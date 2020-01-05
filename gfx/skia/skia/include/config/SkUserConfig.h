@@ -154,8 +154,6 @@
 
 #define SK_RASTERIZE_EVEN_ROUNDING
 
-#define SK_DISABLE_SCREENSPACE_TESS_AA_PATH_RENDERER
-
 #define SK_DISABLE_SLOW_DEBUG_VALIDATION 1
 
 #define MOZ_SKIA 1
@@ -166,6 +164,17 @@
 #  else
 #    define MOZ_IMPLICIT
 #  endif
+#endif
+
+
+
+
+
+#include "mozilla/Compiler.h"
+#if MOZ_IS_MSVC || MOZ_USING_LIBCXX || MOZ_LIBSTDCXX_VERSION_AT_LEAST(4, 8, 0)
+#  define MOZ_SKIA_AVOID_CXX11 0
+#else
+#  define MOZ_SKIA_AVOID_CXX11 1
 #endif
 
 #endif

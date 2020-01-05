@@ -9,7 +9,6 @@
 #ifndef SkPathRef_DEFINED
 #define SkPathRef_DEFINED
 
-#include "../private/SkAtomics.h"
 #include "../private/SkTDArray.h"
 #include "SkMatrix.h"
 #include "SkPoint.h"
@@ -36,7 +35,7 @@ class SkWBuffer;
 
 
 
-class SK_API SkPathRef final : public SkNVRefCnt<SkPathRef> {
+class SK_API SkPathRef : public ::SkRefCnt {
 public:
     class Editor {
     public:
@@ -58,11 +57,11 @@ public:
         SkPoint* atPoint(int i) {
             SkASSERT((unsigned) i < (unsigned) fPathRef->fPointCnt);
             return this->points() + i;
-        }
+        };
         const SkPoint* atPoint(int i) const {
             SkASSERT((unsigned) i < (unsigned) fPathRef->fPointCnt);
             return this->points() + i;
-        }
+        };
 
         
 
@@ -100,13 +99,9 @@ public:
 
         SkPathRef* pathRef() { return fPathRef; }
 
-        void setIsOval(bool isOval, bool isCCW, unsigned start) {
-            fPathRef->setIsOval(isOval, isCCW, start);
-        }
+        void setIsOval(bool isOval) { fPathRef->setIsOval(isOval); }
 
-        void setIsRRect(bool isRRect, bool isCCW, unsigned start) {
-            fPathRef->setIsRRect(isRRect, isCCW, start);
-        }
+        void setIsRRect(bool isRRect) { fPathRef->setIsRRect(isRRect); }
 
         void setBounds(const SkRect& rect) { fPathRef->setBounds(rect); }
 
@@ -174,36 +169,17 @@ public:
 
 
 
-
-
-
-    bool isOval(SkRect* rect, bool* isCCW, unsigned* start) const {
-        if (fIsOval) {
-            if (rect) {
-                *rect = this->getBounds();
-            }
-            if (isCCW) {
-                *isCCW = SkToBool(fRRectOrOvalIsCCW);
-            }
-            if (start) {
-                *start = fRRectOrOvalStartIdx;
-            }
+    bool isOval(SkRect* rect) const {
+        if (fIsOval && rect) {
+            *rect = this->getBounds();
         }
 
         return SkToBool(fIsOval);
     }
 
-    bool isRRect(SkRRect* rrect, bool* isCCW, unsigned* start) const {
-        if (fIsRRect) {
-            if (rrect) {
-                *rrect = this->getRRect();
-            }
-            if (isCCW) {
-                *isCCW = SkToBool(fRRectOrOvalIsCCW);
-            }
-            if (start) {
-                *start = fRRectOrOvalStartIdx;
-            }
+    bool isRRect(SkRRect* rrect) const {
+        if (fIsRRect && rrect) {
+            *rrect = this->getRRect();
         }
         return SkToBool(fIsRRect);
     }
@@ -243,7 +219,7 @@ public:
 
     static void Rewind(SkAutoTUnref<SkPathRef>* pathRef);
 
-    ~SkPathRef();
+    virtual ~SkPathRef();
     int countPoints() const { SkDEBUGCODE(this->validate();) return fPointCnt; }
     int countVerbs() const { SkDEBUGCODE(this->validate();) return fVerbCnt; }
     int countWeights() const { SkDEBUGCODE(this->validate();) return fConicWeights.count(); }
@@ -315,12 +291,10 @@ public:
 
 private:
     enum SerializationOffsets {
-        kRRectOrOvalStartIdx_SerializationShift = 28,  
-        kRRectOrOvalIsCCW_SerializationShift = 27,     
-        kIsRRect_SerializationShift = 26,              
-        kIsFinite_SerializationShift = 25,             
-        kIsOval_SerializationShift = 24,               
-        kSegmentMask_SerializationShift = 0            
+        kIsRRect_SerializationShift = 26,   
+        kIsFinite_SerializationShift = 25,  
+        kIsOval_SerializationShift = 24,    
+        kSegmentMask_SerializationShift = 0 
     };
 
     SkPathRef() {
@@ -334,9 +308,6 @@ private:
         fSegmentMask = 0;
         fIsOval = false;
         fIsRRect = false;
-        
-        fRRectOrOvalIsCCW = false;
-        fRRectOrOvalStartIdx = 0xAC;
         SkDEBUGCODE(fEditorsAttached = 0;)
         SkDEBUGCODE(this->validate();)
     }
@@ -482,17 +453,9 @@ private:
 
     friend SkPathRef* sk_create_empty_pathref();
 
-    void setIsOval(bool isOval, bool isCCW, unsigned start) {
-        fIsOval = isOval;
-        fRRectOrOvalIsCCW = isCCW;
-        fRRectOrOvalStartIdx = start;
-    }
+    void setIsOval(bool isOval) { fIsOval = isOval; }
 
-    void setIsRRect(bool isRRect, bool isCCW, unsigned start) {
-        fIsRRect = isRRect;
-        fRRectOrOvalIsCCW = isCCW;
-        fRRectOrOvalStartIdx = start;
-    }
+    void setIsRRect(bool isRRect) { fIsRRect = isRRect; }
 
     
     SkPoint* getPoints() {
@@ -535,14 +498,11 @@ private:
 
     SkBool8  fIsOval;
     SkBool8  fIsRRect;
-    
-    
-    SkBool8  fRRectOrOvalIsCCW;
-    uint8_t  fRRectOrOvalStartIdx;
     uint8_t  fSegmentMask;
 
     friend class PathRefTest_Private;
     friend class ForceIsRRect_Private; 
+    typedef SkRefCnt INHERITED;
 };
 
 #endif

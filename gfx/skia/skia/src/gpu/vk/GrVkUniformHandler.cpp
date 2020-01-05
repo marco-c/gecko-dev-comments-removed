@@ -16,7 +16,7 @@
 
 uint32_t grsltype_to_alignment_mask(GrSLType type) {
     SkASSERT(GrSLTypeIsFloatType(type));
-    static const uint32_t kAlignmentMask[] = {
+    static const uint32_t kAlignments[kGrSLTypeCount] = {
         0x0, 
         0x3, 
         0x7, 
@@ -25,13 +25,6 @@ uint32_t grsltype_to_alignment_mask(GrSLType type) {
         0x7, 
         0xF, 
         0xF, 
-        0x0, 
-        0x0, 
-        0x0, 
-        0x0, 
-        0x0, 
-        0x7, 
-        0x7, 
         0x0, 
         0x0, 
     };
@@ -43,24 +36,17 @@ uint32_t grsltype_to_alignment_mask(GrSLType type) {
     GR_STATIC_ASSERT(5 == kMat22f_GrSLType);
     GR_STATIC_ASSERT(6 == kMat33f_GrSLType);
     GR_STATIC_ASSERT(7 == kMat44f_GrSLType);
-    GR_STATIC_ASSERT(8 == kTexture2DSampler_GrSLType);
-    GR_STATIC_ASSERT(9 == kTextureExternalSampler_GrSLType);
-    GR_STATIC_ASSERT(10 == kTexture2DRectSampler_GrSLType);
-    GR_STATIC_ASSERT(11 == kTextureBufferSampler_GrSLType);
-    GR_STATIC_ASSERT(12 == kBool_GrSLType);
-    GR_STATIC_ASSERT(13 == kInt_GrSLType);
-    GR_STATIC_ASSERT(14 == kUint_GrSLType);
-    GR_STATIC_ASSERT(15 == kTexture2D_GrSLType);
-    GR_STATIC_ASSERT(16 == kSampler_GrSLType);
-    GR_STATIC_ASSERT(SK_ARRAY_COUNT(kAlignmentMask) == kGrSLTypeCount);
-    return kAlignmentMask[type];
+    GR_STATIC_ASSERT(8 == kSampler2D_GrSLType);
+    GR_STATIC_ASSERT(9 == kSamplerExternal_GrSLType);
+    GR_STATIC_ASSERT(SK_ARRAY_COUNT(kAlignments) == kGrSLTypeCount);
+    return kAlignments[type];
 }
-
 
 
 
 static inline uint32_t grsltype_to_vk_size(GrSLType type) {
     SkASSERT(GrSLTypeIsFloatType(type));
+    SkASSERT(kMat22f_GrSLType != type); 
     static const uint32_t kSizes[] = {
         0,                        
         sizeof(float),            
@@ -74,9 +60,6 @@ static inline uint32_t grsltype_to_vk_size(GrSLType type) {
         0,                        
         0,                        
         0,                        
-        1,                        
-        4,                        
-        4,                        
         0,                        
         0,                        
     };
@@ -90,15 +73,12 @@ static inline uint32_t grsltype_to_vk_size(GrSLType type) {
     GR_STATIC_ASSERT(5 == kMat22f_GrSLType);
     GR_STATIC_ASSERT(6 == kMat33f_GrSLType);
     GR_STATIC_ASSERT(7 == kMat44f_GrSLType);
-    GR_STATIC_ASSERT(8 == kTexture2DSampler_GrSLType);
-    GR_STATIC_ASSERT(9 == kTextureExternalSampler_GrSLType);
-    GR_STATIC_ASSERT(10 == kTexture2DRectSampler_GrSLType);
-    GR_STATIC_ASSERT(11 == kTextureBufferSampler_GrSLType);
-    GR_STATIC_ASSERT(12 == kBool_GrSLType);
-    GR_STATIC_ASSERT(13 == kInt_GrSLType);
-    GR_STATIC_ASSERT(14 == kUint_GrSLType);
-    GR_STATIC_ASSERT(15 == kTexture2D_GrSLType);
-    GR_STATIC_ASSERT(16 == kSampler_GrSLType);
+    GR_STATIC_ASSERT(8 == kSampler2D_GrSLType);
+    GR_STATIC_ASSERT(9 == kSamplerExternal_GrSLType);
+    GR_STATIC_ASSERT(10 == kSampler2DRect_GrSLType);
+    GR_STATIC_ASSERT(11 == kBool_GrSLType);
+    GR_STATIC_ASSERT(12 == kInt_GrSLType);
+    GR_STATIC_ASSERT(13 == kUint_GrSLType);
     GR_STATIC_ASSERT(SK_ARRAY_COUNT(kSizes) == kGrSLTypeCount);
 }
 
@@ -112,7 +92,8 @@ void get_ubo_aligned_offset(uint32_t* uniformOffset,
                             int arrayCount) {
     uint32_t alignmentMask = grsltype_to_alignment_mask(type);
     
-    if (arrayCount || type == kMat22f_GrSLType) {
+    SkASSERT(type != kMat22f_GrSLType); 
+    if (arrayCount) {
         alignmentMask = 0xF;
     }
     uint32_t offsetDiff = *currentOffset & alignmentMask;
@@ -143,7 +124,6 @@ GrGLSLUniformHandler::UniformHandle GrVkUniformHandler::internalAddUniformArray(
     SkASSERT(0 == (~kVisibilityMask & visibility));
     SkASSERT(0 != visibility);
     SkASSERT(kDefault_GrSLPrecision == precision || GrSLTypeIsFloatType(type));
-    GrSLTypeIsFloatType(type);
 
     UniformInfo& uni = fUniforms.push_back();
     uni.fVariable.setType(type);
@@ -163,63 +143,58 @@ GrGLSLUniformHandler::UniformHandle GrVkUniformHandler::internalAddUniformArray(
     SkASSERT(kVertex_GrShaderFlag == visibility || kFragment_GrShaderFlag == visibility);
     uni.fVisibility = visibility;
     uni.fVariable.setPrecision(precision);
-    
-    
-    uni.fVariable.setTypeModifier(GrGLSLShaderVar::kNone_TypeModifier);
+    if (GrSLTypeIsFloatType(type)) {
+        
+        
+        uni.fVariable.setTypeModifier(GrGLSLShaderVar::kNone_TypeModifier);
 
-    uint32_t* currentOffset = kVertex_GrShaderFlag == visibility ? &fCurrentVertexUBOOffset
-                                                                   : &fCurrentFragmentUBOOffset;
-    get_ubo_aligned_offset(&uni.fUBOffset, currentOffset, type, arrayCount);
+        uint32_t* currentOffset = kVertex_GrShaderFlag == visibility ? &fCurrentVertexUBOOffset
+                                                                     : &fCurrentFragmentUBOOffset;
+        get_ubo_aligned_offset(&uni.fUBOffset, currentOffset, type, arrayCount);
+        uni.fSetNumber = kUniformBufferDescSet;
+        uni.fBinding = kVertex_GrShaderFlag == visibility ? kVertexBinding : kFragBinding;
 
-    if (outName) {
-        *outName = uni.fVariable.c_str();
+        if (outName) {
+            *outName = uni.fVariable.c_str();
+        }
+    } else {
+        SkASSERT(type == kSampler2D_GrSLType);
+        uni.fVariable.setTypeModifier(GrGLSLShaderVar::kUniform_TypeModifier);
+
+        uni.fSetNumber = kSamplerDescSet;
+        uni.fBinding = fCurrentSamplerBinding++;
+        uni.fUBOffset = 0; 
+        SkString layoutQualifier;
+        layoutQualifier.appendf("set=%d, binding=%d", uni.fSetNumber, uni.fBinding);
+        uni.fVariable.setLayoutQualifier(layoutQualifier.c_str());
     }
 
     return GrGLSLUniformHandler::UniformHandle(fUniforms.count() - 1);
 }
 
-GrGLSLUniformHandler::SamplerHandle GrVkUniformHandler::internalAddSampler(uint32_t visibility,
-                                                                           GrPixelConfig config,
-                                                                           GrSLType type,
-                                                                           GrSLPrecision precision,
-                                                                           const char* name) {
-    SkASSERT(name && strlen(name));
-    SkDEBUGCODE(static const uint32_t kVisMask = kVertex_GrShaderFlag | kFragment_GrShaderFlag);
-    SkASSERT(0 == (~kVisMask & visibility));
-    SkASSERT(0 != visibility);
-    SkString mangleName;
-    char prefix = 'u';
-    fProgramBuilder->nameVariable(&mangleName, prefix, name, true);
-    fSamplers.emplace_back(visibility, config, type, precision, mangleName.c_str(),
-                           (uint32_t)fSamplers.count(), kSamplerDescSet);
-    return GrGLSLUniformHandler::SamplerHandle(fSamplers.count() - 1);
-}
-
 void GrVkUniformHandler::appendUniformDecls(GrShaderFlags visibility, SkString* out) const {
-    SkASSERT(kVertex_GrShaderFlag == visibility || kFragment_GrShaderFlag == visibility);
-
-    for (int i = 0; i < fSamplers.count(); ++i) {
-        const GrVkGLSLSampler& sampler = fSamplers[i];
-        SkASSERT(sampler.type() == kTexture2DSampler_GrSLType);
-        if (visibility == sampler.visibility()) {
-            sampler.fShaderVar.appendDecl(fProgramBuilder->glslCaps(), out);
-            out->append(";\n");
-        }
-    }
-
+    SkTArray<UniformInfo*> uniformBufferUniform;
+    
     SkString uniformsString;
+    SkASSERT(kVertex_GrShaderFlag == visibility || kFragment_GrShaderFlag == visibility);
+    uint32_t uniformBinding = (visibility == kVertex_GrShaderFlag) ? kVertexBinding : kFragBinding;
     for (int i = 0; i < fUniforms.count(); ++i) {
         const UniformInfo& localUniform = fUniforms[i];
         if (visibility == localUniform.fVisibility) {
             if (GrSLTypeIsFloatType(localUniform.fVariable.getType())) {
+                SkASSERT(uniformBinding == localUniform.fBinding);
+                SkASSERT(kUniformBufferDescSet == localUniform.fSetNumber);
                 localUniform.fVariable.appendDecl(fProgramBuilder->glslCaps(), &uniformsString);
                 uniformsString.append(";\n");
+            } else {
+                SkASSERT(localUniform.fVariable.getType() == kSampler2D_GrSLType);
+                SkASSERT(kSamplerDescSet == localUniform.fSetNumber);
+                localUniform.fVariable.appendDecl(fProgramBuilder->glslCaps(), out);
+                out->append(";\n");
             }
         }
     }
     if (!uniformsString.isEmpty()) {
-        uint32_t uniformBinding = (visibility == kVertex_GrShaderFlag) ? kVertexBinding
-                                                                       : kFragBinding;
         const char* stage = (visibility == kVertex_GrShaderFlag) ? "vertex" : "fragment";
         out->appendf("layout (set=%d, binding=%d) uniform %sUniformBuffer\n{\n",
                      kUniformBufferDescSet, uniformBinding, stage);

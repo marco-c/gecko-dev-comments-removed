@@ -8,7 +8,6 @@
 #ifndef SkClipStack_DEFINED
 #define SkClipStack_DEFINED
 
-#include "SkCanvas.h"
 #include "SkDeque.h"
 #include "SkPath.h"
 #include "SkRect.h"
@@ -54,21 +53,21 @@ public:
         static const int kTypeCnt = kLastType + 1;
 
         Element() {
-            this->initCommon(0, SkCanvas::kReplace_Op, false);
+            this->initCommon(0, SkRegion::kReplace_Op, false);
             this->setEmpty();
         }
 
         Element(const Element&);
 
-        Element(const SkRect& rect, SkCanvas::ClipOp op, bool doAA) {
+        Element(const SkRect& rect, SkRegion::Op op, bool doAA) {
             this->initRect(0, rect, op, doAA);
         }
 
-        Element(const SkRRect& rrect, SkCanvas::ClipOp op, bool doAA) {
+        Element(const SkRRect& rrect, SkRegion::Op op, bool doAA) {
             this->initRRect(0, rrect, op, doAA);
         }
 
-        Element(const SkPath& path, SkCanvas::ClipOp op, bool doAA) {
+        Element(const SkPath& path, SkRegion::Op op, bool doAA) {
             this->initPath(0, path, op, doAA);
         }
 
@@ -94,7 +93,7 @@ public:
         }
 
         
-        SkCanvas::ClipOp getOp() const { return fOp; }
+        SkRegion::Op getOp() const { return fOp; }
 
         
         void asPath(SkPath* path) const;
@@ -110,7 +109,7 @@ public:
         void invertShapeFillType();
 
         
-        void setOp(SkCanvas::ClipOp op) { fOp = op; }
+        void setOp(SkRegion::Op op) { fOp = op; }
 
         
 
@@ -159,23 +158,6 @@ public:
             }
         }
 
-        bool contains(const SkRRect& rrect) const {
-            switch (fType) {
-                case kRect_Type:
-                    return this->getRect().contains(rrect.getBounds());
-                case kRRect_Type:
-                    
-                    return fRRect.contains(rrect.getBounds()) || rrect == fRRect;
-                case kPath_Type:
-                    return fPath.get()->conservativelyContainsRect(rrect.getBounds());
-                case kEmpty_Type:
-                    return false;
-                default:
-                    SkDEBUGFAIL("Unexpected type.");
-                    return false;
-            }
-        }
-
         
 
 
@@ -188,7 +170,7 @@ public:
 
         void replay(SkCanvasClipVisitor*) const;
 
-#ifdef SK_DEBUG
+#ifdef SK_DEVELOPER
         
 
 
@@ -202,7 +184,7 @@ public:
         SkTLazy<SkPath> fPath;
         SkRRect         fRRect;
         int             fSaveCount; 
-        SkCanvas::ClipOp fOp;
+        SkRegion::Op    fOp;
         Type            fType;
         bool            fDoAA;
 
@@ -226,23 +208,23 @@ public:
         int                     fGenID;
 
         Element(int saveCount) {
-            this->initCommon(saveCount, SkCanvas::kReplace_Op, false);
+            this->initCommon(saveCount, SkRegion::kReplace_Op, false);
             this->setEmpty();
         }
 
-        Element(int saveCount, const SkRRect& rrect, SkCanvas::ClipOp op, bool doAA) {
+        Element(int saveCount, const SkRRect& rrect, SkRegion::Op op, bool doAA) {
             this->initRRect(saveCount, rrect, op, doAA);
         }
 
-        Element(int saveCount, const SkRect& rect, SkCanvas::ClipOp op, bool doAA) {
+        Element(int saveCount, const SkRect& rect, SkRegion::Op op, bool doAA) {
             this->initRect(saveCount, rect, op, doAA);
         }
 
-        Element(int saveCount, const SkPath& path, SkCanvas::ClipOp op, bool doAA) {
+        Element(int saveCount, const SkPath& path, SkRegion::Op op, bool doAA) {
             this->initPath(saveCount, path, op, doAA);
         }
 
-        void initCommon(int saveCount, SkCanvas::ClipOp op, bool doAA) {
+        void initCommon(int saveCount, SkRegion::Op op, bool doAA) {
             fSaveCount = saveCount;
             fOp = op;
             fDoAA = doAA;
@@ -254,13 +236,13 @@ public:
             fGenID = kInvalidGenID;
         }
 
-        void initRect(int saveCount, const SkRect& rect, SkCanvas::ClipOp op, bool doAA) {
+        void initRect(int saveCount, const SkRect& rect, SkRegion::Op op, bool doAA) {
             fRRect.setRect(rect);
             fType = kRect_Type;
             this->initCommon(saveCount, op, doAA);
         }
 
-        void initRRect(int saveCount, const SkRRect& rrect, SkCanvas::ClipOp op, bool doAA) {
+        void initRRect(int saveCount, const SkRRect& rrect, SkRegion::Op op, bool doAA) {
             SkRRect::Type type = rrect.getType();
             fRRect = rrect;
             if (SkRRect::kRect_Type == type || SkRRect::kEmpty_Type == type) {
@@ -271,13 +253,13 @@ public:
             this->initCommon(saveCount, op, doAA);
         }
 
-        void initPath(int saveCount, const SkPath& path, SkCanvas::ClipOp op, bool doAA);
+        void initPath(int saveCount, const SkPath& path, SkRegion::Op op, bool doAA);
 
         void setEmpty();
 
         
         inline void checkEmpty() const;
-        inline bool canBeIntersectedInPlace(int saveCount, SkCanvas::ClipOp op) const;
+        inline bool canBeIntersectedInPlace(int saveCount, SkRegion::Op op) const;
         
 
 
@@ -302,6 +284,8 @@ public:
 
     SkClipStack();
     SkClipStack(const SkClipStack& b);
+    explicit SkClipStack(const SkRect& r);
+    explicit SkClipStack(const SkIRect& r);
     ~SkClipStack();
 
     SkClipStack& operator=(const SkClipStack& b);
@@ -332,13 +316,7 @@ public:
 
 
 
-    bool quickContains(const SkRect& devRect) const {
-        return this->isWideOpen() || this->internalQuickContains(devRect);
-    }
-
-    bool quickContains(const SkRRect& devRRect) const {
-        return this->isWideOpen() || this->internalQuickContains(devRRect);
-    }
+    bool quickContains(const SkRect& devRect) const;
 
     
 
@@ -346,14 +324,14 @@ public:
 
     bool asPath(SkPath* path) const;
 
-    void clipDevRect(const SkIRect& ir, SkCanvas::ClipOp op) {
+    void clipDevRect(const SkIRect& ir, SkRegion::Op op) {
         SkRect r;
         r.set(ir);
-        this->clipRect(r, SkMatrix::I(), op, false);
+        this->clipDevRect(r, op, false);
     }
-    void clipRect(const SkRect&, const SkMatrix& matrix, SkCanvas::ClipOp, bool doAA);
-    void clipRRect(const SkRRect&, const SkMatrix& matrix, SkCanvas::ClipOp, bool doAA);
-    void clipPath(const SkPath&, const SkMatrix& matrix, SkCanvas::ClipOp, bool doAA);
+    void clipDevRect(const SkRect&, SkRegion::Op, bool doAA);
+    void clipDevRRect(const SkRRect&, SkRegion::Op, bool doAA);
+    void clipDevPath(const SkPath&, SkRegion::Op, bool doAA);
     
     void clipEmpty();
 
@@ -361,22 +339,7 @@ public:
 
 
 
-    bool isWideOpen() const { return this->getTopmostGenID() == kWideOpenGenID; }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-    bool isRRect(const SkRect& bounds, SkRRect* rrect, bool* aa) const;
+    bool isWideOpen() const;
 
     
 
@@ -390,7 +353,7 @@ public:
 
     int32_t getTopmostGenID() const;
 
-#ifdef SK_DEBUG
+#ifdef SK_DEVELOPER
     
 
 
@@ -424,7 +387,7 @@ public:
 
 
 
-        const Element* skipToTopmost(SkCanvas::ClipOp op);
+        const Element* skipToTopmost(SkRegion::Op op);
 
         
 
@@ -497,9 +460,6 @@ private:
     
     
     static int32_t     gGenID;
-
-    bool internalQuickContains(const SkRect& devRect) const;
-    bool internalQuickContains(const SkRRect& devRRect) const;
 
     
 

@@ -16,9 +16,6 @@ class GrContext;
 class SkBigPicture;
 class SkBitmap;
 class SkCanvas;
-class SkData;
-class SkImage;
-class SkImageDeserializer;
 class SkPath;
 class SkPictureData;
 class SkPixelSerializer;
@@ -52,7 +49,6 @@ public:
 
     typedef bool (*InstallPixelRefProc)(const void* src, size_t length, SkBitmap* dst);
 
-#ifdef SK_SUPPORT_LEGACY_PICTUREINSTALLPIXELREF
     
 
 
@@ -62,10 +58,6 @@ public:
 
 
     static sk_sp<SkPicture> MakeFromStream(SkStream*, InstallPixelRefProc proc);
-    static sk_sp<SkPicture> MakeFromStream(SkStream* stream, std::nullptr_t) {
-        return MakeFromStream(stream);
-    }
-#endif
 
     
 
@@ -73,11 +65,11 @@ public:
 
 
 
-    static sk_sp<SkPicture> MakeFromStream(SkStream*, SkImageDeserializer*);
+
+
+
+
     static sk_sp<SkPicture> MakeFromStream(SkStream*);
-    static sk_sp<SkPicture> MakeFromData(const void* data, size_t size,
-                                         SkImageDeserializer* = nullptr);
-    static sk_sp<SkPicture> MakeFromData(const SkData* data, SkImageDeserializer* = nullptr);
 
     
 
@@ -127,13 +119,7 @@ public:
 
 
 
-    sk_sp<SkData> serialize(SkPixelSerializer* = nullptr) const;
-
-    
-
-
-
-    void serialize(SkWStream*, SkPixelSerializer* = nullptr) const;
+    void serialize(SkWStream*, SkPixelSerializer* = NULL) const;
 
     
 
@@ -154,6 +140,10 @@ public:
     virtual int approximateOpCount() const = 0;
 
     
+
+    virtual bool hasText() const = 0;
+
+    
     virtual size_t approximateBytesUsed() const = 0;
 
     
@@ -167,10 +157,8 @@ public:
     static bool InternalOnly_StreamIsSKP(SkStream*, SkPictInfo*);
     static bool InternalOnly_BufferIsSKP(SkReadBuffer*, SkPictInfo*);
 
-#ifdef SK_SUPPORT_LEGACY_PICTURE_GPUVETO
     
     bool suitableForGpuRasterization(GrContext*, const char** whyNot = NULL) const;
-#endif
 
     
     struct DeletionMessage { int32_t fUniqueID; };  
@@ -202,19 +190,12 @@ private:
     template <typename> friend class SkMiniPicture;
 
     void serialize(SkWStream*, SkPixelSerializer*, SkRefCntSet* typefaces) const;
-    static sk_sp<SkPicture> MakeFromStream(SkStream*, SkImageDeserializer*, SkTypefacePlayback*);
+    static sk_sp<SkPicture> MakeFromStream(SkStream*, InstallPixelRefProc, SkTypefacePlayback*);
     friend class SkPictureData;
 
     virtual int numSlowPaths() const = 0;
-    friend class SkPictureGpuAnalyzer;
     friend struct SkPathCounter;
 
-    
-    
-    
-    
-    
-    
     
     
     
@@ -228,7 +209,7 @@ private:
 
     
     static const uint32_t     MIN_PICTURE_VERSION = 35;     
-    static const uint32_t CURRENT_PICTURE_VERSION = 50;
+    static const uint32_t CURRENT_PICTURE_VERSION = 44;
 
     static_assert(MIN_PICTURE_VERSION <= 41,
                   "Remove kFontFileName and related code from SkFontDescriptor.cpp.");
@@ -238,17 +219,9 @@ private:
 
     static_assert(MIN_PICTURE_VERSION <= 43,
                   "Remove SkBitmapSourceDeserializer.");
-
-    static_assert(MIN_PICTURE_VERSION <= 45,
-                  "Remove decoding of old SkTypeface::Style from SkFontDescriptor.cpp.");
-
-    static_assert(MIN_PICTURE_VERSION <= 48,
-                  "Remove legacy gradient deserialization code from SkGradientShader.cpp.");
-
+    
     static bool IsValidPictInfo(const SkPictInfo& info);
-    static sk_sp<SkPicture> Forwardport(const SkPictInfo&,
-                                        const SkPictureData*,
-                                        SkReadBuffer* buffer);
+    static sk_sp<SkPicture> Forwardport(const SkPictInfo&, const SkPictureData*);
 
     SkPictInfo createHeader() const;
     SkPictureData* backport() const;

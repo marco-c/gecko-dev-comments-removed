@@ -14,7 +14,6 @@ class GrCoordTransform;
 class GrGLSLCaps;
 class GrGLSLFragmentProcessor;
 class GrInvariantOutput;
-class GrPipeline;
 class GrProcessorKeyBuilder;
 
 
@@ -32,27 +31,21 @@ public:
 
 
 
-    static sk_sp<GrFragmentProcessor> MulOutputByInputAlpha(sk_sp<GrFragmentProcessor>);
+    static const GrFragmentProcessor* MulOutputByInputAlpha(const GrFragmentProcessor*);
 
     
 
 
 
 
-    static sk_sp<GrFragmentProcessor> MulOutputByInputUnpremulColor(sk_sp<GrFragmentProcessor>);
+    static const GrFragmentProcessor* MulOutputByInputUnpremulColor(const GrFragmentProcessor*);
 
     
 
 
 
 
-    static sk_sp<GrFragmentProcessor> OverrideInput(sk_sp<GrFragmentProcessor>, GrColor4f);
-
-    
-
-
-
-    static sk_sp<GrFragmentProcessor> PremulInput(sk_sp<GrFragmentProcessor>);
+    static const GrFragmentProcessor* OverrideInput(const GrFragmentProcessor*, GrColor);
 
     
 
@@ -60,14 +53,13 @@ public:
 
 
 
-
-
-    static sk_sp<GrFragmentProcessor> RunInSeries(sk_sp<GrFragmentProcessor>*, int cnt);
+    static const GrFragmentProcessor* RunInSeries(const GrFragmentProcessor*[], int cnt);
 
     GrFragmentProcessor()
         : INHERITED()
-        , fUsesDistanceVectorField(false)
-        , fUsesLocalCoords(false) {}
+        , fUsesLocalCoords(false)
+        , fNumTexturesExclChildren(0)
+        , fNumTransformsExclChildren(0) {}
 
     ~GrFragmentProcessor() override;
 
@@ -80,7 +72,11 @@ public:
         }
     }
 
-    int numCoordTransforms() const { return fCoordTransforms.count(); }
+    int numTexturesExclChildren() const { return fNumTexturesExclChildren; }
+
+    int numTransformsExclChildren() const { return fNumTransformsExclChildren; }
+
+    int numTransforms() const { return fCoordTransforms.count(); }
 
     
 
@@ -88,6 +84,12 @@ public:
 
     const SkTArray<const GrCoordTransform*, true>& coordTransforms() const {
         return fCoordTransforms;
+    }
+
+    void gatherCoordTransforms(SkTArray<const GrCoordTransform*, true>* outTransforms) const {
+        if (!fCoordTransforms.empty()) {
+            outTransforms->push_back_n(fCoordTransforms.count(), fCoordTransforms.begin());
+        }
     }
 
     int numChildProcessors() const { return fChildProcessors.count(); }
@@ -98,16 +100,13 @@ public:
     bool usesLocalCoords() const { return fUsesLocalCoords; }
 
     
-    bool usesDistanceVectorField() const { return fUsesDistanceVectorField; }
-
-    
 
 
 
 
 
 
-    bool isEqual(const GrFragmentProcessor& that) const;
+    bool isEqual(const GrFragmentProcessor& that, bool ignoreCoordTransforms) const;
 
     
 
@@ -121,76 +120,8 @@ public:
         this->onComputeInvariantOutput(inout);
     }
 
-    
-
-
-
-    class Iter : public SkNoncopyable {
-    public:
-        explicit Iter(const GrFragmentProcessor* fp) { fFPStack.push_back(fp); }
-        explicit Iter(const GrPipeline& pipeline);
-        const GrFragmentProcessor* next();
-
-    private:
-        SkSTArray<4, const GrFragmentProcessor*, true> fFPStack;
-    };
-
-    
-
-
-
-
-    template <typename T, typename BASE,
-              int (BASE::*COUNT)() const,
-              const T& (BASE::*GET)(int) const>
-    class FPItemIter : public SkNoncopyable {
-    public:
-        explicit FPItemIter(const GrFragmentProcessor* fp)
-                : fCurrFP(nullptr)
-                , fCTIdx(0)
-                , fFPIter(fp) {
-            fCurrFP = fFPIter.next();
-        }
-        explicit FPItemIter(const GrPipeline& pipeline)
-                : fCurrFP(nullptr)
-                , fCTIdx(0)
-                , fFPIter(pipeline) {
-            fCurrFP = fFPIter.next();
-        }
-
-        const T* next() {
-            if (!fCurrFP) {
-                return nullptr;
-            }
-            while (fCTIdx == (fCurrFP->*COUNT)()) {
-                fCTIdx = 0;
-                fCurrFP = fFPIter.next();
-                if (!fCurrFP) {
-                    return nullptr;
-                }
-            }
-            return &(fCurrFP->*GET)(fCTIdx++);
-        }
-
-    private:
-        const GrFragmentProcessor*  fCurrFP;
-        int                         fCTIdx;
-        GrFragmentProcessor::Iter   fFPIter;
-    };
-
-    using CoordTransformIter = FPItemIter<GrCoordTransform,
-                                          GrFragmentProcessor,
-                                          &GrFragmentProcessor::numCoordTransforms,
-                                          &GrFragmentProcessor::coordTransform>;
-
-    using TextureAccessIter = FPItemIter<GrTextureAccess,
-                                         GrProcessor,
-                                         &GrProcessor::numTextures,
-                                         &GrProcessor::textureAccess>;
-
 protected:
     void addTextureAccess(const GrTextureAccess* textureAccess) override;
-    void addBufferAccess(const GrBufferAccess*) override;
 
     
 
@@ -220,7 +151,7 @@ protected:
 
 
 
-    int registerChildProcessor(sk_sp<GrFragmentProcessor> child);
+    int registerChildProcessor(const GrFragmentProcessor* child);
 
     
 
@@ -229,11 +160,6 @@ protected:
 
 
     virtual void onComputeInvariantOutput(GrInvariantOutput* inout) const = 0;
-
-    
-
-
-    bool fUsesDistanceVectorField;
 
 private:
     void notifyRefCntIsZero() const final;
@@ -257,15 +183,35 @@ private:
 
     bool hasSameTransforms(const GrFragmentProcessor&) const;
 
-    bool                                       fUsesLocalCoords;
-
-    SkSTArray<4, const GrCoordTransform*, true> fCoordTransforms;
+    bool                                            fUsesLocalCoords;
 
     
 
 
 
-    SkSTArray<1, GrFragmentProcessor*, true>    fChildProcessors;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    SkSTArray<4, const GrCoordTransform*, true>     fCoordTransforms;
+    int                                             fNumTexturesExclChildren;
+    int                                             fNumTransformsExclChildren;
+    SkSTArray<1, const GrFragmentProcessor*, true>  fChildProcessors;
 
     typedef GrProcessor INHERITED;
 };

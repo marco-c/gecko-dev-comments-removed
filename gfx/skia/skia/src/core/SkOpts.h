@@ -8,7 +8,7 @@
 #ifndef SkOpts_DEFINED
 #define SkOpts_DEFINED
 
-#include "SkRasterPipeline.h"
+#include "SkMatrix.h"
 #include "SkTextureCompressor.h"
 #include "SkTypes.h"
 #include "SkXfermode.h"
@@ -50,6 +50,8 @@ namespace SkOpts {
                                           int,
                                           const SkColor*);
 
+    extern SkMatrix::MapPtsProc matrix_translate, matrix_scale_translate, matrix_affine;
+
     
     typedef void (*Swizzle_8888)(uint32_t*, const void*, int);
     extern Swizzle_8888 RGBA_to_BGRA,          
@@ -63,18 +65,8 @@ namespace SkOpts {
                         inverted_CMYK_to_RGB1, 
                         inverted_CMYK_to_BGR1; 
 
-    
-    
-    extern void (*srcover_srgb_srgb)(uint32_t* dst, const uint32_t* src, int ndst, int nsrc);
-
-    
-    extern uint32_t (*hash_fn)(const void*, size_t, uint32_t seed);
-    static inline uint32_t hash(const void* data, size_t bytes, uint32_t seed=0) {
-        return hash_fn(data, bytes, seed);
-    }
-
-    extern SkRasterPipeline::Fn stages_4  [SkRasterPipeline::kNumStockStages],
-                                stages_1_3[SkRasterPipeline::kNumStockStages];
+    extern void (*half_to_float)(float[], const uint16_t[], int);
+    extern void (*float_to_half)(uint16_t[], const float[], int);
 }
 
 #endif

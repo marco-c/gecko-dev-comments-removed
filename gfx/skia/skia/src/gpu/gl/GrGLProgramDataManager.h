@@ -11,7 +11,6 @@
 #include "glsl/GrGLSLProgramDataManager.h"
 
 #include "GrAllocator.h"
-#include "gl/GrGLSampler.h"
 #include "gl/GrGLTypes.h"
 #include "glsl/GrGLSLShaderVar.h"
 
@@ -47,14 +46,11 @@ public:
     GrGLProgramDataManager(GrGLGpu*, GrGLuint programID, const UniformInfoArray&,
                            const VaryingInfoArray&);
 
-
-    void setSamplers(const SkTArray<GrGLSampler>& samplers) const;
-
     
 
 
-    void set1i(UniformHandle, int32_t) const override;
-    void set1iv(UniformHandle, int arrayCount, const int v[]) const override;
+    void setSampler(UniformHandle, int texUnit) const;
+
     void set1f(UniformHandle, float v0) const override;
     void set1fv(UniformHandle, int arrayCount, const float v[]) const override;
     void set2f(UniformHandle, float, float) const override;

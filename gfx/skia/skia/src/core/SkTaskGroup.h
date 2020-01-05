@@ -39,4 +39,7 @@ private:
     SkAtomic<int32_t> fPending;
 };
 
+
+int sk_num_cores();
+
 #endif

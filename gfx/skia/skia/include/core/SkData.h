@@ -14,12 +14,14 @@
 
 class SkStream;
 
+#define SK_SUPPORT_LEGACY_DATA_FACTORIES
 
 
 
 
 
-class SK_API SkData final : public SkNVRefCnt<SkData> {
+
+class SK_API SkData : public SkRefCnt {
 public:
     
 
@@ -67,6 +69,7 @@ public:
 
 
     bool equals(const SkData* other) const;
+    bool equals(sk_sp<const SkData>& other) const { return this->equals(other.get()); }
 
     
 
@@ -79,7 +82,7 @@ public:
 
     static sk_sp<SkData> MakeWithCopy(const void* data, size_t length);
 
-
+    
     
 
 
@@ -157,8 +160,38 @@ public:
 
     static sk_sp<SkData> MakeEmpty();
 
+#ifdef SK_SUPPORT_LEGACY_DATA_FACTORIES
+    static SkData* NewWithCopy(const void* data, size_t length) {
+        return MakeWithCopy(data, length).release();
+    }
+    static SkData* NewUninitialized(size_t length) {
+        return MakeUninitialized(length).release();
+    }
+    static SkData* NewWithCString(const char cstr[]) {
+        return MakeWithCString(cstr).release();
+    }
+    static SkData* NewWithProc(const void* ptr, size_t length, ReleaseProc proc, void* context) {
+        return MakeWithProc(ptr, length, proc, context).release();
+    }
+    static SkData* NewWithoutCopy(const void* data, size_t length) {
+        return MakeWithoutCopy(data, length).release();
+    }
+    static SkData* NewFromMalloc(const void* data, size_t length) {
+        return MakeFromMalloc(data, length).release();
+    }
+    static SkData* NewFromFileName(const char path[]) { return MakeFromFileName(path).release(); }
+    static SkData* NewFromFILE(FILE* f) { return MakeFromFILE(f).release(); }
+    static SkData* NewFromFD(int fd) { return MakeFromFD(fd).release(); }
+    static SkData* NewFromStream(SkStream* stream, size_t size) {
+        return MakeFromStream(stream, size).release();
+    }
+    static SkData* NewSubset(const SkData* src, size_t offset, size_t length) {
+        return MakeSubset(src, offset, length).release();
+    }
+    static SkData* NewEmpty() { return MakeEmpty().release(); }
+#endif
+
 private:
-    friend class SkNVRefCnt<SkData>;
     ReleaseProc fReleaseProc;
     void*       fReleaseProcContext;
     void*       fPtr;
@@ -166,7 +199,7 @@ private:
 
     SkData(const void* ptr, size_t size, ReleaseProc, void* context);
     explicit SkData(size_t size);   
-    ~SkData();
+    virtual ~SkData();
 
 
     
@@ -183,9 +216,14 @@ private:
     
     static sk_sp<SkData> PrivateNewWithCopy(const void* srcOrNull, size_t length);
 
-    static void DummyReleaseProc(const void*, void*); 
+    static void DummyReleaseProc(const void*, void*) {}
 
     typedef SkRefCnt INHERITED;
 };
+
+#ifdef SK_SUPPORT_LEGACY_DATA_FACTORIES
+
+typedef SkAutoTUnref<SkData> SkAutoDataUnref;
+#endif
 
 #endif

@@ -10,7 +10,6 @@
 #ifndef SkWGL_DEFINED
 #define SkWGL_DEFINED
 
-#include "SkLeanWindows.h"
 
 
 
@@ -23,15 +22,21 @@
 
 
 
+#if !defined(WIN32_LEAN_AND_MEAN)
+    #define WIN32_LEAN_AND_MEAN
+    #define SK_LOCAL_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+#if defined(SK_LOCAL_LEAN_AND_MEAN)
+    #undef WIN32_LEAN_AND_MEAN
+    #undef SK_LOCAL_LEAN_AND_MEAN
+#endif
 
 #define SK_WGL_DRAW_TO_WINDOW                       0x2001
 #define SK_WGL_ACCELERATION                         0x2003
 #define SK_WGL_SUPPORT_OPENGL                       0x2010
 #define SK_WGL_DOUBLE_BUFFER                        0x2011
 #define SK_WGL_COLOR_BITS                           0x2014
-#define SK_WGL_RED_BITS                             0x2015
-#define SK_WGL_GREEN_BITS                           0x2017
-#define SK_WGL_BLUE_BITS                            0x2019
 #define SK_WGL_ALPHA_BITS                           0x201B
 #define SK_WGL_STENCIL_BITS                         0x2023
 #define SK_WGL_FULL_ACCELERATION                    0x2027
@@ -133,7 +138,7 @@ enum SkWGLContextRequest {
 
 
 
-HGLRC SkCreateWGLContext(HDC dc, int msaaSampleCount, bool deepColor, SkWGLContextRequest context);
+HGLRC SkCreateWGLContext(HDC dc, int msaaSampleCount, SkWGLContextRequest context);
 
 
 

@@ -11,28 +11,6 @@
 #include "SkPathOpsQuad.h"
 
 
-static bool pointInTriangle(const SkDPoint fPts[3], const SkDPoint& test) {
-    SkDVector v0 = fPts[2] - fPts[0];
-    SkDVector v1 = fPts[1] - fPts[0];
-    SkDVector v2 = test - fPts[0];
-    double dot00 = v0.dot(v0);
-    double dot01 = v0.dot(v1);
-    double dot02 = v0.dot(v2);
-    double dot11 = v1.dot(v1);
-    double dot12 = v1.dot(v2);
-    
-    double invDenom = 1 / (dot00 * dot11 - dot01 * dot01);
-    double u = (dot11 * dot02 - dot01 * dot12) * invDenom;
-    double v = (dot00 * dot12 - dot01 * dot02) * invDenom;
-    
-    return u >= 0 && v >= 0 && u + v < 1;
-}
-
-static bool matchesEnd(const SkDPoint fPts[3], const SkDPoint& test) {
-    return fPts[0] == test || fPts[2] == test;
-}
-
-
 
 
 
@@ -64,14 +42,6 @@ bool SkDQuad::hullIntersects(const SkDQuad& q2, bool* isLinear) const {
         }
         if (!foundOutlier) {
             return false;
-        }
-    }
-    if (linear && !matchesEnd(fPts, q2.fPts[0]) && !matchesEnd(fPts, q2.fPts[2])) {
-        
-        
-        
-        if (pointInTriangle(fPts, q2.fPts[0]) || pointInTriangle(fPts, q2.fPts[2])) {
-            linear = false;
         }
     }
     *isLinear = linear;
@@ -221,12 +191,6 @@ SkDPoint SkDQuad::ptAtT(double t) const {
 }
 
 static double interp_quad_coords(const double* src, double t) {
-    if (0 == t) {
-        return src[0];
-    }
-    if (1 == t) {
-        return src[4];
-    }
     double ab = SkDInterp(src[0], src[2], t);
     double bc = SkDInterp(src[2], src[4], t);
     double abc = SkDInterp(ab, bc, t);
@@ -266,9 +230,6 @@ bool SkDQuad::monotonicInY() const {
 
 
 SkDQuad SkDQuad::subDivide(double t1, double t2) const {
-    if (0 == t1 && 1 == t2) {
-        return *this;
-    }
     SkDQuad dst;
     double ax = dst[0].fX = interp_quad_coords(&fPts[0].fX, t1);
     double ay = dst[0].fY = interp_quad_coords(&fPts[0].fY, t1);
@@ -302,7 +263,7 @@ SkDPoint SkDQuad::subDivide(const SkDPoint& a, const SkDPoint& c, double t1, dou
         b = i.pt(0);
     } else {
         SkASSERT(i.used() <= 2);
-        return SkDPoint::Mid(b0[1], b1[1]);
+        b = SkDPoint::Mid(b0[1], b1[1]);
     }
     if (t1 == 0 || t2 == 0) {
         align(0, &b);

@@ -66,7 +66,7 @@ public:
             fSize.set(SK_Scalar1, SK_Scalar1);
             
             
-        }
+        };
         ~PointData() {
             delete [] fPoints;
         }
@@ -118,8 +118,6 @@ public:
 
     struct DashInfo {
         DashInfo() : fIntervals(NULL), fCount(0), fPhase(0) {}
-        DashInfo(SkScalar* intervals, int32_t count, SkScalar phase)
-            : fIntervals(intervals), fCount(count), fPhase(phase) {}
 
         SkScalar*   fIntervals;         
                                         
@@ -155,7 +153,7 @@ private:
 
 
 
-class SK_API SkPairPathEffect : public SkPathEffect {
+class SkPairPathEffect : public SkPathEffect {
 protected:
     SkPairPathEffect(sk_sp<SkPathEffect> pe0, sk_sp<SkPathEffect> pe1);
 
@@ -176,7 +174,7 @@ private:
 
 
 
-class SK_API SkComposePathEffect : public SkPairPathEffect {
+class SkComposePathEffect : public SkPairPathEffect {
 public:
     
 
@@ -226,7 +224,7 @@ private:
 
 
 
-class SK_API SkSumPathEffect : public SkPairPathEffect {
+class SkSumPathEffect : public SkPairPathEffect {
 public:
     
 

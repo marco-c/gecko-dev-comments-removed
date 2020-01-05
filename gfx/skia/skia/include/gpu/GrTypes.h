@@ -49,28 +49,7 @@
     \
     template <typename T> \
     friend X operator & (X a, T b); \
-
-
-
-
-
-#define GR_MAKE_BITFIELD_CLASS_OPS(X) \
-    inline X operator | (X a, X b) { \
-        return (X) ((int)a | (int)b); \
-    } \
-    inline X& operator |= (X& a, X b) { \
-        return (a = a | b); \
-    } \
-    inline bool operator & (X a, X b) { \
-        return SkToBool((int)a & (int)b); \
-    }
-
-#define GR_DECL_BITFIELD_CLASS_OPS_FRIENDS(X) \
-    friend X operator | (X a, X b); \
-    friend X& operator |= (X& a, X b); \
-    friend bool operator & (X a, X b);
-
-
+////////////////////////////////////////////////////////////////////////////////
 
 
 #define GR_CT_MAX(a, b) (((b) < (a)) ? (a) : (b))
@@ -131,6 +110,20 @@ static inline size_t GrSizeAlignDown(size_t x, uint32_t alignment) {
 
 
 
+static inline uint32_t GrNextPow2(uint32_t n) {
+    return n ? (1 << (32 - SkCLZ(n - 1))) : 1;
+}
+
+static inline int GrNextPow2(int n) {
+    SkASSERT(n >= 0); 
+    return n ? (1 << (32 - SkCLZ(n - 1))) : 1;
+}
+
+
+
+
+
+
 enum GrBackend {
     kOpenGL_GrBackend,
     kVulkan_GrBackend,
@@ -138,7 +131,6 @@ enum GrBackend {
     kLast_GrBackend = kVulkan_GrBackend
 };
 const int kBackendCount = kLast_GrBackend + 1;
-
 
 
 
@@ -407,17 +399,6 @@ static inline bool GrPixelConfigIsAlphaOnly(GrPixelConfig config) {
     }
 }
 
-static inline bool GrPixelConfigIsFloatingPoint(GrPixelConfig config) {
-    switch (config) {
-        case kRGBA_float_GrPixelConfig:
-        case kAlpha_half_GrPixelConfig:
-        case kRGBA_half_GrPixelConfig:
-            return true;
-        default:
-            return false;
-    }
-}
-
 
 
 
@@ -465,6 +446,58 @@ struct GrMipLevel {
 
 
 
+
+
+
+struct GrTextureStorageAllocator {
+    GrTextureStorageAllocator()
+    : fAllocateTextureStorage(nullptr)
+    , fDeallocateTextureStorage(nullptr) {
+    }
+
+    enum class Result {
+        kSucceededAndUploaded,
+        kSucceededWithoutUpload,
+        kFailed
+    };
+    typedef Result (*AllocateTextureStorageProc)(
+            void* ctx, GrBackendObject texture, unsigned width,
+            unsigned height, GrPixelConfig config, const void* srcData, GrSurfaceOrigin);
+    typedef void (*DeallocateTextureStorageProc)(void* ctx, GrBackendObject texture);
+
+    
+
+
+
+
+
+
+
+
+
+
+    AllocateTextureStorageProc fAllocateTextureStorage;
+
+    
+
+
+
+
+
+
+
+    DeallocateTextureStorageProc fDeallocateTextureStorage;
+
+    
+
+
+
+    void* fCtx;
+};
+
+
+
+
 struct GrSurfaceDesc {
     GrSurfaceDesc()
     : fFlags(kNone_GrSurfaceFlags)
@@ -495,6 +528,13 @@ struct GrSurfaceDesc {
 
 
     int                    fSampleCnt;
+
+    
+
+
+
+    GrTextureStorageAllocator fTextureStorageAllocator;
+
     bool                   fIsMipMapped; 
 };
 
@@ -571,7 +611,6 @@ struct GrBackendTextureDesc {
 
 
 
-
     GrBackendObject                 fTextureHandle;
 };
 
@@ -603,7 +642,6 @@ struct GrBackendRenderTargetDesc {
 
     int                             fStencilBits;
     
-
 
 
 

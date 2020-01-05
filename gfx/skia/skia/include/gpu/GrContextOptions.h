@@ -11,77 +11,68 @@
 #include "SkTypes.h"
 
 struct GrContextOptions {
-    GrContextOptions() {}
+    GrContextOptions()
+        : fDrawPathToCompressedTexture(false)
+        , fSuppressPrints(false)
+        , fMaxTextureSizeOverride(SK_MaxS32)
+        , fMaxTileSizeOverride(0)
+        , fSuppressDualSourceBlending(false)
+        , fBufferMapThreshold(-1)
+        , fUseDrawInsteadOfPartialRenderTargetWrite(false)
+        , fImmediateMode(false)
+        , fClipBatchToBounds(false)
+        , fDrawBatchBounds(false)
+        , fMaxBatchLookback(-1)
+        , fMaxBatchLookahead(-1)
+        , fUseShaderSwizzling(false) {}
 
     
-    bool fSuppressPrints = false;
+    
+    
+    bool fDrawPathToCompressedTexture;
 
     
-
-
-
-    int  fMaxTextureSizeOverride = SK_MaxS32;
-
-    
-
-    int  fMaxTileSizeOverride = 0;
-    bool fSuppressDualSourceBlending = false;
-
-    
-
-
-    int  fBufferMapThreshold = -1;
-
-    
-    bool fUseDrawInsteadOfPartialRenderTargetWrite = false;
-
-    
-
-    bool fImmediateMode = false;
-
-    
-
-    bool fClipBatchToBounds = false;
-
-    
-
-
-    bool fDrawBatchBounds = false;
-
-    
-
-    int fMaxBatchLookback = -1;
-    int fMaxBatchLookahead = -1;
-
-    
-
-    bool fUseShaderSwizzling = false;
-
-    
-
-
-    bool fDoManualMipmapping = false;
-
-    
-
-    bool fEnableInstancedRendering = false;
-
-    
-
-    bool fDisableDistanceFieldPaths = false;
+    bool fSuppressPrints;
 
     
 
 
 
-    bool fAllowPathMaskCaching = false;
+    int  fMaxTextureSizeOverride;
+    
+
+    int  fMaxTileSizeOverride;
+    bool fSuppressDualSourceBlending;
 
     
 
 
+    int  fBufferMapThreshold;
+
+    
+    bool fUseDrawInsteadOfPartialRenderTargetWrite;
+
+    
+
+    bool fImmediateMode;
+
+    
+
+    bool fClipBatchToBounds;
+
+    
 
 
-    bool fForceSWPathMasks = false;
+    bool fDrawBatchBounds;
+
+    
+
+    int fMaxBatchLookback;
+    int fMaxBatchLookahead;
+
+    
+
+    bool fUseShaderSwizzling;
 };
 
 #endif

@@ -255,15 +255,7 @@ public:
 
 
 
-    bool op(const SkIRect& rect, Op op) {
-        if (this->isRect() && kIntersect_Op == op) {
-            if (!fBounds.intersect(rect)) {
-                return this->setEmpty();
-            }
-            return true;
-        }
-        return this->op(*this, rect, op);
-    }
+    bool op(const SkIRect& rect, Op op) { return this->op(*this, rect, op); }
 
     
 

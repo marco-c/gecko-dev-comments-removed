@@ -19,7 +19,6 @@ namespace android {
 };
 #endif
 
-class GrContext;
 class SkCanvas;
 class SkDrawable;
 class SkPictureRecord;
@@ -34,11 +33,11 @@ public:
     enum RecordFlags {
         
         
-        kPlaybackDrawPicture_RecordFlag     = 1 << 0,
-    };
+        kComputeSaveLayerInfo_RecordFlag = 0x01,
 
-    enum FinishFlags {
-        kReturnNullForEmpty_FinishFlag  = 1 << 0,   
+        
+        
+        kPlaybackDrawPicture_RecordFlag  = 0x02,
     };
 
     
@@ -73,7 +72,7 @@ public:
 
 
 
-    sk_sp<SkPicture> finishRecordingAsPicture(uint32_t endFlags = 0);
+    sk_sp<SkPicture> finishRecordingAsPicture();
 
     
 
@@ -84,8 +83,7 @@ public:
 
 
 
-    sk_sp<SkPicture> finishRecordingAsPictureWithCull(const SkRect& cullRect,
-                                                      uint32_t endFlags = 0);
+    sk_sp<SkPicture> finishRecordingAsPictureWithCull(const SkRect& cullRect);
 
     
 
@@ -97,7 +95,7 @@ public:
 
 
 
-    sk_sp<SkDrawable> finishRecordingAsDrawable(uint32_t endFlags = 0);
+    sk_sp<SkDrawable> finishRecordingAsDrawable();
 
 #ifdef SK_SUPPORT_LEGACY_PICTURE_PTR
     SkPicture* SK_WARN_UNUSED_RESULT endRecordingAsPicture() {

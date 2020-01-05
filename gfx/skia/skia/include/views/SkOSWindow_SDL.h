@@ -23,10 +23,13 @@ public:
 #if SK_ANGLE
         kANGLE_BackEndType,
 #endif 
+#if SK_COMMAND_BUFFER
+        kCommandBuffer_BackEndType,
+#endif 
     };
 
     void release();
-    bool attach(SkBackEndTypes attachType, int msaaSampleCount, bool deepColor, AttachmentInfo*);
+    bool attach(SkBackEndTypes attachType, int msaaSampleCount, AttachmentInfo*);
     void present();
     bool makeFullscreen();
     void setVsync(bool);

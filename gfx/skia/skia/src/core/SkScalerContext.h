@@ -20,16 +20,6 @@ class SkMaskFilter;
 class SkPathEffect;
 class SkRasterizer;
 
-struct SkScalerContextEffects {
-    SkScalerContextEffects() : fPathEffect(nullptr), fMaskFilter(nullptr), fRasterizer(nullptr) {}
-    SkScalerContextEffects(SkPathEffect* pe, SkMaskFilter* mf, SkRasterizer* ra)
-        : fPathEffect(pe), fMaskFilter(mf), fRasterizer(ra) {}
-
-    SkPathEffect*   fPathEffect;
-    SkMaskFilter*   fMaskFilter;
-    SkRasterizer*   fRasterizer;
-};
-
 enum SkAxisAlignment {
     kNone_SkAxisAlignment,
     kX_SkAxisAlignment,
@@ -81,18 +71,10 @@ struct SkScalerContextRec {
 
 
 
-    void ignoreGamma() {
+    void ignorePreBlend() {
         setLuminanceColor(SK_ColorTRANSPARENT);
         setPaintGamma(SK_Scalar1);
         setDeviceGamma(SK_Scalar1);
-    }
-
-    
-
-
-
-    void ignorePreBlend() {
-        ignoreGamma();
         setContrast(0);
     }
 
@@ -147,8 +129,7 @@ struct SkScalerContextRec {
 
 
 
-
-    bool computeMatrices(PreMatrixScale preMatrixScale,
+    void computeMatrices(PreMatrixScale preMatrixScale,
                          SkVector* scale, SkMatrix* remaining,
                          SkMatrix* remainingWithoutRotation = nullptr,
                          SkMatrix* remainingRotation = nullptr,
@@ -211,7 +192,8 @@ public:
         kHinting_Mask   = kHintingBit1_Flag | kHintingBit2_Flag,
     };
 
-    SkScalerContext(SkTypeface*, const SkScalerContextEffects&, const SkDescriptor*);
+
+    SkScalerContext(SkTypeface*, const SkDescriptor*);
     virtual ~SkScalerContext();
 
     SkTypeface* getTypeface() const { return fTypeface.get(); }
@@ -270,15 +252,12 @@ public:
 
     const Rec& getRec() const { return fRec; }
 
-    SkScalerContextEffects getEffects() const {
-        return { fPathEffect.get(), fMaskFilter.get(), fRasterizer.get() };
-    }
-
     
 
 
 
     SkAxisAlignment computeAxisAlignmentForHText();
+
 
 protected:
     Rec         fRec;
@@ -339,12 +318,12 @@ private:
     friend class SkRandomScalerContext; 
 
     
-    sk_sp<SkTypeface> fTypeface;
+    SkAutoTUnref<SkTypeface> fTypeface;
 
     
-    sk_sp<SkPathEffect> fPathEffect;
-    sk_sp<SkMaskFilter> fMaskFilter;
-    sk_sp<SkRasterizer> fRasterizer;
+    SkPathEffect*   fPathEffect;
+    SkMaskFilter*   fMaskFilter;
+    SkRasterizer*   fRasterizer;
 
     
     

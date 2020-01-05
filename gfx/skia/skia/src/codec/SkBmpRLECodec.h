@@ -35,7 +35,7 @@ public:
 
 
 
-    SkBmpRLECodec(int width, int height, const SkEncodedInfo& info, SkStream* stream,
+    SkBmpRLECodec(const SkImageInfo& srcInfo, SkStream* stream,
             uint16_t bitsPerPixel, uint32_t numColors, uint32_t bytesPerColor,
             uint32_t offset, SkCodec::SkScanlineOrder rowOrder,
             size_t RLEBytes);
@@ -58,7 +58,7 @@ private:
 
 
 
-    bool createColorTable(SkColorType dstColorType, int* colorCount);
+    bool createColorTable(int* colorCount);
 
     bool initializeStreamBuffer();
 

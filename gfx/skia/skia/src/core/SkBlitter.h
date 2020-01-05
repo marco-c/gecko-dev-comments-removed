@@ -23,36 +23,21 @@ struct SkMask;
 
 
 
-
-
-
 class SkBlitter {
 public:
     virtual ~SkBlitter();
 
     
-    virtual void blitH(int x, int y, int width) = 0;
-
+    virtual void blitH(int x, int y, int width);
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    virtual void blitAntiH(int x, int y, const SkAlpha antialias[], const int16_t runs[]) = 0;
+    virtual void blitAntiH(int x, int y, const SkAlpha antialias[],
+                           const int16_t runs[]);
 
     
     virtual void blitV(int x, int y, int height, SkAlpha alpha);
-
     
     virtual void blitRect(int x, int y, int width, int height);
-
     
 
 
@@ -60,7 +45,6 @@ public:
 
     virtual void blitAntiRect(int x, int y, int width, int height,
                               SkAlpha leftAlpha, SkAlpha rightAlpha);
-
     
     
     virtual void blitMask(const SkMask&, const SkIRect& clip);

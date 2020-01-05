@@ -9,15 +9,15 @@
 #define GrVkResource_DEFINED
 
 #include "SkAtomics.h"
+#include "SkTDynamicHash.h"
 #include "SkRandom.h"
-#include "SkTHash.h"
 
 class GrVkGpu;
 
 
-#ifdef SK_DEBUG
-#define SK_TRACE_VK_RESOURCES
-#endif
+
+
+
 
 
 
@@ -38,37 +38,17 @@ class GrVkResource : SkNoncopyable {
 public:
     
 #ifdef SK_TRACE_VK_RESOURCES
-    struct Hash {
-        uint32_t operator()(const GrVkResource* const& r) const {
-            SkASSERT(r);
-            return r->fKey;
-        }
-    };
-
-    class Trace {
-    public:
-        ~Trace() {
-            fHashSet.foreach([](const GrVkResource* r) {
-                r->dumpInfo();
-            });
-            SkASSERT(0 == fHashSet.count());
-        }
-        void add(const GrVkResource* r) { fHashSet.add(r); }
-        void remove(const GrVkResource* r) { fHashSet.remove(r); }
-
-    private:
-        SkTHashSet<const GrVkResource*, GrVkResource::Hash> fHashSet;
-    };
-    static Trace  fTrace;
-
-    static uint32_t fKeyCounter;
+    static const uint32_t& GetKey(const GrVkResource& r) { return r.fKey; }
+    static uint32_t Hash(const uint32_t& k) { return k; }
+    static SkTDynamicHash<GrVkResource, uint32_t> fTrace;
+    static SkRandom fRandom;
 #endif
 
     
 
     GrVkResource() : fRefCnt(1) {
 #ifdef SK_TRACE_VK_RESOURCES
-        fKey = sk_atomic_fetch_add(&fKeyCounter, 1u, sk_memory_order_relaxed);
+        fKey = fRandom.nextU();
         fTrace.add(this);
 #endif
     }
@@ -141,12 +121,6 @@ public:
     }
 #endif
 
-#ifdef SK_TRACE_VK_RESOURCES
-    
-
-    virtual void dumpInfo() const = 0;
-#endif
-
 private:
     
 
@@ -164,7 +138,7 @@ private:
     void internal_dispose(const GrVkGpu* gpu) const {
         this->freeGPUData(gpu);
 #ifdef SK_TRACE_VK_RESOURCES
-        fTrace.remove(this);
+        fTrace.remove(GetKey(*this));
 #endif
         SkASSERT(0 == fRefCnt);
         fRefCnt = 1;
@@ -177,7 +151,7 @@ private:
     void internal_dispose() const {
         this->abandonSubResources();
 #ifdef SK_TRACE_VK_RESOURCES
-        fTrace.remove(this);
+        fTrace.remove(GetKey(*this));
 #endif
         SkASSERT(0 == fRefCnt);
         fRefCnt = 1;
@@ -192,22 +166,5 @@ private:
     typedef SkNoncopyable INHERITED;
 };
 
-
-class GrVkRecycledResource : public GrVkResource {
-public:
-    
-    
-    
-    void recycle(GrVkGpu* gpu) const {
-        if (this->unique()) {
-            this->onRecycle(gpu);
-        } else {
-            this->unref(gpu);
-        }
-    }
-
-private:
-    virtual void onRecycle(GrVkGpu* gpu) const = 0;
-};
 
 #endif

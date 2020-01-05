@@ -26,13 +26,6 @@ class SkWStream;
 
 class SK_API SkPath {
 public:
-    enum Direction {
-        
-        kCW_Direction,
-        
-        kCCW_Direction,
-    };
-
     SkPath();
     SkPath(const SkPath&);
     ~SkPath();
@@ -179,17 +172,7 @@ public:
 
 
 
-
-
-    bool isOval(SkRect* rect, Direction* dir = nullptr,
-                unsigned* start = nullptr) const {
-        bool isCCW = false;
-        bool result = fPathRef->isOval(rect, &isCCW, start);
-        if (dir && result) {
-            *dir = isCCW ? kCCW_Direction : kCW_Direction;
-        }
-        return result;
-    }
+    bool isOval(SkRect* rect) const { return fPathRef->isOval(rect); }
 
     
 
@@ -200,18 +183,7 @@ public:
 
 
 
-
-
-
-    bool isRRect(SkRRect* rrect, Direction* dir = nullptr,
-                 unsigned* start = nullptr) const {
-        bool isCCW = false;
-        bool result = fPathRef->isRRect(rrect, &isCCW, start);
-        if (dir && result) {
-            *dir = isCCW ? kCCW_Direction : kCW_Direction;
-        }
-        return result;
-    }
+    bool isRRect(SkRRect* rrect) const { return fPathRef->isRRect(rrect); }
 
     
 
@@ -554,6 +526,13 @@ public:
         kLarge_ArcSize,
     };
 
+    enum Direction {
+        
+        kCW_Direction,
+        
+        kCCW_Direction,
+    };
+
     
 
 
@@ -738,7 +717,6 @@ public:
     void addOval(const SkRect& oval, Direction dir, unsigned start);
 
     
-
 
 
 

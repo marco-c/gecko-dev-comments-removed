@@ -11,15 +11,15 @@
 
 #include "SkRefCnt.h"
 #include "SkScalar.h"
+#include "SkStream.h"
+#include "SkString.h"
+#include "SkTDArray.h"
 #include "SkTHash.h"
 #include "SkTypes.h"
 
-class SkData;
 class SkPDFObjNumMap;
 class SkPDFObject;
-class SkStreamAsset;
-class SkString;
-class SkWStream;
+class SkPDFSubstituteMap;
 
 #ifdef SK_PDF_IMAGE_STATS
 #include "SkAtomics.h"
@@ -40,14 +40,16 @@ public:
 
 
     virtual void emitObject(SkWStream* stream,
-                            const SkPDFObjNumMap& objNumMap) const = 0;
+                            const SkPDFObjNumMap& objNumMap,
+                            const SkPDFSubstituteMap& substitutes) const = 0;
 
     
 
 
 
 
-    virtual void addResources(SkPDFObjNumMap* catalog) const {}
+    virtual void addResources(SkPDFObjNumMap* catalog,
+                              const SkPDFSubstituteMap& substitutes) const {}
 
     
 
@@ -88,8 +90,6 @@ public:
 
     static SkPDFUnion Scalar(SkScalar);
 
-    static SkPDFUnion ColorComponent(uint8_t);
-
     
 
 
@@ -118,8 +118,10 @@ public:
 
     
 
-    void emitObject(SkWStream*, const SkPDFObjNumMap&) const;
-    void addResources(SkPDFObjNumMap*) const;
+    void emitObject(SkWStream*,
+                    const SkPDFObjNumMap&,
+                    const SkPDFSubstituteMap&) const;
+    void addResources(SkPDFObjNumMap*, const SkPDFSubstituteMap&) const;
 
     bool isName() const;
 
@@ -137,7 +139,6 @@ private:
 
         kDestroyed = 0,
         kInt,
-        kColorComponent,
         kBool,
         kScalar,
         kName,
@@ -166,8 +167,9 @@ static_assert(sizeof(SkString) == sizeof(void*), "SkString_size");
 class SkPDFAtom final : public SkPDFObject {
 public:
     void emitObject(SkWStream* stream,
-                    const SkPDFObjNumMap& objNumMap) final;
-    void addResources(SkPDFObjNumMap* const final;
+                    const SkPDFObjNumMap& objNumMap,
+                    const SkPDFSubstituteMap& substitutes) final;
+    void addResources(SkPDFObjNumMap*, const SkPDFSubstituteMap&) const final;
     SkPDFAtom(SkPDFUnion&& v) : fValue(std::move(v) {}
 
 private:
@@ -191,8 +193,10 @@ public:
 
     
     void emitObject(SkWStream* stream,
-                    const SkPDFObjNumMap& objNumMap) const override;
-    void addResources(SkPDFObjNumMap*) const override;
+                    const SkPDFObjNumMap& objNumMap,
+                    const SkPDFSubstituteMap& substitutes) const override;
+    void addResources(SkPDFObjNumMap*,
+                      const SkPDFSubstituteMap&) const override;
     void drop() override;
 
     
@@ -208,7 +212,6 @@ public:
 
 
     void appendInt(int32_t);
-    void appendColorComponent(uint8_t);
     void appendBool(bool);
     void appendScalar(SkScalar);
     void appendName(const char[]);
@@ -239,8 +242,10 @@ public:
 
     
     void emitObject(SkWStream* stream,
-                    const SkPDFObjNumMap& objNumMap) const override;
-    void addResources(SkPDFObjNumMap*) const override;
+                    const SkPDFObjNumMap& objNumMap,
+                    const SkPDFSubstituteMap& substitutes) const override;
+    void addResources(SkPDFObjNumMap*,
+                      const SkPDFSubstituteMap&) const override;
     void drop() override;
 
     
@@ -272,15 +277,16 @@ public:
     
 
     void emitAll(SkWStream* stream,
-                 const SkPDFObjNumMap& objNumMap) const;
+                 const SkPDFObjNumMap& objNumMap,
+                 const SkPDFSubstituteMap& substitutes) const;
 
 private:
     struct Record {
         SkPDFUnion fKey;
         SkPDFUnion fValue;
         Record(SkPDFUnion&&, SkPDFUnion&&);
-        Record(Record&&) = default;
-        Record& operator=(Record&&) = default;
+        Record(Record&&);
+        Record& operator=(Record&&);
         Record(const Record&) = delete;
         Record& operator=(const Record&) = delete;
     };
@@ -297,59 +303,22 @@ private:
 
 class SkPDFSharedStream final : public SkPDFObject {
 public:
-    SkPDFSharedStream(std::unique_ptr<SkStreamAsset> data);
+    
+    SkPDFSharedStream(SkStreamAsset* data);
     ~SkPDFSharedStream();
-    SkPDFDict* dict() { return &fDict; }
+    SkPDFDict* dict() { return fDict.get(); }
     void emitObject(SkWStream*,
-                    const SkPDFObjNumMap&) const override;
-    void addResources(SkPDFObjNumMap*) const override;
+                    const SkPDFObjNumMap&,
+                    const SkPDFSubstituteMap&) const override;
+    void addResources(SkPDFObjNumMap*,
+                      const SkPDFSubstituteMap&) const override;
     void drop() override;
 
 private:
     std::unique_ptr<SkStreamAsset> fAsset;
-    SkPDFDict fDict;
+    sk_sp<SkPDFDict> fDict;
+    SkDEBUGCODE(bool fDumped;)
     typedef SkPDFObject INHERITED;
-};
-
-
-
-
-
-
-
-
-class SkPDFStream final : public SkPDFObject {
-
-public:
-    
-
-
-
-    explicit SkPDFStream(sk_sp<SkData> data);
-    explicit SkPDFStream(std::unique_ptr<SkStreamAsset> stream);
-    virtual ~SkPDFStream();
-
-    SkPDFDict* dict() { return &fDict; }
-
-    
-    void emitObject(SkWStream* stream,
-                    const SkPDFObjNumMap& objNumMap) const override;
-    void addResources(SkPDFObjNumMap*) const final;
-    void drop() override;
-
-protected:
-    
-
-    SkPDFStream();
-
-    
-    void setData(std::unique_ptr<SkStreamAsset> stream);
-
-private:
-    std::unique_ptr<SkStreamAsset> fCompressedData;
-    SkPDFDict fDict;
-
-    typedef SkPDFDict INHERITED;
 };
 
 
@@ -370,7 +339,8 @@ public:
     
 
 
-    void addObjectRecursively(SkPDFObject* obj);
+
+    void addObjectRecursively(SkPDFObject* obj, const SkPDFSubstituteMap& subs);
 
     
 
@@ -385,6 +355,32 @@ private:
 };
 
 
+
+
+
+
+
+
+class SkPDFSubstituteMap : SkNoncopyable {
+public:
+    ~SkPDFSubstituteMap();
+    
+
+
+    void setSubstitute(SkPDFObject* original, SkPDFObject* substitute);
+
+    
+
+
+    SkPDFObject* getSubstitute(SkPDFObject* object) const;
+
+    SkPDFObject* operator()(SkPDFObject* o) const {
+        return this->getSubstitute(o);
+    }
+
+private:
+    SkTHashMap<SkPDFObject*, SkPDFObject*> fSubstituteMap;
+};
 
 #ifdef SK_PDF_IMAGE_STATS
 extern SkAtomic<int> gDrawImageCalls;

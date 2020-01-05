@@ -12,10 +12,6 @@
 #include "SkImage.h"
 #include "SkSurface.h"
 
-#if SK_SUPPORT_GPU
-    #include "GrTexture.h"
-#endif
-
 #include <new>
 
 class GrTextureParams;
@@ -30,33 +26,25 @@ public:
     SkImage_Base(int width, int height, uint32_t uniqueID);
     virtual ~SkImage_Base();
 
-    
-    
-    
-    virtual SkImageInfo onImageInfo() const = 0;
-    virtual SkAlphaType onAlphaType() const = 0;
-
     virtual bool onPeekPixels(SkPixmap*) const { return false; }
-
-    virtual const SkBitmap* onPeekBitmap() const { return nullptr; }
 
     
     virtual bool onReadPixels(const SkImageInfo& dstInfo, void* dstPixels, size_t dstRowBytes,
                               int srcX, int srcY, CachingHint) const;
 
     virtual GrTexture* peekTexture() const { return nullptr; }
-#if SK_SUPPORT_GPU
-    virtual sk_sp<GrTexture> refPinnedTexture(uint32_t* uniqueID) const { return nullptr; }
-#endif
     virtual SkImageCacherator* peekCacherator() const { return nullptr; }
 
     
     
     virtual bool getROPixels(SkBitmap*, CachingHint = kAllow_CachingHint) const = 0;
 
+    virtual sk_sp<SkSurface> onNewSurface(const SkImageInfo& info) const {
+        return SkSurface::MakeRaster(info);
+    }
+
     
-    virtual GrTexture* asTextureRef(GrContext*, const GrTextureParams&,
-                                    SkSourceGammaTreatment) const = 0;
+    virtual GrTexture* asTextureRef(GrContext*, const GrTextureParams&) const = 0;
 
     virtual sk_sp<SkImage> onMakeSubset(const SkIRect&) const = 0;
 
@@ -69,12 +57,15 @@ public:
 
     
     
+    virtual bool asBitmapForImageFilters(SkBitmap* bitmap) const {
+        return this->getROPixels(bitmap, kAllow_CachingHint);
+    }
+
+    
+    
     void notifyAddedToCache() const {
         fAddedToCache.store(true);
     }
-
-    virtual void onPinAsTexture(GrContext*) const {}
-    virtual void onUnpinAsTexture(GrContext*) const {}
 
 private:
     

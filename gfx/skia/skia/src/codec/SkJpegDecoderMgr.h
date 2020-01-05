@@ -45,8 +45,7 @@ public:
     
 
 
-
-    bool getEncodedColor(SkEncodedInfo::Color* outColor);
+    SkColorType getColorType();
 
     
 

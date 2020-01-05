@@ -6,34 +6,12 @@
 
 
 #include "SkBitmap.h"
-#include "SkDeduper.h"
 #include "SkErrorInternals.h"
 #include "SkImage.h"
-#include "SkImageDeserializer.h"
 #include "SkImageGenerator.h"
 #include "SkReadBuffer.h"
 #include "SkStream.h"
 #include "SkTypeface.h"
-
-namespace {
-
-    
-    
-    class EmptyImageGenerator final : public SkImageGenerator {
-    public:
-        EmptyImageGenerator(const SkImageInfo& info) : INHERITED(info) { }
-
-    private:
-        typedef SkImageGenerator INHERITED;
-    };
-
-    static sk_sp<SkImage> MakeEmptyImage(int width, int height) {
-        return SkImage::MakeFromGenerator(
-            new EmptyImageGenerator(SkImageInfo::MakeN32Premul(width, height)));
-    }
-    
-} 
-
 
 static uint32_t default_flags() {
     uint32_t flags = 0;
@@ -44,20 +22,18 @@ static uint32_t default_flags() {
     return flags;
 }
 
-
-static SkImageDeserializer gDefaultImageDeserializer;
-
 SkReadBuffer::SkReadBuffer() {
     fFlags = default_flags();
     fVersion = 0;
     fMemoryPtr = nullptr;
 
+    fBitmapStorage = nullptr;
     fTFArray = nullptr;
     fTFCount = 0;
 
     fFactoryArray = nullptr;
     fFactoryCount = 0;
-    fImageDeserializer = &gDefaultImageDeserializer;
+    fBitmapDecoder = nullptr;
 #ifdef DEBUG_NON_DETERMINISTIC_ASSERT
     fDecodedBitmapIndex = -1;
 #endif 
@@ -69,12 +45,13 @@ SkReadBuffer::SkReadBuffer(const void* data, size_t size) {
     fReader.setMemory(data, size);
     fMemoryPtr = nullptr;
 
+    fBitmapStorage = nullptr;
     fTFArray = nullptr;
     fTFCount = 0;
 
     fFactoryArray = nullptr;
     fFactoryCount = 0;
-    fImageDeserializer = &gDefaultImageDeserializer;
+    fBitmapDecoder = nullptr;
 #ifdef DEBUG_NON_DETERMINISTIC_ASSERT
     fDecodedBitmapIndex = -1;
 #endif 
@@ -88,12 +65,13 @@ SkReadBuffer::SkReadBuffer(SkStream* stream) {
     stream->read(fMemoryPtr, length);
     fReader.setMemory(fMemoryPtr, length);
 
+    fBitmapStorage = nullptr;
     fTFArray = nullptr;
     fTFCount = 0;
 
     fFactoryArray = nullptr;
     fFactoryCount = 0;
-    fImageDeserializer = &gDefaultImageDeserializer;
+    fBitmapDecoder = nullptr;
 #ifdef DEBUG_NON_DETERMINISTIC_ASSERT
     fDecodedBitmapIndex = -1;
 #endif 
@@ -101,10 +79,7 @@ SkReadBuffer::SkReadBuffer(SkStream* stream) {
 
 SkReadBuffer::~SkReadBuffer() {
     sk_free(fMemoryPtr);
-}
-
-void SkReadBuffer::setImageDeserializer(SkImageDeserializer* deserializer) {
-    fImageDeserializer = deserializer ? deserializer : &gDefaultImageDeserializer;
+    SkSafeUnref(fBitmapStorage);
 }
 
 bool SkReadBuffer::readBool() {
@@ -131,19 +106,19 @@ int32_t SkReadBuffer::read32() {
     return fReader.readInt();
 }
 
-uint8_t SkReadBuffer::peekByte() {
-    SkASSERT(fReader.available() > 0);
-    return *((uint8_t*) fReader.peek());
-}
-
 void SkReadBuffer::readString(SkString* string) {
     size_t len;
     const char* strContents = fReader.readString(&len);
     string->set(strContents, len);
 }
 
-void SkReadBuffer::readColor4f(SkColor4f* color) {
-    memcpy(color, fReader.skip(sizeof(SkColor4f)), sizeof(SkColor4f));
+void* SkReadBuffer::readEncodedString(size_t* length, SkPaint::TextEncoding encoding) {
+    SkDEBUGCODE(int32_t encodingType = ) fReader.readInt();
+    SkASSERT(encodingType == encoding);
+    *length =  fReader.readInt();
+    void* data = sk_malloc_throw(*length);
+    memcpy(data, fReader.skip(SkAlign4(*length)), *length);
+    return data;
 }
 
 void SkReadBuffer::readPoint(SkPoint* point) {
@@ -161,10 +136,6 @@ void SkReadBuffer::readIRect(SkIRect* rect) {
 
 void SkReadBuffer::readRect(SkRect* rect) {
     memcpy(rect, fReader.skip(sizeof(SkRect)), sizeof(SkRect));
-}
-
-void SkReadBuffer::readRRect(SkRRect* rrect) {
-    fReader.readRRect(rrect);
 }
 
 void SkReadBuffer::readRegion(SkRegion* region) {
@@ -196,10 +167,6 @@ bool SkReadBuffer::readColorArray(SkColor* colors, size_t size) {
     return readArray(colors, size, sizeof(SkColor));
 }
 
-bool SkReadBuffer::readColor4fArray(SkColor4f* colors, size_t size) {
-    return readArray(colors, size, sizeof(SkColor4f));
-}
-
 bool SkReadBuffer::readIntArray(int32_t* values, size_t size) {
     return readArray(values, size, sizeof(int32_t));
 }
@@ -216,18 +183,28 @@ uint32_t SkReadBuffer::getArrayCount() {
     return *(uint32_t*)fReader.peek();
 }
 
-sk_sp<SkImage> SkReadBuffer::readBitmapAsImage() {
+bool SkReadBuffer::readBitmap(SkBitmap* bitmap) {
     const int width = this->readInt();
     const int height = this->readInt();
-
     
     
     if (this->readBool()) {
+        
+        
+        const uint32_t index = this->readUInt();
         this->readUInt(); 
-        this->readUInt(); 
-        SkErrorInternals::SetError(kParseError_SkError, "SkWriteBuffer::writeBitmap "
-                                   "stored the SkBitmap in an SkBitmapHeap, but "
-                                   "that feature is no longer supported.");
+        if (fBitmapStorage) {
+            *bitmap = *fBitmapStorage->getBitmap(index);
+            fBitmapStorage->releaseRef(index);
+            return true;
+        } else {
+            
+            
+            SkErrorInternals::SetError(kParseError_SkError, "SkWriteBuffer::writeBitmap "
+                                       "stored the SkBitmap in an SkBitmapHeap, but "
+                                       "SkReadBuffer has no SkBitmapHeapReader to "
+                                       "retrieve the SkBitmap.");
+        }
     } else {
         
         const size_t length = this->readUInt();
@@ -240,12 +217,39 @@ sk_sp<SkImage> SkReadBuffer::readBitmapAsImage() {
             const void* data = this->skip(length);
             const int32_t xOffset = this->readInt();
             const int32_t yOffset = this->readInt();
-            SkIRect subset = SkIRect::MakeXYWH(xOffset, yOffset, width, height);
-            sk_sp<SkImage> image = fImageDeserializer->makeFromMemory(data, length, &subset);
-            if (image) {
-                return image;
-            }
+            if (fBitmapDecoder != nullptr && fBitmapDecoder(data, length, bitmap)) {
+                if (bitmap->width() == width && bitmap->height() == height) {
+#ifdef DEBUG_NON_DETERMINISTIC_ASSERT
+                    if (0 != xOffset || 0 != yOffset) {
+                        SkDebugf("SkReadBuffer::readBitmap: heights match,"
+                                 " but offset is not zero. \nInfo about the bitmap:"
+                                 "\n\tIndex: %d\n\tDimensions: [%d %d]\n\tEncoded"
+                                 " data size: %d\n\tOffset: (%d, %d)\n",
+                                 fDecodedBitmapIndex, width, height, length, xOffset,
+                                 yOffset);
+                    }
+#endif 
+                    
+                    SkASSERT(0 == xOffset && 0 == yOffset);
+                    return true;
+                }
 
+                
+                
+                
+                
+                
+                
+                
+                
+
+                SkBitmap subsetBm;
+                SkIRect subset = SkIRect::MakeXYWH(xOffset, yOffset, width, height);
+                if (bitmap->extractSubset(&subsetBm, subset)) {
+                    bitmap->swap(subsetBm);
+                    return true;
+                }
+            }
             
             
             SkErrorInternals::SetError(kParseError_SkError,
@@ -253,25 +257,32 @@ sk_sp<SkImage> SkReadBuffer::readBitmapAsImage() {
             
             
             
-            return MakeEmptyImage(width, height);
-        } else {
-            SkBitmap bitmap;
-            if (SkBitmap::ReadRawPixels(this, &bitmap)) {
-                bitmap.setImmutable();
-                return SkImage::MakeFromBitmap(bitmap);
-            }
+            bitmap->setInfo(SkImageInfo::MakeUnknown(width, height));
+            return true;
+        } else if (SkBitmap::ReadRawPixels(this, bitmap)) {
+            return true;
         }
     }
     
-    return nullptr;
+    bitmap->setInfo(SkImageInfo::MakeUnknown(width, height));
+    return false;
 }
 
-sk_sp<SkImage> SkReadBuffer::readImage() {
-    if (fInflator) {
-        SkImage* img = fInflator->getImage(this->read32());
-        return img ? sk_ref_sp(img) : nullptr;
-    }
+namespace {
 
+
+
+class EmptyImageGenerator final : public SkImageGenerator {
+public:
+    EmptyImageGenerator(const SkImageInfo& info) : INHERITED(info) { }
+
+private:
+    typedef SkImageGenerator INHERITED;
+};
+
+} 
+
+SkImage* SkReadBuffer::readImage() {
     int width = this->read32();
     int height = this->read32();
     if (width <= 0 || height <= 0) {    
@@ -279,24 +290,12 @@ sk_sp<SkImage> SkReadBuffer::readImage() {
         return nullptr;
     }
 
-    uint32_t encoded_size = this->getArrayCount();
-    if (encoded_size == 0) {
-        
-        (void)this->readUInt();  
-        return MakeEmptyImage(width, height);
-    }
-    if (encoded_size == 1) {
-        
-        (void)this->readUInt();  
-        SkBitmap bm;
-        if (SkBitmap::ReadRawPixels(this, &bm)) {
-            return SkImage::MakeFromBitmap(bm);
-        }
-        return MakeEmptyImage(width, height);
-    }
-
-    
     sk_sp<SkData> encoded(this->readByteArrayAsData());
+    if (encoded->size() == 0) {
+        
+        return SkImage::MakeFromGenerator(
+            new EmptyImageGenerator(SkImageInfo::MakeN32Premul(width, height))).release();
+    }
 
     int originX = this->read32();
     int originY = this->read32();
@@ -306,22 +305,23 @@ sk_sp<SkImage> SkReadBuffer::readImage() {
     }
 
     const SkIRect subset = SkIRect::MakeXYWH(originX, originY, width, height);
+    SkImage* image = SkImage::MakeFromEncoded(std::move(encoded), &subset).release();
+    if (image) {
+        return image;
+    }
 
-    sk_sp<SkImage> image = fImageDeserializer->makeFromData(encoded.get(), &subset);
-    return image ? image : MakeEmptyImage(width, height);
+    return SkImage::MakeFromGenerator(
+            new EmptyImageGenerator(SkImageInfo::MakeN32Premul(width, height))).release();
 }
 
-sk_sp<SkTypeface> SkReadBuffer::readTypeface() {
-    if (fInflator) {
-        return sk_ref_sp(fInflator->getTypeface(this->read32()));
-    }
-    
+SkTypeface* SkReadBuffer::readTypeface() {
+
     uint32_t index = fReader.readU32();
     if (0 == index || index > (unsigned)fTFCount) {
         return nullptr;
     } else {
         SkASSERT(fTFArray);
-        return sk_ref_sp(fTFArray[index - 1]);
+        return fTFArray[index - 1];
     }
 }
 
@@ -332,12 +332,7 @@ SkFlattenable* SkReadBuffer::readFlattenable(SkFlattenable::Type ft) {
 
     SkFlattenable::Factory factory = nullptr;
 
-    if (fInflator) {
-        factory = fInflator->getFactory(this->read32());
-        if (!factory) {
-            return nullptr;
-        }
-    } else if (fFactoryCount > 0) {
+    if (fFactoryCount > 0) {
         int32_t index = fReader.readU32();
         if (0 == index) {
             return nullptr; 
@@ -349,32 +344,9 @@ SkFlattenable* SkReadBuffer::readFlattenable(SkFlattenable::Type ft) {
         }
         factory = fFactoryArray[index];
     } else {
-        SkString name;
-        if (this->peekByte()) {
-            
-            this->readString(&name);
-
-            
-            fFlattenableDict.set(fFlattenableDict.count() + 1, name);
-        } else {
-            
-            
-            uint32_t index = fReader.readU32() >> 8;
-            if (0 == index) {
-                return nullptr; 
-            }
-
-            SkString* namePtr = fFlattenableDict.find(index);
-            SkASSERT(namePtr);
-            name = *namePtr;
-        }
-
-        
-        if (!(factory = this->getCustomFactory(name))) {
-            
-            if (!(factory = SkFlattenable::NameToFactory(name.c_str()))) {
-                return nullptr; 
-            }
+        factory = (SkFlattenable::Factory)readFunctionPtr();
+        if (nullptr == factory) {
+            return nullptr; 
         }
     }
 
@@ -396,4 +368,22 @@ SkFlattenable* SkReadBuffer::readFlattenable(SkFlattenable::Type ft) {
         fReader.skip(sizeRecorded);
     }
     return obj.release();
+}
+
+
+
+
+
+void SkReadBuffer::skipFlattenable() {
+    if (fFactoryCount > 0) {
+        if (0 == fReader.readU32()) {
+            return;
+        }
+    } else {
+        if (nullptr == this->readFunctionPtr()) {
+            return;
+        }
+    }
+    uint32_t sizeRecorded = fReader.readU32();
+    fReader.skip(sizeRecorded);
 }

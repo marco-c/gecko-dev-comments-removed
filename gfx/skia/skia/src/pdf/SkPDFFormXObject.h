@@ -9,17 +9,45 @@
 #ifndef SkPDFFormXObject_DEFINED
 #define SkPDFFormXObject_DEFINED
 
-#include "SkPDFDevice.h"
+#include "SkPDFStream.h"
 #include "SkPDFTypes.h"
+#include "SkRect.h"
+#include "SkRefCnt.h"
+#include "SkString.h"
+
+class SkMatrix;
+class SkPDFDevice;
+class SkPDFObjNumMap;
 
 
 
 
 
 
-sk_sp<SkPDFObject> SkPDFMakeFormXObject(std::unique_ptr<SkStreamAsset> content,
-                                        sk_sp<SkPDFArray> mediaBox,
-                                        sk_sp<SkPDFDict> resourceDict,
-                                        const SkMatrix& inverseTransform,
-                                        const char* colorSpace);
+
+
+
+
+
+class SkPDFFormXObject final : public SkPDFStream {
+public:
+    
+
+
+
+    explicit SkPDFFormXObject(SkPDFDevice* device);
+    
+
+
+
+    explicit SkPDFFormXObject(SkStream* content,
+                              SkRect bbox,
+                              SkPDFDict* resourceDict);
+    virtual ~SkPDFFormXObject();
+
+private:
+    void init(const char* colorSpace,
+              SkPDFDict* resourceDict, SkPDFArray* bbox);
+};
+
 #endif

@@ -18,6 +18,10 @@
 #include "EGL/egl.h"
 #endif
 
+#if SK_COMMAND_BUFFER
+class SkCommandBufferGLContext;
+#endif
+
 class SkOSWindow : public SkWindow {
 public:
     struct WindowInit {
@@ -37,10 +41,13 @@ public:
 #if SK_ANGLE
         kANGLE_BackEndType,
 #endif 
+#if SK_COMMAND_BUFFER
+        kCommandBuffer_BackEndType,
+#endif 
 #endif 
     };
 
-    bool attach(SkBackEndTypes attachType, int msaaSampleCount, bool deepColor, AttachmentInfo*);
+    bool attach(SkBackEndTypes attachType, int msaaSampleCount, AttachmentInfo*);
     void release();
     void present();
 
@@ -97,6 +104,9 @@ private:
     EGLConfig                         fConfig;
     SkAutoTUnref<const GrGLInterface> fANGLEInterface;
 #endif 
+#if SK_COMMAND_BUFFER
+    SkCommandBufferGLContext* fCommandBuffer;
+#endif 
 #endif 
 
     bool                fFullscreen;
@@ -117,7 +127,7 @@ private:
 
     void updateSize();
 #if SK_SUPPORT_GPU
-    bool attachGL(int msaaSampleCount, bool deepColor, AttachmentInfo* info);
+    bool attachGL(int msaaSampleCount, AttachmentInfo* info);
     void detachGL();
     void presentGL();
 
@@ -127,6 +137,11 @@ private:
     void presentANGLE();
 #endif 
 
+#if SK_COMMAND_BUFFER
+    bool attachCommandBuffer(int msaaSampleCount, AttachmentInfo* info);
+    void detachCommandBuffer();
+    void presentCommandBuffer();
+#endif 
 #endif 
 
     typedef SkWindow INHERITED;

@@ -9,7 +9,6 @@
 #define GrRectanizer_pow2_DEFINED
 
 #include "GrRectanizer.h"
-#include "SkMathPriv.h"
 #include "SkPoint.h"
 
 

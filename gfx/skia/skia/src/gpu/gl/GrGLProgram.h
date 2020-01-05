@@ -10,7 +10,7 @@
 #define GrGLProgram_DEFINED
 
 #include "GrGLContext.h"
-#include "GrProgramDesc.h"
+#include "GrGLProgramDesc.h"
 #include "GrGLTexture.h"
 #include "GrGLProgramDataManager.h"
 #include "glsl/GrGLSLProgramDataManager.h"
@@ -94,13 +94,8 @@ public:
 
 
 
-    void setData(const GrPrimitiveProcessor&, const GrPipeline&);
-
-    
-
-
-
-    void generateMipmaps(const GrPrimitiveProcessor&, const GrPipeline&);
+    void setData(const GrPrimitiveProcessor&, const GrPipeline&,
+                 SkTArray<const GrTextureAccess*>* textureBindings);
 
 protected:
     typedef GrGLSLProgramDataManager::UniformHandle UniformHandle;
@@ -112,23 +107,21 @@ protected:
                 const BuiltinUniformHandles&,
                 GrGLuint programID,
                 const UniformInfoArray&,
-                const SkTArray<GrGLSampler>&,
                 const VaryingInfoArray&, 
                 GrGLSLPrimitiveProcessor* geometryProcessor,
                 GrGLSLXferProcessor* xferProcessor,
-                const GrGLSLFragProcs& fragmentProcessors);
+                const GrGLSLFragProcs& fragmentProcessors,
+                SkTArray<UniformHandle>* passSamplerUniforms);
 
     
-    void setFragmentData(const GrPrimitiveProcessor&, const GrPipeline&, int* nextSamplerIdx);
+    void setFragmentData(const GrPrimitiveProcessor&, const GrPipeline&,
+                         SkTArray<const GrTextureAccess*>* textureBindings);
+    void setTransformData(const GrPrimitiveProcessor&,
+                          const GrFragmentProcessor&,
+                          int index);
 
     
     void setRenderTargetState(const GrPrimitiveProcessor&, const GrPipeline&);
-
-    
-    void bindTextures(const GrProcessor&, bool allowSRGBInputs, int* nextSamplerIdx);
-
-    
-    void generateMipmaps(const GrProcessor&, bool allowSRGBInputs);
 
     
     RenderTargetState fRenderTargetState;
@@ -143,6 +136,7 @@ protected:
     GrProgramDesc fDesc;
     GrGLGpu* fGpu;
     GrGLProgramDataManager fProgramDataManager;
+    SkTArray<UniformHandle> fSamplerUniforms;
 
     friend class GrGLProgramBuilder;
 

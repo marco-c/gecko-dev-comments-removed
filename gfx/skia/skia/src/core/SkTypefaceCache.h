@@ -10,20 +10,27 @@
 #ifndef SkTypefaceCache_DEFINED
 #define SkTypefaceCache_DEFINED
 
-#include "SkRefCnt.h"
 #include "SkTypeface.h"
-#include "SkTArray.h"
+#include "SkTDArray.h"
+
+
+
+
+
+
+
 
 class SkTypefaceCache {
 public:
     SkTypefaceCache();
+    ~SkTypefaceCache();
 
     
 
 
 
 
-    typedef bool(*FindProc)(SkTypeface*, void* context);
+    typedef bool(*FindProc)(SkTypeface*, const SkFontStyle&, void* context);
 
     
 
@@ -31,7 +38,7 @@ public:
 
 
 
-    void add(SkTypeface*);
+    void add(SkTypeface*, const SkFontStyle& requested);
 
     
 
@@ -56,7 +63,7 @@ public:
 
     
 
-    static void Add(SkTypeface*);
+    static void Add(SkTypeface*, const SkFontStyle& requested);
     static SkTypeface* FindByProcAndRef(FindProc proc, void* ctx);
     static void PurgeAll();
 
@@ -70,7 +77,11 @@ private:
 
     void purge(int count);
 
-    SkTArray<sk_sp<SkTypeface>> fTypefaces;
+    struct Rec {
+        SkTypeface* fFace;
+        SkFontStyle fRequestedStyle;
+    };
+    SkTDArray<Rec> fArray;
 };
 
 #endif

@@ -18,6 +18,74 @@ public:
     
 
 
+    enum SrcConfig {
+        kUnknown,  
+        kBit,      
+        kGray,
+        kGrayAlpha,
+        kIndex1,
+        kIndex2,
+        kIndex4,
+        kIndex,
+        kRGB,
+        kBGR,
+        kBGRX,     
+        kRGBA,
+        kBGRA,
+        kCMYK,
+        kNoOp8,    
+        kNoOp16,   
+        kNoOp32,
+    };
+
+    
+
+
+
+
+    static int BitsPerPixel(SrcConfig sc) {
+        switch (sc) {
+            case kBit:
+            case kIndex1:
+                return 1;
+            case kIndex2:
+                return 2;
+            case kIndex4:
+                return 4;
+            case kGray:
+            case kIndex:
+            case kNoOp8:
+                return 8;
+            case kGrayAlpha:
+            case kNoOp16:
+                return 16;
+            case kRGB:
+            case kBGR:
+                return 24;
+            case kRGBA:
+            case kBGRX:
+            case kBGRA:
+            case kCMYK:
+            case kNoOp32:
+                return 32;
+            default:
+                SkASSERT(false);
+                return 0;
+        }
+    }
+
+    
+
+
+
+
+
+    static int BytesPerPixel(SrcConfig sc) {
+        SkASSERT(SkIsAlign8(BitsPerPixel(sc)));
+        return BitsPerPixel(sc) >> 3;
+    }
+
+    
 
 
 
@@ -36,10 +104,9 @@ public:
 
 
 
-
-    static SkSwizzler* CreateSwizzler(const SkEncodedInfo& encodedInfo, const SkPMColor* ctable,
+    static SkSwizzler* CreateSwizzler(SrcConfig, const SkPMColor* ctable,
                                       const SkImageInfo& dstInfo, const SkCodec::Options&,
-                                      const SkIRect* frame = nullptr, bool preSwizzled = false);
+                                      const SkIRect* frame = nullptr);
 
     
 
@@ -56,7 +123,7 @@ public:
     
 
 
-    void fill(const SkImageInfo& info, void* dst, size_t rowBytes, uint64_t colorOrIndex,
+    void fill(const SkImageInfo& info, void* dst, size_t rowBytes, uint32_t colorOrIndex,
             SkCodec::ZeroInitialized zeroInit) override {
         const SkImageInfo fillInfo = info.makeWH(fAllocatedWidth, info.height());
         SkSampler::Fill(fillInfo, dst, rowBytes, colorOrIndex, zeroInit);
@@ -71,12 +138,6 @@ public:
 
 
     int sampleX() const { return fSampleX; }
-
-    
-
-
-
-    int swizzleWidth() const { return fSwizzleWidth; }
 
 private:
 

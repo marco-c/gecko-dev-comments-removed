@@ -7,7 +7,7 @@
 
 #include "SkAtomics.h"
 #include "SkEventTracer.h"
-#include "SkOnce.h"
+#include "SkOncePtr.h"
 
 #include <stdlib.h>
 
@@ -41,6 +41,7 @@ class SkDefaultEventTracer : public SkEventTracer {
 
 
 static SkEventTracer* gUserTracer = nullptr;
+SK_DECLARE_STATIC_ONCE_PTR(SkDefaultEventTracer, gDefaultTracer);
 
 void SkEventTracer::SetInstance(SkEventTracer* tracer) {
     SkASSERT(nullptr == sk_atomic_load(&gUserTracer, sk_memory_order_acquire));
@@ -53,8 +54,5 @@ SkEventTracer* SkEventTracer::GetInstance() {
     if (SkEventTracer* tracer = sk_atomic_load(&gUserTracer, sk_memory_order_acquire)) {
         return tracer;
     }
-    static SkOnce once;
-    static SkDefaultEventTracer* defaultTracer;
-    once([] { defaultTracer = new SkDefaultEventTracer; });
-    return defaultTracer;
+    return gDefaultTracer.get([]{ return new SkDefaultEventTracer; });
 }

@@ -26,6 +26,10 @@ public:
 
     bool willUseGeoShader() const override { return fWillUseGeoShader; }
 
+    bool hasTransformedLocalCoords() const override {
+        return kHasTransformed_LocalCoordsType == fLocalCoordsType;
+    }
+
     bool hasExplicitLocalCoords() const override {
         return kHasExplicit_LocalCoordsType == fLocalCoordsType;
     }
@@ -49,10 +53,9 @@ protected:
 
 
 
-    const Attribute& addVertexAttrib(const char* name, GrVertexAttribType type,
-                                     GrSLPrecision precision = kDefault_GrSLPrecision) {
-        fAttribs.emplace_back(name, type, precision);
-        fVertexStride += fAttribs.back().fOffset;
+    const Attribute& addVertexAttrib(const Attribute& attribute) {
+        fVertexStride += attribute.fOffset;
+        fAttribs.push_back(attribute);
         return fAttribs.back();
     }
 

@@ -18,7 +18,7 @@ class GrPath;
 class GrRenderTarget;
 class GrSingleOwner;
 class GrStencilAttachment;
-class GrStyle;
+class GrStrokeInfo;
 class SkDescriptor;
 class SkPath;
 class SkTypeface;
@@ -83,10 +83,9 @@ public:
 
 
 
-    GrPath* createPath(const SkPath&, const GrStyle&);
-    GrPathRange* createPathRange(GrPathRange::PathGenerator*, const GrStyle&);
-    GrPathRange* createGlyphs(const SkTypeface*, const SkScalerContextEffects&,
-                              const SkDescriptor*, const GrStyle&);
+    GrPath* createPath(const SkPath&, const GrStrokeInfo&);
+    GrPathRange* createPathRange(GrPathRange::PathGenerator*, const GrStrokeInfo&);
+    GrPathRange* createGlyphs(const SkTypeface*, const SkDescriptor*, const GrStrokeInfo&);
 
     using GrTextureProvider::assignUniqueKeyToResource;
     using GrTextureProvider::findAndRefResourceByUniqueKey;
@@ -100,12 +99,7 @@ public:
 
 
 
-        kNoPendingIO_Flag = 0x1,
-
-        
-
-
-        kRequireGpuMemory_Flag = 0x2,
+        kNoPendingIO_Flag = kNoPendingIO_ScratchTextureFlag,
     };
 
     
@@ -118,9 +112,7 @@ public:
 
 
 
-
-    GrBuffer* createBuffer(size_t size, GrBufferType intendedType, GrAccessPattern, uint32_t flags,
-                           const void* data = nullptr);
+    GrBuffer* createBuffer(size_t size, GrBufferType intendedType, GrAccessPattern, uint32_t flags);
 
     GrTexture* createApproxTexture(const GrSurfaceDesc& desc, uint32_t flags) {
         SkASSERT(0 == flags || kNoPendingIO_Flag == flags);

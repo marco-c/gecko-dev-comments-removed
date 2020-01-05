@@ -10,7 +10,6 @@
 
 #include "../private/SkTemplates.h"
 #include "SkPaint.h"
-#include "SkString.h"
 #include "SkRefCnt.h"
 
 class SkReadBuffer;
@@ -20,7 +19,7 @@ class SkWriteBuffer;
 
 
 
-class SK_API SkTextBlob final : public SkNVRefCnt<SkTextBlob> {
+class SK_API SkTextBlob : public SkRefCnt {
 public:
     
 
@@ -44,25 +43,20 @@ public:
 
 
 
-    static sk_sp<SkTextBlob> MakeFromBuffer(SkReadBuffer&);
+    static const SkTextBlob* CreateFromBuffer(SkReadBuffer&);
 
-    static const SkTextBlob* CreateFromBuffer(SkReadBuffer& buffer) {
-        return MakeFromBuffer(buffer).release();
-    }
-
-    enum GlyphPositioning : uint8_t {
+    enum GlyphPositioning {
         kDefault_Positioning      = 0, 
         kHorizontal_Positioning   = 1, 
         kFull_Positioning         = 2  
     };
 
 private:
-    friend class SkNVRefCnt<SkTextBlob>;
     class RunRecord;
 
     SkTextBlob(int runCount, const SkRect& bounds);
 
-    ~SkTextBlob();
+    virtual ~SkTextBlob();
 
     
     
@@ -104,40 +98,16 @@ public:
 
 
 
-    sk_sp<SkTextBlob> make();
-
-#ifdef SK_SUPPORT_LEGACY_TEXTBLOB_BUILDER
-    const SkTextBlob* build() {
-        return this->make().release();
-    }
-#endif
+    const SkTextBlob* build();
 
     
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     struct RunBuffer {
-        SkGlyphID* glyphs;
+        uint16_t* glyphs;
         SkScalar* pos;
-        char* utf8text;
-        uint32_t* clusters;
     };
 
     
@@ -153,21 +123,8 @@ public:
 
 
 
-
-
-
-
-    const RunBuffer& allocRunText(const SkPaint& font,
-                                  int count,
-                                  SkScalar x,
-                                  SkScalar y,
-                                  int textByteCount,
-                                  SkString lang,
-                                  const SkRect* bounds = NULL);
     const RunBuffer& allocRun(const SkPaint& font, int count, SkScalar x, SkScalar y,
-                              const SkRect* bounds = NULL) {
-        return this->allocRunText(font, count, x, y, 0, SkString(), bounds);
-    }
+                              const SkRect* bounds = NULL);
 
     
 
@@ -182,17 +139,8 @@ public:
 
 
 
-
-
-
-
-    const RunBuffer& allocRunTextPosH(const SkPaint& font, int count, SkScalar y,
-                                      int textByteCount, SkString lang,
-                                      const SkRect* bounds = NULL);
     const RunBuffer& allocRunPosH(const SkPaint& font, int count, SkScalar y,
-                                  const SkRect* bounds = NULL) {
-        return this->allocRunTextPosH(font, count, y, 0, SkString(), bounds);
-    }
+                                  const SkRect* bounds = NULL);
 
     
 
@@ -207,22 +155,12 @@ public:
 
 
 
-
-
-
-
-    const RunBuffer& allocRunTextPos(const SkPaint& font, int count,
-                                     int textByteCount, SkString lang,
-                                     const SkRect* bounds = NULL);
-    const RunBuffer& allocRunPos(const SkPaint& font, int count,
-                                 const SkRect* bounds = NULL) {
-        return this->allocRunTextPos(font, count, 0, SkString(), bounds);
-    }
+    const RunBuffer& allocRunPos(const SkPaint& font, int count, const SkRect* bounds = NULL);
 
 private:
     void reserve(size_t size);
     void allocInternal(const SkPaint& font, SkTextBlob::GlyphPositioning positioning,
-                       int count, int textBytes, SkPoint offset, const SkRect* bounds);
+                       int count, SkPoint offset, const SkRect* bounds);
     bool mergeRun(const SkPaint& font, SkTextBlob::GlyphPositioning positioning,
                   int count, SkPoint offset);
     void updateDeferredBounds();

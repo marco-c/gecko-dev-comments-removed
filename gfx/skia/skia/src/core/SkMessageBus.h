@@ -9,7 +9,7 @@
 #define SkMessageBus_DEFINED
 
 #include "SkMutex.h"
-#include "SkOnce.h"
+#include "SkOncePtr.h"
 #include "SkTArray.h"
 #include "SkTDArray.h"
 #include "SkTypes.h"
@@ -47,12 +47,10 @@ private:
 
 
 #define DECLARE_SKMESSAGEBUS_MESSAGE(Message)                      \
+    SK_DECLARE_STATIC_ONCE_PTR(SkMessageBus<Message>, bus);        \
     template <>                                                    \
     SkMessageBus<Message>* SkMessageBus<Message>::Get() {          \
-        static SkOnce once;                                        \
-        static SkMessageBus<Message>* bus;                         \
-        once([] { bus = new SkMessageBus<Message>(); });           \
-        return bus;                                                \
+        return bus.get([]{ return new SkMessageBus<Message>(); }); \
     }
 
 

@@ -91,7 +91,7 @@ protected:
 
 
 #define DECLARE_ENCODER_CREATOR(codec)          \
-    SK_API SkImageEncoder *Create ## codec ();
+    SkImageEncoder *Create ## codec ();
 
 
 
@@ -100,17 +100,22 @@ protected:
 
 
 
+
+
+
+
+DECLARE_ENCODER_CREATOR(ARGBImageEncoder);
 DECLARE_ENCODER_CREATOR(JPEGImageEncoder);
 DECLARE_ENCODER_CREATOR(PNGImageEncoder);
 DECLARE_ENCODER_CREATOR(KTXImageEncoder);
 DECLARE_ENCODER_CREATOR(WEBPImageEncoder);
 
 #if defined(SK_BUILD_FOR_MAC) || defined(SK_BUILD_FOR_IOS)
-SkImageEncoder* CreateImageEncoder_CG(SkImageEncoder::Type type);
+DECLARE_ENCODER_CREATOR(PNGImageEncoder_CG);
 #endif
 
 #if defined(SK_BUILD_FOR_WIN)
-SkImageEncoder* CreateImageEncoder_WIC(SkImageEncoder::Type type);
+DECLARE_ENCODER_CREATOR(ImageEncoder_WIC);
 #endif
 
 

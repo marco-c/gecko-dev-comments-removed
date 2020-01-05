@@ -28,7 +28,7 @@ public:
 
 
 
-    SkBmpMaskCodec(int width, int height, const SkEncodedInfo& info, SkStream* stream,
+    SkBmpMaskCodec(const SkImageInfo& srcInfo, SkStream* stream,
             uint16_t bitsPerPixel, SkMasks* masks,
             SkCodec::SkScanlineOrder rowOrder);
 

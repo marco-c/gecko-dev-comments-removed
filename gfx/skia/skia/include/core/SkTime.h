@@ -17,7 +17,7 @@ class SkString;
 
 
 
-class SK_API SkTime {
+class SkTime {
 public:
     struct DateTime {
         int16_t  fTimeZoneMinutes;  

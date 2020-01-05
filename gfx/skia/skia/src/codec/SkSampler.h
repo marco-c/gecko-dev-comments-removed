@@ -23,31 +23,6 @@ public:
     
 
 
-    void setSampleY(int sampleY) {
-        fSampleY = sampleY;
-    }
-
-    
-
-
-    int sampleY() const {
-        return fSampleY;
-    }
-
-    
-
-
-
-
-
-    bool rowNeeded(int row) const {
-        return row % fSampleY == 0;
-    }
-
-    
-
-
-
 
 
 
@@ -71,21 +46,16 @@ public:
 
 
     static void Fill(const SkImageInfo& info, void* dst, size_t rowBytes,
-            uint64_t colorOrIndex, SkCodec::ZeroInitialized zeroInit);
+            uint32_t colorOrIndex, SkCodec::ZeroInitialized zeroInit);
 
     
 
 
     virtual void fill(const SkImageInfo& info, void* dst, size_t rowBytes,
-            uint64_t colorOrIndex, SkCodec::ZeroInitialized zeroInit) {}
-
-    SkSampler()
-        : fSampleY(1)
-    {}
+            uint32_t colorOrIndex, SkCodec::ZeroInitialized zeroInit) {}
 
     virtual ~SkSampler() {}
 private:
-    int fSampleY;
 
     virtual int onSetSampleX(int) = 0;
 };

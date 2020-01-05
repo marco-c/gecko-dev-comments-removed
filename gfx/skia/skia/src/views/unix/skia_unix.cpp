@@ -7,11 +7,9 @@
 
 #include "SkApplication.h"
 #include "SkEvent.h"
-#include "SkGraphics.h"
 #include "SkWindow.h"
 
 int main(int argc, char** argv){
-    SkGraphics::Init();
     SkOSWindow* window = create_sk_window(nullptr, argc, argv);
 
     

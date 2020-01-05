@@ -8,10 +8,9 @@
 #ifndef GrGLSLFragmentProcessor_DEFINED
 #define GrGLSLFragmentProcessor_DEFINED
 
-#include "GrFragmentProcessor.h"
-#include "GrShaderVar.h"
+#include "glsl/GrGLSLProcessorTypes.h"
 #include "glsl/GrGLSLProgramDataManager.h"
-#include "glsl/GrGLSLSampler.h"
+#include "glsl/GrGLSLTextureSampler.h"
 
 class GrProcessor;
 class GrProcessorKeyBuilder;
@@ -31,58 +30,9 @@ public:
     }
 
     typedef GrGLSLProgramDataManager::UniformHandle UniformHandle;
-    typedef GrGLSLProgramDataManager::UniformHandle SamplerHandle;
-
-private:
-    
-
-
-
-
-
-    template <typename T, typename FPBASE, int (FPBASE::*COUNT)() const>
-    class BuilderInputProvider {
-    public:
-        BuilderInputProvider(const GrFragmentProcessor* fp, const T* ts) : fFP(fp) , fTs(ts) {}
-
-        const T& operator[] (int i) const {
-            SkASSERT(i >= 0 && i < (fFP->*COUNT)());
-            return fTs[i];
-        }
-
-        BuilderInputProvider childInputs(int childIdx) const {
-            const GrFragmentProcessor* child = &fFP->childProcessor(childIdx);
-            GrFragmentProcessor::Iter iter(fFP);
-            int numToSkip = 0;
-            while (true) {
-                const GrFragmentProcessor* fp = iter.next();
-                if (fp == child) {
-                    return BuilderInputProvider(child, fTs + numToSkip);
-                }
-                numToSkip += (fp->*COUNT)();
-            }
-        }
-
-    private:
-        const GrFragmentProcessor* fFP;
-        const T*                   fTs;
-    };
-
-public:
-    using TransformedCoordVars = BuilderInputProvider<GrShaderVar, GrFragmentProcessor,
-                                                      &GrFragmentProcessor::numCoordTransforms>;
-    using TextureSamplers = BuilderInputProvider<SamplerHandle, GrProcessor,
-                                                 &GrProcessor::numTextures>;
-    using BufferSamplers = BuilderInputProvider<SamplerHandle, GrProcessor,
-                                                &GrProcessor::numBuffers>;
+    typedef GrGLSLTextureSampler::TextureSamplerArray TextureSamplerArray;
 
     
-
-
-
-
-
-
 
 
 
@@ -108,30 +58,24 @@ public:
                  const GrFragmentProcessor& fp,
                  const char* outputColor,
                  const char* inputColor,
-                 const TransformedCoordVars& transformedCoordVars,
-                 const TextureSamplers& textureSamplers,
-                 const BufferSamplers& bufferSamplers,
-                 bool gpImplementsDistanceVector)
+                 const GrGLSLTransformedCoordsArray& coords,
+                 const TextureSamplerArray& samplers)
             : fFragBuilder(fragBuilder)
             , fUniformHandler(uniformHandler)
             , fGLSLCaps(caps)
             , fFp(fp)
             , fOutputColor(outputColor)
             , fInputColor(inputColor)
-            , fTransformedCoords(transformedCoordVars)
-            , fTexSamplers(textureSamplers)
-            , fBufferSamplers(bufferSamplers)
-            , fGpImplementsDistanceVector(gpImplementsDistanceVector) {}
+            , fCoords(coords)
+            , fSamplers(samplers) {}
         GrGLSLFPFragmentBuilder* fFragBuilder;
         GrGLSLUniformHandler* fUniformHandler;
         const GrGLSLCaps* fGLSLCaps;
         const GrFragmentProcessor& fFp;
         const char* fOutputColor;
         const char* fInputColor;
-        const TransformedCoordVars& fTransformedCoords;
-        const TextureSamplers& fTexSamplers;
-        const BufferSamplers& fBufferSamplers;
-        bool fGpImplementsDistanceVector;
+        const GrGLSLTransformedCoordsArray& fCoords;
+        const TextureSamplerArray& fSamplers;
     };
 
     virtual void emitCode(EmitArgs&) = 0;
@@ -142,7 +86,7 @@ public:
 
     int numChildProcessors() const { return fChildProcessors.count(); }
 
-    GrGLSLFragmentProcessor* childProcessor(int index) {
+    GrGLSLFragmentProcessor* childProcessor(int index) const {
         return fChildProcessors[index];
     }
 
@@ -159,24 +103,6 @@ public:
 
     
     void emitChild(int childIndex, const char* inputColor, EmitArgs& parentArgs);
-
-    
-
-
-
-    class Iter : public SkNoncopyable {
-    public:
-        explicit Iter(GrGLSLFragmentProcessor* fp) { fFPStack.push_back(fp); }
-        explicit Iter(GrGLSLFragmentProcessor* fps[], int cnt) {
-            for (int i = cnt - 1; i >= 0; --i) {
-                fFPStack.push_back(fps[i]);
-            }
-        }
-        GrGLSLFragmentProcessor* next();
-
-    private:
-        SkSTArray<4, GrGLSLFragmentProcessor*, true> fFPStack;
-    };
 
 protected:
     

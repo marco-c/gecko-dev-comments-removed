@@ -15,10 +15,10 @@ public:
 
 
 
-    static SkImageGenerator* NewFromEncodedCodec(sk_sp<SkData>);
-    static SkImageGenerator* NewFromEncodedCodec(SkData* data) {
-        return NewFromEncodedCodec(sk_ref_sp(data));
-    }
+
+
+
+    static SkImageGenerator* NewFromEncodedCodec(SkData* data);
 
 protected:
     SkData* onRefEncodedData(SK_REFENCODEDDATA_CTXPARAM) override;
@@ -34,10 +34,11 @@ private:
     
 
 
-    SkCodecImageGenerator(SkCodec* codec, sk_sp<SkData>);
+
+    SkCodecImageGenerator(SkCodec* codec, SkData* data);
 
     SkAutoTDelete<SkCodec> fCodec;
-    sk_sp<SkData> fData;
+    SkAutoTUnref<SkData> fData;
 
     typedef SkImageGenerator INHERITED;
 };

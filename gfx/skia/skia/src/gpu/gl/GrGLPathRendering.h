@@ -10,13 +10,12 @@
 
 #include "SkRefCnt.h"
 #include "GrPathRendering.h"
+#include "GrStencil.h"
 #include "gl/GrGLTypes.h"
 #include "glsl/GrGLSLUtil.h"
 
 class GrGLNameAllocator;
 class GrGLGpu;
-class GrStencilSettings;
-class GrStyle;
 
 
 
@@ -34,9 +33,9 @@ public:
     virtual ~GrGLPathRendering();
 
     
-    GrPath* createPath(const SkPath&, const GrStyle&) override;
+    GrPath* createPath(const SkPath&, const GrStrokeInfo&) override;
     virtual GrPathRange* createPathRange(GrPathRange::PathGenerator*,
-                                         const GrStyle&) override;
+                                         const GrStrokeInfo&) override;
 
     
     void resetContext();

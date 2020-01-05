@@ -17,7 +17,7 @@ class SkDescriptor;
 class SkTypeface;
 class GrPath;
 class GrStencilSettings;
-class GrStyle;
+class GrStrokeInfo;
 
 
 
@@ -77,7 +77,25 @@ public:
         kEvenOdd_FillType,
     };
 
-    static const GrUserStencilSettings& GetStencilPassSettings(FillType);
+    
+
+
+
+
+
+
+
+    virtual GrPath* createPath(const SkPath&, const GrStrokeInfo&) = 0;
+
+    
+
+
+
+
+
+
+
+    virtual GrPathRange* createPathRange(GrPathRange::PathGenerator*, const GrStrokeInfo&) = 0;
 
     
 
@@ -88,20 +106,6 @@ public:
 
 
 
-    virtual GrPath* createPath(const SkPath&, const GrStyle&) = 0;
-
-    
-
-
-
-
-
-
-
-
-    virtual GrPathRange* createPathRange(GrPathRange::PathGenerator*, const GrStyle&) = 0;
-
-    
 
 
 
@@ -121,16 +125,7 @@ public:
 
 
 
-
-
-
-
-
-
-
-
-    GrPathRange* createGlyphs(const SkTypeface*, const SkScalerContextEffects&,
-                              const SkDescriptor*, const GrStyle&);
+    GrPathRange* createGlyphs(const SkTypeface*, const SkDescriptor*, const GrStrokeInfo&);
 
     
     struct StencilPathArgs {
@@ -159,18 +154,18 @@ public:
 
     void drawPath(const GrPipeline& pipeline,
                   const GrPrimitiveProcessor& primProc,
-                  const GrStencilSettings& stencilPassSettings, 
+                  const GrStencilSettings& stencil,
                   const GrPath* path) {
         fGpu->handleDirtyContext();
         if (GrXferBarrierType barrierType = pipeline.xferBarrierType(*fGpu->caps())) {
             fGpu->xferBarrier(pipeline.getRenderTarget(), barrierType);
         }
-        this->onDrawPath(pipeline, primProc, stencilPassSettings, path);
+        this->onDrawPath(pipeline, primProc, stencil, path);
     }
 
     void drawPaths(const GrPipeline& pipeline,
                    const GrPrimitiveProcessor& primProc,
-                   const GrStencilSettings& stencilPassSettings, 
+                   const GrStencilSettings& stencil,
                    const GrPathRange* pathRange,
                    const void* indices,
                    PathIndexType indexType,
@@ -184,7 +179,7 @@ public:
 #ifdef SK_DEBUG
         pathRange->assertPathsLoaded(indices, indexType, count);
 #endif
-        this->onDrawPaths(pipeline, primProc, stencilPassSettings, pathRange, indices, indexType,
+        this->onDrawPaths(pipeline, primProc, stencil, pathRange, indices, indexType,
                           transformValues, transformType, count);
     }
 

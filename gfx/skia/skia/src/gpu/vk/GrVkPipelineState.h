@@ -9,10 +9,8 @@
 #ifndef GrVkPipelineState_DEFINED
 #define GrVkPipelineState_DEFINED
 
-#include "GrProgramDesc.h"
-#include "GrStencilSettings.h"
-#include "GrVkDescriptorSetManager.h"
 #include "GrVkImage.h"
+#include "GrVkProgramDesc.h"
 #include "GrVkPipelineStateDataManager.h"
 #include "glsl/GrGLSLProgramBuilder.h"
 
@@ -21,7 +19,6 @@
 class GrPipeline;
 class GrVkCommandBuffer;
 class GrVkDescriptorPool;
-class GrVkDescriptorSet;
 class GrVkGpu;
 class GrVkImageView;
 class GrVkPipeline;
@@ -57,6 +54,18 @@ public:
     void abandonGPUResources();
 
     
+    
+    
+    enum StateKeyOffsets {
+        
+        kLength_StateKeyOffset = 0,
+        
+        kData_StateKeyOffset = kLength_StateKeyOffset + sizeof(uint32_t),
+    };
+    static void BuildStateKey(const GrPipeline&, GrPrimitiveType primitiveType,
+                               SkTArray<unsigned char, true>* key);
+
+    
 
 
 
@@ -69,15 +78,65 @@ public:
 
 
 
-    class Desc : public GrProgramDesc {
-    public:
-        static bool Build(Desc*,
-                          const GrPrimitiveProcessor&,
-                          const GrPipeline&,
-                          GrPrimitiveType primitiveType,
-                          const GrGLSLCaps&);
-    private:
-        typedef GrProgramDesc INHERITED;
+
+
+
+    struct Desc {
+        uint32_t                fChecksum;
+        GrVkProgramDesc         fProgramDesc;
+
+        enum {
+            kRenderPassKeyAlloc = 12, 
+            kStencilKeyAlloc = sizeof(GrStencilSettings),
+            kDrawFaceKeyAlloc = 4,
+            kBlendingKeyAlloc = 4,
+            kPrimitiveTypeKeyAlloc = 4,
+            kPreAllocSize = kData_StateKeyOffset + kRenderPassKeyAlloc + kStencilKeyAlloc +
+                            kDrawFaceKeyAlloc + kBlendingKeyAlloc + kPrimitiveTypeKeyAlloc,
+        };
+        SkSTArray<kPreAllocSize, uint8_t, true> fStateKey;
+
+        bool operator== (const Desc& that) const {
+            if (fChecksum != that.fChecksum || fProgramDesc != that.fProgramDesc) {
+                return false;
+            }
+            
+            
+            
+            int keyLength = fStateKey.count();
+            SkASSERT(SkIsAlign4(keyLength));
+            int l = keyLength >> 2;
+            const uint32_t* aKey = reinterpret_cast<const uint32_t*>(fStateKey.begin());
+            const uint32_t* bKey = reinterpret_cast<const uint32_t*>(that.fStateKey.begin());
+            for (int i = 0; i < l; ++i) {
+                if (aKey[i] != bKey[i]) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        static bool Less(const Desc& a, const Desc& b) {
+            if (a.fChecksum != b.fChecksum) {
+                return a.fChecksum < b.fChecksum ? true : false;
+            }
+            bool progDescLess = GrProgramDesc::Less(a.fProgramDesc, b.fProgramDesc);
+            if (progDescLess || a.fProgramDesc != b.fProgramDesc) {
+                return progDescLess;
+            }
+
+            int keyLength = a.fStateKey.count();
+            SkASSERT(SkIsAlign4(keyLength));
+            int l = keyLength >> 2;
+            const uint32_t* aKey = reinterpret_cast<const uint32_t*>(a.fStateKey.begin());
+            const uint32_t* bKey = reinterpret_cast<const uint32_t*>(b.fStateKey.begin());
+            for (int i = 0; i < l; ++i) {
+                if (aKey[i] != bKey[i]) {
+                    return aKey[i] < bKey[i] ? true : false;
+                }
+            }
+            return false;
+        }
     };
 
     const Desc& getDesc() { return fDesc; }
@@ -90,7 +149,7 @@ private:
                       const GrVkPipelineState::Desc&,
                       GrVkPipeline* pipeline,
                       VkPipelineLayout layout,
-                      const GrVkDescriptorSetManager::Handle& samplerDSHandle,
+                      VkDescriptorSetLayout dsLayout[2],
                       const BuiltinUniformHandles& builtinUniformHandles,
                       const UniformInfoArray& uniforms,
                       uint32_t vertexUniformSize,
@@ -107,11 +166,10 @@ private:
                               uint32_t descCount, GrVkGpu* gpu)
             : fDescLayout(layout)
             , fDescType(type)
-            , fDescCountPerSet(descCount)
-            , fCurrentDescriptorCount(0)
+            , fCurrentDescriptorSet(0)
             , fPool(nullptr) {
-            SkASSERT(descCount < kMaxDescLimit >> 2);
-            fMaxDescriptors = fDescCountPerSet << 2;
+            SkASSERT(descCount < (kMaxDescSetLimit >> 2));
+            fMaxDescriptorSets = descCount << 2;
             this->getNewPool(gpu);
         }
 
@@ -127,21 +185,19 @@ private:
 
         VkDescriptorSetLayout  fDescLayout;
         VkDescriptorType       fDescType;
-        uint32_t               fDescCountPerSet;
-        uint32_t               fMaxDescriptors;
-        uint32_t               fCurrentDescriptorCount;
+        uint32_t               fMaxDescriptorSets;
+        uint32_t               fCurrentDescriptorSet;
         GrVkDescriptorPool*    fPool;
 
     private:
-        static const uint32_t kMaxDescLimit = 1 << 10;
+        static const uint32_t kMaxDescSetLimit = 1 << 10;
 
         void getNewPool(GrVkGpu* gpu);
     };
 
     void writeUniformBuffers(const GrVkGpu* gpu);
 
-    void writeSamplers(GrVkGpu* gpu, const SkTArray<const GrTextureAccess*>& textureBindings,
-                       bool allowSRGBInputs);
+    void writeSamplers(GrVkGpu* gpu, const SkTArray<const GrTextureAccess*>& textureBindings);
 
     
 
@@ -197,13 +253,6 @@ private:
     VkDescriptorSet fDescriptorSets[2];
 
     
-    
-    const GrVkDescriptorSet* fUniformDescriptorSet;
-    const GrVkDescriptorSet* fSamplerDescriptorSet;
-
-    const GrVkDescriptorSetManager::Handle fSamplerDSHandle;
-
-    
     int fStartDS;
     int fDSCount;
 
@@ -213,7 +262,7 @@ private:
     
     SkTDArray<GrVkSampler*> fSamplers;
     SkTDArray<const GrVkImageView*> fTextureViews;
-    SkTDArray<const GrVkResource*> fTextures;
+    SkTDArray<const GrVkImage::Resource*> fTextures;
 
     
     RenderTargetState fRenderTargetState;
@@ -227,6 +276,9 @@ private:
     Desc fDesc;
 
     GrVkPipelineStateDataManager fDataManager;
+
+    DescriptorPoolManager fSamplerPoolManager;
+    DescriptorPoolManager fUniformPoolManager;
 
     int fNumSamplers;
 

@@ -18,33 +18,33 @@ namespace GrYUVEffect {
 
 
 
-    sk_sp<GrFragmentProcessor> MakeYUVToRGB(GrTexture* yTexture, GrTexture* uTexture,
-                                            GrTexture* vTexture, const SkISize sizes[3],
-                                            SkYUVColorSpace colorSpace, bool nv12);
+    const GrFragmentProcessor* CreateYUVToRGB(GrTexture* yTexture, GrTexture* uTexture,
+                                              GrTexture* vTexture, const SkISize sizes[3],
+                                              SkYUVColorSpace colorSpace);
 
     
 
 
 
 
-    sk_sp<GrFragmentProcessor> MakeRGBToYUV(sk_sp<GrFragmentProcessor>,
-                                            SkYUVColorSpace colorSpace);
+    const GrFragmentProcessor* CreateRGBToYUV(const GrFragmentProcessor*,
+                                              SkYUVColorSpace colorSpace);
 
     
 
 
 
 
-    sk_sp<GrFragmentProcessor> MakeRGBToUV(sk_sp<GrFragmentProcessor>,
-                                           SkYUVColorSpace colorSpace);
+    const GrFragmentProcessor* CreateRGBToUV(const GrFragmentProcessor*,
+                                             SkYUVColorSpace colorSpace);
     
 
 
 
 
-    sk_sp<GrFragmentProcessor> MakeRGBToY(sk_sp<GrFragmentProcessor>, SkYUVColorSpace colorSpace);
-    sk_sp<GrFragmentProcessor> MakeRGBToU(sk_sp<GrFragmentProcessor>, SkYUVColorSpace colorSpace);
-    sk_sp<GrFragmentProcessor> MakeRGBToV(sk_sp<GrFragmentProcessor>, SkYUVColorSpace colorSpace);
+    const GrFragmentProcessor* CreateRGBToY(const GrFragmentProcessor*, SkYUVColorSpace colorSpace);
+    const GrFragmentProcessor* CreateRGBToU(const GrFragmentProcessor*, SkYUVColorSpace colorSpace);
+    const GrFragmentProcessor* CreateRGBToV(const GrFragmentProcessor*, SkYUVColorSpace colorSpace);
 };
 
 #endif

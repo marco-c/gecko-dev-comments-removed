@@ -78,7 +78,10 @@ void GrBufferAllocPool::reset() {
     VALIDATE();
     fBytesInUse = 0;
     this->deleteBlocks();
-    this->resetCpuData(0);      
+
+    
+    this->resetCpuData(fMinBlockSize);
+
     VALIDATE();
 }
 
@@ -278,7 +281,7 @@ void* GrBufferAllocPool::resetCpuData(size_t newSize) {
     sk_free(fCpuData);
     if (newSize) {
         if (fGpu->caps()->mustClearUploadedBufferData()) {
-            fCpuData = sk_calloc_throw(newSize);
+            fCpuData = sk_calloc(newSize);
         } else {
             fCpuData = sk_malloc_throw(newSize);
         }

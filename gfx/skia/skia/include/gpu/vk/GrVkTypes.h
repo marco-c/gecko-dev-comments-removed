@@ -9,7 +9,6 @@
 #ifndef GrVkTypes_DEFINED
 #define GrVkTypes_DEFINED
 
-#include "GrTypes.h"
 #include "vk/GrVkDefines.h"
 
 
@@ -30,35 +29,14 @@
 
 
 
-struct GrVkAlloc {
-    VkDeviceMemory fMemory;  
-    VkDeviceSize   fOffset;
-    VkDeviceSize   fSize;    
-    uint32_t       fFlags;
 
-    enum Flag {
-        kNoncoherent_Flag = 0x1,   
-    };
-};
-
-struct GrVkImageInfo {
-    
-
-
-
+struct GrVkTextureInfo {
     VkImage        fImage;
-    GrVkAlloc      fAlloc;
+    VkDeviceMemory fAlloc;    
     VkImageTiling  fImageTiling;
     VkImageLayout  fImageLayout;
-    VkFormat       fFormat;
-    uint32_t       fLevelCount;
-
-    
-    
-    
-    void updateImageLayout(VkImageLayout layout) { fImageLayout = layout; }
 };
 
-GR_STATIC_ASSERT(sizeof(GrBackendObject) >= sizeof(const GrVkImageInfo*));
+GR_STATIC_ASSERT(sizeof(GrBackendObject) >= sizeof(const GrVkTextureInfo*));
 
 #endif

@@ -11,18 +11,17 @@
 #include "SkRefCnt.h"
 #include "SkCanvas.h"
 #include "SkColor.h"
+#include "SkImageFilter.h"
 #include "SkSurfaceProps.h"
 
 class SkBitmap;
 class SkClipStack;
 class SkDraw;
 class SkDrawFilter;
-class SkImageFilterCache;
 struct SkIRect;
 class SkMatrix;
 class SkMetaData;
 class SkRegion;
-class SkSpecialImage;
 class GrRenderTarget;
 
 class SK_API SkBaseDevice : public SkRefCnt {
@@ -30,7 +29,7 @@ public:
     
 
 
-    explicit SkBaseDevice(const SkImageInfo&, const SkSurfaceProps&);
+    explicit SkBaseDevice(const SkSurfaceProps&);
     virtual ~SkBaseDevice();
 
     SkMetaData& getMetaData();
@@ -39,7 +38,7 @@ public:
 
 
 
-    const SkImageInfo& imageInfo() const { return fInfo; }
+    virtual SkImageInfo imageInfo() const;
 
     
 
@@ -77,7 +76,6 @@ public:
         return this->imageInfo().isOpaque();
     }
 
-#ifdef SK_SUPPORT_LEGACY_ACCESSBITMAP
     
 
 
@@ -85,7 +83,6 @@ public:
 
 
     const SkBitmap& accessBitmap(bool changePixels);
-#endif
 
     bool writePixels(const SkImageInfo&, const void*, size_t rowBytes, int x, int y);
 
@@ -109,8 +106,40 @@ public:
     
 
 
+    virtual GrRenderTarget* accessRenderTarget() { return NULL; }
+
+
+    
+
+
 
     const SkIPoint& getOrigin() const { return fOrigin; }
+
+    
+
+
+
+
+
+    virtual void onAttachToCanvas(SkCanvas*) {
+        SkASSERT(!fAttachedToCanvas);
+#ifdef SK_DEBUG
+        fAttachedToCanvas = true;
+#endif
+    };
+
+    
+
+
+
+
+
+    virtual void onDetachFromCanvas() {
+        SkASSERT(fAttachedToCanvas);
+#ifdef SK_DEBUG
+        fAttachedToCanvas = false;
+#endif
+    };
 
 protected:
     enum TileUsage {
@@ -135,18 +164,32 @@ protected:
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+     virtual void setMatrixClip(const SkMatrix&, const SkRegion&,
+                                const SkClipStack&) {};
+
+    
+
+
+
+
     virtual void drawPaint(const SkDraw&, const SkPaint& paint) = 0;
     virtual void drawPoints(const SkDraw&, SkCanvas::PointMode mode, size_t count,
                             const SkPoint[], const SkPaint& paint) = 0;
     virtual void drawRect(const SkDraw&, const SkRect& r,
                           const SkPaint& paint) = 0;
-    virtual void drawRegion(const SkDraw&, const SkRegion& r,
-                            const SkPaint& paint);
     virtual void drawOval(const SkDraw&, const SkRect& oval,
                           const SkPaint& paint) = 0;
-    
-    virtual void drawArc(const SkDraw&, const SkRect& oval, SkScalar startAngle,
-                         SkScalar sweepAngle, bool useCenter, const SkPaint& paint);
     virtual void drawRRect(const SkDraw&, const SkRRect& rr,
                            const SkPaint& paint) = 0;
 
@@ -183,17 +226,13 @@ protected:
                                 const SkPaint& paint,
                                 SkCanvas::SrcRectConstraint) = 0;
     virtual void drawBitmapNine(const SkDraw&, const SkBitmap&, const SkIRect& center,
-                                const SkRect& dst, const SkPaint&);
-    virtual void drawBitmapLattice(const SkDraw&, const SkBitmap&, const SkCanvas::Lattice&,
-                                   const SkRect& dst, const SkPaint&);
+                               const SkRect& dst, const SkPaint&);
 
     virtual void drawImage(const SkDraw&, const SkImage*, SkScalar x, SkScalar y, const SkPaint&);
     virtual void drawImageRect(const SkDraw&, const SkImage*, const SkRect* src, const SkRect& dst,
                                const SkPaint&, SkCanvas::SrcRectConstraint);
     virtual void drawImageNine(const SkDraw&, const SkImage*, const SkIRect& center,
                                const SkRect& dst, const SkPaint&);
-    virtual void drawImageLattice(const SkDraw&, const SkImage*, const SkCanvas::Lattice&,
-                                  const SkRect& dst, const SkPaint&);
 
     
 
@@ -230,30 +269,38 @@ protected:
 
     virtual void drawTextOnPath(const SkDraw&, const void* text, size_t len, const SkPath&,
                                 const SkMatrix*, const SkPaint&);
-    virtual void drawTextRSXform(const SkDraw&, const void* text, size_t len, const SkRSXform[],
-                                 const SkPaint&);
-
-    virtual void drawSpecial(const SkDraw&, SkSpecialImage*, int x, int y, const SkPaint&);
-    virtual sk_sp<SkSpecialImage> makeSpecial(const SkBitmap&);
-    virtual sk_sp<SkSpecialImage> makeSpecial(const SkImage*);
-    virtual sk_sp<SkSpecialImage> snapSpecial();
 
     bool readPixels(const SkImageInfo&, void* dst, size_t rowBytes, int x, int y);
 
     
 
-#ifdef SK_SUPPORT_LEGACY_ACCESSBITMAP
     
 
 
 
-    virtual const SkBitmap& onAccessBitmap() {
-        SkASSERT(0);
-        return fLegacyBitmap;
-    }
-#endif
+    virtual const SkBitmap& onAccessBitmap() = 0;
 
-    virtual GrContext* context() const { return nullptr; }
+    
+
+
+
+
+
+
+    virtual bool canHandleImageFilter(const SkImageFilter*) { return false; }
+
+    
+
+
+
+
+
+
+    virtual bool filterImage(const SkImageFilter*, const SkBitmap&,
+                             const SkImageFilter::Context&,
+                             SkBitmap* , SkIPoint* ) {
+        return false;
+    }
 
 protected:
     virtual sk_sp<SkSurface> makeSurface(const SkImageInfo&, const SkSurfaceProps&);
@@ -277,6 +324,19 @@ protected:
 
     virtual bool onAccessPixels(SkPixmap*) { return false; }
 
+    
+
+
+
+
+
+
+
+
+
+    virtual bool EXPERIMENTAL_drawPicture(SkCanvas*, const SkPicture*, const SkMatrix*,
+                                          const SkPaint*);
+
     struct CreateInfo {
         static SkPixelGeometry AdjustGeometry(const SkImageInfo&, TileUsage, SkPixelGeometry,
                                               bool preserveLCDText);
@@ -288,20 +348,22 @@ protected:
             : fInfo(info)
             , fTileUsage(tileUsage)
             , fPixelGeometry(AdjustGeometry(info, tileUsage, geo, false))
-        {}
+            , fForImageFilter(false) {}
 
         CreateInfo(const SkImageInfo& info,
                    TileUsage tileUsage,
                    SkPixelGeometry geo,
-                   bool preserveLCDText)
+                   bool preserveLCDText,
+                   bool forImageFilter)
             : fInfo(info)
             , fTileUsage(tileUsage)
             , fPixelGeometry(AdjustGeometry(info, tileUsage, geo, preserveLCDText))
-        {}
+            , fForImageFilter(forImageFilter) {}
 
         const SkImageInfo       fInfo;
         const TileUsage         fTileUsage;
         const SkPixelGeometry   fPixelGeometry;
+        const bool              fForImageFilter;
     };
 
     
@@ -320,7 +382,10 @@ protected:
     }
 
     
-    static void LogDrawScaleFactor(const SkMatrix&, SkFilterQuality);
+
+
+    virtual void drawSpriteWithFilter(const SkDraw&, const SkBitmap&,
+                                      int x, int y, const SkPaint&);
 
 private:
     friend class SkCanvas;
@@ -328,9 +393,9 @@ private:
     friend class SkDraw;
     friend class SkDrawIter;
     friend class SkDeviceFilteredPaint;
+    friend class SkImageFilter::DeviceProxy;
     friend class SkNoPixelsBitmapDevice;
     friend class SkSurface_Raster;
-    friend class DeviceTestingAccess;
 
     
     
@@ -341,31 +406,20 @@ private:
     virtual bool forceConservativeRasterClip() const { return false; }
 
     
-
-
-    virtual GrDrawContext* accessDrawContext() { return nullptr; }
-
-    
     void setOrigin(int x, int y) { fOrigin.set(x, y); }
 
     
 
     virtual void flush() {}
 
-    virtual SkImageFilterCache* getImageFilterCache() { return NULL; }
-
-    friend class SkBitmapDevice;
-    void privateResize(int w, int h) {
-        *const_cast<SkImageInfo*>(&fInfo) = fInfo.makeWH(w, h);
-    }
+    virtual SkImageFilter::Cache* getImageFilterCache() { return NULL; }
 
     SkIPoint    fOrigin;
     SkMetaData* fMetaData;
-    const SkImageInfo    fInfo;
-    const SkSurfaceProps fSurfaceProps;
+    SkSurfaceProps fSurfaceProps;
 
-#ifdef SK_SUPPORT_LEGACY_ACCESSBITMAP
-    SkBitmap    fLegacyBitmap;
+#ifdef SK_DEBUG
+    bool        fAttachedToCanvas;
 #endif
 
     typedef SkRefCnt INHERITED;

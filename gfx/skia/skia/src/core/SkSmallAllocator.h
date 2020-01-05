@@ -81,11 +81,9 @@ public:
         Rec* rec = &fRecs[fNumObjects];
         if (storageRequired > storageRemaining) {
             
-
             
             
-            
-
+            SkASSERT(false);
             rec->fStorageSize = 0;
             rec->fHeapStorage = sk_malloc_throw(storageRequired);
             rec->fObj = static_cast<void*>(rec->fHeapStorage);

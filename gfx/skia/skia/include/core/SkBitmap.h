@@ -23,6 +23,7 @@ class SkPixelRef;
 class SkPixelRefFactory;
 class SkRegion;
 class SkString;
+class GrTexture;
 
 
 
@@ -84,7 +85,7 @@ public:
     int height() const { return fInfo.height(); }
     SkColorType colorType() const { return fInfo.colorType(); }
     SkAlphaType alphaType() const { return fInfo.alphaType(); }
-    SkColorSpace* colorSpace() const { return fInfo.colorSpace(); }
+    SkColorProfileType profileType() const { return fInfo.profileType(); }
 
     
 
@@ -104,7 +105,7 @@ public:
 
 
 
-    int shiftPerPixel() const { return this->fInfo.shiftPerPixel(); }
+    int shiftPerPixel() const { return this->bytesPerPixel() >> 1; }
 
     
 
@@ -454,7 +455,6 @@ public:
 
 
 
-    
     bool lockPixelsAreWritable() const;
 
     bool requestLock(SkAutoPixmapUnlock* result) const;
@@ -467,6 +467,10 @@ public:
         return this->getPixels() != NULL &&
                (this->colorType() != kIndex_8_SkColorType || fColorTable);
     }
+
+    
+
+    GrTexture* getTexture() const;
 
     
 
@@ -770,8 +774,8 @@ private:
     static void WriteRawPixels(SkWriteBuffer*, const SkBitmap&);
     static bool ReadRawPixels(SkReadBuffer*, SkBitmap*);
 
-    friend class SkReadBuffer;        
-    friend class SkBinaryWriteBuffer; 
+    friend class SkReadBuffer;      
+    friend class SkWriteBuffer;     
     friend struct SkBitmapProcState;
 };
 

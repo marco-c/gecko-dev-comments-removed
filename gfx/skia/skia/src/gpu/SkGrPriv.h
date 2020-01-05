@@ -16,7 +16,6 @@
 
 class GrCaps;
 class GrContext;
-class GrDrawContext;
 class GrFragmentProcessor;
 class GrPaint;
 class GrTexture;
@@ -47,24 +46,24 @@ void GrInstallBitmapUniqueKeyInvalidator(const GrUniqueKey& key, SkPixelRef* pix
 
 
 bool SkPaintToGrPaint(GrContext*,
-                      GrDrawContext*,
                       const SkPaint& skPaint,
                       const SkMatrix& viewM,
+                      bool allowSRGBInputs,
                       GrPaint* grPaint);
 
 
 bool SkPaintToGrPaintNoShader(GrContext* context,
-                              GrDrawContext* dc,
                               const SkPaint& skPaint,
+                              bool allowSRGBInputs,
                               GrPaint* grPaint);
 
 
 
 
 bool SkPaintToGrPaintReplaceShader(GrContext*,
-                                   GrDrawContext*,
                                    const SkPaint& skPaint,
-                                   sk_sp<GrFragmentProcessor> shaderFP,
+                                   const GrFragmentProcessor* shaderFP,
+                                   bool allowSRGBInputs,
                                    GrPaint* grPaint);
 
 
@@ -72,43 +71,38 @@ bool SkPaintToGrPaintReplaceShader(GrContext*,
 
 
 bool SkPaintToGrPaintWithXfermode(GrContext* context,
-                                  GrDrawContext* dc,
                                   const SkPaint& skPaint,
                                   const SkMatrix& viewM,
                                   SkXfermode::Mode primColorMode,
                                   bool primitiveIsSrc,
+                                  bool allowSRGBInputs,
                                   GrPaint* grPaint);
 
 
 
 
 
-inline bool SkPaintToGrPaintWithPrimitiveColor(GrContext* context, GrDrawContext* dc,
-                                               const SkPaint& skPaint, GrPaint* grPaint) {
-    return SkPaintToGrPaintWithXfermode(context, dc, skPaint, SkMatrix::I(), SkXfermode::kDst_Mode,
-                                        false, grPaint);
+inline bool SkPaintToGrPaintWithPrimitiveColor(GrContext* context, const SkPaint& skPaint,
+                                               bool allowSRGBInputs, GrPaint* grPaint) {
+    return SkPaintToGrPaintWithXfermode(context, skPaint, SkMatrix::I(), SkXfermode::kDst_Mode,
+                                        false, allowSRGBInputs, grPaint);
 }
 
 
 
 bool SkPaintToGrPaintWithTexture(GrContext* context,
-                                 GrDrawContext* dc,
                                  const SkPaint& paint,
                                  const SkMatrix& viewM,
-                                 sk_sp<GrFragmentProcessor> fp,
+                                 const GrFragmentProcessor* fp,
                                  bool textureIsAlphaOnly,
+                                 bool allowSRGBInputs,
                                  GrPaint* grPaint);
 
 
 
 GrSurfaceDesc GrImageInfoToSurfaceDesc(const SkImageInfo&, const GrCaps&);
 
-bool GrPixelConfigToColorType(GrPixelConfig, SkColorType*);
-
-
-
-
-GrPixelConfig GrRenderableConfigForColorSpace(const SkColorSpace*);
+bool GrPixelConfig2ColorAndProfileType(GrPixelConfig, SkColorType*, SkColorProfileType*);
 
 
 
@@ -130,18 +124,12 @@ GrPixelConfig GrIsCompressedTextureDataSupported(GrContext* ctx, SkData* data,
 
 GrTexture* GrUploadBitmapToTexture(GrContext*, const SkBitmap&);
 
-GrTexture* GrGenerateMipMapsAndUploadToTexture(GrContext*, const SkBitmap&, SkSourceGammaTreatment);
+GrTexture* GrGenerateMipMapsAndUploadToTexture(GrContext*, const SkBitmap&);
 
 
 
 
 GrTexture* GrUploadPixmapToTexture(GrContext*, const SkPixmap&, SkBudgeted budgeted);
-
-
-
-
-GrTexture* GrUploadMipMapToTexture(GrContext*, const SkImageInfo&, const GrMipLevel* texels,
-                                   int mipLevelCount);
 
 
 

@@ -33,18 +33,7 @@ public:
         kThrow_AllocFailType
     };
 
-    
-
-
-
-
-
-
     void* alloc(size_t bytes, AllocFailType);
-
-    
-
-
     void* allocThrow(size_t bytes) {
         return this->alloc(bytes, kThrow_AllocFailType);
     }

@@ -9,9 +9,7 @@
 #define SkCanvas_DEFINED
 
 #include "SkTypes.h"
-#include "SkBlendMode.h"
 #include "SkBitmap.h"
-#include "SkClipOp.h"
 #include "SkDeque.h"
 #include "SkImage.h"
 #include "SkPaint.h"
@@ -19,11 +17,9 @@
 #include "SkRegion.h"
 #include "SkSurfaceProps.h"
 #include "SkXfermode.h"
-#include "SkLights.h"
-#include "../private/SkShadowParams.h"
 
 class GrContext;
-class GrDrawContext;
+class GrRenderTarget;
 class SkBaseDevice;
 class SkCanvasClipVisitor;
 class SkClipStack;
@@ -36,7 +32,6 @@ class SkMetaData;
 class SkPath;
 class SkPicture;
 class SkPixmap;
-class SkRasterClip;
 class SkRRect;
 struct SkRSXform;
 class SkSurface;
@@ -58,33 +53,12 @@ class SkTextBlob;
 
 
 
-
-
 class SK_API SkCanvas : public SkRefCnt {
     enum PrivateSaveLayerFlags {
         kDontClipToLayer_PrivateSaveLayerFlag   = 1U << 31,
     };
-
+    
 public:
-#ifdef SK_SUPPORT_LEGACY_CLIP_REGIONOPS
-    typedef SkRegion::Op ClipOp;
-
-    static const ClipOp kDifference_Op         = SkRegion::kDifference_Op;
-    static const ClipOp kIntersect_Op          = SkRegion::kIntersect_Op;
-    static const ClipOp kUnion_Op              = SkRegion::kUnion_Op;
-    static const ClipOp kXOR_Op                = SkRegion::kXOR_Op;
-    static const ClipOp kReverseDifference_Op  = SkRegion::kReverseDifference_Op;
-    static const ClipOp kReplace_Op            = SkRegion::kReplace_Op;
-#else
-    typedef SkClipOp ClipOp;
-
-    static const ClipOp kDifference_Op         = kDifference_SkClipOp;
-    static const ClipOp kIntersect_Op          = kIntersect_SkClipOp;
-    static const ClipOp kUnion_Op              = kUnion_SkClipOp;
-    static const ClipOp kXOR_Op                = kXOR_SkClipOp;
-    static const ClipOp kReverseDifference_Op  = kReverseDifference_SkClipOp;
-    static const ClipOp kReplace_Op            = kReplace_SkClipOp;
-#endif
     
 
 
@@ -453,13 +427,6 @@ public:
 
 
 
-
-    void rotate(SkScalar degrees, SkScalar px, SkScalar py);
-
-    
-
-
-
     void skew(SkScalar sx, SkScalar sy);
 
     
@@ -476,23 +443,15 @@ public:
 
     void resetMatrix();
 
-#ifdef SK_EXPERIMENTAL_SHADOWING
     
 
 
 
 
-    void translateZ(SkScalar z);
 
-    
-
-
-    void setLights(sk_sp<SkLights> lights);
-
-    
-
-    sk_sp<SkLights> getLights() const;
-#endif
+    void clipRect(const SkRect& rect,
+                  SkRegion::Op op = SkRegion::kIntersect_Op,
+                  bool doAntiAlias = false);
 
     
 
@@ -500,13 +459,9 @@ public:
 
 
 
-    void clipRect(const SkRect& rect, ClipOp, bool doAntiAlias);
-    void clipRect(const SkRect& rect, ClipOp op) {
-        this->clipRect(rect, op, false);
-    }
-    void clipRect(const SkRect& rect, bool doAntiAlias = false) {
-        this->clipRect(rect, kIntersect_Op, doAntiAlias);
-    }
+    void clipRRect(const SkRRect& rrect,
+                   SkRegion::Op op = SkRegion::kIntersect_Op,
+                   bool doAntiAlias = false);
 
     
 
@@ -514,26 +469,16 @@ public:
 
 
 
-    void clipRRect(const SkRRect& rrect, ClipOp op, bool doAntiAlias);
-    void clipRRect(const SkRRect& rrect, ClipOp op) {
-        this->clipRRect(rrect, op, false);
-    }
-    void clipRRect(const SkRRect& rrect, bool doAntiAlias = false) {
-        this->clipRRect(rrect, kIntersect_Op, doAntiAlias);
-    }
+    void clipPath(const SkPath& path,
+                  SkRegion::Op op = SkRegion::kIntersect_Op,
+                  bool doAntiAlias = false);
 
     
 
 
 
-
-
-    void clipPath(const SkPath& path, ClipOp op, bool doAntiAlias);
-    void clipPath(const SkPath& path, ClipOp op) {
-        this->clipPath(path, op, false);
-    }
-    void clipPath(const SkPath& path, bool doAntiAlias = false) {
-        this->clipPath(path, kIntersect_Op, doAntiAlias);
+    void setAllowSoftClip(bool allow) {
+        fAllowSoftClip = allow;
     }
 
     
@@ -550,7 +495,17 @@ public:
 
 
 
-    void clipRegion(const SkRegion& deviceRgn, ClipOp op = kIntersect_Op);
+    void clipRegion(const SkRegion& deviceRgn,
+                    SkRegion::Op op = SkRegion::kIntersect_Op);
+
+    
+
+
+
+
+    void setClipRegion(const SkRegion& deviceRgn) {
+        this->clipRegion(deviceRgn, SkRegion::kReplace_Op);
+    }
 
     
 
@@ -579,6 +534,40 @@ public:
 
 
 
+
+
+
+
+
+    bool quickRejectY(SkScalar top, SkScalar bottom) const {
+        SkASSERT(top <= bottom);
+
+#ifndef SK_WILL_NEVER_DRAW_PERSPECTIVE_TEXT
+        
+        
+        
+        if (this->getTotalMatrix().hasPerspective()) {
+            
+            
+            
+            
+            return false;
+        }
+#endif
+
+        const SkRect& clipR = this->getLocalClipBounds();
+        
+        
+        
+        
+        return top >= clipR.fBottom || bottom <= clipR.fTop;
+    }
+
+    
+
+
+
+
     virtual bool getClipBounds(SkRect* bounds) const;
 
     
@@ -596,31 +585,22 @@ public:
 
 
 
-    void drawARGB(U8CPU a, U8CPU r, U8CPU g, U8CPU b, SkBlendMode mode = SkBlendMode::kSrcOver);
-#ifdef SK_SUPPORT_LEGACY_XFERMODE_OBJECT
-    void drawARGB(U8CPU a, U8CPU r, U8CPU g, U8CPU b, SkXfermode::Mode mode) {
-        this->drawARGB(a, r, g, b, (SkBlendMode)mode);
-    }
-#endif
+    void drawARGB(U8CPU a, U8CPU r, U8CPU g, U8CPU b,
+                  SkXfermode::Mode mode = SkXfermode::kSrcOver_Mode);
 
     
 
 
 
 
-    void drawColor(SkColor color, SkBlendMode mode = SkBlendMode::kSrcOver);
-#ifdef SK_SUPPORT_LEGACY_XFERMODE_OBJECT
-    void drawColor(SkColor color, SkXfermode::Mode mode) {
-        this->drawColor(color, (SkBlendMode)mode);
-    }
-#endif
+    void drawColor(SkColor color, SkXfermode::Mode mode = SkXfermode::kSrcOver_Mode);
 
     
 
 
 
     void clear(SkColor color) {
-        this->drawColor(color, SkBlendMode::kSrc);
+        this->drawColor(color, SkXfermode::kSrc_Mode);
     }
 
     
@@ -733,12 +713,6 @@ public:
 
 
 
-    void drawRegion(const SkRegion& region, const SkPaint& paint);
-
-    
-
-
-
 
     void drawOval(const SkRect& oval, const SkPaint&);
 
@@ -769,9 +743,6 @@ public:
                     const SkPaint& paint);
 
     
-
-
-
 
 
 
@@ -962,69 +933,6 @@ public:
 
 
 
-    struct Lattice {
-        enum Flags : uint8_t {
-            
-            kTransparent_Flags = 1 << 0,
-        };
-
-        
-        
-        
-        const int*     fXDivs;
-
-        
-        
-        
-        const int*     fYDivs;
-
-        
-        
-        
-        
-        
-        
-        
-        const Flags*   fFlags;
-
-        
-        int            fXCount;
-
-        
-        int            fYCount;
-
-        
-        
-        
-        const SkIRect* fBounds;
-    };
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    void drawBitmapLattice(const SkBitmap& bitmap, const Lattice& lattice, const SkRect& dst,
-                           const SkPaint* paint = nullptr);
-    void drawImageLattice(const SkImage* image, const Lattice& lattice, const SkRect& dst,
-                          const SkPaint* paint = nullptr);
-
-    
-
-
-
-
-
 
 
     void drawText(const void* text, size_t byteLength, SkScalar x, SkScalar y,
@@ -1085,19 +993,8 @@ public:
 
 
 
-    void drawTextRSXform(const void* text, size_t byteLength, const SkRSXform[],
-                         const SkRect* cullRect, const SkPaint& paint);
-
-    
-
-
-
-
 
     void drawTextBlob(const SkTextBlob* blob, SkScalar x, SkScalar y, const SkPaint& paint);
-    void drawTextBlob(const sk_sp<SkTextBlob>& blob, SkScalar x, SkScalar y, const SkPaint& paint) {
-        this->drawTextBlob(blob.get(), x, y, paint);
-    }
 
     
 
@@ -1128,53 +1025,6 @@ public:
     void drawPicture(const sk_sp<SkPicture>& picture, const SkMatrix* matrix, const SkPaint* paint) {
         this->drawPicture(picture.get(), matrix, paint);
     }
-
-#ifdef SK_EXPERIMENTAL_SHADOWING
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    void drawShadowedPicture(const SkPicture*,
-                             const SkMatrix* matrix,
-                             const SkPaint* paint,
-                             const SkShadowParams& params);
-    void drawShadowedPicture(const sk_sp<SkPicture>& picture,
-                             const SkMatrix* matrix,
-                             const SkPaint* paint,
-                             const SkShadowParams& params) {
-        this->drawShadowedPicture(picture.get(), matrix, paint, params);
-    }
-#endif
 
     enum VertexMode {
         kTriangles_VertexMode,
@@ -1371,7 +1221,45 @@ public:
     
 
     
-    GrDrawContext* internal_private_accessTopLayerDrawContext();
+
+
+
+
+
+    class SK_API LayerIter  {
+    public:
+        
+        LayerIter(SkCanvas*, bool skipEmptyClips);
+        ~LayerIter();
+
+        
+        bool done() const { return fDone; }
+        
+        void next();
+
+        
+
+        SkBaseDevice*   device() const;
+        const SkMatrix& matrix() const;
+        const SkRegion& clip() const;
+        const SkPaint&  paint() const;
+        int             x() const;
+        int             y() const;
+
+    private:
+        
+        
+        
+        
+        
+        intptr_t          fStorage[32];
+        class SkDrawIter* fImpl;    
+        SkPaint           fDefaultPaint;
+        bool              fDone;
+    };
+
+    
+    GrRenderTarget* internal_private_accessTopLayerRenderTarget();
 
     
     static void Internal_Private_SetIgnoreSaveLayerBounds(bool);
@@ -1387,30 +1275,13 @@ public:
                                const SkPaint* paint,
                                SrcRectConstraint constraint = kStrict_SrcRectConstraint);
 
-    
-    
-
-
-    void temporary_internal_describeTopLayer(SkMatrix* matrix, SkIRect* clip_bounds);
-
 protected:
-#ifdef SK_EXPERIMENTAL_SHADOWING
-    
-
-    SkScalar getZ() const;
-
-    sk_sp<SkLights> fLights;
-#endif
-
     
     virtual sk_sp<SkSurface> onNewSurface(const SkImageInfo&, const SkSurfaceProps&);
 
     
     virtual bool onPeekPixels(SkPixmap*);
     virtual bool onAccessTopLayerPixels(SkPixmap*);
-    virtual SkImageInfo onImageInfo() const;
-    virtual bool onGetProps(SkSurfaceProps*) const;
-    virtual void onFlush();
 
     
     
@@ -1429,13 +1300,6 @@ protected:
     virtual void didRestore() {}
     virtual void didConcat(const SkMatrix&) {}
     virtual void didSetMatrix(const SkMatrix&) {}
-    virtual void didTranslate(SkScalar dx, SkScalar dy) {
-        this->didConcat(SkMatrix::MakeTrans(dx, dy));
-    }
-
-#ifdef SK_EXPERIMENTAL_SHADOWING
-    virtual void didTranslateZ(SkScalar) {}
-#endif
 
     virtual void onDrawAnnotation(const SkRect&, const char key[], SkData* value);
     virtual void onDrawDRRect(const SkRRect&, const SkRRect&, const SkPaint&);
@@ -1453,8 +1317,6 @@ protected:
     virtual void onDrawTextOnPath(const void* text, size_t byteLength,
                                   const SkPath& path, const SkMatrix* matrix,
                                   const SkPaint& paint);
-    virtual void onDrawTextRSXform(const void* text, size_t byteLength, const SkRSXform[],
-                                   const SkRect* cullRect, const SkPaint& paint);
 
     virtual void onDrawTextBlob(const SkTextBlob* blob, SkScalar x, SkScalar y,
                                 const SkPaint& paint);
@@ -1466,10 +1328,7 @@ protected:
 
     virtual void onDrawPaint(const SkPaint&);
     virtual void onDrawRect(const SkRect&, const SkPaint&);
-    virtual void onDrawRegion(const SkRegion& region, const SkPaint& paint);
     virtual void onDrawOval(const SkRect&, const SkPaint&);
-    virtual void onDrawArc(const SkRect&, SkScalar startAngle, SkScalar sweepAngle, bool useCenter,
-                           const SkPaint&);
     virtual void onDrawRRect(const SkRRect&, const SkPaint&);
     virtual void onDrawPoints(PointMode, size_t count, const SkPoint pts[], const SkPaint&);
     virtual void onDrawVertices(VertexMode, int vertexCount, const SkPoint vertices[],
@@ -1484,38 +1343,27 @@ protected:
                                  SrcRectConstraint);
     virtual void onDrawImageNine(const SkImage*, const SkIRect& center, const SkRect& dst,
                                  const SkPaint*);
-    virtual void onDrawImageLattice(const SkImage*, const Lattice& lattice, const SkRect& dst,
-                                    const SkPaint*);
 
     virtual void onDrawBitmap(const SkBitmap&, SkScalar dx, SkScalar dy, const SkPaint*);
     virtual void onDrawBitmapRect(const SkBitmap&, const SkRect*, const SkRect&, const SkPaint*,
                                   SrcRectConstraint);
     virtual void onDrawBitmapNine(const SkBitmap&, const SkIRect& center, const SkRect& dst,
                                   const SkPaint*);
-    virtual void onDrawBitmapLattice(const SkBitmap&, const Lattice& lattice, const SkRect& dst,
-                                     const SkPaint*);
 
     enum ClipEdgeStyle {
         kHard_ClipEdgeStyle,
         kSoft_ClipEdgeStyle
     };
 
-    virtual void onClipRect(const SkRect& rect, ClipOp, ClipEdgeStyle);
-    virtual void onClipRRect(const SkRRect& rrect, ClipOp, ClipEdgeStyle);
-    virtual void onClipPath(const SkPath& path, ClipOp, ClipEdgeStyle);
-    virtual void onClipRegion(const SkRegion& deviceRgn, ClipOp);
+    virtual void onClipRect(const SkRect& rect, SkRegion::Op op, ClipEdgeStyle edgeStyle);
+    virtual void onClipRRect(const SkRRect& rrect, SkRegion::Op op, ClipEdgeStyle edgeStyle);
+    virtual void onClipPath(const SkPath& path, SkRegion::Op op, ClipEdgeStyle edgeStyle);
+    virtual void onClipRegion(const SkRegion& deviceRgn, SkRegion::Op op);
 
     virtual void onDiscard();
 
     virtual void onDrawPicture(const SkPicture*, const SkMatrix*, const SkPaint*);
 
-#ifdef SK_EXPERIMENTAL_SHADOWING
-    virtual void onDrawShadowedPicture(const SkPicture*,
-                                       const SkMatrix*,
-                                       const SkPaint*,
-                                       const SkShadowParams& params);
-#endif
-    
     
     
     
@@ -1530,50 +1378,8 @@ protected:
                         const SkImageFilter* imageFilter = NULL);
 
 private:
-    
-
-
-
-
-
-    class LayerIter  {
-    public:
-        
-        LayerIter(SkCanvas*);
-        ~LayerIter();
-
-        
-        bool done() const { return fDone; }
-        
-        void next();
-
-        
-
-        SkBaseDevice*   device() const;
-        const SkMatrix& matrix() const;
-        const SkRasterClip& clip() const;
-        const SkPaint&  paint() const;
-        int             x() const;
-        int             y() const;
-
-    private:
-        
-        
-        
-        
-        
-        intptr_t          fStorage[32];
-        class SkDrawIter* fImpl;    
-        SkPaint           fDefaultPaint;
-        bool              fDone;
-    };
-    
     static bool BoundsAffectsClip(SaveLayerFlags);
     static SaveLayerFlags LegacySaveFlagsToSaveLayerFlags(uint32_t legacySaveFlags);
-
-    static void DrawDeviceWithFilter(SkBaseDevice* src, const SkImageFilter* filter,
-                                     SkBaseDevice* dst, const SkMatrix& ctm,
-                                     const SkClipStack* clipStack);
 
     enum ShaderOverrideOpacity {
         kNone_ShaderOverrideOpacity,        
@@ -1600,7 +1406,7 @@ private:
     enum {
         kMCRecSize      = 128,  
         kMCRecCount     = 32,   
-        kDeviceCMSize   = 176,  
+        kDeviceCMSize   = 136,  
     };
     intptr_t fMCRecStorage[kMCRecSize * kMCRecCount / sizeof(intptr_t)];
     intptr_t fDeviceCMStorage[kDeviceCMSize / sizeof(intptr_t)];
@@ -1624,7 +1430,6 @@ private:
 
     void doSave();
     void checkForDeferredSave();
-    void internalSetMatrix(const SkMatrix&);
 
     friend class SkDrawIter;        
     friend class AutoDrawLooper;
@@ -1632,7 +1437,6 @@ private:
     friend class SkDebugCanvas;     
     friend class SkSurface_Raster;  
     friend class SkRecorder;        
-    friend class SkLiteRecorder;        
     friend class SkNoSaveLayerCanvas;   
     friend class SkPictureImageFilter;  
     friend class SkPictureRecord;   
@@ -1668,7 +1472,7 @@ private:
                                 SrcRectConstraint);
     void internalDrawPaint(const SkPaint& paint);
     void internalSaveLayer(const SaveLayerRec&, SaveLayerStrategy);
-    void internalDrawDevice(SkBaseDevice*, int x, int y, const SkPaint*);
+    void internalDrawDevice(SkBaseDevice*, int x, int y, const SkPaint*, bool isBitmapDevice);
 
     
     void internalSave();
@@ -1694,17 +1498,24 @@ private:
 
     bool canDrawBitmapAsSprite(SkScalar x, SkScalar y, int w, int h, const SkPaint&);
 
-
     
 
 
-
-    bool   fIsScaleTranslate;
-    SkRect fDeviceClipBounds;
-
+    mutable SkRect fCachedLocalClipBounds;
+    mutable bool   fCachedLocalClipBoundsDirty;
     bool fAllowSoftClip;
     bool fAllowSimplifyClip;
     const bool fConservativeRasterClip;
+
+    const SkRect& getLocalClipBounds() const {
+        if (fCachedLocalClipBoundsDirty) {
+            if (!this->getClipBounds(&fCachedLocalClipBounds)) {
+                fCachedLocalClipBounds.setEmpty();
+            }
+            fCachedLocalClipBoundsDirty = false;
+        }
+        return fCachedLocalClipBounds;
+    }
 
     class AutoValidateClip : ::SkNoncopyable {
     public:
@@ -1766,9 +1577,9 @@ private:
 class SkCanvasClipVisitor {
 public:
     virtual ~SkCanvasClipVisitor();
-    virtual void clipRect(const SkRect&, SkCanvas::ClipOp, bool antialias) = 0;
-    virtual void clipRRect(const SkRRect&, SkCanvas::ClipOp, bool antialias) = 0;
-    virtual void clipPath(const SkPath&, SkCanvas::ClipOp, bool antialias) = 0;
+    virtual void clipRect(const SkRect&, SkRegion::Op, bool antialias) = 0;
+    virtual void clipRRect(const SkRRect&, SkRegion::Op, bool antialias) = 0;
+    virtual void clipPath(const SkPath&, SkRegion::Op, bool antialias) = 0;
 };
 
 #endif

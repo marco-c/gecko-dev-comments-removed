@@ -32,6 +32,11 @@ public:
                                       int* left, int* top, int* width, int* height,
                                       const void** data,
                                       size_t* rowBytes);
+    
+
+
+
+    SkImageInfo info(SkAlphaType alphaType) const { return fSurface->info(alphaType); }
 
     
 

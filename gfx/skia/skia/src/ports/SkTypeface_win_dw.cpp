@@ -45,7 +45,6 @@ void DWriteFontTypeface::onGetFontDescriptor(SkFontDescriptor* desc,
     sk_get_locale_string(familyNames.get(), nullptr, &utf8FamilyName);
 
     desc->setFamilyName(utf8FamilyName.c_str());
-    desc->setStyle(this->fontStyle());
     *isLocalStream = SkToBool(fDWriteFontFileLoader.get());
 }
 
@@ -245,9 +244,8 @@ SkStreamAsset* DWriteFontTypeface::onOpenStream(int* ttcIndex) const {
     return new SkDWriteFontFileStream(fontFileStream.get());
 }
 
-SkScalerContext* DWriteFontTypeface::onCreateScalerContext(const SkScalerContextEffects& effects,
-                                                           const SkDescriptor* desc) const {
-    return new SkScalerContext_DW(const_cast<DWriteFontTypeface*>(this), effects, desc);
+SkScalerContext* DWriteFontTypeface::onCreateScalerContext(const SkDescriptor* desc) const {
+    return new SkScalerContext_DW(const_cast<DWriteFontTypeface*>(this), desc);
 }
 
 void DWriteFontTypeface::onFilterRec(SkScalerContext::Rec* rec) const {
@@ -267,7 +265,7 @@ void DWriteFontTypeface::onFilterRec(SkScalerContext::Rec* rec) const {
     h = SkPaint::kSlight_Hinting;
     rec->setHinting(h);
 
-#if defined(SK_FONT_HOST_USE_SYSTEM_SETTINGS)
+#if SK_FONT_HOST_USE_SYSTEM_SETTINGS
     IDWriteFactory* factory = sk_get_dwrite_factory();
     if (factory != nullptr) {
         SkTScopedComPtr<IDWriteRenderingParams> defaultRenderingParams;
@@ -284,6 +282,8 @@ void DWriteFontTypeface::onFilterRec(SkScalerContext::Rec* rec) const {
 
 
 
+
+using namespace skia_advanced_typeface_metrics_utils;
 
 
 
@@ -313,6 +313,22 @@ static void populate_glyph_to_unicode(IDWriteFontFace* fontFace,
     SkTDArray<SkUnichar>(glyphToUni, maxGlyph + 1).swap(*glyphToUnicode);
 }
 
+static bool getWidthAdvance(IDWriteFontFace* fontFace, int gId, int16_t* advance) {
+    SkASSERT(advance);
+
+    UINT16 glyphId = gId;
+    DWRITE_GLYPH_METRICS gm;
+    HRESULT hr = fontFace->GetDesignGlyphMetrics(&glyphId, 1, &gm);
+
+    if (FAILED(hr)) {
+        *advance = 0;
+        return false;
+    }
+
+    *advance = gm.advanceWidth;
+    return true;
+}
+
 SkAdvancedTypefaceMetrics* DWriteFontTypeface::onGetAdvancedTypefaceMetrics(
         PerGlyphInfo perGlyphInfo,
         const uint32_t* glyphIDs,
@@ -330,10 +346,6 @@ SkAdvancedTypefaceMetrics* DWriteFontTypeface::onGetAdvancedTypefaceMetrics(
     info = new SkAdvancedTypefaceMetrics;
     info->fEmSize = dwfm.designUnitsPerEm;
     info->fLastGlyphID = SkToU16(glyphCount - 1);
-
-    info->fAscent = SkToS16(dwfm.ascent);
-    info->fDescent = SkToS16(dwfm.descent);
-    info->fCapHeight = SkToS16(dwfm.capHeight);
 
     
     
@@ -354,15 +366,14 @@ SkAdvancedTypefaceMetrics* DWriteFontTypeface::onGetAdvancedTypefaceMetrics(
     }
 
     DWRITE_FONT_FACE_TYPE fontType = fDWriteFontFace->GetType();
-    if (fontType != DWRITE_FONT_FACE_TYPE_TRUETYPE &&
-        fontType != DWRITE_FONT_FACE_TYPE_TRUETYPE_COLLECTION)
-    {
-        return info;
-    }
-
-    
-    if (fDWriteFontFace->GetSimulations() == DWRITE_FONT_SIMULATIONS_NONE) {
+    if (fontType == DWRITE_FONT_FACE_TYPE_TRUETYPE ||
+        fontType == DWRITE_FONT_FACE_TYPE_TRUETYPE_COLLECTION) {
         info->fType = SkAdvancedTypefaceMetrics::kTrueType_Font;
+    } else {
+        info->fAscent = dwfm.ascent;
+        info->fDescent = dwfm.descent;
+        info->fCapHeight = dwfm.capHeight;
+        return info;
     }
 
     AutoTDWriteTable<SkOTTableHead> headTable(fDWriteFontFace.get());
@@ -370,6 +381,9 @@ SkAdvancedTypefaceMetrics* DWriteFontTypeface::onGetAdvancedTypefaceMetrics(
     AutoTDWriteTable<SkOTTableHorizontalHeader> hheaTable(fDWriteFontFace.get());
     AutoTDWriteTable<SkOTTableOS2> os2Table(fDWriteFontFace.get());
     if (!headTable.fExists || !postTable.fExists || !hheaTable.fExists || !os2Table.fExists) {
+        info->fAscent = dwfm.ascent;
+        info->fDescent = dwfm.descent;
+        info->fCapHeight = dwfm.capHeight;
         return info;
     }
 
@@ -386,32 +400,65 @@ SkAdvancedTypefaceMetrics* DWriteFontTypeface::onGetAdvancedTypefaceMetrics(
         info->fStyle |= SkAdvancedTypefaceMetrics::kItalic_Style;
     }
     
-    using SerifStyle = SkPanose::Data::TextAndDisplay::SerifStyle;
-    SerifStyle serifStyle = os2Table->version.v0.panose.data.textAndDisplay.bSerifStyle;
-    if (SkPanose::FamilyType::TextAndDisplay == os2Table->version.v0.panose.bFamilyType) {
-        if (SerifStyle::Cove == serifStyle ||
-            SerifStyle::ObtuseCove == serifStyle ||
-            SerifStyle::SquareCove == serifStyle ||
-            SerifStyle::ObtuseSquareCove == serifStyle ||
-            SerifStyle::Square == serifStyle ||
-            SerifStyle::Thin == serifStyle ||
-            SerifStyle::Bone == serifStyle ||
-            SerifStyle::Exaggerated == serifStyle ||
-            SerifStyle::Triangle == serifStyle)
-        {
-            info->fStyle |= SkAdvancedTypefaceMetrics::kSerif_Style;
-        }
-    
-    } else if (SkPanose::FamilyType::Script == os2Table->version.v0.panose.bFamilyType) {
+    if (SkPanose::FamilyType::Script == os2Table->version.v0.panose.bFamilyType.value) {
         info->fStyle |= SkAdvancedTypefaceMetrics::kScript_Style;
+    
+    } else if (SkPanose::FamilyType::TextAndDisplay == os2Table->version.v0.panose.bFamilyType.value &&
+               SkPanose::Data::TextAndDisplay::SerifStyle::Triangle <= os2Table->version.v0.panose.data.textAndDisplay.bSerifStyle.value &&
+               SkPanose::Data::TextAndDisplay::SerifStyle::NoFit != os2Table->version.v0.panose.data.textAndDisplay.bSerifStyle.value) {
+        info->fStyle |= SkAdvancedTypefaceMetrics::kSerif_Style;
     }
 
     info->fItalicAngle = SkEndian_SwapBE32(postTable->italicAngle) >> 16;
+
+    info->fAscent = SkToS16(dwfm.ascent);
+    info->fDescent = SkToS16(dwfm.descent);
+    info->fCapHeight = SkToS16(dwfm.capHeight);
 
     info->fBBox = SkIRect::MakeLTRB((int32_t)SkEndian_SwapBE16((uint16_t)headTable->xMin),
                                     (int32_t)SkEndian_SwapBE16((uint16_t)headTable->yMax),
                                     (int32_t)SkEndian_SwapBE16((uint16_t)headTable->xMax),
                                     (int32_t)SkEndian_SwapBE16((uint16_t)headTable->yMin));
+
+    
+    
+    info->fStemV = 0;
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    if (perGlyphInfo & kHAdvance_PerGlyphInfo) {
+        if (fixedWidth) {
+            appendRange(&info->fGlyphWidths, 0);
+            int16_t advance;
+            getWidthAdvance(fDWriteFontFace.get(), 1, &advance);
+            info->fGlyphWidths->fAdvance.append(1, &advance);
+            finishRange(info->fGlyphWidths.get(), 0,
+                        SkAdvancedTypefaceMetrics::WidthRange::kDefault);
+        } else {
+            info->fGlyphWidths.reset(
+                getAdvanceData(fDWriteFontFace.get(),
+                               glyphCount,
+                               glyphIDs,
+                               glyphIDsCount,
+                               getWidthAdvance));
+        }
+    }
+
     return info;
 }
 #endif

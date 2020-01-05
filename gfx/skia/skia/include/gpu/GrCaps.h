@@ -63,7 +63,6 @@ public:
     bool dstReadInShaderSupport() const { return fDstReadInShaderSupport; }
     bool dualSourceBlendingSupport() const { return fDualSourceBlendingSupport; }
     bool integerSupport() const { return fIntegerSupport; }
-    bool texelBufferSupport() const { return fTexelBufferSupport; }
 
     
 
@@ -74,7 +73,7 @@ public:
     const PrecisionInfo& getFloatShaderPrecisionInfo(GrShaderType shaderType,
                                                      GrSLPrecision precision) const {
         return fFloatPrecisions[shaderType][precision];
-    }
+    };
 
     
 
@@ -93,7 +92,7 @@ public:
 
 
 
-    bool plsPathRenderingSupport() const {
+    bool plsPathRenderingSupport() const { 
 #if GR_ENABLE_PLS_PATH_RENDERING
         return fPLSPathRenderingSupport;
 #else
@@ -112,7 +111,6 @@ protected:
     bool fDstReadInShaderSupport : 1;
     bool fDualSourceBlendingSupport : 1;
     bool fIntegerSupport : 1;
-    bool fTexelBufferSupport : 1;
 
     bool fShaderPrecisionVaries;
     PrecisionInfo fFloatPrecisions[kGrShaderTypeCount][kGrSLPrecisionCount];
@@ -120,7 +118,7 @@ protected:
     bool fPLSPathRenderingSupport;
 
 private:
-    virtual void onApplyOptionsOverrides(const GrContextOptions&) {}
+    virtual void onApplyOptionsOverrides(const GrContextOptions&) {};
     typedef SkRefCnt INHERITED;
 };
 
@@ -145,11 +143,8 @@ public:
 
 
 
+
     bool srgbSupport() const { return fSRGBSupport; }
-    
-
-
-    bool srgbWriteControl() const { return fSRGBWriteControl; }
     bool twoSidedStencilSupport() const { return fTwoSidedStencilSupport; }
     bool stencilWrapOpsSupport() const { return  fStencilWrapOpsSupport; }
     bool discardRenderTargetSupport() const { return fDiscardRenderTargetSupport; }
@@ -158,9 +153,7 @@ public:
     bool oversizedStencilSupport() const { return fOversizedStencilSupport; }
     bool textureBarrierSupport() const { return fTextureBarrierSupport; }
     bool sampleLocationsSupport() const { return fSampleLocationsSupport; }
-    bool multisampleDisableSupport() const { return fMultisampleDisableSupport; }
     bool usesMixedSamples() const { return fUsesMixedSamples; }
-    bool preferClientSideDynamicBuffers() const { return fPreferClientSideDynamicBuffers; }
 
     bool useDrawInsteadOfClear() const { return fUseDrawInsteadOfClear; }
     bool useDrawInsteadOfPartialRenderTargetWrite() const {
@@ -172,21 +165,6 @@ public:
     }
 
     bool preferVRAMUseOverFlushes() const { return fPreferVRAMUseOverFlushes; }
-
-    
-
-
-
-    enum class InstancedSupport {
-        kNone,
-        kBasic,
-        kMultisampled,
-        kMixedSampled
-    };
-
-    InstancedSupport instancedSupport() const { return fInstancedSupport; }
-
-    bool avoidInstancedDrawsToFPTargets() const { return fAvoidInstancedDrawsToFPTargets; }
 
     
 
@@ -264,7 +242,6 @@ public:
         }
     }
 
-    int maxWindowRectangles() const { return fMaxWindowRectangles; }
 
     virtual bool isConfigTexturable(GrPixelConfig config) const = 0;
     virtual bool isConfigRenderable(GrPixelConfig config, bool withMSAA) const = 0;
@@ -273,9 +250,17 @@ public:
 
     bool immediateFlush() const { return fImmediateFlush; }
 
+    bool drawPathMasksToCompressedTexturesSupport() const {
+        return fDrawPathMasksToCompressedTextureSupport;
+    }
+
     size_t bufferMapThreshold() const {
         SkASSERT(fBufferMapThreshold >= 0);
         return fBufferMapThreshold;
+    }
+
+    bool supportsInstancedDraws() const {
+        return fSupportsInstancedDraws;
     }
 
     bool fullClearIsFree() const { return fFullClearIsFree; }
@@ -285,8 +270,6 @@ public:
     bool mustClearUploadedBufferData() const { return fMustClearUploadedBufferData; }
 
     bool sampleShadingSupport() const { return fSampleShadingSupport; }
-
-    bool fenceSyncSupport() const { return fFenceSyncSupport; }
 
 protected:
     
@@ -299,7 +282,6 @@ protected:
     bool fNPOTTextureTileSupport                     : 1;
     bool fMipMapSupport                              : 1;
     bool fSRGBSupport                                : 1;
-    bool fSRGBWriteControl                           : 1;
     bool fTwoSidedStencilSupport                     : 1;
     bool fStencilWrapOpsSupport                      : 1;
     bool fDiscardRenderTargetSupport                 : 1;
@@ -310,9 +292,8 @@ protected:
     bool fOversizedStencilSupport                    : 1;
     bool fTextureBarrierSupport                      : 1;
     bool fSampleLocationsSupport                     : 1;
-    bool fMultisampleDisableSupport                  : 1;
     bool fUsesMixedSamples                           : 1;
-    bool fPreferClientSideDynamicBuffers             : 1;
+    bool fSupportsInstancedDraws                     : 1;
     bool fFullClearIsFree                            : 1;
     bool fMustClearUploadedBufferData                : 1;
 
@@ -320,16 +301,11 @@ protected:
     bool fUseDrawInsteadOfClear                      : 1;
     bool fUseDrawInsteadOfPartialRenderTargetWrite   : 1;
     bool fUseDrawInsteadOfAllRenderTargetWrites      : 1;
-    bool fAvoidInstancedDrawsToFPTargets             : 1;
 
     
     bool fPreferVRAMUseOverFlushes                   : 1;
 
     bool fSampleShadingSupport                       : 1;
-    
-    bool fFenceSyncSupport                           : 1;
-
-    InstancedSupport fInstancedSupport;
 
     BlendEquationSupport fBlendEquationSupport;
     uint32_t fAdvBlendEqBlacklist;
@@ -345,13 +321,13 @@ protected:
     int fMaxColorSampleCount;
     int fMaxStencilSampleCount;
     int fMaxRasterSamples;
-    int fMaxWindowRectangles;
 
 private:
-    virtual void onApplyOptionsOverrides(const GrContextOptions&) {}
+    virtual void onApplyOptionsOverrides(const GrContextOptions&) {};
 
     bool fSuppressPrints : 1;
     bool fImmediateFlush: 1;
+    bool fDrawPathMasksToCompressedTextureSupport : 1;
 
     typedef SkRefCnt INHERITED;
 };

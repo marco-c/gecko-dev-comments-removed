@@ -10,13 +10,13 @@
 
 #include "SkBitmap.h"
 #include "SkPicture.h"
-#include "SkPixelSerializer.h"
 #include "SkRect.h"
 #include "SkRefCnt.h"
 #include "SkString.h"
 #include "SkTime.h"
 
 class SkCanvas;
+class SkPixelSerializer;
 class SkWStream;
 
 
@@ -35,55 +35,6 @@ class SkWStream;
 
 class SK_API SkDocument : public SkRefCnt {
 public:
-    struct OptionalTimestamp {
-        SkTime::DateTime fDateTime;
-        bool fEnabled;
-        OptionalTimestamp() : fEnabled(false) {}
-    };
-
-    
-
-
-    struct PDFMetadata {
-        
-
-
-        SkString fTitle;
-        
-
-
-        SkString fAuthor;
-        
-
-
-        SkString fSubject;
-        
-
-
-
-        SkString fKeywords;
-        
-
-
-
-
-        SkString fCreator;
-        
-
-
-
-
-        SkString fProducer;
-        
-
-
-        OptionalTimestamp fCreation;
-        
-
-
-        OptionalTimestamp fModified;
-    };
-
     
 
 
@@ -104,57 +55,46 @@ public:
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    static sk_sp<SkDocument> MakePDF(SkWStream* stream,
-                                     SkScalar dpi,
-                                     const SkDocument::PDFMetadata& metadata,
-                                     sk_sp<SkPixelSerializer> jpegEncoder,
-                                     bool pdfa);
-
-    static sk_sp<SkDocument> MakePDF(SkWStream* stream,
-                                     SkScalar dpi = SK_ScalarDefaultRasterDPI) {
-        return SkDocument::MakePDF(stream, dpi, SkDocument::PDFMetadata(),
-                                   nullptr, false);
-    }
-
-    
-
-
-    static sk_sp<SkDocument> MakePDF(const char outputFilePath[],
-                                     SkScalar dpi = SK_ScalarDefaultRasterDPI);
+    static SkDocument* CreatePDF(SkWStream*,
+                                 SkScalar dpi = SK_ScalarDefaultRasterDPI);
 
     
 
 
 
-    static sk_sp<SkDocument> MakeXPS(SkWStream* stream,
-                                     SkScalar dpi = SK_ScalarDefaultRasterDPI);
+
+
+
+
+
+
+
+
+
+
+    static SkDocument* CreatePDF(SkWStream*,
+                                 SkScalar dpi,
+                                 SkPixelSerializer* jpegEncoder);
+
+    
+
+
+    static SkDocument* CreatePDF(const char outputFilePath[],
+                                 SkScalar dpi = SK_ScalarDefaultRasterDPI);
 
     
 
 
 
-    static sk_sp<SkDocument> MakeXPS(const char path[],
-                                     SkScalar dpi = SK_ScalarDefaultRasterDPI);
+    static SkDocument* CreateXPS(SkWStream* stream,
+                                 SkScalar dpi = SK_ScalarDefaultRasterDPI);
 
+    
+
+
+
+    static SkDocument* CreateXPS(const char path[],
+                                 SkScalar dpi = SK_ScalarDefaultRasterDPI);
     
 
 
@@ -176,13 +116,42 @@ public:
 
 
 
-    void close();
+
+    bool close();
 
     
 
 
 
     void abort();
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    struct Attribute {
+        SkString fKey, fValue;
+        Attribute(const SkString& k, const SkString& v) : fKey(k), fValue(v) {}
+    };
+    virtual void setMetadata(const SkDocument::Attribute[],
+                             int ,
+                             const SkTime::DateTime* ,
+                             const SkTime::DateTime* ) {}
 
 protected:
     SkDocument(SkWStream*, void (*)(SkWStream*, bool aborted));
@@ -194,7 +163,7 @@ protected:
     virtual SkCanvas* onBeginPage(SkScalar width, SkScalar height,
                                   const SkRect& content) = 0;
     virtual void onEndPage() = 0;
-    virtual void onClose(SkWStream*) = 0;
+    virtual bool onClose(SkWStream*) = 0;
     virtual void onAbort() = 0;
 
     

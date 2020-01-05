@@ -9,7 +9,7 @@
 
 void SkSpinlock::contendedAcquire() {
     
-    while (fLocked.exchange(true, std::memory_order_acquire)) {
+    while (fLocked.exchange(true, sk_memory_order_acquire)) {
         
     }
 }

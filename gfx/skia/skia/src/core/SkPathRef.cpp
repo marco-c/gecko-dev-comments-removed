@@ -6,7 +6,7 @@
 
 
 #include "SkBuffer.h"
-#include "SkOnce.h"
+#include "SkOncePtr.h"
 #include "SkPath.h"
 #include "SkPathRef.h"
 #include <limits>
@@ -45,70 +45,13 @@ SkPathRef::~SkPathRef() {
     SkDEBUGCODE(fEditorsAttached = 0x7777777;)
 }
 
-static SkPathRef* gEmpty = nullptr;
-
+SK_DECLARE_STATIC_ONCE_PTR(SkPathRef, empty);
 SkPathRef* SkPathRef::CreateEmpty() {
-    static SkOnce once;
-    once([]{
-        gEmpty = new SkPathRef;
-        gEmpty->computeBounds();   
-    });
-    return SkRef(gEmpty);
-}
-
-static void transform_dir_and_start(const SkMatrix& matrix, bool isRRect, bool* isCCW,
-                                    unsigned* start) {
-    int inStart = *start;
-    int rm = 0;
-    if (isRRect) {
-        
-        
-        rm = inStart & 0b1;
-        inStart /= 2;
-    }
-    
-    int antiDiag;
-    
-    int topNeg;
-    
-    int sameSign;
-    if (matrix.get(SkMatrix::kMScaleX) != 0) {
-        antiDiag = 0b00;
-        if (matrix.get(SkMatrix::kMScaleX) > 0) {
-            topNeg = 0b00;
-            sameSign = matrix.get(SkMatrix::kMScaleY) > 0 ? 0b01 : 0b00;
-        } else {
-            topNeg = 0b10;
-            sameSign = matrix.get(SkMatrix::kMScaleY) > 0 ? 0b00 : 0b01;
-        }
-    } else {
-        antiDiag = 0b01;
-        if (matrix.get(SkMatrix::kMSkewX) > 0) {
-            topNeg = 0b00;
-            sameSign = matrix.get(SkMatrix::kMSkewY) > 0 ? 0b01 : 0b00;
-        } else {
-            topNeg = 0b10;
-            sameSign = matrix.get(SkMatrix::kMSkewY) > 0 ? 0b00 : 0b01;
-        }
-    }
-    if (sameSign != antiDiag) {
-        
-        
-        *start = (inStart + 4 - (topNeg | antiDiag)) % 4;
-        SkASSERT(*start < 4);
-        if (isRRect) {
-            *start = 2 * *start + rm;
-        }
-    } else {
-        
-        *isCCW = !*isCCW;
-        
-        *start = (6 + (topNeg | antiDiag) - inStart) % 4;
-        SkASSERT(*start < 4);
-        if (isRRect) {
-            *start = 2 * *start + (rm ? 0 : 1);
-        }
-    }
+    return SkRef(empty.get([]{
+        SkPathRef* pr = new SkPathRef;
+        pr->computeBounds();   
+        return pr;
+    }));
 }
 
 void SkPathRef::CreateTransformedCopy(SkAutoTUnref<SkPathRef>* dst,
@@ -181,13 +124,6 @@ void SkPathRef::CreateTransformedCopy(SkAutoTUnref<SkPathRef>* dst,
     bool rectStaysRect = matrix.rectStaysRect();
     (*dst)->fIsOval = src.fIsOval && rectStaysRect;
     (*dst)->fIsRRect = src.fIsRRect && rectStaysRect;
-    if ((*dst)->fIsOval || (*dst)->fIsRRect) {
-        unsigned start = src.fRRectOrOvalStartIdx;
-        bool isCCW = SkToBool(src.fRRectOrOvalIsCCW);
-        transform_dir_and_start(matrix, (*dst)->fIsRRect, &isCCW, &start);
-        (*dst)->fRRectOrOvalIsCCW = isCCW;
-        (*dst)->fRRectOrOvalStartIdx = start;
-    }
 
     SkDEBUGCODE((*dst)->validate();)
 }
@@ -205,8 +141,6 @@ SkPathRef* SkPathRef::CreateFromBuffer(SkRBuffer* buffer) {
     uint8_t segmentMask = (packed >> kSegmentMask_SerializationShift) & 0xF;
     bool isOval  = (packed >> kIsOval_SerializationShift) & 1;
     bool isRRect  = (packed >> kIsRRect_SerializationShift) & 1;
-    bool rrectOrOvalIsCCW = (packed >> kRRectOrOvalIsCCW_SerializationShift) & 1;
-    unsigned rrectOrOvalStartIdx = (packed >> kRRectOrOvalStartIdx_SerializationShift) & 0x7;
 
     int32_t verbCount, pointCount, conicCount;
     ptrdiff_t maxPtrDiff = std::numeric_limits<ptrdiff_t>::max();
@@ -243,8 +177,6 @@ SkPathRef* SkPathRef::CreateFromBuffer(SkRBuffer* buffer) {
     ref->fSegmentMask = segmentMask;
     ref->fIsOval = isOval;
     ref->fIsRRect = isRRect;
-    ref->fRRectOrOvalIsCCW = rrectOrOvalIsCCW;
-    ref->fRRectOrOvalStartIdx = rrectOrOvalStartIdx;
     return ref;
 }
 
@@ -325,9 +257,7 @@ void SkPathRef::writeToBuffer(SkWBuffer* buffer) const {
     
     const SkRect& bounds = this->getBounds();
 
-    int32_t packed = ((fRRectOrOvalStartIdx & 7) << kRRectOrOvalStartIdx_SerializationShift) |
-                     ((fRRectOrOvalIsCCW & 1) << kRRectOrOvalIsCCW_SerializationShift) |
-                     ((fIsFinite & 1) << kIsFinite_SerializationShift) |
+    int32_t packed = ((fIsFinite & 1) << kIsFinite_SerializationShift) |
                      ((fIsOval & 1) << kIsOval_SerializationShift) |
                      ((fIsRRect & 1) << kIsRRect_SerializationShift) |
                      (fSegmentMask << kSegmentMask_SerializationShift);
@@ -372,8 +302,6 @@ void SkPathRef::copy(const SkPathRef& ref,
     fSegmentMask = ref.fSegmentMask;
     fIsOval = ref.fIsOval;
     fIsRRect = ref.fIsRRect;
-    fRRectOrOvalIsCCW = ref.fRRectOrOvalIsCCW;
-    fRRectOrOvalStartIdx = ref.fRRectOrOvalStartIdx;
     SkDEBUGCODE(this->validate();)
 }
 
@@ -547,7 +475,7 @@ uint32_t SkPathRef::genID() const {
 }
 
 void SkPathRef::addGenIDChangeListener(GenIDChangeListener* listener) {
-    if (nullptr == listener || this == gEmpty) {
+    if (nullptr == listener || this == (SkPathRef*)empty) {
         delete listener;
         return;
     }
@@ -625,10 +553,7 @@ void SkPathRef::Iter::setPathRef(const SkPathRef& path) {
     fPts = path.points();
     fVerbs = path.verbs();
     fVerbStop = path.verbsMemBegin();
-    fConicWeights = path.conicWeights();
-    if (fConicWeights) {
-      fConicWeights -= 1;  
-    }
+    fConicWeights = path.conicWeights() - 1; 
 }
 
 uint8_t SkPathRef::Iter::next(SkPoint pts[4]) {
@@ -683,10 +608,8 @@ uint8_t SkPathRef::Iter::peek() const {
 }
 
 #ifdef SK_DEBUG
-
-#include "SkNx.h"
-
 void SkPathRef::validate() const {
+    this->INHERITED::validate();
     SkASSERT(static_cast<ptrdiff_t>(fFreeSpace) >= 0);
     SkASSERT(reinterpret_cast<intptr_t>(fVerbs) - reinterpret_cast<intptr_t>(fPoints) >= 0);
     SkASSERT((nullptr == fPoints) == (nullptr == fVerbs));
@@ -697,25 +620,13 @@ void SkPathRef::validate() const {
     SkASSERT(this->currSize() ==
                 fFreeSpace + sizeof(SkPoint) * fPointCnt + sizeof(uint8_t) * fVerbCnt);
 
-    if (fIsOval || fIsRRect) {
-        
-        SkASSERT(fIsOval != fIsRRect);
-        if (fIsOval) {
-            SkASSERT(fRRectOrOvalStartIdx < 4);
-        } else {
-            SkASSERT(fRRectOrOvalStartIdx < 8);
-        }
-    }
-
     if (!fBoundsIsDirty && !fBounds.isEmpty()) {
         bool isFinite = true;
-        Sk2s leftTop = Sk2s(fBounds.fLeft, fBounds.fTop);
-        Sk2s rightBot = Sk2s(fBounds.fRight, fBounds.fBottom);
         for (int i = 0; i < fPointCnt; ++i) {
-            Sk2s point = Sk2s(fPoints[i].fX, fPoints[i].fY);
 #ifdef SK_DEBUG
             if (fPoints[i].isFinite() &&
-                ((point < leftTop).anyTrue() || (point > rightBot).anyTrue())) {
+                (fPoints[i].fX < fBounds.fLeft || fPoints[i].fX > fBounds.fRight ||
+                 fPoints[i].fY < fBounds.fTop || fPoints[i].fY > fBounds.fBottom)) {
                 SkDebugf("bounds: %f %f %f %f\n",
                          fBounds.fLeft, fBounds.fTop, fBounds.fRight, fBounds.fBottom);
                 for (int j = 0; j < fPointCnt; ++j) {
@@ -728,7 +639,8 @@ void SkPathRef::validate() const {
 #endif
 
             SkASSERT(!fPoints[i].isFinite() ||
-                    (!(point < leftTop).anyTrue() && !(point > rightBot).anyTrue()));
+		     (fPoints[i].fX >= fBounds.fLeft && fPoints[i].fX <= fBounds.fRight &&
+		      fPoints[i].fY >= fBounds.fTop && fPoints[i].fY <= fBounds.fBottom));
             if (!fPoints[i].isFinite()) {
                 isFinite = false;
             }

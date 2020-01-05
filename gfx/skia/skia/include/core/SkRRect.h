@@ -44,12 +44,9 @@ class SkMatrix;
 
 
 
+
 class SK_API SkRRect {
 public:
-    SkRRect() {  }
-    SkRRect(const SkRRect&) = default;
-    SkRRect& operator=(const SkRRect&) = default;
-
     
 
 
@@ -89,7 +86,7 @@ public:
 
 
     Type getType() const {
-        SkASSERT(this->isValid());
+        SkDEBUGCODE(this->validate();)
         return static_cast<Type>(fType);
     }
 
@@ -123,7 +120,7 @@ public:
         memset(fRadii, 0, sizeof(fRadii));
         fType = kEmpty_Type;
 
-        SkASSERT(this->isValid());
+        SkDEBUGCODE(this->validate();)
     }
 
     
@@ -141,13 +138,7 @@ public:
         memset(fRadii, 0, sizeof(fRadii));
         fType = kRect_Type;
 
-        SkASSERT(this->isValid());
-    }
-
-    static SkRRect MakeEmpty() {
-        SkRRect rr;
-        rr.setEmpty();
-        return rr;
+        SkDEBUGCODE(this->validate();)
     }
 
     static SkRRect MakeRect(const SkRect& r) {
@@ -155,7 +146,7 @@ public:
         rr.setRect(r);
         return rr;
     }
-
+    
     static SkRRect MakeOval(const SkRect& oval) {
         SkRRect rr;
         rr.setOval(oval);
@@ -189,7 +180,7 @@ public:
         }
         fType = kOval_Type;
 
-        SkASSERT(this->isValid());
+        SkDEBUGCODE(this->validate();)
     }
 
     
@@ -277,17 +268,13 @@ public:
         fRect.offset(dx, dy);
     }
 
-    SkRRect SK_WARN_UNUSED_RESULT makeOffset(SkScalar dx, SkScalar dy) const {
-        return SkRRect(fRect.makeOffset(dx, dy), fRadii, fType);
-    }
-
     
 
 
 
     bool contains(const SkRect& rect) const;
 
-    bool isValid() const;
+    SkDEBUGCODE(void validate() const;)
 
     enum {
         kSizeInMemory = 12 * sizeof(SkScalar)
@@ -329,11 +316,6 @@ public:
     void dumpHex() const { this->dump(true); }
 
 private:
-    SkRRect(const SkRect& rect, const SkVector radii[4], int32_t type)
-        : fRect(rect)
-        , fRadii{radii[0], radii[1], radii[2], radii[3]}
-        , fType(type) {}
-
     SkRect fRect;
     
     SkVector fRadii[4];

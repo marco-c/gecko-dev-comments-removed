@@ -22,7 +22,9 @@ public:
 
 
 
-    static sk_sp<SkImageFilter> Make(const SkPaint& paint, const CropRect* cropRect = nullptr);
+    static sk_sp<SkImageFilter> Make(const SkPaint& paint, const CropRect* cropRect = nullptr) {
+        return sk_sp<SkImageFilter>(new SkPaintImageFilter(paint, cropRect));
+    }
 
     bool affectsTransparentBlack() const override;
 

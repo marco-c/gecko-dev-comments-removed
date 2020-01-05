@@ -11,7 +11,6 @@
 #include "../private/SkTemplates.h"
 #include "SkColor.h"
 #include "SkEncodedFormat.h"
-#include "SkEncodedInfo.h"
 #include "SkImageInfo.h"
 #include "SkSize.h"
 #include "SkStream.h"
@@ -22,12 +21,6 @@ class SkColorSpace;
 class SkData;
 class SkPngChunkReader;
 class SkSampler;
-
-namespace DM {
-class CodecSrc;
-class ColorCodecSrc;
-}
-class ColorCodecBench;
 
 
 
@@ -96,10 +89,9 @@ public:
 
 
 
-    static SkCodec* NewFromData(sk_sp<SkData>, SkPngChunkReader* = NULL);
-    static SkCodec* NewFromData(SkData* data, SkPngChunkReader* reader) {
-        return NewFromData(sk_ref_sp(data), reader);
-    }
+
+
+    static SkCodec* NewFromData(SkData*, SkPngChunkReader* = NULL);
 
     virtual ~SkCodec();
 
@@ -108,7 +100,12 @@ public:
 
     const SkImageInfo& getInfo() const { return fSrcInfo; }
 
-    const SkEncodedInfo& getEncodedInfo() const { return fEncodedInfo; }
+    
+
+
+
+
+    SkColorSpace* getColorSpace() const { return fColorSpace.get(); }
 
     enum Origin {
         kTopLeft_Origin     = 1, 
@@ -299,12 +296,6 @@ public:
 
 
 
-
-
-
-
-
-
     Result getPixels(const SkImageInfo& info, void* pixels, size_t rowBytes, const Options*,
                      SkPMColor ctable[], int* ctableCount);
 
@@ -352,67 +343,6 @@ public:
         }
 
         return this->onGetYUV8Planes(sizeInfo, planes);
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    Result startIncrementalDecode(const SkImageInfo& dstInfo, void* dst, size_t rowBytes,
-            const SkCodec::Options*, SkPMColor* ctable, int* ctableCount);
-
-    Result startIncrementalDecode(const SkImageInfo& dstInfo, void* dst, size_t rowBytes,
-            const SkCodec::Options* options) {
-        return this->startIncrementalDecode(dstInfo, dst, rowBytes, options, nullptr, nullptr);
-    }
-
-    Result startIncrementalDecode(const SkImageInfo& dstInfo, void* dst, size_t rowBytes) {
-        return this->startIncrementalDecode(dstInfo, dst, rowBytes, nullptr, nullptr, nullptr);
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    Result incrementalDecode(int* rowsDecoded = nullptr) {
-        if (!fStartedIncrementalDecode) {
-            return kInvalidParameters;
-        }
-        return this->onIncrementalDecode(rowsDecoded);
     }
 
     
@@ -535,6 +465,17 @@ public:
 
 
         kOutOfOrder_SkScanlineOrder,
+
+        
+
+
+
+
+
+
+
+
+        kNone_SkScanlineOrder,
     };
 
     
@@ -570,20 +511,9 @@ protected:
     
 
 
-    SkCodec(int width,
-            int height,
-            const SkEncodedInfo&,
+    SkCodec(const SkImageInfo&,
             SkStream*,
             sk_sp<SkColorSpace> = nullptr,
-            Origin = kTopLeft_Origin);
-
-    
-
-
-
-    SkCodec(const SkEncodedInfo&,
-            const SkImageInfo&,
-            SkStream*,
             Origin = kTopLeft_Origin);
 
     virtual SkISize onGetScaledDimensions(float ) const {
@@ -658,8 +588,8 @@ protected:
 
 
 
-    uint64_t getFillValue(const SkImageInfo& dstInfo) const {
-        return this->onGetFillValue(dstInfo);
+    uint32_t getFillValue(SkColorType colorType) const {
+        return this->onGetFillValue(colorType);
     }
 
     
@@ -672,9 +602,9 @@ protected:
 
 
 
-
-
-    virtual uint64_t onGetFillValue(const SkImageInfo& dstInfo) const;
+    virtual uint32_t onGetFillValue(SkColorType ) const {
+        return kOpaque_SkAlphaType == fSrcInfo.alphaType() ? SK_ColorBLACK : SK_ColorTRANSPARENT;
+    }
 
     
 
@@ -692,6 +622,11 @@ protected:
 
     virtual SkScanlineOrder onGetScanlineOrder() const { return kTopDown_SkScanlineOrder; }
 
+    
+
+
+    void updateCurrScanline(int newY) { fCurrScanline = newY; }
+
     const SkImageInfo& dstInfo() const { return fDstInfo; }
 
     const SkCodec::Options& options() const { return fOptions; }
@@ -706,25 +641,17 @@ protected:
 
     virtual int onOutputScanline(int inputScanline) const;
 
-    
-
-
-
-    virtual sk_sp<SkData> getICCData() const { return nullptr; }
 private:
-    const SkEncodedInfo         fEncodedInfo;
     const SkImageInfo           fSrcInfo;
     SkAutoTDelete<SkStream>     fStream;
     bool                        fNeedsRewind;
+    sk_sp<SkColorSpace>         fColorSpace;
     const Origin                fOrigin;
 
+    
     SkImageInfo                 fDstInfo;
     SkCodec::Options            fOptions;
-
-    
     int                         fCurrScanline;
-
-    bool                        fStartedIncrementalDecode;
 
     
 
@@ -744,16 +671,6 @@ private:
             const SkCodec::Options& , SkPMColor* , int* ) {
         return kUnimplemented;
     }
-
-    virtual Result onStartIncrementalDecode(const SkImageInfo& , void*, size_t,
-            const SkCodec::Options&, SkPMColor*, int*) {
-        return kUnimplemented;
-    }
-
-    virtual Result onIncrementalDecode(int*) {
-        return kUnimplemented;
-    }
-
 
     virtual bool onSkipScanlines(int ) { return false; }
 
@@ -786,12 +703,6 @@ private:
 
     virtual SkSampler* getSampler(bool ) { return nullptr; }
 
-    
-    
-    friend class DM::ColorCodecSrc;
-    friend class ColorCodecBench;
-
-    friend class DM::CodecSrc;  
     friend class SkSampledCodec;
     friend class SkIcoCodec;
 };

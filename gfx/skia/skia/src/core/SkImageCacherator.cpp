@@ -25,13 +25,6 @@
 #include "SkGrPriv.h"
 #endif
 
-
-
-
-
-
-
-
 SkImageCacherator* SkImageCacherator::NewFromGenerator(SkImageGenerator* gen,
                                                        const SkIRect* subset) {
     if (!gen) {
@@ -202,7 +195,6 @@ bool SkImageCacherator::lockAsBitmap(SkBitmap* bitmap, const SkImage* client,
 
 #if SK_SUPPORT_GPU
 
-#ifdef SK_SUPPORT_COMPRESSED_TEXTURES_IN_CACHERATOR
 static GrTexture* load_compressed_into_texture(GrContext* ctx, SkData* data, GrSurfaceDesc desc) {
     const void* rawStart;
     GrPixelConfig config = GrIsCompressedTextureDataSupported(ctx, data, desc.fWidth, desc.fHeight,
@@ -214,7 +206,6 @@ static GrTexture* load_compressed_into_texture(GrContext* ctx, SkData* data, GrS
     desc.fConfig = config;
     return ctx->textureProvider()->createTexture(desc, SkBudgeted::kYes, rawStart, 0);
 }
-#endif
 
 class Generator_GrYUVProvider : public GrYUVProvider {
     SkImageGenerator* fGen;
@@ -249,8 +240,7 @@ static GrTexture* set_key_and_return(GrTexture* tex, const GrUniqueKey& key) {
 
 GrTexture* SkImageCacherator::lockTexture(GrContext* ctx, const GrUniqueKey& key,
                                           const SkImage* client, SkImage::CachingHint chint,
-                                          bool willBeMipped,
-                                          SkSourceGammaTreatment gammaTreatment) {
+                                          bool willBeMipped) {
     
     
     enum LockTexturePath {
@@ -286,9 +276,8 @@ GrTexture* SkImageCacherator::lockTexture(GrContext* ctx, const GrUniqueKey& key
 
     const GrSurfaceDesc desc = GrImageInfoToSurfaceDesc(fInfo, *ctx->caps());
 
-#ifdef SK_SUPPORT_COMPRESSED_TEXTURES_IN_CACHERATOR
     
-    sk_sp<SkData> data(this->refEncoded(ctx));
+    SkAutoTUnref<SkData> data(this->refEncoded(ctx));
     if (data) {
         GrTexture* tex = load_compressed_into_texture(ctx, data, desc);
         if (tex) {
@@ -297,17 +286,16 @@ GrTexture* SkImageCacherator::lockTexture(GrContext* ctx, const GrUniqueKey& key
             return set_key_and_return(tex, key);
         }
     }
-#endif
 
     
     {
         ScopedGenerator generator(this);
         Generator_GrYUVProvider provider(generator);
-        sk_sp<GrTexture> tex = provider.refAsTexture(ctx, desc, true);
+        GrTexture* tex = provider.refAsTexture(ctx, desc, true);
         if (tex) {
             SK_HISTOGRAM_ENUMERATION("LockTexturePath", kYUV_LockTexturePath,
                                      kLockTexturePathCount);
-            return set_key_and_return(tex.release(), key);
+            return set_key_and_return(tex, key);
         }
     }
 
@@ -316,7 +304,7 @@ GrTexture* SkImageCacherator::lockTexture(GrContext* ctx, const GrUniqueKey& key
     if (this->tryLockAsBitmap(&bitmap, client, chint)) {
         GrTexture* tex = nullptr;
         if (willBeMipped) {
-            tex = GrGenerateMipMapsAndUploadToTexture(ctx, bitmap, gammaTreatment);
+            tex = GrGenerateMipMapsAndUploadToTexture(ctx, bitmap);
         }
         if (!tex) {
             tex = GrUploadBitmapToTexture(ctx, bitmap);
@@ -335,20 +323,17 @@ GrTexture* SkImageCacherator::lockTexture(GrContext* ctx, const GrUniqueKey& key
 
 
 GrTexture* SkImageCacherator::lockAsTexture(GrContext* ctx, const GrTextureParams& params,
-                                            SkSourceGammaTreatment gammaTreatment,
                                             const SkImage* client, SkImage::CachingHint chint) {
     if (!ctx) {
         return nullptr;
     }
 
-    return GrImageTextureMaker(ctx, this, client, chint).refTextureForParams(params,
-                                                                             gammaTreatment);
+    return GrImageTextureMaker(ctx, this, client, chint).refTextureForParams(params);
 }
 
 #else
 
 GrTexture* SkImageCacherator::lockAsTexture(GrContext* ctx, const GrTextureParams&,
-                                            SkSourceGammaTreatment gammaTreatment,
                                             const SkImage* client, SkImage::CachingHint) {
     return nullptr;
 }

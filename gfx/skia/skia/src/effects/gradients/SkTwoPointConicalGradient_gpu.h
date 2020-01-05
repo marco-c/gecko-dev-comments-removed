@@ -18,7 +18,8 @@ namespace Gr2PtConicalGradientEffect {
 
 
 
-    sk_sp<GrFragmentProcessor> Make(const GrGradientEffect::CreateArgs& args);
+    GrFragmentProcessor* Create(GrContext* ctx,  const SkTwoPointConicalGradient& shader,
+                                SkShader::TileMode tm, const SkMatrix* localMatrix);
 };
 
 #endif

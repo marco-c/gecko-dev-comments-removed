@@ -5,6 +5,7 @@
 
 
 
+#include "SkBitmapRegionCanvas.h"
 #include "SkBitmapRegionCodec.h"
 #include "SkBitmapRegionDecoder.h"
 #include "SkAndroidCodec.h"
@@ -12,7 +13,7 @@
 #include "SkCodecPriv.h"
 
 SkBitmapRegionDecoder* SkBitmapRegionDecoder::Create(
-        sk_sp<SkData> data, Strategy strategy) {
+        SkData* data, Strategy strategy) {
     return SkBitmapRegionDecoder::Create(new SkMemoryStream(data),
             strategy);
 }
@@ -21,6 +22,32 @@ SkBitmapRegionDecoder* SkBitmapRegionDecoder::Create(
         SkStreamRewindable* stream, Strategy strategy) {
     SkAutoTDelete<SkStreamRewindable> streamDeleter(stream);
     switch (strategy) {
+        case kCanvas_Strategy: {
+            SkAutoTDelete<SkCodec> codec(SkCodec::NewFromStream(streamDeleter.release()));
+            if (nullptr == codec) {
+                SkCodecPrintf("Error: Failed to create decoder.\n");
+                return nullptr;
+            }
+
+            SkEncodedFormat format = codec->getEncodedFormat();
+            switch (format) {
+                case SkEncodedFormat::kJPEG_SkEncodedFormat:
+                case SkEncodedFormat::kPNG_SkEncodedFormat:
+                    break;
+                default:
+                    
+                    
+                    return nullptr;
+            }
+
+            
+            
+            
+            SkASSERT(SkCodec::kTopDown_SkScanlineOrder == codec->getScanlineOrder() ||
+                    SkCodec::kNone_SkScanlineOrder == codec->getScanlineOrder());
+
+            return new SkBitmapRegionCanvas(codec.release());
+        }
         case kAndroidCodec_Strategy: {
             SkAutoTDelete<SkAndroidCodec> codec =
                     SkAndroidCodec::NewFromStream(streamDeleter.release());

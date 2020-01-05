@@ -29,22 +29,12 @@ namespace SkDashPath {
     const SkScalar kMaxDashCount = 1000000;
 
     
-    enum class StrokeRecApplication {
-        kDisallow,
-        kAllow,
-    };
-
-    
-
-
-
 
 
     bool InternalFilter(SkPath* dst, const SkPath& src, SkStrokeRec* rec,
                         const SkRect* cullRect, const SkScalar aIntervals[],
                         int32_t count, SkScalar initialDashLength, int32_t initialDashIndex,
-                        SkScalar intervalLength,
-                        StrokeRecApplication = StrokeRecApplication::kAllow);
+                        SkScalar intervalLength);
 
     bool ValidDashPath(SkScalar phase, const SkScalar intervals[], int32_t count);
 }

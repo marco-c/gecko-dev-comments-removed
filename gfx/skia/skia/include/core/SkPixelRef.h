@@ -208,6 +208,10 @@ public:
 
     
 
+    virtual GrTexture* getTexture() { return NULL; }
+
+    
+
 
 
 
@@ -233,6 +237,20 @@ public:
 
     
     bool readPixels(SkBitmap* dst, SkColorType colorType, const SkIRect* subset = NULL);
+
+    
+
+
+
+
+
+
+
+
+
+    virtual SkPixelRef* deepCopy(SkColorType, SkColorProfileType, const SkIRect* ) {
+        return NULL;
+    }
 
     
     
@@ -386,7 +404,6 @@ private:
     void setImmutableWithID(uint32_t genID);
     friend class SkImage_Gpu;
     friend class SkImageCacherator;
-    friend class SkSpecialImage_Gpu;
 
     typedef SkRefCnt INHERITED;
 };

@@ -9,9 +9,9 @@
 #define GrBatchFontCache_DEFINED
 
 #include "GrBatchAtlas.h"
-#include "GrCaps.h"
+#include "GrFontScaler.h"
 #include "GrGlyph.h"
-#include "SkGlyphCache.h"
+#include "SkGlyph.h"
 #include "SkTDynamicHash.h"
 #include "SkVarAlloc.h"
 
@@ -22,20 +22,19 @@ class GrGpu;
 
 
 
-
-
-
 class GrBatchTextStrike : public SkNVRefCnt<GrBatchTextStrike> {
 public:
-    
-    GrBatchTextStrike(GrBatchFontCache* owner, const SkDescriptor& fontScalerKey);
+    GrBatchTextStrike(GrBatchFontCache*, const GrFontDescKey* fontScalerKey);
     ~GrBatchTextStrike();
 
+    const GrFontDescKey* getFontScalerKey() const { return fFontScalerKey; }
+    GrBatchFontCache* getBatchFontCache() const { return fBatchFontCache; }
+
     inline GrGlyph* getGlyph(const SkGlyph& skGlyph, GrGlyph::PackedID packed,
-                             SkGlyphCache* cache) {
+                             GrFontScaler* scaler) {
         GrGlyph* glyph = fCache.find(packed);
         if (nullptr == glyph) {
-            glyph = this->generateGlyph(skGlyph, packed, cache);
+            glyph = this->generateGlyph(skGlyph, packed, scaler);
         }
         return glyph;
     }
@@ -46,14 +45,14 @@ public:
     
     inline GrGlyph* getGlyph(GrGlyph::PackedID packed,
                              GrMaskFormat expectedMaskFormat,
-                             SkGlyphCache* cache) {
+                             GrFontScaler* scaler) {
         GrGlyph* glyph = fCache.find(packed);
         if (nullptr == glyph) {
             
             
             
-            const SkGlyph& skGlyph = GrToSkGlyph(cache, packed);
-            glyph = this->generateGlyph(skGlyph, packed, cache);
+            const SkGlyph& skGlyph = scaler->grToSkGlyph(packed);
+            glyph = this->generateGlyph(skGlyph, packed, scaler);
             glyph->fMaskFormat = expectedMaskFormat;
         }
         return glyph;
@@ -64,7 +63,7 @@ public:
     
     
     
-    bool addGlyphToAtlas(GrDrawBatch::Target*, GrGlyph*, SkGlyphCache*,
+    bool addGlyphToAtlas(GrDrawBatch::Target*, GrGlyph*, GrFontScaler*,
                          GrMaskFormat expectedMaskFormat);
 
     
@@ -76,28 +75,23 @@ public:
     
     bool isAbandoned() const { return fIsAbandoned; }
 
-    static const SkDescriptor& GetKey(const GrBatchTextStrike& ts) {
-        return *ts.fFontScalerKey.getDesc();
+    static const GrFontDescKey& GetKey(const GrBatchTextStrike& ts) {
+        return *(ts.fFontScalerKey);
     }
-
-    static uint32_t Hash(const SkDescriptor& desc) { return desc.getChecksum(); }
+    static uint32_t Hash(const GrFontDescKey& key) {
+        return key.getHash();
+    }
 
 private:
     SkTDynamicHash<GrGlyph, GrGlyph::PackedID> fCache;
-    SkAutoDescriptor fFontScalerKey;
+    SkAutoTUnref<const GrFontDescKey> fFontScalerKey;
     SkVarAlloc fPool;
 
     GrBatchFontCache* fBatchFontCache;
     int fAtlasedGlyphs;
     bool fIsAbandoned;
 
-    static const SkGlyph& GrToSkGlyph(SkGlyphCache* cache, GrGlyph::PackedID id) {
-        return cache->getGlyphIDMetrics(GrGlyph::UnpackID(id),
-                                        GrGlyph::UnpackFixedX(id),
-                                        GrGlyph::UnpackFixedY(id));
-    }
-
-    GrGlyph* generateGlyph(const SkGlyph&, GrGlyph::PackedID, SkGlyphCache*);
+    GrGlyph* generateGlyph(const SkGlyph&, GrGlyph::PackedID, GrFontScaler*);
 
     friend class GrBatchFontCache;
 };
@@ -118,10 +112,10 @@ public:
     
     
     
-    inline GrBatchTextStrike* getStrike(const SkGlyphCache* cache) {
-        GrBatchTextStrike* strike = fCache.find(cache->getDescriptor());
+    inline GrBatchTextStrike* getStrike(GrFontScaler* scaler) {
+        GrBatchTextStrike* strike = fCache.find(*(scaler->getKey()));
         if (nullptr == strike) {
-            strike = this->generateStrike(cache);
+            strike = this->generateStrike(scaler);
         }
         return strike;
     }
@@ -187,18 +181,15 @@ public:
     void setAtlasSizes_ForTesting(const GrBatchAtlasConfig configs[3]);
 
 private:
-    static GrPixelConfig MaskFormatToPixelConfig(GrMaskFormat format, const GrCaps& caps) {
-        switch (format) {
-            case kA8_GrMaskFormat:
-                return kAlpha_8_GrPixelConfig;
-            case kA565_GrMaskFormat:
-                return kRGB_565_GrPixelConfig;
-            case kARGB_GrMaskFormat:
-                return caps.srgbSupport() ? kSkiaGamma8888_GrPixelConfig : kSkia8888_GrPixelConfig;
-            default:
-                SkDEBUGFAIL("unsupported GrMaskFormat");
-                return kAlpha_8_GrPixelConfig;
-        }
+    static GrPixelConfig MaskFormatToPixelConfig(GrMaskFormat format) {
+        static const GrPixelConfig kPixelConfigs[] = {
+            kAlpha_8_GrPixelConfig,
+            kRGB_565_GrPixelConfig,
+            kSkia8888_GrPixelConfig
+        };
+        static_assert(SK_ARRAY_COUNT(kPixelConfigs) == kMaskFormatCount, "array_size_mismatch");
+
+        return kPixelConfigs[format];
     }
 
     
@@ -216,8 +207,8 @@ private:
 
     bool initAtlas(GrMaskFormat);
 
-    GrBatchTextStrike* generateStrike(const SkGlyphCache* cache) {
-        GrBatchTextStrike* strike = new GrBatchTextStrike(this, cache->getDescriptor());
+    GrBatchTextStrike* generateStrike(GrFontScaler* scaler) {
+        GrBatchTextStrike* strike = new GrBatchTextStrike(this, scaler->getKey());
         fCache.add(strike);
         return strike;
     }
@@ -230,9 +221,8 @@ private:
 
     static void HandleEviction(GrBatchAtlas::AtlasID, void*);
 
-    using StrikeHash = SkTDynamicHash<GrBatchTextStrike, SkDescriptor>;
     GrContext* fContext;
-    StrikeHash fCache;
+    SkTDynamicHash<GrBatchTextStrike, GrFontDescKey> fCache;
     GrBatchAtlas* fAtlases[kMaskFormatCount];
     GrBatchTextStrike* fPreserveStrike;
     GrBatchAtlasConfig fAtlasConfigs[kMaskFormatCount];

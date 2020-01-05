@@ -39,7 +39,7 @@
 #include "skia/include/core/SkColorPriv.h"
 #include "skia/include/core/SkBitmap.h"
 #include "skia/include/core/SkRect.h"
-#include "skia/include/core/SkFontLCDConfig.h"
+#include "skia/include/core/SkFontHost.h"
 
 namespace skia {
 
@@ -208,18 +208,18 @@ SkBitmap ImageOperations::ResizeSubpixel(const SkBitmap& source,
   
 #if defined(XP_UNIX)
   
-  const SkFontLCDConfig::LCDOrder order = SkFontLCDConfig::GetSubpixelOrder();
-  const SkFontLCDConfig::LCDOrientation orientation =
-      SkFontLCDConfig::GetSubpixelOrientation();
+  const SkFontHost::LCDOrder order = SkFontHost::GetSubpixelOrder();
+  const SkFontHost::LCDOrientation orientation =
+      SkFontHost::GetSubpixelOrientation();
 
   
   int w = 1;
   int h = 1;
   switch (orientation) {
-    case SkFontLCDConfig::kHorizontal_LCDOrientation:
+    case SkFontHost::kHorizontal_LCDOrientation:
       w = dest_width < source.width() ? 3 : 1;
       break;
-    case SkFontLCDConfig::kVertical_LCDOrientation:
+    case SkFontHost::kVertical_LCDOrientation:
       h = dest_height < source.height() ? 3 : 1;
       break;
   }
@@ -260,15 +260,15 @@ SkBitmap ImageOperations::ResizeSubpixel(const SkBitmap& source,
     for (int x = 0; x < dest_subset.width(); x++, src += w, dst++) {
       uint8_t r = 0, g = 0, b = 0, a = 0;
       switch (order) {
-        case SkFontLCDConfig::kRGB_LCDOrder:
+        case SkFontHost::kRGB_LCDOrder:
           switch (orientation) {
-            case SkFontLCDConfig::kHorizontal_LCDOrientation:
+            case SkFontHost::kHorizontal_LCDOrientation:
               r = SkGetPackedR32(src[0]);
               g = SkGetPackedG32(src[1]);
               b = SkGetPackedB32(src[2]);
               a = SkGetPackedA32(src[1]);
               break;
-            case SkFontLCDConfig::kVertical_LCDOrientation:
+            case SkFontHost::kVertical_LCDOrientation:
               r = SkGetPackedR32(src[0 * row_words]);
               g = SkGetPackedG32(src[1 * row_words]);
               b = SkGetPackedB32(src[2 * row_words]);
@@ -276,15 +276,15 @@ SkBitmap ImageOperations::ResizeSubpixel(const SkBitmap& source,
               break;
           }
           break;
-        case SkFontLCDConfig::kBGR_LCDOrder:
+        case SkFontHost::kBGR_LCDOrder:
           switch (orientation) {
-            case SkFontLCDConfig::kHorizontal_LCDOrientation:
+            case SkFontHost::kHorizontal_LCDOrientation:
               b = SkGetPackedB32(src[0]);
               g = SkGetPackedG32(src[1]);
               r = SkGetPackedR32(src[2]);
               a = SkGetPackedA32(src[1]);
               break;
-            case SkFontLCDConfig::kVertical_LCDOrientation:
+            case SkFontHost::kVertical_LCDOrientation:
               b = SkGetPackedB32(src[0 * row_words]);
               g = SkGetPackedG32(src[1 * row_words]);
               r = SkGetPackedR32(src[2 * row_words]);
@@ -292,7 +292,7 @@ SkBitmap ImageOperations::ResizeSubpixel(const SkBitmap& source,
               break;
           }
           break;
-        case SkFontLCDConfig::kNONE_LCDOrder:
+        case SkFontHost::kNONE_LCDOrder:
           break;
       }
       

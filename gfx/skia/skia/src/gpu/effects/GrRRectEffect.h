@@ -10,7 +10,6 @@
 
 #include "GrTypes.h"
 #include "GrTypesPriv.h"
-#include "SkRefCnt.h"
 
 class GrFragmentProcessor;
 class GrProcessor;
@@ -21,7 +20,7 @@ namespace GrRRectEffect {
 
 
 
-    sk_sp<GrFragmentProcessor> Make(GrPrimitiveEdgeType, const SkRRect&);
+    GrFragmentProcessor* Create(GrPrimitiveEdgeType, const SkRRect&);
 };
 
 #endif

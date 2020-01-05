@@ -10,7 +10,7 @@
 #define SkTSort_DEFINED
 
 #include "SkTypes.h"
-#include "SkMathPriv.h"
+#include "SkMath.h"
 
 
 template <typename T> struct SkTCompareLT {

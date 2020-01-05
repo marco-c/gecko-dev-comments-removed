@@ -323,7 +323,8 @@ public:
     virtual void getInvariantBlendedColor(const GrProcOptInfo& colorPOI,
                                           InvariantBlendedColor*) const = 0;
 
-    bool willNeedDstTexture(const GrCaps& caps, const GrPipelineOptimizations& optimizations) const;
+    bool willNeedDstTexture(const GrCaps& caps, const GrPipelineOptimizations& optimizations, 
+                            bool hasMixedSamples) const;
 
     bool isEqual(const GrXPFactory& that) const {
         if (this->classID() != that.classID()) {
@@ -357,12 +358,16 @@ private:
 
     virtual bool onIsEqual(const GrXPFactory&) const = 0;
 
-    bool willReadDstColor(const GrCaps&, const GrPipelineOptimizations&) const;
+    bool willReadDstColor(const GrCaps& caps,
+                          const GrPipelineOptimizations& optimizations,
+                          bool hasMixedSamples) const;
     
 
 
 
-    virtual bool onWillReadDstColor(const GrCaps&, const GrPipelineOptimizations&) const = 0;
+    virtual bool onWillReadDstColor(const GrCaps& caps,
+                                    const GrPipelineOptimizations& optimizations,
+                                    bool hasMixedSamples) const = 0;
 
     static uint32_t GenClassID() {
         

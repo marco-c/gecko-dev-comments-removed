@@ -12,10 +12,8 @@
 #include "GrProcessorUnitTest.h"
 #include "GrProgramElement.h"
 #include "GrTextureAccess.h"
-#include "GrBufferAccess.h"
 #include "SkMath.h"
 #include "SkString.h"
-#include "../private/SkAtomics.h"
 
 class GrContext;
 class GrCoordTransform;
@@ -81,14 +79,6 @@ public:
     
     GrTexture* texture(int index) const { return this->textureAccess(index).getTexture(); }
 
-    int numBuffers() const { return fBufferAccesses.count(); }
-
-    
-
-    const GrBufferAccess& bufferAccess(int index) const {
-        return *fBufferAccesses[index];
-    }
-
     
 
 
@@ -128,11 +118,9 @@ protected:
 
 
 
-
     virtual void addTextureAccess(const GrTextureAccess* textureAccess);
-    virtual void addBufferAccess(const GrBufferAccess* bufferAccess);
 
-    bool hasSameSamplers(const GrProcessor&) const;
+    bool hasSameTextureAccesses(const GrProcessor&) const;
 
     
 
@@ -153,7 +141,6 @@ protected:
 
     uint32_t fClassID;
     SkSTArray<4, const GrTextureAccess*, true>   fTextureAccesses;
-    SkSTArray<2, const GrBufferAccess*, true>    fBufferAccesses;
 
 private:
     static uint32_t GenClassID() {

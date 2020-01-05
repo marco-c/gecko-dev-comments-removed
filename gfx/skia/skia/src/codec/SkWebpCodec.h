@@ -15,10 +15,6 @@
 #include "SkTypes.h"
 
 class SkStream;
-extern "C" {
-    struct WebPDemuxer;
-    void WebPDemuxDelete(WebPDemuxer* dmux);
-}
 
 static const size_t WEBP_VP8_HEADER_SIZE = 30;
 
@@ -38,14 +34,7 @@ protected:
 
     bool onGetValidSubset(SkIRect* ) const override;
 private:
-    SkWebpCodec(int width, int height, const SkEncodedInfo&, sk_sp<SkColorSpace>, SkStream*,
-                WebPDemuxer*, sk_sp<SkData>);
-
-    SkAutoTCallVProc<WebPDemuxer, WebPDemuxDelete> fDemux;
-
-    
-    
-    sk_sp<SkData> fData;
+    SkWebpCodec(const SkImageInfo&, SkStream*);
 
     typedef SkCodec INHERITED;
 };

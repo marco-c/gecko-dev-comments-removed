@@ -8,76 +8,79 @@
 #ifndef SkSemaphore_DEFINED
 #define SkSemaphore_DEFINED
 
-#include "../private/SkOnce.h"
 #include "SkTypes.h"
-#include <atomic>
+#include "../private/SkAtomics.h"
+#include "../private/SkOncePtr.h"
 
-class SkBaseSemaphore {
-public:
-    constexpr SkBaseSemaphore(int count = 0)
-        : fCount(count), fOSSemaphore(nullptr) {}
+struct SkBaseSemaphore {
 
     
     
-    void signal(int n = 1);
+    void signal() {
+        
+        
+        
+        if (sk_atomic_fetch_add(&fCount, 1, sk_memory_order_release) < 0) {
+           this->osSignal(1);
+        }
+    }
 
     
     
-    void wait();
+    void signal(int N);
 
     
-    void cleanup();
+    
+    void wait() {
+        
+        
+        if (sk_atomic_fetch_sub(&fCount, 1, sk_memory_order_acquire) <= 0) {
+            this->osWait();
+        }
+    }
 
-private:
-    
-    
-    
-    
-    
-    
-    
-    
-    
     struct OSSemaphore;
 
     void osSignal(int n);
     void osWait();
+    void deleteSemaphore();
 
-    std::atomic<int> fCount;
-    SkOnce           fOSSemaphoreOnce;
-    OSSemaphore*     fOSSemaphore;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    int                        fCount;
+    SkBaseOncePtr<OSSemaphore> fOSSemaphore;
 };
 
-class SkSemaphore : public SkBaseSemaphore {
+
+
+
+
+
+
+
+
+
+
+class SkSemaphore : SkNoncopyable {
 public:
-    using SkBaseSemaphore::SkBaseSemaphore;
-    ~SkSemaphore() { this->cleanup(); }
+    
+    
+    SkSemaphore();
+    ~SkSemaphore();
+
+    void wait();
+
+    void signal(int n = 1);
+
+private:
+    SkBaseSemaphore fBaseSemaphore;
 };
-
-inline void SkBaseSemaphore::signal(int n) {
-    int prev = fCount.fetch_add(n, std::memory_order_release);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    int toSignal = SkTMin(-prev, n);
-    if (toSignal > 0) {
-        this->osSignal(toSignal);
-    }
-}
-
-inline void SkBaseSemaphore::wait() {
-    
-    
-    if (fCount.fetch_sub(1, std::memory_order_acquire) <= 0) {
-        this->osWait();
-    }
-}
 
 #endif

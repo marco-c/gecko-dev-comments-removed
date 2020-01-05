@@ -14,9 +14,9 @@
 
 
 #ifdef SK_DEBUG
-#include "SkCondensedDebug.inc"
+#include "SkCondensedDebug.cpp"
 #else
-#include "SkCondensedRelease.inc"
+#include "SkCondensedRelease.cpp"
 #endif
 
 static int _searchByName(const unsigned char* lengths, int count, const char* strings, const char target[]) {

@@ -30,9 +30,10 @@ SkWindow::~SkWindow() {
     fMenus.deleteAll();
 }
 
-sk_sp<SkSurface> SkWindow::makeSurface() {
+SkSurface* SkWindow::createSurface() {
     const SkBitmap& bm = this->getBitmap();
-    return SkSurface::MakeRasterDirect(bm.info(), bm.getPixels(), bm.rowBytes(), &fSurfaceProps);
+    return SkSurface::MakeRasterDirect(bm.info(), bm.getPixels(), bm.rowBytes(),
+                                       &fSurfaceProps).release();
 }
 
 void SkWindow::setMatrix(const SkMatrix& matrix) {
@@ -66,9 +67,16 @@ void SkWindow::resize(int width, int height) {
     this->resize(fBitmap.info().makeWH(width, height));
 }
 
-void SkWindow::setColorType(SkColorType ct, sk_sp<SkColorSpace> cs) {
+void SkWindow::setColorType(SkColorType ct, SkColorProfileType pt) {
     const SkImageInfo& info = fBitmap.info();
-    this->resize(SkImageInfo::Make(info.width(), info.height(), ct, kPremul_SkAlphaType, cs));
+    this->resize(SkImageInfo::Make(info.width(), info.height(), ct, kPremul_SkAlphaType, pt));
+
+    
+    
+    SkSurfaceProps props = this->getSurfaceProps();
+    uint32_t flags = (props.flags() & ~SkSurfaceProps::kAllowSRGBInputs_Flag) |
+        (SkColorAndProfileAreGammaCorrect(ct, pt) ? SkSurfaceProps::kAllowSRGBInputs_Flag : 0);
+    this->setSurfaceProps(SkSurfaceProps(flags, props.pixelGeometry()));
 }
 
 bool SkWindow::handleInval(const SkRect* localR) {
@@ -105,7 +113,7 @@ extern bool gEnableControlledThrow;
 
 bool SkWindow::update(SkIRect* updateArea) {
     if (!fDirtyRgn.isEmpty()) {
-        sk_sp<SkSurface> surface(this->makeSurface());
+        SkAutoTUnref<SkSurface> surface(this->createSurface());
         SkCanvas* canvas = surface->getCanvas();
 
         canvas->clipRegion(fDirtyRgn);
@@ -321,41 +329,27 @@ bool SkWindow::onDispatchClick(int x, int y, Click::State state,
 #include "gl/GrGLUtil.h"
 #include "SkGr.h"
 
-sk_sp<SkSurface> SkWindow::makeGpuBackedSurface(const AttachmentInfo& attachmentInfo,
-                                                const GrGLInterface* interface,
-                                                GrContext* grContext) {
+GrRenderTarget* SkWindow::renderTarget(const AttachmentInfo& attachmentInfo,
+        const GrGLInterface* interface, GrContext* grContext) {
     GrBackendRenderTargetDesc desc;
     desc.fWidth = SkScalarRoundToInt(this->width());
     desc.fHeight = SkScalarRoundToInt(this->height());
-    if (0 == desc.fWidth || 0 == desc.fHeight) {
-        return nullptr;
-    }
-
     
     
     
     
     
     
-    
-    
-    
-    desc.fConfig =
-        grContext->caps()->srgbSupport() &&
-        SkImageInfoIsGammaCorrect(info()) &&
-        (attachmentInfo.fColorBits != 30)
-        ? kSkiaGamma8888_GrPixelConfig : kSkia8888_GrPixelConfig;
+    desc.fConfig = grContext->caps()->srgbSupport() && SkImageInfoIsGammaCorrect(info())
+        ? kSkiaGamma8888_GrPixelConfig
+        : kSkia8888_GrPixelConfig;
     desc.fOrigin = kBottomLeft_GrSurfaceOrigin;
     desc.fSampleCnt = attachmentInfo.fSampleCount;
     desc.fStencilBits = attachmentInfo.fStencilBits;
     GrGLint buffer;
     GR_GL_GetIntegerv(interface, GR_GL_FRAMEBUFFER_BINDING, &buffer);
     desc.fRenderTargetHandle = buffer;
-
-    sk_sp<SkColorSpace> colorSpace =
-        grContext->caps()->srgbSupport() && SkImageInfoIsGammaCorrect(info())
-        ? SkColorSpace::NewNamed(SkColorSpace::kSRGB_Named) : nullptr;
-    return SkSurface::MakeFromBackendRenderTarget(grContext, desc, colorSpace, &fSurfaceProps);
+    return grContext->textureProvider()->wrapBackendRenderTarget(desc);
 }
 
 #endif

@@ -48,14 +48,14 @@ static void release_info_proc(void* info) {
     delete (SkStream*)info;
 }
 
-CGDataProviderRef SkCreateDataProviderFromStream(std::unique_ptr<SkStreamRewindable> stream) {
+CGDataProviderRef SkCreateDataProviderFromStream(SkStream* stream) {
     
     
     const void* addr = stream->getMemoryBase();
     if (addr) {
         
-        size_t size = stream->getLength();
-        return CGDataProviderCreateWithData(stream.release(), addr, size, delete_stream_proc);
+        return CGDataProviderCreateWithData(stream, addr, stream->getLength(),
+                                            delete_stream_proc);
     }
 
     CGDataProviderSequentialCallbacks rec;
@@ -65,17 +65,17 @@ CGDataProviderRef SkCreateDataProviderFromStream(std::unique_ptr<SkStreamRewinda
     rec.skipForward = skip_forward_proc;
     rec.rewind = rewind_proc;
     rec.releaseInfo = release_info_proc;
-    return CGDataProviderCreateSequential(stream.release(), &rec);
+    return CGDataProviderCreateSequential(stream, &rec);
 }
 
 
 
 #include "SkData.h"
 
-CGDataProviderRef SkCreateDataProviderFromData(sk_sp<SkData> data) {
-    const void* addr = data->data();
-    size_t size = data->size();
-    return CGDataProviderCreateWithData(data.release(), addr, size, unref_proc);
+CGDataProviderRef SkCreateDataProviderFromData(SkData* data) {
+    data->ref();
+    return CGDataProviderCreateWithData(data, data->data(), data->size(),
+                                            unref_proc);
 }
 
 #endif

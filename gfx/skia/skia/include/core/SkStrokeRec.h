@@ -103,22 +103,6 @@ public:
 
 
 
-    SkScalar getInflationRadius() const;
-
-    
-
-
-
-
-
-
-    static SkScalar GetInflationRadius(const SkPaint&, SkPaint::Style);
-
-    
-
-
-
-
     bool hasEqualEffect(const SkStrokeRec& other) const {
         if (!this->needToApply()) {
             return this->getStyle() == other.getStyle();

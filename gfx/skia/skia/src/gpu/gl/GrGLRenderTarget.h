@@ -13,7 +13,6 @@
 #include "GrRenderTarget.h"
 #include "SkScalar.h"
 
-class GrGLCaps;
 class GrGLGpu;
 class GrGLStencilAttachment;
 
@@ -24,11 +23,11 @@ public:
     enum { kUnresolvableFBOID = 0 };
 
     struct IDDesc {
-        GrGLuint                   fRTFBOID;
-        GrBackendObjectOwnership   fRTFBOOwnership;
-        GrGLuint                   fTexFBOID;
-        GrGLuint                   fMSColorRenderbufferID;
-        bool                       fIsMixedSampled;
+        GrGLuint                     fRTFBOID;
+        GrGLuint                     fTexFBOID;
+        GrGLuint                     fMSColorRenderbufferID;
+        GrGpuResource::LifeCycle     fLifeCycle;
+        GrRenderTarget::SampleConfig fSampleConfig;
     };
 
     static GrGLRenderTarget* CreateWrapped(GrGLGpu*,
@@ -62,7 +61,10 @@ public:
 
     GrBackendObject getRenderTargetHandle() const override { return fRTFBOID; }
 
-    bool canAttemptStencilAttachment() const override;
+    
+    bool canAttemptStencilAttachment() const override {
+        return kCached_LifeCycle == fRTLifecycle || kUncached_LifeCycle == fRTLifecycle;
+    }
 
     
     
@@ -70,7 +72,10 @@ public:
 
 protected:
     
-    GrGLRenderTarget(GrGLGpu*, const GrSurfaceDesc&, const IDDesc&);
+    
+    
+    enum Derived { kDerived };
+    GrGLRenderTarget(GrGLGpu*, const GrSurfaceDesc&, const IDDesc&, Derived);
 
     void init(const GrSurfaceDesc&, const IDDesc&);
 
@@ -82,9 +87,8 @@ protected:
 
 private:
     
+    
     GrGLRenderTarget(GrGLGpu*, const GrSurfaceDesc&, const IDDesc&, GrGLStencilAttachment*);
-
-    static Flags ComputeFlags(const GrGLCaps&, const IDDesc&);
 
     GrGLGpu* getGLGpu() const;
     bool completeStencilAttachment() override;
@@ -99,7 +103,9 @@ private:
     GrGLuint    fTexFBOID;
     GrGLuint    fMSColorRenderbufferID;
 
-    GrBackendObjectOwnership fRTFBOOwnership;
+    
+    
+    LifeCycle   fRTLifecycle;
 
     
     

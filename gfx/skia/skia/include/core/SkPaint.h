@@ -8,13 +8,10 @@
 #ifndef SkPaint_DEFINED
 #define SkPaint_DEFINED
 
-#include "SkBlendMode.h"
 #include "SkColor.h"
 #include "SkFilterQuality.h"
 #include "SkMatrix.h"
 #include "SkXfermode.h"
-
-
 
 class SkAutoDescriptor;
 class SkAutoGlyphCache;
@@ -33,10 +30,8 @@ class SkPath;
 class SkPathEffect;
 struct SkPoint;
 class SkRasterizer;
-struct SkScalerContextEffects;
 class SkShader;
 class SkSurfaceProps;
-class SkTextBlob;
 class SkTypeface;
 
 #define kBicubicFilterBitmap_Flag kHighQualityFilterBitmap_Flag
@@ -413,10 +408,9 @@ public:
         kRound_Cap,     
         kSquare_Cap,    
 
-        kLast_Cap = kSquare_Cap,
+        kCapCount,
         kDefault_Cap = kButt_Cap
     };
-    static constexpr int kCapCount = kLast_Cap + 1;
 
     
 
@@ -426,10 +420,9 @@ public:
         kRound_Join,    
         kBevel_Join,    
 
-        kLast_Join = kBevel_Join,
+        kJoinCount,
         kDefault_Join = kMiter_Join
     };
-    static constexpr int kJoinCount = kLast_Join + 1;
 
     
 
@@ -528,13 +521,12 @@ public:
 #endif
     void setColorFilter(sk_sp<SkColorFilter>);
 
-#ifdef SK_SUPPORT_LEGACY_XFERMODE_OBJECT
     
 
 
 
 
-    SkXfermode* getXfermode() const;
+    SkXfermode* getXfermode() const { return fXfermode.get(); }
 
     
 
@@ -556,11 +548,6 @@ public:
 
 
     SkXfermode* setXfermodeMode(SkXfermode::Mode);
-#endif
-
-    SkBlendMode getBlendMode() const { return (SkBlendMode)fBlendMode; }
-    bool isSrcOver() const { return (SkBlendMode)fBlendMode == SkBlendMode::kSrcOver; }
-    void setBlendMode(SkBlendMode mode) { fBlendMode = (unsigned)mode; }
 
     
 
@@ -626,10 +613,8 @@ public:
 
 
 
-    void setTypeface(sk_sp<SkTypeface>);
-#ifdef SK_SUPPORT_LEGACY_TYPEFACE_PTR
     SkTypeface* setTypeface(SkTypeface* typeface);
-#endif
+    void setTypeface(sk_sp<SkTypeface>);
 
     
 
@@ -662,8 +647,8 @@ public:
 
 
 
-    SkDrawLooper* getDrawLooper() const { return fDrawLooper.get(); }
-    SkDrawLooper* getLooper() const { return fDrawLooper.get(); }
+    SkDrawLooper* getLooper() const { return fLooper.get(); }
+
     
 
 
@@ -673,7 +658,8 @@ public:
 
 
 
-    void setDrawLooper(sk_sp<SkDrawLooper>);
+
+
 #ifdef SK_SUPPORT_LEGACY_MINOR_EFFECT_PTR
     SkDrawLooper* setLooper(SkDrawLooper* looper);
 #endif
@@ -830,7 +816,7 @@ public:
 
 
     int textToGlyphs(const void* text, size_t byteLength,
-                     SkGlyphID glyphs[]) const;
+                     uint16_t glyphs[]) const;
 
     
 
@@ -845,7 +831,7 @@ public:
 
 
 
-    void glyphsToUnichars(const SkGlyphID glyphs[], int count, SkUnichar text[]) const;
+    void glyphsToUnichars(const uint16_t glyphs[], int count, SkUnichar text[]) const;
 
     
 
@@ -979,40 +965,6 @@ public:
 
 
 
-
-
-
-
-
-
-
-
-
-
-    int getPosTextHIntercepts(const void* text, size_t length, const SkScalar xpos[],
-                              SkScalar constY, const SkScalar bounds[2], SkScalar* intervals) const;
-
-    
-
-
-
-
-
-
-
-
-
-
-
-    int getTextBlobIntercepts(const SkTextBlob* blob, const SkScalar bounds[2],
-                              SkScalar* intervals) const;
-
-    
-
-
-
-
-
     SkRect getFontBounds() const;
 
     
@@ -1099,10 +1051,11 @@ private:
     sk_sp<SkTypeface>     fTypeface;
     sk_sp<SkPathEffect>   fPathEffect;
     sk_sp<SkShader>       fShader;
+    sk_sp<SkXfermode>     fXfermode;
     sk_sp<SkMaskFilter>   fMaskFilter;
     sk_sp<SkColorFilter>  fColorFilter;
     sk_sp<SkRasterizer>   fRasterizer;
-    sk_sp<SkDrawLooper>   fDrawLooper;
+    sk_sp<SkDrawLooper>   fLooper;
     sk_sp<SkImageFilter>  fImageFilter;
 
     SkScalar        fTextSize;
@@ -1111,7 +1064,6 @@ private:
     SkColor         fColor;
     SkScalar        fWidth;
     SkScalar        fMiterLimit;
-    uint32_t        fBlendMode; 
     union {
         struct {
             
@@ -1128,38 +1080,28 @@ private:
         uint32_t fBitfieldsUInt;
     };
 
-    static GlyphCacheProc GetGlyphCacheProc(TextEncoding encoding,
-                                            bool isDevKern,
-                                            bool needFullMetrics);
+    GlyphCacheProc getGlyphCacheProc(bool needFullMetrics) const;
 
     SkScalar measure_text(SkGlyphCache*, const char* text, size_t length,
                           int* count, SkRect* bounds) const;
 
-    enum ScalerContextFlags : uint32_t {
-        kNone_ScalerContextFlags = 0,
-
-        kFakeGamma_ScalerContextFlag = 1 << 0,
-        kBoostContrast_ScalerContextFlag = 1 << 1,
-
-        kFakeGammaAndBoostContrast_ScalerContextFlags =
-            kFakeGamma_ScalerContextFlag | kBoostContrast_ScalerContextFlag,
+    enum class FakeGamma {
+        Off = 0, On
     };
 
     
 
 
 
-    void getScalerContextDescriptor(SkScalerContextEffects*, SkAutoDescriptor*,
-                                    const SkSurfaceProps& surfaceProps,
-                                    uint32_t scalerContextFlags, const SkMatrix*) const;
+    void getScalerContextDescriptor(SkAutoDescriptor*, const SkSurfaceProps& surfaceProps,
+                                    FakeGamma fakeGamma, const SkMatrix*) const;
 
-    SkGlyphCache* detachCache(const SkSurfaceProps* surfaceProps, uint32_t scalerContextFlags,
+    SkGlyphCache* detachCache(const SkSurfaceProps* surfaceProps, FakeGamma fakeGamma,
                               const SkMatrix*) const;
 
-    void descriptorProc(const SkSurfaceProps* surfaceProps, uint32_t scalerContextFlags,
+    void descriptorProc(const SkSurfaceProps* surfaceProps, FakeGamma fakeGamma,
                         const SkMatrix* deviceMatrix,
-                        void (*proc)(SkTypeface*, const SkScalerContextEffects&,
-                                     const SkDescriptor*, void*),
+                        void (*proc)(SkTypeface*, const SkDescriptor*, void*),
                         void* context) const;
 
     

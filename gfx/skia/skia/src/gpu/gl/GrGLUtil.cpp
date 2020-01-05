@@ -127,6 +127,7 @@ void GrGLGetDriverInfo(GrGLStandard standard,
             }
             return;
         }
+
         int n = sscanf(versionString, "%d.%d Mesa %d.%d",
                        &major, &minor, &driverMajor, &driverMinor);
         if (4 == n) {
@@ -252,9 +253,6 @@ GrGLVendor GrGLGetVendorFromString(const char* vendorString) {
         if (0 == strcmp(vendorString, "NVIDIA Corporation")) {
             return kNVIDIA_GrGLVendor;
         }
-        if (0 == strcmp(vendorString, "ATI Technologies Inc.")) {
-            return kATI_GrGLVendor;
-        }
     }
     return kOther_GrGLVendor;
 }
@@ -304,13 +302,7 @@ GrGLRenderer GrGLGetRendererFromString(const char* rendererString) {
                 if (adrenoNumber < 500) {
                     return kAdreno4xx_GrGLRenderer;
                 }
-                if (adrenoNumber < 600) {
-                    return kAdreno5xx_GrGLRenderer;
-                }
             }
-        }
-        if (strcmp("Mesa Offscreen", rendererString)) {
-            return kOSMesa_GrGLRenderer;
         }
     }
     return kOther_GrGLRenderer;
@@ -340,8 +332,8 @@ GrGLRenderer GrGLGetRenderer(const GrGLInterface* gl) {
     return GrGLGetRendererFromString((const char*) v);
 }
 
-GrGLenum GrToGLStencilFunc(GrStencilTest test) {
-    static const GrGLenum gTable[kGrStencilTestCount] = {
+GrGLenum GrToGLStencilFunc(GrStencilFunc basicFunc) {
+    static const GrGLenum gTable[] = {
         GR_GL_ALWAYS,           
         GR_GL_NEVER,            
         GR_GL_GREATER,          
@@ -351,15 +343,16 @@ GrGLenum GrToGLStencilFunc(GrStencilTest test) {
         GR_GL_EQUAL,            
         GR_GL_NOTEQUAL,         
     };
-    GR_STATIC_ASSERT(0 == (int)GrStencilTest::kAlways);
-    GR_STATIC_ASSERT(1 == (int)GrStencilTest::kNever);
-    GR_STATIC_ASSERT(2 == (int)GrStencilTest::kGreater);
-    GR_STATIC_ASSERT(3 == (int)GrStencilTest::kGEqual);
-    GR_STATIC_ASSERT(4 == (int)GrStencilTest::kLess);
-    GR_STATIC_ASSERT(5 == (int)GrStencilTest::kLEqual);
-    GR_STATIC_ASSERT(6 == (int)GrStencilTest::kEqual);
-    GR_STATIC_ASSERT(7 == (int)GrStencilTest::kNotEqual);
-    SkASSERT(test < (GrStencilTest)kGrStencilTestCount);
+    GR_STATIC_ASSERT(SK_ARRAY_COUNT(gTable) == kBasicStencilFuncCount);
+    GR_STATIC_ASSERT(0 == kAlways_StencilFunc);
+    GR_STATIC_ASSERT(1 == kNever_StencilFunc);
+    GR_STATIC_ASSERT(2 == kGreater_StencilFunc);
+    GR_STATIC_ASSERT(3 == kGEqual_StencilFunc);
+    GR_STATIC_ASSERT(4 == kLess_StencilFunc);
+    GR_STATIC_ASSERT(5 == kLEqual_StencilFunc);
+    GR_STATIC_ASSERT(6 == kEqual_StencilFunc);
+    GR_STATIC_ASSERT(7 == kNotEqual_StencilFunc);
+    SkASSERT((unsigned) basicFunc < kBasicStencilFuncCount);
 
-    return gTable[(int)test];
+    return gTable[basicFunc];
 }

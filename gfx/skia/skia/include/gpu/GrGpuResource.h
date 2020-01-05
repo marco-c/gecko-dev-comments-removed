@@ -10,6 +10,7 @@
 
 #include "GrResourceKey.h"
 #include "GrTypesPriv.h"
+#include "SkData.h"
 
 class GrContext;
 class GrGpu;
@@ -139,6 +140,34 @@ private:
 class SK_API GrGpuResource : public GrIORef<GrGpuResource> {
 public:
 
+
+    enum LifeCycle {
+        
+
+
+
+
+        kCached_LifeCycle,
+
+        
+
+
+
+        kUncached_LifeCycle,
+
+        
+
+
+
+
+        kBorrowed_LifeCycle,
+
+        
+
+
+        kAdopted_LifeCycle,
+    };
+
     
 
 
@@ -180,11 +209,25 @@ public:
 
 
 
-    uint32_t uniqueID() const { return fUniqueID; }
+    uint32_t getUniqueID() const { return fUniqueID; }
 
     
 
     const GrUniqueKey& getUniqueKey() const { return fUniqueKey; }
+
+    
+
+
+
+
+
+    const SkData* setCustomData(const SkData* data);
+
+    
+
+
+
+    const SkData* getCustomData() const { return fData.get(); }
 
     
 
@@ -217,19 +260,12 @@ public:
 
     virtual void dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump) const;
 
-    static uint32_t CreateUniqueID();
-
 protected:
     
     
-    void registerWithCache(SkBudgeted);
+    void registerWithCache();
 
-    
-    
-    
-    void registerWithCacheWrapped();
-
-    GrGpuResource(GrGpu*);
+    GrGpuResource(GrGpu*, LifeCycle);
     virtual ~GrGpuResource();
 
     GrGpu* getGpu() const { return fGpu; }
@@ -241,6 +277,13 @@ protected:
 
     virtual void onAbandon() { }
 
+    bool shouldFreeResources() const { return fLifeCycle != kBorrowed_LifeCycle; }
+
+    bool isExternal() const {
+        return GrGpuResource::kAdopted_LifeCycle == fLifeCycle ||
+               GrGpuResource::kBorrowed_LifeCycle == fLifeCycle;
+    }
+
     
 
 
@@ -251,17 +294,15 @@ protected:
 
 
 
-    virtual void setMemoryBacking(SkTraceMemoryDump*, const SkString&) const {}
+    void setScratchKey(const GrScratchKey& scratchKey);
 
-private:
     
 
 
 
+    virtual void setMemoryBacking(SkTraceMemoryDump*, const SkString&) const {}
 
-
-    virtual void computeScratchKey(GrScratchKey*) const { }
-
+private:
     
 
 
@@ -281,13 +322,15 @@ private:
 #ifdef SK_DEBUG
     friend class GrGpu; 
 #endif
+
+    static uint32_t CreateUniqueID();
+
     
     
     int                         fCacheArrayIndex;
     
     
     uint32_t                    fTimestamp;
-    uint32_t                    fExternalFlushCntWhenBecamePurgeable;
 
     static const size_t kInvalidGpuMemorySize = ~static_cast<size_t>(0);
     GrScratchKey                fScratchKey;
@@ -298,9 +341,10 @@ private:
     GrGpu*                      fGpu;
     mutable size_t              fGpuMemorySize;
 
-    SkBudgeted                  fBudgeted;
-    bool                        fRefsWrappedObjects;
+    LifeCycle                   fLifeCycle;
     const uint32_t              fUniqueID;
+
+    SkAutoTUnref<const SkData>  fData;
 
     typedef GrIORef<GrGpuResource> INHERITED;
     friend class GrIORef<GrGpuResource>; 

@@ -15,20 +15,20 @@ class GrFragmentProcessor;
 namespace GrXfermodeFragmentProcessor {
     
 
-    sk_sp<GrFragmentProcessor> MakeFromDstProcessor(sk_sp<GrFragmentProcessor> dst,
-                                                    SkXfermode::Mode mode);
+    const GrFragmentProcessor* CreateFromDstProcessor(const GrFragmentProcessor* dst,
+                                                      SkXfermode::Mode mode);
 
     
 
-    sk_sp<GrFragmentProcessor> MakeFromSrcProcessor(sk_sp<GrFragmentProcessor> src,
-                                                    SkXfermode::Mode mode);
+    const GrFragmentProcessor* CreateFromSrcProcessor(const GrFragmentProcessor* src,
+                                                      SkXfermode::Mode mode);
 
     
 
 
-    sk_sp<GrFragmentProcessor> MakeFromTwoProcessors(sk_sp<GrFragmentProcessor> src,
-                                                     sk_sp<GrFragmentProcessor> dst,
-                                                     SkXfermode::Mode mode);
+    const GrFragmentProcessor* CreateFromTwoProcessors(const GrFragmentProcessor* src,
+                                                       const GrFragmentProcessor* dst,
+                                                       SkXfermode::Mode mode);
 };
 
 #endif

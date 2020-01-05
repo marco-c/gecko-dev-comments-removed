@@ -14,6 +14,18 @@
 #include "SkRecords.h"
 #include "SkTLogic.h"
 
+struct SkTextHunter {
+    
+    bool operator()(const SkRecords::DrawPicture& op) { return op.picture->hasText(); }
+    bool operator()(const SkRecords::DrawDrawable&) {  return false; }
+
+    template <typename T>
+    SK_WHEN(T::kTags & SkRecords::kHasText_Tag, bool) operator()(const T&) { return true; }
+    template <typename T>
+    SK_WHEN(!(T::kTags & SkRecords::kHasText_Tag), bool) operator()(const T&) { return false; }
+};
+
+
 
 struct SkBitmapHunter {
     
@@ -45,12 +57,18 @@ struct SkBitmapHunter {
 
     
     template <typename T>
-    static SK_WHEN(T::kTags & SkRecords::kHasPaint_Tag, bool) CheckPaint(const T& op) {
+    static SK_WHEN(T::kTags & SkRecords::kDraw_Tag, bool) CheckPaint(const T& op) {
         return PaintHasBitmap(AsPtr(op.paint));
     }
 
+    
+    static bool CheckPaint(const SkRecords::SaveLayer& op) {
+        return PaintHasBitmap(AsPtr(op.paint));
+    }
+
+    
     template <typename T>
-    static SK_WHEN(!(T::kTags & SkRecords::kHasPaint_Tag), bool) CheckPaint(const T&) {
+    static SK_WHEN(!(T::kTags & SkRecords::kDraw_Tag), bool) CheckPaint(const T&) {
         return false;
     }
 
@@ -58,7 +76,7 @@ private:
     static bool PaintHasBitmap(const SkPaint* paint) {
         if (paint) {
             const SkShader* shader = paint->getShader();
-            if (shader && shader->isAImage()) {
+            if (shader && shader->isABitmap()) {
                 return true;
             }
         }
@@ -114,13 +132,6 @@ struct SkPathCounter {
             } else {
                 fNumSlowPathsAndDashEffects++;
             }
-        }
-    }
-
-    void operator()(const SkRecords::ClipPath& op) {
-        
-        if (op.opAA.aa && !op.path.isConvex()) {
-            fNumSlowPathsAndDashEffects++;
         }
     }
 

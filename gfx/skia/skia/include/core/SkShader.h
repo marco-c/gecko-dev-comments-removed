@@ -17,8 +17,6 @@
 #include "../gpu/GrColor.h"
 
 class SkColorFilter;
-class SkColorSpace;
-class SkImage;
 class SkPath;
 class SkPicture;
 class SkXfermode;
@@ -229,7 +227,6 @@ public:
 
     size_t contextSize(const ContextRec&) const;
 
-#ifdef SK_SUPPORT_LEGACY_SHADER_ISABITMAP
     
 
 
@@ -241,19 +238,6 @@ public:
 
     bool isABitmap() const {
         return this->isABitmap(nullptr, nullptr, nullptr);
-    }
-#endif
-
-    
-
-
-
-    SkImage* isAImage(SkMatrix* localMatrix, TileMode xy[2]) const {
-        return this->onIsAImage(localMatrix, xy);
-    }
-
-    bool isAImage() const {
-        return this->isAImage(nullptr, nullptr) != nullptr;
     }
 
     
@@ -325,28 +309,6 @@ public:
 
     virtual bool asACompose(ComposeRec*) const { return false; }
 
-#if SK_SUPPORT_GPU
-    struct AsFPArgs {
-        AsFPArgs(GrContext* context,
-                 const SkMatrix* viewMatrix,
-                 const SkMatrix* localMatrix,
-                 SkFilterQuality filterQuality,
-                 SkColorSpace* dstColorSpace,
-                 SkSourceGammaTreatment gammaTreatment)
-            : fContext(context)
-            , fViewMatrix(viewMatrix)
-            , fLocalMatrix(localMatrix)
-            , fFilterQuality(filterQuality)
-            , fDstColorSpace(dstColorSpace)
-            , fGammaTreatment(gammaTreatment) {}
-
-        GrContext*             fContext;
-        const SkMatrix*        fViewMatrix;
-        const SkMatrix*        fLocalMatrix;
-        SkFilterQuality        fFilterQuality;
-        SkColorSpace*          fDstColorSpace;
-        SkSourceGammaTreatment fGammaTreatment;
-    };
 
     
 
@@ -361,8 +323,10 @@ public:
 
 
 
-    virtual sk_sp<GrFragmentProcessor> asFragmentProcessor(const AsFPArgs&) const;
-#endif
+    virtual const GrFragmentProcessor* asFragmentProcessor(GrContext*,
+                                                           const SkMatrix& viewMatrix,
+                                                           const SkMatrix* localMatrix,
+                                                           SkFilterQuality) const;
 
     
 
@@ -410,14 +374,6 @@ public:
 
 
     static sk_sp<SkShader> MakeColorShader(SkColor);
-
-    
-
-
-
-
-
-    static sk_sp<SkShader> MakeColorShader(const SkColor4f&, sk_sp<SkColorSpace>);
 
     static sk_sp<SkShader> MakeComposeShader(sk_sp<SkShader> dst, sk_sp<SkShader> src,
                                              SkXfermode::Mode);
@@ -501,7 +457,6 @@ public:
 
     SK_TO_STRING_VIRT()
     SK_DEFINE_FLATTENABLE_TYPE(SkShader)
-    SK_DECLARE_FLATTENABLE_REGISTRAR_GROUP()
 
 protected:
     void flatten(SkWriteBuffer&) const override;
@@ -524,14 +479,8 @@ protected:
         return false;
     }
 
-#ifdef SK_SUPPORT_LEGACY_SHADER_ISABITMAP
     virtual bool onIsABitmap(SkBitmap*, SkMatrix*, TileMode[2]) const {
         return false;
-    }
-#endif
-
-    virtual SkImage* onIsAImage(SkMatrix*, TileMode[2]) const {
-        return nullptr;
     }
 
 private:
@@ -541,7 +490,7 @@ private:
 
     
     friend class SkLocalMatrixShader;
-    friend class SkBitmapProcLegacyShader;    
+    friend class SkBitmapProcShader;    
 
     typedef SkFlattenable INHERITED;
 };

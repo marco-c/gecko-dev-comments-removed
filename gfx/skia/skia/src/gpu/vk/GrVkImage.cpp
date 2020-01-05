@@ -12,85 +12,60 @@
 
 #define VK_CALL(GPU, X) GR_VK_CALL(GPU->vkInterface(), X)
 
-VkImageAspectFlags vk_format_to_aspect_flags(VkFormat format) {
-    switch (format) {
-        case VK_FORMAT_S8_UINT:
-            return VK_IMAGE_ASPECT_STENCIL_BIT;
-        case VK_FORMAT_D24_UNORM_S8_UINT: 
-        case VK_FORMAT_D32_SFLOAT_S8_UINT:
-            return VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-        default:
-            SkASSERT(GrVkFormatToPixelConfig(format, nullptr));
-            return VK_IMAGE_ASPECT_COLOR_BIT;
-    }
-}
-
 void GrVkImage::setImageLayout(const GrVkGpu* gpu, VkImageLayout newLayout,
+                               VkAccessFlags srcAccessMask,
                                VkAccessFlags dstAccessMask,
+                               VkPipelineStageFlags srcStageMask,
                                VkPipelineStageFlags dstStageMask,
                                bool byRegion) {
-    SkASSERT(VK_IMAGE_LAYOUT_UNDEFINED != newLayout &&
-             VK_IMAGE_LAYOUT_PREINITIALIZED != newLayout);
-    VkImageLayout currentLayout = this->currentLayout();
-
+    SkASSERT(VK_IMAGE_LAYOUT_GENERAL != newLayout || VK_IMAGE_LAYOUT_PREINITIALIZED != newLayout);
     
     
-    
-    
-    if (newLayout == currentLayout && VK_IMAGE_LAYOUT_GENERAL != currentLayout) {
+    if (newLayout == fCurrentLayout) {
         return;
     }
 
-    VkAccessFlags srcAccessMask = GrVkMemory::LayoutToSrcAccessMask(currentLayout);
-    VkPipelineStageFlags srcStageMask = GrVkMemory::LayoutToPipelineStageFlags(currentLayout);
-
-    VkImageAspectFlags aspectFlags = vk_format_to_aspect_flags(fInfo.fFormat);
     VkImageMemoryBarrier imageMemoryBarrier = {
-        VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,          
-        nullptr,                                         
-        srcAccessMask,                                   
-        dstAccessMask,                                   
-        currentLayout,                                   
-        newLayout,                                       
-        VK_QUEUE_FAMILY_IGNORED,                         
-        VK_QUEUE_FAMILY_IGNORED,                         
-        fInfo.fImage,                                    
-        { aspectFlags, 0, fInfo.fLevelCount, 0, 1 }      
+        VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,   
+        NULL,                                     
+        srcAccessMask,                            
+        dstAccessMask,                            
+        fCurrentLayout,                           
+        newLayout,                                
+        VK_QUEUE_FAMILY_IGNORED,                  
+        VK_QUEUE_FAMILY_IGNORED,                  
+        fResource->fImage,                        
+        { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 } 
     };
 
+    
     gpu->addImageMemoryBarrier(srcStageMask, dstStageMask, byRegion, &imageMemoryBarrier);
 
-    fInfo.fImageLayout = newLayout;
+    fCurrentLayout = newLayout;
 }
 
-bool GrVkImage::InitImageInfo(const GrVkGpu* gpu, const ImageDesc& imageDesc, GrVkImageInfo* info) {
-    if (0 == imageDesc.fWidth || 0 == imageDesc.fHeight) {
-        return false;
-    }
+const GrVkImage::Resource* GrVkImage::CreateResource(const GrVkGpu* gpu,
+                                                     const ImageDesc& imageDesc) {
     VkImage image = 0;
-    GrVkAlloc alloc;
+    VkDeviceMemory alloc;
 
-    bool isLinear = VK_IMAGE_TILING_LINEAR == imageDesc.fImageTiling;
-    VkImageLayout initialLayout = isLinear ? VK_IMAGE_LAYOUT_PREINITIALIZED
-                                           : VK_IMAGE_LAYOUT_UNDEFINED;
+    VkImageLayout initialLayout = (VK_IMAGE_TILING_LINEAR == imageDesc.fImageTiling)
+        ? VK_IMAGE_LAYOUT_PREINITIALIZED
+        : VK_IMAGE_LAYOUT_UNDEFINED;
 
     
     VkSampleCountFlagBits vkSamples;
     if (!GrSampleCountToVkSampleCount(imageDesc.fSamples, &vkSamples)) {
-        return false;
+        return nullptr;
     }
 
     SkASSERT(VK_IMAGE_TILING_OPTIMAL == imageDesc.fImageTiling ||
              VK_SAMPLE_COUNT_1_BIT == vkSamples);
 
-    
-    VkImageCreateFlags createFlags = GrVkFormatIsSRGB(imageDesc.fFormat, nullptr)
-        ? VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT : 0;
-
     const VkImageCreateInfo imageCreateInfo = {
         VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,         
         NULL,                                        
-        createFlags,                                 
+        0,                                           
         imageDesc.fImageType,                        
         imageDesc.fFormat,                           
         { imageDesc.fWidth, imageDesc.fHeight, 1 },  
@@ -105,31 +80,18 @@ bool GrVkImage::InitImageInfo(const GrVkGpu* gpu, const ImageDesc& imageDesc, Gr
         initialLayout                                
     };
 
-    GR_VK_CALL_ERRCHECK(gpu->vkInterface(), CreateImage(gpu->device(), &imageCreateInfo, nullptr,
-                                                        &image));
+    GR_VK_CALL_ERRCHECK(gpu->vkInterface(), CreateImage(gpu->device(), &imageCreateInfo, nullptr, &image));
 
-    if (!GrVkMemory::AllocAndBindImageMemory(gpu, image, isLinear, &alloc)) {
+    if (!GrVkMemory::AllocAndBindImageMemory(gpu, image, imageDesc.fMemProps, &alloc)) {
         VK_CALL(gpu, DestroyImage(gpu->device(), image, nullptr));
-        return false;
+        return nullptr;
     }
 
-    info->fImage = image;
-    info->fAlloc = alloc;
-    info->fImageTiling = imageDesc.fImageTiling;
-    info->fImageLayout = initialLayout;
-    info->fFormat = imageDesc.fFormat;
-    info->fLevelCount = imageDesc.fLevels;
-    return true;
-}
+    GrVkImage::Resource::Flags flags =
+        (VK_IMAGE_TILING_LINEAR == imageDesc.fImageTiling) ? Resource::kLinearTiling_Flag
+                                                           : Resource::kNo_Flags;
 
-void GrVkImage::DestroyImageInfo(const GrVkGpu* gpu, GrVkImageInfo* info) {
-    VK_CALL(gpu, DestroyImage(gpu->device(), info->fImage, nullptr));
-    bool isLinear = VK_IMAGE_TILING_LINEAR == info->fImageTiling;
-    GrVkMemory::FreeImageMemory(gpu, isLinear, info->fAlloc);
-}
-
-void GrVkImage::setNewResource(VkImage image, const GrVkAlloc& alloc, VkImageTiling tiling) {
-    fResource = new Resource(image, alloc, tiling);
+    return (new GrVkImage::Resource(image, alloc, flags));
 }
 
 GrVkImage::~GrVkImage() {
@@ -153,8 +115,7 @@ void GrVkImage::abandonImage() {
 
 void GrVkImage::Resource::freeGPUData(const GrVkGpu* gpu) const {
     VK_CALL(gpu, DestroyImage(gpu->device(), fImage, nullptr));
-    bool isLinear = (VK_IMAGE_TILING_LINEAR == fImageTiling);
-    GrVkMemory::FreeImageMemory(gpu, isLinear, fAlloc);
+    VK_CALL(gpu, FreeMemory(gpu->device(), fAlloc, nullptr));
 }
 
 void GrVkImage::BorrowedResource::freeGPUData(const GrVkGpu* gpu) const {

@@ -10,7 +10,6 @@
 
 #include "GrTypes.h"
 #include "GrTypesPriv.h"
-#include "SkRefCnt.h"
 
 class GrFragmentProcessor;
 
@@ -18,7 +17,7 @@ namespace GrDitherEffect {
     
 
 
-    sk_sp<GrFragmentProcessor> Make();
+    GrFragmentProcessor* Create();
 };
 
 #endif

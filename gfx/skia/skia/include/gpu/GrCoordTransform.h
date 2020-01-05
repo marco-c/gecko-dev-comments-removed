@@ -18,51 +18,79 @@
 
 
 
+
+
+enum GrCoordSet {
+    
+
+
+
+
+
+    kLocal_GrCoordSet,
+
+    
+
+
+    kDevice_GrCoordSet,
+};
+
+
+
+
+
+
 class GrCoordTransform : SkNoncopyable {
 public:
-    GrCoordTransform() { SkDEBUGCODE(fInProcessor = false); }
+    GrCoordTransform() : fSourceCoords(kLocal_GrCoordSet) { SkDEBUGCODE(fInProcessor = false); }
 
     
 
 
 
 
-    GrCoordTransform(const GrTexture* texture, GrTextureParams::FilterMode filter) {
-        SkASSERT(texture);
-        SkDEBUGCODE(fInProcessor = false);
-        this->reset(texture, filter);
-    }
-
-    
-
-
-
-    GrCoordTransform(const SkMatrix& m, const GrTexture* texture,
+    GrCoordTransform(GrCoordSet sourceCoords,
+                     const GrTexture* texture,
                      GrTextureParams::FilterMode filter) {
-        SkDEBUGCODE(fInProcessor = false);
         SkASSERT(texture);
-        this->reset(m, texture, filter);
+        SkDEBUGCODE(fInProcessor = false);
+        this->reset(sourceCoords, texture, filter);
     }
 
     
 
 
-    GrCoordTransform(const SkMatrix& m, GrSLPrecision precision = kDefault_GrSLPrecision) {
+
+    GrCoordTransform(GrCoordSet sourceCoords, const SkMatrix& m,
+                     const GrTexture* texture, GrTextureParams::FilterMode filter) {
         SkDEBUGCODE(fInProcessor = false);
-        this->reset(m, precision);
+        SkASSERT(texture);
+        this->reset(sourceCoords, m, texture, filter);
     }
 
-    void reset(const GrTexture* texture, GrTextureParams::FilterMode filter) {
+    
+
+
+    GrCoordTransform(GrCoordSet sourceCoords, const SkMatrix& m,
+                     GrSLPrecision precision = kDefault_GrSLPrecision) {
+        SkDEBUGCODE(fInProcessor = false);
+        this->reset(sourceCoords, m, precision);
+    }
+
+    void reset(GrCoordSet sourceCoords, const GrTexture* texture,
+               GrTextureParams::FilterMode filter) {
         SkASSERT(!fInProcessor);
         SkASSERT(texture);
-        this->reset(MakeDivByTextureWHMatrix(texture), texture, filter);
+        this->reset(sourceCoords, MakeDivByTextureWHMatrix(texture), texture, filter);
     }
 
-    void reset(const SkMatrix&, const GrTexture*, GrTextureParams::FilterMode filter);
-    void reset(const SkMatrix& m, GrSLPrecision precision = kDefault_GrSLPrecision);
+    void reset(GrCoordSet, const SkMatrix&, const GrTexture*, GrTextureParams::FilterMode filter);
+    void reset(GrCoordSet sourceCoords, const SkMatrix& m,
+               GrSLPrecision precision = kDefault_GrSLPrecision);
 
     GrCoordTransform& operator= (const GrCoordTransform& that) {
         SkASSERT(!fInProcessor);
+        fSourceCoords = that.fSourceCoords;
         fMatrix = that.fMatrix;
         fReverseY = that.fReverseY;
         fPrecision = that.fPrecision;
@@ -79,13 +107,15 @@ public:
     }
 
     bool operator==(const GrCoordTransform& that) const {
-        return fMatrix.cheapEqualTo(that.fMatrix) &&
+        return fSourceCoords == that.fSourceCoords &&
+               fMatrix.cheapEqualTo(that.fMatrix) &&
                fReverseY == that.fReverseY &&
                fPrecision == that.fPrecision;
     }
 
     bool operator!=(const GrCoordTransform& that) const { return !(*this == that); }
 
+    GrCoordSet sourceCoords() const { return fSourceCoords; }
     const SkMatrix& getMatrix() const { return fMatrix; }
     bool reverseY() const { return fReverseY; }
     GrSLPrecision precision() const { return fPrecision; }
@@ -100,6 +130,7 @@ public:
     }
 
 private:
+    GrCoordSet              fSourceCoords;
     SkMatrix                fMatrix;
     bool                    fReverseY;
     GrSLPrecision           fPrecision;

@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+#ifndef GrGLSLProcessorTypes_DEFINED
+#define GrGLSLProcessorTypes_DEFINED
+
+#include "GrShaderVar.h"
+
+
+
+
+
+typedef GrShaderVar GrGLSLTransformedCoords;
+typedef SkTArray<GrShaderVar> GrGLSLTransformedCoordsArray;
+
+#endif

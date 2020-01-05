@@ -62,7 +62,9 @@ public:
 
 
 
-    virtual sk_sp<SkDataTable> getFamilyNames() const = 0;
+
+
+    virtual SkDataTable* getFamilyNames() const = 0;
 
     
 

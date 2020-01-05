@@ -8,11 +8,9 @@
 #ifndef SkPDFResourceDict_DEFINED
 #define SkPDFResourceDict_DEFINED
 
-#include "SkRefCnt.h"
+#include "SkPDFTypes.h"
 #include "SkTDArray.h"
-
-class SkPDFDict;
-class SkPDFObject;
+#include "SkTypes.h"
 
 
 
@@ -31,8 +29,6 @@ public:
         
         kResourceTypeCount
     };
-
-    static char GetResourceTypePrefix(SkPDFResourceDict::SkPDFResourceType type);
 
     
 

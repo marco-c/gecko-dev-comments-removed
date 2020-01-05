@@ -13,13 +13,10 @@
 #ifdef GR_TEST_UTILS
 
 #include "GrColor.h"
-#include "GrColorSpaceXform.h"
-#include "SkPathEffect.h"
 #include "SkRandom.h"
 #include "SkStrokeRec.h"
-#include "../private/SkTemplates.h"
 
-class GrStyle;
+class GrStrokeInfo;
 class SkMatrix;
 class SkPath;
 class SkRRect;
@@ -33,43 +30,15 @@ const SkMatrix& TestMatrix(SkRandom*);
 const SkMatrix& TestMatrixPreservesRightAngles(SkRandom*);
 const SkMatrix& TestMatrixRectStaysRect(SkRandom*);
 const SkMatrix& TestMatrixInvertible(SkRandom*);
-const SkMatrix& TestMatrixPerspective(SkRandom*);
 const SkRect& TestRect(SkRandom*);
 const SkRect& TestSquare(SkRandom*);
 const SkRRect& TestRRectSimple(SkRandom*);
 const SkPath& TestPath(SkRandom*);
 const SkPath& TestPathConvex(SkRandom*);
 SkStrokeRec TestStrokeRec(SkRandom*);
+GrStrokeInfo TestStrokeInfo(SkRandom*);
 
-void TestStyle(SkRandom*, GrStyle*);
-sk_sp<SkColorSpace> TestColorSpace(SkRandom*);
-sk_sp<GrColorSpaceXform> TestColorXform(SkRandom*);
-
-
-
-class TestDashPathEffect : public SkPathEffect {
-public:
-    static sk_sp<SkPathEffect> Make(const SkScalar* intervals, int count, SkScalar phase) {
-        return sk_sp<SkPathEffect>(new TestDashPathEffect(intervals, count, phase));
-    }
-
-    bool filterPath(SkPath* dst, const SkPath&, SkStrokeRec* , const SkRect*) const override;
-    DashType asADash(DashInfo* info) const override;
-    Factory getFactory() const override { return nullptr; }
-    void toString(SkString*) const override {}
-
-private:
-    TestDashPathEffect(const SkScalar* intervals, int count, SkScalar phase);
-
-    int                     fCount;
-    SkAutoTArray<SkScalar>  fIntervals;
-    SkScalar                fPhase;
-    SkScalar                fInitialDashLength;
-    int                     fInitialDashIndex;
-    SkScalar                fIntervalLength;
-};
-
-}  
+}
 
 static inline GrColor GrRandomColor(SkRandom* random) {
     

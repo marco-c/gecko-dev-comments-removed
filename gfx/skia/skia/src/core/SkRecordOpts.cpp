@@ -10,7 +10,6 @@
 #include "SkRecordPattern.h"
 #include "SkRecords.h"
 #include "SkTDArray.h"
-#include "SkXfermode.h"
 
 using namespace SkRecords;
 
@@ -87,7 +86,7 @@ struct SaveOnlyDrawsRestoreNooper {
     }
 };
 
-static bool fold_opacity_layer_color_to_paint(const SkPaint* layerPaint,
+static bool fold_opacity_layer_color_to_paint(const SkPaint& layerPaint,
                                               bool isSaveLayer,
                                               SkPaint* paint) {
     
@@ -98,7 +97,7 @@ static bool fold_opacity_layer_color_to_paint(const SkPaint* layerPaint,
     
     
     
-    if (!paint->isSrcOver() || paint->getLooper()) {
+    if (paint->getXfermode() || paint->getLooper()) {
         return false;
     }
 
@@ -121,26 +120,25 @@ static bool fold_opacity_layer_color_to_paint(const SkPaint* layerPaint,
         return false;
     }
 
-    if (layerPaint) {
-        const uint32_t layerColor = layerPaint->getColor();
-        
-        if (SK_ColorTRANSPARENT != SkColorSetA(layerColor, SK_AlphaTRANSPARENT)) {
-            return false;
-        }
-
-        
-        if (layerPaint->getPathEffect()  ||
-            layerPaint->getShader()      ||
-            !layerPaint->isSrcOver()     ||
-            layerPaint->getMaskFilter()  ||
-            layerPaint->getColorFilter() ||
-            layerPaint->getRasterizer()  ||
-            layerPaint->getLooper()      ||
-            layerPaint->getImageFilter()) {
-            return false;
-        }
-        paint->setAlpha(SkMulDiv255Round(paint->getAlpha(), SkColorGetA(layerColor)));
+    const uint32_t layerColor = layerPaint.getColor();
+    
+    if (SK_ColorTRANSPARENT != SkColorSetA(layerColor, SK_AlphaTRANSPARENT)) {
+        return false;
     }
+
+    
+    if (layerPaint.getPathEffect() ||
+        layerPaint.getShader()      ||
+        layerPaint.getXfermode()    ||
+        layerPaint.getMaskFilter()  ||
+        layerPaint.getColorFilter() ||
+        layerPaint.getRasterizer()  ||
+        layerPaint.getLooper()      ||
+        layerPaint.getImageFilter()) {
+        return false;
+    }
+
+    paint->setAlpha(SkMulDiv255Round(paint->getAlpha(), SkColorGetA(layerColor)));
 
     return true;
 }
@@ -173,15 +171,6 @@ void SkRecordNoopSaveRestores(SkRecord* record) {
     while (apply(&onlyDraws, record) || apply(&noDraws, record));
 }
 
-static bool effectively_srcover(const SkPaint* paint) {
-    if (!paint || paint->isSrcOver()) {
-        return true;
-    }
-    
-    return !paint->getShader() && !paint->getColorFilter() && !paint->getImageFilter() &&
-           0xFF == paint->getAlpha() && paint->getBlendMode() == SkBlendMode::kSrc;
-}
-
 
 
 struct SaveLayerDrawRestoreNooper {
@@ -195,20 +184,19 @@ struct SaveLayerDrawRestoreNooper {
 
         
         SkPaint* layerPaint = match->first<SaveLayer>()->paint;
-        SkPaint* drawPaint = match->second<SkPaint>();
-
-        if (nullptr == layerPaint && effectively_srcover(drawPaint)) {
+        if (nullptr == layerPaint) {
             
             return KillSaveLayerAndRestore(record, begin);
         }
 
+        SkPaint* drawPaint = match->second<SkPaint>();
         if (drawPaint == nullptr) {
             
             
             return false;
         }
 
-        if (!fold_opacity_layer_color_to_paint(layerPaint, false , drawPaint)) {
+        if (!fold_opacity_layer_color_to_paint(*layerPaint, false , drawPaint)) {
             return false;
         }
 
@@ -261,7 +249,7 @@ struct SvgOpacityAndFilterLayerMergePass {
             return false;
         }
 
-        if (!fold_opacity_layer_color_to_paint(opacityPaint, true ,
+        if (!fold_opacity_layer_color_to_paint(*opacityPaint, true ,
                                                filterLayerPaint)) {
             return false;
         }
@@ -289,9 +277,6 @@ void SkRecordOptimize(SkRecord* record) {
     
     
     
-    
-    
-
 
     SkRecordNoopSaveLayerDrawRestores(record);
     SkRecordMergeSvgOpacityAndFilterLayers(record);

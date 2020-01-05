@@ -101,65 +101,37 @@ SkCodec::Result SkSampledCodec::onGetAndroidPixels(const SkImageInfo& info, void
     int scaledSubsetWidth = info.width();
     int scaledSubsetHeight = info.height();
 
-    const SkImageInfo scaledInfo = info.makeWH(scaledSize.width(), scaledSize.height());
-
-    {
-        
-        
-        
-        SkIRect incrementalSubset = SkIRect::MakeXYWH(scaledSubsetX, scaledSubsetY,
-                                                      scaledSubsetWidth, scaledSubsetHeight);
-        codecOptions.fSubset = &incrementalSubset;
-        const SkCodec::Result startResult = this->codec()->startIncrementalDecode(
-                scaledInfo, pixels, rowBytes, &codecOptions,
-                options.fColorPtr, options.fColorCount);
-        if (SkCodec::kSuccess == startResult) {
-            int rowsDecoded;
-            const SkCodec::Result incResult = this->codec()->incrementalDecode(&rowsDecoded);
-            if (incResult == SkCodec::kSuccess) {
-                return SkCodec::kSuccess;
-            }
-            SkASSERT(SkCodec::kIncompleteInput == incResult);
-
-            
-            this->codec()->fillIncompleteImage(scaledInfo, pixels, rowBytes,
-                    options.fZeroInitialized, scaledSubsetHeight, rowsDecoded);
-            return SkCodec::kIncompleteInput;
-        } else if (startResult != SkCodec::kUnimplemented) {
-            return startResult;
-        }
-        
-        
-        
-    }
-
     
     SkIRect scanlineSubset = SkIRect::MakeXYWH(scaledSubsetX, 0, scaledSubsetWidth,
             scaledSize.height());
     codecOptions.fSubset = &scanlineSubset;
-
-    SkCodec::Result result = this->codec()->startScanlineDecode(scaledInfo,
-            &codecOptions, options.fColorPtr, options.fColorCount);
+    SkCodec::Result result = this->codec()->startScanlineDecode(info.makeWH(scaledSize.width(),
+            scaledSize.height()), &codecOptions, options.fColorPtr, options.fColorCount);
     if (SkCodec::kSuccess != result) {
         return result;
     }
 
     
     
-    
-    
-    SkASSERT(this->codec()->getScanlineOrder() == SkCodec::kTopDown_SkScanlineOrder);
-    if (!this->codec()->skipScanlines(scaledSubsetY)) {
-        this->codec()->fillIncompleteImage(info, pixels, rowBytes, options.fZeroInitialized,
-                scaledSubsetHeight, 0);
-        return SkCodec::kIncompleteInput;
-    }
+    switch (this->codec()->getScanlineOrder()) {
+        case SkCodec::kTopDown_SkScanlineOrder:
+        case SkCodec::kNone_SkScanlineOrder: {
+            if (!this->codec()->skipScanlines(scaledSubsetY)) {
+                this->codec()->fillIncompleteImage(info, pixels, rowBytes, options.fZeroInitialized,
+                        scaledSubsetHeight, 0);
+                return SkCodec::kIncompleteInput;
+            }
 
-    int decodedLines = this->codec()->getScanlines(pixels, scaledSubsetHeight, rowBytes);
-    if (decodedLines != scaledSubsetHeight) {
-        return SkCodec::kIncompleteInput;
+            int decodedLines = this->codec()->getScanlines(pixels, scaledSubsetHeight, rowBytes);
+            if (decodedLines != scaledSubsetHeight) {
+                return SkCodec::kIncompleteInput;
+            }
+            return SkCodec::kSuccess;
+        }
+        default:
+            SkASSERT(false);
+            return SkCodec::kUnimplemented;
     }
-    return SkCodec::kSuccess;
 }
 
 
@@ -203,74 +175,9 @@ SkCodec::Result SkSampledCodec::sampledDecode(const SkImageInfo& info, void* pix
     }
 
     
-    
-    
-    const int sampleX = subsetWidth / info.width();
-    const int sampleY = subsetHeight / info.height();
-
-    const int samplingOffsetY = get_start_coord(sampleY);
-    const int startY = samplingOffsetY + subsetY;
-    int dstHeight = info.height();
-
-    const SkImageInfo nativeInfo = info.makeWH(nativeSize.width(), nativeSize.height());
-
-    {
-        
-        
-        
-        
-        
-        
-        
-        SkIRect incrementalSubset;
-        incrementalSubset.fTop = startY;
-        incrementalSubset.fBottom = startY + (dstHeight - 1) * sampleY + 1;
-        if (sampledOptions.fSubset) {
-            incrementalSubset.fLeft = sampledOptions.fSubset->fLeft;
-            incrementalSubset.fRight = sampledOptions.fSubset->fRight;
-        } else {
-            incrementalSubset.fLeft = 0;
-            incrementalSubset.fRight = nativeSize.width();
-        }
-        SkCodec::Options incrementalOptions = sampledOptions;
-        incrementalOptions.fSubset = &incrementalSubset;
-        const SkCodec::Result startResult = this->codec()->startIncrementalDecode(nativeInfo,
-                pixels, rowBytes, &incrementalOptions, options.fColorPtr, options.fColorCount);
-        if (SkCodec::kSuccess == startResult) {
-            SkSampler* sampler = this->codec()->getSampler(true);
-            if (!sampler) {
-                return SkCodec::kUnimplemented;
-            }
-
-            if (sampler->setSampleX(sampleX) != info.width()) {
-                return SkCodec::kInvalidScale;
-            }
-            if (get_scaled_dimension(subsetHeight, sampleY) != info.height()) {
-                return SkCodec::kInvalidScale;
-            }
-
-            sampler->setSampleY(sampleY);
-
-            int rowsDecoded;
-            const SkCodec::Result incResult = this->codec()->incrementalDecode(&rowsDecoded);
-            if (incResult == SkCodec::kSuccess) {
-                return SkCodec::kSuccess;
-            }
-            SkASSERT(incResult == SkCodec::kIncompleteInput);
-
-            
-            const int trueRowsDecoded = (rowsDecoded + sampleY - 1) / sampleY;
-            this->codec()->fillIncompleteImage(info, pixels, rowBytes, options.fZeroInitialized,
-                                               info.height(), trueRowsDecoded);
-            return SkCodec::kIncompleteInput;
-        } else if (startResult != SkCodec::kUnimplemented) {
-            return startResult;
-        } 
-    }
-
-    
-    SkCodec::Result result = this->codec()->startScanlineDecode(nativeInfo,
-            &sampledOptions, options.fColorPtr, options.fColorCount);
+    SkCodec::Result result = this->codec()->startScanlineDecode(
+            info.makeWH(nativeSize.width(), nativeSize.height()), &sampledOptions,
+            options.fColorPtr, options.fColorCount);
     if (SkCodec::kSuccess != result) {
         return result;
     }
@@ -280,6 +187,11 @@ SkCodec::Result SkSampledCodec::sampledDecode(const SkImageInfo& info, void* pix
         return SkCodec::kUnimplemented;
     }
 
+    
+    
+    
+    const int sampleX = subsetWidth / info.width();
+    const int sampleY = subsetHeight / info.height();
     if (sampler->setSampleX(sampleX) != info.width()) {
         return SkCodec::kInvalidScale;
     }
@@ -287,6 +199,9 @@ SkCodec::Result SkSampledCodec::sampledDecode(const SkImageInfo& info, void* pix
         return SkCodec::kInvalidScale;
     }
 
+    const int samplingOffsetY = get_start_coord(sampleY);
+    const int startY = samplingOffsetY + subsetY;
+    int dstHeight = info.height();
     switch(this->codec()->getScanlineOrder()) {
         case SkCodec::kTopDown_SkScanlineOrder: {
             if (!this->codec()->skipScanlines(startY)) {
@@ -338,7 +253,7 @@ SkCodec::Result SkSampledCodec::sampledDecode(const SkImageInfo& info, void* pix
 
             
             
-            const uint64_t fillValue = this->codec()->getFillValue(info);
+            const uint32_t fillValue = this->codec()->getFillValue(info.colorType());
             const SkImageInfo fillInfo = info.makeWH(info.width(), 1);
             for (; y < nativeSize.height(); y++) {
                 int srcY = this->codec()->outputScanline(y);
@@ -350,6 +265,30 @@ SkCodec::Result SkSampledCodec::sampledDecode(const SkImageInfo& info, void* pix
                 SkSampler::Fill(fillInfo, rowPtr, rowBytes, fillValue, options.fZeroInitialized);
             }
             return SkCodec::kIncompleteInput;
+        }
+        case SkCodec::kNone_SkScanlineOrder: {
+            const int linesNeeded = subsetHeight - samplingOffsetY;
+            SkAutoTMalloc<uint8_t> storage(linesNeeded * rowBytes);
+            uint8_t* storagePtr = storage.get();
+
+            if (!this->codec()->skipScanlines(startY)) {
+                this->codec()->fillIncompleteImage(info, pixels, rowBytes, options.fZeroInitialized,
+                        dstHeight, 0);
+                return SkCodec::kIncompleteInput;
+            }
+            int scanlines = this->codec()->getScanlines(storagePtr, linesNeeded, rowBytes);
+
+            for (int y = 0; y < dstHeight; y++) {
+                memcpy(pixels, storagePtr, info.minRowBytes());
+                storagePtr += sampleY * rowBytes;
+                pixels = SkTAddOffset<void>(pixels, rowBytes);
+            }
+
+            if (scanlines < dstHeight) {
+                
+                return SkCodec::kIncompleteInput;
+            }
+            return SkCodec::kSuccess;
         }
         default:
             SkASSERT(false);

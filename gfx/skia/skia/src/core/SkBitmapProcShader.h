@@ -4,15 +4,42 @@
 
 
 
+
 #ifndef SkBitmapProcShader_DEFINED
 #define SkBitmapProcShader_DEFINED
 
-#include "SkImagePriv.h"
 #include "SkShader.h"
+#include "SkSmallAllocator.h"
 
+struct SkBitmapProcState;
 class SkBitmapProvider;
 
-class SkBitmapProcLegacyShader : public SkShader {
+class SkBitmapProcShader : public SkShader {
+public:
+    SkBitmapProcShader(const SkBitmap& src, TileMode tx, TileMode ty,
+                       const SkMatrix* localMatrix = nullptr);
+
+    bool isOpaque() const override;
+
+    SK_TO_STRING_OVERRIDE()
+    SK_DECLARE_PUBLIC_FLATTENABLE_DESERIALIZATION_PROCS(SkBitmapProcShader)
+
+#if SK_SUPPORT_GPU
+    const GrFragmentProcessor* asFragmentProcessor(GrContext*, const SkMatrix& viewM,
+                                                   const SkMatrix*, SkFilterQuality) const override;
+#endif
+
+protected:
+    void flatten(SkWriteBuffer&) const override;
+    size_t onContextSize(const ContextRec& rec) const override {
+        return ContextSize(rec, fRawBitmap.info());
+    }
+    Context* onCreateContext(const ContextRec&, void* storage) const override;
+    bool onIsABitmap(SkBitmap*, SkMatrix*, TileMode*) const override;
+
+    SkBitmap    fRawBitmap;
+    uint8_t     fTileModeX, fTileModeY;
+
 private:
     friend class SkImageShader;
 
@@ -22,5 +49,17 @@ private:
 
     typedef SkShader INHERITED;
 };
+
+
+
+
+
+
+typedef SkSmallAllocator<3, 2100> SkTBlitterAllocator;
+
+
+
+sk_sp<SkShader> SkMakeBitmapShader(const SkBitmap& src, SkShader::TileMode, SkShader::TileMode,
+                                   const SkMatrix* localMatrix, SkTBlitterAllocator* alloc);
 
 #endif

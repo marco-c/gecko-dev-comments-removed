@@ -8,51 +8,40 @@
 #include "SkBitmap.h"
 #include "SkCodecPriv.h"
 #include "SkColorPriv.h"
-#include "SkColorSpace_Base.h"
+#include "SkColorSpace.h"
 #include "SkColorTable.h"
 #include "SkMath.h"
 #include "SkOpts.h"
 #include "SkPngCodec.h"
-#include "SkPoint3.h"
 #include "SkSize.h"
 #include "SkStream.h"
 #include "SkSwizzler.h"
 #include "SkTemplates.h"
 #include "SkUtils.h"
 
-#include "png.h"
-
-
-#if defined(__GNUC__) && !defined(__clang__)
-    #pragma GCC diagnostic ignored "-Wclobbered"
-#endif
-
-#if PNG_LIBPNG_VER_MAJOR > 1 || (PNG_LIBPNG_VER_MAJOR == 1 && PNG_LIBPNG_VER_MINOR >= 5)
-    
-    #undef SK_GOOGLE3_PNG_HACK
-#endif
-
-
-#define PNG_JMPBUF(x) png_jmpbuf((png_structp) x)
 
 
 
-
-
-
-constexpr int kSetJmpOkay   = 0;
-
-constexpr int kPngError     = 1;
-
-constexpr int kStopDecoding = 2;
 
 static void sk_error_fn(png_structp png_ptr, png_const_charp msg) {
     SkCodecPrintf("------ png error %s\n", msg);
-    longjmp(PNG_JMPBUF(png_ptr), kPngError);
+    longjmp(png_jmpbuf(png_ptr), 1);
 }
 
 void sk_warning_fn(png_structp, png_const_charp msg) {
     SkCodecPrintf("----- png warning %s\n", msg);
+}
+
+static void sk_read_fn(png_structp png_ptr, png_bytep data,
+                       png_size_t length) {
+    SkStream* stream = static_cast<SkStream*>(png_get_io_ptr(png_ptr));
+    const size_t bytes = stream->read(data, length);
+    if (bytes != length) {
+        
+        
+        
+        png_error(png_ptr, "Read Error!");
+    }
 }
 
 #ifdef PNG_READ_UNKNOWN_CHUNKS_SUPPORTED
@@ -69,22 +58,9 @@ static int sk_read_user_chunk(png_structp png_ptr, png_unknown_chunkp chunk) {
 
 class AutoCleanPng : public SkNoncopyable {
 public:
-    
-
-
-
-
-
-    AutoCleanPng(png_structp png_ptr, SkStream* stream, SkPngChunkReader* reader,
-            SkCodec** codecPtr)
+    AutoCleanPng(png_structp png_ptr)
         : fPng_ptr(png_ptr)
-        , fInfo_ptr(nullptr)
-        , fDecodedBounds(false)
-        , fReadHeader(false)
-        , fStream(stream)
-        , fChunkReader(reader)
-        , fOutCodec(codecPtr)
-    {}
+        , fInfo_ptr(nullptr) {}
 
     ~AutoCleanPng() {
         
@@ -99,121 +75,25 @@ public:
         fInfo_ptr = info_ptr;
     }
 
-    
-
-
-
-
-
-
-
-
-
-
-
-    bool decodeBounds();
-
-private:
-    png_structp         fPng_ptr;
-    png_infop           fInfo_ptr;
-    bool                fDecodedBounds;
-    bool                fReadHeader;
-    SkStream*           fStream;
-    SkPngChunkReader*   fChunkReader;
-    SkCodec**           fOutCodec;
-
-    
-
-
-
-    static void InfoCallback(png_structp png_ptr, png_infop) {
-        
-        
-        static_cast<AutoCleanPng*>(png_get_progressive_ptr(png_ptr))->infoCallback();
-    }
-
-    void infoCallback();
-
-#ifdef SK_GOOGLE3_PNG_HACK
-
-public:
-#endif
-    void releasePngPtrs() {
+    void release() {
         fPng_ptr = nullptr;
         fInfo_ptr = nullptr;
     }
+
+private:
+    png_structp     fPng_ptr;
+    png_infop       fInfo_ptr;
 };
 #define AutoCleanPng(...) SK_REQUIRE_LOCAL_VAR(AutoCleanPng)
 
-bool AutoCleanPng::decodeBounds() {
-    if (setjmp(PNG_JMPBUF(fPng_ptr))) {
-        return false;
-    }
-
-    png_set_progressive_read_fn(fPng_ptr, this, InfoCallback, nullptr, nullptr);
-
-    
-    
-    
-    constexpr size_t kBufferSize = 4096;
-    char buffer[kBufferSize];
-
-    while (true) {
-        const size_t bytesRead = fStream->read(buffer, kBufferSize);
-        if (!bytesRead) {
-            
-            break;
-        }
-
-        png_process_data(fPng_ptr, fInfo_ptr, (png_bytep) buffer, bytesRead);
-        if (fReadHeader) {
-            break;
-        }
-    }
-
-    
-    png_set_progressive_read_fn(fPng_ptr, nullptr, nullptr, nullptr, nullptr);
-    return fDecodedBounds;
-}
-
-void SkPngCodec::processData() {
-    switch (setjmp(PNG_JMPBUF(fPng_ptr))) {
-        case kPngError:
-            
-            
-            return;
-        case kStopDecoding:
-            
-            return;
-        case kSetJmpOkay:
-            
-            break;
-        default:
-            
-            SkASSERT(false);
-    }
-
-    
-    constexpr size_t kBufferSize = 4096;
-    char buffer[kBufferSize];
-
-    while (true) {
-        const size_t bytesRead = this->stream()->read(buffer, kBufferSize);
-        png_process_data(fPng_ptr, fInfo_ptr, (png_bytep) buffer, bytesRead);
-
-        if (!bytesRead) {
-            
-            
-            
-            
-            
-            break;
-        }
-    }
-}
 
 
-bool SkPngCodec::createColorTable(const SkImageInfo& dstInfo, int* ctableCount) {
+typedef uint32_t (*PackColorProc)(U8CPU a, U8CPU r, U8CPU g, U8CPU b);
+
+
+
+
+bool SkPngCodec::decodePalette(bool premultiply, int* ctableCount) {
 
     int numColors;
     png_color* palette;
@@ -222,26 +102,25 @@ bool SkPngCodec::createColorTable(const SkImageInfo& dstInfo, int* ctableCount) 
     }
 
     
-    
-    SkPMColor colorTable[256];
-    SkColorType tableColorType = fColorXform ? kRGBA_8888_SkColorType : dstInfo.colorType();
+    SkPMColor colorPtr[256];
 
     png_bytep alphas;
     int numColorsWithAlpha = 0;
     if (png_get_tRNS(fPng_ptr, fInfo_ptr, &alphas, &numColorsWithAlpha, nullptr)) {
         
         
-        bool premultiply =  !fColorXform && needs_premul(dstInfo, this->getInfo());
-
-        
-        
-        PackColorProc proc = choose_pack_color_proc(premultiply, tableColorType);
+        PackColorProc proc;
+        if (premultiply) {
+            proc = &SkPremultiplyARGBInline;
+        } else {
+            proc = &SkPackARGB32NoCheck;
+        }
 
         for (int i = 0; i < numColorsWithAlpha; i++) {
             
             
             
-            colorTable[i] = proc(alphas[i], palette->red, palette->green, palette->blue);
+            colorPtr[i] = proc(alphas[i], palette->red, palette->green, palette->blue);
             palette++;
         }
     }
@@ -255,33 +134,19 @@ bool SkPngCodec::createColorTable(const SkImageInfo& dstInfo, int* ctableCount) 
         SkASSERT(&palette->green < &palette->blue);
 #endif
 
-        if (is_rgba(tableColorType)) {
-            SkOpts::RGB_to_RGB1(colorTable + numColorsWithAlpha, palette,
-                    numColors - numColorsWithAlpha);
-        } else {
-            SkOpts::RGB_to_BGR1(colorTable + numColorsWithAlpha, palette,
-                    numColors - numColorsWithAlpha);
-        }
-    }
-
-    
-    
-    if (fColorXform && kRGBA_F16_SkColorType != dstInfo.colorType()) {
-        SkColorSpaceXform::ColorFormat xformColorFormat = is_rgba(dstInfo.colorType()) ?
-                SkColorSpaceXform::kRGBA_8888_ColorFormat :
-                SkColorSpaceXform::kBGRA_8888_ColorFormat;
-        SkAlphaType xformAlphaType = select_xform_alpha(dstInfo.alphaType(),
-                                                        this->getInfo().alphaType());
-        fColorXform->apply(colorTable, colorTable, numColors, xformColorFormat,
-                           SkColorSpaceXform::kRGBA_8888_ColorFormat, xformAlphaType);
+#ifdef SK_PMCOLOR_IS_RGBA
+        SkOpts::RGB_to_RGB1(colorPtr + numColorsWithAlpha, palette, numColors - numColorsWithAlpha);
+#else
+        SkOpts::RGB_to_BGR1(colorPtr + numColorsWithAlpha, palette, numColors - numColorsWithAlpha);
+#endif
     }
 
     
     
     const int maxColors = 1 << fBitDepth;
     if (numColors < maxColors) {
-        SkPMColor lastColor = numColors > 0 ? colorTable[numColors - 1] : SK_ColorBLACK;
-        sk_memset32(colorTable + numColors, lastColor, maxColors - numColors);
+        SkPMColor lastColor = numColors > 0 ? colorPtr[numColors - 1] : SK_ColorBLACK;
+        sk_memset32(colorPtr + numColors, lastColor, maxColors - numColors);
     }
 
     
@@ -289,7 +154,7 @@ bool SkPngCodec::createColorTable(const SkImageInfo& dstInfo, int* ctableCount) 
         *ctableCount = maxColors;
     }
 
-    fColorTable.reset(new SkColorTable(colorTable, maxColors));
+    fColorTable.reset(new SkColorTable(colorPtr, maxColors));
     return true;
 }
 
@@ -300,8 +165,6 @@ bool SkPngCodec::createColorTable(const SkImageInfo& dstInfo, int* ctableCount) 
 bool SkPngCodec::IsPng(const char* buf, size_t bytesRead) {
     return !png_sig_cmp((png_bytep) buf, (png_size_t)0, bytesRead);
 }
-
-#if (PNG_LIBPNG_VER_MAJOR > 1) || (PNG_LIBPNG_VER_MAJOR == 1 && PNG_LIBPNG_VER_MINOR >= 6)
 
 static float png_fixed_point_to_float(png_fixed_point x) {
     
@@ -315,71 +178,6 @@ static float png_inverted_fixed_point_to_float(png_fixed_point x) {
     
     return 1.0f / png_fixed_point_to_float(x);
 }
-
-static constexpr float gSRGB_toXYZD50[] {
-    0.4358f, 0.3853f, 0.1430f,    
-    0.2224f, 0.7170f, 0.0606f,    
-    0.0139f, 0.0971f, 0.7139f,    
-};
-
-static bool convert_to_D50(SkMatrix44* toXYZD50, float toXYZ[9], float whitePoint[2]) {
-    float wX = whitePoint[0];
-    float wY = whitePoint[1];
-    if (wX < 0.0f || wY < 0.0f || (wX + wY > 1.0f)) {
-        return false;
-    }
-
-    
-    float wZ = 1.0f - wX - wY;
-    float scale = 1.0f / wY;
-    
-    
-    
-    
-    SkVector3 srcXYZ = SkVector3::Make(wX * scale, 1.0f, wZ * scale);
-
-    
-    SkVector3 dstXYZ = SkVector3::Make(0.96422f, 1.0f, 0.82521f);
-
-    
-    
-    
-    
-    SkMatrix mA, mAInv;
-    mA.setAll(0.8951f, 0.2664f, -0.1614f, -0.7502f, 1.7135f, 0.0367f, 0.0389f, -0.0685f, 1.0296f);
-    mAInv.setAll(0.9869929f, -0.1470543f, 0.1599627f, 0.4323053f, 0.5183603f, 0.0492912f,
-                 -0.0085287f, 0.0400428f, 0.9684867f);
-
-    
-    SkVector3 srcCone;
-    srcCone.fX = mA[0] * srcXYZ.fX + mA[1] * srcXYZ.fY + mA[2] * srcXYZ.fZ;
-    srcCone.fY = mA[3] * srcXYZ.fX + mA[4] * srcXYZ.fY + mA[5] * srcXYZ.fZ;
-    srcCone.fZ = mA[6] * srcXYZ.fX + mA[7] * srcXYZ.fY + mA[8] * srcXYZ.fZ;
-    SkVector3 dstCone;
-    dstCone.fX = mA[0] * dstXYZ.fX + mA[1] * dstXYZ.fY + mA[2] * dstXYZ.fZ;
-    dstCone.fY = mA[3] * dstXYZ.fX + mA[4] * dstXYZ.fY + mA[5] * dstXYZ.fZ;
-    dstCone.fZ = mA[6] * dstXYZ.fX + mA[7] * dstXYZ.fY + mA[8] * dstXYZ.fZ;
-
-    SkMatrix DXToD50;
-    DXToD50.setIdentity();
-    DXToD50[0] = dstCone.fX / srcCone.fX;
-    DXToD50[4] = dstCone.fY / srcCone.fY;
-    DXToD50[8] = dstCone.fZ / srcCone.fZ;
-    DXToD50.postConcat(mAInv);
-    DXToD50.preConcat(mA);
-
-    SkMatrix toXYZ3x3;
-    toXYZ3x3.setAll(toXYZ[0], toXYZ[3], toXYZ[6], toXYZ[1], toXYZ[4], toXYZ[7], toXYZ[2], toXYZ[5],
-                    toXYZ[8]);
-    toXYZ3x3.postConcat(DXToD50);
-
-    toXYZD50->set3x3(toXYZ3x3[0], toXYZ3x3[3], toXYZ3x3[6],
-                     toXYZ3x3[1], toXYZ3x3[4], toXYZ3x3[7],
-                     toXYZ3x3[2], toXYZ3x3[5], toXYZ3x3[8]);
-    return true;
-}
-
-#endif 
 
 
 
@@ -416,453 +214,83 @@ sk_sp<SkColorSpace> read_color_space(png_structp png_ptr, png_infop info_ptr) {
     }
 
     
-    png_fixed_point toXYZFixed[9];
-    float toXYZ[9];
-    png_fixed_point whitePointFixed[2];
-    float whitePoint[2];
+    png_fixed_point XYZ[9];
+    SkFloat3x3 toXYZD50;
     png_fixed_point gamma;
-    float gammas[3];
-    if (png_get_cHRM_XYZ_fixed(png_ptr, info_ptr, &toXYZFixed[0], &toXYZFixed[1], &toXYZFixed[2],
-                               &toXYZFixed[3], &toXYZFixed[4], &toXYZFixed[5], &toXYZFixed[6],
-                               &toXYZFixed[7], &toXYZFixed[8]) &&
-        png_get_cHRM_fixed(png_ptr, info_ptr, &whitePointFixed[0], &whitePointFixed[1], nullptr,
-                           nullptr, nullptr, nullptr, nullptr, nullptr))
-    {
-        for (int i = 0; i < 9; i++) {
-            toXYZ[i] = png_fixed_point_to_float(toXYZFixed[i]);
-        }
-        whitePoint[0] = png_fixed_point_to_float(whitePointFixed[0]);
-        whitePoint[1] = png_fixed_point_to_float(whitePointFixed[1]);
+    SkFloat3 gammas;
+    if (png_get_cHRM_XYZ_fixed(png_ptr, info_ptr, &XYZ[0], &XYZ[1], &XYZ[2], &XYZ[3], &XYZ[4],
+            &XYZ[5], &XYZ[6], &XYZ[7], &XYZ[8])) {
 
-        SkMatrix44 toXYZD50(SkMatrix44::kUninitialized_Constructor);
-        if (!convert_to_D50(&toXYZD50, toXYZ, whitePoint)) {
-            toXYZD50.set3x3RowMajorf(gSRGB_toXYZD50);
+        
+        
+        
+        
+        
+        
+        for (int i = 0; i < 9; i++) {
+            toXYZD50.fMat[i] = png_fixed_point_to_float(XYZ[i]);
         }
 
         if (PNG_INFO_gAMA == png_get_gAMA_fixed(png_ptr, info_ptr, &gamma)) {
-            float value = png_inverted_fixed_point_to_float(gamma);
-            gammas[0] = value;
-            gammas[1] = value;
-            gammas[2] = value;
-
-            return SkColorSpace_Base::NewRGB(gammas, toXYZD50);
+            gammas.fVec[0] = gammas.fVec[1] = gammas.fVec[2] =
+                    png_inverted_fixed_point_to_float(gamma);
+        } else {
+            
+            
+            gammas.fVec[0] = gammas.fVec[1] = gammas.fVec[2] = 1.0f;
         }
 
-        
-        
-        return SkColorSpace::NewRGB(SkColorSpace::kSRGB_RenderTargetGamma, toXYZD50);
+
+        return SkColorSpace::NewRGB(toXYZD50, gammas);
     }
 
     
     if (PNG_INFO_gAMA == png_get_gAMA_fixed(png_ptr, info_ptr, &gamma)) {
 
         
-        float value = png_inverted_fixed_point_to_float(gamma);
-        gammas[0] = value;
-        gammas[1] = value;
-        gammas[2] = value;
+        
+        
+        memset(toXYZD50.fMat, 0, 9 * sizeof(float));
+        toXYZD50.fMat[0] = toXYZD50.fMat[4] = toXYZD50.fMat[8] = 1.0f;
 
         
-        SkMatrix44 toXYZD50(SkMatrix44::kUninitialized_Constructor);
-        toXYZD50.set3x3RowMajorf(gSRGB_toXYZD50);
+        gammas.fVec[0] = gammas.fVec[1] = gammas.fVec[2] = png_inverted_fixed_point_to_float(gamma);
 
-        return SkColorSpace_Base::NewRGB(gammas, toXYZD50);
+        return SkColorSpace::NewRGB(toXYZD50, gammas);
     }
 
 #endif 
 
+    
+    
     
     
     return nullptr;
 }
 
-void SkPngCodec::allocateStorage(const SkImageInfo& dstInfo) {
-    switch (fXformMode) {
-        case kSwizzleOnly_XformMode:
-            break;
-        case kColorOnly_XformMode:
-            
-            
-            
-        case kSwizzleColor_XformMode: {
-            const size_t colorXformBytes = dstInfo.width() * sizeof(uint32_t);
-            fStorage.reset(colorXformBytes);
-            fColorXformSrcRow = (uint32_t*) fStorage.get();
-            break;
-        }
-    }
-}
-
-void SkPngCodec::applyXformRow(void* dst, const void* src) {
-    const SkColorSpaceXform::ColorFormat srcColorFormat = SkColorSpaceXform::kRGBA_8888_ColorFormat;
-    switch (fXformMode) {
-        case kSwizzleOnly_XformMode:
-            fSwizzler->swizzle(dst, (const uint8_t*) src);
-            break;
-        case kColorOnly_XformMode:
-            fColorXform->apply(dst, (const uint32_t*) src, fXformWidth, fXformColorFormat,
-                               srcColorFormat, fXformAlphaType);
-            break;
-        case kSwizzleColor_XformMode:
-            fSwizzler->swizzle(fColorXformSrcRow, (const uint8_t*) src);
-            fColorXform->apply(dst, fColorXformSrcRow, fXformWidth, fXformColorFormat,
-                               srcColorFormat, fXformAlphaType);
-            break;
-    }
-}
-
-class SkPngNormalDecoder : public SkPngCodec {
-public:
-    SkPngNormalDecoder(const SkEncodedInfo& info, const SkImageInfo& imageInfo, SkStream* stream,
-            SkPngChunkReader* reader, png_structp png_ptr, png_infop info_ptr, int bitDepth)
-        : INHERITED(info, imageInfo, stream, reader, png_ptr, info_ptr, bitDepth)
-        , fLinesDecoded(0)
-        , fDst(nullptr)
-        , fRowBytes(0)
-        , fFirstRow(0)
-        , fLastRow(0)
-    {}
-
-    static void AllRowsCallback(png_structp png_ptr, png_bytep row, png_uint_32 rowNum, int ) {
-        GetDecoder(png_ptr)->allRowsCallback(row, rowNum);
-    }
-
-    static void RowCallback(png_structp png_ptr, png_bytep row, png_uint_32 rowNum, int ) {
-        GetDecoder(png_ptr)->rowCallback(row, rowNum);
-    }
-
-#ifdef SK_GOOGLE3_PNG_HACK
-    static void RereadInfoCallback(png_structp png_ptr, png_infop) {
-        GetDecoder(png_ptr)->rereadInfoCallback();
-    }
-#endif
-
-private:
-    int                         fLinesDecoded; 
-    void*                       fDst;
-    size_t                      fRowBytes;
-
-    
-    int                         fFirstRow;  
-    int                         fLastRow;
-
-    typedef SkPngCodec INHERITED;
-
-    static SkPngNormalDecoder* GetDecoder(png_structp png_ptr) {
-        return static_cast<SkPngNormalDecoder*>(png_get_progressive_ptr(png_ptr));
-    }
-
-    Result decodeAllRows(void* dst, size_t rowBytes, int* rowsDecoded) override {
-        const int height = this->getInfo().height();
-        png_progressive_info_ptr callback = nullptr;
-#ifdef SK_GOOGLE3_PNG_HACK
-        callback = RereadInfoCallback;
-#endif
-        png_set_progressive_read_fn(this->png_ptr(), this, callback, AllRowsCallback, nullptr);
-        fDst = dst;
-        fRowBytes = rowBytes;
-
-        fLinesDecoded = 0;
-
-        this->processData();
-
-        if (fLinesDecoded == height) {
-            return SkCodec::kSuccess;
-        }
-
-        if (rowsDecoded) {
-            *rowsDecoded = fLinesDecoded;
-        }
-
-        return SkCodec::kIncompleteInput;
-    }
-
-    void allRowsCallback(png_bytep row, int rowNum) {
-        SkASSERT(rowNum - fFirstRow == fLinesDecoded);
-        fLinesDecoded++;
-        this->applyXformRow(fDst, row);
-        fDst = SkTAddOffset<void>(fDst, fRowBytes);
-    }
-
-    void setRange(int firstRow, int lastRow, void* dst, size_t rowBytes) override {
-        png_progressive_info_ptr callback = nullptr;
-#ifdef SK_GOOGLE3_PNG_HACK
-        callback = RereadInfoCallback;
-#endif
-        png_set_progressive_read_fn(this->png_ptr(), this, callback, RowCallback, nullptr);
-        fFirstRow = firstRow;
-        fLastRow = lastRow;
-        fDst = dst;
-        fRowBytes = rowBytes;
-        fLinesDecoded = 0;
-    }
-
-    SkCodec::Result decode(int* rowsDecoded) override {
-        this->processData();
-
-        if (fLinesDecoded == fLastRow - fFirstRow + 1) {
-            return SkCodec::kSuccess;
-        }
-
-        if (rowsDecoded) {
-            *rowsDecoded = fLinesDecoded;
-        }
-
-        return SkCodec::kIncompleteInput;
-    }
-
-    void rowCallback(png_bytep row, int rowNum) {
-        if (rowNum < fFirstRow) {
-            
-            return;
-        }
-
-        SkASSERT(rowNum <= fLastRow);
-
-        
-        if (!this->swizzler() || this->swizzler()->rowNeeded(fLinesDecoded)) {
-            this->applyXformRow(fDst, row);
-            fDst = SkTAddOffset<void>(fDst, fRowBytes);
-        }
-
-        fLinesDecoded++;
-
-        if (rowNum == fLastRow) {
-            
-            longjmp(PNG_JMPBUF(this->png_ptr()), kStopDecoding);
-        }
-    }
-};
-
-class SkPngInterlacedDecoder : public SkPngCodec {
-public:
-    SkPngInterlacedDecoder(const SkEncodedInfo& info, const SkImageInfo& imageInfo,
-            SkStream* stream, SkPngChunkReader* reader, png_structp png_ptr, png_infop info_ptr,
-            int bitDepth, int numberPasses)
-        : INHERITED(info, imageInfo, stream, reader, png_ptr, info_ptr, bitDepth)
-        , fNumberPasses(numberPasses)
-        , fFirstRow(0)
-        , fLastRow(0)
-        , fLinesDecoded(0)
-        , fInterlacedComplete(false)
-        , fPng_rowbytes(0)
-    {}
-
-    static void InterlacedRowCallback(png_structp png_ptr, png_bytep row, png_uint_32 rowNum, int pass) {
-        auto decoder = static_cast<SkPngInterlacedDecoder*>(png_get_progressive_ptr(png_ptr));
-        decoder->interlacedRowCallback(row, rowNum, pass);
-    }
-
-#ifdef SK_GOOGLE3_PNG_HACK
-    static void RereadInfoInterlacedCallback(png_structp png_ptr, png_infop) {
-        static_cast<SkPngInterlacedDecoder*>(png_get_progressive_ptr(png_ptr))->rereadInfoInterlaced();
-    }
-#endif
-
-private:
-    const int               fNumberPasses;
-    int                     fFirstRow;
-    int                     fLastRow;
-    void*                   fDst;
-    size_t                  fRowBytes;
-    int                     fLinesDecoded;
-    bool                    fInterlacedComplete;
-    size_t                  fPng_rowbytes;
-    SkAutoTMalloc<png_byte> fInterlaceBuffer;
-
-    typedef SkPngCodec INHERITED;
-
-#ifdef SK_GOOGLE3_PNG_HACK
-    void rereadInfoInterlaced() {
-        this->rereadInfoCallback();
-        
-        this->setUpInterlaceBuffer(this->getInfo().height());
-    }
-#endif
-
-    
-    
-    
-    void interlacedRowCallback(png_bytep row, int rowNum, int pass) {
-        if (rowNum < fFirstRow || rowNum > fLastRow) {
-            
-            return;
-        }
-
-        png_bytep oldRow = fInterlaceBuffer.get() + (rowNum - fFirstRow) * fPng_rowbytes;
-        png_progressive_combine_row(this->png_ptr(), oldRow, row);
-
-        if (0 == pass) {
-            
-            SkASSERT(row);
-            SkASSERT(fLinesDecoded == rowNum - fFirstRow);
-            fLinesDecoded++;
-        } else {
-            SkASSERT(fLinesDecoded == fLastRow - fFirstRow + 1);
-            if (fNumberPasses - 1 == pass && rowNum == fLastRow) {
-                
-                
-                
-                fInterlacedComplete = true;
-                
-                longjmp(PNG_JMPBUF(this->png_ptr()), kStopDecoding);
-            }
-        }
-    }
-
-    SkCodec::Result decodeAllRows(void* dst, size_t rowBytes, int* rowsDecoded) override {
-        const int height = this->getInfo().height();
-        this->setUpInterlaceBuffer(height);
-        png_progressive_info_ptr callback = nullptr;
-#ifdef SK_GOOGLE3_PNG_HACK
-        callback = RereadInfoInterlacedCallback;
-#endif
-        png_set_progressive_read_fn(this->png_ptr(), this, callback, InterlacedRowCallback,
-                                    nullptr);
-
-        fFirstRow = 0;
-        fLastRow = height - 1;
-        fLinesDecoded = 0;
-
-        this->processData();
-
-        png_bytep srcRow = fInterlaceBuffer.get();
-        
-        for (int rowNum = 0; rowNum < fLinesDecoded; rowNum++) {
-            this->applyXformRow(dst, srcRow);
-            dst = SkTAddOffset<void>(dst, rowBytes);
-            srcRow = SkTAddOffset<png_byte>(srcRow, fPng_rowbytes);
-        }
-        if (fInterlacedComplete) {
-            return SkCodec::kSuccess;
-        }
-
-        if (rowsDecoded) {
-            *rowsDecoded = fLinesDecoded;
-        }
-
-        return SkCodec::kIncompleteInput;
-    }
-
-    void setRange(int firstRow, int lastRow, void* dst, size_t rowBytes) override {
-        
-        this->setUpInterlaceBuffer(lastRow - firstRow + 1);
-        png_progressive_info_ptr callback = nullptr;
-#ifdef SK_GOOGLE3_PNG_HACK
-        callback = RereadInfoInterlacedCallback;
-#endif
-        png_set_progressive_read_fn(this->png_ptr(), this, callback, InterlacedRowCallback, nullptr);
-        fFirstRow = firstRow;
-        fLastRow = lastRow;
-        fDst = dst;
-        fRowBytes = rowBytes;
-        fLinesDecoded = 0;
-    }
-
-    SkCodec::Result decode(int* rowsDecoded) override {
-        this->processData();
-
-        
-        if (!fLinesDecoded) {
-            return SkCodec::kIncompleteInput;
-        }
-        const int lastRow = fLinesDecoded + fFirstRow - 1;
-        SkASSERT(lastRow <= fLastRow);
-
-        
-        
-        png_bytep srcRow = fInterlaceBuffer.get();
-        const int sampleY = this->swizzler() ? this->swizzler()->sampleY() : 1;
-        void* dst = fDst;
-        for (int rowNum = fFirstRow; rowNum <= lastRow; rowNum += sampleY) {
-            this->applyXformRow(dst, srcRow);
-            dst = SkTAddOffset<void>(dst, fRowBytes);
-            srcRow = SkTAddOffset<png_byte>(srcRow, fPng_rowbytes * sampleY);
-        }
-
-        if (fInterlacedComplete) {
-            return SkCodec::kSuccess;
-        }
-
-        if (rowsDecoded) {
-            *rowsDecoded = fLinesDecoded;
-        }
-        return SkCodec::kIncompleteInput;
-    }
-
-    void setUpInterlaceBuffer(int height) {
-        fPng_rowbytes = png_get_rowbytes(this->png_ptr(), this->info_ptr());
-        fInterlaceBuffer.reset(fPng_rowbytes * height);
-        fInterlacedComplete = false;
-    }
-};
-
-#ifdef SK_GOOGLE3_PNG_HACK
-bool SkPngCodec::rereadHeaderIfNecessary() {
-    if (!fNeedsToRereadHeader) {
-        return true;
-    }
-
-    
-    
-    if (this->stream()->getPosition() > 0) {
-        this->stream()->rewind();
-    }
-
-    this->destroyReadStruct();
-    png_structp png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr,
-                                                 sk_error_fn, sk_warning_fn);
-    if (!png_ptr) {
-        return false;
-    }
-
-    
-    
-    AutoCleanPng autoClean(png_ptr, nullptr, nullptr, nullptr);
-
-    png_infop info_ptr = png_create_info_struct(png_ptr);
-    if (info_ptr == nullptr) {
-        return false;
-    }
-
-    autoClean.setInfoPtr(info_ptr);
-
-#ifdef PNG_READ_UNKNOWN_CHUNKS_SUPPORTED
-    
-    
-    
-    if (fPngChunkReader.get()) {
-        png_set_keep_unknown_chunks(png_ptr, PNG_HANDLE_CHUNK_ALWAYS, (png_byte*)"", 0);
-        png_set_read_user_chunk_fn(png_ptr, (png_voidp) fPngChunkReader.get(), sk_read_user_chunk);
-    }
-#endif
-
-    fPng_ptr = png_ptr;
-    fInfo_ptr = info_ptr;
-    autoClean.releasePngPtrs();
-    fNeedsToRereadHeader = false;
-    return true;
-}
-#endif 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-static bool read_header(SkStream* stream, SkPngChunkReader* chunkReader, SkCodec** outCodec,
-                        png_structp* png_ptrp, png_infop* info_ptrp) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static bool read_header(SkStream* stream, SkPngChunkReader* chunkReader,
+                        png_structp* png_ptrp, png_infop* info_ptrp,
+                        SkImageInfo* imageInfo, int* bitDepthPtr, int* numberPassesPtr) {
     
     png_structp png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr,
                                                  sk_error_fn, sk_warning_fn);
@@ -870,7 +298,7 @@ static bool read_header(SkStream* stream, SkPngChunkReader* chunkReader, SkCodec
         return false;
     }
 
-    AutoCleanPng autoClean(png_ptr, stream, chunkReader, outCodec);
+    AutoCleanPng autoClean(png_ptr);
 
     png_infop info_ptr = png_create_info_struct(png_ptr);
     if (info_ptr == nullptr) {
@@ -881,9 +309,11 @@ static bool read_header(SkStream* stream, SkPngChunkReader* chunkReader, SkCodec
 
     
     
-    if (setjmp(PNG_JMPBUF(png_ptr))) {
+    if (setjmp(png_jmpbuf(png_ptr))) {
         return false;
     }
+
+    png_set_read_fn(png_ptr, static_cast<void*>(stream), sk_read_fn);
 
 #ifdef PNG_READ_UNKNOWN_CHUNKS_SUPPORTED
     
@@ -895,35 +325,17 @@ static bool read_header(SkStream* stream, SkPngChunkReader* chunkReader, SkCodec
     }
 #endif
 
-    const bool decodedBounds = autoClean.decodeBounds();
-
-    if (!decodedBounds) {
-        return false;
-    }
-
     
-    if (png_ptrp) {
-        *png_ptrp = png_ptr;
-    }
-    if (info_ptrp) {
-        *info_ptrp = info_ptr;
-    }
-
     
-    if (outCodec) {
-        SkASSERT(*outCodec);
-    }
-    return true;
-}
-
-
-
-static void general_info_callback(png_structp png_ptr, png_infop info_ptr,
-                                  SkEncodedInfo::Color* outColor, SkEncodedInfo::Alpha* outAlpha) {
+    png_read_info(png_ptr, info_ptr);
     png_uint_32 origWidth, origHeight;
     int bitDepth, encodedColorType;
     png_get_IHDR(png_ptr, info_ptr, &origWidth, &origHeight, &bitDepth,
                  &encodedColorType, nullptr, nullptr, nullptr);
+
+    if (bitDepthPtr) {
+        *bitDepthPtr = bitDepth;
+    }
 
     
     
@@ -936,8 +348,8 @@ static void general_info_callback(png_structp png_ptr, png_infop info_ptr,
     
     
     
-    SkEncodedInfo::Color color;
-    SkEncodedInfo::Alpha alpha;
+    SkColorType colorType = kUnknown_SkColorType;
+    SkAlphaType alphaType = kUnknown_SkAlphaType;
     switch (encodedColorType) {
         case PNG_COLOR_TYPE_PALETTE:
             
@@ -947,21 +359,20 @@ static void general_info_callback(png_structp png_ptr, png_infop info_ptr,
                 png_set_packing(png_ptr);
             }
 
-            color = SkEncodedInfo::kPalette_Color;
+            colorType = kIndex_8_SkColorType;
             
-            alpha = png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS) ?
-                    SkEncodedInfo::kUnpremul_Alpha : SkEncodedInfo::kOpaque_Alpha;
+            alphaType = png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS) ?
+                    kUnpremul_SkAlphaType : kOpaque_SkAlphaType;
             break;
         case PNG_COLOR_TYPE_RGB:
             if (png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS)) {
                 
                 png_set_tRNS_to_alpha(png_ptr);
-                color = SkEncodedInfo::kRGBA_Color;
-                alpha = SkEncodedInfo::kBinary_Alpha;
+                alphaType = kUnpremul_SkAlphaType;
             } else {
-                color = SkEncodedInfo::kRGB_Color;
-                alpha = SkEncodedInfo::kOpaque_Alpha;
+                alphaType = kOpaque_SkAlphaType;
             }
+            colorType = kN32_SkColorType;
             break;
         case PNG_COLOR_TYPE_GRAY:
             
@@ -972,113 +383,65 @@ static void general_info_callback(png_structp png_ptr, png_infop info_ptr,
 
             if (png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS)) {
                 png_set_tRNS_to_alpha(png_ptr);
-                color = SkEncodedInfo::kGrayAlpha_Color;
-                alpha = SkEncodedInfo::kBinary_Alpha;
+
+                
+                
+                colorType = kN32_SkColorType;
+                alphaType = kUnpremul_SkAlphaType;
             } else {
-                color = SkEncodedInfo::kGray_Color;
-                alpha = SkEncodedInfo::kOpaque_Alpha;
+                colorType = kGray_8_SkColorType;
+                alphaType = kOpaque_SkAlphaType;
             }
             break;
         case PNG_COLOR_TYPE_GRAY_ALPHA:
-            color = SkEncodedInfo::kGrayAlpha_Color;
-            alpha = SkEncodedInfo::kUnpremul_Alpha;
+            
+            
+            colorType = kN32_SkColorType;
+            alphaType = kUnpremul_SkAlphaType;
             break;
         case PNG_COLOR_TYPE_RGBA:
-            color = SkEncodedInfo::kRGBA_Color;
-            alpha = SkEncodedInfo::kUnpremul_Alpha;
+            colorType = kN32_SkColorType;
+            alphaType = kUnpremul_SkAlphaType;
             break;
         default:
             
             SkASSERT(false);
-            color = SkEncodedInfo::kRGBA_Color;
-            alpha = SkEncodedInfo::kUnpremul_Alpha;
     }
-    if (outColor) {
-        *outColor = color;
+
+    int numberPasses = png_set_interlace_handling(png_ptr);
+    if (numberPassesPtr) {
+        *numberPassesPtr = numberPasses;
     }
-    if (outAlpha) {
-        *outAlpha = alpha;
+
+    SkColorProfileType profileType = kLinear_SkColorProfileType;
+    if (png_get_valid(png_ptr, info_ptr, PNG_INFO_sRGB)) {
+        profileType = kSRGB_SkColorProfileType;
     }
+
+    if (imageInfo) {
+        *imageInfo = SkImageInfo::Make(origWidth, origHeight, colorType, alphaType, profileType);
+    }
+    autoClean.release();
+    if (png_ptrp) {
+        *png_ptrp = png_ptr;
+    }
+    if (info_ptrp) {
+        *info_ptrp = info_ptr;
+    }
+
+    return true;
 }
 
-#ifdef SK_GOOGLE3_PNG_HACK
-void SkPngCodec::rereadInfoCallback() {
-    general_info_callback(fPng_ptr, fInfo_ptr, nullptr, nullptr);
-    png_set_interlace_handling(fPng_ptr);
-    png_read_update_info(fPng_ptr, fInfo_ptr);
-}
-#endif
-
-void AutoCleanPng::infoCallback() {
-    SkEncodedInfo::Color color;
-    SkEncodedInfo::Alpha alpha;
-    general_info_callback(fPng_ptr, fInfo_ptr, &color, &alpha);
-
-    const int numberPasses = png_set_interlace_handling(fPng_ptr);
-
-    fReadHeader = true;
-    fDecodedBounds = true;
-#ifndef SK_GOOGLE3_PNG_HACK
-    
-    
-    png_process_data_pause(fPng_ptr, 1);
-#else
-    
-    fPng_ptr->buffer_size = 0;
-#endif
-    if (fOutCodec) {
-        SkASSERT(nullptr == *fOutCodec);
-        sk_sp<SkColorSpace> colorSpace = read_color_space(fPng_ptr, fInfo_ptr);
-        if (!colorSpace) {
-            
-            colorSpace = SkColorSpace::NewNamed(SkColorSpace::kSRGB_Named);
-        }
-
-        SkEncodedInfo encodedInfo = SkEncodedInfo::Make(color, alpha, 8);
-        
-        
-        png_uint_32 origWidth = png_get_image_width(fPng_ptr, fInfo_ptr);
-        png_uint_32 origHeight = png_get_image_height(fPng_ptr, fInfo_ptr);
-        png_byte bitDepth = png_get_bit_depth(fPng_ptr, fInfo_ptr);
-        SkImageInfo imageInfo = encodedInfo.makeImageInfo(origWidth, origHeight, colorSpace);
-
-        if (SkEncodedInfo::kOpaque_Alpha == alpha) {
-            png_color_8p sigBits;
-            if (png_get_sBIT(fPng_ptr, fInfo_ptr, &sigBits)) {
-                if (5 == sigBits->red && 6 == sigBits->green && 5 == sigBits->blue) {
-                    
-                    imageInfo = imageInfo.makeColorType(kRGB_565_SkColorType);
-                }
-            }
-        }
-
-        if (1 == numberPasses) {
-            *fOutCodec = new SkPngNormalDecoder(encodedInfo, imageInfo, fStream,
-                    fChunkReader, fPng_ptr, fInfo_ptr, bitDepth);
-        } else {
-            *fOutCodec = new SkPngInterlacedDecoder(encodedInfo, imageInfo, fStream,
-                    fChunkReader, fPng_ptr, fInfo_ptr, bitDepth, numberPasses);
-        }
-    }
-
-
-    
-    
-    this->releasePngPtrs();
-}
-
-SkPngCodec::SkPngCodec(const SkEncodedInfo& encodedInfo, const SkImageInfo& imageInfo,
-                       SkStream* stream, SkPngChunkReader* chunkReader, void* png_ptr,
-                       void* info_ptr, int bitDepth)
-    : INHERITED(encodedInfo, imageInfo, stream)
+SkPngCodec::SkPngCodec(const SkImageInfo& info, SkStream* stream, SkPngChunkReader* chunkReader,
+                       png_structp png_ptr, png_infop info_ptr, int bitDepth, int numberPasses,
+                       sk_sp<SkColorSpace> colorSpace)
+    : INHERITED(info, stream, colorSpace)
     , fPngChunkReader(SkSafeRef(chunkReader))
     , fPng_ptr(png_ptr)
     , fInfo_ptr(info_ptr)
-    , fColorXformSrcRow(nullptr)
+    , fSrcConfig(SkSwizzler::kUnknown)
+    , fNumberPasses(numberPasses)
     , fBitDepth(bitDepth)
-#ifdef SK_GOOGLE3_PNG_HACK
-    , fNeedsToRereadHeader(true)
-#endif
 {}
 
 SkPngCodec::~SkPngCodec() {
@@ -1089,7 +452,7 @@ void SkPngCodec::destroyReadStruct() {
     if (fPng_ptr) {
         
         SkASSERT(fInfo_ptr);
-        png_destroy_read_struct((png_struct**)&fPng_ptr, (png_info**)&fInfo_ptr, nullptr);
+        png_destroy_read_struct(&fPng_ptr, &fInfo_ptr, nullptr);
         fPng_ptr = nullptr;
         fInfo_ptr = nullptr;
     }
@@ -1099,109 +462,72 @@ void SkPngCodec::destroyReadStruct() {
 
 
 
-bool SkPngCodec::initializeXforms(const SkImageInfo& dstInfo, const Options& options,
-                                  SkPMColor ctable[], int* ctableCount) {
-    if (setjmp(PNG_JMPBUF((png_struct*)fPng_ptr))) {
-        SkCodecPrintf("Failed on png_read_update_info.\n");
-        return false;
+SkCodec::Result SkPngCodec::initializeSwizzler(const SkImageInfo& requestedInfo,
+                                               const Options& options,
+                                               SkPMColor ctable[],
+                                               int* ctableCount) {
+    
+    
+    if (setjmp(png_jmpbuf(fPng_ptr))) {
+        SkCodecPrintf("setjmp long jump!\n");
+        return kInvalidInput;
     }
     png_read_update_info(fPng_ptr, fInfo_ptr);
 
     
-    
-    fSwizzler.reset(nullptr);
-    fColorXform = nullptr;
+    const SkColorType suggestedColorType = this->getInfo().colorType();
 
-    if (needs_color_xform(dstInfo, this->getInfo())) {
-        fColorXform = SkColorSpaceXform::New(this->getInfo().colorSpace(), dstInfo.colorSpace());
-        SkASSERT(fColorXform);
-    }
+    switch (suggestedColorType) {
+        case kIndex_8_SkColorType:
+            
+            fSrcConfig = SkSwizzler::kIndex;
+            if (!this->decodePalette(kPremul_SkAlphaType == requestedInfo.alphaType(),
+                    ctableCount)) {
+                return kInvalidInput;
+            }
+            break;
+        case kGray_8_SkColorType:
+            fSrcConfig = SkSwizzler::kGray;
+            break;
+        case kN32_SkColorType: {
+            const uint8_t encodedColorType = png_get_color_type(fPng_ptr, fInfo_ptr);
+            if (PNG_COLOR_TYPE_GRAY_ALPHA == encodedColorType ||
+                    PNG_COLOR_TYPE_GRAY == encodedColorType) {
+                
+                
+                
+                
+                SkASSERT(encodedColorType == PNG_COLOR_TYPE_GRAY_ALPHA ||
+                        png_get_valid(fPng_ptr, fInfo_ptr, PNG_INFO_tRNS));
 
-    
-    
-    
-    if (fColorXform && SkEncodedInfo::kRGBA_Color == this->getEncodedInfo().color() &&
-        !options.fSubset)
-    {
-        fXformMode = kColorOnly_XformMode;
-        return true;
-    }
-
-    if (SkEncodedInfo::kPalette_Color == this->getEncodedInfo().color()) {
-        if (!this->createColorTable(dstInfo, ctableCount)) {
-            return false;
+                fSrcConfig = SkSwizzler::kGrayAlpha;
+            } else {
+                if (this->getInfo().alphaType() == kOpaque_SkAlphaType) {
+                    fSrcConfig = SkSwizzler::kRGB;
+                } else {
+                    fSrcConfig = SkSwizzler::kRGBA;
+                }
+            }
+            break;
         }
-    }
-
-    
-    copy_color_table(dstInfo, fColorTable, ctable, ctableCount);
-
-    this->initializeSwizzler(dstInfo, options);
-    return true;
-}
-
-void SkPngCodec::initializeXformParams() {
-    switch (fXformMode) {
-        case kColorOnly_XformMode:
-            fXformColorFormat = select_xform_format(this->dstInfo().colorType());
-            fXformAlphaType = select_xform_alpha(this->dstInfo().alphaType(),
-                                                 this->getInfo().alphaType());
-            fXformWidth = this->dstInfo().width();
-            break;
-        case kSwizzleColor_XformMode:
-            fXformColorFormat = select_xform_format(this->dstInfo().colorType());
-            fXformAlphaType = select_xform_alpha(this->dstInfo().alphaType(),
-                                                 this->getInfo().alphaType());
-            fXformWidth = this->swizzler()->swizzleWidth();
-            break;
         default:
-            break;
+            
+            SkASSERT(false);
     }
-}
 
-static inline bool apply_xform_on_decode(SkColorType dstColorType, SkEncodedInfo::Color srcColor) {
     
-    return SkEncodedInfo::kPalette_Color != srcColor || kRGBA_F16_SkColorType == dstColorType;
-}
+    copy_color_table(requestedInfo, fColorTable, ctable, ctableCount);
 
-void SkPngCodec::initializeSwizzler(const SkImageInfo& dstInfo, const Options& options) {
-    SkImageInfo swizzlerInfo = dstInfo;
-    Options swizzlerOptions = options;
-    fXformMode = kSwizzleOnly_XformMode;
-    if (fColorXform && apply_xform_on_decode(dstInfo.colorType(), this->getEncodedInfo().color())) {
-        swizzlerInfo = swizzlerInfo.makeColorType(kRGBA_8888_SkColorType);
-        if (kPremul_SkAlphaType == dstInfo.alphaType()) {
-            swizzlerInfo = swizzlerInfo.makeAlphaType(kUnpremul_SkAlphaType);
-        }
-
-        fXformMode = kSwizzleColor_XformMode;
-
-        
-        
-        
-        swizzlerOptions.fZeroInitialized = kNo_ZeroInitialized;
-    }
-
+    
     const SkPMColor* colors = get_color_ptr(fColorTable.get());
-    fSwizzler.reset(SkSwizzler::CreateSwizzler(this->getEncodedInfo(), colors, swizzlerInfo,
-                                               swizzlerOptions));
+    fSwizzler.reset(SkSwizzler::CreateSwizzler(fSrcConfig, colors, requestedInfo, options));
     SkASSERT(fSwizzler);
+
+    return kSuccess;
 }
 
-SkSampler* SkPngCodec::getSampler(bool createIfNecessary) {
-    if (fSwizzler || !createIfNecessary) {
-        return fSwizzler;
-    }
-
-    this->initializeSwizzler(this->dstInfo(), this->options());
-    return fSwizzler;
-}
 
 bool SkPngCodec::onRewind() {
-#ifdef SK_GOOGLE3_PNG_HACK
-    fNeedsToRereadHeader = true;
-    return true;
-#else
     
     
     
@@ -1211,99 +537,322 @@ bool SkPngCodec::onRewind() {
 
     png_structp png_ptr;
     png_infop info_ptr;
-    if (!read_header(this->stream(), fPngChunkReader.get(), nullptr, &png_ptr, &info_ptr)) {
+    if (!read_header(this->stream(), fPngChunkReader.get(), &png_ptr, &info_ptr,
+                     nullptr, nullptr, nullptr)) {
         return false;
     }
 
     fPng_ptr = png_ptr;
     fInfo_ptr = info_ptr;
     return true;
-#endif
 }
 
-SkCodec::Result SkPngCodec::onGetPixels(const SkImageInfo& dstInfo, void* dst,
-                                        size_t rowBytes, const Options& options,
+SkCodec::Result SkPngCodec::onGetPixels(const SkImageInfo& requestedInfo, void* dst,
+                                        size_t dstRowBytes, const Options& options,
                                         SkPMColor ctable[], int* ctableCount,
                                         int* rowsDecoded) {
-    if (!conversion_possible(dstInfo, this->getInfo()) ||
-        !this->initializeXforms(dstInfo, options, ctable, ctableCount))
-    {
+    if (!conversion_possible(requestedInfo, this->getInfo())) {
         return kInvalidConversion;
     }
-#ifdef SK_GOOGLE3_PNG_HACK
-    
-    
-    if (!this->rereadHeaderIfNecessary()) {
-        return kCouldNotRewind;
-    }
-#endif
-
     if (options.fSubset) {
+        
         return kUnimplemented;
     }
 
-    this->allocateStorage(dstInfo);
-    this->initializeXformParams();
-    return this->decodeAllRows(dst, rowBytes, rowsDecoded);
-}
-
-SkCodec::Result SkPngCodec::onStartIncrementalDecode(const SkImageInfo& dstInfo,
-        void* dst, size_t rowBytes, const SkCodec::Options& options,
-        SkPMColor* ctable, int* ctableCount) {
-    if (!conversion_possible(dstInfo, this->getInfo()) ||
-        !this->initializeXforms(dstInfo, options, ctable, ctableCount))
-    {
-        return kInvalidConversion;
-    }
-#ifdef SK_GOOGLE3_PNG_HACK
     
-    if (!this->rereadHeaderIfNecessary()) {
-        return kCouldNotRewind;
+    const Result result = this->initializeSwizzler(requestedInfo, options, ctable, ctableCount);
+    if (result != kSuccess) {
+        return result;
     }
-#endif
 
-    this->allocateStorage(dstInfo);
+    const int width = requestedInfo.width();
+    const int height = requestedInfo.height();
+    const int bpp = SkSwizzler::BytesPerPixel(fSrcConfig);
+    const size_t srcRowBytes = width * bpp;
 
-    int firstRow, lastRow;
-    if (options.fSubset) {
-        firstRow = options.fSubset->top();
-        lastRow = options.fSubset->bottom() - 1;
+    
+    
+    int row = 0;
+    
+    SkAutoTMalloc<uint8_t> storage;
+    if (setjmp(png_jmpbuf(fPng_ptr))) {
+        
+        if (fNumberPasses > 1) {
+            
+            return (row == height) ? kSuccess : kInvalidInput;
+        }
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        *rowsDecoded = row;
+        return (row == height) ? kSuccess : kIncompleteInput;
+    }
+
+    
+    void* dstRow = dst;
+    if (fNumberPasses > 1) {
+        storage.reset(height * srcRowBytes);
+        uint8_t* const base = storage.get();
+
+        for (int i = 0; i < fNumberPasses; i++) {
+            uint8_t* srcRow = base;
+            for (int y = 0; y < height; y++) {
+                png_read_row(fPng_ptr, srcRow, nullptr);
+                srcRow += srcRowBytes;
+            }
+        }
+
+        
+        uint8_t* srcRow = base;
+        for (; row < height; row++) {
+            fSwizzler->swizzle(dstRow, srcRow);
+            dstRow = SkTAddOffset<void>(dstRow, dstRowBytes);
+            srcRow += srcRowBytes;
+        }
     } else {
-        firstRow = 0;
-        lastRow = dstInfo.height() - 1;
+        storage.reset(srcRowBytes);
+        uint8_t* srcRow = storage.get();
+        for (; row < height; row++) {
+            png_read_row(fPng_ptr, srcRow, nullptr);
+            fSwizzler->swizzle(dstRow, srcRow);
+            dstRow = SkTAddOffset<void>(dstRow, dstRowBytes);
+        }
     }
-    this->setRange(firstRow, lastRow, dst, rowBytes);
+
+    
+    png_read_end(fPng_ptr, fInfo_ptr);
+
     return kSuccess;
 }
 
-SkCodec::Result SkPngCodec::onIncrementalDecode(int* rowsDecoded) {
-    
-    this->initializeXformParams();
-
-    return this->decode(rowsDecoded);
-}
-
-uint64_t SkPngCodec::onGetFillValue(const SkImageInfo& dstInfo) const {
+uint32_t SkPngCodec::onGetFillValue(SkColorType colorType) const {
     const SkPMColor* colorPtr = get_color_ptr(fColorTable.get());
     if (colorPtr) {
-        SkAlphaType alphaType = select_xform_alpha(dstInfo.alphaType(),
-                                                   this->getInfo().alphaType());
-        return get_color_table_fill_value(dstInfo.colorType(), alphaType, colorPtr, 0,
-                                          fColorXform.get());
+        return get_color_table_fill_value(colorType, colorPtr, 0);
     }
-    return INHERITED::onGetFillValue(dstInfo);
+    return INHERITED::onGetFillValue(colorType);
 }
+
+
+class SkPngScanlineDecoder : public SkPngCodec {
+public:
+    SkPngScanlineDecoder(const SkImageInfo& srcInfo, SkStream* stream,
+            SkPngChunkReader* chunkReader, png_structp png_ptr, png_infop info_ptr, int bitDepth,
+            sk_sp<SkColorSpace> colorSpace)
+        : INHERITED(srcInfo, stream, chunkReader, png_ptr, info_ptr, bitDepth, 1, colorSpace)
+        , fSrcRow(nullptr)
+    {}
+
+    Result onStartScanlineDecode(const SkImageInfo& dstInfo, const Options& options,
+            SkPMColor ctable[], int* ctableCount) override {
+        if (!conversion_possible(dstInfo, this->getInfo())) {
+            return kInvalidConversion;
+        }
+
+        const Result result = this->initializeSwizzler(dstInfo, options, ctable,
+                                                       ctableCount);
+        if (result != kSuccess) {
+            return result;
+        }
+
+        fStorage.reset(this->getInfo().width() * SkSwizzler::BytesPerPixel(this->srcConfig()));
+        fSrcRow = fStorage.get();
+
+        return kSuccess;
+    }
+
+    int onGetScanlines(void* dst, int count, size_t rowBytes) override {
+        
+        int row = 0;
+        if (setjmp(png_jmpbuf(this->png_ptr()))) {
+            SkCodecPrintf("setjmp long jump!\n");
+            return row;
+        }
+
+        void* dstRow = dst;
+        for (; row < count; row++) {
+            png_read_row(this->png_ptr(), fSrcRow, nullptr);
+            this->swizzler()->swizzle(dstRow, fSrcRow);
+            dstRow = SkTAddOffset<void>(dstRow, rowBytes);
+        }
+
+        return row;
+    }
+
+    bool onSkipScanlines(int count) override {
+        
+        if (setjmp(png_jmpbuf(this->png_ptr()))) {
+            SkCodecPrintf("setjmp long jump!\n");
+            return false;
+        }
+
+        for (int row = 0; row < count; row++) {
+            png_read_row(this->png_ptr(), fSrcRow, nullptr);
+        }
+        return true;
+    }
+
+private:
+    SkAutoTMalloc<uint8_t>      fStorage;
+    uint8_t*                    fSrcRow;
+
+    typedef SkPngCodec INHERITED;
+};
+
+
+class SkPngInterlacedScanlineDecoder : public SkPngCodec {
+public:
+    SkPngInterlacedScanlineDecoder(const SkImageInfo& srcInfo, SkStream* stream,
+            SkPngChunkReader* chunkReader, png_structp png_ptr, png_infop info_ptr,
+            int bitDepth, int numberPasses, sk_sp<SkColorSpace> colorSpace)
+        : INHERITED(srcInfo, stream, chunkReader, png_ptr, info_ptr, bitDepth, numberPasses,
+                    colorSpace)
+        , fHeight(-1)
+        , fCanSkipRewind(false)
+    {
+        SkASSERT(numberPasses != 1);
+    }
+
+    Result onStartScanlineDecode(const SkImageInfo& dstInfo, const Options& options,
+            SkPMColor ctable[], int* ctableCount) override {
+        if (!conversion_possible(dstInfo, this->getInfo())) {
+            return kInvalidConversion;
+        }
+
+        const Result result = this->initializeSwizzler(dstInfo, options, ctable,
+                                                       ctableCount);
+        if (result != kSuccess) {
+            return result;
+        }
+
+        fHeight = dstInfo.height();
+        
+        fSrcRowBytes = this->getInfo().width() * SkSwizzler::BytesPerPixel(this->srcConfig());
+        fGarbageRow.reset(fSrcRowBytes);
+        fGarbageRowPtr = static_cast<uint8_t*>(fGarbageRow.get());
+        fCanSkipRewind = true;
+
+        return SkCodec::kSuccess;
+    }
+
+    int onGetScanlines(void* dst, int count, size_t dstRowBytes) override {
+        
+        
+        if (fCanSkipRewind) {
+            
+            
+            fCanSkipRewind = false;
+        } else {
+            
+            
+            
+            
+            
+            const int currScanline = this->nextScanline();
+            
+            SkASSERT(currScanline != -1);
+
+            if (!this->rewindIfNeeded()) {
+                return kCouldNotRewind;
+            }
+            this->updateCurrScanline(currScanline);
+        }
+
+        if (setjmp(png_jmpbuf(this->png_ptr()))) {
+            SkCodecPrintf("setjmp long jump!\n");
+            
+            
+            
+            return 0;
+        }
+        SkAutoTMalloc<uint8_t> storage(count * fSrcRowBytes);
+        uint8_t* storagePtr = storage.get();
+        uint8_t* srcRow;
+        const int startRow = this->nextScanline();
+        for (int i = 0; i < this->numberPasses(); i++) {
+            
+            for (int y = 0; y < startRow; y++){
+                png_read_row(this->png_ptr(), fGarbageRowPtr, nullptr);
+            }
+            
+            srcRow = storagePtr;
+            for (int y = 0; y < count; y++) {
+                png_read_row(this->png_ptr(), srcRow, nullptr);
+                srcRow += fSrcRowBytes;
+            }
+            
+            for (int y = 0; y < fHeight - startRow - count; y++) {
+                png_read_row(this->png_ptr(), fGarbageRowPtr, nullptr);
+            }
+        }
+        
+        srcRow = storagePtr;
+        void* dstRow = dst;
+        for (int y = 0; y < count; y++) {
+            this->swizzler()->swizzle(dstRow, srcRow);
+            dstRow = SkTAddOffset<void>(dstRow, dstRowBytes);
+            srcRow += fSrcRowBytes;
+        }
+
+        return count;
+    }
+
+    bool onSkipScanlines(int count) override {
+        
+        return true;
+    }
+
+    SkScanlineOrder onGetScanlineOrder() const override {
+        return kNone_SkScanlineOrder;
+    }
+
+private:
+    int                         fHeight;
+    size_t                      fSrcRowBytes;
+    SkAutoMalloc                fGarbageRow;
+    uint8_t*                    fGarbageRowPtr;
+    
+    
+    
+    
+    
+    
+    
+    
+    bool                        fCanSkipRewind;
+
+    typedef SkPngCodec INHERITED;
+};
 
 SkCodec* SkPngCodec::NewFromStream(SkStream* stream, SkPngChunkReader* chunkReader) {
     SkAutoTDelete<SkStream> streamDeleter(stream);
+    png_structp png_ptr;
+    png_infop info_ptr;
+    SkImageInfo imageInfo;
+    int bitDepth;
+    int numberPasses;
 
-    SkCodec* outCodec = nullptr;
-    if (read_header(streamDeleter.get(), chunkReader, &outCodec, nullptr, nullptr)) {
-        
-        SkASSERT(outCodec);
-        streamDeleter.release();
-        return outCodec;
+    if (!read_header(stream, chunkReader, &png_ptr, &info_ptr, &imageInfo, &bitDepth,
+                     &numberPasses)) {
+        return nullptr;
     }
 
-    return nullptr;
+    auto colorSpace = read_color_space(png_ptr, info_ptr);
+
+    if (1 == numberPasses) {
+        return new SkPngScanlineDecoder(imageInfo, streamDeleter.release(), chunkReader,
+                                        png_ptr, info_ptr, bitDepth, colorSpace);
+    }
+
+    return new SkPngInterlacedScanlineDecoder(imageInfo, streamDeleter.release(), chunkReader,
+                                              png_ptr, info_ptr, bitDepth, numberPasses,
+                                              colorSpace);
 }

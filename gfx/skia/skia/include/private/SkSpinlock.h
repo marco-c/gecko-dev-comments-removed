@@ -9,15 +9,13 @@
 #define SkSpinlock_DEFINED
 
 #include "SkTypes.h"
-#include <atomic>
+#include "SkAtomics.h"
 
 class SkSpinlock {
 public:
-    constexpr SkSpinlock() = default;
-
     void acquire() {
         
-        if (fLocked.exchange(true, std::memory_order_acquire)) {
+        if (fLocked.exchange(true, sk_memory_order_acquire)) {
             
             this->contendedAcquire();
         }
@@ -25,13 +23,13 @@ public:
 
     void release() {
         
-        fLocked.store(false, std::memory_order_release);
+        fLocked.store(false, sk_memory_order_release);
     }
 
 private:
     SK_API void contendedAcquire();
 
-    std::atomic<bool> fLocked{false};
+    SkAtomic<bool> fLocked{false};
 };
 
 #endif

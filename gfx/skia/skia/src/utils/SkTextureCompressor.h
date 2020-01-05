@@ -57,7 +57,8 @@ namespace SkTextureCompressor {
     
     
     
-    sk_sp<SkData> CompressBitmapToFormat(const SkPixmap&, Format format);
+    
+    SkData* CompressBitmapToFormat(const SkPixmap&, Format format);
 
     
     

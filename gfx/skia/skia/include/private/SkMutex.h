@@ -8,16 +8,33 @@
 #ifndef SkMutex_DEFINED
 #define SkMutex_DEFINED
 
+
 #include "../private/SkSemaphore.h"
-#include "../private/SkThreadID.h"
 #include "SkTypes.h"
 
-#define SK_DECLARE_STATIC_MUTEX(name) static SkBaseMutex name;
+#ifdef SK_DEBUG
+    #include "../private/SkThreadID.h"
+#endif
 
-class SkBaseMutex {
-public:
-    constexpr SkBaseMutex() = default;
+#define SK_MUTEX_SEMAPHORE_INIT {1, {0}}
 
+#ifdef SK_DEBUG
+    #define SK_BASE_MUTEX_INIT {SK_MUTEX_SEMAPHORE_INIT, 0}
+#else
+    #define SK_BASE_MUTEX_INIT {SK_MUTEX_SEMAPHORE_INIT}
+#endif
+
+
+
+
+
+
+
+
+
+#define SK_DECLARE_STATIC_MUTEX(name) namespace {} static SkBaseMutex name = SK_BASE_MUTEX_INIT;
+
+struct SkBaseMutex {
     void acquire() {
         fSemaphore.wait();
         SkDEBUGCODE(fOwner = SkGetThreadID();)
@@ -33,61 +50,76 @@ public:
         SkASSERT(fOwner == SkGetThreadID());
     }
 
-protected:
-    SkBaseSemaphore fSemaphore{1};
-    SkDEBUGCODE(SkThreadID fOwner{kIllegalThreadID};)
+    SkBaseSemaphore fSemaphore;
+    SkDEBUGCODE(SkThreadID fOwner;)
 };
+
 
 class SkMutex : public SkBaseMutex {
 public:
-    using SkBaseMutex::SkBaseMutex;
-    ~SkMutex() { fSemaphore.cleanup(); }
+    SkMutex () {
+        fSemaphore = SK_MUTEX_SEMAPHORE_INIT;
+        SkDEBUGCODE(fOwner = kIllegalThreadID);
+    }
+    ~SkMutex () { fSemaphore.deleteSemaphore(); }
+    SkMutex(const SkMutex&) = delete;
+    SkMutex& operator=(const SkMutex&) = delete;
 };
 
-class SkAutoMutexAcquire {
+template <typename Lock>
+class SkAutoTAcquire : SkNoncopyable {
 public:
-    template <typename T>
-    SkAutoMutexAcquire(T* mutex) : fMutex(mutex) {
+    explicit SkAutoTAcquire(Lock& mutex) : fMutex(&mutex) {
+        SkASSERT(fMutex != nullptr);
+        mutex.acquire();
+    }
+
+    explicit SkAutoTAcquire(Lock* mutex) : fMutex(mutex) {
         if (mutex) {
             mutex->acquire();
         }
-        fRelease = [](void* mutex) { ((T*)mutex)->release(); };
     }
 
-    template <typename T>
-    SkAutoMutexAcquire(T& mutex) : SkAutoMutexAcquire(&mutex) {}
+    
+    ~SkAutoTAcquire() {
+        if (fMutex) {
+            fMutex->release();
+        }
+    }
 
-    ~SkAutoMutexAcquire() { this->release(); }
-
+    
     void release() {
         if (fMutex) {
-            fRelease(fMutex);
+            fMutex->release();
+            fMutex = nullptr;
         }
-        fMutex = nullptr;
+    }
+
+    
+    void assertHeld() {
+        SkASSERT(fMutex);
+        fMutex->assertHeld();
     }
 
 private:
-    void*  fMutex;
-    void (*fRelease)(void*);
+    Lock* fMutex;
 };
+
+
+
+template <typename Lock>
+class SkAutoTExclusive {
+public:
+    SkAutoTExclusive(Lock& lock) : fLock(lock) { lock.acquire(); }
+    ~SkAutoTExclusive() { fLock.release(); }
+private:
+    Lock &fLock;
+};
+
+typedef SkAutoTAcquire<SkBaseMutex> SkAutoMutexAcquire;
 #define SkAutoMutexAcquire(...) SK_REQUIRE_LOCAL_VAR(SkAutoMutexAcquire)
 
-
-
-class SkAutoExclusive {
-public:
-    template <typename T>
-    SkAutoExclusive(T& mutex) : fMutex(&mutex) {
-        mutex.acquire();
-
-        fRelease = [](void* mutex) { ((T*)mutex)->release(); };
-    }
-    ~SkAutoExclusive() { fRelease(fMutex); }
-
-private:
-    void* fMutex;
-    void (*fRelease)(void*);
-};
-#define SkAutoExclusive(...) SK_REQUIRE_LOCAL_VAR(SkAutoExclusive)
+typedef SkAutoTExclusive<SkBaseMutex> SkAutoMutexExclusive;
+#define SkAutoMutexExclusive(...) SK_REQUIRE_LOCAL_VAR(SkAutoMutexExclusive)
 
 #endif

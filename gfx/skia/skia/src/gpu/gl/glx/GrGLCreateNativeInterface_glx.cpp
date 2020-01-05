@@ -13,12 +13,6 @@
 #include <GL/glx.h>
 
 static GrGLFuncPtr glx_get(void* ctx, const char name[]) {
-    
-    
-    if (0 == strncmp(name, "egl", 3)) {
-        return nullptr;
-    }
-
     SkASSERT(nullptr == ctx);
     SkASSERT(glXGetCurrentContext());
     return glXGetProcAddress(reinterpret_cast<const GLubyte*>(name));

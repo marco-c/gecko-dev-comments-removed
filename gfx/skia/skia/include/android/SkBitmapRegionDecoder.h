@@ -21,6 +21,7 @@ class SkBitmapRegionDecoder {
 public:
 
     enum Strategy {
+        kCanvas_Strategy,       
         kAndroidCodec_Strategy, 
     };
 
@@ -29,7 +30,8 @@ public:
 
 
 
-    static SkBitmapRegionDecoder* Create(sk_sp<SkData>, Strategy strategy);
+    static SkBitmapRegionDecoder* Create(
+            SkData* data, Strategy strategy);
 
     
 

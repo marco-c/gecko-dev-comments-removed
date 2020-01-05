@@ -15,12 +15,12 @@
 #include "GrTextureProvider.h"
 
 namespace {
-    using MakeFPProc = sk_sp<GrFragmentProcessor> (*)(sk_sp<GrFragmentProcessor>,
-                                                      SkYUVColorSpace colorSpace);
+    using CreateFPProc = const GrFragmentProcessor* (*)(const GrFragmentProcessor*,
+                                                        SkYUVColorSpace colorSpace);
 };
 
 static bool convert_texture(GrTexture* src, GrDrawContext* dst, int dstW, int dstH,
-                            SkYUVColorSpace colorSpace, MakeFPProc proc) {
+                            SkYUVColorSpace colorSpace, CreateFPProc proc) {
 
     SkScalar xScale = SkIntToScalar(src->width()) / dstW / src->width();
     SkScalar yScale = SkIntToScalar(src->height()) / dstH / src->height();
@@ -31,19 +31,19 @@ static bool convert_texture(GrTexture* src, GrDrawContext* dst, int dstW, int ds
         filter = GrTextureParams::kBilerp_FilterMode;
     }
 
-    sk_sp<GrFragmentProcessor> fp(
-            GrSimpleTextureEffect::Make(src, nullptr, SkMatrix::MakeScale(xScale, yScale), filter));
+    SkAutoTUnref<const GrFragmentProcessor> fp(
+            GrSimpleTextureEffect::Create(src, SkMatrix::MakeScale(xScale, yScale), filter));
     if (!fp) {
         return false;
     }
-    fp = proc(std::move(fp), colorSpace);
+    fp.reset(proc(fp, colorSpace));
     if (!fp) {
         return false;
     }
     GrPaint paint;
-    paint.setPorterDuffXPFactory(SkBlendMode::kSrc);
-    paint.addColorFragmentProcessor(std::move(fp));
-    dst->drawRect(GrNoClip(), paint, SkMatrix::I(), SkRect::MakeIWH(dstW, dstH));
+    paint.setPorterDuffXPFactory(SkXfermode::kSrc_Mode);
+    paint.addColorFragmentProcessor(fp);
+    dst->drawRect(GrClip::WideOpen(), paint, SkMatrix::I(), SkRect::MakeIWH(dstW, dstH));
     return true;
 }
 
@@ -52,99 +52,122 @@ bool GrTextureToYUVPlanes(GrTexture* texture, const SkISize sizes[3], void* cons
     if (GrContext* context = texture->getContext()) {
         
         
-        sk_sp<GrDrawContext> yuvDrawContext;
-        sk_sp<GrDrawContext> yDrawContext;
-        sk_sp<GrDrawContext> uvDrawContext;
-        sk_sp<GrDrawContext> uDrawContext;
-        sk_sp<GrDrawContext> vDrawContext;
+        SkAutoTUnref<GrTexture> yuvTex;
+        SkAutoTUnref<GrTexture> yTex;
+        SkAutoTUnref<GrTexture> uvTex;
+        SkAutoTUnref<GrTexture> uTex;
+        SkAutoTUnref<GrTexture> vTex;
+
+        GrPixelConfig singleChannelPixelConfig;
+        if (context->caps()->isConfigRenderable(kAlpha_8_GrPixelConfig, false)) {
+            singleChannelPixelConfig = kAlpha_8_GrPixelConfig;
+        } else {
+            singleChannelPixelConfig = kRGBA_8888_GrPixelConfig;
+        }
 
         
         
         
         if (sizes[0] == sizes[1] && sizes[1] == sizes[2]) {
-            yuvDrawContext = context->makeDrawContextWithFallback(SkBackingFit::kApprox,
-                                                                  sizes[0].fWidth,
-                                                                  sizes[0].fHeight,
-                                                                  kRGBA_8888_GrPixelConfig,
-                                                                  nullptr);
-            if (!yuvDrawContext) {
+            GrSurfaceDesc yuvDesc;
+            yuvDesc.fConfig = kRGBA_8888_GrPixelConfig;
+            yuvDesc.fFlags = kRenderTarget_GrSurfaceFlag;
+            yuvDesc.fWidth = sizes[0].fWidth;
+            yuvDesc.fHeight = sizes[0].fHeight;
+            yuvTex.reset(context->textureProvider()->createApproxTexture(yuvDesc));
+            if (!yuvTex) {
                 return false;
             }
         } else {
-            yDrawContext = context->makeDrawContextWithFallback(SkBackingFit::kApprox,
-                                                                sizes[0].fWidth,
-                                                                sizes[0].fHeight,
-                                                                kAlpha_8_GrPixelConfig,
-                                                                nullptr);
-            if (!yDrawContext) {
+            GrSurfaceDesc yDesc;
+            yDesc.fConfig = singleChannelPixelConfig;
+            yDesc.fFlags = kRenderTarget_GrSurfaceFlag;
+            yDesc.fWidth = sizes[0].fWidth;
+            yDesc.fHeight = sizes[0].fHeight;
+            yTex.reset(context->textureProvider()->createApproxTexture(yDesc));
+            if (!yTex) {
                 return false;
             }
             if (sizes[1] == sizes[2]) {
+                GrSurfaceDesc uvDesc;
                 
-                uvDrawContext = context->makeDrawContextWithFallback(SkBackingFit::kApprox,
-                                                                     sizes[1].fWidth,
-                                                                     sizes[1].fHeight,
-                                                                     kRGBA_8888_GrPixelConfig,
-                                                                     nullptr);
-                if (!uvDrawContext) {
+                uvDesc.fConfig = kRGBA_8888_GrPixelConfig;
+                uvDesc.fFlags = kRenderTarget_GrSurfaceFlag;
+                uvDesc.fWidth = sizes[1].fWidth;
+                uvDesc.fHeight = sizes[1].fHeight;
+                uvTex.reset(context->textureProvider()->createApproxTexture(uvDesc));
+                if (!uvTex) {
                     return false;
                 }
             } else {
-                uDrawContext = context->makeDrawContextWithFallback(SkBackingFit::kApprox,
-                                                                    sizes[1].fWidth,
-                                                                    sizes[1].fHeight,
-                                                                    kAlpha_8_GrPixelConfig,
-                                                                    nullptr);
-                vDrawContext = context->makeDrawContextWithFallback(SkBackingFit::kApprox,
-                                                                    sizes[2].fWidth,
-                                                                    sizes[2].fHeight,
-                                                                    kAlpha_8_GrPixelConfig,
-                                                                    nullptr);
-                if (!uDrawContext || !vDrawContext) {
+                GrSurfaceDesc uvDesc;
+                uvDesc.fConfig = singleChannelPixelConfig;
+                uvDesc.fFlags = kRenderTarget_GrSurfaceFlag;
+                uvDesc.fWidth = sizes[1].fWidth;
+                uvDesc.fHeight = sizes[1].fHeight;
+                uTex.reset(context->textureProvider()->createApproxTexture(uvDesc));
+                uvDesc.fWidth = sizes[2].fWidth;
+                uvDesc.fHeight = sizes[2].fHeight;
+                vTex.reset(context->textureProvider()->createApproxTexture(uvDesc));
+                if (!uTex || !vTex) {
                     return false;
                 }
             }
         }
 
         
-        if (yuvDrawContext) {
-            if (!convert_texture(texture, yuvDrawContext.get(),
-                                 sizes[0].fWidth, sizes[0].fHeight,
-                                 colorSpace, GrYUVEffect::MakeRGBToYUV)) {
+        if (yuvTex) {
+            SkAutoTUnref<GrDrawContext> dc(context->drawContext(yuvTex->asRenderTarget()));
+            if (!dc) {
                 return false;
             }
+            if (!convert_texture(texture, dc, sizes[0].fWidth, sizes[0].fHeight, colorSpace,
+                                 GrYUVEffect::CreateRGBToYUV)) {
+                return false;
+            }
+
         } else {
-            SkASSERT(yDrawContext);
-            if (!convert_texture(texture, yDrawContext.get(),
-                                 sizes[0].fWidth, sizes[0].fHeight,
-                                 colorSpace, GrYUVEffect::MakeRGBToY)) {
+            SkASSERT(yTex);
+            SkAutoTUnref<GrDrawContext> dc(context->drawContext(yTex->asRenderTarget()));
+            if (!dc) {
                 return false;
             }
-            if (uvDrawContext) {
-                if (!convert_texture(texture, uvDrawContext.get(),
-                                     sizes[1].fWidth, sizes[1].fHeight,
-                                     colorSpace,  GrYUVEffect::MakeRGBToUV)) {
+            if (!convert_texture(texture, dc, sizes[0].fWidth, sizes[0].fHeight, colorSpace,
+                                 GrYUVEffect::CreateRGBToY)) {
+                return false;
+            }
+            if (uvTex) {
+                dc.reset(context->drawContext(uvTex->asRenderTarget()));
+                if (!dc) {
+                    return false;
+                }
+                if (!convert_texture(texture, dc, sizes[1].fWidth, sizes[1].fHeight,
+                                     colorSpace,  GrYUVEffect::CreateRGBToUV)) {
                     return false;
                 }
             } else {
-                SkASSERT(uDrawContext && vDrawContext);
-                if (!convert_texture(texture, uDrawContext.get(),
-                                     sizes[1].fWidth, sizes[1].fHeight,
-                                     colorSpace, GrYUVEffect::MakeRGBToU)) {
+                SkASSERT(uTex && vTex);
+                dc.reset(context->drawContext(uTex->asRenderTarget()));
+                if (!dc) {
                     return false;
                 }
-                if (!convert_texture(texture, vDrawContext.get(),
-                                     sizes[2].fWidth, sizes[2].fHeight,
-                                     colorSpace, GrYUVEffect::MakeRGBToV)) {
+                if (!convert_texture(texture, dc, sizes[1].fWidth, sizes[1].fHeight,
+                                     colorSpace, GrYUVEffect::CreateRGBToU)) {
+                    return false;
+                }
+                dc.reset(context->drawContext(vTex->asRenderTarget()));
+                if (!dc) {
+                    return false;
+                }
+                if (!convert_texture(texture, dc, sizes[2].fWidth, sizes[2].fHeight,
+                                     colorSpace, GrYUVEffect::CreateRGBToV)) {
                     return false;
                 }
             }
         }
 
-        if (yuvDrawContext) {
+        if (yuvTex) {
             SkASSERT(sizes[0] == sizes[1] && sizes[1] == sizes[2]);
-            sk_sp<GrTexture> yuvTex(yuvDrawContext->asTexture());
-            SkASSERT(yuvTex);
             SkISize yuvSize = sizes[0];
             
             SkAutoSTMalloc<128 * 128, uint32_t> tempYUV(yuvSize.fWidth * yuvSize.fHeight);
@@ -175,17 +198,13 @@ bool GrTextureToYUVPlanes(GrTexture* texture, const SkISize sizes[3], void* cons
             }
             return true;
         } else {
-            SkASSERT(yDrawContext);
-            sk_sp<GrTexture> yTex(yDrawContext->asTexture());
             SkASSERT(yTex);
             if (!yTex->readPixels(0, 0, sizes[0].fWidth, sizes[0].fHeight,
                                   kAlpha_8_GrPixelConfig, planes[0], rowBytes[0])) {
                 return false;
             }
-            if (uvDrawContext) {
+            if (uvTex) {
                 SkASSERT(sizes[1].fWidth == sizes[2].fWidth);
-                sk_sp<GrTexture> uvTex(uvDrawContext->asTexture());
-                SkASSERT(uvTex);
                 SkISize uvSize = sizes[1];
                 
                 SkAutoSTMalloc<128 * 128, uint32_t> tempUV(uvSize.fWidth * uvSize.fHeight);
@@ -212,17 +231,13 @@ bool GrTextureToYUVPlanes(GrTexture* texture, const SkISize sizes[3], void* cons
                 }
                 return true;
             } else {
-                SkASSERT(uDrawContext && vDrawContext);
-                sk_sp<GrTexture> tex(uDrawContext->asTexture());
-                SkASSERT(tex);
-                if (!tex->readPixels(0, 0, sizes[1].fWidth, sizes[1].fHeight,
-                                     kAlpha_8_GrPixelConfig, planes[1], rowBytes[1])) {
+                SkASSERT(uTex && vTex);
+                if (!uTex->readPixels(0, 0, sizes[1].fWidth, sizes[1].fHeight,
+                                      kAlpha_8_GrPixelConfig, planes[1], rowBytes[1])) {
                     return false;
                 }
-                tex = vDrawContext->asTexture();
-                SkASSERT(tex);
-                if (!tex->readPixels(0, 0, sizes[2].fWidth, sizes[2].fHeight,
-                                     kAlpha_8_GrPixelConfig, planes[2], rowBytes[2])) {
+                if (!vTex->readPixels(0, 0, sizes[2].fWidth, sizes[2].fHeight,
+                                      kAlpha_8_GrPixelConfig, planes[2], rowBytes[2])) {
                     return false;
                 }
                 return true;

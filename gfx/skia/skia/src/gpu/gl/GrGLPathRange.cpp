@@ -10,43 +10,42 @@
 #include "GrGLPathRendering.h"
 #include "GrGLGpu.h"
 
-GrGLPathRange::GrGLPathRange(GrGLGpu* gpu, PathGenerator* pathGenerator, const GrStyle& style)
+GrGLPathRange::GrGLPathRange(GrGLGpu* gpu, PathGenerator* pathGenerator, const GrStrokeInfo& stroke)
     : INHERITED(gpu, pathGenerator),
-      fStyle(style),
+      fStroke(stroke),
       fBasePathID(gpu->glPathRendering()->genPaths(this->getNumPaths())),
       fGpuMemorySize(0) {
     this->init();
-    this->registerWithCache(SkBudgeted::kYes);
+    this->registerWithCache();
 }
 
 GrGLPathRange::GrGLPathRange(GrGLGpu* gpu,
                              GrGLuint basePathID,
                              int numPaths,
                              size_t gpuMemorySize,
-                             const GrStyle& style)
+                             const GrStrokeInfo& stroke)
     : INHERITED(gpu, numPaths),
-      fStyle(style),
+      fStroke(stroke),
       fBasePathID(basePathID),
       fGpuMemorySize(gpuMemorySize) {
     this->init();
-    this->registerWithCache(SkBudgeted::kYes);
+    this->registerWithCache();
 }
 
 void GrGLPathRange::init() {
-    const SkStrokeRec& stroke = fStyle.strokeRec();
     
     
     
-    bool forceFill = fStyle.pathEffect() ||
-            (stroke.needToApply() && stroke.getCap() != SkPaint::kButt_Cap);
+    bool forceFill = fStroke.isDashed() ||
+            (fStroke.needToApply() && fStroke.getCap() != SkPaint::kButt_Cap);
 
     if (forceFill) {
         fShouldStroke = false;
         fShouldFill = true;
     } else {
-        fShouldStroke = stroke.needToApply();
-        fShouldFill = stroke.isFillStyle() ||
-                stroke.getStyle() == SkStrokeRec::kStrokeAndFill_Style;
+        fShouldStroke = fStroke.needToApply();
+        fShouldFill = fStroke.isFillStyle() ||
+                fStroke.getStyle() == SkStrokeRec::kStrokeAndFill_Style;
     }
 }
 
@@ -55,6 +54,7 @@ void GrGLPathRange::onInitPath(int index, const SkPath& origSkPath) const {
     if (nullptr == gpu) {
         return;
     }
+
     
     SkDEBUGCODE(
         GrGLboolean isPath;
@@ -65,25 +65,32 @@ void GrGLPathRange::onInitPath(int index, const SkPath& origSkPath) const {
         GrGLPath::InitPathObjectEmptyPath(gpu, fBasePathID + index);
     } else if (fShouldStroke) {
         GrGLPath::InitPathObjectPathData(gpu, fBasePathID + index, origSkPath);
-        GrGLPath::InitPathObjectStroke(gpu, fBasePathID + index, fStyle.strokeRec());
+        GrGLPath::InitPathObjectStroke(gpu, fBasePathID + index, fStroke);
     } else {
         const SkPath* skPath = &origSkPath;
         SkTLazy<SkPath> tmpPath;
-        if (!fStyle.isSimpleFill()) {
-            SkStrokeRec::InitStyle fill;
-            
-            
-            
-            
-            
-            if (!fStyle.applyToPath(tmpPath.init(), &fill, *skPath, SK_Scalar1)) {
+        const GrStrokeInfo* stroke = &fStroke;
+        GrStrokeInfo tmpStroke(SkStrokeRec::kFill_InitStyle);
+
+        
+        
+        
+        
+        
+        if (fStroke.isDashed()) {
+            if (!stroke->applyDashToPath(tmpPath.init(), &tmpStroke, *skPath)) {
                 return;
             }
-            
-            
-            SkASSERT(SkStrokeRec::kFill_InitStyle == fill);
             skPath = tmpPath.get();
-
+            stroke = &tmpStroke;
+        }
+        if (stroke->needToApply()) {
+            if (!tmpPath.isValid()) {
+                tmpPath.init();
+            }
+            if (!stroke->applyToPath(tmpPath.get(), *tmpPath.get())) {
+                return;
+            }
         }
         GrGLPath::InitPathObjectPathData(gpu, fBasePathID + index, *skPath);
     }
@@ -94,7 +101,7 @@ void GrGLPathRange::onInitPath(int index, const SkPath& origSkPath) const {
 void GrGLPathRange::onRelease() {
     SkASSERT(this->getGpu());
 
-    if (0 != fBasePathID) {
+    if (0 != fBasePathID && this->shouldFreeResources()) {
         static_cast<GrGLGpu*>(this->getGpu())->glPathRendering()->deletePaths(fBasePathID,
                                                                               this->getNumPaths());
         fBasePathID = 0;
