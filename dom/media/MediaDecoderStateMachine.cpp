@@ -867,26 +867,24 @@ public:
   void HandleAudioDecoded(MediaData* aAudio) override
   {
     MOZ_ASSERT(!mDoneAudioSeeking || !mDoneVideoSeeking, "Seek shouldn't be finished");
-
-    RefPtr<MediaData> audio(aAudio);
-    MOZ_ASSERT(audio);
+    MOZ_ASSERT(aAudio);
 
     
     
     
     if (mSeekJob.mTarget.IsVideoOnly()) {
-      mSeekedAudioData = audio.forget();
+      mSeekedAudioData = aAudio;
       return;
     }
 
-    AdjustFastSeekIfNeeded(audio);
+    AdjustFastSeekIfNeeded(aAudio);
 
     if (mSeekJob.mTarget.IsFast()) {
       
-      mSeekedAudioData = audio;
+      mSeekedAudioData = aAudio;
       mDoneAudioSeeking = true;
     } else {
-      nsresult rv = DropAudioUpToSeekTarget(audio);
+      nsresult rv = DropAudioUpToSeekTarget(aAudio->As<AudioData>());
       if (NS_FAILED(rv)) {
         OnSeekTaskRejected(rv);
         return;
@@ -903,18 +901,16 @@ public:
   void HandleVideoDecoded(MediaData* aVideo, TimeStamp aDecodeStart) override
   {
     MOZ_ASSERT(!mDoneAudioSeeking || !mDoneVideoSeeking, "Seek shouldn't be finished");
+    MOZ_ASSERT(aVideo);
 
-    RefPtr<MediaData> video(aVideo);
-    MOZ_ASSERT(video);
-
-    AdjustFastSeekIfNeeded(video);
+    AdjustFastSeekIfNeeded(aVideo);
 
     if (mSeekJob.mTarget.IsFast()) {
       
-      mSeekedVideoData = video;
+      mSeekedVideoData = aVideo;
       mDoneVideoSeeking = true;
     } else {
-      nsresult rv = DropVideoUpToSeekTarget(video.get());
+      nsresult rv = DropVideoUpToSeekTarget(aVideo);
       if (NS_FAILED(rv)) {
         OnSeekTaskRejected(rv);
         return;
@@ -1110,23 +1106,22 @@ private:
     }
   }
 
-  nsresult DropAudioUpToSeekTarget(MediaData* aSample)
+  nsresult DropAudioUpToSeekTarget(AudioData* aAudio)
   {
-    RefPtr<AudioData> audio(aSample->As<AudioData>());
-    MOZ_ASSERT(audio && mSeekJob.mTarget.IsAccurate());
+    MOZ_ASSERT(aAudio && mSeekJob.mTarget.IsAccurate());
 
-    CheckedInt64 sampleDuration = FramesToUsecs(audio->mFrames, Info().mAudio.mRate);
+    CheckedInt64 sampleDuration = FramesToUsecs(aAudio->mFrames, Info().mAudio.mRate);
     if (!sampleDuration.isValid()) {
       return NS_ERROR_DOM_MEDIA_OVERFLOW_ERR;
     }
 
-    if (audio->mTime + sampleDuration.value() <= mSeekJob.mTarget.GetTime().ToMicroseconds()) {
+    if (aAudio->mTime + sampleDuration.value() <= mSeekJob.mTarget.GetTime().ToMicroseconds()) {
       
       
       return NS_OK;
     }
 
-    if (audio->mTime > mSeekJob.mTarget.GetTime().ToMicroseconds()) {
+    if (aAudio->mTime > mSeekJob.mTarget.GetTime().ToMicroseconds()) {
       
       
       
@@ -1135,7 +1130,7 @@ private:
       
       
       SWARN("Audio not synced after seek, maybe a poorly muxed file?");
-      mSeekedAudioData = audio;
+      mSeekedAudioData = aAudio;
       mDoneAudioSeeking = true;
       return NS_OK;
     }
@@ -1143,45 +1138,45 @@ private:
     
     
     
-    NS_ASSERTION(mSeekJob.mTarget.GetTime().ToMicroseconds() >= audio->mTime,
+    NS_ASSERTION(mSeekJob.mTarget.GetTime().ToMicroseconds() >= aAudio->mTime,
                  "Target must at or be after data start.");
-    NS_ASSERTION(mSeekJob.mTarget.GetTime().ToMicroseconds() < audio->mTime + sampleDuration.value(),
+    NS_ASSERTION(mSeekJob.mTarget.GetTime().ToMicroseconds() < aAudio->mTime + sampleDuration.value(),
                  "Data must end after target.");
 
     CheckedInt64 framesToPrune =
-      UsecsToFrames(mSeekJob.mTarget.GetTime().ToMicroseconds() - audio->mTime, Info().mAudio.mRate);
+      UsecsToFrames(mSeekJob.mTarget.GetTime().ToMicroseconds() - aAudio->mTime, Info().mAudio.mRate);
     if (!framesToPrune.isValid()) {
       return NS_ERROR_DOM_MEDIA_OVERFLOW_ERR;
     }
-    if (framesToPrune.value() > audio->mFrames) {
+    if (framesToPrune.value() > aAudio->mFrames) {
       
       
       SWARN("Can't prune more frames that we have!");
       return NS_ERROR_FAILURE;
     }
-    uint32_t frames = audio->mFrames - static_cast<uint32_t>(framesToPrune.value());
-    uint32_t channels = audio->mChannels;
+    uint32_t frames = aAudio->mFrames - static_cast<uint32_t>(framesToPrune.value());
+    uint32_t channels = aAudio->mChannels;
     AlignedAudioBuffer audioData(frames * channels);
     if (!audioData) {
       return NS_ERROR_OUT_OF_MEMORY;
     }
 
     memcpy(audioData.get(),
-           audio->mAudioData.get() + (framesToPrune.value() * channels),
+           aAudio->mAudioData.get() + (framesToPrune.value() * channels),
            frames * channels * sizeof(AudioDataValue));
     CheckedInt64 duration = FramesToUsecs(frames, Info().mAudio.mRate);
     if (!duration.isValid()) {
       return NS_ERROR_DOM_MEDIA_OVERFLOW_ERR;
     }
-    RefPtr<AudioData> data(new AudioData(audio->mOffset,
+    RefPtr<AudioData> data(new AudioData(aAudio->mOffset,
                                          mSeekJob.mTarget.GetTime().ToMicroseconds(),
                                          duration.value(),
                                          frames,
                                          Move(audioData),
                                          channels,
-                                         audio->mRate));
+                                         aAudio->mRate));
     MOZ_ASSERT(!mSeekedAudioData, "Should be the 1st sample after seeking");
-    mSeekedAudioData = data;
+    mSeekedAudioData = data.forget();
     mDoneAudioSeeking = true;
 
     return NS_OK;
