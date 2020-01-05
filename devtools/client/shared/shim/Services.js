@@ -315,8 +315,14 @@ PrefBranch.prototype = {
         let localList = this._observers[domain].slice();
         for (let observer of localList) {
           try {
-            observer.observe(this, NS_PREFBRANCH_PREFCHANGE_TOPIC_ID,
-                             relativeName);
+            if ("observe" in observer) {
+              observer.observe(this, NS_PREFBRANCH_PREFCHANGE_TOPIC_ID,
+                               relativeName);
+            } else {
+              
+              
+              observer(this, NS_PREFBRANCH_PREFCHANGE_TOPIC_ID, relativeName);
+            }
           } catch (e) {
             console.error(e);
           }
