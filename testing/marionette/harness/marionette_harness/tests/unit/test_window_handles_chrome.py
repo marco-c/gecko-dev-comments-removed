@@ -63,6 +63,12 @@ class TestWindowHandles(WindowManagerMixin, MarionetteTestCase):
             self.assertEqual(self.marionette.get_url(), self.empty_page)
 
         
+        other_page = self.marionette.absolute_url("test.html")
+        with self.marionette.using_context("content"):
+            self.marionette.navigate(other_page)
+            self.assertEqual(self.marionette.get_url(), other_page)
+
+        
         self.marionette.close()
         self.assertEqual(len(self.marionette.chrome_window_handles), len(self.start_windows))
 
@@ -85,6 +91,12 @@ class TestWindowHandles(WindowManagerMixin, MarionetteTestCase):
         self.assertEqual(self.marionette.current_window_handle, new_tab)
         with self.marionette.using_context("content"):
             self.assertEqual(self.marionette.get_url(), self.empty_page)
+
+        
+        other_page = self.marionette.absolute_url("test.html")
+        with self.marionette.using_context("content"):
+            self.marionette.navigate(other_page)
+            self.assertEqual(self.marionette.get_url(), other_page)
 
         self.marionette.switch_to_window(self.start_tab)
         self.assertEqual(self.marionette.current_window_handle, self.start_tab)
@@ -114,6 +126,12 @@ class TestWindowHandles(WindowManagerMixin, MarionetteTestCase):
         self.assertEqual(self.marionette.current_window_handle, new_tab)
         with self.marionette.using_context("content"):
             self.assertEqual(self.marionette.get_url(), self.empty_page)
+
+        
+        other_page = self.marionette.absolute_url("test.html")
+        with self.marionette.using_context("content"):
+            self.marionette.navigate(other_page)
+            self.assertEqual(self.marionette.get_url(), other_page)
 
         
         self.marionette.close()

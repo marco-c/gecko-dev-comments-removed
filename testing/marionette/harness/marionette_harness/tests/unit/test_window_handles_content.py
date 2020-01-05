@@ -61,6 +61,11 @@ class TestWindowHandles(WindowManagerMixin, MarionetteTestCase):
         self.assertEqual(self.marionette.get_url(), self.empty_page)
 
         
+        other_page = self.marionette.absolute_url("test.html")
+        self.marionette.navigate(other_page)
+        self.assertEqual(self.marionette.get_url(), other_page)
+
+        
         self.marionette.close()
         self.assertEqual(len(self.marionette.window_handles), len(self.start_tabs))
 
@@ -75,7 +80,7 @@ class TestWindowHandles(WindowManagerMixin, MarionetteTestCase):
 
         new_tab = self.open_tab(trigger=open_with_link)
         self.assertEqual(len(self.marionette.window_handles), len(self.start_tabs) + 1)
-        self.assertNotEqual(self.marionette.current_window_handle, new_tab)
+        self.assertEqual(self.marionette.current_window_handle, self.start_tab)
 
         self.marionette.close()
         self.assertEqual(len(self.marionette.window_handles), len(self.start_tabs))

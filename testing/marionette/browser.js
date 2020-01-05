@@ -26,20 +26,17 @@ const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 
 
 
-
-
-
 browser.getBrowserForTab = function (tab) {
-  if (tab.hasOwnProperty("browser")) {
+  if ("browser" in tab) {
     
     return tab.browser;
 
-  } else if (tab.hasOwnProperty("linkedBrowser")) {
+  } else if ("linkedBrowser" in tab) {
     
     return tab.linkedBrowser;
 
   } else {
-      new UnsupportedOperationError("getBrowserForTab() not supported.");
+    return null;
   }
 };
 
@@ -52,20 +49,17 @@ browser.getBrowserForTab = function (tab) {
 
 
 
-
-
-
 browser.getTabBrowser = function (win) {
-  if (win.hasOwnProperty("BrowserApp")) {
+  if ("BrowserApp" in win) {
     
     return win.BrowserApp;
 
-  } else if (win.hasOwnProperty("gBrowser")) {
+  } else if ("gBrowser" in win) {
     
     return win.gBrowser;
 
   } else {
-      new UnsupportedOperationError("getBrowserForTab() not supported.");
+    return null;
   }
 };
 
@@ -245,7 +239,13 @@ browser.Context = class {
 
 
 
-  switchToTab(index, win) {
+
+
+
+
+
+
+  switchToTab(index, win, focus = true) {
     if (win) {
       this.window = win;
       this.tabBrowser = browser.getTabBrowser(win);
@@ -260,13 +260,18 @@ browser.Context = class {
     } else {
       this.tab = this.tabBrowser.tabs[index];
 
-      if (this.tabBrowser.selectTab) {
-        
-        this.tabBrowser.selectTab(this.tab);
+      if (focus) {
+        if (this.tabBrowser.selectTab) {
+          
+          this.tabBrowser.selectTab(this.tab);
 
-      } else {
-        
-        this.tabBrowser.selectedTab = this.tab;
+        } else if ("selectedTab" in this.tabBrowser) {
+          
+          this.tabBrowser.selectedTab = this.tab;
+
+        } else {
+          throw new UnsupportedOperationError("switchToTab() not supported");
+        }
       }
     }
 
