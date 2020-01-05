@@ -118,10 +118,10 @@ TracedRunnable::Run()
 
 
 
-already_AddRefed<nsIRunnable>
+already_AddRefed<Runnable>
 CreateTracedRunnable(already_AddRefed<nsIRunnable>&& aRunnable)
 {
-  nsCOMPtr<nsIRunnable> runnable = new TracedRunnable(Move(aRunnable));
+  RefPtr<Runnable> runnable = new TracedRunnable(Move(aRunnable));
   return runnable.forget();
 }
 

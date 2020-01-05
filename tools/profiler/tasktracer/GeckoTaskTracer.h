@@ -31,6 +31,7 @@ class nsCString;
 namespace mozilla {
 
 class TimeStamp;
+class Runnable;
 
 namespace tasktracer {
 
@@ -79,7 +80,7 @@ PRTime GetStartTime();
 
 
 
-already_AddRefed<nsIRunnable>
+already_AddRefed<Runnable>
 CreateTracedRunnable(already_AddRefed<nsIRunnable>&& aRunnable);
 
 
