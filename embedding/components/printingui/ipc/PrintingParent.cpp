@@ -84,9 +84,15 @@ PrintingParent::ShowPrintDialog(PBrowserParent* aParent,
                                 const PrintData& aData,
                                 PrintData* aResult)
 {
-  nsCOMPtr<nsPIDOMWindowOuter> parentWin = DOMWindowFromBrowserParent(aParent);
-  if (!parentWin) {
-    return NS_ERROR_FAILURE;
+  
+  
+  bool isPrintPreview = !aParent;
+  nsCOMPtr<nsPIDOMWindowOuter> parentWin;
+  if (aParent) {
+    parentWin = DOMWindowFromBrowserParent(aParent);
+    if (!parentWin) {
+      return NS_ERROR_FAILURE;
+    }
   }
 
   nsCOMPtr<nsIPrintingPromptService> pps(do_GetService("@mozilla.org/embedcomp/printingprompt-service;1"));
@@ -125,7 +131,7 @@ PrintingParent::ShowPrintDialog(PBrowserParent* aParent,
 
   
   
-  if (printSilently ||
+  if (isPrintPreview || printSilently ||
       Preferences::GetBool("print.always_print_silent", printSilently)) {
     nsXPIDLString printerName;
     rv = settings->GetPrinterName(getter_Copies(printerName));
@@ -138,8 +144,13 @@ PrintingParent::ShowPrintDialog(PBrowserParent* aParent,
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
-  rv = SerializeAndEnsureRemotePrintJob(settings, nullptr, remotePrintJob,
-                                        aResult);
+  if (isPrintPreview) {
+    
+    rv = mPrintSettingsSvc->SerializeToPrintData(settings, nullptr, aResult);
+  } else {
+    rv = SerializeAndEnsureRemotePrintJob(settings, nullptr, remotePrintJob,
+                                          aResult);
+  }
 
   return rv;
 }

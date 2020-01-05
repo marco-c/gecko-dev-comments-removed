@@ -562,7 +562,11 @@ nsPrintEngine::DoCommonPrint(bool                    aIsPrintPreview,
   }
 
   nsScriptSuppressor scriptSuppressor(this);
-  if (!aIsPrintPreview) {
+  
+  
+  
+  
+  if (!aIsPrintPreview || printingViaParent) {
 #ifdef DEBUG
     mPrt->mDebugFilePtr = mDebugFile;
 #endif
@@ -583,8 +587,12 @@ nsPrintEngine::DoCommonPrint(bool                    aIsPrintPreview,
     if (!printSilently || printingViaParent) {
       nsCOMPtr<nsIPrintingPromptService> printPromptService(do_GetService(kPrintingPromptService));
       if (printPromptService) {
-        nsPIDOMWindowOuter* domWin = mDocument->GetWindow(); 
-        NS_ENSURE_TRUE(domWin, NS_ERROR_FAILURE);
+        nsPIDOMWindowOuter* domWin = nullptr;
+        
+        if (!aIsPrintPreview) {
+          domWin = mDocument->GetWindow();
+          NS_ENSURE_TRUE(domWin, NS_ERROR_FAILURE);
+        }
 
         
         
@@ -608,7 +616,7 @@ nsPrintEngine::DoCommonPrint(bool                    aIsPrintPreview,
           
           printSilently = true;
 
-          if (mPrt->mPrintSettings) {
+          if (mPrt->mPrintSettings && !aIsPrintPreview) {
             
             mPrt->mPrintSettings->GetShrinkToFit(&mPrt->mShrinkToFit);
 

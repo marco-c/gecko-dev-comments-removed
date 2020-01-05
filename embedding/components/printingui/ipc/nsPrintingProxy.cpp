@@ -72,21 +72,25 @@ nsPrintingProxy::ShowPrintDialog(mozIDOMWindowProxy *parent,
                                  nsIWebBrowserPrint *webBrowserPrint,
                                  nsIPrintSettings *printSettings)
 {
-  NS_ENSURE_ARG(parent);
   NS_ENSURE_ARG(webBrowserPrint);
   NS_ENSURE_ARG(printSettings);
 
   
   
-  nsCOMPtr<nsPIDOMWindowOuter> pwin = nsPIDOMWindowOuter::From(parent);
-  NS_ENSURE_STATE(pwin);
-  nsCOMPtr<nsIDocShell> docShell = pwin->GetDocShell();
-  NS_ENSURE_STATE(docShell);
+  TabChild* pBrowser = nullptr;
+  if (parent) {
+    
+    
+    nsCOMPtr<nsPIDOMWindowOuter> pwin = nsPIDOMWindowOuter::From(parent);
+    NS_ENSURE_STATE(pwin);
+    nsCOMPtr<nsIDocShell> docShell = pwin->GetDocShell();
+    NS_ENSURE_STATE(docShell);
 
-  nsCOMPtr<nsITabChild> tabchild = docShell->GetTabChild();
-  NS_ENSURE_STATE(tabchild);
+    nsCOMPtr<nsITabChild> tabchild = docShell->GetTabChild();
+    NS_ENSURE_STATE(tabchild);
 
-  TabChild* pBrowser = static_cast<TabChild*>(tabchild.get());
+    pBrowser = static_cast<TabChild*>(tabchild.get());
+  }
 
   
   nsresult rv = NS_OK;
