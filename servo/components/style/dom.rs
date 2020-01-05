@@ -19,9 +19,7 @@ use std::ops::BitOr;
 use std::sync::Arc;
 use string_cache::{Atom, Namespace};
 
-
-
-pub type UnsafeNode = (usize, usize);
+pub use style_traits::UnsafeNode;
 
 
 

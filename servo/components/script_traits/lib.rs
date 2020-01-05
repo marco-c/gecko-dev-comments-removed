@@ -66,7 +66,7 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::collections::HashMap;
 use std::fmt;
 use std::sync::mpsc::{Receiver, Sender};
-use style_traits::{PagePx, ViewportPx};
+use style_traits::{PagePx, UnsafeNode, ViewportPx};
 use url::Url;
 use util::ipc::OptionalOpaqueIpcSender;
 use webdriver_msg::{LoadStatus, WebDriverScriptCommand};
@@ -198,6 +198,8 @@ pub enum ConstellationControlMsg {
     
     TickAllAnimations(PipelineId),
     
+    TransitionEnd(UnsafeNode, String, f64),
+    
     
     WebFontLoaded(PipelineId),
     
@@ -238,6 +240,7 @@ impl fmt::Debug for ConstellationControlMsg {
             FocusIFrame(..) => "FocusIFrame",
             WebDriverScriptCommand(..) => "WebDriverScriptCommand",
             TickAllAnimations(..) => "TickAllAnimations",
+            TransitionEnd(..) => "TransitionEnd",
             WebFontLoaded(..) => "WebFontLoaded",
             DispatchFrameLoadEvent { .. } => "DispatchFrameLoadEvent",
             FramedContentChanged(..) => "FramedContentChanged",

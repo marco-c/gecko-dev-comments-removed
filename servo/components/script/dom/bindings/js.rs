@@ -451,6 +451,14 @@ impl<T: Reflectable> LayoutJS<T> {
         debug_assert!(thread_state::get().is_layout());
         *self.ptr
     }
+
+    
+    
+    
+    pub fn get_for_script(&self) -> &T {
+        debug_assert!(thread_state::get().is_script());
+        unsafe { &**self.ptr }
+    }
 }
 
 

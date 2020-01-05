@@ -1,9 +1,9 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
+//! The layout thread. Performs layout on the DOM, builds display lists and sends them to be
+//! painted.
 
 #![feature(box_syntax)]
 #![feature(custom_derive)]
@@ -126,128 +126,128 @@ use util::prefs::PREFS;
 use util::resource_files::read_resource_file;
 use util::thread;
 
-
+/// The number of screens we have to traverse before we decide to generate new display lists.
 const DISPLAY_PORT_THRESHOLD_SIZE_FACTOR: i32 = 4;
 
-
+/// Information needed by the layout thread.
 pub struct LayoutThread {
-    
+    /// The ID of the pipeline that we belong to.
     id: PipelineId,
 
-    
+    /// The URL of the pipeline that we belong to.
     url: Url,
 
-    
+    /// Is the current reflow of an iframe, as opposed to a root window?
     is_iframe: bool,
 
-    
+    /// The port on which we receive messages from the script thread.
     port: Receiver<Msg>,
 
-    
+    /// The port on which we receive messages from the constellation.
     pipeline_port: Receiver<LayoutControlMsg>,
 
-    
+    /// The port on which we receive messages from the image cache
     image_cache_receiver: Receiver<ImageCacheResult>,
 
-    
+    /// The channel on which the image cache can send messages to ourself.
     image_cache_sender: ImageCacheChan,
 
-    
+    /// The port on which we receive messages from the font cache thread.
     font_cache_receiver: Receiver<()>,
 
-    
+    /// The channel on which the font cache can send messages to us.
     font_cache_sender: IpcSender<()>,
 
-    
+    /// The channel on which messages can be sent to the constellation.
     constellation_chan: IpcSender<ConstellationMsg>,
 
-    
+    /// The channel on which messages can be sent to the script thread.
     script_chan: IpcSender<ConstellationControlMsg>,
 
-    
+    /// The channel on which messages can be sent to the painting thread.
     paint_chan: OptionalIpcSender<LayoutToPaintMsg>,
 
-    
+    /// The channel on which messages can be sent to the time profiler.
     time_profiler_chan: time::ProfilerChan,
 
-    
+    /// The channel on which messages can be sent to the memory profiler.
     mem_profiler_chan: mem::ProfilerChan,
 
-    
+    /// The channel on which messages can be sent to the image cache.
     image_cache_thread: ImageCacheThread,
 
-    
+    /// Public interface to the font cache thread.
     font_cache_thread: FontCacheThread,
 
-    
+    /// Is this the first reflow in this LayoutThread?
     first_reflow: bool,
 
-    
+    /// The workers that we use for parallel operation.
     parallel_traversal: Option<WorkQueue<SharedLayoutContext, WorkQueueData>>,
 
-    
-    
+    /// Starts at zero, and increased by one every time a layout completes.
+    /// This can be used to easily check for invalid stale data.
     generation: u32,
 
-    
-    
+    /// A channel on which new animations that have been triggered by style recalculation can be
+    /// sent.
     new_animations_sender: Sender<Animation>,
 
-    
+    /// Receives newly-discovered animations.
     new_animations_receiver: Receiver<Animation>,
 
-    
+    /// The number of Web fonts that have been requested but not yet loaded.
     outstanding_web_fonts: Arc<AtomicUsize>,
 
-    
+    /// The root of the flow tree.
     root_flow: Option<FlowRef>,
 
-    
-    
+    /// The position and size of the visible rect for each layer. We do not build display lists
+    /// for any areas more than `DISPLAY_PORT_SIZE_FACTOR` screens away from this area.
     visible_rects: Arc<HashMap<LayerId, Rect<Au>, BuildHasherDefault<FnvHasher>>>,
 
-    
+    /// The list of currently-running animations.
     running_animations: Arc<RwLock<HashMap<OpaqueNode, Vec<Animation>>>>,
 
-    
+    /// The list of animations that have expired since the last style recalculation.
     expired_animations: Arc<RwLock<HashMap<OpaqueNode, Vec<Animation>>>>,
 
-    
+    /// A counter for epoch messages
     epoch: Epoch,
 
-    
-    
+    /// The size of the viewport. This may be different from the size of the screen due to viewport
+    /// constraints.
     viewport_size: Size2D<Au>,
 
-    
-    
-    
-    
+    /// A mutex to allow for fast, read-only RPC of layout's internal data
+    /// structures, while still letting the LayoutThread modify them.
+    ///
+    /// All the other elements of this struct are read-only.
     rw_data: Arc<Mutex<LayoutThreadData>>,
 
-    
+    /// The CSS error reporter for all CSS loaded in this layout thread
     error_reporter: CSSErrorReporter,
 
     webrender_image_cache: Arc<RwLock<HashMap<(Url, UsePlaceholder),
                                               WebRenderImageInfo,
                                               BuildHasherDefault<FnvHasher>>>>,
 
-    
+    // Webrender interface, if enabled.
     webrender_api: Option<webrender_traits::RenderApi>,
 
-    
-    
+    /// The timer object to control the timing of the animations. This should
+    /// only be a test-mode timer during testing for animations.
     timer: Timer,
 
-    
-    
+    // Number of layout threads. This is copied from `util::opts`, but we'd
+    // rather limit the dependency on that module here.
     layout_threads: usize,
 }
 
 impl LayoutThreadFactory for LayoutThread {
     type Message = Msg;
 
-    
+    /// Spawns a new layout thread.
     fn create(id: PipelineId,
               url: Url,
               is_iframe: bool,
@@ -267,7 +267,7 @@ impl LayoutThreadFactory for LayoutThread {
                       move || {
             thread_state::initialize(thread_state::LAYOUT);
             PipelineId::install(id);
-            { 
+            { // Ensures layout thread is destroyed before we send shutdown message
                 let sender = chan.0;
                 let layout = LayoutThread::new(id,
                                              url,
@@ -294,14 +294,14 @@ impl LayoutThreadFactory for LayoutThread {
     }
 }
 
-
-
-
+/// The `LayoutThread` `rw_data` lock must remain locked until the first reflow,
+/// as RPC calls don't make sense until then. Use this in combination with
+/// `LayoutThread::lock_rw_data` and `LayoutThread::return_rw_data`.
 pub enum RWGuard<'a> {
-    
+    /// If the lock was previously held, from when the thread started.
     Held(MutexGuard<'a, LayoutThreadData>),
-    
-    
+    /// If the lock was just used, and has been returned since there has been
+    /// a reflow already.
     Used(MutexGuard<'a, LayoutThreadData>),
 }
 
@@ -330,12 +330,12 @@ struct RwData<'a, 'b: 'a> {
 }
 
 impl<'a, 'b: 'a> RwData<'a, 'b> {
-    
-    
-    
-    
-    
-    
+    /// If no reflow has happened yet, this will just return the lock in
+    /// `possibly_locked_rw_data`. Otherwise, it will acquire the `rw_data` lock.
+    ///
+    /// If you do not wish RPCs to remain blocked, just drop the `RWGuard`
+    /// returned from this function. If you _do_ wish for them to remain blocked,
+    /// use `block`.
     fn lock(&mut self) -> RWGuard<'b> {
         match self.possibly_locked_rw_data.take() {
             None    => RWGuard::Used(self.rw_data.lock().unwrap()),
@@ -343,9 +343,9 @@ impl<'a, 'b: 'a> RwData<'a, 'b> {
         }
     }
 
-    
-    
-    
+    /// If no reflow has ever been triggered, this will keep the lock, locked
+    /// (and saved in `possibly_locked_rw_data`). If it has been, the lock will
+    /// be unlocked.
     fn block(&mut self, rw_data: RWGuard<'b>) {
         match rw_data {
             RWGuard::Used(x) => drop(x),
@@ -380,7 +380,7 @@ fn add_font_face_rules(stylesheet: &Stylesheet,
 }
 
 impl LayoutThread {
-    
+    /// Creates a new `LayoutThread` structure.
     fn new(id: PipelineId,
            url: Url,
            is_iframe: bool,
@@ -405,18 +405,18 @@ impl LayoutThread {
             None
         };
 
-        
+        // Create the channel on which new animations can be sent.
         let (new_animations_sender, new_animations_receiver) = channel();
 
-        
+        // Proxy IPC messages from the pipeline to the layout thread.
         let pipeline_receiver = ROUTER.route_ipc_receiver_to_new_mpsc_receiver(pipeline_port);
 
-        
+        // Ask the router to proxy IPC messages from the image cache thread to the layout thread.
         let (ipc_image_cache_sender, ipc_image_cache_receiver) = ipc::channel().unwrap();
         let image_cache_receiver =
             ROUTER.route_ipc_receiver_to_new_mpsc_receiver(ipc_image_cache_receiver);
 
-        
+        // Ask the router to proxy IPC messages from the font cache thread to the layout thread.
         let (ipc_font_cache_sender, ipc_font_cache_receiver) = ipc::channel().unwrap();
         let font_cache_receiver =
             ROUTER.route_ipc_receiver_to_new_mpsc_receiver(ipc_font_cache_receiver);
@@ -495,7 +495,7 @@ impl LayoutThread {
         }
     }
 
-    
+    /// Starts listening on the port.
     fn start(mut self) {
         let rw_data = self.rw_data.clone();
         let mut possibly_locked_rw_data = Some(rw_data.lock().unwrap());
@@ -504,11 +504,11 @@ impl LayoutThread {
             possibly_locked_rw_data: &mut possibly_locked_rw_data,
         };
         while self.handle_request(&mut rw_data) {
-            
+            // Loop indefinitely.
         }
     }
 
-    
+    // Create a layout context for use in building display lists, hit testing, &c.
     fn build_shared_layout_context(&self,
                                    rw_data: &LayoutThreadData,
                                    screen_size_changed: bool,
@@ -537,7 +537,7 @@ impl LayoutThread {
         }
     }
 
-    
+    /// Receives and dispatches messages from the script and constellation threads
     fn handle_request<'a, 'b>(&mut self, possibly_locked_rw_data: &mut RwData<'a, 'b>) -> bool {
         enum Request {
             FromPipeline(LayoutControlMsg),
@@ -608,11 +608,11 @@ impl LayoutThread {
         }
     }
 
-    
-    
-    
-    
-    
+    /// Repaint the scene, without performing style matching. This is typically
+    /// used when an image arrives asynchronously and triggers a relayout and
+    /// repaint.
+    /// TODO: In the future we could detect if the image size hasn't changed
+    /// since last time and avoid performing a complete layout pass.
     fn repaint<'a, 'b>(&mut self, possibly_locked_rw_data: &mut RwData<'a, 'b>) -> bool {
         let mut rw_data = possibly_locked_rw_data.lock();
 
@@ -639,7 +639,7 @@ impl LayoutThread {
         true
     }
 
-    
+    /// Receives and dispatches messages from other threads.
     fn handle_request_helper<'a, 'b>(&mut self,
                                      request: Msg,
                                      possibly_locked_rw_data: &mut RwData<'a, 'b>)
@@ -1477,6 +1477,7 @@ impl LayoutThread {
         if let Some(mut root_flow) = self.root_flow.clone() {
             // Kick off animations if any were triggered, expire completed ones.
             animation::update_animation_state(&self.constellation_chan,
+                                              &self.script_chan,
                                               &mut *self.running_animations.write().unwrap(),
                                               &mut *self.expired_animations.write().unwrap(),
                                               &self.new_animations_receiver,

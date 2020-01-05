@@ -413,7 +413,7 @@ impl<'ln> ServoLayoutNode<'ln> {
 
     
     
-    unsafe fn get_jsmanaged(&self) -> &LayoutJS<Node> {
+    pub unsafe fn get_jsmanaged(&self) -> &LayoutJS<Node> {
         &self.node
     }
 }

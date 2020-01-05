@@ -29,6 +29,10 @@ extern crate rustc_serialize;
 
 
 
+pub type UnsafeNode = (usize, usize);
+
+
+
 
 
 
