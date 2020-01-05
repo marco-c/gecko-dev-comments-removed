@@ -955,9 +955,13 @@ element.isVisible = function (el, x = undefined, y = undefined) {
 
 
 
-element.isPointerInteractable = function (el) {
+
+
+
+
+element.isObscured = function (el) {
   let tree = element.getPointerInteractablePaintTree(el);
-  return tree[0] === el;
+  return !el.contains(tree[0]);
 };
 
 

@@ -269,6 +269,24 @@ class TestClick(TestLegacyClick):
             button.click()
         self.assertFalse(self.marionette.execute_script("return window.clicked", sandbox=None))
 
+    def test_inclusive_descendant(self):
+        self.marionette.navigate(inline("""
+            <select multiple>
+              <option>first
+              <option>second
+              <option>third
+             </select>"""))
+        select = self.marionette.find_element(By.TAG_NAME, "select")
+
+        
+        
+        
+        
+        
+        
+        
+        select.click()
+
 
 class TestClickNavigation(MarionetteTestCase):
 
