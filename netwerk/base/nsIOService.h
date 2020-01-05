@@ -95,6 +95,8 @@ public:
 
     bool IsLinkUp();
 
+    static bool IsInheritSecurityContextForDataURIEnabled();
+
     
     nsresult RecheckCaptivePortal();
 private:
@@ -175,6 +177,8 @@ private:
     bool                                 mNetworkNotifyChanged;
 
     static bool                          sTelemetryEnabled;
+
+    static bool                          sDataURIInheritSecurityContext;
 
     
     
