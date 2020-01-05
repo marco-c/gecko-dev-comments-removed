@@ -3466,7 +3466,12 @@ nsGlobalWindow::SetOpenerWindow(nsPIDOMWindowOuter* aOpener,
   NS_ASSERTION(mOpener || !aOpener, "Opener must support weak references!");
 
   
+  
+  
   nsPIDOMWindowOuter* contentOpener = GetSanitizedOpener(aOpener);
+
+  
+  mozilla::Unused << contentOpener;
   MOZ_DIAGNOSTIC_ASSERT(!contentOpener || !mTabGroup ||
     mTabGroup == Cast(contentOpener)->mTabGroup);
 
