@@ -384,6 +384,11 @@ private:
   bool    mIsPrintableKey;
   
   
+  
+  
+  bool    mCharMessageHasGone;
+  
+  
   bool    mIsOverridingKeyboardLayout;
 
   nsTArray<FakeCharMsg>* mFakeCharMsgs;
