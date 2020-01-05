@@ -8,13 +8,17 @@ use IFrameLoadInfo;
 use MouseButton;
 use MouseEventType;
 use MozBrowserEvent;
+use WorkerGlobalScopeInit;
+use WorkerScriptLoadOrigin;
 use canvas_traits::CanvasMsg;
+use devtools_traits::{ScriptToDevtoolsControlMsg, WorkerId};
 use euclid::point::Point2D;
 use euclid::size::Size2D;
 use gfx_traits::LayerId;
 use ipc_channel::ipc::IpcSender;
 use msg::constellation_msg::{Key, KeyModifiers, KeyState, LoadData};
 use msg::constellation_msg::{NavigationDirection, PipelineId, SubpageId};
+use net_traits::CoreResourceMsg;
 use offscreen_gl_context::{GLContextAttributes, GLLimits};
 use style_traits::cursor::Cursor;
 use style_traits::viewport::ViewportConstraints;
@@ -132,5 +136,50 @@ pub enum ScriptMsg {
     
     PipelineExited(PipelineId),
     
+    RegisterServiceWorker(ScopeThings, Url),
+    
+    Exit
+}
+
+
+#[derive(Deserialize, Serialize, Clone)]
+pub struct ScopeThings {
+    
+    pub script_url: Url,
+    
+    pub pipeline_id: PipelineId,
+    
+    pub worker_load_origin: WorkerScriptLoadOrigin,
+    
+    pub init: WorkerGlobalScopeInit,
+    
+    pub devtools_chan: Option<IpcSender<ScriptToDevtoolsControlMsg>>,
+    
+    pub worker_id: WorkerId,
+}
+
+
+pub struct SWManagerSenders {
+    
+    pub swmanager_sender: IpcSender<SWManagerMsg>,
+    
+    pub resource_sender: IpcSender<CoreResourceMsg>
+}
+
+
+#[derive(Deserialize, Serialize)]
+pub enum ServiceWorkerMsg {
+    
+    RegisterServiceWorker(ScopeThings, Url),
+    
+    Timeout(Url),
+    
     Exit,
+}
+
+
+#[derive(Deserialize, Serialize)]
+pub enum SWManagerMsg {
+    
+    OwnSender(IpcSender<ServiceWorkerMsg>),
 }

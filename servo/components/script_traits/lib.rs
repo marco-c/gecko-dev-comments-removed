@@ -36,7 +36,7 @@ mod script_msg;
 pub mod webdriver_msg;
 
 use app_units::Au;
-use devtools_traits::ScriptToDevtoolsControlMsg;
+use devtools_traits::{DevtoolScriptControlMsg, ScriptToDevtoolsControlMsg, WorkerId};
 use euclid::Size2D;
 use euclid::length::Length;
 use euclid::point::Point2D;
@@ -51,13 +51,14 @@ use ipc_channel::ipc::{IpcReceiver, IpcSender};
 use layers::geometry::DevicePixel;
 use libc::c_void;
 use msg::constellation_msg::{FrameId, FrameType, Image, Key, KeyModifiers, KeyState, LoadData};
-use msg::constellation_msg::{NavigationDirection, PanicMsg, PipelineId};
+use msg::constellation_msg::{NavigationDirection, PanicMsg, PipelineId, ReferrerPolicy};
 use msg::constellation_msg::{PipelineNamespaceId, SubpageId, WindowSizeType};
-use net_traits::ResourceThreads;
 use net_traits::bluetooth_thread::BluetoothMethodMsg;
 use net_traits::image_cache_thread::ImageCacheThread;
 use net_traits::response::HttpsState;
+use net_traits::{LoadOrigin, ResourceThreads};
 use profile_traits::mem;
+use profile_traits::time as profile_time;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::collections::HashMap;
 use std::sync::mpsc::{Sender, Receiver};
@@ -67,6 +68,7 @@ use util::ipc::OptionalOpaqueIpcSender;
 use webdriver_msg::{LoadStatus, WebDriverScriptCommand};
 
 pub use script_msg::{LayoutMsg, ScriptMsg, EventResult, LogEntry};
+pub use script_msg::{ServiceWorkerMsg, ScopeThings, SWManagerMsg, SWManagerSenders};
 
 
 
@@ -602,4 +604,50 @@ pub enum ConstellationMsg {
     Reload,
     
     LogEntry(Option<PipelineId>, Option<String>, LogEntry),
+}
+
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct WorkerGlobalScopeInit {
+    
+    pub resource_threads: ResourceThreads,
+    
+    pub mem_profiler_chan: mem::ProfilerChan,
+    
+    pub time_profiler_chan: profile_time::ProfilerChan,
+    
+    pub to_devtools_sender: Option<IpcSender<ScriptToDevtoolsControlMsg>>,
+    
+    pub from_devtools_sender: Option<IpcSender<DevtoolScriptControlMsg>>,
+    
+    pub constellation_chan: IpcSender<ScriptMsg>,
+    
+    pub scheduler_chan: IpcSender<TimerEventRequest>,
+    
+    pub panic_chan: IpcSender<PanicMsg>,
+    
+    pub worker_id: WorkerId,
+}
+
+
+#[derive(Deserialize, Serialize, Clone)]
+pub struct WorkerScriptLoadOrigin {
+    
+    pub referrer_url: Option<Url>,
+    
+    pub referrer_policy: Option<ReferrerPolicy>,
+    
+    pub pipeline_id: Option<PipelineId>
+}
+
+impl LoadOrigin for WorkerScriptLoadOrigin {
+    fn referrer_url(&self) -> Option<Url> {
+        self.referrer_url.clone()
+    }
+    fn referrer_policy(&self) -> Option<ReferrerPolicy> {
+        self.referrer_policy.clone()
+    }
+    fn pipeline_id(&self) -> Option<PipelineId> {
+        self.pipeline_id.clone()
+    }
 }
