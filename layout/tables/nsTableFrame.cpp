@@ -3165,7 +3165,7 @@ nsTableFrame::ReflowChildren(TableReflowInput& aReflowInput,
       }
       if (isPaginated && !aStatus.IsFullyComplete() &&
           ShouldAvoidBreakInside(aReflowInput.reflowInput)) {
-        aStatus = NS_INLINE_LINE_BREAK_BEFORE();
+        aStatus.SetInlineLineBreakBeforeAndReset();
         break;
       }
       
@@ -3176,7 +3176,7 @@ nsTableFrame::ReflowChildren(TableReflowInput& aReflowInput,
             (NS_UNCONSTRAINEDSIZE != kidReflowInput.AvailableHeight()) &&
             kidReflowInput.AvailableHeight() < desiredSize.Height()))) {
         if (ShouldAvoidBreakInside(aReflowInput.reflowInput)) {
-          aStatus = NS_INLINE_LINE_BREAK_BEFORE();
+          aStatus.SetInlineLineBreakBeforeAndReset();
           break;
         }
         

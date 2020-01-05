@@ -9550,7 +9550,7 @@ nsTextFrame::ReflowText(nsLineLayout& aLineLayout, nscoord aAvailableWidth,
 
   if (charsFit == 0 && length > 0 && !usedHyphenation) {
     
-    aStatus = NS_INLINE_LINE_BREAK_BEFORE();
+    aStatus.SetInlineLineBreakBeforeAndReset();
   } else if (contentLength > 0 && mContentOffset + contentLength - 1 == newLineOffset) {
     
     aStatus = NS_INLINE_LINE_BREAK_AFTER(aStatus);

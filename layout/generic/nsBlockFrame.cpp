@@ -3406,7 +3406,7 @@ nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
       aState.mPrevBEndMargin = incomingMargin;
       *aKeepReflowGoing = false;
       if (ShouldAvoidBreakInside(aState.mReflowInput)) {
-        aState.mReflowStatus = NS_INLINE_LINE_BREAK_BEFORE();
+        aState.mReflowStatus.SetInlineLineBreakBeforeAndReset();
       } else {
         PushLines(aState, aLine.prev());
         aState.mReflowStatus.SetIncomplete();
@@ -3583,7 +3583,7 @@ nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
       
       *aKeepReflowGoing = false;
       if (ShouldAvoidBreakInside(aState.mReflowInput)) {
-        aState.mReflowStatus = NS_INLINE_LINE_BREAK_BEFORE();
+        aState.mReflowStatus.SetInlineLineBreakBeforeAndReset();
       } else {
         PushLines(aState, aLine.prev());
         aState.mReflowStatus.SetIncomplete();
@@ -3757,7 +3757,7 @@ nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
           
           
           
-          aState.mReflowStatus = NS_INLINE_LINE_BREAK_BEFORE();
+          aState.mReflowStatus.SetInlineLineBreakBeforeAndReset();
         } else {
           
           
@@ -4644,7 +4644,7 @@ nsBlockFrame::PlaceLine(BlockReflowInput& aState,
   if (!aState.mReflowStatus.IsFullyComplete() &&
       ShouldAvoidBreakInside(aState.mReflowInput)) {
     aLine->AppendFloats(aState.mCurrentLineFloats);
-    aState.mReflowStatus = NS_INLINE_LINE_BREAK_BEFORE();
+    aState.mReflowStatus.SetInlineLineBreakBeforeAndReset();
     return true;
   }
 
@@ -4655,7 +4655,7 @@ nsBlockFrame::PlaceLine(BlockReflowInput& aState,
     NS_ASSERTION(aState.mCurrentLine == aLine, "oops");
     if (ShouldAvoidBreakInside(aState.mReflowInput)) {
       
-      aState.mReflowStatus = NS_INLINE_LINE_BREAK_BEFORE();
+      aState.mReflowStatus.SetInlineLineBreakBeforeAndReset();
     } else {
       
       
@@ -6277,7 +6277,7 @@ nsBlockFrame::ReflowFloat(BlockReflowInput& aState,
 
   if (!aReflowStatus.IsFullyComplete() &&
       ShouldAvoidBreakInside(floatRS)) {
-    aReflowStatus = NS_INLINE_LINE_BREAK_BEFORE();
+    aReflowStatus.SetInlineLineBreakBeforeAndReset();
   } else if (aReflowStatus.IsIncomplete() &&
              (NS_UNCONSTRAINEDSIZE == aAdjustedAvailableSpace.BSize(wm))) {
     
@@ -7423,7 +7423,7 @@ nsBlockFrame::ComputeFinalBSize(const ReflowInput& aReflowInput,
         NS_UNCONSTRAINEDSIZE != aReflowInput.AvailableBSize() &&
         aFinalSize.BSize(wm) > aReflowInput.AvailableBSize()) {
       if (ShouldAvoidBreakInside(aReflowInput)) {
-        *aStatus = NS_INLINE_LINE_BREAK_BEFORE();
+        aStatus->SetInlineLineBreakBeforeAndReset();
         return;
       }
       

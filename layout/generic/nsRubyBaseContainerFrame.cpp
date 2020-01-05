@@ -514,7 +514,7 @@ nsRubyBaseContainerFrame::ReflowColumns(const RubyReflowInput& aReflowInput,
     
     e.Next();
     e.GetColumn(column);
-    reflowStatus = NS_INLINE_LINE_BREAK_BEFORE();
+    reflowStatus.SetInlineLineBreakBeforeAndReset();
   }
   if (!e.AtEnd() || (GetNextInFlow() && !isComplete)) {
     aStatus.SetIncomplete();
@@ -524,7 +524,7 @@ nsRubyBaseContainerFrame::ReflowColumns(const RubyReflowInput& aReflowInput,
     if (!columnIndex || !aReflowInput.mAllowLineBreak) {
       
       
-      aStatus = NS_INLINE_LINE_BREAK_BEFORE();
+      aStatus.SetInlineLineBreakBeforeAndReset();
       return 0;
     }
     aStatus = NS_INLINE_LINE_BREAK_AFTER(aStatus);
@@ -598,7 +598,7 @@ nsRubyBaseContainerFrame::ReflowOneColumn(const RubyReflowInput& aReflowInput,
           if (istart > baseReflowInput.AvailableISize() ||
               baseReflowInput.mLineLayout->NotifyOptionalBreakPosition(
                 aColumn.mBaseFrame, 0, true, breakPriority)) {
-            aStatus = NS_INLINE_LINE_BREAK_BEFORE();
+            aStatus.SetInlineLineBreakBeforeAndReset();
             return 0;
           }
         }

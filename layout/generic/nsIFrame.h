@@ -197,21 +197,29 @@ enum nsSpread {
 
 
 class nsReflowStatus final {
+  using StyleClear = mozilla::StyleClear;
+
 public:
   nsReflowStatus()
     : mStatus(0)
+    , mBreakType(StyleClear::None)
     , mIncomplete(false)
     , mOverflowIncomplete(false)
     , mNextInFlowNeedsReflow(false)
     , mTruncated(false)
+    , mInlineBreak(false)
+    , mInlineBreakAfter(false)
   {}
 
   
   void Reset() {
+    mBreakType = StyleClear::None;
     mIncomplete = false;
     mOverflowIncomplete = false;
     mNextInFlowNeedsReflow = false;
     mTruncated = false;
+    mInlineBreak = false;
+    mInlineBreakAfter = false;
   }
 
   nsReflowStatus(uint32_t aStatus)
@@ -309,28 +317,43 @@ public:
     }
   }
 
+  
+
+  
+  
+  
+
+  
+  
+  
+  void SetInlineLineBreakBeforeAndReset() {
+    Reset();
+    mBreakType = StyleClear::Line;
+    mInlineBreak = true;
+    mInlineBreakAfter = false;
+  }
+
 private:
   uint32_t mStatus;
+
+  StyleClear mBreakType;
 
   
   bool mIncomplete : 1;
   bool mOverflowIncomplete : 1;
   bool mNextInFlowNeedsReflow : 1;
   bool mTruncated : 1;
+
+  
+  bool mInlineBreak : 1;
+  bool mInlineBreakAfter : 1;
 };
 
 #define NS_FRAME_COMPLETE             0       // Note: not a bit!
 #define NS_FRAME_NOT_COMPLETE         0x1
 #define NS_FRAME_OVERFLOW_INCOMPLETE  0x4
 
-
-
 #define NS_INLINE_BREAK              0x0100
-
-
-
-
-#define NS_INLINE_BREAK_BEFORE       0x0000
 #define NS_INLINE_BREAK_AFTER        0x0200
 
 
@@ -355,14 +378,6 @@ private:
   (static_cast<StyleClear>(((_status) >> 12) & 0xF))
 
 #define NS_INLINE_MAKE_BREAK_TYPE(_type)  (static_cast<int>(_type) << 12)
-
-
-
-
-
-#define NS_INLINE_LINE_BREAK_BEFORE()                                   \
-  (NS_INLINE_BREAK | NS_INLINE_BREAK_BEFORE |                           \
-   NS_INLINE_MAKE_BREAK_TYPE(StyleClear::Line))
 
 
 
