@@ -411,8 +411,6 @@ AddDynamicCodeLocationTag(ProfileBuffer* aBuffer, const char* aStr)
   }
 }
 
-static const int SAMPLER_MAX_STRING_LENGTH = 128;
-
 static void
 AddPseudoEntry(ProfileBuffer* aBuffer, volatile js::ProfileEntry& entry,
                PseudoStack* stack, void* lastpc)
@@ -428,17 +426,8 @@ AddPseudoEntry(ProfileBuffer* aBuffer, volatile js::ProfileEntry& entry,
   
   
   const char* sampleLabel = entry.label();
-  const char* dynamicString = entry.getDynamicString();
-  char combinedStringBuffer[SAMPLER_MAX_STRING_LENGTH];
 
-  if (entry.isCopyLabel() || dynamicString) {
-    if (dynamicString) {
-      int bytesWritten =
-        SprintfLiteral(combinedStringBuffer, "%s %s", sampleLabel, dynamicString);
-      if (bytesWritten > 0) {
-        sampleLabel = combinedStringBuffer;
-      }
-    }
+  if (entry.isCopyLabel()) {
     
     
     AddDynamicCodeLocationTag(aBuffer, sampleLabel);
@@ -546,6 +535,7 @@ MergeStacksIntoProfile(ProfileBuffer* aBuffer, TickSample* aSample,
       registerState.pc = aSample->pc;
       registerState.sp = aSample->sp;
       registerState.lr = aSample->lr;
+      registerState.fp = aSample->fp;
 
       JS::ProfilingFrameIterator jsIter(pseudoStack->mContext,
                                         registerState,
@@ -2878,28 +2868,11 @@ profiler_get_backtrace_noalloc(char *output, size_t outputSize)
   uint32_t pseudoCount = pseudoStack->stackSize();
 
   for (uint32_t i = 0; i < pseudoCount; i++) {
-    const char* label = pseudoFrames[i].label();
-    const char* dynamicString = pseudoFrames[i].getDynamicString();
-    size_t labelLength = strlen(label);
-    if (dynamicString) {
-      
-      size_t dynamicStringLength = strlen(dynamicString);
-      if (output + labelLength + 1 + dynamicStringLength >= bound) {
-        break;
-      }
-      strcpy(output, label);
-      output += labelLength;
-      *output++ = ' ';
-      strcpy(output, dynamicString);
-      output += dynamicStringLength;
-    } else {
-      
-      if (output + labelLength >= bound) {
-        break;
-      }
-      strcpy(output, label);
-      output += labelLength;
-    }
+    size_t len = strlen(pseudoFrames[i].label());
+    if (output + len >= bound)
+      break;
+    strcpy(output, pseudoFrames[i].label());
+    output += len;
     *output++ = '\0';
     *output = '\0';
   }

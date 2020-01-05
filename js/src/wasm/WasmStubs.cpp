@@ -263,11 +263,24 @@ wasm::GenerateEntry(MacroAssembler& masm, const FuncExport& fe)
     }
 
     
+    masm.movePtr(ImmWord(0), FramePointer);
+
+    
     masm.assertStackAlignment(WasmStackAlignment);
     masm.call(CallSiteDesc(CallSiteDesc::Func), fe.funcIndex());
+    masm.assertStackAlignment(WasmStackAlignment);
+
+#ifdef DEBUG
+    
+    Label ok;
+    masm.branchTestPtr(Assembler::Zero, FramePointer, FramePointer, &ok);
+    masm.breakpoint();
+    masm.bind(&ok);
+#endif
 
     
     masm.loadWasmActivationFromTls(scratch);
+    masm.wasmAssertNonExitInvariants(scratch);
     masm.loadStackPtr(Address(scratch, WasmActivation::offsetOfEntrySP()));
     masm.setFramePushed(FramePushedForEntrySP);
 
@@ -707,6 +720,8 @@ wasm::GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi, Label* t
     
     
     masm.loadWasmTlsRegFromFrame();
+    masm.moveStackPtrTo(FramePointer);
+    masm.addPtr(Imm32(masm.framePushed()), FramePointer);
 
     {
         
@@ -1109,16 +1124,7 @@ wasm::GenerateThrowStub(MacroAssembler& masm, Label* throwLabel)
 
     
     Register act = ReturnReg;
-
-#ifdef DEBUG
-    
-    
-    
-    Label ok;
-    masm.branchPtr(Assembler::Equal, Address(act, WasmActivation::offsetOfFP()), ImmWord(0), &ok);
-    masm.breakpoint();
-    masm.bind(&ok);
-#endif
+    masm.wasmAssertNonExitInvariants(act);
 
     masm.setFramePushed(FramePushedForEntrySP);
     masm.loadStackPtr(Address(act, WasmActivation::offsetOfEntrySP()));

@@ -89,7 +89,6 @@ enum class ExitReason : uint32_t
     None,          
     ImportJit,     
     ImportInterp,  
-    Native,        
     Trap,          
     DebugTrap      
 };
@@ -101,12 +100,12 @@ class ProfilingFrameIterator
     const WasmActivation* activation_;
     const Code* code_;
     const CodeRange* codeRange_;
-    uint8_t* callerFP_;
+    void* callerFP_;
     void* callerPC_;
     void* stackAddress_;
     ExitReason exitReason_;
 
-    void initFromFP();
+    void initFromExitFP();
 
   public:
     ProfilingFrameIterator();

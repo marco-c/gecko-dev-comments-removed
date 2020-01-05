@@ -1646,7 +1646,7 @@ WasmActivation::WasmActivation(JSContext* cx)
   : Activation(cx, Wasm),
     entrySP_(nullptr),
     resumePC_(nullptr),
-    fp_(nullptr),
+    exitFP_(nullptr),
     exitReason_(wasm::ExitReason::None)
 {
     (void) entrySP_;  
@@ -1664,7 +1664,8 @@ WasmActivation::~WasmActivation()
     
     unregisterProfiling();
 
-    MOZ_ASSERT(fp_ == nullptr);
+    MOZ_ASSERT(exitFP_ == nullptr);
+    MOZ_ASSERT(exitReason_ == wasm::ExitReason::None);
 
     MOZ_ASSERT(cx_->wasmActivationStack_ == this);
     cx_->wasmActivationStack_ = prevWasm_;

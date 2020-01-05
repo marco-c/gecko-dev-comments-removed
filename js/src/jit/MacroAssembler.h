@@ -1464,6 +1464,9 @@ class MacroAssembler : public MacroAssemblerSpecific
     
     void wasmEmitTrapOutOfLineCode();
 
+    
+    void wasmAssertNonExitInvariants(Register activation);
+
   public:
     
     

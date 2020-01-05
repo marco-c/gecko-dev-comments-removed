@@ -1735,7 +1735,7 @@ class WasmActivation : public Activation
     WasmActivation* prevWasm_;
     void* entrySP_;
     void* resumePC_;
-    uint8_t* fp_;
+    uint8_t* exitFP_;
     wasm::ExitReason exitReason_;
 
   public:
@@ -1750,14 +1750,14 @@ class WasmActivation : public Activation
 
     
     
-    uint8_t* fp() const { return fp_; }
+    uint8_t* exitFP() const { return exitFP_; }
 
     
     wasm::ExitReason exitReason() const { return exitReason_; }
 
     
     static unsigned offsetOfEntrySP() { return offsetof(WasmActivation, entrySP_); }
-    static unsigned offsetOfFP() { return offsetof(WasmActivation, fp_); }
+    static unsigned offsetOfExitFP() { return offsetof(WasmActivation, exitFP_); }
     static unsigned offsetOfExitReason() { return offsetof(WasmActivation, exitReason_); }
 
     
@@ -1765,7 +1765,7 @@ class WasmActivation : public Activation
     void* resumePC() const { return resumePC_; }
 
     
-    void unwindFP(uint8_t* fp) { fp_ = fp; }
+    void unwindExitFP(uint8_t* exitFP) { exitFP_ = exitFP; exitReason_ = wasm::ExitReason::None; }
 };
 
 

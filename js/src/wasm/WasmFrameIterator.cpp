@@ -83,7 +83,7 @@ FrameIterator::FrameIterator(WasmActivation* activation, Unwind unwind)
         return;
     }
 
-    fp_ = activation->fp();
+    fp_ = activation->exitFP();
 
     if (!fp_) {
         MOZ_ASSERT(done());
@@ -118,7 +118,7 @@ void
 FrameIterator::settle()
 {
     if (unwind_ == Unwind::True)
-        activation_->unwindFP(fp_);
+        activation_->unwindExitFP(fp_);
 
     void* returnAddress = ReturnAddressFromFP(fp_);
 
@@ -130,7 +130,7 @@ FrameIterator::settle()
         callsite_ = nullptr;
 
         if (unwind_ == Unwind::True)
-            activation_->unwindFP(nullptr);
+            activation_->unwindExitFP(nullptr);
 
         MOZ_ASSERT(done());
         return;
@@ -254,71 +254,60 @@ FrameIterator::debugTrapCallsite() const
 
 
 #if defined(JS_CODEGEN_X64)
-# if defined(DEBUG)
 static const unsigned PushedRetAddr = 0;
-# endif
-static const unsigned PushedFP = 16;
-static const unsigned PushedTLS = 18;
-static const unsigned StoredFP = 25;
-static const unsigned RestoreFP = 4;
+static const unsigned PushedFP = 1;
+static const unsigned PushedTLS = 3;
+static const unsigned PoppedTLS = 1;
 #elif defined(JS_CODEGEN_X86)
-# if defined(DEBUG)
 static const unsigned PushedRetAddr = 0;
-# endif
-static const unsigned PushedFP = 11;
-static const unsigned PushedTLS = 12;
-static const unsigned StoredFP = 15;
-static const unsigned RestoreFP = 3;
+static const unsigned PushedFP = 1;
+static const unsigned PushedTLS = 2;
+static const unsigned PoppedTLS = 1;
 #elif defined(JS_CODEGEN_ARM)
+static const unsigned BeforePushRetAddr = 0;
 static const unsigned PushedRetAddr = 4;
-static const unsigned PushedFP = 20;
-static const unsigned PushedTLS = 24;
-static const unsigned StoredFP = 28;
-static const unsigned RestoreFP = 4;
+static const unsigned PushedFP = 8;
+static const unsigned PushedTLS = 12;
+static const unsigned PoppedTLS = 4;
 #elif defined(JS_CODEGEN_ARM64)
+static const unsigned BeforePushRetAddr = 0;
 static const unsigned PushedRetAddr = 0;
 static const unsigned PushedFP = 0;
 static const unsigned PushedTLS = 0;
-static const unsigned StoredFP = 0;
-static const unsigned RestoreFP = 0;
+static const unsigned PoppedTLS = 0;
 #elif defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
-static const unsigned PushedRetAddr = 8;
-static const unsigned PushedFP = 28;
-static const unsigned PushedTLS = 32;
-static const unsigned StoredFP = 36;
-static const unsigned RestoreFP = 4;
+static const unsigned BeforePushRetAddr = 0;
+static const unsigned PushedRetAddr = 4;
+static const unsigned PushedFP = 8;
+static const unsigned PushedTLS = 12;
+static const unsigned PoppedTLS = 4;
 #elif defined(JS_CODEGEN_NONE)
-# if defined(DEBUG)
 static const unsigned PushedRetAddr = 0;
-# endif
-static const unsigned PushedFP = 1;
-static const unsigned PushedTLS = 1;
-static const unsigned StoredFP = 1;
-static const unsigned RestoreFP = 0;
+static const unsigned PushedFP = 0;
+static const unsigned PushedTLS = 0;
+static const unsigned PoppedTLS = 0;
 #else
 # error "Unknown architecture!"
 #endif
 
 static void
-PushRetAddr(MacroAssembler& masm)
+PushRetAddr(MacroAssembler& masm, unsigned entry)
 {
 #if defined(JS_CODEGEN_ARM)
+    MOZ_ASSERT(masm.currentOffset() - entry == BeforePushRetAddr);
     masm.push(lr);
 #elif defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
+    MOZ_ASSERT(masm.currentOffset() - entry == BeforePushRetAddr);
     masm.push(ra);
 #else
     
 #endif
 }
 
-
-
 static void
 GenerateCallablePrologue(MacroAssembler& masm, unsigned framePushed, ExitReason reason,
                          uint32_t* entry)
 {
-    Register scratch = ABINonArgReg0;
-
     
     
     
@@ -331,63 +320,57 @@ GenerateCallablePrologue(MacroAssembler& masm, unsigned framePushed, ExitReason 
 
         *entry = masm.currentOffset();
 
-        PushRetAddr(masm);
+        PushRetAddr(masm, *entry);
         MOZ_ASSERT_IF(!masm.oom(), PushedRetAddr == masm.currentOffset() - *entry);
-
-        masm.loadWasmActivationFromTls(scratch);
-        masm.push(Address(scratch, WasmActivation::offsetOfFP()));
+        masm.push(FramePointer);
         MOZ_ASSERT_IF(!masm.oom(), PushedFP == masm.currentOffset() - *entry);
-
         masm.push(WasmTlsReg);
         MOZ_ASSERT_IF(!masm.oom(), PushedTLS == masm.currentOffset() - *entry);
-
-        masm.storePtr(masm.getStackPointer(), Address(scratch, WasmActivation::offsetOfFP()));
-        MOZ_ASSERT_IF(!masm.oom(), StoredFP == masm.currentOffset() - *entry);
+        masm.moveStackPtrTo(FramePointer);
     }
 
-    if (reason != ExitReason::None)
-        masm.store32(Imm32(int32_t(reason)), Address(scratch, WasmActivation::offsetOfExitReason()));
+    if (reason != ExitReason::None) {
+        Register scratch = ABINonArgReg0;
+        masm.loadWasmActivationFromTls(scratch);
+        masm.wasmAssertNonExitInvariants(scratch);
+        Address exitReason(scratch, WasmActivation::offsetOfExitReason());
+        masm.store32(Imm32(int32_t(reason)), exitReason);
+        Address exitFP(scratch, WasmActivation::offsetOfExitFP());
+        masm.storePtr(FramePointer, exitFP);
+    }
 
     if (framePushed)
         masm.subFromStackPtr(Imm32(framePushed));
 }
 
-
 static void
 GenerateCallableEpilogue(MacroAssembler& masm, unsigned framePushed, ExitReason reason,
                          uint32_t* ret)
 {
-    Register scratch = ABINonArgReturnReg0;
-    Register scratch2 = ABINonArgReturnReg1;
-
     if (framePushed)
         masm.addToStackPtr(Imm32(framePushed));
 
-    masm.loadWasmActivationFromTls(scratch);
 
     if (reason != ExitReason::None) {
-        masm.store32(Imm32(int32_t(ExitReason::None)),
-                     Address(scratch, WasmActivation::offsetOfExitReason()));
+        Register scratch = ABINonArgReturnReg0;
+        masm.loadWasmActivationFromTls(scratch);
+        Address exitFP(scratch, WasmActivation::offsetOfExitFP());
+        masm.storePtr(ImmWord(0), exitFP);
+        Address exitReason(scratch, WasmActivation::offsetOfExitReason());
+        masm.store32(Imm32(int32_t(ExitReason::None)), exitReason);
     }
 
-#if defined(JS_CODEGEN_ARM)
     
-    AutoForbidPools afp(&masm,  5);
+#if defined(JS_CODEGEN_ARM)
+    AutoForbidPools afp(&masm,  3);
 #endif
 
-    
-    
-    
-    
-
-    masm.loadPtr(Address(masm.getStackPointer(), offsetof(Frame, callerFP)), scratch2);
-    masm.storePtr(scratch2, Address(scratch, WasmActivation::offsetOfFP()));
-    DebugOnly<uint32_t> afterRestoreFP = masm.currentOffset();
-    masm.addToStackPtr(Imm32(2 * sizeof(void*)));
+    masm.pop(WasmTlsReg);
+    DebugOnly<uint32_t> poppedTLS = masm.currentOffset();
+    masm.pop(FramePointer);
     *ret = masm.currentOffset();
     masm.ret();
-
-    MOZ_ASSERT_IF(!masm.oom(), RestoreFP == *ret - afterRestoreFP);
+    MOZ_ASSERT_IF(!masm.oom(), PoppedTLS == *ret - poppedTLS);
 }
 
 void
@@ -478,7 +461,7 @@ ProfilingFrameIterator::ProfilingFrameIterator(const WasmActivation& activation)
     stackAddress_(nullptr),
     exitReason_(ExitReason::None)
 {
-    initFromFP();
+    initFromExitFP();
 }
 
 static inline void
@@ -502,9 +485,9 @@ AssertMatchesCallSite(const WasmActivation& activation, void* callerPC, void* ca
 }
 
 void
-ProfilingFrameIterator::initFromFP()
+ProfilingFrameIterator::initFromExitFP()
 {
-    uint8_t* fp = activation_->fp();
+    uint8_t* fp = activation_->exitFP();
     stackAddress_ = fp;
 
     
@@ -546,6 +529,7 @@ ProfilingFrameIterator::initFromFP()
       case CodeRange::TrapExit:
       case CodeRange::DebugTrap:
       case CodeRange::Inline:
+      case CodeRange::Throw:
       case CodeRange::FarJumpIsland:
         MOZ_CRASH("Unexpected CodeRange kind");
     }
@@ -553,12 +537,6 @@ ProfilingFrameIterator::initFromFP()
     
     
     exitReason_ = activation_->exitReason();
-
-    
-    
-    
-    if (exitReason_ == ExitReason::None)
-        exitReason_ = ExitReason::Native;
 
     MOZ_ASSERT(!done());
 }
@@ -577,9 +555,16 @@ ProfilingFrameIterator::ProfilingFrameIterator(const WasmActivation& activation,
 {
     
     
+    if (activation.exitFP()) {
+        initFromExitFP();
+        return;
+    }
+
+    
+    
     code_ = activation_->compartment()->wasm.lookupCode(state.pc);
     if (!code_) {
-        initFromFP();
+        MOZ_ASSERT(done());
         return;
     }
 
@@ -589,7 +574,7 @@ ProfilingFrameIterator::ProfilingFrameIterator(const WasmActivation& activation,
     
     
     
-    uint8_t* fp = activation.fp();
+    uint8_t* fp = (uint8_t*)state.fp;
     uint8_t* pc = (uint8_t*)state.pc;
     void** sp = (void**)state.sp;
 
@@ -620,32 +605,35 @@ ProfilingFrameIterator::ProfilingFrameIterator(const WasmActivation& activation,
       case CodeRange::ImportInterpExit:
       case CodeRange::TrapExit:
 #if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_ARM64) || defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
-        if (offsetFromEntry < PushedRetAddr || codeRange->isThunk()) {
-            
+        if (offsetFromEntry == BeforePushRetAddr || codeRange->isThunk()) {
             
             callerPC_ = state.lr;
             callerFP_ = fp;
             AssertMatchesCallSite(*activation_, callerPC_, callerFP_);
         } else
 #endif
-        if (offsetFromEntry < PushedFP || codeRange->isThunk()) {
+        if (offsetFromEntry == PushedRetAddr || codeRange->isThunk()) {
             
             
             callerPC_ = sp[0];
             callerFP_ = fp;
             AssertMatchesCallSite(*activation_, callerPC_, callerFP_);
-        } else if (offsetFromEntry < PushedTLS) {
+        } else if (offsetFromEntry == PushedFP) {
             
             
             callerPC_ = sp[1];
-            callerFP_ = fp;
+            callerFP_ = sp[0];
             AssertMatchesCallSite(*activation_, callerPC_, callerFP_);
-        } else if (offsetFromEntry < StoredFP || offsetInModule == codeRange->ret() - RestoreFP) {
+        } else if (offsetFromEntry == PushedTLS) {
             
             MOZ_ASSERT(fp == CallerFPFromFP(sp));
             callerPC_ = ReturnAddressFromFP(sp);
             callerFP_ = fp;
             AssertMatchesCallSite(*activation_, callerPC_, callerFP_);
+        } else if (offsetInModule == codeRange->ret() - PoppedTLS) {
+            
+            callerPC_ = sp[1];
+            callerFP_ = sp[0];
         } else if (offsetInModule == codeRange->ret()) {
             
             
@@ -663,18 +651,11 @@ ProfilingFrameIterator::ProfilingFrameIterator(const WasmActivation& activation,
         
         
         
-        MOZ_ASSERT(!fp);
         callerPC_ = nullptr;
         callerFP_ = nullptr;
         break;
       case CodeRange::DebugTrap:
       case CodeRange::Inline:
-        
-        if (!fp) {
-            MOZ_ASSERT(done());
-            return;
-        }
-
         
         
         
@@ -684,10 +665,16 @@ ProfilingFrameIterator::ProfilingFrameIterator(const WasmActivation& activation,
         callerFP_ = CallerFPFromFP(fp);
         AssertMatchesCallSite(*activation_, callerPC_, callerFP_);
         break;
+      case CodeRange::Throw:
+        
+        
+        
+        MOZ_ASSERT(done());
+        return;
     }
 
     codeRange_ = codeRange;
-    stackAddress_ = state.sp;
+    stackAddress_ = sp;
     MOZ_ASSERT(!done());
 }
 
@@ -716,6 +703,7 @@ ProfilingFrameIterator::operator++()
 
     switch (codeRange_->kind()) {
       case CodeRange::Entry:
+      case CodeRange::Throw:
         MOZ_ASSERT(callerFP_ == nullptr);
         callerPC_ = nullptr;
         break;
@@ -748,7 +736,6 @@ ProfilingFrameIterator::label() const
     
     const char* importJitDescription = "fast FFI trampoline (in asm.js)";
     const char* importInterpDescription = "slow FFI trampoline (in asm.js)";
-    const char* nativeDescription = "native call (in asm.js)";
     const char* trapDescription = "trap handling (in asm.js)";
     const char* debugTrapDescription = "debug trap handling (in asm.js)";
 
@@ -759,8 +746,6 @@ ProfilingFrameIterator::label() const
         return importJitDescription;
       case ExitReason::ImportInterp:
         return importInterpDescription;
-      case ExitReason::Native:
-        return nativeDescription;
       case ExitReason::Trap:
         return trapDescription;
       case ExitReason::DebugTrap:
@@ -776,6 +761,7 @@ ProfilingFrameIterator::label() const
       case CodeRange::DebugTrap:        return debugTrapDescription;
       case CodeRange::Inline:           return "inline stub (in asm.js)";
       case CodeRange::FarJumpIsland:    return "interstitial (in asm.js)";
+      case CodeRange::Throw:            MOZ_CRASH("no frame for throw stubs");
     }
 
     MOZ_CRASH("bad code range kind");

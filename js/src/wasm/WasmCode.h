@@ -239,8 +239,8 @@ class CodeRange
         DebugTrap,         
                            
         FarJumpIsland,     
-        Inline             
-                           
+        Inline,            
+        Throw              
     };
 
   private:
