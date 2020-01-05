@@ -13,6 +13,7 @@
 #include "nsIDOMHTMLInputElement.h"
 #include "nsITextControlElement.h"
 #include "nsITimer.h"
+#include "nsIPhonetic.h"
 #include "nsIDOMNSEditableElement.h"
 #include "nsCOMPtr.h"
 #include "nsIConstraintValidation.h"
@@ -127,6 +128,7 @@ class HTMLInputElement final : public nsGenericHTMLFormElementWithState,
                                public nsImageLoadingContent,
                                public nsIDOMHTMLInputElement,
                                public nsITextControlElement,
+                               public nsIPhonetic,
                                public nsIDOMNSEditableElement,
                                public nsIConstraintValidation
 {
@@ -171,6 +173,9 @@ public:
 
   
   NS_DECL_NSIDOMHTMLINPUTELEMENT
+
+  
+  NS_DECL_NSIPHONETIC
 
   
   NS_IMETHOD GetEditor(nsIEditor** aEditor) override
@@ -869,6 +874,8 @@ public:
 
   void SetUserInput(const nsAString& aInput,
                     nsIPrincipal& aSubjectPrincipal);
+
+  
 
   
 
@@ -1594,6 +1601,7 @@ protected:
   static const double kMsPerDay;
 
   nsContentUtils::AutocompleteAttrState mAutocompleteAttrState;
+  nsContentUtils::AutocompleteAttrState mAutocompleteInfoState;
   bool                     mDisabledChanged     : 1;
   bool                     mValueChanged        : 1;
   bool                     mLastValueChangeWasInteractive : 1;

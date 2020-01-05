@@ -610,6 +610,7 @@ protected:
   
   RefPtr<HTMLOptionsCollection> mOptions;
   nsContentUtils::AutocompleteAttrState mAutocompleteAttrState;
+  nsContentUtils::AutocompleteAttrState mAutocompleteInfoState;
   
   bool            mIsDoneAddingChildren;
   

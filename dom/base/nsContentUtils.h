@@ -2412,7 +2412,8 @@ public:
   SerializeAutocompleteAttribute(const nsAttrValue* aAttr,
                                  mozilla::dom::AutocompleteInfo& aInfo,
                                  AutocompleteAttrState aCachedState =
-                                   eAutocompleteAttrState_Unknown);
+                                   eAutocompleteAttrState_Unknown,
+                                 bool aGrantAllValidValue = false);
 
   
 
@@ -2958,7 +2959,8 @@ private:
 
   
   static AutocompleteAttrState InternalSerializeAutocompleteAttribute(const nsAttrValue* aAttrVal,
-                                                                      mozilla::dom::AutocompleteInfo& aInfo);
+                                                                      mozilla::dom::AutocompleteInfo& aInfo,
+                                                                      bool aGrantAllValidValue = false);
 
   static bool CallOnAllRemoteChildren(nsIMessageBroadcaster* aManager,
                                       CallOnRemoteChildFunction aCallback,
