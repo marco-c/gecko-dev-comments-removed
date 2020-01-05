@@ -179,8 +179,14 @@ function search(aQuery, aAttribute) {
   let mainPrefPane = document.getElementById("mainPrefPane");
   let elements = mainPrefPane.children;
   for (let element of elements) {
-    let attributeValue = element.getAttribute(aAttribute);
-    element.hidden = (attributeValue != aQuery);
+    
+    
+    
+    
+    if (element.getAttribute("data-hidden-from-search") != "true") {
+      let attributeValue = element.getAttribute(aAttribute);
+      element.hidden = (attributeValue != aQuery);
+    }
   }
 
   let keysets = mainPrefPane.getElementsByTagName("keyset");
