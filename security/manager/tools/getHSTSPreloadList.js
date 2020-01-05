@@ -433,6 +433,33 @@ function combineLists(newHosts, currentHosts) {
   }
 }
 
+const TEST_ENTRIES = [
+  { name: "includesubdomains.preloaded.test", includeSubdomains: true },
+  { name: "includesubdomains2.preloaded.test", includeSubdomains: true },
+  { name: "noincludesubdomains.preloaded.test", includeSubdomains: false },
+];
+
+function deleteTestHosts(currentHosts) {
+  for (let testEntry of TEST_ENTRIES) {
+    delete currentHosts[testEntry.name];
+  }
+}
+
+function insertTestHosts(hstsStatuses) {
+  for (let testEntry of TEST_ENTRIES) {
+    hstsStatuses.push({
+      name: testEntry.name,
+      maxAge: MINIMUM_REQUIRED_MAX_AGE,
+      includeSubdomains: testEntry.includeSubdomains,
+      error: ERROR_NONE,
+      
+      
+      forceInclude: true,
+      originalIncludeSubdomains: testEntry.includeSubdomains,
+    });
+  }
+}
+
 
 
 if (arguments.length != 1) {
@@ -441,6 +468,8 @@ if (arguments.length != 1) {
 }
 
 var currentHosts = readCurrentList(arguments[0]);
+
+deleteTestHosts(currentHosts);
 
 Services.prefs.setBoolPref("network.stricttransportsecurity.preloadlist", false);
 
@@ -452,6 +481,8 @@ combineLists(hosts, currentHosts);
 
 var hstsStatuses = [];
 getHSTSStatuses(hosts, hstsStatuses);
+
+insertTestHosts(hstsStatuses);
 
 hstsStatuses.sort(compareHSTSStatus);
 
