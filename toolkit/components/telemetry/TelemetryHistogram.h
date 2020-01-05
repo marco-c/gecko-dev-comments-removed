@@ -97,8 +97,6 @@ GetMapShallowSizesOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf);
 size_t
 GetHistogramSizesofIncludingThis(mozilla::MallocSizeOf aMallocSizeOf);
 
-void
-IPCTimerFired(nsITimer* aTimer, void* aClosure);
 } 
 
 #endif 
