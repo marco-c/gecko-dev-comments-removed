@@ -766,7 +766,6 @@ pub enum DisplayItem {
     Gradient(Box<GradientDisplayItem>),
     Line(Box<LineDisplayItem>),
     BoxShadow(Box<BoxShadowDisplayItem>),
-    LayeredItem(Box<LayeredItem>),
     Iframe(Box<IframeDisplayItem>),
     PushStackingContext(Box<PushStackingContextItem>),
     PopStackingContext(Box<PopStackingContextItem>),
@@ -1253,16 +1252,6 @@ pub struct BoxShadowDisplayItem {
 
 
 #[derive(Clone, HeapSizeOf, Deserialize, Serialize)]
-pub struct LayeredItem {
-    
-    pub item: DisplayItem,
-
-    
-    pub layer_info: LayerInfo,
-}
-
-
-#[derive(Clone, HeapSizeOf, Deserialize, Serialize)]
 pub struct PushStackingContextItem {
     
     pub base: BaseDisplayItem,
@@ -1359,8 +1348,6 @@ impl DisplayItem {
                                               box_shadow.clip_mode);
             }
 
-            DisplayItem::LayeredItem(ref item) => item.item.draw_into_context(paint_context),
-
             DisplayItem::Iframe(..) => {}
 
             DisplayItem::PushStackingContext(..) => {}
@@ -1392,7 +1379,6 @@ impl DisplayItem {
             DisplayItem::Gradient(ref gradient) => &gradient.base,
             DisplayItem::Line(ref line) => &line.base,
             DisplayItem::BoxShadow(ref box_shadow) => &box_shadow.base,
-            DisplayItem::LayeredItem(ref layered_item) => layered_item.item.base(),
             DisplayItem::Iframe(ref iframe) => &iframe.base,
             DisplayItem::PushStackingContext(ref stacking_context) => &stacking_context.base,
             DisplayItem::PopStackingContext(ref item) => &item.base,
@@ -1492,8 +1478,6 @@ impl fmt::Debug for DisplayItem {
                 DisplayItem::Gradient(_) => "Gradient".to_owned(),
                 DisplayItem::Line(_) => "Line".to_owned(),
                 DisplayItem::BoxShadow(_) => "BoxShadow".to_owned(),
-                DisplayItem::LayeredItem(ref layered_item) =>
-                    format!("LayeredItem({:?})", layered_item.item),
                 DisplayItem::Iframe(_) => "Iframe".to_owned(),
                 DisplayItem::PushStackingContext(_) => "".to_owned(),
                 DisplayItem::PopStackingContext(_) => "".to_owned(),
