@@ -10,7 +10,7 @@ use dom::bindings::reflector::{Reflector, reflect_dom_object};
 use dom::bindings::str::USVString;
 use dom::urlhelper::UrlHelper;
 use dom::window::Window;
-use url::{Url, UrlParser};
+use url::Url;
 use util::str::DOMString;
 
 #[dom_struct]
@@ -51,7 +51,7 @@ impl LocationMethods for Location {
         
         
         let base_url = self.window.get_url();
-        if let Ok(url) = UrlParser::new().base_url(&base_url).parse(&url.0) {
+        if let Ok(url) = base_url.join(&url.0) {
             self.window.load_url(url);
         }
     }
@@ -98,7 +98,7 @@ impl LocationMethods for Location {
 
     
     fn SetHref(&self, value: USVString) {
-        if let Ok(url) = UrlParser::new().base_url(&self.window.get_url()).parse(&value.0) {
+        if let Ok(url) = self.window.get_url().join(&value.0) {
             self.window.load_url(url);
         }
     }
