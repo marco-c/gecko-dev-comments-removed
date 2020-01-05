@@ -5532,8 +5532,3 @@ pref("dom.storageManager.enabled", true);
 #else
 pref("dom.storageManager.enabled", false);
 #endif
-
-
-
-pref("browser.storageManager.enabled", false);
-
