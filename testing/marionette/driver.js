@@ -1897,25 +1897,7 @@ GeckoDriver.prototype.clickElement = function*(cmd, resp) {
       
       
       this.addFrameCloseListener("click");
-
-      let click = this.listener.clickElement({id: id, pageTimeout: this.timeouts.pageLoad});
-
-      
-      
-      
-      this.curBrowser.pendingCommands.push(() => {
-        let parameters = {
-          
-          command_id: this.listener.activeMessageId,
-          pageTimeout: this.timeouts.pageLoad,
-          startTime: new Date().getTime(),
-        };
-        this.mm.broadcastAsyncMessage(
-            "Marionette:waitForPageLoaded" + this.curBrowser.curFrameId,
-            parameters);
-      });
-
-      yield click;
+      yield this.listener.clickElement(id);
       break;
   }
 };
