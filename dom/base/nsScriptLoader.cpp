@@ -2457,7 +2457,8 @@ nsScriptLoader::ConvertToUTF16(nsIChannel* aChannel, const uint8_t* aData,
     
     
     
-    unicodeDecoder = EncodingUtils::DecoderForEncoding("windows-1252");
+    charset = "windows-1252";
+    unicodeDecoder = EncodingUtils::DecoderForEncoding(charset);
   }
 
   int32_t unicodeLength = 0;
@@ -2484,6 +2485,11 @@ nsScriptLoader::ConvertToUTF16(nsIChannel* aChannel, const uint8_t* aData,
     aBufOut = nullptr;
     aLengthOut = 0;
   }
+  if (charset.Length() == 0) {
+    charset = "?";
+  }
+  mozilla::Telemetry::Accumulate(mozilla::Telemetry::DOM_SCRIPT_SRC_ENCODING,
+    charset);
   return rv;
 }
 
@@ -2975,11 +2981,28 @@ nsScriptLoadHandler::EnsureDecoder(nsIIncrementalStreamLoader *aLoader,
   }
 
   nsAutoCString charset;
+  if (!EnsureDecoder(aLoader, aData, aDataLength, aEndOfStream, charset)) {
+    return false;
+  }
+  if (charset.Length() == 0) {
+    charset = "?";
+  }
+  mozilla::Telemetry::Accumulate(mozilla::Telemetry::DOM_SCRIPT_SRC_ENCODING,
+    charset);
+  return true;
+}
 
+bool
+nsScriptLoadHandler::EnsureDecoder(nsIIncrementalStreamLoader *aLoader,
+                                   const uint8_t* aData,
+                                   uint32_t aDataLength,
+                                   bool aEndOfStream,
+                                   nsCString& oCharset)
+{
   
   if (mRequest->IsModuleRequest()) {
-    charset = "UTF-8";
-    mDecoder = EncodingUtils::DecoderForEncoding(charset);
+    oCharset = "UTF-8";
+    mDecoder = EncodingUtils::DecoderForEncoding(oCharset);
     return true;
   }
 
@@ -2991,8 +3014,8 @@ nsScriptLoadHandler::EnsureDecoder(nsIIncrementalStreamLoader *aLoader,
   }
 
   
-  if (nsContentUtils::CheckForBOM(aData, aDataLength, charset)) {
-    mDecoder = EncodingUtils::DecoderForEncoding(charset);
+  if (nsContentUtils::CheckForBOM(aData, aDataLength, oCharset)) {
+    mDecoder = EncodingUtils::DecoderForEncoding(oCharset);
     return true;
   }
 
@@ -3005,9 +3028,9 @@ nsScriptLoadHandler::EnsureDecoder(nsIIncrementalStreamLoader *aLoader,
   nsCOMPtr<nsIChannel> channel = do_QueryInterface(req);
 
   if (channel &&
-      NS_SUCCEEDED(channel->GetContentCharset(charset)) &&
-      EncodingUtils::FindEncodingForLabel(charset, charset)) {
-    mDecoder = EncodingUtils::DecoderForEncoding(charset);
+      NS_SUCCEEDED(channel->GetContentCharset(oCharset)) &&
+      EncodingUtils::FindEncodingForLabel(oCharset, oCharset)) {
+    mDecoder = EncodingUtils::DecoderForEncoding(oCharset);
     return true;
   }
 
@@ -3026,15 +3049,15 @@ nsScriptLoadHandler::EnsureDecoder(nsIIncrementalStreamLoader *aLoader,
     hintCharset = mScriptLoader->mPreloads[i].mCharset;
   }
 
-  if (EncodingUtils::FindEncodingForLabel(hintCharset, charset)) {
-    mDecoder = EncodingUtils::DecoderForEncoding(charset);
+  if (EncodingUtils::FindEncodingForLabel(hintCharset, oCharset)) {
+    mDecoder = EncodingUtils::DecoderForEncoding(oCharset);
     return true;
   }
 
   
   if (mScriptLoader->mDocument) {
-    charset = mScriptLoader->mDocument->GetDocumentCharacterSet();
-    mDecoder = EncodingUtils::DecoderForEncoding(charset);
+    oCharset = mScriptLoader->mDocument->GetDocumentCharacterSet();
+    mDecoder = EncodingUtils::DecoderForEncoding(oCharset);
     return true;
   }
 
@@ -3042,8 +3065,9 @@ nsScriptLoadHandler::EnsureDecoder(nsIIncrementalStreamLoader *aLoader,
   
   
   
-  charset = "windows-1252";
-  mDecoder = EncodingUtils::DecoderForEncoding(charset);
+  oCharset = "windows-1252";
+  mDecoder = EncodingUtils::DecoderForEncoding(oCharset);
+
   return true;
 }
 
