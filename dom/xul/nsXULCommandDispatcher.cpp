@@ -42,7 +42,7 @@ static LazyLogModule gCommandLog("nsXULCommandDispatcher");
 
 
 nsXULCommandDispatcher::nsXULCommandDispatcher(nsIDocument* aDocument)
-    : mDocument(aDocument), mUpdaters(nullptr)
+    : mDocument(aDocument), mUpdaters(nullptr), mLocked(false)
 {
 }
 
@@ -350,6 +350,14 @@ nsXULCommandDispatcher::RemoveCommandUpdater(nsIDOMElement* aElement)
 NS_IMETHODIMP
 nsXULCommandDispatcher::UpdateCommands(const nsAString& aEventName)
 {
+  if (mLocked) {
+    if (!mPendingUpdates.Contains(aEventName)) {
+      mPendingUpdates.AppendElement(aEventName);
+    }
+
+    return NS_OK;
+  }
+
   nsAutoString id;
   nsCOMPtr<nsIDOMElement> element;
   GetFocusedElement(getter_AddRefs(element));
@@ -457,3 +465,30 @@ nsXULCommandDispatcher::SetSuppressFocusScroll(bool aSuppressFocusScroll)
   return NS_OK;
 }
 
+NS_IMETHODIMP
+nsXULCommandDispatcher::Lock()
+{
+  
+  
+  
+  mLocked = true;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsXULCommandDispatcher::Unlock()
+{
+  if (mLocked) {
+    mLocked = false;
+
+    
+    
+    while (!mLocked && mPendingUpdates.Length() > 0) {
+      nsString name = mPendingUpdates.ElementAt(0);
+      mPendingUpdates.RemoveElementAt(0);
+      UpdateCommands(name);
+    }
+  }
+
+  return NS_OK;
+}
