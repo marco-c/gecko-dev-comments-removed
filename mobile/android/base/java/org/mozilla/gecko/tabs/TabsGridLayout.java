@@ -23,8 +23,9 @@ abstract class TabsGridLayout extends TabsLayout {
 
         setItemAnimator(new TabsGridLayoutAnimator());
 
+        final int dragDirections = ItemTouchHelper.UP | ItemTouchHelper.DOWN | ItemTouchHelper.START | ItemTouchHelper.END;
         
-        final TabsTouchHelperCallback callback = new TabsTouchHelperCallback(this) {
+        final TabsTouchHelperCallback callback = new TabsTouchHelperCallback(this, dragDirections, this) {
             @Override
             protected float alphaForItemSwipeDx(float dX, int distanceToAlphaMin) {
                 return 1f - 2f * Math.abs(dX) / distanceToAlphaMin;

@@ -6,29 +6,50 @@
 package org.mozilla.gecko.tabs;
 
 import android.graphics.Canvas;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.helper.ItemTouchHelper;
 import android.view.View;
 
-abstract class TabsTouchHelperCallback extends ItemTouchHelper.Callback {
-    private final DismissListener dismissListener;
+class TabsTouchHelperCallback extends ItemTouchHelper.Callback {
+    private final @Nullable DismissListener dismissListener;
+    private final @NonNull DragListener dragListener;
+    private final int movementFlags;
 
     interface DismissListener {
         void onItemDismiss(View view);
     }
 
-    public TabsTouchHelperCallback(DismissListener dismissListener) {
+    interface DragListener {
+        boolean onItemMove(int fromPosition, int toPosition);
+    }
+
+    TabsTouchHelperCallback(@NonNull DragListener dragListener, int dragDirections) {
+        this(dragListener, dragDirections, null);
+    }
+
+    TabsTouchHelperCallback(@NonNull DragListener dragListener, int dragDirections, @Nullable DismissListener dismissListener) {
+        this.dragListener = dragListener;
         this.dismissListener = dismissListener;
+        
+        final int swipeDirections = (dismissListener == null) ? 0 : ItemTouchHelper.START | ItemTouchHelper.END;
+        movementFlags = makeMovementFlags(dragDirections, swipeDirections);
     }
 
     @Override
     public boolean isItemViewSwipeEnabled() {
+        return dismissListener != null;
+    }
+
+    @Override
+    public boolean isLongPressDragEnabled() {
         return true;
     }
 
     @Override
     public int getMovementFlags(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder) {
-        return makeFlag(ItemTouchHelper.ACTION_STATE_SWIPE, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT);
+        return movementFlags;
     }
 
     @Override
@@ -39,18 +60,21 @@ abstract class TabsTouchHelperCallback extends ItemTouchHelper.Callback {
     @Override
     public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder,
                           RecyclerView.ViewHolder target) {
-        return false;
+        final int fromPosition = viewHolder.getAdapterPosition();
+        final int toPosition = target.getAdapterPosition();
+        if (fromPosition == RecyclerView.NO_POSITION || toPosition == RecyclerView.NO_POSITION) {
+            return false;
+        }
+        return dragListener.onItemMove(fromPosition, toPosition);
     }
 
     
 
 
 
-    abstract protected float alphaForItemSwipeDx(float dX, int distanceToAlphaMin);
-
-    
-
-
+     protected float alphaForItemSwipeDx(float dX, int distanceToAlphaMin) {
+        return 1;
+    }
 
     @Override
     public void onChildDraw(Canvas c,
@@ -60,15 +84,16 @@ abstract class TabsTouchHelperCallback extends ItemTouchHelper.Callback {
                             float dY,
                             int actionState,
                             boolean isCurrentlyActive) {
-        if (actionState != ItemTouchHelper.ACTION_STATE_SWIPE) {
-            return;
-        }
-
         super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive);
 
-        viewHolder.itemView.setAlpha(alphaForItemSwipeDx(dX, viewHolder.itemView.getWidth()));
+        if (actionState == ItemTouchHelper.ACTION_STATE_SWIPE) {
+            
+            
+            viewHolder.itemView.setAlpha(alphaForItemSwipeDx(dX, viewHolder.itemView.getWidth()));
+        }
     }
 
+    @Override
     public void clearView(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder) {
         super.clearView(recyclerView, viewHolder);
         viewHolder.itemView.setAlpha(1);
