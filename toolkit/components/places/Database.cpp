@@ -77,7 +77,16 @@
 
 
 
-#define DATABASE_MAX_WAL_SIZE_IN_KIBIBYTES 512
+
+
+
+#define DATABASE_MAX_WAL_BYTES 2048000
+
+
+
+
+
+#define DATABASE_JOURNAL_OVERHEAD_BYTES 2048000
 
 #define BYTES_PER_KIBIBYTE 1024
 
@@ -330,10 +339,8 @@ SetupDurability(nsCOMPtr<mozIStorageConnection>& aDBConn, int32_t aDBPageSize) {
     if (JOURNAL_WAL == SetJournalMode(aDBConn, JOURNAL_WAL)) {
       
       
-      
-      
       int32_t checkpointPages =
-        static_cast<int32_t>(DATABASE_MAX_WAL_SIZE_IN_KIBIBYTES * 1024 / aDBPageSize);
+        static_cast<int32_t>(DATABASE_MAX_WAL_BYTES / aDBPageSize);
       nsAutoCString checkpointPragma("PRAGMA wal_autocheckpoint = ");
       checkpointPragma.AppendInt(checkpointPages);
       rv = aDBConn->ExecuteSimpleSQL(checkpointPragma);
@@ -355,12 +362,8 @@ SetupDurability(nsCOMPtr<mozIStorageConnection>& aDBConn, int32_t aDBPageSize) {
 
   
   
-  
-  
-  
-  
   nsAutoCString journalSizePragma("PRAGMA journal_size_limit = ");
-  journalSizePragma.AppendInt(DATABASE_MAX_WAL_SIZE_IN_KIBIBYTES * 3);
+  journalSizePragma.AppendInt(DATABASE_MAX_WAL_BYTES + DATABASE_JOURNAL_OVERHEAD_BYTES);
   (void)aDBConn->ExecuteSimpleSQL(journalSizePragma);
 
   
@@ -391,6 +394,11 @@ AttachFaviconsDatabase(nsCOMPtr<mozIStorageConnection>& aDBConn) {
 
   rv = aDBConn->ExecuteSimpleSQL(CREATE_ICONS_AFTERINSERT_TRIGGER);
   NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  nsAutoCString journalSizePragma("PRAGMA favicons.journal_size_limit = ");
+  journalSizePragma.AppendInt(DATABASE_MAX_WAL_BYTES + DATABASE_JOURNAL_OVERHEAD_BYTES);
+  Unused << aDBConn->ExecuteSimpleSQL(journalSizePragma);
 
   return NS_OK;
 }
