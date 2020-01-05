@@ -37,9 +37,6 @@ public:
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_AMBIGUOUS(Location,
                                                          nsIDOMLocation)
 
-  void SetDocShell(nsIDocShell *aDocShell);
-  nsIDocShell *GetDocShell();
-
   
   NS_DECL_NSIDOMLOCATION
 
@@ -233,7 +230,11 @@ protected:
   
   
   
+  
+  
   nsresult GetURI(nsIURI** aURL, bool aGetInnermostURI = false);
+  
+  
   nsresult GetWritableURI(nsIURI** aURL,
                           
                           const nsACString* aNewRef = nullptr);
