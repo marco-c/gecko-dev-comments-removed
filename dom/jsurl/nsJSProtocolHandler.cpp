@@ -630,9 +630,11 @@ nsJSChannel::AsyncOpen(nsIStreamListener *aListener, nsISupports *aContext)
     mPopupState = win->GetPopupControlState();
 
     void (nsJSChannel::*method)();
+    const char* name;
     if (mIsAsync) {
         
         method = &nsJSChannel::EvaluateScript;
+        name = "nsJSChannel::EvaluateScript";
     } else {
         EvaluateScript();
         if (mOpenedStreamChannel) {
@@ -657,10 +659,11 @@ nsJSChannel::AsyncOpen(nsIStreamListener *aListener, nsISupports *aContext)
         
         
         
-        method = &nsJSChannel::NotifyListener;            
+        method = &nsJSChannel::NotifyListener;
+        name = "nsJSChannel::NotifyListener";
     }
 
-    nsresult rv = NS_DispatchToCurrentThread(mozilla::NewRunnableMethod(this, method));
+    nsresult rv = NS_DispatchToCurrentThread(mozilla::NewRunnableMethod(name, this, method));
 
     if (NS_FAILED(rv)) {
         loadGroup->RemoveRequest(this, nullptr, rv);
