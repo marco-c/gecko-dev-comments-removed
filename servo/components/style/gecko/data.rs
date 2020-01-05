@@ -7,11 +7,10 @@
 use animation::Animation;
 use atomic_refcell::{AtomicRef, AtomicRefCell, AtomicRefMut};
 use dom::OpaqueNode;
-use euclid::size::TypedSize2D;
-use gecko_bindings::bindings::RawGeckoPresContextBorrowed;
 use gecko_bindings::bindings::RawServoStyleSet;
+use gecko_bindings::structs::RawGeckoPresContextOwned;
 use gecko_bindings::sugar::ownership::{HasBoxFFI, HasFFI, HasSimpleFFI};
-use media_queries::{Device, MediaType};
+use media_queries::Device;
 use num_cpus;
 use parking_lot::RwLock;
 use properties::ComputedValues;
@@ -21,7 +20,6 @@ use std::collections::HashMap;
 use std::env;
 use std::sync::Arc;
 use std::sync::mpsc::{Receiver, Sender, channel};
-use style_traits::ViewportPx;
 use stylesheets::Stylesheet;
 use stylist::Stylist;
 
@@ -36,6 +34,9 @@ pub struct PerDocumentStyleDataImpl {
 
     
     pub stylesheets_changed: bool,
+
+    
+    pub device_changed: bool,
 
     
     
@@ -57,9 +58,6 @@ pub struct PerDocumentStyleDataImpl {
 
     
     pub num_threads: usize,
-
-    
-    pub default_computed_values: Arc<ComputedValues>
 }
 
 
@@ -78,15 +76,8 @@ lazy_static! {
 
 impl PerDocumentStyleData {
     
-    pub fn new(pres_context: RawGeckoPresContextBorrowed) -> Self {
-        
-        let window_size: TypedSize2D<f32, ViewportPx> = TypedSize2D::new(800.0, 600.0);
-        let default_computed_values = ComputedValues::default_values(pres_context);
-
-        
-        
-        
-        let device = Device::new(MediaType::Screen, window_size, &default_computed_values);
+    pub fn new(pres_context: RawGeckoPresContextOwned) -> Self {
+        let device = Device::new(pres_context);
 
         let (new_anims_sender, new_anims_receiver) = channel();
 
@@ -94,6 +85,7 @@ impl PerDocumentStyleData {
             stylist: Arc::new(Stylist::new(device)),
             stylesheets: vec![],
             stylesheets_changed: true,
+            device_changed: true,
             new_animations_sender: new_anims_sender,
             new_animations_receiver: new_anims_receiver,
             running_animations: Arc::new(RwLock::new(HashMap::new())),
@@ -106,7 +98,6 @@ impl PerDocumentStyleData {
                 rayon::ThreadPool::new(configuration).ok()
             },
             num_threads: *NUM_THREADS,
-            default_computed_values: default_computed_values,
         }))
     }
 
@@ -124,14 +115,29 @@ impl PerDocumentStyleData {
 impl PerDocumentStyleDataImpl {
     
     pub fn flush_stylesheets(&mut self) {
-        
-        
-        
+        let mut stylist = if self.device_changed || self.stylesheets_changed {
+            Some(Arc::get_mut(&mut self.stylist).unwrap())
+        } else {
+            None
+        };
+
+        if self.device_changed {
+            Arc::get_mut(&mut stylist.as_mut().unwrap().device).unwrap().reset();
+            self.device_changed = false;
+            
+            self.stylesheets_changed = true;
+        }
+
         if self.stylesheets_changed {
-            let _ = Arc::get_mut(&mut self.stylist).unwrap()
-                                                   .update(&self.stylesheets, None, true);
+            let _ = stylist.unwrap().update(&self.stylesheets, None, true);
             self.stylesheets_changed = false;
         }
+    }
+
+    
+    pub fn default_computed_values(&self) -> &Arc<ComputedValues> {
+        debug_assert!(!self.device_changed, "A device flush was pending");
+        self.stylist.device.default_values_arc()
     }
 }
 

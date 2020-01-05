@@ -49,6 +49,20 @@ pub use ::fnv::FnvHashMap;
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct Stylist {
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub device: Arc<Device>,
 
     
@@ -144,6 +158,18 @@ impl Stylist {
                   stylesheets_changed: bool) -> bool {
         if !(self.is_device_dirty || stylesheets_changed) {
             return false;
+        }
+
+        let cascaded_rule = ViewportRule {
+            declarations: viewport::Cascade::from_stylesheets(doc_stylesheets, &self.device).finish(),
+        };
+
+        self.viewport_constraints =
+            ViewportConstraints::maybe_new(&self.device, &cascaded_rule);
+
+        if let Some(ref constraints) = self.viewport_constraints {
+            Arc::get_mut(&mut self.device).unwrap()
+                .account_for_viewport_rule(constraints);
         }
 
         self.element_map = PerPseudoElementSelectorMap::new();
@@ -394,6 +420,13 @@ impl Stylist {
     
     
     
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "servo")]
     pub fn set_device(&mut self, mut device: Device, stylesheets: &[Arc<Stylesheet>]) {
         let cascaded_rule = ViewportRule {
             declarations: viewport::Cascade::from_stylesheets(stylesheets, &device).finish(),

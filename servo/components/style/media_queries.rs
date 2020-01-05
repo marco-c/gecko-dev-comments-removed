@@ -19,7 +19,7 @@ pub use servo::media_queries::{Device, Expression};
 pub use gecko::media_queries::{Device, Expression};
 
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct MediaList {
     
@@ -66,7 +66,7 @@ impl ToCss for Qualifier {
 
 
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct MediaQuery {
     

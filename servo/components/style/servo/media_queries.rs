@@ -10,8 +10,6 @@ use euclid::{Size2D, TypedSize2D};
 use media_queries::MediaType;
 use properties::ComputedValues;
 use std::fmt;
-#[cfg(feature = "gecko")]
-use std::sync::Arc;
 use style_traits::{ToCss, ViewportPx};
 use style_traits::viewport::ViewportConstraints;
 use values::computed::{self, ToComputedValue};
@@ -21,24 +19,16 @@ use values::specified;
 
 
 
-#[derive(Debug)]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[derive(Debug, HeapSizeOf)]
 pub struct Device {
     
     media_type: MediaType,
     
     viewport_size: TypedSize2D<f32, ViewportPx>,
-    
-    
-    
-    
-    #[cfg(feature = "gecko")]
-    default_values: Arc<ComputedValues>,
 }
 
 impl Device {
     
-    #[cfg(feature = "servo")]
     pub fn new(media_type: MediaType,
                viewport_size: TypedSize2D<f32, ViewportPx>)
                -> Device {
@@ -49,27 +39,8 @@ impl Device {
     }
 
     
-    #[cfg(feature = "gecko")]
-    pub fn new(media_type:
-               MediaType, viewport_size: TypedSize2D<f32, ViewportPx>,
-               default_values: &Arc<ComputedValues>) -> Device {
-        Device {
-            media_type: media_type,
-            viewport_size: viewport_size,
-            default_values: default_values.clone(),
-        }
-    }
-
-    
-    #[cfg(feature = "servo")]
     pub fn default_values(&self) -> &ComputedValues {
         ComputedValues::initial_values()
-    }
-
-    
-    #[cfg(feature = "gecko")]
-    pub fn default_values(&self) -> &ComputedValues {
-        &*self.default_values
     }
 
     
