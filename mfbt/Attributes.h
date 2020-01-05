@@ -569,4 +569,14 @@
 
 #endif 
 
+
+
+
+#ifdef __GNUC__
+#define MOZ_FORMAT_PRINTF(stringIndex, firstToCheck)  \
+    __attribute__ ((format (printf, stringIndex, firstToCheck)))
+#else
+#define MOZ_FORMAT_PRINTF(stringIndex, firstToCheck)
+#endif
+
 #endif 
