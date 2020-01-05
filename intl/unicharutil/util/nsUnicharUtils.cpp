@@ -425,11 +425,4 @@ HashUTF8AsUTF16(const char* aUTF8, uint32_t aLength, bool* aErr)
   return hash;
 }
 
-bool
-IsSegmentBreakSkipChar(uint32_t u)
-{
-  return unicode::IsEastAsianWidthFWH(u) &&
-         unicode::GetScriptCode(u) != unicode::Script::HANGUL;
-}
-
 } 
