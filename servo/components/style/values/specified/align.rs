@@ -119,8 +119,8 @@ pub struct AlignJustifyContent(u16);
 impl AlignJustifyContent {
     
     #[inline]
-    pub fn auto() -> Self {
-        Self::new(ALIGN_AUTO)
+    pub fn normal() -> Self {
+        Self::new(ALIGN_NORMAL)
     }
 
     
