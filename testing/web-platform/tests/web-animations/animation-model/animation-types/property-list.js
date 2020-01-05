@@ -1435,8 +1435,7 @@ var gCSSProperties = {
   },
   'word-spacing': {
     
-    types: [
-    ]
+    types: [ 'lengthPercentageOrCalc' ]
   },
   'will-change': {
     
