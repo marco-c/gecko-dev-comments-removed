@@ -376,8 +376,6 @@ proto.throws = function(block, expected, message) {
 
 
 
-
-
 proto.rejects = function(promise, expected, message) {
   return new Promise((resolve, reject) => {
     if (typeof expected === "string") {
@@ -392,7 +390,7 @@ proto.rejects = function(promise, expected, message) {
           return;
         }
         this.report(false, err, expected, message);
-        resolve(err);
+        resolve();
       }
     ).then(null, reject);
   });
