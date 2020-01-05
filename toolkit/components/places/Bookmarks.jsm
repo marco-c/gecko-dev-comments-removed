@@ -1310,9 +1310,14 @@ function insertBookmarkTree(items, source, parent, urls, lastAddedForParent) {
 
 
 function queryBookmarks(info) {
-  let queryParams = {tags_folder: PlacesUtils.tagsFolderId};
+  let queryParams = {
+    tags_folder: PlacesUtils.tagsFolderId,
+    type: Bookmarks.TYPE_SEPARATOR,
+  };
   
-  let queryString = "WHERE p.parent <> :tags_folder";
+  let queryString = "WHERE b.type <> :type";
+  queryString += " AND b.parent <> :tags_folder";
+  queryString += " AND p.parent <> :tags_folder";
 
   if (info.title) {
     queryString += " AND b.title = :title";
