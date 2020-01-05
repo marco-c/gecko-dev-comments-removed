@@ -1578,8 +1578,6 @@ locked_profiler_stream_json_for_this_process(PSLockRef aLock,
   
   aWriter.StartArrayProperty("threads");
   {
-    ActivePS::SetIsPaused(aLock, true);
-
     const CorePS::ThreadVector& liveThreads = CorePS::LiveThreads(aLock);
     for (size_t i = 0; i < liveThreads.size(); i++) {
       ThreadInfo* info = liveThreads.at(i);
@@ -1611,8 +1609,6 @@ locked_profiler_stream_json_for_this_process(PSLockRef aLock,
       java::GeckoJavaSampler::Unpause();
     }
 #endif
-
-    ActivePS::SetIsPaused(aLock, false);
   }
   aWriter.EndArray();
 }
@@ -3021,15 +3017,11 @@ profiler_clear_js_context()
   
 
   if (ActivePS::Exists(lock)) {
-    ActivePS::SetIsPaused(lock, true);
-
     
     if (info->IsBeingProfiled()) {
       info->FlushSamplesAndMarkers(ActivePS::Buffer(lock),
                                    CorePS::ProcessStartTime(lock));
     }
-
-    ActivePS::SetIsPaused(lock, false);
   }
 
   
