@@ -140,6 +140,8 @@ protected:
   PrincipalHandle mPendingPrincipalHandle;
   
   ImageContainer::FrameID mFrameIDForPendingPrincipalHandle;
+
+  const RefPtr<AbstractThread> mMainThread;
 };
 
 } 

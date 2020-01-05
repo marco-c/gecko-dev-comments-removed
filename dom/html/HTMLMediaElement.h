@@ -749,6 +749,8 @@ public:
 
   void SetMediaInfo(const MediaInfo& aInfo);
 
+  virtual AbstractThread* AbstractMainThread() const final override;
+
   
   
   
@@ -1187,8 +1189,6 @@ protected:
   {
     return this;
   }
-
-  virtual AbstractThread* AbstractMainThread() const final override;
 
   
   virtual bool GetPaused() final override
