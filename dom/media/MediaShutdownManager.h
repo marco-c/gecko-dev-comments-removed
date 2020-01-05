@@ -75,10 +75,6 @@ private:
   virtual ~MediaShutdownManager();
   void RemoveBlocker();
 
-  
-  
-  void EnsureCorrectShutdownObserverState();
-
   static StaticRefPtr<MediaShutdownManager> sInstance;
 
   
@@ -86,10 +82,7 @@ private:
   
   nsTHashtable<nsRefPtrHashKey<MediaDecoder>> mDecoders;
 
-  
-  bool mIsObservingShutdown;
-
-  bool mIsDoingXPCOMShutDown;
+  bool mIsDoingXPCOMShutDown = false;
 };
 
 } 
