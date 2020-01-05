@@ -125,6 +125,9 @@ class TypedOperandId : public OperandId
     MOZ_IMPLICIT TypedOperandId(Int32OperandId id)
       : OperandId(id.id()), type_(JSVAL_TYPE_INT32)
     {}
+    TypedOperandId(ValOperandId val, JSValueType type)
+      : OperandId(val.id()), type_(type)
+    {}
 
     JSValueType type() const { return type_; }
 };
@@ -1054,28 +1057,49 @@ class MOZ_RAII GetNameIRGenerator : public IRGenerator
 };
 
 
+class MOZ_RAII PropertyTypeCheckInfo
+{
+    RootedObjectGroup group_;
+    RootedId id_;
+    bool needsTypeBarrier_;
+
+    PropertyTypeCheckInfo(const PropertyTypeCheckInfo&) = delete;
+    void operator=(const PropertyTypeCheckInfo&) = delete;
+
+  public:
+    PropertyTypeCheckInfo(JSContext* cx, bool needsTypeBarrier)
+      : group_(cx), id_(cx), needsTypeBarrier_(needsTypeBarrier)
+    {}
+
+    bool needsTypeBarrier() const { return needsTypeBarrier_; }
+    bool isSet() const { return group_ != nullptr; }
+    ObjectGroup* group() const { MOZ_ASSERT(isSet()); return group_; }
+    jsid id() const { MOZ_ASSERT(isSet()); return id_; }
+
+    void set(ObjectGroup* group, jsid id) {
+        MOZ_ASSERT(!group_);
+        MOZ_ASSERT(group);
+        if (needsTypeBarrier_) {
+            group_ = group;
+            id_ = id;
+        }
+    }
+};
+
+
 class MOZ_RAII SetPropIRGenerator : public IRGenerator
 {
     HandleValue lhsVal_;
     HandleValue idVal_;
     HandleValue rhsVal_;
     bool* isTemporarilyUnoptimizable_;
+    PropertyTypeCheckInfo typeCheckInfo_;
 
     enum class PreliminaryObjectAction { None, Unlink, NotePreliminary };
     PreliminaryObjectAction preliminaryObjectAction_;
     bool attachedTypedArrayOOBStub_;
 
-    
-    RootedObjectGroup updateStubGroup_;
-    RootedId updateStubId_;
-    bool needUpdateStub_;
-
-    void setUpdateStubInfo(ObjectGroup* group, jsid id) {
-        MOZ_ASSERT(!needUpdateStub_);
-        needUpdateStub_ = true;
-        updateStubGroup_ = group;
-        updateStubId_ = id;
-    }
+    bool maybeHasExtraIndexedProps_;
 
     ValOperandId setElemKeyValueId() const {
         MOZ_ASSERT(cacheKind_ == CacheKind::SetElem);
@@ -1131,7 +1155,8 @@ class MOZ_RAII SetPropIRGenerator : public IRGenerator
   public:
     SetPropIRGenerator(JSContext* cx, HandleScript script, jsbytecode* pc, CacheKind cacheKind,
                        bool* isTemporarilyUnoptimizable, HandleValue lhsVal, HandleValue idVal,
-                       HandleValue rhsVal);
+                       HandleValue rhsVal, bool needsTypeBarrier = true,
+                       bool maybeHasExtraIndexedProps = true);
 
     bool tryAttachStub();
     bool tryAttachAddSlotStub(HandleObjectGroup oldGroup, HandleShape oldShape);
@@ -1144,19 +1169,12 @@ class MOZ_RAII SetPropIRGenerator : public IRGenerator
         return preliminaryObjectAction_ == PreliminaryObjectAction::NotePreliminary;
     }
 
-    bool needUpdateStub() const { return needUpdateStub_; }
+    const PropertyTypeCheckInfo* typeCheckInfo() const {
+        return &typeCheckInfo_;
+    }
 
     bool attachedTypedArrayOOBStub() const {
         return attachedTypedArrayOOBStub_;
-    }
-
-    ObjectGroup* updateStubGroup() const {
-        MOZ_ASSERT(updateStubGroup_);
-        return updateStubGroup_;
-    }
-    jsid updateStubId() const {
-        MOZ_ASSERT(needUpdateStub_);
-        return updateStubId_;
     }
 };
 

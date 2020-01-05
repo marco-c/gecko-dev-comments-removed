@@ -3977,13 +3977,9 @@ LIRGenerator::visitSetPropertyCache(MSetPropertyCache* ins)
 
     
     
-    LDefinition tempToUnboxIndex = LDefinition::BogusTemp();
     LDefinition tempD = LDefinition::BogusTemp();
     LDefinition tempF32 = LDefinition::BogusTemp();
-
-    if (id->mightBeType(MIRType::Int32)) {
-        if (id->type() != MIRType::Int32)
-            tempToUnboxIndex = tempToUnbox();
+    if (IsSetElemPC(ins->resumePoint()->pc())) {
         tempD = tempDouble();
         tempF32 = hasUnaliasedDouble() ? tempFloat32() : LDefinition::BogusTemp();
     }
@@ -3992,8 +3988,7 @@ LIRGenerator::visitSetPropertyCache(MSetPropertyCache* ins)
         new(alloc()) LSetPropertyCache(useRegister(ins->object()),
                                        useBoxOrTypedOrConstant(id, useConstId),
                                        useBoxOrTypedOrConstant(ins->value(), useConstValue),
-                                       temp(),
-                                       tempToUnboxIndex, tempD, tempF32);
+                                       temp(), tempD, tempF32);
     add(lir, ins);
     assignSafepoint(lir, ins);
 }

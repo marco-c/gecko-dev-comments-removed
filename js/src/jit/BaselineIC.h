@@ -1711,8 +1711,8 @@ IsCacheableDOMProxy(JSObject* obj)
 
 struct IonOsrTempData;
 
-void EmitUnboxedPreBarrierForBaseline(MacroAssembler &masm, const BaseIndex& address,
-                                      JSValueType type);
+template <typename T>
+void EmitICUnboxedPreBarrier(MacroAssembler &masm, const T& address, JSValueType type);
 
 
 

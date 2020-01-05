@@ -930,7 +930,7 @@ BaselineCacheIRCompiler::emitStoreUnboxedProperty()
 
     
     
-    EmitUnboxedPreBarrierForBaseline(masm, fieldAddr, fieldType);
+    EmitICUnboxedPreBarrier(masm, fieldAddr, fieldType);
     masm.storeUnboxedProperty(fieldAddr, fieldType,
                               ConstantOrRegister(TypedOrValueRegister(val)),
                                nullptr);
@@ -970,35 +970,10 @@ BaselineCacheIRCompiler::emitStoreTypedObjectReferenceProperty()
     masm.addPtr(offsetAddr, scratch1);
     Address dest(scratch1, 0);
 
-    switch (type) {
-      case ReferenceTypeDescr::TYPE_ANY:
-        EmitPreBarrier(masm, dest, MIRType::Value);
-        masm.storeValue(val, dest);
-        break;
-
-      case ReferenceTypeDescr::TYPE_OBJECT: {
-        EmitPreBarrier(masm, dest, MIRType::Object);
-        Label isNull, done;
-        masm.branchTestObject(Assembler::NotEqual, val, &isNull);
-        masm.unboxObject(val, scratch2);
-        masm.storePtr(scratch2, dest);
-        masm.jump(&done);
-        masm.bind(&isNull);
-        masm.storePtr(ImmWord(0), dest);
-        masm.bind(&done);
-        break;
-      }
-
-      case ReferenceTypeDescr::TYPE_STRING:
-        EmitPreBarrier(masm, dest, MIRType::String);
-        masm.unboxString(val, scratch2);
-        masm.storePtr(scratch2, dest);
-        break;
-    }
+    emitStoreTypedObjectReferenceProp(val, type, dest, scratch2);
 
     if (type != ReferenceTypeDescr::TYPE_STRING)
         BaselineEmitPostWriteBarrierSlot(masm, obj, val, scratch1, LiveGeneralRegisterSet(), cx_);
-
     return true;
 }
 
@@ -1303,7 +1278,7 @@ BaselineCacheIRCompiler::emitStoreUnboxedArrayElement()
     
     
     BaseIndex element(scratch, index, ScaleFromElemWidth(UnboxedTypeSize(elementType)));
-    EmitUnboxedPreBarrierForBaseline(masm, element, elementType);
+    EmitICUnboxedPreBarrier(masm, element, elementType);
     masm.storeUnboxedProperty(element, elementType,
                               ConstantOrRegister(TypedOrValueRegister(val)),
                                nullptr);
@@ -1376,7 +1351,7 @@ BaselineCacheIRCompiler::emitStoreUnboxedArrayElementHole()
     masm.bind(&inBounds);
 
     BaseIndex element(scratch, index, ScaleFromElemWidth(UnboxedTypeSize(elementType)));
-    EmitUnboxedPreBarrierForBaseline(masm, element, elementType);
+    EmitICUnboxedPreBarrier(masm, element, elementType);
 
     
     

@@ -1925,17 +1925,17 @@ IRGenerator::maybeGuardInt32Index(const Value& index, ValOperandId indexId,
 
 SetPropIRGenerator::SetPropIRGenerator(JSContext* cx, HandleScript script, jsbytecode* pc,
                                        CacheKind cacheKind, bool* isTemporarilyUnoptimizable,
-                                       HandleValue lhsVal, HandleValue idVal, HandleValue rhsVal)
+                                       HandleValue lhsVal, HandleValue idVal, HandleValue rhsVal,
+                                       bool needsTypeBarrier, bool maybeHasExtraIndexedProps)
   : IRGenerator(cx, script, pc, cacheKind),
     lhsVal_(lhsVal),
     idVal_(idVal),
     rhsVal_(rhsVal),
     isTemporarilyUnoptimizable_(isTemporarilyUnoptimizable),
+    typeCheckInfo_(cx, needsTypeBarrier),
     preliminaryObjectAction_(PreliminaryObjectAction::None),
     attachedTypedArrayOOBStub_(false),
-    updateStubGroup_(cx),
-    updateStubId_(cx, JSID_EMPTY),
-    needUpdateStub_(false)
+    maybeHasExtraIndexedProps_(maybeHasExtraIndexedProps)
 {}
 
 bool
@@ -2063,9 +2063,9 @@ SetPropIRGenerator::tryAttachNativeSetSlot(HandleObject obj, ObjOperandId objId,
     
     
     
-    
     NativeObject* nobj = &obj->as<NativeObject>();
-    writer.guardGroup(objId, nobj->group());
+    if (typeCheckInfo_.needsTypeBarrier())
+        writer.guardGroup(objId, nobj->group());
     writer.guardShape(objId, nobj->lastProperty());
 
     if (IsPreliminaryObject(obj))
@@ -2073,7 +2073,7 @@ SetPropIRGenerator::tryAttachNativeSetSlot(HandleObject obj, ObjOperandId objId,
     else
         preliminaryObjectAction_ = PreliminaryObjectAction::Unlink;
 
-    setUpdateStubInfo(nobj->group(), id);
+    typeCheckInfo_.set(nobj->group(), id);
     EmitStoreSlotAndReturn(writer, objId, nobj, propShape, rhsId);
 
     trackAttached("NativeSlot");
@@ -2102,7 +2102,7 @@ SetPropIRGenerator::tryAttachUnboxedExpandoSetSlot(HandleObject obj, ObjOperandI
 
     
     
-    setUpdateStubInfo(obj->group(), id);
+    typeCheckInfo_.set(obj->group(), id);
     EmitStoreSlotAndReturn(writer, expandoId, expando, propShape, rhsId);
 
     trackAttached("UnboxedExpando");
@@ -2139,7 +2139,7 @@ SetPropIRGenerator::tryAttachUnboxedProperty(HandleObject obj, ObjOperandId objI
                                 rhsId);
     writer.returnFromIC();
 
-    setUpdateStubInfo(obj->group(), id);
+    typeCheckInfo_.set(obj->group(), id);
     preliminaryObjectAction_ = PreliminaryObjectAction::Unlink;
 
     trackAttached("Unboxed");
@@ -2176,7 +2176,7 @@ SetPropIRGenerator::tryAttachTypedObjectProperty(HandleObject obj, ObjOperandId 
     writer.guardShape(objId, obj->as<TypedObject>().shape());
     writer.guardGroup(objId, obj->group());
 
-    setUpdateStubInfo(obj->group(), id);
+    typeCheckInfo_.set(obj->group(), id);
 
     
     if (fieldDescr->is<ScalarTypeDescr>()) {
@@ -2348,14 +2348,15 @@ SetPropIRGenerator::tryAttachSetDenseElement(HandleObject obj, ObjOperandId objI
     if (!nobj->containsDenseElement(index) || nobj->getElementsHeader()->isFrozen())
         return false;
 
-    writer.guardGroup(objId, nobj->group());
+    if (typeCheckInfo_.needsTypeBarrier())
+        writer.guardGroup(objId, nobj->group());
     writer.guardShape(objId, nobj->shape());
 
     writer.storeDenseElement(objId, indexId, rhsId);
     writer.returnFromIC();
 
     
-    setUpdateStubInfo(nobj->group(), JSID_VOID);
+    typeCheckInfo_.set(nobj->group(), JSID_VOID);
 
     trackAttached("SetDenseElement");
     return true;
@@ -2460,18 +2461,20 @@ SetPropIRGenerator::tryAttachSetDenseElementHole(HandleObject obj, ObjOperandId 
     if (!CanAttachAddElement(nobj, IsPropertyInitOp(op)))
         return false;
 
-    writer.guardGroup(objId, nobj->group());
+    if (typeCheckInfo_.needsTypeBarrier())
+        writer.guardGroup(objId, nobj->group());
     writer.guardShape(objId, nobj->shape());
 
     
-    if (IsPropertySetOp(op))
+    
+    if (IsPropertySetOp(op) && maybeHasExtraIndexedProps_)
         ShapeGuardProtoChain(writer, obj, objId);
 
     writer.storeDenseElementHole(objId, indexId, rhsId, isAdd);
     writer.returnFromIC();
 
     
-    setUpdateStubInfo(nobj->group(), JSID_VOID);
+    typeCheckInfo_.set(nobj->group(), JSID_VOID);
 
     trackAttached(isAdd ? "AddDenseElement" : "StoreDenseElementHole");
     return true;
@@ -2500,7 +2503,7 @@ SetPropIRGenerator::tryAttachSetUnboxedArrayElement(HandleObject obj, ObjOperand
     writer.returnFromIC();
 
     
-    setUpdateStubInfo(obj->group(), JSID_VOID);
+    typeCheckInfo_.set(obj->group(), JSID_VOID);
 
     trackAttached("SetUnboxedArrayElement");
     return true;
@@ -2593,7 +2596,7 @@ SetPropIRGenerator::tryAttachSetUnboxedArrayElementHole(HandleObject obj, ObjOpe
     writer.returnFromIC();
 
     
-    setUpdateStubInfo(aobj->group(), JSID_VOID);
+    typeCheckInfo_.set(aobj->group(), JSID_VOID);
 
     trackAttached("StoreUnboxedArrayElementHole");
     return true;
@@ -2883,6 +2886,6 @@ SetPropIRGenerator::tryAttachAddSlotStub(HandleObjectGroup oldGroup, HandleShape
     }
     writer.returnFromIC();
 
-    setUpdateStubInfo(oldGroup, id);
+    typeCheckInfo_.set(oldGroup, id);
     return true;
 }

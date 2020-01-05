@@ -462,11 +462,8 @@ MacroAssembler::PushRegsInMask(LiveRegisterSet set)
 }
 
 void
-MacroAssembler::storeRegsInMask(LiveRegisterSet set, Address dest, Register scratch)
+MacroAssembler::storeRegsInMask(LiveRegisterSet set, Address dest, Register)
 {
-    
-    MOZ_ASSERT(!set.has(scratch));
-
     FloatRegisterSet fpuSet(set.fpus().reduceSetForPush());
     unsigned numFpu = fpuSet.size();
     int32_t diffF = fpuSet.getPushSizeInBytes();
@@ -474,8 +471,6 @@ MacroAssembler::storeRegsInMask(LiveRegisterSet set, Address dest, Register scra
 
     MOZ_ASSERT(dest.offset >= diffG + diffF);
 
-    
-    
     for (GeneralRegisterBackwardIterator iter(set.gprs()); iter.more(); ++iter) {
         diffG -= sizeof(intptr_t);
         dest.offset -= sizeof(intptr_t);
