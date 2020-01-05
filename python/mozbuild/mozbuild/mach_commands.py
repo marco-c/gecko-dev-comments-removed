@@ -230,6 +230,11 @@ class BuildOutputManager(LoggingMixin):
             
             self._handler.footer = None
 
+        
+        
+        
+        self.monitor.stop_resource_recording()
+
     def write_line(self, line):
         if self.footer:
             self.footer.clear()
