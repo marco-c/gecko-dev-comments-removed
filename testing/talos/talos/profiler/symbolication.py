@@ -127,7 +127,6 @@ class ProfileSymbolicator:
         self.options = options
         self.sym_file_manager = SymFileManager(self.options)
         self.symbol_dumper = self.get_symbol_dumper()
-        self.main_start_time = None
 
     def get_symbol_dumper(self):
         try:
@@ -262,30 +261,11 @@ class ProfileSymbolicator:
         symbolication_table = self._resolve_symbols(symbols_to_resolve)
         self._substitute_symbols(profile_json, symbolication_table)
 
-        profile_start_time = profile_json["meta"].get("startTime", 0)
-        delta_time = 0
-
-        
-        
-        
-        
-        if self.main_start_time is None:
-            self.main_start_time = profile_start_time
-        else:
-            
-            
-            
-            delta_time = profile_start_time - self.main_start_time
-
         for i, thread in enumerate(profile_json["threads"]):
             if isinstance(thread, basestring):
                 thread_json = json.loads(thread)
                 self.symbolicate_profile(thread_json)
                 profile_json["threads"][i] = json.dumps(thread_json)
-            else:
-                for marker in thread["markers"]["data"]:
-                    if marker[1]:
-                        marker[1] += delta_time
 
     def _find_addresses(self, profile_json):
         addresses = set()
