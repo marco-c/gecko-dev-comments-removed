@@ -77,7 +77,22 @@ function getFormattedTime(ms) {
   return L10N.getFormatStr("networkMenu.minute", getTimeWithDecimals(min));
 }
 
+
+
+
+
+
+
+
+function getFormattedIPAndPort(ip, port) {
+  if (!port) {
+    return ip;
+  }
+  return ip.match(/:+/) ? `[${ip}]:${port}` : `${ip}:${port}`;
+}
+
 module.exports = {
+  getFormattedIPAndPort,
   getFormattedSize,
   getFormattedTime,
   getSizeWithDecimals,
