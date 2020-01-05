@@ -64,6 +64,7 @@
 namespace mozilla {
 namespace dom {
 class EventTarget;
+class PendingGlobalHistoryEntry;
 typedef uint32_t ScreenOrientationInternal;
 } 
 } 
@@ -807,6 +808,8 @@ protected:
 
   bool HasUnloadedParent();
 
+  void UpdateGlobalHistoryTitle(nsIURI* aURI);
+
   
   nsIntRect mBounds;
   nsString mName;
@@ -1042,6 +1045,8 @@ private:
   nsCString mOriginalUriString;
   nsWeakPtr mOpener;
   mozilla::OriginAttributes mOriginAttributes;
+
+  mozilla::UniquePtr<mozilla::dom::PendingGlobalHistoryEntry> mPrerenderGlobalHistory;
 
   
   
