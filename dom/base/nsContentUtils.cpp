@@ -2076,15 +2076,22 @@ nsContentUtils::CanCallerAccess(nsPIDOMWindowInner* aWindow)
 
 
 bool
-nsContentUtils::CallerHasPermission(JSContext* aCx, const nsAString& aPerm)
+nsContentUtils::PrincipalHasPermission(nsIPrincipal* aPrincipal, const nsAString& aPerm)
 {
   
-  if (IsSystemCaller(aCx)) {
+  if (IsSystemPrincipal(aPrincipal)) {
     return true;
   }
 
   
-  return BasePrincipal::Cast(SubjectPrincipal(aCx))->AddonHasPermission(aPerm);
+  return BasePrincipal::Cast(aPrincipal)->AddonHasPermission(aPerm);
+}
+
+
+bool
+nsContentUtils::CallerHasPermission(JSContext* aCx, const nsAString& aPerm)
+{
+  return PrincipalHasPermission(SubjectPrincipal(aCx), aPerm);
 }
 
 
@@ -6894,12 +6901,11 @@ nsContentUtils::IsRequestFullScreenAllowed(CallerType aCallerType)
 bool
 nsContentUtils::IsCutCopyAllowed(nsIPrincipal* aSubjectPrincipal)
 {
-  if ((!IsCutCopyRestricted() && EventStateManager::IsHandlingUserInput()) ||
-      IsSystemPrincipal(aSubjectPrincipal)) {
+  if (!IsCutCopyRestricted() && EventStateManager::IsHandlingUserInput()) {
     return true;
   }
 
-  return BasePrincipal::Cast(aSubjectPrincipal)->AddonHasPermission(NS_LITERAL_STRING("clipboardWrite"));
+  return PrincipalHasPermission(aSubjectPrincipal, NS_LITERAL_STRING("clipboardWrite"));
 }
 
 
