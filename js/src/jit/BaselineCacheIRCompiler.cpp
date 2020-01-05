@@ -1117,8 +1117,35 @@ BaselineCacheIRCompiler::emitStoreDenseElementHole()
         masm.branch32(Assembler::Below, initLength, index, failure->label());
 
         
+        
+        Label capacityOk;
         Address capacity(scratch, ObjectElements::offsetOfCapacity());
-        masm.branch32(Assembler::BelowOrEqual, capacity, index, failure->label());
+        masm.branch32(Assembler::Above, capacity, index, &capacityOk);
+
+        
+        
+        masm.branchTest32(Assembler::NonZero, elementsFlags,
+                          Imm32(ObjectElements::NONWRITABLE_ARRAY_LENGTH),
+                          failure->label());
+
+        LiveRegisterSet save(GeneralRegisterSet::Volatile(), liveVolatileFloatRegs());
+        save.takeUnchecked(scratch);
+        masm.PushRegsInMask(save);
+
+        masm.setupUnalignedABICall(scratch);
+        masm.loadJSContext(scratch);
+        masm.passABIArg(scratch);
+        masm.passABIArg(obj);
+        masm.callWithABI(JS_FUNC_TO_DATA_PTR(void*, NativeObject::addDenseElementDontReportOOM));
+        masm.mov(ReturnReg, scratch);
+
+        masm.PopRegsInMask(save);
+        masm.branchIfFalseBool(scratch, failure->label());
+
+        
+        masm.loadPtr(Address(obj, NativeObject::offsetOfElements()), scratch);
+
+        masm.bind(&capacityOk);
 
         
         

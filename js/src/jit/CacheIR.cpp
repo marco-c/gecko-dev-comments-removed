@@ -2472,7 +2472,6 @@ SetPropIRGenerator::tryAttachSetDenseElementHole(HandleObject obj, ObjOperandId 
     if (nobj->getElementsHeader()->isFrozen())
         return false;
 
-    uint32_t capacity = nobj->getDenseCapacity();
     uint32_t initLength = nobj->getDenseInitializedLength();
 
     
@@ -2484,11 +2483,12 @@ SetPropIRGenerator::tryAttachSetDenseElementHole(HandleObject obj, ObjOperandId 
         return false;
 
     
-    
-    if (index >= capacity)
+    if (isAdd && nobj->is<ArrayObject>() && !nobj->as<ArrayObject>().lengthIsWritable())
         return false;
 
-    MOZ_ASSERT(!nobj->is<TypedArrayObject>());
+    
+    if (nobj->is<TypedArrayObject>())
+        return false;
 
     
     if (!CanAttachAddElement(nobj, IsPropertyInitOp(op)))
