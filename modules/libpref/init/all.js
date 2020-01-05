@@ -4826,7 +4826,7 @@ pref("dom.w3c_pointer_events.implicit_capture", false);
 pref("dom.imagecapture.enabled", false);
 
 
-pref("media.ondevicechange.enabled", false);
+pref("media.ondevicechange.enabled", true);
 
 
 pref("media.ondevicechange.fakeDeviceChangeEvent.enabled", false);
@@ -5058,13 +5058,6 @@ pref("dom.telephony.enabled", false);
 
 
 pref("dom.telephony.defaultServiceId", 0);
-
-
-#ifdef MOZ_B2G_RIL
-pref("dom.cellbroadcast.enabled", true);
-#else
-pref("dom.cellbroadcast.enabled", false);
-#endif
 
 
 #ifdef MOZ_B2G_RIL
