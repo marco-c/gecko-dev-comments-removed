@@ -119,7 +119,7 @@ class ChecksumsGenerator(BaseScript, VirtualenvMixin, SigningMixin, VCSMixin, Bu
         
         
         if not self.config.get("formats"):
-            self.config["formats"] = ["sha512"]
+            self.config["formats"] = ["sha512", "sha256"]
 
         if not self.config.get("includes"):
             self.config["includes"] = [
