@@ -4063,11 +4063,6 @@ class nsDisplayTransform: public nsDisplayItem
   };
 
 public:
-  enum PrerenderDecision {
-    NoPrerender,
-    FullPrerender
-  };
-
   
 
 
@@ -4284,8 +4279,8 @@ public:
 
 
 
-  static PrerenderDecision ShouldPrerenderTransformedContent(nsDisplayListBuilder* aBuilder,
-                                                             nsIFrame* aFrame);
+  static bool ShouldPrerenderTransformedContent(nsDisplayListBuilder* aBuilder,
+                                                nsIFrame* aFrame);
   bool CanUseAsyncAnimations(nsDisplayListBuilder* aBuilder) override;
 
   bool MayBeAnimated(nsDisplayListBuilder* aBuilder);
