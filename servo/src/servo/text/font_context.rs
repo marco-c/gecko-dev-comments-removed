@@ -1,0 +1,25 @@
+
+
+
+
+
+
+#[cfg(target_os = "macos")]
+type FontContext/& = quartz::font_context::QuartzFontContext;
+
+#[cfg(target_os = "linux")]
+type FontContext/& = freetype::font_context::FreeTypeFontContext;
+
+#[cfg(target_os = "macos")]
+pub impl FontContext {
+    static pub fn new() -> FontContext {
+        quartz::font_context::QuartzFontContext::new()
+    }
+}
+
+#[cfg(target_os = "linux")]
+pub impl FontContext {
+    static pub fn new() -> FontContext {
+        freetype::font_context::FreeTypeFontContext::new()
+    }
+}

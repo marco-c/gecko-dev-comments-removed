@@ -1,43 +1,14 @@
 use font::{Font, FontStyle};
-use native_font::NativeFont;
-use native_font_matcher::NativeFontMatcher;
-
-
-const TEST_FONT: [u8 * 33004] = #include_bin("JosefinSans-SemiBold.ttf");
-
-fn test_font_bin() -> ~[u8] {
-    return vec::from_fn(33004, |i| TEST_FONT[i]);
-}
+use font_context::FontContext;
 
 struct FontMatcher {
-    native_matcher: NativeFontMatcher,
-    
-    mut cached_font: Option<@Font>,
+    fctx: @FontContext,
 }
 
 impl FontMatcher {
-    static pub fn new() -> FontMatcher {
+    static pub fn new(fctx: @FontContext) -> FontMatcher {
         FontMatcher {
-            native_matcher: NativeFontMatcher::new(),
-            cached_font: None
+            fctx: fctx,
         }
-    }
-
-    
-    
-    priv fn create_font(style: &FontStyle) -> Result<@Font, ()> {
-        let font_bin = @test_font_bin();
-        let native_font = NativeFont::new(&self.native_matcher, font_bin, style.pt_size);
-        let native_font = if native_font.is_ok() {
-            result::unwrap(move native_font)
-        } else {
-            return Err(native_font.get_err());
-        };
-
-        return Ok(@Font::new(font_bin, move native_font, copy *style));
-    }
-
-    pub fn get_font(@self, style: &FontStyle) -> Result<@Font, ()> {
-        self.create_font(style)
     }
 }
