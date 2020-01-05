@@ -69,6 +69,11 @@ HasCompilerSupport(ExclusiveContext* cx);
 
 
 
+bool
+HasSupport(ExclusiveContext* cx);
+
+
+
 
 MOZ_MUST_USE bool
 Eval(JSContext* cx, Handle<TypedArrayObject*> code, HandleObject importObj,
