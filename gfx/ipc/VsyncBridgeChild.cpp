@@ -114,8 +114,14 @@ VsyncBridgeChild::Close()
   if (!mProcessToken) {
     return;
   }
-  PVsyncBridgeChild::Close();
+
+  
+  
+  
   mProcessToken = 0;
+
+  
+  PVsyncBridgeChild::Close();
 }
 
 void
