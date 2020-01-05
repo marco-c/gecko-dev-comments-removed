@@ -34,6 +34,7 @@ add_task(function* () {
 
   
   
+  yield waitForSources(dbg, "simple1.js");
   selectSource(dbg, "simple1.js", 6);
 
   

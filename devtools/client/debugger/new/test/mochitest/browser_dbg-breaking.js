@@ -4,7 +4,7 @@
 
 
 add_task(function* () {
-  const dbg = yield initDebugger("doc-scripts.html");
+  const dbg = yield initDebugger("doc-scripts.html", "scripts.html");
   const { selectors: { getSelectedSource }, getState } = dbg;
 
   
