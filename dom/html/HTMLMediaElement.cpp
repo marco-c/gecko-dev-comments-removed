@@ -998,7 +998,9 @@ private:
   {
     
     if (mOwner->mMuted || (std::fabs(mOwner->Volume()) <= 1e-7)) {
-      return AudioChannelService::AudibleState::eNotAudible;
+      return mOwner->HasAudio() ?
+        AudioChannelService::AudibleState::eMaybeAudible :
+        AudioChannelService::AudibleState::eNotAudible;
     }
 
     
@@ -4279,6 +4281,7 @@ nsresult HTMLMediaElement::BindToTree(nsIDocument* aDocument, nsIContent* aParen
     
     
     UpdatePreloadAction();
+    aDocument->AddMediaContent(this);
   }
 
   if (mDecoder) {
@@ -4514,6 +4517,9 @@ void HTMLMediaElement::UnbindFromTree(bool aDeep,
                                       bool aNullParent)
 {
   mUnboundFromTree = true;
+  if (OwnerDoc()) {
+    OwnerDoc()->RemoveMediaContent(this);
+  }
 
   nsGenericHTMLElement::UnbindFromTree(aDeep, aNullParent);
 
