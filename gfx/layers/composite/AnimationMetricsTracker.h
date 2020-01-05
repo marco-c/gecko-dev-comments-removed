@@ -6,6 +6,7 @@
 #ifndef mozilla_layers_AnimationMetricsTracker_h
 #define mozilla_layers_AnimationMetricsTracker_h
 
+#include "mozilla/Telemetry.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/TypedEnumBits.h"
 
@@ -33,14 +34,36 @@ public:
 
 
 
-  void UpdateAnimationInProgress(bool aInProgress, uint64_t aLayerArea);
+
+  void UpdateAnimationInProgress(AnimationProcessTypes aActive, uint64_t aLayerArea,
+                                 TimeDuration aVsyncInterval);
 
 private:
   void AnimationStarted();
   void AnimationEnded();
+  void UpdateAnimationThroughput(const char* aLabel,
+                                 bool aInProgress,
+                                 TimeStamp& aStartTime,
+                                 uint32_t& aFrameCount,
+                                 TimeDuration aVsyncInterval,
+                                 Telemetry::HistogramID aHistogram);
 
+  
+  
+  
   TimeStamp mCurrentAnimationStart;
+  
+  
   uint64_t mMaxLayerAreaAnimated;
+
+  
+  TimeStamp mChromeAnimationStart;
+  
+  uint32_t mChromeAnimationFrameCount;
+  
+  TimeStamp mContentAnimationStart;
+  
+  uint32_t mContentAnimationFrameCount;
 };
 
 } 
