@@ -892,7 +892,7 @@ fails == 403519-1.html 403519-1.html
 == 404030-1.html 404030-1.html
 == 404030-1-notref.html 404030-1-notref.html
 == 404030-1-notref2.html 404030-1-notref2.html
-== 404123-1.html 404123-1.html
+fails == 404123-1.html 404123-1.html
 fails == 404123-2.html 404123-2.html
 == 404123-3.html 404123-3.html
 # may fail "randomly" on OS X, doesn't seem to be rendering usefully anyhow - bug 602469
@@ -1138,7 +1138,7 @@ fails == 430412-1.html 430412-1.html
 == 431520-1.html 431520-1.html
 == 431948-1.html 431948-1.html
 == 433640-1.html 433640-1.html
-== 433700.html 433700.html
+fails == 433700.html 433700.html
 == 436356-1.html 436356-1.html
 == 436356-2.html 436356-2.html
 == 438537-1.html 438537-1.html
@@ -1583,8 +1583,7 @@ fails == 580863-1.html 580863-1.html
 == 582037-1b.html 582037-1b.html
 fuzzy-if(Android,3,256) == 582037-2a.html 582037-2a.html
 fuzzy-if(Android,3,256) == 582037-2b.html 582037-2b.html
-# 582146-1 has the ame assertions as gecko, plus "non-root reflow roots must not have scrollable overflow" from bug 718883
-asserts(1-3) == 582146-1.html 582146-1.html
+asserts(1-2) == 582146-1.html 582146-1.html
 fails == 582476-1.svg 582476-1.svg
 == 584400-dash-length.svg 584400-dash-length.svg
 == 584699-1.html 584699-1.html
@@ -1770,7 +1769,7 @@ fails == 825999.html 825999.html
 fails == 844178.html 844178.html
 == 846144-1.html 846144-1.html
 == 847850-1.html 847850-1.html
-== 848421-1.html 848421-1.html
+fails == 848421-1.html 848421-1.html
 fails == 849407-1.html 849407-1.html
 == 849996-1.html 849996-1.html
 == 858803-1.html 858803-1.html
