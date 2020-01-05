@@ -371,7 +371,7 @@ function serverDebug(metadata, response)
 
 
 
-function dirIter(dir)
+function* dirIter(dir)
 {
   var en = dir.directoryEntries;
   while (en.hasMoreElements()) {
