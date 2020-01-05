@@ -264,7 +264,7 @@ impl LayoutDataRef {
 
     
     #[inline]
-    pub fn borrow<'a>(&'a self) -> Ref<'a, Option<LayoutData>> {
+    pub fn borrow(&self) -> Ref<Option<LayoutData>> {
         debug_assert!(task_state::get().is_layout());
         self.data_cell.borrow()
     }
@@ -275,7 +275,7 @@ impl LayoutDataRef {
     
     
     #[inline]
-    pub fn borrow_mut<'a>(&'a self) -> RefMut<'a, Option<LayoutData>> {
+    pub fn borrow_mut(&self) -> RefMut<Option<LayoutData>> {
         debug_assert!(task_state::get().is_layout());
         self.data_cell.borrow_mut()
     }
@@ -908,7 +908,7 @@ impl<'a> NodeHelpers for &'a Node {
         
         match parse_author_origin_selector_list_from_str(&selectors) {
             
-            Err(()) => return Err(Syntax),
+            Err(()) => Err(Syntax),
             
             Ok(ref selectors) => {
                 let root = self.ancestors().last();
@@ -1326,7 +1326,7 @@ impl Iterator for FollowingNodeIterator {
             }
         }
         self.current = None;
-        return None
+        None
     }
 }
 
@@ -1372,7 +1372,7 @@ impl Iterator for PrecedingNodeIterator {
         }
 
         self.current = None;
-        return None
+        None
     }
 }
 
@@ -1663,7 +1663,7 @@ impl Node {
         Node::insert(node, parent, reference_child, SuppressObserver::Unsuppressed);
 
         
-        return Ok(Root::from_ref(node))
+        Ok(Root::from_ref(node))
     }
 
     
@@ -2088,24 +2088,13 @@ impl<'a> NodeMethods for &'a Node {
 
     
     fn GetNodeValue(self) -> Option<DOMString> {
-        match self.type_id {
-            NodeTypeId::CharacterData(..) => {
-                let chardata: &CharacterData = CharacterDataCast::to_ref(self).unwrap();
-                Some(chardata.Data())
-            }
-            _ => {
-                None
-            }
-        }
+        CharacterDataCast::to_ref(self).map(|c| c.Data())
     }
 
     
     fn SetNodeValue(self, val: Option<DOMString>) {
-        match self.type_id {
-            NodeTypeId::CharacterData(..) => {
-                self.SetTextContent(val)
-            }
-            _ => {}
+        if let NodeTypeId::CharacterData(..) = self.type_id {
+            self.SetTextContent(val)
         }
     }
 
@@ -2565,7 +2554,7 @@ pub fn window_from_node<T: NodeBase + Reflectable>(derived: &T) -> Root<Window> 
 }
 
 impl<'a> VirtualMethods for &'a Node {
-    fn super_type<'b>(&'b self) -> Option<&'b VirtualMethods> {
+    fn super_type(&self) -> Option<&VirtualMethods> {
         let eventtarget: &&EventTarget = EventTargetCast::from_borrowed_ref(self);
         Some(eventtarget as &VirtualMethods)
     }

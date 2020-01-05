@@ -138,7 +138,7 @@ impl<'a> NodeIteratorMethods for &'a NodeIterator {
             }
         }
 
-        return Ok(None);
+        Ok(None)
     }
 
     
@@ -183,7 +183,7 @@ impl<'a> NodeIteratorMethods for &'a NodeIterator {
             }
         }
 
-        return Ok(None);
+        Ok(None)
     }
 
     
