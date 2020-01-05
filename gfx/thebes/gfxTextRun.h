@@ -175,6 +175,12 @@ public:
     virtual bool SetPotentialLineBreaks(Range aRange,
                                         const uint8_t* aBreakBefore);
 
+    enum class HyphenType : uint8_t {
+      None,
+      Manual,
+      Auto
+    };
+
     
 
 
@@ -189,7 +195,8 @@ public:
     public:
         
         
-        virtual void GetHyphenationBreaks(Range aRange, bool *aBreakBefore) = 0;
+        virtual void GetHyphenationBreaks(Range aRange,
+                                          HyphenType *aBreakBefore) = 0;
 
         
         
