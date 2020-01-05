@@ -389,7 +389,10 @@ DynamicAtom::GCAtomTableLocked(const MutexAutoLock& aProofOfLock,
       i.Remove();
       delete atom;
       ++removedCount;
-    } else if (aKind == GCKind::Shutdown) {
+    }
+#ifdef NS_FREE_PERMANENT_DATA
+    else if (aKind == GCKind::Shutdown && PR_GetEnv("XPCOM_MEM_BLOAT_LOG")) {
+      
       
       
       
@@ -404,6 +407,8 @@ DynamicAtom::GCAtomTableLocked(const MutexAutoLock& aProofOfLock,
       }
       nonZeroRefcountAtomsCount++;
     }
+#endif
+
   }
   if (nonZeroRefcountAtomsCount) {
     nsPrintfCString msg("%d dynamic atom(s) with non-zero refcount: %s",
