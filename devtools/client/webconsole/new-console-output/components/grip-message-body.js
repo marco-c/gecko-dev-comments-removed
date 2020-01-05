@@ -31,10 +31,19 @@ GripMessageBody.propTypes = {
     PropTypes.number,
     PropTypes.object,
   ]).isRequired,
+  serviceContainer: PropTypes.shape({
+    createElement: PropTypes.func.isRequired,
+  }),
+  userProvidedStyle: PropTypes.string,
 };
 
 function GripMessageBody(props) {
-  const { grip } = props;
+  const { grip, userProvidedStyle, serviceContainer } = props;
+
+  let styleObject;
+  if (userProvidedStyle && userProvidedStyle !== "") {
+    styleObject = cleanupStyle(userProvidedStyle, serviceContainer.createElement);
+  }
 
   return (
     
@@ -43,6 +52,7 @@ function GripMessageBody(props) {
         object: grip,
         useQuotes: false,
         mode: props.mode,
+        style: styleObject
       })
       : Rep({
         object: grip,
@@ -51,6 +61,42 @@ function GripMessageBody(props) {
         mode: props.mode,
       })
   );
+}
+
+function cleanupStyle(userProvidedStyle, createElement) {
+  
+  const allowedStylesRegex = new RegExp(
+    "^(?:-moz-)?(?:background|border|box|clear|color|cursor|display|float|font|line|" +
+    "margin|padding|text|transition|outline|white-space|word|writing|" +
+    "(?:min-|max-)?width|(?:min-|max-)?height)"
+  );
+
+  
+  const forbiddenValuesRegexs = [
+    
+    /\b(?:url|(?:-moz-)?element)[\s('"]+/gi,
+
+    
+    /['"(]*(?:chrome|resource|about|app|data|https?|ftp|file):+\/*/gi,
+  ];
+
+  
+  let dummy = createElement("div");
+  dummy.style = userProvidedStyle;
+
+  
+  
+  
+  return [...dummy.style]
+    .filter(name => {
+      return allowedStylesRegex.test(name)
+        && !forbiddenValuesRegexs.some(regex => regex.test(dummy.style[name]));
+    })
+    .reduce((object, name) => {
+      return Object.assign({
+        [name]: dummy.style[name]
+      }, object);
+    }, {});
 }
 
 module.exports = GripMessageBody;
