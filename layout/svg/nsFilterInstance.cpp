@@ -264,7 +264,6 @@ nsFilterInstance::ComputeTargetBBoxInFilterSpace()
 bool
 nsFilterInstance::ComputeUserSpaceToFilterSpaceScale()
 {
-  gfxMatrix canvasTransform;
   if (mTargetFrame) {
     mUserSpaceToFilterSpaceScale = mPaintTransform.ScaleFactors(true);
     if (mUserSpaceToFilterSpaceScale.width <= 0.0f ||
@@ -279,6 +278,7 @@ nsFilterInstance::ComputeUserSpaceToFilterSpaceScale()
   mFilterSpaceToUserSpaceScale =
     gfxSize(1.0f / mUserSpaceToFilterSpaceScale.width,
             1.0f / mUserSpaceToFilterSpaceScale.height);
+
   return true;
 }
 
@@ -359,19 +359,6 @@ nsFilterInstance::BuildPrimitivesForFilter(const nsStyleFilter& aFilter,
   return cssFilterInstance.BuildPrimitives(mPrimitiveDescriptions, aInputIsTainted);
 }
 
-static void
-UpdateNeededBounds(const nsIntRegion& aRegion, nsIntRect& aBounds)
-{
-  aBounds = aRegion.GetBounds();
-
-  bool overflow;
-  IntSize surfaceSize =
-   nsSVGUtils::ConvertToSurfaceSize(aBounds.Size(), &overflow);
-  if (overflow) {
-    aBounds.SizeTo(surfaceSize);
-  }
-}
-
 void
 nsFilterInstance::ComputeNeededBoxes()
 {
@@ -388,9 +375,9 @@ nsFilterInstance::ComputeNeededBoxes()
 
   sourceGraphicNeededRegion.And(sourceGraphicNeededRegion, mTargetBounds);
 
-  UpdateNeededBounds(sourceGraphicNeededRegion, mSourceGraphic.mNeededBounds);
-  UpdateNeededBounds(fillPaintNeededRegion, mFillPaint.mNeededBounds);
-  UpdateNeededBounds(strokePaintNeededRegion, mStrokePaint.mNeededBounds);
+  mSourceGraphic.mNeededBounds = sourceGraphicNeededRegion.GetBounds();
+  mFillPaint.mNeededBounds = fillPaintNeededRegion.GetBounds();
+  mStrokePaint.mNeededBounds = strokePaintNeededRegion.GetBounds();
 }
 
 DrawResult
@@ -398,9 +385,6 @@ nsFilterInstance::BuildSourcePaint(SourceInfo *aSource)
 {
   MOZ_ASSERT(mTargetFrame);
   nsIntRect neededRect = aSource->mNeededBounds;
-  if (neededRect.IsEmpty()) {
-    return DrawResult::SUCCESS;
-  }
 
   RefPtr<DrawTarget> offscreenDT =
     gfxPlatform::GetPlatform()->CreateOffscreenContentDrawTarget(
@@ -591,7 +575,13 @@ nsFilterInstance::OutputFilterSpaceBounds() const
   if (numPrimitives <= 0)
     return nsIntRect();
 
-  return mPrimitiveDescriptions[numPrimitives - 1].PrimitiveSubregion();
+  nsIntRect bounds =
+    mPrimitiveDescriptions[numPrimitives - 1].PrimitiveSubregion();
+  bool overflow;
+  IntSize surfaceSize =
+    nsSVGUtils::ConvertToSurfaceSize(bounds.Size(), &overflow);
+  bounds.SizeTo(surfaceSize);
+  return bounds;
 }
 
 nsIntRect
