@@ -2119,27 +2119,20 @@ ContentParent::InitInternal(ProcessPriority aInitialPriority,
   if (sheetService) {
     
     
-    
-    
-    
-    
 
-    for (StyleSheet* sheet :
-           *sheetService->AgentStyleSheets(StyleBackendType::Gecko)) {
+    for (StyleSheet* sheet : *sheetService->AgentStyleSheets()) {
       URIParams uri;
       SerializeURI(sheet->GetSheetURI(), uri);
       Unused << SendLoadAndRegisterSheet(uri, nsIStyleSheetService::AGENT_SHEET);
     }
 
-    for (StyleSheet* sheet :
-           *sheetService->UserStyleSheets(StyleBackendType::Gecko)) {
+    for (StyleSheet* sheet : *sheetService->UserStyleSheets()) {
       URIParams uri;
       SerializeURI(sheet->GetSheetURI(), uri);
       Unused << SendLoadAndRegisterSheet(uri, nsIStyleSheetService::USER_SHEET);
     }
 
-    for (StyleSheet* sheet :
-           *sheetService->AuthorStyleSheets(StyleBackendType::Gecko)) {
+    for (StyleSheet* sheet : *sheetService->AuthorStyleSheets()) {
       URIParams uri;
       SerializeURI(sheet->GetSheetURI(), uri);
       Unused << SendLoadAndRegisterSheet(uri, nsIStyleSheetService::AUTHOR_SHEET);
@@ -4994,13 +4987,15 @@ ContentParent::RecvFileCreationRequest(const nsID& aID,
                                        const nsString& aName,
                                        const bool& aLastModifiedPassed,
                                        const int64_t& aLastModified,
+                                       const bool& aExistenceCheck,
                                        const bool& aIsFromNsIFile)
 {
   RefPtr<BlobImpl> blobImpl;
   nsresult rv =
     FileCreatorHelper::CreateBlobImplForIPC(aFullPath, aType, aName,
                                             aLastModifiedPassed,
-                                            aLastModified, aIsFromNsIFile,
+                                            aLastModified, aExistenceCheck,
+                                            aIsFromNsIFile,
                                             getter_AddRefs(blobImpl));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     if (!SendFileCreationResponse(aID, FileCreationErrorResult(rv))) {

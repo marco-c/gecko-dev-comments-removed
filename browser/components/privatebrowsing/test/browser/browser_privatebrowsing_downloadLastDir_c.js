@@ -62,7 +62,7 @@ function test() {
     is(gDownloadLastDir.file.path, aDisplayDir.path,
        "gDownloadLastDir should be the expected display dir");
 
-    MockFilePicker.returnFiles = [aFile];
+    MockFilePicker.setFiles([aFile]);
     MockFilePicker.displayDirectory = null;
     aWin.promiseTargetFile(params).then(function() {
       
