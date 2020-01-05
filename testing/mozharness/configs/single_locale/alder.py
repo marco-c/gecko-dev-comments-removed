@@ -16,6 +16,8 @@
 
 
 
+import os
+
 config = {
     "nightly_build": True,
     "branch": "alder",
@@ -27,7 +29,11 @@ config = {
     "hg_l10n_base": "https://hg.mozilla.org/l10n-central",
 
     
-    "mar_tools_url": "http://ftp.mozilla.org/pub/mozilla.org/firefox/nightly/latest-mozilla-central/mar-tools/%(platform)s",
+    "mar_tools_url": os.environ.get(
+        "MAR_TOOLS_URL",
+        
+        "http://ftp.mozilla.org/pub/mozilla.org/firefox/nightly/latest-mozilla-central/mar-tools/%(platform)s"
+    ),
 
     
     "mozilla_dir": "alder",
