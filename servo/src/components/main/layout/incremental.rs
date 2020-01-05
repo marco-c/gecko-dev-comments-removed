@@ -48,11 +48,6 @@ impl RestyleDamage {
     }
 
     
-    pub fn for_resize() -> RestyleDamage {
-        RestyleDamage::all()
-    }
-
-    
     
     
     pub fn from_int(n: int) -> RestyleDamage {
