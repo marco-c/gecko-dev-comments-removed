@@ -39,7 +39,11 @@ public:
                         uint32_t aNumCharsToDelete,
                         RangeUpdater* aRangeUpdater);
 
-  nsresult Init();
+  
+
+
+
+  bool CanDoIt() const;
 
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(DeleteTextTransaction,
                                            EditTransactionBase)
