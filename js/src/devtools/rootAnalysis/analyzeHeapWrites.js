@@ -127,6 +127,8 @@ function checkVariableAssignment(entry, location, variable)
     dumpError(entry, location, "Variable assignment " + variable);
 }
 
+
+
 function treatAsSafeArgument(entry, varName, csuName)
 {
     var whitelist = [
@@ -231,7 +233,7 @@ function checkFieldWrite(entry, location, fields)
             return;
         if (/nsCOMPtr<.*?>.mRawPtr/.test(field))
             return;
-    }
+}
 
     var str = "";
     for (var field of fields)
@@ -715,7 +717,7 @@ function dumpError(entry, location, text)
 {
     var stack = entry.stack;
     print("Error: " + text);
-    print("Location: " + entry.readable() + (location ? " @ " + location : "") + stack[0].safeString());
+    print("Location: " + entry.name + (location ? " @ " + location : "") + stack[0].safeString());
     print("Stack Trace:");
     
     
