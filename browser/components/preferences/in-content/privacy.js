@@ -178,6 +178,8 @@ var gPrivacyPane = {
                      gPrivacyPane.showBlockLists);
     setEventListener("browserContainersCheckbox", "command",
                      gPrivacyPane._checkBrowserContainers);
+    setEventListener("browserContainersSettings", "command",
+                     gPrivacyPane.showContainerSettings);
   },
 
   
@@ -478,6 +480,13 @@ var gPrivacyPane = {
   
 
 
+  showContainerSettings() {
+    gotoPref("containers");
+  },
+
+  
+
+
   showBlockLists: function ()
   {
     var bundlePreferences = document.getElementById("bundlePreferences");
@@ -678,6 +687,26 @@ var gPrivacyPane = {
     var sanitizeOnShutdownPref = document.getElementById("privacy.sanitize.sanitizeOnShutdown");
 
     settingsButton.disabled = !sanitizeOnShutdownPref.value;
+   },
+
+  
+
+  
+
+
+
+
+
+
+   
+
+
+   readBrowserContainersCheckbox: function ()
+   {
+     var pref = document.getElementById("privacy.userContext.enabled");
+     var settings = document.getElementById("browserContainersSettings");
+
+     settings.disabled = !pref.value;
    }
 
 };
