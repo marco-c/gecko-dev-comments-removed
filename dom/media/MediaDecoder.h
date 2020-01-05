@@ -192,6 +192,8 @@ public:
   
   void SetMinimizePrerollUntilPlaybackStarts();
 
+  bool GetMinimizePreroll() const { return mMinimizePreroll; }
+
   
   
   

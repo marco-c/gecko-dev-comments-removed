@@ -179,26 +179,6 @@ public:
   RefPtr<ShutdownPromise> BeginShutdown();
 
   
-  
-  
-  
-  
-  void DispatchMinimizePrerollUntilPlaybackStarts()
-  {
-    RefPtr<MediaDecoderStateMachine> self = this;
-    nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction([self] () -> void
-    {
-      MOZ_ASSERT(self->OnTaskQueue());
-      self->mMinimizePreroll = true;
-
-      
-      
-      MOZ_DIAGNOSTIC_ASSERT(self->mPlayState == MediaDecoder::PLAY_STATE_LOADING);
-    });
-    OwnerThread()->Dispatch(r.forget());
-  }
-
-  
   void DispatchSetFragmentEndTime(int64_t aEndTime)
   {
     RefPtr<MediaDecoderStateMachine> self = this;
