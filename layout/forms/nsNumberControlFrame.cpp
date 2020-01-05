@@ -325,15 +325,27 @@ nsresult
 nsNumberControlFrame::MakeAnonymousElement(Element** aResult,
                                            nsTArray<ContentInfo>& aElements,
                                            nsIAtom* aTagName,
-                                           CSSPseudoElementType aPseudoType)
+                                           CSSPseudoElementType aPseudoType,
+                                           nsStyleContext* aParentContext)
 {
   
   nsCOMPtr<nsIDocument> doc = mContent->GetComposedDoc();
   RefPtr<Element> resultElement = doc->CreateHTMLElement(aTagName);
-  resultElement->SetPseudoElementType(aPseudoType);
 
   
-  if (!aElements.AppendElement(resultElement)) {
+  
+  
+  
+  NS_ASSERTION(aPseudoType != CSSPseudoElementType::NotPseudo,
+               "Expecting anonymous children to all be pseudo-elements");
+  
+  RefPtr<nsStyleContext> newStyleContext =
+    PresContext()->StyleSet()->ResolvePseudoElementStyle(mContent->AsElement(),
+                                                         aPseudoType,
+                                                         aParentContext,
+                                                         resultElement);
+
+  if (!aElements.AppendElement(ContentInfo(resultElement, newStyleContext))) {
     return NS_ERROR_OUT_OF_MEMORY;
   }
 
@@ -370,7 +382,8 @@ nsNumberControlFrame::CreateAnonymousContent(nsTArray<ContentInfo>& aElements)
   rv = MakeAnonymousElement(getter_AddRefs(mOuterWrapper),
                             aElements,
                             nsGkAtoms::div,
-                            CSSPseudoElementType::mozNumberWrapper);
+                            CSSPseudoElementType::mozNumberWrapper,
+                            mStyleContext);
   NS_ENSURE_SUCCESS(rv, rv);
 
   ContentInfo& outerWrapperCI = aElements.LastElement();
@@ -379,7 +392,8 @@ nsNumberControlFrame::CreateAnonymousContent(nsTArray<ContentInfo>& aElements)
   rv = MakeAnonymousElement(getter_AddRefs(mTextField),
                             outerWrapperCI.mChildren,
                             nsGkAtoms::input,
-                            CSSPseudoElementType::mozNumberText);
+                            CSSPseudoElementType::mozNumberText,
+                            outerWrapperCI.mStyleContext);
   NS_ENSURE_SUCCESS(rv, rv);
 
   mTextField->SetAttr(kNameSpaceID_None, nsGkAtoms::type,
@@ -426,7 +440,8 @@ nsNumberControlFrame::CreateAnonymousContent(nsTArray<ContentInfo>& aElements)
   rv = MakeAnonymousElement(getter_AddRefs(mSpinBox),
                             outerWrapperCI.mChildren,
                             nsGkAtoms::div,
-                            CSSPseudoElementType::mozNumberSpinBox);
+                            CSSPseudoElementType::mozNumberSpinBox,
+                            outerWrapperCI.mStyleContext);
   NS_ENSURE_SUCCESS(rv, rv);
 
   ContentInfo& spinBoxCI = outerWrapperCI.mChildren.LastElement();
@@ -435,14 +450,16 @@ nsNumberControlFrame::CreateAnonymousContent(nsTArray<ContentInfo>& aElements)
   rv = MakeAnonymousElement(getter_AddRefs(mSpinUp),
                             spinBoxCI.mChildren,
                             nsGkAtoms::div,
-                            CSSPseudoElementType::mozNumberSpinUp);
+                            CSSPseudoElementType::mozNumberSpinUp,
+                            spinBoxCI.mStyleContext);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
   rv = MakeAnonymousElement(getter_AddRefs(mSpinDown),
                             spinBoxCI.mChildren,
                             nsGkAtoms::div,
-                            CSSPseudoElementType::mozNumberSpinDown);
+                            CSSPseudoElementType::mozNumberSpinDown,
+                            spinBoxCI.mStyleContext);
 
   SyncDisabledState();
 

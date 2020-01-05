@@ -2015,16 +2015,6 @@ ElementRestyler::ComputeRestyleResultFromFrame(nsIFrame* aSelf,
   
   
   
-  if (aSelf->GetContent() && aSelf->GetContent()->IsNativeAnonymous()) {
-    LOG_RESTYLE_CONTINUE("native anonymous content");
-    aRestyleResult = RestyleResult::eContinue;
-    aCanStopWithStyleChange = false;
-    return;
-  }
-
-  
-  
-  
   
   
   nsIAtom* type = aSelf->GetType();

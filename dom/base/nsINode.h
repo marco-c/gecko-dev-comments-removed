@@ -129,26 +129,7 @@ enum {
 
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  NODE_IS_NATIVE_ANONYMOUS =              NODE_FLAG_BIT(8),
+  NODE_MAY_HAVE_CLASS =                   NODE_FLAG_BIT(8),
 
   
   NODE_IS_IN_SHADOW_TREE =                NODE_FLAG_BIT(9),
@@ -1193,15 +1174,6 @@ public:
   
 
 
-
-  bool IsNativeAnonymous() const
-  {
-    return HasFlag(NODE_IS_NATIVE_ANONYMOUS);
-  }
-
-  
-
-
   bool IsInNativeAnonymousSubtree() const
   {
 #ifdef DEBUG
@@ -1331,11 +1303,10 @@ public:
 
 protected:
   nsIURI* GetExplicitBaseURI() const {
-    if (!HasProperties()) {
-      return nullptr;
+    if (HasExplicitBaseURI()) {
+      return static_cast<nsIURI*>(GetProperty(nsGkAtoms::baseURIProperty));
     }
-
-    return static_cast<nsIURI*>(GetProperty(nsGkAtoms::baseURIProperty));
+    return nullptr;
   }
 
 public:
@@ -1526,8 +1497,6 @@ private:
     
     ElementHasID,
     
-    ElementMayHaveClass,
-    
     ElementMayHaveStyle,
     
     ElementHasName,
@@ -1545,6 +1514,8 @@ private:
     
     
     NodeIsPurpleRoot,
+    
+    NodeHasExplicitBaseURI,
     
     ElementHasLockedStyleStates,
     
@@ -1621,8 +1592,6 @@ public:
     { SetBoolFlag(NodeHasRenderingObservers, aValue); }
   bool IsContent() const { return GetBoolFlag(NodeIsContent); }
   bool HasID() const { return GetBoolFlag(ElementHasID); }
-  bool MayHaveClass() const { return GetBoolFlag(ElementMayHaveClass); }
-  void SetMayHaveClass() { SetBoolFlag(ElementMayHaveClass); }
   bool MayHaveStyle() const { return GetBoolFlag(ElementMayHaveStyle); }
   bool HasName() const { return GetBoolFlag(ElementHasName); }
   bool MayHaveContentEditableAttr() const
@@ -1752,6 +1721,8 @@ protected:
   void ClearHasName() { ClearBoolFlag(ElementHasName); }
   void SetMayHaveContentEditableAttr()
     { SetBoolFlag(ElementMayHaveContentEditableAttr); }
+  bool HasExplicitBaseURI() const { return GetBoolFlag(NodeHasExplicitBaseURI); }
+  void SetHasExplicitBaseURI() { SetBoolFlag(NodeHasExplicitBaseURI); }
   void SetHasLockedStyleStates() { SetBoolFlag(ElementHasLockedStyleStates); }
   void ClearHasLockedStyleStates() { ClearBoolFlag(ElementHasLockedStyleStates); }
   bool HasLockedStyleStates() const

@@ -364,8 +364,7 @@ private:
   already_AddRefed<nsStyleContext>
   ResolveStyleContext(nsStyleContext*          aParentStyleContext,
                       nsIContent*              aContent,
-                      nsFrameConstructorState* aState,
-                      Element*                 aOriginatingElementOrNull = nullptr);
+                      nsFrameConstructorState* aState);
 
   
   
