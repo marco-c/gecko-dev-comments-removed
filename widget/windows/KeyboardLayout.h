@@ -324,7 +324,9 @@ private:
   
   
   
-  nsTArray<MSG> mFollowingCharMsgs;
+  
+  
+  AutoTArray<MSG, 5> mFollowingCharMsgs;
   
   
   
