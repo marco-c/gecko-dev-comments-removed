@@ -2190,10 +2190,15 @@ function hackDebugger(Debugger) {
 
 
   Debugger.Script.prototype.toString = function () {
+    if (this.type == "wasm") {
+      return "[wasm]";
+    }
+
     let output = "";
     if (this.url) {
       output += this.url;
     }
+
     if (typeof this.staticLevel != "undefined") {
       output += ":L" + this.staticLevel;
     }
