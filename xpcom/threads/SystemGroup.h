@@ -8,7 +8,7 @@
 #define mozilla_SystemGroup_h
 
 #include "mozilla/TaskCategory.h"
-#include "mozilla/Dispatcher.h"
+#include "mozilla/SchedulerGroup.h"
 
 
 

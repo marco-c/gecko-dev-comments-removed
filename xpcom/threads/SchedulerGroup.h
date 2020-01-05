@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_Dispatcher_h
-#define mozilla_Dispatcher_h
+#ifndef mozilla_SchedulerGroup_h
+#define mozilla_SchedulerGroup_h
 
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/TaskCategory.h"
@@ -31,10 +31,10 @@ class TabGroup;
 
 
 
-class ValidatingDispatcher
+class SchedulerGroup
 {
 public:
-  ValidatingDispatcher();
+  SchedulerGroup();
 
   NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
 
@@ -44,7 +44,7 @@ public:
     ~AutoProcessEvent();
 
   private:
-    ValidatingDispatcher* mPrevRunningDispatcher;
+    SchedulerGroup* mPrevRunningDispatcher;
   };
 
   
@@ -87,7 +87,7 @@ protected:
 
   
   
-  static ValidatingDispatcher* FromEventTarget(nsIEventTarget* aEventTarget);
+  static SchedulerGroup* FromEventTarget(nsIEventTarget* aEventTarget);
 
   nsresult LabeledDispatch(const char* aName,
                            TaskCategory aCategory,
@@ -105,7 +105,7 @@ protected:
   };
   void SetValidatingAccess(ValidationType aType);
 
-  static ValidatingDispatcher* sRunningDispatcher;
+  static SchedulerGroup* sRunningDispatcher;
   bool mAccessValid;
 
   nsCOMPtr<nsIEventTarget> mEventTargets[size_t(TaskCategory::Count)];
