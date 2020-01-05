@@ -1520,7 +1520,19 @@ pref("extensions.pocket.enabled", true);
 pref("signon.schemeUpgrades", true);
 
 
-pref("print.use_simplify_page", true);
+
+
+
+
+#ifdef UNIX_BUT_NOT_MAC
+#if defined(NIGHTLY_BUILD)
+pref("print.user_simplify_page", true);
+#endif
+#else
+#if defined(EARLY_BETA_OR_EARLIER)
+pref("print.user_simplify_page", true);
+#endif
+#endif
 
 
 
