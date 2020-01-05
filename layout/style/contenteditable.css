@@ -51,7 +51,6 @@ a:active:-moz-read-write img {
 
 
 a:link:-moz-read-write {
-  text-decoration: underline -moz-anchor-decoration;
   color: -moz-hyperlinktext;
 }
 

@@ -45,7 +45,6 @@ a:link img, a:visited img {
 
 
 a:link {
-  text-decoration: underline -moz-anchor-decoration;
   color: -moz-hyperlinktext;
 }
 

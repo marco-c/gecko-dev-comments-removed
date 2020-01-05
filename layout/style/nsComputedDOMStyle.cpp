@@ -3930,8 +3930,7 @@ nsComputedDOMStyle::DoGetTextDecorationLine()
     nsAutoString decorationLineString;
     
     
-    intValue &= ~(NS_STYLE_TEXT_DECORATION_LINE_PREF_ANCHORS |
-                  NS_STYLE_TEXT_DECORATION_LINE_OVERRIDE_ALL);
+    intValue &= ~NS_STYLE_TEXT_DECORATION_LINE_OVERRIDE_ALL;
     nsStyleUtil::AppendBitmaskCSSValue(eCSSProperty_text_decoration_line,
       intValue, NS_STYLE_TEXT_DECORATION_LINE_UNDERLINE,
       NS_STYLE_TEXT_DECORATION_LINE_BLINK, decorationLineString);
