@@ -332,6 +332,23 @@ impl AttrValue {
             panic!("Uint not found");
         }
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn as_uint_px_dimension(&self) -> LengthOrPercentageOrAuto {
+        if let AttrValue::UInt(_, value) = *self {
+            LengthOrPercentageOrAuto::Length(Au::from_px(value as i32))
+        } else {
+            panic!("Uint not found");
+        }
+    }
 }
 
 impl ::std::ops::Deref for AttrValue {

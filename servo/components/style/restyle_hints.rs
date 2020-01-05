@@ -18,6 +18,7 @@ use selectors::{Element, MatchAttr};
 use selectors::matching::{ElementSelectorFlags, StyleRelations};
 use selectors::matching::matches_complex_selector;
 use selectors::parser::{AttrSelector, Combinator, ComplexSelector, SimpleSelector};
+use selectors::visitor::SelectorVisitor;
 use std::clone::Clone;
 use std::sync::Arc;
 
@@ -399,6 +400,22 @@ fn is_attr_selector(sel: &SimpleSelector<SelectorImpl>) -> bool {
     }
 }
 
+fn is_sibling_affecting_selector(sel: &SimpleSelector<SelectorImpl>) -> bool {
+    match *sel {
+        SimpleSelector::FirstChild |
+        SimpleSelector::LastChild |
+        SimpleSelector::OnlyChild |
+        SimpleSelector::NthChild(..) |
+        SimpleSelector::NthLastChild(..) |
+        SimpleSelector::NthOfType(..) |
+        SimpleSelector::NthLastOfType(..) |
+        SimpleSelector::FirstOfType |
+        SimpleSelector::LastOfType |
+        SimpleSelector::OnlyOfType => true,
+        _ => false,
+    }
+}
+
 fn combinator_to_restyle_hint(combinator: Option<Combinator>) -> RestyleHint {
     match combinator {
         None => RESTYLE_SELF,
@@ -462,6 +479,74 @@ struct Dependency {
 
 
 
+pub struct SelectorDependencyVisitor<'a> {
+    dependency_set: &'a mut DependencySet,
+    affects_siblings: bool,
+    affected_by_attribute: bool,
+}
+
+impl<'a> SelectorDependencyVisitor<'a> {
+    
+    pub fn new(dependency_set: &'a mut DependencySet) -> Self {
+        SelectorDependencyVisitor {
+            dependency_set: dependency_set,
+            affects_siblings: false,
+            affected_by_attribute: false,
+        }
+    }
+
+    
+    pub fn affects_siblings(&self) -> bool {
+        self.affects_siblings
+    }
+
+    
+    
+    pub fn affected_by_attribute(&self) -> bool {
+        self.affected_by_attribute
+    }
+}
+
+impl<'a> SelectorVisitor for SelectorDependencyVisitor<'a> {
+    type Impl = SelectorImpl;
+
+    fn visit_complex_selector(&mut self,
+                              selector: &Arc<ComplexSelector<SelectorImpl>>,
+                              combinator: Option<Combinator>)
+                              -> bool
+    {
+        let mut sensitivities = Sensitivities::new();
+        for s in &selector.compound_selector {
+            sensitivities.states.insert(selector_to_state(s));
+            if !self.affects_siblings {
+                self.affects_siblings = is_sibling_affecting_selector(s);
+            }
+            if !sensitivities.attrs {
+                sensitivities.attrs = is_attr_selector(s);
+            }
+        }
+
+        let hint = combinator_to_restyle_hint(combinator);
+
+        self.affected_by_attribute |= sensitivities.attrs;
+        self.affects_siblings |= hint.intersects(RESTYLE_LATER_SIBLINGS);
+
+        if !sensitivities.is_empty() {
+            self.dependency_set.add_dependency(Dependency {
+                selector: selector.clone(),
+                hint: hint,
+                sensitivities: sensitivities,
+            });
+        }
+
+        true
+    }
+}
+
+
+
+
+
 
 #[derive(Debug)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
@@ -476,12 +561,12 @@ pub struct DependencySet {
 
 impl DependencySet {
     fn add_dependency(&mut self, dep: Dependency) {
-        let affects_attrs = dep.sensitivities.attrs;
+        let affected_by_attribute = dep.sensitivities.attrs;
         let affects_states = !dep.sensitivities.states.is_empty();
 
-        if affects_attrs && affects_states {
+        if affected_by_attribute && affects_states {
             self.common_deps.push(dep)
-        } else if affects_attrs {
+        } else if affected_by_attribute {
             self.attr_deps.push(dep)
         } else {
             self.state_deps.push(dep)
@@ -500,46 +585,6 @@ impl DependencySet {
     
     pub fn len(&self) -> usize {
         self.common_deps.len() + self.attr_deps.len() + self.state_deps.len()
-    }
-
-    
-    
-    pub fn note_selector(&mut self, selector: &Arc<ComplexSelector<SelectorImpl>>) {
-        let mut cur = selector;
-        let mut combinator: Option<Combinator> = None;
-        loop {
-            let mut sensitivities = Sensitivities::new();
-            for s in &cur.compound_selector {
-                sensitivities.states.insert(selector_to_state(s));
-                if !sensitivities.attrs {
-                    sensitivities.attrs = is_attr_selector(s);
-                }
-
-                
-                
-                
-                
-                
-                
-                
-                
-            }
-            if !sensitivities.is_empty() {
-                self.add_dependency(Dependency {
-                    selector: cur.clone(),
-                    hint: combinator_to_restyle_hint(combinator),
-                    sensitivities: sensitivities,
-                });
-            }
-
-            cur = match cur.next {
-                Some((ref sel, comb)) => {
-                    combinator = Some(comb);
-                    sel
-                }
-                None => break,
-            }
-        }
     }
 
     
