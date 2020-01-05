@@ -9,6 +9,7 @@
 
 #include <stdint.h>
 #include <algorithm>  
+#include <ostream>
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/FloatingPoint.h"
@@ -277,6 +278,11 @@ public:
   explicit operator bool() const
   {
     return mValue != 0;
+  }
+
+  friend std::ostream& operator<<(std::ostream& aStream,
+                                  const BaseTimeDuration& aDuration) {
+    return aStream << aDuration.ToMilliseconds() << " ms";
   }
 
   
