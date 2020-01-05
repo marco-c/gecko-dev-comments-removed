@@ -40,6 +40,10 @@ fn build_dom(scope: dom::node_scope,
                 
                 cur = scope.get_parent(cur).get();
             }
+            parser::to_text(s) if !s.is_whitespace() {
+                let new_node = scope.new_node(dom::nk_text(s));
+                scope.add_child(cur, new_node);
+            }
             parser::to_text(_) {
                 
             }
