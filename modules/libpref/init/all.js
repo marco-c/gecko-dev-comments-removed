@@ -1221,6 +1221,10 @@ pref("privacy.popups.disable_from_plugins", 2);
 
 pref("privacy.donottrackheader.enabled",    false);
 
+
+
+pref("privacy.permissionPrompts.showCloseButton", false);
+
 pref("privacy.trackingprotection.enabled",  false);
 
 pref("privacy.trackingprotection.pbmode.enabled",  true);
