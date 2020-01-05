@@ -132,7 +132,14 @@ impl<'a> PreorderDomTraversal for RecalcStyleForNode<'a> {
         
         let some_bf = Some(bf);
 
-        if node.is_dirty() {
+        if node.is_dirty() || node.has_dirty_siblings() {
+            
+            
+            if node.has_changed() {
+                let node = ThreadSafeLayoutNode::new(&node);
+                node.unstyle();
+            }
+
             
             let style_sharing_candidate_cache =
                 self.layout_context.style_sharing_candidate_cache();
@@ -194,17 +201,31 @@ impl<'a> PostorderDomTraversal for ConstructFlows<'a> {
     fn process(&self, node: LayoutNode) {
         
         {
-            let node = ThreadSafeLayoutNode::new(&node);
-            let mut flow_constructor = FlowConstructor::new(self.layout_context);
-            flow_constructor.process(&node);
+            let tnode = ThreadSafeLayoutNode::new(&node);
+
+            
+            if !self.layout_context.shared.opts.incremental_layout {
+                unsafe {
+                    node.set_dirty_descendants(true);
+                }
+            }
+
+            if node.has_dirty_descendants() {
+                tnode.set_restyle_damage(RestyleDamage::all());
+                debug!("Constructing flow for {}", tnode.debug_id());
+                let mut flow_constructor = FlowConstructor::new(self.layout_context);
+                flow_constructor.process(&tnode);
+            }
 
             
             
-            node.set_restyle_damage(RestyleDamage::empty());
+            tnode.set_restyle_damage(RestyleDamage::empty());
         }
 
         unsafe {
+            node.set_changed(false);
             node.set_dirty(false);
+            node.set_dirty_siblings(false);
             node.set_dirty_descendants(false);
         }
 
