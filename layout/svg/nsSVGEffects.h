@@ -480,13 +480,6 @@ public:
 
 
     nsSVGClipPathFrame *GetClipPathFrame(bool* aOK);
-    
-
-
-
-
-
-    nsSVGMaskFrame *GetFirstMaskFrame(bool* aOK = nullptr);
 
     
 
@@ -494,6 +487,20 @@ public:
     nsTArray<nsSVGMaskFrame*> GetMaskFrames();
 
     bool MightHaveNoneSVGMask() const;
+
+    
+
+
+
+    bool HasNoOrValidEffects();
+
+    
+
+
+    bool HasInvalidEffects() {
+      return !HasNoOrValidEffects();
+    }
+
     bool HasValidFilter() {
       return mFilter && mFilter->ReferencesValidResources();
     }

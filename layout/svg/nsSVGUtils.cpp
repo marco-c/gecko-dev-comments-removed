@@ -740,13 +740,15 @@ nsSVGUtils::PaintFrameWithEffects(nsIFrame *aFrame,
 
   nsSVGEffects::EffectProperties effectProperties =
     nsSVGEffects::GetEffectProperties(aFrame);
-  bool isOK = effectProperties.HasNoFilterOrHasValidFilter();
-  nsSVGClipPathFrame *clipPathFrame = effectProperties.GetClipPathFrame(&isOK);
-  nsSVGMaskFrame *maskFrame = effectProperties.GetFirstMaskFrame(&isOK);
-  if (!isOK) {
+  if (effectProperties.HasInvalidEffects()) {
     
     return DrawResult::SUCCESS;
   }
+
+  nsSVGClipPathFrame *clipPathFrame =
+    effectProperties.GetClipPathFrame(nullptr);
+  nsTArray<nsSVGMaskFrame*> masks = effectProperties.GetMaskFrames();
+  nsSVGMaskFrame *maskFrame = masks.IsEmpty() ? nullptr : masks[0];
 
   MixModeBlender blender(aFrame, &aContext);
   gfxContext* target = blender.ShouldCreateDrawTargetForBlend()
