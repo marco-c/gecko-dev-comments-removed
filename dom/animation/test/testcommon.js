@@ -252,7 +252,7 @@ function waitForAllAnimations(animations) {
 
 
 function flushComputedStyle(elem) {
-  var cs = window.getComputedStyle(elem);
+  var cs = getComputedStyle(elem);
   cs.marginLeft;
 }
 
