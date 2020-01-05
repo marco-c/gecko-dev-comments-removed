@@ -123,24 +123,6 @@ static mozilla::LazyLogModule gMediaElementEventsLog("nsMediaElementEvents");
 using namespace mozilla::layers;
 using mozilla::net::nsMediaFragmentURIParser;
 
-class MOZ_STACK_CLASS AutoNotifyAudioChannelAgent
-{
-  RefPtr<mozilla::dom::HTMLMediaElement> mElement;
-  MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER;
-public:
-  explicit AutoNotifyAudioChannelAgent(mozilla::dom::HTMLMediaElement* aElement
-                                       MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
-    : mElement(aElement)
-  {
-    MOZ_GUARD_OBJECT_NOTIFIER_INIT;
-  }
-
-  ~AutoNotifyAudioChannelAgent()
-  {
-    mElement->UpdateAudioChannelPlayingState();
-  }
-};
-
 namespace mozilla {
 namespace dom {
 
@@ -4441,7 +4423,6 @@ nsresult HTMLMediaElement::FinishDecoderSetup(MediaDecoder* aDecoder,
   
   
   NotifyOwnerDocumentActivityChanged();
-  UpdateAudioChannelPlayingState();
 
   if (!mPaused) {
     SetPlayedOrSeeked(true);
@@ -4874,11 +4855,6 @@ void HTMLMediaElement::MetadataLoaded(const MediaInfo* aInfo,
                                       nsAutoPtr<const MetadataTags> aTags)
 {
   MOZ_ASSERT(NS_IsMainThread());
-
-  
-  
-  
-  AutoNotifyAudioChannelAgent autoNotify(this);
 
   SetMediaInfo(*aInfo);
 
@@ -5946,8 +5922,6 @@ void HTMLMediaElement::AddRemoveSelfReference()
       NS_DispatchToMainThread(event);
     }
   }
-
-  UpdateAudioChannelPlayingState();
 }
 
 void HTMLMediaElement::DoRemoveSelfReference()
