@@ -11843,7 +11843,20 @@ void
 nsGlobalWindow::Suspend()
 {
   MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(IsInnerWindow());
+  MOZ_DIAGNOSTIC_ASSERT(IsInnerWindow());
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!AsInner()->IsCurrentInnerWindow()) {
+    return;
+  }
 
   
   
@@ -11891,7 +11904,17 @@ void
 nsGlobalWindow::Resume()
 {
   MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(IsInnerWindow());
+  MOZ_DIAGNOSTIC_ASSERT(IsInnerWindow());
+
+  
+  
+  
+  
+  
+  
+  if (!AsInner()->IsCurrentInnerWindow()) {
+    return;
+  }
 
   
   
@@ -11988,7 +12011,6 @@ void
 nsGlobalWindow::Freeze()
 {
   MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(IsInnerWindow());
   Suspend();
   FreezeInternal();
 }
@@ -11997,7 +12019,9 @@ void
 nsGlobalWindow::FreezeInternal()
 {
   MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(IsSuspended());
+  MOZ_DIAGNOSTIC_ASSERT(IsInnerWindow());
+  MOZ_DIAGNOSTIC_ASSERT(AsInner()->IsCurrentInnerWindow());
+  MOZ_DIAGNOSTIC_ASSERT(IsSuspended());
 
   CallOnChildren(&nsGlobalWindow::FreezeInternal);
 
@@ -12033,7 +12057,6 @@ void
 nsGlobalWindow::Thaw()
 {
   MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(IsInnerWindow());
   ThawInternal();
   Resume();
 }
@@ -12042,7 +12065,9 @@ void
 nsGlobalWindow::ThawInternal()
 {
   MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(IsSuspended());
+  MOZ_DIAGNOSTIC_ASSERT(IsInnerWindow());
+  MOZ_DIAGNOSTIC_ASSERT(AsInner()->IsCurrentInnerWindow());
+  MOZ_DIAGNOSTIC_ASSERT(IsSuspended());
 
   CallOnChildren(&nsGlobalWindow::ThawInternal);
 
@@ -12099,6 +12124,7 @@ nsGlobalWindow::SyncStateFromParentWindow()
   
   
   MOZ_ASSERT(IsInnerWindow());
+  MOZ_ASSERT(AsInner()->IsCurrentInnerWindow());
   nsPIDOMWindowOuter* outer = GetOuterWindow();
   MOZ_ASSERT(outer);
 
@@ -12142,6 +12168,8 @@ void
 nsGlobalWindow::CallOnChildren(Method aMethod)
 {
   MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(IsInnerWindow());
+  MOZ_ASSERT(AsInner()->IsCurrentInnerWindow());
 
   nsCOMPtr<nsIDocShell> docShell = GetDocShell();
   if (!docShell) {
