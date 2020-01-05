@@ -135,6 +135,12 @@ MP4Decoder::CanHandleMediaType(const MediaContentType& aType,
             NS_LITERAL_CSTRING("audio/mpeg"), aType));
         continue;
       }
+      if (codec.EqualsLiteral("opus")) {
+        trackInfos.AppendElement(
+          CreateTrackInfoWithMIMETypeAndContentTypeExtraParameters(
+            NS_LITERAL_CSTRING("audio/opus"), aType));
+        continue;
+      }
       
       
       if (IsWhitelistedH264Codec(codec) && isMP4Video) {
