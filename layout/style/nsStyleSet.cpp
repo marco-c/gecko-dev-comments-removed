@@ -997,6 +997,10 @@ nsStyleSet::GetContext(nsStyleContext* aParentContext,
                oldAnimRule == GetAnimationRule(aVisitedRuleNode),
                "animation rule mismatch between rule nodes");
     if (oldAnimRule != animRule) {
+      
+      
+      
+      
       nsRuleNode *ruleNode =
         ReplaceAnimationRule(aRuleNode, oldAnimRule, animRule);
       nsRuleNode *visitedRuleNode = aVisitedRuleNode
@@ -1525,36 +1529,83 @@ nsStyleSet::RuleNodeWithReplacement(Element* aElement,
                 nsCSSPseudoElements::PseudoElementSupportsUserActionState(aPseudoType))),
              "should have aPseudoElement only for certain pseudo elements");
 
+  
+  
+  aReplacements &= ~(eRestyle_Force | eRestyle_ForceDescendants);
+
   MOZ_ASSERT(!(aReplacements & ~(eRestyle_CSSTransitions |
                                  eRestyle_CSSAnimations |
                                  eRestyle_SVGAttrAnimations |
                                  eRestyle_StyleAttribute |
-                                 eRestyle_StyleAttribute_Animations |
-                                 eRestyle_Force |
-                                 eRestyle_ForceDescendants)),
+                                 eRestyle_StyleAttribute_Animations)),
              "unexpected replacement bits");
 
   
   
-  
-  
-  
-  
-  
-
-  
-  
   AutoTArray<RuleNodeInfo, 30> rules;
-  for (nsRuleNode* ruleNode = aOldRuleNode; !ruleNode->IsRoot();
-       ruleNode = ruleNode->GetParent()) {
-    RuleNodeInfo* curRule = rules.AppendElement();
-    curRule->mRule = ruleNode->GetRule();
-    curRule->mLevel = ruleNode->GetLevel();
-    curRule->mIsImportant = ruleNode->IsImportantRule();
-    curRule->mIsAnimationRule = ruleNode->IsAnimationRule();
+
+  const CascadeLevel* startingLevel = gCascadeLevels;
+  nsRuleNode* startingNode = mRuleTree;
+  if (mInReconstruct) {
+    
+    
+
+    for (nsRuleNode* ruleNode = aOldRuleNode; !ruleNode->IsRoot();
+         ruleNode = ruleNode->GetParent()) {
+      RuleNodeInfo* curRule = rules.AppendElement();
+      curRule->mRule = ruleNode->GetRule();
+      curRule->mLevel = ruleNode->GetLevel();
+      curRule->mIsImportant = ruleNode->IsImportantRule();
+      curRule->mIsAnimationRule = ruleNode->IsAnimationRule();
+    }
+  } else {
+    if (aReplacements == nsRestyleHint(0)) {
+      
+      return aOldRuleNode;
+    }
+
+    
+    
+
+    nsRestyleHint remainingReplacements = aReplacements;
+    nsRuleNode* ruleNode = aOldRuleNode;
+    for (const CascadeLevel *level = ArrayEnd(gCascadeLevels);
+         level-- != gCascadeLevels; ) {
+      SheetType nodeLevel;
+      bool nodeIsImportant;
+      while (!ruleNode->IsRoot() &&
+             (nodeLevel = ruleNode->GetLevel()) == level->mLevel &&
+             (nodeIsImportant = ruleNode->IsImportantRule()) ==
+               level->mIsImportant) {
+        if (!(level->mLevelReplacementHint & aReplacements)) {
+          RuleNodeInfo* curRule = rules.AppendElement();
+          curRule->mRule = ruleNode->GetRule();
+          curRule->mLevel = nodeLevel;
+          curRule->mIsImportant = nodeIsImportant;
+          curRule->mIsAnimationRule = ruleNode->IsAnimationRule();
+        }
+
+        ruleNode = ruleNode->GetParent();
+      }
+      if (!level->mIsImportant &&
+          (level->mLevelReplacementHint & aReplacements)) {
+        remainingReplacements &= ~level->mLevelReplacementHint;
+        if (remainingReplacements == nsRestyleHint(0)) {
+          
+          
+          startingLevel = level;
+          startingNode = ruleNode;
+          break;
+        }
+      }
+    }
+    MOZ_ASSERT(remainingReplacements == nsRestyleHint(0),
+               "unexpected replacements (but we safely handle this case by "
+               "falling through to replacing the whole path");
   }
 
   nsRuleWalker ruleWalker(mRuleTree, mAuthorStyleDisabled);
+  ruleWalker.SetCurrentNode(startingNode);
   auto rulesIndex = rules.Length();
 
   
@@ -1563,7 +1614,7 @@ nsStyleSet::RuleNodeWithReplacement(Element* aElement,
   nsRuleNode* lastStyleAttrRN = nullptr;
   bool haveImportantStyleAttrRules = false;
 
-  for (const CascadeLevel *level = gCascadeLevels,
+  for (const CascadeLevel *level = startingLevel,
                        *levelEnd = ArrayEnd(gCascadeLevels);
        level != levelEnd; ++level) {
 
@@ -1663,6 +1714,8 @@ nsStyleSet::RuleNodeWithReplacement(Element* aElement,
         break;
       }
 
+      
+      
       if (!doReplace) {
         ruleWalker.ForwardOnPossiblyCSSRule(ruleInfo.mRule);
         if (ruleInfo.mIsAnimationRule) {
