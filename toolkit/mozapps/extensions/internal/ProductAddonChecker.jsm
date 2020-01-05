@@ -4,6 +4,8 @@
 
 "use strict";
 
+
+
 const { classes: Cc, interfaces: Ci, utils: Cu } = Components;
 
 const LOCAL_EME_SOURCES = [{
@@ -58,10 +60,6 @@ var CreateXHR = function() {
 
 
 const TIMEOUT_DELAY_MS = 20000;
-
-const DOWNLOAD_CHUNK_BYTES_SIZE = 300000;
-
-const DOWNLOAD_INTERVAL  = 0;
 
 const HASH_CHUNK_SIZE = 8192;
 

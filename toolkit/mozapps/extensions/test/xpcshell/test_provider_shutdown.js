@@ -56,7 +56,6 @@ function findInStatus(aStatus, aName) {
 
 add_task(function* blockRepoShutdown() {
   
-  let realAddonRepo = AMscope.AddonRepository;
   
   let mockRepo = mockAddonProvider("Mock repo");
   AMscope.AddonRepository = mockRepo;

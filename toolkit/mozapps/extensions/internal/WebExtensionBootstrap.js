@@ -4,6 +4,8 @@
 
 "use strict";
 
+
+
 Components.utils.import("resource://gre/modules/Extension.jsm");
 
 var extension;

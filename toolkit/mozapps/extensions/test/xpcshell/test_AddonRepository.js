@@ -23,8 +23,6 @@ const DEFAULT_URL   = "about:blank";
 gPort = PORT;
 
 
-const INSTALL_URL1  = "/addons/test_AddonRepository_1.xpi";
-
 const INSTALL_URL2  = "/addons/test_AddonRepository_2.xpi";
 
 const INSTALL_URL3  = "/addons/test_AddonRepository_3.xpi";

@@ -5,8 +5,6 @@
 
 
 
-var gManagerWindow;
-
 function test() {
   waitForExplicitFinish();
 

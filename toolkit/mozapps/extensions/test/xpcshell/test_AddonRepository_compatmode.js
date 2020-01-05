@@ -11,7 +11,6 @@ Components.utils.import("resource://testing-common/httpd.js");
 var gServer = new HttpServer();
 gServer.start(-1);
 gPort = gServer.identity.primaryPort;
-var COMPATIBILITY_PREF;
 
 
 mapFile("/data/test_AddonRepository_compatmode_ignore.xml", gServer);

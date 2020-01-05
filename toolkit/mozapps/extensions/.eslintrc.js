@@ -4,5 +4,7 @@ module.exports = {
   "rules": {
     
     "no-undef": "error",
+
+    "no-unused-vars": ["error", {"args": "none", "varsIgnorePattern": "^(Cc|Ci|Cr|Cu|EXPORTED_SYMBOLS)$"}],
   }
 };

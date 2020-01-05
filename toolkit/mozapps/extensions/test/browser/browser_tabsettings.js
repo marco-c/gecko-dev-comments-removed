@@ -5,7 +5,6 @@
 
 
 var gManagerWindow;
-var gCategoryUtilities;
 var gProvider;
 
 function test() {
@@ -23,7 +22,6 @@ function test() {
 
   open_manager("addons://list/extension", function(aWindow) {
     gManagerWindow = aWindow;
-    gCategoryUtilities = new CategoryUtilities(gManagerWindow);
 
     run_next_test();
   });

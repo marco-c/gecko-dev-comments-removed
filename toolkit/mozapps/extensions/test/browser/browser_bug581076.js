@@ -4,7 +4,6 @@
 
 
 
-const PREF_GETADDONS_BROWSESEARCHRESULTS = "extensions.getAddons.search.browseURL";
 const PREF_GETADDONS_GETSEARCHRESULTS = "extensions.getAddons.search.url";
 const PREF_GETADDONS_MAXRESULTS = "extensions.getAddons.maxResults";
 const SEARCH_URL = TESTROOT + "browser_searching.xml";

@@ -3,5 +3,9 @@
 module.exports = { 
   "extends": [
     "../../../../../testing/mochitest/browser.eslintrc.js"
-  ]
+  ],
+
+  "rules": {
+    "no-unused-vars": ["error", {"args": "none", "varsIgnorePattern": "^(Cc|Ci|Cr|Cu|EXPORTED_SYMBOLS|end_test)$"}],
+  }
 };

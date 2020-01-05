@@ -252,16 +252,6 @@ function logSQLError(aError, aErrorString) {
 
 
 
-function asyncErrorLogger(aError) {
-  logSQLError(aError.result, aError.message);
-}
-
-
-
-
-
-
-
 
 function stepStatement(aStatement) {
   try {
@@ -292,27 +282,6 @@ function copyProperties(aObject, aProperties, aTarget) {
   aProperties.forEach(function(aProp) {
     if (aProp in aObject)
       aTarget[aProp] = aObject[aProp];
-  });
-  return aTarget;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-function copyRowProperties(aRow, aProperties, aTarget) {
-  if (!aTarget)
-    aTarget = {};
-  aProperties.forEach(function(aProp) {
-    aTarget[aProp] = aRow.getResultByName(aProp);
   });
   return aTarget;
 }
@@ -1585,7 +1554,7 @@ this.XPIDatabaseReconcile = {
   getVisibleAddons(addonMap) {
     let map = new Map();
 
-    for (let [location, addons] of addonMap) {
+    for (let addons of addonMap.values()) {
       for (let [id, addon] of addons) {
         if (!addon.visible)
           continue;
@@ -2026,7 +1995,7 @@ this.XPIDatabaseReconcile = {
     
     for (let [locationName, addons] of previousAddons) {
       if (!currentAddons.has(locationName)) {
-        for (let [id, oldAddon] of addons)
+        for (let oldAddon of addons.values())
           this.removeMetadata(oldAddon);
       }
     }

@@ -1,3 +1,4 @@
+
 Components.utils.import("resource://gre/modules/Services.jsm");
 
 function install(data, reason) {

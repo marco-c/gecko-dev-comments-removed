@@ -3,6 +3,9 @@
 
 
 
+"use strict";
+
+
 
 const kXULNS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 const kDialog = "dialog";
@@ -41,8 +44,6 @@ const kDialog = "dialog";
 
 
 
-
-"use strict";
 
 var gButtons = { };
 

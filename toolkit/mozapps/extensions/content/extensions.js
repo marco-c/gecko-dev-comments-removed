@@ -7,6 +7,7 @@
 
 
 
+
 var Cc = Components.classes;
 var Ci = Components.interfaces;
 var Cu = Components.utils;
@@ -3168,8 +3169,6 @@ var gDetailView = {
     this._loadingTimer = setTimeout(() => {
       this.node.setAttribute("loading-extended", true);
     }, LOADING_MSG_DELAY);
-
-    var view = gViewController.currentViewId;
 
     AddonManager.getAddonByID(aAddonId, (aAddon) => {
       if (gViewController && aRequest != gViewController.currentViewRequest)

@@ -1,3 +1,4 @@
+
 Components.utils.import("resource://gre/modules/Services.jsm");
 
 const install = function() {

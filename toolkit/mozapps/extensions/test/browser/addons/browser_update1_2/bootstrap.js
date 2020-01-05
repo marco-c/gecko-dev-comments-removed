@@ -2,6 +2,7 @@
 
 
 
+
 function install(data, reason) {}
 function startup(data, reason) {
   Components.utils.import("resource://gre/modules/Services.jsm");
