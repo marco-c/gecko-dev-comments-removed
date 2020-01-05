@@ -1768,8 +1768,8 @@ DateTimePickerListener.init();
 
 
 
-addEventListener("DOMWindowCreated", function(aEvent) {
-  if (aEvent.target !== content.document ||
+addEventListener("DOMWindowCreated", function() {
+  if (event.target !== content.document ||
       content.location == "" ||
       content.location.protocol === "about:") {
     return;
