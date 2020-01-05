@@ -58,8 +58,13 @@ const SPECIALVALUES = new Set([
 
 
 
-function CssColor(colorValue) {
+
+
+
+
+function CssColor(colorValue, supportsCssColor4ColorFunction = false) {
   this.newColor(colorValue);
+  this.cssColor4 = supportsCssColor4ColorFunction;
 }
 
 module.exports.colorUtils = {
@@ -91,6 +96,9 @@ CssColor.prototype = {
   authored: null,
   
   lowerCased: null,
+
+  
+  cssColor4: false,
 
   _setColorUnitUppercase: function (color) {
     
@@ -136,7 +144,7 @@ CssColor.prototype = {
   },
 
   get valid() {
-    return isValidCSSColor(this.authored);
+    return isValidCSSColor(this.authored, this.cssColor4);
   },
 
   
@@ -393,7 +401,7 @@ CssColor.prototype = {
 
 
   _getRGBATuple: function () {
-    let tuple = colorToRGBA(this.authored);
+    let tuple = colorToRGBA(this.authored, this.cssColor4);
 
     tuple.a = parseFloat(tuple.a.toFixed(1));
 
@@ -484,8 +492,10 @@ function roundTo(number, digits) {
 
 
 
-function setAlpha(colorValue, alpha) {
-  let color = new CssColor(colorValue);
+
+
+function setAlpha(colorValue, alpha, useCssColor4ColorFunction = false) {
+  let color = new CssColor(colorValue, useCssColor4ColorFunction);
 
   
   if (!color.valid) {
@@ -1053,8 +1063,7 @@ function parseOldStyleRgb(lexer, hasAlpha) {
 
 
 
-
-function colorToRGBA(name, oldColorFunctionSyntax = true) {
+function colorToRGBA(name, useCssColor4ColorFunction = false) {
   name = name.trim().toLowerCase();
 
   if (name in cssColors) {
@@ -1089,7 +1098,7 @@ function colorToRGBA(name, oldColorFunctionSyntax = true) {
   let hsl = func.text === "hsl" || func.text === "hsla";
 
   let vals;
-  if (oldColorFunctionSyntax) {
+  if (!useCssColor4ColorFunction) {
     let hasAlpha = (func.text === "rgba" || func.text === "hsla");
     vals = hsl ? parseOldStyleHsl(lexer, hasAlpha) : parseOldStyleRgb(lexer, hasAlpha);
   } else {
@@ -1112,6 +1121,7 @@ function colorToRGBA(name, oldColorFunctionSyntax = true) {
 
 
 
-function isValidCSSColor(name) {
-  return colorToRGBA(name) !== null;
+
+function isValidCSSColor(name, useCssColor4ColorFunction = false) {
+  return colorToRGBA(name, useCssColor4ColorFunction) !== null;
 }

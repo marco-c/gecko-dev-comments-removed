@@ -29,7 +29,11 @@ const XHTML_NS = "http://www.w3.org/1999/xhtml";
 
 
 
-function SwatchColorPickerTooltip(document, inspector) {
+
+
+function SwatchColorPickerTooltip(document,
+                                  inspector,
+                                  {supportsCssColor4ColorFunction}) {
   let stylesheet = "chrome://devtools/content/shared/widgets/spectrum.css";
   SwatchBasedEditorTooltip.call(this, document, stylesheet);
 
@@ -40,6 +44,7 @@ function SwatchColorPickerTooltip(document, inspector) {
   this.spectrum = this.setColorPickerContent([0, 0, 0, 1]);
   this._onSpectrumColorChange = this._onSpectrumColorChange.bind(this);
   this._openEyeDropper = this._openEyeDropper.bind(this);
+  this.cssColor4 = supportsCssColor4ColorFunction();
 }
 
 SwatchColorPickerTooltip.prototype = Heritage.extend(SwatchBasedEditorTooltip.prototype, {
@@ -157,14 +162,14 @@ SwatchColorPickerTooltip.prototype = Heritage.extend(SwatchBasedEditorTooltip.pr
   },
 
   _colorToRgba: function (color) {
-    color = new colorUtils.CssColor(color);
+    color = new colorUtils.CssColor(color, this.cssColor4);
     let rgba = color._getRGBATuple();
     return [rgba.r, rgba.g, rgba.b, rgba.a];
   },
 
   _toDefaultType: function (color) {
     let colorObj = new colorUtils.CssColor(color);
-    colorObj.setAuthoredUnitFromColor(this._originalColor);
+    colorObj.setAuthoredUnitFromColor(this._originalColor, this.cssColor4);
     return colorObj.toString();
   },
 
