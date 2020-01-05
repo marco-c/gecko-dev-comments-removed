@@ -4467,8 +4467,6 @@ void HTMLMediaElement::Error(uint16_t aErrorCode,
                aErrorCode == MEDIA_ERR_NETWORK ||
                aErrorCode == MEDIA_ERR_ABORTED,
                "Only use MediaError codes!");
-  NS_ASSERTION(mReadyState > HAVE_NOTHING,
-               "Shouldn't be called when readyState is HAVE_NOTHING");
 
   
   
