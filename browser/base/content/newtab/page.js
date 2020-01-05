@@ -94,14 +94,14 @@ var gPage = {
       return;
     }
 
-    this._scheduleUpdateTimeout = setTimeout(() => {
+    this._scheduleUpdateTimeout = requestIdleCallback(() => {
       
       if (gGrid.ready) {
         gGrid.refresh();
       }
 
       this._scheduleUpdateTimeout = null;
-    }, SCHEDULE_UPDATE_TIMEOUT_MS);
+    }, {timeout: SCHEDULE_UPDATE_TIMEOUT_MS});
   },
 
   
@@ -221,7 +221,7 @@ var gPage = {
       case "visibilitychange":
         
         if (this._scheduleUpdateTimeout) {
-          clearTimeout(this._scheduleUpdateTimeout);
+          cancelIdleCallback(this._scheduleUpdateTimeout);
           this._scheduleUpdateTimeout = null;
 
           
