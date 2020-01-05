@@ -256,6 +256,9 @@ private:
   
   bool mSendResumeAt;
 
+  
+  Atomic<bool> mDeletingChannelSent;
+
   Atomic<bool> mIPCOpen;
   bool mKeptAlive;            
   RefPtr<ChannelEventQueue> mEventQ;
