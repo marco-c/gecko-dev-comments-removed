@@ -114,7 +114,6 @@ impl PropertyDeclarationBlock {
 
                 
                 
-                
                 if important_count > 0 && important_count != list.len() {
                     return Ok(());
                 }
@@ -123,8 +122,11 @@ impl PropertyDeclarationBlock {
                 
                 
                 let importance = Importance::Normal;
-                let appendable_value = shorthand.get_shorthand_appendable_value(list).unwrap();
-                append_declaration_value(dest, appendable_value, importance, false)
+                match shorthand.get_shorthand_appendable_value(list) {
+                    Some(appendable_value) =>
+                        append_declaration_value(dest, appendable_value, importance, false),
+                    None => return Ok(()),
+                }
             }
             Err(longhand_or_custom) => {
                 if let Some(&(ref value, _importance)) = self.get(longhand_or_custom) {
