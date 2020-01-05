@@ -245,7 +245,7 @@ public:
 
   virtual void HandleVideoSuspendTimeout() = 0;
 
-  virtual void HandleResumeVideoDecoding();
+  virtual void HandleResumeVideoDecoding(const TimeUnit& aTarget);
 
   virtual void HandlePlayStateChanged(MediaDecoder::PlayState aPlayState) {}
 
@@ -395,7 +395,7 @@ public:
     
   }
 
-  void HandleResumeVideoDecoding() override
+  void HandleResumeVideoDecoding(const TimeUnit&) override
   {
     
     MOZ_ASSERT(false, "Shouldn't have suspended video decoding.");
@@ -459,7 +459,7 @@ public:
     
   }
 
-  void HandleResumeVideoDecoding() override
+  void HandleResumeVideoDecoding(const TimeUnit&) override
   {
     
     MOZ_ASSERT(false, "Shouldn't have suspended video decoding.");
@@ -518,7 +518,7 @@ public:
     
   }
 
-  void HandleResumeVideoDecoding() override
+  void HandleResumeVideoDecoding(const TimeUnit&) override
   {
     
   }
@@ -617,7 +617,7 @@ public:
     
   }
 
-  void HandleResumeVideoDecoding() override
+  void HandleResumeVideoDecoding(const TimeUnit&) override
   {
     
     MOZ_ASSERT(false, "Shouldn't have suspended video decoding.");
@@ -997,7 +997,7 @@ public:
     
   }
 
-  void HandleResumeVideoDecoding() override
+  void HandleResumeVideoDecoding(const TimeUnit&) override
   {
     
     MOZ_ASSERT(false, "Shouldn't have suspended video decoding.");
@@ -1944,7 +1944,7 @@ public:
     MOZ_DIAGNOSTIC_ASSERT(false, "Already shutting down.");
   }
 
-  void HandleResumeVideoDecoding() override
+  void HandleResumeVideoDecoding(const TimeUnit&) override
   {
     MOZ_DIAGNOSTIC_ASSERT(false, "Already shutting down.");
   }
@@ -2010,7 +2010,7 @@ ReportRecoveryTelemetry(const TimeStamp& aRecoveryStart,
 
 void
 MediaDecoderStateMachine::
-StateObject::HandleResumeVideoDecoding()
+StateObject::HandleResumeVideoDecoding(const TimeUnit& aTarget)
 {
   MOZ_ASSERT(mMaster->mVideoDecodeSuspended);
 
@@ -2028,9 +2028,7 @@ StateObject::HandleResumeVideoDecoding()
                                 ? SeekTarget::Type::Accurate
                                 : SeekTarget::Type::PrevSyncPoint;
 
-  seekJob.mTarget.emplace(mMaster->GetMediaTime(),
-                          type,
-                          true );
+  seekJob.mTarget.emplace(aTarget, type, true );
 
   
   
@@ -3076,7 +3074,7 @@ void MediaDecoderStateMachine::SetVideoDecodeModeInternal(VideoDecodeMode aMode)
   CancelSuspendTimer();
 
   if (mVideoDecodeSuspended) {
-    mStateObj->HandleResumeVideoDecoding();
+    mStateObj->HandleResumeVideoDecoding(GetMediaTime());
   }
 }
 
