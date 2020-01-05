@@ -214,13 +214,6 @@ bitflags! {
 }
 
 
-#[derive(Copy, Clone, PartialEq)]
-pub enum FocusType {
-    Element,    
-    Parent,     
-}
-
-
 #[derive(Deserialize, Serialize)]
 pub struct IframeLoadInfo {
     
