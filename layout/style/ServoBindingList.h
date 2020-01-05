@@ -108,6 +108,14 @@ SERVO_BINDING_FUNC(Servo_RestyleWithAddedDeclaration,
                    ServoComputedValuesBorrowed previous_style)
 
 
+SERVO_BINDING_FUNC(Servo_AnimationValues_Populate, void,
+                   RawGeckoAnimationValueListBorrowedMut,
+                   RawServoDeclarationBlockBorrowed,
+                   ServoComputedValuesBorrowed,
+                   ServoComputedValuesBorrowedOrNull,
+                   RawGeckoPresContextBorrowed)
+
+
 SERVO_BINDING_FUNC(Servo_ParseStyleAttribute, RawServoDeclarationBlockStrong,
                    const nsACString* data)
 SERVO_BINDING_FUNC(Servo_DeclarationBlock_CreateEmpty,
