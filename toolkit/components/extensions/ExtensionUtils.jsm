@@ -1864,6 +1864,10 @@ class ChildAPIManager {
     return this.context.cloneScope;
   }
 
+  get principal() {
+    return this.context.principal;
+  }
+
   shouldInject(namespace, name, allowedContexts) {
     
     return this.context.envType !== "content_child" || allowedContexts.includes("content");
