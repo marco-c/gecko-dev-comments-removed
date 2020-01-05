@@ -42,8 +42,6 @@ namespace mozilla {
 
 namespace hal {
 
-typedef Observer<void_t> AlarmObserver;
-
 class WindowIdentifier;
 
 typedef Observer<int64_t> SystemClockChangeObserver;
@@ -431,41 +429,6 @@ hal::SwitchState GetCurrentSwitchState(hal::SwitchDevice aDevice);
 
 void NotifySwitchStateFromInputDevice(hal::SwitchDevice aDevice,
                                       hal::SwitchState aState);
-
-
-
-
-
-
-
-MOZ_MUST_USE bool RegisterTheOneAlarmObserver(hal::AlarmObserver* aObserver);
-
-
-
-
-
-void UnregisterTheOneAlarmObserver();
-
-
-
-
-
-
-void NotifyAlarmFired();
-
-
-
-
-
-
-
-
-
-
-
-
-
-MOZ_MUST_USE bool SetAlarm(int32_t aSeconds, int32_t aNanoseconds);
 
 
 

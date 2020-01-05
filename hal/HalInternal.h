@@ -67,16 +67,6 @@ void DisableSwitchNotifications(hal::SwitchDevice aDevice);
 
 
 
-MOZ_MUST_USE bool EnableAlarm();
-
-
-
-
-void DisableAlarm();
-
-
-
-
 void EnableSystemClockChangeNotifications();
 
 
