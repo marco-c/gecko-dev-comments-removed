@@ -229,8 +229,8 @@ class FormatProvider(MachCommandBase):
         import urllib2
 
         plat = platform.system()
-        fmt = plat.lower() + "/clang-format-4.0"
-        fmt_diff = "clang-format-diff-4.0"
+        fmt = plat.lower() + "/clang-format-5.0~svn297730"
+        fmt_diff = "clang-format-diff-5.0~svn297730"
 
         
         
@@ -287,10 +287,10 @@ class FormatProvider(MachCommandBase):
         import urllib2
         import hashlib
         bin_sha = {
-            "Windows": "51ad909026e7adcc9342a199861ab4882d5ecbbd24ec76aee1d620ed5ee93c94079485214a7e4656180fb889ced11fc137aff9b1e08b474af5c21a2506407b7d",  
-            "Linux": "3f85905248f103c7c6761e622a2a374fa26fe0b90cb78e65496596f39788621871fcf2619092975d362c2001c544fa662ebdca227042ef40369a16f564fe51a8",  
-            "Darwin": "b07ed6bbb08bf71d8e9985b68e60fc8e9abda05d4b16f2123a188eb35fabb3f0b0123b9224aea7e51cae4cc59ddc25ffce55007fc841a8c30b195961841f850c",  
-            "python_script": "00d6d6628c9e1af4a250bae09bef27bcb9ba9e325c7ae11de9413d247fa327c512e4a17dd82ba871532038dfd48985a01c4c21f0cb868c531b852d04160cd757",  
+            "Windows": "0cbfc306df48f01bfe804e5e89cef73b3abe8f884fb7a5208f8895897f19ec45c13760787298192bd37de057d0ded091640c7d504438e06ec880f071a38db89c",  
+            "Linux": "e6da4f6df074bfb15caefcf7767eb5670c02bb4768ba86ae4ab6b35235b53db012900a4f9e9a950ee140158a19532a71f21b986f511826bebc16f2ef83984e57",  
+            "Darwin": "18000940a11e5ab0c1fe950d4360292216c8e963dd708679c4c5fb8cc845f5919cef3f58a7e092555b8ea6b8d8a809d66153ea6d1e7c226a2c4f2b0b7ad1b2f3",  
+            "python_script": "34b6934a48a263ea3f88d48c2981d61ae6698823cfa689b9b0c8a607c224437ca0b9fdd434d260bd790d52a98455e2c2e2c745490d327ba84b4e22b7bb55b757",  
         }
 
         target = os.path.join(self._mach_context.state_dir, os.path.basename(root))
