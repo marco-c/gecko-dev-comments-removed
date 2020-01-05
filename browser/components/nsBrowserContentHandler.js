@@ -2,6 +2,8 @@
 
 
 
+
+
 Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 Components.utils.import("resource://gre/modules/Services.jsm");
 Components.utils.import("resource://gre/modules/AppConstants.jsm");
@@ -231,7 +233,7 @@ function openPreferences() {
                        .createInstance(Components.interfaces.nsISupportsString);
   wuri.data = "about:preferences";
 
-  sa.appendElement(wuri,  false);
+  args.appendElement(wuri,  false);
 
   Services.ww.openWindow(null, gBrowserContentHandler.chromeURL,
                          "_blank",
