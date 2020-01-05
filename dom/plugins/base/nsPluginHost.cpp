@@ -146,7 +146,28 @@ static const char *kPrefJavaMIME = "plugin.java.mime";
 static const char *kPrefUnloadPluginTimeoutSecs = "dom.ipc.plugins.unloadTimeoutSecs";
 static const uint32_t kDefaultPluginUnloadingTimeout = 30;
 
-static const char *kPluginRegistryVersion = "0.18";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static const char *kPluginRegistryVersion = "0.17";
+
+static const char *kMinimumRegistryVersion = "0.9";
 
 static const char kDirectoryServiceContractID[] = "@mozilla.org/file/directory_service;1";
 
@@ -2075,7 +2096,7 @@ nsPluginHost::AddPluginTag(nsPluginTag* aPluginTag)
 static bool
 PluginInfoIsFlash(const nsPluginInfo& info)
 {
-  if (strcmp(info.fName, "Shockwave Flash") != 0) {
+  if (strcmp(info.fDescription, "Shockwave Flash") != 0) {
     return false;
   }
   for (uint32_t i = 0; i < info.fVariantCount; ++i) {
@@ -2969,6 +2990,10 @@ nsPluginHost::ReadPluginInfo()
   const long PLUGIN_REG_MIMETYPES_ARRAY_SIZE = 12;
   const long PLUGIN_REG_MAX_MIMETYPES = 1000;
 
+  
+  const bool pluginStateImported =
+    Preferences::GetDefaultBool("plugin.importedState", false);
+
   nsresult rv;
 
   nsCOMPtr<nsIProperties> directoryService(do_GetService(NS_DIRECTORY_SERVICE_CONTRACTID,&rv));
@@ -3061,66 +3086,127 @@ nsPluginHost::ReadPluginInfo()
     return rv;
 
   
-  if (!strcmp(values[1], kPluginRegistryVersion)) {
+  int32_t vdiff = mozilla::CompareVersions(values[1], kPluginRegistryVersion);
+  mozilla::Version version(values[1]);
+  
+  if (vdiff > 0)
     return rv;
-  }
+  
+  if (version < kMinimumRegistryVersion)
+    return rv;
 
-  char* archValues[6];
-  if (!reader.NextLine()) {
-    return rv;
+  
+  bool regHasVersion = (version >= "0.10");
+
+  
+  if (version >= "0.13") {
+    char* archValues[6];
+
+    if (!reader.NextLine()) {
+      return rv;
+    }
+
+    
+    if (2 != reader.ParseLine(archValues, 2)) {
+      return rv;
+    }
+
+    
+    if (PL_strcmp(archValues[0], "Arch")) {
+      return rv;
+    }
+
+    nsCOMPtr<nsIXULRuntime> runtime = do_GetService("@mozilla.org/xre/runtime;1");
+    if (!runtime) {
+      return rv;
+    }
+
+    nsAutoCString arch;
+    if (NS_FAILED(runtime->GetXPCOMABI(arch))) {
+      return rv;
+    }
+
+    
+    if (PL_strcmp(archValues[1], arch.get())) {
+      return rv;
+    }
   }
 
   
-  if (2 != reader.ParseLine(archValues, 2)) {
-    return rv;
-  }
+  const bool hasInvalidPlugins = (version >= "0.13");
 
   
-  if (PL_strcmp(archValues[0], "Arch")) {
-    return rv;
-  }
-
-  nsCOMPtr<nsIXULRuntime> runtime = do_GetService("@mozilla.org/xre/runtime;1");
-  if (!runtime) {
-    return rv;
-  }
-
-  nsAutoCString arch;
-  if (NS_FAILED(runtime->GetXPCOMABI(arch))) {
-    return rv;
-  }
+  const bool hasValidFlags = (version < "0.16");
 
   
-  if (PL_strcmp(archValues[1], arch.get())) {
-    return rv;
-  }
+  const bool hasFromExtension = (version >= "0.17");
+
+#if defined(XP_MACOSX)
+  const bool hasFullPathInFileNameField = false;
+#else
+  const bool hasFullPathInFileNameField = (version < "0.11");
+#endif
 
   if (!ReadSectionHeader(reader, "PLUGINS"))
     return rv;
 
   while (reader.NextLine()) {
-    if (*reader.LinePtr() == '[') {
+    const char *filename;
+    const char *fullpath;
+    nsAutoCString derivedFileName;
+
+    if (hasInvalidPlugins && *reader.LinePtr() == '[') {
       break;
     }
 
-    const char* filename = reader.LinePtr();
-    if (!reader.NextLine())
-      return rv;
+    if (hasFullPathInFileNameField) {
+      fullpath = reader.LinePtr();
+      if (!reader.NextLine())
+        return rv;
+      
+      if (fullpath) {
+        nsCOMPtr<nsIFile> file = do_CreateInstance("@mozilla.org/file/local;1");
+        file->InitWithNativePath(nsDependentCString(fullpath));
+        file->GetNativeLeafName(derivedFileName);
+        filename = derivedFileName.get();
+      } else {
+        filename = nullptr;
+      }
 
-    const char* fullpath = reader.LinePtr();
-    if (!reader.NextLine())
-      return rv;
+      
+      if (!reader.NextLine())
+        return rv;
+    } else {
+      filename = reader.LinePtr();
+      if (!reader.NextLine())
+        return rv;
+
+      fullpath = reader.LinePtr();
+      if (!reader.NextLine())
+        return rv;
+    }
 
     const char *version;
-    version = reader.LinePtr();
-    if (!reader.NextLine())
+    if (regHasVersion) {
+      version = reader.LinePtr();
+      if (!reader.NextLine())
+        return rv;
+    } else {
+      version = "0";
+    }
 
     
-    if (4 != reader.ParseLine(values, 4))
+    const int count = hasFromExtension ? 4 : 3;
+    if (reader.ParseLine(values, count) != count)
       return rv;
 
-    int64_t lastmod = nsCRT::atoll(values[0]);
-    bool fromExtension = atoi(values[3]);
+    
+    int64_t lastmod = (vdiff == 0) ? nsCRT::atoll(values[0]) : -1;
+    uint32_t tagflag = atoi(values[2]);
+    bool fromExtension = false;
+    if (hasFromExtension) {
+      fromExtension = atoi(values[3]);
+    }
     if (!reader.NextLine())
       return rv;
 
@@ -3196,6 +3282,10 @@ nsPluginHost::ReadPluginInfo()
       delete [] heapalloced;
 
     
+    if (hasValidFlags && !pluginStateImported) {
+      tag->ImportFlagsToPrefs(tagflag);
+    }
+
     MOZ_LOG(nsPluginLogging::gPluginLog, PLUGIN_LOG_BASIC,
       ("LoadCachedPluginsInfo : Loading Cached plugininfo for %s\n", tag->FileName().get()));
 
@@ -3209,28 +3299,33 @@ nsPluginHost::ReadPluginInfo()
 
 
 #ifndef MOZ_WIDGET_ANDROID
-  if (!ReadSectionHeader(reader, "INVALID")) {
-    return rv;
-  }
-
-  while (reader.NextLine()) {
-    const char *fullpath = reader.LinePtr();
-    if (!reader.NextLine()) {
+  if (hasInvalidPlugins) {
+    if (!ReadSectionHeader(reader, "INVALID")) {
       return rv;
     }
 
-    const char *lastModifiedTimeStamp = reader.LinePtr();
-    int64_t lastmod = nsCRT::atoll(lastModifiedTimeStamp);
+    while (reader.NextLine()) {
+      const char *fullpath = reader.LinePtr();
+      if (!reader.NextLine()) {
+        return rv;
+      }
 
-    RefPtr<nsInvalidPluginTag> invalidTag = new nsInvalidPluginTag(fullpath, lastmod);
+      const char *lastModifiedTimeStamp = reader.LinePtr();
+      int64_t lastmod = (vdiff == 0) ? nsCRT::atoll(lastModifiedTimeStamp) : -1;
 
-    invalidTag->mNext = mInvalidPlugins;
-    if (mInvalidPlugins) {
-      mInvalidPlugins->mPrev = invalidTag;
+      RefPtr<nsInvalidPluginTag> invalidTag = new nsInvalidPluginTag(fullpath, lastmod);
+
+      invalidTag->mNext = mInvalidPlugins;
+      if (mInvalidPlugins) {
+        mInvalidPlugins->mPrev = invalidTag;
+      }
+      mInvalidPlugins = invalidTag;
     }
-    mInvalidPlugins = invalidTag;
   }
 #endif
+
+  
+  Preferences::SetBool("plugin.importedState", true);
 
   return NS_OK;
 }
