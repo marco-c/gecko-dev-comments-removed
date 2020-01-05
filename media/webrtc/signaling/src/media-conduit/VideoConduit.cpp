@@ -443,6 +443,17 @@ WebrtcVideoConduit::CreateRecvStream()
   return kMediaConduitNoError;
 }
 
+static bool CompatibleH264Config(const webrtc::VideoCodecH264 &aEncoderSpecificH264,
+                                 const VideoCodecConfig* aCodecConfig)
+{
+  if (aEncoderSpecificH264.profile_byte != aCodecConfig->mProfile ||
+      aEncoderSpecificH264.constraints != aCodecConfig->mConstraints ||
+      aEncoderSpecificH264.packetizationMode != aCodecConfig->mPacketizationMode) {
+    return false;
+  }
+  return true;
+}
+
 
 
 
@@ -467,10 +478,20 @@ WebrtcVideoConduit::ConfigureSendMediaCodec(const VideoCodecConfig* codecConfig)
     return condError;
   }
 
-  condError = StopTransmitting();
-  if (condError != kMediaConduitNoError) {
-    return condError;
-  }
+  
+  
+  
+  if (!mSendStream ||
+      mSendStreamConfig.encoder_settings.payload_type != codecConfig->mType ||
+      mSendStreamConfig.encoder_settings.payload_name != codecConfig->mName ||
+      (codecConfig->mName == "H264" &&
+       !CompatibleH264Config(mEncoderSpecificH264, codecConfig))) {
+    condError = StopTransmitting();
+    if (condError != kMediaConduitNoError) {
+      return condError;
+    }
+    DeleteSendStream(); 
+  } 
 
   mSendStreamConfig.encoder_settings.payload_name = codecConfig->mName;
   mSendStreamConfig.encoder_settings.payload_type = codecConfig->mType;
@@ -508,7 +529,7 @@ WebrtcVideoConduit::ConfigureSendMediaCodec(const VideoCodecConfig* codecConfig)
     
     width = mSendingWidth;
     height = mSendingHeight;
-    max_framerate = mSendingFramerate;
+    
   }
   mSendingFramerate = std::max(mSendingFramerate,
                                static_cast<unsigned int>(max_framerate));
@@ -609,6 +630,18 @@ WebrtcVideoConduit::ConfigureSendMediaCodec(const VideoCodecConfig* codecConfig)
     MutexAutoLock lock(mCodecMutex);
     
     mCurSendCodecConfig = new VideoCodecConfig(*codecConfig);
+  }
+
+  
+  if (mSendStream &&
+      !mSendStream->ReconfigureVideoEncoder(mEncoderConfig.GenerateConfig())) {
+    CSFLogError(logTag, "%s: ReconfigureVideoEncoder failed", __FUNCTION__);
+    
+    condError = StopTransmitting();
+    if (condError != kMediaConduitNoError) {
+      return condError;
+    }
+    DeleteSendStream();
   }
 
   return condError;
