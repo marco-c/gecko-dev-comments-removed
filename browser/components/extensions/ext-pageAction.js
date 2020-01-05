@@ -6,14 +6,14 @@ XPCOMUtils.defineLazyModuleGetter(this, "PanelPopup",
                                   "resource:///modules/ExtensionPopups.jsm");
 
 Cu.import("resource://gre/modules/Task.jsm");
-Cu.import("resource://gre/modules/ExtensionUtils.jsm");
+
 var {
   SingletonEventManager,
   IconDetails,
 } = ExtensionUtils;
 
 
-var pageActionMap = new WeakMap();
+let pageActionMap = new WeakMap();
 
 
 
@@ -217,25 +217,11 @@ PageAction.prototype = {
     for (let window of windowTracker.browserWindows()) {
       if (this.buttons.has(window)) {
         this.buttons.get(window).remove();
-        window.removeEventListener("popupshowing", this);
+        window.document.removeEventListener("popupshowing", this);
       }
     }
   },
 };
-
-
-extensions.on("manifest_page_action", (type, directive, extension, manifest) => {
-  let pageAction = new PageAction(manifest.page_action, extension);
-  pageActionMap.set(extension, pageAction);
-});
-
-extensions.on("shutdown", (type, extension) => {
-  if (pageActionMap.has(extension)) {
-    pageActionMap.get(extension).shutdown();
-    pageActionMap.delete(extension);
-  }
-});
-
 
 PageAction.for = extension => {
   return pageActionMap.get(extension);
@@ -243,74 +229,93 @@ PageAction.for = extension => {
 
 global.pageActionFor = PageAction.for;
 
-extensions.registerSchemaAPI("pageAction", "addon_parent", context => {
-  let {extension} = context;
+this.pageAction = class extends ExtensionAPI {
+  onManifestEntry(entryName) {
+    let {extension} = this;
+    let {manifest} = extension;
 
-  const {tabManager} = extension;
+    let pageAction = new PageAction(manifest.page_action, extension);
+    pageActionMap.set(extension, pageAction);
+  }
 
-  return {
-    pageAction: {
-      onClicked: new SingletonEventManager(context, "pageAction.onClicked", fire => {
-        let listener = (evt, tab) => {
-          fire.async(tabManager.convert(tab));
-        };
-        let pageAction = PageAction.for(extension);
+  onShutdown(reason) {
+    let {extension} = this;
 
-        pageAction.on("click", listener);
-        return () => {
-          pageAction.off("click", listener);
-        };
-      }).api(),
+    if (pageActionMap.has(extension)) {
+      pageActionMap.get(extension).shutdown();
+      pageActionMap.delete(extension);
+    }
+  }
 
-      show(tabId) {
-        let tab = tabTracker.getTab(tabId);
-        PageAction.for(extension).setProperty(tab, "show", true);
+  getAPI(context) {
+    let {extension} = context;
+
+    const {tabManager} = extension;
+
+    return {
+      pageAction: {
+        onClicked: new SingletonEventManager(context, "pageAction.onClicked", fire => {
+          let listener = (evt, tab) => {
+            fire.async(tabManager.convert(tab));
+          };
+          let pageAction = PageAction.for(extension);
+
+          pageAction.on("click", listener);
+          return () => {
+            pageAction.off("click", listener);
+          };
+        }).api(),
+
+        show(tabId) {
+          let tab = tabTracker.getTab(tabId);
+          PageAction.for(extension).setProperty(tab, "show", true);
+        },
+
+        hide(tabId) {
+          let tab = tabTracker.getTab(tabId);
+          PageAction.for(extension).setProperty(tab, "show", false);
+        },
+
+        setTitle(details) {
+          let tab = tabTracker.getTab(details.tabId);
+
+          
+          PageAction.for(extension).setProperty(tab, "title", details.title || null);
+        },
+
+        getTitle(details) {
+          let tab = tabTracker.getTab(details.tabId);
+
+          let title = PageAction.for(extension).getProperty(tab, "title");
+          return Promise.resolve(title);
+        },
+
+        setIcon(details) {
+          let tab = tabTracker.getTab(details.tabId);
+
+          let icon = IconDetails.normalize(details, extension, context);
+          PageAction.for(extension).setProperty(tab, "icon", icon);
+        },
+
+        setPopup(details) {
+          let tab = tabTracker.getTab(details.tabId);
+
+          
+          
+          
+          
+          
+          let url = details.popup && context.uri.resolve(details.popup);
+          PageAction.for(extension).setProperty(tab, "popup", url);
+        },
+
+        getPopup(details) {
+          let tab = tabTracker.getTab(details.tabId);
+
+          let popup = PageAction.for(extension).getProperty(tab, "popup");
+          return Promise.resolve(popup);
+        },
       },
-
-      hide(tabId) {
-        let tab = tabTracker.getTab(tabId);
-        PageAction.for(extension).setProperty(tab, "show", false);
-      },
-
-      setTitle(details) {
-        let tab = tabTracker.getTab(details.tabId);
-
-        
-        PageAction.for(extension).setProperty(tab, "title", details.title || null);
-      },
-
-      getTitle(details) {
-        let tab = tabTracker.getTab(details.tabId);
-
-        let title = PageAction.for(extension).getProperty(tab, "title");
-        return Promise.resolve(title);
-      },
-
-      setIcon(details) {
-        let tab = tabTracker.getTab(details.tabId);
-
-        let icon = IconDetails.normalize(details, extension, context);
-        PageAction.for(extension).setProperty(tab, "icon", icon);
-      },
-
-      setPopup(details) {
-        let tab = tabTracker.getTab(details.tabId);
-
-        
-        
-        
-        
-        
-        let url = details.popup && context.uri.resolve(details.popup);
-        PageAction.for(extension).setProperty(tab, "popup", url);
-      },
-
-      getPopup(details) {
-        let tab = tabTracker.getTab(details.tabId);
-
-        let popup = PageAction.for(extension).getProperty(tab, "popup");
-        return Promise.resolve(popup);
-      },
-    },
-  };
-});
+    };
+  }
+};
