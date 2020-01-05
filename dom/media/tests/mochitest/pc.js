@@ -1427,19 +1427,18 @@ PeerConnectionWrapper.prototype = {
 
 
 
-  waitForRtpFlow(track) {
-    var hasFlow = (stats, retries) => {
+  async waitForRtpFlow(track) {
+    let hasFlow = (stats, retries) => {
       info("Checking for stats in " + JSON.stringify(stats) + " for " + track.kind
         + " track " + track.id + ", retry number " + retries);
-      var rtp = stats.get([...Object.keys(stats)].find(key =>
+      let rtp = stats.get([...Object.keys(stats)].find(key =>
         !stats.get(key).isRemote && stats.get(key).type.endsWith("bound-rtp")));
       if (!rtp) {
-
         return false;
       }
       info("Should have RTP stats for track " + track.id);
-      info("RTP stats: "+JSON.stringify(rtp));
-      var nrPackets = rtp[rtp.type == "outbound-rtp" ? "packetsSent"
+      info("RTP stats: " + JSON.stringify(rtp));
+      let nrPackets = rtp[rtp.type == "outbound-rtp" ? "packetsSent"
                                                     : "packetsReceived"];
       info("Track " + track.id + " has " + nrPackets + " " +
            rtp.type + " RTP packets.");
@@ -1447,43 +1446,21 @@ PeerConnectionWrapper.prototype = {
     };
 
     
-    var retryInterval = 500;
+    const retryInterval = 500;
     
-    var timeoutInterval = 30000;
+    const timeout = 30000;
+    let retry = 0;
     
-    var checkStats = new Promise((resolve, reject)=>{
-      var retries = 0;
-      var timer = setInterval(()=>{
-        this._pc.getStats(track).then(stats=>{
-          if (hasFlow(stats, retries)) {
-            clearInterval(timer);
-            ok(true, "RTP flowing for " + track.kind + " track " + track.id);
-            resolve();
-          }
-          retries = retries + 1;
-          
-          
-          
-          if ((retries * retryInterval) > timeoutInterval) {
-            clearInterval(timer);
-          }
-        });
-      }, retryInterval);
-    });
-
-    info("Checking RTP packet flow for track " + track.id);
-    var retry = Promise.race([checkStats.then(new Promise((resolve, reject)=>{
-        info("checkStats completed for " + track.kind + " track " + track.id);
-        resolve();
-      })),
-      new Promise((accept,reject)=>wait(timeoutInterval).then(()=>{
-        info("Timeout checking for stats for track " + track.id + " after " + timeoutInterval + "ms");
-        reject("Timeout checking for stats for " + track.kind
-          + " track " + track.id + " after " + timeoutInterval + "ms");
-      })
-    )]);
-
-    return retry;
+    for (let remaining = timeout; remaining >= 0; remaining -= retryInterval) {
+      let stats = await this._pc.getStats(track);
+      if (hasFlow(stats, retry++)) {
+        ok(true, "RTP flowing for " + track.kind + " track " + track.id);
+        return stats;
+      }
+      await wait(retryInterval);
+    }
+    throw new Error("Timeout checking for stats for track " + track.id
+                    + " after at least" + timeout + "ms");
   },
 
   
