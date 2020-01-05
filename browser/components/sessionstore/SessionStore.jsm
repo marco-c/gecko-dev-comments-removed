@@ -211,10 +211,6 @@ this.SessionStore = {
     SessionStoreInternal.canRestoreLastSession = val;
   },
 
-  get lastClosedObjectType() {
-    return SessionStoreInternal.lastClosedObjectType;
-  },
-
   init: function ss_init() {
     SessionStoreInternal.init();
   },
@@ -505,33 +501,6 @@ var SessionStoreInternal = {
     if (!val) {
       LastSession.clear();
     }
-  },
-
-  
-
-
-
-
-  get lastClosedObjectType() {
-    if (this._closedWindows.length) {
-      
-      
-      
-      let tabTimestamps = [];
-      let windowsEnum = Services.wm.getEnumerator("navigator:browser");
-      while (windowsEnum.hasMoreElements()) {
-        let window = windowsEnum.getNext();
-        let windowState = this._windows[window.__SSi];
-        if (windowState && windowState._closedTabs[0]) {
-          tabTimestamps.push(windowState._closedTabs[0].closedAt);
-        }
-      }
-      if (!tabTimestamps.length ||
-          (tabTimestamps.sort((a, b) => b - a)[0] < this._closedWindows[0].closedAt)) {
-        return "window";
-      }
-    }
-    return "tab";
   },
 
   
