@@ -21,6 +21,12 @@ module.exports = {
     "no-implied-eval": "error",
     "no-eval": "error",
   },
+  
+  
+  
+  "settings": {
+    "html/xml-extensions": [ ".xhtml" ]
+  },
   "env": {
     "es6": true
   },
