@@ -170,6 +170,12 @@ class ParentDevToolsPanel {
       unwatchExtensionProxyContextLoad();
       browser.remove();
       toolbox.off("select", this.onToolboxPanelSelect);
+
+      
+      
+      this.waitTopLevelContext = new Promise(resolve => {
+        this._resolveTopLevelContext = resolve;
+      });
     };
   }
 
@@ -184,7 +190,6 @@ class ParentDevToolsPanel {
     if (!this.waitTopLevelContext || !this.panelAdded) {
       return;
     }
-
     if (!this.visible && id === this.id) {
       
       this.waitTopLevelContext.then(() => {
@@ -218,6 +223,8 @@ class ParentDevToolsPanel {
 
     this.context = null;
     this.toolbox = null;
+    this.waitTopLevelContext = null;
+    this._resolveTopLevelContext = null;
   }
 }
 

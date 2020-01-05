@@ -44,6 +44,13 @@ class ChildDevToolsPanel extends EventEmitter {
       if (view.viewType === "devtools_panel" &&
           view.devtoolsToolboxInfo.toolboxPanelId === this.id) {
         this._panelContext = view;
+
+        
+        view.callOnClose({
+          close: () => {
+            this._panelContext = null;
+          },
+        });
         return view;
       }
     }
