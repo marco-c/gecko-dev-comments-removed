@@ -1724,6 +1724,8 @@ private:
   mozilla::dom::TabGroup* TabGroupInner();
   mozilla::dom::TabGroup* TabGroupOuter();
 
+  bool IsBackgroundInternal() const;
+
 public:
   
   virtual nsresult Dispatch(const char* aName,

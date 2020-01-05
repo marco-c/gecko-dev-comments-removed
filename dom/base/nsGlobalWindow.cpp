@@ -319,8 +319,7 @@ nsGlobalWindow::DOMMinTimeoutValue() const {
   int32_t value = std::max(mBackPressureDelayMS, 0);
   
   
-  bool isBackground = mAudioContexts.IsEmpty() &&
-    (!mOuterWindow || mOuterWindow->IsBackground());
+  bool isBackground = mAudioContexts.IsEmpty() && IsBackgroundInternal();
   return
     std::max(isBackground ? gMinBackgroundTimeoutValue : gMinTimeoutValue, value);
 }
@@ -654,6 +653,11 @@ void nsGlobalWindow::UnthrottleIdleCallbackRequests()
   }
 }
 
+bool
+nsGlobalWindow::IsBackgroundInternal() const
+{
+  return !mOuterWindow || mOuterWindow->IsBackground();
+}
 
 namespace mozilla {
 namespace dom {
@@ -12741,7 +12745,7 @@ nsGlobalWindow::SetTimeoutOrInterval(nsITimeoutHandler* aHandler,
   uint32_t nestingLevel = sNestingLevel + 1;
   uint32_t realInterval = interval;
   if (aIsInterval || nestingLevel >= DOM_CLAMP_TIMEOUT_NESTING_LEVEL ||
-      mBackPressureDelayMS > 0) {
+      mBackPressureDelayMS > 0 || IsBackgroundInternal()) {
     
     
     realInterval = std::max(realInterval, uint32_t(DOMMinTimeoutValue()));
