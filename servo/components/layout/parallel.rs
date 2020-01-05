@@ -25,7 +25,7 @@ use util::time::{TimeProfilerCategory, ProfilerMetadata, TimeProfilerChan, profi
 use util::workqueue::{WorkQueue, WorkUnit, WorkerProxy};
 use std::mem;
 use std::ptr;
-use std::sync::atomic::{AtomicInt, Ordering};
+use std::sync::atomic::{AtomicIsize, Ordering};
 
 #[allow(dead_code)]
 fn static_assertion(node: UnsafeLayoutNode) {
@@ -68,13 +68,13 @@ pub fn mut_borrowed_flow_to_unsafe_flow(flow: &mut Flow) -> UnsafeFlow {
 
 pub struct DomParallelInfo {
     
-    pub children_count: AtomicInt,
+    pub children_count: AtomicIsize,
 }
 
 impl DomParallelInfo {
     pub fn new() -> DomParallelInfo {
         DomParallelInfo {
-            children_count: AtomicInt::new(0),
+            children_count: AtomicIsize::new(0),
         }
     }
 }
@@ -187,7 +187,7 @@ trait ParallelPostorderDomTraversal : PostorderDomTraversal {
 
 pub struct FlowParallelInfo {
     
-    pub children_count: AtomicInt,
+    pub children_count: AtomicIsize,
     
     pub parent: UnsafeFlow,
 }
@@ -195,7 +195,7 @@ pub struct FlowParallelInfo {
 impl FlowParallelInfo {
     pub fn new() -> FlowParallelInfo {
         FlowParallelInfo {
-            children_count: AtomicInt::new(0),
+            children_count: AtomicIsize::new(0),
             parent: null_unsafe_flow(),
         }
     }
