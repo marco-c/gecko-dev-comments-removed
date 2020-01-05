@@ -5034,6 +5034,11 @@ pref("dom.vr.openvr.enabled", false);
 
 pref("dom.vr.poseprediction.enabled", false);
 
+
+
+
+pref("dom.vr.require-gesture", true);
+
 pref("gfx.vr.openvr-runtime", "");
 
 pref("gfx.vr.osvr.utilLibPath", "");

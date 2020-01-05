@@ -12,7 +12,9 @@
 #include "mozilla/dom/VRDisplay.h"
 #include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/dom/VRDisplayBinding.h"
+#include "mozilla/EventStateManager.h"
 #include "Navigator.h"
+#include "gfxPrefs.h"
 #include "gfxVR.h"
 #include "VRDisplayClient.h"
 #include "VRManagerChild.h"
@@ -450,7 +452,9 @@ VRDisplay::ResetPose()
 }
 
 already_AddRefed<Promise>
-VRDisplay::RequestPresent(const nsTArray<VRLayer>& aLayers, ErrorResult& aRv)
+VRDisplay::RequestPresent(const nsTArray<VRLayer>& aLayers,
+                          CallerType aCallerType,
+                          ErrorResult& aRv)
 {
   nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(GetParentObject());
   if (!global) {
@@ -464,7 +468,15 @@ VRDisplay::RequestPresent(const nsTArray<VRLayer>& aLayers, ErrorResult& aRv)
   nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
   NS_ENSURE_TRUE(obs, nullptr);
 
-  if (!IsPresenting() && IsAnyPresenting()) {
+  if (!EventStateManager::IsHandlingUserInput() &&
+      aCallerType != CallerType::System &&
+      gfxPrefs::VRRequireGesture()) {
+    
+    
+    
+    
+    promise->MaybeRejectWithUndefined();
+  } else if (!IsPresenting() && IsAnyPresenting()) {
     
     
     
