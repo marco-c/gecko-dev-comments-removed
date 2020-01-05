@@ -255,16 +255,8 @@ static void nr_turn_stun_ctx_cb(NR_SOCKET s, int how, void *arg)
 
       
       
-      if (ctx->stun->error_code == 438) {
-        
-        nr_ice_accumulate_count(&(ctx->tctx->cnt_438s), 1);
-      }
       if (ctx->stun->error_code == 401 || ctx->stun->error_code == 438) {
         if (ctx->retry_ct > 0) {
-          if (ctx->stun->error_code == 401) {
-            
-            nr_ice_accumulate_count(&(ctx->tctx->cnt_401s), 1);
-          }
           r_log(NR_LOG_TURN, LOG_WARNING, "TURN(%s): Exceeded the number of retries", ctx->tctx->label);
           ABORT(R_FAILED);
         }
@@ -614,8 +606,6 @@ static void nr_turn_client_permission_error_cb(NR_SOCKET s, int how, void *arg)
   nr_turn_stun_ctx *ctx = (nr_turn_stun_ctx *)arg;
 
   if (ctx->last_error_code == 403) {
-    
-    nr_ice_accumulate_count(&(ctx->tctx->cnt_403s), 1);
     r_log(NR_LOG_TURN, LOG_WARNING, "TURN(%s): mode %d, permission denied",
           ctx->tctx->label, ctx->mode);
 
