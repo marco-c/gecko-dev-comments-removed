@@ -3184,6 +3184,13 @@ protected:
   bool mPostedFlushUserFontSet : 1;
 
   
+  
+  bool mDidFireDOMContentLoaded : 1;
+
+  
+  bool mHasScrollLinkedEffect : 1;
+
+  
   nsCompatibility mCompatMode;
 
   
@@ -3333,9 +3340,6 @@ protected:
   nsTArray<RefPtr<mozilla::dom::AnonymousContent>> mAnonymousContents;
 
   uint32_t mBlockDOMContentLoaded;
-  bool mDidFireDOMContentLoaded:1;
-
-  bool mHasScrollLinkedEffect:1;
 
   
   PRCList mDOMMediaQueryLists;
