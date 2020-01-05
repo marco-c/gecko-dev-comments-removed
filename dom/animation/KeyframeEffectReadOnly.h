@@ -20,8 +20,8 @@
 #include "mozilla/EffectCompositor.h"
 #include "mozilla/KeyframeEffectParams.h"
 #include "mozilla/LayerAnimationInfo.h" 
-#include "mozilla/ServoBindingHelpers.h" 
-                                         
+#include "mozilla/ServoBindingTypes.h" 
+                                       
 #include "mozilla/StyleAnimationValue.h"
 #include "mozilla/dom/AnimationEffectReadOnly.h"
 #include "mozilla/dom/Element.h"

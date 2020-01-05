@@ -52,11 +52,6 @@ class ImageTracker;
 } 
 } 
 
-typedef nsINode RawGeckoNode;
-typedef mozilla::dom::Element RawGeckoElement;
-typedef nsIDocument RawGeckoDocument;
-struct ServoNodeData;
-
 
 #include "nsStyleStructFwd.h"
 
