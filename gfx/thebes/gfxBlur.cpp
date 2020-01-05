@@ -557,8 +557,14 @@ GetBlur(gfxContext* aDestinationCtx,
   
   
   
+  
+  
+  
+  
+  
   Matrix destMatrix = ToMatrix(aDestinationCtx->CurrentMatrix());
-  bool useDestRect = !destMatrix.IsRectilinear() || destMatrix.HasNonIntegerTranslation();
+  bool useDestRect = !destMatrix.IsRectilinear() || destMatrix.HasNonIntegerTranslation() ||
+                     aDestinationCtx->GetDrawTarget()->IsRecording();
   if (useDestRect) {
     minSize = aRectSize;
   }
