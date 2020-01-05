@@ -3333,6 +3333,9 @@ nsCSSRendering::ComputeImageLayerPositioningArea(nsPresContext* aPresContext,
 
   
   
+  
+  
+  
   if (aLayer.mOrigin != NS_STYLE_IMAGELAYER_ORIGIN_BORDER && geometryFrame) {
     nsMargin border = geometryFrame->GetUsedBorder();
     if (aLayer.mOrigin != NS_STYLE_IMAGELAYER_ORIGIN_PADDING) {
