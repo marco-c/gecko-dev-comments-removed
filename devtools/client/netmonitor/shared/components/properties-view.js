@@ -100,15 +100,21 @@ const PropertiesView = createClass({
   },
 
   renderValueWithRep(props) {
+    const { member } = props;
+
     
-    if (props.member.level === 0) {
+    
+    
+    
+    if (member.level === 0 ||
+      (typeof member.value === "object" && member.value.value)) {
       return null;
     }
 
     return Rep(Object.assign(props, {
       
       
-      member: Object.assign({}, props.member, { open: false }),
+      member: Object.assign({}, member, { open: false }),
       mode: MODE.TINY,
       cropLimit: 60,
     }));
@@ -149,11 +155,11 @@ const PropertiesView = createClass({
 
   render() {
     const {
-      object,
       decorator,
       enableInput,
       expandableStrings,
       filterPlaceHolder,
+      object,
       renderRow,
       renderValue,
       sectionNames,
@@ -191,8 +197,6 @@ const PropertiesView = createClass({
       )
     );
   }
-
 });
 
 module.exports = PropertiesView;
-

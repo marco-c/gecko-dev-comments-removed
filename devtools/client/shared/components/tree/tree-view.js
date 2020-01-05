@@ -78,7 +78,7 @@ define(function (require, exports, module) {
         getHeaderClass: PropTypes.func,
         renderValue: PropTypes.func,
         renderRow: PropTypes.func,
-        renderCelL: PropTypes.func,
+        renderCell: PropTypes.func,
         renderLabelCell: PropTypes.func,
       }),
       
