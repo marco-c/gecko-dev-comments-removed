@@ -1360,21 +1360,21 @@ function getInternals(obj)
 
     var internals = callFunction(std_WeakMap_get, internalsMap, obj);
 
-    assert(internals.type !== "partial", "must have been successfully initialized");
-    var lazyData = internals.lazyData;
-    if (!lazyData)
-        return internals.internalProps;
+    
+    var internalProps = maybeInternalProperties(internals);
+    if (internalProps)
+        return internalProps;
 
-    var internalProps;
+    
     var type = internals.type;
     if (type === "Collator")
-        internalProps = resolveCollatorInternals(lazyData)
+        internalProps = resolveCollatorInternals(internals.lazyData)
     else if (type === "DateTimeFormat")
-        internalProps = resolveDateTimeFormatInternals(lazyData)
-    else if (type === "PluralRules")
-        internalProps = resolvePluralRulesInternals(lazyData)
+        internalProps = resolveDateTimeFormatInternals(internals.lazyData)
+    else if (type === "NumberFormat")
+        internalProps = resolveNumberFormatInternals(internals.lazyData);
     else
-        internalProps = resolveNumberFormatInternals(lazyData);
+        internalProps = resolvePluralRulesInternals(internals.lazyData)
     setInternalProperties(internals, internalProps);
     return internalProps;
 }
@@ -2797,7 +2797,7 @@ function dateTimeFormatFormatToBind() {
     var x = (date === undefined) ? std_Date_now() : ToNumber(date);
 
     
-    return intl_FormatDateTime(this, x, false);
+    return intl_FormatDateTime(this, x,  false);
 }
 
 
@@ -2836,7 +2836,7 @@ function Intl_DateTimeFormat_formatToParts() {
     var x = (date === undefined) ? std_Date_now() : ToNumber(date);
 
     
-    return intl_FormatDateTime(this, x, true);
+    return intl_FormatDateTime(this, x,  true);
 }
 
 
@@ -2959,6 +2959,8 @@ function resolveICUPattern(pattern, result) {
         }
     }
 }
+
+
 
 
 
@@ -3181,40 +3183,83 @@ function Intl_PluralRules_resolvedOptions() {
 }
 
 
+
+
+
+
+
+
+
+
 function Intl_getCanonicalLocales(locales) {
-  let codes = CanonicalizeLocaleList(locales);
-  let result = [];
+    
+    var localeList = CanonicalizeLocaleList(locales);
 
-  let len = codes.length;
-  let k = 0;
+    
+    var array = [];
 
-  while (k < len) {
-    _DefineDataProperty(result, k, codes[k]);
-    k++;
-  }
-  return result;
+    for (var n = 0, len = localeList.length; n < len; n++)
+        _DefineDataProperty(array, n, localeList[n]);
+
+    return array;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function Intl_getCalendarInfo(locales) {
-  const requestedLocales = CanonicalizeLocaleList(locales);
+    
+    const requestedLocales = CanonicalizeLocaleList(locales);
 
-  const DateTimeFormat = dateTimeFormatInternalProperties;
-  const localeData = DateTimeFormat.localeData;
+    const DateTimeFormat = dateTimeFormatInternalProperties;
 
-  const localeOpt = new Record();
-  localeOpt.localeMatcher = "best fit";
+    
+    const localeData = DateTimeFormat.localeData;
 
-  const r = ResolveLocale(callFunction(DateTimeFormat.availableLocales, DateTimeFormat),
-                          requestedLocales,
-                          localeOpt,
-                          DateTimeFormat.relevantExtensionKeys,
-                          localeData);
+    
+    const localeOpt = new Record();
 
-  const result = intl_GetCalendarInfo(r.locale);
-  result.calendar = r.ca;
-  result.locale = r.locale;
+    
+    localeOpt.localeMatcher = "best fit";
 
-  return result;
+    
+    
+    
+    const r = ResolveLocale(callFunction(DateTimeFormat.availableLocales, DateTimeFormat),
+                            requestedLocales,
+                            localeOpt,
+                            DateTimeFormat.relevantExtensionKeys,
+                            localeData);
+
+    
+    const result = intl_GetCalendarInfo(r.locale);
+    _DefineDataProperty(result, "calendar", r.ca);
+    _DefineDataProperty(result, "locale", r.locale);
+
+    
+    return result;
 }
 
 
@@ -3267,6 +3312,7 @@ function Intl_getDisplayNames(locales, options) {
 
     
     const localeOpt = new Record();
+
     
     localeOpt.localeMatcher = "best fit";
 
@@ -3280,6 +3326,7 @@ function Intl_getDisplayNames(locales, options) {
 
     
     const style = GetOption(options, "style", "string", ["long", "short", "narrow"], "long");
+
     
     let keys = options.keys;
 
@@ -3298,8 +3345,10 @@ function Intl_getDisplayNames(locales, options) {
     
     
     let processedKeys = [];
+
     
     let len = ToLength(keys.length);
+
     
     
     for (let i = 0; i < len; i++) {

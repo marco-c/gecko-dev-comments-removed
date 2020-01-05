@@ -373,6 +373,7 @@ intl_FormatDateTime(JSContext* cx, unsigned argc, Value* vp);
 
 
 
+
 extern MOZ_MUST_USE bool
 intl_PluralRules_availableLocales(JSContext* cx, unsigned argc, Value* vp);
 
@@ -400,6 +401,9 @@ intl_SelectPluralRule(JSContext* cx, unsigned argc, Value* vp);
 
 extern MOZ_MUST_USE bool
 intl_GetPluralCategories(JSContext* cx, unsigned argc, Value* vp);
+
+
+
 
 
 

@@ -104,7 +104,7 @@ function Date_toLocaleString() {
     }
 
     
-    return intl_FormatDateTime(dateTimeFormat, x, false);
+    return intl_FormatDateTime(dateTimeFormat, x,  false);
 }
 
 
@@ -137,7 +137,7 @@ function Date_toLocaleDateString() {
     }
 
     
-    return intl_FormatDateTime(dateTimeFormat, x, false);
+    return intl_FormatDateTime(dateTimeFormat, x,  false);
 }
 
 
@@ -170,5 +170,5 @@ function Date_toLocaleTimeString() {
     }
 
     
-    return intl_FormatDateTime(dateTimeFormat, x, false);
+    return intl_FormatDateTime(dateTimeFormat, x,  false);
 }
