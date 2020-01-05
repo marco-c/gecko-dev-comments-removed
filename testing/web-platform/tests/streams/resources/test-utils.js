@@ -6,10 +6,10 @@ self.getterRejects = (t, obj, getterName, target) => {
   return promise_rejects(t, new TypeError(), getter.call(target));
 };
 
-self.methodRejects = (t, obj, methodName, target) => {
+self.methodRejects = (t, obj, methodName, target, args) => {
   const method = obj[methodName];
 
-  return promise_rejects(t, new TypeError(), method.call(target));
+  return promise_rejects(t, new TypeError(), method.apply(target, args));
 };
 
 self.getterThrows = (obj, getterName, target) => {
@@ -41,3 +41,10 @@ self.garbageCollect = () => {
 };
 
 self.delay = ms => new Promise(resolve => step_timeout(resolve, ms));
+
+
+
+
+
+
+self.flushAsyncEvents = () => delay(0).then(() => delay(0)).then(() => delay(0)).then(() => delay(0));

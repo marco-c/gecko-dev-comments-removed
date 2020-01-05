@@ -96,6 +96,14 @@ function setupRangeTests() {
     doctype = document.doctype;
     foreignDoctype = foreignDoc.doctype;
 
+    
+    
+    
+    
+    
+    
+    
+    
     testRanges = [
         
         
