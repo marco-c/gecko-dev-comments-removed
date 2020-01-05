@@ -9,6 +9,7 @@ module.exports = {
     "mozilla/import-globals": "warn",
     "mozilla/no-import-into-var-and-global": "error",
     "mozilla/no-useless-parameters": "error",
+    "mozilla/no-useless-removeEventListener": "error",
 
     
     "no-unsafe-negation": "error",
