@@ -735,18 +735,19 @@ PresentationConnection::AsyncCloseConnectionWithErrorMsg(const nsAString& aMessa
   }
 
   nsString message = nsString(aMessage);
+  RefPtr<PresentationConnection> self = this;
   nsCOMPtr<nsIRunnable> r =
-    NS_NewRunnableFunction([this, message]() -> void {
+    NS_NewRunnableFunction([self, message]() -> void {
       
       
-      mState = PresentationConnectionState::Closed;
+      self->mState = PresentationConnectionState::Closed;
 
       
       
       Unused << NS_WARN_IF(NS_FAILED(
-        DispatchConnectionCloseEvent(PresentationConnectionClosedReason::Error,
-                                      message,
-                                      true)));
+        self->DispatchConnectionCloseEvent(PresentationConnectionClosedReason::Error,
+                                           message,
+                                           true)));
 
       nsCOMPtr<nsIPresentationService> service =
         do_GetService(PRESENTATION_SERVICE_CONTRACTID);
@@ -755,8 +756,8 @@ PresentationConnection::AsyncCloseConnectionWithErrorMsg(const nsAString& aMessa
       }
 
       Unused << NS_WARN_IF(NS_FAILED(
-        service->CloseSession(mId,
-                              mRole,
+        service->CloseSession(self->mId,
+                              self->mRole,
                               nsIPresentationService::CLOSED_REASON_ERROR)));
     });
 
