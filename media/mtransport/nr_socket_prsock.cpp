@@ -743,6 +743,58 @@ abort:
   return(_status);
 }
 
+static int ShouldDrop(size_t len) {
+  
+  
+
+  
+  static SimpleTokenBucket burst(16384*1, 16384);
+  
+  static SimpleTokenBucket sustained(7372*20, 7372);
+
+  
+  if (burst.getTokens(UINT32_MAX) < len) {
+    r_log(LOG_GENERIC, LOG_ERR,
+               "Short term global rate limit for STUN requests exceeded.");
+#ifdef MOZILLA_INTERNAL_API
+    nr_socket_short_term_violation_time = TimeStamp::Now();
+#endif
+
+
+#if !EARLY_BETA_OR_EARLIER
+    return R_WOULDBLOCK;
+#else
+    MOZ_ASSERT(false,
+               "Short term global rate limit for STUN requests exceeded. Go "
+               "bug bcampen@mozilla.com if you weren't intentionally "
+               "spamming ICE candidates, or don't know what that means.");
+#endif
+  }
+
+  if (sustained.getTokens(UINT32_MAX) < len) {
+    r_log(LOG_GENERIC, LOG_ERR,
+               "Long term global rate limit for STUN requests exceeded.");
+#ifdef MOZILLA_INTERNAL_API
+    nr_socket_long_term_violation_time = TimeStamp::Now();
+#endif
+
+#if !EARLY_BETA_OR_EARLIER
+    return R_WOULDBLOCK;
+#else
+    MOZ_ASSERT(false,
+               "Long term global rate limit for STUN requests exceeded. Go "
+               "bug bcampen@mozilla.com if you weren't intentionally "
+               "spamming ICE candidates, or don't know what that means.");
+#endif
+  }
+
+  
+  
+  burst.getTokens(len);
+  sustained.getTokens(len);
+  return 0;
+}
+
 
 int NrSocket::sendto(const void *msg, size_t len,
                      int flags, nr_transport_addr *to) {
@@ -757,55 +809,8 @@ int NrSocket::sendto(const void *msg, size_t len,
   if(fd_==nullptr)
     ABORT(R_EOD);
 
-  if (nr_is_stun_request_message((UCHAR*)msg, len)) {
-    
-    
-
-    
-    static SimpleTokenBucket burst(16384*1, 16384);
-    
-    static SimpleTokenBucket sustained(7372*20, 7372);
-
-    
-    if (burst.getTokens(UINT32_MAX) < len) {
-      r_log(LOG_GENERIC, LOG_ERR,
-                 "Short term global rate limit for STUN requests exceeded.");
-#ifdef MOZILLA_INTERNAL_API
-      nr_socket_short_term_violation_time = TimeStamp::Now();
-#endif
-
-
-#if !EARLY_BETA_OR_EARLIER
-      ABORT(R_WOULDBLOCK);
-#else
-      MOZ_ASSERT(false,
-                 "Short term global rate limit for STUN requests exceeded. Go "
-                 "bug bcampen@mozilla.com if you weren't intentionally "
-                 "spamming ICE candidates, or don't know what that means.");
-#endif
-    }
-
-    if (sustained.getTokens(UINT32_MAX) < len) {
-      r_log(LOG_GENERIC, LOG_ERR,
-                 "Long term global rate limit for STUN requests exceeded.");
-#ifdef MOZILLA_INTERNAL_API
-      nr_socket_long_term_violation_time = TimeStamp::Now();
-#endif
-
-#if !EARLY_BETA_OR_EARLIER
-      ABORT(R_WOULDBLOCK);
-#else
-      MOZ_ASSERT(false,
-                 "Long term global rate limit for STUN requests exceeded. Go "
-                 "bug bcampen@mozilla.com if you weren't intentionally "
-                 "spamming ICE candidates, or don't know what that means.");
-#endif
-    }
-
-    
-    
-    burst.getTokens(len);
-    sustained.getTokens(len);
+  if (nr_is_stun_request_message((UCHAR*)msg, len) && ShouldDrop(len)) {
+    ABORT(R_WOULDBLOCK);
   }
 
   
@@ -1361,6 +1366,10 @@ int NrUdpSocketIpc::sendto(const void *msg, size_t len, int flags,
   net::NetAddr addr;
   if ((r=nr_transport_addr_to_netaddr(to, &addr))) {
     return r;
+  }
+
+  if (nr_is_stun_request_message((UCHAR*)msg, len) && ShouldDrop(len)) {
+    return R_WOULDBLOCK;
   }
 
   nsAutoPtr<DataBuffer> buf(new DataBuffer(static_cast<const uint8_t*>(msg), len));
