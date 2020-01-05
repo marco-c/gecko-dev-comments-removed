@@ -357,6 +357,33 @@ class ScriptSource
 {
     friend class SourceCompressionTask;
 
+  public:
+    
+    
+    
+    
+    
+    class PinnedChars
+    {
+        PinnedChars** stack_;
+        PinnedChars* prev_;
+
+        ScriptSource* source_;
+        const char16_t* chars_;
+
+      public:
+        PinnedChars(JSContext* cx, ScriptSource* source,
+                    UncompressedSourceCache::AutoHoldEntry& holder,
+                    size_t begin, size_t len);
+
+        ~PinnedChars();
+
+        const char16_t* get() const {
+            return chars_;
+        }
+    };
+
+  private:
     uint32_t refs;
 
     
@@ -389,6 +416,12 @@ class ScriptSource
 
     using SourceType = mozilla::Variant<Missing, Uncompressed, Compressed>;
     SourceType data;
+
+    
+    
+    
+    PinnedChars* pinnedCharsStack_;
+    mozilla::Maybe<Compressed> pendingCompressed_;
 
     
     UniqueChars filename_;
@@ -454,10 +487,21 @@ class ScriptSource
     const char16_t* chunkChars(JSContext* cx, UncompressedSourceCache::AutoHoldEntry& holder,
                                size_t chunk);
 
+    
+    
+    
+    
+    
+    const char16_t* chars(JSContext* cx, UncompressedSourceCache::AutoHoldEntry& asp,
+                          size_t begin, size_t len);
+
+    void movePendingCompressedSource();
+
   public:
     explicit ScriptSource()
       : refs(0),
         data(SourceType(Missing())),
+        pinnedCharsStack_(nullptr),
         filename_(nullptr),
         displayURL_(nullptr),
         sourceMapURL_(nullptr),
@@ -512,11 +556,6 @@ class ScriptSource
         MOZ_ASSERT(hasSourceData());
         return data.match(LengthMatcher());
     }
-
-    
-    
-    const char16_t* chars(JSContext* cx, UncompressedSourceCache::AutoHoldEntry& asp,
-                          size_t begin, size_t len);
 
     JSFlatString* substring(JSContext* cx, size_t start, size_t stop);
     JSFlatString* substringDontDeflate(JSContext* cx, size_t start, size_t stop);
