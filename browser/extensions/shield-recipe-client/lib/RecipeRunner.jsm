@@ -10,10 +10,15 @@ Cu.import("resource://gre/modules/Timer.jsm");
 Cu.import("resource://gre/modules/Task.jsm");
 Cu.import("resource://shield-recipe-client/lib/LogManager.jsm");
 Cu.import("resource://shield-recipe-client/lib/NormandyDriver.jsm");
-Cu.import("resource://shield-recipe-client/lib/EnvExpressions.jsm");
+Cu.import("resource://shield-recipe-client/lib/FilterExpressions.jsm");
 Cu.import("resource://shield-recipe-client/lib/NormandyApi.jsm");
 Cu.import("resource://shield-recipe-client/lib/SandboxManager.jsm");
+Cu.import("resource://shield-recipe-client/lib/ClientEnvironment.jsm");
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.importGlobalProperties(["fetch"]); 
+
+XPCOMUtils.defineLazyModuleGetter(this, "Preferences", "resource://gre/modules/Preferences.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "Storage", "resource://shield-recipe-client/lib/Storage.jsm");
 
 this.EXPORTED_SYMBOLS = ["RecipeRunner"];
 
@@ -59,6 +64,11 @@ this.RecipeRunner = {
   },
 
   start: Task.async(function* () {
+    
+    if (!Preferences.get("extensions.shield-recipe-client.experiments.lazy_classify", false)) {
+      yield ClientEnvironment.getClientClassification();
+    }
+
     let recipes;
     try {
       recipes = yield NormandyApi.fetchRecipes({enabled: true});
@@ -68,18 +78,10 @@ this.RecipeRunner = {
       return;
     }
 
-    let extraContext;
-    try {
-      extraContext = yield this.getExtraContext();
-    } catch (e) {
-      log.warn(`Couldn't get extra filter context: ${e}`);
-      extraContext = {};
-    }
-
     const recipesToRun = [];
 
     for (const recipe of recipes) {
-      if (yield this.checkFilter(recipe, extraContext)) {
+      if (yield this.checkFilter(recipe)) {
         recipesToRun.push(recipe);
       }
     }
@@ -90,7 +92,7 @@ this.RecipeRunner = {
       for (const recipe of recipesToRun) {
         try {
           log.debug(`Executing recipe "${recipe.name}" (action=${recipe.action})`);
-          yield this.executeRecipe(recipe, extraContext);
+          yield this.executeRecipe(recipe);
         } catch (e) {
           log.error(`Could not execute recipe ${recipe.name}:`, e);
         }
@@ -98,9 +100,10 @@ this.RecipeRunner = {
     }
   }),
 
-  getExtraContext() {
-    return NormandyApi.classifyClient()
-      .then(clientData => ({normandy: clientData}));
+  getFilterContext() {
+    return {
+      normandy: ClientEnvironment.getEnvironment(),
+    };
   },
 
   
@@ -110,29 +113,30 @@ this.RecipeRunner = {
 
 
 
-  checkFilter(recipe, extraContext) {
-    return EnvExpressions.eval(recipe.filter_expression, extraContext)
-      .then(result => {
-        return !!result;
-      })
-      .catch(error => {
-        log.error(`Error checking filter for "${recipe.name}"`);
-        log.error(`Filter: "${recipe.filter_expression}"`);
-        log.error(`Error: "${error}"`);
-      });
-  },
+  checkFilter: Task.async(function* (recipe) {
+    const context = this.getFilterContext();
+    try {
+      const result = yield FilterExpressions.eval(recipe.filter_expression, context);
+      return !!result;
+    } catch (err) {
+      log.error(`Error checking filter for "${recipe.name}"`);
+      log.error(`Filter: "${recipe.filter_expression}"`);
+      log.error(`Error: "${err}"`);
+      return false;
+    }
+  }),
 
   
 
 
 
 
-  executeRecipe: Task.async(function* (recipe, extraContext) {
+  executeRecipe: Task.async(function* (recipe) {
     const action = yield NormandyApi.fetchAction(recipe.action);
     const response = yield fetch(action.implementation_url);
 
     const actionScript = yield response.text();
-    yield this.executeAction(recipe, extraContext, actionScript);
+    yield this.executeAction(recipe, actionScript);
   }),
 
   
@@ -141,8 +145,7 @@ this.RecipeRunner = {
 
 
 
-
-  executeAction(recipe, extraContext, actionScript) {
+  executeAction(recipe, actionScript) {
     return new Promise((resolve, reject) => {
       const sandboxManager = new SandboxManager();
       const prepScript = `
@@ -159,7 +162,7 @@ this.RecipeRunner = {
         this.clearTimeout = sandboxedDriver.clearTimeout;
       `;
 
-      const driver = new NormandyDriver(sandboxManager, extraContext);
+      const driver = new NormandyDriver(sandboxManager);
       sandboxManager.cloneIntoGlobal("sandboxedDriver", driver, {cloneFunctions: true});
       sandboxManager.cloneIntoGlobal("sandboxedRecipe", recipe);
 
@@ -185,4 +188,24 @@ this.RecipeRunner = {
       sandboxManager.evalInSandbox(actionScript);
     });
   },
+
+  
+
+
+
+
+  testRun: Task.async(function* (baseApiUrl) {
+    const oldApiUrl = prefs.getCharPref("api_url");
+    prefs.setCharPref("api_url", baseApiUrl);
+
+    try {
+      Storage.clearAllStorage();
+      ClientEnvironment.clearClassifyCache();
+      NormandyApi.clearIndexCache();
+      yield this.start();
+    } finally {
+      prefs.setCharPref("api_url", oldApiUrl);
+      NormandyApi.clearIndexCache();
+    }
+  }),
 };
