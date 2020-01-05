@@ -118,7 +118,7 @@ public:
 
 
 
-  virtual void NodeInfoChanged(nsIDocument* aOldDoc) override;
+  virtual void NodeInfoChanged(nsIDocument* aOldDoc) final;
 
   NS_IMETHOD WalkContentStyleRules(nsRuleWalker* aRuleWalker) override;
   void WalkAnimatedContentStyleRules(nsRuleWalker* aRuleWalker);

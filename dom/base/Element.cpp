@@ -1673,7 +1673,7 @@ Element::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
     
     
     
-    static_cast<nsStyledElement*>(this)->ReparseStyleAttribute(false);
+    static_cast<nsStyledElement*>(this)->ReparseStyleAttribute(false, false);
   }
 
   if (aDocument) {
