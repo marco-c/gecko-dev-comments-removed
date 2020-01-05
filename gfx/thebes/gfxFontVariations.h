@@ -1,0 +1,22 @@
+
+
+
+
+
+
+#ifndef GFX_FONT_VARIATIONS_H
+#define GFX_FONT_VARIATIONS_H
+
+
+struct gfxFontVariation {
+    uint32_t mTag;
+    float mValue;
+};
+
+inline bool
+operator==(const gfxFontVariation& a, const gfxFontVariation& b)
+{
+    return (a.mTag == b.mTag) && (a.mValue == b.mValue);
+}
+
+#endif
