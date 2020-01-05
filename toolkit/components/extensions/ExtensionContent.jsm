@@ -151,9 +151,16 @@ Script.prototype = {
     }
 
     if (this.match_about_blank && ["about:blank", "about:srcdoc"].includes(uri.spec)) {
+      const principal = window.document.nodePrincipal;
+
       
       
-      uri = window.document.nodePrincipal.URI;
+      if (window === window.top && principal.isNullPrincipal) {
+        return true;
+      }
+      
+      
+      uri = principal.URI;
     }
 
     if (!(this.matches_.matches(uri) || this.matches_host_.matchesIgnoringPath(uri))) {
@@ -631,7 +638,7 @@ DocumentManager = {
 
     if (!promises.length) {
       let details = {};
-      for (let key of ["all_frames", "frame_id", "matches_about_blank", "matchesHost"]) {
+      for (let key of ["all_frames", "frame_id", "match_about_blank", "matchesHost"]) {
         if (key in options) {
           details[key] = options[key];
         }

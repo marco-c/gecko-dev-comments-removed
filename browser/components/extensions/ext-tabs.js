@@ -548,6 +548,10 @@ extensions.registerSchemaAPI("tabs", "addon_parent", context => {
             }
           }
 
+          
+          
+          options.disallowInheritPrincipal = true;
+
           tabListener.initTabReady();
           let tab = window.gBrowser.addTab(url || window.BROWSER_NEW_TAB_URL, options);
 
