@@ -82,11 +82,6 @@
 #include "mozilla/dom/PerformanceTiming.h"
 #include "mozilla/layers/APZThreadUtils.h"
 
-#if defined(MOZ_WIDGET_GTK)
-#include "gfxPlatformGtk.h" 
-#endif
-
-
 
 #include "imgIContainer.h"
 #include "nsIImageLoadingContent.h"
@@ -2230,19 +2225,12 @@ nsPresContext::UserFontSetUpdated(gfxUserFontEntry* aUpdatedFont)
   if (!mShell)
     return;
 
-  bool usePlatformFontList = true;
-#if defined(MOZ_WIDGET_GTK)
-  usePlatformFontList = gfxPlatformGtk::UseFcFontList();
-#endif
-
   
   
   
   
   
-  
-  
-  if (!usePlatformFontList || !aUpdatedFont) {
+  if (!aUpdatedFont) {
     PostRebuildAllStyleDataEvent(NS_STYLE_HINT_REFLOW, eRestyle_ForceDescendants);
     return;
   }
