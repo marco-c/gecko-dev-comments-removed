@@ -659,6 +659,12 @@ class Viewport {
     });
   }
 
+  print() {
+    this._doAction({
+      type: 'startPrint'
+    });
+  }
+
   
   registerActionHandler(handler) {
     if (typeof handler === 'function') {
