@@ -1007,7 +1007,9 @@ protected:
             AutoActionListenerArray;
   AutoActionListenerArray mActionListeners;
   
-  nsTArray<OwningNonNull<nsIEditorObserver>> mEditorObservers;
+  typedef AutoTArray<OwningNonNull<nsIEditorObserver>, 3>
+            AutoEditorObserverArray;
+  AutoEditorObserverArray mEditorObservers;
   
   nsTArray<OwningNonNull<nsIDocumentStateListener>> mDocStateListeners;
 
