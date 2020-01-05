@@ -711,6 +711,12 @@ NetworkEventsHandler.prototype = {
 
 
   getString: function (stringGrip) {
+    
+    
+    if (typeof stringGrip === "string") {
+      return Promise.resolve(stringGrip);
+    }
+
     return this.webConsoleClient.getString(stringGrip);
   }
 };
