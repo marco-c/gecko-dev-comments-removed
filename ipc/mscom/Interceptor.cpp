@@ -5,10 +5,11 @@
 
 
 #define INITGUID
+
+#include "mozilla/Move.h"
+#include "mozilla/mscom/DispatchForwarder.h"
 #include "mozilla/mscom/Interceptor.h"
 #include "mozilla/mscom/InterceptorLog.h"
-
-#include "mozilla/mscom/DispatchForwarder.h"
 #include "mozilla/mscom/MainThreadInvoker.h"
 #include "mozilla/mscom/Registration.h"
 #include "mozilla/mscom/Utils.h"
@@ -100,8 +101,10 @@ Interceptor::GetMarshalSizeMax(REFIID riid, void* pv, DWORD dwDestContext,
     return hr;
   }
 
+  InterceptorTargetPtr<IUnknown> targetParam(mTarget.get());
+
   DWORD payloadSize = 0;
-  hr = mEventSink->GetHandlerPayloadSize(riid, mTarget.get(), &payloadSize);
+  hr = mEventSink->GetHandlerPayloadSize(riid, Move(targetParam), &payloadSize);
   *pSize += payloadSize;
   return hr;
 }
@@ -117,7 +120,8 @@ Interceptor::MarshalInterface(IStream* pStm, REFIID riid, void* pv,
     return hr;
   }
 
-  return mEventSink->WriteHandlerPayload(pStm, riid, mTarget.get());
+  InterceptorTargetPtr<IUnknown> targetParam(mTarget.get());
+  return mEventSink->WriteHandlerPayload(pStm, riid, Move(targetParam));
 }
 
 HRESULT
@@ -152,7 +156,8 @@ Interceptor::Lookup(REFIID aIid)
 }
 
 HRESULT
-Interceptor::GetTargetForIID(REFIID aIid, InterceptorTargetPtr& aTarget)
+Interceptor::GetTargetForIID(REFIID aIid,
+                             InterceptorTargetPtr<IUnknown>& aTarget)
 {
   MutexAutoLock lock(mMutex);
   MapEntry* entry = Lookup(aIid);
@@ -167,7 +172,7 @@ Interceptor::GetTargetForIID(REFIID aIid, InterceptorTargetPtr& aTarget)
 
 
 
-static const HRESULT kFileNotFound = 0x80070002;
+static const HRESULT kFileNotFound = HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND);
 
 HRESULT
 Interceptor::CreateInterceptor(REFIID aIid, IUnknown* aOuter, IUnknown** aOutput)
