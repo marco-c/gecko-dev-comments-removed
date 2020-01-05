@@ -69,13 +69,9 @@ function defineCohort() {
     
     
 
+    
     Preferences.set(PREF_E10S_ADDON_BLOCKLIST,
-                    
-                    "{dc572301-7619-498c-a57d-39143191b318};" +
-                    
-                    "support@lastpass.com;" +
-                    "abb@amazon.com;" +
-                    "abb-acer@amazon.com;");
+                    "{dc572301-7619-498c-a57d-39143191b318}");
   } else {
     Preferences.reset(PREF_E10S_ADDON_POLICY);
   }
