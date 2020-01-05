@@ -6226,21 +6226,6 @@ nsDisplayTransform::CanUseAsyncAnimations(nsDisplayListBuilder* aBuilder)
   return mAllowAsyncAnimation;
 }
 
-static nsRect ComputePartialPrerenderArea(const nsRect& aDirtyRect,
-                                          const nsRect& aOverflow,
-                                          const nsSize& aPrerenderSize)
-{
-  
-  
-  
-  nscoord xExcess = aPrerenderSize.width - aDirtyRect.width;
-  nscoord yExcess = aPrerenderSize.height - aDirtyRect.height;
-  return nsRect(aDirtyRect.x - (xExcess / 2),
-                aDirtyRect.y - (yExcess / 2),
-                aPrerenderSize.width,
-                aPrerenderSize.height).MoveInsideAndClamp(aOverflow);
-}
-
  auto
 nsDisplayTransform::ShouldPrerenderTransformedContent(nsDisplayListBuilder* aBuilder,
                                                       nsIFrame* aFrame,
@@ -6281,9 +6266,6 @@ nsDisplayTransform::ShouldPrerenderTransformedContent(nsDisplayListBuilder* aBui
   if (frameSize <= maxSize) {
     *aDirtyRect = overflow;
     return FullPrerender;
-  } else if (gfxPrefs::PartiallyPrerenderAnimatedContent()) {
-    *aDirtyRect = ComputePartialPrerenderArea(*aDirtyRect, overflow, maxSize);
-    return PartialPrerender;
   }
 
   nsRect visual = aFrame->GetVisualOverflowRect();
