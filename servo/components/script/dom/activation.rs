@@ -18,6 +18,9 @@ pub trait Activatable : Copy {
     fn as_element(&self) -> Temporary<Element>;
 
     
+    fn is_instance_activatable(&self) -> bool;
+
+    
     fn pre_click_activation(&self);
 
     
