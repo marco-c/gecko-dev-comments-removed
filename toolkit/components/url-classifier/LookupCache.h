@@ -14,6 +14,7 @@
 #include "nsIFileStreams.h"
 #include "mozilla/RefPtr.h"
 #include "nsUrlClassifierPrefixSet.h"
+#include "VariableLengthPrefixSet.h"
 #include "mozilla/Logging.h"
 
 namespace mozilla {
@@ -96,55 +97,136 @@ public:
                               nsTArray<nsCString>* aHostKeys);
 
   LookupCache(const nsACString& aTableName, nsIFile* aStoreFile);
-  ~LookupCache();
+  virtual ~LookupCache() {}
 
   const nsCString &TableName() const { return mTableName; }
 
-  nsresult Init();
-  nsresult Open();
   
   
   nsresult UpdateRootDirHandle(nsIFile* aRootStoreDirectory);
+
   
-  nsresult Build(AddPrefixArray& aAddPrefixes,
-                 AddCompleteArray& aAddCompletes);
   nsresult AddCompletionsToCache(AddCompleteArray& aAddCompletes);
-  nsresult GetPrefixes(FallibleTArray<uint32_t>& aAddPrefixes);
-  void ClearUpdatedCompletions();
+
+  
+  nsresult WriteFile();
+
+  
   void ClearCache();
+
+  bool IsPrimed() const { return mPrimed; };
 
 #if DEBUG
   void DumpCache();
-  void Dump();
 #endif
-  nsresult WriteFile();
-  nsresult Has(const Completion& aCompletion,
-               bool* aHas, bool* aComplete);
-  bool IsPrimed();
+
+  virtual nsresult Open();
+  virtual nsresult Init() = 0;
+  virtual nsresult ClearPrefixes() = 0;
+  virtual nsresult Has(const Completion& aCompletion,
+                       bool* aHas, bool* aComplete) = 0;
+
+  template<typename T>
+  static T* Cast(LookupCache* aThat) {
+    return (T::VER == aThat->Ver() ? reinterpret_cast<T*>(aThat) : nullptr);
+  }
 
 private:
-  void ClearAll();
   nsresult Reset();
-  nsresult ReadCompletions();
   nsresult LoadPrefixSet();
-  nsresult LoadCompletions();
-  
-  
-  nsresult ConstructPrefixSet(AddPrefixArray& aAddPrefixes);
+
+  virtual nsresult StoreToFile(nsIFile* aFile) = 0;
+  virtual nsresult LoadFromFile(nsIFile* aFile) = 0;
+  virtual size_t SizeOfPrefixSet() = 0;
+
+  virtual int Ver() const = 0;
+
+protected:
+  virtual void ClearAll();
 
   bool mPrimed;
   nsCString mTableName;
   nsCOMPtr<nsIFile> mRootStoreDirectory;
   nsCOMPtr<nsIFile> mStoreDirectory;
-  
-  RefPtr<nsUrlClassifierPrefixSet> mPrefixSet;
-  
-  CompletionArray mUpdateCompletions;
+
   
   CompletionArray mGetHashCache;
 
   
   friend class PerProviderDirectoryTestUtils;
+};
+
+class LookupCacheV2 final : public LookupCache
+{
+public:
+  explicit LookupCacheV2(const nsACString& aTableName, nsIFile* aStoreFile)
+    : LookupCache(aTableName, aStoreFile) {}
+  ~LookupCacheV2() {}
+
+  virtual nsresult Init() override;
+  virtual nsresult Open() override;
+  virtual void ClearAll() override;
+  virtual nsresult Has(const Completion& aCompletion,
+                       bool* aHas, bool* aComplete) override;
+
+  nsresult Build(AddPrefixArray& aAddPrefixes,
+                 AddCompleteArray& aAddCompletes);
+
+  nsresult GetPrefixes(FallibleTArray<uint32_t>& aAddPrefixes);
+
+#if DEBUG
+  void DumpCompletions();
+#endif
+
+  static const int VER;
+
+protected:
+  nsresult ReadCompletions();
+
+  virtual nsresult ClearPrefixes() override;
+  virtual nsresult StoreToFile(nsIFile* aFile) override;
+  virtual nsresult LoadFromFile(nsIFile* aFile) override;
+  virtual size_t SizeOfPrefixSet() override;
+
+private:
+  virtual int Ver() const override { return VER; }
+
+  
+  
+  nsresult ConstructPrefixSet(AddPrefixArray& aAddPrefixes);
+
+  
+  CompletionArray mUpdateCompletions;
+
+  
+  RefPtr<nsUrlClassifierPrefixSet> mPrefixSet;
+};
+
+class LookupCacheV4 final : public LookupCache
+{
+public:
+  explicit LookupCacheV4(const nsACString& aTableName, nsIFile* aStoreFile)
+    : LookupCache(aTableName, aStoreFile) {}
+  ~LookupCacheV4() {}
+
+  virtual nsresult Init() override;
+  virtual nsresult Has(const Completion& aCompletion,
+                       bool* aHas, bool* aComplete) override;
+
+  nsresult Build(PrefixStringMap& aPrefixMap);
+
+  static const int VER;
+
+protected:
+  virtual nsresult ClearPrefixes() override;
+  virtual nsresult StoreToFile(nsIFile* aFile) override;
+  virtual nsresult LoadFromFile(nsIFile* aFile) override;
+  virtual size_t SizeOfPrefixSet() override;
+
+private:
+  virtual int Ver() const override { return VER; }
+
+  RefPtr<VariableLengthPrefixSet> mVLPrefixSet;
 };
 
 } 
