@@ -870,19 +870,11 @@ WebGLContext::InitAndValidateGL(FailureReason* const out_failReason)
     }
 
     if (gl->IsCompatibilityProfile()) {
-        
-        
-        gl->fEnable(LOCAL_GL_VERTEX_PROGRAM_POINT_SIZE);
-
-        
-
-
-
-
-
-
-
         gl->fEnable(LOCAL_GL_POINT_SPRITE);
+    }
+
+    if (!gl->IsGLES()) {
+        gl->fEnable(LOCAL_GL_PROGRAM_POINT_SIZE);
     }
 
 #ifdef XP_MACOSX
