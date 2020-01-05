@@ -179,6 +179,15 @@ function ensureVerifiesAsDVWithVeryOldEndEntityOCSPResponse(testcase) {
 add_task(function* plainExpectSuccessEVTests() {
   yield ensureVerifiesAsEV("anyPolicy-int-path");
   yield ensureVerifiesAsEV("test-oid-path");
+  yield ensureVerifiesAsEV("cabforum-oid-path");
+  yield ensureVerifiesAsEV("cabforum-and-test-oid-ee-path");
+  yield ensureVerifiesAsEV("test-and-cabforum-oid-ee-path");
+  yield ensureVerifiesAsEV("reverse-order-oids-path");
+  
+  
+  
+  
+  yield ensureVerifiesAsEV("cabforum-and-test-oid-ee-cabforum-oid-int-path");
 });
 
 
@@ -189,6 +198,15 @@ add_task(function* expectDVFallbackTests() {
   yield ensureVerifiesAsDV("no-ocsp-ee-path",
                            gEVExpected ? [ "no-ocsp-ee-path-int" ] : []);
   yield ensureVerifiesAsDV("no-ocsp-int-path");
+  
+  
+  
+  yield ensureVerifiesAsDV("test-oid-ee-cabforum-oid-int-path");
+  
+  
+  
+  
+  yield ensureVerifiesAsDV("test-and-cabforum-oid-ee-cabforum-oid-int-path");
 });
 
 
