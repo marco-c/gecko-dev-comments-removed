@@ -76,7 +76,7 @@ impl Clone for ChildFrameTree {
 
 pub struct SendableFrameTree {
     pub pipeline: CompositionPipeline,
-    pub children: ~[SendableChildFrameTree],
+    pub children: Vec<SendableChildFrameTree>,
 }
 
 pub struct SendableChildFrameTree {
@@ -111,13 +111,13 @@ impl FrameTreeTraversal for Rc<FrameTree> {
         self.iter().any(|frame_tree| id == frame_tree.pipeline.id)
     }
 
-    /// Returns the frame tree whose key is id
+    
     fn find(&self, id: PipelineId) -> Option<Rc<FrameTree>> {
         self.iter().find(|frame_tree| id == frame_tree.pipeline.id)
     }
 
-    /// Replaces a node of the frame tree in place. Returns the node that was removed or the original node
-    /// if the node to replace could not be found.
+    
+    
     fn replace_child(&self, id: PipelineId, new_child: Rc<FrameTree>) -> ReplaceResult {
         for frame_tree in self.iter() {
             let mut children = frame_tree.children.borrow_mut();
@@ -133,7 +133,7 @@ impl FrameTreeTraversal for Rc<FrameTree> {
 
     fn iter(&self) -> FrameTreeIterator {
         FrameTreeIterator {
-            stack: ~[self.clone()],
+            stack: vec!(self.clone()),
         }
     }
 }
@@ -147,11 +147,11 @@ impl ChildFrameTree {
     }
 }
 
-/// An iterator over a frame tree, returning nodes in depth-first order.
-/// Note that this iterator should _not_ be used to mutate nodes _during_
-/// iteration. Mutating nodes once the iterator is out of scope is OK.
+
+
+
 struct FrameTreeIterator {
-    stack: ~[Rc<FrameTree>],
+    stack: Vec<Rc<FrameTree>>,
 }
 
 impl Iterator<Rc<FrameTree>> for FrameTreeIterator {
@@ -168,14 +168,14 @@ impl Iterator<Rc<FrameTree>> for FrameTreeIterator {
     }
 }
 
-/// Represents the portion of a page that is changing in navigating.
+
 struct FrameChange {
     pub before: Option<PipelineId>,
     pub after: Rc<FrameTree>,
     pub navigation_type: NavigationType,
 }
 
-/// Stores the Id's of the pipelines previous and next in the browser's history
+
 struct NavigationContext {
     pub previous: Vec<Rc<FrameTree>>,
     pub next: Vec<Rc<FrameTree>>,
@@ -191,8 +191,8 @@ impl NavigationContext {
         }
     }
 
-    /* Note that the following two methods can fail. They should only be called  *
-     * when it is known that there exists either a previous page or a next page. */
+    
+
 
     fn back(&mut self) -> Rc<FrameTree> {
         self.next.push(self.current.take_unwrap());
@@ -208,7 +208,7 @@ impl NavigationContext {
         next
     }
 
-    /// Loads a new set of page frames, returning all evicted frame trees
+    
     fn load(&mut self, frame_tree: Rc<FrameTree>) -> Vec<Rc<FrameTree>> {
         debug!("navigating to {:?}", frame_tree.pipeline.id);
         let evicted = replace(&mut self.next, vec!());
@@ -219,8 +219,8 @@ impl NavigationContext {
         evicted
     }
 
-    /// Returns the frame trees whose keys are pipeline_id.
-    fn find_all(&mut self, pipeline_id: PipelineId) -> ~[Rc<FrameTree>] {
+    
+    fn find_all(&mut self, pipeline_id: PipelineId) -> Vec<Rc<FrameTree>> {
         let from_current = self.current.iter().filter_map(|frame_tree| {
             frame_tree.find(pipeline_id)
         });
@@ -300,7 +300,7 @@ impl Constellation {
     }
 
     /// Returns both the navigation context and pending frame trees whose keys are pipeline_id.
-    fn find_all(&mut self, pipeline_id: PipelineId) -> ~[Rc<FrameTree>] {
+    fn find_all(&mut self, pipeline_id: PipelineId) -> Vec<Rc<FrameTree>> {
         let matching_navi_frames = self.navigation_context.find_all(pipeline_id);
         let matching_pending_frames = self.pending_frames.iter().filter_map(|frame_change| {
             frame_change.after.find(pipeline_id)
@@ -548,7 +548,7 @@ impl Constellation {
         // or a new url entered.
         //     Start by finding the frame trees matching the pipeline id,
         // and add the new pipeline to their sub frames.
-        let frame_trees: ~[Rc<FrameTree>] = {
+        let frame_trees: Vec<Rc<FrameTree>> = {
             let matching_navi_frames = self.navigation_context.find_all(source_pipeline_id);
             let matching_pending_frames = self.pending_frames.iter().filter_map(|frame_change| {
                 frame_change.after.find(source_pipeline_id)

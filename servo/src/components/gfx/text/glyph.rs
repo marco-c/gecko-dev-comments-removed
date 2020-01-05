@@ -467,7 +467,7 @@ pub enum GlyphInfo<'a> {
 impl<'a> GlyphInfo<'a> {
     pub fn index(self) -> GlyphIndex {
         match self {
-            SimpleGlyphInfo(store, entry_i) => store.entry_buffer[entry_i].index(),
+            SimpleGlyphInfo(store, entry_i) => store.entry_buffer.get(entry_i).index(),
             DetailGlyphInfo(store, entry_i, detail_j) => {
                 store.detail_store.get_detailed_glyph_with_index(entry_i, detail_j).index
             }
@@ -478,7 +478,7 @@ impl<'a> GlyphInfo<'a> {
     
     pub fn advance(self) -> Au {
         match self {
-            SimpleGlyphInfo(store, entry_i) => store.entry_buffer[entry_i].advance(),
+            SimpleGlyphInfo(store, entry_i) => store.entry_buffer.get(entry_i).advance(),
             DetailGlyphInfo(store, entry_i, detail_j) => {
                 store.detail_store.get_detailed_glyph_with_index(entry_i, detail_j).advance
             }
@@ -499,7 +499,7 @@ impl<'a> GlyphInfo<'a> {
 pub struct GlyphStore {
     
     
-    entry_buffer: ~[GlyphEntry],
+    entry_buffer: Vec<GlyphEntry>,
 
     detail_store: DetailedGlyphStore,
 
@@ -507,13 +507,13 @@ pub struct GlyphStore {
 }
 
 impl<'a> GlyphStore {
-    // Initializes the glyph store, but doesn't actually shape anything.
-    // Use the set_glyph, set_glyphs() methods to store glyph data.
+    
+    
     pub fn new(length: uint, is_whitespace: bool) -> GlyphStore {
         assert!(length > 0);
 
         GlyphStore {
-            entry_buffer: slice::from_elem(length, GlyphEntry::initial()),
+            entry_buffer: Vec::from_elem(length, GlyphEntry::initial()),
             detail_store: DetailedGlyphStore::new(),
             is_whitespace: is_whitespace,
         }
@@ -536,10 +536,10 @@ impl<'a> GlyphStore {
             is_simple_glyph_id(data.index)
                 && is_simple_advance(data.advance)
                 && data.offset.is_zero()
-                && data.cluster_start  // others are stored in detail buffer
+                && data.cluster_start  
         }
 
-        assert!(data.ligature_start); // can't compress ligature continuation glyphs.
+        assert!(data.ligature_start); 
         assert!(i < self.entry_buffer.len());
 
         let entry = match (data.is_missing, glyph_is_compressible(data)) {
@@ -550,9 +550,9 @@ impl<'a> GlyphStore {
                 self.detail_store.add_detailed_glyphs_for_entry(i, glyph);
                 GlyphEntry::complex(data.cluster_start, data.ligature_start, 1)
             }
-        }.adapt_character_flags_of_entry(self.entry_buffer[i]);
+        }.adapt_character_flags_of_entry(*self.entry_buffer.get(i));
 
-        self.entry_buffer[i] = entry;
+        *self.entry_buffer.get_mut(i) = entry;
     }
 
     pub fn add_glyphs_for_char_index(&mut self, i: uint, data_for_glyphs: &[GlyphData]) {
@@ -576,21 +576,21 @@ impl<'a> GlyphStore {
                                     first_glyph_data.ligature_start,
                                     glyph_count)
             }
-        }.adapt_character_flags_of_entry(self.entry_buffer[i]);
+        }.adapt_character_flags_of_entry(*self.entry_buffer.get(i));
 
         debug!("Adding multiple glyphs[idx={:u}, count={:u}]: {:?}", i, glyph_count, entry);
 
-        self.entry_buffer[i] = entry;
+        *self.entry_buffer.get_mut(i) = entry;
     }
 
-    // used when a character index has no associated glyph---for example, a ligature continuation.
+    
     pub fn add_nonglyph_for_char_index(&mut self, i: uint, cluster_start: bool, ligature_start: bool) {
         assert!(i < self.entry_buffer.len());
 
         let entry = GlyphEntry::complex(cluster_start, ligature_start, 0);
         debug!("adding spacer for chracter without associated glyph[idx={:u}]", i);
 
-        self.entry_buffer[i] = entry;
+        *self.entry_buffer.get_mut(i) = entry;
     }
 
     pub fn iter_glyphs_for_char_index(&'a self, i: uint) -> GlyphIterator<'a> {
@@ -617,57 +617,57 @@ impl<'a> GlyphStore {
     
     pub fn char_is_space(&self, i: uint) -> bool {
         assert!(i < self.entry_buffer.len());
-        self.entry_buffer[i].char_is_space()
+        self.entry_buffer.get(i).char_is_space()
     }
 
     pub fn char_is_tab(&self, i: uint) -> bool {
         assert!(i < self.entry_buffer.len());
-        self.entry_buffer[i].char_is_tab()
+        self.entry_buffer.get(i).char_is_tab()
     }
 
     pub fn char_is_newline(&self, i: uint) -> bool {
         assert!(i < self.entry_buffer.len());
-        self.entry_buffer[i].char_is_newline()
+        self.entry_buffer.get(i).char_is_newline()
     }
 
     pub fn is_ligature_start(&self, i: uint) -> bool {
         assert!(i < self.entry_buffer.len());
-        self.entry_buffer[i].is_ligature_start()
+        self.entry_buffer.get(i).is_ligature_start()
     }
 
     pub fn is_cluster_start(&self, i: uint) -> bool {
         assert!(i < self.entry_buffer.len());
-        self.entry_buffer[i].is_cluster_start()
+        self.entry_buffer.get(i).is_cluster_start()
     }
 
     pub fn can_break_before(&self, i: uint) -> BreakType {
         assert!(i < self.entry_buffer.len());
-        self.entry_buffer[i].can_break_before()
+        self.entry_buffer.get(i).can_break_before()
     }
 
     
     pub fn set_char_is_space(&mut self, i: uint) {
         assert!(i < self.entry_buffer.len());
-        let entry = self.entry_buffer[i];
-        self.entry_buffer[i] = entry.set_char_is_space();
+        let entry = *self.entry_buffer.get(i);
+        *self.entry_buffer.get_mut(i) = entry.set_char_is_space();
     }
 
     pub fn set_char_is_tab(&mut self, i: uint) {
         assert!(i < self.entry_buffer.len());
-        let entry = self.entry_buffer[i];
-        self.entry_buffer[i] = entry.set_char_is_tab();
+        let entry = *self.entry_buffer.get(i);
+        *self.entry_buffer.get_mut(i) = entry.set_char_is_tab();
     }
 
     pub fn set_char_is_newline(&mut self, i: uint) {
         assert!(i < self.entry_buffer.len());
-        let entry = self.entry_buffer[i];
-        self.entry_buffer[i] = entry.set_char_is_newline();
+        let entry = *self.entry_buffer.get(i);
+        *self.entry_buffer.get_mut(i) = entry.set_char_is_newline();
     }
 
     pub fn set_can_break_before(&mut self, i: uint, t: BreakType) {
         assert!(i < self.entry_buffer.len());
-        let entry = self.entry_buffer[i];
-        self.entry_buffer[i] = entry.set_can_break_before(t);
+        let entry = *self.entry_buffer.get(i);
+        *self.entry_buffer.get_mut(i) = entry.set_can_break_before(t);
     }
 }
 
@@ -722,7 +722,7 @@ impl<'a> Iterator<(uint, GlyphInfo<'a>)> for GlyphIterator<'a> {
                 Some(i) => {
                     self.char_index = i;
                     assert!(i < self.store.entry_buffer.len());
-                    let entry = &self.store.entry_buffer[i];
+                    let entry = self.store.entry_buffer.get(i);
                     if entry.is_simple() {
                         Some((self.char_index, SimpleGlyphInfo(self.store, i)))
                     } else {
