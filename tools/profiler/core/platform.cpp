@@ -1358,7 +1358,7 @@ locked_profiler_stream_json_for_this_process(PS::LockRef aLock, SpliceableJSONWr
       const PS::ThreadVector& liveThreads = gPS->LiveThreads(aLock);
       for (size_t i = 0; i < liveThreads.size(); i++) {
         ThreadInfo* info = liveThreads.at(i);
-        if (!info->IsBeingProfiled()) {
+        if (!info->HasProfile()) {
           continue;
         }
         info->StreamJSON(gPS->Buffer(aLock), aWriter, gPS->StartTime(aLock),
@@ -1368,7 +1368,7 @@ locked_profiler_stream_json_for_this_process(PS::LockRef aLock, SpliceableJSONWr
       const PS::ThreadVector& deadThreads = gPS->DeadThreads(aLock);
       for (size_t i = 0; i < deadThreads.size(); i++) {
         ThreadInfo* info = deadThreads.at(i);
-        MOZ_ASSERT(info->IsBeingProfiled());
+        MOZ_ASSERT(info->HasProfile());
         info->StreamJSON(gPS->Buffer(aLock), aWriter, gPS->StartTime(aLock),
                          aSinceTime);
       }
@@ -1615,7 +1615,7 @@ SamplerThread::Run()
         for (uint32_t i = 0; i < liveThreads.size(); i++) {
           ThreadInfo* info = liveThreads[i];
 
-          if (!info->IsBeingProfiled()) {
+          if (!info->HasProfile()) {
             
             continue;
           }
@@ -1861,9 +1861,10 @@ locked_register_thread(PS::LockRef aLock, const char* aName, void* stackTop)
 
   tlsPseudoStack.set(pseudoStack.get());
 
-  if (gPS->IsActive(aLock) && ShouldProfileThread(aLock, info)) {
-    info->StartProfiling();
-    if (gPS->FeatureJS(aLock)) {
+  if (ShouldProfileThread(aLock, info)) {
+    info->SetHasProfile();
+
+    if (gPS->IsActive(aLock) && gPS->FeatureJS(aLock)) {
       
       
       pseudoStack->startJSSampling();
@@ -2351,7 +2352,8 @@ locked_profiler_start(PS::LockRef aLock, int aEntries, double aInterval,
     ThreadInfo* info = liveThreads.at(i);
 
     if (ShouldProfileThread(aLock, info)) {
-      info->StartProfiling();
+      info->SetHasProfile();
+      info->Stack()->reinitializeOnResume();
       if (featureJS) {
         info->Stack()->startJSSampling();
       }
@@ -2478,14 +2480,14 @@ locked_profiler_stop(PS::LockRef aLock)
 #endif
 
   
-  PS::ThreadVector& liveThreads = gPS->LiveThreads(aLock);
-  for (uint32_t i = 0; i < liveThreads.size(); i++) {
-    ThreadInfo* info = liveThreads.at(i);
-    if (info->IsBeingProfiled()) {
-      if (gPS->FeatureJS(aLock)) {
+  if (gPS->FeatureJS(aLock)) {
+    PS::ThreadVector& liveThreads = gPS->LiveThreads(aLock);
+    for (uint32_t i = 0; i < liveThreads.size(); i++) {
+      ThreadInfo* info = liveThreads.at(i);
+      if (ShouldProfileThread(aLock, info)) {
+        MOZ_RELEASE_ASSERT(info->HasProfile());
         info->Stack()->stopJSSampling();
       }
-      info->StopProfiling();
     }
   }
 
@@ -2497,7 +2499,6 @@ locked_profiler_stop(PS::LockRef aLock)
   }
 
   if (gPS->FeatureJS(aLock)) {
-    
     
     
     if (PseudoStack* stack = tlsPseudoStack.get()) {
@@ -2674,7 +2675,8 @@ profiler_is_active()
 void
 profiler_set_frame_number(int aFrameNumber)
 {
-  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  
+
   MOZ_RELEASE_ASSERT(gPS);
 
   PS::AutoLock lock(gPSMutex);
@@ -2711,7 +2713,7 @@ profiler_unregister_thread()
   ThreadInfo* info = FindLiveThreadInfo(lock, &i);
   if (info) {
     DEBUG_LOG("profiler_unregister_thread: %s", info->Name());
-    if (gPS->IsActive(lock) && info->IsBeingProfiled()) {
+    if (gPS->IsActive(lock) && info->HasProfile()) {
       gPS->DeadThreads(lock).push_back(info);
     } else {
       delete info;
@@ -3042,7 +3044,7 @@ profiler_clear_js_context()
     
     ThreadInfo* info = FindLiveThreadInfo(lock);
     MOZ_RELEASE_ASSERT(info);
-    if (info->IsBeingProfiled()) {
+    if (info->HasProfile()) {
       info->FlushSamplesAndMarkers(gPS->Buffer(lock), gPS->StartTime(lock));
     }
 
