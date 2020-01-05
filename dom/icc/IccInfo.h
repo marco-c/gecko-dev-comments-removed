@@ -141,7 +141,8 @@ private:
   ~CdmaIccInfo() {}
 
   nsString mPhoneNumber;
-  int32_t mPrlVersion;
+  
+  MOZ_INIT_OUTSIDE_CTOR int32_t mPrlVersion;
 };
 
 } 
