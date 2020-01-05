@@ -11,7 +11,6 @@ WEAVE_VERSION:                         "@weave_version@",
 
 
 SYNC_API_VERSION:                      "1.1",
-MISC_API_VERSION:                      "1.0",
 
 
 

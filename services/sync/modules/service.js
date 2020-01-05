@@ -68,24 +68,6 @@ Sync11Service.prototype = {
   
   _clusterURL: null,
 
-  get serverURL() {
-    return Svc.Prefs.get("serverURL");
-  },
-  set serverURL(value) {
-    if (!value.endsWith("/")) {
-      value += "/";
-    }
-
-    
-    if (value == this.serverURL)
-      return;
-
-    Svc.Prefs.set("serverURL", value);
-
-    
-    this._clusterURL = null;
-  },
-
   get clusterURL() {
     return this._clusterURL || "";
   },
@@ -95,18 +77,6 @@ Sync11Service.prototype = {
     }
     this._clusterURL = value;
     this._updateCachedURLs();
-  },
-
-  get miscAPI() {
-    
-    let misc = Svc.Prefs.get("miscURL");
-    if (misc.indexOf(":") == -1)
-      misc = this.serverURL + misc;
-    return misc + MISC_API_VERSION + "/";
-  },
-
-  get pwResetURL() {
-    return this.serverURL + "weave-password-reset";
   },
 
   get syncID() {
