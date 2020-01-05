@@ -24,7 +24,6 @@ namespace js {
 
 class AutoLockGC;
 class AutoLockHelperThreadState;
-class SliceBudget;
 class VerifyPreTracer;
 
 namespace gc {
@@ -859,19 +858,6 @@ class GCRuntime
 #endif
 
     
-    bool addInterruptCallback(JS::GCInterruptCallback callback);
-    void requestInterruptCallback();
-
-    bool checkInterruptCallback(JSContext* cx) {
-        if (interruptCallbackRequested) {
-            invokeInterruptCallback(cx);
-            return true;
-        }
-        return false;
-    }
-    void invokeInterruptCallback(JSContext* cx);
-
-    
     void freeUnusedLifoBlocksAfterSweeping(LifoAlloc* lifo);
     void freeAllLifoBlocksAfterSweeping(LifoAlloc* lifo);
     void freeAllLifoBlocksAfterMinorGC(LifoAlloc* lifo);
@@ -1085,13 +1071,6 @@ class GCRuntime
 
     mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire> numArenasFreeCommitted;
     VerifyPreTracer* verifyPreData;
-
-    
-    using GCInterruptCallbackVector = js::Vector<JS::GCInterruptCallback, 2, js::SystemAllocPolicy>;
-    GCInterruptCallbackVector interruptCallbacks;
-
-    mozilla::Atomic<bool, mozilla::Relaxed> interruptCallbackRequested;
-    SliceBudget* currentBudget;
 
   private:
     bool chunkAllocationSinceLastGC;

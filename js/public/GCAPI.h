@@ -721,18 +721,6 @@ PokeGC(JSContext* cx);
 extern JS_FRIEND_API(void)
 NotifyDidPaint(JSContext* cx);
 
-
-
-
-typedef bool
-(* GCInterruptCallback)(JSContext* cx);
-
-extern JS_FRIEND_API(bool)
-AddGCInterruptCallback(JSContext* cx, GCInterruptCallback callback);
-
-extern JS_FRIEND_API(void)
-RequestGCInterruptCallback(JSContext* cx);
-
 } 
 
 #endif 
