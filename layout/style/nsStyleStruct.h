@@ -3376,6 +3376,12 @@ struct nsCursorImage
 
   nsCursorImage& operator=(const nsCursorImage& aOther);
 
+  bool operator==(const nsCursorImage& aOther) const;
+  bool operator!=(const nsCursorImage& aOther) const
+  {
+    return !(*this == aOther);
+  }
+
   void SetImage(imgIRequest *aImage) {
     if (mImage) {
       mImage->UnlockImage();
@@ -3431,17 +3437,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleUserInterface
   mozilla::StyleUserFocus   mUserFocus;       
   uint8_t                   mPointerEvents;   
 
-  uint8_t   mCursor;          
-
-  uint32_t mCursorArrayLength;
-  nsCursorImage *mCursorArray;
-                              
-                              
-                              
-
-  
-  
-  void CopyCursorArrayFrom(const nsStyleUserInterface& aSource);
+  uint8_t mCursor;                            
+  nsTArray<nsCursorImage> mCursorImages;      
 
   inline uint8_t GetEffectivePointerEvents(nsIFrame* aFrame) const;
 };
