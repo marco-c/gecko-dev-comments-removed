@@ -3322,11 +3322,11 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleUIReset
            nsChangeHint_ClearAncestorIntrinsics;
   }
 
-  mozilla::StyleUserSelect mUserSelect;   
-  uint8_t   mForceBrokenImageIcon; 
-  uint8_t   mIMEMode;         
-  uint8_t   mWindowDragging;  
-  uint8_t   mWindowShadow;    
+  mozilla::StyleUserSelect     mUserSelect;     
+  uint8_t mForceBrokenImageIcon; 
+  uint8_t                      mIMEMode;        
+  mozilla::StyleWindowDragging mWindowDragging; 
+  uint8_t                      mWindowShadow;   
 };
 
 struct nsCursorImage
