@@ -534,19 +534,53 @@ class TypeSet
     static bool IsTypeAboutToBeFinalized(Type* v);
 } JS_HAZ_GC_POINTER;
 
+#if JS_BITS_PER_WORD == 32
+static const uintptr_t TypeInferenceMagic = 0xa1a2b3b4;
+#else
+static const uintptr_t TypeInferenceMagic = 0xa1a2b3b4c5c6d7d8;
+#endif
+
 
 
 
 
 class TypeConstraint
 {
-public:
-    
-    TypeConstraint* next;
+#ifdef JS_CRASH_DIAGNOSTICS
+    uintptr_t magic_;
+#endif
 
+    
+    TypeConstraint* next_;
+
+  public:
     TypeConstraint()
-        : next(nullptr)
-    {}
+      : next_(nullptr)
+    {
+#ifdef JS_CRASH_DIAGNOSTICS
+        magic_ = TypeInferenceMagic;
+#endif
+    }
+
+    void checkMagic() const {
+#ifdef JS_CRASH_DIAGNOSTICS
+        MOZ_RELEASE_ASSERT(magic_ == TypeInferenceMagic);
+#endif
+    }
+
+    TypeConstraint* next() const {
+        checkMagic();
+        if (next_)
+            next_->checkMagic();
+        return next_;
+    }
+    void setNext(TypeConstraint* next) {
+        MOZ_ASSERT(!next_);
+        checkMagic();
+        if (next)
+            next->checkMagic();
+        next_ = next;
+    }
 
     
     virtual const char* kind() = 0;
@@ -606,11 +640,49 @@ class AutoClearTypeInferenceStateOnOOM
 
 class ConstraintTypeSet : public TypeSet
 {
-  public:
-    
-    TypeConstraint* constraintList;
+#ifdef JS_CRASH_DIAGNOSTICS
+    uintptr_t magic_;
+#endif
 
-    ConstraintTypeSet() : constraintList(nullptr) {}
+  protected:
+    
+    TypeConstraint* constraintList_;
+
+  public:
+    ConstraintTypeSet()
+      : constraintList_(nullptr)
+    {
+#ifdef JS_CRASH_DIAGNOSTICS
+        magic_ = TypeInferenceMagic;
+#endif
+    }
+
+#ifdef JS_CRASH_DIAGNOSTICS
+    void initMagic() {
+        MOZ_ASSERT(!magic_);
+        magic_ = TypeInferenceMagic;
+    }
+#endif
+
+    void checkMagic() const {
+#ifdef JS_CRASH_DIAGNOSTICS
+        MOZ_RELEASE_ASSERT(magic_ == TypeInferenceMagic);
+#endif
+    }
+
+    TypeConstraint* constraintList() const {
+        checkMagic();
+        if (constraintList_)
+            constraintList_->checkMagic();
+        return constraintList_;
+    }
+    void setConstraintList(TypeConstraint* constraint) {
+        MOZ_ASSERT(!constraintList_);
+        checkMagic();
+        if (constraint)
+            constraint->checkMagic();
+        constraintList_ = constraint;
+    }
 
     
 
