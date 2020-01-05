@@ -201,20 +201,17 @@ class Descriptor(DescriptorProvider):
         
         
         if spiderMonkeyInterface:
-            self.needsRooting = False
             self.returnType = 'Rc<%s>' % typeName
             self.argumentType = '&%s' % typeName
             self.nativeType = typeName
             pathDefault = 'dom::types::%s' % typeName
         elif self.interface.isCallback():
-            self.needsRooting = False
             ty = 'dom::bindings::codegen::Bindings::%sBinding::%s' % (ifaceName, ifaceName)
             pathDefault = ty
             self.returnType = "Rc<%s>" % ty
             self.argumentType = "???"
             self.nativeType = ty
         else:
-            self.needsRooting = True
             self.returnType = "Root<%s>" % typeName
             self.argumentType = "&%s" % typeName
             self.nativeType = "*const %s" % typeName
