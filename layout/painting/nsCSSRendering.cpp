@@ -3224,9 +3224,6 @@ nsCSSRendering::PaintGradient(nsPresContext* aPresContext,
                gfxFloat(aPresContext->CSSPixelsToAppUnits(aSrc.height))/aDest.height);
   gradientPattern->SetMatrix(matrix);
 
-  if (gradientPattern->CairoStatus())
-    return;
-
   if (stopDelta == 0.0) {
     
     

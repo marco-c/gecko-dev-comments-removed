@@ -54,8 +54,6 @@ public:
     
     void SetExtend(mozilla::gfx::ExtendMode aExtend);
 
-    int CairoStatus();
-
     void SetSamplingFilter(mozilla::gfx::SamplingFilter aSamplingFilter);
     mozilla::gfx::SamplingFilter SamplingFilter() const;
 
