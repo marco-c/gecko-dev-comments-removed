@@ -5069,8 +5069,7 @@ pref("dom.vr.openvr.enabled", false);
 
 
 
-
-pref("dom.vr.poseprediction.enabled", false);
+pref("dom.vr.poseprediction.enabled", true);
 
 
 

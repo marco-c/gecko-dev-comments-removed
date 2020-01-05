@@ -480,7 +480,7 @@ VRDisplayOculus::GetSensorState()
   if (gfxPrefs::VRPosePredictionEnabled()) {
     
     
-    double predictedFrameTime = ovr_GetPredictedDisplayTime(mSession, mInputFrameID);
+    double predictedFrameTime = ovr_GetPredictedDisplayTime(mSession, 0);
     frameDelta = predictedFrameTime - ovr_GetTimeInSeconds();
   }
   result = GetSensorState(frameDelta);
