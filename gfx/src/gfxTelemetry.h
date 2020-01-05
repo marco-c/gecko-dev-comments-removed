@@ -33,6 +33,10 @@ enum class FeatureStatus
   Blacklisted,
 
   
+  
+  OptIn,
+
+  
   Failed,
 
   
