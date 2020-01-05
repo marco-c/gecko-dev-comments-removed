@@ -88,7 +88,7 @@ Gecko_IsInDocument(RawGeckoNodeBorrowed aNode)
   return aNode->IsInComposedDoc();
 }
 
-#ifdef DEBUG
+#ifdef MOZ_DEBUG_RUST
 bool
 Gecko_FlattenedTreeParentIsParent(RawGeckoNodeBorrowed aNode)
 {
@@ -1313,7 +1313,7 @@ Gecko_SetStyleCoordCalcValue(nsStyleUnit* aUnit, nsStyleUnion* aValue, nsStyleCo
 }
 
 void
-Gecko_CopyShapeSourceFrom(mozilla::StyleShapeSource* aDst, const mozilla::StyleShapeSource* aSrc)
+Gecko_CopyClipPathValueFrom(mozilla::StyleShapeSource* aDst, const mozilla::StyleShapeSource* aSrc)
 {
   MOZ_ASSERT(aDst);
   MOZ_ASSERT(aSrc);
@@ -1322,16 +1322,16 @@ Gecko_CopyShapeSourceFrom(mozilla::StyleShapeSource* aDst, const mozilla::StyleS
 }
 
 void
-Gecko_DestroyShapeSource(mozilla::StyleShapeSource* aShape)
+Gecko_DestroyClipPath(mozilla::StyleShapeSource* aClip)
 {
-  aShape->~StyleShapeSource();
+  aClip->~StyleShapeSource();
 }
 
 void
-Gecko_StyleShapeSource_SetURLValue(mozilla::StyleShapeSource* aShape, ServoBundledURI aURI)
+Gecko_StyleClipPath_SetURLValue(mozilla::StyleShapeSource* aClip, ServoBundledURI aURI)
 {
   RefPtr<css::URLValue> url = aURI.IntoCssUrl();
-  aShape->SetURL(url.get());
+  aClip->SetURL(url.get());
 }
 
 mozilla::StyleBasicShape*
