@@ -17,6 +17,7 @@ namespace mozilla {
 namespace net {
 
 StunAddrsRequestParent::StunAddrsRequestParent()
+  : mIPCClosed(false)
 {
   NS_GetMainThread(getter_AddRefs(mMainThread));
 
@@ -30,10 +31,23 @@ StunAddrsRequestParent::RecvGetStunAddrs()
 {
   ASSERT_ON_THREAD(mMainThread);
 
+  if (mIPCClosed) {
+    return IPC_OK();
+  }
+
   RUN_ON_THREAD(mSTSThread,
-                WrapRunnable(this, &StunAddrsRequestParent::GetStunAddrs_s),
+                WrapRunnable(RefPtr<StunAddrsRequestParent>(this),
+                             &StunAddrsRequestParent::GetStunAddrs_s),
                 NS_DISPATCH_NORMAL);
 
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult
+StunAddrsRequestParent::Recv__delete__()
+{
+  
+  mIPCClosed = true;
   return IPC_OK();
 }
 
@@ -41,6 +55,10 @@ void
 StunAddrsRequestParent::ActorDestroy(ActorDestroyReason why)
 {
   
+  
+  
+  
+  mIPCClosed = true;
 }
 
 void
@@ -51,9 +69,13 @@ StunAddrsRequestParent::GetStunAddrs_s()
   
   NrIceStunAddrArray addrs = NrIceCtx::GetStunAddrs();
 
+  if (mIPCClosed) {
+    return;
+  }
+
   
   RUN_ON_THREAD(mMainThread,
-                WrapRunnable(this,
+                WrapRunnable(RefPtr<StunAddrsRequestParent>(this),
                              &StunAddrsRequestParent::SendStunAddrs_m,
                              std::move(addrs)),
                 NS_DISPATCH_NORMAL);
@@ -64,6 +86,12 @@ StunAddrsRequestParent::SendStunAddrs_m(const NrIceStunAddrArray& addrs)
 {
   ASSERT_ON_THREAD(mMainThread);
 
+  if (mIPCClosed) {
+    
+    return;
+  }
+
+  mIPCClosed = true;
   
   Unused << SendOnStunAddrsAvailable(addrs);
 }
