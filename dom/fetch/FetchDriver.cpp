@@ -108,6 +108,8 @@ FetchDriver::Fetch(FetchDriverObserver* aObserver)
 nsresult
 FetchDriver::HttpFetch()
 {
+  MOZ_ASSERT(NS_IsMainThread());
+
   
   mResponse = nullptr;
   nsresult rv;
@@ -277,7 +279,9 @@ FetchDriver::HttpFetch()
     
     
     if (mRequest->ReferrerPolicy_() == ReferrerPolicy::_empty) {
-      mRequest->SetReferrerPolicy(net::RP_No_Referrer_When_Downgrade);
+      net::ReferrerPolicy referrerPolicy =
+        static_cast<net::ReferrerPolicy>(NS_GetDefaultReferrerPolicy());
+      mRequest->SetReferrerPolicy(referrerPolicy);
     }
 
     rv = FetchUtil::SetRequestReferrer(mPrincipal,
