@@ -1708,6 +1708,12 @@ private:
   friend class nsPIDOMWindow<mozIDOMWindow>;
   friend class nsPIDOMWindow<nsISupports>;
 
+  
+  
+  
+  void
+  MaybeApplyBackPressure();
+
   mozilla::dom::TabGroup* TabGroupInner();
   mozilla::dom::TabGroup* TabGroupOuter();
 

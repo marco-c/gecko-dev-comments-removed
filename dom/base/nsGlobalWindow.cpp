@@ -3641,6 +3641,47 @@ nsGlobalWindow::DefineArgumentsProperty(nsIArray *aArguments)
   return ctx->SetProperty(obj, "arguments", aArguments);
 }
 
+void
+nsGlobalWindow::MaybeApplyBackPressure()
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  
+  
+  
+  
+  if (IsSuspended()) {
+    return;
+  }
+
+  RefPtr<ThrottledEventQueue> taskQueue = TabGroup()->GetThrottledEventQueue();
+  if (!taskQueue) {
+    return;
+  }
+
+  
+  
+  
+  
+  
+  static const uint32_t kThrottledEventQueueBackPressure = 5000;
+  if (taskQueue->Length() < kThrottledEventQueueBackPressure) {
+    return;
+  }
+
+  
+  
+  nsCOMPtr<nsIRunnable> r = NewRunnableMethod(this, &nsGlobalWindow::Resume);
+  nsresult rv = taskQueue->Dispatch(r.forget(), NS_DISPATCH_NORMAL);
+  NS_ENSURE_SUCCESS_VOID(rv);
+
+  
+  
+  
+  
+  Suspend();
+}
+
 
 
 
@@ -13071,6 +13112,8 @@ nsGlobalWindow::RunTimeout(Timeout* aTimeout)
   MOZ_ASSERT(dummy_timeout->HasRefCntOne(), "dummy_timeout may leak");
 
   mTimeoutInsertionPoint = last_insertion_point;
+
+  MaybeApplyBackPressure();
 }
 
 void
