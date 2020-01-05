@@ -334,6 +334,8 @@ nsCopySupport::GetTransferableForNode(nsINode* aNode,
 {
   nsCOMPtr<nsISelection> selection;
   
+  
+  
   nsresult rv = NS_NewDomSelection(getter_AddRefs(selection));
   NS_ENSURE_SUCCESS(rv, rv);
   nsCOMPtr<nsIDOMNode> node = do_QueryInterface(aNode);
@@ -341,7 +343,9 @@ nsCopySupport::GetTransferableForNode(nsINode* aNode,
   RefPtr<nsRange> range = new nsRange(aNode);
   rv = range->SelectNode(node);
   NS_ENSURE_SUCCESS(rv, rv);
-  rv = selection->AddRange(range);
+  ErrorResult result;
+  selection->AsSelection()->AddRangeInternal(*range, aDoc, result);
+  rv = result.StealNSResult();
   NS_ENSURE_SUCCESS(rv, rv);
   
   uint32_t flags = 0;

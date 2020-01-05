@@ -1404,6 +1404,9 @@ nsHTMLCopyEncoder::SetSelection(nsISelection* aSelection)
   }
 
   
+  
+
+  
   nsCOMPtr<nsIHTMLDocument> htmlDoc = do_QueryInterface(mDocument);
   if (!(htmlDoc && mDocument->IsHTMLDocument())) {
     mIsTextWidget = true;
@@ -1430,7 +1433,10 @@ nsHTMLCopyEncoder::SetSelection(nsISelection* aSelection)
     rv = PromoteRange(myRange);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    rv = mSelection->AddRange(myRange);
+    ErrorResult result;
+    nsRange* r = static_cast<nsRange*>(myRange.get());
+    mSelection->AsSelection()->AddRangeInternal(*r, mDocument, result);
+    rv = result.StealNSResult();
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
