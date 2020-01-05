@@ -112,11 +112,14 @@ class WannabeChildAPIManager extends ChildAPIManager {
 
   getFallbackImplementation(namespace, name) {
     
-    let shouldSynchronouslyUseParentAPI = true;
+    let shouldSynchronouslyUseParentAPI = false;
     
-    
-    if (namespace == "test" && name != "onMessage") {
-      shouldSynchronouslyUseParentAPI = false;
+    if (namespace == "runtime" && name == "connectNative" || 
+        namespace == "runtime" && name == "sendNativeMessage" || 
+        namespace == "tabs" && name == "onRemoved" || 
+        namespace == "webNavigation" || 
+        namespace == "webRequest") { 
+      shouldSynchronouslyUseParentAPI = true;
     }
     if (shouldSynchronouslyUseParentAPI) {
       let proxyContext = ParentAPIManager.proxyContexts.get(this.id);
