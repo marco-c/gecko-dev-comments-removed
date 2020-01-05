@@ -606,6 +606,8 @@ def apply_patches():
     os.system("patch -p3 < 1237848-check-lookahead-ctx.patch")
     
     os.system("patch -p3 < input_frame_validation.patch")
+    
+    os.system("patch -p3 < input_frame_validation_vp9.patch")
 
 def update_readme(commit):
     with open('README_MOZILLA') as f:
