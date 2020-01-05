@@ -2,85 +2,207 @@
 
 
 
+"use strict";
+
 const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
 Cu.import("resource://gre/modules/Log.jsm");
-Cu.import("resource://gre/modules/Preferences.jsm");
 
 Cu.import("chrome://marionette/content/element.js");
-Cu.import("chrome://marionette/content/event.js");
+Cu.import("chrome://marionette/content/error.js");
 
-const CONTEXT_MENU_DELAY_PREF = "ui.click_hold_context_menus.delay";
-const DEFAULT_CONTEXT_MENU_DELAY = 750;  
 
 this.EXPORTED_SYMBOLS = ["action"];
 
 const logger = Log.repository.getLogger("Marionette");
 
-this.action = {};
 
 
 
 
-action.Chain = function(checkForInterrupted) {
-  
-  this.nextTouchId = 1000;
-  
-  this.touchIds = {};
-  
-  this.lastCoordinates = null;
-  this.isTap = false;
-  this.scrolling = false;
-  
-  this.mouseEventsOnly = false;
-  this.checkTimer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
 
-  if (typeof checkForInterrupted == "function") {
-    this.checkForInterrupted = checkForInterrupted;
-  } else {
-    this.checkForInterrupted = () => {};
-  }
 
-  
-  this.inputSource = null;
+this.action = {
+  Pause: "pause",
+  KeyDown: "keyDown",
+  KeyUp: "keyUp",
+  PointerDown: "pointerDown",
+  PointerUp: "pointerUp",
+  PointerMove: "pointerMove",
+  PointerCancel: "pointerCancel",
 };
 
-action.Chain.prototype.dispatchActions = function(
-    args,
-    touchId,
-    container,
-    seenEls,
-    touchProvider) {
+const ACTIONS = {
+  none: new Set([action.Pause]),
+  key: new Set([action.Pause, action.KeyDown, action.KeyUp]),
+  pointer: new Set([
+    action.Pause,
+    action.PointerDown,
+    action.PointerUp,
+    action.PointerMove,
+    action.PointerCancel,
+  ]),
+};
+
+
+action.PointerType = {
+  Mouse: "mouse",
+  Pen: "pen",
+  Touch: "touch",
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+action.PointerType.get = function(str) {
+  let name = capitalize(str);
+  if (!(name in this)) {
+    throw new InvalidArgumentError(`Unknown pointerType: ${str}`);
+  }
+  return this[name];
+};
+
+
+
+
+
+action.inputStateMap = new Map();
+
+
+
+
+class InputState {
+  constructor() {
+    this.type = this.constructor.name.toLowerCase();
+  }
+
   
+
+
+
+
+
+
+
+  is(other) {
+    if (typeof other == "undefined") {
+      return false;
+    }
+    return this.type === other.type;
+  }
+
+  toString() {
+    return `[object ${this.constructor.name}InputState]`;
+  }
+
   
-  if (touchProvider) {
-    this.touchProvider = touchProvider;
+
+
+
+
+
+
+
+
+
+  static fromJson(actionSequence) {
+    let type = actionSequence.type;
+    if (!(type in ACTIONS)) {
+      throw new InvalidArgumentError(`Unknown action type: ${type}`);
+    }
+    let name = type == "none" ? "Null" : capitalize(type);
+    return new action.InputState[name]();
   }
+}
 
-  this.seenEls = seenEls;
-  this.container = container;
-  let commandArray = element.fromJson(
-      args, seenEls, container.frame, container.shadowRoot);
 
-  if (touchId == null) {
-    touchId = this.nextTouchId++;
+action.InputState = {};
+
+
+
+
+action.InputState.Key = class extends InputState {
+  constructor() {
+    super();
+    this.pressed = new Set();
+    this.alt = false;
+    this.shift = false;
+    this.ctrl = false;
+    this.meta = false;
   }
+};
 
-  if (!container.frame.document.createTouch) {
-    this.mouseEventsOnly = true;
+
+
+
+action.InputState.Null = class extends InputState {
+  constructor() {
+    super();
+    this.type = "none";
   }
+};
 
-  let keyModifiers = {
-    shiftKey: false,
-    ctrlKey: false,
-    altKey: false,
-    metaKey: false,
+
+
+
+
+
+
+
+
+action.InputState.Pointer = class extends InputState {
+  constructor(subtype, primary) {
+    super();
+    this.pressed = new Set();
+    this.subtype = subtype;
+    this.primary = primary;
+    this.x = 0;
+    this.y = 0;
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+action.Action = class {
+  constructor(id, type, subtype) {
+    if ([id, type, subtype].includes(undefined)) {
+      throw new InvalidArgumentError("Missing id, type or subtype");
+    }
+    for (let attr of [id, type, subtype]) {
+      if (typeof attr != "string") {
+        throw new InvalidArgumentError(`Expected string, got: ${attr}`);
+      }
+    }
+    this.id = id;
+    this.type = type;
+    this.subtype = subtype;
   };
 
-  return new Promise(resolve => {
-    this.actions(commandArray, touchId, 0, keyModifiers, resolve);
-  }).catch(this.resetValues);
-};
+  toString() {
+    return `[action ${this.type}]`;
+  }
+
+  
 
 
 
@@ -94,222 +216,165 @@ action.Chain.prototype.dispatchActions = function(
 
 
 
-
-
-
-
-action.Chain.prototype.emitMouseEvent = function(
-    doc,
-    type,
-    elClientX,
-    elClientY,
-    button,
-    clickCount,
-    modifiers) {
-  if (!this.checkForInterrupted()) {
-    logger.debug(`Emitting ${type} mouse event ` +
-        `at coordinates (${elClientX}, ${elClientY}) ` +
-        `relative to the viewport, ` +
-        `button: ${button}, ` +
-        `clickCount: ${clickCount}`);
-
-    let win = doc.defaultView;
-    let domUtils = win.QueryInterface(Ci.nsIInterfaceRequestor)
-        .getInterface(Ci.nsIDOMWindowUtils);
-
-    let mods;
-    if (typeof modifiers != "undefined") {
-      mods = event.parseModifiers_(modifiers);
-    } else {
-      mods = 0;
+  static fromJson(actionSequence, actionItem) {
+    let type = actionSequence.type;
+    let id = actionSequence.id;
+    let subtypes = ACTIONS[type];
+    if (!subtypes) {
+      throw new InvalidArgumentError("Unknown type: " + type);
+    }
+    let subtype = actionItem.type;
+    if (!subtypes.has(subtype)) {
+      throw new InvalidArgumentError(`Unknown subtype for ${type} action: ${subtype}`);
     }
 
-    domUtils.sendMouseEvent(
-        type,
-        elClientX,
-        elClientY,
-        button || 0,
-        clickCount || 1,
-        mods,
-        false,
-        0,
-        this.inputSource);
-  }
-};
-
-
-
-
-action.Chain.prototype.resetValues = function() {
-  this.container = null;
-  this.seenEls = null;
-  this.touchProvider = null;
-  this.mouseEventsOnly = false;
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-action.Chain.prototype.actions = function(chain, touchId, i, keyModifiers, cb) {
-  if (i == chain.length) {
-    cb(touchId || null);
-    this.resetValues();
-    return;
-  }
-
-  let pack = chain[i];
-  let command = pack[0];
-  let el;
-  let c;
-  i++;
-
-  if (["press", "wait", "keyDown", "keyUp", "click"].indexOf(command) == -1) {
-    
-    if (!(touchId in this.touchIds) && !this.mouseEventsOnly) {
-      this.resetValues();
-      throw new WebDriverError("Element has not been pressed");
+    let item = new action.Action(id, type, subtype);
+    if (type === "pointer") {
+      action.processPointerAction(id,
+          action.PointerParameters.fromJson(actionSequence.parameters), item);
     }
-  }
 
-  switch (command) {
-    case "keyDown":
-      event.sendKeyDown(pack[1], keyModifiers, this.container.frame);
-      this.actions(chain, touchId, i, keyModifiers, cb);
-      break;
-
-    case "keyUp":
-      event.sendKeyUp(pack[1], keyModifiers, this.container.frame);
-      this.actions(chain, touchId, i, keyModifiers, cb);
-      break;
-
-    case "click":
-      el = this.seenEls.get(pack[1], this.container);
-      let button = pack[2];
-      let clickCount = pack[3];
-      c = element.coordinates(el);
-      this.mouseTap(el.ownerDocument, c.x, c.y, button, clickCount, keyModifiers);
-      if (button == 2) {
-        this.emitMouseEvent(el.ownerDocument, "contextmenu", c.x, c.y,
-            button, clickCount, keyModifiers);
-      }
-      this.actions(chain, touchId, i, keyModifiers, cb);
-      break;
-
-    case "press":
-      if (this.lastCoordinates) {
-        this.generateEvents(
-            "cancel",
-            this.lastCoordinates[0],
-            this.lastCoordinates[1],
-            touchId,
-            null,
-            keyModifiers);
-        this.resetValues();
-        throw new WebDriverError(
-            "Invalid Command: press cannot follow an active touch event");
-      }
-
-      
-      
-      if ((i != chain.length) && (chain[i][0].indexOf('move') !== -1)) {
-        this.scrolling = true;
-      }
-      el = this.seenEls.get(pack[1], this.container);
-      c = element.coordinates(el, pack[2], pack[3]);
-      touchId = this.generateEvents("press", c.x, c.y, null, el, keyModifiers);
-      this.actions(chain, touchId, i, keyModifiers, cb);
-      break;
-
-    case "release":
-      this.generateEvents(
-          "release",
-          this.lastCoordinates[0],
-          this.lastCoordinates[1],
-          touchId,
-          null,
-          keyModifiers);
-      this.actions(chain, null, i, keyModifiers, cb);
-      this.scrolling =  false;
-      break;
-
-    case "move":
-      el = this.seenEls.get(pack[1], this.container);
-      c = element.coordinates(el);
-      this.generateEvents("move", c.x, c.y, touchId, null, keyModifiers);
-      this.actions(chain, touchId, i, keyModifiers, cb);
-      break;
-
-    case "moveByOffset":
-      this.generateEvents(
-          "move",
-          this.lastCoordinates[0] + pack[1],
-          this.lastCoordinates[1] + pack[2],
-          touchId,
-          null,
-          keyModifiers);
-      this.actions(chain, touchId, i, keyModifiers, cb);
-      break;
-
-    case "wait":
-      if (pack[1] != null) {
-        let time = pack[1] * 1000;
-
+    switch (item.subtype) {
+      case action.KeyUp:
+      case action.KeyDown:
+        let key = actionItem.value;
         
-        let standard = Preferences.get(
-            CONTEXT_MENU_DELAY_PREF,
-            DEFAULT_CONTEXT_MENU_DELAY);
-
-        if (time >= standard && this.isTap) {
-          chain.splice(i, 0, ["longPress"], ["wait", (time - standard) / 1000]);
-          time = standard;
+        if (typeof key != "string" || (typeof key == "string" && key.length != 1)) {
+          throw new InvalidArgumentError("Expected 'key' to be a single-character string, " +
+                                         "got: " + key);
         }
-        this.checkTimer.initWithCallback(
-            () => this.actions(chain, touchId, i, keyModifiers, cb),
-            time, Ci.nsITimer.TYPE_ONE_SHOT);
-      } else {
-        this.actions(chain, touchId, i, keyModifiers, cb);
+        item.value = key;
+        break;
+
+      case action.PointerDown:
+      case action.PointerUp:
+        assertPositiveInteger(actionItem.button, "button");
+        item.button = actionItem.button;
+        break;
+
+      case action.PointerMove:
+        item.duration = actionItem.duration;
+        if (typeof item.duration != "undefined"){
+          assertPositiveInteger(item.duration, "duration");
+        }
+        if (typeof actionItem.element != "undefined" &&
+            !element.isWebElementReference(actionItem.element)) {
+          throw new InvalidArgumentError(
+              "Expected 'actionItem.element' to be a web element reference, " +
+              `got: ${actionItem.element}`);
+        }
+        item.element = actionItem.element;
+
+        item.x = actionItem.x;
+        if (typeof item.x != "undefined") {
+          assertPositiveInteger(item.x, "x");
+        }
+        item.y = actionItem.y;
+        if (typeof item.y != "undefined") {
+          assertPositiveInteger(item.y, "y");
+        }
+        break;
+
+      case action.PointerCancel:
+        throw new UnsupportedOperationError();
+        break;
+
+      case action.Pause:
+        item.duration = actionItem.duration;
+        if (typeof item.duration != "undefined") {
+          assertPositiveInteger(item.duration, "duration");
+        }
+        break;
+    }
+
+    return item;
+  }
+};
+
+
+
+
+action.Chain = class extends Array {
+  toString() {
+    return `[chain ${super.toString()}]`;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  static fromJson(actions) {
+    if (!Array.isArray(actions)) {
+      throw new InvalidArgumentError(`Expected 'actions' to be an Array, got: ${actions}`);
+    }
+    let actionsByTick = new action.Chain();
+    
+    for (let actionSequence of actions) {
+      let inputSourceActions = action.Sequence.fromJson(actionSequence);
+      for (let i = 0; i < inputSourceActions.length; i++) {
+        
+        if (actionsByTick.length < (i + 1)) {
+          actionsByTick.push([]);
+        }
+        actionsByTick[i].push(inputSourceActions[i]);
       }
-      break;
+    }
+    return actionsByTick;
+  }
+};
 
-    case "cancel":
-      this.generateEvents(
-          "cancel",
-          this.lastCoordinates[0],
-          this.lastCoordinates[1],
-          touchId,
-          null,
-          keyModifiers);
-      this.actions(chain, touchId, i, keyModifiers, cb);
-      this.scrolling = false;
-      break;
 
-    case "longPress":
-      this.generateEvents(
-          "contextmenu",
-          this.lastCoordinates[0],
-          this.lastCoordinates[1],
-          touchId,
-          null,
-          keyModifiers);
-      this.actions(chain, touchId, i, keyModifiers, cb);
-      break;
+
+
+action.Sequence = class extends Array {
+  toString() {
+    return `[sequence ${super.toString()}]`;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  static fromJson(actionSequence) {
+    
+    let inputSourceState = InputState.fromJson(actionSequence);
+    let id = actionSequence.id;
+    if (typeof id == "undefined") {
+      actionSequence.id = id = element.generateUUID();
+    } else if (typeof id != "string") {
+      throw new InvalidArgumentError(`Expected 'id' to be a string, got: ${id}`);
+    }
+    let actionItems = actionSequence.actions;
+    if (!Array.isArray(actionItems)) {
+      throw new InvalidArgumentError(
+          `Expected 'actionSequence.actions' to be an Array, got: ${actionSequence.actions}`);
+    }
+
+    if (action.inputStateMap.has(id) && !action.inputStateMap.get(id).is(inputSourceState)) {
+      throw new InvalidArgumentError(
+          `Expected ${id} to be mapped to ${inputSourceState}, ` +
+          `got: ${action.inputStateMap.get(id)}`);
+    }
+    let actions = new action.Sequence();
+    for (let actionItem of actionItems) {
+      actions.push(action.Action.fromJson(actionSequence, actionItem));
+    }
+    return actions;
   }
 };
 
@@ -317,161 +382,82 @@ action.Chain.prototype.actions = function(chain, touchId, i, keyModifiers, cb) {
 
 
 
-action.Chain.prototype.getCoordinateInfo = function(el, corx, cory) {
-  let win = el.ownerDocument.defaultView;
-  return [
-    corx, 
-    cory, 
-    corx + win.pageXOffset, 
-    cory + win.pageYOffset, 
-    corx + win.mozInnerScreenX, 
-    cory + win.mozInnerScreenY 
-  ];
-};
 
 
 
 
 
+action.PointerParameters = class {
+  constructor(pointerType = "mouse", primary = true) {
+    this.pointerType = action.PointerType.get(pointerType);
+    assertBoolean(primary, "primary");
+    this.primary = primary;
+  };
 
-
-
-
-action.Chain.prototype.generateEvents = function(
-    type, x, y, touchId, target, keyModifiers) {
-  this.lastCoordinates = [x, y];
-  let doc = this.container.frame.document;
-
-  switch (type) {
-    case "tap":
-      if (this.mouseEventsOnly) {
-        this.mouseTap(
-            touch.target.ownerDocument,
-            touch.clientX,
-            touch.clientY,
-            null,
-            null,
-            keyModifiers);
-      } else {
-        touchId = this.nextTouchId++;
-        let touch = this.touchProvider.createATouch(target, x, y, touchId);
-        this.touchProvider.emitTouchEvent("touchstart", touch);
-        this.touchProvider.emitTouchEvent("touchend", touch);
-        this.mouseTap(
-            touch.target.ownerDocument,
-            touch.clientX,
-            touch.clientY,
-            null,
-            null,
-            keyModifiers);
-      }
-      this.lastCoordinates = null;
-      break;
-
-    case "press":
-      this.isTap = true;
-      if (this.mouseEventsOnly) {
-        this.emitMouseEvent(doc, "mousemove", x, y, null, null, keyModifiers);
-        this.emitMouseEvent(doc, "mousedown", x, y, null, null, keyModifiers);
-      } else {
-        touchId = this.nextTouchId++;
-        let touch = this.touchProvider.createATouch(target, x, y, touchId);
-        this.touchProvider.emitTouchEvent("touchstart", touch);
-        this.touchIds[touchId] = touch;
-        return touchId;
-      }
-      break;
-
-    case "release":
-      if (this.mouseEventsOnly) {
-        let [x, y] = this.lastCoordinates;
-        this.emitMouseEvent(doc, "mouseup", x, y, null, null, keyModifiers);
-      } else {
-        let touch = this.touchIds[touchId];
-        let [x, y] = this.lastCoordinates;
-
-        touch = this.touchProvider.createATouch(touch.target, x, y, touchId);
-        this.touchProvider.emitTouchEvent("touchend", touch);
-
-        if (this.isTap) {
-          this.mouseTap(
-              touch.target.ownerDocument,
-              touch.clientX,
-              touch.clientY,
-              null,
-              null,
-              keyModifiers);
-        }
-        delete this.touchIds[touchId];
-      }
-
-      this.isTap = false;
-      this.lastCoordinates = null;
-      break;
-
-    case "cancel":
-      this.isTap = false;
-      if (this.mouseEventsOnly) {
-        let [x, y] = this.lastCoordinates;
-        this.emitMouseEvent(doc, "mouseup", x, y, null, null, keyModifiers);
-      } else {
-        this.touchProvider.emitTouchEvent("touchcancel", this.touchIds[touchId]);
-        delete this.touchIds[touchId];
-      }
-      this.lastCoordinates = null;
-      break;
-
-    case "move":
-      this.isTap = false;
-      if (this.mouseEventsOnly) {
-        this.emitMouseEvent(doc, "mousemove", x, y, null, null, keyModifiers);
-      } else {
-        let touch = this.touchProvider.createATouch(
-            this.touchIds[touchId].target, x, y, touchId);
-        this.touchIds[touchId] = touch;
-        this.touchProvider.emitTouchEvent("touchmove", touch);
-      }
-      break;
-
-    case "contextmenu":
-      this.isTap = false;
-      let event = this.container.frame.document.createEvent("MouseEvents");
-      if (this.mouseEventsOnly) {
-        target = doc.elementFromPoint(this.lastCoordinates[0], this.lastCoordinates[1]);
-      } else {
-        target = this.touchIds[touchId].target;
-      }
-
-      let [clientX, clientY, pageX, pageY, screenX, screenY] =
-          this.getCoordinateInfo(target, x, y);
-
-      event.initMouseEvent(
-          "contextmenu",
-          true,
-          true,
-          target.ownerDocument.defaultView,
-          1,
-          screenX,
-          screenY,
-          clientX,
-          clientY,
-          false,
-          false,
-          false,
-          false,
-          0,
-          null);
-      target.dispatchEvent(event);
-      break;
-
-    default:
-      throw new WebDriverError("Unknown event type: " + type);
+  toString() {
+    return `[pointerParameters ${this.pointerType}, primary=${this.primary}]`;
   }
-  this.checkForInterrupted();
+
+  
+
+
+
+
+
+
+  static fromJson(parametersData) {
+    if (typeof parametersData == "undefined") {
+      return new action.PointerParameters();
+    } else {
+      return new action.PointerParameters(parametersData.pointerType, parametersData.primary);
+    }
+  }
 };
 
-action.Chain.prototype.mouseTap = function(doc, x, y, button, count, mod) {
-  this.emitMouseEvent(doc, "mousemove", x, y, button, count, mod);
-  this.emitMouseEvent(doc, "mousedown", x, y, button, count, mod);
-  this.emitMouseEvent(doc, "mouseup", x, y, button, count, mod);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+action.processPointerAction = function processPointerAction(id, pointerParams, act) {
+  let subtype = act.subtype;
+  if (action.inputStateMap.has(id) && action.inputStateMap.get(id).subtype !== subtype) {
+    throw new InvalidArgumentError(
+        `Expected 'id' ${id} to be mapped to InputState whose subtype is ` +
+        `${action.inputStateMap.get(id).subtype}, got: ${subtype}`);
+  }
+  act.pointerType = pointerParams.pointerType;
+  act.primary = pointerParams.primary;
 };
+
+
+function assertPositiveInteger(value, name = undefined) {
+  let suffix = name ? ` (${name})` : '';
+  if (!Number.isInteger(value) || value < 0) {
+    throw new InvalidArgumentError(`Expected integer >= 0${suffix}, got: ${value}`);
+  }
+}
+
+function assertBoolean(value, name = undefined) {
+  let suffix = name ? ` (${name})` : '';
+  if (typeof(value) != "boolean") {
+    throw new InvalidArgumentError(`Expected boolean${suffix}, got: ${value}`);
+  }
+}
+
+function capitalize(str) {
+  if (typeof str != "string") {
+    throw new InvalidArgumentError(`Expected string, got: ${str}`);
+  }
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
