@@ -221,9 +221,53 @@ pub trait Flow: fmt::Debug + Sync {
         if impacted {
             mut_base(self).thread_id = parent_thread_id;
             self.assign_block_size(layout_context);
+            self.store_overflow(layout_context);
             mut_base(self).restyle_damage.remove(REFLOW_OUT_OF_FLOW | REFLOW);
         }
         impacted
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn store_overflow(&mut self, _: &LayoutContext) {
+        
+        let mut overflow = self.compute_overflow();
+        match self.class() {
+            FlowClass::Block |
+            FlowClass::TableCaption |
+            FlowClass::TableCell if base(self).children.len() != 0 => {
+                
+                let container_size = Size2D::zero();
+                for kid in mut_base(self).children.iter_mut() {
+                    if base(kid).flags.contains(IS_ABSOLUTELY_POSITIONED) {
+                        continue
+                    }
+                    let kid_overflow = base(kid).overflow;
+                    let kid_position = base(kid).position.to_physical(base(kid).writing_mode,
+                                                                      container_size);
+                    overflow = overflow.union(&kid_overflow.translate(&kid_position.origin))
+                }
+
+                for kid in mut_base(self).abs_descendants.iter() {
+                    let kid_overflow = base(kid).overflow;
+                    let kid_position = base(kid).position.to_physical(base(kid).writing_mode,
+                                                                      container_size);
+                    overflow = overflow.union(&kid_overflow.translate(&kid_position.origin))
+                }
+            }
+            _ => {}
+        }
+        mut_base(self).overflow = overflow;
     }
 
     
@@ -428,9 +472,6 @@ pub trait MutableFlowUtils {
     fn traverse_postorder<T:PostorderFlowTraversal>(self, traversal: &T);
 
     
-
-    
-    fn store_overflow(self, _: &LayoutContext);
 
     
     
@@ -1228,41 +1269,6 @@ impl<'a> MutableFlowUtils for &'a mut (Flow + 'a) {
         }
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn store_overflow(self, _: &LayoutContext) {
-        
-        let mut overflow = self.compute_overflow();
-        if self.is_block_container() {
-            
-            let container_size = Size2D::zero();
-            for kid in child_iter(self) {
-                if base(kid).flags.contains(IS_ABSOLUTELY_POSITIONED) {
-                    continue
-                }
-                let kid_overflow = base(kid).overflow;
-                let kid_position = base(kid).position.to_physical(base(kid).writing_mode,
-                                                                  container_size);
-                overflow = overflow.union(&kid_overflow.translate(&kid_position.origin))
-            }
-
-            for kid in mut_base(self).abs_descendants.iter() {
-                let kid_overflow = base(kid).overflow;
-                let kid_position = base(kid).position.to_physical(base(kid).writing_mode,
-                                                                  container_size);
-                overflow = overflow.union(&kid_overflow.translate(&kid_position.origin))
-            }
-        }
-
-        mut_base(self).overflow = overflow;
-    }
 
     
     
