@@ -139,9 +139,16 @@ class EncryptionRemoteTransformer {
                                           keyBundle.encryptionKeyB64, IV);
       let hmac = ciphertextHMAC(keyBundle, id, IV, ciphertext);
       const encryptedResult = {ciphertext, IV, hmac, id};
+
+      
+      
+      
+      
+      encryptedResult._status = record._status == "deleted" ? "updated" : record._status;
       if (record.hasOwnProperty("last_modified")) {
         encryptedResult.last_modified = record.last_modified;
       }
+
       return encryptedResult;
     });
   }
@@ -181,6 +188,13 @@ class EncryptionRemoteTransformer {
 
       if (record.hasOwnProperty("last_modified")) {
         jsonResult.last_modified = record.last_modified;
+      }
+
+      
+      
+      
+      if (jsonResult._status == "deleted") {
+        jsonResult.deleted = true;
       }
 
       return jsonResult;
