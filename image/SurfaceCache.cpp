@@ -502,7 +502,7 @@ public:
 
     
     if (!aSurface->IsPlaceholder()) {
-      static_cast<Image*>(imageKey)->OnSurfaceDiscarded();
+      static_cast<Image*>(imageKey)->OnSurfaceDiscarded(aSurface->GetSurfaceKey());
     }
 
     StopTracking(aSurface);
