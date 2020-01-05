@@ -1734,7 +1734,6 @@ class WasmActivation : public Activation
 {
     WasmActivation* prevWasm_;
     void* entrySP_;
-    void* resumePC_;
     uint8_t* exitFP_;
     wasm::ExitReason exitReason_;
 
@@ -1765,8 +1764,8 @@ class WasmActivation : public Activation
     
     void startInterrupt(void* pc, uint8_t* fp);
     void finishInterrupt();
-    bool interrupted() const { return !!resumePC_; }
-    void* resumePC() const { MOZ_ASSERT(interrupted()); return resumePC_; }
+    bool interrupted() const;
+    void* resumePC() const;
 
     
     void unwindExitFP(uint8_t* exitFP);

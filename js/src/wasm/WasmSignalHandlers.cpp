@@ -1027,7 +1027,12 @@ HandleMachException(JSContext* cx, const ExceptionRequest& request)
     if (!IsHeapAccessAddress(*instance, faultingAddress))
         return false;
 
-    HandleMemoryAccess(&context, pc, faultingAddress, *instance, activation, ppc);
+    {
+        
+        
+        AutoNoteSingleThreadedRegion anstr;
+        HandleMemoryAccess(&context, pc, faultingAddress, *instance, activation, ppc);
+    }
 
     
     kret = thread_set_state(cxThread, float_state, (thread_state_t)&context.float_, float_state_count);

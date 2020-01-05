@@ -1060,6 +1060,23 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
     js::ActiveThreadData<js::RuntimeCaches> caches_;
   public:
     js::RuntimeCaches& caches() { return caches_.ref(); }
+
+  private:
+    
+    
+    
+    
+    
+    js::ActiveThreadData<void*> wasmResumePC_;
+
+  public:
+    void* wasmResumePC() const {
+        return wasmResumePC_;
+    }
+    void setWasmResumePC(void* resumePC) {
+        MOZ_ASSERT(!!resumePC == !wasmResumePC_);
+        wasmResumePC_ = resumePC;
+    }
 };
 
 namespace js {
