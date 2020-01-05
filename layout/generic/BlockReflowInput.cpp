@@ -329,8 +329,8 @@ BlockReflowInput::ReplacedBlockFitsInAvailSpace(nsIFrame* aReplacedBlock,
 
 nsFlowAreaRect
 BlockReflowInput::GetFloatAvailableSpaceWithState(
-                      nscoord aBCoord,
-                      nsFloatManager::SavedState *aState) const
+                    nscoord aBCoord, ShapeType aShapeType,
+                    nsFloatManager::SavedState* aState) const
 {
   WritingMode wm = mReflowInput.GetWritingMode();
 #ifdef DEBUG
@@ -346,7 +346,7 @@ BlockReflowInput::GetFloatAvailableSpaceWithState(
     ? nscoord_MAX : std::max(mContentArea.BEnd(wm) - aBCoord, 0);
   nsFlowAreaRect result =
     mFloatManager->GetFlowArea(wm, aBCoord, blockSize,
-                               nsFloatManager::BandInfoType::BandFromPoint,
+                               BandInfoType::BandFromPoint, aShapeType,
                                mContentArea, aState, ContainerSize());
   
   if (result.mRect.ISize(wm) < 0) {
@@ -380,7 +380,8 @@ BlockReflowInput::GetFloatAvailableSpaceForBSize(
 #endif
   nsFlowAreaRect result =
     mFloatManager->GetFlowArea(wm, aBCoord, aBSize,
-                               nsFloatManager::BandInfoType::WidthWithinHeight,
+                               BandInfoType::WidthWithinHeight,
+                               ShapeType::ShapeOutside,
                                mContentArea, aState, ContainerSize());
   
   if (result.mRect.ISize(wm) < 0) {
@@ -619,7 +620,8 @@ BlockReflowInput::AddFloat(nsLineLayout*       aLineLayout,
   
   
   
-  LogicalRect floatAvailableSpace = GetFloatAvailableSpace().mRect;
+  LogicalRect floatAvailableSpace =
+    GetFloatAvailableSpaceForPlacingFloat(mBCoord).mRect;
   if (mBelowCurrentLineFloats.IsEmpty() &&
       (aLineLayout->LineIsEmpty() ||
        mBlock->ComputeFloatISize(*this, floatAvailableSpace, aFloat)
@@ -743,8 +745,9 @@ BlockReflowInput::FlowAndPlaceFloat(nsIFrame* aFloat)
     
     mBCoord = ClearFloats(mBCoord, floatDisplay->PhysicalBreakType(wm));
   }
-    
-  nsFlowAreaRect floatAvailableSpace = GetFloatAvailableSpace(mBCoord);
+  
+  nsFlowAreaRect floatAvailableSpace =
+    GetFloatAvailableSpaceForPlacingFloat(mBCoord);
   LogicalRect adjustedAvailableSpace =
     mBlock->AdjustFloatAvailableSpace(*this, floatAvailableSpace.mRect, aFloat);
 
@@ -819,7 +822,7 @@ BlockReflowInput::FlowAndPlaceFloat(nsIFrame* aFloat)
       if (adjustedAvailableSpace.BSize(wm) != NS_UNCONSTRAINEDSIZE) {
         adjustedAvailableSpace.BSize(wm) -= floatAvailableSpace.mRect.BSize(wm);
       }
-      floatAvailableSpace = GetFloatAvailableSpace(mBCoord);
+      floatAvailableSpace = GetFloatAvailableSpaceForPlacingFloat(mBCoord);
     } else {
       
       
@@ -860,7 +863,7 @@ BlockReflowInput::FlowAndPlaceFloat(nsIFrame* aFloat)
       mBCoord += floatAvailableSpace.mRect.BSize(wm);
       
       
-      floatAvailableSpace = GetFloatAvailableSpace(mBCoord);
+      floatAvailableSpace = GetFloatAvailableSpaceForPlacingFloat(mBCoord);
       adjustedAvailableSpace = mBlock->AdjustFloatAvailableSpace(*this,
                                  floatAvailableSpace.mRect, aFloat);
       floatMarginISize = FloatMarginISize(mReflowInput,

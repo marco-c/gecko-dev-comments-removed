@@ -22,6 +22,8 @@ namespace mozilla {
 
 
 class BlockReflowInput {
+  using BandInfoType = nsFloatManager::BandInfoType;
+  using ShapeType = nsFloatManager::ShapeType;
 
   
   struct Flags {
@@ -121,10 +123,14 @@ public:
 
   nsFlowAreaRect GetFloatAvailableSpace() const
     { return GetFloatAvailableSpace(mBCoord); }
+  nsFlowAreaRect GetFloatAvailableSpaceForPlacingFloat(nscoord aBCoord) const
+    { return GetFloatAvailableSpaceWithState(
+        aBCoord, ShapeType::Margin, nullptr); }
   nsFlowAreaRect GetFloatAvailableSpace(nscoord aBCoord) const
-    { return GetFloatAvailableSpaceWithState(aBCoord, nullptr); }
+    { return GetFloatAvailableSpaceWithState(
+        aBCoord, ShapeType::ShapeOutside, nullptr); }
   nsFlowAreaRect
-    GetFloatAvailableSpaceWithState(nscoord aBCoord,
+    GetFloatAvailableSpaceWithState(nscoord aBCoord, ShapeType aShapeType,
                                     nsFloatManager::SavedState *aState) const;
   nsFlowAreaRect
     GetFloatAvailableSpaceForBSize(nscoord aBCoord, nscoord aBSize,

@@ -10,6 +10,7 @@
 #define nsFloatManager_h_
 
 #include "mozilla/Attributes.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/WritingModes.h"
 #include "nsCoord.h"
 #include "nsFrameList.h" 
@@ -159,10 +160,15 @@ public:
 
 
 
+
+
+
+
   enum class BandInfoType { BandFromPoint, WidthWithinHeight };
+  enum class ShapeType { Margin, ShapeOutside };
   nsFlowAreaRect GetFlowArea(mozilla::WritingMode aWM,
                              nscoord aBCoord, nscoord aBSize,
-                             BandInfoType aBandInfoType,
+                             BandInfoType aBandInfoType, ShapeType aShapeType,
                              mozilla::LogicalRect aContentArea,
                              SavedState* aState,
                              const nsSize& aContainerSize) const;
@@ -324,6 +330,18 @@ private:
     nscoord BSize() const { return mRect.height; }
     bool IsEmpty() const { return mRect.IsEmpty(); }
 
+    nsRect ShapeBoxRect() const { return mShapeBoxRect.valueOr(mRect); }
+    nscoord LineLeft(ShapeType aShapeType) const;
+    nscoord LineRight(ShapeType aShapeType) const;
+    nscoord BStart(ShapeType aShapeType) const
+    {
+      return aShapeType == ShapeType::Margin ? BStart() : ShapeBoxRect().y;
+    }
+    nscoord BEnd(ShapeType aShapeType) const
+    {
+      return aShapeType == ShapeType::Margin ? BEnd() : ShapeBoxRect().YMost();
+    }
+
 #ifdef NS_BUILD_REFCNT_LOGGING
     FloatInfo(const FloatInfo& aOther);
     ~FloatInfo();
@@ -336,6 +354,10 @@ private:
     
     
     nsRect mRect;
+    
+    
+    
+    mozilla::Maybe<nsRect> mShapeBoxRect;
   };
 
 #ifdef DEBUG
