@@ -1,8 +1,18 @@
 
 
 
+
 use bluetooth_scanfilter::RequestDeviceoptions;
 use ipc_channel::ipc::IpcSender;
+
+#[derive(Deserialize, Serialize)]
+pub enum BluetoothError {
+    Type(String),
+    Network,
+    NotFound,
+    NotSupported,
+    Security,
+}
 
 #[derive(Deserialize, Serialize)]
 pub struct BluetoothDeviceMsg {
@@ -51,7 +61,7 @@ pub type BluetoothCharacteristicsMsg = Vec<BluetoothCharacteristicMsg>;
 
 pub type BluetoothDescriptorsMsg = Vec<BluetoothDescriptorMsg>;
 
-pub type BluetoothResult<T> = Result<T, String>;
+pub type BluetoothResult<T> = Result<T, BluetoothError>;
 
 #[derive(Deserialize, Serialize)]
 pub enum BluetoothMethodMsg {
