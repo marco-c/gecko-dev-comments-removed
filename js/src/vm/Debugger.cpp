@@ -3223,16 +3223,20 @@ Debugger::sweepAll(FreeOp* fop)
         Debugger* dbg = group->debuggerList().getFirst();
         while (dbg) {
             Debugger* next = dbg->getNext();
-            if (IsAboutToBeFinalized(&dbg->object)) {
-                
 
-
-
-
-                for (WeakGlobalObjectSet::Enum e(dbg->debuggees); !e.empty(); e.popFront())
+            
+            
+            
+            bool debuggerDying = IsAboutToBeFinalized(&dbg->object);
+            for (WeakGlobalObjectSet::Enum e(dbg->debuggees); !e.empty(); e.popFront()) {
+                GlobalObject* global = e.front().unbarrieredGet();
+                if (debuggerDying || IsAboutToBeFinalizedUnbarriered(&global))
                     dbg->removeDebuggeeGlobal(fop, e.front().unbarrieredGet(), &e);
-                fop->delete_(dbg);
             }
+
+            if (debuggerDying)
+                fop->delete_(dbg);
+
             dbg = next;
         }
     }

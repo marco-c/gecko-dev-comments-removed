@@ -162,9 +162,10 @@ class DebuggerWeakMap : private WeakMap<HeapPtr<UnbarrieredKey>, HeapPtr<JSObjec
   private:
     
     void sweep() {
+        MOZ_ASSERT(CurrentThreadIsPerformingGC());
         for (Enum e(*static_cast<Base*>(this)); !e.empty(); e.popFront()) {
             if (gc::IsAboutToBeFinalized(&e.front().mutableKey())) {
-                decZoneCount(e.front().key()->zone());
+                decZoneCount(e.front().key()->zoneFromAnyThread());
                 e.removeFront();
             }
         }
