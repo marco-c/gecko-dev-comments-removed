@@ -48,6 +48,7 @@ impl FramerateActor {
     }
 
     
+    #[allow(dead_code)]
     pub fn on_refresh_driver_tick(&mut self) {
         if !self.is_recording {
             return;
