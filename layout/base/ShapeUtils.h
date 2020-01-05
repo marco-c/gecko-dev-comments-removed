@@ -48,6 +48,15 @@ struct ShapeUtils final
   static nscoord ComputeCircleRadius(
     mozilla::StyleBasicShape* const aBasicShape,
     const nsPoint& aCenter, const nsRect& aRefBox);
+
+  
+  
+  
+  
+  
+  static nsSize ComputeEllipseRadii(
+    mozilla::StyleBasicShape* const aBasicShape,
+    const nsPoint& aCenter, const nsRect& aRefBox);
 };
 
 } 
