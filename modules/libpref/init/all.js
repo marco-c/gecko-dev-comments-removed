@@ -5061,9 +5061,6 @@ pref("dom.forms.inputmode", false);
 pref("dom.forms.inputmode", true);
 #endif
 
-
-pref("dom.mozInputMethod.enabled", false);
-
 pref("dom.flyweb.enabled", false);
 
 
