@@ -32,7 +32,9 @@ const EXTRA_SCRIPTS = [
   
   "toolkit/content/globalOverlay.js",
   
-  "toolkit/content/editMenuOverlay.js"
+  "toolkit/content/editMenuOverlay.js",
+  
+  "browser/base/content/utilityOverlay.js",
 ];
 
 

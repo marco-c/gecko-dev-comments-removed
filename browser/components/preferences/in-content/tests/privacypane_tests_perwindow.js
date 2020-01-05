@@ -1,3 +1,6 @@
+
+
+
 function* runTestOnPrivacyPrefPane(testFunc) {
   info("runTestOnPrivacyPrefPane entered");
   let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, "about:preferences", true, true);

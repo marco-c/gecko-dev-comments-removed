@@ -64,6 +64,13 @@ const globalCache = new Map();
 
 
 
+var globalDiscoveryInProgressForFiles = new Set();
+
+
+
+
+
+
 
 
 
@@ -130,6 +137,14 @@ module.exports = {
       return globalCache.get(path);
     }
 
+    if (globalDiscoveryInProgressForFiles.has(path)) {
+      
+      
+      return [];
+    } else {
+      globalDiscoveryInProgressForFiles.add(path);
+    }
+
     let content = fs.readFileSync(path, "utf8");
 
     
@@ -173,6 +188,7 @@ module.exports = {
 
     globalCache.set(path, globals);
 
+    globalDiscoveryInProgressForFiles.delete(path);
     return globals;
   },
 
