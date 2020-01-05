@@ -276,6 +276,21 @@ public:
               ComputeSizeFlags            aFlags) override;
 
   
+
+
+
+  mozilla::LogicalSize
+  ComputeSizeWithIntrinsicDimensions(
+              nsRenderingContext*           aRenderingContext,
+              mozilla::WritingMode          aWM,
+              const mozilla::IntrinsicSize& aIntrinsicSize,
+              nsSize                        aIntrinsicRatio,
+              const mozilla::LogicalSize&   aCBSize,
+              const mozilla::LogicalSize&   aMargin,
+              const mozilla::LogicalSize&   aBorder,
+              const mozilla::LogicalSize&   aPadding);
+
+  
   
   nsRect ComputeSimpleTightBounds(mozilla::gfx::DrawTarget* aDrawTarget) const;
   
