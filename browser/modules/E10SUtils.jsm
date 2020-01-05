@@ -13,8 +13,12 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyPreferenceGetter(this, "useRemoteWebExtensions",
                                       "extensions.webextensions.remote", false);
+XPCOMUtils.defineLazyPreferenceGetter(this, "useSeparateFileUriProcess",
+                                      "browser.tabs.remote.separateFileUriProcess", false);
 XPCOMUtils.defineLazyModuleGetter(this, "Utils",
                                   "resource://gre/modules/sessionstore/Utils.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "console",
+                                  "resource://gre/modules/Console.jsm");
 
 function getAboutModule(aURL) {
   
@@ -56,7 +60,7 @@ this.E10SUtils = {
   },
 
   getRemoteTypeForURI(aURL, aMultiProcess,
-                                aPreferredRemoteType = DEFAULT_REMOTE_TYPE) {
+                      aPreferredRemoteType = DEFAULT_REMOTE_TYPE) {
     if (!aMultiProcess) {
       return NOT_REMOTE;
     }
@@ -66,92 +70,105 @@ this.E10SUtils = {
       aURL = "about:blank";
     }
 
-    
-    if (aURL.startsWith("javascript:")) {
-      return aPreferredRemoteType;
+    let uri;
+    try {
+      uri = Services.io.newURI(aURL);
+    } catch (e) {
+      
+      
+      
+      
+      return DEFAULT_REMOTE_TYPE;
     }
 
-    
-    
-    
-    
-    if (aURL.startsWith("data:") || aURL.startsWith("blob:")) {
-      return aPreferredRemoteType == NOT_REMOTE ? DEFAULT_REMOTE_TYPE
-                                                : aPreferredRemoteType;
-    }
+    return this.getRemoteTypeForURIObject(uri, aMultiProcess,
+                                          aPreferredRemoteType);
+  },
 
-    if (aURL.startsWith("file:")) {
-      return Services.prefs.getBoolPref("browser.tabs.remote.separateFileUriProcess")
-             ? FILE_REMOTE_TYPE : DEFAULT_REMOTE_TYPE;
-    }
-
-    if (aURL.startsWith("about:")) {
-      
-      if (aURL == "about:blank") {
-        return aPreferredRemoteType;
-      }
-
-      let url = Services.io.newURI(aURL);
-      let module = getAboutModule(url);
-      
-      
-      if (!module) {
-        return aPreferredRemoteType;
-      }
-
-      let flags = module.getURIFlags(url);
-      if (flags & Ci.nsIAboutModule.URI_MUST_LOAD_IN_CHILD) {
-        return DEFAULT_REMOTE_TYPE;
-      }
-
-      
-      
-      if (flags & Ci.nsIAboutModule.URI_CAN_LOAD_IN_CHILD) {
-        return aPreferredRemoteType;
-      }
-
+  getRemoteTypeForURIObject(aURI, aMultiProcess,
+                            aPreferredRemoteType = DEFAULT_REMOTE_TYPE) {
+    if (!aMultiProcess) {
       return NOT_REMOTE;
     }
 
-    if (aURL.startsWith("chrome:")) {
-      let url;
-      try {
+    switch (aURI.scheme) {
+      case "javascript":
         
-        
-        url = Services.io.newURI(aURL);
-      } catch (ex) {
         return aPreferredRemoteType;
-      }
 
-      let chromeReg = Cc["@mozilla.org/chrome/chrome-registry;1"].
-                      getService(Ci.nsIXULChromeRegistry);
-      if (chromeReg.mustLoadURLRemotely(url)) {
-        return DEFAULT_REMOTE_TYPE;
-      }
+      case "data":
+      case "blob":
+        
+        
+        
+        
+        
+        return aPreferredRemoteType == NOT_REMOTE ? DEFAULT_REMOTE_TYPE
+                                                  : aPreferredRemoteType;
 
-      if (chromeReg.canLoadURLRemotely(url) &&
-          aPreferredRemoteType != NOT_REMOTE) {
-        return DEFAULT_REMOTE_TYPE;
-      }
+      case "file":
+        return useSeparateFileUriProcess ? FILE_REMOTE_TYPE
+                                         : DEFAULT_REMOTE_TYPE;
 
-      return NOT_REMOTE;
+      case "about":
+        let module = getAboutModule(aURI);
+        
+        
+        if (!module) {
+          return aPreferredRemoteType;
+        }
+
+        let flags = module.getURIFlags(aURI);
+        if (flags & Ci.nsIAboutModule.URI_MUST_LOAD_IN_CHILD) {
+          return DEFAULT_REMOTE_TYPE;
+        }
+
+        
+        
+        if (flags & Ci.nsIAboutModule.URI_CAN_LOAD_IN_CHILD) {
+          return aPreferredRemoteType;
+        }
+
+        return NOT_REMOTE;
+
+      case "chrome":
+        let chromeReg = Cc["@mozilla.org/chrome/chrome-registry;1"].
+                        getService(Ci.nsIXULChromeRegistry);
+        if (chromeReg.mustLoadURLRemotely(aURI)) {
+          return DEFAULT_REMOTE_TYPE;
+        }
+
+        if (chromeReg.canLoadURLRemotely(aURI) &&
+            aPreferredRemoteType != NOT_REMOTE) {
+          return DEFAULT_REMOTE_TYPE;
+        }
+
+        return NOT_REMOTE;
+
+      case "moz-extension":
+        return useRemoteWebExtensions ? EXTENSION_REMOTE_TYPE : NOT_REMOTE;
+
+      default:
+        
+        
+        
+        
+        
+        
+        
+        if (aURI instanceof Ci.nsINestedURI) {
+          let innerURI = aURI.QueryInterface(Ci.nsINestedURI).innerURI;
+          return this.getRemoteTypeForURIObject(innerURI, aMultiProcess,
+                                                aPreferredRemoteType);
+        }
+
+        return validatedWebRemoteType(aPreferredRemoteType);
     }
-
-    if (aURL.startsWith("moz-extension:")) {
-      return useRemoteWebExtensions ? EXTENSION_REMOTE_TYPE : NOT_REMOTE;
-    }
-
-    if (aURL.startsWith("view-source:")) {
-      return this.getRemoteTypeForURI(aURL.substr("view-source:".length),
-                                      aMultiProcess, aPreferredRemoteType);
-    }
-
-    return validatedWebRemoteType(aPreferredRemoteType);
   },
 
   shouldLoadURIInThisProcess(aURI) {
     let remoteType = Services.appinfo.remoteType;
-    return remoteType == this.getRemoteTypeForURI(aURI.spec, true, remoteType);
+    return remoteType == this.getRemoteTypeForURIObject(aURI, true, remoteType);
   },
 
   shouldLoadURI(aDocShell, aURI, aReferrer) {
