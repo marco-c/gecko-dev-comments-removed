@@ -16,17 +16,24 @@ add_task(function* test() {
 
   
   
-  injectInlineScript(browser, 'document.getElementById("test_id").value = "fail";');
-  is(browser.contentDocument.getElementById("test_id").value, "ok",
-     "CSP should block the inline script that modifies test_id");
+  yield injectInlineScript(browser, `document.getElementById("test_id").value = "fail";`);
 
-  
-  
-  browser.contentDocument.getElementById("test_data_link").click();
-  yield promiseBrowserLoaded(browser);
+  let loadedPromise = promiseBrowserLoaded(browser);
+  yield ContentTask.spawn(browser, null, function() {
+    is(content.document.getElementById("test_id").value, "ok",
+       "CSP should block the inline script that modifies test_id");
 
-  is(browser.contentDocument.getElementById("test_id2").value, "ok",
-     "CSP should block the script loaded by the clicked data URI");
+    
+    
+    content.document.getElementById("test_data_link").click();
+  });
+
+  yield loadedPromise;
+
+  yield ContentTask.spawn(browser, null, function() {
+    is(content.document.getElementById("test_id2").value, "ok",
+       "CSP should block the script loaded by the clicked data URI");
+  });
 
   
   yield promiseRemoveTab(tab);
@@ -36,8 +43,10 @@ add_task(function* test() {
   yield promiseTabRestored(tab);
   browser = tab.linkedBrowser;
 
-  is(browser.contentDocument.getElementById("test_id2").value, "ok",
-     "CSP should block the script loaded by the clicked data URI after restore");
+  yield ContentTask.spawn(browser, null, function() {
+    is(content.document.getElementById("test_id2").value, "ok",
+       "CSP should block the script loaded by the clicked data URI after restore");
+  });
 
   
   gBrowser.removeTab(tab);
@@ -45,8 +54,10 @@ add_task(function* test() {
 
 
 function injectInlineScript(browser, scriptText) {
-  let scriptElt = browser.contentDocument.createElement("script");
-  scriptElt.type = "text/javascript";
-  scriptElt.text = scriptText;
-  browser.contentDocument.body.appendChild(scriptElt);
+  return ContentTask.spawn(browser, scriptText, function(text) {
+    let scriptElt = content.document.createElement("script");
+    scriptElt.type = "text/javascript";
+    scriptElt.text = text;
+    content.document.body.appendChild(scriptElt);
+  });
 }
