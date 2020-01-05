@@ -3,7 +3,8 @@
 
 
 
-#include "mozilla/ProfileGatherer.h"
+#include "ProfileGatherer.h"
+
 #include "mozilla/Services.h"
 #include "nsIObserverService.h"
 #include "nsIProfileSaveEvent.h"
