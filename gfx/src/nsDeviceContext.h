@@ -193,6 +193,12 @@ public:
 
 
 
+    bool IsCurrentlyPrintingDocument() const { return mIsCurrentlyPrintingDoc; }
+
+    
+
+
+
 
 
 
@@ -305,6 +311,7 @@ private:
     nsCOMPtr<nsIScreenManager>     mScreenManager;
     nsCOMPtr<nsIDeviceContextSpec> mDeviceContextSpec;
     RefPtr<PrintTarget>            mPrintTarget;
+    bool                           mIsCurrentlyPrintingDoc;
 #ifdef DEBUG
     bool mIsInitialized;
 #endif
