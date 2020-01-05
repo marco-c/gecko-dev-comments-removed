@@ -4,15 +4,14 @@
 
 
 
-use core::cell::Cell;
-
 use layout::box::{RenderBox};
 use layout::context::LayoutContext;
 use layout::display_list_builder::{DisplayListBuilder, FlowDisplayListBuilderMethods};
-use layout::flow::{FlowContext, FlowTree, InlineBlockFlow, BlockFlow, RootFlow};
+use layout::flow::{BlockFlow, FlowContext, InlineBlockFlow, RootFlow};
 use layout::inline::InlineLayout;
 
 use au = gfx::geometry;
+use core::cell::Cell;
 use geom::point::Point2D;
 use geom::rect::Rect;
 use gfx::display_list::DisplayList;
@@ -82,15 +81,15 @@ impl BlockLayout for FlowContext {
         let mut pref_width = Au(0);
 
         
-        for FlowTree.each_child(self) |child_ctx| {
+        for self.each_child |child_ctx| {
             assert!(child_ctx.starts_block_flow() || child_ctx.starts_inline_flow());
 
             min_width  = au::max(min_width, child_ctx.d().min_width);
             pref_width = au::max(pref_width, child_ctx.d().pref_width);
         }
 
-        /* if not an anonymous block context, add in block box's widths.
-           these widths will not include child elements, just padding etc. */
+        
+
         do self.with_block_box |box| {
             min_width = min_width.add(&box.get_min_width(ctx));
             pref_width = pref_width.add(&box.get_pref_width(ctx));
@@ -122,7 +121,7 @@ impl BlockLayout for FlowContext {
             remaining_width -= left_used.add(&right_used);
         }
 
-        for FlowTree.each_child(self) |child_ctx| {
+        for self.each_child |child_ctx| {
             assert!(child_ctx.starts_block_flow() || child_ctx.starts_inline_flow());
             child_ctx.d().position.origin.x = left_used;
             child_ctx.d().position.size.width = remaining_width;
@@ -134,7 +133,7 @@ impl BlockLayout for FlowContext {
 
         let mut cur_y = Au(0);
 
-        for FlowTree.each_child(self) |child_ctx| {
+        for self.each_child |child_ctx| {
             child_ctx.d().position.origin.y = cur_y;
             cur_y += child_ctx.d().position.size.height;
         }
@@ -164,7 +163,7 @@ impl BlockLayout for FlowContext {
         
 
         
-        for FlowTree.each_child(self) |child| {
+        for self.each_child |child| {
             self.build_display_list_for_child(builder, child, dirty, offset, list)
         }
     }
