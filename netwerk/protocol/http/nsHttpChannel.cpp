@@ -5885,14 +5885,12 @@ nsHttpChannel::BeginConnect()
         return AsyncCall(&nsHttpChannel::HandleAsyncAPIRedirect);
     }
     
-    RefPtr<nsChannelClassifier> channelClassifier = new nsChannelClassifier(this);
+    RefPtr<nsChannelClassifier> channelClassifier = new nsChannelClassifier();
     if (mLoadFlags & LOAD_CLASSIFY_URI) {
         nsCOMPtr<nsIURIClassifier> classifier = do_GetService(NS_URICLASSIFIERSERVICE_CONTRACTID);
         bool tpEnabled = false;
-        channelClassifier->ShouldEnableTrackingProtection(&tpEnabled);
-        bool annotateChannelEnabled =
-            Preferences::GetBool("privacy.trackingprotection.annotate_channels");
-        if (classifier && (tpEnabled || annotateChannelEnabled)) {
+        channelClassifier->ShouldEnableTrackingProtection(this, &tpEnabled);
+        if (classifier && tpEnabled) {
             
             
             
@@ -6014,7 +6012,7 @@ nsHttpChannel::BeginConnect()
     
     LOG(("nsHttpChannel::Starting nsChannelClassifier %p [this=%p]",
          channelClassifier.get(), this));
-    channelClassifier->Start();
+    channelClassifier->Start(this);
     if (callContinueBeginConnect) {
         return ContinueBeginConnectWithResult();
     }

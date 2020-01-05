@@ -8,7 +8,6 @@
 #include "nsIURIClassifier.h"
 #include "nsCOMPtr.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/Maybe.h"
 
 class nsIChannel;
 class nsIHttpChannelInternal;
@@ -20,16 +19,16 @@ namespace net {
 class nsChannelClassifier final : public nsIURIClassifierCallback
 {
 public:
-    explicit nsChannelClassifier(nsIChannel* aChannel);
+    nsChannelClassifier();
 
     NS_DECL_ISUPPORTS
     NS_DECL_NSIURICLASSIFIERCALLBACK
 
     
     
-    void Start();
+    void Start(nsIChannel *aChannel);
     
-    nsresult ShouldEnableTrackingProtection(bool *result);
+    nsresult ShouldEnableTrackingProtection(nsIChannel *aChannel, bool *result);
 
 private:
     
@@ -37,7 +36,6 @@ private:
     
     bool mSuspendedChannel;
     nsCOMPtr<nsIChannel> mChannel;
-    Maybe<bool> mTrackingProtectionEnabled;
 
     ~nsChannelClassifier() {}
     
@@ -53,9 +51,6 @@ private:
     bool IsHostnameWhitelisted(nsIURI *aUri, const nsACString &aWhitelisted);
     
     static bool SameLoadingURI(nsIDocument *aDoc, nsIChannel *aChannel);
-
-    nsresult ShouldEnableTrackingProtectionInternal(nsIChannel *aChannel,
-                                                    bool *result);
 
 public:
     
