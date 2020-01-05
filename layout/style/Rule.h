@@ -30,7 +30,7 @@ class GroupRule;
   DECL_STYLE_RULE_INHERIT_NO_DOMRULE                       \
   virtual nsIDOMCSSRule* GetDOMRule() override;
 
-class Rule : public nsIDOMCSSRule
+class Rule : public nsISupports
            , public nsWrapperCache
 {
 protected:
@@ -119,10 +119,9 @@ public:
   virtual nsIDOMCSSRule* GetDOMRule() = 0;
 
   
-  NS_IMETHOD GetParentRule(nsIDOMCSSRule** aParentRule) override;
-  NS_IMETHOD GetParentStyleSheet(nsIDOMCSSStyleSheet** aSheet) override;
-  virtual Rule* GetCSSRule() override;
-  using nsIDOMCSSRule::GetType;
+  nsresult GetParentRule(nsIDOMCSSRule** aParentRule);
+  nsresult GetParentStyleSheet(nsIDOMCSSStyleSheet** aSheet);
+  Rule* GetCSSRule();
 
   
   
