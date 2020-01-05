@@ -15,7 +15,7 @@ pub enum WorkerScriptMsg {
     
     Common(CommonScriptMsg),
     
-    DOMMessage(StructuredCloneData),
+    DOMMessage(StructuredCloneData)
 }
 
 pub struct SimpleWorkerErrorHandler<T: Reflectable> {
