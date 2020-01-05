@@ -95,6 +95,8 @@ public:
     nsresult pushEvalContext(txIEvalContext* aContext);
     txIEvalContext* popEvalContext();
 
+    void popAndDeleteEvalContext();
+
     
 
 
