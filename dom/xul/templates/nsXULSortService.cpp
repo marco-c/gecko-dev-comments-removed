@@ -32,7 +32,7 @@
 #include "nsQuickSort.h"
 #include "nsWhitespaceTokenizer.h"
 #include "nsXULSortService.h"
-#include "nsIDOMXULElement.h"
+#include "nsXULElement.h"
 #include "nsIXULTemplateBuilder.h"
 #include "nsTemplateMatch.h"
 #include "nsICollation.h"
@@ -107,10 +107,9 @@ XULSortServiceImpl::GetItemsToSort(nsIContent *aContainer,
 {
   
   
-  nsCOMPtr<nsIDOMXULElement> element = do_QueryInterface(aContainer);
+  RefPtr<nsXULElement> element = nsXULElement::FromContent(aContainer);
   if (element) {
-    nsCOMPtr<nsIXULTemplateBuilder> builder;
-    element->GetBuilder(getter_AddRefs(builder));
+    nsCOMPtr<nsIXULTemplateBuilder> builder = element->GetBuilder();
 
     if (builder) {
       nsresult rv = builder->GetQueryProcessor(getter_AddRefs(aSortState->processor));
