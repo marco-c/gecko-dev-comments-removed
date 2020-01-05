@@ -1,3 +1,9 @@
+
+
+
+
+"use strict";
+
 Cu.import("resource://testing-common/httpd.js");
 Cu.import("resource://gre/modules/NetUtil.jsm");
 
@@ -18,13 +24,13 @@ var listener = {
 
   onStopRequest: function (request, ctx, status) {
       do_check_eq(status, Components.results.NS_OK);
-      do_test_finished();
+      server.stop(do_test_finished);
   },
 
 };
 
+var server = new HttpServer();
 function run_test() {
-    var server = new HttpServer();
     server.start(SERVER_PORT);
     server.registerPathHandler('/', function(metadata, response) {
         response.setStatusLine(metadata.httpVersion, 200, "OK");
