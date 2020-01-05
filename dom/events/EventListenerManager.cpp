@@ -1314,7 +1314,8 @@ EventListenerManager::HandleEventInternal(nsPresContext* aPresContext,
     
     
     
-    if (hasListenerForCurrentGroup || usingLegacyMessage) {
+    if (hasListenerForCurrentGroup ||
+        usingLegacyMessage || !aEvent->IsTrusted()) {
       
       
       break;
