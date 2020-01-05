@@ -17,6 +17,19 @@ use util::cursor::Cursor;
 
 
 #[derive(Deserialize, Serialize)]
+pub enum LayoutMsg {
+    
+    ChangeRunningAnimationsState(PipelineId, AnimationState),
+    
+    Failure(Failure),
+    
+    SetCursor(Cursor),
+    
+    ViewportConstrained(PipelineId, ViewportConstraints),
+}
+
+
+#[derive(Deserialize, Serialize)]
 pub enum ScriptMsg {
     
     ChangeRunningAnimationsState(PipelineId, AnimationState),
@@ -62,10 +75,6 @@ pub enum ScriptMsg {
     ScriptLoadedURLInIFrame(IframeLoadInfo),
     
     SetClipboardContents(String),
-    
-    SetCursor(Cursor),
-    
-    ViewportConstrained(PipelineId, ViewportConstraints),
     
     ActivateDocument(PipelineId),
     

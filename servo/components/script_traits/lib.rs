@@ -52,7 +52,7 @@ use std::any::Any;
 use util::ipc::OptionalOpaqueIpcSender;
 use util::mem::HeapSizeOf;
 
-pub use script_msg::ScriptMsg;
+pub use script_msg::{LayoutMsg, ScriptMsg};
 
 
 
@@ -250,6 +250,8 @@ pub struct InitialScriptState {
     pub control_port: IpcReceiver<ConstellationControlMsg>,
     
     pub constellation_chan: ConstellationChan<ScriptMsg>,
+    
+    pub layout_to_constellation_chan: ConstellationChan<LayoutMsg>,
     
     pub scheduler_chan: IpcSender<TimerEventRequest>,
     
