@@ -233,6 +233,39 @@ function testOptionColors(index, item, menulist) {
   }
 }
 
+function* testSelectColors(select, itemCount, options) {
+  const pageUrl = "data:text/html," + escape(select);
+  let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, pageUrl);
+
+  let menulist = document.getElementById("ContentSelectDropdown");
+  let selectPopup = menulist.menupopup;
+
+  let popupShownPromise = BrowserTestUtils.waitForEvent(selectPopup, "popupshown");
+  yield BrowserTestUtils.synthesizeMouseAtCenter("#one", { type: "mousedown" }, gBrowser.selectedBrowser);
+  yield popupShownPromise;
+
+  is(selectPopup.parentNode.itemCount, itemCount, "Correct number of items");
+  let child = selectPopup.firstChild;
+  let idx = 1;
+
+  if (!options.skipSelectColorTest) {
+    is(getComputedStyle(selectPopup).color, options.selectColor,
+      "popup has expected foreground color");
+    is(getComputedStyle(selectPopup).backgroundColor, options.selectBgColor,
+      "popup has expected background color");
+  }
+
+  ok(!child.selected, "The first child should not be selected");
+  while (child) {
+    testOptionColors(idx, child, menulist);
+    idx++;
+    child = child.nextSibling;
+  }
+
+  yield hideSelectPopup(selectPopup, "escape");
+
+  yield BrowserTestUtils.removeTab(tab);
+}
 function* doSelectTests(contentType, dtd) {
   const pageUrl = "data:" + contentType + "," + escape(dtd + "\n" + PAGECONTENT);
   let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, pageUrl);
@@ -848,97 +881,26 @@ add_task(function* test_somehidden() {
 
 
 add_task(function* test_colors_applied_to_popup_items() {
-  const pageUrl = "data:text/html," + escape(PAGECONTENT_COLORS);
-  let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, pageUrl);
-
-  let menulist = document.getElementById("ContentSelectDropdown");
-  let selectPopup = menulist.menupopup;
-
-  let popupShownPromise = BrowserTestUtils.waitForEvent(selectPopup, "popupshown");
-  yield BrowserTestUtils.synthesizeMouseAtCenter("#one", { type: "mousedown" }, gBrowser.selectedBrowser);
-  yield popupShownPromise;
-
-  
-  
-  is(selectPopup.parentNode.itemCount, 7, "Correct number of items");
-  let child = selectPopup.firstChild;
-  let idx = 1;
-
-  ok(!child.selected, "The first child should not be selected");
-  while (child) {
-    testOptionColors(idx, child, menulist);
-    idx++;
-    child = child.nextSibling;
-  }
-
-  yield hideSelectPopup(selectPopup, "escape");
-  yield BrowserTestUtils.removeTab(tab);
+  yield testSelectColors(PAGECONTENT_COLORS, 7,
+                         {skipSelectColorTest: true});
 });
 
 
 add_task(function* test_colors_applied_to_popup() {
-  const pageUrl = "data:text/html," + escape(PAGECONTENT_COLORS_ON_SELECT);
-  let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, pageUrl);
-
-  let menulist = document.getElementById("ContentSelectDropdown");
-  let selectPopup = menulist.menupopup;
-
-  let popupShownPromise = BrowserTestUtils.waitForEvent(selectPopup, "popupshown");
-  yield BrowserTestUtils.synthesizeMouseAtCenter("#one", { type: "mousedown" }, gBrowser.selectedBrowser);
-  yield popupShownPromise;
-
-  is(selectPopup.parentNode.itemCount, 4, "Correct number of items");
-  let child = selectPopup.firstChild;
-  let idx = 1;
-
-  is(getComputedStyle(selectPopup).color, "rgb(255, 255, 255)",
-    "popup has expected foreground color");
-  is(getComputedStyle(selectPopup).backgroundColor, "rgb(126, 58, 58)",
-    "popup has expected background color");
-
-  ok(!child.selected, "The first child should not be selected");
-  while (child) {
-    testOptionColors(idx, child, menulist);
-    idx++;
-    child = child.nextSibling;
-  }
-
-  yield hideSelectPopup(selectPopup, "escape");
-
-  yield BrowserTestUtils.removeTab(tab);
+  let options = {
+    selectColor: "rgb(255, 255, 255)",
+    selectBgColor: "rgb(126, 58, 58)"
+  };
+  yield testSelectColors(PAGECONTENT_COLORS_ON_SELECT, 4, options);
 });
 
 
 add_task(function* test_transparent_applied_to_popup() {
-  const pageUrl = "data:text/html," + escape(TRANSPARENT_SELECT);
-  let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, pageUrl);
-
-  let menulist = document.getElementById("ContentSelectDropdown");
-  let selectPopup = menulist.menupopup;
-
-  let popupShownPromise = BrowserTestUtils.waitForEvent(selectPopup, "popupshown");
-  yield BrowserTestUtils.synthesizeMouseAtCenter("#one", { type: "mousedown" }, gBrowser.selectedBrowser);
-  yield popupShownPromise;
-
-  is(selectPopup.parentNode.itemCount, 2, "Correct number of items");
-  let child = selectPopup.firstChild;
-  let idx = 1;
-
-  is(getComputedStyle(selectPopup).color, getSystemColor("-moz-ComboboxText"),
-    "popup has expected foreground color");
-  is(getComputedStyle(selectPopup).backgroundColor, getSystemColor("-moz-Combobox"),
-    "popup has expected background color");
-
-  ok(!child.selected, "The first child should not be selected");
-  while (child) {
-    testOptionColors(idx, child, menulist);
-    idx++;
-    child = child.nextSibling;
-  }
-
-  yield hideSelectPopup(selectPopup, "escape");
-
-  yield BrowserTestUtils.removeTab(tab);
+  let options = {
+    selectColor: getSystemColor("-moz-ComboboxText"),
+    selectBgColor: getSystemColor("-moz-Combobox")
+  };
+  yield testSelectColors(TRANSPARENT_SELECT, 2, options);
 });
 
 
@@ -978,103 +940,33 @@ add_task(function* test_blur_hides_popup() {
 
 
 add_task(function* test_options_inverted_from_select_background() {
-  const pageUrl = "data:text/html," + escape(OPTION_COLOR_EQUAL_TO_UABACKGROUND_COLOR_SELECT);
-  let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, pageUrl);
-
-  let menulist = document.getElementById("ContentSelectDropdown");
-  let selectPopup = menulist.menupopup;
-
-  let popupShownPromise = BrowserTestUtils.waitForEvent(selectPopup, "popupshown");
-  yield BrowserTestUtils.synthesizeMouseAtCenter("#one", { type: "mousedown" }, gBrowser.selectedBrowser);
-  yield popupShownPromise;
-
-  is(selectPopup.parentNode.itemCount, 2, "Correct number of items");
-  let child = selectPopup.firstChild;
-  let idx = 1;
-
   
   
-  is(getComputedStyle(selectPopup).color, "rgb(255, 255, 255)",
-    "popup has expected foreground color");
-  is(getComputedStyle(selectPopup).backgroundColor, "rgb(0, 0, 0)",
-    "popup has expected background color");
-
-  ok(!child.selected, "The first child should not be selected");
-  while (child) {
-    testOptionColors(idx, child, menulist);
-    idx++;
-    child = child.nextSibling;
-  }
-
-  yield hideSelectPopup(selectPopup, "escape");
-
-  yield BrowserTestUtils.removeTab(tab);
+  let options = {
+    selectColor: "rgb(255, 255, 255)",
+    selectBgColor: "rgb(0, 0, 0)"
+  };
+  yield testSelectColors(OPTION_COLOR_EQUAL_TO_UABACKGROUND_COLOR_SELECT,
+                         2, options);
 });
 
 
 
 add_task(function* test_select_background_using_important() {
-  const pageUrl = "data:text/html," + escape(GENERIC_OPTION_STYLED_AS_IMPORTANT);
-  let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, pageUrl);
-
-  let menulist = document.getElementById("ContentSelectDropdown");
-  let selectPopup = menulist.menupopup;
-
-  let popupShownPromise = BrowserTestUtils.waitForEvent(selectPopup, "popupshown");
-  yield BrowserTestUtils.synthesizeMouseAtCenter("#one", { type: "mousedown" }, gBrowser.selectedBrowser);
-  yield popupShownPromise;
-
-  is(selectPopup.parentNode.itemCount, 2, "Correct number of items");
-  let child = selectPopup.firstChild;
-  let idx = 1;
-  ok(!child.selected, "The first child should not be selected");
-
-  while (child) {
-    testOptionColors(idx, child, menulist);
-    idx++;
-    child = child.nextSibling;
-  }
-
-  yield hideSelectPopup(selectPopup, "escape");
-
-  yield BrowserTestUtils.removeTab(tab);
+  yield testSelectColors(GENERIC_OPTION_STYLED_AS_IMPORTANT, 2,
+                         {skipSelectColorTest: true});
 });
-
 
 
 
 
 
 add_task(function* test_translucent_select_becomes_opaque() {
-  const pageUrl = "data:text/html," + escape(TRANSLUCENT_SELECT_BECOMES_OPAQUE);
-  let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, pageUrl);
-
-  let menulist = document.getElementById("ContentSelectDropdown");
-  let selectPopup = menulist.menupopup;
-
-  let popupShownPromise = BrowserTestUtils.waitForEvent(selectPopup, "popupshown");
-  yield BrowserTestUtils.synthesizeMouseAtCenter("#one", { type: "mousedown" }, gBrowser.selectedBrowser);
-  yield popupShownPromise;
-
-  is(selectPopup.parentNode.itemCount, 2, "Correct number of items");
-  let child = selectPopup.firstChild;
-  let idx = 1;
-
   
   
-  is(getComputedStyle(selectPopup).color, "rgb(0, 0, 0)",
-    "popup has expected foreground color");
-  is(getComputedStyle(selectPopup).backgroundColor, "rgb(255, 255, 255)",
-    "popup has expected background color");
-
-  ok(!child.selected, "The first child should not be selected");
-  while (child) {
-    testOptionColors(idx, child, menulist);
-    idx++;
-    child = child.nextSibling;
-  }
-
-  yield hideSelectPopup(selectPopup, "escape");
-
-  yield BrowserTestUtils.removeTab(tab);
+  let options = {
+    selectColor: "rgb(0, 0, 0)",
+    selectBgColor: "rgb(255, 255, 255)"
+  };
+  yield testSelectColors(TRANSLUCENT_SELECT_BECOMES_OPAQUE, 2, options);
 });
