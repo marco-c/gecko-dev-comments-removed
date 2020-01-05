@@ -1133,12 +1133,49 @@ impl Flow for InlineFlow {
             flow::mut_base(kid).floats = Floats::new(writing_mode);
         }
 
-        let mut computation = IntrinsicISizesContribution::new();
+        let mut intrinsic_sizes_for_flow = IntrinsicISizesContribution::new();
+        let mut intrinsic_sizes_for_inline_run = IntrinsicISizesContribution::new();
+        let mut intrinsic_sizes_for_nonbroken_run = IntrinsicISizesContribution::new();
         for fragment in self.fragments.fragments.iter_mut() {
-            debug!("Flow: measuring {:?}", *fragment);
-            computation.union_inline(&fragment.compute_intrinsic_inline_sizes().finish())
+            let intrinsic_sizes_for_fragment = fragment.compute_intrinsic_inline_sizes().finish();
+            match fragment.style.get_inheritedtext().white_space {
+                white_space::T::nowrap => {
+                    intrinsic_sizes_for_nonbroken_run.union_nonbreaking_inline(
+                        &intrinsic_sizes_for_fragment)
+                }
+                white_space::T::pre => {
+                    intrinsic_sizes_for_nonbroken_run.union_nonbreaking_inline(
+                        &intrinsic_sizes_for_fragment);
+
+                    
+                    
+                    if fragment.requires_line_break_afterward_if_wrapping_on_newlines() {
+                        intrinsic_sizes_for_inline_run.union_inline(
+                            &intrinsic_sizes_for_nonbroken_run.finish());
+                        intrinsic_sizes_for_nonbroken_run = IntrinsicISizesContribution::new();
+                        intrinsic_sizes_for_flow.union_block(
+                            &intrinsic_sizes_for_inline_run.finish());
+                        intrinsic_sizes_for_inline_run = IntrinsicISizesContribution::new();
+                    }
+                }
+                white_space::T::normal => {
+                    
+                    
+                    intrinsic_sizes_for_inline_run.union_inline(
+                        &intrinsic_sizes_for_nonbroken_run.finish());
+                    intrinsic_sizes_for_nonbroken_run = IntrinsicISizesContribution::new();
+
+                    intrinsic_sizes_for_nonbroken_run.union_inline(&intrinsic_sizes_for_fragment)
+                }
+            }
         }
-        self.base.intrinsic_inline_sizes = computation.finish()
+
+        
+        intrinsic_sizes_for_inline_run.union_inline(&intrinsic_sizes_for_nonbroken_run.finish());
+        intrinsic_sizes_for_flow.union_block(&intrinsic_sizes_for_inline_run.finish());
+
+        
+        self.base.intrinsic_inline_sizes = intrinsic_sizes_for_flow.finish()
     }
 
     

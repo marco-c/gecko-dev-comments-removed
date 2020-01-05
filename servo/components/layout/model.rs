@@ -335,6 +335,17 @@ impl IntrinsicISizesContribution {
     
     
     
+    pub fn union_nonbreaking_inline(&mut self, sizes: &IntrinsicISizes) {
+        self.content_intrinsic_sizes.minimum_inline_size =
+            self.content_intrinsic_sizes.minimum_inline_size + sizes.minimum_inline_size;
+        self.content_intrinsic_sizes.preferred_inline_size =
+            self.content_intrinsic_sizes.preferred_inline_size + sizes.preferred_inline_size
+    }
+
+    
+    
+    
+    
     
     
     pub fn union_block(&mut self, sizes: &IntrinsicISizes) {
