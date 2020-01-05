@@ -86,6 +86,9 @@ pub struct Fragment {
     pub style: Arc<ServoComputedValues>,
 
     
+    pub selected_style: Arc<ServoComputedValues>,
+
+    
     
     
     
@@ -798,6 +801,7 @@ impl Fragment {
         Fragment {
             node: node.opaque(),
             style: style,
+            selected_style: node.selected_style().clone(),
             restyle_damage: restyle_damage,
             border_box: LogicalRect::zero(writing_mode),
             border_padding: LogicalMargin::zero(writing_mode),
@@ -815,6 +819,7 @@ impl Fragment {
     pub fn from_opaque_node_and_style(node: OpaqueNode,
                                       pseudo: PseudoElementType<()>,
                                       style: Arc<ServoComputedValues>,
+                                      selected_style: Arc<ServoComputedValues>,
                                       mut restyle_damage: RestyleDamage,
                                       specific: SpecificFragmentInfo)
                                       -> Fragment {
@@ -825,6 +830,7 @@ impl Fragment {
         Fragment {
             node: node,
             style: style,
+            selected_style: selected_style,
             restyle_damage: restyle_damage,
             border_box: LogicalRect::zero(writing_mode),
             border_padding: LogicalMargin::zero(writing_mode),
@@ -858,6 +864,7 @@ impl Fragment {
         Fragment {
             node: self.node,
             style: self.style.clone(),
+            selected_style: self.selected_style.clone(),
             restyle_damage: restyle_damage,
             border_box: new_border_box,
             border_padding: self.border_padding,
@@ -1284,6 +1291,11 @@ impl Fragment {
     #[inline(always)]
     pub fn style(&self) -> &ServoComputedValues {
         &*self.style
+    }
+
+    #[inline(always)]
+    pub fn selected_style(&self) -> &ServoComputedValues {
+        &*self.selected_style
     }
 
     pub fn white_space(&self) -> white_space::T {
