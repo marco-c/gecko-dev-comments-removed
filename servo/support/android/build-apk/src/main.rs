@@ -30,7 +30,7 @@ fn main() {
     
     let android_platform = env::var("ANDROID_PLATFORM")
         .ok()
-        .expect("Please set the ANDROID_PLATFORM environment variable")
+        .expect("Please set the ANDROID_PLATFORM environment variable");
 
     
     
