@@ -162,6 +162,73 @@ Object.defineProperty(GeckoDriver.prototype, "a11yChecks", {
   }
 });
 
+Object.defineProperty(GeckoDriver.prototype, "proxy", {
+  get: function () {
+    return this.capabilities.get("proxy");
+  }
+});
+
+Object.defineProperty(GeckoDriver.prototype, "secureTLS", {
+  get: function () {
+    return !this.capabilities.get("acceptInsecureCerts");
+  }
+});
+
+Object.defineProperty(GeckoDriver.prototype, "timeouts", {
+  get: function () {
+    return this.capabilities.get("timeouts");
+  },
+
+  set: function (newTimeouts) {
+    this.capabilities.set("timeouts", newTimeouts);
+  },
+});
+
+Object.defineProperty(GeckoDriver.prototype, "windowHandles", {
+  get: function () {
+    let hs = [];
+    let winEn = Services.wm.getEnumerator(null);
+
+    while (winEn.hasMoreElements()) {
+      let win = winEn.getNext();
+      if (win.gBrowser) {
+        let tabbrowser = win.gBrowser;
+        for (let i = 0; i < tabbrowser.browsers.length; ++i) {
+          let winId = this.getIdForBrowser(tabbrowser.getBrowserAtIndex(i));
+          if (winId !== null) {
+            hs.push(winId);
+          }
+        }
+      } else {
+        
+        let winId = win.QueryInterface(Ci.nsIInterfaceRequestor)
+            .getInterface(Ci.nsIDOMWindowUtils)
+            .outerWindowID;
+        hs.push(winId.toString());
+      }
+    }
+
+    return hs;
+  },
+});
+
+Object.defineProperty(GeckoDriver.prototype, "chromeWindowHandles", {
+  get : function () {
+    let hs = [];
+    let winEn = Services.wm.getEnumerator(null);
+
+    while (winEn.hasMoreElements()) {
+      let foundWin = winEn.getNext();
+      let winId = foundWin.QueryInterface(Ci.nsIInterfaceRequestor)
+          .getInterface(Ci.nsIDOMWindowUtils)
+          .outerWindowID;
+      hs.push(winId.toString());
+    }
+
+    return hs;
+  },
+});
+
 GeckoDriver.prototype.QueryInterface = XPCOMUtils.generateQI([
   Ci.nsIMessageListener,
   Ci.nsIObserver,
@@ -490,28 +557,6 @@ GeckoDriver.prototype.listeningPromise = function() {
     this.mm.addMessageListener(li, cb);
   });
 };
-
-Object.defineProperty(GeckoDriver.prototype, "timeouts", {
-  get: function () {
-    return this.capabilities.get("timeouts");
-  },
-
-  set: function (newTimeouts) {
-    this.capabilities.set("timeouts", newTimeouts);
-  },
-});
-
-Object.defineProperty(GeckoDriver.prototype, "secureTLS", {
-  get: function () {
-    return !this.capabilities.get("acceptInsecureCerts");
-  }
-});
-
-Object.defineProperty(GeckoDriver.prototype, "proxy", {
-  get: function () {
-    return this.capabilities.get("proxy");
-  }
-});
 
 
 GeckoDriver.prototype.newSession = function*(cmd, resp) {
@@ -1010,32 +1055,6 @@ GeckoDriver.prototype.refresh = function*(cmd, resp) {
 
 
 
-
-
-
-
-
-
-
-
-GeckoDriver.prototype.getWindowHandle = function (cmd, resp) {
-  
-  if (this.curBrowser.curFrameId && this.appName != "B2G") {
-    resp.body.value = this.curBrowser.curFrameId;
-    return;
-  }
-
-  for (let i in this.browsers) {
-    if (this.curBrowser == this.browsers[i]) {
-      resp.body.value = i;
-      return;
-    }
-  }
-};
-
-
-
-
 GeckoDriver.prototype.updateIdForBrowser = function (browser, newId) {
   this._browserIds.set(browser.permanentKey, newId);
 };
@@ -1045,7 +1064,7 @@ GeckoDriver.prototype.updateIdForBrowser = function (browser, newId) {
 
 
 
-GeckoDriver.prototype.getIdForBrowser = function getIdForBrowser(browser) {
+GeckoDriver.prototype.getIdForBrowser = function (browser) {
   if (browser === null) {
     return null;
   }
@@ -1056,7 +1075,7 @@ GeckoDriver.prototype.getIdForBrowser = function getIdForBrowser(browser) {
 
   let winId = browser.outerWindowID;
   if (winId) {
-    winId += "";
+    winId = winId.toString();
     this._browserIds.set(permKey, winId);
     return winId;
   }
@@ -1073,30 +1092,36 @@ GeckoDriver.prototype.getIdForBrowser = function getIdForBrowser(browser) {
 
 
 
-GeckoDriver.prototype.getWindowHandles = function (cmd, resp) {
-  let hs = [];
-  let winEn = Services.wm.getEnumerator(null);
-  while (winEn.hasMoreElements()) {
-    let win = winEn.getNext();
-    if (win.gBrowser && this.appName != "B2G") {
-      let tabbrowser = win.gBrowser;
-      for (let i = 0; i < tabbrowser.browsers.length; ++i) {
-        let winId = this.getIdForBrowser(tabbrowser.getBrowserAtIndex(i));
-        if (winId !== null) {
-          hs.push(winId);
-        }
-      }
-    } else {
-      
-      let winId = win.QueryInterface(Ci.nsIInterfaceRequestor)
-          .getInterface(Ci.nsIDOMWindowUtils)
-          .outerWindowID;
-      winId += (this.appName == "B2G") ? "-b2g" : "";
-      hs.push(winId);
+
+GeckoDriver.prototype.getWindowHandle = function (cmd, resp) {
+  
+  if (this.curBrowser.curFrameId) {
+    resp.body.value = this.curBrowser.curFrameId;
+    return;
+  }
+
+  for (let i in this.browsers) {
+    if (this.curBrowser == this.browsers[i]) {
+      resp.body.value = i;
+      return;
     }
   }
-  resp.body = hs;
 };
+
+
+
+
+
+
+
+
+
+
+
+
+GeckoDriver.prototype.getWindowHandles = function (cmd, resp) {
+  return this.windowHandles;
+}
 
 
 
@@ -1126,18 +1151,8 @@ GeckoDriver.prototype.getChromeWindowHandle = function (cmd, resp) {
 
 
 GeckoDriver.prototype.getChromeWindowHandles = function (cmd, resp) {
-  let hs = [];
-  let winEn = Services.wm.getEnumerator(null);
-  while (winEn.hasMoreElements()) {
-    let foundWin = winEn.getNext();
-    let winId = foundWin.QueryInterface(Ci.nsIInterfaceRequestor)
-        .getInterface(Ci.nsIDOMWindowUtils)
-        .outerWindowID;
-    winId = winId + ((this.appName == "B2G") ? "-b2g" : "");
-    hs.push(winId);
-  }
-  resp.body = hs;
-};
+  return this.chromeWindowHandles;
+}
 
 
 
@@ -2086,14 +2101,15 @@ GeckoDriver.prototype.deleteCookie = function*(cmd, resp) {
 
 
 
-GeckoDriver.prototype.close = function (cmd, resp) {
-  
-  if (this.appName == "B2G") {
-    return;
-  }
 
+
+
+
+
+GeckoDriver.prototype.close = function (cmd, resp) {
   let nwins = 0;
   let winEn = Services.wm.getEnumerator(null);
+
   while (winEn.hasMoreElements()) {
     let win = winEn.getNext();
 
@@ -2106,24 +2122,17 @@ GeckoDriver.prototype.close = function (cmd, resp) {
   }
 
   
+  
+  
   if (nwins == 1) {
-    this.sessionTearDown();
-    return;
+    return [];
   }
 
-  try {
-    if (this.mm != globalMessageManager) {
-      this.mm.removeDelayedFrameScript(FRAME_SCRIPT);
-    }
-
-    if (this.curBrowser.tab) {
-      this.curBrowser.closeTab();
-    } else {
-      this.getCurrentWindow().close();
-    }
-  } catch (e) {
-    throw new UnknownError(`Could not close window: ${e.message}`);
+  if (this.mm != globalMessageManager) {
+    this.mm.removeDelayedFrameScript(FRAME_SCRIPT);
   }
+
+  return this.curBrowser.closeTab().then(() => this.windowHandles);
 };
 
 
@@ -2132,35 +2141,37 @@ GeckoDriver.prototype.close = function (cmd, resp) {
 
 
 
+
+
+
+
 GeckoDriver.prototype.closeChromeWindow = function (cmd, resp) {
-  
-  if (this.appName == "B2G") {
-    return;
-  }
+  assert.firefox();
 
   
   let nwins = 0;
   let winEn = Services.wm.getEnumerator(null);
+
   while (winEn.hasMoreElements()) {
     nwins++;
     winEn.getNext();
   }
 
   
+  
+  
   if (nwins == 1) {
-    this.sessionTearDown();
-    return;
+    return [];
   }
 
-  try {
-    
-    this.curFrame = null;
+  
+  this.curFrame = null;
 
+  if (this.mm != globalMessageManager) {
     this.mm.removeDelayedFrameScript(FRAME_SCRIPT);
-    this.getCurrentWindow().close();
-  } catch (e) {
-    throw new UnknownError(`Could not close window: ${e.message}`);
   }
+
+  return this.curBrowser.closeWindow().then(() => this.chromeWindowHandles);
 };
 
 
