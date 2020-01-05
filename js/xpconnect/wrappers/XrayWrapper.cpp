@@ -87,6 +87,7 @@ IsJSXraySupported(JSProtoKey key)
       case JSProto_SavedFrame:
       case JSProto_RegExp:
       case JSProto_Promise:
+      case JSProto_ArrayBuffer:
         return true;
       default:
         return false;
@@ -327,26 +328,8 @@ bool JSXrayTraits::getOwnPropertyFromTargetIfSafe(JSContext* cx,
         
         XrayType xrayType = GetXrayType(propObj);
         if (xrayType == NotXray || xrayType == XrayForOpaqueObject) {
-            if (IdentifyStandardInstance(propObj) == JSProto_ArrayBuffer) {
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-            } else {
-                JSAutoCompartment ac(cx, wrapper);
-                return ReportWrapperDenial(cx, id, WrapperDenialForXray, "value not Xrayable");
-            }
+            JSAutoCompartment ac(cx, wrapper);
+            return ReportWrapperDenial(cx, id, WrapperDenialForXray, "value not Xrayable");
         }
 
         
