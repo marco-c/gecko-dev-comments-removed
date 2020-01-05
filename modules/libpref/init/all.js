@@ -859,7 +859,11 @@ pref("canvas.path.enabled", true);
 pref("canvas.capturestream.enabled", true);
 
 
+#ifdef RELEASE_OR_BETA
 pref("canvas.imagebitmap_extensions.enabled", false);
+#else
+pref("canvas.imagebitmap_extensions.enabled", true);
+#endif
 
 
 
@@ -2905,7 +2909,7 @@ pref("dom.ipc.plugins.forcedirect.enabled", true);
 #endif
 
 #ifdef NIGHTLY_BUILD
-pref("dom.ipc.processCount", 2);
+pref("dom.ipc.processCount", 4);
 #else
 pref("dom.ipc.processCount", 1);
 #endif
