@@ -51,13 +51,11 @@ fn test_meta_viewport<F>(meta: &str, callback: F)
     where F: Fn(&Vec<ViewportDescriptorDeclaration>, &str)
 {
     if let Some(mut rule) = ViewportRule::from_meta(meta) {
-        use std::intrinsics::discriminant_value;
-
         
         
         rule.declarations.sort_by(|a, b| {
-            let a = unsafe { discriminant_value(&a.descriptor) };
-            let b = unsafe { discriminant_value(&b.descriptor) };
+            let a = a.descriptor.discriminant_value();
+            let b = b.descriptor.discriminant_value();
             a.cmp(&b)
         });
 

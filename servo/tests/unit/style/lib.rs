@@ -3,7 +3,7 @@
 
 
 #![cfg(test)]
-#![feature(core_intrinsics, plugin, test)]
+#![feature(plugin, test)]
 
 extern crate app_units;
 extern crate cssparser;

@@ -437,6 +437,7 @@ impl HTMLMediaElement {
     }
 
     
+    #[allow(unreachable_code)]
     fn resource_selection_algorithm_sync(&self, base_url: ServoUrl) {
         
 
@@ -446,7 +447,7 @@ impl HTMLMediaElement {
             ResourceSelectionMode::Object
         } else if let Some(attr) = self.upcast::<Element>().get_attribute(&ns!(), &local_name!("src")) {
             ResourceSelectionMode::Attribute(attr.Value().to_string())
-        } else if false {
+        } else if false {  
             
             ResourceSelectionMode::Children(panic!())
         } else {
