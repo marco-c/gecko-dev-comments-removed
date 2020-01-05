@@ -318,7 +318,55 @@ var NetMonitorController = {
 
   viewSourceInDebugger(sourceURL, sourceLine) {
     return this._toolbox.viewSourceInDebugger(sourceURL, sourceLine);
-  }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  waitForAllRequestsFinished() {
+    return new Promise(resolve => {
+      
+      let requests = new Map();
+
+      function onRequest(_, id) {
+        requests.set(id, false);
+      }
+
+      function onTimings(_, id) {
+        requests.set(id, true);
+        maybeResolve();
+      }
+
+      function maybeResolve() {
+        
+        if (![...requests.values()].every(finished => finished)) {
+          return;
+        }
+
+        
+        window.off(EVENTS.NETWORK_EVENT, onRequest);
+        window.off(EVENTS.RECEIVED_EVENT_TIMINGS, onTimings);
+        resolve();
+      }
+
+      window.on(EVENTS.NETWORK_EVENT, onRequest);
+      window.on(EVENTS.RECEIVED_EVENT_TIMINGS, onTimings);
+    });
+  },
 };
 
 
