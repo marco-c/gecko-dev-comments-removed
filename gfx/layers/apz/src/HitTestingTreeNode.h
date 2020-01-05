@@ -128,9 +128,15 @@ private:
 
   uint64_t mLayersId;
 
+  
+  
   FrameMetrics::ViewID mScrollViewId;
+
+  
   ScrollDirection mScrollDir;
   int32_t mScrollThumbLength;
+
+  
   bool mIsScrollbarContainer;
 
   FrameMetrics::ViewID mFixedPosTarget;
