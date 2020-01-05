@@ -1,6 +1,6 @@
-# Library for JSTest manifests.
-#
-# This includes classes for representing and parsing JS manifests.
+
+
+
 
 from __future__ import print_function
 
@@ -44,10 +44,10 @@ class XULInfo:
     def create(cls, jsdir):
         """Create a XULInfo based on the current platform's characteristics."""
 
-        # Our strategy is to find the autoconf.mk generated for the build and
-        # read the values from there.
+        
+        
 
-        # Find config/autoconf.mk.
+        
         dirs = split_path_into_dirs(os.getcwd()) + split_path_into_dirs(jsdir)
 
         path = None
@@ -62,7 +62,7 @@ class XULInfo:
                   " the JS shell (searched from {})".format(jsdir))
             sys.exit(1)
 
-        # Read the values.
+        
         val_re = re.compile(r'(TARGET_XPCOM_ABI|OS_TARGET|MOZ_DEBUG)\s*=\s*(.*)')
         kw = {'isdebug': False}
         for line in open(path):
@@ -82,7 +82,7 @@ class XULInfoTester:
     def __init__(self, xulinfo, js_bin):
         self.js_prologue = xulinfo.as_js()
         self.js_bin = js_bin
-        # Maps JS expr to evaluation result.
+        
         self.cache = {}
 
     def test(self, cond):
@@ -91,9 +91,9 @@ class XULInfoTester:
         if ans is None:
             cmd = [
                 self.js_bin,
-                # run in safe configuration, since it is hard to debug
-                # crashes when running code here. In particular, msan will
-                # error out if the jit is active.
+                
+                
+                
                 '--no-baseline',
                 '-e', self.js_prologue,
                 '-e', 'print(!!({}))'.format(cond)
@@ -135,8 +135,8 @@ def _parse_one(testcase, terms, xul_tester):
                 testcase.expect = False
             pos += 1
         elif parts[pos].startswith('asserts-if'):
-            # This directive means we may flunk some number of
-            # NS_ASSERTIONs in the browser. For the shell, ignore it.
+            
+            
             pos += 1
         elif parts[pos].startswith('skip-if'):
             cond = parts[pos][len('skip-if('):-1]
@@ -152,7 +152,7 @@ def _parse_one(testcase, terms, xul_tester):
             testcase.slow = True
             pos += 1
         elif parts[pos] == 'silentfail':
-            # silentfails use tons of memory, and Darwin doesn't support ulimit.
+            
             if xul_tester.test("xulRuntime.OS == 'Darwin'"):
                 testcase.expect = testcase.enable = False
             pos += 1
@@ -213,10 +213,10 @@ def _emit_manifest_at(location, relative, test_gen, depth):
             line = _build_manifest_script_entry(k, test_list[0])
             manifest.append(line)
 
-    # Always present our manifest in sorted order.
+    
     manifest.sort()
 
-    # If we have tests, we have to set the url-prefix so reftest can find them.
+    
     if numTestFiles > 0:
         manifest = ["url-prefix {}jsreftest.html?test={}/".format(
             '../' * depth, relative)] + manifest
@@ -262,11 +262,11 @@ def _parse_test_header(fullpath, testcase, xul_tester):
     finally:
         fp.close()
 
-    # Bail early if we do not start with a single comment.
+    
     if not buf.startswith("//"):
         return
 
-    # Extract the token.
+    
     buf, _, _ = buf.partition('\n')
     matches = TEST_HEADER_PATTERN_INLINE.match(buf)
 
@@ -304,61 +304,57 @@ def _parse_external_manifest(filename, relpath):
 
             path = os.path.normpath(os.path.join(relpath, matches.group(3)))
             if matches.group(2) == 'include':
-                # The manifest spec wants a reference to another manifest here,
-                # but we need just the directory. We do need the trailing
-                # separator so we don't accidentally match other paths of which
-                # this one is a prefix.
+                
+                
+                
+                
                 assert(path.endswith('jstests.list'))
                 path = path[:-len('jstests.list')]
 
             entries.append({'path': path, 'terms': matches.group(1),
                             'comment': comment.strip()})
 
-    # if one directory name is a prefix of another, we want the shorter one
-    # first
+    
+    
     entries.sort(key=lambda x: x["path"])
     return entries
 
 def _apply_external_manifests(filename, testcase, entries, xul_tester):
     for entry in entries:
         if filename.startswith(entry["path"]):
-            # The reftest spec would require combining the terms (failure types)
-            # that may already be defined in the test case with the terms
-            # specified in entry; for example, a skip overrides a random, which
-            # overrides a fails. Since we don't necessarily know yet in which
-            # environment the test cases will be run, we'd also have to
-            # consider skip-if, random-if, and fails-if with as-yet unresolved
-            # conditions.
-            # At this point, we use external manifests only for test cases
-            # that can't have their own failure type comments, so we simply
-            # use the terms for the most specific path.
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
             _append_terms_and_comment(testcase, entry["terms"], entry["comment"])
             _parse_one(testcase, entry["terms"], xul_tester)
 
 def _is_test_file(path_from_root, basename, filename, requested_paths,
                   excluded_files, excluded_dirs):
-    # Any file whose basename matches something in this set is ignored.
+    
     EXCLUDED = set(('browser.js', 'shell.js', 'template.js',
-                    'user.js', 'sta.js',
-                    'test262-browser.js', 'test262-shell.js',
-                    'test402-browser.js', 'test402-shell.js',
-                    'testBuiltInObject.js', 'testIntl.js',
-                    'js-test-driver-begin.js', 'js-test-driver-end.js'))
+                    'user.js', 'js-test-driver-begin.js', 'js-test-driver-end.js'))
 
-    # Skip js files in the root test directory.
+    
     if not path_from_root:
         return False
 
-    # Skip files that we know are not tests.
+    
     if basename in EXCLUDED:
         return False
 
-    # If any tests are requested by name, skip tests that do not match.
+    
     if requested_paths \
         and not any(req in filename for req in requested_paths):
         return False
 
-    # Skip excluded tests.
+    
     if filename in excluded_files:
         return False
     for dir in excluded_dirs:
@@ -408,12 +404,12 @@ def load_reftests(location, requested_paths, excluded_paths, xul_tester, reldir=
     excluded_files, excluded_dirs = _split_files_and_dirs(location, excluded_paths)
 
     for root, basename in _find_all_js_files(location, location):
-        # Get the full path and relative location of the file.
+        
         filename = os.path.join(root, basename)
         if not _is_test_file(root, basename, filename, requested_paths, excluded_files, excluded_dirs):
             continue
 
-        # Skip empty files.
+        
         fullpath = os.path.join(location, filename)
         statbuf = os.stat(fullpath)
 
