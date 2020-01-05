@@ -1650,7 +1650,10 @@ public:
 
 
 
-  bool IsTransformed() const;
+
+
+
+  bool IsTransformed(const nsStyleDisplay* aStyleDisplay = nullptr) const;
 
   
 
@@ -1705,7 +1708,11 @@ public:
 
 
 
-  bool Combines3DTransformWithAncestors() const;
+
+
+
+  bool Combines3DTransformWithAncestors(const nsStyleDisplay* aStyleDisplay
+                                          = nullptr) const;
 
   
 
@@ -3641,8 +3648,12 @@ public:
   virtual mozilla::dom::Element*
   GetPseudoElement(mozilla::CSSPseudoElementType aType);
 
-  bool BackfaceIsHidden() const {
-    return StyleDisplay()->BackfaceIsHidden();
+  
+
+
+
+  bool BackfaceIsHidden(const nsStyleDisplay* aStyleDisplay = nullptr) const {
+    return StyleDisplayWithOptionalParam(aStyleDisplay)->BackfaceIsHidden();
   }
 
   
