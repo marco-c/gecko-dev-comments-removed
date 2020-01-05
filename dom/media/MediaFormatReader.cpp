@@ -81,12 +81,17 @@ private:
   
   void ResolvePromise(ReentrantMonitorAutoEnter& aProofOfLock);
 
+  
+  static StaticMutex sMutex;
+
   ReentrantMonitor mMonitor;
   
   int mDecoderLimit;
   
   std::queue<RefPtr<PromisePrivate>> mPromises;
 };
+
+StaticMutex DecoderAllocPolicy::sMutex;
 
 class DecoderAllocPolicy::AutoDeallocToken : public Token
 {
@@ -115,8 +120,7 @@ DecoderAllocPolicy::~DecoderAllocPolicy()
 DecoderAllocPolicy&
 DecoderAllocPolicy::Instance()
 {
-  
-  
+  StaticMutexAutoLock lock(sMutex);
   static auto sPolicy = new DecoderAllocPolicy();
   return *sPolicy;
 }
