@@ -64,6 +64,19 @@ enum DeleteDir {
     Backward
 }
 
+
+
+
+#[cfg(target_os="macos")]
+fn is_control_key(event: JSRef<KeyboardEvent>) -> bool {
+    event.MetaKey() && !event.CtrlKey() && !event.AltKey()
+}
+
+#[cfg(not(target_os="macos"))]
+fn is_control_key(event: JSRef<KeyboardEvent>) -> bool {
+    event.CtrlKey() && !event.MetaKey() && !event.AltKey()
+}
+
 impl TextInput {
     
     pub fn new(lines: Lines, initial: DOMString) -> TextInput {
@@ -232,8 +245,23 @@ impl TextInput {
     }
 
     
+    fn select_all(&mut self) {
+        self.selection_begin = Some(TextPoint {
+            line: 0,
+            index: 0,
+        });
+        let last_line = self.lines.len() - 1;
+        self.edit_point.line = last_line;
+        self.edit_point.index = self.lines[last_line].char_len();
+    }
+
+    
     pub fn handle_keydown(&mut self, event: JSRef<KeyboardEvent>) -> KeyReaction {
         match event.Key().as_slice() {
+           "a" if is_control_key(event) => {
+                self.select_all();
+                KeyReaction::Nothing
+            },
             
             c if c.len() == 1 => {
                 self.insert_char(c.char_at(0));
