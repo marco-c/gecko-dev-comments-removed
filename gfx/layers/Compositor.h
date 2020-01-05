@@ -135,7 +135,6 @@ class CompositorD3D11;
 class BasicCompositor;
 class TextureHost;
 class TextureReadLock;
-class WebRenderCompositorOGL;
 
 enum SurfaceInitMode
 {
@@ -474,7 +473,6 @@ public:
   virtual CompositorD3D9* AsCompositorD3D9() { return nullptr; }
   virtual CompositorD3D11* AsCompositorD3D11() { return nullptr; }
   virtual BasicCompositor* AsBasicCompositor() { return nullptr; }
-  virtual WebRenderCompositorOGL* AsWebRenderCompositorOGL() { return nullptr; }
 
   
 
@@ -542,6 +540,27 @@ public:
   }
   void SetScreenRotation(ScreenRotation aRotation) {
     mScreenRotation = aRotation;
+  }
+
+  TimeStamp GetCompositionTime() const {
+    return mCompositionTime;
+  }
+  void SetCompositionTime(TimeStamp aTimeStamp) {
+    mCompositionTime = aTimeStamp;
+    if (!mCompositionTime.IsNull() && !mCompositeUntilTime.IsNull() &&
+        mCompositionTime >= mCompositeUntilTime) {
+      mCompositeUntilTime = TimeStamp();
+    }
+  }
+
+  virtual void CompositeUntil(TimeStamp aTimeStamp) {
+    if (mCompositeUntilTime.IsNull() ||
+        mCompositeUntilTime < aTimeStamp) {
+      mCompositeUntilTime = aTimeStamp;
+    }
+  }
+  TimeStamp GetCompositeUntilTime() const {
+    return mCompositeUntilTime;
   }
 
   
@@ -632,6 +651,17 @@ protected:
 
 
   TimeStamp mLastCompositionEndTime;
+
+  
+
+
+  TimeStamp mCompositionTime;
+  
+
+
+
+
+  TimeStamp mCompositeUntilTime;
 
   uint32_t mCompositorID;
   DiagnosticTypes mDiagnosticTypes;
