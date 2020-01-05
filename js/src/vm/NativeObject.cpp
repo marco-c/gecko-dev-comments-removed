@@ -2372,7 +2372,7 @@ SetExistingProperty(JSContext* cx, HandleNativeObject obj, HandleId id, HandleVa
     
     if (prop.isDenseOrTypedArrayElement()) {
         
-        if (obj->getElementsHeader()->isFrozen())
+        if (pobj->getElementsHeader()->isFrozen())
             return result.fail(JSMSG_READ_ONLY);
 
         
