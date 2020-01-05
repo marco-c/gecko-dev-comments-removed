@@ -50,6 +50,15 @@ DataChannelParent::NotifyTrackingResource()
 }
 
 NS_IMETHODIMP
+DataChannelParent::SetClassifierMatchedInfo(const nsACString& aList,
+                                            const nsACString& aProvider,
+                                            const nsACString& aPrefix)
+{
+  
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 DataChannelParent::Delete()
 {
     

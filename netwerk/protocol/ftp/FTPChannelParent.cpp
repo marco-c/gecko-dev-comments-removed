@@ -571,6 +571,15 @@ FTPChannelParent::NotifyTrackingResource()
 }
 
 NS_IMETHODIMP
+FTPChannelParent::SetClassifierMatchedInfo(const nsACString& aList,
+                                           const nsACString& aProvider,
+                                           const nsACString& aPrefix)
+{
+  
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 FTPChannelParent::Delete()
 {
   if (mIPCClosed || !SendDeleteSelf())

@@ -63,7 +63,11 @@ private:
 public:
     
     
-    static nsresult SetBlockedTrackingContent(nsIChannel *channel);
+    static nsresult SetBlockedContent(nsIChannel *channel,
+                                      nsresult aErrorCode,
+                                      const nsACString& aList,
+                                      const nsACString& aProvider,
+                                      const nsACString& aPrefix);
     static nsresult NotifyTrackingProtectionDisabled(nsIChannel *aChannel);
 };
 

@@ -42,7 +42,24 @@ var gSafeBrowsing = {
 
 
 
-  getReportURL(name) {
-    return SafeBrowsing.getReportURL(name, gBrowser.currentURI);
+
+
+
+
+
+
+  getReportURL(name, info) {
+    let reportInfo = info;
+    if (!reportInfo) {
+      let pageUri = gBrowser.currentURI.clone();
+
+      
+      if (pageUri instanceof Ci.nsIURL) {
+        pageUri.query = "";
+      }
+
+      reportInfo = { uri: pageUri.asciiSpec };
+    }
+    return SafeBrowsing.getReportURL(name, reportInfo);
   }
 }
