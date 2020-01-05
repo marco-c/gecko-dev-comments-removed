@@ -39,6 +39,7 @@ class nsCSSCounterStyleRule;
 namespace mozilla {
 class CSSStyleSheet;
 enum class CSSPseudoElementType : uint8_t;
+enum class CSSPseudoClassType : uint8_t;
 namespace css {
 class DocumentRule;
 } 
@@ -132,6 +133,36 @@ public:
   static bool RestrictedSelectorMatches(mozilla::dom::Element* aElement,
                                         nsCSSSelector* aSelector,
                                         TreeMatchContext& aTreeMatchContext);
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static bool StringPseudoMatches(mozilla::dom::Element* aElement,
+                                  mozilla::CSSPseudoClassType aPseudo,
+                                  char16_t* aString,
+                                  nsIDocument* aDocument,
+                                  bool aForStyling,
+                                  mozilla::EventStates aStateMask,
+                                  bool* const aDependence = nullptr);
 
   
   virtual void RulesMatching(ElementRuleProcessorData* aData) override;
