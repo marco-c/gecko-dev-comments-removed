@@ -975,12 +975,6 @@ impl Flow for InlineFlow {
     }
 }
 
-struct FragmentFixupWorkItem {
-    style: Arc<ComputedValues>,
-    new_start_index: uint,
-    old_end_index: uint,
-}
-
 
 
 pub struct FragmentRange {
@@ -1009,6 +1003,12 @@ impl FragmentRange {
         
         model::padding_from_style(&*self.style, Au(0))
     }
+}
+
+struct FragmentFixupWorkItem {
+    style: Arc<ComputedValues>,
+    new_start_index: uint,
+    old_end_index: uint,
 }
 
 
