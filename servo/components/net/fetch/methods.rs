@@ -22,6 +22,7 @@ use net_traits::response::{Response, ResponseBody, ResponseType};
 use net_traits::{AsyncFetchListener, Metadata};
 use resource_thread::CancellationListener;
 use std::ascii::AsciiExt;
+use std::cell::RefCell;
 use std::io::Read;
 use std::rc::Rc;
 use std::str::FromStr;
@@ -90,14 +91,177 @@ pub fn fetch(request: Rc<Request>, cors_flag: bool) -> Response {
     
     
     
-    main_fetch(request, cors_flag)
+    main_fetch(request, cors_flag, false)
 }
 
 
-fn main_fetch(request: Rc<Request>, _cors_flag: bool) -> Response {
+fn main_fetch(request: Rc<Request>, cors_flag: bool, recursive_flag: bool) -> Response {
     
-    let response = basic_fetch(request);
-    response
+
+    
+    let mut response = None;
+
+    
+    if request.local_urls_only {
+        match &*request.current_url().scheme {
+            "about" | "blob" | "data" | "filesystem" => response = Some(Response::network_error()),
+            _ => { }
+        };
+    }
+
+    
+    
+
+    
+    
+
+    
+    
+
+    
+    if request.referer != Referer::NoReferer {
+        
+    }
+
+    
+    
+
+    
+    if !request.synchronous && !recursive_flag {
+        
+    }
+
+    
+    let mut response = if response.is_none() {
+
+        let current_url = request.current_url();
+        let origin_match = request.origin == current_url.origin();
+
+        if (!cors_flag && origin_match) ||
+            (current_url.scheme == "data" && request.same_origin_data.get()) ||
+            current_url.scheme == "about" ||
+            request.mode == RequestMode::Navigate {
+
+            basic_fetch(request.clone())
+
+        } else if request.mode == RequestMode::SameOrigin {
+            Response::network_error()
+
+        } else if request.mode == RequestMode::NoCORS {
+            request.response_tainting.set(ResponseTainting::Opaque);
+            basic_fetch(request.clone())
+
+        } else if current_url.scheme != "http" && current_url.scheme != "https" {
+            Response::network_error()
+
+        } else if request.use_cors_preflight ||
+            (request.unsafe_request &&
+            (!is_simple_method(&request.method.borrow()) ||
+            request.headers.borrow().iter().any(|h| !is_simple_header(&h)))) {
+
+            request.response_tainting.set(ResponseTainting::CORSTainting);
+            request.redirect_mode.set(RedirectMode::Error);
+            let response = http_fetch(request.clone(), BasicCORSCache::new(), true, true, false);
+            if Response::is_network_error(&response) {
+                
+            }
+            response
+
+        } else {
+            request.response_tainting.set(ResponseTainting::CORSTainting);
+            http_fetch(request.clone(), BasicCORSCache::new(), true, false, false)
+        }
+    } else {
+        response.unwrap()
+    };
+
+    
+    if recursive_flag {
+        return response;
+    }
+
+    
+    
+    let mut response = if response.response_type == ResponseType::Default {
+        let old_response = Rc::new(response);
+        let response_type = match request.response_tainting.get() {
+            ResponseTainting::Basic => ResponseType::Basic,
+            ResponseTainting::CORSTainting => ResponseType::CORS,
+            ResponseTainting::Opaque => ResponseType::Opaque,
+        };
+        Response::to_filtered(old_response, response_type)
+    } else {
+        response
+    };
+
+    
+    let mut internal_response = if Response::is_network_error(&response) {
+        Rc::new(Response::network_error())
+    } else {
+        response.internal_response.clone().unwrap()
+    };
+
+    
+    
+
+    
+    if !Response::is_network_error(&response) && (is_null_body_status(&internal_response.status) ||
+        match *request.method.borrow() {
+            Method::Head | Method::Connect => true,
+            _ => false })
+        {
+        
+        
+        *internal_response.body.borrow_mut() = ResponseBody::Empty;
+    }
+
+    
+    
+    
+
+    
+    
+
+    
+    
+    
+    
+    
+    
+
+    
+    if request.synchronous {
+        
+        return response;
+    }
+
+    
+    if request.body.is_some() && match &*request.current_url().scheme {
+        "http" | "https" => true,
+        _ => false }
+        {
+        
+    }
+
+    
+    
+
+    match *internal_response.body.borrow() {
+        
+        ResponseBody::Empty => {
+            
+            
+        },
+
+        
+        _ => {
+            
+            
+        }
+    };
+
+    
+    return response;
 }
 
 
@@ -180,7 +344,7 @@ fn http_fetch(request: Rc<Request>,
             if (res.response_type == ResponseType::Opaque &&
                 request.mode != RequestMode::NoCORS) ||
                (res.response_type == ResponseType::OpaqueRedirect &&
-                request.redirect_mode != RedirectMode::Manual) ||
+                request.redirect_mode.get() != RedirectMode::Manual) ||
                res.response_type == ResponseType::Error {
                 return Response::network_error();
             }
@@ -205,9 +369,7 @@ fn http_fetch(request: Rc<Request>,
             let mut method_mismatch = false;
             let mut header_mismatch = false;
 
-            
-            
-            let origin = request.origin.clone().unwrap_or(Url::parse("").unwrap());
+            let origin = request.origin.clone();
             let url = request.current_url();
             let credentials = request.credentials_mode == CredentialsMode::Include;
             let method_cache_match = cache.match_method(CacheRequestDetails {
@@ -217,7 +379,7 @@ fn http_fetch(request: Rc<Request>,
             }, request.method.borrow().clone());
 
             method_mismatch = !method_cache_match && (!is_simple_method(&request.method.borrow()) ||
-                request.mode == RequestMode::ForcedPreflightMode);
+                request.use_cors_preflight);
             header_mismatch = request.headers.borrow().iter().any(|view|
                 !cache.match_header(CacheRequestDetails {
                     origin: origin.clone(),
@@ -226,12 +388,13 @@ fn http_fetch(request: Rc<Request>,
                 }, view.name()) && !is_simple_header(&view)
             );
 
+            
             if method_mismatch || header_mismatch {
                 let preflight_result = preflight_fetch(request.clone());
+                
                 if preflight_result.response_type == ResponseType::Error {
                     return Response::network_error();
                 }
-                response = Some(Rc::new(preflight_result));
             }
         }
 
@@ -242,7 +405,7 @@ fn http_fetch(request: Rc<Request>,
         let credentials = match request.credentials_mode {
             CredentialsMode::Include => true,
             CredentialsMode::CredentialsSameOrigin if (!cors_flag ||
-                request.response_tainting == ResponseTainting::Opaque)
+                request.response_tainting.get() == ResponseTainting::Opaque)
                 => true,
             _ => false
         };
@@ -271,7 +434,7 @@ fn http_fetch(request: Rc<Request>,
         StatusCode::TemporaryRedirect | StatusCode::PermanentRedirect => {
 
             
-            if request.redirect_mode == RedirectMode::Error {
+            if request.redirect_mode.get() == RedirectMode::Error {
                 return Response::network_error();
             }
 
@@ -308,11 +471,11 @@ fn http_fetch(request: Rc<Request>,
             
             request.same_origin_data.set(false);
 
-            match request.redirect_mode {
+            match request.redirect_mode.get() {
 
                 
                 RedirectMode::Manual => {
-                    response = Rc::new(Response::to_filtered(actual_response, ResponseType::Opaque));
+                    response = Rc::new(Response::to_filtered(actual_response, ResponseType::OpaqueRedirect));
                 }
 
                 
@@ -350,7 +513,7 @@ fn http_fetch(request: Rc<Request>,
                     request.url_list.borrow_mut().push(location_url);
 
                     
-                    return main_fetch(request.clone(), cors_flag);
+                    return main_fetch(request.clone(), cors_flag, true);
                 }
                 RedirectMode::Error => { panic!("RedirectMode is Error after step 8") }
             }
@@ -418,7 +581,7 @@ fn http_network_or_cache_fetch(request: Rc<Request>,
 
     
     let http_request = if request_has_no_window &&
-        request.redirect_mode != RedirectMode::Follow {
+        request.redirect_mode.get() != RedirectMode::Follow {
         request.clone()
     } else {
         Rc::new((*request).clone())
@@ -457,9 +620,7 @@ fn http_network_or_cache_fetch(request: Rc<Request>,
     
     if http_request.omit_origin_header == false {
         
-        if let Some(ref _origin) = http_request.origin {
-            
-        }
+        
     }
 
     
@@ -628,7 +789,7 @@ fn http_network_fetch(request: Rc<Request>,
 
             let mut body = vec![];
             res.response.read_to_end(&mut body);
-            response.body = ResponseBody::Done(body);
+            *response.body.borrow_mut() = ResponseBody::Done(body);
         },
         Err(e) =>
             response.termination_reason = Some(TerminationReason::Fatal)
@@ -677,6 +838,7 @@ fn http_network_fetch(request: Rc<Request>,
         
         
 
+    
     
         
         
@@ -761,3 +923,14 @@ fn response_needs_revalidation(response: &Response) -> bool {
 
 
 
+
+fn is_null_body_status(status: &Option<StatusCode>) -> bool {
+    match *status {
+        Some(status) => match status {
+            StatusCode::SwitchingProtocols | StatusCode::NoContent |
+                StatusCode::ResetContent | StatusCode::NotModified => true,
+            _ => false
+        },
+        _ => false
+    }
+}
