@@ -118,6 +118,11 @@ class Theme {
     }
   }
 
+  
+
+
+
+
   loadIcons(icons) {
     if (!Preferences.get("extensions.webextensions.themes.icons.enabled")) {
       
@@ -171,8 +176,8 @@ extensions.on("manifest_theme", (type, directive, extension, manifest) => {
 extensions.on("shutdown", (type, extension) => {
   let theme = themeMap.get(extension);
 
-  
   if (!theme) {
+    
     return;
   }
 
