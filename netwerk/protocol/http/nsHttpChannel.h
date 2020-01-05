@@ -182,8 +182,6 @@ public:
     void SetWarningReporter(HttpChannelSecurityWarningReporter* aReporter)
       { mWarningReporter = aReporter; }
 
-    void ApplyContentConversions();
-
 public: 
 
     void InternalSetUploadStream(nsIInputStream *uploadStream)
@@ -613,13 +611,6 @@ private:
     HttpChannelSecurityWarningReporter* mWarningReporter;
 
     RefPtr<ADivertableParentChannel> mParentChannel;
-
-    
-    
-    
-    
-    
-    uint32_t mDelayedInstallCacheListenerForTraceableChannel : 1;
 
     
     Atomic<bool> mIsReadingFromCache;
