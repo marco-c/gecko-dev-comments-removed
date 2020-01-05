@@ -22,7 +22,7 @@ var AboutReaderListener = {
 
   _articlePromise: null,
 
-  _isLeavingReaderMode: false,
+  _isLeavingReaderableReaderMode: false,
 
   init: function() {
     addEventListener("AboutReaderContentLoaded", this, false, true);
@@ -41,7 +41,7 @@ var AboutReaderListener = {
           this._articlePromise = ReaderMode.parseDocument(content.document).catch(Cu.reportError);
           ReaderMode.enterReaderMode(docShell, content);
         } else {
-          this._isLeavingReaderMode = true;
+          this._isLeavingReaderableReaderMode = this.isReaderableAboutReader;
           ReaderMode.leaveReaderMode(docShell, content);
         }
         break;
@@ -54,6 +54,11 @@ var AboutReaderListener = {
 
   get isAboutReader() {
     return content.document.documentURI.startsWith("about:reader");
+  },
+
+  get isReaderableAboutReader() {
+    return this.isAboutReader &&
+      !content.document.documentElement.dataset.isError;
   },
 
   get isErrorPage() {
@@ -87,9 +92,9 @@ var AboutReaderListener = {
         
         
         
-        sendAsyncMessage("Reader:UpdateReaderButton", { isArticle: this._isLeavingReaderMode });
-        if (this._isLeavingReaderMode) {
-          this._isLeavingReaderMode = false;
+        sendAsyncMessage("Reader:UpdateReaderButton", { isArticle: this._isLeavingReaderableReaderMode });
+        if (this._isLeavingReaderableReaderMode) {
+          this._isLeavingReaderableReaderMode = false;
         }
         break;
 

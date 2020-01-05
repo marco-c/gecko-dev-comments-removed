@@ -762,7 +762,12 @@ AboutReader.prototype = {
 
     this._doc.title = errorMessage;
 
+    this._doc.documentElement.dataset.isError = true;
+
     this._error = true;
+
+    this._doc.dispatchEvent(
+      new this._win.CustomEvent("AboutReaderContentError", { bubbles: true, cancelable: false }));
   },
 
   
