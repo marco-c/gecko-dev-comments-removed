@@ -5,6 +5,8 @@
 
 "use strict";
 
+requestLongerTimeout(2);
+
 
 
 var PAGE_1 = URL_ROOT + "doc_inspector_select-last-selected-01.html";
