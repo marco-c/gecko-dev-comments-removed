@@ -6814,7 +6814,7 @@ var Distribution = {
       } catch (e) {  }
     }
 
-    Messaging.sendRequest({ type: "Distribution:Set:OK" });
+    GlobalEventDispatcher.sendRequest({ type: "Distribution:Set:OK" });
   },
 
   

@@ -102,11 +102,11 @@ add_task(function* test_tracking_pb() {
 
   
   yield promiseLoadEvent(browser, "http://tracking.example.org/tests/robocop/tracking_good.html");
-  Messaging.sendRequest({ type: "Test:Expected", expected: "unknown" });
+  EventDispatcher.instance.sendRequest({ type: "Test:Expected", expected: "unknown" });
 
   
   yield promiseLoadEvent(browser, "http://tracking.example.org/tests/robocop/tracking_bad.html");
-  Messaging.sendRequest({ type: "Test:Expected", expected: "tracking_content_blocked" });
+  EventDispatcher.instance.sendRequest({ type: "Test:Expected", expected: "tracking_content_blocked" });
 
   
   
@@ -116,7 +116,7 @@ add_task(function* test_tracking_pb() {
       contentType: "tracking",
     });
   });
-  Messaging.sendRequest({ type: "Test:Expected", expected: "tracking_content_loaded" });
+  EventDispatcher.instance.sendRequest({ type: "Test:Expected", expected: "tracking_content_loaded" });
 
   
   yield promiseLoadEvent(browser, undefined, undefined, () => {
@@ -125,18 +125,18 @@ add_task(function* test_tracking_pb() {
       contentType: "tracking",
     });
   });
-  Messaging.sendRequest({ type: "Test:Expected", expected: "tracking_content_blocked" });
+  EventDispatcher.instance.sendRequest({ type: "Test:Expected", expected: "tracking_content_blocked" });
 
   
   Services.prefs.setBoolPref("privacy.trackingprotection.pbmode.enabled", false);
 
   
   yield promiseLoadEvent(browser, "http://tracking.example.org/tests/robocop/tracking_bad.html");
-  Messaging.sendRequest({ type: "Test:Expected", expected: "unknown" });
+  EventDispatcher.instance.sendRequest({ type: "Test:Expected", expected: "unknown" });
 
   
   yield promiseLoadEvent(browser, "http://tracking.example.org/tests/robocop/tracking_good.html");
-  Messaging.sendRequest({ type: "Test:Expected", expected: "unknown" });
+  EventDispatcher.instance.sendRequest({ type: "Test:Expected", expected: "unknown" });
 
   
   Services.prefs.clearUserPref("privacy.trackingprotection.pbmode.enabled");
@@ -153,18 +153,18 @@ add_task(function* test_tracking_not_pb() {
 
   
   yield promiseLoadEvent(browser, "http://tracking.example.org/tests/robocop/tracking_good.html");
-  Messaging.sendRequest({ type: "Test:Expected", expected: "unknown" });
+  EventDispatcher.instance.sendRequest({ type: "Test:Expected", expected: "unknown" });
 
   
   yield promiseLoadEvent(browser, "http://tracking.example.org/tests/robocop/tracking_bad.html");
-  Messaging.sendRequest({ type: "Test:Expected", expected: "unknown" });
+  EventDispatcher.instance.sendRequest({ type: "Test:Expected", expected: "unknown" });
 
   
   Services.prefs.setBoolPref("privacy.trackingprotection.enabled", true);
 
   
   yield promiseLoadEvent(browser, "http://tracking.example.org/tests/robocop/tracking_bad.html");
-  Messaging.sendRequest({ type: "Test:Expected", expected: "tracking_content_blocked" });
+  EventDispatcher.instance.sendRequest({ type: "Test:Expected", expected: "tracking_content_blocked" });
 });
 
 run_next_test();
