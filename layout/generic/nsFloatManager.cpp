@@ -121,8 +121,8 @@ void nsFloatManager::Shutdown()
   "incompatible writing modes")
 
 nsFlowAreaRect
-nsFloatManager::GetFlowArea(WritingMode aWM, nscoord aBCoord,
-                            BandInfoType aInfoType, nscoord aBSize,
+nsFloatManager::GetFlowArea(WritingMode aWM, nscoord aBCoord, nscoord aBSize,
+                            BandInfoType aBandInfoType,
                             LogicalRect aContentArea, SavedState* aState,
                             const nsSize& aContainerSize) const
 {
@@ -161,7 +161,7 @@ nsFloatManager::GetFlowArea(WritingMode aWM, nscoord aBCoord,
   if (aBSize == nscoord_MAX) {
     
     
-    NS_WARNING_ASSERTION(aInfoType == BAND_FROM_POINT, "bad height");
+    NS_WARNING_ASSERTION(aBandInfoType == BandInfoType::BandFromPoint, "bad height");
     blockEnd = nscoord_MAX;
   } else {
     blockEnd = blockStart + aBSize;
@@ -195,7 +195,7 @@ nsFloatManager::GetFlowArea(WritingMode aWM, nscoord aBCoord,
 
     nscoord floatBStart = fi.BStart();
     nscoord floatBEnd = fi.BEnd();
-    if (blockStart < floatBStart && aInfoType == BAND_FROM_POINT) {
+    if (blockStart < floatBStart && aBandInfoType == BandInfoType::BandFromPoint) {
       
       if (floatBStart < blockEnd) {
         blockEnd = floatBStart;
@@ -212,7 +212,7 @@ nsFloatManager::GetFlowArea(WritingMode aWM, nscoord aBCoord,
       
 
       
-      if (floatBEnd < blockEnd && aInfoType == BAND_FROM_POINT) {
+      if (floatBEnd < blockEnd && aBandInfoType == BandInfoType::BandFromPoint) {
         blockEnd = floatBEnd;
       }
 

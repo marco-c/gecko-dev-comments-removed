@@ -159,10 +159,11 @@ public:
 
 
 
-  enum BandInfoType { BAND_FROM_POINT, WIDTH_WITHIN_HEIGHT };
+  enum class BandInfoType { BandFromPoint, WidthWithinHeight };
   nsFlowAreaRect GetFlowArea(mozilla::WritingMode aWM,
-                             nscoord aBCoord, BandInfoType aInfoType,
-                             nscoord aBSize, mozilla::LogicalRect aContentArea,
+                             nscoord aBCoord, nscoord aBSize,
+                             BandInfoType aBandInfoType,
+                             mozilla::LogicalRect aContentArea,
                              SavedState* aState,
                              const nsSize& aContainerSize) const;
 
