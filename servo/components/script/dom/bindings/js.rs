@@ -77,15 +77,6 @@ impl<T> JS<T> {
 
 impl<T: Reflectable> JS<T> {
     
-    
-    #[allow(unrooted_must_root)]
-    pub fn from_rooted(root: &Root<T>) -> JS<T> {
-        debug_assert!(thread_state::get().is_script());
-        JS {
-            ptr: unsafe { NonZero::new(&**root) },
-        }
-    }
-    
     #[allow(unrooted_must_root)]
     pub fn from_ref(obj: &T) -> JS<T> {
         debug_assert!(thread_state::get().is_script());
@@ -504,27 +495,24 @@ impl RootCollection {
     }
 
     
-    fn root(&self, untracked_reflector: *const Reflector) {
+    unsafe fn root(&self, untracked_reflector: *const Reflector) {
         debug_assert!(thread_state::get().is_script());
-        unsafe {
-            let mut roots = &mut *self.roots.get();
-            roots.push(untracked_reflector);
-            assert!(!(*untracked_reflector).get_jsobject().is_null())
-        }
+        let mut roots = &mut *self.roots.get();
+        roots.push(untracked_reflector);
+        assert!(!(*untracked_reflector).get_jsobject().is_null())
     }
 
     
-    fn unroot<T: Reflectable>(&self, rooted: &Root<T>) {
+    unsafe fn unroot(&self, tracked_reflector: *const Reflector) {
+        assert!(!tracked_reflector.is_null());
+        assert!(!(*tracked_reflector).get_jsobject().is_null());
         debug_assert!(thread_state::get().is_script());
-        unsafe {
-            let mut roots = &mut *self.roots.get();
-            let old_reflector = &*rooted.reflector();
-            match roots.iter().rposition(|r| *r == old_reflector) {
-                Some(idx) => {
-                    roots.remove(idx);
-                },
-                None => panic!("Can't remove a root that was never rooted!"),
-            }
+        let mut roots = &mut *self.roots.get();
+        match roots.iter().rposition(|r| *r == tracked_reflector) {
+            Some(idx) => {
+                roots.remove(idx);
+            },
+            None => panic!("Can't remove a root that was never rooted!"),
         }
     }
 }
@@ -613,7 +601,7 @@ impl<T: Reflectable> Deref for Root<T> {
 }
 
 impl<T: Reflectable> PartialEq for Root<T> {
-    fn eq(&self, other: &Root<T>) -> bool {
+    fn eq(&self, other: &Self) -> bool {
         self.ptr == other.ptr
     }
 }
@@ -627,7 +615,7 @@ impl<T: Reflectable> Clone for Root<T> {
 impl<T: Reflectable> Drop for Root<T> {
     fn drop(&mut self) {
         unsafe {
-            (*self.root_list).unroot(self);
+            (*self.root_list).unroot(self.reflector());
         }
     }
 }
