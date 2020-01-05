@@ -7,6 +7,10 @@
 
 
 add_task(function* () {
+  
+  
+  
+  Services.prefs.setBoolPref("network.tcp.tcp_fastopen_enable", false);
   let { tab, monitor } = yield initNetMonitor(SIMPLE_URL);
 
   info("Starting test... ");
