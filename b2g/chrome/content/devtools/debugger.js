@@ -265,7 +265,7 @@ var USBRemoteDebugger = {
       this._listener.open();
       
       
-      Services.obs.notifyObservers(null, "debugger-server-started");
+      Services.obs.notifyObservers(null, "debugger-server-started", null);
     } catch (e) {
       debug("Unable to start USB debugger server: " + e);
     }

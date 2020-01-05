@@ -62,7 +62,7 @@ this.PlacesDBUtils = {
       }
 
       
-      Services.obs.notifyObservers(null, FINISHED_MAINTENANCE_TOPIC);
+      Services.obs.notifyObservers(null, FINISHED_MAINTENANCE_TOPIC, null);
     }
   },
 

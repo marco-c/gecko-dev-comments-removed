@@ -45,7 +45,7 @@ webideCli.prototype = {
       
       
       
-      Services.obs.notifyObservers(null, "sessionstore-windows-restored");
+      Services.obs.notifyObservers(null, "sessionstore-windows-restored", "");
     }
   },
 

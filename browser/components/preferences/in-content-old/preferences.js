@@ -99,7 +99,7 @@ function init_all() {
 
   
   
-  Services.obs.notifyObservers(window, "advanced-pane-loaded");
+  Services.obs.notifyObservers(window, "advanced-pane-loaded", null);
 }
 
 

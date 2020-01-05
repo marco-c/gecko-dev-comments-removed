@@ -1349,7 +1349,7 @@ var gFinishedPage = {
 
 
   onExtra2: Task.async(function*() {
-    Services.obs.notifyObservers(null, "update-canceled");
+    Services.obs.notifyObservers(null, "update-canceled", null);
     let um = CoC["@mozilla.org/updates/update-manager;1"].
                getService(CoI.nsIUpdateManager);
     um.cleanupActiveUpdate();

@@ -11,11 +11,11 @@ Components.utils.import("resource://gre/modules/Services.jsm");
 
 
 function myBootstrapAddonFunction() { 
-  Services.obs.notifyObservers(null, "addon-console-works");
+  Services.obs.notifyObservers(null, "addon-console-works", null);
 }
 
 function startup() {
-  Services.obs.notifyObservers(null, "test-devtools");
+  Services.obs.notifyObservers(null, "test-devtools", null);
 }
 function shutdown() {}
 function install() {}

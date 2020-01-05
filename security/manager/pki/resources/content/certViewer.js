@@ -215,7 +215,7 @@ function displayUsages(results) {
   
   
   
-  Services.obs.notifyObservers(window, "ViewCertDetails:CertUsagesDone");
+  Services.obs.notifyObservers(window, "ViewCertDetails:CertUsagesDone", null);
 }
 
 function addChildrenToTree(parentTree, label, value, addTwistie) {

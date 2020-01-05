@@ -1188,7 +1188,7 @@ var gBrowserInit = {
     
     
     
-    Services.obs.notifyObservers(window, "browser-window-before-show");
+    Services.obs.notifyObservers(window, "browser-window-before-show", "");
 
     let isResistFingerprintingEnabled = gPrefService.getBoolPref("privacy.resistFingerprinting");
 
@@ -1606,7 +1606,7 @@ var gBrowserInit = {
 
     this.delayedStartupFinished = true;
 
-    Services.obs.notifyObservers(window, "browser-delayed-startup-finished");
+    Services.obs.notifyObservers(window, "browser-delayed-startup-finished", "");
     TelemetryTimestamps.add("delayedStartupFinished");
   },
 
@@ -6160,7 +6160,7 @@ var BrowserOffline = {
   _canGoOffline() {
     try {
       var cancelGoOffline = Cc["@mozilla.org/supports-PRBool;1"].createInstance(Ci.nsISupportsPRBool);
-      Services.obs.notifyObservers(cancelGoOffline, "offline-requested");
+      Services.obs.notifyObservers(cancelGoOffline, "offline-requested", null);
 
       
       if (cancelGoOffline.data)
@@ -6489,7 +6489,8 @@ function warnAboutClosingWindow() {
                           createInstance(Ci.nsISupportsPRBool);
     exitingCanceled.data = false;
     Services.obs.notifyObservers(exitingCanceled,
-                                 "last-pb-context-exiting");
+                                 "last-pb-context-exiting",
+                                 null);
     if (exitingCanceled.data)
       return false;
   }
@@ -6503,11 +6504,11 @@ function warnAboutClosingWindow() {
   let closingCanceled = Cc["@mozilla.org/supports-PRBool;1"].
                         createInstance(Ci.nsISupportsPRBool);
   os.notifyObservers(closingCanceled,
-                     "browser-lastwindow-close-requested");
+                     "browser-lastwindow-close-requested", null);
   if (closingCanceled.data)
     return false;
 
-  os.notifyObservers(null, "browser-lastwindow-close-granted");
+  os.notifyObservers(null, "browser-lastwindow-close-granted", null);
 
   
   
@@ -6565,7 +6566,7 @@ function BrowserOpenAddonsMgr(aView) {
       }
     }
     Services.obs.addObserver(receivePong, "EM-pong");
-    Services.obs.notifyObservers(null, "EM-ping");
+    Services.obs.notifyObservers(null, "EM-ping", "");
     Services.obs.removeObserver(receivePong, "EM-pong");
 
     if (emWindow) {
@@ -8128,7 +8129,7 @@ function safeModeRestart() {
     return;
   }
 
-  Services.obs.notifyObservers(null, "restart-in-safe-mode");
+  Services.obs.notifyObservers(null, "restart-in-safe-mode", "");
 }
 
 

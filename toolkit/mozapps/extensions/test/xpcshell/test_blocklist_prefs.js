@@ -42,7 +42,7 @@ var WindowWatcher = {
     });
 
     
-    Services.obs.notifyObservers(null, "addon-blocklist-closed");
+    Services.obs.notifyObservers(null, "addon-blocklist-closed", null);
 
   },
 

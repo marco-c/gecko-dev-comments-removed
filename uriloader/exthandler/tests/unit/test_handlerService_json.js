@@ -30,6 +30,6 @@ var reloadData = Task.async(function* () {
   
   let svc = gHandlerService;
   let promise = TestUtils.topicObserved("handlersvc-json-replace-complete");
-  Services.obs.notifyObservers(null, "handlersvc-json-replace");
+  Services.obs.notifyObservers(null, "handlersvc-json-replace", null);
   yield promise;
 });

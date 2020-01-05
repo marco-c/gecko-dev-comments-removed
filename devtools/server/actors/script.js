@@ -1023,7 +1023,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       
       
       if (Services.obs) {
-        Services.obs.notifyObservers(this, "devtools-thread-resumed");
+        Services.obs.notifyObservers(this, "devtools-thread-resumed", null);
       }
       return packet;
     }, error => {

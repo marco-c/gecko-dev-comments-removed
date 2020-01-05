@@ -1689,15 +1689,15 @@ function buildJarURI(aJarfile, aPath) {
 
 
 function flushJarCache(aJarFile) {
-  Services.obs.notifyObservers(aJarFile, "flush-cache-entry");
+  Services.obs.notifyObservers(aJarFile, "flush-cache-entry", null);
   Services.mm.broadcastAsyncMessage(MSG_JAR_FLUSH, aJarFile.path);
 }
 
 function flushChromeCaches() {
   
-  Services.obs.notifyObservers(null, "startupcache-invalidate");
+  Services.obs.notifyObservers(null, "startupcache-invalidate", null);
   
-  Services.obs.notifyObservers(null, "message-manager-flush-caches");
+  Services.obs.notifyObservers(null, "message-manager-flush-caches", null);
   
   Services.mm.broadcastAsyncMessage(MSG_MESSAGE_MANAGER_CACHES_FLUSH, null);
 }
@@ -2850,13 +2850,13 @@ this.XPIProvider = {
       }
 
       if (flushCaches) {
-        Services.obs.notifyObservers(null, "startupcache-invalidate");
+        Services.obs.notifyObservers(null, "startupcache-invalidate", null);
         
         
         
         
-        Services.obs.notifyObservers(null, "chrome-flush-skin-caches");
-        Services.obs.notifyObservers(null, "chrome-flush-caches");
+        Services.obs.notifyObservers(null, "chrome-flush-skin-caches", null);
+        Services.obs.notifyObservers(null, "chrome-flush-caches", null);
       }
 
       this.enabledAddons = Preferences.get(PREF_EM_ENABLED_ADDONS, "");
@@ -2995,7 +2995,7 @@ this.XPIProvider = {
       done.then(
         ret => {
           logger.debug("Notifying XPI shutdown observers");
-          Services.obs.notifyObservers(null, "xpi-provider-shutdown");
+          Services.obs.notifyObservers(null, "xpi-provider-shutdown", null);
         },
         err => {
           logger.debug("Notifying XPI shutdown observers");
@@ -3006,7 +3006,7 @@ this.XPIProvider = {
       return done;
     }
     logger.debug("Notifying XPI shutdown observers");
-    Services.obs.notifyObservers(null, "xpi-provider-shutdown");
+    Services.obs.notifyObservers(null, "xpi-provider-shutdown", null);
     return undefined;
   },
 
@@ -7740,7 +7740,7 @@ AddonWrapper.prototype = {
       if (!this.temporarilyInstalled) {
         let addonFile = addon.getResourceURI;
         XPIProvider.updateAddonDisabledState(addon, true);
-        Services.obs.notifyObservers(addonFile, "flush-cache-entry");
+        Services.obs.notifyObservers(addonFile, "flush-cache-entry", null);
         XPIProvider.updateAddonDisabledState(addon, false)
         resolve();
       } else {

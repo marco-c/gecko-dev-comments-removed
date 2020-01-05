@@ -26,7 +26,7 @@ function notifyAndPromiseUIUpdated(topic) {
       });
     };
     
-    Services.obs.notifyObservers(null, topic);
+    Services.obs.notifyObservers(null, topic, null);
   });
 }
 
@@ -84,7 +84,7 @@ add_task(function* prepare() {
     window.gSyncUI._needsSetup = oldNeedsSetup;
     
     
-    Services.obs.notifyObservers(null, "weave:service:login:finish");
+    Services.obs.notifyObservers(null, "weave:service:login:finish", null);
   });
   
   yield notifyAndPromiseUIUpdated("weave:service:login:finish");

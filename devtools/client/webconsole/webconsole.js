@@ -488,7 +488,7 @@ WebConsoleFrame.prototype = {
     
     let notifyObservers = () => {
       let id = WebConsoleUtils.supportsString(this.hudId);
-      Services.obs.notifyObservers(id, "web-console-created");
+      Services.obs.notifyObservers(id, "web-console-created", null);
     };
     allReady.then(notifyObservers, notifyObservers);
 

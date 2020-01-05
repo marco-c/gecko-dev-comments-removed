@@ -18,7 +18,7 @@ const TEST_ROOT = "http://example.com/browser/browser/base/content/test/general/
   let stubs = {
     updateUI() {
       return unstubs["updateUI"].call(gFxAccounts).then(() => {
-        Services.obs.notifyObservers(null, "test:browser_fxaccounts:updateUI");
+        Services.obs.notifyObservers(null, "test:browser_fxaccounts:updateUI", null);
       });
     },
     
@@ -26,7 +26,7 @@ const TEST_ROOT = "http://example.com/browser/browser/base/content/test/general/
     
     
     openPreferences() {
-      Services.obs.notifyObservers(null, "test:browser_fxaccounts:openPreferences");
+      Services.obs.notifyObservers(null, "test:browser_fxaccounts:openPreferences", null);
     }
   };
 
@@ -73,7 +73,7 @@ add_task(function* test_nouser() {
   let user = yield fxAccounts.getSignedInUser();
   Assert.strictEqual(user, null, "start with no user signed in");
   let promiseUpdateDone = promiseObserver("test:browser_fxaccounts:updateUI");
-  Services.obs.notifyObservers(null, this.FxAccountsCommon.ONLOGOUT_NOTIFICATION);
+  Services.obs.notifyObservers(null, this.FxAccountsCommon.ONLOGOUT_NOTIFICATION, null);
   yield promiseUpdateDone;
 
   
@@ -152,7 +152,7 @@ add_task(function* test_verifiedUserDisplayName() {
 add_task(function* test_profileNotificationsClearsCache() {
   let promiseUpdateDone = promiseObserver("test:browser_fxaccounts:updateUI", 1);
   gFxAccounts._cachedProfile = { foo: "bar" };
-  Services.obs.notifyObservers(null, this.FxAccountsCommon.ON_PROFILE_CHANGE_NOTIFICATION);
+  Services.obs.notifyObservers(null, this.FxAccountsCommon.ON_PROFILE_CHANGE_NOTIFICATION, null);
   Assert.ok(!gFxAccounts._cachedProfile);
   yield promiseUpdateDone;
 });

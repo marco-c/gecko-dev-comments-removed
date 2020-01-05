@@ -197,7 +197,7 @@ var gMainPane = {
     
     Components.classes["@mozilla.org/observer-service;1"]
               .getService(Components.interfaces.nsIObserverService)
-              .notifyObservers(window, "main-pane-loaded");
+              .notifyObservers(window, "main-pane-loaded", null);
   },
 
   enableE10SChange() {

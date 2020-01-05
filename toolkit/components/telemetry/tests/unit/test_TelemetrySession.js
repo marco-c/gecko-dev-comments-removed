@@ -1815,7 +1815,7 @@ add_task(function* test_schedulerComputerSleep() {
   
   
   
-  Services.obs.notifyObservers(null, "wake_notification");
+  Services.obs.notifyObservers(null, "wake_notification", null);
 
   dailyPing = yield PingServer.promiseNextPing();
   Assert.equal(dailyPing.payload.info.reason, REASON_DAILY,

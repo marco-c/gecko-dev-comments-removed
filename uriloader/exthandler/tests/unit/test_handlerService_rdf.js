@@ -32,6 +32,6 @@ var reloadData = Task.async(function* () {
   
   let svc = gHandlerService;
   let promise = TestUtils.topicObserved("handlersvc-rdf-replace-complete");
-  Services.obs.notifyObservers(null, "handlersvc-rdf-replace");
+  Services.obs.notifyObservers(null, "handlersvc-rdf-replace", null);
   yield promise;
 });

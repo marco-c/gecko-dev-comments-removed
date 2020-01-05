@@ -53,7 +53,7 @@ let signonReloadDisplay = {
           }
           break;
       }
-      Services.obs.notifyObservers(null, "passwordmgr-dialog-updated");
+      Services.obs.notifyObservers(null, "passwordmgr-dialog-updated", null);
     }
   }
 };
@@ -450,7 +450,7 @@ function TogglePasswordVisible() {
 
   
   
-  Services.obs.notifyObservers(null, "passwordmgr-password-toggle-complete");
+  Services.obs.notifyObservers(null, "passwordmgr-password-toggle-complete", null);
   Services.telemetry.getHistogramById("PWMGR_MANAGE_VISIBILITY_TOGGLED").add(showingPasswords);
 }
 

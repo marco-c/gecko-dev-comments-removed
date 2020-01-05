@@ -27,7 +27,7 @@ function createRootActor(connection)
     onShutdown() {
       
       
-      Services.obs.notifyObservers(null, "xpcshell-test-devtools-shutdown");
+      Services.obs.notifyObservers(null, "xpcshell-test-devtools-shutdown", null);
     }
   };
   return new RootActor(connection, parameters);

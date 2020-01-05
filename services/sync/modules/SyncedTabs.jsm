@@ -196,15 +196,15 @@ let SyncedTabsInternal = {
         
         
         Preferences.set("services.sync.lastTabFetch", Math.floor(Date.now() / 1000));
-        Services.obs.notifyObservers(null, TOPIC_TABS_CHANGED);
+        Services.obs.notifyObservers(null, TOPIC_TABS_CHANGED, null);
         break;
       case "weave:service:start-over":
         
         Preferences.reset("services.sync.lastTabFetch");
-        Services.obs.notifyObservers(null, TOPIC_TABS_CHANGED);
+        Services.obs.notifyObservers(null, TOPIC_TABS_CHANGED, null);
         break;
       case "nsPref:changed":
-        Services.obs.notifyObservers(null, TOPIC_TABS_CHANGED);
+        Services.obs.notifyObservers(null, TOPIC_TABS_CHANGED, null);
         break;
       default:
         break;
