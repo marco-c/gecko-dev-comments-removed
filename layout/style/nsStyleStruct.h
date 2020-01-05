@@ -484,7 +484,10 @@ struct nsStyleImage
   
 
 
-  nsresult StartDecoding() const;
+
+
+
+  bool StartDecoding() const;
   
 
 

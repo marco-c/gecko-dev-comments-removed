@@ -375,6 +375,24 @@ imgRequestProxy::StartDecoding(uint32_t aFlags)
   return NS_OK;
 }
 
+bool
+imgRequestProxy::StartDecodingWithResult(uint32_t aFlags)
+{
+  
+  mDecodeRequested = true;
+
+  RefPtr<Image> image = GetImage();
+  if (image) {
+    return image->StartDecodingWithResult(aFlags);
+  }
+
+  if (GetOwner()) {
+    GetOwner()->StartDecoding();
+  }
+
+  return false;
+}
+
 NS_IMETHODIMP
 imgRequestProxy::LockImage()
 {
