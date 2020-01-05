@@ -498,8 +498,8 @@ function waitForContentMessage(name) {
 
 
 
-function openContextMenuAndGetAllItems(netmonitor, options) {
-  let menu = netmonitor.RequestsMenu._openMenu(options);
+function openContextMenuAndGetAllItems(netmonitor, event) {
+  let menu = netmonitor.RequestsMenu.contextMenu.open(event);
 
   
   let allItems = [].concat.apply([], menu.items.map(function addItem(item) {

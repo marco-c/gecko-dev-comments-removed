@@ -25,7 +25,7 @@ add_task(function* () {
   yield wait;
 
   
-  let jsonString = yield RequestsMenu.copyAllAsHar();
+  let jsonString = yield RequestsMenu.contextMenu.copyAllAsHar();
   let har = JSON.parse(jsonString);
 
   
