@@ -878,7 +878,7 @@ public class Distribution {
 
         
         
-        if (!content.matches("^[a-zA-Z0-9]+$")) {
+        if (!content.matches("^[a-zA-Z0-9_-]+$")) {
             Log.e(LOGTAG, "Invalid referrer content: " + content);
             Telemetry.addToHistogram(HISTOGRAM_REFERRER_INVALID, 1);
             return null;
