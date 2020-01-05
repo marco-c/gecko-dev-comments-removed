@@ -63,9 +63,6 @@ function getCleanedPacket(key, packet) {
         
         
         
-        if (res.message.timer.started) {
-          res.message.timer.started = existingPacket.message.timer.started;
-        }
         if (res.message.timer.duration) {
           res.message.timer.duration = existingPacket.message.timer.duration;
         }

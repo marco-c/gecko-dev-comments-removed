@@ -277,10 +277,8 @@ private:
   
   
   
-  
   JS::Value
   CreateStartTimerValue(JSContext* aCx, const nsAString& aTimerLabel,
-                        DOMHighResTimeStamp aTimerValue,
                         bool aTimerStatus) const;
 
   
