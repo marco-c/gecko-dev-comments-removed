@@ -130,7 +130,7 @@ function initializeAutoCompletion(ctx, options = {}) {
 
   
 
-  let popup = new AutocompletePopup({ doc: win.parent.document }, {
+  let popup = new AutocompletePopup(win.parent.document, {
     position: "bottom",
     theme: "auto",
     autoSelect: true,

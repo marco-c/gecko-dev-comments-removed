@@ -477,7 +477,8 @@ RequestsMenuView.prototype = Heritage.extend(WidgetMethods, {
       .createInstance(Ci.nsITimer);
 
     
-    this.tooltip = new HTMLTooltip(NetMonitorController._toolbox, { type: "arrow" });
+    
+    this.tooltip = new HTMLTooltip(NetMonitorController._toolbox.doc, { type: "arrow" });
     this.tooltip.startTogglingOnHover(widgetParentEl, this._onHover, {
       toggleDelay: REQUESTS_TOOLTIP_TOGGLE_DELAY,
       interactive: true

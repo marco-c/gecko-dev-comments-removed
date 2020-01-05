@@ -15,13 +15,15 @@ const {HTMLTooltip} = require("devtools/client/shared/widgets/tooltip/HTMLToolti
 
 
 
-function SwatchBasedEditorTooltip(toolbox, stylesheet) {
+
+
+function SwatchBasedEditorTooltip(document, stylesheet) {
   EventEmitter.decorate(this);
   
   
   
   
-  this.tooltip = new HTMLTooltip(toolbox, {
+  this.tooltip = new HTMLTooltip(document, {
     type: "arrow",
     consumeOutsideClicks: true,
     useXulWrapper: true,

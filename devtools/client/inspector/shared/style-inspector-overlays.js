@@ -287,7 +287,10 @@ TooltipsOverlay.prototype = {
     let { toolbox } = this.view.inspector;
 
     
-    this.previewTooltip = new HTMLTooltip(toolbox, {
+    
+    
+    
+    this.previewTooltip = new HTMLTooltip(toolbox.doc, {
       type: "arrow",
       useXulWrapper: true
     });
@@ -295,15 +298,15 @@ TooltipsOverlay.prototype = {
       this._onPreviewTooltipTargetHover.bind(this));
 
     
-    this.cssDocs = new CssDocsTooltip(toolbox);
+    this.cssDocs = new CssDocsTooltip(toolbox.doc);
 
     if (this.isRuleView) {
       
-      this.colorPicker = new SwatchColorPickerTooltip(toolbox, this.view.inspector);
+      this.colorPicker = new SwatchColorPickerTooltip(toolbox.doc, this.view.inspector);
       
-      this.cubicBezier = new SwatchCubicBezierTooltip(toolbox);
+      this.cubicBezier = new SwatchCubicBezierTooltip(toolbox.doc);
       
-      this.filterEditor = new SwatchFilterTooltip(toolbox,
+      this.filterEditor = new SwatchFilterTooltip(toolbox.doc,
         this._cssProperties.getValidityChecker(this.view.inspector.panelDoc));
     }
 

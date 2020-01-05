@@ -18,8 +18,8 @@ const TOOLTIP_HEIGHT = 308;
 
 
 
-function CssDocsTooltip(toolbox) {
-  this.tooltip = new HTMLTooltip(toolbox, {
+function CssDocsTooltip(toolboxDoc) {
+  this.tooltip = new HTMLTooltip(toolboxDoc, {
     type: "arrow",
     consumeOutsideClicks: true,
     autofocus: true,
@@ -31,7 +31,7 @@ function CssDocsTooltip(toolbox) {
   this.widget.on("visitlink", this._onVisitLink);
 
   
-  this.shortcuts = new KeyShortcuts({ window: toolbox.win });
+  this.shortcuts = new KeyShortcuts({ window: this.tooltip.topWindow });
   this._onShortcut = this._onShortcut.bind(this);
 
   this.shortcuts.on("Escape", this._onShortcut);
