@@ -94,9 +94,11 @@ this.SelectContentHelper.prototype = {
   showDropDown() {
     this.element.openInParentProcess = true;
     let rect = this._getBoundingContentRect();
+    DOMUtils.addPseudoClassLock(this.element, ":focus");
     let computedStyles = getComputedStyles(this.element);
     this._selectBackgroundColor = computedStyles.backgroundColor;
     this._selectColor = computedStyles.color;
+    DOMUtils.clearPseudoClassLocks(this.element);
     this.global.sendAsyncMessage("Forms:ShowDropDown", {
       direction: computedStyles.direction,
       isOpenedViaTouch: this.isOpenedViaTouch,
@@ -124,6 +126,14 @@ this.SelectContentHelper.prototype = {
   _update() {
     
     
+    
+    
+    
+    DOMUtils.addPseudoClassLock(this.element, ":focus");
+    let computedStyles = getComputedStyles(this.element);
+    this._selectBackgroundColor = computedStyles.backgroundColor;
+    this._selectColor = computedStyles.color;
+    DOMUtils.clearPseudoClassLocks(this.element);
     this.global.sendAsyncMessage("Forms:UpdateDropDown", {
       options: this._buildOptionList(),
       selectedIndex: this.element.selectedIndex,
