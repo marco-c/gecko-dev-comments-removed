@@ -107,10 +107,8 @@ InitListUpdateRequest(ThreatType aThreatType,
   aListUpdateRequest->set_platform_type(GetPlatformType());
   aListUpdateRequest->set_threat_entry_type(URL);
 
-  
-  
   Constraints* contraints = new Constraints();
-  contraints->add_supported_compressions(RAW);
+  contraints->add_supported_compressions(RICE);
   aListUpdateRequest->set_allocated_constraints(contraints);
 
   
