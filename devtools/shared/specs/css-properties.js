@@ -3,16 +3,14 @@
 
 "use strict";
 
-const { Arg, RetVal, generateActorSpec } = require("devtools/shared/protocol");
+const { RetVal, generateActorSpec } = require("devtools/shared/protocol");
 
 const cssPropertiesSpec = generateActorSpec({
   typeName: "cssProperties",
 
   methods: {
     getCSSDatabase: {
-      request: {
-        clientBrowserVersion: Arg(0, "string"),
-      },
+      request: {},
 
       response: RetVal("json"),
     }
