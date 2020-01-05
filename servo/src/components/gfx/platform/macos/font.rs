@@ -4,9 +4,9 @@
 
 
 
-extern mod core_foundation = "rust-core-foundation";
-extern mod core_graphics = "rust-core-graphics";
-extern mod core_text = "rust-core-text";
+extern mod core_foundation;
+extern mod core_graphics;
+extern mod core_text;
 
 use font::{CSSFontWeight, FontHandleMethods, FontMetrics, FontTableMethods};
 use font::{FontTableTag, FontWeight100, FontWeight200, FontWeight300, FontWeight400};
@@ -35,7 +35,7 @@ pub struct FontTable {
     data: CFData,
 }
 
-// Noncopyable.
+
 impl Drop for FontTable {
     fn drop(&mut self) {}
 }
