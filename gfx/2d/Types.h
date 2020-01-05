@@ -431,7 +431,7 @@ enum Corner {
 
 
 
-#define NS_FOR_CSS_CORNERS(var_)                                        \
+#define NS_FOR_CSS_FULL_CORNERS(var_)                                   \
   int32_t MOZ_CONCAT(var_,__LINE__) = mozilla::eCornerTopLeft;          \
   for (mozilla::Corner var_;                                            \
        MOZ_CONCAT(var_,__LINE__) <= mozilla::eCornerBottomLeft &&       \
