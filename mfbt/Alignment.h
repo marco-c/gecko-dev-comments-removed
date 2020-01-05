@@ -99,36 +99,6 @@ struct AlignedElem<16>
   MOZ_ALIGNED_DECL(uint8_t elem, 16);
 };
 
-
-
-
-
-
-
-
-
-
-
-template<size_t Nbytes>
-struct AlignedStorage
-{
-  union U
-  {
-    char mBytes[Nbytes];
-    uint64_t mDummy;
-  } u;
-
-  const void* addr() const { return u.mBytes; }
-  void* addr() { return u.mBytes; }
-
-  AlignedStorage() = default;
-
-  
-  
-  AlignedStorage(const AlignedStorage&) = delete;
-  void operator=(const AlignedStorage&) = delete;
-};
-
 template<typename T>
 struct MOZ_INHERIT_TYPE_ANNOTATIONS_FROM_TEMPLATE_ARGS AlignedStorage2
 {

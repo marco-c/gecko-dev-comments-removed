@@ -506,19 +506,48 @@ class SnapshotReader
 
 class RInstructionStorage
 {
-    static const size_t Size = 4 * sizeof(uint32_t);
-    mozilla::AlignedStorage<Size> mem;
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static constexpr size_t Size = 4 * sizeof(uint32_t);
+    union U
+    {
+        char mBytes[Size];
+
+        
+        
+        
+        uint64_t mDummy;
+    } u;
 
   public:
-    const void* addr() const { return mem.addr(); }
-    void* addr() { return mem.addr(); }
+    const void* addr() const { return u.mBytes; }
+    void* addr() { return u.mBytes; }
 
     RInstructionStorage() = default;
 
     RInstructionStorage(const RInstructionStorage& other) {
+        
+        
+        
         memcpy(addr(), other.addr(), Size);
     }
     void operator=(const RInstructionStorage& other) {
+        
+        
+        
         memcpy(addr(), other.addr(), Size);
     }
 };
