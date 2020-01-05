@@ -3099,30 +3099,9 @@ FindDominatingBoundsCheck(BoundsCheckMap& checks, MBoundsCheck* check, size_t in
     return p->value().check;
 }
 
-static MathSpace
-ExtractMathSpace(MDefinition* ins)
-{
-    MOZ_ASSERT(ins->isAdd() || ins->isSub());
-    MBinaryArithInstruction* arith = nullptr;
-    if (ins->isAdd())
-        arith = ins->toAdd();
-    else
-        arith = ins->toSub();
-    switch (arith->truncateKind()) {
-      case MDefinition::NoTruncate:
-      case MDefinition::TruncateAfterBailouts:
-        
-        
-        return MathSpace::Infinite;
-      case MDefinition::IndirectTruncate:
-      case MDefinition::Truncate:
-        return MathSpace::Modulo;
-    }
-}
-
 
 SimpleLinearSum
-jit::ExtractLinearSum(MDefinition* ins, MathSpace space)
+jit::ExtractLinearSum(MDefinition* ins)
 {
     if (ins->isBeta())
         ins = ins->getOperand(0);
@@ -3133,53 +3112,32 @@ jit::ExtractLinearSum(MDefinition* ins, MathSpace space)
     if (ins->isConstant())
         return SimpleLinearSum(nullptr, ins->toConstant()->toInt32());
 
-    if (!ins->isAdd() && !ins->isSub())
-        return SimpleLinearSum(ins, 0);
+    if (ins->isAdd() || ins->isSub()) {
+        MDefinition* lhs = ins->getOperand(0);
+        MDefinition* rhs = ins->getOperand(1);
+        if (lhs->type() == MIRType::Int32 && rhs->type() == MIRType::Int32) {
+            SimpleLinearSum lsum = ExtractLinearSum(lhs);
+            SimpleLinearSum rsum = ExtractLinearSum(rhs);
 
-    
-    MathSpace insSpace = ExtractMathSpace(ins);
-    if (space == MathSpace::Unknown)
-        space = insSpace;
-    else if (space != insSpace)
-        return SimpleLinearSum(ins, 0);
-    MOZ_ASSERT(space == MathSpace::Modulo || space == MathSpace::Infinite);
+            if (lsum.term && rsum.term)
+                return SimpleLinearSum(ins, 0);
 
-    MDefinition* lhs = ins->getOperand(0);
-    MDefinition* rhs = ins->getOperand(1);
-    if (lhs->type() != MIRType::Int32 || rhs->type() != MIRType::Int32)
-        return SimpleLinearSum(ins, 0);
-
-    
-    SimpleLinearSum lsum = ExtractLinearSum(lhs, space);
-    SimpleLinearSum rsum = ExtractLinearSum(rhs, space);
-
-    
-    
-    if (lsum.term && rsum.term)
-        return SimpleLinearSum(ins, 0);
-
-    
-    if (ins->isAdd()) {
-        int32_t constant;
-        if (space == MathSpace::Modulo)
-            constant = lsum.constant + rsum.constant;
-        else if (!SafeAdd(lsum.constant, rsum.constant, &constant))
-            return SimpleLinearSum(ins, 0);
-        return SimpleLinearSum(lsum.term ? lsum.term : rsum.term, constant);
+            
+            if (ins->isAdd()) {
+                int32_t constant;
+                if (!SafeAdd(lsum.constant, rsum.constant, &constant))
+                    return SimpleLinearSum(ins, 0);
+                return SimpleLinearSum(lsum.term ? lsum.term : rsum.term, constant);
+            }
+            if (lsum.term) {
+                int32_t constant;
+                if (!SafeSub(lsum.constant, rsum.constant, &constant))
+                    return SimpleLinearSum(ins, 0);
+                return SimpleLinearSum(lsum.term, constant);
+            }
+        }
     }
 
-    MOZ_ASSERT(ins->isSub());
-    
-    if (lsum.term) {
-        int32_t constant;
-        if (space == MathSpace::Modulo)
-            constant = lsum.constant - rsum.constant;
-        else if (!SafeSub(lsum.constant, rsum.constant, &constant))
-            return SimpleLinearSum(ins, 0);
-        return SimpleLinearSum(lsum.term, constant);
-    }
-
-    
     return SimpleLinearSum(ins, 0);
 }
 
