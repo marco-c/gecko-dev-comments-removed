@@ -13,6 +13,7 @@
 #include "build/build_config.h"
 
 #if defined(OS_WIN)
+#include "base/win/current_module.h"
 #include "base/win/pe_image.h"
 #endif  
 
@@ -56,6 +57,10 @@ void RestartProfilingAfterFork() {
   ProfilerRegisterThread();
 }
 
+bool IsProfilingSupported() {
+  return true;
+}
+
 #else
 
 void StartProfiling(const std::string& name) {
@@ -72,6 +77,10 @@ bool BeingProfiled() {
 }
 
 void RestartProfilingAfterFork() {
+}
+
+bool IsProfilingSupported() {
+  return false;
 }
 
 #endif
@@ -100,9 +109,6 @@ MoveDynamicSymbol GetProfilerMoveDynamicSymbolFunc() {
 
 #else  
 
-
-extern "C" IMAGE_DOS_HEADER __ImageBase;
-
 bool IsBinaryInstrumented() {
   enum InstrumentationCheckState {
     UNINITIALIZED,
@@ -113,8 +119,7 @@ bool IsBinaryInstrumented() {
   static InstrumentationCheckState state = UNINITIALIZED;
 
   if (state == UNINITIALIZED) {
-    HMODULE this_module = reinterpret_cast<HMODULE>(&__ImageBase);
-    base::win::PEImage image(this_module);
+    base::win::PEImage image(CURRENT_MODULE());
 
     
     DCHECK(image.VerifyMagic());
@@ -149,8 +154,8 @@ bool FindResolutionFunctionInImports(
   FunctionSearchContext* context =
       reinterpret_cast<FunctionSearchContext*>(cookie);
 
-  DCHECK_NE(static_cast<FunctionSearchContext*>(NULL), context);
-  DCHECK_EQ(static_cast<FARPROC>(NULL), context->function);
+  DCHECK(context);
+  DCHECK(!context->function);
 
   
   
@@ -184,8 +189,7 @@ FunctionType FindFunctionInImports(const char* function_name) {
   if (!IsBinaryInstrumented())
     return NULL;
 
-  HMODULE this_module = reinterpret_cast<HMODULE>(&__ImageBase);
-  base::win::PEImage image(this_module);
+  base::win::PEImage image(CURRENT_MODULE());
 
   FunctionSearchContext ctx = { function_name, NULL };
   image.EnumImportChunks(FindResolutionFunctionInImports, &ctx);

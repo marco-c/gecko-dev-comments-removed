@@ -61,15 +61,28 @@ class BASE_EXPORT Lock {
   void AssertAcquired() const;
 #endif  
 
+  
+  
+  static bool HandlesMultipleThreadPriorities() {
 #if defined(OS_POSIX)
+    
+    
+    return internal::LockImpl::PriorityInheritanceAvailable();
+#elif defined(OS_WIN)
+    
+    
+    
+    return true;
+#else
+#error Unsupported platform
+#endif
+  }
+
+#if defined(OS_POSIX) || defined(OS_WIN)
   
   
   
   friend class ConditionVariable;
-#elif defined(OS_WIN)
-  
-  
-  friend class WinVistaCondVar;
 #endif
 
  private:

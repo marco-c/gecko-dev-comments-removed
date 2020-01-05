@@ -8,20 +8,34 @@
 
 
 
+
+
 #ifndef BASE_WIN_REGISTRY_H_
 #define BASE_WIN_REGISTRY_H_
+
+#include <winerror.h>
 
 namespace base {
 namespace win {
 
 class BASE_EXPORT RegKey {
  public:
+  RegKey() {};
   RegKey(HKEY rootkey, const wchar_t* subkey, REGSAM access) {}
   ~RegKey() {}
 
+  LONG Open(HKEY rootkey, const wchar_t* subkey, REGSAM access) {
+    return ERROR_CANTOPEN;
+  }
+
+  LONG ReadValueDW(const wchar_t* name, DWORD* out_value) const
+  {
+    return ERROR_CANTREAD;
+  }
+
   LONG ReadValue(const wchar_t* name, std::wstring* out_value) const
   {
-    return 0;
+    return ERROR_CANTREAD;
   }
 
  private:

@@ -10,11 +10,12 @@
 #include <stdint.h>
 
 #include <list>
+#include <memory>
 #include <vector>
 
 #include "base/compiler_specific.h"
 #include "base/macros.h"
-#include "base/memory/scoped_ptr.h"
+#include "base/process/launch.h"
 #include "base/strings/string16.h"
 #include "base/win/scoped_handle.h"
 #include "sandbox/win/src/crosscall_server.h"
@@ -27,12 +28,9 @@
 
 namespace sandbox {
 
-class AppContainerAttributes;
 class LowLevelPolicy;
 class TargetProcess;
 struct PolicyGlobal;
-
-typedef std::vector<base::win::ScopedHandle*> HandleList;
 
 class PolicyBase final : public TargetPolicy {
  public:
@@ -45,6 +43,7 @@ class PolicyBase final : public TargetPolicy {
   TokenLevel GetInitialTokenLevel() const override;
   TokenLevel GetLockdownTokenLevel() const override;
   ResultCode SetJobLevel(JobLevel job_level, uint32_t ui_exceptions) override;
+  JobLevel GetJobLevel() const override;
   ResultCode SetJobMemoryLimit(size_t memory_limit) override;
   ResultCode SetAlternateDesktop(bool alternate_winstation) override;
   base::string16 GetAlternateDesktop() const override;
@@ -53,13 +52,13 @@ class PolicyBase final : public TargetPolicy {
   ResultCode SetIntegrityLevel(IntegrityLevel integrity_level) override;
   IntegrityLevel GetIntegrityLevel() const override;
   ResultCode SetDelayedIntegrityLevel(IntegrityLevel integrity_level) override;
-  ResultCode SetAppContainer(const wchar_t* sid) override;
   ResultCode SetCapability(const wchar_t* sid) override;
   ResultCode SetLowBox(const wchar_t* sid) override;
   ResultCode SetProcessMitigations(MitigationFlags flags) override;
   MitigationFlags GetProcessMitigations() override;
   ResultCode SetDelayedProcessMitigations(MitigationFlags flags) override;
   MitigationFlags GetDelayedProcessMitigations() const override;
+  void SetDisconnectCsrss() override;
   void SetStrictInterceptions() override;
   ResultCode SetStdoutHandle(HANDLE handle) override;
   ResultCode SetStderrHandle(HANDLE handle) override;
@@ -69,7 +68,10 @@ class PolicyBase final : public TargetPolicy {
   ResultCode AddDllToUnload(const wchar_t* dll_name) override;
   ResultCode AddKernelObjectToClose(const base::char16* handle_type,
                                     const base::char16* handle_name) override;
-  void* AddHandleToShare(HANDLE handle) override;
+  void AddHandleToShare(HANDLE handle) override;
+  void SetLockdownDefaultDacl() override;
+  void SetEnableOPMRedirection() override;
+  bool GetEnableOPMRedirection() override;
 
   
   
@@ -82,13 +84,11 @@ class PolicyBase final : public TargetPolicy {
                         base::win::ScopedHandle* lockdown,
                         base::win::ScopedHandle* lowbox);
 
-  const AppContainerAttributes* GetAppContainer() const;
-
   PSID GetLowBoxSid() const;
 
   
   
-  bool AddTarget(TargetProcess* target);
+  ResultCode AddTarget(TargetProcess* target);
 
   
   
@@ -101,16 +101,13 @@ class PolicyBase final : public TargetPolicy {
   HANDLE GetStderrHandle();
 
   
-  const HandleList& GetHandlesBeingShared();
-
-  
-  void ClearSharedHandles();
+  const base::HandlesToInheritVector& GetHandlesBeingShared();
 
  private:
   ~PolicyBase();
 
   
-  bool SetupAllInterceptions(TargetProcess* target);
+  ResultCode SetupAllInterceptions(TargetProcess* target);
 
   
   bool SetupHandleCloser(TargetProcess* target);
@@ -144,6 +141,7 @@ class PolicyBase final : public TargetPolicy {
   IntegrityLevel delayed_integrity_level_;
   MitigationFlags mitigations_;
   MitigationFlags delayed_mitigations_;
+  bool is_csrss_connected_;
   
   LowLevelPolicy* policy_maker_;
   
@@ -155,10 +153,10 @@ class PolicyBase final : public TargetPolicy {
   
   HandleCloser handle_closer_;
   std::vector<base::string16> capabilities_;
-  scoped_ptr<AppContainerAttributes> appcontainer_list_;
   PSID lowbox_sid_;
   base::win::ScopedHandle lowbox_directory_;
-  scoped_ptr<Dispatcher> dispatcher_;
+  std::unique_ptr<Dispatcher> dispatcher_;
+  bool lockdown_default_dacl_;
 
   static HDESK alternate_desktop_handle_;
   static HWINSTA alternate_winstation_handle_;
@@ -167,7 +165,8 @@ class PolicyBase final : public TargetPolicy {
   
   
   
-  HandleList handles_to_share_;
+  base::HandlesToInheritVector handles_to_share_;
+  bool enable_opm_redirection_;
 
   DISALLOW_COPY_AND_ASSIGN(PolicyBase);
 };

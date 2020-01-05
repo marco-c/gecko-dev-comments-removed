@@ -80,10 +80,19 @@ void SysTimeToTimeStruct(SysTime t, struct tm* timestruct, bool is_local) {
 #endif  
 
 int64_t ConvertTimespecToMicros(const struct timespec& ts) {
-  base::CheckedNumeric<int64_t> result(ts.tv_sec);
-  result *= base::Time::kMicrosecondsPerSecond;
-  result += (ts.tv_nsec / base::Time::kNanosecondsPerMicrosecond);
-  return result.ValueOrDie();
+  
+  
+  if (sizeof(ts.tv_sec) <= 4 && sizeof(ts.tv_nsec) <= 8) {
+    int64_t result = ts.tv_sec;
+    result *= base::Time::kMicrosecondsPerSecond;
+    result += (ts.tv_nsec / base::Time::kNanosecondsPerMicrosecond);
+    return result;
+  } else {
+    base::CheckedNumeric<int64_t> result(ts.tv_sec);
+    result *= base::Time::kMicrosecondsPerSecond;
+    result += (ts.tv_nsec / base::Time::kNanosecondsPerMicrosecond);
+    return result.ValueOrDie();
+  }
 }
 
 
@@ -109,6 +118,12 @@ int64_t ClockNow(clockid_t clk_id) {
 }  
 
 namespace base {
+
+
+TimeDelta TimeDelta::FromTimeSpec(const timespec& ts) {
+  return TimeDelta(ts.tv_sec * Time::kMicrosecondsPerSecond +
+                   ts.tv_nsec / Time::kNanosecondsPerMicrosecond);
+}
 
 struct timespec TimeDelta::ToTimeSpec() const {
   int64_t microseconds = InMicroseconds();
@@ -211,7 +226,7 @@ void Time::Explode(bool is_local, Exploded* exploded) const {
 }
 
 
-Time Time::FromExploded(bool is_local, const Exploded& exploded) {
+bool Time::FromExploded(bool is_local, const Exploded& exploded, Time* time) {
   struct tm timestruct;
   timestruct.tm_sec    = exploded.second;
   timestruct.tm_min    = exploded.minute;
@@ -227,7 +242,6 @@ Time Time::FromExploded(bool is_local, const Exploded& exploded) {
   timestruct.tm_zone   = NULL;  
 #endif
 
-  int64_t milliseconds;
   SysTime seconds;
 
   
@@ -265,6 +279,7 @@ Time Time::FromExploded(bool is_local, const Exploded& exploded) {
   
   
   
+  int64_t milliseconds = 0;
   if (seconds == -1 &&
       (exploded.year < 1969 || exploded.year > 1970)) {
     
@@ -297,12 +312,42 @@ Time Time::FromExploded(bool is_local, const Exploded& exploded) {
       milliseconds += (kMillisecondsPerSecond - 1);
     }
   } else {
-    milliseconds = seconds * kMillisecondsPerSecond + exploded.millisecond;
+    base::CheckedNumeric<int64_t> checked_millis = seconds;
+    checked_millis *= kMillisecondsPerSecond;
+    checked_millis += exploded.millisecond;
+    if (!checked_millis.IsValid()) {
+      *time = base::Time(0);
+      return false;
+    }
+    milliseconds = checked_millis.ValueOrDie();
   }
 
   
-  return Time((milliseconds * kMicrosecondsPerMillisecond) +
-      kWindowsEpochDeltaMicroseconds);
+  base::CheckedNumeric<int64_t> checked_microseconds_win_epoch = milliseconds;
+  checked_microseconds_win_epoch *= kMicrosecondsPerMillisecond;
+  checked_microseconds_win_epoch += kWindowsEpochDeltaMicroseconds;
+  if (!checked_microseconds_win_epoch.IsValid()) {
+    *time = base::Time(0);
+    return false;
+  }
+  base::Time converted_time(checked_microseconds_win_epoch.ValueOrDie());
+
+  
+  
+  
+  base::Time::Exploded to_exploded;
+  if (!is_local)
+    converted_time.UTCExplode(&to_exploded);
+  else
+    converted_time.LocalExplode(&to_exploded);
+
+  if (ExplodedMostlyEquals(to_exploded, exploded)) {
+    *time = converted_time;
+    return true;
+  }
+
+  *time = Time(0);
+  return false;
 }
 
 
@@ -312,7 +357,17 @@ TimeTicks TimeTicks::Now() {
 }
 
 
+TimeTicks::Clock TimeTicks::GetClock() {
+  return Clock::LINUX_CLOCK_MONOTONIC;
+}
+
+
 bool TimeTicks::IsHighResolution() {
+  return true;
+}
+
+
+bool TimeTicks::IsConsistentAcrossProcesses() {
   return true;
 }
 

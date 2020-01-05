@@ -8,19 +8,15 @@
 #ifndef BASE_CALLBACK_INTERNAL_H_
 #define BASE_CALLBACK_INTERNAL_H_
 
-#include <stddef.h>
-#include <memory>
-#include <type_traits>
-
 #include "base/atomic_ref_count.h"
 #include "base/base_export.h"
+#include "base/callback_forward.h"
 #include "base/macros.h"
 #include "base/memory/ref_counted.h"
-#include "base/memory/scoped_ptr.h"
-#include "base/template_util.h"
 
 namespace base {
 namespace internal {
+template <CopyMode copy_mode>
 class CallbackBase;
 
 
@@ -34,55 +30,82 @@ class CallbackBase;
 
 
 
-class BindStateBase {
+class BASE_EXPORT BindStateBase {
+ public:
+  using InvokeFuncStorage = void(*)();
+
  protected:
-  explicit BindStateBase(void (*destructor)(BindStateBase*))
-      : ref_count_(0), destructor_(destructor) {}
+  BindStateBase(InvokeFuncStorage polymorphic_invoke,
+                void (*destructor)(const BindStateBase*));
+  BindStateBase(InvokeFuncStorage polymorphic_invoke,
+                void (*destructor)(const BindStateBase*),
+                bool (*is_cancelled)(const BindStateBase*));
   ~BindStateBase() = default;
 
  private:
   friend class scoped_refptr<BindStateBase>;
+  template <CopyMode copy_mode>
   friend class CallbackBase;
 
-  void AddRef();
-  void Release();
+  bool IsCancelled() const {
+    return is_cancelled_(this);
+  }
 
-  AtomicRefCount ref_count_;
+  void AddRef() const;
+  void Release() const;
 
   
-  void (*destructor_)(BindStateBase*);
+  
+  
+  
+  InvokeFuncStorage polymorphic_invoke_;
+
+  mutable AtomicRefCount ref_count_;
+
+  
+  void (*destructor_)(const BindStateBase*);
+  bool (*is_cancelled_)(const BindStateBase*);
 
   DISALLOW_COPY_AND_ASSIGN(BindStateBase);
 };
 
 
 
-class BASE_EXPORT CallbackBase {
+
+
+template <>
+class BASE_EXPORT CallbackBase<CopyMode::MoveOnly> {
  public:
-  CallbackBase(const CallbackBase& c);
-  CallbackBase& operator=(const CallbackBase& c);
+  CallbackBase(CallbackBase&& c);
+  CallbackBase& operator=(CallbackBase&& c);
+
+  explicit CallbackBase(const CallbackBase<CopyMode::Copyable>& c);
+  CallbackBase& operator=(const CallbackBase<CopyMode::Copyable>& c);
 
   
   bool is_null() const { return bind_state_.get() == NULL; }
+  explicit operator bool() const { return !is_null(); }
+
+  
+  
+  bool IsCancelled() const;
 
   
   void Reset();
 
  protected:
-  
-  
-  
-  
-  using InvokeFuncStorage = void(*)();
+  using InvokeFuncStorage = BindStateBase::InvokeFuncStorage;
 
   
-  bool Equals(const CallbackBase& other) const;
+  bool EqualsInternal(const CallbackBase& other) const;
 
-  
-  
   
   
   explicit CallbackBase(BindStateBase* bind_state);
+
+  InvokeFuncStorage polymorphic_invoke() const {
+    return bind_state_->polymorphic_invoke_;
+  }
 
   
   
@@ -90,143 +113,25 @@ class BASE_EXPORT CallbackBase {
   ~CallbackBase();
 
   scoped_refptr<BindStateBase> bind_state_;
-  InvokeFuncStorage polymorphic_invoke_;
 };
 
 
-
-
-
-
-
-
-
-
-template <typename T> struct IsMoveOnlyType {
-  template <typename U>
-  static YesType Test(const typename U::MoveOnlyTypeForCPP03*);
-
-  template <typename U>
-  static NoType Test(...);
-
-  static const bool value = sizeof((Test<T>(0))) == sizeof(YesType) &&
-                            !is_const<T>::value;
+template <>
+class BASE_EXPORT CallbackBase<CopyMode::Copyable>
+    : public CallbackBase<CopyMode::MoveOnly> {
+ public:
+  CallbackBase(const CallbackBase& c);
+  CallbackBase(CallbackBase&& c);
+  CallbackBase& operator=(const CallbackBase& c);
+  CallbackBase& operator=(CallbackBase&& c);
+ protected:
+  explicit CallbackBase(BindStateBase* bind_state)
+      : CallbackBase<CopyMode::MoveOnly>(bind_state) {}
+  ~CallbackBase() {}
 };
 
-
-
-template <typename T>
-struct IsMoveOnlyType<std::unique_ptr<T>> : std::true_type {};
-
-template <typename>
-struct CallbackParamTraitsForMoveOnlyType;
-
-template <typename>
-struct CallbackParamTraitsForNonMoveOnlyType;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <typename T>
-struct CallbackParamTraits
-    : std::conditional<IsMoveOnlyType<T>::value,
-         CallbackParamTraitsForMoveOnlyType<T>,
-         CallbackParamTraitsForNonMoveOnlyType<T>>::type {
-};
-
-template <typename T>
-struct CallbackParamTraitsForNonMoveOnlyType {
-  using ForwardType = const T&;
-  using StorageType = T;
-};
-
-
-
-
-
-
-template <typename T>
-struct CallbackParamTraitsForNonMoveOnlyType<T&> {
-  using ForwardType = T&;
-  using StorageType = T;
-};
-
-
-
-
-
-
-template <typename T, size_t n>
-struct CallbackParamTraitsForNonMoveOnlyType<T[n]> {
-  using ForwardType = const T*;
-  using StorageType = const T*;
-};
-
-
-template <typename T>
-struct CallbackParamTraitsForNonMoveOnlyType<T[]> {
-  using ForwardType = const T*;
-  using StorageType = const T*;
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <typename T>
-struct CallbackParamTraitsForMoveOnlyType {
-  using ForwardType = T;
-  using StorageType = T;
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <typename T>
-typename std::enable_if<!IsMoveOnlyType<T>::value, T>::type& CallbackForward(
-    T& t) {
-  return t;
-}
-
-template <typename T>
-typename std::enable_if<IsMoveOnlyType<T>::value, T>::type CallbackForward(
-    T& t) {
-  return std::move(t);
-}
+extern template class CallbackBase<CopyMode::MoveOnly>;
+extern template class CallbackBase<CopyMode::Copyable>;
 
 }  
 }  

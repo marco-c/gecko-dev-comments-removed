@@ -10,6 +10,7 @@
 #include "base/logging.h"
 #include "base/memory/singleton.h"
 #include "base/strings/string_util.h"
+#include "base/trace_event/heap_profiler_allocation_context_tracker.h"
 
 namespace base {
 namespace {
@@ -50,27 +51,37 @@ void ThreadIdNameManager::RegisterThread(PlatformThreadHandle::Handle handle,
 
 void ThreadIdNameManager::SetName(PlatformThreadId id,
                                   const std::string& name) {
-  AutoLock locked(lock_);
-  NameToInternedNameMap::iterator iter = name_to_interned_name_.find(name);
   std::string* leaked_str = NULL;
-  if (iter != name_to_interned_name_.end()) {
-    leaked_str = iter->second;
-  } else {
-    leaked_str = new std::string(name);
-    name_to_interned_name_[name] = leaked_str;
-  }
+  {
+    AutoLock locked(lock_);
+    NameToInternedNameMap::iterator iter = name_to_interned_name_.find(name);
+    if (iter != name_to_interned_name_.end()) {
+      leaked_str = iter->second;
+    } else {
+      leaked_str = new std::string(name);
+      name_to_interned_name_[name] = leaked_str;
+    }
 
-  ThreadIdToHandleMap::iterator id_to_handle_iter =
-      thread_id_to_handle_.find(id);
+    ThreadIdToHandleMap::iterator id_to_handle_iter =
+        thread_id_to_handle_.find(id);
+
+    
+    
+    if (id_to_handle_iter == thread_id_to_handle_.end()) {
+      main_process_name_ = leaked_str;
+      main_process_id_ = id;
+      return;
+    }
+    thread_handle_to_interned_name_[id_to_handle_iter->second] = leaked_str;
+  }
 
   
   
-  if (id_to_handle_iter == thread_id_to_handle_.end()) {
-    main_process_name_ = leaked_str;
-    main_process_id_ = id;
-    return;
-  }
-  thread_handle_to_interned_name_[id_to_handle_iter->second] = leaked_str;
+  
+  
+  
+  trace_event::AllocationContextTracker::SetCurrentThreadName(
+      leaked_str->c_str());
 }
 
 const char* ThreadIdNameManager::GetName(PlatformThreadId id) {

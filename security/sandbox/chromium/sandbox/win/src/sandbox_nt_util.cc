@@ -23,58 +23,67 @@ SANDBOX_INTERCEPT NtExports g_nt;
 namespace {
 
 #if defined(_WIN64)
+
+inline char* AlignToBoundary(void* ptr, size_t increment) {
+  const size_t kAllocationGranularity = (64 * 1024) - 1;
+  uintptr_t ptr_int = reinterpret_cast<uintptr_t>(ptr);
+  uintptr_t ret_ptr =
+      (ptr_int + increment + kAllocationGranularity) & ~kAllocationGranularity;
+  
+  if (ret_ptr < ptr_int)
+    return nullptr;
+  return reinterpret_cast<char*>(ret_ptr);
+}
+
+
+
+
 void* AllocateNearTo(void* source, size_t size) {
   using sandbox::g_nt;
+  
+  const size_t kMaxSize = 0x80000000ULL;
+  
+  
+  if (source == nullptr)
+    return nullptr;
+  
+  if (size > kMaxSize)
+    return nullptr;
 
   
-  const size_t kOneGB = 0x40000000;
-  void* base = reinterpret_cast<char*>(source) + kOneGB;
-  SIZE_T actual_size = size;
-  ULONG_PTR zero_bits = 0;  
-  ULONG type = MEM_RESERVE;
+  char* base = AlignToBoundary(source, 0);
+  if (base == nullptr)
+    return nullptr;
+  
+  const char* top_address = base + kMaxSize;
 
-  NTSTATUS ret;
-  int attempts = 0;
-  for (; attempts < 41; attempts++) {
-    ret = g_nt.AllocateVirtualMemory(NtCurrentProcess, &base, zero_bits,
-                                     &actual_size, type, PAGE_READWRITE);
-    if (NT_SUCCESS(ret)) {
-      if (base < source ||
-          base >= reinterpret_cast<char*>(source) + 4 * kOneGB) {
-        
-        VERIFY_SUCCESS(g_nt.FreeVirtualMemory(NtCurrentProcess, &base, &size,
-                                              MEM_RELEASE));
-        return NULL;
-      }
+  while (base < top_address) {
+    MEMORY_BASIC_INFORMATION mem_info;
+    NTSTATUS status =
+        g_nt.QueryVirtualMemory(NtCurrentProcess, base, MemoryBasicInformation,
+                                &mem_info, sizeof(mem_info), nullptr);
+    if (!NT_SUCCESS(status))
       break;
-    }
 
-    if (attempts == 30) {
+    if ((mem_info.State == MEM_FREE) && (mem_info.RegionSize >= size)) {
       
-      base = reinterpret_cast<char*>(source);
-    } else if (attempts == 40) {
       
-      base = NULL;
-      type |= MEM_TOP_DOWN;
+      
+      void* ret_base = mem_info.BaseAddress;
+      status =
+          g_nt.AllocateVirtualMemory(NtCurrentProcess, &ret_base, 0, &size,
+                                     MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+      
+      if (NT_SUCCESS(status))
+        return ret_base;
     }
 
     
-    base = reinterpret_cast<char*>(base) + 100 * 0x100000;
+    base = AlignToBoundary(mem_info.BaseAddress, mem_info.RegionSize);
+    if (base == nullptr)
+      break;
   }
-
-  if (attempts == 41)
-    return NULL;
-
-  ret = g_nt.AllocateVirtualMemory(NtCurrentProcess, &base, zero_bits,
-                                   &actual_size, MEM_COMMIT, PAGE_READWRITE);
-
-  if (!NT_SUCCESS(ret)) {
-    VERIFY_SUCCESS(g_nt.FreeVirtualMemory(NtCurrentProcess, &base, &size,
-                                          MEM_RELEASE));
-    base = NULL;
-  }
-
-  return base;
+  return nullptr;
 }
 #else  
 void* AllocateNearTo(void* source, size_t size) {

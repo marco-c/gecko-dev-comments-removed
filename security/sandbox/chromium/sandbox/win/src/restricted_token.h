@@ -94,17 +94,6 @@ class RestrictedToken {
   
   
   
-  
-  
-  
-  DWORD AddDenyOnlySids(const std::vector<Sid>& deny_only_sids);
-
-  
-  
-  
-  
-  
-  
   DWORD AddSidForDenyOnly(const Sid &sid);
 
   
@@ -179,6 +168,10 @@ class RestrictedToken {
   
   DWORD SetIntegrityLevel(IntegrityLevel integrity_level);
 
+  
+  
+  void SetLockdownDefaultDacl();
+
  private:
   
   std::vector<Sid> sids_to_restrict_;
@@ -192,6 +185,8 @@ class RestrictedToken {
   IntegrityLevel integrity_level_;
   
   bool init_;
+  
+  bool lockdown_default_dacl_;
 
   DISALLOW_COPY_AND_ASSIGN(RestrictedToken);
 };

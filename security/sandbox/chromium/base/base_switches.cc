@@ -21,6 +21,10 @@ const char kEnableCrashReporter[]           = "enable-crash-reporter";
 const char kEnableHeapProfiling[]           = "enable-heap-profiling";
 
 
+
+const char kEnableHeapProfilingModeNative[] = "native";
+
+
 const char kFullMemoryCrashReport[]         = "full-memory-crash-report";
 
 
@@ -45,6 +49,11 @@ const char kNoErrorDialogs[]                = "noerrdialogs";
 
 
 const char kTestChildProcess[]              = "test-child-process";
+
+
+
+
+const char kTestDoNotInitializeIcu[]        = "test-do-not-initialize-icu";
 
 
 
@@ -79,6 +88,16 @@ const char kProfilerTiming[]                = "profiler-timing";
 
 
 const char kProfilerTimingDisabledValue[]   = "0";
+
+
+
+
+
+
+
+
+
+const char kProfilingFile[] = "profiling-file";
 
 #if defined(OS_WIN)
 

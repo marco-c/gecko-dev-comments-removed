@@ -6,13 +6,42 @@
 #define BASE_CALLBACK_FORWARD_H_
 
 namespace base {
+namespace internal {
 
-template <typename Sig>
+
+
+
+enum class CopyMode {
+  MoveOnly,
+  Copyable,
+};
+
+enum class RepeatMode {
+  Once,
+  Repeating,
+};
+
+}  
+
+template <typename Signature,
+          internal::CopyMode copy_mode = internal::CopyMode::Copyable,
+          internal::RepeatMode repeat_mode = internal::RepeatMode::Repeating>
 class Callback;
 
 
 
 using Closure = Callback<void()>;
+
+template <typename Signature>
+using OnceCallback = Callback<Signature,
+                              internal::CopyMode::MoveOnly,
+                              internal::RepeatMode::Once>;
+template <typename Signature>
+using RepeatingCallback = Callback<Signature,
+                                   internal::CopyMode::Copyable,
+                                   internal::RepeatMode::Repeating>;
+using OnceClosure = OnceCallback<void()>;
+using RepeatingClosure = RepeatingCallback<void()>;
 
 }  
 

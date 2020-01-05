@@ -33,16 +33,17 @@
 
 #include "base/time/time.h"
 
-#pragma comment(lib, "winmm.lib")
 #include <windows.h>
 #include <mmsystem.h>
 #include <stdint.h>
 
+#include "base/atomicops.h"
 #include "base/bit_cast.h"
 #include "base/cpu.h"
 #include "base/lazy_instance.h"
 #include "base/logging.h"
 #include "base/synchronization/lock.h"
+#include "base/threading/platform_thread.h"
 
 using base::ThreadTicks;
 using base::Time;
@@ -100,16 +101,6 @@ base::LazyInstance<base::Lock>::Leaky g_high_res_lock =
     LAZY_INSTANCE_INITIALIZER;
 
 
-
-using QueryThreadCycleTimePtr = decltype(::QueryThreadCycleTime)*;
-QueryThreadCycleTimePtr GetQueryThreadCycleTimeFunction() {
-  static const QueryThreadCycleTimePtr query_thread_cycle_time_fn =
-      reinterpret_cast<QueryThreadCycleTimePtr>(::GetProcAddress(
-          ::GetModuleHandle(L"kernel32.dll"), "QueryThreadCycleTime"));
-  return query_thread_cycle_time_fn;
-}
-
-
 uint64_t QPCNowRaw() {
   LARGE_INTEGER perf_counter_now = {};
   
@@ -117,6 +108,12 @@ uint64_t QPCNowRaw() {
   
   ::QueryPerformanceCounter(&perf_counter_now);
   return perf_counter_now.QuadPart;
+}
+
+bool SafeConvertToWord(int in, WORD* out) {
+  base::CheckedNumeric<WORD> result = in;
+  *out = result.ValueOrDefault(std::numeric_limits<WORD>::max());
+  return result.IsValid();
 }
 
 }  
@@ -245,35 +242,41 @@ bool Time::IsHighResolutionTimerInUse() {
 }
 
 
-Time Time::FromExploded(bool is_local, const Exploded& exploded) {
+bool Time::FromExploded(bool is_local, const Exploded& exploded, Time* time) {
+  
   
   
   SYSTEMTIME st;
-  st.wYear = static_cast<WORD>(exploded.year);
-  st.wMonth = static_cast<WORD>(exploded.month);
-  st.wDayOfWeek = static_cast<WORD>(exploded.day_of_week);
-  st.wDay = static_cast<WORD>(exploded.day_of_month);
-  st.wHour = static_cast<WORD>(exploded.hour);
-  st.wMinute = static_cast<WORD>(exploded.minute);
-  st.wSecond = static_cast<WORD>(exploded.second);
-  st.wMilliseconds = static_cast<WORD>(exploded.millisecond);
+  if (!SafeConvertToWord(exploded.year, &st.wYear) ||
+      !SafeConvertToWord(exploded.month, &st.wMonth) ||
+      !SafeConvertToWord(exploded.day_of_week, &st.wDayOfWeek) ||
+      !SafeConvertToWord(exploded.day_of_month, &st.wDay) ||
+      !SafeConvertToWord(exploded.hour, &st.wHour) ||
+      !SafeConvertToWord(exploded.minute, &st.wMinute) ||
+      !SafeConvertToWord(exploded.second, &st.wSecond) ||
+      !SafeConvertToWord(exploded.millisecond, &st.wMilliseconds)) {
+    *time = base::Time(0);
+    return false;
+  }
 
   FILETIME ft;
   bool success = true;
   
   if (is_local) {
     SYSTEMTIME utc_st;
-    success = TzSpecificLocalTimeToSystemTime(NULL, &st, &utc_st) &&
+    success = TzSpecificLocalTimeToSystemTime(nullptr, &st, &utc_st) &&
               SystemTimeToFileTime(&utc_st, &ft);
   } else {
     success = !!SystemTimeToFileTime(&st, &ft);
   }
 
   if (!success) {
-    NOTREACHED() << "Unable to convert time";
-    return Time(0);
+    *time = Time(0);
+    return false;
   }
-  return Time(FileTimeToMicroseconds(ft));
+
+  *time = Time(FileTimeToMicroseconds(ft));
+  return true;
 }
 
 void Time::Explode(bool is_local, Exploded* exploded) const {
@@ -298,7 +301,7 @@ void Time::Explode(bool is_local, Exploded* exploded) const {
     
     
     success = FileTimeToSystemTime(&utc_ft, &utc_st) &&
-              SystemTimeToTzSpecificLocalTime(NULL, &utc_st, &st);
+              SystemTimeToTzSpecificLocalTime(nullptr, &utc_st, &st);
   } else {
     success = !!FileTimeToSystemTime(&utc_ft, &st);
   }
@@ -332,18 +335,29 @@ DWORD timeGetTimeWrapper() {
 DWORD (*g_tick_function)(void) = &timeGetTimeWrapper;
 
 
-int64_t g_rollover_ms = 0;
 
+union LastTimeAndRolloversState {
+  
+  base::subtle::Atomic32 as_opaque_32;
 
-DWORD g_last_seen_now = 0;
-
-
-
-
-
-
-
-base::Lock g_rollover_lock;
+  
+  struct {
+    
+    
+    
+    uint8_t last_8;
+    
+    
+    
+    
+    
+    uint16_t rollovers;
+  } as_values;
+};
+base::subtle::Atomic32 g_last_time_and_rollovers = 0;
+static_assert(
+    sizeof(LastTimeAndRolloversState) <= sizeof(g_last_time_and_rollovers),
+    "LastTimeAndRolloversState does not fit in a single atomic word");
 
 
 
@@ -351,14 +365,38 @@ base::Lock g_rollover_lock;
 
 
 TimeDelta RolloverProtectedNow() {
-  base::AutoLock locked(g_rollover_lock);
-  
-  
-  DWORD now = g_tick_function();
-  if (now < g_last_seen_now)
-    g_rollover_ms += 0x100000000I64;  
-  g_last_seen_now = now;
-  return TimeDelta::FromMilliseconds(now + g_rollover_ms);
+  LastTimeAndRolloversState state;
+  DWORD now;  
+
+  while (true) {
+    
+    
+    
+    
+    int32_t original = base::subtle::Acquire_Load(&g_last_time_and_rollovers);
+    state.as_opaque_32 = original;
+    now = g_tick_function();
+    uint8_t now_8 = static_cast<uint8_t>(now >> 24);
+    if (now_8 < state.as_values.last_8)
+      ++state.as_values.rollovers;
+    state.as_values.last_8 = now_8;
+
+    
+    if (state.as_opaque_32 == original)
+      break;
+
+    
+    
+    int32_t check = base::subtle::Release_CompareAndSwap(
+        &g_last_time_and_rollovers, original, state.as_opaque_32);
+    if (check == original)
+      break;
+
+    
+  }
+
+  return TimeDelta::FromMilliseconds(
+      now + (static_cast<uint64_t>(state.as_values.rollovers) << 32));
 }
 
 
@@ -491,11 +529,9 @@ TimeDelta InitialNowFunction() {
 
 TimeTicks::TickFunctionType TimeTicks::SetMockTickFunction(
     TickFunctionType ticker) {
-  base::AutoLock locked(g_rollover_lock);
   TickFunctionType old = g_tick_function;
   g_tick_function = ticker;
-  g_rollover_ms = 0;
-  g_last_seen_now = 0;
+  base::subtle::NoBarrier_Store(&g_last_time_and_rollovers, 0);
   return old;
 }
 
@@ -512,12 +548,44 @@ bool TimeTicks::IsHighResolution() {
 }
 
 
+bool TimeTicks::IsConsistentAcrossProcesses() {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  return IsHighResolution();
+}
+
+
+TimeTicks::Clock TimeTicks::GetClock() {
+  return IsHighResolution() ?
+      Clock::WIN_QPC : Clock::WIN_ROLLOVER_PROTECTED_TIME_GET_TIME;
+}
+
+
 ThreadTicks ThreadTicks::Now() {
+  return ThreadTicks::GetForThread(PlatformThread::CurrentHandle());
+}
+
+
+ThreadTicks ThreadTicks::GetForThread(
+    const base::PlatformThreadHandle& thread_handle) {
   DCHECK(IsSupported());
 
   
   ULONG64 thread_cycle_time = 0;
-  GetQueryThreadCycleTimeFunction()(::GetCurrentThread(), &thread_cycle_time);
+  ::QueryThreadCycleTime(thread_handle.platform_handle(), &thread_cycle_time);
 
   
   double tsc_ticks_per_second = TSCTicksPerSecond();
@@ -532,8 +600,7 @@ ThreadTicks ThreadTicks::Now() {
 
 
 bool ThreadTicks::IsSupportedWin() {
-  static bool is_supported = GetQueryThreadCycleTimeFunction() &&
-                             base::CPU().has_non_stop_time_stamp_counter() &&
+  static bool is_supported = base::CPU().has_non_stop_time_stamp_counter() &&
                              !IsBuggyAthlon(base::CPU());
   return is_supported;
 }

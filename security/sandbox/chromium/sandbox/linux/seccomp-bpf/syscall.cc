@@ -190,12 +190,15 @@ asm(
     "9:.size SyscallAsm, 9b-SyscallAsm\n"
 #elif defined(__mips__)
     ".text\n"
+    ".option pic2\n"
     ".align 4\n"
+    ".global SyscallAsm\n"
     ".type SyscallAsm, @function\n"
     "SyscallAsm:.ent SyscallAsm\n"
     ".frame  $sp, 40, $ra\n"
     ".set   push\n"
     ".set   noreorder\n"
+    ".cpload $t9\n"
     "addiu  $sp, $sp, -40\n"
     "sw     $ra, 36($sp)\n"
     
@@ -204,7 +207,11 @@ asm(
     
     "bgez   $v0, 1f\n"
     " nop\n"
-    "la     $v0, 2f\n"
+    
+    
+    
+    "lw     $v0, %got(2f)($gp)\n"
+    "addiu  $v0, $v0, %lo(2f)\n"
     "b      2f\n"
     " nop\n"
     
@@ -261,6 +268,10 @@ asm(
 #if defined(__x86_64__)
 extern "C" {
 intptr_t SyscallAsm(intptr_t nr, const intptr_t args[6]);
+}
+#elif defined(__mips__)
+extern "C" {
+intptr_t SyscallAsm(intptr_t nr, const intptr_t args[8]);
 }
 #endif
 
@@ -395,20 +406,21 @@ intptr_t Syscall::SandboxSyscallRaw(int nr,
                                     const intptr_t* args,
                                     intptr_t* err_ret) {
   register intptr_t ret __asm__("v0") = nr;
+  register intptr_t syscallasm __asm__("t9") = (intptr_t) &SyscallAsm;
   
   register intptr_t err_stat __asm__("a3") = 0;
   {
     register const intptr_t* data __asm__("a0") = args;
     asm volatile(
-        "la $t9, SyscallAsm\n"
         "jalr $t9\n"
         " nop\n"
         : "=r"(ret), "=r"(err_stat)
         : "0"(ret),
-          "r"(data)
+          "r"(data),
+          "r"(syscallasm)
           
           
-        : "memory", "ra", "t9", "a2");
+        : "memory", "ra", "a2");
   }
 
   

@@ -140,6 +140,23 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #ifndef BASE_BIND_HELPERS_H_
 #define BASE_BIND_HELPERS_H_
 
@@ -150,149 +167,17 @@
 
 #include "base/callback.h"
 #include "base/memory/weak_ptr.h"
-#include "base/template_util.h"
 #include "build/build_config.h"
 
 namespace base {
+
+template <typename T>
+struct IsWeakReceiver;
+
+template <typename>
+struct BindUnwrapTraits;
+
 namespace internal {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <typename T>
-class SupportsAddRefAndRelease {
-  using Yes = char[1];
-  using No = char[2];
-
-  struct BaseMixin {
-    void AddRef();
-  };
-
-
-
-
-#if defined(OS_WIN)
-#pragma warning(push)
-#pragma warning(disable:4624)
-#endif
-  struct Base : public T, public BaseMixin {
-  };
-#if defined(OS_WIN)
-#pragma warning(pop)
-#endif
-
-  template <void(BaseMixin::*)()> struct Helper {};
-
-  template <typename C>
-  static No& Check(Helper<&C::AddRef>*);
-
-  template <typename >
-  static Yes& Check(...);
-
- public:
-  enum { value = sizeof(Check<Base>(0)) == sizeof(Yes) };
-};
-
-
-
-template <bool IsClasstype, typename T>
-struct UnsafeBindtoRefCountedArgHelper : false_type {
-};
-
-template <typename T>
-struct UnsafeBindtoRefCountedArgHelper<true, T>
-    : integral_constant<bool, SupportsAddRefAndRelease<T>::value> {
-};
-
-template <typename T>
-struct UnsafeBindtoRefCountedArg : false_type {
-};
-
-template <typename T>
-struct UnsafeBindtoRefCountedArg<T*>
-    : UnsafeBindtoRefCountedArgHelper<is_class<T>::value, T> {
-};
-
-template <typename T>
-class HasIsMethodTag {
-  using Yes = char[1];
-  using No = char[2];
-
-  template <typename U>
-  static Yes& Check(typename U::IsMethod*);
-
-  template <typename U>
-  static No& Check(...);
-
- public:
-  enum { value = sizeof(Check<T>(0)) == sizeof(Yes) };
-};
 
 template <typename T>
 class UnretainedWrapper {
@@ -313,17 +198,21 @@ class ConstRefWrapper {
 };
 
 template <typename T>
-struct IgnoreResultHelper {
-  explicit IgnoreResultHelper(T functor) : functor_(functor) {}
-
-  T functor_;
+class RetainedRefWrapper {
+ public:
+  explicit RetainedRefWrapper(T* o) : ptr_(o) {}
+  explicit RetainedRefWrapper(scoped_refptr<T> o) : ptr_(std::move(o)) {}
+  T* get() const { return ptr_.get(); }
+ private:
+  scoped_refptr<T> ptr_;
 };
 
 template <typename T>
-struct IgnoreResultHelper<Callback<T> > {
-  explicit IgnoreResultHelper(const Callback<T>& functor) : functor_(functor) {}
+struct IgnoreResultHelper {
+  explicit IgnoreResultHelper(T functor) : functor_(std::move(functor)) {}
+  explicit operator bool() const { return !!functor_; }
 
-  const Callback<T>& functor_;
+  T functor_;
 };
 
 
@@ -339,7 +228,7 @@ class OwnedWrapper {
   explicit OwnedWrapper(T* o) : ptr_(o) {}
   ~OwnedWrapper() { delete ptr_; }
   T* get() const { return ptr_; }
-  OwnedWrapper(const OwnedWrapper& other) {
+  OwnedWrapper(OwnedWrapper&& other) {
     ptr_ = other.ptr_;
     other.ptr_ = NULL;
   }
@@ -376,9 +265,9 @@ class PassedWrapper {
  public:
   explicit PassedWrapper(T&& scoper)
       : is_valid_(true), scoper_(std::move(scoper)) {}
-  PassedWrapper(const PassedWrapper& other)
+  PassedWrapper(PassedWrapper&& other)
       : is_valid_(other.is_valid_), scoper_(std::move(other.scoper_)) {}
-  T Pass() const {
+  T Take() const {
     CHECK(is_valid_);
     is_valid_ = false;
     return std::move(scoper_);
@@ -389,100 +278,13 @@ class PassedWrapper {
   mutable T scoper_;
 };
 
+template <typename T>
+using Unwrapper = BindUnwrapTraits<typename std::decay<T>::type>;
 
 template <typename T>
-struct UnwrapTraits {
-  using ForwardType = const T&;
-  static ForwardType Unwrap(const T& o) { return o; }
-};
-
-template <typename T>
-struct UnwrapTraits<UnretainedWrapper<T> > {
-  using ForwardType = T*;
-  static ForwardType Unwrap(UnretainedWrapper<T> unretained) {
-    return unretained.get();
-  }
-};
-
-template <typename T>
-struct UnwrapTraits<ConstRefWrapper<T> > {
-  using ForwardType = const T&;
-  static ForwardType Unwrap(ConstRefWrapper<T> const_ref) {
-    return const_ref.get();
-  }
-};
-
-template <typename T>
-struct UnwrapTraits<scoped_refptr<T> > {
-  using ForwardType = T*;
-  static ForwardType Unwrap(const scoped_refptr<T>& o) { return o.get(); }
-};
-
-template <typename T>
-struct UnwrapTraits<WeakPtr<T> > {
-  using ForwardType = const WeakPtr<T>&;
-  static ForwardType Unwrap(const WeakPtr<T>& o) { return o; }
-};
-
-template <typename T>
-struct UnwrapTraits<OwnedWrapper<T> > {
-  using ForwardType = T*;
-  static ForwardType Unwrap(const OwnedWrapper<T>& o) {
-    return o.get();
-  }
-};
-
-template <typename T>
-struct UnwrapTraits<PassedWrapper<T> > {
-  using ForwardType = T;
-  static T Unwrap(PassedWrapper<T>& o) {
-    return o.Pass();
-  }
-};
-
-
-
-template <bool is_method, typename... T>
-struct MaybeScopedRefPtr;
-
-template <bool is_method>
-struct MaybeScopedRefPtr<is_method> {
-  MaybeScopedRefPtr() {}
-};
-
-template <typename T, typename... Rest>
-struct MaybeScopedRefPtr<false, T, Rest...> {
-  MaybeScopedRefPtr(const T&, const Rest&...) {}
-};
-
-template <typename T, size_t n, typename... Rest>
-struct MaybeScopedRefPtr<false, T[n], Rest...> {
-  MaybeScopedRefPtr(const T*, const Rest&...) {}
-};
-
-template <typename T, typename... Rest>
-struct MaybeScopedRefPtr<true, T, Rest...> {
-  MaybeScopedRefPtr(const T& o, const Rest&...) {}
-};
-
-template <typename T, typename... Rest>
-struct MaybeScopedRefPtr<true, T*, Rest...> {
-  MaybeScopedRefPtr(T* o, const Rest&...) : ref_(o) {}
-  scoped_refptr<T> ref_;
-};
-
-
-
-template <typename T, typename... Rest>
-struct MaybeScopedRefPtr<true, scoped_refptr<T>, Rest...> {
-  MaybeScopedRefPtr(const scoped_refptr<T>&, const Rest&...) {}
-};
-
-template <typename T, typename... Rest>
-struct MaybeScopedRefPtr<true, const T*, Rest...> {
-  MaybeScopedRefPtr(const T* o, const Rest&...) : ref_(o) {}
-  scoped_refptr<const T> ref_;
-};
+auto Unwrap(T&& o) -> decltype(Unwrapper<T>::Unwrap(std::forward<T>(o))) {
+  return Unwrapper<T>::Unwrap(std::forward<T>(o));
+}
 
 
 
@@ -491,16 +293,11 @@ struct MaybeScopedRefPtr<true, const T*, Rest...> {
 
 
 
-template <bool IsMethod, typename... Args>
-struct IsWeakMethod : public false_type {};
+template <bool is_method, typename... Args>
+struct IsWeakMethod : std::false_type {};
 
 template <typename T, typename... Args>
-struct IsWeakMethod<true, WeakPtr<T>, Args...> : public true_type {};
-
-template <typename T, typename... Args>
-struct IsWeakMethod<true, ConstRefWrapper<WeakPtr<T>>, Args...>
-    : public true_type {};
-
+struct IsWeakMethod<true, T, Args...> : IsWeakReceiver<T> {};
 
 
 template <typename... Types>
@@ -589,19 +386,35 @@ struct ExtractArgsImpl;
 
 template <typename R, typename... Args>
 struct ExtractArgsImpl<R(Args...)> {
-  using Type = TypeList<Args...>;
+  using ReturnType = R;
+  using ArgsList = TypeList<Args...>;
 };
 
 
 
 template <typename Signature>
-using ExtractArgs = typename ExtractArgsImpl<Signature>::Type;
+using ExtractArgs = typename ExtractArgsImpl<Signature>::ArgsList;
+
+
+
+template <typename Signature>
+using ExtractReturnType = typename ExtractArgsImpl<Signature>::ReturnType;
 
 }  
 
 template <typename T>
 static inline internal::UnretainedWrapper<T> Unretained(T* o) {
   return internal::UnretainedWrapper<T>(o);
+}
+
+template <typename T>
+static inline internal::RetainedRefWrapper<T> RetainedRef(T* o) {
+  return internal::RetainedRefWrapper<T>(o);
+}
+
+template <typename T>
+static inline internal::RetainedRefWrapper<T> RetainedRef(scoped_refptr<T> o) {
+  return internal::RetainedRefWrapper<T>(std::move(o));
 }
 
 template <typename T>
@@ -622,28 +435,19 @@ static inline internal::OwnedWrapper<T> Owned(T* o) {
 
 
 template <typename T,
-          typename std::enable_if<internal::IsMoveOnlyType<T>::value &&
-                                  !std::is_lvalue_reference<T>::value>::type* =
+          typename std::enable_if<!std::is_lvalue_reference<T>::value>::type* =
               nullptr>
 static inline internal::PassedWrapper<T> Passed(T&& scoper) {
   return internal::PassedWrapper<T>(std::move(scoper));
 }
-template <typename T,
-          typename std::enable_if<internal::IsMoveOnlyType<T>::value>::type* =
-              nullptr>
+template <typename T>
 static inline internal::PassedWrapper<T> Passed(T* scoper) {
   return internal::PassedWrapper<T>(std::move(*scoper));
 }
 
 template <typename T>
 static inline internal::IgnoreResultHelper<T> IgnoreResult(T data) {
-  return internal::IgnoreResultHelper<T>(data);
-}
-
-template <typename T>
-static inline internal::IgnoreResultHelper<Callback<T> >
-IgnoreResult(const Callback<T>& data) {
-  return internal::IgnoreResultHelper<Callback<T> >(data);
+  return internal::IgnoreResultHelper<T>(std::move(data));
 }
 
 BASE_EXPORT void DoNothing();
@@ -652,6 +456,70 @@ template<typename T>
 void DeletePointer(T* obj) {
   delete obj;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename T>
+struct IsWeakReceiver : std::false_type {};
+
+template <typename T>
+struct IsWeakReceiver<internal::ConstRefWrapper<T>> : IsWeakReceiver<T> {};
+
+template <typename T>
+struct IsWeakReceiver<WeakPtr<T>> : std::true_type {};
+
+
+
+
+template <typename>
+struct BindUnwrapTraits {
+  template <typename T>
+  static T&& Unwrap(T&& o) { return std::forward<T>(o); }
+};
+
+template <typename T>
+struct BindUnwrapTraits<internal::UnretainedWrapper<T>> {
+  static T* Unwrap(const internal::UnretainedWrapper<T>& o) {
+    return o.get();
+  }
+};
+
+template <typename T>
+struct BindUnwrapTraits<internal::ConstRefWrapper<T>> {
+  static const T& Unwrap(const internal::ConstRefWrapper<T>& o) {
+    return o.get();
+  }
+};
+
+template <typename T>
+struct BindUnwrapTraits<internal::RetainedRefWrapper<T>> {
+  static T* Unwrap(const internal::RetainedRefWrapper<T>& o) {
+    return o.get();
+  }
+};
+
+template <typename T>
+struct BindUnwrapTraits<internal::OwnedWrapper<T>> {
+  static T* Unwrap(const internal::OwnedWrapper<T>& o) {
+    return o.get();
+  }
+};
+
+template <typename T>
+struct BindUnwrapTraits<internal::PassedWrapper<T>> {
+  static T Unwrap(const internal::PassedWrapper<T>& o) {
+    return o.Take();
+  }
+};
 
 }  
 

@@ -11,10 +11,13 @@
 #include <cstring>
 #include <sstream>
 #include <string>
+#include <type_traits>
+#include <utility>
 
 #include "base/base_export.h"
 #include "base/debug/debugger.h"
 #include "base/macros.h"
+#include "base/template_util.h"
 #include "build/build_config.h"
 
 
@@ -306,15 +309,16 @@ const LogSeverity LOG_DFATAL = LOG_FATAL;
 
 
 #define COMPACT_GOOGLE_LOG_EX_INFO(ClassName, ...) \
-  logging::ClassName(__FILE__, __LINE__, logging::LOG_INFO , ##__VA_ARGS__)
-#define COMPACT_GOOGLE_LOG_EX_WARNING(ClassName, ...) \
-  logging::ClassName(__FILE__, __LINE__, logging::LOG_WARNING , ##__VA_ARGS__)
+  ::logging::ClassName(__FILE__, __LINE__, ::logging::LOG_INFO, ##__VA_ARGS__)
+#define COMPACT_GOOGLE_LOG_EX_WARNING(ClassName, ...)              \
+  ::logging::ClassName(__FILE__, __LINE__, ::logging::LOG_WARNING, \
+                       ##__VA_ARGS__)
 #define COMPACT_GOOGLE_LOG_EX_ERROR(ClassName, ...) \
-  logging::ClassName(__FILE__, __LINE__, logging::LOG_ERROR , ##__VA_ARGS__)
+  ::logging::ClassName(__FILE__, __LINE__, ::logging::LOG_ERROR, ##__VA_ARGS__)
 #define COMPACT_GOOGLE_LOG_EX_FATAL(ClassName, ...) \
-  logging::ClassName(__FILE__, __LINE__, logging::LOG_FATAL , ##__VA_ARGS__)
+  ::logging::ClassName(__FILE__, __LINE__, ::logging::LOG_FATAL, ##__VA_ARGS__)
 #define COMPACT_GOOGLE_LOG_EX_DFATAL(ClassName, ...) \
-  logging::ClassName(__FILE__, __LINE__, logging::LOG_DFATAL , ##__VA_ARGS__)
+  ::logging::ClassName(__FILE__, __LINE__, ::logging::LOG_DFATAL, ##__VA_ARGS__)
 
 #define COMPACT_GOOGLE_LOG_INFO \
   COMPACT_GOOGLE_LOG_EX_INFO(LogMessage)
@@ -373,12 +377,9 @@ const LogSeverity LOG_0 = LOG_ERROR;
 #define LOG_IF(severity, condition) \
   LAZY_STREAM(LOG_STREAM(severity), LOG_IS_ON(severity) && (condition))
 
-#define SYSLOG(severity) LOG(severity)
-#define SYSLOG_IF(severity, condition) LOG_IF(severity, condition)
-
 
 #define VLOG_STREAM(verbose_level) \
-  logging::LogMessage(__FILE__, __LINE__, -verbose_level).stream()
+  ::logging::LogMessage(__FILE__, __LINE__, -verbose_level).stream()
 
 #define VLOG(verbose_level) \
   LAZY_STREAM(VLOG_STREAM(verbose_level), VLOG_IS_ON(verbose_level))
@@ -389,11 +390,11 @@ const LogSeverity LOG_0 = LOG_ERROR;
 
 #if defined (OS_WIN)
 #define VPLOG_STREAM(verbose_level) \
-  logging::Win32ErrorLogMessage(__FILE__, __LINE__, -verbose_level, \
+  ::logging::Win32ErrorLogMessage(__FILE__, __LINE__, -verbose_level, \
     ::logging::GetLastSystemErrorCode()).stream()
 #elif defined(OS_POSIX)
 #define VPLOG_STREAM(verbose_level) \
-  logging::ErrnoLogMessage(__FILE__, __LINE__, -verbose_level, \
+  ::logging::ErrnoLogMessage(__FILE__, __LINE__, -verbose_level, \
     ::logging::GetLastSystemErrorCode()).stream()
 #endif
 
@@ -408,8 +409,6 @@ const LogSeverity LOG_0 = LOG_ERROR;
 
 #define LOG_ASSERT(condition)  \
   LOG_IF(FATAL, !(condition)) << "Assert failed: " #condition ". "
-#define SYSLOG_ASSERT(condition) \
-  SYSLOG_IF(FATAL, !(condition)) << "Assert failed: " #condition ". "
 
 #if defined(OS_WIN)
 #define PLOG_STREAM(severity) \
@@ -453,22 +452,28 @@ class CheckOpResult {
 
 
 
-#if defined(OFFICIAL_BUILD) && defined(NDEBUG) && !defined(OS_ANDROID)
+#if defined(OFFICIAL_BUILD) && defined(NDEBUG)
 
 
 
+
+#if defined(COMPILER_GCC) || __clang__
+#define LOGGING_CRASH() __builtin_trap()
+#else
+#define LOGGING_CRASH() ((void)(*(volatile char*)0 = 0))
+#endif
 
 
 
 
 #define CHECK(condition)                                                \
-  !(condition) ? ::base::debug::BreakDebugger() : EAT_STREAM_PARAMETERS
+  !(condition) ? LOGGING_CRASH() : EAT_STREAM_PARAMETERS
 
 #define PCHECK(condition) CHECK(condition)
 
 #define CHECK_OP(name, op, val1, val2) CHECK((val1) op (val2))
 
-#else
+#else  
 
 #if defined(_PREFAST_) && defined(OS_WIN)
 
@@ -491,8 +496,8 @@ class CheckOpResult {
 #else  
 
 
-#define CHECK(condition)                                                    \
-  LAZY_STREAM(logging::LogMessage(__FILE__, __LINE__, #condition).stream(), \
+#define CHECK(condition)                                                      \
+  LAZY_STREAM(::logging::LogMessage(__FILE__, __LINE__, #condition).stream(), \
               !(condition))
 
 #define PCHECK(condition)                       \
@@ -509,14 +514,38 @@ class CheckOpResult {
 
 #define CHECK_OP(name, op, val1, val2)                                         \
   switch (0) case 0: default:                                                  \
-  if (logging::CheckOpResult true_if_passed =                                  \
-      logging::Check##name##Impl((val1), (val2),                               \
-                                 #val1 " " #op " " #val2))                     \
+  if (::logging::CheckOpResult true_if_passed =                                \
+      ::logging::Check##name##Impl((val1), (val2),                             \
+                                   #val1 " " #op " " #val2))                   \
    ;                                                                           \
   else                                                                         \
-    logging::LogMessage(__FILE__, __LINE__, true_if_passed.message()).stream()
+    ::logging::LogMessage(__FILE__, __LINE__, true_if_passed.message()).stream()
 
-#endif
+#endif  
+
+
+
+template <typename T>
+inline typename std::enable_if<
+    base::internal::SupportsOstreamOperator<const T&>::value,
+    void>::type
+MakeCheckOpValueString(std::ostream* os, const T& v) {
+  (*os) << v;
+}
+
+
+
+template <typename T>
+inline typename std::enable_if<
+    !base::internal::SupportsOstreamOperator<const T&>::value &&
+        std::is_enum<T>::value,
+    void>::type
+MakeCheckOpValueString(std::ostream* os, const T& v) {
+  (*os) << static_cast<typename base::underlying_type<T>::type>(v);
+}
+
+
+BASE_EXPORT void MakeCheckOpValueString(std::ostream* os, std::nullptr_t p);
 
 
 
@@ -525,7 +554,11 @@ class CheckOpResult {
 template<class t1, class t2>
 std::string* MakeCheckOpString(const t1& v1, const t2& v2, const char* names) {
   std::ostringstream ss;
-  ss << names << " (" << v1 << " vs. " << v2 << ")";
+  ss << names << " (";
+  MakeCheckOpValueString(&ss, v1);
+  ss << " vs. ";
+  MakeCheckOpValueString(&ss, v2);
+  ss << ")";
   std::string* msg = new std::string(ss.str());
   return msg;
 }
@@ -556,11 +589,11 @@ std::string* MakeCheckOpString<std::string, std::string>(
   inline std::string* Check##name##Impl(const t1& v1, const t2& v2, \
                                         const char* names) { \
     if (v1 op v2) return NULL; \
-    else return MakeCheckOpString(v1, v2, names); \
+    else return ::logging::MakeCheckOpString(v1, v2, names);    \
   } \
   inline std::string* Check##name##Impl(int v1, int v2, const char* names) { \
     if (v1 op v2) return NULL; \
-    else return MakeCheckOpString(v1, v2, names); \
+    else return ::logging::MakeCheckOpString(v1, v2, names);    \
   }
 DEFINE_CHECK_OP_IMPL(EQ, ==)
 DEFINE_CHECK_OP_IMPL(NE, !=)
@@ -577,12 +610,6 @@ DEFINE_CHECK_OP_IMPL(GT, > )
 #define CHECK_GE(val1, val2) CHECK_OP(GE, >=, val1, val2)
 #define CHECK_GT(val1, val2) CHECK_OP(GT, > , val1, val2)
 
-#if defined(NDEBUG)
-#define ENABLE_DLOG 0
-#else
-#define ENABLE_DLOG 1
-#endif
-
 #if defined(NDEBUG) && !defined(DCHECK_ALWAYS_ON)
 #define DCHECK_IS_ON() 0
 #else
@@ -591,7 +618,7 @@ DEFINE_CHECK_OP_IMPL(GT, > )
 
 
 
-#if ENABLE_DLOG
+#if DCHECK_IS_ON()
 
 #define DLOG_IS_ON(severity) LOG_IS_ON(severity)
 #define DLOG_IF(severity, condition) LOG_IF(severity, condition)
@@ -601,7 +628,6 @@ DEFINE_CHECK_OP_IMPL(GT, > )
 #define DVPLOG_IF(verboselevel, condition) VPLOG_IF(verboselevel, condition)
 
 #else  
-
 
 
 
@@ -621,12 +647,7 @@ DEFINE_CHECK_OP_IMPL(GT, > )
 
 
 
-
-
-
-enum { DEBUG_MODE = ENABLE_DLOG };
-
-#undef ENABLE_DLOG
+enum { DEBUG_MODE = DCHECK_IS_ON() };
 
 #define DLOG(severity)                                          \
   LAZY_STREAM(LOG_STREAM(severity), DLOG_IS_ON(severity))
@@ -693,16 +714,17 @@ const LogSeverity LOG_DCHECK = LOG_INFO;
 
 
 
-#define DCHECK_OP(name, op, val1, val2)                               \
-  switch (0) case 0: default:                                         \
-  if (logging::CheckOpResult true_if_passed =                         \
-      DCHECK_IS_ON() ?                                                \
-      logging::Check##name##Impl((val1), (val2),                      \
-                                 #val1 " " #op " " #val2) : nullptr)  \
-   ;                                                                  \
-  else                                                                \
-    logging::LogMessage(__FILE__, __LINE__, ::logging::LOG_DCHECK,    \
-                        true_if_passed.message()).stream()
+#define DCHECK_OP(name, op, val1, val2)                                \
+  switch (0) case 0: default:                                          \
+  if (::logging::CheckOpResult true_if_passed =                        \
+      DCHECK_IS_ON() ?                                                 \
+      ::logging::Check##name##Impl((val1), (val2),                     \
+                                   #val1 " " #op " " #val2) : nullptr) \
+   ;                                                                   \
+  else                                                                 \
+    ::logging::LogMessage(__FILE__, __LINE__, ::logging::LOG_DCHECK,   \
+                          true_if_passed.message()).stream()
+
 
 
 
@@ -773,6 +795,9 @@ class BASE_EXPORT LogMessage {
 
   std::ostream& stream() { return stream_; }
 
+  LogSeverity severity() { return severity_; }
+  std::string str() { return stream_.str(); }
+
  private:
   void Init(const char* file, int line);
 
@@ -806,12 +831,6 @@ class BASE_EXPORT LogMessage {
 
   DISALLOW_COPY_AND_ASSIGN(LogMessage);
 };
-
-
-
-inline void LogAtLevel(int log_level, const std::string& msg) {
-  LogMessage(__FILE__, __LINE__, log_level).stream() << msg;
-}
 
 
 
@@ -886,12 +905,14 @@ BASE_EXPORT void CloseLogFile();
 
 BASE_EXPORT void RawLog(int level, const char* message);
 
-#define RAW_LOG(level, message) logging::RawLog(logging::LOG_ ## level, message)
+#define RAW_LOG(level, message) \
+  ::logging::RawLog(::logging::LOG_##level, message)
 
-#define RAW_CHECK(condition)                                                   \
-  do {                                                                         \
-    if (!(condition))                                                          \
-      logging::RawLog(logging::LOG_FATAL, "Check failed: " #condition "\n");   \
+#define RAW_CHECK(condition)                               \
+  do {                                                     \
+    if (!(condition))                                      \
+      ::logging::RawLog(::logging::LOG_FATAL,              \
+                        "Check failed: " #condition "\n"); \
   } while (0)
 
 #if defined(OS_WIN)

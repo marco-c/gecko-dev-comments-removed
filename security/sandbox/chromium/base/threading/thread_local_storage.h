@@ -5,6 +5,8 @@
 #ifndef BASE_THREADING_THREAD_LOCAL_STORAGE_H_
 #define BASE_THREADING_THREAD_LOCAL_STORAGE_H_
 
+#include <stdint.h>
+
 #include "base/atomicops.h"
 #include "base/base_export.h"
 #include "base/macros.h"
@@ -19,6 +21,9 @@
 namespace base {
 
 namespace internal {
+
+
+
 
 
 
@@ -123,18 +128,25 @@ class BASE_EXPORT ThreadLocalStorage {
     
     base::subtle::Atomic32 initialized_;
     int slot_;
+    uint32_t version_;
   };
 
   
   
-  class BASE_EXPORT Slot : public StaticSlot {
+  class BASE_EXPORT Slot {
    public:
-    
     explicit Slot(TLSDestructorFunc destructor = NULL);
+    ~Slot();
+
+    
+    
+    void* Get() const;
+
+    
+    void Set(void* value);
 
    private:
-    using StaticSlot::initialized_;
-    using StaticSlot::slot_;
+    StaticSlot tls_slot_;
 
     DISALLOW_COPY_AND_ASSIGN(Slot);
   };

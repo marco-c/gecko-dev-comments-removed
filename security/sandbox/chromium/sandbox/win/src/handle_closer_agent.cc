@@ -82,12 +82,11 @@ bool HandleCloserAgent::AttemptToStuffHandleSlot(HANDLE closed_handle,
            reinterpret_cast<uintptr_t>(dup_dummy) <
                reinterpret_cast<uintptr_t>(closed_handle));
 
-  for (auto h : to_close)
+  for (HANDLE h : to_close)
     ::CloseHandle(h);
 
   
-  DCHECK(dup_dummy == closed_handle);
-
+  
   return dup_dummy == closed_handle;
 }
 
