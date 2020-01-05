@@ -843,9 +843,9 @@ private:
   
   
   
-  uint32_t AudioPrerollUsecs() const
+  TimeUnit AudioPrerollThreshold() const
   {
-    return mMaster->mAmpleAudioThreshold.ToMicroseconds() / 2;
+    return mMaster->mAmpleAudioThreshold / 2;
   }
 
   uint32_t VideoPrerollFrames() const
@@ -857,7 +857,7 @@ private:
   {
     return !mMaster->IsAudioDecoding()
            || mMaster->GetDecodedAudioDuration()
-              >= AudioPrerollUsecs() * mMaster->mPlaybackRate;
+              >= AudioPrerollThreshold().ToMicroseconds() * mMaster->mPlaybackRate;
   }
 
   bool DonePrerollingVideo()
