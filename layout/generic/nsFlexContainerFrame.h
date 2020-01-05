@@ -82,6 +82,26 @@ public:
   
   bool IsHorizontal();
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static void CalculatePackingSpace(uint32_t aNumThingsToPack,
+                                    uint8_t aAlignVal,
+                                    nscoord* aFirstSubjectOffset,
+                                    uint32_t* aNumPackingSpacesRemaining,
+                                    nscoord* aPackingSpaceRemaining);
+
 protected:
   
   explicit nsFlexContainerFrame(nsStyleContext* aContext)
