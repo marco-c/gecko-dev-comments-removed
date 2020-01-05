@@ -122,16 +122,10 @@ impl AsyncResponseListener for ParserContext {
             },
             Some(ContentType(Mime(TopLevel::Text, SubLevel::Plain, _))) => {
                 
-                
-
-                
-                
-                
-                
-                
-                let page = format!("<pre>\u{000A}<plaintext>");
+                let page = format!("<pre>\n");
                 parser.pending_input.borrow_mut().push(page);
                 parser.parse_sync();
+                parser.tokenizer().borrow_mut().set_plaintext_state();
             },
             Some(ContentType(Mime(TopLevel::Text, SubLevel::Html, _))) => {}, 
             Some(ContentType(Mime(toplevel, sublevel, _))) => {
