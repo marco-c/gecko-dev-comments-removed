@@ -2924,7 +2924,9 @@ nsDocument::Timeline()
 void
 nsDocument::GetAnimations(nsTArray<RefPtr<Animation>>& aAnimations)
 {
-  Element* root = GetRootElement();
+  
+  
+  RefPtr<Element> root = GetRootElement();
   if (!root) {
     return;
   }

@@ -884,6 +884,8 @@ public:
           ErrorResult& aError);
 
   
+  
+  
   void GetAnimations(const AnimationFilter& filter,
                      nsTArray<RefPtr<Animation>>& aAnimations);
   static void GetAnimationsUnsorted(Element* aElement,
