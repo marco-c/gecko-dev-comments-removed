@@ -391,7 +391,7 @@ public:
                            const gfxMatrix& aTransform,
                            const nsIntRect* aDirtyRect) override
   {
-    BasicLayerManager* basic = mLayerManager->AsBasicLayerManager();
+    BasicLayerManager* basic = static_cast<BasicLayerManager*>(mLayerManager);
     basic->SetTarget(&aContext);
 
     gfxPoint devPixelOffset =
@@ -462,9 +462,6 @@ GenerateMaskSurface(const PaintFramesParams& aParams,
     return DrawResult::SUCCESS;
   }
 
-  
-  
-  
   RefPtr<DrawTarget> maskDT =
       ctx.GetDrawTarget()->CreateSimilarDrawTarget(maskSurfaceRect.Size(),
                                                    SurfaceFormat::A8);
@@ -850,7 +847,7 @@ nsSVGIntegrationUtils::PaintMaskAndClipPath(const PaintFramesParams& aParams)
 
   
   context.SetMatrix(matrixAutoSaveRestore.Matrix());
-  BasicLayerManager* basic = aParams.layerManager->AsBasicLayerManager();
+  BasicLayerManager* basic = static_cast<BasicLayerManager*>(aParams.layerManager);
   RefPtr<gfxContext> oldCtx = basic->GetTarget();
   basic->SetTarget(&context);
   aParams.layerManager->EndTransaction(FrameLayerBuilder::DrawPaintedLayer,
