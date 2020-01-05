@@ -576,13 +576,28 @@ struct AnimationValue
     : mServo(aValue) { }
   AnimationValue() = default;
 
-  
-  
-  
-  
-  
-  StyleAnimationValue mGecko;
-  RefPtr<RawServoAnimationValue> mServo;
+  AnimationValue(const AnimationValue& aOther)
+    : mGecko(aOther.mGecko), mServo(aOther.mServo) { }
+  AnimationValue(AnimationValue&& aOther)
+    : mGecko(Move(aOther.mGecko)), mServo(Move(aOther.mServo)) { }
+
+  AnimationValue& operator=(const AnimationValue& aOther)
+  {
+    if (this != &aOther) {
+      mGecko = aOther.mGecko;
+      mServo = aOther.mServo;
+    }
+    return *this;
+  }
+  AnimationValue& operator=(AnimationValue&& aOther)
+  {
+    MOZ_ASSERT(this != &aOther, "Do not move itself");
+    if (this != &aOther) {
+      mGecko = Move(aOther.mGecko);
+      mServo = Move(aOther.mServo);
+    }
+    return *this;
+  }
 
   bool operator==(const AnimationValue& aOther) const;
   bool operator!=(const AnimationValue& aOther) const;
@@ -609,6 +624,21 @@ struct AnimationValue
   double ComputeDistance(nsCSSPropertyID aProperty,
                          const AnimationValue& aOther,
                          nsStyleContext* aStyleContext) const;
+
+  
+  
+  
+  static AnimationValue FromString(nsCSSPropertyID aProperty,
+                                   const nsAString& aValue,
+                                   dom::Element* aElement);
+
+  
+  
+  
+  
+  
+  StyleAnimationValue mGecko;
+  RefPtr<RawServoAnimationValue> mServo;
 };
 
 struct PropertyStyleAnimationValuePair

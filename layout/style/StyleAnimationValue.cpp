@@ -24,11 +24,14 @@
 #include "nsStyleContext.h"
 #include "nsStyleSet.h"
 #include "nsComputedDOMStyle.h"
+#include "nsContentUtils.h"
 #include "nsCSSParser.h"
 #include "nsCSSPseudoElements.h"
 #include "mozilla/css/Declaration.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/FloatingPoint.h"
+#include "mozilla/ServoComputedValuesWithParent.h"
+#include "mozilla/KeyframeUtils.h" 
 #include "mozilla/Likely.h"
 #include "mozilla/ServoBindings.h" 
 #include "gfxMatrix.h"
@@ -5218,6 +5221,7 @@ StyleAnimationValue::operator==(const StyleAnimationValue& aOther) const
 
 
 
+
 bool
 AnimationValue::operator==(const AnimationValue& aOther) const
 {
@@ -5322,4 +5326,66 @@ AnimationValue::ComputeDistance(nsCSSPropertyID aProperty,
                                               distance)
          ? distance
          : 0.0;
+}
+
+ AnimationValue
+AnimationValue::FromString(nsCSSPropertyID aProperty,
+                           const nsAString& aValue,
+                           Element* aElement)
+{
+  MOZ_ASSERT(aElement);
+
+  AnimationValue result;
+
+  nsCOMPtr<nsIDocument> doc = aElement->GetComposedDoc();
+  if (!doc) {
+    return result;
+  }
+
+  nsCOMPtr<nsIPresShell> shell = doc->GetShell();
+  if (!shell) {
+    return result;
+  }
+
+  
+  
+  RefPtr<nsStyleContext> styleContext =
+    nsComputedDOMStyle::GetStyleContext(aElement, nullptr, shell);
+
+  if (styleContext->StyleSource().IsServoComputedValues()) {
+    nsPresContext* presContext = shell->GetPresContext();
+    if (!presContext) {
+      return result;
+    }
+
+    RefPtr<RawServoDeclarationBlock> declarations =
+      KeyframeUtils::ParseProperty(aProperty, aValue, doc);
+
+    if (!declarations) {
+      return result;
+    }
+
+    
+    
+    
+    
+    RefPtr<nsStyleContext> parentContext = styleContext->GetParentAllowServo();
+    const ServoComputedValuesWithParent styles = {
+      styleContext->StyleSource().AsServoComputedValues(),
+      parentContext ? parentContext->StyleSource().AsServoComputedValues()
+                    : nullptr
+    };
+
+    result.mServo = presContext->StyleSet()
+                               ->AsServo()
+                               ->ComputeAnimationValue(declarations, styles);
+    return result;
+  }
+
+  if (!StyleAnimationValue::ComputeValue(aProperty, aElement, styleContext,
+                                         aValue, false ,
+                                         result.mGecko)) {
+    MOZ_ASSERT(result.IsNull());
+  }
+  return result;
 }
