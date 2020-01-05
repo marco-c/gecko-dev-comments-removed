@@ -249,6 +249,9 @@ public class RecordsChannel implements
     Logger.trace(LOG_TAG, "onStoreCompleted. Notifying delegate of onFlowCompleted. " +
                           "Fetch end is " + fetchEnd + ", store end is " + storeEnd);
     
+    
+    this.source.performCleanup();
+    
     delegate.onFlowCompleted(this, fetchEnd, storeEnd);
   }
 

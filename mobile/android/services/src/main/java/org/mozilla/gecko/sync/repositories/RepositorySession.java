@@ -76,6 +76,11 @@ public abstract class RepositorySession {
     return lastSyncTimestamp;
   }
 
+  
+  public long getHighWaterMarkTimestamp() {
+    return 0;
+  }
+
   public static long now() {
     return System.currentTimeMillis();
   }
@@ -144,6 +149,27 @@ public abstract class RepositorySession {
       }
     };
     storeWorkQueue.execute(command);
+  }
+
+  
+
+
+
+  public void storeFlush() {
+  }
+
+  
+
+
+
+
+  public void sourceFailed(Exception e) {
+  }
+
+  
+
+
+  public void performCleanup() {
   }
 
   public abstract void wipe(RepositorySessionWipeDelegate delegate);
