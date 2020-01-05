@@ -649,7 +649,16 @@ public class Distribution {
             return null;
         }
 
-        return new JarInputStream(new BufferedInputStream(connection.getInputStream()), true);
+        final BufferedInputStream bufferedInputStream = new BufferedInputStream(connection.getInputStream());
+        try {
+            return new JarInputStream(bufferedInputStream, true);
+        } catch (IOException e) {
+            
+            
+            
+            bufferedInputStream.close();
+            throw e;
+        }
     }
 
     private static void recordFetchTelemetry(final Exception exception) {
