@@ -473,8 +473,8 @@ GetStubReturnAddress(JSContext* cx, jsbytecode* pc)
     if (IsSetPropPC(pc))
         return cx->compartment()->jitCompartment()->baselineSetPropReturnAddr();
     
-    MOZ_ASSERT(IsCallPC(pc));
-    return cx->compartment()->jitCompartment()->baselineCallReturnAddr(JSOp(*pc) == JSOP_NEW);
+    MOZ_ASSERT(IsCallPC(pc) && !IsSpreadCallPC(pc));
+    return cx->compartment()->jitCompartment()->baselineCallReturnAddr(IsConstructorCallPC(pc));
 }
 
 static inline jsbytecode*
@@ -868,6 +868,9 @@ InitFromBailout(JSContext* cx, HandleScript caller, jsbytecode* callerPC,
     JSOp op = JSOp(*pc);
 
     
+    MOZ_ASSERT_IF(IsSpreadCallPC(pc), !iter.moreFrames());
+
+    
     
     uint32_t pushedSlots = 0;
     AutoValueVector savedCallerArgs(cx);
@@ -875,12 +878,14 @@ InitFromBailout(JSContext* cx, HandleScript caller, jsbytecode* callerPC,
     if (iter.moreFrames() && (op == JSOP_FUNCALL || needToSaveArgs))
     {
         uint32_t inlined_args = 0;
-        if (op == JSOP_FUNCALL)
+        if (op == JSOP_FUNCALL) {
             inlined_args = 2 + GET_ARGC(pc) - 1;
-        else if (op == JSOP_FUNAPPLY)
+        } else if (op == JSOP_FUNAPPLY) {
             inlined_args = 2 + blFrame->numActualArgs();
-        else
+        } else {
+            MOZ_ASSERT(IsGetPropPC(pc) || IsSetPropPC(pc));
             inlined_args = 2 + IsSetPropPC(pc);
+        }
 
         MOZ_ASSERT(exprStackSlots >= inlined_args);
         pushedSlots = exprStackSlots - inlined_args;
@@ -1016,7 +1021,6 @@ InitFromBailout(JSContext* cx, HandleScript caller, jsbytecode* callerPC,
     }
 
     uint32_t pcOff = script->pcToOffset(pc);
-    bool isCall = IsCallPC(pc);
     BaselineScript* baselineScript = script->baselineScript();
 
 #ifdef DEBUG
@@ -1061,7 +1065,7 @@ InitFromBailout(JSContext* cx, HandleScript caller, jsbytecode* callerPC,
             BailoutKindString(bailoutKind));
 #endif
 
-    bool pushedNewTarget = op == JSOP_NEW;
+    bool pushedNewTarget = IsConstructorCallPC(pc);
 
     
     
@@ -1083,7 +1087,7 @@ InitFromBailout(JSContext* cx, HandleScript caller, jsbytecode* callerPC,
                 enterMonitorChain = true;
         }
 
-        uint32_t numCallArgs = isCall ? GET_ARGC(pc) : 0;
+        uint32_t numUses = js::StackUses(script, pc);
 
         if (resumeAfter && !enterMonitorChain)
             pc = GetNextPc(pc);
@@ -1114,7 +1118,8 @@ InitFromBailout(JSContext* cx, HandleScript caller, jsbytecode* callerPC,
             
             
             
-            if (isCall) {
+            if (IsCallPC(pc)) {
+                uint32_t numCallArgs = numUses - 2 - uint32_t(pushedNewTarget);
                 if (!builder.writeValue(UndefinedValue(), "CallOp FillerCallee"))
                     return false;
                 if (!builder.writeValue(UndefinedValue(), "CallOp FillerThis"))
@@ -1128,10 +1133,10 @@ InitFromBailout(JSContext* cx, HandleScript caller, jsbytecode* callerPC,
                         return false;
                 }
 
-                frameSize += (numCallArgs + 2 + pushedNewTarget) * sizeof(Value);
+                frameSize += numUses * sizeof(Value);
                 blFrame->setFrameSize(frameSize);
                 JitSpew(JitSpew_BaselineBailouts, "      Adjusted framesize += %d: %d",
-                                (int) ((numCallArgs + 2 + pushedNewTarget) * sizeof(Value)),
+                                (int) (numUses * sizeof(Value)),
                                 (int) frameSize);
             }
 
@@ -1362,7 +1367,7 @@ InitFromBailout(JSContext* cx, HandleScript caller, jsbytecode* callerPC,
     JitSpew(JitSpew_BaselineBailouts, "      Callee = %016" PRIx64, callee.asRawBits());
 
     JSFunction* calleeFun = &callee.toObject().as<JSFunction>();
-    if (!builder.writePtr(CalleeToToken(calleeFun, JSOp(*pc) == JSOP_NEW), "CalleeToken"))
+    if (!builder.writePtr(CalleeToToken(calleeFun, pushedNewTarget), "CalleeToken"))
         return false;
     nextCallee.set(calleeFun);
 
@@ -1464,7 +1469,7 @@ InitFromBailout(JSContext* cx, HandleScript caller, jsbytecode* callerPC,
         return false;
 
     
-    if (!builder.writePtr(CalleeToToken(calleeFun, JSOp(*pc) == JSOP_NEW), "CalleeToken"))
+    if (!builder.writePtr(CalleeToToken(calleeFun, pushedNewTarget), "CalleeToken"))
         return false;
 
     

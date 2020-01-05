@@ -184,7 +184,9 @@ IsIonInlinablePC(jsbytecode* pc) {
     
     
     
-    return IsCallPC(pc) || IsGetPropPC(pc) || IsSetPropPC(pc);
+    return (IsCallPC(pc) && !IsSpreadCallPC(pc)) ||
+           IsGetPropPC(pc) ||
+           IsSetPropPC(pc);
 }
 
 inline bool
