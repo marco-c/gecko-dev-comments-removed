@@ -12,12 +12,7 @@
 #include "SkBlitMask.h"
 #include "SkBlitRow.h"
 #include "SkBlitRow_opts_SSE2.h"
-#include "SkOncePtr.h"
-#include "SkRTConf.h"
-
-#if defined(_MSC_VER) && defined(_WIN64)
-#include <intrin.h>
-#endif
+#include "SkCpu.h"
 
 
 
@@ -27,99 +22,21 @@
 
 
 
-#ifdef _MSC_VER
-static inline void getcpuid(int info_type, int info[4]) {
-#if defined(_WIN64)
-    __cpuid(info, info_type);
-#else
-    __asm {
-        mov    eax, [info_type]
-        cpuid
-        mov    edi, [info]
-        mov    [edi], eax
-        mov    [edi+4], ebx
-        mov    [edi+8], ecx
-        mov    [edi+12], edx
-    }
-#endif
-}
-#elif defined(__x86_64__)
-static inline void getcpuid(int info_type, int info[4]) {
-    asm volatile (
-        "cpuid \n\t"
-        : "=a"(info[0]), "=b"(info[1]), "=c"(info[2]), "=d"(info[3])
-        : "a"(info_type)
-    );
-}
-#else
-static inline void getcpuid(int info_type, int info[4]) {
-    
-    asm volatile (
-        "pushl %%ebx      \n\t"
-        "cpuid            \n\t"
-        "movl %%ebx, %1   \n\t"
-        "popl %%ebx       \n\t"
-        : "=a"(info[0]), "=r"(info[1]), "=c"(info[2]), "=d"(info[3])
-        : "a"(info_type)
-    );
-}
-#endif
 
 
 
 
 
 
-static int* get_SIMD_level() {
-    int cpu_info[4] = { 0, 0, 0, 0 };
-    getcpuid(1, cpu_info);
-
-    int* level = new int;
-
-    if ((cpu_info[2] & (1<<20)) != 0) {
-        *level = SK_CPU_SSE_LEVEL_SSE42;
-    } else if ((cpu_info[2] & (1<<19)) != 0) {
-        *level = SK_CPU_SSE_LEVEL_SSE41;
-    } else if ((cpu_info[2] & (1<<9)) != 0) {
-        *level = SK_CPU_SSE_LEVEL_SSSE3;
-    } else if ((cpu_info[3] & (1<<26)) != 0) {
-        *level = SK_CPU_SSE_LEVEL_SSE2;
-    } else {
-        *level = 0;
-    }
-    return level;
-}
-
-SK_DECLARE_STATIC_ONCE_PTR(int, gSIMDLevel);
 
 
 
 
-static inline bool supports_simd(int minLevel) {
-#if defined(SK_CPU_SSE_LEVEL)
-    if (minLevel <= SK_CPU_SSE_LEVEL) {
-        return true;
-    } else
-#endif
-    {
-#if defined(SK_BUILD_FOR_ANDROID_FRAMEWORK)
-        
-
-
-
-
-
-        return false;
-#else
-        return minLevel <= *gSIMDLevel.get(get_SIMD_level);
-#endif
-    }
-}
 
 
 
 void SkBitmapScaler::PlatformConvolutionProcs(SkConvolutionProcs* procs) {
-    if (supports_simd(SK_CPU_SSE_LEVEL_SSE2)) {
+    if (SkCpu::Supports(SkCpu::SSE2)) {
         procs->fExtraHorizontalReads = 3;
         procs->fConvolveVertically = &convolveVertically_SSE2;
         procs->fConvolve4RowsHorizontally = &convolve4RowsHorizontally_SSE2;
@@ -132,10 +49,10 @@ void SkBitmapScaler::PlatformConvolutionProcs(SkConvolutionProcs* procs) {
 
 void SkBitmapProcState::platformProcs() {
     
-    if (!supports_simd(SK_CPU_SSE_LEVEL_SSE2)) {
+    if (!SkCpu::Supports(SkCpu::SSE2)) {
         return;
     }
-    const bool ssse3 = supports_simd(SK_CPU_SSE_LEVEL_SSSE3);
+    const bool ssse3 = SkCpu::Supports(SkCpu::SSSE3);
 
     
     if (fSampleProc32 == S32_opaque_D32_filter_DX) {
@@ -186,7 +103,7 @@ static const SkBlitRow::Proc16 platform_16_procs[] = {
 };
 
 SkBlitRow::Proc16 SkBlitRow::PlatformFactory565(unsigned flags) {
-    if (supports_simd(SK_CPU_SSE_LEVEL_SSE2)) {
+    if (SkCpu::Supports(SkCpu::SSE2)) {
         return platform_16_procs[flags];
     } else {
         return nullptr;
@@ -204,7 +121,7 @@ SkBlitRow::ColorProc16 SkBlitRow::PlatformColorFactory565(unsigned flags) {
 
 
 
-    if (supports_simd(SK_CPU_SSE_LEVEL_SSE2)) {
+    if (SkCpu::Supports(SkCpu::SSE2)) {
         return platform_565_colorprocs_SSE2[flags];
     } else {
         return nullptr;
@@ -219,7 +136,7 @@ static const SkBlitRow::Proc32 platform_32_procs_SSE2[] = {
 };
 
 SkBlitRow::Proc32 SkBlitRow::PlatformProcs32(unsigned flags) {
-    if (supports_simd(SK_CPU_SSE_LEVEL_SSE2)) {
+    if (SkCpu::Supports(SkCpu::SSE2)) {
         return platform_32_procs_SSE2[flags];
     } else {
         return nullptr;
@@ -229,7 +146,7 @@ SkBlitRow::Proc32 SkBlitRow::PlatformProcs32(unsigned flags) {
 
 
 SkBlitMask::BlitLCD16RowProc SkBlitMask::PlatformBlitRowProcs16(bool isOpaque) {
-    if (supports_simd(SK_CPU_SSE_LEVEL_SSE2)) {
+    if (SkCpu::Supports(SkCpu::SSE2)) {
         if (isOpaque) {
             return SkBlitLCD16OpaqueRow_SSE2;
         } else {

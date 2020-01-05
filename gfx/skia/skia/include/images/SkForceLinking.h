@@ -5,6 +5,8 @@
 
 
 
+#include "SkTypes.h"
+
 
 
 

@@ -10,6 +10,7 @@
 
 #include "SkPoint.h"
 #include "SkMatrix.h"
+#include "SkMatrixPriv.h"
 
 
 
@@ -35,8 +36,7 @@ public:
     }
 
     void setFromMappedRect(const SkRect& rect, const SkMatrix& matrix) {
-        this->set(rect);
-        matrix.mapPoints(fPoints, kNumPoints);
+        SkMatrixPriv::SetMappedRectFan(matrix, rect, fPoints);
     }
 
     const GrQuad& operator=(const GrQuad& that) {

@@ -66,7 +66,7 @@ protected:
 
     bool onRewind() override;
 
-    uint32_t onGetFillValue(SkColorType) const override;
+    uint64_t onGetFillValue(const SkImageInfo&) const override;
 
     int onOutputScanline(int inputScanline) const override;
 
@@ -189,8 +189,8 @@ private:
 
 
 
-    SkGifCodec(const SkImageInfo& srcInfo, SkStream* stream, GifFileType* gif, uint32_t transIndex,
-            const SkIRect& frameRect, bool frameIsSubset);
+    SkGifCodec(int width, int height, const SkEncodedInfo& info, SkStream* stream,
+            GifFileType* gif, uint32_t transIndex, const SkIRect& frameRect, bool frameIsSubset);
 
     SkAutoTCallVProc<GifFileType, CloseGif> fGif; 
     SkAutoTDeleteArray<uint8_t>             fSrcBuffer;

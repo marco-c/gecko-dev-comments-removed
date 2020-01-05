@@ -6,7 +6,9 @@
 
 
 #include "SkCodecPriv.h"
+#include "SkColorSpaceXform.h"
 #include "SkWebpCodec.h"
+#include "SkStreamPriv.h"
 #include "SkTemplates.h"
 
 
@@ -18,6 +20,7 @@
 
 
 #include "webp/decode.h"
+#include "webp/demux.h"
 #include "webp/encode.h"
 
 bool SkWebpCodec::IsWebp(const void* buf, size_t bytesRead) {
@@ -31,79 +34,114 @@ bool SkWebpCodec::IsWebp(const void* buf, size_t bytesRead) {
 
 
 
-static bool webp_parse_header(SkStream* stream, SkImageInfo* info) {
-    unsigned char buffer[WEBP_VP8_HEADER_SIZE];
-    SkASSERT(WEBP_VP8_HEADER_SIZE <= SkCodec::MinBufferedBytesNeeded());
 
-    const size_t bytesPeeked = stream->peek(buffer, WEBP_VP8_HEADER_SIZE);
-    if (bytesPeeked != WEBP_VP8_HEADER_SIZE) {
+SkCodec* SkWebpCodec::NewFromStream(SkStream* stream) {
+    SkAutoTDelete<SkStream> streamDeleter(stream);
+
+    
+    sk_sp<SkData> data = nullptr;
+    if (stream->getMemoryBase()) {
         
-        if (stream->read(buffer, WEBP_VP8_HEADER_SIZE) != WEBP_VP8_HEADER_SIZE
-            || !stream->rewind())
-        return false;
+        data = SkData::MakeWithoutCopy(stream->getMemoryBase(), stream->getLength());
+    } else {
+        data = SkCopyStreamToData(stream);
+
+        
+        streamDeleter.reset(nullptr);
     }
 
-    WebPBitstreamFeatures features;
-    VP8StatusCode status = WebPGetFeatures(buffer, WEBP_VP8_HEADER_SIZE, &features);
-    if (VP8_STATUS_OK != status) {
-        return false; 
+    
+    
+    
+    WebPData webpData = { data->bytes(), data->size() };
+    SkAutoTCallVProc<WebPDemuxer, WebPDemuxDelete> demux(WebPDemuxPartial(&webpData, nullptr));
+    if (nullptr == demux) {
+        return nullptr;
+    }
+
+    WebPChunkIterator chunkIterator;
+    SkAutoTCallVProc<WebPChunkIterator, WebPDemuxReleaseChunkIterator> autoCI(&chunkIterator);
+    sk_sp<SkColorSpace> colorSpace = nullptr;
+    if (WebPDemuxGetChunk(demux, "ICCP", 1, &chunkIterator)) {
+        colorSpace = SkColorSpace::NewICC(chunkIterator.chunk.bytes, chunkIterator.chunk.size);
+    }
+
+    if (!colorSpace) {
+        colorSpace = SkColorSpace::NewNamed(SkColorSpace::kSRGB_Named);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    WebPIterator frame;
+    SkAutoTCallVProc<WebPIterator, WebPDemuxReleaseIterator> autoFrame(&frame);
+    if (!WebPDemuxGetFrame(demux, 1, &frame)) {
+        return nullptr;
     }
 
     
     {
-        const int64_t size = sk_64_mul(features.width, features.height);
+        const int64_t size = sk_64_mul(frame.width, frame.height);
         if (!sk_64_isS32(size)) {
-            return false;
+            return nullptr;
         }
         
         if (sk_64_asS32(size) > (0x7FFFFFFF >> 2)) {
-            return false;
+            return nullptr;
         }
     }
 
-    if (info) {
-        
-        
-        
-        
-        *info = SkImageInfo::Make(features.width, features.height, kN32_SkColorType,
-                                  SkToBool(features.has_alpha) ? kUnpremul_SkAlphaType
-                                                              : kOpaque_SkAlphaType);
-    }
-    return true;
-}
-
-SkCodec* SkWebpCodec::NewFromStream(SkStream* stream) {
-    SkAutoTDelete<SkStream> streamDeleter(stream);
-    SkImageInfo info;
-    if (webp_parse_header(stream, &info)) {
-        return new SkWebpCodec(info, streamDeleter.release());
-    }
-    return nullptr;
-}
-
-
-
-static bool webp_conversion_possible(const SkImageInfo& dst, const SkImageInfo& src) {
     
     
     
     
-
-    if (!valid_alpha(dst.alphaType(), src.alphaType())) {
-        return false;
+    WebPBitstreamFeatures features;
+    VP8StatusCode status = WebPGetFeatures(frame.fragment.bytes, frame.fragment.size, &features);
+    if (VP8_STATUS_OK != status) {
+        return nullptr;
     }
 
-    switch (dst.colorType()) {
-        
-        case kBGRA_8888_SkColorType:
-        case kRGBA_8888_SkColorType:
-            return true;
-        case kRGB_565_SkColorType:
-            return src.alphaType() == kOpaque_SkAlphaType;
+    SkEncodedInfo::Color color;
+    SkEncodedInfo::Alpha alpha;
+    switch (features.format) {
+        case 0:
+            
+            
+            
+            
+            
+            
+            
+            color = SkEncodedInfo::kBGRA_Color;
+            alpha = SkEncodedInfo::kUnpremul_Alpha;
+            break;
+        case 1:
+            
+            if (SkToBool(features.has_alpha)) {
+                color = SkEncodedInfo::kYUVA_Color;
+                alpha = SkEncodedInfo::kUnpremul_Alpha;
+            } else {
+                color = SkEncodedInfo::kYUV_Color;
+                alpha = SkEncodedInfo::kOpaque_Alpha;
+            }
+            break;
+        case 2:
+            
+            color = SkEncodedInfo::kBGRA_Color;
+            alpha = SkEncodedInfo::kUnpremul_Alpha;
+            break;
         default:
-            return false;
+            return nullptr;
     }
+
+    SkEncodedInfo info = SkEncodedInfo::Make(color, alpha, 8);
+    return new SkWebpCodec(features.width, features.height, info, std::move(colorSpace),
+                           streamDeleter.release(), demux.release(), std::move(data));
 }
 
 SkISize SkWebpCodec::onGetScaledDimensions(float desiredScale) const {
@@ -121,7 +159,6 @@ bool SkWebpCodec::onDimensionsSupported(const SkISize& dim) {
             && dim.height() >= 1 && dim.height() <= info.height();
 }
 
-
 static WEBP_CSP_MODE webp_decode_mode(SkColorType ct, bool premultiply) {
     switch (ct) {
         case kBGRA_8888_SkColorType:
@@ -134,11 +171,6 @@ static WEBP_CSP_MODE webp_decode_mode(SkColorType ct, bool premultiply) {
             return MODE_LAST;
     }
 }
-
-
-
-
-static const size_t BUFFER_SIZE = 4096;
 
 bool SkWebpCodec::onGetValidSubset(SkIRect* desiredSubset) const {
     if (!desiredSubset) {
@@ -160,9 +192,15 @@ bool SkWebpCodec::onGetValidSubset(SkIRect* desiredSubset) const {
 
 SkCodec::Result SkWebpCodec::onGetPixels(const SkImageInfo& dstInfo, void* dst, size_t rowBytes,
                                          const Options& options, SkPMColor*, int*,
-                                         int* rowsDecoded) {
-    if (!webp_conversion_possible(dstInfo, this->getInfo())) {
+                                         int* rowsDecodedPtr) {
+    if (!conversion_possible(dstInfo, this->getInfo())) {
         return kInvalidConversion;
+    }
+
+    std::unique_ptr<SkColorSpaceXform> colorXform = nullptr;
+    if (needs_color_xform(dstInfo, this->getInfo())) {
+        colorXform = SkColorSpaceXform::New(this->getInfo().colorSpace(), dstInfo.colorSpace());
+        SkASSERT(colorXform);
     }
 
     WebPDecoderConfig config;
@@ -219,40 +257,78 @@ SkCodec::Result SkWebpCodec::onGetPixels(const SkImageInfo& dstInfo, void* dst, 
         config.options.scaled_height = dstDimensions.height();
     }
 
-    config.output.colorspace = webp_decode_mode(dstInfo.colorType(),
-            dstInfo.alphaType() == kPremul_SkAlphaType);
-    config.output.u.RGBA.rgba = (uint8_t*) dst;
-    config.output.u.RGBA.stride = (int) rowBytes;
-    config.output.u.RGBA.size = dstInfo.getSafeSize(rowBytes);
+    
+    
+    
+    
+    
+    config.output.colorspace = colorXform ? MODE_BGRA :
+            webp_decode_mode(dstInfo.colorType(), dstInfo.alphaType() == kPremul_SkAlphaType);
     config.output.is_external_memory = 1;
+
+    
+    
+    
+    SkAutoTMalloc<uint32_t> pixels;
+    if (kRGBA_F16_SkColorType == dstInfo.colorType()) {
+        pixels.reset(dstDimensions.width() * dstDimensions.height());
+        config.output.u.RGBA.rgba = (uint8_t*) pixels.get();
+        config.output.u.RGBA.stride = (int) dstDimensions.width() * sizeof(uint32_t);
+        config.output.u.RGBA.size = config.output.u.RGBA.stride * dstDimensions.height();
+    } else {
+        config.output.u.RGBA.rgba = (uint8_t*) dst;
+        config.output.u.RGBA.stride = (int) rowBytes;
+        config.output.u.RGBA.size = dstInfo.getSafeSize(rowBytes);
+    }
+
+    WebPIterator frame;
+    SkAutoTCallVProc<WebPIterator, WebPDemuxReleaseIterator> autoFrame(&frame);
+    
+    SkAssertResult(WebPDemuxGetFrame(fDemux, 1, &frame));
 
     SkAutoTCallVProc<WebPIDecoder, WebPIDelete> idec(WebPIDecode(nullptr, 0, &config));
     if (!idec) {
         return kInvalidInput;
     }
 
-    SkAutoTMalloc<uint8_t> storage(BUFFER_SIZE);
-    uint8_t* buffer = storage.get();
-    while (true) {
-        const size_t bytesRead = stream()->read(buffer, BUFFER_SIZE);
-        if (0 == bytesRead) {
-            WebPIDecGetRGB(idec, rowsDecoded, NULL, NULL, NULL);
-            return kIncompleteInput;
-        }
+    int rowsDecoded;
+    SkCodec::Result result;
+    switch (WebPIUpdate(idec, frame.fragment.bytes, frame.fragment.size)) {
+        case VP8_STATUS_OK:
+            rowsDecoded = dstInfo.height();
+            result = kSuccess;
+            break;
+        case VP8_STATUS_SUSPENDED:
+            WebPIDecGetRGB(idec, rowsDecodedPtr, nullptr, nullptr, nullptr);
+            rowsDecoded = *rowsDecodedPtr;
+            result = kIncompleteInput;
+            break;
+        default:
+            return kInvalidInput;
+    }
 
-        switch (WebPIAppend(idec, buffer, bytesRead)) {
-            case VP8_STATUS_OK:
-                return kSuccess;
-            case VP8_STATUS_SUSPENDED:
-                
-                break;
-            default:
-                return kInvalidInput;
+    if (colorXform) {
+        SkColorSpaceXform::ColorFormat dstColorFormat = select_xform_format(dstInfo.colorType());
+        SkAlphaType xformAlphaType = select_xform_alpha(dstInfo.alphaType(),
+                                                        this->getInfo().alphaType());
+
+        uint32_t* src = (uint32_t*) config.output.u.RGBA.rgba;
+        size_t srcRowBytes = config.output.u.RGBA.stride;
+        for (int y = 0; y < rowsDecoded; y++) {
+            colorXform->apply(dst, src, dstInfo.width(), dstColorFormat,
+                              SkColorSpaceXform::kBGRA_8888_ColorFormat, xformAlphaType);
+            dst = SkTAddOffset<void>(dst, rowBytes);
+            src = SkTAddOffset<uint32_t>(src, srcRowBytes);
         }
     }
+
+    return result;
 }
 
-SkWebpCodec::SkWebpCodec(const SkImageInfo& info, SkStream* stream)
-    
-    
-    : INHERITED(info, stream, SkColorSpace::NewNamed(SkColorSpace::kSRGB_Named)) {}
+SkWebpCodec::SkWebpCodec(int width, int height, const SkEncodedInfo& info,
+                         sk_sp<SkColorSpace> colorSpace, SkStream* stream, WebPDemuxer* demux,
+                         sk_sp<SkData> data)
+    : INHERITED(width, height, info, stream, std::move(colorSpace))
+    , fDemux(demux)
+    , fData(std::move(data))
+{}

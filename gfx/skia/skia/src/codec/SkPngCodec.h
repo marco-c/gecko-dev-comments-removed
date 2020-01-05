@@ -6,6 +6,7 @@
 
 
 #include "SkCodec.h"
+#include "SkColorSpaceXform.h"
 #include "SkColorTable.h"
 #include "SkPngChunkReader.h"
 #include "SkEncodedFormat.h"
@@ -13,7 +14,12 @@
 #include "SkRefCnt.h"
 #include "SkSwizzler.h"
 
-#include "png.h"
+
+
+
+
+
+#define SK_GOOGLE3_PNG_HACK
 
 class SkStream;
 
@@ -27,43 +33,109 @@ public:
     virtual ~SkPngCodec();
 
 protected:
+    
+    
+    struct voidp {
+        voidp(void* ptr) : fPtr(ptr) {}
+
+        template <typename T>
+        operator T*() const { return (T*)fPtr; }
+
+        explicit operator bool() const { return fPtr != nullptr; }
+
+        void* fPtr;
+    };
+
+    SkPngCodec(const SkEncodedInfo&, const SkImageInfo&, SkStream*, SkPngChunkReader*,
+            void* png_ptr, void* info_ptr, int bitDepth);
+
     Result onGetPixels(const SkImageInfo&, void*, size_t, const Options&, SkPMColor*, int*, int*)
             override;
     SkEncodedFormat onGetEncodedFormat() const override { return kPNG_SkEncodedFormat; }
     bool onRewind() override;
-    uint32_t onGetFillValue(SkColorType) const override;
+    uint64_t onGetFillValue(const SkImageInfo&) const override;
+
+    SkSampler* getSampler(bool createIfNecessary) override;
+    void applyXformRow(void* dst, const void* src);
+
+    voidp png_ptr() { return fPng_ptr; }
+    voidp info_ptr() { return fInfo_ptr; }
+
+    SkSwizzler* swizzler() { return fSwizzler; }
 
     
-    Result initializeSwizzler(const SkImageInfo& requestedInfo, const Options&,
-                              SkPMColor*, int* ctableCount);
-    SkSampler* getSampler(bool createIfNecessary) override {
-        SkASSERT(fSwizzler);
-        return fSwizzler;
-    }
+    void initializeXformParams();
 
-    SkPngCodec(const SkImageInfo&, SkStream*, SkPngChunkReader*, png_structp, png_infop, int, int,
-               sk_sp<SkColorSpace>);
+    
 
-    png_structp png_ptr() { return fPng_ptr; }
-    SkSwizzler* swizzler() { return fSwizzler; }
-    SkSwizzler::SrcConfig srcConfig() const { return fSrcConfig; }
-    int numberPasses() const { return fNumberPasses; }
+
+
+
+
+    void processData();
+
+#ifdef SK_GOOGLE3_PNG_HACK
+    
+    
+    
+    
+    bool rereadHeaderIfNecessary();
+
+    
+    
+    void rereadInfoCallback();
+#endif
+
+    Result onStartIncrementalDecode(const SkImageInfo& dstInfo, void* pixels, size_t rowBytes,
+            const SkCodec::Options&,
+            SkPMColor* ctable, int* ctableCount) override;
+    Result onIncrementalDecode(int*) override;
+
+    SkAutoTUnref<SkPngChunkReader> fPngChunkReader;
+    voidp                          fPng_ptr;
+    voidp                          fInfo_ptr;
+
+    
+    SkAutoTUnref<SkColorTable>         fColorTable;    
+    SkAutoTDelete<SkSwizzler>          fSwizzler;
+    std::unique_ptr<SkColorSpaceXform> fColorXform;
+    SkAutoTMalloc<uint8_t>             fStorage;
+    uint32_t*                          fColorXformSrcRow;
+    const int                          fBitDepth;
 
 private:
-    SkAutoTUnref<SkPngChunkReader>  fPngChunkReader;
-    png_structp                     fPng_ptr;
-    png_infop                       fInfo_ptr;
 
+    enum XformMode {
+        
+        kSwizzleOnly_XformMode,
+
+        
+        kColorOnly_XformMode,
+
+        
+        kSwizzleColor_XformMode,
+    };
+
+    bool createColorTable(const SkImageInfo& dstInfo, int* ctableCount);
     
-    SkAutoTUnref<SkColorTable>      fColorTable;    
-    SkAutoTDelete<SkSwizzler>       fSwizzler;
-
-    SkSwizzler::SrcConfig           fSrcConfig;
-    const int                       fNumberPasses;
-    int                             fBitDepth;
-
-    bool decodePalette(bool premultiply, int* ctableCount);
+    bool initializeXforms(const SkImageInfo& dstInfo, const Options&, SkPMColor* colorPtr,
+                          int* colorCount);
+    void initializeSwizzler(const SkImageInfo& dstInfo, const Options&);
+    void allocateStorage(const SkImageInfo& dstInfo);
     void destroyReadStruct();
+
+    virtual Result decodeAllRows(void* dst, size_t rowBytes, int* rowsDecoded) = 0;
+    virtual void setRange(int firstRow, int lastRow, void* dst, size_t rowBytes) = 0;
+    virtual Result decode(int* rowsDecoded) = 0;
+
+    XformMode                      fXformMode;
+    SkColorSpaceXform::ColorFormat fXformColorFormat;
+    SkAlphaType                    fXformAlphaType;
+    int                            fXformWidth;
+
+#ifdef SK_GOOGLE3_PNG_HACK
+    bool        fNeedsToRereadHeader;
+#endif
 
     typedef SkCodec INHERITED;
 };

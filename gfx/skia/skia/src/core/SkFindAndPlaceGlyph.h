@@ -405,7 +405,7 @@ private:
     template<typename ProcessOneGlyph>
     class GlyphFindAndPlaceInterface : SkNoncopyable {
     public:
-        virtual ~GlyphFindAndPlaceInterface() { };
+        virtual ~GlyphFindAndPlaceInterface() { }
 
         
         
@@ -419,7 +419,7 @@ private:
             const char** text, SkPoint position, ProcessOneGlyph&& processOneGlyph) {
             SkFAIL("Should never get here.");
             return {0.0f, 0.0f};
-        };
+        }
     };
 
     

@@ -8,58 +8,15 @@
 #ifndef SkLightingShader_DEFINED
 #define SkLightingShader_DEFINED
 
-#include "SkFlattenable.h"
-#include "SkLight.h"
+#include "SkLights.h"
 #include "SkShader.h"
-#include "SkTDArray.h"
 
 class SkBitmap;
 class SkMatrix;
+class SkNormalSource;
 
 class SK_API SkLightingShader {
 public:
-    class Lights  : public SkRefCnt {
-    public:
-        class Builder {
-        public:
-            Builder(const SkLight lights[], int numLights)
-                : fLights(new Lights(lights, numLights)) {}
-
-            Builder() : fLights(new Lights) {}
-
-            
-            
-            void add(const SkLight& light) {
-                if (fLights) {
-                    *fLights->fLights.push() = light;
-                }
-            }
-
-            const Lights* finish() {
-                return fLights.release();
-            }
-
-        private:
-            SkAutoTUnref<Lights> fLights;
-        };
-
-        int numLights() const {
-            return fLights.count();
-        }
-
-        const SkLight& light(int index) const {
-            return fLights[index];
-        }
-
-    private:
-        Lights() {}
-        Lights(const SkLight lights[], int numLights) : fLights(lights, numLights) {}
-
-        SkTDArray<SkLight> fLights;
-
-        typedef SkRefCnt INHERITED;
-    };
-
     
 
 
@@ -73,24 +30,8 @@ public:
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    static sk_sp<SkShader> Make(const SkBitmap& diffuse, const SkBitmap& normal,
-                                const Lights* lights, const SkVector& invNormRotation,
-                                const SkMatrix* diffLocalMatrix, const SkMatrix* normLocalMatrix);
+    static sk_sp<SkShader> Make(sk_sp<SkShader> diffuseShader, sk_sp<SkNormalSource> normalSource,
+                                sk_sp<SkLights> lights);
 
     SK_DECLARE_FLATTENABLE_REGISTRAR_GROUP()
 };

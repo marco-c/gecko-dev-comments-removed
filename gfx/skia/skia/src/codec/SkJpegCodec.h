@@ -10,6 +10,7 @@
 
 #include "SkCodec.h"
 #include "SkColorSpace.h"
+#include "SkColorSpaceXform.h"
 #include "SkImageInfo.h"
 #include "SkSwizzler.h"
 #include "SkStream.h"
@@ -58,6 +59,8 @@ protected:
 
     bool onDimensionsSupported(const SkISize&) override;
 
+    sk_sp<SkData> getICCData() const override { return fICCData; }
+
 private:
 
     
@@ -91,38 +94,53 @@ private:
 
 
 
-    SkJpegCodec(const SkImageInfo& srcInfo, SkStream* stream, JpegDecoderMgr* decoderMgr,
-            sk_sp<SkColorSpace> colorSpace, Origin origin);
+    SkJpegCodec(int width, int height, const SkEncodedInfo& info, SkStream* stream,
+            JpegDecoderMgr* decoderMgr, sk_sp<SkColorSpace> colorSpace, Origin origin,
+            sk_sp<SkData> iccData);
 
     
+
 
 
 
 
     bool setOutputColorSpace(const SkImageInfo& dst);
 
-    
     void initializeSwizzler(const SkImageInfo& dstInfo, const Options& options);
+    void initializeColorXform(const SkImageInfo& dstInfo);
+    void allocateStorage(const SkImageInfo& dstInfo);
+    int readRows(const SkImageInfo& dstInfo, void* dst, size_t rowBytes, int count);
+
+    
+
+
     SkSampler* getSampler(bool createIfNecessary) override;
     Result onStartScanlineDecode(const SkImageInfo& dstInfo, const Options& options,
             SkPMColor ctable[], int* ctableCount) override;
     int onGetScanlines(void* dst, int count, size_t rowBytes) override;
     bool onSkipScanlines(int count) override;
 
-    SkAutoTDelete<JpegDecoderMgr> fDecoderMgr;
-    
-    
-    const int                     fReadyState;
+    SkAutoTDelete<JpegDecoderMgr>      fDecoderMgr;
 
     
-    SkAutoTMalloc<uint8_t>     fStorage;    
-    uint8_t*                   fSrcRow;     
+    
+    const int                          fReadyState;
+
+
+    SkAutoTMalloc<uint8_t>             fStorage;
+    uint8_t*                           fSwizzleSrcRow;
+    uint32_t*                          fColorXformSrcRow;
+
     
     
     
-    SkIRect                    fSwizzlerSubset;
-    SkAutoTDelete<SkSwizzler>  fSwizzler;
-    
+    SkIRect                            fSwizzlerSubset;
+
+    SkAutoTDelete<SkSwizzler>          fSwizzler;
+    std::unique_ptr<SkColorSpaceXform> fColorXform;
+
+    sk_sp<SkData>                      fICCData;
+
     typedef SkCodec INHERITED;
 };
 

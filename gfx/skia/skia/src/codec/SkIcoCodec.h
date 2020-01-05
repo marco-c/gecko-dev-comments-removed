@@ -54,6 +54,11 @@ private:
 
     bool onSkipScanlines(int count) override;
 
+    Result onStartIncrementalDecode(const SkImageInfo& dstInfo, void* pixels, size_t rowBytes,
+            const SkCodec::Options&, SkPMColor*, int*) override;
+
+    Result onIncrementalDecode(int* rowsDecoded) override;
+
     SkSampler* getSampler(bool createIfNecessary) override;
 
     
@@ -71,7 +76,8 @@ private:
 
 
 
-    SkIcoCodec(const SkImageInfo& srcInfo, SkTArray<SkAutoTDelete<SkCodec>, true>* embeddedCodecs);
+    SkIcoCodec(int width, int height, const SkEncodedInfo& info,
+            SkTArray<SkAutoTDelete<SkCodec>, true>* embeddedCodecs);
 
     SkAutoTDelete<SkTArray<SkAutoTDelete<SkCodec>, true>> fEmbeddedCodecs; 
 
@@ -82,6 +88,14 @@ private:
     
     
     SkCodec* fCurrScanlineCodec;
+
+    
+    
+    
+    
+    
+    
+    SkCodec* fCurrIncrementalCodec;
 
     typedef SkCodec INHERITED;
 };

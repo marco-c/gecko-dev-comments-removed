@@ -95,7 +95,8 @@ private:
         SkScalar    fDistance;  
         unsigned    fPtIndex; 
         unsigned    fTValue : 30;
-        unsigned    fType : 2;
+        unsigned    fType : 2;  
+                                
 
         SkScalar getScalarT() const;
     };

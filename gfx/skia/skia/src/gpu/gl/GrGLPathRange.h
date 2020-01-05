@@ -9,7 +9,7 @@
 #define GrGLPathRange_DEFINED
 
 #include "../GrPathRange.h"
-#include "GrStrokeInfo.h"
+#include "GrStyle.h"
 #include "gl/GrGLTypes.h"
 
 class GrGLGpu;
@@ -26,7 +26,7 @@ public:
 
 
 
-    GrGLPathRange(GrGLGpu*, PathGenerator*, const GrStrokeInfo&);
+    GrGLPathRange(GrGLGpu*, PathGenerator*, const GrStyle&);
 
     
 
@@ -37,7 +37,7 @@ public:
                   GrGLuint basePathID,
                   int numPaths,
                   size_t gpuMemorySize,
-                  const GrStrokeInfo&);
+                  const GrStyle&);
 
     GrGLuint basePathID() const { return fBasePathID; }
 
@@ -54,7 +54,7 @@ private:
     void init();
     size_t onGpuMemorySize() const override { return fGpuMemorySize; }
 
-    const GrStrokeInfo fStroke;
+    const GrStyle fStyle;
     GrGLuint fBasePathID;
     mutable size_t fGpuMemorySize;
     bool fShouldStroke;

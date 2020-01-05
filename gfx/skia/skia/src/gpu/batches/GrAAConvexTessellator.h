@@ -12,6 +12,7 @@
 #include "SkPaint.h"
 #include "SkPoint.h"
 #include "SkScalar.h"
+#include "SkStrokeRec.h"
 #include "SkTDArray.h"
 
 class SkCanvas;
@@ -31,11 +32,13 @@ class GrAAConvexTessellator;
 
 class GrAAConvexTessellator {
 public:
-    GrAAConvexTessellator(SkScalar strokeWidth = -1.0f,
+    GrAAConvexTessellator(SkStrokeRec::Style style = SkStrokeRec::kFill_Style,
+                          SkScalar strokeWidth = -1.0f,
                           SkPaint::Join join = SkPaint::Join::kBevel_Join,
                           SkScalar miterLimit = 0.0f)
         : fSide(SkPoint::kOn_Side)
         , fStrokeWidth(strokeWidth)
+        , fStyle(style)
         , fJoin(join)
         , fMiterLimit(miterLimit) {
     }
@@ -137,6 +140,13 @@ private:
         }
 
         
+        void makeOriginalRing() {
+            for (int i = 0; i < fPts.count(); ++i) {
+                fPts[i].fOrigEdgeId = fPts[i].fIndex;
+            }            
+        }
+
+        
         void init(const GrAAConvexTessellator& tess);
         void init(const SkTDArray<SkVector>& norms, const SkTDArray<SkVector>& bisectors);
 
@@ -166,12 +176,24 @@ private:
         SkTDArray<PointData> fPts;
     };
 
+    
+    
+    
+    enum CurveState {
+        
+        kSharp_CurveState,
+        
+        kIndeterminate_CurveState,
+        
+        kCurve_CurveState
+    };
+
     bool movable(int index) const { return fMovable[index]; }
 
     
     
     
-    int addPt(const SkPoint& pt, SkScalar depth, SkScalar coverage, bool movable, bool isCurve);
+    int addPt(const SkPoint& pt, SkScalar depth, SkScalar coverage, bool movable, CurveState curve);
     void popLastPt();
     void popFirstPtShuffle();
 
@@ -191,11 +213,11 @@ private:
                                 int edgeIdx, SkScalar desiredDepth,
                                 SkPoint* result) const;
 
-    void lineTo(SkPoint p, bool isCurve);
+    void lineTo(const SkPoint& p, CurveState curve);
 
-    void lineTo(const SkMatrix& m, SkPoint p, bool isCurve);
+    void lineTo(const SkMatrix& m, SkPoint p, CurveState curve);
 
-    void quadTo(SkPoint pts[3]);
+    void quadTo(const SkPoint pts[3]);
 
     void quadTo(const SkMatrix& m, SkPoint pts[3]);
 
@@ -226,43 +248,43 @@ private:
     void validate() const;
 
     
-    SkTDArray<SkPoint>  fPts;
-    SkTDArray<SkScalar> fCoverages;
+    SkTDArray<SkPoint>    fPts;
+    SkTDArray<SkScalar>   fCoverages;
     
-    SkTDArray<bool>     fMovable;
+    SkTDArray<bool>       fMovable;
+    
+    
+    SkTDArray<CurveState> fCurveState;
 
     
-    SkTDArray<SkVector> fNorms;
+    SkTDArray<SkVector>   fNorms;
     
     
-    SkTDArray<SkVector> fBisectors;
+    SkTDArray<SkVector>   fBisectors;
+
+    SkPoint::Side         fSide;    
 
     
-    
-    SkTDArray<bool> fIsCurve;
+    SkTDArray<int>        fIndices;
 
-    SkPoint::Side       fSide;    
-
-    
-    SkTDArray<int>      fIndices;
-
-    Ring                fInitialRing;
+    Ring                  fInitialRing;
 #if GR_AA_CONVEX_TESSELLATOR_VIZ
     
-    SkTDArray<Ring*>    fRings;
+    SkTDArray<Ring*>      fRings;
 #else
-    Ring                fRings[2];
+    Ring                  fRings[2];
 #endif
-    CandidateVerts      fCandidateVerts;
+    CandidateVerts        fCandidateVerts;
 
     
-    SkScalar            fStrokeWidth;
+    SkScalar              fStrokeWidth;
+    SkStrokeRec::Style    fStyle;
 
-    SkPaint::Join        fJoin;
+    SkPaint::Join         fJoin;
 
-    SkScalar            fMiterLimit;
+    SkScalar              fMiterLimit;
 
-    SkTDArray<SkPoint>  fPointBuffer;
+    SkTDArray<SkPoint>    fPointBuffer;
 };
 
 

@@ -13,7 +13,6 @@
 #include "SkCanvas.h"
 #include "SkColor.h"
 #include "SkDevice.h"
-#include "SkImageFilter.h"
 #include "SkImageInfo.h"
 #include "SkRect.h"
 #include "SkScalar.h"
@@ -22,6 +21,7 @@
 #include "SkTypes.h"
 
 class SkDraw;
+class SkImageFilterCache;
 class SkMatrix;
 class SkPaint;
 class SkPath;
@@ -57,8 +57,6 @@ public:
     SkBitmapDevice(const SkBitmap& bitmap, const SkSurfaceProps& surfaceProps);
 
     static SkBitmapDevice* Create(const SkImageInfo&, const SkSurfaceProps&);
-
-    SkImageInfo imageInfo() const override;
 
 protected:
     bool onShouldDisableLCD(const SkPaint&) const override;
@@ -122,13 +120,24 @@ protected:
     virtual void drawDevice(const SkDraw&, SkBaseDevice*, int x, int y, const SkPaint&) override;
 
     
+    
+    void drawSpecial(const SkDraw&, SkSpecialImage*, int x, int y, const SkPaint&) override;
+    sk_sp<SkSpecialImage> makeSpecial(const SkBitmap&) override;
+    sk_sp<SkSpecialImage> makeSpecial(const SkImage*) override;
+    sk_sp<SkSpecialImage> snapSpecial() override;
+
+    
 
     
 
 
 
 
+#ifdef SK_SUPPORT_LEGACY_ACCESSBITMAP
     const SkBitmap& onAccessBitmap() override;
+#else
+    const SkBitmap& onAccessBitmap();
+#endif
 
     SkPixelRef* getPixelRef() const { return fBitmap.pixelRef(); }
     
@@ -141,8 +150,6 @@ protected:
     bool onWritePixels(const SkImageInfo&, const void*, size_t, int, int) override;
     bool onPeekPixels(SkPixmap*) override;
     bool onAccessPixels(SkPixmap*) override;
-    void onAttachToCanvas(SkCanvas*) override;
-    void onDetachFromCanvas() override;
 
 private:
     friend class SkCanvas;
@@ -162,7 +169,7 @@ private:
 
     sk_sp<SkSurface> makeSurface(const SkImageInfo&, const SkSurfaceProps&) override;
 
-    SkImageFilter::Cache* getImageFilterCache() override;
+    SkImageFilterCache* getImageFilterCache() override;
 
     SkBitmap    fBitmap;
 

@@ -13,6 +13,7 @@
 #include "SkCanvas.h"
 #include "SkMask.h"
 #include "SkPaint.h"
+#include "SkStrokeRec.h"
 
 class SkBitmap;
 class SkClipStack;
@@ -29,7 +30,6 @@ class SkRRect;
 class SkDraw {
 public:
     SkDraw();
-    SkDraw(const SkDraw& src);
 
     void    drawPaint(const SkPaint&) const;
     void    drawPoints(SkCanvas::PointMode, size_t count, const SkPoint[],
@@ -93,7 +93,7 @@ public:
     static bool DrawToMask(const SkPath& devPath, const SkIRect* clipBounds,
                            const SkMaskFilter*, const SkMatrix* filterMatrix,
                            SkMask* mask, SkMask::CreateMode mode,
-                           SkPaint::Style style);
+                           SkStrokeRec::InitStyle style);
 
     enum RectType {
         kHair_RectType,
@@ -128,6 +128,9 @@ private:
                      bool pathIsMutable, bool drawCoverage,
                      SkBlitter* customBlitter = NULL) const;
 
+    void drawLine(const SkPoint[2], const SkPaint&) const;
+    void drawDevPath(const SkPath& devPath, const SkPaint& paint, bool drawCoverage,
+                     SkBlitter* customBlitter, bool doFill) const;
     
 
 
@@ -140,12 +143,11 @@ private:
     computeConservativeLocalClipBounds(SkRect* bounds) const;
 
     
-    SkPaint::FakeGamma SK_WARN_UNUSED_RESULT fakeGamma() const;
+    uint32_t SK_WARN_UNUSED_RESULT scalerContextFlags() const;
 
 public:
     SkPixmap        fDst;
     const SkMatrix* fMatrix;        
-    const SkRegion* fClip;          
     const SkRasterClip* fRC;        
 
     const SkClipStack* fClipStack;  

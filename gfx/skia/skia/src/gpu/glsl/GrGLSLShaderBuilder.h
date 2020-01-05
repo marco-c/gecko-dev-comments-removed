@@ -9,13 +9,13 @@
 #define GrGLSLShaderBuilder_DEFINED
 
 #include "GrAllocator.h"
+#include "glsl/GrGLSLUniformHandler.h"
 #include "glsl/GrGLSLShaderVar.h"
 #include "SkTDArray.h"
 
 #include <stdarg.h>
 
-class GrGLSLProgramBuilder;
-class GrGLSLTextureSampler;
+class GrGLSLColorSpaceXformHelper;
 
 
 
@@ -25,19 +25,22 @@ public:
     GrGLSLShaderBuilder(GrGLSLProgramBuilder* program);
     virtual ~GrGLSLShaderBuilder() {}
 
+    typedef GrGLSLUniformHandler::SamplerHandle SamplerHandle;
+
     
 
 
 
     void appendTextureLookup(SkString* out,
-                             const GrGLSLTextureSampler&,
+                             SamplerHandle,
                              const char* coordName,
                              GrSLType coordType = kVec2f_GrSLType) const;
 
     
-    void appendTextureLookup(const GrGLSLTextureSampler&,
+    void appendTextureLookup(SamplerHandle,
                              const char* coordName,
-                             GrSLType coordType = kVec2f_GrSLType);
+                             GrSLType coordType = kVec2f_GrSLType,
+                             GrGLSLColorSpaceXformHelper* colorXformHelper = nullptr);
 
 
     
@@ -45,9 +48,28 @@ public:
 
 
     void appendTextureLookupAndModulate(const char* modulation,
-                                        const GrGLSLTextureSampler&,
+                                        SamplerHandle,
                                         const char* coordName,
-                                        GrSLType coordType = kVec2f_GrSLType);
+                                        GrSLType coordType = kVec2f_GrSLType,
+                                        GrGLSLColorSpaceXformHelper* colorXformHelper = nullptr);
+
+    
+
+
+
+    void appendColorGamutXform(SkString* out, const char* srcColor,
+                               GrGLSLColorSpaceXformHelper* colorXformHelper);
+
+    
+    void appendColorGamutXform(const char* srcColor, GrGLSLColorSpaceXformHelper* colorXformHelper);
+
+    
+
+
+    void appendTexelFetch(SkString* out, SamplerHandle, const char* coordExpr) const;
+
+    
+    void appendTexelFetch(SamplerHandle, const char* coordExpr);
 
     
 
@@ -92,6 +114,11 @@ public:
 
 
     void declAppend(const GrGLSLShaderVar& var);
+
+    
+
+
+    void appendPrecisionModifier(GrSLPrecision);
 
     
     void emitFunction(GrSLType returnType,
@@ -140,6 +167,7 @@ protected:
         kBlendEquationAdvanced_GLSLPrivateFeature,
         kBlendFuncExtended_GLSLPrivateFeature,
         kExternalTexture_GLSLPrivateFeature,
+        kTexelBuffer_GLSLPrivateFeature,
         kFramebufferFetch_GLSLPrivateFeature,
         kNoPerspectiveInterpolation_GLSLPrivateFeature,
         kSampleVariables_GLSLPrivateFeature,
@@ -169,6 +197,12 @@ protected:
     void addLayoutQualifier(const char* param, InterfaceQualifier);
 
     void compileAndAppendLayoutQualifiers();
+
+    
+
+
+
+    void appendTextureSwizzle(SkString* out, GrPixelConfig) const;
 
     void nextStage() {
         fShaderStrings.push_back();

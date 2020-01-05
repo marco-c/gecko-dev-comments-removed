@@ -26,17 +26,23 @@ public:
     
     
     GrGLTextureRenderTarget(GrGLGpu* gpu,
+                            SkBudgeted budgeted,
                             const GrSurfaceDesc& desc,
                             const GrGLTexture::IDDesc& texIDDesc,
                             const GrGLRenderTarget::IDDesc& rtIDDesc)
-        : GrSurface(gpu, texIDDesc.fLifeCycle, desc)
-        , GrGLTexture(gpu, desc, texIDDesc, GrGLTexture::kDerived)
-        , GrGLRenderTarget(gpu, desc, rtIDDesc, GrGLRenderTarget::kDerived) {
-        this->registerWithCache();
+        : GrSurface(gpu, desc)
+        , GrGLTexture(gpu, desc, texIDDesc)
+        , GrGLRenderTarget(gpu, desc, rtIDDesc) {
+        this->registerWithCache(budgeted);
     }
+
+    bool canAttemptStencilAttachment() const override;
 
     void dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump) const override;
 
+    static GrGLTextureRenderTarget* CreateWrapped(GrGLGpu* gpu, const GrSurfaceDesc& desc,
+                                                  const GrGLTexture::IDDesc& texIDDesc,
+                                                  const GrGLRenderTarget::IDDesc& rtIDDesc);
 protected:
     void onAbandon() override {
         GrGLRenderTarget::onAbandon();
@@ -49,6 +55,17 @@ protected:
     }
 
 private:
+    
+    GrGLTextureRenderTarget(GrGLGpu* gpu,
+                            const GrSurfaceDesc& desc,
+                            const GrGLTexture::IDDesc& texIDDesc,
+                            const GrGLRenderTarget::IDDesc& rtIDDesc)
+        : GrSurface(gpu, desc)
+        , GrGLTexture(gpu, desc, texIDDesc)
+        , GrGLRenderTarget(gpu, desc, rtIDDesc) {
+        this->registerWithCacheWrapped();
+    }
+
     
     size_t onGpuMemorySize() const override {
         return GrGLRenderTarget::onGpuMemorySize();

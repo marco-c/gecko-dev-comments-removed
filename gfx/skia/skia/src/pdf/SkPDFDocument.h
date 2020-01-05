@@ -14,17 +14,17 @@
 
 class SkPDFDevice;
 
-sk_sp<SkDocument> SkPDFMakeDocument(
-        SkWStream* stream,
-        void (*doneProc)(SkWStream*, bool),
-        SkScalar rasterDpi,
-        SkPixelSerializer* jpegEncoder);
+sk_sp<SkDocument> SkPDFMakeDocument(SkWStream* stream,
+                                    void (*doneProc)(SkWStream*, bool),
+                                    SkScalar rasterDpi,
+                                    const SkDocument::PDFMetadata&,
+                                    sk_sp<SkPixelSerializer>,
+                                    bool pdfa);
 
 
 
 struct SkPDFObjectSerializer : SkNoncopyable {
     SkPDFObjNumMap fObjNumMap;
-    SkPDFSubstituteMap fSubstituteMap;
     SkTDArray<int32_t> fOffsets;
     sk_sp<SkPDFObject> fInfoDict;
     size_t fBaseOffset;
@@ -33,7 +33,7 @@ struct SkPDFObjectSerializer : SkNoncopyable {
     SkPDFObjectSerializer();
     ~SkPDFObjectSerializer();
     void addObjectRecursively(const sk_sp<SkPDFObject>&);
-    void serializeHeader(SkWStream*, const SkPDFMetadata&);
+    void serializeHeader(SkWStream*, const SkDocument::PDFMetadata&);
     void serializeObjects(SkWStream*);
     void serializeFooter(SkWStream*, const sk_sp<SkPDFObject>, sk_sp<SkPDFObject>);
     int32_t offset(SkWStream*);
@@ -47,19 +47,16 @@ public:
     SkPDFDocument(SkWStream*,
                   void (*)(SkWStream*, bool),
                   SkScalar,
-                  SkPixelSerializer*);
+                  const SkDocument::PDFMetadata&,
+                  sk_sp<SkPixelSerializer>,
+                  bool);
     virtual ~SkPDFDocument();
     SkCanvas* onBeginPage(SkScalar, SkScalar, const SkRect&) override;
     void onEndPage() override;
-    bool onClose(SkWStream*) override;
+    void onClose(SkWStream*) override;
     void onAbort() override;
-    void setMetadata(const SkDocument::Attribute[],
-                     int,
-                     const SkTime::DateTime*,
-                     const SkTime::DateTime*) override;
+
     
-
-
 
 
 
@@ -70,21 +67,23 @@ public:
 
     void serialize(const sk_sp<SkPDFObject>&);
     SkPDFCanon* canon() { return &fCanon; }
+    void registerFont(SkPDFFont* f) { fFonts.add(f); }
 
 private:
     SkPDFObjectSerializer fObjectSerializer;
     SkPDFCanon fCanon;
-    SkPDFGlyphSetMap fGlyphUsage;
     SkTArray<sk_sp<SkPDFDict>> fPages;
+    SkTHashSet<SkPDFFont*> fFonts;
     sk_sp<SkPDFDict> fDests;
     sk_sp<SkPDFDevice> fPageDevice;
     sk_sp<SkCanvas> fCanvas;
-    #ifdef SK_PDF_GENERATE_PDFA
     sk_sp<SkPDFObject> fID;
     sk_sp<SkPDFObject> fXMP;
-    #endif
     SkScalar fRasterDpi;
-    SkPDFMetadata fMetadata;
+    SkDocument::PDFMetadata fMetadata;
+    bool fPDFA;
+
+    void reset();
 };
 
 #endif  

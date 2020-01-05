@@ -16,23 +16,23 @@
 
 
 
-static inline SkTypeface* ref_or_default(SkTypeface* face) {
-    return face ? SkRef(face) : SkTypeface::RefDefault();
+static inline sk_sp<SkTypeface> ref_or_default(SkTypeface* face) {
+    return face ? sk_ref_sp(face) : SkTypeface::MakeDefault();
 }
 
 
 
 
 
-class SkAutoResolveDefaultTypeface : public SkAutoTUnref<SkTypeface> {
+class SkAutoResolveDefaultTypeface : public sk_sp<SkTypeface> {
 public:
-    SkAutoResolveDefaultTypeface() : INHERITED(SkTypeface::RefDefault()) {}
+    SkAutoResolveDefaultTypeface() : INHERITED(SkTypeface::MakeDefault()) {}
 
     SkAutoResolveDefaultTypeface(SkTypeface* face)
         : INHERITED(ref_or_default(face)) {}
 
 private:
-    typedef SkAutoTUnref<SkTypeface> INHERITED;
+    typedef sk_sp<SkTypeface> INHERITED;
 };
 
 #endif

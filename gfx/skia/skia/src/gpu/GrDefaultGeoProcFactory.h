@@ -24,7 +24,7 @@ namespace GrDefaultGeoProcFactory {
 
     struct PositionCoverageAttr {
         SkPoint fPosition;
-        GrColor fCoverage;
+        float   fCoverage;
     };
 
     struct PositionColorAttr {
@@ -35,7 +35,7 @@ namespace GrDefaultGeoProcFactory {
     struct PositionColorCoverageAttr {
         SkPoint fPosition;
         SkColor fColor;
-        GrColor fCoverage;
+        float   fCoverage;
     };
 
     struct PositionLocalCoordAttr {
@@ -46,7 +46,7 @@ namespace GrDefaultGeoProcFactory {
     struct PositionLocalCoordCoverageAttr {
         SkPoint fPosition;
         SkPoint fLocalCoord;
-        GrColor fCoverage;
+        float   fCoverage;
     };
 
     struct PositionColorLocalCoordAttr {
@@ -59,7 +59,7 @@ namespace GrDefaultGeoProcFactory {
         SkPoint fPosition;
         GrColor fColor;
         SkPoint fLocalCoord;
-        GrColor fCoverage;
+        float   fCoverage;
     };
 
     struct Color {
@@ -115,20 +115,20 @@ namespace GrDefaultGeoProcFactory {
         const SkMatrix* fMatrix;
     };
 
-    const GrGeometryProcessor* Create(const Color&,
-                                      const Coverage&,
-                                      const LocalCoords&,
-                                      const SkMatrix& viewMatrix);
+    sk_sp<GrGeometryProcessor> Make(const Color&,
+                                    const Coverage&,
+                                    const LocalCoords&,
+                                    const SkMatrix& viewMatrix);
 
     
 
 
 
 
-    const GrGeometryProcessor* CreateForDeviceSpace(const Color&,
-                                                    const Coverage&,
-                                                    const LocalCoords&,
-                                                    const SkMatrix& viewMatrix);
+    sk_sp<GrGeometryProcessor> MakeForDeviceSpace(const Color&,
+                                                  const Coverage&,
+                                                  const LocalCoords&,
+                                                  const SkMatrix& viewMatrix);
 
     inline size_t DefaultVertexStride() { return sizeof(PositionAttr); }
 };

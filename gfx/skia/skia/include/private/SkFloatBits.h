@@ -6,11 +6,11 @@
 
 
 
-
 #ifndef SkFloatBits_DEFINED
 #define SkFloatBits_DEFINED
 
 #include "SkTypes.h"
+#include <math.h>
 
 
 
@@ -35,27 +35,6 @@ static inline int32_t Sk2sComplimentToSignBit(int32_t x) {
     x |= SkLeftShift(sign, 31);
     return x;
 }
-
-
-
-
-int32_t SkFloatBits_toIntCast(int32_t floatBits);
-
-
-
-
-SK_API int32_t SkFloatBits_toIntFloor(int32_t floatBits);
-
-
-
-
-SK_API int32_t SkFloatBits_toIntRound(int32_t floatBits);
-
-
-
-
-SK_API int32_t SkFloatBits_toIntCeil(int32_t floatBits);
-
 
 union SkFloatIntUnion {
     float   fFloat;
@@ -92,36 +71,29 @@ static inline float Sk2sComplimentAsFloat(int32_t x) {
     return SkBits2Float(Sk2sComplimentToSignBit(x));
 }
 
-
-
-float SkIntToFloatCast(int x);
-
-
-
-
-static inline int32_t SkFloatToIntCast(float x) {
-    return SkFloatBits_toIntCast(SkFloat2Bits(x));
+static inline int32_t pin_double_to_int(double x) {
+    return (int32_t)SkTPin<double>(x, SK_MinS32, SK_MaxS32);
 }
 
 
 
 
 static inline int32_t SkFloatToIntFloor(float x) {
-    return SkFloatBits_toIntFloor(SkFloat2Bits(x));
+    return pin_double_to_int(floor(x));
 }
 
 
 
 
 static inline int32_t SkFloatToIntRound(float x) {
-    return SkFloatBits_toIntRound(SkFloat2Bits(x));
+    return pin_double_to_int(floor((double)x + 0.5));
 }
 
 
 
 
 static inline int32_t SkFloatToIntCeil(float x) {
-    return SkFloatBits_toIntCeil(SkFloat2Bits(x));
+    return pin_double_to_int(ceil(x));
 }
 
 

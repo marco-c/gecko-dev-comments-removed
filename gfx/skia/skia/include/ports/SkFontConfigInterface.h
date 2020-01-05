@@ -13,7 +13,7 @@
 #include "SkRefCnt.h"
 #include "SkTypeface.h"
 
-struct SkBaseMutex;
+class SkFontMgr;
 
 
 
@@ -23,9 +23,9 @@ struct SkBaseMutex;
 
 class SK_API SkFontConfigInterface : public SkRefCnt {
 public:
-    
 
     
+
 
 
 
@@ -81,10 +81,10 @@ public:
 
 
     virtual bool matchFamilyName(const char familyName[],
-                                 SkTypeface::Style requested,
+                                 SkFontStyle requested,
                                  FontIdentity* outFontIdentifier,
                                  SkString* outFamilyName,
-                                 SkTypeface::Style* outStyle) = 0;
+                                 SkFontStyle* outStyle) = 0;
 
     
 
@@ -99,22 +99,19 @@ public:
 
 
 
-
-
-    virtual SkTypeface* createTypeface(const FontIdentity& identity) {
-        return SkTypeface::CreateFromStream(this->openStream(identity), identity.fTTCIndex);
+    virtual sk_sp<SkTypeface> makeTypeface(const FontIdentity& identity) {
+        return SkTypeface::MakeFromStream(this->openStream(identity), identity.fTTCIndex);
     }
 
     
 
 
 
-
-    static SkFontConfigInterface* GetSingletonDirectInterface(SkBaseMutex* mutex = NULL);
+    static SkFontConfigInterface* GetSingletonDirectInterface();
 
     
 
-    virtual SkDataTable* getFamilyNames() { return SkDataTable::NewEmpty(); }
+    virtual sk_sp<SkDataTable> getFamilyNames() { return SkDataTable::MakeEmpty(); }
     typedef SkRefCnt INHERITED;
 };
 

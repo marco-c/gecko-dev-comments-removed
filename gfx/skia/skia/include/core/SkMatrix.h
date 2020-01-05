@@ -565,6 +565,12 @@ public:
 
 
 
+    void mapRectScaleTranslate(SkRect* dst, const SkRect& src) const;
+    
+    
+
+
+
     SkScalar mapRadius(SkScalar radius) const;
 
     typedef void (*MapXYProc)(const SkMatrix& mat, SkScalar x, SkScalar y,
@@ -704,6 +710,37 @@ public:
         this->setTypeMask(kUnknown_Mask);
     }
 
+    
+
+
+    void setScaleTranslate(SkScalar sx, SkScalar sy, SkScalar tx, SkScalar ty) {
+        fMat[kMScaleX] = sx;
+        fMat[kMSkewX]  = 0;
+        fMat[kMTransX] = tx;
+        
+        fMat[kMSkewY]  = 0;
+        fMat[kMScaleY] = sy;
+        fMat[kMTransY] = ty;
+        
+        fMat[kMPersp0] = 0;
+        fMat[kMPersp1] = 0;
+        fMat[kMPersp2] = 1;
+        
+        unsigned mask = 0;
+        if (sx != 1 || sy != 1) {
+            mask |= kScale_Mask;
+        }
+        if (tx || ty) {
+            mask |= kTranslate_Mask;
+        }
+        this->setTypeMask(mask | kRectStaysRect_Mask);
+    }
+    
+    
+
+
+    bool isFinite() const { return SkScalarsAreFinite(fMat, 9); }
+
 private:
     enum {
         
@@ -736,34 +773,7 @@ private:
     SkScalar         fMat[9];
     mutable uint32_t fTypeMask;
 
-    
-
-    bool isFinite() const { return SkScalarsAreFinite(fMat, 9); }
-
     static void ComputeInv(SkScalar dst[9], const SkScalar src[9], double invDet, bool isPersp);
-
-    void setScaleTranslate(SkScalar sx, SkScalar sy, SkScalar tx, SkScalar ty) {
-        fMat[kMScaleX] = sx;
-        fMat[kMSkewX]  = 0;
-        fMat[kMTransX] = tx;
-
-        fMat[kMSkewY]  = 0;
-        fMat[kMScaleY] = sy;
-        fMat[kMTransY] = ty;
-
-        fMat[kMPersp0] = 0;
-        fMat[kMPersp1] = 0;
-        fMat[kMPersp2] = 1;
-
-        unsigned mask = 0;
-        if (sx != 1 || sy != 1) {
-            mask |= kScale_Mask;
-        }
-        if (tx || ty) {
-            mask |= kTranslate_Mask;
-        }
-        this->setTypeMask(mask | kRectStaysRect_Mask);
-    }
 
     uint8_t computeTypeMask() const;
     uint8_t computePerspectiveTypeMask() const;
@@ -833,6 +843,7 @@ private:
     static const MapPtsProc gMapPtsProcs[];
 
     friend class SkPerspIter;
+    friend class SkMatrixPriv;
 };
 SK_END_REQUIRE_DENSE
 

@@ -250,7 +250,10 @@ bool SkBitmapScaler::Resize(SkBitmap* resultPtr, const SkPixmap& source, ResizeM
     }
 
     SkBitmap result;
-    result.setInfo(SkImageInfo::MakeN32(destWidth, destHeight, source.alphaType()));
+    
+    
+    result.setInfo(SkImageInfo::MakeN32(destWidth, destHeight, source.alphaType(),
+                                        sk_ref_sp(source.info().colorSpace())));
     result.allocPixels(allocator, nullptr);
 
     SkPixmap resultPM;

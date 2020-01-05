@@ -11,6 +11,7 @@
 #include "GrSurface.h"
 #include "SkRect.h"
 
+class GrCaps;
 class GrDrawTarget;
 class GrStencilAttachment;
 class GrRenderTargetPriv;
@@ -29,66 +30,28 @@ public:
     const GrRenderTarget* asRenderTarget() const  override { return this; }
 
     
-    
-
-
-
-
-
-
-
-
-
-    enum SampleConfig {
-        kUnified_SampleConfig = 0,
-        kStencil_SampleConfig = 1
-    };
+    bool isStencilBufferMultisampled() const { return fDesc.fSampleCnt > 0; }
 
     
 
 
 
-    bool isUnifiedMultisampled() const {
-        if (fSampleConfig != kUnified_SampleConfig) {
-            return false;
-        }
-        return 0 != fDesc.fSampleCnt;
-    }
+    bool isMixedSampled() const { return fFlags & Flags::kMixedSampled; }
 
     
 
 
-
-    bool isStencilBufferMultisampled() const {
-        return 0 != fDesc.fSampleCnt;
-    }
+    bool isUnifiedMultisampled() const { return fDesc.fSampleCnt > 0 && !this->isMixedSampled(); }
 
     
 
 
-
-    int numColorSamples() const {
-        if (fSampleConfig == kUnified_SampleConfig) {
-            return fDesc.fSampleCnt;
-        }
-        return 0;
-    }
+    int numStencilSamples() const { return fDesc.fSampleCnt; }
 
     
 
 
-    int numStencilSamples() const {
-        return fDesc.fSampleCnt;
-    }
-
-    
-
-
-    bool hasMixedSamples() const {
-        SkASSERT(kStencil_SampleConfig != fSampleConfig ||
-                 this->isStencilBufferMultisampled());
-        return kStencil_SampleConfig == fSampleConfig;
-    }
+    int numColorSamples() const { return this->isMixedSampled() ? 0 : fDesc.fSampleCnt; }
 
     
 
@@ -156,15 +119,16 @@ public:
     GrDrawTarget* getLastDrawTarget() { return fLastDrawTarget; }
 
 protected:
-    GrRenderTarget(GrGpu* gpu, LifeCycle lifeCycle, const GrSurfaceDesc& desc,
-                   SampleConfig sampleConfig, GrStencilAttachment* stencil = nullptr)
-        : INHERITED(gpu, lifeCycle, desc)
-        , fStencilAttachment(stencil)
-        , fSampleConfig(sampleConfig)
-        , fLastDrawTarget(nullptr) {
-        fResolveRect.setLargestInverted();
-    }
+    enum class Flags {
+        kNone                = 0,
+        kMixedSampled        = 1 << 0,
+        kWindowRectsSupport  = 1 << 1
+    };
 
+    GR_DECL_BITFIELD_CLASS_OPS_FRIENDS(Flags);
+
+    GrRenderTarget(GrGpu*, const GrSurfaceDesc&, Flags = Flags::kNone,
+                   GrStencilAttachment* = nullptr);
     ~GrRenderTarget() override;
 
     
@@ -181,7 +145,8 @@ private:
     friend class GrRenderTargetPriv;
 
     GrStencilAttachment*  fStencilAttachment;
-    SampleConfig          fSampleConfig;
+    uint8_t               fMultisampleSpecsID;
+    Flags                 fFlags;
 
     SkIRect               fResolveRect;
 
@@ -196,5 +161,6 @@ private:
     typedef GrSurface INHERITED;
 };
 
+GR_MAKE_BITFIELD_CLASS_OPS(GrRenderTarget::Flags);
 
 #endif

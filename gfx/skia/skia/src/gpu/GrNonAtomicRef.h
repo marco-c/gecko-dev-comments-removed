@@ -28,6 +28,8 @@ public:
     }
 #endif
 
+    bool unique() const { return 1 == fRefCnt; }
+
     void ref() const {
         
         SkASSERT(fRefCnt > 0);

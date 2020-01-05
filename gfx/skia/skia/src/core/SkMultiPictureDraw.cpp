@@ -5,21 +5,11 @@
 
 
 
-
-
-
 #include "SkCanvas.h"
 #include "SkCanvasPriv.h"
 #include "SkMultiPictureDraw.h"
 #include "SkPicture.h"
 #include "SkTaskGroup.h"
-
-#if SK_SUPPORT_GPU
-#include "GrContext.h"
-#include "GrLayerHoister.h"
-#include "GrRecordReplaceDraw.h"
-#include "GrRenderTarget.h"
-#endif
 
 void SkMultiPictureDraw::DrawData::draw() {
     fCanvas->drawPicture(fPicture, &fMatrix, fPaint);
@@ -107,100 +97,14 @@ void SkMultiPictureDraw::draw(bool flush) {
         return;
     }
 
-#if !defined(SK_IGNORE_GPU_LAYER_HOISTING) && SK_SUPPORT_GPU
-    GrContext* context = fGPUDrawData[0].fCanvas->getGrContext();
-    SkASSERT(context);
-
-    
-    
-    
-    SkTDArray<GrHoistedLayer> atlasedNeedRendering, atlasedRecycled;
-
-    GrLayerHoister::Begin(context);
-
-    for (int i = 0; i < count; ++i) {
-        const DrawData& data = fGPUDrawData[i];
-        
-        SkASSERT(data.fCanvas->getGrContext() == context);
-
-        if (!data.fPaint) {
-            SkRect clipBounds;
-            if (!data.fCanvas->getClipBounds(&clipBounds)) {
-                continue;
-            }
-
-            SkMatrix initialMatrix = data.fCanvas->getTotalMatrix();
-            initialMatrix.preConcat(data.fMatrix);
-
-            GrRenderTarget* rt = data.fCanvas->internal_private_accessTopLayerRenderTarget();
-            SkASSERT(rt);
-
-            
-            
-            
-            
-            GrLayerHoister::FindLayersToAtlas(context, data.fPicture, initialMatrix,
-                                              clipBounds,
-                                              &atlasedNeedRendering, &atlasedRecycled,
-                                              rt->numColorSamples());
-        }
-    }
-
-    GrLayerHoister::DrawLayersToAtlas(context, atlasedNeedRendering);
-
-    SkTDArray<GrHoistedLayer> needRendering, recycled;
-#endif
-
     for (int i = 0; i < count; ++i) {
         const DrawData& data = fGPUDrawData[i];
         SkCanvas* canvas = data.fCanvas;
         const SkPicture* picture = data.fPicture;
 
-#if !defined(SK_IGNORE_GPU_LAYER_HOISTING) && SK_SUPPORT_GPU
-        if (!data.fPaint) {
-
-            SkRect clipBounds;
-            if (!canvas->getClipBounds(&clipBounds)) {
-                continue;
-            }
-
-            SkAutoCanvasMatrixPaint acmp(canvas, &data.fMatrix, data.fPaint, picture->cullRect());
-
-            const SkMatrix initialMatrix = canvas->getTotalMatrix();
-
-            GrRenderTarget* rt = data.fCanvas->internal_private_accessTopLayerRenderTarget();
-            SkASSERT(rt);
-
-            
-            
-            GrLayerHoister::FindLayersToHoist(context, picture, initialMatrix,
-                                              clipBounds, &needRendering, &recycled,
-                                              rt->numColorSamples());
-
-            GrLayerHoister::DrawLayers(context, needRendering);
-
-            
-            GrRecordReplaceDraw(picture, canvas, context->getLayerCache(),
-                                initialMatrix, nullptr);
-
-            GrLayerHoister::UnlockLayers(context, needRendering);
-            GrLayerHoister::UnlockLayers(context, recycled);
-
-            needRendering.rewind();
-            recycled.rewind();
-        } else
-#endif
-        {
-            canvas->drawPicture(picture, &data.fMatrix, data.fPaint);
-        }
+        canvas->drawPicture(picture, &data.fMatrix, data.fPaint);
         if (flush) {
             canvas->flush();
         }
     }
-
-#if !defined(SK_IGNORE_GPU_LAYER_HOISTING) && SK_SUPPORT_GPU
-    GrLayerHoister::UnlockLayers(context, atlasedNeedRendering);
-    GrLayerHoister::UnlockLayers(context, atlasedRecycled);
-    GrLayerHoister::End(context);
-#endif
 }

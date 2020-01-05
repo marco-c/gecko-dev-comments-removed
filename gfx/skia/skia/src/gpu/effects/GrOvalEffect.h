@@ -10,6 +10,7 @@
 
 #include "GrTypes.h"
 #include "GrTypesPriv.h"
+#include "SkRefCnt.h"
 
 class GrFragmentProcessor;
 struct SkRect;
@@ -18,7 +19,7 @@ namespace GrOvalEffect {
     
 
 
-    GrFragmentProcessor* Create(GrPrimitiveEdgeType, const SkRect&);
+    sk_sp<GrFragmentProcessor> Make(GrPrimitiveEdgeType, const SkRect&);
 };
 
 #endif

@@ -1,0 +1,48 @@
+
+
+
+
+
+
+#ifndef SkMultiPictureDocument_DEFINED
+#define SkMultiPictureDocument_DEFINED
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#include "SkDocument.h"
+
+
+
+SK_API sk_sp<SkDocument> SkMakeMultiPictureDocument(SkWStream* dst);
+
+#endif  

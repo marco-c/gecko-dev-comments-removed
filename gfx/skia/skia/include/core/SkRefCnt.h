@@ -8,11 +8,12 @@
 #ifndef SkRefCnt_DEFINED
 #define SkRefCnt_DEFINED
 
-#include "../private/SkAtomics.h"
 #include "../private/SkTLogic.h"
 #include "SkTypes.h"
+#include <atomic>
 #include <functional>
 #include <memory>
+#include <type_traits>
 #include <utility>
 
 #define SK_SUPPORT_TRANSITION_TO_SP_INTERFACES
@@ -37,19 +38,28 @@ public:
 
     virtual ~SkRefCntBase() {
 #ifdef SK_DEBUG
-        SkASSERTF(fRefCnt == 1, "fRefCnt was %d", fRefCnt);
-        fRefCnt = 0;    
+        SkASSERTF(getRefCnt() == 1, "fRefCnt was %d", getRefCnt());
+        
+        fRefCnt.store(0, std::memory_order_relaxed);
 #endif
     }
 
     
-    int32_t getRefCnt() const { return fRefCnt; }
+    int32_t getRefCnt() const {
+        return fRefCnt.load(std::memory_order_relaxed);
+    }
+
+#ifdef SK_DEBUG
+    void validate() const {
+        SkASSERT(getRefCnt() > 0);
+    }
+#endif
 
     
 
 
     bool unique() const {
-        if (1 == sk_atomic_load(&fRefCnt, sk_memory_order_acquire)) {
+        if (1 == fRefCnt.load(std::memory_order_acquire)) {
             
             
             
@@ -66,11 +76,12 @@ public:
         
         
         
-        SkASSERT(fRefCnt >= 0);
+        SkASSERT(getRefCnt() >= 0);
 #else
-        SkASSERT(fRefCnt > 0);
+        SkASSERT(getRefCnt() > 0);
 #endif
-        (void)sk_atomic_fetch_add(&fRefCnt, +1, sk_memory_order_relaxed);  
+        
+        (void)fRefCnt.fetch_add(+1, std::memory_order_relaxed);
     }
 
     
@@ -78,20 +89,14 @@ public:
 
 
     void unref() const {
-        SkASSERT(fRefCnt > 0);
+        SkASSERT(getRefCnt() > 0);
         
-        if (1 == sk_atomic_fetch_add(&fRefCnt, -1, sk_memory_order_acq_rel)) {
+        if (1 == fRefCnt.fetch_add(-1, std::memory_order_acq_rel)) {
             
             
             this->internal_dispose();
         }
     }
-
-#ifdef SK_DEBUG
-    void validate() const {
-        SkASSERT(fRefCnt > 0);
-    }
-#endif
 
 protected:
     
@@ -99,12 +104,9 @@ protected:
 
 
 
-
     void internal_dispose_restore_refcnt_to_1() const {
-#ifdef SK_DEBUG
-        SkASSERT(0 == fRefCnt);
-        fRefCnt = 1;
-#endif
+        SkASSERT(0 == getRefCnt());
+        fRefCnt.store(1, std::memory_order_relaxed);
     }
 
 private:
@@ -120,7 +122,7 @@ private:
     
     friend class SkWeakRefCnt;
 
-    mutable int32_t fRefCnt;
+    mutable std::atomic<int32_t> fRefCnt;
 
     typedef SkNoncopyable INHERITED;
 };
@@ -130,7 +132,13 @@ private:
 
 #include SK_REF_CNT_MIXIN_INCLUDE
 #else
-class SK_API SkRefCnt : public SkRefCntBase { };
+class SK_API SkRefCnt : public SkRefCntBase {
+    
+    #if defined(GOOGLE3)
+    public:
+        void deref() const { this->unref(); }
+    #endif
+};
 #endif
 
 
@@ -213,25 +221,29 @@ template <typename Derived>
 class SkNVRefCnt : SkNoncopyable {
 public:
     SkNVRefCnt() : fRefCnt(1) {}
-    ~SkNVRefCnt() { SkASSERTF(1 == fRefCnt, "NVRefCnt was %d", fRefCnt); }
+    ~SkNVRefCnt() { SkASSERTF(1 == getRefCnt(), "NVRefCnt was %d", getRefCnt()); }
 
     
     
     
     
 
-    bool unique() const { return 1 == sk_atomic_load(&fRefCnt, sk_memory_order_acquire); }
-    void    ref() const { (void)sk_atomic_fetch_add(&fRefCnt, +1, sk_memory_order_relaxed); }
+    bool unique() const { return 1 == fRefCnt.load(std::memory_order_acquire); }
+    void ref() const { (void)fRefCnt.fetch_add(+1, std::memory_order_relaxed); }
     void  unref() const {
-        if (1 == sk_atomic_fetch_add(&fRefCnt, -1, sk_memory_order_acq_rel)) {
-            SkDEBUGCODE(fRefCnt = 1;)  
+        if (1 == fRefCnt.fetch_add(-1, std::memory_order_acq_rel)) {
+            
+            SkDEBUGCODE(fRefCnt.store(1, std::memory_order_relaxed));
             delete (const Derived*)this;
         }
     }
     void  deref() const { this->unref(); }
 
 private:
-    mutable int32_t fRefCnt;
+    mutable std::atomic<int32_t> fRefCnt;
+    int32_t getRefCnt() const {
+        return fRefCnt.load(std::memory_order_relaxed);
+    }
 };
 
 
@@ -249,15 +261,15 @@ template <typename T> class sk_sp {
 public:
     using element_type = T;
 
-    sk_sp() : fPtr(nullptr) {}
-    sk_sp(std::nullptr_t) : fPtr(nullptr) {}
+    constexpr sk_sp() : fPtr(nullptr) {}
+    constexpr sk_sp(std::nullptr_t) : fPtr(nullptr) {}
 
     
 
 
 
     sk_sp(const sk_sp<T>& that) : fPtr(SkSafeRef(that.get())) {}
-    template <typename U, typename = skstd::enable_if_t<skstd::is_convertible<U*, T*>::value>>
+    template <typename U, typename = skstd::enable_if_t<std::is_convertible<U*, T*>::value>>
     sk_sp(const sk_sp<U>& that) : fPtr(SkSafeRef(that.get())) {}
 
     
@@ -266,7 +278,7 @@ public:
 
 
     sk_sp(sk_sp<T>&& that) : fPtr(that.release()) {}
-    template <typename U, typename = skstd::enable_if_t<skstd::is_convertible<U*, T*>::value>>
+    template <typename U, typename = skstd::enable_if_t<std::is_convertible<U*, T*>::value>>
     sk_sp(sk_sp<U>&& that) : fPtr(that.release()) {}
 
     
@@ -294,7 +306,7 @@ public:
         this->reset(SkSafeRef(that.get()));
         return *this;
     }
-    template <typename U, typename = skstd::enable_if_t<skstd::is_convertible<U*, T*>::value>>
+    template <typename U, typename = skstd::enable_if_t<std::is_convertible<U*, T*>::value>>
     sk_sp<T>& operator=(const sk_sp<U>& that) {
         this->reset(SkSafeRef(that.get()));
         return *this;
@@ -309,7 +321,7 @@ public:
         this->reset(that.release());
         return *this;
     }
-    template <typename U, typename = skstd::enable_if_t<skstd::is_convertible<U*, T*>::value>>
+    template <typename U, typename = skstd::enable_if_t<std::is_convertible<U*, T*>::value>>
     sk_sp<T>& operator=(sk_sp<U>&& that) {
         this->reset(that.release());
         return *this;
@@ -391,7 +403,7 @@ template <typename T, typename U> inline bool operator<(const sk_sp<T>& a, const
     
     
     
-    return std::less<void*>()((void*)a.get(), (void*)b.get());
+    return std::less<skstd::common_type_t<T*, U*>>()(a.get(), b.get());
 }
 template <typename T> inline bool operator<(const sk_sp<T>& a, std::nullptr_t) {
     return std::less<T*>()(a.get(), nullptr);
@@ -432,7 +444,7 @@ template <typename T> inline bool operator>=(std::nullptr_t, const sk_sp<T>& b) 
 
 template <typename T, typename... Args>
 sk_sp<T> sk_make_sp(Args&&... args) {
-    return sk_sp<T>(new T(std__forward<Args>(args)...));
+    return sk_sp<T>(new T(std::forward<Args>(args)...));
 }
 
 #ifdef SK_SUPPORT_TRANSITION_TO_SP_INTERFACES

@@ -45,6 +45,9 @@ public:
     }
 
     
+    void setColorSpace(sk_sp<SkColorSpace>);
+
+    
 
 
 
@@ -80,7 +83,7 @@ public:
 
 
 
-    int shiftPerPixel() const { return fInfo.bytesPerPixel() >> 1; }
+    int shiftPerPixel() const { return fInfo.shiftPerPixel(); }
 
     uint64_t getSize64() const { return sk_64_mul(fInfo.height(), fRowBytes); }
     uint64_t getSafeSize64() const { return fInfo.getSafeSize64(fRowBytes); }
@@ -141,6 +144,9 @@ public:
     
 
     void* writable_addr() const { return const_cast<void*>(fPixels); }
+    void* writable_addr(int x, int y) const {
+        return const_cast<void*>(this->addr(x, y));
+    }
     uint8_t* writable_addr8(int x, int y) const {
         return const_cast<uint8_t*>(this->addr8(x, y));
     }

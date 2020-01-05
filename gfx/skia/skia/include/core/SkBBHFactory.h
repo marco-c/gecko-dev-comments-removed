@@ -18,7 +18,7 @@ public:
 
 
     virtual SkBBoxHierarchy* operator()(const SkRect& bounds) const = 0;
-    virtual ~SkBBHFactory() {};
+    virtual ~SkBBHFactory() {}
 };
 
 class SK_API SkRTreeFactory : public SkBBHFactory {

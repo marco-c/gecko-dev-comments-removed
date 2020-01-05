@@ -37,6 +37,8 @@ public:
 
 
 
+
+
     static sk_sp<SkSurface> MakeRasterDirect(const SkImageInfo&, void* pixels, size_t rowBytes,
                                              const SkSurfaceProps* = nullptr);
 
@@ -57,12 +59,19 @@ public:
 
 
 
+
+
+
+
     static sk_sp<SkSurface> MakeRaster(const SkImageInfo&, size_t rowBytes, const SkSurfaceProps*);
 
     
 
 
-    static sk_sp<SkSurface> MakeRaster(const SkImageInfo&, const SkSurfaceProps* = nullptr);
+    static sk_sp<SkSurface> MakeRaster(const SkImageInfo& info,
+                                       const SkSurfaceProps* props = nullptr) {
+        return MakeRaster(info, 0, props);
+    }
 
     
 
@@ -77,17 +86,11 @@ public:
     
 
 
-    static sk_sp<SkSurface> MakeRenderTargetDirect(GrRenderTarget*,
-                                                   const SkSurfaceProps* = nullptr);
-
-    
-
-
 
 
 
     static sk_sp<SkSurface> MakeFromBackendTexture(GrContext*, const GrBackendTextureDesc&,
-                                                   const SkSurfaceProps*);
+                                                   sk_sp<SkColorSpace>, const SkSurfaceProps*);
 
     
 
@@ -96,6 +99,7 @@ public:
 
     static sk_sp<SkSurface> MakeFromBackendRenderTarget(GrContext*,
                                                         const GrBackendRenderTargetDesc&,
+                                                        sk_sp<SkColorSpace>,
                                                         const SkSurfaceProps*);
 
     
@@ -107,21 +111,46 @@ public:
 
 
     static sk_sp<SkSurface> MakeFromBackendTextureAsRenderTarget(
-            GrContext*, const GrBackendTextureDesc&, const SkSurfaceProps*);
+        GrContext*, const GrBackendTextureDesc&, sk_sp<SkColorSpace>, const SkSurfaceProps*);
 
     
 
 
 
+    static sk_sp<SkSurface> MakeFromBackendTexture(GrContext* ctx, const GrBackendTextureDesc& desc,
+                                                   const SkSurfaceProps* props) {
+        return MakeFromBackendTexture(ctx, desc, nullptr, props);
+    }
+
+    static sk_sp<SkSurface> MakeFromBackendRenderTarget(GrContext* ctx,
+                                                        const GrBackendRenderTargetDesc& desc,
+                                                        const SkSurfaceProps* props) {
+        return MakeFromBackendRenderTarget(ctx, desc, nullptr, props);
+    }
+
+    static sk_sp<SkSurface> MakeFromBackendTextureAsRenderTarget(
+            GrContext* ctx, const GrBackendTextureDesc& desc, const SkSurfaceProps* props) {
+        return MakeFromBackendTextureAsRenderTarget(ctx, desc, nullptr, props);
+    }
+
+
+    
 
 
 
-    static sk_sp<SkSurface> MakeRenderTarget(
-            GrContext*, SkBudgeted, const SkImageInfo&, int sampleCount, const SkSurfaceProps*,
-            GrTextureStorageAllocator = GrTextureStorageAllocator());
+    static sk_sp<SkSurface> MakeRenderTarget(GrContext*, SkBudgeted, const SkImageInfo&,
+                                             int sampleCount, GrSurfaceOrigin,
+                                             const SkSurfaceProps*);
+
+    static sk_sp<SkSurface> MakeRenderTarget(GrContext* context, SkBudgeted budgeted,
+                                             const SkImageInfo& info, int sampleCount,
+                                             const SkSurfaceProps* props) {
+        return MakeRenderTarget(context, budgeted, info, sampleCount,
+                                kBottomLeft_GrSurfaceOrigin, props);
+    }
 
     static sk_sp<SkSurface> MakeRenderTarget(GrContext* gr, SkBudgeted b, const SkImageInfo& info) {
-        return MakeRenderTarget(gr, b, info, 0, nullptr);
+        return MakeRenderTarget(gr, b, info, 0, kBottomLeft_GrSurfaceOrigin, nullptr);
     }
 
 #ifdef SK_SUPPORT_LEGACY_NEW_SURFACE_API
@@ -147,12 +176,6 @@ public:
                                          const SkSurfaceProps* props = NULL) {
         return NewRaster(SkImageInfo::MakeN32Premul(width, height), props);
     }
-    static SkSurface* NewRenderTargetDirect(GrRenderTarget* rt, const SkSurfaceProps* props) {
-        return MakeRenderTargetDirect(rt, props).release();
-    }
-    static SkSurface* NewRenderTargetDirect(GrRenderTarget* target) {
-        return NewRenderTargetDirect(target, NULL);
-    }
     static SkSurface* NewFromBackendTexture(GrContext* ctx, const GrBackendTextureDesc& desc,
                                             const SkSurfaceProps* props) {
         return MakeFromBackendTexture(ctx, desc, props).release();
@@ -172,9 +195,8 @@ public:
         return MakeFromBackendTextureAsRenderTarget(ctx, desc, props).release();
     }
     static SkSurface* NewRenderTarget(GrContext* ctx, SkBudgeted b, const SkImageInfo& info,
-                                      int sampleCount, const SkSurfaceProps* props = NULL,
-                                      GrTextureStorageAllocator a = GrTextureStorageAllocator()) {
-        return MakeRenderTarget(ctx, b, info, sampleCount, props, a).release();
+                                      int sampleCount, const SkSurfaceProps* props = NULL) {
+        return MakeRenderTarget(ctx, b, info, sampleCount, props).release();
     }
     static SkSurface* NewRenderTarget(GrContext* gr, SkBudgeted b, const SkImageInfo& info) {
         return NewRenderTarget(gr, b, info, 0);

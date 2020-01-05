@@ -5,12 +5,11 @@
 
 
 
-
-
 #ifndef SkTypeface_DEFINED
 #define SkTypeface_DEFINED
 
-#include "../private/SkOncePtr.h"
+#include "../private/SkBitmaskEnum.h"
+#include "../private/SkOnce.h"
 #include "../private/SkWeakRefCnt.h"
 #include "SkFontStyle.h"
 #include "SkRect.h"
@@ -21,6 +20,7 @@ class SkFontData;
 class SkFontDescriptor;
 class SkScalerContext;
 struct SkScalerContextRec;
+struct SkScalerContextEffects;
 class SkStream;
 class SkStreamAsset;
 class SkAdvancedTypefaceMetrics;
@@ -94,23 +94,14 @@ public:
     static bool Equal(const SkTypeface* facea, const SkTypeface* faceb);
 
     
+    static sk_sp<SkTypeface> MakeDefault(Style style = SkTypeface::kNormal);
+#ifdef SK_SUPPORT_LEGACY_TYPEFACE_PTR
+    static SkTypeface* RefDefault(Style style = SkTypeface::kNormal) {
+        return MakeDefault(style).release();
+    }
+#endif
 
-
-
-    static SkTypeface* RefDefault(Style style = SkTypeface::kNormal);
-
-    
-
-
-
-
-
-
-
-
-    static SkTypeface* CreateFromName(const char familyName[], Style style);
-
-    
+  
 
 
 
@@ -119,25 +110,49 @@ public:
 
 
 
+  static sk_sp<SkTypeface> MakeFromName(const char familyName[], SkFontStyle fontStyle);
 
-    static SkTypeface* CreateFromTypeface(const SkTypeface* family, Style s);
-
-    
-
-
-    static SkTypeface* CreateFromFile(const char path[], int index = 0);
+#ifdef SK_SUPPORT_LEGACY_TYPEFACE_PTR
+    static SkTypeface* CreateFromName(const char familyName[], Style style) {
+        return MakeFromName(familyName, SkFontStyle::FromOldStyle(style)).release();
+    }
+#endif
 
     
 
 
 
-    static SkTypeface* CreateFromStream(SkStreamAsset* stream, int index = 0);
+
+
+
+
+    static sk_sp<SkTypeface> MakeFromTypeface(SkTypeface* family, Style);
+
+    
+
+
+    static sk_sp<SkTypeface> MakeFromFile(const char path[], int index = 0);
+#ifdef SK_SUPPORT_LEGACY_TYPEFACE_PTR
+    static SkTypeface* CreateFromFile(const char path[], int index = 0) {
+        return MakeFromFile(path, index).release();
+    }
+#endif
 
     
 
 
 
-    static SkTypeface* CreateFromFontData(SkFontData*);
+    static sk_sp<SkTypeface> MakeFromStream(SkStreamAsset* stream, int index = 0);
+#ifdef SK_SUPPORT_LEGACY_TYPEFACE_PTR
+    static SkTypeface* CreateFromStream(SkStreamAsset* stream, int index = 0) {
+        return MakeFromStream(stream, index).release();
+    }
+#endif
+
+    
+
+
+    static sk_sp<SkTypeface> MakeFromFontData(std::unique_ptr<SkFontData>);
 
     
 
@@ -149,8 +164,7 @@ public:
 
 
 
-
-    static SkTypeface* Deserialize(SkStream*);
+    static sk_sp<SkTypeface> MakeDeserialize(SkStream*);
 
     enum Encoding {
         kUTF8_Encoding,
@@ -174,7 +188,7 @@ public:
 
 
 
-    int charsToGlyphs(const void* chars, Encoding encoding, uint16_t glyphs[],
+    int charsToGlyphs(const void* chars, Encoding encoding, SkGlyphID glyphs[],
                       int glyphCount) const;
 
     
@@ -248,7 +262,7 @@ public:
 
 
 
-    bool getKerningPairAdjustments(const uint16_t glyphs[], int count,
+    bool getKerningPairAdjustments(const SkGlyphID glyphs[], int count,
                                    int32_t adjustments[]) const;
 
     struct LocalizedString {
@@ -287,15 +301,14 @@ public:
     
 
 
-
-    SkFontData* createFontData() const;
+    std::unique_ptr<SkFontData> makeFontData() const;
 
     
 
 
 
 
-    SkScalerContext* createScalerContext(const SkDescriptor*,
+    SkScalerContext* createScalerContext(const SkScalerContextEffects&, const SkDescriptor*,
                                          bool allowFailure = false) const;
 
     
@@ -324,25 +337,26 @@ protected:
     
     enum PerGlyphInfo {
         kNo_PerGlyphInfo         = 0x0, 
-        kHAdvance_PerGlyphInfo   = 0x1, 
-        kVAdvance_PerGlyphInfo   = 0x2, 
-        kGlyphNames_PerGlyphInfo = 0x4, 
-        kToUnicode_PerGlyphInfo  = 0x8  
-        
+        kGlyphNames_PerGlyphInfo = 0x1, 
+        kToUnicode_PerGlyphInfo  = 0x2  
+                                        
     };
 
     
 
-    SkTypeface(const SkFontStyle& style, SkFontID uniqueID, bool isFixedPitch = false);
+    SkTypeface(const SkFontStyle& style, bool isFixedPitch = false);
     virtual ~SkTypeface();
 
     
     void setIsFixedPitch(bool isFixedPitch) { fIsFixedPitch = isFixedPitch; }
+    
+    void setFontStyle(SkFontStyle style) { fStyle = style; }
 
     friend class SkScalerContext;
     static SkTypeface* GetDefaultTypeface(Style style = SkTypeface::kNormal);
 
-    virtual SkScalerContext* onCreateScalerContext(const SkDescriptor*) const = 0;
+    virtual SkScalerContext* onCreateScalerContext(const SkScalerContextEffects&,
+                                                   const SkDescriptor*) const = 0;
     virtual void onFilterRec(SkScalerContextRec*) const = 0;
     virtual SkAdvancedTypefaceMetrics* onGetAdvancedTypefaceMetrics(
                         PerGlyphInfo,
@@ -351,16 +365,16 @@ protected:
 
     virtual SkStreamAsset* onOpenStream(int* ttcIndex) const = 0;
     
-    virtual SkFontData* onCreateFontData() const;
+    virtual std::unique_ptr<SkFontData> onMakeFontData() const;
 
     virtual void onGetFontDescriptor(SkFontDescriptor*, bool* isLocal) const = 0;
 
-    virtual int onCharsToGlyphs(const void* chars, Encoding, uint16_t glyphs[],
+    virtual int onCharsToGlyphs(const void* chars, Encoding, SkGlyphID glyphs[],
                                 int glyphCount) const = 0;
     virtual int onCountGlyphs() const = 0;
 
     virtual int onGetUPEM() const = 0;
-    virtual bool onGetKerningPairAdjustments(const uint16_t glyphs[], int count,
+    virtual bool onGetKerningPairAdjustments(const SkGlyphID glyphs[], int count,
                                              int32_t adjustments[]) const;
 
     
@@ -381,7 +395,6 @@ private:
     friend class SkGTypeface;
     friend class SkRandomTypeface;
     friend class SkPDFFont;
-    friend class SkPDFCIDFont;
     friend class GrPathRendering;
     friend class GrGLPathRendering;
 
@@ -401,12 +414,10 @@ private:
                           uint32_t glyphIDsCount = 0) const;
 
 private:
-    static SkTypeface* CreateDefault(int style);  
-    static void        DeleteDefault(SkTypeface*);
-
-    SkOncePtr<SkRect>   fLazyBounds;
     SkFontID            fUniqueID;
     SkFontStyle         fStyle;
+    mutable SkRect      fBounds;
+    mutable SkOnce      fBoundsOnce;
     bool                fIsFixedPitch;
 
     friend class SkPaint;
@@ -414,5 +425,9 @@ private:
 
     typedef SkWeakRefCnt INHERITED;
 };
+
+namespace skstd {
+template <> struct is_bitmask_enum<SkTypeface::PerGlyphInfo> : std::true_type {};
+}
 
 #endif

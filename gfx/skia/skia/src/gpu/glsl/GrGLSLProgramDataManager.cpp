@@ -8,6 +8,7 @@
 #include "glsl/GrGLSLProgramDataManager.h"
 
 #include "SkMatrix.h"
+#include "SkMatrix44.h"
 
 void GrGLSLProgramDataManager::setSkMatrix(UniformHandle u, const SkMatrix& matrix) const {
     float mt[] = {
@@ -22,4 +23,11 @@ void GrGLSLProgramDataManager::setSkMatrix(UniformHandle u, const SkMatrix& matr
         matrix.get(SkMatrix::kMPersp2),
     };
     this->setMatrix3f(u, mt);
+}
+
+void GrGLSLProgramDataManager::setSkMatrix44(UniformHandle u, const SkMatrix44& matrix) const {
+    
+    float m[16];
+    matrix.asColMajorf(m);
+    this->setMatrix4f(u, m);
 }

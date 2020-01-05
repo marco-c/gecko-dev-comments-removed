@@ -17,7 +17,11 @@
 
 
 
-#if defined(MOZ_B2G) && defined(__GNUC__) && __GNUC__ == 4
+
+#include <ciso646>  
+#if defined(__GNUC__) && __GNUC__ == 4 \
+ && ((defined(__arm__) && (defined(__ARM_NEON__) || defined(__ARM_NEON))) || defined(__aarch64__)) \
+ && defined(_LIBCPP_VERSION)
     typedef float float32_t;
     #include <memory>
 #endif
@@ -27,12 +31,6 @@
 #include "SkPostConfig.h"
 #include <stddef.h>
 #include <stdint.h>
-
-#if defined(SK_ARM_HAS_NEON)
-    #include <arm_neon.h>
-#elif SK_CPU_SSE_LEVEL >= SK_CPU_SSE_LEVEL_SSE2
-    #include <immintrin.h>
-#endif
 
 
 #include <string.h>
@@ -141,44 +139,44 @@ inline void operator delete(void* p) {
     SK_API void SkDebugf(const char format[], ...);
 #endif
 
-#define SkASSERT_RELEASE(cond)          if(!(cond)) { SK_ABORT(#cond); }
+#define SkREQUIRE_SEMICOLON_AFTER(code) do { code } while (false)
+
+#define SkASSERT_RELEASE(cond) \
+    SkREQUIRE_SEMICOLON_AFTER(if (!(cond)) { SK_ABORT(#cond); } )
 
 #ifdef SK_DEBUG
-    #define SkASSERT(cond)              SkASSERT_RELEASE(cond)
-    #define SkDEBUGFAIL(message)        SkASSERT(false && message)
+    #define SkASSERT(cond) \
+        SkREQUIRE_SEMICOLON_AFTER(if (!(cond)) { SK_ABORT("assert(" #cond ")"); })
+    #define SkASSERTF(cond, fmt, ...) \
+        SkREQUIRE_SEMICOLON_AFTER(if (!(cond)) { \
+                                      SkDebugf(fmt"\n", __VA_ARGS__); \
+                                      SK_ABORT("assert(" #cond ")"); \
+                                  })
+    #define SkDEBUGFAIL(message)        SK_ABORT(message)
     #define SkDEBUGFAILF(fmt, ...)      SkASSERTF(false, fmt, ##__VA_ARGS__)
-    #define SkDEBUGCODE(code)           code
+    #define SkDEBUGCODE(...)            __VA_ARGS__
     #define SkDECLAREPARAM(type, var)   , type var
     #define SkPARAM(var)                , var
-
     #define SkDEBUGF(args       )       SkDebugf args
     #define SkAssertResult(cond)        SkASSERT(cond)
 #else
     #define SkASSERT(cond)
+    #define SkASSERTF(cond, fmt, ...)
     #define SkDEBUGFAIL(message)
-    #define SkDEBUGCODE(code)
+    #define SkDEBUGFAILF(fmt, ...)
+    #define SkDEBUGCODE(...)
     #define SkDEBUGF(args)
     #define SkDECLAREPARAM(type, var)
     #define SkPARAM(var)
 
     
-    #define SkAssertResult(cond)        cond
+    
+    #define SkAssertResult(cond)         if (cond) {} do {} while(false)
 #endif
 
 
 #define SkFAIL(message)                 SK_ABORT(message)
 #define sk_throw()                      SK_ABORT("sk_throw")
-
-
-
-
-#define SkASSERTF(cond, fmt, ...)       SkASSERT((cond) || (SkDebugf(fmt"\n", __VA_ARGS__), false))
-
-#ifdef SK_DEVELOPER
-    #define SkDEVCODE(code)             code
-#else
-    #define SkDEVCODE(code)
-#endif
 
 #ifdef SK_IGNORE_TO_STRING
     #define SK_TO_STRING_NONVIRT()
@@ -286,7 +284,7 @@ template <typename D, typename S> D SkTo(S s) {
 
 
 
-#define SkToBool(cond)  (!!(cond))
+#define SkToBool(cond)  ((cond) != 0)
 
 #define SK_MaxS16   32767
 #define SK_MinS16   -32767
@@ -358,6 +356,10 @@ typedef int32_t SkUnichar;
 
 
 
+typedef uint16_t SkGlyphID;
+
+
+
 
 typedef uint32_t SkMSec;
 
@@ -387,7 +389,7 @@ typedef uint32_t SkMSec;
 
 
 
-static inline int Sk32ToBool(uint32_t n) {
+static inline constexpr int Sk32ToBool(uint32_t n) {
     return (n | (0-n)) >> 31;
 }
 
@@ -426,11 +428,11 @@ static inline int32_t SkMin32(int32_t a, int32_t b) {
     return a;
 }
 
-template <typename T> const T& SkTMin(const T& a, const T& b) {
+template <typename T> constexpr const T& SkTMin(const T& a, const T& b) {
     return (a < b) ? a : b;
 }
 
-template <typename T> const T& SkTMax(const T& a, const T& b) {
+template <typename T> constexpr const T& SkTMax(const T& a, const T& b) {
     return (b < a) ? a : b;
 }
 
@@ -446,7 +448,7 @@ static inline int32_t SkFastMin32(int32_t value, int32_t max) {
 }
 
 
-template <typename T> static inline const T& SkTPin(const T& value, const T& min, const T& max) {
+template <typename T> static constexpr const T& SkTPin(const T& value, const T& min, const T& max) {
     return SkTMax(SkTMin(value, max), min);
 }
 
@@ -459,6 +461,15 @@ template <typename T> static inline const T& SkTPin(const T& value, const T& min
 enum class SkBudgeted : bool {
     kNo  = false,
     kYes = true
+};
+
+
+
+
+
+enum class SkBackingFit {
+    kApprox,
+    kExact
 };
 
 

@@ -9,8 +9,11 @@
 #define GrVkResourceProvider_DEFINED
 
 #include "GrGpu.h"
+#include "GrResourceHandle.h"
 #include "GrVkDescriptorPool.h"
+#include "GrVkDescriptorSetManager.h"
 #include "GrVkPipelineState.h"
+#include "GrVkRenderPass.h"
 #include "GrVkResource.h"
 #include "GrVkUtil.h"
 #include "SkTArray.h"
@@ -23,12 +26,14 @@
 class GrPipeline;
 class GrPrimitiveProcessor;
 class GrTextureParams;
-class GrVkCommandBuffer;
+class GrVkCopyPipeline;
 class GrVkGpu;
 class GrVkPipeline;
-class GrVkRenderPass;
+class GrVkPrimaryCommandBuffer;
 class GrVkRenderTarget;
 class GrVkSampler;
+class GrVkSecondaryCommandBuffer;
+class GrVkUniformHandler;
 
 class GrVkResourceProvider {
 public:
@@ -46,12 +51,42 @@ public:
                                  const GrVkRenderPass& renderPass,
                                  VkPipelineLayout layout);
 
-    
-    
-    const GrVkRenderPass* findOrCreateCompatibleRenderPass(const GrVkRenderTarget& target);
+    GrVkCopyPipeline* findOrCreateCopyPipeline(const GrVkRenderTarget* dst,
+                                               VkPipelineShaderStageCreateInfo*,
+                                               VkPipelineLayout);
 
-    GrVkCommandBuffer* createCommandBuffer();
+    GR_DEFINE_RESOURCE_HANDLE_CLASS(CompatibleRPHandle);
+
+    
+    
+    
+    
+    const GrVkRenderPass* findCompatibleRenderPass(const GrVkRenderTarget& target,
+                                                   CompatibleRPHandle* compatibleHandle = nullptr);
+    
+    
+    const GrVkRenderPass* findCompatibleRenderPass(const CompatibleRPHandle& compatibleHandle);
+
+    
+    
+    
+    
+    const GrVkRenderPass* findRenderPass(const GrVkRenderTarget& target,
+                                         const GrVkRenderPass::LoadStoreOps& colorOps,
+                                         const GrVkRenderPass::LoadStoreOps& stencilOps,
+                                         CompatibleRPHandle* compatibleHandle = nullptr);
+
+    
+    
+    const GrVkRenderPass* findRenderPass(const CompatibleRPHandle& compatibleHandle,
+                                         const GrVkRenderPass::LoadStoreOps& colorOps,
+                                         const GrVkRenderPass::LoadStoreOps& stencilOps);
+
+    GrVkPrimaryCommandBuffer* findOrCreatePrimaryCommandBuffer();
     void checkCommandBuffers();
+
+    GrVkSecondaryCommandBuffer* findOrCreateSecondaryCommandBuffer();
+    void recycleSecondaryCommandBuffer(GrVkSecondaryCommandBuffer* cb);
 
     
     
@@ -63,12 +98,50 @@ public:
 
     
     
-    GrVkSampler* findOrCreateCompatibleSampler(const GrTextureParams&);
+    GrVkSampler* findOrCreateCompatibleSampler(const GrTextureParams&, uint32_t mipLevels);
 
     sk_sp<GrVkPipelineState> findOrCreateCompatiblePipelineState(const GrPipeline&,
                                                                  const GrPrimitiveProcessor&,
                                                                  GrPrimitiveType,
                                                                  const GrVkRenderPass& renderPass);
+
+    void getSamplerDescriptorSetHandle(const GrVkUniformHandler&,
+                                       GrVkDescriptorSetManager::Handle* handle);
+    void getSamplerDescriptorSetHandle(const SkTArray<uint32_t>& visibilities,
+                                       GrVkDescriptorSetManager::Handle* handle);
+
+    
+    
+    
+    VkDescriptorSetLayout getUniformDSLayout() const;
+
+    
+    
+    
+    VkDescriptorSetLayout getSamplerDSLayout(const GrVkDescriptorSetManager::Handle&) const;
+
+    
+    
+    const GrVkDescriptorSet* getUniformDescriptorSet();
+
+    
+    
+    
+    const GrVkDescriptorSet* getSamplerDescriptorSet(const GrVkDescriptorSetManager::Handle&);
+
+
+    
+    
+    void recycleDescriptorSet(const GrVkDescriptorSet* descSet,
+                              const GrVkDescriptorSetManager::Handle&);
+
+    
+    
+    const GrVkResource* findOrCreateStandardUniformBufferResource();
+
+    
+    
+    void recycleStandardUniformBufferResource(const GrVkResource*);
 
     
     
@@ -82,8 +155,7 @@ public:
     void abandonResources();
 
 private:
-
-#ifdef SK_DEVELOPER
+#ifdef SK_DEBUG
 #define GR_PIPELINE_STATE_CACHE_STATS
 #endif
 
@@ -122,24 +194,65 @@ private:
 #endif
     };
 
+    class CompatibleRenderPassSet {
+    public:
+        
+        
+        
+        CompatibleRenderPassSet(const GrVkGpu* gpu, const GrVkRenderTarget& target);
+
+        bool isCompatible(const GrVkRenderTarget& target) const;
+
+        GrVkRenderPass* getCompatibleRenderPass() const {
+            
+            
+            SkASSERT(fRenderPasses[0]);
+            return fRenderPasses[0];
+        }
+
+        GrVkRenderPass* getRenderPass(const GrVkGpu* gpu,
+                                      const GrVkRenderPass::LoadStoreOps& colorOps,
+                                      const GrVkRenderPass::LoadStoreOps& stencilOps);
+
+        void releaseResources(const GrVkGpu* gpu);
+        void abandonResources();
+
+    private:
+        SkSTArray<4, GrVkRenderPass*> fRenderPasses;
+        int                           fLastReturnedIndex;
+    };
+
     GrVkGpu* fGpu;
 
     
     VkPipelineCache fPipelineCache;
 
     
-    
-    SkSTArray<4, GrVkRenderPass*> fSimpleRenderPasses;
+    SkTArray<GrVkCopyPipeline*> fCopyPipelines;
+
+    SkSTArray<4, CompatibleRenderPassSet> fRenderPassArray;
 
     
-    SkSTArray<4, GrVkCommandBuffer*> fActiveCommandBuffers;
+    SkSTArray<4, GrVkPrimaryCommandBuffer*, true> fActiveCommandBuffers;
+    
+    SkSTArray<4, GrVkPrimaryCommandBuffer*, true> fAvailableCommandBuffers;
+
+    
+    SkSTArray<16, GrVkSecondaryCommandBuffer*, true> fAvailableSecondaryCommandBuffers;
+
+    
+    SkSTArray<16, const GrVkResource*, true> fAvailableUniformBufferResources;
 
     
     
-    SkTDynamicHash<GrVkSampler, uint8_t> fSamplers;
+    SkTDynamicHash<GrVkSampler, uint16_t> fSamplers;
 
     
     PipelineStateCache* fPipelineStateCache;
+
+    SkSTArray<4, GrVkDescriptorSetManager, true> fDescriptorSetManagers;
+
+    GrVkDescriptorSetManager::Handle fUniformDSHandle;
 };
 
 #endif

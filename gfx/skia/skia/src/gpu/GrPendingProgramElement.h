@@ -18,7 +18,7 @@
 
 template <typename T> class GrPendingProgramElement : SkNoncopyable {
 public:
-    GrPendingProgramElement() : fObj(nullptr) { };
+    GrPendingProgramElement() : fObj(nullptr) { }
 
     
     explicit GrPendingProgramElement(T* obj) : fObj(obj)  {

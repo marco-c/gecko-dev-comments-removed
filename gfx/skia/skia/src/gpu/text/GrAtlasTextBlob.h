@@ -14,6 +14,9 @@
 #include "GrMemoryPool.h"
 #include "SkDescriptor.h"
 #include "SkMaskFilter.h"
+#include "SkOpts.h"
+#include "SkPathEffect.h"
+#include "SkRasterizer.h"
 #include "SkSurfaceProps.h"
 #include "SkTInternalLList.h"
 
@@ -61,6 +64,7 @@ public:
         SkPaint::Style fStyle;
         SkPixelGeometry fPixelGeometry;
         bool fHasBlur;
+        uint32_t fScalerContextFlags;
 
         bool operator==(const Key& other) const {
             return 0 == memcmp(this, &other, sizeof(Key));
@@ -86,7 +90,7 @@ public:
     }
 
     static uint32_t Hash(const Key& key) {
-        return SkChecksum::Murmur3(&key, sizeof(Key));
+        return SkOpts::hash(&key, sizeof(Key));
     }
 
     void operator delete(void* p) {
@@ -148,7 +152,7 @@ public:
 
     SkGlyphCache* setupCache(int runIndex,
                              const SkSurfaceProps& props,
-                             SkPaint::FakeGamma fakeGamma,
+                             uint32_t scalerContextFlags,
                              const SkPaint& skPaint,
                              const SkMatrix* viewMatrix);
 
@@ -159,7 +163,7 @@ public:
                      GrColor color,
                      GrBatchTextStrike* strike,
                      GrGlyph* glyph,
-                     GrFontScaler* scaler, const SkGlyph& skGlyph,
+                     SkGlyphCache*, const SkGlyph& skGlyph,
                      SkScalar x, SkScalar y, SkScalar scale, bool applyVM);
 
     static size_t GetVertexStride(GrMaskFormat maskFormat) {
@@ -255,13 +259,15 @@ public:
         this->setupViewMatrix(viewMatrix, x, y);
     }
 
+    
+
+
+
+
     void regenInBatch(GrDrawBatch::Target* target, GrBatchFontCache* fontCache,
-                      GrBlobRegenHelper *helper, int run, int subRun, SkGlyphCache** cache,
-                      SkTypeface** typeface, GrFontScaler** scaler,
-                      const SkDescriptor** desc, size_t vertexStride,
-                      const SkMatrix& viewMatrix, SkScalar x, SkScalar y,
-                      GrColor color,
-                      void** vertices, size_t* byteCount, int* glyphCount);
+                      GrBlobRegenHelper *helper, int run, int subRun, SkAutoGlyphCache*,
+                      size_t vertexStride, const SkMatrix& viewMatrix, SkScalar x, SkScalar y,
+                      GrColor color, void** vertices, size_t* byteCount, int* glyphCount);
 
     const Key& key() const { return fKey; }
 
@@ -285,11 +291,11 @@ private:
         , fMinMaxScale(SK_ScalarMax)
         , fTextType(0) {}
 
-    void appendLargeGlyph(GrGlyph* glyph, GrFontScaler* scaler, const SkGlyph& skGlyph,
+    void appendLargeGlyph(GrGlyph* glyph, SkGlyphCache* cache, const SkGlyph& skGlyph,
                           SkScalar x, SkScalar y, SkScalar scale, bool applyVM);
 
-    inline void flushRun(GrDrawContext* dc, GrPipelineBuilder* pipelineBuilder,
-                         int run, const SkMatrix& viewMatrix, SkScalar x, SkScalar y, GrColor color,
+    inline void flushRun(GrDrawContext* dc, const GrPaint&, const GrClip&,
+                         int run, const SkMatrix& viewMatrix, SkScalar x, SkScalar y,
                          const SkPaint& skPaint, const SkSurfaceProps& props,
                          const GrDistanceFieldAdjustTable* distanceAdjustTable,
                          GrBatchFontCache* cache);
@@ -476,6 +482,11 @@ private:
         SkAutoDescriptor fDescriptor;
 
         
+        sk_sp<SkPathEffect> fPathEffect;
+        sk_sp<SkRasterizer> fRasterizer;
+        sk_sp<SkMaskFilter> fMaskFilter;
+
+        
         
         
         
@@ -488,10 +499,9 @@ private:
     void regenInBatch(GrDrawBatch::Target* target,
                       GrBatchFontCache* fontCache,
                       GrBlobRegenHelper* helper,
-                      Run* run, Run::SubRunInfo* info, SkGlyphCache** cache,
-                      SkTypeface** typeface, GrFontScaler** scaler,
-                      const SkDescriptor** desc,
-                      int glyphCount, size_t vertexStride,
+                      Run* run, Run::SubRunInfo* info,
+                      SkAutoGlyphCache*, int glyphCount,
+                      size_t vertexStride,
                       GrColor color, SkScalar transX,
                       SkScalar transY) const;
 
@@ -501,6 +511,7 @@ private:
                                     GrColor color,
                                     const SkPaint& skPaint, const SkSurfaceProps& props,
                                     const GrDistanceFieldAdjustTable* distanceAdjustTable,
+                                    bool useGammaCorrectDistanceTable,
                                     GrBatchFontCache* cache);
 
     struct BigGlyph {

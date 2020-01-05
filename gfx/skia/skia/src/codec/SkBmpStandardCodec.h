@@ -37,7 +37,7 @@ public:
 
 
 
-    SkBmpStandardCodec(const SkImageInfo& srcInfo, SkStream* stream,
+    SkBmpStandardCodec(int width, int height, const SkEncodedInfo& info, SkStream* stream,
             uint16_t bitsPerPixel, uint32_t numColors, uint32_t bytesPerColor,
             uint32_t offset, SkCodec::SkScanlineOrder rowOrder, bool isOpaque,
             bool inIco);
@@ -57,7 +57,7 @@ protected:
             int* inputColorCount) override;
 
 
-    uint32_t onGetFillValue(SkColorType) const override;
+    uint64_t onGetFillValue(const SkImageInfo&) const override;
 
     SkSampler* getSampler(bool createIfNecessary) override {
         SkASSERT(fSwizzler);
@@ -70,7 +70,7 @@ private:
 
 
 
-    bool createColorTable(SkAlphaType alphaType, int* colorCount);
+    bool createColorTable(SkColorType colorType, SkAlphaType alphaType, int* colorCount);
 
     void initializeSwizzler(const SkImageInfo& dstInfo, const Options& opts);
 

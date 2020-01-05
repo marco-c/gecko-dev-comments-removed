@@ -16,21 +16,27 @@ GrVkCaps::GrVkCaps(const GrContextOptions& contextOptions, const GrVkInterface* 
                    VkPhysicalDevice physDev, uint32_t featureFlags, uint32_t extensionFlags)
     : INHERITED(contextOptions) {
     fCanUseGLSLForShaderModule = false;
+    fMustDoCopiesFromOrigin = false;
+    fAllowInitializationErrorOnTearDown = false;
+    fSupportsCopiesAsDraws = false;
+    fMustSubmitCommandsBeforeCopyOp = false;
 
     
 
 
-    fMipMapSupport = false; 
-    fNPOTTextureTileSupport = false; 
-    fTwoSidedStencilSupport = false; 
-    fStencilWrapOpsSupport = false; 
-    fDiscardRenderTargetSupport = false; 
+    fMipMapSupport = true;   
+    fSRGBSupport = true;   
+    fNPOTTextureTileSupport = true;  
+    fTwoSidedStencilSupport = true;  
+    fStencilWrapOpsSupport = true; 
+    fDiscardRenderTargetSupport = true;
     fReuseScratchTextures = true; 
     fGpuTracingSupport = false; 
     fCompressedTexSubImageSupport = false; 
     fOversizedStencilSupport = false; 
 
-    fUseDrawInsteadOfClear = false; 
+    fUseDrawInsteadOfClear = false;
+    fFenceSyncSupport = true;   
 
     fMapBufferFlags = kNone_MapFlags; 
     fBufferMapThreshold = SK_MaxS32;  
@@ -39,7 +45,6 @@ GrVkCaps::GrVkCaps(const GrContextOptions& contextOptions, const GrVkInterface* 
     fMaxTextureSize = 4096; 
     fMaxColorSampleCount = 4; 
     fMaxStencilSampleCount = 4; 
-
 
     fShaderCaps.reset(new GrGLSLCaps(contextOptions));
 
@@ -64,6 +69,16 @@ void GrVkCaps::init(const GrContextOptions& contextOptions, const GrVkInterface*
         
         
         
+    }
+
+    if (kQualcomm_VkVendor == properties.vendorID) {
+        fMustDoCopiesFromOrigin = true;
+        fAllowInitializationErrorOnTearDown = true;
+    }
+
+    if (kNvidia_VkVendor == properties.vendorID) {
+        fSupportsCopiesAsDraws = true;
+        fMustSubmitCommandsBeforeCopyOp = true;
     }
 
     this->applyOptionsOverrides(contextOptions);
@@ -105,11 +120,11 @@ void GrVkCaps::initSampleCount(const VkPhysicalDeviceProperties& properties) {
 void GrVkCaps::initGrCaps(const VkPhysicalDeviceProperties& properties,
                           const VkPhysicalDeviceMemoryProperties& memoryProperties,
                           uint32_t featureFlags) {
-    fMaxVertexAttributes = properties.limits.maxVertexInputAttributes;
+    fMaxVertexAttributes = SkTMin(properties.limits.maxVertexInputAttributes, (uint32_t)INT_MAX);
     
     
-    fMaxRenderTargetSize = properties.limits.maxImageDimension2D;
-    fMaxTextureSize = properties.limits.maxImageDimension2D;
+    fMaxRenderTargetSize = SkTMin(properties.limits.maxImageDimension2D, (uint32_t)INT_MAX);
+    fMaxTextureSize = SkTMin(properties.limits.maxImageDimension2D, (uint32_t)INT_MAX);
 
     this->initSampleCount(properties);
 
@@ -137,7 +152,16 @@ void GrVkCaps::initGLSLCaps(const VkPhysicalDeviceProperties& properties,
             glslCaps->fConfigTextureSwizzle[i] = GrSwizzle::RRRR();
             glslCaps->fConfigOutputSwizzle[i] = GrSwizzle::AAAA();
         } else {
-            glslCaps->fConfigTextureSwizzle[i] = GrSwizzle::RGBA();
+            if (kRGBA_4444_GrPixelConfig == config) {
+                
+                
+                
+                
+                glslCaps->fConfigTextureSwizzle[i] = GrSwizzle::BGRA();
+                glslCaps->fConfigOutputSwizzle[i] = GrSwizzle::BGRA();
+            } else {
+                glslCaps->fConfigTextureSwizzle[i] = GrSwizzle::RGBA();
+            }
         }
     }
 
@@ -154,12 +178,29 @@ void GrVkCaps::initGLSLCaps(const VkPhysicalDeviceProperties& properties,
 
     glslCaps->fIntegerSupport = true;
 
+    
+    glslCaps->fShaderPrecisionVaries = true;
+    for (int s = 0; s < kGrShaderTypeCount; ++s) {
+        auto& highp = glslCaps->fFloatPrecisions[s][kHigh_GrSLPrecision];
+        highp.fLogRangeLow = highp.fLogRangeHigh = 127;
+        highp.fBits = 23;
+
+        auto& mediump = glslCaps->fFloatPrecisions[s][kMedium_GrSLPrecision];
+        mediump.fLogRangeLow = mediump.fLogRangeHigh = 14;
+        mediump.fBits = 10;
+
+        glslCaps->fFloatPrecisions[s][kLow_GrSLPrecision] = mediump;
+    }
+    glslCaps->initSamplerPrecisionTable();
+
     glslCaps->fMaxVertexSamplers =
     glslCaps->fMaxGeometrySamplers =
-    glslCaps->fMaxFragmentSamplers = SkTMin(properties.limits.maxPerStageDescriptorSampledImages,
-                                            properties.limits.maxPerStageDescriptorSamplers);
-    glslCaps->fMaxCombinedSamplers = SkTMin(properties.limits.maxDescriptorSetSampledImages,
-                                            properties.limits.maxDescriptorSetSamplers);
+    glslCaps->fMaxFragmentSamplers = SkTMin(SkTMin(properties.limits.maxPerStageDescriptorSampledImages,
+                                                   properties.limits.maxPerStageDescriptorSamplers),
+                                            (uint32_t)INT_MAX);
+    glslCaps->fMaxCombinedSamplers = SkTMin(SkTMin(properties.limits.maxDescriptorSetSampledImages,
+                                                   properties.limits.maxDescriptorSetSamplers),
+                                            (uint32_t)INT_MAX);
 }
 
 bool stencil_format_supported(const GrVkInterface* interface,

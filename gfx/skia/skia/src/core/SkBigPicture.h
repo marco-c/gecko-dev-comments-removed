@@ -8,7 +8,7 @@
 #ifndef SkBigPicture_DEFINED
 #define SkBigPicture_DEFINED
 
-#include "SkOncePtr.h"
+#include "SkOnce.h"
 #include "SkPicture.h"
 #include "SkRect.h"
 #include "SkTemplates.h"
@@ -20,9 +20,6 @@ class SkRecord;
 
 class SkBigPicture final : public SkPicture {
 public:
-    
-    class AccelData : public SkRefCnt { };
-
     
     class SnapshotArray : ::SkNoncopyable {
     public:
@@ -40,14 +37,12 @@ public:
                  SkRecord*,            
                  SnapshotArray*,       
                  SkBBoxHierarchy*,     
-                 AccelData*,           
                  size_t approxBytesUsedBySubPictures);
 
 
 
     void playback(SkCanvas*, AbortCallback*) const override;
     SkRect cullRect() const override;
-    bool hasText() const override;
     bool willPlayBackBitmaps() const override;
     int approximateOpCount() const override;
     size_t approximateBytesUsed() const override;
@@ -61,17 +56,15 @@ public:
 
     const SkBBoxHierarchy* bbh() const { return fBBH; }
     const SkRecord*     record() const { return fRecord; }
-    const AccelData* accelData() const { return fAccelData; }
 
 private:
     struct Analysis {
-        explicit Analysis(const SkRecord&);
+        void init(const SkRecord&);
 
         bool suitableForGpuRasterization(const char** reason) const;
 
         uint8_t fNumSlowPathsAndDashEffects;
         bool    fWillPlaybackBitmaps : 1;
-        bool    fHasText             : 1;
     };
 
     int numSlowPaths() const override;
@@ -81,11 +74,11 @@ private:
 
     const SkRect                          fCullRect;
     const size_t                          fApproxBytesUsedBySubPictures;
-    SkOncePtr<const Analysis>             fAnalysis;
+    mutable SkOnce                        fAnalysisOnce;
+    mutable Analysis                      fAnalysis;
     SkAutoTUnref<const SkRecord>          fRecord;
     SkAutoTDelete<const SnapshotArray>    fDrawablePicts;
     SkAutoTUnref<const SkBBoxHierarchy>   fBBH;
-    SkAutoTUnref<const AccelData>         fAccelData;
 };
 
 #endif

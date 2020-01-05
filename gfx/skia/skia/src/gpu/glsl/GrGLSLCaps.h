@@ -66,7 +66,7 @@ public:
 
     bool externalTextureSupport() const { return fExternalTextureSupport; }
 
-    bool bufferTextureSupport() const { return fBufferTextureSupport; }
+    bool texelFetchSupport() const { return fTexelFetchSupport; }
 
     AdvBlendEqInteraction advBlendEqInteraction() const { return fAdvBlendEqInteraction; }
 
@@ -90,6 +90,8 @@ public:
     bool canUseMinAndAbsTogether() const { return fCanUseMinAndAbsTogether; }
 
     bool mustForceNegatedAtanParamToFloat() const { return fMustForceNegatedAtanParamToFloat; }
+
+    bool requiresLocalOutputColorForFBFetch() const { return fRequiresLocalOutputColorForFBFetch; }
 
     
     
@@ -120,9 +122,9 @@ public:
         return fExternalTextureExtensionString;
     }
 
-    const char* bufferTextureExtensionString() const {
-        SkASSERT(this->bufferTextureSupport());
-        return fBufferTextureExtensionString;
+    const char* texelBufferExtensionString() const {
+        SkASSERT(this->texelBufferSupport());
+        return fTexelBufferExtensionString;
     }
 
     const char* noperspectiveInterpolationExtensionString() const {
@@ -162,6 +164,11 @@ public:
         return fConfigOutputSwizzle[config];
     }
 
+    
+    GrSLPrecision samplerPrecision(GrPixelConfig config, GrShaderFlags visibility) const {
+        return static_cast<GrSLPrecision>(fSamplerPrecisions[visibility][config]);
+    }
+
     GrGLSLGeneration generation() const { return fGLSLGeneration; }
 
     
@@ -170,6 +177,9 @@ public:
     SkString dump() const override;
 
 private:
+    
+    void initSamplerPrecisionTable();
+
     void onApplyOptionsOverrides(const GrContextOptions& options) override;
 
     GrGLSLGeneration fGLSLGeneration;
@@ -186,11 +196,12 @@ private:
     bool fSampleVariablesSupport : 1;
     bool fSampleMaskOverrideCoverageSupport : 1;
     bool fExternalTextureSupport : 1;
-    bool fBufferTextureSupport : 1;
+    bool fTexelFetchSupport : 1;
 
     
     bool fCanUseMinAndAbsTogether : 1;
     bool fMustForceNegatedAtanParamToFloat : 1;
+    bool fRequiresLocalOutputColorForFBFetch : 1;
 
     const char* fVersionDeclString;
 
@@ -198,7 +209,7 @@ private:
     const char* fFragCoordConventionsExtensionString;
     const char* fSecondaryOutputExtensionString;
     const char* fExternalTextureExtensionString;
-    const char* fBufferTextureExtensionString;
+    const char* fTexelBufferExtensionString;
     const char* fNoPerspectiveInterpolationExtensionString;
     const char* fMultisampleInterpolationExtensionString;
     const char* fSampleVariablesExtensionString;
@@ -206,15 +217,17 @@ private:
     const char* fFBFetchColorName;
     const char* fFBFetchExtensionString;
 
-    uint8_t fMaxVertexSamplers;
-    uint8_t fMaxGeometrySamplers;
-    uint8_t fMaxFragmentSamplers;
-    uint8_t fMaxCombinedSamplers;
+    int fMaxVertexSamplers;
+    int fMaxGeometrySamplers;
+    int fMaxFragmentSamplers;
+    int fMaxCombinedSamplers;
 
     AdvBlendEqInteraction fAdvBlendEqInteraction;
 
     GrSwizzle fConfigTextureSwizzle[kGrPixelConfigCnt];
     GrSwizzle fConfigOutputSwizzle[kGrPixelConfigCnt];
+
+    uint8_t fSamplerPrecisions[(1 << kGrShaderTypeCount)][kGrPixelConfigCnt];
 
     friend class GrGLCaps;  
     friend class GrVkCaps;

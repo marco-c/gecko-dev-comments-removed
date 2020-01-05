@@ -50,10 +50,6 @@ class SkImageEncoder_WIC : public SkImageEncoder {
 public:
     SkImageEncoder_WIC(Type t) : fType(t) {}
 
-    
-    
-    SkImageEncoder_WIC() {}
-
 protected:
     virtual bool onEncode(SkWStream* stream, const SkBitmap& bm, int quality);
 
@@ -67,12 +63,6 @@ bool SkImageEncoder_WIC::onEncode(SkWStream* stream
 {
     GUID type;
     switch (fType) {
-        case kBMP_Type:
-            type = GUID_ContainerFormatBmp;
-            break;
-        case kICO_Type:
-            type = GUID_ContainerFormatIco;
-            break;
         case kJPEG_Type:
             type = GUID_ContainerFormatJpeg;
             break;
@@ -84,33 +74,47 @@ bool SkImageEncoder_WIC::onEncode(SkWStream* stream
     }
 
     
-    const SkBitmap* bitmap;
-    SkBitmap bitmapCopy;
-    if (kN32_SkColorType == bitmapOrig.colorType() && bitmapOrig.isOpaque()) {
-        bitmap = &bitmapOrig;
-    } else {
-        if (!bitmapOrig.copyTo(&bitmapCopy, kN32_SkColorType)) {
-            return false;
-        }
-        bitmap = &bitmapCopy;
+    SkBitmap bitmap;
+    if (!bitmapOrig.copyTo(&bitmap, kBGRA_8888_SkColorType)) {
+        return false;
     }
 
     
-    if (!bitmap->isOpaque()) {
-        SkAutoLockPixels alp(*bitmap);
-
-        uint8_t* pixels = reinterpret_cast<uint8_t*>(bitmap->getPixels());
-        for (int y = 0; y < bitmap->height(); ++y) {
-            for (int x = 0; x < bitmap->width(); ++x) {
-                uint8_t* bytes = pixels + y * bitmap->rowBytes() + x * bitmap->bytesPerPixel();
-
+    if (kPremul_SkAlphaType == bitmap.alphaType()) {
+        uint8_t* pixels = reinterpret_cast<uint8_t*>(bitmap.getPixels());
+        for (int y = 0; y < bitmap.height(); ++y) {
+            for (int x = 0; x < bitmap.width(); ++x) {
+                uint8_t* bytes = pixels + y * bitmap.rowBytes() + x * bitmap.bytesPerPixel();
                 SkPMColor* src = reinterpret_cast<SkPMColor*>(bytes);
                 SkColor* dst = reinterpret_cast<SkColor*>(bytes);
-
                 *dst = SkUnPreMultiply::PMColorToColor(*src);
             }
         }
     }
+
+    
+    void* pixels = bitmap.getPixels();
+    size_t rowBytes = bitmap.rowBytes();
+    SkAutoMalloc pixelStorage;
+    WICPixelFormatGUID formatDesired = GUID_WICPixelFormat32bppBGRA;
+    if (kJPEG_Type == fType) {
+        formatDesired = GUID_WICPixelFormat24bppBGR;
+        rowBytes = SkAlign4(bitmap.width() * 3);
+        pixelStorage.reset(rowBytes * bitmap.height());
+        for (int y = 0; y < bitmap.height(); y++) {
+            uint8_t* dstRow = SkTAddOffset<uint8_t>(pixelStorage.get(), y * rowBytes);
+            for (int x = 0; x < bitmap.width(); x++) {
+                uint32_t bgra = *bitmap.getAddr32(x, y);
+                dstRow[0] = (uint8_t) (bgra >>  0);
+                dstRow[1] = (uint8_t) (bgra >>  8);
+                dstRow[2] = (uint8_t) (bgra >> 16);
+                dstRow += 3;
+            }
+        }
+
+        pixels = pixelStorage.get();
+    }
+
 
     
     SkAutoCoInitialize scopedCo;
@@ -176,15 +180,14 @@ bool SkImageEncoder_WIC::onEncode(SkWStream* stream
     }
 
     
-    const UINT width = bitmap->width();
-    const UINT height = bitmap->height();
+    const UINT width = bitmap.width();
+    const UINT height = bitmap.height();
     if (SUCCEEDED(hr)) {
         hr = piBitmapFrameEncode->SetSize(width, height);
     }
 
     
     
-    const WICPixelFormatGUID formatDesired = GUID_WICPixelFormat32bppBGRA;
     WICPixelFormatGUID formatGUID = formatDesired;
     if (SUCCEEDED(hr)) {
         hr = piBitmapFrameEncode->SetPixelFormat(&formatGUID);
@@ -196,13 +199,10 @@ bool SkImageEncoder_WIC::onEncode(SkWStream* stream
 
     
     if (SUCCEEDED(hr)) {
-        SkAutoLockPixels alp(*bitmap);
-        const UINT stride = (UINT) bitmap->rowBytes();
-        hr = piBitmapFrameEncode->WritePixels(
-            height
-            , stride
-            , stride * height
-            , reinterpret_cast<BYTE*>(bitmap->getPixels()));
+        hr = piBitmapFrameEncode->WritePixels(height,
+                                              (UINT) rowBytes,
+                                              (UINT) rowBytes * height,
+                                              reinterpret_cast<BYTE*>(pixels));
     }
 
     if (SUCCEEDED(hr)) {
@@ -218,11 +218,11 @@ bool SkImageEncoder_WIC::onEncode(SkWStream* stream
 
 
 
+#ifdef SK_USE_WIC_ENCODER
 static SkImageEncoder* sk_imageencoder_wic_factory(SkImageEncoder::Type t) {
     switch (t) {
-        case SkImageEncoder::kBMP_Type:
-        case SkImageEncoder::kICO_Type:
         case SkImageEncoder::kPNG_Type:
+        case SkImageEncoder::kJPEG_Type:
             break;
         default:
             return nullptr;
@@ -231,7 +231,10 @@ static SkImageEncoder* sk_imageencoder_wic_factory(SkImageEncoder::Type t) {
 }
 
 static SkImageEncoder_EncodeReg gEReg(sk_imageencoder_wic_factory);
+#endif
 
-DEFINE_ENCODER_CREATOR(ImageEncoder_WIC);
+SkImageEncoder* CreateImageEncoder_WIC(SkImageEncoder::Type type) {
+    return new SkImageEncoder_WIC(type);
+}
 
 #endif 

@@ -71,6 +71,7 @@ class SK_API SkFlattenable : public SkRefCnt {
 public:
     enum Type {
         kSkColorFilter_Type,
+        kSkDrawable_Type,
         kSkDrawLooper_Type,
         kSkImageFilter_Type,
         kSkMaskFilter_Type,
@@ -80,6 +81,7 @@ public:
         kSkShader_Type,
         kSkUnused_Type,     
         kSkXfermode_Type,
+        kSkNormalSource_Type,
     };
 
     typedef sk_sp<SkFlattenable> (*Factory)(SkReadBuffer&);
@@ -94,7 +96,13 @@ public:
 
     
 
-    const char* getTypeName() const { return FactoryToName(getFactory()); }
+
+
+
+
+
+
+    virtual const char* getTypeName() const { return FactoryToName(getFactory()); }
 
     static Factory NameToFactory(const char name[]);
     static const char* FactoryToName(Factory);

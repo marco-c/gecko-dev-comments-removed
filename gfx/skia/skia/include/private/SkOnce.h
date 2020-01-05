@@ -8,132 +8,43 @@
 #ifndef SkOnce_DEFINED
 #define SkOnce_DEFINED
 
+#include <atomic>
+#include <utility>
+#include "SkTypes.h"
 
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-#include "../private/SkAtomics.h"
-#include "../private/SkSpinlock.h"
-
-
-#define SK_DECLARE_STATIC_ONCE(name) namespace {} static SkOnceFlag name
-
-class SkOnceFlag;
-
-inline void SkOnce(SkOnceFlag* once, void (*f)());
-
-template <typename Arg>
-inline void SkOnce(SkOnceFlag* once, void (*f)(Arg), Arg arg);
-
-
-template <typename Lock>
-inline void SkOnce(bool* done, Lock* lock, void (*f)());
-
-template <typename Lock, typename Arg>
-inline void SkOnce(bool* done, Lock* lock, void (*f)(Arg), Arg arg);
-
-
-
-
-class SkOnceFlag {
+class SkOnce {
 public:
-    bool* mutableDone() { return &fDone; }
+    constexpr SkOnce() = default;
 
-    void acquire() { fSpinlock.acquire(); }
-    void release() { fSpinlock.release(); }
+    template <typename Fn, typename... Args>
+    void operator()(Fn&& fn, Args&&... args) {
+        auto state = fState.load(std::memory_order_acquire);
+
+        if (state == Done) {
+            return;
+        }
+
+        
+        if (state == NotStarted && fState.compare_exchange_strong(state, Claimed,
+                                                                  std::memory_order_relaxed)) {
+            
+            fn(std::forward<Args>(args)...);
+            return fState.store(Done, std::memory_order_release);
+        }
+
+        
+        
+        while (fState.load(std::memory_order_acquire) != Done) {  }
+    }
 
 private:
-    bool fDone;
-    SkSpinlock fSpinlock;
+    enum State : uint8_t { NotStarted, Claimed, Done};
+    std::atomic<uint8_t> fState{NotStarted};
 };
-
-
-
-
-
-
-
-
-template <typename Lock, typename Arg>
-static void sk_once_slow(bool* done, Lock* lock, void (*f)(Arg), Arg arg) {
-    lock->acquire();
-    if (!sk_atomic_load(done, sk_memory_order_relaxed)) {
-        f(arg);
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        sk_release_store(done, true);
-    }
-    lock->release();
-}
-
-
-template <typename Lock, typename Arg>
-inline void SkOnce(bool* done, Lock* lock, void (*f)(Arg), Arg arg) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (!sk_atomic_load(done, sk_memory_order_acquire)) {
-        sk_once_slow(done, lock, f, arg);
-    }
-}
-
-template <typename Arg>
-inline void SkOnce(SkOnceFlag* once, void (*f)(Arg), Arg arg) {
-    return SkOnce(once->mutableDone(), once, f, arg);
-}
-
-
-
-
-static void sk_once_no_arg_adaptor(void (*f)()) {
-    f();
-}
-
-inline void SkOnce(SkOnceFlag* once, void (*func)()) {
-    return SkOnce(once, sk_once_no_arg_adaptor, func);
-}
-
-template <typename Lock>
-inline void SkOnce(bool* done, Lock* lock, void (*func)()) {
-    return SkOnce(done, lock, sk_once_no_arg_adaptor, func);
-}
 
 #endif  

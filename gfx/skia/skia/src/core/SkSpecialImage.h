@@ -12,10 +12,8 @@
 #include "SkRefCnt.h"
 #include "SkSurfaceProps.h"
 
-
-#include "SkImageFilter.h"
-
-#include "SkImageInfo.h" 
+#include "SkImageFilter.h" 
+#include "SkImageInfo.h"   
 
 class GrContext;
 class GrTexture;
@@ -53,9 +51,10 @@ public:
     int width() const { return fSubset.width(); }
     int height() const { return fSubset.height(); }
     const SkIRect& subset() const { return fSubset; }
+    SkColorSpace* getColorSpace() const;
 
     uint32_t uniqueID() const { return fUniqueID; }
-    virtual bool isOpaque() const { return false; }
+    virtual SkAlphaType alphaType() const = 0;
     virtual size_t getSize() const = 0;
 
     
@@ -63,44 +62,42 @@ public:
 
 
 
-    sk_sp<SkSpecialImage> makeTextureImage(SkImageFilter::Proxy*, GrContext*);
+    sk_sp<SkSpecialImage> makeTextureImage(GrContext*);
 
     
 
 
     void draw(SkCanvas*, SkScalar x, SkScalar y, const SkPaint*) const;
 
-    static sk_sp<SkSpecialImage> MakeFromImage(SkImageFilter::Proxy*,
-                                               const SkIRect& subset,
+    static sk_sp<SkSpecialImage> MakeFromImage(const SkIRect& subset,
                                                sk_sp<SkImage>,
                                                const SkSurfaceProps* = nullptr);
-    static sk_sp<SkSpecialImage> MakeFromRaster(SkImageFilter::Proxy*,
-                                                const SkIRect& subset,
+    static sk_sp<SkSpecialImage> MakeFromRaster(const SkIRect& subset,
                                                 const SkBitmap&,
                                                 const SkSurfaceProps* = nullptr);
-    static sk_sp<SkSpecialImage> MakeFromGpu(SkImageFilter::Proxy*,
-                                             const SkIRect& subset,
+#if SK_SUPPORT_GPU
+    static sk_sp<SkSpecialImage> MakeFromGpu(const SkIRect& subset,
                                              uint32_t uniqueID,
-                                             GrTexture*,
+                                             sk_sp<GrTexture>,
+                                             sk_sp<SkColorSpace>,
                                              const SkSurfaceProps* = nullptr,
                                              SkAlphaType at = kPremul_SkAlphaType);
-    static sk_sp<SkSpecialImage> MakeFromPixmap(SkImageFilter::Proxy*,
-                                                const SkIRect& subset,
-                                                const SkPixmap&,
-                                                RasterReleaseProc,
-                                                ReleaseContext,
-                                                const SkSurfaceProps* = nullptr);
+#endif
 
     
 
 
-    sk_sp<SkSpecialSurface> makeSurface(const SkImageInfo&) const;
+    sk_sp<SkSpecialSurface> makeSurface(const SkImageFilter::OutputProperties& outProps,
+                                        const SkISize& size,
+                                        SkAlphaType at = kPremul_SkAlphaType) const;
 
     
 
 
 
-    sk_sp<SkSurface> makeTightSurface(const SkImageInfo&) const;
+    sk_sp<SkSurface> makeTightSurface(const SkImageFilter::OutputProperties& outProps,
+                                      const SkISize& size,
+                                      SkAlphaType at = kPremul_SkAlphaType) const;
 
     
 
@@ -116,54 +113,40 @@ public:
     sk_sp<SkImage> makeTightSubset(const SkIRect& subset) const;
 
     
-    bool internal_getBM(SkBitmap* result);
-    static sk_sp<SkSpecialImage> internal_fromBM(SkImageFilter::Proxy*, const SkBitmap&,
-                                                 const SkSurfaceProps*);
-    SkImageFilter::Proxy* internal_getProxy() const;
+    
+
+
+    bool isTextureBacked() const;
+
+    
+
+
+    GrContext* getContext() const;
+
+#if SK_SUPPORT_GPU
+    
+
+
+
+    sk_sp<GrTexture> asTextureRef(GrContext*) const;
+#endif
 
     
     
 
 
 
-    GrTexture* peekTexture() const;
-
-    
-    
 
 
-
-
-
-
-
-
-
-
-    bool peekPixels(SkPixmap*) const;
+    bool getROPixels(SkBitmap*) const;
 
 protected:
-    SkSpecialImage(SkImageFilter::Proxy*, const SkIRect& subset, uint32_t uniqueID,
-                   const SkSurfaceProps*);
-
-    
-    friend class TestingSpecialImageAccess;
-    friend class TestingSpecialSurfaceAccess;
-
-    
-    
-    bool testingOnlyGetROPixels(SkBitmap*) const;
-
-    
-    SkImageFilter::Proxy* proxy() const { return fProxy; }
+    SkSpecialImage(const SkIRect& subset, uint32_t uniqueID, const SkSurfaceProps*);
 
 private:
     const SkSurfaceProps fProps;
     const SkIRect        fSubset;
     const uint32_t       fUniqueID;
-
-    
-    SkImageFilter::Proxy* fProxy;
 
     typedef SkRefCnt INHERITED;
 };

@@ -10,14 +10,38 @@
 
 #include "GrColor.h"
 #include "GrTypesPriv.h"
-#include "SkChecksum.h"
+#include "SkOpts.h"
+#include "SkTArray.h"
 
+class GrGLSLCaps;
+class GrPipeline;
+class GrPrimitiveProcessor;
 
 
 class GrProgramDesc {
 public:
     
     GrProgramDesc() {}
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static bool Build(GrProgramDesc*,
+                      const GrPrimitiveProcessor&,
+                      bool hasPointSize,
+                      const GrPipeline&,
+                      const GrGLSLCaps&);
 
     
     const uint32_t* asKey() const {
@@ -71,39 +95,23 @@ public:
 
     struct KeyHeader {
         
-        uint8_t                     fSurfaceOriginKey;
-        
         
         uint8_t                     fSamplePatternKey;
         
         uint8_t                     fOutputSwizzle;
-        uint8_t                     fSnapVerticesToPixelCenters;
-        int8_t                      fColorEffectCnt;
-        int8_t                      fCoverageEffectCnt;
-        uint8_t                     fIgnoresCoverage;
+        uint8_t                     fColorFragmentProcessorCnt : 4;
+        uint8_t                     fCoverageFragmentProcessorCnt : 4;
+        
+        uint8_t                     fSurfaceOriginKey : 2;
+        uint8_t                     fIgnoresCoverage : 1;
+        uint8_t                     fSnapVerticesToPixelCenters : 1;
+        uint8_t                     fHasPointSize : 1;
+        uint8_t                     fPad : 3;
     };
-
-    int numColorEffects() const {
-        return this->header().fColorEffectCnt;
-    }
-
-    int numCoverageEffects() const {
-        return this->header().fCoverageEffectCnt;
-    }
-
-    int numTotalEffects() const { return this->numColorEffects() + this->numCoverageEffects(); }
+    GR_STATIC_ASSERT(sizeof(KeyHeader) == 4);
 
     
     const KeyHeader& header() const { return *this->atOffset<KeyHeader, kHeaderOffset>(); }
-
-protected:
-    template<typename T, size_t OFFSET> T* atOffset() {
-        return reinterpret_cast<T*>(reinterpret_cast<intptr_t>(fKey.begin()) + OFFSET);
-    }
-
-    template<typename T, size_t OFFSET> const T* atOffset() const {
-        return reinterpret_cast<const T*>(reinterpret_cast<intptr_t>(fKey.begin()) + OFFSET);
-    }
 
     void finalize() {
         int keyLength = fKey.count();
@@ -112,7 +120,16 @@ protected:
 
         uint32_t* checksum = this->atOffset<uint32_t, GrProgramDesc::kChecksumOffset>();
         *checksum = 0;  
-        *checksum = SkChecksum::Murmur3(fKey.begin(), keyLength);
+        *checksum = SkOpts::hash(fKey.begin(), keyLength);
+    }
+
+protected:
+    template<typename T, size_t OFFSET> T* atOffset() {
+        return reinterpret_cast<T*>(reinterpret_cast<intptr_t>(fKey.begin()) + OFFSET);
+    }
+
+    template<typename T, size_t OFFSET> const T* atOffset() const {
+        return reinterpret_cast<const T*>(reinterpret_cast<intptr_t>(fKey.begin()) + OFFSET);
     }
 
     
@@ -127,7 +144,11 @@ protected:
         kChecksumOffset = kLengthOffset + sizeof(uint32_t),
         
         kHeaderOffset = kChecksumOffset + sizeof(uint32_t),
-        kHeaderSize = SkAlign4(2 * sizeof(KeyHeader)),
+        kHeaderSize = SkAlign4(sizeof(KeyHeader)),
+        
+        
+        
+        kProcessorKeysOffset = kHeaderOffset + kHeaderSize,
     };
 
     enum {

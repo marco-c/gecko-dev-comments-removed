@@ -9,8 +9,8 @@
 #ifndef GrStencilAttachment_DEFINED
 #define GrStencilAttachment_DEFINED
 
-#include "GrClip.h"
 #include "GrGpuResource.h"
+#include "SkClipStack.h"
 
 class GrRenderTarget;
 class GrResourceKey;
@@ -31,18 +31,18 @@ public:
     
     void setLastClip(int32_t clipStackGenID,
                      const SkIRect& clipSpaceRect,
-                     const SkIPoint clipSpaceToStencilOffset) {
+                     const SkIPoint clipOrigin) {
         fLastClipStackGenID = clipStackGenID;
         fLastClipStackRect = clipSpaceRect;
-        fLastClipSpaceOffset = clipSpaceToStencilOffset;
+        fLastClipOrigin = clipOrigin;
     }
 
     
     bool mustRenderClip(int32_t clipStackGenID,
                         const SkIRect& clipSpaceRect,
-                        const SkIPoint clipSpaceToStencilOffset) const {
+                        const SkIPoint& clipOrigin) const {
         return fLastClipStackGenID != clipStackGenID ||
-               fLastClipSpaceOffset != clipSpaceToStencilOffset ||
+               fLastClipOrigin != clipOrigin ||
                !fLastClipStackRect.contains(clipSpaceRect);
     }
 
@@ -52,9 +52,8 @@ public:
                                                   GrUniqueKey* key);
 
 protected:
-    GrStencilAttachment(GrGpu* gpu, LifeCycle lifeCycle, int width, int height, int bits,
-                        int sampleCnt)
-        : GrGpuResource(gpu, lifeCycle)
+    GrStencilAttachment(GrGpu* gpu, int width, int height, int bits, int sampleCnt)
+        : GrGpuResource(gpu)
         , fWidth(width)
         , fHeight(height)
         , fBits(bits)
@@ -72,7 +71,7 @@ private:
 
     int32_t     fLastClipStackGenID;
     SkIRect     fLastClipStackRect;
-    SkIPoint    fLastClipSpaceOffset;
+    SkIPoint    fLastClipOrigin;
 
     typedef GrGpuResource INHERITED;
 };

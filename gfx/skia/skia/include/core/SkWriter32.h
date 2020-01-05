@@ -52,12 +52,6 @@ public:
     }
 
     
-    
-    const uint32_t* contiguousArray() const {
-        return (uint32_t*)fData;
-    }
-
-    
     uint32_t* reserve(size_t size) {
         SkASSERT(SkAlign4(size) == size);
         size_t offset = fUsed;

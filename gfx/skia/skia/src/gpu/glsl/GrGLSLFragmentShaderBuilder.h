@@ -11,7 +11,6 @@
 #include "GrGLSLShaderBuilder.h"
 
 #include "GrProcessor.h"
-#include "glsl/GrGLSLProcessorTypes.h"
 
 class GrRenderTarget;
 class GrGLSLVarying;
@@ -46,7 +45,8 @@ public:
 
 
 
-    virtual SkString ensureFSCoords2D(const GrGLSLTransformedCoordsArray& coords, int index) = 0;
+
+    virtual SkString ensureCoords2D(const GrShaderVar&) = 0;
 
 
     
@@ -95,6 +95,10 @@ public:
 
 
     virtual void maskSampleCoverage(const char* mask, bool invert = false) = 0;
+
+    
+
+    virtual const char* distanceVectorName() const = 0;
 
     
 
@@ -163,9 +167,9 @@ public:
 
     
     bool enableFeature(GLSLFeature) override;
-    virtual SkString ensureFSCoords2D(const GrGLSLTransformedCoordsArray& coords,
-                                      int index) override;
+    virtual SkString ensureCoords2D(const GrShaderVar&) override;
     const char* fragmentPosition() override;
+    const char* distanceVectorName() const override;
 
     
     void appendOffsetToSample(const char* sampleIdx, Coordinates) override;
@@ -207,7 +211,7 @@ private:
     void onFinalize() override;
     void defineSampleOffsetArray(const char* name, const SkMatrix&);
 
-    static const char* kDstTextureColorName;
+    static const char* kDstColorName;
 
     
 
@@ -235,6 +239,7 @@ private:
     bool       fHasSecondaryOutput;
     uint8_t    fUsedSampleOffsetArrays;
     bool       fHasInitializedSampleMask;
+    SkString   fDistanceVectorOutput;
 
 #ifdef SK_DEBUG
     

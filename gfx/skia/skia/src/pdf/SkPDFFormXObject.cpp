@@ -7,71 +7,33 @@
 
 
 #include "SkPDFFormXObject.h"
-
-#include "SkMatrix.h"
-#include "SkPDFDevice.h"
 #include "SkPDFUtils.h"
-#include "SkStream.h"
-#include "SkTypes.h"
 
-SkPDFFormXObject::SkPDFFormXObject(SkPDFDevice* device) {
-    
-    
-    
-    auto resourceDict = device->makeResourceDict();
-
-    auto content = device->content();
-    this->setData(content.get());
-
-    sk_sp<SkPDFArray> bboxArray(device->copyMediaBox());
-    this->init(nullptr, resourceDict.get(), bboxArray.get());
-
-    
-    
-    
-    if (!device->initialTransform().isIdentity()) {
-        SkMatrix inverse;
-        if (!device->initialTransform().invert(&inverse)) {
-            
-            SkASSERT(false);
-            inverse.reset();
-        }
-        this->insertObject("Matrix", SkPDFUtils::MatrixToArray(inverse));
+sk_sp<SkPDFObject> SkPDFMakeFormXObject(std::unique_ptr<SkStreamAsset> content,
+                                        sk_sp<SkPDFArray> mediaBox,
+                                        sk_sp<SkPDFDict> resourceDict,
+                                        const SkMatrix& inverseTransform,
+                                        const char* colorSpace) {
+    auto form = sk_make_sp<SkPDFStream>(std::move(content));
+    form->dict()->insertName("Type", "XObject");
+    form->dict()->insertName("Subtype", "Form");
+    if (!inverseTransform.isIdentity()) {
+        sk_sp<SkPDFObject> mat(SkPDFUtils::MatrixToArray(inverseTransform));
+        form->dict()->insertObject("Matrix", std::move(mat));
     }
-}
+    form->dict()->insertObject("Resources", std::move(resourceDict));
+    form->dict()->insertObject("BBox", std::move(mediaBox));
 
-
-
-
-SkPDFFormXObject::SkPDFFormXObject(SkStream* content, SkRect bbox,
-                                   SkPDFDict* resourceDict) {
-    setData(content);
-
-    sk_sp<SkPDFArray> bboxArray(SkPDFUtils::RectToArray(bbox));
-    this->init("DeviceRGB", resourceDict, bboxArray.get());
-}
-
-
-
-
-
-void SkPDFFormXObject::init(const char* colorSpace,
-                            SkPDFDict* resourceDict, SkPDFArray* bbox) {
-    this->insertName("Type", "XObject");
-    this->insertName("Subtype", "Form");
-    this->insertObject("Resources", sk_ref_sp(resourceDict));
-    this->insertObject("BBox", sk_ref_sp(bbox));
-
+    
+    
     
     
     auto group = sk_make_sp<SkPDFDict>("Group");
     group->insertName("S", "Transparency");
-
     if (colorSpace != nullptr) {
         group->insertName("CS", colorSpace);
     }
     group->insertBool("I", true);  
-    this->insertObject("Group", std::move(group));
+    form->dict()->insertObject("Group", std::move(group));
+    return form;
 }
-
-SkPDFFormXObject::~SkPDFFormXObject() {}

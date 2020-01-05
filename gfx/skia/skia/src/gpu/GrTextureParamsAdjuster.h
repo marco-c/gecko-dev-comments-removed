@@ -59,18 +59,22 @@ public:
 
 
 
-    virtual const GrFragmentProcessor* createFragmentProcessor(
+    virtual sk_sp<GrFragmentProcessor> createFragmentProcessor(
                                     const SkMatrix& textureMatrix,
                                     const SkRect& constraintRect,
                                     FilterConstraint filterConstraint,
                                     bool coordsLimitedToConstraintRect,
-                                    const GrTextureParams::FilterMode* filterOrNullForBicubic) = 0;
+                                    const GrTextureParams::FilterMode* filterOrNullForBicubic,
+                                    SkColorSpace* dstColorSpace,
+                                    SkSourceGammaTreatment) = 0;
 
     virtual ~GrTextureProducer() {}
 
     int width() const { return fWidth; }
     int height() const { return fHeight; }
     bool isAlphaOnly() const { return fIsAlphaOnly; }
+    virtual SkAlphaType alphaType() const = 0;
+    virtual SkColorSpace* getColorSpace() = 0;
 
 protected:
     GrTextureProducer(int width, int height, bool isAlphaOnly)
@@ -127,22 +131,28 @@ public:
 
 
 
-    GrTexture* refTextureSafeForParams(const GrTextureParams&, SkIPoint* outOffset);
+    GrTexture* refTextureSafeForParams(const GrTextureParams&, SkSourceGammaTreatment,
+                                       SkIPoint* outOffset);
 
-    const GrFragmentProcessor* createFragmentProcessor(
+    sk_sp<GrFragmentProcessor> createFragmentProcessor(
                                 const SkMatrix& textureMatrix,
                                 const SkRect& constraintRect,
                                 FilterConstraint,
                                 bool coordsLimitedToConstraintRect,
-                                const GrTextureParams::FilterMode* filterOrNullForBicubic) override;
+                                const GrTextureParams::FilterMode* filterOrNullForBicubic,
+                                SkColorSpace* dstColorSpace,
+                                SkSourceGammaTreatment) override;
+
+    
+    
+    GrTextureAdjuster(GrTexture*, SkAlphaType, const SkIRect& area, uint32_t uniqueID,
+                      SkColorSpace*);
 
 protected:
-    
-    explicit GrTextureAdjuster(GrTexture* original, bool isAlphaOnly)
-        : INHERITED(original->width(), original->height(), isAlphaOnly)
-        , fOriginal(original) {}
-
-    GrTextureAdjuster(GrTexture* original, const SkIRect& contentArea, bool isAlphaOnly);
+    SkAlphaType alphaType() const override { return fAlphaType; }
+    SkColorSpace* getColorSpace() override;
+    void makeCopyKey(const CopyParams& params, GrUniqueKey* copyKey) override;
+    void didCacheCopy(const GrUniqueKey& copyKey) override;
 
     GrTexture* originalTexture() const { return fOriginal; }
 
@@ -152,6 +162,9 @@ protected:
 private:
     SkTLazy<SkIRect>    fContentArea;
     GrTexture*          fOriginal;
+    SkAlphaType         fAlphaType;
+    SkColorSpace*       fColorSpace;
+    uint32_t            fUniqueID;
 
     GrTexture* refCopy(const CopyParams &copyParams);
 
@@ -167,14 +180,16 @@ public:
     
 
 
-    GrTexture* refTextureForParams(const GrTextureParams&);
+    GrTexture* refTextureForParams(const GrTextureParams&, SkSourceGammaTreatment);
 
-    const GrFragmentProcessor* createFragmentProcessor(
+    sk_sp<GrFragmentProcessor> createFragmentProcessor(
                                 const SkMatrix& textureMatrix,
                                 const SkRect& constraintRect,
                                 FilterConstraint filterConstraint,
                                 bool coordsLimitedToConstraintRect,
-                                const GrTextureParams::FilterMode* filterOrNullForBicubic) override;
+                                const GrTextureParams::FilterMode* filterOrNullForBicubic,
+                                SkColorSpace* dstColorSpace,
+                                SkSourceGammaTreatment) override;
 
 protected:
     GrTextureMaker(GrContext* context, int width, int height, bool isAlphaOnly)
@@ -185,7 +200,7 @@ protected:
 
 
 
-    virtual GrTexture* refOriginalTexture(bool willBeMipped) = 0;
+    virtual GrTexture* refOriginalTexture(bool willBeMipped, SkSourceGammaTreatment) = 0;
 
     
 
@@ -197,7 +212,8 @@ protected:
 
 
 
-    virtual GrTexture* generateTextureForParams(const CopyParams&, bool willBeMipped);
+    virtual GrTexture* generateTextureForParams(const CopyParams&, bool willBeMipped,
+                                                SkSourceGammaTreatment);
 
     GrContext* context() const { return fContext; }
 

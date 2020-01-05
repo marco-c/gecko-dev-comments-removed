@@ -8,6 +8,8 @@
 #include "GrVkTexture.h"
 #include "GrVkGpu.h"
 #include "GrVkImageView.h"
+#include "GrTexturePriv.h"
+#include "GrVkTextureRenderTarget.h"
 #include "GrVkUtil.h"
 
 #include "vk/GrVkTypes.h"
@@ -16,98 +18,91 @@
 
 
 GrVkTexture::GrVkTexture(GrVkGpu* gpu,
+                         SkBudgeted budgeted,
                          const GrSurfaceDesc& desc,
-                         GrGpuResource::LifeCycle lifeCycle,
-                         const GrVkImage::Resource* imageResource,
+                         const GrVkImageInfo& info,
                          const GrVkImageView* view)
-    : GrSurface(gpu, lifeCycle, desc)
-    , GrVkImage(imageResource)
-    , INHERITED(gpu, lifeCycle, desc, kSampler2D_GrSLType,
-                false) 
-    , fTextureView(view) {
-    this->registerWithCache();
+    : GrSurface(gpu, desc)
+    , GrVkImage(info, GrVkImage::kNot_Wrapped)
+    , INHERITED(gpu, desc, kTexture2DSampler_GrSLType, desc.fIsMipMapped) 
+    , fTextureView(view)
+    , fLinearTextureView(nullptr) {
+    this->registerWithCache(budgeted);
+}
+
+GrVkTexture::GrVkTexture(GrVkGpu* gpu,
+                         Wrapped,
+                         const GrSurfaceDesc& desc,
+                         const GrVkImageInfo& info,
+                         const GrVkImageView* view,
+                         GrVkImage::Wrapped wrapped)
+    : GrSurface(gpu, desc)
+    , GrVkImage(info, wrapped)
+    , INHERITED(gpu, desc, kTexture2DSampler_GrSLType, desc.fIsMipMapped)
+    , fTextureView(view)
+    , fLinearTextureView(nullptr) {
+    this->registerWithCacheWrapped();
 }
 
 
 GrVkTexture::GrVkTexture(GrVkGpu* gpu,
                          const GrSurfaceDesc& desc,
-                         GrGpuResource::LifeCycle lifeCycle,
-                         const GrVkImage::Resource* imageResource,
+                         const GrVkImageInfo& info,
                          const GrVkImageView* view,
-                         Derived)
-    : GrSurface(gpu, lifeCycle, desc)
-    , GrVkImage(imageResource)
-    , INHERITED(gpu, lifeCycle, desc, kSampler2D_GrSLType,
-                false) 
-    , fTextureView(view) {}
+                         GrVkImage::Wrapped wrapped)
+    : GrSurface(gpu, desc)
+    , GrVkImage(info, wrapped)
+    , INHERITED(gpu, desc, kTexture2DSampler_GrSLType, desc.fIsMipMapped)
+    , fTextureView(view)
+    , fLinearTextureView(nullptr) {
+}
 
+GrVkTexture* GrVkTexture::CreateNewTexture(GrVkGpu* gpu, SkBudgeted budgeted,
+                                           const GrSurfaceDesc& desc,
+                                           const GrVkImage::ImageDesc& imageDesc) {
+    SkASSERT(imageDesc.fUsageFlags & VK_IMAGE_USAGE_SAMPLED_BIT);
 
-GrVkTexture* GrVkTexture::Create(GrVkGpu* gpu,
-                                 const GrSurfaceDesc& desc,
-                                 GrGpuResource::LifeCycle lifeCycle,
-                                 VkFormat format,
-                                 const GrVkImage::Resource* imageResource) {
-    VkImage image = imageResource->fImage;
-    const GrVkImageView* imageView = GrVkImageView::Create(gpu, image, format,
-                                                           GrVkImageView::kColor_Type);
+    GrVkImageInfo info;
+    if (!GrVkImage::InitImageInfo(gpu, imageDesc, &info)) {
+        return nullptr;
+    }
+
+    const GrVkImageView* imageView = GrVkImageView::Create(gpu, info.fImage, info.fFormat,
+                                                           GrVkImageView::kColor_Type,
+                                                           info.fLevelCount);
+    if (!imageView) {
+        GrVkImage::DestroyImageInfo(gpu, &info);
+        return nullptr;
+    }
+
+    return new GrVkTexture(gpu, budgeted, desc, info, imageView);
+}
+
+GrVkTexture* GrVkTexture::CreateWrappedTexture(GrVkGpu* gpu,
+                                               const GrSurfaceDesc& desc,
+                                               GrWrapOwnership ownership,
+                                               const GrVkImageInfo* info) {
+    SkASSERT(info);
+    
+    SkASSERT(VK_NULL_HANDLE != info->fImage && VK_NULL_HANDLE != info->fAlloc.fMemory);
+
+    const GrVkImageView* imageView = GrVkImageView::Create(gpu, info->fImage, info->fFormat,
+                                                           GrVkImageView::kColor_Type,
+                                                           info->fLevelCount);
     if (!imageView) {
         return nullptr;
     }
 
-    return new GrVkTexture(gpu, desc, lifeCycle, imageResource, imageView);
-}
+    GrVkImage::Wrapped wrapped = kBorrow_GrWrapOwnership == ownership ? GrVkImage::kBorrowed_Wrapped
+                                                                      : GrVkImage::kAdopted_Wrapped;
 
-GrVkTexture* GrVkTexture::CreateNewTexture(GrVkGpu* gpu, const GrSurfaceDesc& desc,
-                                           GrGpuResource::LifeCycle lifeCycle,
-                                           const GrVkImage::ImageDesc& imageDesc) {
-    SkASSERT(imageDesc.fUsageFlags & VK_IMAGE_USAGE_SAMPLED_BIT);
-
-    const GrVkImage::Resource* imageResource = GrVkImage::CreateResource(gpu, imageDesc);
-    if (!imageResource) {
-        return nullptr;
-    }
-
-    GrVkTexture* texture = Create(gpu, desc, lifeCycle, imageDesc.fFormat, imageResource);
-    
-    imageResource->unref(gpu);
-
-    return texture;
-}
-
-GrVkTexture* GrVkTexture::CreateWrappedTexture(GrVkGpu* gpu, const GrSurfaceDesc& desc,
-                                               GrGpuResource::LifeCycle lifeCycle,
-                                               VkFormat format,
-                                               const GrVkTextureInfo* info) {
-    SkASSERT(info);
-    
-    SkASSERT(VK_NULL_HANDLE != info->fImage && VK_NULL_HANDLE != info->fAlloc);
-
-    GrVkImage::Resource::Flags flags = (VK_IMAGE_TILING_LINEAR == info->fImageTiling)
-                                     ? Resource::kLinearTiling_Flag : Resource::kNo_Flags;
-
-    const GrVkImage::Resource* imageResource;
-    if (kBorrowed_LifeCycle == lifeCycle) {
-        imageResource = new GrVkImage::BorrowedResource(info->fImage, info->fAlloc, flags);
-    } else {
-        imageResource = new GrVkImage::Resource(info->fImage, info->fAlloc, flags);
-    }
-    if (!imageResource) {
-        return nullptr;
-    }
-
-    GrVkTexture* texture = Create(gpu, desc, lifeCycle, format, imageResource);
-    if (texture) {
-        texture->fCurrentLayout = info->fImageLayout;
-    }
-    
-    imageResource->unref(gpu);
-
-    return texture;
+    return new GrVkTexture(gpu, kWrapped, desc, *info, imageView, wrapped);
 }
 
 GrVkTexture::~GrVkTexture() {
     
     SkASSERT(!fTextureView);
+    SkASSERT(!fLinearTextureView);
 }
 
 void GrVkTexture::onRelease() {
@@ -117,11 +112,12 @@ void GrVkTexture::onRelease() {
         fTextureView = nullptr;
     }
 
-    if (this->shouldFreeResources()) {
-        this->releaseImage(this->getVkGpu());
-    } else {
-        this->abandonImage();
+    if (fLinearTextureView) {
+        fLinearTextureView->unref(this->getVkGpu());
+        fLinearTextureView = nullptr;
     }
+
+    this->releaseImage(this->getVkGpu());
 
     INHERITED::onRelease();
 }
@@ -132,16 +128,106 @@ void GrVkTexture::onAbandon() {
         fTextureView = nullptr;
     }
 
+    if (fLinearTextureView) {
+        fLinearTextureView->unrefAndAbandon();
+        fLinearTextureView = nullptr;
+    }
+
     this->abandonImage();
     INHERITED::onAbandon();
 }
 
 GrBackendObject GrVkTexture::getTextureHandle() const {
-    
-    return (GrBackendObject)&fResource;
+    return (GrBackendObject)&fInfo;
 }
 
 GrVkGpu* GrVkTexture::getVkGpu() const {
     SkASSERT(!this->wasDestroyed());
     return static_cast<GrVkGpu*>(this->getGpu());
+}
+
+const GrVkImageView* GrVkTexture::textureView(bool allowSRGB) {
+    VkFormat linearFormat;
+    if (allowSRGB || !GrVkFormatIsSRGB(fInfo.fFormat, &linearFormat)) {
+        return fTextureView;
+    }
+
+    if (!fLinearTextureView) {
+        fLinearTextureView = GrVkImageView::Create(this->getVkGpu(), fInfo.fImage,
+                                                   linearFormat, GrVkImageView::kColor_Type,
+                                                   fInfo.fLevelCount);
+        SkASSERT(fLinearTextureView);
+    }
+
+    return fLinearTextureView;
+}
+
+bool GrVkTexture::reallocForMipmap(GrVkGpu* gpu, uint32_t mipLevels) {
+    if (mipLevels == 1) {
+        
+        return false;
+    }
+
+    const GrVkResource* oldResource = this->resource();
+
+    
+    if (fIsBorrowed) {
+        return false;
+    }
+
+    bool renderTarget = SkToBool(fDesc.fFlags & kRenderTarget_GrSurfaceFlag);
+
+    VkImageUsageFlags usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT;
+    if (renderTarget) {
+        usageFlags |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    }
+    usageFlags |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+
+    GrVkImage::ImageDesc imageDesc;
+    imageDesc.fImageType = VK_IMAGE_TYPE_2D;
+    imageDesc.fFormat = fInfo.fFormat;
+    imageDesc.fWidth = fDesc.fWidth;
+    imageDesc.fHeight = fDesc.fHeight;
+    imageDesc.fLevels = mipLevels;
+    imageDesc.fSamples = 1;
+    imageDesc.fImageTiling = VK_IMAGE_TILING_OPTIMAL;
+    imageDesc.fUsageFlags = usageFlags;
+    imageDesc.fMemProps = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+
+    GrVkImageInfo info;
+    if (!GrVkImage::InitImageInfo(gpu, imageDesc, &info)) {
+        return false;
+    }
+
+    
+    const GrVkImageView* oldView = fTextureView;
+    VkImage image = info.fImage;
+    const GrVkImageView* textureView = GrVkImageView::Create(gpu, image, info.fFormat,
+                                                             GrVkImageView::kColor_Type, mipLevels);
+    if (!textureView) {
+        GrVkImage::DestroyImageInfo(gpu, &info);
+        return false;
+    }
+
+    if (renderTarget) {
+        GrVkTextureRenderTarget* texRT = static_cast<GrVkTextureRenderTarget*>(this);
+        if (!texRT->updateForMipmap(gpu, info)) {
+            GrVkImage::DestroyImageInfo(gpu, &info);
+            return false;
+        }
+    }
+
+    oldResource->unref(gpu);
+    oldView->unref(gpu);
+    if (fLinearTextureView) {
+        fLinearTextureView->unref(gpu);
+        fLinearTextureView = nullptr;
+    }
+
+    this->setNewResource(info.fImage, info.fAlloc, info.fImageTiling);
+    fTextureView = textureView;
+    fInfo = info;
+    this->texturePriv().setMaxMipMapLevel(mipLevels);
+
+    return true;
 }

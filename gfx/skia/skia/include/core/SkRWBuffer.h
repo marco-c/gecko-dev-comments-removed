@@ -25,7 +25,7 @@ public:
 
 
 
-    size_t size() const { return fUsed; }
+    size_t size() const { return fAvailable; }
 
     class SK_API Iter {
     public:
@@ -53,17 +53,20 @@ public:
     private:
         const SkBufferBlock* fBlock;
         size_t               fRemaining;
+        const SkROBuffer*    fBuffer;
     };
 
 private:
-    SkROBuffer(const SkBufferHead* head, size_t used);
+    SkROBuffer(const SkBufferHead* head, size_t available, const SkBufferBlock* fTail);
     virtual ~SkROBuffer();
 
-    const SkBufferHead* fHead;
-    const size_t        fUsed;
+    const SkBufferHead*     fHead;
+    const size_t            fAvailable;
+    const SkBufferBlock*    fTail;
 
     friend class SkRWBuffer;
 };
+
 
 
 
@@ -76,8 +79,15 @@ public:
     ~SkRWBuffer();
 
     size_t size() const { return fTotalUsed; }
-    void append(const void* buffer, size_t length);
-    void* append(size_t length);
+
+    
+
+
+
+
+
+
+    void append(const void* buffer, size_t length, size_t reserve = 0);
 
     SkROBuffer* newRBufferSnapshot() const;
     SkStreamAsset* newStreamSnapshot() const;

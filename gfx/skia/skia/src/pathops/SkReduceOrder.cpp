@@ -4,6 +4,7 @@
 
 
 
+#include "SkGeometry.h"
 #include "SkReduceOrder.h"
 
 int SkReduceOrder::reduce(const SkDLine& line) {
@@ -78,10 +79,12 @@ int SkReduceOrder::reduce(const SkDQuad& quad) {
             minYSet |= 1 << index;
         }
     }
+    if ((minXSet & 0x05) == 0x5 && (minYSet & 0x05) == 0x5) { 
+        
+        
+        return coincident_line(quad, fQuad);
+    }
     if (minXSet == 0x7) {  
-        if (minYSet == 0x7) {  
-            return coincident_line(quad, fQuad);
-        }
         return vertical_line(quad, fQuad);
     }
     if (minYSet == 0x7) {  
@@ -253,9 +256,9 @@ SkPath::Verb SkReduceOrder::Quad(const SkPoint a[3], SkPoint* reducePts) {
     return SkPathOpsPointsToVerb(order - 1);
 }
 
-SkPath::Verb SkReduceOrder::Conic(const SkPoint a[3], SkScalar weight, SkPoint* reducePts) {
-    SkPath::Verb verb = SkReduceOrder::Quad(a, reducePts);
-    if (verb > SkPath::kLine_Verb && weight == 1) {
+SkPath::Verb SkReduceOrder::Conic(const SkConic& c, SkPoint* reducePts) {
+    SkPath::Verb verb = SkReduceOrder::Quad(c.fPts, reducePts);
+    if (verb > SkPath::kLine_Verb && c.fW == 1) {
         return SkPath::kQuad_Verb;
     }
     return verb == SkPath::kQuad_Verb ? SkPath::kConic_Verb : verb;

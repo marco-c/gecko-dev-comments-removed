@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+#ifndef SkAutoCo_DEFINED
+#define SkAutoCo_DEFINED
+
+#include "SkTypes.h"
+
+#ifdef SK_BUILD_FOR_WIN
+
+#include "SkLeanWindows.h"
+
+
+
+
+
+class SkAutoCoInitialize : SkNoncopyable {
+private:
+    HRESULT fHR;
+public:
+    SkAutoCoInitialize();
+    ~SkAutoCoInitialize();
+    bool succeeded();
+};
+
+#endif  
+#endif  

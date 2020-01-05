@@ -7,7 +7,7 @@
 
 #include "SkCodecImageGenerator.h"
 
-SkImageGenerator* SkCodecImageGenerator::NewFromEncodedCodec(SkData* data) {
+SkImageGenerator* SkCodecImageGenerator::NewFromEncodedCodec(sk_sp<SkData> data) {
     SkCodec* codec = SkCodec::NewFromData(data);
     if (nullptr == codec) {
         return nullptr;
@@ -16,26 +16,18 @@ SkImageGenerator* SkCodecImageGenerator::NewFromEncodedCodec(SkData* data) {
     return new SkCodecImageGenerator(codec, data);
 }
 
+static SkImageInfo make_premul(const SkImageInfo& info) {
+    if (kUnpremul_SkAlphaType == info.alphaType()) {
+        return info.makeAlphaType(kPremul_SkAlphaType);
+    }
 
-
-
-
-static SkImageInfo fix_info(const SkCodec& codec) {
-    const SkImageInfo& info = codec.getInfo();
-    SkAlphaType alphaType = (kUnpremul_SkAlphaType == info.alphaType()) ? kPremul_SkAlphaType :
-            info.alphaType();
-
-    
-    SkColorProfileType profileType = (codec.getColorSpace()) ? kSRGB_SkColorProfileType :
-            kLinear_SkColorProfileType;
-
-    return SkImageInfo::Make(info.width(), info.height(), info.colorType(), alphaType, profileType);
+    return info;
 }
 
-SkCodecImageGenerator::SkCodecImageGenerator(SkCodec* codec, SkData* data)
-    : INHERITED(fix_info(*codec))
+SkCodecImageGenerator::SkCodecImageGenerator(SkCodec* codec, sk_sp<SkData> data)
+    : INHERITED(make_premul(codec->getInfo()))
     , fCodec(codec)
-    , fData(SkRef(data))
+    , fData(std::move(data))
 {}
 
 SkData* SkCodecImageGenerator::onRefEncodedData(SK_REFENCODEDDATA_CTXPARAM) {
@@ -45,7 +37,12 @@ SkData* SkCodecImageGenerator::onRefEncodedData(SK_REFENCODEDDATA_CTXPARAM) {
 bool SkCodecImageGenerator::onGetPixels(const SkImageInfo& info, void* pixels, size_t rowBytes,
         SkPMColor ctable[], int* ctableCount) {
 
-    SkCodec::Result result = fCodec->getPixels(info, pixels, rowBytes, nullptr, ctable,
+    
+    
+    
+    SkImageInfo decodeInfo = info.makeColorSpace(nullptr);
+
+    SkCodec::Result result = fCodec->getPixels(decodeInfo, pixels, rowBytes, nullptr, ctable,
             ctableCount);
     switch (result) {
         case SkCodec::kSuccess:

@@ -14,7 +14,8 @@
 #include "SkStrokeRec.h"
 
 Sk2DPathEffect::Sk2DPathEffect(const SkMatrix& mat) : fMatrix(mat) {
-    fMatrixIsInvertible = mat.invert(&fInverse);
+    
+    fMatrixIsInvertible = fMatrix.invert(&fInverse);
 }
 
 bool Sk2DPathEffect::filterPath(SkPath* dst, const SkPath& src,
