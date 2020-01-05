@@ -220,7 +220,7 @@ class NativePanZoomController extends JNIObject implements PanZoomController {
         mDestroyed = false;
     }
 
-    @WrapForJNI(calledFrom = "ui", dispatchTo = "gecko") @Override 
+    @WrapForJNI(calledFrom = "ui", dispatchTo = "gecko_priority") @Override 
     protected native void disposeNative();
 
     @Override
