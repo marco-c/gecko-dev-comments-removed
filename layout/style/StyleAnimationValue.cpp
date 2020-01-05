@@ -733,6 +733,73 @@ StyleAnimationValue::ComputeColorDistance(const RGBAColorData& aStartColor,
   return sqrt(diffA * diffA + diffR * diffR + diffG * diffG + diffB * diffB);
 }
 
+enum class Restrictions {
+  Enable,
+  Disable
+};
+
+static already_AddRefed<nsCSSValue::Array>
+AddShapeFunction(nsCSSPropertyID aProperty,
+                 double aCoeff1, const nsCSSValue::Array* aArray1,
+                 double aCoeff2, const nsCSSValue::Array* aArray2,
+                 Restrictions aRestriction = Restrictions::Enable);
+
+static double
+ComputeShapeDistance(nsCSSPropertyID aProperty,
+                     const nsCSSValue::Array* aArray1,
+                     const nsCSSValue::Array* aArray2)
+{
+  
+  RefPtr<nsCSSValue::Array> diffShape =
+    AddShapeFunction(aProperty, 1.0, aArray2, -1.0, aArray1,
+                     Restrictions::Disable);
+  if (!diffShape) {
+    return 0.0;
+  }
+
+  
+  auto pixelCalcDistance = [](const PixelCalcValue& aValue) {
+    MOZ_ASSERT(aValue.mHasPercent || aValue.mPercent == 0.0f,
+             "can't have a nonzero percentage part without having percentages");
+    return aValue.mLength * aValue.mLength + aValue.mPercent * aValue.mPercent;
+  };
+
+  double squareDistance = 0.0;
+  const nsCSSValue::Array* func = diffShape->Item(0).GetArrayValue();
+  nsCSSKeyword shapeFuncName = func->Item(0).GetKeywordValue();
+  switch (shapeFuncName) {
+    case eCSSKeyword_ellipse:
+    case eCSSKeyword_circle: {
+      
+      
+      const size_t len = func->Count();
+      for (size_t i = 1; i < len - 1; ++i) {
+        squareDistance += pixelCalcDistance(ExtractCalcValue(func->Item(i)));
+      }
+      
+      
+      for (size_t i = 1; i < 4; i += 2) {
+        const nsCSSValue& value = func->Item(len - 1).GetArrayValue()->Item(i);
+        squareDistance += pixelCalcDistance(ExtractCalcValue(value));
+      }
+      break;
+    }
+    case eCSSKeyword_polygon:
+      
+      MOZ_ASSERT(false);
+      break;
+
+    case eCSSKeyword_inset:
+      
+      MOZ_ASSERT(false);
+      break;
+
+    default:
+      MOZ_ASSERT_UNREACHABLE("Unknown shape type");
+  }
+  return sqrt(squareDistance);
+}
+
 static nsCSSValueList*
 AddTransformLists(double aCoeff1, const nsCSSValueList* aList1,
                   double aCoeff2, const nsCSSValueList* aList2);
@@ -1416,9 +1483,10 @@ StyleAnimationValue::ComputeDistance(nsCSSPropertyID aProperty,
       return true;
     }
     case eUnit_Shape:
-      
-      
-      return false;
+      aDistance = ComputeShapeDistance(aProperty,
+                                       aStartValue.GetCSSValueArrayValue(),
+                                       aEndValue.GetCSSValueArrayValue());
+      return true;
 
     case eUnit_Filter:
       
@@ -2132,16 +2200,11 @@ AddCSSValuePairList(nsCSSPropertyID aProperty,
   return result;
 }
 
-enum class Restrictions {
-  Enable,
-  Disable
-};
-
 static already_AddRefed<nsCSSValue::Array>
 AddShapeFunction(nsCSSPropertyID aProperty,
                  double aCoeff1, const nsCSSValue::Array* aArray1,
                  double aCoeff2, const nsCSSValue::Array* aArray2,
-                 Restrictions aRestriction = Restrictions::Enable)
+                 Restrictions aRestriction)
 {
   MOZ_ASSERT(aArray1 && aArray1->Count() == 2, "expected shape function");
   MOZ_ASSERT(aArray2 && aArray2->Count() == 2, "expected shape function");
