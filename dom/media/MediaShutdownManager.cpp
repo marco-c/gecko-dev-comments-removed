@@ -38,9 +38,7 @@ MediaShutdownManager&
 MediaShutdownManager::Instance()
 {
   MOZ_ASSERT(NS_IsMainThread());
-  if (!sInstance) {
-    sInstance = new MediaShutdownManager();
-  }
+  MOZ_DIAGNOSTIC_ASSERT(sInstance);
   return *sInstance;
 }
 
@@ -60,6 +58,33 @@ GetShutdownBarrier()
   MOZ_RELEASE_ASSERT(NS_SUCCEEDED(rv));
   MOZ_RELEASE_ASSERT(barrier);
   return barrier.forget();
+}
+
+void
+MediaShutdownManager::InitStatics()
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  static bool sInitDone = false;
+  if (sInitDone) {
+    return;
+  }
+
+  sInitDone = true;
+  sInstance = new MediaShutdownManager();
+
+  nsresult rv = GetShutdownBarrier()->AddBlocker(
+    sInstance, NS_LITERAL_STRING(__FILE__), __LINE__,
+    NS_LITERAL_STRING("MediaShutdownManager shutdown"));
+  if (NS_FAILED(rv)) {
+    
+    
+    
+    const size_t CAPACITY = 256;
+    auto buf = new char[CAPACITY];
+    snprintf(buf, CAPACITY, "Failed to add shutdown blocker! rv=%x", uint32_t(rv));
+    MOZ_CRASH_ANNOTATE(buf);
+    MOZ_REALLY_CRASH();
+  }
 }
 
 void
@@ -93,6 +118,19 @@ MediaShutdownManager::EnsureCorrectShutdownObserverState()
 }
 
 void
+MediaShutdownManager::RemoveBlocker()
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(mIsDoingXPCOMShutDown);
+  MOZ_ASSERT(mDecoders.Count() == 0);
+  GetShutdownBarrier()->RemoveBlocker(this);
+  
+  
+  sInstance = nullptr;
+  DECODER_LOG(LogLevel::Debug, ("MediaShutdownManager::BlockShutdown() end."));
+}
+
+void
 MediaShutdownManager::Register(MediaDecoder* aDecoder)
 {
   MOZ_ASSERT(NS_IsMainThread());
@@ -103,7 +141,6 @@ MediaShutdownManager::Register(MediaDecoder* aDecoder)
   mDecoders.PutEntry(aDecoder);
   MOZ_ASSERT(mDecoders.Contains(aDecoder));
   MOZ_ASSERT(mDecoders.Count() > 0);
-  EnsureCorrectShutdownObserverState();
 }
 
 void
@@ -112,7 +149,9 @@ MediaShutdownManager::Unregister(MediaDecoder* aDecoder)
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(mDecoders.Contains(aDecoder));
   mDecoders.RemoveEntry(aDecoder);
-  EnsureCorrectShutdownObserverState();
+  if (mIsDoingXPCOMShutDown && mDecoders.Count() == 0) {
+    RemoveBlocker();
+  }
 }
 
 NS_IMETHODIMP
@@ -139,8 +178,11 @@ MediaShutdownManager::BlockShutdown(nsIAsyncShutdownClient*)
   
   mIsDoingXPCOMShutDown = true;
 
-  DebugOnly<uint32_t> oldCount = mDecoders.Count();
-  MOZ_ASSERT(oldCount > 0);
+  auto oldCount = mDecoders.Count();
+  if (oldCount == 0) {
+    RemoveBlocker();
+    return NS_OK;
+  }
 
   
   for (auto iter = mDecoders.Iter(); !iter.Done(); iter.Next()) {
