@@ -2467,6 +2467,13 @@ DoCallFallback(JSContext* cx, BaselineFrame* frame, ICCall_Fallback* stub_, uint
         return true;
 
     
+    ICTypeMonitor_Fallback* typeMonFbStub = stub->fallbackMonitorStub();
+    if (!typeMonFbStub->addMonitorStubForValue(cx, &info, res))
+    {
+        return false;
+    }
+
+    
     if (!stub->addMonitorStubForValue(cx, &info, res))
         return false;
 
@@ -2519,6 +2526,13 @@ DoSpreadCallFallback(JSContext* cx, BaselineFrame* frame, ICCall_Fallback* stub_
     
     if (stub.invalid())
         return true;
+
+    
+    ICTypeMonitor_Fallback* typeMonFbStub = stub->fallbackMonitorStub();
+    if (!typeMonFbStub->addMonitorStubForValue(cx, &info, res))
+    {
+        return false;
+    }
 
     
     if (!stub->addMonitorStubForValue(cx, &info, res))
