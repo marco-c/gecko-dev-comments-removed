@@ -15,7 +15,7 @@ add_task(function* testTelemetry() {
 
   
   const telemetry = yield environment.telemetry;
-  is(typeof telemetry, "object", "Telemetry is accesible");
+  is(typeof telemetry, "object", "Telemetry is accessible");
 
   
   is(telemetry.testfoo.payload.foo, 1, "value 'foo' is in mock telemetry");
