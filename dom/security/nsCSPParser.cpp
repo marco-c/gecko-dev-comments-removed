@@ -536,7 +536,7 @@ nsCSPParser::keywordSource()
   
   
   if (CSP_IsKeyword(mCurToken, CSP_SELF)) {
-    return CSP_CreateHostSrcFromURI(mSelfURI);
+    return CSP_CreateHostSrcFromSelfURI(mSelfURI);
   }
 
   if (CSP_IsKeyword(mCurToken, CSP_STRICT_DYNAMIC)) {

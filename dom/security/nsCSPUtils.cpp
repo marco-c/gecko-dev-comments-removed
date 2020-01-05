@@ -267,20 +267,21 @@ CSP_ContentTypeToDirective(nsContentPolicyType aType)
 }
 
 nsCSPHostSrc*
-CSP_CreateHostSrcFromURI(nsIURI* aURI)
+CSP_CreateHostSrcFromSelfURI(nsIURI* aSelfURI)
 {
   
   nsCString host;
-  aURI->GetAsciiHost(host);
+  aSelfURI->GetAsciiHost(host);
   nsCSPHostSrc *hostsrc = new nsCSPHostSrc(NS_ConvertUTF8toUTF16(host));
+  hostsrc->setGeneratedFromSelfKeyword();
 
   
   nsCString scheme;
-  aURI->GetScheme(scheme);
+  aSelfURI->GetScheme(scheme);
   hostsrc->setScheme(NS_ConvertUTF8toUTF16(scheme));
 
   int32_t port;
-  aURI->GetPort(&port);
+  aSelfURI->GetPort(&port);
   
   if (port > 0) {
     nsAutoString portStr;
@@ -351,11 +352,15 @@ CSP_IsQuotelessKeyword(const nsAString& aKey)
 
 
 
+
+
+
 bool
 permitsScheme(const nsAString& aEnforcementScheme,
               nsIURI* aUri,
               bool aReportOnly,
-              bool aUpgradeInsecure)
+              bool aUpgradeInsecure,
+              bool aFromSelfURI)
 {
   nsAutoCString scheme;
   nsresult rv = aUri->GetScheme(scheme);
@@ -374,8 +379,20 @@ permitsScheme(const nsAString& aEnforcementScheme,
   
   
   
-  if (aEnforcementScheme.EqualsASCII("http") &&
-      scheme.EqualsASCII("https")) {
+  if (aEnforcementScheme.EqualsASCII("http")) {
+    if (scheme.EqualsASCII("https")) {
+      return true;
+    }
+    if ((scheme.EqualsASCII("ws") || scheme.EqualsASCII("wss")) && aFromSelfURI) {
+      return true;
+    }
+  }
+  if (aEnforcementScheme.EqualsASCII("https")) {
+    if (scheme.EqualsLiteral("wss") && aFromSelfURI) {
+      return true;
+    }
+  }
+  if (aEnforcementScheme.EqualsASCII("ws") && scheme.EqualsASCII("wss")) {
     return true;
   }
 
@@ -484,7 +501,7 @@ nsCSPSchemeSrc::permits(nsIURI* aUri, const nsAString& aNonce, bool aWasRedirect
   if (mInvalidated) {
     return false;
   }
-  return permitsScheme(mScheme, aUri, aReportOnly, aUpgradeInsecure);
+  return permitsScheme(mScheme, aUri, aReportOnly, aUpgradeInsecure, false);
 }
 
 bool
@@ -504,6 +521,7 @@ nsCSPSchemeSrc::toString(nsAString& outStr) const
 
 nsCSPHostSrc::nsCSPHostSrc(const nsAString& aHost)
   : mHost(aHost)
+  , mGeneratedFromSelfKeyword(false)
 {
   ToLowerCase(mHost);
 }
@@ -612,7 +630,7 @@ nsCSPHostSrc::permits(nsIURI* aUri, const nsAString& aNonce, bool aWasRedirected
   
 
   
-  if (!permitsScheme(mScheme, aUri, aReportOnly, aUpgradeInsecure)) {
+  if (!permitsScheme(mScheme, aUri, aReportOnly, aUpgradeInsecure, mGeneratedFromSelfKeyword)) {
     return false;
   }
 
