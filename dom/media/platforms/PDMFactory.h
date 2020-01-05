@@ -36,14 +36,12 @@ public:
   bool SupportsMimeType(const nsACString& aMimeType,
                         DecoderDoctorDiagnostics* aDiagnostics) const;
 
-#ifdef MOZ_EME
   
   
   
   
   
   void SetCDMProxy(CDMProxy* aProxy);
-#endif
 
   static constexpr int kYUV400 = 0;
   static constexpr int kYUV420 = 1;

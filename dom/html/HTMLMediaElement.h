@@ -20,9 +20,7 @@
 #include "mozilla/dom/TextTrackManager.h"
 #include "mozilla/WeakPtr.h"
 #include "MediaDecoder.h"
-#ifdef MOZ_EME
 #include "mozilla/dom/MediaKeys.h"
-#endif
 #include "mozilla/StateWatching.h"
 #include "nsGkAtoms.h"
 #include "PrincipalChangeObserver.h"
@@ -626,7 +624,6 @@ public:
 
   
 
-#ifdef MOZ_EME
   MediaKeys* GetMediaKeys() const;
 
   already_AddRefed<Promise> SetMediaKeys(MediaKeys* mediaKeys,
@@ -648,7 +645,6 @@ public:
   already_AddRefed<nsIPrincipal> GetTopLevelPrincipal();
 
   bool ContainsRestrictedContent();
-#endif 
 
   void CannotDecryptWaitingForKey();
 
@@ -1191,9 +1187,8 @@ protected:
 
   void HiddenVideoStop();
 
-#ifdef MOZ_EME
   void ReportEMETelemetry();
-#endif
+
   void ReportTelemetry();
 
   
@@ -1452,10 +1447,8 @@ protected:
   
   nsCOMPtr<nsITimer> mVideoDecodeSuspendTimer;
 
-#ifdef MOZ_EME
   
   RefPtr<MediaKeys> mMediaKeys;
-#endif
 
   
   double mCurrentPlayRangeStart;
@@ -1604,10 +1597,8 @@ protected:
   
   MediaEventListener mWaitingForKeyListener;
 
-#ifdef MOZ_EME
   
   EncryptionInfo mPendingEncryptedInitData;
-#endif 
 
   
   Watchable<bool> mDownloadSuspendedByCache;

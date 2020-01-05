@@ -108,7 +108,6 @@
 #include "nsFrameSelection.h"
 #include "FrameLayerBuilder.h"
 #include "mozilla/layers/APZCTreeManager.h"
-#include "mozilla/layers/CompositorBridgeChild.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/EventStateManager.h"
@@ -7503,11 +7502,9 @@ nsLayoutUtils::SurfaceFromElement(HTMLVideoElement* aElement,
     (aSurfaceFlags & SFE_PREFER_NO_PREMULTIPLY_ALPHA) == 0,
     "We can't support non-premultiplied alpha for video!");
 
-#ifdef MOZ_EME
   if (aElement->ContainsRestrictedContent()) {
     return result;
   }
-#endif
 
   uint16_t readyState;
   if (NS_SUCCEEDED(aElement->GetReadyState(&readyState)) &&
@@ -9293,11 +9290,10 @@ static void UpdateDisplayPortMarginsForPendingMetrics(FrameMetrics& aMetrics) {
 }
 
  void
-nsLayoutUtils::UpdateDisplayPortMarginsFromPendingMessages()
-{
+nsLayoutUtils::UpdateDisplayPortMarginsFromPendingMessages() {
   if (mozilla::dom::ContentChild::GetSingleton() &&
       mozilla::dom::ContentChild::GetSingleton()->GetIPCChannel()) {
-    CompositorBridgeChild::Get()->GetIPCChannel()->PeekMessages(
+    mozilla::dom::ContentChild::GetSingleton()->GetIPCChannel()->PeekMessages(
       [](const IPC::Message& aMsg) -> bool {
         if (aMsg.type() == mozilla::layers::PAPZ::Msg_RequestContentRepaint__ID) {
           PickleIterator iter(aMsg);

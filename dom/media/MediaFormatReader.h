@@ -93,9 +93,7 @@ public:
     return mTrackDemuxersMayBlock;
   }
 
-#ifdef MOZ_EME
   void SetCDMProxy(CDMProxy* aProxy) override;
-#endif
 
   
   
@@ -105,8 +103,8 @@ public:
 
 private:
 
-  bool HasVideo() const { return mVideo.mTrackDemuxer; }
-  bool HasAudio() const { return mAudio.mTrackDemuxer; }
+  bool HasVideo() { return mVideo.mTrackDemuxer; }
+  bool HasAudio() { return mAudio.mTrackDemuxer; }
 
   bool IsWaitingOnCDMResource();
 
@@ -528,7 +526,11 @@ private:
   
   bool mInitDone;
   MozPromiseHolder<MetadataPromise> mMetadataPromise;
-  bool IsEncrypted() const;
+  bool IsEncrypted()
+  {
+    return mIsEncrypted;
+  }
+  bool mIsEncrypted;
 
   
   bool mTrackDemuxersMayBlock;
@@ -565,9 +567,8 @@ private:
   RefPtr<VideoFrameContainer> mVideoFrameContainer;
   layers::ImageContainer* GetImageContainer();
 
-#ifdef MOZ_EME
   RefPtr<CDMProxy> mCDMProxy;
-#endif
+
   RefPtr<GMPCrashHelper> mCrashHelper;
 
   void SetBlankDecode(TrackType aTrack, bool aIsBlankDecode);

@@ -46,9 +46,7 @@
 #include "mozilla/dom/ExternalHelperAppParent.h"
 #include "mozilla/dom/GetFilesHelper.h"
 #include "mozilla/dom/GeolocationBinding.h"
-#ifdef MOZ_EME
 #include "mozilla/dom/MediaKeySystemAccess.h"
-#endif
 #include "mozilla/dom/Notification.h"
 #include "mozilla/dom/PContentBridgeParent.h"
 #include "mozilla/dom/PContentPermissionRequestParent.h"
@@ -975,14 +973,9 @@ ContentParent::RecvIsGMPPresentOnDisk(const nsString& aKeySystem,
                                       bool* aIsPresent,
                                       nsCString* aMessage)
 {
-#ifdef MOZ_EME
   *aIsPresent = MediaKeySystemAccess::IsGMPPresentOnDisk(aKeySystem,
                                                          aVersion,
                                                          *aMessage);
-#else
-  *aIsPresent = false;
-#endif
-
   return true;
 }
 
@@ -3901,18 +3894,18 @@ ContentParent::RecvIsSecureURI(const uint32_t& type,
   if (!ourURI) {
     return false;
   }
-  nsresult rv = sss->IsSecureURI(type, ourURI, flags, nullptr, isSecureURI);
+  nsresult rv = sss->IsSecureURI(type, ourURI, flags, isSecureURI);
   return NS_SUCCEEDED(rv);
 }
 
 bool
-ContentParent::RecvAccumulateMixedContentHSTS(const URIParams& aURI, const bool& aActive, const bool& aHSTSPriming)
+ContentParent::RecvAccumulateMixedContentHSTS(const URIParams& aURI, const bool& aActive)
 {
   nsCOMPtr<nsIURI> ourURI = DeserializeURI(aURI);
   if (!ourURI) {
     return false;
   }
-  nsMixedContentBlocker::AccumulateMixedContentHSTS(ourURI, aActive, aHSTSPriming);
+  nsMixedContentBlocker::AccumulateMixedContentHSTS(ourURI, aActive);
   return true;
 }
 

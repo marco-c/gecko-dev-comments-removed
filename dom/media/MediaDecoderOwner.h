@@ -143,13 +143,11 @@ public:
   
   virtual void NotifyXPCOMShutdown() = 0;
 
-#ifdef MOZ_EME
   
   
   
   virtual void DispatchEncrypted(const nsTArray<uint8_t>& aInitData,
                                  const nsAString& aInitDataType) = 0;
-#endif 
 };
 
 } 

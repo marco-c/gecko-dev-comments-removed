@@ -11,9 +11,7 @@
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/AsyncEventDispatcher.h"
-#ifdef MOZ_EME
 #include "mozilla/dom/MediaEncryptedEvent.h"
-#endif
 
 #include "base/basictypes.h"
 #include "nsIDOMHTMLMediaElement.h"
@@ -565,6 +563,16 @@ public:
       ? nsIContentPolicy::TYPE_INTERNAL_AUDIO :
         nsIContentPolicy::TYPE_INTERNAL_VIDEO;
 
+    nsCOMPtr<nsIDocShell> docShell = aElement->OwnerDoc()->GetDocShell();
+    if (docShell) {
+      nsDocShell* docShellPtr = nsDocShell::Cast(docShell);
+      bool privateBrowsing;
+      docShellPtr->GetUsePrivateBrowsing(&privateBrowsing);
+      if (privateBrowsing) {
+        securityFlags |= nsILoadInfo::SEC_FORCE_PRIVATE_BROWSING;
+      }
+    }
+
     nsCOMPtr<nsILoadGroup> loadGroup = aElement->GetDocumentLoadGroup();
     nsCOMPtr<nsIChannel> channel;
     nsresult rv = NS_NewChannel(getter_AddRefs(channel),
@@ -711,9 +719,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(HTMLMediaElement, nsGenericHTM
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mTextTrackManager)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mAudioTrackList)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mVideoTrackList)
-#ifdef MOZ_EME
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mMediaKeys)
-#endif
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mSelectedVideoStreamTrack)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
@@ -738,9 +744,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(HTMLMediaElement, nsGenericHTMLE
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mTextTrackManager)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mAudioTrackList)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mVideoTrackList)
-#ifdef MOZ_EME
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mMediaKeys)
-#endif
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mSelectedVideoStreamTrack)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
@@ -918,14 +922,12 @@ void HTMLMediaElement::ShutdownDecoder()
 
 void HTMLMediaElement::AbortExistingLoads()
 {
-#ifdef MOZ_EME
   
   
   
   if (mDecoder) {
     ReportEMETelemetry();
   }
-#endif
   
   mLoadWaitStatus = NOT_WAITING;
 
@@ -984,9 +986,7 @@ void HTMLMediaElement::AbortExistingLoads()
   mDownloadSuspendedByCache = false;
   mMediaInfo = MediaInfo();
   mIsEncrypted = false;
-#ifdef MOZ_EME
   mPendingEncryptedInitData.mInitDatas.Clear();
-#endif 
   mWaitingForKey = false;
   mSourcePointer = nullptr;
 
@@ -1626,6 +1626,18 @@ nsresult HTMLMediaElement::LoadResource()
 
   
   mCORSMode = AttrValueToCORSMode(GetParsedAttr(nsGkAtoms::crossorigin));
+
+  bool isBlob = false;
+  if (mMediaKeys &&
+      Preferences::GetBool("media.eme.mse-only", true) &&
+      
+      
+      (NS_FAILED(mLoadingSrc->SchemeIs(BLOBURI_SCHEME, &isBlob)) ||
+       !isBlob ||
+       IsMediaStreamURI(mLoadingSrc) ||
+       IsBlobURI(mLoadingSrc))) {
+    return NS_ERROR_DOM_NOT_SUPPORTED_ERR;
+  }
 
   HTMLMediaElement* other = LookupMediaElementURITable(mLoadingSrc);
   if (other && other->mDecoder) {
@@ -2525,11 +2537,9 @@ HTMLMediaElement::CaptureStreamInternal(bool aFinishWhenEnded,
   if (!window) {
     return nullptr;
   }
-#ifdef MOZ_EME
   if (ContainsRestrictedContent()) {
     return nullptr;
   }
-#endif
 
   if (!mOutputStreams.IsEmpty() &&
       aGraph != mOutputStreams[0].mStream->GetInputStream()->Graph()) {
@@ -3463,7 +3473,6 @@ void HTMLMediaElement::HiddenVideoStop()
   mVideoDecodeSuspendTimer = nullptr;
 }
 
-#ifdef MOZ_EME
 void
 HTMLMediaElement::ReportEMETelemetry()
 {
@@ -3475,7 +3484,6 @@ HTMLMediaElement::ReportEMETelemetry()
                        this, mLoadedDataFired ? "true" : "false"));
   }
 }
-#endif
 
 void
 HTMLMediaElement::ReportTelemetry()
@@ -3832,7 +3840,6 @@ nsresult HTMLMediaElement::FinishDecoderSetup(MediaDecoder* aDecoder,
                               ms.mFinishWhenEnded);
   }
 
-#ifdef MOZ_EME
   if (mMediaKeys) {
     if (mMediaKeys->GetCDMProxy()) {
       mDecoder->SetCDMProxy(mMediaKeys->GetCDMProxy());
@@ -3842,7 +3849,6 @@ nsresult HTMLMediaElement::FinishDecoderSetup(MediaDecoder* aDecoder,
       return NS_ERROR_FAILURE;
     }
   }
-#endif
 
   MediaEventSource<void>* waitingForKeyProducer = mDecoder->WaitingForKeyEvent();
   
@@ -4305,11 +4311,7 @@ void HTMLMediaElement::MetadataLoaded(const MediaInfo* aInfo,
 
   SetMediaInfo(*aInfo);
 
-  mIsEncrypted = aInfo->IsEncrypted()
-#ifdef MOZ_EME
-                 || mPendingEncryptedInitData.IsEncrypted()
-#endif 
-                 ;
+  mIsEncrypted = aInfo->IsEncrypted() || mPendingEncryptedInitData.IsEncrypted();
   mTags = aTags.forget();
   mLoadedDataFired = false;
   ChangeReadyState(nsIDOMHTMLMediaElement::HAVE_METADATA);
@@ -4335,13 +4337,11 @@ void HTMLMediaElement::MetadataLoaded(const MediaInfo* aInfo,
       return;
     }
 
-#ifdef MOZ_EME
     
     for (const auto& initData : mPendingEncryptedInitData.mInitDatas) {
       DispatchEncrypted(initData.mInitData, initData.mType);
     }
     mPendingEncryptedInitData.mInitDatas.Clear();
-#endif 
   }
 
   mWatchManager.ManualNotify(&HTMLMediaElement::UpdateReadyStateInternal);
@@ -5260,11 +5260,8 @@ void HTMLMediaElement::SuspendOrResumeElement(bool aPauseElement, bool aSuspendE
     UpdateAudioChannelPlayingState();
     if (aPauseElement) {
       ReportTelemetry();
-#ifdef MOZ_EME
       ReportEMETelemetry();
-#endif
 
-#ifdef MOZ_EME
       
       
       
@@ -5277,16 +5274,13 @@ void HTMLMediaElement::SuspendOrResumeElement(bool aPauseElement, bool aSuspendE
           ShutdownDecoder();
         }
       }
-#endif
       if (mDecoder) {
         mDecoder->Pause();
         mDecoder->Suspend();
       }
       mEventDeliveryPaused = aSuspendEvents;
     } else {
-#ifdef MOZ_EME
       MOZ_ASSERT(!mMediaKeys);
-#endif
       if (mDecoder) {
         mDecoder->Resume();
         if (!mPaused && !mDecoder->IsEnded()) {
@@ -6069,7 +6063,7 @@ HTMLMediaElement::OnVisibilityChange(Visibility aNewVisibility)
   }
 
 }
-#ifdef MOZ_EME
+
 MediaKeys*
 HTMLMediaElement::GetMediaKeys() const
 {
@@ -6275,7 +6269,6 @@ HTMLMediaElement::GetTopLevelPrincipal()
   principal = doc->NodePrincipal();
   return principal.forget();
 }
-#endif 
 
 void
 HTMLMediaElement::CannotDecryptWaitingForKey()

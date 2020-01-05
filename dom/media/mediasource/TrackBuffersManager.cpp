@@ -58,7 +58,6 @@ AppendStateToStr(SourceBufferAttributes::AppendState aState)
 
 static Atomic<uint32_t> sStreamSourceID(0u);
 
-#ifdef MOZ_EME
 class DispatchKeyNeededEvent : public Runnable {
 public:
   DispatchKeyNeededEvent(AbstractMediaDecoder* aDecoder,
@@ -84,7 +83,6 @@ private:
   nsTArray<uint8_t> mInitData;
   nsString mInitDataType;
 };
-#endif 
 
 TrackBuffersManager::TrackBuffersManager(MediaSourceDecoder* aParentDecoder,
                                          const nsACString& aType)
@@ -1063,18 +1061,17 @@ TrackBuffersManager::OnDemuxerInitDone(nsresult)
 
   UniquePtr<EncryptionInfo> crypto = mInputDemuxer->GetCrypto();
   if (crypto && crypto->IsEncrypted()) {
-#ifdef MOZ_EME
     
     for (uint32_t i = 0; i < crypto->mInitDatas.Length(); i++) {
       NS_DispatchToMainThread(
         new DispatchKeyNeededEvent(mParentDecoder, crypto->mInitDatas[i].mInitData,
                                    crypto->mInitDatas[i].mType));
     }
-#endif 
     info.mCrypto = *crypto;
     
     
     info.mCrypto.mInitDatas.Clear();
+    mEncrypted = true;
   }
 
   {

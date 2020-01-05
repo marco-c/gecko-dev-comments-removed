@@ -186,9 +186,7 @@ public:
   
   virtual void SetIdle() {}
 
-#ifdef MOZ_EME
   virtual void SetCDMProxy(CDMProxy* aProxy) {}
-#endif
 
   
   

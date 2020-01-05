@@ -4,6 +4,7 @@
 
 
 
+#include "mozilla/CDMProxy.h"
 #include "mozilla/dom/HTMLMediaElement.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Telemetry.h"
@@ -20,10 +21,6 @@
 #include "VideoFrameContainer.h"
 
 #include <algorithm>
-
-#ifdef MOZ_EME
-#include "mozilla/CDMProxy.h"
-#endif
 
 using namespace mozilla::media;
 
@@ -72,6 +69,7 @@ MediaFormatReader::MediaFormatReader(AbstractMediaDecoder* aDecoder,
   , mPreviousDecodedKeyframeTime_us(sNoPreviousDecodedKeyframe)
   , mLayersBackendType(aLayersBackend)
   , mInitDone(false)
+  , mIsEncrypted(false)
   , mTrackDemuxersMayBlock(false)
   , mDemuxOnly(false)
   , mSeekScheduled(false)
@@ -185,7 +183,6 @@ MediaFormatReader::Init()
   return NS_OK;
 }
 
-#ifdef MOZ_EME
 class DispatchKeyNeededEvent : public Runnable {
 public:
   DispatchKeyNeededEvent(AbstractMediaDecoder* aDecoder,
@@ -223,16 +220,11 @@ MediaFormatReader::SetCDMProxy(CDMProxy* aProxy)
   });
   OwnerThread()->Dispatch(r.forget());
 }
-#endif 
 
 bool
 MediaFormatReader::IsWaitingOnCDMResource() {
   MOZ_ASSERT(OnTaskQueue());
-#ifdef MOZ_EME
   return IsEncrypted() && !mCDMProxy;
-#else
-  return false;
-#endif
 }
 
 RefPtr<MediaDecoderReader::MetadataPromise>
@@ -336,14 +328,15 @@ MediaFormatReader::OnDemuxerInitDone(nsresult)
   }
 
   UniquePtr<EncryptionInfo> crypto = mDemuxer->GetCrypto();
+
+  mIsEncrypted = crypto && crypto->IsEncrypted();
+
   if (mDecoder && crypto && crypto->IsEncrypted()) {
-#ifdef MOZ_EME
     
     for (uint32_t i = 0; i < crypto->mInitDatas.Length(); i++) {
       NS_DispatchToMainThread(
         new DispatchKeyNeededEvent(mDecoder, crypto->mInitDatas[i].mInitData, crypto->mInitDatas[i].mType));
     }
-#endif 
     mInfo.mCrypto = *crypto;
   }
 
@@ -371,13 +364,6 @@ MediaFormatReader::OnDemuxerInitDone(nsresult)
   mMetadataPromise.Resolve(metadata, __func__);
 }
 
-bool
-MediaFormatReader::IsEncrypted() const
-{
-  return (HasAudio() && mInfo.mAudio.mCrypto.mValid) ||
-         (HasVideo() && mInfo.mVideo.mCrypto.mValid);
-}
-
 void
 MediaFormatReader::OnDemuxerInitFailed(const MediaResult& aError)
 {
@@ -400,12 +386,8 @@ MediaFormatReader::EnsureDecoderCreated(TrackType aTrack)
   if (!mPlatform) {
     mPlatform = new PDMFactory();
     if (IsEncrypted()) {
-#ifdef MOZ_EME
       MOZ_ASSERT(mCDMProxy);
       mPlatform->SetCDMProxy(mCDMProxy);
-#else
-      return MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR, "EME not supported");
-#endif
     }
   }
 
