@@ -3887,6 +3887,15 @@ ContainerState::SetupMaskLayerForCSSMask(Layer* aLayer,
   bool snap;
   nsRect bounds = aMaskItem->GetBounds(mBuilder, &snap);
   nsIntRect itemRect = ScaleToOutsidePixels(bounds, snap);
+
+  
+  
+  
+  Matrix4x4 matrix;
+  matrix.PreTranslate(itemRect.x, itemRect.y, 0);
+  matrix.PreTranslate(mParameters.mOffset.x, mParameters.mOffset.y, 0);
+  maskLayer->SetBaseTransform(matrix);
+
   CSSMaskLayerUserData newUserData(aMaskItem->Frame(), itemRect.Size());
   nsRect dirtyRect;
   if (!aMaskItem->IsInvalid(dirtyRect) && *oldUserData == newUserData) {
@@ -3899,6 +3908,7 @@ ContainerState::SetupMaskLayerForCSSMask(Layer* aLayer,
                       std::min(itemRect.height, maxSize));
 
   if (surfaceSize.IsEmpty()) {
+    
     return;
   }
 
@@ -3917,13 +3927,6 @@ ContainerState::SetupMaskLayerForCSSMask(Layer* aLayer,
     
     return;
   }
-
-  
-  Matrix4x4 matrix;
-  matrix.PreTranslate(itemRect.x, itemRect.y, 0);
-  matrix.PreTranslate(mParameters.mOffset.x, mParameters.mOffset.y, 0);
-
-  maskLayer->SetBaseTransform(matrix);
 
   RefPtr<ImageContainer> imgContainer =
     imageData.CreateImageAndImageContainer();
@@ -4316,7 +4319,6 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
                    "If we have rounded rects, we must have a clip rect");
 
       
-
       ownLayer->SetClipRect(Nothing());
       ownLayer->SetScrolledClip(Nothing());
       if (layerClip.HasClip()) {
@@ -4339,9 +4341,21 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
             SetupMaskLayer(ownLayer, layerClip);
           }
         }
-      } else if (item->GetType() == nsDisplayItem::TYPE_MASK) {
+      }
+
+      if (item->GetType() == nsDisplayItem::TYPE_MASK) {
+        MOZ_ASSERT(layerClip.GetRoundedRectCount() == 0);
+
         nsDisplayMask* maskItem = static_cast<nsDisplayMask*>(item);
         SetupMaskLayerForCSSMask(ownLayer, maskItem);
+
+        nsDisplayItem* next = aList->GetBottom();
+        if (next && next->GetType() == nsDisplayItem::TYPE_SCROLL_INFO_LAYER) {
+          
+          
+          aList->RemoveBottom();
+          next->~nsDisplayItem();
+        }
       }
 
       
@@ -6283,6 +6297,11 @@ ContainerState::CreateMaskLayer(Layer *aLayer,
   gfx::Matrix maskTransform =
     Matrix::Scaling(surfaceSize.width / boundingRect.Width(),
                     surfaceSize.height / boundingRect.Height());
+  if (surfaceSize.IsEmpty()) {
+    
+    return nullptr;
+  }
+
   gfx::Point p = boundingRect.TopLeft();
   maskTransform.PreTranslate(-p.x, -p.y);
   

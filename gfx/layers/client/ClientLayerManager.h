@@ -354,22 +354,6 @@ public:
 
   ~ClientLayer();
 
-  void SetShadow(PLayerChild* aShadow)
-  {
-    MOZ_ASSERT(!mShadow, "can't have two shadows (yet)");
-    mShadow = aShadow;
-  }
-
-  virtual void Disconnect()
-  {
-    
-    
-    
-    
-    
-    mShadow = nullptr;
-  }
-
   
   
   virtual void HandleMemoryPressure() { }
@@ -404,12 +388,12 @@ CreateShadowFor(ClientLayer* aLayer,
                 ClientLayerManager* aMgr,
                 CreatedMethod aMethod)
 {
-  PLayerChild* shadow = aMgr->AsShadowForwarder()->ConstructShadowFor(aLayer);
+  LayerHandle shadow = aMgr->AsShadowForwarder()->ConstructShadowFor(aLayer);
   if (!shadow) {
     return;
   }
 
-  aLayer->SetShadow(shadow);
+  aLayer->SetShadow(aMgr->AsShadowForwarder(), shadow);
   (aMgr->AsShadowForwarder()->*aMethod)(aLayer);
   aMgr->Hold(aLayer->AsLayer());
 }

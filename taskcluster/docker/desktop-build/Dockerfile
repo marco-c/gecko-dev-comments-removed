@@ -24,12 +24,6 @@ ADD topsrcdir/taskcluster/docker/recipes/common.sh /setup/common.sh
 # %include taskcluster/docker/recipes/install-mercurial.sh
 ADD topsrcdir/taskcluster/docker/recipes/install-mercurial.sh /setup/install-mercurial.sh
 
-# %include taskcluster/docker/recipes/install-make.sh
-ADD topsrcdir/taskcluster/docker/recipes/install-make.sh /setup/install-make.sh
-
-# %include taskcluster/docker/recipes/install-cmake.sh
-ADD topsrcdir/taskcluster/docker/recipes/install-cmake.sh /setup/install-cmake.sh
-
 # %include taskcluster/docker/recipes/centos6-build-system-setup.sh
 ADD topsrcdir/taskcluster/docker/recipes/centos6-build-system-setup.sh /setup/system-setup.sh
 
@@ -66,9 +60,6 @@ ADD           buildprops.json /home/worker/
 # Install the screen package here to use with xvfb.
 # Install bison to build binutils.
 RUN yum install -y bison screen
-
-# Install libtool.
-RUN yum install -y libtool
 
 # Set a default command useful for debugging
 CMD ["/bin/bash", "--login"]
