@@ -3,6 +3,7 @@
 
 
 use dom::bindings::codegen::HTMLAudioElementBinding;
+use dom::bindings::utils::DOMString;
 use dom::document::AbstractDocument;
 use dom::element::HTMLAudioElementTypeId;
 use dom::htmlmediaelement::HTMLMediaElement;
@@ -13,13 +14,13 @@ pub struct HTMLAudioElement {
 }
 
 impl HTMLAudioElement {
-    pub fn new_inherited(localName: ~str, document: AbstractDocument) -> HTMLAudioElement {
+    pub fn new_inherited(localName: DOMString, document: AbstractDocument) -> HTMLAudioElement {
         HTMLAudioElement {
             htmlmediaelement: HTMLMediaElement::new_inherited(HTMLAudioElementTypeId, localName, document)
         }
     }
 
-    pub fn new(localName: ~str, document: AbstractDocument) -> AbstractNode {
+    pub fn new(localName: DOMString, document: AbstractDocument) -> AbstractNode {
         let element = HTMLAudioElement::new_inherited(localName, document);
         Node::reflect_node(@mut element, document, HTMLAudioElementBinding::Wrap)
     }

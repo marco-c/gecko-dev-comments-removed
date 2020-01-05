@@ -3,6 +3,7 @@
 
 
 use dom::bindings::codegen::HTMLHeadElementBinding;
+use dom::bindings::utils::DOMString;
 use dom::document::AbstractDocument;
 use dom::element::HTMLHeadElementTypeId;
 use dom::htmlelement::HTMLElement;
@@ -13,13 +14,13 @@ pub struct HTMLHeadElement {
 }
 
 impl HTMLHeadElement {
-    pub fn new_inherited(localName: ~str, document: AbstractDocument) -> HTMLHeadElement {
+    pub fn new_inherited(localName: DOMString, document: AbstractDocument) -> HTMLHeadElement {
         HTMLHeadElement {
             htmlelement: HTMLElement::new_inherited(HTMLHeadElementTypeId, localName, document)
         }
     }
 
-    pub fn new(localName: ~str, document: AbstractDocument) -> AbstractNode {
+    pub fn new(localName: DOMString, document: AbstractDocument) -> AbstractNode {
         let element = HTMLHeadElement::new_inherited(localName, document);
         Node::reflect_node(@mut element, document, HTMLHeadElementBinding::Wrap)
     }
