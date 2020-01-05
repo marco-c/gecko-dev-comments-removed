@@ -583,37 +583,10 @@ TimerThread::AddTimer(nsTimerImpl* aTimer)
 }
 
 nsresult
-TimerThread::TimerDelayChanged(nsTimerImpl* aTimer)
-{
-  MonitorAutoLock lock(mMonitor);
-
-  
-  
-  RemoveTimerInternal(aTimer);
-
-  int32_t i = AddTimerInternal(aTimer);
-  if (i < 0) {
-    return NS_ERROR_OUT_OF_MEMORY;
-  }
-
-  
-  if (mWaiting && i == 0) {
-    mNotified = true;
-    mMonitor.Notify();
-  }
-
-  return NS_OK;
-}
-
-nsresult
 TimerThread::RemoveTimer(nsTimerImpl* aTimer)
 {
   MonitorAutoLock lock(mMonitor);
 
-  
-  
-  
-  
   
   
 
