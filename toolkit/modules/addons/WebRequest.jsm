@@ -624,10 +624,16 @@ HttpObserverManager = {
         data.originUrl = originPrincipal.URI.spec;
       }
 
+      
+      
+      
+      
       let {isSystemPrincipal} = Services.scriptSecurityManager;
-
-      data.isSystemPrincipal = (isSystemPrincipal(loadInfo.triggeringPrincipal) ||
-                                isSystemPrincipal(loadInfo.loadingPrincipal));
+      let isTopLevel = !loadInfo.loadingPrincipal && !!data.browser;
+      data.isSystemPrincipal = !isTopLevel &&
+                               isSystemPrincipal(loadInfo.loadingPrincipal ||
+                                                 loadInfo.principalToInherit ||
+                                                 loadInfo.triggeringPrincipal);
 
       if (loadInfo.frameOuterWindowID) {
         Object.assign(data, {
