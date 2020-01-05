@@ -53,7 +53,6 @@ public class DynamicToolbarAnimator {
     private final List<MetricsListener> mListeners;
     private ToolbarChromeProxy mToolbarChromeProxy;
     private int mMaxToolbarHeight;
-    private boolean mCompositorControllerOpen;
 
     public DynamicToolbarAnimator(GeckoLayerClient aTarget) {
         mTarget = aTarget;
@@ -87,7 +86,7 @@ public class DynamicToolbarAnimator {
     public void setMaxToolbarHeight(int maxToolbarHeight) {
         ThreadUtils.assertOnUiThread();
         mMaxToolbarHeight = maxToolbarHeight;
-        if (mCompositor != null) {
+        if (isCompositorReady()) {
             mCompositor.setMaxToolbarHeight(mMaxToolbarHeight);
         }
     }
@@ -110,9 +109,25 @@ public class DynamicToolbarAnimator {
         return mPinFlags.contains(reason);
     }
 
-    public void setPinned(boolean pinned, PinReason reason) {
-        if ((mCompositor != null) && (pinned != mPinFlags.contains(reason))) {
+     void sendPinValueToCompositor(final boolean pinned, final PinReason reason) {
+        if (isCompositorReady()) {
              mCompositor.setPinned(pinned, reason.value);
+        }
+    }
+
+    public void setPinned(final boolean pinned, final PinReason reason) {
+        
+        if (pinned != mPinFlags.contains(reason)) {
+            if (ThreadUtils.isOnUiThread() == true) {
+                sendPinValueToCompositor(pinned, reason);
+            } else {
+                ThreadUtils.postToUiThread(new Runnable() {
+                        @Override
+                    public void run() {
+                        sendPinValueToCompositor(pinned, reason);
+                    }
+                });
+            }
         }
 
         if (pinned) {
@@ -123,14 +138,14 @@ public class DynamicToolbarAnimator {
     }
 
     public void showToolbar(boolean immediately) {
-        if (mCompositor != null) {
+        if (isCompositorReady()) {
             mCompositor.sendToolbarAnimatorMessage(immediately ?
                 LayerView.REQUEST_SHOW_TOOLBAR_IMMEDIATELY : LayerView.REQUEST_SHOW_TOOLBAR_ANIMATED);
         }
     }
 
     public void hideToolbar(boolean immediately) {
-        if (mCompositor != null) {
+        if (isCompositorReady()) {
             mCompositor.sendToolbarAnimatorMessage(immediately ?
                 LayerView.REQUEST_HIDE_TOOLBAR_IMMEDIATELY : LayerView.REQUEST_HIDE_TOOLBAR_ANIMATED);
         }
@@ -152,8 +167,8 @@ public class DynamicToolbarAnimator {
             mTarget.getView().getHeight());
     }
 
-    private void dumpStateToCompositor() {
-        if ((mCompositor != null) && mCompositorControllerOpen) {
+     void updateCompositor() {
+        if (isCompositorReady()) {
             mCompositor.setMaxToolbarHeight(mMaxToolbarHeight);
             if ((mToolbarChromeProxy != null) && mToolbarChromeProxy.isToolbarChromeVisible()) {
                 mCompositor.sendToolbarAnimatorMessage(LayerView.REQUEST_SHOW_TOOLBAR_IMMEDIATELY);
@@ -161,29 +176,18 @@ public class DynamicToolbarAnimator {
                 mCompositor.sendToolbarAnimatorMessage(LayerView.REQUEST_HIDE_TOOLBAR_IMMEDIATELY);
             }
             for (PinReason reason : PinReason.values()) {
-              mCompositor.setPinned(mPinFlags.contains(reason), reason.value);
+                mCompositor.setPinned(mPinFlags.contains(reason), reason.value);
             }
-        } else if ((mCompositor != null) && !mCompositorControllerOpen) {
-            
-            
-            
-            mCompositor.sendToolbarAnimatorMessage(LayerView.IS_COMPOSITOR_CONTROLLER_OPEN);
         }
     }
 
      void notifyCompositorCreated(LayerView.Compositor aCompositor) {
         ThreadUtils.assertOnUiThread();
         mCompositor = aCompositor;
-        dumpStateToCompositor();
     }
 
-     void notifyCompositorControllerOpen() {
-        mCompositorControllerOpen = true;
-        dumpStateToCompositor();
-    }
-
-     void notifyCompositorDestroyed() {
-        mCompositor = null;
+    private boolean isCompositorReady() {
+        return ((mCompositor != null) && (mCompositor.isReady()));
     }
 
 
