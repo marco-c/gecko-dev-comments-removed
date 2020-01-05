@@ -41,7 +41,7 @@ add_task(function*() {
   yield testLink(function(doc) {
     let link = doc.createElement("a");
     link.textContent = "Link to Mozilla";
-    link.href = "about:mozilla";
+    link.href = "about:logo";
     doc.body.appendChild(link);
     return link;
   }, true, false, false, "about:robots");
