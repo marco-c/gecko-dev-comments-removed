@@ -148,6 +148,8 @@ RootActor.prototype = {
     
     getUniqueSelector: true,
     
+    getCssPath: true,
+    
     directorScripts: true,
     
     
