@@ -6,6 +6,7 @@ const MAX_CONCURRENT_WINDOWS = "browser.engagement.max_concurrent_window_count";
 const WINDOW_OPEN_COUNT = "browser.engagement.window_open_event_count";
 const TOTAL_URI_COUNT = "browser.engagement.total_uri_count";
 const UNIQUE_DOMAINS_COUNT = "browser.engagement.unique_domains_count";
+const UNFILTERED_URI_COUNT = "browser.engagement.unfiltered_uri_count";
 
 const TELEMETRY_SUBSESSION_TOPIC = "internal-telemetry-after-subsession-split";
 
@@ -59,23 +60,25 @@ let checkScalar = (scalars, scalarName, value, msg) => {
 
 
 
-let checkScalars = (maxTabs, tabOpenCount, maxWindows, windowsOpenCount, totalURIs, domainCount) => {
+let checkScalars = (countsObject) => {
   const scalars =
     Services.telemetry.snapshotScalars(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN);
 
   
-  checkScalar(scalars, MAX_CONCURRENT_TABS, maxTabs,
+  checkScalar(scalars, MAX_CONCURRENT_TABS, countsObject.maxTabs,
               "The maximum tab count must match the expected value.");
-  checkScalar(scalars, TAB_EVENT_COUNT, tabOpenCount,
+  checkScalar(scalars, TAB_EVENT_COUNT, countsObject.tabOpenCount,
               "The number of open tab event count must match the expected value.");
-  checkScalar(scalars, MAX_CONCURRENT_WINDOWS, maxWindows,
+  checkScalar(scalars, MAX_CONCURRENT_WINDOWS, countsObject.maxWindows,
               "The maximum window count must match the expected value.");
-  checkScalar(scalars, WINDOW_OPEN_COUNT, windowsOpenCount,
+  checkScalar(scalars, WINDOW_OPEN_COUNT, countsObject.windowsOpenCount,
               "The number of window open event count must match the expected value.");
-  checkScalar(scalars, TOTAL_URI_COUNT, totalURIs,
+  checkScalar(scalars, TOTAL_URI_COUNT, countsObject.totalURIs,
               "The total URI count must match the expected value.");
-  checkScalar(scalars, UNIQUE_DOMAINS_COUNT, domainCount,
+  checkScalar(scalars, UNIQUE_DOMAINS_COUNT, countsObject.domainCount,
               "The unique domains count must match the expected value.");
+  checkScalar(scalars, UNFILTERED_URI_COUNT, countsObject.totalUnfilteredURIs,
+              "The unfiltered URI count must match the expected value.");
 };
 
 add_task(function* test_tabsAndWindows() {
@@ -92,14 +95,20 @@ add_task(function* test_tabsAndWindows() {
   openedTabs.push(yield BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank"));
   expectedTabOpenCount = 1;
   expectedMaxTabs = 2;
-  checkScalars(expectedMaxTabs, expectedTabOpenCount, expectedMaxWins, expectedWinOpenCount, 0, 0);
+  
+  
+  checkScalars({maxTabs: expectedMaxTabs, tabOpenCount: expectedTabOpenCount, maxWindows: expectedMaxWins,
+                windowsOpenCount: expectedWinOpenCount, totalURIs: 0, domainCount: 0,
+                totalUnfilteredURIs: 0});
 
   
   openedTabs.push(yield BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank"));
   openedTabs.push(yield BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank"));
   expectedTabOpenCount += 2;
   expectedMaxTabs += 2;
-  checkScalars(expectedMaxTabs, expectedTabOpenCount, expectedMaxWins, expectedWinOpenCount, 0, 0);
+  checkScalars({maxTabs: expectedMaxTabs, tabOpenCount: expectedTabOpenCount, maxWindows: expectedMaxWins,
+                windowsOpenCount: expectedWinOpenCount, totalURIs: 0, domainCount: 0,
+                totalUnfilteredURIs: 0});
 
   
   let win = yield BrowserTestUtils.openNewBrowserWindow();
@@ -114,7 +123,9 @@ add_task(function* test_tabsAndWindows() {
 
   
   yield BrowserTestUtils.removeTab(openedTabs.pop());
-  checkScalars(expectedMaxTabs, expectedTabOpenCount, expectedMaxWins, expectedWinOpenCount, 0, 0);
+  checkScalars({maxTabs: expectedMaxTabs, tabOpenCount: expectedTabOpenCount, maxWindows: expectedMaxWins,
+                windowsOpenCount: expectedWinOpenCount, totalURIs: 0, domainCount: 0,
+                totalUnfilteredURIs: 0});
 
   
   for (let tab of openedTabs) {
@@ -123,7 +134,9 @@ add_task(function* test_tabsAndWindows() {
   yield BrowserTestUtils.closeWindow(win);
 
   
-  checkScalars(expectedMaxTabs, expectedTabOpenCount, expectedMaxWins, expectedWinOpenCount, 0, 0);
+  checkScalars({maxTabs: expectedMaxTabs, tabOpenCount: expectedTabOpenCount, maxWindows: expectedMaxWins,
+                windowsOpenCount: expectedWinOpenCount, totalURIs: 0, domainCount: 0,
+                totalUnfilteredURIs: 0});
 });
 
 add_task(function* test_subsessionSplit() {
@@ -134,12 +147,14 @@ add_task(function* test_subsessionSplit() {
   let win = yield BrowserTestUtils.openNewBrowserWindow();
   let openedTabs = [];
   openedTabs.push(yield BrowserTestUtils.openNewForegroundTab(win.gBrowser, "about:blank"));
-  openedTabs.push(yield BrowserTestUtils.openNewForegroundTab(win.gBrowser, "about:blank"));
+  openedTabs.push(yield BrowserTestUtils.openNewForegroundTab(win.gBrowser, "about:mozilla"));
   openedTabs.push(yield BrowserTestUtils.openNewForegroundTab(win.gBrowser, "http://www.example.com"));
 
   
-  checkScalars(5 , 4 , 2 , 1 ,
-               1 , 1 );
+  
+  
+  checkScalars({maxTabs: 5, tabOpenCount: 4, maxWindows: 2, windowsOpenCount: 1,
+                totalURIs: 1, domainCount: 1, totalUnfilteredURIs: 2});
 
   
   yield BrowserTestUtils.removeTab(openedTabs.pop());
@@ -153,8 +168,8 @@ add_task(function* test_subsessionSplit() {
   
   
   
-  checkScalars(4 , 0 , 2 , 0 ,
-               0 , 0 );
+  checkScalars({maxTabs: 4, tabOpenCount: 0, maxWindows: 2, windowsOpenCount: 0,
+                totalURIs: 0, domainCount: 0, totalUnfilteredURIs: 0});
 
   
   for (let tab of openedTabs) {
@@ -167,36 +182,38 @@ add_task(function* test_URIAndDomainCounts() {
   
   Services.telemetry.clearScalars();
 
-  let checkCounts = (URICount, domainCount) => {
+  let checkCounts = (countsObject) => {
     
     const scalars =
       Services.telemetry.snapshotScalars(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN);
-    checkScalar(scalars, TOTAL_URI_COUNT, URICount,
+    checkScalar(scalars, TOTAL_URI_COUNT, countsObject.totalURIs,
                 "The URI scalar must contain the expected value.");
-    checkScalar(scalars, UNIQUE_DOMAINS_COUNT, domainCount,
+    checkScalar(scalars, UNIQUE_DOMAINS_COUNT, countsObject.domainCount,
                 "The unique domains scalar must contain the expected value.");
+    checkScalar(scalars, UNFILTERED_URI_COUNT, countsObject.totalUnfilteredURIs,
+                "The unfiltered URI scalar must contain the expected value.");
   };
 
   
   let firstTab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank");
-  checkCounts(0, 0);
+  checkCounts({totalURIs: 0, domainCount: 0, totalUnfilteredURIs: 0});
 
   
   yield BrowserTestUtils.loadURI(firstTab.linkedBrowser, "http://example.com/");
   yield BrowserTestUtils.browserLoaded(firstTab.linkedBrowser);
-  checkCounts(1, 1);
+  checkCounts({totalURIs: 1, domainCount: 1, totalUnfilteredURIs: 1});
 
   
   let secondTab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank");
   yield BrowserTestUtils.switchTab(gBrowser, firstTab);
-  checkCounts(1, 1);
+  checkCounts({totalURIs: 1, domainCount: 1, totalUnfilteredURIs: 1});
   yield BrowserTestUtils.removeTab(secondTab);
 
   
   let newWin = yield BrowserTestUtils.openNewBrowserWindow();
   yield BrowserTestUtils.loadURI(newWin.gBrowser.selectedBrowser, "http://example.com/");
   yield BrowserTestUtils.browserLoaded(newWin.gBrowser.selectedBrowser);
-  checkCounts(2, 1);
+  checkCounts({totalURIs: 2, domainCount: 1, totalUnfilteredURIs: 2});
 
   
   const XHR_URL = "http://example.com/r";
@@ -208,23 +225,23 @@ add_task(function* test_URIAndDomainCounts() {
       xhr.send();
     });
   });
-  checkCounts(2, 1);
+  checkCounts({totalURIs: 2, domainCount: 1, totalUnfilteredURIs: 2});
 
   
   let loadingStopped = browserLocationChanged(newWin.gBrowser.selectedBrowser);
   yield BrowserTestUtils.loadURI(newWin.gBrowser.selectedBrowser, "http://example.com/#2");
   yield loadingStopped;
-  checkCounts(3, 1);
+  checkCounts({totalURIs: 3, domainCount: 1, totalUnfilteredURIs: 3});
 
   
   yield BrowserTestUtils.loadURI(newWin.gBrowser.selectedBrowser, "http://test1.example.com/");
   yield BrowserTestUtils.browserLoaded(newWin.gBrowser.selectedBrowser);
-  checkCounts(4, 1);
+  checkCounts({totalURIs: 4, domainCount: 1, totalUnfilteredURIs: 4});
 
   
   yield BrowserTestUtils.loadURI(newWin.gBrowser.selectedBrowser, "https://example.org/");
   yield BrowserTestUtils.browserLoaded(newWin.gBrowser.selectedBrowser);
-  checkCounts(5, 2);
+  checkCounts({totalURIs: 5, domainCount: 2, totalUnfilteredURIs: 5});
 
   
   
@@ -236,7 +253,14 @@ add_task(function* test_URIAndDomainCounts() {
     doc.body.insertBefore(iframe, doc.body.firstChild);
     yield promiseIframeLoaded;
   });
-  checkCounts(5, 2);
+  checkCounts({totalURIs: 5, domainCount: 2, totalUnfilteredURIs: 5});
+
+  
+  const TEST_PAGE =
+    "data:text/html,<a id='target' href='%23par1'>Click me</a><a name='par1'>The paragraph.</a>";
+  yield BrowserTestUtils.loadURI(newWin.gBrowser.selectedBrowser, TEST_PAGE);
+  yield BrowserTestUtils.browserLoaded(newWin.gBrowser.selectedBrowser);
+  checkCounts({totalURIs: 5, domainCount: 2, totalUnfilteredURIs: 6});
 
   
   yield BrowserTestUtils.removeTab(firstTab);

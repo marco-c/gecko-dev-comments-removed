@@ -31,6 +31,7 @@ const TAB_OPEN_EVENT_COUNT_SCALAR_NAME = "browser.engagement.tab_open_event_coun
 const WINDOW_OPEN_EVENT_COUNT_SCALAR_NAME = "browser.engagement.window_open_event_count";
 const UNIQUE_DOMAINS_COUNT_SCALAR_NAME = "browser.engagement.unique_domains_count";
 const TOTAL_URI_COUNT_SCALAR_NAME = "browser.engagement.total_uri_count";
+const UNFILTERED_URI_COUNT_SCALAR_NAME = "browser.engagement.unfiltered_uri_count";
 
 
 const KNOWN_SEARCH_SOURCES = [
@@ -78,13 +79,13 @@ let URICountListener = {
   
   _restoredURIsMap: new WeakMap(),
 
-  isValidURI(uri) {
+  isHttpURI(uri) {
     
     return uri.schemeIs("http") || uri.schemeIs("https");
   },
 
   addRestoredURI(browser, uri) {
-    if (!this.isValidURI(uri)) {
+    if (!this.isHttpURI(uri)) {
       return;
     }
 
@@ -102,10 +103,6 @@ let URICountListener = {
       return;
     }
 
-    if (!this.isValidURI(uri)) {
-      return;
-    }
-
     
     
     
@@ -117,10 +114,37 @@ let URICountListener = {
     }
 
     
+    let uriSpec = null;
+    try {
+      uriSpec = uri.spec;
+    } catch (e) {
+      
+      
+      Services.telemetry.scalarAdd(UNFILTERED_URI_COUNT_SCALAR_NAME, 1);
+      return;
+    }
+
+
     
     
-    if (this._restoredURIsMap.get(browser) === uri.spec) {
+    if (browser.ownerDocument.defaultView.gInitialPages.includes(uriSpec)) {
+      return;
+    }
+
+    
+    
+    
+    if (this._restoredURIsMap.get(browser) === uriSpec) {
       this._restoredURIsMap.delete(browser);
+      return;
+    }
+
+    
+    
+    
+    Services.telemetry.scalarAdd(UNFILTERED_URI_COUNT_SCALAR_NAME, 1);
+
+    if (!this.isHttpURI(uri)) {
       return;
     }
 
