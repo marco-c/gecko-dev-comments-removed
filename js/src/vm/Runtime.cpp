@@ -694,8 +694,13 @@ FreeOp::isDefaultFreeOp() const
 JSObject*
 JSRuntime::getIncumbentGlobal(JSContext* cx)
 {
-    MOZ_ASSERT(cx->getIncumbentGlobalCallback,
-               "Must set a callback using SetGetIncumbentGlobalCallback before using Promises");
+    
+    
+    if (!cx->getIncumbentGlobalCallback) {
+        if (!cx->compartment())
+            return nullptr;
+        return cx->global();
+    }
 
     return cx->getIncumbentGlobalCallback(cx);
 }

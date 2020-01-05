@@ -382,6 +382,24 @@ SetSourceHook(JSContext* cx, mozilla::UniquePtr<SourceHook> hook);
 extern JS_FRIEND_API(mozilla::UniquePtr<SourceHook>)
 ForgetSourceHook(JSContext* cx);
 
+
+
+
+
+
+
+
+
+
+
+
+
+extern JS_FRIEND_API(bool)
+UseInternalJobQueues(JSContext* cx);
+
+extern JS_FRIEND_API(void)
+RunJobs(JSContext* cx);
+
 extern JS_FRIEND_API(JS::Zone*)
 GetCompartmentZone(JSCompartment* comp);
 
