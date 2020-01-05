@@ -16,13 +16,13 @@ use style;
 
 
 pub trait ExtraDisplayListData {
-    fn new(box: &@Box) -> Self;
+    fn new(box: &Box) -> Self;
 }
 
 pub type Nothing = ();
 
 impl ExtraDisplayListData for AbstractNode<()> {
-    fn new(box: &@Box) -> AbstractNode<()> {
+    fn new(box: &Box) -> AbstractNode<()> {
         unsafe {
             transmute(box.node)
         }
@@ -30,7 +30,7 @@ impl ExtraDisplayListData for AbstractNode<()> {
 }
 
 impl ExtraDisplayListData for Nothing {
-    fn new(_: &@Box) -> Nothing {
+    fn new(_: &Box) -> Nothing {
         ()
     }
 }
