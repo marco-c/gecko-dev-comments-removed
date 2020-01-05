@@ -200,43 +200,65 @@ function RegExpReplace(string, replaceValue) {
     }
 
     
-    var global = !!rx.global;
-
-    
     if (IsRegExpMethodOptimizable(rx)) {
+        var flags = UnsafeGetInt32FromReservedSlot(rx, REGEXP_FLAGS_SLOT);
+
+        
+        var global = !!(flags & REGEXP_GLOBAL_FLAG);
+
         
         if (global) {
+            
+            var fullUnicode = !!(flags & REGEXP_UNICODE_FLAG);
+
             if (functionalReplace) {
                 var elemBase = GetElemBaseForLambda(replaceValue);
                 if (IsObject(elemBase))
-                    return RegExpGlobalReplaceOptElemBase(rx, S, lengthS, replaceValue, elemBase);
-                return RegExpGlobalReplaceOptFunc(rx, S, lengthS, replaceValue);
+                    return RegExpGlobalReplaceOptElemBase(rx, S, lengthS, replaceValue,
+                                                          fullUnicode, elemBase);
+                return RegExpGlobalReplaceOptFunc(rx, S, lengthS, replaceValue,
+                                                  fullUnicode);
             }
-            if (firstDollarIndex !== -1)
-                return RegExpGlobalReplaceOptSubst(rx, S, lengthS, replaceValue, firstDollarIndex);
-            if (lengthS < 0x7fff)
-                return RegExpGlobalReplaceShortOpt(rx, S, lengthS, replaceValue);
-            return RegExpGlobalReplaceOpt(rx, S, lengthS, replaceValue);
+            if (firstDollarIndex !== -1) {
+                return RegExpGlobalReplaceOptSubst(rx, S, lengthS, replaceValue,
+                                                   fullUnicode, firstDollarIndex);
+            }
+            if (lengthS < 0x7fff) {
+                return RegExpGlobalReplaceShortOpt(rx, S, lengthS, replaceValue,
+                                                   fullUnicode);
+            }
+            return RegExpGlobalReplaceOpt(rx, S, lengthS, replaceValue,
+                                          fullUnicode);
         }
 
-        if (functionalReplace)
-            return RegExpLocalReplaceOptFunc(rx, S, lengthS, replaceValue);
-        if (firstDollarIndex !== -1)
-            return RegExpLocalReplaceOptSubst(rx, S, lengthS, replaceValue, firstDollarIndex);
-        return RegExpLocalReplaceOpt(rx, S, lengthS, replaceValue);
+        var sticky = !!(flags & REGEXP_STICKY_FLAG);
+
+        if (functionalReplace) {
+            return RegExpLocalReplaceOptFunc(rx, S, lengthS, replaceValue,
+                                             sticky);
+        }
+        if (firstDollarIndex !== -1) {
+            return RegExpLocalReplaceOptSubst(rx, S, lengthS, replaceValue,
+                                              sticky, firstDollarIndex);
+        }
+        return RegExpLocalReplaceOpt(rx, S, lengthS, replaceValue,
+                                     sticky);
     }
 
     
     return RegExpReplaceSlowPath(rx, S, lengthS, replaceValue,
-                                 functionalReplace, firstDollarIndex, global);
+                                 functionalReplace, firstDollarIndex);
 }
 
 
 
 
 function RegExpReplaceSlowPath(rx, S, lengthS, replaceValue,
-                               functionalReplace, firstDollarIndex, global)
+                               functionalReplace, firstDollarIndex)
 {
+    
+    var global = !!rx.global;
+
     
     var fullUnicode = false;
     if (global) {
@@ -410,11 +432,8 @@ function RegExpGetComplexReplacement(result, matched, S, position,
 
 
 
-function RegExpGlobalReplaceShortOpt(rx, S, lengthS, replaceValue)
+function RegExpGlobalReplaceShortOpt(rx, S, lengthS, replaceValue, fullUnicode)
 {
-    
-    var fullUnicode = !!rx.unicode;
-
     
     var lastIndex = 0;
     rx.lastIndex = 0;

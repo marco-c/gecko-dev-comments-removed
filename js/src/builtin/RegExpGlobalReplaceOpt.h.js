@@ -18,7 +18,7 @@
 
 
 
-function FUNC_NAME(rx, S, lengthS, replaceValue
+function FUNC_NAME(rx, S, lengthS, replaceValue, fullUnicode
 #ifdef SUBSTITUTION
                    , firstDollarIndex
 #endif
@@ -27,9 +27,6 @@ function FUNC_NAME(rx, S, lengthS, replaceValue
 #endif
                   )
 {
-    
-    var fullUnicode = !!rx.unicode;
-
     
     var lastIndex = 0;
     rx.lastIndex = 0;
