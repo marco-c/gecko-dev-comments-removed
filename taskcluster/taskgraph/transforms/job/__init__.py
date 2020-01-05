@@ -133,11 +133,6 @@ def make_task_description(config, jobs):
             job['label'] = '{}-{}'.format(config.kind, job['name'])
         if job['name']:
             del job['name']
-        if 'platform' in job:
-            if 'treeherder' in job:
-                job['treeherder']['platform'] = job['platform']
-            del job['platform']
-
         taskdesc = copy.deepcopy(job)
 
         
@@ -151,6 +146,11 @@ def make_task_description(config, jobs):
         
         configure_taskdesc_for_run(config, job, taskdesc)
         del taskdesc['run']
+
+        if 'platform' in taskdesc:
+            if 'treeherder' in taskdesc:
+                taskdesc['treeherder']['platform'] = taskdesc['platform']
+            del taskdesc['platform']
 
         
         yield taskdesc
