@@ -38,6 +38,7 @@
 
 #define DEFAULT_REMOTE_TYPE "web"
 #define FILE_REMOTE_TYPE "file"
+#define EXTENSION_REMOTE_TYPE "extension"
 
 
 #define LARGE_ALLOCATION_REMOTE_TYPE "webLargeAllocation"
