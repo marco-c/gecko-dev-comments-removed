@@ -1092,30 +1092,6 @@ var AddonTestUtils = {
 
 
 
-  promiseAddonsByIDs(list) {
-    return new Promise(resolve => AddonManager.getAddonsByIDs(list, resolve));
-  },
-
-  
-
-
-
-
-
-
-
-  promiseAddonByID(id) {
-    return new Promise(resolve => AddonManager.getAddonByID(id, resolve));
-  },
-
-  
-
-
-
-
-
-
-
 
   promiseFindAddonUpdates(addon, reason = AddonManager.UPDATE_WHEN_PERIODIC_UPDATE) {
     let equal = this.testScope.equal;
@@ -1165,19 +1141,6 @@ var AddonTestUtils = {
         }
       }, reason);
     });
-  },
-
-  
-
-
-
-
-
-
-
-
-  promiseAddonsWithOperationsByTypes(types) {
-    return new Promise(resolve => AddonManager.getAddonsWithOperationsByTypes(types, resolve));
   },
 
   
