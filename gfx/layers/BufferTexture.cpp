@@ -165,8 +165,9 @@ BufferTextureData::CreateForYCbCrWithBufferSize(KnowsCompositor* aAllocator,
     return nullptr;
   }
 
-  bool hasIntermediateBuffer = ComputeHasIntermediateBuffer(gfx::SurfaceFormat::YUV,
-                                                            aAllocator->GetCompositorBackendType());
+  bool hasIntermediateBuffer = aAllocator ? ComputeHasIntermediateBuffer(gfx::SurfaceFormat::YUV,
+                                                                         aAllocator->GetCompositorBackendType())
+                                          : true;
 
   
   
@@ -175,8 +176,8 @@ BufferTextureData::CreateForYCbCrWithBufferSize(KnowsCompositor* aAllocator,
                                           aYUVColorSpace,
                                           hasIntermediateBuffer);
 
-  return CreateInternal(aAllocator->GetTextureForwarder(), desc, gfx::BackendType::NONE, aBufferSize,
-                        aTextureFlags);
+  return CreateInternal(aAllocator ? aAllocator->GetTextureForwarder() : nullptr,
+                       desc, gfx::BackendType::NONE, aBufferSize, aTextureFlags);
 }
 
 BufferTextureData*
