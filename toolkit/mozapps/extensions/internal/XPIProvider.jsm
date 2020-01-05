@@ -5312,7 +5312,7 @@ class AddonInstall {
     }
     this.hash = this.originalHash;
     this.existingAddon = options.existingAddon || null;
-    this.permHandler = options.permHandler || (() => Promise.resolve());
+    this.promptHandler = options.promptHandler || (() => Promise.resolve());
     this.releaseNotesURI = null;
 
     this.listeners = [];
@@ -5352,9 +5352,9 @@ class AddonInstall {
   install() {
     switch (this.state) {
     case AddonManager.STATE_DOWNLOADED:
-      this.checkPermissions();
+      this.checkPrompt();
       break;
-    case AddonManager.STATE_PERMISSION_GRANTED:
+    case AddonManager.STATE_PROMPTS_DONE:
       this.checkForBlockers();
       break;
     case AddonManager.STATE_READY:
@@ -5620,9 +5620,9 @@ class AddonInstall {
 
 
 
-  checkPermissions() {
+  checkPrompt() {
     Task.spawn((function*() {
-      if (this.permHandler) {
+      if (this.promptHandler) {
         let info = {
           existingAddon: this.existingAddon ? this.existingAddon.wrapper : null,
           addon: this.addon.wrapper,
@@ -5630,9 +5630,9 @@ class AddonInstall {
         };
 
         try {
-          yield this.permHandler(info);
+          yield this.promptHandler(info);
         } catch (err) {
-          logger.info(`Install of ${this.addon.id} cancelled since user declined permissions`);
+          logger.info(`Install of ${this.addon.id} cancelled by user`);
           this.state = AddonManager.STATE_CANCELLED;
           XPIProvider.removeActiveInstall(this);
           AddonManagerPrivate.callInstallListeners("onInstallCancelled",
@@ -5640,7 +5640,7 @@ class AddonInstall {
           return;
         }
       }
-      this.state = AddonManager.STATE_PERMISSION_GRANTED;
+      this.state = AddonManager.STATE_PROMPTS_DONE;
       this.install();
     }).bind(this));
   }
@@ -6608,8 +6608,8 @@ AddonInstallWrapper.prototype = {
     return installFor(this).sourceURI;
   },
 
-  set _permHandler(handler) {
-    installFor(this).permHandler = handler;
+  set promptHandler(handler) {
+    installFor(this).promptHandler = handler;
   },
 
   install() {
