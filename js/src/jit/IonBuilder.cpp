@@ -823,7 +823,8 @@ IonBuilder::build()
     }
 #endif
 
-    initParameters();
+    if (!initParameters())
+        return false;
     initLocals();
 
     
@@ -862,7 +863,8 @@ IonBuilder::build()
 
     
     
-    rewriteParameters();
+    if (!rewriteParameters())
+        return false;
 
     
     if (!info().funMaybeLazy() && !info().module() &&
@@ -1136,25 +1138,29 @@ IonBuilder::rewriteParameter(uint32_t slotIdx, MDefinition* param, int32_t argIn
 
 
 
-void
+bool
 IonBuilder::rewriteParameters()
 {
     MOZ_ASSERT(info().environmentChainSlot() == 0);
 
     if (!info().funMaybeLazy())
-        return;
+        return true;
 
     for (uint32_t i = info().startArgSlot(); i < info().endArgSlot(); i++) {
+        if (!alloc().ensureBallast())
+            return false;
         MDefinition* param = current->getSlot(i);
         rewriteParameter(i, param, param->toParameter()->index());
     }
+
+    return true;
 }
 
-void
+bool
 IonBuilder::initParameters()
 {
     if (!info().funMaybeLazy())
-        return;
+        return true;
 
     
     
@@ -1182,10 +1188,14 @@ IonBuilder::initParameters()
             types->addType(type, alloc_->lifoAlloc());
         }
 
-        param = MParameter::New(alloc(), i, types);
+        param = MParameter::New(alloc().fallible(), i, types);
+        if (!param)
+            return false;
         current->add(param);
         current->initSlot(info().argSlotUnchecked(i), param);
     }
+
+    return true;
 }
 
 void
