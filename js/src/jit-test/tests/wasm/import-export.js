@@ -375,6 +375,20 @@ assertEq(new Instance(m, {glob:{a:(64*1024 - 2)}}) instanceof Instance, true);
 assertErrorMessage(() => new Instance(m, {glob:{a:(64*1024 - 1)}}), RangeError, /data segment does not fit/);
 assertErrorMessage(() => new Instance(m, {glob:{a:64*1024}}), RangeError, /data segment does not fit/);
 
+var m = new Module(wasmTextToBinary(`
+    (module
+        (memory 1)
+        (data (i32.const 0x10001) "\\0a\\0b"))
+`));
+assertErrorMessage(() => new Instance(m), RangeError, /data segment does not fit/);
+
+var m = new Module(wasmTextToBinary(`
+    (module
+        (memory 0)
+        (data (i32.const 0x10001) ""))
+`));
+assertEq(new Instance(m) instanceof Instance, true);
+
 
 
 
