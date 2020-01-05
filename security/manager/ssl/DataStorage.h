@@ -7,6 +7,7 @@
 #ifndef mozilla_DataStorage_h
 #define mozilla_DataStorage_h
 
+#include "mozilla/Atomics.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/StaticPtr.h"
@@ -186,7 +187,7 @@ private:
   uint32_t mTimerDelay; 
   bool mPendingWrite; 
   bool mShuttingDown;
-  bool mInitCalled; 
+  mozilla::Atomic<bool> mInitCalled; 
   
 
   Monitor mReadyMonitor; 
