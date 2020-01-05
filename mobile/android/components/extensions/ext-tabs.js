@@ -15,51 +15,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "PromiseUtils",
 XPCOMUtils.defineLazyModuleGetter(this, "Services",
                                   "resource://gre/modules/Services.jsm");
 
-
-
-function getSender(extension, target, sender) {
-  let tabId;
-  if ("tabId" in sender) {
-    
-    
-    
-    tabId = sender.tabId;
-    delete sender.tabId;
-  } else if (target instanceof Ci.nsIDOMXULElement) {
-    tabId = tabTracker.getBrowserData(target).tabId;
-  }
-
-  if (tabId) {
-    let tab = extension.tabManager.get(tabId, null);
-    if (tab) {
-      sender.tab = tab.convert();
-    }
-  }
-}
-
-
-global.tabGetSender = getSender;
-
-
-extensions.on("page-shutdown", (type, context) => {
-  if (context.viewType == "tab") {
-    if (context.extension.id !== context.xulBrowser.contentPrincipal.addonId) {
-      
-      
-      
-      return;
-    }
-    let {BrowserApp} = context.xulBrowser.ownerGlobal;
-    if (BrowserApp) {
-      let nativeTab = BrowserApp.getTabForBrowser(context.xulBrowser);
-      if (nativeTab) {
-        BrowserApp.closeTab(nativeTab);
-      }
-    }
-  }
-});
-
-
 function getBrowserWindow(window) {
   return window.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDocShell)
                .QueryInterface(Ci.nsIDocShellTreeItem).rootTreeItem
