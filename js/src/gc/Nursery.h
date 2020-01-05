@@ -448,6 +448,7 @@ class Nursery
     void maybeResizeNursery(JS::gcreason::Reason reason, double promotionRate);
     void growAllocableSpace();
     void shrinkAllocableSpace();
+    void minimizeAllocableSpace();
 
     
     void startProfile(ProfileKey key);
