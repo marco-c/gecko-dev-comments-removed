@@ -42,7 +42,8 @@ public:
     
     
     virtual bool ProvidesGlyphWidths() const override {
-        return mFontEntry->HasFontTable(TRUETYPE_TAG('s','b','i','x'));
+        return mVariationFont ||
+               mFontEntry->HasFontTable(TRUETYPE_TAG('s','b','i','x'));
     }
 
     virtual int32_t GetGlyphWidth(DrawTarget& aDrawTarget,
@@ -60,6 +61,14 @@ public:
                                         FontCacheSizes* aSizes) const override;
 
     virtual FontType GetType() const override { return FONT_TYPE_MAC; }
+
+    
+    
+    
+    static CTFontRef
+    CreateCTFontFromCGFontWithVariations(CGFontRef aCGFont,
+                                         CGFloat aSize,
+                                         CTFontDescriptorRef aFontDesc = nullptr);
 
 protected:
     virtual const Metrics& GetHorizontalMetrics() override {
@@ -84,7 +93,6 @@ protected:
                           uint32_t *aGlyphID, gfxFloat aConvFactor);
 
     
-    
     CGFontRef             mCGFont;
 
     
@@ -97,6 +105,8 @@ protected:
 
     Metrics               mMetrics;
     uint32_t              mSpaceGlyph;
+
+    bool                  mVariationFont; 
 };
 
 #endif 
