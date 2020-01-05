@@ -1,0 +1,4 @@
+
+
+pub type IPropertyDescriptionList = ::IUnknown; 
+pub type IPropertyStore = ::IUnknown; 

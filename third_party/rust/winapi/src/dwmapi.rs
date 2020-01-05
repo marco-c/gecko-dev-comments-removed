@@ -1,0 +1,9 @@
+
+
+
+STRUCT!{struct DWM_BLURBEHIND {
+    dwFlags: ::DWORD,
+    fEnable: ::BOOL,
+    hRgnBlur: ::HRGN,
+    fTransitionOnMaximized: ::BOOL,
+}}

@@ -1,0 +1,7 @@
+
+
+
+
+
+
+pub type va_list = *mut ::c_char;

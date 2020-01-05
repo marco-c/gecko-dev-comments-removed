@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+#![crate_name = "gleam"]
+#![crate_type = "lib"]
+
+pub mod gl;
+
+mod ffi {
+    include!(concat!(env!("OUT_DIR"), "/gl_bindings.rs"));
+}

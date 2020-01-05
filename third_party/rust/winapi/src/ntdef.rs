@@ -1,0 +1,7 @@
+
+
+
+
+pub type NTSTATUS = ::LONG;
+pub type PNTSTATUS = *mut NTSTATUS;
+pub type PCNTSTATUS = *const NTSTATUS;

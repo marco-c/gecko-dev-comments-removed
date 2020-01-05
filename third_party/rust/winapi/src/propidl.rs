@@ -1,0 +1,10 @@
+
+
+use super::*;
+STRUCT!{struct PROPVARIANT {
+    vt: VARTYPE,
+    wReserved1: WORD,
+    wReserved2: WORD,
+    wReserved3: WORD,
+    data: [u8; 16],
+}}
