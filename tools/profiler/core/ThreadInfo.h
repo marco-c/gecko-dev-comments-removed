@@ -51,9 +51,6 @@ private:
   void* mStackTop;
 
   
-  nsCOMPtr<nsIThread> mThread;
-
-  
   
   
   bool mPendingDelete;
@@ -74,10 +71,12 @@ public:
   void FlushSamplesAndMarkers(ProfileBuffer* aBuffer,
                               const mozilla::TimeStamp& aStartTime);
 
-  ThreadResponsiveness* GetThreadResponsiveness() { return &mRespInfo; }
-
-  void UpdateThreadResponsiveness() {
-    mRespInfo.Update(mIsMainThread, mThread);
+  
+  ThreadResponsiveness* GetThreadResponsiveness()
+  {
+    ThreadResponsiveness* responsiveness = mResponsiveness.ptrOr(nullptr);
+    MOZ_ASSERT(!!responsiveness == mIsMainThread);
+    return responsiveness;
   }
 
 private:
@@ -91,7 +90,8 @@ private:
   mozilla::UniquePtr<char[]> mSavedStreamedMarkers;
   mozilla::Maybe<UniqueStacks> mUniqueStacks;
 
-  ThreadResponsiveness mRespInfo;
+  
+  mozilla::Maybe<ThreadResponsiveness> mResponsiveness;
 
   
   
