@@ -52,17 +52,6 @@ class RemoteCPPUnitTests(cppunittests.CPPUnitTests):
         self.device.chmodDir(self.remote_bin_dir)
 
     def push_libs(self):
-        if self.options.local_bin is not None:
-            szip = os.path.join(self.options.local_bin, '..', 'host', 'bin', 'szip')
-            if not os.path.exists(szip):
-                
-                szip = os.path.join(self.options.local_bin, 'host', 'szip')
-            if not os.path.exists(szip):
-                
-                
-                szip = None
-        else:
-            szip = None
         if self.options.local_apk:
             with mozfile.TemporaryDirectory() as tmpdir:
                 apk_contents = ZipFile(self.options.local_apk)
@@ -73,13 +62,6 @@ class RemoteCPPUnitTests(cppunittests.CPPUnitTests):
                         remote_file = posixpath.join(self.remote_bin_dir, os.path.basename(info.filename))
                         apk_contents.extract(info, tmpdir)
                         local_file = os.path.join(tmpdir, info.filename)
-                        if szip:
-                            try:
-                                out = subprocess.check_output([szip, '-d', local_file], stderr=subprocess.STDOUT)
-                            except subprocess.CalledProcessError:
-                                print >> sys.stderr, "Error calling %s on %s.." % (szip, local_file)
-                                if out:
-                                    print >> sys.stderr, out
                         self.device.pushFile(local_file, remote_file)
 
         elif self.options.local_lib:
@@ -88,13 +70,6 @@ class RemoteCPPUnitTests(cppunittests.CPPUnitTests):
                     print >> sys.stderr, "Pushing %s.." % file
                     remote_file = posixpath.join(self.remote_bin_dir, file)
                     local_file = os.path.join(self.options.local_lib, file)
-                    if szip:
-                        try:
-                            out = subprocess.check_output([szip, '-d', local_file], stderr=subprocess.STDOUT)
-                        except subprocess.CalledProcessError:
-                            print >> sys.stderr, "Error calling %s on %s.." % (szip, local_file)
-                            if out:
-                                print >> sys.stderr, out
                     self.device.pushFile(local_file, remote_file)
             
             for subdir in ["assets", "lib"]:
@@ -106,13 +81,6 @@ class RemoteCPPUnitTests(cppunittests.CPPUnitTests):
                                 print >> sys.stderr, "Pushing %s.." % file
                                 remote_file = posixpath.join(self.remote_bin_dir, file)
                                 local_file = os.path.join(root, file)
-                                if szip:
-                                    try:
-                                        out = subprocess.check_output([szip, '-d', local_file], stderr=subprocess.STDOUT)
-                                    except subprocess.CalledProcessError:
-                                        print >> sys.stderr, "Error calling %s on %s.." % (szip, local_file)
-                                        if out:
-                                            print >> sys.stderr, out
                                 self.device.pushFile(local_file, remote_file)
 
     def push_progs(self, progs):
