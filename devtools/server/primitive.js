@@ -28,9 +28,7 @@ var WebGLPrimitiveCounter = exports.WebGLPrimitiveCounter = Class({
     this.tabActor = tabActor;
   },
 
-  destroy: function () {
-    this.stopRecording();
-  },
+  destroy: function () {},
 
   
 
