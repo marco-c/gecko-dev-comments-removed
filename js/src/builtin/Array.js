@@ -203,6 +203,9 @@ function ArraySort(comparefn) {
     
     var len = ToLength(O.length);
 
+    if (len <= 1)
+      return this;
+
     
     var wrappedCompareFn = comparefn;
     comparefn = function(x, y) {
