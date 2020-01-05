@@ -39,8 +39,6 @@ var test_servers = {
   },
 };
 
-var priming_count = 2;
-
 var test_settings = {
   
   allow_active: {
@@ -275,22 +273,3 @@ function execute_test(test, mimetype) {
 
   yield BrowserTestUtils.removeTab(tab);
 }
-
-
-add_task(function*() {
-  
-  Services.obs.addObserver(Observer, "console-api-log-event", false);
-  Services.obs.addObserver(Observer, "http-on-examine-response", false);
-  registerCleanupFunction(do_cleanup);
-  requestLongerTimeout(4);
-
-  for (let which of Object.keys(test_settings)) {
-    SetupPrefTestEnvironment(which);
-
-    for (let server of Object.keys(test_servers)) {
-      yield execute_test(server, test_settings[which].mimetype);
-    }
-
-    SpecialPowers.popPrefEnv();
-  }
-});
