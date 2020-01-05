@@ -120,6 +120,7 @@ class ObjectBox;
     F(VOID) \
     F(NOT) \
     F(BITNOT) \
+    F(AWAIT) \
     \
     /* \
      * Binary operators. \
@@ -199,6 +200,7 @@ IsTypeofKind(ParseNodeKind kind)
 {
     return PNK_TYPEOFNAME <= kind && kind <= PNK_TYPEOFEXPR;
 }
+
 
 
 

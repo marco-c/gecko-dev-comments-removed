@@ -290,7 +290,8 @@ PushNodeChildren(ParseNode* pn, NodeStack* stack)
       
       
       case PNK_YIELD_STAR:
-      case PNK_YIELD: {
+      case PNK_YIELD:
+      case PNK_AWAIT: {
         MOZ_ASSERT(pn->isArity(PN_BINARY));
         MOZ_ASSERT(pn->pn_right);
         MOZ_ASSERT(pn->pn_right->isKind(PNK_NAME) ||
