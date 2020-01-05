@@ -10,7 +10,7 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/TaskQueue.h"
-#include "mozilla/Monitor.h"
+#include "mozilla/Mutex.h"
 
 #include "MediaEventSource.h"
 #include "MediaDataDemuxer.h"
@@ -209,7 +209,7 @@ private:
                 uint32_t aNumOfMaxError)
       : mOwner(aOwner)
       , mType(aType)
-      , mMonitor("DecoderData")
+      , mMutex("DecoderData")
       , mDescription("shutdown")
       , mUpdateScheduled(false)
       , mDemuxEOS(false)
@@ -244,13 +244,13 @@ private:
     nsAutoPtr<DecoderCallback> mCallback;
 
     
-    Monitor mMonitor;
+    Mutex mMutex;
     
     RefPtr<MediaDataDecoder> mDecoder;
     const char* mDescription;
     void ShutdownDecoder()
     {
-      MonitorAutoLock mon(mMonitor);
+      MutexAutoLock lock(mMutex);
       if (mDecoder) {
         mDecoder->Shutdown();
       }
