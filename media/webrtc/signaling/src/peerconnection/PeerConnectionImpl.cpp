@@ -3417,6 +3417,11 @@ void PeerConnectionImpl::IceConnectionStateChange(
   CSFLogDebug(logTag, "%s", __FUNCTION__);
 
   auto domState = toDomIceConnectionState(state);
+  if (domState == mIceConnectionState) {
+    
+    
+    return;
+  }
 
 #if !defined(MOZILLA_EXTERNAL_LINKAGE)
   if (!isDone(mIceConnectionState) && isDone(domState)) {
