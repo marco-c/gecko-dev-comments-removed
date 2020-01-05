@@ -89,11 +89,6 @@ GPUParent::Init(base::ProcessId aParentPid,
 
   nsDebugImpl::SetMultiprocessMode("GPU");
 
-  
-  
-  
-  GetIPCChannel()->SendBuildID();
-
 #ifdef MOZ_CRASHREPORTER
   
   CrashReporterClient::InitSingleton(this);
