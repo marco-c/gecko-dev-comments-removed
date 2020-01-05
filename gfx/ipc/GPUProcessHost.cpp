@@ -152,12 +152,12 @@ GPUProcessHost::Shutdown()
     
     mShutdownRequested = true;
 
+#ifdef NS_FREE_PERMANENT_DATA
     
     if (!mChannelClosed) {
       mGPUChild->Close();
     }
-
-#ifndef NS_FREE_PERMANENT_DATA
+#else
     
     
     KillHard("NormalShutdown");
