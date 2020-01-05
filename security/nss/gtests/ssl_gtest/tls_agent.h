@@ -140,6 +140,7 @@ class TlsAgent : public PollTarget {
   void WaitForErrorCode(int32_t expected, uint32_t delay) const;
   
   void SendData(size_t bytes, size_t blocksize = 1024);
+  void SendBuffer(const DataBuffer& buf);
   
   void SendDirect(const DataBuffer& buf);
   void ReadBytes();
