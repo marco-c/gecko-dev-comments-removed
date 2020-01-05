@@ -462,7 +462,7 @@ private:
   };
 
   
-  class EllipseShapeInfo : public ShapeInfo
+  class EllipseShapeInfo final : public ShapeInfo
   {
   public:
     EllipseShapeInfo(const nsPoint& aCenter,
@@ -486,7 +486,7 @@ private:
       mCenter.MoveBy(aLineLeft, aBlockStart);
     }
 
-  protected:
+  private:
     
     
     nsPoint mCenter;
