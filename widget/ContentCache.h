@@ -414,7 +414,9 @@ private:
   
   
   uint32_t mPendingEventsNeedingAck;
-
+  
+  
+  uint8_t mPendingCompositionCount;
   
   
   
