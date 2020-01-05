@@ -3,6 +3,7 @@ Cu.import("resource://testing-common/httpd.js");
 var server;
 
 const PREF_SETTINGS_SERVER = "services.settings.server";
+const PREF_SETTINGS_SERVER_BACKOFF = "services.settings.server.backoff";
 const PREF_LAST_UPDATE = "services.blocklist.last_update_seconds";
 const PREF_LAST_ETAG = "services.blocklist.last_etag";
 const PREF_CLOCK_SKEW_SECONDS = "services.blocklist.clock_skew_seconds";
@@ -127,6 +128,33 @@ add_task(function* test_check_maybeSync() {
   clockDifference = Services.prefs.getIntPref(PREF_CLOCK_SKEW_SECONDS);
   
   do_check_true(clockDifference <= 0 && clockDifference >= -10);
+
+  
+  
+  
+  function simulateBackoffResponse(request, response) {
+    response.setHeader("Content-Type", "application/json; charset=UTF-8");
+    response.setHeader("Backoff", "10");
+    response.write(JSON.stringify({data: []}));
+    response.setStatusLine(null, 200, "OK");
+  }
+  server.registerPathHandler(changesPath, simulateBackoffResponse);
+  
+  yield updater.checkVersions();
+  
+  try {
+    yield updater.checkVersions();
+    
+    do_check_true(false);
+  } catch (e) {
+    do_check_true(/Server is asking clients to back off; retry in \d+s./.test(e.message));
+  }
+  
+  server.registerPathHandler(changesPath, handleResponse.bind(null, 2000));
+  Services.prefs.setCharPref(PREF_SETTINGS_SERVER_BACKOFF, `${Date.now() - 1000}`);
+  yield updater.checkVersions();
+  
+  do_check_false(Services.prefs.prefHasUserValue(PREF_SETTINGS_SERVER_BACKOFF));
 });
 
 function run_test() {
