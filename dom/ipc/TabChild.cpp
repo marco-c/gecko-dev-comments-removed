@@ -1100,9 +1100,15 @@ TabChild::ActorDestroy(ActorDestroyReason why)
   if (mTabChildGlobal) {
     
     
-    static_cast<nsFrameMessageManager*>
-      (mTabChildGlobal->mMessageManager.get())->Disconnect();
-    mTabChildGlobal->mMessageManager = nullptr;
+    
+    MOZ_DIAGNOSTIC_ASSERT(mTabChildGlobal->mMessageManager);
+    if (mTabChildGlobal->mMessageManager) {
+      
+      
+      static_cast<nsFrameMessageManager*>
+        (mTabChildGlobal->mMessageManager.get())->Disconnect();
+      mTabChildGlobal->mMessageManager = nullptr;
+    }
   }
 
   CompositorBridgeChild* compositorChild = static_cast<CompositorBridgeChild*>(CompositorBridgeChild::Get());
@@ -2102,16 +2108,26 @@ TabChild::RecvAsyncMessage(const nsString& aMessage,
                            const IPC::Principal& aPrincipal,
                            const ClonedMessageData& aData)
 {
-  if (mTabChildGlobal) {
-    nsCOMPtr<nsIXPConnectJSObjectHolder> kungFuDeathGrip(GetGlobal());
-    StructuredCloneData data;
-    UnpackClonedMessageDataForChild(aData, data);
-    RefPtr<nsFrameMessageManager> mm =
-      static_cast<nsFrameMessageManager*>(mTabChildGlobal->mMessageManager.get());
-    CrossProcessCpowHolder cpows(Manager(), aCpows);
-    mm->ReceiveMessage(static_cast<EventTarget*>(mTabChildGlobal), nullptr,
-                       aMessage, false, &data, &cpows, aPrincipal, nullptr);
+  if (!mTabChildGlobal) {
+    return IPC_OK();
   }
+
+  
+  
+  
+  MOZ_DIAGNOSTIC_ASSERT(mTabChildGlobal->mMessageManager);
+  if (!mTabChildGlobal->mMessageManager) {
+    return IPC_OK();
+  }
+
+  nsCOMPtr<nsIXPConnectJSObjectHolder> kungFuDeathGrip(GetGlobal());
+  StructuredCloneData data;
+  UnpackClonedMessageDataForChild(aData, data);
+  RefPtr<nsFrameMessageManager> mm =
+    static_cast<nsFrameMessageManager*>(mTabChildGlobal->mMessageManager.get());
+  CrossProcessCpowHolder cpows(Manager(), aCpows);
+  mm->ReceiveMessage(static_cast<EventTarget*>(mTabChildGlobal), nullptr,
+                     aMessage, false, &data, &cpows, aPrincipal, nullptr);
   return IPC_OK();
 }
 
