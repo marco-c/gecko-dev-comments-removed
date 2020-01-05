@@ -52,9 +52,9 @@ VideoDecoderManagerChild::Initialize()
     return;
   }
 
-  
-  
-  
+  if (!endpoint.IsValid()) {
+    return;
+  }
 
   sDecoderManager = new VideoDecoderManagerChild();
 
