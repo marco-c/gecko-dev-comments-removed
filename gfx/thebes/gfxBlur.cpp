@@ -75,7 +75,12 @@ gfxAlphaBoxBlur::InitDrawTarget(const DrawTarget* aReferenceDT,
   
   
   
+  
+  
+  
+  
   if (aBlurRadius.IsSquare() && aSpreadRadius.IsEmpty() &&
+      blurDataSize >= 8192 &&
       backend == BackendType::DIRECT2D1_1) {
     mAccelerated = true;
     mDrawTarget =
