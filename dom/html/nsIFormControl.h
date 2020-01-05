@@ -128,7 +128,9 @@ public:
 
 
 
-  virtual void ClearForm(bool aRemoveFromForm) = 0;
+
+
+  virtual void ClearForm(bool aRemoveFromForm, bool aUnbindOrDelete) = 0;
 
   
 

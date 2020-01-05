@@ -1550,6 +1550,27 @@ HTMLInputElement::AfterSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
                                                          aValue, aNotify);
 }
 
+void
+HTMLInputElement::BeforeSetForm(bool aBindToTree)
+{
+  
+  if (mType == NS_FORM_INPUT_RADIO && !aBindToTree) {
+    WillRemoveFromRadioGroup();
+  }
+}
+
+void
+HTMLInputElement::AfterClearForm(bool aUnbindOrDelete)
+{
+  MOZ_ASSERT(!mForm);
+
+  
+  if (mType == NS_FORM_INPUT_RADIO && !aUnbindOrDelete) {
+    AddedToRadioGroup();
+    UpdateValueMissingValidityStateForRadio(false);
+  }
+}
+
 
 
 NS_IMETHODIMP

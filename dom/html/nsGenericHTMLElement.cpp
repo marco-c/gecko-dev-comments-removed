@@ -1760,12 +1760,21 @@ nsGenericHTMLFormElement::SetForm(nsIDOMHTMLFormElement* aForm)
   NS_ASSERTION(!mForm,
                "We don't support switching from one non-null form to another.");
 
+  SetForm(static_cast<HTMLFormElement*>(aForm), false);
+}
+
+void nsGenericHTMLFormElement::SetForm(HTMLFormElement* aForm, bool aBindToTree)
+{
+  if (aForm) {
+    BeforeSetForm(aBindToTree);
+  }
+
   
-  mForm = static_cast<HTMLFormElement*>(aForm);
+  mForm = aForm;
 }
 
 void
-nsGenericHTMLFormElement::ClearForm(bool aRemoveFromForm)
+nsGenericHTMLFormElement::ClearForm(bool aRemoveFromForm, bool aUnbindOrDelete)
 {
   NS_ASSERTION((mForm != nullptr) == HasFlag(ADDED_TO_FORM),
                "Form control should have had flag set correctly");
@@ -1792,6 +1801,8 @@ nsGenericHTMLFormElement::ClearForm(bool aRemoveFromForm)
 
   UnsetFlags(ADDED_TO_FORM);
   mForm = nullptr;
+
+  AfterClearForm(aUnbindOrDelete);
 }
 
 Element*
@@ -1876,12 +1887,12 @@ nsGenericHTMLFormElement::UnbindFromTree(bool aDeep, bool aNullParent)
     
     if (aNullParent) {
       
-      ClearForm(true);
+      ClearForm(true, true);
     } else {
       
       if (HasAttr(kNameSpaceID_None, nsGkAtoms::form) ||
           !FindAncestorForm(mForm)) {
-        ClearForm(true);
+        ClearForm(true, true);
       } else {
         UnsetFlags(MAYBE_ORPHAN_FORM_ELEMENT);
       }
@@ -2269,7 +2280,7 @@ nsGenericHTMLFormElement::UpdateFormOwner(bool aBindToTree,
   bool needStateUpdate = false;
   if (!aBindToTree) {
     needStateUpdate = mForm && mForm->IsDefaultSubmitElement(this);
-    ClearForm(true);
+    ClearForm(true, false);
   }
 
   HTMLFormElement *oldForm = mForm;
@@ -2295,7 +2306,7 @@ nsGenericHTMLFormElement::UpdateFormOwner(bool aBindToTree,
                      "associated with the id in @form!");
 
         if (element && element->IsHTMLElement(nsGkAtoms::form)) {
-          mForm = static_cast<HTMLFormElement*>(element);
+          SetForm(static_cast<HTMLFormElement*>(element), aBindToTree);
         }
       }
      } else {
@@ -2305,7 +2316,7 @@ nsGenericHTMLFormElement::UpdateFormOwner(bool aBindToTree,
       
       
       
-      mForm = FindAncestorForm();
+      SetForm(FindAncestorForm(), aBindToTree);
     }
   }
 

@@ -984,6 +984,10 @@ protected:
   virtual nsresult AfterSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
                                 const nsAttrValue* aValue, bool aNotify) override;
 
+  virtual void BeforeSetForm(bool aBindToTree) override;
+
+  virtual void AfterClearForm(bool aUnbindOrDelete) override;
+
   
 
 

@@ -332,7 +332,7 @@ nsNodeUtils::LastRelease(nsINode* aNode)
         aNode->HasFlag(ADDED_TO_FORM)) {
       
       
-      static_cast<nsGenericHTMLFormElement*>(aNode)->ClearForm(true);
+      static_cast<nsGenericHTMLFormElement*>(aNode)->ClearForm(true, true);
     }
 
     if (aNode->IsHTMLElement(nsGkAtoms::img) &&
