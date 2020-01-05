@@ -42,15 +42,17 @@ define(function (require, exports, module) {
 
   input.actions = {
     onCopyJson: function () {
-      dispatchEvent("copy", input.prettified ? input.jsonPretty : input.jsonText);
+      let value = input.prettified ? input.jsonPretty : input.jsonText;
+      postChromeMessage("copy", value);
     },
 
     onSaveJson: function () {
-      dispatchEvent("save", input.prettified ? input.jsonPretty : input.jsonText);
+      let value = input.prettified ? input.jsonPretty : input.jsonText;
+      postChromeMessage("save", value);
     },
 
     onCopyHeaders: function () {
-      dispatchEvent("copy-headers", input.headers);
+      postChromeMessage("copy-headers", input.headers);
     },
 
     onSearch: function (value) {
@@ -70,24 +72,6 @@ define(function (require, exports, module) {
       input.prettified = !input.prettified;
     },
   };
-
-  
-
-
-
-
-
-  function dispatchEvent (type, value) {
-    let data = {
-      detail: {
-        type,
-        value,
-      }
-    };
-
-    let contentMessageEvent = new CustomEvent("contentMessage", data);
-    window.dispatchEvent(contentMessageEvent);
-  }
 
   
 

@@ -6,7 +6,7 @@
 
 "use strict";
 
-const {Cc, Ci, components} = require("chrome");
+const {Cu, Cc, Ci, components} = require("chrome");
 const Services = require("Services");
 const {Class} = require("sdk/core/heritage");
 const {Unknown} = require("sdk/platform/xpcom");
@@ -140,8 +140,9 @@ let Converter = Class({
     JsonViewUtils.exportIntoContentScope(win, Locale, "Locale");
 
     Events.once(win, "DOMContentLoaded", event => {
-      win.addEventListener("contentMessage",
-        this.onContentMessage.bind(this), false, true);
+      Cu.exportFunction(this.postChromeMessage.bind(this), win, {
+        defineAs: "postChromeMessage"
+      });
     });
 
     
@@ -262,15 +263,10 @@ let Converter = Class({
 
   
 
-  onContentMessage: function (e) {
-    
-    let win = NetworkHelper.getWindowForRequest(this.channel);
-    if (win != e.target) {
-      return;
-    }
+  postChromeMessage: function (type, args, objects) {
+    let value = args;
 
-    let value = e.detail.value;
-    switch (e.detail.type) {
+    switch (type) {
       case "copy":
         Clipboard.set(value, "text");
         break;
