@@ -543,7 +543,6 @@ class SchemaAPIManager extends EventEmitter {
 
 
 
-
   constructor(processType) {
     super();
     this.processType = processType;
@@ -556,7 +555,6 @@ class SchemaAPIManager extends EventEmitter {
       content_child: [],
       devtools_parent: [],
       devtools_child: [],
-      proxy_script: [],
     };
   }
 
@@ -601,7 +599,6 @@ class SchemaAPIManager extends EventEmitter {
   }
 
   
-
 
 
 
