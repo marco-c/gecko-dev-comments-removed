@@ -1,0 +1,8 @@
+
+function checkOne(win, addon) {
+  win.gViewController.doCommand("cmd_findItemUpdates", addon);
+}
+
+
+add_task(() => interactiveUpdateTest(true, checkOne));
+add_task(() => interactiveUpdateTest(false, checkOne));
