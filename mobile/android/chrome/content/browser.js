@@ -430,13 +430,6 @@ var BrowserApp = {
     SearchEngines.init();
     Experiments.init();
 
-    if ("arguments" in window) {
-      if (window.arguments[0])
-        gScreenWidth = window.arguments[0];
-      if (window.arguments[1])
-        gScreenHeight = window.arguments[1];
-    }
-
     
     Services.io.offline = false;
 
@@ -3341,11 +3334,6 @@ nsBrowserAccess.prototype = {
 };
 
 
-
-
-var gScreenWidth = 1;
-var gScreenHeight = 1;
-
 function Tab(aURL, aParams) {
   this.filter = null;
   this.browser = null;
@@ -3674,24 +3662,6 @@ Tab.prototype = {
 
   getActive: function getActive() {
     return this.browser.docShellIsActive;
-  },
-
-  setScrollClampingSize: function(zoom) {
-    let viewportWidth = gScreenWidth / zoom;
-    let viewportHeight = gScreenHeight / zoom;
-    let screenWidth = gScreenWidth;
-    let screenHeight = gScreenHeight;
-
-    
-    
-    let factor = Math.min(viewportWidth / screenWidth,
-                          viewportHeight / screenHeight);
-    let scrollPortWidth = screenWidth * factor;
-    let scrollPortHeight = screenHeight * factor;
-
-    let win = this.browser.contentWindow;
-    win.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindowUtils).
-        setScrollPositionClampingScrollPortSize(scrollPortWidth, scrollPortHeight);
   },
 
   
@@ -5585,22 +5555,7 @@ var ViewportHandler = {
   },
 
   observe: function(aSubject, aTopic, aData) {
-    switch (aTopic) {
-      case "Window:Resize":
-        if (window.outerWidth == gScreenWidth && window.outerHeight == gScreenHeight)
-          break;
-        if (window.outerWidth == 0 || window.outerHeight == 0)
-          break;
-
-        gScreenWidth = window.outerWidth * window.devicePixelRatio;
-        gScreenHeight = window.outerHeight * window.devicePixelRatio;
-        let tabs = BrowserApp.tabs;
-        break;
-      default:
-        return;
-    }
-
-    if (aData) {
+    if (aTopic == "Window:Resize" && aData) {
       let scrollChange = JSON.parse(aData);
       let windowUtils = window.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindowUtils);
       windowUtils.setNextPaintSyncId(scrollChange.id);
