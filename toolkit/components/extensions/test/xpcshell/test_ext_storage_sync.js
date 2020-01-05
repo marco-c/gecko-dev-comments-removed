@@ -8,17 +8,18 @@ do_get_profile();
 Cu.import("resource://testing-common/httpd.js");
 Cu.import("resource://services-common/utils.js");
 Cu.import("resource://services-crypto/utils.js");
-Cu.import("resource://gre/modules/ExtensionStorageSync.jsm");
 const {
   CollectionKeyEncryptionRemoteTransformer,
   cryptoCollection,
+  EncryptionRemoteTransformer,
+  ExtensionStorageSync,
   idToKey,
+  KeyRingEncryptionRemoteTransformer,
   keyToId,
 } = Cu.import("resource://gre/modules/ExtensionStorageSync.jsm", {});
 Cu.import("resource://services-sync/engines/extension-storage.js");
 Cu.import("resource://services-sync/keys.js");
 Cu.import("resource://services-sync/util.js");
-
 
 
 

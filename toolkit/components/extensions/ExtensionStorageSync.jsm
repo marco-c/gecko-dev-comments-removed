@@ -40,14 +40,14 @@ const {
 
 XPCOMUtils.defineLazyModuleGetter(this, "AsyncShutdown",
                                   "resource://gre/modules/AsyncShutdown.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "BulkKeyBundle",
+                                  "resource://services-sync/keys.js");
 XPCOMUtils.defineLazyModuleGetter(this, "CollectionKeyManager",
                                   "resource://services-sync/record.js");
 XPCOMUtils.defineLazyModuleGetter(this, "CommonUtils",
                                   "resource://services-common/utils.js");
 XPCOMUtils.defineLazyModuleGetter(this, "CryptoUtils",
                                   "resource://services-crypto/utils.js");
-XPCOMUtils.defineLazyModuleGetter(this, "EncryptionRemoteTransformer",
-                                  "resource://services-sync/engines/extension-storage.js");
 XPCOMUtils.defineLazyModuleGetter(this, "ExtensionStorage",
                                   "resource://gre/modules/ExtensionStorage.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "fxAccounts",
@@ -64,10 +64,12 @@ XPCOMUtils.defineLazyModuleGetter(this, "Observers",
                                   "resource://services-common/observers.js");
 XPCOMUtils.defineLazyModuleGetter(this, "Sqlite",
                                   "resource://gre/modules/Sqlite.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "Svc",
+                                  "resource://services-sync/util.js");
 XPCOMUtils.defineLazyModuleGetter(this, "Task",
                                   "resource://gre/modules/Task.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "KeyRingEncryptionRemoteTransformer",
-                                  "resource://services-sync/engines/extension-storage.js");
+XPCOMUtils.defineLazyModuleGetter(this, "Utils",
+                                  "resource://services-sync/util.js");
 XPCOMUtils.defineLazyPreferenceGetter(this, "prefPermitsStorageSync",
                                       STORAGE_SYNC_ENABLED_PREF, true);
 XPCOMUtils.defineLazyPreferenceGetter(this, "prefStorageSyncServerURL",
@@ -81,6 +83,204 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "prefStorageSyncServerURL",
 const extensionContexts = new Map();
 
 const log = Log.repository.getLogger("Sync.Engine.Extension-Storage");
+
+
+
+
+
+
+
+
+
+
+function ciphertextHMAC(keyBundle, id, IV, ciphertext) {
+  const hasher = keyBundle.sha256HMACHasher;
+  return Utils.bytesAsHex(Utils.digestUTF8(id + IV + ciphertext, hasher));
+}
+
+
+
+
+
+
+
+
+class EncryptionRemoteTransformer {
+  encode(record) {
+    const self = this;
+    return Task.spawn(function* () {
+      const keyBundle = yield self.getKeys();
+      if (record.ciphertext) {
+        throw new Error("Attempt to reencrypt??");
+      }
+      let id = yield self.getEncodedRecordId(record);
+      if (!id) {
+        throw new Error("Record ID is missing or invalid");
+      }
+
+      let IV = Svc.Crypto.generateRandomIV();
+      let ciphertext = Svc.Crypto.encrypt(JSON.stringify(record),
+                                          keyBundle.encryptionKeyB64, IV);
+      let hmac = ciphertextHMAC(keyBundle, id, IV, ciphertext);
+      const encryptedResult = {ciphertext, IV, hmac, id};
+
+      
+      
+      
+      
+      encryptedResult._status = record._status == "deleted" ? "updated" : record._status;
+      if (record.hasOwnProperty("last_modified")) {
+        encryptedResult.last_modified = record.last_modified;
+      }
+
+      return encryptedResult;
+    });
+  }
+
+  decode(record) {
+    const self = this;
+    return Task.spawn(function* () {
+      if (!record.ciphertext) {
+        
+        if (record.deleted) {
+          return record;
+        }
+        throw new Error("No ciphertext: nothing to decrypt?");
+      }
+      const keyBundle = yield self.getKeys();
+      
+      let computedHMAC = ciphertextHMAC(keyBundle, record.id, record.IV, record.ciphertext);
+
+      if (computedHMAC != record.hmac) {
+        Utils.throwHMACMismatch(record.hmac, computedHMAC);
+      }
+
+      
+      let cleartext = Svc.Crypto.decrypt(record.ciphertext,
+                                         keyBundle.encryptionKeyB64, record.IV);
+      let jsonResult = JSON.parse(cleartext);
+      if (!jsonResult || typeof jsonResult !== "object") {
+        throw new Error("Decryption failed: result is <" + jsonResult + ">, not an object.");
+      }
+
+      if (record.hasOwnProperty("last_modified")) {
+        jsonResult.last_modified = record.last_modified;
+      }
+
+      
+      
+      
+      if (jsonResult._status == "deleted") {
+        jsonResult.deleted = true;
+      }
+
+      return jsonResult;
+    });
+  }
+
+  
+
+
+
+
+  getKeys() {
+    throw new Error("override getKeys in a subclass");
+  }
+
+  
+
+
+
+
+
+
+
+
+  getEncodedRecordId(record) {
+    return Promise.resolve(record.id);
+  }
+}
+global.EncryptionRemoteTransformer = EncryptionRemoteTransformer;
+
+
+EncryptionRemoteTransformer.prototype._fxaService = null;
+if (AppConstants.platform != "android") {
+  EncryptionRemoteTransformer.prototype._fxaService = fxAccounts;
+}
+
+
+
+
+
+class KeyRingEncryptionRemoteTransformer extends EncryptionRemoteTransformer {
+  getKeys() {
+    const self = this;
+    return Task.spawn(function* () {
+      const user = yield self._fxaService.getSignedInUser();
+      
+      
+      if (!user) {
+        throw new Error("user isn't signed in to FxA; can't sync");
+      }
+
+      if (!user.kB) {
+        throw new Error("user doesn't have kB");
+      }
+
+      let kB = Utils.hexToBytes(user.kB);
+
+      let keyMaterial = CryptoUtils.hkdf(kB, undefined,
+                                       "identity.mozilla.com/picl/v1/chrome.storage.sync", 2 * 32);
+      let bundle = new BulkKeyBundle();
+      
+      bundle.keyPair = [keyMaterial.slice(0, 32), keyMaterial.slice(32, 64)];
+      return bundle;
+    });
+  }
+  
+  
+  
+  
+  encode(record) {
+    const encodePromise = super.encode(record);
+    return Task.spawn(function* () {
+      const encoded = yield encodePromise;
+      encoded.kbHash = record.kbHash;
+      return encoded;
+    });
+  }
+
+  decode(record) {
+    const decodePromise = super.decode(record);
+    return Task.spawn(function* () {
+      try {
+        return yield decodePromise;
+      } catch (e) {
+        if (Utils.isHMACMismatch(e)) {
+          const currentKBHash = yield ExtensionStorageSync.getKBHash();
+          if (record.kbHash != currentKBHash) {
+            
+            
+            KeyRingEncryptionRemoteTransformer.throwOutdatedKB(currentKBHash, record.kbHash);
+          }
+        }
+        throw e;
+      }
+    });
+  }
+
+  
+  static throwOutdatedKB(shouldBe, is) {
+    throw new Error(`kB hash on record is outdated: should be ${shouldBe}, is ${is}`);
+  }
+
+  static isOutdatedKB(exc) {
+    const kbMessage = "kB hash on record is outdated: ";
+    return exc && exc.message && exc.message.indexOf &&
+      (exc.message.indexOf(kbMessage) == 0);
+  }
+}
+global.KeyRingEncryptionRemoteTransformer = KeyRingEncryptionRemoteTransformer;
 
 
 
@@ -181,31 +381,29 @@ const cryptoCollectionIdSchema = {
   },
 };
 
-let cryptoCollection, CollectionKeyEncryptionRemoteTransformer;
-if (AppConstants.platform != "android") {
+
+
+
+let cryptoCollection = this.cryptoCollection = {
+  getCollection: Task.async(function* () {
+    const {kinto} = yield storageSyncInit;
+    return kinto.collection(STORAGE_SYNC_CRYPTO_COLLECTION_NAME, {
+      idSchema: cryptoCollectionIdSchema,
+      remoteTransformers: [new KeyRingEncryptionRemoteTransformer()],
+    });
+  }),
+
   
 
 
-  cryptoCollection = this.cryptoCollection = {
-    getCollection: Task.async(function* () {
-      const {kinto} = yield storageSyncInit;
-      return kinto.collection(STORAGE_SYNC_CRYPTO_COLLECTION_NAME, {
-        idSchema: cryptoCollectionIdSchema,
-        remoteTransformers: [new KeyRingEncryptionRemoteTransformer()],
-      });
-    }),
-
-    
 
 
 
+  getNewSalt() {
+    return btoa(CryptoUtils.generateRandomBytes(STORAGE_SYNC_CRYPTO_SALT_LENGTH_BYTES));
+  },
 
-
-    getNewSalt() {
-      return btoa(CryptoUtils.generateRandomBytes(STORAGE_SYNC_CRYPTO_SALT_LENGTH_BYTES));
-    },
-
-    
+  
 
 
 
@@ -223,40 +421,38 @@ if (AppConstants.platform != "android") {
 
 
 
-    getKeyRingRecord: Task.async(function* () {
-      const collection = yield this.getCollection();
-      const cryptoKeyRecord = yield collection.getAny(STORAGE_SYNC_CRYPTO_KEYRING_RECORD_ID);
+  getKeyRingRecord: Task.async(function* () {
+    const collection = yield this.getCollection();
+    const cryptoKeyRecord = yield collection.getAny(STORAGE_SYNC_CRYPTO_KEYRING_RECORD_ID);
 
-      let data = cryptoKeyRecord.data;
-      if (!data) {
-        
-        
-        
-        const uuidgen = Cc["@mozilla.org/uuid-generator;1"].getService(Ci.nsIUUIDGenerator);
-        const uuid = uuidgen.generateUUID().toString();
-        data = {uuid, id: STORAGE_SYNC_CRYPTO_KEYRING_RECORD_ID};
-      }
-      return data;
-    }),
+    let data = cryptoKeyRecord.data;
+    if (!data) {
+      
+      
+      
+      const uuidgen = Cc["@mozilla.org/uuid-generator;1"].getService(Ci.nsIUUIDGenerator);
+      const uuid = uuidgen.generateUUID().toString();
+      data = {uuid, id: STORAGE_SYNC_CRYPTO_KEYRING_RECORD_ID};
+    }
+    return data;
+  }),
 
-    getSalts: Task.async(function* () {
-      const cryptoKeyRecord = yield this.getKeyRingRecord();
-      return cryptoKeyRecord && cryptoKeyRecord.salts;
-    }),
+  getSalts: Task.async(function* () {
+    const cryptoKeyRecord = yield this.getKeyRingRecord();
+    return cryptoKeyRecord && cryptoKeyRecord.salts;
+  }),
 
-    
-
-
-    _setSalt: Task.async(function* (extensionId, salt) {
-      const cryptoKeyRecord = yield this.getKeyRingRecord();
-      cryptoKeyRecord.salts = cryptoKeyRecord.salts || {};
-      cryptoKeyRecord.salts[extensionId] = salt;
-      this.upsert(cryptoKeyRecord);
-    }),
-
-    
+  
 
 
+  _setSalt: Task.async(function* (extensionId, salt) {
+    const cryptoKeyRecord = yield this.getKeyRingRecord();
+    cryptoKeyRecord.salts = cryptoKeyRecord.salts || {};
+    cryptoKeyRecord.salts[extensionId] = salt;
+    this.upsert(cryptoKeyRecord);
+  }),
+
+  
 
 
 
@@ -272,16 +468,14 @@ if (AppConstants.platform != "android") {
 
 
 
-    extensionIdToCollectionId(extensionId) {
-      return this.hashWithExtensionSalt(CommonUtils.encodeUTF8(extensionId), extensionId)
-        .then(hash => `ext-${hash}`);
-    },
-
-    
 
 
+  extensionIdToCollectionId(extensionId) {
+    return this.hashWithExtensionSalt(CommonUtils.encodeUTF8(extensionId), extensionId)
+      .then(hash => `ext-${hash}`);
+  },
 
-
+  
 
 
 
@@ -291,126 +485,131 @@ if (AppConstants.platform != "android") {
 
 
 
-    hashWithExtensionSalt: Task.async(function* (value, extensionId) {
-      const salts = yield this.getSalts();
-      const saltBase64 = salts && salts[extensionId];
-      if (!saltBase64) {
-        
-        
-        throw new Error(`no salt available for ${extensionId}; how did this happen?`);
-      }
 
-      const hasher = Cc["@mozilla.org/security/hash;1"]
+
+
+
+  hashWithExtensionSalt: Task.async(function* (value, extensionId) {
+    const salts = yield this.getSalts();
+    const saltBase64 = salts && salts[extensionId];
+    if (!saltBase64) {
+      
+      
+      throw new Error(`no salt available for ${extensionId}; how did this happen?`);
+    }
+
+    const hasher = Cc["@mozilla.org/security/hash;1"]
           .createInstance(Ci.nsICryptoHash);
-      hasher.init(hasher.SHA256);
+    hasher.init(hasher.SHA256);
 
-      const salt = atob(saltBase64);
-      const message = `${salt}\x00${value}`;
-      const hash = CryptoUtils.digestBytes(message, hasher);
-      return CommonUtils.encodeBase64URL(hash, false);
-    }),
-
-    
-
-
-
-
-    getKeyRing: Task.async(function* () {
-      const cryptoKeyRecord = yield this.getKeyRingRecord();
-      const collectionKeys = new CollectionKeyManager();
-      if (cryptoKeyRecord.keys) {
-        collectionKeys.setContents(cryptoKeyRecord.keys, cryptoKeyRecord.last_modified);
-      } else {
-        
-        
-        collectionKeys.generateDefaultKey();
-      }
-      
-      collectionKeys.uuid = cryptoKeyRecord.uuid;
-      return collectionKeys;
-    }),
-
-    updateKBHash: Task.async(function* (kbHash) {
-      const coll = yield this.getCollection();
-      yield coll.update({id: STORAGE_SYNC_CRYPTO_KEYRING_RECORD_ID,
-                         kbHash: kbHash},
-                        {patch: true});
-    }),
-
-    upsert: Task.async(function* (record) {
-      const collection = yield this.getCollection();
-      yield collection.upsert(record);
-    }),
-
-    sync: Task.async(function* () {
-      const collection = yield this.getCollection();
-      return yield ExtensionStorageSync._syncCollection(collection, {
-        strategy: "server_wins",
-      });
-    }),
-
-    
-
-
-
-    resetSyncStatus: Task.async(function* () {
-      const coll = yield this.getCollection();
-      yield coll.db.resetSyncStatus();
-    }),
-
-    
-    _clear: Task.async(function* () {
-      const collection = yield this.getCollection();
-      yield collection.clear();
-    }),
-  };
+    const salt = atob(saltBase64);
+    const message = `${salt}\x00${value}`;
+    const hash = CryptoUtils.digestBytes(message, hasher);
+    return CommonUtils.encodeBase64URL(hash, false);
+  }),
 
   
 
 
 
 
-
-
-
-
-
-
-
-  CollectionKeyEncryptionRemoteTransformer = class extends EncryptionRemoteTransformer {
-    constructor(extensionId) {
-      super();
-      this.extensionId = extensionId;
+  getKeyRing: Task.async(function* () {
+    const cryptoKeyRecord = yield this.getKeyRingRecord();
+    const collectionKeys = new CollectionKeyManager();
+    if (cryptoKeyRecord.keys) {
+      collectionKeys.setContents(cryptoKeyRecord.keys, cryptoKeyRecord.last_modified);
+    } else {
+      
+      
+      collectionKeys.generateDefaultKey();
     }
+    
+    collectionKeys.uuid = cryptoKeyRecord.uuid;
+    return collectionKeys;
+  }),
 
-    getKeys() {
-      const self = this;
-      return Task.spawn(function* () {
+  updateKBHash: Task.async(function* (kbHash) {
+    const coll = yield this.getCollection();
+    yield coll.update({id: STORAGE_SYNC_CRYPTO_KEYRING_RECORD_ID,
+                       kbHash: kbHash},
+                      {patch: true});
+  }),
+
+  upsert: Task.async(function* (record) {
+    const collection = yield this.getCollection();
+    yield collection.upsert(record);
+  }),
+
+  sync: Task.async(function* () {
+    const collection = yield this.getCollection();
+    return yield ExtensionStorageSync._syncCollection(collection, {
+      strategy: "server_wins",
+    });
+  }),
+
+  
+
+
+
+  resetSyncStatus: Task.async(function* () {
+    const coll = yield this.getCollection();
+    yield coll.db.resetSyncStatus();
+  }),
+
+  
+  _clear: Task.async(function* () {
+    const collection = yield this.getCollection();
+    yield collection.clear();
+  }),
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+let CollectionKeyEncryptionRemoteTransformer = class extends EncryptionRemoteTransformer {
+  constructor(extensionId) {
+    super();
+    this.extensionId = extensionId;
+  }
+
+  getKeys() {
+    const self = this;
+    return Task.spawn(function* () {
+      
+      const collectionKeys = yield cryptoCollection.getKeyRing();
+      if (!collectionKeys.hasKeysFor([self.extensionId])) {
         
-        const collectionKeys = yield cryptoCollection.getKeyRing();
-        if (!collectionKeys.hasKeysFor([self.extensionId])) {
-          
-          
-          throw new Error(`tried to encrypt records for ${this.extensionId}, but key is not present`);
-        }
-        return collectionKeys.keyForCollection(self.extensionId);
-      });
-    }
+        
+        throw new Error(`tried to encrypt records for ${this.extensionId}, but key is not present`);
+      }
+      return collectionKeys.keyForCollection(self.extensionId);
+    });
+  }
 
-    getEncodedRecordId(record) {
-      
-      
-      
-      const id = CommonUtils.encodeUTF8(record.id);
-      
-      
-      
-      return cryptoCollection.hashWithExtensionSalt(id, this.extensionId)
-        .then(hash => `id-${hash}`);
-    }
-  };
-  global.CollectionKeyEncryptionRemoteTransformer = CollectionKeyEncryptionRemoteTransformer;
-}
+  getEncodedRecordId(record) {
+    
+    
+    
+    const id = CommonUtils.encodeUTF8(record.id);
+    
+    
+    
+    return cryptoCollection.hashWithExtensionSalt(id, this.extensionId)
+      .then(hash => `id-${hash}`);
+  }
+};
+
+global.CollectionKeyEncryptionRemoteTransformer = CollectionKeyEncryptionRemoteTransformer;
+
 
 
 
@@ -446,26 +645,13 @@ function cleanUpForContext(extension, context) {
 const openCollection = Task.async(function* (extension, context) {
   let collectionId = extension.id;
   const {kinto} = yield storageSyncInit;
-  const remoteTransformers = [];
-  if (CollectionKeyEncryptionRemoteTransformer) {
-    remoteTransformers.push(new CollectionKeyEncryptionRemoteTransformer(extension.id));
-  }
+  const remoteTransformers = [new CollectionKeyEncryptionRemoteTransformer(extension.id)];
   const coll = kinto.collection(collectionId, {
     idSchema: storageSyncIdSchema,
     remoteTransformers,
   });
   return coll;
 });
-
-
-
-
-
-function ensureCryptoCollection() {
-  if (!cryptoCollection) {
-    throw new Error("Call to ensureCanSync, but no sync code; are you on Android?");
-  }
-}
 
 
 
@@ -658,8 +844,6 @@ this.ExtensionStorageSync = {
 
 
   ensureCanSync: Task.async(function* (extIds) {
-    ensureCryptoCollection();
-
     const keysRecord = yield cryptoCollection.getKeyRingRecord();
     const collectionKeys = yield cryptoCollection.getKeyRing();
     if (collectionKeys.hasKeysFor(extIds) && this.hasSaltsFor(keysRecord, extIds)) {
@@ -716,8 +900,6 @@ this.ExtensionStorageSync = {
 
 
   updateKeyRingKB: Task.async(function* () {
-    ensureCryptoCollection();
-
     const signedInUser = yield this._fxaService.getSignedInUser();
     if (!signedInUser) {
       
@@ -742,8 +924,6 @@ this.ExtensionStorageSync = {
 
 
   checkSyncKeyRing: Task.async(function* () {
-    ensureCryptoCollection();
-
     yield this.updateKeyRingKB();
 
     const cryptoKeyRecord = yield cryptoCollection.getKeyRingRecord();
@@ -758,8 +938,6 @@ this.ExtensionStorageSync = {
   }),
 
   _syncKeyRing: Task.async(function* (cryptoKeyRecord) {
-    ensureCryptoCollection();
-
     try {
       
       
