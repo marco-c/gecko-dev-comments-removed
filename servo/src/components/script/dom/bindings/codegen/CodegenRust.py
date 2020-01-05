@@ -1584,9 +1584,9 @@ for (uint32_t i = 0; i < length; ++i) {
 
     if type.isString():
         if type.nullable():
-            return (wrapAndSetPtr("*${jsvalPtr} = domstring_to_jsval(cx, &%s)" % result), False)
+            return (wrapAndSetPtr("*${jsvalPtr} = domstring_to_jsval(cx, %s)" % result), False)
         else:
-            return (wrapAndSetPtr("*${jsvalPtr} = str_to_jsval(cx, &%s)" % result), False)
+            return (wrapAndSetPtr("*${jsvalPtr} = str_to_jsval(cx, %s)" % result), False)
 
     if type.isEnum():
         if type.nullable():
@@ -2961,9 +2961,7 @@ class CGCallGenerator(CGThing):
             if a.type.isObject() and not a.type.nullable() and not a.optional:
                 name = "(JSObject&)" + name
             
-            
-            
-            if a.type.isDictionary() or (a.type.isString() and not (bool(a.defaultValue) ^ a.optional)):
+            if a.type.isDictionary():
                 name = "&" + name
             args.append(CGGeneric(name))
 
