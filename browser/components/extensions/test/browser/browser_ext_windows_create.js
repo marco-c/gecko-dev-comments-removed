@@ -2,6 +2,8 @@
 
 "use strict";
 
+requestLongerTimeout(2);
+
 add_task(function* testWindowCreate() {
   let extension = ExtensionTestUtils.loadExtension({
     async background() {
