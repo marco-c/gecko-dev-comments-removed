@@ -155,7 +155,9 @@ this.SafeBrowsing = {
         throw err;
     }
 
-    if (!info.list || !info.uri) {
+    
+    
+    if (kind != "Phish" && (!info.list || !info.uri)) {
       return null;
     }
 
