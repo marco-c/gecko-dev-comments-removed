@@ -1,12 +1,12 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-// This file is a Mako template: http://www.makotemplates.org/
 
-// Please note that valid Rust syntax may be mangled by the Mako parser.
-// For example, Vec<&Foo> will be mangled as Vec&Foo>. To work around these issues, the code
-// can be escaped. In the above example, Vec<<&Foo> or Vec< &Foo> achieves the desired result of Vec<&Foo>.
+
+
+
+
+
+
+
 
 <%namespace name="helpers" file="/helpers.mako.rs" />
 
@@ -2535,13 +2535,16 @@ pub fn apply_declarations<'a, F, I>(device: &Device,
                                                  &mut cacheable,
                                                  &mut cascade_info,
                                                  error_reporter);
-            } else {
-                // Font size must be explicitly inherited to handle keyword
-                // sizes and scriptlevel
+            % if product == "gecko":
+            // Font size must be explicitly inherited to handle lang changes and
+            // scriptlevel changes.
+            } else if seen.contains(LonghandId::XLang) ||
+                      seen.contains(LonghandId::MozScriptLevel) ||
+                      font_family.is_some() {
                 let discriminant = LonghandId::FontSize as usize;
                 let size = PropertyDeclaration::CSSWideKeyword(
-                    LonghandId::FontSize, CSSWideKeyword::Inherit
-                );
+                    LonghandId::FontSize, CSSWideKeyword::Inherit);
+
                 (CASCADE_PROPERTY[discriminant])(&size,
                                                  inherited_style,
                                                  default_style,
@@ -2549,6 +2552,7 @@ pub fn apply_declarations<'a, F, I>(device: &Device,
                                                  &mut cacheable,
                                                  &mut cascade_info,
                                                  error_reporter);
+            % endif
             }
         % endif
     % endfor
