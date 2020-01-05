@@ -24,6 +24,7 @@
 #include "nsHashKeys.h"
 #include "nsAutoPtr.h"
 #include "nsUnicharUtils.h"
+#include "nsPrintfCString.h"
 
 
 
@@ -78,6 +79,14 @@ public:
   }
 
   static void GCAtomTable();
+
+  enum class GCKind {
+    RegularOperation,
+    Shutdown,
+  };
+
+  static void GCAtomTableLocked(const MutexAutoLock& aProofOfLock,
+                                GCKind aKind);
 
 private:
   DynamicAtom(const nsAString& aString, uint32_t aHash)
@@ -359,16 +368,33 @@ void
 DynamicAtom::GCAtomTable()
 {
   MutexAutoLock lock(*gAtomTableLock);
+  GCAtomTableLocked(lock, GCKind::RegularOperation);
+}
+
+void
+DynamicAtom::GCAtomTableLocked(const MutexAutoLock& aProofOfLock,
+                               GCKind aKind)
+{
   uint32_t removedCount = 0; 
   for (auto i = gAtomTable->Iter(); !i.Done(); i.Next()) {
     auto entry = static_cast<AtomTableEntry*>(i.Get());
-    if (!entry->mAtom->IsStaticAtom()) {
-      auto atom = static_cast<DynamicAtom*>(entry->mAtom);
-      if (atom->mRefCnt == 0) {
-        i.Remove();
-        delete atom;
-        ++removedCount;
-      }
+    if (entry->mAtom->IsStaticAtom()) {
+      continue;
+    }
+
+    auto atom = static_cast<DynamicAtom*>(entry->mAtom);
+    if (atom->mRefCnt == 0) {
+      i.Remove();
+      delete atom;
+      ++removedCount;
+    } else if (aKind == GCKind::Shutdown) {
+      
+      
+      
+      nsAutoCString name;
+      atom->ToUTF8String(name);
+      nsPrintfCString msg("dynamic atom with non-zero refcount %s!", name.get());
+      NS_ASSERTION(false, msg.get());
     }
   }
 
@@ -379,9 +405,16 @@ DynamicAtom::GCAtomTable()
   
   
   
-  MOZ_ASSERT(removedCount <= gUnusedAtomCount);
-  gUnusedAtomCount -= removedCount;
+  if (aKind == GCKind::RegularOperation) {
+    MOZ_ASSERT(removedCount <= gUnusedAtomCount);
+  } else {
+    
+    MOZ_ASSERT(aKind == GCKind::Shutdown);
+    
+    MOZ_ASSERT(removedCount == gUnusedAtomCount);
+  }
 
+  gUnusedAtomCount -= removedCount;
 }
 
 NS_IMPL_QUERY_INTERFACE(DynamicAtom, nsIAtom)
@@ -501,13 +534,12 @@ NS_ShutdownAtomTable()
 #ifdef NS_FREE_PERMANENT_DATA
   
   
-  DynamicAtom::GCAtomTable();
-  MOZ_ASSERT(gUnusedAtomCount == 0);
+  {
+    MutexAutoLock lock(*gAtomTableLock);
+    DynamicAtom::GCAtomTableLocked(lock, DynamicAtom::GCKind::Shutdown);
+  }
 #endif
 
-  
-  
-  
   delete gAtomTable;
   gAtomTable = nullptr;
   delete gAtomTableLock;
