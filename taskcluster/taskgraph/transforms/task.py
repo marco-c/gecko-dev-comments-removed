@@ -312,6 +312,20 @@ task_description_schema = Schema({
             
             Required('locale'): basestring,
         }],
+    }, {
+        Required('implementation'): 'balrog',
+
+        
+        Required('upstream-artifacts'): [{
+            
+            Required('taskId'): taskref_or_string,
+
+            
+            Required('taskType'): basestring,
+
+            
+            Required('paths'): [basestring],
+        }],
     }),
 
     
@@ -346,6 +360,7 @@ GROUP_NAMES = {
     'tc-X-e10s': 'Xpcshell tests executed by TaskCluster with e10s',
     'tc-L10n': 'Localised Repacks executed by Taskcluster',
     'tc-BM-L10n': 'Beetmover for locales executed by Taskcluster',
+    'tc-Up': 'Balrog submission of updates, executed by Taskcluster',
     'Aries': 'Aries Device Image',
     'Nexus 5-L': 'Nexus 5-L Device Image',
     'Cc': 'Toolchain builds',
@@ -524,6 +539,17 @@ def build_beetmover_payload(config, task, task_def):
     }
     if worker.get('locale'):
         task_def['payload']['locale'] = worker['locale']
+
+
+@payload_builder('balrog')
+def build_balrog_payload(config, task, task_def):
+    worker = task['worker']
+
+    task_def['payload'] = {
+        
+        'signing_cert': "dep",
+        'upstreamArtifacts':  worker['upstream-artifacts']
+    }
 
 
 @payload_builder('macosx-engine')
