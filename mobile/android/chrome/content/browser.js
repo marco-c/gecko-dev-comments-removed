@@ -1706,7 +1706,8 @@ var BrowserApp = {
           isPrivate: (data.isPrivate === true),
           pinned: (data.pinned === true),
           delayLoad: (delayLoad === true),
-          desktopMode: (data.desktopMode === true)
+          desktopMode: (data.desktopMode === true),
+          customTab: (data.customTab === true)
         };
 
         params.userRequested = url;
@@ -3299,6 +3300,13 @@ nsBrowserAccess.prototype = {
                   aWhere == Ci.nsIBrowserDOMWindow.OPEN_SWITCHTAB);
     let isPrivate = false;
 
+    let parent = BrowserApp.getTabForWindow(aOpener.top);
+    if (parent) {
+      if (parent.isCustomTab) {
+        newTab = false;
+      }
+    }
+
     if (newTab) {
       let parentId = -1;
       if (!isExternal && aOpener) {
@@ -3563,6 +3571,7 @@ Tab.prototype = {
       
       this.userRequested = "userRequested" in aParams ? aParams.userRequested : "";
       this.isSearch = "isSearch" in aParams ? aParams.isSearch : false;
+      this.isCustomTab = "customTab" in aParams ? aParams.customTab : false;
 
       try {
         this.browser.loadURIWithFlags(aURL, flags, referrerURI, charset, postData);
@@ -6238,6 +6247,14 @@ var SearchEngines = {
       return;
     }
 
+    
+    let dbFile = FileUtils.getFile("ProfD", ["browser.db"]);
+    let mDBConn = Services.storage.openDatabase(dbFile);
+    let stmts = [];
+    stmts[0] = mDBConn.createStatement("SELECT favicon FROM history_with_favicons WHERE url = ?");
+    stmts[0].bindByIndex(0, docURI.spec);
+    let favicon = null;
+
     Services.search.init(function addEngine_cb(rv) {
       if (!Components.isSuccessCode(rv)) {
         Cu.reportError("Could not initialize search service, bailing out.");
@@ -6247,32 +6264,31 @@ var SearchEngines = {
         return;
       }
 
-      GlobalEventDispatcher.sendRequestForResult({
-        type: 'Favicon:Request',
-        url: docURI.spec,
-        skipNetwork: false
-      }).then(data => {
-        
-        
-        let name = title.value;
-        for (let i = 2; Services.search.getEngineByName(name); i++) {
+      mDBConn.executeAsync(stmts, stmts.length, {
+        handleResult: function (results) {
+          let bytes = results.getNextRow().getResultByName("favicon");
+          if (bytes && bytes.length) {
+            favicon = "data:image/x-icon;base64," + btoa(String.fromCharCode.apply(null, bytes));
+          }
+        },
+        handleCompletion: function (reason) {
+          
+          
+          let name = title.value;
+          for (let i = 2; Services.search.getEngineByName(name); i++)
             name = title.value + " " + i;
-        }
 
-        Services.search.addEngineWithDetails(name, data, null, null, method, formURL);
-        Snackbars.show(Strings.browser.formatStringFromName("alertSearchEngineAddedToast", [name], 1), Snackbars.LENGTH_LONG);
+          Services.search.addEngineWithDetails(name, favicon, null, null, method, formURL);
+          Snackbars.show(Strings.browser.formatStringFromName("alertSearchEngineAddedToast", [name], 1), Snackbars.LENGTH_LONG);
 
-        let engine = Services.search.getEngineByName(name);
-        engine.wrappedJSObject._queryCharset = charset;
-        formData.forEach(param => { engine.addParam(param.name, param.value, null); });
+          let engine = Services.search.getEngineByName(name);
+          engine.wrappedJSObject._queryCharset = charset;
+          formData.forEach(param => { engine.addParam(param.name, param.value, null); });
 
-        if (resultCallback) {
+          if (resultCallback) {
             return resultCallback(true);
-        };
-      }).catch(e => {
-        dump("Error while fetching icon for search engine");
-
-        resultCallback(false);
+          };
+        }
       });
     });
   }
