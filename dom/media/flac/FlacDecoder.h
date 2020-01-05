@@ -11,7 +11,10 @@
 
 namespace mozilla {
 
-class FlacDecoder : public MediaDecoder {
+class MediaContentType;
+
+class FlacDecoder : public MediaDecoder
+{
 public:
   
   explicit FlacDecoder(MediaDecoderOwner* aOwner) : MediaDecoder(aOwner) {}
@@ -21,8 +24,7 @@ public:
   
   
   static bool IsEnabled();
-  static bool CanHandleMediaType(const nsACString& aType,
-                                 const nsAString& aCodecs);
+  static bool IsSupportedType(const MediaContentType& aContentType);
 };
 
 } 
