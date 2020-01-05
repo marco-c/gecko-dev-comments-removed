@@ -562,6 +562,8 @@ private:
 
   
   DECL_GFX_PREF(Once, "layout.scroll.root-frame-containers",   LayoutUseContainersForRootFrames, bool, true);
+  
+  DECL_GFX_PREF(Live, "layout.scrollbars.always-layerize-track", AlwaysLayerizeScrollbarTrackTestOnly, bool, false);
   DECL_GFX_PREF(Live, "layout.smaller-painted-layers",         LayoutSmallerPaintedLayers, bool, false);
 
   DECL_GFX_PREF(Once, "media.hardware-video-decoding.force-enabled",

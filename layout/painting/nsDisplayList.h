@@ -449,11 +449,8 @@ public:
 
 
 
-  void GetScrollbarInfo(ViewID* aOutScrollbarTarget, uint32_t* aOutScrollbarFlags)
-  {
-    *aOutScrollbarTarget = mCurrentScrollbarTarget;
-    *aOutScrollbarFlags = mCurrentScrollbarFlags;
-  }
+  ViewID GetCurrentScrollbarTarget() const { return mCurrentScrollbarTarget; }
+  uint32_t GetCurrentScrollbarFlags() const { return mCurrentScrollbarFlags; }
   
 
 
