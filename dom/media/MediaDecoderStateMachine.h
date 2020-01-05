@@ -432,12 +432,6 @@ protected:
   
   
   
-  void DispatchDecodeTasksIfNeeded();
-
-  
-  
-  
-  
   
   int64_t GetMediaTime() const {
     MOZ_ASSERT(OnTaskQueue());
