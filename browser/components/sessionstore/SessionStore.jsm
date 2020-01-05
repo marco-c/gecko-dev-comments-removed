@@ -3204,6 +3204,9 @@ var SessionStoreInternal = {
     let overwriteTabs = aOptions && aOptions.overwriteTabs;
     let isFollowUp = aOptions && aOptions.isFollowUp;
     let firstWindow = aOptions && aOptions.firstWindow;
+    
+    
+    let selectTab = (overwriteTabs ? parseInt(winData.selected || 1, 10) : 0);
 
     if (isFollowUp) {
       this.windowToFocus = aWindow;
@@ -3280,9 +3283,6 @@ var SessionStoreInternal = {
 
       tabs.push(tab);
 
-      if (winData.tabs[t].pinned)
-        tabbrowser.pinTab(tabs[t]);
-
       if (winData.tabs[t].hidden) {
         tabbrowser.hideTab(tabs[t]);
       } else {
@@ -3292,6 +3292,54 @@ var SessionStoreInternal = {
 
       if (!!winData.tabs[t].muted != tabs[t].linkedBrowser.audioMuted) {
         tabs[t].toggleMuteAudio(winData.tabs[t].muteReason);
+      }
+    }
+
+    if (selectTab > 0) {
+      
+      
+      let currentIndex = tabbrowser.tabContainer.selectedIndex;
+      let targetIndex = selectTab - 1;
+
+      if (currentIndex != targetIndex) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+        let selectedTab = tabbrowser.selectedTab;
+        let tabAtTargetIndex = tabs[targetIndex];
+        let userContextsMatch = selectedTab.userContextId == tabAtTargetIndex.userContextId;
+
+        if (userContextsMatch) {
+          tabbrowser.moveTabTo(selectedTab, targetIndex);
+          tabbrowser.moveTabTo(tabAtTargetIndex, currentIndex);
+          
+          
+          
+          tabs[targetIndex] = tabs[currentIndex];
+          tabs[currentIndex] = tabAtTargetIndex;
+        } else {
+          
+          tabbrowser.selectedTab = tabs[targetIndex];
+        }
+      }
+    }
+
+    for (let i = 0; i < newTabCount; ++i) {
+      if (winData.tabs[i].pinned) {
+        tabbrowser.pinTab(tabs[i]);
+      } else {
+        
+        
+        
+        break;
       }
     }
 
@@ -3371,8 +3419,7 @@ var SessionStoreInternal = {
 
     
     if (winData.tabs.length) {
-      this.restoreTabs(aWindow, tabs, winData.tabs,
-        (overwriteTabs ? (parseInt(winData.selected || "1")) : 0));
+      this.restoreTabs(aWindow, tabs, winData.tabs, selectTab);
     }
 
     
@@ -3499,10 +3546,7 @@ var SessionStoreInternal = {
     
     tabsDataArray.length = numTabsInWindow;
 
-    
     if (aSelectTab > 0 && aSelectTab <= aTabs.length) {
-      tabbrowser.selectedTab = aTabs[aSelectTab - 1];
-
       
       this._windows[aWindow.__SSi].selected = aSelectTab;
     }
