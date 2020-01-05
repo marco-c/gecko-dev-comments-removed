@@ -129,6 +129,15 @@ class Pickle {
   }
 #endif
 
+  bool IgnoreSentinel(PickleIterator* iter) const
+#ifdef MOZ_PICKLE_SENTINEL_CHECKING
+    ;
+#else
+  {
+    return true;
+  }
+#endif
+
   
   
   

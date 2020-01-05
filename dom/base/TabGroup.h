@@ -71,9 +71,9 @@ public:
   
   
   
-  
-  static TabGroup*
-  GetFromWindowActor(mozIDOMWindowProxy* aWindow);
+  static TabGroup* GetFromActor(TabChild* aTabChild);
+
+  static TabGroup* GetFromWindow(mozIDOMWindowProxy* aWindow);
 
   explicit TabGroup(bool aIsChrome = false);
 
