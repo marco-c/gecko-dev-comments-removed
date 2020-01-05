@@ -246,14 +246,14 @@ public:
   
   
   nsIDOMCSSRule* GetDOMOwnerRule() const;
-  dom::CSSRuleList* GetCssRules(const Maybe<nsIPrincipal*>& aSubjectPrincipal,
+  dom::CSSRuleList* GetCssRules(nsIPrincipal& aSubjectPrincipal,
                                 ErrorResult& aRv);
   uint32_t InsertRule(const nsAString& aRule, uint32_t aIndex,
-                      const Maybe<nsIPrincipal*>& aSubjectPrincipal,
+                      nsIPrincipal& aSubjectPrincipal,
                       ErrorResult& aRv);
 
   void DeleteRule(uint32_t aIndex,
-                  const Maybe<nsIPrincipal*>& aSubjectPrincipal,
+                  nsIPrincipal& aSubjectPrincipal,
                   ErrorResult& aRv);
 
   
@@ -291,7 +291,7 @@ protected:
   
   
   
-  void SubjectSubsumesInnerPrincipal(const Maybe<nsIPrincipal*>& aSubjectPrincipal,
+  void SubjectSubsumesInnerPrincipal(nsIPrincipal& aSubjectPrincipal,
                                      ErrorResult& aRv);
 
   

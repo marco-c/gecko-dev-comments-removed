@@ -180,7 +180,7 @@ class nsObjectLoadingContent : public nsImageLoadingContent
                              mozilla::ErrorResult& aRv);
 
     
-    nsIDocument* GetContentDocument(const mozilla::Maybe<nsIPrincipal*>& aSubjectPrincipal);
+    nsIDocument* GetContentDocument(nsIPrincipal& aSubjectPrincipal);
     void GetActualType(nsAString& aType) const
     {
       CopyUTF8toUTF16(mContentType, aType);

@@ -188,7 +188,7 @@ public:
   
   
   nsIDocument*
-  GetSVGDocument(const mozilla::Maybe<nsIPrincipal*>& aSubjectPrincipal)
+  GetSVGDocument(nsIPrincipal& aSubjectPrincipal)
   {
     return GetContentDocument(aSubjectPrincipal);
   }
