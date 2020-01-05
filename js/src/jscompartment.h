@@ -556,7 +556,7 @@ struct JSCompartment
     enum {
         IsDebuggee = 1 << 0,
         DebuggerObservesAllExecution = 1 << 1,
-        DebuggerObservesWasm = 1 << 2,
+        DebuggerObservesAsmJS = 1 << 2,
         DebuggerObservesCoverage = 1 << 3,
         DebuggerNeedsDelazification = 1 << 4
     };
@@ -567,7 +567,7 @@ struct JSCompartment
     static const unsigned DebuggerObservesMask = IsDebuggee |
                                                  DebuggerObservesAllExecution |
                                                  DebuggerObservesCoverage |
-                                                 DebuggerObservesWasm;
+                                                 DebuggerObservesAsmJS;
 
     void updateDebuggerObservesFlag(unsigned flag);
 
@@ -758,12 +758,12 @@ struct JSCompartment
     
     
     
-    bool debuggerObservesWasm() const {
-        static const unsigned Mask = IsDebuggee | DebuggerObservesWasm;
+    bool debuggerObservesAsmJS() const {
+        static const unsigned Mask = IsDebuggee | DebuggerObservesAsmJS;
         return (debugModeBits & Mask) == Mask;
     }
-    void updateDebuggerObservesWasm() {
-        updateDebuggerObservesFlag(DebuggerObservesWasm);
+    void updateDebuggerObservesAsmJS() {
+        updateDebuggerObservesFlag(DebuggerObservesAsmJS);
     }
 
     
