@@ -92,8 +92,7 @@ pub struct CefDOMVisitor {
 impl Clone for CefDOMVisitor {
   fn clone(&self) -> CefDOMVisitor{
     unsafe {
-      if !self.c_object.is_null() &&
-          self.c_object as usize != mem::POST_DROP_USIZE {
+      if !self.c_object.is_null() {
         ((*self.c_object).base.add_ref.unwrap())(&mut (*self.c_object).base);
       }
       CefDOMVisitor {
@@ -106,8 +105,7 @@ impl Clone for CefDOMVisitor {
 impl Drop for CefDOMVisitor {
   fn drop(&mut self) {
     unsafe {
-      if !self.c_object.is_null() &&
-          self.c_object as usize != mem::POST_DROP_USIZE {
+      if !self.c_object.is_null() {
         ((*self.c_object).base.release.unwrap())(&mut (*self.c_object).base);
       }
     }
@@ -122,8 +120,7 @@ impl CefDOMVisitor {
   }
 
   pub unsafe fn from_c_object_addref(c_object: *mut cef_domvisitor_t) -> CefDOMVisitor {
-    if !c_object.is_null() &&
-        c_object as usize != mem::POST_DROP_USIZE {
+    if !c_object.is_null() {
       ((*c_object).base.add_ref.unwrap())(&mut (*c_object).base);
     }
     CefDOMVisitor {
@@ -137,8 +134,7 @@ impl CefDOMVisitor {
 
   pub fn c_object_addrefed(&self) -> *mut cef_domvisitor_t {
     unsafe {
-      if !self.c_object.is_null() &&
-          self.c_object as usize != mem::POST_DROP_USIZE {
+      if !self.c_object.is_null() {
         eutil::add_ref(self.c_object as *mut types::cef_base_t);
       }
       self.c_object
@@ -146,10 +142,10 @@ impl CefDOMVisitor {
   }
 
   pub fn is_null_cef_object(&self) -> bool {
-    self.c_object.is_null() || self.c_object as usize == mem::POST_DROP_USIZE
+    self.c_object.is_null()
   }
   pub fn is_not_null_cef_object(&self) -> bool {
-    !self.c_object.is_null() && self.c_object as usize != mem::POST_DROP_USIZE
+    !self.c_object.is_null()
   }
 
   
@@ -160,8 +156,7 @@ impl CefDOMVisitor {
   
   
   pub fn visit(&self, document: interfaces::CefDOMDocument) -> () {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null(){
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -189,8 +184,7 @@ impl CefWrap<*mut cef_domvisitor_t> for Option<CefDOMVisitor> {
     }
   }
   unsafe fn to_rust(c_object: *mut cef_domvisitor_t) -> Option<CefDOMVisitor> {
-    if c_object.is_null() &&
-       c_object as usize != mem::POST_DROP_USIZE {
+    if c_object.is_null() {
       None
     } else {
       Some(CefDOMVisitor::from_c_object_addref(c_object))
@@ -325,8 +319,7 @@ pub struct CefDOMDocument {
 impl Clone for CefDOMDocument {
   fn clone(&self) -> CefDOMDocument{
     unsafe {
-      if !self.c_object.is_null() &&
-          self.c_object as usize != mem::POST_DROP_USIZE {
+      if !self.c_object.is_null() {
         ((*self.c_object).base.add_ref.unwrap())(&mut (*self.c_object).base);
       }
       CefDOMDocument {
@@ -339,8 +332,7 @@ impl Clone for CefDOMDocument {
 impl Drop for CefDOMDocument {
   fn drop(&mut self) {
     unsafe {
-      if !self.c_object.is_null() &&
-          self.c_object as usize != mem::POST_DROP_USIZE {
+      if !self.c_object.is_null() {
         ((*self.c_object).base.release.unwrap())(&mut (*self.c_object).base);
       }
     }
@@ -355,8 +347,7 @@ impl CefDOMDocument {
   }
 
   pub unsafe fn from_c_object_addref(c_object: *mut cef_domdocument_t) -> CefDOMDocument {
-    if !c_object.is_null() &&
-        c_object as usize != mem::POST_DROP_USIZE {
+    if !c_object.is_null() {
       ((*c_object).base.add_ref.unwrap())(&mut (*c_object).base);
     }
     CefDOMDocument {
@@ -370,8 +361,7 @@ impl CefDOMDocument {
 
   pub fn c_object_addrefed(&self) -> *mut cef_domdocument_t {
     unsafe {
-      if !self.c_object.is_null() &&
-          self.c_object as usize != mem::POST_DROP_USIZE {
+      if !self.c_object.is_null() {
         eutil::add_ref(self.c_object as *mut types::cef_base_t);
       }
       self.c_object
@@ -379,18 +369,17 @@ impl CefDOMDocument {
   }
 
   pub fn is_null_cef_object(&self) -> bool {
-    self.c_object.is_null() || self.c_object as usize == mem::POST_DROP_USIZE
+    self.c_object.is_null()
   }
   pub fn is_not_null_cef_object(&self) -> bool {
-    !self.c_object.is_null() && self.c_object as usize != mem::POST_DROP_USIZE
+    !self.c_object.is_null()
   }
 
   
   
   
   pub fn get_type(&self) -> types::cef_dom_document_type_t {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null(){
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -404,8 +393,7 @@ impl CefDOMDocument {
   
   
   pub fn get_document(&self) -> interfaces::CefDOMNode {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null(){
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -419,8 +407,7 @@ impl CefDOMDocument {
   
   
   pub fn get_body(&self) -> interfaces::CefDOMNode {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null(){
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -434,8 +421,7 @@ impl CefDOMDocument {
   
   
   pub fn get_head(&self) -> interfaces::CefDOMNode {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null(){
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -450,8 +436,7 @@ impl CefDOMDocument {
   
   
   pub fn get_title(&self) -> String {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null(){
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -465,8 +450,7 @@ impl CefDOMDocument {
   
   
   pub fn get_element_by_id(&self, id: &[u16]) -> interfaces::CefDOMNode {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null(){
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -481,8 +465,7 @@ impl CefDOMDocument {
   
   
   pub fn get_focused_node(&self) -> interfaces::CefDOMNode {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null(){
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -496,8 +479,7 @@ impl CefDOMDocument {
   
   
   pub fn has_selection(&self) -> libc::c_int {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null(){
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -511,8 +493,7 @@ impl CefDOMDocument {
   
   
   pub fn get_selection_start_offset(&self) -> libc::c_int {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null(){
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -526,8 +507,7 @@ impl CefDOMDocument {
   
   
   pub fn get_selection_end_offset(&self) -> libc::c_int {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null(){
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -542,8 +522,7 @@ impl CefDOMDocument {
   
   
   pub fn get_selection_as_markup(&self) -> String {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null(){
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -558,8 +537,7 @@ impl CefDOMDocument {
   
   
   pub fn get_selection_as_text(&self) -> String {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null(){
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -574,8 +552,7 @@ impl CefDOMDocument {
   
   
   pub fn get_base_url(&self) -> String {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null(){
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -591,8 +568,7 @@ impl CefDOMDocument {
   
   
   pub fn get_complete_url(&self, partialURL: &[u16]) -> String {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null(){
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -620,8 +596,7 @@ impl CefWrap<*mut cef_domdocument_t> for Option<CefDOMDocument> {
     }
   }
   unsafe fn to_rust(c_object: *mut cef_domdocument_t) -> Option<CefDOMDocument> {
-    if c_object.is_null() &&
-       c_object as usize != mem::POST_DROP_USIZE {
+    if c_object.is_null() {
       None
     } else {
       Some(CefDOMDocument::from_c_object_addref(c_object))
@@ -828,8 +803,7 @@ pub struct CefDOMNode {
 impl Clone for CefDOMNode {
   fn clone(&self) -> CefDOMNode{
     unsafe {
-      if !self.c_object.is_null() &&
-          self.c_object as usize != mem::POST_DROP_USIZE {
+      if !self.c_object.is_null() {
         ((*self.c_object).base.add_ref.unwrap())(&mut (*self.c_object).base);
       }
       CefDOMNode {
@@ -842,8 +816,7 @@ impl Clone for CefDOMNode {
 impl Drop for CefDOMNode {
   fn drop(&mut self) {
     unsafe {
-      if !self.c_object.is_null() &&
-          self.c_object as usize != mem::POST_DROP_USIZE {
+      if !self.c_object.is_null() {
         ((*self.c_object).base.release.unwrap())(&mut (*self.c_object).base);
       }
     }
@@ -858,8 +831,7 @@ impl CefDOMNode {
   }
 
   pub unsafe fn from_c_object_addref(c_object: *mut cef_domnode_t) -> CefDOMNode {
-    if !c_object.is_null() &&
-        c_object as usize != mem::POST_DROP_USIZE {
+    if !c_object.is_null() {
       ((*c_object).base.add_ref.unwrap())(&mut (*c_object).base);
     }
     CefDOMNode {
@@ -873,8 +845,7 @@ impl CefDOMNode {
 
   pub fn c_object_addrefed(&self) -> *mut cef_domnode_t {
     unsafe {
-      if !self.c_object.is_null() &&
-          self.c_object as usize != mem::POST_DROP_USIZE {
+      if !self.c_object.is_null() {
         eutil::add_ref(self.c_object as *mut types::cef_base_t);
       }
       self.c_object
@@ -882,18 +853,17 @@ impl CefDOMNode {
   }
 
   pub fn is_null_cef_object(&self) -> bool {
-    self.c_object.is_null() || self.c_object as usize == mem::POST_DROP_USIZE
+    self.c_object.is_null()
   }
   pub fn is_not_null_cef_object(&self) -> bool {
-    !self.c_object.is_null() && self.c_object as usize != mem::POST_DROP_USIZE
+    !self.c_object.is_null()
   }
 
   
   
   
   pub fn get_type(&self) -> types::cef_dom_node_type_t {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null(){
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -907,8 +877,7 @@ impl CefDOMNode {
   
   
   pub fn is_text(&self) -> libc::c_int {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null(){
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -922,8 +891,7 @@ impl CefDOMNode {
   
   
   pub fn is_element(&self) -> libc::c_int {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null(){
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -937,8 +905,7 @@ impl CefDOMNode {
   
   
   pub fn is_editable(&self) -> libc::c_int {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null(){
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -952,8 +919,7 @@ impl CefDOMNode {
   
   
   pub fn is_form_control_element(&self) -> libc::c_int {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null(){
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -968,8 +934,7 @@ impl CefDOMNode {
   
   
   pub fn get_form_control_element_type(&self) -> String {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null(){
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -984,8 +949,7 @@ impl CefDOMNode {
   
   
   pub fn is_same(&self, that: interfaces::CefDOMNode) -> libc::c_int {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null(){
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -1001,8 +965,7 @@ impl CefDOMNode {
   
   
   pub fn get_name(&self) -> String {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null(){
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -1017,8 +980,7 @@ impl CefDOMNode {
   
   
   pub fn get_value(&self) -> String {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null(){
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -1032,8 +994,7 @@ impl CefDOMNode {
   
   
   pub fn set_value(&self, value: &[u16]) -> libc::c_int {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null(){
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -1049,8 +1010,7 @@ impl CefDOMNode {
   
   
   pub fn get_as_markup(&self) -> String {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null(){
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -1064,8 +1024,7 @@ impl CefDOMNode {
   
   
   pub fn get_document(&self) -> interfaces::CefDOMDocument {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null(){
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -1079,8 +1038,7 @@ impl CefDOMNode {
   
   
   pub fn get_parent(&self) -> interfaces::CefDOMNode {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null(){
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -1094,8 +1052,7 @@ impl CefDOMNode {
   
   
   pub fn get_previous_sibling(&self) -> interfaces::CefDOMNode {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null(){
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -1109,8 +1066,7 @@ impl CefDOMNode {
   
   
   pub fn get_next_sibling(&self) -> interfaces::CefDOMNode {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null(){
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -1124,8 +1080,7 @@ impl CefDOMNode {
   
   
   pub fn has_children(&self) -> libc::c_int {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null(){
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -1139,8 +1094,7 @@ impl CefDOMNode {
   
   
   pub fn get_first_child(&self) -> interfaces::CefDOMNode {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null(){
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -1154,8 +1108,7 @@ impl CefDOMNode {
   
   
   pub fn get_last_child(&self) -> interfaces::CefDOMNode {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null(){
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -1173,8 +1126,7 @@ impl CefDOMNode {
   
   
   pub fn get_element_tag_name(&self) -> String {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null(){
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -1188,8 +1140,7 @@ impl CefDOMNode {
   
   
   pub fn has_element_attributes(&self) -> libc::c_int {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null(){
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -1203,8 +1154,7 @@ impl CefDOMNode {
   
   
   pub fn has_element_attribute(&self, attrName: &[u16]) -> libc::c_int {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null(){
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -1220,8 +1170,7 @@ impl CefDOMNode {
   
   
   pub fn get_element_attribute(&self, attrName: &[u16]) -> String {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null(){
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -1236,8 +1185,7 @@ impl CefDOMNode {
   
   
   pub fn get_element_attributes(&self, attrMap: HashMap<String,String>) -> () {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null(){
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -1254,8 +1202,7 @@ impl CefDOMNode {
   
   pub fn set_element_attribute(&self, attrName: &[u16],
       value: &[u16]) -> libc::c_int {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null(){
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -1272,8 +1219,7 @@ impl CefDOMNode {
   
   
   pub fn get_element_inner_text(&self) -> String {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null(){
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -1300,8 +1246,7 @@ impl CefWrap<*mut cef_domnode_t> for Option<CefDOMNode> {
     }
   }
   unsafe fn to_rust(c_object: *mut cef_domnode_t) -> Option<CefDOMNode> {
-    if c_object.is_null() &&
-       c_object as usize != mem::POST_DROP_USIZE {
+    if c_object.is_null() {
       None
     } else {
       Some(CefDOMNode::from_c_object_addref(c_object))

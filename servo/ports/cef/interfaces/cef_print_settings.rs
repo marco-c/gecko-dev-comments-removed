@@ -228,8 +228,7 @@ pub struct CefPrintSettings {
 impl Clone for CefPrintSettings {
   fn clone(&self) -> CefPrintSettings{
     unsafe {
-      if !self.c_object.is_null() &&
-          self.c_object as usize != mem::POST_DROP_USIZE {
+      if !self.c_object.is_null() {
         ((*self.c_object).base.add_ref.unwrap())(&mut (*self.c_object).base);
       }
       CefPrintSettings {
@@ -242,8 +241,7 @@ impl Clone for CefPrintSettings {
 impl Drop for CefPrintSettings {
   fn drop(&mut self) {
     unsafe {
-      if !self.c_object.is_null() &&
-          self.c_object as usize != mem::POST_DROP_USIZE {
+      if !self.c_object.is_null() {
         ((*self.c_object).base.release.unwrap())(&mut (*self.c_object).base);
       }
     }
@@ -258,8 +256,7 @@ impl CefPrintSettings {
   }
 
   pub unsafe fn from_c_object_addref(c_object: *mut cef_print_settings_t) -> CefPrintSettings {
-    if !c_object.is_null() &&
-        c_object as usize != mem::POST_DROP_USIZE {
+    if !c_object.is_null() {
       ((*c_object).base.add_ref.unwrap())(&mut (*c_object).base);
     }
     CefPrintSettings {
@@ -273,8 +270,7 @@ impl CefPrintSettings {
 
   pub fn c_object_addrefed(&self) -> *mut cef_print_settings_t {
     unsafe {
-      if !self.c_object.is_null() &&
-          self.c_object as usize != mem::POST_DROP_USIZE {
+      if !self.c_object.is_null() {
         eutil::add_ref(self.c_object as *mut types::cef_base_t);
       }
       self.c_object
@@ -282,10 +278,10 @@ impl CefPrintSettings {
   }
 
   pub fn is_null_cef_object(&self) -> bool {
-    self.c_object.is_null() || self.c_object as usize == mem::POST_DROP_USIZE
+    self.c_object.is_null()
   }
   pub fn is_not_null_cef_object(&self) -> bool {
-    !self.c_object.is_null() && self.c_object as usize != mem::POST_DROP_USIZE
+    !self.c_object.is_null()
   }
 
   
@@ -293,8 +289,7 @@ impl CefPrintSettings {
   
   
   pub fn is_valid(&self) -> libc::c_int {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null() {
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -309,8 +304,7 @@ impl CefPrintSettings {
   
   
   pub fn is_read_only(&self) -> libc::c_int {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null() {
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -324,8 +318,7 @@ impl CefPrintSettings {
   
   
   pub fn copy(&self) -> interfaces::CefPrintSettings {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null() {
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -339,8 +332,7 @@ impl CefPrintSettings {
   
   
   pub fn set_orientation(&self, landscape: libc::c_int) -> () {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null() {
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -355,8 +347,7 @@ impl CefPrintSettings {
   
   
   pub fn is_landscape(&self) -> libc::c_int {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null() {
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -375,8 +366,7 @@ impl CefPrintSettings {
       physical_size_device_units: &types::cef_size_t,
       printable_area_device_units: &types::cef_rect_t,
       landscape_needs_flip: libc::c_int) -> () {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null() {
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -393,8 +383,7 @@ impl CefPrintSettings {
   
   
   pub fn set_device_name(&self, name: &[u16]) -> () {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null() {
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -410,8 +399,7 @@ impl CefPrintSettings {
   
   
   pub fn get_device_name(&self) -> String {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null() {
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -425,8 +413,7 @@ impl CefPrintSettings {
   
   
   pub fn set_dpi(&self, dpi: libc::c_int) -> () {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null() {
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -441,8 +428,7 @@ impl CefPrintSettings {
   
   
   pub fn get_dpi(&self) -> libc::c_int {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null() {
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -457,8 +443,7 @@ impl CefPrintSettings {
   
   pub fn set_page_ranges(&self, ranges_count: libc::size_t,
       ranges: *const types::cef_page_range_t) -> () {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null() {
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -474,8 +459,7 @@ impl CefPrintSettings {
   
   
   pub fn get_page_ranges_count(&self) -> libc::size_t {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null() {
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -490,8 +474,7 @@ impl CefPrintSettings {
   
   pub fn get_page_ranges(&self, ranges_count: *mut libc::size_t,
       ranges: *mut types::cef_page_range_t) -> () {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null() {
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -507,8 +490,7 @@ impl CefPrintSettings {
   
   
   pub fn set_selection_only(&self, selection_only: libc::c_int) -> () {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null() {
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -523,8 +505,7 @@ impl CefPrintSettings {
   
   
   pub fn is_selection_only(&self) -> libc::c_int {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null() {
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -538,8 +519,7 @@ impl CefPrintSettings {
   
   
   pub fn set_collate(&self, collate: libc::c_int) -> () {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null() {
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -554,8 +534,7 @@ impl CefPrintSettings {
   
   
   pub fn will_collate(&self) -> libc::c_int {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null() {
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -569,8 +548,7 @@ impl CefPrintSettings {
   
   
   pub fn set_color_model(&self, model: types::cef_color_model_t) -> () {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null() {
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -585,8 +563,7 @@ impl CefPrintSettings {
   
   
   pub fn get_color_model(&self) -> types::cef_color_model_t {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null() {
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -600,8 +577,7 @@ impl CefPrintSettings {
   
   
   pub fn set_copies(&self, copies: libc::c_int) -> () {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null() {
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -616,8 +592,7 @@ impl CefPrintSettings {
   
   
   pub fn get_copies(&self) -> libc::c_int {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null() {
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -631,8 +606,7 @@ impl CefPrintSettings {
   
   
   pub fn set_duplex_mode(&self, mode: types::cef_duplex_mode_t) -> () {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null() {
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -647,8 +621,7 @@ impl CefPrintSettings {
   
   
   pub fn get_duplex_mode(&self) -> types::cef_duplex_mode_t {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
+    if self.c_object.is_null() {
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -686,8 +659,7 @@ impl CefWrap<*mut cef_print_settings_t> for Option<CefPrintSettings> {
     }
   }
   unsafe fn to_rust(c_object: *mut cef_print_settings_t) -> Option<CefPrintSettings> {
-    if c_object.is_null() &&
-       c_object as usize != mem::POST_DROP_USIZE {
+    if c_object.is_null() {
       None
     } else {
       Some(CefPrintSettings::from_c_object_addref(c_object))
