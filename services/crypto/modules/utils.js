@@ -260,12 +260,11 @@ this.CryptoUtils = {
                                                             forceJS) {
     if (Svc.Crypto.deriveKeyFromPassphrase && !forceJS) {
       return Svc.Crypto.deriveKeyFromPassphrase(passphrase, salt, keyLength);
-    } else {
-      
-      
-      return CryptoUtils.pbkdf2Generate(passphrase, atob(salt), 4096,
-                                        keyLength);
     }
+    
+    
+    return CryptoUtils.pbkdf2Generate(passphrase, atob(salt), 4096,
+                                      keyLength);
   },
 
   
