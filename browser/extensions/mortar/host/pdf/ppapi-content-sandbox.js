@@ -183,4 +183,35 @@ mm.addMessageListener("ppapipdf.js:save", () => {
   });
 });
 
+
+
+
+
+class CommandController {
+  constructor() {
+    this.SUPPORTED_COMMANDS = ['cmd_copy', 'cmd_selectAll'];
+    containerWindow.controllers.insertControllerAt(0, this);
+    containerWindow.addEventListener('unload', this.terminate.bind(this));
+  }
+
+  terminate() {
+    containerWindow.controllers.removeController(this);
+  }
+
+  supportsCommand(cmd) {
+    return this.SUPPORTED_COMMANDS.includes(cmd);
+  }
+
+  isCommandEnabled(cmd) {
+    return this.SUPPORTED_COMMANDS.includes(cmd);
+  }
+
+  doCommand(cmd) {
+    mm.sendAsyncMessage("ppapipdf.js:oncommand", {name: cmd});
+  }
+
+  onEvent(evt) {}
+};
+var commandController = new CommandController();
+
 mm.loadFrameScript("resource://ppapi.js/ppapi-instance.js", true);
