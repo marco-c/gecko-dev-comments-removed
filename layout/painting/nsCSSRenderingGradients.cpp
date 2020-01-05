@@ -1048,53 +1048,47 @@ nsCSSGradientRenderer::BuildWebRenderDisplayItems(wr::DisplayListBuilder& aBuild
   LayoutDeviceSize gradientRadius;
   BuildWebRenderParameters(aOpacity, extendMode, stops, lineStart, lineEnd, gradientRadius);
 
-  
-  
-
   nscoord appUnitsPerDevPixel = mPresContext->AppUnitsPerDevPixel();
-  LayoutDeviceRect firstTileBounds = LayoutDevicePixel::FromAppUnits(mDest, appUnitsPerDevPixel);
-  LayoutDeviceRect clipBounds = LayoutDevicePixel::FromAppUnits(mFillArea, appUnitsPerDevPixel);
 
   
-  firstTileBounds = LayoutDeviceRect::FromUnknownRect(aLayer->RelativeToParent(firstTileBounds.ToUnknownRect()));
+  LayoutDeviceRect clipBounds = LayoutDevicePixel::FromAppUnits(mFillArea, appUnitsPerDevPixel);
+  LayoutDeviceRect firstTileBounds = LayoutDevicePixel::FromAppUnits(mDest, appUnitsPerDevPixel);
+  LayoutDeviceSize tileRepeat = LayoutDevicePixel::FromAppUnits(mRepeatSize, appUnitsPerDevPixel);
+
+  
+  
+  LayoutDevicePoint tileToClip = clipBounds.BottomRight() - firstTileBounds.TopLeft();
+  LayoutDeviceRect gradientBounds = LayoutDeviceRect(firstTileBounds.TopLeft(),
+                                                     LayoutDeviceSize(tileToClip.x, tileToClip.y));
+
+  
+  LayoutDeviceSize tileSpacing = tileRepeat - firstTileBounds.Size();
+
+  
   clipBounds = LayoutDeviceRect::FromUnknownRect(aLayer->RelativeToParent(clipBounds.ToUnknownRect()));
+  firstTileBounds = LayoutDeviceRect::FromUnknownRect(aLayer->RelativeToParent(firstTileBounds.ToUnknownRect()));
+  gradientBounds = LayoutDeviceRect::FromUnknownRect(aLayer->RelativeToParent(gradientBounds.ToUnknownRect()));
 
-  float xStart = 0;
-  float yStart = 0;
-  float xEnd = (mFillArea.XMost() - mDest.X()) / appUnitsPerDevPixel;
-  float yEnd = (mFillArea.YMost() - mDest.Y()) / appUnitsPerDevPixel;
-
-  float stepX = mRepeatSize.width / appUnitsPerDevPixel;
-  float stepY = mRepeatSize.height / appUnitsPerDevPixel;
-
-  for (float y = yStart; y < yEnd; y += stepY) {
-    for (float x = xStart; x < xEnd; x += stepX) {
-      LayoutDevicePoint tileOffset = firstTileBounds.TopLeft() + LayoutDevicePoint(x, y);
-      LayoutDeviceRect tileRect = LayoutDeviceRect(tileOffset, firstTileBounds.Size());
-
-      if (mGradient->mShape == NS_STYLE_GRADIENT_SHAPE_LINEAR) {
-        LayoutDevicePoint relativeGradientStart = lineStart + tileOffset;
-        LayoutDevicePoint relativeGradientEnd = lineEnd + tileOffset;
-
-        aBuilder.PushLinearGradient(
-          mozilla::wr::ToWrRect(tileRect),
-          aBuilder.BuildClipRegion(mozilla::wr::ToWrRect(clipBounds)),
-          mozilla::wr::ToWrPoint(relativeGradientStart),
-          mozilla::wr::ToWrPoint(relativeGradientEnd),
-          stops,
-          extendMode);
-      } else {
-        LayoutDevicePoint relativeGradientCenter = lineStart + tileOffset;
-
-        aBuilder.PushRadialGradient(
-          mozilla::wr::ToWrRect(tileRect),
-          aBuilder.BuildClipRegion(mozilla::wr::ToWrRect(clipBounds)),
-          mozilla::wr::ToWrPoint(relativeGradientCenter),
-          mozilla::wr::ToWrSize(gradientRadius),
-          stops,
-          extendMode);
-      }
-    }
+  if (mGradient->mShape == NS_STYLE_GRADIENT_SHAPE_LINEAR) {
+    aBuilder.PushLinearGradient(
+      mozilla::wr::ToWrRect(gradientBounds),
+      aBuilder.BuildClipRegion(mozilla::wr::ToWrRect(clipBounds)),
+      mozilla::wr::ToWrPoint(lineStart),
+      mozilla::wr::ToWrPoint(lineEnd),
+      stops,
+      extendMode,
+      mozilla::wr::ToWrSize(firstTileBounds.Size()),
+      mozilla::wr::ToWrSize(tileSpacing));
+  } else {
+    aBuilder.PushRadialGradient(
+      mozilla::wr::ToWrRect(gradientBounds),
+      aBuilder.BuildClipRegion(mozilla::wr::ToWrRect(clipBounds)),
+      mozilla::wr::ToWrPoint(lineStart),
+      mozilla::wr::ToWrSize(gradientRadius),
+      stops,
+      extendMode,
+      mozilla::wr::ToWrSize(firstTileBounds.Size()),
+      mozilla::wr::ToWrSize(tileSpacing));
   }
 }
 
