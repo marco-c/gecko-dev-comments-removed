@@ -23,6 +23,7 @@ use dom::bindings::codegen::InheritTypes::{HTMLAreaElementDerived, HTMLEmbedElem
 use dom::bindings::codegen::InheritTypes::{HTMLFormElementDerived, HTMLImageElementDerived};
 use dom::bindings::codegen::InheritTypes::{HTMLScriptElementDerived, HTMLTitleElementDerived};
 use dom::bindings::codegen::InheritTypes::ElementDerived;
+use dom::bindings::codegen::InheritTypes::HTMLBaseElementCast;
 use dom::bindings::codegen::UnionTypes::NodeOrString;
 use dom::bindings::error::{ErrorResult, Fallible};
 use dom::bindings::error::Error::{NotSupported, InvalidCharacter, Security};
@@ -45,6 +46,7 @@ use dom::element::{ElementTypeId, ActivationElementHelpers, FocusElementHelpers}
 use dom::event::{Event, EventBubbles, EventCancelable, EventHelpers};
 use dom::eventtarget::{EventTarget, EventTargetTypeId, EventTargetHelpers};
 use dom::htmlanchorelement::HTMLAnchorElement;
+use dom::htmlbaseelement::HTMLBaseElement;
 use dom::htmlcollection::{HTMLCollection, CollectionFilter};
 use dom::htmlelement::{HTMLElement, HTMLElementTypeId};
 use dom::htmlheadelement::HTMLHeadElement;
@@ -153,6 +155,8 @@ pub struct Document {
     current_parser: MutNullableHeap<JS<ServoHTMLParser>>,
     
     reflow_timeout: Cell<Option<u64>>,
+    
+    base_element: MutNullableHeap<JS<HTMLBaseElement>>,
 }
 
 impl PartialEq for Document {
@@ -231,7 +235,16 @@ pub trait DocumentHelpers<'a> {
     fn encoding_name(self) -> Ref<'a, DOMString>;
     fn is_html_document(self) -> bool;
     fn is_fully_active(self) -> bool;
+    
     fn url(self) -> Url;
+    
+    fn fallback_base_url(self) -> Url;
+    
+    fn base_url(self) -> Url;
+    
+    fn base_element(self) -> Option<Root<HTMLBaseElement>>;
+    
+    fn refresh_base_element(self);
     fn quirks_mode(self) -> QuirksMode;
     fn set_quirks_mode(self, mode: QuirksMode);
     fn set_encoding_name(self, name: DOMString);
@@ -338,6 +351,39 @@ impl<'a> DocumentHelpers<'a> for &'a Document {
     
     fn url(self) -> Url {
         self.url.clone()
+    }
+
+    
+    fn fallback_base_url(self) -> Url {
+        
+        
+        
+        self.url()
+    }
+
+    
+    fn base_url(self) -> Url {
+        match self.base_element() {
+            
+            None => self.fallback_base_url(),
+            
+            Some(base) => base.frozen_base_url(),
+        }
+    }
+
+    
+    fn base_element(self) -> Option<Root<HTMLBaseElement>> {
+        self.base_element.get().map(Root::from_rooted)
+    }
+
+    
+    fn refresh_base_element(self) {
+        let base = NodeCast::from_ref(self)
+            .traverse_preorder()
+            .filter_map(HTMLBaseElementCast::to_root)
+            .filter(|element| ElementCast::from_ref(&**element).has_attribute(&atom!("href")))
+            .next();
+        self.base_element.set(base.map(|element| JS::from_ref(&*element)));
     }
 
     fn quirks_mode(self) -> QuirksMode {
@@ -1089,6 +1135,7 @@ impl Document {
             loader: DOMRefCell::new(doc_loader),
             current_parser: Default::default(),
             reflow_timeout: Cell::new(None),
+            base_element: Default::default(),
         }
     }
 
