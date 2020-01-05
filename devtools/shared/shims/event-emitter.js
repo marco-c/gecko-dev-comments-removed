@@ -9,13 +9,10 @@
 
 
 
-(function (factory) {
-  
-  if (this.module && module.id.indexOf("event-emitter") >= 0) {
-    
+(function (factory) { 
+  if (this.module && module.id.indexOf("event-emitter") >= 0) { 
     factory.call(this, require, exports, module);
-  } else {
-    
+  } else { 
     const Cu = Components.utils;
     const { require } =
       Cu.import("resource://devtools/shared/Loader.jsm", {});

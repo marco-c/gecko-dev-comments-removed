@@ -1,9 +1,6 @@
 
 
 
-
-
-
 "use strict";
 
 const { Ci, Cu } = require("chrome");
@@ -275,14 +272,12 @@ SimulatorCore.prototype = {
         }
       }
       let unwrapped = XPCNativeWrapper.unwrap(target);
-      
       unwrapped.sendTouchEvent(name, clone([0]),       
                                clone([evt.clientX]),   
                                clone([evt.clientY]),   
                                clone([1]), clone([1]), 
                                clone([0]), clone([0]), 
                                1);                     
-      
       return;
     }
     let document = target.ownerDocument;
@@ -344,10 +339,10 @@ SimulatorCore.prototype = {
     let utils = content.QueryInterface(Ci.nsIInterfaceRequestor)
                        .getInterface(Ci.nsIDOMWindowUtils);
 
-    let allowZoom = {};
-    let minZoom = {};
-    let maxZoom = {};
-    let autoSize = {};
+    let allowZoom = {},
+        minZoom = {},
+        maxZoom = {},
+        autoSize = {};
 
     utils.getViewportInfo(content.innerWidth, content.innerHeight, {},
                           allowZoom, minZoom, maxZoom, {}, {}, autoSize);
@@ -357,15 +352,14 @@ SimulatorCore.prototype = {
     
     
     
-    
     if (!allowZoom.value ||                   
         minZoom.value === maxZoom.value ||    
         autoSize.value                        
     ) {
-    
       return 0;
+    } else {
+      return 300;
     }
-    return 300;
   }
 };
 

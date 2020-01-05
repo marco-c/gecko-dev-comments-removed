@@ -1,12 +1,12 @@
 
 
 
-"use strict";
 
 
 
 function Class() {}
 DevToolsUtils.defineLazyPrototypeGetter(Class.prototype, "foo", () => []);
+
 
 function run_test() {
   test_prototype_attributes();

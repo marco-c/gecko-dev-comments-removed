@@ -1,10 +1,7 @@
 
 
-
-
-
 "use strict";
 
-var { utils: Cu } = Components;
+var { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 
 var { require } = Cu.import("resource://devtools/shared/Loader.jsm", {});
