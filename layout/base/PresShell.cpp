@@ -7608,30 +7608,28 @@ PresShell::HandleEvent(nsIFrame* aFrame,
       }
     }
 
-    if (aEvent->mClass == ePointerEventClass &&
-        aEvent->mMessage != ePointerDown) {
-      if (WidgetPointerEvent* pointerEvent = aEvent->AsPointerEvent()) {
-        uint32_t pointerId = pointerEvent->pointerId;
+    
+    
+    if ((aEvent->mClass == ePointerEventClass ||
+         aEvent->mClass == eMouseEventClass) &&
+        aEvent->mMessage != ePointerDown && aEvent->mMessage != eMouseDown) {
+      if (WidgetMouseEvent* mouseEvent = aEvent->AsMouseEvent()) {
+        uint32_t pointerId = mouseEvent->pointerId;
         nsIContent* pointerCapturingContent =
           GetPointerCapturingContent(pointerId);
 
         if (pointerCapturingContent) {
           if (nsIFrame* capturingFrame = pointerCapturingContent->GetPrimaryFrame()) {
-            
-            
-            
-            pointerEvent->retargetedByPointerCapture =
-              frame && frame->GetContent() &&
-              !nsContentUtils::ContentIsDescendantOf(frame->GetContent(),
-                                                     pointerCapturingContent);
             frame = capturingFrame;
           }
 
-          if (pointerEvent->mMessage == ePointerUp ||
-              pointerEvent->mMessage == ePointerCancel) {
+          if (aEvent->mMessage == ePointerUp ||
+              aEvent->mMessage == ePointerCancel) {
             
             
             
+            WidgetPointerEvent* pointerEvent = aEvent->AsPointerEvent();
+            MOZ_ASSERT(pointerEvent);
             releasePointerCaptureCaller.SetTarget(pointerId,
                                                   pointerEvent->inputSource,
                                                   pointerEvent->mIsPrimary);
