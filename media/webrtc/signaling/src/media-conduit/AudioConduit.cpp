@@ -536,19 +536,16 @@ WebrtcAudioConduit::ConfigureRecvMediaCodecs(
       error = mPtrVoEBase->LastError();
       CSFLogError(logTag,  "%s SetRecvCodec Failed %d ",__FUNCTION__, error);
       continue;
-    } else {
-      CSFLogDebug(logTag, "%s Successfully Set RecvCodec %s", __FUNCTION__,
-                                          codec->mName.c_str());
-      
-      if(CopyCodecToDB(codec))
-      {
-        success = true;
-      } else {
+    }
+    CSFLogDebug(logTag, "%s Successfully Set RecvCodec %s", __FUNCTION__,
+                                        codec->mName.c_str());
+
+    
+    if(!CopyCodecToDB(codec)) {
         CSFLogError(logTag,"%s Unable to updated Codec Database", __FUNCTION__);
         return kMediaConduitUnknownError;
-      }
-
     }
+    success = true;
 
   } 
 
@@ -927,23 +924,22 @@ WebrtcAudioConduit::SendRtp(const uint8_t* data,
   
   
   
-  (void) options;
+  (void)options;
   if(mTransmitterTransport &&
      (mTransmitterTransport->SendRtpPacket(data, len) == NS_OK))
   {
     CSFLogDebug(logTag, "%s Sent RTP Packet ", __FUNCTION__);
     return true;
-  } else {
-    CSFLogError(logTag, "%s RTP Packet Send Failed ", __FUNCTION__);
-    return false;
   }
+  CSFLogError(logTag, "%s RTP Packet Send Failed ", __FUNCTION__);
+  return false;
 }
 
 
 bool
 WebrtcAudioConduit::SendRtcp(const uint8_t* data, size_t len)
 {
-  CSFLogDebug(logTag,  "%s : len %lu, first rtcp = %u ",
+  CSFLogDebug(logTag, "%s : len %lu, first rtcp = %u ",
               __FUNCTION__,
               (unsigned long) len,
               static_cast<unsigned>(data[1]));
@@ -958,14 +954,14 @@ WebrtcAudioConduit::SendRtcp(const uint8_t* data, size_t len)
     
     CSFLogDebug(logTag, "%s Sent RTCP Packet ", __FUNCTION__);
     return true;
-  } else if(mTransmitterTransport &&
-            (mTransmitterTransport->SendRtcpPacket(data, len) == NS_OK)) {
-      CSFLogDebug(logTag, "%s Sent RTCP Packet (sender report) ", __FUNCTION__);
-      return true;
-  } else {
-    CSFLogError(logTag, "%s RTCP Packet Send Failed ", __FUNCTION__);
-    return false;
   }
+  if (mTransmitterTransport &&
+      (mTransmitterTransport->SendRtcpPacket(data, len) == NS_OK)) {
+    CSFLogDebug(logTag, "%s Sent RTCP Packet (sender report) ", __FUNCTION__);
+    return true;
+  }
+  CSFLogError(logTag, "%s RTCP Packet Send Failed ", __FUNCTION__);
+  return false;
 }
 
 
@@ -975,7 +971,7 @@ WebrtcAudioConduit::SendRtcp(const uint8_t* data, size_t len)
 bool
 WebrtcAudioConduit::CodecConfigToWebRTCCodec(const AudioCodecConfig* codecInfo,
                                               webrtc::CodecInst& cinst)
- {
+{
   const unsigned int plNameLength = codecInfo->mName.length();
   memset(&cinst, 0, sizeof(webrtc::CodecInst));
   if(sizeof(cinst.plname) < plNameLength+1)
@@ -996,7 +992,7 @@ WebrtcAudioConduit::CodecConfigToWebRTCCodec(const AudioCodecConfig* codecInfo,
   }
   cinst.channels =  codecInfo->mChannels;
   return true;
- }
+}
 
 
 
@@ -1004,19 +1000,14 @@ WebrtcAudioConduit::CodecConfigToWebRTCCodec(const AudioCodecConfig* codecInfo,
 bool
 WebrtcAudioConduit::IsSamplingFreqSupported(int freq) const
 {
-  if(GetNum10msSamplesForFrequency(freq))
-  {
-    return true;
-  } else {
-    return false;
-  }
+  return GetNum10msSamplesForFrequency(freq) != 0;
 }
 
 
 unsigned int
 WebrtcAudioConduit::GetNum10msSamplesForFrequency(int samplingFreqHz) const
 {
-  switch(samplingFreqHz)
+  switch (samplingFreqHz)
   {
     case 16000: return 160; 
     case 32000: return 320; 

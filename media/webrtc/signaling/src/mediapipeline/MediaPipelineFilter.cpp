@@ -24,12 +24,11 @@ bool MediaPipelineFilter::Filter(const webrtc::RTPHeader& header,
     if (correlator == correlator_) {
       AddRemoteSSRC(header.ssrc);
       return true;
-    } else {
-      
-      
-      remote_ssrc_set_.erase(header.ssrc);
-      return false;
     }
+    
+    
+    remote_ssrc_set_.erase(header.ssrc);
+    return false;
   }
 
   if (remote_ssrc_set_.count(header.ssrc)) {
