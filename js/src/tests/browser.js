@@ -640,9 +640,6 @@ function jsTestDriverEnd()
 }
 
 
-var dlog = (function (s) {});
-
-
 
 var gDialogCloser;
 var gDialogCloserObserver;

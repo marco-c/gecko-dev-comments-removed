@@ -52,21 +52,6 @@ function returns(value) {
 
 
 
-function returnsCopyOf(value) {
-  return function(code) {
-    try {
-      return deepEqual(eval(code), value);
-    } catch (exception) {
-      return false;
-    }
-  }
-}
-
-
-
-
-
-
 
 function raisesException(exception) {
   return function (code) {
@@ -106,15 +91,6 @@ function parseRaisesException(exception) {
     }
   };
 };
-
-
-
-
-
-
-function clean_uneval(val) {
-  return uneval(val).replace(/\s+/g, ' ');
-}
 
 
 

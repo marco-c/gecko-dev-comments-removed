@@ -1,5 +1,3 @@
-gTestsubsuite='JSON';
-
 function testJSON(str, expectSyntaxError)
 {
   

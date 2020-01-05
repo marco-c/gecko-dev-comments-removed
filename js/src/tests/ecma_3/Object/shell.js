@@ -22,19 +22,10 @@
 
 
 
-
 var cnNoObject = 'Unexpected Error!!! Parameter to this function must be an object';
 var cnNoClass = 'Unexpected Error!!! Cannot find Class property';
 var cnObjectToString = Object.prototype.toString;
 var GLOBAL = 'global';
-
-
-function getJSType(obj)
-{
-  if (isObject(obj))
-    return findType(obj);
-  return cnNoObject;
-}
 
 
 

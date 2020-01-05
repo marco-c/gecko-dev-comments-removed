@@ -36,24 +36,6 @@ function completesNormally(code) {
 
 
 
-
-
-
-function raisesException(exception) {
-  return function (code) {
-    try {
-      eval(code);
-      return false;
-    } catch (actual) {
-      return exception.prototype.isPrototypeOf(actual);
-    }
-  };
-};
-
-
-
-
-
 function parsesSuccessfully(code) {
   try {
     Function(code);
@@ -77,12 +59,3 @@ function parseRaisesException(exception) {
     }
   };
 };
-
-
-
-
-
-
-function clean_uneval(val) {
-  return uneval(val).replace(/\s+/g, ' ');
-}
