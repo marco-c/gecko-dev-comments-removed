@@ -21,13 +21,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "ScrollPosition", "resource://gre/module
 XPCOMUtils.defineLazyModuleGetter(this, "TelemetryStopwatch", "resource://gre/modules/TelemetryStopwatch.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Log", "resource://gre/modules/AndroidLog.jsm", "AndroidLog");
 XPCOMUtils.defineLazyModuleGetter(this, "SharedPreferences", "resource://gre/modules/SharedPreferences.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "Utils", "resource://gre/modules/sessionstore/Utils.jsm");
-XPCOMUtils.defineLazyServiceGetter(this, "serializationHelper",
-                                   "@mozilla.org/network/serialization-helper;1",
-                                   "nsISerializationHelper");
-XPCOMUtils.defineLazyServiceGetter(this, "uuidGenerator",
-                                   "@mozilla.org/uuid-generator;1",
-                                   "nsIUUIDGenerator");
+XPCOMUtils.defineLazyModuleGetter(this, "SessionHistory", "resource://gre/modules/sessionstore/SessionHistory.jsm");
 
 function dump(a) {
   Services.console.logStringMessage(a);
@@ -97,9 +91,6 @@ SessionStore.prototype = {
   
   
   _keepAsZombieTabId: -1,
-
-  
-  _docshellUUIDMap: new Map(),
 
   init: function ss_init() {
     loggingEnabled = Services.prefs.getBoolPref("browser.sessionstore.debug_logging");
@@ -708,25 +699,28 @@ SessionStore.prototype = {
       return;
     }
 
-    let history = aBrowser.sessionHistory;
+    
+    let data = SessionHistory.collect(aBrowser.docShell);
+    if (!data.index) {
+      
+      return;
+    }
 
     
-    let entries = [];
-    let index = history.index + 1;
-    for (let i = 0; i < history.count; i++) {
-      let historyEntry = history.getEntryAtIndex(i, false);
-      
-      if (historyEntry.URI.schemeIs("wyciwyg")) {
+    
+    
+    let historyIndex = data.index - 1;
+    for (let i = 0; i < data.entries.length; i++) {
+      if (data.entries[i].url.startsWith("wyciwyg")) {
         
-        if (i <= history.index) {
-          index--;
+        if (i <= historyIndex) {
+          data.index--;
+          historyIndex--;
         }
-        continue;
+        data.entries.splice(i, 1);
+        i--;
       }
-      let entry = this._serializeHistoryEntry(historyEntry);
-      entries.push(entry);
     }
-    let data = { entries: entries, index: index };
 
     let formdata;
     let scrolldata;
@@ -736,6 +730,7 @@ SessionStore.prototype = {
     }
     delete aBrowser.__SS_data;
 
+    
     this._collectTabData(aWindow, aBrowser, data);
     if (aBrowser.__SS_restoreDataOnLoad || aBrowser.__SS_restoreDataOnPageshow) {
       
@@ -1073,8 +1068,6 @@ SessionStore.prototype = {
       return;
     }
 
-    aHistory = aHistory || { entries: [{ url: aBrowser.currentURI.spec, title: aBrowser.contentTitle }], index: 1 };
-
     let tabData = {};
     let tab = aWindow.BrowserApp.getTabForBrowser(aBrowser);
     tabData.entries = aHistory.entries;
@@ -1225,272 +1218,6 @@ SessionStore.prototype = {
   },
 
   
-
-
-  isDynamic: function(aEntry) {
-    
-    
-    
-    
-    return aEntry.parent && aEntry.isDynamicallyAdded();
-  },
-
-  
-
-
-  _serializeHistoryEntry: function _serializeHistoryEntry(aEntry) {
-    let entry = { url: aEntry.URI.spec };
-
-    if (aEntry.title && aEntry.title != entry.url) {
-      entry.title = aEntry.title;
-    }
-
-    if (!(aEntry instanceof Ci.nsISHEntry)) {
-      return entry;
-    }
-
-    let cacheKey = aEntry.cacheKey;
-    if (cacheKey && cacheKey instanceof Ci.nsISupportsPRUint32 && cacheKey.data != 0) {
-      entry.cacheKey = cacheKey.data;
-    }
-
-    entry.ID = aEntry.ID;
-    entry.docshellUUID = aEntry.docshellID.number;
-
-    if (aEntry.referrerURI) {
-      entry.referrer = aEntry.referrerURI.spec;
-    }
-
-    if (aEntry.originalURI) {
-      entry.originalURI = aEntry.originalURI.spec;
-    }
-
-    if (aEntry.loadReplace) {
-      entry.loadReplace = aEntry.loadReplace;
-    }
-
-    if (aEntry.contentType) {
-      entry.contentType = aEntry.contentType;
-    }
-
-    if (aEntry.scrollRestorationIsManual) {
-      entry.scrollRestorationIsManual = true;
-    } else {
-      let x = {}, y = {};
-      aEntry.getScrollPosition(x, y);
-      if (x.value != 0 || y.value != 0) {
-        entry.scroll = x.value + "," + y.value;
-      }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    if (aEntry.principalToInherit) {
-      try {
-        let principalToInherit = Utils.serializePrincipal(aEntry.principalToInherit);
-        if (principalToInherit) {
-          entry.triggeringPrincipal_b64 = principalToInherit;
-          entry.principalToInherit_base64 = principalToInherit;
-        }
-      } catch (e) {
-        dump(e);
-      }
-    }
-
-    if (aEntry.triggeringPrincipal) {
-      try {
-        let triggeringPrincipal = Utils.serializePrincipal(aEntry.triggeringPrincipal);
-        if (triggeringPrincipal) {
-          entry.triggeringPrincipal_base64 = triggeringPrincipal;
-        }
-      } catch (e) {
-        dump(e);
-      }
-    }
-
-    entry.docIdentifier = aEntry.BFCacheEntry.ID;
-
-    if (aEntry.stateData != null) {
-      entry.structuredCloneState = aEntry.stateData.getDataAsBase64();
-      entry.structuredCloneVersion = aEntry.stateData.formatVersion;
-    }
-
-    if (!(aEntry instanceof Ci.nsISHContainer)) {
-      return entry;
-    }
-
-    if (aEntry.childCount > 0) {
-      let children = [];
-      for (let i = 0; i < aEntry.childCount; i++) {
-        let child = aEntry.GetChildAt(i);
-
-        if (child && !this.isDynamic(child)) {
-          
-          if (child.URI.schemeIs("wyciwyg")) {
-            children = [];
-            break;
-          }
-          children.push(this._serializeHistoryEntry(child));
-        }
-      }
-
-      if (children.length) {
-        entry.children = children;
-      }
-    }
-
-    return entry;
-  },
-
-  _deserializeHistoryEntry: function _deserializeHistoryEntry(aEntry, aIdMap, aDocIdentMap) {
-    let shEntry = Cc["@mozilla.org/browser/session-history-entry;1"].createInstance(Ci.nsISHEntry);
-
-    shEntry.setURI(Services.io.newURI(aEntry.url));
-    shEntry.setTitle(aEntry.title || aEntry.url);
-    if (aEntry.subframe) {
-      shEntry.setIsSubFrame(aEntry.subframe || false);
-    }
-    shEntry.loadType = Ci.nsIDocShellLoadInfo.loadHistory;
-    if (aEntry.contentType) {
-      shEntry.contentType = aEntry.contentType;
-    }
-    if (aEntry.referrer) {
-      shEntry.referrerURI = Services.io.newURI(aEntry.referrer);
-    }
-
-    if (aEntry.originalURI) {
-      shEntry.originalURI =  Services.io.newURI(aEntry.originalURI);
-    }
-
-    if (aEntry.loadReplace) {
-      shEntry.loadReplace = aEntry.loadReplace;
-    }
-
-    if (aEntry.cacheKey) {
-      let cacheKey = Cc["@mozilla.org/supports-PRUint32;1"].createInstance(Ci.nsISupportsPRUint32);
-      cacheKey.data = aEntry.cacheKey;
-      shEntry.cacheKey = cacheKey;
-    }
-
-    if (aEntry.ID) {
-      
-      
-      let id = aIdMap[aEntry.ID] || 0;
-      if (!id) {
-        for (id = Date.now(); id in aIdMap.used; id++);
-        aIdMap[aEntry.ID] = id;
-        aIdMap.used[id] = true;
-      }
-      shEntry.ID = id;
-    }
-
-    
-    
-    if (aEntry.docshellID) {
-      if (!this._docshellUUIDMap.has(aEntry.docshellID)) {
-        
-        
-        this._docshellUUIDMap.set(aEntry.docshellID,
-                                  uuidGenerator.generateUUID().number);
-      }
-      aEntry.docshellUUID = this._docshellUUIDMap.get(aEntry.docshellID);
-      delete aEntry.docshellID;
-    }
-
-    if (aEntry.docshellUUID) {
-      shEntry.docshellID = Components.ID(aEntry.docshellUUID);
-    }
-
-    if (aEntry.structuredCloneState && aEntry.structuredCloneVersion) {
-      shEntry.stateData =
-        Cc["@mozilla.org/docshell/structured-clone-container;1"].
-        createInstance(Ci.nsIStructuredCloneContainer);
-
-      shEntry.stateData.initFromBase64(aEntry.structuredCloneState, aEntry.structuredCloneVersion);
-    }
-
-    if (aEntry.scrollRestorationIsManual) {
-      shEntry.scrollRestorationIsManual = true;
-    } else if (aEntry.scroll) {
-      let scrollPos = aEntry.scroll.split(",");
-      scrollPos = [parseInt(scrollPos[0]) || 0, parseInt(scrollPos[1]) || 0];
-      shEntry.setScrollPosition(scrollPos[0], scrollPos[1]);
-    }
-
-    let childDocIdents = {};
-    if (aEntry.docIdentifier) {
-      
-      
-      
-      
-      let matchingEntry = aDocIdentMap[aEntry.docIdentifier];
-      if (!matchingEntry) {
-        matchingEntry = {shEntry: shEntry, childDocIdents: childDocIdents};
-        aDocIdentMap[aEntry.docIdentifier] = matchingEntry;
-      } else {
-        shEntry.adoptBFCacheEntry(matchingEntry.shEntry);
-        childDocIdents = matchingEntry.childDocIdents;
-      }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (aEntry.triggeringPrincipal_base64 || aEntry.principalToInherit_base64) {
-      if (aEntry.triggeringPrincipal_base64) {
-        shEntry.triggeringPrincipal =
-          Utils.deserializePrincipal(aEntry.triggeringPrincipal_base64);
-      }
-      if (aEntry.principalToInherit_base64) {
-        shEntry.principalToInherit =
-          Utils.deserializePrincipal(aEntry.principalToInherit_base64);
-      }
-    } else if (aEntry.triggeringPrincipal_b64) {
-      shEntry.triggeringPrincipal = Utils.deserializePrincipal(aEntry.triggeringPrincipal_b64);
-      shEntry.principalToInherit = shEntry.triggeringPrincipal;
-    }
-
-    if (aEntry.children && shEntry instanceof Ci.nsISHContainer) {
-      for (let i = 0; i < aEntry.children.length; i++) {
-        if (!aEntry.children[i].url) {
-          continue;
-        }
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-
-        shEntry.AddChild(this._deserializeHistoryEntry(aEntry.children[i], aIdMap, childDocIdents), i);
-      }
-    }
-
-    return shEntry;
-  },
-
-  
   _openTabs: function ss_openTabs(aData) {
     let window = Services.wm.getMostRecentWindow("navigator:browser");
     for (let i = 0; i < aData.urls.length; i++) {
@@ -1537,7 +1264,7 @@ SessionStore.prototype = {
       Cu.reportError("SessionStore.js: Error trying to restore tab with empty tabdata");
       return;
     }
-    this._restoreHistory(aTabData, aBrowser.sessionHistory);
+    this._restoreHistory(aBrowser.docShell, aTabData);
 
     
     
@@ -1556,31 +1283,14 @@ SessionStore.prototype = {
 
 
 
-  _restoreHistory: function ss_restoreHistory(aTabData, aHistory) {
-    if (aHistory.count > 0) {
-      aHistory.PurgeHistory(aHistory.count);
-    }
-    aHistory.QueryInterface(Ci.nsISHistoryInternal);
+
+  _restoreHistory: function ss_restoreHistory(aDocShell, aTabData) {
+    let history = SessionHistory.restore(aDocShell, aTabData);
 
     
     
-    let idMap = { used: {} };
-    let docIdentMap = {};
-
-    for (let i = 0; i < aTabData.entries.length; i++) {
-      if (!aTabData.entries[i].url) {
-        continue;
-      }
-      aHistory.addEntry(this._deserializeHistoryEntry(aTabData.entries[i], idMap, docIdentMap), true);
-    }
-
-    
-    
-    let activeIndex = (aTabData.index || aTabData.entries.length) - 1;
-    aHistory.getEntryAtIndex(activeIndex, true);
-
     try {
-      aHistory.QueryInterface(Ci.nsISHistory).reloadCurrentEntry();
+      history.QueryInterface(Ci.nsISHistory).reloadCurrentEntry();
     } catch (e) {
       
     }
