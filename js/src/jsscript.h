@@ -10,6 +10,7 @@
 #define jsscript_h
 
 #include "mozilla/Atomics.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/PodOperations.h"
 #include "mozilla/Variant.h"
@@ -402,6 +403,11 @@ class ScriptSource
     
     
     
+    uint32_t parameterListEnd_;
+
+    
+    
+    
     
     
     
@@ -428,7 +434,6 @@ class ScriptSource
     
     
     bool sourceRetrievable_:1;
-    bool argumentsNotIncluded_:1;
     bool hasIntroductionOffset_:1;
 
     const char16_t* chunkChars(JSContext* cx, UncompressedSourceCache::AutoHoldEntry& holder,
@@ -443,10 +448,10 @@ class ScriptSource
         sourceMapURL_(nullptr),
         mutedErrors_(false),
         introductionOffset_(0),
+        parameterListEnd_(0),
         introducerFilename_(nullptr),
         introductionType_(nullptr),
         sourceRetrievable_(false),
-        argumentsNotIncluded_(false),
         hasIntroductionOffset_(false)
     {
     }
@@ -461,10 +466,10 @@ class ScriptSource
         if (--refs == 0)
             js_delete(this);
     }
-    bool initFromOptions(ExclusiveContext* cx, const ReadOnlyCompileOptions& options);
+    bool initFromOptions(ExclusiveContext* cx, const ReadOnlyCompileOptions& options,
+                         mozilla::Maybe<uint32_t> parameterListEnd = mozilla::Nothing());
     bool setSourceCopy(ExclusiveContext* cx,
                        JS::SourceBufferHolder& srcBuf,
-                       bool argumentsNotIncluded,
                        SourceCompressionTask* tok);
     void setSourceRetrievable() { sourceRetrievable_ = true; }
     bool sourceRetrievable() const { return sourceRetrievable_; }
@@ -492,11 +497,6 @@ class ScriptSource
         return data.match(LengthMatcher());
     }
 
-    bool argumentsNotIncluded() const {
-        MOZ_ASSERT(hasSourceData());
-        return argumentsNotIncluded_;
-    }
-
     
     
     const char16_t* chars(JSContext* cx, UncompressedSourceCache::AutoHoldEntry& asp,
@@ -504,6 +504,12 @@ class ScriptSource
 
     JSFlatString* substring(JSContext* cx, size_t start, size_t stop);
     JSFlatString* substringDontDeflate(JSContext* cx, size_t start, size_t stop);
+
+    bool isFunctionBody() {
+        return parameterListEnd_ != 0;
+    }
+    JSFlatString* functionBodyString(JSContext* cx);
+
     void addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf,
                                 JS::ScriptSourceInfo* info) const;
 
@@ -566,6 +572,10 @@ class ScriptSource
         MOZ_ASSERT(offset <= (uint32_t)INT32_MAX);
         introductionOffset_ = offset;
         hasIntroductionOffset_ = true;
+    }
+
+    uint32_t parameterListEnd() const {
+        return parameterListEnd_;
     }
 };
 

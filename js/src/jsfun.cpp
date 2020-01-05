@@ -12,6 +12,7 @@
 
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/CheckedInt.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/PodOperations.h"
 #include "mozilla/Range.h"
 
@@ -60,8 +61,10 @@ using namespace js::gc;
 using namespace js::frontend;
 
 using mozilla::ArrayLength;
+using mozilla::Maybe;
 using mozilla::PodCopy;
 using mozilla::RangedPtr;
+using mozilla::Some;
 
 static bool
 fun_enumerate(JSContext* cx, HandleObject obj)
@@ -933,19 +936,19 @@ const Class JSFunction::class_ = {
 const Class* const js::FunctionClassPtr = &JSFunction::class_;
 
 JSString*
-js::FunctionToString(JSContext* cx, HandleFunction fun, bool lambdaParen)
+js::FunctionToString(JSContext* cx, HandleFunction fun, bool prettyPrint)
 {
     if (fun->isInterpretedLazy() && !fun->getOrCreateScript(cx))
         return nullptr;
 
     if (IsAsmJSModule(fun))
-        return AsmJSModuleToString(cx, fun, !lambdaParen);
+        return AsmJSModuleToString(cx, fun, !prettyPrint);
     if (IsAsmJSFunction(fun))
         return AsmJSFunctionToString(cx, fun);
 
     if (IsWrappedAsyncFunction(fun)) {
         RootedFunction unwrapped(cx, GetUnwrappedAsyncFunction(fun));
-        return FunctionToString(cx, unwrapped, lambdaParen);
+        return FunctionToString(cx, unwrapped, prettyPrint);
     }
 
     StringBuffer out(cx);
@@ -971,11 +974,10 @@ js::FunctionToString(JSContext* cx, HandleFunction fun, bool lambdaParen)
 
     bool funIsMethodOrNonArrowLambda = (fun->isLambda() && !fun->isArrow()) || fun->isMethod() ||
                                         fun->isGetter() || fun->isSetter();
+    bool haveSource = fun->isInterpreted() && !fun->isSelfHostedBuiltin();
 
     
-    if (fun->isInterpreted() && !lambdaParen && funIsMethodOrNonArrowLambda &&
-        !fun->isSelfHostedBuiltin())
-    {
+    if (haveSource && !prettyPrint && funIsMethodOrNonArrowLambda) {
         if (!out.append("("))
             return nullptr;
     }
@@ -993,7 +995,6 @@ js::FunctionToString(JSContext* cx, HandleFunction fun, bool lambdaParen)
             return nullptr;
     }
 
-    bool haveSource = fun->isInterpreted() && !fun->isSelfHostedBuiltin();
     if (haveSource && !script->scriptSource()->hasSourceData() &&
         !JSScript::loadSource(cx, script->scriptSource(), &haveSource))
     {
@@ -1004,54 +1005,10 @@ js::FunctionToString(JSContext* cx, HandleFunction fun, bool lambdaParen)
         if (!src)
             return nullptr;
 
-        
-        
-        
-        
-        bool funCon = !fun->isArrow() &&
-                      script->sourceStart() == 0 &&
-                      script->sourceEnd() == script->scriptSource()->length() &&
-                      script->scriptSource()->argumentsNotIncluded();
-
-        
-        
-        MOZ_ASSERT_IF(funCon, !fun->isArrow());
-        MOZ_ASSERT_IF(funCon, !fun->isExprBody());
-        MOZ_ASSERT_IF(!funCon && !fun->isArrow(),
-                      src->length() > 0 && src->latin1OrTwoByteChar(0) == '(');
-
-        bool buildBody = funCon;
-        if (buildBody) {
-            
-            
-            
-            
-            if (!out.append("("))
-                return nullptr;
-
-            
-            MOZ_ASSERT(script->numArgs() == fun->nargs());
-
-            BindingIter bi(script);
-            for (unsigned i = 0; i < fun->nargs(); i++, bi++) {
-                MOZ_ASSERT(bi.argumentSlot() == i);
-                if (i && !out.append(", "))
-                    return nullptr;
-                if (i == unsigned(fun->nargs() - 1) && fun->hasRest() && !out.append("..."))
-                    return nullptr;
-                if (!out.append(bi.name()))
-                    return nullptr;
-            }
-            if (!out.append(") {\n"))
-                return nullptr;
-        }
         if (!out.append(src))
             return nullptr;
-        if (buildBody) {
-            if (!out.append("\n}"))
-                return nullptr;
-        }
-        if (!lambdaParen && funIsMethodOrNonArrowLambda) {
+
+        if (!prettyPrint && funIsMethodOrNonArrowLambda) {
             if (!out.append(")"))
                 return nullptr;
         }
@@ -1062,8 +1019,6 @@ js::FunctionToString(JSContext* cx, HandleFunction fun, bool lambdaParen)
         {
             return nullptr;
         }
-        if (!lambdaParen && fun->isLambda() && !fun->isArrow() && !out.append(")"))
-            return nullptr;
     } else {
         MOZ_ASSERT(!fun->isExprBody());
 
@@ -1605,17 +1560,6 @@ fun_isGenerator(JSContext* cx, unsigned argc, Value* vp)
     return true;
 }
 
-
-
-
-
-static bool
-OnBadFormal(JSContext* cx)
-{
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_BAD_FORMAL);
-    return false;
-}
-
 const JSFunctionSpec js::function_methods[] = {
 #if JS_HAS_TOSOURCE
     JS_FN(js_toSource_str,   fun_toSource,   0,0),
@@ -1628,6 +1572,7 @@ const JSFunctionSpec js::function_methods[] = {
     JS_SYM_FN(hasInstance, fun_symbolHasInstance, 1, JSPROP_READONLY | JSPROP_PERMANENT),
     JS_FS_END
 };
+
 
 static bool
 FunctionConstructor(JSContext* cx, const CallArgs& args, GeneratorKind generatorKind,
@@ -1665,82 +1610,65 @@ FunctionConstructor(JSContext* cx, const CallArgs& args, GeneratorKind generator
         introducerFilename = maybeScript->scriptSource()->introducerFilename();
 
     CompileOptions options(cx);
+    
     options.setMutedErrors(mutedErrors)
-           .setFileAndLine(filename, 1)
+           .setFileAndLine(filename, 0)
            .setNoScriptRval(false)
            .setIntroductionInfo(introducerFilename, introductionType, lineno, maybeScript, pcOffset);
 
-    Vector<char16_t> paramStr(cx);
-    RootedString bodyText(cx);
+    StringBuffer sb(cx);
 
-    if (args.length() == 0) {
-        bodyText = cx->names().empty;
-    } else {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+    if (!sb.append('('))
+        return false;
+
+    if (args.length() > 1) {
+        RootedString str(cx);
+
         
         unsigned n = args.length() - 1;
 
-        
-        
-        mozilla::CheckedInt<uint32_t> paramStrLen = 0;
-        RootedString str(cx);
         for (unsigned i = 0; i < n; i++) {
+            
             str = ToString<CanGC>(cx, args[i]);
             if (!str)
                 return false;
 
-            args[i].setString(str);
-            paramStrLen += str->length();
+            
+            if (!sb.append(str))
+                 return false;
+
+            if (i < args.length() - 2) {
+                
+                if (!sb.append(", "))
+                    return false;
+            }
         }
-
-        
-        if (n > 0)
-            paramStrLen += n - 1;
-
-        
-        if (!paramStrLen.isValid() || paramStrLen.value() > JSString::MAX_LENGTH) {
-            ReportAllocationOverflow(cx);
-            return false;
-        }
-
-        uint32_t paramsLen = paramStrLen.value();
-
-        
-        
-        MOZ_ASSERT(paramStr.length() == 0);
-        if (!paramStr.growBy(paramsLen)) {
-            ReportOutOfMemory(cx);
-            return false;
-        }
-
-        char16_t* cp = paramStr.begin();
-        for (unsigned i = 0; i < n; i++) {
-            JSLinearString* argLinear = args[i].toString()->ensureLinear(cx);
-            if (!argLinear)
-                return false;
-
-            CopyChars(cp, *argLinear);
-            cp += argLinear->length();
-
-            if (i + 1 < n)
-                *cp++ = ',';
-        }
-
-        MOZ_ASSERT(cp == paramStr.end());
-
-        bodyText = ToString(cx, args[n]);
-        if (!bodyText)
-            return false;
     }
+
+    
+    Maybe<uint32_t> parameterListEnd = Some(uint32_t(sb.length()));
+    MOZ_ASSERT(FunctionConstructorMedialSigils[0] == ')');
+
+    if (!sb.append(FunctionConstructorMedialSigils))
+        return false;
+
+    if (args.length() > 0) {
+        
+        RootedString body(cx, ToString<CanGC>(cx, args[args.length() - 1]));
+        if (!body || !sb.append(body))
+             return false;
+     }
+
+    if (!sb.append(FunctionConstructorFinalBrace))
+        return false;
+
+    
+    if (!sb.ensureTwoByteChars())
+        return false;
+
+    RootedString functionText(cx, sb.finishString());
+    if (!functionText)
+        return false;
 
     
 
@@ -1751,7 +1679,6 @@ FunctionConstructor(JSContext* cx, const CallArgs& args, GeneratorKind generator
     RootedAtom anonymousAtom(cx, cx->names().anonymous);
 
     
-    
     RootedObject proto(cx);
     if (!isAsync) {
         if (!GetPrototypeFromCallableConstructor(cx, args, &proto))
@@ -1761,13 +1688,12 @@ FunctionConstructor(JSContext* cx, const CallArgs& args, GeneratorKind generator
     
     
     if (!proto && isStarGenerator) {
-        
-        
         proto = GlobalObject::getOrCreateStarGeneratorFunctionPrototype(cx, global);
         if (!proto)
             return false;
     }
 
+    
     RootedObject globalLexical(cx, &global->lexicalEnvironment());
     AllocKind allocKind = isAsync ? AllocKind::FUNCTION_EXTENDED : AllocKind::FUNCTION;
     RootedFunction fun(cx, NewFunctionWithProto(cx, nullptr, 0,
@@ -1780,80 +1706,10 @@ FunctionConstructor(JSContext* cx, const CallArgs& args, GeneratorKind generator
     if (!JSFunction::setTypeForScriptedFunction(cx, fun))
         return false;
 
+    
     AutoStableStringChars stableChars(cx);
-    if (!stableChars.initTwoByte(cx, bodyText))
+    if (!stableChars.initTwoByte(cx, functionText))
         return false;
-
-    bool hasRest = false;
-
-    Rooted<PropertyNameVector> formals(cx, PropertyNameVector(cx));
-    if (args.length() > 1) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        AutoKeepAtoms keepAtoms(cx->perThreadData);
-        TokenStream ts(cx, options, paramStr.begin(), paramStr.length(),
-                        nullptr);
-        bool yieldIsValidName = ts.versionNumber() < JSVERSION_1_7 && !isStarGenerator;
-
-        
-        TokenKind tt;
-        if (!ts.getToken(&tt))
-            return false;
-        if (tt != TOK_EOF) {
-            while (true) {
-                
-                if (hasRest) {
-                    ts.reportError(JSMSG_PARAMETER_AFTER_REST);
-                    return false;
-                }
-
-                if (tt == TOK_YIELD && yieldIsValidName)
-                    tt = TOK_NAME;
-
-                if (tt != TOK_NAME) {
-                    if (tt == TOK_TRIPLEDOT) {
-                        hasRest = true;
-                        if (!ts.getToken(&tt))
-                            return false;
-                        if (tt == TOK_YIELD && yieldIsValidName)
-                            tt = TOK_NAME;
-                        if (tt != TOK_NAME) {
-                            ts.reportError(JSMSG_NO_REST_NAME);
-                            return false;
-                        }
-                    } else {
-                        return OnBadFormal(cx);
-                    }
-                }
-
-                if (!formals.append(ts.currentName()))
-                    return false;
-
-                
-                
-                if (!ts.getToken(&tt))
-                    return false;
-                if (tt == TOK_EOF)
-                    break;
-                if (tt != TOK_COMMA)
-                    return OnBadFormal(cx);
-                if (!ts.getToken(&tt))
-                    return false;
-            }
-        }
-    }
-
-    if (hasRest)
-        fun->setHasRest();
 
     mozilla::Range<const char16_t> chars = stableChars.twoByteRange();
     SourceBufferHolder::Ownership ownership = stableChars.maybeGiveOwnershipToCaller()
@@ -1862,11 +1718,13 @@ FunctionConstructor(JSContext* cx, const CallArgs& args, GeneratorKind generator
     bool ok;
     SourceBufferHolder srcBuf(chars.begin().get(), chars.length(), ownership);
     if (isAsync)
-        ok = frontend::CompileAsyncFunctionBody(cx, &fun, options, formals, srcBuf);
+        ok = frontend::CompileStandaloneAsyncFunction(cx, &fun, options, srcBuf, parameterListEnd);
     else if (isStarGenerator)
-        ok = frontend::CompileStarGeneratorBody(cx, &fun, options, formals, srcBuf);
+        ok = frontend::CompileStandaloneGenerator(cx, &fun, options, srcBuf, parameterListEnd);
     else
-        ok = frontend::CompileFunctionBody(cx, &fun, options, formals, srcBuf);
+        ok = frontend::CompileStandaloneFunction(cx, &fun, options, srcBuf, parameterListEnd);
+
+    
     args.rval().setObject(*fun);
     return ok;
 }

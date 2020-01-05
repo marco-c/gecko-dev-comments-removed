@@ -134,8 +134,7 @@ function testArgumentFunction(pattern, input, binding) {
 }
 
 
-
-assertThrowsInstanceOf(() => testDeclaration(testArgumentFunction), SyntaxError);
+testDeclaration(testArgumentFunction);
 
 function testThrow(pattern, input, binding) {
   binding = binding || 'rest';

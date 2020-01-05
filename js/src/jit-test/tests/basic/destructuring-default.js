@@ -84,10 +84,7 @@ function testArgumentFunction(pattern, input) {
     'return [a, b, c, d, e, f];'
   )(input);
 }
-
-
-
-assertThrowsInstanceOf(() => testAll(testArgumentFunction), SyntaxError);
+testAll(testArgumentFunction);
 
 function testThrow(pattern, input) {
   return new Function('input',

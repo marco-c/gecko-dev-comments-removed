@@ -7,6 +7,8 @@
 #ifndef frontend_BytecodeCompiler_h
 #define frontend_BytecodeCompiler_h
 
+#include "mozilla/Maybe.h"
+
 #include "NamespaceImports.h"
 
 #include "vm/Scope.h"
@@ -51,22 +53,36 @@ CompileModule(ExclusiveContext* cx, const ReadOnlyCompileOptions& options,
 MOZ_MUST_USE bool
 CompileLazyFunction(JSContext* cx, Handle<LazyScript*> lazy, const char16_t* chars, size_t length);
 
-MOZ_MUST_USE bool
-CompileFunctionBody(JSContext* cx, MutableHandleFunction fun,
-                    const ReadOnlyCompileOptions& options,
-                    Handle<PropertyNameVector> formals, JS::SourceBufferHolder& srcBuf,
-                    HandleScope enclosingScope);
+
+
+
+
+
+
+
+
+
+
 
 
 MOZ_MUST_USE bool
-CompileFunctionBody(JSContext* cx, MutableHandleFunction fun,
-                    const ReadOnlyCompileOptions& options,
-                    Handle<PropertyNameVector> formals, JS::SourceBufferHolder& srcBuf);
+CompileStandaloneFunction(JSContext* cx, MutableHandleFunction fun,
+                          const ReadOnlyCompileOptions& options,
+                          JS::SourceBufferHolder& srcBuf,
+                          mozilla::Maybe<uint32_t> parameterListEnd,
+                          HandleScope enclosingScope = nullptr);
 
 MOZ_MUST_USE bool
-CompileStarGeneratorBody(JSContext* cx, MutableHandleFunction fun,
-                         const ReadOnlyCompileOptions& options,
-                         Handle<PropertyNameVector> formals, JS::SourceBufferHolder& srcBuf);
+CompileStandaloneGenerator(JSContext* cx, MutableHandleFunction fun,
+                           const ReadOnlyCompileOptions& options,
+                           JS::SourceBufferHolder& srcBuf,
+                           mozilla::Maybe<uint32_t> parameterListEnd);
+
+MOZ_MUST_USE bool
+CompileStandaloneAsyncFunction(JSContext* cx, MutableHandleFunction fun,
+                               const ReadOnlyCompileOptions& options,
+                               JS::SourceBufferHolder& srcBuf,
+                               mozilla::Maybe<uint32_t> parameterListEnd);
 
 MOZ_MUST_USE bool
 CompileAsyncFunctionBody(JSContext* cx, MutableHandleFunction fun,
@@ -74,7 +90,8 @@ CompileAsyncFunctionBody(JSContext* cx, MutableHandleFunction fun,
                          Handle<PropertyNameVector> formals, JS::SourceBufferHolder& srcBuf);
 
 ScriptSourceObject*
-CreateScriptSourceObject(ExclusiveContext* cx, const ReadOnlyCompileOptions& options);
+CreateScriptSourceObject(ExclusiveContext* cx, const ReadOnlyCompileOptions& options,
+                         mozilla::Maybe<uint32_t> parameterListEnd = mozilla::Nothing());
 
 
 

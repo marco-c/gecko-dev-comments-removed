@@ -1052,10 +1052,10 @@ class Parser final : private JS::AutoGCRooter, public StrictModeGetter
 
     
     
-    Node standaloneFunctionBody(HandleFunction fun, HandleScope enclosingScope,
-                                Handle<PropertyNameVector> formals,
-                                GeneratorKind generatorKind, FunctionAsyncKind asyncKind,
-                                Directives inheritedDirectives, Directives* newDirectives);
+    Node standaloneFunction(HandleFunction fun, HandleScope enclosingScope,
+                            mozilla::Maybe<uint32_t> parameterListEnd,
+                            GeneratorKind generatorKind, FunctionAsyncKind asyncKind,
+                            Directives inheritedDirectives, Directives* newDirectives);
 
     
     
@@ -1071,7 +1071,8 @@ class Parser final : private JS::AutoGCRooter, public StrictModeGetter
     
     
     bool functionFormalParametersAndBody(InHandling inHandling, YieldHandling yieldHandling,
-                                         Node pn, FunctionSyntaxKind kind);
+                                         Node pn, FunctionSyntaxKind kind,
+                                         mozilla::Maybe<uint32_t> parameterListEnd = mozilla::Nothing());
 
     
     
