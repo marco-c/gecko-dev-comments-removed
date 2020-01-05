@@ -1595,9 +1595,8 @@ Sync11Service.prototype = {
       this.resetService();
 
       engines = [this.clientsEngine].concat(this.engineManager.getAll());
-    }
-    
-    else {
+    } else {
+      
       engines = this.engineManager.get(engines);
     }
 
@@ -1632,9 +1631,8 @@ Sync11Service.prototype = {
         engines.forEach(function(e) {
             this.clientsEngine.sendCommand("wipeEngine", [e]);
           }, this);
-      }
-      
-      else {
+      } else {
+        
         this.clientsEngine.sendCommand("wipeAll", []);
       }
 
@@ -1673,9 +1671,8 @@ Sync11Service.prototype = {
         this.resetService();
 
         engines = [this.clientsEngine].concat(this.engineManager.getAll());
-      }
-      
-      else {
+      } else {
+        
         engines = this.engineManager.get(engines);
       }
 

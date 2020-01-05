@@ -1047,17 +1047,15 @@ BookmarksTracker.prototype = {
     if (PlacesUtils.bookmarks.getIdForItemAt(PlacesUtils.mobileFolderId, 0) == -1) {
       if (mobile.length != 0)
         PlacesUtils.bookmarks.removeItem(mobile[0], SOURCE_SYNC);
-    }
-    
-    else if (mobile.length == 0) {
+    } else if (mobile.length == 0) {
+      
       let query = PlacesUtils.bookmarks.insertBookmark(all[0], queryURI, -1, title,  null, SOURCE_SYNC);
       PlacesUtils.annotations.setItemAnnotation(query, ORGANIZERQUERY_ANNO, MOBILE_ANNO, 0,
                                   PlacesUtils.annotations.EXPIRE_NEVER, SOURCE_SYNC);
       PlacesUtils.annotations.setItemAnnotation(query, PlacesUtils.EXCLUDE_FROM_BACKUP_ANNO, 1, 0,
                                   PlacesUtils.annotations.EXPIRE_NEVER, SOURCE_SYNC);
-    }
-    
-    else {
+    } else {
+      
       if (!PlacesUtils.bookmarks.getBookmarkURI(mobile[0]).equals(queryURI)) {
         PlacesUtils.bookmarks.changeBookmarkURI(mobile[0], queryURI,
                                                 SOURCE_SYNC);
