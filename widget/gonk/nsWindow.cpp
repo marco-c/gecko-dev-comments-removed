@@ -623,9 +623,7 @@ nsWindow::GetLayerManager(PLayerTransactionChild* aShadowManager,
     if (mLayerManager) {
         
         
-        if (mLayerManager->GetBackendType() == LayersBackend::LAYERS_CLIENT) {
-            ClientLayerManager* manager =
-                static_cast<ClientLayerManager*>(mLayerManager.get());
+        if (ClientLayerManager* manager = mLayerManager->AsClientLayerManager()) {
             uint32_t rotation = mScreen->EffectiveScreenRotation();
             manager->SetDefaultTargetConfiguration(mozilla::layers::BufferMode::BUFFER_NONE,
                                                    ScreenRotation(rotation));
