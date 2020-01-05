@@ -3032,7 +3032,11 @@ nsGlobalWindow::PreloadLocalStorage()
     return;
   }
 
-  storageManager->PrecacheStorage(principal);
+  
+  
+  if (principal->GetPrivateBrowsingId() == 0) {
+    storageManager->PrecacheStorage(principal);
+  }
 }
 
 void
@@ -10790,6 +10794,8 @@ nsGlobalWindow::GetSessionStorage(ErrorResult& aError)
       return nullptr;
     }
 
+    MOZ_DIAGNOSTIC_ASSERT((principal->GetPrivateBrowsingId() > 0) == IsPrivateBrowsing());
+
     nsCOMPtr<nsIDOMStorage> storage;
     aError = storageManager->CreateStorage(AsInner(), principal, documentURI,
                                            getter_AddRefs(storage));
@@ -10853,6 +10859,8 @@ nsGlobalWindow::GetLocalStorage(ErrorResult& aError)
         return nullptr;
       }
     }
+
+    MOZ_DIAGNOSTIC_ASSERT((principal->GetPrivateBrowsingId() > 0) == IsPrivateBrowsing());
 
     nsCOMPtr<nsIDOMStorage> storage;
     aError = storageManager->CreateStorage(AsInner(), principal, documentURI,
