@@ -890,12 +890,6 @@ gfxPlatform::Shutdown()
       GPUProcessManager::Shutdown();
     }
 
-    
-    
-    
-    delete mozilla::gfx::Factory::GetLogForwarder();
-    mozilla::gfx::Factory::SetLogForwarder(nullptr);
-
     gfx::Factory::ShutDown();
 
     delete gGfxPlatformPrefsLock;
