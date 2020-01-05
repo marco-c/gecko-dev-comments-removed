@@ -164,7 +164,7 @@ public:
 
 
 
-  void RecomputeDefaultComputedStyles();
+  void RebuildData();
 
   
 
