@@ -9331,11 +9331,13 @@ nsGlobalWindow::ReallyCloseWindow()
 
 
         
-        bool isTab = false;
+        bool isTab;
         if (rootWin == AsOuter() ||
-            !bwin || (bwin->IsTabContentWindow(GetOuterWindowInternal(),
-                                               &isTab), isTab))
+            !bwin ||
+            (NS_SUCCEEDED(bwin->IsTabContentWindow(GetOuterWindowInternal(),
+                                                   &isTab)) && isTab)) {
           treeOwnerAsWin->Destroy();
+        }
       }
     }
 

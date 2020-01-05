@@ -3,6 +3,7 @@
 
 
 
+
 #include "nsCOMPtr.h"
 #include "nsXMLContentSink.h"
 #include "nsIFragmentContentSink.h"
@@ -224,7 +225,7 @@ nsXMLFragmentContentSink::CloseElement(nsIContent* aContent)
 {
   
   if (mPreventScriptExecution &&
-      (aContent->IsHTMLElement(nsGkAtoms::script),
+      (aContent->IsHTMLElement(nsGkAtoms::script) ||
        aContent->IsSVGElement(nsGkAtoms::script))) {
     nsCOMPtr<nsIScriptElement> sele = do_QueryInterface(aContent);
     if (sele) {
