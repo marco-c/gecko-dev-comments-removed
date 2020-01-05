@@ -44,7 +44,7 @@ public:
   virtual void NotifyVSync() { };
 
   void SubmitFrame(VRLayerParent* aLayer,
-                   const int32_t& aInputFrameID,
+                   const uint32_t& aInputFrameID,
                    mozilla::layers::PTextureParent* aTexture,
                    const gfx::Rect& aLeftEyeRect,
                    const gfx::Rect& aRightEyeRect);
@@ -77,7 +77,7 @@ protected:
   
   static const int kMaxLatencyFrames = 100;
   VRHMDSensorState mLastSensorState[kMaxLatencyFrames];
-  int32_t mInputFrameID;
+  uint32_t mInputFrameID;
 
 private:
   VRDisplayInfo mLastUpdateDisplayInfo;
@@ -87,17 +87,13 @@ class VRControllerHost {
 public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(VRControllerHost)
 
-  const VRControllerInfo& GetControllerInfo() const;
-  void SetIndex(uint32_t aIndex);
-  uint32_t GetIndex();
+  const VRControllerInfo& GetControllerInfo() const { return mControllerInfo; }
 
 protected:
   explicit VRControllerHost(VRDeviceType aType);
   virtual ~VRControllerHost();
 
   VRControllerInfo mControllerInfo;
-  
-  uint32_t mIndex;
 };
 
 } 

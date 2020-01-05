@@ -68,7 +68,7 @@ VRDisplayHost::RemoveLayer(VRLayerParent *aLayer)
 #if defined(XP_WIN)
 
 void
-VRDisplayHost::SubmitFrame(VRLayerParent* aLayer, const int32_t& aInputFrameID,
+VRDisplayHost::SubmitFrame(VRLayerParent* aLayer, const uint32_t& aInputFrameID,
   PTextureParent* aTexture, const gfx::Rect& aLeftEyeRect,
   const gfx::Rect& aRightEyeRect)
 {
@@ -78,14 +78,9 @@ VRDisplayHost::SubmitFrame(VRLayerParent* aLayer, const int32_t& aInputFrameID,
   
   
 
-  int32_t inputFrameID = aInputFrameID;
+  uint32_t inputFrameID = aInputFrameID;
   if (inputFrameID == 0) {
     inputFrameID = mInputFrameID;
-  }
-  if (inputFrameID < 0) {
-    
-    
-    inputFrameID = 0;
   }
 
   VRHMDSensorState sensorState = mLastSensorState[inputFrameID % kMaxLatencyFrames];
@@ -126,7 +121,7 @@ VRDisplayHost::SubmitFrame(VRLayerParent* aLayer, const int32_t& aInputFrameID,
 #else
 
 void
-VRDisplayHost::SubmitFrame(VRLayerParent* aLayer, const int32_t& aInputFrameID,
+VRDisplayHost::SubmitFrame(VRLayerParent* aLayer, const uint32_t& aInputFrameID,
   PTextureParent* aTexture, const gfx::Rect& aLeftEyeRect,
   const gfx::Rect& aRightEyeRect)
 {
@@ -155,22 +150,4 @@ VRControllerHost::VRControllerHost(VRDeviceType aType)
 VRControllerHost::~VRControllerHost()
 {
   MOZ_COUNT_DTOR(VRControllerHost);
-}
-
-const VRControllerInfo&
-VRControllerHost::GetControllerInfo() const
-{
-  return mControllerInfo;
-}
-
-void
-VRControllerHost::SetIndex(uint32_t aIndex)
-{
-  mIndex = aIndex;
-}
-
-uint32_t
-VRControllerHost::GetIndex()
-{
-  return mIndex;
 }
