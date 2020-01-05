@@ -101,7 +101,7 @@ void OverrideBaseCallChecker::check(
     
     for (auto BaseMethod : MethodsList) {
       std::string QualName;
-      llvm::raw_string_ostream OS(QualName);
+      raw_string_ostream OS(QualName);
       BaseMethod->printQualifiedName(OS);
 
       diag(Method->getLocation(), Error, DiagnosticIDs::Error)

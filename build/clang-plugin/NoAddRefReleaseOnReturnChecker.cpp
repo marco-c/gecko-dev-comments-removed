@@ -7,34 +7,26 @@
 
 void NoAddRefReleaseOnReturnChecker::registerMatchers(MatchFinder* AstMatcher) {
   
-  AstMatcher->addMatcher(
-      callExpr(
-          callee(functionDecl(hasNoAddRefReleaseOnReturnAttr()).bind("func")),
-          hasParent(memberExpr(isAddRefOrRelease(), hasParent(callExpr()))
-                        .bind("member")))
-          .bind("node"),
-      this);
-  
-  
-  AstMatcher->addMatcher(
-      callExpr(
-          callee(functionDecl(hasNoAddRefReleaseOnReturnAttr()).bind("func")),
-          hasParent(castExpr(
-              hasParent(memberExpr(isAddRefOrRelease(), hasParent(callExpr()))
-                            .bind("member")))))
-          .bind("node"),
-      this);
+  AstMatcher->addMatcher(memberExpr(isAddRefOrRelease(), hasParent(callExpr())).bind("member"),
+                         this);
 }
 
 void NoAddRefReleaseOnReturnChecker::check(
     const MatchFinder::MatchResult &Result) {
-  const Stmt *Node = Result.Nodes.getNodeAs<Stmt>("node");
-  const FunctionDecl *Func = Result.Nodes.getNodeAs<FunctionDecl>("func");
   const MemberExpr *Member = Result.Nodes.getNodeAs<MemberExpr>("member");
-  const CXXMethodDecl *Method =
-      dyn_cast<CXXMethodDecl>(Member->getMemberDecl());
+  const Expr *Base = IgnoreTrivials(Member->getBase());
 
-  diag(Node->getLocStart(),
-       "%1 cannot be called on the return value of %0",
-       DiagnosticIDs::Error) << Func << Method;
+  
+  
+  if (auto *Call = dyn_cast<CallExpr>(Base)) {
+    if (auto *Callee = Call->getDirectCallee()) {
+      if (hasCustomAnnotation(Callee, "moz_no_addref_release_on_return")) {
+        diag(Call->getLocStart(),
+             "%1 cannot be called on the return value of %0",
+             DiagnosticIDs::Error)
+          << Callee
+          << dyn_cast<CXXMethodDecl>(Member->getMemberDecl());
+      }
+    }
+  }
 }
