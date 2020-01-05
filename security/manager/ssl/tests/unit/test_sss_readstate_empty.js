@@ -10,15 +10,18 @@ var gSSService = null;
 
 function checkStateRead(aSubject, aTopic, aData) {
   
-  ok(!gSSService.isSecureHost(Ci.nsISiteSecurityService.HEADER_HSTS,
-                              "nonexistent.example.com", 0));
+  ok(!gSSService.isSecureURI(
+       Ci.nsISiteSecurityService.HEADER_HSTS,
+       Services.io.newURI("https://nonexistent.example.com"), 0));
   
-  ok(gSSService.isSecureHost(Ci.nsISiteSecurityService.HEADER_HSTS,
-                             "bugzilla.mozilla.org", 0));
+  ok(gSSService.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS,
+                            Services.io.newURI("https://bugzilla.mozilla.org"),
+                            0));
   
   
-  ok(!gSSService.isSecureHost(Ci.nsISiteSecurityService.HEADER_HSTS,
-                              "notexpired.example.com", 0));
+  ok(!gSSService.isSecureURI(
+       Ci.nsISiteSecurityService.HEADER_HSTS,
+       Services.io.newURI("https://notexpired.example.com"), 0));
   do_test_finished();
 }
 

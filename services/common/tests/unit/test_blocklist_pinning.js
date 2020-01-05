@@ -92,10 +92,16 @@ add_task(function* test_something() {
               .getService(Ci.nsISiteSecurityService);
 
   
-  ok(!sss.isSecureHost(sss.HEADER_HPKP, "one.example.com", 0));
-  ok(!sss.isSecureHost(sss.HEADER_HPKP, "two.example.com", 0));
-  ok(!sss.isSecureHost(sss.HEADER_HPKP, "three.example.com", 0));
-  ok(!sss.isSecureHost(sss.HEADER_HSTS, "five.example.com", 0));
+  ok(!sss.isSecureURI(sss.HEADER_HPKP,
+                      Services.io.newURI("https://one.example.com"), 0));
+  ok(!sss.isSecureURI(sss.HEADER_HPKP,
+                      Services.io.newURI("https://two.example.com"), 0));
+  ok(!sss.isSecureURI(sss.HEADER_HPKP,
+                      Services.io.newURI("https://three.example.com"), 0));
+  ok(!sss.isSecureURI(sss.HEADER_HSTS,
+                      Services.io.newURI("https://four.example.com"), 0));
+  ok(!sss.isSecureURI(sss.HEADER_HSTS,
+                      Services.io.newURI("https://five.example.com"), 0));
 
   
   yield PinningPreloadClient.maybeSync(2000, Date.now());
@@ -109,7 +115,8 @@ add_task(function* test_something() {
   do_check_eq(list.data.length, 1);
 
   
-  ok(sss.isSecureHost(sss.HEADER_HPKP, "one.example.com", 0));
+  ok(sss.isSecureURI(sss.HEADER_HPKP,
+                     Services.io.newURI("https://one.example.com"), 0));
 
   
   yield PinningPreloadClient.maybeSync(4000, Date.now());
@@ -122,12 +129,15 @@ add_task(function* test_something() {
   yield connection.close();
 
   
-  ok(sss.isSecureHost(sss.HEADER_HPKP, "two.example.com", 0));
-  ok(sss.isSecureHost(sss.HEADER_HPKP, "three.example.com", 0));
+  ok(sss.isSecureURI(sss.HEADER_HPKP,
+                     Services.io.newURI("https://two.example.com"), 0));
+  ok(sss.isSecureURI(sss.HEADER_HPKP,
+                     Services.io.newURI("https://three.example.com"), 0));
 
   
   
-  ok(!sss.isSecureHost(sss.HEADER_HPKP, "four.example.com", 0));
+  ok(!sss.isSecureURI(sss.HEADER_HPKP,
+                      Services.io.newURI("https://four.example.com"), 0));
 
   
   
@@ -146,9 +156,12 @@ add_task(function* test_something() {
   do_check_neq(newValue, 0);
 
   
-  ok(sss.isSecureHost(sss.HEADER_HSTS, "five.example.com", 0));
+  ok(sss.isSecureURI(sss.HEADER_HSTS,
+                     Services.io.newURI("https://five.example.com"), 0));
   
-  ok(!sss.isSecureHost(sss.HEADER_HSTS, "subdomain.five.example.com", 0));
+  ok(!sss.isSecureURI(sss.HEADER_HSTS,
+                      Services.io.newURI("https://subdomain.five.example.com"),
+                      0));
 
   
   
@@ -159,7 +172,9 @@ add_task(function* test_something() {
 
   
   
-  ok(sss.isSecureHost(sss.HEADER_HSTS, "subdomain.five.example.com", 0));
+  ok(sss.isSecureURI(sss.HEADER_HSTS,
+                     Services.io.newURI("https://subdomain.five.example.com"),
+                     0));
 });
 
 function run_test() {
