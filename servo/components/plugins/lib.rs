@@ -37,11 +37,11 @@ pub mod jstraceable;
 
 pub mod heap_size;
 
-pub mod reflector;
 pub mod lints;
+pub mod reflector;
 
-pub mod utils;
 pub mod casing;
+pub mod utils;
 
 #[plugin_registrar]
 pub fn plugin_registrar(reg: &mut Registry) {
