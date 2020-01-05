@@ -476,10 +476,7 @@ public:
     
 
 
-
-
-
-    nsSVGClipPathFrame *GetClipPathFrame(bool* aOK);
+    nsSVGClipPathFrame* GetClipPathFrame();
 
     
 
@@ -499,6 +496,19 @@ public:
 
     bool HasInvalidEffects() {
       return !HasNoOrValidEffects();
+    }
+
+    
+
+
+
+    bool HasNoOrValidClipPath();
+
+    
+
+
+    bool HasInvalidClipPath() {
+      return !HasNoOrValidClipPath();
     }
 
     bool HasValidFilter() {
