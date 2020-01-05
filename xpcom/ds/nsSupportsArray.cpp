@@ -13,73 +13,6 @@
 #include "nsIObjectInputStream.h"
 #include "nsIObjectOutputStream.h"
 
-#if DEBUG_SUPPORTSARRAY
-#define MAXSUPPORTS 20
-
-class SupportsStats
-{
-public:
-  SupportsStats();
-  ~SupportsStats();
-
-};
-
-static int sizesUsed; 
-static int sizesAlloced[MAXSUPPORTS]; 
-static int NumberOfSize[MAXSUPPORTS]; 
-static int AllocedOfSize[MAXSUPPORTS]; 
-static int GrowInPlace[MAXSUPPORTS];
-
-
-static int MaxElements[3000];
-
-
-#define ADD_TO_STATS(x,size) do {int i; for (i = 0; i < sizesUsed; i++) \
-                                  { \
-                                    if (sizesAlloced[i] == (int)(size)) \
-                                    { ((x)[i])++; break; } \
-                                  } \
-                                  if (i >= sizesUsed && sizesUsed < MAXSUPPORTS) \
-                                  { sizesAlloced[sizesUsed] = (size); \
-                                    ((x)[sizesUsed++])++; break; \
-                                  } \
-                                } while (0);
-
-#define SUB_FROM_STATS(x,size) do {int i; for (i = 0; i < sizesUsed; i++) \
-                                    { \
-                                      if (sizesAlloced[i] == (int)(size)) \
-                                      { ((x)[i])--; break; } \
-                                    } \
-                                  } while (0);
-
-
-SupportsStats::SupportsStats()
-{
-  sizesUsed = 1;
-  sizesAlloced[0] = 0;
-}
-
-SupportsStats::~SupportsStats()
-{
-  int i;
-  for (i = 0; i < sizesUsed; ++i) {
-    printf("Size %d:\n", sizesAlloced[i]);
-    printf("\tNumber of SupportsArrays this size (max):     %d\n", NumberOfSize[i]);
-    printf("\tNumber of allocations this size (total):  %d\n", AllocedOfSize[i]);
-    printf("\tNumber of GrowsInPlace this size (total): %d\n", GrowInPlace[i]);
-  }
-  printf("Max Size of SupportsArray:\n");
-  for (i = 0; i < (int)(sizeof(MaxElements) / sizeof(MaxElements[0])); ++i) {
-    if (MaxElements[i]) {
-      printf("\t%d: %d\n", i, MaxElements[i]);
-    }
-  }
-}
-
-
-SupportsStats gSupportsStats;
-#endif
-
 nsresult
 nsQueryElementAt::operator()(const nsIID& aIID, void** aResult) const
 {
@@ -99,12 +32,6 @@ nsSupportsArray::nsSupportsArray()
   mArray = mAutoArray;
   mArraySize = kAutoArraySize;
   mCount = 0;
-#if DEBUG_SUPPORTSARRAY
-  mMaxCount = 0;
-  mMaxSize = 0;
-  ADD_TO_STATS(NumberOfSize, kAutoArraySize * sizeof(mArray[0]));
-  MaxElements[0]++;
-#endif
 }
 
 nsSupportsArray::~nsSupportsArray()
@@ -155,19 +82,6 @@ nsSupportsArray::GrowArrayBy(uint32_t aGrowBy)
   mArray = new nsISupports*[newCount.value()];
   mArraySize = newCount.value();
 
-#if DEBUG_SUPPORTSARRAY
-  if (oldArray == mArray) { 
-    ADD_TO_STATS(GrowInPlace, mCount);
-  }
-  ADD_TO_STATS(AllocedOfSize, mArraySize * sizeof(mArray[0]));
-  if (mArraySize > mMaxSize) {
-    ADD_TO_STATS(NumberOfSize, mArraySize * sizeof(mArray[0]));
-    if (oldArray != &(mAutoArray[0])) {
-      SUB_FROM_STATS(NumberOfSize, mCount * sizeof(mArray[0]));
-    }
-    mMaxSize = mArraySize;
-  }
-#endif
   if (oldArray) {                   
     if (0 < mCount) {
       ::memcpy(mArray, oldArray, mCount * sizeof(nsISupports*));
@@ -389,14 +303,6 @@ nsSupportsArray::InsertElementAt(nsISupports* aElement, uint32_t aIndex)
     NS_IF_ADDREF(aElement);
     mCount++;
 
-#if DEBUG_SUPPORTSARRAY
-    if (mCount > mMaxCount &&
-        mCount < (int32_t)(sizeof(MaxElements) / sizeof(MaxElements[0]))) {
-      MaxElements[mCount]++;
-      MaxElements[mMaxCount]--;
-      mMaxCount = mCount;
-    }
-#endif
     return true;
   }
   return false;
@@ -500,9 +406,6 @@ nsSupportsArray::Clear(void)
 NS_IMETHODIMP
 nsSupportsArray::Compact(void)
 {
-#if DEBUG_SUPPORTSARRAY
-  uint32_t oldArraySize = mArraySize;
-#endif
   if ((mArraySize != mCount) && (kAutoArraySize < mArraySize)) {
     nsISupports** oldArray = mArray;
     if (mCount <= kAutoArraySize) {
@@ -516,15 +419,7 @@ nsSupportsArray::Compact(void)
       }
       mArraySize = mCount;
     }
-#if DEBUG_SUPPORTSARRAY
-    if (oldArray == mArray &&
-        oldArray != &(mAutoArray[0])) { 
-      ADD_TO_STATS(GrowInPlace, oldArraySize);
-    }
-    if (oldArray != &(mAutoArray[0])) {
-      ADD_TO_STATS(AllocedOfSize, mArraySize * sizeof(mArray[0]));
-    }
-#endif
+
     ::memcpy(mArray, oldArray, mCount * sizeof(nsISupports*));
     delete[] oldArray;
   }
@@ -534,9 +429,6 @@ nsSupportsArray::Compact(void)
 NS_IMETHODIMP_(bool)
 nsSupportsArray::SizeTo(int32_t aSize)
 {
-#if DEBUG_SUPPORTSARRAY
-  uint32_t oldArraySize = mArraySize;
-#endif
   NS_ASSERTION(aSize >= 0, "negative aSize!");
 
   
@@ -557,15 +449,7 @@ nsSupportsArray::SizeTo(int32_t aSize)
     }
     mArraySize = aSize;
   }
-#if DEBUG_SUPPORTSARRAY
-  if (oldArray == mArray &&
-      oldArray != &(mAutoArray[0])) { 
-    ADD_TO_STATS(GrowInPlace, oldArraySize);
-  }
-  if (oldArray != &(mAutoArray[0])) {
-    ADD_TO_STATS(AllocedOfSize, mArraySize * sizeof(mArray[0]));
-  }
-#endif
+
   ::memcpy(mArray, oldArray, mCount * sizeof(nsISupports*));
   if (oldArray != mAutoArray) {
     delete[] oldArray;
