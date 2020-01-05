@@ -35,7 +35,7 @@ def loader(kind, path, config, params, loaded_tasks):
     test_platforms = expand_tests(test_sets_cfg, test_platforms)
 
     
-    test_descriptions = load_yaml(path, 'tests.yml')
+    test_descriptions = load_yaml(path, 'tests.yml', enforce_order=True)
 
     
     for test_platform_name, test_platform in test_platforms.iteritems():
