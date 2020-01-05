@@ -130,6 +130,7 @@ enum class LogReason : int {
   UnbalancedClipStack,
   ProcessingError,
   InvalidDrawTarget,
+  NativeFontResourceNotFound,
   
   MustBeLessThanThis = 101,
 };
