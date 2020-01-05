@@ -1220,6 +1220,9 @@ pref("privacy.trackingprotection.pbmode.enabled",  true);
 
 pref("privacy.trackingprotection.annotate_channels",  false);
 
+
+pref("privacy.trackingprotection.lower_network_priority",  false);
+
 pref("dom.event.contextmenu.enabled",       true);
 pref("dom.event.clipboardevents.enabled",   true);
 #if defined(XP_WIN) && !defined(RELEASE_OR_BETA) || defined(MOZ_WIDGET_GTK) && !defined(RELEASE_OR_BETA)

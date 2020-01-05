@@ -73,6 +73,7 @@ var tests =[
   
   function setupNormalPriority() {
     Services.prefs.setBoolPref("privacy.trackingprotection.annotate_channels", false);
+    Services.prefs.setBoolPref("privacy.trackingprotection.lower_network_priority", false);
     testPriorityMap = [
       {
         path: origin + "/evil.css",
@@ -90,6 +91,7 @@ var tests =[
   
   function setupLowestPriority() {
     Services.prefs.setBoolPref("privacy.trackingprotection.annotate_channels", true);
+    Services.prefs.setBoolPref("privacy.trackingprotection.lower_network_priority", true);
     testPriorityMap = [
       {
         path: origin + "/evil.css",
