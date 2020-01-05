@@ -2,6 +2,8 @@
 
 
 
+use ipc_channel::ipc::{self, IpcSender};
+use ipc_channel::router::ROUTER;
 use net_traits::image::base::{Image, load_from_memory};
 use net_traits::image_cache_task::{ImageState, ImageCacheTask, ImageCacheChan, ImageCacheCommand};
 use net_traits::image_cache_task::{ImageCacheResult, ImageResponse, UsePlaceholder};
@@ -69,11 +71,11 @@ impl CompletedLoad {
 
 struct ImageListener {
     sender: ImageCacheChan,
-    responder: Option<Box<ImageResponder>>,
+    responder: Option<ImageResponder>,
 }
 
 impl ImageListener {
-    fn new(sender: ImageCacheChan, responder: Option<Box<ImageResponder>>) -> ImageListener {
+    fn new(sender: ImageCacheChan, responder: Option<ImageResponder>) -> ImageListener {
         ImageListener {
             sender: sender,
             responder: responder,
@@ -153,7 +155,7 @@ enum SelectResult {
 
 impl ImageCache {
     fn run(&mut self) {
-        let mut exit_sender: Option<Sender<()>> = None;
+        let mut exit_sender: Option<IpcSender<()>> = None;
 
         loop {
             let result = {
@@ -203,7 +205,7 @@ impl ImageCache {
     }
 
     
-    fn handle_cmd(&mut self, cmd: ImageCacheCommand) -> Option<Sender<()>> {
+    fn handle_cmd(&mut self, cmd: ImageCacheCommand) -> Option<IpcSender<()>> {
         match cmd {
             ImageCacheCommand::Exit(sender) => {
                 return Some(sender);
@@ -303,7 +305,7 @@ impl ImageCache {
     fn request_image(&mut self,
                      url: Url,
                      result_chan: ImageCacheChan,
-                     responder: Option<Box<ImageResponder>>) {
+                     responder: Option<ImageResponder>) {
         let image_listener = ImageListener::new(result_chan, responder);
 
         
@@ -343,7 +345,7 @@ impl ImageCache {
 
 
 pub fn new_image_cache_task(resource_task: ResourceTask) -> ImageCacheTask {
-    let (cmd_sender, cmd_receiver) = channel();
+    let (ipc_command_sender, ipc_command_receiver) = ipc::channel().unwrap();
     let (progress_sender, progress_receiver) = channel();
     let (decoder_sender, decoder_receiver) = channel();
 
@@ -370,6 +372,9 @@ pub fn new_image_cache_task(resource_task: ResourceTask) -> ImageCacheTask {
             }
         };
 
+        
+        let cmd_receiver = ROUTER.route_ipc_receiver_to_new_mpsc_receiver(ipc_command_receiver);
+
         let mut cache = ImageCache {
             cmd_receiver: cmd_receiver,
             progress_sender: progress_sender,
@@ -386,6 +391,6 @@ pub fn new_image_cache_task(resource_task: ResourceTask) -> ImageCacheTask {
         cache.run();
     });
 
-    ImageCacheTask::new(cmd_sender)
+    ImageCacheTask::new(ipc_command_sender)
 }
 

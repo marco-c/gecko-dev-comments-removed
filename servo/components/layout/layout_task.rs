@@ -1,9 +1,9 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-//! The layout task. Performs layout on the DOM, builds display lists and sends them to be
-//! painted.
+
+
+
+
+
 
 #![allow(unsafe_code)]
 
@@ -68,7 +68,6 @@ use std::mem::transmute;
 use std::ops::{Deref, DerefMut};
 use std::sync::mpsc::{channel, Sender, Receiver, Select};
 use std::sync::{Arc, Mutex, MutexGuard};
-use std::thread;
 use style::computed_values::{filter, mix_blend_mode};
 use style::media_queries::{MediaType, MediaQueryList, Device};
 use style::selector_matching::Stylist;
@@ -83,132 +82,132 @@ use util::task::spawn_named_with_send_on_failure;
 use util::task_state;
 use util::workqueue::WorkQueue;
 
-/// The number of screens of data we're allowed to generate display lists for in each direction.
+
 pub const DISPLAY_PORT_SIZE_FACTOR: i32 = 8;
 
-/// The number of screens we have to traverse before we decide to generate new display lists.
+
 const DISPLAY_PORT_THRESHOLD_SIZE_FACTOR: i32 = 4;
 
-/// Mutable data belonging to the LayoutTask.
-///
-/// This needs to be protected by a mutex so we can do fast RPCs.
+
+
+
 pub struct LayoutTaskData {
-    /// The root of the flow tree.
+    
     pub root_flow: Option<FlowRef>,
 
-    /// The image cache.
+    
     pub image_cache_task: ImageCacheTask,
 
-    /// The channel on which messages can be sent to the constellation.
+    
     pub constellation_chan: ConstellationChan,
 
-    /// The size of the viewport.
+    
     pub screen_size: Size2D<Au>,
 
-    /// The root stacking context.
+    
     pub stacking_context: Option<Arc<StackingContext>>,
 
-    /// Performs CSS selector matching and style resolution.
+    
     pub stylist: Box<Stylist>,
 
-    /// The workers that we use for parallel operation.
+    
     pub parallel_traversal: Option<WorkQueue<SharedLayoutContext, WorkQueueData>>,
 
-    /// The dirty rect. Used during display list construction.
+    
     pub dirty: Rect<Au>,
 
-    /// Starts at zero, and increased by one every time a layout completes.
-    /// This can be used to easily check for invalid stale data.
+    
+    
     pub generation: u32,
 
-    /// A queued response for the union of the content boxes of a node.
+    
     pub content_box_response: Rect<Au>,
 
-    /// A queued response for the content boxes of a node.
+    
     pub content_boxes_response: Vec<Rect<Au>>,
 
-    /// The list of currently-running animations.
+    
     pub running_animations: Vec<Animation>,
 
-    /// Receives newly-discovered animations.
+    
     pub new_animations_receiver: Receiver<Animation>,
 
-    /// A channel on which new animations that have been triggered by style recalculation can be
-    /// sent.
+    
+    
     pub new_animations_sender: Sender<Animation>,
 
-    /// A counter for epoch messages
+    
     epoch: Epoch,
 
-    /// The position and size of the visible rect for each layer. We do not build display lists
-    /// for any areas more than `DISPLAY_PORT_SIZE_FACTOR` screens away from this area.
+    
+    
     pub visible_rects: Arc<HashMap<LayerId, Rect<Au>, DefaultState<FnvHasher>>>,
 }
 
-/// Information needed by the layout task.
+
 pub struct LayoutTask {
-    /// The ID of the pipeline that we belong to.
+    
     pub id: PipelineId,
 
-    /// The URL of the pipeline that we belong to.
+    
     pub url: Url,
 
-    /// Is the current reflow of an iframe, as opposed to a root window?
+    
     pub is_iframe: bool,
 
-    /// The port on which we receive messages from the script task.
+    
     pub port: Receiver<Msg>,
 
-    /// The port on which we receive messages from the constellation.
+    
     pub pipeline_port: Receiver<LayoutControlMsg>,
 
-    /// The port on which we receive messages from the image cache
+    
     image_cache_receiver: Receiver<ImageCacheResult>,
 
-    /// The channel on which the image cache can send messages to ourself.
+    
     image_cache_sender: ImageCacheChan,
 
-    /// The channel on which we or others can send messages to ourselves.
+    
     pub chan: LayoutChan,
 
-    /// The channel on which messages can be sent to the constellation.
+    
     pub constellation_chan: ConstellationChan,
 
-    /// The channel on which messages can be sent to the script task.
+    
     pub script_chan: ScriptControlChan,
 
-    /// The channel on which messages can be sent to the painting task.
+    
     pub paint_chan: PaintChan,
 
-    /// The channel on which messages can be sent to the time profiler.
+    
     pub time_profiler_chan: time::ProfilerChan,
 
-    /// The channel on which messages can be sent to the memory profiler.
+    
     pub mem_profiler_chan: mem::ProfilerChan,
 
-    /// The channel on which messages can be sent to the image cache.
+    
     pub image_cache_task: ImageCacheTask,
 
-    /// Public interface to the font cache task.
+    
     pub font_cache_task: FontCacheTask,
 
-    /// Is this the first reflow in this LayoutTask?
+    
     pub first_reflow: Cell<bool>,
 
-    /// To receive a canvas renderer associated to a layer, this message is propagated
-    /// to the paint chan
+    
+    
     pub canvas_layers_receiver: Receiver<(LayerId, IpcSender<CanvasMsg>)>,
     pub canvas_layers_sender: Sender<(LayerId, IpcSender<CanvasMsg>)>,
 
-    /// A mutex to allow for fast, read-only RPC of layout's internal data
-    /// structures, while still letting the LayoutTask modify them.
-    ///
-    /// All the other elements of this struct are read-only.
+    
+    
+    
+    
     pub rw_data: Arc<Mutex<LayoutTaskData>>,
 }
 
 impl LayoutTaskFactory for LayoutTask {
-    /// Spawns a new layout task.
+    
     fn create(_phantom: Option<&mut LayoutTask>,
               id: PipelineId,
               url: Url,
@@ -226,7 +225,7 @@ impl LayoutTaskFactory for LayoutTask {
               shutdown_chan: Sender<()>) {
         let ConstellationChan(con_chan) = constellation_chan.clone();
         spawn_named_with_send_on_failure(format!("LayoutTask {:?}", id), task_state::LAYOUT, move || {
-            { // Ensures layout task is destroyed before we send shutdown message
+            { 
                 let sender = chan.sender();
                 let layout_chan = LayoutChan(sender);
                 let layout = LayoutTask::new(id,
@@ -243,7 +242,7 @@ impl LayoutTaskFactory for LayoutTask {
                                              time_profiler_chan,
                                              mem_profiler_chan.clone());
 
-                // Create a memory reporter thread.
+                
                 let reporter_name = format!("layout-reporter-{}", id.0);
                 let (reporter_sender, reporter_receiver) =
                     ipc::channel::<ReporterRequest>().unwrap();
@@ -327,16 +326,15 @@ impl LayoutTask {
 
         // Create the channel on which new animations can be sent.
         let (new_animations_sender, new_animations_receiver) = channel();
-        let (image_cache_sender, image_cache_receiver) = channel();
         let (canvas_layers_sender, canvas_layers_receiver) = channel();
 
-        // Start a thread to proxy IPC messages from the layout thread to us.
-        let (pipeline_sender, pipeline_receiver) = channel();
-        thread::spawn(move || {
-            while let Ok(message) = pipeline_port.recv() {
-                pipeline_sender.send(message).unwrap()
-            }
-        });
+        // Proxy IPC messages from the pipeline to the layout thread.
+        let pipeline_receiver = ROUTER.route_ipc_receiver_to_new_mpsc_receiver(pipeline_port);
+
+        // Ask the router to proxy IPC messages from the image cache task to the layout thread.
+        let (ipc_image_cache_sender, ipc_image_cache_receiver) = ipc::channel().unwrap();
+        let image_cache_receiver =
+            ROUTER.route_ipc_receiver_to_new_mpsc_receiver(ipc_image_cache_receiver);
 
         LayoutTask {
             id: id,
@@ -354,7 +352,7 @@ impl LayoutTask {
             font_cache_task: font_cache_task,
             first_reflow: Cell::new(true),
             image_cache_receiver: image_cache_receiver,
-            image_cache_sender: ImageCacheChan(image_cache_sender),
+            image_cache_sender: ImageCacheChan(ipc_image_cache_sender),
             canvas_layers_receiver: canvas_layers_receiver,
             canvas_layers_sender: canvas_layers_sender,
             rw_data: Arc::new(Mutex::new(
@@ -1408,9 +1406,9 @@ impl FragmentBorderBoxIterator for CollectingFragmentBorderBoxIterator {
 // element (http://dev.w3.org/csswg/css-backgrounds/#special-backgrounds) if
 // it is non-transparent. The phrase in the spec "If the canvas background
 // is not opaque, what shows through is UA-dependent." is handled by rust-layers
-// clearing the frame buffer to white. This ensures that setting a background
-// color on an iframe element, while the iframe content itself has a default
-// transparent background color is handled correctly.
+
+
+
 fn get_root_flow_background_color(flow: &mut Flow) -> AzColor {
     if !flow.is_block_like() {
         return color::transparent()

@@ -3,20 +3,33 @@
 
 
 use image::base::Image;
+use ipc_channel::ipc::{self, IpcSender};
 use url::Url;
 use std::sync::Arc;
-use std::sync::mpsc::{channel, Sender};
 
 
 
 
 
-pub trait ImageResponder : Send {
-    fn respond(&self, ImageResponse);
+#[derive(Deserialize, Serialize)]
+pub struct ImageResponder {
+    sender: IpcSender<ImageResponse>,
+}
+
+impl ImageResponder {
+    pub fn new(sender: IpcSender<ImageResponse>) -> ImageResponder {
+        ImageResponder {
+            sender: sender,
+        }
+    }
+
+    pub fn respond(&self, response: ImageResponse) {
+        self.sender.send(response).unwrap()
+    }
 }
 
 
-#[derive(PartialEq, Copy, Clone)]
+#[derive(PartialEq, Copy, Clone, Deserialize, Serialize)]
 pub enum ImageState {
     Pending,
     LoadError,
@@ -24,7 +37,7 @@ pub enum ImageState {
 }
 
 
-#[derive(Clone)]
+#[derive(Clone, Deserialize, Serialize)]
 pub enum ImageResponse {
     
     Loaded(Arc<Image>),
@@ -35,34 +48,36 @@ pub enum ImageResponse {
 }
 
 
-#[derive(Clone)]
-pub struct ImageCacheChan(pub Sender<ImageCacheResult>);
+#[derive(Clone, Deserialize, Serialize)]
+pub struct ImageCacheChan(pub IpcSender<ImageCacheResult>);
 
 
 
+#[derive(Deserialize, Serialize)]
 pub struct ImageCacheResult {
-    pub responder: Option<Box<ImageResponder>>,
+    pub responder: Option<ImageResponder>,
     pub image_response: ImageResponse,
 }
 
 
+#[derive(Deserialize, Serialize)]
 pub enum ImageCacheCommand {
     
     
     
-    RequestImage(Url, ImageCacheChan, Option<Box<ImageResponder>>),
+    RequestImage(Url, ImageCacheChan, Option<ImageResponder>),
 
     
     
     
     
-    GetImageIfAvailable(Url, UsePlaceholder, Sender<Result<Arc<Image>, ImageState>>),
+    GetImageIfAvailable(Url, UsePlaceholder, IpcSender<Result<Arc<Image>, ImageState>>),
 
     
-    Exit(Sender<()>),
+    Exit(IpcSender<()>),
 }
 
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, PartialEq, Deserialize, Serialize)]
 pub enum UsePlaceholder {
     No,
     Yes,
@@ -70,16 +85,16 @@ pub enum UsePlaceholder {
 
 
 
-#[derive(Clone)]
+#[derive(Clone, Deserialize, Serialize)]
 pub struct ImageCacheTask {
-    chan: Sender<ImageCacheCommand>,
+    chan: IpcSender<ImageCacheCommand>,
 }
 
 
 impl ImageCacheTask {
 
     
-    pub fn new(chan: Sender<ImageCacheCommand>) -> ImageCacheTask {
+    pub fn new(chan: IpcSender<ImageCacheCommand>) -> ImageCacheTask {
         ImageCacheTask {
             chan: chan,
         }
@@ -89,7 +104,7 @@ impl ImageCacheTask {
     pub fn request_image(&self,
                          url: Url,
                          result_chan: ImageCacheChan,
-                         responder: Option<Box<ImageResponder>>) {
+                         responder: Option<ImageResponder>) {
         let msg = ImageCacheCommand::RequestImage(url, result_chan, responder);
         self.chan.send(msg).unwrap();
     }
@@ -97,7 +112,7 @@ impl ImageCacheTask {
     
     pub fn get_image_if_available(&self, url: Url, use_placeholder: UsePlaceholder)
                                   -> Result<Arc<Image>, ImageState> {
-        let (sender, receiver) = channel();
+        let (sender, receiver) = ipc::channel().unwrap();
         let msg = ImageCacheCommand::GetImageIfAvailable(url, use_placeholder, sender);
         self.chan.send(msg).unwrap();
         receiver.recv().unwrap()
@@ -105,7 +120,7 @@ impl ImageCacheTask {
 
     
     pub fn exit(&self) {
-        let (response_chan, response_port) = channel();
+        let (response_chan, response_port) = ipc::channel().unwrap();
         self.chan.send(ImageCacheCommand::Exit(response_chan)).unwrap();
         response_port.recv().unwrap();
     }
