@@ -30,6 +30,7 @@ class nsSVGPaintServerFrame : public nsSVGContainerFrame
 {
 protected:
   typedef mozilla::gfx::DrawTarget DrawTarget;
+  typedef mozilla::image::DrawResult DrawResult;
 
   explicit nsSVGPaintServerFrame(nsStyleContext* aContext)
     : nsSVGContainerFrame(aContext)
@@ -48,7 +49,7 @@ public:
 
 
 
-  virtual already_AddRefed<gfxPattern>
+  virtual mozilla::Pair<DrawResult, RefPtr<gfxPattern>>
     GetPaintServerPattern(nsIFrame *aSource,
                           const DrawTarget* aDrawTarget,
                           const gfxMatrix& aContextMatrix,
