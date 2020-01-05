@@ -47,6 +47,7 @@ public:
   virtual void List(FILE* out = stdout, int32_t aIndent = 0) const override;
 #endif
   virtual int32_t GetType() const override;
+  using Rule::GetType;
   virtual already_AddRefed<Rule> Clone() const override;
 
   void SetSheet(CSSStyleSheet*);
@@ -57,10 +58,11 @@ public:
                                JS::Handle<JSObject*> aGivenProto) override;
 
   
-  NS_DECL_NSIDOMCSSRULE
+  NS_DECL_NSIDOMCSSIMPORTRULE
 
   
-  NS_DECL_NSIDOMCSSIMPORTRULE
+  uint16_t Type() const override;
+  void GetCssTextImpl(nsAString& aCssText) const override;
 
 private:
   nsString  mURLSpec;
