@@ -686,7 +686,7 @@ pub enum ConstellationMsg {
     
     
     
-    GetPipeline(Option<FrameId>, IpcSender<Option<(PipelineId, bool)>>),
+    GetPipeline(Option<FrameId>, IpcSender<Option<PipelineId>>),
     
     
     GetPipelineTitle(PipelineId),
