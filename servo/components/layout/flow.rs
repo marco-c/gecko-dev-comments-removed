@@ -228,12 +228,6 @@ pub trait Flow: fmt::Show + ToString + Sync {
         float::none
     }
 
-    
-    
-    fn is_block_formatting_context(&self, _only_impactable_by_floats: bool) -> bool {
-        false
-    }
-
     fn compute_collapsible_block_start_margin(&mut self,
                                       _layout_context: &mut LayoutContext,
                                       _margin_collapse_info: &mut MarginCollapseInfo) {
