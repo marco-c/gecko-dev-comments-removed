@@ -1298,7 +1298,18 @@ void nsBaseWidget::CreateCompositor(int aWidth, int aHeight)
 
   CreateCompositorVsyncDispatcher();
 
-  CompositorOptions options(UseAPZ(), gfxPrefs::WebRenderEnabled());
+  
+  
+  
+  
+  bool enableWR = Preferences::GetBool("gfx.webrender.enabled", false);
+  bool enableAPZ = UseAPZ();
+  if (enableWR && !gfxPrefs::APZAllowWithWebRender()) {
+    
+    
+    enableAPZ = false;
+  }
+  CompositorOptions options(enableAPZ, enableWR);
 
   RefPtr<LayerManager> lm;
   if (options.UseWebRender()) {

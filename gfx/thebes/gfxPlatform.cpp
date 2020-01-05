@@ -2464,12 +2464,6 @@ gfxPlatform::AsyncPanZoomEnabled()
   if (!BrowserTabsRemoteAutostart()) {
     return false;
   }
-#ifdef MOZ_ENABLE_WEBRENDER
-  
-  if (gfxPrefs::WebRenderEnabled() && !gfxPrefs::APZAllowWithWebRender()) {
-    return false;
-  }
-#endif 
 #endif
 #ifdef MOZ_WIDGET_ANDROID
   return true;
