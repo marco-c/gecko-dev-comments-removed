@@ -878,7 +878,7 @@ DrawBuffer::~DrawBuffer()
     GLuint rbs[] = {
         mColorMSRB,
         mDepthRB,
-        mStencilRB
+        (mStencilRB != mDepthRB) ? mStencilRB : 0, 
     };
 
     mGL->fDeleteFramebuffers(1, &fb);
@@ -966,11 +966,12 @@ ReadBuffer::~ReadBuffer()
     GLuint fb = mFB;
     GLuint rbs[] = {
         mDepthRB,
-        mStencilRB
+        (mStencilRB != mDepthRB) ? mStencilRB : 0, 
     };
 
     mGL->fDeleteFramebuffers(1, &fb);
     mGL->fDeleteRenderbuffers(2, rbs);
+
     mGL->mFBOMapping.erase(mFB);
 }
 
