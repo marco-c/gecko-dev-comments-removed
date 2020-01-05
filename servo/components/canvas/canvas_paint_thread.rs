@@ -706,6 +706,14 @@ impl<'a> CanvasPaintThread<'a> {
     }
 }
 
+impl<'a> Drop for CanvasPaintThread<'a> {
+    fn drop(&mut self) {
+        if let Some(ref mut wr) = self.webrender_api {
+            wr.delete_image(self.webrender_image_key.unwrap());
+        }
+    }
+}
+
 
 
 
