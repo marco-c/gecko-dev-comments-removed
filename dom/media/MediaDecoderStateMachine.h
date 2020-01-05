@@ -553,11 +553,11 @@ private:
   
   
   
-  int64_t AudioEndTime() const;
+  media::TimeUnit AudioEndTime() const;
 
   
   
-  int64_t VideoEndTime() const;
+  media::TimeUnit VideoEndTime() const;
 
   
   
