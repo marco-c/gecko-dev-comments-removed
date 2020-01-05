@@ -171,7 +171,8 @@ public:
 
 
 
-  bool IsBlackAndDoesNotNeedTracing(nsISupports* aThis);
+
+  bool HasKnownLiveWrapperAndDoesNotNeedTracing(nsISupports* aThis);
 
   bool HasNothingToTrace(nsISupports* aThis);
 
