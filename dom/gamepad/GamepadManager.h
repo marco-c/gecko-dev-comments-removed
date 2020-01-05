@@ -76,6 +76,11 @@ class GamepadManager final : public nsIObserver,
                     const GamepadPoseState& aState);
 
   
+  
+  void NewHandChangeEvent(uint32_t aIndex, GamepadServiceType aServiceType,
+                          GamepadHand aHand);
+
+  
   void SyncGamepadState(uint32_t aIndex, Gamepad* aGamepad);
 
   
