@@ -4934,12 +4934,11 @@ nsRuleNode::ComputeTextData(void* aStartStruct,
            NS_STYLE_RUBY_POSITION_OVER);
 
   
-  SetValue(*aRuleData->ValueForTextSizeAdjust(), text->mTextSizeAdjust,
-           conditions, SETVAL_UNSET_INHERIT,
+  SetValue(*aRuleData->ValueForTextSizeAdjust(),
+           text->mTextSizeAdjust, conditions,
+           SETVAL_ENUMERATED | SETVAL_UNSET_INHERIT,
            parentText->mTextSizeAdjust,
-            NS_STYLE_TEXT_SIZE_ADJUST_AUTO,
-            NS_STYLE_TEXT_SIZE_ADJUST_AUTO,
-            NS_STYLE_TEXT_SIZE_ADJUST_NONE, Unused, Unused);
+           NS_STYLE_TEXT_SIZE_ADJUST_AUTO);
 
   
   SetValue(*aRuleData->ValueForTextCombineUpright(),
