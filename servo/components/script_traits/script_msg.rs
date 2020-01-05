@@ -15,7 +15,7 @@ use WorkerScriptLoadOrigin;
 use canvas_traits::CanvasMsg;
 use devtools_traits::{ScriptToDevtoolsControlMsg, WorkerId};
 use euclid::point::Point2D;
-use euclid::size::Size2D;
+use euclid::size::{Size2D, TypedSize2D};
 use gfx_traits::ScrollRootId;
 use ipc_channel::ipc::IpcSender;
 use msg::constellation_msg::{FrameId, PipelineId, TraversalDirection};
@@ -24,6 +24,7 @@ use net_traits::CoreResourceMsg;
 use net_traits::storage_thread::StorageType;
 use offscreen_gl_context::{GLContextAttributes, GLLimits};
 use servo_url::ServoUrl;
+use style_traits::PagePx;
 use style_traits::cursor::Cursor;
 use style_traits::viewport::ViewportConstraints;
 
@@ -32,6 +33,8 @@ use style_traits::viewport::ViewportConstraints;
 pub enum LayoutMsg {
     
     ChangeRunningAnimationsState(PipelineId, AnimationState),
+    
+    FrameSizes(Vec<(PipelineId, TypedSize2D<f32, PagePx>)>),
     
     SetCursor(Cursor),
     
