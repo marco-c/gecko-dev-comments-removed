@@ -328,7 +328,7 @@ impl Page {
                 self.join_layout();
 
                 
-                compositor.set_ready_state(PerformingLayout);
+                compositor.set_ready_state(self.id, PerformingLayout);
 
                 
                 let (join_chan, join_port) = channel();

@@ -20,7 +20,7 @@ pub enum RenderState {
     RenderingRenderState,
 }
 
-#[deriving(PartialEq, Clone)]
+#[deriving(Eq, Ord, PartialEq, PartialOrd, Clone)]
 pub enum ReadyState {
     
     Blank,
@@ -101,13 +101,13 @@ pub trait RenderListener {
              replies: Vec<(LayerId, Box<LayerBufferSet>)>);
 
     fn render_msg_discarded(&self);
-    fn set_render_state(&self, render_state: RenderState);
+    fn set_render_state(&self, PipelineId, RenderState);
 }
 
 
 
 pub trait ScriptListener : Clone {
-    fn set_ready_state(&self, ReadyState);
+    fn set_ready_state(&self, PipelineId, ReadyState);
     fn scroll_fragment_point(&self,
                              pipeline_id: PipelineId,
                              layer_id: LayerId,
