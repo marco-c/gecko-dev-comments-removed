@@ -98,6 +98,10 @@ public:
 
   virtual int32_t GetMaxTextureSize() const = 0;
 
+  
+  
+  virtual bool IsValid() const = 0;
+
 protected:
   
   void ReadUnlockTextures();

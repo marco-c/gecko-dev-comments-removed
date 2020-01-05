@@ -533,7 +533,7 @@ public:
   
   
   void SetInvalid();
-  virtual bool IsValid() const;
+  virtual bool IsValid() const override;
   CompositorBridgeParent* GetCompositorBridgeParent() const {
     return mParent;
   }
