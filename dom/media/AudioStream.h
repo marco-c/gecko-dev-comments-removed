@@ -190,7 +190,8 @@ public:
   
   
   
-  nsresult Init(uint32_t aNumChannels, uint32_t aRate,
+  
+  nsresult Init(uint32_t aNumChannels, uint32_t aChannelMap, uint32_t aRate,
                 const dom::AudioChannel aAudioStreamChannel);
 
   

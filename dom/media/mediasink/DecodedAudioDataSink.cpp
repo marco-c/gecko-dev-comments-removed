@@ -197,7 +197,13 @@ nsresult
 DecodedAudioDataSink::InitializeAudioStream(const PlaybackParams& aParams)
 {
   mAudioStream = new AudioStream(*this);
-  nsresult rv = mAudioStream->Init(mOutputChannels, mOutputRate, mChannel);
+  
+  
+  
+  nsresult rv = mAudioStream->Init(mOutputChannels,
+                                   mConverter->OutputConfig().Layout().Map(),
+                                   mOutputRate,
+                                   mChannel);
   if (NS_FAILED(rv)) {
     mAudioStream->Shutdown();
     mAudioStream = nullptr;

@@ -90,8 +90,12 @@ private:
   DECL_MEDIA_PREF("accessibility.monoaudio.enable",           MonoAudio, bool, false);
   DECL_MEDIA_PREF("media.resampling.enabled",                 AudioSinkResampling, bool, false);
   DECL_MEDIA_PREF("media.resampling.rate",                    AudioSinkResampleRate, uint32_t, 48000);
+#if defined(XP_WIN)
+  
+  DECL_MEDIA_PREF("media.forcestereo.enabled",                AudioSinkForceStereo, bool, false);
+#else
   DECL_MEDIA_PREF("media.forcestereo.enabled",                AudioSinkForceStereo, bool, true);
-
+#endif
   
   DECL_MEDIA_PREF("media.ruin-av-sync.enabled",               RuinAvSync, bool, false);
 
