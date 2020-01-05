@@ -558,7 +558,7 @@ protected:
   
   RefPtr<HTMLFormControlsCollection> mControls;
   
-  nsRefPtrHashtable<nsStringCaseInsensitiveHashKey, HTMLInputElement> mSelectedRadioButtons;
+  nsRefPtrHashtable<nsStringHashKey, HTMLInputElement> mSelectedRadioButtons;
   
   nsDataHashtable<nsStringCaseInsensitiveHashKey,uint32_t> mRequiredRadioButtonCounts;
   
