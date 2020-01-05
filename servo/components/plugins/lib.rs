@@ -28,8 +28,6 @@ extern crate syntax;
 extern crate syntax_ext;
 extern crate tenacious;
 
-extern crate url;
-
 use rustc_plugin::Registry;
 use syntax::ext::base::*;
 use syntax::feature_gate::AttributeType::Whitelisted;
@@ -42,8 +40,6 @@ pub mod lints;
 
 pub mod reflector;
 
-mod url_plugin;
-
 pub mod utils;
 
 #[plugin_registrar]
@@ -51,7 +47,6 @@ pub fn plugin_registrar(reg: &mut Registry) {
     reg.register_syntax_extension(intern("dom_struct"), MultiModifier(box jstraceable::expand_dom_struct));
     reg.register_syntax_extension(intern("derive_JSTraceable"), MultiDecorator(box jstraceable::expand_jstraceable));
     reg.register_syntax_extension(intern("_generate_reflector"), MultiDecorator(box reflector::expand_reflector));
-    reg.register_macro("url", url_plugin::expand_url);
     reg.register_late_lint_pass(box lints::transmute_type::TransmutePass);
     reg.register_late_lint_pass(box lints::unrooted_must_root::UnrootedPass::new());
     reg.register_late_lint_pass(box lints::privatize::PrivatizePass);
