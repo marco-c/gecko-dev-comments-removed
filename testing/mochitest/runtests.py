@@ -1375,11 +1375,6 @@ toolbar#nav-bar {
                                    manifest.fmt_filters()))
 
         paths = []
-
-        
-        
-        manifest_root = build_obj.topsrcdir if build_obj else self.testRootAbs
-        manifests = set()
         for test in tests:
             if len(tests) == 1 and 'disabled' in test:
                 del test['disabled']
@@ -1393,8 +1388,6 @@ toolbar#nav-bar {
                     'Warning: %s from manifest %s is not a valid test' %
                     (test['name'], test['manifest']))
                 continue
-
-            manifests.add(os.path.relpath(test['manifest'], manifest_root))
 
             testob = {'path': tp}
             if 'disabled' in test:
@@ -1411,22 +1404,16 @@ toolbar#nav-bar {
             return cmp(path1, path2)
 
         paths.sort(path_sort)
+        self._active_tests = paths
         if options.dump_tests:
             options.dump_tests = os.path.expanduser(options.dump_tests)
             assert os.path.exists(os.path.dirname(options.dump_tests))
             with open(options.dump_tests, 'w') as dumpFile:
-                dumpFile.write(json.dumps({'active_tests': paths}))
+                dumpFile.write(json.dumps({'active_tests': self._active_tests}))
 
             self.log.info("Dumping active_tests to %s file." % options.dump_tests)
             sys.exit()
 
-        
-        if 'MOZ_UPLOAD_DIR' in os.environ:
-            artifact = os.path.join(os.environ['MOZ_UPLOAD_DIR'], 'manifests.list')
-            with open(artifact, 'a') as fh:
-                fh.write('\n'.join(sorted(manifests)))
-
-        self._active_tests = paths
         return self._active_tests
 
     def getTestManifest(self, options):
@@ -1648,8 +1635,10 @@ toolbar#nav-bar {
                 options.timeout)
         
         
-        if mozinfo.info["asan"] and options.flavor == 'browser' and options.timeout is None:
-            self.log.info("Increasing default timeout to 90 seconds on ASAN")
+        
+        if (mozinfo.info["asan"] or mozinfo.info["debug"]) and \
+                options.flavor == 'browser' and options.timeout is None:
+            self.log.info("Increasing default timeout to 90 seconds")
             options.extraPrefs.append("testing.browserTestHarness.timeout=90")
 
         options.extraPrefs.append(
