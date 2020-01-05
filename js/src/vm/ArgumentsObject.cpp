@@ -590,6 +590,64 @@ MappedArgumentsObject::obj_enumerate(JSContext* cx, HandleObject obj)
     return true;
 }
 
+
+ bool
+MappedArgumentsObject::obj_defineProperty(JSContext* cx, HandleObject obj, HandleId id,
+                                          Handle<PropertyDescriptor> desc, ObjectOpResult& result)
+{
+    
+    Rooted<MappedArgumentsObject*> argsobj(cx, &obj->as<MappedArgumentsObject>());
+
+    
+    bool isMapped = false;
+    if (JSID_IS_INT(id)) {
+        unsigned arg = unsigned(JSID_TO_INT(id));
+        isMapped = arg < argsobj->initialLength() && !argsobj->isElementDeleted(arg);
+    }
+
+    
+    Rooted<PropertyDescriptor> newArgDesc(cx, desc);
+    if (!desc.isAccessorDescriptor() && isMapped) {
+        
+        
+        newArgDesc.setGetter(MappedArgGetter);
+        newArgDesc.setSetter(MappedArgSetter);
+    }
+
+    
+    if (!NativeDefineProperty(cx, obj.as<NativeObject>(), id, newArgDesc, result))
+        return false;
+    
+    if (!result.ok())
+        return true;
+
+    
+    if (isMapped) {
+        unsigned arg = unsigned(JSID_TO_INT(id));
+        if (desc.isAccessorDescriptor()) {
+            if (!argsobj->markElementDeleted(cx, arg))
+                return false;
+        } else {
+            if (desc.hasValue()) {
+                RootedFunction callee(cx, &argsobj->callee());
+                RootedScript script(cx, callee->getOrCreateScript(cx));
+                if (!script)
+                    return false;
+                argsobj->setElement(cx, arg, desc.value());
+                if (arg < script->functionNonDelazifying()->nargs())
+                    TypeScript::SetArgument(cx, script, arg, desc.value());
+            }
+            if (desc.hasWritable() && !desc.writable()) {
+                if (!argsobj->markElementDeleted(cx, arg))
+                    return false;
+            }
+        }
+    }
+
+    
+    return result.succeed();
+}
+
 static bool
 UnmappedArgGetter(JSContext* cx, HandleObject obj, HandleId id, MutableHandleValue vp)
 {
@@ -808,6 +866,11 @@ const ClassOps MappedArgumentsObject::classOps_ = {
     ArgumentsObject::trace
 };
 
+const ObjectOps MappedArgumentsObject::objectOps_ = {
+    nullptr,                 
+    MappedArgumentsObject::obj_defineProperty
+};
+
 const Class MappedArgumentsObject::class_ = {
     "Arguments",
     JSCLASS_DELAY_METADATA_BUILDER |
@@ -815,7 +878,10 @@ const Class MappedArgumentsObject::class_ = {
     JSCLASS_HAS_CACHED_PROTO(JSProto_Object) |
     JSCLASS_SKIP_NURSERY_FINALIZE |
     JSCLASS_BACKGROUND_FINALIZE,
-    &MappedArgumentsObject::classOps_
+    &MappedArgumentsObject::classOps_,
+    nullptr,
+    nullptr,
+    &MappedArgumentsObject::objectOps_
 };
 
 

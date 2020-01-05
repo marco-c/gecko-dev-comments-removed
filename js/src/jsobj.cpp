@@ -470,7 +470,7 @@ js::SetIntegrityLevel(JSContext* cx, HandleObject obj, IntegrityLevel level)
 
     
     if (obj->isNative() && !obj->as<NativeObject>().inDictionaryMode() &&
-        !obj->is<TypedArrayObject>())
+        !obj->is<TypedArrayObject>() && !obj->is<MappedArgumentsObject>())
     {
         HandleNativeObject nobj = obj.as<NativeObject>();
 
