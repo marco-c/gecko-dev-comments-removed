@@ -83,7 +83,7 @@ struct Census;
 class CountBase;
 
 struct CountDeleter {
-    void operator()(CountBase*);
+    JS_PUBLIC_API(void) operator()(CountBase*);
 };
 
 using CountBasePtr = js::UniquePtr<CountBase, CountDeleter>;
@@ -203,7 +203,7 @@ struct Census {
 
     explicit Census(JSContext* cx) : cx(cx), atomsZone(nullptr) { }
 
-    MOZ_MUST_USE bool init();
+    MOZ_MUST_USE JS_PUBLIC_API(bool) init();
 };
 
 
@@ -227,22 +227,23 @@ class CensusHandler {
     
     class NodeData { };
 
-    MOZ_MUST_USE bool operator() (BreadthFirst<CensusHandler>& traversal,
-                                  Node origin, const Edge& edge,
-                                  NodeData* referentData, bool first);
+    MOZ_MUST_USE JS_PUBLIC_API(bool) operator() (BreadthFirst<CensusHandler>& traversal,
+                                                 Node origin, const Edge& edge,
+                                                 NodeData* referentData, bool first);
 };
 
 using CensusTraversal = BreadthFirst<CensusHandler>;
 
 
 
-MOZ_MUST_USE bool ParseCensusOptions(JSContext* cx, Census& census, HandleObject options,
-                                     CountTypePtr& outResult);
+MOZ_MUST_USE JS_PUBLIC_API(bool) ParseCensusOptions(JSContext* cx,
+                                                    Census& census, HandleObject options,
+                                                    CountTypePtr& outResult);
 
 
 
 
-CountTypePtr ParseBreakdown(JSContext* cx, HandleValue breakdownValue);
+JS_PUBLIC_API(CountTypePtr) ParseBreakdown(JSContext* cx, HandleValue breakdownValue);
 
 
 } 

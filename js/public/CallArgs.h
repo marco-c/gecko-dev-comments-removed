@@ -302,7 +302,7 @@ class MOZ_STACK_CLASS CallArgs : public detail::CallArgsBase<detail::IncludeUsed
 
 
 
-    bool requireAtLeast(JSContext* cx, const char* fnname, unsigned required) const;
+    JS_PUBLIC_API(bool) requireAtLeast(JSContext* cx, const char* fnname, unsigned required) const;
 
 };
 
