@@ -1126,7 +1126,8 @@ nsSVGUtils::GetBBox(nsIFrame *aFrame, uint32_t aFlags)
     }
 
     gfxMatrix matrix;
-    if (aFrame->GetType() == nsGkAtoms::svgForeignObjectFrame) {
+    if (aFrame->GetType() == nsGkAtoms::svgForeignObjectFrame ||
+        aFrame->GetType() == nsGkAtoms::svgUseFrame) {
       
       
       
@@ -1218,7 +1219,8 @@ nsSVGUtils::FrameSpaceInCSSPxToUserSpaceOffset(nsIFrame *aFrame)
 
   
   
-  if (aFrame->GetType() == nsGkAtoms::svgForeignObjectFrame) {
+  if (aFrame->GetType() == nsGkAtoms::svgForeignObjectFrame ||
+      aFrame->GetType() == nsGkAtoms::svgUseFrame) {
     gfxMatrix transform = static_cast<nsSVGElement*>(aFrame->GetContent())->
         PrependLocalTransformsTo(gfxMatrix(), eChildToUserSpace);
     NS_ASSERTION(!transform.HasNonTranslation(), "we're relying on this being an offset-only transform");
