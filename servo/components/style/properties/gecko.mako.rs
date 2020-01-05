@@ -1,8 +1,8 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-// `data` comes from components/style/properties.mako.rs; see build.rs for more details.
+
+
+
+
 
 <%!
     from data import to_rust_ident, to_camel_case
@@ -3120,6 +3120,8 @@ clip-path
                             => self.gecko.mContents[i].mType = eStyleContentType_NoOpenQuote,
                         ContentItem::NoCloseQuote
                             => self.gecko.mContents[i].mType = eStyleContentType_NoCloseQuote,
+                        ContentItem::MozAltContent
+                            => self.gecko.mContents[i].mType = eStyleContentType_AltContent,
                         ContentItem::Counter(..) |
                         ContentItem::Counters(..)
                             => self.gecko.mContents[i].mType = eStyleContentType_Uninitialized,
