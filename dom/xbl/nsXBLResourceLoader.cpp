@@ -232,7 +232,7 @@ nsXBLResourceLoader::NotifyBoundElements()
     
       if (doc) {
         
-        doc->FlushPendingNotifications(Flush_Frames);
+        doc->FlushPendingNotifications(FlushType::Frames);
 
         
         
@@ -259,7 +259,7 @@ nsXBLResourceLoader::NotifyBoundElements()
 
         
         
-        doc->FlushPendingNotifications(Flush_ContentAndNotify);
+        doc->FlushPendingNotifications(FlushType::ContentAndNotify);
       }
     }
   }

@@ -92,7 +92,7 @@ CalculateRectToZoomTo(const nsCOMPtr<nsIDocument>& aRootContentDocument,
                       const CSSPoint& aPoint)
 {
   
-  aRootContentDocument->FlushPendingNotifications(Flush_Layout);
+  aRootContentDocument->FlushPendingNotifications(FlushType::Layout);
 
   
   const CSSRect zoomOut;

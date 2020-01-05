@@ -136,7 +136,7 @@ class nsHtml5TreeOpExecutor final : public nsHtml5DocumentBuilder,
     
 
 
-    virtual void FlushPendingNotifications(mozFlushType aType) override;
+    virtual void FlushPendingNotifications(mozilla::FlushType aType) override;
 
     
 

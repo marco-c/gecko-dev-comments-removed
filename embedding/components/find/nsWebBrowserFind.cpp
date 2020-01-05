@@ -723,7 +723,7 @@ nsWebBrowserFind::SearchInFrame(nsPIDOMWindowOuter* aWindow, bool aWrapping,
 
   
   
-  theDoc->FlushPendingNotifications(Flush_Frames);
+  theDoc->FlushPendingNotifications(FlushType::Frames);
 
   nsCOMPtr<nsISelection> sel = GetFrameSelection(aWindow);
   NS_ENSURE_ARG_POINTER(sel);

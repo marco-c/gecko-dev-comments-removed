@@ -700,7 +700,7 @@ RestyleManager::RebuildAllStyleData(nsChangeHint aExtraHint,
 
   
   
-  presShell->GetDocument()->FlushPendingNotifications(Flush_ContentAndNotify);
+  presShell->GetDocument()->FlushPendingNotifications(FlushType::ContentAndNotify);
 
   nsAutoScriptBlocker scriptBlocker;
 

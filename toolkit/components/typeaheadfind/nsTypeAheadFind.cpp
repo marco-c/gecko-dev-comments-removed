@@ -338,7 +338,7 @@ nsTypeAheadFind::FindItNow(nsIPresShell *aPresShell, bool aIsLinksOnly,
 
   
   
-  presShell->FlushPendingNotifications(Flush_Layout);
+  presShell->FlushPendingNotifications(mozilla::FlushType::Layout);
 
   RefPtr<nsPresContext> presContext = presShell->GetPresContext();
 

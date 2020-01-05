@@ -97,7 +97,7 @@ public:
 
 
 
-  virtual void FlushPendingNotifications(mozFlushType aType)=0;
+  virtual void FlushPendingNotifications(mozilla::FlushType aType)=0;
 
   
 

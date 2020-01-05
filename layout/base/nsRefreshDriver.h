@@ -121,9 +121,9 @@ public:
 
 
   bool AddRefreshObserver(nsARefreshObserver *aObserver,
-                          mozFlushType aFlushType);
+                          mozilla::FlushType aFlushType);
   bool RemoveRefreshObserver(nsARefreshObserver *aObserver,
-                             mozFlushType aFlushType);
+                             mozilla::FlushType aFlushType);
 
   
 
@@ -288,7 +288,7 @@ public:
 
 
   bool IsRefreshObserver(nsARefreshObserver *aObserver,
-                         mozFlushType aFlushType);
+                         mozilla::FlushType aFlushType);
 #endif
 
   
@@ -399,7 +399,7 @@ private:
 
   uint32_t ObserverCount() const;
   uint32_t ImageRequestCount() const;
-  ObserverArray& ArrayFor(mozFlushType aFlushType);
+  ObserverArray& ArrayFor(mozilla::FlushType aFlushType);
   
   void DoRefresh();
 

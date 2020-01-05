@@ -1438,7 +1438,7 @@ nsXMLContentSink::AddText(const char16_t* aText,
 }
 
 void
-nsXMLContentSink::FlushPendingNotifications(mozFlushType aType)
+nsXMLContentSink::FlushPendingNotifications(FlushType aType)
 {
   
   
@@ -1446,14 +1446,14 @@ nsXMLContentSink::FlushPendingNotifications(mozFlushType aType)
     if (mIsDocumentObserver) {
       
       
-      if (aType >= Flush_ContentAndNotify) {
+      if (aType >= FlushType::ContentAndNotify) {
         FlushTags();
       }
       else {
         FlushText(false);
       }
     }
-    if (aType >= Flush_InterruptibleLayout) {
+    if (aType >= FlushType::InterruptibleLayout) {
       
       
       MaybeStartLayout(true);

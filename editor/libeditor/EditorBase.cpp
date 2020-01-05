@@ -2788,7 +2788,7 @@ EditorBase::SplitNodeImpl(nsIContent& aExistingRightNode,
   
   nsCOMPtr<nsIPresShell> ps = GetPresShell();
   if (ps) {
-    ps->FlushPendingNotifications(Flush_Frames);
+    ps->FlushPendingNotifications(FlushType::Frames);
   }
 
   bool shouldSetSelection = GetShouldTxnSetSelection();

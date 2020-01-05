@@ -264,7 +264,7 @@ nsSMILAnimationController::StartSampling(nsRefreshDriver* aRefreshDriver)
     
     
     mCurrentSampleTime = mozilla::TimeStamp::Now();
-    aRefreshDriver->AddRefreshObserver(this, Flush_Style);
+    aRefreshDriver->AddRefreshObserver(this, FlushType::Style);
     mRegisteredWithRefreshDriver = true;
   }
 }
@@ -277,7 +277,7 @@ nsSMILAnimationController::StopSampling(nsRefreshDriver* aRefreshDriver)
     
     MOZ_ASSERT(!GetRefreshDriver() || aRefreshDriver == GetRefreshDriver(),
                "Stopping sampling with wrong refresh driver");
-    aRefreshDriver->RemoveRefreshObserver(this, Flush_Style);
+    aRefreshDriver->RemoveRefreshObserver(this, FlushType::Style);
     mRegisteredWithRefreshDriver = false;
   }
 }
@@ -432,7 +432,7 @@ nsSMILAnimationController::DoSample(bool aSkipUnchangedContainers)
 
   nsCOMPtr<nsIDocument> document(mDocument);  
   if (isStyleFlushNeeded) {
-    document->FlushPendingNotifications(Flush_Style);
+    document->FlushPendingNotifications(FlushType::Style);
   }
 
   

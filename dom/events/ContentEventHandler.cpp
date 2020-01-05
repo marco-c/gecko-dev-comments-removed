@@ -117,7 +117,7 @@ ContentEventHandler::InitBasic()
 
   
   
-  mPresShell->FlushPendingNotifications(Flush_Layout);
+  mPresShell->FlushPendingNotifications(FlushType::Layout);
 
   
   NS_ENSURE_TRUE(!mPresShell->IsDestroying(), NS_ERROR_FAILURE);

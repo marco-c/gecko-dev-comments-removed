@@ -254,7 +254,7 @@ nsTextControlFrame::EnsureEditorInitialized()
   
   
   
-  doc->FlushPendingNotifications(Flush_ContentAndNotify);
+  doc->FlushPendingNotifications(FlushType::ContentAndNotify);
   NS_ENSURE_TRUE(weakFrame.IsAlive(), NS_ERROR_FAILURE);
 
   

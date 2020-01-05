@@ -670,13 +670,13 @@ void nsDocLoader::DocLoaderIsEmpty(bool aFlushLayout)
         
         
         
-        mozFlushType flushType = Flush_Style;
+        mozilla::FlushType flushType = mozilla::FlushType::Style;
         nsIPresShell* shell = doc->GetShell();
         if (shell) {
           
           nsPresContext* presContext = shell->GetPresContext();
           if (presContext && presContext->GetUserFontSet()) {
-            flushType = Flush_Layout;
+            flushType = mozilla::FlushType::Layout;
           }
         }
         mDontFlushLayout = mIsFlushingLayout = true;

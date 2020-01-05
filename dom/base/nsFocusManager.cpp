@@ -1547,7 +1547,7 @@ nsFocusManager::CheckIfFocusable(nsIContent* aContent, uint32_t aFlags)
   }
 
   
-  doc->FlushPendingNotifications(Flush_Layout);
+  doc->FlushPendingNotifications(FlushType::Layout);
 
   nsIPresShell *shell = doc->GetShell();
   if (!shell)

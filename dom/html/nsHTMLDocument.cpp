@@ -1783,7 +1783,7 @@ nsHTMLDocument::Close(ErrorResult& rv)
   
   
   if (GetShell()) {
-    FlushPendingNotifications(Flush_Layout);
+    FlushPendingNotifications(FlushType::Layout);
   }
 
   
@@ -2638,7 +2638,7 @@ nsHTMLDocument::EditingStateChanged()
   
   
   if (mParentDocument) {
-    mParentDocument->FlushPendingNotifications(Flush_Style);
+    mParentDocument->FlushPendingNotifications(FlushType::Style);
   }
 
   
@@ -3579,7 +3579,7 @@ nsHTMLDocument::IsEditingOnAfterFlush()
   if (doc) {
     
     
-    doc->FlushPendingNotifications(Flush_Frames);
+    doc->FlushPendingNotifications(FlushType::Frames);
   }
 
   return IsEditingOn();

@@ -2911,7 +2911,7 @@ CanvasRenderingContext2D::UpdateFilter()
   
   
   
-  presShell->FlushPendingNotifications(Flush_Frames);
+  presShell->FlushPendingNotifications(FlushType::Frames);
 
   bool sourceGraphicIsTainted =
     (mCanvasElement && mCanvasElement->IsWriteOnly());

@@ -3,41 +3,47 @@
 
 
 
-#ifndef mozFlushType_h___
-#define mozFlushType_h___
 
+#ifndef mozilla_FlushType_h
+#define mozilla_FlushType_h
 
-
-
-
-
-
-
-enum mozFlushType {
-  Flush_None             = 0, 
-  Flush_Content          = 1, 
-  Flush_ContentAndNotify = 2, 
-
-
-  Flush_Style            = 3, 
-  Flush_Frames           = Flush_Style,
-  Flush_InterruptibleLayout = 4, 
-
-
-  Flush_Layout           = 5, 
-
-  Flush_Display          = 6  
-};
+#include <stdint.h>
+#include "X11UndefineNone.h"
 
 namespace mozilla {
 
+
+
+
+
+
+
+
+enum class FlushType : uint8_t {
+  None             = 0, 
+  Content          = 1, 
+  ContentAndNotify = 2, 
+
+
+  Style            = 3, 
+  Frames           = Style,
+  InterruptibleLayout = 4, 
+
+
+  Layout           = 5, 
+
+  Display          = 6, 
+
+  Count
+};
+
 struct ChangesToFlush {
-  ChangesToFlush(mozFlushType aFlushType, bool aFlushAnimations)
+  ChangesToFlush(FlushType aFlushType, bool aFlushAnimations)
     : mFlushType(aFlushType)
     , mFlushAnimations(aFlushAnimations)
   {}
 
-  mozFlushType mFlushType;
+  FlushType mFlushType;
   bool mFlushAnimations;
 };
 

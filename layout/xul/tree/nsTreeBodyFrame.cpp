@@ -939,7 +939,7 @@ nsTreeBodyFrame::CheckOverflow(const ScrollParts& aParts)
   
   
   mCheckingOverflow = true;
-  presShell->FlushPendingNotifications(Flush_Layout);
+  presShell->FlushPendingNotifications(FlushType::Layout);
   if (!weakFrame.IsAlive()) {
     return;
   }

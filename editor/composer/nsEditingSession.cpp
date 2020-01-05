@@ -334,7 +334,7 @@ nsEditingSession::SetupEditorOnWindow(mozIDOMWindowProxy* aWindow)
     
     nsCOMPtr<nsIDocument> document = do_QueryInterface(doc);
     if (document) {
-      document->FlushPendingNotifications(Flush_Frames);
+      document->FlushPendingNotifications(mozilla::FlushType::Frames);
       if (mMakeWholeDocumentEditable) {
         document->SetEditableFlag(true);
         nsCOMPtr<nsIHTMLDocument> htmlDocument = do_QueryInterface(document);

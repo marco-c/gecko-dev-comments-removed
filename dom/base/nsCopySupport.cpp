@@ -843,7 +843,7 @@ nsCopySupport::FireClipboardEvent(EventMessage aEventMessage,
 
   
   
-  presShell->FlushPendingNotifications(Flush_Frames);
+  presShell->FlushPendingNotifications(FlushType::Frames);
   if (presShell->IsDestroying())
     return false;
 

@@ -1575,7 +1575,7 @@ public:
   
   nsresult FireHashchange(const nsAString &aOldURL, const nsAString &aNewURL);
 
-  void FlushPendingNotifications(mozFlushType aType);
+  void FlushPendingNotifications(mozilla::FlushType aType);
 
   
   void EnsureReflowFlushAndPaint();

@@ -867,7 +867,7 @@ SelectionMoveCommands::DoCommand(const char* aCommandName,
   if (doc) {
     
     
-    doc->FlushPendingNotifications(Flush_Layout);
+    doc->FlushPendingNotifications(FlushType::Layout);
   }
 
   nsCOMPtr<nsISelectionController> selCont;

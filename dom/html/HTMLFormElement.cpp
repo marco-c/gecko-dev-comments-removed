@@ -587,7 +587,7 @@ HTMLFormElement::DoSubmitOrReset(WidgetEvent* aEvent,
   
   nsIDocument* doc = GetComposedDoc();
   if (doc) {
-    doc->FlushPendingNotifications(Flush_ContentAndNotify);
+    doc->FlushPendingNotifications(FlushType::ContentAndNotify);
   }
 
   

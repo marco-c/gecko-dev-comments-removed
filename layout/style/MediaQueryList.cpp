@@ -146,7 +146,7 @@ MediaQueryList::RecomputeMatches()
   if (mDocument->GetParentDocument()) {
     
     
-    mDocument->GetParentDocument()->FlushPendingNotifications(Flush_Frames);
+    mDocument->GetParentDocument()->FlushPendingNotifications(FlushType::Frames);
     
     if (!mDocument) {
       return;

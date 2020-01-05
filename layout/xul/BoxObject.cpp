@@ -116,7 +116,7 @@ BoxObject::GetFrame(bool aFlushLayout)
     
     
     
-    shell->FlushPendingNotifications(Flush_Frames);
+    shell->FlushPendingNotifications(FlushType::Frames);
   }
 
   
@@ -140,7 +140,7 @@ BoxObject::GetPresShell(bool aFlushLayout)
   }
 
   if (aFlushLayout) {
-    doc->FlushPendingNotifications(Flush_Layout);
+    doc->FlushPendingNotifications(FlushType::Layout);
   }
 
   return doc->GetShell();

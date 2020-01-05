@@ -508,7 +508,7 @@ public:
         
         
         
-        mPresShell->FlushPendingNotifications(Flush_Layout);
+        mPresShell->FlushPendingNotifications(FlushType::Layout);
       } else if (aVisitor.mEvent->mMessage == eWheel &&
                  aVisitor.mEventStatus != nsEventStatus_eConsumeNoDefault) {
         nsIFrame* frame = mPresShell->GetCurrentEventFrame();
@@ -1882,7 +1882,7 @@ PresShell::ResizeReflowIgnoreOverride(nscoord aWidth, nscoord aHeight, nscoord a
   if (!GetPresContext()->SuppressingResizeReflow()) {
     
     
-    mDocument->FlushPendingNotifications(Flush_ContentAndNotify);
+    mDocument->FlushPendingNotifications(FlushType::ContentAndNotify);
 
     
     {
@@ -2843,7 +2843,7 @@ PresShell::CreateFramesFor(nsIContent* aContent)
 
   
   
-  mDocument->FlushPendingNotifications(Flush_ContentAndNotify);
+  mDocument->FlushPendingNotifications(FlushType::ContentAndNotify);
 
   nsAutoScriptBlocker scriptBlocker;
 
@@ -2876,7 +2876,7 @@ PresShell::RecreateFramesFor(nsIContent* aContent)
 
   
   
-  mDocument->FlushPendingNotifications(Flush_ContentAndNotify);
+  mDocument->FlushPendingNotifications(FlushType::ContentAndNotify);
 
   nsAutoScriptBlocker scriptBlocker;
 
@@ -3426,7 +3426,7 @@ PresShell::ScrollContentIntoView(nsIContent*              aContent,
 
   
   composedDoc->SetNeedLayoutFlush();
-  composedDoc->FlushPendingNotifications(Flush_InterruptibleLayout);
+  composedDoc->FlushPendingNotifications(FlushType::InterruptibleLayout);
 
   
   
@@ -3664,7 +3664,7 @@ FlushLayoutRecursive(nsIDocument* aDocument,
   MOZ_ASSERT(!aData);
   nsCOMPtr<nsIDocument> kungFuDeathGrip(aDocument);
   aDocument->EnumerateSubDocuments(FlushLayoutRecursive, nullptr);
-  aDocument->FlushPendingNotifications(Flush_Layout);
+  aDocument->FlushPendingNotifications(FlushType::Layout);
   return true;
 }
 
@@ -3948,8 +3948,8 @@ PresShell::HandlePostedReflowCallbacks(bool aInterruptible)
      }
    }
 
-   mozFlushType flushType =
-     aInterruptible ? Flush_InterruptibleLayout : Flush_Layout;
+   FlushType flushType =
+     aInterruptible ? FlushType::InterruptibleLayout : FlushType::Layout;
    if (shouldFlush && !mIsDestroying) {
      FlushPendingNotifications(flushType);
    }
@@ -3979,10 +3979,10 @@ PresShell::IsSafeToFlush() const
 
 
 void
-PresShell::FlushPendingNotifications(mozFlushType aType)
+PresShell::FlushPendingNotifications(FlushType aType)
 {
   
-  mozilla::ChangesToFlush flush(aType, aType >= Flush_Style);
+  mozilla::ChangesToFlush flush(aType, aType >= FlushType::Style);
   FlushPendingNotifications(flush);
 }
 
@@ -3994,10 +3994,13 @@ PresShell::FlushPendingNotifications(mozilla::ChangesToFlush aFlush)
 
 
 
-  mozFlushType flushType = aFlush.mFlushType;
+  FlushType flushType = aFlush.mFlushType;
 
 #ifdef MOZ_ENABLE_PROFILER_SPS
-  static const char flushTypeNames[][20] = {
+  static const EnumeratedArray<FlushType,
+                               FlushType::Count,
+                               const char*> flushTypeNames = {
+    "",
     "Content",
     "ContentAndNotify",
     "Style",
@@ -4006,11 +4009,9 @@ PresShell::FlushPendingNotifications(mozilla::ChangesToFlush aFlush)
     "Display"
   };
 
-  
-  MOZ_ASSERT(static_cast<uint32_t>(flushType) <= ArrayLength(flushTypeNames));
-
   PROFILER_LABEL_PRINTF("PresShell", "Flush",
-    js::ProfileEntry::Category::GRAPHICS, "(Flush_%s)", flushTypeNames[flushType - 1]);
+    js::ProfileEntry::Category::GRAPHICS, "(FlushType::%s)",
+    flushTypeNames[flushType]);
 #endif
 
 #ifdef ACCESSIBILITY
@@ -4023,7 +4024,7 @@ PresShell::FlushPendingNotifications(mozilla::ChangesToFlush aFlush)
 #endif
 #endif
 
-  NS_ASSERTION(flushType >= Flush_Frames, "Why did we get called?");
+  NS_ASSERTION(flushType >= FlushType::Frames, "Why did we get called?");
 
   bool isSafeToFlush = IsSafeToFlush();
 
@@ -4065,7 +4066,7 @@ PresShell::FlushPendingNotifications(mozilla::ChangesToFlush aFlush)
     
     
     
-    mDocument->FlushPendingNotifications(Flush_ContentAndNotify);
+    mDocument->FlushPendingNotifications(FlushType::ContentAndNotify);
 
     
     
@@ -4122,12 +4123,15 @@ PresShell::FlushPendingNotifications(mozilla::ChangesToFlush aFlush)
     
     
 
-    if (flushType >= (mSuppressInterruptibleReflows ? Flush_Layout : Flush_InterruptibleLayout) &&
+    if (flushType >= (mSuppressInterruptibleReflows
+                        ? FlushType::Layout
+                        : FlushType::InterruptibleLayout) &&
         !mIsDestroying) {
       didLayoutFlush = true;
       mFrameConstructor->RecalcQuotesAndCounters();
       viewManager->FlushDelayedResize(true);
-      if (ProcessReflowCommands(flushType < Flush_Layout) && mContentToScrollTo) {
+      if (ProcessReflowCommands(flushType < FlushType::Layout) &&
+          mContentToScrollTo) {
         
         DoScrollContentIntoView();
         if (mContentToScrollTo) {
@@ -4137,20 +4141,21 @@ PresShell::FlushPendingNotifications(mozilla::ChangesToFlush aFlush)
       }
     }
 
-    if (flushType >= Flush_Layout) {
+    if (flushType >= FlushType::Layout) {
       if (!mIsDestroying) {
         viewManager->UpdateWidgetGeometry();
       }
     }
   }
 
-  if (!didStyleFlush && flushType >= Flush_Style && !mIsDestroying) {
+  if (!didStyleFlush && flushType >= FlushType::Style && !mIsDestroying) {
     mDocument->SetNeedStyleFlush();
   }
 
   if (!didLayoutFlush && !mIsDestroying &&
       (flushType >=
-       (mSuppressInterruptibleReflows ? Flush_Layout : Flush_InterruptibleLayout))) {
+       (mSuppressInterruptibleReflows ? FlushType::Layout
+                                      : FlushType::InterruptibleLayout))) {
     
     
     
@@ -4446,7 +4451,7 @@ PresShell::ReconstructFrames(void)
 
   
   
-  mDocument->FlushPendingNotifications(Flush_ContentAndNotify);
+  mDocument->FlushPendingNotifications(FlushType::ContentAndNotify);
 
   if (mIsDestroying) {
     return NS_OK;
@@ -5475,8 +5480,8 @@ void PresShell::SynthesizeMouseMove(bool aFromScroll)
     RefPtr<nsSynthMouseMoveEvent> ev =
         new nsSynthMouseMoveEvent(this, aFromScroll);
 
-    if (!GetPresContext()->RefreshDriver()->AddRefreshObserver(ev,
-                                                               Flush_Display)) {
+    if (!GetPresContext()->RefreshDriver()
+                         ->AddRefreshObserver(ev, FlushType::Display)) {
       NS_WARNING("failed to dispatch nsSynthMouseMoveEvent");
       return;
     }
@@ -8655,7 +8660,7 @@ PresShell::WillPaint()
   
   
   
-  FlushPendingNotifications(ChangesToFlush(Flush_InterruptibleLayout, false));
+  FlushPendingNotifications(ChangesToFlush(FlushType::InterruptibleLayout, false));
 }
 
 void
@@ -9220,7 +9225,7 @@ PresShell::DoVerifyReflow()
     nsView* rootView = mViewManager->GetRootView();
     mViewManager->InvalidateView(rootView);
 
-    FlushPendingNotifications(Flush_Layout);
+    FlushPendingNotifications(FlushType::Layout);
     mInVerifyReflow = true;
     bool ok = VerifyIncrementalReflow();
     mInVerifyReflow = false;
@@ -9439,7 +9444,7 @@ PresShell::Observe(nsISupports* aSubject,
       nsWeakFrame weakRoot(rootFrame);
       
       
-      mDocument->FlushPendingNotifications(Flush_ContentAndNotify);
+      mDocument->FlushPendingNotifications(FlushType::ContentAndNotify);
 
       if (weakRoot.IsAlive()) {
         WalkFramesThroughPlaceholders(mPresContext, rootFrame,
@@ -9525,7 +9530,7 @@ PresShell::Observe(nsISupports* aSubject,
 
 bool
 nsIPresShell::AddRefreshObserverInternal(nsARefreshObserver* aObserver,
-                                         mozFlushType aFlushType)
+                                         FlushType aFlushType)
 {
   nsPresContext* presContext = GetPresContext();
   return presContext &&
@@ -9534,14 +9539,14 @@ nsIPresShell::AddRefreshObserverInternal(nsARefreshObserver* aObserver,
 
  bool
 nsIPresShell::AddRefreshObserverExternal(nsARefreshObserver* aObserver,
-                                         mozFlushType aFlushType)
+                                         FlushType aFlushType)
 {
   return AddRefreshObserverInternal(aObserver, aFlushType);
 }
 
 bool
 nsIPresShell::RemoveRefreshObserverInternal(nsARefreshObserver* aObserver,
-                                            mozFlushType aFlushType)
+                                            FlushType aFlushType)
 {
   nsPresContext* presContext = GetPresContext();
   return presContext &&
@@ -9550,7 +9555,7 @@ nsIPresShell::RemoveRefreshObserverInternal(nsARefreshObserver* aObserver,
 
  bool
 nsIPresShell::RemoveRefreshObserverExternal(nsARefreshObserver* aObserver,
-                                            mozFlushType aFlushType)
+                                            FlushType aFlushType)
 {
   return RemoveRefreshObserverInternal(aObserver, aFlushType);
 }
@@ -9958,7 +9963,7 @@ PresShell::VerifyIncrementalReflow()
     sh->Initialize(r.width, r.height);
   }
   mDocument->BindingManager()->ProcessAttachedQueue();
-  sh->FlushPendingNotifications(Flush_Layout);
+  sh->FlushPendingNotifications(FlushType::Layout);
   sh->SetVerifyReflowEnable(true);  
   
   
