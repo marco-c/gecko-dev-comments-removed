@@ -285,25 +285,6 @@ if (opener) {
 
 
 
-
-
-
-
-function setupSynchronousObserver(t, target, subtree) {
-   var observer = new MutationObserver(records => {
-     assert_unreached("Any MutationRecords should not be observed in this " +
-                      "callback");
-   });
-  t.add_cleanup(() => {
-    observer.disconnect();
-  });
-  observer.observe(target, { animations: true, subtree: subtree });
-  return observer;
-}
-
-
-
-
 function waitForDocumentLoad() {
   return new Promise(function(resolve, reject) {
     if (document.readyState === "complete") {
