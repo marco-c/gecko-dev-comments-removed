@@ -78,6 +78,7 @@ class nsCSSBorderRenderer final
   typedef mozilla::gfx::StrokeOptions StrokeOptions;
 
   friend class nsDisplayBorder;
+  friend class nsDisplayOutline;
 
 public:
 
@@ -121,7 +122,7 @@ private:
 
   
   DrawTarget* mDrawTarget;
-  const Rect mDirtyRect;
+  Rect mDirtyRect;
 
   
   Rect mOuterRect;

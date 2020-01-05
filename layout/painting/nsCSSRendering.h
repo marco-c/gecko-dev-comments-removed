@@ -354,7 +354,6 @@ struct nsBackgroundLayerState {
 };
 
 struct nsCSSRendering {
-  typedef mozilla::gfx::Color Color;
   typedef mozilla::gfx::CompositionOp CompositionOp;
   typedef mozilla::gfx::DrawTarget DrawTarget;
   typedef mozilla::gfx::Float Float;
@@ -380,17 +379,6 @@ struct nsCSSRendering {
                                   nsIFrame* aForFrame,
                                   const nsRect& aFrameArea);
 
-  static nsRect GetShadowRect(const nsRect aFrameArea,
-                              bool aNativeTheme,
-                              nsIFrame* aForFrame);
-  static mozilla::gfx::Color GetShadowColor(nsCSSShadowItem* aShadow,
-                                   nsIFrame* aFrame,
-                                   float aOpacity);
-  
-  
-  
-  static bool HasBoxShadowNativeTheme(nsIFrame* aFrame,
-                                      bool& aMaybeHasBorderRadius);
   static void PaintBoxShadowOuter(nsPresContext* aPresContext,
                                   nsRenderingContext& aRenderingContext,
                                   nsIFrame* aForFrame,
@@ -450,6 +438,13 @@ struct nsCSSRendering {
                                       nsStyleContext* aStyleContext,
                                       Sides aSkipSides = Sides());
 
+  static mozilla::Maybe<nsCSSBorderRenderer>
+  CreateBorderRendererForOutline(nsPresContext* aPresContext,
+                                 nsRenderingContext* aRenderingContext,
+                                 nsIFrame* aForFrame,
+                                 const nsRect& aDirtyRect,
+                                 const nsRect& aBorderArea,
+                                 nsStyleContext* aStyleContext);
 
   
 
