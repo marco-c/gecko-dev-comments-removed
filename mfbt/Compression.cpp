@@ -12,6 +12,15 @@
 
 #include <string>
 
+
+
+
+
+
+#ifdef _MSC_VER
+#include <intrin.h>
+#endif
+
 using namespace mozilla::Compression;
 
 namespace {
