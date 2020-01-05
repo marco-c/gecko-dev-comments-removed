@@ -69,10 +69,11 @@ public:
 
     nsHttpHandler();
 
-    nsresult Init();
-    nsresult AddStandardRequestHeaders(nsHttpRequestHead *, bool isSecure);
-    nsresult AddConnectionHeader(nsHttpRequestHead *,
-                                 uint32_t capabilities);
+    MOZ_MUST_USE nsresult Init();
+    MOZ_MUST_USE nsresult AddStandardRequestHeaders(nsHttpRequestHead *,
+                                                    bool isSecure);
+    MOZ_MUST_USE nsresult AddConnectionHeader(nsHttpRequestHead *,
+                                              uint32_t capabilities);
     bool     IsAcceptableEncoding(const char *encoding, bool isSecure);
 
     const nsAFlatCString &UserAgent();
@@ -189,50 +190,53 @@ public:
     
     
     
-    nsresult InitiateTransaction(nsHttpTransaction *trans, int32_t priority)
+    MOZ_MUST_USE nsresult InitiateTransaction(nsHttpTransaction *trans,
+                                              int32_t priority)
     {
         return mConnMgr->AddTransaction(trans, priority);
     }
 
     
     
-    nsresult RescheduleTransaction(nsHttpTransaction *trans, int32_t priority)
+    MOZ_MUST_USE nsresult RescheduleTransaction(nsHttpTransaction *trans,
+                                                int32_t priority)
     {
         return mConnMgr->RescheduleTransaction(trans, priority);
     }
 
     
     
-    nsresult CancelTransaction(nsHttpTransaction *trans, nsresult reason)
+    MOZ_MUST_USE nsresult CancelTransaction(nsHttpTransaction *trans,
+                                            nsresult reason)
     {
         return mConnMgr->CancelTransaction(trans, reason);
     }
 
     
     
-    nsresult ReclaimConnection(nsHttpConnection *conn)
+    MOZ_MUST_USE nsresult ReclaimConnection(nsHttpConnection *conn)
     {
         return mConnMgr->ReclaimConnection(conn);
     }
 
-    nsresult ProcessPendingQ(nsHttpConnectionInfo *cinfo)
+    MOZ_MUST_USE nsresult ProcessPendingQ(nsHttpConnectionInfo *cinfo)
     {
         return mConnMgr->ProcessPendingQ(cinfo);
     }
 
-    nsresult ProcessPendingQ()
+    MOZ_MUST_USE nsresult ProcessPendingQ()
     {
         return mConnMgr->ProcessPendingQ();
     }
 
-    nsresult GetSocketThreadTarget(nsIEventTarget **target)
+    MOZ_MUST_USE nsresult GetSocketThreadTarget(nsIEventTarget **target)
     {
         return mConnMgr->GetSocketThreadTarget(target);
     }
 
-    nsresult SpeculativeConnect(nsHttpConnectionInfo *ci,
-                                nsIInterfaceRequestor *callbacks,
-                                uint32_t caps = 0)
+    MOZ_MUST_USE nsresult SpeculativeConnect(nsHttpConnectionInfo *ci,
+                                             nsIInterfaceRequestor *callbacks,
+                                             uint32_t caps = 0)
     {
         TickleWifi(callbacks);
         return mConnMgr->SpeculativeConnect(ci, callbacks, caps);
@@ -261,8 +265,8 @@ public:
     
     
     
-    nsresult GetStreamConverterService(nsIStreamConverterService **);
-    nsresult GetIOService(nsIIOService** service);
+    MOZ_MUST_USE nsresult GetStreamConverterService(nsIStreamConverterService **);
+    MOZ_MUST_USE nsresult GetIOService(nsIIOService** service);
     nsICookieService * GetCookieService(); 
     nsISiteSecurityService * GetSSService();
     nsIThrottlingService * GetThrottlingService();
@@ -302,8 +306,9 @@ public:
 
     
     
-    nsresult AsyncOnChannelRedirect(nsIChannel* oldChan, nsIChannel* newChan,
-                               uint32_t flags);
+    MOZ_MUST_USE nsresult AsyncOnChannelRedirect(nsIChannel* oldChan,
+                                                 nsIChannel* newChan,
+                                                 uint32_t flags);
 
     
     
@@ -314,8 +319,9 @@ public:
 
     
     
-    static nsresult GenerateHostPort(const nsCString& host, int32_t port,
-                                     nsACString& hostLine);
+    static MOZ_MUST_USE nsresult GenerateHostPort(const nsCString& host,
+                                                  int32_t port,
+                                                  nsACString& hostLine);
 
 
     SpdyInformation *SpdyInfo() { return &mSpdyInfo; }
@@ -362,11 +368,11 @@ private:
     void     InitUserAgentComponents();
     void     PrefsChanged(nsIPrefBranch *prefs, const char *pref);
 
-    nsresult SetAccept(const char *);
-    nsresult SetAcceptLanguages(const char *);
-    nsresult SetAcceptEncodings(const char *, bool mIsSecure);
+    MOZ_MUST_USE nsresult SetAccept(const char *);
+    MOZ_MUST_USE nsresult SetAcceptLanguages(const char *);
+    MOZ_MUST_USE nsresult SetAcceptEncodings(const char *, bool mIsSecure);
 
-    nsresult InitConnectionMgr();
+    MOZ_MUST_USE nsresult InitConnectionMgr();
 
     void     NotifyObservers(nsIHttpChannel *chan, const char *event);
 
@@ -567,8 +573,8 @@ private:
 
 public:
     
-    nsresult SubmitPacedRequest(ATokenBucketEvent *event,
-                                nsICancelable **cancel)
+    MOZ_MUST_USE nsresult SubmitPacedRequest(ATokenBucketEvent *event,
+                                             nsICancelable **cancel)
     {
         MOZ_ASSERT(PR_GetCurrentThread() == gSocketThread);
         if (!mRequestTokenBucket) {
@@ -598,16 +604,17 @@ private:
     void TickleWifi(nsIInterfaceRequestor *cb);
 
 private:
-    nsresult SpeculativeConnectInternal(nsIURI *aURI,
-                                        nsIPrincipal *aPrincipal,
-                                        nsIInterfaceRequestor *aCallbacks,
-                                        bool anonymous);
+    MOZ_MUST_USE nsresult
+    SpeculativeConnectInternal(nsIURI *aURI,
+                               nsIPrincipal *aPrincipal,
+                               nsIInterfaceRequestor *aCallbacks,
+                               bool anonymous);
 
     
     nsCOMPtr<nsIUUIDGenerator> mUUIDGen;
 
 public:
-    nsresult NewChannelId(nsID *channelId);
+    MOZ_MUST_USE nsresult NewChannelId(nsID *channelId);
 };
 
 extern nsHttpHandler *gHttpHandler;
@@ -634,7 +641,7 @@ public:
 
     nsHttpsHandler() { }
 
-    nsresult Init();
+    MOZ_MUST_USE nsresult Init();
 };
 
 } 

@@ -82,7 +82,7 @@ public:
     
     nsHttpConnectionInfo* Clone() const;
     void CloneAsDirectRoute(nsHttpConnectionInfo **outParam);
-    nsresult CreateWildCard(nsHttpConnectionInfo **outParam);
+    MOZ_MUST_USE nsresult CreateWildCard(nsHttpConnectionInfo **outParam);
 
     const char *ProxyHost() const { return mProxyInfo ? mProxyInfo->Host().get() : nullptr; }
     int32_t     ProxyPort() const { return mProxyInfo ? mProxyInfo->Port() : -1; }

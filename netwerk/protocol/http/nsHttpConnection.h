@@ -66,15 +66,16 @@ public:
     
     
     
-    nsresult Init(nsHttpConnectionInfo *info, uint16_t maxHangTime,
-                  nsISocketTransport *, nsIAsyncInputStream *,
-                  nsIAsyncOutputStream *, bool connectedTransport,
-                  nsIInterfaceRequestor *, PRIntervalTime);
+    MOZ_MUST_USE nsresult Init(nsHttpConnectionInfo *info, uint16_t maxHangTime,
+                               nsISocketTransport *, nsIAsyncInputStream *,
+                               nsIAsyncOutputStream *, bool connectedTransport,
+                               nsIInterfaceRequestor *, PRIntervalTime);
 
     
     
     
-    nsresult Activate(nsAHttpTransaction *, uint32_t caps, int32_t pri);
+    MOZ_MUST_USE nsresult Activate(nsAHttpTransaction *, uint32_t caps,
+                                   int32_t pri);
 
     
     void Close(nsresult reason, bool aIsShutdown = false);
@@ -126,28 +127,32 @@ public:
     nsHttpConnectionInfo *ConnectionInfo() { return mConnInfo; }
 
     
-    nsresult OnHeadersAvailable(nsAHttpTransaction *, nsHttpRequestHead *, nsHttpResponseHead *, bool *reset);
-    void     CloseTransaction(nsAHttpTransaction *, nsresult reason, bool aIsShutdown = false);
+    MOZ_MUST_USE nsresult OnHeadersAvailable(nsAHttpTransaction *,
+                                             nsHttpRequestHead *,
+                                             nsHttpResponseHead *, bool *reset);
+    void     CloseTransaction(nsAHttpTransaction *, nsresult reason,
+                              bool aIsShutdown = false);
     void     GetConnectionInfo(nsHttpConnectionInfo **ci) { NS_IF_ADDREF(*ci = mConnInfo); }
-    nsresult TakeTransport(nsISocketTransport **,
-                           nsIAsyncInputStream **,
-                           nsIAsyncOutputStream **);
+    MOZ_MUST_USE nsresult TakeTransport(nsISocketTransport **,
+                                        nsIAsyncInputStream **,
+                                        nsIAsyncOutputStream **);
     void     GetSecurityInfo(nsISupports **);
     bool     IsPersistent() { return IsKeepAlive() && !mDontReuse; }
     bool     IsReused();
     void     SetIsReusedAfter(uint32_t afterMilliseconds);
-    nsresult PushBack(const char *data, uint32_t length);
-    nsresult ResumeSend();
-    nsresult ResumeRecv();
+    MOZ_MUST_USE nsresult PushBack(const char *data, uint32_t length);
+    MOZ_MUST_USE nsresult ResumeSend();
+    MOZ_MUST_USE nsresult ResumeRecv();
     int64_t  MaxBytesRead() {return mMaxBytesRead;}
     uint8_t GetLastHttpResponseVersion() { return mLastHttpResponseVersion; }
 
     friend class HttpConnectionForceIO;
-    nsresult ForceSend();
-    nsresult ForceRecv();
+    MOZ_MUST_USE nsresult ForceSend();
+    MOZ_MUST_USE nsresult ForceRecv();
 
-    static nsresult ReadFromStream(nsIInputStream *, void *, const char *,
-                                   uint32_t, uint32_t, uint32_t *);
+    static MOZ_MUST_USE nsresult ReadFromStream(nsIInputStream *, void *,
+                                                const char *, uint32_t,
+                                                uint32_t, uint32_t *);
 
     
     
@@ -191,9 +196,9 @@ public:
     
     bool    IsExperienced() { return mExperienced; }
 
-    static nsresult MakeConnectString(nsAHttpTransaction *trans,
-                                      nsHttpRequestHead *request,
-                                      nsACString &result);
+    static MOZ_MUST_USE nsresult MakeConnectString(nsAHttpTransaction *trans,
+                                                   nsHttpRequestHead *request,
+                                                   nsACString &result);
     void    SetupSecondaryTLS();
     void    SetInSpdyTunnel(bool arg);
 
@@ -220,22 +225,23 @@ private:
     };
 
     
-    nsresult InitSSLParams(bool connectingToProxy, bool ProxyStartSSL);
-    nsresult SetupNPNList(nsISSLSocketControl *ssl, uint32_t caps);
+    MOZ_MUST_USE nsresult InitSSLParams(bool connectingToProxy,
+                                        bool ProxyStartSSL);
+    MOZ_MUST_USE nsresult SetupNPNList(nsISSLSocketControl *ssl, uint32_t caps);
 
-    nsresult OnTransactionDone(nsresult reason);
-    nsresult OnSocketWritable();
-    nsresult OnSocketReadable();
+    MOZ_MUST_USE nsresult OnTransactionDone(nsresult reason);
+    MOZ_MUST_USE nsresult OnSocketWritable();
+    MOZ_MUST_USE nsresult OnSocketReadable();
 
-    nsresult SetupProxyConnect();
+    MOZ_MUST_USE nsresult SetupProxyConnect();
 
     PRIntervalTime IdleTime();
     bool     IsAlive();
 
     
     
-    bool     EnsureNPNComplete(nsresult &aOut0RTTWriteHandshakeValue,
-                               uint32_t &aOut0RTTBytesWritten);
+    MOZ_MUST_USE bool EnsureNPNComplete(nsresult &aOut0RTTWriteHandshakeValue,
+                                        uint32_t &aOut0RTTBytesWritten);
     void     SetupSSL();
 
     
@@ -249,13 +255,13 @@ private:
     nsresult MoveTransactionsToSpdy(nsresult status, nsTArray<RefPtr<nsAHttpTransaction> > &list);
 
     
-    nsresult AddTransaction(nsAHttpTransaction *, int32_t);
+    MOZ_MUST_USE nsresult AddTransaction(nsAHttpTransaction *, int32_t);
 
     
     
-    nsresult StartShortLivedTCPKeepalives();
-    nsresult StartLongLivedTCPKeepalives();
-    nsresult DisableTCPKeepalives();
+    MOZ_MUST_USE nsresult StartShortLivedTCPKeepalives();
+    MOZ_MUST_USE nsresult StartLongLivedTCPKeepalives();
+    MOZ_MUST_USE nsresult DisableTCPKeepalives();
 
 private:
     nsCOMPtr<nsISocketTransport>    mSocketTransport;
@@ -351,7 +357,7 @@ private:
 private:
     
     static void                     ForceSendIO(nsITimer *aTimer, void *aClosure);
-    nsresult                        MaybeForceSendIO();
+    MOZ_MUST_USE nsresult           MaybeForceSendIO();
     bool                            mForceSendPending;
     nsCOMPtr<nsITimer>              mForceSendTimer;
 

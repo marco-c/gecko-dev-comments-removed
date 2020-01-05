@@ -120,7 +120,7 @@ struct nsHttpAtom
 
 struct nsHttp
 {
-    static nsresult CreateAtomTable();
+    static MOZ_MUST_USE nsresult CreateAtomTable();
     static void DestroyAtomTable();
 
     
@@ -164,12 +164,13 @@ struct nsHttp
     
     
     
-    static bool ParseInt64(const char *input, const char **next,
-                             int64_t *result);
+    static MOZ_MUST_USE bool ParseInt64(const char *input, const char **next,
+                                        int64_t *result);
 
     
     
-    static inline bool ParseInt64(const char *input, int64_t *result) {
+    static inline MOZ_MUST_USE bool ParseInt64(const char *input,
+                                               int64_t *result) {
         const char *next;
         return ParseInt64(input, &next, result) && *next == '\0';
     }

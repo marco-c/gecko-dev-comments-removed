@@ -103,7 +103,7 @@ public:
   void AddIPDLReference();
   void ReleaseIPDLReference();
 
-  bool IsSuspended();
+  MOZ_MUST_USE bool IsSuspended();
 
   mozilla::ipc::IPCResult RecvNotifyTrackingProtectionDisabled() override;
   mozilla::ipc::IPCResult RecvNotifyTrackingResource() override;
@@ -156,7 +156,8 @@ protected:
 
   mozilla::ipc::IPCResult RecvSetPriority(const int16_t& aPriority) override;
 
-  bool GetAssociatedContentSecurity(nsIAssociatedContentSecurity** res = nullptr);
+  MOZ_MUST_USE bool
+  GetAssociatedContentSecurity(nsIAssociatedContentSecurity** res = nullptr);
   virtual void DoNotifyListenerCleanup() override;
 
   NS_IMETHOD GetResponseSynthesized(bool* aSynthesized) override;
@@ -187,7 +188,7 @@ private:
   
   void SetEventTarget();
 
-  nsresult ContinueAsyncOpen();
+  MOZ_MUST_USE nsresult ContinueAsyncOpen();
 
   void DoOnStartRequest(nsIRequest* aRequest, nsISupports* aContext);
   void DoOnStatus(nsIRequest* aRequest, nsresult status);
@@ -328,10 +329,10 @@ private:
 
   
   
-  nsresult SetupRedirect(nsIURI* uri,
-                         const nsHttpResponseHead* responseHead,
-                         const uint32_t& redirectFlags,
-                         nsIChannel** outChannel);
+  MOZ_MUST_USE nsresult SetupRedirect(nsIURI* uri,
+                                      const nsHttpResponseHead* responseHead,
+                                      const uint32_t& redirectFlags,
+                                      nsIChannel** outChannel);
 
   
   void BeginNonIPCRedirect(nsIURI* responseURI,

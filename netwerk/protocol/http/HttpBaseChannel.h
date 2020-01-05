@@ -110,10 +110,11 @@ public:
 
   HttpBaseChannel();
 
-  virtual nsresult Init(nsIURI *aURI, uint32_t aCaps, nsProxyInfo *aProxyInfo,
-                        uint32_t aProxyResolveFlags,
-                        nsIURI *aProxyURI,
-                        const nsID& aChannelId);
+  virtual MOZ_MUST_USE nsresult Init(nsIURI *aURI, uint32_t aCaps,
+                                     nsProxyInfo *aProxyInfo,
+                                     uint32_t aProxyResolveFlags,
+                                     nsIURI *aProxyURI,
+                                     const nsID& aChannelId);
 
   
   NS_IMETHOD GetName(nsACString& aName) override;
@@ -231,7 +232,7 @@ public:
   NS_IMETHOD GetBeConservative(bool *aBeConservative) override;
   NS_IMETHOD SetBeConservative(bool aBeConservative) override;
   NS_IMETHOD GetApiRedirectToURI(nsIURI * *aApiRedirectToURI) override;
-  virtual nsresult AddSecurityMessage(const nsAString &aMessageTag, const nsAString &aMessageCategory);
+  virtual MOZ_MUST_USE nsresult AddSecurityMessage(const nsAString &aMessageTag, const nsAString &aMessageCategory);
   NS_IMETHOD TakeAllSecurityMessages(nsCOMArray<nsISecurityConsoleMessage> &aMessages) override;
   NS_IMETHOD GetResponseTimeoutEnabled(bool *aEnable) override;
   NS_IMETHOD SetResponseTimeoutEnabled(bool aEnable) override;
@@ -312,7 +313,7 @@ public:
     private:
         virtual ~nsContentEncodings();
 
-        nsresult PrepareForNext(void);
+        MOZ_MUST_USE nsresult PrepareForNext(void);
 
         
         const char* mEncodingHeader;
@@ -332,7 +333,7 @@ public:
     const NetAddr& GetSelfAddr() { return mSelfAddr; }
     const NetAddr& GetPeerAddr() { return mPeerAddr; }
 
-    nsresult OverrideSecurityInfo(nsISupports* aSecurityInfo);
+    MOZ_MUST_USE nsresult OverrideSecurityInfo(nsISupports* aSecurityInfo);
 
 public: 
     bool IsNavigation();
@@ -344,8 +345,9 @@ public:
 
     
     
-    nsresult DoApplyContentConversions(nsIStreamListener *aNextListener,
-                                       nsIStreamListener **aNewNextListener);
+    MOZ_MUST_USE nsresult
+    DoApplyContentConversions(nsIStreamListener *aNextListener,
+                              nsIStreamListener **aNewNextListener);
 
     
     
@@ -375,10 +377,9 @@ protected:
   nsPIDOMWindowInner* GetInnerDOMWindow();
 
   void AddCookiesToRequest();
-  virtual nsresult SetupReplacementChannel(nsIURI *,
-                                           nsIChannel *,
-                                           bool preserveMethod,
-                                           uint32_t redirectFlags);
+  virtual MOZ_MUST_USE nsresult
+  SetupReplacementChannel(nsIURI *, nsIChannel *, bool preserveMethod,
+                          uint32_t redirectFlags);
 
   
   inline void CallOnModifyRequestObservers() {
@@ -402,7 +403,7 @@ protected:
   
   nsIPrincipal *GetURIPrincipal();
 
-  bool BypassServiceWorker() const;
+  MOZ_MUST_USE bool BypassServiceWorker() const;
 
   
   
@@ -626,7 +627,7 @@ public:
 
   
   
-  nsresult AsyncAbort(nsresult status);
+  MOZ_MUST_USE nsresult AsyncAbort(nsresult status);
 
   
   void HandleAsyncAbort();
@@ -634,8 +635,8 @@ public:
   
   
   
-  nsresult AsyncCall(void (T::*funcPtr)(),
-                     nsRunnableMethod<T> **retval = nullptr);
+  MOZ_MUST_USE nsresult AsyncCall(void (T::*funcPtr)(),
+                                  nsRunnableMethod<T> **retval = nullptr);
 private:
   T *mThis;
 
@@ -645,7 +646,7 @@ protected:
 };
 
 template <class T>
-nsresult HttpAsyncAborter<T>::AsyncAbort(nsresult status)
+MOZ_MUST_USE nsresult HttpAsyncAborter<T>::AsyncAbort(nsresult status)
 {
   MOZ_LOG(gHttpLog, LogLevel::Debug,
          ("HttpAsyncAborter::AsyncAbort [this=%p status=%" PRIx32 "]\n",

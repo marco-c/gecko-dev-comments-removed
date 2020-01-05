@@ -41,23 +41,23 @@ public:
     
     
     
-    virtual nsresult OnHeadersAvailable(nsAHttpTransaction *,
-                                        nsHttpRequestHead *,
-                                        nsHttpResponseHead *,
-                                        bool *reset) = 0;
+    virtual MOZ_MUST_USE nsresult OnHeadersAvailable(nsAHttpTransaction *,
+                                                     nsHttpRequestHead *,
+                                                     nsHttpResponseHead *,
+                                                     bool *reset) = 0;
 
     
     
     
     
     
-    virtual nsresult ResumeSend() = 0;
-    virtual nsresult ResumeRecv() = 0;
+    virtual MOZ_MUST_USE nsresult ResumeSend() = 0;
+    virtual MOZ_MUST_USE nsresult ResumeRecv() = 0;
 
     
     
-    virtual nsresult ForceSend() = 0;
-    virtual nsresult ForceRecv() = 0;
+    virtual MOZ_MUST_USE nsresult ForceSend() = 0;
+    virtual MOZ_MUST_USE nsresult ForceRecv() = 0;
 
     
     
@@ -96,9 +96,9 @@ public:
 
     
     
-    virtual nsresult TakeTransport(nsISocketTransport **,
-                                   nsIAsyncInputStream **,
-                                   nsIAsyncOutputStream **) = 0;
+    virtual MOZ_MUST_USE nsresult TakeTransport(nsISocketTransport **,
+                                                nsIAsyncInputStream **,
+                                                nsIAsyncOutputStream **) = 0;
 
     
     virtual void GetSecurityInfo(nsISupports **) = 0;
@@ -113,7 +113,7 @@ public:
 
     
     
-    virtual nsresult PushBack(const char *data, uint32_t length) = 0;
+    virtual MOZ_MUST_USE nsresult PushBack(const char *data, uint32_t length) = 0;
 
     
     
@@ -148,15 +148,18 @@ public:
 NS_DEFINE_STATIC_IID_ACCESSOR(nsAHttpConnection, NS_AHTTPCONNECTION_IID)
 
 #define NS_DECL_NSAHTTPCONNECTION(fwdObject)                    \
-    nsresult OnHeadersAvailable(nsAHttpTransaction *, nsHttpRequestHead *, nsHttpResponseHead *, bool *reset) override; \
+    MOZ_MUST_USE nsresult OnHeadersAvailable(nsAHttpTransaction *,  \
+                                             nsHttpRequestHead *,   \
+                                             nsHttpResponseHead *,  \
+                                             bool *reset) override; \
     void CloseTransaction(nsAHttpTransaction *, nsresult) override; \
-    nsresult TakeTransport(nsISocketTransport **,    \
-                           nsIAsyncInputStream **,   \
-                           nsIAsyncOutputStream **) override; \
+    MOZ_MUST_USE nsresult TakeTransport(nsISocketTransport **,    \
+                                        nsIAsyncInputStream **,   \
+                                        nsIAsyncOutputStream **) override; \
     bool IsPersistent() override;                         \
     bool IsReused() override;                             \
     void DontReuse() override;                            \
-    nsresult PushBack(const char *, uint32_t) override;   \
+    MOZ_MUST_USE nsresult PushBack(const char *, uint32_t) override; \
     already_AddRefed<nsHttpConnection> TakeHttpConnection() override; \
     /*                                                    \
        Thes methods below have automatic definitions that just forward the \
@@ -179,25 +182,25 @@ NS_DEFINE_STATIC_IID_ACCESSOR(nsAHttpConnection, NS_AHTTPCONNECTION_IID)
       }                                                   \
       return (fwdObject)->GetSecurityInfo(result);        \
     }                                                     \
-    nsresult ResumeSend() override     \
+    MOZ_MUST_USE nsresult ResumeSend() override \
     {                                      \
         if (!(fwdObject))                  \
             return NS_ERROR_FAILURE;       \
         return (fwdObject)->ResumeSend();  \
     }                                      \
-    nsresult ResumeRecv() override     \
+    MOZ_MUST_USE nsresult ResumeRecv() override \
     {                                      \
         if (!(fwdObject))                  \
             return NS_ERROR_FAILURE;       \
         return (fwdObject)->ResumeRecv();  \
     }                                      \
-    nsresult ForceSend() override      \
+    MOZ_MUST_USE nsresult ForceSend() override \
     {                                      \
         if (!(fwdObject))                  \
             return NS_ERROR_FAILURE;       \
         return (fwdObject)->ForceSend();   \
     }                                      \
-    nsresult ForceRecv() override      \
+    MOZ_MUST_USE nsresult ForceRecv() override \
     {                                      \
         if (!(fwdObject))                  \
             return NS_ERROR_FAILURE;       \

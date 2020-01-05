@@ -47,8 +47,8 @@ public:
   explicit HttpChannelParentListener(HttpChannelParent* aInitialChannel);
 
   
-  nsresult DivertTo(nsIStreamListener *aListener);
-  nsresult SuspendForDiversion();
+  MOZ_MUST_USE nsresult DivertTo(nsIStreamListener *aListener);
+  MOZ_MUST_USE nsresult SuspendForDiversion();
 
   void SetupInterception(const nsHttpResponseHead& aResponseHead);
   void SetupInterceptionAfterRedirect(bool aShouldIntercept);
@@ -58,7 +58,7 @@ private:
   virtual ~HttpChannelParentListener();
 
   
-  nsresult ResumeForDiversion();
+  MOZ_MUST_USE nsresult ResumeForDiversion();
 
   
   
