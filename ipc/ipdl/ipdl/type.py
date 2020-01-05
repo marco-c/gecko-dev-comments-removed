@@ -423,7 +423,7 @@ class StructType(_CompoundType):
     def itercomponents(self):
         for f in self.fields:
             yield f
-    
+
     def name(self): return self.qname.baseid
     def fullname(self): return str(self.qname)
 
@@ -552,7 +552,7 @@ class SymbolTable:
         self.scopes = [ { } ]   
         self.globalScope = self.scopes[0]
         self.currentScope = self.globalScope
-    
+
     def enterScope(self, node):
         assert (isinstance(self.scopes[0], dict)
                 and self.globalScope is self.scopes[0])
@@ -843,7 +843,7 @@ class GatherDecls(TcheckVisitor):
         
         if len(utype.components):
             return
-        
+
         for c in ud.components:
             cdecl = self.symtab.lookup(str(c))
             if cdecl is None:
@@ -930,7 +930,7 @@ class GatherDecls(TcheckVisitor):
                     mgdname, p.name)
 
         p.states = { }
-        
+
         if len(p.transitionStmts):
             p.startStates = [ ts for ts in p.transitionStmts
                               if ts.state.start ]
@@ -966,7 +966,7 @@ class GatherDecls(TcheckVisitor):
                     and None is self.symtab.lookup(_DELETE_MSG))):
             
             deadtrans = TransitionStmt.makeNullStmt(State.DEAD)
-            p.states[State.DEAD] = deadtrans           
+            p.states[State.DEAD] = deadtrans
             if p.decl.type.hasReentrantDelete:
                 dyingtrans = TransitionStmt.makeNullStmt(State.DYING)
                 p.states[State.DYING] = dyingtrans
@@ -979,7 +979,7 @@ class GatherDecls(TcheckVisitor):
             
             if isinstance(actortype.state, Decl):
                 return
-            
+
             if actortype.state is None:
                 
                 
@@ -1182,7 +1182,7 @@ class GatherDecls(TcheckVisitor):
         mdecl = self.symtab.lookup(mname)
         if mdecl is not None and mdecl.type.isIPDL() and mdecl.type.isProtocol():
             mdecl = self.symtab.lookup(mname +'Constructor')
-        
+
         if mdecl is None:
             self.error(loc, "message `%s' has not been declared", mname)
         elif not mdecl.type.isMessage():
@@ -1247,7 +1247,7 @@ def checkcycles(p, stack=None):
         
         if cp is p:
             continue
-        
+
         if cp in stack:
             return [stack + [p, cp]]
         cycles += checkcycles(cp, stack + [p])
@@ -1328,7 +1328,7 @@ class CheckTypes(TcheckVisitor):
 
     def visitProtocol(self, p):
         self.ptype = p.decl.type
-        
+
         
         ptype, pname = p.decl.type, p.decl.shortname
 
@@ -1454,7 +1454,7 @@ class CheckTypes(TcheckVisitor):
 
     def visitManager(self, mgr):
         
-        
+
         pdecl = mgr.of.decl
         ptype, pname = pdecl.type, pdecl.shortname
 
@@ -1523,7 +1523,7 @@ class CheckTypes(TcheckVisitor):
         if mtype.isCtor() and not ptype.isManagerOf(mtype.constructedType()):
             self.error(
                 loc,
-                "ctor for protocol `%s', which is not managed by protocol `%s'", 
+                "ctor for protocol `%s', which is not managed by protocol `%s'",
                 mname[:-len('constructor')], pname)
 
 
@@ -1535,7 +1535,7 @@ class CheckTypes(TcheckVisitor):
             SEND: [ OUT, _YNC ], RECV: [ IN, _YNC ],
             CALL: [ OUT, INTR ],  ANSWER: [ IN, INTR ],
          } [t.trigger]
-        
+
         if (OUT is impliedDirection and t.msg.type.isIn()
             or IN is impliedDirection and t.msg.type.isOut()
             or _YNC is impliedSems and t.msg.type.isInterrupt()
@@ -2147,7 +2147,7 @@ direction as trigger |t|'''
         U2 = stateName(U2)
 
         return T1, M1.msg.progname, U1, T2, M2.msg.progname, U2
-        
+
 
     def reportRaceError(self, loc, S, t1Seq, t2Seq):
         T1, M1, U1, T2, M2, U2 = self._normalizeTransitionSequences(t1Seq, t2Seq)
