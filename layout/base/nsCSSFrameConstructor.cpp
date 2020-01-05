@@ -3698,7 +3698,7 @@ nsCSSFrameConstructor::FindInputData(Element* aElement,
                                  nsCSSAnonBoxes::buttonContent) },
     
     SIMPLE_INT_CREATE(NS_FORM_INPUT_NUMBER, NS_NewNumberControlFrame),
-#if defined(MOZ_WIDGET_ANDROID) || defined(MOZ_WIDGET_GONK)
+#if defined(MOZ_WIDGET_ANDROID)
     
     SIMPLE_INT_CREATE(NS_FORM_INPUT_TIME, NS_NewTextControlFrame),
     SIMPLE_INT_CREATE(NS_FORM_INPUT_DATE, NS_NewTextControlFrame),
@@ -3733,7 +3733,7 @@ nsCSSFrameConstructor::FindInputData(Element* aElement,
   
   
   
-#if !defined(MOZ_WIDGET_ANDROID) && !defined(MOZ_WIDGET_GONK)
+#if !defined(MOZ_WIDGET_ANDROID)
   
   
   
