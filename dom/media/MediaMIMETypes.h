@@ -9,6 +9,7 @@
 
 #include "mozilla/Maybe.h"
 #include "nsString.h"
+#include "VideoUtils.h"
 
 namespace mozilla {
 
@@ -100,6 +101,47 @@ Maybe<MediaMIMEType> MakeMediaMIMEType(const char* aType);
 
 
 
+class MediaCodecs
+{
+public:
+  MediaCodecs() {}
+  
+  explicit MediaCodecs(const nsAString& aCodecs)
+    : mCodecs(aCodecs)
+  {}
+  
+  template <size_t N>
+  explicit MediaCodecs(const char (&aCodecs)[N])
+    : mCodecs(NS_ConvertUTF8toUTF16(aCodecs, N - 1))
+  {}
+
+  bool IsEmpty() const { return mCodecs.IsEmpty(); }
+  const nsAString& AsString() const { return mCodecs; }
+
+  using RangeType =
+    const StringListRange<nsString, StringListRangeEmptyItems::ProcessEmptyItems>;
+
+  
+  
+  
+  
+  RangeType Range() const
+  {
+    return RangeType(mCodecs);
+  };
+
+  bool Contains(const nsAString& aCodec) const;
+  bool ContainsAll(const MediaCodecs& aCodecs) const;
+
+private:
+  
+  
+  
+  nsString mCodecs;
+};
+
+
+
 
 class MediaExtendedMIMEType
 {
@@ -113,7 +155,7 @@ public:
   
   bool HaveCodecs() const { return mHaveCodecs; }
   
-  const nsAString& GetCodecs() const { return mCodecs; }
+  const MediaCodecs& Codecs() const { return mCodecs; }
 
   
   Maybe<int32_t> GetWidth() const { return GetMaybeNumber(mWidth); }
@@ -135,7 +177,7 @@ private:
 
   MediaMIMEType mMIMEType; 
   bool mHaveCodecs = false; 
-  nsString mCodecs;
+  MediaCodecs mCodecs;
   int32_t mWidth = -1; 
   int32_t mHeight = -1; 
   int32_t mFramerate = -1; 

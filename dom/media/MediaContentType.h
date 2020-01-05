@@ -41,7 +41,7 @@ public:
   
   bool HaveCodecs() const { return mExtendedMIMEType.HaveCodecs(); }
   
-  const nsAString& GetCodecs() const { return mExtendedMIMEType.GetCodecs(); }
+  const nsAString& GetCodecs() const { return mExtendedMIMEType.Codecs().AsString(); }
 
   
   Maybe<int32_t> GetWidth() const { return mExtendedMIMEType.GetWidth(); }
