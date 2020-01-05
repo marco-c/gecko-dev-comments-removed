@@ -450,9 +450,6 @@ pub enum NavigationDirection {
 #[derive(Clone, PartialEq, Eq, Copy, Hash, Debug, Deserialize, Serialize)]
 pub struct FrameId(pub u32);
 
-#[derive(Clone, PartialEq, Eq, Copy, Hash, Debug, Deserialize, Serialize, HeapSizeOf)]
-pub struct WorkerId(pub u32);
-
 
 
 
