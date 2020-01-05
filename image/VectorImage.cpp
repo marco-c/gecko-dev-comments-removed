@@ -841,25 +841,22 @@ VectorImage::Draw(gfxContext* aContext,
     return DrawResult::NOT_READY;
   }
 
-  if (mIsDrawing) {
-    NS_WARNING("Refusing to make re-entrant call to VectorImage::Draw");
-    return DrawResult::TEMPORARY_ERROR;
-  }
-
   if (mAnimationConsumers == 0) {
     SendOnUnlockedDraw(aFlags);
   }
 
-  AutoRestore<bool> autoRestoreIsDrawing(mIsDrawing);
-  mIsDrawing = true;
+  MOZ_ASSERT(!(aFlags & FLAG_FORCE_PRESERVEASPECTRATIO_NONE) ||
+             (aSVGContext && aSVGContext->GetViewportSize()),
+             "Viewport size is required when using "
+             "FLAG_FORCE_PRESERVEASPECTRATIO_NONE");
 
-  
-  
-  
-  
-  
   Maybe<SVGImageContext> newSVGContext;
   if ((aFlags & FLAG_FORCE_PRESERVEASPECTRATIO_NONE) && aSVGContext) {
+    
+    
+    MOZ_ASSERT(!aSVGContext->GetPreserveAspectRatio(),
+               "FLAG_FORCE_PRESERVEASPECTRATIO_NONE is not expected if a "
+               "preserveAspectRatio override is supplied");
     Maybe<SVGPreserveAspectRatio> aspectRatio =
       Some(SVGPreserveAspectRatio(SVG_PRESERVEASPECTRATIO_NONE,
                                   SVG_MEETORSLICE_UNKNOWN));
@@ -867,13 +864,8 @@ VectorImage::Draw(gfxContext* aContext,
     newSVGContext->SetPreserveAspectRatio(aspectRatio);
   }
 
-  float animTime =
-    (aWhichFrame == FRAME_FIRST) ? 0.0f
-                                 : mSVGDocumentWrapper->GetCurrentTime();
-  AutoSVGRenderingState autoSVGState(newSVGContext ? newSVGContext : aSVGContext,
-                                     animTime,
-                                     mSVGDocumentWrapper->GetRootSVGElem());
-
+  float animTime = (aWhichFrame == FRAME_FIRST)
+                     ? 0.0f : mSVGDocumentWrapper->GetCurrentTime();
 
   SVGDrawingParameters params(aContext, aSize, aRegion, aSamplingFilter,
                               newSVGContext ? newSVGContext : aSVGContext,
@@ -887,6 +879,22 @@ VectorImage::Draw(gfxContext* aContext,
     return DrawResult::SUCCESS;
   }
 
+  
+
+  if (mIsDrawing) {
+    NS_WARNING("Refusing to make re-entrant call to VectorImage::Draw");
+    return DrawResult::TEMPORARY_ERROR;
+  }
+  AutoRestore<bool> autoRestoreIsDrawing(mIsDrawing);
+  mIsDrawing = true;
+
+  
+  
+  AutoSVGRenderingState autoSVGState(newSVGContext ? newSVGContext : aSVGContext,
+                                     animTime,
+                                     mSVGDocumentWrapper->GetRootSVGElem());
+
+  
   Maybe<AutoSetRestoreSVGContextPaint> autoContextPaint;
   if (aSVGContext &&
       aSVGContext->GetContextPaint()) {
