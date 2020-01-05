@@ -26,6 +26,7 @@
 #include "nsNetUtil.h"
 #include "mozilla/Services.h"
 #include "nsIOutputStream.h"
+#include "nsXPCOMStrings.h"
 #include "nscore.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsITimer.h"
@@ -440,6 +441,82 @@ STDMETHODIMP_(ULONG) nsDataObj::AddRef()
 	return m_cRef;
 }
 
+namespace {
+class RemoveTempFileHelper : public nsIObserver
+{
+public:
+  explicit RemoveTempFileHelper(nsIFile* aTempFile)
+    : mTempFile(aTempFile)
+  {
+    MOZ_ASSERT(mTempFile);
+  }
+
+  
+  
+  void Attach()
+  {
+    
+    
+    nsresult rv;
+    mTimer = do_CreateInstance(NS_TIMER_CONTRACTID, &rv);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return;
+    }
+    mTimer->Init(this, 500, nsITimer::TYPE_ONE_SHOT);
+
+    nsCOMPtr<nsIObserverService> observerService =
+      do_GetService("@mozilla.org/observer-service;1");
+    if (NS_WARN_IF(!observerService)) {
+      mTimer->Cancel();
+      mTimer = nullptr;
+      return;
+    }
+    observerService->AddObserver(this, NS_XPCOM_SHUTDOWN_OBSERVER_ID, false);
+  }
+
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIOBSERVER
+
+private:
+  ~RemoveTempFileHelper()
+  {
+    if (mTempFile) {
+      mTempFile->Remove(false);
+    }
+  }
+
+  nsCOMPtr<nsIFile> mTempFile;
+  nsCOMPtr<nsITimer> mTimer;
+};
+
+NS_IMPL_ISUPPORTS(RemoveTempFileHelper, nsIObserver);
+
+NS_IMETHODIMP
+RemoveTempFileHelper::Observe(nsISupports* aSubject, const char* aTopic, const char16_t* aData)
+{
+  
+  RefPtr<RemoveTempFileHelper> grip = this;
+
+  
+  nsCOMPtr<nsIObserverService> observerService =
+    do_GetService("@mozilla.org/observer-service;1");
+  if (observerService) {
+    observerService->RemoveObserver(this, NS_XPCOM_SHUTDOWN_OBSERVER_ID);
+  }
+
+  if (mTimer) {
+    mTimer->Cancel();
+    mTimer = nullptr;
+  }
+
+  
+  if (mTempFile) {
+    mTempFile->Remove(false);
+    mTempFile = nullptr;
+  }
+  return NS_OK;
+}
+} 
 
 
 STDMETHODIMP_(ULONG) nsDataObj::Release()
@@ -455,15 +532,10 @@ STDMETHODIMP_(ULONG) nsDataObj::Release()
   
   
   if (mCachedTempFile) {
-    nsresult rv;
-    mTimer = do_CreateInstance(NS_TIMER_CONTRACTID, &rv);
-    if (NS_SUCCEEDED(rv)) {
-      mTimer->InitWithFuncCallback(nsDataObj::RemoveTempFile, this,
-                                   500, nsITimer::TYPE_ONE_SHOT);
-      return AddRef();
-    }
-    mCachedTempFile->Remove(false);
+    RefPtr<RemoveTempFileHelper> helper =
+      new RemoveTempFileHelper(mCachedTempFile);
     mCachedTempFile = nullptr;
+    helper->Attach();
   }
 
 	delete this;
@@ -1598,7 +1670,7 @@ HRESULT nsDataObj::DropTempFile(FORMATETC& aFE, STGMEDIUM& aSTG)
       wideFileName);
     if (FAILED(res))
       return res;
-    NS_CopyUnicodeToNative(wideFileName, filename);
+    NS_UTF16ToCString(wideFileName, NS_CSTRING_ENCODING_NATIVE_FILESYSTEM, filename);
 
     dropFile->AppendNative(filename);
     rv = dropFile->CreateUnique(nsIFile::NORMAL_FILE_TYPE, 0660);
@@ -2086,7 +2158,7 @@ HRESULT nsDataObj::GetFileDescriptor_IStreamA(FORMATETC& aFE, STGMEDIUM& aSTG)
   }
 
   nsAutoCString nativeFileName;
-  NS_CopyUnicodeToNative(wideFileName, nativeFileName);
+  NS_UTF16ToCString(wideFileName, NS_CSTRING_ENCODING_NATIVE_FILESYSTEM, nativeFileName);
   
   strncpy(fileGroupDescA->fgd[0].cFileName, nativeFileName.get(), NS_MAX_FILEDESCRIPTOR - 1);
   fileGroupDescA->fgd[0].cFileName[NS_MAX_FILEDESCRIPTOR - 1] = '\0';
@@ -2149,14 +2221,4 @@ HRESULT nsDataObj::GetFileContents_IStream(FORMATETC& aFE, STGMEDIUM& aSTG)
   aSTG.pUnkForRelease = nullptr;
 
   return S_OK;
-}
-
-void nsDataObj::RemoveTempFile(nsITimer* aTimer, void* aClosure)
-{
-  nsDataObj *timedDataObj = static_cast<nsDataObj *>(aClosure);
-  if (timedDataObj->mCachedTempFile) {
-    timedDataObj->mCachedTempFile->Remove(false);
-    timedDataObj->mCachedTempFile = nullptr;
-  }
-  timedDataObj->Release();
 }
