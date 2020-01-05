@@ -74,7 +74,7 @@ pub enum ScriptMsg {
     
     NodeStatus(Option<String>),
     
-    RemoveIFrame(PipelineId),
+    RemoveIFrame(PipelineId, Option<IpcSender<()>>),
     
     ScriptLoadedURLInIFrame(IFrameLoadInfo),
     

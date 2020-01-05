@@ -15,7 +15,6 @@ use msg::constellation_msg::{Key, KeyModifiers, KeyState};
 use net_traits::net_error_list::NetError;
 use script_traits::{MouseButton, TouchEventType, TouchId};
 use std::fmt::{Debug, Error, Formatter};
-use std::rc::Rc;
 use style_traits::cursor::Cursor;
 use url::Url;
 use util::geometry::ScreenPx;
@@ -142,7 +141,7 @@ pub trait WindowMethods {
     
     
     
-    fn create_compositor_channel(_: &Option<Rc<Self>>)
+    fn create_compositor_channel(&self)
                                  -> (Box<CompositorProxy + Send>, Box<CompositorReceiver>);
 
     

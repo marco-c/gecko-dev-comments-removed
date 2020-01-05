@@ -28,6 +28,7 @@ use dom::node::{Node, UnbindContext, window_from_node, document_from_node};
 use dom::urlhelper::UrlHelper;
 use dom::virtualmethods::VirtualMethods;
 use dom::window::{ReflowReason, Window};
+use ipc_channel::ipc;
 use js::jsapi::{JSAutoCompartment, JSAutoRequest, RootedValue, JSContext, MutableHandleValue};
 use js::jsval::{UndefinedValue, NullValue};
 use layout_interface::ReflowQueryType;
@@ -559,9 +560,30 @@ impl VirtualMethods for HTMLIFrameElement {
             let window = window_from_node(self);
             let window = window.r();
 
+            
+            
+            
+            
+            
+            
             let ConstellationChan(ref chan) = window.constellation_chan();
-            let msg = ConstellationMsg::RemoveIFrame(pipeline_id);
+            let same_origin = if let Some(self_url) = self.get_url() {
+                let win_url = window_from_node(self).get_url();
+                UrlHelper::SameOrigin(&self_url, &win_url)
+            } else {
+                false
+            };
+            let (sender, receiver) = if same_origin {
+                (None, None)
+            } else {
+                let (sender, receiver) = ipc::channel().unwrap();
+                (Some(sender), Some(receiver))
+            };
+            let msg = ConstellationMsg::RemoveIFrame(pipeline_id, sender);
             chan.send(msg).unwrap();
+            if let Some(receiver) = receiver {
+                receiver.recv().unwrap()
+            }
 
             
             

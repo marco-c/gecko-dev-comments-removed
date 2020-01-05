@@ -9,7 +9,6 @@ use compositor::{self, CompositingReason};
 use euclid::point::Point2D;
 use euclid::size::Size2D;
 use gfx_traits::{Epoch, FrameTreeId, LayerId, LayerProperties, PaintListener};
-use headless;
 use ipc_channel::ipc::{self, IpcReceiver, IpcSender};
 use layers::layers::{BufferRequest, LayerBufferSet};
 use layers::platform::surface::{NativeDisplay, NativeSurface};
@@ -98,6 +97,8 @@ pub fn run_script_listener_thread(compositor_proxy: Box<CompositorProxy + 'stati
             ScriptToCompositorMsg::TouchEventProcessed(result) => {
                 compositor_proxy.send(Msg::TouchEventProcessed(result))
             }
+
+            ScriptToCompositorMsg::Exited => break,
         }
     }
 }
@@ -123,7 +124,7 @@ impl PaintListener for Box<CompositorProxy + 'static + Send> {
         
         
         
-        port.recv().unwrap_or(None)
+        port.recv().ok()
     }
 
     fn assign_painted_buffers(&mut self,
@@ -174,9 +175,7 @@ pub enum Msg {
     
     
     
-    
-    
-    GetNativeDisplay(Sender<Option<NativeDisplay>>),
+    GetNativeDisplay(Sender<NativeDisplay>),
 
     
     
@@ -233,7 +232,11 @@ pub enum Msg {
     
     ResizeTo(Size2D<u32>),
     
-    PipelineExited(PipelineId),
+    
+    
+    
+    
+    PipelineExited(PipelineId, IpcSender<()>),
 }
 
 impl Debug for Msg {
@@ -276,20 +279,12 @@ impl Debug for Msg {
 pub struct CompositorThread;
 
 impl CompositorThread {
-    pub fn create<Window>(window: Option<Rc<Window>>,
+    pub fn create<Window>(window: Rc<Window>,
                           state: InitialCompositorState)
                           -> Box<CompositorEventListener + 'static>
                           where Window: WindowMethods + 'static {
-        match window {
-            Some(window) => {
-                box compositor::IOCompositor::create(window, state)
-                    as Box<CompositorEventListener>
-            }
-            None => {
-                box headless::NullCompositor::create(state)
-                    as Box<CompositorEventListener>
-            }
-        }
+        box compositor::IOCompositor::create(window, state)
+            as Box<CompositorEventListener>
     }
 }
 

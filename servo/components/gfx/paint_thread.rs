@@ -342,7 +342,7 @@ pub enum Msg {
 #[derive(Deserialize, Serialize)]
 pub enum LayoutToPaintMsg {
     PaintInit(Epoch, Arc<DisplayList>),
-    Exit(IpcSender<()>),
+    Exit,
 }
 
 pub enum ChromeToPaintMsg {
@@ -505,21 +505,20 @@ impl<C> PaintThread<C> where C: PaintListener + Send + 'static {
                     
                     channel.send(Vec::new())
                 }
-                Msg::FromLayout(LayoutToPaintMsg::Exit(ref response_channel)) => {
+                Msg::FromLayout(LayoutToPaintMsg::Exit) => {
                     
                     
+                    debug!("PaintThread: Exiting.");
                     self.compositor.notify_paint_thread_exiting(self.id);
 
-                    debug!("PaintThread: Exiting.");
-                    let _ = response_channel.send(());
                     break;
                 }
                 Msg::FromChrome(ChromeToPaintMsg::Exit) => {
                     
                     
+                    debug!("PaintThread: Exiting.");
                     self.compositor.notify_paint_thread_exiting(self.id);
 
-                    debug!("PaintThread: Exiting.");
                     break;
                 }
             }
