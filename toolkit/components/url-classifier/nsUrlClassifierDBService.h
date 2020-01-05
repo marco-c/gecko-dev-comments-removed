@@ -26,6 +26,13 @@
 #include "LookupCache.h"
 
 
+#if defined(XP_WIN) && defined(__MINGW32__)
+#define GCC_MANGLING_WORKAROUND __stdcall
+#else
+#define GCC_MANGLING_WORKAROUND
+#endif
+
+
 #define DOMAIN_LENGTH 4
 
 
@@ -167,10 +174,10 @@ public:
                          LookupResultArray* results);
 
   
-  nsresult OpenDb();
+  nsresult GCC_MANGLING_WORKAROUND OpenDb();
 
   
-  nsresult CloseDb();
+  nsresult GCC_MANGLING_WORKAROUND CloseDb();
 
   nsresult CacheCompletions(CacheResultArray * aEntries);
   nsresult CacheMisses(PrefixArray * aEntries);
