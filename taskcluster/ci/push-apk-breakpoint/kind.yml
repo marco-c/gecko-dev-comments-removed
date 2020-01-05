@@ -5,28 +5,23 @@
 loader: taskgraph.loader.push_apk:loader
 
 transforms:
-   - taskgraph.transforms.push_apk:transforms
+   - taskgraph.transforms.push_apk_breakpoint:transforms
    - taskgraph.transforms.task:transforms
 
 kind-dependencies:
   - build-signing
-  - push-apk-breakpoint
 
 jobs:
-    push-apk/opt:
-        description: Publishes APK onto Google Play Store
+    android-push-apk-breakpoint/opt:
+        description: PushApk breakpoint. Decides whether APK should be published onto Google Play Store
         attributes:
             build_platform: android-nightly
             nightly: true
-        worker-type: scriptworker-prov-v1/pushapk-v1
+        worker-type: # see transforms
         worker:
-            upstream-artifacts: # see transforms
-            google-play-track: # see transforms
-            implementation: push-apk
-            dry-run: # see transforms
-        scopes: # see transforms
+            implementation: push-apk-breakpoint
         treeherder:
-            symbol: pub(gp)
+            symbol: pub(Br)
             platform: Android/opt
             tier: 2
             kind: other
