@@ -3778,7 +3778,7 @@ nsStyleText::nsStyleText(StyleStructContext aContext)
   , mWhiteSpace(NS_STYLE_WHITESPACE_NORMAL)
   , mWordBreak(NS_STYLE_WORDBREAK_NORMAL)
   , mOverflowWrap(NS_STYLE_OVERFLOWWRAP_NORMAL)
-  , mHyphens(StyleHyphens::Manual)
+  , mHyphens(NS_STYLE_HYPHENS_MANUAL)
   , mRubyAlign(NS_STYLE_RUBY_ALIGN_SPACE_AROUND)
   , mRubyPosition(NS_STYLE_RUBY_POSITION_OVER)
   , mTextSizeAdjust(NS_STYLE_TEXT_SIZE_ADJUST_AUTO)
@@ -4133,6 +4133,11 @@ nsStyleUIReset::CalcDifference(const nsStyleUIReset& aNewData) const
 
 
 
+
+nsStyleVariables::nsStyleVariables()
+{
+  MOZ_COUNT_CTOR(nsStyleVariables);
+}
 
 nsStyleVariables::nsStyleVariables(StyleStructContext aContext)
 {

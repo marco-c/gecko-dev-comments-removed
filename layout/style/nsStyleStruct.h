@@ -2082,7 +2082,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleText
   uint8_t mWhiteSpace;                  
   uint8_t mWordBreak;                   
   uint8_t mOverflowWrap;                
-  mozilla::StyleHyphens mHyphens;       
+  uint8_t mHyphens;                     
   uint8_t mRubyAlign;                   
   uint8_t mRubyPosition;                
   uint8_t mTextSizeAdjust;              
@@ -3825,6 +3825,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleSVGReset
 
 struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleVariables
 {
+  nsStyleVariables();
   explicit nsStyleVariables(StyleStructContext aContext);
   nsStyleVariables(const nsStyleVariables& aSource);
   ~nsStyleVariables();
