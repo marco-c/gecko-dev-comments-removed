@@ -5949,18 +5949,6 @@ typedef AsmJSCacheResult
 typedef void
 (* CloseAsmJSCacheEntryForWriteOp)(size_t size, uint8_t* memory, intptr_t handle);
 
-typedef js::Vector<char, 0, js::SystemAllocPolicy> BuildIdCharVector;
-
-
-
-
-
-
-
-
-typedef bool
-(* BuildIdOp)(BuildIdCharVector* buildId);
-
 struct AsmJSCacheOps
 {
     OpenAsmJSCacheEntryForReadOp openEntryForRead;
@@ -5972,8 +5960,71 @@ struct AsmJSCacheOps
 extern JS_PUBLIC_API(void)
 SetAsmJSCacheOps(JSContext* cx, const AsmJSCacheOps* callbacks);
 
+
+
+
+
+
+
+
+typedef js::Vector<char, 0, js::SystemAllocPolicy> BuildIdCharVector;
+
+typedef bool
+(* BuildIdOp)(BuildIdCharVector* buildId);
+
 extern JS_PUBLIC_API(void)
 SetBuildIdOp(JSContext* cx, BuildIdOp buildIdOp);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct WasmModule : mozilla::external::AtomicRefCounted<WasmModule>
+{
+    MOZ_DECLARE_REFCOUNTED_TYPENAME(WasmModule)
+    virtual ~WasmModule() {}
+
+    virtual void serializedSize(size_t* bytecodeSize, size_t* compiledSize) const = 0;
+    virtual void serialize(uint8_t* bytecodeBegin, size_t bytecodeSize,
+                           uint8_t* compiledBegin, size_t compiledSize) const = 0;
+
+    virtual JSObject* createObject(JSContext* cx) = 0;
+};
+
+extern JS_PUBLIC_API(bool)
+IsWasmModuleObject(HandleObject obj);
+
+extern JS_PUBLIC_API(RefPtr<WasmModule>)
+GetWasmModule(HandleObject obj);
+
+extern JS_PUBLIC_API(bool)
+CompiledWasmModuleAssumptionsMatch(PRFileDesc* compiled, BuildIdCharVector&& buildId);
+
+extern JS_PUBLIC_API(RefPtr<WasmModule>)
+DeserializeWasmModule(PRFileDesc* bytecode, PRFileDesc* maybeCompiled, BuildIdCharVector&& buildId,
+                      JS::UniqueChars filename, unsigned line, unsigned column);
 
 
 
