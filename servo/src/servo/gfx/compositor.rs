@@ -1,7 +1,7 @@
 use azure::azure_hl::{DrawTarget};
 use cairo::cairo_hl::ImageSurface;
 use dom::event::Event;
-use geom::size::Size2D;
+use geom::rect::Rect;
 
 struct LayerBuffer {
     
@@ -10,7 +10,8 @@ struct LayerBuffer {
 
     draw_target: DrawTarget,
 
-    size: Size2D<uint>,
+    
+    rect: Rect<uint>,
 
     
     stride: uint
