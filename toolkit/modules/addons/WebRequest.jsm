@@ -755,6 +755,10 @@ HttpObserverManager = {
       if (originPrincipal.URI) {
         data.originUrl = originPrincipal.URI.spec;
       }
+      let docPrincipal = loadInfo.loadingPrincipal;
+      if (docPrincipal && docPrincipal.URI) {
+        data.documentUrl = docPrincipal.URI.spec;
+      }
 
       
       
