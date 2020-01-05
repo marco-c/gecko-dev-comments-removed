@@ -895,6 +895,9 @@ class Graphics extends PP_Resource {
     super.destroy();
   }
   changeSize(width, height) {
+    let devicePixelRatio = this.instance.window.devicePixelRatio;
+    this.canvas.style.width = (width / devicePixelRatio) + "px";
+    this.canvas.style.height = (height / devicePixelRatio) + "px";
     this.canvas.width = width;
     this.canvas.height = height;
   }
@@ -5330,20 +5333,16 @@ dump(`callFromJSON: < ${JSON.stringify(call)}\n`);
 
 
     PPB_View_GetDeviceScale: function(json) {
-      
-      
       let view = PP_Resource.lookup(json.resource);
-      return 1; 
+      return view.instance.window.devicePixelRatio;
     },
 
     
 
 
     PPB_View_GetCSSScale: function(json) {
-      
-      
       let view = PP_Resource.lookup(json.resource);
-      return view.instance.window.devicePixelRatio;
+      return 1;
     },
 
     
