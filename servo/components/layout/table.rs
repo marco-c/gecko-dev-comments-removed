@@ -135,7 +135,7 @@ impl TableFlow {
 
     
     
-    fn update_column_inline_sizes_for_row(row: &mut TableRowFlow,
+    fn update_column_inline_sizes_for_row(row: &TableRowFlow,
                                           column_inline_sizes: &mut Vec<ColumnIntrinsicInlineSize>,
                                           computation: &mut IntrinsicISizesContribution,
                                           first_row: bool,
