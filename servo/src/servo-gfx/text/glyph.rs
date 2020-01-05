@@ -307,6 +307,8 @@ impl DetailedGlyphStore {
             detail_offset: self.detail_buffer.len()
         };
 
+        debug!("Adding entry[off=%u] for detailed glyphs: %?", entry_offset, glyphs);
+
         /* TODO: don't actually assert this until asserts are compiled
         in/out based on severity, debug/release, etc. This assertion
         would wreck the complexity of the lookup.
@@ -325,6 +327,8 @@ impl DetailedGlyphStore {
 
     // not pure; may perform a deferred sort.
     fn get_detailed_glyphs_for_entry(&self, entry_offset: uint, count: u16) -> &[DetailedGlyph] {
+        debug!("Requesting detailed glyphs[n=%u] for entry[off=%u]", count as uint, entry_offset);
+
         assert count > 0;
         assert (count as uint) <= self.detail_buffer.len();
         self.ensure_sorted();
@@ -370,7 +374,7 @@ impl DetailedGlyphStore {
         }
     }
 
-     fn ensure_sorted() {
+    /*priv*/ fn ensure_sorted() {
         if self.lookup_is_sorted {
             return;
         }
@@ -382,8 +386,8 @@ impl DetailedGlyphStore {
     }
 }
 
-
-
+// This struct is used by GlyphStore clients to provide new glyph data.
+// It should be allocated on the stack and passed by reference to GlyphStore.
 struct GlyphData {
     index: GlyphIndex,
     advance: Au,
@@ -415,10 +419,10 @@ pure fn GlyphData(index: GlyphIndex,
     }
 }
 
-
-
-
-
+// This enum is a proxy that's provided to GlyphStore clients when iterating
+// through glyphs (either for a particular TextRun offset, or all glyphs).
+// Rather than eagerly assembling and copying glyph data, it only retrieves
+// values as they are needed from the GlyphStore, using provided offsets.
 enum GlyphInfo {
     SimpleGlyphInfo(&GlyphStore, uint),
     DetailGlyphInfo(&GlyphStore, uint, u16)
@@ -462,15 +466,15 @@ impl GlyphInfo {
     }
 }
 
-
+// Public data structure and API for storing and retrieving glyph data
 struct GlyphStore {
-    
+    // we use a DVec here instead of a mut vec, since this is much safer.
     entry_buffer: DVec<GlyphEntry>,
     detail_store: DetailedGlyphStore,
 }
 
-
-
+// Initializes the glyph store, but doesn't actually shape anything.
+// Use the set_glyph, set_glyphs() methods to store glyph data.
 fn GlyphStore(length: uint) -> GlyphStore {
     assert length > 0;
 
@@ -503,6 +507,8 @@ impl GlyphStore {
             }
         };
 
+        //debug!("Adding single glyph[idx=%u]: %?", i, entry);
+
         self.entry_buffer.set_elt(i, entry);
     }
 
@@ -528,6 +534,8 @@ impl GlyphStore {
                                   glyph_count)
             }
         };
+
+        debug!("Adding multiple glyphs[idx=%u, count=%u]: %?", i, glyph_count, entry);
 
         self.entry_buffer.set_elt(i, entry);
     }
