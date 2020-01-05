@@ -8,6 +8,7 @@ import org.mozilla.gecko.AppConstants.Versions;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PorterDuff.Mode;
@@ -34,26 +35,21 @@ class CanvasDelegate {
     }
 
     void draw(Canvas canvas, Path path, int width, int height) {
-        
-        int count = canvas.saveLayer(0, 0, width, height, null,
-                                     Canvas.MATRIX_SAVE_FLAG |
-                                     Canvas.CLIP_SAVE_FLAG |
-                                     Canvas.HAS_ALPHA_LAYER_SAVE_FLAG |
-                                     Canvas.FULL_COLOR_LAYER_SAVE_FLAG |
-                                     Canvas.CLIP_TO_LAYER_SAVE_FLAG);
+        Bitmap offscreen = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        Canvas offscreenCanvas = new Canvas(offscreen);
 
         
-        mDrawManager.defaultDraw(canvas);
+        mDrawManager.defaultDraw(offscreenCanvas);
 
         if (path != null && !path.isEmpty()) {
             
             
             mPaint.setXfermode(mMode);
-            canvas.drawPath(path, mPaint);
+            offscreenCanvas.drawPath(path, mPaint);
         }
 
-        
-        canvas.restoreToCount(count);
+        offscreen.prepareToDraw();
+        canvas.drawBitmap(offscreen, 0, 0, null);
     }
 
     void setShader(Shader shader) {

@@ -10,6 +10,9 @@
 #include "mozilla/layers/LayersTypes.h"
 #include "mozilla/layers/CompositorTypes.h"
 #include "nsISupportsImpl.h"
+#if defined(MOZ_WIDGET_ANDROID)
+#include "mozilla/layers/UiCompositorControllerChild.h"
+#endif 
 
 class nsIWidget;
 
@@ -72,6 +75,17 @@ public:
     return mRootLayerTreeId;
   }
 
+#if defined(MOZ_WIDGET_ANDROID)
+  
+  
+  void SetUiCompositorControllerChild(RefPtr<UiCompositorControllerChild> aUiController) {
+    mUiCompositorControllerChild = aUiController;
+  }
+
+  RefPtr<UiCompositorControllerChild> GetUiCompositorControllerChild() {
+    return mUiCompositorControllerChild;
+  }
+#endif 
 protected:
   CompositorSession(CompositorWidgetDelegate* aDelegate,
                     CompositorBridgeChild* aChild,
@@ -82,7 +96,9 @@ protected:
   CompositorWidgetDelegate* mCompositorWidgetDelegate;
   RefPtr<CompositorBridgeChild> mCompositorBridgeChild;
   uint64_t mRootLayerTreeId;
-
+#if defined(MOZ_WIDGET_ANDROID)
+  RefPtr<UiCompositorControllerChild> mUiCompositorControllerChild;
+#endif 
 private:
   DISALLOW_COPY_AND_ASSIGN(CompositorSession);
 };

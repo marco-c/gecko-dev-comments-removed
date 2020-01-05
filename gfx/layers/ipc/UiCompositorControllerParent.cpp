@@ -4,16 +4,35 @@
 
 
 #include "UiCompositorControllerParent.h"
+#include "mozilla/layers/APZCTreeManager.h"
+#include "mozilla/layers/Compositor.h"
 #include "mozilla/layers/CompositorBridgeParent.h"
 #include "mozilla/layers/CompositorThread.h"
+#include "mozilla/layers/LayerManagerComposite.h"
+#include "mozilla/gfx/Types.h"
+#include "mozilla/Move.h"
+#include "mozilla/Unused.h"
 
 namespace mozilla {
 namespace layers {
 
-RefPtr<UiCompositorControllerParent>
-UiCompositorControllerParent::Start(Endpoint<PUiCompositorControllerParent>&& aEndpoint)
+typedef CompositorBridgeParent::LayerTreeState LayerTreeState;
+
+ RefPtr<UiCompositorControllerParent>
+UiCompositorControllerParent::GetFromRootLayerTreeId(const uint64_t& aRootLayerTreeId)
 {
-  RefPtr<UiCompositorControllerParent> parent = new UiCompositorControllerParent();
+  LayerTreeState* state = CompositorBridgeParent::GetIndirectShadowTree(aRootLayerTreeId);
+  if (state) {
+    return state->mUiControllerParent;
+  }
+
+  return nullptr;
+}
+
+ RefPtr<UiCompositorControllerParent>
+UiCompositorControllerParent::Start(const uint64_t& aRootLayerTreeId, Endpoint<PUiCompositorControllerParent>&& aEndpoint)
+{
+  RefPtr<UiCompositorControllerParent> parent = new UiCompositorControllerParent(aRootLayerTreeId);
 
   RefPtr<Runnable> task = NewRunnableMethod<Endpoint<PUiCompositorControllerParent>&&>(
     parent, &UiCompositorControllerParent::Open, Move(aEndpoint));
@@ -22,30 +41,10 @@ UiCompositorControllerParent::Start(Endpoint<PUiCompositorControllerParent>&& aE
   return parent;
 }
 
-UiCompositorControllerParent::UiCompositorControllerParent()
-{
-  MOZ_COUNT_CTOR(UiCompositorControllerParent);
-}
-
-UiCompositorControllerParent::~UiCompositorControllerParent()
-{
-  MOZ_COUNT_DTOR(UiCompositorControllerParent);
-}
-
-void
-UiCompositorControllerParent::Open(Endpoint<PUiCompositorControllerParent>&& aEndpoint)
-{
-  if (!aEndpoint.Bind(this)) {
-    
-    MOZ_CRASH("Failed to bind UiCompositorControllerParent to endpoint");
-  }
-  AddRef();
-}
-
 mozilla::ipc::IPCResult
-UiCompositorControllerParent::RecvPause(const uint64_t& aLayersId)
+UiCompositorControllerParent::RecvPause()
 {
-  CompositorBridgeParent* parent = CompositorBridgeParent::GetCompositorBridgeParentFromLayersId(aLayersId);
+  CompositorBridgeParent* parent = CompositorBridgeParent::GetCompositorBridgeParentFromLayersId(mRootLayerTreeId);
   if (parent) {
     parent->PauseComposition();
   }
@@ -53,9 +52,9 @@ UiCompositorControllerParent::RecvPause(const uint64_t& aLayersId)
 }
 
 mozilla::ipc::IPCResult
-UiCompositorControllerParent::RecvResume(const uint64_t& aLayersId)
+UiCompositorControllerParent::RecvResume()
 {
-  CompositorBridgeParent* parent = CompositorBridgeParent::GetCompositorBridgeParentFromLayersId(aLayersId);
+  CompositorBridgeParent* parent = CompositorBridgeParent::GetCompositorBridgeParentFromLayersId(mRootLayerTreeId);
   if (parent) {
     parent->ResumeComposition();
   }
@@ -63,21 +62,20 @@ UiCompositorControllerParent::RecvResume(const uint64_t& aLayersId)
 }
 
 mozilla::ipc::IPCResult
-UiCompositorControllerParent::RecvResumeAndResize(const uint64_t& aLayersId,
-                                                  const int32_t& aHeight,
-                                                  const int32_t& aWidth)
+UiCompositorControllerParent::RecvResumeAndResize(const int32_t& aWidth,
+                                                  const int32_t& aHeight)
 {
-  CompositorBridgeParent* parent = CompositorBridgeParent::GetCompositorBridgeParentFromLayersId(aLayersId);
+  CompositorBridgeParent* parent = CompositorBridgeParent::GetCompositorBridgeParentFromLayersId(mRootLayerTreeId);
   if (parent) {
-    parent->ResumeCompositionAndResize(aHeight, aWidth);
+    parent->ResumeCompositionAndResize(aWidth, aHeight);
   }
   return IPC_OK();
 }
 
 mozilla::ipc::IPCResult
-UiCompositorControllerParent::RecvInvalidateAndRender(const uint64_t& aLayersId)
+UiCompositorControllerParent::RecvInvalidateAndRender()
 {
-  CompositorBridgeParent* parent = CompositorBridgeParent::GetCompositorBridgeParentFromLayersId(aLayersId);
+  CompositorBridgeParent* parent = CompositorBridgeParent::GetCompositorBridgeParentFromLayersId(mRootLayerTreeId);
   if (parent) {
     parent->Invalidate();
     parent->ScheduleComposition();
@@ -85,22 +83,100 @@ UiCompositorControllerParent::RecvInvalidateAndRender(const uint64_t& aLayersId)
   return IPC_OK();
 }
 
-void
-UiCompositorControllerParent::Shutdown()
+mozilla::ipc::IPCResult
+UiCompositorControllerParent::RecvMaxToolbarHeight(const int32_t& aHeight)
 {
-  MessageLoop* ccloop = CompositorThreadHolder::Loop();
-  if (MessageLoop::current() != ccloop) {
-    ccloop->PostTask(NewRunnableMethod(this, &UiCompositorControllerParent::ShutdownImpl));
-    return;
+  mMaxToolbarHeight = aHeight;
+#if defined(MOZ_WIDGET_ANDROID)
+  if (mAnimator) {
+    mAnimator->SetMaxToolbarHeight(mMaxToolbarHeight);
   }
+#endif 
 
-  ShutdownImpl();
+  return IPC_OK();
 }
 
-void
-UiCompositorControllerParent::ShutdownImpl()
+mozilla::ipc::IPCResult
+UiCompositorControllerParent::RecvPinned(const bool& aPinned, const int32_t& aReason)
 {
-  Close();
+#if defined(MOZ_WIDGET_ANDROID)
+  if (mAnimator) {
+    mAnimator->SetPinned(aPinned, aReason);
+  }
+#endif 
+
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult
+UiCompositorControllerParent::RecvToolbarAnimatorMessageFromUI(const int32_t& aMessage)
+{
+#if defined(MOZ_WIDGET_ANDROID)
+  if (mAnimator) {
+    mAnimator->ToolbarAnimatorMessageFromUI(aMessage);
+  }
+#endif 
+
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult
+UiCompositorControllerParent::RecvDefaultClearColor(const uint32_t& aColor)
+{
+  LayerTreeState* state = CompositorBridgeParent::GetIndirectShadowTree(mRootLayerTreeId);
+
+  if (state && state->mLayerManager) {
+    Compositor* compositor = state->mLayerManager->GetCompositor();
+    if (compositor) {
+      
+      compositor->SetDefaultClearColor(gfx::Color::UnusualFromARGB(aColor));
+    }
+  }
+
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult
+UiCompositorControllerParent::RecvRequestScreenPixels()
+{
+#if defined(MOZ_WIDGET_ANDROID)
+  LayerTreeState* state = CompositorBridgeParent::GetIndirectShadowTree(mRootLayerTreeId);
+
+  if (state && state->mLayerManager && state->mParent) {
+    state->mLayerManager->RequestScreenPixels(this);
+    state->mParent->Invalidate();
+    state->mParent->ScheduleComposition();
+  }
+#endif 
+
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult
+UiCompositorControllerParent::RecvEnableLayerUpdateNotifications(const bool& aEnable)
+{
+#if defined(MOZ_WIDGET_ANDROID)
+  if (mAnimator) {
+    mAnimator->EnableLayersUpdateNotifications(aEnable);
+  }
+#endif 
+
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult
+UiCompositorControllerParent::RecvToolbarPixelsToCompositor(Shmem&& aMem, const ScreenIntSize& aSize)
+{
+#if defined(MOZ_WIDGET_ANDROID)
+  if (mAnimator) {
+    
+    mAnimator->AdoptToolbarPixels(Move(aMem), aSize);
+  } else {
+    DeallocShmem(aMem);
+  }
+#endif 
+
+  return IPC_OK();
 }
 
 void
@@ -111,7 +187,112 @@ UiCompositorControllerParent::ActorDestroy(ActorDestroyReason aWhy)
 void
 UiCompositorControllerParent::DeallocPUiCompositorControllerParent()
 {
-  Release();
+  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
+  Shutdown();
+  Release(); 
+}
+
+#if defined(MOZ_WIDGET_ANDROID)
+void
+UiCompositorControllerParent::RegisterAndroidDynamicToolbarAnimator(AndroidDynamicToolbarAnimator* aAnimator)
+{
+  MOZ_ASSERT(!mAnimator);
+  mAnimator = aAnimator;
+  if (mAnimator) {
+    mAnimator->SetMaxToolbarHeight(mMaxToolbarHeight);
+  }
+}
+#endif 
+
+void
+UiCompositorControllerParent::ToolbarAnimatorMessageFromCompositor(int32_t aMessage)
+{
+  
+  if (!CompositorThreadHolder::IsInCompositorThread()) {
+    CompositorThreadHolder::Loop()->PostTask(NewRunnableMethod<int32_t>(this, &UiCompositorControllerParent::ToolbarAnimatorMessageFromCompositor, aMessage));
+    return;
+  }
+
+  Unused << SendToolbarAnimatorMessageFromCompositor(aMessage);
+}
+
+bool
+UiCompositorControllerParent::AllocPixelBuffer(const int32_t aSize, ipc::Shmem* aMem)
+{
+  MOZ_ASSERT(aSize > 0);
+  return AllocShmem(aSize, ipc::SharedMemory::TYPE_BASIC, aMem);
+}
+
+UiCompositorControllerParent::UiCompositorControllerParent(const uint64_t& aRootLayerTreeId)
+  : mRootLayerTreeId(aRootLayerTreeId)
+  , mMaxToolbarHeight(0)
+{
+  MOZ_COUNT_CTOR(UiCompositorControllerParent);
+}
+
+UiCompositorControllerParent::~UiCompositorControllerParent()
+{
+  MOZ_COUNT_DTOR(UiCompositorControllerParent);
+}
+
+void
+UiCompositorControllerParent::InitializeForSameProcess()
+{
+  
+  
+  if (!CompositorThreadHolder::IsInCompositorThread()) {
+    CompositorThreadHolder::Loop()->PostTask(NewRunnableMethod(this, &UiCompositorControllerParent::InitializeForSameProcess));
+    return;
+  }
+
+  Initialize();
+}
+
+void
+UiCompositorControllerParent::InitializeForOutOfProcess()
+{
+  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
+  Initialize();
+}
+
+void
+UiCompositorControllerParent::Initialize()
+{
+  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
+  AddRef();
+  LayerTreeState* state = CompositorBridgeParent::GetIndirectShadowTree(mRootLayerTreeId);
+  MOZ_ASSERT(state);
+  MOZ_ASSERT(state->mParent);
+  state->mUiControllerParent = this;
+#if defined(MOZ_WIDGET_ANDROID)
+  state->mParent->GetAPZCTreeManager()->InitializeDynamicToolbarAnimator(mRootLayerTreeId);
+#endif
+}
+
+void
+UiCompositorControllerParent::Open(Endpoint<PUiCompositorControllerParent>&& aEndpoint)
+{
+  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
+  if (!aEndpoint.Bind(this)) {
+    
+    MOZ_CRASH("Failed to bind UiCompositorControllerParent to endpoint");
+  }
+  InitializeForOutOfProcess();
+}
+
+void
+UiCompositorControllerParent::Shutdown()
+{
+  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
+#if defined(MOZ_WIDGET_ANDROID)
+  if (mAnimator) {
+    mAnimator->Shutdown();
+  }
+#endif 
+  LayerTreeState* state = CompositorBridgeParent::GetIndirectShadowTree(mRootLayerTreeId);
+  if (state) {
+    state->mUiControllerParent = nullptr;
+  }
 }
 
 } 

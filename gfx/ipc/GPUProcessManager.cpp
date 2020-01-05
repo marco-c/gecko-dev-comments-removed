@@ -254,38 +254,33 @@ GPUProcessManager::EnsureVRManager()
 }
 
 #if defined(MOZ_WIDGET_ANDROID)
-void
-GPUProcessManager::EnsureUiCompositorController()
+already_AddRefed<UiCompositorControllerChild>
+GPUProcessManager::CreateUiCompositorController(nsBaseWidget* aWidget, const uint64_t aId)
 {
-  if (UiCompositorControllerChild::IsInitialized()) {
-    return;
-  }
-
-  RefPtr<nsThread> uiThread;
-
-  uiThread = GetAndroidUiThread();
-
-  MOZ_ASSERT(uiThread);
+  RefPtr<UiCompositorControllerChild> result;
 
   if (!EnsureGPUReady()) {
-    UiCompositorControllerChild::InitSameProcess(uiThread);
-    return;
-  }
+    result = UiCompositorControllerChild::CreateForSameProcess(aId);
+  } else {
+    ipc::Endpoint<PUiCompositorControllerParent> parentPipe;
+    ipc::Endpoint<PUiCompositorControllerChild> childPipe;
+    nsresult rv = PUiCompositorController::CreateEndpoints(
+      mGPUChild->OtherPid(),
+      base::GetCurrentProcId(),
+      &parentPipe,
+      &childPipe);
+    if (NS_FAILED(rv)) {
+      DisableGPUProcess("Failed to create PUiCompositorController endpoints");
+      return nullptr;
+    }
 
-  ipc::Endpoint<PUiCompositorControllerParent> parentPipe;
-  ipc::Endpoint<PUiCompositorControllerChild> childPipe;
-  nsresult rv = PUiCompositorController::CreateEndpoints(
-    mGPUChild->OtherPid(),
-    base::GetCurrentProcId(),
-    &parentPipe,
-    &childPipe);
-  if (NS_FAILED(rv)) {
-    DisableGPUProcess("Failed to create PUiCompositorController endpoints");
-    return;
+    mGPUChild->SendInitUiCompositorController(aId, Move(parentPipe));
+    result = UiCompositorControllerChild::CreateForGPUProcess(mProcessToken, Move(childPipe));
   }
-
-  mGPUChild->SendInitUiCompositorController(Move(parentPipe));
-  UiCompositorControllerChild::InitWithGPUProcess(uiThread, mProcessToken, Move(childPipe));
+  if (result) {
+    result->SetBaseWidget(aWidget);
+  }
+  return result.forget();
 }
 #endif 
 
@@ -550,9 +545,6 @@ GPUProcessManager::DestroyProcess()
     mVsyncBridge->Close();
     mVsyncBridge = nullptr;
   }
-#if defined(MOZ_WIDGET_ANDROID)
-  UiCompositorControllerChild::Shutdown();
-#endif 
 
 #ifdef MOZ_CRASHREPORTER
   CrashReporter::AnnotateCrashReport(
@@ -573,12 +565,11 @@ GPUProcessManager::CreateTopLevelCompositor(nsBaseWidget* aWidget,
 
   EnsureImageBridgeChild();
   EnsureVRManager();
-#if defined(MOZ_WIDGET_ANDROID)
-  EnsureUiCompositorController();
-#endif 
+
+  RefPtr<CompositorSession> session;
 
   if (EnsureGPUReady()) {
-    RefPtr<CompositorSession> session = CreateRemoteSession(
+    session = CreateRemoteSession(
       aWidget,
       aLayerManager,
       layerTreeId,
@@ -586,23 +577,33 @@ GPUProcessManager::CreateTopLevelCompositor(nsBaseWidget* aWidget,
       aOptions,
       aUseExternalSurfaceSize,
       aSurfaceSize);
-    if (session) {
-      return session;
+    if (!session) {
+      
+      DisableGPUProcess("Failed to create remote compositor");
     }
-
-    
-    DisableGPUProcess("Failed to create remote compositor");
   }
 
-  return InProcessCompositorSession::Create(
-    aWidget,
-    aLayerManager,
-    layerTreeId,
-    aScale,
-    aOptions,
-    aUseExternalSurfaceSize,
-    aSurfaceSize,
-    AllocateNamespace());
+  if (!session) {
+    session = InProcessCompositorSession::Create(
+      aWidget,
+      aLayerManager,
+      layerTreeId,
+      aScale,
+      aOptions,
+      aUseExternalSurfaceSize,
+      aSurfaceSize,
+      AllocateNamespace());
+  }
+
+#if defined(MOZ_WIDGET_ANDROID)
+  if (session) {
+    
+    RefPtr<UiCompositorControllerChild> controller = CreateUiCompositorController(aWidget, session->RootLayerTreeId());
+    session->SetUiCompositorControllerChild(controller);
+  }
+#endif 
+
+  return session;
 }
 
 RefPtr<CompositorSession>

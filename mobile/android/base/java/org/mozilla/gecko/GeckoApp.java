@@ -1783,9 +1783,6 @@ public abstract class GeckoApp
 
             if (GeckoThread.isRunning()) {
                 geckoConnected();
-                if (mLayerView != null) {
-                    mLayerView.setPaintState(LayerView.PAINT_BEFORE_FIRST);
-                }
             }
         }
     }
@@ -1886,18 +1883,14 @@ public abstract class GeckoApp
     }
 
     @RobocopTarget
-    public static @NonNull EventDispatcher getEventDispatcher() {
+    public static EventDispatcher getEventDispatcher() {
         final GeckoApp geckoApp = (GeckoApp) GeckoAppShell.getGeckoInterface();
         return geckoApp.getAppEventDispatcher();
     }
 
     @Override
-    public @NonNull EventDispatcher getAppEventDispatcher() {
-        if (mLayerView == null) {
-            throw new IllegalStateException("Must not call getAppEventDispatcher() until after onCreate()");
-        }
-
-        return mLayerView.getEventDispatcher();
+    public EventDispatcher getAppEventDispatcher() {
+        return mLayerView != null ? mLayerView.getEventDispatcher() : null;
     }
 
     @Override

@@ -5,15 +5,12 @@
 
 package org.mozilla.gecko.gfx;
 
-import org.mozilla.gecko.PrefsHelper;
-import org.mozilla.gecko.util.FloatUtils;
 import org.mozilla.gecko.util.ThreadUtils;
 
+import android.graphics.Bitmap;
 import android.graphics.PointF;
-import android.support.v4.view.ViewCompat;
 import android.util.Log;
 import android.view.MotionEvent;
-import android.view.animation.LinearInterpolator;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -23,143 +20,82 @@ import java.util.Set;
 
 public class DynamicToolbarAnimator {
     private static final String LOGTAG = "GeckoDynamicToolbarAnimator";
-    private static final String PREF_SCROLL_TOOLBAR_THRESHOLD = "browser.ui.scroll-toolbar-threshold";
 
     public static enum PinReason {
-        RELAYOUT,
-        ACTION_MODE,
-        FULL_SCREEN,
-        CARET_DRAG,
-        PAGE_LOADING
+        DISABLED(0),
+        RELAYOUT(1),
+        ACTION_MODE(2),
+        FULL_SCREEN(3),
+        CARET_DRAG(4),
+        PAGE_LOADING(5);
+
+        public final int mValue;
+        PinReason(final int value) {
+            mValue = value;
+        }
+    }
+
+    public interface MetricsListener {
+        public void onMetricsChanged(ImmutableViewportMetrics viewport);
+    }
+
+    public interface ToolbarChromeProxy {
+        public Bitmap getBitmapOfToolbarChrome();
+        public boolean isToolbarChromeVisible();
+        public void toggleToolbarChrome(boolean aShow);
     }
 
     private final Set<PinReason> pinFlags = Collections.synchronizedSet(EnumSet.noneOf(PinReason.class));
 
-    
-    private static final long ANIMATION_DURATION = 150000000;
-
     private final GeckoLayerClient mTarget;
-    private final List<LayerView.DynamicToolbarListener> mListeners;
-
-    
-
-
-
-
-
-    private float mToolbarTranslation;
-
-    
-
-
-
-
-
-    private float mLayerViewTranslation;
-
-    
-
-
-    private float mMaxTranslation;
-
-    
-    private LinearInterpolator mInterpolator;
-
-    
-
-
-    private float SCROLL_TOOLBAR_THRESHOLD = 0.20f;
-    
-    private final PrefsHelper.PrefHandler mPrefObserver;
-
-    
-
-
-
-
-
-    private Integer mHeightDuringResize;
-
-    
-
-
-
-
-    private boolean mSnapRequired = false;
-
-    
-    private DynamicToolbarAnimationTask mAnimationTask;
-
-    
-
-    private PointF mTouchStart;
-    private float mLastTouch;
-
-    
-    private boolean mScrollingRootContent;
+    private LayerView.Compositor mCompositor;
+    private final List<MetricsListener> mListeners;
+    private ToolbarChromeProxy mToolbarChromeProxy;
+    private int mMaxToolbarHeight;
+    private boolean mCompositorControllerOpen;
 
     public DynamicToolbarAnimator(GeckoLayerClient aTarget) {
         mTarget = aTarget;
-        mListeners = new ArrayList<LayerView.DynamicToolbarListener>();
-
-        mInterpolator = new LinearInterpolator();
-
-        
-        mPrefObserver = new PrefsHelper.PrefHandlerBase() {
-            @Override
-            public void prefValue(String pref, int value) {
-                SCROLL_TOOLBAR_THRESHOLD = value / 100.0f;
-            }
-        };
-        PrefsHelper.addObserver(new String[] { PREF_SCROLL_TOOLBAR_THRESHOLD }, mPrefObserver);
+        mListeners = new ArrayList<MetricsListener>();
     }
 
-    public void destroy() {
-        PrefsHelper.removeObserver(mPrefObserver);
-    }
-
-    public void addTranslationListener(LayerView.DynamicToolbarListener aListener) {
+    public void addMetricsListener(MetricsListener aListener) {
         mListeners.add(aListener);
     }
 
-    public void removeTranslationListener(LayerView.DynamicToolbarListener aListener) {
+    public void removeMetricsListener(MetricsListener aListener) {
         mListeners.remove(aListener);
     }
 
-    private void fireListeners() {
-        for (LayerView.DynamicToolbarListener listener : mListeners) {
-            listener.onTranslationChanged(mToolbarTranslation, mLayerViewTranslation);
+    public void setToolbarChromeProxy(ToolbarChromeProxy aToolbarChromeProxy) {
+        mToolbarChromeProxy = aToolbarChromeProxy;
+    }
+
+     void onToggleChrome(boolean aShow) {
+        if (mToolbarChromeProxy != null) {
+            mToolbarChromeProxy.toggleToolbarChrome(aShow);
         }
     }
 
-    void onPanZoomStopped() {
-        for (LayerView.DynamicToolbarListener listener : mListeners) {
-            listener.onPanZoomStopped();
-        }
-    }
-
-    void onMetricsChanged(ImmutableViewportMetrics aMetrics) {
-        for (LayerView.DynamicToolbarListener listener : mListeners) {
+     void onMetricsChanged(ImmutableViewportMetrics aMetrics) {
+        for (MetricsListener listener : mListeners) {
             listener.onMetricsChanged(aMetrics);
         }
     }
 
-    public void setMaxTranslation(float maxTranslation) {
+    public void setMaxToolbarHeight(int maxToolbarHeight) {
         ThreadUtils.assertOnUiThread();
-        if (maxTranslation < 0) {
-            Log.e(LOGTAG, "Got a negative max-translation value: " + maxTranslation + "; clamping to zero");
-            mMaxTranslation = 0;
-        } else {
-            mMaxTranslation = maxTranslation;
+        mMaxToolbarHeight = maxToolbarHeight;
+        if (mCompositor != null) {
+            mCompositor.setMaxToolbarHeight(mMaxToolbarHeight);
         }
     }
 
-    public float getMaxTranslation() {
-        return mMaxTranslation;
-    }
-
-    public float getToolbarTranslation() {
-        return mToolbarTranslation;
+    public int getCurrentToolbarHeight() {
+        if ((mToolbarChromeProxy != null) && mToolbarChromeProxy.isToolbarChromeVisible()) {
+            return mMaxToolbarHeight;
+        }
+        return 0;
     }
 
     
@@ -174,6 +110,10 @@ public class DynamicToolbarAnimator {
     }
 
     public void setPinned(boolean pinned, PinReason reason) {
+        if ((mCompositor != null) && (pinned != pinFlags.contains(reason))) {
+             mCompositor.setPinned(pinned, reason.mValue);
+        }
+
         if (pinned) {
             pinFlags.add(reason);
         } else {
@@ -182,412 +122,64 @@ public class DynamicToolbarAnimator {
     }
 
     public void showToolbar(boolean immediately) {
-        animateToolbar(true, immediately);
+        if (mCompositor != null) {
+            mCompositor.sendToolbarAnimatorMessage(immediately ?
+                LayerView.REQUEST_SHOW_TOOLBAR_IMMEDIATELY : LayerView.REQUEST_SHOW_TOOLBAR_ANIMATED);
+        }
     }
 
     public void hideToolbar(boolean immediately) {
-        animateToolbar(false, immediately);
-    }
-
-    public void setScrollingRootContent(boolean isRootContent) {
-        mScrollingRootContent = isRootContent;
-    }
-
-    private void animateToolbar(final boolean showToolbar, boolean immediately) {
-        ThreadUtils.assertOnUiThread();
-
-        if (mAnimationTask != null) {
-            mTarget.getView().removeRenderTask(mAnimationTask);
-            mAnimationTask = null;
-        }
-
-        float desiredTranslation = (showToolbar ? 0 : mMaxTranslation);
-        Log.v(LOGTAG, "Requested " + (immediately ? "immediate " : "") + "toolbar animation to translation " + desiredTranslation);
-        if (FloatUtils.fuzzyEquals(mToolbarTranslation, desiredTranslation)) {
-            
-            
-            immediately = true;
-            Log.v(LOGTAG, "Changing animation to immediate jump");
-        }
-
-        if (showToolbar && immediately) {
-            
-            
-            
-            
-            mToolbarTranslation = desiredTranslation;
-            fireListeners();
-            
-            
-        }
-
-        if (!showToolbar) {
-            
-            
-            
-            
-            
-            shiftLayerView(desiredTranslation);
-        }
-
-        mAnimationTask = new DynamicToolbarAnimationTask(desiredTranslation, immediately, showToolbar);
-        mTarget.getView().postRenderTask(mAnimationTask);
-    }
-
-    private synchronized void shiftLayerView(float desiredTranslation) {
-        float layerViewTranslationNeeded = desiredTranslation - mLayerViewTranslation;
-        mLayerViewTranslation = desiredTranslation;
-        synchronized (mTarget.getLock()) {
-            if (layerViewTranslationNeeded == 0 && isResizing()) {
-                
-                
-                return;
-            }
-            mHeightDuringResize = new Integer(mTarget.getViewportMetrics().viewportRectHeight);
-            mSnapRequired = mTarget.setViewportSize(
-                mTarget.getView().getWidth(),
-                mTarget.getView().getHeight() - Math.round(mMaxTranslation - mLayerViewTranslation),
-                new PointF(0, -layerViewTranslationNeeded));
-            if (!mSnapRequired) {
-                mHeightDuringResize = null;
-                ThreadUtils.postToUiThread(new Runnable() {
-                    
-                    
-                    @Override
-                    public void run() {
-                        fireListeners();
-                    }
-                });
-            }
-            
-            mTarget.getView().requestRender();
+        if (mCompositor != null) {
+            mCompositor.sendToolbarAnimatorMessage(immediately ?
+                LayerView.REQUEST_HIDE_TOOLBAR_IMMEDIATELY : LayerView.REQUEST_HIDE_TOOLBAR_ANIMATED);
         }
     }
 
-    IntSize getViewportSize() {
+     IntSize getViewportSize() {
         ThreadUtils.assertOnUiThread();
 
         int viewWidth = mTarget.getView().getWidth();
         int viewHeight = mTarget.getView().getHeight();
-        float toolbarTranslation = mToolbarTranslation;
-        if (mAnimationTask != null) {
-            
-            
-            toolbarTranslation = mAnimationTask.getFinalToolbarTranslation();
+        if ((mToolbarChromeProxy != null) && mToolbarChromeProxy.isToolbarChromeVisible()) {
+          viewHeight -= mMaxToolbarHeight;
         }
-        int viewHeightVisible = viewHeight - Math.round(mMaxTranslation - toolbarTranslation);
-        return new IntSize(viewWidth, viewHeightVisible);
-    }
-
-    boolean isResizing() {
-        return mHeightDuringResize != null;
-    }
-
-    private final Runnable mSnapRunnable = new Runnable() {
-        private int mFrame = 0;
-
-        @Override
-        public final void run() {
-            
-            
-            
-            
-            
-            if (mFrame == 1) {
-                synchronized (this) {
-                    this.notifyAll();
-                }
-                mFrame = 0;
-                return;
-            }
-
-            if (mFrame == 0) {
-                fireListeners();
-            }
-
-            ViewCompat.postOnAnimation(mTarget.getView(), this);
-            mFrame++;
-        }
-    };
-
-    void scrollChangeResizeCompleted() {
-        synchronized (mTarget.getLock()) {
-            Log.v(LOGTAG, "Scrollchange resize completed");
-            mHeightDuringResize = null;
-        }
-    }
-
-    
-
-
-
-
-
-    private static float shrinkAbs(float aValue, float aShrinkAmount) {
-        if (aShrinkAmount <= 0) {
-            return aValue;
-        }
-        float shrinkBy = Math.min(Math.abs(aValue), aShrinkAmount);
-        return (aValue < 0 ? aValue + shrinkBy : aValue - shrinkBy);
-    }
-
-    
-
-
-
-
-
-    private float decideTranslation(float aDelta,
-                                    ImmutableViewportMetrics aMetrics,
-                                    float aTouchTravelDistance) {
-
-        float exposeThreshold = aMetrics.getHeight() * SCROLL_TOOLBAR_THRESHOLD;
-        float translation = aDelta;
-
-        if (translation < 0) { 
-            translation = shrinkAbs(translation, aMetrics.getOverscroll().top);
-
-            
-            
-            
-            
-            
-            
-            
-            boolean inBetween = (mToolbarTranslation != 0 && mToolbarTranslation != mMaxTranslation);
-            boolean reachedThreshold = -aTouchTravelDistance >= exposeThreshold;
-            boolean atBottomOfPage = aMetrics.viewportRectBottom() >= aMetrics.pageRectBottom;
-            if (inBetween || (mScrollingRootContent && reachedThreshold && !atBottomOfPage)) {
-                return translation;
-            }
-        } else {    
-            translation = shrinkAbs(translation, aMetrics.getOverscroll().bottom);
-
-            
-            
-            
-            boolean inBetween = (mToolbarTranslation != 0 && mToolbarTranslation != mMaxTranslation);
-            boolean reachedThreshold = aTouchTravelDistance >= exposeThreshold;
-            boolean atTopOfPage = aMetrics.viewportRectTop <= aMetrics.pageRectTop;
-            boolean isToolbarTranslated = (mToolbarTranslation != 0);
-            if (inBetween || reachedThreshold || (atTopOfPage && isToolbarTranslated)) {
-                return translation;
-            }
-        }
-
-        return 0;
-    }
-
-    
-    private long mLastEventTime;
-    
-    private float mVelocity;
-
-    boolean onInterceptTouchEvent(MotionEvent event) {
-        if (isPinned()) {
-            return false;
-        }
-
-        
-        if (mAnimationTask != null) {
-            mTarget.getView().removeRenderTask(mAnimationTask);
-            mAnimationTask = null;
-        }
-
-        
-        
-        if (event.getToolType(0) == MotionEvent.TOOL_TYPE_MOUSE ||
-            event.getActionMasked() != MotionEvent.ACTION_MOVE ||
-            event.getPointerCount() != 1)
-        {
-            if (mTouchStart != null) {
-                Log.v(LOGTAG, "Resetting touch sequence due to non-move");
-                mTouchStart = null;
-                mVelocity = 0.0f;
-            }
-
-            if (event.getActionMasked() == MotionEvent.ACTION_UP) {
-                
-                
-                
-                boolean toolbarMostlyVisible = mToolbarTranslation < (mMaxTranslation / 2);
-                Log.v(LOGTAG, "All fingers lifted, completing " + (toolbarMostlyVisible ? "show" : "hide"));
-                animateToolbar(toolbarMostlyVisible, false);
-            }
-            return false;
-        }
-
-        if (mTouchStart != null) {
-            float prevDir = mLastTouch - mTouchStart.y;
-            float newDir = event.getRawY() - mLastTouch;
-            if (prevDir != 0 && newDir != 0 && ((prevDir < 0) != (newDir < 0))) {
-                
-                
-                mTouchStart = null;
-                mVelocity = 0.0f;
-            }
-        }
-
-        if (mTouchStart == null) {
-            mTouchStart = new PointF(event.getRawX(), event.getRawY());
-            mLastTouch = event.getRawY();
-            mLastEventTime = event.getEventTime();
-            return false;
-        }
-
-        float deltaY = event.getRawY() - mLastTouch;
-        long currentTime = event.getEventTime();
-        float deltaTime = (float)(currentTime - mLastEventTime);
-        mLastEventTime = currentTime;
-        if (deltaTime > 0.0f) {
-            mVelocity = -deltaY / deltaTime;
-        } else {
-            mVelocity = 0.0f;
-        }
-        mLastTouch = event.getRawY();
-        float travelDistance = event.getRawY() - mTouchStart.y;
-
-        ImmutableViewportMetrics metrics = mTarget.getViewportMetrics();
-
-        if (metrics.getPageHeight() <= mTarget.getView().getHeight() &&
-            mToolbarTranslation == 0) {
-            
-            
-            return false;
-        }
-
-        float translation = decideTranslation(deltaY, metrics, travelDistance);
-
-        float oldToolbarTranslation = mToolbarTranslation;
-        float oldLayerViewTranslation = mLayerViewTranslation;
-        mToolbarTranslation = FloatUtils.clamp(mToolbarTranslation - translation, 0, mMaxTranslation);
-        mLayerViewTranslation = FloatUtils.clamp(mLayerViewTranslation - translation, 0, mMaxTranslation);
-
-        if (oldToolbarTranslation == mToolbarTranslation &&
-            oldLayerViewTranslation == mLayerViewTranslation) {
-            return false;
-        }
-
-        if (mToolbarTranslation == mMaxTranslation) {
-            Log.v(LOGTAG, "Toolbar at maximum translation, calling shiftLayerView(" + mMaxTranslation + ")");
-            shiftLayerView(mMaxTranslation);
-        } else if (mToolbarTranslation == 0) {
-            Log.v(LOGTAG, "Toolbar at minimum translation, calling shiftLayerView(0)");
-            shiftLayerView(0);
-        }
-
-        fireListeners();
-        mTarget.getView().requestRender();
-        return true;
-    }
-
-    
-    float getVelocity() {
-        return mVelocity;
+        return new IntSize(viewWidth, viewHeight);
     }
 
     public PointF getVisibleEndOfLayerView() {
         return new PointF(mTarget.getView().getWidth(),
-            mTarget.getView().getHeight() - mMaxTranslation + mLayerViewTranslation);
+            mTarget.getView().getHeight());
     }
 
-    private float bottomOfCssViewport(ImmutableViewportMetrics aMetrics) {
-        return (isResizing() ? mHeightDuringResize : aMetrics.getHeight())
-                + mMaxTranslation - mLayerViewTranslation;
-    }
-
-    private synchronized boolean getAndClearSnapRequired() {
-        boolean snapRequired = mSnapRequired;
-        mSnapRequired = false;
-        return snapRequired;
-    }
-
-    void populateViewTransform(ViewTransform aTransform, ImmutableViewportMetrics aMetrics) {
-        if (getAndClearSnapRequired()) {
-            synchronized (mSnapRunnable) {
-                ViewCompat.postOnAnimation(mTarget.getView(), mSnapRunnable);
-                try {
-                    
-                    
-                    
-                    mSnapRunnable.wait(100);
-                } catch (InterruptedException ie) {
-                }
+    private void dumpStateToCompositor() {
+        if ((mCompositor != null) && mCompositorControllerOpen) {
+            mCompositor.setMaxToolbarHeight(mMaxToolbarHeight);
+            for (PinReason reason : pinFlags) {
+              mCompositor.setPinned(true, reason.mValue);
             }
         }
-
-        aTransform.x = aMetrics.viewportRectLeft;
-        aTransform.y = aMetrics.viewportRectTop;
-        aTransform.width = aMetrics.viewportRectWidth;
-        aTransform.height = aMetrics.viewportRectHeight;
-        aTransform.scale = aMetrics.zoomFactor;
-
-        aTransform.fixedLayerMarginTop = mLayerViewTranslation - mToolbarTranslation;
-        float bottomOfScreen = mTarget.getView().getHeight();
-        
-        
-        
-        aTransform.fixedLayerMarginBottom = bottomOfCssViewport(aMetrics) - bottomOfScreen;
-        
-        
-        
     }
 
-    class DynamicToolbarAnimationTask extends RenderTask {
-        private final float mStartTranslation;
-        private final float mEndTranslation;
-        private final boolean mImmediate;
-        private final boolean mShiftLayerView;
-        private boolean mContinueAnimation;
+     void notifyCompositorCreated(LayerView.Compositor aCompositor) {
+        ThreadUtils.assertOnUiThread();
+        mCompositor = aCompositor;
+        dumpStateToCompositor();
+    }
 
-        public DynamicToolbarAnimationTask(float aTranslation, boolean aImmediate, boolean aShiftLayerView) {
-            super(false);
-            mContinueAnimation = true;
-            mStartTranslation = mToolbarTranslation;
-            mEndTranslation = aTranslation;
-            mImmediate = aImmediate;
-            mShiftLayerView = aShiftLayerView;
+     void notifyCompositorControllerOpen() {
+        mCompositorControllerOpen = true;
+        dumpStateToCompositor();
+    }
+
+     void notifyCompositorDestroyed() {
+        mCompositor = null;
+    }
+
+
+     Bitmap getBitmapOfToolbarChrome() {
+        if (mToolbarChromeProxy != null) {
+            return mToolbarChromeProxy.getBitmapOfToolbarChrome();
         }
-
-        float getFinalToolbarTranslation() {
-            return mEndTranslation;
-        }
-
-        @Override
-        public boolean internalRun(long timeDelta, long currentFrameStartTime) {
-            if (!mContinueAnimation) {
-                return false;
-            }
-
-            
-            final float progress = mImmediate
-                ? 1.0f
-                : mInterpolator.getInterpolation(
-                    Math.min(1.0f, (System.nanoTime() - getStartTime())
-                                    / (float)ANIMATION_DURATION));
-
-            
-            
-            ThreadUtils.assertNotOnUiThread();
-
-            ThreadUtils.postToUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    
-                    mToolbarTranslation = FloatUtils.interpolate(mStartTranslation, mEndTranslation, progress);
-                    fireListeners();
-
-                    if (mShiftLayerView && progress >= 1.0f) {
-                        shiftLayerView(mEndTranslation);
-                    }
-                }
-            });
-
-            mTarget.getView().requestRender();
-            if (progress >= 1.0f) {
-                mContinueAnimation = false;
-            }
-            return mContinueAnimation;
-        }
+        return null;
     }
 }

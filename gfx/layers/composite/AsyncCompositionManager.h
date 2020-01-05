@@ -94,15 +94,11 @@ public:
   void ComputeRotation();
 
   
-  void Updated(bool isFirstPaint, const TargetConfig& aTargetConfig,
-               int32_t aPaintSyncId)
+  void Updated(bool isFirstPaint, const TargetConfig& aTargetConfig)
   {
     mIsFirstPaint |= isFirstPaint;
     mLayersUpdated = true;
     mTargetConfig = aTargetConfig;
-    if (aPaintSyncId) {
-      mPaintSyncId = aPaintSyncId;
-    }
   }
 
   bool RequiresReorientation(mozilla::dom::ScreenOrientationInternal aOrientation) const
@@ -148,18 +144,6 @@ private:
 
 
   void ApplyAsyncTransformToScrollbar(Layer* aLayer);
-
-  void SetFirstPaintViewport(const LayerIntPoint& aOffset,
-                             const CSSToLayerScale& aZoom,
-                             const CSSRect& aCssPageRect);
-  void SyncFrameMetrics(const ParentLayerPoint& aScrollOffset,
-                        const CSSToParentLayerScale& aZoom,
-                        const CSSRect& aCssPageRect,
-                        const CSSRect& aDisplayPort,
-                        const CSSToLayerScale& aPaintedResolution,
-                        bool aLayersUpdated,
-                        int32_t aPaintSyncId,
-                        ScreenMargin& aFixedLayerMargins);
 
   
 
@@ -231,8 +215,6 @@ private:
   
   bool mLayersUpdated;
 
-  int32_t mPaintSyncId;
-
   bool mReadyForCompose;
 
   gfx::Matrix mWorldTransform;
@@ -244,6 +226,9 @@ private:
   CompositorBridgeParent* mCompositorBridge;
 
 #ifdef MOZ_WIDGET_ANDROID
+public:
+  void SetFixedLayerMarginsBottom(ScreenIntCoord aBottom);
+private:
   
   
   

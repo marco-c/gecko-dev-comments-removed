@@ -42,6 +42,11 @@ class   nsIRunnable;
 class   nsIKeyEventInPluginCallback;
 
 namespace mozilla {
+#if defined(MOZ_WIDGET_ANDROID)
+namespace ipc {
+class Shmem;
+}
+#endif 
 namespace dom {
 class TabChild;
 } 
@@ -358,6 +363,9 @@ class nsIWidget : public nsISupports
     typedef mozilla::LayoutDeviceIntRegion LayoutDeviceIntRegion;
     typedef mozilla::LayoutDeviceIntSize LayoutDeviceIntSize;
     typedef mozilla::ScreenIntPoint ScreenIntPoint;
+    typedef mozilla::ScreenIntSize ScreenIntSize;
+    typedef mozilla::ScreenPoint ScreenPoint;
+    typedef mozilla::CSSToScreenScale CSSToScreenScale;
     typedef mozilla::DesktopIntRect DesktopIntRect;
     typedef mozilla::CSSRect CSSRect;
 
@@ -1820,10 +1828,7 @@ public:
     
 
 
-
-
-
-    const IMENotificationRequests& IMENotificationRequestsRef();
+    virtual IMENotificationRequests GetIMENotificationRequests() = 0;
 
     
 
@@ -2009,6 +2014,32 @@ public:
                    const bool aIsVertical,
                    const LayoutDeviceIntPoint& aPoint)
     { }
+
+#if defined(MOZ_WIDGET_ANDROID)
+    
+
+
+
+
+    virtual void RecvToolbarAnimatorMessageFromCompositor(int32_t aMessage) = 0;
+
+    
+
+
+
+
+
+
+    virtual void UpdateRootFrameMetrics(const ScreenPoint& aScrollOffset, const CSSToScreenScale& aZoom, const CSSRect& aPage) = 0;
+
+    
+
+
+
+
+
+    virtual void RecvScreenPixels(mozilla::ipc::Shmem&& aMem, const ScreenIntSize& aSize) = 0;
+#endif
 
 protected:
     

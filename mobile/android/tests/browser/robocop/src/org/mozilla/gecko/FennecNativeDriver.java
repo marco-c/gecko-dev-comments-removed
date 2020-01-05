@@ -17,7 +17,10 @@ import java.nio.IntBuffer;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.lang.StringBuffer;
+import java.lang.Math;
 
+import org.mozilla.gecko.GeckoThread;
 import org.mozilla.gecko.gfx.LayerView;
 import org.mozilla.gecko.gfx.PanningPerfAPI;
 import org.mozilla.gecko.util.BundleEventListener;
@@ -30,7 +33,7 @@ import android.view.View;
 
 import com.robotium.solo.Solo;
 
-public class FennecNativeDriver implements Driver {
+public class FennecNativeDriver implements Driver, LayerView.GetPixelsResult {
     private static final int FRAME_TIME_THRESHOLD = 25;     
 
     private final Activity mActivity;
@@ -83,6 +86,14 @@ public class FennecNativeDriver implements Driver {
             mGeckoInfo = true;
         } else {
             throw new RoboCopException("Unable to find view gecko_layout");
+        }
+        View toolbarLayout = mActivity.findViewById(R.id.browser_chrome);
+        if (toolbarLayout != null) {
+          
+          
+          final int toolbarHeight = toolbarLayout.getHeight();
+          mGeckoTop += toolbarHeight;
+          mGeckoHeight -= toolbarHeight;
         }
     }
 
@@ -178,6 +189,65 @@ public class FennecNativeDriver implements Driver {
         return layerView;
     }
 
+    private volatile boolean mGotPixelsResult;
+    private int mPixelsWidth;
+    private int mPixelsHeight;
+    private IntBuffer mPixelsResult;
+
+    @Override
+    public synchronized void onPixelsResult(int aWidth, int aHeight, IntBuffer aPixels) {
+        mPixelsWidth = aWidth;
+        mPixelsHeight = aHeight;
+        mPixelsResult = aPixels;
+        mGotPixelsResult = true;
+        notifyAll();
+    }
+
+    private static final int COLOR_DEVIATION = 3;
+
+    
+    private static boolean differentColor(final int c1, final int c2) {
+        int r1 = c1 & 0xFF;
+        int b1 = (c1 & 0xFF00) >> 8;
+        int g1 = (c1 & 0xFF0000) >> 16;
+        int r2 = c2 & 0xFF;
+        int b2 = (c2 & 0xFF00) >> 8;
+        int g2 = (c2 & 0xFF0000) >> 16;
+        return (Math.abs(r1 - r2) > COLOR_DEVIATION) ||
+               (Math.abs(g1 - g2) > COLOR_DEVIATION) ||
+               (Math.abs(b1 - b2) > COLOR_DEVIATION);
+    }
+
+    private void logPixels(final IntBuffer pixelBuffer, final int w, final int h) {
+        pixelBuffer.position(0);
+
+        int prevFirstRowColor = 0xFF000000; 
+        int prevColor = 0xFF000000;
+        StringBuffer sb = null;
+        for (int y = 0; y < h; y++) {
+             for (int x = 0; x < w; x++) {
+                 int agbr = pixelBuffer.get();
+                 
+                 if ((x == 0) && (prevFirstRowColor != agbr)) {
+                     sb = new StringBuffer();
+                     prevFirstRowColor = agbr;
+                 }
+
+                 
+                 if ((sb != null) && differentColor(prevColor, agbr)) {
+                     sb.append(String.format("(%3d,%3d,%3d) ", (agbr & 0xFF), (agbr & 0xFF00) >> 8, (agbr & 0xFF0000) >> 16));
+                 }
+                 prevColor = agbr;
+             }
+             if (sb != null) {
+                 
+                 sb.append("h:").append(h - y);
+                 log(LogLevel.INFO,sb.toString());
+                 sb = null;
+             }
+        }
+    }
+
     @Override
     public PaintedSurface getPaintedSurface() {
         final LayerView view = getSurfaceView();
@@ -185,12 +255,39 @@ public class FennecNativeDriver implements Driver {
             return null;
         }
 
-        final IntBuffer pixelBuffer = view.getPixels();
+        view.getPixels(this);
+
+        synchronized (this) {
+            while (!mGotPixelsResult) {
+                try {
+                    wait();
+                } catch (InterruptedException ie) {
+                }
+            }
+        }
+
+        final IntBuffer pixelBuffer = mPixelsResult;
+        int w = mPixelsWidth;
+        int h = mPixelsHeight;
+
+        mGotPixelsResult = false;
+        mPixelsWidth = 0;
+        mPixelsHeight = 0;
+        mPixelsResult = null;
+
+
+        if ((pixelBuffer == null) || (w == 0) || (h == 0)) {
+            return null;
+        }
 
         
         
-        int w = view.getWidth();
-        int h = view.getHeight();
+        
+        
+        
+
+        
+        
         pixelBuffer.position(0);
         String mapFile = mRootPath + "/pixels.map";
 

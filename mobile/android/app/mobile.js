@@ -418,16 +418,10 @@ pref("browser.ui.zoom.force-user-scalable", false);
 
 
 #ifdef NIGHTLY_BUILD
-pref("ui.zoomedview.enabled", true);
 pref("ui.bookmark.mobilefolder.enabled", true);
 #else
-pref("ui.zoomedview.enabled", false);
 pref("ui.bookmark.mobilefolder.enabled", false);
 #endif
-pref("ui.zoomedview.keepLimitSize", 16); 
-pref("ui.zoomedview.limitReadableSize", 8); 
-pref("ui.zoomedview.defaultZoomFactor", 2);
-pref("ui.zoomedview.simplified", true); 
 
 pref("ui.touch.radius.enabled", false);
 pref("ui.touch.radius.leftmm", 3);

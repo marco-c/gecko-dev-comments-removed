@@ -9,7 +9,6 @@ import org.mozilla.gecko.annotation.RobocopTarget;
 import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.gecko.EventDispatcher;
 import org.mozilla.gecko.GeckoAppShell;
-import org.mozilla.gecko.gfx.LayerView.DrawListener;
 import org.mozilla.gecko.util.FloatUtils;
 import org.mozilla.gecko.util.GeckoBundle;
 
@@ -25,30 +24,14 @@ import android.view.InputDevice;
 import android.view.MotionEvent;
 
 import java.util.ArrayList;
-import java.util.List;
 
-class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
+class GeckoLayerClient implements LayerView.Listener
 {
     private static final String LOGTAG = "GeckoLayerClient";
-    private static int sPaintSyncId = 1;
-
-    private LayerRenderer mLayerRenderer;
-    private boolean mLayerRendererInitialized;
 
     private final Context mContext;
     private IntSize mScreenSize;
     private IntSize mWindowSize;
-
-    
-
-
-
-    private ImmutableViewportMetrics mFrameMetrics;
-
-    private final List<DrawListener> mDrawListeners;
-
-    
-    private final ViewTransform mCurrentViewTransform;
 
     private boolean mForceRedraw;
 
@@ -83,27 +66,20 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
 
     private SynthesizedEventState mPointerState;
 
-    @WrapForJNI(stubName = "ClearColor")
-    private volatile int mClearColor = Color.WHITE;
-
     public GeckoLayerClient(Context context, LayerView view) {
         
         
         mContext = context;
         mScreenSize = new IntSize(0, 0);
         mWindowSize = new IntSize(0, 0);
-        mCurrentViewTransform = new ViewTransform(0, 0, 1);
 
         mForceRedraw = true;
         DisplayMetrics displayMetrics = context.getResources().getDisplayMetrics();
         mViewportMetrics = new ImmutableViewportMetrics(displayMetrics)
                            .setViewportSize(view.getWidth(), view.getHeight());
 
-        mFrameMetrics = mViewportMetrics;
-
-        mDrawListeners = new ArrayList<DrawListener>();
         mToolbarAnimator = new DynamicToolbarAnimator(this);
-        mPanZoomController = PanZoomController.Factory.create(this, view);
+        mPanZoomController = PanZoomController.Factory.create(view);
         mView = view;
         mView.setListener(this);
         mContentDocumentIsDisplayed = true;
@@ -117,7 +93,6 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
         mGeckoIsReady = ready;
     }
 
-    @Override 
     public boolean isGeckoReady() {
         return mGeckoIsReady;
     }
@@ -127,9 +102,7 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
     private void onGeckoReady() {
         mGeckoIsReady = true;
 
-        mLayerRenderer = mView.getRenderer();
-
-        sendResizeEventIfNecessary(true, null);
+        sendResizeEventIfNecessary(true);
 
         
         
@@ -147,8 +120,6 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
 
     public void destroy() {
         mPanZoomController.destroy();
-        mToolbarAnimator.destroy();
-        mDrawListeners.clear();
         mGeckoIsReady = false;
     }
 
@@ -168,22 +139,18 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
 
 
 
-    boolean setViewportSize(int width, int height, PointF scrollChange) {
+    boolean setViewportSize(int width, int height) {
         if (mViewportMetrics.viewportRectWidth == width &&
-            mViewportMetrics.viewportRectHeight == height &&
-            (scrollChange == null || (scrollChange.x == 0 && scrollChange.y == 0))) {
+            mViewportMetrics.viewportRectHeight == height) {
             return false;
         }
         mViewportMetrics = mViewportMetrics.setViewportSize(width, height);
-        if (scrollChange != null) {
-            mViewportMetrics = mPanZoomController.adjustScrollForSurfaceShift(mViewportMetrics, scrollChange);
-        }
 
         if (mGeckoIsReady) {
             
             
             
-            sendResizeEventIfNecessary(true, scrollChange);
+            sendResizeEventIfNecessary(true);
 
             
             
@@ -202,7 +169,7 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
     }
 
     
-    private void sendResizeEventIfNecessary(boolean force, PointF scrollChange) {
+    private void sendResizeEventIfNecessary(boolean force) {
         DisplayMetrics metrics = mContext.getResources().getDisplayMetrics();
 
         IntSize newScreenSize = new IntSize(metrics.widthPixels, metrics.heightPixels);
@@ -231,33 +198,6 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
             mView.notifySizeChanged(mWindowSize.width, mWindowSize.height,
                                     mScreenSize.width, mScreenSize.height);
         }
-
-        final GeckoBundle data;
-        if (scrollChange != null) {
-            int id = ++sPaintSyncId;
-            if (id == 0) {
-                
-                
-                id = ++sPaintSyncId;
-            }
-            data = new GeckoBundle(3);
-            data.putDouble("x", scrollChange.x / mViewportMetrics.zoomFactor);
-            data.putDouble("y", scrollChange.y / mViewportMetrics.zoomFactor);
-            data.putInt("id", id);
-        } else {
-            data = null;
-        }
-        EventDispatcher.getInstance().dispatch("Window:Resize", data);
-    }
-
-    
-
-
-
-
-    private enum ViewportMessageType {
-        UPDATE,       
-        PAGE_SIZE     
     }
 
     @WrapForJNI(calledFrom = "gecko")
@@ -275,83 +215,16 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
 
 
 
-    @WrapForJNI
-    public void setFirstPaintViewport(float offsetX, float offsetY, float zoom,
+    @WrapForJNI(calledFrom = "ui")
+    public void updateRootFrameMetrics(float scrollX, float scrollY, float zoom,
             float cssPageLeft, float cssPageTop, float cssPageRight, float cssPageBottom) {
-        synchronized (getLock()) {
-            ImmutableViewportMetrics currentMetrics = getViewportMetrics();
-
-            RectF cssPageRect = new RectF(cssPageLeft, cssPageTop, cssPageRight, cssPageBottom);
-            RectF pageRect = RectUtils.scaleAndRound(cssPageRect, zoom);
-
-            final ImmutableViewportMetrics newMetrics = currentMetrics
-                .setViewportOrigin(offsetX, offsetY)
-                .setZoomFactor(zoom)
-                .setPageRect(pageRect, cssPageRect);
-            
-            
-            
-            
-            setViewportMetrics(newMetrics, true);
-
-            
-            
-            if (mView.getPaintState() == LayerView.PAINT_START) {
-                mView.setPaintState(LayerView.PAINT_BEFORE_FIRST);
-            }
-        }
-
-        mContentDocumentIsDisplayed = true;
-    }
-
-    
-
-
-
-
-
-
-
-    private ViewTransform syncViewportInfo(int x, int y, int width, int height, float resolution, boolean layersUpdated,
-                                          int paintSyncId) {
-        
-        
-        
-        
-        
-        
-        mFrameMetrics = getViewportMetrics();
-
-        if (paintSyncId == sPaintSyncId) {
-            mToolbarAnimator.scrollChangeResizeCompleted();
-        }
-        mToolbarAnimator.populateViewTransform(mCurrentViewTransform, mFrameMetrics);
-
-        if (layersUpdated) {
-            for (DrawListener listener : mDrawListeners) {
-                listener.drawFinished();
-            }
-        }
-
-        return mCurrentViewTransform;
-    }
-
-    @WrapForJNI
-    public ViewTransform syncFrameMetrics(float scrollX, float scrollY, float zoom,
-                float cssPageLeft, float cssPageTop, float cssPageRight, float cssPageBottom,
-                int dpX, int dpY, int dpWidth, int dpHeight, float paintedResolution,
-                boolean layersUpdated, int paintSyncId)
-    {
-        
-        
         RectF cssPageRect = new RectF(cssPageLeft, cssPageTop, cssPageRight, cssPageBottom);
-        synchronized (getLock()) {
-            mViewportMetrics = mViewportMetrics.setViewportOrigin(scrollX, scrollY)
-                .setZoomFactor(zoom)
-                .setPageRect(RectUtils.scale(cssPageRect, zoom), cssPageRect);
-        }
-        return syncViewportInfo(dpX, dpY, dpWidth, dpHeight, paintedResolution,
-                    layersUpdated, paintSyncId);
+        mViewportMetrics = mViewportMetrics.setViewportOrigin(scrollX, scrollY)
+            .setZoomFactor(zoom)
+            .setPageRect(RectUtils.scale(cssPageRect, zoom), cssPageRect);
+
+        mToolbarAnimator.onMetricsChanged(mViewportMetrics);
+        mContentDocumentIsDisplayed = true;
     }
 
     class PointerInfo {
@@ -509,6 +382,9 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
         PointerInfo info = mPointerState.pointers.get(pointerIndex);
         info.screenX = screenX;
         info.screenY = screenY;
+        if (mView != null) {
+            info.screenY += mView.getCurrentToolbarHeight();
+        }
         info.pressure = pressure;
         info.orientation = orientation;
 
@@ -567,89 +443,15 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
             eventType, screenX, screenY, 0, 0);
     }
 
-    @WrapForJNI
-    public LayerRenderer.Frame createFrame() {
-        
-        if (!mLayerRendererInitialized) {
-            if (mLayerRenderer == null) {
-                return null;
-            }
-            mLayerRenderer.createDefaultProgram();
-            mLayerRendererInitialized = true;
-        }
-
-        try {
-            return mLayerRenderer.createFrame(mFrameMetrics);
-        } catch (Exception e) {
-            Log.w(LOGTAG, e);
-            return null;
-        }
-    }
-
-    private void geometryChanged() {
-        
-        sendResizeEventIfNecessary(false, null);
-    }
-
     
     @Override
-    public void surfaceChanged(int width, int height) {
+    public void surfaceChanged() {
         IntSize viewportSize = mToolbarAnimator.getViewportSize();
-        setViewportSize(viewportSize.width, viewportSize.height, null);
+        setViewportSize(viewportSize.width, viewportSize.height);
     }
 
     ImmutableViewportMetrics getViewportMetrics() {
         return mViewportMetrics;
-    }
-
-    
-
-
-    private void setViewportMetrics(ImmutableViewportMetrics metrics, boolean notifyGecko) {
-        
-        
-        
-        
-        
-        metrics = metrics.setViewportSize(mViewportMetrics.viewportRectWidth, mViewportMetrics.viewportRectHeight);
-        mViewportMetrics = metrics;
-
-        viewportMetricsChanged(notifyGecko);
-    }
-
-    
-
-
-    private void viewportMetricsChanged(boolean notifyGecko) {
-        mToolbarAnimator.onMetricsChanged(mViewportMetrics);
-
-        mView.requestRender();
-        if (notifyGecko && mGeckoIsReady) {
-            geometryChanged();
-        }
-    }
-
-    
-
-
-
-
-    void forceViewportMetrics(ImmutableViewportMetrics metrics, boolean notifyGecko, boolean forceRedraw) {
-        if (forceRedraw) {
-            mForceRedraw = true;
-        }
-        mViewportMetrics = metrics;
-        viewportMetricsChanged(notifyGecko);
-    }
-
-    
-    @Override
-    public void panZoomStopped() {
-        mToolbarAnimator.onPanZoomStopped();
-    }
-
-    Object getLock() {
-        return this;
     }
 
     Matrix getMatrixForLayerRectToViewRect() {
@@ -669,22 +471,5 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
         matrix.postScale(zoom, zoom);
         matrix.postTranslate(-origin.x, -origin.y);
         return matrix;
-    }
-
-    @Override
-    public void setScrollingRootContent(boolean isRootContent) {
-        mToolbarAnimator.setScrollingRootContent(isRootContent);
-    }
-
-    public void addDrawListener(DrawListener listener) {
-        mDrawListeners.add(listener);
-    }
-
-    public void removeDrawListener(DrawListener listener) {
-        mDrawListeners.remove(listener);
-    }
-
-    public void setClearColor(int color) {
-        mClearColor = color;
     }
 }

@@ -63,6 +63,7 @@ class TextRenderer;
 class CompositingRenderTarget;
 struct FPSState;
 class PaintCounter;
+class UiCompositorControllerParent;
 
 static const int kVisualWarningDuration = 150; 
 
@@ -213,6 +214,13 @@ protected:
   
   
   TimeStamp mCompositeUntilTime;
+#if defined(MOZ_WIDGET_ANDROID)
+public:
+  
+  
+  
+  virtual void RequestScreenPixels(UiCompositorControllerParent* aController) {}
+#endif 
 };
 
 
@@ -429,6 +437,10 @@ private:
   void Render(const nsIntRegion& aInvalidRegion, const nsIntRegion& aOpaqueRegion);
 #if defined(MOZ_WIDGET_ANDROID)
   void RenderToPresentationSurface();
+  
+  int32_t RenderToolbar();
+  
+  void HandlePixelsTarget();
 #endif
 
   
@@ -482,6 +494,15 @@ private:
   void DrawPaintTimes(Compositor* aCompositor);
   RefPtr<PaintCounter> mPaintCounter;
 #endif
+#if defined(MOZ_WIDGET_ANDROID)
+public:
+  virtual void RequestScreenPixels(UiCompositorControllerParent* aController)
+  {
+    mScreenPixelsTarget = aController;
+  }
+private:
+  UiCompositorControllerParent* mScreenPixelsTarget;
+#endif 
 };
 
 
