@@ -490,12 +490,6 @@ void
 nsMathMLElement::MapMathMLAttributesInto(const nsMappedAttributes* aAttributes,
                                          GenericSpecifiedValues* aGenericData)
 {
-  if (aGenericData->IsServo()) {
-    
-    NS_WARNING("stylo: cannot handle MathML presentation attributes");
-    return;
-  }
-
   nsRuleData* aData = aGenericData->AsGecko();
   if (aData->mSIDs & NS_STYLE_INHERIT_BIT(Font)) {
     
