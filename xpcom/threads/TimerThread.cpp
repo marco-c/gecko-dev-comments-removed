@@ -369,7 +369,7 @@ TimerThread::Shutdown()
 
   uint32_t timersCount = timers.Length();
   for (uint32_t i = 0; i < timersCount; i++) {
-    RefPtr<nsTimerImpl> timer = timers[i]->mTimerImpl.forget();
+    RefPtr<nsTimerImpl> timer = timers[i]->Take();
     if (timer) {
       timer->Cancel();
     }
@@ -443,14 +443,11 @@ TimerThread::Run()
     } else {
       waitFor = PR_INTERVAL_NO_TIMEOUT;
       TimeStamp now = TimeStamp::Now();
-      nsTimerImpl* timer = nullptr;
 
       RemoveLeadingCanceledTimersInternal();
 
       if (!mTimers.IsEmpty()) {
-        timer = mTimers[0]->mTimerImpl;
-
-        if (now >= timer->mTimeout || forceRunThisTimer) {
+        if (now >= mTimers[0]->Value()->mTimeout || forceRunThisTimer) {
     next:
           
           
@@ -458,9 +455,8 @@ TimerThread::Run()
           
           
 
-          RefPtr<nsTimerImpl> timerRef(timer);
+          RefPtr<nsTimerImpl> timerRef(mTimers[0]->Take());
           RemoveFirstTimerInternal();
-          timer = nullptr;
 
           MOZ_LOG(GetTimerLog(), LogLevel::Debug,
                  ("Timer thread woke up %fms from when it was supposed to\n",
@@ -505,9 +501,7 @@ TimerThread::Run()
       RemoveLeadingCanceledTimersInternal();
 
       if (!mTimers.IsEmpty()) {
-        timer = mTimers[0]->mTimerImpl;
-
-        TimeStamp timeout = timer->mTimeout;
+        TimeStamp timeout = mTimers[0]->Value()->mTimeout;
 
         
         
@@ -578,7 +572,7 @@ TimerThread::AddTimer(nsTimerImpl* aTimer)
   }
 
   
-  if (mWaiting && mTimers[0]->mTimerImpl == aTimer) {
+  if (mWaiting && mTimers[0]->Value() == aTimer) {
     mNotified = true;
     mMonitor.Notify();
   }
@@ -639,13 +633,11 @@ bool
 TimerThread::RemoveTimerInternal(nsTimerImpl* aTimer)
 {
   mMonitor.AssertCurrentThreadOwns();
-  for (uint32_t i = 0; i < mTimers.Length(); ++i) {
-    if (mTimers[i]->mTimerImpl == aTimer) {
-      mTimers[i]->mTimerImpl = nullptr;
-      return true;
-    }
+  if (!aTimer || !aTimer->mHolder) {
+    return false;
   }
-  return false;
+  aTimer->mHolder->Forget(aTimer);
+  return true;
 }
 
 void
@@ -658,7 +650,7 @@ TimerThread::RemoveLeadingCanceledTimersInternal()
   
   
   auto sortedEnd = mTimers.end();
-  while (sortedEnd != mTimers.begin() && !mTimers[0]->mTimerImpl) {
+  while (sortedEnd != mTimers.begin() && !mTimers[0]->Value()) {
     std::pop_heap(mTimers.begin(), sortedEnd, Entry::UniquePtrLessThan);
     --sortedEnd;
   }

@@ -33,12 +33,18 @@ extern mozilla::LogModule* GetTimerLog();
     {0x84, 0x27, 0xfb, 0xab, 0x44, 0xf2, 0x9b, 0xc8} \
 }
 
+class nsTimerImplHolder;
+
 
 
 
 class nsTimerImpl
 {
-  ~nsTimerImpl() {}
+  ~nsTimerImpl()
+  {
+    MOZ_ASSERT(!mHolder);
+  }
+
 public:
   typedef mozilla::TimeStamp TimeStamp;
 
@@ -151,6 +157,8 @@ public:
 
   void GetName(nsACString& aName);
 
+  void SetHolder(nsTimerImplHolder* aHolder);
+
   nsCOMPtr<nsIEventTarget> mEventTarget;
 
   void LogFiring(const Callback& aCallback, uint8_t aType, uint32_t aDelay);
@@ -160,6 +168,10 @@ public:
                                       uint32_t aDelay,
                                       uint32_t aType,
                                       const Callback::Name& aName);
+
+  
+  
+  nsTimerImplHolder*    mHolder;
 
   
   
@@ -208,5 +220,41 @@ private:
   
   RefPtr<nsTimerImpl> mImpl;
 };
+
+
+
+class nsTimerImplHolder
+{
+public:
+  explicit nsTimerImplHolder(nsTimerImpl* aTimerImpl)
+    : mTimerImpl(aTimerImpl)
+  {
+    if (mTimerImpl) {
+      mTimerImpl->SetHolder(this);
+    }
+  }
+
+  ~nsTimerImplHolder()
+  {
+    if (mTimerImpl) {
+      mTimerImpl->SetHolder(nullptr);
+    }
+  }
+
+  void
+  Forget(nsTimerImpl* aTimerImpl)
+  {
+    if (MOZ_UNLIKELY(!mTimerImpl)) {
+      return;
+    }
+    MOZ_ASSERT(aTimerImpl == mTimerImpl);
+    mTimerImpl->SetHolder(nullptr);
+    mTimerImpl = nullptr;
+  }
+
+protected:
+  RefPtr<nsTimerImpl> mTimerImpl;
+};
+
 
 #endif 
