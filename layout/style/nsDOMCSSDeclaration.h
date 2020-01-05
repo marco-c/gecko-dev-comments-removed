@@ -156,6 +156,13 @@ protected:
   static void GetCSSParsingEnvironmentForRule(mozilla::css::Rule* aRule,
                                               CSSParsingEnvironment& aCSSParseEnv);
 
+  
+  static mozilla::URLExtraData* GetURLDataForRule(const mozilla::css::Rule* aRule);
+
+  
+  
+  virtual mozilla::URLExtraData* GetURLData() const = 0;
+
   nsresult ParsePropertyValue(const nsCSSPropertyID aPropID,
                               const nsAString& aPropValue,
                               bool aIsImportant);

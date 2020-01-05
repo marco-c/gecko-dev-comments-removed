@@ -82,6 +82,8 @@ public:
     Inner()->mSheet = aSheet;
   }
 
+  URLExtraData* URLData() const { return Inner()->mURLData; }
+
   
   
   
