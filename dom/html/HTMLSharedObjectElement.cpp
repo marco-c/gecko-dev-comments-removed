@@ -180,7 +180,7 @@ HTMLSharedObjectElement::SetAttr(int32_t aNameSpaceID, nsIAtom *aName,
   
   if (aNotify && IsInComposedDoc() && mIsDoneAddingChildren &&
       aNameSpaceID == kNameSpaceID_None && aName == URIAttrName()
-      && !BlockEmbedContentLoading()) {
+      && !BlockEmbedOrObjectContentLoading()) {
     return LoadObject(aNotify, true);
   }
 
@@ -313,7 +313,7 @@ HTMLSharedObjectElement::StartObjectLoad(bool aNotify, bool aForceLoad)
   
   
   if (!IsInComposedDoc() || !OwnerDoc()->IsActive() ||
-      BlockEmbedContentLoading()) {
+      BlockEmbedOrObjectContentLoading()) {
     return;
   }
 
@@ -387,32 +387,6 @@ HTMLSharedObjectElement::GetContentPolicyType() const
     MOZ_ASSERT(mNodeInfo->Equals(nsGkAtoms::embed));
     return nsIContentPolicy::TYPE_INTERNAL_EMBED;
   }
-}
-
-bool
-HTMLSharedObjectElement::BlockEmbedContentLoading()
-{
-  
-  if (!IsHTMLElement(nsGkAtoms::embed)) {
-    return false;
-  }
-  
-  
-  for (nsIContent* parent = GetParent(); parent; parent = parent->GetParent()) {
-    if (parent->IsAnyOfHTMLElements(nsGkAtoms::video, nsGkAtoms::audio)) {
-      return true;
-    }
-    
-    
-    
-    if (HTMLObjectElement* object = HTMLObjectElement::FromContent(parent)) {
-      uint32_t type = object->DisplayedType();
-      if (type != eType_Null) {
-        return true;
-      }
-    }
-  }
-  return false;
 }
 
 } 

@@ -220,21 +220,6 @@ private:
 
   static void MapAttributesIntoRule(const nsMappedAttributes* aAttributes,
                                     GenericSpecifiedValues* aGenericData);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  bool BlockEmbedContentLoading();
 };
 
 } 
