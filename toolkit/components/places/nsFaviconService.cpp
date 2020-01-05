@@ -57,6 +57,69 @@ public:
   NS_IMETHOD HandleCompletion(uint16_t aReason);
 };
 
+namespace {
+
+
+
+
+
+
+
+nsresult
+GetFramesInfoForContainer(imgIContainer* aContainer,
+                           nsTArray<FrameData>& aFramesInfo) {
+  
+  bool animated;
+  nsresult rv = aContainer->GetAnimated(&animated);
+  if (NS_FAILED(rv) || !animated) {
+    nsTArray<nsIntSize> nativeSizes;
+    rv = aContainer->GetNativeSizes(nativeSizes);
+    if (NS_SUCCEEDED(rv) && nativeSizes.Length() > 1) {
+      for (uint32_t i = 0; i < nativeSizes.Length(); ++i) {
+        nsIntSize nativeSize = nativeSizes[i];
+        
+        if (nativeSize.width != nativeSize.height) {
+          continue;
+        }
+        
+        auto end = std::end(sFaviconSizes);
+        uint16_t* matchingSize = std::find(std::begin(sFaviconSizes), end,
+                                          nativeSize.width);
+        if (matchingSize != end) {
+          
+          
+          
+          
+          bool dupe = false;
+          for (const auto& frameInfo : aFramesInfo) {
+            if (frameInfo.width == *matchingSize) {
+              dupe = true;
+              break;
+            }
+          }
+          if (!dupe) {
+            aFramesInfo.AppendElement(FrameData(i, *matchingSize));
+          }
+        }
+      }
+    }
+  }
+
+  if (aFramesInfo.Length() == 0) {
+    
+    int32_t width;
+    rv = aContainer->GetWidth(&width);
+    NS_ENSURE_SUCCESS(rv, rv);
+    int32_t height;
+    rv = aContainer->GetHeight(&height);
+    NS_ENSURE_SUCCESS(rv, rv);
+    
+    aFramesInfo.AppendElement(FrameData(0, std::max(width, height)));
+  }
+  return NS_OK;
+}
+
+} 
 
 PLACES_FACTORY_SINGLETON_IMPLEMENTATION(nsFaviconService, gFaviconService)
 
@@ -677,47 +740,46 @@ nsFaviconService::OptimizeIconSizes(IconData& aIcon)
                                       getter_AddRefs(container));
   NS_ENSURE_SUCCESS(rv, rv);
 
-  IconPayload newPayload;
-  newPayload.mimeType = NS_LITERAL_CSTRING(PNG_MIME_TYPE);
   
-  int32_t width;
-  rv = container->GetWidth(&width);
+  nsTArray<FrameData> framesInfo;
+  rv = GetFramesInfoForContainer(container, framesInfo);
   NS_ENSURE_SUCCESS(rv, rv);
-  int32_t height;
-  rv = container->GetHeight(&height);
-  NS_ENSURE_SUCCESS(rv, rv);
-  
-  int32_t originalSize = std::max(width, height);
-  newPayload.width = originalSize;
-  for (uint16_t size : sFaviconSizes) {
-    if (size <= originalSize) {
-      newPayload.width = size;
-      break;
+
+  for (const auto& frameInfo : framesInfo) {
+    IconPayload newPayload;
+    newPayload.mimeType = NS_LITERAL_CSTRING(PNG_MIME_TYPE);
+    newPayload.width = frameInfo.width;
+    for (uint16_t size : sFaviconSizes) {
+      if (size <= frameInfo.width) {
+        newPayload.width = size;
+        break;
+      }
     }
-  }
 
-  
-  
-  if (newPayload.mimeType.Equals(payload.mimeType) &&
-      newPayload.width == originalSize) {
-    newPayload.data = payload.data;
-  } else {
     
-    nsCOMPtr<nsIInputStream> iconStream;
-    rv = GetImgTools()->EncodeScaledImage(container,
-                                          newPayload.mimeType,
-                                          newPayload.width,
-                                          newPayload.width,
-                                          EmptyString(),
-                                          getter_AddRefs(iconStream));
-    NS_ENSURE_SUCCESS(rv, rv);
     
-    rv = NS_ConsumeStream(iconStream, UINT32_MAX, newPayload.data);
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
+    if (newPayload.mimeType.Equals(payload.mimeType) &&
+        newPayload.width == frameInfo.width) {
+      newPayload.data = payload.data;
+    } else {
+      
+      
+      nsCOMPtr<nsIInputStream> iconStream;
+      rv = GetImgTools()->EncodeScaledImage(container,
+                                            newPayload.mimeType,
+                                            newPayload.width,
+                                            newPayload.width,
+                                            EmptyString(),
+                                            getter_AddRefs(iconStream));
+      NS_ENSURE_SUCCESS(rv, rv);
+      
+      rv = NS_ConsumeStream(iconStream, UINT32_MAX, newPayload.data);
+      NS_ENSURE_SUCCESS(rv, rv);
+    }
 
-  if (newPayload.data.Length() < nsIFaviconService::MAX_FAVICON_BUFFER_SIZE) {
-    aIcon.payloads.AppendElement(newPayload);
+    if (newPayload.data.Length() < nsIFaviconService::MAX_FAVICON_BUFFER_SIZE) {
+      aIcon.payloads.AppendElement(newPayload);
+    }
   }
 
   return NS_OK;

@@ -122,6 +122,21 @@ struct PageData
 
 
 
+struct FrameData
+{
+  FrameData(uint16_t aIndex, uint16_t aWidth)
+  : index(aIndex)
+  , width(aWidth)
+  {
+  }
+
+  uint16_t index;
+  uint16_t width;
+};
+
+
+
+
 
 class AsyncFetchAndSetIconForPage final : public Runnable
                                         , public nsIStreamListener
