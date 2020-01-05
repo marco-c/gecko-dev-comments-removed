@@ -30,8 +30,11 @@
 
 
 
+
+
 use dom::bindings::codegen::PrototypeList;
 use dom::bindings::js::{JSRef, Root, Unrooted};
+use dom::bindings::num::Finite;
 use dom::bindings::str::{ByteString, USVString};
 use dom::bindings::utils::{Reflectable, Reflector, DOMClass};
 use util::str::DOMString;
@@ -254,6 +257,24 @@ impl FromJSValConvertible for f32 {
     }
 }
 
+impl ToJSValConvertible for Finite<f32> {
+    fn to_jsval(&self, cx: *mut JSContext) -> JSVal {
+        let value = **self;
+        value.to_jsval(cx)
+    }
+}
+
+impl FromJSValConvertible for Finite<f32> {
+    type Config = ();
+    fn from_jsval(cx: *mut JSContext, val: JSVal, option: ()) -> Result<Finite<f32>, ()> {
+        let result = FromJSValConvertible::from_jsval(cx, val, option);
+        let result = result.and_then(|v| {
+            Finite::<f32>::new(v).ok_or(())
+        });
+        result
+    }
+}
+
 impl ToJSValConvertible for f64 {
     fn to_jsval(&self, _cx: *mut JSContext) -> JSVal {
         unsafe {
@@ -266,6 +287,25 @@ impl FromJSValConvertible for f64 {
     type Config = ();
     fn from_jsval(cx: *mut JSContext, val: JSVal, _option: ()) -> Result<f64, ()> {
         unsafe { convert_from_jsval(cx, val, JS_ValueToNumber) }
+    }
+}
+
+impl ToJSValConvertible for Finite<f64> {
+    #[inline]
+    fn to_jsval(&self, cx: *mut JSContext) -> JSVal {
+        let value = **self;
+        value.to_jsval(cx)
+    }
+}
+
+impl FromJSValConvertible for Finite<f64> {
+    type Config = ();
+    fn from_jsval(cx: *mut JSContext, val: JSVal, option: ()) -> Result<Finite<f64>, ()> {
+        let result = FromJSValConvertible::from_jsval(cx, val, option);
+        let result = result.and_then(|v| {
+            Finite::<f64>::new(v).ok_or(())
+        });
+        result
     }
 }
 
