@@ -392,6 +392,7 @@ mod bindings {
                                         
             "nsPIDOMWindow",  
                               
+            "RawGeckoPresContext", 
             "JS::Rooted",
             "mozilla::Maybe",
             "gfxSize",  
@@ -467,6 +468,7 @@ mod bindings {
             "RawGeckoDocument",
             "RawGeckoElement",
             "RawGeckoNode",
+            "RawGeckoPresContext",
             "ThreadSafeURIHolder",
             "ThreadSafePrincipalHolder",
             "ConsumeStyleBehavior",
@@ -560,6 +562,7 @@ mod bindings {
             "RawGeckoElement",
             "RawGeckoDocument",
             "RawServoDeclarationBlockStrong",
+            "RawGeckoPresContext",
         ];
         let servo_borrow_types = [
             "nsCSSValue",

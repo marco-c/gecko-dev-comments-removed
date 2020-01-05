@@ -8,6 +8,7 @@ use euclid::size::Size2D;
 use media_queries::CSSErrorReporterTest;
 use std::f32::consts::PI;
 use style::parser::ParserContext;
+use style::properties::ComputedValues;
 use style::stylesheets::Origin;
 use style::values::computed;
 use style::values::computed::{Angle, Context, ToComputedValue};
@@ -43,7 +44,14 @@ fn test_linear_gradient() {
     
     
     let container = Size2D::new(Au::default(), Au::default());
-    let specified_context = Context::initial(container, true);
+    let initial_style = ComputedValues::initial_values();
+    let specified_context = Context {
+        is_root_element: true,
+        viewport_size: container,
+        inherited_style: initial_style,
+        style: initial_style.clone(),
+        font_metrics_provider: None,
+    };
     assert_eq!(specified::AngleOrCorner::None.to_computed_value(&specified_context),
                computed::AngleOrCorner::Angle(Angle(PI)));
 }

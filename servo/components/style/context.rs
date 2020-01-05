@@ -13,6 +13,7 @@ use error_reporting::ParseErrorReporter;
 use euclid::Size2D;
 use matching::StyleSharingCandidateCache;
 use parking_lot::RwLock;
+use properties::ComputedValues;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::sync::mpsc::Sender;
@@ -82,6 +83,10 @@ pub struct SharedStyleContext {
 
     
     pub quirks_mode: QuirksMode,
+
+    
+    
+    pub default_computed_values: Arc<ComputedValues>,
 }
 
 

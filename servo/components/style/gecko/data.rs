@@ -8,11 +8,13 @@ use animation::Animation;
 use atomic_refcell::{AtomicRef, AtomicRefCell, AtomicRefMut};
 use dom::OpaqueNode;
 use euclid::size::TypedSize2D;
+use gecko_bindings::bindings::RawGeckoPresContextBorrowed;
 use gecko_bindings::bindings::RawServoStyleSet;
 use gecko_bindings::sugar::ownership::{HasBoxFFI, HasFFI, HasSimpleFFI};
 use media_queries::{Device, MediaType};
 use num_cpus;
 use parking_lot::RwLock;
+use properties::ComputedValues;
 use rayon;
 use std::cmp;
 use std::collections::HashMap;
@@ -55,6 +57,9 @@ pub struct PerDocumentStyleDataImpl {
 
     
     pub num_threads: usize,
+
+    
+    pub default_computed_values: Arc<ComputedValues>
 }
 
 
@@ -73,10 +78,15 @@ lazy_static! {
 
 impl PerDocumentStyleData {
     
-    pub fn new() -> Self {
+    pub fn new(pres_context: RawGeckoPresContextBorrowed) -> Self {
         
         let window_size: TypedSize2D<f32, ViewportPx> = TypedSize2D::new(800.0, 600.0);
-        let device = Device::new(MediaType::Screen, window_size);
+        let default_computed_values = ComputedValues::default_values(pres_context);
+
+        
+        
+        
+        let device = Device::new(MediaType::Screen, window_size, &default_computed_values);
 
         let (new_anims_sender, new_anims_receiver) = channel();
 
@@ -96,6 +106,7 @@ impl PerDocumentStyleData {
                 rayon::ThreadPool::new(configuration).ok()
             },
             num_threads: *NUM_THREADS,
+            default_computed_values: default_computed_values,
         }))
     }
 
