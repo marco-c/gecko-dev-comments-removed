@@ -18,7 +18,7 @@ use extra::serialize::{Encoder, Encodable};
 #[deriving(Encodable)]
 pub struct Location {
     reflector_: Reflector, 
-    extra: Untraceable,
+    priv extra: Untraceable,
 }
 
 struct Untraceable {
