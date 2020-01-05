@@ -1029,7 +1029,11 @@ pref("security.sandbox.content.tempDirSuffix", "");
 #if defined(MOZ_SANDBOX)
 
 
+#if defined(XP_WIN)
+pref("security.sandbox.logging.enabled", false);
+#else
 pref("security.sandbox.logging.enabled", true);
+#endif
 #endif
 
 
