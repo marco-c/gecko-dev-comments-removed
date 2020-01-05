@@ -10193,7 +10193,13 @@ nsIDocument::WarnOnceAbout(DeprecatedOperations aOperation,
     return;
   }
   mDeprecationWarnedAbout[aOperation] = true;
-  const_cast<nsIDocument*>(this)->SetDocumentAndPageUseCounter(OperationToUseCounter(aOperation));
+  
+  
+  
+  if (!static_cast<const nsDocument*>(this)->IsAboutPage()) {
+    const_cast<nsIDocument*>(this)->
+      SetDocumentAndPageUseCounter(OperationToUseCounter(aOperation));
+  }
   uint32_t flags = asError ? nsIScriptError::errorFlag
                            : nsIScriptError::warningFlag;
   nsContentUtils::ReportToConsole(flags,
