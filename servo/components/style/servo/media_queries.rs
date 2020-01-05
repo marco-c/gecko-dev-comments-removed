@@ -7,6 +7,7 @@
 use app_units::Au;
 use cssparser::Parser;
 use euclid::{Size2D, TypedSize2D};
+use font_metrics::ServoMetricsProvider;
 use media_queries::MediaType;
 use properties::ComputedValues;
 use std::fmt;
@@ -185,7 +186,10 @@ impl Range<specified::Length> {
             
             
             style: default_values.clone(),
-            font_metrics_provider: None
+            
+            
+            
+            font_metrics_provider: &ServoMetricsProvider,
         };
 
         match *self {

@@ -12,6 +12,7 @@ use data::ElementData;
 use dom::{OpaqueNode, TNode, TElement, SendElement};
 use error_reporting::ParseErrorReporter;
 use euclid::Size2D;
+use font_metrics::FontMetricsProvider;
 #[cfg(feature = "gecko")] use gecko_bindings::structs;
 use matching::StyleSharingCandidateCache;
 use parking_lot::RwLock;
@@ -291,6 +292,9 @@ pub struct ThreadLocalStyleContext<E: TElement> {
     pub statistics: TraversalStatistics,
     
     pub current_element_info: Option<CurrentElementInfo>,
+    
+    
+    pub font_metrics_provider: E::FontMetricsProvider,
 }
 
 impl<E: TElement> ThreadLocalStyleContext<E> {
@@ -303,6 +307,7 @@ impl<E: TElement> ThreadLocalStyleContext<E> {
             tasks: Vec::new(),
             statistics: TraversalStatistics::default(),
             current_element_info: None,
+            font_metrics_provider: E::FontMetricsProvider::create_from(shared),
         }
     }
 

@@ -57,9 +57,7 @@ pub struct Context<'a> {
 
     
     
-    
-    
-    pub font_metrics_provider: Option<&'a FontMetricsProvider>,
+    pub font_metrics_provider: &'a FontMetricsProvider,
 }
 
 impl<'a> Context<'a> {

@@ -8,6 +8,7 @@
 
 use Atom;
 use app_units::Au;
+use context::SharedStyleContext;
 use euclid::Size2D;
 use std::fmt;
 
@@ -32,7 +33,43 @@ pub enum FontMetricsQueryResult {
 }
 
 
-pub trait FontMetricsProvider: Send + Sync + fmt::Debug {
+
+
+#[derive(Debug)]
+#[cfg(feature = "servo")]
+
+
+pub struct ServoMetricsProvider;
+
+#[cfg(feature = "servo")]
+impl FontMetricsProvider for ServoMetricsProvider {
+    fn create_from(_: &SharedStyleContext) -> Self {
+        ServoMetricsProvider
+    }
+
+    fn get_size(&self, _font_name: &Atom, _font_family: u8) -> Au {
+        unreachable!("Dummy provider should never be used to compute font size")
+    }
+}
+
+
+
+
+
+#[cfg(feature = "gecko")]
+
+pub fn get_metrics_provider_for_product() -> ::gecko::wrapper::GeckoFontMetricsProvider {
+    ::gecko::wrapper::GeckoFontMetricsProvider::new()
+}
+
+#[cfg(feature = "servo")]
+
+pub fn get_metrics_provider_for_product() -> ServoMetricsProvider {
+    ServoMetricsProvider
+}
+
+
+pub trait FontMetricsProvider: fmt::Debug {
     
     
     
@@ -41,4 +78,11 @@ pub trait FontMetricsProvider: Send + Sync + fmt::Debug {
     fn query(&self, _font_name: &Atom) -> FontMetricsQueryResult {
         FontMetricsQueryResult::NotAvailable
     }
+
+    
+    fn get_size(&self, font_name: &Atom, font_family: u8) -> Au;
+
+    
+    fn create_from(context: &SharedStyleContext) -> Self where Self: Sized;
 }
+
