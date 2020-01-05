@@ -32,8 +32,6 @@ public:
   NS_IMETHOD    GetOwnedSelectionController(nsISelectionController** aSelCon) = 0;
   virtual nsFrameSelection* GetOwnedFrameSelection() = 0;
 
-  virtual nsresult GetPhonetic(nsAString& aPhonetic) = 0;
-
   
 
 

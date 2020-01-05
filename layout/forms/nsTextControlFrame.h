@@ -148,8 +148,6 @@ public:
   NS_IMETHOD    GetOwnedSelectionController(nsISelectionController** aSelCon) override;
   virtual nsFrameSelection* GetOwnedFrameSelection() override;
 
-  nsresult GetPhonetic(nsAString& aPhonetic) override;
-
   
 
 

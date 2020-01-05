@@ -17,7 +17,6 @@
 #include "nsGkAtoms.h"
 #include "nsIEditor.h"                  
 #include "nsIObserver.h"                
-#include "nsIPhonetic.h"                
 #include "nsIPlaintextEditor.h"         
 #include "nsISelectionController.h"     
 #include "nsISupportsImpl.h"            
@@ -146,7 +145,6 @@ struct IMEState;
 
 class EditorBase : public nsIEditor
                  , public nsSupportsWeakReference
-                 , public nsIPhonetic
 {
 public:
   typedef dom::Element Element;
@@ -195,9 +193,6 @@ public:
 
   
   NS_DECL_NSIEDITOR
-
-  
-  NS_DECL_NSIPHONETIC
 
 public:
   virtual bool IsModifiableNode(nsINode* aNode);
@@ -1010,7 +1005,6 @@ protected:
   nsIAtom* mPlaceHolderName;
   
   mozilla::UniquePtr<SelectionState> mSelState;
-  nsString* mPhonetic;
   
   
   RefPtr<TextComposition> mComposition;
