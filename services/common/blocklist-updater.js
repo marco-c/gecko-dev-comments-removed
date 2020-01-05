@@ -42,8 +42,8 @@ this.checkVersions = function() {
     
     
     
-    let kintoBase = Services.prefs.getCharPref(PREF_SETTINGS_SERVER);
-    let changesEndpoint = kintoBase + Services.prefs.getCharPref(PREF_BLOCKLIST_CHANGES_PATH);
+    const kintoBase = Services.prefs.getCharPref(PREF_SETTINGS_SERVER);
+    const changesEndpoint = kintoBase + Services.prefs.getCharPref(PREF_BLOCKLIST_CHANGES_PATH);
 
     
     const headers = {};
@@ -54,7 +54,7 @@ this.checkVersions = function() {
       }
     }
 
-    let response = yield fetch(changesEndpoint, {headers});
+    const response = yield fetch(changesEndpoint, {headers});
 
     let versionInfo;
     
@@ -71,25 +71,19 @@ this.checkVersions = function() {
     }
 
     
-    let serverTimeMillis = Date.parse(response.headers.get("Date"));
+    const serverTimeMillis = Date.parse(response.headers.get("Date"));
 
     
     
-    let clockDifference = Math.floor((Date.now() - serverTimeMillis) / 1000);
+    const clockDifference = Math.floor((Date.now() - serverTimeMillis) / 1000);
     Services.prefs.setIntPref(PREF_BLOCKLIST_CLOCK_SKEW_SECONDS, clockDifference);
     Services.prefs.setIntPref(PREF_BLOCKLIST_LAST_UPDATE, serverTimeMillis / 1000);
 
     let firstError;
     for (let collectionInfo of versionInfo.data) {
-      let collection = collectionInfo.collection;
-      let client = gBlocklistClients[collection];
-      if (client &&
-          client.bucketName == collectionInfo.bucket &&
-          client.maybeSync) {
-        let lastModified = 0;
-        if (collectionInfo.last_modified) {
-          lastModified = collectionInfo.last_modified;
-        }
+      const {bucket, collection, last_modified: lastModified} = collectionInfo;
+      const client = gBlocklistClients[collection];
+      if (client && client.bucketName == bucket) {
         try {
           yield client.maybeSync(lastModified, serverTimeMillis);
         } catch (e) {

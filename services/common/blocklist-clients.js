@@ -52,6 +52,7 @@ this.FILENAME_ADDONS_JSON  = "blocklist-addons.json";
 this.FILENAME_GFX_JSON     = "blocklist-gfx.json";
 this.FILENAME_PLUGINS_JSON = "blocklist-plugins.json";
 
+
 function mergeChanges(collection, localRecords, changes) {
   const records = {};
   
@@ -88,10 +89,10 @@ function fetchRemoteCollection(collection) {
 
 
 function kintoClient(connection, bucket) {
-  let base = Services.prefs.getCharPref(PREF_SETTINGS_SERVER);
+  const remote = Services.prefs.getCharPref(PREF_SETTINGS_SERVER);
 
-  let config = {
-    remote: base,
+  const config = {
+    remote,
     bucket,
     adapter: FirefoxAdapter,
     adapterOptions: {sqliteHandle: connection},
@@ -127,7 +128,7 @@ class BlocklistClient {
           data: payload.data
         };
       } else {
-        const localRecords = (yield collection.list()).data;
+        const {data: localRecords} = yield collection.list();
         const records = mergeChanges(collection, localRecords, payload.changes);
         toSerialize = {
           last_modified: `${payload.lastModified}`,
@@ -156,8 +157,8 @@ class BlocklistClient {
 
 
   maybeSync(lastModified, serverTime) {
-    let opts = {};
-    let enforceCollectionSigning =
+    const opts = {};
+    const enforceCollectionSigning =
       Services.prefs.getBoolPref(PREF_BLOCKLIST_ENFORCE_SIGNING);
 
     
@@ -173,10 +174,10 @@ class BlocklistClient {
       let connection;
       try {
         connection = yield FirefoxAdapter.openConnection({path: KINTO_STORAGE_PATH});
-        let db = kintoClient(connection, this.bucketName);
-        let collection = db.collection(this.collectionName, opts);
+        const db = kintoClient(connection, this.bucketName);
+        const collection = db.collection(this.collectionName, opts);
 
-        let collectionLastModified = yield collection.db.getLastModified();
+        const collectionLastModified = yield collection.db.getLastModified();
         
         
         if (lastModified <= collectionLastModified) {
@@ -185,8 +186,8 @@ class BlocklistClient {
         }
         
         try {
-          let syncResult = yield collection.sync();
-          if (!syncResult.ok) {
+          const {ok} = yield collection.sync();
+          if (!ok) {
             throw new Error("Sync failed");
           }
         } catch (e) {
@@ -195,7 +196,7 @@ class BlocklistClient {
             
             
             
-            let payload = yield fetchRemoteCollection(collection);
+            const payload = yield fetchRemoteCollection(collection);
             yield this.validateCollectionSignature(payload, collection, true);
             
             
@@ -210,9 +211,9 @@ class BlocklistClient {
           }
         }
         
-        let list = yield collection.list();
+        const {data} = yield collection.list();
 
-        yield this.processCallback(list.data);
+        yield this.processCallback(data);
 
         
         this.updateLastCheck(serverTime);
@@ -228,7 +229,7 @@ class BlocklistClient {
 
 
   updateLastCheck(serverTime) {
-    let checkedServerTimeInSeconds = Math.round(serverTime / 1000);
+    const checkedServerTimeInSeconds = Math.round(serverTime / 1000);
     Services.prefs.setIntPref(this.lastCheckTimePref, checkedServerTimeInSeconds);
   }
 }
@@ -239,8 +240,8 @@ class BlocklistClient {
 
 
 function* updateCertBlocklist(records) {
-  let certList = Cc["@mozilla.org/security/certblocklist;1"]
-                   .getService(Ci.nsICertBlocklist);
+  const certList = Cc["@mozilla.org/security/certblocklist;1"]
+                     .getService(Ci.nsICertBlocklist);
   for (let item of records) {
     try {
       if (item.issuerName && item.serialNumber) {
@@ -267,39 +268,40 @@ function* updateCertBlocklist(records) {
 
 
 function* updatePinningList(records) {
-  if (Services.prefs.getBoolPref(PREF_BLOCKLIST_PINNING_ENABLED)) {
-    const appInfo = Cc["@mozilla.org/xre/app-info;1"]
-        .getService(Ci.nsIXULAppInfo);
+  if (!Services.prefs.getBoolPref(PREF_BLOCKLIST_PINNING_ENABLED)) {
+    return;
+  }
+  const appInfo = Cc["@mozilla.org/xre/app-info;1"]
+      .getService(Ci.nsIXULAppInfo);
 
-    const siteSecurityService = Cc["@mozilla.org/ssservice;1"]
-        .getService(Ci.nsISiteSecurityService);
+  const siteSecurityService = Cc["@mozilla.org/ssservice;1"]
+      .getService(Ci.nsISiteSecurityService);
 
-    
-    siteSecurityService.clearPreloads();
+  
+  siteSecurityService.clearPreloads();
 
-    
-    for (let item of records) {
-      try {
-        const {pinType, pins = [], versions} = item;
-        if (versions.indexOf(appInfo.version) != -1) {
-          if (pinType == "KeyPin" && pins.length) {
-            siteSecurityService.setKeyPins(item.hostName,
-                item.includeSubdomains,
-                item.expires,
-                pins.length,
-                pins, true);
-          }
-          if (pinType == "STSPin") {
-            siteSecurityService.setHSTSPreload(item.hostName,
-                                               item.includeSubdomains,
-                                               item.expires);
-          }
+  
+  for (let item of records) {
+    try {
+      const {pinType, pins = [], versions} = item;
+      if (versions.indexOf(appInfo.version) != -1) {
+        if (pinType == "KeyPin" && pins.length) {
+          siteSecurityService.setKeyPins(item.hostName,
+              item.includeSubdomains,
+              item.expires,
+              pins.length,
+              pins, true);
         }
-      } catch (e) {
-        
-        
-        
+        if (pinType == "STSPin") {
+          siteSecurityService.setHSTSPreload(item.hostName,
+                                             item.includeSubdomains,
+                                             item.expires);
+        }
       }
+    } catch (e) {
+      
+      
+      
     }
   }
 }
