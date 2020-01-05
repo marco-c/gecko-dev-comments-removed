@@ -1248,18 +1248,14 @@ pref("dom.debug.propagate_gesture_events_through_content", false);
 
 
 
-#ifdef RELEASE_OR_BETA
+
+
+
+#ifdef RELEASE
 pref("geo.wifi.uri", "https://www.googleapis.com/geolocation/v1/geolocate?key=%GOOGLE_API_KEY%");
-#else
-pref("geo.wifi.uri", "https://location.services.mozilla.com/v1/geolocate?key=%MOZILLA_API_KEY%");
-#endif
 
 #ifdef XP_MACOSX
-#ifdef RELEASE_OR_BETA
 pref("geo.provider.use_corelocation", false);
-#else
-pref("geo.provider.use_corelocation", true);
-#endif
 #endif
 
 #ifdef XP_WIN
@@ -1267,13 +1263,28 @@ pref("geo.provider.ms-windows-location", false);
 #endif
 
 #ifdef MOZ_WIDGET_GTK
-#ifdef MOZ_GPSD
-#ifdef RELEASE_OR_BETA
 pref("geo.provider.use_gpsd", false);
+#endif
+
 #else
+
+
+pref("geo.wifi.uri", "https://location.services.mozilla.com/v1/geolocate?key=%MOZILLA_API_KEY%");
+
+#ifdef XP_MACOSX
+pref("geo.provider.use_corelocation", true);
+#endif
+
+
+
+#if defined(XP_WIN) && defined(NIGHTLY_BUILD)
+pref("geo.provider.ms-windows-location", true);
+#endif
+
+#if defined(MOZ_WIDGET_GTK) && defined(MOZ_GPSD)
 pref("geo.provider.use_gpsd", true);
 #endif
-#endif
+
 #endif
 
 

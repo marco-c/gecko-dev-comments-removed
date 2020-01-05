@@ -693,15 +693,6 @@ nsresult nsGeolocationService::Init()
   mProvider = new AndroidLocationProvider();
 #endif
 
-#ifdef MOZ_WIDGET_GONK
-  
-  
-  
-  
-  
-  mProvider = do_GetService(GONK_GPS_GEOLOCATION_PROVIDER_CONTRACTID);
-#endif
-
 #ifdef MOZ_WIDGET_GTK
 #ifdef MOZ_GPSD
   if (Preferences::GetBool("geo.provider.use_gpsd", false)) {
@@ -733,11 +724,11 @@ nsresult nsGeolocationService::Init()
   
   
   if (!mProvider || Preferences::GetBool("geo.provider.testing", false)) {
-    nsCOMPtr<nsIGeolocationProvider> geo_net_provider =
+    nsCOMPtr<nsIGeolocationProvider> geoTestProvider =
       do_GetService(NS_GEOLOCATION_PROVIDER_CONTRACTID);
 
-    if (geo_net_provider) {
-      mProvider = geo_net_provider;
+    if (geoTestProvider) {
+      mProvider = geoTestProvider;
     }
   }
 
