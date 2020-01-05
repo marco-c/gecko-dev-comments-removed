@@ -26,6 +26,7 @@
 #include "nsTArray.h"
 #include "nsCOMArray.h"
 #include "nsIStyleRule.h"
+#include "nsCSSAnonBoxes.h"
 
 class gfxFontFeatureValueSet;
 class nsCSSKeyframesRule;
@@ -573,6 +574,11 @@ private:
   
   
   
+  void ClearNonInheritingStyleContexts();
+
+  
+  
+  
   
   
   mozilla::EnumeratedArray<mozilla::SheetType, mozilla::SheetType::Count,
@@ -633,6 +639,10 @@ private:
 
   
   RefPtr<gfxFontFeatureValueSet> mFontFeatureValuesLookup;
+
+  
+  
+  RefPtr<nsStyleContext> mNonInheritingStyleContexts[static_cast<nsCSSAnonBoxes::NonInheritingBase>(nsCSSAnonBoxes::NonInheriting::_Count)];
 };
 
 #ifdef MOZILLA_INTERNAL_API

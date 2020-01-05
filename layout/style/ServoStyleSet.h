@@ -15,6 +15,7 @@
 #include "mozilla/SheetType.h"
 #include "mozilla/UniquePtr.h"
 #include "nsCSSPseudoElements.h"
+#include "nsCSSAnonBoxes.h"
 #include "nsChangeHint.h"
 #include "nsIAtom.h"
 #include "nsTArray.h"
@@ -60,6 +61,7 @@ public:
   }
 
   ServoStyleSet();
+  ~ServoStyleSet();
 
   void Init(nsPresContext* aPresContext);
   void BeginShutdown();
@@ -256,11 +258,22 @@ private:
   bool PrepareAndTraverseSubtree(RawGeckoElementBorrowed aRoot,
                                  mozilla::TraversalRootBehavior aRootBehavior);
 
+  
+
+
+
+
+  void ClearNonInheritingStyleContexts();
+
   nsPresContext* mPresContext;
   UniquePtr<RawServoStyleSet> mRawSet;
   EnumeratedArray<SheetType, SheetType::Count,
                   nsTArray<RefPtr<ServoStyleSheet>>> mSheets;
   int32_t mBatching;
+
+  
+  
+  RefPtr<nsStyleContext> mNonInheritingStyleContexts[static_cast<nsCSSAnonBoxes::NonInheritingBase>(nsCSSAnonBoxes::NonInheriting::_Count)];
 
   static bool sInServoTraversal;
 };
