@@ -705,9 +705,11 @@ DrawTargetSkia::DrawSurfaceWithShadow(SourceSurface *aSurface,
     mCanvas->drawImage(image, shadowDest.x, shadowDest.y, &shadowPaint);
   }
 
-  
-  auto dest = IntPoint::Round(aDest);
-  mCanvas->drawImage(image, dest.x, dest.y, &paint);
+  if (aSurface->GetFormat() != SurfaceFormat::A8) {
+    
+    auto dest = IntPoint::Round(aDest);
+    mCanvas->drawImage(image, dest.x, dest.y, &paint);
+  }
 
   mCanvas->restore();
 }
