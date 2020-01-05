@@ -80,6 +80,10 @@ public:
   
   bool GetAnyDeviceRemovedReason(DeviceResetReason* aOutReason);
 
+  
+  
+  bool CheckRemotePresentSupport();
+
 private:
   IDXGIAdapter1 *GetDXGIAdapter();
 

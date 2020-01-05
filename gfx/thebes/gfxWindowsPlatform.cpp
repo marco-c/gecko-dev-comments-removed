@@ -1511,18 +1511,22 @@ gfxWindowsPlatform::RecordContentDeviceFailure(TelemetryDeviceCode aDevice)
 void
 gfxWindowsPlatform::InitializeDevices()
 {
-  
-  if (!gfxConfig::IsEnabled(Feature::HW_COMPOSITING)) {
-    return;
-  }
-
   MOZ_ASSERT(!InSafeMode());
 
+  if (XRE_IsParentProcess()) {
+    
+    
+    
+    
+    if (InitGPUProcessSupport()) {
+      return;
+    }
+
+    
+  }
+
   
-  
-  
-  
-  if (gfxConfig::IsEnabled(Feature::GPU_PROCESS) && XRE_IsParentProcess()) {
+  if (!gfxConfig::IsEnabled(Feature::HW_COMPOSITING)) {
     return;
   }
 
@@ -1666,6 +1670,49 @@ gfxWindowsPlatform::InitializeD2D()
 
   MOZ_ASSERT(d2d1.IsEnabled());
   d2d1_1.SetSuccessful();
+}
+
+bool
+gfxWindowsPlatform::InitGPUProcessSupport()
+{
+  FeatureState& gpuProc = gfxConfig::GetFeature(Feature::GPU_PROCESS);
+
+  if (!gpuProc.IsEnabled()) {
+    return false;
+  }
+
+  if (!gfxConfig::IsEnabled(Feature::D3D11_COMPOSITING)) {
+    
+    gpuProc.Disable(
+      FeatureStatus::Unavailable,
+      "Not using GPU Process since D3D11 is unavailable",
+      NS_LITERAL_CSTRING("FEATURE_FAILURE_NO_D3D11"));
+  } else if (!IsWin7SP1OrLater()) {
+    
+    
+    
+    
+    
+    gpuProc.Disable(
+      FeatureStatus::Unavailable,
+      "Windows XP, Vista, and 7 Pre-SP1 cannot use the GPU process",
+      NS_LITERAL_CSTRING("FEATURE_FAILURE_OLD_WINDOWS"));
+  } else if (!IsWin8OrLater()) {
+    
+    
+    if (!DeviceManagerDx::Get()->CheckRemotePresentSupport()) {
+      gpuProc.Disable(
+        FeatureStatus::Unavailable,
+        "GPU Process requires the Windows 7 Platform Update",
+        NS_LITERAL_CSTRING("FEATURE_FAILURE_PLATFORM_UPDATE"));
+    } else {
+      
+      DeviceManagerDx::Get()->ResetDevices();
+    }
+  }
+
+  
+  return gpuProc.IsEnabled();
 }
 
 bool

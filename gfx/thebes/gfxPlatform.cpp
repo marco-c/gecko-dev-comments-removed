@@ -681,6 +681,11 @@ gfxPlatform::Init()
 #endif
     gPlatform->InitAcceleration();
 
+    if (gfxConfig::IsEnabled(Feature::GPU_PROCESS)) {
+      GPUProcessManager* gpu = GPUProcessManager::Get();
+      gpu->LaunchGPUProcess();
+    }
+
 #ifdef USE_SKIA
     SkGraphics::Init();
 #  ifdef MOZ_ENABLE_FREETYPE
@@ -2146,31 +2151,46 @@ gfxPlatform::InitAcceleration()
                                          "media.hardware-video-decoding.failed",
                                          nullptr,
                                          Preferences::ExactMatch);
+    InitGPUProcessPrefs();
+  }
+}
 
-    FeatureState& gpuProc = gfxConfig::GetFeature(Feature::GPU_PROCESS);
-    if (gfxPrefs::GPUProcessDevEnabled()) {
-      
-      
-      gpuProc.SetDefaultFromPref(
-        gfxPrefs::GetGPUProcessDevEnabledPrefName(),
-        true,
-        gfxPrefs::GetGPUProcessDevEnabledPrefDefault());
+void
+gfxPlatform::InitGPUProcessPrefs()
+{
+  
+  
+  if (!gfxPrefs::GPUProcessDevEnabled() && !gfxPrefs::GPUProcessDevForceEnabled()) {
+    return;
+  }
 
-      
-      
-      
-      if (!BrowserTabsRemoteAutostart()) {
-        gpuProc.Disable(
-          FeatureStatus::Unavailable,
-          "Multi-process mode is not enabled",
-          NS_LITERAL_CSTRING("FEATURE_FAILURE_NO_E10S"));
-      }
-    }
+  FeatureState& gpuProc = gfxConfig::GetFeature(Feature::GPU_PROCESS);
 
-    if (gpuProc.IsEnabled()) {
-      GPUProcessManager* gpu = GPUProcessManager::Get();
-      gpu->LaunchGPUProcess();
-    }
+  gpuProc.SetDefaultFromPref(
+    gfxPrefs::GetGPUProcessDevEnabledPrefName(),
+    true,
+    gfxPrefs::GetGPUProcessDevEnabledPrefDefault());
+
+  if (gfxPrefs::GPUProcessDevForceEnabled()) {
+    gpuProc.UserForceEnable("User force-enabled via pref");
+  }
+
+  
+  
+  
+  if (!BrowserTabsRemoteAutostart()) {
+    gpuProc.ForceDisable(
+      FeatureStatus::Unavailable,
+      "Multi-process mode is not enabled",
+      NS_LITERAL_CSTRING("FEATURE_FAILURE_NO_E10S"));
+    return;
+  }
+  if (InSafeMode()) {
+    gpuProc.ForceDisable(
+      FeatureStatus::Blocked,
+      "Safe-mode is enabled",
+      NS_LITERAL_CSTRING("FEATURE_FAILURE_SAFE_MODE"));
+    return;
   }
 }
 

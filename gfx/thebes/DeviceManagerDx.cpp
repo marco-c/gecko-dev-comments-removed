@@ -206,8 +206,6 @@ DeviceManagerDx::GetDXGIAdapter()
   if (!mDeviceStatus) {
     
     
-    MOZ_ASSERT(ProcessOwnsCompositor());
-
     if (FAILED(factory1->EnumAdapters1(0, getter_AddRefs(mAdapter)))) {
       return nullptr;
     }
@@ -553,6 +551,7 @@ DeviceManagerDx::ResetDevices()
 {
   MutexAutoLock lock(mDeviceLock);
 
+  mAdapter = nullptr;
   mCompositorDevice = nullptr;
   mContentDevice = nullptr;
   mDeviceStatus = Nothing();
@@ -688,6 +687,21 @@ DeviceManagerDx::CanInitializeKeyedMutexTextures()
   
   
   return mDeviceStatus->adapter().VendorId != 0x8086;
+}
+
+bool
+DeviceManagerDx::CheckRemotePresentSupport()
+{
+  MOZ_ASSERT(XRE_IsParentProcess());
+
+  RefPtr<IDXGIAdapter1> adapter = GetDXGIAdapter();
+  if (!adapter) {
+    return false;
+  }
+  if (!D3D11Checks::DoesRemotePresentWork(adapter)) {
+    return false;
+  }
+  return true;
 }
 
 bool
