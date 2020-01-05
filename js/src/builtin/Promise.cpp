@@ -1919,8 +1919,8 @@ CommonStaticResolveRejectImpl(JSContext* cx, unsigned argc, Value* vp, Resolutio
 
 
 
-static bool
-Promise_reject(JSContext* cx, unsigned argc, Value* vp)
+bool
+js::Promise_reject(JSContext* cx, unsigned argc, Value* vp)
 {
     return CommonStaticResolveRejectImpl(cx, argc, vp, RejectMode);
 }
@@ -1949,8 +1949,8 @@ PromiseObject::unforgeableReject(JSContext* cx, HandleValue value)
 
 
 
-static bool
-Promise_static_resolve(JSContext* cx, unsigned argc, Value* vp)
+bool
+js::Promise_static_resolve(JSContext* cx, unsigned argc, Value* vp)
 {
     return CommonStaticResolveRejectImpl(cx, argc, vp, ResolveMode);
 }
@@ -2051,8 +2051,8 @@ js::OriginalPromiseThen(JSContext* cx, Handle<PromiseObject*> promise, HandleVal
 }
 
 
-static bool
-Promise_then(JSContext* cx, unsigned argc, Value* vp)
+bool
+js::Promise_then(JSContext* cx, unsigned argc, Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
 
