@@ -53,8 +53,24 @@ class UpdateTestCase(PuppeteerMixin, MarionetteTestCase):
         self.software_update = SoftwareUpdate(self.marionette)
 
         
+        
+        
+        
+        if self.update_channel:
+            self.software_update.update_channel = self.update_channel
+            self.restart(clean=True)
+
+            self.assertEqual(self.software_update.update_channel, self.update_channel)
+
+        
         if self.update_mar_channels:
             self.software_update.mar_channels.add_channels(self.update_mar_channels)
+
+            self.assertTrue(self.update_mar_channels.issubset(
+                            self.software_update.mar_channels.channels),
+                            'Allowed MAR channels have been set: expected "{}" in "{}"'.format(
+                                ', '.join(self.update_mar_channels),
+                                ', '.join(self.software_update.mar_channels.channels)))
 
         
         self.remove_downloaded_update()
@@ -69,12 +85,6 @@ class UpdateTestCase(PuppeteerMixin, MarionetteTestCase):
             'patch': {},
             'success': False,
         }]
-
-        self.assertTrue(self.update_mar_channels.issubset(
-                        self.software_update.mar_channels.channels),
-                        'Allowed MAR channels have been set: expected "{}" in "{}"'.format(
-                            ', '.join(self.update_mar_channels),
-                            ', '.join(self.software_update.mar_channels.channels)))
 
         
         self.assertTrue(self.software_update.allowed,
@@ -349,8 +359,6 @@ class UpdateTestCase(PuppeteerMixin, MarionetteTestCase):
 
     def set_preferences_defaults(self):
         """Set the default value for specific preferences to force its usage."""
-        if self.update_channel:
-            self.software_update.update_channel = self.update_channel
         if self.update_url:
             self.software_update.update_url = self.update_url
 
