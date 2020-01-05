@@ -1204,6 +1204,12 @@ protected:
   
   bool ParseColorComponent(float& aComponent, Maybe<char> aSeparator);
 
+  
+  
+  
+  
+  bool ParseHue(float& aAngle);
+
   bool ParseEnum(nsCSSValue& aValue,
                  const KTableEntry aKeywordTable[]);
 
@@ -6874,6 +6880,33 @@ CSSParserImpl::ParseColorComponent(float& aComponent, Maybe<char> aSeparator)
   return true;
 }
 
+bool
+CSSParserImpl::ParseHue(float& aAngle)
+{
+  if (!GetToken(true)) {
+    REPORT_UNEXPECTED_EOF(PEColorHueEOF);
+    return false;
+  }
+
+  
+  if (mToken.mType == eCSSToken_Number) {
+    aAngle = mToken.mNumber;
+    return true;
+  }
+  UngetToken();
+
+  
+  nsCSSValue angleValue;
+  
+  
+  if (ParseSingleTokenVariant(angleValue, VARIANT_ANGLE, nullptr)) {
+    aAngle = angleValue.GetAngleValueInDegrees();
+    return true;
+  }
+
+  REPORT_UNEXPECTED_TOKEN(PEExpectedNumberOrAngle);
+  return false;
+}
 
 bool
 CSSParserImpl::ParseHSLColor(float& aHue, float& aSaturation, float& aLightness,
@@ -6888,20 +6921,11 @@ CSSParserImpl::ParseHSLColor(float& aHue, float& aSaturation, float& aLightness,
 
   
   
-  
-  
-  
-  if (!GetToken(true)) {
-    REPORT_UNEXPECTED_EOF(PEColorHueEOF);
+  float degreeAngle;
+  if (!ParseHue(degreeAngle)) {
     return false;
   }
-  if (mToken.mType != eCSSToken_Number) {
-    REPORT_UNEXPECTED_TOKEN(PEExpectedNumber);
-    UngetToken();
-    return false;
-  }
-  aHue = mToken.mNumber;
-  aHue /= 360.0f;
+  aHue = degreeAngle / 360.0f;
   
   aHue = aHue - floor(aHue);
   

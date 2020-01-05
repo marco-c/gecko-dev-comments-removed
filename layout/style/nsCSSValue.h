@@ -736,6 +736,9 @@ public:
   
   double GetAngleValueInRadians() const;
 
+  
+  double GetAngleValueInDegrees() const;
+
   nsAString& GetStringValue(nsAString& aBuffer) const
   {
     MOZ_ASSERT(UnitHasStringValue(), "not a string value");
