@@ -165,19 +165,15 @@ XPCWrappedNative::WrapNewGlobal(xpcObjectHelper& nativeHelper,
                !nativeHelper.GetWrapperCache()->GetWrapperPreserveColor());
 
     
-    XPCNativeScriptableCreateInfo sciProto;
-    XPCNativeScriptableCreateInfo sciMaybe;
-    const XPCNativeScriptableCreateInfo& sciWrapper =
-        GatherScriptableCreateInfo(identity, nativeHelper.GetClassInfo(),
-                                   sciProto, sciMaybe);
+    
+    nsCOMPtr<nsIXPCScriptable> scrProto;
+    nsCOMPtr<nsIXPCScriptable> scrWrapper;
+    GatherScriptable(identity, nativeHelper.GetClassInfo(),
+                     getter_AddRefs(scrProto), getter_AddRefs(scrWrapper));
+    MOZ_ASSERT(scrWrapper);
 
     
-    
-    nsCOMPtr<nsIXPCScriptable> scr = sciWrapper.GetCallback();
-    MOZ_ASSERT(scr);
-
-    
-    const JSClass* clasp = scr->GetJSClass();
+    const JSClass* clasp = scrWrapper->GetJSClass();
     MOZ_ASSERT(clasp->flags & JSCLASS_IS_GLOBAL);
 
     
@@ -200,7 +196,8 @@ XPCWrappedNative::WrapNewGlobal(xpcObjectHelper& nativeHelper,
     
     XPCWrappedNativeProto* proto =
         XPCWrappedNativeProto::GetNewOrUsed(scope,
-                                            nativeHelper.GetClassInfo(), &sciProto,
+                                            nativeHelper.GetClassInfo(),
+                                            scrProto,
                                              false);
     if (!proto)
         return NS_ERROR_FAILURE;
@@ -222,7 +219,7 @@ XPCWrappedNative::WrapNewGlobal(xpcObjectHelper& nativeHelper,
     
     
 
-    wrapper->mScriptable = scr;
+    wrapper->mScriptable = scrWrapper;
 
     
     wrapper->mFlatJSObject = global;
@@ -330,8 +327,8 @@ XPCWrappedNative::GetNewOrUsed(xpcObjectHelper& helper,
 
     nsIClassInfo* info = helper.GetClassInfo();
 
-    XPCNativeScriptableCreateInfo sciProto;
-    XPCNativeScriptableCreateInfo sci;
+    nsCOMPtr<nsIXPCScriptable> scrProto;
+    nsCOMPtr<nsIXPCScriptable> scrWrapper;
 
     
     
@@ -340,15 +337,14 @@ XPCWrappedNative::GetNewOrUsed(xpcObjectHelper& helper,
     
     
     
-    const XPCNativeScriptableCreateInfo& sciWrapper =
-        isClassInfoSingleton ? sci :
-        GatherScriptableCreateInfo(identity, info, sciProto, sci);
+    if (!isClassInfoSingleton)
+        GatherScriptable(identity, info, getter_AddRefs(scrProto),
+                         getter_AddRefs(scrWrapper));
 
     RootedObject parent(cx, Scope->GetGlobalJSObject());
 
     mozilla::Maybe<JSAutoCompartment> ac;
 
-    nsCOMPtr<nsIXPCScriptable> scrWrapper = sciWrapper.GetCallback();
     if (scrWrapper && scrWrapper->WantPreCreate()) {
         RootedObject plannedParent(cx, parent);
         nsresult rv =
@@ -405,7 +401,7 @@ XPCWrappedNative::GetNewOrUsed(xpcObjectHelper& helper,
     
 
     if (info && !isClassInfoSingleton) {
-        proto = XPCWrappedNativeProto::GetNewOrUsed(Scope, info, &sciProto);
+        proto = XPCWrappedNativeProto::GetNewOrUsed(Scope, info, scrProto);
         if (!proto)
             return NS_ERROR_FAILURE;
 
@@ -435,7 +431,7 @@ XPCWrappedNative::GetNewOrUsed(xpcObjectHelper& helper,
     
     AutoMarkingWrappedNativePtr wrapperMarker(cx, wrapper);
 
-    if (!wrapper->Init(&sciWrapper))
+    if (!wrapper->Init(scrWrapper))
         return NS_ERROR_FAILURE;
 
     if (!wrapper->FindTearOff(Interface, false, &rv)) {
@@ -610,50 +606,55 @@ XPCWrappedNative::SetProto(XPCWrappedNativeProto* p)
 
 
 
-void
-XPCWrappedNative::GatherProtoScriptableCreateInfo(nsIClassInfo* classInfo,
-                                                  XPCNativeScriptableCreateInfo& sciProto)
+nsIXPCScriptable*
+XPCWrappedNative::GatherProtoScriptable(nsIClassInfo* classInfo)
 {
     MOZ_ASSERT(classInfo, "bad param");
-    MOZ_ASSERT(!sciProto.GetCallback(), "bad param");
 
     nsXPCClassInfo* classInfoHelper = nullptr;
     CallQueryInterface(classInfo, &classInfoHelper);
     if (classInfoHelper) {
         nsCOMPtr<nsIXPCScriptable> helper =
           dont_AddRef(static_cast<nsIXPCScriptable*>(classInfoHelper));
-        sciProto.SetCallback(helper.forget());
-
-        return;
+        return helper;
     }
 
     nsCOMPtr<nsIXPCScriptable> helper;
     nsresult rv = classInfo->GetScriptableHelper(getter_AddRefs(helper));
     if (NS_SUCCEEDED(rv) && helper) {
-        sciProto.SetCallback(helper.forget());
+        return helper;
     }
+
+    return nullptr;
 }
 
 
-const XPCNativeScriptableCreateInfo&
-XPCWrappedNative::GatherScriptableCreateInfo(nsISupports* obj,
-                                             nsIClassInfo* classInfo,
-                                             XPCNativeScriptableCreateInfo& sciProto,
-                                             XPCNativeScriptableCreateInfo& sciWrapper)
+void
+XPCWrappedNative::GatherScriptable(nsISupports* aObj,
+                                   nsIClassInfo* aClassInfo,
+                                   nsIXPCScriptable** aScrProto,
+                                   nsIXPCScriptable** aScrWrapper)
 {
-    MOZ_ASSERT(!sciWrapper.GetCallback(), "bad param");
+    MOZ_ASSERT(!*aScrProto, "bad param");
+    MOZ_ASSERT(!*aScrWrapper, "bad param");
+
+    nsCOMPtr<nsIXPCScriptable> scrProto;
+    nsCOMPtr<nsIXPCScriptable> scrWrapper;
 
     
-    if (classInfo) {
-        GatherProtoScriptableCreateInfo(classInfo, sciProto);
+    if (aClassInfo) {
+        scrProto = GatherProtoScriptable(aClassInfo);
 
-        nsCOMPtr<nsIXPCScriptable> scrProto = sciProto.GetCallback();
-        if (scrProto && scrProto->DontAskInstanceForScriptable())
-            return sciProto;
+        if (scrProto && scrProto->DontAskInstanceForScriptable()) {
+            scrWrapper = scrProto;
+            scrProto.forget(aScrProto);
+            scrWrapper.forget(aScrWrapper);
+            return;
+        }
     }
 
     
-    nsCOMPtr<nsIXPCScriptable> scrWrapper(do_QueryInterface(obj));
+    scrWrapper = do_QueryInterface(aObj);
     if (scrWrapper) {
         
         
@@ -661,54 +662,48 @@ XPCWrappedNative::GatherScriptableCreateInfo(nsISupports* obj,
         
         
         MOZ_ASSERT_IF(scrWrapper->WantPreCreate(),
-                      sciProto.GetCallback() &&
-                      sciProto.GetCallback()->WantPreCreate());
+                      scrProto && scrProto->WantPreCreate());
 
         
         
-        MOZ_ASSERT_IF(scrWrapper->DontEnumQueryInterface() &&
-                      sciProto.GetCallback(),
-                      sciProto.GetCallback()->DontEnumQueryInterface());
+        MOZ_ASSERT_IF(scrWrapper->DontEnumQueryInterface() && scrProto,
+                      scrProto->DontEnumQueryInterface());
 
         
         
         MOZ_ASSERT_IF(scrWrapper->DontAskInstanceForScriptable(),
-                      sciProto.GetCallback() &&
-                      sciProto.GetCallback()->DontAskInstanceForScriptable());
+                      scrProto && scrProto->DontAskInstanceForScriptable());
 
         
         
-        MOZ_ASSERT_IF(scrWrapper->ClassInfoInterfacesOnly() &&
-                      sciProto.GetCallback(),
-                      sciProto.GetCallback()->ClassInfoInterfacesOnly());
+        MOZ_ASSERT_IF(scrWrapper->ClassInfoInterfacesOnly() && scrProto,
+                      scrProto->ClassInfoInterfacesOnly());
 
         
         
-        MOZ_ASSERT_IF(scrWrapper->AllowPropModsDuringResolve() &&
-                      sciProto.GetCallback(),
-                      sciProto.GetCallback()->AllowPropModsDuringResolve());
+        MOZ_ASSERT_IF(scrWrapper->AllowPropModsDuringResolve() && scrProto,
+                      scrProto->AllowPropModsDuringResolve());
 
         
         
-        MOZ_ASSERT_IF(scrWrapper->AllowPropModsToPrototype() &&
-                      sciProto.GetCallback(),
-                      sciProto.GetCallback()->AllowPropModsToPrototype());
-
-        sciWrapper.SetCallback(scrWrapper.forget());
-        return sciWrapper;
+        MOZ_ASSERT_IF(scrWrapper->AllowPropModsToPrototype() && scrProto,
+                      scrProto->AllowPropModsToPrototype());
+    } else {
+        scrWrapper = scrProto;
     }
 
-    return sciProto;
+    scrProto.forget(aScrProto);
+    scrWrapper.forget(aScrWrapper);
 }
 
 bool
-XPCWrappedNative::Init(const XPCNativeScriptableCreateInfo* sci)
+XPCWrappedNative::Init(nsIXPCScriptable* aScriptable)
 {
     AutoJSContext cx;
 
     
     MOZ_ASSERT(!mScriptable);
-    mScriptable = sci->GetCallback();
+    mScriptable = aScriptable;
 
     
 
