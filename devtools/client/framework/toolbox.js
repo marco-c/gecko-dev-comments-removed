@@ -416,6 +416,14 @@ Toolbox.prototype = {
       yield this._target.makeRemote();
 
       
+      
+      if (this._target.activeConsole) {
+        yield this._target.activeConsole.startListeners([
+          "NetworkActivity",
+        ]);
+      }
+
+      
       this._threadClient = yield attachThread(this);
       yield domReady.promise;
 
