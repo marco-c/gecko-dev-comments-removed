@@ -2884,8 +2884,9 @@ StyleAnimationValue::AddWeighted(nsCSSPropertyID aProperty,
       switch (aProperty) {
         case eCSSProperty_font_stretch: {
           
-          int32_t result = floor(aCoeff1 * double(aValue1.GetIntValue()) +
-                                 aCoeff2 * double(aValue2.GetIntValue()));
+          double interpolatedValue = aCoeff1 * double(aValue1.GetIntValue()) +
+                                     aCoeff2 * double(aValue2.GetIntValue());
+          int32_t result = floor(interpolatedValue + 0.5);
           if (result < NS_STYLE_FONT_STRETCH_ULTRA_CONDENSED) {
             result = NS_STYLE_FONT_STRETCH_ULTRA_CONDENSED;
           } else if (result > NS_STYLE_FONT_STRETCH_ULTRA_EXPANDED) {
@@ -2918,9 +2919,9 @@ StyleAnimationValue::AddWeighted(nsCSSPropertyID aProperty,
     }
     case eUnit_Integer: {
       
-      
-      int32_t result = floor(aCoeff1 * double(aValue1.GetIntValue()) +
-                             aCoeff2 * double(aValue2.GetIntValue()));
+      double interpolatedValue = aCoeff1 * double(aValue1.GetIntValue()) +
+                                 aCoeff2 * double(aValue2.GetIntValue());
+      int32_t result = floor(interpolatedValue + 0.5);
       if (aProperty == eCSSProperty_font_weight) {
         if (result < 100) {
           result = 100;
