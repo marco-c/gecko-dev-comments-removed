@@ -485,6 +485,7 @@ class StringToDoubleConverter {
   
   
   
+  
   StringToDoubleConverter(int flags,
                           double empty_string_value,
                           double junk_string_value,
@@ -504,19 +505,24 @@ class StringToDoubleConverter {
   
   double StringToDouble(const char* buffer,
                         int length,
-                        int* processed_characters_count) const {
-    return StringToIeee(buffer, length, processed_characters_count, true);
-  }
+                        int* processed_characters_count) const;
+
+  
+  double StringToDouble(const uc16* buffer,
+                        int length,
+                        int* processed_characters_count) const;
 
   
   
   
   float StringToFloat(const char* buffer,
                       int length,
-                      int* processed_characters_count) const {
-    return static_cast<float>(StringToIeee(buffer, length,
-                                           processed_characters_count, false));
-  }
+                      int* processed_characters_count) const;
+
+  
+  float StringToFloat(const uc16* buffer,
+                      int length,
+                      int* processed_characters_count) const;
 
  private:
   const int flags_;
@@ -525,10 +531,11 @@ class StringToDoubleConverter {
   const char* const infinity_symbol_;
   const char* const nan_symbol_;
 
-  double StringToIeee(const char* buffer,
+  template <class Iterator>
+  double StringToIeee(Iterator start_pointer,
                       int length,
-                      int* processed_characters_count,
-                      bool read_as_double) const;
+                      bool read_as_double,
+                      int* processed_characters_count) const;
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(StringToDoubleConverter);
 };
