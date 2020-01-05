@@ -35,7 +35,7 @@ use flow_ref::{self, FlowRef, WeakFlowRef};
 use fragment::{Fragment, FragmentBorderBoxIterator, SpecificFragmentInfo};
 use gfx::display_list::{ClippingRegion, DisplayList};
 use gfx_traits::{LayerId, LayerType};
-use incremental::{RECONSTRUCT_FLOW, REFLOW, REFLOW_OUT_OF_FLOW, RestyleDamage};
+use incremental::{RECONSTRUCT_FLOW, REFLOW, REFLOW_OUT_OF_FLOW, REPAINT, RestyleDamage};
 use inline::InlineFlow;
 use model::{CollapsibleMargins, IntrinsicISizes, MarginCollapseInfo};
 use multicol::MulticolFlow;
@@ -199,6 +199,26 @@ pub trait Flow: fmt::Debug + Sync + Send + 'static {
     
     fn assign_block_size<'a>(&mut self, _ctx: &'a LayoutContext<'a>) {
         panic!("assign_block_size not yet implemented")
+    }
+
+    
+    
+    
+    
+    
+    
+    fn fragment(&mut self,
+                layout_context: &LayoutContext,
+                _fragmentation_context: Option<FragmentationContext>)
+                -> Option<FlowRef> {
+        fn recursive_assign_block_size<F: ?Sized + Flow>(flow: &mut F, ctx: &LayoutContext) {
+            for child in mut_base(flow).children.iter_mut() {
+                recursive_assign_block_size(child, ctx)
+            }
+            flow.assign_block_size(ctx);
+        }
+        recursive_assign_block_size(self, layout_context);
+        None
     }
 
     
@@ -517,6 +537,7 @@ pub enum FlowClass {
     TableCaption,
     TableCell,
     Multicol,
+    MulticolColumn,
     Flex,
 }
 
@@ -614,6 +635,9 @@ bitflags! {
                  static` and `position: relative` as well as absolutely-positioned flows with \
                  unconstrained positions in the block direction."]
         const BLOCK_POSITION_IS_STATIC = 0b0100_0000_0000_0000_0000,
+
+        /// Whether any ancestor is a fragmentation container
+        const CAN_BE_FRAGMENTED = 0b1000_0000_0000_0000_0000,
     }
 }
 
@@ -775,6 +799,7 @@ pub type AbsoluteDescendantOffsetIter<'a> = Zip<AbsoluteDescendantIter<'a>, Iter
 
 
 
+#[derive(Copy, Clone)]
 pub struct EarlyAbsolutePositionInfo {
     
     pub relative_containing_block_size: LogicalSize<Au>,
@@ -810,6 +835,12 @@ impl LateAbsolutePositionInfo {
             stacking_relative_position_of_absolute_containing_block: Point2D::zero(),
         }
     }
+}
+
+#[derive(Copy, Clone, Debug)]
+pub struct FragmentationContext {
+    pub available_block_size: Au,
+    pub this_fragment_is_empty: bool,
 }
 
 
@@ -1065,6 +1096,23 @@ impl BaseFlow {
             flags: flags,
             writing_mode: writing_mode,
             thread_id: 0,
+        }
+    }
+
+    
+    pub fn clone_with_children(&self, children: FlowList) -> BaseFlow {
+        BaseFlow {
+            children: children,
+            restyle_damage: self.restyle_damage | REPAINT | REFLOW_OUT_OF_FLOW | REFLOW,
+            parallel: FlowParallelInfo::new(),
+            display_list_building_result: None,
+
+            floats: self.floats.clone(),
+            abs_descendants: self.abs_descendants.clone(),
+            absolute_cb: self.absolute_cb.clone(),
+            clip: self.clip.clone(),
+
+            ..*self
         }
     }
 
@@ -1430,6 +1478,7 @@ impl MutableOwnedFlowUtils for FlowRef {
 
 
 
+#[derive(Clone)]
 pub struct ContainingBlockLink {
     
     link: Option<WeakFlowRef>,

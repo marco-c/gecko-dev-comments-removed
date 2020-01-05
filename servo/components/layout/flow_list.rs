@@ -30,6 +30,17 @@ impl FlowList {
     }
 
     
+    
+    
+    pub fn push_front(&mut self, new_head: FlowRef) {
+        self.flows.push_front(new_head);
+    }
+
+    pub fn pop_front(&mut self) -> Option<FlowRef> {
+        self.flows.pop_front()
+    }
+
+    
     #[inline]
     pub fn new() -> FlowList {
         FlowList {
@@ -63,6 +74,13 @@ impl FlowList {
     #[inline]
     pub fn len(&self) -> usize {
         self.flows.len()
+    }
+
+    #[inline]
+    pub fn split_off(&mut self, i: usize) -> Self {
+        FlowList {
+            flows: self.flows.split_off(i)
+        }
     }
 }
 
