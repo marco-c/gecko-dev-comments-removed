@@ -260,6 +260,18 @@ pub trait TElement : PartialEq + Debug + Sized + Copy + Clone + ElementExt + Pre
     }
 
     
+    fn get_animation_rule(&self, _pseudo: Option<&PseudoElement>)
+                          -> Option<Arc<RwLock<PropertyDeclarationBlock>>> {
+        None
+    }
+
+    
+    fn get_transition_rule(&self, _pseudo: Option<&PseudoElement>)
+                           -> Option<Arc<RwLock<PropertyDeclarationBlock>>> {
+        None
+    }
+
+    
     fn get_state(&self) -> ElementState;
 
     
