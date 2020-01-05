@@ -6,6 +6,7 @@
 package org.mozilla.gecko.activitystream;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.text.TextUtils;
@@ -48,35 +49,98 @@ public class ActivityStream {
             "edit"
     );
 
-    public static boolean isEnabled(Context context) {
-        if (!isUserEligible(context)) {
-            
-            
-            return false;
-        }
+    
 
-        return GeckoSharedPrefs.forApp(context)
-                .getBoolean(GeckoPreferences.PREFS_ACTIVITY_STREAM, false);
+
+    public static boolean hasUserEnabledOrDisabled(Context context) {
+        final SharedPreferences preferences = GeckoSharedPrefs.forApp(context);
+        return preferences.contains(GeckoPreferences.PREFS_ACTIVITY_STREAM);
     }
 
     
 
 
-    public static boolean isUserEligible(Context context) {
-        if (AppConstants.MOZ_ANDROID_ACTIVITY_STREAM) {
-            
-            return true;
+    public static void setUserEnabled(Context context, boolean value) {
+        GeckoSharedPrefs.forApp(context).edit()
+                .putBoolean(GeckoPreferences.PREFS_ACTIVITY_STREAM, value)
+                .apply();
+    }
+
+    
+
+
+
+
+    public static boolean isEnabledByUser(Context context) {
+        final SharedPreferences preferences = GeckoSharedPrefs.forApp(context);
+        if (!preferences.contains(GeckoPreferences.PREFS_ACTIVITY_STREAM)) {
+            throw new IllegalStateException("User hasn't made a decision. Call hasUserEnabledOrDisabled() before calling this method");
         }
 
-        if (AppConstants.NIGHTLY_BUILD && SwitchBoard.isInExperiment(context, Experiments.ACTIVITY_STREAM)) {
-            
-            
-            
-            return true;
+        return preferences.getBoolean(GeckoPreferences.PREFS_ACTIVITY_STREAM,  false);
+    }
+
+    
+
+
+    public static boolean isEnabledByExperiment(Context context) {
+        
+        return SwitchBoard.isInExperiment(context, Experiments.ACTIVITY_STREAM_OPT_OUT);
+    }
+
+    
+
+
+    public static boolean isEnabled(Context context) {
+        
+        if (!canBeEnabled(context)) {
+            return false;
         }
 
         
-        return false;
+        if (hasUserEnabledOrDisabled(context)) {
+            return isEnabledByUser(context);
+        }
+
+        
+        return isEnabledByExperiment(context);
+    }
+
+    
+
+
+    public static boolean isUserSwitchable(Context context) {
+        
+        if (!canBeEnabled(context)) {
+            return false;
+        }
+
+        
+        return SwitchBoard.isInExperiment(context, Experiments.ACTIVITY_STREAM_SETTING);
+    }
+
+    
+
+
+
+
+
+    public static boolean canBeEnabled(Context context) {
+        if (!AppConstants.NIGHTLY_BUILD) {
+            
+            
+            
+            return false;
+        }
+
+        if (!SwitchBoard.isInExperiment(context, Experiments.ACTIVITY_STREAM)) {
+            
+            
+            return false;
+        }
+
+        
+        return true;
     }
 
     
