@@ -647,6 +647,9 @@ public:
 
   bool IsReadLocked() const;
 
+  bool TryReadLock();
+  void ReadUnlock();
+
   void SerializeReadLock(ReadLockDescriptor& aDescriptor);
 
 private:
@@ -719,6 +722,7 @@ protected:
   uint32_t mExpectedDtRefs;
 #endif
   bool mIsLocked;
+  bool mIsReadLocked;
   
   
   
