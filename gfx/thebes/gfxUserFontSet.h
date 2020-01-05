@@ -17,6 +17,9 @@
 #include "mozilla/net/ReferrerPolicy.h"
 #include "gfxFontConstants.h"
 
+namespace mozilla {
+class PostTraversalTask;
+} 
 class nsFontFaceLoader;
 
 
@@ -548,6 +551,7 @@ protected:
 
 
 class gfxUserFontEntry : public gfxFontEntry {
+    friend class mozilla::PostTraversalTask;
     friend class gfxUserFontSet;
     friend class nsUserFontSet;
     friend class nsFontFaceLoader;
@@ -556,6 +560,7 @@ class gfxUserFontEntry : public gfxFontEntry {
 public:
     enum UserFontLoadState {
         STATUS_NOT_LOADED = 0,
+        STATUS_LOAD_PENDING,
         STATUS_LOADING,
         STATUS_LOADED,
         STATUS_FAILED
@@ -593,7 +598,8 @@ public:
 
     
     bool WaitForUserFont() const {
-        return mUserFontLoadState == STATUS_LOADING &&
+        return (mUserFontLoadState == STATUS_LOAD_PENDING ||
+                mUserFontLoadState == STATUS_LOADING) &&
                mFontDataLoadingState < LOADING_SLOWLY;
     }
 
@@ -633,6 +639,8 @@ protected:
 
     
     void LoadNextSrc();
+    void ContinueLoad();
+    void DoLoadNextSrc(bool aForceAsync);
 
     
     virtual void SetLoadState(UserFontLoadState aLoadState);
