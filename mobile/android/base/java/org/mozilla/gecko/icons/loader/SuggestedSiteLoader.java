@@ -54,6 +54,13 @@ public class SuggestedSiteLoader implements IconLoader {
     private IconResponse buildIcon(final Context context, final String siteURL, final int targetSize) {
         final SuggestedSites suggestedSites = BrowserDB.from(context).getSuggestedSites();
 
+        if (suggestedSites == null) {
+            
+            
+            
+            return null;
+        }
+
         final String iconLocation = suggestedSites.getImageUrlForUrl(siteURL);
         final String backgroundColorString = suggestedSites.getBackgroundColorForUrl(siteURL);
 
