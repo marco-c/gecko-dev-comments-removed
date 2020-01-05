@@ -285,6 +285,7 @@ class CertErrorRunnable : public SyncRunnableBase
   RefPtr<SSLServerCertVerificationResult> mResult; 
 private:
   SSLServerCertVerificationResult* CheckCertOverrides();
+  nsresult OverrideAllowedForHost( bool& overrideAllowed);
 
   const void* const mFdForLogging; 
   const nsCOMPtr<nsIX509Cert> mCert;
@@ -473,6 +474,73 @@ DetermineCertOverrideErrors(const UniqueCERTCertificate& cert,
   return SECSuccess;
 }
 
+
+
+
+nsresult
+CertErrorRunnable::OverrideAllowedForHost( bool& overrideAllowed)
+{
+  overrideAllowed = false;
+
+  
+  
+  
+  
+  
+  
+  const nsACString& hostname = mInfoObject->GetHostName();
+  if (net_IsValidIPv6Addr(hostname.BeginReading(), hostname.Length())) {
+    overrideAllowed = true;
+    return NS_OK;
+  }
+
+  
+  
+  
+  bool strictTransportSecurityEnabled = false;
+  bool hasPinningInformation = false;
+  nsCOMPtr<nsISiteSecurityService> sss(do_GetService(NS_SSSERVICE_CONTRACTID));
+  if (!sss) {
+    MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
+            ("[%p][%p] couldn't get nsISiteSecurityService to check HSTS/HPKP",
+            mFdForLogging, this));
+    return NS_ERROR_FAILURE;
+  }
+  nsCOMPtr<nsIURI> uri;
+  nsresult rv = NS_NewURI(getter_AddRefs(uri),
+                          NS_LITERAL_CSTRING("https://") + hostname);
+  if (NS_FAILED(rv)) {
+    MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
+            ("[%p][%p] Creating new URI failed", mFdForLogging, this));
+    return rv;
+  }
+  rv = sss->IsSecureURI(nsISiteSecurityService::HEADER_HSTS,
+                        uri,
+                        mProviderFlags,
+                        mInfoObject->GetOriginAttributes(),
+                        nullptr,
+                        &strictTransportSecurityEnabled);
+  if (NS_FAILED(rv)) {
+    MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
+            ("[%p][%p] checking for HSTS failed", mFdForLogging, this));
+    return rv;
+  }
+  rv = sss->IsSecureURI(nsISiteSecurityService::HEADER_HPKP,
+                        uri,
+                        mProviderFlags,
+                        mInfoObject->GetOriginAttributes(),
+                        nullptr,
+                        &hasPinningInformation);
+  if (NS_FAILED(rv)) {
+    MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
+            ("[%p][%p] checking for HPKP failed", mFdForLogging, this));
+    return rv;
+  }
+
+  overrideAllowed = !strictTransportSecurityEnabled && !hasPinningInformation;
+  return NS_OK;
+}
+
 SSLServerCertVerificationResult*
 CertErrorRunnable::CheckCertOverrides()
 {
@@ -497,56 +565,13 @@ CertErrorRunnable::CheckCertOverrides()
 
   uint32_t remaining_display_errors = mCollectedErrors;
 
-
-  
-  
-  
-  bool strictTransportSecurityEnabled = false;
-  bool hasPinningInformation = false;
-  nsCOMPtr<nsISiteSecurityService> sss(do_GetService(NS_SSSERVICE_CONTRACTID));
-  if (!sss) {
-    MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-           ("[%p][%p] couldn't get nsISiteSecurityService to check for HSTS/HPKP\n",
-            mFdForLogging, this));
-    return new SSLServerCertVerificationResult(mInfoObject,
-                                               mDefaultErrorCodeToReport);
-  }
-  nsCOMPtr<nsIURI> uri;
-  nsresult nsrv = NS_NewURI(getter_AddRefs(uri),
-                            NS_LITERAL_CSTRING("https://") +
-                            mInfoObject->GetHostName());
-  if (NS_FAILED(nsrv)) {
-    MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-            ("[%p][%p] Creating new URI failed\n", mFdForLogging, this));
-    return new SSLServerCertVerificationResult(mInfoObject,
-                                               mDefaultErrorCodeToReport);
-  }
-  nsrv = sss->IsSecureURI(nsISiteSecurityService::HEADER_HSTS,
-                          uri,
-                          mProviderFlags,
-                          mInfoObject->GetOriginAttributes(),
-                          nullptr,
-                          &strictTransportSecurityEnabled);
-  if (NS_FAILED(nsrv)) {
-    MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-           ("[%p][%p] checking for HSTS failed\n", mFdForLogging, this));
-    return new SSLServerCertVerificationResult(mInfoObject,
-                                               mDefaultErrorCodeToReport);
-  }
-  nsrv = sss->IsSecureURI(nsISiteSecurityService::HEADER_HPKP,
-                          uri,
-                          mProviderFlags,
-                          mInfoObject->GetOriginAttributes(),
-                          nullptr,
-                          &hasPinningInformation);
-  if (NS_FAILED(nsrv)) {
-    MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-           ("[%p][%p] checking for HPKP failed\n", mFdForLogging, this));
+  bool overrideAllowed;
+  if (NS_FAILED(OverrideAllowedForHost(overrideAllowed))) {
     return new SSLServerCertVerificationResult(mInfoObject,
                                                mDefaultErrorCodeToReport);
   }
 
-  if (!strictTransportSecurityEnabled && !hasPinningInformation) {
+  if (overrideAllowed) {
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
            ("[%p][%p] no HSTS or HPKP - overrides allowed\n",
             mFdForLogging, this));
@@ -556,18 +581,16 @@ CertErrorRunnable::CheckCertOverrides()
 
     uint32_t overrideBits = 0;
 
-    if (overrideService)
-    {
+    if (overrideService) {
       bool haveOverride;
       bool isTemporaryOverride; 
       const nsACString& hostString(mInfoObject->GetHostName());
-      nsrv = overrideService->HasMatchingOverride(hostString, port,
-                                                  mCert,
-                                                  &overrideBits,
-                                                  &isTemporaryOverride,
-                                                  &haveOverride);
-      if (NS_SUCCEEDED(nsrv) && haveOverride)
-      {
+      nsresult rv = overrideService->HasMatchingOverride(hostString, port,
+                                                         mCert,
+                                                         &overrideBits,
+                                                         &isTemporaryOverride,
+                                                         &haveOverride);
+      if (NS_SUCCEEDED(rv) && haveOverride) {
        
         remaining_display_errors &= ~overrideBits;
       }
@@ -621,8 +644,8 @@ CertErrorRunnable::CheckCertOverrides()
         nsIInterfaceRequestor* csi
           = static_cast<nsIInterfaceRequestor*>(mInfoObject);
         bool suppressMessage = false; 
-        nsrv = bcl->NotifyCertProblem(csi, mInfoObject->SSLStatus(),
-                                      hostWithPortString, &suppressMessage);
+        Unused << bcl->NotifyCertProblem(csi, mInfoObject->SSLStatus(),
+                                         hostWithPortString, &suppressMessage);
       }
     }
   }
