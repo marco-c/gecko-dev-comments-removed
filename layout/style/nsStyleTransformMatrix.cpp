@@ -16,6 +16,7 @@
 #include "nsCSSKeywords.h"
 #include "mozilla/StyleAnimationValue.h"
 #include "gfxMatrix.h"
+#include "gfxQuaternion.h"
 
 #include <limits>
 
@@ -224,7 +225,7 @@ ProcessMatrix(Matrix4x4& aMatrix,
   aMatrix = result * aMatrix;
 }
 
-static void 
+static void
 ProcessMatrix3D(Matrix4x4& aMatrix,
                 const nsCSSValue::Array* aData,
                 nsStyleContext* aContext,
@@ -335,7 +336,7 @@ ProcessTranslateY(Matrix4x4& aMatrix,
   aMatrix.PreTranslate(temp);
 }
 
-static void 
+static void
 ProcessTranslateZ(Matrix4x4& aMatrix,
                   const nsCSSValue::Array* aData,
                   nsStyleContext* aContext,
@@ -408,8 +409,8 @@ ProcessTranslate3D(Matrix4x4& aMatrix,
 
 static void
 ProcessScaleHelper(Matrix4x4& aMatrix,
-                   float aXScale, 
-                   float aYScale, 
+                   float aXScale,
+                   float aYScale,
                    float aZScale)
 {
   aMatrix.PreScale(aXScale, aYScale, aZScale);
@@ -460,7 +461,7 @@ ProcessScale(Matrix4x4& aMatrix, const nsCSSValue::Array* aData)
   const nsCSSValue& scaleY = (aData->Count() == 2 ? scaleX :
                               aData->Item(2));
 
-  ProcessScaleHelper(aMatrix, 
+  ProcessScaleHelper(aMatrix,
                      scaleX.GetFloatValue(),
                      scaleY.GetFloatValue(),
                      1.0f);
@@ -545,7 +546,7 @@ ProcessRotate3D(Matrix4x4& aMatrix, const nsCSSValue::Array* aData)
   aMatrix = temp * aMatrix;
 }
 
-static void 
+static void
 ProcessPerspective(Matrix4x4& aMatrix,
                    const nsCSSValue::Array* aData,
                    nsStyleContext *aContext,
@@ -666,7 +667,7 @@ MatrixForTransformFunction(Matrix4x4& aMatrix,
     break;
   case eCSSKeyword_perspective:
     *aContains3dTransform = true;
-    ProcessPerspective(aMatrix, aData, aContext, aPresContext, 
+    ProcessPerspective(aMatrix, aData, aContext, aPresContext,
                        aConditions);
     break;
   default:
@@ -745,6 +746,291 @@ ReadTransforms(const nsCSSValueList* aList,
   result.PostScale(scale, scale, scale);
 
   return result;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+bool
+Decompose2DMatrix(const Matrix& aMatrix,
+                  Point3D& aScale,
+                  float aShear[3],
+                  gfxQuaternion& aRotate,
+                  Point3D& aTranslate)
+{
+  float A = aMatrix._11,
+        B = aMatrix._12,
+        C = aMatrix._21,
+        D = aMatrix._22;
+  if (A * D == B * C) {
+    
+    return false;
+  }
+
+  float scaleX = sqrt(A * A + B * B);
+  A /= scaleX;
+  B /= scaleX;
+
+  float XYshear = A * C + B * D;
+  C -= A * XYshear;
+  D -= B * XYshear;
+
+  float scaleY = sqrt(C * C + D * D);
+  C /= scaleY;
+  D /= scaleY;
+  XYshear /= scaleY;
+
+  
+  NS_ASSERTION(0.99 < Abs(A*D - B*C) && Abs(A*D - B*C) < 1.01,
+               "determinant should now be 1 or -1");
+  if (A * D < B * C) {
+    A = -A;
+    B = -B;
+    C = -C;
+    D = -D;
+    XYshear = -XYshear;
+    scaleX = -scaleX;
+  }
+
+  float rotate = atan2f(B, A);
+  aRotate = gfxQuaternion(0, 0, sin(rotate/2), cos(rotate/2));
+  aShear[XYSHEAR] = XYshear;
+  aScale.x = scaleX;
+  aScale.y = scaleY;
+  aTranslate.x = aMatrix._31;
+  aTranslate.y = aMatrix._32;
+  return true;
+}
+
+
+
+
+
+
+
+
+
+
+
+bool
+Decompose3DMatrix(const Matrix4x4& aMatrix,
+                  Point3D& aScale,
+                  float aShear[3],
+                  gfxQuaternion& aRotate,
+                  Point3D& aTranslate,
+                  Point4D& aPerspective)
+{
+  Matrix4x4 local = aMatrix;
+
+  if (local[3][3] == 0) {
+    return false;
+  }
+  
+  local.Normalize();
+
+  
+
+
+
+  Matrix4x4 perspective = local;
+  Point4D empty(0, 0, 0, 1);
+  perspective.SetTransposedVector(3, empty);
+
+  if (perspective.Determinant() == 0.0) {
+    return false;
+  }
+
+  
+  if (local[0][3] != 0 || local[1][3] != 0 ||
+      local[2][3] != 0) {
+    
+    aPerspective = local.TransposedVector(3);
+
+    
+
+
+
+    perspective.Invert();
+    aPerspective = perspective.TransposeTransform4D(aPerspective);
+
+    
+    local.SetTransposedVector(3, empty);
+  } else {
+    aPerspective = Point4D(0, 0, 0, 1);
+  }
+
+  
+  for (int i = 0; i < 3; i++) {
+    aTranslate[i] = local[3][i];
+    local[3][i] = 0;
+  }
+
+  
+
+  
+  aScale.x = local[0].Length();
+  local[0] /= aScale.x;
+
+  
+  aShear[XYSHEAR] = local[0].DotProduct(local[1]);
+  local[1] -= local[0] * aShear[XYSHEAR];
+
+  
+  aScale.y = local[1].Length();
+  local[1] /= aScale.y;
+  aShear[XYSHEAR] /= aScale.y;
+
+  
+  aShear[XZSHEAR] = local[0].DotProduct(local[2]);
+  local[2] -= local[0] * aShear[XZSHEAR];
+  aShear[YZSHEAR] = local[1].DotProduct(local[2]);
+  local[2] -= local[1] * aShear[YZSHEAR];
+
+  
+  aScale.z = local[2].Length();
+  local[2] /= aScale.z;
+
+  aShear[XZSHEAR] /= aScale.z;
+  aShear[YZSHEAR] /= aScale.z;
+
+  
+
+
+
+
+  if (local[0].DotProduct(local[1].CrossProduct(local[2])) < 0) {
+    aScale *= -1;
+    for (int i = 0; i < 3; i++) {
+      local[i] *= -1;
+    }
+  }
+
+  
+  aRotate = gfxQuaternion(local);
+
+  return true;
 }
 
 } 

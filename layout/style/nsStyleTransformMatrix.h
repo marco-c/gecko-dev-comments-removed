@@ -15,6 +15,7 @@
 class nsIFrame;
 class nsStyleContext;
 class nsPresContext;
+struct gfxQuaternion;
 struct nsRect;
 namespace mozilla {
 class RuleNodeCacheConditions;
@@ -171,6 +172,29 @@ namespace nsStyleTransformMatrix {
                                          TransformReferenceBox& aBounds,
                                          float aAppUnitsPerMatrixUnit,
                                          bool* aContains3dTransform);
+
+  
+  #define XYSHEAR 0
+  #define XZSHEAR 1
+  #define YZSHEAR 2
+
+  
+
+
+  bool Decompose2DMatrix(const mozilla::gfx::Matrix& aMatrix,
+                         mozilla::gfx::Point3D& aScale,
+                         float aShear[3],
+                         gfxQuaternion& aRotate,
+                         mozilla::gfx::Point3D& aTranslate);
+  
+
+
+  bool Decompose3DMatrix(const mozilla::gfx::Matrix4x4& aMatrix,
+                         mozilla::gfx::Point3D& aScale,
+                         float aShear[3],
+                         gfxQuaternion& aRotate,
+                         mozilla::gfx::Point3D& aTranslate,
+                         mozilla::gfx::Point4D& aPerspective);
 } 
 
 #endif
