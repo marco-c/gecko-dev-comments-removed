@@ -750,7 +750,18 @@ const CustomizableWidgets = [
             return;
           aArea = aArea || this.currentArea;
           updateCombinedWidgetStyle(node, aArea, true);
-        }
+        },
+
+        
+        
+        
+        
+        onAreaNodeRegistered(aArea, aContainer) {
+          if (aContainer.ownerDocument == node.ownerDocument &&
+              aArea == CustomizableUI.AREA_PANEL) {
+            updateCombinedWidgetStyle(node, aArea, true);
+          }
+        },
       };
       CustomizableUI.addListener(listener);
 
@@ -846,7 +857,18 @@ const CustomizableWidgets = [
             return;
           aArea = aArea || this.currentArea;
           updateCombinedWidgetStyle(node, aArea);
-        }
+        },
+
+        
+        
+        
+        
+        onAreaNodeRegistered(aArea, aContainer) {
+          if (aContainer.ownerDocument == node.ownerDocument &&
+              aArea == CustomizableUI.AREA_PANEL) {
+            updateCombinedWidgetStyle(node, aArea);
+          }
+        },
       };
       CustomizableUI.addListener(listener);
 

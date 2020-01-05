@@ -468,6 +468,9 @@ var gSync = {
 
 
   maybeMoveSyncedTabsButton() {
+    if (gPhotonStructure) {
+      return;
+    }
     const prefName = "browser.migrated-sync-button";
     let migrated = Services.prefs.getBoolPref(prefName, false);
     if (migrated) {
