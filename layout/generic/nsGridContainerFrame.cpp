@@ -4143,6 +4143,15 @@ nsGridContainerFrame::Tracks::ResolveIntrinsicSize(
   nsRenderingContext* rc = &aState.mRenderingContext;
   WritingMode wm = aState.mWM;
   uint32_t maxSpan = 0; 
+  
+  const auto contentBasedMinSelector =
+    aConstraint == SizingConstraint::eMinContent ?
+    TrackSize::eIntrinsicMinSizing : TrackSize::eMinOrMaxContentMinSizing;
+  
+  const auto maxContentMinSelector =
+    aConstraint == SizingConstraint::eMaxContent ?
+    (TrackSize::eMaxContentMinSizing | TrackSize::eAutoMinSizing) :
+    TrackSize::eMaxContentMinSizing;
   iter.Reset();
   for (; !iter.AtEnd(); iter.Next()) {
     auto& gridItem = aGridItems[iter.GridItemIndex()];
@@ -4174,13 +4183,13 @@ nsGridContainerFrame::Tracks::ResolveIntrinsicSize(
           minSize = MinSize(gridItem, aState, rc, wm, mAxis, &cache);
         }
         nscoord minContent = 0;
-        if (state & (TrackSize::eMinOrMaxContentMinSizing | 
-                     TrackSize::eIntrinsicMaxSizing)) {     
+        if (state & (contentBasedMinSelector |          
+                     TrackSize::eIntrinsicMaxSizing)) { 
           minContent = MinContentContribution(gridItem, aState,
                                               rc, wm, mAxis, &cache);
         }
         nscoord maxContent = 0;
-        if (state & (TrackSize::eMaxContentMinSizing |         
+        if (state & (maxContentMinSelector |                   
                      TrackSize::eAutoOrMaxContentMaxSizing)) { 
           maxContent = MaxContentContribution(gridItem, aState,
                                               rc, wm, mAxis, &cache);
@@ -4238,8 +4247,9 @@ nsGridContainerFrame::Tracks::ResolveIntrinsicSize(
         }
       }
 
-      selector = TrackSize::eMinOrMaxContentMinSizing;
+      selector = contentBasedMinSelector;
       if (stateBitsPerSpan[span] & selector) {
+        
         
         for (i = spanGroupStartIndex; i < spanGroupEndIndex; ++i) {
           Step2ItemData& item = step2Items[i];
@@ -4260,11 +4270,13 @@ nsGridContainerFrame::Tracks::ResolveIntrinsicSize(
         }
       }
 
-      if (stateBitsPerSpan[span] & TrackSize::eMaxContentMinSizing) {
+      selector = maxContentMinSelector;
+      if (stateBitsPerSpan[span] & selector) {
+        
         
         for (i = spanGroupStartIndex; i < spanGroupEndIndex; ++i) {
           Step2ItemData& item = step2Items[i];
-          if (!(item.mState & TrackSize::eMaxContentMinSizing)) {
+          if (!(item.mState & selector)) {
             continue;
           }
           nscoord space = item.mMaxContentContribution;
@@ -4272,12 +4284,10 @@ nsGridContainerFrame::Tracks::ResolveIntrinsicSize(
             continue;
           }
           tracks.ClearAndRetainStorage();
-          space = CollectGrowable(space, mSizes, item.mLineRange,
-                                  TrackSize::eMaxContentMinSizing,
+          space = CollectGrowable(space, mSizes, item.mLineRange, selector,
                                   tracks);
           if (space > 0) {
-            DistributeToTrackBases(space, plan, tracks,
-                                   TrackSize::eMaxContentMinSizing);
+            DistributeToTrackBases(space, plan, tracks, selector);
             updatedBase = true;
           }
         }
