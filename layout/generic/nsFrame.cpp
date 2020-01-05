@@ -10077,6 +10077,9 @@ nsFrame::UpdateStyleOfChildAnonBox(nsIFrame* aChildFrame,
   
   
   
+  
+  
+  
   uint32_t equalStructs, samePointerStructs; 
   nsChangeHint childHint = aChildFrame->StyleContext()->CalcStyleDifference(
     newContext,
