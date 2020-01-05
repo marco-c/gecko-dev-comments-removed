@@ -294,8 +294,12 @@ struct WorkerLoadInfo
   FinalChannelPrincipalIsValid(nsIChannel* aChannel);
 #endif
 
-  void
-  ForgetMainThreadObjects(nsTArray<nsCOMPtr<nsISupports> >& aDoomed);
+  bool
+  ProxyReleaseMainThreadObjects(WorkerPrivate* aWorkerPrivate);
+
+  bool
+  ProxyReleaseMainThreadObjects(WorkerPrivate* aWorkerPrivate,
+                                nsCOMPtr<nsILoadGroup>& aLoadGroupToCancel);
 };
 
 
