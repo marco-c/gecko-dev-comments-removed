@@ -1658,6 +1658,10 @@ private:
   MaybeRemoveCorruptData(const OriginProps& aOriginProps);
 
   nsresult
+  MaybeRemoveAppsData(const OriginProps& aOriginProps,
+                      bool* aRemoved);
+
+  nsresult
   ProcessOriginDirectory(const OriginProps& aOriginProps) override;
 };
 
@@ -4294,6 +4298,21 @@ QuotaManager::UpgradeStorageFrom1_0To2_0(mozIStorageConnection* aConnection)
   AssertIsOnIOThread();
   MOZ_ASSERT(aConnection);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   
@@ -8069,6 +8088,15 @@ UpgradeStorageFrom1_0To2_0Helper::DoUpgrade()
       return rv;
     }
 
+    bool removed;
+    rv = MaybeRemoveAppsData(originProps, &removed);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+    if (removed) {
+      continue;
+    }
+
     int64_t timestamp;
     nsCString group;
     nsCString origin;
@@ -8184,6 +8212,30 @@ UpgradeStorageFrom1_0To2_0Helper::MaybeRemoveCorruptData(
     return rv;
   }
 
+  return NS_OK;
+}
+
+nsresult
+UpgradeStorageFrom1_0To2_0Helper::MaybeRemoveAppsData(
+                                                const OriginProps& aOriginProps,
+                                                bool* aRemoved)
+{
+  AssertIsOnIOThread();
+
+  
+  
+  if (aOriginProps.mAttrs.mAppId != kNoAppId &&
+      aOriginProps.mAttrs.mAppId != kUnknownAppId) {
+    nsresult rv = RemoveObsoleteOrigin(aOriginProps);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
+    *aRemoved = true;
+    return NS_OK;
+  }
+
+  *aRemoved = false;
   return NS_OK;
 }
 
