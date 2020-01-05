@@ -1550,7 +1550,7 @@ public:
   {
     
     
-    mMaster->Push(aAudio);
+    mMaster->PushAudio(aAudio);
     mMaster->ScheduleStateMachine();
   }
 
@@ -1558,7 +1558,7 @@ public:
   {
     
     
-    mMaster->Push(aVideo);
+    mMaster->PushVideo(aVideo);
     mMaster->ScheduleStateMachine();
   }
 
@@ -2163,6 +2163,7 @@ BufferingState::Step()
       SLOG("Buffering: wait %ds, timeout in %.3lfs",
            mBufferingWait, mBufferingWait - elapsed.ToSeconds());
       mMaster->ScheduleStateMachineIn(USECS_PER_S);
+      mMaster->DispatchDecodeTasksIfNeeded();
       return;
     }
   } else if (mMaster->OutOfDecodedAudio() || mMaster->OutOfDecodedVideo()) {
