@@ -70,14 +70,18 @@ var navigateTo = function (toolbox, url) {
 
 
 
-var startPicker = Task.async(function* (toolbox) {
+
+var startPicker = Task.async(function* (toolbox, skipFocus) {
   info("Start the element picker");
+  toolbox.win.focus();
   yield toolbox.highlighterUtils.startPicker();
-  
-  
-  yield ContentTask.spawn(gBrowser.selectedBrowser, null, function* () {
-    content.focus();
-  });
+  if (!skipFocus) {
+    
+    
+    yield ContentTask.spawn(gBrowser.selectedBrowser, null, function* () {
+      content.focus();
+    });
+  }
 });
 
 

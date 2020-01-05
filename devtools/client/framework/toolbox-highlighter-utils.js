@@ -95,11 +95,13 @@ exports.getHighlighterUtils = function (toolbox) {
 
 
 
-  let togglePicker = exported.togglePicker = function () {
+
+
+  let togglePicker = exported.togglePicker = function (doFocus) {
     if (isPicking) {
-      return stopPicker();
+      return cancelPicker();
     } else {
-      return startPicker();
+      return startPicker(doFocus);
     }
   };
 
@@ -112,7 +114,9 @@ exports.getHighlighterUtils = function (toolbox) {
 
 
 
-  let startPicker = exported.startPicker = requireInspector(function* () {
+
+
+  let startPicker = exported.startPicker = requireInspector(function* (doFocus = false) {
     if (isPicking) {
       return;
     }
@@ -120,14 +124,14 @@ exports.getHighlighterUtils = function (toolbox) {
 
     toolbox.pickerButtonChecked = true;
     yield toolbox.selectTool("inspector");
-    toolbox.on("select", stopPicker);
+    toolbox.on("select", cancelPicker);
 
     if (isRemoteHighlightable()) {
       toolbox.walker.on("picker-node-hovered", onPickerNodeHovered);
       toolbox.walker.on("picker-node-picked", onPickerNodePicked);
       toolbox.walker.on("picker-node-canceled", onPickerNodeCanceled);
 
-      yield toolbox.highlighter.pick();
+      yield toolbox.highlighter.pick(doFocus);
       toolbox.emit("picker-started");
     } else {
       
@@ -164,8 +168,16 @@ exports.getHighlighterUtils = function (toolbox) {
       yield toolbox.walker.cancelPick();
     }
 
-    toolbox.off("select", stopPicker);
+    toolbox.off("select", cancelPicker);
     toolbox.emit("picker-stopped");
+  });
+
+  
+
+
+  let cancelPicker = exported.cancelPicker = Task.async(function* () {
+    yield stopPicker();
+    toolbox.emit("picker-canceled");
   });
 
   
@@ -190,7 +202,7 @@ exports.getHighlighterUtils = function (toolbox) {
 
 
   function onPickerNodeCanceled() {
-    stopPicker();
+    cancelPicker();
     toolbox.win.focus();
   }
 

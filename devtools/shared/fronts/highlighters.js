@@ -3,7 +3,7 @@
 
 "use strict";
 
-const { FrontClassWithSpec } = require("devtools/shared/protocol");
+const { FrontClassWithSpec, custom } = require("devtools/shared/protocol");
 const {
   customHighlighterSpec,
   highlighterSpec
@@ -15,7 +15,16 @@ const HighlighterFront = FrontClassWithSpec(highlighterSpec, {
     this.actorID = json.actor;
     
     this.traits = json.traits || {};
-  }
+  },
+
+  pick: custom(function (doFocus) {
+    if (doFocus && this.pickAndFocus) {
+      return this.pickAndFocus();
+    }
+    return this._pick();
+  }, {
+    impl: "_pick"
+  })
 });
 
 exports.HighlighterFront = HighlighterFront;

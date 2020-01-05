@@ -353,6 +353,16 @@ var HighlighterActor = exports.HighlighterActor = protocol.ActorClassWithSpec(hi
     return null;
   },
 
+  
+
+
+  pickAndFocus: function() {
+    
+    let pickResults = this.pick();
+    this._highlighterEnv.window.focus();
+    return pickResults;
+  },
+
   _findAndAttachElement: function (event) {
     
     
