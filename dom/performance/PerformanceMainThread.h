@@ -23,9 +23,6 @@ public:
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_INHERITED(PerformanceMainThread,
                                                          Performance)
 
-  
-  DOMHighResTimeStamp Now() const override;
-
   virtual PerformanceTiming* Timing() override;
 
   virtual PerformanceNavigation* Navigation() override;

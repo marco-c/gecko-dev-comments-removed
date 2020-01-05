@@ -105,12 +105,6 @@ PerformanceMainThread::Navigation()
   return mNavigation;
 }
 
-DOMHighResTimeStamp
-PerformanceMainThread::Now() const
-{
-  return RoundTime(GetDOMTiming()->TimeStampToDOMHighRes(TimeStamp::Now()));
-}
-
 
 
 
