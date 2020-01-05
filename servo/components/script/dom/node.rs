@@ -802,40 +802,54 @@ impl<'a> NodeHelpers for &'a Node {
 
     
     fn before(self, nodes: Vec<NodeOrString>) -> ErrorResult {
-        match self.parent_node.get() {
-            None => {
-                
-                Ok(())
-            },
-            Some(ref parent_node) => {
-                
-                let doc = self.owner_doc();
-                let node = try!(doc.r().node_from_nodes_and_strings(nodes));
-                
-                Node::pre_insert(node.r(), parent_node.root().r(),
-                                 Some(self)).map(|_| ())
-            },
-        }
+        
+        let parent = &self.parent_node;
+
+        
+        let parent = match parent.get() {
+            None => return Ok(()),
+            Some(ref parent) => parent.root(),
+        };
+
+        
+        let viable_previous_sibling = first_node_not_in(self.preceding_siblings(), &nodes);
+
+        
+        let node = try!(self.owner_doc().node_from_nodes_and_strings(nodes));
+
+        
+        let viable_previous_sibling = match viable_previous_sibling {
+            Some(ref viable_previous_sibling) => viable_previous_sibling.next_sibling.get(),
+            None => parent.first_child.get(),
+        }.map(|s| s.root());
+
+        
+        try!(Node::pre_insert(&node, &parent, viable_previous_sibling.r()));
+
+        Ok(())
     }
 
     
     fn after(self, nodes: Vec<NodeOrString>) -> ErrorResult {
-        match self.parent_node.get() {
-            None => {
-                
-                Ok(())
-            },
-            Some(ref parent_node) => {
-                
-                let doc = self.owner_doc();
-                let node = try!(doc.r().node_from_nodes_and_strings(nodes));
-                
-                
-                let next_sibling = self.next_sibling.get().map(Root::from_rooted);
-                Node::pre_insert(node.r(), parent_node.root().r(),
-                                 next_sibling.r()).map(|_| ())
-            },
-        }
+        
+        let parent = &self.parent_node;
+
+        
+        let parent = match parent.get() {
+            None => return Ok(()),
+            Some(ref parent) => parent.root(),
+        };
+
+        
+        let viable_next_sibling = first_node_not_in(self.following_siblings(), &nodes);
+
+        
+        let node = try!(self.owner_doc().node_from_nodes_and_strings(nodes));
+
+        
+        try!(Node::pre_insert(&node, &parent, viable_next_sibling.r()));
+
+        Ok(())
     }
 
     
@@ -1026,6 +1040,21 @@ impl<'a> NodeHelpers for &'a Node {
         }
         Ok(fragment)
     }
+}
+
+
+
+fn first_node_not_in<I>(mut nodes: I, not_in: &[NodeOrString]) -> Option<Root<Node>>
+        where I: Iterator<Item=Root<Node>>
+{
+    nodes.find(|node| {
+        not_in.iter().all(|n| {
+            match n {
+                &NodeOrString::eNode(ref n) => n != node,
+                _ => true,
+            }
+        })
+    })
 }
 
 
