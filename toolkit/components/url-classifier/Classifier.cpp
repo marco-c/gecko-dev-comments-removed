@@ -4,6 +4,7 @@
 
 
 #include "Classifier.h"
+#include "LookupCacheV4.h"
 #include "nsIPrefBranch.h"
 #include "nsIPrefService.h"
 #include "nsISimpleEnumerator.h"
@@ -946,7 +947,14 @@ Classifier::UpdateTableV4(nsTArray<TableUpdate*>* aUpdates,
     return NS_ERROR_FAILURE;
   }
 
-  PrefixStringMap prefixes;
+  nsresult rv = NS_OK;
+
+  
+  
+  
+  PrefixStringMap prefixes1, prefixes2;
+  PrefixStringMap* output = &prefixes1;
+
   for (uint32_t i = 0; i < aUpdates->Length(); i++) {
     TableUpdate *update = aUpdates->ElementAt(i);
     if (!update || !update->TableName().Equals(aTable)) {
@@ -957,23 +965,44 @@ Classifier::UpdateTableV4(nsTArray<TableUpdate*>* aUpdates,
     NS_ENSURE_TRUE(updateV4, NS_ERROR_FAILURE);
 
     if (updateV4->IsFullUpdate()) {
-      prefixes.Clear();
-      TableUpdateV4::PrefixesStringMap& map = updateV4->Prefixes();
+      TableUpdateV4::PrefixStdStringMap& map = updateV4->Prefixes();
 
+      output->Clear();
       for (auto iter = map.Iter(); !iter.Done(); iter.Next()) {
         
         
         nsCString* prefix = new nsCString(iter.Data()->GetPrefixString());
-        prefixes.Put(iter.Key(), prefix);
+        output->Put(iter.Key(), prefix);
       }
     } else {
+      PrefixStringMap* input = nullptr;
       
+      
+      
+      if (prefixes1.IsEmpty() && prefixes2.IsEmpty()) {
+        lookupCache->GetPrefixes(prefixes1);
+        input = &prefixes1;
+        output = &prefixes2;
+      } else {
+        MOZ_ASSERT(prefixes1.IsEmpty() ^ prefixes2.IsEmpty());
+
+        
+        
+        
+        input = prefixes1.IsEmpty() ? &prefixes2 : &prefixes1;
+        output = prefixes1.IsEmpty() ? &prefixes1 : &prefixes2;
+      }
+
+      rv = lookupCache->ApplyPartialUpdate(updateV4, *input, *output);
+      NS_ENSURE_SUCCESS(rv, rv);
+
+      input->Clear();
     }
 
     aUpdates->ElementAt(i) = nullptr;
   }
 
-  nsresult rv = lookupCache->Build(prefixes);
+  rv = lookupCache->Build(*output);
   NS_ENSURE_SUCCESS(rv, rv);
 
   rv = lookupCache->WriteFile();
