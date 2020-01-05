@@ -422,7 +422,7 @@ nsTypeAheadFind::FindItNow(nsIPresShell *aPresShell, bool aIsLinksOnly,
     while (true) {  
       mFind->Find(mTypeAheadBuffer.get(), mSearchRange, mStartPointRange,
                   mEndPointRange, getter_AddRefs(returnRange));
-      
+
       if (!returnRange)
         break;  
 
@@ -1008,18 +1008,18 @@ nsTypeAheadFind::Find(const nsAString& aSearchString, bool aLinksOnly,
     return NS_OK;
   }
 
-  bool atEnd = false;    
+  bool atEnd = false;
   if (mTypeAheadBuffer.Length()) {
     const nsAString& oldStr = Substring(mTypeAheadBuffer, 0, mTypeAheadBuffer.Length());
     const nsAString& newStr = Substring(aSearchString, 0, mTypeAheadBuffer.Length());
     if (oldStr.Equals(newStr))
       atEnd = true;
-  
+
     const nsAString& newStr2 = Substring(aSearchString, 0, aSearchString.Length());
     const nsAString& oldStr2 = Substring(mTypeAheadBuffer, 0, aSearchString.Length());
     if (oldStr2.Equals(newStr2))
       atEnd = true;
-    
+
     if (!atEnd)
       mStartFindRange = nullptr;
   }
