@@ -2,6 +2,7 @@
 
 
 
+use cssparser::RGBA;
 use devtools_traits::AttrInfo;
 use dom::bindings::cell::DOMRefCell;
 use dom::bindings::codegen::Bindings::AttrBinding::{self, AttrMethods};
@@ -28,6 +29,7 @@ pub enum AttrValue {
     UInt(DOMString, u32),
     Atom(Atom),
     Length(DOMString, Option<Length>),
+    Color(DOMString, Option<RGBA>),
 }
 
 impl AttrValue {
@@ -103,6 +105,18 @@ impl AttrValue {
     
     
     
+    pub fn as_color(&self) -> Option<&RGBA> {
+        match *self {
+            AttrValue::Color(_, ref color) => color.as_ref(),
+            _ => panic!("Color not found"),
+        }
+    }
+
+    
+    
+    
+    
+    
     pub fn as_length(&self) -> Option<&Length> {
         match *self {
             AttrValue::Length(_, ref length) => length.as_ref(),
@@ -134,7 +148,8 @@ impl Deref for AttrValue {
             AttrValue::String(ref value) |
                 AttrValue::TokenList(ref value, _) |
                 AttrValue::UInt(ref value, _) |
-                AttrValue::Length(ref value, _) => &value,
+                AttrValue::Length(ref value, _) |
+                AttrValue::Color(ref value, _) => &value,
             AttrValue::Atom(ref value) => &value,
         }
     }
