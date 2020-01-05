@@ -58,6 +58,14 @@ struct StyleCache final : public PropItem
     MOZ_COUNT_CTOR(StyleCache);
   }
 
+  StyleCache(nsIAtom* aTag,
+             const nsAString& aAttr)
+    : PropItem(aTag, aAttr, EmptyString())
+    , mPresent(false)
+  {
+    MOZ_COUNT_CTOR(StyleCache);
+  }
+
   ~StyleCache()
   {
     MOZ_COUNT_DTOR(StyleCache);
@@ -405,6 +413,19 @@ protected:
   nsresult ChangeIndentation(Element& aElement, Change aChange);
   void DocumentModifiedWorker();
 
+  
+
+
+
+  void InitStyleCacheArray(StyleCache aStyleCache[SIZE_STYLE_TABLE]);
+
+  
+
+
+
+  nsresult GetInlineStyles(nsIDOMNode* aNode,
+                           StyleCache aStyleCache[SIZE_STYLE_TABLE]);
+
 protected:
   HTMLEditor* mHTMLEditor;
   RefPtr<nsRange> mDocChangeRange;
@@ -418,6 +439,11 @@ protected:
   uint32_t mJoinOffset;
   nsCOMPtr<Element> mNewBlock;
   RefPtr<RangeItem> mRangeItem;
+
+  
+  
+  
+  
   StyleCache mCachedStyles[SIZE_STYLE_TABLE];
 };
 
