@@ -66,6 +66,7 @@ use sync::Arc;
 use url::Url;
 
 
+#[deriving(Clone)]
 pub enum ConstructionResult {
     
     
@@ -84,84 +85,89 @@ pub enum ConstructionResult {
 impl ConstructionResult {
     pub fn swap_out(&mut self, layout_context: &LayoutContext) -> ConstructionResult {
         if layout_context.shared.opts.incremental_layout {
-            match *self {
-                NoConstructionResult =>
-                    return NoConstructionResult,
-                FlowConstructionResult(ref flow_ref, ref abs_descendants) =>
-                    return FlowConstructionResult((*flow_ref).clone(), (*abs_descendants).clone()),
-                ConstructionItemConstructionResult(_) => {},
-            }
+            return (*self).clone();
         }
 
         mem::replace(self, NoConstructionResult)
     }
+
+    pub fn debug_id(&self) -> uint {
+        match self {
+            &NoConstructionResult => 0u,
+            &ConstructionItemConstructionResult(_) => 0u,
+            &FlowConstructionResult(ref flow_ref, _) => flow::base(flow_ref.deref()).debug_id(),
+        }
+    }
 }
 
-
-
-
+/// Represents the output of flow construction for a DOM node that has not yet resulted in a
+/// complete flow. Construction items bubble up the tree until they find a `Flow` to be attached
+/// to.
+#[deriving(Clone)]
 pub enum ConstructionItem {
-    
+    /// Inline fragments and associated {ib} splits that have not yet found flows.
     InlineFragmentsConstructionItem(InlineFragmentsConstructionResult),
-    
+    /// Potentially ignorable whitespace.
     WhitespaceConstructionItem(OpaqueNode, Arc<ComputedValues>, RestyleDamage),
-    
+    /// TableColumn Fragment
     TableColumnFragmentConstructionItem(Fragment),
 }
 
-
+/// Represents inline fragments and {ib} splits that are bubbling up from an inline.
+#[deriving(Clone)]
 pub struct InlineFragmentsConstructionResult {
-    
+    /// Any {ib} splits that we're bubbling up.
     pub splits: Vec<InlineBlockSplit>,
 
-    
+    /// Any fragments that succeed the {ib} splits.
     pub fragments: InlineFragments,
 
-    
+    /// Any absolute descendants that we're bubbling up.
     pub abs_descendants: AbsDescendants,
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/// Represents an {ib} split that has not yet found the containing block that it belongs to. This
+/// is somewhat tricky. An example may be helpful. For this DOM fragment:
+///
+/// ```html
+///     <span>
+///     A
+///     <div>B</div>
+///     C
+///     </span>
+/// ```
+///
+/// The resulting `ConstructionItem` for the outer `span` will be:
+///
+/// ```ignore
+///     InlineFragmentsConstructionItem(Some(~[
+///         InlineBlockSplit {
+///             predecessor_fragments: ~[
+///                 A
+///             ],
+///             block: ~BlockFlow {
+///                 B
+///             },
+///         }),~[
+///             C
+///         ])
+/// ```
+#[deriving(Clone)]
 pub struct InlineBlockSplit {
-    
+    /// The inline fragments that precede the flow.
     pub predecessors: InlineFragments,
 
-    
+    /// The flow that caused this {ib} split.
     pub flow: FlowRef,
 }
 
-
+/// Holds inline fragments that we're gathering for children of an inline node.
 struct InlineFragmentsAccumulator {
-    
+    /// The list of fragments.
     fragments: InlineFragments,
 
-    
-    
+    /// Whether we've created a range to enclose all the fragments. This will be Some() if the outer node
+    /// is an inline and None otherwise.
     enclosing_style: Option<Arc<ComputedValues>>,
 }
 
@@ -205,14 +211,14 @@ enum WhitespaceStrippingMode {
     StripWhitespaceFromEnd,
 }
 
-
+/// An object that knows how to create flows.
 pub struct FlowConstructor<'a> {
-    
+    /// The layout context.
     pub layout_context: &'a LayoutContext<'a>,
 }
 
 impl<'a> FlowConstructor<'a> {
-    
+    /// Creates a new flow constructor.
     pub fn new<'a>(layout_context: &'a LayoutContext<'a>)
                -> FlowConstructor<'a> {
         FlowConstructor {
@@ -220,14 +226,14 @@ impl<'a> FlowConstructor<'a> {
         }
     }
 
-    
+    /// Builds the `ImageFragmentInfo` for the given image. This is out of line to guide inlining.
     fn build_fragment_info_for_image(&mut self, node: &ThreadSafeLayoutNode, url: Option<Url>)
                                 -> SpecificFragmentInfo {
         match url {
             None => GenericFragment,
             Some(url) => {
-                
-                
+                // FIXME(pcwalton): The fact that image fragments store the cache within them makes
+                // little sense to me.
                 ImageFragment(ImageFragmentInfo::new(node,
                                                      url,
                                                      self.layout_context
@@ -238,12 +244,12 @@ impl<'a> FlowConstructor<'a> {
         }
     }
 
-    
-    
-    
-    
-    
-    
+    /// Builds specific `Fragment` info for the given node.
+    ///
+    /// This does *not* construct the text for generated content (but, for generated content with
+    /// `display: block`, it does construct the generic fragment corresponding to the block).
+    /// Construction of the text fragment is done specially by `build_flow_using_children()` and
+    /// `build_fragments_for_replaced_inline_content()`.
     pub fn build_specific_fragment_info_for_node(&mut self, node: &ThreadSafeLayoutNode)
                                                  -> SpecificFragmentInfo {
         match node.type_id() {
@@ -270,17 +276,17 @@ impl<'a> FlowConstructor<'a> {
             Some(ElementNodeTypeId(HTMLTableSectionElementTypeId)) => TableRowFragment,
             Some(TextNodeTypeId) => UnscannedTextFragment(UnscannedTextFragmentInfo::new(node)),
             _ => {
-                
+                // This includes pseudo-elements.
                 GenericFragment
             }
         }
     }
 
-    
-    
-    
-    
-    
+    /// Creates an inline flow from a set of inline fragments, then adds it as a child of the given
+    /// flow or pushes it onto the given flow list.
+    ///
+    /// `#[inline(always)]` because this is performance critical and LLVM will not inline it
+    /// otherwise.
     #[inline(always)]
     fn flush_inline_fragments_to_flow_or_list(&mut self,
                                               fragment_accumulator: InlineFragmentsAccumulator,
@@ -311,7 +317,7 @@ impl<'a> FlowConstructor<'a> {
             }
         }
 
-        
+        // Build a list of all the inline-block fragments before fragments is moved.
         let mut inline_block_flows = vec!();
         for f in fragments.fragments.iter() {
             match f.specific {

@@ -159,7 +159,7 @@ impl Flow for TableFlow {
     
     
     fn bubble_inline_sizes(&mut self) {
-        let _scope = layout_debug_scope!("table::bubble_inline_sizes {:s}",
+        let _scope = layout_debug_scope!("table::bubble_inline_sizes {:x}",
                                          self.block_flow.base.debug_id());
 
         let mut computation = IntrinsicISizesContribution::new();
@@ -233,7 +233,7 @@ impl Flow for TableFlow {
     
     
     fn assign_inline_sizes(&mut self, layout_context: &LayoutContext) {
-        let _scope = layout_debug_scope!("table::assign_inline_sizes {:s}",
+        let _scope = layout_debug_scope!("table::assign_inline_sizes {:x}",
                                             self.block_flow.base.debug_id());
         debug!("assign_inline_sizes({}): assigning inline_size for flow", "table");
 
@@ -396,4 +396,3 @@ impl ColumnInlineSize {
         }
     }
 }
-
