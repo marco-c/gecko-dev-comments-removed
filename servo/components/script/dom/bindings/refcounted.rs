@@ -47,7 +47,7 @@ unsafe impl Send for TrustedReference {}
 
 
 
-pub struct Trusted<T> {
+pub struct Trusted<T: Reflectable> {
     
     
     ptr: *const libc::c_void,

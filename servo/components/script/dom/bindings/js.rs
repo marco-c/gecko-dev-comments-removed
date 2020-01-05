@@ -593,7 +593,7 @@ impl RootCollection {
 
 
 #[no_move]
-pub struct Root<T> {
+pub struct Root<T: Reflectable> {
     
     root_list: &'static RootCollection,
     
