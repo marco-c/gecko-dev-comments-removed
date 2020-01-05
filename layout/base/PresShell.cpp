@@ -4580,6 +4580,17 @@ nsIPresShell::RestyleForCSSRuleChanges()
     mPresContext->RebuildCounterStyles();
   }
 
+  
+  
+  
+  
+  
+  
+  
+  if (mStyleSet->IsServo()) {
+    mStyleSet->AsServo()->NoteStyleSheetsChanged();
+  }
+
   Element* root = mDocument->GetRootElement();
   if (!mDidInitialize) {
     
@@ -4592,11 +4603,6 @@ nsIPresShell::RestyleForCSSRuleChanges()
   }
 
   RestyleManager* restyleManager = mPresContext->RestyleManager();
-
-  if (mStyleSet->IsServo()) {
-    
-    mStyleSet->AsServo()->NoteStyleSheetsChanged();
-  }
 
   if (scopeRoots.IsEmpty()) {
     
