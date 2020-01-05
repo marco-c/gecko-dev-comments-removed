@@ -18,9 +18,6 @@ createEnum([
   "UPDATE_GRIDS",
 
   
-  "UPDATE_LAYOUT",
-
-  
   "UPDATE_SHOW_GRID_LINE_NUMBERS",
 
   

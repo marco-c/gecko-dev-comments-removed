@@ -7,6 +7,6 @@
 
 
 
-exports.boxModel = require("devtools/client/inspector/layout/reducers/box-model");
+exports.boxModel = require("devtools/client/inspector/boxmodel/reducers/box-model");
 exports.grids = require("devtools/client/inspector/layout/reducers/grids");
 exports.highlighterSettings = require("devtools/client/inspector/layout/reducers/highlighter-settings");
