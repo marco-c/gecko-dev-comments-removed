@@ -187,44 +187,68 @@ impl Default for RequestInit {
 }
 
 
+
 #[derive(Clone, HeapSizeOf)]
 pub struct Request {
+    
     #[ignore_heap_size_of = "Defined in hyper"]
     pub method: Method,
+    
     pub local_urls_only: bool,
+    
     pub sandboxed_storage_area_urls: bool,
+    
     #[ignore_heap_size_of = "Defined in hyper"]
     pub headers: Headers,
+    
     pub unsafe_request: bool,
+    
     pub body: Option<Vec<u8>>,
     
     pub is_service_worker_global_scope: bool,
     pub window: Window,
     
+    
     pub keep_alive: bool,
     pub skip_service_worker: bool,
+    
     pub initiator: Initiator,
+    
     pub type_: Type,
+    
     pub destination: Destination,
+    
     
     pub origin: Origin,
     pub omit_origin_header: bool,
     
     pub referrer: Referrer,
+    
     pub referrer_policy: Option<ReferrerPolicy>,
     pub pipeline_id: Option<PipelineId>,
+    
     pub synchronous: bool,
+    
     pub mode: RequestMode,
+    
     pub use_cors_preflight: bool,
+    
     pub credentials_mode: CredentialsMode,
+    
     pub use_url_credentials: bool,
+    
     pub cache_mode: CacheMode,
+    
     pub redirect_mode: RedirectMode,
+    
     pub integrity_metadata: String,
     
     
+    
     pub url_list: Vec<ServoUrl>,
+    
     pub redirect_count: u32,
+    
     pub response_tainting: ResponseTainting,
 }
 
@@ -296,18 +320,27 @@ impl Request {
         req
     }
 
+    
     pub fn url(&self) -> ServoUrl {
         self.url_list.first().unwrap().clone()
     }
 
+    
     pub fn current_url(&self) -> ServoUrl {
         self.url_list.last().unwrap().clone()
     }
 
+    
+    pub fn current_url_mut(&mut self) -> &mut ServoUrl {
+        self.url_list.last_mut().unwrap()
+    }
+
+    
     pub fn is_navigation_request(&self) -> bool {
         self.destination == Destination::Document
     }
 
+    
     pub fn is_subresource_request(&self) -> bool {
         match self.destination {
             Destination::Font | Destination::Image | Destination::Manifest | Destination::Media |
