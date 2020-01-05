@@ -24,8 +24,8 @@
 }(this, function (exports) {
   
   'use strict';
-  var pdfjsVersion = '1.6.263';
-  var pdfjsBuild = '7e392c0';
+  var pdfjsVersion = '1.6.274';
+  var pdfjsBuild = '1c3fb17';
   var pdfjsFilePath = typeof document !== 'undefined' && document.currentScript ? document.currentScript.src : null;
   var pdfjsLibs = {};
   (function pdfjsWrapper() {
