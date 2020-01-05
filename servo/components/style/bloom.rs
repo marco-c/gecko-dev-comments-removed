@@ -214,11 +214,25 @@ impl StyleBloom {
         
         
         
+        
+        
+        
+        
+        
         while *self.elements.last().unwrap() != common_parent.as_node().to_unsafe() {
             parents_to_insert.push(common_parent);
-            common_parent =
-                common_parent.parent_element().expect("We were lied again?");
             self.pop::<E>().unwrap();
+            common_parent = match common_parent.parent_element() {
+                Some(parent) => parent,
+                None => {
+                    debug_assert!(self.elements.is_empty());
+                    if cfg!(feature = "gecko") {
+                        break;
+                    } else {
+                        panic!("should have found a common ancestor");
+                    }
+                }
+            }
         }
 
         
