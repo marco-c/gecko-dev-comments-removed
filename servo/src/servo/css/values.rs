@@ -1,12 +1,12 @@
+
+
+
+
+
+
 use SharedColor = util::color::Color;
 use cmp::Eq;
 use std::net::url::Url;
-
-#[doc = "
-  Defines how css rules, both selectors and style specifications, are
-  stored.  CSS selector-matching rules, as presented by 
-  http://www.w3.org/TR/CSS2/selector.html are represented by nested types.
-"]
 
 // CSS Units
 
