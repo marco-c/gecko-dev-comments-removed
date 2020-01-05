@@ -124,6 +124,13 @@ public:
   WebRenderBridgeChild* WRBridge() { return mWRChild; }
 
 private:
+ 
+
+
+
+ void MakeSnapshotIfRequired(LayoutDeviceIntSize aSize);
+
+private:
   nsIWidget* MOZ_NON_OWNING_REF mWidget;
   std::vector<WRImageKey> mImageKeys;
 
@@ -142,12 +149,6 @@ private:
  
  
  RefPtr<gfxContext> mTarget;
-
- 
-
-
-
- void MakeSnapshotIfRequired(LayoutDeviceIntSize aSize);
 };
 
 } 
