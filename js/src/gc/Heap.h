@@ -261,8 +261,6 @@ struct Cell
     
     inline JSCompartment* maybeCompartment() const { return nullptr; }
 
-    
-    
     inline StoreBuffer* storeBuffer() const;
 
     inline JS::TraceKind getTraceKind() const;
@@ -786,7 +784,6 @@ struct ChunkTrailer
     ChunkLocation   location;
     uint32_t        padding;
 
-    
     
     StoreBuffer*    storeBuffer;
 

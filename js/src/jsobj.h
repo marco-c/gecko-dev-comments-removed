@@ -671,7 +671,6 @@ JSObject::writeBarrierPost(void* cellp, JSObject* prev, JSObject* next)
     }
 
     
-    
     if (prev && (buffer = prev->storeBuffer()))
         buffer->unputCell(static_cast<js::gc::Cell**>(cellp));
 }
