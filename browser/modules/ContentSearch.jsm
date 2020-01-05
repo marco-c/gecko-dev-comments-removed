@@ -109,9 +109,6 @@ this.ContentSearch = {
   _currentSuggestion: null,
 
   init() {
-    Cc["@mozilla.org/globalmessagemanager;1"].
-      getService(Ci.nsIMessageListenerManager).
-      addMessageListener(INBOUND_MESSAGE, this);
     Services.obs.addObserver(this, "browser-search-engine-modified");
     Services.obs.addObserver(this, "shutdown-leaks-before-check");
     Services.prefs.addObserver("browser.search.hiddenOneOffs", this);
@@ -138,9 +135,6 @@ this.ContentSearch = {
       return this._destroyedPromise;
     }
 
-    Cc["@mozilla.org/globalmessagemanager;1"].
-      getService(Ci.nsIMessageListenerManager).
-      removeMessageListener(INBOUND_MESSAGE, this);
     Services.obs.removeObserver(this, "browser-search-engine-modified");
     Services.obs.removeObserver(this, "shutdown-leaks-before-check");
 
@@ -160,6 +154,7 @@ this.ContentSearch = {
     });
   },
 
+  
   receiveMessage(msg) {
     
     
