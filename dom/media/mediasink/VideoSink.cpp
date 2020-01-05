@@ -410,12 +410,12 @@ VideoSink::UpdateRenderedVideoFrames()
   NS_ASSERTION(clockTime >= 0, "Should have positive clock time.");
 
   
-  int64_t lastDisplayedFrameEndTime = 0;
+  int64_t lastFrameEndTime = 0;
   while (VideoQueue().GetSize() > mMinVideoQueueSize &&
          clockTime >= VideoQueue().PeekFront()->GetEndTime()) {
     RefPtr<MediaData> frame = VideoQueue().PopFront();
+    lastFrameEndTime = frame->GetEndTime();
     if (frame->As<VideoData>()->mSentToCompositor) {
-      lastDisplayedFrameEndTime = frame->GetEndTime();
       mFrameStats.NotifyPresentedFrame();
     } else {
       mFrameStats.NotifyDecodedFrames({ 0, 0, 1 });
@@ -429,7 +429,7 @@ VideoSink::UpdateRenderedVideoFrames()
   
   RefPtr<MediaData> currentFrame = VideoQueue().PeekFront();
   mVideoFrameEndTime = std::max(mVideoFrameEndTime,
-    currentFrame ? currentFrame->GetEndTime() : lastDisplayedFrameEndTime);
+    currentFrame ? currentFrame->GetEndTime() : lastFrameEndTime);
 
   MaybeResolveEndPromise();
 
