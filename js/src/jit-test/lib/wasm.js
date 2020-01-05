@@ -3,17 +3,8 @@ if (!wasmIsSupported())
 
 load(libdir + "asserts.js");
 
-function textToBinary(str) {
-    
-    
-    return wasmTextToBinary(str, 'new-format');
-}
-
-function evalText(str, imports) {
-    
-    
-    
-    let binary = wasmTextToBinary(str, 'new-format');
+function wasmEvalText(str, imports) {
+    let binary = wasmTextToBinary(str);
     let valid = WebAssembly.validate(binary);
 
     let m;
@@ -29,20 +20,13 @@ function evalText(str, imports) {
 }
 
 function wasmValidateText(str) {
-    assertEq(WebAssembly.validate(wasmTextToBinary(str, 'new-format')), true);
+    assertEq(WebAssembly.validate(wasmTextToBinary(str)), true);
 }
 
 function wasmFailValidateText(str, errorType, pattern) {
-    let binary = wasmTextToBinary(str, 'new-format');
+    let binary = wasmTextToBinary(str);
     assertEq(WebAssembly.validate(binary), false);
     assertErrorMessage(() => new WebAssembly.Module(binary), errorType, pattern);
-}
-
-function wasmEvalText(str, imports) {
-    var exports = Wasm.instantiateModule(wasmTextToBinary(str), imports).exports;
-    if (Object.keys(exports).length == 1 && exports[""])
-        return exports[""];
-    return exports;
 }
 
 function mismatchError(actual, expect) {
