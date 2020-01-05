@@ -200,14 +200,14 @@ ElementForStyleContext(nsIContent* aParentContent,
 
 
 
-nsresult
+void
 GeckoRestyleManager::ContentStateChanged(nsIContent* aContent,
                                          EventStates aStateMask)
 {
   
   
   if (!aContent->IsElement()) {
-    return NS_OK;
+    return;
   }
 
   Element* aElement = aContent->AsElement();
@@ -217,7 +217,6 @@ GeckoRestyleManager::ContentStateChanged(nsIContent* aContent,
   ContentStateChangedInternal(aElement, aStateMask, &changeHint, &restyleHint);
 
   PostRestyleEvent(aElement, restyleHint, changeHint);
-  return NS_OK;
 }
 
 

@@ -54,8 +54,8 @@ protected:
 public:
   
   
-  nsresult ContentStateChanged(nsIContent*   aContent,
-                               EventStates aStateMask);
+  void ContentStateChanged(nsIContent* aContent,
+                           EventStates aStateMask);
 
   
   void AttributeWillChange(Element* aElement,
