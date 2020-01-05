@@ -15,6 +15,7 @@
 
 
 use servo_config::resource_files::read_resource_file;
+use servo_url::ServoUrl;
 use std::collections::HashSet;
 use std::iter::FromIterator;
 use std::str::from_utf8;
@@ -137,4 +138,12 @@ pub fn is_pub_domain(domain: &str) -> bool {
 
 pub fn is_reg_domain(domain: &str) -> bool {
     PUB_DOMAINS.is_registrable_suffix(domain)
+}
+
+
+
+
+
+pub fn reg_host<'a>(url: &'a ServoUrl) -> Option<&'a str> {
+    url.domain().map(reg_suffix).or(url.host_str())
 }
