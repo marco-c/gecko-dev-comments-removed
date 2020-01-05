@@ -1005,17 +1005,12 @@ WebrtcVideoConduit::ConfigureRecvMediaCodecs(
   MediaConduitErrorCode condError = kMediaConduitNoError;
   std::string payloadName;
 
-  condError = StopReceiving();
-  if (condError != kMediaConduitNoError) {
-    return condError;
-  }
-
   if (codecConfigList.empty()) {
     CSFLogError(logTag, "%s Zero number of codecs to configure", __FUNCTION__);
     return kMediaConduitMalformedArgument;
   }
 
-  webrtc::KeyFrameRequestMethod kf_request_method;
+  webrtc::KeyFrameRequestMethod kf_request_method = webrtc::kKeyFrameReqPliRtcp;
   bool kf_request_enabled = false;
   bool use_nack_basic = false;
   bool use_tmmbr = false;
@@ -1024,9 +1019,7 @@ WebrtcVideoConduit::ConfigureRecvMediaCodecs(
   int ulpfec_payload_type = kNullPayloadType;
   int red_payload_type = kNullPayloadType;
   bool configuredH264 = false;
-  
-  mRecvStreamConfig.decoders.clear();
-  mRecvStreamConfig.rtp.rtx.clear();
+  nsTArray<UniquePtr<VideoCodecConfig>> recv_codecs;
 
   
   
@@ -1060,6 +1053,8 @@ WebrtcVideoConduit::ConfigureRecvMediaCodecs(
 
     
     
+    
+    
     if (codec_config->RtcpFbNackIsSet("pli")) {
       kf_request_enabled = true;
       kf_request_method = webrtc::kKeyFrameReqPliRtcp;
@@ -1068,43 +1063,72 @@ WebrtcVideoConduit::ConfigureRecvMediaCodecs(
       kf_request_method = webrtc::kKeyFrameReqFirRtcp;
     }
 
-    use_nack_basic = codec_config->RtcpFbNackIsSet("");
-    use_tmmbr = codec_config->RtcpFbCcmIsSet("tmmbr");
-    use_remb = codec_config->RtcpFbRembIsSet();
-    use_fec = codec_config->RtcpFbFECIsSet();
+    
+    
+    
+    use_nack_basic |= codec_config->RtcpFbNackIsSet("");
+    use_tmmbr |= codec_config->RtcpFbCcmIsSet("tmmbr");
+    use_remb |= codec_config->RtcpFbRembIsSet();
+    use_fec |= codec_config->RtcpFbFECIsSet();
 
-    CopyCodecToDB(codec_config);
-  }
-
-  mRecvStreamConfig.rtp.rtcp_mode = webrtc::RtcpMode::kCompound;
-  mRecvStreamConfig.rtp.nack.rtp_history_ms = use_nack_basic ? 1000 : 0;
-  mRecvStreamConfig.rtp.remb = use_remb;
-  mRecvStreamConfig.rtp.tmmbr = use_tmmbr;
-
-  if (use_fec) {
-    mRecvStreamConfig.rtp.fec.ulpfec_payload_type = ulpfec_payload_type;
-    mRecvStreamConfig.rtp.fec.red_payload_type = red_payload_type;
-    mRecvStreamConfig.rtp.fec.red_rtx_payload_type = -1;
+    recv_codecs.AppendElement(new VideoCodecConfig(*codec_config));
   }
 
   
-  
-  
-  
-  
-  
-  auto ssrc = mRecvStreamConfig.rtp.remote_ssrc;
-  do {
-    SECStatus rv = PK11_GenerateRandom(reinterpret_cast<unsigned char*>(&ssrc), sizeof(ssrc));
-    if (rv != SECSuccess) {
-      return kMediaConduitUnknownError;
+  if (!mRecvStream ||
+      CodecsDifferent(recv_codecs, mRecvCodecList) ||
+      mRecvStreamConfig.rtp.nack.rtp_history_ms != (use_nack_basic ? 1000 : 0) ||
+      mRecvStreamConfig.rtp.remb != use_remb ||
+      mRecvStreamConfig.rtp.tmmbr != use_tmmbr ||
+      mRecvStreamConfig.rtp.keyframe_method != kf_request_method ||
+      (use_fec &&
+       mRecvStreamConfig.rtp.fec.ulpfec_payload_type != ulpfec_payload_type ||
+       mRecvStreamConfig.rtp.fec.red_payload_type != red_payload_type)) {
+
+    condError = StopReceiving();
+    if (condError != kMediaConduitNoError) {
+      return condError;
     }
-  } while (ssrc == mRecvStreamConfig.rtp.remote_ssrc);
 
-  
-  mRecvStreamConfig.rtp.local_ssrc = 1;
+    
+    mRecvStreamConfig.rtp.rtcp_mode = webrtc::RtcpMode::kCompound;
+    mRecvStreamConfig.rtp.nack.rtp_history_ms = use_nack_basic ? 1000 : 0;
+    mRecvStreamConfig.rtp.remb = use_remb;
+    mRecvStreamConfig.rtp.tmmbr = use_tmmbr;
+    mRecvStreamConfig.rtp.keyframe_method = kf_request_method;
 
-  return StartReceiving();
+    if (use_fec) {
+      mRecvStreamConfig.rtp.fec.ulpfec_payload_type = ulpfec_payload_type;
+      mRecvStreamConfig.rtp.fec.red_payload_type = red_payload_type;
+      mRecvStreamConfig.rtp.fec.red_rtx_payload_type = -1;
+    }
+
+    
+    
+    
+    
+    
+    
+    auto ssrc = mRecvStreamConfig.rtp.remote_ssrc;
+    do {
+      SECStatus rv = PK11_GenerateRandom(reinterpret_cast<unsigned char*>(&ssrc), sizeof(ssrc));
+      if (rv != SECSuccess) {
+        return kMediaConduitUnknownError;
+      }
+    } while (ssrc == mRecvStreamConfig.rtp.remote_ssrc);
+
+    
+    mRecvStreamConfig.rtp.local_ssrc = 1;
+
+    
+    mRecvCodecList.SwapElements(recv_codecs);
+    recv_codecs.Clear();
+    mRecvStreamConfig.decoders.clear();
+    mRecvStreamConfig.rtp.rtx.clear();
+    
+    DeleteRecvStream();
+    return StartReceiving();
+  }
   return kMediaConduitNoError;
 }
 
@@ -1872,10 +1896,25 @@ WebrtcVideoConduit::RenderFrame(const webrtc::VideoFrame& video_frame,
 
 
 bool
-WebrtcVideoConduit::CopyCodecToDB(const VideoCodecConfig* codecInfo)
+WebrtcVideoConduit::CodecsDifferent(const nsTArray<UniquePtr<VideoCodecConfig>>& a,
+                                    const nsTArray<UniquePtr<VideoCodecConfig>>& b)
 {
-  mRecvCodecList.AppendElement(new VideoCodecConfig(*codecInfo));
-  return true;
+  
+  
+  auto len = a.Length();
+  if (len != b.Length()) {
+    return true;
+  }
+
+  
+  
+  for (uint32_t i = 0; i < len; ++i) {
+    if (!(*a[i] == *b[i])) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 

@@ -417,7 +417,8 @@ private:
   
   void DumpCodecDB() const;
 
-  bool CopyCodecToDB(const VideoCodecConfig* codecInfo);
+  bool CodecsDifferent(const nsTArray<UniquePtr<VideoCodecConfig>>& a,
+                       const nsTArray<UniquePtr<VideoCodecConfig>>& b);
 
   
   void VideoLatencyUpdate(uint64_t new_sample);
