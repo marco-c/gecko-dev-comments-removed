@@ -2488,11 +2488,10 @@ class MethodDefiner(PropertyDefiner):
                 
                 self.regular.append({
                     "name": 'valueOf',
-                    "nativeName": "UnforgeableValueOf",
+                    "selfHostedName": "Object_valueOf",
                     "methodInfo": False,
                     "length": 0,
-                    "flags": "JSPROP_ENUMERATE",  
-                                                  
+                    "flags": "0",  
                     "condition": MemberCondition()
                 })
 
@@ -3565,17 +3564,13 @@ def InitUnforgeablePropertiesOnHolder(descriptor, properties, failureCode,
     if descriptor.interface.getExtendedAttribute("Unforgeable"):
         
         
-        
         unforgeables.append(CGGeneric(fill(
             """
             JS::RootedId toPrimitive(aCx,
               SYMBOL_TO_JSID(JS::GetWellKnownSymbol(aCx, JS::SymbolCode::toPrimitive)));
             if (!JS_DefinePropertyById(aCx, ${holderName}, toPrimitive,
                                        JS::UndefinedHandleValue,
-                                       JSPROP_READONLY | JSPROP_PERMANENT) ||
-                !JS_DefineProperty(aCx, ${holderName}, "toJSON",
-                                   JS::UndefinedHandleValue,
-                                   JSPROP_READONLY | JSPROP_ENUMERATE | JSPROP_PERMANENT)) {
+                                       JSPROP_READONLY | JSPROP_PERMANENT)) {
               $*{failureCode}
             }
             """,
