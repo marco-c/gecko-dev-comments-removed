@@ -4,81 +4,27 @@
 "use strict";
 
 const {utils: Cu} = Components;
-Cu.import("resource://gre/modules/Services.jsm");
-Cu.import("resource://gre/modules/Preferences.jsm");
-Cu.import("resource://gre/modules/Log.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "LogManager",
   "resource://shield-recipe-client/lib/LogManager.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "RecipeRunner",
-  "resource://shield-recipe-client/lib/RecipeRunner.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "CleanupManager",
-  "resource://shield-recipe-client/lib/CleanupManager.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "ShieldRecipeClient",
+  "resource://shield-recipe-client/lib/ShieldRecipeClient.jsm");
 
-const REASONS = {
-  APP_STARTUP: 1,      
-  APP_SHUTDOWN: 2,     
-  ADDON_ENABLE: 3,     
-  ADDON_DISABLE: 4,    
-  ADDON_INSTALL: 5,    
-  ADDON_UNINSTALL: 6,  
-  ADDON_UPGRADE: 7,    
-  ADDON_DOWNGRADE: 8,  
-};
+this.install = function() {};
 
-const PREF_BRANCH = "extensions.shield-recipe-client.";
-const DEFAULT_PREFS = {
-  api_url: "https://normandy.cdn.mozilla.net/api/v1",
-  dev_mode: false,
-  enabled: true,
-  startup_delay_seconds: 300,
-  "logging.level": Log.Level.Warn,
-  user_id: "",
-};
-const PREF_DEV_MODE = "extensions.shield-recipe-client.dev_mode";
-const PREF_SELF_SUPPORT_ENABLED = "browser.selfsupport.enabled";
-const PREF_LOGGING_LEVEL = PREF_BRANCH + "logging.level";
-
-let shouldRun = true;
-let log = null;
-
-this.install = function() {
-  
-  
-  if (Preferences.get(PREF_SELF_SUPPORT_ENABLED, true)) {
-    Preferences.set(PREF_SELF_SUPPORT_ENABLED, false);
-    if (!Preferences.get(PREF_DEV_MODE, false)) {
-      shouldRun = false;
-    }
-  }
-};
-
-this.startup = function() {
-  setDefaultPrefs();
-
-  
-  LogManager.configure(Services.prefs.getIntPref(PREF_LOGGING_LEVEL));
-  log = LogManager.getLogger("bootstrap");
-  Preferences.observe(PREF_LOGGING_LEVEL, LogManager.configure);
-  CleanupManager.addCleanupHandler(
-    () => Preferences.ignore(PREF_LOGGING_LEVEL, LogManager.configure));
-
-  if (!shouldRun) {
-    return;
-  }
-
-  RecipeRunner.init();
+this.startup = async function() {
+  await ShieldRecipeClient.startup();
 };
 
 this.shutdown = function(data, reason) {
-  CleanupManager.cleanup();
+  ShieldRecipeClient.shutdown(reason);
 
-  if (reason === REASONS.ADDON_DISABLE || reason === REASONS.ADDON_UNINSTALL) {
-    Services.prefs.setBoolPref(PREF_SELF_SUPPORT_ENABLED, true);
-  }
-
+  
+  
+  const log = LogManager.getLogger("bootstrap");
   const modules = [
+    "lib/ActionSandboxManager.jsm",
     "lib/CleanupManager.jsm",
     "lib/ClientEnvironment.jsm",
     "lib/FilterExpressions.jsm",
@@ -87,29 +33,18 @@ this.shutdown = function(data, reason) {
     "lib/LogManager.jsm",
     "lib/NormandyApi.jsm",
     "lib/NormandyDriver.jsm",
+    "lib/PreferenceExperiments.jsm",
     "lib/RecipeRunner.jsm",
     "lib/Sampling.jsm",
     "lib/SandboxManager.jsm",
+    "lib/ShieldRecipeClient.jsm",
     "lib/Storage.jsm",
+    "lib/Utils.jsm",
   ];
   for (const module of modules) {
     log.debug(`Unloading ${module}`);
     Cu.unload(`resource://shield-recipe-client/${module}`);
   }
-
-  
-  log = null;
 };
 
-this.uninstall = function() {
-};
-
-function setDefaultPrefs() {
-  for (const [key, val] of Object.entries(DEFAULT_PREFS)) {
-    const fullKey = PREF_BRANCH + key;
-    
-    if (!Preferences.isSet(fullKey)) {
-      Preferences.set(fullKey, val);
-    }
-  }
-}
+this.uninstall = function() {};
