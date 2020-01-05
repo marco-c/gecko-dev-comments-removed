@@ -5,12 +5,14 @@
 import os
 import posixpath
 import re
+import shutil
 import subprocess
 import tempfile
 import time
 import traceback
 
 from abc import ABCMeta, abstractmethod
+from distutils import dir_util
 
 
 class ADBProcess(object):
@@ -149,15 +151,19 @@ class ADBCommand(object):
         self._adb_port = adb_port
         self._timeout = timeout
         self._polling_interval = 0.1
+        self._adb_version = ''
 
         self._logger.debug("%s: %s" % (self.__class__.__name__,
                                        self.__dict__))
 
         
+        
         try:
-            subprocess.Popen([adb, 'help'],
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE).communicate()
+            output = subprocess.Popen([adb, 'version'],
+                                      stdout=subprocess.PIPE,
+                                      stderr=subprocess.PIPE).communicate()
+            re_version = re.compile(r'Android Debug Bridge version (.*)')
+            self._adb_version = re_version.match(output[0]).group(1)
         except Exception as exc:
             raise ADBError('%s: %s is not executable.' % (exc, adb))
 
@@ -1718,8 +1724,42 @@ class ADBDevice(ADBCommand):
         :raises: * ADBTimeoutError
                  * ADBError
         """
-        self.command_output(["push", os.path.realpath(local), remote],
-                            timeout=timeout)
+        
+        local = os.path.normpath(local)
+        remote = os.path.normpath(remote)
+        copy_required = False
+        if self._adb_version >= '1.0.36' and \
+           os.path.isdir(local) and self.is_dir(remote):
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            local_name = os.path.basename(local)
+            remote_name = os.path.basename(remote)
+            if local_name != remote_name:
+                copy_required = True
+                temp_parent = tempfile.mkdtemp()
+                new_local = os.path.join(temp_parent, remote_name)
+                dir_util.copy_tree(local, new_local)
+                local = new_local
+            remote = '/'.join(remote.rstrip('/').split('/')[:-1])
+        try:
+            self.command_output(["push", local, remote], timeout=timeout)
+        except:
+            raise
+        finally:
+            if copy_required:
+                shutil.rmtree(temp_parent)
 
     def pull(self, remote, local, timeout=None):
         """Pulls a file or directory from the device.
@@ -1738,8 +1778,42 @@ class ADBDevice(ADBCommand):
         :raises: * ADBTimeoutError
                  * ADBError
         """
-        self.command_output(["pull", remote, os.path.realpath(local)],
-                            timeout=timeout)
+        
+        local = os.path.normpath(local)
+        remote = os.path.normpath(remote)
+        copy_required = False
+        original_local = local
+        if self._adb_version >= '1.0.36' and \
+           os.path.isdir(local) and self.is_dir(remote):
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            local_name = os.path.basename(local)
+            remote_name = os.path.basename(remote)
+            if local_name != remote_name:
+                copy_required = True
+                temp_parent = tempfile.mkdtemp()
+                local = os.path.join(temp_parent, remote_name)
+            else:
+                local = '/'.join(local.rstrip('/').split('/')[:-1])
+        try:
+            self.command_output(["pull", remote, local], timeout=timeout)
+        except:
+            raise
+        finally:
+            if copy_required:
+                dir_util.copy_tree(local, original_local)
+                shutil.rmtree(temp_parent)
 
     def rm(self, path, recursive=False, force=False, timeout=None, root=False):
         """Delete files or directories on the device.
