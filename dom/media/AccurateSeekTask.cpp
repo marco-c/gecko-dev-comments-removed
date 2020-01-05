@@ -63,34 +63,6 @@ int64_t
 AccurateSeekTask::CalculateNewCurrentTime() const
 {
   AssertOwnerThread();
-
-  const int64_t seekTime = mTarget.GetTime().ToMicroseconds();
-
-  
-  
-  
-  
-  if (mTarget.IsAccurate()) {
-    return seekTime;
-  }
-
-  
-  
-  if (mTarget.IsFast()) {
-
-    
-    if (!mSeekedAudioData && !mSeekedVideoData) {
-      return seekTime;
-    }
-
-    const int64_t audioStart = mSeekedAudioData ? mSeekedAudioData->mTime : INT64_MAX;
-    const int64_t videoStart = mSeekedVideoData ? mSeekedVideoData->mTime : INT64_MAX;
-    const int64_t audioGap = std::abs(audioStart - seekTime);
-    const int64_t videoGap = std::abs(videoStart - seekTime);
-    return audioGap <= videoGap ? audioStart : videoStart;
-  }
-
-  MOZ_ASSERT(false, "AccurateSeekTask doesn't handle other seek types.");
   return 0;
 }
 

@@ -1079,7 +1079,34 @@ private:
 
   int64_t CalculateNewCurrentTime() const override
   {
-    return mSeekTask->CalculateNewCurrentTime();
+    const int64_t seekTime = mTask->mTarget.GetTime().ToMicroseconds();
+
+    
+    
+    
+    
+    if (mTask->mTarget.IsAccurate()) {
+      return seekTime;
+    }
+
+    
+    
+    if (mTask->mTarget.IsFast()) {
+
+      
+      if (!mTask->mSeekedAudioData && !mTask->mSeekedVideoData) {
+        return seekTime;
+      }
+
+      const int64_t audioStart = mTask->mSeekedAudioData ? mTask->mSeekedAudioData->mTime : INT64_MAX;
+      const int64_t videoStart = mTask->mSeekedVideoData ? mTask->mSeekedVideoData->mTime : INT64_MAX;
+      const int64_t audioGap = std::abs(audioStart - seekTime);
+      const int64_t videoGap = std::abs(videoStart - seekTime);
+      return audioGap <= videoGap ? audioStart : videoStart;
+    }
+
+    MOZ_ASSERT(false, "AccurateSeekTask doesn't handle other seek types.");
+    return 0;
   }
 
   void OnSeekResolved(media::TimeUnit) {
