@@ -3,29 +3,28 @@
 
 
 use properties::ComputedValues;
+use selectors::parser::SelectorImpl;
+use std::collections::HashMap;
+use std::hash::BuildHasherDefault;
 use std::sync::Arc;
 use std::sync::atomic::AtomicIsize;
 
-pub struct PrivateStyleData {
+pub struct PrivateStyleData<Impl: SelectorImpl> {
     
     pub style: Option<Arc<ComputedValues>>,
 
     
-    pub before_style: Option<Arc<ComputedValues>>,
-
-    
-    pub after_style: Option<Arc<ComputedValues>>,
+    pub per_pseudo: HashMap<Impl::PseudoElement, Arc<ComputedValues>, BuildHasherDefault<::fnv::FnvHasher>>,
 
     
     pub parallel: DomParallelInfo,
 }
 
-impl PrivateStyleData {
-    pub fn new() -> PrivateStyleData {
+impl<Impl: SelectorImpl> PrivateStyleData<Impl> {
+    pub fn new() -> PrivateStyleData<Impl> {
         PrivateStyleData {
             style: None,
-            before_style: None,
-            after_style: None,
+            per_pseudo: HashMap::with_hasher(Default::default()),
             parallel: DomParallelInfo::new(),
         }
     }
