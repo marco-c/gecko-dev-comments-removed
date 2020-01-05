@@ -487,7 +487,7 @@ GetNextNonLoopEntryPc(jsbytecode* pc)
 }
 
 static bool
-HasLiveIteratorAtStackDepth(JSScript* script, jsbytecode* pc, uint32_t stackDepth)
+HasLiveStackValueAtDepth(JSScript* script, jsbytecode* pc, uint32_t stackDepth)
 {
     if (!script->hasTrynotes())
         return false;
@@ -501,14 +501,37 @@ HasLiveIteratorAtStackDepth(JSScript* script, jsbytecode* pc, uint32_t stackDept
         if (pcOffset >= tn->start + tn->length)
             continue;
 
-        
-        if (tn->kind == JSTRY_FOR_IN && stackDepth == tn->stackDepth)
-            return true;
+        switch (tn->kind) {
+          case JSTRY_FOR_IN:
+            
+            if (stackDepth == tn->stackDepth)
+                return true;
+            break;
 
-        
-        
-        if (tn->kind == JSTRY_FOR_OF && stackDepth == tn->stackDepth - 1)
-            return true;
+          case JSTRY_FOR_OF:
+            
+            
+            if (stackDepth == tn->stackDepth - 1)
+                return true;
+            break;
+
+          case JSTRY_ITERCLOSE:
+            
+            
+            if (stackDepth == tn->stackDepth)
+                return true;
+            break;
+
+          case JSTRY_DESTRUCTURING_ITERCLOSE:
+            
+            
+            if (stackDepth == tn->stackDepth || stackDepth == tn->stackDepth - 1)
+                return true;
+            break;
+
+          default:
+            break;
+        }
     }
 
     return false;
@@ -943,7 +966,7 @@ InitFromBailout(JSContext* cx, HandleScript caller, jsbytecode* callerPC,
             
             
             MOZ_ASSERT(cx->compartment()->isDebuggee());
-            if (iter.moreFrames() || HasLiveIteratorAtStackDepth(script, pc, i + 1)) {
+            if (iter.moreFrames() || HasLiveStackValueAtDepth(script, pc, i + 1)) {
                 v = iter.read();
             } else {
                 iter.skip();
