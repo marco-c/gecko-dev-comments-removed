@@ -13,34 +13,7 @@
 
 #include "mozilla/Bootstrap.h"
 
-
-
-
-
-
-
-
-
-extern "C" NS_HIDDEN_(nsresult) XPCOMGlueStartup(const char* aXPCOMFile);
-
 typedef void (*NSFuncPtr)();
-
-struct nsDynamicFunctionLoad
-{
-  const char* functionName;
-  NSFuncPtr* function;
-};
-
-
-
-
-
-
-
-
-
-extern "C" NS_HIDDEN_(nsresult)
-XPCOMGlueLoadXULFunctions(const nsDynamicFunctionLoad* aSymbols);
 
 namespace mozilla {
 
