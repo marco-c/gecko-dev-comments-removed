@@ -240,7 +240,10 @@ nsInputStreamPump::Resume()
     NS_ENSURE_TRUE(mSuspendCount > 0, NS_ERROR_UNEXPECTED);
     NS_ENSURE_TRUE(mState != STATE_IDLE, NS_ERROR_UNEXPECTED);
 
-    if (--mSuspendCount == 0)
+    
+    
+    
+    if (--mSuspendCount == 0 && mAsyncStream)
         EnsureWaiting();
     return NS_OK;
 }

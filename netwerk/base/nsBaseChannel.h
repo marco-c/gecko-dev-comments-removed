@@ -100,6 +100,19 @@ private:
   
   
   
+  
+  virtual nsresult BeginAsyncRead(nsIStreamListener* listener, nsIRequest** request) {
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
   virtual bool GetStatusArg(nsresult status, nsString &statusArg) {
     return false;
   }
@@ -164,7 +177,7 @@ public:
 
   
   virtual bool Pending() const {
-    return mPump || mWaitingOnAsyncRedirect;
+    return mPumpingData || mWaitingOnAsyncRedirect;
  }
 
   
@@ -266,6 +279,8 @@ private:
   friend class RedirectRunnable;
 
   RefPtr<nsInputStreamPump>         mPump;
+  RefPtr<nsIRequest>                  mRequest;
+  bool                                mPumpingData;
   nsCOMPtr<nsIProgressEventSink>      mProgressSink;
   nsCOMPtr<nsIURI>                    mOriginalURI;
   nsCOMPtr<nsISupports>               mOwner;
