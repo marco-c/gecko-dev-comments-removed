@@ -44,7 +44,7 @@ add_task(function* () {
     
     
     monitor.toolbox.doc
-      .querySelector("#request-menu-context-copy-request-headers").click();
+      .querySelector("#request-list-context-copy-request-headers").click();
   }, function validate(result) {
     
     result = String(result).replace(/Cookie: [^\n]+\n/, "");
