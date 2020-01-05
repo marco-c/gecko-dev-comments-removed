@@ -2001,7 +2001,8 @@ nsBoxFrame::XULRelayoutChildAtOrdinal(nsIFrame* aChild)
 
 
 
-class nsDisplayXULEventRedirector : public nsDisplayWrapList {
+class nsDisplayXULEventRedirector final : public nsDisplayWrapList
+{
 public:
   nsDisplayXULEventRedirector(nsDisplayListBuilder* aBuilder,
                               nsIFrame* aFrame, nsDisplayItem* aItem,
@@ -2053,7 +2054,7 @@ void nsDisplayXULEventRedirector::HitTest(nsDisplayListBuilder* aBuilder,
   }
 }
 
-class nsXULEventRedirectorWrapper : public nsDisplayWrapper
+class nsXULEventRedirectorWrapper final : public nsDisplayWrapper
 {
 public:
   explicit nsXULEventRedirectorWrapper(nsIFrame* aTargetFrame)
