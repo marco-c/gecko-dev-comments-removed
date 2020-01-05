@@ -1579,13 +1579,17 @@ CacheCreator::DeleteCache()
 {
   AssertIsOnMainThread();
 
-  ErrorResult rv;
+  
+  
+  if (!mCacheStorage) {
+    return;
+  }
 
   
   
+  IgnoredErrorResult rv;
   RefPtr<Promise> promise = mCacheStorage->Delete(mCacheName, rv);
   if (NS_WARN_IF(rv.Failed())) {
-    rv.SuppressException();
     return;
   }
 
