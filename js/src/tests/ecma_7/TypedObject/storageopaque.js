@@ -1,5 +1,6 @@
 
 var BUGNUMBER = 898356;
+var summary = "";
 
 var {StructType, uint32, Object, Any, storage, objectType} = TypedObject;
 
