@@ -211,9 +211,9 @@ CSSTransition::QueueEvents()
   
   
   
-  TimeStamp zeroTimeStamp  = AnimationTimeToTimeStamp(zeroDuration);
-  TimeStamp startTimeStamp = ElapsedTimeToTimeStamp(intervalStartTime);
-  TimeStamp endTimeStamp   = ElapsedTimeToTimeStamp(intervalEndTime);
+  TimeStamp zeroTimeStamp   = AnimationTimeToTimeStamp(zeroDuration);
+  TimeStamp startTimeStamp  = ElapsedTimeToTimeStamp(intervalStartTime);
+  TimeStamp endTimeStamp    = ElapsedTimeToTimeStamp(intervalEndTime);
 
   TransitionPhase currentPhase;
   if (mPendingState != PendingState::NotPending &&
@@ -226,30 +226,44 @@ CSSTransition::QueueEvents()
   }
 
   AutoTArray<TransitionEventParams, 3> events;
+
+  
+  if (mPreviousTransitionPhase != TransitionPhase::Idle &&
+      currentPhase == TransitionPhase::Idle) {
+    
+    
+    StickyTimeDuration activeTime(0);
+    TimeStamp activeTimeStamp = ElapsedTimeToTimeStamp(activeTime);
+    events.AppendElement(TransitionEventParams{ eTransitionCancel,
+                                                activeTime,
+                                                activeTimeStamp });
+  }
+
+  
   switch (mPreviousTransitionPhase) {
     case TransitionPhase::Idle:
       if (currentPhase == TransitionPhase::Pending ||
           currentPhase == TransitionPhase::Before) {
         events.AppendElement(TransitionEventParams{ eTransitionRun,
-                                                   intervalStartTime,
-                                                   zeroTimeStamp });
+                                                    intervalStartTime,
+                                                    zeroTimeStamp });
       } else if (currentPhase == TransitionPhase::Active) {
         events.AppendElement(TransitionEventParams{ eTransitionRun,
-                                                   intervalStartTime,
-                                                   zeroTimeStamp });
+                                                    intervalStartTime,
+                                                    zeroTimeStamp });
         events.AppendElement(TransitionEventParams{ eTransitionStart,
-                                                   intervalStartTime,
-                                                   startTimeStamp });
+                                                    intervalStartTime,
+                                                    startTimeStamp });
       } else if (currentPhase == TransitionPhase::After) {
         events.AppendElement(TransitionEventParams{ eTransitionRun,
-                                                   intervalStartTime,
-                                                   zeroTimeStamp });
+                                                    intervalStartTime,
+                                                    zeroTimeStamp });
         events.AppendElement(TransitionEventParams{ eTransitionStart,
-                                                   intervalStartTime,
-                                                   startTimeStamp });
+                                                    intervalStartTime,
+                                                    startTimeStamp });
         events.AppendElement(TransitionEventParams{ eTransitionEnd,
-                                                   intervalEndTime,
-                                                   endTimeStamp });
+                                                    intervalEndTime,
+                                                    endTimeStamp });
       }
       break;
 
@@ -257,42 +271,42 @@ CSSTransition::QueueEvents()
     case TransitionPhase::Before:
       if (currentPhase == TransitionPhase::Active) {
         events.AppendElement(TransitionEventParams{ eTransitionStart,
-                                                   intervalStartTime,
-                                                   startTimeStamp });
+                                                    intervalStartTime,
+                                                    startTimeStamp });
       } else if (currentPhase == TransitionPhase::After) {
         events.AppendElement(TransitionEventParams{ eTransitionStart,
-                                                   intervalStartTime,
-                                                   startTimeStamp });
+                                                    intervalStartTime,
+                                                    startTimeStamp });
         events.AppendElement(TransitionEventParams{ eTransitionEnd,
-                                                   intervalEndTime,
-                                                   endTimeStamp });
+                                                    intervalEndTime,
+                                                    endTimeStamp });
       }
       break;
 
     case TransitionPhase::Active:
       if (currentPhase == TransitionPhase::After) {
         events.AppendElement(TransitionEventParams{ eTransitionEnd,
-                                                   intervalEndTime,
-                                                   endTimeStamp });
+                                                    intervalEndTime,
+                                                    endTimeStamp });
       } else if (currentPhase == TransitionPhase::Before) {
         events.AppendElement(TransitionEventParams{ eTransitionEnd,
-                                                   intervalStartTime,
-                                                   startTimeStamp });
+                                                    intervalStartTime,
+                                                    startTimeStamp });
       }
       break;
 
     case TransitionPhase::After:
       if (currentPhase == TransitionPhase::Active) {
         events.AppendElement(TransitionEventParams{ eTransitionStart,
-                                                   intervalEndTime,
-                                                   startTimeStamp });
+                                                    intervalEndTime,
+                                                    startTimeStamp });
       } else if (currentPhase == TransitionPhase::Before) {
         events.AppendElement(TransitionEventParams{ eTransitionStart,
-                                                   intervalEndTime,
-                                                   startTimeStamp });
+                                                    intervalEndTime,
+                                                    startTimeStamp });
         events.AppendElement(TransitionEventParams{ eTransitionEnd,
-                                                   intervalStartTime,
-                                                   endTimeStamp });
+                                                    intervalStartTime,
+                                                    endTimeStamp });
       }
       break;
   }
