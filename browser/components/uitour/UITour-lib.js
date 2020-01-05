@@ -3,6 +3,8 @@
 
 
 
+
+
 if (typeof Mozilla == "undefined") {
   var Mozilla = {};
 }
@@ -12,6 +14,19 @@ if (typeof Mozilla == "undefined") {
 
   
   if (typeof Mozilla.UITour == "undefined") {
+    
+
+
+
+
+
+
+
+
+
+
+
+
     Mozilla.UITour = {};
   }
 
@@ -71,6 +86,53 @@ if (typeof Mozilla == "undefined") {
   Mozilla.UITour.CONFIGNAME_SYNC = "sync";
   Mozilla.UITour.CONFIGNAME_AVAILABLETARGETS = "availableTargets";
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
   Mozilla.UITour.ping = function(callback) {
     var data = {};
     if (callback) {
@@ -78,6 +140,16 @@ if (typeof Mozilla == "undefined") {
     }
     _sendEvent("ping", data);
   };
+
+  
+
+
+
+
+
+
+
+
 
   Mozilla.UITour.observe = function(listener, callback) {
     notificationListener = listener;
@@ -92,11 +164,41 @@ if (typeof Mozilla == "undefined") {
     }
   };
 
+  
+
+
+
+
+
+
+
+
+
+
   Mozilla.UITour.registerPageID = function(pageID) {
     _sendEvent("registerPageID", {
       pageID
     });
   };
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   Mozilla.UITour.showHeartbeat = function(message, thankyouMessage, flowId, engagementURL,
 					  learnMoreLabel, learnMoreURL, options) {
@@ -121,6 +223,31 @@ if (typeof Mozilla == "undefined") {
     _sendEvent("showHeartbeat", args);
   };
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
   Mozilla.UITour.showHighlight = function(target, effect) {
     _sendEvent("showHighlight", {
       target,
@@ -128,9 +255,53 @@ if (typeof Mozilla == "undefined") {
     });
   };
 
+  
+
+
+
   Mozilla.UITour.hideHighlight = function() {
     _sendEvent("hideHighlight");
   };
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   Mozilla.UITour.showInfo = function(target, title, text, icon, buttons, options) {
     var buttonData = [];
@@ -162,9 +333,43 @@ if (typeof Mozilla == "undefined") {
     });
   };
 
+  
+
+
+
   Mozilla.UITour.hideInfo = function() {
     _sendEvent("hideInfo");
   };
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   Mozilla.UITour.previewTheme = function(theme) {
     _stopCyclingThemes();
@@ -174,11 +379,27 @@ if (typeof Mozilla == "undefined") {
     });
   };
 
+  
+
+
+
+
   Mozilla.UITour.resetTheme = function() {
     _stopCyclingThemes();
 
     _sendEvent("resetTheme");
   };
+
+  
+
+
+
+
+
+
+
+
+
 
   Mozilla.UITour.cycleThemes = function(themes, delay, callback) {
     _stopCyclingThemes();
@@ -203,6 +424,34 @@ if (typeof Mozilla == "undefined") {
     nextTheme();
   };
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
   Mozilla.UITour.showMenu = function(name, callback) {
     var showCallbackID;
     if (callback)
@@ -214,15 +463,102 @@ if (typeof Mozilla == "undefined") {
     });
   };
 
+  
+
+
+
+
+
+
   Mozilla.UITour.hideMenu = function(name) {
     _sendEvent("hideMenu", {
       name
     });
   };
 
+  
+
+
+
   Mozilla.UITour.showNewTab = function() {
     _sendEvent("showNewTab");
   };
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+
+
+
+
 
   Mozilla.UITour.getConfiguration = function(configName, callback) {
     _sendEvent("getConfiguration", {
@@ -230,6 +566,21 @@ if (typeof Mozilla == "undefined") {
       configuration: configName,
     });
   };
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   Mozilla.UITour.setConfiguration = function(configName, configValue) {
     _sendEvent("setConfiguration", {
@@ -248,15 +599,46 @@ if (typeof Mozilla == "undefined") {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
   Mozilla.UITour.showFirefoxAccounts = function(extraURLCampaignParams) {
     _sendEvent("showFirefoxAccounts", {
       extraURLCampaignParams: JSON.stringify(extraURLCampaignParams),
     });
   };
 
+  
+
+
+
+
+
+
+
   Mozilla.UITour.resetFirefox = function() {
     _sendEvent("resetFirefox");
   };
+
+  
+
+
+
+
+
+
+
+
+
+
 
   Mozilla.UITour.addNavBarWidget = function(name, callback) {
     _sendEvent("addNavBarWidget", {
@@ -265,11 +647,29 @@ if (typeof Mozilla == "undefined") {
     });
   };
 
+  
+
+
+
+
+
+
+
+
   Mozilla.UITour.setDefaultSearchEngine = function(identifier) {
     _sendEvent("setDefaultSearchEngine", {
       identifier,
     });
   };
+
+  
+
+
+
+
+
+
+
 
   Mozilla.UITour.setTreatmentTag = function(name, value) {
     _sendEvent("setTreatmentTag", {
@@ -278,6 +678,18 @@ if (typeof Mozilla == "undefined") {
     });
   };
 
+  
+
+
+
+
+
+
+
+
+
+
+
   Mozilla.UITour.getTreatmentTag = function(name, callback) {
     _sendEvent("getTreatmentTag", {
       name,
@@ -285,11 +697,27 @@ if (typeof Mozilla == "undefined") {
     });
   };
 
+  
+
+
+
+
+
+
+
   Mozilla.UITour.setSearchTerm = function(term) {
     _sendEvent("setSearchTerm", {
       term
     });
   };
+
+  
+
+
+
+
+
+
 
   Mozilla.UITour.openSearchPanel = function(callback) {
     _sendEvent("openSearchPanel", {
@@ -297,13 +725,39 @@ if (typeof Mozilla == "undefined") {
     });
   };
 
+  
+
+
+
+
+
+
   Mozilla.UITour.forceShowReaderIcon = function() {
     _sendEvent("forceShowReaderIcon");
   };
 
+  
+
+
+
+
   Mozilla.UITour.toggleReaderMode = function() {
     _sendEvent("toggleReaderMode");
   };
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
 
   Mozilla.UITour.openPreferences = function(pane) {
     _sendEvent("openPreferences", {
@@ -312,6 +766,7 @@ if (typeof Mozilla == "undefined") {
   };
 
   
+
 
 
 
