@@ -80,6 +80,17 @@ impl CollapsibleMargins {
     pub fn new() -> CollapsibleMargins {
         CollapsibleMargins::None(Au(0), Au(0))
     }
+
+    
+    
+    
+    pub fn block_start_margin_for_noncollapsible_context(&self) -> Au {
+        match *self {
+            CollapsibleMargins::None(block_start, _) => block_start,
+            CollapsibleMargins::Collapse(ref block_start, _) |
+            CollapsibleMargins::CollapseThrough(ref block_start) => block_start.collapse(),
+        }
+    }
 }
 
 enum FinalMarginState {

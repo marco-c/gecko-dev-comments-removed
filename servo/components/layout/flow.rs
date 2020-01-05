@@ -58,11 +58,12 @@ use std::fmt;
 use std::iter::Zip;
 use std::num::FromPrimitive;
 use std::raw;
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::slice::IterMut;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use style::computed_values::{clear, empty_cells, float, position, text_align};
 use style::properties::ComputedValues;
-use std::sync::Arc;
+use style::values::computed::LengthOrPercentageOrAuto;
 
 
 
@@ -428,16 +429,6 @@ pub trait MutableFlowUtils {
 
     
     
-    
-    
-    
-    
-    
-    
-    fn collect_static_block_offsets_from_children(self);
-
-    
-    
     fn repair_style_and_bubble_inline_sizes(self, style: &Arc<ComputedValues>);
 }
 
@@ -548,7 +539,17 @@ bitflags! {
         const AFFECTS_COUNTERS = 0b0000_1000_0000_0000_0000,
         #[doc = "Whether this flow's descendants have fragments that affect `counter-reset` or \
                  `counter-increment` styles."]
-        const HAS_COUNTER_AFFECTING_CHILDREN = 0b0001_0000_0000_0000_0000
+        const HAS_COUNTER_AFFECTING_CHILDREN = 0b0001_0000_0000_0000_0000,
+        #[doc = "Whether this flow behaves as though it had `position: static` for the purposes \
+                 of positioning in the inline direction. This is set for flows with `position: \
+                 static` and `position: relative` as well as absolutely-positioned flows with \
+                 unconstrained positions in the inline direction."]
+        const INLINE_POSITION_IS_STATIC = 0b0010_0000_0000_0000_0000,
+        #[doc = "Whether this flow behaves as though it had `position: static` for the purposes \
+                 of positioning in the block direction. This is set for flows with `position: \
+                 static` and `position: relative` as well as absolutely-positioned flows with \
+                 unconstrained positions in the block direction."]
+        const BLOCK_POSITION_IS_STATIC = 0b0100_0000_0000_0000_0000,
     }
 }
 
@@ -637,16 +638,12 @@ pub struct Descendants {
     
     
     descendant_links: Vec<FlowRef>,
-
-    
-    pub static_block_offsets: Vec<Au>,
 }
 
 impl Descendants {
     pub fn new() -> Descendants {
         Descendants {
             descendant_links: Vec::new(),
-            static_block_offsets: Vec::new(),
         }
     }
 
@@ -676,14 +673,6 @@ impl Descendants {
         DescendantIter {
             iter: self.descendant_links.iter_mut(),
         }
-    }
-
-    
-    pub fn iter_with_offset<'a>(&'a mut self) -> DescendantOffsetIter<'a> {
-        let descendant_iter = DescendantIter {
-            iter: self.descendant_links.iter_mut(),
-        };
-        descendant_iter.zip(self.static_block_offsets.iter_mut())
     }
 }
 
@@ -916,37 +905,50 @@ impl BaseFlow {
                force_nonfloated: ForceNonfloatedFlag)
                -> BaseFlow {
         let mut flags = FlowFlags::empty();
-        if let Some(node) = node {
-            let node_style = node.style();
-            match node_style.get_box().position {
-                position::T::absolute | position::T::fixed => {
-                    flags.insert(IS_ABSOLUTELY_POSITIONED)
-                }
-                _ => {}
-            }
+        match node {
+            Some(node) => {
+                let node_style = node.style();
+                match node_style.get_box().position {
+                    position::T::absolute | position::T::fixed => {
+                        flags.insert(IS_ABSOLUTELY_POSITIONED);
 
-            if force_nonfloated == ForceNonfloatedFlag::FloatIfNecessary {
-                match node_style.get_box().float {
-                    float::T::none => {}
-                    float::T::left => flags.insert(FLOATS_LEFT),
-                    float::T::right => flags.insert(FLOATS_RIGHT),
+                        let logical_position = node_style.logical_position();
+                        if logical_position.inline_start == LengthOrPercentageOrAuto::Auto &&
+                                logical_position.inline_end == LengthOrPercentageOrAuto::Auto {
+                            flags.insert(INLINE_POSITION_IS_STATIC);
+                        }
+                        if logical_position.block_start == LengthOrPercentageOrAuto::Auto &&
+                                logical_position.block_end == LengthOrPercentageOrAuto::Auto {
+                            flags.insert(BLOCK_POSITION_IS_STATIC);
+                        }
+                    }
+                    _ => flags.insert(BLOCK_POSITION_IS_STATIC | INLINE_POSITION_IS_STATIC),
+                }
+
+                if force_nonfloated == ForceNonfloatedFlag::FloatIfNecessary {
+                    match node_style.get_box().float {
+                        float::T::none => {}
+                        float::T::left => flags.insert(FLOATS_LEFT),
+                        float::T::right => flags.insert(FLOATS_RIGHT),
+                    }
+                }
+
+                match node_style.get_box().clear {
+                    clear::T::none => {}
+                    clear::T::left => flags.insert(CLEARS_LEFT),
+                    clear::T::right => flags.insert(CLEARS_RIGHT),
+                    clear::T::both => {
+                        flags.insert(CLEARS_LEFT);
+                        flags.insert(CLEARS_RIGHT);
+                    }
+                }
+
+                if !node_style.get_counters().counter_reset.0.is_empty() ||
+                        !node_style.get_counters().counter_increment.0.is_empty() {
+                    flags.insert(AFFECTS_COUNTERS)
                 }
             }
-
-            match node_style.get_box().clear {
-                clear::T::none => {}
-                clear::T::left => flags.insert(CLEARS_LEFT),
-                clear::T::right => flags.insert(CLEARS_RIGHT),
-                clear::T::both => {
-                    flags.insert(CLEARS_LEFT);
-                    flags.insert(CLEARS_RIGHT);
-                }
-            }
-
-            if !node_style.get_counters().counter_reset.0.is_empty() ||
-                    !node_style.get_counters().counter_increment.0.is_empty() {
-                flags.insert(AFFECTS_COUNTERS)
-            }
+            None => flags.insert(BLOCK_POSITION_IS_STATIC | INLINE_POSITION_IS_STATIC),
         }
 
         
@@ -1266,52 +1268,6 @@ impl<'a> MutableFlowUtils for &'a mut (Flow + 'a) {
         }
 
         mut_base(self).overflow = overflow;
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn collect_static_block_offsets_from_children(self) {
-        let mut absolute_descendant_block_offsets = Vec::new();
-        for kid in mut_base(self).child_iter() {
-            let mut gives_absolute_offsets = true;
-            if kid.is_block_like() {
-                let kid_block = kid.as_block();
-                if kid_block.is_fixed() || kid_block.base.flags.contains(IS_ABSOLUTELY_POSITIONED) {
-                    
-                    
-                    gives_absolute_offsets = false;
-                    
-                    absolute_descendant_block_offsets.push(
-                        kid_block.get_hypothetical_block_start_edge());
-                } else if kid_block.is_positioned() {
-                    
-                    
-                    gives_absolute_offsets = false;
-                }
-            }
-
-            if gives_absolute_offsets {
-                let kid_base = mut_base(kid);
-                
-                let offsets = mem::replace(&mut kid_base.abs_descendants.static_block_offsets,
-                                           Vec::new());
-                
-                for block_offset in offsets.into_iter() {
-                    
-                    
-                    absolute_descendant_block_offsets.push(
-                        block_offset + kid_base.position.start.b);
-                }
-            }
-        }
-        mut_base(self).abs_descendants.static_block_offsets = absolute_descendant_block_offsets
     }
 
     
