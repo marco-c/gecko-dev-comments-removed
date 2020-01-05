@@ -248,19 +248,6 @@ static inline bool profiler_in_privacy_mode() { return false; }
 static inline void profiler_log(const char *str) {}
 static inline void profiler_log(const char *fmt, va_list args) {}
 
-namespace mozilla {
-
-class AutoProfilerRegister final MOZ_STACK_CLASS
-{
-public:
-  explicit AutoProfilerRegister(const char* aName) {}
-private:
-  AutoProfilerRegister(const AutoProfilerRegister&) = delete;
-  AutoProfilerRegister& operator=(const AutoProfilerRegister&) = delete;
-};
-
-} 
-
 #else
 
 #include "GeckoProfilerImpl.h"
@@ -341,6 +328,26 @@ protected:
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
   const char* mCategory;
   const char* mInfo;
+};
+
+
+
+
+
+class MOZ_STACK_CLASS AutoProfilerRegister final
+{
+public:
+  explicit AutoProfilerRegister(const char* aName)
+  {
+    profiler_register_thread(aName, this);
+  }
+  ~AutoProfilerRegister()
+  {
+    profiler_unregister_thread();
+  }
+private:
+  AutoProfilerRegister(const AutoProfilerRegister&) = delete;
+  AutoProfilerRegister& operator=(const AutoProfilerRegister&) = delete;
 };
 
 } 
