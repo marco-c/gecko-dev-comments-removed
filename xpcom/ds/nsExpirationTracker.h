@@ -117,9 +117,14 @@ public:
     MOZ_ASSERT(NS_IsMainThread());
     if (mEventTarget) {
       bool current = false;
-      MOZ_RELEASE_ASSERT(
-        NS_SUCCEEDED(mEventTarget->IsOnCurrentThread(&current)) && current,
-        "Provided event target must be on the main thread");
+      
+      
+      
+      
+      if (MOZ_UNLIKELY(NS_FAILED(mEventTarget->IsOnCurrentThread(&current)) ||
+                       !current)) {
+        MOZ_CRASH("Provided event target must be on the main thread");
+      }
     }
     mObserver = new ExpirationTrackerObserver();
     mObserver->Init(this);
