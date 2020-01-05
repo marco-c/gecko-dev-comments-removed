@@ -17,6 +17,12 @@
 
 #include "nsCharTraits.h"
 
+#ifdef MOZILLA_INTERNAL_API
+#define UTF8UTILS_WARNING(msg) NS_WARNING(msg)
+#else
+#define UTF8UTILS_WARNING(msg)
+#endif
+
 class UTF8traits
 {
 public:
@@ -210,7 +216,7 @@ public:
         
         
 
-        NS_WARNING("Unexpected end of buffer after high surrogate");
+        UTF8UTILS_WARNING("Unexpected end of buffer after high surrogate");
 
         if (aErr) {
           *aErr = true;
@@ -243,7 +249,7 @@ public:
         
         
         
-        NS_WARNING("got a High Surrogate but no low surrogate");
+        UTF8UTILS_WARNING("got a High Surrogate but no low surrogate");
 
         if (aErr) {
           *aErr = true;
@@ -258,7 +264,7 @@ public:
       
       
 
-      NS_WARNING("got a low Surrogate but no high surrogate");
+      UTF8UTILS_WARNING("got a low Surrogate but no high surrogate");
       if (aErr) {
         *aErr = true;
       }
@@ -492,7 +498,7 @@ public:
           *out++ = '\xBF';
           *out++ = '\xBD';
 
-          NS_WARNING("String ending in half a surrogate pair!");
+          UTF8UTILS_WARNING("String ending in half a surrogate pair!");
 
           break;
         }
@@ -525,7 +531,7 @@ public:
           
           p--;
 
-          NS_WARNING("got a High Surrogate but no low surrogate");
+          UTF8UTILS_WARNING("got a High Surrogate but no low surrogate");
         }
       } else { 
         
@@ -535,7 +541,7 @@ public:
         *out++ = '\xBD';
 
         
-        NS_WARNING("got a low Surrogate but no high surrogate");
+        UTF8UTILS_WARNING("got a low Surrogate but no high surrogate");
       }
     }
 
@@ -591,7 +597,7 @@ public:
           
           mSize += 3;
 
-          NS_WARNING("String ending in half a surrogate pair!");
+          UTF8UTILS_WARNING("String ending in half a surrogate pair!");
 
           break;
         }
@@ -614,14 +620,14 @@ public:
           
           p--;
 
-          NS_WARNING("got a high Surrogate but no low surrogate");
+          UTF8UTILS_WARNING("got a high Surrogate but no low surrogate");
         }
       } else { 
         
         
         mSize += 3;
 
-        NS_WARNING("got a low Surrogate but no high surrogate");
+        UTF8UTILS_WARNING("got a low Surrogate but no high surrogate");
       }
     }
   }
@@ -738,5 +744,7 @@ RewindToPriorUTF8Codepoint(const Char* utf8Chars, UnsignedT index)
 
   return index;
 }
+
+#undef UTF8UTILS_WARNING
 
 #endif 
