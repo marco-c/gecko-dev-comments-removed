@@ -52,7 +52,6 @@ pub enum Origin {
 
 
 #[derive(Default, Debug)]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 #[allow(missing_docs)]
 pub struct Namespaces {
     pub default: Option<Namespace>,
@@ -389,7 +388,6 @@ impl ToCss for CssRule {
 }
 
 #[derive(Debug, PartialEq)]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 #[allow(missing_docs)]
 pub struct NamespaceRule {
     
@@ -536,7 +534,7 @@ impl ToCss for StyleRule {
         let declaration_block = self.block.read();
         try!(declaration_block.to_css(dest));
         
-        if declaration_block.declarations.len() > 0 {
+        if declaration_block.declarations().len() > 0 {
             try!(write!(dest, " "));
         }
         

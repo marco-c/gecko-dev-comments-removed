@@ -99,7 +99,7 @@ impl StyleSource {
             let _ = write!(writer, "{:?}", rule.read().selectors);
         }
 
-        let _ = write!(writer, "  -> {:?}", self.read().declarations);
+        let _ = write!(writer, "  -> {:?}", self.read().declarations());
     }
 
     

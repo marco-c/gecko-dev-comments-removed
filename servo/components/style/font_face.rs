@@ -21,7 +21,7 @@ use values::specified::url::SpecifiedUrl;
 
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf, Deserialize, Serialize))]
+#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 pub enum Source {
     
     Url(UrlSource),
@@ -54,7 +54,7 @@ impl OneOrMoreCommaSeparated for Source {}
 
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf, Deserialize, Serialize))]
+#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 pub struct UrlSource {
     
     pub url: SpecifiedUrl,
@@ -184,7 +184,6 @@ macro_rules! font_face_descriptors {
         ///
         /// https://drafts.csswg.org/css-fonts/#font-face-rule
         #[derive(Debug, PartialEq, Eq)]
-        #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
         pub struct FontFaceRule {
             $(
                 #[$m_doc]
