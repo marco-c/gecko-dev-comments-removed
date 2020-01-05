@@ -611,68 +611,6 @@ abstract class BaseTest extends BaseRobocopTest {
         }
     }
 
-    
-
-
-
-
-    private final RecyclerView getTabsLayout() {
-        Element tabs = mDriver.findElement(getActivity(), R.id.tabs);
-        tabs.click();
-        return (RecyclerView) getActivity().findViewById(R.id.normal_tabs);
-    }
-
-    
-
-
-
-
-    private View getTabViewAt(final int index) {
-        final View[] childView = { null };
-
-        final RecyclerView view = getTabsLayout();
-
-        runOnUiThreadSync(new Runnable() {
-            @Override
-            public void run() {
-                view.scrollToPosition(index);
-
-                
-                
-                
-                view.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        
-                        final RecyclerView.ViewHolder itemViewHolder =
-                                view.findViewHolderForLayoutPosition(index);
-                        childView[0] = itemViewHolder == null ? null : itemViewHolder.itemView;
-                    }
-                });
-            }
-        });
-
-        boolean result = waitForCondition(new Condition() {
-            @Override
-            public boolean isSatisfied() {
-                return childView[0] != null;
-            }
-        }, MAX_WAIT_MS);
-
-        mAsserter.ok(result, "list item at index " + index + " exists", null);
-
-        return childView[0];
-    }
-
-    
-
-
-
-
-    public void selectTabAt(final int index) {
-        mSolo.clickOnView(getTabViewAt(index));
-    }
-
     public final void runOnUiThreadSync(Runnable runnable) {
         RobocopUtils.runOnUiThreadSync(getActivity(), runnable);
     }
