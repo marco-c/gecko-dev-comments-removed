@@ -37,8 +37,6 @@ class gfxContext;
 
 namespace mozilla {
 class CompositorVsyncDispatcher;
-class LiveResizeListener;
-
 #ifdef ACCESSIBILITY
 namespace a11y {
 class Accessible;
@@ -400,13 +398,6 @@ public:
   uint64_t CreateScrollCaptureContainer() override;
 #endif
 
-  
-  
-  
-  
-  void NotifyLiveResizeStarted();
-  void NotifyLiveResizeStopped();
-
 protected:
   
   
@@ -717,11 +708,6 @@ protected:
   };
 
   mozilla::Maybe<InitialZoomConstraints> mInitialZoomConstraints;
-
-  
-  
-  
-  nsTArray<RefPtr<mozilla::LiveResizeListener>> mLiveResizeListeners;
 
 #ifdef DEBUG
 protected:
