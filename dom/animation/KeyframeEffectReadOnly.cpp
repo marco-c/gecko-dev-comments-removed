@@ -305,6 +305,34 @@ KeyframeEffectReadOnly::UpdateProperties(nsStyleContext* aStyleContext)
   RequestRestyle(EffectCompositor::RestyleType::Layer);
 }
 
+ StyleAnimationValue
+KeyframeEffectReadOnly::CompositeValue(
+  nsCSSPropertyID aProperty,
+  const StyleAnimationValue& aValueToComposite,
+  const StyleAnimationValue& aUnderlyingValue,
+  CompositeOperation aCompositeOperation)
+{
+  switch (aCompositeOperation) {
+    case dom::CompositeOperation::Replace:
+      return aValueToComposite;
+    case dom::CompositeOperation::Add:
+      
+      
+      
+      
+      
+      return aUnderlyingValue;
+    case dom::CompositeOperation::Accumulate:
+      
+      MOZ_ASSERT_UNREACHABLE("Not implemented yet");
+      break;
+    default:
+      MOZ_ASSERT_UNREACHABLE("Unknown compisite operation type");
+      break;
+  }
+  return StyleAnimationValue();
+}
+
 StyleAnimationValue
 KeyframeEffectReadOnly::CompositeValue(
   nsCSSPropertyID aProperty,
@@ -350,26 +378,10 @@ KeyframeEffectReadOnly::CompositeValue(
     SetNeedsBaseStyle(aProperty);
   }
 
-  switch (aCompositeOperation) {
-    case dom::CompositeOperation::Add:
-      
-      
-      
-      
-      
-      return result;
-    case dom::CompositeOperation::Accumulate:
-      
-      MOZ_ASSERT_UNREACHABLE("Not implemented yet");
-      break;
-    case dom::CompositeOperation::Replace:
-      MOZ_ASSERT_UNREACHABLE("Replace should have already handled");
-      break;
-    default:
-      MOZ_ASSERT_UNREACHABLE("Unknown compisite operation type");
-      break;
-  }
-  return result;
+  return CompositeValue(aProperty,
+                        aValueToComposite,
+                        result,
+                        aCompositeOperation);
 }
 
 void

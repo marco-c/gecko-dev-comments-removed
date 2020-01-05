@@ -1418,6 +1418,11 @@ public:
 
   bool HasTransformAnimation() const;
 
+  StyleAnimationValue GetBaseAnimationStyle() const
+  {
+    return mBaseAnimationStyle;
+  }
+
   
 
 

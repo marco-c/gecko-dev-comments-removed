@@ -289,6 +289,16 @@ public:
   
   void ComposeStyle(RefPtr<AnimValuesStyleRule>& aStyleRule,
                     const nsCSSPropertyIDSet& aPropertiesToSkip);
+
+  
+  
+  
+  static StyleAnimationValue CompositeValue(
+    nsCSSPropertyID aProperty,
+    const StyleAnimationValue& aValueToComposite,
+    const StyleAnimationValue& aUnderlyingValue,
+    CompositeOperation aCompositeOperation);
+
   
   bool IsRunningOnCompositor() const;
   void SetIsRunningOnCompositor(nsCSSPropertyID aProperty, bool aIsRunning);
