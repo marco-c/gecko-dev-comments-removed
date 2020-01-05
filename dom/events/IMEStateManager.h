@@ -142,7 +142,7 @@ public:
   
   static bool OnMouseButtonEventInEditor(nsPresContext* aPresContext,
                                          nsIContent* aContent,
-                                         nsIDOMMouseEvent* aMouseEvent);
+                                         WidgetMouseEvent* aMouseEvent);
 
   
   
