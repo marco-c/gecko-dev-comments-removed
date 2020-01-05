@@ -32,6 +32,10 @@
 #include "mozilla/StyleSheet.h"
 #include "mozilla/StyleSheetInlines.h"
 
+#ifdef ENABLE_INTL_API
+#include "unicode/uloc.h"
+#endif
+
 nsChromeRegistry* nsChromeRegistry::gChromeRegistry;
 
 
@@ -708,4 +712,33 @@ nsChromeRegistry::GetSingleton()
     return nullptr;
 
   return cr.forget();
+}
+
+void
+nsChromeRegistry::SanitizeForBCP47(nsACString& aLocale)
+{
+#ifdef ENABLE_INTL_API
+  
+  
+  
+  const int32_t LANG_TAG_CAPACITY = 128;
+  char langTag[LANG_TAG_CAPACITY];
+  nsAutoCString locale(aLocale);
+  UErrorCode err = U_ZERO_ERROR;
+  
+  
+  int32_t len = uloc_toLanguageTag(locale.get(), langTag, LANG_TAG_CAPACITY,
+                                   false, &err);
+  if (U_SUCCESS(err) && len > 0) {
+    aLocale.Assign(langTag, len);
+  }
+#else
+  
+  
+  
+  
+  if (aLocale.EqualsLiteral("ja-JP-mac")) {
+    aLocale.AssignLiteral("ja-JP");
+  }
+#endif
 }
