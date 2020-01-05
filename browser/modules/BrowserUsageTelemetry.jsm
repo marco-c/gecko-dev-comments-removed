@@ -261,14 +261,13 @@ let urlbarListener = {
 
     
     
-    
-    
-    
-    
     if (actionType in URLBAR_SELECTED_RESULT_TYPES) {
       Services.telemetry
               .getHistogramById("FX_URLBAR_SELECTED_RESULT_TYPE")
               .add(URLBAR_SELECTED_RESULT_TYPES[actionType]);
+      Services.telemetry
+              .getKeyedHistogramById("FX_URLBAR_SELECTED_RESULT_INDEX_BY_TYPE")
+              .add(actionType, idx);
     } else {
       Cu.reportError("Unknown FX_URLBAR_SELECTED_RESULT_TYPE type: " +
                      actionType);
