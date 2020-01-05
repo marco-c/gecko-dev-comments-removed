@@ -119,6 +119,15 @@ public:
   
   uint64_t AllocateLayerTreeId();
 
+  
+  
+  
+  
+  
+  bool AllocateAndConnectLayerTreeId(
+    PCompositorBridgeChild* aCompositorBridge,
+    base::ProcessId aOtherPid,
+    uint64_t* aOutLayersId);
 
   void OnProcessLaunchComplete(GPUProcessHost* aHost) override;
   void OnProcessUnexpectedShutdown(GPUProcessHost* aHost) override;
