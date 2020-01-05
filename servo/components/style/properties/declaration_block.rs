@@ -203,15 +203,8 @@ impl PropertyDeclarationBlock {
     }
 
     
-    
-    pub fn set_parsed_declaration(&mut self,
-                                  declaration: PropertyDeclaration,
-                                  importance: Importance) -> bool {
-        self.push_common(declaration, importance, true)
-    }
-
-    fn push_common(&mut self, declaration: PropertyDeclaration, importance: Importance,
-                   overwrite_more_important: bool) -> bool {
+    pub fn push_common(&mut self, declaration: PropertyDeclaration, importance: Importance,
+                       overwrite_more_important: bool) -> bool {
         let definitely_new = if let PropertyDeclarationId::Longhand(id) = declaration.id() {
             !self.longhands.contains(id)
         } else {
@@ -697,7 +690,7 @@ pub fn parse_property_declaration_list(context: &ParserContext,
     let mut iter = DeclarationListParser::new(input, parser);
     while let Some(declaration) = iter.next() {
         match declaration {
-            Ok((parsed, importance)) => parsed.expand(|d| block.push(d, importance)),
+            Ok((parsed, importance)) => parsed.expand_push_into(&mut block, importance),
             Err(range) => {
                 let pos = range.start;
                 let message = format!("Unsupported property declaration: '{}'",
