@@ -18,8 +18,8 @@ use util::geometry::{PagePx, ViewportPx};
 use std::collections::HashMap;
 use std::sync::mpsc::{channel, Sender, Receiver};
 use style::viewport::ViewportConstraints;
-use webdriver_traits::{WebDriverScriptCommand, LoadComplete};
 use url::Url;
+use webdriver_msg::{WebDriverScriptCommand, LoadComplete};
 
 #[derive(Clone)]
 pub struct ConstellationChan(pub Sender<Msg>);
@@ -231,7 +231,11 @@ pub enum Msg {
     
     TickAnimation(PipelineId),
     
-    GetRootPipeline(Sender<Option<PipelineId>>),
+    
+    GetPipeline(Option<FrameId>, Sender<Option<PipelineId>>),
+    
+    
+    GetFrame(PipelineId, SubpageId, Sender<Option<FrameId>>),
     
     Focus(PipelineId),
     
