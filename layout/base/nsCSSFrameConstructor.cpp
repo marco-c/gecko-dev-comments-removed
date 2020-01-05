@@ -8488,11 +8488,14 @@ nsCSSFrameConstructor::ContentRemoved(nsIContent*  aContainer,
     ServoRestyleManager::ClearServoDataFromSubtree(aChild->AsElement());
   }
 
+  nsPresContext* presContext = mPresShell->GetPresContext();
+  MOZ_ASSERT(presContext, "Our presShell should have a valid presContext");
+
   if (aChild->IsHTMLElement(nsGkAtoms::body) ||
       (!aContainer && aChild->IsElement())) {
     
     
-    mPresShell->GetPresContext()->UpdateViewportScrollbarStylesOverride();
+    presContext->UpdateViewportScrollbarStylesOverride();
   }
 
   
@@ -8554,7 +8557,6 @@ nsCSSFrameConstructor::ContentRemoved(nsIContent*  aContainer,
     ClearDisplayContentsIn(aChild, aContainer);
   }
 
-  nsPresContext* presContext = mPresShell->GetPresContext();
 #ifdef MOZ_XUL
   if (NotifyListBoxBody(presContext, aContainer, aChild, aOldNextSibling,
                         childFrame, CONTENT_REMOVED)) {
