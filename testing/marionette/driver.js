@@ -148,9 +148,6 @@ this.GeckoDriver = function(appName, server) {
     "proxy": {},
 
     
-    "platform": Services.sysinfo.getProperty("name").toUpperCase(),
-
-    
     "processId" : Services.appinfo.processID,
   };
 
