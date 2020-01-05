@@ -547,6 +547,10 @@ public:
 
   
   
+  static nsIPrincipal* SubjectPrincipal(JSContext* aCx);
+
+  
+  
   static nsIPrincipal* SubjectPrincipal();
 
   
@@ -820,16 +824,6 @@ public:
   
 
 
-  static bool IsInPrivateBrowsing(nsIDocument* aDoc);
-
-  
-
-
-  static bool IsInPrivateBrowsing(nsILoadGroup* aLoadGroup);
-
-  
-
-
 
 
 
@@ -893,37 +887,6 @@ public:
                                               uint32_t aColumnNumber = 0,
                                               MissingErrorLocationMode aLocationMode
                                                 = eUSE_CALLING_LOCATION);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  static nsresult ReportToConsoleByWindowID(const nsAString& aErrorText,
-                                            uint32_t aErrorFlags,
-                                            const nsACString& aCategory,
-                                            uint64_t aInnerWindowID,
-                                            nsIURI* aURI = nullptr,
-                                            const nsAFlatString& aSourceLine
-                                              = EmptyString(),
-                                            uint32_t aLineNumber = 0,
-                                            uint32_t aColumnNumber = 0,
-                                            MissingErrorLocationMode aLocationMode
-                                              = eUSE_CALLING_LOCATION);
 
   
 
@@ -2491,11 +2454,6 @@ public:
 
 
   static uint64_t GetInnerWindowID(nsIRequest* aRequest);
-
-  
-
-
-  static uint64_t GetInnerWindowID(nsILoadGroup* aLoadGroup);
 
   
 

@@ -1797,7 +1797,8 @@ nsContentUtils::ParseLegacyFontSize(const nsAString& aValue)
 bool
 nsContentUtils::IsControlledByServiceWorker(nsIDocument* aDocument)
 {
-  if (nsContentUtils::IsInPrivateBrowsing(aDocument)) {
+  if (aDocument &&
+      aDocument->NodePrincipal()->OriginAttributesRef().mPrivateBrowsingId) {
     return false;
   }
 
@@ -2083,11 +2084,8 @@ nsContentUtils::CallerHasPermission(JSContext* aCx, const nsAString& aPerm)
     return true;
   }
 
-  JSCompartment* c = js::GetContextCompartment(aCx);
-  nsIPrincipal* p = nsJSPrincipals::get(JS_GetCompartmentPrincipals(c));
-
   
-  return BasePrincipal::Cast(p)->AddonHasPermission(aPerm);
+  return BasePrincipal::Cast(SubjectPrincipal(aCx))->AddonHasPermission(aPerm);
 }
 
 
@@ -2173,16 +2171,8 @@ nsContentUtils::IsCallerContentXBL()
 bool
 nsContentUtils::IsSystemCaller(JSContext* aCx)
 {
-  MOZ_ASSERT(NS_IsMainThread());
-
   
-  
-  
-  JSCompartment *compartment = js::GetContextCompartment(aCx);
-  MOZ_ASSERT(compartment);
-
-  JSPrincipals *principals = JS_GetCompartmentPrincipals(compartment);
-  return nsJSPrincipals::get(principals) == sSystemPrincipal;
+  return SubjectPrincipal(aCx) == sSystemPrincipal;
 }
 
 bool
@@ -2778,6 +2768,22 @@ nsContentUtils::GenerateStateKey(nsIContent* aContent,
 
 
 nsIPrincipal*
+nsContentUtils::SubjectPrincipal(JSContext* aCx)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  
+  
+  
+  JSCompartment* compartment = js::GetContextCompartment(aCx);
+  MOZ_ASSERT(compartment);
+
+  JSPrincipals* principals = JS_GetCompartmentPrincipals(compartment);
+  return nsJSPrincipals::get(principals);
+}
+
+
+nsIPrincipal*
 nsContentUtils::SubjectPrincipal()
 {
   MOZ_ASSERT(IsInitialized());
@@ -2813,8 +2819,7 @@ nsContentUtils::SubjectPrincipal()
     return sNullSubjectPrincipal;
   }
 
-  JSPrincipals *principals = JS_GetCompartmentPrincipals(compartment);
-  return nsJSPrincipals::get(principals);
+  return SubjectPrincipal(cx);
 }
 
 
@@ -3201,40 +3206,6 @@ nsContentUtils::GetOriginAttributes(nsILoadGroup* aLoadGroup)
   return attrs;
 }
 
-
-bool
-nsContentUtils::IsInPrivateBrowsing(nsIDocument* aDoc)
-{
-  if (!aDoc) {
-    return false;
-  }
-
-  nsCOMPtr<nsILoadGroup> loadGroup = aDoc->GetDocumentLoadGroup();
-  if (loadGroup) {
-    return IsInPrivateBrowsing(loadGroup);
-  }
-
-  nsCOMPtr<nsIChannel> channel = aDoc->GetChannel();
-  return channel && NS_UsePrivateBrowsing(channel);
-}
-
-
-bool
-nsContentUtils::IsInPrivateBrowsing(nsILoadGroup* aLoadGroup)
-{
-  if (!aLoadGroup) {
-    return false;
-  }
-  bool isPrivate = false;
-  nsCOMPtr<nsIInterfaceRequestor> callbacks;
-  aLoadGroup->GetNotificationCallbacks(getter_AddRefs(callbacks));
-  if (callbacks) {
-    nsCOMPtr<nsILoadContext> loadContext = do_GetInterface(callbacks);
-    isPrivate = loadContext && loadContext->UsePrivateBrowsing();
-  }
-  return isPrivate;
-}
-
 bool
 nsContentUtils::DocumentInactiveForImageLoads(nsIDocument* aDocument)
 {
@@ -3254,9 +3225,26 @@ nsContentUtils::GetImgLoaderForDocument(nsIDocument* aDoc)
   if (!aDoc) {
     return imgLoader::NormalLoader();
   }
-  bool isPrivate = IsInPrivateBrowsing(aDoc);
-  return isPrivate ? imgLoader::PrivateBrowsingLoader()
-                   : imgLoader::NormalLoader();
+
+  nsCOMPtr<nsILoadGroup> loadGroup = aDoc->GetDocumentLoadGroup();
+  if (loadGroup) {
+    nsCOMPtr<nsIInterfaceRequestor> callbacks;
+    loadGroup->GetNotificationCallbacks(getter_AddRefs(callbacks));
+    if (callbacks) {
+      nsCOMPtr<nsILoadContext> loadContext = do_GetInterface(callbacks);
+      if (loadContext && loadContext->UsePrivateBrowsing()) {
+        return imgLoader::PrivateBrowsingLoader();
+      }
+    }
+    return imgLoader::NormalLoader();
+  }
+
+  nsCOMPtr<nsIChannel> channel = aDoc->GetChannel();
+  if (channel && NS_UsePrivateBrowsing(channel)) {
+    return imgLoader::PrivateBrowsingLoader();
+  }
+
+  return imgLoader::NormalLoader();
 }
 
 
@@ -3688,22 +3676,6 @@ nsContentUtils::ReportToConsoleNonLocalized(const nsAString& aErrorText,
     innerWindowID = aDocument->InnerWindowID();
   }
 
-  return ReportToConsoleByWindowID(aErrorText, aErrorFlags, aCategory,
-                                   innerWindowID, aURI, aSourceLine,
-                                   aLineNumber, aColumnNumber, aLocationMode);
-}
-
- nsresult
-nsContentUtils::ReportToConsoleByWindowID(const nsAString& aErrorText,
-                                          uint32_t aErrorFlags,
-                                          const nsACString& aCategory,
-                                          uint64_t aInnerWindowID,
-                                          nsIURI* aURI,
-                                          const nsAFlatString& aSourceLine,
-                                          uint32_t aLineNumber,
-                                          uint32_t aColumnNumber,
-                                          MissingErrorLocationMode aLocationMode)
-{
   nsresult rv;
   if (!sConsoleService) { 
     rv = CallGetService(NS_CONSOLESERVICE_CONTRACTID, &sConsoleService);
@@ -3730,7 +3702,7 @@ nsContentUtils::ReportToConsoleByWindowID(const nsAString& aErrorText,
                                      aSourceLine,
                                      aLineNumber, aColumnNumber,
                                      aErrorFlags, aCategory,
-                                     aInnerWindowID);
+                                     innerWindowID);
   NS_ENSURE_SUCCESS(rv, rv);
 
   return sConsoleService->LogMessage(errorObject);
@@ -7369,18 +7341,8 @@ nsContentUtils::GetInnerWindowID(nsIRequest* aRequest)
     return 0;
   }
 
-  return GetInnerWindowID(loadGroup);
-}
-
-uint64_t
-nsContentUtils::GetInnerWindowID(nsILoadGroup* aLoadGroup)
-{
-  if (!aLoadGroup) {
-    return 0;
-  }
-
   nsCOMPtr<nsIInterfaceRequestor> callbacks;
-  nsresult rv = aLoadGroup->GetNotificationCallbacks(getter_AddRefs(callbacks));
+  rv = loadGroup->GetNotificationCallbacks(getter_AddRefs(callbacks));
   if (NS_FAILED(rv) || !callbacks) {
     return 0;
   }
@@ -8663,7 +8625,7 @@ nsContentUtils::InternalStorageAllowedForPrincipal(nsIPrincipal* aPrincipal,
     }
 
     
-    if (IsInPrivateBrowsing(document)) {
+    if (document->NodePrincipal()->OriginAttributesRef().mPrivateBrowsingId) {
       access = StorageAccess::ePrivateBrowsing;
     }
   }
