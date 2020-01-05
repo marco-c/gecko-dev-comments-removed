@@ -28,6 +28,7 @@
 #include "jstypes.h"
 #include "jsutil.h"
 
+#include "ds/Nestable.h"
 #include "frontend/Parser.h"
 #include "frontend/TokenStream.h"
 #include "vm/Debugger.h"
@@ -9231,6 +9232,41 @@ BytecodeEmitter::isRestParameter(ParseNode* pn)
 }
 
 bool
+BytecodeEmitter::emitOptimizeSpread(ParseNode* arg0, JumpList* jmp, bool* emitted)
+{
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (!isRestParameter(arg0)) {
+        *emitted = false;
+        return true;
+    }
+
+    if (!emitTree(arg0))
+        return false;
+
+    if (!emit1(JSOP_OPTIMIZE_SPREADCALL))
+        return false;
+
+    if (!emitJump(JSOP_IFNE, jmp))
+        return false;
+
+    if (!emit1(JSOP_POP))
+        return false;
+
+    *emitted = true;
+    return true;
+}
+
+bool
 BytecodeEmitter::emitCallOrNew(ParseNode* pn, ValueUsage valueUsage )
 {
     bool callop = pn->isKind(PNK_CALL) || pn->isKind(PNK_TAGGED_TEMPLATE);
@@ -9387,43 +9423,18 @@ BytecodeEmitter::emitCallOrNew(ParseNode* pn, ValueUsage valueUsage )
         }
     } else {
         ParseNode* args = pn2->pn_next;
-        bool emitOptCode = (argc == 1) && isRestParameter(args->pn_kid);
-        IfThenElseEmitter ifNotOptimizable(this);
-
-        if (emitOptCode) {
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-
-            if (!emitTree(args->pn_kid))
-                return false;
-
-            if (!emit1(JSOP_OPTIMIZE_SPREADCALL))
-                return false;
-
-            if (!emit1(JSOP_NOT))
-                return false;
-
-            if (!ifNotOptimizable.emitIf())
-                return false;
-
-            if (!emit1(JSOP_POP))
+        JumpList jmp;
+        bool optCodeEmitted = false;
+        if (argc == 1) {
+            if (!emitOptimizeSpread(args->pn_kid, &jmp, &optCodeEmitted))
                 return false;
         }
 
         if (!emitArray(args, argc, JSOP_SPREADCALLARRAY))
             return false;
 
-        if (emitOptCode) {
-            if (!ifNotOptimizable.emitEnd())
+        if (optCodeEmitted) {
+            if (!emitJumpTargetAndPatch(jmp))
                 return false;
         }
 
