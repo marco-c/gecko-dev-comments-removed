@@ -1,12 +1,6 @@
 const kURL1 = "data:text/html,Should I stay or should I go?";
 const kURL2 = "data:text/html,I shouldn't be here!";
 
-add_task(function* setup() {
-  yield SpecialPowers.pushPrefEnv({
-    set: [["dom.ipc.processCount", 1]]
-  });
-});
-
 
 
 
