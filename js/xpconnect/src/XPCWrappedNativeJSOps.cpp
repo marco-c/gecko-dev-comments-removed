@@ -479,8 +479,8 @@ XPC_WN_CannotModifyPropertyStub(JSContext* cx, HandleObject obj, HandleId id,
 }
 
 bool
-XPC_WN_CantDeletePropertyStub(JSContext* cx, HandleObject obj, HandleId id,
-                              ObjectOpResult& result)
+XPC_WN_CannotDeletePropertyStub(JSContext* cx, HandleObject obj, HandleId id,
+                                ObjectOpResult& result)
 {
     return Throw(NS_ERROR_XPC_CANT_MODIFY_PROP_ON_WN, cx);
 }
@@ -624,7 +624,7 @@ XPC_WN_NoHelper_Resolve(JSContext* cx, HandleObject obj, HandleId id, bool* reso
 
 static const js::ClassOps XPC_WN_NoHelper_JSClassOps = {
     XPC_WN_OnlyIWrite_AddPropertyStub, 
-    XPC_WN_CantDeletePropertyStub,     
+    XPC_WN_CannotDeletePropertyStub,   
     nullptr,                           
     nullptr,                           
     XPC_WN_Shared_Enumerate,           
@@ -1206,7 +1206,7 @@ XPC_WN_NoMods_Proto_Resolve(JSContext* cx, HandleObject obj, HandleId id, bool* 
 
 static const js::ClassOps XPC_WN_NoMods_Proto_JSClassOps = {
     XPC_WN_OnlyIWrite_Proto_AddPropertyStub,   
-    XPC_WN_CantDeletePropertyStub,             
+    XPC_WN_CannotDeletePropertyStub,           
     nullptr,                                   
     nullptr,                                   
     XPC_WN_Shared_Proto_Enumerate,             
@@ -1302,7 +1302,7 @@ static_assert(((XPC_WRAPPER_FLAGS >> JSCLASS_RESERVED_SLOTS_SHIFT) &
 
 static const js::ClassOps XPC_WN_Tearoff_JSClassOps = {
     XPC_WN_OnlyIWrite_AddPropertyStub,  
-    XPC_WN_CantDeletePropertyStub,      
+    XPC_WN_CannotDeletePropertyStub,    
     nullptr,                            
     nullptr,                            
     XPC_WN_TearOff_Enumerate,           
