@@ -8,6 +8,7 @@ package org.mozilla.gecko.toolbar;
 import org.mozilla.gecko.R;
 import org.mozilla.gecko.animation.PropertyAnimator;
 import org.mozilla.gecko.animation.ViewHelper;
+import org.mozilla.gecko.util.ViewUtil;
 
 import android.content.Context;
 import android.graphics.drawable.Drawable;
@@ -97,13 +98,12 @@ class BrowserToolbarTablet extends BrowserToolbarTabletBase {
                 if (!willShowForward) {
                     
                     
-                    MarginLayoutParams layoutParams =
-                        (MarginLayoutParams) urlDisplayLayout.getLayoutParams();
-                    MarginLayoutParamsCompat.setMarginStart(layoutParams, 0);
+                    MarginLayoutParams layoutParams = (MarginLayoutParams) urlDisplayLayout.getLayoutParams();
+                    ViewUtil.setMarginStart(layoutParams, 0, isLayoutRtl());
 
                     
                     layoutParams = (MarginLayoutParams) urlEditLayout.getLayoutParams();
-                    MarginLayoutParamsCompat.setMarginStart(layoutParams, 0);
+                    ViewUtil.setMarginStart(layoutParams, 0, isLayoutRtl());
 
                     requestLayout();
                     
@@ -117,12 +117,11 @@ class BrowserToolbarTablet extends BrowserToolbarTabletBase {
                 final ForwardButtonState newForwardButtonState;
                 if (willShowForward) {
                     
-                    MarginLayoutParams layoutParams =
-                        (MarginLayoutParams) urlDisplayLayout.getLayoutParams();
-                    MarginLayoutParamsCompat.setMarginStart(layoutParams, forwardButtonTranslationWidth);
+                    MarginLayoutParams layoutParams = (MarginLayoutParams) urlDisplayLayout.getLayoutParams();
+                    ViewUtil.setMarginStart(layoutParams, forwardButtonTranslationWidth, isLayoutRtl());
 
                     layoutParams = (MarginLayoutParams) urlEditLayout.getLayoutParams();
-                    MarginLayoutParamsCompat.setMarginStart(layoutParams, forwardButtonTranslationWidth);
+                    ViewUtil.setMarginStart(layoutParams, forwardButtonTranslationWidth, isLayoutRtl());
 
                     newForwardButtonState = ForwardButtonState.DISPLAYED;
                 } else {
