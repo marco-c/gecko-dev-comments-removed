@@ -1726,13 +1726,16 @@ Inspector.prototype = {
 
 
   screenshotNode: function () {
+    const command = Services.prefs.getBoolPref("devtools.screenshot.clipboard.enabled") ?
+      "screenshot --file --clipboard --selector" :
+      "screenshot --file --selector";
     CommandUtils.createRequisition(this._target, {
       environment: CommandUtils.createEnvironment(this, "_target")
     }).then(requisition => {
       
       
       
-      requisition.updateExec("screenshot --selector '" + this.selectionCssSelector + "'");
+      requisition.updateExec(`${command} '${this.selectionCssSelector}'`);
     });
   },
 
