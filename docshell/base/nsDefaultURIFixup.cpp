@@ -545,11 +545,22 @@ nsDefaultURIFixup::MakeAlternateURI(nsIURI* aURI)
   if (!userpass.IsEmpty()) {
     return false;
   }
+  
+  int32_t port;
+  aURI->GetPort(&port);
+  if (port != -1) {
+    return false;
+  }
 
   nsAutoCString oldHost;
-  nsAutoCString newHost;
   aURI->GetHost(oldHost);
 
+  
+  if (oldHost.EqualsLiteral("localhost")) {
+    return false;
+  }
+
+  nsAutoCString newHost;
   
   int32_t numDots = 0;
   nsReadingIterator<char> iter;
