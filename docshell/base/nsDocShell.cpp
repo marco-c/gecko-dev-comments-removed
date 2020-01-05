@@ -1575,7 +1575,6 @@ nsDocShell::LoadURI(nsIURI* aURI,
                       srcdoc,
                       sourceDocShell,
                       baseURI,
-                      false,
                       nullptr,  
                       nullptr); 
 }
@@ -5362,8 +5361,8 @@ nsDocShell::LoadErrorPage(nsIURI* aURI, const char16_t* aURL,
                       nsContentUtils::GetSystemPrincipal(), nullptr,
                       INTERNAL_LOAD_FLAGS_NONE, EmptyString(),
                       nullptr, NullString(), nullptr, nullptr, LOAD_ERROR_PAGE,
-                      nullptr, true, NullString(), this, nullptr, false,
-                      nullptr, nullptr);
+                      nullptr, true, NullString(), this, nullptr, nullptr,
+                      nullptr);
 }
 
 NS_IMETHODIMP
@@ -5455,7 +5454,6 @@ nsDocShell::Reload(uint32_t aReloadFlags)
                       srcdoc,          
                       this,            
                       baseURI,
-                      false,
                       nullptr,         
                       nullptr);        
   }
@@ -7952,8 +7950,7 @@ nsDocShell::EnsureContentViewer()
 nsresult
 nsDocShell::CreateAboutBlankContentViewer(nsIPrincipal* aPrincipal,
                                           nsIURI* aBaseURI,
-                                          bool aTryToSaveOldPresentation,
-                                          bool aCheckPermitUnload)
+                                          bool aTryToSaveOldPresentation)
 {
   nsCOMPtr<nsIDocument> blankDoc;
   nsCOMPtr<nsIContentViewer> viewer;
@@ -7986,31 +7983,30 @@ nsDocShell::CreateAboutBlankContentViewer(nsIPrincipal* aPrincipal,
   bool hadTiming = mTiming;
   bool toBeReset = MaybeInitTiming();
   if (mContentViewer) {
-    if (aCheckPermitUnload) {
-      
-      
-      
-      
+    
+    
+    
+    
 
-      
-      
-      mTiming->NotifyBeforeUnload();
+    
+    
+    mTiming->NotifyBeforeUnload();
 
-      bool okToUnload;
-      rv = mContentViewer->PermitUnload(&okToUnload);
+    bool okToUnload;
+    rv = mContentViewer->PermitUnload(&okToUnload);
 
-      if (NS_SUCCEEDED(rv) && !okToUnload) {
-        
-        MaybeResetInitTiming(toBeReset);
-        return NS_ERROR_FAILURE;
-      }
-      if (mTiming) {
-        mTiming->NotifyUnloadAccepted(mCurrentURI);
-      }
+    if (NS_SUCCEEDED(rv) && !okToUnload) {
+      
+      MaybeResetInitTiming(toBeReset);
+      return NS_ERROR_FAILURE;
     }
 
     mSavingOldViewer = aTryToSaveOldPresentation &&
                        CanSavePresentation(LOAD_NORMAL, nullptr, nullptr);
+
+    if (mTiming) {
+      mTiming->NotifyUnloadAccepted(mCurrentURI);
+    }
 
     
     
@@ -8093,12 +8089,6 @@ NS_IMETHODIMP
 nsDocShell::CreateAboutBlankContentViewer(nsIPrincipal* aPrincipal)
 {
   return CreateAboutBlankContentViewer(aPrincipal, nullptr);
-}
-
-NS_IMETHODIMP
-nsDocShell::ForceCreateAboutBlankContentViewer(nsIPrincipal* aPrincipal)
-{
-  return CreateAboutBlankContentViewer(aPrincipal, nullptr, true, false);
 }
 
 bool
@@ -9582,7 +9572,7 @@ public:
                     nsIInputStream* aHeadersData, uint32_t aLoadType,
                     nsISHEntry* aSHEntry, bool aFirstParty,
                     const nsAString& aSrcdoc, nsIDocShell* aSourceDocShell,
-                    nsIURI* aBaseURI, bool aCheckForPrerender)
+                    nsIURI* aBaseURI)
     : mSrcdoc(aSrcdoc)
     , mDocShell(aDocShell)
     , mURI(aURI)
@@ -9600,7 +9590,6 @@ public:
     , mFirstParty(aFirstParty)
     , mSourceDocShell(aSourceDocShell)
     , mBaseURI(aBaseURI)
-    , mCheckForPrerender(aCheckForPrerender)
   {
     
     if (aTypeHint) {
@@ -9620,7 +9609,7 @@ public:
                                    NullString(), mPostData, mHeadersData,
                                    mLoadType, mSHEntry, mFirstParty,
                                    mSrcdoc, mSourceDocShell, mBaseURI,
-                                   mCheckForPrerender, nullptr, nullptr);
+                                   nullptr, nullptr);
   }
 
 private:
@@ -9645,7 +9634,6 @@ private:
   bool mFirstParty;
   nsCOMPtr<nsIDocShell> mSourceDocShell;
   nsCOMPtr<nsIURI> mBaseURI;
-  bool mCheckForPrerender;
 };
 
 
@@ -9718,7 +9706,6 @@ nsDocShell::InternalLoad(nsIURI* aURI,
                          const nsAString& aSrcdoc,
                          nsIDocShell* aSourceDocShell,
                          nsIURI* aBaseURI,
-                         bool aCheckForPrerender,
                          nsIDocShell** aDocShell,
                          nsIRequest** aRequest)
 {
@@ -10078,7 +10065,6 @@ nsDocShell::InternalLoad(nsIURI* aURI,
                                         aSrcdoc,
                                         aSourceDocShell,
                                         aBaseURI,
-                                        aCheckForPrerender,
                                         aDocShell,
                                         aRequest);
       if (rv == NS_ERROR_NO_CONTENT) {
@@ -10149,7 +10135,7 @@ nsDocShell::InternalLoad(nsIURI* aURI,
                               aTriggeringPrincipal, principalToInherit,
                               aFlags, aTypeHint, aPostData, aHeadersData,
                               aLoadType, aSHEntry, aFirstParty, aSrcdoc,
-                              aSourceDocShell, aBaseURI, false);
+                              aSourceDocShell, aBaseURI);
       return NS_DispatchToCurrentThread(ev);
     }
 
@@ -10534,25 +10520,6 @@ nsDocShell::InternalLoad(nsIURI* aURI,
 
   if (mTiming && timeBeforeUnload) {
     mTiming->NotifyUnloadAccepted(mCurrentURI);
-  }
-
-  if (browserChrome3 && aCheckForPrerender) {
-    nsCOMPtr<nsIRunnable> ev =
-      new InternalLoadEvent(this, aURI, aOriginalURI, aLoadReplace,
-                            aReferrer, aReferrerPolicy,
-                            aTriggeringPrincipal, principalToInherit,
-                            aFlags, aTypeHint, aPostData, aHeadersData,
-                            aLoadType, aSHEntry, aFirstParty, aSrcdoc,
-                            aSourceDocShell, aBaseURI, false);
-    
-    
-    
-    bool shouldSwitch = false;
-    rv = browserChrome3->ShouldSwitchToPrerenderedDocument(
-      aURI, mCurrentURI, nullptr, ev, &shouldSwitch);
-    if (NS_SUCCEEDED(rv) && shouldSwitch) {
-      return NS_OK;
-    }
   }
 
   
@@ -12558,7 +12525,6 @@ nsDocShell::LoadHistoryEntry(nsISHEntry* aEntry, uint32_t aLoadType)
                     srcdoc,
                     nullptr,            
                     baseURI,
-                    false,
                     nullptr,            
                     nullptr);           
   return rv;
@@ -14064,7 +14030,6 @@ nsDocShell::OnLinkClickSync(nsIContent* aContent,
                              NullString(),              
                              this,                      
                              nullptr,                   
-                             true,                      
                              aDocShell,                 
                              aRequest);                 
   if (NS_SUCCEEDED(rv)) {
@@ -14719,14 +14684,6 @@ nsDocShell::GetCommandManager()
 {
   NS_ENSURE_SUCCESS(EnsureCommandHandler(), nullptr);
   return mCommandManager;
-}
-
-NS_IMETHODIMP
-nsDocShell::GetIsProcessLocked(bool* aIsLocked)
-{
-  MOZ_ASSERT(aIsLocked);
-  *aIsLocked = GetProcessLockReason() != PROCESS_LOCK_NONE;
-  return NS_OK;
 }
 
 NS_IMETHODIMP

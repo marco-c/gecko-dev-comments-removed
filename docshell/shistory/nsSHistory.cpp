@@ -510,10 +510,7 @@ nsSHistory::OnPartialSessionHistoryDeactive()
     return NS_OK;
   }
 
-  
-  
-  
-  if (NS_FAILED(mRootDocShell->ForceCreateAboutBlankContentViewer(nullptr))) {
+  if (NS_FAILED(mRootDocShell->CreateAboutBlankContentViewer(nullptr))) {
     return NS_ERROR_FAILURE;
   }
 

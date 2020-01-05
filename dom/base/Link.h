@@ -123,7 +123,7 @@ public:
                          nsWrapperCache::FlagsType aRequestedFlag);
 
   
-  void TryDNSPrefetchPreconnectOrPrefetchOrPrerender();
+  void TryDNSPrefetchPreconnectOrPrefetch();
   void CancelPrefetch();
 
 protected:
