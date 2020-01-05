@@ -4,8 +4,9 @@
 
 
 
-#include "gfxUserFontSet.h"
 #include "nsFontFaceUtils.h"
+
+#include "gfxUserFontSet.h"
 #include "nsFontMetrics.h"
 #include "nsIFrame.h"
 #include "nsLayoutUtils.h"

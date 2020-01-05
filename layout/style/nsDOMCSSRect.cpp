@@ -5,9 +5,10 @@
 
 
 
+#include "nsDOMCSSRect.h"
+
 #include "mozilla/dom/RectBinding.h"
 #include "nsROCSSPrimitiveValue.h"
-#include "nsDOMCSSRect.h"
 
 using namespace mozilla;
 

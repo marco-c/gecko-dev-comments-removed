@@ -5,9 +5,10 @@
 
 
 
+#include "nsCSSRules.h"
+
 #include "mozilla/Attributes.h"
 
-#include "nsCSSRules.h"
 #include "nsCSSValue.h"
 #include "mozilla/StyleSheetInlines.h"
 #include "mozilla/MemoryReporting.h"

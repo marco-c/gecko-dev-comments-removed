@@ -9,6 +9,8 @@
 
 
 
+#include "nsRuleNode.h"
+
 #include <algorithm>
 #include <functional>
 
@@ -26,7 +28,6 @@
 #include "mozilla/TypeTraits.h"
 
 #include "nsAlgorithm.h" 
-#include "nsRuleNode.h"
 #include "nscore.h"
 #include "nsIWidget.h"
 #include "nsIPresShell.h"
