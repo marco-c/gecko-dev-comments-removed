@@ -184,7 +184,7 @@ impl Request {
         }
         
         if self.context != Context::Fetch && !self.headers.has::<AcceptLanguage>() {
-            self.headers.set(AcceptLanguage(vec![qitem(Language::from_str("en-US").unwrap())]));
+            self.headers.set(AcceptLanguage(vec![qitem("en-US".parse().unwrap())]));
         }
         
         
