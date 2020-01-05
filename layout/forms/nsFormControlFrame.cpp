@@ -49,7 +49,7 @@ nsFormControlFrame::GetMinISize(nsRenderingContext *aRenderingContext)
 {
   nscoord result;
   DISPLAY_MIN_WIDTH(this, result);
-  result = GetIntrinsicISize();
+  result = StyleDisplay()->mAppearance == NS_THEME_NONE ? 0 : DefaultSize();
   return result;
 }
 
@@ -58,13 +58,13 @@ nsFormControlFrame::GetPrefISize(nsRenderingContext *aRenderingContext)
 {
   nscoord result;
   DISPLAY_PREF_WIDTH(this, result);
-  result = GetIntrinsicISize();
+  result = StyleDisplay()->mAppearance == NS_THEME_NONE ? 0 : DefaultSize();
   return result;
 }
 
 
 LogicalSize
-nsFormControlFrame::ComputeAutoSize(nsRenderingContext* aRenderingContext,
+nsFormControlFrame::ComputeAutoSize(nsRenderingContext* aRC,
                                     WritingMode         aWM,
                                     const LogicalSize&  aCBSize,
                                     nscoord             aAvailableISize,
@@ -73,27 +73,16 @@ nsFormControlFrame::ComputeAutoSize(nsRenderingContext* aRenderingContext,
                                     const LogicalSize&  aPadding,
                                     ComputeSizeFlags    aFlags)
 {
-  const WritingMode wm = GetWritingMode();
-  LogicalSize result(wm, GetIntrinsicISize(), GetIntrinsicBSize());
-  return result.ConvertTo(aWM, wm);
-}
-
-nscoord
-nsFormControlFrame::GetIntrinsicISize()
-{
+  LogicalSize size(aWM, 0, 0);
+  if (StyleDisplay()->mAppearance == NS_THEME_NONE) {
+    return size;
+  }
   
-  
-  
-  return nsPresContext::CSSPixelsToAppUnits(13 - 2 * 2);
-}
-
-nscoord
-nsFormControlFrame::GetIntrinsicBSize()
-{
-  
-  
-  
-  return nsPresContext::CSSPixelsToAppUnits(13 - 2 * 2);
+  size = nsAtomicContainerFrame::ComputeAutoSize(aRC, aWM, aCBSize,
+                                                 aAvailableISize, aMargin,
+                                                 aBorder, aPadding, aFlags);
+  size.BSize(aWM) = DefaultSize();
+  return size;
 }
 
 nscoord

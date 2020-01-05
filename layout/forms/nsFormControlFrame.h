@@ -108,16 +108,15 @@ protected:
 
   virtual ~nsFormControlFrame();
 
-  nscoord GetIntrinsicISize();
-  nscoord GetIntrinsicBSize();
+  static nscoord DefaultSize()
+  {
+    
+    
+    
+    return nsPresContext::CSSPixelsToAppUnits(9);
+  }
 
-
-
-
-
-
-   
-
+  
 
 
 
