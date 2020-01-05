@@ -156,7 +156,7 @@ using namespace mozilla::gfx;
 #define DEFAULT_QUIESCENT_FRAMES 2
 
 
-#define DEFAULT_IDLE_PERIOD_TIME_LIMIT 3.0f
+#define DEFAULT_IDLE_PERIOD_TIME_LIMIT 1.0f
 
 #ifdef DEBUG
 
