@@ -47,41 +47,6 @@ struct WRImageMask
     }
 };
 
-typedef uint64_t WRImageIdType;
-struct WRExternalImageId {
-  WRImageIdType id;
-};
-
-enum WRExternalImageType {
-    TEXTURE_HANDLE, 
-    
-    
-};
-
-struct WRExternalImage {
-  WRExternalImageType type;
-
-  
-  float u0, v0;
-  float u1, v1;
-
-  
-  uint32_t handle;
-
-  
-  
-  
-  
-};
-
-typedef WRExternalImage (*GetExternalImageCallback)(void*, WRExternalImageId);
-typedef void (*ReleaseExternalImageCallback)(void*, WRExternalImageId);
-
-struct WRExternalImageHandler {
-  void* ExternalImageObj;
-  GetExternalImageCallback get_func;
-  ReleaseExternalImageCallback release_func;
-};
 
 struct wrwindowstate;
 struct wrstate;
@@ -95,7 +60,7 @@ struct wrstate;
 #endif
 
 WR_INLINE wrwindowstate*
-wr_init_window(uint64_t root_pipeline_id, WRExternalImageHandler* handler = nullptr)
+wr_init_window(uint64_t root_pipeline_id)
 WR_FUNC;
 
 WR_INLINE wrstate*
@@ -137,6 +102,10 @@ WR_FUNC;
 
 WR_INLINE void
 wr_dp_end(wrwindowstate* wrWindow, wrstate* wrState)
+WR_FUNC;
+
+WR_INLINE void
+wr_composite_window(wrwindowstate* wrWindow)
 WR_FUNC;
 
 WR_INLINE void
