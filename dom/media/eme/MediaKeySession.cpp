@@ -156,7 +156,7 @@ MediaKeySession::UpdateKeyStatusMap()
                       this, NS_ConvertUTF16toUTF8(mSessionId).get()));
     using IntegerType = typename std::underlying_type<MediaKeyStatus>::type;
     for (const CDMCaps::KeyStatus& status : keyStatuses) {
-      message.Append(nsPrintfCString(" (%s,%s)", ToBase64(status.mId).get(),
+      message.Append(nsPrintfCString(" (%s,%s)", ToHexString(status.mId).get(),
         MediaKeyStatusValues::strings[static_cast<IntegerType>(status.mStatus)].value));
     }
     message.Append(" }");
@@ -321,7 +321,7 @@ MediaKeySession::GenerateRequest(const nsAString& aInitDataType,
   
   
   
-  nsAutoCString base64InitData(ToBase64(data));
+  nsAutoCString hexInitData(ToHexString(data));
   PromiseId pid = mKeys->StorePromise(promise);
   mKeys->ConnectPendingPromiseIdWithToken(pid, Token());
   mKeys->GetCDMProxy()->CreateSession(Token(),
@@ -330,11 +330,11 @@ MediaKeySession::GenerateRequest(const nsAString& aInitDataType,
                                       aInitDataType, data);
 
   EME_LOG("MediaKeySession[%p,'%s'] GenerateRequest() sent, "
-          "promiseId=%d initData(base64)='%s' initDataType='%s'",
+          "promiseId=%d initData='%s' initDataType='%s'",
           this,
           NS_ConvertUTF16toUTF8(mSessionId).get(),
           pid,
-          base64InitData.get(),
+          hexInitData.get(),
           NS_ConvertUTF16toUTF8(aInitDataType).get());
 
   return promise.forget();
@@ -450,7 +450,7 @@ MediaKeySession::Update(const ArrayBufferViewOrArrayBuffer& aResponse, ErrorResu
   
   
   
-  nsAutoCString base64Response(ToBase64(data));
+  nsAutoCString hexResponse(ToHexString(data));
 
   PromiseId pid = mKeys->StorePromise(promise);
   mKeys->GetCDMProxy()->UpdateSession(mSessionId,
@@ -458,11 +458,11 @@ MediaKeySession::Update(const ArrayBufferViewOrArrayBuffer& aResponse, ErrorResu
                                       data);
 
   EME_LOG("MediaKeySession[%p,'%s'] Update() sent to CDM, "
-          "promiseId=%d Response(base64)='%s'",
+          "promiseId=%d Response='%s'",
            this,
            NS_ConvertUTF16toUTF8(mSessionId).get(),
            pid,
-           base64Response.get());
+           hexResponse.get());
 
   return promise.forget();
 }
@@ -579,10 +579,10 @@ MediaKeySession::DispatchKeyMessage(MediaKeyMessageType aMessageType,
                                     const nsTArray<uint8_t>& aMessage)
 {
   if (EME_LOG_ENABLED()) {
-    EME_LOG("MediaKeySession[%p,'%s'] DispatchKeyMessage() type=%s message(base64)='%s'",
+    EME_LOG("MediaKeySession[%p,'%s'] DispatchKeyMessage() type=%s message='%s'",
             this, NS_ConvertUTF16toUTF8(mSessionId).get(),
             MediaKeyMessageTypeValues::strings[uint32_t(aMessageType)].value,
-            ToBase64(aMessage).get());
+            ToHexString(aMessage).get());
   }
 
   RefPtr<MediaKeyMessageEvent> event(
