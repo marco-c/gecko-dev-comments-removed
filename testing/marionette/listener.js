@@ -77,8 +77,6 @@ var originalOnError;
 
 var checkTimer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
 
-var readyStateTimer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
-
 var EVENT_INTERVAL = 30; 
 
 var multiLast = {};
@@ -578,36 +576,11 @@ function startListeners() {
 
 
 
-function waitForReady() {
-  if (content.document.readyState == 'complete') {
-    readyStateTimer.cancel();
-    content.addEventListener("mozbrowsershowmodalprompt", modalHandler);
-    content.addEventListener("unload", waitForReady);
-  }
-  else {
-    readyStateTimer.initWithCallback(waitForReady, 100, Ci.nsITimer.TYPE_ONE_SHOT);
-  }
-}
-
-
-
-
 
 function newSession(msg) {
   capabilities = session.Capabilities.fromJSON(msg.json);
-  isB2G = capabilities.get("platformName") === "B2G";
   resetValues();
-  if (isB2G) {
-    readyStateTimer.initWithCallback(waitForReady, 100, Ci.nsITimer.TYPE_ONE_SHOT);
-    
-    
-    
-    
-    
-    legacyactions.inputSource = Ci.nsIDOMMouseEvent.MOZ_SOURCE_TOUCH;
-  }
 }
-
 
 
 
@@ -623,9 +596,6 @@ function sleepSession(msg) {
 
 function restart(msg) {
   removeMessageListener("Marionette:restart", restart);
-  if (isB2G) {
-    readyStateTimer.initWithCallback(waitForReady, 100, Ci.nsITimer.TYPE_ONE_SHOT);
-  }
   registerSelf();
 }
 
