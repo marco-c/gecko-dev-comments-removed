@@ -9249,8 +9249,13 @@ nsCSSFrameConstructor::GetInsertionPoint(nsIContent* aContainer,
   }
 
   if (!insertionElement) {
-    insertionElement = aContainer;
+    
+    
+    
+    
+    return InsertionPoint();
   }
+
   InsertionPoint insertion(GetContentInsertionFrameFor(insertionElement),
                            insertionElement);
 
