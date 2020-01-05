@@ -451,10 +451,11 @@ struct MOZ_RAII AutoPhase
 
     ~AutoPhase() {
         if (enabled) {
-            if (task)
-                stats.endParallelPhase(phase, task);
-            else
-                stats.endPhase(phase);
+            
+            
+            
+            
+            stats.endPhase(phase);
         }
     }
 
