@@ -6,11 +6,12 @@
 
 #![allow(unsafe_code)]
 
-use atomic_refcell::{AtomicRef, AtomicRefMut};
+use atomic_refcell::{AtomicRef, AtomicRefCell};
 use data::{ElementStyles, ElementData};
 use element_state::ElementState;
 use parking_lot::RwLock;
 use properties::{ComputedValues, PropertyDeclarationBlock};
+use properties::longhands::display::computed_value as display;
 use restyle_hints::{RESTYLE_DESCENDANTS, RESTYLE_LATER_SIBLINGS, RESTYLE_SELF, RestyleHint};
 use selector_impl::{ElementExt, PseudoElement};
 use selector_matching::ApplicableDeclarationBlock;
@@ -213,6 +214,13 @@ pub trait TElement : PartialEq + Debug + Sized + Copy + Clone + ElementExt + Pre
     
     fn did_process_child(&self) -> isize;
 
+    
+    
+    fn is_display_none(&self) -> bool {
+        self.borrow_data().unwrap()
+            .current_styles().primary
+            .get_box().clone_display() == display::T::none
+    }
 
     
     fn frame_has_style(&self) -> bool { false }
@@ -243,29 +251,42 @@ pub trait TElement : PartialEq + Debug + Sized + Copy + Clone + ElementExt + Pre
             Stop
         };
 
-        match self.borrow_data() {
+        let mut mode = match self.borrow_data() {
             
             None if !self.frame_has_style() => Initial,
             
             None => mode_for_descendants,
+            
             Some(d) => {
-                if d.restyle_data.is_some() || self.deprecated_dirty_bit_is_set() {
-                    Restyle
-                } else {
-                    debug_assert!(!self.frame_has_style()); 
+                if d.has_current_styles() {
+                    
+                    debug_assert!(!self.frame_has_style());
+                    debug_assert!(d.restyle_data.is_none());
                     mode_for_descendants
+                } else {
+                    
+                    if d.previous_styles().is_some() {
+                        Restyle
+                    } else {
+                        Initial
+                    }
                 }
             },
+        };
+
+        
+        if mode != Initial && self.deprecated_dirty_bit_is_set() {
+            mode = Restyle;
         }
+        mode
+
     }
 
     
-    
-    
-    fn begin_styling(&self) -> AtomicRefMut<ElementData>;
+    fn borrow_data(&self) -> Option<AtomicRef<ElementData>>;
 
     
-    fn borrow_data(&self) -> Option<AtomicRef<ElementData>>;
+    fn get_data(&self) -> Option<&AtomicRefCell<ElementData>>;
 
     
     fn note_restyle_hint<C: DomTraversalContext<Self::ConcreteNode>>(&self, hint: RestyleHint) {
@@ -285,13 +306,13 @@ pub trait TElement : PartialEq + Debug + Sized + Copy + Clone + ElementExt + Pre
 
         
         if hint.contains(RESTYLE_SELF) {
-            unsafe { C::ensure_element_data(self).borrow_mut().ensure_restyle_data(); }
+            unsafe { let _ = C::prepare_for_styling(self); }
         
         } else if hint.contains(RESTYLE_DESCENDANTS) {
             unsafe { self.set_dirty_descendants(); }
             let mut current = self.first_child_element();
             while let Some(el) = current {
-                unsafe { C::ensure_element_data(&el).borrow_mut().ensure_restyle_data(); }
+                unsafe { let _ = C::prepare_for_styling(&el); }
                 current = el.next_sibling_element();
             }
         }
@@ -299,7 +320,7 @@ pub trait TElement : PartialEq + Debug + Sized + Copy + Clone + ElementExt + Pre
         if hint.contains(RESTYLE_LATER_SIBLINGS) {
             let mut next = ::selectors::Element::next_sibling_element(self);
             while let Some(sib) = next {
-                unsafe { C::ensure_element_data(&sib).borrow_mut().ensure_restyle_data() };
+                unsafe { let _ = C::prepare_for_styling(&sib); }
                 next = ::selectors::Element::next_sibling_element(&sib);
             }
         }

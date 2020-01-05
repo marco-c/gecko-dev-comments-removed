@@ -19,16 +19,16 @@ use style::data::ElementData;
 use style::dom::{StylingMode, TElement, TNode};
 use style::traversal::{DomTraversalContext, put_thread_local_bloom_filter};
 use style::traversal::{recalc_style_at, remove_from_bloom_filter};
-use style::traversal::RestyleResult;
 use style::traversal::take_thread_local_bloom_filter;
 use util::opts;
-use wrapper::{LayoutNodeHelpers, LayoutNodeLayoutData};
+use wrapper::{GetRawData, LayoutNodeHelpers, LayoutNodeLayoutData};
 
 pub struct RecalcStyleAndConstructFlows<'lc> {
     context: LayoutContext<'lc>,
     root: OpaqueNode,
 }
 
+#[allow(unsafe_code)]
 impl<'lc, N> DomTraversalContext<N> for RecalcStyleAndConstructFlows<'lc>
     where N: LayoutNode + TNode,
           N::ConcreteElement: LayoutElement
@@ -73,7 +73,7 @@ impl<'lc, N> DomTraversalContext<N> for RecalcStyleAndConstructFlows<'lc>
         }
     }
 
-    fn process_preorder(&self, node: N) -> RestyleResult {
+    fn process_preorder(&self, node: N) {
         
         
         node.initialize_data();
@@ -101,11 +101,9 @@ impl<'lc, N> DomTraversalContext<N> for RecalcStyleAndConstructFlows<'lc>
             let parent = node.parent_node().unwrap().as_element();
             let bf = take_thread_local_bloom_filter(parent, self.root, self.context.shared_context());
             put_thread_local_bloom_filter(bf, &node.to_unsafe(), self.context.shared_context());
-
-            RestyleResult::Stop
         } else {
             let el = node.as_element().unwrap();
-            recalc_style_at::<_, _, Self>(&self.context, self.root, el)
+            recalc_style_at::<_, _, Self>(&self.context, self.root, el);
         }
     }
 
@@ -114,6 +112,11 @@ impl<'lc, N> DomTraversalContext<N> for RecalcStyleAndConstructFlows<'lc>
     }
 
     fn should_traverse_child(parent: N::ConcreteElement, child: N) -> bool {
+        
+        if parent.is_display_none() {
+            return false;
+        }
+
         
         
         if child.has_changed() {
@@ -131,9 +134,13 @@ impl<'lc, N> DomTraversalContext<N> for RecalcStyleAndConstructFlows<'lc>
         }
     }
 
-    fn ensure_element_data(element: &N::ConcreteElement) -> &AtomicRefCell<ElementData> {
+    unsafe fn ensure_element_data(element: &N::ConcreteElement) -> &AtomicRefCell<ElementData> {
         element.as_node().initialize_data();
-        element.get_style_data().unwrap()
+        element.get_data().unwrap()
+    }
+
+    unsafe fn clear_element_data(element: &N::ConcreteElement) {
+        element.as_node().clear_data();
     }
 
     fn local_context(&self) -> &LocalStyleContext {

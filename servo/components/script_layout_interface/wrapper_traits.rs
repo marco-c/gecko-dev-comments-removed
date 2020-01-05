@@ -73,7 +73,6 @@ impl<T> PseudoElementType<T> {
 
 pub trait GetLayoutData {
     fn get_style_and_layout_data(&self) -> Option<OpaqueStyleAndLayoutData>;
-    fn init_style_and_layout_data(&self, data: OpaqueStyleAndLayoutData);
 }
 
 
@@ -84,6 +83,9 @@ pub trait LayoutNode: GetLayoutData + TNode {
 
     
     fn type_id(&self) -> LayoutNodeType;
+
+    unsafe fn init_style_and_layout_data(&self, data: OpaqueStyleAndLayoutData);
+    unsafe fn take_style_and_layout_data(&self) -> OpaqueStyleAndLayoutData;
 
     fn has_changed(&self) -> bool;
 
@@ -274,7 +276,6 @@ pub trait DangerousThreadSafeLayoutNode: ThreadSafeLayoutNode {
 }
 
 pub trait LayoutElement: Clone + Copy + Sized + Debug + GetLayoutData + TElement {
-    fn get_style_data(&self) -> Option<&AtomicRefCell<ElementData>>;
 }
 
 pub trait ThreadSafeLayoutElement: Clone + Copy + Sized + Debug +
