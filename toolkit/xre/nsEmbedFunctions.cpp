@@ -501,14 +501,6 @@ XRE_InitChildProcess(int aArgc,
 #ifdef MOZ_WIDGET_GTK
   
   g_set_prgname(aArgv[0]);
-
-#if MOZ_WIDGET_GTK == 3 && defined(MOZ_X11)
-  
-  const char* useXI2 = PR_GetEnv("MOZ_USE_XINPUT2");
-  if (!useXI2 || (*useXI2 == '0')) {
-    gdk_disable_multidevice();
-  }
-#endif
 #endif
 
 #ifdef OS_POSIX
