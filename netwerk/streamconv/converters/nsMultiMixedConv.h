@@ -14,7 +14,6 @@
 #include "nsIMultiPartChannel.h"
 #include "nsAutoPtr.h"
 #include "mozilla/Attributes.h"
-#include "nsIResponseHeadProvider.h"
 #include "nsHttpResponseHead.h"
 
 #define NS_MULTIMIXEDCONVERTER_CID                         \
@@ -34,7 +33,6 @@
 
 class nsPartChannel final : public nsIChannel,
                             public nsIByteRangeRequest,
-                            public nsIResponseHeadProvider,
                             public nsIMultiPartChannel
 {
 public:
@@ -43,8 +41,6 @@ public:
 
   void InitializeByteRange(int64_t aStart, int64_t aEnd);
   void SetIsLastPart() { mIsLastPart = true; }
-  void SetPreamble(const nsACString& aPreamble);
-  void SetOriginalResponseHeader(const nsACString& aOriginalResponseHeader);
   nsresult SendOnStartRequest(nsISupports* aContext);
   nsresult SendOnDataAvailable(nsISupports* aContext, nsIInputStream* aStream,
                                uint64_t aOffset, uint32_t aLen);
@@ -58,7 +54,6 @@ public:
   NS_DECL_NSIREQUEST
   NS_DECL_NSICHANNEL
   NS_DECL_NSIBYTERANGEREQUEST
-  NS_DECL_NSIRESPONSEHEADPROVIDER
   NS_DECL_NSIMULTIPARTCHANNEL
 
 protected:
@@ -88,11 +83,6 @@ protected:
   uint32_t                mPartID; 
                                    
   bool                    mIsLastPart;
-
-  nsCString               mPreamble;
-
-  
-  nsCString               mOriginalResponseHeader;
 };
 
 
@@ -152,7 +142,6 @@ protected:
     int32_t  PushOverLine(char *&aPtr, uint32_t &aLen);
     char *FindToken(char *aCursor, uint32_t aLen);
     nsresult BufferData(char *aData, uint32_t aLen);
-    char* ProbeToken(char* aBuffer, uint32_t& aTokenLen);
 
     
     bool                mNewPart;        
@@ -182,27 +171,6 @@ protected:
     bool                mIsByteRangeRequest;
 
     uint32_t            mCurrentPartID;
-
-    
-    
-    bool                mHasAppContentType;
-    
-    
-    
-    bool                mPackagedApp;
-    nsAutoPtr<mozilla::net::nsHttpResponseHead> mResponseHead;
-    
-    
-    
-    bool                mIsFromCache;
-
-    
-    
-    
-    nsCString           mPreamble;
-
-    
-    nsCString           mOriginalResponseHeader;
 };
 
 #endif 

@@ -51,8 +51,6 @@ nsPartChannel::nsPartChannel(nsIChannel *aMultipartChannel, uint32_t aPartID,
   mPartID(aPartID),
   mIsLastPart(false)
 {
-    mMultipartChannel = aMultipartChannel;
-
     
     mMultipartChannel->GetLoadFlags(&mLoadFlags);
 
@@ -115,7 +113,6 @@ NS_INTERFACE_MAP_BEGIN(nsPartChannel)
     NS_INTERFACE_MAP_ENTRY(nsIChannel)
     NS_INTERFACE_MAP_ENTRY(nsIByteRangeRequest)
     NS_INTERFACE_MAP_ENTRY(nsIMultiPartChannel)
-    NS_INTERFACE_MAP_ENTRY(nsIResponseHeadProvider)
 NS_INTERFACE_MAP_END
 
 
@@ -410,25 +407,6 @@ nsPartChannel::GetIsLastPart(bool *aIsLastPart)
 
 
 
-NS_IMETHODIMP_(mozilla::net::nsHttpResponseHead *)
-nsPartChannel::GetResponseHead()
-{
-    return mResponseHead;
-}
-
-NS_IMETHODIMP
-nsPartChannel::VisitResponseHeaders(nsIHttpHeaderVisitor *visitor)
-{
-    if (!mResponseHead)
-        return NS_ERROR_NOT_AVAILABLE;
-    return mResponseHead->VisitHeaders(visitor,
-        mozilla::net::nsHttpHeaderArray::eFilterResponse);
-}
-
-
-
-
-
 NS_IMETHODIMP 
 nsPartChannel::GetIsByteRangeRequest(bool *aIsByteRangeRequest)
 {
@@ -463,32 +441,6 @@ nsPartChannel::GetBaseChannel(nsIChannel ** aReturn)
     return NS_OK;
 }
 
-NS_IMETHODIMP
-nsPartChannel::GetPreamble(nsACString & aPreamble)
-{
-    aPreamble = mPreamble;
-    return NS_OK;
-}
-
-void
-nsPartChannel::SetPreamble(const nsACString& aPreamble)
-{
-    mPreamble = aPreamble;
-}
-
-NS_IMETHODIMP
-nsPartChannel::GetOriginalResponseHeader(nsACString & aOriginalResponseHeader)
-{
-    aOriginalResponseHeader = mOriginalResponseHeader;
-    return NS_OK;
-}
-
-void
-nsPartChannel::SetOriginalResponseHeader(const nsACString& aOriginalResponseHeader)
-{
-    mOriginalResponseHeader = aOriginalResponseHeader;
-}
-
 
 NS_IMPL_ISUPPORTS(nsMultiMixedConv,
                   nsIStreamConverter,
@@ -521,9 +473,6 @@ nsMultiMixedConv::AsyncConvertData(const char *aFromType, const char *aToType,
     
     mFinalListener = aListener;
 
-    if (NS_LITERAL_CSTRING(APPLICATION_PACKAGE).Equals(aFromType)) {
-        mPackagedApp = true;
-    }
     return NS_OK;
 }
 
@@ -550,49 +499,6 @@ public:
 private:
   char *mBuffer;
 };
-
-char*
-nsMultiMixedConv::ProbeToken(char* aBuffer, uint32_t& aTokenLen)
-{
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    char* posCRLFDashDash = PL_strstr(aBuffer, "\r\n--");
-    if (!posCRLFDashDash) {
-        return nullptr;
-    }
-
-    char* tokenStart = posCRLFDashDash + 2; 
-    char* tokenEnd = PL_strstr(tokenStart, "\r\n");
-    if (!tokenEnd) {
-        return nullptr;
-    }
-
-    aTokenLen = tokenEnd - tokenStart;
-
-    return tokenStart;
-}
 
 
 NS_IMETHODIMP
@@ -653,43 +559,6 @@ nsMultiMixedConv::OnDataAvailable(nsIRequest *request, nsISupports *context,
             
             
             mFirstOnData = true;
-        } else if (mPackagedApp) {
-            
-            if (!StringBeginsWith(firstBuffer, NS_LITERAL_CSTRING("--"))) {
-                char* tokenPos = ProbeToken(buffer, mTokenLen);
-                if (!tokenPos) {
-                    
-                    mFirstOnData = true;
-                } else {
-                    
-                    mToken = Substring(tokenPos, mTokenLen);
-                    mPreamble = nsCString(Substring(buffer, tokenPos));
-
-                    
-                    
-                    cursor = tokenPos;
-
-                    
-                    
-                    bufLen -= mPreamble.Length();
-                }
-            } else {
-                
-                
-                if (mTokenLen &&
-                    !StringBeginsWith(Substring(firstBuffer, 2), mToken)) {
-                    return NS_ERROR_FAILURE;
-                }
-
-                
-                if (!mTokenLen) {
-                    mToken = nsCString(Substring(firstBuffer, 2).BeginReading(),
-                                       posCR - 2);
-                    mTokenLen = mToken.Length();
-                }
-
-                cursor = buffer;
-            }
         } else if (!PL_strnstr(cursor, token, mTokenLen + 2)) {
             char *newBuffer = (char *) realloc(buffer, bufLen + mTokenLen + 1);
             if (!newBuffer)
@@ -709,22 +578,13 @@ nsMultiMixedConv::OnDataAvailable(nsIRequest *request, nsISupports *context,
 
     char *token = nullptr;
 
-    
-    
-
     if (mProcessingHeaders) {
         
         
         
         bool done = false;
-        const char* originalCursor = cursor;
         rv = ParseHeaders(channel, cursor, bufLen, &done);
         if (NS_FAILED(rv)) return rv;
-
-        
-        if (cursor > originalCursor) {
-            mOriginalResponseHeader.Append(originalCursor, cursor - originalCursor);
-        }
 
         if (done) {
             mProcessingHeaders = false;
@@ -764,14 +624,8 @@ nsMultiMixedConv::OnDataAvailable(nsIRequest *request, nsISupports *context,
             mNewPart = false;
             cursor = token;
             bool done = false;
-            const char* originalCursor = cursor;
             rv = ParseHeaders(channel, cursor, bufLen, &done);
             if (NS_FAILED(rv)) return rv;
-
-            
-            if (cursor > originalCursor) {
-                mOriginalResponseHeader.Append(originalCursor, cursor - originalCursor);
-            }
 
             if (done) {
                 rv = SendStart(channel);
@@ -854,50 +708,22 @@ nsMultiMixedConv::OnStartRequest(nsIRequest *request, nsISupports *ctxt) {
     nsCOMPtr<nsIChannel> channel = do_QueryInterface(request, &rv);
     if (NS_FAILED(rv)) return rv;
 
-    nsCOMPtr<nsICacheInfoChannel> cacheChan = do_QueryInterface(request);
-    if (cacheChan) {
-        cacheChan->IsFromCache(&mIsFromCache);
-    }
-
     
     nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(channel, &rv);
     if (NS_SUCCEEDED(rv)) {
         rv = httpChannel->GetResponseHeader(NS_LITERAL_CSTRING("content-type"), delimiter);
-        if (NS_FAILED(rv) && !mPackagedApp) {
+        if (NS_FAILED(rv)) {
             return rv;
         }
     } else {
         
         rv = channel->GetContentType(delimiter);
-        if (NS_FAILED(rv) && !mPackagedApp) {
+        if (NS_FAILED(rv)) {
             return NS_ERROR_FAILURE;
         }
     }
 
-    
-    
-    
-    
-    if (delimiter.Find(NS_LITERAL_CSTRING(APPLICATION_PACKAGE)) != kNotFound) {
-        mPackagedApp = true;
-        mHasAppContentType = true;
-        mToken.Truncate();
-        mTokenLen = 0;
-    }
-
     bndry = strstr(delimiter.BeginWriting(), "boundary");
-
-    bool requestSucceeded = true;
-    if (httpChannel) {
-        httpChannel->GetRequestSucceeded(&requestSucceeded);
-    }
-
-    
-    
-    
-    if (!bndry && (mHasAppContentType || (mPackagedApp && requestSucceeded))) {
-        return NS_OK;
-    }
 
     if (!bndry) {
         return NS_ERROR_FAILURE;
@@ -919,7 +745,7 @@ nsMultiMixedConv::OnStartRequest(nsIRequest *request, nsISupports *ctxt) {
     mToken = boundaryString;
     mTokenLen = boundaryString.Length();
 
-    if (mTokenLen == 0 && !mPackagedApp) {
+    if (mTokenLen == 0) {
         return NS_ERROR_FAILURE;
     }
 
@@ -928,22 +754,10 @@ nsMultiMixedConv::OnStartRequest(nsIRequest *request, nsISupports *ctxt) {
 
 NS_IMETHODIMP
 nsMultiMixedConv::OnStopRequest(nsIRequest *request, nsISupports *ctxt,
-                                nsresult aStatus) {
-
-    nsresult rv = NS_OK;
-
-    
-    
-    
-    
-    
-    
-    
-    if (mToken.IsEmpty() &&
-        NS_SUCCEEDED(rv) && 
-        !(mPackagedApp && mIsFromCache && mFirstOnData)) {
-        aStatus = NS_ERROR_FAILURE;
-        rv = NS_ERROR_FAILURE;
+                                nsresult aStatus)
+{
+    if (mToken.IsEmpty()) { 
+        return NS_ERROR_FAILURE;
     }
 
     if (mPartChannel) {
@@ -964,22 +778,16 @@ nsMultiMixedConv::OnStopRequest(nsIRequest *request, nsISupports *ctxt,
         
         
         
+
         
         
         
         
-        
-        
-        (void) mFinalListener->OnStopRequest(request, ctxt, aStatus);
-    } else if (mIsFromCache && mFirstOnData) {
-        
-        
-        
-        
+
         (void) mFinalListener->OnStopRequest(request, ctxt, aStatus);
     }
 
-    return rv;
+    return NS_OK;
 }
 
 
@@ -997,9 +805,6 @@ nsMultiMixedConv::nsMultiMixedConv() :
     mByteRangeEnd       = 0;
     mTotalSent          = 0;
     mIsByteRangeRequest = false;
-    mPackagedApp        = false;
-    mHasAppContentType  = false;
-    mIsFromCache        = false;
 }
 
 nsMultiMixedConv::~nsMultiMixedConv() {
@@ -1029,9 +834,7 @@ nsMultiMixedConv::SendStart(nsIChannel *aChannel) {
     nsresult rv = NS_OK;
 
     nsCOMPtr<nsIStreamListener> partListener(mFinalListener);
-    
-    
-    if (mContentType.IsEmpty() && !mPackagedApp) {
+    if (mContentType.IsEmpty()) {
         mContentType.AssignLiteral(UNKNOWN_CONTENT_TYPE);
         nsCOMPtr<nsIStreamConverterService> serv =
             do_GetService(NS_STREAMCONVERTERSERVICE_CONTRACTID, &rv);
@@ -1065,16 +868,6 @@ nsMultiMixedConv::SendStart(nsIChannel *aChannel) {
 
     
     mPartChannel = newChannel;
-
-    
-    mPartChannel->SetPreamble(mPreamble);
-
-    
-    mPartChannel->SetOriginalResponseHeader(mOriginalResponseHeader);
-    mOriginalResponseHeader = EmptyCString();
-
-    
-    mPartChannel->SetResponseHead(mResponseHead.forget());
 
     rv = mPartChannel->SetContentType(mContentType);
     if (NS_FAILED(rv)) return rv;
@@ -1183,13 +976,6 @@ nsMultiMixedConv::ParseHeaders(nsIChannel *aChannel, char *&aPtr,
     bool done = false;
     uint32_t lineFeedIncrement = 1;
 
-    
-    
-    
-    if (mPackagedApp && !mResponseHead) {
-        mResponseHead = new mozilla::net::nsHttpResponseHead();
-    }
-
     mContentLength = UINT64_MAX; 
     while (cursorLen && (newLine = (char *) memchr(cursor, nsCRT::LF, cursorLen))) {
         
@@ -1214,11 +1000,6 @@ nsMultiMixedConv::ParseHeaders(nsIChannel *aChannel, char *&aPtr,
         char tmpChar = *newLine;
         *newLine = '\0'; 
 
-        if (mResponseHead) {
-            nsAutoCString tmpHeader(cursor);
-            mResponseHead->ParseHeaderLine(tmpHeader);
-        }
-
         char *colon = (char *) strchr(cursor, ':');
         if (colon) {
             *colon = '\0';
@@ -1232,17 +1013,6 @@ nsMultiMixedConv::ParseHeaders(nsIChannel *aChannel, char *&aPtr,
             
             if (headerStr.LowerCaseEqualsLiteral("content-type")) {
                 mContentType = headerVal;
-
-                
-                
-                
-                
-                if (mPackagedApp && !mHasAppContentType) {
-                    mContentType = APPLICATION_OCTET_STREAM;
-                    mResponseHead->SetHeader(mozilla::net::nsHttp::Content_Type,
-                                             mContentType);
-                    mResponseHead->SetContentType(mContentType);
-                }
             } else if (headerStr.LowerCaseEqualsLiteral("content-length")) {
                 mContentLength = nsCRT::atoll(headerVal.get());
             } else if (headerStr.LowerCaseEqualsLiteral("content-disposition")) {
