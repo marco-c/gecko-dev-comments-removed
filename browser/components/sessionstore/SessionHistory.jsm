@@ -171,15 +171,34 @@ var SessionHistoryInternal = {
     }
 
     
-    try {
-      let triggeringPrincipal = Utils.serializePrincipal(shEntry.triggeringPrincipal);
-      if (triggeringPrincipal) {
-        entry.triggeringPrincipal_b64 = triggeringPrincipal;
+    
+    
+    
+    
+    
+    
+    
+    if (shEntry.principalToInherit) {
+      try {
+        let principalToInherit = Utils.serializePrincipal(shEntry.principalToInherit);
+        if (principalToInherit) {
+          entry.triggeringPrincipal_b64 = principalToInherit;
+          entry.principalToInherit_base64 = principalToInherit;
+        }
+      } catch (e) {
+        debug(e);
       }
-    } catch (ex) {
-      
-      
-      debug("Failed serializing triggeringPrincipal data: " + ex);
+    }
+
+    if (shEntry.triggeringPrincipal) {
+      try {
+        let triggeringPrincipal = Utils.serializePrincipal(shEntry.triggeringPrincipal);
+        if (triggeringPrincipal) {
+          entry.triggeringPrincipal_base64 = triggeringPrincipal;
+        }
+      } catch (e) {
+        debug(e);
+      }
     }
 
     entry.docIdentifier = shEntry.BFCacheEntry.ID;
@@ -354,8 +373,40 @@ var SessionHistoryInternal = {
       delete entry.owner_b64;
     }
 
-    if (entry.triggeringPrincipal_b64) {
-      shEntry.triggeringPrincipal = Utils.deserializePrincipal(entry.triggeringPrincipal_b64);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (entry.triggeringPrincipal_base64 || entry.principalToInherit_base64) {
+      if (entry.triggeringPrincipal_base64) {
+        try {
+          shEntry.triggeringPrincipal =
+            Utils.deserializePrincipal(entry.triggeringPrincipal_base64);
+        } catch (e) {
+          debug(e);
+        }
+      }
+      if (entry.principalToInherit_base64) {
+        try {
+          shEntry.principalToInherit =
+            Utils.deserializePrincipal(entry.principalToInherit_base64);
+        } catch (e) {
+          debug(e);
+        }
+      }
+    } else if (entry.triggeringPrincipal_b64) {
+      try {
+        shEntry.triggeringPrincipal = Utils.deserializePrincipal(entry.triggeringPrincipal_b64);
+        shEntry.principalToInherit = shEntry.triggeringPrincipal;
+      }
+      catch (e) {
+        debug(e);
+      }
     }
 
     if (entry.children && shEntry instanceof Ci.nsISHContainer) {
