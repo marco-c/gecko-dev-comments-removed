@@ -370,6 +370,3 @@ user_pref("browser.formautofill.experimental", true);
 
 
 user_pref("marionette.prefs.recommended", false);
-
-
-user_pref("extensions.screenshots.system-disabled", true);
