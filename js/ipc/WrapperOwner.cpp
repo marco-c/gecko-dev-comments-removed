@@ -1203,6 +1203,8 @@ WrapperOwner::fromRemoteObjectVariant(JSContext* cx, RemoteObject objVar)
         if (!cpows_.add(objId, obj))
             return nullptr;
 
+        nextCPOWNumber_ = objId.serialNumber() + 1;
+
         
         incref();
 

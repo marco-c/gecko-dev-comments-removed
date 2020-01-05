@@ -91,7 +91,7 @@ class IdToObjectMap
     IdToObjectMap();
 
     bool init();
-    void trace(JSTracer* trc);
+    void trace(JSTracer* trc, uint64_t minimumId = 0);
     void sweep();
 
     bool add(ObjectId id, JSObject* obj);
@@ -199,6 +199,10 @@ class JavaScriptShared : public CPOWManager
     IdToObjectMap cpows_;
 
     uint64_t nextSerialNumber_;
+
+    
+    
+    uint64_t nextCPOWNumber_;
 
     
     
