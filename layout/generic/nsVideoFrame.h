@@ -130,8 +130,6 @@ protected:
 
   virtual ~nsVideoFrame();
 
-  nsMargin mBorderPadding;
-
   
   nsCOMPtr<nsIContent> mVideoControls;
 
