@@ -85,66 +85,20 @@ private:
     if (r) {
       return *r;
     }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+
 #ifdef DEBUG
-    if (aCheckPropCache) {
-      nsIFrame* firstFrame =
-        nsLayoutUtils::FirstContinuationOrIBSplitSibling(aFrame);
-      bool mightHaveNoneSVGMask =
-        nsSVGEffects::GetEffectProperties(firstFrame).MightHaveNoneSVGMask();
+    
+    
+    
+    
+    
+    if (nsSVGIntegrationUtils::UsingEffectsForFrame(aFrame)) {
+      nsOverflowAreas* preTransformOverflows =
+        aFrame->Properties().Get(aFrame->PreTransformOverflowAreasProperty());
 
-      NS_ASSERTION(mightHaveNoneSVGMask ||
-                   aFrame->GetParent()->StyleContext()->GetPseudo() ==
-                   nsCSSAnonBoxes::mozAnonymousBlock,
-                   "How did we getting here, then?");
+      MOZ_ASSERT(!preTransformOverflows,
+                 "GetVisualOverflowRect() won't return the pre-effects rect!");
     }
-
-    bool hasEffect = nsSVGIntegrationUtils::UsingEffectsForFrame(aFrame);
-    nsOverflowAreas* preTransformOverflows =
-      aFrame->Properties().Get(aFrame->PreTransformOverflowAreasProperty());
-    
-    
-    
-    
-    
-    MOZ_ASSERT(!hasEffect || !preTransformOverflows,
-               "GetVisualOverflowRect() won't return the pre-effects rect!");
 #endif
     return aFrame->GetVisualOverflowRect();
   }
