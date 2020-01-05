@@ -1016,7 +1016,8 @@ private:
     }
 
     
-    if (mSuspended != nsISuspendedTypes::NONE_SUSPENDED) {
+    if (mSuspended != nsISuspendedTypes::NONE_SUSPENDED ||
+        mOwner->mPaused) {
       return AudioChannelService::AudibleState::eNotAudible;
     }
 
