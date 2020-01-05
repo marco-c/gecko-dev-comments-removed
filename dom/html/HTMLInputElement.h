@@ -1053,11 +1053,7 @@ protected:
   
 
 
-  bool DoesStepApply() const
-  {
-    
-    return DoesMinMaxApply() && mType != NS_FORM_INPUT_WEEK;
-  }
+  bool DoesStepApply() const { return DoesMinMaxApply(); }
 
   
 
@@ -1507,9 +1503,13 @@ protected:
   static const Decimal kStepScaleFactorNumberRange;
   static const Decimal kStepScaleFactorTime;
   static const Decimal kStepScaleFactorMonth;
+  static const Decimal kStepScaleFactorWeek;
 
   
   static const Decimal kDefaultStepBase;
+  
+  
+  static const Decimal kDefaultStepBaseWeek;
 
   
   static const Decimal kDefaultStep;
