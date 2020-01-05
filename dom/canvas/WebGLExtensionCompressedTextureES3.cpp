@@ -17,6 +17,18 @@ namespace mozilla {
 WebGLExtensionCompressedTextureES3::WebGLExtensionCompressedTextureES3(WebGLContext* webgl)
     : WebGLExtensionBase(webgl)
 {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
     RefPtr<WebGLContext> webgl_ = webgl; 
     const auto fnAdd = [&webgl_](GLenum sizedFormat, webgl::EffectiveFormat effFormat) {
         auto& fua = webgl_->mFormatUsage;
