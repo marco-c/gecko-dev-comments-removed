@@ -8,7 +8,7 @@
 
 
 use dom::bindings::conversions::FromJSValConvertible;
-use dom::bindings::js::{JS, JSRef, Root};
+use dom::bindings::js::{JS, JSRef, Root, Unrooted};
 use dom::bindings::utils::{Reflectable, Reflector};
 use dom::workerglobalscope::{WorkerGlobalScope, WorkerGlobalScopeHelpers};
 use dom::window;
@@ -51,6 +51,15 @@ pub enum GlobalField {
     Window(JS<window::Window>),
     
     Worker(JS<WorkerGlobalScope>),
+}
+
+
+#[must_root]
+pub enum GlobalUnrooted {
+    
+    Window(Unrooted<window::Window>),
+    
+    Worker(Unrooted<WorkerGlobalScope>),
 }
 
 impl<'a> GlobalRef<'a> {
@@ -136,20 +145,30 @@ impl GlobalField {
     }
 }
 
+impl GlobalUnrooted {
+    
+    pub fn root(&self) -> GlobalRoot {
+        match *self {
+            GlobalUnrooted::Window(ref window) => GlobalRoot::Window(window.root()),
+            GlobalUnrooted::Worker(ref worker) => GlobalRoot::Worker(worker.root()),
+        }
+    }
+}
+
 
 #[allow(unrooted_must_root)]
-pub fn global_object_for_js_object(obj: *mut JSObject) -> GlobalField {
+pub fn global_object_for_js_object(obj: *mut JSObject) -> GlobalUnrooted {
     unsafe {
         let global = GetGlobalForObjectCrossCompartment(obj);
         let clasp = JS_GetClass(global);
         assert!(((*clasp).flags & (JSCLASS_IS_DOMJSCLASS | JSCLASS_IS_GLOBAL)) != 0);
         match FromJSValConvertible::from_jsval(ptr::null_mut(), ObjectOrNullValue(global), ()) {
-            Ok(window) => return GlobalField::Window(window),
+            Ok(window) => return GlobalUnrooted::Window(window),
             Err(_) => (),
         }
 
         match FromJSValConvertible::from_jsval(ptr::null_mut(), ObjectOrNullValue(global), ()) {
-            Ok(worker) => return GlobalField::Worker(worker),
+            Ok(worker) => return GlobalUnrooted::Worker(worker),
             Err(_) => (),
         }
 
