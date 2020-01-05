@@ -522,6 +522,18 @@ public:
 
   virtual int32_t Pid() const override;
 
+  virtual PURLClassifierParent*
+  AllocPURLClassifierParent(const Principal& aPrincipal,
+                            const bool& aUseTrackingProtection,
+                            bool* aSuccess) override;
+  virtual mozilla::ipc::IPCResult
+  RecvPURLClassifierConstructor(PURLClassifierParent* aActor,
+                                const Principal& aPrincipal,
+                                const bool& aUseTrackingProtection,
+                                bool* aSuccess) override;
+  virtual bool
+  DeallocPURLClassifierParent(PURLClassifierParent* aActor) override;
+
   
   void ForceTabPaint(TabParent* aTabParent, uint64_t aLayerObserverEpoch);
 
