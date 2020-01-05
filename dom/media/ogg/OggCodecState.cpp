@@ -1305,6 +1305,9 @@ OpusState::PacketOutAsMediaRawData()
   }
 
   RefPtr<MediaRawData> data = OggCodecState::PacketOutAsMediaRawData();
+  if (!data) {
+    return nullptr;
+  }
 
   if (data->mEOS && mPrevPacketGranulepos != -1) {
     
