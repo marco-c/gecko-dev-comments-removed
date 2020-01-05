@@ -1606,9 +1606,6 @@ pref("network.http.signed-packages.enabled", false);
 pref("network.http.keep_empty_response_headers_as_empty_string", true);
 
 
-pref("network.http.max_response_header_size", 393216);
-
-
 
 
 
@@ -4323,7 +4320,6 @@ pref("font.name.monospace.x-unicode", "dt-interface user-ucs2.cjk_japan-0");
 pref("signon.rememberSignons",              true);
 pref("signon.rememberSignons.visibilityToggle", true);
 pref("signon.autofillForms",                true);
-pref("signon.autofillForms.http",           true);
 pref("signon.autologin.proxy",              false);
 pref("signon.formlessCapture.enabled",      true);
 pref("signon.storeWhenAutocompleteOff",     true);
@@ -5006,16 +5002,6 @@ pref("dom.forms.inputmode", true);
 pref("dom.mozInputMethod.enabled", false);
 
 pref("dom.flyweb.enabled", false);
-
-
-#ifdef MOZ_B2G_RIL
-pref("dom.telephony.enabled", true);
-#else
-pref("dom.telephony.enabled", false);
-#endif
-
-
-pref("dom.telephony.defaultServiceId", 0);
 
 
 #ifdef MOZ_B2G_RIL
