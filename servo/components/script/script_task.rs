@@ -19,6 +19,7 @@ use dom::bindings::global::GlobalRef;
 use dom::bindings::js::{JS, JSRef, Temporary, OptionalRootable};
 use dom::bindings::js::{RootCollection, RootCollectionPtr};
 use dom::bindings::refcounted::{LiveDOMReferences, Trusted};
+use dom::bindings::structuredclone::StructuredCloneData;
 use dom::bindings::trace::JSTraceable;
 use dom::bindings::utils::{wrap_for_same_compartment, pre_wrap};
 use dom::document::{Document, IsHTMLDocument, DocumentHelpers, DocumentSource};
@@ -77,7 +78,6 @@ use js;
 use url::Url;
 
 use libc;
-use libc::size_t;
 use std::any::{Any, AnyRefExt};
 use std::cell::Cell;
 use std::comm::{channel, Sender, Receiver, Select};
@@ -120,7 +120,7 @@ pub enum ScriptMsg {
     ExitWindow(PipelineId),
     
     
-    DOMMessage(*mut u64, size_t),
+    DOMMessage(StructuredCloneData),
     
     RunnableMsg(Box<Runnable+Send>),
     
