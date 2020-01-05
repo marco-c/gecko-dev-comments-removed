@@ -399,14 +399,16 @@ SocialShare = {
     if (!SocialUI.canSharePage(sharedURI))
       return;
 
+    let browserMM = gBrowser.selectedBrowser.messageManager;
+
     
     
     
     
     let _dataFn;
     if (!pageData || sharedURI == gBrowser.currentURI) {
-      messageManager.addMessageListener("PageMetadata:PageDataResult", _dataFn = (msg) => {
-        messageManager.removeMessageListener("PageMetadata:PageDataResult", _dataFn);
+      browserMM.addMessageListener("PageMetadata:PageDataResult", _dataFn = (msg) => {
+        browserMM.removeMessageListener("PageMetadata:PageDataResult", _dataFn);
         let pageData = msg.json;
         if (graphData) {
           
@@ -416,17 +418,17 @@ SocialShare = {
         }
         this.sharePage(providerOrigin, pageData, target, anchor);
       });
-      gBrowser.selectedBrowser.messageManager.sendAsyncMessage("PageMetadata:GetPageData", null, { target });
+      browserMM.sendAsyncMessage("PageMetadata:GetPageData", null, { target });
       return;
     }
     
     if (!pageData.microformats && target) {
-      messageManager.addMessageListener("PageMetadata:MicroformatsResult", _dataFn = (msg) => {
-        messageManager.removeMessageListener("PageMetadata:MicroformatsResult", _dataFn);
+      browserMM.addMessageListener("PageMetadata:MicroformatsResult", _dataFn = (msg) => {
+        browserMM.removeMessageListener("PageMetadata:MicroformatsResult", _dataFn);
         pageData.microformats = msg.data;
         this.sharePage(providerOrigin, pageData, target, anchor);
       });
-      gBrowser.selectedBrowser.messageManager.sendAsyncMessage("PageMetadata:GetMicroformats", null, { target });
+      browserMM.sendAsyncMessage("PageMetadata:GetMicroformats", null, { target });
       return;
     }
     this.currentShare = pageData;
