@@ -103,7 +103,7 @@ public:
 
 
 
-UniquePtr<GMPLoader> CreateGMPLoader(UniquePtr<SandboxStarter> aStarter);
+UniquePtr<GMPLoader> CreateGMPLoader();
 
 } 
 } 

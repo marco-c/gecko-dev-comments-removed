@@ -58,21 +58,5 @@ GMPProcessChild::CleanUp()
   BackgroundHangMonitor::Shutdown();
 }
 
-GMPLoader* GMPProcessChild::mLoader = nullptr;
-
-
-void
-GMPProcessChild::SetGMPLoader(GMPLoader* aLoader)
-{
-  mLoader = aLoader;
-}
-
-
-GMPLoader*
-GMPProcessChild::GetGMPLoader()
-{
-  return mLoader;
-}
-
 } 
 } 

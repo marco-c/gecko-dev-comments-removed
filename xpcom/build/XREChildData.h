@@ -17,24 +17,11 @@ class TargetServices;
 }
 #endif
 
-namespace mozilla {
-namespace gmp {
-class GMPLoader;
-}
-}
-
 
 
 
 struct XREChildData
 {
-#if !defined(MOZ_WIDGET_ANDROID) && !defined(MOZ_WIDGET_GONK)
-  
-
-
-  mozilla::UniquePtr<mozilla::gmp::GMPLoader> gmpLoader;
-#endif
-
 #if defined(XP_WIN) && defined(MOZ_SANDBOX)
   
 

@@ -70,7 +70,6 @@
 #include "mozilla/WindowsDllBlocklist.h"
 
 #include "GMPProcessChild.h"
-#include "GMPLoader.h"
 #include "mozilla/gfx/GPUProcessImpl.h"
 
 #include "GeckoProfiler.h"
@@ -115,8 +114,6 @@ using mozilla::dom::ContentProcess;
 using mozilla::dom::ContentParent;
 using mozilla::dom::ContentChild;
 
-using mozilla::gmp::GMPLoader;
-using mozilla::gmp::CreateGMPLoader;
 using mozilla::gmp::GMPProcessChild;
 
 using mozilla::ipc::TestShellParent;
@@ -328,32 +325,6 @@ AddContentSandboxLevelAnnotation()
 #endif 
 #endif 
 
-#if defined (XP_LINUX) && defined(MOZ_GMP_SANDBOX)
-namespace {
-class LinuxSandboxStarter : public mozilla::gmp::SandboxStarter {
-private:
-  LinuxSandboxStarter() { }
-  friend mozilla::detail::UniqueSelector<LinuxSandboxStarter>::SingleObject mozilla::MakeUnique<LinuxSandboxStarter>();
-
-public:
-  static UniquePtr<SandboxStarter> Make() {
-    if (mozilla::SandboxInfo::Get().CanSandboxMedia()) {
-      return MakeUnique<LinuxSandboxStarter>();
-    } else {
-      
-      
-      return nullptr;
-    }
-    return nullptr;
-  }
-  virtual bool Start(const char *aLibPath) override {
-    mozilla::SetMediaPluginSandbox(aLibPath);
-    return true;
-  }
-};
-} 
-#endif 
-
 nsresult
 XRE_InitChildProcess(int aArgc,
                      char* aArgv[],
@@ -372,26 +343,6 @@ XRE_InitChildProcess(int aArgc,
 #ifdef MOZ_JPROF
   
   setupProfilingStuff();
-#endif
-
-#ifdef XP_LINUX
-  
-  
-  
-  
-  
-  
-  
-  UniquePtr<mozilla::gmp::SandboxStarter> starter;
-#ifdef MOZ_GMP_SANDBOX
-  starter = LinuxSandboxStarter::Make();
-#endif
-  UniquePtr<GMPLoader> loader = CreateGMPLoader(Move(starter));
-  GMPProcessChild::SetGMPLoader(loader.get());
-#else
-  
-  
-  GMPProcessChild::SetGMPLoader(aChildData->gmpLoader.get());
 #endif
 
 #if defined(XP_WIN)
@@ -518,18 +469,18 @@ XRE_InitChildProcess(int aArgc,
 
 #endif
 
-  SetupErrorHandling(aArgv[0]);  
+  SetupErrorHandling(aArgv[0]);
 
 #if defined(MOZ_CRASHREPORTER)
   if (aArgc < 1)
     return NS_ERROR_FAILURE;
   const char* const crashReporterArg = aArgv[--aArgc];
-  
+
 #  if defined(XP_WIN) || defined(XP_MACOSX)
   
   
   
-  if (0 != strcmp("-", crashReporterArg) && 
+  if (0 != strcmp("-", crashReporterArg) &&
       !XRE_SetRemoteExceptionHandler(crashReporterArg)) {
     
     NS_WARNING("Could not setup crash reporting\n");
@@ -537,14 +488,14 @@ XRE_InitChildProcess(int aArgc,
 #  elif defined(OS_LINUX)
   
   
-  if (0 != strcmp("false", crashReporterArg) && 
+  if (0 != strcmp("false", crashReporterArg) &&
       !XRE_SetRemoteExceptionHandler(nullptr)) {
     
     NS_WARNING("Could not setup crash reporting\n");
   }
 #  else
 #    error "OOP crash reporting unsupported on this platform"
-#  endif   
+#  endif
 #endif 
 
   gArgv = aArgv;
@@ -707,7 +658,7 @@ XRE_InitChildProcess(int aArgc,
       case GeckoProcessType_IPDLUnitTest:
 #ifdef MOZ_IPDL_TESTS
         process = new IPDLUnitTestProcessChild(parentPID);
-#else 
+#else
         MOZ_CRASH("rebuild with --enable-ipdl-tests");
 #endif
         break;
@@ -794,7 +745,7 @@ public:
                        void* aData)
   : mFunction(aFunction),
     mData(aData)
-  { 
+  {
     NS_ASSERTION(aFunction, "Don't give me a null pointer!");
   }
 
