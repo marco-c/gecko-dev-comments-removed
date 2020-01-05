@@ -156,10 +156,10 @@ unsafe impl Sync for DOMJSClass {}
 
 
 
-pub fn get_proto_or_iface_array(global: *mut JSObject) -> *mut *mut JSObject {
+pub fn get_proto_or_iface_array(global: *mut JSObject) -> *mut ProtoOrIfaceArray {
     unsafe {
         assert!(((*JS_GetClass(global)).flags & JSCLASS_DOM_GLOBAL) != 0);
-        JS_GetReservedSlot(global, DOM_PROTOTYPE_SLOT).to_private() as *mut *mut JSObject
+        JS_GetReservedSlot(global, DOM_PROTOTYPE_SLOT).to_private() as *mut ProtoOrIfaceArray
     }
 }
 
@@ -330,7 +330,8 @@ pub unsafe extern fn throwing_constructor(cx: *mut JSContext, _argc: c_uint,
     return 0;
 }
 
-type ProtoOrIfaceArray = [*mut JSObject; PrototypeList::ID::Count as usize];
+
+pub type ProtoOrIfaceArray = [*mut JSObject; PrototypeList::ID::Count as usize];
 
 
 
@@ -594,12 +595,12 @@ pub fn create_dom_global(cx: *mut JSContext, class: *const JSClass)
 
 pub unsafe fn finalize_global(obj: *mut JSObject) {
     let _: Box<ProtoOrIfaceArray> =
-        Box::from_raw(get_proto_or_iface_array(obj) as *mut ProtoOrIfaceArray);
+        Box::from_raw(get_proto_or_iface_array(obj));
 }
 
 
 pub unsafe fn trace_global(tracer: *mut JSTracer, obj: *mut JSObject) {
-    let array = get_proto_or_iface_array(obj) as *mut ProtoOrIfaceArray;
+    let array = get_proto_or_iface_array(obj);
     for &proto in (*array).iter() {
         if !proto.is_null() {
             trace_object(tracer, "prototype", proto);
