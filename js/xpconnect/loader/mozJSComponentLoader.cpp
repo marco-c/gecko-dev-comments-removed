@@ -303,14 +303,6 @@ mozJSComponentLoader::ReallyInit()
 
     mReuseLoaderGlobal = Preferences::GetBool("jsloader.reuseGlobal");
 
-    
-    
-    
-    
-#if defined(MOZ_B2G) && !defined(MOZ_MULET) && !defined(DEBUG)
-    mReuseLoaderGlobal = true;
-#endif
-
     nsCOMPtr<nsIScriptSecurityManager> secman =
         do_GetService(NS_SCRIPTSECURITYMANAGER_CONTRACTID);
     if (!secman)
