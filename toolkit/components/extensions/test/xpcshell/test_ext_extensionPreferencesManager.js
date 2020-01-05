@@ -78,6 +78,8 @@ function checkPrefs(settingObj, value, msg) {
 }
 
 add_task(async function test_preference_manager() {
+  await promiseStartupManager();
+
   
   let testExtensions = [
     ExtensionTestUtils.loadExtension({
@@ -90,15 +92,13 @@ add_task(async function test_preference_manager() {
     }),
   ];
 
-  await promiseStartupManager();
-
   for (let extension of testExtensions) {
     await extension.startup();
   }
 
   
   
-  let extensions = testExtensions.map(extension => extension.extension._extension);
+  let extensions = testExtensions.map(extension => extension.extension);
 
   for (let setting in SETTINGS) {
     let settingObj = SETTINGS[setting];
