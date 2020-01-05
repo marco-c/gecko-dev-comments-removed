@@ -4,11 +4,9 @@
 
 
 
-#include <dlfcn.h>
 #include <unistd.h>
 #include <sys/mman.h>
 #include <mach/mach_init.h>
-#include <mach-o/dyld.h>
 #include <mach-o/getsect.h>
 
 #include <AvailabilityMacros.h>
@@ -78,25 +76,10 @@ private:
 
 
 
-static void
-SetThreadName()
-{
-  
-  
-  int (*dynamic_pthread_setname_np)(const char*);
-  *reinterpret_cast<void**>(&dynamic_pthread_setname_np) =
-    dlsym(RTLD_DEFAULT, "pthread_setname_np");
-  if (!dynamic_pthread_setname_np)
-    return;
-
-  dynamic_pthread_setname_np("SamplerThread");
-}
-
 static void*
 ThreadEntry(void* aArg)
 {
   auto thread = static_cast<SamplerThread*>(aArg);
-  SetThreadName();
   thread->Run();
   return nullptr;
 }

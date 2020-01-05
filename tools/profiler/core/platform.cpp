@@ -1774,6 +1774,8 @@ NewSamplerThread(PSLockRef aLock, uint32_t aGeneration, double aInterval)
 void
 SamplerThread::Run()
 {
+  PR_SetCurrentThreadName("SamplerThread");
+
   
   
   TimeDuration lastSleepOvershoot = 0;
