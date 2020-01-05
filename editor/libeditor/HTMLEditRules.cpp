@@ -1570,6 +1570,15 @@ HTMLEditRules::WillInsertBreak(Selection& aSelection,
     
     
     Unused << NS_WARN_IF(NS_FAILED(rv));
+
+    
+    if (NS_WARN_IF(!aSelection.GetRangeAt(0) ||
+                   !aSelection.GetRangeAt(0)->GetStartParent())) {
+      return NS_ERROR_FAILURE;
+    }
+    node = *aSelection.GetRangeAt(0)->GetStartParent();
+    offset = aSelection.GetRangeAt(0)->StartOffset();
+
     blockParent = mHTMLEditor->GetBlock(node);
     if (NS_WARN_IF(!blockParent)) {
       return NS_ERROR_UNEXPECTED;
