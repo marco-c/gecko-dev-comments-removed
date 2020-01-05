@@ -148,10 +148,7 @@ impl Stylesheet {
     
     
     pub fn is_effective_for_device(&self, device: &Device) -> bool {
-        match self.media {
-            Some(ref media) => media.evaluate(device),
-            None => true
-        }
+        self.media.as_ref().map_or(true, |ref media| media.evaluate(device))
     }
 
     
