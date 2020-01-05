@@ -30,6 +30,9 @@ module.exports = {
     "eol-last": "error",
 
     
+    "func-call-spacing": ["error", "never"],
+
+    
     "generator-star-spacing": ["error", {"before": false, "after": true}],
 
     
@@ -109,6 +112,9 @@ module.exports = {
     "no-func-assign": "error",
 
     
+    "no-global-assign": "error",
+
+    
     "no-invalid-regexp": "error",
 
     
@@ -127,9 +133,6 @@ module.exports = {
       "ArrayExpression": true,
       "ObjectExpression": true
     }}],
-
-    
-    "no-native-reassign": "error",
 
     
     "no-nested-ternary": "error",
@@ -157,9 +160,6 @@ module.exports = {
 
     
     "no-shadow-restricted-names": "error",
-
-    
-    "no-spaced-func": "error",
 
     
     "no-sparse-arrays": "error",
