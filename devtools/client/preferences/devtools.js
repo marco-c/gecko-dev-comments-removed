@@ -357,7 +357,7 @@ pref("devtools.telemetry.tools.opened.version", "{}");
 
 
 
-#ifdef RELEASE_BUILD
+#ifdef RELEASE_OR_BETA
 pref("devtools.jsonview.enabled", false);
 #else
 pref("devtools.jsonview.enabled", true);

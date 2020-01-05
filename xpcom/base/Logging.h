@@ -31,7 +31,7 @@
 
 
 
-#if !defined(ANDROID) || !defined(RELEASE_BUILD)
+#if !defined(ANDROID) || !defined(RELEASE_OR_BETA)
 #define MOZ_LOGGING_ENABLED 1
 #else
 #define MOZ_LOGGING_ENABLED 0

@@ -390,7 +390,7 @@ NS_IMPL_ISUPPORTS_INHERITED0(CrashTelemetryEvent, Runnable);
 void
 CrashStatsLogForwarder::CrashAction(LogReason aReason)
 {
-#ifndef RELEASE_BUILD
+#ifndef RELEASE_OR_BETA
   
   
   static bool useTelemetry = gfxEnv::GfxDevCrashTelemetry();

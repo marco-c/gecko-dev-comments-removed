@@ -181,7 +181,7 @@ public:
     virtual ots::TableAction GetTableAction(uint32_t aTag) override {
         
         if (
-#ifdef RELEASE_BUILD 
+#ifdef RELEASE_OR_BETA 
                      
             aTag == TRUETYPE_TAG('G', 'D', 'E', 'F') ||
             aTag == TRUETYPE_TAG('G', 'P', 'O', 'S') ||

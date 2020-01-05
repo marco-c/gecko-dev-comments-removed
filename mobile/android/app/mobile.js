@@ -300,7 +300,7 @@ pref("browser.search.noCurrentEngine", true);
 
 
 pref("browser.casting.enabled", true);
-#ifdef RELEASE_BUILD
+#ifdef RELEASE_OR_BETA
 
 pref("browser.mirroring.enabled", false);
 #else
@@ -863,13 +863,13 @@ pref("layout.accessiblecaret.hapticfeedback", true);
 pref("layout.accessiblecaret.extend_selection_for_phone_number", true);
 
 
-#ifdef RELEASE_BUILD
+#ifdef RELEASE_OR_BETA
 pref("consoleservice.logcat", false);
 #else
 pref("consoleservice.logcat", true);
 #endif
 
-#ifndef RELEASE_BUILD
+#ifndef RELEASE_OR_BETA
 
 pref("dom.vr.enabled", true);
 #endif

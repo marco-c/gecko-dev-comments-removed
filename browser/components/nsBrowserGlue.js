@@ -703,7 +703,7 @@ BrowserGlue.prototype = {
     
     Cu.import("resource:///modules/AutoMigrate.jsm");
 
-    if (!AppConstants.RELEASE_BUILD) {
+    if (!AppConstants.RELEASE_OR_BETA) {
       let themeName = gBrowserBundle.GetStringFromName("deveditionTheme.name");
       let vendorShortName = gBrandBundle.GetStringFromName("vendorShortName");
 
@@ -1150,7 +1150,7 @@ BrowserGlue.prototype = {
                                              ShellService.shouldCheckDefaultBrowser;
       let promptCount;
       let skipDefaultBrowserCheck = false;
-      if (!AppConstants.RELEASE_BUILD) {
+      if (!AppConstants.RELEASE_OR_BETA) {
         promptCount =
           Services.prefs.getIntPref("browser.shell.defaultBrowserCheckCount");
         skipDefaultBrowserCheck =
@@ -1195,7 +1195,7 @@ BrowserGlue.prototype = {
         }
       }
 
-      if (!AppConstants.RELEASE_BUILD) {
+      if (!AppConstants.RELEASE_OR_BETA) {
         if (willPrompt) {
           Services.prefs.setIntPref("browser.shell.defaultBrowserCheckCount",
                                     promptCount);

@@ -1011,7 +1011,7 @@ pref("dom.activities.developer_mode_only", "import-app");
 pref("dom.serviceWorkers.enabled", false);
 pref("dom.push.enabled", false);
 
-#if defined(RELEASE_BUILD)
+#if defined(RELEASE_OR_BETA)
 
 
 pref("dom.webnotifications.serviceworker.enabled", false);

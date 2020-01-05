@@ -860,7 +860,7 @@ nsOuterWindowProxy::defineProperty(JSContext* cx,
     return result.failCantDefineWindowElement();
   }
 
-#ifndef RELEASE_BUILD 
+#ifndef RELEASE_OR_BETA 
   
   
   

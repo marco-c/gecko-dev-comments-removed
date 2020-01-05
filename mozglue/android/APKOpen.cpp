@@ -42,7 +42,7 @@
 #define RUSAGE_THREAD 1
 #endif
 
-#ifndef RELEASE_BUILD
+#ifndef RELEASE_OR_BETA
 
 
 

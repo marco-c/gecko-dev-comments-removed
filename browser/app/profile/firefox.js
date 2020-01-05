@@ -122,7 +122,7 @@ pref("app.update.auto", true);
 pref("app.update.silent", false);
 
 
-#ifndef RELEASE_BUILD
+#ifndef RELEASE_OR_BETA
 pref("app.update.badge", true);
 #else
 pref("app.update.badge", false);
@@ -328,7 +328,7 @@ pref("browser.download.folderList", 1);
 pref("browser.download.manager.addToRecentDocs", true);
 pref("browser.download.manager.resumeOnWakeDelay", 10000);
 
-#ifdef RELEASE_BUILD
+#ifdef RELEASE_OR_BETA
 pref("browser.download.showPanelDropmarker", false);
 #else
 pref("browser.download.showPanelDropmarker", true);
@@ -1244,14 +1244,14 @@ pref("plain_text.wrap_long_lines", true);
 pref("dom.debug.propagate_gesture_events_through_content", false);
 
 
-#ifdef RELEASE_BUILD
+#ifdef RELEASE_OR_BETA
 pref("geo.wifi.uri", "https://www.googleapis.com/geolocation/v1/geolocate?key=%GOOGLE_API_KEY%");
 #else
 pref("geo.wifi.uri", "https://location.services.mozilla.com/v1/geolocate?key=%MOZILLA_API_KEY%");
 #endif
 
 #ifdef XP_MACOSX
-#ifdef RELEASE_BUILD
+#ifdef RELEASE_OR_BETA
 pref("geo.provider.use_corelocation", false);
 #else
 pref("geo.provider.use_corelocation", true);
@@ -1264,7 +1264,7 @@ pref("geo.provider.ms-windows-location", false);
 
 #ifdef MOZ_WIDGET_GTK
 #ifdef MOZ_GPSD
-#ifdef RELEASE_BUILD
+#ifdef RELEASE_OR_BETA
 pref("geo.provider.use_gpsd", false);
 #else
 pref("geo.provider.use_gpsd", true);
@@ -1428,7 +1428,7 @@ pref("privacy.userContext.enabled", false);
 pref("privacy.userContext.ui.enabled", false);
 #endif
 
-#ifndef RELEASE_BUILD
+#ifndef RELEASE_OR_BETA
 
 
 
@@ -1447,7 +1447,7 @@ pref("extensions.interposition.enabled", true);
 pref("extensions.interposition.prefetching", true);
 
 
-#ifdef RELEASE_BUILD
+#ifdef RELEASE_OR_BETA
 pref("extensions.e10sBlocksEnabling", true);
 #endif
 
@@ -1530,7 +1530,7 @@ pref("webchannel.allowObject.urlWhitelist", "https://accounts.firefox.com https:
 
 
 
-#ifdef RELEASE_BUILD
+#ifdef RELEASE_OR_BETA
 pref("browser.crashReports.unsubmittedCheck.enabled", false);
 #else
 pref("browser.crashReports.unsubmittedCheck.enabled", true);

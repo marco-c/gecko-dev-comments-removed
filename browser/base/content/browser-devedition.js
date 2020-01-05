@@ -123,7 +123,7 @@ var DevEdition = {
 
 
 
-if (!AppConstants.RELEASE_BUILD &&
+if (!AppConstants.RELEASE_OR_BETA &&
     this != Services.appShell.hiddenDOMWindow && DevEdition.isThemeCurrentlyApplied) {
   DevEdition.createStyleSheet();
 }

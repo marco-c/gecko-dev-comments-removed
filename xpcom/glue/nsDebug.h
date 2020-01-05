@@ -426,7 +426,7 @@ void fprintf_stderr(FILE* aFile, const char* aFmt, ...) MOZ_FORMAT_PRINTF(2, 3);
 
 void set_stderr_callback(StderrCallback aCallback);
 
-#if defined(ANDROID) && !defined(RELEASE_BUILD)
+#if defined(ANDROID) && !defined(RELEASE_OR_BETA)
 
 
 

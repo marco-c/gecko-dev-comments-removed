@@ -230,7 +230,7 @@ const TYPES = {
   experiment: 128,
 };
 
-if (!AppConstants.RELEASE_BUILD)
+if (!AppConstants.RELEASE_OR_BETA)
   TYPES.apiextension = 256;
 
 

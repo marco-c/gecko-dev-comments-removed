@@ -268,7 +268,7 @@ public final class GeckoProfile {
                             "Refusing to reuse profile with a different directory.");
                 }
 
-                if (AppConstants.RELEASE_BUILD) {
+                if (AppConstants.RELEASE_OR_BETA) {
                     Log.e(LOGTAG, "Release build trying to switch out profile dir. " +
                                   "This is an error, but let's do what we can.");
                 }

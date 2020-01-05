@@ -32,7 +32,7 @@ public class testGetUserMedia extends BaseTest {
 
     public void testGetUserMedia() {
         
-        if (AppConstants.RELEASE_BUILD) {
+        if (AppConstants.RELEASE_OR_BETA) {
             mAsserter.dumpLog(LOGTAG + " is disabled on release builds: returning");
             return;
         }

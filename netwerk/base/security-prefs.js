@@ -68,7 +68,7 @@ pref("security.pki.sha1_enforcement_level", 4);
 
 
 
-#ifdef RELEASE_BUILD
+#ifdef RELEASE_OR_BETA
 pref("security.pki.name_matching_mode", 1);
 #else
 pref("security.pki.name_matching_mode", 2);
@@ -80,7 +80,7 @@ pref("security.pki.name_matching_mode", 2);
 
 
 
-#ifdef RELEASE_BUILD
+#ifdef RELEASE_OR_BETA
 pref("security.pki.netscape_step_up_policy", 1);
 #else
 pref("security.pki.netscape_step_up_policy", 2);
@@ -107,7 +107,7 @@ pref("security.cert_pinning.max_max_age_seconds", 5184000);
 
 
 pref("security.mixed_content.send_hsts_priming", true);
-#ifdef RELEASE_BUILD
+#ifdef RELEASE_OR_BETA
 
 pref("security.mixed_content.use_hsts", false);
 #else

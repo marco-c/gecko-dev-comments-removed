@@ -304,7 +304,7 @@ add_task(function* test_options_ui() {
 
 
 add_task(function* test_experiments_dependencies() {
-  if (AppConstants.RELEASE_BUILD)
+  if (AppConstants.RELEASE_OR_BETA)
     
     return;
 
@@ -329,7 +329,7 @@ add_task(function* test_experiments_dependencies() {
 
 
 add_task(function* test_experiments_api() {
-  if (AppConstants.RELEASE_BUILD)
+  if (AppConstants.RELEASE_OR_BETA)
     
     return;
 

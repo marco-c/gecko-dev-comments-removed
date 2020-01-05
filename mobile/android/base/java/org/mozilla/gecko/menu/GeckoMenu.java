@@ -44,7 +44,7 @@ public class GeckoMenu extends ListView
 
 
 
-    private static final AssertBehavior THREAD_ASSERT_BEHAVIOR = AppConstants.RELEASE_BUILD ? AssertBehavior.NONE : AssertBehavior.THROW;
+    private static final AssertBehavior THREAD_ASSERT_BEHAVIOR = AppConstants.RELEASE_OR_BETA ? AssertBehavior.NONE : AssertBehavior.THROW;
 
     
 
