@@ -12,8 +12,6 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "devtools",
                                   "resource://devtools/shared/Loader.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "LoginManagerContent",
-                                  "resource://gre/modules/LoginManagerContent.jsm");
 XPCOMUtils.defineLazyServiceGetter(this, "gContentSecurityManager",
                                    "@mozilla.org/contentsecuritymanager;1",
                                    "nsIContentSecurityManager");
@@ -47,32 +45,6 @@ this.InsecurePasswordUtils = {
 
 
 
-
-
-
-
-  _checkForInsecureNestedDocuments(domDoc) {
-    if (domDoc.defaultView == domDoc.defaultView.parent) {
-      
-      return false;
-    }
-    if (!LoginManagerContent.isDocumentSecure(domDoc)) {
-      
-      return true;
-    }
-    
-    return this._checkForInsecureNestedDocuments(domDoc.defaultView.parent.document);
-  },
-
-
-  
-
-
-
-
-
-
-
   checkForInsecurePasswords(aForm) {
     if (this._formRootsWarned.has(aForm.rootElement) ||
         this._formRootsWarned.get(aForm.rootElement)) {
@@ -80,20 +52,15 @@ this.InsecurePasswordUtils = {
     }
 
     let domDoc = aForm.ownerDocument;
-    let topDocument = domDoc.defaultView.top.document;
-    let isSafePage = LoginManagerContent.isDocumentSecure(topDocument);
+    let isSafePage = domDoc.defaultView.isSecureContext;
 
     if (!isSafePage) {
-      this._sendWebConsoleMessage("InsecurePasswordsPresentOnPage", domDoc);
+      if (domDoc.defaultView == domDoc.defaultView.parent) {
+        this._sendWebConsoleMessage("InsecurePasswordsPresentOnPage", domDoc);
+      } else {
+        this._sendWebConsoleMessage("InsecurePasswordsPresentOnIframe", domDoc);
+      }
       this._formRootsWarned.set(aForm.rootElement, true);
-    }
-
-    
-    
-    if (this._checkForInsecureNestedDocuments(domDoc)) {
-      this._sendWebConsoleMessage("InsecurePasswordsPresentOnIframe", domDoc);
-      this._formRootsWarned.set(aForm.rootElement, true);
-      isSafePage = false;
     }
 
     let isFormSubmitHTTP = false, isFormSubmitSecure = false;

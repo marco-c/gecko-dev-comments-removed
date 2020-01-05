@@ -23,12 +23,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "LoginRecipesContent",
 XPCOMUtils.defineLazyModuleGetter(this, "LoginHelper",
                                   "resource://gre/modules/LoginHelper.jsm");
 
-XPCOMUtils.defineLazyServiceGetter(this, "gContentSecurityManager",
-                                   "@mozilla.org/contentsecuritymanager;1",
-                                   "nsIContentSecurityManager");
-XPCOMUtils.defineLazyServiceGetter(this, "gScriptSecurityManager",
-                                   "@mozilla.org/scriptsecuritymanager;1",
-                                   "nsIScriptSecurityManager");
 XPCOMUtils.defineLazyServiceGetter(this, "gNetUtil",
                                    "@mozilla.org/network/util;1",
                                    "nsINetUtil");
@@ -455,18 +449,17 @@ var LoginManagerContent = {
     log("_detectInsecureFormLikes", topWindow.location.href);
 
     
-    let hasInsecureLoginForms = (thisWindow, parentIsInsecure) => {
+    let hasInsecureLoginForms = (thisWindow) => {
       let doc = thisWindow.document;
-      let isInsecure = parentIsInsecure || !this.isDocumentSecure(doc);
       let hasLoginForm = this.stateForDocument(doc).loginFormRootElements.size > 0;
-      return (hasLoginForm && isInsecure) ||
+      return (hasLoginForm && !thisWindow.isSecureContext) ||
              Array.some(thisWindow.frames,
-                        frame => hasInsecureLoginForms(frame, isInsecure));
+                        frame => hasInsecureLoginForms(frame));
     };
 
     let messageManager = messageManagerFromWindow(topWindow);
     messageManager.sendAsyncMessage("RemoteLogins:insecureLoginFormPresent", {
-      hasInsecureLoginForms: hasInsecureLoginForms(topWindow, false),
+      hasInsecureLoginForms: hasInsecureLoginForms(topWindow),
     });
   },
 
@@ -1168,41 +1161,6 @@ var LoginManagerContent = {
         disabled: newPasswordField && (newPasswordField.disabled || newPasswordField.readOnly),
       },
     };
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  isDocumentSecure(document) {
-    let principal = document.nodePrincipal;
-    if (principal.isSystemPrincipal) {
-      return true;
-    }
-
-    
-    
-    
-    
-    
-    
-    if (!principal.isCodebasePrincipal) {
-      principal =
-        gScriptSecurityManager.getCodebasePrincipal(document.documentURIObject);
-    }
-
-    
-    return gContentSecurityManager.isOriginPotentiallyTrustworthy(principal);
   },
 };
 
