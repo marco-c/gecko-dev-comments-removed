@@ -260,6 +260,12 @@ public:
 
 private:
   NativeKey* mLastInstance;
+  
+  
+  MSG mRemovingMsg;
+  
+  
+  MSG mReceivedMsg;
   RefPtr<nsWindowBase> mWidget;
   RefPtr<TextEventDispatcher> mDispatcher;
   HKL mKeyboardLayout;
@@ -456,7 +462,7 @@ private:
 
 
 
-  bool GetFollowingCharMessage(MSG& aCharMsg) const;
+  bool GetFollowingCharMessage(MSG& aCharMsg);
 
   
 
@@ -554,6 +560,26 @@ private:
 
 
   static NativeKey* sLatestInstance;
+
+  static const MSG EmptyMSG()
+  {
+    static bool sInitialized = false;
+    static MSG sEmptyMSG;
+    if (!sInitialized) {
+      memset(&sEmptyMSG, 0, sizeof(sEmptyMSG));
+      sInitialized = true;
+    }
+    return sEmptyMSG;
+  }
+  static bool IsEmptyMSG(const MSG& aMSG)
+  {
+    return !memcmp(&aMSG, &EmptyMSG(), sizeof(MSG));
+  }
+
+  bool IsAnotherInstanceRemovingCharMessage() const
+  {
+    return mLastInstance && !IsEmptyMSG(mLastInstance->mRemovingMsg);
+  }
 };
 
 class KeyboardLayout
