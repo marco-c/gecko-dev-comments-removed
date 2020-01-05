@@ -4077,9 +4077,6 @@ void
 nsDisplayOutline::Paint(nsDisplayListBuilder* aBuilder,
                         nsRenderingContext* aCtx) {
   
-  MOZ_ASSERT(mFrame->StyleOutline()->ShouldPaintOutline(),
-             "Should have not created a nsDisplayOutline!");
-
   nsPoint offset = ToReferenceFrame();
   nsCSSRendering::PaintOutline(mFrame->PresContext(), *aCtx, mFrame,
                                mVisibleRect,
@@ -4136,7 +4133,13 @@ nsDisplayOutline::CreateWebRenderCommands(wr::DisplayListBuilder& aBuilder,
                                           WebRenderDisplayItemLayer* aLayer)
 {
   MOZ_ASSERT(mBorderRenderer.isSome());
-  mBorderRenderer->CreateWebRenderCommands(aBuilder, aLayer);
+
+  gfx::Rect clip(0, 0, 0, 0);
+  if (GetClip().HasClip()) {
+    int32_t appUnitsPerDevPixel = mFrame->PresContext()->AppUnitsPerDevPixel();
+    clip = NSRectToRect(GetClip().GetClipRect(), appUnitsPerDevPixel);
+  }
+  mBorderRenderer->CreateWebRenderCommands(aBuilder, aLayer, clip);
 }
 
 bool
@@ -8043,7 +8046,8 @@ bool nsDisplayMask::TryMerge(nsDisplayItem* aItem)
 
   
   
-  if (mFrame->StyleSVGReset()->HasMask()) {
+  const nsStyleSVGReset *style = mFrame->StyleSVGReset();
+  if (style->mMask.HasLayerWithImage()) {
     return false;
   }
 
