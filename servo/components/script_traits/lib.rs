@@ -148,6 +148,15 @@ pub enum ConstellationControlMsg {
 }
 
 
+#[derive(Copy, Clone, Debug, PartialEq, Deserialize, Serialize)]
+pub enum DocumentState {
+    
+    Idle,
+    
+    Pending,
+}
+
+
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub enum TouchEventType {
     

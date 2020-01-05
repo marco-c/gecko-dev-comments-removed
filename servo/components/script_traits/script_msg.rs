@@ -2,13 +2,14 @@
 
 
 
+use DocumentState;
 use IFrameLoadInfo;
 use MouseEventType;
 use canvas_traits::CanvasMsg;
 use euclid::point::Point2D;
 use euclid::size::Size2D;
 use ipc_channel::ipc::IpcSender;
-use msg::constellation_msg::{AnimationState, DocumentState, NavigationDirection};
+use msg::constellation_msg::{AnimationState, NavigationDirection};
 use msg::constellation_msg::{Failure, MozBrowserEvent, PipelineId};
 use msg::constellation_msg::{LoadData, MouseButton, SubpageId};
 use offscreen_gl_context::GLContextAttributes;

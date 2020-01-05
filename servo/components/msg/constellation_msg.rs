@@ -220,15 +220,6 @@ pub enum AnimationState {
 }
 
 
-#[derive(Copy, Clone, Debug, PartialEq, Deserialize, Serialize)]
-pub enum DocumentState {
-    
-    Idle,
-    
-    Pending,
-}
-
-
 #[derive(Deserialize, Serialize)]
 pub enum MozBrowserEvent {
     
