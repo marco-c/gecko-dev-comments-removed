@@ -513,8 +513,15 @@ protected:
         numBytes += 4;
         break;
       case kModNoRegDisp:
-        if ((*aModRm & kMaskRm) == kRmNoRegDispDisp32 ||
-            ((*aModRm & kMaskRm) == kRmNeedSib &&
+        if ((*aModRm & kMaskRm) == kRmNoRegDispDisp32) {
+#if defined(_M_X64)
+          
+          return -1;
+#else
+          
+          numBytes += 4;
+#endif
+        } else if (((*aModRm & kMaskRm) == kRmNeedSib &&
              (*(aModRm + 1) & kMaskSibBase) == kSibBaseEbp)) {
           numBytes += 4;
         }
