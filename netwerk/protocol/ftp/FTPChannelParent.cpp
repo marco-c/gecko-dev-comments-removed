@@ -26,7 +26,6 @@
 #include "nsIContentPolicy.h"
 #include "mozilla/ipc/BackgroundUtils.h"
 #include "mozilla/LoadInfo.h"
-#include "mozilla/dom/ContentParent.h"
 
 using namespace mozilla::dom;
 using namespace mozilla::ipc;
@@ -457,13 +456,6 @@ FTPChannelParent::OnStartRequest(nsIRequest* aRequest, nsISupports* aContext)
   nsCOMPtr<nsIChannel> chan = do_QueryInterface(aRequest);
   MOZ_ASSERT(chan);
   NS_ENSURE_TRUE(chan, NS_ERROR_UNEXPECTED);
-
-  
-  
-  PContentParent* pcp = Manager()->Manager();
-  DebugOnly<nsresult> rv =
-    static_cast<ContentParent*>(pcp)->TransmitPermissionsFor(chan);
-  MOZ_ASSERT(NS_SUCCEEDED(rv));
 
   int64_t contentLength;
   chan->GetContentLength(&contentLength);

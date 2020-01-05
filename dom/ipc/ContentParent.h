@@ -623,8 +623,6 @@ public:
   
   void ForceTabPaint(TabParent* aTabParent, uint64_t aLayerObserverEpoch);
 
-  nsresult TransmitPermissionsFor(nsIChannel* aChannel);
-
 protected:
   void OnChannelConnected(int32_t pid) override;
 
@@ -764,13 +762,6 @@ private:
 
   
   void StartForceKillTimer();
-
-  
-  
-  
-  
-  
-  void EnsurePermissionsByKey(const nsCString& aKey);
 
   static void ForceKillTimerCallback(nsITimer* aTimer, void* aClosure);
 
@@ -1214,8 +1205,6 @@ private:
   
   
   nsRefPtrHashtable<nsIDHashKey, GetFilesHelper> mGetFilesPendingRequests;
-
-  nsTHashtable<nsCStringHashKey> mActivePermissionKeys;
 
   nsTArray<nsCString> mBlobURLs;
 #ifdef MOZ_CRASHREPORTER
