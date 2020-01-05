@@ -5,6 +5,7 @@
 
 
 #include "ImageBitmapColorUtils.h"
+#include "libyuv.h"
 
 namespace mozilla {
 namespace dom {

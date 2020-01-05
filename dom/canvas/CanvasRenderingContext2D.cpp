@@ -90,6 +90,7 @@
 #include "mozilla/gfx/PathHelpers.h"
 #include "mozilla/gfx/DataSurfaceHelpers.h"
 #include "mozilla/gfx/PatternHelpers.h"
+#include "mozilla/gfx/Swizzle.h"
 #include "mozilla/ipc/DocumentRendererParent.h"
 #include "mozilla/ipc/PDocumentRendererParent.h"
 #include "mozilla/layers/PersistentBufferProvider.h"
@@ -5543,52 +5544,13 @@ CanvasRenderingContext2D::GetImageDataArray(JSContext* aCx,
     uint8_t* dst = data + dstWriteRect.y * (aWidth * 4) + dstWriteRect.x * 4;
 
     if (mOpaque) {
-      for (int32_t j = 0; j < dstWriteRect.height; ++j) {
-        for (int32_t i = 0; i < dstWriteRect.width; ++i) {
-          
-#if MOZ_LITTLE_ENDIAN
-          uint8_t b = *src++;
-          uint8_t g = *src++;
-          uint8_t r = *src++;
-          src++;
-#else
-          src++;
-          uint8_t r = *src++;
-          uint8_t g = *src++;
-          uint8_t b = *src++;
-#endif
-          *dst++ = r;
-          *dst++ = g;
-          *dst++ = b;
-          *dst++ = 255;
-        }
-        src += srcStride - (dstWriteRect.width * 4);
-        dst += (aWidth * 4) - (dstWriteRect.width * 4);
-      }
+      SwizzleData(src, srcStride, SurfaceFormat::X8R8G8B8_UINT32,
+                  dst, aWidth * 4, SurfaceFormat::R8G8B8A8,
+                  dstWriteRect.Size());
     } else {
-      for (int32_t j = 0; j < dstWriteRect.height; ++j) {
-        for (int32_t i = 0; i < dstWriteRect.width; ++i) {
-          
-#if MOZ_LITTLE_ENDIAN
-          uint8_t b = *src++;
-          uint8_t g = *src++;
-          uint8_t r = *src++;
-          uint8_t a = *src++;
-#else
-          uint8_t a = *src++;
-          uint8_t r = *src++;
-          uint8_t g = *src++;
-          uint8_t b = *src++;
-#endif
-          
-          *dst++ = gfxUtils::sUnpremultiplyTable[a * 256 + r];
-          *dst++ = gfxUtils::sUnpremultiplyTable[a * 256 + g];
-          *dst++ = gfxUtils::sUnpremultiplyTable[a * 256 + b];
-          *dst++ = a;
-        }
-        src += srcStride - (dstWriteRect.width * 4);
-        dst += (aWidth * 4) - (dstWriteRect.width * 4);
-      }
+      UnpremultiplyData(src, srcStride, SurfaceFormat::A8R8G8B8_UINT32,
+                        dst, aWidth * 4, SurfaceFormat::R8G8B8A8,
+                        dstWriteRect.Size());
     }
   }
 
@@ -5724,66 +5686,6 @@ CanvasRenderingContext2D::PutImageData_explicit(int32_t aX, int32_t aY, uint32_t
     return NS_ERROR_DOM_INVALID_STATE_ERR;
   }
 
-  uint32_t copyWidth = dirtyRect.Width();
-  uint32_t copyHeight = dirtyRect.Height();
-  RefPtr<DataSourceSurface> sourceSurface =
-    gfx::Factory::CreateDataSourceSurface(gfx::IntSize(copyWidth, copyHeight),
-                                          SurfaceFormat::B8G8R8A8,
-                                          false);
-  
-  
-  
-  
-  if (!sourceSurface) {
-    return NS_ERROR_FAILURE;
-  }
-
-  uint8_t *dstLine = sourceSurface->GetData();
-  if (!dstLine) {
-    return NS_ERROR_OUT_OF_MEMORY;
-  }
-  int32_t dstStride = sourceSurface->Stride();
-
-  uint32_t copyX = dirtyRect.x - aX;
-  uint32_t copyY = dirtyRect.y - aY;
-  uint8_t* srcLine = aArray->Data() + copyY * (aW * 4) + copyX * 4;
-  
-  uint8_t alphaMask = mOpaque ? 255 : 0;
-#if 0
-  printf("PutImageData_explicit: dirty x=%d y=%d w=%d h=%d copy x=%d y=%d w=%d h=%d ext x=%d y=%d w=%d h=%d\n",
-       dirtyRect.x, dirtyRect.y, copyWidth, copyHeight,
-       copyX, copyY, copyWidth, copyHeight,
-       x, y, w, h);
-#endif
-  for (uint32_t j = 0; j < copyHeight; j++) {
-    uint8_t *src = srcLine;
-    uint8_t *dst = dstLine;
-    for (uint32_t i = 0; i < copyWidth; i++) {
-      uint8_t r = *src++;
-      uint8_t g = *src++;
-      uint8_t b = *src++;
-      uint8_t a = *src++;
-
-      
-#if MOZ_LITTLE_ENDIAN
-      *dst++ = gfxUtils::sPremultiplyTable[a * 256 + b];
-      *dst++ = gfxUtils::sPremultiplyTable[a * 256 + g];
-      *dst++ = gfxUtils::sPremultiplyTable[a * 256 + r];
-      *dst++ = a | alphaMask;
-#else
-      *dst++ = a | alphaMask;
-      *dst++ = gfxUtils::sPremultiplyTable[a * 256 + r];
-      *dst++ = gfxUtils::sPremultiplyTable[a * 256 + g];
-      *dst++ = gfxUtils::sPremultiplyTable[a * 256 + b];
-#endif
-    }
-    srcLine += aW * 4;
-    
-    
-    
-    dstLine += dstStride;
-  }
-
   
   
   
@@ -5794,10 +5696,48 @@ CanvasRenderingContext2D::PutImageData_explicit(int32_t aX, int32_t aY, uint32_t
     return NS_ERROR_FAILURE;
   }
 
-  mTarget->CopySurface(sourceSurface,
-                       IntRect(0, 0,
-                               dirtyRect.width, dirtyRect.height),
-                       IntPoint(dirtyRect.x, dirtyRect.y));
+  RefPtr<DataSourceSurface> sourceSurface;
+  uint8_t* lockedBits = nullptr;
+  uint8_t* dstData;
+  IntSize dstSize;
+  int32_t dstStride;
+  SurfaceFormat dstFormat;
+  if (mTarget->LockBits(&lockedBits, &dstSize, &dstStride, &dstFormat)) {
+    dstData = lockedBits + dirtyRect.y * dstStride + dirtyRect.x * 4;
+  } else {
+    sourceSurface =
+      Factory::CreateDataSourceSurface(dirtyRect.Size(),
+                                       SurfaceFormat::B8G8R8A8,
+                                       false);
+
+    
+    
+    
+    
+    if (!sourceSurface) {
+      return NS_ERROR_FAILURE;
+    }
+    dstData = sourceSurface->GetData();
+    if (!dstData) {
+      return NS_ERROR_OUT_OF_MEMORY;
+    }
+    dstStride = sourceSurface->Stride();
+    dstFormat = sourceSurface->GetFormat();
+  }
+
+  IntRect srcRect = dirtyRect - IntPoint(aX, aY);
+  uint8_t* srcData = aArray->Data() + srcRect.y * (aW * 4) + srcRect.x * 4;
+
+  PremultiplyData(srcData, aW * 4, SurfaceFormat::R8G8B8A8,
+                  dstData, dstStride,
+                  mOpaque ? SurfaceFormat::X8R8G8B8_UINT32 : SurfaceFormat::A8R8G8B8_UINT32,
+                  dirtyRect.Size());
+
+  if (lockedBits) {
+    mTarget->ReleaseBits(lockedBits);
+  } else if (sourceSurface) {
+    mTarget->CopySurface(sourceSurface, dirtyRect - dirtyRect.TopLeft(), dirtyRect.TopLeft());
+  }
 
   Redraw(gfx::Rect(dirtyRect.x, dirtyRect.y, dirtyRect.width, dirtyRect.height));
 
