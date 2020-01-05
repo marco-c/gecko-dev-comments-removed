@@ -524,7 +524,7 @@ nsAccessibilityService::DeckPanelSwitched(nsIPresShell* aPresShell,
     }
 #endif
 
-    document->ContentRemoved(aDeckNode, panelNode);
+    document->ContentRemoved(panelNode);
   }
 
   if (aCurrentBoxFrame) {
@@ -582,26 +582,7 @@ nsAccessibilityService::ContentRemoved(nsIPresShell* aPresShell,
 #endif
 
   if (document) {
-    
-    
-    
-    
-    Accessible* child = document->GetAccessible(aChildNode);
-    if (!child) {
-      Accessible* container = document->GetContainerAccessible(aChildNode);
-      a11y::TreeWalker walker(container ? container : document, aChildNode,
-                              a11y::TreeWalker::eWalkCache);
-      child = walker.Next();
-    }
-
-    if (child) {
-      MOZ_DIAGNOSTIC_ASSERT(child->Parent(), "Unattached accessible from tree");
-      document->ContentRemoved(child->Parent(), aChildNode);
-#ifdef A11Y_LOG
-      if (logging::IsEnabled(logging::eTree))
-        logging::AccessibleNNode("real container", child->Parent());
-#endif
-    }
+    document->ContentRemoved(aChildNode);
   }
 
 #ifdef A11Y_LOG

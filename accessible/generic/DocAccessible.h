@@ -344,16 +344,8 @@ public:
   
 
 
-  void ContentRemoved(Accessible* aContainer, nsIContent* aChildNode)
-  {
-    
-    
-    UpdateTreeOnRemoval((aContainer ? aContainer : this), aChildNode);
-  }
-  void ContentRemoved(nsIContent* aContainerNode, nsIContent* aChildNode)
-  {
-    ContentRemoved(AccessibleOrTrueContainer(aContainerNode), aChildNode);
-  }
+  void ContentRemoved(Accessible* aContent);
+  void ContentRemoved(nsIContent* aContentNode);
 
   
 
@@ -511,11 +503,6 @@ protected:
 
 
   void ProcessInvalidationList();
-
-  
-
-
-  void UpdateTreeOnRemoval(Accessible* aContainer, nsIContent* aChildNode);
 
   
 

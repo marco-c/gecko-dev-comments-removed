@@ -47,6 +47,11 @@ public:
 
   TreeWalker(Accessible* aContext, nsIContent* aAnchorNode, uint32_t aFlags = eWalkCache);
 
+  
+
+
+  TreeWalker(DocAccessible* aDocument, nsIContent* aAnchorNode);
+
   ~TreeWalker();
 
   
