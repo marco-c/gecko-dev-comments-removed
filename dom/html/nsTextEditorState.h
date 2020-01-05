@@ -15,6 +15,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/WeakPtr.h"
+#include "mozilla/dom/HTMLInputElementBinding.h"
 #include "mozilla/dom/Nullable.h"
 
 class nsTextInputListener;
@@ -329,6 +330,16 @@ public:
   
   void SetSelectionDirection(const nsAString& aDirection,
                              mozilla::ErrorResult& aRv);
+
+  
+  
+  void SetRangeText(const nsAString& aReplacement, mozilla::ErrorResult& aRv);
+  
+  
+  void SetRangeText(const nsAString& aReplacement, uint32_t aStart,
+                    uint32_t aEnd, mozilla::dom::SelectionMode aSelectMode,
+                    mozilla::ErrorResult& aRv, int32_t aSelectionStart = -1,
+                    int32_t aSelectionEnd = -1);
 
   void UpdateEditableState(bool aNotify) {
     if (mRootNode) {
