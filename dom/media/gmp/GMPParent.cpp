@@ -884,12 +884,6 @@ GMPParent::ReadGMPInfoFile(nsIFile* aFile)
       }
     }
 
-    
-    
-    if (cap.mAPIName.EqualsLiteral(GMP_API_DECRYPTOR_BACKWARDS_COMPAT)) {
-      cap.mAPIName.AssignLiteral(GMP_API_DECRYPTOR);
-    }
-
     if (cap.mAPIName.EqualsLiteral(GMP_API_DECRYPTOR)) {
       mCanDecrypt = true;
 
@@ -901,15 +895,6 @@ GMPParent::ReadGMPInfoFile(nsIFile* aFile)
         return GenericPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
       }
 #endif
-#ifdef XP_WIN
-      
-      
-      
-      if (cap.mAPITags.Contains(kEMEKeySystemPrimetime) &&
-          !mozilla::supports_sse2()) {
-        return GenericPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
-      }
-#endif 
     }
 
     mCapabilities.AppendElement(Move(cap));
