@@ -7,7 +7,6 @@
 
 
 use dom::node::LayoutData;
-
 use euclid::point::Point2D;
 use euclid::rect::Rect;
 use ipc_channel::ipc::{IpcReceiver, IpcSender};

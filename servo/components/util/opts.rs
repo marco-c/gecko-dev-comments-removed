@@ -5,9 +5,8 @@
 
 
 
-use geometry::ScreenPx;
-
 use euclid::size::{Size2D, TypedSize2D};
+use geometry::ScreenPx;
 use getopts::Options;
 use num_cpus;
 use prefs;

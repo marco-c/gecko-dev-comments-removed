@@ -2,10 +2,8 @@
 
 
 
-use compositor::IOCompositor;
-use windowing::{MouseWindowEvent, WindowMethods};
-
 use azure::azure_hl;
+use compositor::IOCompositor;
 use euclid::length::Length;
 use euclid::point::{Point2D, TypedPoint2D};
 use euclid::rect::Rect;
@@ -18,6 +16,7 @@ use msg::constellation_msg::PipelineId;
 use script_traits::CompositorEvent::{ClickEvent, MouseDownEvent, MouseMoveEvent, MouseUpEvent};
 use script_traits::ConstellationControlMsg;
 use std::rc::Rc;
+use windowing::{MouseWindowEvent, WindowMethods};
 
 #[derive(Debug)]
 pub struct CompositorData {

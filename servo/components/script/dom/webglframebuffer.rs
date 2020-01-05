@@ -3,13 +3,12 @@
 
 
 
+use canvas_traits::{CanvasMsg, CanvasWebGLMsg, WebGLFramebufferBindingRequest};
 use dom::bindings::codegen::Bindings::WebGLFramebufferBinding;
 use dom::bindings::global::GlobalRef;
 use dom::bindings::js::Root;
 use dom::bindings::utils::reflect_dom_object;
 use dom::webglobject::WebGLObject;
-
-use canvas_traits::{CanvasMsg, CanvasWebGLMsg, WebGLFramebufferBindingRequest};
 use ipc_channel::ipc::{self, IpcSender};
 use std::cell::Cell;
 

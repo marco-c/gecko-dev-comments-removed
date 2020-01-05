@@ -3,16 +3,14 @@
 
 
 
+use angle::hl::{BuiltInResources, Output, ShaderValidator};
+use canvas_traits::{CanvasMsg, CanvasWebGLMsg, WebGLResult, WebGLError, WebGLShaderParameter};
+use dom::bindings::codegen::Bindings::WebGLRenderingContextBinding::WebGLRenderingContextConstants as constants;
 use dom::bindings::codegen::Bindings::WebGLShaderBinding;
 use dom::bindings::global::GlobalRef;
 use dom::bindings::js::Root;
 use dom::bindings::utils::reflect_dom_object;
 use dom::webglobject::WebGLObject;
-
-use dom::bindings::codegen::Bindings::WebGLRenderingContextBinding::WebGLRenderingContextConstants as constants;
-
-use angle::hl::{BuiltInResources, Output, ShaderValidator};
-use canvas_traits::{CanvasMsg, CanvasWebGLMsg, WebGLResult, WebGLError, WebGLShaderParameter};
 use ipc_channel::ipc::{self, IpcSender};
 use std::cell::Cell;
 use std::cell::RefCell;

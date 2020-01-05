@@ -3,19 +3,16 @@
 
 
 use cssparser::ToCss;
-
 use euclid::length::Length;
 use euclid::num::Zero;
 use euclid::point::Point2D;
 use euclid::rect::Rect;
 use euclid::size::Size2D;
-
+use rustc_serialize::{Encoder, Encodable};
 use std::default::Default;
 use std::fmt;
 use std::i32;
 use std::ops::{Add, Sub, Neg, Mul, Div, Rem};
-
-use rustc_serialize::{Encoder, Encodable};
 
 
 

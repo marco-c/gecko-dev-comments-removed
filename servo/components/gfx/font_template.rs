@@ -6,9 +6,8 @@ use font::FontHandleMethods;
 use platform::font::FontHandle;
 use platform::font_context::FontContextHandle;
 use platform::font_template::FontTemplateData;
-use string_cache::Atom;
-
 use std::sync::{Arc, Weak};
+use string_cache::Atom;
 use style::computed_values::{font_stretch, font_weight};
 
 

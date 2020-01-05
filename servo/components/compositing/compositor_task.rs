@@ -8,10 +8,8 @@ pub use windowing;
 pub use constellation::SendableFrameTree;
 
 use compositor;
-use headless;
-use windowing::{WindowEvent, WindowMethods};
-
 use euclid::{Size2D, Point2D, Rect};
+use headless;
 use ipc_channel::ipc::{IpcReceiver, IpcSender};
 use layers::layers::{BufferRequest, LayerBufferSet};
 use layers::platform::surface::{NativeDisplay, NativeSurface};
@@ -28,6 +26,7 @@ use std::sync::mpsc::{channel, Sender, Receiver};
 use style_traits::viewport::ViewportConstraints;
 use url::Url;
 use util::cursor::Cursor;
+use windowing::{WindowEvent, WindowMethods};
 
 
 

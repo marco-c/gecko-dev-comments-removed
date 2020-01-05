@@ -2,10 +2,9 @@
 
 
 
+use ipc_channel::ipc;
 use msg::constellation_msg::ConstellationChan;
 use msg::constellation_msg::Msg as ConstellationMsg;
-
-use ipc_channel::ipc;
 use std::borrow::ToOwned;
 use std::sync::mpsc::channel;
 

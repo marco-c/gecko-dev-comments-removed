@@ -2,10 +2,8 @@
 
 
 
-use geometry::Au;
-
 use cssparser::{self, RGBA, Color};
-
+use geometry::Au;
 use libc::c_char;
 use num_lib::ToPrimitive;
 use std::ascii::AsciiExt;

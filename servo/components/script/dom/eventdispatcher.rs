@@ -2,6 +2,7 @@
 
 
 
+use devtools_traits::{StartedTimelineMarker, TimelineMarker, TimelineMarkerType};
 use dom::bindings::callback::ExceptionHandling::Report;
 use dom::bindings::codegen::Bindings::EventBinding::EventMethods;
 use dom::bindings::codegen::InheritTypes::{EventTargetCast, NodeCast};
@@ -13,8 +14,6 @@ use dom::eventtarget::{EventTarget, ListenerPhase, EventListenerType};
 use dom::node::Node;
 use dom::virtualmethods::vtable_for;
 use dom::window::Window;
-
-use devtools_traits::{StartedTimelineMarker, TimelineMarker, TimelineMarkerType};
 
 struct AutoDOMEventMarker {
     window: Root<Window>,

@@ -39,10 +39,9 @@ use dom::event::Event;
 use dom::htmlelement::HTMLElementTypeId;
 use dom::node::NodeTypeId;
 use dom::node::{ChildrenMutation, CloneChildrenFlag, Node};
-
+use string_cache::Atom;
 use util::str::DOMString;
 
-use string_cache::Atom;
 
 
 

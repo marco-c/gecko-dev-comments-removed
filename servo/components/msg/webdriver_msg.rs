@@ -3,7 +3,6 @@
 
 
 use constellation_msg::{PipelineId, SubpageId};
-
 use ipc_channel::ipc::IpcSender;
 use rustc_serialize::json::{Json, ToJson};
 use url::Url;

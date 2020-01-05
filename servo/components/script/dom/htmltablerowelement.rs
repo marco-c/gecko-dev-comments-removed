@@ -2,6 +2,7 @@
 
 
 
+use cssparser::RGBA;
 use dom::attr::Attr;
 use dom::bindings::codegen::Bindings::HTMLTableRowElementBinding;
 use dom::bindings::codegen::InheritTypes::{HTMLElementCast, HTMLTableRowElementDerived};
@@ -12,8 +13,6 @@ use dom::eventtarget::{EventTarget, EventTargetTypeId};
 use dom::htmlelement::{HTMLElement, HTMLElementTypeId};
 use dom::node::{Node, NodeTypeId};
 use dom::virtualmethods::VirtualMethods;
-
-use cssparser::RGBA;
 use std::cell::Cell;
 use util::str::{self, DOMString};
 

@@ -2,12 +2,11 @@
 
 
 
+use cssparser::serialize_identifier;
 use dom::bindings::error::{Error, Fallible};
 use dom::bindings::global::GlobalRef;
 use dom::bindings::utils::Reflector;
 use util::str::DOMString;
-
-use cssparser::serialize_identifier;
 
 #[dom_struct]
 pub struct CSS {

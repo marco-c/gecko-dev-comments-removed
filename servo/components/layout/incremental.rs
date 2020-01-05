@@ -3,7 +3,6 @@
 
 
 use flow::{self, AFFECTS_COUNTERS, Flow, HAS_COUNTER_AFFECTING_CHILDREN, IS_ABSOLUTELY_POSITIONED};
-
 use std::fmt;
 use std::sync::Arc;
 use style::computed_values::float;

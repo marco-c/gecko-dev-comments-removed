@@ -3,7 +3,6 @@
 
 
 use actor::{Actor, ActorRegistry, ActorMessageStatus};
-
 use rustc_serialize::json;
 use std::net::TcpStream;
 

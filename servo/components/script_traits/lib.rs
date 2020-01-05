@@ -22,6 +22,8 @@ extern crate util;
 extern crate url;
 
 use devtools_traits::ScriptToDevtoolsControlMsg;
+use euclid::point::Point2D;
+use euclid::rect::Rect;
 use ipc_channel::ipc::{IpcReceiver, IpcSender};
 use libc::c_void;
 use msg::compositor_msg::{Epoch, LayerId, ScriptToCompositorMsg};
@@ -37,9 +39,6 @@ use std::any::Any;
 use std::sync::mpsc::{Receiver, Sender};
 use url::Url;
 use util::geometry::Au;
-
-use euclid::point::Point2D;
-use euclid::rect::Rect;
 
 
 

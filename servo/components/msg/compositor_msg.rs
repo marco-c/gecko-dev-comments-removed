@@ -3,6 +3,7 @@
 
 
 use azure::azure_hl::Color;
+use constellation_msg::PipelineId;
 use constellation_msg::{Key, KeyState, KeyModifiers};
 use euclid::Matrix4;
 use euclid::{Size2D, Point2D, Rect};
@@ -11,8 +12,6 @@ use layers::layers::{BufferRequest, LayerBufferSet};
 use layers::platform::surface::NativeDisplay;
 use std::fmt;
 use std::fmt::{Formatter, Debug};
-
-use constellation_msg::PipelineId;
 
 
 #[derive(PartialEq, Eq, Debug, Copy, Clone, PartialOrd, Ord, Deserialize, Serialize)]

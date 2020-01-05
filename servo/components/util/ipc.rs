@@ -2,10 +2,9 @@
 
 
 
-use opts;
-
 use ipc_channel::ipc::{self, IpcSender};
 use ipc_channel::router::ROUTER;
+use opts;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::any::Any;
 use std::collections::HashMap;

@@ -3,10 +3,8 @@
 
 
 use euclid::point::Point2D;
-
 #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 use simd::u32x4;
-
 use std::cmp::{Ordering, PartialOrd};
 use std::fmt;
 use std::mem;

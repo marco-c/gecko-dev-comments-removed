@@ -5,10 +5,9 @@
 
 
 
+use cookie_rs;
 use net_traits::CookieSource;
 use pub_domains::PUB_DOMAINS;
-
-use cookie_rs;
 use std::borrow::ToOwned;
 use std::net::{Ipv4Addr, Ipv6Addr};
 use time::{Tm, now, at, Duration};

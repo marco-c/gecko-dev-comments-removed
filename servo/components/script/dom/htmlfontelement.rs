@@ -2,6 +2,7 @@
 
 
 
+use cssparser::RGBA;
 use dom::attr::{Attr, AttrValue};
 use dom::bindings::cell::DOMRefCell;
 use dom::bindings::codegen::Bindings::HTMLFontElementBinding;
@@ -14,11 +15,9 @@ use dom::eventtarget::{EventTarget, EventTargetTypeId};
 use dom::htmlelement::{HTMLElement, HTMLElementTypeId};
 use dom::node::{Node, NodeTypeId};
 use dom::virtualmethods::VirtualMethods;
+use std::cell::Cell;
 use string_cache::Atom;
 use util::str::{self, DOMString};
-
-use cssparser::RGBA;
-use std::cell::Cell;
 
 #[dom_struct]
 pub struct HTMLFontElement {

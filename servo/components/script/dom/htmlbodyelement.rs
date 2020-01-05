@@ -2,6 +2,7 @@
 
 
 
+use cssparser::RGBA;
 use dom::attr::Attr;
 use dom::bindings::cell::DOMRefCell;
 use dom::bindings::codegen::Bindings::EventHandlerBinding::EventHandlerNonNull;
@@ -19,15 +20,12 @@ use dom::node::{Node, NodeTypeId, window_from_node, document_from_node};
 use dom::virtualmethods::VirtualMethods;
 use msg::constellation_msg::ConstellationChan;
 use msg::constellation_msg::Msg as ConstellationMsg;
-
-use cssparser::RGBA;
-use url::{Url, UrlParser};
-use util::str::{self, DOMString};
-
 use std::borrow::ToOwned;
 use std::cell::Cell;
 use std::rc::Rc;
 use time;
+use url::{Url, UrlParser};
+use util::str::{self, DOMString};
 
 
 

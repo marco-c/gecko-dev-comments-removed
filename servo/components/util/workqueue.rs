@@ -8,13 +8,12 @@
 
 
 use deque::{Abort, BufferPool, Data, Empty, Stealer, Worker};
-use task::spawn_named;
-use task_state;
-
 use libc::funcs::posix88::unistd::usleep;
 use rand::{Rng, weak_rng, XorShiftRng};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::mpsc::{channel, Sender, Receiver};
+use task::spawn_named;
+use task_state;
 
 
 

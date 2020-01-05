@@ -2,10 +2,9 @@
 
 
 
+use std::borrow::ToOwned;
 use util::opts;
 use util::str::DOMString;
-
-use std::borrow::ToOwned;
 
 pub fn Product() -> DOMString {
     "Gecko".to_owned()
