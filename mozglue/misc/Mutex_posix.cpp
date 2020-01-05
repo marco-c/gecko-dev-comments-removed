@@ -23,55 +23,40 @@
     }                                           \
   }
 
+mozilla::detail::MutexImpl::MutexImpl()
+{
+  pthread_mutexattr_t* attrp = nullptr;
 
-
-
+  
+  
+  
 #if (defined(__linux__) && defined(__GLIBC__)) || defined(__FreeBSD__)
 #define ADAPTIVE_MUTEX_SUPPORTED
 #endif
 
 #if defined(DEBUG)
-#define ATTR_SETTYPE PTHREAD_MUTEX_ERRORCHECK
+#define ATTR_REQUIRED
+#define MUTEX_KIND PTHREAD_MUTEX_ERRORCHECK
 #elif defined(ADAPTIVE_MUTEX_SUPPORTED)
-#define ATTR_SETTYPE PTHREAD_MUTEX_ADAPTIVE_NP
+#define ATTR_REQUIRED
+#define MUTEX_KIND PTHREAD_MUTEX_ADAPTIVE_NP
 #endif
 
-#if defined(XP_DARWIN)
-
-
-
-
-
-#include <pthread_spis.h>
-#define ATTR_SETPOLICY _PTHREAD_MUTEX_POLICY_FIRSTFIT
-#endif
-
-mozilla::detail::MutexImpl::MutexImpl()
-{
-  pthread_mutexattr_t* attrp = nullptr;
-
-#if defined(ATTR_SETTYPE) || defined(ATTR_SETPOLICY)
+#if defined(ATTR_REQUIRED)
   pthread_mutexattr_t attr;
 
   TRY_CALL_PTHREADS(pthread_mutexattr_init(&attr),
                     "mozilla::detail::MutexImpl::MutexImpl: pthread_mutexattr_init failed");
 
-#if defined(ATTR_SETTYPE)
-  TRY_CALL_PTHREADS(pthread_mutexattr_settype(&attr, ATTR_SETTYPE),
+  TRY_CALL_PTHREADS(pthread_mutexattr_settype(&attr, MUTEX_KIND),
                     "mozilla::detail::MutexImpl::MutexImpl: pthread_mutexattr_settype failed");
-#endif
-#if defined(ATTR_SETPOLICY)
-  TRY_CALL_PTHREADS(pthread_mutexattr_setpolicy_np(&attr, ATTR_SETPOLICY),
-                    "mozilla::detail::MutexImpl::MutexImpl: pthread_mutex_setpolicy_np failed");
-#endif
-
   attrp = &attr;
 #endif
 
   TRY_CALL_PTHREADS(pthread_mutex_init(&platformData()->ptMutex, attrp),
                     "mozilla::detail::MutexImpl::MutexImpl: pthread_mutex_init failed");
 
-#if defined(ATTR_SETTYPE) || defined(ATTR_SETPOLICY)
+#if defined(ATTR_REQUIRED)
   TRY_CALL_PTHREADS(pthread_mutexattr_destroy(&attr),
                     "mozilla::detail::MutexImpl::MutexImpl: pthread_mutexattr_destroy failed");
 #endif
