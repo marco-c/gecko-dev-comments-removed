@@ -226,10 +226,9 @@ function setupSearch() {
   
   
   searchText = document.getElementById("searchText");
-  searchText.addEventListener("blur", function searchText_onBlur() {
-    searchText.removeEventListener("blur", searchText_onBlur);
+  searchText.addEventListener("blur", function() {
     searchText.removeAttribute("autofocus");
-  });
+  }, {once: true});
 
   if (!gContentSearchController) {
     gContentSearchController =

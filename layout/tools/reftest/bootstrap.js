@@ -13,8 +13,6 @@ var WindowListener = {
 
     win = win.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindow);
     win.addEventListener("load", function listener() {
-      win.removeEventListener("load", listener);
-
       
       let windows = Services.wm.getEnumerator("navigator:browser");
       while (windows.hasMoreElements()) {
@@ -23,12 +21,11 @@ var WindowListener = {
       }
 
       Cu.import("chrome://reftest/content/reftest.jsm");
-      win.addEventListener("pageshow", function listener() {
-        win.removeEventListener("pageshow", listener);
+      win.addEventListener("pageshow", function() {
         
         win.setTimeout(function() {OnRefTestLoad(win);}, 0);
-      });
-    });
+      }, {once: true});
+    }, {once: true});
   }
 };
 

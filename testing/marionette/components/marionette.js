@@ -174,16 +174,14 @@ MarionetteComponent.prototype.maybeReadPrefsFromEnvironment = function() {
 
 MarionetteComponent.prototype.suppressSafeModeDialog_ = function (win) {
   
-  win.addEventListener("load", function onload() {
-    win.removeEventListener("load", onload);
-
+  win.addEventListener("load", function() {
     if (win.document.getElementById("safeModeDialog")) {
       
       win.setTimeout(() => {
         win.document.documentElement.getButton("accept").click();
       });
     }
-  });
+  }, {once: true});
 };
 
 MarionetteComponent.prototype.init = function() {

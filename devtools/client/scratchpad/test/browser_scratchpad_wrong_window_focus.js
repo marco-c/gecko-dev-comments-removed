@@ -26,9 +26,7 @@ function test()
   
 
   gBrowser.selectedTab = gBrowser.addTab();
-  gBrowser.selectedBrowser.addEventListener("load", function onLoad() {
-    gBrowser.selectedBrowser.removeEventListener("load", onLoad, true);
-
+  gBrowser.selectedBrowser.addEventListener("load", function () {
     openScratchpad(function () {
       let sw = gScratchpadWindow;
       let {require} = Cu.import("resource://devtools/shared/Loader.jsm", {});
@@ -43,7 +41,7 @@ function test()
         });
       });
     });
-  }, true);
+  }, {capture: true, once: true});
 
   content.location = "data:text/html;charset=utf8,<p>test window focus for Scratchpad.";
 }
@@ -61,9 +59,7 @@ function testFocus(sw, hud) {
     is(loc.getAttribute("data-line"), "1", "line value is correct");
     is(loc.getAttribute("data-column"), "1", "column value is correct");
 
-    sw.addEventListener("focus", function onFocus() {
-      sw.removeEventListener("focus", onFocus, true);
-
+    sw.addEventListener("focus", function () {
       let win = Services.wm.getMostRecentWindow("devtools:scratchpad");
 
       ok(win, "there are active Scratchpad windows");
@@ -74,7 +70,7 @@ function testFocus(sw, hud) {
       
       sw.close();
       finish();
-    }, true);
+    }, {capture: true, once: true});
 
     
     EventUtils.synthesizeMouse(loc, 2, 2, {}, hud.iframeWindow);

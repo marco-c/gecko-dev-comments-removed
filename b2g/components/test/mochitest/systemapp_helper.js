@@ -113,8 +113,7 @@ var steps = [
     SystemAppProxy.registerFrame(frame);
     assert.ok(true, "Frame created and registered");
 
-    frame.contentWindow.addEventListener("load", function onload() {
-      frame.contentWindow.removeEventListener("load", onload);
+    frame.contentWindow.addEventListener("load", function() {
       assert.ok(true, "Frame document loaded");
 
       
@@ -128,7 +127,7 @@ var steps = [
 
       
       
-    });
+    }, {once: true});
 
     frame.setAttribute("src", "data:text/html,system app");
   },

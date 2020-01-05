@@ -200,14 +200,13 @@ function runTestInNewWindow(aFile) {
   
   
   
-  testWindow.addEventListener("DOMContentLoaded", function scriptInjector() {
-    testWindow.removeEventListener("DOMContentLoaded", scriptInjector);
+  testWindow.addEventListener("DOMContentLoaded", function() {
     const PARENT_ORIGIN = "http://mochi.test:8888/";
     var e = testWindow.document.createElement('script');
     e.type = 'text/javascript';
     e.src = "mochitest_support_internal.js";
     testWindow.document.getElementsByTagName('head')[0].appendChild(e);
-  });
+  }, {once: true});
 
   window.addEventListener("message", function(aEvent) {
     switch(aEvent.data.type) {

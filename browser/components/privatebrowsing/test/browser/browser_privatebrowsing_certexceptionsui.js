@@ -14,10 +14,9 @@ function test() {
 
   
   var pbWin = OpenBrowserWindow({private: true});
-  pbWin.addEventListener("load", function onLoad() {
-    pbWin.removeEventListener("load", onLoad);
+  pbWin.addEventListener("load", function() {
     doTest();
-  });
+  }, {once: true});
 
   
   function doTest() {

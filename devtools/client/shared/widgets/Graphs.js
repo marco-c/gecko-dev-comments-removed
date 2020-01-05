@@ -1243,10 +1243,9 @@ AbstractCanvasGraph.prototype = {
 AbstractCanvasGraph.createIframe = function (url, parent, callback) {
   let iframe = parent.ownerDocument.createElementNS(HTML_NS, "iframe");
 
-  iframe.addEventListener("DOMContentLoaded", function onLoad() {
-    iframe.removeEventListener("DOMContentLoaded", onLoad);
+  iframe.addEventListener("DOMContentLoaded", function () {
     callback(iframe);
-  });
+  }, {once: true});
 
   
   

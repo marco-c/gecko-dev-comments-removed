@@ -140,11 +140,10 @@ function* testKeyboardInteraction(tree, win) {
 
   
   
-  tree.root.children.addEventListener("keypress", function onClick() {
-    tree.root.children.removeEventListener("keypress", onClick);
+  tree.root.children.addEventListener("keypress", function () {
     
     executeSoon(() => event.resolve(null));
-  });
+  }, {once: true});
   info("Pressing left key to collapse the item");
   event = defer();
   node = tree._selectedLabel;
@@ -183,10 +182,9 @@ function* testKeyboardInteraction(tree, win) {
 
   
 
-  tree.root.children.addEventListener("keypress", function onClick() {
-    tree.root.children.removeEventListener("keypress", onClick);
+  tree.root.children.addEventListener("keypress", function () {
     executeSoon(() => event.resolve(null));
-  });
+  }, {once: true});
   info("Pressing left key to collapse the item");
   event = defer();
   node = tree._selectedLabel;
@@ -197,10 +195,9 @@ function* testKeyboardInteraction(tree, win) {
 
   
 
-  tree.root.children.addEventListener("keypress", function onClick() {
-    tree.root.children.removeEventListener("keypress", onClick);
+  tree.root.children.addEventListener("keypress", function () {
     executeSoon(() => event.resolve(null));
-  });
+  }, {once: true});
   info("Pressing right key to expend the collapsed item");
   event = defer();
   node = tree._selectedLabel;
@@ -215,10 +212,9 @@ function* testKeyboardInteraction(tree, win) {
   node = tree._selectedLabel;
   
   event = defer();
-  tree.root.children.addEventListener("keypress", function onClick() {
-    tree.root.children.removeEventListener("keypress", onClick);
+  tree.root.children.addEventListener("keypress", function () {
     executeSoon(() => event.resolve(null));
-  });
+  }, {once: true});
   info("Pressing down key on last item of the tree");
   EventUtils.sendKey("DOWN", win);
   yield event.promise;

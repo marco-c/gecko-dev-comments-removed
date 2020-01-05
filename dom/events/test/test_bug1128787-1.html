@@ -18,7 +18,6 @@
     var blurEventFired = false;
     var input = document.getElementsByTagName("input")[0];
     input.addEventListener("blur", function (aEvent) {
-      input.removeEventListener("blur", arguments.callee);
       ok(true, "input element gets blur event correctly");
 
       var utils = SpecialPowers.getDOMWindowUtils(window);
@@ -32,7 +31,7 @@
 
         SimpleTest.finish();
       });
-    });
+    }, {once: true});
     document.designMode = "on";
   }
   </script>

@@ -68,13 +68,12 @@ function test_paste(aCurrentTest) {
   
   info("About to focus " + element.id);
   element.addEventListener("focus", function() {
-    element.removeEventListener("focus", arguments.callee);
     executeSoon(function() {
       
       
       info("Pasting into " + element.id);
       EventUtils.synthesizeKey("v", { accelKey: true });
     });
-  });
+  }, {once: true});
   element.focus();
 }

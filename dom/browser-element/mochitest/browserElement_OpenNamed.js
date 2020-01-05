@@ -23,13 +23,11 @@ function runTest() {
     is(popupFrame.getAttribute('name'), 'OpenNamed');
 
     
-    popupFrame.addEventListener('mozbrowsershowmodalprompt', function promptlistener(e) {
-      popupFrame.removeEventListener('mozbrowsershowmodalprompt', promptlistener);
-
+    popupFrame.addEventListener('mozbrowsershowmodalprompt', function(e) {
       ok(gotPopup, 'Got openwindow event before showmodalprompt event.');
       is(e.detail.message, 'success: loaded');
       SimpleTest.executeSoon(test2);
-    });
+    }, {once: true});
 
     document.body.appendChild(popupFrame);
   });

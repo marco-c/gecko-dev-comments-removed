@@ -80,7 +80,6 @@ function test() {
     });
 
     sidebar.addEventListener("load", function() {
-      sidebar.removeEventListener("load", arguments.callee, true);
       executeSoon(function() {
         currentTest.prepare();
 
@@ -115,7 +114,7 @@ function test() {
         
         
       });
-    }, true);
+    }, {capture: true, once: true});
   }
 
   function changeSidebarDirection(aDirection) {

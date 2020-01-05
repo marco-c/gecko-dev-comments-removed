@@ -12,10 +12,9 @@ add_task(function* () {
 
     
     
-    content.addEventListener("popstate", function onPopState() {
-      content.removeEventListener("popstate", onPopState);
+    content.addEventListener("popstate", function() {
       sendAsyncMessage("Test:PopStateOccurred", { location: content.document.location.href });
-    });
+    }, {once: true});
   });
 
   window.maximize();

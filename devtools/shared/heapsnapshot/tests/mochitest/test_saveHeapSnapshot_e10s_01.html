@@ -51,8 +51,7 @@
              iframe.src = childFrameURL;
 
 
-             iframe.addEventListener("mozbrowserloadend", function onLoadEnd() {
-                 iframe.removeEventListener("mozbrowserloadend", onLoadEnd);
+             iframe.addEventListener("mozbrowserloadend", function () {
                  info("iframe done loading");
 
                  var mm = SpecialPowers.getBrowserFrameMessageManager(iframe);
@@ -72,7 +71,7 @@
                  info("Loading frame script to save heap snapshot");
                  mm.loadFrameScript("data:,(" + encodeURI(childFrameScript.toString()) + ")();",
                                     false);
-             });
+             }, {once: true});
 
              info("Loading iframe");
              document.body.appendChild(iframe);

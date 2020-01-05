@@ -244,11 +244,10 @@ function assertVisible(visible, win = window) {
 
 function promiseTransition(win = window) {
   return new Promise(resolve => {
-    win.gURLBar.popup.addEventListener("transitionend", function onEnd() {
-      win.gURLBar.popup.removeEventListener("transitionend", onEnd, true);
+    win.gURLBar.popup.addEventListener("transitionend", function() {
       
       
       resolve();
-    }, true);
+    }, {capture: true, once: true});
   });
 }

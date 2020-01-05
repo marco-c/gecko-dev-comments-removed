@@ -82,10 +82,9 @@ message.wait(window, "init").then(() => bootstrap.init());
 
 message.wait(window, "post-init").then(() => bootstrap.dispatch(loadDevices()));
 
-window.addEventListener("unload", function onUnload() {
-  window.removeEventListener("unload", onUnload);
+window.addEventListener("unload", function () {
   bootstrap.destroy();
-});
+}, {once: true});
 
 
 window.dispatch = action => bootstrap.dispatch(action);

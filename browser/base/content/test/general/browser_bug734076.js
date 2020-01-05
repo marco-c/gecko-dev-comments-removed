@@ -65,10 +65,9 @@ add_task(function* () {
 
           
           return new Promise(resolve => {
-            iframe.addEventListener("load", function onload() {
-              iframe.removeEventListener("load", onload, true);
+            iframe.addEventListener("load", function() {
               resolve("context-showonlythisframe");
-            }, true);
+            }, {capture: true, once: true});
           });
         });
       },

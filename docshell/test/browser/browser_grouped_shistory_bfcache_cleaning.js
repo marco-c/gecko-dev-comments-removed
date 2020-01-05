@@ -6,11 +6,10 @@ add_task(function* () {
   
   function awaitProcessChange(browser) {
     return new Promise(resolve => {
-      browser.addEventListener("BrowserChangedProcess", function bcp(e) {
-        browser.removeEventListener("BrowserChangedProcess", bcp);
+      browser.addEventListener("BrowserChangedProcess", function(e) {
         ok(true, "The browser changed process!");
         resolve();
-      });
+      }, {once: true});
     });
   }
 
@@ -47,11 +46,10 @@ add_task(function* () {
     
     browser1.loadURI("data:text/html,f", null, null);
     yield new Promise(resolve => {
-      tab2.addEventListener("TabClose", function f() {
-        tab2.removeEventListener("TabClose", f);
+      tab2.addEventListener("TabClose", function() {
         ok(true, "The tab is being closed!\n");
         resolve();
-      });
+      }, {once: true});
     });
     
     

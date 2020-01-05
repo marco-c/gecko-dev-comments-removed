@@ -90,10 +90,9 @@ add_task(function* test_swap_frameloader_pagevisibility_events() {
   
   
   yield new Promise((resolve) => {
-    emptyBrowser.addEventListener("pageshow", function onPageShow() {
-      emptyBrowser.removeEventListener("pageshow", onPageShow);
+    emptyBrowser.addEventListener("pageshow", function() {
       resolve();
-    });
+    }, {once: true});
   });
 
   

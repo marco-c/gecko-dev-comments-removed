@@ -142,10 +142,9 @@ function* openTabInFirstParty(aURL, aFirstPartyDomain,
 
       
       yield new Promise(done => {
-        frameElement.addEventListener("load", function loadEnd() {
-          frameElement.removeEventListener("load", loadEnd, true);
+        frameElement.addEventListener("load", function() {
           done();
-        }, true);
+        }, {capture: true, once: true});
 
         
         

@@ -29,15 +29,13 @@ function runTest() {
 
   
   
-  iframe.addEventListener('mozbrowserloadend', function loadend() {
-    iframe.removeEventListener('mozbrowserloadend', loadend);
+  iframe.addEventListener('mozbrowserloadend', function() {
     iframe.src = browserElementTestHelpers.emptyPage1;
 
-    iframe.addEventListener('mozbrowserloadend', function loadend2() {
-      iframe.removeEventListener('mozbrowserloadend', loadend2);
+    iframe.addEventListener('mozbrowserloadend', function() {
       SimpleTest.executeSoon(test1);
-    });
-  });
+    }, {once: true});
+  }, {once: true});
 
 }
 

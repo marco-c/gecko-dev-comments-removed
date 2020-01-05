@@ -13,14 +13,13 @@ exports["test sdk/event/dom does not leak when attached to closed window"] = fun
       let loader = Loader(module);
       let { open } = loader.require('sdk/event/dom');
       let w = openWindow();
-      w.addEventListener("DOMWindowClose", function windowClosed(evt) {
-        w.removeEventListener("DOMWindowClose", windowClosed);
+      w.addEventListener("DOMWindowClose", function(evt) {
         
         
         
         open(w.document, "TestEvent1");
         resolve(loader);
-      });
+      }, {once: true});
       w.close();
     });
   });

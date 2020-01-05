@@ -162,11 +162,10 @@ function testNext() {
       test.onload && test.onload(evt);
 
       if (test.expectError) {
-        content.addEventListener("error", function _onError() {
-          content.removeEventListener("error", _onError);
+        content.addEventListener("error", function () {
           pageError = true;
           startNextTest();
-        });
+        }, {once: true});
         
         
         if (!Services.appinfo.browserTabsRemoteAutostart) {

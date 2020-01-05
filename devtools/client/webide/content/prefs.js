@@ -7,9 +7,7 @@
 const Cu = Components.utils;
 const {Services} = Cu.import("resource://gre/modules/Services.jsm", {});
 
-window.addEventListener("load", function onLoad() {
-  window.removeEventListener("load", onLoad);
-
+window.addEventListener("load", function () {
   
   let inputs = document.querySelectorAll("[data-pref]");
   for (let i of inputs) {
@@ -26,17 +24,16 @@ window.addEventListener("load", function onLoad() {
   
   FillForm();
 
-}, true);
+}, {capture: true, once: true});
 
-window.addEventListener("unload", function onUnload() {
-  window.removeEventListener("unload", onUnload);
+window.addEventListener("unload", function () {
   let inputs = document.querySelectorAll("[data-pref]");
   for (let i of inputs) {
     let pref = i.dataset.pref;
     i.removeEventListener("change", SaveForm);
     Services.prefs.removeObserver(pref, FillForm);
   }
-}, true);
+}, {capture: true, once: true});
 
 function CloseUI() {
   window.parent.UI.openProject();

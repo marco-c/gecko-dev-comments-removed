@@ -3393,10 +3393,9 @@ var gDetailView = {
     
     let whenViewLoaded = callback => {
       if (gViewController.displayedView.hasAttribute("loading")) {
-        gDetailView.node.addEventListener("ViewChanged", function viewChangedEventListener() {
-          gDetailView.node.removeEventListener("ViewChanged", viewChangedEventListener);
+        gDetailView.node.addEventListener("ViewChanged", function() {
           callback();
-        });
+        }, {once: true});
       } else {
         callback();
       }
@@ -3440,10 +3439,9 @@ var gDetailView = {
           this.createOptionsBrowser(rows).then(browser => {
             
             
-            document.addEventListener("ViewChanged", function viewChangedEventListener() {
-              document.removeEventListener("ViewChanged", viewChangedEventListener);
+            document.addEventListener("ViewChanged", function() {
               browser.remove();
-            });
+            }, {once: true});
 
             finish(browser);
           });

@@ -100,8 +100,7 @@ function _attachConsole(aListeners, aCallback, aAttachToTab, aAttachToWorker)
             
             
             aState._worker_ref = worker;
-            worker.addEventListener("message", function listener() {
-              worker.removeEventListener("message", listener);
+            worker.addEventListener("message", function () {
               tabClient.listWorkers(function (response) {
                 let worker = response.workers.filter(w => w.url == workerName)[0];
                 if (!worker) {
@@ -122,7 +121,7 @@ function _attachConsole(aListeners, aCallback, aAttachToTab, aAttachToWorker)
                   });
                 });
               });
-            });
+            }, {once: true});
           } else {
             aState.actor = tab.consoleActor;
             aState.dbgClient.attachConsole(tab.consoleActor, aListeners,

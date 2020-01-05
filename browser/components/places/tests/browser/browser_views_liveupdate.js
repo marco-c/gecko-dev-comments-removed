@@ -33,10 +33,9 @@ function openBookmarksSidebar() {
   
   var sidebar = document.getElementById("sidebar");
   sidebar.addEventListener("load", function() {
-    sidebar.removeEventListener("load", arguments.callee, true);
     
     executeSoon(startTest);
-  }, true);
+  }, {capture: true, once: true});
   SidebarUI.show("viewBookmarksSidebar");
 }
 

@@ -7,11 +7,10 @@ add_task(function* () {
   
   function awaitProcessChange(browser) {
     return new Promise(resolve => {
-      browser.addEventListener("BrowserChangedProcess", function bcp(e) {
-        browser.removeEventListener("BrowserChangedProcess", bcp);
+      browser.addEventListener("BrowserChangedProcess", function(e) {
         ok(true, "The browser changed process!");
         resolve();
-      });
+      }, {once: true});
     });
   }
 

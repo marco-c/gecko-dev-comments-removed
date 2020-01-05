@@ -252,9 +252,7 @@ function loadUITourTestPage(callback, host = "https://example.org/") {
   gTestTab = gBrowser.addTab(url);
   gBrowser.selectedTab = gTestTab;
 
-  gTestTab.linkedBrowser.addEventListener("load", function onLoad() {
-    gTestTab.linkedBrowser.removeEventListener("load", onLoad, true);
-
+  gTestTab.linkedBrowser.addEventListener("load", function() {
     if (gMultiProcessBrowser) {
       
       
@@ -343,7 +341,7 @@ function loadUITourTestPage(callback, host = "https://example.org/") {
     }
 
     waitForFocus(callback, gTestTab.linkedBrowser);
-  }, true);
+  }, {capture: true, once: true});
 }
 
 

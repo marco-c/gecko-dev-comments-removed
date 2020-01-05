@@ -952,23 +952,21 @@ extensions.registerSchemaAPI("tabs", "addon_parent", context => {
           
           
           
-          newTab.addEventListener("SSTabRestoring", function listener() {
+          newTab.addEventListener("SSTabRestoring", function() {
             
-            newTab.removeEventListener("SSTabRestoring", listener);
             
             
             if (tab.pinned) {
               gBrowser.pinTab(newTab);
             }
             gBrowser.moveTabTo(newTab, tab._tPos + 1);
-          });
+          }, {once: true});
 
-          newTab.addEventListener("SSTabRestored", function listener() {
+          newTab.addEventListener("SSTabRestored", function() {
             
-            newTab.removeEventListener("SSTabRestored", listener);
             gBrowser.selectedTab = newTab;
             return resolve(TabManager.convert(extension, newTab));
-          });
+          }, {once: true});
         });
       },
 

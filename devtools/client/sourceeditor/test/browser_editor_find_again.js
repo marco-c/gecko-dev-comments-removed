@@ -27,10 +27,9 @@ const REPLACE_KEY = OS == "Darwin" ? L10N.getStr("replaceAllMac.key")
 
 
 const dispatchAndWaitForFocus = (target) => new Promise((resolve) => {
-  target.addEventListener("focus", function listener() {
-    target.removeEventListener("focus", listener);
+  target.addEventListener("focus", function () {
     resolve(target);
-  });
+  }, {once: true});
 
   target.dispatchEvent(new UIEvent("focus"));
 });

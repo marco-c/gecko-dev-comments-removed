@@ -51,10 +51,9 @@ window.location = "data:application/vnd.mozilla.xul+xml;charset=utf-8,<window/>"
 
 
 var { promise, resolve } = defer();
-eventTarget.addEventListener("DOMContentLoaded", function handler(event) {
-  eventTarget.removeEventListener("DOMContentLoaded", handler);
+eventTarget.addEventListener("DOMContentLoaded", function(event) {
   resolve();
-});
+}, {once: true});
 
 exports.ready = promise;
 exports.window = window;
