@@ -23,7 +23,8 @@ loader.loadSubScript("resource://devtools/shared/transport/transport.js");
 
 const logger = Log.repository.getLogger("Marionette");
 
-this.EXPORTED_SYMBOLS = ["MarionetteServer"];
+this.EXPORTED_SYMBOLS = ["server"];
+this.server = {};
 
 const CONTENT_LISTENER_PREF = "marionette.contentListener";
 
@@ -256,114 +257,116 @@ const RECOMMENDED_PREFS = new Map([
 
 
 
+server.TCPListener = class {
+  
 
 
 
 
 
 
-this.MarionetteServer = function (port, forceLocal) {
-  this.port = port;
-  this.forceLocal = forceLocal;
-  this.conns = {};
-  this.nextConnId = 0;
-  this.alive = false;
-  this._acceptConnections = false;
-  this.alteredPrefs = new Set();
-};
-
-
-
-
-
-
-
-
-
-MarionetteServer.prototype.driverFactory = function() {
-  Preferences.set(CONTENT_LISTENER_PREF, false);
-  return new GeckoDriver(Services.appinfo.name, this);
-};
-
-MarionetteServer.prototype.__defineSetter__("acceptConnections", function (value) {
-  if (!value) {
-    logger.info("New connections will no longer be accepted");
-  } else {
-    logger.info("New connections are accepted again");
-  }
-
-  this._acceptConnections = value;
-});
-
-MarionetteServer.prototype.start = function() {
-  if (this.alive) {
-    return;
+  constructor (port, forceLocal) {
+    this.port = port;
+    this.forceLocal = forceLocal;
+    this.conns = {};
+    this.nextConnId = 0;
+    this.alive = false;
+    this._acceptConnections = false;
+    this.alteredPrefs = new Set();
   }
 
   
-  for (let [k, v] of RECOMMENDED_PREFS) {
-    if (!Preferences.isSet(k)) {
-      logger.debug(`Setting recommended pref ${k} to ${v}`);
-      Preferences.set(k, v);
-      this.alteredPrefs.add(k);
+
+
+
+
+
+
+
+  driverFactory () {
+    Preferences.set(CONTENT_LISTENER_PREF, false);
+    return new GeckoDriver(Services.appinfo.name, this);
+  }
+
+  set acceptConnections (value) {
+    if (!value) {
+      logger.info("New connections will no longer be accepted");
+    } else {
+      logger.info("New connections are accepted again");
     }
+
+    this._acceptConnections = value;
   }
 
-  let flags = Ci.nsIServerSocket.KeepWhenOffline;
-  if (this.forceLocal) {
-    flags |= Ci.nsIServerSocket.LoopbackOnly;
-  }
-  this.listener = new ServerSocket(this.port, flags, 1);
-  this.listener.asyncListen(this);
+  start () {
+    if (this.alive) {
+      return;
+    }
 
-  this.alive = true;
-  this._acceptConnections = true;
-};
+    
+    for (let [k, v] of RECOMMENDED_PREFS) {
+      if (!Preferences.isSet(k)) {
+        logger.debug(`Setting recommended pref ${k} to ${v}`);
+        Preferences.set(k, v);
+        this.alteredPrefs.add(k);
+      }
+    }
 
-MarionetteServer.prototype.stop = function() {
-  if (!this.alive) {
-    return;
-  }
+    let flags = Ci.nsIServerSocket.KeepWhenOffline;
+    if (this.forceLocal) {
+      flags |= Ci.nsIServerSocket.LoopbackOnly;
+    }
+    this.listener = new ServerSocket(this.port, flags, 1);
+    this.listener.asyncListen(this);
 
-  for (let k of this.alteredPrefs) {
-    logger.debug(`Resetting recommended pref ${k}`);
-    Preferences.reset(k);
-  }
-  this.closeListener();
-
-  this.alteredPrefs.clear();
-  this.alive = false;
-  this._acceptConnections = false;
-};
-
-MarionetteServer.prototype.closeListener = function() {
-  this.listener.close();
-  this.listener = null;
-};
-
-MarionetteServer.prototype.onSocketAccepted = function (
-    serverSocket, clientSocket) {
-  if (!this._acceptConnections) {
-    logger.warn("New connections are currently not accepted");
-    return;
+    this.alive = true;
+    this._acceptConnections = true;
   }
 
-  let input = clientSocket.openInputStream(0, 0, 0);
-  let output = clientSocket.openOutputStream(0, 0, 0);
-  let transport = new DebuggerTransport(input, output);
-  let connId = "conn" + this.nextConnId++;
+  stop () {
+    if (!this.alive) {
+      return;
+    }
 
-  let dispatcher = new Dispatcher(connId, transport, this.driverFactory.bind(this));
-  dispatcher.onclose = this.onConnectionClosed.bind(this);
-  this.conns[connId] = dispatcher;
+    for (let k of this.alteredPrefs) {
+      logger.debug(`Resetting recommended pref ${k}`);
+      Preferences.reset(k);
+    }
+    this.closeListener();
 
-  logger.debug(`Accepted connection ${connId} from ${clientSocket.host}:${clientSocket.port}`);
-  dispatcher.sayHello();
-  transport.ready();
-};
+    this.alteredPrefs.clear();
+    this.alive = false;
+    this._acceptConnections = false;
+  }
 
-MarionetteServer.prototype.onConnectionClosed = function (conn) {
-  let id = conn.connId;
-  delete this.conns[id];
-  logger.debug(`Closed connection ${id}`);
+  closeListener () {
+    this.listener.close();
+    this.listener = null;
+  }
+
+  onSocketAccepted (serverSocket, clientSocket) {
+    if (!this._acceptConnections) {
+      logger.warn("New connections are currently not accepted");
+      return;
+    }
+
+    let input = clientSocket.openInputStream(0, 0, 0);
+    let output = clientSocket.openOutputStream(0, 0, 0);
+    let transport = new DebuggerTransport(input, output);
+    let connId = "conn" + this.nextConnId++;
+
+    let dispatcher = new Dispatcher(connId, transport, this.driverFactory.bind(this));
+    dispatcher.onclose = this.onConnectionClosed.bind(this);
+    this.conns[connId] = dispatcher;
+
+    logger.debug(`Accepted connection ${connId} from ${clientSocket.host}:${clientSocket.port}`);
+    dispatcher.sayHello();
+    transport.ready();
+  }
+
+  onConnectionClosed (conn) {
+    let id = conn.connId;
+    delete this.conns[id];
+    logger.debug(`Closed connection ${id}`);
+  }
 };
