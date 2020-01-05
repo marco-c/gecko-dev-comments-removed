@@ -22,7 +22,7 @@ use layout::parallel;
 use layout::util::{LayoutDataAccess, OpaqueNode, LayoutDataWrapper};
 use layout::wrapper::LayoutNode;
 
-use extra::arc::{Arc, MutexArc, RWArc};
+use extra::arc::{Arc, MutexArc};
 use geom::rect::Rect;
 use geom::size::Size2D;
 use gfx::display_list::{ClipDisplayItemClass, DisplayItem, DisplayItemIterator, DisplayList};
@@ -91,18 +91,18 @@ pub struct LayoutTask {
     
     display_list: Option<Arc<DisplayList<OpaqueNode>>>,
 
-    stylist: RWArc<Stylist>,
+    stylist: ~Stylist,
 
-    
+    /// The workers that we use for parallel operation.
     parallel_traversal: Option<WorkQueue<*mut LayoutContext,UnsafeFlow>>,
 
-    
+    /// The channel on which messages can be sent to the profiler.
     profiler_chan: ProfilerChan,
 
     opts: Opts
 }
 
-
+/// The damage computation traversal.
 #[deriving(Clone)]
 struct ComputeDamageTraversal;
 
@@ -118,9 +118,9 @@ impl PostorderFlowTraversal for ComputeDamageTraversal {
     }
 }
 
-
-
-
+/// Propagates restyle damage up and down the tree as appropriate.
+///
+/// FIXME(pcwalton): Merge this with flow tree building and/or other traversals.
 struct PropagateDamageTraversal {
     all_style_damage: bool,
 }
@@ -143,8 +143,8 @@ impl PreorderFlowTraversal for PropagateDamageTraversal {
     }
 }
 
-
-
+/// The bubble-widths traversal, the first part of layout computation. This computes preferred
+/// and intrinsic widths and bubbles them up the tree.
 pub struct BubbleWidthsTraversal<'a> {
     layout_context: &'a mut LayoutContext,
 }
@@ -156,16 +156,16 @@ impl<'a> PostorderFlowTraversal for BubbleWidthsTraversal<'a> {
         true
     }
 
-    
-    
-
-
-
-
-
+    // FIXME: We can't prune until we start reusing flows
+    /*
+    #[inline]
+    fn should_prune(&mut self, flow: &mut Flow) -> bool {
+        flow::mut_base(flow).restyle_damage.lacks(BubbleWidths)
+    }
+    */
 }
 
-
+/// The assign-widths traversal. In Gecko this corresponds to `Reflow`.
 struct AssignWidthsTraversal<'a>(&'a mut LayoutContext);
 
 impl<'a> PreorderFlowTraversal for AssignWidthsTraversal<'a> {
@@ -176,9 +176,9 @@ impl<'a> PreorderFlowTraversal for AssignWidthsTraversal<'a> {
     }
 }
 
-
-
-
+/// The assign-heights-and-store-overflow traversal, the last (and most expensive) part of layout
+/// computation. Determines the final heights for all layout objects, computes positions, and
+/// computes overflow regions. In Gecko this corresponds to `FinishAndStoreOverflow`.
 pub struct AssignHeightsAndStoreOverflowTraversal<'a> {
     layout_context: &'a mut LayoutContext,
 }
@@ -214,7 +214,7 @@ impl ImageResponder for LayoutImageResponder {
 }
 
 impl LayoutTask {
-    
+    /// Spawns a new layout task.
     pub fn create(id: PipelineId,
                   port: Port<Msg>,
                   chan: LayoutChan,
@@ -274,7 +274,7 @@ impl LayoutTask {
             leaf_set: MutexArc::new(LeafSet::new()),
 
             display_list: None,
-            stylist: RWArc::new(new_stylist()),
+            stylist: ~new_stylist(),
             parallel_traversal: parallel_traversal,
             profiler_chan: profiler_chan,
             opts: opts.clone()
@@ -302,6 +302,7 @@ impl LayoutTask {
             constellation_chan: self.constellation_chan.clone(),
             leaf_set: self.leaf_set.clone(),
             font_context_info: font_context_info,
+            stylist: &*self.stylist,
         }
     }
 
@@ -379,10 +380,7 @@ impl LayoutTask {
     }
 
     fn handle_add_stylesheet(&mut self, sheet: Stylesheet) {
-        let mut sheet = Some(sheet);
-        self.stylist.write(|stylist| {
-            stylist.add_stylesheet(sheet.take_unwrap(), AuthorOrigin);
-        });
+        self.stylist.add_stylesheet(sheet, AuthorOrigin)
     }
 
     /// Builds the flow tree.
@@ -521,7 +519,12 @@ impl LayoutTask {
             ReflowDocumentDamage => {}
             _ => {
                 profile(time::LayoutSelectorMatchCategory, self.profiler_chan.clone(), || {
-                    node.match_subtree(self.stylist.clone());
+                    match self.parallel_traversal {
+                        None => node.match_subtree(self.stylist),
+                        Some(ref mut traversal) => {
+                            parallel::match_subtree(node, &mut layout_ctx, traversal)
+                        }
+                    }
                 });
                 profile(time::LayoutSelectorCascadeCategory, self.profiler_chan.clone(), || {
                     node.cascade_subtree(None);

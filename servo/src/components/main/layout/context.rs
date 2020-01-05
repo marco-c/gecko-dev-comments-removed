@@ -18,6 +18,7 @@ use gfx::font_context::{FontContext, FontContextInfo};
 use servo_msg::constellation_msg::ConstellationChan;
 use servo_net::local_image_cache::LocalImageCache;
 use servo_util::geometry::Au;
+use style::Stylist;
 
 #[thread_local]
 static mut FONT_CONTEXT: *mut FontContext = 0 as *mut FontContext;
@@ -39,11 +40,16 @@ pub struct LayoutContext {
 
     
     font_context_info: FontContextInfo,
+
+    
+    
+    
+    stylist: *Stylist,
 }
 
 impl LayoutContext {
     pub fn font_context<'a>(&'a mut self) -> &'a mut FontContext {
-        
+        // Sanity check.
         let mut task = Local::borrow(None::<Task>);
         match task.get().maybe_take_runtime::<GreenTask>() {
             Some(green) => {
