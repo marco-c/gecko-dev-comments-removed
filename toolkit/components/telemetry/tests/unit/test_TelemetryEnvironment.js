@@ -854,6 +854,9 @@ add_task(function* setup() {
   Preferences.set("extensions.hotfix.lastVersion", APP_HOTFIX_VERSION);
 
   
+  Preferences.set("extensions.allow-non-mpc-extensions", true);
+
+  
   
   if (AppConstants.MOZ_BUILD_APP == "browser") {
     spoofAttributionData();
