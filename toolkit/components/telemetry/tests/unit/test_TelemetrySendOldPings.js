@@ -15,7 +15,6 @@ Cu.import("resource://gre/modules/Promise.jsm", this);
 Cu.import("resource://gre/modules/TelemetryStorage.jsm", this);
 Cu.import("resource://gre/modules/TelemetryController.jsm", this);
 Cu.import("resource://gre/modules/TelemetrySend.jsm", this);
-Cu.import("resource://gre/modules/Task.jsm", this);
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 var {OS: {File, Path, Constants}} = Cu.import("resource://gre/modules/osfile.jsm", {});
 
@@ -50,7 +49,7 @@ var gSeenPings = 0;
 
 
 
-var createSavedPings = Task.async(function* (aPingInfos) {
+var createSavedPings = async function(aPingInfos) {
   let pingIds = [];
   let now = Date.now();
 
@@ -58,12 +57,12 @@ var createSavedPings = Task.async(function* (aPingInfos) {
     let num = aPingInfos[type].num;
     let age = now - (aPingInfos[type].age || 0);
     for (let i = 0; i < num; ++i) {
-      let pingId = yield TelemetryController.addPendingPing("test-ping", {}, { overwrite: true });
+      let pingId = await TelemetryController.addPendingPing("test-ping", {}, { overwrite: true });
       if (aPingInfos[type].age) {
         
         
         let filePath = getSavePathForPingId(pingId);
-        yield File.setDates(filePath, null, age);
+        await File.setDates(filePath, null, age);
       }
       gCreatedPings++;
       pingIds.push(pingId);
@@ -71,7 +70,7 @@ var createSavedPings = Task.async(function* (aPingInfos) {
   }
 
   return pingIds;
-});
+};
 
 
 
@@ -79,11 +78,11 @@ var createSavedPings = Task.async(function* (aPingInfos) {
 
 
 
-var clearPings = Task.async(function* (aPingIds) {
+var clearPings = async function(aPingIds) {
   for (let pingId of aPingIds) {
-    yield TelemetryStorage.removePendingPing(pingId);
+    await TelemetryStorage.removePendingPing(pingId);
   }
-});
+};
 
 
 
@@ -120,18 +119,18 @@ function assertReceivedPings(aExpectedNum) {
 
 
 
-var assertNotSaved = Task.async(function* (aPingIds) {
+var assertNotSaved = async function(aPingIds) {
   let saved = 0;
   for (let id of aPingIds) {
     let filePath = getSavePathForPingId(id);
-    if (yield File.exists(filePath)) {
+    if (await File.exists(filePath)) {
       saved++;
     }
   }
   if (saved > 0) {
     do_throw("Found " + saved + " unexpected saved pings.");
   }
-});
+};
 
 
 
@@ -403,21 +402,21 @@ add_task(function* test_pendingPingsQuota() {
   let expectedPrunedPings = [];
   let expectedNotPrunedPings = [];
 
-  let checkPendingPings = Task.async(function*() {
+  let checkPendingPings = async function() {
     
     for (let prunedPingId of expectedPrunedPings) {
-      yield Assert.rejects(TelemetryStorage.loadPendingPing(prunedPingId),
+      await Assert.rejects(TelemetryStorage.loadPendingPing(prunedPingId),
                            "Ping " + prunedPingId + " should have been pruned.");
       const pingPath = getSavePathForPingId(prunedPingId);
-      Assert.ok(!(yield OS.File.exists(pingPath)), "The ping should not be on the disk anymore.");
+      Assert.ok(!(await OS.File.exists(pingPath)), "The ping should not be on the disk anymore.");
     }
 
     
     for (let expectedPingId of expectedNotPrunedPings) {
-      Assert.ok((yield TelemetryStorage.loadPendingPing(expectedPingId)),
+      Assert.ok((await TelemetryStorage.loadPendingPing(expectedPingId)),
                 "Ping" + expectedPingId + " should be among the pending pings.");
     }
-  });
+  };
 
   let pendingPingsInfo = [];
   let pingsSizeInBytes = 0;
