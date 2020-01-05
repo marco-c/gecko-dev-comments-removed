@@ -465,7 +465,7 @@ public final class GeckoProfile {
             clientIdToWrite = getValidClientIdFromDisk(FHR_CLIENT_ID_FILE_PATH);
         } catch (final IOException e) {
             
-            Log.d(LOGTAG, "Could not migrate client ID from FHR – creating a new one: " + e.getLocalizedMessage());
+            Log.d(LOGTAG, "Could not migrate client ID from FHR - creating a new one: " + e.getLocalizedMessage());
             clientIdToWrite = generateNewClientId();
         }
 
