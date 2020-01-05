@@ -999,17 +999,8 @@ nsUrlClassifierLookupCallback::LookupComplete(nsTArray<LookupResult>* results)
         
         
         nsAutoCString partialHash;
-        if (StringEndsWith(result.mTableName, NS_LITERAL_CSTRING("-proto"))) {
-          
-          partialHash = result.PartialHash();
-        } else {
-          
-          
-          
-          partialHash.Assign(reinterpret_cast<char*>(&result.hash.fixedLengthPrefix),
-                             PREFIX_SIZE);
-        }
-
+        partialHash.Assign(reinterpret_cast<char*>(&result.hash.fixedLengthPrefix),
+                           PREFIX_SIZE);
         nsresult rv = completer->Complete(partialHash,
                                           gethashUrl,
                                           result.mTableName,
