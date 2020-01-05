@@ -47,19 +47,22 @@ function runTest(config) {
         {
             exception: 'NotSupportedError',
             func: function () {
-                return navigator.requestMediaKeySystemAccess(new Uint8Array(0), [{}]);
+                return navigator.requestMediaKeySystemAccess('unsupported', [{}]);
             }
         },
+        
         {
-            exception: 'NotSupportedError',
+            exception: 'TypeError',
             func: function () {
                 return navigator.requestMediaKeySystemAccess('', [{}]);
             }
         },
+        
+        
         {
-            exception: 'NotSupportedError',
+            exception: 'TypeError',
             func: function () {
-                return navigator.requestMediaKeySystemAccess('unsupported', [{}]);
+                return navigator.requestMediaKeySystemAccess(new Uint8Array(0), [{}]);
             }
         },
         
@@ -71,32 +74,32 @@ function runTest(config) {
         },
         
         {
-            exception: 'NotSupportedError',
+            exception: 'TypeError',
             func: function () {
                 return navigator.requestMediaKeySystemAccess(keysystem, []);
             }
         },
         
         {
-            exception: 'NotSupportedError',
+            exception: 'TypeError',
             func: function () {
                 return navigator.requestMediaKeySystemAccess(keysystem, {});
             }
         },
         {
-            exception: 'NotSupportedError',
+            exception: 'TypeError',
             func: function () {
                 return navigator.requestMediaKeySystemAccess(keysystem, "invalid");
             }
         },
         {
-            exception: 'NotSupportedError',
+            exception: 'TypeError',
             func: function () {
                 return navigator.requestMediaKeySystemAccess(keysystem, [{}, 6]);
             }
         },
         {
-            exception: 'NotSupportedError',
+            exception: 'TypeError',
             func: function () {
                 return navigator.requestMediaKeySystemAccess(keysystem, ["invalid", "upsupported"]);
             }

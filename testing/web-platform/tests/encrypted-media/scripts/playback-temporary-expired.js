@@ -44,13 +44,20 @@ function runTest(config,qualifier) {
 
             assert_in_array(event.messageType, ['license-request', 'individualization-request']);
 
-            var expiration = Date.now().valueOf();
-            config.messagehandler(event.messageType, event.message, expiration).then(function(response) {
+            var expiration = Date.now().valueOf() + 1000;
+            config.messagehandler(event.messageType, event.message, { expiration: expiration }).then(function(response) {
                 return event.target.update(response);
-            }).then(test.step_func(function(){
+            }).then(test.step_func(function() {
+                
+                
                 assert_approx_equals(event.target.expiration, expiration, 2000, "expiration attribute should equal provided expiration time");
+
+                
+                
                 test.step_timeout(function() {
+                    assert_greater_than(Date.now().valueOf(), expiration, "Starting play before license expired");
                     _video.play();
+                    
                     test.step_timeout(function() { test.done(); }, 2000);
                 }, 5000);
             })).catch(onFailure);
@@ -79,6 +86,7 @@ function runTest(config,qualifier) {
         }).then(function(source) {
             _mediaSource = source;
             _video.src = URL.createObjectURL(_mediaSource);
+            return source.done;
         }).catch(onFailure);
     }, testname);
 }

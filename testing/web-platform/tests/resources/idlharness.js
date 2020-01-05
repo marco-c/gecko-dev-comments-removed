@@ -447,6 +447,14 @@ IdlArray.prototype.assert_type_is = function(value, type)
         return;
     }
 
+    if (type.generic === "Promise") {
+        assert_own_property(value, "then", "Attribute with a Promise type has a then property");
+        
+        
+        
+        return;
+    }
+
     type = type.idlType;
 
     switch(type)

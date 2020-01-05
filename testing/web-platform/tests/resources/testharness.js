@@ -527,7 +527,11 @@
             tests.promise_tests = Promise.resolve();
         }
         tests.promise_tests = tests.promise_tests.then(function() {
-            return Promise.resolve(test.step(func, test, test))
+            var promise = test.step(func, test, test);
+            test.step(function() {
+                assert_not_equals(promise, undefined);
+            });
+            return Promise.resolve(promise)
                 .then(
                     function() {
                         test.done();
@@ -1247,6 +1251,7 @@
                 ReadOnlyError: 0,
                 VersionError: 0,
                 OperationError: 0,
+                NotAllowedError: 0
             };
 
             if (!(name in name_code_map)) {
@@ -2461,6 +2466,11 @@
             } catch (e) {
                 stack = e.stack;
             }
+        }
+
+        
+        if (!stack) {
+            return "(Stack trace unavailable)";
         }
 
         var lines = stack.split("\n");

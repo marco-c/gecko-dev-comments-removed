@@ -9,7 +9,7 @@ function runTest(config, qualifier) {
             _access,
             _mediaKeys1,
             _mediaKeys2,
-            fail;
+            _usingMediaKeys2 = false;;
 
         
         assert_equals(_video.mediaKeys, null);
@@ -52,16 +52,21 @@ function runTest(config, qualifier) {
             _video.src = URL.createObjectURL(source);
             
             
+            
             return _video.setMediaKeys(_mediaKeys2);
-        })).then(test.step_func(function() {
+        }).then(test.step_func(function() {
             
+            _usingMediaKeys2 = true;
+            assert_equals(_video.mediaKeys, _mediaKeys2);
             
-            assert_equals(_video2.mediaKeys, _mediaKeys2);
-            fail = false;
             return Promise.resolve();
-        }, test.step_func(function(error) {
-            fail = true;
+        }), test.step_func(function(error) {
+            
+            _usingMediaKeys2 = false;
             assert_equals(_video.mediaKeys, _mediaKeys1);
+            
+            
+            
             assert_in_array(error.name, ['InvalidStateError','NotSupportedError']);
             assert_not_equals(error.message, '');
             
@@ -69,16 +74,23 @@ function runTest(config, qualifier) {
         })).then(function() {
             
             
+            
             return _video.setMediaKeys(null);
         }).then(test.step_func(function() {
-            assert_unreached('Clearing mediaKeys after setting src should have failed.');
+            
+            assert_equals(_video.mediaKeys, null);
+            test.done();
         }), test.step_func(function(error) {
-            if(fail) {
+            
+            if(!_usingMediaKeys2) {
                 assert_equals(_video.mediaKeys, _mediaKeys1);
             } else {
                 assert_equals(_video.mediaKeys, _mediaKeys2);
             }
-            assert_is_array(error.name, ['InvalidStateError','ReferenceError']);
+            
+            
+            
+            assert_in_array(error.name, ['InvalidStateError','NotSupportedError']);
             assert_not_equals(error.message, '');
             test.done();
         })).catch(onFailure);

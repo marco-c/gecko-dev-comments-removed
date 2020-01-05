@@ -8,10 +8,7 @@ ReflectionHarness.failed = document.getElementById("failed");
 
 
 
-
-
-
-ReflectionHarness.catchUnexpectedExceptions = true;
+ReflectionHarness.conformanceTesting = false;
 
 
 
@@ -89,9 +86,25 @@ ReflectionHarness.currentTestInfo = {};
 
 
 
+ReflectionHarness.currentTestDescription = null;
 
-ReflectionHarness.testWrapper = function(fn) {
-  fn();
+
+
+
+
+ReflectionHarness.test = function(fn, description) {
+  if (this.currentTestDescription) {
+    throw "TEST BUG: test() may not be called recursively!";
+  }
+  this.currentTestDescription = description;
+  try {
+    fn();
+    
+    this.success();
+  } catch(err) {
+    this.failure("Exception thrown during tests with " + description);
+  }
+  this.currentTestDescription = null;
 }
 
 
@@ -102,26 +115,18 @@ ReflectionHarness.testWrapper = function(fn) {
 
 
 
-ReflectionHarness.test = function(expected, actual, description) {
+ReflectionHarness.assertEquals = function(expected, actual, description) {
   
   if (expected === 0 && actual === 0 && 1/expected === 1/actual) {
     this.increment(this.passed);
-    return true;
   } else if (expected === actual) {
     this.increment(this.passed);
-    return true;
   } else {
     this.increment(this.failed);
-    this.reportFailure(description + ' (expected ' + this.stringRep(actual) + ', got ' + this.stringRep(expected) + ')');
-    return false;
-  }
-}
-
-ReflectionHarness.run = function(fun, description) {
-  try {
-    fun();
-  } catch (err) {
-    ReflectionHarness.failure(description);
+    this.reportFailure(this.currentTestDescription +
+        (description ? " followed by " + description : "") +
+        ' (expected ' + this.stringRep(actual) + ', got ' +
+        this.stringRep(expected) + ')');
   }
 }
 
@@ -132,7 +137,7 @@ ReflectionHarness.run = function(fun, description) {
 
 
 
-ReflectionHarness.testException = function(exceptionName, fn, description) {
+ReflectionHarness.assertThrows = function(exceptionName, fn) {
   try {
     fn();
   } catch (e) {
@@ -142,7 +147,8 @@ ReflectionHarness.testException = function(exceptionName, fn, description) {
     }
   }
   this.increment(this.failed);
-  this.reportFailure(description);
+  this.reportFailure(this.currentTestDescription + " must throw " +
+      exceptionName);
   return false;
 }
 

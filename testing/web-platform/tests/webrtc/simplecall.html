@@ -6,6 +6,8 @@
 
 
 
+
+
 <html>
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
@@ -108,9 +110,8 @@
 
   // This function starts the test.
   test.step(function() {
-    navigator.getUserMedia({ video: true, audio: true },
-        getUserMediaOkCallback,
-        failed('getUserMedia'));
+    navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+      .then(getUserMediaOkCallback, failed('getUserMedia'));
   });
 </script>
 
