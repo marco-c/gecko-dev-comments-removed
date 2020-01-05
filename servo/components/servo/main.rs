@@ -15,7 +15,7 @@
 
 
 
-#![feature(start, libc)]
+#![feature(start)]
 
 
 extern crate servo;
