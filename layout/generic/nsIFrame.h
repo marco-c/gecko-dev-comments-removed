@@ -1644,6 +1644,11 @@ public:
   
 
 
+  bool HasAnimationOfTransform() const;
+
+  
+
+
 
   bool HasOpacity() const
   {
