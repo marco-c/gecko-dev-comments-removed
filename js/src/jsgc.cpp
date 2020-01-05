@@ -4334,14 +4334,16 @@ js::gc::MarkingValidator::validate()
 
 
 
-                MOZ_ASSERT_IF(bitmap->isMarked(cell, BLACK), incBitmap->isMarked(cell, BLACK));
+                if (bitmap->isMarked(cell, BLACK))
+                    MOZ_RELEASE_ASSERT(incBitmap->isMarked(cell, BLACK));
 
                 
 
 
 
 
-                MOZ_ASSERT_IF(!bitmap->isMarked(cell, GRAY), !incBitmap->isMarked(cell, GRAY));
+                if (!bitmap->isMarked(cell, GRAY))
+                    MOZ_RELEASE_ASSERT(!incBitmap->isMarked(cell, GRAY));
 
                 thing += Arena::thingSize(kind);
             }
