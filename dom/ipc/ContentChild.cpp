@@ -189,6 +189,7 @@
 #include "nsDeviceStorage.h"
 #include "DomainPolicy.h"
 #include "mozilla/dom/ipc/StructuredCloneData.h"
+#include "mozilla/dom/telephony/PTelephonyChild.h"
 #include "mozilla/dom/time/DateCacheCleaner.h"
 #include "mozilla/net/NeckoMessageUtils.h"
 #include "mozilla/widget/PuppetBidiKeyboard.h"
@@ -206,6 +207,7 @@ using namespace mozilla::dom::devicestorage;
 using namespace mozilla::dom::icc;
 using namespace mozilla::dom::ipc;
 using namespace mozilla::dom::mobileconnection;
+using namespace mozilla::dom::telephony;
 using namespace mozilla::dom::workers;
 using namespace mozilla::media;
 using namespace mozilla::embedding;
@@ -1421,7 +1423,11 @@ ContentChild::RecvSetProcessSandbox(const MaybeFileDesc& aBroker)
     NS_LITERAL_CSTRING("ContentSandboxEnabled"),
     sandboxEnabled? NS_LITERAL_CSTRING("1") : NS_LITERAL_CSTRING("0"));
 #if defined(XP_LINUX) && !defined(OS_ANDROID)
-  SandboxInfo::Get().AnnotateCrashReport();
+  nsAutoCString flagsString;
+  flagsString.AppendInt(SandboxInfo::Get().AsInteger());
+
+  CrashReporter::AnnotateCrashReport(
+    NS_LITERAL_CSTRING("ContentSandboxCapabilities"), flagsString);
 #endif 
 #endif 
 #endif 
@@ -1974,6 +1980,19 @@ ContentChild::AllocPHandlerServiceChild()
 bool ContentChild::DeallocPHandlerServiceChild(PHandlerServiceChild* aHandlerServiceChild)
 {
   static_cast<HandlerServiceChild*>(aHandlerServiceChild)->Release();
+  return true;
+}
+
+PTelephonyChild*
+ContentChild::AllocPTelephonyChild()
+{
+  MOZ_CRASH("No one should be allocating PTelephonyChild actors");
+}
+
+bool
+ContentChild::DeallocPTelephonyChild(PTelephonyChild* aActor)
+{
+  delete aActor;
   return true;
 }
 
