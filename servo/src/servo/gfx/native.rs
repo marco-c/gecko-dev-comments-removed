@@ -6,3 +6,4 @@
 
 pub use font::FontHandle;
 pub use font_context::FontContextHandle;
+pub use font_list::FontListHandle;
