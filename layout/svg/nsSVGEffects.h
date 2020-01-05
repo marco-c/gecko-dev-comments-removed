@@ -511,6 +511,19 @@ public:
       return !HasNoOrValidClipPath();
     }
 
+    
+
+
+
+    bool HasNoOrValidMask();
+
+    
+
+
+    bool HasInvalidMask() {
+      return !HasNoOrValidMask();
+    }
+
     bool HasValidFilter() {
       return mFilter && mFilter->ReferencesValidResources();
     }
