@@ -50,6 +50,7 @@
 #include "nsStringStream.h"
 #include "nsThreadUtils.h"
 #include "nsXULAppAPI.h"
+#include "SlicedInputStream.h"
 #include "StreamBlobImpl.h"
 #include "WorkerPrivate.h"
 #include "WorkerRunnable.h"
@@ -2765,19 +2766,44 @@ CreateStreamHelper::GetStream(nsIInputStream** aInputStream)
   MOZ_ASSERT(baseRemoteBlobImpl);
 
   if (EventTargetIsOnCurrentThread(baseRemoteBlobImpl->GetActorEventTarget())) {
+    
+    
     RunInternal(baseRemoteBlobImpl, false);
   } else if (PBackgroundChild* manager = mozilla::ipc::BackgroundChild::GetForCurrentThread()) {
+    
+    
+    
+    
     BlobChild* blobChild = BlobChild::GetOrCreate(manager, baseRemoteBlobImpl);
     MOZ_ASSERT(blobChild);
 
-    RefPtr<BlobImpl> blobImpl = blobChild->GetBlobImpl();
-    MOZ_ASSERT(blobImpl);
+    
+    
+    
+    RefPtr<BlobImpl> baseBlobImpl = blobChild->GetBlobImpl();
+    MOZ_ASSERT(baseBlobImpl);
 
     ErrorResult rv;
-    blobImpl->GetInternalStream(aInputStream, rv);
+    nsCOMPtr<nsIInputStream> baseInputStream;
+    baseBlobImpl->GetInternalStream(getter_AddRefs(baseInputStream), rv);
+    if (NS_WARN_IF(rv.Failed())) {
+      return rv.StealNSResult();
+    }
+
+    
+    
+    
+    if (mRemoteBlobImpl->IsSlice()) {
+      RefPtr<SlicedInputStream> slicedInputStream =
+        new SlicedInputStream(baseInputStream, mStart, mLength);
+      slicedInputStream.forget(aInputStream);
+    } else {
+      baseInputStream.forget(aInputStream);
+    }
+
     mRemoteBlobImpl = nullptr;
     mDone = true;
-    return rv.StealNSResult();
+    return NS_OK;
   } else {
     nsresult rv = baseRemoteBlobImpl->DispatchToTarget(this);
     if (NS_WARN_IF(NS_FAILED(rv))) {
