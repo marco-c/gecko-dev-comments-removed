@@ -6,6 +6,7 @@
 
 
 #include "nsCSSRules.h"
+#include "nsCSSFontFaceRule.h"
 
 #include "mozilla/Attributes.h"
 
