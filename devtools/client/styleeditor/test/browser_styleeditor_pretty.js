@@ -46,7 +46,14 @@ const ORIGINAL_SOURCE = "" +
   "color\: red\r?\n" +
 "\}";
 
+const EXPAND_TAB = "devtools.editor.expandtab";
+
 add_task(function* () {
+  let oldExpandTabPref = SpecialPowers.getBoolPref(EXPAND_TAB);
+  
+  
+  SpecialPowers.setBoolPref(EXPAND_TAB, false);
+
   let { ui } = yield openStyleEditorForURL(TESTCASE_URI);
   is(ui.editors.length, 2, "Two sheets present.");
 
@@ -65,4 +72,6 @@ add_task(function* () {
   let originalSourceRE = new RegExp(ORIGINAL_SOURCE);
   ok(originalSourceRE.test(editor.sourceEditor.getText()),
      "non-minified source has been left untouched");
+
+  SpecialPowers.setBoolPref(EXPAND_TAB, oldExpandTabPref);
 });

@@ -23,6 +23,19 @@ const DETECT_INDENT_MAX_LINES = 500;
 
 
 
+function getTabPrefs() {
+  let indentWithTabs = !Services.prefs.getBoolPref(EXPAND_TAB);
+  let indentUnit = Services.prefs.getIntPref(TAB_SIZE);
+  return {indentUnit, indentWithTabs};
+}
+
+
+
+
+
+
+
+
 
 
 function getIndentationFromPrefs() {
@@ -31,9 +44,7 @@ function getIndentationFromPrefs() {
     return false;
   }
 
-  let indentWithTabs = !Services.prefs.getBoolPref(EXPAND_TAB);
-  let indentUnit = Services.prefs.getIntPref(TAB_SIZE);
-  return {indentUnit, indentWithTabs};
+  return getTabPrefs();
 }
 
 
@@ -155,6 +166,7 @@ function detectIndentation(textIteratorFn) {
 exports.EXPAND_TAB = EXPAND_TAB;
 exports.TAB_SIZE = TAB_SIZE;
 exports.DETECT_INDENT = DETECT_INDENT;
+exports.getTabPrefs = getTabPrefs;
 exports.getIndentationFromPrefs = getIndentationFromPrefs;
 exports.getIndentationFromIteration = getIndentationFromIteration;
 exports.getIndentationFromString = getIndentationFromString;
