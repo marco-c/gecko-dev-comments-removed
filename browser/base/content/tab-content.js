@@ -622,10 +622,6 @@ var WebBrowserChrome = {
     return true;
   },
 
-  shouldLoadURIInThisProcess: function(aURI) {
-    return E10SUtils.shouldLoadURIInThisProcess(aURI);
-  },
-
   
   reloadInFreshProcess: function(aDocShell, aURI, aReferrer) {
     E10SUtils.redirectLoad(aDocShell, aURI, aReferrer, true);
