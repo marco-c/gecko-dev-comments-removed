@@ -71,8 +71,6 @@ IGNORED_DIRS = [
     os.path.join(".", "target"),
     os.path.join(".", "ports", "cef"),
     
-    os.path.join(".", "ports", "geckolib", "gecko_bindings", "tools"),
-    
     os.path.join(".", "."),
 ]
 
