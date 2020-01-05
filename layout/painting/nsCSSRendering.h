@@ -479,7 +479,8 @@ struct nsCSSRendering {
                             const nsRect& aFill,
                             const nsSize& aRepeatSize,
                             const mozilla::CSSIntRect& aSrc,
-                            const nsSize& aIntrinsiceSize);
+                            const nsSize& aIntrinsiceSize,
+                            float aOpacity = 1.0);
 
   
 
