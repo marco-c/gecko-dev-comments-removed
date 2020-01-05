@@ -1,0 +1,5 @@
+window.requestAnimationFrame(function() {
+  
+  var begin = window.performance.now();
+  while (window.performance.now() < begin + 51);
+});
