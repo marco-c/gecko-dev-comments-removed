@@ -1203,6 +1203,11 @@ nsStyleContext::CalcStyleDifferenceInternal(StyleContextLike* aNewContext,
     hint |= nsChangeHint_RepaintFrame;
   } else if (thisVis && !NS_IsHintSubset(nsChangeHint_RepaintFrame, hint)) {
     
+    
+    
+    MOZ_ASSERT(!ServoStyleSet::IsInServoTraversal());
+
+    
     bool change = false;
 
     
