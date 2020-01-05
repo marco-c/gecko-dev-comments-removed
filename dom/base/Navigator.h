@@ -278,9 +278,6 @@ public:
   static bool HasWakeLockSupport(JSContext* , JSObject* );
   static bool HasWifiManagerSupport(JSContext* ,
                                   JSObject* aGlobal);
-#ifdef MOZ_NFC
-  static bool HasNFCSupport(JSContext* , JSObject* aGlobal);
-#endif 
   static bool HasUserMediaSupport(JSContext* ,
                                   JSObject* );
 
