@@ -16,14 +16,19 @@ use font_face::FontFaceRuleData;
 use font_face::parse_font_face_block;
 #[cfg(feature = "gecko")]
 pub use gecko::rules::FontFaceRule;
+#[cfg(feature = "gecko")]
+use gecko_bindings::structs::URLExtraData;
+#[cfg(feature = "gecko")]
+use gecko_bindings::sugar::refptr::RefPtr;
 use keyframes::{Keyframe, parse_keyframe_list};
 use media_queries::{Device, MediaList, parse_media_query_list};
 use parking_lot::RwLock;
-use parser::{ParserContext, ParserContextExtraData, log_css_error};
+use parser::{ParserContext, log_css_error};
 use properties::{PropertyDeclarationBlock, parse_property_declaration_list};
 use selector_parser::{SelectorImpl, SelectorParser};
 use selectors::parser::SelectorList;
 use servo_config::prefs::PREFS;
+#[cfg(not(feature = "gecko"))]
 use servo_url::ServoUrl;
 use shared_lock::{SharedRwLock, Locked, ToCssWithGuard, SharedRwLockReadGuard};
 use std::cell::Cell;
@@ -36,6 +41,30 @@ use supports::SupportsCondition;
 use values::specified::url::SpecifiedUrl;
 use viewport::ViewportRule;
 
+
+
+#[cfg(not(feature = "gecko"))]
+pub type UrlExtraData = ServoUrl;
+
+
+#[cfg(feature = "gecko")]
+pub type UrlExtraData = RefPtr<URLExtraData>;
+
+#[cfg(feature = "gecko")]
+impl UrlExtraData {
+    
+    
+    
+    pub fn as_str(&self) -> &str {
+        
+        "(stylo: not supported)"
+    }
+}
+
+
+
+#[cfg(feature = "gecko")]
+impl Eq for UrlExtraData {}
 
 
 
@@ -106,7 +135,12 @@ impl CssRules {
     }
 
     
-    pub fn insert_rule(&mut self, rule: &str, parent_stylesheet: &Stylesheet, index: usize, nested: bool)
+    pub fn insert_rule(&mut self,
+                       rule: &str,
+                       parent_stylesheet: &Stylesheet,
+                       index: usize,
+                       nested: bool,
+                       loader: Option<&StylesheetLoader>)
                        -> Result<CssRule, RulesMutateError> {
         
         if index > self.0.len() {
@@ -125,8 +159,7 @@ impl CssRules {
         
         
         let (new_rule, new_state) =
-            try!(CssRule::parse(&rule, parent_stylesheet,
-                                ParserContextExtraData::default(), state));
+            try!(CssRule::parse(&rule, parent_stylesheet, state, loader));
 
         
         
@@ -184,7 +217,7 @@ pub struct Stylesheet {
     
     pub origin: Origin,
     
-    pub base_url: ServoUrl,
+    pub url_data: UrlExtraData,
     
     pub shared_lock: SharedRwLock,
     
@@ -259,7 +292,7 @@ impl ParseErrorReporter for MemoryHoleReporter {
             _: &mut Parser,
             _: SourcePosition,
             _: &str,
-            _: &ServoUrl) {
+            _: &UrlExtraData) {
         
     }
 }
@@ -342,15 +375,14 @@ impl CssRule {
     #[allow(missing_docs)]
     pub fn parse(css: &str,
                  parent_stylesheet: &Stylesheet,
-                 extra_data: ParserContextExtraData,
-                 state: Option<State>)
+                 state: Option<State>,
+                 loader: Option<&StylesheetLoader>)
                  -> Result<(Self, State), SingleRuleParseError> {
         let error_reporter = MemoryHoleReporter;
         let mut namespaces = parent_stylesheet.namespaces.write();
-        let context = ParserContext::new_with_extra_data(parent_stylesheet.origin,
-                                                         &parent_stylesheet.base_url,
-                                                         &error_reporter,
-                                                         extra_data);
+        let context = ParserContext::new(parent_stylesheet.origin,
+                                         &parent_stylesheet.url_data,
+                                         &error_reporter);
         let mut input = Parser::new(css);
 
         
@@ -359,7 +391,7 @@ impl CssRule {
             stylesheet_origin: parent_stylesheet.origin,
             context: context,
             shared_lock: &parent_stylesheet.shared_lock,
-            loader: None,
+            loader: loader,
             state: Cell::new(state),
             namespaces: &mut namespaces,
         };
@@ -563,13 +595,15 @@ impl Stylesheet {
     
     pub fn update_from_str(existing: &Stylesheet,
                            css: &str,
+                           url_data: &UrlExtraData,
                            stylesheet_loader: Option<&StylesheetLoader>,
-                           error_reporter: &ParseErrorReporter,
-                           extra_data: ParserContextExtraData) {
+                           error_reporter: &ParseErrorReporter) {
         let mut namespaces = Namespaces::default();
+        
+        
         let (rules, dirty_on_viewport_size_change) = Stylesheet::parse_rules(
-            css, &existing.base_url, existing.origin, &mut namespaces, &existing.shared_lock,
-            stylesheet_loader, error_reporter, extra_data,
+            css, url_data, existing.origin, &mut namespaces,
+            &existing.shared_lock, stylesheet_loader, error_reporter,
         );
 
         *existing.namespaces.write() = namespaces;
@@ -582,13 +616,12 @@ impl Stylesheet {
     }
 
     fn parse_rules(css: &str,
-                   base_url: &ServoUrl,
+                   url_data: &UrlExtraData,
                    origin: Origin,
                    namespaces: &mut Namespaces,
                    shared_lock: &SharedRwLock,
                    stylesheet_loader: Option<&StylesheetLoader>,
-                   error_reporter: &ParseErrorReporter,
-                   extra_data: ParserContextExtraData)
+                   error_reporter: &ParseErrorReporter)
                    -> (Vec<CssRule>, bool) {
         let mut rules = Vec::new();
         let mut input = Parser::new(css);
@@ -597,10 +630,7 @@ impl Stylesheet {
             namespaces: namespaces,
             shared_lock: shared_lock,
             loader: stylesheet_loader,
-            context: ParserContext::new_with_extra_data(origin,
-                                                        base_url,
-                                                        error_reporter,
-                                                        extra_data),
+            context: ParserContext::new(origin, url_data, error_reporter),
             state: Cell::new(State::Start),
         };
 
@@ -629,21 +659,20 @@ impl Stylesheet {
     
     
     pub fn from_str(css: &str,
-                    base_url: ServoUrl,
+                    url_data: UrlExtraData,
                     origin: Origin,
                     media: MediaList,
                     shared_lock: SharedRwLock,
                     stylesheet_loader: Option<&StylesheetLoader>,
-                    error_reporter: &ParseErrorReporter,
-                    extra_data: ParserContextExtraData) -> Stylesheet {
+                    error_reporter: &ParseErrorReporter) -> Stylesheet {
         let mut namespaces = Namespaces::default();
         let (rules, dirty_on_viewport_size_change) = Stylesheet::parse_rules(
-            css, &base_url, origin, &mut namespaces, &shared_lock,
-            stylesheet_loader, error_reporter, extra_data,
+            css, &url_data, origin, &mut namespaces,
+            &shared_lock, stylesheet_loader, error_reporter,
         );
         Stylesheet {
             origin: origin,
-            base_url: base_url,
+            url_data: url_data,
             namespaces: RwLock::new(namespaces),
             rules: CssRules::new(rules, &shared_lock),
             media: Arc::new(shared_lock.wrap(media)),
@@ -862,7 +891,7 @@ impl<'a> AtRuleParser for TopLevelRuleParser<'a> {
                                 media: Arc::new(self.shared_lock.wrap(media)),
                                 shared_lock: self.shared_lock.clone(),
                                 origin: self.context.stylesheet_origin,
-                                base_url: self.context.base_url.clone(),
+                                url_data: self.context.url_data.clone(),
                                 namespaces: RwLock::new(Namespaces::default()),
                                 dirty_on_viewport_size_change: AtomicBool::new(false),
                                 disabled: AtomicBool::new(false),

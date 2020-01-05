@@ -74,6 +74,15 @@ impl<T: RefCounted> RefPtr<T> {
     
     
     
+    
+    
+    pub unsafe fn from_ptr_ref(ptr: &*mut T) -> &Self {
+        mem::transmute(ptr)
+    }
+
+    
+    
+    
     pub fn forget(self) -> structs::RefPtr<T> {
         let ret = structs::RefPtr {
             mRawPtr: self.ptr,

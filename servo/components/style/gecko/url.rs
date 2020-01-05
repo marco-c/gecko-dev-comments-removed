@@ -34,18 +34,9 @@ impl SpecifiedUrl {
     pub fn parse_from_string<'a>(url: Cow<'a, str>,
                                  context: &ParserContext)
                                  -> Result<Self, ()> {
-        let extra = &context.extra_data;
-        if extra.data.is_none() {
-            
-            
-            
-            warn!("stylo: skipping declaration without ParserContextExtraData");
-            return Err(())
-        }
-
         Ok(SpecifiedUrl {
             serialization: Arc::new(url.into_owned()),
-            extra_data: extra.data.as_ref().unwrap().clone(),
+            extra_data: context.url_data.clone(),
         })
     }
 
