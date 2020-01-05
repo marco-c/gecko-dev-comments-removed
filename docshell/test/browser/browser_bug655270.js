@@ -31,7 +31,11 @@ function test() {
 
       if (aURI.spec == origURL) {
         is(aValue, faviconURL, 'FaviconURL for original URI');
-        tab.linkedBrowser.contentWindow.history.pushState('', '', '?new_page');
+        
+        
+        ContentTask.spawn(tab.linkedBrowser, null, function() {
+          content.history.pushState('', '', '?new_page');
+        });
       }
 
       if (aURI.spec == newURL) {
