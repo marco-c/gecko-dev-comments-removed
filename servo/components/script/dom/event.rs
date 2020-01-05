@@ -174,55 +174,67 @@ impl Event {
 }
 
 impl<'a> EventMethods for JSRef<'a, Event> {
+    
     fn EventPhase(self) -> u16 {
         self.phase.get() as u16
     }
 
+    
     fn Type(self) -> DOMString {
         
         let type_ = self.type_.borrow();
         type_.clone()
     }
 
+    
     fn GetTarget(self) -> Option<Temporary<EventTarget>> {
         self.target.get()
     }
 
+    
     fn GetCurrentTarget(self) -> Option<Temporary<EventTarget>> {
         self.current_target.get()
     }
 
+    
     fn DefaultPrevented(self) -> bool {
         self.canceled.get()
     }
 
+    
     fn PreventDefault(self) {
         if self.cancelable.get() {
             self.canceled.set(true)
         }
     }
 
+    
     fn StopPropagation(self) {
         self.stop_propagation.set(true);
     }
 
+    
     fn StopImmediatePropagation(self) {
         self.stop_immediate.set(true);
         self.stop_propagation.set(true);
     }
 
+    
     fn Bubbles(self) -> bool {
         self.bubbles.get()
     }
 
+    
     fn Cancelable(self) -> bool {
         self.cancelable.get()
     }
 
+    
     fn TimeStamp(self) -> u64 {
         self.timestamp
     }
 
+    
     fn InitEvent(self,
                  type_: DOMString,
                  bubbles: bool,
@@ -242,6 +254,7 @@ impl<'a> EventMethods for JSRef<'a, Event> {
         self.cancelable.set(cancelable);
     }
 
+    
     fn IsTrusted(self) -> bool {
         self.trusted.get()
     }
