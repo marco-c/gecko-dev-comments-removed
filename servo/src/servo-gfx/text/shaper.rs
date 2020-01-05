@@ -4,9 +4,15 @@
 
 
 
-use servo_gfx_font::Font;
+use gfx_font::Font;
+use text::glyph::GlyphStore;
 
 pub type Shaper/& = harfbuzz::shaper::HarfbuzzShaper;
+
+trait ShaperMethods {
+    fn shape_text(text: &str, glyphs: &mut GlyphStore);
+
+}
 
 
 

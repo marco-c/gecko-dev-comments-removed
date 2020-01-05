@@ -368,7 +368,7 @@ impl Font {
     }
 }
 
-
+// Public API
 pub trait FontMethods {
     fn draw_text_into_context(rctx: &RenderContext,
                               run: &TextRun,
@@ -376,11 +376,11 @@ pub trait FontMethods {
                               baseline_origin: Point2D<Au>,
                               color: Color);
     fn measure_text(&TextRun, &const Range) -> RunMetrics;
-    fn shape_text(@self, &str) -> GlyphStore;
+    fn shape_text(@self, &str, &mut GlyphStore);
     fn get_descriptor() -> FontDescriptor;
 
-    
-    
+    // these are used to get glyphs and advances in the case that the
+    // shaper can't figure it out.
     fn glyph_index(char) -> Option<GlyphIndex>;
     fn glyph_h_advance(GlyphIndex) -> FractionalPixel;
 }
@@ -430,7 +430,7 @@ pub impl Font : FontMethods {
         };
 
         let azglyph_buf_len = azglyphs.len();
-        if azglyph_buf_len == 0 { return; } 
+        if azglyph_buf_len == 0 { return; } // Otherwise the Quartz backend will assert.
 
         let azglyph_buf = dvec::unwrap(move azglyphs);
         let glyphbuf: AzGlyphBuffer = unsafe {{
@@ -438,7 +438,7 @@ pub impl Font : FontMethods {
             mNumGlyphs: azglyph_buf_len as uint32_t            
         }};
 
-        
+        // TODO(Issue #64): this call needs to move into azure_hl.rs
         AzDrawTargetFillGlyphs(target.azure_draw_target,
                                azfontref,
                                ptr::to_unsafe_ptr(&glyphbuf),
@@ -450,8 +450,8 @@ pub impl Font : FontMethods {
     fn measure_text(run: &TextRun, range: &const Range) -> RunMetrics {
         assert range.is_valid_for_string(run.text);
 
-        
-        
+        // TODO(Issue #199): alter advance direction for RTL
+        // TODO(Issue #98): using inter-char and inter-word spacing settings  when measuring text
         let mut advance = Au(0);
         for run.glyphs.iter_glyphs_for_byte_range(range) |_i, glyph| {
             advance += glyph.advance();
@@ -459,9 +459,9 @@ pub impl Font : FontMethods {
         let mut bounds = Rect(Point2D(Au(0), -self.metrics.ascent),
                               Size2D(advance, self.metrics.ascent + self.metrics.descent));
 
-        
-        
-        
+        // TODO(Issue #125): support loose and tight bounding boxes; using the
+        // ascent+descent and advance is sometimes too generous and
+        // looking at actual glyph extents can yield a tighter box.
 
         RunMetrics { 
             advance_width: advance,
@@ -471,11 +471,11 @@ pub impl Font : FontMethods {
         }
     }
 
-    fn shape_text(@self, text: &str) -> GlyphStore {
-        let store = GlyphStore(str::char_len(text));
+    fn shape_text(@self, text: &str, store: &mut GlyphStore) {
+        // TODO(Issue #229): use a more efficient strategy for repetitive shaping.
+        // For example, Gecko uses a per-"word" hashtable of shaper results.
         let shaper = self.get_shaper();
-        shaper.shape_text(text, &store);
-        return move store;
+        shaper.shape_text(text, store);
     }
 
     fn get_descriptor() -> FontDescriptor {
@@ -489,7 +489,7 @@ pub impl Font : FontMethods {
     fn glyph_h_advance(glyph: GlyphIndex) -> FractionalPixel {
         match self.handle.glyph_h_advance(glyph) {
           Some(adv) => adv,
-          None => /* FIXME: Need fallback strategy */ 10f as FractionalPixel
+          None =>  10f as FractionalPixel
         }
     }
 }
