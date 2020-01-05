@@ -27,6 +27,8 @@
 
 #include "jit/ExecutableAllocator.h"
 
+#include "mozilla/Atomics.h"
+
 #include "jit/JitCompartment.h"
 #include "js/MemoryMetrics.h"
 
@@ -236,8 +238,8 @@ ExecutableAllocator::createPool(size_t n)
     }
 
     if (!m_pools.put(pool)) {
+        
         js_delete(pool);
-        systemRelease(a);
         return nullptr;
     }
 
@@ -406,4 +408,48 @@ ExecutableAllocator::poisonCode(JSRuntime* rt, JitPoisonRangeVector& ranges)
         }
         pool->release();
     }
+}
+
+
+
+#if JS_BITS_PER_WORD == 32
+static const size_t MaxCodeBytesPerProcess = 128 * 1024 * 1024;
+#else
+static const size_t MaxCodeBytesPerProcess = 512 * 1024 * 1024;
+#endif
+
+static mozilla::Atomic<size_t> allocatedExecutableBytes(0);
+
+bool
+js::jit::AddAllocatedExecutableBytes(size_t bytes)
+{
+    MOZ_ASSERT(allocatedExecutableBytes <= MaxCodeBytesPerProcess);
+
+    
+    
+    while (true) {
+        size_t bytesOld = allocatedExecutableBytes;
+        size_t bytesNew = bytesOld + bytes;
+
+        if (bytesNew > MaxCodeBytesPerProcess)
+            return false;
+
+        if (allocatedExecutableBytes.compareExchange(bytesOld, bytesNew))
+            return true;
+    }
+
+    MOZ_CRASH();
+}
+
+void
+js::jit::SubAllocatedExecutableBytes(size_t bytes)
+{
+    MOZ_ASSERT(bytes <= allocatedExecutableBytes);
+    allocatedExecutableBytes -= bytes;
+}
+
+void
+js::jit::AssertAllocatedExecutableBytesIsZero()
+{
+    MOZ_ASSERT(allocatedExecutableBytes == 0);
 }

@@ -340,6 +340,19 @@ AllocateExecutableMemory(size_t bytes, unsigned permissions, const char* tag,
 extern void
 DeallocateExecutableMemory(void* addr, size_t bytes, size_t pageSize);
 
+
+
+
+
+extern MOZ_MUST_USE bool
+AddAllocatedExecutableBytes(size_t bytes);
+
+extern void
+SubAllocatedExecutableBytes(size_t bytes);
+
+extern void
+AssertAllocatedExecutableBytesIsZero();
+
 } 
 } 
 
