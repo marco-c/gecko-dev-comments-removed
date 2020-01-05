@@ -3037,13 +3037,6 @@ protected:
   RefPtr<mozilla::dom::FontFaceSet> mFontFaceSet;
 
   
-  
-  
-  
-  
-  
-
-  
   bool mBidiEnabled : 1;
   
   bool mMathMLEnabled : 1;
