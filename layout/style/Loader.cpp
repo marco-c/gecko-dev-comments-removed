@@ -1300,7 +1300,7 @@ Loader::PrepareSheet(StyleSheet* aSheet,
 
     
     
-    mediumParser.ParseMediaList(aMediaString, nullptr, 0, mediaList, true);
+    mediumParser.ParseMediaList(aMediaString, nullptr, 0, mediaList);
   }
 
   sheet->SetMedia(mediaList);

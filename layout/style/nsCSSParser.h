@@ -156,14 +156,10 @@ public:
 
 
 
-
-
-
   void ParseMediaList(const nsSubstring& aBuffer,
                       nsIURI*            aURL,
                       uint32_t           aLineNumber,
-                      nsMediaList*       aMediaList,
-                      bool               aHTMLMode);
+                      nsMediaList*       aMediaList);
 
   
 
@@ -181,8 +177,7 @@ public:
                            nsIURI* aURI, 
                            uint32_t aLineNumber, 
                            InfallibleTArray< nsAutoPtr<nsMediaQuery> >& aQueries,
-                           InfallibleTArray<nsCSSValue>& aValues,
-                           bool aHTMLMode);
+                           InfallibleTArray<nsCSSValue>& aValues);
 
   
 

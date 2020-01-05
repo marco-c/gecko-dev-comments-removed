@@ -202,15 +202,13 @@ public:
   void ParseMediaList(const nsSubstring& aBuffer,
                       nsIURI* aURL, 
                       uint32_t aLineNumber, 
-                      nsMediaList* aMediaList,
-                      bool aHTMLMode);
+                      nsMediaList* aMediaList);
 
   bool ParseSourceSizeList(const nsAString& aBuffer,
                            nsIURI* aURI, 
                            uint32_t aLineNumber, 
                            InfallibleTArray< nsAutoPtr<nsMediaQuery> >& aQueries,
-                           InfallibleTArray<nsCSSValue>& aValues,
-                           bool aHTMLMode);
+                           InfallibleTArray<nsCSSValue>& aValues);
 
   void ParseVariable(const nsAString& aVariableName,
                      const nsAString& aPropValue,
@@ -1490,10 +1488,6 @@ protected:
 
   
   
-  bool mHTMLMediaMode : 1;
-
-  
-  
   bool          mParsingCompoundProperty : 1;
 
   
@@ -1613,7 +1607,6 @@ CSSParserImpl::CSSParserImpl()
     mParsingMode(css::eAuthorSheetFeatures),
     mIsChrome(false),
     mViewportUnitsEnabled(true),
-    mHTMLMediaMode(false),
     mParsingCompoundProperty(false),
     mInSupportsCondition(false),
     mInFailingSupportsRule(false),
@@ -1687,7 +1680,6 @@ CSSParserImpl::InitScanner(nsCSSScanner& aScanner,
                            nsIURI* aSheetURI, nsIURI* aBaseURI,
                            nsIPrincipal* aSheetPrincipal)
 {
-  NS_PRECONDITION(!mHTMLMediaMode, "Bad initial state");
   NS_PRECONDITION(!mParsingCompoundProperty, "Bad initial state");
   NS_PRECONDITION(!mScanner, "already have scanner");
 
@@ -2132,8 +2124,7 @@ void
 CSSParserImpl::ParseMediaList(const nsSubstring& aBuffer,
                               nsIURI* aURI, 
                               uint32_t aLineNumber, 
-                              nsMediaList* aMediaList,
-                              bool aHTMLMode)
+                              nsMediaList* aMediaList)
 {
   
   
@@ -2145,27 +2136,12 @@ CSSParserImpl::ParseMediaList(const nsSubstring& aBuffer,
   css::ErrorReporter reporter(scanner, mSheet, mChildLoader, aURI);
   InitScanner(scanner, reporter, aURI, aURI, nullptr);
 
-  mHTMLMediaMode = aHTMLMode;
-
-    
-    
-
-  
-  
-  
-  
-  
-  
-  
-  
-
   DebugOnly<bool> parsedOK = GatherMedia(aMediaList, false);
   NS_ASSERTION(parsedOK, "GatherMedia returned false; we probably want to avoid "
                          "trashing aMediaList");
 
   CLEAR_ERROR();
   ReleaseScanner();
-  mHTMLMediaMode = false;
 }
 
 
@@ -2175,8 +2151,7 @@ CSSParserImpl::ParseSourceSizeList(const nsAString& aBuffer,
                                    nsIURI* aURI, 
                                    uint32_t aLineNumber, 
                                    InfallibleTArray< nsAutoPtr<nsMediaQuery> >& aQueries,
-                                   InfallibleTArray<nsCSSValue>& aValues,
-                                   bool aHTMLMode)
+                                   InfallibleTArray<nsCSSValue>& aValues)
 {
   aQueries.Clear();
   aValues.Clear();
@@ -2185,9 +2160,6 @@ CSSParserImpl::ParseSourceSizeList(const nsAString& aBuffer,
   nsCSSScanner scanner(aBuffer, aLineNumber);
   css::ErrorReporter reporter(scanner, mSheet, mChildLoader, aURI);
   InitScanner(scanner, reporter, aURI, aURI, nullptr);
-
-  
-  mHTMLMediaMode = aHTMLMode;
 
   
   bool hitEnd = false;
@@ -2257,7 +2229,6 @@ CSSParserImpl::ParseSourceSizeList(const nsAString& aBuffer,
 
   CLEAR_ERROR();
   ReleaseScanner();
-  mHTMLMediaMode = false;
 
   return !aQueries.IsEmpty();
 }
@@ -18225,11 +18196,10 @@ void
 nsCSSParser::ParseMediaList(const nsSubstring& aBuffer,
                             nsIURI*            aURI,
                             uint32_t           aLineNumber,
-                            nsMediaList*       aMediaList,
-                            bool               aHTMLMode)
+                            nsMediaList*       aMediaList)
 {
   static_cast<CSSParserImpl*>(mImpl)->
-    ParseMediaList(aBuffer, aURI, aLineNumber, aMediaList, aHTMLMode);
+    ParseMediaList(aBuffer, aURI, aLineNumber, aMediaList);
 }
 
 bool
@@ -18237,12 +18207,10 @@ nsCSSParser::ParseSourceSizeList(const nsAString& aBuffer,
                                  nsIURI* aURI,
                                  uint32_t aLineNumber,
                                  InfallibleTArray< nsAutoPtr<nsMediaQuery> >& aQueries,
-                                 InfallibleTArray<nsCSSValue>& aValues,
-                                 bool aHTMLMode)
+                                 InfallibleTArray<nsCSSValue>& aValues)
 {
   return static_cast<CSSParserImpl*>(mImpl)->
-    ParseSourceSizeList(aBuffer, aURI, aLineNumber, aQueries, aValues,
-                        aHTMLMode);
+    ParseSourceSizeList(aBuffer, aURI, aLineNumber, aQueries, aValues);
 }
 
 bool
