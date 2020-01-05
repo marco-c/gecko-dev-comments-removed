@@ -1758,6 +1758,8 @@ TrackBuffersManager::RemoveFrames(const TimeIntervals& aIntervals,
   
   
   
+  TimeUnit intervalsEnd = aIntervals.GetEnd();
+  bool mayBreakLoop = false;
   for (uint32_t i = aStartIndex; i < data.Length(); i++) {
     const RefPtr<MediaRawData> sample = data[i];
     TimeInterval sampleInterval =
@@ -1768,6 +1770,14 @@ TrackBuffersManager::RemoveFrames(const TimeIntervals& aIntervals,
         firstRemovedIndex = Some(i);
       }
       lastRemovedIndex = i;
+      mayBreakLoop = false;
+      continue;
+    }
+    if (sample->mKeyframe && mayBreakLoop) {
+      break;
+    }
+    if (sampleInterval.mStart > intervalsEnd) {
+      mayBreakLoop = true;
     }
   }
 
