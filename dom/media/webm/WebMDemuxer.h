@@ -258,7 +258,7 @@ private:
   Maybe<uint32_t> mLastSeenFrameHeight;
   
   
-  RefPtr<SharedTrackInfo> mSharedVideoTrackInfo;
+  RefPtr<TrackInfoSharedPtr> mSharedVideoTrackInfo;
 
   EncryptionInfo mCrypto;
 };

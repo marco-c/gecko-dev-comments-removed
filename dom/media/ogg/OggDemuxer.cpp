@@ -725,7 +725,7 @@ OggDemuxer::ReadOggChain(const media::TimeUnit& aLastEndTime)
     }
     
     
-    mSharedAudioTrackInfo = new SharedTrackInfo(mInfo.mAudio, ++sStreamSourceID);
+    mSharedAudioTrackInfo = new TrackInfoSharedPtr(mInfo.mAudio, ++sStreamSourceID);
     return true;
   }
 

@@ -1037,7 +1037,7 @@ TrackBuffersManager::OnDemuxerInitDone(nsresult)
       
       mAudioTracks.mBuffers.AppendElement(TrackBuffer());
       
-      mAudioTracks.mInfo = new SharedTrackInfo(info.mAudio, streamID);
+      mAudioTracks.mInfo = new TrackInfoSharedPtr(info.mAudio, streamID);
       mAudioTracks.mLastInfo = mAudioTracks.mInfo;
     }
 
@@ -1069,7 +1069,7 @@ TrackBuffersManager::OnDemuxerInitDone(nsresult)
       
       mVideoTracks.mBuffers.AppendElement(TrackBuffer());
       
-      mVideoTracks.mInfo = new SharedTrackInfo(info.mVideo, streamID);
+      mVideoTracks.mInfo = new TrackInfoSharedPtr(info.mVideo, streamID);
       mVideoTracks.mLastInfo = mVideoTracks.mInfo;
     }
     
@@ -1082,8 +1082,8 @@ TrackBuffersManager::OnDemuxerInitDone(nsresult)
     
     mFirstInitializationSegmentReceived = true;
   } else {
-    mAudioTracks.mLastInfo = new SharedTrackInfo(info.mAudio, streamID);
-    mVideoTracks.mLastInfo = new SharedTrackInfo(info.mVideo, streamID);
+    mAudioTracks.mLastInfo = new TrackInfoSharedPtr(info.mAudio, streamID);
+    mVideoTracks.mLastInfo = new TrackInfoSharedPtr(info.mVideo, streamID);
   }
 
   UniquePtr<EncryptionInfo> crypto = mInputDemuxer->GetCrypto();

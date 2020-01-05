@@ -326,7 +326,7 @@ private:
   
   
   
-  RefPtr<SharedTrackInfo> mSharedAudioTrackInfo;
+  RefPtr<TrackInfoSharedPtr> mSharedAudioTrackInfo;
 
   friend class OggTrackDemuxer;
 };

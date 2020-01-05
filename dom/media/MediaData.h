@@ -28,7 +28,7 @@ class ImageContainer;
 } 
 
 class MediaByteBuffer;
-class SharedTrackInfo;
+class TrackInfoSharedPtr;
 
 
 
@@ -672,7 +672,7 @@ public:
   
   uint32_t mDiscardPadding = 0;
 
-  RefPtr<SharedTrackInfo> mTrackInfo;
+  RefPtr<TrackInfoSharedPtr> mTrackInfo;
 
   
   virtual already_AddRefed<MediaRawData> Clone() const;

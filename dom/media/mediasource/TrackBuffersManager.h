@@ -334,9 +334,9 @@ private:
     
     uint32_t mSizeBuffer;
     
-    RefPtr<SharedTrackInfo> mInfo;
+    RefPtr<TrackInfoSharedPtr> mInfo;
     
-    RefPtr<SharedTrackInfo> mLastInfo;
+    RefPtr<TrackInfoSharedPtr> mLastInfo;
 
     
     

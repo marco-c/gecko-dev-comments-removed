@@ -423,7 +423,7 @@ private:
     Maybe<media::TimeUnit> mLastTimeRangesEnd;
     
     UniquePtr<TrackInfo> mOriginalInfo;
-    RefPtr<SharedTrackInfo> mInfo;
+    RefPtr<TrackInfoSharedPtr> mInfo;
     Maybe<media::TimeUnit> mFirstDemuxedSampleTime;
     
     bool mIsBlankDecode;
