@@ -1148,15 +1148,15 @@ const YuvConstants SIMD_ALIGNED(kYvuJPEGConstants) = {
 
 
 
-#define YG 16320 /* round(1.000 * 64 * 256 * 256 / 257) */
-#define YGB 32  /* 64 / 2 */
+#define YG 18997 /* round(1.164 * 64 * 256 * 256 / 257) */
+#define YGB -1160 /* 1.164 * 64 * -16 + 64 / 2 */
 
 
 
-#define UB -128 /* max(-128, round(-2.12798 * 64)) */
-#define UG 14 /* round(0.21482 * 64) */
-#define VG 24 /* round(0.38059  * 64) */
-#define VR -82 /* round(-1.28033 * 64) */
+#define UB -128 /* max(-128, round(-2.112 * 64)) */
+#define UG 14 /* round(0.213 * 64) */
+#define VG 34 /* round(0.533  * 64) */
+#define VR -115 /* round(-1.793 * 64) */
 
 
 #define BB (UB * 128            + YGB)
