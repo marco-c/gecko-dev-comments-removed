@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 mod common {
     use std::env;
@@ -88,7 +88,7 @@ mod bindings {
         file.read_to_string(&mut content).unwrap();
         println!("cargo:rerun-if-changed={}", path.to_str().unwrap());
         added_paths.insert(path);
-        // Find all includes and add them recursively
+        
         for cap in INCLUDE_RE.captures_iter(&content) {
             if let Some(path) = search_include(cap.get(1).unwrap().as_str()) {
                 add_headers_recursively(path, added_paths);
@@ -149,21 +149,21 @@ mod bindings {
             } else if cfg!(target_os = "macos") {
                 builder = builder.clang_arg("-DOS_MACOSX=1")
                     .clang_arg("-stdlib=libc++")
-                    // To disable the fixup bindgen applies which adds search
-                    // paths from clang command line in order to avoid potential
-                    // conflict with -stdlib=libc++.
+                    
+                    
+                    
                     .clang_arg("--target=x86_64-apple-darwin");
             } else if cfg!(target_env = "msvc") {
                 builder = builder.clang_arg("-DOS_WIN=1").clang_arg("-DWIN32=1")
-                    // For compatibility with MSVC 2015
+                    
                     .clang_arg("-fms-compatibility-version=19")
-                    // To enable the builtin __builtin_offsetof so that CRT wouldn't
-                    // use reinterpret_cast in offsetof() which is not allowed inside
-                    // static_assert().
+                    
+                    
+                    
                     .clang_arg("-D_CRT_USE_BUILTIN_OFFSETOF")
-                    // Enable hidden attribute (which is not supported by MSVC and
-                    // thus not enabled by default with a MSVC-compatibile build)
-                    // to exclude hidden symbols from the generated file.
+                    
+                    
+                    
                     .clang_arg("-DHAVE_VISIBILITY_HIDDEN_ATTRIBUTE=1");
                 if cfg!(target_pointer_width = "32") {
                     builder = builder.clang_arg("--target=i686-pc-win32");
@@ -178,14 +178,14 @@ mod bindings {
         fn include<T: Into<String>>(self, file: T) -> Builder {
             self.clang_arg("-include").clang_arg(file)
         }
-        // This makes an FFI-safe void type that can't be matched on
-        // &VoidType is UB to have, because you can match on it
-        // to produce a reachable unreachable. If it's wrapped in
-        // a struct as a private field it becomes okay again
-        //
-        // Not 100% sure of how safe this is, but it's what we're using
-        // in the XPCOM ffi too
-        // https://github.com/nikomatsakis/rust-memory-model/issues/2
+        
+        
+        
+        
+        
+        
+        
+        
         fn zero_size_type(self, ty: &str, structs_list: &[&str]) -> Builder {
             if !structs_list.contains(&ty) {
                 self.hide_type(ty)
@@ -218,7 +218,7 @@ mod bindings {
     fn write_binding_file(builder: Builder, file: &str, fixups: &[Fixup]) {
         let out_file = OUTDIR_PATH.join(file);
         if let Some(modified) = get_modified_time(&out_file) {
-            // Don't generate the file if nothing it depends on was modified.
+            
             let last_modified = LAST_MODIFIED.lock().unwrap();
             if *last_modified <= modified {
                 return;
@@ -230,6 +230,24 @@ mod bindings {
                 .into_owned().into();
         }
         File::create(&out_file).unwrap().write_all(&result.into_bytes()).expect("Unable to write output");
+    }
+
+    fn get_arc_types() -> Vec<String> {
+        
+        let mut list_file = File::open(DISTDIR_PATH.join("include/mozilla/ServoArcTypeList.h"))
+            .expect("Unable to open ServoArcTypeList.h");
+        let mut content = String::new();
+        list_file.read_to_string(&mut content).expect("Fail to read ServoArcTypeList.h");
+        
+        let block_comment_re = Regex::new(r#"(?s)/\*.*?\*/"#).unwrap();
+        let content = block_comment_re.replace_all(&content, "");
+        
+        let re = Regex::new(r#"^SERVO_ARC_TYPE\(\w+,\s*(\w+)\)$"#).unwrap();
+        content.lines().map(|line| line.trim()).filter(|line| !line.is_empty())
+            .map(|line| re.captures(&line)
+                 .expect(&format!("Unrecognized line in ServoArcTypeList.h: '{}'", line))
+                 .get(1).unwrap().as_str().to_string())
+            .collect()
     }
 
     pub fn generate_structs(build_type: BuildType) {
@@ -253,8 +271,8 @@ mod bindings {
             .include(add_include("mozilla/ServoBindings.h"))
             .include(add_include("nsMediaFeatures.h"))
             .include(add_include("nsMediaList.h"))
-            // FIXME(emilio): Incrementally remove these "pub use"s. Probably
-            // mozilla::css and mozilla::dom are easier.
+            
+            
             .raw_line("pub use self::root::*;")
             .raw_line("pub use self::root::mozilla::*;")
             .raw_line("pub use self::root::mozilla::css::*;")
@@ -425,22 +443,22 @@ mod bindings {
             "mozilla::detail::WeakReference",
             "mozilla::WeakPtr",
             "nsWritingIterator_reference", "nsReadingIterator_reference",
-            "nsTObserverArray",  // <- Inherits from nsAutoTObserverArray<T, 0>
-            "nsTHashtable",  // <- Inheriting from inner typedefs that clang
-                             //    doesn't expose properly.
-            "nsRefPtrHashtable", "nsDataHashtable", "nsClassHashtable",  // <- Ditto
-            "nsIDocument_SelectorCache",  // <- Inherits from nsExpirationTracker<.., 4>
-            "nsIPresShell_ScrollAxis",  // <- For some reason the alignment of this is 4
-                                        // for clang.
-            "nsPIDOMWindow",  // <- Takes the vtable from a template parameter, and we can't
-                              //    generate it conditionally.
+            "nsTObserverArray",  
+            "nsTHashtable",  
+                             
+            "nsRefPtrHashtable", "nsDataHashtable", "nsClassHashtable",  
+            "nsIDocument_SelectorCache",  
+            "nsIPresShell_ScrollAxis",  
+                                        
+            "nsPIDOMWindow",  
+                              
             "JS::Rooted",
             "mozilla::Maybe",
-            "gfxSize",  // <- union { struct { T width; T height; }; T components[2] };
-            "gfxSize_Super",  // Ditto.
-            "mozilla::ErrorResult",  // Causes JSWhyMagic to be included & handled incorrectly.
+            "gfxSize",  
+            "gfxSize_Super",  
+            "mozilla::ErrorResult",  
             "mozilla::StyleAnimationValue",
-            "StyleAnimationValue", // pulls in a whole bunch of stuff we don't need in the bindings
+            "StyleAnimationValue", 
         ];
 
         struct MappedGenericType {
@@ -600,15 +618,6 @@ mod bindings {
         let array_types = [
             ArrayType { cpp_type: "uintptr_t", rust_type: "usize" },
         ];
-        let servo_nullable_arc_types = [
-            "ServoComputedValues",
-            "ServoCssRules",
-            "RawServoStyleSheet",
-            "RawServoDeclarationBlock",
-            "RawServoStyleRule",
-            "RawServoImportRule",
-            "RawServoAnimationValue",
-        ];
         struct ServoOwnedType {
             name: &'static str,
             opaque: bool,
@@ -633,8 +642,8 @@ mod bindings {
         for &ty in structs_types.iter() {
             builder = builder.hide_type(ty)
                 .raw_line(format!("use gecko_bindings::structs::{};", ty));
-            // TODO this is hacky, figure out a better way to do it without
-            // hardcoding everything...
+            
+            
             if ty.starts_with("nsStyle") {
                 builder = builder
                     .raw_line(format!("unsafe impl Send for {} {{}}", ty))
@@ -646,7 +655,7 @@ mod bindings {
                 .raw_line(format!("pub type nsTArrayBorrowed_{}<'a> = &'a mut ::gecko_bindings::structs::nsTArray<{}>;",
                                   cpp_type, rust_type))
         }
-        for &ty in servo_nullable_arc_types.iter() {
+        for ty in get_arc_types().iter() {
             builder = builder
                 .hide_type(format!("{}Strong", ty))
                 .raw_line(format!("pub type {0}Strong = ::gecko_bindings::sugar::ownership::Strong<{0}>;", ty))
@@ -670,10 +679,10 @@ mod bindings {
         }
         for &ty in servo_borrow_types.iter() {
             builder = builder.mutable_borrowed_type(ty);
-            // Right now the only immutable borrow types are ones which we import
-            // from the |structs| module. As such, we don't need to create an opaque
-            // type with zero_size_type. If we ever introduce immutable borrow types
-            // which _do_ need to be opaque, we'll need a separate mode.
+            
+            
+            
+            
         }
         write_binding_file(builder, BINDINGS_FILE, &Vec::new());
     }
