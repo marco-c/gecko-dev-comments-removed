@@ -11,6 +11,7 @@ config = {
          'assembleAutomationDebug',
          'assembleAutomationDebugAndroidTest',
          'checkstyle',
+         'findbugsAutomationDebug',
          
          'geckoview:assembleWithoutGeckoBinaries',
          
