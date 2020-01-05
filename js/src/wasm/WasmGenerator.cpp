@@ -1149,6 +1149,8 @@ ModuleGenerator::finish(const ShareableBytes& bytecode)
 
     
     metadata_->memoryAccesses = masm_.extractMemoryAccesses();
+    metadata_->memoryPatches = masm_.extractMemoryPatches();
+    metadata_->boundsChecks = masm_.extractBoundsChecks();
 
     
     metadata_->memoryUsage = env_->memoryUsage;
@@ -1168,6 +1170,8 @@ ModuleGenerator::finish(const ShareableBytes& bytecode)
     
     
     metadata_->memoryAccesses.podResizeToFit();
+    metadata_->memoryPatches.podResizeToFit();
+    metadata_->boundsChecks.podResizeToFit();
     metadata_->codeRanges.podResizeToFit();
     metadata_->callSites.podResizeToFit();
     metadata_->callThunks.podResizeToFit();

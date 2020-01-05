@@ -101,6 +101,11 @@ class CodeSegment
     bool containsCodePC(const void* pc) const {
         return pc >= base() && pc < (base() + length_);
     }
+
+    
+    
+
+    void onMovingGrow(uint8_t* prevMemoryBase, const Metadata& metadata, ArrayBufferObject& buffer);
 };
 
 
@@ -461,6 +466,8 @@ struct Metadata : ShareableBase<Metadata>, MetadataCacheablePod
     GlobalDescVector      globals;
     TableDescVector       tables;
     MemoryAccessVector    memoryAccesses;
+    MemoryPatchVector     memoryPatches;
+    BoundsCheckVector     boundsChecks;
     CodeRangeVector       codeRanges;
     CallSiteVector        callSites;
     CallThunkVector       callThunks;
