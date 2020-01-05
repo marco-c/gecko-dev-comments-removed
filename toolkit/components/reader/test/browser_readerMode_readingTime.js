@@ -20,7 +20,7 @@ add_task(function* () {
       
       let readingTimeElement = content.document.getElementById("reader-estimated-time");
       ok(readingTimeElement, "Reading time element should be in document");
-      is(readingTimeElement.textContent, "9-12 min", "Reading time should be '9-12 min'");
+      is(readingTimeElement.textContent, "9-12 minutes", "Reading time should be '9-12 minutes'");
     });
   });
 });
@@ -39,7 +39,27 @@ add_task(function* () {
       
       let readingTimeElement = content.document.getElementById("reader-estimated-time");
       ok(readingTimeElement, "Reading time element should be in document");
-      is(readingTimeElement.textContent, "1 min", "Reading time should be '1 min'");
+      is(readingTimeElement.textContent, "1 minute", "Reading time should be '1 minute'");
+    });
+  });
+});
+
+
+
+
+
+
+add_task(function* () {
+  yield BrowserTestUtils.withNewTab(TEST_PATH + "readerModeArticleMedium.html", function* (browser) {
+    let pageShownPromise = BrowserTestUtils.waitForContentEvent(browser, "AboutReaderContentReady");
+    let readerButton = document.getElementById("reader-mode-button");
+    readerButton.click();
+    yield pageShownPromise;
+    yield ContentTask.spawn(browser, null, function* () {
+      
+      let readingTimeElement = content.document.getElementById("reader-estimated-time");
+      ok(readingTimeElement, "Reading time element should be in document");
+      is(readingTimeElement.textContent, "3 minutes", "Reading time should be '3 minutes'");
     });
   });
 });
