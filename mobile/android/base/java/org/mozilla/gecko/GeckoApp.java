@@ -889,8 +889,8 @@ public abstract class GeckoApp
                 
                 final ArrayList<Integer> permissionsToClear = new ArrayList<>();
                 for (int i = 0; i < checkedItemPositions.size(); i++) {
-                    if (checkedItemPositions.get(i)) {
-                        permissionsToClear.add(i);
+                    if (checkedItemPositions.valueAt(i)) {
+                        permissionsToClear.add(checkedItemPositions.keyAt(i));
                     }
                 }
 
