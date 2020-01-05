@@ -271,6 +271,10 @@ public:
                                             bool aHidden);
 
   
+  
+  void AddDummyHiddenData();
+
+  
   Element* GetDragImage(int32_t* aX, int32_t* aY) const
   {
     *aX = mDragImageX;

@@ -38,6 +38,7 @@
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/OSFileSystem.h"
 #include "mozilla/dom/Promise.h"
+#include "mozilla/storage/Variant.h"
 #include "nsNetUtil.h"
 
 namespace mozilla {
@@ -1571,6 +1572,29 @@ DataTransfer::FillInExternalCustomTypes(nsIVariant* aData, uint32_t aIndex,
       SetDataWithPrincipal(format, variant, aIndex, aPrincipal);
     }
   } while (type != eCustomClipboardTypeId_None);
+}
+
+void
+DataTransfer::AddDummyHiddenData()
+{
+  RefPtr<nsVariantCC> variant = new nsVariantCC();
+  variant->SetAsAString(EmptyString());
+
+  ErrorResult rv;
+  RefPtr<DataTransferItem> item =
+    mItems->SetDataWithPrincipal(NS_LITERAL_STRING(kDummyTypeMime),
+                                 variant,
+                                  0,
+                                 nsContentUtils::GetSystemPrincipal(),
+                                  true,
+                                  true,
+                                 rv);
+  MOZ_ASSERT(item->ChromeOnly());
+
+  
+  
+  
+  rv.SuppressException();
 }
 
 } 
