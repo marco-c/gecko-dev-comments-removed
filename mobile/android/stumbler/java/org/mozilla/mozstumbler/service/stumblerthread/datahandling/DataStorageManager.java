@@ -15,6 +15,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Properties;
 import java.util.Timer;
@@ -63,7 +64,7 @@ public class DataStorageManager {
     private final ReportBatchBuilder mCurrentReports = new ReportBatchBuilder();
     private final File mReportsDir;
     private final File mStatsFile;
-    private final StorageIsEmptyTracker mTracker;
+    private final WeakReference<StorageIsEmptyTracker> mTrackerWeakReference;
 
     private static DataStorageManager sInstance;
 
@@ -215,6 +216,10 @@ public class DataStorageManager {
         return dir.getPath();
     }
 
+    
+
+
+
     public static synchronized void createGlobalInstance(Context context, StorageIsEmptyTracker tracker) {
         DataStorageManager.createGlobalInstance(context, tracker,
                 DEFAULT_MAX_BYTES_STORED_ON_DISK, DEFAULT_MAX_WEEKS_DATA_ON_DISK);
@@ -222,7 +227,9 @@ public class DataStorageManager {
 
     public static synchronized void createGlobalInstance(Context context, StorageIsEmptyTracker tracker,
                                                          long maxBytesStoredOnDisk, int maxWeeksDataStored) {
-        if (sInstance != null) {
+        
+        
+        if (sInstance != null && sInstance.mTrackerWeakReference.get() != null) {
             return;
         }
         sInstance = new DataStorageManager(context, tracker, maxBytesStoredOnDisk, maxWeeksDataStored);
@@ -236,8 +243,8 @@ public class DataStorageManager {
                                long maxBytesStoredOnDisk, int maxWeeksDataStored) {
         mMaxBytesDiskStorage = maxBytesStoredOnDisk;
         mMaxWeeksStored = maxWeeksDataStored;
-        mTracker = tracker;
-        final String baseDir = getStorageDir(c);
+        mTrackerWeakReference = new WeakReference<>(tracker);
+        final String baseDir = getStorageDir(c.getApplicationContext());
         mStatsFile = new File(baseDir, "upload_stats.ini");
         mReportsDir = new File(baseDir + "/reports");
         if (!mReportsDir.exists()) {
@@ -464,8 +471,9 @@ public class DataStorageManager {
     }
 
     private void notifyStorageIsEmpty(boolean isEmpty) {
-        if (mTracker != null) {
-            mTracker.notifyStorageStateEmpty(isEmpty);
+        final StorageIsEmptyTracker tracker = mTrackerWeakReference.get();
+        if (tracker != null) {
+            tracker.notifyStorageStateEmpty(isEmpty);
         }
     }
 
