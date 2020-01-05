@@ -4250,6 +4250,23 @@ ContentParent::RecvNotifyTabDestroying(const TabId& aTabId,
   return IPC_OK();
 }
 
+mozilla::ipc::IPCResult
+ContentParent::RecvTabChildNotReady(const TabId& aTabId)
+{
+  ContentProcessManager* cpm = ContentProcessManager::GetSingleton();
+  RefPtr<TabParent> tp =
+    cpm->GetTopLevelTabParentByProcessAndTabId(this->ChildID(), aTabId);
+
+  if (!tp) {
+    NS_WARNING("Couldn't find TabParent for TabChildNotReady message.");
+    return IPC_OK();
+  }
+
+  tp->DispatchTabChildNotReadyEvent();
+
+  return IPC_OK();
+}
+
 nsTArray<TabContext>
 ContentParent::GetManagedTabContext()
 {
@@ -5145,15 +5162,13 @@ ContentParent::RecvFileCreationRequest(const nsID& aID,
                                        const nsString& aName,
                                        const bool& aLastModifiedPassed,
                                        const int64_t& aLastModified,
-                                       const bool& aExistenceCheck,
                                        const bool& aIsFromNsIFile)
 {
   RefPtr<BlobImpl> blobImpl;
   nsresult rv =
     FileCreatorHelper::CreateBlobImplForIPC(aFullPath, aType, aName,
                                             aLastModifiedPassed,
-                                            aLastModified, aExistenceCheck,
-                                            aIsFromNsIFile,
+                                            aLastModified, aIsFromNsIFile,
                                             getter_AddRefs(blobImpl));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     if (!SendFileCreationResponse(aID, FileCreationErrorResult(rv))) {
