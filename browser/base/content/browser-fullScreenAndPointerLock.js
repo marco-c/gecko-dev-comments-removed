@@ -636,8 +636,7 @@ var FullScreen = {
       }
     }
 
-    ToolbarIconColor.inferFromText("fullscreen", aEnterFS);
-
+    ToolbarIconColor.inferFromText();
 
     
     
