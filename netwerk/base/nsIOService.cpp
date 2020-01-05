@@ -1804,6 +1804,8 @@ nsIOService::SpeculativeConnectInternal(nsIURI *aURI,
 
     nsCOMPtr<nsIPrincipal> loadingPrincipal = aPrincipal;
 
+    NS_ASSERTION(aPrincipal, "We expect passing a principal here.");
+
     
     
     if (!aPrincipal) {
