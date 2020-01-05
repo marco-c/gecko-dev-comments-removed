@@ -607,8 +607,8 @@ def build_generic_worker_payload(config, task, task_def):
     for artifact in worker['artifacts']:
         a = {
             'path': artifact['path'],
-            'type': artifact['type']
-            
+            'type': artifact['type'],
+            'expires': task_def['expires'],  
         }
         if 'name' in artifact:
             a['name'] = artifact['name']
