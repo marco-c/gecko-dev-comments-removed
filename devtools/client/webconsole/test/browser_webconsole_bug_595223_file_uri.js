@@ -23,7 +23,9 @@ add_task(function* () {
 
   
   
-  let { browser } = yield loadTab("about:blank", E10SUtils.FILE_REMOTE_TYPE);
+  let remoteType = E10SUtils.getRemoteTypeForURI(uri.spec,
+                                                 gMultiProcessBrowser);
+  let { browser } = yield loadTab("about:blank", remoteType);
 
   hud = yield openConsole();
   hud.jsterm.clearOutput();
