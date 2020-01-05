@@ -8,6 +8,5 @@ use gfx::render_task::LayerBuffer;
 trait Compositor {
     fn begin_drawing(next_dt: pipes::Chan<LayerBuffer>);
     fn draw(next_dt: pipes::Chan<LayerBuffer>, +draw_me: LayerBuffer);
-    fn add_event_listener(listener: pipes::SharedChan<Event>);
 }
 
