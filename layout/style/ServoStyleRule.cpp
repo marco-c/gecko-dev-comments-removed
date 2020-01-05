@@ -104,6 +104,7 @@ ServoStyleRule::ServoStyleRule(already_AddRefed<RawServoStyleRule> aRawRule)
   , mRawRule(aRawRule)
   , mDecls(Servo_StyleRule_GetStyle(mRawRule).Consume())
 {
+  SetIsNotDOMBinding();
 }
 
 
@@ -165,6 +166,14 @@ ServoStyleRule::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
 {
   
   return aMallocSizeOf(this);
+}
+
+ JSObject*
+ServoStyleRule::WrapObject(JSContext* aCx,
+                           JS::Handle<JSObject*> aGivenProto)
+{
+  NS_NOTREACHED("We called SetIsNotDOMBinding() in our constructor");
+  return nullptr;
 }
 
 #ifdef DEBUG
