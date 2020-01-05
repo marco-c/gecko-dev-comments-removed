@@ -296,6 +296,17 @@ nsPluginFrame::PrepForDrawing(nsIWidget *aWidget)
       return NS_ERROR_FAILURE;
     }
 
+    
+    
+    if (mInnerView) {
+      if (mInnerView->GetWidget()) {
+        
+        
+        MOZ_RELEASE_ASSERT(mInnerView->GetWidget()->GetWidgetListener() == nullptr);
+      }
+      mInnerView->Destroy();
+      mInnerView = nullptr;
+    }
     mInnerView = viewMan->CreateView(GetContentRectRelativeToSelf(), view);
     if (!mInnerView) {
       NS_ERROR("Could not create inner view");
