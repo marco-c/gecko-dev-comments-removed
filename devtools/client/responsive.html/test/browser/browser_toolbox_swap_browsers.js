@@ -7,6 +7,9 @@
 
 const TEST_URL = "http://example.com/";
 
+
+requestLongerTimeout(2);
+
 function getServerConnections(browser) {
   ok(browser.isRemoteBrowser, "Content browser is remote");
   return ContentTask.spawn(browser, {}, function* () {
