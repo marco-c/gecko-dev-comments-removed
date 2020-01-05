@@ -36,6 +36,7 @@ class nsIStyleSheetLinkingElement;
 
 namespace mozilla {
 namespace dom {
+class DocGroup;
 class Element;
 } 
 } 
@@ -191,7 +192,11 @@ class Loader final {
   typedef mozilla::net::ReferrerPolicy ReferrerPolicy;
 
 public:
-  explicit Loader(StyleBackendType aType);
+  
+  
+  
+  Loader(StyleBackendType aType, mozilla::dom::DocGroup* aDocGroup);
+
   explicit Loader(nsIDocument*);
 
  private:
@@ -574,6 +579,8 @@ private:
   
   nsIDocument* MOZ_NON_OWNING_REF mDocument;  
 
+  
+  RefPtr<mozilla::dom::DocGroup> mDocGroup;
 
   
   
