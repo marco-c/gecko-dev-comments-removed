@@ -24,13 +24,13 @@ add_task(function* () {
   info("The first animation has its rate set to 1, let's measure it");
 
   let el = timeBlocks[0];
-  let duration = parseInt(el.querySelector(".iterations").style.width, 10);
+  let duration = getDuration(el.querySelector("path"));
   let delay = parseInt(el.querySelector(".delay").style.width, 10);
 
   info("The second animation has its rate set to 2, so should be shorter");
 
   let el2 = timeBlocks[1];
-  let duration2 = parseInt(el2.querySelector(".iterations").style.width, 10);
+  let duration2 = getDuration(el2.querySelector("path"));
   let delay2 = parseInt(el2.querySelector(".delay").style.width, 10);
 
   
@@ -41,3 +41,41 @@ add_task(function* () {
   let delayDelta = (2 * delay2) - delay;
   ok(delayDelta <= 1, "The delay width is correct");
 });
+
+function getDuration(pathEl) {
+  const pathSegList = pathEl.pathSegList;
+  
+  let startingIterationIndex = 0;
+  const firstPathSeg = pathSegList.getItem(1);
+  for (let i = 2, n = pathSegList.numberOfItems - 2; i < n; i++) {
+    
+    const pathSeg = pathSegList.getItem(i);
+    if (firstPathSeg.y != pathSeg.y) {
+      startingIterationIndex = i;
+      break;
+    }
+  }
+  
+  let endingIterationIndex = 0;
+  let previousPathSegment = pathSegList.getItem(startingIterationIndex);
+  for (let i = startingIterationIndex + 1, n = pathSegList.numberOfItems - 2;
+       i < n; i++) {
+    
+    const pathSeg = pathSegList.getItem(i);
+    if (previousPathSegment.y == pathSeg.y) {
+      endingIterationIndex = i;
+      break;
+    }
+    previousPathSegment = pathSeg;
+  }
+  if (endingIterationIndex) {
+    
+    endingIterationIndex = pathSegList.numberOfItems - 2;
+  }
+  
+  const startingIterationPathSegment =
+    pathSegList.getItem(startingIterationIndex);
+  const endingIterationPathSegment =
+    pathSegList.getItem(startingIterationIndex);
+  return endingIterationPathSegment.x - startingIterationPathSegment.x;
+}

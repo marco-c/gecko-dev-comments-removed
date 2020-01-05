@@ -345,46 +345,15 @@ body {
 }
 
 
-
-.animation-timeline .animation .iterations {
+.animation-timeline .animation .summary {
   position: absolute;
+  width: 100%;
   height: 100%;
-  box-sizing: border-box;
-
-  
-
-
-
-  background-image:
-    linear-gradient(to left,
-                    var(--timeline-border-color) 0,
-                    var(--timeline-border-color) 1px,
-                    transparent 1px,
-                    transparent 2px);
-  border: 1px solid var(--timeline-border-color);
-  
-  border-width: 1px 0 1px 1px;
-
-  
-  background-color: var(--timeline-background-color);
 }
 
-.animation-timeline .animation .iterations.infinite::before,
-.animation-timeline .animation .iterations.infinite::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 0;
-  height: 0;
-  border-right: 4px solid var(--theme-body-background);
-  border-top: 4px solid transparent;
-  border-bottom: 4px solid transparent;
-}
-
-.animation-timeline .animation .iterations.infinite::after {
-  bottom: 0;
-  top: unset;
+.animation-timeline .animation .summary path {
+  fill: var(--timeline-background-color);
+  stroke: var(--timeline-border-color);
 }
 
 .animation-timeline .animation .name {
@@ -471,6 +440,17 @@ body {
 
 
   border-width: 1px;
+}
+
+
+#animationinspector-fade-gradient stop {
+  
+  stop-color: white;
+}
+
+#animationinspector-fade-gradient stop:nth-child(2) {
+  
+  stop-color: black;
 }
 
 
