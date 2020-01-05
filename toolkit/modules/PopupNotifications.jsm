@@ -387,6 +387,11 @@ PopupNotifications.prototype = {
 
 
 
+
+
+
+
+
   show: function PopupNotifications_show(browser, id, message, anchorID,
                                          mainAction, secondaryActions, options) {
     function isInvalidAction(a) {
@@ -683,6 +688,10 @@ PopupNotifications.prototype = {
         popupnotification.removeAttribute("closeitemcommand");
       }
 
+      if (n.options.popupIconClass) {
+        let classes = "popup-notification-icon " + n.options.popupIconClass;
+        popupnotification.setAttribute("iconclass", classes);
+      }
       if (n.options.popupIconURL)
         popupnotification.setAttribute("icon", n.options.popupIconURL);
 
