@@ -210,7 +210,7 @@ bitflags! {
 #[derive(Deserialize, Serialize)]
 pub struct IframeLoadInfo {
     
-    pub url: Url,
+    pub url: Option<Url>,
     
     pub containing_pipeline_id: PipelineId,
     
