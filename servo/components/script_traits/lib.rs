@@ -70,6 +70,10 @@ pub enum ConstellationControlMsg {
     Viewport(PipelineId, Rect<f32>),
     
     GetTitle(PipelineId),
+    
+    Freeze(PipelineId),
+    
+    Thaw(PipelineId)
 }
 
 unsafe impl Send for ConstellationControlMsg {
