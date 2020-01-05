@@ -158,6 +158,7 @@ function RegExpMatch(string) {
 
 
 
+
 function IsRegExpMethodOptimizable(rx) {
     var RegExpProto = GetBuiltinPrototype("RegExp");
     
