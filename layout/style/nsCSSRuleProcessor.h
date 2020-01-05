@@ -155,13 +155,13 @@ public:
 
 
 
-
-  static bool StringPseudoMatches(mozilla::dom::Element* aElement,
+  static bool StringPseudoMatches(const mozilla::dom::Element* aElement,
                                   mozilla::CSSPseudoClassType aPseudo,
-                                  char16_t* aString,
-                                  nsIDocument* aDocument,
+                                  const char16_t* aString,
+                                  const nsIDocument* aDocument,
                                   bool aForStyling,
                                   mozilla::EventStates aStateMask,
+                                  bool* aSetSlowSelectorFlag,
                                   bool* const aDependence = nullptr);
 
   

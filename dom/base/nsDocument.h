@@ -980,7 +980,12 @@ public:
 
   virtual nsISupports* GetCurrentContentSink() override;
 
-  virtual mozilla::EventStates GetDocumentState() override;
+  virtual mozilla::EventStates GetDocumentState() final;
+  
+  
+  
+  
+  virtual mozilla::EventStates ThreadSafeGetDocumentState() const final;
 
   
   void AsyncBlockOnload();
@@ -1391,6 +1396,7 @@ protected:
   
   mozilla::Maybe<bool> mIsThirdParty;
 private:
+  void UpdatePossiblyStaleDocumentState();
   static bool CustomElementConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp);
 
   

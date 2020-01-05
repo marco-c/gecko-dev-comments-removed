@@ -286,6 +286,8 @@ private:
 
 
   void PreTraverse();
+  
+  void PreTraverseSync();
 
   already_AddRefed<ServoComputedValues> ResolveStyleLazily(dom::Element* aElement,
                                                            nsIAtom* aPseudoTag);
