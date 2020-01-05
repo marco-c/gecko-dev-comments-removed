@@ -18,9 +18,8 @@ use style::data::ElementData;
 use style::dom::{StylingMode, TElement, TNode};
 use style::selector_parser::RestyleDamage;
 use style::servo::restyle_damage::{BUBBLE_ISIZES, REFLOW, REFLOW_OUT_OF_FLOW, REPAINT};
-use style::traversal::{DomTraversalContext, put_thread_local_bloom_filter};
-use style::traversal::{recalc_style_at, remove_from_bloom_filter};
-use style::traversal::take_thread_local_bloom_filter;
+use style::traversal::{DomTraversalContext, recalc_style_at, remove_from_bloom_filter};
+use style::traversal::PerLevelTraversalData;
 use util::opts;
 use wrapper::{GetRawData, LayoutNodeHelpers, LayoutNodeLayoutData};
 
@@ -74,37 +73,14 @@ impl<'lc, N> DomTraversalContext<N> for RecalcStyleAndConstructFlows<'lc>
         }
     }
 
-    fn process_preorder(&self, node: N) {
+    fn process_preorder(&self, node: N, data: &mut PerLevelTraversalData) {
         
         
         node.initialize_data();
 
-        if node.is_text_node() {
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            let parent = node.parent_node().unwrap().as_element();
-            let bf = take_thread_local_bloom_filter(parent, self.root, self.context.shared_context());
-            put_thread_local_bloom_filter(bf, &node.to_unsafe(), self.context.shared_context());
-        } else {
+        if !node.is_text_node() {
             let el = node.as_element().unwrap();
-            recalc_style_at::<_, _, Self>(&self.context, self.root, el);
+            recalc_style_at::<_, _, Self>(&self.context, data, el);
         }
     }
 
@@ -174,9 +150,9 @@ fn construct_flows_at<'a, N: LayoutNode>(context: &'a LayoutContext<'a>, root: O
     if let Some(el) = node.as_element() {
         el.mutate_data().unwrap().persist();
         unsafe { el.unset_dirty_descendants(); }
-    }
 
-    remove_from_bloom_filter(context, root, node);
+        remove_from_bloom_filter(context, root, el);
+    }
 }
 
 

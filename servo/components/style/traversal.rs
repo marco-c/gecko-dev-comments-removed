@@ -5,17 +5,16 @@
 
 
 use atomic_refcell::{AtomicRefCell, AtomicRefMut};
+use bloom::StyleBloom;
 use context::{LocalStyleContext, SharedStyleContext, StyleContext};
 use data::{ElementData, RestyleData, StoredRestyleHint};
-use dom::{OpaqueNode, StylingMode, TElement, TNode, UnsafeNode};
+use dom::{OpaqueNode, StylingMode, TElement, TNode};
 use matching::{MatchMethods, StyleSharingResult};
 use restyle_hints::{RESTYLE_DESCENDANTS, RESTYLE_LATER_SIBLINGS, RESTYLE_SELF};
-use selectors::bloom::BloomFilter;
 use selectors::matching::StyleRelations;
 use std::cell::RefCell;
 use std::marker::PhantomData;
 use std::sync::atomic::{AtomicUsize, ATOMIC_USIZE_INIT, Ordering};
-use tid::tid;
 use util::opts;
 
 
@@ -27,125 +26,74 @@ pub type Generation = u32;
 pub static STYLE_SHARING_CACHE_HITS: AtomicUsize = ATOMIC_USIZE_INIT;
 pub static STYLE_SHARING_CACHE_MISSES: AtomicUsize = ATOMIC_USIZE_INIT;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 thread_local!(
-    static STYLE_BLOOM: RefCell<Option<(Box<BloomFilter>, UnsafeNode, Generation)>> = RefCell::new(None));
+    static STYLE_BLOOM: RefCell<Option<StyleBloom>> = RefCell::new(None));
 
 
 
 
 
-pub fn take_thread_local_bloom_filter<E>(parent_element: Option<E>,
-                                         root: OpaqueNode,
-                                         context: &SharedStyleContext)
-                                         -> Box<BloomFilter>
-                                         where E: TElement {
+pub fn take_thread_local_bloom_filter(context: &SharedStyleContext)
+                                      -> StyleBloom
+{
+    debug!("{} taking bf", ::tid::tid());
+
     STYLE_BLOOM.with(|style_bloom| {
-        match (parent_element, style_bloom.borrow_mut().take()) {
-            
-            (None,     _  ) => {
-                debug!("[{}] No parent, but new bloom filter!", tid());
-                Box::new(BloomFilter::new())
-            }
-            
-            (Some(parent), None) => {
-                let mut bloom_filter = Box::new(BloomFilter::new());
-                insert_ancestors_into_bloom_filter(&mut bloom_filter, parent, root);
-                bloom_filter
-            }
-            
-            (Some(parent), Some((mut bloom_filter, old_node, old_generation))) => {
-                if old_node == parent.as_node().to_unsafe() &&
-                    old_generation == context.generation {
-                    
-                    debug!("[{}] Parent matches (={}). Reusing bloom filter.", tid(), old_node.0);
-                } else {
-                    
-                    
-                    bloom_filter.clear();
-                    insert_ancestors_into_bloom_filter(&mut bloom_filter, parent, root);
-                }
-                bloom_filter
-            },
-        }
+        style_bloom.borrow_mut().take()
+            .unwrap_or_else(|| StyleBloom::new(context.generation))
     })
 }
 
-pub fn put_thread_local_bloom_filter(bf: Box<BloomFilter>, unsafe_node: &UnsafeNode,
-                                     context: &SharedStyleContext) {
+pub fn put_thread_local_bloom_filter(bf: StyleBloom) {
+    debug!("[{}] putting bloom filter back", ::tid::tid());
+
     STYLE_BLOOM.with(move |style_bloom| {
-        assert!(style_bloom.borrow().is_none(),
-                "Putting into a never-taken thread-local bloom filter");
-        *style_bloom.borrow_mut() = Some((bf, *unsafe_node, context.generation));
+        debug_assert!(style_bloom.borrow().is_none(),
+                     "Putting into a never-taken thread-local bloom filter");
+        *style_bloom.borrow_mut() = Some(bf);
     })
 }
 
 
-fn insert_ancestors_into_bloom_filter<E>(bf: &mut Box<BloomFilter>,
-                                         mut el: E,
-                                         root: OpaqueNode)
-                                         where E: TElement {
-    debug!("[{}] Inserting ancestors.", tid());
-    let mut ancestors = 0;
-    loop {
-        ancestors += 1;
 
-        el.insert_into_bloom_filter(&mut **bf);
-        el = match el.layout_parent_element(root) {
-            None => break,
-            Some(p) => p,
-        };
-    }
-    debug!("[{}] Inserted {} ancestors.", tid(), ancestors);
-}
 
-pub fn remove_from_bloom_filter<'a, N, C>(context: &C, root: OpaqueNode, node: N)
-    where N: TNode,
+
+
+
+pub fn remove_from_bloom_filter<'a, E, C>(context: &C, root: OpaqueNode, element: E)
+    where E: TElement,
           C: StyleContext<'a>
 {
-    let unsafe_layout_node = node.to_unsafe();
+    debug!("[{}] remove_from_bloom_filter", ::tid::tid());
 
-    let (mut bf, old_node, old_generation) =
-        STYLE_BLOOM.with(|style_bloom| {
-            style_bloom.borrow_mut()
-                       .take()
-                       .expect("The bloom filter should have been set by style recalc.")
-        });
+    
+    
+    
+    let bf = STYLE_BLOOM.with(|style_bloom| {
+        style_bloom.borrow_mut().take()
+    });
 
-    assert_eq!(old_node, unsafe_layout_node);
-    assert_eq!(old_generation, context.shared_context().generation);
+    if let Some(mut bf) = bf {
+        if context.shared_context().generation == bf.generation() {
+            bf.maybe_pop(element);
 
-    match node.layout_parent_element(root) {
-        None => {
-            debug!("[{}] - {:X}, and deleting BF.", tid(), unsafe_layout_node.0);
             
+            
+            
+            
+            
+            
+            if element.as_node().opaque() != root {
+                put_thread_local_bloom_filter(bf);
+            }
         }
-        Some(parent) => {
-            
-            node.as_element().map(|x| x.remove_from_bloom_filter(&mut *bf));
-            let unsafe_parent = parent.as_node().to_unsafe();
-            put_thread_local_bloom_filter(bf, &unsafe_parent, &context.shared_context());
-        },
-    };
+    }
+}
+
+
+#[derive(Clone, Debug)]
+pub struct PerLevelTraversalData {
+    pub current_dom_depth: Option<usize>,
 }
 
 pub trait DomTraversalContext<N: TNode> {
@@ -154,7 +102,7 @@ pub trait DomTraversalContext<N: TNode> {
     fn new<'a>(&'a Self::SharedContext, OpaqueNode) -> Self;
 
     
-    fn process_preorder(&self, node: N);
+    fn process_preorder(&self, node: N, data: &mut PerLevelTraversalData);
 
     
     
@@ -258,27 +206,19 @@ pub fn style_element_in_display_none_subtree<'a, E, C, F>(element: E,
 #[inline]
 #[allow(unsafe_code)]
 pub fn recalc_style_at<'a, E, C, D>(context: &'a C,
-                                    root: OpaqueNode,
+                                    data: &mut PerLevelTraversalData,
                                     element: E)
     where E: TElement,
           C: StyleContext<'a>,
           D: DomTraversalContext<E::ConcreteNode>
 {
-    
-    
-    
-    
-    
-    
-    let mut bf = take_thread_local_bloom_filter(element.parent_element(), root, context.shared_context());
-
     let mode = element.styling_mode();
     let should_compute = element.borrow_data().map_or(true, |d| d.get_current_styles().is_none());
     debug!("recalc_style_at: {:?} (should_compute={:?} mode={:?}, data={:?})",
            element, should_compute, mode, element.borrow_data());
 
     let (computed_display_none, propagated_hint) = if should_compute {
-        compute_style::<_, _, D>(context, element, &*bf)
+        compute_style::<_, _, D>(context, data, element)
     } else {
         (false, StoredRestyleHint::empty())
     };
@@ -294,25 +234,30 @@ pub fn recalc_style_at<'a, E, C, D>(context: &'a C,
         preprocess_children::<_, _, D>(context, element, propagated_hint,
                                        mode == StylingMode::Restyle);
     }
-
-    let unsafe_layout_node = element.as_node().to_unsafe();
-
-    
-    
-    debug!("[{}] + {:X}", tid(), unsafe_layout_node.0);
-    element.insert_into_bloom_filter(&mut *bf);
-
-    
-    put_thread_local_bloom_filter(bf, &unsafe_layout_node, context.shared_context());
 }
 
 fn compute_style<'a, E, C, D>(context: &'a C,
-                              element: E,
-                              bloom_filter: &BloomFilter) -> (bool, StoredRestyleHint)
+                              data: &mut PerLevelTraversalData,
+                              element: E) -> (bool, StoredRestyleHint)
     where E: TElement,
           C: StyleContext<'a>,
           D: DomTraversalContext<E::ConcreteNode>
 {
+    let shared_context = context.shared_context();
+    let mut bf = take_thread_local_bloom_filter(shared_context);
+    
+    let dom_depth = bf.insert_parents_recovering(element,
+                                                 data.current_dom_depth,
+                                                 shared_context.generation);
+
+    
+    
+    
+    
+    data.current_dom_depth = Some(dom_depth);
+
+    bf.assert_complete(element);
+
     let mut data = unsafe { D::ensure_element_data(&element).borrow_mut() };
     debug_assert!(!data.is_persistent());
 
@@ -324,7 +269,7 @@ fn compute_style<'a, E, C, D>(context: &'a C,
         StyleSharingResult::CannotShare
     } else {
         unsafe { element.share_style_if_possible(style_sharing_candidate_cache,
-                                                 context.shared_context(), &mut data) }
+                                                 shared_context, &mut data) }
     };
 
     
@@ -337,7 +282,7 @@ fn compute_style<'a, E, C, D>(context: &'a C,
                 }
 
                 
-                match_results = element.match_element(context, Some(bloom_filter));
+                match_results = element.match_element(context, Some(bf.filter()));
                 if match_results.primary_is_shareable() {
                     Some(element)
                 } else {
@@ -378,6 +323,13 @@ fn compute_style<'a, E, C, D>(context: &'a C,
         debug!("New element style is display:none - clearing data from descendants.");
         clear_descendant_data(element, &|e| unsafe { D::clear_element_data(&e) });
     }
+
+    
+    
+    
+    
+    
+    put_thread_local_bloom_filter(bf);
 
     (display_none, data.as_restyle().map_or(StoredRestyleHint::empty(), |r| r.hint.propagate()))
 }
