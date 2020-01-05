@@ -22,7 +22,34 @@ extern crate euclid;
 #[cfg(feature = "servo")] extern crate heapsize;
 extern crate rustc_serialize;
 #[cfg(feature = "servo")] extern crate serde;
-extern crate util;
+
+
+
+
+
+
+
+
+
+
+#[derive(Clone, Copy, Debug)]
+pub enum ViewportPx {}
+
+
+
+
+
+
+
+#[derive(Clone, Copy, Debug)]
+pub enum PagePx {}
+
+
+
+
+
+
+
 
 pub mod cursor;
 #[macro_use]
