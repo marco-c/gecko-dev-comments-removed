@@ -3147,7 +3147,12 @@ MediaDecoderStateMachine::DumpDebugInfo()
       mAudioCompleted.Ref(), mVideoCompleted.Ref());
   });
 
-  OwnerThread()->DispatchStateChange(r.forget());
+  
+  
+  
+  
+  OwnerThread()->Dispatch(r.forget(),
+    AbstractThread::AssertDispatchSuccess, AbstractThread::TailDispatch);
 }
 
 void MediaDecoderStateMachine::AddOutputStream(ProcessedMediaStream* aStream,
