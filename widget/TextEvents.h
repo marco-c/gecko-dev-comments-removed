@@ -126,7 +126,6 @@ protected:
     , mKeyNameIndex(KEY_NAME_INDEX_Unidentified)
     , mCodeNameIndex(CODE_NAME_INDEX_UNKNOWN)
     , mInputMethodAppState(eNotHandled)
-    , mIsChar(false)
     , mIsRepeat(false)
     , mIsComposing(false)
     , mIsReserved(false)
@@ -155,7 +154,6 @@ public:
     , mKeyNameIndex(KEY_NAME_INDEX_Unidentified)
     , mCodeNameIndex(CODE_NAME_INDEX_UNKNOWN)
     , mInputMethodAppState(eNotHandled)
-    , mIsChar(false)
     , mIsRepeat(false)
     , mIsComposing(false)
     , mIsReserved(false)
@@ -268,8 +266,6 @@ public:
   };
   InputMethodAppState mInputMethodAppState;
 
-  
-  bool mIsChar;
   
   
   bool mIsRepeat;
@@ -392,7 +388,6 @@ public:
     mPseudoCharCode = aEvent.mPseudoCharCode;
     mLocation = aEvent.mLocation;
     mAlternativeCharCodes = aEvent.mAlternativeCharCodes;
-    mIsChar = aEvent.mIsChar;
     mIsRepeat = aEvent.mIsRepeat;
     mIsComposing = aEvent.mIsComposing;
     mIsReserved = aEvent.mIsReserved;
