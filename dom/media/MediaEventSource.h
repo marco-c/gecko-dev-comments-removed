@@ -405,7 +405,8 @@ class MediaEventProducer : public MediaEventSource<Es...> {
 public:
   template <typename... Ts>
   void Notify(Ts&&... aEvents) {
-    this->NotifyInternal(Forward<Ts>(aEvents)...);
+    
+    this->NotifyInternal(aEvents...);
   }
 };
 
