@@ -5960,11 +5960,6 @@ HTMLMediaElement::UpdateAudioChannelPlayingState(bool aForcePlaying)
 void
 HTMLMediaElement::NotifyAudioChannelAgent(bool aPlaying)
 {
-  
-  
-  
-  AutoNoJSAPI nojsapi;
-
   if (aPlaying) {
     
     
