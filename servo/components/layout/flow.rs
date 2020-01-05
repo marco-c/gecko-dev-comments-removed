@@ -499,7 +499,7 @@ pub trait MutableOwnedFlowUtils {
     
     
     
-    fn set_absolute_descendants(&mut self, abs_descendants: AbsDescendants);
+    fn set_absolute_descendants(&mut self, abs_descendants: AbsoluteDescendants);
 }
 
 #[derive(RustcEncodable, PartialEq, Debug)]
@@ -695,18 +695,16 @@ impl FlowFlags {
 }
 
 
-
-
 #[derive(Clone)]
-pub struct Descendants {
+pub struct AbsoluteDescendants {
     
     
-    descendant_links: Vec<FlowRef>,
+    descendant_links: Vec<AbsoluteDescendantInfo>,
 }
 
-impl Descendants {
-    pub fn new() -> Descendants {
-        Descendants {
+impl AbsoluteDescendants {
+    pub fn new() -> AbsoluteDescendants {
+        AbsoluteDescendants {
             descendant_links: Vec::new(),
         }
     }
@@ -720,40 +718,63 @@ impl Descendants {
     }
 
     pub fn push(&mut self, given_descendant: FlowRef) {
-        self.descendant_links.push(given_descendant);
+        self.descendant_links.push(AbsoluteDescendantInfo {
+            flow: given_descendant,
+        });
     }
 
     
     
     
-    pub fn push_descendants(&mut self, given_descendants: Descendants) {
+    pub fn push_descendants(&mut self, given_descendants: AbsoluteDescendants) {
         for elem in given_descendants.descendant_links.into_iter() {
             self.descendant_links.push(elem);
         }
     }
 
     
-    pub fn iter<'a>(&'a mut self) -> DescendantIter<'a> {
-        DescendantIter {
+    pub fn iter<'a>(&'a mut self) -> AbsoluteDescendantIter<'a> {
+        AbsoluteDescendantIter {
             iter: self.descendant_links.iter_mut(),
         }
     }
 }
 
-pub type AbsDescendants = Descendants;
 
-pub struct DescendantIter<'a> {
-    iter: IterMut<'a, FlowRef>,
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Clone)]
+pub struct AbsoluteDescendantInfo {
+    
+    flow: FlowRef,
 }
 
-impl<'a> Iterator for DescendantIter<'a> {
+pub struct AbsoluteDescendantIter<'a> {
+    iter: IterMut<'a, AbsoluteDescendantInfo>,
+}
+
+impl<'a> Iterator for AbsoluteDescendantIter<'a> {
     type Item = &'a mut (Flow + 'a);
     fn next(&mut self) -> Option<&'a mut (Flow + 'a)> {
-        self.iter.next().map(|flow| &mut **flow)
+        self.iter.next().map(|info| &mut *info.flow)
     }
 }
 
-pub type DescendantOffsetIter<'a> = Zip<DescendantIter<'a>, IterMut<'a, Au>>;
+pub type AbsoluteDescendantOffsetIter<'a> = Zip<AbsoluteDescendantIter<'a>, IterMut<'a, Au>>;
 
 
 
@@ -837,7 +858,7 @@ pub struct BaseFlow {
 
     
     
-    pub abs_descendants: AbsDescendants,
+    pub abs_descendants: AbsoluteDescendants,
 
     
     
@@ -1034,7 +1055,7 @@ impl BaseFlow {
             floats: Floats::new(writing_mode),
             collapsible_margins: CollapsibleMargins::new(),
             stacking_relative_position: Point2D::zero(),
-            abs_descendants: Descendants::new(),
+            abs_descendants: AbsoluteDescendants::new(),
             block_container_inline_size: Au(0),
             block_container_writing_mode: writing_mode,
             block_container_explicit_block_size: None,
@@ -1367,7 +1388,7 @@ impl MutableOwnedFlowUtils for FlowRef {
     
     
     
-    fn set_absolute_descendants(&mut self, abs_descendants: AbsDescendants) {
+    fn set_absolute_descendants(&mut self, abs_descendants: AbsoluteDescendants) {
         let this = self.clone();
         let base = mut_base(&mut **self);
         base.abs_descendants = abs_descendants;
@@ -1414,7 +1435,10 @@ impl ContainingBlockLink {
                 panic!("Link to containing block not established; perhaps you forgot to call \
                         `set_absolute_descendants`?")
             }
-            Some(ref link) => link.upgrade().unwrap().generated_containing_block_size(for_flow),
+            Some(ref link) => {
+                let flow = link.upgrade().unwrap();
+                flow.generated_containing_block_size(for_flow)
+            }
         }
     }
 
@@ -1429,6 +1453,8 @@ impl ContainingBlockLink {
                 let flow = link.upgrade().unwrap();
                 if flow.is_block_like() {
                     flow.as_immutable_block().explicit_block_containing_size(layout_context)
+                } else if flow.is_inline_flow() {
+                    Some(flow.as_immutable_inline().minimum_block_size_above_baseline)
                 } else {
                     None
                 }
