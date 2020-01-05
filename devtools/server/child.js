@@ -112,15 +112,6 @@ try {
       }
       connections.clear();
     });
-
-    let onInspect = DevToolsUtils.makeInfallible(function (msg) {
-      
-      
-      
-      let inspector = require("devtools/server/actors/inspector");
-      inspector.setInspectingNode(msg.objects.node);
-    });
-    addMessageListener("debug:inspect", onInspect);
   })();
 } catch (e) {
   dump(`Exception in app child process: ${e}\n`);

@@ -174,20 +174,6 @@ exports.setValueSummaryLength = function (val) {
 
 
 
-var gInspectingNode = null;
-
-
-
-exports.setInspectingNode = function (val) {
-  gInspectingNode = val;
-};
-
-
-
-
-
-
-
 
 
 
@@ -1477,22 +1463,6 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     } while (node && --count);
     ret.reverse();
     return ret;
-  },
-
-  
-
-
-
-
-
-
-  findInspectingNode: function () {
-    let node = gInspectingNode;
-    if (!node) {
-      return {};
-    }
-
-    return this.attachElement(node);
   },
 
   
