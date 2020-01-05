@@ -63,9 +63,6 @@ using namespace mozilla::ipc;
 namespace mozilla {
 namespace net {
 
-extern bool
-WillRedirect(nsHttpResponseHead * response);
-
 namespace {
 
 const uint32_t kMaxFileDescriptorsPerMessage = 250;
@@ -3179,14 +3176,14 @@ HttpChannelChild::OverrideWithSynthesizedResponse(nsAutoPtr<nsHttpResponseHead>&
 
   
   
-  if (!WillRedirect(aResponseHead)) {
+  if (!nsHttpChannel::WillRedirect(aResponseHead)) {
     SetApplyConversion(false);
   }
 
   mResponseHead = aResponseHead;
   mSynthesizedResponse = true;
 
-  if (WillRedirect(mResponseHead)) {
+  if (nsHttpChannel::WillRedirect(mResponseHead)) {
     mShouldInterceptSubsequentRedirect = true;
     
     nsresult rv = ContinueAsyncOpen();
