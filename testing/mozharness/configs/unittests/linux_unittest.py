@@ -203,7 +203,7 @@ config = {
         "jetpack-package-clipboard": ["--flavor=jetpack-package", "--subsuite=clipboard"],
         "jetpack-addon": ["--flavor=jetpack-addon"],
         "a11y": ["--flavor=a11y"],
-        "mochitest-stylo": ["--disable-e10s", "--tag=stylo"],
+        "mochitest-style": ["--disable-e10s", "layout/style/test"],
     },
     
     "all_reftest_suites": {
