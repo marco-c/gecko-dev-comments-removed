@@ -230,6 +230,8 @@ SessionStore.prototype = {
     }
   },
 
+  
+  
   observe: function ss_observe(aSubject, aTopic, aData) {
     let observerService = Services.obs;
     switch (aTopic) {
@@ -404,9 +406,11 @@ SessionStore.prototype = {
         
         
         let window = Services.wm.getMostRecentWindow("navigator:browser");
-        if (window) { 
+        if (window && window.BrowserApp) { 
           let tab = window.BrowserApp.selectedTab;
-          this.restoreZombieTab(tab);
+          if (tab) { 
+            this.restoreZombieTab(tab);
+          }
         }
         break;
       case "last-pb-context-exited":
