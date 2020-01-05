@@ -137,9 +137,6 @@ WHITELISTED_SCHEMA_IDENTIFIERS = [
     lambda path: "[u'upstream-artifacts']" in path,
 
     
-    lambda path: path.startswith("schema[u'chainOfTrust']"),
-
-    
     lambda path: path.startswith("schema[u'attributes']"),
 ]
 

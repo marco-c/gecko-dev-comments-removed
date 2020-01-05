@@ -21,6 +21,7 @@ from taskgraph.util.schema import (
     Schema,
 )
 from taskgraph.util.treeherder import split_symbol, join_symbol
+from taskgraph.transforms.job import job_description_schema
 from voluptuous import (
     Any,
     Extra,
@@ -37,6 +38,10 @@ taskref_or_string = Any(
     basestring,
     {Required('task-reference'): basestring})
 
+
+
+job_description_schema = {str(k): v for k, v in job_description_schema.schema.iteritems()}
+
 l10n_description_schema = Schema({
     
     Required('name'): basestring,
@@ -46,9 +51,6 @@ l10n_description_schema = Schema({
 
     
     Required('run-time'): _by_platform(int),
-
-    
-    Optional('chainOfTrust'): {Extra: object},
 
     
     Required('mozharness'): {
@@ -126,7 +128,10 @@ l10n_description_schema = Schema({
     
     Optional('when'): {
         'files-changed': [basestring]
-    }
+    },
+
+    
+    Optional('extra'): job_description_schema['extra'],
 })
 
 transforms = TransformSequence()
@@ -328,11 +333,9 @@ def mh_options_replace_project(config, jobs):
 @transforms.add
 def chain_of_trust(config, jobs):
     for job in jobs:
-        job.setdefault('chainOfTrust', {})
-        job['chainOfTrust'].setdefault('inputs', {})
-        job['chainOfTrust']['inputs']['docker-image'] = {
-            "task-reference": "<docker-image>"
-        }
+        
+        cot = job.setdefault('extra', {}).setdefault('chainOfTrust', {})
+        cot.setdefault('inputs', {})['docker-image'] = {"task-reference": "<docker-image>"}
         yield job
 
 
@@ -354,9 +357,7 @@ def make_job_description(config, jobs):
                 'max-run-time': job['run-time'],
                 'chain-of-trust': True,
             },
-            'extra': {
-                'chainOfTrust': job['chainOfTrust'],
-            },
+            'extra': job['extra'],
             'worker-type': job['worker-type'],
             'description': job['description'],
             'run': {
