@@ -5756,6 +5756,11 @@ HTMLMediaElement::IsPlayingThroughTheAudioChannel() const
   }
 
   
+  if (IsCurrentlyPlaying()) {
+    return true;
+  }
+
+  
   if (mPlayingThroughTheAudioChannelBeforeSeek) {
     return true;
   }
@@ -5765,7 +5770,7 @@ HTMLMediaElement::IsPlayingThroughTheAudioChannel() const
     return true;
   }
 
-  return true;
+  return false;
 }
 
 void
