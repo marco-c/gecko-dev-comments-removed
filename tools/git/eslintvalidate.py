@@ -1,0 +1,35 @@
+
+
+
+
+import os
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__), "..", "lint", "eslint"))
+from hook_helper import is_lintable, runESLint
+
+
+def output(message):
+    print >> sys.stderr, message
+
+
+def eslint():
+    f = os.popen('git diff --cached --name-only --diff-filter=ACM')
+
+    files = [file for file in f.read().splitlines() if is_lintable(file)]
+
+    if len(files) == 0:
+        return True
+
+    print "Running ESLint..."
+
+    return runESLint(output, files)
+
+
+if __name__ == '__main__':
+    if not eslint():
+        output("Note: ESLint failed, but the commit will still happen. "
+               "Please fix before pushing.")
+
+    
+    
+    
