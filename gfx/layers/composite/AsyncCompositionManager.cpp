@@ -458,8 +458,10 @@ AsyncCompositionManager::AlignFixedAndStickyLayers(Layer* aTransformedSubtreeRoo
 
         
         Matrix4x4 ancestorTransform;
-        AccumulateLayerTransforms(layer->GetParent(), aTransformedSubtreeRoot,
-                                  ancestorTransform);
+        if (layer != aTransformedSubtreeRoot) {
+          AccumulateLayerTransforms(layer->GetParent(), aTransformedSubtreeRoot,
+                                    ancestorTransform);
+        }
 
         
         
