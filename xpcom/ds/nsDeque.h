@@ -183,6 +183,52 @@ public:
   
   
   
+  class ConstDequeIterator
+  {
+  public:
+    ConstDequeIterator(const nsDeque& aDeque, size_t aIndex)
+      : mDeque(aDeque)
+      , mIndex(aIndex)
+    {
+    }
+    ConstDequeIterator& operator++()
+    {
+      ++mIndex;
+      return *this;
+    }
+    bool operator==(const ConstDequeIterator& aOther) const
+    {
+      return mIndex == aOther.mIndex;
+    }
+    bool operator!=(const ConstDequeIterator& aOther) const
+    {
+      return mIndex != aOther.mIndex;
+    }
+    void* operator*() const
+    {
+      
+      MOZ_RELEASE_ASSERT(mIndex < mDeque.GetSize());
+      return mDeque.ObjectAt(mIndex);
+    }
+  private:
+    const nsDeque& mDeque;
+    size_t mIndex;
+  };
+  
+  ConstDequeIterator begin() const
+  {
+    return ConstDequeIterator(*this, 0);
+  }
+  ConstDequeIterator end() const
+  {
+    return ConstDequeIterator(*this, mSize);
+  }
+
+  
+  
+  
+  
+  
   class ConstIterator
   {
   public:
@@ -227,11 +273,13 @@ public:
     const nsDeque& mDeque;
     size_t mIndex; 
   };
-  ConstIterator begin() const
+  
+  
+  ConstIterator begin()
   {
     return ConstIterator(*this, 0);
   }
-  ConstIterator end() const
+  ConstIterator end()
   {
     return ConstIterator(*this, ConstIterator::EndIteratorIndex);
   }
