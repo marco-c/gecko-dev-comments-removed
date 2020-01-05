@@ -276,11 +276,11 @@ impl TextRunScanner {
                     options.flags.insert(RTL_FLAG);
                 }
                 let mut font = fontgroup.fonts.get(run_info.font_index).unwrap().borrow_mut();
-                Arc::new(box TextRun::new(&mut *font, run_info.text, &options, run_info.bidi_level))
+                Arc::new(TextRun::new(&mut *font, run_info.text, &options, run_info.bidi_level))
             }).collect::<Vec<_>>()
         };
 
-        // Make new fragments with the runs and adjusted text indices.
+        
         debug!("TextRunScanner: pushing {} fragment(s)", self.clump.len());
         let mut mappings = mappings.into_iter().peekable();
         for (logical_offset, old_fragment) in
@@ -327,9 +327,9 @@ impl TextRunScanner {
 fn bounding_box_for_run_metrics(metrics: &RunMetrics, writing_mode: WritingMode)
                                 -> LogicalSize<Au> {
 
-    // This does nothing, but it will fail to build
-    // when more values are added to the `text-orientation` CSS property.
-    // This will be a reminder to update the code below.
+    
+    
+    
     let dummy: Option<text_orientation::T> = None;
     match dummy {
         Some(text_orientation::T::sideways_right) |
@@ -338,9 +338,9 @@ fn bounding_box_for_run_metrics(metrics: &RunMetrics, writing_mode: WritingMode)
         None => {}
     }
 
-    // In vertical sideways or horizontal upright text,
-    // the "width" of text metrics is always inline
-    // This will need to be updated when other text orientations are supported.
+    
+    
+    
     LogicalSize::new(
         writing_mode,
         metrics.bounding_box.size.width,
@@ -348,19 +348,19 @@ fn bounding_box_for_run_metrics(metrics: &RunMetrics, writing_mode: WritingMode)
 
 }
 
-/// Returns the metrics of the font represented by the given `FontStyle`, respectively.
-///
-/// `#[inline]` because often the caller only needs a few fields from the font metrics.
+
+
+
 #[inline]
 pub fn font_metrics_for_style(font_context: &mut FontContext, font_style: Arc<FontStyle>)
                               -> FontMetrics {
     let fontgroup = font_context.get_layout_font_group_for_style(font_style);
-    // FIXME(https://github.com/rust-lang/rust/issues/23338)
+    
     let font = fontgroup.fonts[0].borrow();
     font.metrics.clone()
 }
 
-/// Returns the line block-size needed by the given computed style and font size.
+
 pub fn line_height_from_style(style: &ComputedValues, metrics: &FontMetrics) -> Au {
     let font_size = style.get_font().font_size;
     match style.get_inheritedbox().line_height {
@@ -398,9 +398,9 @@ fn split_first_fragment_at_newline_if_necessary(fragments: &mut LinkedList<Fragm
             };
 
             string_before =
-                box unscanned_text_fragment_info.text[..(position + 1)].to_owned();
+                unscanned_text_fragment_info.text[..(position + 1)].to_owned().into_boxed_slice();
             unscanned_text_fragment_info.text =
-                box unscanned_text_fragment_info.text[(position + 1)..].to_owned();
+                unscanned_text_fragment_info.text[(position + 1)..].to_owned().into_boxed_slice();
         }
         first_fragment.transform(first_fragment.border_box.size,
                                  SpecificFragmentInfo::UnscannedText(UnscannedTextFragmentInfo {
@@ -411,15 +411,15 @@ fn split_first_fragment_at_newline_if_necessary(fragments: &mut LinkedList<Fragm
     fragments.push_front(new_fragment);
 }
 
-/// Information about a text run that we're about to create. This is used in `scan_for_runs`.
+
 struct RunInfo {
-    /// The text that will go in this text run.
+    
     text: String,
-    /// The index of the applicable font in the font group.
+    
     font_index: usize,
-    /// A cached copy of the number of Unicode characters in the text run.
+    
     character_length: usize,
-    /// The bidirection embedding level of this text run.
+    
     bidi_level: u8,
 }
 
@@ -434,24 +434,24 @@ impl RunInfo {
     }
 }
 
-/// A mapping from a portion of an unscanned text fragment to the text run we're going to create
-/// for it.
+
+
 #[derive(Copy, Clone, Debug)]
 struct RunMapping {
-    /// The range of characters within the text fragment.
+    
     char_range: Range<CharIndex>,
-    /// The range of byte indices within the text fragment.
+    
     byte_range: Range<usize>,
-    /// The index of the unscanned text fragment that this mapping corresponds to.
+    
     old_fragment_index: usize,
-    /// The index of the text run we're going to create.
+    
     text_run_index: usize,
 }
 
 impl RunMapping {
-    /// Given the current set of text runs, creates a run mapping for the next fragment.
-    /// `run_info_list` describes the set of runs we've seen already, and `current_run_info`
-    /// describes the run we just finished processing.
+    
+    
+    
     fn new(run_info_list: &[RunInfo], current_run_info: &RunInfo, fragment_index: usize)
            -> RunMapping {
         RunMapping {
@@ -463,8 +463,8 @@ impl RunMapping {
         }
     }
 
-    /// Flushes this run mapping to the list. `run_info` describes the text run that we're
-    /// currently working on. `text` refers to the text of this fragment.
+    
+    
     fn flush(mut self,
              mappings: &mut Vec<RunMapping>,
              run_info: &mut RunInfo,
@@ -480,8 +480,8 @@ impl RunMapping {
                                                 *last_whitespace,
                                                 &mut run_info.text);
 
-        // Account for `text-transform`. (Confusingly, this is not handled in "text
-        // transformation" above, but we follow Gecko in the naming.)
+        
+        
         let character_count = apply_style_transform_if_necessary(&mut run_info.text,
                                                                  old_byte_length,
                                                                  text_transform);

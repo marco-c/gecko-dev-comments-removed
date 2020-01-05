@@ -824,7 +824,7 @@ pub struct TextDisplayItem {
 
     
     #[ignore_heap_size_of = "Because it is non-owning"]
-    pub text_run: Arc<Box<TextRun>>,
+    pub text_run: Arc<TextRun>,
 
     
     pub range: Range<CharIndex>,
