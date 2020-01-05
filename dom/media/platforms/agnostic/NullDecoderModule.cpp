@@ -17,10 +17,10 @@ public:
     
     
     RefPtr<VideoData> v(new VideoData(aSample->mOffset,
-                                      aSample->mTime.ToMicroseconds(),
-                                      aSample->mDuration.ToMicroseconds(),
+                                      aSample->mTime,
+                                      aSample->mDuration,
                                       aSample->mKeyframe,
-                                      aSample->mTimecode.ToMicroseconds(),
+                                      aSample->mTimecode,
                                       gfx::IntSize(),
                                       0));
     return v.forget();

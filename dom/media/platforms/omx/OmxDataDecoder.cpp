@@ -994,11 +994,11 @@ MediaDataHelper::CreateYUV420VideoData(BufferData* aBufferData)
     VideoData::CreateAndCopyData(info,
                                  mImageContainer,
                                  0, 
-                                 0, 
+                                 media::TimeUnit::Zero(), 
                                  media::TimeUnit::FromMicroseconds(1), 
                                  b,
                                  0, 
-                                 -1,
+                                 media::TimeUnit::FromMicroseconds(-1),
                                  info.ImageRect());
 
   LOG("YUV420 VideoData: disp width %d, height %d, pic width %d, height %d, time %lld",
