@@ -266,6 +266,15 @@ pub trait CoordDataMut : CoordData {
 
     #[inline]
     
+    fn move_from<T: CoordData>(&mut self, other: T) {
+        unsafe {
+            self.reset();
+            self.copy_from_unchecked(&other);
+        }
+    }
+
+    #[inline]
+    
     
     unsafe fn copy_from_unchecked<T: CoordData>(&mut self, other: &T) {
         let (unit, union) = self.values_mut();

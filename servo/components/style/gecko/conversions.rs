@@ -297,10 +297,10 @@ impl nsStyleImage {
             },
         };
 
-        let mut coord: nsStyleCoord = nsStyleCoord::null();
         for (index, stop) in gradient.stops.iter().enumerate() {
             
             
+            let mut coord: nsStyleCoord = nsStyleCoord::null();
             coord.set(stop.position);
             let color = match stop.color {
                 CSSColor::CurrentColor => {
@@ -322,7 +322,7 @@ impl nsStyleImage {
 
             stop.mColor = color;
             stop.mIsInterpolationHint = false;
-            stop.mLocation.copy_from(&coord);
+            stop.mLocation.move_from(coord);
         }
 
         unsafe {
