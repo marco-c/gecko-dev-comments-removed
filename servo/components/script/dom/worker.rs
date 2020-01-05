@@ -36,6 +36,7 @@ use std::sync::mpsc::{channel, Sender};
 
 pub type TrustedWorkerAddress = Trusted<Worker>;
 
+
 #[dom_struct]
 pub struct Worker {
     eventtarget: EventTarget,

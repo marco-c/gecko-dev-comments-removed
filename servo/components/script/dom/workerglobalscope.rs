@@ -39,6 +39,7 @@ pub enum WorkerGlobalScopeTypeId {
     DedicatedGlobalScope,
 }
 
+
 #[dom_struct]
 pub struct WorkerGlobalScope {
     eventtarget: EventTarget,
@@ -96,16 +97,19 @@ impl WorkerGlobalScope {
 }
 
 impl<'a> WorkerGlobalScopeMethods for JSRef<'a, WorkerGlobalScope> {
+    
     fn Self_(self) -> Temporary<WorkerGlobalScope> {
         Temporary::from_rooted(self)
     }
 
+    
     fn Location(self) -> Temporary<WorkerLocation> {
         self.location.or_init(|| {
             WorkerLocation::new(self, self.worker_url.clone())
         })
     }
 
+    
     fn ImportScripts(self, url_strings: Vec<DOMString>) -> ErrorResult {
         let mut urls = Vec::with_capacity(url_strings.len());
         for url in url_strings.into_iter() {
@@ -138,6 +142,7 @@ impl<'a> WorkerGlobalScopeMethods for JSRef<'a, WorkerGlobalScope> {
         Ok(())
     }
 
+    
     fn Navigator(self) -> Temporary<WorkerNavigator> {
         self.navigator.or_init(|| WorkerNavigator::new(self))
     }

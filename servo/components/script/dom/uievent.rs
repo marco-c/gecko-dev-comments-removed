@@ -18,6 +18,7 @@ use util::str::DOMString;
 use std::cell::Cell;
 use std::default::Default;
 
+
 #[dom_struct]
 pub struct UIEvent {
     event: Event,
@@ -70,10 +71,12 @@ impl UIEvent {
 }
 
 impl<'a> UIEventMethods for JSRef<'a, UIEvent> {
+    
     fn GetView(self) -> Option<Temporary<Window>> {
         self.view.get()
     }
 
+    
     fn Detail(self) -> i32 {
         self.detail.get()
     }

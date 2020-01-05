@@ -13,6 +13,7 @@ use dom::workerglobalscope::WorkerGlobalScope;
 
 use url::Url;
 
+
 #[dom_struct]
 pub struct WorkerLocation {
     reflector_: Reflector,
