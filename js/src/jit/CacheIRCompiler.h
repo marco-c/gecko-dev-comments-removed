@@ -14,6 +14,13 @@ namespace jit {
 
 
 
+#define CACHE_IR_SHARED_OPS(_)            \
+    _(GuardIsObject)                      \
+    _(GuardIsString)                      \
+    _(GuardIsSymbol)
+
+
+
 class OperandLocation
 {
   public:
@@ -321,6 +328,10 @@ class MOZ_RAII CacheIRCompiler
     MOZ_MUST_USE bool addFailurePath(FailurePath** failure);
 
     void emitFailurePath(size_t i);
+
+#define DEFINE_SHARED_OP(op) MOZ_MUST_USE bool emit##op();
+    CACHE_IR_SHARED_OPS(DEFINE_SHARED_OP)
+#undef DEFINE_SHARED_OP
 };
 
 
