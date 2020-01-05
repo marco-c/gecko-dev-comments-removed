@@ -106,7 +106,8 @@ private:
   void IssueSingleInsertNofications(nsIContent* aContainer,
                                     nsIContent* aStartChild,
                                     nsIContent* aEndChild,
-                                    bool aAllowLazyConstruction);
+                                    bool aAllowLazyConstruction,
+                                    bool aForReconstruction);
 
   
 
@@ -149,7 +150,8 @@ private:
   InsertionPoint GetRangeInsertionPoint(nsIContent* aContainer,
                                         nsIContent* aStartChild,
                                         nsIContent* aEndChild,
-                                        bool aAllowLazyConstruction);
+                                        bool aAllowLazyConstruction,
+                                        bool aForReconstruction);
 
   
   bool MaybeRecreateForFrameset(nsIFrame* aParentFrame,
@@ -220,7 +222,11 @@ public:
   void ContentAppended(nsIContent* aContainer,
                        nsIContent* aFirstNewContent,
                        bool aAllowLazyConstruction,
-                       TreeMatchContext* aProvidedTreeMatchContext = nullptr);
+                       TreeMatchContext* aProvidedTreeMatchContext = nullptr)
+  {
+    ContentAppended(aContainer, aFirstNewContent, aAllowLazyConstruction, false,
+                    aProvidedTreeMatchContext);
+  }
 
   
   
@@ -245,8 +251,36 @@ public:
                             nsIContent* aEndChild,
                             nsILayoutHistoryState* aFrameState,
                             bool aAllowLazyConstruction,
-                            TreeMatchContext* aProvidedTreeMatchContext = nullptr);
+                            TreeMatchContext* aProvidedTreeMatchContext = nullptr)
+  {
+    ContentRangeInserted(aContainer, aStartChild, aEndChild, aFrameState,
+                         aAllowLazyConstruction, false,
+                         aProvidedTreeMatchContext);
+  }
 
+private:
+  
+  
+  
+  
+  
+  
+  
+  
+  void ContentAppended(nsIContent* aContainer,
+                       nsIContent* aFirstNewContent,
+                       bool aAllowLazyConstruction,
+                       bool aForReconstruction,
+                       TreeMatchContext* aProvidedTreeMatchContext);
+  void ContentRangeInserted(nsIContent* aContainer,
+                            nsIContent* aStartChild,
+                            nsIContent* aEndChild,
+                            nsILayoutHistoryState* aFrameState,
+                            bool aAllowLazyConstruction,
+                            bool aForReconstruction,
+                            TreeMatchContext* aProvidedTreeMatchContext);
+
+public:
   enum RemoveFlags {
     REMOVE_CONTENT, REMOVE_FOR_RECONSTRUCTION, REMOVE_DESTROY_FRAMES };
   
