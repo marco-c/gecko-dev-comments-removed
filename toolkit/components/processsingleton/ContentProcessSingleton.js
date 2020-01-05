@@ -14,6 +14,9 @@ XPCOMUtils.defineLazyServiceGetter(this, "cpmm",
                                    "@mozilla.org/childprocessmessagemanager;1",
                                    "nsIMessageSender");
 
+XPCOMUtils.defineLazyModuleGetter(this, "TelemetryController",
+                                  "resource://gre/modules/TelemetryController.jsm");
+
 
 
 
@@ -47,6 +50,7 @@ ContentProcessSingleton.prototype = {
       Services.obs.addObserver(this, "console-api-log-event", false);
       Services.obs.addObserver(this, "xpcom-shutdown", false);
       cpmm.addMessageListener("DevTools:InitDebuggerServer", this);
+      TelemetryController.observe(null, topic, null);
       break;
     }
     case "console-api-log-event": {
