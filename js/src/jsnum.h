@@ -283,26 +283,6 @@ ToInteger(JSContext* cx, HandleValue v, double* dp)
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-MOZ_MUST_USE bool NonStandardToIndex(JSContext* cx, JS::HandleValue v, uint64_t* index);
-
-
-
-
-
-
-
-
 MOZ_MUST_USE bool ToIndex(JSContext* cx, JS::HandleValue v, uint64_t* index);
 
 MOZ_MUST_USE inline bool
