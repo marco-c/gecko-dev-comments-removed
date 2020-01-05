@@ -1454,17 +1454,11 @@ GetCurrentThreadWorkerPrivate()
   JSContext* cx = ccjscx->Context();
   MOZ_ASSERT(cx);
 
-  void* cxPrivate = JS_GetContextPrivate(cx);
-  if (!cxPrivate) {
-    
-    
-    
-    
-    return nullptr;
-  }
-
-  return
-    static_cast<WorkerThreadContextPrivate*>(cxPrivate)->GetWorkerPrivate();
+  
+  
+  
+  
+  return GetWorkerPrivateFromContext(cx);
 }
 
 bool
