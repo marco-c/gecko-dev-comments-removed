@@ -88,6 +88,10 @@ var gPrivacyPane = {
 
   _initBrowserContainers() {
     if (!Services.prefs.getBoolPref("privacy.userContext.ui.enabled")) {
+      
+      
+      
+      document.getElementById("browserContainersGroup").setAttribute("data-hidden-from-search", "true");
       return;
     }
 

@@ -232,6 +232,21 @@ treecol {
 
 
 
+#trackingProtectionLearnMore {
+  white-space: normal;
+  margin-inline-start: 0;
+}
+
+#trackingProtectionAdvancedSettings {
+  margin-inline-start: 15px;
+}
+
+#crashReporterGroup {
+  margin-top: 0;
+}
+
+
+
 #historyPane:not([selectedIndex="1"]) > #historyDontRememberPane,
 #historyPane:not([selectedIndex="2"]) > #historyCustomPane,
 #weavePrefsDeck:not([selectedIndex="1"]) > #hasFxaAccount,
