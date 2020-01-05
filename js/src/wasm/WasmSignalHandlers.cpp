@@ -1172,6 +1172,10 @@ HandleFault(int signum, siginfo_t* info, void* ctx)
 
 #ifdef JS_CODEGEN_ARM
     if (signal == Signal::BusError) {
+        
+        
+        
+        
         *ppc = instance->codeSegment().unalignedAccessCode();
         return true;
     }

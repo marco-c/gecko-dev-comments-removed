@@ -628,6 +628,7 @@ ModuleGenerator::finishCodegen()
 
     
 
+    linkData_.unalignedAccessOffset = unalignedAccessExit.begin;
     linkData_.outOfBoundsOffset = outOfBoundsExit.begin;
     linkData_.interruptOffset = interruptExit.begin;
 
