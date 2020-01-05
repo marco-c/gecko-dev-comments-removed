@@ -96,14 +96,18 @@ nsHttpChunkedDecoder::ParseChunkRemaining(char *buf,
     char *p = static_cast<char *>(memchr(buf, '\n', count));
     if (p) {
         *p = 0;
-        if ((p > buf) && (*(p-1) == '\r')) 
+        count = p - buf; 
+        *bytesConsumed = count + 1; 
+        if ((p > buf) && (*(p-1) == '\r')) { 
             *(p-1) = 0;
-        *bytesConsumed = p - buf + 1;
+            count--;
+        }
 
         
         if (!mLineBuf.IsEmpty()) {
-            mLineBuf.Append(buf);
+            mLineBuf.Append(buf, count);
             buf = (char *) mLineBuf.get();
+            count = mLineBuf.Length();
         }
 
         if (mWaitEOF) {
