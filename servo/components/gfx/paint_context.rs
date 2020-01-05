@@ -5,13 +5,16 @@
 
 
 use azure::azure::AzIntSize;
-use azure::azure_hl::{B8G8R8A8, A8, Color, ColorPattern, ColorPatternRef, DrawOptions};
-use azure::azure_hl::{DrawSurfaceOptions, DrawTarget, ExtendClamp, GradientStop, Linear};
-use azure::azure_hl::{LinearGradientPattern, LinearGradientPatternRef, SourceOp, StrokeOptions};
+use azure::azure_hl::{A8, B8G8R8A8, Color, ColorPattern, ColorPatternRef, DrawOptions};
+use azure::azure_hl::{DrawSurfaceOptions, DrawTarget, ExtendClamp, GaussianBlurFilterType};
+use azure::azure_hl::{GaussianBlurInput, GradientStop, Linear, LinearGradientPattern};
+use azure::azure_hl::{LinearGradientPatternRef, Path, SourceOp, StdDeviationGaussianBlurAttribute};
+use azure::azure_hl::{StrokeOptions};
 use azure::scaled_font::ScaledFont;
 use azure::{AZ_CAP_BUTT, AzFloat, struct__AzDrawOptions, struct__AzGlyph};
 use azure::{struct__AzGlyphBuffer, struct__AzPoint, AzDrawTargetFillGlyphs};
-use display_list::{SidewaysLeft, SidewaysRight, TextDisplayItem, Upright, BorderRadii};
+use display_list::{BOX_SHADOW_INFLATION_FACTOR, BorderRadii, SidewaysLeft, SidewaysRight};
+use display_list::{TextDisplayItem, Upright};
 use font_context::FontContext;
 use geom::matrix2d::Matrix2D;
 use geom::point::Point2D;
@@ -22,7 +25,7 @@ use libc::size_t;
 use libc::types::common::c99::{uint16_t, uint32_t};
 use png::{RGB8, RGBA8, K8, KA8};
 use servo_net::image::base::Image;
-use servo_util::geometry::Au;
+use servo_util::geometry::{Au, MAX_RECT};
 use servo_util::opts;
 use servo_util::range::Range;
 use std::default::Default;
@@ -41,6 +44,8 @@ pub struct PaintContext<'a> {
     
     pub screen_rect: Rect<uint>,
     
+    pub clip_rect: Option<Rect<Au>>,
+    
     
     
     pub transient_clip_rect: Option<Rect<Au>>,
@@ -58,7 +63,7 @@ enum DashSize {
     DashedBorder = 3
 }
 
-impl<'a> PaintContext<'a>  {
+impl<'a> PaintContext<'a> {
     pub fn get_draw_target(&self) -> &DrawTarget {
         &self.draw_target
     }
@@ -751,6 +756,108 @@ impl<'a> PaintContext<'a>  {
                                       draw_options);
         self.draw_target.set_transform(&old_transform);
     }
+
+    
+    
+    pub fn draw_box_shadow(&mut self,
+                           box_bounds: &Rect<Au>,
+                           offset: &Point2D<Au>,
+                           color: Color,
+                           blur_radius: Au,
+                           spread_radius: Au,
+                           inset: bool) {
+        
+        
+        self.remove_transient_clip_if_applicable();
+        self.pop_clip_if_applicable();
+
+        
+        
+        
+        
+        
+        let side_inflation = (blur_radius * BOX_SHADOW_INFLATION_FACTOR).to_subpx().ceil() as i32;
+        let draw_target_transform = self.draw_target.get_transform();
+        let temporary_draw_target;
+        if blur_radius > Au(0) {
+            let draw_target_size = self.draw_target.get_size();
+            let draw_target_size = Size2D(draw_target_size.width, draw_target_size.height);
+            let inflated_draw_target_size = Size2D(draw_target_size.width + side_inflation * 2,
+                                                   draw_target_size.height + side_inflation * 2);
+            temporary_draw_target =
+                self.draw_target.create_similar_draw_target(&inflated_draw_target_size,
+                                                            self.draw_target.get_format());
+            temporary_draw_target.set_transform(
+                &Matrix2D::identity().translate(side_inflation as AzFloat,
+                                                side_inflation as AzFloat)
+                                     .mul(&draw_target_transform));
+        } else {
+            temporary_draw_target = self.draw_target.clone();
+        }
+
+        let shadow_bounds = box_bounds.translate(offset).inflate(spread_radius, spread_radius);
+        let path;
+        if inset {
+            path = temporary_draw_target.create_rectangular_border_path(&MAX_RECT, &shadow_bounds);
+            self.draw_target.push_clip(&self.draw_target.create_rectangular_path(box_bounds))
+        } else {
+            path = temporary_draw_target.create_rectangular_path(&shadow_bounds);
+            self.draw_target.push_clip(&self.draw_target
+                                            .create_rectangular_border_path(&MAX_RECT, box_bounds))
+        }
+
+        temporary_draw_target.fill(&path, &ColorPattern::new(color), &DrawOptions::new(1.0, 0));
+
+        
+        if blur_radius > Au(0) {
+            
+            
+            let blur_filter = self.draw_target.create_filter(GaussianBlurFilterType);
+            blur_filter.set_attribute(StdDeviationGaussianBlurAttribute(blur_radius.to_subpx() as
+                                                                        AzFloat));
+            blur_filter.set_input(GaussianBlurInput, &temporary_draw_target.snapshot());
+
+            
+            
+            temporary_draw_target.set_transform(&Matrix2D::identity());
+            self.draw_target.set_transform(&Matrix2D::identity());
+            let temporary_draw_target_size = temporary_draw_target.get_size();
+            self.draw_target
+                .draw_filter(blur_filter,
+                             &Rect(Point2D(0.0, 0.0),
+                                   Size2D(temporary_draw_target_size.width as AzFloat,
+                                          temporary_draw_target_size.height as AzFloat)),
+                             &Point2D(-side_inflation as AzFloat, -side_inflation as AzFloat),
+                             DrawOptions::new(1.0, 0));
+            self.draw_target.set_transform(&draw_target_transform);
+        }
+
+        
+        self.draw_target.pop_clip();
+
+        
+        self.push_clip_if_applicable();
+    }
+
+    pub fn push_clip_if_applicable(&self) {
+        match self.clip_rect {
+            None => {}
+            Some(ref clip_rect) => self.draw_push_clip(clip_rect),
+        }
+    }
+
+    pub fn pop_clip_if_applicable(&self) {
+        if self.clip_rect.is_some() {
+            self.draw_pop_clip()
+        }
+    }
+
+    pub fn remove_transient_clip_if_applicable(&mut self) {
+        if self.transient_clip_rect.is_some() {
+            self.draw_pop_clip();
+            self.transient_clip_rect = None
+        }
+    }
 }
 
 pub trait ToAzurePoint {
@@ -782,6 +889,28 @@ pub trait ToAzureSize {
 impl ToAzureSize for AzIntSize {
     fn to_azure_size(&self) -> Size2D<AzFloat> {
         Size2D(self.width as AzFloat, self.height as AzFloat)
+    }
+}
+
+trait ToAzureIntSize {
+    fn to_azure_int_size(&self) -> Size2D<i32>;
+}
+
+impl ToAzureIntSize for Size2D<Au> {
+    fn to_azure_int_size(&self) -> Size2D<i32> {
+        Size2D(self.width.to_nearest_px() as i32, self.height.to_nearest_px() as i32)
+    }
+}
+
+impl ToAzureIntSize for Size2D<AzFloat> {
+    fn to_azure_int_size(&self) -> Size2D<i32> {
+        Size2D(self.width as i32, self.height as i32)
+    }
+}
+
+impl ToAzureIntSize for Size2D<i32> {
+    fn to_azure_int_size(&self) -> Size2D<i32> {
+        Size2D(self.width, self.height)
     }
 }
 
@@ -890,3 +1019,65 @@ impl ScaledFontExtensionMethods for ScaledFont {
         }
     }
 }
+
+trait DrawTargetExtensions {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn create_rectangular_border_path<T>(&self, outer_rect: &T, inner_rect: &T)
+                                         -> Path
+                                         where T: ToAzureRect;
+
+    
+    fn create_rectangular_path(&self, rect: &Rect<Au>) -> Path;
+}
+
+impl DrawTargetExtensions for DrawTarget {
+    fn create_rectangular_border_path<T>(&self, outer_rect: &T, inner_rect: &T)
+                                         -> Path
+                                         where T: ToAzureRect {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+        let (outer_rect, inner_rect) = (outer_rect.to_azure_rect(), inner_rect.to_azure_rect());
+        let path_builder = self.create_path_builder();
+        path_builder.move_to(Point2D(outer_rect.max_x(), outer_rect.origin.y));     
+        path_builder.line_to(Point2D(outer_rect.origin.x, outer_rect.origin.y));    
+        path_builder.line_to(Point2D(outer_rect.origin.x, outer_rect.max_y()));     
+        path_builder.line_to(Point2D(outer_rect.max_x(), outer_rect.max_y()));      
+        path_builder.line_to(Point2D(outer_rect.max_x(), inner_rect.origin.y));     
+        path_builder.line_to(Point2D(inner_rect.max_x(), inner_rect.origin.y));     
+        path_builder.line_to(Point2D(inner_rect.max_x(), inner_rect.max_y()));      
+        path_builder.line_to(Point2D(inner_rect.origin.x, inner_rect.max_y()));     
+        path_builder.line_to(inner_rect.origin);                                    
+        path_builder.line_to(Point2D(outer_rect.max_x(), inner_rect.origin.y));     
+        path_builder.finish()
+    }
+
+    fn create_rectangular_path(&self, rect: &Rect<Au>) -> Path {
+        let path_builder = self.create_path_builder();
+        path_builder.move_to(rect.origin.to_azure_point());
+        path_builder.line_to(Point2D(rect.max_x(), rect.origin.y).to_azure_point());
+        path_builder.line_to(Point2D(rect.max_x(), rect.max_y()).to_azure_point());
+        path_builder.line_to(Point2D(rect.origin.x, rect.max_y()).to_azure_point());
+        path_builder.finish()
+    }
+}
+
