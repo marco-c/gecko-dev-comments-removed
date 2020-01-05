@@ -205,6 +205,8 @@ def build_one_stage(cc, cxx, ld, ar, ranlib,
     
     if os.path.exists(build_dir + "/CMakeCache.txt"):
         os.remove(build_dir + "/CMakeCache.txt")
+    if os.path.exists(build_dir + "/CMakeFiles"):
+        shutil.rmtree(build_dir + "/CMakeFiles")
 
     
     def slashify_path(path):
