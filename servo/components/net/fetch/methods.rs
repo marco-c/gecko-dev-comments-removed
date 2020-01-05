@@ -3,13 +3,14 @@
 
 
 use blob_loader::load_blob_sync;
+use connector::Connector;
 use data_loader::decode;
 use devtools_traits::DevtoolsControlMsg;
 use fetch::cors_cache::CorsCache;
 use filemanager_thread::FileManager;
 use http_loader::{HttpState, determine_request_referrer, http_fetch, set_default_accept_language};
-use hyper::Error;
-use hyper::error::Result as HyperResult;
+use hyper::{Error, Result as HyperResult};
+use hyper::client::Pool;
 use hyper::header::{Accept, AcceptLanguage, ContentLanguage, ContentType};
 use hyper::header::{Header, HeaderFormat, HeaderView, Headers, QualityItem};
 use hyper::header::{Referer as RefererHeader, q, qitem};
@@ -27,8 +28,8 @@ use std::fmt;
 use std::fs::File;
 use std::io::Read;
 use std::mem;
-use std::rc::Rc;
 use std::str;
+use std::sync::Arc;
 use std::sync::mpsc::{Sender, Receiver};
 use subresource_integrity::is_response_integrity_valid;
 
@@ -40,40 +41,41 @@ pub enum Data {
 }
 
 pub struct FetchContext {
-    pub state: HttpState,
+    pub state: Arc<HttpState>,
     pub user_agent: Cow<'static, str>,
     pub devtools_chan: Option<Sender<DevtoolsControlMsg>>,
     pub filemanager: FileManager,
+    pub connector: Arc<Pool<Connector>>,
 }
 
 pub type DoneChannel = Option<(Sender<Data>, Receiver<Data>)>;
 
 
-pub fn fetch(request: Rc<Request>,
+pub fn fetch(request: &mut Request,
              target: Target,
              context: &FetchContext) {
     fetch_with_cors_cache(request, &mut CorsCache::new(), target, context);
 }
 
-pub fn fetch_with_cors_cache(request: Rc<Request>,
+pub fn fetch_with_cors_cache(request: &mut Request,
                              cache: &mut CorsCache,
                              target: Target,
                              context: &FetchContext) {
     
-    if request.window.get() == Window::Client {
+    if request.window == Window::Client {
         
     } else {
-        request.window.set(Window::NoWindow);
+        request.window = Window::NoWindow;
     }
 
     
-    if *request.origin.borrow() == Origin::Client {
+    if request.origin == Origin::Client {
         
         unimplemented!()
     }
 
     
-    if !request.headers.borrow().has::<Accept>() {
+    if !request.headers.has::<Accept>() {
         let value = match request.type_ {
             
             _ if request.is_navigation_request() =>
@@ -102,11 +104,11 @@ pub fn fetch_with_cors_cache(request: Rc<Request>,
         };
 
         
-        request.headers.borrow_mut().set(Accept(value));
+        request.headers.set(Accept(value));
     }
 
     
-    set_default_accept_language(&mut request.headers.borrow_mut());
+    set_default_accept_language(&mut request.headers);
 
     
     
@@ -121,7 +123,7 @@ pub fn fetch_with_cors_cache(request: Rc<Request>,
 }
 
 
-pub fn main_fetch(request: Rc<Request>,
+pub fn main_fetch(request: &mut Request,
                   cache: &mut CorsCache,
                   cors_flag: bool,
                   recursive_flag: bool,
@@ -129,8 +131,6 @@ pub fn main_fetch(request: Rc<Request>,
                   done_chan: &mut DoneChannel,
                   context: &FetchContext)
                   -> Response {
-    
-
     
     let mut response = None;
 
@@ -149,42 +149,45 @@ pub fn main_fetch(request: Rc<Request>,
     
 
     
-    
     if should_be_blocked_due_to_bad_port(&request.url()) {
         response = Some(Response::network_error(NetworkError::Internal("Request attempted on bad port".into())));
     }
+    
+    
 
     
     
-    
 
     
-    let referrer_policy = request.referrer_policy.get().unwrap_or(ReferrerPolicy::NoReferrerWhenDowngrade);
-    request.referrer_policy.set(Some(referrer_policy));
+    let referrer_policy = request.referrer_policy.unwrap_or(ReferrerPolicy::NoReferrerWhenDowngrade);
+    request.referrer_policy = Some(referrer_policy);
 
     
     {
-        let mut referrer = request.referrer.borrow_mut();
-        let referrer_url = match mem::replace(&mut *referrer, Referrer::NoReferrer) {
+        let referrer_url = match mem::replace(&mut request.referrer, Referrer::NoReferrer) {
             Referrer::NoReferrer => None,
             Referrer::Client => {
                 
                 
-                request.headers.borrow_mut().remove::<RefererHeader>();
+                request.headers.remove::<RefererHeader>();
                 None
             },
             Referrer::ReferrerUrl(url) => {
-                request.headers.borrow_mut().remove::<RefererHeader>();
-                determine_request_referrer(&mut *request.headers.borrow_mut(),
+                request.headers.remove::<RefererHeader>();
+                let current_url = request.current_url().clone();
+                determine_request_referrer(&mut request.headers,
                                            referrer_policy,
                                            url,
-                                           request.current_url().clone())
+                                           current_url)
             }
         };
         if let Some(referrer_url) = referrer_url {
-            *referrer = Referrer::ReferrerUrl(referrer_url);
+            request.referrer = Referrer::ReferrerUrl(referrer_url);
         }
     }
+
+    
+    
 
     
     if !request.current_url().is_secure_scheme() && request.current_url().domain().is_some() {
@@ -193,7 +196,7 @@ pub fn main_fetch(request: Rc<Request>,
             .read()
             .unwrap()
             .is_host_secure(request.current_url().domain().unwrap()) {
-           request.url_list.borrow_mut().last_mut().unwrap().as_mut_url().set_scheme("https").unwrap();
+           request.url_list.last_mut().unwrap().as_mut_url().set_scheme("https").unwrap();
         }
     }
 
@@ -201,51 +204,48 @@ pub fn main_fetch(request: Rc<Request>,
     
 
     
-    let response = match response {
-        Some(response) => response,
-        None => {
-            let current_url = request.current_url();
-            let same_origin = if let Origin::Origin(ref origin) = *request.origin.borrow() {
-                *origin == current_url.origin()
-            } else {
-                false
-            };
+    let response = response.unwrap_or_else(|| {
+        let current_url = request.current_url();
+        let same_origin = if let Origin::Origin(ref origin) = request.origin {
+            *origin == current_url.origin()
+        } else {
+            false
+        };
 
-            if (same_origin && !cors_flag ) ||
-                current_url.scheme() == "data" ||
-                current_url.scheme() == "file" ||
-                current_url.scheme() == "about" ||
-                request.mode == RequestMode::Navigate {
-                basic_fetch(request.clone(), cache, target, done_chan, context)
+        if (same_origin && !cors_flag ) ||
+            current_url.scheme() == "data" ||
+            current_url.scheme() == "file" ||
+            current_url.scheme() == "about" ||
+            request.mode == RequestMode::Navigate {
+            basic_fetch(request, cache, target, done_chan, context)
 
-            } else if request.mode == RequestMode::SameOrigin {
-                Response::network_error(NetworkError::Internal("Cross-origin response".into()))
+        } else if request.mode == RequestMode::SameOrigin {
+            Response::network_error(NetworkError::Internal("Cross-origin response".into()))
 
-            } else if request.mode == RequestMode::NoCors {
-                request.response_tainting.set(ResponseTainting::Opaque);
-                basic_fetch(request.clone(), cache, target, done_chan, context)
+        } else if request.mode == RequestMode::NoCors {
+            request.response_tainting = ResponseTainting::Opaque;
+            basic_fetch(request, cache, target, done_chan, context)
 
-            } else if !matches!(current_url.scheme(), "http" | "https") {
-                Response::network_error(NetworkError::Internal("Non-http scheme".into()))
+        } else if !matches!(current_url.scheme(), "http" | "https") {
+            Response::network_error(NetworkError::Internal("Non-http scheme".into()))
 
-            } else if request.use_cors_preflight ||
-                (request.unsafe_request &&
-                 (!is_simple_method(&request.method.borrow()) ||
-                  request.headers.borrow().iter().any(|h| !is_simple_header(&h)))) {
-                request.response_tainting.set(ResponseTainting::CorsTainting);
-                let response = http_fetch(request.clone(), cache, true, true, false,
-                                          target, done_chan, context);
-                if response.is_network_error() {
-                    
-                }
-                response
-
-            } else {
-                request.response_tainting.set(ResponseTainting::CorsTainting);
-                http_fetch(request.clone(), cache, true, false, false, target, done_chan, context)
+        } else if request.use_cors_preflight ||
+            (request.unsafe_request &&
+                (!is_simple_method(&request.method) ||
+                request.headers.iter().any(|h| !is_simple_header(&h)))) {
+            request.response_tainting = ResponseTainting::CorsTainting;
+            let response = http_fetch(request, cache, true, true, false,
+                                        target, done_chan, context);
+            if response.is_network_error() {
+                
             }
+            response
+
+        } else {
+            request.response_tainting = ResponseTainting::CorsTainting;
+            http_fetch(request, cache, true, false, false, target, done_chan, context)
         }
-    };
+    });
 
     
     if recursive_flag {
@@ -254,8 +254,9 @@ pub fn main_fetch(request: Rc<Request>,
 
     
     
-    let response = if response.response_type == ResponseType::Default {
-        let response_type = match request.response_tainting.get() {
+    
+    let mut response = if response.response_type == ResponseType::Default {
+        let response_type = match request.response_tainting {
             ResponseTainting::Basic => ResponseType::Basic,
             ResponseTainting::CorsTainting => ResponseType::Cors,
             ResponseTainting::Opaque => ResponseType::Opaque,
@@ -265,26 +266,32 @@ pub fn main_fetch(request: Rc<Request>,
         response
     };
 
-    let internal_error = { 
+    let internal_error = {
         
-        let network_error_response;
-        let internal_response = if let Some(error) = response.get_network_error() {
-            network_error_response = Response::network_error(error.clone());
-            &network_error_response
+        let response_is_network_error = response.is_network_error();
+        let should_replace_with_nosniff_error =
+            !response_is_network_error && should_be_blocked_due_to_nosniff(request.type_, &response.headers);
+
+        
+        let mut network_error_response = response.get_network_error().cloned().map(Response::network_error);
+        let internal_response = if let Some(error_response) = network_error_response.as_mut() {
+            error_response
         } else {
-            response.actual_response()
+            response.actual_response_mut()
         };
 
         
-        if internal_response.url_list.borrow().is_empty() {
-            *internal_response.url_list.borrow_mut() = request.url_list.borrow().clone();
+        if internal_response.url_list.is_empty() {
+            internal_response.url_list = request.url_list.clone();
         }
 
         
         
+        
+        
         let blocked_error_response;
         let internal_response =
-            if !response.is_network_error() && should_be_blocked_due_to_nosniff(request.type_, &response.headers) {
+            if should_replace_with_nosniff_error {
                 
                 blocked_error_response = Response::network_error(NetworkError::Internal("Blocked by nosniff".into()));
                 &blocked_error_response
@@ -294,9 +301,10 @@ pub fn main_fetch(request: Rc<Request>,
 
         
         
-        let not_network_error = !response.is_network_error() && !internal_response.is_network_error();
+        
+        let not_network_error = !response_is_network_error && !internal_response.is_network_error();
         if not_network_error && (is_null_body_status(&internal_response.status) ||
-            match *request.method.borrow() {
+            match request.method {
                 Method::Head | Method::Connect => true,
                 _ => false }) {
             
@@ -317,13 +325,13 @@ pub fn main_fetch(request: Rc<Request>,
 
     
     let mut response_loaded = false;
-    let response = if !response.is_network_error() && *request.integrity_metadata.borrow() != "" {
+    let response = if !response.is_network_error() && !request.integrity_metadata.is_empty() {
         
         wait_for_response(&response, target, done_chan);
         response_loaded = true;
 
         
-        let ref integrity_metadata = *request.integrity_metadata.borrow();
+        let ref integrity_metadata = &request.integrity_metadata;
         if response.termination_reason.is_none() &&
            !is_response_integrity_valid(integrity_metadata, &response) {
             Response::network_error(NetworkError::Internal("Subresource integrity validation failed".into()))
@@ -348,7 +356,7 @@ pub fn main_fetch(request: Rc<Request>,
     }
 
     
-    if request.body.borrow().is_some() && matches!(request.current_url().scheme(), "http" | "https") {
+    if request.body.is_some() && matches!(request.current_url().scheme(), "http" | "https") {
         
         
         
@@ -369,7 +377,8 @@ pub fn main_fetch(request: Rc<Request>,
     target.process_response_eof(&response);
 
     
-    return response;
+    
+    response
 }
 
 fn wait_for_response(response: &Response, target: Target, done_chan: &mut DoneChannel) {
@@ -397,7 +406,7 @@ fn wait_for_response(response: &Response, target: Target, done_chan: &mut DoneCh
 }
 
 
-fn basic_fetch(request: Rc<Request>,
+fn basic_fetch(request: &mut Request,
                cache: &mut CorsCache,
                target: Target,
                done_chan: &mut DoneChannel,
@@ -414,11 +423,11 @@ fn basic_fetch(request: Rc<Request>,
         },
 
         "http" | "https" => {
-            http_fetch(request.clone(), cache, false, false, false, target, done_chan, context)
+            http_fetch(request, cache, false, false, false, target, done_chan, context)
         },
 
         "data" => {
-            if *request.method.borrow() == Method::Get {
+            if request.method == Method::Get {
                 match decode(&url) {
                     Ok((mime, bytes)) => {
                         let mut response = Response::new(url);
@@ -434,7 +443,7 @@ fn basic_fetch(request: Rc<Request>,
         },
 
         "file" => {
-            if *request.method.borrow() == Method::Get {
+            if request.method == Method::Get {
                 match url.to_file_path() {
                     Ok(file_path) => {
                         match File::open(file_path.clone()) {
@@ -461,7 +470,7 @@ fn basic_fetch(request: Rc<Request>,
         "blob" => {
             println!("Loading blob {}", url.as_str());
             
-            if *request.method.borrow() != Method::Get {
+            if request.method != Method::Get {
                 return Response::network_error(NetworkError::Internal("Unexpected method for blob".into()));
             }
 

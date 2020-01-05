@@ -3,7 +3,7 @@
 
 
 use brotli::Decompressor;
-use connector::{Connector, create_http_connector, create_ssl_client};
+use connector::Connector;
 use cookie;
 use cookie_storage::CookieStorage;
 use devtools_traits::{ChromeToDevtoolsControlMsg, DevtoolsControlMsg, HttpRequest as DevtoolsHttpRequest};
@@ -44,7 +44,6 @@ use std::io::{self, Read, Write};
 use std::iter::FromIterator;
 use std::mem;
 use std::ops::Deref;
-use std::rc::Rc;
 use std::sync::{Arc, RwLock};
 use std::sync::mpsc::{channel, Sender};
 use std::thread;
@@ -67,20 +66,17 @@ fn read_block<R: Read>(reader: &mut R) -> Result<Data, ()> {
 }
 
 pub struct HttpState {
-    pub hsts_list: Arc<RwLock<HstsList>>,
-    pub cookie_jar: Arc<RwLock<CookieStorage>>,
-    pub auth_cache: Arc<RwLock<AuthCache>>,
-    pub connector_pool: Arc<Pool<Connector>>,
+    pub hsts_list: RwLock<HstsList>,
+    pub cookie_jar: RwLock<CookieStorage>,
+    pub auth_cache: RwLock<AuthCache>,
 }
 
 impl HttpState {
-    pub fn new(certificate_path: &str) -> HttpState {
-        let ssl_client = create_ssl_client(certificate_path);
+    pub fn new() -> HttpState {
         HttpState {
-            hsts_list: Arc::new(RwLock::new(HstsList::new())),
-            cookie_jar: Arc::new(RwLock::new(CookieStorage::new(150))),
-            auth_cache: Arc::new(RwLock::new(AuthCache::new())),
-            connector_pool: create_http_connector(ssl_client),
+            hsts_list: RwLock::new(HstsList::new()),
+            cookie_jar: RwLock::new(CookieStorage::new(150)),
+            auth_cache: RwLock::new(AuthCache::new()),
         }
     }
 }
@@ -241,7 +237,7 @@ pub fn determine_request_referrer(headers: &mut Headers,
     }
 }
 
-pub fn set_request_cookies(url: &ServoUrl, headers: &mut Headers, cookie_jar: &Arc<RwLock<CookieStorage>>) {
+pub fn set_request_cookies(url: &ServoUrl, headers: &mut Headers, cookie_jar: &RwLock<CookieStorage>) {
     let mut cookie_jar = cookie_jar.write().unwrap();
     if let Some(cookie_list) = cookie_jar.cookies_for_url(url, CookieSource::HTTP) {
         let mut v = Vec::new();
@@ -250,7 +246,7 @@ pub fn set_request_cookies(url: &ServoUrl, headers: &mut Headers, cookie_jar: &A
     }
 }
 
-fn set_cookie_for_url(cookie_jar: &Arc<RwLock<CookieStorage>>,
+fn set_cookie_for_url(cookie_jar: &RwLock<CookieStorage>,
                       request: &ServoUrl,
                       cookie_val: String) {
     let mut cookie_jar = cookie_jar.write().unwrap();
@@ -266,7 +262,7 @@ fn set_cookie_for_url(cookie_jar: &Arc<RwLock<CookieStorage>>,
     }
 }
 
-fn set_cookies_from_headers(url: &ServoUrl, headers: &Headers, cookie_jar: &Arc<RwLock<CookieStorage>>) {
+fn set_cookies_from_headers(url: &ServoUrl, headers: &Headers, cookie_jar: &RwLock<CookieStorage>) {
     if let Some(cookies) = headers.get_raw("set-cookie") {
         for cookie in cookies.iter() {
             if let Ok(cookie_value) = String::from_utf8(cookie.clone()) {
@@ -366,7 +362,7 @@ fn send_response_to_devtools(devtools_chan: &Sender<DevtoolsControlMsg>,
     let _ = devtools_chan.send(DevtoolsControlMsg::FromChrome(msg));
 }
 
-fn auth_from_cache(auth_cache: &Arc<RwLock<AuthCache>>, origin: &ImmutableOrigin) -> Option<Basic> {
+fn auth_from_cache(auth_cache: &RwLock<AuthCache>, origin: &ImmutableOrigin) -> Option<Basic> {
     if let Some(ref auth_entry) = auth_cache.read().unwrap().entries.get(&origin.ascii_serialization()) {
         let user_name = auth_entry.user_name.clone();
         let password  = Some(auth_entry.password.clone());
@@ -477,7 +473,7 @@ fn obtain_response(request_factory: &NetworkHttpRequestFactory,
 }
 
 
-pub fn http_fetch(request: Rc<Request>,
+pub fn http_fetch(request: &mut Request,
                   cache: &mut CorsCache,
                   cors_flag: bool,
                   cors_preflight_flag: bool,
@@ -495,7 +491,7 @@ pub fn http_fetch(request: Rc<Request>,
     
 
     
-    if !request.skip_service_worker.get() && !request.is_service_worker_global_scope {
+    if !request.skip_service_worker && !request.is_service_worker_global_scope {
         
         
 
@@ -507,9 +503,8 @@ pub fn http_fetch(request: Rc<Request>,
             if (res.response_type == ResponseType::Opaque &&
                 request.mode != RequestMode::NoCors) ||
                (res.response_type == ResponseType::OpaqueRedirect &&
-                request.redirect_mode.get() != RedirectMode::Manual) ||
-               (res.url_list.borrow().len() > 1 &&
-                request.redirect_mode.get() != RedirectMode::Follow) ||
+                request.redirect_mode != RedirectMode::Manual) ||
+               (res.url_list.len() > 1 && request.redirect_mode != RedirectMode::Follow) ||
                res.is_network_error() {
                 return Response::network_error(NetworkError::Internal("Request failed".into()));
             }
@@ -522,7 +517,7 @@ pub fn http_fetch(request: Rc<Request>,
     
     let credentials = match request.credentials_mode {
         CredentialsMode::Include => true,
-        CredentialsMode::CredentialsSameOrigin if request.response_tainting.get() == ResponseTainting::Basic
+        CredentialsMode::CredentialsSameOrigin if request.response_tainting == ResponseTainting::Basic
             => true,
         _ => false
     };
@@ -532,17 +527,17 @@ pub fn http_fetch(request: Rc<Request>,
         
         if cors_preflight_flag {
             let method_cache_match = cache.match_method(&*request,
-                                                        request.method.borrow().clone());
+                                                        request.method.clone());
 
-            let method_mismatch = !method_cache_match && (!is_simple_method(&request.method.borrow()) ||
+            let method_mismatch = !method_cache_match && (!is_simple_method(&request.method) ||
                                                           request.use_cors_preflight);
-            let header_mismatch = request.headers.borrow().iter().any(|view|
+            let header_mismatch = request.headers.iter().any(|view|
                 !cache.match_header(&*request, view.name()) && !is_simple_header(&view)
             );
 
             
             if method_mismatch || header_mismatch {
-                let preflight_result = cors_preflight_fetch(request.clone(), cache, context);
+                let preflight_result = cors_preflight_fetch(&request, cache, context);
                 
                 if let Some(e) = preflight_result.get_network_error() {
                     return Response::network_error(e.clone());
@@ -551,18 +546,18 @@ pub fn http_fetch(request: Rc<Request>,
         }
 
         
-        request.skip_service_worker.set(true);
+        request.skip_service_worker = true;
 
         
-        let fetch_result = http_network_or_cache_fetch(request.clone(), authentication_fetch_flag,
-                                                       cors_flag, done_chan, context);
+        let mut fetch_result = http_network_or_cache_fetch(
+            request, authentication_fetch_flag, cors_flag, done_chan, context);
 
         
-        if cors_flag && cors_check(request.clone(), &fetch_result).is_err() {
+        if cors_flag && cors_check(&request, &fetch_result).is_err() {
             return Response::network_error(NetworkError::Internal("CORS check failed".into()));
         }
 
-        fetch_result.return_internal.set(false);
+        fetch_result.return_internal = false;
         response = Some(fetch_result);
     }
 
@@ -573,14 +568,14 @@ pub fn http_fetch(request: Rc<Request>,
     match response.actual_response().status {
         
         status if status.map_or(false, is_redirect_status) => {
-            response = match request.redirect_mode.get() {
+            response = match request.redirect_mode {
                 RedirectMode::Error => Response::network_error(NetworkError::Internal("Redirect mode error".into())),
                 RedirectMode::Manual => {
                     response.to_filtered(ResponseType::OpaqueRedirect)
                 },
                 RedirectMode::Follow => {
                     
-                    response.return_internal.set(true);
+                    response.return_internal = true;
                     http_redirect_fetch(request, cache, response,
                                         cors_flag, target, done_chan, context)
                 }
@@ -643,13 +638,13 @@ pub fn http_fetch(request: Rc<Request>,
     }
 
     
-    response.return_internal.set(true);
+    response.return_internal = true;
     
     response
 }
 
 
-fn http_redirect_fetch(request: Rc<Request>,
+fn http_redirect_fetch(request: &mut Request,
                        cache: &mut CorsCache,
                        response: Response,
                        cors_flag: bool,
@@ -658,7 +653,7 @@ fn http_redirect_fetch(request: Rc<Request>,
                        context: &FetchContext)
                        -> Response {
     
-    assert_eq!(response.return_internal.get(), true);
+    assert!(response.return_internal);
 
     
     if !response.actual_response().headers.has::<Location>() {
@@ -684,12 +679,12 @@ fn http_redirect_fetch(request: Rc<Request>,
     }
 
     
-    if request.redirect_count.get() >= 20 {
+    if request.redirect_count >= 20 {
         return Response::network_error(NetworkError::Internal("Too many redirects".into()));
     }
 
     
-    request.redirect_count.set(request.redirect_count.get() + 1);
+    request.redirect_count += 1;
 
     
     let same_origin = location_url.origin()== request.current_url().origin();
@@ -706,20 +701,20 @@ fn http_redirect_fetch(request: Rc<Request>,
 
     
     if cors_flag && !same_origin {
-        *request.origin.borrow_mut() = Origin::Origin(ImmutableOrigin::new_opaque());
+        request.origin = Origin::Origin(ImmutableOrigin::new_opaque());
     }
 
     
     let status_code = response.actual_response().status.unwrap();
     if ((status_code == StatusCode::MovedPermanently || status_code == StatusCode::Found) &&
-        *request.method.borrow() == Method::Post) ||
+        request.method == Method::Post) ||
         status_code == StatusCode::SeeOther {
-        *request.method.borrow_mut() = Method::Get;
-        *request.body.borrow_mut() = None;
+        request.method = Method::Get;
+        request.body = None;
     }
 
     
-    request.url_list.borrow_mut().push(location_url);
+    request.url_list.push(location_url);
 
     
     
@@ -738,7 +733,7 @@ fn try_immutable_origin_to_hyper_origin(url_origin: &ImmutableOrigin) -> Option<
 }
 
 
-fn http_network_or_cache_fetch(request: Rc<Request>,
+fn http_network_or_cache_fetch(request: &mut Request,
                                authentication_fetch_flag: bool,
                                cors_flag: bool,
                                done_chan: &mut DoneChannel,
@@ -748,26 +743,28 @@ fn http_network_or_cache_fetch(request: Rc<Request>,
     let request_has_no_window = true;
 
     
+    let mut http_request;
     let http_request = if request_has_no_window &&
-        request.redirect_mode.get() == RedirectMode::Error {
+        request.redirect_mode == RedirectMode::Error {
         request
     } else {
         
         
-        Rc::new((*request).clone())
+        http_request = request.clone();
+        &mut http_request
     };
 
     
     let credentials_flag = match http_request.credentials_mode {
         CredentialsMode::Include => true,
-        CredentialsMode::CredentialsSameOrigin if http_request.response_tainting.get() == ResponseTainting::Basic
+        CredentialsMode::CredentialsSameOrigin if http_request.response_tainting == ResponseTainting::Basic
             => true,
         _ => false
     };
 
-    let content_length_value = match *http_request.body.borrow() {
+    let content_length_value = match http_request.body {
         None =>
-            match *http_request.method.borrow() {
+            match http_request.method {
                 
                 Method::Post | Method::Put =>
                     Some(0),
@@ -780,16 +777,16 @@ fn http_network_or_cache_fetch(request: Rc<Request>,
 
     
     if let Some(content_length_value) = content_length_value {
-        http_request.headers.borrow_mut().set(ContentLength(content_length_value));
+        http_request.headers.set(ContentLength(content_length_value));
     }
 
     
 
     
-    match *http_request.referrer.borrow() {
+    match http_request.referrer {
         Referrer::NoReferrer => (),
         Referrer::ReferrerUrl(ref http_request_referrer) =>
-            http_request.headers.borrow_mut().set(Referer(http_request_referrer.to_string())),
+            http_request.headers.set(Referer(http_request_referrer.to_string())),
         Referrer::Client =>
             
             
@@ -797,45 +794,45 @@ fn http_network_or_cache_fetch(request: Rc<Request>,
     };
 
     
-    if !http_request.omit_origin_header.get() {
-        let method = http_request.method.borrow();
+    if !http_request.omit_origin_header {
+        let method = &http_request.method;
         if cors_flag || (*method != Method::Get && *method != Method::Head) {
-            debug_assert!(*http_request.origin.borrow() != Origin::Client);
-            if let Origin::Origin(ref url_origin) = *http_request.origin.borrow() {
+            debug_assert!(http_request.origin != Origin::Client);
+            if let Origin::Origin(ref url_origin) = http_request.origin {
                 if let Some(hyper_origin) = try_immutable_origin_to_hyper_origin(url_origin) {
-                    http_request.headers.borrow_mut().set(hyper_origin)
+                    http_request.headers.set(hyper_origin)
                 }
             }
         }
     }
 
     
-    if !http_request.headers.borrow().has::<UserAgent>() {
+    if !http_request.headers.has::<UserAgent>() {
         let user_agent = context.user_agent.clone().into_owned();
-        http_request.headers.borrow_mut().set(UserAgent(user_agent));
+        http_request.headers.set(UserAgent(user_agent));
     }
 
-    match http_request.cache_mode.get() {
+    match http_request.cache_mode {
         
-        CacheMode::Default if is_no_store_cache(&http_request.headers.borrow()) => {
-            http_request.cache_mode.set(CacheMode::NoStore);
+        CacheMode::Default if is_no_store_cache(&http_request.headers) => {
+            http_request.cache_mode = CacheMode::NoStore;
         },
 
         
-        CacheMode::NoCache if !http_request.headers.borrow().has::<CacheControl>() => {
-            http_request.headers.borrow_mut().set(CacheControl(vec![CacheDirective::MaxAge(0)]));
+        CacheMode::NoCache if !http_request.headers.has::<CacheControl>() => {
+            http_request.headers.set(CacheControl(vec![CacheDirective::MaxAge(0)]));
         },
 
         
         CacheMode::Reload | CacheMode::NoStore => {
             
-            if !http_request.headers.borrow().has::<Pragma>() {
-                http_request.headers.borrow_mut().set(Pragma::NoCache);
+            if !http_request.headers.has::<Pragma>() {
+                http_request.headers.set(Pragma::NoCache);
             }
 
             
-            if !http_request.headers.borrow().has::<CacheControl>() {
-                http_request.headers.borrow_mut().set(CacheControl(vec![CacheDirective::NoCache]));
+            if !http_request.headers.has::<CacheControl>() {
+                http_request.headers.set(CacheControl(vec![CacheDirective::NoCache]));
             }
         },
 
@@ -844,17 +841,14 @@ fn http_network_or_cache_fetch(request: Rc<Request>,
 
     
     let current_url = http_request.current_url();
-    {
-        let headers = &mut *http_request.headers.borrow_mut();
-        let host = Host {
-            hostname: current_url.host_str().unwrap().to_owned(),
-            port: current_url.port()
-        };
-        headers.set(host);
-        
-        
-        set_default_accept_encoding(headers);
-    }
+    let host = Host {
+        hostname: current_url.host_str().unwrap().to_owned(),
+        port: current_url.port()
+    };
+    http_request.headers.set(host);
+    
+    
+    set_default_accept_encoding(&mut http_request.headers);
 
     
     
@@ -863,10 +857,10 @@ fn http_network_or_cache_fetch(request: Rc<Request>,
         
         
         set_request_cookies(&current_url,
-                            &mut *http_request.headers.borrow_mut(),
+                            &mut http_request.headers,
                             &context.state.cookie_jar);
         
-        if !http_request.headers.borrow().has::<Authorization<String>>() {
+        if !http_request.headers.has::<Authorization<String>>() {
             
             let mut authorization_value = None;
 
@@ -889,7 +883,7 @@ fn http_network_or_cache_fetch(request: Rc<Request>,
 
             
             if let Some(basic) = authorization_value {
-                http_request.headers.borrow_mut().set(Authorization(basic));
+                http_request.headers.set(Authorization(basic));
             }
         }
     }
@@ -906,8 +900,8 @@ fn http_network_or_cache_fetch(request: Rc<Request>,
     
     
     let complete_http_response_from_cache: Option<Response> = None;
-    if http_request.cache_mode.get() != CacheMode::NoStore &&
-       http_request.cache_mode.get() != CacheMode::Reload &&
+    if http_request.cache_mode != CacheMode::NoStore &&
+       http_request.cache_mode != CacheMode::Reload &&
        complete_http_response_from_cache.is_some() {
         
 
@@ -917,8 +911,8 @@ fn http_network_or_cache_fetch(request: Rc<Request>,
         };
 
         
-        if http_request.cache_mode.get() == CacheMode::ForceCache ||
-           http_request.cache_mode.get() == CacheMode::OnlyIfCached {
+        if http_request.cache_mode == CacheMode::ForceCache ||
+           http_request.cache_mode == CacheMode::OnlyIfCached {
             
             
         }
@@ -938,18 +932,18 @@ fn http_network_or_cache_fetch(request: Rc<Request>,
     
     if response.is_none() {
         
-        if http_request.cache_mode.get() == CacheMode::OnlyIfCached {
+        if http_request.cache_mode == CacheMode::OnlyIfCached {
             return Response::network_error(
                 NetworkError::Internal("Couldn't find response in cache".into()))
         }
         
-        let forward_response = http_network_fetch(http_request.clone(), credentials_flag,
+        let forward_response = http_network_fetch(http_request, credentials_flag,
                                                   done_chan, context);
         match forward_response.raw_status {
             
             Some((200...303, _)) |
             Some((305...399, _)) => {
-                if !http_request.method.borrow().safe() {
+                if !http_request.method.safe() {
                     
                 }
             },
@@ -983,7 +977,7 @@ fn http_network_or_cache_fetch(request: Rc<Request>,
             
 
             
-            if http_request.body.borrow().is_some() {
+            if http_request.body.is_some() {
                 
             }
 
@@ -1033,7 +1027,7 @@ fn http_network_or_cache_fetch(request: Rc<Request>,
 }
 
 
-fn http_network_fetch(request: Rc<Request>,
+fn http_network_fetch(request: &Request,
                       credentials_flag: bool,
                       done_chan: &mut DoneChannel,
                       context: &FetchContext)
@@ -1051,7 +1045,7 @@ fn http_network_fetch(request: Rc<Request>,
 
     
     let factory = NetworkHttpRequestFactory {
-        connector: context.state.connector_pool.clone(),
+        connector: context.connector.clone(),
     };
 
     let url = request.current_url();
@@ -1064,13 +1058,13 @@ fn http_network_fetch(request: Rc<Request>,
     
     
     let is_xhr = request.destination == Destination::None;
-    let wrapped_response = obtain_response(&factory, &url, &request.method.borrow(),
-                                           &request.headers.borrow(),
-                                           &request.body.borrow(), &request.method.borrow(),
-                                           &request.pipeline_id.get(), request.redirect_count.get() + 1,
+    let wrapped_response = obtain_response(&factory, &url, &request.method,
+                                           &request.headers,
+                                           &request.body, &request.method,
+                                           &request.pipeline_id, request.redirect_count + 1,
                                            request_id.as_ref().map(Deref::deref), is_xhr);
 
-    let pipeline_id = request.pipeline_id.get();
+    let pipeline_id = request.pipeline_id;
     let (res, msg) = match wrapped_response {
         Ok(wrapped_response) => wrapped_response,
         Err(error) => return Response::network_error(error),
@@ -1081,7 +1075,7 @@ fn http_network_fetch(request: Rc<Request>,
     response.raw_status = Some((res.response.status_raw().0,
                                 res.response.status_raw().1.as_bytes().to_vec()));
     response.headers = res.response.headers.clone();
-    response.referrer = request.referrer.borrow().to_url().cloned();
+    response.referrer = request.referrer.to_url().cloned();
 
     let res_body = response.body.clone();
 
@@ -1177,7 +1171,7 @@ fn http_network_fetch(request: Rc<Request>,
     
 
     
-    if response.is_network_error() && request.cache_mode.get() == CacheMode::NoStore {
+    if response.is_network_error() && request.cache_mode == CacheMode::NoStore {
         
     }
 
@@ -1204,41 +1198,41 @@ fn http_network_fetch(request: Rc<Request>,
 }
 
 
-fn cors_preflight_fetch(request: Rc<Request>,
+fn cors_preflight_fetch(request: &Request,
                         cache: &mut CorsCache,
                         context: &FetchContext)
                         -> Response {
     
-    let mut preflight = Request::new(request.current_url(), Some(request.origin.borrow().clone()),
-                                     request.is_service_worker_global_scope, request.pipeline_id.get());
-    *preflight.method.borrow_mut() = Method::Options;
+    let mut preflight = Request::new(request.current_url(), Some(request.origin.clone()),
+                                     request.is_service_worker_global_scope, request.pipeline_id);
+    preflight.method = Method::Options;
     preflight.initiator = request.initiator.clone();
     preflight.type_ = request.type_.clone();
     preflight.destination = request.destination.clone();
-    *preflight.referrer.borrow_mut() = request.referrer.borrow().clone();
-    preflight.referrer_policy.set(request.referrer_policy.get());
+    preflight.referrer = request.referrer.clone();
+    preflight.referrer_policy = request.referrer_policy;
 
     
-    preflight.headers.borrow_mut().set::<AccessControlRequestMethod>(
-        AccessControlRequestMethod(request.method.borrow().clone()));
+    preflight.headers.set::<AccessControlRequestMethod>(
+        AccessControlRequestMethod(request.method.clone()));
 
     
-    let mut value = request.headers.borrow().iter()
-                                            .filter(|view| !is_simple_header(view))
-                                            .map(|view| UniCase(view.name().to_owned()))
-                                            .collect::<Vec<UniCase<String>>>();
+    let mut value = request.headers
+        .iter()
+        .filter(|view| !is_simple_header(view))
+        .map(|view| UniCase(view.name().to_owned()))
+        .collect::<Vec<UniCase<String>>>();
     value.sort();
 
     
-    preflight.headers.borrow_mut().set::<AccessControlRequestHeaders>(
+    preflight.headers.set::<AccessControlRequestHeaders>(
         AccessControlRequestHeaders(value));
 
     
-    let preflight = Rc::new(preflight);
-    let response = http_network_or_cache_fetch(preflight.clone(), false, false, &mut None, context);
+    let response = http_network_or_cache_fetch(&mut preflight, false, false, &mut None, context);
 
     
-    if cors_check(request.clone(), &response).is_ok() &&
+    if cors_check(&request, &response).is_ok() &&
        response.status.map_or(false, |status| status.is_success()) {
         
         let mut methods = if response.headers.has::<AccessControlAllowMethods>() {
@@ -1264,23 +1258,21 @@ fn cors_preflight_fetch(request: Rc<Request>,
 
         
         if methods.is_empty() && request.use_cors_preflight {
-            methods = vec![request.method.borrow().clone()];
+            methods = vec![request.method.clone()];
         }
 
         
         debug!("CORS check: Allowed methods: {:?}, current method: {:?}",
-                methods, request.method.borrow());
-        if methods.iter().all(|method| *method != *request.method.borrow()) &&
-            !is_simple_method(&*request.method.borrow()) {
+                methods, request.method);
+        if methods.iter().all(|method| *method != request.method) &&
+            !is_simple_method(&request.method) {
             return Response::network_error(NetworkError::Internal("CORS method check failed".into()));
         }
 
         
-        debug!("CORS check: Allowed headers: {:?}, current headers: {:?}",
-                header_names, request.headers.borrow());
+        debug!("CORS check: Allowed headers: {:?}, current headers: {:?}", header_names, request.headers);
         let set: HashSet<&UniCase<String>> = HashSet::from_iter(header_names.iter());
-        if request.headers.borrow().iter().any(|ref hv| !set.contains(&UniCase(hv.name().to_owned())) &&
-                                                        !is_simple_header(hv)) {
+        if request.headers.iter().any(|ref hv| !set.contains(&UniCase(hv.name().to_owned())) && !is_simple_header(hv)) {
             return Response::network_error(NetworkError::Internal("CORS headers check failed".into()));
         }
 
@@ -1308,7 +1300,7 @@ fn cors_preflight_fetch(request: Rc<Request>,
 }
 
 
-fn cors_check(request: Rc<Request>, response: &Response) -> Result<(), ()> {
+fn cors_check(request: &Request, response: &Response) -> Result<(), ()> {
     
     let origin = response.headers.get::<AccessControlAllowOrigin>().cloned();
 
@@ -1328,7 +1320,7 @@ fn cors_check(request: Rc<Request>, response: &Response) -> Result<(), ()> {
         _ => return Err(())
     };
 
-    match *request.origin.borrow() {
+    match request.origin {
         Origin::Origin(ref o) if o.ascii_serialization() == origin => {},
         _ => return Err(())
     }
