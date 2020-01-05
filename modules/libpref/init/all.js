@@ -2934,6 +2934,9 @@ pref("dom.ipc.processCount", 1);
 #endif
 
 
+pref("dom.ipc.processCount.file", 1);
+
+
 pref("dom.ipc.processCount.extension", 1);
 
 
