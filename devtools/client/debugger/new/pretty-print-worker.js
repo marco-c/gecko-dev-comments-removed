@@ -64,13 +64,13 @@ return  (function(modules) {
  function(module, exports) {
 
 	"use strict";
-	
+
 	function assert(condition, message) {
 	  if (!condition) {
 	    throw new Error(`Assertion failure: ${message}`);
 	  }
 	}
-	
+
 	module.exports = assert;
 
  },
@@ -79,21 +79,21 @@ return  (function(modules) {
  function(module, exports, __webpack_require__) {
 
 	"use strict";
-	
+
 	var prettyFast = __webpack_require__(802);
 	var assert = __webpack_require__(223);
-	
+
 	function prettyPrint(_ref) {
 	  var url = _ref.url,
 	      indent = _ref.indent,
 	      source = _ref.source;
-	
+
 	  try {
 	    var prettified = prettyFast(source, {
 	      url: url,
 	      indent: " ".repeat(indent)
 	    });
-	
+
 	    return {
 	      code: prettified.code,
 	      mappings: prettified.map._mappings
@@ -102,7 +102,7 @@ return  (function(modules) {
 	    throw new Error(`${e.message}\n${e.stack}`);
 	  }
 	}
-	
+
 	function invertMappings(mappings) {
 	  return mappings._array.map(m => {
 	    var mapping = {
@@ -122,19 +122,19 @@ return  (function(modules) {
 	    return mapping;
 	  });
 	}
-	
+
 	self.onmessage = function (msg) {
 	  var _msg$data = msg.data,
 	      id = _msg$data.id,
 	      args = _msg$data.args;
-	
+
 	  assert(msg.data.method === "prettyPrint", "Method must be `prettyPrint`");
-	
+
 	  try {
 	    var _prettyPrint = prettyPrint(args[0]),
 	        code = _prettyPrint.code,
 	        mappings = _prettyPrint.mappings;
-	
+
 	    self.postMessage({ id, response: {
 	        code, mappings: invertMappings(mappings)
 	      } });
@@ -156,7 +156,7 @@ return  (function(modules) {
 
 	(function (root, factory) {
 	  "use strict";
-	
+
 	  if (true) {
 	    !(__WEBPACK_AMD_DEFINE_FACTORY__ = (factory), __WEBPACK_AMD_DEFINE_RESULT__ = (typeof __WEBPACK_AMD_DEFINE_FACTORY__ === 'function' ? (__WEBPACK_AMD_DEFINE_FACTORY__.call(exports, __webpack_require__, exports, module)) : __WEBPACK_AMD_DEFINE_FACTORY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 	  } else if (typeof exports === "object") {
@@ -166,11 +166,11 @@ return  (function(modules) {
 	  }
 	}(this, function () {
 	  "use strict";
-	
+
 	  var acorn = this.acorn || __webpack_require__(803);
 	  var sourceMap = this.sourceMap || __webpack_require__(804);
 	  var SourceNode = sourceMap.SourceNode;
-	
+
 	  
 	  
 	  
@@ -219,10 +219,10 @@ return  (function(modules) {
 	    "===": true,
 	    "!==": true,
 	    ",": true,
-	
+
 	    "}": true
 	  };
-	
+
 	  
 
 
@@ -248,7 +248,7 @@ return  (function(modules) {
 	      lastToken.type.keyword || lastToken.type.type
 	    ];
 	  }
-	
+
 	  
 	  
 	  var PREVENT_ASI_AFTER_TOKENS = {
@@ -300,7 +300,7 @@ return  (function(modules) {
 	    
 	    "(": true
 	  };
-	
+
 	  
 	  
 	  var PREVENT_ASI_BEFORE_TOKENS = {
@@ -343,7 +343,7 @@ return  (function(modules) {
 	    
 	    "(": true
 	  };
-	
+
 	  
 
 
@@ -373,7 +373,7 @@ return  (function(modules) {
 	    }
 	    return true;
 	  }
-	
+
 	  
 
 
@@ -397,7 +397,7 @@ return  (function(modules) {
 	      && (lastToken.value == "get" || lastToken.value == "set")
 	      && token.type.type == "name";
 	  }
-	
+
 	  
 
 
@@ -420,7 +420,7 @@ return  (function(modules) {
 	      || ttt == "," && top != "("
 	      || ttt == ":" && (top == "case" || top == "default");
 	  }
-	
+
 	  
 
 
@@ -443,7 +443,7 @@ return  (function(modules) {
 	    }
 	    return false;
 	  }
-	
+
 	  
 
 
@@ -464,7 +464,7 @@ return  (function(modules) {
 	      if (lastToken.type.binop != null) {
 	        return true;
 	      }
-	
+
 	      var ltt = lastToken.type.type;
 	      if (ltt == "?") {
 	        return true;
@@ -478,7 +478,7 @@ return  (function(modules) {
 	      if (ltt == ";") {
 	        return true;
 	      }
-	
+
 	      var ltk = lastToken.type.keyword;
 	      if (ltk != null) {
 	        if (ltk == "break" || ltk == "continue" || ltk == "return") {
@@ -493,7 +493,7 @@ return  (function(modules) {
 	          return true;
 	        }
 	      }
-	
+
 	      if (ltt == ")" && (token.type.type != ")"
 	                         && token.type.type != "]"
 	                         && token.type.type != ";"
@@ -502,7 +502,7 @@ return  (function(modules) {
 	        return true;
 	      }
 	    }
-	
+
 	    if (token.type.isAssign) {
 	      return true;
 	    }
@@ -512,10 +512,10 @@ return  (function(modules) {
 	    if (token.type.type == "?") {
 	      return true;
 	    }
-	
+
 	    return false;
 	  }
-	
+
 	  
 
 
@@ -542,7 +542,7 @@ return  (function(modules) {
 	    var ttt = token.type.type;
 	    var newlineAdded = addedNewline;
 	    var ltt = lastToken ? lastToken.type.type : null;
-	
+
 	    
 	    
 	    
@@ -569,25 +569,25 @@ return  (function(modules) {
 	        newlineAdded = true;
 	      }
 	    }
-	
+
 	    if (isGetterOrSetter(token, lastToken, stack)) {
 	      write(" ",
 	            lastToken.startLoc.line,
 	            lastToken.startLoc.column);
 	    }
-	
+
 	    if (ttt == ":" && stack[stack.length - 1] == "?") {
 	      write(" ",
 	            lastToken.startLoc.line,
 	            lastToken.startLoc.column);
 	    }
-	
+
 	    if (lastToken && ltt != "}" && ttk == "else") {
 	      write(" ",
 	            lastToken.startLoc.line,
 	            lastToken.startLoc.column);
 	    }
-	
+
 	    function ensureNewline() {
 	      if (!newlineAdded) {
 	        write("\n",
@@ -596,15 +596,15 @@ return  (function(modules) {
 	        newlineAdded = true;
 	      }
 	    }
-	
+
 	    if (isASI(token, lastToken)) {
 	      ensureNewline();
 	    }
-	
+
 	    if (decrementsIndent(ttt, stack)) {
 	      ensureNewline();
 	    }
-	
+
 	    if (newlineAdded) {
 	      if (ttk == "case" || ttk == "default") {
 	        write(repeat(options.indent, indentLevel - 1),
@@ -621,7 +621,7 @@ return  (function(modules) {
 	            lastToken.startLoc.column);
 	    }
 	  }
-	
+
 	  
 
 
@@ -644,7 +644,7 @@ return  (function(modules) {
 	    }
 	    return result;
 	  }
-	
+
 	  
 
 
@@ -668,14 +668,14 @@ return  (function(modules) {
 	      
 	      "'": "\\'"
 	    };
-	
+
 	    var regExpString = "("
 	      + Object.keys(escapeCharacters)
 	              .map(function (c) { return escapeCharacters[c]; })
 	              .join("|")
 	      + ")";
 	    var escapeCharactersRegExp = new RegExp(regExpString, "g");
-	
+
 	    return function (str) {
 	      return str.replace(escapeCharactersRegExp, function (_, c) {
 	        return escapeCharacters[c];
@@ -705,7 +705,7 @@ return  (function(modules) {
 	            token.startLoc.column);
 	    }
 	  }
-	
+
 	  
 
 
@@ -721,7 +721,7 @@ return  (function(modules) {
 	      || ttk == "case"
 	      || ttk == "default";
 	  }
-	
+
 	  
 
 
@@ -735,7 +735,7 @@ return  (function(modules) {
 	      || (ttt == ":" && (top == "case" || top == "default" || top == "?"))
 	      || (ttk == "while" && top == "do");
 	  }
-	
+
 	  
 
 
@@ -744,7 +744,7 @@ return  (function(modules) {
 	    return tokenType == "}"
 	      || (tokenType == "]" && stack[stack.length - 1] == "[\n");
 	  }
-	
+
 	  
 
 
@@ -754,7 +754,7 @@ return  (function(modules) {
 	      || token.isArrayLiteral
 	      || token.type.keyword == "switch";
 	  }
-	
+
 	  
 
 
@@ -775,7 +775,7 @@ return  (function(modules) {
 
 	  function addComment(write, indentLevel, options, block, text, line, column) {
 	    var indentString = repeat(options.indent, indentLevel);
-	
+
 	    write(indentString, line, column);
 	    if (block) {
 	      write("/*");
@@ -789,7 +789,7 @@ return  (function(modules) {
 	    }
 	    write("\n");
 	  }
-	
+
 	  
 
 
@@ -809,10 +809,10 @@ return  (function(modules) {
 	  return function prettyFast(input, options) {
 	    
 	    var indentLevel = 0;
-	
+
 	    
 	    var result = new SourceNode();
-	
+
 	    
 
 
@@ -842,7 +842,7 @@ return  (function(modules) {
 	          bufferColumn = column;
 	        }
 	        buffer.push(str);
-	
+
 	        if (str == "\n") {
 	          var lineStr = "";
 	          for (var i = 0, len = buffer.length; i < len; i++) {
@@ -856,24 +856,24 @@ return  (function(modules) {
 	        }
 	      };
 	    }());
-	
+
 	    
 	    var addedNewline = false;
-	
+
 	    
 	    var token;
-	
+
 	    
 	    
 	    var ttt;
-	
+
 	    
 	    
 	    var ttk;
-	
+
 	    
 	    var lastToken;
-	
+
 	    
 	    
 	    
@@ -896,7 +896,7 @@ return  (function(modules) {
 	    
 	    
 	    var stack = [];
-	
+
 	    
 	    
 	    
@@ -911,7 +911,7 @@ return  (function(modules) {
 	    
 	    
 	    var commentQueue = [];
-	
+
 	    var getToken = acorn.tokenize(input, {
 	      locations: true,
 	      sourceFile: options.url,
@@ -931,22 +931,22 @@ return  (function(modules) {
 	        }
 	      }
 	    });
-	
+
 	    for (;;) {
 	      token = getToken();
-	
+
 	      ttk = token.type.keyword;
 	      ttt = token.type.type;
-	
+
 	      if (ttt == "eof") {
 	        if (!addedNewline) {
 	          write("\n");
 	        }
 	        break;
 	      }
-	
+
 	      token.isArrayLiteral = isArrayLiteral(token, lastToken);
-	
+
 	      if (belongsOnStack(token)) {
 	        if (token.isArrayLiteral) {
 	          stack.push("[\n");
@@ -954,7 +954,7 @@ return  (function(modules) {
 	          stack.push(ttt || ttk);
 	        }
 	      }
-	
+
 	      if (decrementsIndent(ttt, stack)) {
 	        indentLevel--;
 	        if (ttt == "}"
@@ -963,14 +963,14 @@ return  (function(modules) {
 	          indentLevel--;
 	        }
 	      }
-	
+
 	      prependWhiteSpace(token, lastToken, addedNewline, write, options,
 	                        indentLevel, stack);
 	      addToken(token, write);
 	      if (commentQueue.length === 0 || !commentQueue[0].trailing) {
 	        addedNewline = appendNewline(token, write, stack);
 	      }
-	
+
 	      if (shouldStackPop(token, stack)) {
 	        stack.pop();
 	        if (token == "}" && stack.length
@@ -978,11 +978,11 @@ return  (function(modules) {
 	          stack.pop();
 	        }
 	      }
-	
+
 	      if (incrementsIndent(token)) {
 	        indentLevel++;
 	      }
-	
+
 	      
 	      
 	      
@@ -999,7 +999,7 @@ return  (function(modules) {
 	      lastToken.type = token.type;
 	      lastToken.value = token.value;
 	      lastToken.isArrayLiteral = token.isArrayLiteral;
-	
+
 	      
 	      if (commentQueue.length) {
 	        if (!addedNewline && !commentQueue[0].trailing) {
@@ -1018,10 +1018,10 @@ return  (function(modules) {
 	        commentQueue.splice(0, commentQueue.length);
 	      }
 	    }
-	
+
 	    return result.toStringWithSourceMap({ file: options.url });
 	  };
-	
+
 	}.bind(this)));
 
 
@@ -1052,25 +1052,25 @@ return  (function(modules) {
 	
 	
 	
-	
+
 	(function(root, mod) {
 	  if (true) return mod(exports); 
 	  if (true) return !(__WEBPACK_AMD_DEFINE_ARRAY__ = [exports], __WEBPACK_AMD_DEFINE_FACTORY__ = (mod), __WEBPACK_AMD_DEFINE_RESULT__ = (typeof __WEBPACK_AMD_DEFINE_FACTORY__ === 'function' ? (__WEBPACK_AMD_DEFINE_FACTORY__.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__)) : __WEBPACK_AMD_DEFINE_FACTORY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__)); 
 	  mod(root.acorn || (root.acorn = {})); 
 	})(this, function(exports) {
 	  "use strict";
-	
+
 	  exports.version = "0.11.0";
-	
+
 	  
 	  
 	  
 	  
 	  
 	  
-	
+
 	  var options, input, inputLen, sourceFile;
-	
+
 	  exports.parse = function(inpt, opts) {
 	    input = String(inpt); inputLen = input.length;
 	    setOptions(opts);
@@ -1079,10 +1079,10 @@ return  (function(modules) {
 	    initParserState();
 	    return parseTopLevel(options.program || startNodeAt(startPos));
 	  };
-	
+
 	  
 	  
-	
+
 	  var defaultOptions = exports.defaultOptions = {
 	    
 	    
@@ -1153,11 +1153,11 @@ return  (function(modules) {
 	    
 	    preserveParens: false
 	  };
-	
+
 	  
 	  
 	  
-	
+
 	  exports.parseExpressionAt = function(inpt, pos, opts) {
 	    input = String(inpt); inputLen = input.length;
 	    setOptions(opts);
@@ -1165,11 +1165,11 @@ return  (function(modules) {
 	    initParserState();
 	    return parseExpression();
 	  };
-	
+
 	  var isArray = function (obj) {
 	    return Object.prototype.toString.call(obj) === "[object Array]";
 	  };
-	
+
 	  function setOptions(opts) {
 	    options = {};
 	    for (var opt in defaultOptions)
@@ -1202,13 +1202,13 @@ return  (function(modules) {
 	    }
 	    isKeyword = options.ecmaVersion >= 6 ? isEcma6Keyword : isEcma5AndLessKeyword;
 	  }
-	
+
 	  
 	  
 	  
 	  
 	  
-	
+
 	  var getLineInfo = exports.getLineInfo = function(input, offset) {
 	    for (var line = 1, cur = 0;;) {
 	      lineBreak.lastIndex = cur;
@@ -1220,7 +1220,7 @@ return  (function(modules) {
 	    }
 	    return {line: line, column: offset - cur};
 	  };
-	
+
 	  function Token() {
 	    this.type = tokType;
 	    this.value = tokVal;
@@ -1236,22 +1236,22 @@ return  (function(modules) {
 	    if (options.ranges)
 	      this.range = [tokStart, tokEnd];
 	  }
-	
+
 	  exports.Token = Token;
-	
+
 	  
 	  
 	  
 	  
 	  
 	  
-	
+
 	  exports.tokenize = function(inpt, opts) {
 	    input = String(inpt); inputLen = input.length;
 	    setOptions(opts);
 	    initTokenState();
 	    skipSpace();
-	
+
 	    function getToken(forceRegexp) {
 	      lastEnd = tokEnd;
 	      readToken(forceRegexp);
@@ -1277,23 +1277,23 @@ return  (function(modules) {
 	    getToken.options = options;
 	    return getToken;
 	  };
-	
+
 	  
 	  
-	
+
 	  
-	
+
 	  var tokPos;
-	
+
 	  
-	
+
 	  var tokStart, tokEnd;
-	
+
 	  
 	  
-	
+
 	  var tokStartLoc, tokEndLoc;
-	
+
 	  
 	  
 	  
@@ -1301,49 +1301,49 @@ return  (function(modules) {
 	  
 	  
 	  
-	
+
 	  var tokType, tokVal;
-	
+
 	  
 	  
 	  
 	  
 	  
 	  
-	
+
 	  var tokRegexpAllowed;
-	
+
 	  
 	  
 	  
-	
+
 	  var tokCurLine, tokLineStart;
-	
+
 	  
 	  
-	
+
 	  var lastStart, lastEnd, lastEndLoc;
-	
+
 	  
 	  
 	  
 	  
 	  
-	
+
 	  var inFunction, inGenerator, labels, strict;
-	
+
 	  
 	  
-	
+
 	  var metParenL;
-	
+
 	  
 	  
 	  
 	  
-	
+
 	  var templates;
-	
+
 	  function initParserState() {
 	    lastStart = lastEnd = tokPos;
 	    if (options.locations) lastEndLoc = curPosition();
@@ -1352,13 +1352,13 @@ return  (function(modules) {
 	    skipSpace();
 	    readToken();
 	  }
-	
+
 	  
 	  
 	  
 	  
 	  
-	
+
 	  function raise(pos, message) {
 	    var loc = getLineInfo(input, pos);
 	    message += " (" + loc.line + ":" + loc.column + ")";
@@ -1366,26 +1366,26 @@ return  (function(modules) {
 	    err.pos = pos; err.loc = loc; err.raisedAt = tokPos;
 	    throw err;
 	  }
-	
+
 	  
-	
+
 	  var empty = [];
-	
+
 	  
-	
-	  
-	  
-	  
-	
+
 	  
 	  
-	
+	  
+
 	  
 	  
-	
+
+	  
+	  
+
 	  var _num = {type: "num"}, _regexp = {type: "regexp"}, _string = {type: "string"};
 	  var _name = {type: "name"}, _eof = {type: "eof"};
-	
+
 	  
 	  
 	  
@@ -1398,7 +1398,7 @@ return  (function(modules) {
 	  
 	  
 	  
-	
+
 	  var _break = {keyword: "break"}, _case = {keyword: "case", beforeExpr: true}, _catch = {keyword: "catch"};
 	  var _continue = {keyword: "continue"}, _debugger = {keyword: "debugger"}, _default = {keyword: "default"};
 	  var _do = {keyword: "do", isLoop: true}, _else = {keyword: "else", beforeExpr: true};
@@ -1411,20 +1411,20 @@ return  (function(modules) {
 	  var _class = {keyword: "class"}, _extends = {keyword: "extends", beforeExpr: true};
 	  var _export = {keyword: "export"}, _import = {keyword: "import"};
 	  var _yield = {keyword: "yield", beforeExpr: true};
-	
+
 	  
-	
+
 	  var _null = {keyword: "null", atomValue: null}, _true = {keyword: "true", atomValue: true};
 	  var _false = {keyword: "false", atomValue: false};
-	
+
 	  
 	  
 	  
-	
+
 	  var _in = {keyword: "in", binop: 7, beforeExpr: true};
-	
+
 	  
-	
+
 	  var keywordTypes = {"break": _break, "case": _case, "catch": _catch,
 	                      "continue": _continue, "debugger": _debugger, "default": _default,
 	                      "do": _do, "else": _else, "finally": _finally, "for": _for,
@@ -1438,16 +1438,16 @@ return  (function(modules) {
 	                      "delete": {keyword: "delete", prefix: true, beforeExpr: true},
 	                      "class": _class, "extends": _extends,
 	                      "export": _export, "import": _import, "yield": _yield};
-	
+
 	  
-	
+
 	  var _bracketL = {type: "[", beforeExpr: true}, _bracketR = {type: "]"}, _braceL = {type: "{", beforeExpr: true};
 	  var _braceR = {type: "}"}, _parenL = {type: "(", beforeExpr: true}, _parenR = {type: ")"};
 	  var _comma = {type: ",", beforeExpr: true}, _semi = {type: ";", beforeExpr: true};
 	  var _colon = {type: ":", beforeExpr: true}, _dot = {type: "."}, _question = {type: "?", beforeExpr: true};
 	  var _arrow = {type: "=>", beforeExpr: true}, _template = {type: "template"}, _templateContinued = {type: "templateContinued"};
 	  var _ellipsis = {type: "...", prefix: true, beforeExpr: true};
-	
+
 	  
 	  
 	  
@@ -1463,7 +1463,7 @@ return  (function(modules) {
 	  
 	  
 	  
-	
+
 	  var _slash = {binop: 10, beforeExpr: true}, _eq = {isAssign: true, beforeExpr: true};
 	  var _assign = {isAssign: true, beforeExpr: true};
 	  var _incDec = {postfix: true, prefix: true, isUpdate: true}, _prefix = {prefix: true, beforeExpr: true};
@@ -1477,13 +1477,13 @@ return  (function(modules) {
 	  var _bitShift = {binop: 8, beforeExpr: true};
 	  var _plusMin = {binop: 9, prefix: true, beforeExpr: true};
 	  var _modulo = {binop: 10, beforeExpr: true};
-	
+
 	  
 	  var _star = {binop: 10, beforeExpr: true};
-	
+
 	  
 	  
-	
+
 	  exports.tokTypes = {bracketL: _bracketL, bracketR: _bracketR, braceL: _braceL, braceR: _braceR,
 	                      parenL: _parenL, parenR: _parenR, comma: _comma, semi: _semi, colon: _colon,
 	                      dot: _dot, ellipsis: _ellipsis, question: _question, slash: _slash, eq: _eq,
@@ -1491,7 +1491,7 @@ return  (function(modules) {
 	                      arrow: _arrow, template: _template, templateContinued: _templateContinued, star: _star,
 	                      assign: _assign};
 	  for (var kw in keywordTypes) exports.tokTypes["_" + kw] = keywordTypes[kw];
-	
+
 	  
 	  
 	  
@@ -1500,7 +1500,7 @@ return  (function(modules) {
 	  
 	  
 	  
-	
+
 	  function makePredicate(words) {
 	    words = words.split(" ");
 	    var f = "", cats = [];
@@ -1518,10 +1518,10 @@ return  (function(modules) {
 	      for (var i = 0; i < arr.length; ++i) f += "case " + JSON.stringify(arr[i]) + ":";
 	      f += "return true}return false;";
 	    }
-	
+
 	    
 	    
-	
+
 	    if (cats.length > 3) {
 	      cats.sort(function(a, b) {return b.length - a.length;});
 	      f += "switch(str.length){";
@@ -1531,70 +1531,70 @@ return  (function(modules) {
 	        compareTo(cat);
 	      }
 	      f += "}";
-	
+
 	    
-	
+
 	    } else {
 	      compareTo(words);
 	    }
 	    return new Function("str", f);
 	  }
-	
+
 	  
-	
+
 	  var isReservedWord3 = makePredicate("abstract boolean byte char class double enum export extends final float goto implements import int interface long native package private protected public short static super synchronized throws transient volatile");
-	
+
 	  
-	
+
 	  var isReservedWord5 = makePredicate("class enum extends super const export import");
-	
+
 	  
-	
+
 	  var isStrictReservedWord = makePredicate("implements interface let package private protected public static yield");
-	
+
 	  
-	
+
 	  var isStrictBadIdWord = makePredicate("eval arguments");
-	
+
 	  
-	
+
 	  var ecma5AndLessKeywords = "break case catch continue debugger default do else finally for function if return switch throw try var while with null true false instanceof typeof void delete new in this";
-	
+
 	  var isEcma5AndLessKeyword = makePredicate(ecma5AndLessKeywords);
-	
+
 	  var isEcma6Keyword = makePredicate(ecma5AndLessKeywords + " let const class extends export import yield");
-	
+
 	  var isKeyword = isEcma5AndLessKeyword;
-	
+
 	  
-	
-	  
-	  
+
 	  
 	  
 	  
-	
+	  
+	  
+
 	  var nonASCIIwhitespace = /[\u1680\u180e\u2000-\u200a\u202f\u205f\u3000\ufeff]/;
 	  var nonASCIIidentifierStartChars = "\xAA\xB5\xBA\xC0-\xD6\xD8-\xF6\xF8-\u02C1\u02C6-\u02D1\u02E0-\u02E4\u02EC\u02EE\u0370-\u0374\u0376\u0377\u037A-\u037D\u037F\u0386\u0388-\u038A\u038C\u038E-\u03A1\u03A3-\u03F5\u03F7-\u0481\u048A-\u052F\u0531-\u0556\u0559\u0561-\u0587\u05D0-\u05EA\u05F0-\u05F2\u0620-\u064A\u066E\u066F\u0671-\u06D3\u06D5\u06E5\u06E6\u06EE\u06EF\u06FA-\u06FC\u06FF\u0710\u0712-\u072F\u074D-\u07A5\u07B1\u07CA-\u07EA\u07F4\u07F5\u07FA\u0800-\u0815\u081A\u0824\u0828\u0840-\u0858\u08A0-\u08B2\u0904-\u0939\u093D\u0950\u0958-\u0961\u0971-\u0980\u0985-\u098C\u098F\u0990\u0993-\u09A8\u09AA-\u09B0\u09B2\u09B6-\u09B9\u09BD\u09CE\u09DC\u09DD\u09DF-\u09E1\u09F0\u09F1\u0A05-\u0A0A\u0A0F\u0A10\u0A13-\u0A28\u0A2A-\u0A30\u0A32\u0A33\u0A35\u0A36\u0A38\u0A39\u0A59-\u0A5C\u0A5E\u0A72-\u0A74\u0A85-\u0A8D\u0A8F-\u0A91\u0A93-\u0AA8\u0AAA-\u0AB0\u0AB2\u0AB3\u0AB5-\u0AB9\u0ABD\u0AD0\u0AE0\u0AE1\u0B05-\u0B0C\u0B0F\u0B10\u0B13-\u0B28\u0B2A-\u0B30\u0B32\u0B33\u0B35-\u0B39\u0B3D\u0B5C\u0B5D\u0B5F-\u0B61\u0B71\u0B83\u0B85-\u0B8A\u0B8E-\u0B90\u0B92-\u0B95\u0B99\u0B9A\u0B9C\u0B9E\u0B9F\u0BA3\u0BA4\u0BA8-\u0BAA\u0BAE-\u0BB9\u0BD0\u0C05-\u0C0C\u0C0E-\u0C10\u0C12-\u0C28\u0C2A-\u0C39\u0C3D\u0C58\u0C59\u0C60\u0C61\u0C85-\u0C8C\u0C8E-\u0C90\u0C92-\u0CA8\u0CAA-\u0CB3\u0CB5-\u0CB9\u0CBD\u0CDE\u0CE0\u0CE1\u0CF1\u0CF2\u0D05-\u0D0C\u0D0E-\u0D10\u0D12-\u0D3A\u0D3D\u0D4E\u0D60\u0D61\u0D7A-\u0D7F\u0D85-\u0D96\u0D9A-\u0DB1\u0DB3-\u0DBB\u0DBD\u0DC0-\u0DC6\u0E01-\u0E30\u0E32\u0E33\u0E40-\u0E46\u0E81\u0E82\u0E84\u0E87\u0E88\u0E8A\u0E8D\u0E94-\u0E97\u0E99-\u0E9F\u0EA1-\u0EA3\u0EA5\u0EA7\u0EAA\u0EAB\u0EAD-\u0EB0\u0EB2\u0EB3\u0EBD\u0EC0-\u0EC4\u0EC6\u0EDC-\u0EDF\u0F00\u0F40-\u0F47\u0F49-\u0F6C\u0F88-\u0F8C\u1000-\u102A\u103F\u1050-\u1055\u105A-\u105D\u1061\u1065\u1066\u106E-\u1070\u1075-\u1081\u108E\u10A0-\u10C5\u10C7\u10CD\u10D0-\u10FA\u10FC-\u1248\u124A-\u124D\u1250-\u1256\u1258\u125A-\u125D\u1260-\u1288\u128A-\u128D\u1290-\u12B0\u12B2-\u12B5\u12B8-\u12BE\u12C0\u12C2-\u12C5\u12C8-\u12D6\u12D8-\u1310\u1312-\u1315\u1318-\u135A\u1380-\u138F\u13A0-\u13F4\u1401-\u166C\u166F-\u167F\u1681-\u169A\u16A0-\u16EA\u16EE-\u16F8\u1700-\u170C\u170E-\u1711\u1720-\u1731\u1740-\u1751\u1760-\u176C\u176E-\u1770\u1780-\u17B3\u17D7\u17DC\u1820-\u1877\u1880-\u18A8\u18AA\u18B0-\u18F5\u1900-\u191E\u1950-\u196D\u1970-\u1974\u1980-\u19AB\u19C1-\u19C7\u1A00-\u1A16\u1A20-\u1A54\u1AA7\u1B05-\u1B33\u1B45-\u1B4B\u1B83-\u1BA0\u1BAE\u1BAF\u1BBA-\u1BE5\u1C00-\u1C23\u1C4D-\u1C4F\u1C5A-\u1C7D\u1CE9-\u1CEC\u1CEE-\u1CF1\u1CF5\u1CF6\u1D00-\u1DBF\u1E00-\u1F15\u1F18-\u1F1D\u1F20-\u1F45\u1F48-\u1F4D\u1F50-\u1F57\u1F59\u1F5B\u1F5D\u1F5F-\u1F7D\u1F80-\u1FB4\u1FB6-\u1FBC\u1FBE\u1FC2-\u1FC4\u1FC6-\u1FCC\u1FD0-\u1FD3\u1FD6-\u1FDB\u1FE0-\u1FEC\u1FF2-\u1FF4\u1FF6-\u1FFC\u2071\u207F\u2090-\u209C\u2102\u2107\u210A-\u2113\u2115\u2119-\u211D\u2124\u2126\u2128\u212A-\u212D\u212F-\u2139\u213C-\u213F\u2145-\u2149\u214E\u2160-\u2188\u2C00-\u2C2E\u2C30-\u2C5E\u2C60-\u2CE4\u2CEB-\u2CEE\u2CF2\u2CF3\u2D00-\u2D25\u2D27\u2D2D\u2D30-\u2D67\u2D6F\u2D80-\u2D96\u2DA0-\u2DA6\u2DA8-\u2DAE\u2DB0-\u2DB6\u2DB8-\u2DBE\u2DC0-\u2DC6\u2DC8-\u2DCE\u2DD0-\u2DD6\u2DD8-\u2DDE\u2E2F\u3005-\u3007\u3021-\u3029\u3031-\u3035\u3038-\u303C\u3041-\u3096\u309D-\u309F\u30A1-\u30FA\u30FC-\u30FF\u3105-\u312D\u3131-\u318E\u31A0-\u31BA\u31F0-\u31FF\u3400-\u4DB5\u4E00-\u9FCC\uA000-\uA48C\uA4D0-\uA4FD\uA500-\uA60C\uA610-\uA61F\uA62A\uA62B\uA640-\uA66E\uA67F-\uA69D\uA6A0-\uA6EF\uA717-\uA71F\uA722-\uA788\uA78B-\uA78E\uA790-\uA7AD\uA7B0\uA7B1\uA7F7-\uA801\uA803-\uA805\uA807-\uA80A\uA80C-\uA822\uA840-\uA873\uA882-\uA8B3\uA8F2-\uA8F7\uA8FB\uA90A-\uA925\uA930-\uA946\uA960-\uA97C\uA984-\uA9B2\uA9CF\uA9E0-\uA9E4\uA9E6-\uA9EF\uA9FA-\uA9FE\uAA00-\uAA28\uAA40-\uAA42\uAA44-\uAA4B\uAA60-\uAA76\uAA7A\uAA7E-\uAAAF\uAAB1\uAAB5\uAAB6\uAAB9-\uAABD\uAAC0\uAAC2\uAADB-\uAADD\uAAE0-\uAAEA\uAAF2-\uAAF4\uAB01-\uAB06\uAB09-\uAB0E\uAB11-\uAB16\uAB20-\uAB26\uAB28-\uAB2E\uAB30-\uAB5A\uAB5C-\uAB5F\uAB64\uAB65\uABC0-\uABE2\uAC00-\uD7A3\uD7B0-\uD7C6\uD7CB-\uD7FB\uF900-\uFA6D\uFA70-\uFAD9\uFB00-\uFB06\uFB13-\uFB17\uFB1D\uFB1F-\uFB28\uFB2A-\uFB36\uFB38-\uFB3C\uFB3E\uFB40\uFB41\uFB43\uFB44\uFB46-\uFBB1\uFBD3-\uFD3D\uFD50-\uFD8F\uFD92-\uFDC7\uFDF0-\uFDFB\uFE70-\uFE74\uFE76-\uFEFC\uFF21-\uFF3A\uFF41-\uFF5A\uFF66-\uFFBE\uFFC2-\uFFC7\uFFCA-\uFFCF\uFFD2-\uFFD7\uFFDA-\uFFDC";
 	  var nonASCIIidentifierChars = "\u0300-\u036F\u0483-\u0487\u0591-\u05BD\u05BF\u05C1\u05C2\u05C4\u05C5\u05C7\u0610-\u061A\u064B-\u0669\u0670\u06D6-\u06DC\u06DF-\u06E4\u06E7\u06E8\u06EA-\u06ED\u06F0-\u06F9\u0711\u0730-\u074A\u07A6-\u07B0\u07C0-\u07C9\u07EB-\u07F3\u0816-\u0819\u081B-\u0823\u0825-\u0827\u0829-\u082D\u0859-\u085B\u08E4-\u0903\u093A-\u093C\u093E-\u094F\u0951-\u0957\u0962\u0963\u0966-\u096F\u0981-\u0983\u09BC\u09BE-\u09C4\u09C7\u09C8\u09CB-\u09CD\u09D7\u09E2\u09E3\u09E6-\u09EF\u0A01-\u0A03\u0A3C\u0A3E-\u0A42\u0A47\u0A48\u0A4B-\u0A4D\u0A51\u0A66-\u0A71\u0A75\u0A81-\u0A83\u0ABC\u0ABE-\u0AC5\u0AC7-\u0AC9\u0ACB-\u0ACD\u0AE2\u0AE3\u0AE6-\u0AEF\u0B01-\u0B03\u0B3C\u0B3E-\u0B44\u0B47\u0B48\u0B4B-\u0B4D\u0B56\u0B57\u0B62\u0B63\u0B66-\u0B6F\u0B82\u0BBE-\u0BC2\u0BC6-\u0BC8\u0BCA-\u0BCD\u0BD7\u0BE6-\u0BEF\u0C00-\u0C03\u0C3E-\u0C44\u0C46-\u0C48\u0C4A-\u0C4D\u0C55\u0C56\u0C62\u0C63\u0C66-\u0C6F\u0C81-\u0C83\u0CBC\u0CBE-\u0CC4\u0CC6-\u0CC8\u0CCA-\u0CCD\u0CD5\u0CD6\u0CE2\u0CE3\u0CE6-\u0CEF\u0D01-\u0D03\u0D3E-\u0D44\u0D46-\u0D48\u0D4A-\u0D4D\u0D57\u0D62\u0D63\u0D66-\u0D6F\u0D82\u0D83\u0DCA\u0DCF-\u0DD4\u0DD6\u0DD8-\u0DDF\u0DE6-\u0DEF\u0DF2\u0DF3\u0E31\u0E34-\u0E3A\u0E47-\u0E4E\u0E50-\u0E59\u0EB1\u0EB4-\u0EB9\u0EBB\u0EBC\u0EC8-\u0ECD\u0ED0-\u0ED9\u0F18\u0F19\u0F20-\u0F29\u0F35\u0F37\u0F39\u0F3E\u0F3F\u0F71-\u0F84\u0F86\u0F87\u0F8D-\u0F97\u0F99-\u0FBC\u0FC6\u102B-\u103E\u1040-\u1049\u1056-\u1059\u105E-\u1060\u1062-\u1064\u1067-\u106D\u1071-\u1074\u1082-\u108D\u108F-\u109D\u135D-\u135F\u1712-\u1714\u1732-\u1734\u1752\u1753\u1772\u1773\u17B4-\u17D3\u17DD\u17E0-\u17E9\u180B-\u180D\u1810-\u1819\u18A9\u1920-\u192B\u1930-\u193B\u1946-\u194F\u19B0-\u19C0\u19C8\u19C9\u19D0-\u19D9\u1A17-\u1A1B\u1A55-\u1A5E\u1A60-\u1A7C\u1A7F-\u1A89\u1A90-\u1A99\u1AB0-\u1ABD\u1B00-\u1B04\u1B34-\u1B44\u1B50-\u1B59\u1B6B-\u1B73\u1B80-\u1B82\u1BA1-\u1BAD\u1BB0-\u1BB9\u1BE6-\u1BF3\u1C24-\u1C37\u1C40-\u1C49\u1C50-\u1C59\u1CD0-\u1CD2\u1CD4-\u1CE8\u1CED\u1CF2-\u1CF4\u1CF8\u1CF9\u1DC0-\u1DF5\u1DFC-\u1DFF\u200C\u200D\u203F\u2040\u2054\u20D0-\u20DC\u20E1\u20E5-\u20F0\u2CEF-\u2CF1\u2D7F\u2DE0-\u2DFF\u302A-\u302F\u3099\u309A\uA620-\uA629\uA66F\uA674-\uA67D\uA69F\uA6F0\uA6F1\uA802\uA806\uA80B\uA823-\uA827\uA880\uA881\uA8B4-\uA8C4\uA8D0-\uA8D9\uA8E0-\uA8F1\uA900-\uA909\uA926-\uA92D\uA947-\uA953\uA980-\uA983\uA9B3-\uA9C0\uA9D0-\uA9D9\uA9E5\uA9F0-\uA9F9\uAA29-\uAA36\uAA43\uAA4C\uAA4D\uAA50-\uAA59\uAA7B-\uAA7D\uAAB0\uAAB2-\uAAB4\uAAB7\uAAB8\uAABE\uAABF\uAAC1\uAAEB-\uAAEF\uAAF5\uAAF6\uABE3-\uABEA\uABEC\uABED\uABF0-\uABF9\uFB1E\uFE00-\uFE0F\uFE20-\uFE2D\uFE33\uFE34\uFE4D-\uFE4F\uFF10-\uFF19\uFF3F";
 	  var nonASCIIidentifierStart = new RegExp("[" + nonASCIIidentifierStartChars + "]");
 	  var nonASCIIidentifier = new RegExp("[" + nonASCIIidentifierStartChars + nonASCIIidentifierChars + "]");
-	
+
 	  
-	
+
 	  var newline = /[\n\r\u2028\u2029]/;
-	
+
 	  function isNewLine(code) {
 	    return code === 10 || code === 13 || code === 0x2028 || code == 0x2029;
 	  }
-	
+
 	  
 	  
-	
+
 	  var lineBreak = /\r\n|[\n\r\u2028\u2029]/g;
-	
+
 	  
-	
+
 	  var isIdentifierStart = exports.isIdentifierStart = function(code) {
 	    if (code < 65) return code === 36;
 	    if (code < 91) return true;
@@ -1602,9 +1602,9 @@ return  (function(modules) {
 	    if (code < 123)return true;
 	    return code >= 0xaa && nonASCIIidentifierStart.test(String.fromCharCode(code));
 	  };
-	
+
 	  
-	
+
 	  var isIdentifierChar = exports.isIdentifierChar = function(code) {
 	    if (code < 48) return code === 36;
 	    if (code < 58) return true;
@@ -1614,27 +1614,27 @@ return  (function(modules) {
 	    if (code < 123)return true;
 	    return code >= 0xaa && nonASCIIidentifier.test(String.fromCharCode(code));
 	  };
-	
+
 	  
-	
+
 	  
 	  
-	
+
 	  function Position(line, col) {
 	    this.line = line;
 	    this.column = col;
 	  }
-	
+
 	  Position.prototype.offset = function(n) {
 	    return new Position(this.line, this.column + n);
 	  }
-	
+
 	  function curPosition() {
 	    return new Position(tokCurLine, tokPos - tokLineStart);
 	  }
-	
+
 	  
-	
+
 	  function initTokenState(pos) {
 	    if (pos) {
 	      tokPos = pos;
@@ -1648,11 +1648,11 @@ return  (function(modules) {
 	    metParenL = 0;
 	    templates = [];
 	  }
-	
+
 	  
 	  
 	  
-	
+
 	  function finishToken(type, val, shouldSkipSpace) {
 	    tokEnd = tokPos;
 	    if (options.locations) tokEndLoc = curPosition();
@@ -1664,7 +1664,7 @@ return  (function(modules) {
 	      options.onToken(new Token());
 	    }
 	  }
-	
+
 	  function skipBlockComment() {
 	    var startLoc = options.onComment && options.locations && curPosition();
 	    var start = tokPos, end = input.indexOf("*/", tokPos += 2);
@@ -1682,7 +1682,7 @@ return  (function(modules) {
 	      options.onComment(true, input.slice(start + 2, end), start, tokPos,
 	                        startLoc, options.locations && curPosition());
 	  }
-	
+
 	  function skipLineComment(startSkip) {
 	    var start = tokPos;
 	    var startLoc = options.onComment && options.locations && curPosition();
@@ -1695,10 +1695,10 @@ return  (function(modules) {
 	      options.onComment(false, input.slice(start + startSkip, tokPos), start, tokPos,
 	                        startLoc, options.locations && curPosition());
 	  }
-	
+
 	  
 	  
-	
+
 	  function skipSpace() {
 	    while (tokPos < inputLen) {
 	      var ch = input.charCodeAt(tokPos);
@@ -1738,11 +1738,9 @@ return  (function(modules) {
 	      }
 	    }
 	  }
-	
+
 	  
-	
-	  
-	  
+
 	  
 	  
 	  
@@ -1750,7 +1748,9 @@ return  (function(modules) {
 	  
 	  
 	  
-	
+	  
+	  
+
 	  function readToken_dot() {
 	    var next = input.charCodeAt(tokPos + 1);
 	    if (next >= 48 && next <= 57) return readNumber(true);
@@ -1763,33 +1763,33 @@ return  (function(modules) {
 	      return finishToken(_dot);
 	    }
 	  }
-	
+
 	  function readToken_slash() { 
 	    var next = input.charCodeAt(tokPos + 1);
 	    if (tokRegexpAllowed) {++tokPos; return readRegexp();}
 	    if (next === 61) return finishOp(_assign, 2);
 	    return finishOp(_slash, 1);
 	  }
-	
+
 	  function readToken_mult_modulo(code) { 
 	    var next = input.charCodeAt(tokPos + 1);
 	    if (next === 61) return finishOp(_assign, 2);
 	    return finishOp(code === 42 ? _star : _modulo, 1);
 	  }
-	
+
 	  function readToken_pipe_amp(code) { 
 	    var next = input.charCodeAt(tokPos + 1);
 	    if (next === code) return finishOp(code === 124 ? _logicalOR : _logicalAND, 2);
 	    if (next === 61) return finishOp(_assign, 2);
 	    return finishOp(code === 124 ? _bitwiseOR : _bitwiseAND, 1);
 	  }
-	
+
 	  function readToken_caret() { 
 	    var next = input.charCodeAt(tokPos + 1);
 	    if (next === 61) return finishOp(_assign, 2);
 	    return finishOp(_bitwiseXOR, 1);
 	  }
-	
+
 	  function readToken_plus_min(code) { 
 	    var next = input.charCodeAt(tokPos + 1);
 	    if (next === code) {
@@ -1805,7 +1805,7 @@ return  (function(modules) {
 	    if (next === 61) return finishOp(_assign, 2);
 	    return finishOp(_plusMin, 1);
 	  }
-	
+
 	  function readToken_lt_gt(code) { 
 	    var next = input.charCodeAt(tokPos + 1);
 	    var size = 1;
@@ -1825,7 +1825,7 @@ return  (function(modules) {
 	      size = input.charCodeAt(tokPos + 2) === 61 ? 3 : 2;
 	    return finishOp(_relational, size);
 	  }
-	
+
 	  function readToken_eq_excl(code) { 
 	    var next = input.charCodeAt(tokPos + 1);
 	    if (next === 61) return finishOp(_equality, input.charCodeAt(tokPos + 2) === 61 ? 3 : 2);
@@ -1835,14 +1835,14 @@ return  (function(modules) {
 	    }
 	    return finishOp(code === 61 ? _eq : _prefix, 1);
 	  }
-	
+
 	  function getTokenFromCode(code) {
 	    switch (code) {
 	    
 	    
 	    case 46: 
 	      return readToken_dot();
-	
+
 	    
 	    case 40: ++tokPos; return finishToken(_parenL);
 	    case 41: ++tokPos; return finishToken(_parenR);
@@ -1862,13 +1862,13 @@ return  (function(modules) {
 	        return finishToken(_braceR);
 	    case 58: ++tokPos; return finishToken(_colon);
 	    case 63: ++tokPos; return finishToken(_question);
-	
+
 	    case 96: 
 	      if (options.ecmaVersion >= 6) {
 	        ++tokPos;
 	        return readTemplateString(_template);
 	      }
-	
+
 	    case 48: 
 	      var next = input.charCodeAt(tokPos + 1);
 	      if (next === 120 || next === 88) return readRadixNumber(16); 
@@ -1880,59 +1880,59 @@ return  (function(modules) {
 	    
 	    case 49: case 50: case 51: case 52: case 53: case 54: case 55: case 56: case 57: 
 	      return readNumber(false);
-	
+
 	    
 	    case 34: case 39: 
 	      return readString(code);
-	
+
 	    
 	    
 	    
 	    
-	
+
 	    case 47: 
 	      return readToken_slash();
-	
+
 	    case 37: case 42: 
 	      return readToken_mult_modulo(code);
-	
+
 	    case 124: case 38: 
 	      return readToken_pipe_amp(code);
-	
+
 	    case 94: 
 	      return readToken_caret();
-	
+
 	    case 43: case 45: 
 	      return readToken_plus_min(code);
-	
+
 	    case 60: case 62: 
 	      return readToken_lt_gt(code);
-	
+
 	    case 61: case 33: 
 	      return readToken_eq_excl(code);
-	
+
 	    case 126: 
 	      return finishOp(_prefix, 1);
 	    }
-	
+
 	    return false;
 	  }
-	
+
 	  function readToken(forceRegexp) {
 	    if (!forceRegexp) tokStart = tokPos;
 	    else tokPos = tokStart + 1;
 	    if (options.locations) tokStartLoc = curPosition();
 	    if (forceRegexp) return readRegexp();
 	    if (tokPos >= inputLen) return finishToken(_eof);
-	
+
 	    var code = input.charCodeAt(tokPos);
-	
+
 	    
 	    
 	    if (isIdentifierStart(code) || code === 92 ) return readWord();
-	
+
 	    var tok = getTokenFromCode(code);
-	
+
 	    if (tok === false) {
 	      
 	      
@@ -1942,20 +1942,20 @@ return  (function(modules) {
 	    }
 	    return tok;
 	  }
-	
+
 	  function finishOp(type, size) {
 	    var str = input.slice(tokPos, tokPos + size);
 	    tokPos += size;
 	    finishToken(type, str);
 	  }
-	
+
 	  var regexpUnicodeSupport = false;
 	  try { new RegExp("\uffff", "u"); regexpUnicodeSupport = true; }
 	  catch(e) {}
-	
+
 	  
 	  
-	
+
 	  function readRegexp() {
 	    var content = "", escaped, inClass, start = tokPos;
 	    for (;;) {
@@ -2006,11 +2006,11 @@ return  (function(modules) {
 	    }
 	    return finishToken(_regexp, {pattern: content, flags: mods, value: value});
 	  }
-	
+
 	  
 	  
 	  
-	
+
 	  function readInt(radix, len) {
 	    var start = tokPos, total = 0;
 	    for (var i = 0, e = len == null ? Infinity : len; i < e; ++i) {
@@ -2024,10 +2024,10 @@ return  (function(modules) {
 	      total = total * radix + val;
 	    }
 	    if (tokPos === start || len != null && tokPos - start !== len) return null;
-	
+
 	    return total;
 	  }
-	
+
 	  function readRadixNumber(radix) {
 	    tokPos += 2; 
 	    var val = readInt(radix);
@@ -2035,9 +2035,9 @@ return  (function(modules) {
 	    if (isIdentifierStart(input.charCodeAt(tokPos))) raise(tokPos, "Identifier directly after number");
 	    return finishToken(_num, val);
 	  }
-	
+
 	  
-	
+
 	  function readNumber(startsWithDot) {
 	    var start = tokPos, isFloat = false, octal = input.charCodeAt(tokPos) === 48;
 	    if (!startsWithDot && readInt(10) === null) raise(start, "Invalid number");
@@ -2054,7 +2054,7 @@ return  (function(modules) {
 	      isFloat = true;
 	    }
 	    if (isIdentifierStart(input.charCodeAt(tokPos))) raise(tokPos, "Identifier directly after number");
-	
+
 	    var str = input.slice(start, tokPos), val;
 	    if (isFloat) val = parseFloat(str);
 	    else if (!octal || str.length === 1) val = parseInt(str, 10);
@@ -2062,12 +2062,12 @@ return  (function(modules) {
 	    else val = parseInt(str, 8);
 	    return finishToken(_num, val);
 	  }
-	
+
 	  
-	
+
 	  function readCodePoint() {
 	    var ch = input.charCodeAt(tokPos), code;
-	
+
 	    if (ch === 123) {
 	      if (options.ecmaVersion < 6) unexpected();
 	      ++tokPos;
@@ -2077,7 +2077,7 @@ return  (function(modules) {
 	    } else {
 	      code = readHexChar(4);
 	    }
-	
+
 	    
 	    if (code <= 0xFFFF) {
 	      return String.fromCharCode(code);
@@ -2086,7 +2086,7 @@ return  (function(modules) {
 	    var cu2 = ((code - 0x10000) & 1023) + 0xDC00;
 	    return String.fromCharCode(cu1, cu2);
 	  }
-	
+
 	  function readString(quote) {
 	    ++tokPos;
 	    var out = "";
@@ -2108,7 +2108,7 @@ return  (function(modules) {
 	      }
 	    }
 	  }
-	
+
 	  function readTemplateString(type) {
 	    if (type == _templateContinued) templates.pop();
 	    var out = "", start = tokPos;;
@@ -2121,7 +2121,7 @@ return  (function(modules) {
 	        if (ch == "$") { ++tokPos; templates.push(1); }
 	        return finishToken(type, {cooked: out, raw: raw});
 	      }
-	
+
 	      if (ch === "\\") { 
 	        out += readEscapedChar();
 	      } else {
@@ -2140,9 +2140,9 @@ return  (function(modules) {
 	      }
 	    }
 	  }
-	
+
 	  
-	
+
 	  function readEscapedChar() {
 	    var ch = input.charCodeAt(++tokPos);
 	    var octal = /^[0-7]+/.exec(input.slice(tokPos, tokPos + 3));
@@ -2173,27 +2173,27 @@ return  (function(modules) {
 	      }
 	    }
 	  }
-	
+
 	  
-	
+
 	  function readHexChar(len) {
 	    var n = readInt(16, len);
 	    if (n === null) raise(tokStart, "Bad character escape sequence");
 	    return n;
 	  }
-	
+
 	  
 	  
 	  
-	
+
 	  var containsEsc;
-	
+
 	  
 	  
 	  
 	  
 	  
-	
+
 	  function readWord1() {
 	    containsEsc = false;
 	    var word, first = true, start = tokPos;
@@ -2221,10 +2221,10 @@ return  (function(modules) {
 	    }
 	    return containsEsc ? word : input.slice(start, tokPos);
 	  }
-	
+
 	  
 	  
-	
+
 	  function readWord() {
 	    var word = readWord1();
 	    var type = _name;
@@ -2232,11 +2232,9 @@ return  (function(modules) {
 	      type = keywordTypes[word];
 	    return finishToken(type, word);
 	  }
-	
+
 	  
-	
-	  
-	  
+
 	  
 	  
 	  
@@ -2252,21 +2250,23 @@ return  (function(modules) {
 	  
 	  
 	  
-	
 	  
-	
 	  
-	
+
+	  
+
+	  
+
 	  function next() {
 	    lastStart = tokStart;
 	    lastEnd = tokEnd;
 	    lastEndLoc = tokEndLoc;
 	    readToken();
 	  }
-	
+
 	  
 	  
-	
+
 	  function setStrict(strct) {
 	    strict = strct;
 	    tokPos = tokStart;
@@ -2279,23 +2279,23 @@ return  (function(modules) {
 	    skipSpace();
 	    readToken();
 	  }
-	
+
 	  
-	
+
 	  function Node() {
 	    this.type = null;
 	    this.start = tokStart;
 	    this.end = null;
 	  }
-	
+
 	  exports.Node = Node;
-	
+
 	  function SourceLocation() {
 	    this.start = tokStartLoc;
 	    this.end = null;
 	    if (sourceFile !== null) this.source = sourceFile;
 	  }
-	
+
 	  function startNode() {
 	    var node = new Node();
 	    if (options.locations)
@@ -2306,15 +2306,15 @@ return  (function(modules) {
 	      node.range = [tokStart, 0];
 	    return node;
 	  }
-	
+
 	  
 	  
 	  
-	
+
 	  function storeCurrentPos() {
 	    return options.locations ? [tokStart, tokStartLoc] : tokStart;
 	  }
-	
+
 	  function startNodeAt(pos) {
 	    var node = new Node(), start = pos;
 	    if (options.locations) {
@@ -2327,12 +2327,12 @@ return  (function(modules) {
 	      node.sourceFile = options.directSourceFile;
 	    if (options.ranges)
 	      node.range = [start, 0];
-	
+
 	    return node;
 	  }
-	
+
 	  
-	
+
 	  function finishNode(node, type) {
 	    node.type = type;
 	    node.end = lastEnd;
@@ -2342,7 +2342,7 @@ return  (function(modules) {
 	      node.range[1] = lastEnd;
 	    return node;
 	  }
-	
+
 	  function finishNodeAt(node, type, pos) {
 	    if (options.locations) { node.loc.end = pos[1]; pos = pos[0]; }
 	    node.type = type;
@@ -2351,17 +2351,17 @@ return  (function(modules) {
 	      node.range[1] = pos;
 	    return node;
 	  }
-	
+
 	  
-	
+
 	  function isUseStrict(stmt) {
 	    return options.ecmaVersion >= 5 && stmt.type === "ExpressionStatement" &&
 	      stmt.expression.type === "Literal" && stmt.expression.value === "use strict";
 	  }
-	
+
 	  
 	  
-	
+
 	  function eat(type) {
 	    if (tokType === type) {
 	      next();
@@ -2370,49 +2370,49 @@ return  (function(modules) {
 	      return false;
 	    }
 	  }
-	
+
 	  
-	
+
 	  function canInsertSemicolon() {
 	    return !options.strictSemicolons &&
 	      (tokType === _eof || tokType === _braceR || newline.test(input.slice(lastEnd, tokStart)));
 	  }
-	
+
 	  
 	  
-	
+
 	  function semicolon() {
 	    if (!eat(_semi) && !canInsertSemicolon()) unexpected();
 	  }
-	
+
 	  
 	  
-	
+
 	  function expect(type) {
 	    eat(type) || unexpected();
 	  }
-	
+
 	  
-	
+
 	  function unexpected(pos) {
 	    raise(pos != null ? pos : tokStart, "Unexpected token");
 	  }
-	
+
 	  
-	
+
 	  function has(obj, propName) {
 	    return Object.prototype.hasOwnProperty.call(obj, propName);
 	  }
 	  
 	  
-	
+
 	  function toAssignable(node, allowSpread, checkType) {
 	    if (options.ecmaVersion >= 6 && node) {
 	      switch (node.type) {
 	        case "Identifier":
 	        case "MemberExpression":
 	          break;
-	
+
 	        case "ObjectExpression":
 	          node.type = "ObjectPattern";
 	          for (var i = 0; i < node.properties.length; i++) {
@@ -2421,14 +2421,14 @@ return  (function(modules) {
 	            toAssignable(prop.value, false, checkType);
 	          }
 	          break;
-	
+
 	        case "ArrayExpression":
 	          node.type = "ArrayPattern";
 	          for (var i = 0, lastI = node.elements.length - 1; i <= lastI; i++) {
 	            toAssignable(node.elements[i], i === lastI, checkType);
 	          }
 	          break;
-	
+
 	        case "SpreadElement":
 	          if (allowSpread) {
 	            toAssignable(node.argument, false, checkType);
@@ -2437,24 +2437,24 @@ return  (function(modules) {
 	            unexpected(node.start);
 	          }
 	          break;
-	
+
 	        default:
 	          if (checkType) unexpected(node.start);
 	      }
 	    }
 	    return node;
 	  }
-	
+
 	  
-	
+
 	  function checkSpreadAssign(node) {
 	    if (node.type !== "Identifier" && node.type !== "ArrayPattern")
 	      unexpected(node.start);
 	  }
-	
+
 	  
 	  
-	
+
 	  function checkFunctionParam(param, nameHash) {
 	    switch (param.type) {
 	      case "Identifier":
@@ -2464,12 +2464,12 @@ return  (function(modules) {
 	          raise(param.start, "Argument name clash in strict mode");
 	        nameHash[param.name] = true;
 	        break;
-	
+
 	      case "ObjectPattern":
 	        for (var i = 0; i < param.properties.length; i++)
 	          checkFunctionParam(param.properties[i].value, nameHash);
 	        break;
-	
+
 	      case "ArrayPattern":
 	        for (var i = 0; i < param.elements.length; i++) {
 	          var elem = param.elements[i];
@@ -2478,12 +2478,12 @@ return  (function(modules) {
 	        break;
 	    }
 	  }
-	
+
 	  
 	  
 	  
 	  
-	
+
 	  function checkPropClash(prop, propHash) {
 	    if (options.ecmaVersion >= 6) return;
 	    var key = prop.key, name;
@@ -2507,10 +2507,10 @@ return  (function(modules) {
 	    }
 	    other[kind] = true;
 	  }
-	
+
 	  
 	  
-	
+
 	  function checkLVal(expr, isBinding) {
 	    switch (expr.type) {
 	      case "Identifier":
@@ -2520,37 +2520,37 @@ return  (function(modules) {
 	            : "Assigning to " + expr.name + " in strict mode"
 	          );
 	        break;
-	
+
 	      case "MemberExpression":
 	        if (!isBinding) break;
-	
+
 	      case "ObjectPattern":
 	        for (var i = 0; i < expr.properties.length; i++)
 	          checkLVal(expr.properties[i].value, isBinding);
 	        break;
-	
+
 	      case "ArrayPattern":
 	        for (var i = 0; i < expr.elements.length; i++) {
 	          var elem = expr.elements[i];
 	          if (elem) checkLVal(elem, isBinding);
 	        }
 	        break;
-	
+
 	      case "SpreadElement":
 	        break;
-	
+
 	      default:
 	        raise(expr.start, "Assigning to rvalue");
 	    }
 	  }
-	
+
 	  
-	
-	  
-	  
+
 	  
 	  
-	
+	  
+	  
+
 	  function parseTopLevel(node) {
 	    var first = true;
 	    if (!node.body) node.body = [];
@@ -2560,32 +2560,32 @@ return  (function(modules) {
 	      if (first && isUseStrict(stmt)) setStrict(true);
 	      first = false;
 	    }
-	
+
 	    lastStart = tokStart;
 	    lastEnd = tokEnd;
 	    lastEndLoc = tokEndLoc;
 	    return finishNode(node, "Program");
 	  }
-	
+
 	  var loopLabel = {kind: "loop"}, switchLabel = {kind: "switch"};
-	
+
 	  
 	  
 	  
 	  
 	  
 	  
-	
+
 	  function parseStatement(topLevel) {
 	    if (tokType === _slash || tokType === _assign && tokVal == "/=")
 	      readToken(true);
-	
+
 	    var starttype = tokType, node = startNode();
-	
+
 	    
 	    
 	    
-	
+
 	    switch (starttype) {
 	    case _break: case _continue: return parseBreakContinueStatement(node, starttype.keyword);
 	    case _debugger: return parseDebuggerStatement(node);
@@ -2608,7 +2608,7 @@ return  (function(modules) {
 	      if (!topLevel && !options.allowImportExportEverywhere)
 	        raise(tokStart, "'import' and 'export' may only appear at the top level");
 	      return starttype === _import ? parseImport(node) : parseExport(node);
-	
+
 	      
 	      
 	      
@@ -2621,7 +2621,7 @@ return  (function(modules) {
 	      else return parseExpressionStatement(node, expr);
 	    }
 	  }
-	
+
 	  function parseBreakContinueStatement(node, keyword) {
 	    var isBreak = keyword == "break";
 	    next();
@@ -2631,7 +2631,7 @@ return  (function(modules) {
 	      node.label = parseIdent();
 	      semicolon();
 	    }
-	
+
 	    
 	    
 	    for (var i = 0; i < labels.length; ++i) {
@@ -2644,13 +2644,13 @@ return  (function(modules) {
 	    if (i === labels.length) raise(node.start, "Unsyntactic " + keyword);
 	    return finishNode(node, isBreak ? "BreakStatement" : "ContinueStatement");
 	  }
-	
+
 	  function parseDebuggerStatement(node) {
 	    next();
 	    semicolon();
 	    return finishNode(node, "DebuggerStatement");
 	  }
-	
+
 	  function parseDoStatement(node) {
 	    next();
 	    labels.push(loopLabel);
@@ -2664,7 +2664,7 @@ return  (function(modules) {
 	      semicolon();
 	    return finishNode(node, "DoWhileStatement");
 	  }
-	
+
 	  
 	  
 	  
@@ -2672,7 +2672,7 @@ return  (function(modules) {
 	  
 	  
 	  
-	
+
 	  function parseForStatement(node) {
 	    next();
 	    labels.push(loopLabel);
@@ -2695,12 +2695,12 @@ return  (function(modules) {
 	    }
 	    return parseFor(node, init);
 	  }
-	
+
 	  function parseFunctionStatement(node) {
 	    next();
 	    return parseFunction(node, true);
 	  }
-	
+
 	  function parseIfStatement(node) {
 	    next();
 	    node.test = parseParenExpression();
@@ -2708,32 +2708,32 @@ return  (function(modules) {
 	    node.alternate = eat(_else) ? parseStatement() : null;
 	    return finishNode(node, "IfStatement");
 	  }
-	
+
 	  function parseReturnStatement(node) {
 	    if (!inFunction && !options.allowReturnOutsideFunction)
 	      raise(tokStart, "'return' outside of function");
 	    next();
-	
+
 	    
 	    
 	    
-	
+
 	    if (eat(_semi) || canInsertSemicolon()) node.argument = null;
 	    else { node.argument = parseExpression(); semicolon(); }
 	    return finishNode(node, "ReturnStatement");
 	  }
-	
+
 	  function parseSwitchStatement(node) {
 	    next();
 	    node.discriminant = parseParenExpression();
 	    node.cases = [];
 	    expect(_braceL);
 	    labels.push(switchLabel);
-	
+
 	    
 	    
 	    
-	
+
 	    for (var cur, sawDefault; tokType != _braceR;) {
 	      if (tokType === _case || tokType === _default) {
 	        var isCase = tokType === _case;
@@ -2757,7 +2757,7 @@ return  (function(modules) {
 	    labels.pop();
 	    return finishNode(node, "SwitchStatement");
 	  }
-	
+
 	  function parseThrowStatement(node) {
 	    next();
 	    if (newline.test(input.slice(lastEnd, tokStart)))
@@ -2766,7 +2766,7 @@ return  (function(modules) {
 	    semicolon();
 	    return finishNode(node, "ThrowStatement");
 	  }
-	
+
 	  function parseTryStatement(node) {
 	    next();
 	    node.block = parseBlock();
@@ -2789,14 +2789,14 @@ return  (function(modules) {
 	      raise(node.start, "Missing catch or finally clause");
 	    return finishNode(node, "TryStatement");
 	  }
-	
+
 	  function parseVarStatement(node, kind) {
 	    next();
 	    parseVar(node, false, kind);
 	    semicolon();
 	    return finishNode(node, "VariableDeclaration");
 	  }
-	
+
 	  function parseWhileStatement(node) {
 	    next();
 	    node.test = parseParenExpression();
@@ -2805,7 +2805,7 @@ return  (function(modules) {
 	    labels.pop();
 	    return finishNode(node, "WhileStatement");
 	  }
-	
+
 	  function parseWithStatement(node) {
 	    if (strict) raise(tokStart, "'with' in strict mode");
 	    next();
@@ -2813,12 +2813,12 @@ return  (function(modules) {
 	    node.body = parseStatement();
 	    return finishNode(node, "WithStatement");
 	  }
-	
+
 	  function parseEmptyStatement(node) {
 	    next();
 	    return finishNode(node, "EmptyStatement");
 	  }
-	
+
 	  function parseLabeledStatement(node, maybeName, expr) {
 	    for (var i = 0; i < labels.length; ++i)
 	      if (labels[i].name === maybeName) raise(expr.start, "Label '" + maybeName + "' is already declared");
@@ -2829,27 +2829,27 @@ return  (function(modules) {
 	    node.label = expr;
 	    return finishNode(node, "LabeledStatement");
 	  }
-	
+
 	  function parseExpressionStatement(node, expr) {
 	    node.expression = expr;
 	    semicolon();
 	    return finishNode(node, "ExpressionStatement");
 	  }
-	
+
 	  
 	  
-	
+
 	  function parseParenExpression() {
 	    expect(_parenL);
 	    var val = parseExpression();
 	    expect(_parenR);
 	    return val;
 	  }
-	
+
 	  
 	  
 	  
-	
+
 	  function parseBlock(allowStrict) {
 	    var node = startNode(), first = true, oldStrict;
 	    node.body = [];
@@ -2866,11 +2866,11 @@ return  (function(modules) {
 	    if (oldStrict === false) setStrict(false);
 	    return finishNode(node, "BlockStatement");
 	  }
-	
+
 	  
 	  
 	  
-	
+
 	  function parseFor(node, init) {
 	    node.init = init;
 	    expect(_semi);
@@ -2882,10 +2882,10 @@ return  (function(modules) {
 	    labels.pop();
 	    return finishNode(node, "ForStatement");
 	  }
-	
+
 	  
 	  
-	
+
 	  function parseForIn(node, init) {
 	    var type = tokType === _in ? "ForInStatement" : "ForOfStatement";
 	    next();
@@ -2896,9 +2896,9 @@ return  (function(modules) {
 	    labels.pop();
 	    return finishNode(node, type);
 	  }
-	
+
 	  
-	
+
 	  function parseVar(node, noIn, kind) {
 	    node.declarations = [];
 	    node.kind = kind;
@@ -2912,19 +2912,19 @@ return  (function(modules) {
 	    }
 	    return node;
 	  }
-	
+
 	  
-	
-	  
-	  
+
 	  
 	  
 	  
-	
+	  
+	  
+
 	  
 	  
 	  
-	
+
 	  function parseExpression(noComma, noIn) {
 	    var start = storeCurrentPos();
 	    var expr = parseMaybeAssign(noIn);
@@ -2936,10 +2936,10 @@ return  (function(modules) {
 	    }
 	    return expr;
 	  }
-	
+
 	  
 	  
-	
+
 	  function parseMaybeAssign(noIn) {
 	    var start = storeCurrentPos();
 	    var left = parseMaybeConditional(noIn);
@@ -2954,9 +2954,9 @@ return  (function(modules) {
 	    }
 	    return left;
 	  }
-	
+
 	  
-	
+
 	  function parseMaybeConditional(noIn) {
 	    var start = storeCurrentPos();
 	    var expr = parseExprOps(noIn);
@@ -2970,20 +2970,20 @@ return  (function(modules) {
 	    }
 	    return expr;
 	  }
-	
+
 	  
-	
+
 	  function parseExprOps(noIn) {
 	    var start = storeCurrentPos();
 	    return parseExprOp(parseMaybeUnary(), start, -1, noIn);
 	  }
-	
+
 	  
 	  
 	  
 	  
 	  
-	
+
 	  function parseExprOp(left, leftStart, minPrec, noIn) {
 	    var prec = tokType.binop;
 	    if (prec != null && (!noIn || tokType !== _in)) {
@@ -3001,9 +3001,9 @@ return  (function(modules) {
 	    }
 	    return left;
 	  }
-	
+
 	  
-	
+
 	  function parseMaybeUnary() {
 	    if (tokType.prefix) {
 	      var node = startNode(), update = tokType.isUpdate, nodeType;
@@ -3036,14 +3036,14 @@ return  (function(modules) {
 	    }
 	    return expr;
 	  }
-	
+
 	  
-	
+
 	  function parseExprSubscripts() {
 	    var start = storeCurrentPos();
 	    return parseSubscripts(parseExprAtom(), start);
 	  }
-	
+
 	  function parseSubscripts(base, start, noCalls) {
 	    if (eat(_dot)) {
 	      var node = startNodeAt(start);
@@ -3070,22 +3070,22 @@ return  (function(modules) {
 	      return parseSubscripts(finishNode(node, "TaggedTemplateExpression"), start, noCalls);
 	    } return base;
 	  }
-	
+
 	  
 	  
 	  
 	  
-	
+
 	  function parseExprAtom() {
 	    switch (tokType) {
 	    case _this:
 	      var node = startNode();
 	      next();
 	      return finishNode(node, "ThisExpression");
-	
+
 	    case _yield:
 	      if (inGenerator) return parseYield();
-	
+
 	    case _name:
 	      var start = storeCurrentPos();
 	      var id = parseIdent(tokType !== _name);
@@ -3093,7 +3093,7 @@ return  (function(modules) {
 	        return parseArrowExpression(startNodeAt(start), [id]);
 	      }
 	      return id;
-	
+
 	    case _regexp:
 	      var node = startNode();
 	      node.regex = {pattern: tokVal.pattern, flags: tokVal.flags};
@@ -3101,21 +3101,21 @@ return  (function(modules) {
 	      node.raw = input.slice(tokStart, tokEnd);
 	      next();
 	      return finishNode(node, "Literal");
-	
+
 	    case _num: case _string:
 	      var node = startNode();
 	      node.value = tokVal;
 	      node.raw = input.slice(tokStart, tokEnd);
 	      next();
 	      return finishNode(node, "Literal");
-	
+
 	    case _null: case _true: case _false:
 	      var node = startNode();
 	      node.value = tokType.atomValue;
 	      node.raw = tokType.keyword;
 	      next();
 	      return finishNode(node, "Literal");
-	
+
 	    case _parenL:
 	      var start = storeCurrentPos();
 	      var val, exprList;
@@ -3144,7 +3144,7 @@ return  (function(modules) {
 	              if (exprList[i].type === "SpreadElement") unexpected();
 	            }
 	          }
-	
+
 	          if (options.preserveParens) {
 	            var par = startNodeAt(start);
 	            par.expression = val;
@@ -3153,7 +3153,7 @@ return  (function(modules) {
 	        }
 	      }
 	      return val;
-	
+
 	    case _bracketL:
 	      var node = startNode();
 	      next();
@@ -3163,33 +3163,33 @@ return  (function(modules) {
 	      }
 	      node.elements = parseExprList(_bracketR, true, true);
 	      return finishNode(node, "ArrayExpression");
-	
+
 	    case _braceL:
 	      return parseObj();
-	
+
 	    case _function:
 	      var node = startNode();
 	      next();
 	      return parseFunction(node, false);
-	
+
 	    case _class:
 	      return parseClass(startNode(), false);
-	
+
 	    case _new:
 	      return parseNew();
-	
+
 	    case _template:
 	      return parseTemplate();
-	
+
 	    default:
 	      unexpected();
 	    }
 	  }
-	
+
 	  
 	  
 	  
-	
+
 	  function parseNew() {
 	    var node = startNode();
 	    next();
@@ -3199,9 +3199,9 @@ return  (function(modules) {
 	    else node.arguments = empty;
 	    return finishNode(node, "NewExpression");
 	  }
-	
+
 	  
-	
+
 	  function parseTemplateElement() {
 	    var elem = startNodeAt(options.locations ? [tokStart + 1, tokStartLoc.offset(1)] : tokStart + 1);
 	    elem.value = tokVal;
@@ -3210,7 +3210,7 @@ return  (function(modules) {
 	    var endOff = elem.tail ? 1 : 2;
 	    return finishNodeAt(elem, "TemplateElement", options.locations ? [lastEnd - endOff, lastEndLoc.offset(-endOff)] : lastEnd - endOff);
 	  }
-	
+
 	  function parseTemplate() {
 	    var node = startNode();
 	    node.expressions = [];
@@ -3223,9 +3223,9 @@ return  (function(modules) {
 	    }
 	    return finishNode(node, "TemplateLiteral");
 	  }
-	
+
 	  
-	
+
 	  function parseObj() {
 	    var node = startNode(), first = true, propHash = {};
 	    node.properties = [];
@@ -3235,7 +3235,7 @@ return  (function(modules) {
 	        expect(_comma);
 	        if (options.allowTrailingCommas && eat(_braceR)) break;
 	      } else first = false;
-	
+
 	      var prop = startNode(), isGenerator;
 	      if (options.ecmaVersion >= 6) {
 	        prop.method = false;
@@ -3261,13 +3261,13 @@ return  (function(modules) {
 	        prop.value = prop.key;
 	        prop.shorthand = true;
 	      } else unexpected();
-	
+
 	      checkPropClash(prop, propHash);
 	      node.properties.push(finishNode(prop, "Property"));
 	    }
 	    return finishNode(node, "ObjectExpression");
 	  }
-	
+
 	  function parsePropertyName(prop) {
 	    if (options.ecmaVersion >= 6) {
 	      if (eat(_bracketL)) {
@@ -3281,9 +3281,9 @@ return  (function(modules) {
 	    }
 	    prop.key = (tokType === _num || tokType === _string) ? parseExprAtom() : parseIdent(true);
 	  }
-	
+
 	  
-	
+
 	  function initFunction(node) {
 	    node.id = null;
 	    node.params = [];
@@ -3293,10 +3293,10 @@ return  (function(modules) {
 	      node.generator = false;
 	    }
 	  }
-	
+
 	  
 	  
-	
+
 	  function parseFunction(node, isStatement, allowExpressionBody) {
 	    initFunction(node);
 	    if (options.ecmaVersion >= 6) {
@@ -3309,9 +3309,9 @@ return  (function(modules) {
 	    parseFunctionBody(node, allowExpressionBody);
 	    return finishNode(node, isStatement ? "FunctionDeclaration" : "FunctionExpression");
 	  }
-	
+
 	  
-	
+
 	  function parseMethod(isGenerator) {
 	    var node = startNode();
 	    initFunction(node);
@@ -3326,17 +3326,17 @@ return  (function(modules) {
 	    parseFunctionBody(node, allowExpressionBody);
 	    return finishNode(node, "FunctionExpression");
 	  }
-	
+
 	  
-	
+
 	  function parseArrowExpression(node, params) {
 	    initFunction(node);
-	
+
 	    var defaults = node.defaults, hasDefaults = false;
-	
+
 	    for (var i = 0, lastI = params.length - 1; i <= lastI; i++) {
 	      var param = params[i];
-	
+
 	      if (param.type === "AssignmentExpression" && param.operator === "=") {
 	        hasDefaults = true;
 	        params[i] = param.left;
@@ -3351,19 +3351,19 @@ return  (function(modules) {
 	        }
 	      }
 	    }
-	
+
 	    node.params = params;
 	    if (!hasDefaults) node.defaults = [];
-	
+
 	    parseFunctionBody(node, true);
 	    return finishNode(node, "ArrowFunctionExpression");
 	  }
-	
+
 	  
-	
+
 	  function parseFunctionParams(node) {
 	    var defaults = [], hasDefaults = false;
-	
+
 	    expect(_parenL);
 	    for (;;) {
 	      if (eat(_parenR)) {
@@ -3390,15 +3390,15 @@ return  (function(modules) {
 	        }
 	      }
 	    }
-	
+
 	    if (hasDefaults) node.defaults = defaults;
 	  }
-	
+
 	  
-	
+
 	  function parseFunctionBody(node, allowExpression) {
 	    var isExpression = allowExpression && tokType !== _braceL;
-	
+
 	    if (isExpression) {
 	      node.body = parseExpression(true);
 	      node.expression = true;
@@ -3411,7 +3411,7 @@ return  (function(modules) {
 	      node.expression = false;
 	      inFunction = oldInFunc; inGenerator = oldInGen; labels = oldLabels;
 	    }
-	
+
 	    
 	    
 	    
@@ -3425,10 +3425,10 @@ return  (function(modules) {
 	        checkFunctionParam(node.rest, nameHash);
 	    }
 	  }
-	
+
 	  
 	  
-	
+
 	  function parseClass(node, isStatement) {
 	    next();
 	    node.id = tokType === _name ? parseIdent() : isStatement ? unexpected() : null;
@@ -3461,13 +3461,13 @@ return  (function(modules) {
 	    node.body = finishNode(classBody, "ClassBody");
 	    return finishNode(node, isStatement ? "ClassDeclaration" : "ClassExpression");
 	  }
-	
+
 	  
 	  
 	  
 	  
 	  
-	
+
 	  function parseExprList(close, allowTrailingComma, allowEmpty) {
 	    var elts = [], first = true;
 	    while (!eat(close)) {
@@ -3475,17 +3475,17 @@ return  (function(modules) {
 	        expect(_comma);
 	        if (allowTrailingComma && options.allowTrailingCommas && eat(close)) break;
 	      } else first = false;
-	
+
 	      if (allowEmpty && tokType === _comma) elts.push(null);
 	      else elts.push(parseExpression(true));
 	    }
 	    return elts;
 	  }
-	
+
 	  
 	  
 	  
-	
+
 	  function parseIdent(liberal) {
 	    var node = startNode();
 	    if (liberal && options.forbidReserved == "everywhere") liberal = false;
@@ -3506,9 +3506,9 @@ return  (function(modules) {
 	    next();
 	    return finishNode(node, "Identifier");
 	  }
-	
+
 	  
-	
+
 	  function parseExport(node) {
 	    next();
 	    
@@ -3543,9 +3543,9 @@ return  (function(modules) {
 	    }
 	    return finishNode(node, "ExportDeclaration");
 	  }
-	
+
 	  
-	
+
 	  function parseExportSpecifiers() {
 	    var nodes = [], first = true;
 	    if (tokType === _star) {
@@ -3561,7 +3561,7 @@ return  (function(modules) {
 	          expect(_comma);
 	          if (options.allowTrailingCommas && eat(_braceR)) break;
 	        } else first = false;
-	
+
 	        var node = startNode();
 	        node.id = parseIdent(tokType === _default);
 	        if (tokType === _name && tokVal === "as") {
@@ -3575,9 +3575,9 @@ return  (function(modules) {
 	    }
 	    return nodes;
 	  }
-	
+
 	  
-	
+
 	  function parseImport(node) {
 	    next();
 	    
@@ -3594,9 +3594,9 @@ return  (function(modules) {
 	    semicolon();
 	    return finishNode(node, "ImportDeclaration");
 	  }
-	
+
 	  
-	
+
 	  function parseImportSpecifiers() {
 	    var nodes = [], first = true;
 	    if (tokType === _name) {
@@ -3625,7 +3625,7 @@ return  (function(modules) {
 	        expect(_comma);
 	        if (options.allowTrailingCommas && eat(_braceR)) break;
 	      } else first = false;
-	
+
 	      var node = startNode();
 	      node.id = parseIdent(true);
 	      if (tokType === _name && tokVal === "as") {
@@ -3640,9 +3640,9 @@ return  (function(modules) {
 	    }
 	    return nodes;
 	  }
-	
+
 	  
-	
+
 	  function parseYield() {
 	    var node = startNode();
 	    next();
@@ -3655,9 +3655,9 @@ return  (function(modules) {
 	    }
 	    return finishNode(node, "YieldExpression");
 	  }
-	
+
 	  
-	
+
 	  function parseComprehension(node, isGenerator) {
 	    node.blocks = [];
 	    while (tokType === _for) {
@@ -3681,7 +3681,7 @@ return  (function(modules) {
 	    node.generator = isGenerator;
 	    return finishNode(node, "ComprehensionExpression");
 	  }
-	
+
 	});
 
 
@@ -3715,12 +3715,12 @@ return  (function(modules) {
 	    var define = require('amdefine')(module, require);
 	}
 	!(__WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, module) {
-	
+
 	  var base64VLQ = __webpack_require__(806);
 	  var util = __webpack_require__(808);
 	  var ArraySet = __webpack_require__(809).ArraySet;
 	  var MappingList = __webpack_require__(810).MappingList;
-	
+
 	  
 
 
@@ -3741,9 +3741,9 @@ return  (function(modules) {
 	    this._mappings = new MappingList();
 	    this._sourcesContents = null;
 	  }
-	
+
 	  SourceMapGenerator.prototype._version = 3;
-	
+
 	  
 
 
@@ -3763,23 +3763,23 @@ return  (function(modules) {
 	            column: mapping.generatedColumn
 	          }
 	        };
-	
+
 	        if (mapping.source != null) {
 	          newMapping.source = mapping.source;
 	          if (sourceRoot != null) {
 	            newMapping.source = util.relative(sourceRoot, newMapping.source);
 	          }
-	
+
 	          newMapping.original = {
 	            line: mapping.originalLine,
 	            column: mapping.originalColumn
 	          };
-	
+
 	          if (mapping.name != null) {
 	            newMapping.name = mapping.name;
 	          }
 	        }
-	
+
 	        generator.addMapping(newMapping);
 	      });
 	      aSourceMapConsumer.sources.forEach(function (sourceFile) {
@@ -3790,7 +3790,7 @@ return  (function(modules) {
 	      });
 	      return generator;
 	    };
-	
+
 	  
 
 
@@ -3807,19 +3807,19 @@ return  (function(modules) {
 	      var original = util.getArg(aArgs, 'original', null);
 	      var source = util.getArg(aArgs, 'source', null);
 	      var name = util.getArg(aArgs, 'name', null);
-	
+
 	      if (!this._skipValidation) {
 	        this._validateMapping(generated, original, source, name);
 	      }
-	
+
 	      if (source != null && !this._sources.has(source)) {
 	        this._sources.add(source);
 	      }
-	
+
 	      if (name != null && !this._names.has(name)) {
 	        this._names.add(name);
 	      }
-	
+
 	      this._mappings.add({
 	        generatedLine: generated.line,
 	        generatedColumn: generated.column,
@@ -3829,7 +3829,7 @@ return  (function(modules) {
 	        name: name
 	      });
 	    };
-	
+
 	  
 
 
@@ -3839,7 +3839,7 @@ return  (function(modules) {
 	      if (this._sourceRoot != null) {
 	        source = util.relative(this._sourceRoot, source);
 	      }
-	
+
 	      if (aSourceContent != null) {
 	        
 	        
@@ -3856,7 +3856,7 @@ return  (function(modules) {
 	        }
 	      }
 	    };
-	
+
 	  
 
 
@@ -3895,7 +3895,7 @@ return  (function(modules) {
 	      
 	      var newSources = new ArraySet();
 	      var newNames = new ArraySet();
-	
+
 	      
 	      this._mappings.unsortedForEach(function (mapping) {
 	        if (mapping.source === sourceFile && mapping.originalLine != null) {
@@ -3920,21 +3920,21 @@ return  (function(modules) {
 	            }
 	          }
 	        }
-	
+
 	        var source = mapping.source;
 	        if (source != null && !newSources.has(source)) {
 	          newSources.add(source);
 	        }
-	
+
 	        var name = mapping.name;
 	        if (name != null && !newNames.has(name)) {
 	          newNames.add(name);
 	        }
-	
+
 	      }, this);
 	      this._sources = newSources;
 	      this._names = newNames;
-	
+
 	      
 	      aSourceMapConsumer.sources.forEach(function (sourceFile) {
 	        var content = aSourceMapConsumer.sourceContentFor(sourceFile);
@@ -3949,7 +3949,7 @@ return  (function(modules) {
 	        }
 	      }, this);
 	    };
-	
+
 	  
 
 
@@ -3987,7 +3987,7 @@ return  (function(modules) {
 	        }));
 	      }
 	    };
-	
+
 	  
 
 
@@ -4002,12 +4002,12 @@ return  (function(modules) {
 	      var previousSource = 0;
 	      var result = '';
 	      var mapping;
-	
+
 	      var mappings = this._mappings.toArray();
-	
+
 	      for (var i = 0, len = mappings.length; i < len; i++) {
 	        mapping = mappings[i];
-	
+
 	        if (mapping.generatedLine !== previousGeneratedLine) {
 	          previousGeneratedColumn = 0;
 	          while (mapping.generatedLine !== previousGeneratedLine) {
@@ -4023,25 +4023,25 @@ return  (function(modules) {
 	            result += ',';
 	          }
 	        }
-	
+
 	        result += base64VLQ.encode(mapping.generatedColumn
 	                                   - previousGeneratedColumn);
 	        previousGeneratedColumn = mapping.generatedColumn;
-	
+
 	        if (mapping.source != null) {
 	          result += base64VLQ.encode(this._sources.indexOf(mapping.source)
 	                                     - previousSource);
 	          previousSource = this._sources.indexOf(mapping.source);
-	
+
 	          
 	          result += base64VLQ.encode(mapping.originalLine - 1
 	                                     - previousOriginalLine);
 	          previousOriginalLine = mapping.originalLine - 1;
-	
+
 	          result += base64VLQ.encode(mapping.originalColumn
 	                                     - previousOriginalColumn);
 	          previousOriginalColumn = mapping.originalColumn;
-	
+
 	          if (mapping.name != null) {
 	            result += base64VLQ.encode(this._names.indexOf(mapping.name)
 	                                       - previousName);
@@ -4049,10 +4049,10 @@ return  (function(modules) {
 	          }
 	        }
 	      }
-	
+
 	      return result;
 	    };
-	
+
 	  SourceMapGenerator.prototype._generateSourcesContent =
 	    function SourceMapGenerator_generateSourcesContent(aSources, aSourceRoot) {
 	      return aSources.map(function (source) {
@@ -4069,7 +4069,7 @@ return  (function(modules) {
 	          : null;
 	      }, this);
 	    };
-	
+
 	  
 
 
@@ -4090,10 +4090,10 @@ return  (function(modules) {
 	      if (this._sourcesContents) {
 	        map.sourcesContent = this._generateSourcesContent(map.sources, map.sourceRoot);
 	      }
-	
+
 	      return map;
 	    };
-	
+
 	  
 
 
@@ -4101,9 +4101,9 @@ return  (function(modules) {
 	    function SourceMapGenerator_toString() {
 	      return JSON.stringify(this);
 	    };
-	
+
 	  exports.SourceMapGenerator = SourceMapGenerator;
-	
+
 	}.call(exports, __webpack_require__, exports, module), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 
 
@@ -4152,9 +4152,9 @@ return  (function(modules) {
 	    var define = require('amdefine')(module, require);
 	}
 	!(__WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, module) {
-	
+
 	  var base64 = __webpack_require__(807);
-	
+
 	  
 	  
 	  
@@ -4166,18 +4166,18 @@ return  (function(modules) {
 	  
 	  
 	  
-	
+
 	  var VLQ_BASE_SHIFT = 5;
-	
+
 	  
 	  var VLQ_BASE = 1 << VLQ_BASE_SHIFT;
-	
+
 	  
 	  var VLQ_BASE_MASK = VLQ_BASE - 1;
-	
+
 	  
 	  var VLQ_CONTINUATION_BIT = VLQ_BASE;
-	
+
 	  
 
 
@@ -4189,7 +4189,7 @@ return  (function(modules) {
 	      ? ((-aValue) << 1) + 1
 	      : (aValue << 1) + 0;
 	  }
-	
+
 	  
 
 
@@ -4203,16 +4203,16 @@ return  (function(modules) {
 	      ? -shifted
 	      : shifted;
 	  }
-	
+
 	  
 
 
 	  exports.encode = function base64VLQ_encode(aValue) {
 	    var encoded = "";
 	    var digit;
-	
+
 	    var vlq = toVLQSigned(aValue);
-	
+
 	    do {
 	      digit = vlq & VLQ_BASE_MASK;
 	      vlq >>>= VLQ_BASE_SHIFT;
@@ -4223,10 +4223,10 @@ return  (function(modules) {
 	      }
 	      encoded += base64.encode(digit);
 	    } while (vlq > 0);
-	
+
 	    return encoded;
 	  };
-	
+
 	  
 
 
@@ -4237,7 +4237,7 @@ return  (function(modules) {
 	    var result = 0;
 	    var shift = 0;
 	    var continuation, digit;
-	
+
 	    do {
 	      if (i >= strLen) {
 	        throw new Error("Expected more digits in base 64 VLQ value.");
@@ -4248,11 +4248,11 @@ return  (function(modules) {
 	      result = result + (digit << shift);
 	      shift += VLQ_BASE_SHIFT;
 	    } while (continuation);
-	
+
 	    aOutParam.value = fromVLQSigned(result);
 	    aOutParam.rest = aStr.slice(i);
 	  };
-	
+
 	}.call(exports, __webpack_require__, exports, module), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 
 
@@ -4271,17 +4271,17 @@ return  (function(modules) {
 	    var define = require('amdefine')(module, require);
 	}
 	!(__WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, module) {
-	
+
 	  var charToIntMap = {};
 	  var intToCharMap = {};
-	
+
 	  'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
 	    .split('')
 	    .forEach(function (ch, index) {
 	      charToIntMap[ch] = index;
 	      intToCharMap[index] = ch;
 	    });
-	
+
 	  
 
 
@@ -4291,7 +4291,7 @@ return  (function(modules) {
 	    }
 	    throw new TypeError("Must be between 0 and 63: " + aNumber);
 	  };
-	
+
 	  
 
 
@@ -4301,7 +4301,7 @@ return  (function(modules) {
 	    }
 	    throw new TypeError("Not a valid base 64 digit: " + aChar);
 	  };
-	
+
 	}.call(exports, __webpack_require__, exports, module), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 
 
@@ -4320,7 +4320,7 @@ return  (function(modules) {
 	    var define = require('amdefine')(module, require);
 	}
 	!(__WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, module) {
-	
+
 	  
 
 
@@ -4341,10 +4341,10 @@ return  (function(modules) {
 	    }
 	  }
 	  exports.getArg = getArg;
-	
+
 	  var urlRegexp = /^(?:([\w+\-.]+):)?\/\/(?:(\w+:\w+)@)?([\w.]*)(?::(\d+))?(\S*)$/;
 	  var dataUrlRegexp = /^data:.+\,.+$/;
-	
+
 	  function urlParse(aUrl) {
 	    var match = aUrl.match(urlRegexp);
 	    if (!match) {
@@ -4359,7 +4359,7 @@ return  (function(modules) {
 	    };
 	  }
 	  exports.urlParse = urlParse;
-	
+
 	  function urlGenerate(aParsedUrl) {
 	    var url = '';
 	    if (aParsedUrl.scheme) {
@@ -4381,7 +4381,7 @@ return  (function(modules) {
 	    return url;
 	  }
 	  exports.urlGenerate = urlGenerate;
-	
+
 	  
 
 
@@ -4403,7 +4403,7 @@ return  (function(modules) {
 	      path = url.path;
 	    }
 	    var isAbsolute = (path.charAt(0) === '/');
-	
+
 	    var parts = path.split(/\/+/);
 	    for (var part, up = 0, i = parts.length - 1; i >= 0; i--) {
 	      part = parts[i];
@@ -4425,11 +4425,11 @@ return  (function(modules) {
 	      }
 	    }
 	    path = parts.join('/');
-	
+
 	    if (path === '') {
 	      path = isAbsolute ? '/' : '.';
 	    }
-	
+
 	    if (url) {
 	      url.path = path;
 	      return urlGenerate(url);
@@ -4437,7 +4437,7 @@ return  (function(modules) {
 	    return path;
 	  }
 	  exports.normalize = normalize;
-	
+
 	  
 
 
@@ -4466,7 +4466,7 @@ return  (function(modules) {
 	    if (aRootUrl) {
 	      aRoot = aRootUrl.path || '/';
 	    }
-	
+
 	    
 	    if (aPathUrl && !aPathUrl.scheme) {
 	      if (aRootUrl) {
@@ -4474,21 +4474,21 @@ return  (function(modules) {
 	      }
 	      return urlGenerate(aPathUrl);
 	    }
-	
+
 	    if (aPathUrl || aPath.match(dataUrlRegexp)) {
 	      return aPath;
 	    }
-	
+
 	    
 	    if (aRootUrl && !aRootUrl.host && !aRootUrl.path) {
 	      aRootUrl.host = aPath;
 	      return urlGenerate(aRootUrl);
 	    }
-	
+
 	    var joined = aPath.charAt(0) === '/'
 	      ? aPath
 	      : normalize(aRoot.replace(/\/+$/, '') + '/' + aPath);
-	
+
 	    if (aRootUrl) {
 	      aRootUrl.path = joined;
 	      return urlGenerate(aRootUrl);
@@ -4496,7 +4496,7 @@ return  (function(modules) {
 	    return joined;
 	  }
 	  exports.join = join;
-	
+
 	  
 
 
@@ -4507,21 +4507,21 @@ return  (function(modules) {
 	    if (aRoot === "") {
 	      aRoot = ".";
 	    }
-	
+
 	    aRoot = aRoot.replace(/\/$/, '');
-	
+
 	    
 	    var url = urlParse(aRoot);
 	    if (aPath.charAt(0) == "/" && url && url.path == "/") {
 	      return aPath.slice(1);
 	    }
-	
+
 	    return aPath.indexOf(aRoot + '/') === 0
 	      ? aPath.substr(aRoot.length + 1)
 	      : aPath;
 	  }
 	  exports.relative = relative;
-	
+
 	  
 
 
@@ -4535,18 +4535,18 @@ return  (function(modules) {
 	    return '$' + aStr;
 	  }
 	  exports.toSetString = toSetString;
-	
+
 	  function fromSetString(aStr) {
 	    return aStr.substr(1);
 	  }
 	  exports.fromSetString = fromSetString;
-	
+
 	  function strcmp(aStr1, aStr2) {
 	    var s1 = aStr1 || "";
 	    var s2 = aStr2 || "";
 	    return (s1 > s2) - (s1 < s2);
 	  }
-	
+
 	  
 
 
@@ -4557,36 +4557,36 @@ return  (function(modules) {
 
 	  function compareByOriginalPositions(mappingA, mappingB, onlyCompareOriginal) {
 	    var cmp;
-	
+
 	    cmp = strcmp(mappingA.source, mappingB.source);
 	    if (cmp) {
 	      return cmp;
 	    }
-	
+
 	    cmp = mappingA.originalLine - mappingB.originalLine;
 	    if (cmp) {
 	      return cmp;
 	    }
-	
+
 	    cmp = mappingA.originalColumn - mappingB.originalColumn;
 	    if (cmp || onlyCompareOriginal) {
 	      return cmp;
 	    }
-	
+
 	    cmp = strcmp(mappingA.name, mappingB.name);
 	    if (cmp) {
 	      return cmp;
 	    }
-	
+
 	    cmp = mappingA.generatedLine - mappingB.generatedLine;
 	    if (cmp) {
 	      return cmp;
 	    }
-	
+
 	    return mappingA.generatedColumn - mappingB.generatedColumn;
 	  };
 	  exports.compareByOriginalPositions = compareByOriginalPositions;
-	
+
 	  
 
 
@@ -4598,36 +4598,36 @@ return  (function(modules) {
 
 	  function compareByGeneratedPositions(mappingA, mappingB, onlyCompareGenerated) {
 	    var cmp;
-	
+
 	    cmp = mappingA.generatedLine - mappingB.generatedLine;
 	    if (cmp) {
 	      return cmp;
 	    }
-	
+
 	    cmp = mappingA.generatedColumn - mappingB.generatedColumn;
 	    if (cmp || onlyCompareGenerated) {
 	      return cmp;
 	    }
-	
+
 	    cmp = strcmp(mappingA.source, mappingB.source);
 	    if (cmp) {
 	      return cmp;
 	    }
-	
+
 	    cmp = mappingA.originalLine - mappingB.originalLine;
 	    if (cmp) {
 	      return cmp;
 	    }
-	
+
 	    cmp = mappingA.originalColumn - mappingB.originalColumn;
 	    if (cmp) {
 	      return cmp;
 	    }
-	
+
 	    return strcmp(mappingA.name, mappingB.name);
 	  };
 	  exports.compareByGeneratedPositions = compareByGeneratedPositions;
-	
+
 	}.call(exports, __webpack_require__, exports, module), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 
 
@@ -4646,9 +4646,9 @@ return  (function(modules) {
 	    var define = require('amdefine')(module, require);
 	}
 	!(__WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, module) {
-	
+
 	  var util = __webpack_require__(808);
-	
+
 	  
 
 
@@ -4659,7 +4659,7 @@ return  (function(modules) {
 	    this._array = [];
 	    this._set = {};
 	  }
-	
+
 	  
 
 
@@ -4670,7 +4670,7 @@ return  (function(modules) {
 	    }
 	    return set;
 	  };
-	
+
 	  
 
 
@@ -4686,7 +4686,7 @@ return  (function(modules) {
 	      this._set[util.toSetString(aStr)] = idx;
 	    }
 	  };
-	
+
 	  
 
 
@@ -4696,7 +4696,7 @@ return  (function(modules) {
 	    return Object.prototype.hasOwnProperty.call(this._set,
 	                                                util.toSetString(aStr));
 	  };
-	
+
 	  
 
 
@@ -4708,7 +4708,7 @@ return  (function(modules) {
 	    }
 	    throw new Error('"' + aStr + '" is not in the set.');
 	  };
-	
+
 	  
 
 
@@ -4720,7 +4720,7 @@ return  (function(modules) {
 	    }
 	    throw new Error('No element indexed by ' + aIdx);
 	  };
-	
+
 	  
 
 
@@ -4729,9 +4729,9 @@ return  (function(modules) {
 	  ArraySet.prototype.toArray = function ArraySet_toArray() {
 	    return this._array.slice();
 	  };
-	
+
 	  exports.ArraySet = ArraySet;
-	
+
 	}.call(exports, __webpack_require__, exports, module), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 
 
@@ -4750,9 +4750,9 @@ return  (function(modules) {
 	    var define = require('amdefine')(module, require);
 	}
 	!(__WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, module) {
-	
+
 	  var util = __webpack_require__(808);
-	
+
 	  
 
 
@@ -4766,7 +4766,7 @@ return  (function(modules) {
 	    return lineB > lineA || lineB == lineA && columnB >= columnA ||
 	           util.compareByGeneratedPositions(mappingA, mappingB) <= 0;
 	  }
-	
+
 	  
 
 
@@ -4778,7 +4778,7 @@ return  (function(modules) {
 	    
 	    this._last = {generatedLine: -1, generatedColumn: 0};
 	  }
-	
+
 	  
 
 
@@ -4789,7 +4789,7 @@ return  (function(modules) {
 	    function MappingList_forEach(aCallback, aThisArg) {
 	      this._array.forEach(aCallback, aThisArg);
 	    };
-	
+
 	  
 
 
@@ -4805,7 +4805,7 @@ return  (function(modules) {
 	      this._array.push(aMapping);
 	    }
 	  };
-	
+
 	  
 
 
@@ -4822,9 +4822,9 @@ return  (function(modules) {
 	    }
 	    return this._array;
 	  };
-	
+
 	  exports.MappingList = MappingList;
-	
+
 	}.call(exports, __webpack_require__, exports, module), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 
 
@@ -4843,12 +4843,12 @@ return  (function(modules) {
 	    var define = require('amdefine')(module, require);
 	}
 	!(__WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, module) {
-	
+
 	  var util = __webpack_require__(808);
 	  var binarySearch = __webpack_require__(812);
 	  var ArraySet = __webpack_require__(809).ArraySet;
 	  var base64VLQ = __webpack_require__(806);
-	
+
 	  
 
 
@@ -4884,7 +4884,7 @@ return  (function(modules) {
 	    if (typeof aSourceMap === 'string') {
 	      sourceMap = JSON.parse(aSourceMap.replace(/^\)\]\}'/, ''));
 	    }
-	
+
 	    var version = util.getArg(sourceMap, 'version');
 	    var sources = util.getArg(sourceMap, 'sources');
 	    
@@ -4894,31 +4894,31 @@ return  (function(modules) {
 	    var sourcesContent = util.getArg(sourceMap, 'sourcesContent', null);
 	    var mappings = util.getArg(sourceMap, 'mappings');
 	    var file = util.getArg(sourceMap, 'file', null);
-	
+
 	    
 	    
 	    if (version != this._version) {
 	      throw new Error('Unsupported version: ' + version);
 	    }
-	
+
 	    
 	    
 	    
 	    sources = sources.map(util.normalize);
-	
+
 	    
 	    
 	    
 	    
 	    this._names = ArraySet.fromArray(names, true);
 	    this._sources = ArraySet.fromArray(sources, true);
-	
+
 	    this.sourceRoot = sourceRoot;
 	    this.sourcesContent = sourcesContent;
 	    this._mappings = mappings;
 	    this.file = file;
 	  }
-	
+
 	  
 
 
@@ -4929,26 +4929,26 @@ return  (function(modules) {
 	  SourceMapConsumer.fromSourceMap =
 	    function SourceMapConsumer_fromSourceMap(aSourceMap) {
 	      var smc = Object.create(SourceMapConsumer.prototype);
-	
+
 	      smc._names = ArraySet.fromArray(aSourceMap._names.toArray(), true);
 	      smc._sources = ArraySet.fromArray(aSourceMap._sources.toArray(), true);
 	      smc.sourceRoot = aSourceMap._sourceRoot;
 	      smc.sourcesContent = aSourceMap._generateSourcesContent(smc._sources.toArray(),
 	                                                              smc.sourceRoot);
 	      smc.file = aSourceMap._file;
-	
+
 	      smc.__generatedMappings = aSourceMap._mappings.toArray().slice();
 	      smc.__originalMappings = aSourceMap._mappings.toArray().slice()
 	        .sort(util.compareByOriginalPositions);
-	
+
 	      return smc;
 	    };
-	
+
 	  
 
 
 	  SourceMapConsumer.prototype._version = 3;
-	
+
 	  
 
 
@@ -4959,7 +4959,7 @@ return  (function(modules) {
 	      }, this);
 	    }
 	  });
-	
+
 	  
 	  
 	  
@@ -4989,7 +4989,7 @@ return  (function(modules) {
 	  
 	  
 	  
-	
+
 	  SourceMapConsumer.prototype.__generatedMappings = null;
 	  Object.defineProperty(SourceMapConsumer.prototype, '_generatedMappings', {
 	    get: function () {
@@ -4998,11 +4998,11 @@ return  (function(modules) {
 	        this.__originalMappings = [];
 	        this._parseMappings(this._mappings, this.sourceRoot);
 	      }
-	
+
 	      return this.__generatedMappings;
 	    }
 	  });
-	
+
 	  SourceMapConsumer.prototype.__originalMappings = null;
 	  Object.defineProperty(SourceMapConsumer.prototype, '_originalMappings', {
 	    get: function () {
@@ -5011,17 +5011,17 @@ return  (function(modules) {
 	        this.__originalMappings = [];
 	        this._parseMappings(this._mappings, this.sourceRoot);
 	      }
-	
+
 	      return this.__originalMappings;
 	    }
 	  });
-	
+
 	  SourceMapConsumer.prototype._nextCharIsMappingSeparator =
 	    function SourceMapConsumer_nextCharIsMappingSeparator(aStr) {
 	      var c = aStr.charAt(0);
 	      return c === ";" || c === ",";
 	    };
-	
+
 	  
 
 
@@ -5038,7 +5038,7 @@ return  (function(modules) {
 	      var str = aStr;
 	      var temp = {};
 	      var mapping;
-	
+
 	      while (str.length > 0) {
 	        if (str.charAt(0) === ';') {
 	          generatedLine++;
@@ -5051,13 +5051,13 @@ return  (function(modules) {
 	        else {
 	          mapping = {};
 	          mapping.generatedLine = generatedLine;
-	
+
 	          
 	          base64VLQ.decode(str, temp);
 	          mapping.generatedColumn = previousGeneratedColumn + temp.value;
 	          previousGeneratedColumn = mapping.generatedColumn;
 	          str = temp.rest;
-	
+
 	          if (str.length > 0 && !this._nextCharIsMappingSeparator(str)) {
 	            
 	            base64VLQ.decode(str, temp);
@@ -5067,7 +5067,7 @@ return  (function(modules) {
 	            if (str.length === 0 || this._nextCharIsMappingSeparator(str)) {
 	              throw new Error('Found a source, but no line and column');
 	            }
-	
+
 	            
 	            base64VLQ.decode(str, temp);
 	            mapping.originalLine = previousOriginalLine + temp.value;
@@ -5078,13 +5078,13 @@ return  (function(modules) {
 	            if (str.length === 0 || this._nextCharIsMappingSeparator(str)) {
 	              throw new Error('Found a source and line, but no column');
 	            }
-	
+
 	            
 	            base64VLQ.decode(str, temp);
 	            mapping.originalColumn = previousOriginalColumn + temp.value;
 	            previousOriginalColumn = mapping.originalColumn;
 	            str = temp.rest;
-	
+
 	            if (str.length > 0 && !this._nextCharIsMappingSeparator(str)) {
 	              
 	              base64VLQ.decode(str, temp);
@@ -5093,18 +5093,18 @@ return  (function(modules) {
 	              str = temp.rest;
 	            }
 	          }
-	
+
 	          this.__generatedMappings.push(mapping);
 	          if (typeof mapping.originalLine === 'number') {
 	            this.__originalMappings.push(mapping);
 	          }
 	        }
 	      }
-	
+
 	      this.__generatedMappings.sort(util.compareByGeneratedPositions);
 	      this.__originalMappings.sort(util.compareByOriginalPositions);
 	    };
-	
+
 	  
 
 
@@ -5116,7 +5116,7 @@ return  (function(modules) {
 	      
 	      
 	      
-	
+
 	      if (aNeedle[aLineName] <= 0) {
 	        throw new TypeError('Line must be greater than or equal to 1, got '
 	                            + aNeedle[aLineName]);
@@ -5125,10 +5125,10 @@ return  (function(modules) {
 	        throw new TypeError('Column must be greater than or equal to 0, got '
 	                            + aNeedle[aColumnName]);
 	      }
-	
+
 	      return binarySearch.search(aNeedle, aMappings, aComparator);
 	    };
-	
+
 	  
 
 
@@ -5137,25 +5137,25 @@ return  (function(modules) {
 	    function SourceMapConsumer_computeColumnSpans() {
 	      for (var index = 0; index < this._generatedMappings.length; ++index) {
 	        var mapping = this._generatedMappings[index];
-	
+
 	        
 	        
 	        
 	        
 	        if (index + 1 < this._generatedMappings.length) {
 	          var nextMapping = this._generatedMappings[index + 1];
-	
+
 	          if (mapping.generatedLine === nextMapping.generatedLine) {
 	            mapping.lastGeneratedColumn = nextMapping.generatedColumn - 1;
 	            continue;
 	          }
 	        }
-	
+
 	        
 	        mapping.lastGeneratedColumn = Infinity;
 	      }
 	    };
-	
+
 	  
 
 
@@ -5177,16 +5177,16 @@ return  (function(modules) {
 	        generatedLine: util.getArg(aArgs, 'line'),
 	        generatedColumn: util.getArg(aArgs, 'column')
 	      };
-	
+
 	      var index = this._findMapping(needle,
 	                                    this._generatedMappings,
 	                                    "generatedLine",
 	                                    "generatedColumn",
 	                                    util.compareByGeneratedPositions);
-	
+
 	      if (index >= 0) {
 	        var mapping = this._generatedMappings[index];
-	
+
 	        if (mapping.generatedLine === needle.generatedLine) {
 	          var source = util.getArg(mapping, 'source', null);
 	          if (source != null && this.sourceRoot != null) {
@@ -5200,7 +5200,7 @@ return  (function(modules) {
 	          };
 	        }
 	      }
-	
+
 	      return {
 	        source: null,
 	        line: null,
@@ -5208,7 +5208,7 @@ return  (function(modules) {
 	        name: null
 	      };
 	    };
-	
+
 	  
 
 
@@ -5219,15 +5219,15 @@ return  (function(modules) {
 	      if (!this.sourcesContent) {
 	        return null;
 	      }
-	
+
 	      if (this.sourceRoot != null) {
 	        aSource = util.relative(this.sourceRoot, aSource);
 	      }
-	
+
 	      if (this._sources.has(aSource)) {
 	        return this.sourcesContent[this._sources.indexOf(aSource)];
 	      }
-	
+
 	      var url;
 	      if (this.sourceRoot != null
 	          && (url = util.urlParse(this.sourceRoot))) {
@@ -5240,16 +5240,16 @@ return  (function(modules) {
 	            && this._sources.has(fileUriAbsPath)) {
 	          return this.sourcesContent[this._sources.indexOf(fileUriAbsPath)]
 	        }
-	
+
 	        if ((!url.path || url.path == "/")
 	            && this._sources.has("/" + aSource)) {
 	          return this.sourcesContent[this._sources.indexOf("/" + aSource)];
 	        }
 	      }
-	
+
 	      throw new Error('"' + aSource + '" is not in the SourceMap.');
 	    };
-	
+
 	  
 
 
@@ -5271,34 +5271,34 @@ return  (function(modules) {
 	        originalLine: util.getArg(aArgs, 'line'),
 	        originalColumn: util.getArg(aArgs, 'column')
 	      };
-	
+
 	      if (this.sourceRoot != null) {
 	        needle.source = util.relative(this.sourceRoot, needle.source);
 	      }
-	
+
 	      var index = this._findMapping(needle,
 	                                    this._originalMappings,
 	                                    "originalLine",
 	                                    "originalColumn",
 	                                    util.compareByOriginalPositions);
-	
+
 	      if (index >= 0) {
 	        var mapping = this._originalMappings[index];
-	
+
 	        return {
 	          line: util.getArg(mapping, 'generatedLine', null),
 	          column: util.getArg(mapping, 'generatedColumn', null),
 	          lastColumn: util.getArg(mapping, 'lastGeneratedColumn', null)
 	        };
 	      }
-	
+
 	      return {
 	        line: null,
 	        column: null,
 	        lastColumn: null
 	      };
 	    };
-	
+
 	  
 
 
@@ -5323,13 +5323,13 @@ return  (function(modules) {
 	        originalLine: util.getArg(aArgs, 'line'),
 	        originalColumn: Infinity
 	      };
-	
+
 	      if (this.sourceRoot != null) {
 	        needle.source = util.relative(this.sourceRoot, needle.source);
 	      }
-	
+
 	      var mappings = [];
-	
+
 	      var index = this._findMapping(needle,
 	                                    this._originalMappings,
 	                                    "originalLine",
@@ -5337,24 +5337,24 @@ return  (function(modules) {
 	                                    util.compareByOriginalPositions);
 	      if (index >= 0) {
 	        var mapping = this._originalMappings[index];
-	
+
 	        while (mapping && mapping.originalLine === needle.originalLine) {
 	          mappings.push({
 	            line: util.getArg(mapping, 'generatedLine', null),
 	            column: util.getArg(mapping, 'generatedColumn', null),
 	            lastColumn: util.getArg(mapping, 'lastGeneratedColumn', null)
 	          });
-	
+
 	          mapping = this._originalMappings[--index];
 	        }
 	      }
-	
+
 	      return mappings.reverse();
 	    };
-	
+
 	  SourceMapConsumer.GENERATED_ORDER = 1;
 	  SourceMapConsumer.ORIGINAL_ORDER = 2;
-	
+
 	  
 
 
@@ -5375,7 +5375,7 @@ return  (function(modules) {
 	    function SourceMapConsumer_eachMapping(aCallback, aContext, aOrder) {
 	      var context = aContext || null;
 	      var order = aOrder || SourceMapConsumer.GENERATED_ORDER;
-	
+
 	      var mappings;
 	      switch (order) {
 	      case SourceMapConsumer.GENERATED_ORDER:
@@ -5387,7 +5387,7 @@ return  (function(modules) {
 	      default:
 	        throw new Error("Unknown order of iteration.");
 	      }
-	
+
 	      var sourceRoot = this.sourceRoot;
 	      mappings.map(function (mapping) {
 	        var source = mapping.source;
@@ -5404,9 +5404,9 @@ return  (function(modules) {
 	        };
 	      }).forEach(aCallback, context);
 	    };
-	
+
 	  exports.SourceMapConsumer = SourceMapConsumer;
-	
+
 	}.call(exports, __webpack_require__, exports, module), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 
 
@@ -5425,7 +5425,7 @@ return  (function(modules) {
 	    var define = require('amdefine')(module, require);
 	}
 	!(__WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, module) {
-	
+
 	  
 
 
@@ -5473,7 +5473,7 @@ return  (function(modules) {
 	      return aLow < 0 ? -1 : aLow;
 	    }
 	  }
-	
+
 	  
 
 
@@ -5493,7 +5493,7 @@ return  (function(modules) {
 	    }
 	    return recursiveSearch(-1, aHaystack.length, aNeedle, aHaystack, aCompare)
 	  };
-	
+
 	}.call(exports, __webpack_require__, exports, module), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 
 
@@ -5512,22 +5512,22 @@ return  (function(modules) {
 	    var define = require('amdefine')(module, require);
 	}
 	!(__WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, module) {
-	
+
 	  var SourceMapGenerator = __webpack_require__(805).SourceMapGenerator;
 	  var util = __webpack_require__(808);
-	
+
 	  
 	  
 	  var REGEX_NEWLINE = /(\r?\n)/;
-	
+
 	  
 	  var NEWLINE_CODE = 10;
-	
+
 	  
 	  
 	  
 	  var isSourceNode = "$$$isSourceNode$$$";
-	
+
 	  
 
 
@@ -5550,7 +5550,7 @@ return  (function(modules) {
 	    this[isSourceNode] = true;
 	    if (aChunks != null) this.add(aChunks);
 	  }
-	
+
 	  
 
 
@@ -5564,7 +5564,7 @@ return  (function(modules) {
 	      
 	      
 	      var node = new SourceNode();
-	
+
 	      
 	      
 	      
@@ -5576,15 +5576,15 @@ return  (function(modules) {
 	        var newLine = remainingLines.shift() || "";
 	        return lineContents + newLine;
 	      };
-	
+
 	      
 	      var lastGeneratedLine = 1, lastGeneratedColumn = 0;
-	
+
 	      
 	      
 	      
 	      var lastMapping = null;
-	
+
 	      aSourceMapConsumer.eachMapping(function (mapping) {
 	        if (lastMapping !== null) {
 	          
@@ -5636,7 +5636,7 @@ return  (function(modules) {
 	        
 	        node.add(remainingLines.join(""));
 	      }
-	
+
 	      
 	      aSourceMapConsumer.sources.forEach(function (sourceFile) {
 	        var content = aSourceMapConsumer.sourceContentFor(sourceFile);
@@ -5647,9 +5647,9 @@ return  (function(modules) {
 	          node.setSourceContent(sourceFile, content);
 	        }
 	      });
-	
+
 	      return node;
-	
+
 	      function addMappingWithCode(mapping, code) {
 	        if (mapping === null || mapping.source === undefined) {
 	          node.add(code);
@@ -5665,7 +5665,7 @@ return  (function(modules) {
 	        }
 	      }
 	    };
-	
+
 	  
 
 
@@ -5690,7 +5690,7 @@ return  (function(modules) {
 	    }
 	    return this;
 	  };
-	
+
 	  
 
 
@@ -5713,7 +5713,7 @@ return  (function(modules) {
 	    }
 	    return this;
 	  };
-	
+
 	  
 
 
@@ -5738,7 +5738,7 @@ return  (function(modules) {
 	      }
 	    }
 	  };
-	
+
 	  
 
 
@@ -5760,7 +5760,7 @@ return  (function(modules) {
 	    }
 	    return this;
 	  };
-	
+
 	  
 
 
@@ -5781,7 +5781,7 @@ return  (function(modules) {
 	    }
 	    return this;
 	  };
-	
+
 	  
 
 
@@ -5793,7 +5793,7 @@ return  (function(modules) {
 	    function SourceNode_setSourceContent(aSourceFile, aSourceContent) {
 	      this.sourceContents[util.toSetString(aSourceFile)] = aSourceContent;
 	    };
-	
+
 	  
 
 
@@ -5807,13 +5807,13 @@ return  (function(modules) {
 	          this.children[i].walkSourceContents(aFn);
 	        }
 	      }
-	
+
 	      var sources = Object.keys(this.sourceContents);
 	      for (var i = 0, len = sources.length; i < len; i++) {
 	        aFn(util.fromSetString(sources[i]), this.sourceContents[sources[i]]);
 	      }
 	    };
-	
+
 	  
 
 
@@ -5825,7 +5825,7 @@ return  (function(modules) {
 	    });
 	    return str;
 	  };
-	
+
 	  
 
 
@@ -5909,12 +5909,12 @@ return  (function(modules) {
 	    this.walkSourceContents(function (sourceFile, sourceContent) {
 	      map.setSourceContent(sourceFile, sourceContent);
 	    });
-	
+
 	    return { code: generated.code, map: map };
 	  };
-	
+
 	  exports.SourceNode = SourceNode;
-	
+
 	}.call(exports, __webpack_require__, exports, module), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 
 
