@@ -1,0 +1,22 @@
+
+
+
+
+
+#include "mozIMozIntlHelper.h"
+
+namespace mozilla {
+
+class MozIntlHelper final : public mozIMozIntlHelper
+{
+public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_MOZIMOZINTLHELPER
+
+  MozIntlHelper();
+
+private:
+  ~MozIntlHelper();
+};
+
+} 
