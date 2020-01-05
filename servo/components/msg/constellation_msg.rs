@@ -344,6 +344,12 @@ impl fmt::Display for PipelineId {
 #[derive(Clone, PartialEq, Eq, Copy, Hash, Debug, Deserialize, Serialize, HeapSizeOf)]
 pub struct SubpageId(pub u32);
 
+#[derive(Clone, PartialEq, Eq, Copy, Hash, Debug, Deserialize, Serialize, HeapSizeOf)]
+pub enum FrameType {
+    IFrame,
+    MozBrowserIFrame,
+}
+
 
 
 #[derive(HeapSizeOf, Clone, Deserialize, Serialize)]
