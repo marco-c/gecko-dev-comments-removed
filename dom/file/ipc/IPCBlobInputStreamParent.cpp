@@ -5,6 +5,7 @@
 
 
 #include "IPCBlobInputStreamParent.h"
+#include "IPCBlobInputStreamStorage.h"
 #include "nsContentUtils.h"
 
 namespace mozilla {
@@ -23,7 +24,7 @@ IPCBlobInputStreamParent::Create(nsIInputStream* aInputStream, uint64_t aSize,
     return nullptr;
   }
 
-  
+  IPCBlobInputStreamStorage::Get()->AddStream(aInputStream, id);
 
   return new IPCBlobInputStreamParent(id, aSize);
 }
@@ -37,7 +38,7 @@ IPCBlobInputStreamParent::IPCBlobInputStreamParent(const nsID& aID,
 void
 IPCBlobInputStreamParent::ActorDestroy(IProtocol::ActorDestroyReason aReason)
 {
-  
+  IPCBlobInputStreamStorage::Get()->ForgetStream(mID);
 }
 
 } 
