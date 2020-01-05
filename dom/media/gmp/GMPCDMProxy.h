@@ -12,15 +12,15 @@
 #include "GMPDecryptorProxy.h"
 
 namespace mozilla {
+
 class MediaRawData;
+class DecryptJob;
 
 
 class GMPCDMProxy : public CDMProxy {
 public:
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(GMPCDMProxy, override)
-
-  typedef MozPromise<DecryptResult, DecryptResult,  true> DecryptPromise;
 
   GMPCDMProxy(dom::MediaKeys* aKeys,
               const nsAString& aKeySystem,
@@ -175,30 +175,6 @@ private:
   
   void gmp_RemoveSession(UniquePtr<SessionOpData>&& aData);
 
-  class DecryptJob {
-  public:
-    NS_INLINE_DECL_THREADSAFE_REFCOUNTING(DecryptJob)
-
-    explicit DecryptJob(MediaRawData* aSample)
-      : mId(0)
-      , mSample(aSample)
-    {
-    }
-
-    void PostResult(DecryptStatus aResult,
-                    const nsTArray<uint8_t>& aDecryptedData);
-    void PostResult(DecryptStatus aResult);
-
-    RefPtr<DecryptPromise> Ensure() {
-      return mPromise.Ensure(__func__);
-    }
-
-    uint32_t mId;
-    RefPtr<MediaRawData> mSample;
-  private:
-    ~DecryptJob() {}
-    MozPromiseHolder<DecryptPromise> mPromise;
-  };
   
   void gmp_Decrypt(RefPtr<DecryptJob> aJob);
 
