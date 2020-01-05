@@ -120,9 +120,9 @@ extensions.registerSchemaAPI("windows", "addon_parent", context => {
           args.appendElement(tab,  false);
         } else if (createData.url !== null) {
           if (Array.isArray(createData.url)) {
-            let array = Cc["@mozilla.org/supports-array;1"].createInstance(Ci.nsISupportsArray);
+            let array = Cc["@mozilla.org/array;1"].createInstance(Ci.nsIMutableArray);
             for (let url of createData.url) {
-              array.AppendElement(mkstr(url));
+              array.appendElement(mkstr(url),  false);
             }
             args.appendElement(array,  false);
           } else {
