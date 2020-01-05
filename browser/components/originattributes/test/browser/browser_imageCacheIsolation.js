@@ -2,6 +2,8 @@
 
 
 
+requestLongerTimeout(2);
+
 let Cu = Components.utils;
 let {HttpServer} = Cu.import("resource://testing-common/httpd.js", {});
 
