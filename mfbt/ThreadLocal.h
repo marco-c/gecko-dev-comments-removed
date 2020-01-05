@@ -11,7 +11,6 @@
 
 #if !defined(XP_WIN)
 #  include <pthread.h>
-#  include <signal.h>
 #endif
 
 #include "mozilla/Assertions.h"
@@ -19,15 +18,6 @@
 #include "mozilla/TypeTraits.h"
 
 namespace mozilla {
-
-
-
-
-#if defined(XP_WIN)
-typedef unsigned long sig_safe_t;
-#else
-typedef sig_atomic_t sig_safe_t;
-#endif
 
 namespace detail {
 
