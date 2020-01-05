@@ -248,6 +248,9 @@ pub trait TElement : PartialEq + Debug + Sized + Copy + Clone + ElementExt + Pre
     
     fn is_display_none(&self) -> bool {
         let data = self.borrow_data().unwrap();
+        
+        
+        debug_assert!(cfg!(gecko) || data.has_current_styles());
         data.styles().is_display_none()
     }
 

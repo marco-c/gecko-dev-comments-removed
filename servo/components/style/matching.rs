@@ -733,6 +733,13 @@ pub trait MatchMethods : TElement {
         
         let parent_data = parent.as_ref().map(|x| x.borrow_data().unwrap());
         let parent_style = parent_data.as_ref().map(|d| {
+            
+            
+            
+            
+            
+            
+            debug_assert!(cfg!(gecko) || d.has_current_styles());
             &d.styles().primary.values
         });
 
