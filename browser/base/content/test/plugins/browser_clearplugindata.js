@@ -46,14 +46,14 @@ add_task(function* () {
     window.focus();
     gTestBrowser = null;
   });
-});
 
-add_task(function* () {
   Services.prefs.setBoolPref("plugins.click_to_play", true);
 
   setTestPluginEnabledState(Ci.nsIPluginTag.STATE_ENABLED, "Test Plug-in");
   setTestPluginEnabledState(Ci.nsIPluginTag.STATE_ENABLED, "Second Test Plug-in");
+});
 
+function* setPrefs(cookies, pluginData) {
   sanitizer = new Sanitizer();
   sanitizer.ignoreTimespan = false;
   sanitizer.prefDomain = "privacy.cpd.";
@@ -61,51 +61,21 @@ add_task(function* () {
   itemPrefs.setBoolPref("history", false);
   itemPrefs.setBoolPref("downloads", false);
   itemPrefs.setBoolPref("cache", false);
-  itemPrefs.setBoolPref("cookies", true); 
+  itemPrefs.setBoolPref("cookies", cookies);
   itemPrefs.setBoolPref("formdata", false);
   itemPrefs.setBoolPref("offlineApps", false);
   itemPrefs.setBoolPref("passwords", false);
   itemPrefs.setBoolPref("sessions", false);
   itemPrefs.setBoolPref("siteSettings", false);
-});
+  itemPrefs.setBoolPref("pluginData", pluginData);
+}
 
-add_task(function* () {
+function* testClearingData(url) {
   
   gBrowser.selectedTab = gBrowser.addTab();
   gTestBrowser = gBrowser.selectedBrowser;
 
-  yield promiseTabLoadEvent(gBrowser.selectedTab, testURL1);
-
-  yield promiseUpdatePluginBindings(gTestBrowser);
-
-  ok(stored(["foo.com", "bar.com", "baz.com", "qux.com"]),
-    "Data stored for sites");
-
-  
-  let now_uSec = Date.now() * 1000;
-  sanitizer.range = [now_uSec - 20 * 1000000, now_uSec];
-  yield sanitizer.sanitize();
-
-  ok(stored(["bar.com", "qux.com"]), "Data stored for sites");
-  ok(!stored(["foo.com"]), "Data cleared for foo.com");
-  ok(!stored(["baz.com"]), "Data cleared for baz.com");
-
-  
-  sanitizer.range = null;
-  yield sanitizer.sanitize();
-
-  ok(!stored(null), "All data cleared");
-
-  gBrowser.removeCurrentTab();
-  gTestBrowser = null;
-});
-
-add_task(function* () {
-  
-  gBrowser.selectedTab = gBrowser.addTab();
-  gTestBrowser = gBrowser.selectedBrowser;
-
-  yield promiseTabLoadEvent(gBrowser.selectedTab, testURL2);
+  yield promiseTabLoadEvent(gBrowser.selectedTab, url);
 
   yield promiseUpdatePluginBindings(gTestBrowser);
 
@@ -115,13 +85,35 @@ add_task(function* () {
   
   
   
+  
   let now_uSec = Date.now() * 1000;
   sanitizer.range = [now_uSec - 20 * 1000000, now_uSec];
   yield sanitizer.sanitize();
+
+  if (url == testURL1) {
+    ok(stored(["bar.com", "qux.com"]), "Data stored for sites");
+    ok(!stored(["foo.com"]), "Data cleared for foo.com");
+    ok(!stored(["baz.com"]), "Data cleared for baz.com");
+
+    
+    sanitizer.range = null;
+    yield sanitizer.sanitize();
+  }
 
   ok(!stored(null), "All data cleared");
 
   gBrowser.removeCurrentTab();
   gTestBrowser = null;
-});
+}
 
+add_task(function* () {
+  
+  yield setPrefs(true, false);
+  yield testClearingData(testURL1);
+  yield testClearingData(testURL2);
+
+  
+  yield setPrefs(false, true);
+  yield testClearingData(testURL1);
+  yield testClearingData(testURL2);
+});

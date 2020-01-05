@@ -278,79 +278,16 @@ Sanitizer.prototype = {
         }
 
         
-        
-        
-        
-        
-        
-        
-        
-        let promiseClearPluginCookies;
         try {
-          
-          promiseClearPluginCookies = this.promiseClearPluginCookies(range);
-
-          
-          yield Promise.race([
-            promiseClearPluginCookies,
-            new Promise(resolve => setTimeout(resolve, 10000 ))
-          ]);
+          yield Sanitizer.clearPluginData(range);
         } catch (ex) {
           seenException = ex;
         }
-
-        
-        promiseClearPluginCookies.catch(() => {
-          
-          
-          
-        });
 
         if (seenException) {
           throw seenException;
         }
       }),
-
-      promiseClearPluginCookies: Task.async(function* (range) {
-        const FLAG_CLEAR_ALL = Ci.nsIPluginHost.FLAG_CLEAR_ALL;
-        let ph = Cc["@mozilla.org/plugin/host;1"].getService(Ci.nsIPluginHost);
-
-        
-        
-        
-        let age = range ? (Date.now() / 1000 - range[0] / 1000000) : -1;
-        if (!range || age >= 0) {
-          let tags = ph.getPluginTags();
-          for (let tag of tags) {
-            let refObj = {};
-            let probe = "";
-            if (/\bFlash\b/.test(tag.name)) {
-              probe = tag.loaded ? "FX_SANITIZE_LOADED_FLASH"
-                                 : "FX_SANITIZE_UNLOADED_FLASH";
-              TelemetryStopwatch.start(probe, refObj);
-            }
-            try {
-              let rv = yield new Promise(resolve =>
-                ph.clearSiteData(tag, null, FLAG_CLEAR_ALL, age, resolve)
-              );
-              
-              if (rv == Components.results.NS_ERROR_PLUGIN_TIME_RANGE_NOT_SUPPORTED) {
-                yield new Promise(resolve =>
-                  ph.clearSiteData(tag, null, FLAG_CLEAR_ALL, -1, resolve)
-                );
-              }
-              if (probe) {
-                TelemetryStopwatch.finish(probe, refObj);
-              }
-            } catch (ex) {
-              
-              if (probe) {
-                TelemetryStopwatch.cancel(probe, refObj);
-              }
-            }
-          }
-        }
-      })
     },
 
     offlineApps: {
@@ -705,6 +642,12 @@ Sanitizer.prototype = {
         yield promiseReady;
       })
     },
+
+    pluginData: {
+      clear: Task.async(function* (range) {
+        yield Sanitizer.clearPluginData(range);
+      }),
+    },
   }
 };
 
@@ -773,6 +716,83 @@ Sanitizer.getClearRange = function(ts) {
   }
   return [startDate, endDate];
 };
+
+Sanitizer.clearPluginData = Task.async(function* (range) {
+  
+  
+  
+  
+  
+  
+  
+  
+  let seenException;
+
+  let promiseClearPluginData = Task.async(function* () {
+    const FLAG_CLEAR_ALL = Ci.nsIPluginHost.FLAG_CLEAR_ALL;
+    let ph = Cc["@mozilla.org/plugin/host;1"].getService(Ci.nsIPluginHost);
+
+    
+    
+    
+    let age = range ? (Date.now() / 1000 - range[0] / 1000000) : -1;
+    if (!range || age >= 0) {
+      let tags = ph.getPluginTags();
+      for (let tag of tags) {
+        let refObj = {};
+        let probe = "";
+        if (/\bFlash\b/.test(tag.name)) {
+          probe = tag.loaded ? "FX_SANITIZE_LOADED_FLASH"
+                             : "FX_SANITIZE_UNLOADED_FLASH";
+          TelemetryStopwatch.start(probe, refObj);
+        }
+        try {
+          let rv = yield new Promise(resolve =>
+            ph.clearSiteData(tag, null, FLAG_CLEAR_ALL, age, resolve)
+          );
+          
+          if (rv == Components.results.NS_ERROR_PLUGIN_TIME_RANGE_NOT_SUPPORTED) {
+            yield new Promise(resolve =>
+              ph.clearSiteData(tag, null, FLAG_CLEAR_ALL, -1, resolve)
+            );
+          }
+          if (probe) {
+            TelemetryStopwatch.finish(probe, refObj);
+          }
+        } catch (ex) {
+          
+          if (probe) {
+            TelemetryStopwatch.cancel(probe, refObj);
+          }
+        }
+      }
+    }
+  });
+
+  try {
+    
+    promiseClearPluginData = promiseClearPluginData(range);
+
+    
+    yield Promise.race([
+      promiseClearPluginData,
+      new Promise(resolve => setTimeout(resolve, 10000 ))
+    ]);
+  } catch (ex) {
+    seenException = ex;
+  }
+
+  
+  promiseClearPluginData.catch(() => {
+    
+    
+    
+  });
+
+  if (seenException) {
+    throw seenException;
+  }
+});
 
 Sanitizer._prefs = null;
 Sanitizer.__defineGetter__("prefs", function()
