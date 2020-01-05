@@ -1,0 +1,17 @@
+
+
+
+
+
+
+#ifndef CUBEB_ASSERT
+#define CUBEB_ASSERT
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <mozilla/Assertions.h>
+
+
+#define XASSERT(expr) MOZ_ASSERT(expr)
+
+#endif
