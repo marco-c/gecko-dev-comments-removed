@@ -246,9 +246,6 @@ public:
   void Tick(TickSample* sample);
 
   
-  SyncProfile* GetBacktrace();
-
-  
   void Start();
   void Stop();
 
