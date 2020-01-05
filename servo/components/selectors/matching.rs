@@ -112,10 +112,54 @@ pub fn matches<E>(selector_list: &[Selector<E::Impl>],
     })
 }
 
+fn may_match<E>(mut selector: &ComplexSelector<E::Impl>,
+                bf: &BloomFilter)
+                -> bool
+    where E: Element,
+{
+    
+    
+    loop {
+         match selector.next {
+             None => break,
+             Some((ref cs, Combinator::Descendant)) => selector = &**cs,
+             Some((ref cs, _)) => {
+                 selector = &**cs;
+                 continue;
+             }
+         };
 
+        for ss in selector.compound_selector.iter() {
+            match *ss {
+                SimpleSelector::LocalName(LocalName { ref name, ref lower_name })  => {
+                    if !bf.might_contain(name) &&
+                       !bf.might_contain(lower_name) {
+                       return false
+                    }
+                },
+                SimpleSelector::Namespace(ref namespace) => {
+                    if !bf.might_contain(&namespace.url) {
+                        return false
+                    }
+                },
+                SimpleSelector::ID(ref id) => {
+                    if !bf.might_contain(id) {
+                        return false
+                    }
+                },
+                SimpleSelector::Class(ref class) => {
+                    if !bf.might_contain(class) {
+                        return false
+                    }
+                },
+                _ => {},
+            }
+        }
+    }
 
-
-
+    
+    true
+}
 
 
 pub fn matches_complex_selector<E>(selector: &ComplexSelector<E::Impl>,
@@ -126,7 +170,13 @@ pub fn matches_complex_selector<E>(selector: &ComplexSelector<E::Impl>,
                                    -> bool
     where E: Element
 {
-    match matches_complex_selector_internal(selector, element, parent_bf, relations, flags) {
+    if let Some(filter) = parent_bf {
+        if !may_match::<E>(selector, filter) {
+            return false;
+        }
+    }
+
+    match matches_complex_selector_internal(selector, element, relations, flags) {
         SelectorMatchingResult::Matched => {
             match selector.next {
                 Some((_, Combinator::NextSibling)) |
@@ -190,81 +240,19 @@ enum SelectorMatchingResult {
     NotMatchedGlobally,
 }
 
-
-
-
-fn can_fast_reject<E>(mut selector: &ComplexSelector<E::Impl>,
-                      element: &E,
-                      parent_bf: Option<&BloomFilter>,
-                      relations: &mut StyleRelations,
-                      flags: &mut ElementSelectorFlags)
-                      -> Option<SelectorMatchingResult>
-    where E: Element
-{
-    if !selector.compound_selector.iter().all(|simple_selector| {
-      matches_simple_selector(simple_selector, element, parent_bf, relations, flags) }) {
-        return Some(SelectorMatchingResult::NotMatchedAndRestartFromClosestLaterSibling);
-    }
-
-    let bf: &BloomFilter = match parent_bf {
-        None => return None,
-        Some(ref bf) => bf,
-    };
-
-    
-    
-    loop {
-         match selector.next {
-             None => break,
-             Some((ref cs, Combinator::Descendant)) => selector = &**cs,
-             Some((ref cs, _)) => {
-                 selector = &**cs;
-                 continue;
-             }
-         };
-
-        for ss in selector.compound_selector.iter() {
-            match *ss {
-                SimpleSelector::LocalName(LocalName { ref name, ref lower_name })  => {
-                    if !bf.might_contain(name) &&
-                       !bf.might_contain(lower_name) {
-                        return Some(SelectorMatchingResult::NotMatchedGlobally);
-                    }
-                },
-                SimpleSelector::Namespace(ref namespace) => {
-                    if !bf.might_contain(&namespace.url) {
-                        return Some(SelectorMatchingResult::NotMatchedGlobally);
-                    }
-                },
-                SimpleSelector::ID(ref id) => {
-                    if !bf.might_contain(id) {
-                        return Some(SelectorMatchingResult::NotMatchedGlobally);
-                    }
-                },
-                SimpleSelector::Class(ref class) => {
-                    if !bf.might_contain(class) {
-                        return Some(SelectorMatchingResult::NotMatchedGlobally);
-                    }
-                },
-                _ => {},
-            }
-        }
-    }
-
-    
-    None
-}
-
 fn matches_complex_selector_internal<E>(selector: &ComplexSelector<E::Impl>,
-                                         element: &E,
-                                         parent_bf: Option<&BloomFilter>,
-                                         relations: &mut StyleRelations,
-                                         flags: &mut ElementSelectorFlags)
-                                         -> SelectorMatchingResult
+                                        element: &E,
+                                        relations: &mut StyleRelations,
+                                        flags: &mut ElementSelectorFlags)
+                                        -> SelectorMatchingResult
      where E: Element
 {
-    if let Some(result) = can_fast_reject(selector, element, parent_bf, relations, flags) {
-        return result;
+    let matches_all_simple_selectors = selector.compound_selector.iter().all(|simple| {
+        matches_simple_selector(simple, element, relations, flags)
+    });
+
+    if !matches_all_simple_selectors {
+        return SelectorMatchingResult::NotMatchedAndRestartFromClosestLaterSibling;
     }
 
     match selector.next {
@@ -287,10 +275,9 @@ fn matches_complex_selector_internal<E>(selector: &ComplexSelector<E::Impl>,
                     Some(next_element) => next_element,
                 };
                 let result = matches_complex_selector_internal(&**next_selector,
-                                                                &element,
-                                                                parent_bf,
-                                                                relations,
-                                                                flags);
+                                                               &element,
+                                                               relations,
+                                                               flags);
                 match (result, combinator) {
                     
                     (SelectorMatchingResult::Matched, _) => return result,
@@ -332,7 +319,6 @@ fn matches_complex_selector_internal<E>(selector: &ComplexSelector<E::Impl>,
 fn matches_simple_selector<E>(
         selector: &SimpleSelector<E::Impl>,
         element: &E,
-        parent_bf: Option<&BloomFilter>,
         relations: &mut StyleRelations,
         flags: &mut ElementSelectorFlags)
         -> bool
@@ -466,7 +452,10 @@ fn matches_simple_selector<E>(
         }
         SimpleSelector::Negation(ref negated) => {
             !negated.iter().all(|s| {
-                matches_complex_selector(s, element, parent_bf, relations, flags)
+                match matches_complex_selector_internal(s, element, relations, flags) {
+                    SelectorMatchingResult::Matched => true,
+                    _ => false,
+                }
             })
         }
     }
