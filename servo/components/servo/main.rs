@@ -256,13 +256,6 @@ extern {
 }
 
 
-
-
-
-
-#[cfg(target_os = "android")]
-android_start!(main);
-
 #[cfg(target_os = "android")]
 mod android {
     extern crate android_glue;
