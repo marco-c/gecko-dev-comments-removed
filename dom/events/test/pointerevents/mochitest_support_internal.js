@@ -13,18 +13,9 @@ addEventListener("load", function(event) {
 
 
 function preExecute() {
-  add_result_callback(parent.result_function);
-  add_completion_callback(parent.completion_function);
-  parent.turnOnPointerEvents(window.callExecute);
-}
-
-
-function callExecute() {
-  console.log("Run 'executeTest' function");
-  if(!!parent.executeTest)
-    parent.executeTest(window);
-  else
-    parent.is(!!parent.executeTest, true, "parent-document should have function 'executeTest'");
+  add_result_callback(testContext.result_callback);
+  add_completion_callback(testContext.completion_callback);
+  testContext.execute(window);
 }
 
 function addListeners(elem) {

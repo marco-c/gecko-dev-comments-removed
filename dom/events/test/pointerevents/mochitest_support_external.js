@@ -36,22 +36,6 @@ function turnOnPointerEvents(callback) {
 }
 
 
-function result_function(testObj) {
-if(testObj["status"] != testObj["PASS"])
-  console.log(testObj["status"] + " = " + testObj["PASS"] + ". " + testObj["name"]);
-  is(testObj["status"], testObj["PASS"], testObj["name"]);
-}
-
-
-function completion_function() {
-  console.log("w3c tests have been finished");
-  if(!SimpleTest._stopOnLoad) {
-    console.log("Finishing Mochitest system");
-    SimpleTest.finish();
-  }
-}
-
-
 function sendMouseEvent(int_win, elemId, mouseEventType, params) {
   var elem = int_win.document.getElementById(elemId);
   if(!!elem) {
@@ -81,4 +65,46 @@ function sendTouchEvent(int_win, elemId, touchEventType, params) {
   } else {
     is(!!elem, true, "Document should have element with id: " + elemId);
   }
+}
+
+
+function runTestInNewWindow(aFile) {
+  var w = window.open('', "_blank");
+  w.is = function(a, b, msg) { return is(a, b, aFile + " | " + msg); };
+  w.ok = function(cond, name, diag) { return ok(cond, aFile + " | " + name, diag); };
+  w.location = location.href.substring(0, location.href.lastIndexOf('/') + 1) + aFile;
+
+  w.testContext = {
+    result_callback: (aTestObj) => {
+      if(aTestObj["status"] != aTestObj["PASS"]) {
+        console.log(aTestObj["status"] + " = " + aTestObj["PASS"] + ". " + aTestObj["name"]);
+      }
+      is(aTestObj["status"], aTestObj["PASS"], aTestObj["name"]);
+    },
+
+    completion_callback: () => {
+      if (!!w.testContext.executionPromise) {
+        
+        w.testContext.executionPromise.then(() => {
+          w.close();
+          SimpleTest.finish();
+        });        
+      } else {
+        
+        
+        w.close();
+        SimpleTest.finish();
+      }
+    },
+
+    execute: (aWindow) => {
+      turnOnPointerEvents(() => {
+        w.testContext.executionPromise = new Promise((aResolve, aReject) => {
+          executeTest(aWindow);
+          aResolve();
+        });
+      });
+    }
+  };
+  return w;
 }

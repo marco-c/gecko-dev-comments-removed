@@ -14,8 +14,7 @@
     <script type="text/javascript">
       SimpleTest.waitForExplicitFinish();
       function startTest() {
-        var iframe = document.getElementById("testFrame");
-        iframe.src = "pointerevent_attributes_mouse-manual.html";
+        runTestInNewWindow("pointerevent_attributes_mouse-manual.html");
       }
       function executeTest(int_win) {
         var square1 = int_win.document.getElementById("square1");
@@ -31,7 +30,6 @@
     </script>
   </head>
   <body>
-    <iframe id="testFrame" height="800" width="1000"></iframe>
   </body>
 </html>
 

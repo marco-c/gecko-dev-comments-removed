@@ -14,8 +14,7 @@
     <script type="text/javascript">
       SimpleTest.waitForExplicitFinish();
       function startTest() {
-        var iframe = document.getElementById("testFrame");
-        iframe.src = "pointerevent_pointermove-on-chorded-mouse-button.html";
+        runTestInNewWindow("pointerevent_pointermove-on-chorded-mouse-button.html");
       }
 
       function executeTest(int_win) {
@@ -34,6 +33,5 @@
     </script>
   </head>
   <body>
-    <iframe id="testFrame" height="800" width="1000"></iframe>
   </body>
 </html>
