@@ -1520,11 +1520,11 @@ NativeKey::InitWithKeyChar()
       
       mCommittedCharsAndModifiers.Clear();
       for (size_t i = 0; i < mFollowingCharMsgs.Length(); ++i) {
-        char16_t ch = static_cast<char16_t>(mFollowingCharMsgs[i].wParam);
         
-        if (IsControlChar(ch)) {
+        if (!IsPrintableCharMessage(mFollowingCharMsgs[i])) {
           continue;
         }
+        char16_t ch = static_cast<char16_t>(mFollowingCharMsgs[i].wParam);
         mCommittedCharsAndModifiers.Append(ch, mModKeyState.GetModifiers());
       }
     }
