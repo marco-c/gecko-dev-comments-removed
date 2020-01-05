@@ -307,9 +307,8 @@ TimeIntervals
 TrackBuffersManager::Buffered() const
 {
   MSE_DEBUG("");
+
   
-  
-  TimeUnit highestEndTime = HighestEndTime();
 
   MonitorAutoLock mon(mMonitor);
   nsTArray<const TimeIntervals*> tracks;
@@ -319,6 +318,9 @@ TrackBuffersManager::Buffered() const
   if (HasAudio()) {
     tracks.AppendElement(&mAudioBufferedRanges);
   }
+
+  
+  TimeUnit highestEndTime = HighestEndTime(tracks);
 
   
   TimeIntervals intersection{TimeInterval(TimeUnit::FromSeconds(0), highestEndTime)};
@@ -1979,7 +1981,6 @@ TimeUnit
 TrackBuffersManager::HighestEndTime() const
 {
   MonitorAutoLock mon(mMonitor);
-  TimeUnit highestEndTime;
 
   nsTArray<const TimeIntervals*> tracks;
   if (HasVideo()) {
@@ -1988,7 +1989,18 @@ TrackBuffersManager::HighestEndTime() const
   if (HasAudio()) {
     tracks.AppendElement(&mAudioBufferedRanges);
   }
-  for (const auto& trackRanges : tracks) {
+  return HighestEndTime(tracks);
+}
+
+TimeUnit
+TrackBuffersManager::HighestEndTime(
+  nsTArray<const TimeIntervals*>& aTracks) const
+{
+  mMonitor.AssertCurrentThreadOwns();
+
+  TimeUnit highestEndTime;
+
+  for (const auto& trackRanges : aTracks) {
     highestEndTime = std::max(trackRanges->GetEnd(), highestEndTime);
   }
   return highestEndTime;

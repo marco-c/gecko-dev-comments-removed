@@ -468,6 +468,10 @@ private:
   nsMainThreadPtrHandle<MediaSourceDecoder> mParentDecoder;
 
   
+  
+  media::TimeUnit HighestEndTime(nsTArray<const media::TimeIntervals*>& aTracks) const;
+
+  
   Atomic<bool> mEnded;
 
   
