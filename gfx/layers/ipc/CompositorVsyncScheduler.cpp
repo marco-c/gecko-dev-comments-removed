@@ -21,7 +21,6 @@
 #include "mozilla/gfx/Point.h"          
 #include "mozilla/gfx/Rect.h"           
 #include "mozilla/layers/CompositorThread.h"
-#include "mozilla/layers/CompositorVsyncSchedulerOwner.h"
 #include "mozilla/mozalloc.h"           
 #include "nsCOMPtr.h"                   
 #include "nsDebug.h"                    
@@ -34,7 +33,6 @@
 #include "VsyncSource.h"
 #endif
 #include "mozilla/widget/CompositorWidget.h"
-#include "VRManager.h"
 
 namespace mozilla {
 
