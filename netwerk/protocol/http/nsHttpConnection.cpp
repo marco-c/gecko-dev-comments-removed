@@ -87,7 +87,6 @@ nsHttpConnection::nsHttpConnection()
     , mWaitingFor0RTTResponse(false)
     , mContentBytesWritten0RTT(0)
     , mEarlyDataNegotiated(false)
-    , mDid0RTTSpdy(false)
 {
     LOG(("Creating nsHttpConnection @%p\n", this));
 
@@ -159,113 +158,16 @@ nsHttpConnection::Init(nsHttpConnectionInfo *info,
     return NS_OK;
 }
 
-nsresult
-nsHttpConnection::TryTakeSubTransactions(nsTArray<RefPtr<nsAHttpTransaction> > &list)
-{
-    nsresult rv = mTransaction->TakeSubTransactions(list);
-
-    if (rv == NS_ERROR_ALREADY_OPENED) {
-        
-        LOG(("TakeSubTransactions somehow called after "
-             "nsAHttpTransaction began processing\n"));
-        MOZ_ASSERT(false,
-                   "TakeSubTransactions somehow called after "
-                   "nsAHttpTransaction began processing");
-        mTransaction->Close(NS_ERROR_ABORT);
-        return rv;
-    }
-
-    if (NS_FAILED(rv) && rv != NS_ERROR_NOT_IMPLEMENTED) {
-        
-        LOG(("unexpected rv from nnsAHttpTransaction::TakeSubTransactions()"));
-        MOZ_ASSERT(false,
-                   "unexpected result from "
-                   "nsAHttpTransaction::TakeSubTransactions()");
-        mTransaction->Close(NS_ERROR_ABORT);
-        return rv;
-    }
-
-    return rv;
-}
-
-nsresult
-nsHttpConnection::MoveTransactionsToSpdy(nsresult status, nsTArray<RefPtr<nsAHttpTransaction> > &list)
-{
-    if (NS_FAILED(status)) { 
-        MOZ_ASSERT(list.IsEmpty(), "sub transaction list not empty");
-
-        
-        
-        
-        LOG(("nsHttpConnection::MoveTransactionsToSpdy moves single transaction %p "
-             "into SpdySession %p\n", mTransaction.get(), mSpdySession.get()));
-        nsresult rv = AddTransaction(mTransaction, mPriority);
-        if (NS_FAILED(rv)) {
-            return rv;
-        }
-    } else {
-        int32_t count = list.Length();
-
-        LOG(("nsHttpConnection::MoveTransactionsToSpdy moving transaction list len=%d "
-             "into SpdySession %p\n", count, mSpdySession.get()));
-
-        if (!count) {
-            mTransaction->Close(NS_ERROR_ABORT);
-            return NS_ERROR_ABORT;
-        }
-
-        for (int32_t index = 0; index < count; ++index) {
-            nsresult rv = AddTransaction(list[index], mPriority);
-            if (NS_FAILED(rv)) {
-                return rv;
-            }
-        }
-    }
-
-    return NS_OK;
-}
-
-void
-nsHttpConnection::Start0RTTSpdy(uint8_t spdyVersion)
-{
-    LOG(("nsHttpConnection::Start0RTTSpdy [this=%p]", this));
-    mDid0RTTSpdy = true;
-    mUsingSpdyVersion = spdyVersion;
-    mSpdySession = ASpdySession::NewSpdySession(spdyVersion, mSocketTransport,
-                                                true);
-
-    nsTArray<RefPtr<nsAHttpTransaction> > list;
-    nsresult rv = TryTakeSubTransactions(list);
-    if (NS_FAILED(rv) && rv != NS_ERROR_NOT_IMPLEMENTED) {
-        LOG(("nsHttpConnection::Start0RTTSpdy [this=%p] failed taking "
-             "subtransactions rv=%x", this, rv));
-        return;
-    }
-
-    rv = MoveTransactionsToSpdy(rv, list);
-    if (NS_FAILED(rv)) {
-        LOG(("nsHttpConnection::Start0RTTSpdy [this=%p] failed moving "
-             "transactions rv=%x", this, rv));
-        return;
-    }
-
-    mTransaction = mSpdySession;
-}
-
 void
 nsHttpConnection::StartSpdy(uint8_t spdyVersion)
 {
-    LOG(("nsHttpConnection::StartSpdy [this=%p, mDid0RTTSpdy=%d]\n", this, mDid0RTTSpdy));
+    LOG(("nsHttpConnection::StartSpdy [this=%p]\n", this));
 
-    MOZ_ASSERT(!mSpdySession || mDid0RTTSpdy);
+    MOZ_ASSERT(!mSpdySession);
 
     mUsingSpdyVersion = spdyVersion;
     mEverUsedSpdy = true;
-
-    if (!mDid0RTTSpdy) {
-        mSpdySession = ASpdySession::NewSpdySession(spdyVersion, mSocketTransport,
-                                                    false);
-    }
+    mSpdySession = ASpdySession::NewSpdySession(spdyVersion, mSocketTransport);
 
     if (!mReportedSpdy) {
         mReportedSpdy = true;
@@ -283,13 +185,27 @@ nsHttpConnection::StartSpdy(uint8_t spdyVersion)
     
 
     nsTArray<RefPtr<nsAHttpTransaction> > list;
-    nsresult rv;
-    if (!mDid0RTTSpdy) {
-        rv = TryTakeSubTransactions(list);
+    nsresult rv = mTransaction->TakeSubTransactions(list);
 
-        if (NS_FAILED(rv) && rv != NS_ERROR_NOT_IMPLEMENTED) {
-            return;
-        }
+    if (rv == NS_ERROR_ALREADY_OPENED) {
+        
+        LOG(("TakeSubTransactions somehow called after "
+             "nsAHttpTransaction began processing\n"));
+        MOZ_ASSERT(false,
+                   "TakeSubTransactions somehow called after "
+                   "nsAHttpTransaction began processing");
+        mTransaction->Close(NS_ERROR_ABORT);
+        return;
+    }
+
+    if (NS_FAILED(rv) && rv != NS_ERROR_NOT_IMPLEMENTED) {
+        
+        LOG(("unexpected rv from nnsAHttpTransaction::TakeSubTransactions()"));
+        MOZ_ASSERT(false,
+                   "unexpected result from "
+                   "nsAHttpTransaction::TakeSubTransactions()");
+        mTransaction->Close(NS_ERROR_ABORT);
+        return;
     }
 
     if (NeedSpdyTunnel()) {
@@ -311,10 +227,34 @@ nsHttpConnection::StartSpdy(uint8_t spdyVersion)
         mConnInfo = wildCardProxyCi;
     }
 
-    if (!mDid0RTTSpdy) {
-        rv = MoveTransactionsToSpdy(rv, list);
+    if (NS_FAILED(rv)) { 
+        MOZ_ASSERT(list.IsEmpty(), "sub transaction list not empty");
+
+        
+        
+        
+        LOG(("nsHttpConnection::StartSpdy moves single transaction %p "
+             "into SpdySession %p\n", mTransaction.get(), mSpdySession.get()));
+        rv = AddTransaction(mTransaction, mPriority);
         if (NS_FAILED(rv)) {
             return;
+        }
+    } else {
+        int32_t count = list.Length();
+
+        LOG(("nsHttpConnection::StartSpdy moving transaction list len=%d "
+             "into SpdySession %p\n", count, mSpdySession.get()));
+
+        if (!count) {
+            mTransaction->Close(NS_ERROR_ABORT);
+            return;
+        }
+
+        for (int32_t index = 0; index < count; ++index) {
+            rv = AddTransaction(list[index], mPriority);
+            if (NS_FAILED(rv)) {
+                return;
+            }
         }
     }
 
@@ -381,7 +321,8 @@ nsHttpConnection::EnsureNPNComplete(nsresult &aOut0RTTWriteHandshakeValue,
         
         
         m0RTTChecked = true;
-        nsresult rvEarlyAlpn = ssl->GetAlpnEarlySelection(mEarlyNegotiatedALPN);
+        nsAutoCString earlyNegotiatedNPN;
+        nsresult rvEarlyAlpn = ssl->GetAlpnEarlySelection(earlyNegotiatedNPN);
         if (NS_FAILED(rvEarlyAlpn)) {
             
             
@@ -398,7 +339,7 @@ nsHttpConnection::EnsureNPNComplete(nsresult &aOut0RTTWriteHandshakeValue,
             
             rv = ssl->GetNegotiatedNPN(negotiatedNPN);
             if (rv == NS_ERROR_NOT_CONNECTED) {
-                rvEarlyAlpn = ssl->GetAlpnEarlySelection(mEarlyNegotiatedALPN);
+                rvEarlyAlpn = ssl->GetAlpnEarlySelection(earlyNegotiatedNPN);
             }
         }
 
@@ -408,26 +349,19 @@ nsHttpConnection::EnsureNPNComplete(nsresult &aOut0RTTWriteHandshakeValue,
             mEarlyDataNegotiated = false;
         } else {
             LOG(("nsHttpConnection::EnsureNPNComplete %p -"
-                 "early selected alpn: %s", this, mEarlyNegotiatedALPN.get()));
+                 "early selected alpn: %s", this, earlyNegotiatedNPN.get()));
             uint32_t infoIndex;
             const SpdyInformation *info = gHttpHandler->SpdyInfo();
-            if (NS_FAILED(info->GetNPNIndex(mEarlyNegotiatedALPN, &infoIndex))) {
-                
+            
+            if (NS_FAILED(info->GetNPNIndex(earlyNegotiatedNPN, &infoIndex))) {
                 
                 if (mTransaction->Do0RTT()) {
                     LOG(("nsHttpConnection::EnsureNPNComplete [this=%p] - We "
-                         "can do 0RTT (http/1)!", this));
+                         "can do 0RTT!", this));
                     mWaitingFor0RTTResponse = true;
                 }
-            } else {
-                
-                
-                LOG(("nsHttpConnection::EnsureNPNComplete [this=%p] - Starting "
-                     "0RTT for h2!", this));
-                mWaitingFor0RTTResponse = true;
-                Start0RTTSpdy(info->Version[infoIndex]);
+                mEarlyDataNegotiated = true;
             }
-            mEarlyDataNegotiated = true;
         }
     }
 
@@ -457,17 +391,16 @@ nsHttpConnection::EnsureNPNComplete(nsresult &aOut0RTTWriteHandshakeValue,
              this, mConnInfo->HashKey().get(), negotiatedNPN.get(),
              mTLSFilter ? " [Double Tunnel]" : ""));
 
-        bool earlyDataAccepted = false;
+        bool ealyDataAccepted = false;
         if (mWaitingFor0RTTResponse) {
             
-            rv = ssl->GetEarlyDataAccepted(&earlyDataAccepted);
+            rv = ssl->GetEarlyDataAccepted(&ealyDataAccepted);
             LOG(("nsHttpConnection::EnsureNPNComplete [this=%p] - early data "
-                 "that was sent during 0RTT %s been accepted [rv=%x].",
-                 this, earlyDataAccepted ? "has" : "has not", rv));
+                 "that was sent during 0RTT %s been accepted.",
+                 this, ealyDataAccepted ? "has" : "has not"));
 
             if (NS_FAILED(rv) ||
-                NS_FAILED(mTransaction->Finish0RTT(!earlyDataAccepted, negotiatedNPN != mEarlyNegotiatedALPN))) {
-                LOG(("nsHttpConection::EnsureNPNComplete [this=%p] closing transaction %p", this, mTransaction.get()));
+                NS_FAILED(mTransaction->Finish0RTT(!ealyDataAccepted))) {
                 mTransaction->Close(NS_ERROR_NET_RESET);
                 goto npnComplete;
             }
@@ -483,17 +416,16 @@ nsHttpConnection::EnsureNPNComplete(nsresult &aOut0RTTWriteHandshakeValue,
                                                  : TLS_EARLY_DATA_AVAILABLE_BUT_NOT_USED));
             if (mWaitingFor0RTTResponse) {
                 Telemetry::Accumulate(Telemetry::TLS_EARLY_DATA_ACCEPTED,
-                                      earlyDataAccepted);
+                                      ealyDataAccepted);
             }
-            if (earlyDataAccepted) {
+            if (ealyDataAccepted) {
                 Telemetry::Accumulate(Telemetry::TLS_EARLY_DATA_BYTES_WRITTEN,
                                       mContentBytesWritten0RTT);
             }
         }
         mWaitingFor0RTTResponse = false;
 
-        if (!earlyDataAccepted) {
-            LOG(("nsHttpConnection::EnsureNPNComplete [this=%p] early data not accepted", this));
+        if (!ealyDataAccepted) {
             uint32_t infoIndex;
             const SpdyInformation *info = gHttpHandler->SpdyInfo();
             if (NS_SUCCEEDED(info->GetNPNIndex(negotiatedNPN, &infoIndex))) {
@@ -503,40 +435,20 @@ nsHttpConnection::EnsureNPNComplete(nsresult &aOut0RTTWriteHandshakeValue,
           LOG(("nsHttpConnection::EnsureNPNComplete [this=%p] - %" PRId64 " bytes "
                "has been sent during 0RTT.", this, mContentBytesWritten0RTT));
           mContentBytesWritten = mContentBytesWritten0RTT;
-          if (mSpdySession) {
-              
-              
-              LOG(("nsHttpConnection::EnsureNPNComplete [this=%p] - finishing "
-                   "StartSpdy for 0rtt spdy session %p", this, mSpdySession.get()));
-              StartSpdy(mSpdySession->SpdyVersion());
-          }
         }
 
         Telemetry::Accumulate(Telemetry::SPDY_NPN_CONNECT, UsingSpdy());
     }
 
 npnComplete:
-    LOG(("nsHttpConnection::EnsureNPNComplete [this=%p] setting complete to true", this));
+    LOG(("nsHttpConnection::EnsureNPNComplete setting complete to true"));
     mNPNComplete = true;
     if (mWaitingFor0RTTResponse) {
-        
         mWaitingFor0RTTResponse = false;
-        LOG(("nsHttpConnection::EnsureNPNComplete [this=%p] 0rtt failed", this));
-        if (NS_FAILED(mTransaction->Finish0RTT(true, negotiatedNPN != mEarlyNegotiatedALPN))) {
+        if (NS_FAILED(mTransaction->Finish0RTT(true))) {
             mTransaction->Close(NS_ERROR_NET_RESET);
         }
         mContentBytesWritten0RTT = 0;
-    }
-
-    if (mDid0RTTSpdy && negotiatedNPN != mEarlyNegotiatedALPN) {
-        
-        LOG(("nsHttpConnection::EnsureNPNComplete [this=%p] resetting Start0RTTSpdy", this));
-        mUsingSpdyVersion = 0;
-        mTransaction = nullptr;
-        mSpdySession = nullptr;
-        
-        
-        mDid0RTTSpdy = false;
     }
     return true;
 }

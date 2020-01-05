@@ -28,9 +28,8 @@ public:
   virtual PRIntervalTime IdleTime() = 0;
   virtual uint32_t ReadTimeoutTick(PRIntervalTime now) = 0;
   virtual void DontReuse() = 0;
-  virtual uint32_t SpdyVersion() = 0;
 
-  static ASpdySession *NewSpdySession(uint32_t version, nsISocketTransport *, bool);
+  static ASpdySession *NewSpdySession(uint32_t version, nsISocketTransport *);
 
   
   

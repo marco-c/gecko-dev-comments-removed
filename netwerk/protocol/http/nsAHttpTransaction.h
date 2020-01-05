@@ -217,10 +217,7 @@ public:
     
     
     
-    
-    
-    
-    virtual nsresult Finish0RTT(bool aRestart, bool aAlpnChanged) {
+    virtual nsresult Finish0RTT(bool aRestart) {
         return NS_ERROR_NOT_IMPLEMENTED;
     }
 };

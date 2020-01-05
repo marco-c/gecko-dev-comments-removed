@@ -154,10 +154,6 @@ public:
                                 const nsACString &origin,
                                 RefPtr<nsStandardURL> &url);
 
-  
-  bool Do0RTT();
-  nsresult Finish0RTT(bool aRestart, bool aAlpnIgnored);
-
 protected:
   static void CreatePushHashKey(const nsCString &scheme,
                                 const nsCString &hostHeader,
@@ -331,8 +327,6 @@ private:
   
   
   SimpleBuffer mSimpleBuffer;
-
-  bool mAttempting0RTT;
 
 
 public:
