@@ -19,11 +19,7 @@ function AutoCompleteInput(aSearches) {
 }
 AutoCompleteInput.prototype = Object.create(AutoCompleteInputBase.prototype);
 
-function run_test() {
-  run_next_test();
-}
-
-add_test(function test_handleEnter() {
+add_test(function test_handleEnter_key() {
   let results = [
     ["mozilla.com", "http://www.mozilla.com"],
     ["mozilla.org", "http://www.mozilla.org"],
@@ -46,7 +42,13 @@ add_test(function test_handleEnter() {
     
     Assert.equal(aController.input.textValue, "http://www.mozilla.org");
   });
+});
 
+add_test(function test_handleEnter_mouse() {
+  let results = [
+    ["mozilla.com", "http://www.mozilla.com"],
+    ["mozilla.org", "http://www.mozilla.org"],
+  ];
   
   doSearch("moz", results, function(aController) {
     Assert.equal(aController.input.textValue, "moz");
@@ -65,6 +67,26 @@ add_test(function test_handleEnter() {
     
     
     Assert.equal(aController.input.textValue, "moz");
+  });
+});
+
+add_test(function test_handleEnter_preselected() {
+  let results = [
+    ["mozilla.com", "http://www.mozilla.com"],
+    ["mozilla.org", "http://www.mozilla.org"],
+  ];
+  
+  doSearch("moz", results, function(aController) {
+    Assert.equal(aController.input.textValue, "moz");
+    Assert.equal(aController.getFinalCompleteValueAt(0), "http://www.mozilla.com");
+    Assert.equal(aController.getFinalCompleteValueAt(1), "http://www.mozilla.org");
+
+    aController.setInitiallySelectedIndex(0);
+
+    aController.handleEnter(false);
+    
+    
+    Assert.equal(aController.input.textValue, "http://www.mozilla.com");
   });
 });
 

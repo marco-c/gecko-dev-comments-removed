@@ -90,6 +90,26 @@ nsAutoCompleteController::GetInput(nsIAutoCompleteInput **aInput)
 }
 
 NS_IMETHODIMP
+nsAutoCompleteController::SetInitiallySelectedIndex(int32_t aSelectedIndex)
+{
+  
+  nsCOMPtr<nsIAutoCompleteInput> input(mInput);
+  NS_ENSURE_STATE(input);
+  nsCOMPtr<nsIAutoCompletePopup> popup;
+  input->GetPopup(getter_AddRefs(popup));
+  NS_ENSURE_STATE(popup);
+  popup->SetSelectedIndex(aSelectedIndex);
+
+  
+  bool completeSelection;
+  if (NS_SUCCEEDED(input->GetCompleteSelectedIndex(&completeSelection)) &&
+      completeSelection) {
+    mCompletedSelectionIndex = aSelectedIndex;
+  }
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 nsAutoCompleteController::SetInput(nsIAutoCompleteInput *aInput)
 {
   
@@ -1425,9 +1445,7 @@ nsAutoCompleteController::EnterMatch(bool aIsPopupSelection,
         
         nsAutoString finalValue;
         GetResultValueAt(mCompletedSelectionIndex, true, finalValue);
-        nsAutoString completedValue;
-        GetResultValueAt(mCompletedSelectionIndex, false, completedValue);
-        if (completedValue.Equals(inputValue) && !finalValue.Equals(inputValue)) {
+        if (!inputValue.Equals(finalValue)) {
           value = finalValue;
         }
         

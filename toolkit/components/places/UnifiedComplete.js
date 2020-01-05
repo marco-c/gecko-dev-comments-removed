@@ -1310,16 +1310,6 @@ Search.prototype = {
     
     
     
-    if (uri.asciiHost &&
-        Prefs.keywordEnabled &&
-        REGEXP_SINGLEWORD_HOST.test(uri.asciiHost) &&
-        !Services.uriFixup.isDomainWhitelisted(uri.asciiHost, -1)) {
-      return false;
-    }
-
-    
-    
-    
     
     
     let escapedURL = uri.spec;
