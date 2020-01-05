@@ -1018,39 +1018,33 @@ nsIFrame::ReparentFrameViewTo(nsIFrame* aFrame,
 }
 
 void
-nsIFrame::SyncFrameViewProperties(nsPresContext*  aPresContext,
-                                 nsIFrame*        aFrame,
-                                 nsStyleContext*  aStyleContext,
-                                 nsView*          aView)
+nsIFrame::SyncFrameViewProperties(nsView* aView)
 {
-  NS_ASSERTION(!aStyleContext || aFrame->StyleContext() == aStyleContext,
-               "Wrong style context for frame?");
-
   if (!aView) {
-    return;
+    aView = GetView();
+    if (!aView) {
+      return;
+    }
   }
 
   nsViewManager* vm = aView->GetViewManager();
 
-  if (nullptr == aStyleContext) {
-    aStyleContext = aFrame->StyleContext();
-  }
-
   
-  if (!aFrame->SupportsVisibilityHidden()) {
+  if (!SupportsVisibilityHidden()) {
     
+    nsStyleContext* sc = StyleContext();
     vm->SetViewVisibility(aView,
-        aStyleContext->StyleVisibility()->IsVisible()
+        sc->StyleVisibility()->IsVisible()
             ? nsViewVisibility_kShow : nsViewVisibility_kHide);
   }
 
   int32_t zIndex = 0;
   bool    autoZIndex = false;
 
-  if (aFrame->IsAbsPosContainingBlock()) {
+  if (IsAbsPosContainingBlock()) {
     
-    const nsStylePosition* position = aStyleContext->StylePosition();
-
+    nsStyleContext* sc = StyleContext();
+    const nsStylePosition* position = sc->StylePosition();
     if (position->mZIndex.GetUnit() == eStyleUnit_Integer) {
       zIndex = position->mZIndex.GetIntValue();
     } else if (position->mZIndex.GetUnit() == eStyleUnit_Auto) {
@@ -1069,15 +1063,13 @@ nsFrame::CreateView()
   MOZ_ASSERT(!HasView());
 
   nsView* parentView = GetParent()->GetClosestView();
-  NS_ASSERTION(parentView, "no parent with view");
+  MOZ_ASSERT(parentView, "no parent with view");
 
   nsViewManager* viewManager = parentView->GetViewManager();
-  NS_ASSERTION(viewManager, "null view manager");
+  MOZ_ASSERT(viewManager, "null view manager");
 
-  
   nsView* view = viewManager->CreateView(GetRect(), parentView);
-
-  SyncFrameViewProperties(PresContext(), this, nullptr, view);
+  SyncFrameViewProperties(view);
 
   nsView* insertBefore = nsLayoutUtils::FindSiblingViewFor(parentView, this);
   

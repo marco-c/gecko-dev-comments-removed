@@ -2479,15 +2479,12 @@ public:
   nsIFrame* GetAncestorWithView() const;
 
   
-  
-  
-  
-  
-  
-  static void SyncFrameViewProperties(nsPresContext*  aPresContext,
-                                      nsIFrame*        aFrame,
-                                      nsStyleContext*  aStyleContext,
-                                      nsView*         aView);
+
+
+
+
+
+  void SyncFrameViewProperties(nsView* aView = nullptr);
 
   
 
