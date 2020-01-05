@@ -39,6 +39,9 @@
 
 
 
+
+
+
 use dom::bindings::utils::{Reflector, Reflectable};
 use dom::node::Node;
 use dom::xmlhttprequest::{XMLHttpRequest, TrustedXHRAddress};
@@ -119,7 +122,7 @@ impl <T> Clone for JS<T> {
 }
 
 impl JS<Node> {
-    /// Create a new JS-owned value wrapped from an address known to be a Node pointer.
+    /// Create a new JS-owned value wrapped from an address known to be a `Node` pointer.
     pub unsafe fn from_trusted_node_address(inner: TrustedNodeAddress) -> JS<Node> {
         let TrustedNodeAddress(addr) = inner;
         JS {
@@ -201,7 +204,7 @@ impl<From, To> JS<From> {
 }
 
 
-/// Get an Option<JSRef<T>> out of an Option<Root<T>>
+/// Get an `Option<JSRef<T>>` out of an `Option<Root<T>>`
 pub trait RootedReference<T> {
     fn root_ref<'a>(&'a self) -> Option<JSRef<'a, T>>;
 }
@@ -212,7 +215,7 @@ impl<'a, 'b, T: Reflectable> RootedReference<T> for Option<Root<'a, 'b, T>> {
     }
 }
 
-/// Get an Option<Option<JSRef<T>>> out of an Option<Option<Root<T>>>
+/// Get an `Option<Option<JSRef<T>>>` out of an `Option<Option<Root<T>>>`
 pub trait OptionalRootedReference<T> {
     fn root_ref<'a>(&'a self) -> Option<Option<JSRef<'a, T>>>;
 }
@@ -223,7 +226,7 @@ impl<'a, 'b, T: Reflectable> OptionalRootedReference<T> for Option<Option<Root<'
     }
 }
 
-/// Trait that allows extracting a JS<T> value from a variety of rooting-related containers,
+/// Trait that allows extracting a `JS<T>` value from a variety of rooting-related containers,
 /// which in general is an unsafe operation since they can outlive the rooted lifetime of the
 /// original value.
 /*definitely not public*/ trait Assignable<T> {
@@ -248,8 +251,8 @@ impl<T: Reflectable> Assignable<T> for Temporary<T> {
     }
 }
 
-/// Assign an optional rootable value (either of JS<T> or Temporary<T>) to an optional
-/// field of a DOM type (ie. Option<JS<T>>)
+/// Assign an optional rootable value (either of `JS<T>` or `Temporary<T>`) to an optional
+/// field of a DOM type (ie. `Option<JS<T>>`)
 pub trait OptionalSettable<T> {
     fn assign(&self, val: Option<T>);
 }
@@ -261,7 +264,7 @@ impl<T: Assignable<U>, U: Reflectable> OptionalSettable<T> for Cell<Option<JS<U>
 }
 
 
-/// Root a rootable Option type (used for Option<Temporary<T>>)
+/// Root a rootable `Option` type (used for `Option<Temporary<T>>`)
 pub trait OptionalRootable<T> {
     fn root<'a, 'b>(self) -> Option<Root<'a, 'b, T>>;
 }
@@ -283,7 +286,7 @@ impl<'a, T: Reflectable> OptionalUnrootable<T> for Option<JSRef<'a, T>> {
     }
 }
 
-/// Root a rootable Option type (used for Option<JS<T>>)
+/// Root a rootable `Option` type (used for `Option<JS<T>>`)
 pub trait OptionalRootedRootable<T> {
     fn root<'a, 'b>(&self) -> Option<Root<'a, 'b, T>>;
 }
@@ -294,7 +297,7 @@ impl<T: Reflectable> OptionalRootedRootable<T> for Option<JS<T>> {
     }
 }
 
-/// Root a rootable Option<Option> type (used for Option<Option<JS<T>>>)
+/// Root a rootable `Option<Option>` type (used for `Option<Option<JS<T>>>`)
 pub trait OptionalOptionalRootedRootable<T> {
     fn root<'a, 'b>(&self) -> Option<Option<Root<'a, 'b, T>>>;
 }
@@ -306,7 +309,7 @@ impl<T: Reflectable> OptionalOptionalRootedRootable<T> for Option<Option<JS<T>>>
 }
 
 
-/// Root a rootable Result type (any of Temporary<T> or JS<T>)
+/// Root a rootable `Result` type (any of `Temporary<T>` or `JS<T>`)
 pub trait ResultRootable<T,U> {
     fn root<'a, 'b>(self) -> Result<Root<'a, 'b, T>, U>;
 }
