@@ -171,6 +171,9 @@ impl WebGLPaintTask {
             CanvasWebGLMsg::DrawingBufferHeight(sender) =>
                 self.send_drawing_buffer_height(sender),
         }
+
+        
+        assert!(gl::get_error() == gl::NO_ERROR);
     }
 
     
@@ -259,7 +262,7 @@ impl WebGLPaintTask {
     }
 
     fn create_texture(&self, chan: IpcSender<Option<NonZero<u32>>>) {
-        let texture = gl::gen_framebuffers(1)[0];
+        let texture = gl::gen_textures(1)[0];
         let texture = if texture == 0 {
             None
         } else {
