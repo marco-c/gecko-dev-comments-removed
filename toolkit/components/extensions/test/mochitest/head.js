@@ -35,6 +35,16 @@ if (location.pathname.includes("test-oop-extensions")) {
   });
 }
 
+let Assert = {
+  rejects(promise, msg) {
+    return promise.then(() => {
+      ok(false, msg);
+    }, () => {
+      ok(true, msg);
+    });
+  },
+};
+
 
 
 function waitForLoad(win) {
