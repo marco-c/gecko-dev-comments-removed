@@ -4721,7 +4721,7 @@ PresShell::RenderDocument(const nsRect& aRect, uint32_t aFlags,
       
       
       if (layerManager &&
-          (!layerManager->AsClientLayerManager() ||
+          (!layerManager->AsKnowsCompositor() ||
            XRE_IsParentProcess())) {
         flags |= PaintFrameFlags::PAINT_WIDGET_LAYERS;
       }
