@@ -1487,7 +1487,9 @@ GetKeyframeListFromPropertyIndexedKeyframe(JSContext* aCx,
     size_t i = 0;
 
     for (const nsString& stringValue : pair.mValues) {
-      double offset = i++ / double(n);
+      
+      
+      double offset = n ? i++ / double(n) : 1;
       Keyframe* keyframe = processedKeyframes.LookupOrAdd(offset);
       if (keyframe->mPropertyValues.IsEmpty()) {
         keyframe->mTimingFunction = easing;
