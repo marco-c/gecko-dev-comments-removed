@@ -715,7 +715,7 @@ nsresult nsIDNService::decodeACE(const nsACString& in, nsACString& out,
   
   
   punycode_uint output_length = in.Length() - kACEPrefixLen + 1;
-  punycode_uint *output = new punycode_uint[output_length];
+  auto *output = new punycode_uint[output_length];
   NS_ENSURE_TRUE(output, NS_ERROR_OUT_OF_MEMORY);
 
   enum punycode_status status = punycode_decode(in.Length() - kACEPrefixLen,
