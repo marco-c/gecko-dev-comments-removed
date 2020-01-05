@@ -796,10 +796,6 @@ NotificationController::WillRefresh(mozilla::TimeStamp aTime)
   mDocument->ProcessInvalidationList();
 
   
-  
-  mDocument->ValidateARIAOwned();
-
-  
   for (uint32_t idx = 0; idx < mRelocations.Length(); idx++) {
     if (mRelocations[idx]->IsInDocument()) {
       mDocument->DoARIAOwnsRelocation(mRelocations[idx]);

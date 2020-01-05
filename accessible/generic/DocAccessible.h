@@ -344,7 +344,7 @@ public:
   
 
 
-  void ContentRemoved(Accessible* aContent);
+  void ContentRemoved(Accessible* aAccessible);
   void ContentRemoved(nsIContent* aContentNode);
 
   
@@ -503,11 +503,6 @@ protected:
 
 
   void ProcessInvalidationList();
-
-  
-
-
-  void ValidateARIAOwned();
 
   
 
