@@ -37,26 +37,6 @@ public:
   
   
   
-  
-  
-  static CanPlayStatus CanHandleMediaType(const char* aMIMEType,
-                                          bool aHaveRequestedCodecs,
-                                          const nsAString& aRequestedCodecs,
-                                          DecoderDoctorDiagnostics* aDiagnostics);
-
-  
-  
-  
-  
-  
-  static CanPlayStatus CanHandleCodecsType(const char* aMIMEType,
-                                           const nsAString& aRequestedCodecs,
-                                           DecoderDoctorDiagnostics* aDiagnostics);
-
-  
-  
-  
-  
   static bool ShouldHandleMediaType(const char* aMIMEType,
                                     DecoderDoctorDiagnostics* aDiagnostics);
 
