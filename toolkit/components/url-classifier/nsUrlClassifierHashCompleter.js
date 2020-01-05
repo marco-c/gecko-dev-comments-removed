@@ -525,32 +525,39 @@ HashCompleterRequest.prototype = {
   },
 
   handleResponseV4: function HCR_handleResponseV4() {
-    let callback = (aCompleteHash,
-                    aTableNames,
-                    aMinWaitDuration,
-                    aNegCacheDuration,
-                    aPerHashCacheDuration) => {
-      log("V4 response callback: " + JSON.stringify(aCompleteHash) + ", " +
-          aTableNames + ", " +
-          aMinWaitDuration + ", " +
-          aNegCacheDuration + ", " +
-          aPerHashCacheDuration);
+    let callback = {
+      onCompleteHashFound : (aCompleteHash,
+                             aTableNames,
+                             aPerHashCacheDuration) => {
+        log("V4 fullhash response complete hash found callback: " +
+            JSON.stringify(aCompleteHash) + ", " +
+            aTableNames + ", CacheDuration(" + aPerHashCacheDuration + ")");
 
-      
-      let filteredTables = aTableNames.split(",").filter(name => {
-        return this.tableNames.get(name);
-      });
-      if (0 === filteredTables.length) {
-        log("ERROR: Got complete hash which is from unknown table.");
-        return;
-      }
-      if (filteredTables.length > 1) {
-        log("WARNING: Got complete hash which has ambigious threat type.");
-      }
+        
+        let filteredTables = aTableNames.split(",").filter(name => {
+          return this.tableNames.get(name);
+        });
+        if (0 === filteredTables.length) {
+          log("ERROR: Got complete hash which is from unknown table.");
+          return;
+        }
+        if (filteredTables.length > 1) {
+          log("WARNING: Got complete hash which has ambigious threat type.");
+        }
 
-      this.handleItem(aCompleteHash, filteredTables[0], 0);
+        this.handleItem(aCompleteHash, filteredTables[0], 0);
 
-      
+        
+      },
+
+      onResponseParsed : (aMinWaitDuration,
+                          aNegCacheDuration) => {
+        log("V4 fullhash response parsed callback: " +
+            "MinWaitDuration(" + aMinWaitDuration + "), " +
+            "NegativeCacheDuration(" + aNegCacheDuration + ")");
+
+        
+      },
     };
 
     gUrlUtil.parseFindFullHashResponseV4(this._response, callback);
