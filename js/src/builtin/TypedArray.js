@@ -1113,8 +1113,7 @@ function TypedArraySort(comparefn) {
     var buffer;
     if (isTypedArray) {
         buffer = GetAttachedArrayBuffer(obj);
-    }
-    else {
+    } else {
         buffer = callFunction(CallTypedArrayMethodIfWrapped, obj, obj, "GetAttachedArrayBuffer");
     }
 
@@ -1153,13 +1152,23 @@ function TypedArraySort(comparefn) {
         
         var v = wrappedCompareFn(x, y);
         
+        if (buffer === null) {
+            
+            
+            if (isTypedArray) {
+                buffer = GetAttachedArrayBuffer(obj);
+            } else {
+                buffer = callFunction(CallTypedArrayMethodIfWrapped, obj, obj,
+                                      "GetAttachedArrayBuffer");
+            }
+        }
         var bufferDetached;
         if (isTypedArray) {
             bufferDetached = IsDetachedBuffer(buffer);
         } else {
             
             
-            bufferDetached = callFunction(CallTypedArrayMethodIfWrapped, this,
+            bufferDetached = callFunction(CallTypedArrayMethodIfWrapped, obj,
                                           buffer, "IsDetachedBuffer");
         }
         if (bufferDetached)
