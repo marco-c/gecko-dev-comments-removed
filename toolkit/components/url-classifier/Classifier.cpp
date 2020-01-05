@@ -19,6 +19,7 @@
 #include "mozilla/Logging.h"
 #include "mozilla/SyncRunnable.h"
 #include "mozilla/Base64.h"
+#include "mozilla/Unused.h"
 
 
 extern mozilla::LazyLogModule gUrlClassifierDbServiceLog;
@@ -349,22 +350,36 @@ Classifier::Reset()
 }
 
 void
-Classifier::ResetTables(const nsTArray<nsCString>& aTables)
+Classifier::ResetTables(ClearType aType, const nsTArray<nsCString>& aTables)
 {
-  
-  MarkSpoiled(aTables);
+  for (uint32_t i = 0; i < aTables.Length(); i++) {
+    LOG(("Resetting table: %s", aTables[i].get()));
+    
+    mTableFreshness.Remove(aTables[i]);
+    LookupCache *cache = GetLookupCache(aTables[i]);
+    if (cache) {
+      
+      if (aType == Clear_Cache) {
+        cache->ClearCache();
+      } else {
+        cache->ClearAll();
+      }
+    }
+  }
 
   
-  DeleteTables(aTables);
+  if (aType == Clear_All) {
+    DeleteTables(mRootStoreDirectory, aTables);
 
-  RegenActiveTables();
+    RegenActiveTables();
+  }
 }
 
 void
-Classifier::DeleteTables(const nsTArray<nsCString>& aTables)
+Classifier::DeleteTables(nsIFile* aDirectory, const nsTArray<nsCString>& aTables)
 {
   nsCOMPtr<nsISimpleEnumerator> entries;
-  nsresult rv = mRootStoreDirectory->GetDirectoryEntries(getter_AddRefs(entries));
+  nsresult rv = aDirectory->GetDirectoryEntries(getter_AddRefs(entries));
   NS_ENSURE_SUCCESS_VOID(rv);
 
   bool hasMore;
@@ -375,6 +390,16 @@ Classifier::DeleteTables(const nsTArray<nsCString>& aTables)
 
     nsCOMPtr<nsIFile> file = do_QueryInterface(supports);
     NS_ENSURE_TRUE_VOID(file);
+
+    
+    bool isDirectory;
+    if (NS_FAILED(file->IsDirectory(&isDirectory))) {
+      continue;
+    }
+    if (isDirectory) {
+      DeleteTables(file, aTables);
+      continue;
+    }
 
     nsCString leafName;
     rv = file->GetNativeLeafName(leafName);
@@ -389,6 +414,20 @@ Classifier::DeleteTables(const nsTArray<nsCString>& aTables)
     }
   }
   NS_ENSURE_SUCCESS_VOID(rv);
+}
+
+void
+Classifier::AbortUpdateAndReset(const nsCString& aTable)
+{
+  LOG(("Abort updating table %s.", aTable.get()));
+
+  
+  ResetTables(Clear_All, nsTArray<nsCString> { aTable });
+
+  
+  
+  Unused << RemoveBackupTables();
+  Unused << CleanToDelete();
 }
 
 void
@@ -550,7 +589,7 @@ Classifier::ApplyUpdates(nsTArray<TableUpdate*>* aUpdates)
 
         if (NS_FAILED(rv)) {
           if (rv != NS_ERROR_OUT_OF_MEMORY) {
-            Reset();
+            AbortUpdateAndReset(updateTable);
           }
           return rv;
         }
@@ -599,22 +638,6 @@ Classifier::ApplyFullHashes(nsTArray<TableUpdate*>* aUpdates)
     aUpdates->ElementAt(i) = nullptr;
   }
 
-  return NS_OK;
-}
-
-nsresult
-Classifier::MarkSpoiled(const nsTArray<nsCString>& aTables)
-{
-  for (uint32_t i = 0; i < aTables.Length(); i++) {
-    LOG(("Spoiling table: %s", aTables[i].get()));
-    
-    mTableFreshness.Remove(aTables[i]);
-    
-    LookupCache *cache = GetLookupCache(aTables[i]);
-    if (cache) {
-      cache->ClearCache();
-    }
-  }
   return NS_OK;
 }
 

@@ -34,7 +34,13 @@ public:
   
 
 
-  void ResetTables(const nsTArray<nsCString>& aTables);
+
+
+  enum ClearType {
+    Clear_Cache,
+    Clear_All,
+  };
+  void ResetTables(ClearType aType, const nsTArray<nsCString>& aTables);
 
   
 
@@ -66,11 +72,6 @@ public:
 
   nsresult ApplyFullHashes(nsTArray<TableUpdate*>* aUpdates);
 
-  
-
-
-
-  nsresult MarkSpoiled(const nsTArray<nsCString>& aTables);
   void SetLastUpdateTime(const nsACString& aTableName, uint64_t updateTime);
   int64_t GetLastUpdateTime(const nsACString& aTableName);
   nsresult CacheCompletions(const CacheResultArray& aResults);
@@ -101,7 +102,8 @@ public:
 
 private:
   void DropStores();
-  void DeleteTables(const nsTArray<nsCString>& aTables);
+  void DeleteTables(nsIFile* aDirectory, const nsTArray<nsCString>& aTables);
+  void AbortUpdateAndReset(const nsCString& aTable);
 
   nsresult CreateStoreDirectory();
   nsresult SetupPathNames();
