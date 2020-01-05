@@ -318,6 +318,10 @@ pref("browser.urlbar.oneOffSearches", true);
 pref("browser.urlbar.oneOffSearches", false);
 #endif
 
+
+
+pref("browser.urlbar.decodeURLsOnCopy", false);
+
 pref("browser.altClickSave", false);
 
 
