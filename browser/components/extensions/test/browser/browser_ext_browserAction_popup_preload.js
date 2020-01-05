@@ -5,8 +5,6 @@
 let scriptPage = url => `<html><head><meta charset="utf-8"><script src="${url}"></script></head><body>${url}</body></html>`;
 
 add_task(function* testBrowserActionClickCanceled() {
-  let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, "http://example.com/");
-
   let extension = ExtensionTestUtils.loadExtension({
     manifest: {
       "browser_action": {
@@ -29,6 +27,7 @@ add_task(function* testBrowserActionClickCanceled() {
   let browserAction = browserActionFor(ext);
 
   let widget = getBrowserActionWidget(extension).forWindow(window);
+  let tab = window.gBrowser.selectedTab;
 
   
   EventUtils.synthesizeMouseAtCenter(widget.node, {type: "mousedown", button: 0}, window);
@@ -77,8 +76,6 @@ add_task(function* testBrowserActionClickCanceled() {
   yield closeBrowserAction(extension);
 
   yield extension.unload();
-
-  yield BrowserTestUtils.removeTab(tab);
 });
 
 add_task(function* testBrowserActionDisabled() {
@@ -90,9 +87,8 @@ add_task(function* testBrowserActionDisabled() {
       },
     },
 
-    background: async function() {
-      await browser.browserAction.disable();
-      browser.test.sendMessage("browserAction-disabled");
+    background() {
+      browser.browserAction.disable();
     },
 
     files: {
@@ -105,17 +101,12 @@ add_task(function* testBrowserActionDisabled() {
 
   yield extension.startup();
 
-  yield extension.awaitMessage("browserAction-disabled");
-
   const {GlobalManager, Management: {global: {browserActionFor}}} = Cu.import("resource://gre/modules/Extension.jsm", {});
 
   let ext = GlobalManager.extensionMap.get(extension.id);
   let browserAction = browserActionFor(ext);
 
   let widget = getBrowserActionWidget(extension).forWindow(window);
-
-  is(widget.node.getAttribute("disabled"), "true", "Button is disabled");
-  is(browserAction.pendingPopup, null, "Have no pending popup prior to click");
 
   
   EventUtils.synthesizeMouseAtCenter(widget.node, {type: "mousedown", button: 0}, window);
