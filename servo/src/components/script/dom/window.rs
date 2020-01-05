@@ -195,6 +195,11 @@ impl<'a> WindowMethods for JSRef<'a, Window> {
         self.Window()
     }
 
+    
+    fn Frames(&self) -> Temporary<Window> {
+        self.Window()
+    }
+
     fn Parent(&self) -> Temporary<Window> {
         
         self.Window()
