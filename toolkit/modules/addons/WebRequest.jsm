@@ -331,20 +331,18 @@ function StartStopListener(manager, loadContext) {
 
 StartStopListener.prototype = {
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIRequestObserver,
-                                         Ci.nsIStreamListener]),
+                                         Ci.nsIStreamListener,
+                                         Ci.nsISupports]),
 
   onStartRequest: function(request, context) {
     this.manager.onStartRequest(request, this.loadContext);
-    this.orig.onStartRequest(request, context);
+    return this.orig.onStartRequest(request, context);
   },
 
   onStopRequest(request, context, statusCode) {
-    try {
-      this.orig.onStopRequest(request, context, statusCode);
-    } catch (e) {
-      Cu.reportError(e);
-    }
+    let result = this.orig.onStopRequest(request, context, statusCode);
     this.manager.onStopRequest(request, this.loadContext);
+    return result;
   },
 
   onDataAvailable(...args) {
@@ -566,178 +564,133 @@ HttpObserverManager = {
     return errorData;
   },
 
-  
-
-
-
-
-
-
-  maybeResume(channel) {
-    let data = getData(channel);
-    if (data.suspended) {
-      channel.resume();
-      data.suspended = false;
-    }
-  },
-
-  
-
-
-
-
-
-
-
-
-
-  maybeSuspend(channel) {
-    let data = getData(channel);
-    if (!data.suspended) {
-      channel.suspend();
-      data.suspended = true;
-      return true;
-    }
-  },
-
   runChannelListener(channel, loadContext = null, kind, extraData = null) {
-    let handlerResults = [];
-    let requestHeaders;
-    let responseHeaders;
-
-    try {
-      if (this.activityInitialized) {
-        let channelData = getData(channel);
-        if (kind === "onError") {
-          if (channelData.errorNotified) {
-            return;
-          }
-          channelData.errorNotified = true;
-        } else if (this.errorCheck(channel, loadContext, channelData)) {
+    if (this.activityInitialized) {
+      let channelData = getData(channel);
+      if (kind === "onError") {
+        if (channelData.errorNotified) {
           return;
         }
+        channelData.errorNotified = true;
+      } else if (this.errorCheck(channel, loadContext, channelData)) {
+        return;
       }
-      let listeners = this.listeners[kind];
-      let browser = loadContext && loadContext.topFrameElement;
-      let loadInfo = channel.loadInfo;
-      let policyType = (loadInfo ? loadInfo.externalContentPolicyType
-                                 : Ci.nsIContentPolicy.TYPE_OTHER);
+    }
+    let listeners = this.listeners[kind];
+    let browser = loadContext && loadContext.topFrameElement;
+    let loadInfo = channel.loadInfo;
+    let policyType = (loadInfo ? loadInfo.externalContentPolicyType
+                               : Ci.nsIContentPolicy.TYPE_OTHER);
 
-      let includeStatus = (["headersReceived", "onRedirect", "onStart", "onStop"].includes(kind) &&
-                           channel instanceof Ci.nsIHttpChannel);
+    let includeStatus = (["headersReceived", "onRedirect", "onStart", "onStop"].includes(kind) &&
+                         channel instanceof Ci.nsIHttpChannel);
 
-      let blockable = ["headersReceived", "opening", "modify"].includes(kind);
-
-      if (channel instanceof Ci.nsIHttpChannel) {
-        requestHeaders = new RequestHeaderChanger(channel);
-        try {
-          responseHeaders = new ResponseHeaderChanger(channel);
-        } catch (e) {
-          
-          
-        }
-      }
-
-      let commonData = null;
-      let uri = channel.URI;
-      let requestBody;
-      for (let [callback, opts] of listeners.entries()) {
-        if (!this.shouldRunListener(policyType, uri, opts.filter)) {
-          continue;
-        }
-
-        if (!commonData) {
-          commonData = {
-            requestId: RequestId.get(channel),
-            url: uri.spec,
-            method: channel.requestMethod,
-            browser: browser,
-            type: WebRequestCommon.typeForPolicyType(policyType),
-            fromCache: getData(channel).fromCache,
-            windowId: 0,
-            parentWindowId: 0,
-          };
-
-          if (loadInfo) {
-            let originPrincipal = loadInfo.triggeringPrincipal;
-            if (originPrincipal.URI) {
-              commonData.originUrl = originPrincipal.URI.spec;
-            }
-
-            let {isSystemPrincipal} = Services.scriptSecurityManager;
-
-            commonData.isSystemPrincipal = (isSystemPrincipal(loadInfo.triggeringPrincipal) ||
-                                            isSystemPrincipal(loadInfo.loadingPrincipal));
-
-            if (loadInfo.frameOuterWindowID) {
-              Object.assign(commonData, {
-                windowId: loadInfo.frameOuterWindowID,
-                parentWindowId: loadInfo.outerWindowID,
-              });
-            } else {
-              Object.assign(commonData, {
-                windowId: loadInfo.outerWindowID,
-                parentWindowId: loadInfo.parentOuterWindowID,
-              });
-            }
-          }
-
-          if (channel instanceof Ci.nsIHttpChannelInternal) {
-            try {
-              commonData.ip = channel.remoteAddress;
-            } catch (e) {
-              
-              
-            }
-          }
-
-          Object.assign(commonData, extraData);
-        }
-
-        let data = Object.assign({}, commonData);
-
-        if (opts.requestHeaders) {
-          data.requestHeaders = requestHeaders.toArray();
-        }
-
-        if (opts.responseHeaders && responseHeaders) {
-          data.responseHeaders = responseHeaders.toArray();
-        }
-
-        if (opts.requestBody) {
-          requestBody = requestBody || WebRequestUpload.createRequestBody(channel);
-          data.requestBody = requestBody;
-        }
-
-        if (includeStatus) {
-          mergeStatus(data, channel, kind);
-        }
-
-        try {
-          let result = callback(data);
-
-          if (result && typeof result === "object" && blockable && opts.blocking) {
-            handlerResults.push({opts, result});
-          }
-        } catch (e) {
-          Cu.reportError(e);
-        }
-      }
+    let requestHeaders = new RequestHeaderChanger(channel);
+    let responseHeaders;
+    try {
+      responseHeaders = new ResponseHeaderChanger(channel);
     } catch (e) {
-      Cu.reportError(e);
+      
+      
     }
 
-    return this.applyChanges(kind, channel, loadContext, handlerResults, requestHeaders, responseHeaders);
+    let commonData = null;
+    let uri = channel.URI;
+    let handlerResults = [];
+    let requestBody;
+    for (let [callback, opts] of listeners.entries()) {
+      if (!this.shouldRunListener(policyType, uri, opts.filter)) {
+        continue;
+      }
+
+      if (!commonData) {
+        commonData = {
+          requestId: RequestId.get(channel),
+          url: uri.spec,
+          method: channel.requestMethod,
+          browser: browser,
+          type: WebRequestCommon.typeForPolicyType(policyType),
+          fromCache: getData(channel).fromCache,
+          windowId: 0,
+          parentWindowId: 0,
+        };
+
+        if (loadInfo) {
+          let originPrincipal = loadInfo.triggeringPrincipal;
+          if (originPrincipal.URI) {
+            commonData.originUrl = originPrincipal.URI.spec;
+          }
+
+          let {isSystemPrincipal} = Services.scriptSecurityManager;
+
+          commonData.isSystemPrincipal = (isSystemPrincipal(loadInfo.triggeringPrincipal) ||
+                                          isSystemPrincipal(loadInfo.loadingPrincipal));
+
+          if (loadInfo.frameOuterWindowID) {
+            Object.assign(commonData, {
+              windowId: loadInfo.frameOuterWindowID,
+              parentWindowId: loadInfo.outerWindowID,
+            });
+          } else {
+            Object.assign(commonData, {
+              windowId: loadInfo.outerWindowID,
+              parentWindowId: loadInfo.parentOuterWindowID,
+            });
+          }
+        }
+
+        if (channel instanceof Ci.nsIHttpChannelInternal) {
+          try {
+            commonData.ip = channel.remoteAddress;
+          } catch (e) {
+            
+            
+          }
+        }
+
+        Object.assign(commonData, extraData);
+      }
+
+      let data = Object.assign({}, commonData);
+
+      if (opts.requestHeaders) {
+        data.requestHeaders = requestHeaders.toArray();
+      }
+
+      if (opts.responseHeaders && responseHeaders) {
+        data.responseHeaders = responseHeaders.toArray();
+      }
+
+      if (opts.requestBody) {
+        requestBody = requestBody || WebRequestUpload.createRequestBody(channel);
+        data.requestBody = requestBody;
+      }
+
+      if (includeStatus) {
+        mergeStatus(data, channel, kind);
+      }
+
+      try {
+        let result = callback(data);
+
+        if (result && typeof result === "object" && opts.blocking) {
+          handlerResults.push({opts, result});
+        }
+      } catch (e) {
+        Cu.reportError(e);
+      }
+    }
+
+    this.applyChanges(kind, channel, loadContext, handlerResults, requestHeaders, responseHeaders);
   },
 
   applyChanges: Task.async(function* (kind, channel, loadContext, handlerResults, requestHeaders, responseHeaders) {
     let asyncHandlers = handlerResults.filter(({result}) => isThenable(result));
     let isAsync = asyncHandlers.length > 0;
-    let shouldResume = false;
 
     try {
       if (isAsync) {
-        shouldResume = this.maybeSuspend(channel);
+        channel.suspend();
 
         for (let value of asyncHandlers) {
           try {
@@ -751,7 +704,6 @@ HttpObserverManager = {
 
       for (let {opts, result} of handlerResults) {
         if (result.cancel) {
-          this.maybeResume(channel);
           channel.cancel(Cr.NS_ERROR_ABORT);
 
           this.errorCheck(channel, loadContext);
@@ -760,7 +712,9 @@ HttpObserverManager = {
 
         if (result.redirectUrl) {
           try {
-            this.maybeResume(channel);
+            if (isAsync) {
+              channel.resume();
+            }
 
             channel.redirectTo(BrowserUtils.makeURI(result.redirectUrl));
             return;
@@ -769,11 +723,11 @@ HttpObserverManager = {
           }
         }
 
-        if (opts.requestHeaders && result.requestHeaders && requestHeaders) {
+        if (opts.requestHeaders && result.requestHeaders) {
           requestHeaders.applyChanges(result.requestHeaders);
         }
 
-        if (opts.responseHeaders && result.responseHeaders && responseHeaders) {
+        if (opts.responseHeaders && result.responseHeaders) {
           responseHeaders.applyChanges(result.responseHeaders);
         }
       }
@@ -781,20 +735,14 @@ HttpObserverManager = {
       Cu.reportError(e);
     }
 
+    if (isAsync) {
+      channel.resume();
+    }
 
     if (kind === "opening") {
       return this.runChannelListener(channel, loadContext, "modify");
     } else if (kind === "modify") {
       return this.runChannelListener(channel, loadContext, "afterModify");
-    }
-
-    
-    
-    
-    
-    
-    if (shouldResume || kind === "afterModify") {
-      this.maybeResume(channel);
     }
   }),
 
@@ -802,17 +750,13 @@ HttpObserverManager = {
     let loadContext = this.getLoadContext(channel);
 
     if (this.needTracing) {
-      
-      
-      let channelData = getData(channel);
-      if (!channelData.listener && channel instanceof Ci.nsITraceableChannel) {
+      if (channel instanceof Ci.nsITraceableChannel) {
         let responseStatus = channel.responseStatus;
         
         if (responseStatus < 300 || responseStatus >= 400) {
           let listener = new StartStopListener(this, loadContext);
           let orig = channel.setNewListener(listener);
           listener.orig = orig;
-          channelData.listener = listener;
         }
       }
     }

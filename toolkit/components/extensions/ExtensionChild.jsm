@@ -42,7 +42,6 @@ Cu.import("resource://gre/modules/ExtensionCommon.jsm");
 Cu.import("resource://gre/modules/ExtensionUtils.jsm");
 
 const {
-  DefaultMap,
   EventManager,
   SingletonEventManager,
   SpreadArgs,
@@ -494,49 +493,47 @@ class ProxyAPIImplementation extends SchemaAPIInterface {
   }
 
   addListener(listener, args) {
-    let map = this.childApiManager.listeners.get(this.path);
-
-    if (map.listeners.has(listener)) {
-      
-      return;
+    let set = this.childApiManager.listeners.get(this.path);
+    if (!set) {
+      set = new Set();
+      this.childApiManager.listeners.set(this.path, set);
     }
 
-    let id = getUniqueId();
+    set.add(listener);
 
-    map.ids.set(id, listener);
-    map.listeners.set(listener, id);
+    if (set.size == 1) {
+      args = args.slice(1);
 
-    this.childApiManager.messageManager.sendAsyncMessage("API:AddListener", {
-      childId: this.childApiManager.id,
-      listenerId: id,
-      path: this.path,
-      args,
-    });
+      this.childApiManager.messageManager.sendAsyncMessage("API:AddListener", {
+        childId: this.childApiManager.id,
+        path: this.path,
+        args,
+      });
+    }
   }
 
   removeListener(listener) {
-    let map = this.childApiManager.listeners.get(this.path);
-
-    if (!map.listeners.has(listener)) {
+    let set = this.childApiManager.listeners.get(this.path);
+    if (!set) {
       return;
     }
+    set.delete(listener);
 
-    let id = map.listeners.get(listener);
-    map.listeners.delete(listener);
-    map.ids.delete(id);
-
-    this.childApiManager.messageManager.sendAsyncMessage("API:RemoveListener", {
-      childId: this.childApiManager.id,
-      listenerId: id,
-      path: this.path,
-    });
+    if (set.size == 0) {
+      this.childApiManager.messageManager.sendAsyncMessage("API:RemoveListener", {
+        childId: this.childApiManager.id,
+        path: this.path,
+      });
+    }
   }
 
   hasListener(listener) {
-    let map = this.childApiManager.listeners.get(this.path);
-    return map.listeners.has(listener);
+    let set = this.childApiManager.listeners.get(this.path);
+    return set ? set.has(listener) : false;
   }
 }
+
+let nextId = 1;
 
 
 
@@ -554,35 +551,28 @@ class ChildAPIManagerBase {
 
     this.id = `${context.extension.id}.${context.contextId}`;
 
-    MessageChannel.addListener(messageManager, "API:RunListener", this);
+    messageManager.addMessageListener("API:RunListener", this);
     messageManager.addMessageListener("API:CallResult", this);
 
-    this.messageFilterStrict = {childId: this.id};
-
-    this.listeners = new DefaultMap(() => ({
-      ids: new Map(),
-      listeners: new Map(),
-    }));
+    
+    
+    this.listeners = new Map();
 
     
     this.callPromises = new Map();
   }
 
-  receiveMessage({name, messageName, data}) {
+  receiveMessage({name, data}) {
     if (data.childId != this.id) {
       return;
     }
 
-    switch (name || messageName) {
+    switch (name) {
       case "API:RunListener":
-        let map = this.listeners.get(data.path);
-        let listener = map.ids.get(data.listenerId);
-
-        if (listener) {
-          return this.context.runSafe(listener, ...data.args);
+        let listeners = this.listeners.get(data.path);
+        for (let callback of listeners) {
+          this.context.runSafe(callback, ...data.args);
         }
-
-        Cu.reportError(`Unknown listener at childId=${data.childId} path=${data.path} listenerId=${data.listenerId}\n`);
         break;
 
       case "API:CallResult":
@@ -764,7 +754,8 @@ class PseudoChildAPIManager extends ChildAPIManagerBase {
     
     let useDirectParentAPI = (
       
-      namespace == "webNavigation" 
+      namespace == "webNavigation" || 
+      namespace == "webRequest" 
     );
 
     if (useDirectParentAPI) {
