@@ -662,10 +662,11 @@ bool XPCJSRuntime::UsefulToMergeZones() const
 
 void XPCJSRuntime::TraceNativeBlackRoots(JSTracer* trc)
 {
-    
-    
-    if (AutoMarkingPtr* roots = XPCJSContext::GetOnly()->mAutoRoots)
-        roots->TraceJSAll(trc);
+    for (CycleCollectedJSContext* ccx : Contexts()) {
+        auto* cx = static_cast<const XPCJSContext*>(ccx);
+        if (AutoMarkingPtr* roots = cx->mAutoRoots)
+            roots->TraceJSAll(trc);
+    }
 
     
     
@@ -849,36 +850,37 @@ XPCJSRuntime::FinalizeCallback(JSFreeOp* fop,
             MOZ_ASSERT(!self->mGCIsRunning, "bad state");
             self->mGCIsRunning = true;
 
-            
-            
-            if (AutoMarkingPtr* roots = XPCJSContext::GetOnly()->mAutoRoots)
-                roots->MarkAfterJSFinalizeAll();
+            for (CycleCollectedJSContext* ccx : self->Contexts()) {
+                auto* cx = static_cast<const XPCJSContext*>(ccx);
+                if (AutoMarkingPtr* roots = cx->mAutoRoots)
+                    roots->MarkAfterJSFinalizeAll();
 
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
 
-            XPCCallContext* ccxp = XPCJSContext::GetOnly()->GetCallContext();
-            while (ccxp) {
-                
-                
-                
-                
-                if (ccxp->CanGetTearOff()) {
-                    XPCWrappedNativeTearOff* to =
-                        ccxp->GetTearOff();
-                    if (to)
-                        to->Mark();
+                XPCCallContext* ccxp = cx->GetCallContext();
+                while (ccxp) {
+                    
+                    
+                    
+                    
+                    if (ccxp->CanGetTearOff()) {
+                        XPCWrappedNativeTearOff* to =
+                            ccxp->GetTearOff();
+                        if (to)
+                            to->Mark();
+                    }
+                    ccxp = ccxp->GetPrevCallContext();
                 }
-                ccxp = ccxp->GetPrevCallContext();
             }
 
             XPCWrappedNativeScope::SweepAllWrappedNativeTearOffs();

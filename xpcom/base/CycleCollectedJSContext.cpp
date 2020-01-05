@@ -69,6 +69,8 @@ CycleCollectedJSContext::~CycleCollectedJSContext()
     return;
   }
 
+  mRuntime->RemoveContext(this);
+
   if (mIsPrimaryContext) {
     mRuntime->Shutdown(mJSContext);
   }
@@ -112,6 +114,8 @@ CycleCollectedJSContext::~CycleCollectedJSContext()
 void
 CycleCollectedJSContext::InitializeCommon()
 {
+  mRuntime->AddContext(this);
+
   mOwningThread->SetScriptObserver(this);
   
   mBaseRecursionDepth = RecursionDepth();
