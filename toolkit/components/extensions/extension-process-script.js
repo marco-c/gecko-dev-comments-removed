@@ -38,7 +38,10 @@ XPCOMUtils.defineLazyModuleGetter(this, "ExtensionUtils",
 XPCOMUtils.defineLazyGetter(this, "console", () => ExtensionUtils.getConsole());
 XPCOMUtils.defineLazyGetter(this, "getInnerWindowID", () => ExtensionUtils.getInnerWindowID);
 
-const isContentProcess = Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_CONTENT;
+
+
+const appinfo = Cc["@mozilla.org/xre/app-info;1"].getService(Ci.nsIXULRuntime);
+const isContentProcess = appinfo.processType == appinfo.PROCESS_TYPE_CONTENT;
 
 
 class ScriptMatcher {
