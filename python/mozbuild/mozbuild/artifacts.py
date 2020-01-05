@@ -1044,7 +1044,8 @@ class Artifacts(object):
                   'revision': revision},
                  'Will only accept artifacts from a pushhead at {revision} '
                  '(matched revset "{revset}").')
-        pushheads = [(list(CANDIDATE_TREES), revision)]
+        
+        pushheads = [(list(CANDIDATE_TREES) + ['try'], revision)]
         return self._install_from_hg_pushheads(pushheads, distdir)
 
     def install_from(self, source, distdir):
