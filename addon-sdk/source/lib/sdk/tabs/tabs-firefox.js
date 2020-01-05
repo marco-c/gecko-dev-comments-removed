@@ -101,10 +101,8 @@ const Tabs = Class({
 });
 
 const allTabs = new Tabs();
-
-
-module.exports = Object.create(allTabs);
-pipe(tabEvents, module.exports);
+module.exports = allTabs;
+pipe(tabEvents, allTabs);
 
 function addWindowTab(window, tabElement) {
   let tab = new Tab(tabElement);

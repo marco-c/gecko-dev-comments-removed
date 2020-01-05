@@ -1218,7 +1218,7 @@ exports['test active tab properties defined on popup closed'] = function (assert
 
 
 
-exports["test tabs ready and close after window.open"] = function*(assert, done) {
+if (0) exports["test tabs ready and close after window.open"] = function*(assert, done) {
   
   setPref(OPEN_IN_NEW_WINDOW_PREF, 2);
   setPref(DISABLE_POPUP_PREF, false);
