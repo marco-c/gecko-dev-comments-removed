@@ -133,13 +133,13 @@ var prefList = {
   exec: function(args, context) {
     return new Promise(function(resolve, reject) {
       
-      setTimeout(function() {
+      setTimeout(() => {
         var prefsData = {
           settings: context.system.settings.getAll(args.search),
           search: args.search
         };
         resolve(prefsData);
-      }.bind(this), 10);
+      }, 10);
     });
   }
 };

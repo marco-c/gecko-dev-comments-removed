@@ -268,7 +268,7 @@ BookmarkImporter.prototype = {
 
       let batch = {
         nodes: nodes[0].children,
-        runBatched: function runBatched() {
+        runBatched: () => {
           if (this._replace) {
             
             
@@ -359,7 +359,7 @@ BookmarkImporter.prototype = {
           }
 
           deferred.resolve();
-        }.bind(this)
+        }
       };
 
       PlacesUtils.bookmarks.runInBatchMode(batch, null);

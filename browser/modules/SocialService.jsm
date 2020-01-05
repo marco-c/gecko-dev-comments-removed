@@ -388,11 +388,11 @@ this.SocialService = {
     SocialServiceInternal.providers[provider.origin] = provider;
     ActiveProviders.add(provider.origin);
 
-    this.getOrderedProviderList(function(providers) {
+    this.getOrderedProviderList(providers => {
       this._notifyProviderListeners("provider-enabled", provider.origin, providers);
       if (onDone)
         onDone(provider);
-    }.bind(this));
+    });
   },
 
   
@@ -421,11 +421,11 @@ this.SocialService = {
       AddonManagerPrivate.callAddonListeners("onDisabled", addon);
     }
 
-    this.getOrderedProviderList(function(providers) {
+    this.getOrderedProviderList(providers => {
       this._notifyProviderListeners("provider-disabled", origin, providers);
       if (onDone)
         onDone();
-    }.bind(this));
+    });
   },
 
   
@@ -575,12 +575,12 @@ this.SocialService = {
     
     data.manifest = manifest;
     let id = getAddonIDFromOrigin(manifest.origin);
-    AddonManager.getAddonByID(id, function(aAddon) {
+    AddonManager.getAddonByID(id, aAddon => {
       if (aAddon && aAddon.userDisabled) {
         aAddon.cancelUninstall();
         aAddon.userDisabled = false;
       }
-      schedule(function() {
+      schedule(() => {
         try {
           this._installProvider(data, options, aManifest => {
               this._notifyProviderListeners("provider-installed", aManifest.origin);
@@ -590,8 +590,8 @@ this.SocialService = {
           Cu.reportError("Activation failed: " + e);
           installCallback(null);
         }
-      }.bind(this));
-    }.bind(this));
+      });
+    });
   },
 
   _installProvider(data, options, installCallback) {
@@ -1052,9 +1052,9 @@ AddonWrapper.prototype = {
     let prefName = getPrefnameFromOrigin(this.manifest.origin);
     if (Services.prefs.prefHasUserValue(prefName)) {
       if (ActiveProviders.has(this.manifest.origin)) {
-        SocialService.disableProvider(this.manifest.origin, function() {
+        SocialService.disableProvider(this.manifest.origin, () => {
           SocialAddonProvider.removeAddon(this, aCallback);
-        }.bind(this));
+        });
       } else {
         SocialAddonProvider.removeAddon(this, aCallback);
       }

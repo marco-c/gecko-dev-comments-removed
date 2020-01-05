@@ -965,13 +965,13 @@ FeedWriter.prototype = {
     
     
     if (selectedItem.id == "chooseApplicationMenuItem") {
-      this._chooseClientApp(function(aResult) {
+      this._chooseClientApp(aResult => {
         if (aResult) {
           selectedItem =
             this._handlersList.selectedOptions[0];
           subscribeCallback();
         }
-      }.bind(this));
+      });
     } else {
       subscribeCallback();
     }

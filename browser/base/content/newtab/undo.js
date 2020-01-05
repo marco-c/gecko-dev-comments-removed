@@ -106,10 +106,10 @@ var gUndoDialog = {
 
 
   _undoAll: function UndoDialog_undoAll() {
-    NewTabUtils.undoAll(function() {
+    NewTabUtils.undoAll(() => {
       gUpdater.updateGrid();
       this.hide();
-    }.bind(this));
+    });
   }
 };
 

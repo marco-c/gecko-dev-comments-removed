@@ -1566,7 +1566,7 @@ Readability.prototype = {
 
     
     
-    (function(pageUrl, thisPage) {
+    ((pageUrl, thisPage) => {
       this._ajax(pageUrl, {
         success: function(r) {
 
@@ -1638,16 +1638,16 @@ Readability.prototype = {
           
           
           
-          setTimeout((function() {
+          setTimeout(() => {
             this._postProcessContent(thisPage);
-          }).bind(this), 500);
+          }, 500);
 
 
           if (secondNextPageLink)
             this._appendNextPage(secondNextPageLink);
         }
       });
-    }).bind(this)(nextPageLink, articlePage);
+    })(nextPageLink, articlePage);
   },
 
   

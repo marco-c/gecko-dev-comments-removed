@@ -228,15 +228,15 @@ this.UserAgentUpdates = {
   _update: function() {
     let url = this._getUpdateURL();
     url && this._fetchUpdate(url,
-      (function(response) { 
+      response => { 
         
         this._applyUpdate(response);
         this._saveToFile(response);
         this._scheduleUpdate(); 
-      }).bind(this),
-      (function(response) { 
+      },
+      response => { 
         this._scheduleUpdate(true );
-      }).bind(this));
+      });
   },
 
   _scheduleUpdate: function(retry) {

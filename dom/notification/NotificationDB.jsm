@@ -103,7 +103,7 @@ var NotificationDB = {
   load: function() {
     var promise = OS.File.read(NOTIFICATION_STORE_PATH, { encoding: "utf-8"});
     return promise.then(
-      function onSuccess(data) {
+      data => {
         if (data.length > 0) {
           
           
@@ -124,13 +124,13 @@ var NotificationDB = {
         }
 
         this.loaded = true;
-      }.bind(this),
+      },
 
       
-      function onFailure(reason) {
+      reason => {
         this.loaded = true;
         return this.createStore();
-      }.bind(this)
+      }
     );
   },
 
@@ -262,7 +262,7 @@ var NotificationDB = {
 
     
     this.ensureLoaded()
-    .then(function() {
+    .then(() => {
       var task = this.runningTask;
 
       switch (task.operation) {
@@ -279,22 +279,22 @@ var NotificationDB = {
           break;
       }
 
-    }.bind(this))
-    .then(function(payload) {
+    })
+    .then(payload => {
       if (DEBUG) {
         debug("Finishing task: " + this.runningTask.operation);
       }
       this.runningTask.defer.resolve(payload);
-    }.bind(this))
-    .catch(function(err) {
+    })
+    .catch(err => {
       if (DEBUG) {
         debug("Error while running " + this.runningTask.operation + ": " + err);
       }
       this.runningTask.defer.reject(new String(err));
-    }.bind(this))
-    .then(function() {
+    })
+    .then(() => {
       this.runNextTask();
-    }.bind(this));
+    });
   },
 
   taskGetAll: function(data) {

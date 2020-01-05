@@ -362,10 +362,10 @@ Inputter.prototype._checkAssignment = function(start) {
 
 Inputter.prototype.setInput = function(str) {
   this._caretChange = Caret.TO_END;
-  return this.requisition.update(str).then(function(updated) {
+  return this.requisition.update(str).then(updated => {
     this.textChanged();
     return updated;
-  }.bind(this));
+  });
 };
 
 
@@ -479,14 +479,14 @@ Inputter.prototype.handleKeyUp = function(ev) {
   this._completed = this.requisition.update(this.element.value);
   this._previousValue = this.element.value;
 
-  return this._completed.then(function() {
+  return this._completed.then(() => {
     
     if (this._previousValue === this.element.value) {
       this._choice = null;
       this.textChanged();
       this.onChoiceChange({ choice: this._choice });
     }
-  }.bind(this));
+  });
 };
 
 
@@ -500,22 +500,22 @@ Inputter.prototype._handleUpArrow = function() {
 
   if (this.element.value === '' || this._scrollingThroughHistory) {
     this._scrollingThroughHistory = true;
-    return this.requisition.update(this.history.backward()).then(function(updated) {
+    return this.requisition.update(this.history.backward()).then(updated => {
       this.textChanged();
       return updated;
-    }.bind(this));
+    });
   }
 
   
   
   if (this.assignment.getStatus() === Status.VALID) {
-    return this.requisition.nudge(this.assignment, 1).then(function() {
+    return this.requisition.nudge(this.assignment, 1).then(() => {
       
       this.textChanged();
       if (this.focusManager) {
         this.focusManager.onInputChange();
       }
-    }.bind(this));
+    });
   }
 
   this.changeChoice(-1);
@@ -533,21 +533,21 @@ Inputter.prototype._handleDownArrow = function() {
 
   if (this.element.value === '' || this._scrollingThroughHistory) {
     this._scrollingThroughHistory = true;
-    return this.requisition.update(this.history.forward()).then(function(updated) {
+    return this.requisition.update(this.history.forward()).then(updated => {
       this.textChanged();
       return updated;
-    }.bind(this));
+    });
   }
 
   
   if (this.assignment.getStatus() === Status.VALID) {
-    return this.requisition.nudge(this.assignment, -1).then(function() {
+    return this.requisition.nudge(this.assignment, -1).then(() => {
       
       this.textChanged();
       if (this.focusManager) {
         this.focusManager.onInputChange();
       }
-    }.bind(this));
+    });
   }
 
   this.changeChoice(+1);
@@ -566,9 +566,9 @@ Inputter.prototype._handleReturn = function() {
     let name = this.requisition.commandAssignment.value.name;
     this._telemetry.logKeyed("DEVTOOLS_GCLI_COMMANDS_KEYED", name);
 
-    return this.requisition.exec().then(function() {
+    return this.requisition.exec().then(() => {
       this.textChanged();
-    }.bind(this));
+    });
   }
 
   
@@ -617,14 +617,14 @@ Inputter.prototype._handleTab = function(ev) {
   this.lastTabDownAt = 0;
   this._scrollingThroughHistory = false;
 
-  return this._completed.then(function(updated) {
+  return this._completed.then(updated => {
     
     if (updated) {
       this.textChanged();
       this._choice = null;
       this.onChoiceChange({ choice: this._choice });
     }
-  }.bind(this));
+  });
 };
 
 

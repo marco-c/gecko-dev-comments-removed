@@ -239,7 +239,7 @@ var StarUI = {
     this._overlayLoading = true;
     document.loadOverlay(
       "chrome://browser/content/places/editBookmarkOverlay.xul",
-      (function(aSubject, aTopic, aData) {
+      (aSubject, aTopic, aData) => {
         
         
         let header = this._element("editBookmarkPanelHeader");
@@ -250,7 +250,7 @@ var StarUI = {
         this._overlayLoading = false;
         this._overlayLoaded = true;
         this._doShowEditBookmarkPanel(aNode, aAnchorElement, aPosition);
-      }).bind(this)
+      }
     );
   }),
 

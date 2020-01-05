@@ -312,7 +312,7 @@ AsyncResource.prototype = {
     
     
     
-    XPCOMUtils.defineLazyGetter(ret, "obj", function() {
+    XPCOMUtils.defineLazyGetter(ret, "obj", () => {
       try {
         return JSON.parse(ret);
       } catch (ex) {
@@ -323,7 +323,7 @@ AsyncResource.prototype = {
                         "\".");
         throw ex;
       }
-    }.bind(this));
+    });
 
     this._deferred.resolve(ret);
   },

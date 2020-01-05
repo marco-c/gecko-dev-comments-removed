@@ -60,12 +60,12 @@ exports.items = [
       
       
       
-      var subArgParse = function(subArg) {
-        return this.subtype.parse(subArg, context).then(function(conversion) {
+      var subArgParse = subArg => {
+        return this.subtype.parse(subArg, context).then(conversion => {
           subArg.conversion = conversion;
           return conversion;
-        }.bind(this));
-      }.bind(this);
+        });
+      };
 
       var conversionPromises = arg.getArguments().map(subArgParse);
       return Promise.all(conversionPromises).then(function(conversions) {

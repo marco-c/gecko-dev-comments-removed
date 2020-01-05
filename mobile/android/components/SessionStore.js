@@ -178,7 +178,7 @@ SessionStore.prototype = {
         if (data) {
           
           let window = Services.wm.getMostRecentWindow("navigator:browser");
-          let restoreCleanup = (function (aSubject, aTopic, aData) {
+          let restoreCleanup = (aSubject, aTopic, aData) => {
               Services.obs.removeObserver(restoreCleanup, "sessionstore-windows-restored");
 
               if (window.BrowserApp.tabs.length == 0) {
@@ -190,7 +190,7 @@ SessionStore.prototype = {
               
               this._startupRestoreFinished = true;
               log("startupRestoreFinished = true (through notification)");
-          }).bind(this);
+          };
           Services.obs.addObserver(restoreCleanup, "sessionstore-windows-restored");
 
           

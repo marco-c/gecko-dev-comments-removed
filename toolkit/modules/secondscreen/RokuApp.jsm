@@ -39,7 +39,7 @@ RokuApp.prototype = {
     xhr.channel.loadFlags |= Ci.nsIRequest.INHIBIT_CACHING;
     xhr.overrideMimeType("text/xml");
 
-    xhr.addEventListener("load", (function() {
+    xhr.addEventListener("load", () => {
       if (xhr.status == 200) {
         let doc = xhr.responseXML;
         let apps = doc.querySelectorAll("app");
@@ -54,7 +54,7 @@ RokuApp.prototype = {
       if (callback) {
         callback({ state: "unknown" });
       }
-    }).bind(this));
+    });
 
     xhr.addEventListener("error", (function() {
       if (callback) {
@@ -68,7 +68,7 @@ RokuApp.prototype = {
   start: function start(callback) {
     
     if (this.mediaAppID == -1) {
-      this.status(function() {
+      this.status(() => {
         
         if (this.mediaAppID != -1) {
           this.start(callback);
@@ -76,7 +76,7 @@ RokuApp.prototype = {
           
           callback(false);
         }
-      }.bind(this));
+      });
       return;
     }
 

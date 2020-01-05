@@ -162,12 +162,12 @@ JsonStore.prototype = {
     
     let stream = file.open(this.filename, "w");
     try {
-      stream.writeAsync(JSON.stringify(this.root), function writeAsync(err) {
+      stream.writeAsync(JSON.stringify(this.root), err => {
         if (err)
           console.error("Error writing simple storage file: " + this.filename);
         else if (this.onWrite)
           this.onWrite(this);
-      }.bind(this));
+      });
     }
     catch (err) {
       

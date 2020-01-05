@@ -49,7 +49,7 @@ exports.items = [
 
         
         if (arg.text.indexOf('://') === -1) {
-          [ 'http', 'https' ].forEach(function(scheme) {
+          [ 'http', 'https' ].forEach(scheme => {
             try {
               var http = host.createUrl(scheme + '://' + arg.text);
               predictions.push({ name: http.href, value: http });
@@ -57,7 +57,7 @@ exports.items = [
             catch (ex) {
               
             }
-          }.bind(this));
+          });
 
           
           if ('window' in context.environment) {

@@ -820,7 +820,7 @@ this.CrashManager.prototype = Object.freeze({
 
         
         
-        let timerCB = function() {
+        let timerCB = () => {
           if (this._storeProtectedCount) {
             this._storeTimer.initWithCallback(timerCB, this.STORE_EXPIRATION_MS,
                                               this._storeTimer.TYPE_ONE_SHOT);
@@ -832,7 +832,7 @@ this.CrashManager.prototype = Object.freeze({
           
           this._store = null;
           this._storeTimer = null;
-        }.bind(this);
+        };
 
         this._storeTimer.initWithCallback(timerCB, this.STORE_EXPIRATION_MS,
                                           this._storeTimer.TYPE_ONE_SHOT);

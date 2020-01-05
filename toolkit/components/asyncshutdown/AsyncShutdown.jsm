@@ -919,7 +919,7 @@ Barrier.prototype = Object.freeze({
       
       timeToCrash = looseTimer(crashAfterMS);
       timeToCrash.promise.then(
-        function onTimeout() {
+        () => {
           
           let state = this.state;
 
@@ -957,7 +957,7 @@ Barrier.prototype = Object.freeze({
             break;
           }
           gDebug.abort(filename, lineNumber);
-        }.bind(this),
+        },
         function onSatisfied() {
           
           

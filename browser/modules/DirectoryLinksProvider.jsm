@@ -591,14 +591,14 @@ var DirectoryLinksProvider = {
 
       
       let checkBase = !this.__linksURLModified;
-      let validityFilter = function(link) {
+      let validityFilter = link => {
         
         return this.isURLAllowed(link.url, ALLOWED_LINK_SCHEMES, false) &&
                (!link.imageURI ||
                 this.isURLAllowed(link.imageURI, ALLOWED_IMAGE_SCHEMES, checkBase)) &&
                (!link.enhancedImageURI ||
                 this.isURLAllowed(link.enhancedImageURI, ALLOWED_IMAGE_SCHEMES, checkBase));
-      }.bind(this);
+      };
 
       rawLinks.suggested.filter(validityFilter).forEach((link, position) => {
         

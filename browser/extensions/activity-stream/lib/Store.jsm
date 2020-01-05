@@ -31,9 +31,9 @@ this.Store = class Store {
     
     
     ["dispatch", "getState", "subscribe"].forEach(method => {
-      this[method] = function(...args) {
+      this[method] = (...args) => {
         return this._store[method](...args);
-      }.bind(this);
+      };
     });
     this.feeds = new Map();
     this._feedFactories = null;

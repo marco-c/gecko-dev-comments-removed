@@ -327,10 +327,10 @@ WindowListener.prototype = {
 
       
       if (isOSX) {
-        setTimeout(function() {
+        setTimeout(() => {
           domwindow.close();
           executeSoon(this.callBack_onFinalize);
-        }.bind(this), 3000);
+        }, 3000);
       } else {
         domwindow.close();
         executeSoon(this.callBack_onFinalize);

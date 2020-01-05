@@ -65,7 +65,7 @@ SelectionField.prototype.setConversion = function(conversion) {
   this.setMessage(conversion.message);
 
   var context = this.requisition.executionContext;
-  conversion.getPredictions(context).then(function(predictions) {
+  conversion.getPredictions(context).then(predictions => {
     var items = predictions.map(function(prediction) {
       
       
@@ -77,17 +77,17 @@ SelectionField.prototype.setConversion = function(conversion) {
     if (this.menu != null) {
       this.menu.show(items, conversion.arg.text);
     }
-  }.bind(this)).catch(util.errorHandler);
+  }).catch(util.errorHandler);
 };
 
 SelectionField.prototype.itemClicked = function(ev) {
   var arg = new Argument(ev.name, '', ' ');
   var context = this.requisition.executionContext;
 
-  this.type.parse(arg, context).then(function(conversion) {
+  this.type.parse(arg, context).then(conversion => {
     this.onFieldChange({ conversion: conversion });
     this.setMessage(conversion.message);
-  }.bind(this)).catch(util.errorHandler);
+  }).catch(util.errorHandler);
 };
 
 SelectionField.prototype.getConversion = function() {

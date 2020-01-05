@@ -1697,7 +1697,7 @@ var gApplicationsPane = {
     aEvent.stopPropagation();
 
     var handlerApp;
-    let chooseAppCallback = function(aHandlerApp) {
+    let chooseAppCallback = aHandlerApp => {
       
       
       
@@ -1718,7 +1718,7 @@ var gApplicationsPane = {
           }
         }
       }
-    }.bind(this);
+    };
 
     if (AppConstants.platform == "win") {
       var params = {};
@@ -1753,7 +1753,7 @@ var gApplicationsPane = {
     } else {
       let winTitle = this._prefsBundle.getString("fpTitleChooseApp");
       let fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
-      let fpCallback = function fpCallback_done(aResult) {
+      let fpCallback = aResult => {
         if (aResult == Ci.nsIFilePicker.returnOK && fp.file &&
             this._isValidHandlerExecutable(fp.file)) {
           handlerApp = Cc["@mozilla.org/uriloader/local-handler-app;1"].
@@ -1767,7 +1767,7 @@ var gApplicationsPane = {
 
           chooseAppCallback(handlerApp);
         }
-      }.bind(this);
+      };
 
       
       

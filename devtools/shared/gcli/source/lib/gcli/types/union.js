@@ -30,16 +30,16 @@ exports.items = [
     constructor: function() {
       
       
-      this.alternatives = this.alternatives.map(function(typeData) {
+      this.alternatives = this.alternatives.map(typeData => {
         return this.types.createType(typeData);
-      }.bind(this));
+      });
     },
 
     getSpec: function(command, param) {
       var spec = { name: 'union', alternatives: [] };
-      this.alternatives.forEach(function(type) {
+      this.alternatives.forEach(type => {
         spec.alternatives.push(type.getSpec(command, param));
-      }.bind(this));
+      });
       return spec;
     },
 
@@ -56,22 +56,22 @@ exports.items = [
     },
 
     parse: function(arg, context) {
-      var conversionPromises = this.alternatives.map(function(type) {
+      var conversionPromises = this.alternatives.map(type => {
         return type.parse(arg, context);
-      }.bind(this));
+      });
 
-      return Promise.all(conversionPromises).then(function(conversions) {
+      return Promise.all(conversionPromises).then(conversions => {
         
-        var predictionPromises = conversions.map(function(conversion) {
+        var predictionPromises = conversions.map(conversion => {
           return conversion.getPredictions(context);
-        }.bind(this));
+        });
 
-        return Promise.all(predictionPromises).then(function(allPredictions) {
+        return Promise.all(predictionPromises).then(allPredictions => {
           
           
-          var maxIndex = allPredictions.reduce(function(prev, prediction) {
+          var maxIndex = allPredictions.reduce((prev, prediction) => {
             return Math.max(prev, prediction.length);
-          }.bind(this), 0);
+          }, 0);
           var predictions = [];
 
           indexLoop:
@@ -110,8 +110,8 @@ exports.items = [
                     '' :
                     l10n.lookupFormat('typesSelectionNomatch', [ arg.text ]);
           return new Conversion(value, arg, bestStatus, msg, predictions);
-        }.bind(this));
-      }.bind(this));
+        });
+      });
     },
   }
 ];

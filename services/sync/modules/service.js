@@ -325,7 +325,7 @@ Sync11Service.prototype = {
     
     
     
-    Utils.nextTick(function onNextTick() {
+    Utils.nextTick(() => {
       this.status.ready = true;
 
       
@@ -336,7 +336,7 @@ Sync11Service.prototype = {
       xps.ready = true;
 
       Svc.Obs.notify("weave:service:ready");
-    }.bind(this));
+    });
   },
 
   _checkSetup: function _checkSetup() {

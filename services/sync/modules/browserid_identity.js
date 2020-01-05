@@ -790,7 +790,7 @@ BrowserIDClusterManager.prototype = {
   },
 
   _findCluster() {
-    let endPointFromIdentityToken = function() {
+    let endPointFromIdentityToken = () => {
       
       
       
@@ -811,10 +811,10 @@ BrowserIDClusterManager.prototype = {
       }
       log.debug("_findCluster returning " + endpoint);
       return endpoint;
-    }.bind(this);
+    };
 
     
-    let promiseClusterURL = function() {
+    let promiseClusterURL = () => {
       return this.identity.whenReadyToAuthenticate.promise.then(
         () => {
           
@@ -829,7 +829,7 @@ BrowserIDClusterManager.prototype = {
         }
       ).then(endPointFromIdentityToken
       );
-    }.bind(this);
+    };
 
     let cb = Async.makeSpinningCallback();
     promiseClusterURL().then(function(clusterURL) {

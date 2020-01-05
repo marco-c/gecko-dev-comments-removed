@@ -140,7 +140,7 @@ var Manifests = {
       return this.started;
     }
 
-    this.started = (async function() {
+    this.started = (async () => {
 
       
       await OS.File.makeDir(MANIFESTS_DIR, {ignoreExisting: true});
@@ -159,7 +159,7 @@ var Manifests = {
       
       this.manifestObjs = {};
 
-    }).bind(this)();
+    })();
 
     return this.started;
   },

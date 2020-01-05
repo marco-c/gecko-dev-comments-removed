@@ -830,7 +830,7 @@ AboutReader.prototype = {
   },
 
   _showProgressDelayed() {
-    this._win.setTimeout(function() {
+    this._win.setTimeout(() => {
       
       
       
@@ -843,7 +843,7 @@ AboutReader.prototype = {
 
       this._messageElement.textContent = gStrings.GetStringFromName("aboutReader.loading2");
       this._messageElement.style.display = "block";
-    }.bind(this), 300);
+    }, 300);
   },
 
   

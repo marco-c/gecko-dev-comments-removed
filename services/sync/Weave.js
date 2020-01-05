@@ -117,7 +117,7 @@ WeaveService.prototype = {
       
       this.timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
       this.timer.initWithCallback({
-        notify: function() {
+        notify: () => {
           let isConfigured = false;
           
           if (this.enabled) {
@@ -135,7 +135,7 @@ WeaveService.prototype = {
             getHistogramById("WEAVE_CONFIGURED_MASTER_PASSWORD").add(Utils.mpEnabled());
             this.ensureLoaded();
           }
-        }.bind(this)
+        }
       }, 10000, Ci.nsITimer.TYPE_ONE_SHOT);
       break;
     }
