@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::Bindings::HTMLDivElementBinding;
+use dom::bindings::codegen::Bindings::HTMLDivElementBinding::{self, HTMLDivElementMethods};
 use dom::bindings::codegen::InheritTypes::HTMLDivElementDerived;
 use dom::bindings::js::Root;
 use dom::document::Document;
@@ -41,4 +41,12 @@ impl HTMLDivElement {
         let element = HTMLDivElement::new_inherited(localName, prefix, document);
         Node::reflect_node(box element, document, HTMLDivElementBinding::Wrap)
     }
+}
+
+impl HTMLDivElementMethods for HTMLDivElement {
+    // https://html.spec.whatwg.org/multipage/#dom-div-align
+    make_getter!(Align);
+
+    // https://html.spec.whatwg.org/multipage/#dom-div-align
+    make_setter!(SetAlign, "align");
 }
