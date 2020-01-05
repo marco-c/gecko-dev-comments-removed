@@ -7,6 +7,7 @@
 #include "nsSVGClipPathFrame.h"
 
 
+#include "AutoReferenceChainGuard.h"
 #include "DrawResult.h"
 #include "gfxContext.h"
 #include "mozilla/dom/SVGClipPathElement.h"
@@ -126,21 +127,14 @@ nsSVGClipPathFrame::PaintClipMask(gfxContext& aMaskContext,
                                   SourceSurface* aExtraMask,
                                   const Matrix& aExtraMasksTransform)
 {
-  static int16_t sRefChainLengthCounter = AutoReferenceLimiter::notReferencing;
+  static int16_t sRefChainLengthCounter = AutoReferenceChainGuard::noChain;
 
   
   
   
-  
-  AutoReferenceLimiter refChainLengthLimiter(this, &sRefChainLengthCounter);
-  if (!refChainLengthLimiter.Reference()) {
-    return DrawResult::SUCCESS; 
-  }
-
-  
-  
-  AutoReferenceLimiter refLoopDetector(this, &mReferencing, 1);
-  if (!refLoopDetector.Reference()) {
+  AutoReferenceChainGuard refChainGuard(this, &mIsBeingProcessed,
+                                        &sRefChainLengthCounter);
+  if (MOZ_UNLIKELY(!refChainGuard.Reference())) {
     return DrawResult::SUCCESS; 
   }
 
@@ -296,23 +290,15 @@ bool
 nsSVGClipPathFrame::PointIsInsideClipPath(nsIFrame* aClippedFrame,
                                           const gfxPoint &aPoint)
 {
-  static int16_t sRefChainLengthCounter = AutoReferenceLimiter::notReferencing;
+  static int16_t sRefChainLengthCounter = AutoReferenceChainGuard::noChain;
 
   
   
   
-  
-  AutoReferenceLimiter
-    refChainLengthLimiter(this, &sRefChainLengthCounter);
-  if (!refChainLengthLimiter.Reference()) {
+  AutoReferenceChainGuard refChainGuard(this, &mIsBeingProcessed,
+                                        &sRefChainLengthCounter);
+  if (MOZ_UNLIKELY(!refChainGuard.Reference())) {
     return false; 
-  }
-
-  
-  
-  AutoReferenceLimiter refLoopDetector(this, &mReferencing, 1);
-  if (!refLoopDetector.Reference()) {
-    return true; 
   }
 
   gfxMatrix matrix = GetClipPathTransform(aClippedFrame);
@@ -393,22 +379,14 @@ nsSVGClipPathFrame::IsTrivial(nsSVGDisplayableFrame **aSingleChild)
 bool
 nsSVGClipPathFrame::IsValid()
 {
-  static int16_t sRefChainLengthCounter = AutoReferenceLimiter::notReferencing;
+  static int16_t sRefChainLengthCounter = AutoReferenceChainGuard::noChain;
 
   
   
   
-  
-  AutoReferenceLimiter
-    refChainLengthLimiter(this, &sRefChainLengthCounter);
-  if (!refChainLengthLimiter.Reference()) {
-    return false; 
-  }
-
-  
-  
-  AutoReferenceLimiter refLoopDetector(this, &mReferencing, 1);
-  if (!refLoopDetector.Reference()) {
+  AutoReferenceChainGuard refChainGuard(this, &mIsBeingProcessed,
+                                        &sRefChainLengthCounter);
+  if (MOZ_UNLIKELY(!refChainGuard.Reference())) {
     return false; 
   }
 

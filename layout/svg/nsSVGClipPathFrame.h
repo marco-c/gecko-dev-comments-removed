@@ -6,7 +6,6 @@
 #ifndef __NS_SVGCLIPPATHFRAME_H__
 #define __NS_SVGCLIPPATHFRAME_H__
 
-#include "AutoReferenceLimiter.h"
 #include "gfxMatrix.h"
 #include "mozilla/Attributes.h"
 #include "nsSVGContainerFrame.h"
@@ -27,7 +26,7 @@ class nsSVGClipPathFrame : public nsSVGContainerFrame
 protected:
   explicit nsSVGClipPathFrame(nsStyleContext* aContext)
     : nsSVGContainerFrame(aContext)
-    , mReferencing(mozilla::AutoReferenceLimiter::notReferencing)
+    , mIsBeingProcessed(false)
   {
     AddStateBits(NS_FRAME_IS_NONDISPLAY);
   }
@@ -178,7 +177,7 @@ private:
 
   
   
-  int16_t mReferencing;
+  bool mIsBeingProcessed;
 };
 
 #endif
