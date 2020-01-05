@@ -10,7 +10,7 @@ use js::jsapi::{JSTracer};
 use util::task_state;
 use util::task_state::{SCRIPT, IN_GC};
 
-use std::cell::{RefCell, Ref, RefMut};
+use std::cell::{BorrowState, RefCell, Ref, RefMut};
 
 
 
@@ -52,7 +52,7 @@ impl<T> DOMRefCell<T> {
     
     
     pub fn is_mutably_borrowed(&self) -> bool {
-        self.value.try_borrow().is_some()
+        self.value.borrow_state() == BorrowState::Writing
     }
 
     
@@ -67,7 +67,10 @@ impl<T> DOMRefCell<T> {
     
     pub fn try_borrow<'a>(&'a self) -> Option<Ref<'a, T>> {
         debug_assert!(task_state::get().is_script());
-        self.value.try_borrow()
+        match self.value.borrow_state() {
+            BorrowState::Writing => None,
+            _ => Some(self.value.borrow()),
+        }
     }
 
     
@@ -82,7 +85,10 @@ impl<T> DOMRefCell<T> {
     
     pub fn try_borrow_mut<'a>(&'a self) -> Option<RefMut<'a, T>> {
         debug_assert!(task_state::get().is_script());
-        self.value.try_borrow_mut()
+        match self.value.borrow_state() {
+            BorrowState::Unused => Some(self.value.borrow_mut()),
+            _ => None,
+        }
     }
 }
 
