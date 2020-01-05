@@ -1,8 +1,8 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-// https://www.khronos.org/registry/webgl/specs/latest/1.0/webgl.idl
+
+
+
+
 use angle::hl::{BuiltInResources, Output, ShaderValidator};
 use canvas_traits::CanvasMsg;
 use dom::bindings::cell::DOMRefCell;
@@ -101,6 +101,7 @@ impl WebGLShader {
                                                        &BuiltInResources::default()).unwrap();
             match validator.compile_and_translate(&[source]) {
                 Ok(translated_source) => {
+                    debug!("Shader translated: {}", translated_source);
                     // NOTE: At this point we should be pretty sure that the compilation in the paint thread
                     // will succeed.
                     // It could be interesting to retrieve the info log from the paint thread though
@@ -118,8 +119,8 @@ impl WebGLShader {
         }
     }
 
-    /// Mark this shader as deleted (if it wasn't previously)
-    /// and delete it as if calling glDeleteShader.
+    
+    
     pub fn delete(&self) {
         if !self.is_deleted.get() {
             self.is_deleted.set(true);
@@ -127,24 +128,24 @@ impl WebGLShader {
         }
     }
 
-    /// glGetShaderInfoLog
+    
     pub fn info_log(&self) -> Option<String> {
         self.info_log.borrow().clone()
     }
 
-    /// glGetParameter
+    
     pub fn parameter(&self, param_id: u32) -> WebGLResult<WebGLParameter> {
         let (sender, receiver) = ipc::channel().unwrap();
         self.renderer.send(CanvasMsg::WebGL(WebGLCommand::GetShaderParameter(self.id, param_id, sender))).unwrap();
         receiver.recv().unwrap()
     }
 
-    /// Get the shader source
+    
     pub fn source(&self) -> Option<DOMString> {
         self.source.borrow().clone()
     }
 
-    /// glShaderSource
+    
     pub fn set_source(&self, source: DOMString) {
         *self.source.borrow_mut() = Some(source);
     }

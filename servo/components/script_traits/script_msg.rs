@@ -14,7 +14,7 @@ use euclid::size::Size2D;
 use ipc_channel::ipc::IpcSender;
 use msg::constellation_msg::{Failure, NavigationDirection, PipelineId};
 use msg::constellation_msg::{LoadData, SubpageId};
-use offscreen_gl_context::GLContextAttributes;
+use offscreen_gl_context::{GLContextAttributes, GLLimits};
 use style_traits::cursor::Cursor;
 use style_traits::viewport::ViewportConstraints;
 use url::Url;
@@ -43,8 +43,8 @@ pub enum ScriptMsg {
     
     
     CreateWebGLPaintThread(Size2D<i32>,
-                         GLContextAttributes,
-                         IpcSender<Result<IpcSender<CanvasMsg>, String>>),
+                           GLContextAttributes,
+                           IpcSender<Result<(IpcSender<CanvasMsg>, GLLimits), String>>),
     
     
     
