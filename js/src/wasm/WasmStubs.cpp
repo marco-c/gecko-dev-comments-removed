@@ -687,8 +687,7 @@ wasm::GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi, Label* t
         Register act = WasmIonExitRegE1;
 
         
-        masm.movePtr(SymbolicAddress::ContextPtr, cx);
-        masm.loadPtr(Address(cx, 0), cx);
+        masm.loadPtr(Address(WasmTlsReg, offsetof(TlsData, cx)), cx);
         masm.loadPtr(Address(cx, JSContext::offsetOfActivation()), act);
 
         
@@ -705,6 +704,10 @@ wasm::GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi, Label* t
     masm.callJitNoProfiler(callee);
     AssertStackAlignment(masm, JitStackAlignment, sizeOfRetAddr);
 
+    
+    
+    masm.loadWasmTlsRegFromFrame();
+
     {
         
         
@@ -712,13 +715,13 @@ wasm::GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi, Label* t
         
         MOZ_ASSERT(JSReturnReg_Data == WasmIonExitRegReturnData);
         MOZ_ASSERT(JSReturnReg_Type == WasmIonExitRegReturnType);
+        MOZ_ASSERT(WasmTlsReg == WasmIonExitTlsReg);
         Register cx = WasmIonExitRegD0;
         Register act = WasmIonExitRegD1;
         Register tmp = WasmIonExitRegD2;
 
         
-        masm.movePtr(SymbolicAddress::ContextPtr, cx);
-        masm.loadPtr(Address(cx, 0), cx);
+        masm.loadPtr(Address(WasmTlsReg, offsetof(TlsData, cx)), cx);
         masm.loadPtr(Address(cx, JSContext::offsetOfActivation()), act);
 
         
@@ -781,10 +784,6 @@ wasm::GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi, Label* t
 
     Label done;
     masm.bind(&done);
-
-    
-    
-    masm.loadWasmTlsRegFromFrame();
 
     GenerateExitEpilogue(masm, masm.framePushed(), ExitReason::ImportJit, &offsets);
 
@@ -928,13 +927,17 @@ wasm::GenerateUnalignedExit(MacroAssembler& masm, Label* throwLabel)
     return GenerateGenericMemoryAccessTrap(masm, SymbolicAddress::ReportUnalignedAccess, throwLabel);
 }
 
+#if defined(JS_CODEGEN_ARM)
+static const LiveRegisterSet AllRegsExceptPCSP(
+    GeneralRegisterSet(Registers::AllMask & ~((uint32_t(1) << Registers::sp) |
+                                              (uint32_t(1) << Registers::pc))),
+    FloatRegisterSet(FloatRegisters::AllDoubleMask));
+static_assert(!SupportsSimd, "high lanes of SIMD registers need to be saved too.");
+#else
 static const LiveRegisterSet AllRegsExceptSP(
     GeneralRegisterSet(Registers::AllMask & ~(uint32_t(1) << Registers::StackPointer)),
     FloatRegisterSet(FloatRegisters::AllMask));
-
-static const LiveRegisterSet AllAllocatableRegs = LiveRegisterSet(
-    GeneralRegisterSet(Registers::AllocatableMask),
-    FloatRegisterSet(FloatRegisters::AllMask));
+#endif
 
 
 
@@ -957,16 +960,9 @@ wasm::GenerateInterruptExit(MacroAssembler& masm, Label* throwLabel)
     
     
     masm.push(Imm32(0));            
-    masm.pushFlags();               
     masm.setFramePushed(0);         
+    masm.PushFlags();               
     masm.PushRegsInMask(AllRegsExceptSP); 
-
-    Register scratch = ABINonArgReturnReg0;
-
-    
-    masm.loadWasmActivationFromSymbolicAddress(scratch);
-    masm.loadPtr(Address(scratch, WasmActivation::offsetOfResumePC()), scratch);
-    masm.storePtr(scratch, Address(masm.getStackPointer(), masm.framePushed() + sizeof(void*)));
 
     
     
@@ -975,18 +971,27 @@ wasm::GenerateInterruptExit(MacroAssembler& masm, Label* throwLabel)
     if (ShadowStackSpace)
         masm.subFromStackPtr(Imm32(ShadowStackSpace));
 
+    
     masm.assertStackAlignment(ABIStackAlignment);
     masm.call(SymbolicAddress::HandleExecutionInterrupt);
 
-    masm.branchIfFalseBool(ReturnReg, throwLabel);
+    
+    
+    masm.branchTestPtr(Assembler::Zero, ReturnReg, ReturnReg, throwLabel);
 
+    
     
     masm.moveToStackPtr(ABINonVolatileReg);
+    masm.storePtr(ReturnReg, Address(StackPointer, masm.framePushed()));
 
     
-    masm.PopRegsInMask(AllRegsExceptSP); 
-    masm.popFlags();              
-    masm.ret();                   
+    
+    masm.PopRegsInMask(AllRegsExceptSP);
+    masm.PopFlags();
+
+    
+    MOZ_ASSERT(masm.framePushed() == 0);
+    masm.ret();
 #elif defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
     
     masm.subFromStackPtr(Imm32(2 * sizeof(intptr_t)));
@@ -1034,61 +1039,40 @@ wasm::GenerateInterruptExit(MacroAssembler& masm, Label* throwLabel)
     masm.as_jr(HeapReg);
     masm.loadPtr(Address(StackPointer, -sizeof(intptr_t)), HeapReg);
 #elif defined(JS_CODEGEN_ARM)
+    masm.push(Imm32(0));            
     masm.setFramePushed(0);         
-
-    
-    masm.PushRegsInMask(LiveRegisterSet(
-                            GeneralRegisterSet(Registers::AllMask & ~(1<<Registers::sp)),
-                            FloatRegisterSet(uint32_t(0))));
+    masm.PushRegsInMask(AllRegsExceptPCSP); 
 
     
     masm.as_mrs(r4);
     masm.as_vmrs(r5);
-    
-    masm.mov(sp,r6);
-    
-    masm.as_bic(sp, sp, Imm8(7));
+    masm.mov(sp, r6);
 
     
-    masm.loadWasmActivationFromSymbolicAddress(IntArgReg0);
-    masm.loadPtr(Address(IntArgReg0, WasmActivation::offsetOfResumePC()), IntArgReg1);
-    masm.storePtr(IntArgReg1, Address(r6, 14 * sizeof(uint32_t*)));
+    
+    masm.andToStackPtr(Imm32(~(ABIStackAlignment - 1)));
 
     
-    static_assert(!SupportsSimd, "high lanes of SIMD registers need to be saved too.");
-    masm.PushRegsInMask(LiveRegisterSet(GeneralRegisterSet(0),
-                                        FloatRegisterSet(FloatRegisters::AllDoubleMask)));
-
     masm.assertStackAlignment(ABIStackAlignment);
     masm.call(SymbolicAddress::HandleExecutionInterrupt);
 
-    masm.branchIfFalseBool(ReturnReg, throwLabel);
+    
+    
+    masm.branchTestPtr(Assembler::Zero, ReturnReg, ReturnReg, throwLabel);
 
     
+    
+    masm.mov(r6, sp);
+    masm.storePtr(ReturnReg, Address(sp, masm.framePushed()));
 
     
-    masm.PopRegsInMask(LiveRegisterSet(GeneralRegisterSet(0),
-                                       FloatRegisterSet(FloatRegisters::AllDoubleMask)));
-    masm.mov(r6,sp);
+    
     masm.as_vmsr(r5);
     masm.as_msr(r4);
+    masm.PopRegsInMask(AllRegsExceptPCSP);
+
     
-    masm.startDataTransferM(IsLoad, sp, IA, WriteBack);
-    masm.transferReg(r0);
-    masm.transferReg(r1);
-    masm.transferReg(r2);
-    masm.transferReg(r3);
-    masm.transferReg(r4);
-    masm.transferReg(r5);
-    masm.transferReg(r6);
-    masm.transferReg(r7);
-    masm.transferReg(r8);
-    masm.transferReg(r9);
-    masm.transferReg(r10);
-    masm.transferReg(r11);
-    masm.transferReg(r12);
-    masm.transferReg(lr);
-    masm.finishDataTransfer();
+    MOZ_ASSERT(masm.framePushed() == 0);
     masm.ret();
 #elif defined(JS_CODEGEN_ARM64)
     MOZ_CRASH();
@@ -1123,22 +1107,22 @@ wasm::GenerateThrowStub(MacroAssembler& masm, Label* throwLabel)
         masm.subFromStackPtr(Imm32(ShadowStackSpace));
     masm.call(SymbolicAddress::HandleThrow);
 
-    Register scratch = ABINonArgReturnReg0;
-    masm.loadWasmActivationFromSymbolicAddress(scratch);
+    
+    Register act = ReturnReg;
 
 #ifdef DEBUG
     
     
     
     Label ok;
-    masm.branchPtr(Assembler::Equal, Address(scratch, WasmActivation::offsetOfFP()), ImmWord(0), &ok);
+    masm.branchPtr(Assembler::Equal, Address(act, WasmActivation::offsetOfFP()), ImmWord(0), &ok);
     masm.breakpoint();
     masm.bind(&ok);
 #endif
 
     masm.setFramePushed(FramePushedForEntrySP);
-    masm.loadStackPtr(Address(scratch, WasmActivation::offsetOfEntrySP()));
-    masm.Pop(scratch);
+    masm.loadStackPtr(Address(act, WasmActivation::offsetOfEntrySP()));
+    masm.Pop(ReturnReg);
     masm.PopRegsInMask(NonVolatileRegs);
     MOZ_ASSERT(masm.framePushed() == 0);
 
@@ -1148,6 +1132,10 @@ wasm::GenerateThrowStub(MacroAssembler& masm, Label* throwLabel)
     offsets.end = masm.currentOffset();
     return offsets;
 }
+
+static const LiveRegisterSet AllAllocatableRegs = LiveRegisterSet(
+    GeneralRegisterSet(Registers::AllocatableMask),
+    FloatRegisterSet(FloatRegisters::AllMask));
 
 
 

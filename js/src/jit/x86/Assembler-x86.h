@@ -112,9 +112,10 @@ static constexpr Register WasmIonExitRegE1 = eax;
 
 static constexpr Register WasmIonExitRegReturnData = edx;
 static constexpr Register WasmIonExitRegReturnType = ecx;
+static constexpr Register WasmIonExitTlsReg = esi;
 static constexpr Register WasmIonExitRegD0 = edi;
 static constexpr Register WasmIonExitRegD1 = eax;
-static constexpr Register WasmIonExitRegD2 = esi;
+static constexpr Register WasmIonExitRegD2 = ebx;
 
 
 static constexpr Register RegExpMatcherRegExpReg = CallTempReg0;

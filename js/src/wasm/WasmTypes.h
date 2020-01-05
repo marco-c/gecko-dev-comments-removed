@@ -41,6 +41,7 @@
 namespace js {
 
 class PropertyName;
+class WasmActivation;
 class WasmFunctionCallObject;
 namespace jit {
     struct BaselineScript;
@@ -988,8 +989,6 @@ enum class SymbolicAddress
     LogD,
     PowD,
     ATan2D,
-    ContextPtr,
-    ReportOverRecursed,
     HandleExecutionInterrupt,
     HandleDebugTrap,
     HandleThrow,
@@ -1021,7 +1020,7 @@ bool
 IsRoundingFunction(SymbolicAddress callee, jit::RoundingMode* mode);
 
 void*
-AddressOf(SymbolicAddress imm, JSContext* cx);
+AddressOf(SymbolicAddress imm);
 
 
 

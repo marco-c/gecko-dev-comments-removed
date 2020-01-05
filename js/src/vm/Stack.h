@@ -1756,10 +1756,6 @@ class WasmActivation : public Activation
     wasm::ExitReason exitReason() const { return exitReason_; }
 
     
-    static unsigned offsetOfContext() { return offsetof(WasmActivation, cx_); }
-    static unsigned offsetOfResumePC() { return offsetof(WasmActivation, resumePC_); }
-
-    
     static unsigned offsetOfEntrySP() { return offsetof(WasmActivation, entrySP_); }
     static unsigned offsetOfFP() { return offsetof(WasmActivation, fp_); }
     static unsigned offsetOfExitReason() { return offsetof(WasmActivation, exitReason_); }

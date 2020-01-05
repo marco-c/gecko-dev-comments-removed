@@ -79,13 +79,7 @@ __aeabi_uidivmod(int, int);
 }
 #endif
 
-static void
-WasmReportOverRecursed()
-{
-    ReportOverRecursed(JSContext::innermostWasmActivation()->cx());
-}
-
-static bool
+static void*
 WasmHandleExecutionInterrupt()
 {
     WasmActivation* activation = JSContext::innermostWasmActivation();
@@ -99,11 +93,12 @@ WasmHandleExecutionInterrupt()
 
     
     
-    
-    
+    void* resumePC = activation->resumePC();
     activation->setResumePC(nullptr);
 
-    return success;
+    
+    
+    return success ? resumePC : nullptr;
 }
 
 static bool
@@ -170,7 +165,7 @@ WasmHandleDebugTrap()
     return true;
 }
 
-static void
+static WasmActivation*
 WasmHandleThrow()
 {
     JSContext* cx = TlsContext.get();
@@ -187,7 +182,7 @@ WasmHandleThrow()
     
     FrameIterator iter(activation, FrameIterator::Unwind::True);
     if (iter.done())
-        return;
+        return activation;
 
     
     
@@ -227,6 +222,8 @@ WasmHandleThrow()
         }
         frame->leave(cx);
      }
+
+    return activation;
 }
 
 static void
@@ -436,13 +433,9 @@ wasm::IsRoundingFunction(SymbolicAddress callee, jit::RoundingMode* mode)
 }
 
 void*
-wasm::AddressOf(SymbolicAddress imm, JSContext* cx)
+wasm::AddressOf(SymbolicAddress imm)
 {
     switch (imm) {
-      case SymbolicAddress::ContextPtr:
-        return cx->zone()->group()->addressOfOwnerContext();
-      case SymbolicAddress::ReportOverRecursed:
-        return FuncCast(WasmReportOverRecursed, Args_General0);
       case SymbolicAddress::HandleExecutionInterrupt:
         return FuncCast(WasmHandleExecutionInterrupt, Args_General0);
       case SymbolicAddress::HandleDebugTrap:

@@ -78,7 +78,7 @@ class Instance
     TableTls& tableTls(const TableDesc& td) const;
 
     
-    friend void* AddressOf(SymbolicAddress, JSContext*);
+    friend void* AddressOf(SymbolicAddress);
     static int32_t callImport_void(Instance*, int32_t, int32_t, uint64_t*);
     static int32_t callImport_i32(Instance*, int32_t, int32_t, uint64_t*);
     static int32_t callImport_i64(Instance*, int32_t, int32_t, uint64_t*);
