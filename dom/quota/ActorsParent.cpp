@@ -5355,9 +5355,8 @@ QuotaManager::GetInfoForChrome(nsACString* aSuffix,
 
 
 bool
-QuotaManager::IsOriginWhitelistedForPersistentStorage(const nsACString& aOrigin)
+QuotaManager::IsOriginInternal(const nsACString& aOrigin)
 {
-  
   
   if (aOrigin.EqualsLiteral(kChromeOrigin) ||
       StringBeginsWith(aOrigin, nsDependentCString(kAboutHomeOriginPrefix)) ||
@@ -6762,8 +6761,7 @@ GetUsageOp::TraverseRepository(QuotaManager* aQuotaManager,
       return rv;
     }
 
-    if (!mGetAll &&
-        aQuotaManager->IsOriginWhitelistedForPersistentStorage(origin)) {
+    if (!mGetAll && aQuotaManager->IsOriginInternal(origin)) {
       continue;
     }
 
@@ -8471,9 +8469,7 @@ CreateOrUpgradeDirectoryMetadataHelper::CreateOrUpgradeMetadataFiles()
       }
     }
     else {
-      bool persistent =
-        QuotaManager::IsOriginWhitelistedForPersistentStorage(
-                                                             originProps.mSpec);
+      bool persistent = QuotaManager::IsOriginInternal(originProps.mSpec);
       originProps.mTimestamp = GetLastModifiedTime(originDir, persistent);
     }
 
@@ -8618,8 +8614,7 @@ CreateOrUpgradeDirectoryMetadataHelper::ProcessOriginDirectory(
     }
 
     
-    if (QuotaManager::IsOriginWhitelistedForPersistentStorage(
-                                                          aOriginProps.mSpec)) {
+    if (QuotaManager::IsOriginInternal(aOriginProps.mSpec)) {
       if (!mPermanentStorageDir) {
         mPermanentStorageDir =
           do_CreateInstance(NS_LOCAL_FILE_CONTRACTID, &rv);
