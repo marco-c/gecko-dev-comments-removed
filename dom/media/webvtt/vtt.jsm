@@ -26,6 +26,8 @@ this.EXPORTED_SYMBOLS = ["WebVTT"];
 
 
 
+var Cu = Components.utils;
+Cu.import('resource://gre/modules/Services.jsm');
 
 (function(global) {
 
@@ -1347,22 +1349,28 @@ this.EXPORTED_SYMBOLS = ["WebVTT"];
         
         
         if (settings.has("id")) {
-          var region = new self.window.VTTRegion();
-          region.width = settings.get("width", 100);
-          region.lines = settings.get("lines", 3);
-          region.regionAnchorX = settings.get("regionanchorX", 0);
-          region.regionAnchorY = settings.get("regionanchorY", 100);
-          region.viewportAnchorX = settings.get("viewportanchorX", 0);
-          region.viewportAnchorY = settings.get("viewportanchorY", 100);
-          region.scroll = settings.get("scroll", "");
-          
-          self.onregion && self.onregion(region);
-          
-          
-          self.regionList.push({
-            id: settings.get("id"),
-            region: region
-          });
+          try {
+            var region = new self.window.VTTRegion();
+            region.width = settings.get("width", 100);
+            region.lines = settings.get("lines", 3);
+            region.regionAnchorX = settings.get("regionanchorX", 0);
+            region.regionAnchorY = settings.get("regionanchorY", 100);
+            region.viewportAnchorX = settings.get("viewportanchorX", 0);
+            region.viewportAnchorY = settings.get("viewportanchorY", 100);
+            region.scroll = settings.get("scroll", "");
+            
+            self.onregion && self.onregion(region);
+            
+            
+            self.regionList.push({
+              id: settings.get("id"),
+              region: region
+            });
+          } catch(e) {
+            dump("VTTRegion Error " + e + "\n");
+            var regionPref = Services.prefs.getBoolPref("media.webvtt.regions.enabled");
+            dump("regionPref " + regionPref + "\n");
+          }
         }
       }
 
