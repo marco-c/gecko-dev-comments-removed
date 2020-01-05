@@ -34,6 +34,14 @@ enum LogicalSide {
   eLogicalSideIEnd   = (eLogicalAxisInline << 1) | eLogicalEdgeEnd     
 };
 
+enum LogicalCorner
+{
+  eLogicalCornerBStartIStart = 0,
+  eLogicalCornerBStartIEnd   = 1,
+  eLogicalCornerBEndIEnd     = 2,
+  eLogicalCornerBEndIStart   = 3
+};
+
 } 
 
 enum nsStyleUnit : uint8_t {
