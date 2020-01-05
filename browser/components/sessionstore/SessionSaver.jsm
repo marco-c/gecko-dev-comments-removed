@@ -225,6 +225,9 @@ var SessionSaverInternal = {
       if ((expireCookies || sanitizeCookies) && !restart) {
         for (let window of state.windows) {
           delete window.cookies;
+          for (let tab of window.tabs) {
+            delete tab.storage;
+          }
         }
       }
     }
