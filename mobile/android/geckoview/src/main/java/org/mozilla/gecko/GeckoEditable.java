@@ -1230,8 +1230,7 @@ final class GeckoEditable extends JNIObject
                 
                 mIgnoreSelectionChange = false;
 
-            } else if (indexInText == 0 && text.length() == action.mSequence.length() &&
-                    oldEnd - start == action.mEnd - action.mStart) {
+            } else if (indexInText == 0 && text.length() == action.mSequence.length()) {
                 
                 mText.currentReplace(start, oldEnd, action.mSequence);
 
