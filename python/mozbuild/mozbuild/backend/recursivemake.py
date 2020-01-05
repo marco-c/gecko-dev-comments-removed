@@ -449,9 +449,6 @@ class RecursiveMakeBackend(CommonBackend):
             backend_file.xpt_name = '%s.xpt' % obj.module
             self._idl_dirs.add(obj.relobjdir)
 
-        elif isinstance(obj, TestManifest):
-            self._process_test_manifest(obj, backend_file)
-
         
         if consumed:
             return True
@@ -656,6 +653,9 @@ class RecursiveMakeBackend(CommonBackend):
 
         elif isinstance(obj, ChromeManifestEntry):
             self._process_chrome_manifest_entry(obj, backend_file)
+
+        elif isinstance(obj, TestManifest):
+            self._process_test_manifest(obj, backend_file)
 
         else:
             return False
