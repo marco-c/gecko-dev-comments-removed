@@ -12,6 +12,7 @@ import android.content.ContentProviderClient;
 import android.os.Environment;
 import android.os.Process;
 import android.support.annotation.NonNull;
+import android.support.annotation.UiThread;
 
 import android.graphics.Rect;
 
@@ -927,6 +928,25 @@ public class BrowserApp extends GeckoApp
 
 
 
+    @UiThread
+    private void checkFirstrunInternal() {
+        showFirstrunPager();
+
+        if (HardwareUtils.isTablet()) {
+            mTabStrip.setOnTabChangedListener(new TabStripInterface.OnTabAddedOrRemovedListener() {
+                @Override
+                public void onTabChanged() {
+                    hideFirstrunPager(TelemetryContract.Method.BUTTON);
+                    mTabStrip.setOnTabChangedListener(null);
+                }
+            });
+        }
+    }
+
+    
+
+
+
 
 
 
@@ -946,16 +966,40 @@ public class BrowserApp extends GeckoApp
         try {
             final SharedPreferences prefs = GeckoSharedPrefs.forProfile(this);
 
-            if (prefs.getBoolean(FirstrunAnimationContainer.PREF_FIRSTRUN_ENABLED, true)) {
+            if (prefs.getBoolean(FirstrunAnimationContainer.PREF_FIRSTRUN_ENABLED_OLD, true) &&
+                prefs.getBoolean(FirstrunAnimationContainer.PREF_FIRSTRUN_ENABLED, true)) {
                 if (!Intent.ACTION_VIEW.equals(intent.getAction())) {
-                    showFirstrunPager();
-
-                    if (HardwareUtils.isTablet()) {
-                        mTabStrip.setOnTabChangedListener(new TabStripInterface.OnTabAddedOrRemovedListener() {
+                    
+                    final Distribution distribution = Distribution.getInstance(BrowserApp.this);
+                    if (!distribution.shouldWaitForSystemDistribution()) {
+                        checkFirstrunInternal();
+                    } else {
+                        distribution.addOnDistributionReadyCallback(new Distribution.ReadyCallback() {
                             @Override
-                            public void onTabChanged() {
-                                hideFirstrunPager(TelemetryContract.Method.BUTTON);
-                                mTabStrip.setOnTabChangedListener(null);
+                            public void distributionNotFound() {
+                                ThreadUtils.postToUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        checkFirstrunInternal();
+                                    }
+                                });
+                            }
+
+                            @Override
+                            public void distributionFound(final Distribution distribution) {
+                                
+                                if (prefs.getBoolean(FirstrunAnimationContainer.PREF_FIRSTRUN_ENABLED, true)) {
+                                    ThreadUtils.postToUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            checkFirstrunInternal();
+                                        }
+                                    });
+                                }
+                            }
+
+                            @Override
+                            public void distributionArrivedLate(final Distribution distribution) {
                             }
                         });
                     }

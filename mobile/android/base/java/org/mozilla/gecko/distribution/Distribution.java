@@ -226,6 +226,11 @@ public class Distribution {
                     String preferencesJSON = "";
                     try {
                         final File descFile = distribution.getDistributionFile("preferences.json");
+                        if (descFile == null) {
+                            
+                            
+                            throw new IOException("preferences.json not found");
+                        }
                         preferencesJSON = FileUtils.readStringFromFile(descFile);
                     } catch (IOException e) {
                         Log.e(LOGTAG, "Error getting distribution descriptor file.", e);
@@ -688,6 +693,28 @@ public class Distribution {
 
     private boolean checkSystemDistribution() {
         return checkDirectories(getSystemDistributionDirectories(context));
+    }
+
+    
+
+
+
+    public boolean shouldWaitForSystemDistribution() {
+        if (state == STATE_NONE) {
+            return false;
+        }
+        if (state == STATE_SET) {
+            return true;
+        }
+
+        final String[] directories = getSystemDistributionDirectories(context);
+        for (String path : directories) {
+            final File directory = new File(path);
+            if (directory.exists()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     

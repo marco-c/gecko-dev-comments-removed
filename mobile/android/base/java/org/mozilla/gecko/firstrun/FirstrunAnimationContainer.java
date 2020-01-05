@@ -18,13 +18,16 @@ import org.mozilla.gecko.R;
 import org.mozilla.gecko.Telemetry;
 import org.mozilla.gecko.TelemetryContract;
 import org.mozilla.gecko.Experiments;
+import org.mozilla.gecko.preferences.GeckoPreferences;
 
 
 
 
 
 public class FirstrunAnimationContainer extends LinearLayout {
-    public static final String PREF_FIRSTRUN_ENABLED = "startpane_enabled";
+    
+    public static final String PREF_FIRSTRUN_ENABLED_OLD = "startpane_enabled";
+    public static final String PREF_FIRSTRUN_ENABLED = GeckoPreferences.NON_PREF_PREFIX + "startpane_enabled";
 
     public static interface OnFinishListener {
         public void onFinish();
