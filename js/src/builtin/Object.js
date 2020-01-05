@@ -88,6 +88,12 @@ function Object_toLocaleString() {
 }
 
 
+function Object_valueOf() {
+    
+    return ToObject(this);
+}
+
+
 function ObjectDefineSetter(name, setter) {
     
     var object = ToObject(this);
