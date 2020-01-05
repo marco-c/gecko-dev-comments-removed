@@ -43,7 +43,7 @@ impl HTMLOutputElementMethods for HTMLOutputElement {
     
     fn Validity(&self) -> Root<ValidityState> {
         let window = window_from_node(self);
-        ValidityState::new(window.r())
+        ValidityState::new(window.r(), self.upcast())
     }
 
     

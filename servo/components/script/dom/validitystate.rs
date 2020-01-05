@@ -3,29 +3,109 @@
 
 
 use dom::bindings::codegen::Bindings::ValidityStateBinding;
+use dom::bindings::codegen::Bindings::ValidityStateBinding::ValidityStateMethods;
 use dom::bindings::global::GlobalRef;
-use dom::bindings::js::Root;
+use dom::bindings::js::{JS, Root};
 use dom::bindings::reflector::{Reflector, reflect_dom_object};
+use dom::element::Element;
 use dom::window::Window;
+
+
+#[derive_JSTraceable]
+#[derive_HeapSizeOf]
+pub enum ValidityStatus {
+    ValueMissing,
+    TypeMismatch,
+    PatternMismatch,
+    TooLong,
+    TooShort,
+    RangeUnderflow,
+    RangeOverflow,
+    StepMismatch,
+    BadInput,
+    CustomError,
+    Valid
+}
 
 
 #[dom_struct]
 pub struct ValidityState {
     reflector_: Reflector,
-    state: u8,
+    element: JS<Element>,
+    state: ValidityStatus
 }
 
+
 impl ValidityState {
-    fn new_inherited() -> ValidityState {
+    fn new_inherited(element: &Element) -> ValidityState {
         ValidityState {
             reflector_: Reflector::new(),
-            state: 0,
+            element: JS::from_ref(element),
+            state: ValidityStatus::Valid
         }
     }
 
-    pub fn new(window: &Window) -> Root<ValidityState> {
-        reflect_dom_object(box ValidityState::new_inherited(),
+    pub fn new(window: &Window, element: &Element) -> Root<ValidityState> {
+        reflect_dom_object(box ValidityState::new_inherited(element),
                            GlobalRef::Window(window),
                            ValidityStateBinding::Wrap)
+    }
+}
+
+impl ValidityStateMethods for ValidityState {
+
+    
+    fn ValueMissing(&self) -> bool {
+        false
+    }
+
+    
+    fn TypeMismatch(&self) -> bool {
+        false
+    }
+
+    
+    fn PatternMismatch(&self) -> bool {
+        false
+    }
+
+    
+    fn TooLong(&self) -> bool {
+        false
+    }
+
+    
+    fn TooShort(&self) -> bool {
+        false
+    }
+
+    
+    fn RangeUnderflow(&self) -> bool {
+        false
+    }
+
+    
+    fn RangeOverflow(&self) -> bool {
+        false
+    }
+
+    
+    fn StepMismatch(&self) -> bool {
+        false
+    }
+
+    
+    fn BadInput(&self) -> bool {
+        false
+    }
+
+    
+    fn CustomError(&self) -> bool {
+        false
+    }
+
+    
+    fn Valid(&self) -> bool {
+        false
     }
 }
