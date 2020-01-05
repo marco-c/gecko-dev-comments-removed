@@ -1054,7 +1054,11 @@ PopupNotifications.prototype = {
   },
 
   _isActiveBrowser: function (browser) {
-    return this.tabbrowser.selectedBrowser == browser;
+    
+    
+    return browser.docShell
+      ? browser.docShell.isActive
+      : (this.window.gBrowser.selectedBrowser == browser);
   },
 
   _onIconBoxCommand: function PopupNotifications_onIconBoxCommand(event) {
