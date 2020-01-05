@@ -36,12 +36,7 @@ public class TabsListLayout extends TabsLayout {
         final ItemTouchHelper touchHelper = new ItemTouchHelper(callback);
         touchHelper.attachToRecyclerView(this);
 
-        final TabsListLayoutAnimator animator = new TabsListLayoutAnimator();
-        animator.setRemoveDuration(ANIMATION_DURATION);
-        
-        
-        animator.setSupportsChangeAnimations(false);
-        setItemAnimator(animator);
+        setItemAnimator(new TabsListLayoutAnimator(ANIMATION_DURATION));
     }
 
     @Override
