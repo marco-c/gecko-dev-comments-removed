@@ -1321,15 +1321,16 @@ HttpBaseChannel::SetReferrerWithPolicy(nsIURI *referrer,
 {
   ENSURE_CALLED_BEFORE_CONNECT();
 
+  mReferrerPolicy = referrerPolicy;
+
   
   mReferrer = nullptr;
   nsresult rv = mRequestHead.ClearHeader(nsHttp::Referer);
   if(NS_FAILED(rv)) {
     return rv;
   }
-  mReferrerPolicy = referrerPolicy;
 
-  if (referrerPolicy == REFERRER_POLICY_UNSET) {
+  if (mReferrerPolicy == REFERRER_POLICY_UNSET) {
     mReferrerPolicy = NS_GetDefaultReferrerPolicy();
   }
 
@@ -1338,7 +1339,7 @@ HttpBaseChannel::SetReferrerWithPolicy(nsIURI *referrer,
   }
 
   
-  if (referrerPolicy == REFERRER_POLICY_NO_REFERRER) {
+  if (mReferrerPolicy == REFERRER_POLICY_NO_REFERRER) {
     return NS_OK;
   }
 
@@ -1444,9 +1445,9 @@ HttpBaseChannel::SetReferrerWithPolicy(nsIURI *referrer,
 
     
     
-    if (referrerPolicy != REFERRER_POLICY_UNSAFE_URL &&
-	referrerPolicy != REFERRER_POLICY_ORIGIN_WHEN_XORIGIN &&
-        referrerPolicy != REFERRER_POLICY_ORIGIN) {
+    if (mReferrerPolicy != REFERRER_POLICY_UNSAFE_URL &&
+        mReferrerPolicy != REFERRER_POLICY_ORIGIN_WHEN_XORIGIN &&
+        mReferrerPolicy != REFERRER_POLICY_ORIGIN) {
 
       
       if (!match) return NS_OK;
@@ -1479,8 +1480,7 @@ HttpBaseChannel::SetReferrerWithPolicy(nsIURI *referrer,
   }
 
   
-  if (isCrossOrigin && referrerPolicy == REFERRER_POLICY_SAME_ORIGIN) {
-    mReferrerPolicy = REFERRER_POLICY_SAME_ORIGIN;
+  if (isCrossOrigin && mReferrerPolicy == REFERRER_POLICY_SAME_ORIGIN) {
     return NS_OK;
   }
 
@@ -1560,10 +1560,10 @@ HttpBaseChannel::SetReferrerWithPolicy(nsIURI *referrer,
   
   
   
-  if (referrerPolicy == REFERRER_POLICY_ORIGIN ||
-      referrerPolicy == REFERRER_POLICY_STRICT_ORIGIN ||
-      (isCrossOrigin && (referrerPolicy == REFERRER_POLICY_ORIGIN_WHEN_XORIGIN ||
-                         referrerPolicy == REFERRER_POLICY_STRICT_ORIGIN_WHEN_XORIGIN))) {
+  if (mReferrerPolicy == REFERRER_POLICY_ORIGIN ||
+      mReferrerPolicy == REFERRER_POLICY_STRICT_ORIGIN ||
+      (isCrossOrigin && (mReferrerPolicy == REFERRER_POLICY_ORIGIN_WHEN_XORIGIN ||
+                         mReferrerPolicy == REFERRER_POLICY_STRICT_ORIGIN_WHEN_XORIGIN))) {
     
     
     
