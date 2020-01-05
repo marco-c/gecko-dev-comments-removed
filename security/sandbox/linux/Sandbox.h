@@ -9,6 +9,7 @@
 
 #include "mozilla/Types.h"
 #include "nsXULAppAPI.h"
+#include <vector>
 
 
 
