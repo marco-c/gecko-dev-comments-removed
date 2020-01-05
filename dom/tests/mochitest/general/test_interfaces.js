@@ -835,8 +835,6 @@ var interfaceNamesInGlobalScope =
 
     "ServiceWorkerContainer",
 
-    "ServiceWorkerMessageEvent",
-
     "ServiceWorkerRegistration",
 
     {name: "ScopedCredential", disabled: true},
