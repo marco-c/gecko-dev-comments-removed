@@ -66,21 +66,9 @@ this.PageThumbUtils = {
 
 
 
-
-
-      let systemScale = screenManager.systemDefaultScale;
-      let windowScale = aWindow ? aWindow.devicePixelRatio : systemScale;
-      let scale = Math.max(systemScale, windowScale);
-
-      
-
-
-
-
-
-      if (AppConstants.platform == "macosx" && !aWindow) {
-        scale = 2;
-      }
+      let primaryScale = screenManager.primaryScreen.defaultCSSScaleFactor;
+      let windowScale = aWindow ? aWindow.devicePixelRatio : primaryScale;
+      let scale = Math.max(primaryScale, windowScale);
 
       
 
