@@ -334,6 +334,8 @@ NS_EVENT_MESSAGE(eGestureNotify)
 NS_EVENT_MESSAGE(eScrolledAreaChanged)
 
 
+NS_EVENT_MESSAGE(eTransitionStart)
+NS_EVENT_MESSAGE(eTransitionRun)
 NS_EVENT_MESSAGE(eTransitionEnd)
 NS_EVENT_MESSAGE(eAnimationStart)
 NS_EVENT_MESSAGE(eAnimationEnd)
