@@ -18,6 +18,7 @@
 #include "nsUnicharUtils.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/ServoBindingTypes.h"
+#include "mozilla/ServoStyleSet.h"
 #include "mozilla/DeclarationBlockInlines.h"
 #include "nsContentUtils.h"
 #include "nsReadableUtils.h"
@@ -647,7 +648,15 @@ nsAttrValue::ToString(nsAString& aResult) const
       if (DeclarationBlock* decl = container->mValue.mCSSDeclaration) {
         decl->ToString(aResult);
       }
-      const_cast<nsAttrValue*>(this)->SetMiscAtomOrString(&aResult);
+
+      
+      
+      
+      
+      
+      if (!ServoStyleSet::IsInServoTraversal()) {
+        const_cast<nsAttrValue*>(this)->SetMiscAtomOrString(&aResult);
+      }
 
       break;
     }
