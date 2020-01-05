@@ -357,6 +357,3 @@ user_pref("media.openUnsupportedTypeWithExternalApp", false);
 
 
 user_pref("signon.rememberSignons", false);
-
-
-user_pref("browser.formautofill.experimental", true);
