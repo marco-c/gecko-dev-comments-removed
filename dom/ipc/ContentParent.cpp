@@ -1356,10 +1356,11 @@ ContentParent::Init()
   if (nsIPresShell::IsAccessibilityActive()) {
 #if defined(XP_WIN)
     if (IsVistaOrLater()) {
-      Unused << SendActivateA11y();
+      Unused <<
+        SendActivateA11y(a11y::AccessibleWrap::GetContentProcessIdFor(ChildID()));
     }
 #else
-    Unused << SendActivateA11y();
+    Unused << SendActivateA11y(0);
 #endif
   }
 #endif
@@ -2781,10 +2782,11 @@ ContentParent::Observe(nsISupports* aSubject,
       
 #if defined(XP_WIN)
       if (IsVistaOrLater()) {
-        Unused << SendActivateA11y();
+        Unused <<
+          SendActivateA11y(a11y::AccessibleWrap::GetContentProcessIdFor(ChildID()));
       }
 #else
-      Unused << SendActivateA11y();
+      Unused << SendActivateA11y(0);
 #endif
     } else {
       
@@ -5142,18 +5144,6 @@ ContentParent::RecvUnstoreAndBroadcastBlobURLUnregistration(const nsCString& aUR
   mBlobURLs.RemoveElement(aURI);
 
   return true;
-}
-
-bool
-ContentParent::RecvGetA11yContentId(uint32_t* aContentId)
-{
-#if defined(XP_WIN32) && defined(ACCESSIBILITY)
-  *aContentId = a11y::AccessibleWrap::GetContentProcessIdFor(ChildID());
-  MOZ_ASSERT(*aContentId);
-  return true;
-#else
-  return false;
-#endif
 }
 
 } 
