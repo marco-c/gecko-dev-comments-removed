@@ -1158,12 +1158,18 @@ static_assert((mozilla::pkix::ERROR_BASE - mozilla::pkix::END_OF_LIST) < 31,
               "too many moz::pkix errors");
 
 static void
-reportHandshakeResult(int32_t bytesTransferred, PRErrorCode err)
+reportHandshakeResult(int32_t bytesTransferred, bool wasReading, PRErrorCode err)
 {
   uint32_t bucket;
 
-  if (bytesTransferred >= 0) {
+  
+  if (bytesTransferred > 0) {
     bucket = 0;
+  } else if ((bytesTransferred == 0) && !wasReading) {
+    
+    
+    MOZ_ASSERT(false);
+    bucket = 671;
   } else if (IS_SSL_ERROR(err)) {
     bucket = err - SSL_ERROR_BASE;
     MOZ_ASSERT(bucket > 0);   
@@ -1261,7 +1267,7 @@ checkHandshake(int32_t bytesTransfered, bool wasReading,
     
     
     
-    reportHandshakeResult(bytesTransfered, originalError);
+    reportHandshakeResult(bytesTransfered, wasReading, originalError);
     socketInfo->SetHandshakeNotPending();
   }
 
