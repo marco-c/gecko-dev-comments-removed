@@ -29,7 +29,6 @@ const NC_PROTOCOL_SCHEMES   = NC_NS + "Protocol-Schemes";
 
 
 const NC_VALUE              = NC_NS + "value";
-const NC_DESCRIPTION        = NC_NS + "description";
 
 
 const NC_FILE_EXTENSIONS    = NC_NS + "fileExtensions";
@@ -322,10 +321,6 @@ HandlerService.prototype = {
     if (!this._hasValue(typeID, NC_VALUE))
       throw new Components.Exception("handlerSvc fillHandlerInfo: don't know this type",
                                      Cr.NS_ERROR_NOT_AVAILABLE);
-
-    
-    if (this._hasValue(typeID, NC_DESCRIPTION))
-      aHandlerInfo.description = this._getValue(typeID, NC_DESCRIPTION);
 
     
     
