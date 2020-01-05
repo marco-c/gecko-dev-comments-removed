@@ -343,14 +343,6 @@ protected:
 
   
   
-  bool NeedToDecodeAudio();
-
-  
-  
-  bool NeedToDecodeVideo();
-
-  
-  
   bool HasLowDecodedData();
 
   bool HasLowDecodedAudio();
