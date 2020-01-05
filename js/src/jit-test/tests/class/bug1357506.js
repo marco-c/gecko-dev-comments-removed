@@ -1,0 +1,8 @@
+
+
+
+class a {
+  constructor() {
+    "use asm";
+  }
+}
