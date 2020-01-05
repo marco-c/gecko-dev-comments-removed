@@ -431,11 +431,6 @@ nsAboutCacheEntry::Channel::WriteCacheEntryDescription(nsICacheEntry *entry)
     
     
     
-    
-    
-    
-    
-    
     if (u == 0) {
         APPEND_ROW("expires", "Expired Immediately");
     } else if (u < 0xFFFFFFFF) {

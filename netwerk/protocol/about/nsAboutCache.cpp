@@ -495,11 +495,6 @@ nsAboutCache::Channel::OnCacheEntryInfo(nsIURI *aURI, const nsACString & aIdEnha
     
     
     
-    
-    
-    
-    
-    
     if (aExpirationTime == 0) {
         mBuffer.AppendLiteral("Expired Immediately");
     } else if (aExpirationTime < 0xFFFFFFFF) {
