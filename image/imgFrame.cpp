@@ -22,7 +22,6 @@
 #include "mozilla/gfx/Tools.h"
 #include "mozilla/Likely.h"
 #include "mozilla/MemoryReporting.h"
-#include "mozilla/Telemetry.h"
 #include "nsMargin.h"
 #include "nsThreadUtils.h"
 
@@ -165,7 +164,6 @@ imgFrame::imgFrame()
   , mTimeout(FrameTimeout::FromRawMilliseconds(100))
   , mDisposalMethod(DisposalMethod::NOT_SPECIFIED)
   , mBlendMethod(BlendMethod::OVER)
-  , mHasNoAlpha(false)
   , mAborted(false)
   , mFinished(false)
   , mOptimizable(false)
@@ -383,23 +381,6 @@ imgFrame::InitWithDrawable(gfxDrawable* aDrawable,
   return NS_OK;
 }
 
-bool
-imgFrame::CanOptimizeOpaqueImage()
-{
-  MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(!ShutdownTracker::ShutdownHasStarted());
-  mMonitor.AssertCurrentThreadOwns();
-
-  
-  
-  
-  
-  
-  
-  return mHasNoAlpha && mFormat == SurfaceFormat::B8G8R8A8 && mImageSurface &&
-         (gfxPlatform::GetPlatform()->GetDefaultContentBackend() != BackendType::SKIA);
-}
-
 nsresult
 imgFrame::Optimize(DrawTarget* aTarget)
 {
@@ -424,12 +405,6 @@ imgFrame::Optimize(DrawTarget* aTarget)
   
   if (ShutdownTracker::ShutdownHasStarted()) {
     return NS_OK;
-  }
-
-  
-  if (CanOptimizeOpaqueImage()) {
-    mFormat = SurfaceFormat::B8G8R8X8;
-    mImageSurface = CreateLockedSurface(mVBuf, mFrameRect.Size(), mFormat);
   }
 
   if (gDisableOptimize) {
@@ -618,12 +593,6 @@ imgFrame::Finish(Opacity aFrameOpacity ,
 {
   MonitorAutoLock lock(mMonitor);
   MOZ_ASSERT(mLockCount > 0, "Image data should be locked");
-
-  if (aFrameOpacity == Opacity::FULLY_OPAQUE) {
-    mHasNoAlpha = true;
-    Telemetry::Accumulate(Telemetry::IMAGE_DECODE_OPAQUE_BGRA,
-                          mFormat == SurfaceFormat::B8G8R8A8);
-  }
 
   mDisposalMethod = aDisposalMethod;
   mTimeout = aTimeout;

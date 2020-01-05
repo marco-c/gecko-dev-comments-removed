@@ -352,7 +352,6 @@ private:
 
   nsresult LockImageData();
   nsresult UnlockImageData();
-  bool     CanOptimizeOpaqueImage();
   nsresult Optimize(gfx::DrawTarget* aTarget);
 
   void AssertImageDataLocked() const;
@@ -415,7 +414,6 @@ private:
   Maybe<IntRect> mBlendRect;
   SurfaceFormat  mFormat;
 
-  bool mHasNoAlpha;
   bool mAborted;
   bool mFinished;
   bool mOptimizable;
