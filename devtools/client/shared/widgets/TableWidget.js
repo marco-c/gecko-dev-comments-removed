@@ -39,10 +39,6 @@ Object.defineProperty(this, "EVENTS", {
 
 
 
-const MAX_VISIBLE_STRING_SIZE = 100;
-
-
-
 
 
 
@@ -1508,11 +1504,6 @@ Cell.prototype = {
       let span = this.label.ownerDocument.createElementNS(HTML_NS, "span");
       span.textContent = value;
       value = span;
-    }
-
-    if (!(value instanceof Node) &&
-        value.length > MAX_VISIBLE_STRING_SIZE) {
-      value = value .substr(0, MAX_VISIBLE_STRING_SIZE) + "\u2026";
     }
 
     if (value instanceof Node) {
