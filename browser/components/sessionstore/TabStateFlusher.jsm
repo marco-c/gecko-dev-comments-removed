@@ -106,8 +106,12 @@ var TabStateFlusherInternal = {
 
 
   flushWindow(window) {
-    let browsers = window.gBrowser.browsers;
-    let promises = browsers.map((browser) => this.flush(browser));
+    let promises = [];
+    for (let browser of window.gBrowser.browsers) {
+      if (window.gBrowser.getTabForBrowser(browser).linkedPanel) {
+        promises.push(this.flush(browser));
+      }
+    }
     return Promise.all(promises);
   },
 
