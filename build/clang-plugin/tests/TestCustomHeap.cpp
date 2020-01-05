@@ -21,8 +21,7 @@ T *customAlloc() MOZ_HEAP_ALLOCATOR {
   return new (arg) T();
 }
 
-template <typename T>
-void misuseX(T q) {
+void misuseX() {
   X *foo = customAlloc<X>(); 
   X *foo2 = new (100) X(); 
 }
