@@ -2,12 +2,21 @@
 
 
 
+
+
+#![deny(missing_docs)]
+
 use std::sync::mpsc::Sender;
+
+
 
 #[derive(Clone)]
 pub struct ProfilerChan(pub Sender<ProfilerMsg>);
 
 impl ProfilerChan {
+    
+    
+    
     pub fn send(&self, msg: ProfilerMsg) {
         let ProfilerChan(ref c) = *self;
         c.send(msg).unwrap();
@@ -28,6 +37,9 @@ pub struct Report {
 pub struct ReportsChan(pub Sender<Vec<Report>>);
 
 impl ReportsChan {
+    
+    
+    
     pub fn send(&self, report: Vec<Report>) {
         let ReportsChan(ref c) = *self;
         c.send(report).unwrap();
