@@ -710,8 +710,36 @@ nsSVGUtils::PaintFrameWithEffects(nsIFrame *aFrame,
   }
 
   
-  RefPtr<gfxContext> target = &aContext;
+  
+  
+  
+  aContext.Save();
+  if (!(aFrame->GetStateBits() & NS_FRAME_IS_NONDISPLAY)) {
+    
+    
+    gfxContextMatrixAutoSaveRestore matrixAutoSaveRestore(&aContext);
+    aContext.Multiply(aTransform);
+    nsRect overflowRect = aFrame->GetVisualOverflowRectRelativeToSelf();
+    if (aFrame->IsFrameOfType(nsIFrame::eSVGGeometry) ||
+        aFrame->IsSVGText()) {
+      
+      
+      overflowRect = overflowRect + aFrame->GetPosition();
+    }
+    aContext.Clip(NSRectToSnappedRect(overflowRect,
+                                      aFrame->PresContext()->AppUnitsPerDevPixel(),
+                                      *aContext.GetDrawTarget()));
+  }
   IntPoint targetOffset;
+  RefPtr<gfxContext> target =
+    (aFrame->StyleEffects()->mMixBlendMode == NS_STYLE_BLEND_NORMAL)
+      ? RefPtr<gfxContext>(&aContext).forget()
+      : CreateBlendTarget(&aContext, targetOffset);
+  aContext.Restore();
+
+  if (!target) {
+    return DrawResult::TEMPORARY_ERROR;
+  }
 
   
 
@@ -733,46 +761,6 @@ nsSVGUtils::PaintFrameWithEffects(nsIFrame *aFrame,
         
         return DrawResult::SUCCESS;
       }
-    }
-
-    if (!(aFrame->GetStateBits() & NS_FRAME_IS_NONDISPLAY)) {
-      
-      
-      gfxContextMatrixAutoSaveRestore matrixAutoSaveRestore(&aContext);
-      aContext.Multiply(aTransform);
-      nsRect overflowRect = aFrame->GetVisualOverflowRectRelativeToSelf();
-      if (aFrame->IsFrameOfType(nsIFrame::eSVGGeometry) ||
-          aFrame->IsSVGText()) {
-        
-        
-        overflowRect = overflowRect + aFrame->GetPosition();
-      }
-      aContext.Clip(NSRectToSnappedRect(overflowRect,
-                                        aFrame->PresContext()->AppUnitsPerDevPixel(),
-                                        *aContext.GetDrawTarget()));
-    }
-
-    if (aFrame->StyleEffects()->mMixBlendMode != NS_STYLE_BLEND_NORMAL) {
-      
-      
-      gfxRect clipRect;
-      {
-        gfxContextMatrixAutoSaveRestore matRestore(&aContext);
-
-        aContext.SetMatrix(gfxMatrix());
-        clipRect = aContext.GetClipExtents();
-      }
-
-      IntRect drawRect = RoundedOut(ToRect(clipRect));
-
-      RefPtr<DrawTarget> targetDT = aContext.GetDrawTarget()->CreateSimilarDrawTarget(drawRect.Size(), SurfaceFormat::B8G8R8A8);
-      target = gfxContext::CreateOrNull(targetDT);
-      if (!target) {
-        gfxDevCrash(LogReason::InvalidContext) << "SVGPaintWithEffects context problem " << gfx::hexa(targetDT);
-        return DrawResult::TEMPORARY_ERROR;
-      }
-      target->SetMatrix(aContext.CurrentMatrix() * gfxMatrix::Translation(-drawRect.TopLeft()));
-      targetOffset = drawRect.TopLeft();
     }
 
     if (maskUsage.shouldGenerateClipMaskLayer) {
@@ -847,14 +835,8 @@ nsSVGUtils::PaintFrameWithEffects(nsIFrame *aFrame,
   }
 
   if (aFrame->StyleEffects()->mMixBlendMode != NS_STYLE_BLEND_NORMAL) {
-    RefPtr<DrawTarget> targetDT = target->GetDrawTarget();
-    target = nullptr;
-    RefPtr<SourceSurface> targetSurf = targetDT->Snapshot();
-
-    aContext.SetMatrix(gfxMatrix()); 
-    RefPtr<gfxPattern> pattern = new gfxPattern(targetSurf, Matrix::Translation(targetOffset.x, targetOffset.y));
-    aContext.SetPattern(pattern);
-    aContext.Paint();
+    MOZ_ASSERT(target != &aContext);
+    BlendToTarget(aFrame, &aContext, target, targetOffset);
   }
 
   return result;
