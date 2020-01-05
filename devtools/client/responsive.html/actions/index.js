@@ -39,7 +39,10 @@ createEnum([
   
   
   
-  "CHANGE_VIEWPORT_PIXEL_RATIO",
+  "CHANGE_PIXEL_RATIO",
+
+  
+  "CHANGE_TOUCH_SIMULATION",
 
   
   "LOAD_DEVICE_LIST_START",
@@ -67,8 +70,5 @@ createEnum([
 
   
   "UPDATE_DEVICE_MODAL_OPEN",
-
-  
-  "UPDATE_TOUCH_SIMULATION_ENABLED",
 
 ], module.exports);

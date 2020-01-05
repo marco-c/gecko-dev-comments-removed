@@ -28,7 +28,7 @@ module.exports = createClass({
     swapAfterMount: PropTypes.bool.isRequired,
     viewport: PropTypes.shape(Types.viewport).isRequired,
     onBrowserMounted: PropTypes.func.isRequired,
-    onChangeViewportDevice: PropTypes.func.isRequired,
+    onChangeDevice: PropTypes.func.isRequired,
     onContentResize: PropTypes.func.isRequired,
     onResizeViewport: PropTypes.func.isRequired,
     onRotateViewport: PropTypes.func.isRequired,
@@ -109,7 +109,7 @@ module.exports = createClass({
     
     
     
-    this.props.onChangeViewportDevice({ name: "" });
+    this.props.onChangeDevice({ name: "" });
 
     this.setState({
       lastClientX,
@@ -125,7 +125,7 @@ module.exports = createClass({
       swapAfterMount,
       viewport,
       onBrowserMounted,
-      onChangeViewportDevice,
+      onChangeDevice,
       onContentResize,
       onResizeViewport,
       onRotateViewport,
@@ -149,7 +149,7 @@ module.exports = createClass({
       ViewportToolbar({
         devices,
         selectedDevice: viewport.device,
-        onChangeViewportDevice,
+        onChangeDevice,
         onResizeViewport,
         onRotateViewport,
         onUpdateDeviceModalOpen,
