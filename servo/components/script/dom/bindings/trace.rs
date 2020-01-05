@@ -359,9 +359,16 @@ pub struct RootedTraceableSet {
     set: Vec<TraceableInfo>
 }
 
-
-thread_local!(pub static ROOTED_TRACEABLES: Rc<RefCell<RootedTraceableSet>> =
-              Rc::new(RefCell::new(RootedTraceableSet::new())));
+#[allow(missing_docs)]  
+mod dummy {  
+    use std::rc::Rc;
+    use std::cell::RefCell;
+    use super::RootedTraceableSet;
+    
+    thread_local!(pub static ROOTED_TRACEABLES: Rc<RefCell<RootedTraceableSet>> =
+                  Rc::new(RefCell::new(RootedTraceableSet::new())));
+}
+pub use self::dummy::ROOTED_TRACEABLES;
 
 impl RootedTraceableSet {
     fn new() -> RootedTraceableSet {

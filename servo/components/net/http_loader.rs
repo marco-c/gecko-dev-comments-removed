@@ -17,10 +17,10 @@ use hyper::header::{AcceptEncoding, Accept, ContentLength, ContentType, Host, Lo
 use hyper::Error as HttpError;
 use hyper::method::Method;
 use hyper::mime::{Mime, TopLevel, SubLevel};
-use hyper::net::HttpConnector;
+use hyper::net::{HttpConnector, HttpsConnector, Openssl};
 use hyper::status::{StatusCode, StatusClass};
 use std::error::Error;
-use openssl::ssl::{SslContext, SSL_VERIFY_PEER};
+use openssl::ssl::{SslContext, SslMethod, SSL_VERIFY_PEER};
 use std::io::{self, Read, Write};
 use std::sync::Arc;
 use std::sync::mpsc::{Sender, channel};
@@ -117,29 +117,25 @@ fn load(mut load_data: LoadData, start_chan: LoadConsumer, classifier: Arc<MIMEC
 
         info!("requesting {}", url.serialize());
 
-        fn verifier(ssl: &mut SslContext) {
-            ssl.set_verify(SSL_VERIFY_PEER, None);
-            let mut certs = resources_dir_path();
-            certs.push("certs");
-            ssl.set_CA_file(&certs).unwrap();
-        };
-
         let ssl_err_string = "Some(OpenSslErrors([UnknownError { library: \"SSL routines\", \
 function: \"SSL3_GET_SERVER_CERTIFICATE\", \
 reason: \"certificate verify failed\" }]))";
 
-        let mut connector = if opts::get().nossl {
-            HttpConnector(None)
+        let req = if opts::get().nossl {
+            Request::with_connector(load_data.method.clone(), url.clone(), &HttpConnector)
         } else {
-            HttpConnector(Some(box verifier as Box<Fn(&mut SslContext) + Send>))
+            let mut context = SslContext::new(SslMethod::Sslv23).unwrap();
+            context.set_verify(SSL_VERIFY_PEER, None);
+            context.set_CA_file(&resources_dir_path().join("certs")).unwrap();
+            Request::with_connector(load_data.method.clone(), url.clone(),
+                &HttpsConnector::new(Openssl { context: Arc::new(context) }))
         };
-
-        let mut req = match Request::with_connector(load_data.method.clone(), url.clone(), &mut connector) {
+        let mut req = match req {
             Ok(req) => req,
             Err(HttpError::Io(ref io_error)) if (
                 io_error.kind() == io::ErrorKind::Other &&
                 io_error.description() == "Error in OpenSSL" &&
-                // FIXME: This incredibly hacky. Make it more robust, and at least test it.
+                
                 format!("{:?}", io_error.cause()) == ssl_err_string
             ) => {
                 let mut image = resources_dir_path();
@@ -155,13 +151,13 @@ reason: \"certificate verify failed\" }]))";
             }
         };
 
-        // Preserve the `host` header set automatically by Request.
+        
         let host = req.headers().get::<Host>().unwrap().clone();
 
-        // Avoid automatically preserving request headers when redirects occur.
-        // See https://bugzilla.mozilla.org/show_bug.cgi?id=401564 and
-        // https://bugzilla.mozilla.org/show_bug.cgi?id=216828 .
-        // Only preserve ones which have been explicitly marked as such.
+        
+        
+        
+        
         if iters == 1 {
             let mut combined_headers = load_data.headers.clone();
             combined_headers.extend(load_data.preserved_headers.iter());
@@ -201,7 +197,7 @@ reason: \"certificate verify failed\" }]))";
             info!("{:?}", load_data.data);
         }
 
-        // Avoid automatically sending request body if a redirect has occurred.
+        
         let writer = match load_data.data {
             Some(ref data) if iters == 1 => {
                 req.headers_mut().set(ContentLength(data.len() as u64));
@@ -236,8 +232,8 @@ reason: \"certificate verify failed\" }]))";
             }
         };
 
-        // Send an HttpRequest message to devtools with a unique request_id
-        // TODO: Do this only if load_data has some pipeline_id, and send the pipeline_id in the message
+        
+        
         let request_id = uuid::Uuid::new_v4().to_simple_string();
         if let Some(ref chan) = devtools_chan {
             let net_event = NetworkEvent::HttpRequest(load_data.url.clone(),
@@ -255,7 +251,7 @@ reason: \"certificate verify failed\" }]))";
             }
         };
 
-        // Dump headers, but only do the iteration if info!() is enabled.
+        
         info!("got HTTP response {}, headers:", response.status);
         if log_enabled!(log::LogLevel::Info) {
             for header in response.headers.iter() {
@@ -276,18 +272,18 @@ reason: \"certificate verify failed\" }]))";
         if response.status.class() == StatusClass::Redirection {
             match response.headers.get::<Location>() {
                 Some(&Location(ref new_url)) => {
-                    // CORS (https://fetch.spec.whatwg.org/#http-fetch, status section, point 9, 10)
+                    
                     match load_data.cors {
                         Some(ref c) => {
                             if c.preflight {
-                                // The preflight lied
+                                
                                 send_error(url,
                                            "Preflight fetch inconsistent with main fetch".to_string(),
                                            start_chan);
                                 return;
                             } else {
-                                // XXXManishearth There are some CORS-related steps here,
-                                // but they don't seem necessary until credentials are implemented
+                                
+                                
                             }
                         }
                         _ => {}
@@ -302,8 +298,8 @@ reason: \"certificate verify failed\" }]))";
                     info!("redirecting to {}", new_url);
                     url = new_url;
 
-                    // According to https://tools.ietf.org/html/rfc7231#section-6.4.2,
-                    // historically UAs have rewritten POST->GET on 301 and 302 responses.
+                    
+                    
                     if load_data.method == Method::Post &&
                         (response.status == StatusCode::MovedPermanently ||
                          response.status == StatusCode::Found) {
@@ -335,7 +331,7 @@ reason: \"certificate verify failed\" }]))";
         metadata.status = Some(response.status_raw().clone());
 
         let mut encoding_str: Option<String> = None;
-        //FIXME: Implement Content-Encoding Header https://github.com/hyperium/hyper/issues/391
+        
         if let Some(encodings) = response.headers.get_raw("content-encoding") {
             for encoding in encodings.iter() {
                 if let Ok(encodings) = String::from_utf8(encoding.clone()) {
@@ -347,8 +343,8 @@ reason: \"certificate verify failed\" }]))";
             }
         }
 
-        // Send an HttpResponse message to devtools with the corresponding request_id
-        // TODO: Send this message only if load_data has a pipeline_id that is not None
+        
+        
         if let Some(ref chan) = devtools_chan {
             let net_event_response = NetworkEvent::HttpResponse(
                 metadata.headers.clone(), metadata.status.clone(), None);
