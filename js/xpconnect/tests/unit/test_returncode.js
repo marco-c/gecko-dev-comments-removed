@@ -16,7 +16,7 @@ function getConsoleMessages() {
 
 function run_test() {
   
-  registerXPCTestComponents();
+  registerAppManifest(do_get_file('../components/native/chrome.manifest'));
   registerAppManifest(do_get_file('../components/js/xpctest.manifest'));
 
   
