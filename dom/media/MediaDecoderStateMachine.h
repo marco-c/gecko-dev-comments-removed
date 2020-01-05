@@ -473,9 +473,6 @@ protected:
   void MaybeStartBuffering();
 
   
-  void DecodeFirstFrame();
-
-  
   
   
   

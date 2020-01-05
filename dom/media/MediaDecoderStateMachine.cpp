@@ -439,7 +439,22 @@ public:
 
   void Enter() override
   {
-    mMaster->DecodeFirstFrame();
+    
+    if (mMaster->mQueuedSeek.Exists() &&
+        (mMaster->mSentFirstFrameLoadedEvent ||
+         Reader()->ForceZeroStartTime())) {
+      mMaster->InitiateSeek(Move(mMaster->mQueuedSeek));
+      return;
+    }
+
+    
+    if (mMaster->mSentFirstFrameLoadedEvent) {
+      SetState(DECODER_STATE_DECODING);
+      return;
+    }
+
+    
+    mMaster->DispatchDecodeTasksIfNeeded();
   }
 
   State GetState() const override
@@ -1883,29 +1898,6 @@ MediaDecoderStateMachine::Shutdown()
            &MediaDecoderStateMachine::FinishShutdown,
            &MediaDecoderStateMachine::FinishShutdown)
     ->CompletionPromise();
-}
-
-void
-MediaDecoderStateMachine::DecodeFirstFrame()
-{
-  MOZ_ASSERT(OnTaskQueue());
-  MOZ_ASSERT(mState == DECODER_STATE_DECODING_FIRSTFRAME);
-
-  
-  if (mQueuedSeek.Exists() &&
-      (mSentFirstFrameLoadedEvent || mReader->ForceZeroStartTime())) {
-    InitiateSeek(Move(mQueuedSeek));
-    return;
-  }
-
-  
-  if (mSentFirstFrameLoadedEvent) {
-    SetState(DECODER_STATE_DECODING);
-    return;
-  }
-
-  
-  DispatchDecodeTasksIfNeeded();
 }
 
 void MediaDecoderStateMachine::PlayStateChanged()
