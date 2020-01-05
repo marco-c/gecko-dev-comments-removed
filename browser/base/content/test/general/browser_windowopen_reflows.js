@@ -19,10 +19,6 @@ const EXPECTED_REFLOWS = [
 
   
   "_delayedStartup@chrome://browser/content/browser.js|",
-
-  
-  
-  "ssi_getWindowDimension@resource:///modules/sessionstore/SessionStore.jsm",
 ];
 
 if (Services.appinfo.OS == "WINNT" || Services.appinfo.OS == "Darwin") {
