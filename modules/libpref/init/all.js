@@ -608,6 +608,9 @@ pref("media.video-queue.send-to-compositor-size", 9999);
 pref("media.video_stats.enabled", true);
 
 
+pref("media.decoder.recycle.enabled", false);
+
+
 pref("layers.amd-switchable-gfx.enabled", true);
 
 
