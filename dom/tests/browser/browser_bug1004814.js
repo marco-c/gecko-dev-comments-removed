@@ -24,7 +24,7 @@ add_task(function*() {
           }
         };
 
-        Services.obs.addObserver(ConsoleObserver, "console-api-log-event");
+        Services.obs.addObserver(ConsoleObserver, "console-api-log-event", false);
 
         
         content.document.location = TEST_URI;

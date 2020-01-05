@@ -207,7 +207,7 @@ add_task(function* testOpenPreferences() {
 
       deferred.resolve();
     });
-  }, "advanced-pane-loaded");
+  }, "advanced-pane-loaded", false);
 
   info("Loading preferences pane.");
   

@@ -85,7 +85,7 @@ add_task(function* test_getExperiments() {
   let observerFireCount = 0;
   let expectedObserverFireCount = 0;
   let observer = () => ++observerFireCount;
-  Services.obs.addObserver(observer, OBSERVER_TOPIC);
+  Services.obs.addObserver(observer, OBSERVER_TOPIC, false);
 
   
 
@@ -351,7 +351,7 @@ add_task(function* test_addonAlreadyInstalled() {
   let observerFireCount = 0;
   let expectedObserverFireCount = 0;
   let observer = () => ++observerFireCount;
-  Services.obs.addObserver(observer, OBSERVER_TOPIC);
+  Services.obs.addObserver(observer, OBSERVER_TOPIC, false);
 
   
 
@@ -630,7 +630,7 @@ add_task(function* test_installFailure() {
   let observerFireCount = 0;
   let expectedObserverFireCount = 0;
   let observer = () => ++observerFireCount;
-  Services.obs.addObserver(observer, OBSERVER_TOPIC);
+  Services.obs.addObserver(observer, OBSERVER_TOPIC, false);
 
   
 
@@ -761,7 +761,7 @@ add_task(function* test_userDisabledAndUpdated() {
   let observerFireCount = 0;
   let expectedObserverFireCount = 0;
   let observer = () => ++observerFireCount;
-  Services.obs.addObserver(observer, OBSERVER_TOPIC);
+  Services.obs.addObserver(observer, OBSERVER_TOPIC, false);
 
   
 
@@ -860,7 +860,7 @@ add_task(function* test_updateActiveExperiment() {
   let observerFireCount = 0;
   let expectedObserverFireCount = 0;
   let observer = () => ++observerFireCount;
-  Services.obs.addObserver(observer, OBSERVER_TOPIC);
+  Services.obs.addObserver(observer, OBSERVER_TOPIC, false);
 
   
 
@@ -951,7 +951,7 @@ add_task(function* test_disableActiveExperiment() {
   let observerFireCount = 0;
   let expectedObserverFireCount = 0;
   let observer = () => ++observerFireCount;
-  Services.obs.addObserver(observer, OBSERVER_TOPIC);
+  Services.obs.addObserver(observer, OBSERVER_TOPIC, false);
 
   
 
@@ -1044,7 +1044,7 @@ add_task(function* test_freezePendingExperiment() {
   let observerFireCount = 0;
   let expectedObserverFireCount = 0;
   let observer = () => ++observerFireCount;
-  Services.obs.addObserver(observer, OBSERVER_TOPIC);
+  Services.obs.addObserver(observer, OBSERVER_TOPIC, false);
 
   
 
@@ -1122,7 +1122,7 @@ add_task(function* test_freezeActiveExperiment() {
   let observerFireCount = 0;
   let expectedObserverFireCount = 0;
   let observer = () => ++observerFireCount;
-  Services.obs.addObserver(observer, OBSERVER_TOPIC);
+  Services.obs.addObserver(observer, OBSERVER_TOPIC, false);
 
   
 
@@ -1202,7 +1202,7 @@ add_task(function* test_removeActiveExperiment() {
   let observerFireCount = 0;
   let expectedObserverFireCount = 0;
   let observer = () => ++observerFireCount;
-  Services.obs.addObserver(observer, OBSERVER_TOPIC);
+  Services.obs.addObserver(observer, OBSERVER_TOPIC, false);
 
   
 
@@ -1293,7 +1293,7 @@ add_task(function* test_invalidUrl() {
   let observerFireCount = 0;
   let expectedObserverFireCount = 0;
   let observer = () => ++observerFireCount;
-  Services.obs.addObserver(observer, OBSERVER_TOPIC);
+  Services.obs.addObserver(observer, OBSERVER_TOPIC, false);
 
   
 
@@ -1349,7 +1349,7 @@ add_task(function* test_unexpectedUninstall() {
   let observerFireCount = 0;
   let expectedObserverFireCount = 0;
   let observer = () => ++observerFireCount;
-  Services.obs.addObserver(observer, OBSERVER_TOPIC);
+  Services.obs.addObserver(observer, OBSERVER_TOPIC, false);
 
   
 

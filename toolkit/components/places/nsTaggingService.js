@@ -20,10 +20,10 @@ const TOPIC_SHUTDOWN = "places-shutdown";
 
 function TaggingService() {
   
-  PlacesUtils.bookmarks.addObserver(this);
+  PlacesUtils.bookmarks.addObserver(this, false);
 
   
-  Services.obs.addObserver(this, TOPIC_SHUTDOWN);
+  Services.obs.addObserver(this, TOPIC_SHUTDOWN, false);
 }
 
 TaggingService.prototype = {

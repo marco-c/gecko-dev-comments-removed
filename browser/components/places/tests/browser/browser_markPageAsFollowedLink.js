@@ -27,7 +27,7 @@ add_task(function* test() {
         deferredRightFrameVisit.resolve();
       }
     });
-  }, "uri-visit-saved");
+  }, "uri-visit-saved", false);
 
   
   let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, PAGE_URL);

@@ -23,7 +23,7 @@ function pageLoad() {
 }
 
 function doOnOpenPageInfo(continuation) {
-  Services.obs.addObserver(pageInfoObserve, "page-info-dialog-loaded");
+  Services.obs.addObserver(pageInfoObserve, "page-info-dialog-loaded", false);
   gNextTest = continuation;
   
   

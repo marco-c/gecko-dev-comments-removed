@@ -143,10 +143,10 @@ function setupForTest(aConditions) {
                                                      : aConditions.checkWinLin;
 
   
-  Services.obs.addObserver(onLastWindowClosed, "browser-lastwindow-close-granted");
+  Services.obs.addObserver(onLastWindowClosed, "browser-lastwindow-close-granted", false);
 
   
-  Services.obs.addObserver(onStateRestored, "sessionstore-browser-state-restored");
+  Services.obs.addObserver(onStateRestored, "sessionstore-browser-state-restored", false);
   ss.setBrowserState(JSON.stringify(testState));
 }
 

@@ -83,7 +83,7 @@ var SelfSupportBackendInternal = {
 
     this._log.trace("init");
 
-    Services.prefs.addObserver(PREF_BRANCH_LOG, this);
+    Services.prefs.addObserver(PREF_BRANCH_LOG, this, false);
 
     
     let reportingEnabled = IS_UNIFIED_TELEMETRY;
@@ -105,7 +105,7 @@ var SelfSupportBackendInternal = {
       return;
     }
 
-    Services.obs.addObserver(this, "sessionstore-windows-restored");
+    Services.obs.addObserver(this, "sessionstore-windows-restored", false);
   },
 
   

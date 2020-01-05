@@ -112,7 +112,7 @@ addMessageListener("ss-test:enableStyleSheetsForSet", function(msg) {
   if (change) {
     
     
-    Services.obs.addObserver(observer, "style-sheet-applicable-state-changed");
+    Services.obs.addObserver(observer, "style-sheet-applicable-state-changed", false);
 
     content.document.enableStyleSheetsForSet(msg.data);
   } else {

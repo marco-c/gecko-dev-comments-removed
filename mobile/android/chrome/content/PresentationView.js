@@ -27,7 +27,7 @@ let PresentationView = {
 
     
     
-    Services.obs.addObserver(this,TOPIC_PRESENTATION_RECEIVER_LAUNCH);
+    Services.obs.addObserver(this,TOPIC_PRESENTATION_RECEIVER_LAUNCH, false);
 
     
     Services.obs.notifyObservers(null, TOPIC_PRESENTATION_VIEW_READY, this._id);

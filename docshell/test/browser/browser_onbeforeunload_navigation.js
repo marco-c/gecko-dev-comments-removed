@@ -105,7 +105,7 @@ function onTabModalDialogLoaded(node) {
 }
 
 
-Services.obs.addObserver(onTabModalDialogLoaded, "tabmodal-dialog-loaded");
+Services.obs.addObserver(onTabModalDialogLoaded, "tabmodal-dialog-loaded", false);
 
 function runNextTest() {
   currentTest++;

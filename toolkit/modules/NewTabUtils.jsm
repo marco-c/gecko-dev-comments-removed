@@ -344,8 +344,8 @@ var GridPrefs = {
 
 
   init: function GridPrefs_init() {
-    Services.prefs.addObserver(PREF_NEWTAB_ROWS, this);
-    Services.prefs.addObserver(PREF_NEWTAB_COLUMNS, this);
+    Services.prefs.addObserver(PREF_NEWTAB_ROWS, this, false);
+    Services.prefs.addObserver(PREF_NEWTAB_COLUMNS, this, false);
   },
 
   
@@ -1291,7 +1291,7 @@ var Telemetry = {
 
 
   init: function Telemetry_init() {
-    Services.obs.addObserver(this, TOPIC_GATHER_TELEMETRY);
+    Services.obs.addObserver(this, TOPIC_GATHER_TELEMETRY, false);
   },
 
   

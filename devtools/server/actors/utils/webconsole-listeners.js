@@ -233,7 +233,7 @@ ConsoleAPIListener.prototype =
   init: function () {
     
     
-    Services.obs.addObserver(this, "console-api-log-event");
+    Services.obs.addObserver(this, "console-api-log-event", false);
   },
 
   

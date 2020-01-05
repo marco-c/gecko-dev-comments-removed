@@ -23,6 +23,6 @@ function run_test() {
   }
 
   
-  pb.addObserver("UserPref.nonexistent.setIntPref", observer);
-  pb.addObserver("UserPref.nonexistent.setIntPref", observer);
+  pb.addObserver("UserPref.nonexistent.setIntPref", observer, false);
+  pb.addObserver("UserPref.nonexistent.setIntPref", observer, false);
 }

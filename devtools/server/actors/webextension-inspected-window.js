@@ -68,7 +68,7 @@ CustomizedReload.prototype = {
           if (this.injectedScript) {
             
             
-            Services.obs.addObserver(this, "document-element-inserted");
+            Services.obs.addObserver(this, "document-element-inserted", false);
           }
 
           

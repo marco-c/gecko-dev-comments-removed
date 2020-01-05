@@ -219,7 +219,7 @@ var AboutConfig = {
     this.bufferFilterInput();
 
     
-    Services.prefs.addObserver("", this);
+    Services.prefs.addObserver("", this, false);
   },
 
   

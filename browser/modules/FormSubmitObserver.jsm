@@ -51,7 +51,7 @@ FormSubmitObserver.prototype =
 
     
     
-    Services.obs.addObserver(this, "invalidformsubmit");
+    Services.obs.addObserver(this, "invalidformsubmit", false);
     this._tab.addEventListener("pageshow", this);
     this._tab.addEventListener("unload", this);
   },

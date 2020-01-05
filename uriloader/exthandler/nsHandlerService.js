@@ -109,17 +109,17 @@ HandlerService.prototype = {
   _init: function HS__init() {
     
     
-    this._observerSvc.addObserver(this, "profile-before-change");
+    this._observerSvc.addObserver(this, "profile-before-change", false);
 
     
     
-    this._observerSvc.addObserver(this, "xpcom-shutdown");
+    this._observerSvc.addObserver(this, "xpcom-shutdown", false);
 
     
-    this._observerSvc.addObserver(this, "profile-do-change");
+    this._observerSvc.addObserver(this, "profile-do-change", false);
 
     
-    this._observerSvc.addObserver(this, "handlersvc-rdf-replace");
+    this._observerSvc.addObserver(this, "handlersvc-rdf-replace", false);
   },
 
   _updateDB: function HS__updateDB() {

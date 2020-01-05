@@ -228,12 +228,12 @@ let SyncedTabsInternal = {
   },
 };
 
-Services.obs.addObserver(SyncedTabsInternal, "weave:engine:sync:finish");
-Services.obs.addObserver(SyncedTabsInternal, "weave:service:start-over");
+Services.obs.addObserver(SyncedTabsInternal, "weave:engine:sync:finish", false);
+Services.obs.addObserver(SyncedTabsInternal, "weave:service:start-over", false);
 
 
 
-Services.prefs.addObserver("services.sync.engine.tabs", SyncedTabsInternal);
+Services.prefs.addObserver("services.sync.engine.tabs", SyncedTabsInternal, false);
 
 
 this.SyncedTabs = {

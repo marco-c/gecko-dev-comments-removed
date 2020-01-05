@@ -66,7 +66,7 @@ function waitForInit() {
 
   observerService.addObserver(function() {
     sendAsyncMessage("safeBrowsingInited");
-  }, "mozentries-update-finished");
+  }, "mozentries-update-finished", false);
 
   
   const table = "test-phish-simple";

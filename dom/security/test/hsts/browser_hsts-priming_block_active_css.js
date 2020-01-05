@@ -8,8 +8,8 @@
 
 add_task(function*() {
   
-  Services.obs.addObserver(Observer, "console-api-log-event");
-  Services.obs.addObserver(Observer, "http-on-examine-response");
+  Services.obs.addObserver(Observer, "console-api-log-event", false);
+  Services.obs.addObserver(Observer, "http-on-examine-response", false);
   registerCleanupFunction(do_cleanup);
 
   let which = "block_active_css";

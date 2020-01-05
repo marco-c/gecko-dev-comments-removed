@@ -168,7 +168,7 @@ add_task(function* test_removeVisitsByFilter() {
         
       }
     };
-    PlacesUtils.history.addObserver(observer);
+    PlacesUtils.history.addObserver(observer, false);
 
     let cbarg;
     if (options.useCallback) {

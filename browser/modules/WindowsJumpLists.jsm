@@ -493,9 +493,9 @@ this.WinTaskbarJumpList =
     
     
     
-    Services.obs.addObserver(this, "profile-before-change");
-    Services.obs.addObserver(this, "browser:purge-session-history");
-    _prefs.addObserver("", this);
+    Services.obs.addObserver(this, "profile-before-change", false);
+    Services.obs.addObserver(this, "browser:purge-session-history", false);
+    _prefs.addObserver("", this, false);
   },
 
   _freeObs: function WTBJL__freeObs() {

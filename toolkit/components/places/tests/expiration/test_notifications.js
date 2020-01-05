@@ -19,7 +19,7 @@ var gObserver = {
     this.notifications++;
   }
 };
-os.addObserver(gObserver, PlacesUtils.TOPIC_EXPIRATION_FINISHED);
+os.addObserver(gObserver, PlacesUtils.TOPIC_EXPIRATION_FINISHED, false);
 
 function run_test() {
   

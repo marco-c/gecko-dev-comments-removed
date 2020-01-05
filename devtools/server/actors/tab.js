@@ -586,9 +586,9 @@ TabActor.prototype = {
   _watchDocshells() {
     
     if (this.listenForNewDocShells) {
-      Services.obs.addObserver(this, "webnavigation-create");
+      Services.obs.addObserver(this, "webnavigation-create", false);
     }
-    Services.obs.addObserver(this, "webnavigation-destroy");
+    Services.obs.addObserver(this, "webnavigation-destroy", false);
 
     
     this._progressListener.watch(this.docShell);
@@ -1482,7 +1482,7 @@ function DebuggerProgressListener(tabActor) {
   this._onWindowHidden = this.onWindowHidden.bind(this);
 
   
-  Services.obs.addObserver(this, "inner-window-destroyed");
+  Services.obs.addObserver(this, "inner-window-destroyed", false);
 
   
   

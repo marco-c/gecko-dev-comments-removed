@@ -224,7 +224,7 @@ function onStart() {
     defaultOrientation = screenOrientation;
 
     queueResize();
-  }, 'simulator-adjust-window-size');
+  }, 'simulator-adjust-window-size', false);
 
   
   

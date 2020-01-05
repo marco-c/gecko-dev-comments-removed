@@ -483,7 +483,7 @@ this.PushService = {
     this._setState(PUSH_SERVICE_ACTIVATING);
 
     prefs.observe("serverURL", this);
-    Services.obs.addObserver(this, "quit-application");
+    Services.obs.addObserver(this, "quit-application", false);
 
     if (options.serverURI) {
       
@@ -506,22 +506,22 @@ this.PushService = {
       return;
     }
 
-    Services.obs.addObserver(this, "clear-origin-attributes-data");
+    Services.obs.addObserver(this, "clear-origin-attributes-data", false);
 
     
     
     
-    Services.obs.addObserver(this, "network:offline-status-changed");
+    Services.obs.addObserver(this, "network:offline-status-changed", false);
 
     
     prefs.observe("connection.enabled", this);
 
     
-    Services.obs.addObserver(this, "idle-daily");
+    Services.obs.addObserver(this, "idle-daily", false);
 
     
     
-    Services.obs.addObserver(this, "perm-changed");
+    Services.obs.addObserver(this, "perm-changed", false);
   },
 
   _startService(service, serverURI, options) {

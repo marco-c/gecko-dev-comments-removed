@@ -27,7 +27,7 @@ let prefObserver = function(aSubject, aTopic, aData) {
 
 function startup(aData, aReason) {
   
-  Services.prefs.addObserver(PREF_WC_REPORTER_ENABLED, prefObserver);
+  Services.prefs.addObserver(PREF_WC_REPORTER_ENABLED, prefObserver, false);
 
   
   let enabled = Services.prefs.getBoolPref(PREF_WC_REPORTER_ENABLED);

@@ -825,7 +825,7 @@ SpecialPowersAPI.prototype = {
         
         if (this.isMainProcess()) {
           this.permissionObserverProxy._specialPowersAPI = this;
-          Services.obs.addObserver(this.permissionObserverProxy, "perm-changed");
+          Services.obs.addObserver(this.permissionObserverProxy, "perm-changed", false);
         } else {
           this.registerObservers("perm-changed");
           
@@ -1173,7 +1173,7 @@ SpecialPowersAPI.prototype = {
         
         self._applyPrefs();
       });
-    });
+    }, false);
 
     for (var idx in pendingActions) {
       var pref = pendingActions[idx];

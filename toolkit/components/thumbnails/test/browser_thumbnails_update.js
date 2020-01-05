@@ -56,7 +56,7 @@ function* simpleCaptureTest() {
     }
   }
 
-  Services.obs.addObserver(observe, "page-thumbnail:create");
+  Services.obs.addObserver(observe, "page-thumbnail:create", false);
   
   yield addTab(URL);
   let browser = gBrowser.selectedBrowser;

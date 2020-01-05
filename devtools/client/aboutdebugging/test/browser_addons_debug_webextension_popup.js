@@ -52,7 +52,7 @@ add_task(function* testWebExtensionsToolboxSwitchToPopup() {
         Services.obs.removeObserver(listener, "console-api-log-event");
         done();
       }
-    }, "console-api-log-event");
+    }, "console-api-log-event", false);
   });
 
   
@@ -156,7 +156,7 @@ add_task(function* testWebExtensionsToolboxSwitchToPopup() {
         Services.obs.removeObserver(listener, "console-api-log-event");
         done(apiMessage.arguments);
       }
-    }, "console-api-log-event");
+    }, "console-api-log-event", false);
   });
 
   let onToolboxClose = BrowserToolboxProcess.once("close");

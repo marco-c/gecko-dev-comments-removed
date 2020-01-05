@@ -106,7 +106,7 @@ function run_test()
 
       mc.fired(); 
     }
-  }, "cacheservice:purge-memory-pools");
+  }, "cacheservice:purge-memory-pools", false);
 
 
   do_test_pending();

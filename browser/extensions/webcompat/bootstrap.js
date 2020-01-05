@@ -58,7 +58,7 @@ this.startup = function({webExtension}) {
   
   
   Services.prefs.clearUserPref(UA_ENABLE_PREF_NAME);
-  Services.prefs.addObserver(UA_ENABLE_PREF_NAME, UAEnablePrefObserver);
+  Services.prefs.addObserver(UA_ENABLE_PREF_NAME, UAEnablePrefObserver, false);
 
   overrider = new UAOverrider(UAOverrides);
   overrider.init();

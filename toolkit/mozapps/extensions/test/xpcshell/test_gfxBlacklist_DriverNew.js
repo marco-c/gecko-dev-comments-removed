@@ -85,7 +85,7 @@ function run_test() {
     
     
     do_execute_soon(checkBlacklist);
-  }, "blocklist-data-gfxItems");
+  }, "blocklist-data-gfxItems", false);
 
   load_blocklist("test_gfxBlacklist.xml");
 }

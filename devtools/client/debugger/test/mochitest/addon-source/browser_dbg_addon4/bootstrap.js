@@ -21,7 +21,7 @@ function startup(aParams, aReason) {
   
   console.log({ msg: "Hello from the test add-on" });
 
-  Services.obs.addObserver(notify, "addon-test-ping");
+  Services.obs.addObserver(notify, "addon-test-ping", false);
 }
 
 function shutdown(aParams, aReason) {

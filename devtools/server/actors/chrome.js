@@ -120,8 +120,8 @@ ChromeActor.prototype._attach = function () {
   TabActor.prototype._attach.call(this);
 
   
-  Services.obs.addObserver(this, "chrome-webnavigation-create");
-  Services.obs.addObserver(this, "chrome-webnavigation-destroy");
+  Services.obs.addObserver(this, "chrome-webnavigation-create", false);
+  Services.obs.addObserver(this, "chrome-webnavigation-destroy", false);
 
   
   let e = Services.ww.getWindowEnumerator();

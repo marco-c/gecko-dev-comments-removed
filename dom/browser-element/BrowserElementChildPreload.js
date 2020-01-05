@@ -1,11 +1,11 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
 
 function debug(msg) {
-  
+  // dump("BrowserElementChildPreload - " + msg + "\n");
 }
 
 debug("loaded");
@@ -34,8 +34,8 @@ var Timer = Components.Constructor("@mozilla.org/timer;1",
                                    "initWithCallback");
 
 function sendAsyncMsg(msg, data) {
-  
-  
+  // Ensure that we don't send any messages before BrowserElementChild.js
+  // finishes loading.
   if (!BrowserElementIsReady) {
     return;
   }
@@ -49,8 +49,8 @@ function sendAsyncMsg(msg, data) {
 }
 
 function sendSyncMsg(msg, data) {
-  
-  
+  // Ensure that we don't send any messages before BrowserElementChild.js
+  // finishes loading.
   if (!BrowserElementIsReady) {
     return;
   }
@@ -84,16 +84,16 @@ var LISTENED_EVENTS = [
   { type: "DOMMetaRemoved", useCapture: true, wantsUntrusted: false },
   { type: "scrollviewchange", useCapture: true, wantsUntrusted: false },
   { type: "click", useCapture: false, wantsUntrusted: false },
-  
-  
-  
-  
-  
+  // This listens to unload events from our message manager, but /not/ from
+  // the |content| window.  That's because the window's unload event doesn't
+  // bubble, and we're not using a capturing listener.  If we'd used
+  // useCapture == true, we /would/ hear unload events from the window, which
+  // is not what we want!
   { type: "unload", useCapture: false, wantsUntrusted: false },
 ];
 
-
-
+// We are using the system group for those events so if something in the
+// content called .stopPropagation() this will still be called.
 var LISTENED_SYSTEM_EVENTS = [
   { type: "DOMWindowClose", useCapture: false },
   { type: "DOMWindowCreated", useCapture: false },
@@ -102,29 +102,29 @@ var LISTENED_SYSTEM_EVENTS = [
   { type: "scroll", useCapture: false },
 ];
 
-
-
-
-
-
-
-
-
-
-
+/**
+ * The BrowserElementChild implements one half of <iframe mozbrowser>.
+ * (The other half is, unsurprisingly, BrowserElementParent.)
+ *
+ * This script is injected into an <iframe mozbrowser> via
+ * nsIMessageManager::LoadFrameScript().
+ *
+ * Our job here is to listen for events within this frame and bubble them up to
+ * the parent process.
+ */
 
 var global = this;
 
 function BrowserElementChild() {
-  
+  // Maps outer window id --> weak ref to window.  Used by modal dialog code.
   this._windowIDDict = {};
 
-  
-  
-  
-  
-  
-  
+  // _forcedVisible corresponds to the visibility state our owner has set on us
+  // (via iframe.setVisible).  ownerVisible corresponds to whether the docShell
+  // whose window owns this element is visible.
+  //
+  // Our docShell is visible iff _forcedVisible and _ownerVisible are both
+  // true.
   this._forcedVisible = true;
   this._ownerVisible = true;
 
@@ -157,15 +157,15 @@ BrowserElementChild.prototype = {
                                        .createInstance(Ci.nsISHistory);
     }
 
-    
+    // This is necessary to get security web progress notifications.
     var securityUI = Cc['@mozilla.org/secure_browser_ui;1']
                        .createInstance(Ci.nsISecureBrowserUI);
     securityUI.init(content);
 
-    
-    
+    // A cache of the menuitem dom objects keyed by the id we generate
+    // and pass to the embedder
     this._ctxHandlers = {};
-    
+    // Counter of contextmenu events fired
     this._ctxCounter = 0;
 
     this._shuttingDown = false;
@@ -174,7 +174,7 @@ BrowserElementChild.prototype = {
       addEventListener(event.type, this, event.useCapture, event.wantsUntrusted);
     });
 
-    
+    // Registers a MozAfterPaint handler for the very first paint.
     this._addMozAfterPaintHandler(function () {
       sendAsyncMsg('firstpaint');
     });
@@ -188,16 +188,16 @@ BrowserElementChild.prototype = {
     });
 
     OBSERVED_EVENTS.forEach((aTopic) => {
-      Services.obs.addObserver(this, aTopic);
+      Services.obs.addObserver(this, aTopic, false);
     });
   },
 
-  
-
-
-
-
-
+  /**
+   * Shut down the frame's side of the browser API.  This is called when:
+   *   - our TabChildGlobal starts to die
+   *   - the content is moved to frame without the browser API
+   * This is not called when the page inside |content| unloads.
+   */
   destroy: function() {
     debug("Destroying");
     this._shuttingDown = true;
@@ -331,8 +331,8 @@ BrowserElementChild.prototype = {
 
   _paintFrozenTimer: null,
   observe: function(subject, topic, data) {
-    
-    
+    // Ignore notifications not about our document.  (Note that |content| /can/
+    // be null; see bug 874900.)
 
     if (topic !== 'activity-done' &&
         topic !== 'audio-playback' &&
@@ -355,12 +355,12 @@ BrowserElementChild.prototype = {
         this._shuttingDown = true;
         break;
       case 'will-launch-app':
-        
+        // If the launcher is not visible, let's ignore the message.
         if (!docShell.isActive) {
           return;
         }
 
-        
+        // If this is not a content process, let's not freeze painting.
         if (Services.appinfo.processType != Services.appinfo.PROCESS_TYPE_CONTENT) {
           return;
         }
@@ -396,9 +396,9 @@ BrowserElementChild.prototype = {
     }
   },
 
-  
-
-
+  /**
+   * Show a modal prompt.  Called by BrowserElementPromptService.
+   */
   showModalPrompt: function(win, args) {
     let utils = win.QueryInterface(Ci.nsIInterfaceRequestor)
                    .getInterface(Ci.nsIDOMWindowUtils);
@@ -416,10 +416,10 @@ BrowserElementChild.prototype = {
     }
   },
 
-  
-
-
-
+  /**
+   * Spin in a nested event loop until we receive a unblock-modal-prompt message for
+   * this window.
+   */
   _waitForResult: function(win) {
     debug("_waitForResult(" + win + ")");
     let utils = win.QueryInterface(Ci.nsIInterfaceRequestor)
@@ -428,8 +428,8 @@ BrowserElementChild.prototype = {
     let outerWindowID = utils.outerWindowID;
     let innerWindowID = this._tryGetInnerWindowID(win);
     if (innerWindowID === null) {
-      
-      
+      // I have no idea what waiting for a result means when there's no inner
+      // window, so let's just bail.
       debug("_waitForResult: No inner window. Bailing.");
       return;
     }
@@ -441,8 +441,8 @@ BrowserElementChild.prototype = {
 
     utils.enterModalState();
 
-    
-    
+    // We'll decrement win.modalDepth when we receive a unblock-modal-prompt message
+    // for the window.
     if (!win.modalDepth) {
       win.modalDepth = 0;
     }
@@ -452,16 +452,16 @@ BrowserElementChild.prototype = {
     let thread = Services.tm.currentThread;
     debug("Nested event loop - begin");
     while (win.modalDepth == origModalDepth && !this._shuttingDown) {
-      
-      
-      
+      // Bail out of the loop if the inner window changed; that means the
+      // window navigated.  Bail out when we're shutting down because otherwise
+      // we'll leak our window.
       if (this._tryGetInnerWindowID(win) !== innerWindowID) {
         debug("_waitForResult: Inner window ID changed " +
               "while in nested event loop.");
         break;
       }
 
-      thread.processNextEvent( true);
+      thread.processNextEvent(/* mayWait = */ true);
     }
     debug("Nested event loop - finish");
 
@@ -469,8 +469,8 @@ BrowserElementChild.prototype = {
       delete this._windowIDDict[outerWindowID];
     }
 
-    
-    
+    // If we exited the loop because the inner window changed, then bail on the
+    // modal prompt.
     if (innerWindowID !== this._tryGetInnerWindowID(win)) {
       throw Components.Exception("Modal state aborted by navigation",
                                  Cr.NS_ERROR_NOT_AVAILABLE);
@@ -520,9 +520,9 @@ BrowserElementChild.prototype = {
   _recvEnteredFullscreen: function() {
     if (!this._windowUtils.handleFullscreenRequests() &&
         !content.document.fullscreenElement) {
-      
-      
-      
+      // If we don't actually have any pending fullscreen request
+      // to handle, neither we have been in fullscreen, tell the
+      // parent to just exit.
       sendAsyncMsg("exit-dom-fullscreen");
     }
   },
@@ -535,8 +535,8 @@ BrowserElementChild.prototype = {
     debug("Got titlechanged: (" + e.target.title + ")");
     var win = e.target.defaultView;
 
-    
-    
+    // Ignore titlechanges which don't come from the top-level
+    // <iframe mozbrowser> window.
     if (win == content) {
       sendAsyncMsg('titlechange', { _payload_: e.target.title });
     }
@@ -578,11 +578,11 @@ BrowserElementChild.prototype = {
 
   },
 
-  
+  // Processes the "rel" field in <link> tags and forward to specific handlers.
   _linkAddedHandler: function(e) {
     let win = e.target.ownerGlobal;
-    
-    
+    // Ignore links which don't come from the top-level
+    // <iframe mozbrowser> window.
     if (win != content) {
       debug('Not top level!');
       return;
@@ -607,8 +607,8 @@ BrowserElementChild.prototype = {
 
   _metaChangedHandler: function(e) {
     let win = e.target.ownerGlobal;
-    
-    
+    // Ignore metas which don't come from the top-level
+    // <iframe mozbrowser> window.
     if (win != content) {
       debug('Not top level!');
       return;
@@ -644,8 +644,8 @@ BrowserElementChild.prototype = {
 
   _applicationNameChangedHandler: function(name, eventType, target) {
     if (eventType !== 'DOMMetaAdded') {
-      
-      
+      // Bug 1037448 - Decide what to do when <meta name="application-name">
+      // changes
       return;
     }
 
@@ -669,7 +669,7 @@ BrowserElementChild.prototype = {
       }
     }
 
-    
+    // No lang has been detected.
     if (!lang && elm.nodeType == target.DOCUMENT_NODE) {
       lang = elm.contentLanguage;
     }
@@ -696,8 +696,8 @@ BrowserElementChild.prototype = {
        (node instanceof Ci.nsIDOMHTMLAreaElement && node.href) ||
         node instanceof Ci.nsIDOMHTMLLinkElement);
 
-    
-    
+    // Open in a new tab if middle click or ctrl/cmd-click,
+    // and e.target is a link or inside a link.
     if ((Services.appinfo.OS == 'Darwin' && e.metaKey) ||
         (Services.appinfo.OS != 'Darwin' && e.ctrlKey) ||
          e.button == 1) {
@@ -728,18 +728,18 @@ BrowserElementChild.prototype = {
       if (uri.spec != "about:blank") {
         debug("Got afterpaint event: " + uri.spec);
         removeEventListener('MozAfterPaint', onMozAfterPaint,
-                             true);
+                            /* useCapture = */ true);
         callback();
       }
     }
 
-    addEventListener('MozAfterPaint', onMozAfterPaint,  true);
+    addEventListener('MozAfterPaint', onMozAfterPaint, /* useCapture = */ true);
     return onMozAfterPaint;
   },
 
   _removeMozAfterPaintHandler: function(listener) {
     removeEventListener('MozAfterPaint', listener,
-                         true);
+                        /* useCapture = */ true);
   },
 
   _activateNextPaintListener: function(e) {
@@ -767,7 +767,7 @@ BrowserElementChild.prototype = {
     debug("Closing window " + win);
     sendAsyncMsg('close');
 
-    
+    // Inform the window implementation that we handled this close ourselves.
     e.preventDefault();
   },
 
@@ -798,7 +798,7 @@ BrowserElementChild.prototype = {
     debug("resizing window " + win);
     sendAsyncMsg('resize', { width: e.detail.width, height: e.detail.height });
 
-    
+    // Inform the window implementation that we handled this resize ourselves.
     e.preventDefault();
   },
 
@@ -824,8 +824,8 @@ BrowserElementChild.prototype = {
       }
     };
 
-    
-    
+    // Set the event target as the copy image command needs it to
+    // determine what was context-clicked on.
     docShell.contentViewer.QueryInterface(Ci.nsIContentViewerEdit).setCommandNode(elem);
 
     while (elem && elem.parentNode) {
@@ -841,7 +841,7 @@ BrowserElementChild.prototype = {
         ctxMenuId = elem.getAttribute('contextmenu');
       }
 
-      
+      // Enable copy image/link option
       if (elem.nodeName == 'IMG') {
         copyableElements.image = !clipboardPlainTextOnly;
       } else if (elem.nodeName == 'A') {
@@ -859,18 +859,18 @@ BrowserElementChild.prototype = {
       menuData.contextmenu = this._buildMenuObj(menu, '', copyableElements);
     }
 
-    
+    // Pass along the position where the context menu should be located
     menuData.clientX = e.clientX;
     menuData.clientY = e.clientY;
     menuData.screenX = e.screenX;
     menuData.screenY = e.screenY;
 
-    
-    
-    
-    
-    
-    
+    // The value returned by the contextmenu sync call is true if the embedder
+    // called preventDefault() on its contextmenu event.
+    //
+    // We call preventDefault() on our contextmenu event if the embedder called
+    // preventDefault() on /its/ contextmenu event.  This way, if the embedder
+    // ignored the contextmenu event, TabChild will fire a click.
     if (sendSyncMsg('contextmenu', menuData)[0]) {
       e.preventDefault();
     } else {
@@ -902,8 +902,8 @@ BrowserElementChild.prototype = {
     }
     if (elem instanceof Ci.nsIDOMHTMLInputElement &&
         elem.hasAttribute("name")) {
-      
-      
+      // For input elements, we look for a parent <form> and if there is
+      // one we return the form's method and action uri.
       let parent = elem.parentNode;
       while (parent) {
         if (parent instanceof Ci.nsIDOMHTMLFormElement &&
@@ -966,9 +966,9 @@ BrowserElementChild.prototype = {
 
     let maxDelayMS = Services.prefs.getIntPref('dom.browserElement.maxScreenshotDelayMS', 2000);
 
-    
-    
-    
+    // Try to wait for the event loop to go idle before we take the screenshot,
+    // but once we've waited maxDelayMS milliseconds, go ahead and take it
+    // anyway.
     Cc['@mozilla.org/message-loop;1'].getService(Ci.nsIMessageLoop).postIdleTask(
       takeScreenshotClosure, maxDelayMS);
   },
@@ -1093,44 +1093,44 @@ BrowserElementChild.prototype = {
     }
   },
 
-  
-
-
-
-
+  /**
+   * Actually take a screenshot and foward the result up to our parent, given
+   * the desired maxWidth and maxHeight (in CSS pixels), and given the
+   * DOMRequest ID associated with the request from the parent.
+   */
   _takeScreenshot: function(maxWidth, maxHeight, mimeType, domRequestID) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // You can think of the screenshotting algorithm as carrying out the
+    // following steps:
+    //
+    // - Calculate maxWidth, maxHeight, and viewport's width and height in the
+    //   dimension of device pixels by multiply the numbers with
+    //   window.devicePixelRatio.
+    //
+    // - Let scaleWidth be the factor by which we'd need to downscale the
+    //   viewport pixel width so it would fit within maxPixelWidth.
+    //   (If the viewport's pixel width is less than maxPixelWidth, let
+    //   scaleWidth be 1.) Compute scaleHeight the same way.
+    //
+    // - Scale the viewport by max(scaleWidth, scaleHeight).  Now either the
+    //   viewport's width is no larger than maxWidth, the viewport's height is
+    //   no larger than maxHeight, or both.
+    //
+    // - Crop the viewport so its width is no larger than maxWidth and its
+    //   height is no larger than maxHeight.
+    //
+    // - Set mozOpaque to true and background color to solid white
+    //   if we are taking a JPEG screenshot, keep transparent if otherwise.
+    //
+    // - Return a screenshot of the page's viewport scaled and cropped per
+    //   above.
     debug("Taking a screenshot: maxWidth=" + maxWidth +
           ", maxHeight=" + maxHeight +
           ", mimeType=" + mimeType +
           ", domRequestID=" + domRequestID + ".");
 
     if (!content) {
-      
-      
+      // If content is not loaded yet, bail out since even sendAsyncMessage
+      // fails...
       debug("No content yet!");
       return;
     }
@@ -1173,10 +1173,10 @@ BrowserElementChild.prototype = {
                    transparent ? "rgba(255,255,255,0)" : "rgb(255,255,255)",
                    flags);
 
-    
-    
-    
-    
+    // Take a JPEG screenshot by default instead of PNG with alpha channel.
+    // This requires us to unpremultiply the alpha channel, which
+    // is expensive on ARM processors because they lack a hardware integer
+    // division instruction.
     canvas.toBlob(function(blob) {
       sendAsyncMsg('got-screenshot', {
         id: domRequestID,
@@ -1202,14 +1202,14 @@ BrowserElementChild.prototype = {
       this._ctxHandlers[data.json.menuitem].click();
       this._ctxHandlers = {};
     } else {
-      
+      // We silently ignore if the embedder uses an incorrect id in the callback
       debug("Ignored invalid contextmenu invocation");
     }
   },
 
   _buildMenuObj: function(menu, idPrefix, copyableElements) {
     var menuObj = {type: 'menu', customized: false, items: []};
-    
+    // Customized context menu
     if (menu) {
       this._maybeCopyAttribute(menu, menuObj, 'label');
 
@@ -1230,13 +1230,13 @@ BrowserElementChild.prototype = {
         menuObj.customized = true;
       }
     }
-    
-    
-    
+    // Note: Display "Copy Link" first in order to make sure "Copy Image" is
+    //       put together with other image options if elem is an image link.
+    // "Copy Link" menu item
     if (copyableElements.link) {
       menuObj.items.push({id: 'copy-link'});
     }
-    
+    // "Copy Image" menu item
     if (copyableElements.image) {
       menuObj.items.push({id: 'copy-image'});
     }
@@ -1261,10 +1261,10 @@ BrowserElementChild.prototype = {
     });
   },
 
-  
-
-
-
+  /**
+   * Called when the window which contains this iframe becomes hidden or
+   * visible.
+   */
   _recvOwnerVisibilityChange: function(data) {
     debug("Received ownerVisibilityChange: (" + data.json.visible + ")");
     this._ownerVisible = data.json.visible;
@@ -1277,7 +1277,7 @@ BrowserElementChild.prototype = {
       docShell.isActive = visible;
       sendAsyncMsg('visibilitychange', {visible: visible});
 
-      
+      // Ensure painting is not frozen if the app goes visible.
       if (visible && this._paintFrozenTimer) {
         this.notify();
       }
@@ -1348,7 +1348,7 @@ BrowserElementChild.prototype = {
     try {
       docShell.QueryInterface(Ci.nsIWebNavigation).goBack();
     } catch(e) {
-      
+      // Silently swallow errors; these happen when we can't go back.
     }
   },
 
@@ -1356,7 +1356,7 @@ BrowserElementChild.prototype = {
     try {
       docShell.QueryInterface(Ci.nsIWebNavigation).goForward();
     } catch(e) {
-      
+      // Silently swallow errors; these happen when we can't go forward.
     }
   },
 
@@ -1368,7 +1368,7 @@ BrowserElementChild.prototype = {
     try {
       webNav.reload(reloadFlags);
     } catch(e) {
-      
+      // Silently swallow errors; these can happen if a used cancels reload
     }
   },
 
@@ -1497,26 +1497,26 @@ BrowserElementChild.prototype = {
     sendAsyncMsg("findchange", {active: false});
   },
 
-  
-  
+  // The docShell keeps a weak reference to the progress listener, so we need
+  // to keep a strong ref to it ourselves.
   _progressListener: {
     QueryInterface: XPCOMUtils.generateQI([Ci.nsIWebProgressListener,
                                            Ci.nsISupportsWeakReference]),
     _seenLoadStart: false,
 
     onLocationChange: function(webProgress, request, location, flags) {
-      
+      // We get progress events from subshells here, which is kind of weird.
       if (webProgress != docShell) {
         return;
       }
 
-      
-      
+      // Ignore locationchange events which occur before the first loadstart.
+      // These are usually about:blank loads we don't care about.
       if (!this._seenLoadStart) {
         return;
       }
 
-      
+      // Remove password and wyciwyg from uri.
       location = Cc["@mozilla.org/docshell/urifixup;1"]
         .getService(Ci.nsIURIFixup).createExposableURI(location);
 
@@ -1548,14 +1548,14 @@ BrowserElementChild.prototype = {
         switch (status) {
           case Cr.NS_OK :
           case Cr.NS_BINDING_ABORTED :
-            
-            
+            // Ignoring NS_BINDING_ABORTED, which is set when loading page is
+            // stopped.
           case Cr.NS_ERROR_PARSED_DATA_CACHED:
             return;
 
-          
-          
-          
+          // TODO See nsDocShell::DisplayLoadError to see what extra
+          // information we should be annotating this first block of errors
+          // with. Bug 1107091.
           case Cr.NS_ERROR_UNKNOWN_PROTOCOL :
             sendAsyncMsg('error', { type: 'unknownProtocolFound' });
             return;
@@ -1634,17 +1634,17 @@ BrowserElementChild.prototype = {
             return;
 
           default:
-            
-            
+            // getErrorClass() will throw if the error code passed in is not a NSS
+            // error code.
             try {
               let nssErrorsService = Cc['@mozilla.org/nss_errors_service;1']
                                        .getService(Ci.nsINSSErrorsService);
               if (nssErrorsService.getErrorClass(status)
                     == Ci.nsINSSErrorsService.ERROR_CLASS_BAD_CERT) {
-                
-                
-                
-                
+                // XXX Is there a point firing the event if the error page is not
+                // certerror? If yes, maybe we should add a property to the
+                // event to to indicate whether there is a custom page. That would
+                // let the embedder have more control over the desired behavior.
                 let errorPage = Services.prefs.getCharPref(CERTIFICATE_ERROR_PAGE_PREF, "");
 
                 if (errorPage == 'certerror') {
@@ -1693,7 +1693,7 @@ BrowserElementChild.prototype = {
         mixedStateDesc = 'blocked_mixed_active_content';
       }
       else if (state & Ci.nsIWebProgressListener.STATE_LOADED_MIXED_ACTIVE_CONTENT) {
-        
+        // Note that STATE_LOADED_MIXED_ACTIVE_CONTENT implies STATE_IS_BROKEN
         mixedStateDesc = 'loaded_mixed_active_content';
       }
 
@@ -1716,7 +1716,7 @@ BrowserElementChild.prototype = {
     },
   },
 
-  
+  // Expose the message manager for WebApps and others.
   _messageManagerPublic: {
     sendAsyncMessage: global.sendAsyncMessage.bind(global),
     sendSyncMessage: global.sendSyncMessage.bind(global),
@@ -1731,8 +1731,8 @@ BrowserElementChild.prototype = {
 
 var api = null;
 if ('DoPreloadPostfork' in this && typeof this.DoPreloadPostfork === 'function') {
-  
-  
+  // If we are preloaded, instantiate BrowserElementChild after a content
+  // process is forked.
   this.DoPreloadPostfork(function() {
     api = new BrowserElementChild();
   });

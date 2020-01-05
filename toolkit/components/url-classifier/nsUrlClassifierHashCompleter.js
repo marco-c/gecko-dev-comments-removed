@@ -180,7 +180,7 @@ function HashCompleter() {
   
   this._nextGethashTimeMs = {};
 
-  Services.obs.addObserver(this, "quit-application");
+  Services.obs.addObserver(this, "quit-application", false);
 
 }
 
@@ -382,7 +382,7 @@ HashCompleterRequest.prototype = {
       return;
     }
 
-    Services.obs.addObserver(this, "quit-application");
+    Services.obs.addObserver(this, "quit-application", false);
 
     
     

@@ -88,7 +88,7 @@ function run_test() {
   
   writeLine("includesubdomains2.preloaded.test:HSTS\t0\t0\t0,2,0\n", outputStream);
   outputStream.close();
-  Services.obs.addObserver(checkStateRead, "data-storage-ready");
+  Services.obs.addObserver(checkStateRead, "data-storage-ready", false);
   do_test_pending();
   gSSService = Cc["@mozilla.org/ssservice;1"]
                  .getService(Ci.nsISiteSecurityService);

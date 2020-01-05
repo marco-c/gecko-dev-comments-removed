@@ -134,7 +134,7 @@ function MarionetteComponent() {
   this.finalUIStartup = false;
 
   this.logger = this.setupLogger(prefs.logLevel);
-  Services.prefs.addObserver(PREF_ENABLED, this);
+  Services.prefs.addObserver(PREF_ENABLED, this, false);
 
   if (Preferences.isSet(PREF_ENABLED_FALLBACK)) {
     this.logger.warn(`Deprecated preference ${PREF_ENABLED_FALLBACK} detected, ` +
@@ -197,7 +197,7 @@ MarionetteComponent.prototype.observe = function (subject, topic, data) {
     case "profile-after-change":
       
       
-      Services.obs.addObserver(this, "sessionstore-windows-restored");
+      Services.obs.addObserver(this, "sessionstore-windows-restored", false);
 
       prefs.readFromEnvironment(ENV_PREF_VAR);
 
@@ -205,7 +205,7 @@ MarionetteComponent.prototype.observe = function (subject, topic, data) {
         
         
         if (Services.appinfo.inSafeMode) {
-          Services.obs.addObserver(this, "domwindowopened");
+          Services.obs.addObserver(this, "domwindowopened", false);
         }
       }
       break;
@@ -214,7 +214,7 @@ MarionetteComponent.prototype.observe = function (subject, topic, data) {
       if (this.gfxWindow === null || subject === this.gfxWindow) {
         Services.obs.removeObserver(this, topic);
 
-        Services.obs.addObserver(this, "xpcom-shutdown");
+        Services.obs.addObserver(this, "xpcom-shutdown", false);
         this.finalUIStartup = true;
         this.init();
       }
@@ -241,9 +241,9 @@ MarionetteComponent.prototype.observe = function (subject, topic, data) {
       }
 
       if (this.gfxWindow) {
-        Services.obs.addObserver(this, "domwindowclosed");
+        Services.obs.addObserver(this, "domwindowclosed", false);
       } else {
-        Services.obs.addObserver(this, "xpcom-shutdown");
+        Services.obs.addObserver(this, "xpcom-shutdown", false);
         this.finalUIStartup = true;
         this.init();
       }

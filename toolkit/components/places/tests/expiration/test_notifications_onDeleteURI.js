@@ -93,7 +93,7 @@ add_task(function* test_notifications_onDeleteURI() {
       onPageChanged() {},
       onDeleteVisits(aURI, aTime) { },
     };
-    hs.addObserver(historyObserver);
+    hs.addObserver(historyObserver, false);
 
     
     yield promiseForceExpirationStep(-1);

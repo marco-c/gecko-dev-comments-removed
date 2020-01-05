@@ -32,8 +32,8 @@ function test() {
 function startTest() {
   var bs = PlacesUtils.bookmarks;
   
-  bs.addObserver(bookmarksObserver);
-  PlacesUtils.annotations.addObserver(bookmarksObserver);
+  bs.addObserver(bookmarksObserver, false);
+  PlacesUtils.annotations.addObserver(bookmarksObserver, false);
   var addedBookmarks = [];
 
   
