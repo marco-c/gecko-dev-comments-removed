@@ -366,7 +366,8 @@ private:
   
   
   
-  virtual bool DecodeVideoFrame(bool &aKeyframeSkip, int64_t aTimeThreshold)
+  virtual bool DecodeVideoFrame(bool& aKeyframeSkip,
+                                const media::TimeUnit& aTimeThreshold)
   {
     return false;
   }
