@@ -2,8 +2,8 @@
 
 
 
-function test() {
-  waitForExplicitFinish();
+add_task(function* test() {
+  yield new Promise(resolve => {
 
   let pwmgr = Cc["@mozilla.org/login-manager;1"].
                 getService(Ci.nsILoginManager);
@@ -56,10 +56,12 @@ function test() {
 
         pwmgr.removeAllLogins();
 
-        finish();
+        resolve();
       }
     });
 
     pwmgrdlg.close();
   }
-}
+
+  });
+});

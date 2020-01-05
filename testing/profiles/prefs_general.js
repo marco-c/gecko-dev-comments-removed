@@ -355,3 +355,7 @@ user_pref("plugin.load_flash_only", false);
 
 
 user_pref("media.libavcodec.allow-obsolete", true);
+
+
+
+user_pref("signon.rememberSignons", false);

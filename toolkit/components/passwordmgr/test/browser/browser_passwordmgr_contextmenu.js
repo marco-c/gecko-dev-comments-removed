@@ -2,9 +2,8 @@
 
 
 
-function test() {
-    waitForExplicitFinish();
-
+add_task(function* test() {
+  yield new Promise(resolve => {
     Services.logins.removeAllLogins();
 
     
@@ -81,7 +80,7 @@ function test() {
                 Services.ww.unregisterNotification(arguments.callee);
                 Services.logins.removeAllLogins();
                 doc.getElementById("passwordCol").hidden = true;
-                finish();
+                resolve();
             });
             pwmgrdlg.close();
         }
@@ -97,4 +96,5 @@ function test() {
         info("Testing Copy Username");
         waitForClipboard("ehsan", copyField, testPassword, testPassword);
     }
-}
+  });
+});
