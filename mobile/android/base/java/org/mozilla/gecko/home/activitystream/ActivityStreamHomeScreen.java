@@ -19,7 +19,7 @@ import org.mozilla.gecko.home.HomeScreen;
 
 
 public class ActivityStreamHomeScreen
-        extends ActivityStream
+        extends ActivityStreamPanel
         implements HomeScreen {
 
     private boolean visible = false;
