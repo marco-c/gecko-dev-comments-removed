@@ -2827,6 +2827,14 @@ pref("plugin.persistentPermissionAlways.intervalInDays", 90);
 
 
 
+
+
+
+pref("plugins.favorfallback.mode", "never");
+
+
+
+
 #if !defined(DEBUG) && !defined(MOZ_ASAN) && !defined(MOZ_VALGRIND) && !defined(MOZ_TSAN)
 
 

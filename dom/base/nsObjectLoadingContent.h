@@ -463,6 +463,32 @@ class nsObjectLoadingContent : public nsImageLoadingContent
     
 
 
+
+
+
+
+
+
+
+
+    bool FavorFallbackMode(bool aIsPluginClickToPlay);
+
+    
+
+
+    bool HasGoodFallback();
+
+    
+
+
+
+
+
+    bool PreferFallback(bool aIsPluginClickToPlay);
+
+    
+
+
     bool CheckJavaCodebase();
 
     
