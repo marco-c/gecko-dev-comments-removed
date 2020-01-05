@@ -84,6 +84,11 @@ public:
     return gTheInstance.get()->mCamerasChildThread;
   }
 
+  static nsCOMPtr<nsIThread>& FakeDeviceChangeEventThread() {
+    Mutex().AssertCurrentThreadOwns();
+    return gTheInstance.get()->mFakeDeviceChangeEventThread;
+  }
+
 private:
   static Singleton<CamerasSingleton> gTheInstance;
 
@@ -100,6 +105,7 @@ private:
   
   CamerasChild* mCameras;
   nsCOMPtr<nsIThread> mCamerasChildThread;
+  nsCOMPtr<nsIThread> mFakeDeviceChangeEventThread;
 };
 
 
