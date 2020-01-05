@@ -12,7 +12,7 @@ add_task(function* () {
   yield once(newWindow.gBrowser, "load", true);
 
   let tab = newWindow.gBrowser.selectedTab;
-  yield ResponsiveUIManager.runIfNeeded(newWindow, tab);
+  yield ResponsiveUIManager.openIfNeeded(newWindow, tab);
 
   
   

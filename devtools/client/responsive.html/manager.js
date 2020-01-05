@@ -172,7 +172,7 @@ const ResponsiveUIManager = exports.ResponsiveUIManager = {
     switch (command) {
       case "resize to":
         completed = this.openIfNeeded(window, tab, { command: true });
-        this.activeTabs.get(tab).setViewportSize(args.width, args.height);
+        this.activeTabs.get(tab).setViewportSize(args);
         break;
       case "resize on":
         completed = this.openIfNeeded(window, tab, { command: true });
@@ -491,9 +491,9 @@ ResponsiveUI.prototype = {
   
 
 
-  setViewportSize: Task.async(function* (width, height) {
+  setViewportSize: Task.async(function* (size) {
     yield this.inited;
-    this.toolWindow.setViewportSize(width, height);
+    this.toolWindow.setViewportSize(size);
   }),
 
   

@@ -112,7 +112,7 @@ window.getViewportSize = () => {
 
 
 
-window.setViewportSize = (width, height) => {
+window.setViewportSize = ({ width, height }) => {
   try {
     bootstrap.dispatch(resizeViewport(0, width, height));
   } catch (e) {
