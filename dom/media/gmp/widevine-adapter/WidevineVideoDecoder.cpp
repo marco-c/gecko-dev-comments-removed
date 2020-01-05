@@ -138,7 +138,11 @@ WidevineVideoDecoder::Decode(GMPVideoEncodedFrame* aInputFrame,
       
       
       
-      frame.InitToBlack(mCodedSize.width, mCodedSize.height, sample.timestamp);
+      if (!frame.InitToBlack(mCodedSize.width, mCodedSize.height,
+                             sample.timestamp)) {
+        mCallback->Error(GMPDecodeErr);
+        return;
+      }
     }
     if (!ReturnOutput(frame)) {
       CDM_LOG("WidevineVideoDecoder::Decode() Failed in ReturnOutput()");

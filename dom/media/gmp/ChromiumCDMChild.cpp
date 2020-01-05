@@ -715,7 +715,11 @@ ChromiumCDMChild::RecvDecryptAndDecodeFrame(const CDMInputBuffer& aBuffer)
       
       
       
-      frame.InitToBlack(mCodedSize.width, mCodedSize.height, input.timestamp);
+      if (!frame.InitToBlack(mCodedSize.width, mCodedSize.height,
+                             input.timestamp)) {
+        Unused << SendDecodeFailed(cdm::kDecodeError);
+        break;
+      }
       MOZ_FALLTHROUGH;
     case cdm::kSuccess:
       if (frame.FrameBuffer()) {
