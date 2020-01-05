@@ -92,17 +92,12 @@ import java.util.concurrent.Executors;
     }
 
     @Override
-    public void storeDone() {
-        storeDone(System.currentTimeMillis());
-    }
-
-    @Override
     public void storeFlush() {
         bufferStorage.flush();
     }
 
     @Override
-    public void storeDone(final long end) {
+    public void storeDone() {
         bufferStorage.flush();
 
         
@@ -113,16 +108,16 @@ import java.util.concurrent.Executors;
             return;
         }
 
-        doMergeBuffer(end);
+        doMergeBuffer();
     }
 
     @VisibleForTesting
-     void doMergeBuffer(long end) {
+     void doMergeBuffer() {
         final Collection<Record> bufferData = bufferStorage.all();
 
         
         if (bufferData.isEmpty()) {
-            super.storeDone(end);
+            super.storeDone();
             return;
         }
 
@@ -137,7 +132,7 @@ import java.util.concurrent.Executors;
         }
 
         
-        super.storeDone(end);
+        super.storeDone();
     }
 
     

@@ -80,8 +80,8 @@ public class BufferingMiddlewareRepositorySessionTest {
     @Test
     public void storeDone() throws Exception {
         
-        bufferingSession.doMergeBuffer(123L);
-        verify(innerRepositorySession, times(1)).storeDone(123L);
+        bufferingSession.doMergeBuffer();
+        verify(innerRepositorySession, times(1)).storeDone();
         verify(innerRepositorySession, never()).store(any(Record.class));
 
         
@@ -102,7 +102,7 @@ public class BufferingMiddlewareRepositorySessionTest {
         bufferingSession.store(record4);
 
         
-        bufferingSession.doMergeBuffer(123L);
+        bufferingSession.doMergeBuffer();
 
         
         verify(innerRepositorySession, times(1)).store(record);
@@ -110,7 +110,7 @@ public class BufferingMiddlewareRepositorySessionTest {
         verify(innerRepositorySession, times(1)).store(record4);
 
         
-        verify(innerRepositorySession, times(1)).storeDone(123L);
+        verify(innerRepositorySession, times(1)).storeDone();
 
         
         assertEquals(3, bufferStorage.all().size());

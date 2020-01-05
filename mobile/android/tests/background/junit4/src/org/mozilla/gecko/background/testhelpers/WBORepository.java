@@ -186,9 +186,10 @@ public class WBORepository extends Repository {
     }
 
     @Override
-    public void storeDone(long end) {
+    public void storeDone() {
       
       
+      final long end = now();
       if (stats.storeBegan < 0) {
         stats.storeBegan = end;
       }

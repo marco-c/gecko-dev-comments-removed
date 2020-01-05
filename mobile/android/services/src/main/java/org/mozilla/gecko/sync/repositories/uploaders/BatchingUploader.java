@@ -247,7 +247,7 @@ public class BatchingUploader {
     }
 
      void finished(AtomicLong lastModifiedTimestamp) {
-        repositorySession.storeDone(lastModifiedTimestamp.get());
+        sessionStoreDelegate.deferredStoreDelegate(executor).onStoreCompleted(lastModifiedTimestamp.get());
     }
 
     

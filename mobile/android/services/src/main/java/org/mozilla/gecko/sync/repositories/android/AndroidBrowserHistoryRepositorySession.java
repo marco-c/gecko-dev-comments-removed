@@ -186,11 +186,6 @@ public class AndroidBrowserHistoryRepositorySession extends AndroidBrowserReposi
     }
   }
 
-  @Override
-  public void storeDone() {
-    storeDone(System.currentTimeMillis());
-  }
-
   
 
 
@@ -214,7 +209,7 @@ public class AndroidBrowserHistoryRepositorySession extends AndroidBrowserReposi
   }
 
   @Override
-  public void storeDone(final long end) {
+  public void storeDone() {
     storeWorkQueue.execute(new Runnable() {
       @Override
       public void run() {
@@ -225,7 +220,7 @@ public class AndroidBrowserHistoryRepositorySession extends AndroidBrowserReposi
             Logger.warn(LOG_TAG, "Error flushing records to database.", e);
           }
         }
-        AndroidBrowserHistoryRepositorySession.super.storeDone(end);
+        storeDelegate.deferredStoreDelegate(storeWorkQueue).onStoreCompleted(now());
       }
     });
   }

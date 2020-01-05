@@ -132,10 +132,11 @@ public abstract class RepositorySession {
     
     
     
-    storeDone(now());
-  }
-
-  public void storeDone(final long end) {
+    
+    
+    
+    
+    final long end = now();
     Logger.debug(LOG_TAG, "Scheduling onStoreCompleted for after storing is done: " + end);
     Runnable command = new Runnable() {
       @Override
