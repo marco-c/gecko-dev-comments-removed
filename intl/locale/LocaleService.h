@@ -167,11 +167,6 @@ public:
                           LangNegStrategy aLangNegStrategy,
                           nsTArray<nsCString>& aRetVal);
 
-  
-
-
-  bool IsAppLocaleRTL();
-
 private:
   
 
