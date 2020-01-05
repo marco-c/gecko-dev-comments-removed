@@ -608,27 +608,6 @@ CSSStyleSheet::EnabledStateChangedInternal()
   ClearRuleCascades();
 }
 
-void
-CSSStyleSheet::SetAssociatedDocument(nsIDocument* aDocument,
-                                     DocumentAssociationMode aAssociationMode)
-{
-  MOZ_ASSERT_IF(!aDocument, aAssociationMode == NotOwnedByDocument);
-
-  
-  mDocument = aDocument;
-  mDocumentAssociationMode = aAssociationMode;
-
-  
-  
-  
-  for (StyleSheet* child = GetFirstChild();
-       child; child = child->mNext) {
-    if (child->mParent == this) {
-      child->SetAssociatedDocument(aDocument, aAssociationMode);
-    }
-  }
-}
-
 uint64_t
 CSSStyleSheet::FindOwningWindowInnerID() const
 {

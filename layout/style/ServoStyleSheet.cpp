@@ -55,19 +55,6 @@ ServoStyleSheet::HasRules() const
 }
 
 void
-ServoStyleSheet::SetAssociatedDocument(nsIDocument* aDocument,
-                                       DocumentAssociationMode aAssociationMode)
-{
-  MOZ_ASSERT_IF(!aDocument, aAssociationMode == NotOwnedByDocument);
-
-  
-  
-
-  mDocument = aDocument;
-  mDocumentAssociationMode = aAssociationMode;
-}
-
-void
 ServoStyleSheet::AppendStyleSheet(ServoStyleSheet* aSheet)
 {
   aSheet->mDocument = mDocument;
