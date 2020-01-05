@@ -769,10 +769,11 @@ nsTextControlFrame::SetSelectionInternal(nsIDOMNode *aStartNode,
   
 
   RefPtr<nsRange> range = new nsRange(mContent);
-  nsresult rv = range->SetStart(aStartNode, aStartOffset);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  rv = range->SetEnd(aEndNode, aEndOffset);
+  
+  
+  nsCOMPtr<nsINode> start = do_QueryInterface(aStartNode);
+  nsCOMPtr<nsINode> end = do_QueryInterface(aEndNode);
+  nsresult rv = range->Set(start, aStartOffset, end, aEndOffset);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
