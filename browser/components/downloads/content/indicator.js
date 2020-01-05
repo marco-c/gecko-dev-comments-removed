@@ -430,14 +430,6 @@ const DownloadsIndicatorView = {
 
 
   set percentComplete(aValue) {
-    
-    
-    
-    
-    
-    const PROGRESS_ICON_EMPTY_HEIGHT_PERCENT = 35;
-    const PROGRESS_ICON_FULL_HEIGHT_PERCENT = 87;
-
     if (!this._operational) {
       return this._percentComplete;
     }
@@ -448,13 +440,13 @@ const DownloadsIndicatorView = {
 
       if (this._percentComplete >= 0) {
         this.indicator.setAttribute("progress", "true");
-        this._progressIcon.style.height = (this._percentComplete *
-          (PROGRESS_ICON_FULL_HEIGHT_PERCENT -
-           PROGRESS_ICON_EMPTY_HEIGHT_PERCENT) / 100 +
-           PROGRESS_ICON_EMPTY_HEIGHT_PERCENT) + "%";
+        
+        
+        
+        this._progressIcon.style.animationDelay = (-this._percentComplete) + "s";
       } else {
         this.indicator.removeAttribute("progress");
-        this._progressIcon.style.height = "0";
+        this._progressIcon.style.animationDelay = "1s";
       }
       
       
