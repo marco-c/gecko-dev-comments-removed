@@ -1200,9 +1200,7 @@ HTMLImageElement::SourceElementMatches(nsIContent* aSourceNode)
 }
 
 bool
-HTMLImageElement::TryCreateResponsiveSelector(nsIContent *aSourceNode,
-                                              const nsAString *aSrcset,
-                                              const nsAString *aSizes)
+HTMLImageElement::TryCreateResponsiveSelector(nsIContent *aSourceNode)
 {
   
   bool isSourceTag = aSourceNode->IsHTMLElement(nsGkAtoms::source);
@@ -1217,10 +1215,7 @@ HTMLImageElement::TryCreateResponsiveSelector(nsIContent *aSourceNode,
 
   
   nsString srcset;
-  if (aSrcset) {
-    srcset = *aSrcset;
-  } else if (!aSourceNode->GetAttr(kNameSpaceID_None, nsGkAtoms::srcset,
-                                   srcset)) {
+  if (!aSourceNode->GetAttr(kNameSpaceID_None, nsGkAtoms::srcset, srcset)) {
     return false;
   }
 
@@ -1236,13 +1231,9 @@ HTMLImageElement::TryCreateResponsiveSelector(nsIContent *aSourceNode,
     return false;
   }
 
-  if (aSizes) {
-    sel->SetSizesFromDescriptor(*aSizes);
-  } else {
-    nsAutoString sizes;
-    aSourceNode->GetAttr(kNameSpaceID_None, nsGkAtoms::sizes, sizes);
-    sel->SetSizesFromDescriptor(sizes);
-  }
+  nsAutoString sizes;
+  aSourceNode->GetAttr(kNameSpaceID_None, nsGkAtoms::sizes, sizes);
+  sel->SetSizesFromDescriptor(sizes);
 
   
   if (!isSourceTag) {

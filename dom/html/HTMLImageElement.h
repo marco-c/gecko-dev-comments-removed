@@ -331,9 +331,7 @@ protected:
   
   
   
-  bool TryCreateResponsiveSelector(nsIContent *aSourceNode,
-                                   const nsAString *aSrcset = nullptr,
-                                   const nsAString *aSizes = nullptr);
+  bool TryCreateResponsiveSelector(nsIContent *aSourceNode);
 
   CSSIntPoint GetXY();
   virtual JSObject* WrapNode(JSContext *aCx, JS::Handle<JSObject*> aGivenProto) override;
