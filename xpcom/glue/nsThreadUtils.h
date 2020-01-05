@@ -1040,6 +1040,17 @@ public:
   
 
 
+  nsCString GetNextThreadName(const nsACString& aPoolName);
+
+  template<size_t LEN>
+  nsCString GetNextThreadName(const char (&aPoolName)[LEN])
+  {
+    return GetNextThreadName(nsDependentCString(aPoolName, LEN - 1));
+  }
+
+  
+
+
 
 
   void SetThreadPoolName(const nsACString& aPoolName,
