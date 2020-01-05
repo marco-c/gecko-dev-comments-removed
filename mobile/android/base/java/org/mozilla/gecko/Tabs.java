@@ -5,6 +5,7 @@
 
 package org.mozilla.gecko;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -26,6 +27,7 @@ import org.mozilla.gecko.reader.ReaderModeUtils;
 import org.mozilla.gecko.util.BundleEventListener;
 import org.mozilla.gecko.util.EventCallback;
 import org.mozilla.gecko.util.GeckoBundle;
+import org.mozilla.gecko.util.JavaUtil;
 import org.mozilla.gecko.util.ThreadUtils;
 
 import android.accounts.Account;
@@ -39,6 +41,7 @@ import android.graphics.Color;
 import android.net.Uri;
 import android.os.Handler;
 import android.provider.Browser;
+import android.support.annotation.UiThread;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
@@ -46,7 +49,7 @@ public class Tabs implements BundleEventListener {
     private static final String LOGTAG = "GeckoTabs";
 
     
-    private final CopyOnWriteArrayList<Tab> mOrder = new CopyOnWriteArrayList<Tab>();
+    private volatile CopyOnWriteArrayList<Tab> mOrder = new CopyOnWriteArrayList<Tab>();
 
     
     
@@ -1071,5 +1074,75 @@ public class Tabs implements BundleEventListener {
         }
 
         return Color.WHITE;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+    private int getOrderPositionForTab(int tabId, int positionHint, boolean searchForward) {
+        final int step = searchForward ? 1 : -1;
+        final int stopPosition = searchForward ? mOrder.size() : -1;
+        for (int i = positionHint; i != stopPosition; i += step) {
+            if (mOrder.get(i).getId() == tabId) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    
+
+
+
+
+
+
+
+    @UiThread
+    public void moveTab(int fromTabId, int fromPositionHint, int toTabId, int toPositionHint) {
+        if (fromPositionHint == toPositionHint) {
+            return;
+        }
+
+        
+        
+        
+
+        synchronized (this) {
+            final int fromPosition = getOrderPositionForTab(fromTabId, fromPositionHint, true);
+            
+            final int adjustedToPositionHint = fromPosition + (toPositionHint - fromPositionHint);
+            final int toPosition = getOrderPositionForTab(toTabId, adjustedToPositionHint, fromPositionHint < toPositionHint);
+
+            if (fromPosition == -1 || toPosition == -1) {
+                throw new IllegalStateException("Tabs search failed: (" + fromPositionHint + ", " + toPositionHint + ")" +
+                        " --> (" + fromPosition + ", " + toPosition + ")");
+            }
+
+            
+            
+            
+            
+            final Tab[] newTabsArray = new Tab[mOrder.size()];
+            mOrder.toArray(newTabsArray);
+            
+            final List<Tab> newTabsList = Arrays.asList(newTabsArray);
+            JavaUtil.moveInList(newTabsList, fromPosition, toPosition);
+            
+            
+            
+            
+            
+            mOrder = new CopyOnWriteArrayList<>(newTabsList);
+        }
+
+        queuePersistAllTabs();
     }
 }
