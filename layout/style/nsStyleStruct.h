@@ -3468,6 +3468,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleSVG
   RefPtr<mozilla::css::URLValue> mMarkerMid;   
   RefPtr<mozilla::css::URLValue> mMarkerStart; 
   nsTArray<nsStyleCoord> mStrokeDasharray;  
+  nsTArray<nsCOMPtr<nsIAtom>> mContextProps;
 
   nsStyleCoord     mStrokeDashoffset; 
   nsStyleCoord     mStrokeWidth;      
@@ -3485,6 +3486,15 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleSVG
   uint8_t          mStrokeLinecap;    
   uint8_t          mStrokeLinejoin;   
   uint8_t          mTextAnchor;       
+  uint8_t          mContextPropsBits; 
+                                      
+                                      
+
+  
+  
+  bool ExposesContextProperties() const {
+    return bool(mContextPropsBits);
+  }
 
   nsStyleSVGOpacitySource FillOpacitySource() const {
     uint8_t value = (mContextFlags & FILL_OPACITY_SOURCE_MASK) >>
