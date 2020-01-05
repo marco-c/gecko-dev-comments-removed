@@ -33,6 +33,9 @@ pub struct PerDocumentStyleDataImpl {
     pub stylesheets_changed: bool,
 
     
+    pub author_style_disabled: bool,
+
+    
     
     
     pub new_animations_sender: Sender<Animation>,
@@ -65,6 +68,7 @@ impl PerDocumentStyleData {
             stylist: Arc::new(Stylist::new(device)),
             stylesheets: vec![],
             stylesheets_changed: true,
+            author_style_disabled: false,
             new_animations_sender: new_anims_sender,
             new_animations_receiver: new_anims_receiver,
             running_animations: Arc::new(RwLock::new(HashMap::new())),
@@ -103,6 +107,7 @@ impl PerDocumentStyleDataImpl {
             let mut stylist = Arc::get_mut(&mut self.stylist).unwrap();
             let mut extra_data = ExtraStyleData {
                 font_faces: &mut self.font_faces,
+                author_style_disabled: Some(self.author_style_disabled),
             };
             stylist.update(&self.stylesheets, &StylesheetGuards::same(guard),
                            None, true, &mut extra_data);
