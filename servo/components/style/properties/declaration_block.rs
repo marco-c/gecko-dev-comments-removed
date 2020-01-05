@@ -482,7 +482,7 @@ impl ToCss for PropertyDeclarationBlock {
                     
                     
                     
-                    if shorthand.flags().contains(ALIAS_PROPERTY) {
+                    if shorthand.flags().contains(SHORTHAND_ALIAS_PROPERTY) {
                         append_serialization::<_, Cloned<slice::Iter< _>>, _>(
                              dest,
                              &property,
