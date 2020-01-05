@@ -1,0 +1,11 @@
+
+
+
+
+
+import buildconfig
+import subprocess
+
+def main(output, *inputs):
+    output.write(subprocess.check_output([buildconfig.substs['PERL']] + list(inputs)))
+    return None
