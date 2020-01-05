@@ -135,7 +135,10 @@ BrowserToolboxProcess.prototype = {
     this.debuggerServer.on("connectionchange", this.emit);
 
     this.debuggerServer.init();
-    this.debuggerServer.addBrowserActors();
+    
+    
+    
+    this.debuggerServer.registerActors({ root: true, browser: true, tab: true });
     this.debuggerServer.allowChromeProcess = true;
     dumpn("initialized and added the browser actors for the DebuggerServer.");
 

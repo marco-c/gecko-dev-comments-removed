@@ -33,9 +33,11 @@ var AboutDebugging = {
   init() {
     if (!DebuggerServer.initialized) {
       DebuggerServer.init();
-      DebuggerServer.addBrowserActors();
     }
     DebuggerServer.allowChromeProcess = true;
+    
+    
+    DebuggerServer.registerActors({ root: true, browser: true, tab: true });
 
     this.client = new DebuggerClient(DebuggerServer.connectPipe());
 

@@ -32,12 +32,10 @@ function setupServer(mm) {
   if (!DebuggerServer.initialized) {
     DebuggerServer.init();
   }
-
   
   
   
-  
-  DebuggerServer.addChildActors();
+  DebuggerServer.registerActors({ browser: false, root: true, tab: true });
 
   
   mm.addMessageListener("debug:content-process-destroy", function onDestroy() {

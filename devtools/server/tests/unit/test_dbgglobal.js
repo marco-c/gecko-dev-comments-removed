@@ -16,9 +16,6 @@ function run_test()
 
   
   
-  check_except(function () {
-    DebuggerServer.createListener();
-  });
   check_except(DebuggerServer.closeAllListeners);
   check_except(DebuggerServer.connectPipe);
 

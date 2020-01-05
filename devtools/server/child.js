@@ -17,18 +17,15 @@ try {
     const DevToolsUtils = require("devtools/shared/DevToolsUtils");
     const { dumpn } = DevToolsUtils;
     const { DebuggerServer, ActorPool } = require("devtools/server/main");
+    const { ContentActor } = require("devtools/server/actors/childtab");
 
     if (!DebuggerServer.initialized) {
       DebuggerServer.init();
-      
-      
-      DebuggerServer.addBrowserActors();
     }
-
     
     
     
-    DebuggerServer.addChildActors();
+    DebuggerServer.registerActors({ root: false, browser: false, tab: true });
 
     let connections = new Map();
 
@@ -42,7 +39,7 @@ try {
       conn.parentMessageManager = mm;
       connections.set(prefix, conn);
 
-      let actor = new DebuggerServer.ContentActor(conn, chromeGlobal, prefix);
+      let actor = new ContentActor(conn, chromeGlobal, prefix);
       let actorPool = new ActorPool(conn);
       actorPool.addActor(actor);
       conn.addActorPool(actorPool);

@@ -173,6 +173,15 @@ var DebuggerServer = {
   
 
 
+
+
+  get rootlessServer() {
+    return !this.isModuleRegistered("devtools/server/actors/webbrowser");
+  },
+
+  
+
+
   init() {
     if (this.initialized) {
       return;
@@ -229,9 +238,43 @@ var DebuggerServer = {
       throw new Error("DebuggerServer has not been initialized.");
     }
 
-    if (!this.createRootActor) {
+    if (!this.rootlessServer && !this.createRootActor) {
       throw new Error("Use DebuggerServer.addActors() to add a root actor " +
                       "implementation.");
+    }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  registerActors({ root = true, browser = true, tab = true,
+                   windowType = "navigator:browser" }) {
+    this.chromeWindowType = windowType;
+
+    if (browser) {
+      this.addBrowserActors(windowType);
+    }
+
+    if (root) {
+      this.registerModule("devtools/server/actors/webbrowser");
+    }
+
+    if (tab) {
+      this.addTabActors();
     }
   },
 
@@ -284,7 +327,7 @@ var DebuggerServer = {
 
   registerModule(id, options) {
     if (id in gRegisteredModules) {
-      throw new Error("Tried to register a module twice: " + id + "\n");
+      return;
     }
 
     if (options) {
@@ -417,25 +460,6 @@ var DebuggerServer = {
       constructor: "HeapSnapshotFileActor",
       type: { global: true }
     });
-  },
-
-  
-
-
-  addChildActors() {
-    
-    
-    
-    if (!DebuggerServer.tabActorFactories.hasOwnProperty("consoleActor")) {
-      this.addTabActors();
-    }
-    
-    if (!this.isModuleRegistered("devtools/server/actors/webbrowser")) {
-      this.registerModule("devtools/server/actors/webbrowser");
-    }
-    if (!("ContentActor" in this)) {
-      this.addActors("resource://devtools/server/actors/childtab.js");
-    }
   },
 
   
