@@ -43,28 +43,8 @@
 #include "libavutil/opt.h"
 #include "libavutil/thread.h"
 
-#if defined(MOZ_TSAN)
-typedef  _Atomic(int)  atomic_int;
-#else
-typedef  volatile int  atomic_int;
-#endif
 
 
-
-
-typedef enum {
-    STATE_INPUT_READY,          
-    STATE_SETTING_UP,           
-    STATE_GET_BUFFER,           
-
-
-
-    STATE_GET_FORMAT,           
-
-
-
-    STATE_SETUP_FINISHED        
-} State;
 
 typedef struct PerThreadContext {
     struct FrameThreadContext *parent;
@@ -86,7 +66,19 @@ typedef struct PerThreadContext {
     int     got_frame;              
     int     result;                 
 
-    atomic_int state;
+    enum {
+        STATE_INPUT_READY,          
+        STATE_SETTING_UP,           
+        STATE_GET_BUFFER,           
+
+
+
+        STATE_GET_FORMAT,           
+
+
+
+        STATE_SETUP_FINISHED        
+    } state;
 
     
 
@@ -366,8 +358,7 @@ static int submit_packet(PerThreadContext *p, AVPacket *avpkt)
             while (p->state == STATE_SETTING_UP)
                 pthread_cond_wait(&p->progress_cond, &p->progress_mutex);
 
-            State p_state = (State)p->state;
-            switch (p_state) {
+            switch (p->state) {
             case STATE_GET_BUFFER:
                 p->result = ff_get_buffer(p->avctx, p->requested_frame, p->requested_flags);
                 break;
@@ -480,7 +471,7 @@ int ff_thread_decode_frame(AVCodecContext *avctx,
 void ff_thread_report_progress(ThreadFrame *f, int n, int field)
 {
     PerThreadContext *p;
-    atomic_int *progress = f->progress ? (atomic_int*)f->progress->data : NULL;
+    volatile int *progress = f->progress ? (int*)f->progress->data : NULL;
 
     if (!progress || progress[field] >= n) return;
 
@@ -498,7 +489,7 @@ void ff_thread_report_progress(ThreadFrame *f, int n, int field)
 void ff_thread_await_progress(ThreadFrame *f, int n, int field)
 {
     PerThreadContext *p;
-    atomic_int *progress = f->progress ? (atomic_int*)f->progress->data : NULL;
+    volatile int *progress = f->progress ? (int*)f->progress->data : NULL;
 
     if (!progress || progress[field] >= n) return;
 
