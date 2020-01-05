@@ -573,7 +573,7 @@ png_fixed_error,(png_const_structrp png_ptr, png_const_charp name),PNG_NORETURN)
 {
 #  define fixed_message "fixed point overflow in "
 #  define fixed_message_ln ((sizeof fixed_message)-1)
-   int  iin;
+   unsigned int  iin;
    char msg[fixed_message_ln+PNG_MAX_ERROR_TEXT];
    memcpy(msg, fixed_message, fixed_message_ln);
    iin = 0;

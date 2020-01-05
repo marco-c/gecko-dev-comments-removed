@@ -177,7 +177,7 @@ png_do_shift(png_row_infop row_info, png_bytep row,
    if (row_info->color_type != PNG_COLOR_TYPE_PALETTE)
    {
       int shift_start[4], shift_dec[4];
-      int channels = 0;
+      unsigned int channels = 0;
 
       if ((row_info->color_type & PNG_COLOR_MASK_COLOR) != 0)
       {

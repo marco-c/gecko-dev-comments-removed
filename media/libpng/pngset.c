@@ -288,17 +288,29 @@ png_set_pCAL(png_const_structrp png_ptr, png_inforp info_ptr,
 
    
    if (type < 0 || type > 3)
-      png_error(png_ptr, "Invalid pCAL equation type");
+   {
+      png_chunk_report(png_ptr, "Invalid pCAL equation type",
+            PNG_CHUNK_WRITE_ERROR);
+      return;
+   }
 
    if (nparams < 0 || nparams > 255)
-      png_error(png_ptr, "Invalid pCAL parameter count");
+   {
+      png_chunk_report(png_ptr, "Invalid pCAL parameter count",
+            PNG_CHUNK_WRITE_ERROR);
+      return;
+   }
 
    
    for (i=0; i<nparams; ++i)
    {
       if (params[i] == NULL ||
           !png_check_fp_string(params[i], strlen(params[i])))
-         png_error(png_ptr, "Invalid format for pCAL parameter");
+      {
+         png_chunk_report(png_ptr, "Invalid format for pCAL parameter",
+               PNG_CHUNK_WRITE_ERROR);
+         return;
+      }
    }
 
    info_ptr->pcal_purpose = png_voidcast(png_charp,
@@ -306,8 +318,8 @@ png_set_pCAL(png_const_structrp png_ptr, png_inforp info_ptr,
 
    if (info_ptr->pcal_purpose == NULL)
    {
-      png_warning(png_ptr, "Insufficient memory for pCAL purpose");
-
+      png_chunk_report(png_ptr, "Insufficient memory for pCAL purpose",
+            PNG_CHUNK_WRITE_ERROR);
       return;
    }
 
@@ -336,7 +348,7 @@ png_set_pCAL(png_const_structrp png_ptr, png_inforp info_ptr,
    memcpy(info_ptr->pcal_units, units, length);
 
    info_ptr->pcal_params = png_voidcast(png_charpp, png_malloc_warn(png_ptr,
-       (png_size_t)((nparams + 1) * (sizeof (png_charp)))));
+       (png_size_t)(((unsigned int)nparams + 1) * (sizeof (png_charp)))));
 
    if (info_ptr->pcal_params == NULL)
    {
@@ -345,7 +357,8 @@ png_set_pCAL(png_const_structrp png_ptr, png_inforp info_ptr,
       return;
    }
 
-   memset(info_ptr->pcal_params, 0, (nparams + 1) * (sizeof (png_charp)));
+   memset(info_ptr->pcal_params, 0, ((unsigned int)nparams + 1) *
+       (sizeof (png_charp)));
 
    for (i = 0; i < nparams; i++)
    {
@@ -568,7 +581,8 @@ png_set_PLTE(png_structrp png_ptr, png_inforp info_ptr,
        PNG_MAX_PALETTE_LENGTH * (sizeof (png_color))));
 
    if (num_palette > 0)
-      memcpy(png_ptr->palette, palette, num_palette * (sizeof (png_color)));
+      memcpy(png_ptr->palette, palette, (unsigned int)num_palette *
+          (sizeof (png_color)));
    info_ptr->palette = png_ptr->palette;
    info_ptr->num_palette = png_ptr->num_palette = (png_uint_16)num_palette;
 
@@ -1085,7 +1099,7 @@ png_set_sPLT(png_const_structrp png_ptr,
 
 
       memcpy(np->entries, entries->entries,
-          entries->nentries * sizeof (png_sPLT_entry));
+          (unsigned int)entries->nentries * sizeof (png_sPLT_entry));
 
       
 
@@ -1394,7 +1408,7 @@ png_set_unknown_chunk_location(png_const_structrp png_ptr, png_inforp info_ptr,
       {
          png_app_error(png_ptr, "invalid unknown chunk location");
          
-         if ((location & PNG_HAVE_IDAT) != 0) 
+         if (((unsigned int)location & PNG_HAVE_IDAT) != 0) 
             location = PNG_AFTER_IDAT;
 
          else
@@ -1518,7 +1532,7 @@ png_set_keep_unknown_chunks(png_structrp png_ptr, int keep,
          return;
       }
 
-      num_chunks = num_chunks_in;
+      num_chunks = (unsigned int)num_chunks_in;
    }
 
    old_num_chunks = png_ptr->num_chunk_list;
@@ -1708,7 +1722,7 @@ void PNGAPI
 png_set_invalid(png_const_structrp png_ptr, png_inforp info_ptr, int mask)
 {
    if (png_ptr != NULL && info_ptr != NULL)
-      info_ptr->valid &= ~mask;
+      info_ptr->valid &= (unsigned int)(~mask);
 }
 
 

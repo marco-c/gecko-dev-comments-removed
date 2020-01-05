@@ -507,9 +507,9 @@
 #  error "libpng requires a signed 32-bit (or more) type"
 #endif
 
-#if UINT_MAX > 4294967294
+#if UINT_MAX > 4294967294U
    typedef unsigned int png_uint_32;
-#elif ULONG_MAX > 4294967294
+#elif ULONG_MAX > 4294967294U
    typedef unsigned long int png_uint_32;
 #else
 #  error "libpng requires an unsigned 32-bit (or more) type"

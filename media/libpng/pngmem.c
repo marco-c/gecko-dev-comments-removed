@@ -109,7 +109,7 @@ static png_voidp
 png_malloc_array_checked(png_const_structrp png_ptr, int nelements,
     size_t element_size)
 {
-   png_alloc_size_t req = nelements; 
+   png_alloc_size_t req = (png_alloc_size_t)nelements; 
 
    if (req <= PNG_SIZE_MAX/element_size)
       return png_malloc_base(png_ptr, req * element_size);

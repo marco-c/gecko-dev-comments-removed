@@ -595,7 +595,7 @@ png_do_strip_channel(png_row_infop row_info, png_bytep row, int at_start)
       return; 
 
    
-   row_info->rowbytes = dp-row;
+   row_info->rowbytes = (unsigned int)(dp-row);
 }
 #endif
 
@@ -693,7 +693,7 @@ png_do_check_palette_indexes(png_structrp png_ptr, png_row_infop row_info)
 
 
 
-      int padding = (-row_info->pixel_depth * row_info->width) & 7;
+      int padding = PNG_PADBITS(row_info->pixel_depth, row_info->width);
       png_bytep rp = png_ptr->row_buf + row_info->rowbytes;
 
       switch (row_info->bit_depth)
