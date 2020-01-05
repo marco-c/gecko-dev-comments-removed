@@ -5,7 +5,7 @@
 
 
 #include "sdnAccessible-inl.h"
-#include "ISimpleDOMNode_i.c"
+#include "ISimpleDOM_i.c"
 
 #include "DocAccessibleWrap.h"
 
