@@ -125,24 +125,24 @@ public:
       mIsSentinel(false)
   { }
 
-  LinkedListElement(LinkedListElement<T>&& other)
-    : mIsSentinel(other.mIsSentinel)
+  LinkedListElement(LinkedListElement<T>&& aOther)
+    : mIsSentinel(aOther.mIsSentinel)
   {
-    if (!other.isInList()) {
+    if (!aOther.isInList()) {
       mNext = this;
       mPrev = this;
       return;
     }
 
-    MOZ_ASSERT(other.mNext->mPrev == &other);
-    MOZ_ASSERT(other.mPrev->mNext == &other);
+    MOZ_ASSERT(aOther.mNext->mPrev == &aOther);
+    MOZ_ASSERT(aOther.mPrev->mNext == &aOther);
 
     
 
 
 
-    mNext = other.mNext;
-    mPrev = other.mPrev;
+    mNext = aOther.mNext;
+    mPrev = aOther.mPrev;
 
     mNext->mPrev = this;
     mPrev->mNext = this;
@@ -151,8 +151,8 @@ public:
 
 
 
-    other.mNext = &other;
-    other.mPrev = &other;
+    aOther.mNext = &aOther;
+    aOther.mPrev = &aOther;
   }
 
   ~LinkedListElement()
