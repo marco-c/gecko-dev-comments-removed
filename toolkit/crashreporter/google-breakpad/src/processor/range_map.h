@@ -52,30 +52,46 @@ template<class, class> class RangeMapSerializer;
 template<typename AddressType, typename EntryType>
 class RangeMap {
  public:
-  RangeMap() : map_() {}
+  RangeMap() : enable_shrink_down_(false), map_() {}
 
   
   
   
-  bool StoreRange(const AddressType &base,
-                  const AddressType &size,
+  
+  
+  void SetEnableShrinkDown(bool enable_shrink_down);
+  bool IsShrinkDownEnabled() const;
+
+  
+  
+  
+  
+  
+  bool StoreRange(const AddressType &base, const AddressType &size,
                   const EntryType &entry);
 
   
   
   
+  
+  
   bool RetrieveRange(const AddressType &address, EntryType *entry,
-                     AddressType *entry_base, AddressType *entry_size) const;
+                     AddressType *entry_base, AddressType *entry_delta,
+                     AddressType *entry_size) const;
 
+  
+  
   
   
   
   
   
   bool RetrieveNearestRange(const AddressType &address, EntryType *entry,
-                            AddressType *entry_base, AddressType *entry_size)
-                            const;
+                            AddressType *entry_base, AddressType *entry_delta,
+                            AddressType *entry_size) const;
 
+  
+  
   
   
   
@@ -84,8 +100,8 @@ class RangeMap {
   
   
   bool RetrieveRangeAtIndex(int index, EntryType *entry,
-                            AddressType *entry_base, AddressType *entry_size)
-                            const;
+                            AddressType *entry_base, AddressType *entry_delta,
+                            AddressType *entry_size) const;
 
   
   int GetCount() const;
@@ -99,18 +115,28 @@ class RangeMap {
   friend class ModuleComparer;
   friend class RangeMapSerializer<AddressType, EntryType>;
 
+  
+  
+  bool StoreRangeInternal(const AddressType &base, const AddressType &delta,
+                          const AddressType &size, const EntryType &entry);
+
   class Range {
    public:
-    Range(const AddressType &base, const EntryType &entry)
-        : base_(base), entry_(entry) {}
+    Range(const AddressType &base, const AddressType &delta,
+          const EntryType &entry)
+        : base_(base), delta_(delta), entry_(entry) {}
 
     AddressType base() const { return base_; }
+    AddressType delta() const { return delta_; }
     EntryType entry() const { return entry_; }
 
    private:
     
     
     const AddressType base_;
+
+    
+    const AddressType delta_;
 
     
     const EntryType entry_;
@@ -120,6 +146,9 @@ class RangeMap {
   typedef std::map<AddressType, Range> AddressToRangeMap;
   typedef typename AddressToRangeMap::const_iterator MapConstIterator;
   typedef typename AddressToRangeMap::value_type MapValue;
+
+  
+  bool enable_shrink_down_;
 
   
   AddressToRangeMap map_;

@@ -35,7 +35,7 @@ unsigned int x86_disasm( unsigned char *buf, unsigned int buf_len,
 
         if ( offset >= buf_len ) {
                 
-                x86_report_error(report_disasm_bounds, (void*)(long)buf_rva+offset);
+                x86_report_error(report_disasm_bounds, (void*)(long)(buf_rva+offset));
                 return 0;
         }
 
@@ -53,13 +53,13 @@ unsigned int x86_disasm( unsigned char *buf, unsigned int buf_len,
 
         
         if (! size ) {
-                x86_report_error(report_invalid_insn, (void*)(long)buf_rva+offset );
+                x86_report_error(report_invalid_insn, (void*)(long)(buf_rva+offset));
                 return 0;
         }
 
         
         if ( size > len ) {
-                x86_report_error( report_insn_bounds, (void*)(long)buf_rva + offset );
+                x86_report_error( report_insn_bounds, (void*)(long)(buf_rva + offset));
 		MAKE_INVALID( insn, bytes );
 		return 0;
 	}

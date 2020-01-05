@@ -115,6 +115,11 @@ class DumpSymbols {
   
   
   
+  bool WriteSymbolFileHeader(std::ostream &stream);
+
+  
+  
+  
   bool ReadSymbolData(Module** module);
 
  private:
@@ -129,6 +134,10 @@ class DumpSymbols {
 
   
   std::string Identifier();
+
+
+  
+  bool CreateEmptyModule(scoped_ptr<Module>& module);
 
   
   

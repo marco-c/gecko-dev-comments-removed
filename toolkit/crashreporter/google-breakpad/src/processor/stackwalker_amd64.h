@@ -83,6 +83,14 @@ class StackwalkerAMD64 : public Stackwalker {
   
   
   
+  bool IsEndOfStack(uint64_t caller_rip, uint64_t caller_rsp,
+                    uint64_t callee_rsp);
+
+  
+  
+  
+  
+  
   StackFrameAMD64* GetCallerByFramePointerRecovery(
       const vector<StackFrame*>& frames);
 

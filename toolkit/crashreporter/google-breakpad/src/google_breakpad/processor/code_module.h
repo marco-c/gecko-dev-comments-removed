@@ -86,7 +86,14 @@ class CodeModule {
   
   
   
-  virtual const CodeModule* Copy() const = 0;
+  virtual CodeModule* Copy() const = 0;
+
+  
+  
+  
+  
+  virtual uint64_t shrink_down_delta() const = 0;
+  virtual void SetShrinkDownDelta(uint64_t shrink_down_delta) = 0;
 };
 
 }  
