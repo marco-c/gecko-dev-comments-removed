@@ -27,6 +27,59 @@ const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 
 
 
+
+
+browser.getBrowserForTab = function (tab) {
+  if (tab.hasOwnProperty("browser")) {
+    
+    return tab.browser;
+
+  } else if (tab.hasOwnProperty("linkedBrowser")) {
+    
+    return tab.linkedBrowser;
+
+  } else {
+      new UnsupportedOperationError("getBrowserForTab() not supported.");
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+browser.getTabBrowser = function (win) {
+  if (win.hasOwnProperty("BrowserApp")) {
+    
+    return win.BrowserApp;
+
+  } else if (win.hasOwnProperty("gBrowser")) {
+    
+    return win.gBrowser;
+
+  } else {
+      new UnsupportedOperationError("getBrowserForTab() not supported.");
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+
 browser.Context = class {
 
   
@@ -41,8 +94,7 @@ browser.Context = class {
 
     
     
-    this.browser = undefined;
-    this.setBrowser(win);
+    this.tabBrowser = browser.getTabBrowser(win);
 
     this.knownFrames = [];
 
@@ -83,27 +135,12 @@ browser.Context = class {
 
 
 
-
-
-  get browserForTab() {
-    if (this.browser.getBrowserForTab) {
-      return this.browser.getBrowserForTab(this.tab);
-    } else {
-      return this.browser.selectedBrowser;
-    }
-  }
-
-  
-
-
-
-
   get curFrameId() {
     let rv = null;
     if (this.driver.appName == "B2G") {
       rv = this._curFrameId;
     } else if (this.tab) {
-      rv = this.getIdForBrowser(this.browserForTab);
+      rv = this.getIdForBrowser(browser.getBrowserForTab(this.tab));
     }
     return rv;
   }
@@ -119,7 +156,7 @@ browser.Context = class {
 
 
   getTabModalUI() {
-    let br = this.browserForTab;
+    let br = browser.getBrowserForTab(this.tab);
     if (!br.hasAttribute("tabmodalPromptShowing")) {
       return null;
     }
@@ -129,24 +166,6 @@ browser.Context = class {
     let modals = br.parentNode.getElementsByTagNameNS(
         XUL_NS, "tabmodalprompt");
     return modals[0].ui;
-  }
-
-  
-
-
-
-
-
-  setBrowser(win) {
-    switch (this.driver.appName) {
-      case "Firefox":
-        this.browser = win.gBrowser;
-        break;
-
-      case "Fennec":
-        this.browser = win.BrowserApp;
-        break;
-    }
   }
 
   
@@ -175,19 +194,31 @@ browser.Context = class {
 
 
 
+
+
+
   closeTab() {
     
     
-    if (!this.browser || !this.tab || this.browser.browsers.length == 1) {
+    if (!this.tabBrowser || this.tabBrowser.tabs.length === 1 || !this.tab) {
       return this.closeWindow();
     }
 
     return new Promise((resolve, reject) => {
-      if (this.browser.removeTab) {
+      if (this.tabBrowser.closeTab) {
+        
+        this.tabBrowser.deck.addEventListener("TabClose", ev => {
+          resolve();
+        }, {once: true});
+        this.tabBrowser.closeTab(this.tab);
+
+      } else if (this.tabBrowser.removeTab) {
+        
         this.tab.addEventListener("TabClose", ev => {
           resolve();
         }, {once: true});
-        this.browser.removeTab(this.tab);
+        this.tabBrowser.removeTab(this.tab);
+
       } else {
         reject(new UnsupportedOperationError(
             `closeTab() not supported in ${this.driver.appName}`));
@@ -202,7 +233,7 @@ browser.Context = class {
 
 
   addTab(uri) {
-    return this.browser.addTab(uri, true);
+    return this.tabBrowser.addTab(uri, true);
   }
 
   
@@ -211,20 +242,38 @@ browser.Context = class {
 
 
 
-  switchToTab(ind, win) {
+
+
+
+  switchToTab(index, win) {
     if (win) {
       this.window = win;
-      this.setBrowser(win);
+      this.tabBrowser = browser.getTabBrowser(win);
     }
-    if (this.browser.selectTabAtIndex) {
-      this.browser.selectTabAtIndex(ind);
-      this.tab = this.browser.selectedTab;
-      this._browserWasRemote = this.browserForTab.isRemoteBrowser;
+
+    if (!this.tabBrowser) {
+      return;
     }
-    else {
-      this.tab = this.browser.selectedTab;
+
+    if (typeof index == "undefined") {
+      this.tab = this.tabBrowser.selectedTab;
+    } else {
+      this.tab = this.tabBrowser.tabs[index];
+
+      if (this.tabBrowser.selectTab) {
+        
+        this.tabBrowser.selectTab(this.tab);
+
+      } else {
+        
+        this.tabBrowser.selectedTab = this.tab;
+      }
     }
-    this._hasRemotenessChange = false;
+
+    if (this.driver.appName == "Firefox") {
+      this._browserWasRemote = browser.getBrowserForTab(this.tab).isRemoteBrowser;
+      this._hasRemotenessChange = false;
+    }
   }
 
   
@@ -239,15 +288,15 @@ browser.Context = class {
   register(uid, target) {
     let remotenessChange = this.hasRemotenessChange();
     if (this.curFrameId === null || remotenessChange) {
-      if (this.browser) {
+      if (this.tabBrowser) {
         
         
         if (!this.tab) {
-          this.switchToTab(this.browser.selectedIndex);
+          this.switchToTab();
         }
 
-        if (target == this.browserForTab) {
-          this.updateIdForBrowser(this.browserForTab, uid);
+        if (target == browser.getBrowserForTab(this.tab)) {
+          this.updateIdForBrowser(browser.getBrowserForTab(this.tab), uid);
           this.mainContentId = uid;
         }
       } else {
@@ -271,7 +320,7 @@ browser.Context = class {
     
     if (this.driver.appName != "Firefox" ||
         this.tab === null ||
-        this.browserForTab === null) {
+        browser.getBrowserForTab(this.tab) === null) {
       return false;
     }
 
@@ -279,7 +328,7 @@ browser.Context = class {
       return true;
     }
 
-    let currentIsRemote = this.browserForTab.isRemoteBrowser;
+    let currentIsRemote = browser.getBrowserForTab(this.tab).isRemoteBrowser;
     this._hasRemotenessChange = this._browserWasRemote !== currentIsRemote;
     this._browserWasRemote = currentIsRemote;
     return this._hasRemotenessChange;
