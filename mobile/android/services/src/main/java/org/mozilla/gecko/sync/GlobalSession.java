@@ -574,7 +574,7 @@ public class GlobalSession implements HttpResponseObserver {
 
 
 
-  public void uploadKeys(final CollectionKeys keys,
+  public void uploadKeys(final CollectionKeys keys, final long timestamp,
                          final KeyUploadDelegate keyUploadDelegate) {
     SyncStorageRecordRequest request;
     try {
@@ -588,7 +588,7 @@ public class GlobalSession implements HttpResponseObserver {
 
       @Override
       public String ifUnmodifiedSince() {
-        return null;
+        return Utils.millisecondsToDecimalSecondsString(timestamp);
       }
 
       @Override
@@ -828,8 +828,9 @@ public class GlobalSession implements HttpResponseObserver {
             }
 
             
+            
             Logger.info(LOG_TAG, "Uploading new crypto/keys.");
-            session.uploadKeys(keys, new KeyUploadDelegate() {
+            session.uploadKeys(keys, 0L, new KeyUploadDelegate() {
               @Override
               public void onKeysUploaded() {
                 Logger.info(LOG_TAG, "Uploaded new crypto/keys.");
