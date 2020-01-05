@@ -41,11 +41,12 @@ def memberXrayExpandoReservedSlot(member, descriptor):
             member.slotIndices[descriptor.interface.identifier.name])
 
 
-def mayUseXrayExpandoSlots(attr):
+def mayUseXrayExpandoSlots(descriptor, attr):
     assert not attr.getExtendedAttribute("NewObject")
     
     
-    return not attr.type.isGeckoInterface()
+    
+    return descriptor.wantsXrays and not attr.type.isGeckoInterface()
 
 
 def toStringBool(arg):
@@ -7602,7 +7603,7 @@ class CGPerSignatureCall(CGThing):
                 """,
                 maybeWrap=getMaybeWrapValueFuncForType(self.idlNode.type))
 
-            checkForXray = mayUseXrayExpandoSlots(self.idlNode)
+            checkForXray = mayUseXrayExpandoSlots(self.descriptor, self.idlNode)
 
             
             
@@ -8788,7 +8789,7 @@ class CGSpecializedGetter(CGAbstractStaticMethod):
             
             
             
-            if mayUseXrayExpandoSlots(self.attr):
+            if mayUseXrayExpandoSlots(self.descriptor, self.attr):
                 prefix = fill(
                     """
                     // Have to either root across the getter call or reget after.
