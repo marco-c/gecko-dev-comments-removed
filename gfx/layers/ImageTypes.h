@@ -115,6 +115,13 @@ enum class StereoMode {
   MAX,
 };
 
+enum class YUVColorSpace {
+  BT601,
+  BT709,
+  
+  UNKNOWN,
+};
+
 } 
 
 #endif
