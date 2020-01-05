@@ -9,7 +9,6 @@
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/layers/CompositableChild.h"
 #include "mozilla/layers/PCompositableChild.h"  
-#include "mozilla/layers/PLayerChild.h"  
 #include "mozilla/layers/PImageContainerChild.h"
 #include "mozilla/layers/ShadowLayers.h"  
 #include "mozilla/mozalloc.h"           
@@ -38,21 +37,6 @@ LayerTransactionChild::Destroy()
   SendShutdown();
 }
 
-
-PLayerChild*
-LayerTransactionChild::AllocPLayerChild()
-{
-  
-  MOZ_CRASH("not reached");
-  return nullptr;
-}
-
-bool
-LayerTransactionChild::DeallocPLayerChild(PLayerChild* actor)
-{
-  delete actor;
-  return true;
-}
 
 PCompositableChild*
 LayerTransactionChild::AllocPCompositableChild(const TextureInfo& aInfo)

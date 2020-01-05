@@ -1560,6 +1560,18 @@ public:
 
 
 
+  virtual CanvasLayer* AsCanvasLayer() { return nullptr; }
+
+  
+
+
+
+  virtual ImageLayer* AsImageLayer() { return nullptr; }
+
+  
+
+
+
   virtual HostLayer* AsHostLayer() { return nullptr; }
 
   
@@ -2569,6 +2581,8 @@ public:
 
 
   virtual bool IsDataValid(const Data& aData) { return true; }
+
+  virtual CanvasLayer* AsCanvasLayer() override { return this; }
 
   
 

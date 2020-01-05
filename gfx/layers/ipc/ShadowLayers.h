@@ -17,6 +17,7 @@
 #include "mozilla/dom/ScreenOrientation.h"  
 #include "mozilla/ipc/SharedMemory.h"   
 #include "mozilla/layers/CompositableForwarder.h"
+#include "mozilla/layers/LayersTypes.h"
 #include "mozilla/layers/TextureForwarder.h"
 #include "mozilla/layers/CompositorTypes.h"  
 #include "mozilla/layers/CompositorBridgeChild.h"
@@ -358,7 +359,7 @@ public:
 
 
 
-  PLayerChild* ConstructShadowFor(ShadowableLayer* aLayer);
+  LayerHandle ConstructShadowFor(ShadowableLayer* aLayer);
 
   
 
@@ -384,6 +385,8 @@ public:
 
   virtual void UpdateFwdTransactionId() override;
   virtual uint64_t GetFwdTransactionId() override;
+
+  void ReleaseLayer(const LayerHandle& aHandle);
 
   bool InForwarderThread() override {
     return NS_IsMainThread();
@@ -435,6 +438,7 @@ private:
   int32_t mPaintSyncId;
   InfallibleTArray<PluginWindowData> mPluginWindowData;
   UniquePtr<ActiveResourceTracker> mActiveResourceTracker;
+  uint64_t mNextLayerHandle;
 };
 
 class CompositableClient;
@@ -456,26 +460,28 @@ public:
   
 
 
-  bool HasShadow() { return !!mShadow; }
+  bool HasShadow() { return mShadow.IsValid(); }
 
   
 
 
 
-  PLayerChild* GetShadow() { return mShadow; }
+  const LayerHandle& GetShadow() { return mShadow; }
 
-  void SetShadow(PLayerChild* aShadow) {
-    MOZ_ASSERT(!mShadow || !aShadow, "can't have two shadows (yet)");
+  void SetShadow(ShadowLayerForwarder* aForwarder, const LayerHandle& aShadow) {
+    MOZ_ASSERT(!mShadow, "can't have two shadows (yet)");
+    mForwarder = aForwarder;
     mShadow = aShadow;
   }
 
   virtual CompositableClient* GetCompositableClient() { return nullptr; }
 
 protected:
-  ShadowableLayer() : mShadow(nullptr) {}
+  ShadowableLayer() {}
 
 private:
-  PLayerChild* mShadow;
+  RefPtr<ShadowLayerForwarder> mForwarder;
+  LayerHandle mShadow;
 };
 
 } 
