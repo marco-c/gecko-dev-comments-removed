@@ -1269,6 +1269,7 @@ class HTMLMediaElement::ErrorSink
 public:
   explicit ErrorSink(HTMLMediaElement* aOwner)
     : mOwner(aOwner)
+    , mSrcIsUnsupportedTypeMedia(false)
   {
     MOZ_ASSERT(mOwner);
   }
@@ -1287,11 +1288,17 @@ public:
       return;
     }
 
-    mError = new MediaError(mOwner, aErrorCode, aErrorDetails);
-    if (CanOwnerPlayUnsupportedTypeMedia()) {
+    
+    
+    if (CanOwnerPlayUnsupportedTypeMedia() &&
+        aErrorCode == MEDIA_ERR_SRC_NOT_SUPPORTED) {
+      
+      
+      mSrcIsUnsupportedTypeMedia = true;
       mOwner->ChangeNetworkState(nsIDOMHTMLMediaElement::NETWORK_NO_SOURCE);
-      OpenUnsupportedMediaForOwner();
+      MaybeOpenUnsupportedMediaForOwner();
     } else {
+      mError = new MediaError(mOwner, aErrorCode, aErrorDetails);
       mOwner->DispatchAsyncEvent(NS_LITERAL_STRING("error"));
       if (mOwner->ReadyState() == HAVE_NOTHING &&
           aErrorCode == MEDIA_ERR_ABORTED) {
@@ -1311,13 +1318,27 @@ public:
   void ResetError()
   {
     mError = nullptr;
+    mSrcIsUnsupportedTypeMedia = false;
   }
 
-  void NotifyPlayStarted()
+  void MaybeOpenUnsupportedMediaForOwner() const
   {
-    if (CanOwnerPlayUnsupportedTypeMedia()) {
-      OpenUnsupportedMediaForOwner();
+    
+    if (!mSrcIsUnsupportedTypeMedia ||
+        !CanOwnerPlayUnsupportedTypeMedia()) {
+      return;
     }
+
+    
+    if (mOwner->Paused()) {
+      return;
+    }
+
+    nsContentUtils::DispatchTrustedEvent(mOwner->OwnerDoc(),
+                                         static_cast<nsIContent*>(mOwner),
+                                         NS_LITERAL_STRING("OpenMediaWithExternalApp"),
+                                         true,
+                                         true);
   }
 
   RefPtr<MediaError> mError;
@@ -1335,41 +1356,15 @@ private:
   {
 #if defined(MOZ_WIDGET_ANDROID)
     
-    if (!Preferences::GetBool("media.openUnsupportedTypeWithExternalApp")) {
-      return false;
-    }
-
-    if (!mError) {
-      return false;
-    }
-
-    uint16_t errorCode = mError->Code();
-    if (errorCode != MEDIA_ERR_SRC_NOT_SUPPORTED) {
-      return false;
-    }
-
-    
-    if (mOwner->Paused()) {
-      return false;
-    }
-
-    return true;
+    return Preferences::GetBool("media.openUnsupportedTypeWithExternalApp");
 #endif
     return false;
-  }
-
-  void OpenUnsupportedMediaForOwner() const
-  {
-    nsContentUtils::DispatchTrustedEvent(mOwner->OwnerDoc(),
-                                         static_cast<nsIContent*>(mOwner),
-                                         NS_LITERAL_STRING("OpenMediaWithExternalApp"),
-                                         true,
-                                         true);
   }
 
   
   
   HTMLMediaElement* mOwner;
+  bool mSrcIsUnsupportedTypeMedia;
 };
 
 NS_IMPL_ADDREF_INHERITED(HTMLMediaElement, nsGenericHTMLElement)
@@ -6545,9 +6540,7 @@ HTMLMediaElement::GetError() const
 void
 HTMLMediaElement::OpenUnsupportedMediaWithExternalAppIfNeeded() const
 {
-  
-  
-  mErrorSink->NotifyPlayStarted();
+  mErrorSink->MaybeOpenUnsupportedMediaForOwner();
 }
 
 void HTMLMediaElement::GetCurrentSpec(nsCString& aString)
