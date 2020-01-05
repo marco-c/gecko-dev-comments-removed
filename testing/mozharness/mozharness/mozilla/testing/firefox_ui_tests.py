@@ -216,6 +216,9 @@ class FirefoxUITests(TestingMixin, VCSToolsScript):
             
             '--log-html', os.path.join(dirs['abs_blob_upload_dir'], 'report.html'),
             '--log-xunit', os.path.join(dirs['abs_blob_upload_dir'], 'report.xml'),
+
+            
+            '-vv',
         ]
 
         
