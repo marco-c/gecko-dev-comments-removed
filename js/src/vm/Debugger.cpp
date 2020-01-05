@@ -6039,7 +6039,12 @@ class FlowGraphSummary {
             if (FlowsIntoNext(prevOp))
                 addEdge(prevLineno, prevColumn, r.frontOffset());
 
-            if (BytecodeIsJumpTarget(op)) {
+            
+            
+            
+            
+            
+            if (BytecodeIsJumpTarget(op) && !entries_[r.frontOffset()].hasNoEdges()) {
                 lineno = entries_[r.frontOffset()].lineno();
                 column = entries_[r.frontOffset()].column();
             }
