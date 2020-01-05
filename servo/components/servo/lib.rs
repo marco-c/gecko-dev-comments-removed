@@ -2,9 +2,6 @@
 
 
 
-#![comment = "The Servo Parallel Browser Project"]
-#![license = "MPL"]
-
 #![feature(globs, macro_rules, phase, thread_local)]
 
 #![deny(unused_imports)]

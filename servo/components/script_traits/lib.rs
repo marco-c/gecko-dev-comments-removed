@@ -2,9 +2,6 @@
 
 
 
-#![comment = "The Servo Parallel Browser Project"]
-#![license = "MPL"]
-
 #![deny(unused_imports)]
 #![deny(unused_variables)]
 

@@ -4,7 +4,6 @@
 
 
 
-#![license = "MPL"]
 #![feature(macro_rules)]
 #![deny(unused_imports, unused_variables)]
 
