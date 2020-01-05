@@ -26,6 +26,7 @@
 #include "nsStringGlue.h"
 #include "nsTArray.h"
 
+class nsIPrincipal;
 class nsWrapperCache;
 
 namespace mozilla {
@@ -107,6 +108,10 @@ public:
   {
     return !Get();
   }
+
+  
+  
+  nsIPrincipal* GetSubjectPrincipal() const;
 
 protected:
   JS::Rooted<JSObject*> mGlobalJSObject;
