@@ -169,7 +169,8 @@ JSEventHandler::HandleEvent(nsIDOMEvent* aEvent)
       return rv.StealNSResult();
     }
 
-    if (retval.isBoolean() && retval.toBoolean()) {
+    if (retval.isBoolean() &&
+        retval.toBoolean() == bool(scriptEvent)) {
       event->PreventDefaultInternal(isChromeHandler);
     }
     return NS_OK;
@@ -217,11 +218,7 @@ JSEventHandler::HandleEvent(nsIDOMEvent* aEvent)
   }
 
   
-  
-  
-  if (retval.isBoolean() &&
-      retval.toBoolean() == (mEventName == nsGkAtoms::onerror ||
-                             mEventName == nsGkAtoms::onmouseover)) {
+  if (retval.isBoolean() && !retval.toBoolean()) {
     event->PreventDefaultInternal(isChromeHandler);
   }
 
