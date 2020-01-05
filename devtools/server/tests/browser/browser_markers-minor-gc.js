@@ -5,6 +5,7 @@
 
 
 
+"use strict";
 
 const { PerformanceFront } = require("devtools/shared/fronts/performance");
 
@@ -12,7 +13,7 @@ add_task(function* () {
   
   requestLongerTimeout(2);
 
-  let doc = yield addTab(MAIN_DOMAIN + "doc_allocations.html");
+  yield addTab(MAIN_DOMAIN + "doc_allocations.html");
 
   initDebuggerServer();
   let client = new DebuggerClient(DebuggerServer.connectPipe());

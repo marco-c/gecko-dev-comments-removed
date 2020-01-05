@@ -7,13 +7,15 @@
 
 
 
-const WAIT_TIME = 1000; 
+"use strict";
+
+
+const WAIT_TIME = 1000;
 
 const { PerformanceFront } = require("devtools/shared/fronts/performance");
 
 add_task(function* () {
-  let browser = yield addTab(MAIN_DOMAIN + "doc_perf.html");
-  let doc = browser.contentDocument;
+  yield addTab(MAIN_DOMAIN + "doc_perf.html");
 
   initDebuggerServer();
   let client = new DebuggerClient(DebuggerServer.connectPipe());
@@ -22,7 +24,8 @@ add_task(function* () {
   yield front.connect();
 
   let rec = yield front.startRecording();
-  busyWait(WAIT_TIME); 
+  
+  busyWait(WAIT_TIME);
 
   yield front.stopRecording(rec);
   let profile = rec.getProfile();

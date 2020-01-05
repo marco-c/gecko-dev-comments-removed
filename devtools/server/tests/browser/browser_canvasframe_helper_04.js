@@ -10,7 +10,6 @@
 
 
 require("devtools/server/actors/inspector");
-const events = require("sdk/event/core");
 
 const {HighlighterEnvironment} = require("devtools/server/actors/highlighters");
 
@@ -18,11 +17,14 @@ const {
   CanvasFrameAnonymousContentHelper
 } = require("devtools/server/actors/highlighters/utils/markup");
 
-const TEST_URL_1 = "data:text/html;charset=utf-8,CanvasFrameAnonymousContentHelper test 1";
-const TEST_URL_2 = "data:text/html;charset=utf-8,CanvasFrameAnonymousContentHelper test 2";
+const TEST_URL_1 =
+  "data:text/html;charset=utf-8,CanvasFrameAnonymousContentHelper test 1";
+const TEST_URL_2 =
+  "data:text/html;charset=utf-8,CanvasFrameAnonymousContentHelper test 2";
 
 add_task(function* () {
-  let browser = yield addTab(TEST_URL_2);
+  let browser = yield addTab(TEST_URL_1);
+  
   let doc = browser.contentDocument;
 
   let nodeBuilder = () => {
@@ -66,8 +68,9 @@ add_task(function* () {
 
   info("Navigating to a new page");
   let loaded = BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
-  content.location = TEST_URL_2;
+  BrowserTestUtils.loadURI(browser, TEST_URL_2);
   yield loaded;
+  
   doc = gBrowser.selectedBrowser.contentWindow.document;
 
   info("Try to access the element again");
@@ -93,6 +96,6 @@ function synthesizeMouseDown(x, y, win) {
   
   
   
-  let forceReflow = win.document.documentElement.offsetWidth;
+  win.document.documentElement.offsetWidth;
   EventUtils.synthesizeMouseAtPoint(x, y, {type: "mousedown"}, win);
 }

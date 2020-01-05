@@ -8,8 +8,10 @@
 
 
 
+"use strict";
+
 const { PerformanceFront } = require("devtools/shared/fronts/performance");
-const { pmmIsProfilerActive, pmmStartProfiler, pmmStopProfiler, pmmLoadFrameScripts, pmmClearFrameScripts } = require("devtools/client/performance/test/helpers/profiler-mm-utils");
+const { pmmIsProfilerActive, pmmStartProfiler, pmmLoadFrameScripts, pmmClearFrameScripts } = require("devtools/client/performance/test/helpers/profiler-mm-utils");
 
 add_task(function* () {
   
@@ -29,7 +31,7 @@ add_task(function* () {
   let firstFront = PerformanceFront(client, form);
   yield firstFront.connect();
 
-  let recording = yield firstFront.startRecording();
+  yield firstFront.startRecording();
 
   yield addTab(MAIN_DOMAIN + "doc_perf.html");
   let client2 = new DebuggerClient(DebuggerServer.connectPipe());

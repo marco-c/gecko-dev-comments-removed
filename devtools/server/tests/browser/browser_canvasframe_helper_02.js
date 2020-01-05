@@ -19,6 +19,7 @@ const {
 
 add_task(function* () {
   let browser = yield addTab("about:preferences");
+  
   let doc = browser.contentDocument;
 
   let nodeBuilder = () => {

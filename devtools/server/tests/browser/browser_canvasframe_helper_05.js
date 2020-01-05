@@ -21,6 +21,7 @@ const TEST_URL = "data:text/html;charset=utf-8,CanvasFrameAnonymousContentHelper
 
 add_task(function* () {
   let browser = yield addTab(TEST_URL);
+  
   let doc = browser.contentDocument;
 
   let nodeBuilder = () => {
@@ -107,6 +108,6 @@ function synthesizeMouseDown(x, y, win) {
   
   
   
-  let forceReflow = win.document.documentElement.offsetWidth;
+  win.document.documentElement.offsetWidth;
   EventUtils.synthesizeMouseAtPoint(x, y, {type: "mousedown"}, win);
 }
