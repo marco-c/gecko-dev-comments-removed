@@ -101,37 +101,6 @@ IsLegacyBox(const nsIFrame* aFlexContainer)
 
 
 
-static bool
-IsLegacyBoxFOLD_ME(const nsIFrame* aFrame)
-{
-  nsStyleContext* styleContext = aFrame->StyleContext();
-  const nsStyleDisplay* styleDisp = styleContext->StyleDisplay();
-
-  
-  bool isLegacyBox = IsDisplayValueLegacyBox(styleDisp);
-
-  
-  
-  
-  if (!isLegacyBox && styleDisp->mDisplay == mozilla::StyleDisplay::Block) {
-    nsStyleContext* parentStyleContext = styleContext->GetParent();
-    NS_ASSERTION(parentStyleContext &&
-                 (styleContext->GetPseudo() == nsCSSAnonBoxes::buttonContent ||
-                  styleContext->GetPseudo() == nsCSSAnonBoxes::scrolledContent),
-                 "The only way a nsFlexContainerFrame can have 'display:block' "
-                 "should be if it's the inner part of a scrollable or button "
-                 "element");
-    isLegacyBox = IsDisplayValueLegacyBox(parentStyleContext->StyleDisplay());
-  }
-
-  NS_ASSERTION(!isLegacyBox ||
-               aFrame->GetType() == nsGkAtoms::flexContainerFrame,
-               "legacy box with unexpected frame type");
-  return isLegacyBox;
-}
-
-
-
 static uint8_t
 ConvertLegacyStyleToAlignItems(const nsStyleXUL* aStyleXUL)
 {
@@ -2296,9 +2265,28 @@ nsFlexContainerFrame::Init(nsIContent*       aContent,
 {
   nsContainerFrame::Init(aContent, aParent, aPrevInFlow);
 
-  if (IsLegacyBoxFOLD_ME(this)) {
-    
-    
+  const nsStyleDisplay* styleDisp = StyleContext()->StyleDisplay();
+
+  
+  
+  
+  bool isLegacyBox = IsDisplayValueLegacyBox(styleDisp);
+
+  
+  
+  
+  if (!isLegacyBox && styleDisp->mDisplay == mozilla::StyleDisplay::Block) {
+    nsStyleContext* parentStyleContext = mStyleContext->GetParent();
+    NS_ASSERTION(parentStyleContext &&
+                 (mStyleContext->GetPseudo() == nsCSSAnonBoxes::buttonContent ||
+                  mStyleContext->GetPseudo() == nsCSSAnonBoxes::scrolledContent),
+                 "The only way a nsFlexContainerFrame can have 'display:block' "
+                 "should be if it's the inner part of a scrollable or button "
+                 "element");
+    isLegacyBox = IsDisplayValueLegacyBox(parentStyleContext->StyleDisplay());
+  }
+
+  if (isLegacyBox) {
     AddStateBits(NS_STATE_FLEX_IS_LEGACY_WEBKIT_BOX);
   }
 }
