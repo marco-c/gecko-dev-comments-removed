@@ -2,8 +2,6 @@
 
 
 
-#![old_impl_check]
-
 use std::collections::HashMap;
 use std::collections::hash_map::Entry::{Occupied, Vacant};
 use std::collections::hash_state::DefaultState;
