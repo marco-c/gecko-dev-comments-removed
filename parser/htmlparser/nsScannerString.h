@@ -267,7 +267,6 @@ class nsScannerString : public nsScannerSubstring
         
 
       void UngetReadable(const nsAString& aReadable, const nsScannerIterator& aCurrentPosition);
-      void ReplaceCharacter(nsScannerIterator& aPosition, char16_t aChar);
   };
 
 

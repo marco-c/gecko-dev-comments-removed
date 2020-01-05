@@ -24,6 +24,7 @@
 #include "nsIParser.h"
 #include "nsIUnicodeDecoder.h"
 #include "nsScannerString.h"
+#include "mozilla/CheckedInt.h"
 
 class nsReadEndCondition {
 public:
@@ -109,8 +110,7 @@ class nsScanner {
 
 
 
-      nsresult Append(const char* aBuffer, uint32_t aLen,
-                      nsIRequest *aRequest);
+      nsresult Append(const char* aBuffer, uint32_t aLen);
 
       
 
@@ -148,10 +148,7 @@ class nsScanner {
       void CurrentPosition(nsScannerIterator& aPosition);
       void EndReading(nsScannerIterator& aPosition);
       void SetPosition(nsScannerIterator& aPosition,
-                       bool aTruncate = false,
-                       bool aReverse = false);
-      void ReplaceCharacter(nsScannerIterator& aPosition,
-                            char16_t aChar);
+                       bool aTruncate = false);
 
       
 
@@ -162,34 +159,15 @@ class nsScanner {
       bool      IsIncremental(void) {return mIncremental;}
       void      SetIncremental(bool anIncrValue) {mIncremental=anIncrValue;}
 
-      
-
-
-
-
-      int32_t FirstNonWhitespacePosition()
-      {
-        return mFirstNonWhitespacePosition;
-      }
-
-      
-
-
-
-
-
-
-      void OverrideReplacementCharacter(char16_t aReplacementCharacter);
-
   protected:
 
-      bool AppendToBuffer(nsScannerString::Buffer *, nsIRequest *aRequest, int32_t aErrorPos = -1);
+      bool AppendToBuffer(nsScannerString::Buffer* aBuffer);
       bool AppendToBuffer(const nsAString& aStr)
       {
         nsScannerString::Buffer* buf = nsScannerString::AllocBufferFromString(aStr);
         if (!buf)
           return false;
-        AppendToBuffer(buf, nullptr);
+        AppendToBuffer(buf);
         return true;
       }
 
@@ -197,14 +175,8 @@ class nsScanner {
       nsScannerIterator            mCurrentPosition; 
       nsScannerIterator            mMarkPosition;    
       nsScannerIterator            mEndPosition;     
-      nsScannerIterator            mFirstInvalidPosition; 
       nsString        mFilename;
-      uint32_t        mCountRemaining; 
-                                       
       bool            mIncremental;
-      bool            mHasInvalidCharacter;
-      char16_t       mReplacementCharacter;
-      int32_t         mFirstNonWhitespacePosition;
       int32_t         mCharsetSource;
       nsCString       mCharset;
       nsCOMPtr<nsIUnicodeDecoder> mUnicodeDecoder;

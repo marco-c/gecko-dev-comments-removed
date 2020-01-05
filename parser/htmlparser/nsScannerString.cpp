@@ -373,19 +373,6 @@ nsScannerString::UngetReadable( const nsAString& aReadable, const nsScannerItera
     mIsDirty = true;
   }
 
-void
-nsScannerString::ReplaceCharacter(nsScannerIterator& aPosition, char16_t aChar)
-  {
-    
-    
-    
-    char16_t* pos = const_cast<char16_t*>(aPosition.get());
-    *pos = aChar;
-
-    mIsDirty = true;
-  }
-
-
   
 
 

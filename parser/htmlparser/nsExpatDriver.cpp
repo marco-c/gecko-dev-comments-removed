@@ -1306,9 +1306,6 @@ nsExpatDriver::WillBuildModel(const CParserContext& aParserContext,
   
   XML_SetUserData(mExpatParser, this);
 
-  
-  aParserContext.mScanner->OverrideReplacementCharacter(0xffff);
-
   return mInternalState;
 }
 
