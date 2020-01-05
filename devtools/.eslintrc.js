@@ -234,6 +234,8 @@ module.exports = {
     
     "no-floating-decimal": "off",
     
+    "no-implied-eval": "error",
+    
     "no-inline-comments": "off",
     
     "no-lonely-if": "error",
@@ -427,8 +429,6 @@ module.exports = {
     "no-eq-null": "off",
     
     "no-func-assign": "off",
-    
-    "no-implied-eval": "off",
     
     "no-inner-declarations": "off",
     

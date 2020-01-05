@@ -18,6 +18,8 @@ module.exports = {
 
     
     "no-unsafe-negation": "error",
+    
+    "no-implied-eval": "error",
   },
   "env": {
     "es6": true

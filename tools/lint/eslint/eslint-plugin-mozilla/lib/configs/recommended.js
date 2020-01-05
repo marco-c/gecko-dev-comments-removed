@@ -115,6 +115,9 @@ module.exports = {
     "no-extra-bind": "error",
 
     
+    "no-implied-eval": "error",
+
+    
     "no-labels": "error",
 
     
