@@ -8506,6 +8506,43 @@ class SystemAddonInstallLocation extends MutableDirectoryInstallLocation {
 
 
 
+
+
+  cleanStagingDir(aLeafNames = []) {
+    let dir = this.getStagingDir();
+
+    for (let name of aLeafNames) {
+      let file = dir.clone();
+      file.append(name);
+      recursiveRemove(file);
+    }
+
+    if (this._stagingDirLock > 0)
+      return;
+
+    let dirEntries = dir.directoryEntries.QueryInterface(Ci.nsIDirectoryEnumerator);
+    try {
+      if (dirEntries.nextFile)
+        return;
+    } finally {
+      dirEntries.close();
+    }
+
+    try {
+      setFilePermissions(dir, FileUtils.PERMS_DIRECTORY);
+      dir.remove(false);
+    } catch (e) {
+      logger.warn("Failed to remove staging dir", e);
+      
+    }
+  }
+
+  
+
+
+
+
+
   getStagingDir() {
     this._addonSet = SystemAddonInstallLocation._loadAddonSet();
     let dir = null;
@@ -8522,12 +8559,35 @@ class SystemAddonInstallLocation extends MutableDirectoryInstallLocation {
   }
 
   requestStagingDir() {
+    this._stagingDirLock++;
+    if (this._stagingDirPromise)
+      return this._stagingDirPromise;
+
     this._addonSet = SystemAddonInstallLocation._loadAddonSet();
     if (this._addonSet.directory) {
       this._directory = this._baseDir.clone();
       this._directory.append(this._addonSet.directory);
     }
-    return super.requestStagingDir();
+
+    OS.File.makeDir(this._directory.path);
+    let stagepath = OS.Path.join(this._directory.path, DIR_STAGE);
+    return this._stagingDirPromise = OS.File.makeDir(stagepath).then(null, (e) => {
+      if (e instanceof OS.File.Error && e.becauseExists)
+        return;
+      logger.error("Failed to create staging directory", e);
+      throw e;
+    });
+  }
+
+  releaseStagingDir() {
+    this._stagingDirLock--;
+
+    if (this._stagingDirLock == 0) {
+      this._stagingDirPromise = null;
+      this.cleanStagingDir();
+    }
+
+    return Promise.resolve();
   }
 
   
@@ -8555,7 +8615,7 @@ class SystemAddonInstallLocation extends MutableDirectoryInstallLocation {
 
 
 
-  static _saveAddonSet(aAddonSet) {
+  _saveAddonSet(aAddonSet) {
     Preferences.set(PREF_SYSTEM_ADDON_SET, JSON.stringify(aAddonSet));
   }
 
@@ -8640,7 +8700,7 @@ class SystemAddonInstallLocation extends MutableDirectoryInstallLocation {
     
     
     
-    SystemAddonInstallLocation._saveAddonSet({ schema: 1, addons: {} });
+    this._saveAddonSet({ schema: 1, addons: {} });
 
     
     
@@ -8660,7 +8720,7 @@ class SystemAddonInstallLocation extends MutableDirectoryInstallLocation {
     }
   }
 
-    
+  
 
 
 
@@ -8750,7 +8810,7 @@ class SystemAddonInstallLocation extends MutableDirectoryInstallLocation {
 
     
     let state = { schema: 1, directory: newDir.leafName, addons: {} };
-    SystemAddonInstallLocation._saveAddonSet(state);
+    this._saveAddonSet(state);
 
     this._nextDir = newDir;
     let location = this;
@@ -8791,7 +8851,7 @@ class SystemAddonInstallLocation extends MutableDirectoryInstallLocation {
       }
 
       previousState = SystemAddonInstallLocation._loadAddonSet();
-      SystemAddonInstallLocation._saveAddonSet(state);
+      this._saveAddonSet(state);
 
       let blockers = aAddons.filter(
         addon => AddonManagerPrivate.hasUpgradeListener(addon.id)
@@ -8805,7 +8865,7 @@ class SystemAddonInstallLocation extends MutableDirectoryInstallLocation {
     } catch (e) {
       
       if (previousState) {
-        SystemAddonInstallLocation._saveAddonSet(previousState);
+        this._saveAddonSet(previousState);
       }
       
       
@@ -8824,7 +8884,7 @@ class SystemAddonInstallLocation extends MutableDirectoryInstallLocation {
 
 
   async resumeAddonSet(installs) {
-    async function resumeAddon(install) {
+    function resumeAddon(install) {
       install.state = AddonManager.STATE_DOWNLOADED;
       install.installLocation.releaseStagingDir();
       install.install();
@@ -9014,6 +9074,24 @@ class WinRegInstallLocation extends DirectoryInstallLocation {
 
   get name() {
     return this._name;
+  }
+
+  
+
+
+  get scope() {
+    return this._scope;
+  }
+
+  
+
+
+  getAddonLocations() {
+    let locations = new Map();
+    for (let id in this._IDToFileMap) {
+      locations.set(id, this._IDToFileMap[id].clone());
+    }
+    return locations;
   }
 
   
