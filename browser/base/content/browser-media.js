@@ -303,9 +303,9 @@ let gDecoderDoctorHandler = {
         histogram.add(decoderDoctorReportId, TELEMETRY_DDSTAT_SHOWN_FIRST);
       } else {
         
-        let existing = formatsInPref.split(",").map(String.trim);
+        let existing = formatsInPref.split(",").map(x => x.trim());
         
-        let newbies = formats.split(",").map(String.trim)
+        let newbies = formats.split(",").map(x => x.trim())
                       .filter(x => !existing.includes(x));
         
         if (newbies.length) {
