@@ -41,7 +41,6 @@ const CONSOLEAPISTORAGE_CID = Components.ID('{96cf7855-dfa9-4c6d-8276-f9705b4890
 
 
 
-
 function ConsoleAPIStorageService() {
   this.init();
 }
