@@ -118,6 +118,13 @@ enum class RelativeTo {
 };
 
 
+enum class DrawStringFlags {
+  eDefault         = 0x0,
+  eForceHorizontal = 0x1 
+};
+MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(DrawStringFlags)
+
+
 
 
 
@@ -1606,13 +1613,14 @@ public:
                                                  nsFontMetrics& aFontMetrics,
                                                  DrawTarget* aDrawTarget);
 
-  static void DrawString(const nsIFrame*       aFrame,
-                         nsFontMetrics&        aFontMetrics,
-                         nsRenderingContext*   aContext,
-                         const char16_t*      aString,
-                         int32_t               aLength,
-                         nsPoint               aPoint,
-                         nsStyleContext*       aStyleContext = nullptr);
+  static void DrawString(const nsIFrame*     aFrame,
+                         nsFontMetrics&      aFontMetrics,
+                         nsRenderingContext* aContext,
+                         const char16_t*     aString,
+                         int32_t             aLength,
+                         nsPoint             aPoint,
+                         nsStyleContext*     aStyleContext = nullptr,
+                         DrawStringFlags     aFlags = DrawStringFlags::eDefault);
 
   
 
