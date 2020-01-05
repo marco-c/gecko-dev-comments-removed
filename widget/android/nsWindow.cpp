@@ -102,6 +102,20 @@ NS_IMPL_ISUPPORTS_INHERITED0(nsWindow, nsBaseWidget)
 #include "mozilla/Services.h"
 #include "nsThreadUtils.h"
 
+static TimeStamp
+GetEventTimeStamp(int64_t aEventTime)
+{
+    
+    
+    
+    
+    
+    
+    int64_t tick =
+        BaseTimeDurationPlatformUtils::TicksFromMilliseconds(aEventTime);
+    return TimeStamp::FromSystemTime(tick);
+}
+
 
 
 
