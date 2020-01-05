@@ -148,7 +148,7 @@ function GetIterator(obj, method) {
 
     
     if (!IsObject(iterator))
-        ThrowTypeError(JSMSG_NOT_ITERABLE, ToString(iterator));
+        ThrowTypeError(JSMSG_NOT_ITERATOR, ToString(iterator));
 
     
     return iterator;
