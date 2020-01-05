@@ -1100,15 +1100,9 @@ TabChild::ActorDestroy(ActorDestroyReason why)
   if (mTabChildGlobal) {
     
     
-    
-    MOZ_DIAGNOSTIC_ASSERT(mTabChildGlobal->mMessageManager);
-    if (mTabChildGlobal->mMessageManager) {
-      
-      
-      static_cast<nsFrameMessageManager*>
-        (mTabChildGlobal->mMessageManager.get())->Disconnect();
-      mTabChildGlobal->mMessageManager = nullptr;
-    }
+    static_cast<nsFrameMessageManager*>
+      (mTabChildGlobal->mMessageManager.get())->Disconnect();
+    mTabChildGlobal->mMessageManager = nullptr;
   }
 
   CompositorBridgeChild* compositorChild = static_cast<CompositorBridgeChild*>(CompositorBridgeChild::Get());
@@ -1230,15 +1224,11 @@ TabChild::RecvShow(const ScreenIntSize& aSize,
                    const bool& aParentIsActive,
                    const nsSizeMode& aSizeMode)
 {
-    MOZ_ASSERT((!mDidFakeShow && aRenderFrame) || (mDidFakeShow && !aRenderFrame));
+  MOZ_ASSERT((!mDidFakeShow && aRenderFrame) || (mDidFakeShow && !aRenderFrame));
+  bool res = true;
 
-    mPuppetWidget->SetSizeMode(aSizeMode);
-    if (mDidFakeShow) {
-        ApplyShowInfo(aInfo);
-        RecvParentActivated(aParentIsActive);
-        return IPC_OK();
-    }
-
+  mPuppetWidget->SetSizeMode(aSizeMode);
+  if (!mDidFakeShow) {
     nsCOMPtr<nsIBaseWindow> baseWindow = do_QueryInterface(WebNavigation());
     if (!baseWindow) {
         NS_ERROR("WebNavigation() doesn't QI to nsIBaseWindow");
@@ -1248,15 +1238,16 @@ TabChild::RecvShow(const ScreenIntSize& aSize,
     InitRenderingState(aTextureFactoryIdentifier, aLayersId, aRenderFrame);
 
     baseWindow->SetVisibility(true);
+    res = InitTabChildGlobal();
+  }
 
-    bool res = InitTabChildGlobal();
-    ApplyShowInfo(aInfo);
-    RecvParentActivated(aParentIsActive);
+  ApplyShowInfo(aInfo);
+  RecvParentActivated(aParentIsActive);
 
-    if (!res) {
-      return IPC_FAIL_NO_REASON(this);
-    }
-    return IPC_OK();
+  if (!res) {
+    return IPC_FAIL_NO_REASON(this);
+  }
+  return IPC_OK();
 }
 
 mozilla::ipc::IPCResult
@@ -2108,26 +2099,16 @@ TabChild::RecvAsyncMessage(const nsString& aMessage,
                            const IPC::Principal& aPrincipal,
                            const ClonedMessageData& aData)
 {
-  if (!mTabChildGlobal) {
-    return IPC_OK();
+  if (mTabChildGlobal) {
+    nsCOMPtr<nsIXPConnectJSObjectHolder> kungFuDeathGrip(GetGlobal());
+    StructuredCloneData data;
+    UnpackClonedMessageDataForChild(aData, data);
+    RefPtr<nsFrameMessageManager> mm =
+      static_cast<nsFrameMessageManager*>(mTabChildGlobal->mMessageManager.get());
+    CrossProcessCpowHolder cpows(Manager(), aCpows);
+    mm->ReceiveMessage(static_cast<EventTarget*>(mTabChildGlobal), nullptr,
+                       aMessage, false, &data, &cpows, aPrincipal, nullptr);
   }
-
-  
-  
-  
-  MOZ_DIAGNOSTIC_ASSERT(mTabChildGlobal->mMessageManager);
-  if (!mTabChildGlobal->mMessageManager) {
-    return IPC_OK();
-  }
-
-  nsCOMPtr<nsIXPConnectJSObjectHolder> kungFuDeathGrip(GetGlobal());
-  StructuredCloneData data;
-  UnpackClonedMessageDataForChild(aData, data);
-  RefPtr<nsFrameMessageManager> mm =
-    static_cast<nsFrameMessageManager*>(mTabChildGlobal->mMessageManager.get());
-  CrossProcessCpowHolder cpows(Manager(), aCpows);
-  mm->ReceiveMessage(static_cast<EventTarget*>(mTabChildGlobal), nullptr,
-                     aMessage, false, &data, &cpows, aPrincipal, nullptr);
   return IPC_OK();
 }
 
@@ -2517,6 +2498,7 @@ TabChild::InitTabChildGlobal()
     NS_ENSURE_TRUE(chromeHandler, false);
 
     RefPtr<TabChildGlobal> scope = new TabChildGlobal(this);
+    mTabChildGlobal = scope;
 
     nsISupports* scopeSupports = NS_ISUPPORTS_CAST(EventTarget*, scope);
 
@@ -2528,8 +2510,6 @@ TabChild::InitTabChildGlobal()
     nsCOMPtr<nsPIWindowRoot> root = do_QueryInterface(chromeHandler);
     NS_ENSURE_TRUE(root, false);
     root->SetParentTarget(scope);
-
-    mTabChildGlobal = scope.forget();;
   }
 
   if (!mTriedBrowserInit) {
