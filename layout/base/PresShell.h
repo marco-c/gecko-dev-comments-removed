@@ -600,6 +600,7 @@ protected:
   public:
     virtual ~DelayedEvent() { }
     virtual void Dispatch() { }
+    virtual bool IsKeyPressEvent() { return false; }
   };
 
   class DelayedInputEvent : public DelayedEvent
@@ -624,6 +625,7 @@ protected:
   {
   public:
     explicit DelayedKeyEvent(mozilla::WidgetKeyboardEvent* aEvent);
+    virtual bool IsKeyPressEvent() override;
   };
 
   
@@ -902,6 +904,8 @@ protected:
 
   
   bool                      mHasReceivedPaintMessage : 1;
+
+  bool                      mIsLastKeyDownCanceled : 1;
 
   static bool               sDisableNonTestMouseEvents;
 };
