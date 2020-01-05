@@ -27,5 +27,5 @@ Components.utils.import("resource://pdf.js/PdfJs.jsm");
 
 if (Services.appinfo.processType === Services.appinfo.PROCESS_TYPE_CONTENT) {
   
-  PdfJs.updateRegistration();
+  PdfJs.ensureRegistered();
 }
