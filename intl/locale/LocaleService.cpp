@@ -463,7 +463,7 @@ LocaleService::NegotiateLanguages(const char** aRequested,
   
   
   auto validTagChars = [](const char* s) {
-    if (!*s) {
+    if (!s || !*s) {
       return false;
     }
     while (*s) {
