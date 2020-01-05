@@ -3812,41 +3812,18 @@ const BrowserSearch = {
 
 
 
-
-
-  recordSearchInTelemetry: function (engine, source, details={}) {
-    BrowserUITelemetry.countSearchEvent(source, null, details.selection);
+  recordSearchInTelemetry: function (engine, source, selection) {
+    BrowserUITelemetry.countSearchEvent(source, null, selection);
     try {
-      BrowserUsageTelemetry.recordSearch(engine, source, details);
+      BrowserUsageTelemetry.recordSearch(engine, source);
     } catch (ex) {
       Cu.reportError(ex);
     }
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   recordOneoffSearchInTelemetry: function (engine, source, type, where) {
     let id = this._getSearchEngineId(engine) + "." + source;
     BrowserUITelemetry.countOneoffSearchEvent(id, type, where);
-    try {
-      const details = {type, isOneOff: true};
-      BrowserUsageTelemetry.recordSearch(engine, source, details);
-    } catch (ex) {
-      Cu.reportError(ex);
-    }
   }
 };
 
