@@ -55,7 +55,7 @@ regExp.lastIndex = {
     }
 };
 regExp[Symbol.replace]("a", "");
-assertEq(regExp.lastIndex, 0, "Update the expected value to |9001| after fixing 1317397");
+assertEq(regExp.lastIndex, 9001);
 
 
 var regExp = new RegExp("a", "y");
@@ -69,7 +69,7 @@ regExp.lastIndex = {
     }
 };
 regExp[Symbol.replace]("a", "");
-assertEq(regExp.lastIndex, 0, "Update the expected value to |9002| after fixing 1317397");
+assertEq(regExp.lastIndex, 9002);
 
 if (typeof reportCompare === "function")
     reportCompare(true, true);

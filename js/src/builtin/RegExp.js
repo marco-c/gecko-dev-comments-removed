@@ -610,6 +610,7 @@ function RegExpGlobalReplaceShortOpt(rx, S, lengthS, replaceValue, fullUnicode)
 #undef FUNC_NAME
 
 
+
 function RegExpSearch(string) {
     
     var rx = this;
@@ -621,9 +622,38 @@ function RegExpSearch(string) {
     
     var S = ToString(string);
 
+    
+    var previousLastIndex = rx.lastIndex;
+
+    
+    var lastIndexIsZero = SameValue(previousLastIndex, 0);
+    if (!lastIndexIsZero)
+        rx.lastIndex = 0;
+
     if (IsRegExpMethodOptimizable(rx) && S.length < 0x7fff) {
         
         var result = RegExpSearcher(rx, S, 0);
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+        
+        if (!lastIndexIsZero) {
+            rx.lastIndex = previousLastIndex;
+        } else {
+            var flags = UnsafeGetInt32FromReservedSlot(rx, REGEXP_FLAGS_SLOT);
+            if (flags & (REGEXP_GLOBAL_FLAG | REGEXP_STICKY_FLAG))
+                rx.lastIndex = previousLastIndex;
+        }
 
         
         if (result === -1)
@@ -633,23 +663,22 @@ function RegExpSearch(string) {
         return result & 0x7fff;
     }
 
-    return RegExpSearchSlowPath(rx, S);
+    return RegExpSearchSlowPath(rx, S, previousLastIndex);
 }
 
 
 
-function RegExpSearchSlowPath(rx, S) {
-    
-    var previousLastIndex = rx.lastIndex;
 
-    
-    rx.lastIndex = 0;
-
+function RegExpSearchSlowPath(rx, S, previousLastIndex) {
     
     var result = RegExpExec(rx, S, false);
 
     
-    rx.lastIndex = previousLastIndex;
+    var currentLastIndex = rx.lastIndex;
+
+    
+    if (!SameValue(currentLastIndex, previousLastIndex))
+        rx.lastIndex = previousLastIndex;
 
     
     if (result === null)
@@ -905,6 +934,7 @@ function RegExpExec(R, S, forTest) {
 }
 
 
+
 function RegExpBuiltinExec(R, S, forTest) {
     
     
@@ -927,9 +957,11 @@ function RegExpBuiltinExec(R, S, forTest) {
     if (!globalOrSticky) {
         lastIndex = 0;
     } else {
+        
         if (lastIndex > S.length) {
             
-            R.lastIndex = 0;
+            if (globalOrSticky)
+                R.lastIndex = 0;
             return forTest ? false : null;
         }
     }
@@ -939,7 +971,8 @@ function RegExpBuiltinExec(R, S, forTest) {
         var endIndex = RegExpTester(R, S, lastIndex);
         if (endIndex == -1) {
             
-            R.lastIndex = 0;
+            if (globalOrSticky)
+                R.lastIndex = 0;
             return false;
         }
 
@@ -954,7 +987,8 @@ function RegExpBuiltinExec(R, S, forTest) {
     var result = RegExpMatcher(R, S, lastIndex);
     if (result === null) {
         
-        R.lastIndex = 0;
+        if (globalOrSticky)
+            R.lastIndex = 0;
     } else {
         
         if (globalOrSticky)

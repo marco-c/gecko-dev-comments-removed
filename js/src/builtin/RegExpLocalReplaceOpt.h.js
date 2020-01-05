@@ -36,8 +36,10 @@ function FUNC_NAME(rx, S, lengthS, replaceValue
     if (globalOrSticky) {
         
         if (lastIndex > lengthS) {
+            if (globalOrSticky)
+                rx.lastIndex = 0;
+
             
-            rx.lastIndex = 0;
             return S;
         }
     } else {
@@ -51,8 +53,8 @@ function FUNC_NAME(rx, S, lengthS, replaceValue
     
     if (result === null) {
         
-        
-        rx.lastIndex = 0;
+        if (globalOrSticky)
+            rx.lastIndex = 0;
 
         
         return S;
