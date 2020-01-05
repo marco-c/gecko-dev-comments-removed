@@ -64,8 +64,7 @@ private:
 };
 
 
-MOZ_RAII
-class BoxReader
+class MOZ_RAII BoxReader
 {
 public:
   explicit BoxReader(Box& aBox)
