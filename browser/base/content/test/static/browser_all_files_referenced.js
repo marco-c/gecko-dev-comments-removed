@@ -1,6 +1,9 @@
 
 
 
+
+requestLongerTimeout(5);
+
 var isDevtools = SimpleTest.harnessParameters.subsuite == "devtools";
 
 var gExceptionPaths = ["chrome://browser/content/defaultthemes/",
@@ -149,6 +152,8 @@ var whitelist = new Set([
   {file: "chrome://marionette/content/test_anonymous_content.xul"},
   {file: "chrome://marionette/content/test_dialog.properties"},
   {file: "chrome://marionette/content/test_dialog.xul"},
+  
+  {file: "chrome://mozapps/content/extensions/list.xul"},
   
   {file: "chrome://mozapps/skin/downloads/buttons.png", platforms: ["macosx"]},
   {file: "chrome://mozapps/skin/downloads/downloadButtons.png", platforms: ["linux", "win"]},
