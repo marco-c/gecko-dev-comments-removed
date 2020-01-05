@@ -23,8 +23,12 @@
 struct CachedOffsetForFrame;
 class nsAutoScrollTimer;
 class nsIContentIterator;
+class nsIDocument;
+class nsIEditor;
 class nsIFrame;
+class nsIHTMLEditor;
 class nsFrameSelection;
+class nsPIDOMWindowOuter;
 struct SelectionDetails;
 class nsCopySupport;
 class nsHTMLCopyEncoder;
@@ -353,6 +357,43 @@ private:
 
 
   nsresult AddItemInternal(nsRange* aRange, int32_t* aOutIndex);
+
+  nsIDocument* GetDocument() const;
+  nsPIDOMWindowOuter* GetWindow() const;
+  nsIEditor* GetEditor() const;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Element* GetCommonEditingHostForAllRanges();
 
   
   

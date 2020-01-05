@@ -87,6 +87,7 @@ static NS_DEFINE_CID(kFrameTraversalCID, NS_FRAMETRAVERSAL_CID);
 #include "nsIEditor.h"
 #include "nsIHTMLEditor.h"
 #include "nsFocusManager.h"
+#include "nsPIDOMWindow.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -1879,6 +1880,8 @@ printf(" * TakeFocus - moving into new cell\n");
   
   if (GetBatching())
     return NS_OK;
+
+  
   return NotifySelectionListeners(SelectionType::eNormal);
 }
 
@@ -1919,6 +1922,7 @@ nsFrameSelection::SetDragState(bool aState)
     mDragSelectingCells = false;
     
     PostReason(nsISelectionListener::MOUSEUP_REASON);
+    
     NotifySelectionListeners(SelectionType::eNormal);
   }
 }
@@ -2416,6 +2420,7 @@ nsFrameSelection::EndBatchChanges(int16_t aReason)
     int16_t postReason = PopReason() | aReason;
     PostReason(postReason);
     mChangesDuringBatching = false;
+    
     NotifySelectionListeners(SelectionType::eNormal);
   }
 }
@@ -2427,7 +2432,8 @@ nsFrameSelection::NotifySelectionListeners(SelectionType aSelectionType)
   int8_t index = GetIndexFromSelectionType(aSelectionType);
   if (index >=0 && mDomSelections[index])
   {
-    return mDomSelections[index]->NotifySelectionListeners();
+    RefPtr<Selection> selection = mDomSelections[index];
+    return selection->NotifySelectionListeners();
   }
   return NS_ERROR_FAILURE;
 }
@@ -4941,7 +4947,10 @@ Selection::RemoveAllRanges(ErrorResult& aRv)
   
   mFrameSelection->ClearTableCellSelection();
 
+  
+  
   result = mFrameSelection->NotifySelectionListeners(GetType());
+
   
   
   if (NS_FAILED(result)) {
@@ -5026,6 +5035,8 @@ Selection::AddRangeInternal(nsRange& aRange, nsIDocument* aDocument,
   if (!mFrameSelection)
     return;
 
+  
+  
   result = mFrameSelection->NotifySelectionListeners(GetType());
   if (NS_FAILED(result)) {
     aRv.Throw(result);
@@ -5120,6 +5131,9 @@ Selection::RemoveRange(nsRange& aRange, ErrorResult& aRv)
 
   if (!mFrameSelection)
     return;
+
+  
+  
   rv = mFrameSelection->NotifySelectionListeners(GetType());
   if (NS_FAILED(rv)) {
     aRv.Throw(rv);
@@ -5238,6 +5252,9 @@ Selection::Collapse(nsINode& aParentNode, uint32_t aOffset, ErrorResult& aRv)
   }
   setAnchorFocusRange(0);
   selectFrames(presContext, range, true);
+
+  
+  
   result = mFrameSelection->NotifySelectionListeners(GetType());
   if (NS_FAILED(result)) {
     aRv.Throw(result);
@@ -5818,6 +5835,9 @@ Selection::Extend(nsINode& aParentNode, uint32_t aOffset, ErrorResult& aRv)
   printf ("Sel. Extend to %p %s %d\n", content.get(),
           nsAtomCString(content->NodeInfo()->NameAtom()).get(), aOffset);
 #endif
+
+  
+  
   res = mFrameSelection->NotifySelectionListeners(GetType());
   if (NS_FAILED(res)) {
     aRv.Throw(res);
@@ -5988,6 +6008,30 @@ Selection::GetPresShell() const
     return nullptr;
 
   return mFrameSelection->GetShell();
+}
+
+nsIDocument*
+Selection::GetDocument() const
+{
+  nsIPresShell* presShell = GetPresShell();
+  return presShell ? presShell->GetDocument() : nullptr;
+}
+
+nsPIDOMWindowOuter*
+Selection::GetWindow() const
+{
+  nsIDocument* document = GetDocument();
+  return document ? document->GetWindow() : nullptr;
+}
+
+nsIEditor*
+Selection::GetEditor() const
+{
+  nsPresContext* presContext = GetPresContext();
+  if (!presContext) {
+    return nullptr;
+  }
+  return nsContentUtils::GetHTMLEditor(presContext);
 }
 
 nsIFrame *
@@ -6294,6 +6338,46 @@ Selection::RemoveSelectionListener(nsISelectionListener* aListenerToRemove,
   }
 }
 
+Element*
+Selection::GetCommonEditingHostForAllRanges()
+{
+  Element* editingHost = nullptr;
+  for (RangeData& rangeData : mRanges) {
+    nsRange* range = rangeData.mRange;
+    MOZ_ASSERT(range);
+    nsINode* commonAncestorNode = range->GetCommonAncestor();
+    if (!commonAncestorNode || !commonAncestorNode->IsContent()) {
+      return nullptr;
+    }
+    nsIContent* commonAncestor = commonAncestorNode->AsContent();
+    Element* foundEditingHost = commonAncestor->GetEditingHost();
+    
+    
+    
+    if (!foundEditingHost) {
+      return nullptr;
+    }
+    if (!editingHost) {
+      editingHost = foundEditingHost;
+      continue;
+    }
+    if (editingHost == foundEditingHost) {
+      continue;
+    }
+    if (nsContentUtils::ContentIsDescendantOf(foundEditingHost, editingHost)) {
+      continue;
+    }
+    if (nsContentUtils::ContentIsDescendantOf(editingHost, foundEditingHost)) {
+      editingHost = foundEditingHost;
+      continue;
+    }
+    
+    
+    return nullptr;
+  }
+  return editingHost;
+}
+
 nsresult
 Selection::NotifySelectionListeners(bool aCalledByJS)
 {
@@ -6307,7 +6391,50 @@ Selection::NotifySelectionListeners()
 {
   if (!mFrameSelection)
     return NS_OK;
- 
+
+  
+  
+  
+  
+  if (mSelectionType == SelectionType::eNormal && mCalledByJS) {
+    nsPIDOMWindowOuter* window = GetWindow();
+    nsIDocument* document = GetDocument();
+    
+    
+    if (window && document && !document->HasFlag(NODE_IS_EDITABLE) &&
+        GetEditor()) {
+      RefPtr<Element> newEditingHost = GetCommonEditingHostForAllRanges();
+      nsFocusManager* fm = nsFocusManager::GetFocusManager();
+      nsCOMPtr<nsPIDOMWindowOuter> focusedWindow;
+      nsIContent* focusedContent =
+        fm->GetFocusedDescendant(window, false, getter_AddRefs(focusedWindow));
+      nsCOMPtr<Element> focusedElement = do_QueryInterface(focusedContent);
+      
+      if (newEditingHost && newEditingHost != focusedElement) {
+        MOZ_ASSERT(!newEditingHost->IsInNativeAnonymousSubtree());
+        nsCOMPtr<nsIDOMElement> domElementToFocus =
+          do_QueryInterface(newEditingHost->AsDOMNode());
+        
+        
+        fm->SetFocus(domElementToFocus, nsIFocusManager::FLAG_NOSWITCHFRAME);
+      }
+      
+      
+      else if (!newEditingHost && focusedElement &&
+               focusedElement == focusedElement->GetEditingHost()) {
+        IgnoredErrorResult err;
+        focusedElement->Blur(err);
+        NS_WARNING_ASSERTION(!err.Failed(),
+                             "Failed to blur focused element");
+      }
+    }
+  }
+
+  
+  
+  AutoRestore<bool> calledFromExternalRestorer(mCalledByJS);
+  mCalledByJS = false;
+
   if (mFrameSelection->GetBatching()) {
     mFrameSelection->SetDirty();
     return NS_OK;

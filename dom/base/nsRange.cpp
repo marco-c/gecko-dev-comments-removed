@@ -968,7 +968,10 @@ nsRange::DoSetRange(nsINode* aStartN, int32_t aStartOffset,
   
   
   if (mSelection) {
-    mSelection->NotifySelectionListeners(mCalledByJS);
+    
+    
+    RefPtr<Selection> selection = mSelection;
+    selection->NotifySelectionListeners(mCalledByJS);
   }
 }
 
