@@ -35,7 +35,15 @@ class Matrix;
 
 
 
-class nsISVGChildFrame : public nsQueryFrame
+
+
+
+
+
+
+
+
+class nsSVGDisplayableFrame : public nsQueryFrame
 {
 public:
   typedef mozilla::SVGAnimatedNumberList SVGAnimatedNumberList;
@@ -45,7 +53,7 @@ public:
   typedef mozilla::SVGUserUnitList SVGUserUnitList;
   typedef mozilla::image::DrawResult DrawResult;
 
-  NS_DECL_QUERYFRAME_TARGET(nsISVGChildFrame)
+  NS_DECL_QUERYFRAME_TARGET(nsSVGDisplayableFrame)
 
   
 

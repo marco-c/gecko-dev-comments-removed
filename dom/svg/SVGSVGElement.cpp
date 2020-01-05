@@ -27,7 +27,7 @@
 #include "nsISVGSVGFrame.h" 
 #include "mozilla/dom/SVGRect.h"
 #include "nsError.h"
-#include "nsISVGChildFrame.h"
+#include "nsSVGDisplayableFrame.h"
 #include "mozilla/dom/SVGSVGElement.h"
 #include "mozilla/dom/SVGSVGElementBinding.h"
 #include "nsSVGUtils.h"
@@ -807,7 +807,7 @@ SVGSVGElement::InvalidateTransformNotifyFrame()
   
   if (svgframe) {
     svgframe->NotifyViewportOrTransformChanged(
-                nsISVGChildFrame::TRANSFORM_CHANGED);
+                nsSVGDisplayableFrame::TRANSFORM_CHANGED);
   }
 }
 

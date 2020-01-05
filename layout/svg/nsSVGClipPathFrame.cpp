@@ -52,7 +52,7 @@ nsSVGClipPathFrame::ApplyClipPath(gfxContext& aContext,
 
   RefPtr<Path> clipPath;
 
-  nsISVGChildFrame* singleClipPathChild = nullptr;
+  nsSVGDisplayableFrame* singleClipPathChild = nullptr;
   IsTrivial(&singleClipPathChild);
 
   if (singleClipPathChild) {
@@ -207,13 +207,13 @@ nsSVGClipPathFrame::PaintFrameIntoMask(nsIFrame *aFrame,
                                        gfxContext& aTarget,
                                        const gfxMatrix& aMatrix)
 {
-  nsISVGChildFrame* frame = do_QueryFrame(aFrame);
+  nsSVGDisplayableFrame* frame = do_QueryFrame(aFrame);
   if (!frame) {
     return DrawResult::SUCCESS;
   }
 
   
-  frame->NotifySVGChanged(nsISVGChildFrame::TRANSFORM_CHANGED);
+  frame->NotifySVGChanged(nsSVGDisplayableFrame::TRANSFORM_CHANGED);
 
   
   nsSVGEffects::EffectProperties effectProperties =
@@ -335,7 +335,7 @@ nsSVGClipPathFrame::PointIsInsideClipPath(nsIFrame* aClippedFrame,
 
   for (nsIFrame* kid = mFrames.FirstChild(); kid;
        kid = kid->GetNextSibling()) {
-    nsISVGChildFrame* SVGFrame = do_QueryFrame(kid);
+    nsSVGDisplayableFrame* SVGFrame = do_QueryFrame(kid);
     if (SVGFrame) {
       gfxPoint pointForChild = point;
       gfxMatrix m = static_cast<nsSVGElement*>(kid->GetContent())->
@@ -356,7 +356,7 @@ nsSVGClipPathFrame::PointIsInsideClipPath(nsIFrame* aClippedFrame,
 }
 
 bool
-nsSVGClipPathFrame::IsTrivial(nsISVGChildFrame **aSingleChild)
+nsSVGClipPathFrame::IsTrivial(nsSVGDisplayableFrame **aSingleChild)
 {
   
   if (nsSVGEffects::GetEffectProperties(this).GetClipPathFrame())
@@ -366,11 +366,11 @@ nsSVGClipPathFrame::IsTrivial(nsISVGChildFrame **aSingleChild)
     *aSingleChild = nullptr;
   }
 
-  nsISVGChildFrame *foundChild = nullptr;
+  nsSVGDisplayableFrame* foundChild = nullptr;
 
   for (nsIFrame* kid = mFrames.FirstChild(); kid;
        kid = kid->GetNextSibling()) {
-    nsISVGChildFrame *svgChild = do_QueryFrame(kid);
+    nsSVGDisplayableFrame* svgChild = do_QueryFrame(kid);
     if (svgChild) {
       
       
@@ -450,7 +450,7 @@ nsSVGClipPathFrame::AttributeChanged(int32_t         aNameSpaceID,
     if (aAttribute == nsGkAtoms::transform) {
       nsSVGEffects::InvalidateDirectRenderingObservers(this);
       nsSVGUtils::NotifyChildrenOfSVGChange(this,
-                                            nsISVGChildFrame::TRANSFORM_CHANGED);
+                                            nsSVGDisplayableFrame::TRANSFORM_CHANGED);
     }
     if (aAttribute == nsGkAtoms::clipPathUnits) {
       nsSVGEffects::InvalidateDirectRenderingObservers(this);
@@ -508,7 +508,7 @@ nsSVGClipPathFrame::GetBBoxForClipPathFrame(const SVGBBox &aBBox,
     nsIFrame *frame =
       static_cast<nsSVGElement*>(node)->GetPrimaryFrame();
     if (frame) {
-      nsISVGChildFrame *svg = do_QueryFrame(frame);
+      nsSVGDisplayableFrame* svg = do_QueryFrame(frame);
       if (svg) {
         tmpBBox = svg->GetBBoxContribution(mozilla::gfx::ToMatrix(aMatrix),
                                            nsSVGUtils::eBBoxIncludeFill);

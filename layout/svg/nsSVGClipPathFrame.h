@@ -13,7 +13,7 @@
 #include "nsSVGUtils.h"
 
 class gfxContext;
-class nsISVGChildFrame;
+class nsSVGDisplayableFrame;
 
 class nsSVGClipPathFrame : public nsSVGContainerFrame
 {
@@ -112,7 +112,7 @@ public:
   
   
   
-  bool IsTrivial(nsISVGChildFrame **aSingleChild = nullptr);
+  bool IsTrivial(nsSVGDisplayableFrame **aSingleChild = nullptr);
 
   bool IsValid();
 

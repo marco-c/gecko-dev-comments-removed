@@ -10,7 +10,7 @@
 #include "nsContainerFrame.h"
 #include "nsFrame.h"
 #include "nsIFrame.h"
-#include "nsISVGChildFrame.h"
+#include "nsSVGDisplayableFrame.h"
 #include "nsQueryFrame.h"
 #include "nsRect.h"
 #include "nsSVGUtils.h"
@@ -108,7 +108,7 @@ protected:
 
 
 class nsSVGDisplayContainerFrame : public nsSVGContainerFrame,
-                                   public nsISVGChildFrame
+                                   public nsSVGDisplayableFrame
 {
 protected:
   explicit nsSVGDisplayContainerFrame(nsStyleContext* aContext)

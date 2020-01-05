@@ -257,9 +257,9 @@ nsSVGMaskFrame::GetMaskForMaskedFrame(MaskParams& aParams)
   for (nsIFrame* kid = mFrames.FirstChild(); kid;
        kid = kid->GetNextSibling()) {
     
-    nsISVGChildFrame* SVGFrame = do_QueryFrame(kid);
+    nsSVGDisplayableFrame* SVGFrame = do_QueryFrame(kid);
     if (SVGFrame) {
-      SVGFrame->NotifySVGChanged(nsISVGChildFrame::TRANSFORM_CHANGED);
+      SVGFrame->NotifySVGChanged(nsSVGDisplayableFrame::TRANSFORM_CHANGED);
     }
     gfxMatrix m = mMatrixForChildren;
     if (kid->GetContent()->IsSVGElement()) {
