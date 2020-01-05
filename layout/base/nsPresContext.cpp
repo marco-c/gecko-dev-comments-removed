@@ -2095,32 +2095,12 @@ nsPresContext::MediaFeatureValuesChanged(nsRestyleHint aRestyleHint,
   if (!PR_CLIST_IS_EMPTY(mDocument->MediaQueryLists())) {
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    nsTArray<MediaQueryList::HandleChangeData> notifyList;
     for (PRCList *l = PR_LIST_HEAD(mDocument->MediaQueryLists());
          l != mDocument->MediaQueryLists(); l = PR_NEXT_LINK(l)) {
+      nsAutoMicroTask mt;
       MediaQueryList *mql = static_cast<MediaQueryList*>(l);
-      mql->MediumFeaturesChanged(notifyList);
+      mql->MaybeNotify();
     }
-
-    if (!notifyList.IsEmpty()) {
-      for (uint32_t i = 0, i_end = notifyList.Length(); i != i_end; ++i) {
-        nsAutoMicroTask mt;
-        MediaQueryList::HandleChangeData &d = notifyList[i];
-        d.callback->Call(*d.mql);
-      }
-    }
-
-    
   }
 }
 

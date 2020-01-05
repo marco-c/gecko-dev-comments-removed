@@ -638,6 +638,8 @@ var interfaceNamesInGlobalScope =
 
     "MediaQueryList",
 
+    "MediaQueryListEvent",
+
     "MediaRecorder",
 
     "MediaSource",
