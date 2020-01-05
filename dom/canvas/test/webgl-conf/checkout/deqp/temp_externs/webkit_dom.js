@@ -160,11 +160,6 @@ Console.prototype.count = function(value) {};
 
 
 
-Console.prototype.markTimeline = function(value) {};
-
-
-
-
 Console.prototype.profile = function(opt_title) {};
 
 
