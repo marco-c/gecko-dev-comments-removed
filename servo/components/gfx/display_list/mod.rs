@@ -64,7 +64,7 @@ pub static BLUR_INFLATION_FACTOR: i32 = 3;
 
 
 
-#[derive(Clone, PartialEq, Copy)]
+#[derive(Clone, PartialEq, Copy, Debug)]
 pub struct OpaqueNode(pub uintptr_t);
 
 impl OpaqueNode {
