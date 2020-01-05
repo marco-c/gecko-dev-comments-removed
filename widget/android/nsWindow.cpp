@@ -3090,6 +3090,8 @@ nsWindow::GeckoViewSupport::OnImeReplaceText(int32_t aStart, int32_t aEnd,
     const auto composition(window.GetIMEComposition());
     MOZ_ASSERT(!composition || !composition->IsEditorHandlingEvent());
 
+    const bool composing = !mIMERanges->IsEmpty();
+
     if (!mIMEKeyEvents.IsEmpty() || !composition ||
         uint32_t(aStart) != composition->NativeOffsetOfStartComposition() ||
         uint32_t(aEnd) != composition->NativeOffsetOfStartComposition() +
@@ -3133,7 +3135,16 @@ nsWindow::GeckoViewSupport::OnImeReplaceText(int32_t aStart, int32_t aEnd,
             return;
         }
 
-        {
+        if (aStart != aEnd) {
+            
+            WidgetContentCommandEvent event(
+                    true, eContentCommandDelete, &window);
+            window.InitEvent(event, nullptr);
+            window.DispatchEvent(&event);
+        }
+
+        
+        if (composing || !string.IsEmpty()) {
             WidgetCompositionEvent event(true, eCompositionStart, &window);
             window.InitEvent(event, nullptr);
             window.DispatchEvent(&event);
@@ -3150,8 +3161,7 @@ nsWindow::GeckoViewSupport::OnImeReplaceText(int32_t aStart, int32_t aEnd,
         AddIMETextChange(dummyChange);
     }
 
-    const bool composing = !mIMERanges->IsEmpty();
-
+    
     
     if (window.GetIMEComposition()) {
         WidgetCompositionEvent event(true, eCompositionChange, &window);
@@ -3161,15 +3171,8 @@ nsWindow::GeckoViewSupport::OnImeReplaceText(int32_t aStart, int32_t aEnd,
         if (composing) {
             event.mRanges = new TextRangeArray();
             mIMERanges.swap(event.mRanges);
-
-        } else if (event.mData.Length()) {
-            
-            TextRange range;
-            range.mStartOffset = 0;
-            range.mEndOffset = event.mData.Length();
-            range.mRangeType = TextRangeType::eRawClause;
-            event.mRanges = new TextRangeArray();
-            event.mRanges->AppendElement(range);
+        } else {
+            event.mMessage = eCompositionCommit;
         }
 
         window.DispatchEvent(&event);
@@ -3177,11 +3180,6 @@ nsWindow::GeckoViewSupport::OnImeReplaceText(int32_t aStart, int32_t aEnd,
     } else if (composing) {
         
         mIMERanges->Clear();
-    }
-
-    
-    if (!composing) {
-        window.RemoveIMEComposition();
     }
 
     if (mInputContext.mMayBeIMEUnaware) {
