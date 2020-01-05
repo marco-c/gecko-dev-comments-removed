@@ -93,9 +93,6 @@ browser.Context = class {
     this.knownFrames = [];
 
     
-    this.mainContentId = null;
-
-    
     this.newSession = true;
 
     this.seenEls = new element.Store();
@@ -119,7 +116,6 @@ browser.Context = class {
     this.frameManager.addMessageManagerListeners(driver.mm);
     this.getIdForBrowser = driver.getIdForBrowser.bind(driver);
     this.updateIdForBrowser = driver.updateIdForBrowser.bind(driver);
-    this._curFrameId = null;
     this._browserWasRemote = null;
     this._hasRemotenessChange = false;
   }
@@ -143,18 +139,10 @@ browser.Context = class {
 
   get curFrameId() {
     let rv = null;
-    if (this.driver.appName == "B2G") {
-      rv = this._curFrameId;
-    } else if (this.tab) {
+    if (this.tab) {
       rv = this.getIdForBrowser(this.contentBrowser);
     }
     return rv;
-  }
-
-  set curFrameId(id) {
-    if (this.driver.appName != "Firefox") {
-      this._curFrameId = id;
-    }
   }
 
   
@@ -314,11 +302,7 @@ browser.Context = class {
 
         if (target === this.contentBrowser) {
           this.updateIdForBrowser(this.contentBrowser, uid);
-          this.mainContentId = uid;
         }
-      } else {
-        this._curFrameId = uid;
-        this.mainContentId = uid;
       }
     }
 

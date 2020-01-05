@@ -110,7 +110,6 @@ this.GeckoDriver = function (appName, server) {
   this.mainFrame = null;
   
   this.curFrame = null;
-  this.mainContentFrameId = null;
   this.mozBrowserClose = null;
   this.currentFrameElement = null;
   
@@ -509,8 +508,7 @@ GeckoDriver.prototype.registerBrowser = function (id, be) {
   }
 
   let reg = {};
-  
-  let mainContent = this.curBrowser.mainContentId === null;
+
   
   
   
@@ -521,12 +519,6 @@ GeckoDriver.prototype.registerBrowser = function (id, be) {
     
     reg.id = id;
     reg.remotenessChange = this.curBrowser.register(id, be);
-  }
-
-  
-  mainContent = mainContent && this.curBrowser.mainContentId !== null;
-  if (mainContent) {
-    this.mainContentFrameId = this.curBrowser.curFrameId;
   }
 
   this.wins.set(reg.id, listenerWindow);
@@ -540,7 +532,7 @@ GeckoDriver.prototype.registerBrowser = function (id, be) {
     }
   }
 
-  return [reg, mainContent, this.capabilities.toJSON()];
+  return [reg, this.capabilities.toJSON()];
 };
 
 GeckoDriver.prototype.registerPromise = function () {
