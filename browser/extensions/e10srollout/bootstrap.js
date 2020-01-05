@@ -13,7 +13,7 @@ Cu.import("resource://gre/modules/AppConstants.jsm");
 
  
 const TEST_THRESHOLD = {
-  "beta": 0.5,  
+  "beta": 0.9,  
   "release": 1.0,  
   "esr": 1.0,  
 };
@@ -51,6 +51,10 @@ const PREF_TOGGLE_E10S         = "browser.tabs.remote.autostart.2";
 const PREF_E10S_ADDON_POLICY   = "extensions.e10s.rollout.policy";
 const PREF_E10S_ADDON_BLOCKLIST = "extensions.e10s.rollout.blocklist";
 const PREF_E10S_HAS_NONEXEMPT_ADDON = "extensions.e10s.rollout.hasAddon";
+const PREF_E10S_MULTI_OPTOUT   = "dom.ipc.multiOptOut";
+const PREF_E10S_PROCESSCOUNT   = "dom.ipc.processCount";
+const PREF_E10S_MULTI_ADDON_BLOCKS = "extensions.e10sMultiBlocksEnabling";
+const PREF_E10S_MULTI_BLOCKED_BY_ADDONS = "extensions.e10sMultiBlockedByAddons";
 
 function startup() {
   
@@ -104,7 +108,7 @@ function defineCohort() {
   let userOptedIn = optedIn();
   let disqualified = (Services.appinfo.multiprocessBlockPolicy != 0);
   let testThreshold = TEST_THRESHOLD[updateChannel];
-  let testGroup = (getUserSample() < testThreshold);
+  let testGroup = (getUserSample(false) < testThreshold);
   let hasNonExemptAddon = Preferences.get(PREF_E10S_HAS_NONEXEMPT_ADDON, false);
   let temporaryDisqualification = getTemporaryDisqualification();
   let temporaryQualification = getTemporaryQualification();
@@ -116,9 +120,12 @@ function defineCohort() {
     cohortPrefix = `addons-set${addonPolicy}-`;
   }
 
-  if (userOptedOut) {
+  let inMultiExperiment = false;
+  if (userOptedOut.e10s || userOptedOut.multi) {
+    
+    
     setCohort("optedOut");
-  } else if (userOptedIn) {
+  } else if (userOptedIn.e10s) {
     setCohort("optedIn");
   } else if (temporaryDisqualification != "") {
     
@@ -131,6 +138,7 @@ function defineCohort() {
     
     setCohort(`temp-disqualified-${temporaryDisqualification}`);
     Preferences.reset(PREF_TOGGLE_E10S);
+    Preferences.reset(PREF_E10S_PROCESSCOUNT + ".web");
   } else if (!disqualified && testThreshold < 1.0 &&
              temporaryQualification != "") {
     
@@ -138,12 +146,49 @@ function defineCohort() {
     
     setCohort(`temp-qualified-${temporaryQualification}`);
     Preferences.set(PREF_TOGGLE_E10S, true);
+    inMultiExperiment = true;
   } else if (testGroup) {
     setCohort(`${cohortPrefix}test`);
     Preferences.set(PREF_TOGGLE_E10S, true);
+    inMultiExperiment = true;
   } else {
     setCohort(`${cohortPrefix}control`);
     Preferences.reset(PREF_TOGGLE_E10S);
+    Preferences.reset(PREF_E10S_PROCESSCOUNT + ".web");
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  if (updateChannel !== "beta" ||
+      !inMultiExperiment ||
+      userOptedIn.multi ||
+      getAddonsDisqualifyForMulti()) {
+    Preferences.reset(PREF_E10S_PROCESSCOUNT + ".web");
+    return;
+  }
+
+  
+  
+  let BUCKETS = {
+    1: .25,
+    2: .5,
+    4: .75,
+    8: 1
+  };
+
+  let multiUserSample = getUserSample(true);
+  for (let sampleName of Object.getOwnPropertyNames(BUCKETS)) {
+    if (multiUserSample < BUCKETS[sampleName]) {
+      setCohort(`${cohortPrefix}multiBucket${sampleName}`);
+      Preferences.set(PREF_E10S_PROCESSCOUNT + ".web", sampleName);
+      break;
+    }
   }
 }
 
@@ -153,8 +198,9 @@ function shutdown(data, reason) {
 function uninstall() {
 }
 
-function getUserSample() {
-  let prefValue = Preferences.get(PREF_COHORT_SAMPLE, undefined);
+function getUserSample(multi) {
+  let pref = multi ? (PREF_COHORT_SAMPLE + ".multi") : PREF_COHORT_SAMPLE;
+  let prefValue = Preferences.get(pref, undefined);
   let value = 0.0;
 
   if (typeof(prefValue) == "string") {
@@ -169,7 +215,7 @@ function getUserSample() {
     value = Math.random();
   }
 
-  Preferences.set(PREF_COHORT_SAMPLE, value.toString().substr(0, 8));
+  Preferences.set(pref, value.toString().substr(0, 8));
   return value;
 }
 
@@ -183,17 +229,22 @@ function setCohort(cohortName) {
 }
 
 function optedIn() {
-  return Preferences.get(PREF_E10S_OPTED_IN, false) ||
-         Preferences.get(PREF_E10S_FORCE_ENABLED, false);
+  let e10s = Preferences.get(PREF_E10S_OPTED_IN, false) ||
+             Preferences.get(PREF_E10S_FORCE_ENABLED, false);
+  let multi = Preferences.isSet(PREF_E10S_PROCESSCOUNT);
+  return { e10s, multi };
 }
 
 function optedOut() {
   
   
   
-  return Preferences.get(PREF_E10S_FORCE_DISABLED, false) ||
-         (Preferences.isSet(PREF_TOGGLE_E10S) &&
-          Preferences.get(PREF_TOGGLE_E10S) == false);
+  let e10s = Preferences.get(PREF_E10S_FORCE_DISABLED, false) ||
+               (Preferences.isSet(PREF_TOGGLE_E10S) &&
+                Preferences.get(PREF_TOGGLE_E10S) == false);
+  let multi = Preferences.get(PREF_E10S_MULTI_OPTOUT, 0) >=
+              Services.appinfo.E10S_MULTI_EXPERIMENT;
+  return { e10s, multi };
 }
 
 
@@ -224,4 +275,9 @@ function getTemporaryQualification() {
   }
 
   return "";
+}
+
+function getAddonsDisqualifyForMulti() {
+  return Preferences.get("extensions.e10sMultiBlocksEnabling", false) &&
+         Preferences.get("extensions.e10sMultiBlockedByAddons", false);
 }
