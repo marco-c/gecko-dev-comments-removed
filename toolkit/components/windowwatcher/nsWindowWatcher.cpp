@@ -1211,7 +1211,7 @@ nsWindowWatcher::OpenWindowInternal(mozIDOMWindowProxy* aParent,
 
   
   
-  if (aCalledFromJS && parentDocShell && newDocShellItem) {
+  if (parentDocShell && newDocShellItem) {
     nsCOMPtr<nsIObserverService> obsSvc =
       mozilla::services::GetObserverService();
 
