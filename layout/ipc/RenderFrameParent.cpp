@@ -216,7 +216,6 @@ RenderFrameParent::OwnerContentChanged(nsIContent* aContent)
   
   if (lm && lm->GetCompositorBridgeChild()) {
     mLayersConnected = lm->GetCompositorBridgeChild()->SendAdoptChild(mLayersId);
-    lm->GetCompositorBridgeChild()->SendGetCompositorOptions(mLayersId, &mCompositorOptions);
     FrameLayerBuilder::InvalidateAllLayers(lm);
   }
 }
