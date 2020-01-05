@@ -58,30 +58,30 @@ if (url.search.length > 1) {
       
       let iframe = host.wrappedJSObject ? host.wrappedJSObject.target
                                         : host.target;
+      if (!iframe) {
+        throw new Error("Unable to find the targeted iframe to debug");
+      }
+
       
       
       iframe = XPCNativeWrapper(iframe);
       iframe.QueryInterface(Ci.nsIFrameLoaderOwner);
 
-      if (iframe) {
-        
-        
-        let tab = { linkedBrowser: iframe };
+      
+      
+      let tab = { linkedBrowser: iframe };
 
-        if (!DebuggerServer.initialized) {
-          DebuggerServer.init();
-          DebuggerServer.addBrowserActors();
-        }
-        let client = new DebuggerClient(DebuggerServer.connectPipe());
-
-        yield client.connect();
-        
-        let response = yield client.getTab({ tab });
-        let form = response.tab;
-        target = yield TargetFactory.forRemoteTab({client, form, chrome: false});
-      } else {
-        alert("Unable to find the targetted iframe to debug");
+      if (!DebuggerServer.initialized) {
+        DebuggerServer.init();
+        DebuggerServer.addBrowserActors();
       }
+      let client = new DebuggerClient(DebuggerServer.connectPipe());
+
+      yield client.connect();
+      
+      let response = yield client.getTab({ tab });
+      let form = response.tab;
+      target = yield TargetFactory.forRemoteTab({client, form, chrome: false});
     } else {
       target = yield targetFromURL(url);
     }
