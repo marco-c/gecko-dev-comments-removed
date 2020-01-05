@@ -32,29 +32,13 @@ ShadowLayerChild::ActorDestroy(ActorDestroyReason why)
   MOZ_ASSERT(AncestorDeletion != why,
              "shadowable layer should have been cleaned up by now");
 
-  if (AbnormalShutdown == why) {
+  if (AbnormalShutdown == why && mLayer) {
     
     
     
-    Disconnect();
-  }
-}
-
-void
-ShadowLayerChild::Disconnect()
-{
-  if (mLayer) {
     mLayer->AsLayer()->Disconnect();
     mLayer = nullptr;
   }
-}
-
- void
-ShadowLayerChild::Destroy(PLayerChild* aActor)
-{
-  ShadowLayerChild* actor = static_cast<ShadowLayerChild*>(aActor);
-  actor->Disconnect();
-  PLayerChild::Send__delete__(actor);
 }
 
 } 
