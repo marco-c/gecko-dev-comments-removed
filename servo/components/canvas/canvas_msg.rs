@@ -2,7 +2,7 @@
 
 
 
-use canvas_paint_task::{FillOrStrokeStyle, LineCapStyle, LineJoinStyle};
+use canvas_paint_task::{FillOrStrokeStyle, LineCapStyle, LineJoinStyle, CompositionOrBlending};
 use geom::matrix2d::Matrix2D;
 use geom::point::Point2D;
 use geom::rect::Rect;
@@ -46,6 +46,7 @@ pub enum Canvas2dMsg {
     SetLineJoin(LineJoinStyle),
     SetMiterLimit(f32),
     SetGlobalAlpha(f32),
+    SetGlobalComposition(CompositionOrBlending),
     SetTransform(Matrix2D<f32>),
 }
 
