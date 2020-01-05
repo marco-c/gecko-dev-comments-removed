@@ -142,7 +142,7 @@ pub enum ConstellationControlMsg {
         
         target: PipelineId,
         
-        parent: PipelineId
+        parent: PipelineId,
     },
     
     FramedContentChanged(PipelineId, SubpageId),

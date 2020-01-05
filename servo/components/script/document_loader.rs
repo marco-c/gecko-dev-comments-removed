@@ -5,10 +5,13 @@
 
 
 
+use dom::bindings::js::JS;
+use dom::document::Document;
 use msg::constellation_msg::PipelineId;
 use net_traits::AsyncResponseTarget;
 use net_traits::{PendingAsyncLoad, ResourceThread, LoadContext};
 use std::sync::Arc;
+use std::thread;
 use url::Url;
 
 #[derive(JSTraceable, PartialEq, Clone, Debug, HeapSizeOf)]
@@ -37,6 +40,50 @@ impl LoadType {
             LoadType::Script(_) => LoadContext::Script,
             LoadType::Subframe(_) | LoadType::PageSource(_) => LoadContext::Browsing,
             LoadType::Stylesheet(_) => LoadContext::Style
+        }
+    }
+}
+
+
+
+
+#[derive(JSTraceable, HeapSizeOf)]
+#[must_root]
+pub struct LoadBlocker {
+    
+    doc: JS<Document>,
+    
+    load: Option<LoadType>,
+}
+
+impl LoadBlocker {
+    
+    pub fn new(doc: &Document, load: LoadType) -> LoadBlocker {
+        doc.add_blocking_load(load.clone());
+        LoadBlocker {
+            doc: JS::from_ref(doc),
+            load: Some(load),
+        }
+    }
+
+    
+    pub fn terminate(blocker: &mut Option<LoadBlocker>) {
+        if let Some(this) = blocker.as_mut() {
+            this.doc.finish_load(this.load.take().unwrap());
+        }
+        *blocker = None;
+    }
+
+    
+    pub fn url(&self) -> Option<&Url> {
+        self.load.as_ref().map(LoadType::url)
+    }
+}
+
+impl Drop for LoadBlocker {
+    fn drop(&mut self) {
+        if !thread::panicking() {
+            assert!(self.load.is_none());
         }
     }
 }
@@ -74,11 +121,16 @@ impl DocumentLoader {
     }
 
     
+    pub fn add_blocking_load(&mut self, load: LoadType) {
+        self.blocking_loads.push(load);
+    }
+
+    
     
     pub fn prepare_async_load(&mut self, load: LoadType) -> PendingAsyncLoad {
         let context = load.to_load_context();
         let url = load.url().clone();
-        self.blocking_loads.push(load);
+        self.add_blocking_load(load);
         PendingAsyncLoad::new(context, (*self.resource_thread).clone(), url, self.pipeline)
     }
 
