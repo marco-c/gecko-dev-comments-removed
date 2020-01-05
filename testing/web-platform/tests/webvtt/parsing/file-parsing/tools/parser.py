@@ -474,7 +474,7 @@ class VTTCueParser(W3CParser):
                 
                 else:
                     linepos = value
-                    linealign = ""
+                    linealign = None
 
                 
                 if not re.search(r'\d', linepos):
@@ -507,6 +507,22 @@ class VTTCueParser(W3CParser):
                     number = float(linepos)
 
                 
+                if linealign == "start":
+                    self.cue.line_alignment = 'start'
+
+                
+                elif linealign == "center":
+                    self.cue.line_alignment = 'center'
+
+                
+                elif linealign == "end":
+                    self.cue.line_alignment = 'end'
+
+                
+                elif linealign != None:
+                    continue
+
+                
                 self.cue.line = number
 
                 
@@ -514,18 +530,6 @@ class VTTCueParser(W3CParser):
                     self.cue.snap_to_lines = False
                 else:
                     self.cue.snap_to_lines = True
-
-                
-                if linealign == "start":
-                    self.cue.line_alignment = 'start'
-
-                
-                if linealign == "center":
-                    self.cue.line_alignment = 'center'
-
-                
-                if linealign == "end":
-                    self.cue.line_alignment = 'end'
 
             elif name == 'position':
                 
@@ -537,7 +541,7 @@ class VTTCueParser(W3CParser):
                 
                 else:
                     colpos = value
-                    colalign = ""
+                    colalign = None
 
                 
                 number = self.parse_percentage_string(colpos)
@@ -545,19 +549,23 @@ class VTTCueParser(W3CParser):
                     continue
 
                 
-                self.cue.position = number
-
-                
                 if colalign == "line-left":
                     self.cue.line_alignment = 'line-left'
 
                 
-                if colalign == "center":
+                elif colalign == "center":
                     self.cue.line_alignment = 'center'
 
                 
-                if colalign == "line-right":
+                elif colalign == "line-right":
                     self.cue.line_alignment = 'line-right'
+
+                
+                elif colalign != None:
+                    continue
+
+                
+                self.cue.position = number
 
             elif name == 'size':
                 

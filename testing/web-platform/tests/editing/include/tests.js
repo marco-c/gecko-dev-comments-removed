@@ -5534,6 +5534,25 @@ function normalizeSerializedStyle(wrapper) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function runConformanceTest(browserTest) {
 
     document.getElementById("test-container").innerHTML = "<div contenteditable></div><p>test";
