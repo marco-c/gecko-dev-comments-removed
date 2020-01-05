@@ -147,6 +147,7 @@ public:
     
     NS_IMETHOD SetupFallbackChannel(const char *aFallbackKey) override;
     NS_IMETHOD ForceIntercepted(uint64_t aInterceptionID) override;
+    virtual mozilla::net::nsHttpChannel * QueryHttpChannelImpl(void) override;
     
     NS_IMETHOD SetPriority(int32_t value) override;
     

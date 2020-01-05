@@ -371,6 +371,8 @@ HttpChannelParent::DoAsyncOpen(  const URIParams&           aURI,
   if (NS_FAILED(rv))
     return SendFailedAsyncOpen(rv);
 
+  
+  
   mChannel = static_cast<nsHttpChannel *>(channel.get());
 
   
@@ -591,6 +593,9 @@ HttpChannelParent::ConnectChannel(const uint32_t& registrarId, const bool& shoul
        "[this=%p, id=%lu]\n", this, registrarId));
   nsCOMPtr<nsIChannel> channel;
   rv = NS_LinkRedirectChannels(registrarId, this, getter_AddRefs(channel));
+  
+  
+  
   mChannel = static_cast<nsHttpChannel*>(channel.get());
   LOG(("  found channel %p, rv=%08x", mChannel.get(), rv));
 
@@ -1089,7 +1094,23 @@ HttpChannelParent::OnStartRequest(nsIRequest *aRequest, nsISupports *aContext)
   MOZ_RELEASE_ASSERT(!mDivertingFromChild,
     "Cannot call OnStartRequest if diverting is set!");
 
-  nsHttpChannel *chan = static_cast<nsHttpChannel *>(aRequest);
+  
+  
+  nsHttpChannel *chan = nullptr;
+  nsCOMPtr<nsIHttpChannelInternal> httpChannelInternal(do_QueryInterface(aRequest));
+  if (httpChannelInternal) {
+    chan = httpChannelInternal->QueryHttpChannelImpl();
+  }
+
+  if (!chan) {
+    LOG(("  aRequest is not nsHttpChannel"));
+    NS_ERROR("Expecting only nsHttpChannel as aRequest in HttpChannelParent::OnStartRequest");
+    return NS_ERROR_UNEXPECTED;
+  }
+
+  MOZ_ASSERT(mChannel == chan,
+             "HttpChannelParent getting OnStartRequest from a different nsHttpChannel instance");
+
   nsHttpResponseHead *responseHead = chan->GetResponseHead();
   nsHttpRequestHead  *requestHead = chan->GetRequestHead();
   bool isFromCache = false;
@@ -1133,10 +1154,10 @@ HttpChannelParent::OnStartRequest(nsIRequest *aRequest, nsISupports *aContext)
   UpdateAndSerializeSecurityInfo(secInfoSerialization);
 
   uint16_t redirectCount = 0;
-  mChannel->GetRedirectCount(&redirectCount);
+  chan->GetRedirectCount(&redirectCount);
 
   nsCOMPtr<nsISupports> cacheKey;
-  mChannel->GetCacheKey(getter_AddRefs(cacheKey));
+  chan->GetCacheKey(getter_AddRefs(cacheKey));
   uint32_t cacheKeyValue = 0;
   if (cacheKey) {
     nsCOMPtr<nsISupportsPRUint32> container = do_QueryInterface(cacheKey);
@@ -1151,7 +1172,7 @@ HttpChannelParent::OnStartRequest(nsIRequest *aRequest, nsISupports *aContext)
   }
 
   nsAutoCString altDataType;
-  mChannel->GetAlternativeDataType(altDataType);
+  chan->GetAlternativeDataType(altDataType);
 
   
   requestHead->Enter();
@@ -1164,7 +1185,7 @@ HttpChannelParent::OnStartRequest(nsIRequest *aRequest, nsISupports *aContext)
                           isFromCache,
                           mCacheEntry ? true : false,
                           expirationTime, cachedCharset, secInfoSerialization,
-                          mChannel->GetSelfAddr(), mChannel->GetPeerAddr(),
+                          chan->GetSelfAddr(), chan->GetPeerAddr(),
                           redirectCount,
                           cacheKeyValue,
                           altDataType))
