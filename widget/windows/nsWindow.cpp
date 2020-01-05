@@ -7574,7 +7574,8 @@ nsWindow::DealWithPopups(HWND aWnd, UINT aMessage,
       } else if (LOWORD(aWParam) == WA_CLICKACTIVE) {
         
         
-        if (EventIsInsideWindow(popupWindow) ||
+        nsWindow* window = WinUtils::GetNSWindowPtr(aWnd);
+        if ((window && window->IsPopup()) ||
             !GetPopupsToRollup(rollupListener, &popupsToRollup)) {
           return false;
         }
