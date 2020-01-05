@@ -105,6 +105,7 @@ LayoutView.prototype = {
 
 
 
+
       setSelectedNode: (nodeFront) => {
         this.inspector.selection.setNodeFront(nodeFront, "layout-panel");
       },
@@ -161,6 +162,28 @@ LayoutView.prototype = {
       onShowBoxModelHighlighterForNode: (nodeFront, options) => {
         let toolbox = this.inspector.toolbox;
         toolbox.highlighterUtils.highlightNodeFront(nodeFront, options);
+      },
+
+      
+
+
+
+
+
+
+
+
+
+
+
+
+      onShowGridAreaHighlight: (node, gridAreaName, color) => {
+        let { highlighterSettings } = this.store.getState();
+
+        highlighterSettings.showGridArea = gridAreaName;
+        highlighterSettings.color = color;
+
+        this.highlighters.showGridHighlighter(node, highlighterSettings);
       },
 
       

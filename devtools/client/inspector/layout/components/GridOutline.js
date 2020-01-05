@@ -23,6 +23,7 @@ module.exports = createClass({
 
   propTypes: {
     grids: PropTypes.arrayOf(PropTypes.shape(Types.grid)).isRequired,
+    onShowGridAreaHighlight: PropTypes.func.isRequired,
   },
 
   mixins: [ addons.PureRenderMixin ],
@@ -39,29 +40,48 @@ module.exports = createClass({
     });
   },
 
-  renderGridCell(columnNumber, rowNumber, color) {
-    return dom.rect(
-      {
-        className: "grid-outline-cell",
-        x: columnNumber,
-        y: rowNumber,
-        width: 10,
-        height: 10,
-        stroke: color,
-      }
+  
+
+
+
+
+
+
+
+
+
+
+
+  getGridAreaName(columnNumber, rowNumber, areas) {
+    const gridArea = areas.find(area =>
+      (area.rowStart <= rowNumber && area.rowEnd > rowNumber) &&
+      (area.columnStart <= columnNumber && area.columnEnd > columnNumber)
     );
+
+    if (!gridArea) {
+      return null;
+    }
+
+    return gridArea.name;
   },
 
-  renderGridFragment({ color, gridFragments }) {
+  
+
+
+
+
+
+  renderGrid(grid) {
+    const { id, color, gridFragments } = grid;
     
     
-    const { rows, cols } = gridFragments[0];
-    const numOfColLines = cols.lines.length - 1;
-    const numOfRowLines = rows.lines.length - 1;
+    const { rows, cols, areas } = gridFragments[0];
+    const numberOfColumns = cols.lines.length - 1;
+    const numberOfRows = rows.lines.length - 1;
     const rectangles = [];
 
     
-    const border = this.renderGridOutlineBorder(numOfRowLines, numOfColLines, color);
+    const border = this.renderGridOutlineBorder(numberOfRows, numberOfColumns, color);
     rectangles.push(border);
 
     let x = 1;
@@ -70,9 +90,13 @@ module.exports = createClass({
     const height = 10;
 
     
-    for (let row = 0; row < numOfRowLines; row++) {
-      for (let col = 0; col < numOfColLines; col++) {
-        rectangles.push(this.renderGridCell(x, y, color));
+    for (let rowNumber = 1; rowNumber <= numberOfRows; rowNumber++) {
+      for (let columnNumber = 1; columnNumber <= numberOfColumns; columnNumber++) {
+        const gridAreaName = this.getGridAreaName(columnNumber, rowNumber, areas);
+        const gridCell = this.renderGridCell(id, x, y, rowNumber, columnNumber, color,
+          gridAreaName);
+
+        rectangles.push(gridCell);
         x += width;
       }
 
@@ -83,26 +107,87 @@ module.exports = createClass({
     return rectangles;
   },
 
-  renderGridOutline(gridFragments) {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  renderGridCell(id, x, y, rowNumber, columnNumber, color, gridAreaName) {
+    return dom.rect(
+      {
+        className: "grid-outline-cell",
+        "data-grid-area-name": gridAreaName,
+        "data-grid-id": id,
+        x,
+        y,
+        width: 10,
+        height: 10,
+        fill: "none",
+        stroke: color,
+        onMouseOver: this.onMouseOverCell,
+        onMouseOut: this.onMouseLeaveCell,
+      }
+    );
+  },
+
+  renderGridOutline(grids) {
     return dom.g(
       {
         className: "grid-cell-group",
       },
-      gridFragments.map(gridFragment => this.renderGridFragment(gridFragment))
+      grids.map(grid => this.renderGrid(grid))
     );
   },
 
-  renderGridOutlineBorder(numberOfRows, numberOfCols, color) {
+  renderGridOutlineBorder(numberOfRows, numberOfColumns, color) {
     return dom.rect(
       {
         className: "grid-outline-border",
         x: 1,
         y: 1,
-        width: numberOfCols * 10,
+        width: numberOfColumns * 10,
         height: numberOfRows * 10,
         stroke: color,
       }
     );
+  },
+
+  onMouseLeaveCell({ target }) {
+    const {
+      grids,
+      onShowGridAreaHighlight,
+    } = this.props;
+    const id = target.getAttribute("data-grid-id");
+    const color = target.getAttribute("stroke");
+
+    target.setAttribute("fill", "none");
+
+    onShowGridAreaHighlight(grids[id].nodeFront, null, color);
+  },
+
+  onMouseOverCell({ target }) {
+    const {
+      grids,
+      onShowGridAreaHighlight,
+    } = this.props;
+    const name = target.getAttribute("data-grid-area-name");
+    const id = target.getAttribute("data-grid-id");
+    const color = target.getAttribute("stroke");
+
+    target.setAttribute("fill", color);
+
+    onShowGridAreaHighlight(grids[id].nodeFront, name, color);
   },
 
   render() {

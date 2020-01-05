@@ -241,9 +241,6 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     pageListenerTarget.removeEventListener("pagehide", this.onPageHide);
 
     this.markup.destroy();
-
-    
-    this._clearCache();
     AutoRefreshHighlighter.prototype.destroy.call(this);
   },
 
@@ -327,6 +324,9 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
     
     this._clearCache();
+
+    
+    this._hide();
 
     return this._update();
   },
