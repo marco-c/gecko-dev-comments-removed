@@ -2399,6 +2399,12 @@ SeekingState::SeekCompleted()
   }
 
   
+  
+  if (target.IsVideoOnly()) {
+    mMaster->mOnPlaybackEvent.Notify(MediaEventType::VideoOnlySeekCompleted);
+  }
+
+  
   SLOG("Seek completed, mCurrentPosition=%" PRId64,
        mMaster->mCurrentPosition.Ref());
 
