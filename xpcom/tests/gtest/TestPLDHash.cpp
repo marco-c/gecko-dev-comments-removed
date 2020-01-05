@@ -5,6 +5,8 @@
 
 
 #include "PLDHashTable.h"
+#include "nsCOMPtr.h"
+#include "nsServiceManagerUtils.h"
 #include "gtest/gtest.h"
 
 
