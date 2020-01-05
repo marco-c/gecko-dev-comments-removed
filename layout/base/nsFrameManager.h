@@ -140,6 +140,19 @@ public:
 
 
   mozilla::UndisplayedNode* GetAllDisplayContentsIn(nsIContent* aParentContent);
+
+  
+
+
+
+  mozilla::UndisplayedNode* GetDisplayContentsNodeFor(
+      const nsIContent* aContent) {
+    if (!mDisplayContentsMap) {
+      return nullptr;
+    }
+    return GetUndisplayedNodeInMapFor(mDisplayContentsMap, aContent);
+  }
+
   
 
 
@@ -208,6 +221,9 @@ public:
 protected:
   static nsStyleContext* GetStyleContextInMap(UndisplayedMap* aMap,
                                               nsIContent* aContent);
+  static mozilla::UndisplayedNode*
+    GetUndisplayedNodeInMapFor(UndisplayedMap* aMap,
+                               const nsIContent* aContent);
   static mozilla::UndisplayedNode*
     GetAllUndisplayedNodesInMapFor(UndisplayedMap* aMap,
                                    nsIContent* aParentContent);
