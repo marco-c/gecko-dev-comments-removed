@@ -129,11 +129,42 @@ pub struct JS<T> {
     ptr: NonZero<*const T>
 }
 
+impl<T> JS<T> {
+    
+    fn to_layout(self) -> LayoutJS<T> {
+        LayoutJS {
+            ptr: self.ptr.clone()
+        }
+    }
+}
+
+
+
+pub struct LayoutJS<T> {
+    ptr: NonZero<*const T>
+}
+
+impl<T: Reflectable> LayoutJS<T> {
+    
+    pub unsafe fn get_jsobject(&self) -> *mut JSObject {
+        (**self.ptr).reflector().get_jsobject()
+    }
+}
+
 impl<T> Copy for JS<T> {}
+
+impl<T> Copy for LayoutJS<T> {}
 
 impl<T> PartialEq for JS<T> {
     #[allow(unrooted_must_root)]
     fn eq(&self, other: &JS<T>) -> bool {
+        self.ptr == other.ptr
+    }
+}
+
+impl<T> PartialEq for LayoutJS<T> {
+    #[allow(unrooted_must_root)]
+    fn eq(&self, other: &LayoutJS<T>) -> bool {
         self.ptr == other.ptr
     }
 }
@@ -147,12 +178,31 @@ impl <T> Clone for JS<T> {
     }
 }
 
+impl <T> Clone for LayoutJS<T> {
+    #[inline]
+    fn clone(&self) -> LayoutJS<T> {
+        LayoutJS {
+            ptr: self.ptr.clone()
+        }
+    }
+}
+
 impl JS<Node> {
     
     pub unsafe fn from_trusted_node_address(inner: TrustedNodeAddress) -> JS<Node> {
         let TrustedNodeAddress(addr) = inner;
         assert!(!addr.is_null());
         JS {
+            ptr: NonZero::new(addr as *const Node)
+        }
+    }
+}
+
+impl LayoutJS<Node> {
+    
+    pub unsafe fn from_trusted_node_address(inner: TrustedNodeAddress) -> LayoutJS<Node> {
+        let TrustedNodeAddress(addr) = inner;
+        LayoutJS {
             ptr: NonZero::new(addr as *const Node)
         }
     }
@@ -298,6 +348,12 @@ impl<T: Reflectable> MutNullableJS<T> {
 
     
     
+    pub unsafe fn get_inner_as_layout(&self) -> Option<LayoutJS<T>> {
+        self.get_inner().map(|js| js.to_layout())
+    }
+
+    
+    
     pub fn or_init<F>(&self, cb: F) -> Temporary<T>
         where F: FnOnce() -> Temporary<T>
     {
@@ -315,7 +371,6 @@ impl<T: Reflectable> MutNullableJS<T> {
 impl<T: Reflectable> JS<T> {
     
     
-    
     pub unsafe fn unsafe_get(&self) -> *const T {
         *self.ptr
     }
@@ -328,19 +383,28 @@ impl<T: Reflectable> JS<T> {
     }
 }
 
-impl<From> JS<From> {
+impl<T: Reflectable> LayoutJS<T> {
     
     
-    pub unsafe fn transmute<To>(self) -> JS<To> {
-        mem::transmute(self)
+    
+    pub unsafe fn unsafe_get(&self) -> *const T {
+        *self.ptr
     }
+}
 
+impl<From> JS<From> {
     
     pub unsafe fn transmute_copy<To>(&self) -> JS<To> {
         mem::transmute_copy(self)
     }
 }
 
+impl<From> LayoutJS<From> {
+    
+    pub unsafe fn transmute_copy<To>(&self) -> LayoutJS<To> {
+        mem::transmute_copy(self)
+    }
+}
 
 
 pub trait RootedReference<T> {
