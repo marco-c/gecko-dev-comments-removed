@@ -810,7 +810,8 @@ protected:
     nsTArray<Pair<nsString, RefPtr<MediaInputPort>>> mTrackPorts;
   };
 
-  nsresult PlayInternal();
+  
+  void PlayInternal(ErrorResult& aRv);
 
   
 
