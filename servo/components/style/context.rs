@@ -29,7 +29,7 @@ use stylist::Stylist;
 use thread_state;
 use time;
 use timer::Timer;
-use traversal::DomTraversal;
+use traversal::{DomTraversal, TraversalFlags};
 
 
 pub struct ThreadLocalStyleContextCreationInfo {
@@ -90,7 +90,7 @@ pub struct SharedStyleContext<'a> {
     pub quirks_mode: QuirksMode,
 
     
-    pub animation_only_restyle: bool,
+    pub traversal_flags: TraversalFlags,
 }
 
 impl<'a> SharedStyleContext<'a> {
