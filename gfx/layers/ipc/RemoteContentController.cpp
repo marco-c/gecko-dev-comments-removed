@@ -79,9 +79,15 @@ RemoteContentController::HandleTap(TapType aTapType,
     
     
     
+    
+    
     MOZ_ASSERT(XRE_IsParentProcess());
-    MOZ_ASSERT(NS_IsMainThread());
-    tab->SendHandleTap(aTapType, aPoint, aModifiers, aGuid, aInputBlockId);
+    if (NS_IsMainThread()) {
+      tab->SendHandleTap(aTapType, aPoint, aModifiers, aGuid, aInputBlockId);
+    } else {
+      NS_DispatchToMainThread(NewRunnableMethod<TapType, const LayoutDevicePoint&, Modifiers, const ScrollableLayerGuid&, uint64_t>
+        (tab, &dom::TabParent::SendHandleTap, aTapType, aPoint, aModifiers, aGuid, aInputBlockId));
+    }
   }
 }
 
