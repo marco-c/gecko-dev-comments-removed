@@ -2768,16 +2768,6 @@ public:
     return mHasScrollLinkedEffect;
   }
 
-  bool MayHavePluginFramesForPrinting()
-  {
-    return mMayHavePluginFramesForPrinting;
-  }
-
-  void SetMayHavePluginFramesForPrinting()
-  {
-    mMayHavePluginFramesForPrinting = true;
-  }
-
 protected:
   bool GetUseCounter(mozilla::UseCounter aUseCounter)
   {
@@ -3073,10 +3063,6 @@ protected:
 
   
   bool mEverInForeground : 1;
-
-  
-  
-  bool mMayHavePluginFramesForPrinting : 1;
 
   enum Type {
     eUnknown, 
