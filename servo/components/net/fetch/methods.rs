@@ -5,7 +5,7 @@
 use fetch::cors_cache::{BasicCORSCache, CORSCache, CacheRequestDetails};
 use fetch::response::ResponseMethods;
 use http_loader::{NetworkHttpRequestFactory, WrappedHttpResponse};
-use http_loader::{create_http_connector, obtain_response};
+use http_loader::{create_http_connector, obtain_response, read_block, ReadResult};
 use hyper::client::response::Response as HyperResponse;
 use hyper::header::{Accept, CacheControl, IfMatch, IfRange, IfUnmodifiedSince, Location};
 use hyper::header::{AcceptLanguage, ContentLength, ContentLanguage, HeaderView, Pragma};
@@ -27,6 +27,7 @@ use std::cell::RefCell;
 use std::io::Read;
 use std::rc::Rc;
 use std::str::FromStr;
+use std::sync::{Arc, Mutex};
 use std::thread;
 use url::idna::domain_to_ascii;
 use url::{Origin as UrlOrigin, OpaqueOrigin, Url, UrlParser, whatwg_scheme_type_mapper};
@@ -35,8 +36,9 @@ use util::thread::spawn_named;
 pub fn fetch_async(request: Request, listener: Box<AsyncFetchListener + Send>) {
     spawn_named(format!("fetch for {:?}", request.current_url_string()), move || {
         let request = Rc::new(request);
-        let res = fetch(request);
-        listener.response_available(res);
+        let fetch_response = fetch(request);
+        fetch_response.wait_until_done();
+        listener.response_available(fetch_response);
     })
 }
 
@@ -140,9 +142,7 @@ fn main_fetch(request: Rc<Request>, cors_flag: bool, recursive_flag: bool) -> Re
     
 
     
-    if !request.synchronous && !recursive_flag {
-        
-    }
+    
 
     
     let mut response = if response.is_none() {
@@ -230,7 +230,8 @@ fn main_fetch(request: Rc<Request>, cors_flag: bool, recursive_flag: bool) -> Re
             {
             
             
-            *internal_response.body.borrow_mut() = ResponseBody::Empty;
+            let mut body = internal_response.body.lock().unwrap();
+            *body = ResponseBody::Empty;
         }
 
         
@@ -250,7 +251,7 @@ fn main_fetch(request: Rc<Request>, cors_flag: bool, recursive_flag: bool) -> Re
 
     
     if request.synchronous {
-        
+        response.get_actual_response().wait_until_done();
         return response;
     }
 
@@ -274,19 +275,11 @@ fn main_fetch(request: Rc<Request>, cors_flag: bool, recursive_flag: bool) -> Re
         
         
 
-        match *internal_response.body.borrow() {
-            
-            ResponseBody::Empty => {
-                
-                
-            },
+        
+        internal_response.wait_until_done();
 
-            
-            _ => {
-                
-                
-            }
-        };
+        
+        
     }
 
     
@@ -544,11 +537,12 @@ fn http_redirect_fetch(request: Rc<Request>,
     let location = match response.get_actual_response().headers.get::<Location>() {
         Some(&Location(ref location)) => location.clone(),
         
-        _ => return Response::network_error(),
+        _ => return Response::network_error()
     };
 
     
-    let location_url = UrlParser::new().base_url(&request.current_url()).parse(&*location);
+    let response_url = response.get_actual_response().url.as_ref().unwrap();
+    let location_url = UrlParser::new().base_url(response_url).parse(&*location);
 
     
     let location_url = match location_url {
@@ -663,23 +657,32 @@ fn http_network_or_cache_fetch(request: Rc<Request>,
         http_request.headers.borrow_mut().set(UserAgent(global_user_agent().to_owned()));
     }
 
-    
-    if http_request.cache_mode.get() == CacheMode::Default && is_no_store_cache(&http_request.headers.borrow()) {
-        http_request.cache_mode.set(CacheMode::NoStore);
-    }
-
-    
-    if http_request.cache_mode.get() == CacheMode::Reload {
+    match http_request.cache_mode.get() {
 
         
-        if !http_request.headers.borrow().has::<Pragma>() {
-            http_request.headers.borrow_mut().set(Pragma::NoCache);
-        }
+        CacheMode::Default if is_no_store_cache(&http_request.headers.borrow()) => {
+            http_request.cache_mode.set(CacheMode::NoStore);
+        },
 
         
-        if !http_request.headers.borrow().has::<CacheControl>() {
-            http_request.headers.borrow_mut().set(CacheControl(vec![CacheDirective::NoCache]));
-        }
+        CacheMode::NoCache if !http_request.headers.borrow().has::<CacheControl>() => {
+            http_request.headers.borrow_mut().set(CacheControl(vec![CacheDirective::MaxAge(0)]));
+        },
+
+        
+        CacheMode::Reload => {
+            
+            if !http_request.headers.borrow().has::<Pragma>() {
+                http_request.headers.borrow_mut().set(Pragma::NoCache);
+            }
+
+            
+            if !http_request.headers.borrow().has::<CacheControl>() {
+                http_request.headers.borrow_mut().set(CacheControl(vec![CacheDirective::NoCache]));
+            }
+        },
+
+        _ => {}
     }
 
     
@@ -835,14 +838,43 @@ fn http_network_fetch(request: Rc<Request>,
     let mut response = Response::new();
     match wrapped_response {
         Ok(mut res) => {
-            
             response.url = Some(res.response.url.clone());
             response.status = Some(res.response.status);
             response.headers = res.response.headers.clone();
 
-            let mut body = vec![];
-            res.response.read_to_end(&mut body);
-            *response.body.borrow_mut() = ResponseBody::Done(body);
+            let res_body = response.body.clone();
+            thread::spawn(move || {
+
+                *res_body.lock().unwrap() = ResponseBody::Receiving(vec![]);
+                let mut new_body = vec![];
+                res.response.read_to_end(&mut new_body);
+
+                let mut body = res_body.lock().unwrap();
+                assert!(*body != ResponseBody::Empty);
+                *body = ResponseBody::Done(new_body);
+
+                
+                
+                
+
+                
+                
+                
+                
+                
+                
+                
+                
+                
+
+                
+
+                
+                
+                
+                
+                
+            });
         },
         Err(e) =>
             response.termination_reason = Some(TerminationReason::Fatal)

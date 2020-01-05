@@ -8,6 +8,7 @@ use hyper::header::{AccessControlExposeHeaders, Headers};
 use hyper::status::StatusCode;
 use std::ascii::AsciiExt;
 use std::cell::{Cell, RefCell};
+use std::sync::{Arc, Mutex};
 use url::Url;
 
 
@@ -31,7 +32,7 @@ pub enum TerminationReason {
 
 
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum ResponseBody {
     Empty, 
     Receiving(Vec<u8>),
@@ -81,7 +82,7 @@ pub struct Response {
     
     pub status: Option<StatusCode>,
     pub headers: Headers,
-    pub body: RefCell<ResponseBody>,
+    pub body: Arc<Mutex<ResponseBody>>,
     pub cache_state: CacheState,
     pub https_state: HttpsState,
     
@@ -100,7 +101,7 @@ impl Response {
             url_list: RefCell::new(vec![]),
             status: None,
             headers: Headers::new(),
-            body: RefCell::new(ResponseBody::Empty),
+            body: Arc::new(Mutex::new(ResponseBody::Empty)),
             cache_state: CacheState::None,
             https_state: HttpsState::None,
             internal_response: None,
@@ -112,6 +113,11 @@ impl Response {
         match self.response_type {
             ResponseType::Error => true,
             _ => false
+        }
+    }
+
+    pub fn wait_until_done(&self) {
+        while !self.body.lock().unwrap().is_done() && !self.is_network_error() {
         }
     }
 
@@ -188,14 +194,14 @@ impl Response {
                 response.url = None;
                 response.headers = Headers::new();
                 response.status = None;
-                response.body = RefCell::new(ResponseBody::Empty);
+                response.body = Arc::new(Mutex::new(ResponseBody::Empty));
                 response.cache_state = CacheState::None;
             },
 
             ResponseType::OpaqueRedirect => {
                 response.headers = Headers::new();
                 response.status = None;
-                response.body = RefCell::new(ResponseBody::Empty);
+                response.body = Arc::new(Mutex::new(ResponseBody::Empty));
                 response.cache_state = CacheState::None;
             }
         }
