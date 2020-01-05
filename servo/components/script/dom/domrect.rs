@@ -2,74 +2,75 @@
 
 
 
-use app_units::Au;
 use dom::bindings::codegen::Bindings::DOMRectBinding;
 use dom::bindings::codegen::Bindings::DOMRectBinding::DOMRectMethods;
+use dom::bindings::codegen::Bindings::DOMRectReadOnlyBinding::DOMRectReadOnlyMethods;
+use dom::bindings::error::Fallible;
 use dom::bindings::global::GlobalRef;
 use dom::bindings::js::Root;
-use dom::bindings::num::Finite;
-use dom::bindings::utils::{Reflector, reflect_dom_object};
-use dom::window::Window;
+use dom::bindings::utils::reflect_dom_object;
+use dom::domrectreadonly::DOMRectReadOnly;
 
 #[dom_struct]
 pub struct DOMRect {
-    reflector_: Reflector,
-    top: f32,
-    bottom: f32,
-    left: f32,
-    right: f32,
+    rect: DOMRectReadOnly,
 }
 
 impl DOMRect {
-    fn new_inherited(top: Au, bottom: Au,
-                         left: Au, right: Au) -> DOMRect {
+    fn new_inherited(x: f64, y: f64, width: f64, height: f64) -> DOMRect {
         DOMRect {
-            top: top.to_nearest_px() as f32,
-            bottom: bottom.to_nearest_px() as f32,
-            left: left.to_nearest_px() as f32,
-            right: right.to_nearest_px() as f32,
-            reflector_: Reflector::new(),
+            rect: DOMRectReadOnly::new_inherited(x, y, width, height),
         }
     }
 
-    pub fn new(window: &Window,
-               top: Au, bottom: Au,
-               left: Au, right: Au) -> Root<DOMRect> {
-        reflect_dom_object(box DOMRect::new_inherited(top, bottom, left, right),
-                           GlobalRef::Window(window), DOMRectBinding::Wrap)
+    pub fn new(global: GlobalRef, x: f64, y: f64, width: f64, height: f64) -> Root<DOMRect> {
+        reflect_dom_object(box DOMRect::new_inherited(x, y, width, height), global, DOMRectBinding::Wrap)
+    }
+
+    pub fn Constructor(global: GlobalRef,
+                        x: f64, y: f64, width: f64, height: f64) -> Fallible<Root<DOMRect>> {
+        Ok(DOMRect::new(global, x, y, width, height))
     }
 }
 
 impl DOMRectMethods for DOMRect {
     
-    fn Top(&self) -> Finite<f32> {
-        Finite::wrap(self.top)
+    fn X(&self) -> f64 {
+        self.rect.X()
     }
 
     
-    fn Bottom(&self) -> Finite<f32> {
-        Finite::wrap(self.bottom)
+    fn SetX(&self, value: f64) {
+        self.rect.set_x(value);
     }
 
     
-    fn Left(&self) -> Finite<f32> {
-        Finite::wrap(self.left)
+    fn Y(&self) -> f64 {
+        self.rect.Y()
     }
 
     
-    fn Right(&self) -> Finite<f32> {
-        Finite::wrap(self.right)
+    fn SetY(&self, value: f64) {
+        self.rect.set_y(value);
     }
 
     
-    fn Width(&self) -> Finite<f32> {
-        let result = (self.right - self.left).abs();
-        Finite::wrap(result)
+    fn Width(&self) -> f64 {
+        self.rect.Width()
     }
 
     
-    fn Height(&self) -> Finite<f32> {
-        let result = (self.bottom - self.top).abs();
-        Finite::wrap(result)
+    fn SetWidth(&self, value: f64) {
+        self.rect.set_width(value);
+    }
+
+    
+    fn Height(&self) -> f64 {
+        self.rect.Height()
+    }
+
+    
+    fn SetHeight(&self, value: f64) {
+        self.rect.set_height(value);
     }
 }
