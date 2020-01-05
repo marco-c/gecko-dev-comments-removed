@@ -677,8 +677,6 @@ impl Document {
 
         
         
-        
-        
         match self.idmap.find_mut(&id) {
             Some(elements) => {
                 let new_node = NodeCast::from(element);
