@@ -1,12 +1,8 @@
 "use strict";
 
 module.exports = {
-  "extends": "../../.eslintrc.js",
-
   "globals": {
     "addMessageListener": false,
-    "Components": true,
-    "dump": true,
     "removeMessageListener": false,
     "sendAsyncMessage": false,
     "TextDecoder": false,
@@ -34,10 +30,7 @@ module.exports = {
       "requireReturn": false,
       "requireReturnDescription": false,
     }],
-
-    
-    
-
+   
     
     "array-bracket-spacing": ["error", "never"],
 
@@ -46,11 +39,7 @@ module.exports = {
 
     
     "space-in-parens": ["error", "never"],
-
-    
-    
-    "brace-style": ["error", "1tbs", {"allowSingleLine": true}],
-
+   
     
     "comma-style": "error",
 
@@ -64,17 +53,11 @@ module.exports = {
     "indent": ["error", 2, {"SwitchCase": 1}],
 
     
-    "key-spacing": ["error", {"beforeColon": false, "afterColon": true, "mode": "minimum"}],
-
-    
     "new-parens": "error",
 
     
     "no-array-constructor": "error",
-
-    
-    
-
+   
     
     
     
@@ -98,9 +81,6 @@ module.exports = {
     "semi": ["error", "always"],
 
     
-    "space-infix-ops": ["error", {"int32Hint": true}],
-
-    
     
     "block-scoped-var": "error",
 
@@ -110,10 +90,6 @@ module.exports = {
 
     
     "complexity": ["error", {"max": 20}],
-
-    
-    
-    
 
     
     "dot-location": ["error", "property"],
