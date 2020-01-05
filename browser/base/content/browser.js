@@ -1563,20 +1563,6 @@ var gBrowserInit = {
       this.gmpInstallManager.simpleCheckAndInstall().then(null, () => {});
     }, {timeout: 1000 * 60});
 
-    
-    
-    
-    
-    
-    
-    setTimeout(() => {
-      let v = document.createElementNS("http://www.w3.org/1999/xhtml", "video");
-      let aacWorks = v.canPlayType("audio/mp4") != "";
-      Services.telemetry.getHistogramById("VIDEO_CAN_CREATE_AAC_DECODER").add(aacWorks);
-      let h264Works = v.canPlayType("video/mp4") != "";
-      Services.telemetry.getHistogramById("VIDEO_CAN_CREATE_H264_DECODER").add(h264Works);
-    }, 90 * 1000);
-
     SessionStore.promiseInitialized.then(() => {
       
       if (window.closed) {
@@ -4990,8 +4976,8 @@ var CombinedStopReload = {
     if (this._initialized)
       return;
 
-    let reload = document.getElementById("urlbar-reload-button");
-    let stop = document.getElementById("urlbar-stop-button");
+    let reload = document.getElementById("reload-button");
+    let stop = document.getElementById("stop-button");
     if (!stop || !reload || reload.nextSibling != stop)
       return;
 
@@ -5582,8 +5568,8 @@ const nodeToTooltipMap = {
   "new-window-button": "newWindowButton.tooltip",
   "new-tab-button": "newTabButton.tooltip",
   "tabs-newtab-button": "newTabButton.tooltip",
-  "urlbar-reload-button": "reloadButton.tooltip",
-  "urlbar-stop-button": "stopButton.tooltip",
+  "reload-button": "reloadButton.tooltip",
+  "stop-button": "stopButton.tooltip",
   "urlbar-zoom-button": "urlbar-zoom-button.tooltip",
 };
 const nodeToShortcutMap = {
@@ -5595,8 +5581,8 @@ const nodeToShortcutMap = {
   "new-window-button": "key_newNavigator",
   "new-tab-button": "key_newNavigatorTab",
   "tabs-newtab-button": "key_newNavigatorTab",
-  "urlbar-reload-button": "key_reload",
-  "urlbar-stop-button": "key_stop",
+  "reload-button": "key_reload",
+  "stop-button": "key_stop",
   "urlbar-zoom-button": "key_fullZoomReset",
 };
 

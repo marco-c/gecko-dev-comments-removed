@@ -1634,12 +1634,12 @@ pref("browser.crashReports.unsubmittedCheck.autoSubmit", false);
 
 
 #ifdef NIGHTLY_BUILD
-pref("browser.formautofill.experimental", true);
+pref("extensions.formautofill.experimental", true);
 #else
-pref("browser.formautofill.experimental", false);
+pref("extensions.formautofill.experimental", false);
 #endif
-pref("browser.formautofill.enabled", true);
-pref("browser.formautofill.loglevel", "Warn");
+pref("extensions.formautofill.addresses.enabled", true);
+pref("extensions.formautofill.loglevel", "Warn");
 
 
 pref("browser.sessionstore.restore_tabs_lazily", true);
