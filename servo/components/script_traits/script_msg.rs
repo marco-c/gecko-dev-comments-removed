@@ -79,4 +79,6 @@ pub enum ScriptMsg {
     ActivateDocument(PipelineId),
     
     SetDocumentState(PipelineId, DocumentState),
+    
+    SetFinalUrl(PipelineId, Url),
 }
