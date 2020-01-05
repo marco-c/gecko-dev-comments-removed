@@ -7,6 +7,7 @@ var StarUI = {
   uri: null,
   _batching: false,
   _isNewBookmark: false,
+  _isComposing: false,
   _autoCloseTimer: 0,
 
   _element(aID) {
@@ -23,6 +24,9 @@ var StarUI = {
     element.addEventListener("keypress", this);
     element.addEventListener("mouseout", this);
     element.addEventListener("mousemove", this);
+    element.addEventListener("compositionstart", this);
+    element.addEventListener("compositionend", this);
+    element.addEventListener("input", this);
     element.addEventListener("popuphidden", this);
     element.addEventListener("popupshown", this);
     return this.panel = element;
@@ -135,6 +139,25 @@ var StarUI = {
             break;
         }
         break;
+      case "compositionstart":
+        if (aEvent.defaultPrevented) {
+          
+          break;
+        }
+        
+        clearTimeout(this._autoCloseTimer);
+        this._isComposing = true;
+        break;
+      case "compositionend":
+        
+        
+        this._isComposing = false;
+        break;
+      case "input":
+        
+        
+        clearTimeout(this._autoCloseTimer);
+        break;
       case "mouseout":
         
       case "popupshown":
@@ -143,7 +166,7 @@ var StarUI = {
           break;
         }
         
-        if (this._isNewBookmark) {
+        if (this._isNewBookmark && !this._isComposing) {
           
           
           let delay = 3500;
