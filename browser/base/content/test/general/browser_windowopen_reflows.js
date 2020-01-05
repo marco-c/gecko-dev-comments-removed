@@ -10,15 +10,15 @@ const EXPECTED_REFLOWS = [
   
   "loadTabs@chrome://browser/content/tabbrowser.xml|" +
     "loadOneOrMoreURIs@chrome://browser/content/browser.js|" +
-    "gBrowserInit._delayedStartup@chrome://browser/content/browser.js|",
+    "_delayedStartup@chrome://browser/content/browser.js|",
 
   
   "select@chrome://global/content/bindings/textbox.xml|" +
     "focusAndSelectUrlBar@chrome://browser/content/browser.js|" +
-    "gBrowserInit._delayedStartup@chrome://browser/content/browser.js|",
+    "_delayedStartup@chrome://browser/content/browser.js|",
 
   
-  "gBrowserInit._delayedStartup@chrome://browser/content/browser.js|",
+  "_delayedStartup@chrome://browser/content/browser.js|",
 
   
   
@@ -29,23 +29,23 @@ if (Services.appinfo.OS == "WINNT" || Services.appinfo.OS == "Darwin") {
   
   
   
-  EXPECTED_REFLOWS.push("TabsInTitlebar._update/rect@chrome://browser/content/browser-tabsintitlebar.js|" +
-                          "TabsInTitlebar._update@chrome://browser/content/browser-tabsintitlebar.js|" +
+  EXPECTED_REFLOWS.push("rect@chrome://browser/content/browser-tabsintitlebar.js|" +
+                          "_update@chrome://browser/content/browser-tabsintitlebar.js|" +
                           "updateAppearance@chrome://browser/content/browser-tabsintitlebar.js|" +
                           "handleEvent@chrome://browser/content/tabbrowser.xml|");
 }
 
 if (Services.appinfo.OS == "Darwin") {
   
-  EXPECTED_REFLOWS.push("OverflowableToolbar.prototype._onOverflow@resource:///modules/CustomizableUI.jsm|" +
-                        "OverflowableToolbar.prototype.init@resource:///modules/CustomizableUI.jsm|" +
-                        "OverflowableToolbar.prototype.observe@resource:///modules/CustomizableUI.jsm|" +
-                        "gBrowserInit._delayedStartup@chrome://browser/content/browser.js|");
+  EXPECTED_REFLOWS.push("_onOverflow@resource:///modules/CustomizableUI.jsm|" +
+                        "init@resource:///modules/CustomizableUI.jsm|" +
+                        "observe@resource:///modules/CustomizableUI.jsm|" +
+                        "_delayedStartup@chrome://browser/content/browser.js|");
   
   EXPECTED_REFLOWS.push("@resource://app/modules/CustomizableUI.jsm|" +
                           "@resource://app/modules/CustomizableUI.jsm|" +
                           "@resource://app/modules/CustomizableUI.jsm|" +
-                          "gBrowserInit._delayedStartup@chrome://browser/content/browser.js|");
+                          "_delayedStartup@chrome://browser/content/browser.js|");
 }
 
 
