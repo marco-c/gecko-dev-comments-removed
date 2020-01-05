@@ -68,7 +68,7 @@ CycleCollectedJSContext::~CycleCollectedJSContext()
     return;
   }
 
-  mRuntime->Shutdown();
+  mRuntime->Shutdown(mJSContext);
 
   
   ProcessMetastableStateQueue(mBaseRecursionDepth);

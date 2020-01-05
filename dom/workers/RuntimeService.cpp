@@ -1059,7 +1059,7 @@ public:
     MOZ_ASSERT(aWorkerPrivate);
   }
 
-  void Shutdown() override
+  void Shutdown(JSContext* cx) override
   {
     
     

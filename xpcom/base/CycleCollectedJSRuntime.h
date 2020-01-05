@@ -110,7 +110,7 @@ protected:
   CycleCollectedJSRuntime(JSContext* aMainContext);
   virtual ~CycleCollectedJSRuntime();
 
-  virtual void Shutdown();
+  virtual void Shutdown(JSContext* cx);
 
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
   void UnmarkSkippableJSHolders();
@@ -274,14 +274,6 @@ public:
   
   
   void PrepareWaitingZonesForGC();
-
-  
-  
-  JSContext* MainContext() const
-  {
-    MOZ_ASSERT(mJSContext);
-    return mJSContext;
-  }
 
   
   
