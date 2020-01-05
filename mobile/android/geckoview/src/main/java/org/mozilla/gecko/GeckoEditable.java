@@ -67,6 +67,7 @@ final class GeckoEditable extends JNIObject
      GeckoEditableListener mListener;
      GeckoView mView;
      boolean mInBatchMode; 
+     boolean mNeedSync; 
     private boolean mGeckoFocused; 
     private boolean mIgnoreSelectionChange; 
     private volatile boolean mSuppressKeyUp;
@@ -472,6 +473,9 @@ final class GeckoEditable extends JNIObject
             break;
 
         case Action.TYPE_REPLACE_TEXT:
+            
+            
+            mNeedSync = true;
 
             
             
@@ -841,7 +845,39 @@ final class GeckoEditable extends JNIObject
             }
             return;
         }
+
         mInBatchMode = inBatchMode;
+
+        if (!inBatchMode && mNeedSync) {
+            icSyncShadowText();
+        }
+    }
+
+     void icSyncShadowText() {
+        if (mListener == null) {
+            
+            return;
+        }
+
+        if (mInBatchMode || !mActions.isEmpty()) {
+            mNeedSync = true;
+            return;
+        }
+
+        mNeedSync = false;
+        mText.syncShadowText(mListener);
+    }
+
+    private void geckoScheduleSyncShadowText() {
+        if (DEBUG) {
+            ThreadUtils.assertOnGeckoThread();
+        }
+        geckoPostToIc(new Runnable() {
+            @Override
+            public void run() {
+                icSyncShadowText();
+            }
+        });
     }
 
     @Override
@@ -993,7 +1029,10 @@ final class GeckoEditable extends JNIObject
 
         if (type == GeckoEditableListener.NOTIFY_IME_REPLY_EVENT) {
             geckoActionReply(mActions.poll());
-            return;
+            if (!mGeckoFocused || !mActions.isEmpty()) {
+                
+                return;
+            }
         } else if (type == GeckoEditableListener.NOTIFY_IME_TO_COMMIT_COMPOSITION) {
             notifyCommitComposition();
             return;
@@ -1005,7 +1044,15 @@ final class GeckoEditable extends JNIObject
         geckoPostToIc(new Runnable() {
             @Override
             public void run() {
+                if (type == GeckoEditableListener.NOTIFY_IME_REPLY_EVENT) {
+                    if (mNeedSync) {
+                        icSyncShadowText();
+                    }
+                    return;
+                }
+
                 if (type == GeckoEditableListener.NOTIFY_IME_OF_FOCUS && mListener != null) {
+                    mNeedSync = false;
                     mText.syncShadowText( null);
                 }
 
@@ -1065,15 +1112,7 @@ final class GeckoEditable extends JNIObject
             mText.currentSetSelection(start, end);
         }
 
-        geckoPostToIc(new Runnable() {
-            @Override
-            public void run() {
-                if (mListener == null) {
-                    return;
-                }
-                mListener.onSelectionChange();
-            }
-        });
+        geckoScheduleSyncShadowText();
     }
 
     private boolean geckoIsSameText(int start, int oldEnd, CharSequence newText) {
@@ -1188,15 +1227,8 @@ final class GeckoEditable extends JNIObject
             mText.currentReplace(start, oldEnd, text);
         }
 
-        geckoPostToIc(new Runnable() {
-            @Override
-            public void run() {
-                if (mListener == null) {
-                    return;
-                }
-                mListener.onTextChange();
-            }
-        });
+        
+        
     }
 
     @WrapForJNI(calledFrom = "gecko")
