@@ -18,8 +18,8 @@ class WebRenderDisplayItemLayer;
 } 
 
 namespace wr {
-  class DisplayListBuilder;
-}
+class DisplayListBuilder;
+} 
 
 
 
