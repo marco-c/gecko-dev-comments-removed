@@ -727,6 +727,12 @@ nsWindow::Destroy()
     
     DestroyCompositor();
 
+#ifdef MOZ_X11
+    
+    
+    mSurfaceProvider.CleanupResources();
+#endif
+
     ClearCachedResources();
 
     g_signal_handlers_disconnect_by_func(gtk_settings_get_default(),
