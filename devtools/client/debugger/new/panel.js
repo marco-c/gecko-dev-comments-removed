@@ -50,7 +50,7 @@ DebuggerPanel.prototype = {
     let frames = this._selectors().getFrames(this._getState());
 
     
-    if (!frames.toJS) {
+    if (!frames) {
       return {
         frames: [],
         selected: -1
