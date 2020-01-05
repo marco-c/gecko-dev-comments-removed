@@ -1,9 +1,3 @@
-
-
-
-
-
-
 use float::round;
 use libc::types::os::arch::c95::c_double;
 use css_colors::*;

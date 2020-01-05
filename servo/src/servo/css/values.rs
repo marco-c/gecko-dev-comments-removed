@@ -4,7 +4,7 @@
 
 
 
-use SharedColor = util::color::Color;
+use SharedColor = color::Color;
 use cmp::Eq;
 use std::net::url::Url;
 
