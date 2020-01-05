@@ -81,7 +81,7 @@ impl Runnable for ImageResponseHandlerRunnable {
 
         
         let document = document_from_node(&*element);
-        document.content_changed(element.upcast(), NodeDamage::OtherNodeDamage);
+        element.upcast::<Node>().dirty(NodeDamage::OtherNodeDamage);
 
         
         if trigger_image_load {
