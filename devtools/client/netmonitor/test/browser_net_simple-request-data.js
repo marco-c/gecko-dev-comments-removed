@@ -8,6 +8,11 @@
 
 
 function test() {
+  
+  
+  
+  Services.prefs.setBoolPref("network.tcp.tcp_fastopen_enable", false);
+
   let { L10N } = require("devtools/client/netmonitor/src/utils/l10n");
 
   initNetMonitor(SIMPLE_SJS).then(({ tab, monitor }) => {

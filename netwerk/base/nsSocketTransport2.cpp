@@ -1522,11 +1522,13 @@ nsSocketTransport::InitiateSocket()
         status = PR_FAILURE;
         connectCalled = false;
         bool fastOpenNotSupported = false;
-
-        TCPFastOpenFinish(fd, &code, &fastOpenNotSupported);
+        uint8_t tfoStatus = TFO_NOT_TRIED;
+        TCPFastOpenFinish(fd, code, fastOpenNotSupported, tfoStatus);
+        mFastOpenCallback->SetFastOpenStatus(tfoStatus);
         SOCKET_LOG(("called StartFastOpen - code=%d; fastOpen is %s "
                     "supported.\n", code,
                     fastOpenNotSupported ? "not" : ""));
+        SOCKET_LOG(("TFO status %d\n", tfoStatus));
 
         if (fastOpenNotSupported) {
           
@@ -1681,7 +1683,7 @@ nsSocketTransport::RecoverFromError()
         
         tryAgain = true;
         MOZ_ASSERT(mFastOpenCallback);
-        mFastOpenCallback->FastOpenConnected(mCondition);
+        mFastOpenCallback->SetFastOpenConnected(mCondition);
         mFastOpenCallback = nullptr;
     } else {
 
@@ -1812,7 +1814,7 @@ nsSocketTransport::OnSocketConnected()
         
         
         
-        mFastOpenCallback->FastOpenConnected(NS_OK);
+        mFastOpenCallback->SetFastOpenConnected(NS_OK);
         mFastOpenCallback = nullptr;
     }
 
@@ -2233,7 +2235,7 @@ nsSocketTransport::OnSocketDetached(PRFileDesc *fd)
     
     
     if (mFDFastOpenInProgress && mFastOpenCallback) {
-        mFastOpenCallback->FastOpenConnected(mCondition);
+        mFastOpenCallback->SetFastOpenConnected(mCondition);
     }
     mFastOpenCallback = nullptr;
 
