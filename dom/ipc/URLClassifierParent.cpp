@@ -18,6 +18,7 @@ URLClassifierParent::StartClassify(nsIPrincipal* aPrincipal,
                                    bool aUseTrackingProtection,
                                    bool* aSuccess)
 {
+  *aSuccess = false;
   nsresult rv = NS_OK;
   
   
@@ -34,6 +35,7 @@ URLClassifierParent::StartClassify(nsIPrincipal* aPrincipal,
     
     
     
+    *aSuccess = false;
     ClassificationFailed();
   }
   return IPC_OK();
