@@ -89,11 +89,10 @@ public final class EventDispatcher extends JNIObject {
     @WrapForJNI(calledFrom = "gecko")
     private synchronized void setAttachedToGecko(final int state) {
         if (mAttachedToGecko && state == DETACHED) {
-            if (GeckoThread.isStateAtLeast(GeckoThread.State.JNI_READY)) {
+            if (GeckoThread.isRunning()) {
                 disposeNative();
             } else {
-                GeckoThread.queueNativeCallUntil(GeckoThread.State.JNI_READY,
-                        this, "disposeNative");
+                GeckoThread.queueNativeCall(this, "disposeNative");
             }
         }
         mAttachedToGecko = (state == ATTACHED);
@@ -407,7 +406,19 @@ public final class EventDispatcher extends JNIObject {
         }
 
         if (jsMessage == null) {
-            Log.w(LOGTAG, "No listeners for " + type + " in dispatchToThreads");
+            Log.w(LOGTAG, "No listeners for " + type);
+        }
+
+        if (!GeckoThread.isRunning() && jsMessage == null) {
+            
+            
+            
+            
+            
+            GeckoThread.queueNativeCall(this, "dispatchToGecko",
+                                        String.class, type, GeckoBundle.class, bundleMessage,
+                                        EventCallback.class, JavaCallbackDelegate.wrap(callback));
+            return true;
         }
 
         if (!AppConstants.RELEASE_OR_BETA && jsMessage == null) {
@@ -487,8 +498,6 @@ public final class EventDispatcher extends JNIObject {
             }
 
             if (listeners.isEmpty()) {
-                Log.w(LOGTAG, "No listeners for " + type + " in dispatchToThread");
-
                 
                 return false;
             }
@@ -529,8 +538,7 @@ public final class EventDispatcher extends JNIObject {
             final List<GeckoEventListener> listeners = getGeckoListeners(type);
 
             if (listeners == null || listeners.isEmpty()) {
-                Log.w(LOGTAG, "No listeners for " + type + " in dispatchEvent");
-
+                Log.w(LOGTAG, "No listeners for " + type);
                 return false;
             }
 
