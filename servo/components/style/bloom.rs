@@ -5,9 +5,42 @@
 
 
 
+#![deny(missing_docs)]
+
 use dom::{SendElement, TElement};
 use matching::MatchMethods;
 use selectors::bloom::BloomFilter;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 pub struct StyleBloom<E: TElement> {
     
@@ -18,6 +51,7 @@ pub struct StyleBloom<E: TElement> {
 }
 
 impl<E: TElement> StyleBloom<E> {
+    
     pub fn new() -> Self {
         StyleBloom {
             filter: Box::new(BloomFilter::new()),
@@ -25,19 +59,14 @@ impl<E: TElement> StyleBloom<E> {
         }
     }
 
+    
     pub fn filter(&self) -> &BloomFilter {
         &*self.filter
     }
 
-    pub fn maybe_pop(&mut self, element: E) {
-        if self.elements.last().map(|el| **el) == Some(element) {
-            self.pop().unwrap();
-        }
-    }
-
     
     
-    pub fn push(&mut self, element: E) {
+    fn push(&mut self, element: E) {
         if cfg!(debug_assertions) {
             if self.elements.is_empty() {
                 assert!(element.parent_element().is_none());
@@ -78,6 +107,8 @@ impl<E: TElement> StyleBloom<E> {
 
     
     
+    
+    
     pub fn assert_complete(&self, mut element: E) {
         if cfg!(debug_assertions) {
             let mut checked = 0;
@@ -90,6 +121,7 @@ impl<E: TElement> StyleBloom<E> {
         }
     }
 
+    
     
     
     

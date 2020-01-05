@@ -6,9 +6,12 @@
 
 
 
+#![deny(missing_docs)]
+
 use euclid::point::Point2D;
 
 const NEWTON_METHOD_ITERATIONS: u8 = 8;
+
 
 pub struct Bezier {
     ax: f64,
@@ -20,6 +23,7 @@ pub struct Bezier {
 }
 
 impl Bezier {
+    
     #[inline]
     pub fn new(p1: Point2D<f64>, p2: Point2D<f64>) -> Bezier {
         let cx = 3.0 * p1.x;
@@ -96,6 +100,8 @@ impl Bezier {
         t
     }
 
+    
+    
     #[inline]
     pub fn solve(&self, x: f64, epsilon: f64) -> f64 {
         self.sample_curve_y(self.solve_curve_x(x, epsilon))

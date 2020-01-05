@@ -5,6 +5,7 @@
 
 
 #![allow(unsafe_code)]
+#![deny(missing_docs)]
 
 use {Atom, LocalName};
 use animation::{self, Animation, PropertyAnimation};
@@ -49,11 +50,22 @@ fn create_common_style_affecting_attributes_from_element<E: TElement>(element: &
     flags
 }
 
+
+
+
+
 type PseudoRuleNodes = HashMap<PseudoElement, StrongRuleNode,
                                BuildHasherDefault<::fnv::FnvHasher>>;
+
+
 pub struct MatchResults {
+    
+    
     pub primary: StrongRuleNode,
+    
+    
     pub relations: StyleRelations,
+    
     pub per_pseudo: PseudoRuleNodes,
 }
 
@@ -64,6 +76,10 @@ impl MatchResults {
         relations_are_shareable(&self.relations)
     }
 }
+
+
+
+
 
 
 
@@ -95,20 +111,39 @@ pub struct StyleSharingCandidateCache<E: TElement> {
     cache: LRUCache<StyleSharingCandidate<E>, ()>,
 }
 
+
 #[derive(Clone, Debug)]
 pub enum CacheMiss {
+    
     Parent,
+    
     LocalName,
+    
     Namespace,
+    
+    
     Link,
+    
+    
     UserAndAuthorRules,
+    
     State,
+    
     IdAttr,
+    
     StyleAttr,
+    
     Class,
+    
+    
     CommonStyleAffectingAttributes,
+    
     PresHints,
+    
+    
     SiblingRules,
+    
+    
     NonCommonAttrRules,
 }
 
@@ -213,25 +248,41 @@ fn have_same_presentational_hints<E: TElement>(element: &E, candidate: &E) -> bo
 }
 
 bitflags! {
+    /// A set of common style-affecting attributes we check separately to
+    /// optimize the style sharing cache.
     pub flags CommonStyleAffectingAttributes: u8 {
+        /// The `hidden` attribute.
         const HIDDEN_ATTRIBUTE = 0x01,
+        /// The `nowrap` attribute.
         const NO_WRAP_ATTRIBUTE = 0x02,
+        /// The `align="left"` attribute.
         const ALIGN_LEFT_ATTRIBUTE = 0x04,
+        /// The `align="center"` attribute.
         const ALIGN_CENTER_ATTRIBUTE = 0x08,
+        /// The `align="right"` attribute.
         const ALIGN_RIGHT_ATTRIBUTE = 0x10,
     }
 }
 
+
 pub struct CommonStyleAffectingAttributeInfo {
+    
     pub attr_name: LocalName,
+    
     pub mode: CommonStyleAffectingAttributeMode,
 }
 
+
 #[derive(Clone)]
 pub enum CommonStyleAffectingAttributeMode {
+    
     IsPresent(CommonStyleAffectingAttributes),
+    
     IsEqual(Atom, CommonStyleAffectingAttributes),
 }
+
+
+
 
 
 #[inline]
@@ -259,6 +310,11 @@ pub fn common_style_affecting_attributes() -> [CommonStyleAffectingAttributeInfo
         }
     ]
 }
+
+
+
+
+
 
 
 
@@ -301,6 +357,7 @@ fn match_same_sibling_affecting_rules<E: TElement>(element: &E,
 static STYLE_SHARING_CANDIDATE_CACHE_SIZE: usize = 8;
 
 impl<E: TElement> StyleSharingCandidateCache<E> {
+    
     pub fn new() -> Self {
         StyleSharingCandidateCache {
             cache: LRUCache::new(STYLE_SHARING_CANDIDATE_CACHE_SIZE),
@@ -311,6 +368,9 @@ impl<E: TElement> StyleSharingCandidateCache<E> {
         self.cache.iter_mut()
     }
 
+    
+    
+    
     pub fn insert_if_possible(&mut self,
                               element: &E,
                               style: &Arc<ComputedValues>,
@@ -353,10 +413,12 @@ impl<E: TElement> StyleSharingCandidateCache<E> {
         }, ());
     }
 
+    
     pub fn touch(&mut self, index: usize) {
         self.cache.touch(index);
     }
 
+    
     pub fn clear(&mut self) {
         self.cache.evict_all()
     }
@@ -366,8 +428,6 @@ impl<E: TElement> StyleSharingCandidateCache<E> {
 pub enum StyleSharingResult {
     
     CannotShare,
-    
-    
     
     
     StyleWasShared(usize),
@@ -511,7 +571,9 @@ fn compute_rule_node<E: TElement>(context: &StyleContext<E>,
 
 impl<E: TElement> PrivateMatchMethods for E {}
 
+
 pub trait MatchMethods : TElement {
+    
     fn match_element(&self, context: &StyleContext<Self>, parent_bf: Option<&BloomFilter>)
                      -> MatchResults
     {
@@ -556,6 +618,7 @@ pub trait MatchMethods : TElement {
         }
     }
 
+    
     
     
     
@@ -671,6 +734,9 @@ pub trait MatchMethods : TElement {
         self.each_class(|class| bf.remove(class));
     }
 
+    
+    
+    
     fn compute_restyle_damage(&self,
                               old_style: Option<&Arc<ComputedValues>>,
                               new_style: &Arc<ComputedValues>,
@@ -709,6 +775,8 @@ pub trait MatchMethods : TElement {
         }
     }
 
+    
+    
     fn cascade_node(&self,
                     context: &StyleContext<Self>,
                     mut data: &mut AtomicRefMut<ElementData>,
@@ -783,6 +851,7 @@ pub trait MatchMethods : TElement {
         data.finish_styling(new_styles, damage);
     }
 
+    
     fn compute_damage_and_cascade_pseudos(
             &self,
             old_primary: Option<&Arc<ComputedValues>>,

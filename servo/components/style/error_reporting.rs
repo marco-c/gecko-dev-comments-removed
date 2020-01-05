@@ -4,13 +4,26 @@
 
 
 
+#![deny(missing_docs)]
+
 use cssparser::{Parser, SourcePosition};
 use log;
 
+
 pub trait ParseErrorReporter {
+    
+    
+    
+    
     fn report_error(&self, input: &mut Parser, position: SourcePosition, message: &str);
+    
+    
+    
     fn clone(&self) -> Box<ParseErrorReporter + Send + Sync>;
 }
+
+
+
 
 pub struct StdoutErrorReporter;
 impl ParseErrorReporter for StdoutErrorReporter {

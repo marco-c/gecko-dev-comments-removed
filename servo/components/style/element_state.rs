@@ -4,6 +4,8 @@
 
 
 
+#![deny(missing_docs)]
+
 bitflags! {
     #[doc = "Event-based element states."]
     #[cfg_attr(feature = "servo", derive(HeapSizeOf))]

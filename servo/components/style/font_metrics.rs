@@ -2,6 +2,10 @@
 
 
 
+
+
+#![deny(missing_docs)]
+
 use Atom;
 use app_units::Au;
 use euclid::Size2D;
@@ -11,19 +15,24 @@ use std::fmt;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct FontMetrics {
+    
     pub x_height: Au,
+    
     pub zero_advance_measure: Size2D<Au>,
 }
 
+
 #[derive(Debug, PartialEq, Clone)]
 pub enum FontMetricsQueryResult {
+    
+    
     Available(Option<FontMetrics>),
+    
     NotAvailable,
 }
 
 
 pub trait FontMetricsProvider: Send + Sync + fmt::Debug {
-    
     
     
     

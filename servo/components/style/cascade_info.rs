@@ -1,6 +1,11 @@
 
 
 
+
+
+
+#![deny(missing_docs)]
+
 use dom::TNode;
 use properties::{DeclaredValue, PropertyDeclaration};
 use values::HasViewportPercentage;
@@ -12,12 +17,17 @@ use values::HasViewportPercentage;
 
 
 pub struct CascadeInfo {
+    
     pub saw_viewport_units: bool,
+    
+    
+    
     #[cfg(debug_assertions)]
     finished: bool,
 }
 
 impl CascadeInfo {
+    
     #[cfg(debug_assertions)]
     pub fn new() -> Self {
         CascadeInfo {
@@ -26,6 +36,7 @@ impl CascadeInfo {
         }
     }
 
+    
     #[cfg(not(debug_assertions))]
     pub fn new() -> Self {
         CascadeInfo {
@@ -40,7 +51,7 @@ impl CascadeInfo {
     pub fn on_cascade_property<T>(&mut self,
                                   _property_declaration: &PropertyDeclaration,
                                   value: &DeclaredValue<T>)
-        where T: HasViewportPercentage
+        where T: HasViewportPercentage,
     {
         
         
@@ -57,6 +68,11 @@ impl CascadeInfo {
     #[cfg(not(debug_assertions))]
     fn mark_as_finished_if_appropriate(&mut self) {}
 
+    
+    
+    
+    
+    
     #[allow(unsafe_code)]
     pub fn finish<N: TNode>(mut self, node: &N) {
         self.mark_as_finished_if_appropriate();
@@ -73,6 +89,7 @@ impl CascadeInfo {
 impl Drop for CascadeInfo {
     fn drop(&mut self) {
         debug_assert!(self.finished,
-                      "Didn't use the result of CascadeInfo, if you don't need it, consider passing None");
+                      "Didn't use the result of CascadeInfo, if you don't need \
+                      it, consider passing None");
     }
 }
