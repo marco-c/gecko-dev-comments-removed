@@ -18,6 +18,7 @@ use util::str::DOMString;
 
 
 #[dom_struct]
+#[derive(HeapSizeOf)]
 pub struct URLSearchParams {
     reflector_: Reflector,
     

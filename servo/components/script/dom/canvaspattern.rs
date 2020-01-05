@@ -12,6 +12,7 @@ use euclid::size::Size2D;
 
 
 #[dom_struct]
+#[derive(HeapSizeOf)]
 pub struct CanvasPattern {
     reflector_: Reflector,
     surface_data: Vec<u8>,

@@ -12,6 +12,7 @@ use dom::dompointreadonly::{DOMPointReadOnly, DOMPointWriteMethods};
 
 
 #[dom_struct]
+#[derive(HeapSizeOf)]
 pub struct DOMPoint {
     point: DOMPointReadOnly
 }

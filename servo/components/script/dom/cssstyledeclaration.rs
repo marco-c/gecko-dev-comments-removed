@@ -25,6 +25,7 @@ use std::cell::Ref;
 
 
 #[dom_struct]
+#[derive(HeapSizeOf)]
 pub struct CSSStyleDeclaration {
     reflector_: Reflector,
     owner: JS<HTMLElement>,
@@ -32,7 +33,7 @@ pub struct CSSStyleDeclaration {
     pseudo: Option<PseudoElement>,
 }
 
-#[derive(PartialEq)]
+#[derive(PartialEq, HeapSizeOf)]
 pub enum CSSModificationAccess {
     ReadWrite,
     Readonly

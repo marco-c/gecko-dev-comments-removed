@@ -88,7 +88,7 @@ enum WindowState {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, HeapSizeOf)]
 pub enum ReflowReason {
     CachedPageNeededReflow,
     RefreshTick,

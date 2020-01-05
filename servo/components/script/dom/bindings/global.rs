@@ -27,6 +27,8 @@ use js::jsapi::{GetGlobalForObjectCrossCompartment};
 use js::jsapi::{JSContext, JSObject, JS_GetClass, MutableHandleValue};
 use url::Url;
 
+use util::mem::HeapSizeOf;
+
 
 #[derive(Copy, Clone)]
 pub enum GlobalRef<'a> {
@@ -47,7 +49,7 @@ pub enum GlobalRoot {
 
 
 
-#[derive(JSTraceable)]
+#[derive(JSTraceable, HeapSizeOf)]
 #[must_root]
 pub enum GlobalField {
     

@@ -32,6 +32,7 @@ use hyper::status::StatusClass::Success;
 
 use unicase::UniCase;
 use url::{SchemeData, Url};
+use util::mem::HeapSizeOf;
 use util::task::spawn_named;
 
 
@@ -40,12 +41,13 @@ pub trait AsyncCORSResponseListener {
     fn response_available(&self, response: CORSResponse);
 }
 
-#[derive(Clone)]
+#[derive(Clone, HeapSizeOf)]
 pub struct CORSRequest {
     pub origin: Url,
     pub destination: Url,
     pub mode: RequestMode,
     pub method: Method,
+    #[ignore_heap_size_of = "Defined in hyper"]
     pub headers: Headers,
     
     
@@ -55,7 +57,7 @@ pub struct CORSRequest {
 
 
 
-#[derive(PartialEq, Copy, Clone)]
+#[derive(PartialEq, Copy, Clone, HeapSizeOf)]
 pub enum RequestMode {
     CORS, 
     ForcedPreflight 

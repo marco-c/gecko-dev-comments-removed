@@ -40,9 +40,11 @@ pub type TrustedWorkerAddress = Trusted<Worker>;
 
 
 #[dom_struct]
+#[derive(HeapSizeOf)]
 pub struct Worker {
     eventtarget: EventTarget,
     global: GlobalField,
+    #[ignore_heap_size_of = "Defined in std"]
     
     
     sender: Sender<(TrustedWorkerAddress, ScriptMsg)>,

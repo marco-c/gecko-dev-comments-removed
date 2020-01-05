@@ -6,6 +6,7 @@ use image::base::Image;
 use ipc_channel::ipc::{self, IpcSender};
 use url::Url;
 use std::sync::Arc;
+use util::mem::HeapSizeOf;
 
 
 
@@ -37,7 +38,7 @@ pub enum ImageState {
 }
 
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize, HeapSizeOf)]
 pub enum ImageResponse {
     
     Loaded(Arc<Image>),

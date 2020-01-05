@@ -10,6 +10,7 @@ use dom::window::Window;
 
 
 #[dom_struct]
+#[derive(HeapSizeOf)]
 pub struct ValidityState {
     reflector_: Reflector,
     state: u8,

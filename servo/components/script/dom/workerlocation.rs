@@ -16,6 +16,7 @@ use util::str::DOMString;
 
 
 #[dom_struct]
+#[derive(HeapSizeOf)]
 pub struct WorkerLocation {
     reflector_: Reflector,
     url: Url,

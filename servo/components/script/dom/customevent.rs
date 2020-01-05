@@ -17,8 +17,10 @@ use util::str::DOMString;
 
 
 #[dom_struct]
+#[derive(HeapSizeOf)]
 pub struct CustomEvent {
     event: Event,
+    #[ignore_heap_size_of = "Defined in rust-mozjs"]
     detail: MutHeapJSVal,
 }
 

@@ -9,7 +9,8 @@
 #![feature(slice_patterns)]
 #![feature(step_by)]
 #![feature(vec_push_all)]
-#![plugin(serde_macros)]
+#![feature(custom_attribute)]
+#![plugin(serde_macros, plugins)]
 
 #![plugin(regex_macros)]
 
@@ -35,6 +36,7 @@ use msg::constellation_msg::{PipelineId};
 use regex::Regex;
 use serde::{Deserializer, Serializer};
 use url::Url;
+use util::mem::HeapSizeOf;
 
 use std::thread;
 
@@ -56,12 +58,14 @@ pub mod image {
     pub mod base;
 }
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize, HeapSizeOf)]
 pub struct LoadData {
     pub url: Url,
     pub method: Method,
+    #[ignore_heap_size_of = "Defined in hyper"]
     
     pub headers: Headers,
+    #[ignore_heap_size_of = "Defined in hyper"]
     
     pub preserved_headers: Headers,
     pub data: Option<Vec<u8>>,
@@ -231,7 +235,7 @@ pub struct LoadResponse {
     pub progress_port: IpcReceiver<ProgressMsg>,
 }
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize, HeapSizeOf)]
 pub struct ResourceCORSData {
     
     pub preflight: bool,
@@ -240,7 +244,7 @@ pub struct ResourceCORSData {
 }
 
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize, HeapSizeOf)]
 pub struct Metadata {
     
     pub final_url: Url,
@@ -251,6 +255,7 @@ pub struct Metadata {
     
     pub charset: Option<String>,
 
+    #[ignore_heap_size_of = "Defined in hyper"]
     
     pub headers: Option<Headers>,
 

@@ -14,6 +14,7 @@ use util::str::DOMString;
 
 
 #[dom_struct]
+#[derive(HeapSizeOf)]
 pub struct ProcessingInstruction {
     characterdata: CharacterData,
     target: DOMString,

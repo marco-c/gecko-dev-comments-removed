@@ -203,7 +203,7 @@ impl Drop for Node {
 
 
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, HeapSizeOf)]
 enum SuppressObserver {
     Suppressed,
     Unsuppressed
@@ -1455,7 +1455,7 @@ impl Iterator for TreeIterator {
 }
 
 
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, PartialEq, HeapSizeOf)]
 pub enum CloneChildrenFlag {
     CloneChildren,
     DoNotCloneChildren
@@ -2648,7 +2648,7 @@ impl<'a> DisabledStateHelpers for &'a Node {
 }
 
 
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, PartialEq, HeapSizeOf)]
 pub enum NodeDamage {
     
     NodeStyleDamaged,

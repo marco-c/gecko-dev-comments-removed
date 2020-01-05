@@ -6,12 +6,13 @@ use ipc_channel::ipc::IpcSharedMemory;
 use png;
 use stb_image::image as stb_image2;
 use std::mem;
+use util::mem::HeapSizeOf;
 use util::vec::byte_swap;
 
 
 
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, HeapSizeOf)]
 pub enum PixelFormat {
     K8,         
     KA8,        
@@ -19,11 +20,12 @@ pub enum PixelFormat {
     RGBA8,      
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, HeapSizeOf)]
 pub struct Image {
     pub width: u32,
     pub height: u32,
     pub format: PixelFormat,
+    #[ignore_heap_size_of = "Defined in ipc-channel"]
     pub bytes: IpcSharedMemory,
 }
 
