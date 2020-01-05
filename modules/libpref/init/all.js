@@ -633,6 +633,7 @@ pref("apz.displayport_expiry_ms", 15000);
 pref("apz.enlarge_displayport_when_clipped", false);
 pref("apz.fling_accel_base_mult", "1.0");
 pref("apz.fling_accel_interval_ms", 500);
+pref("apz.fling_accel_min_velocity", "1.5");
 pref("apz.fling_accel_supplemental_mult", "1.0");
 pref("apz.fling_curve_function_x1", "0.0");
 pref("apz.fling_curve_function_y1", "0.0");
@@ -4825,7 +4826,7 @@ pref("dom.w3c_pointer_events.implicit_capture", false);
 pref("dom.imagecapture.enabled", false);
 
 
-pref("media.ondevicechange.enabled", true);
+pref("media.ondevicechange.enabled", false);
 
 
 pref("media.ondevicechange.fakeDeviceChangeEvent.enabled", false);
@@ -5057,6 +5058,13 @@ pref("dom.telephony.enabled", false);
 
 
 pref("dom.telephony.defaultServiceId", 0);
+
+
+#ifdef MOZ_B2G_RIL
+pref("dom.cellbroadcast.enabled", true);
+#else
+pref("dom.cellbroadcast.enabled", false);
+#endif
 
 
 #ifdef MOZ_B2G_RIL
