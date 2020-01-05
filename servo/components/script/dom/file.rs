@@ -20,7 +20,8 @@ impl File {
     fn new_inherited(global: &GlobalRef, type_: BlobTypeId,
                      _file_bits: JSRef<Blob>, name: DOMString) -> File {
         File {
-            blob: Blob::new_inherited(global, type_, None),
+            
+            blob: Blob::new_inherited(global, type_, None, ""),
             name: name,
         }
         
