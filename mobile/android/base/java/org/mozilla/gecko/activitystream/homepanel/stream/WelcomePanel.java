@@ -3,7 +3,7 @@
 
 
 
-package org.mozilla.gecko.home.activitystream.stream;
+package org.mozilla.gecko.activitystream.homepanel.stream;
 
 import android.content.Context;
 import android.content.SharedPreferences;

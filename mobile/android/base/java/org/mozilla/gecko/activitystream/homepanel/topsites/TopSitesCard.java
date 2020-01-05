@@ -2,10 +2,9 @@
 
 
 
-package org.mozilla.gecko.home.activitystream.topsites;
+package org.mozilla.gecko.activitystream.homepanel.topsites;
 
 import android.graphics.Color;
-import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.support.v4.widget.TextViewCompat;
 import android.support.v7.widget.RecyclerView;
@@ -20,8 +19,8 @@ import org.mozilla.gecko.TelemetryContract;
 import org.mozilla.gecko.activitystream.ActivityStream;
 import org.mozilla.gecko.activitystream.ActivityStreamTelemetry;
 import org.mozilla.gecko.home.HomePager;
-import org.mozilla.gecko.home.activitystream.menu.ActivityStreamContextMenu;
-import org.mozilla.gecko.home.activitystream.model.TopSite;
+import org.mozilla.gecko.activitystream.homepanel.menu.ActivityStreamContextMenu;
+import org.mozilla.gecko.activitystream.homepanel.model.TopSite;
 import org.mozilla.gecko.icons.IconCallback;
 import org.mozilla.gecko.icons.IconResponse;
 import org.mozilla.gecko.icons.Icons;

@@ -3,7 +3,7 @@
 
 
 
-package org.mozilla.gecko.home.activitystream;
+package org.mozilla.gecko.activitystream.homepanel;
 
 import android.database.Cursor;
 import android.support.v7.widget.RecyclerView;
@@ -14,15 +14,13 @@ import android.view.ViewGroup;
 import org.mozilla.gecko.Telemetry;
 import org.mozilla.gecko.TelemetryContract;
 import org.mozilla.gecko.activitystream.ActivityStreamTelemetry;
-import org.mozilla.gecko.activitystream.Utils;
-import org.mozilla.gecko.db.BrowserContract;
 import org.mozilla.gecko.home.HomePager;
-import org.mozilla.gecko.home.activitystream.model.Highlight;
-import org.mozilla.gecko.home.activitystream.stream.HighlightItem;
-import org.mozilla.gecko.home.activitystream.stream.HighlightsTitle;
-import org.mozilla.gecko.home.activitystream.stream.StreamItem;
-import org.mozilla.gecko.home.activitystream.stream.TopPanel;
-import org.mozilla.gecko.home.activitystream.stream.WelcomePanel;
+import org.mozilla.gecko.activitystream.homepanel.model.Highlight;
+import org.mozilla.gecko.activitystream.homepanel.stream.HighlightItem;
+import org.mozilla.gecko.activitystream.homepanel.stream.HighlightsTitle;
+import org.mozilla.gecko.activitystream.homepanel.stream.StreamItem;
+import org.mozilla.gecko.activitystream.homepanel.stream.TopPanel;
+import org.mozilla.gecko.activitystream.homepanel.stream.WelcomePanel;
 import org.mozilla.gecko.widget.RecyclerViewClickSupport;
 
 import java.util.Collections;

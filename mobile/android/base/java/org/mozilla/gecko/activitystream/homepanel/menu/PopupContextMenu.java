@@ -2,7 +2,7 @@
 
 
 
-package org.mozilla.gecko.home.activitystream.menu;
+package org.mozilla.gecko.activitystream.homepanel.menu;
 
 import android.content.Context;
 import android.graphics.Color;
@@ -18,7 +18,7 @@ import org.mozilla.gecko.AppConstants;
 import org.mozilla.gecko.R;
 import org.mozilla.gecko.activitystream.ActivityStreamTelemetry;
 import org.mozilla.gecko.home.HomePager;
-import org.mozilla.gecko.home.activitystream.model.Item;
+import org.mozilla.gecko.activitystream.homepanel.model.Item;
 
  class PopupContextMenu
         extends ActivityStreamContextMenu {

@@ -3,7 +3,7 @@
 
 
 
-package org.mozilla.gecko.home.activitystream;
+package org.mozilla.gecko.activitystream.homepanel;
 
 import android.content.Context;
 import android.database.ContentObserver;
@@ -15,7 +15,7 @@ import org.mozilla.gecko.Telemetry;
 import org.mozilla.gecko.activitystream.ranking.HighlightsRanking;
 import org.mozilla.gecko.db.BrowserContract;
 import org.mozilla.gecko.db.BrowserDB;
-import org.mozilla.gecko.home.activitystream.model.Highlight;
+import org.mozilla.gecko.activitystream.homepanel.model.Highlight;
 
 import java.util.Collections;
 import java.util.List;

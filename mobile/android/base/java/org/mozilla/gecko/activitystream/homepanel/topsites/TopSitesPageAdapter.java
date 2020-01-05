@@ -2,7 +2,7 @@
 
 
 
-package org.mozilla.gecko.home.activitystream.topsites;
+package org.mozilla.gecko.activitystream.homepanel.topsites;
 
 import android.content.Context;
 import android.database.Cursor;
@@ -18,7 +18,7 @@ import org.mozilla.gecko.Telemetry;
 import org.mozilla.gecko.TelemetryContract;
 import org.mozilla.gecko.activitystream.ActivityStreamTelemetry;
 import org.mozilla.gecko.home.HomePager;
-import org.mozilla.gecko.home.activitystream.model.TopSite;
+import org.mozilla.gecko.activitystream.homepanel.model.TopSite;
 import org.mozilla.gecko.widget.RecyclerViewClickSupport;
 
 import java.util.ArrayList;

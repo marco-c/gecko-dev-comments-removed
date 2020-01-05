@@ -2,7 +2,7 @@
 
 
 
-package org.mozilla.gecko.home.activitystream.menu;
+package org.mozilla.gecko.activitystream.homepanel.menu;
 
 import android.content.Context;
 import android.content.Intent;
@@ -20,7 +20,7 @@ import org.mozilla.gecko.activitystream.ActivityStreamTelemetry;
 import org.mozilla.gecko.annotation.RobocopTarget;
 import org.mozilla.gecko.db.BrowserDB;
 import org.mozilla.gecko.home.HomePager;
-import org.mozilla.gecko.home.activitystream.model.Item;
+import org.mozilla.gecko.activitystream.homepanel.model.Item;
 import org.mozilla.gecko.reader.SavedReaderViewHelper;
 import org.mozilla.gecko.util.Clipboard;
 import org.mozilla.gecko.util.HardwareUtils;

@@ -14,7 +14,7 @@
 
 
 
-package org.mozilla.gecko.home.activitystream.topsites;
+package org.mozilla.gecko.activitystream.homepanel.topsites;
 
 import android.content.Context;
 import android.content.res.Resources;

@@ -3,7 +3,7 @@
 
 
 
-package org.mozilla.gecko.home.activitystream.model;
+package org.mozilla.gecko.activitystream.homepanel.model;
 
 import android.database.Cursor;
 import android.text.TextUtils;

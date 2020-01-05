@@ -2,7 +2,7 @@
 
 
 
-package org.mozilla.gecko.home.activitystream;
+package org.mozilla.gecko.activitystream.homepanel;
 
 import android.os.Bundle;
 import android.support.annotation.Nullable;

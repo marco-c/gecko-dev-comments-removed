@@ -2,7 +2,7 @@
 
 
 
-package org.mozilla.gecko.home.activitystream;
+package org.mozilla.gecko.activitystream.homepanel;
 
 import android.content.Context;
 import android.os.Bundle;
