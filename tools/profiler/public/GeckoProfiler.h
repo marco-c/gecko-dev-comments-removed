@@ -217,12 +217,6 @@ PROFILER_FUNC(mozilla::UniquePtr<char[]> profiler_get_profile(double aSinceTime 
 
 
 
-PROFILER_FUNC(JSObject* profiler_get_profile_jsobject(JSContext* aCx,
-                                                      double aSinceTime = 0),
-              nullptr)
-
-
-
 PROFILER_FUNC_VOID(profiler_get_profile_jsobject_async(double aSinceTime = 0,
                                                        mozilla::dom::Promise* = 0))
 
