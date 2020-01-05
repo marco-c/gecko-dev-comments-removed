@@ -2,6 +2,9 @@
 
 
 
+
+
+
 function testScroll(target, stepSize, opt_reportFunc, opt_numSteps)
 {
   var win;
@@ -12,108 +15,10 @@ function testScroll(target, stepSize, opt_reportFunc, opt_numSteps)
     win = window;
   }
 
-  var result = {
-    names: [],
-    values: [],
-  };
-  
-  
-  
-  
-  var href = win.location.href;
-  var testBaseName = href.split("/tp5n/")[1]
-                  || href.split("/").pop()
-                  || href.split("/").splice(-2, 1)[0]
-                  || "REALLY_WEIRD_URI";
-
-  
-  
-  TalosPowersParent = {
-    replyId: 1,
-
-    
-    exec: function(commandName, arg, callback, opt_custom_window) {
-      let win = opt_custom_window || window;
-      let replyEvent = "TalosPowers:ParentExec:ReplyEvent:" + this.replyId++;
-      if (callback) {
-        win.addEventListener(replyEvent, function rvhandler(e) {
-          win.removeEventListener(replyEvent, rvhandler);
-          callback(e.detail);
-        });
-      }
-      win.dispatchEvent(
-        new win.CustomEvent("TalosPowers:ParentExec:QueryEvent", {
-          bubbles: true,
-          detail: {
-            command: {
-              name: commandName,
-              data: arg,
-            },
-            listeningTo: replyEvent,
-          }
-        })
-      );
-    },
-  };
-  
-
-  var report;
-  
-
-
-
-
-
-
-
-
-  function P_setupReportFn() {
-    return new Promise(function(resolve) {
-      report = opt_reportFunc || win.tpRecordTime;
-      if (report == 'PageLoader:RecordTime') {
-        report = function(duration, start, name) {
-          var msg = { time: duration, startTime: start, testName: name };
-          sendAsyncMessage('PageLoader:RecordTime', msg);
-        }
-        resolve();
-        return;
-      }
-
-      
-      
-      if (!report && document.head) {
-        var imported = document.createElement('script');
-        imported.addEventListener("load", function() {
-          report = tpRecordTime;
-          resolve();
-        });
-
-        imported.src = '../../scripts/talos-debug.js?dummy=' + Date.now(); 
-        document.head.appendChild(imported);
-        return;
-      }
-
-      resolve();
-    });
-  }
-
-  function FP_wait(ms) {
-    return function() {
-      return new Promise(function(resolve) {
-        setTimeout(resolve, ms);
-      });
-    };
-  }
-
   function rAF(fn) {
     return content.requestAnimationFrame(fn);
   }
 
-  function P_rAF() {
-    return new Promise(function(resolve) {
-      rAF(resolve);
-    });
-  }
 
   function myNow() {
     return (win.performance && win.performance.now) ?
@@ -132,12 +37,6 @@ function testScroll(target, stepSize, opt_reportFunc, opt_numSteps)
   var doScrollTick = isWindow ? function() { target.scrollBy(0, stepSize); ensureScroll(); }
                               : function() { target.scrollTop += stepSize; ensureScroll(); };
 
-  var setSmooth =    isWindow ? function() { target.document.scrollingElement.style.scrollBehavior = "smooth"; }
-                              : function() { target.style.scrollBehavior = "smooth"; };
-
-  var gotoBottom =   isWindow ? function() { target.scrollTo(0, target.scrollMaxY); }
-                              : function() { target.scrollTop = target.scrollHeight; };
-
   function ensureScroll() { 
     if (!this.dummyEnsureScroll) {
       this.dummyEnsureScroll = 1;
@@ -148,125 +47,86 @@ function testScroll(target, stepSize, opt_reportFunc, opt_numSteps)
   
   
   
-  function P_syncScrollTest() {
-    return new Promise(function(resolve) {
+  function startTest()
+  {
+    
+    var start = myNow();
+    var lastScrollPos = getPos();
+    var lastScrollTime = start;
+    var durations = [];
+    var report = opt_reportFunc || tpRecordTime;
+    if (report == 'PageLoader:RecordTime') {
+      report = function(duration) {
+        var msg = { time: duration, startTime: '', testName: '' };
+        sendAsyncMessage('PageLoader:RecordTime', msg);
+      }
+    }
+
+    function tick() {
+      var now = myNow();
+      var duration = now - lastScrollTime;
+      lastScrollTime = now;
+
+      durations.push(duration);
+      doScrollTick();
+
       
-      var start = myNow();
-      var lastScrollPos = getPos();
-      var lastScrollTime = start;
-      var durations = [];
-
-      function tick() {
-        var now = myNow();
-        var duration = now - lastScrollTime;
-        lastScrollTime = now;
-
-        durations.push(duration);
-        doScrollTick();
-
-        
-        if ((getPos() == lastScrollPos) || (opt_numSteps && (durations.length >= (opt_numSteps + 2)))) {
-          if (typeof(Profiler) !== "undefined") {
-            Profiler.pause();
-          }
-
-          
-          
-          
-          
-
-          durations.pop(); 
-          durations.pop(); 
-
-          if (win.talosDebug)
-            win.talosDebug.displayData = true; 
-
-          
-          var sum = 0;
-          for (var i = 0; i < durations.length; i++)
-            sum += Number(durations[i]);
-
-          
-          result.values.push(durations.length ? sum / durations.length : 0);
-          result.names.push(testBaseName);
-          resolve();
-          return;
+      if ((getPos() == lastScrollPos) || (opt_numSteps && (durations.length >= (opt_numSteps + 2)))) {
+        if (typeof(Profiler) !== "undefined") {
+          Profiler.pause();
         }
 
-        lastScrollPos = getPos();
-        rAF(tick);
+        
+        
+        
+        
+
+        durations.pop(); 
+        durations.pop(); 
+
+        if (win.talosDebug)
+          win.talosDebug.displayData = true; 
+
+        
+        var sum = 0;
+        for (var i = 0; i < durations.length; i++)
+          sum += Number(durations[i]);
+
+        
+        report(durations.length ? sum / durations.length : 0);
+        return;
       }
 
-      if (typeof(Profiler) !== "undefined") {
-        Profiler.resume();
-      }
+      lastScrollPos = getPos();
       rAF(tick);
-    });
-  }
-
-  function P_testAPZScroll() {
-    var APZ_MEASURE_MS = 1000;
-
-    function startFrameTimeRecording(cb) {
-      TalosPowersParent.exec("startFrameTimeRecording", null, cb, win);
     }
 
-    function stopFrameTimeRecording(handle, cb) {
-      TalosPowersParent.exec("stopFrameTimeRecording", handle, cb, win);
+    if (typeof(Profiler) !== "undefined") {
+      Profiler.resume();
     }
-
-    return new Promise(function(resolve, reject) {
-      setSmooth();
-      var startts = Date.now();
-
-      var handle = -1;
-      startFrameTimeRecording(function(rv) {
-        handle = rv;
-      });
-
-      
-      setTimeout(function() {
-        var endts = Date.now();
-
-        stopFrameTimeRecording(handle, function(intervals) {
-          function average(arr) {
-              var sum = 0;
-              for(var i = 0; i < arr.length; i++)
-                sum += arr[i];
-              return arr.length ? sum / arr.length : 0;
-          }
-
-          
-          result.values.push(average(intervals.slice(2, intervals.length - 2)));
-          result.names.push("CSSOM." + testBaseName);
-
-          resolve();
-        });
-      }, APZ_MEASURE_MS);
-
-      gotoBottom(); 
-    });
+    rAF(tick);
   }
 
-  P_setupReportFn()
-  .then(FP_wait(260))
-  .then(gotoTop)
-  .then(P_rAF)
-  .then(P_syncScrollTest)
-  .then(gotoTop)
-  .then(FP_wait(260))
-  .then(P_testAPZScroll)
-  .then(function() {
-    report(result.values.join(","), 0, result.names.join(","));
-  });
+  
+  
+  
+  if(!opt_reportFunc && document.head) {
+    var imported = document.createElement('script');
+    imported.src = '../../scripts/talos-debug.js?dummy=' + Date.now(); 
+    document.head.appendChild(imported);
+  }
+
+  setTimeout(function(){
+    gotoTop();
+    rAF(startTest);
+  }, 260);
 }
 
 
-try {
-  function handleMessageFromChrome(message) {
-    var payload = message.data.details;
-    testScroll(payload.target, payload.stepSize, 'PageLoader:RecordTime', payload.opt_numSteps);
-  }
 
-  addMessageListener("PageLoader:ScrollTest", handleMessageFromChrome);
-} catch (e) {}
+function handleMessageFromChrome(message) {
+  var payload = message.data.details;
+  testScroll(payload.target, payload.stepSize, 'PageLoader:RecordTime', payload.opt_numSteps);
+}
+
+addMessageListener("PageLoader:ScrollTest", handleMessageFromChrome);

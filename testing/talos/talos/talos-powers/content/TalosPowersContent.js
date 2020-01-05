@@ -2,14 +2,7 @@
 
 
 
-
-
-
-
-
-
 var TalosPowersContent;
-var TalosPowersParent;
 
 (function() {
   TalosPowersContent = {
@@ -52,40 +45,4 @@ var TalosPowersParent;
       });
     },
   };
-
-  
-
-
-  
-  
-  TalosPowersParent = {
-    replyId: 1,
-
-    
-    exec: function(commandName, arg, callback, opt_custom_window) {
-      let win = opt_custom_window || window;
-      let replyEvent = "TalosPowers:ParentExec:ReplyEvent:" + this.replyId++;
-      if (callback) {
-        win.addEventListener(replyEvent, function rvhandler(e) {
-          win.removeEventListener(replyEvent, rvhandler);
-          callback(e.detail);
-        });
-      }
-      win.dispatchEvent(
-        new win.CustomEvent("TalosPowers:ParentExec:QueryEvent", {
-          bubbles: true,
-          detail: {
-            command: {
-              name: commandName,
-              data: arg,
-            },
-            listeningTo: replyEvent,
-          }
-        })
-      );
-    },
-
-  };
-  
-
 })();

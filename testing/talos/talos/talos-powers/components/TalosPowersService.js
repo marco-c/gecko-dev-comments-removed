@@ -41,7 +41,6 @@ TalosPowersService.prototype = {
     Services.mm.addMessageListener("TalosContentProfiler:Command", this);
     Services.mm.addMessageListener("TalosPowersContent:ForceCCAndGC", this);
     Services.mm.addMessageListener("TalosPowersContent:GetStartupInfo", this);
-    Services.mm.addMessageListener("TalosPowers:ParentExec:QueryMsg", this);
     Services.obs.addObserver(this, "xpcom-shutdown", false);
   },
 
@@ -67,11 +66,6 @@ TalosPowersService.prototype = {
       }
       case "TalosPowersContent:GetStartupInfo": {
         this.receiveGetStartupInfo(message);
-        break;
-      }
-      case "TalosPowers:ParentExec:QueryMsg": {
-        this.RecieveParentExecCommand(message);
-        break;
       }
     }
   },
@@ -262,58 +256,6 @@ TalosPowersService.prototype = {
                           startupInfo);
     }
   },
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-
-
-
-
-
-
-  ParentExecServices: {
-
-    
-    startFrameTimeRecording: function(arg, callback, win) {
-      var rv = win.QueryInterface(Ci.nsIInterfaceRequestor)
-                  .getInterface(Ci.nsIDOMWindowUtils)
-                  .startFrameTimeRecording();
-      callback(rv);
-    },
-
-    
-    stopFrameTimeRecording: function(arg, callback, win) {
-      var rv = win.QueryInterface(Ci.nsIInterfaceRequestor)
-                  .getInterface(Ci.nsIDOMWindowUtils)
-                  .stopFrameTimeRecording(arg);
-      callback(rv);
-    },
-  },
-
-  RecieveParentExecCommand(msg) {
-    function sendResult(result) {
-      let mm = msg.target.messageManager;
-      mm.sendAsyncMessage("TalosPowers:ParentExec:ReplyMsg", {
-        id: msg.data.id,
-        result: result
-      });
-    }
-
-    let command = msg.data.command;
-    if (!this.ParentExecServices.hasOwnProperty(command.name))
-      throw new Error("TalosPowers:ParentExec: Invalid service '" + command.name + "'");
-
-    this.ParentExecServices[command.name](command.data, sendResult, msg.target.ownerGlobal);
-  },
-
 };
 
 this.NSGetFactory = XPCOMUtils.generateNSGetFactory([TalosPowersService]);
