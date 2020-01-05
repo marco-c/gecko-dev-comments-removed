@@ -5,9 +5,13 @@
 
 
 
-#include "nsStyleCoord.h"
 #include "mozilla/HashFunctions.h"
 #include "mozilla/PodOperations.h"
+
+
+
+
+#include "nsStyleCoord.h"
 
 using namespace mozilla;
 
