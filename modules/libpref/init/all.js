@@ -422,8 +422,6 @@ pref("media.navigator.video.use_tmmbr", false);
 pref("media.navigator.audio.use_fec", true);
 pref("media.navigator.video.red_ulpfec_enabled", false);
 
-pref("media.peerconnection.dtmf.enabled", false);
-
 pref("media.webrtc.debug.trace_mask", 0);
 pref("media.webrtc.debug.multi_log", false);
 pref("media.webrtc.debug.aec_log_dir", "");
@@ -4811,6 +4809,8 @@ pref("dom.mozPermissionSettings.enabled", false);
 
 #if defined(XP_MACOSX)
 pref("dom.w3c_touch_events.enabled", 0);
+#elif defined(XP_WIN) && !defined(NIGHTLY_BUILD)
+pref("dom.w3c_touch_events.enabled", 0);
 #else
 pref("dom.w3c_touch_events.enabled", 2);
 #endif
@@ -4835,7 +4835,11 @@ pref("media.ondevicechange.fakeDeviceChangeEvent.enabled", false);
 
 
 
+#ifdef NIGHTLY_BUILD
 pref("layout.css.touch_action.enabled", true);
+#else
+pref("layout.css.touch_action.enabled", false);
+#endif
 
 
 
@@ -4855,11 +4859,11 @@ pref("dom.netinfo.enabled", false);
 #ifdef XP_WIN
 
 
-pref("memory.low_virtual_memory_threshold_mb", 256);
+pref("memory.low_virtual_memory_threshold_mb", 128);
 
 
 
-pref("memory.low_commit_space_threshold_mb", 256);
+pref("memory.low_commit_space_threshold_mb", 128);
 
 
 
@@ -5210,7 +5214,11 @@ pref("layout.accessiblecaret.enabled", false);
 
 
 
+#ifdef NIGHTLY_BUILD
 pref("layout.accessiblecaret.enabled_on_touch", true);
+#else
+pref("layout.accessiblecaret.enabled_on_touch", false);
+#endif
 
 
 pref("layout.accessiblecaret.width", "34.0");
