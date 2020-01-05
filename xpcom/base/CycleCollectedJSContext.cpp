@@ -127,11 +127,29 @@ public:
 
 } 
 
-struct NoteWeakMapChildrenTracer : public JS::CallbackTracer
+struct CCJSTracer : public JS::CallbackTracer
 {
-  NoteWeakMapChildrenTracer(JSContext* aCx,
+protected:
+  CCJSTracer(CycleCollectedJSContext* aCx,
+             WeakMapTraceKind aWeakTraceKind = TraceWeakMapValues)
+    : JS::CallbackTracer(aCx->Context(), aWeakTraceKind)
+    , mCx(aCx)
+  {}
+
+public:
+  void TraceChildren(JS::GCCellPtr aThing)
+  {
+    mCx->TraceJSChildren(this, aThing);
+  }
+
+  CycleCollectedJSContext* mCx;
+};
+
+struct NoteWeakMapChildrenTracer : public CCJSTracer
+{
+  NoteWeakMapChildrenTracer(CycleCollectedJSContext* aCx,
                             nsCycleCollectionNoteRootCallback& aCb)
-    : JS::CallbackTracer(aCx), mCb(aCb), mTracedAny(false), mMap(nullptr),
+    : CCJSTracer(aCx), mCb(aCb), mTracedAny(false), mMap(nullptr),
       mKey(nullptr), mKeyDelegate(nullptr)
   {
   }
@@ -158,14 +176,15 @@ NoteWeakMapChildrenTracer::onChild(const JS::GCCellPtr& aThing)
     mCb.NoteWeakMapping(mMap, mKey, mKeyDelegate, aThing);
     mTracedAny = true;
   } else {
-    JS::TraceChildren(this, aThing);
+    TraceChildren(aThing);
   }
 }
 
 struct NoteWeakMapsTracer : public js::WeakMapTracer
 {
-  NoteWeakMapsTracer(JSContext* aCx, nsCycleCollectionNoteRootCallback& aCccb)
-    : js::WeakMapTracer(aCx), mCb(aCccb), mChildTracer(aCx, aCccb)
+  NoteWeakMapsTracer(CycleCollectedJSContext* aCx,
+                     nsCycleCollectionNoteRootCallback& aCccb)
+    : js::WeakMapTracer(aCx->Context()), mCb(aCccb), mChildTracer(aCx, aCccb)
   {
   }
   void trace(JSObject* aMap, JS::GCCellPtr aKey, JS::GCCellPtr aValue) override;
@@ -213,7 +232,7 @@ NoteWeakMapsTracer::trace(JSObject* aMap, JS::GCCellPtr aKey,
     mChildTracer.mKeyDelegate = kdelegate;
 
     if (!aValue.is<JSString>()) {
-      JS::TraceChildren(&mChildTracer, aValue);
+      mChildTracer.TraceChildren(aValue);
     }
 
     
@@ -324,12 +343,13 @@ JSZoneParticipant::Traverse(void* aPtr, nsCycleCollectionTraversalCallback& aCb)
   return NS_OK;
 }
 
-struct TraversalTracer : public JS::CallbackTracer
+struct TraversalTracer : public CCJSTracer
 {
-  TraversalTracer(JSContext* aCx, nsCycleCollectionTraversalCallback& aCb)
-    : JS::CallbackTracer(aCx, DoNotTraceWeakMaps), mCb(aCb)
-  {
-  }
+  TraversalTracer(CycleCollectedJSContext* aCx,
+                  nsCycleCollectionTraversalCallback& aCb)
+    : CCJSTracer(aCx, DoNotTraceWeakMaps)
+    , mCb(aCb)
+  {}
   void onChild(const JS::GCCellPtr& aThing) override;
   nsCycleCollectionTraversalCallback& mCb;
 };
@@ -366,7 +386,7 @@ TraversalTracer::onChild(const JS::GCCellPtr& aThing)
     
     JS_TraceObjectGroupCycleCollectorChildren(this, aThing);
   } else if (!aThing.is<JSString>()) {
-    JS::TraceChildren(this, aThing);
+    TraceChildren(aThing);
   }
 }
 
@@ -630,11 +650,11 @@ CycleCollectedJSContext::DescribeGCThing(bool aIsMarked, JS::GCCellPtr aThing,
 
 void
 CycleCollectedJSContext::NoteGCThingJSChildren(JS::GCCellPtr aThing,
-                                               nsCycleCollectionTraversalCallback& aCb) const
+                                               nsCycleCollectionTraversalCallback& aCb)
 {
   MOZ_ASSERT(mJSContext);
-  TraversalTracer trc(mJSContext, aCb);
-  JS::TraceChildren(&trc, aThing);
+  TraversalTracer trc(this, aCb);
+  trc.TraceChildren(aThing);
 }
 
 void
@@ -733,7 +753,7 @@ CycleCollectedJSContext::TraverseZone(JS::Zone* aZone,
 
 
 
-  TraversalTracer trc(mJSContext, aCb);
+  TraversalTracer trc(this, aCb);
   js::VisitGrayWrapperTargets(aZone, NoteJSChildGrayWrapperShim, &trc);
 
   
@@ -1212,7 +1232,7 @@ CycleCollectedJSContext::TraverseRoots(nsCycleCollectionNoteRootCallback& aCb)
 
   TraverseNativeRoots(aCb);
 
-  NoteWeakMapsTracer trc(mJSContext, aCb);
+  NoteWeakMapsTracer trc(this, aCb);
   js::TraceWeakMaps(&trc);
 
   return NS_OK;
@@ -1677,6 +1697,12 @@ CycleCollectedJSContext::OnLargeAllocationFailure()
   AnnotateAndSetOutOfMemory(&mLargeAllocationFailureState, OOMState::Reporting);
   CustomLargeAllocationFailureCallback();
   AnnotateAndSetOutOfMemory(&mLargeAllocationFailureState, OOMState::Reported);
+}
+
+void
+CycleCollectedJSContext::TraceJSChildren(JSTracer* aTrc, JS::GCCellPtr aThing)
+{
+  JS::TraceChildren(aTrc, aThing);
 }
 
 void
