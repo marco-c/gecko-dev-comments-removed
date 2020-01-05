@@ -75,15 +75,16 @@
 
 
     const sharedTypedArrayConstructors = Object.freeze(
-        typedArrayConstructors.map(sharedConstructor)
+        typeof SharedArrayBuffer === "function"
+        ? typedArrayConstructors.map(sharedConstructor)
+        : []
     );
 
     
 
 
     const anyTypedArrayConstructors = Object.freeze([
-        ...typedArrayConstructors,
-        ...(typeof SharedArrayBuffer === "function" ? sharedTypedArrayConstructors : []),
+        ...typedArrayConstructors, ...sharedTypedArrayConstructors,
     ]);
 
     
