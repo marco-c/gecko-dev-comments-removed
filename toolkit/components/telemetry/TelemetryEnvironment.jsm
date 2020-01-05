@@ -107,6 +107,15 @@ this.TelemetryEnvironment = {
   testReset: function() {
     return getGlobal().reset();
   },
+
+  
+
+
+  testCleanRestart: function() {
+    getGlobal().shutdown();
+    gGlobalEnvironment = null;
+    return getGlobal();
+  },
 };
 
 const RECORD_PREF_STATE = TelemetryEnvironment.RECORD_PREF_STATE;
@@ -310,6 +319,18 @@ function limitStringToLength(aString, aMaxLength) {
     return null;
   }
   return aString.substring(0, aMaxLength);
+}
+
+
+
+
+
+function forceToStringOrNull(aValue) {
+  if (aValue === null) {
+    return null;
+  }
+
+  return String(aValue);
 }
 
 
@@ -1279,13 +1300,13 @@ EnvironmentCache.prototype = {
 
   _getOSData: function () {
     let data = {
-      name: getSysinfoProperty("name", null),
-      version: getSysinfoProperty("version", null),
-      locale: getSystemLocale(),
+      name: forceToStringOrNull(getSysinfoProperty("name", null)),
+      version: forceToStringOrNull(getSysinfoProperty("version", null)),
+      locale: forceToStringOrNull(getSystemLocale()),
     };
 
     if (["gonk", "android"].includes(AppConstants.platform)) {
-      data.kernelVersion = getSysinfoProperty("kernel_version", null);
+      data.kernelVersion = forceToStringOrNull(getSysinfoProperty("kernel_version", null));
     } else if (AppConstants.platform === "win") {
       
       const WINDOWS_UBR_KEY_PATH = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion";
