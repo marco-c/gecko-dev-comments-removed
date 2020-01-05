@@ -16,6 +16,7 @@ use std::mem;
 use style::context::SharedStyleContext;
 use style::dom::TNode;
 use style::selector_impl::ServoSelectorImpl;
+use style::traversal::RestyleResult;
 use style::traversal::{DomTraversalContext, remove_from_bloom_filter, recalc_style_at};
 use util::opts;
 use wrapper::{LayoutNodeLayoutData, ThreadSafeLayoutNodeHelpers};
@@ -69,12 +70,12 @@ impl<'lc, N> DomTraversalContext<N> for RecalcStyleAndConstructFlows<'lc>
         }
     }
 
-    fn process_preorder(&self, node: N) {
+    fn process_preorder(&self, node: N) -> RestyleResult {
         
         
         node.initialize_data();
 
-        recalc_style_at(&self.context, self.root, node);
+        recalc_style_at(&self.context, self.root, node)
     }
 
     fn process_postorder(&self, node: N) {

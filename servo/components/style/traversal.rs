@@ -22,6 +22,16 @@ pub type Generation = u32;
 
 
 
+pub enum RestyleResult {
+    Continue,
+    Stop,
+}
+
+
+
+
+
+
 
 
 
@@ -141,11 +151,22 @@ pub fn remove_from_bloom_filter<'a, N, C>(context: &C, root: OpaqueNode, node: N
 
 pub trait DomTraversalContext<N: TNode>  {
     type SharedContext: Sync + 'static;
+
     fn new<'a>(&'a Self::SharedContext, OpaqueNode) -> Self;
+
     
-    fn process_preorder(&self, node: N);
+    fn process_preorder(&self, node: N) -> RestyleResult;
+
+    
+    
     
     fn process_postorder(&self, node: N);
+
+    
+    
+    
+    
+    fn needs_postorder_traversal(&self) -> bool { true }
 
     
     
@@ -172,14 +193,88 @@ pub trait DomTraversalContext<N: TNode>  {
     }
 }
 
+pub fn ensure_node_styled<'a, N, C>(node: N,
+                                    context: &'a C)
+    where N: TNode,
+          C: StyleContext<'a>
+{
+    let mut display_none = false;
+    ensure_node_styled_internal(node, context, &mut display_none);
+}
+
+#[allow(unsafe_code)]
+fn ensure_node_styled_internal<'a, N, C>(node: N,
+                                         context: &'a C,
+                                         parents_had_display_none: &mut bool)
+    where N: TNode,
+          C: StyleContext<'a>
+{
+    use properties::longhands::display::computed_value as display;
+
+    
+    
+    
+    
+    
+    
+    debug_assert!(node.borrow_data().is_some(),
+                  "Need to initialize the data before calling ensure_node_styled");
+
+    
+    
+    
+    
+    
+    let parent = match node.parent_node() {
+        Some(parent) if parent.is_element() => Some(parent),
+        _ => None,
+    };
+
+    if let Some(parent) = parent {
+        ensure_node_styled_internal(parent, context, parents_had_display_none);
+    }
+
+    
+    
+    
+    
+    
+    if let Some(ref style) = node.borrow_data().unwrap().style {
+        if !*parents_had_display_none {
+            *parents_had_display_none = style.get_box().clone_display() == display::T::none;
+            return;
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    let mut applicable_declarations = ApplicableDeclarations::new();
+    if let Some(element) = node.as_element() {
+        let stylist = &context.shared_context().stylist;
+
+        element.match_element(&**stylist,
+                              None,
+                              &mut applicable_declarations);
+    }
+
+    unsafe {
+        node.cascade_node(context, parent, &applicable_declarations);
+    }
+}
+
 
 #[inline]
 #[allow(unsafe_code)]
 pub fn recalc_style_at<'a, N, C>(context: &'a C,
                                  root: OpaqueNode,
-                                 node: N)
+                                 node: N) -> RestyleResult
     where N: TNode,
-          C: StyleContext<'a> {
+          C: StyleContext<'a>
+{
     
     let parent_opt = match node.parent_node() {
         Some(parent) if parent.is_element() => Some(parent),
@@ -190,6 +285,7 @@ pub fn recalc_style_at<'a, N, C>(context: &'a C,
     let mut bf = take_thread_local_bloom_filter(parent_opt, root, context.shared_context());
 
     let nonincremental_layout = opts::get().nonincremental_layout;
+    let mut restyle_result = RestyleResult::Continue;
     if nonincremental_layout || node.is_dirty() {
         
         
@@ -239,9 +335,9 @@ pub fn recalc_style_at<'a, N, C>(context: &'a C,
 
                 
                 unsafe {
-                    node.cascade_node(context,
-                                      parent_opt,
-                                      &applicable_declarations);
+                    restyle_result = node.cascade_node(context,
+                                                    parent_opt,
+                                                    &applicable_declarations);
                 }
 
                 
@@ -249,7 +345,8 @@ pub fn recalc_style_at<'a, N, C>(context: &'a C,
                     style_sharing_candidate_cache.insert_if_possible::<'ln, N>(&element);
                 }
             }
-            StyleSharingResult::StyleWasShared(index, damage) => {
+            StyleSharingResult::StyleWasShared(index, damage, restyle_result_cascade) => {
+                restyle_result = restyle_result_cascade;
                 style_sharing_candidate_cache.touch(index);
                 node.set_restyle_damage(damage);
             }
@@ -285,5 +382,11 @@ pub fn recalc_style_at<'a, N, C>(context: &'a C,
                 }
             }
         }
+    }
+
+    if nonincremental_layout {
+        RestyleResult::Continue
+    } else {
+        restyle_result
     }
 }
