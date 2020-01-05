@@ -68,7 +68,7 @@ class nsPropertyTable
 
 
 
-  void* GetProperty(nsPropertyOwner aObject,
+  void* GetProperty(const nsPropertyOwner& aObject,
                     nsIAtom    *aPropertyName,
                     nsresult   *aResult = nullptr)
   {
@@ -92,7 +92,7 @@ class nsPropertyTable
 
 
 
-  nsresult SetProperty(nsPropertyOwner     aObject,
+  nsresult SetProperty(const nsPropertyOwner&     aObject,
                                    nsIAtom            *aPropertyName,
                                    void               *aPropertyValue,
                                    NSPropertyDtorFunc  aDtor,
@@ -116,7 +116,7 @@ class nsPropertyTable
 
 
 
-  void* UnsetProperty(nsPropertyOwner aObject,
+  void* UnsetProperty(const nsPropertyOwner& aObject,
                       nsIAtom    *aPropertyName,
                       nsresult   *aStatus = nullptr)
   {
