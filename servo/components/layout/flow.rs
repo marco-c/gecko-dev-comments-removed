@@ -43,6 +43,7 @@ use model::{CollapsibleMargins, IntrinsicISizes, MarginCollapseInfo};
 use multicol::MulticolFlow;
 use parallel::FlowParallelInfo;
 use serde::{Serialize, Serializer};
+use servo_geometry::{au_rect_to_f32_rect, f32_rect_to_au_rect};
 use std::{fmt, mem, raw};
 use std::iter::Zip;
 use std::slice::IterMut;
@@ -248,6 +249,46 @@ pub trait Flow: fmt::Debug + Sync + Send + 'static {
         might_have_floats_in_or_out
     }
 
+    fn get_overflow_in_parent_coordinates(&self) -> Overflow {
+        
+        let container_size = Size2D::zero();
+        let position = base(self).position.to_physical(base(self).writing_mode, container_size);
+
+        let mut overflow = base(self).overflow;
+
+        match self.class() {
+            FlowClass::Block | FlowClass::TableCaption | FlowClass::TableCell => {}
+            _ => {
+                overflow.translate(&position.origin);
+                return overflow;
+            }
+        }
+
+        if !self.as_block().fragment.establishes_stacking_context() ||
+           self.as_block().fragment.style.get_box().transform.0.is_none() {
+            overflow.translate(&position.origin);
+            return overflow;
+        }
+
+        
+        
+        let transform_2d = self.as_block().fragment.transform_matrix(&position).to_2d();
+        let transformed_overflow = Overflow {
+            paint: f32_rect_to_au_rect(transform_2d.transform_rect(
+                                       &au_rect_to_f32_rect(overflow.paint))),
+            scroll: f32_rect_to_au_rect(transform_2d.transform_rect(
+                                       &au_rect_to_f32_rect(overflow.scroll))),
+        };
+
+        
+        
+        
+        overflow.union(&transformed_overflow);
+
+        overflow.translate(&position.origin);
+        overflow
+    }
+
     
     
     
@@ -266,17 +307,11 @@ pub trait Flow: fmt::Debug + Sync + Send + 'static {
             FlowClass::Block |
             FlowClass::TableCaption |
             FlowClass::TableCell => {
-                
-                let container_size = Size2D::zero();
-
                 let overflow_x = self.as_block().fragment.style.get_box().overflow_x;
                 let overflow_y = self.as_block().fragment.style.get_box().overflow_y;
 
                 for kid in mut_base(self).children.iter_mut() {
-                    let mut kid_overflow = base(kid).overflow;
-                    let kid_position = base(kid).position.to_physical(base(kid).writing_mode,
-                                                                      container_size);
-                    kid_overflow.translate(&kid_position.origin);
+                    let mut kid_overflow = kid.get_overflow_in_parent_coordinates();
 
                     
                     
