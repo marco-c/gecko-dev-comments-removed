@@ -64,12 +64,12 @@ struct ComputedTiming
   }
 
   enum class AnimationPhase {
-    Null,   
+    Idle,   
     Before, 
     Active, 
     After   
   };
-  AnimationPhase      mPhase = AnimationPhase::Null;
+  AnimationPhase      mPhase = AnimationPhase::Idle;
 
   ComputedTimingFunction::BeforeFlag mBeforeFlag =
     ComputedTimingFunction::BeforeFlag::Unset;

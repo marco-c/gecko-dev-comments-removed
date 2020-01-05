@@ -76,7 +76,7 @@ public:
     , mIsStylePaused(false)
     , mPauseShouldStick(false)
     , mNeedsNewAnimationIndexWhenRun(false)
-    , mPreviousPhase(ComputedTiming::AnimationPhase::Null)
+    , mPreviousPhase(ComputedTiming::AnimationPhase::Idle)
     , mPreviousIteration(0)
   {
     
