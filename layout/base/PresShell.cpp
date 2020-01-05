@@ -2954,6 +2954,10 @@ PresShell::RecreateFramesFor(nsIContent* aContent)
   changeList.AppendChange(nullptr, aContent, nsChangeHint_ReconstructFrame);
 
   
+  
+  ServoStyleSet::AutoAllowStaleStyles guard(mStyleSet->GetAsServo());
+
+  
   ++mChangeNestCount;
   RestyleManager* restyleManager = mPresContext->RestyleManager();
   restyleManager->ProcessRestyledFrames(changeList);
