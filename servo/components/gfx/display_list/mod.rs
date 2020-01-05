@@ -1150,6 +1150,10 @@ pub struct ImageDisplayItem {
 
     
     
+    pub tile_spacing: Size2D<Au>,
+
+    
+    
     pub image_rendering: image_rendering::T,
 }
 
@@ -1360,6 +1364,7 @@ impl DisplayItem {
                 paint_context.draw_image(
                     &image_item.base.bounds,
                     &image_item.stretch_size,
+                    &image_item.tile_spacing,
                     &image_item.webrender_image,
                     &image_item.image_data
                                .as_ref()
