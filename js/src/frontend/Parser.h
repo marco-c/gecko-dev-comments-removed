@@ -891,6 +891,12 @@ class ParserBase : public StrictModeGetter
 
     MOZ_MUST_USE bool extraWarning(unsigned errorNumber, ...);
 
+    
+
+
+
+    MOZ_MUST_USE bool extraWarningAt(uint32_t offset, unsigned errorNumber, ...);
+
     bool isValidStrictBinding(PropertyName* name);
 
     void addTelemetry(JSCompartment::DeprecatedLanguageExtension e);
@@ -1020,7 +1026,7 @@ class Parser final : public ParserBase, private JS::AutoGCRooter
     class MOZ_STACK_CLASS PossibleError
     {
       private:
-        enum class ErrorKind { Expression, Destructuring };
+        enum class ErrorKind { Expression, Destructuring, DestructuringWarning };
 
         enum class ErrorState { None, Pending };
 
@@ -1035,6 +1041,7 @@ class Parser final : public ParserBase, private JS::AutoGCRooter
         Parser<ParseHandler, CharT>& parser_;
         Error exprError_;
         Error destructuringError_;
+        Error destructuringWarning_;
 
         
         Error& error(ErrorKind kind);
@@ -1051,13 +1058,20 @@ class Parser final : public ParserBase, private JS::AutoGCRooter
 
         
         
-        bool checkForError(ErrorKind kind);
+        MOZ_MUST_USE bool checkForError(ErrorKind kind);
+
+        
+        
+        MOZ_MUST_USE bool checkForWarning(ErrorKind kind);
 
         
         void transferErrorTo(ErrorKind kind, PossibleError* other);
 
       public:
         explicit PossibleError(Parser<ParseHandler, CharT>& parser);
+
+        
+        bool hasPendingDestructuringError();
 
         
         
@@ -1067,15 +1081,22 @@ class Parser final : public ParserBase, private JS::AutoGCRooter
         
         
         
+        void setPendingDestructuringWarningAt(const TokenPos& pos, unsigned errorNumber);
+
+        
+        
+        
         void setPendingExpressionErrorAt(const TokenPos& pos, unsigned errorNumber);
 
         
         
-        bool checkForDestructuringError();
+        
+        MOZ_MUST_USE bool checkForDestructuringErrorOrWarning();
 
         
         
-        bool checkForExpressionError();
+        
+        MOZ_MUST_USE bool checkForExpressionError();
 
         
         
@@ -1524,18 +1545,10 @@ class Parser final : public ParserBase, private JS::AutoGCRooter
     Node objectBindingPattern(DeclarationKind kind, YieldHandling yieldHandling);
     Node arrayBindingPattern(DeclarationKind kind, YieldHandling yieldHandling);
 
-    
-    
-    bool checkDestructuringAssignmentPattern(Node pattern,
-                                             PossibleError* possibleError = nullptr);
-
-    
-    
-    
-    
-    bool checkDestructuringAssignmentArray(Node arrayPattern);
-    bool checkDestructuringAssignmentObject(Node objectPattern);
-    bool checkDestructuringAssignmentName(Node expr);
+    void checkDestructuringAssignmentTarget(Node expr, TokenPos exprPos,
+                                            PossibleError* possibleError);
+    void checkDestructuringAssignmentElement(Node expr, TokenPos exprPos,
+                                             PossibleError* possibleError);
 
     Node newNumber(const Token& tok) {
         return handler.newNumber(tok.number(), tok.decimalPoint(), tok.pos);
