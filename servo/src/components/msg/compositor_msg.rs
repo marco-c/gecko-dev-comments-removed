@@ -2,6 +2,7 @@
 
 
 
+use geom::point::Point2D;
 use geom::rect::Rect;
 use geom::size::Size2D;
 use azure::azure_hl::Color;
@@ -89,6 +90,7 @@ pub trait RenderListener {
 pub trait ScriptListener : Clone {
     fn set_ready_state(&self, ReadyState);
     fn invalidate_rect(&self, PipelineId, Rect<uint>);
+    fn scroll_fragment_point(&self, PipelineId, Point2D<f32>);
     fn close(&self);
 }
 
