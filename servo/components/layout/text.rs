@@ -41,7 +41,7 @@ impl TextRunScanner {
 
     pub fn scan_for_runs(&mut self, font_context: &mut FontContext, mut fragments: DList<Fragment>)
                          -> InlineFragments {
-        debug!("TextRunScanner: scanning {:u} fragments for text runs...", fragments.len());
+        debug!("TextRunScanner: scanning {} fragments for text runs...", fragments.len());
 
         
         

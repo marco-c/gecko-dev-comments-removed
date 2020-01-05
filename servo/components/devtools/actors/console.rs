@@ -163,7 +163,7 @@ impl Actor for ConsoleActor {
 
                         }
 
-                        s => println!("unrecognized message type requested: \"{:s}\"", s),
+                        s => println!("unrecognized message type requested: \"{}\"", s),
                     }
                 }
 

@@ -28,5 +28,5 @@ impl<T, I: Iterator<Result<T, SyntaxError>>> Iterator<T> for ErrorLoggerIterator
 
 pub fn log_css_error(location: SourceLocation, message: &str) {
     
-    info!("{:u}:{:u} {:s}", location.line, location.column, message)
+    info!("{}:{} {}", location.line, location.column, message)
 }

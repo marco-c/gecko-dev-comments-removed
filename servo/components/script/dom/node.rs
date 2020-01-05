@@ -495,7 +495,7 @@ impl<'a> NodeHelpers<'a> for JSRef<'a, Node> {
         }
 
         s.push_str(self.debug_str().as_slice());
-        debug!("{:s}", s);
+        debug!("{}", s);
 
         
         for kid in self.children() {
