@@ -120,7 +120,7 @@ impl ActorRegistry {
     }
 
     
-    pub fn get_start_stamp(&self) -> PreciseTime {
+    pub fn start_stamp(&self) -> PreciseTime {
         self.start_stamp.clone()
     }
 

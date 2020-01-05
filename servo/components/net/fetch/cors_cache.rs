@@ -284,7 +284,7 @@ impl CORSCacheTask {
     }
 
     
-    pub fn get_sender(&self) -> CORSCacheSender {
+    pub fn sender(&self) -> CORSCacheSender {
         self.sender.clone()
     }
 

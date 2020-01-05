@@ -77,7 +77,7 @@ pub struct LayerProperties {
 
 
 pub trait PaintListener {
-    fn get_graphics_metadata(&mut self) -> Option<NativeGraphicsMetadata>;
+    fn graphics_metadata(&mut self) -> Option<NativeGraphicsMetadata>;
 
     
     
