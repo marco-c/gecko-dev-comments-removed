@@ -152,9 +152,9 @@ CertVerifier::SHA1ModeMoreRestrictiveThanGivenMode(SHA1Mode mode)
   switch (mSHA1Mode) {
     case SHA1Mode::Forbidden:
       return mode != SHA1Mode::Forbidden;
-    case SHA1Mode::Before2016:
-      return mode != SHA1Mode::Forbidden && mode != SHA1Mode::Before2016;
     case SHA1Mode::ImportedRoot:
+      return mode != SHA1Mode::Forbidden && mode != SHA1Mode::ImportedRoot;
+    case SHA1Mode::ImportedRootOrBefore2016:
       return mode == SHA1Mode::Allowed;
     case SHA1Mode::Allowed:
       return false;
@@ -283,15 +283,15 @@ CertVerifier::VerifyCert(CERTCertificate* cert, SECCertificateUsage usage,
       
       SHA1Mode sha1ModeConfigurations[] = {
         SHA1Mode::Forbidden,
-        SHA1Mode::Before2016,
         SHA1Mode::ImportedRoot,
+        SHA1Mode::ImportedRootOrBefore2016,
         SHA1Mode::Allowed,
       };
 
       SHA1ModeResult sha1ModeResults[] = {
         SHA1ModeResult::SucceededWithoutSHA1,
-        SHA1ModeResult::SucceededWithSHA1Before2016,
         SHA1ModeResult::SucceededWithImportedRoot,
+        SHA1ModeResult::SucceededWithImportedRootOrSHA1Before2016,
         SHA1ModeResult::SucceededWithSHA1,
       };
 
@@ -346,15 +346,6 @@ CertVerifier::VerifyCert(CERTCertificate* cert, SECCertificateUsage usage,
                                           KeyPurposeId::id_kp_serverAuth,
                                           evPolicy, stapledOCSPResponse,
                                           ocspStaplingStatus);
-        
-        
-        
-        
-        
-        
-        
-        
-        
         if (rv == Success &&
             sha1ModeConfigurations[i] == SHA1Mode::ImportedRoot) {
           bool isBuiltInRoot = false;
@@ -438,15 +429,6 @@ CertVerifier::VerifyCert(CERTCertificate* cert, SECCertificateUsage usage,
                                             CertPolicyId::anyPolicy,
                                             stapledOCSPResponse,
                                             ocspStaplingStatus);
-          
-          
-          
-          
-          
-          
-          
-          
-          
           if (rv == Success &&
               sha1ModeConfigurations[j] == SHA1Mode::ImportedRoot) {
             bool isBuiltInRoot = false;
@@ -479,7 +461,10 @@ CertVerifier::VerifyCert(CERTCertificate* cert, SECCertificateUsage usage,
       
       
       
-      if (sha1ModeResult && mSHA1Mode == SHA1Mode::ImportedRoot) {
+      
+      if (sha1ModeResult &&
+          (mSHA1Mode == SHA1Mode::ImportedRoot ||
+           mSHA1Mode == SHA1Mode::ImportedRootOrBefore2016)) {
         *sha1ModeResult = SHA1ModeResult::Failed;
       }
 
@@ -492,7 +477,7 @@ CertVerifier::VerifyCert(CERTCertificate* cert, SECCertificateUsage usage,
                                        mCertShortLifetimeInDays,
                                        pinningDisabled, MIN_RSA_BITS_WEAK,
                                        ValidityCheckingMode::CheckingOff,
-                                       mSHA1Mode, mNetscapeStepUpPolicy,
+                                       SHA1Mode::Allowed, mNetscapeStepUpPolicy,
                                        builtChain, nullptr, nullptr);
       rv = BuildCertChain(trustDomain, certDER, time,
                           EndEntityOrCA::MustBeCA, KeyUsage::keyCertSign,
