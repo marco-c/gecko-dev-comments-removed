@@ -25,25 +25,6 @@ public class ViERenderer {
     private final static String TAG = "WEBRTC-ViEREnderer";
 
     
-    private static SurfaceHolder g_localRenderer;
-
-    public static SurfaceView CreateRenderer(Context context) {
-        return CreateRenderer(context, false);
-    }
-
-    public static SurfaceView CreateRenderer(Context context,
-            boolean useOpenGLES2) {
-        if(useOpenGLES2 == true && ViEAndroidGLES20.IsSupported(context))
-            return new ViEAndroidGLES20(context);
-        else
-            return new SurfaceView(context);
-    }
-
-    
-    
-    
-    
-    
     
     
     
@@ -53,19 +34,13 @@ public class ViERenderer {
     
     
     public static void CreateLocalRenderer() {
-        View cameraView = GeckoAppShell.getGeckoInterface().getCameraView();
-        if (cameraView != null && (cameraView instanceof SurfaceView)) {
-            SurfaceView localRender = (SurfaceView)cameraView;
-            g_localRenderer = localRender.getHolder();
-        }
-
         ThreadUtils.getUiHandler().post(new Runnable() {
             @Override
             public void run() {
                 try {
-                    GeckoAppShell.getGeckoInterface().enableCameraView();
+                    GeckoAppShell.getGeckoInterface().enableOrientationListener();
                 } catch (Exception e) {
-                    Log.e(TAG, "CreateLocalRenderer enableCameraView exception: "
+                    Log.e(TAG, "enableOrientationListener exception: "
                           + e.getLocalizedMessage());
                 }
             }
@@ -73,26 +48,17 @@ public class ViERenderer {
     }
 
     public static void DestroyLocalRenderer() {
-        if (g_localRenderer != null) {
-            g_localRenderer = null;
-
-            ThreadUtils.getUiHandler().post(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        GeckoAppShell.getGeckoInterface().disableCameraView();
-                    } catch (Exception e) {
-                        Log.e(TAG,
-                              "DestroyLocalRenderer disableCameraView exception: " +
-                              e.getLocalizedMessage());
-                    }
+        ThreadUtils.getUiHandler().post(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    GeckoAppShell.getGeckoInterface().disableOrientationListener();
+                } catch (Exception e) {
+                    Log.e(TAG,
+                          "disableOrientationListener exception: " +
+                          e.getLocalizedMessage());
                 }
-            });
-        }
+            }
+        });
     }
-
-    public static SurfaceHolder GetLocalRenderer() {
-        return g_localRenderer;
-    }
-
 }

@@ -1,7 +1,7 @@
-/* -*- Mode: Java; c-basic-offset: 4; tab-width: 20; indent-tabs-mode: nil; -*-
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 package org.mozilla.gecko;
 
@@ -18,11 +18,11 @@ import android.view.View;
 import android.widget.AbsoluteLayout;
 
 public class BaseGeckoInterface implements GeckoAppShell.GeckoInterface {
-    // Bug 908744: Implement GeckoEventListener
-    // Bug 908752: Implement SensorEventListener
-    // Bug 908755: Implement LocationListener
-    // Bug 908756: Implement Tabs.OnTabsChangedListener
-    // Bug 908760: Implement GeckoEventResponder
+    
+    
+    
+    
+    
 
     private final Context mContext;
     private GeckoProfile mProfile;
@@ -40,7 +40,7 @@ public class BaseGeckoInterface implements GeckoAppShell.GeckoInterface {
 
     @Override
     public GeckoProfile getProfile() {
-        // Fall back to default profile if we didn't load a specific one
+        
         if (mProfile == null) {
             mProfile = GeckoProfile.get(mContext);
         }
@@ -58,7 +58,7 @@ public class BaseGeckoInterface implements GeckoAppShell.GeckoInterface {
                                           AppConstants.USER_AGENT_FENNEC_MOBILE;
     }
 
-    // Bug 908775: Implement this
+    
     @Override
     public void doRestart() {}
 
@@ -72,37 +72,29 @@ public class BaseGeckoInterface implements GeckoAppShell.GeckoInterface {
         });
     }
 
-    // Bug 908779: Implement this
+    
     @Override
     public void addPluginView(final View view) {}
 
-    // Bug 908781: Implement this
+    
     @Override
     public void removePluginView(final View view) {}
 
-    // Bug 908783: Implement this
     @Override
-    public void enableCameraView() {}
+    public void enableOrientationListener() {}
 
-    // Bug 908785: Implement this
     @Override
-    public void disableCameraView() {}
+    public void disableOrientationListener() {}
 
-    // Bug 908786: Implement this
+    
     @Override
     public void addAppStateListener(GeckoAppShell.AppStateListener listener) {}
 
-    // Bug 908787: Implement this
+    
     @Override
     public void removeAppStateListener(GeckoAppShell.AppStateListener listener) {}
 
-    // Bug 908788: Implement this
-    @Override
-    public View getCameraView() {
-        return null;
-    }
-
-    // Bug 908789: Implement this
+    
     @Override
     public void notifyWakeLockChanged(String topic, String state) {}
 
@@ -111,7 +103,7 @@ public class BaseGeckoInterface implements GeckoAppShell.GeckoInterface {
         return false;
     }
 
-    // Bug 908791: Implement this
+    
     @Override
     public AbsoluteLayout getPluginContainer() {
         return null;
@@ -122,56 +114,56 @@ public class BaseGeckoInterface implements GeckoAppShell.GeckoInterface {
         GeckoAppShell.notifyObservers("Update:CheckResult", result);
     }
 
-    // Bug 908792: Implement this
+    
     @Override
     public void invalidateOptionsMenu() {}
 
     @Override
     public void createShortcut(String title, String URI) {
-        // By default, do nothing.
+        
     }
 
     @Override
     public void checkUriVisited(String uri) {
-        // By default, no URIs are considered visited.
+        
     }
 
     @Override
     public void markUriVisited(final String uri) {
-        // By default, no URIs are marked as visited.
+        
     }
 
     @Override
     public void setUriTitle(final String uri, final String title) {
-        // By default, no titles are associated with URIs.
+        
     }
 
     @Override
     public void setAccessibilityEnabled(boolean enabled) {
-        // By default, take no action when accessibility is toggled on or off.
+        
     }
 
     @Override
     public boolean openUriExternal(String targetURI, String mimeType, String packageName, String className, String action, String title) {
-        // By default, never open external URIs.
+        
         return false;
     }
 
     @Override
     public String[] getHandlersForMimeType(String mimeType, String action) {
-        // By default, offer no handlers for any MIME type.
+        
         return new String[] {};
     }
 
     @Override
     public String[] getHandlersForURL(String url, String action) {
-        // By default, offer no handlers for any URL.
+        
         return new String[] {};
     }
 
     @Override
     public String getDefaultChromeURI() {
-        // By default, use the GeckoView-specific chrome URI.
+        
         return "chrome://browser/content/geckoview.xul";
     }
 }
