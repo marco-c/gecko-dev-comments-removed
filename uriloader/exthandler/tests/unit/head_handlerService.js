@@ -33,7 +33,7 @@ var HandlerServiceTest = {
 
   
   
-  
+
   interfaces: [Ci.nsIDirectoryServiceProvider, Ci.nsISupports],
 
   QueryInterface: function HandlerServiceTest_QueryInterface(iid) {
@@ -45,7 +45,7 @@ var HandlerServiceTest = {
 
   
   
-  
+
   init: function HandlerServiceTest_init() {
     
     
@@ -161,3 +161,7 @@ var HandlerServiceTest = {
 };
 
 HandlerServiceTest.init();
+
+do_register_cleanup(function() {
+  HandlerServiceTest.destroy();
+});

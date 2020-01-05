@@ -246,11 +246,15 @@ try {
 } catch (noPref) {}
 Services.prefs.setBoolPref("identity.fxaccounts.enabled", true);
 
-
 do_register_cleanup(function() {
   log("restoring prefs to their initial values");
   Services.prefs.setBoolPref("toolkit.identity.debug", initialPrefDebugValue);
   Services.prefs.setBoolPref("identity.fxaccounts.enabled", initialPrefFXAValue);
+
+  
+  if (typeof IdentityService !== "undefined") {
+    IdentityService.shutdown();
+  } else if (typeof IDService !== "undefined") {
+    IDService.shutdown();
+  }
 });
-
-
