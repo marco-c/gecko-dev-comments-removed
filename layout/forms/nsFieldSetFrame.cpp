@@ -110,7 +110,6 @@ public:
   virtual void ComputeInvalidationRegion(nsDisplayListBuilder* aBuilder,
                                          const nsDisplayItemGeometry* aGeometry,
                                          nsRegion *aInvalidRegion) override;
-  virtual nsRect GetBounds(nsDisplayListBuilder* aBuilder, bool* aSnap) override;
   NS_DISPLAY_DECL_NAME("FieldSetBorderBackground", TYPE_FIELDSET_BORDER_BACKGROUND)
 };
 
@@ -154,19 +153,6 @@ nsDisplayFieldSetBorderBackground::ComputeInvalidationRegion(nsDisplayListBuilde
   }
 
   nsDisplayItem::ComputeInvalidationRegion(aBuilder, aGeometry, aInvalidRegion);
-}
-
-nsRect
-nsDisplayFieldSetBorderBackground::GetBounds(nsDisplayListBuilder* aBuilder,
-                                             bool* aSnap)
-{
-  
-  
-  
-  
-  
-  *aSnap = false;
-  return Frame()->GetVisualOverflowRectRelativeToSelf() + ToReferenceFrame();
 }
 
 void
@@ -235,8 +221,10 @@ nsFieldSetFrame::PaintBorder(
   
   
   
-  
-  nsRect rect = VisualBorderRectRelativeToSelf() + aPt;
+  WritingMode wm = GetWritingMode();
+  nsRect rect = VisualBorderRectRelativeToSelf();
+  nscoord off = wm.IsVertical() ? rect.x : rect.y;
+  rect += aPt;
   nsPresContext* presContext = PresContext();
 
   PaintBorderFlags borderFlags = aBuilder->ShouldSyncDecodeImages()
@@ -249,39 +237,55 @@ nsFieldSetFrame::PaintBorder(
                                       this, rect);
 
   if (nsIFrame* legend = GetLegend()) {
-    
-    
-    
-    
-    
-    
-    nsRect legendRect = legend->GetNormalRect() + aPt;
+    Side legendSide = wm.PhysicalSide(eLogicalSideBStart);
+    nscoord legendBorderWidth =
+      StyleBorder()->GetComputedBorderWidth(legendSide);
 
+    
+    
+    LogicalRect legendRect(wm, legend->GetRect() + aPt, rect.Size());
+
+    
+    
+    LogicalRect clipRect = LogicalRect(wm, rect, rect.Size());
     DrawTarget* drawTarget = aRenderingContext.GetDrawTarget();
-    
-    
-    
-    
-    
-    
-    RefPtr<PathBuilder> pathBuilder =
-      drawTarget->CreatePathBuilder(FillRule::FILL_WINDING);
-    int32_t appUnitsPerDevPixel = presContext->AppUnitsPerDevPixel();
-    AppendRectToPath(pathBuilder,
-                     NSRectToSnappedRect(GetVisualOverflowRectRelativeToSelf() + aPt,
-                                         appUnitsPerDevPixel,
-                                         *drawTarget),
-                     true);
-    AppendRectToPath(pathBuilder,
-                     NSRectToSnappedRect(legendRect, appUnitsPerDevPixel,
-                                         *drawTarget),
-                     false);
-    RefPtr<Path> clipPath = pathBuilder->Finish();
-
     gfxContext* gfx = aRenderingContext.ThebesContext();
+    int32_t appUnitsPerDevPixel = presContext->AppUnitsPerDevPixel();
+
+    
+    clipRect.ISize(wm) = legendRect.IStart(wm) - clipRect.IStart(wm);
+    clipRect.BSize(wm) = legendBorderWidth;
 
     gfx->Save();
-    gfx->Clip(clipPath);
+    gfx->Clip(NSRectToSnappedRect(clipRect.GetPhysicalRect(wm, rect.Size()),
+                                  appUnitsPerDevPixel, *drawTarget));
+    result &=
+      nsCSSRendering::PaintBorder(presContext, aRenderingContext, this,
+                                  aDirtyRect, rect, mStyleContext, borderFlags);
+    gfx->Restore();
+
+    
+    clipRect = LogicalRect(wm, rect, rect.Size());
+    clipRect.ISize(wm) = clipRect.IEnd(wm) - legendRect.IEnd(wm);
+    clipRect.IStart(wm) = legendRect.IEnd(wm);
+    clipRect.BSize(wm) = legendBorderWidth;
+
+    gfx->Save();
+    gfx->Clip(NSRectToSnappedRect(clipRect.GetPhysicalRect(wm, rect.Size()),
+                                  appUnitsPerDevPixel, *drawTarget));
+    result &=
+      nsCSSRendering::PaintBorder(presContext, aRenderingContext, this,
+                                  aDirtyRect, rect, mStyleContext, borderFlags);
+    gfx->Restore();
+
+    
+    clipRect = LogicalRect(wm, rect, rect.Size());
+    clipRect.BStart(wm) += legendBorderWidth;
+    clipRect.BSize(wm) = BSize(wm) - (off + legendBorderWidth);
+
+    gfx->Save();
+    gfx->Clip(NSRectToSnappedRect(clipRect.GetPhysicalRect(wm, rect.Size()),
+                                  appUnitsPerDevPixel, *drawTarget));
     result &=
       nsCSSRendering::PaintBorder(presContext, aRenderingContext, this,
                                   aDirtyRect, rect, mStyleContext, borderFlags);
@@ -341,6 +345,42 @@ nsFieldSetFrame::GetPrefISize(nsRenderingContext* aRenderingContext)
 }
 
 
+LogicalSize
+nsFieldSetFrame::ComputeSize(nsRenderingContext *aRenderingContext,
+                             WritingMode aWM,
+                             const LogicalSize& aCBSize,
+                             nscoord aAvailableISize,
+                             const LogicalSize& aMargin,
+                             const LogicalSize& aBorder,
+                             const LogicalSize& aPadding,
+                             ComputeSizeFlags aFlags)
+{
+  LogicalSize result =
+    nsContainerFrame::ComputeSize(aRenderingContext, aWM,
+                                  aCBSize, aAvailableISize,
+                                  aMargin, aBorder, aPadding, aFlags);
+
+  
+  
+  
+  if (aWM.IsVertical() != GetWritingMode().IsVertical()) {
+    return result;
+  }
+
+  
+
+  
+  
+  AutoMaybeDisableFontInflation an(this);
+
+  nscoord minISize = GetMinISize(aRenderingContext);
+  if (minISize > result.ISize(aWM)) {
+    result.ISize(aWM) = minISize;
+  }
+
+  return result;
+}
+
 void
 nsFieldSetFrame::Reflow(nsPresContext*           aPresContext,
                         ReflowOutput&     aDesiredSize,
@@ -388,6 +428,18 @@ nsFieldSetFrame::Reflow(nsPresContext*           aPresContext,
   LogicalSize legendAvailSize = aReflowInput.ComputedSizeWithPadding(legendWM);
   innerAvailSize.BSize(innerWM) = legendAvailSize.BSize(legendWM) =
     NS_UNCONSTRAINEDSIZE;
+  NS_ASSERTION(!inner ||
+      nsLayoutUtils::IntrinsicForContainer(aReflowInput.mRenderingContext,
+                                           inner,
+                                           nsLayoutUtils::MIN_ISIZE) <=
+               innerAvailSize.ISize(innerWM),
+               "Bogus availSize.ISize; should be bigger");
+  NS_ASSERTION(!legend ||
+      nsLayoutUtils::IntrinsicForContainer(aReflowInput.mRenderingContext,
+                                           legend,
+                                           nsLayoutUtils::MIN_ISIZE) <=
+               legendAvailSize.ISize(legendWM),
+               "Bogus availSize.ISize; should be bigger");
 
   
   LogicalMargin border = aReflowInput.ComputedLogicalBorderPadding() -
@@ -553,6 +605,9 @@ nsFieldSetFrame::Reflow(nsPresContext*           aPresContext,
     } else {
       
       mLegendRect.IStart(wm) = innerContentRect.IStart(wm);
+      innerContentRect.ISize(wm) = mLegendRect.ISize(wm);
+      contentRect.ISize(wm) = mLegendRect.ISize(wm) +
+        aReflowInput.ComputedLogicalPadding().IStartEnd(wm);
     }
 
     
