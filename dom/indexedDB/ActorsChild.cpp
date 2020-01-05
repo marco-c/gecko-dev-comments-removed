@@ -2004,7 +2004,7 @@ BackgroundDatabaseChild::RecvVersionChange(const uint64_t& aOldVersion,
   
   if (nsPIDOMWindowInner* owner = kungFuDeathGrip->GetOwner()) {
     
-    bool shouldAbortAndClose = owner->IsFrozen();
+    bool shouldAbortAndClose = owner->NewIsFrozen();
 
     
     

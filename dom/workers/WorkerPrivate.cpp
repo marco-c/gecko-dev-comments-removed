@@ -2212,6 +2212,10 @@ WorkerPrivateParent<Derived>::WorkerPrivateParent(
     MOZ_ASSERT(IsDedicatedWorker());
     mNowBaseTimeStamp = aParent->NowBaseTimeStamp();
     mNowBaseTimeHighRes = aParent->NowBaseTime();
+
+    if (aParent->mParentFrozen) {
+      Freeze(nullptr);
+    }
   }
   else {
     AssertIsOnMainThread();
@@ -2248,6 +2252,16 @@ WorkerPrivateParent<Derived>::WorkerPrivateParent(
     } else {
       mNowBaseTimeStamp = CreationTimeStamp();
       mNowBaseTimeHighRes = CreationTime();
+    }
+
+    
+    
+    if (mLoadInfo.mWindow && mLoadInfo.mWindow->NewIsSuspended()) {
+      ParentWindowPaused();
+    }
+
+    if (mLoadInfo.mWindow && mLoadInfo.mWindow->NewIsFrozen()) {
+      Freeze(mLoadInfo.mWindow);
     }
   }
 }
@@ -2610,12 +2624,7 @@ WorkerPrivateParent<Derived>::Thaw(nsPIDOMWindowInner* aWindow)
 {
   AssertIsOnParentThread();
 
-  if (IsDedicatedWorker() && !mParentFrozen) {
-    
-    
-    
-    return true;
-  }
+  MOZ_ASSERT(mParentFrozen);
 
   
   
@@ -3120,7 +3129,7 @@ WorkerPrivateParent<Derived>::RegisterSharedWorker(SharedWorker* aSharedWorker,
 
   
   
-  if (mSharedWorkers.Length() > 1 && !Thaw(nullptr)) {
+  if (mSharedWorkers.Length() > 1 && IsFrozen() && !Thaw(nullptr)) {
     return false;
   }
 

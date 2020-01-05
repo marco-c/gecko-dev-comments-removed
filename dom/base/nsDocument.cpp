@@ -8196,8 +8196,13 @@ nsDocument::CanSavePresentation(nsIRequest *aNewRequest)
     return false;
   }
 
+  
+  
+  
+  
+  
   nsPIDOMWindowInner* win = GetInnerWindow();
-  if (win && win->TimeoutSuspendCount()) {
+  if (win && win->NewIsSuspended() && !win->NewIsFrozen()) {
     return false;
   }
 

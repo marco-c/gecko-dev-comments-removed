@@ -1263,8 +1263,7 @@ nsGlobalWindow::nsGlobalWindow(nsGlobalWindow *aOuterWindow)
   } else {
     
     
-    
-    Freeze();
+    MOZ_ASSERT(NewIsFrozen());
 
     
     
@@ -2302,7 +2301,7 @@ WindowStateHolder::WindowStateHolder(nsGlobalWindow* aWindow)
   NS_PRECONDITION(aWindow, "null window");
   NS_PRECONDITION(aWindow->IsInnerWindow(), "Saving an outer window");
 
-  aWindow->SuspendTimeouts();
+  aWindow->NewSuspend();
 
   
   xpc::Scriptability::Get(mInnerWindowReflector).SetDocShellAllowsScript(false);
@@ -2552,13 +2551,6 @@ nsGlobalWindow::SetNewDocument(nsIDocument* aDocument,
   
   NS_ENSURE_STATE(!mCleanedUp);
 
-  if (IsFrozen()) {
-    
-    
-
-    Thaw();
-  }
-
   NS_ASSERTION(!AsOuter()->GetCurrentInnerWindow() ||
                AsOuter()->GetCurrentInnerWindow()->GetExtantDoc() == mDoc,
                "Uh, mDoc doesn't match the current inner window "
@@ -2649,7 +2641,7 @@ nsGlobalWindow::SetNewDocument(nsIDocument* aDocument,
   JS::Rooted<JSObject*> newInnerGlobal(cx);
   if (reUseInnerWindow) {
     
-    NS_ASSERTION(!currentInner->IsFrozen(),
+    NS_ASSERTION(!currentInner->NewIsFrozen(),
                  "We should never be reusing a shared inner window");
     newInnerWindow = currentInner;
     newInnerGlobal = currentInner->GetWrapperPreserveColor();
@@ -2711,10 +2703,10 @@ nsGlobalWindow::SetNewDocument(nsIDocument* aDocument,
       
       
       
+      
 
       mInnerWindow = nullptr;
 
-      Freeze();
       mCreatingInnerWindow = true;
       
       
@@ -2729,7 +2721,6 @@ nsGlobalWindow::SetNewDocument(nsIDocument* aDocument,
 
       mCreatingInnerWindow = false;
       createdInnerWindow = true;
-      Thaw();
 
       NS_ENSURE_SUCCESS(rv, rv);
     }
@@ -2760,7 +2751,7 @@ nsGlobalWindow::SetNewDocument(nsIDocument* aDocument,
 
       
       
-      if (!currentInner->IsFrozen()) {
+      if (!currentInner->NewIsFrozen()) {
         currentInner->FreeInnerObjects();
       }
     }
@@ -2860,13 +2851,7 @@ nsGlobalWindow::SetNewDocument(nsIDocument* aDocument,
                  "outer and inner globals should have the same prototype");
 #endif
 
-    nsCOMPtr<Element> frame = AsOuter()->GetFrameElementInternal();
-    if (frame) {
-      nsPIDOMWindowOuter* parentWindow = frame->OwnerDoc()->GetWindow();
-      if (parentWindow && parentWindow->TimeoutSuspendCount()) {
-        SuspendTimeouts(parentWindow->TimeoutSuspendCount());
-      }
-    }
+    mInnerWindow->NewSyncStateFromParentWindow();
   }
 
   
@@ -8852,7 +8837,7 @@ nsGlobalWindow::RunPendingTimeoutsRecursive(nsGlobalWindow *aTopWindow,
 
   
   if (!(inner = aWindow->GetCurrentInnerWindowInternal()) ||
-      inner->IsFrozen()) {
+      inner->NewIsFrozen()) {
     return;
   }
 
@@ -8860,7 +8845,7 @@ nsGlobalWindow::RunPendingTimeoutsRecursive(nsGlobalWindow *aTopWindow,
 
   
   
-  if (inner->IsFrozen()) {
+  if (inner->NewIsFrozen()) {
     return;
   }
 
@@ -10321,7 +10306,7 @@ nsGlobalWindow::FireHashchange(const nsAString &aOldURL,
   MOZ_ASSERT(IsInnerWindow());
 
   
-  if (IsFrozen()) {
+  if (NewIsFrozen()) {
     return NS_OK;
   }
 
@@ -10360,7 +10345,7 @@ nsGlobalWindow::DispatchSyncPopState()
   nsresult rv = NS_OK;
 
   
-  if (IsFrozen()) {
+  if (NewIsFrozen()) {
     return NS_OK;
   }
 
@@ -11472,7 +11457,7 @@ nsGlobalWindow::Observe(nsISupports* aSubject, const char* aTopic,
                         const char16_t* aData)
 {
   if (!nsCRT::strcmp(aTopic, NS_IOSERVICE_OFFLINE_STATUS_TOPIC)) {
-    if (!IsFrozen()) {
+    if (!NewIsFrozen()) {
         
         FireOfflineStatusEventIfChanged();
     }
@@ -11481,7 +11466,7 @@ nsGlobalWindow::Observe(nsISupports* aSubject, const char* aTopic,
 
   if (!nsCRT::strcmp(aTopic, OBSERVER_TOPIC_IDLE)) {
     mCurrentlyIdle = true;
-    if (IsFrozen()) {
+    if (NewIsFrozen()) {
       
       mNotifyIdleObserversIdleOnThaw = true;
       mNotifyIdleObserversActiveOnThaw = false;
@@ -11493,7 +11478,7 @@ nsGlobalWindow::Observe(nsISupports* aSubject, const char* aTopic,
 
   if (!nsCRT::strcmp(aTopic, OBSERVER_TOPIC_ACTIVE)) {
     mCurrentlyIdle = false;
-    if (IsFrozen()) {
+    if (NewIsFrozen()) {
       mNotifyIdleObserversActiveOnThaw = true;
       mNotifyIdleObserversIdleOnThaw = false;
     } else if (AsInner()->IsCurrentInnerWindow()) {
@@ -11612,7 +11597,7 @@ nsGlobalWindow::Observe(nsISupports* aSubject, const char* aTopic,
       internalEvent->mFlags.mOnlyChromeDispatch = true;
     }
 
-    if (IsFrozen()) {
+    if (NewIsFrozen()) {
       
       
       
@@ -12530,12 +12515,22 @@ nsGlobalWindow::SetTimeoutOrInterval(nsIScriptTimeoutHandler *aHandler,
 
   TimeDuration delta = TimeDuration::FromMilliseconds(realInterval);
 
-  if (!IsFrozen() && !mTimeoutsSuspendDepth) {
+  if (NewIsFrozen()) {
     
     
     
-
+    
+    timeout->mTimeRemaining = delta;
+  } else {
+    
+    
+    
     timeout->mWhen = TimeStamp::Now() + delta;
+  }
+
+  
+  if (!NewIsSuspended()) {
+    MOZ_ASSERT(!timeout->mWhen.IsNull());
 
     nsresult rv;
     timeout->mTimer = do_CreateInstance("@mozilla.org/timer;1", &rv);
@@ -12552,14 +12547,6 @@ nsGlobalWindow::SetTimeoutOrInterval(nsIScriptTimeoutHandler *aHandler,
 
     
     Unused << copy.forget();
-  } else {
-    
-    
-    
-    
-    
-
-    timeout->mTimeRemaining = delta;
   }
 
   timeout->mWindow = this;
@@ -12805,7 +12792,7 @@ nsGlobalWindow::RescheduleTimeout(nsTimeout* aTimeout, const TimeStamp& now,
   }
 
   if (!aTimeout->mTimer) {
-    NS_ASSERTION(IsFrozen() || mTimeoutsSuspendDepth,
+    NS_ASSERTION(NewIsFrozen() || NewIsSuspended(),
                  "How'd our timer end up null if we're not frozen or "
                  "suspended?");
 
@@ -12846,12 +12833,12 @@ nsGlobalWindow::RunTimeout(nsTimeout *aTimeout)
 {
   
   
-  if (IsInModalState() || mTimeoutsSuspendDepth) {
+  if (IsInModalState() || NewIsSuspended()) {
     return;
   }
 
   NS_ASSERTION(IsInnerWindow(), "Timeout running on outer window!");
-  NS_ASSERTION(!IsFrozen(), "Timeout running on a window in the bfcache!");
+  NS_ASSERTION(!NewIsFrozen(), "Timeout running on a window in the bfcache!");
 
   nsTimeout *nextTimeout;
   nsTimeout *last_expired_timeout, *last_insertion_point;
@@ -12927,7 +12914,7 @@ nsGlobalWindow::RunTimeout(nsTimeout *aTimeout)
   mTimeoutInsertionPoint = dummy_timeout;
 
   for (nsTimeout *timeout = mTimeouts.getFirst();
-       timeout != dummy_timeout && !IsFrozen();
+       timeout != dummy_timeout && !NewIsFrozen();
        timeout = nextTimeout) {
     nextTimeout = timeout->getNext();
 
@@ -12938,7 +12925,7 @@ nsGlobalWindow::RunTimeout(nsTimeout *aTimeout)
       continue;
     }
 
-    if (mTimeoutsSuspendDepth) {
+    if (NewIsSuspended()) {
       
       
       timeout->mFiringDepth = 0;
@@ -13039,7 +13026,7 @@ nsresult nsGlobalWindow::ResetTimersForNonBackgroundWindow()
   FORWARD_TO_INNER(ResetTimersForNonBackgroundWindow, (),
                    NS_ERROR_NOT_INITIALIZED);
 
-  if (IsFrozen() || mTimeoutsSuspendDepth) {
+  if (NewIsFrozen() || NewIsSuspended()) {
     return NS_OK;
   }
 
@@ -13178,7 +13165,7 @@ nsGlobalWindow::InsertTimeoutIntoList(nsTimeout *aTimeout)
        prevSibling && prevSibling != mTimeoutInsertionPoint &&
          
          
-         ((IsFrozen() || mTimeoutsSuspendDepth) ?
+         (NewIsFrozen() ?
           prevSibling->mTimeRemaining > aTimeout->mTimeRemaining :
           prevSibling->mWhen > aTimeout->mWhen);
        prevSibling = prevSibling->getPrevious()) {
@@ -13369,7 +13356,7 @@ nsGlobalWindow::SaveWindowState()
   
   
   
-  inner->Freeze();
+  inner->NewFreeze();
 
   nsCOMPtr<nsISupports> state = new WindowStateHolder(inner);
 
@@ -13412,7 +13399,7 @@ nsGlobalWindow::RestoreWindowState(nsISupports *aState)
     }
   }
 
-  inner->Thaw();
+  inner->NewThaw();
 
   holder->DidRestoreWindow();
 
@@ -13499,7 +13486,7 @@ nsGlobalWindow::SuspendTimeouts(uint32_t aIncrease,
         win->SuspendTimeouts(aIncrease, aFreezeChildren, aFreezeWorkers);
 
         if (inner && aFreezeChildren) {
-          inner->Freeze();
+          inner->NewFreeze();
         }
       }
     }
@@ -13610,7 +13597,7 @@ nsGlobalWindow::ResumeTimeouts(bool aThawChildren, bool aThawWorkers)
         }
 
         if (inner && aThawChildren) {
-          inner->Thaw();
+          inner->NewThaw();
         }
 
         rv = win->ResumeTimeouts(aThawChildren, aThawWorkers);

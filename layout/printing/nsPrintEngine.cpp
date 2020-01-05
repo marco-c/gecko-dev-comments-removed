@@ -3393,7 +3393,7 @@ nsPrintEngine::TurnScriptingOn(bool aDoTurnOn)
           if (go && go->GetGlobalJSObject()) {
             xpc::Scriptability::Get(go->GetGlobalJSObject()).Unblock();
           }
-          window->ResumeTimeouts(false);
+          window->NewResume();
         }
       } else {
         
@@ -3407,7 +3407,7 @@ nsPrintEngine::TurnScriptingOn(bool aDoTurnOn)
           if (go && go->GetGlobalJSObject()) {
             xpc::Scriptability::Get(go->GetGlobalJSObject()).Block();
           }
-          window->SuspendTimeouts(1, false);
+          window->NewSuspend();
         }
       }
     }
