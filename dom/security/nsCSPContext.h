@@ -26,6 +26,7 @@
   { 0xbf, 0xe0, 0x27, 0xce, 0xb9, 0x23, 0xd9, 0xac } }
 
 class nsINetworkInterceptController;
+class nsIEventTarget;
 struct ConsoleMsgQueueElem;
 
 class nsCSPContext : public nsIContentSecurityPolicy
@@ -121,6 +122,7 @@ class nsCSPContext : public nsIContentSecurityPolicy
     
     nsTArray<ConsoleMsgQueueElem>              mConsoleMsgQueue;
     bool                                       mQueueUpMessages;
+    nsCOMPtr<nsIEventTarget>                   mEventTarget;
 };
 
 

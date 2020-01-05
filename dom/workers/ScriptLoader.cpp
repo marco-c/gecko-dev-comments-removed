@@ -1154,12 +1154,17 @@ private:
       rv = mWorkerPrivate->SetPrincipalFromChannel(channel);
       NS_ENSURE_SUCCESS(rv, rv);
 
+      nsCOMPtr<nsIContentSecurityPolicy> csp = mWorkerPrivate->GetCSP();
       
       
-      if (!mWorkerPrivate->GetCSP() && CSPService::sCSPEnabled) {
-        rv = mWorkerPrivate->SetCSPFromHeaderValues(tCspHeaderValue,
-                                                    tCspROHeaderValue);
-        NS_ENSURE_SUCCESS(rv, rv);
+      if (CSPService::sCSPEnabled) {
+        if (!csp) {
+          rv = mWorkerPrivate->SetCSPFromHeaderValues(tCspHeaderValue,
+                                                      tCspROHeaderValue);
+          NS_ENSURE_SUCCESS(rv, rv);
+        } else {
+          csp->EnsureEventTarget(mWorkerPrivate->MainThreadEventTarget());
+        }
       }
 
       mWorkerPrivate->SetReferrerPolicyFromHeaderValue(tRPHeaderCValue);
