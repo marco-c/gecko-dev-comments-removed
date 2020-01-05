@@ -55,7 +55,7 @@ GPUProcessHost::WaitForLaunch()
     return !!mGPUChild;
   }
 
-  int32_t timeoutMs = gfxPrefs::GPUProcessDevTimeoutMs();
+  int32_t timeoutMs = gfxPrefs::GPUProcessTimeoutMs();
 
   
   

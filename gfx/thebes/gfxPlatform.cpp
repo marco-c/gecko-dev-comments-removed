@@ -2212,18 +2212,18 @@ gfxPlatform::InitGPUProcessPrefs()
 {
   
   
-  if (!gfxPrefs::GPUProcessDevEnabled() && !gfxPrefs::GPUProcessDevForceEnabled()) {
+  if (!gfxPrefs::GPUProcessEnabled() && !gfxPrefs::GPUProcessForceEnabled()) {
     return;
   }
 
   FeatureState& gpuProc = gfxConfig::GetFeature(Feature::GPU_PROCESS);
 
   gpuProc.SetDefaultFromPref(
-    gfxPrefs::GetGPUProcessDevEnabledPrefName(),
+    gfxPrefs::GetGPUProcessEnabledPrefName(),
     true,
-    gfxPrefs::GetGPUProcessDevEnabledPrefDefault());
+    gfxPrefs::GetGPUProcessEnabledPrefDefault());
 
-  if (gfxPrefs::GPUProcessDevForceEnabled()) {
+  if (gfxPrefs::GPUProcessForceEnabled()) {
     gpuProc.UserForceEnable("User force-enabled via pref");
   }
 
