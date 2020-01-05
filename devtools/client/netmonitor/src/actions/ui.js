@@ -8,7 +8,9 @@ const {
   ACTIVITY_TYPE,
   OPEN_NETWORK_DETAILS,
   OPEN_STATISTICS,
+  RESET_COLUMNS,
   SELECT_DETAILS_PANEL_TAB,
+  TOGGLE_COLUMN,
   WATERFALL_RESIZE,
 } = require("../constants");
 
@@ -42,6 +44,16 @@ function openStatistics(open) {
 
 
 
+
+function resetColumns() {
+  return {
+    type: RESET_COLUMNS,
+  };
+}
+
+
+
+
 function resizeWaterfall(width) {
   return {
     type: WATERFALL_RESIZE,
@@ -64,6 +76,18 @@ function selectDetailsPanelTab(id) {
 
 
 
+
+
+function toggleColumn(column) {
+  return {
+    type: TOGGLE_COLUMN,
+    column,
+  };
+}
+
+
+
+
 function toggleNetworkDetails() {
   return (dispatch, getState) =>
     dispatch(openNetworkDetails(!getState().ui.networkDetailsOpen));
@@ -80,8 +104,10 @@ function toggleStatistics() {
 module.exports = {
   openNetworkDetails,
   openStatistics,
+  resetColumns,
   resizeWaterfall,
   selectDetailsPanelTab,
+  toggleColumn,
   toggleNetworkDetails,
   toggleStatistics,
 };

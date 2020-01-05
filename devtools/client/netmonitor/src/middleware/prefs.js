@@ -6,6 +6,8 @@
 
 const {
   ENABLE_REQUEST_FILTER_TYPE_ONLY,
+  RESET_COLUMNS,
+  TOGGLE_COLUMN,
   TOGGLE_REQUEST_FILTER_TYPE,
 } = require("../constants");
 const { Prefs } = require("../utils/prefs");
@@ -15,14 +17,27 @@ const { getRequestFilterTypes } = require("../selectors/index");
 
 
 
+
 function prefsMiddleware(store) {
   return next => action => {
     const res = next(action);
-    if (action.type === ENABLE_REQUEST_FILTER_TYPE_ONLY ||
-        action.type === TOGGLE_REQUEST_FILTER_TYPE) {
-      Prefs.filters = getRequestFilterTypes(store.getState())
-        .filter(([type, check]) => check)
-        .map(([type, check]) => type);
+    switch (action.type) {
+      case ENABLE_REQUEST_FILTER_TYPE_ONLY:
+      case TOGGLE_REQUEST_FILTER_TYPE:
+        Prefs.filters = getRequestFilterTypes(store.getState())
+          .filter(([type, check]) => check)
+          .map(([type, check]) => type);
+        break;
+
+      case TOGGLE_COLUMN:
+        Prefs.hiddenColumns = [...store.getState().ui.columns]
+          .filter(([column, shown]) => !shown)
+          .map(([column, shown]) => column);
+        break;
+
+      case RESET_COLUMNS:
+        Prefs.hiddenColumns = [];
+        break;
     }
     return res;
   };
