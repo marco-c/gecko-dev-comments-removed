@@ -488,12 +488,9 @@ VRManagerChild::RecvGamepadUpdate(const GamepadChangeEvent& aGamepadEvent)
 {
   
   
-  if (XRE_IsContentProcess()) {
-    RefPtr<dom::GamepadManager> serivce(dom::GamepadManager::GetService());
-
-    if (serivce) {
-      serivce->Update(aGamepadEvent);
-    }
+  
+  if (mGamepadManager) {
+      mGamepadManager->Update(aGamepadEvent);
   }
 
   return true;
@@ -590,6 +587,14 @@ void
 VRManagerChild::FatalError(const char* const aName, const char* const aMsg) const
 {
   dom::ContentChild::FatalErrorIfNotUsingGPUProcess(aName, aMsg, OtherPid());
+}
+
+void
+VRManagerChild::SetGamepadManager(dom::GamepadManager* aGamepadManager)
+{
+  MOZ_ASSERT(aGamepadManager);
+
+  mGamepadManager = aGamepadManager;
 }
 
 } 

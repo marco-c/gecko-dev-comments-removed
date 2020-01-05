@@ -17,6 +17,7 @@
 
 namespace mozilla {
 namespace dom {
+class GamepadManager;
 class Navigator;
 class VRDisplay;
 class VREventObserver;
@@ -77,6 +78,9 @@ public:
     int32_t *aHandle);
   void CancelFrameRequestCallback(int32_t aHandle);
   void RunFrameRequestCallbacks();
+  
+  
+  void SetGamepadManager(dom::GamepadManager* aGamepadManager);
 
   void UpdateDisplayInfo(nsTArray<VRDisplayInfo>& aDisplayUpdates);
   void FireDOMVRDisplayConnectEvent();
@@ -151,6 +155,7 @@ private:
   nsTArray<RefPtr<VRDisplayClient> > mDisplays;
   bool mDisplaysInitialized;
   nsTArray<dom::Navigator*> mNavigatorCallbacks;
+  dom::GamepadManager* mGamepadManager;
 
   int32_t mInputFrameID;
 
