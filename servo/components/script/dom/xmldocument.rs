@@ -76,8 +76,8 @@ impl XMLDocument {
 
 impl XMLDocumentMethods for XMLDocument {
     
-    fn Location(&self) -> Root<Location> {
-        self.document.Location()
+    fn GetLocation(&self) -> Option<Root<Location>> {
+        self.document.GetLocation()
     }
 
     
