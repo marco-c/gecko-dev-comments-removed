@@ -302,7 +302,7 @@ public:
                           nsIURI* aURL,
                           nsMediaList* aMedia,
                           ImportRule* aGeckoParentRule,
-                          const RawServoImportRule* aServoParentRule,
+                          const RawServoStyleSheet* aServoChildSheet,
                           LoaderReusableStyleSheets* aSavedSheets);
 
   
@@ -520,7 +520,7 @@ private:
   nsresult InsertChildSheet(StyleSheet* aSheet,
                             StyleSheet* aParentSheet,
                             ImportRule* aGeckoParentRule,
-                            const RawServoImportRule* aServoParentRule);
+                            const RawServoStyleSheet* aServoChildSheet);
 
   nsresult InternalLoadNonDocumentSheet(nsIURI* aURL,
                                         bool aIsPreload,
