@@ -1011,7 +1011,9 @@ protected:
             AutoEditorObserverArray;
   AutoEditorObserverArray mEditorObservers;
   
-  nsTArray<OwningNonNull<nsIDocumentStateListener>> mDocStateListeners;
+  typedef AutoTArray<OwningNonNull<nsIDocumentStateListener>, 1>
+            AutoDocumentStateListenerArray;
+  AutoDocumentStateListenerArray mDocStateListeners;
 
   
   SelectionState mSavedSel;
