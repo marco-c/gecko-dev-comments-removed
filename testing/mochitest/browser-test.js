@@ -606,7 +606,7 @@ Tester.prototype = {
             
             
             let numCycles = 3;
-            for (i = 0; i < numCycles; i++) {
+            for (let i = 0; i < numCycles; i++) {
               Cu.forceGC();
               Cu.forceCC();
             }
