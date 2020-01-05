@@ -1,0 +1,13 @@
+"use strict";
+
+module.exports = { 
+  "extends": [
+    "../../../../testing/mochitest/mochitest.eslintrc.js",
+    "../../../../testing/mochitest/chrome.eslintrc.js"
+  ],
+  "rules": {
+    "brace-style": 0,
+    "no-undef": 0,
+    "no-unused-vars": 0,
+  },
+};

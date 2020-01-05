@@ -1,0 +1,14 @@
+"use strict";
+
+module.exports = {
+  
+  "plugins": [
+    "mozilla"
+  ],
+  "rules": {
+    "mozilla/import-globals": 1,
+  },
+  "env": {
+    "es6": true
+  },
+};

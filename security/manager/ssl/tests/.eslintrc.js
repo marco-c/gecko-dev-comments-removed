@@ -1,0 +1,8 @@
+"use strict";
+
+module.exports = { 
+  "rules": {
+    
+    "mozilla/var-only-at-top-level": 2
+  }
+};
