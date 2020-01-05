@@ -45,7 +45,7 @@ use euclid::rect::Rect;
 
 
 #[allow(raw_pointer_derive)]
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct UntrustedNodeAddress(pub *const c_void);
 unsafe impl Send for UntrustedNodeAddress {}
 
