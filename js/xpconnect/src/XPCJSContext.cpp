@@ -1318,7 +1318,13 @@ XPCJSContext::InterruptCallback(JSContext* cx)
         return true;
     }
 
-    MOZ_ASSERT(!win->IsDying());
+    if (win->IsDying()) {
+        
+        
+        
+        
+        return false;
+    }
 
     if (win->GetIsPrerendered()) {
         
