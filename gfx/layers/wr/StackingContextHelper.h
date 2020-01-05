@@ -32,6 +32,13 @@ public:
                         WebRenderLayer* aLayer,
                         const Maybe<gfx::Matrix4x4>& aTransform = Nothing());
   
+  
+  StackingContextHelper(wr::DisplayListBuilder& aBuilder,
+                        WebRenderLayer* aLayer,
+                        uint64_t aAnimationsId,
+                        float* aOpacityPtr,
+                        gfx::Matrix4x4* aTransformPtr);
+  
   ~StackingContextHelper();
 
   
