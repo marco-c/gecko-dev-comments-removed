@@ -1717,6 +1717,10 @@ MediaStreamGraphImpl::RunInStableState(bool aSourceIsMSG)
         RefPtr<GraphDriver> driver = CurrentDriver();
         MonitorAutoUnlock unlock(mMonitor);
         driver->Start();
+        
+        
+        
+        NS_ReleaseOnMainThread(driver.forget(), true); 
       }
     }
 
