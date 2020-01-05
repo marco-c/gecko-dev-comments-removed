@@ -1,6 +1,6 @@
 function waitForPdfJS(browser, url) {
   
-  return ContentTask.spawn(browser, url, function* (url) {
+  return ContentTask.spawn(browser, url, function* (contentUrl) {
     yield new Promise((resolve) => {
       
       
@@ -9,7 +9,7 @@ function waitForPdfJS(browser, url) {
         resolve();
       }, false, true);
 
-      content.location = url;
+      content.location = contentUrl;
     });
   });
 }

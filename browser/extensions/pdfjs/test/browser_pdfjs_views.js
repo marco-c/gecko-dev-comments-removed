@@ -5,15 +5,14 @@ const RELATIVE_DIR = "browser/extensions/pdfjs/test/";
 const TESTROOT = "http://example.com/browser/" + RELATIVE_DIR;
 
 add_task(function* test() {
-  let handlerService = Cc["@mozilla.org/uriloader/handler-service;1"].getService(Ci.nsIHandlerService);
   let mimeService = Cc["@mozilla.org/mime;1"].getService(Ci.nsIMIMEService);
-  let handlerInfo = mimeService.getFromTypeAndExtension('application/pdf', 'pdf');
+  let handlerInfo = mimeService.getFromTypeAndExtension("application/pdf", "pdf");
 
   
-  is(handlerInfo.alwaysAskBeforeHandling, false, 'pdf handler defaults to always-ask is false');
-  is(handlerInfo.preferredAction, Ci.nsIHandlerInfo.handleInternally, 'pdf handler defaults to internal');
+  is(handlerInfo.alwaysAskBeforeHandling, false, "pdf handler defaults to always-ask is false");
+  is(handlerInfo.preferredAction, Ci.nsIHandlerInfo.handleInternally, "pdf handler defaults to internal");
 
-  info('Pref action: ' + handlerInfo.preferredAction);
+  info("Pref action: " + handlerInfo.preferredAction);
 
   yield BrowserTestUtils.withNewTab({ gBrowser, url: "about:blank" },
     function* (browser) {
@@ -25,15 +24,15 @@ add_task(function* test() {
         Assert.ok("PDFJS" in content.wrappedJSObject, "window content has PDFJS object");
 
         
-        var sidebar = content.document.querySelector('button#sidebarToggle');
-        var outerContainer = content.document.querySelector('div#outerContainer');
+        var sidebar = content.document.querySelector("button#sidebarToggle");
+        var outerContainer = content.document.querySelector("div#outerContainer");
 
         sidebar.click();
         Assert.ok(outerContainer.classList.contains("sidebarOpen"), "sidebar opens on click");
 
         
-        var thumbnailView = content.document.querySelector('div#thumbnailView');
-        var outlineView = content.document.querySelector('div#outlineView');
+        var thumbnailView = content.document.querySelector("div#thumbnailView");
+        var outlineView = content.document.querySelector("div#outlineView");
 
         Assert.equal(thumbnailView.getAttribute("class"), null,
           "Initial view is thumbnail view");
@@ -41,7 +40,7 @@ add_task(function* test() {
           "Outline view is hidden initially");
 
         
-        var viewOutlineButton = content.document.querySelector('button#viewOutline');
+        var viewOutlineButton = content.document.querySelector("button#viewOutline");
         viewOutlineButton.click();
 
         Assert.equal(thumbnailView.getAttribute("class"), "hidden",
@@ -50,7 +49,7 @@ add_task(function* test() {
           "Outline view is visible when selected");
 
         
-        var viewThumbnailButton = content.document.querySelector('button#viewThumbnail');
+        var viewThumbnailButton = content.document.querySelector("button#viewThumbnail");
         viewThumbnailButton.click();
 
         Assert.equal(thumbnailView.getAttribute("class"), "",
