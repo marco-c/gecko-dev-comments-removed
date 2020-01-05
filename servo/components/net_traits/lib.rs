@@ -28,6 +28,7 @@ extern crate util;
 extern crate uuid;
 extern crate websocket;
 
+use filemanager_thread::FileManagerThreadMsg;
 use heapsize::HeapSizeOf;
 use hyper::header::{ContentType, Headers};
 use hyper::http::RawStatus;
@@ -217,8 +218,13 @@ pub type CoreResourceThread = IpcSender<CoreResourceMsg>;
 
 pub type IpcSendResult = Result<(), IOError>;
 
+
+
+
 pub trait IpcSend<T> where T: serde::Serialize + serde::Deserialize {
+    
     fn send(&self, T) -> IpcSendResult;
+    
     fn sender(&self) -> IpcSender<T>;
 }
 
@@ -231,13 +237,17 @@ pub trait IpcSend<T> where T: serde::Serialize + serde::Deserialize {
 pub struct ResourceThreads {
     core_thread: CoreResourceThread,
     storage_thread: IpcSender<StorageThreadMsg>,
+    filemanager_thread: IpcSender<FileManagerThreadMsg>,
 }
 
 impl ResourceThreads {
-    pub fn new(c: CoreResourceThread, s: IpcSender<StorageThreadMsg>) -> ResourceThreads {
+    pub fn new(c: CoreResourceThread,
+               s: IpcSender<StorageThreadMsg>,
+               f: IpcSender<FileManagerThreadMsg>) -> ResourceThreads {
         ResourceThreads {
             core_thread: c,
             storage_thread: s,
+            filemanager_thread: f,
         }
     }
 }
@@ -259,6 +269,16 @@ impl IpcSend<StorageThreadMsg> for ResourceThreads {
 
     fn sender(&self) -> IpcSender<StorageThreadMsg> {
         self.storage_thread.clone()
+    }
+}
+
+impl IpcSend<FileManagerThreadMsg> for ResourceThreads {
+    fn send(&self, msg: FileManagerThreadMsg) -> IpcSendResult {
+        self.filemanager_thread.send(msg)
+    }
+
+    fn sender(&self) -> IpcSender<FileManagerThreadMsg> {
+        self.filemanager_thread.clone()
     }
 }
 
