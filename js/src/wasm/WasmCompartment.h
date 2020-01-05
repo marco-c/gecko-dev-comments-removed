@@ -83,13 +83,6 @@ class Compartment
 
     
     
-    
-    
-
-    Instance* lookupInstanceDeprecated(const void* pc) const;
-
-    
-    
 
     void setInterrupted(bool interrupted);
 

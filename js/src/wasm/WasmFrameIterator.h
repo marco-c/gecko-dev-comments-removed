@@ -138,6 +138,12 @@ GenerateFunctionEpilogue(jit::MacroAssembler& masm, unsigned framePushed, FuncOf
 void
 TraceActivations(JSContext* cx, const CooperatingContext& target, JSTracer* trc);
 
+
+
+
+Instance*
+LookupFaultingInstance(WasmActivation* activation, void* pc, void* fp);
+
 } 
 } 
 

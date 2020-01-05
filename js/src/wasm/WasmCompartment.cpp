@@ -47,8 +47,13 @@ struct InstanceComparator
     int operator()(const Instance* instance) const {
         if (instance == &target)
             return 0;
-        MOZ_ASSERT(!target.codeSegment().containsCodePC(instance->codeBase()));
-        MOZ_ASSERT(!instance->codeSegment().containsCodePC(target.codeBase()));
+
+        
+        
+        
+        if (instance->codeBase() == target.codeBase())
+            return instance < &target ? -1 : 1;
+
         return target.codeBase() < instance->codeBase() ? -1 : 1;
     }
 };
@@ -120,13 +125,6 @@ struct PCComparator
 Code*
 Compartment::lookupCode(const void* pc) const
 {
-    Instance* instance = lookupInstanceDeprecated(pc);
-    return instance ? &instance->code() : nullptr;
-}
-
-Instance*
-Compartment::lookupInstanceDeprecated(const void* pc) const
-{
     
     
     
@@ -138,7 +136,7 @@ Compartment::lookupInstanceDeprecated(const void* pc) const
     if (!BinarySearchIf(instances_, 0, instances_.length(), PCComparator(pc), &index))
         return nullptr;
 
-    return instances_[index];
+    return &instances_[index]->code();
 }
 
 void
