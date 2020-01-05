@@ -241,6 +241,7 @@ no_jsmanaged_fields!(ImageCacheTask, ScriptControlChan);
 no_jsmanaged_fields!(Atom, Namespace, Timer);
 no_jsmanaged_fields!(Trusted<T>);
 no_jsmanaged_fields!(PropertyDeclarationBlock);
+no_jsmanaged_fields!(HashSet<T>);
 
 
 no_jsmanaged_fields!(SubpageId, WindowSizeData, PipelineId);
