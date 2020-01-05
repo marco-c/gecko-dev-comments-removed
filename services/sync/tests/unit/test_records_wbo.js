@@ -2,7 +2,6 @@
 
 
 Cu.import("resource://services-sync/record.js");
-Cu.import("resource://services-sync/identity.js");
 Cu.import("resource://services-sync/resource.js");
 Cu.import("resource://services-sync/service.js");
 Cu.import("resource://services-sync/util.js");
