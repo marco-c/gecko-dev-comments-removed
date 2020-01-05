@@ -312,6 +312,14 @@ CrossOriginXrayWrapper::setPrototype(JSContext* cx, JS::HandleObject wrapper,
     
     
     
+    
+    
+    
+    
+    
+    if (!proto) {
+        return result.succeed();
+    }
     return result.failCantSetProto();
 }
 
