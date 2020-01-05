@@ -760,7 +760,6 @@ public:
                                           EventVisibility aVisibility)
   {
     mSeekJob = Move(aSeekJob);
-    mVisibility = aVisibility;
 
     
     
@@ -793,7 +792,7 @@ public:
 
     mMaster->UpdatePlaybackPositionInternal(mSeekJob.mTarget.GetTime().ToMicroseconds());
 
-    if (mVisibility == EventVisibility::Observable) {
+    if (aVisibility == EventVisibility::Observable) {
       mMaster->mOnPlaybackEvent.Notify(MediaEventType::SeekStarted);
       
       
@@ -921,7 +920,6 @@ private:
   void SeekCompleted();
 
   SeekJob mSeekJob;
-  EventVisibility mVisibility = EventVisibility::Observable;
   MozPromiseRequestHolder<SeekTask::SeekTaskPromise> mSeekTaskRequest;
   RefPtr<SeekTask> mSeekTask;
 };
