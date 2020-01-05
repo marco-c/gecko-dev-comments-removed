@@ -8,46 +8,30 @@ package org.mozilla.gecko.notifications;
 import android.app.Notification;
 import android.app.Service;
 import android.content.Intent;
-import android.os.Binder;
 import android.os.IBinder;
 
 import org.mozilla.gecko.R;
 
-public class NotificationService extends Service {
-    private final IBinder mBinder = new NotificationBinder();
-    private NotificationHandler mHandler;
+public final class NotificationService extends Service {
+    public static final String EXTRA_NOTIFICATION = "notification";
 
-    @Override
-    public void onCreate() {
-        
-        
-        mHandler = new NotificationHandler(this) {
-            @Override
-            protected void setForegroundNotification(String name, Notification notification) {
-                super.setForegroundNotification(name, notification);
-
-                if (notification == null) {
-                    stopForeground(true);
-                } else {
-                    startForeground(R.id.foregroundNotification, notification);
-                }
-            }
-        };
-    }
-
-    public class NotificationBinder extends Binder {
-        NotificationService getService() {
+    @Override 
+    public int onStartCommand(final Intent intent, final int flags, final int startId) {
+        final Notification notification = intent.getParcelableExtra(EXTRA_NOTIFICATION);
+        if (notification != null) {
             
-            return NotificationService.this;
+            startForeground(R.id.foregroundNotification, notification);
+            return START_NOT_STICKY;
         }
+
+        
+        stopForeground(true);
+        stopSelfResult(startId);
+        return START_NOT_STICKY;
     }
 
-    @Override
-    public IBinder onBind(Intent intent) {
-        return mBinder;
-    }
-
-    public NotificationHandler getNotificationHandler() {
-        return mHandler;
+    @Override 
+    public IBinder onBind(final Intent intent) {
+        return null;
     }
 }

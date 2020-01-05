@@ -574,7 +574,7 @@ public class GeckoAppShell
         public void showNotification(String name, String cookie, String host,
                                      String title, String text, String imageUrl) {
             
-            GeckoAppShell.onNotificationClose(name);
+            GeckoAppShell.onNotificationClose(name, cookie);
         }
 
         @Override 
@@ -582,7 +582,7 @@ public class GeckoAppShell
                                                String title, String text, String imageUrl,
                                                String data) {
             
-            GeckoAppShell.onNotificationClose(name);
+            GeckoAppShell.onNotificationClose(name, cookie);
         }
 
         @Override 
@@ -931,15 +931,15 @@ public class GeckoAppShell
     }
 
     @WrapForJNI(dispatchTo = "gecko")
-    private static native void notifyAlertListener(String name, String topic);
+    private static native void notifyAlertListener(String name, String topic, String cookie);
 
     
 
 
 
-    public static void onNotificationShow(final String name) {
+    public static void onNotificationShow(final String name, final String cookie) {
         if (GeckoThread.isRunning()) {
-            notifyAlertListener(name, "alertshow");
+            notifyAlertListener(name, "alertshow", cookie);
         }
     }
 
@@ -947,9 +947,9 @@ public class GeckoAppShell
 
 
 
-    public static void onNotificationClose(final String name) {
+    public static void onNotificationClose(final String name, final String cookie) {
         if (GeckoThread.isRunning()) {
-            notifyAlertListener(name, "alertfinished");
+            notifyAlertListener(name, "alertfinished", cookie);
         }
     }
 
@@ -957,9 +957,9 @@ public class GeckoAppShell
 
 
 
-    public static void onNotificationClick(final String name) {
+    public static void onNotificationClick(final String name, final String cookie) {
         if (GeckoThread.isRunning()) {
-            notifyAlertListener(name, "alertclickcallback");
+            notifyAlertListener(name, "alertclickcallback", cookie);
         }
     }
 

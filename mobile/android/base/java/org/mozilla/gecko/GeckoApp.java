@@ -22,7 +22,6 @@ import org.mozilla.gecko.icons.Icons;
 import org.mozilla.gecko.menu.GeckoMenu;
 import org.mozilla.gecko.menu.GeckoMenuInflater;
 import org.mozilla.gecko.menu.MenuPanel;
-import org.mozilla.gecko.notifications.AppNotificationClient;
 import org.mozilla.gecko.notifications.NotificationClient;
 import org.mozilla.gecko.notifications.NotificationHelper;
 import org.mozilla.gecko.util.IntentUtils;
@@ -1137,9 +1136,6 @@ public abstract class GeckoApp
         
         GeckoAppShell.setContextGetter(this);
         GeckoAppShell.setGeckoInterface(this);
-        
-        
-        GeckoAppShell.setNotificationListener(makeNotificationClient());
 
         
         
@@ -1653,10 +1649,6 @@ public abstract class GeckoApp
                 geckoConnected();
             }
         }
-
-        if (ACTION_ALERT_CALLBACK.equals(action)) {
-            processAlertCallback(intent);
-        }
     }
 
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
@@ -2001,23 +1993,6 @@ public abstract class GeckoApp
         return bitmap;
     }
 
-    private void processAlertCallback(SafeIntent intent) {
-        String alertName = "";
-        String alertCookie = "";
-        Uri data = intent.getData();
-        if (data != null) {
-            alertName = data.getQueryParameter("name");
-            if (alertName == null)
-                alertName = "";
-            alertCookie = data.getQueryParameter("cookie");
-            if (alertCookie == null)
-                alertCookie = "";
-        }
-
-        ((NotificationClient) GeckoAppShell.getNotificationListener()).onNotificationClick(
-                alertName);
-    }
-
     @Override
     protected void onNewIntent(Intent externalIntent) {
         final SafeIntent intent = new SafeIntent(externalIntent);
@@ -2060,8 +2035,6 @@ public abstract class GeckoApp
             mLayerView.loadUri(uri, GeckoView.LOAD_SWITCH_TAB);
         } else if (Intent.ACTION_SEARCH.equals(action)) {
             mLayerView.loadUri(uri, GeckoView.LOAD_NEW_TAB);
-        } else if (ACTION_ALERT_CALLBACK.equals(action)) {
-            processAlertCallback(intent);
         } else if (NotificationHelper.HELPER_BROADCAST_ACTION.equals(action)) {
             NotificationHelper.getInstance(getApplicationContext()).handleNotificationIntent(intent);
         } else if (ACTION_LAUNCH_SETTINGS.equals(action)) {
@@ -2724,12 +2697,6 @@ public abstract class GeckoApp
             mFullScreenPluginView.onTrackballEvent(event);
             return true;
         }
-    }
-
-    protected NotificationClient makeNotificationClient() {
-        
-        
-        return new AppNotificationClient(getApplicationContext());
     }
 
     private int getVersionCode() {

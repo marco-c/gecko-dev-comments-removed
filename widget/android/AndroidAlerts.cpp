@@ -12,7 +12,7 @@ namespace widget {
 
 NS_IMPL_ISUPPORTS(AndroidAlerts, nsIAlertsService)
 
-StaticAutoPtr<AndroidAlerts::AlertInfoMap> AndroidAlerts::sAlertInfoMap;
+StaticAutoPtr<AndroidAlerts::ListenerMap> AndroidAlerts::sListenerMap;
 
 NS_IMETHODIMP
 AndroidAlerts::ShowAlertNotification(const nsAString & aImageUrl,
@@ -77,11 +77,11 @@ AndroidAlerts::ShowPersistentNotification(const nsAString& aPersistentData,
     nsAlertsUtils::GetSourceHostPort(principal, host);
 
     if (aPersistentData.IsEmpty() && aAlertListener) {
-        if (!sAlertInfoMap) {
-            sAlertInfoMap = new AlertInfoMap();
+        if (!sListenerMap) {
+            sListenerMap = new ListenerMap();
         }
         
-        sAlertInfoMap->Put(name, new AlertInfo{aAlertListener, cookie});
+        sListenerMap->Put(name, aAlertListener);
     }
 
     java::GeckoAppShell::ShowNotification(
@@ -102,24 +102,22 @@ AndroidAlerts::CloseAlert(const nsAString& aAlertName,
 }
 
 void
-AndroidAlerts::NotifyListener(const nsAString& aName, const char* aTopic)
+AndroidAlerts::NotifyListener(const nsAString& aName, const char* aTopic,
+                              const char16_t* aCookie)
 {
-    if (!sAlertInfoMap) {
+    if (!sListenerMap) {
         return;
     }
 
-    const auto pAlertInfo = sAlertInfoMap->Get(aName);
-    if (!pAlertInfo) {
+    nsCOMPtr<nsIObserver> listener = sListenerMap->Get(aName);
+    if (!listener) {
         return;
     }
 
-    if (pAlertInfo->listener) {
-        pAlertInfo->listener->Observe(
-                nullptr, aTopic, pAlertInfo->cookie.get());
-    }
+    listener->Observe(nullptr, aTopic, aCookie);
 
     if (NS_LITERAL_CSTRING("alertfinished").Equals(aTopic)) {
-        sAlertInfoMap->Remove(aName);
+        sListenerMap->Remove(aName);
     }
 }
 

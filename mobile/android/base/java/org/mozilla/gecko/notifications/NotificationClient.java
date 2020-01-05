@@ -7,95 +7,118 @@ package org.mozilla.gecko.notifications;
 
 import android.app.Notification;
 import android.app.PendingIntent;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.net.Uri;
-import android.text.TextUtils;
+import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.NotificationManagerCompat;
 import android.util.Log;
 
-import java.util.LinkedList;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.HashMap;
 
 import org.mozilla.gecko.AppConstants;
 import org.mozilla.gecko.GeckoApp;
 import org.mozilla.gecko.GeckoAppShell;
 import org.mozilla.gecko.GeckoService;
 import org.mozilla.gecko.NotificationListener;
+import org.mozilla.gecko.R;
+import org.mozilla.gecko.gfx.BitmapUtils;
 
 
 
 
-public abstract class NotificationClient implements NotificationListener {
+public final class NotificationClient implements NotificationListener {
     private static final String LOGTAG = "GeckoNotificationClient";
+     static final String CLICK_ACTION = AppConstants.ANDROID_PACKAGE_NAME + ".NOTIFICATION_CLICK";
+     static final String CLOSE_ACTION = AppConstants.ANDROID_PACKAGE_NAME + ".NOTIFICATION_CLOSE";
+     static final String PERSISTENT_INTENT_EXTRA = "persistentIntent";
 
-    private volatile NotificationHandler mHandler;
-    private boolean mReady;
-    private final LinkedList<Runnable> mTaskQueue = new LinkedList<Runnable>();
+    private final Context mContext;
+    private final NotificationManagerCompat mNotificationManager;
+
+    private final HashMap<String, Notification> mNotifications = new HashMap<>();
+
+    
+
+
+
+
+
+
+
+
+
+    private String mForegroundNotification;
+
+    public NotificationClient(Context context) {
+        mContext = context.getApplicationContext();
+        mNotificationManager = NotificationManagerCompat.from(mContext);
+    }
 
     @Override 
     public void showNotification(String name, String cookie, String title,
-                                 String text, String host, String imageUrl)
-    {
-        
-        final Intent notificationIntent = new Intent(GeckoApp.ACTION_ALERT_CALLBACK);
-        notificationIntent.setClassName(AppConstants.ANDROID_PACKAGE_NAME,
-                                        AppConstants.MOZ_ANDROID_BROWSER_INTENT_CLASS);
-        notificationIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-
-        
-        
-        final Uri.Builder b = new Uri.Builder();
-        final Uri dataUri = b.scheme("alert")
-                .appendQueryParameter("name", name)
-                .appendQueryParameter("cookie", cookie)
-                .build();
-        notificationIntent.setData(dataUri);
-
-        final PendingIntent clickIntent = PendingIntent.getActivity(
-                GeckoAppShell.getApplicationContext(), 0, notificationIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT);
-
-        add(name, imageUrl, host, title, text, clickIntent,  null);
-        GeckoAppShell.onNotificationShow(name);
+                                 String text, String host, String imageUrl) {
+        showNotification(name, cookie, title, text, host, imageUrl,  null);
     }
 
     @Override 
     public void showPersistentNotification(String name, String cookie, String title,
                                            String text, String host, String imageUrl,
-                                           String data)
-    {
-        final Context context = GeckoAppShell.getApplicationContext();
-
-        final PendingIntent clickIntent = PendingIntent.getService(
-                context, 0, GeckoService.getIntentToCreateServices(
-                    context, "persistent-notification-click", data),
-                PendingIntent.FLAG_UPDATE_CURRENT);
-
-        final PendingIntent closeIntent = PendingIntent.getService(
-                context, 0, GeckoService.getIntentToCreateServices(
-                    context, "persistent-notification-close", data),
-                PendingIntent.FLAG_UPDATE_CURRENT);
-
-        add(name, imageUrl, host, title, text, clickIntent, closeIntent);
-        GeckoAppShell.onNotificationShow(name);
+                                           String data) {
+        showNotification(name, cookie, title, text, host, imageUrl, data != null ? data : "");
     }
 
-    @Override
+    private void showNotification(String name, String cookie, String title,
+                                  String text, String host, String imageUrl,
+                                  String persistentData) {
+        
+        
+        final ComponentName comp = GeckoAppShell.getGeckoInterface()
+                                                .getActivity().getComponentName();
+        final Uri dataUri = (new Uri.Builder())
+                .scheme("moz-notification")
+                .authority(comp.getPackageName())
+                .path(comp.getClassName())
+                .appendQueryParameter("name", name)
+                .appendQueryParameter("cookie", cookie)
+                .build();
+
+        final Intent clickIntent = new Intent(CLICK_ACTION);
+        clickIntent.setClass(mContext, NotificationReceiver.class);
+        clickIntent.setData(dataUri);
+
+        if (persistentData != null) {
+            final Intent persistentIntent = GeckoService.getIntentToCreateServices(
+                    mContext, "persistent-notification-click", persistentData);
+            clickIntent.putExtra(PERSISTENT_INTENT_EXTRA, persistentIntent);
+        }
+
+        final PendingIntent clickPendingIntent = PendingIntent.getBroadcast(
+                mContext, 0, clickIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+        final Intent closeIntent = new Intent(CLOSE_ACTION);
+        closeIntent.setClass(mContext, NotificationReceiver.class);
+        closeIntent.setData(dataUri);
+
+        if (persistentData != null) {
+            final Intent persistentIntent = GeckoService.getIntentToCreateServices(
+                    mContext, "persistent-notification-close", persistentData);
+            closeIntent.putExtra(PERSISTENT_INTENT_EXTRA, persistentIntent);
+        }
+
+        final PendingIntent closePendingIntent = PendingIntent.getBroadcast(
+                mContext, 0, closeIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+        add(name, imageUrl, host, title, text, clickPendingIntent, closePendingIntent);
+        GeckoAppShell.onNotificationShow(name, cookie);
+    }
+
+    @Override 
     public void closeNotification(String name)
     {
         remove(name);
-        GeckoAppShell.onNotificationClose(name);
-    }
-
-    public void onNotificationClick(String name) {
-        GeckoAppShell.onNotificationClick(name);
-
-        if (isOngoing(name)) {
-            
-            return;
-        }
-
-        closeNotification(name);
     }
 
     
@@ -103,40 +126,111 @@ public abstract class NotificationClient implements NotificationListener {
 
 
 
-    public synchronized void add(final String aName, final String aImageUrl, final String aHost,
-                                 final String aAlertTitle, final String aAlertText,
-                                 final PendingIntent contentIntent, final PendingIntent deleteIntent) {
-        mTaskQueue.add(new Runnable() {
-            @Override
-            public void run() {
-                mHandler.add(aName, aImageUrl, aHost, aAlertTitle,
-                             aAlertText, contentIntent, deleteIntent);
-            }
-        });
-        notify();
 
-        if (!mReady) {
-            bind();
+
+
+
+
+    private void add(final String name, final String imageUrl, final String host,
+                     final String alertTitle, final String alertText,
+                     final PendingIntent contentIntent, final PendingIntent deleteIntent) {
+        final NotificationCompat.Builder builder = new NotificationCompat.Builder(mContext)
+                .setContentTitle(alertTitle)
+                .setContentText(alertText)
+                .setSmallIcon(R.drawable.ic_status_logo)
+                .setContentIntent(contentIntent)
+                .setDeleteIntent(deleteIntent)
+                .setAutoCancel(true)
+                .setStyle(new NotificationCompat.InboxStyle()
+                          .addLine(alertText)
+                          .setSummaryText(host));
+
+        
+        if (!imageUrl.isEmpty()) {
+            final Bitmap image = BitmapUtils.decodeUrl(imageUrl);
+            builder.setLargeIcon(image);
         }
+
+        builder.setWhen(System.currentTimeMillis());
+        final Notification notification = builder.build();
+
+        synchronized (this) {
+            mNotifications.put(name, notification);
+        }
+
+        mNotificationManager.notify(name, 0, notification);
     }
 
     
+
 
 
 
 
     public synchronized void add(final String name, final Notification notification) {
-        mTaskQueue.add(new Runnable() {
-            @Override
-            public void run() {
-                mHandler.add(name, notification);
-            }
-        });
-        notify();
+        final boolean ongoing = isOngoing(notification);
 
-        if (!mReady) {
-            bind();
+        if (ongoing != isOngoing(mNotifications.get(name))) {
+            
+            
+            
+            onNotificationClose(name);
         }
+
+        mNotifications.put(name, notification);
+
+        if (!ongoing) {
+            mNotificationManager.notify(name, 0, notification);
+            return;
+        }
+
+        
+        if (mForegroundNotification == null) {
+            setForegroundNotificationLocked(name, notification);
+        } else if (mForegroundNotification.equals(name)) {
+            
+            
+            mNotificationManager.notify(R.id.foregroundNotification, notification);
+        }
+    }
+
+    
+
+
+
+
+
+
+
+    public void update(final String name, final long progress,
+                       final long progressMax, final String alertText) {
+        Notification notification;
+        synchronized (this) {
+            notification = mNotifications.get(name);
+        }
+        if (notification == null) {
+            return;
+        }
+
+        notification = new NotificationCompat.Builder(mContext)
+                .setContentText(alertText)
+                .setSmallIcon(notification.icon)
+                .setWhen(notification.when)
+                .setContentIntent(notification.contentIntent)
+                .setProgress((int) progressMax, (int) progress, false)
+                .build();
+
+        add(name, notification);
+    }
+
+     synchronized Notification onNotificationClose(final String name) {
+        mNotificationManager.cancel(name, 0);
+
+        final Notification notification = mNotifications.remove(name);
+        if (notification != null) {
+            updateForegroundNotificationLocked(name);
+        }
+        return notification;
     }
 
     
@@ -145,20 +239,18 @@ public abstract class NotificationClient implements NotificationListener {
 
 
     public synchronized void remove(final String name) {
-        mTaskQueue.add(new Runnable() {
-            @Override
-            public void run() {
-                mHandler.remove(name);
-            }
-        });
-
-        
-        
-        if (!mReady) {
-            bind();
+        final Notification notification = onNotificationClose(name);
+        if (notification == null || notification.deleteIntent == null) {
+            return;
         }
 
-        notify();
+        
+        
+        try {
+            notification.deleteIntent.send();
+        } catch (final PendingIntent.CanceledException e) {
+            
+        }
     }
 
     
@@ -166,48 +258,61 @@ public abstract class NotificationClient implements NotificationListener {
 
 
 
-    public boolean isOngoing(String name) {
-        final NotificationHandler handler = mHandler;
-        return handler != null && handler.isOngoing(name);
+
+
+
+    public synchronized boolean isDone() {
+        return mNotifications.isEmpty();
     }
 
-    protected void bind() {
-        mReady = true;
+    
+
+
+
+
+
+    public synchronized boolean isOngoing(final String name) {
+        return isOngoing(mNotifications.get(name));
     }
 
-    protected void unbind() {
-        mReady = false;
+    
+
+
+
+
+
+    public boolean isOngoing(final Notification notification) {
+        if (notification != null && (notification.flags & Notification.FLAG_ONGOING_EVENT) != 0) {
+            return true;
+        }
+        return false;
     }
 
-    protected void connectHandler(NotificationHandler handler) {
-        mHandler = handler;
-        new Thread(new NotificationRunnable()).start();
+    private void setForegroundNotificationLocked(final String name,
+                                                 final Notification notification) {
+        mForegroundNotification = name;
+
+        final Intent intent = new Intent(mContext, NotificationService.class);
+        intent.putExtra(NotificationService.EXTRA_NOTIFICATION, notification);
+        mContext.startService(intent);
     }
 
-    private class NotificationRunnable implements Runnable {
-        @Override
-        public void run() {
-            Runnable r;
-            try {
-                while (true) {
-                    
-                    
-                    synchronized (NotificationClient.this) {
-                        r = mTaskQueue.poll();
-                        while (r == null) {
-                            if (mHandler.isDone()) {
-                                unbind();
-                                return;
-                            }
-                            NotificationClient.this.wait();
-                            r = mTaskQueue.poll();
-                        }
-                    }
-                    r.run();
-                }
-            } catch (InterruptedException e) {
-                Log.e(LOGTAG, "Notification task queue processing interrupted", e);
+    private void updateForegroundNotificationLocked(final String oldName) {
+        if (mForegroundNotification == null || !mForegroundNotification.equals(oldName)) {
+            return;
+        }
+
+        
+        
+        
+        for (final String name : mNotifications.keySet()) {
+            final Notification notification = mNotifications.get(name);
+            if (isOngoing(notification)) {
+                setForegroundNotificationLocked(name, notification);
+                return;
             }
         }
+
+        setForegroundNotificationLocked(null, null);
     }
 }

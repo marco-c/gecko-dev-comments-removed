@@ -25,6 +25,7 @@ import org.mozilla.gecko.home.HomePanelsManager;
 import org.mozilla.gecko.lwt.LightweightTheme;
 import org.mozilla.gecko.mdns.MulticastDNSManager;
 import org.mozilla.gecko.media.AudioFocusAgent;
+import org.mozilla.gecko.notifications.NotificationClient;
 import org.mozilla.gecko.notifications.NotificationHelper;
 import org.mozilla.gecko.preferences.DistroSharedPrefsImport;
 import org.mozilla.gecko.util.BundleEventListener;
@@ -165,6 +166,9 @@ public class GeckoApplication extends Application
         DownloadsIntegration.init();
         HomePanelsManager.getInstance().init(context);
 
+        
+        
+        GeckoAppShell.setNotificationListener(new NotificationClient(context));
         
         NotificationHelper.getInstance(context).init();
 
