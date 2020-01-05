@@ -146,6 +146,13 @@ private:
   inline const StyleSheetInfo& SheetInfo() const;
 
 protected:
+  
+  
+  
+  
+  void SubjectSubsumesInnerPrincipal(nsIPrincipal& aSubjectPrincipal,
+                                     ErrorResult& aRv);
+
   nsString              mTitle;
   nsIDocument*          mDocument; 
   nsINode*              mOwningNode; 

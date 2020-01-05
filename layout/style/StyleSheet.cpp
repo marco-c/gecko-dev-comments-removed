@@ -154,4 +154,43 @@ StyleSheet::GetTitle(nsAString& aTitle)
   return NS_OK;
 }
 
+void
+StyleSheet::SubjectSubsumesInnerPrincipal(nsIPrincipal& aSubjectPrincipal,
+                                          ErrorResult& aRv)
+{
+  StyleSheetInfo& info = SheetInfo();
+
+  if (aSubjectPrincipal.Subsumes(info.mPrincipal)) {
+    return;
+  }
+
+  
+  if (GetCORSMode() == CORS_NONE) {
+    aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!info.mComplete) {
+    aRv.Throw(NS_ERROR_DOM_INVALID_ACCESS_ERR);
+    return;
+  }
+
+  WillDirty();
+
+  info.mPrincipal = &aSubjectPrincipal;
+
+  DidDirty();
+}
+
 } 

@@ -1616,43 +1616,6 @@ CSSStyleSheet::DidDirty()
   ClearRuleCascades();
 }
 
-void
-CSSStyleSheet::SubjectSubsumesInnerPrincipal(nsIPrincipal& aSubjectPrincipal,
-                                             ErrorResult& aRv)
-{
-  if (aSubjectPrincipal.Subsumes(mInner->mPrincipal)) {
-    return;
-  }
-
-  
-  if (GetCORSMode() == CORS_NONE) {
-    aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
-    return;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (!mInner->mComplete) {
-    aRv.Throw(NS_ERROR_DOM_INVALID_ACCESS_ERR);
-    return;
-  }
-
-  WillDirty();
-
-  mInner->mPrincipal = &aSubjectPrincipal;
-
-  DidDirty();
-}
-
 nsresult
 CSSStyleSheet::RegisterNamespaceRule(css::Rule* aRule)
 {
