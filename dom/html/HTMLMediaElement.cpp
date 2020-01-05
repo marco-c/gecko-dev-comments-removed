@@ -1164,6 +1164,10 @@ public:
     if (aElement->mUseUrgentStartForChannel &&
         (cos = do_QueryInterface(channel))) {
       cos->AddClassFlags(nsIClassOfService::UrgentStart);
+
+      
+      
+      aElement->mUseUrgentStartForChannel = false;
     }
 
     
@@ -1877,6 +1881,12 @@ void HTMLMediaElement::DoLoad()
   
   if (EventStateManager::IsHandlingUserInput()) {
     mHasUserInteraction = true;
+
+    
+    
+    if (HasAttr(kNameSpaceID_None, nsGkAtoms::autoplay)) {
+      mUseUrgentStartForChannel = true;
+    }
   }
 
   SetPlayedOrSeeked(false);
