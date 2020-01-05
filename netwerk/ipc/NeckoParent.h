@@ -241,11 +241,6 @@ private:
   RefPtr<OfflineObserver> mObserver;
 };
 
-
-
-
-extern PNeckoParent *gNeckoParent;
-
 } 
 } 
 
