@@ -2414,15 +2414,15 @@ js::AsyncFromSyncIteratorMethod(JSContext* cx, CallArgs& args, CompletionKind co
     
 
     
-    RootedValue value(cx);
-    if (!GetProperty(cx, resultObj, resultObj, cx->names().value, &value))
-        return AbruptRejectPromise(cx, args, resultPromise, nullptr);
-
-    
     RootedValue doneVal(cx);
     if (!GetProperty(cx, resultObj, resultObj, cx->names().done, &doneVal))
         return AbruptRejectPromise(cx, args, resultPromise, nullptr);
     bool done = ToBoolean(doneVal);
+
+    
+    RootedValue value(cx);
+    if (!GetProperty(cx, resultObj, resultObj, cx->names().value, &value))
+        return AbruptRejectPromise(cx, args, resultPromise, nullptr);
 
     
     Rooted<PromiseObject*> promise(cx, CreatePromiseObjectWithoutResolutionFunctions(cx));
