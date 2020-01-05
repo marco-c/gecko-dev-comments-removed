@@ -108,7 +108,11 @@ PushNotifier::Dispatch(PushDispatcher& aDispatcher)
       
       
       for (uint32_t i = 0; i < contentActors.Length(); ++i) {
-        Unused << NS_WARN_IF(!aDispatcher.SendToChild(contentActors[i]));
+        if (aDispatcher.SendToChild(contentActors[i])) {
+          
+          
+          break;
+        }
       }
       return NS_OK;
     }
