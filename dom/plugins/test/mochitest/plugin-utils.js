@@ -27,10 +27,6 @@ function getTestPlugin(pluginName) {
 
 function setTestPluginEnabledState(newEnabledState, pluginName) {
   var oldEnabledState = SpecialPowers.setTestPluginEnabledState(newEnabledState, pluginName);
-  if (!oldEnabledState) {
-    ok(false, "Cannot find plugin '" + plugin + "'");
-    return;
-  }
   var plugin = getTestPlugin(pluginName);
   while (plugin.enabledState != newEnabledState) {
     
