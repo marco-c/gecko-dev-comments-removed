@@ -596,11 +596,6 @@ protected:
       nsAutoSuppressErrors mErrorSuppresser;
   };
 
-
-  bool IsSVGMode() const {
-    return mScanner->IsSVGMode();
-  }
-
   
 
 
@@ -1465,6 +1460,10 @@ protected:
   bool mIsChrome : 1;
 
   
+  
+  bool mIsSVGMode : 1;
+
+  
   bool mViewportUnitsEnabled : 1;
 
   
@@ -1586,6 +1585,7 @@ CSSParserImpl::CSSParserImpl()
     mUnitlessLengthQuirk(false),
     mParsingMode(css::eAuthorSheetFeatures),
     mIsChrome(false),
+    mIsSVGMode(false),
     mViewportUnitsEnabled(true),
     mParsingCompoundProperty(false),
     mInSupportsCondition(false),
@@ -1677,6 +1677,7 @@ void
 CSSParserImpl::ReleaseScanner()
 {
   mScanner = nullptr;
+  mIsSVGMode = false;
   mReporter = nullptr;
   mBaseURI = nullptr;
   mSheetURI = nullptr;
@@ -1991,7 +1992,6 @@ CSSParserImpl::ParseProperty(const nsCSSPropertyID aPropID,
   css::ErrorReporter reporter(scanner, mSheet, mChildLoader, aSheetURI);
   InitScanner(scanner, reporter, aSheetURI, aBaseURI, aSheetPrincipal);
   mSection = eCSSSection_General;
-  scanner.SetSVGMode(aIsSVGMode);
 
   *aChanged = false;
 
@@ -2006,6 +2006,7 @@ CSSParserImpl::ParseProperty(const nsCSSPropertyID aPropID,
     return;
   }
 
+  mIsSVGMode = aIsSVGMode;
   bool parsedOK = ParseProperty(aPropID);
   
   if (parsedOK && GetToken(true)) {
@@ -2041,6 +2042,7 @@ CSSParserImpl::ParseProperty(const nsCSSPropertyID aPropID,
   }
 
   mTempData.AssertInitialState();
+  mIsSVGMode = false;
 
   ReleaseScanner();
 }
@@ -7791,7 +7793,7 @@ CSSParserImpl::ParseVariant(nsCSSValue& aValue,
     }
   }
 
-  if (IsSVGMode() && !IsParsingCompoundProperty()) {
+  if (mIsSVGMode && !IsParsingCompoundProperty()) {
     
     
     if (((aVariantMask & VARIANT_LENGTH) != 0) &&
@@ -17773,7 +17775,6 @@ CSSParserImpl::IsValueValidForProperty(const nsCSSPropertyID aPropID,
   nsAutoSuppressErrors suppressErrors(this);
 
   mSection = eCSSSection_General;
-  scanner.SetSVGMode(false);
 
   
   if (eCSSProperty_UNKNOWN == aPropID) {
