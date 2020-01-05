@@ -1,0 +1,16 @@
+
+
+
+
+#ifndef ExplicitImplicitChecker_h__
+#define ExplicitImplicitChecker_h__
+
+#include "plugin.h"
+
+class ExplicitImplicitChecker : public MatchFinder::MatchCallback {
+public:
+  void registerMatcher(MatchFinder& AstMatcher);
+  virtual void run(const MatchFinder::MatchResult &Result);
+};
+
+#endif

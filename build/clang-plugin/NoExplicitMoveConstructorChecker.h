@@ -1,0 +1,16 @@
+
+
+
+
+#ifndef NoExplicitMoveConstructorChecker_h__
+#define NoExplicitMoveConstructorChecker_h__
+
+#include "plugin.h"
+
+class NoExplicitMoveConstructorChecker : public MatchFinder::MatchCallback {
+public:
+  void registerMatcher(MatchFinder& AstMatcher);
+  virtual void run(const MatchFinder::MatchResult &Result);
+};
+
+#endif

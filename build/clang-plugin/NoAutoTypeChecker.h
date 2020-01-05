@@ -1,0 +1,16 @@
+
+
+
+
+#ifndef NoAutoTypeChecker_h__
+#define NoAutoTypeChecker_h__
+
+#include "plugin.h"
+
+class NoAutoTypeChecker : public MatchFinder::MatchCallback {
+public:
+  void registerMatcher(MatchFinder& AstMatcher);
+  virtual void run(const MatchFinder::MatchResult &Result);
+};
+
+#endif

@@ -1,0 +1,16 @@
+
+
+
+
+#ifndef NonMemMovableTemplateArgChecker_h__
+#define NonMemMovableTemplateArgChecker_h__
+
+#include "plugin.h"
+
+class NonMemMovableTemplateArgChecker : public MatchFinder::MatchCallback {
+public:
+  void registerMatcher(MatchFinder& AstMatcher);
+  virtual void run(const MatchFinder::MatchResult &Result);
+};
+
+#endif

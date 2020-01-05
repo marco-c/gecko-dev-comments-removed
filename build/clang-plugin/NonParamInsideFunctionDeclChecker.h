@@ -1,0 +1,16 @@
+
+
+
+
+#ifndef NonParamInsideFunctionDeclChecker_h__
+#define NonParamInsideFunctionDeclChecker_h__
+
+#include "plugin.h"
+
+class NonParamInsideFunctionDeclChecker : public MatchFinder::MatchCallback {
+public:
+  void registerMatcher(MatchFinder& AstMatcher);
+  virtual void run(const MatchFinder::MatchResult &Result);
+};
+
+#endif

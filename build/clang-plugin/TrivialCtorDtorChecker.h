@@ -1,0 +1,16 @@
+
+
+
+
+#ifndef TrivialCtorDtorChecker_h__
+#define TrivialCtorDtorChecker_h__
+
+#include "plugin.h"
+
+class TrivialCtorDtorChecker : public MatchFinder::MatchCallback {
+public:
+  void registerMatcher(MatchFinder& AstMatcher);
+  virtual void run(const MatchFinder::MatchResult &Result);
+};
+
+#endif

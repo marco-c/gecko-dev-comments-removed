@@ -1,0 +1,16 @@
+
+
+
+
+#ifndef ArithmeticArgChecker_h__
+#define ArithmeticArgChecker_h__
+
+#include "plugin.h"
+
+class ArithmeticArgChecker : public MatchFinder::MatchCallback {
+public:
+  void registerMatcher(MatchFinder& AstMatcher);
+  virtual void run(const MatchFinder::MatchResult &Result);
+};
+
+#endif
