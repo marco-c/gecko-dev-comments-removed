@@ -340,6 +340,10 @@ GetProcessorInformation(int* physical_cpus, int* cache_size_L2, int* cache_size_
 nsresult
 nsSystemInfo::Init()
 {
+  
+  
+  MOZ_ASSERT(NS_IsMainThread());
+
   nsresult rv;
 
   static const struct
