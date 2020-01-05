@@ -1271,12 +1271,19 @@ public:
   }
 
 private:
-  
-  
-  
-  
-  MediaQueue<MediaData>& AudioQueue() const { return mMaster->mAudioQueue; }
-  MediaQueue<MediaData>& VideoQueue() const { return mMaster->mVideoQueue; }
+  void DoSeekInternal()
+  {
+    auto currentTime = mCurrentTime;
+    DiscardFrames(VideoQueue(), [currentTime] (int64_t aSampleTime) {
+      return aSampleTime <= currentTime;
+    });
+
+    if (!IsVideoRequestPending() && NeedMoreVideo()) {
+      RequestVideoData();
+    }
+
+    MaybeFinishSeek(); 
+  }
 
   class AysncNextFrameSeekTask : public Runnable
   {
@@ -1286,30 +1293,17 @@ private:
     {
     }
 
-    ~AysncNextFrameSeekTask() {}
+    void Cancel() { mStateObj = nullptr; }
 
-    void Cancel() { mIsCancelled = true; }
-
-    NS_IMETHOD Run()
+    NS_IMETHOD Run() override
     {
-      if (!mIsCancelled) {
-        auto currentTime = mStateObj->mCurrentTime;
-        DiscardFrames(mStateObj->VideoQueue(), [currentTime] (int64_t aSampleTime) {
-          return aSampleTime <= currentTime;
-        });
-
-        if (!mStateObj->IsVideoRequestPending() && mStateObj->NeedMoreVideo()) {
-          mStateObj->RequestVideoData();
-        }
-
-        mStateObj->MaybeFinishSeek(); 
+      if (mStateObj) {
+        mStateObj->DoSeekInternal();
       }
-
       return NS_OK;
     }
 
   private:
-    bool mIsCancelled = false;
     NextFrameSeekingState* mStateObj;
   };
 
