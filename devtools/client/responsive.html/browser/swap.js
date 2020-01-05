@@ -150,8 +150,9 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
       
       
       
-      gBrowser.updateBrowserRemoteness(tab.linkedBrowser, true,
-                                       contentBrowser.remoteType);
+      gBrowser.updateBrowserRemoteness(tab.linkedBrowser, true, {
+        remoteType: contentBrowser.remoteType,
+      });
 
       
       
