@@ -358,56 +358,6 @@ PopExistingAnimation(const nsAString& aName,
   return nullptr;
 }
 
-static void
-UpdateOldAnimationPropertiesWithNew(
-    CSSAnimation& aOld,
-    TimingParams& aNewTiming,
-    nsTArray<Keyframe>&& aNewKeyframes,
-    bool aNewIsStylePaused,
-    nsStyleContext* aStyleContext)
-{
-  bool animationChanged = false;
-
-  
-  
-  if (aOld.GetEffect()) {
-    dom::AnimationEffectReadOnly* oldEffect = aOld.GetEffect();
-    animationChanged = oldEffect->SpecifiedTiming() != aNewTiming;
-    oldEffect->SetSpecifiedTiming(aNewTiming);
-
-    KeyframeEffectReadOnly* oldKeyframeEffect = oldEffect->AsKeyframeEffect();
-    if (oldKeyframeEffect) {
-      oldKeyframeEffect->SetKeyframes(Move(aNewKeyframes), aStyleContext);
-    }
-  }
-
-  
-  
-  if (aOld.PlayState() != AnimationPlayState::Idle) {
-    
-    
-    
-    
-    
-    
-    
-    if (!aOld.IsStylePaused() && aNewIsStylePaused) {
-      aOld.PauseFromStyle();
-      animationChanged = true;
-    } else if (aOld.IsStylePaused() && !aNewIsStylePaused) {
-      aOld.PlayFromStyle();
-      animationChanged = true;
-    }
-  }
-
-  
-  
-  
-  if (animationChanged && aOld.IsRelevant()) {
-    nsNodeUtils::AnimationChanged(&aOld);
-  }
-}
-
 void
 nsAnimationManager::StopAnimationsForElement(
   mozilla::dom::Element* aElement,
@@ -482,6 +432,12 @@ public:
   bool BuildKeyframes(nsPresContext* aPresContext,
                       const StyleAnimation& aSrc,
                       nsTArray<Keyframe>& aKeyframs);
+  void SetKeyframes(KeyframeEffectReadOnly& aEffect,
+                    nsTArray<Keyframe>&& aKeyframes)
+  {
+    aEffect.SetKeyframes(Move(aKeyframes), mStyleContext);
+  }
+
 private:
   nsTArray<Keyframe> BuildAnimationFrames(nsPresContext* aPresContext,
                                           const StyleAnimation& aSrc,
@@ -516,6 +472,56 @@ private:
 
 static Maybe<ComputedTimingFunction>
 ConvertTimingFunction(const nsTimingFunction& aTimingFunction);
+
+static void
+UpdateOldAnimationPropertiesWithNew(
+    CSSAnimation& aOld,
+    TimingParams& aNewTiming,
+    nsTArray<Keyframe>&& aNewKeyframes,
+    bool aNewIsStylePaused,
+    CSSAnimationBuilder& aBuilder)
+{
+  bool animationChanged = false;
+
+  
+  
+  if (aOld.GetEffect()) {
+    dom::AnimationEffectReadOnly* oldEffect = aOld.GetEffect();
+    animationChanged = oldEffect->SpecifiedTiming() != aNewTiming;
+    oldEffect->SetSpecifiedTiming(aNewTiming);
+
+    KeyframeEffectReadOnly* oldKeyframeEffect = oldEffect->AsKeyframeEffect();
+    if (oldKeyframeEffect) {
+      aBuilder.SetKeyframes(*oldKeyframeEffect, Move(aNewKeyframes));
+    }
+  }
+
+  
+  
+  if (aOld.PlayState() != AnimationPlayState::Idle) {
+    
+    
+    
+    
+    
+    
+    
+    if (!aOld.IsStylePaused() && aNewIsStylePaused) {
+      aOld.PauseFromStyle();
+      animationChanged = true;
+    } else if (aOld.IsStylePaused() && !aNewIsStylePaused) {
+      aOld.PlayFromStyle();
+      animationChanged = true;
+    }
+  }
+
+  
+  
+  
+  if (animationChanged && aOld.IsRelevant()) {
+    nsNodeUtils::AnimationChanged(&aOld);
+  }
+}
 
 
 
@@ -562,7 +568,7 @@ BuildAnimation(nsPresContext* aPresContext,
                                         timing,
                                         Move(keyframes),
                                         isStylePaused,
-                                        aStyleContext);
+                                        aBuilder);
     return oldAnim.forget();
   }
 
@@ -574,7 +580,7 @@ BuildAnimation(nsPresContext* aPresContext,
     new KeyframeEffectReadOnly(aPresContext->Document(), target, timing,
                                effectOptions);
 
-  effect->SetKeyframes(Move(keyframes), aStyleContext);
+  aBuilder.SetKeyframes(*effect, Move(keyframes));
 
   RefPtr<CSSAnimation> animation =
     new CSSAnimation(aPresContext->Document()->GetScopeObject(),
