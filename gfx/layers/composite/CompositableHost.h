@@ -40,12 +40,25 @@ namespace layers {
 class Layer;
 class LayerComposite;
 class Compositor;
-class ImageContainerParent;
 class ThebesBufferData;
 class TiledContentHost;
 class CompositableParentManager;
 class PCompositableParent;
 struct EffectChain;
+
+struct AsyncCompositableRef
+{
+  AsyncCompositableRef()
+   : mProcessId(mozilla::ipc::kInvalidProcessId),
+     mAsyncId(0)
+  {}
+  AsyncCompositableRef(base::ProcessId aProcessId, uint64_t aAsyncId)
+   : mProcessId(aProcessId), mAsyncId(aAsyncId)
+  {}
+  explicit operator bool() const { return !!mAsyncId; }
+  base::ProcessId mProcessId;
+  uint64_t mAsyncId;
+};
 
 
 
@@ -135,8 +148,6 @@ public:
   Layer* GetLayer() const { return mLayer; }
   void SetLayer(Layer* aLayer) { mLayer = aLayer; }
 
-  virtual void SetImageContainer(ImageContainerParent* aImageContainer) {}
-
   virtual TiledContentHost* AsTiledContentHost() { return nullptr; }
 
   typedef uint32_t AttachFlags;
@@ -212,9 +223,7 @@ public:
 
   static PCompositableParent*
   CreateIPDLActor(CompositableParentManager* mgr,
-                  const TextureInfo& textureInfo,
-                  uint64_t asyncID,
-                  PImageContainerParent* aImageContainer = nullptr);
+                  const TextureInfo& textureInfo);
 
   static bool DestroyIPDLActor(PCompositableParent* actor);
 
@@ -222,11 +231,10 @@ public:
 
   uint64_t GetCompositorID() const { return mCompositorID; }
 
-  uint64_t GetAsyncID() const { return mAsyncID; }
+  const AsyncCompositableRef& GetAsyncRef() const { return mAsyncRef; }
+  void SetAsyncRef(const AsyncCompositableRef& aRef) { mAsyncRef = aRef; }
 
   void SetCompositorID(uint64_t aID) { mCompositorID = aID; }
-
-  void SetAsyncID(uint64_t aID) { mAsyncID = aID; }
 
   virtual bool Lock() { return false; }
 
@@ -245,7 +253,7 @@ public:
 
 protected:
   TextureInfo mTextureInfo;
-  uint64_t mAsyncID;
+  AsyncCompositableRef mAsyncRef;
   uint64_t mCompositorID;
   RefPtr<Compositor> mCompositor;
   Layer* mLayer;
@@ -276,43 +284,6 @@ private:
   RefPtr<CompositableHost> mHost;
   bool mSucceeded;
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-namespace CompositableMap {
-  void Create();
-  void Destroy();
-  PCompositableParent* Get(uint64_t aID);
-  void Set(uint64_t aID, PCompositableParent* aParent);
-  void Erase(uint64_t aID);
-  void Clear();
-} 
-
 
 } 
 } 
