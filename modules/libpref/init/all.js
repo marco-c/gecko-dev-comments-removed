@@ -2931,6 +2931,13 @@ pref("browser.tabs.remote.separateFileUriProcess", false);
 #endif
 
 
+
+
+
+
+pref("browser.tabs.remote.allowLinkedWebInFileUriProcess", false);
+
+
 pref("svg.path-caching.enabled", true);
 
 
