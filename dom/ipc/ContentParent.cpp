@@ -623,6 +623,9 @@ ContentParent::StartUp()
 
   BackgroundChild::Startup();
 
+  
+  PreallocatedProcessManager::AllocateAfterDelay();
+
   sDisableUnsafeCPOWWarnings = PR_GetEnv("DISABLE_UNSAFE_CPOW_WARNINGS");
 
 #if defined(XP_LINUX) && defined(MOZ_CONTENT_SANDBOX)
