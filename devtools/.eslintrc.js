@@ -420,6 +420,10 @@ module.exports = {
     
 
     
+    "arrow-spacing": "off",
+    
+    "computed-property-spacing": "off",
+    
     "guard-for-in": "off",
     
     "newline-after-var": "off",
@@ -466,6 +470,8 @@ module.exports = {
     "no-undef-init": "off",
     
     "no-unused-expressions": "off",
+    
+    "no-useless-concat": "off",
     
     "no-void": "off",
     
