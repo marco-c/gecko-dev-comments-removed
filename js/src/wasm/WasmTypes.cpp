@@ -151,12 +151,16 @@ WasmHandleThrow()
 
         DebugFrame* frame = iter.debugFrame();
 
-        JSTrapStatus status = Debugger::onExceptionUnwind(cx, frame);
-        if (status == JSTRAP_RETURN) {
-            
-            
-            
-            JS_ReportErrorASCII(cx, "Unexpected resumption value from onExceptionUnwind");
+        
+        
+        if (cx->isExceptionPending()) {
+            JSTrapStatus status = Debugger::onExceptionUnwind(cx, frame);
+            if (status == JSTRAP_RETURN) {
+                
+                
+                
+                JS_ReportErrorASCII(cx, "Unexpected resumption value from onExceptionUnwind");
+            }
         }
 
         bool ok = Debugger::onLeaveFrame(cx, frame, nullptr, false);
