@@ -834,6 +834,10 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
             }
         };
 
+        if let Some(pipeline_id) = old_pipeline_id {
+            self.pipeline(pipeline_id).freeze();
+        }
+
         
         let window_size = old_pipeline_id.and_then(|old_pipeline_id| {
             self.pipeline(old_pipeline_id).size
