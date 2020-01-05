@@ -136,9 +136,13 @@ private:
 
   MozPromiseHolder<DecodePromise> mDecodePromise;
   MozPromiseHolder<DecodePromise> mDrainPromise;
-  
-  
-  bool mDrained = true;
+  enum class DrainStatus
+  {
+    DRAINED,
+    DRAINABLE,
+    DRAINING,
+  };
+  DrainStatus mDrainStatus = DrainStatus::DRAINED;
 
   
   bool mHasSuccessfulOutput = false;
