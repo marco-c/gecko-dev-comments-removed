@@ -80,9 +80,19 @@ void
 ServoRestyleManager::RebuildAllStyleData(nsChangeHint aExtraHint,
                                          nsRestyleHint aRestyleHint)
 {
-  
-  NS_WARNING("stylo: ServoRestyleManager::RebuildAllStyleData is incomplete");
   StyleSet()->RebuildData();
+
+  
+  
+  
+  
+  if (Element* root = mPresContext->Document()->GetRootElement()) {
+    PostRestyleEvent(root, aRestyleHint, aExtraHint);
+  }
+
+  
+  
+  
 }
 
 void
