@@ -78,11 +78,11 @@ class ScalarType:
 
         
         REQUIRED_FIELDS = {
-            'bug_numbers': list, 
+            'bug_numbers': list,  
             'description': basestring,
             'expires': basestring,
             'kind': basestring,
-            'notification_emails': list, 
+            'notification_emails': list,  
             'record_in_processes': list,
         }
 
