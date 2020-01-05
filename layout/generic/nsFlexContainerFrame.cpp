@@ -89,8 +89,20 @@ IsDisplayValueLegacyBox(const nsStyleDisplay* aStyleDisp)
 
 
 
- bool
-nsFlexContainerFrame::IsLegacyBox(const nsIFrame* aFrame)
+
+
+static bool
+IsLegacyBox(const nsIFrame* aFlexContainer)
+{
+  MOZ_ASSERT(aFlexContainer->GetType() == nsGkAtoms::flexContainerFrame,
+             "only flex containers may be passed to this function");
+  return aFlexContainer->HasAnyStateBits(NS_STATE_FLEX_IS_LEGACY_WEBKIT_BOX);
+}
+
+
+
+static bool
+IsLegacyBoxFOLD_ME(const nsIFrame* aFrame)
 {
   nsStyleContext* styleContext = aFrame->StyleContext();
   const nsStyleDisplay* styleDisp = styleContext->StyleDisplay();
@@ -1133,7 +1145,7 @@ IsOrderLEQWithDOMFallback(nsIFrame* aFrame1,
     return true;
   }
 
-  bool isInLegacyBox = nsFlexContainerFrame::IsLegacyBox(aFrame1->GetParent());
+  const bool isInLegacyBox = IsLegacyBox(aFrame1->GetParent());
 
   int32_t order1 = GetOrderOrBoxOrdinalGroup(aFrame1, isInLegacyBox);
   int32_t order2 = GetOrderOrBoxOrdinalGroup(aFrame2, isInLegacyBox);
@@ -1211,7 +1223,7 @@ IsOrderLEQ(nsIFrame* aFrame1,
     return true;
   }
 
-  bool isInLegacyBox = nsFlexContainerFrame::IsLegacyBox(aFrame1->GetParent());
+  const bool isInLegacyBox = IsLegacyBox(aFrame1->GetParent());
 
   int32_t order1 = GetOrderOrBoxOrdinalGroup(aFrame1, isInLegacyBox);
   int32_t order2 = GetOrderOrBoxOrdinalGroup(aFrame2, isInLegacyBox);
@@ -2284,7 +2296,7 @@ nsFlexContainerFrame::Init(nsIContent*       aContent,
 {
   nsContainerFrame::Init(aContent, aParent, aPrevInFlow);
 
-  if (nsFlexContainerFrame::IsLegacyBox(this)) {
+  if (IsLegacyBoxFOLD_ME(this)) {
     
     
     AddStateBits(NS_STATE_FLEX_IS_LEGACY_WEBKIT_BOX);

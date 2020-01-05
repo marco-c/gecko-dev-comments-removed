@@ -111,12 +111,6 @@ public:
                                     uint32_t* aNumPackingSpacesRemaining,
                                     nscoord* aPackingSpaceRemaining);
 
-  
-
-
-
-  static bool IsLegacyBox(const nsIFrame* aFrame);
-
 protected:
   
   explicit nsFlexContainerFrame(nsStyleContext* aContext)
