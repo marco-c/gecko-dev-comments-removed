@@ -279,7 +279,7 @@ class LIRGeneratorShared : public MDefinitionVisitor
     }
 
     void visitConstant(MConstant* ins) override;
-    void visitWasmFloatConstant(MWasmFloatConstant* ins);
+    void visitWasmFloatConstant(MWasmFloatConstant* ins) override;
 
     
     static bool allowTypedElementHoleCheck() {
