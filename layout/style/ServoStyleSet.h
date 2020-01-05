@@ -46,7 +46,7 @@ class ServoStyleSet
 {
   friend class ServoRestyleManager;
 public:
-  static bool IsInServoTraversal(bool aAssertServoTraversalOrMainThread = true)
+  static bool IsInServoTraversal()
   {
     
     
@@ -56,8 +56,7 @@ public:
     
     
     
-    MOZ_ASSERT_IF(aAssertServoTraversalOrMainThread,
-                  sInServoTraversal || NS_IsMainThread());
+    MOZ_ASSERT(sInServoTraversal || NS_IsMainThread());
     return sInServoTraversal;
   }
 
