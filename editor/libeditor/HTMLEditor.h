@@ -107,7 +107,6 @@ public:
   NS_IMETHOD GetPreferredIMEState(widget::IMEState* aState) override;
 
   
-  NS_IMETHOD GetIsDocumentEditable(bool* aIsDocumentEditable) override;
   NS_IMETHOD BeginningOfDocument() override;
   virtual nsresult HandleKeyPressEvent(nsIDOMKeyEvent* aKeyEvent) override;
   virtual already_AddRefed<nsIContent> GetFocusedContent() override;
@@ -669,11 +668,6 @@ protected:
   void NormalizeEOLInsertPosition(nsINode* firstNodeToInsert,
                                   nsCOMPtr<nsIDOMNode>* insertParentNode,
                                   int32_t* insertOffset);
-
-  
-
-
-  bool IsModifiable();
 
   
 

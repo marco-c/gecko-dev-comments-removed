@@ -857,6 +857,11 @@ public:
     return !!mSelConWeak;
   }
 
+  bool IsModifiable() const
+  {
+    return !IsReadonly();
+  }
+
   
 
 
