@@ -84,7 +84,8 @@ pub enum ScriptMsg {
     
     LoadComplete(PipelineId),
     
-    LoadUrl(PipelineId, LoadData),
+    
+    LoadUrl(PipelineId, LoadData, bool),
     
     
     

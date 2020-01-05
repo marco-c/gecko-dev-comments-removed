@@ -179,7 +179,7 @@ pub enum ConstellationControlMsg {
     NotifyVisibilityChange(PipelineId, PipelineId, bool),
     
     
-    Navigate(PipelineId, PipelineId, LoadData),
+    Navigate(PipelineId, PipelineId, LoadData, bool),
     
     
     
@@ -459,6 +459,9 @@ pub struct IFrameLoadInfo {
     pub is_private: bool,
     
     pub frame_type: FrameType,
+    
+    
+    pub replace: bool,
 }
 
 

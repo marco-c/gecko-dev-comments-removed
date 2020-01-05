@@ -259,6 +259,10 @@ impl Frame {
     fn remove_forward_entries(&mut self) -> Vec<FrameState> {
         replace(&mut self.next, vec!())
     }
+
+    fn replace_current(&mut self, pipeline_id: PipelineId) -> FrameState {
+        replace(&mut self.current, FrameState::new(pipeline_id, self.id))
+    }
 }
 
 
@@ -267,6 +271,7 @@ struct FrameChange {
     old_pipeline_id: Option<PipelineId>,
     new_pipeline_id: PipelineId,
     document_ready: bool,
+    replace: bool,
 }
 
 
@@ -609,11 +614,13 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
 
     
     fn push_pending_frame(&mut self, new_pipeline_id: PipelineId,
-                          old_pipeline_id: Option<PipelineId>) {
+                          old_pipeline_id: Option<PipelineId>,
+                          replace: bool) {
         self.pending_frames.push(FrameChange {
             old_pipeline_id: old_pipeline_id,
             new_pipeline_id: new_pipeline_id,
             document_ready: false,
+            replace: replace,
         });
     }
 
@@ -773,7 +780,7 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
             
             FromCompositorMsg::LoadUrl(source_id, load_data) => {
                 debug!("constellation got URL load message from compositor");
-                self.handle_load_url_msg(source_id, load_data);
+                self.handle_load_url_msg(source_id, load_data, false);
             }
             FromCompositorMsg::IsReadyToSaveImage(pipeline_states) => {
                 let is_ready = self.handle_is_ready_to_save_image(pipeline_states);
@@ -835,9 +842,9 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
             
             
             
-            FromScriptMsg::LoadUrl(source_id, load_data) => {
+            FromScriptMsg::LoadUrl(source_id, load_data, replace) => {
                 debug!("constellation got URL load message from script");
-                self.handle_load_url_msg(source_id, load_data);
+                self.handle_load_url_msg(source_id, load_data, replace);
             }
             
             FromScriptMsg::LoadComplete(pipeline_id) => {
@@ -1151,8 +1158,7 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
             let load_data = LoadData::new(failure_url, None, None);
             self.new_pipeline(new_pipeline_id, parent_info, Some(pipeline_id), window_size, None, load_data, false);
 
-            self.push_pending_frame(new_pipeline_id, Some(pipeline_id));
-
+            self.push_pending_frame(new_pipeline_id, Some(pipeline_id), false);
         }
     }
 
@@ -1177,7 +1183,7 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
         self.new_pipeline(root_pipeline_id, None, None, Some(window_size), None,
                           LoadData::new(url.clone(), None, None), false);
         self.handle_load_start_msg(root_pipeline_id);
-        self.push_pending_frame(root_pipeline_id, None);
+        self.push_pending_frame(root_pipeline_id, None, false);
         self.compositor_proxy.send(ToCompositorMsg::ChangePageUrl(root_pipeline_id, url));
     }
 
@@ -1299,7 +1305,7 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
                           load_data,
                           is_private);
 
-        self.push_pending_frame(load_info.new_pipeline_id, load_info.old_pipeline_id);
+        self.push_pending_frame(load_info.new_pipeline_id, load_info.old_pipeline_id, load_info.replace);
     }
 
     fn handle_set_cursor_msg(&mut self, cursor: Cursor) {
@@ -1376,11 +1382,13 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
         }
     }
 
-    fn handle_load_url_msg(&mut self, source_id: PipelineId, load_data: LoadData) {
-        self.load_url(source_id, load_data);
+    fn handle_load_url_msg(&mut self, source_id: PipelineId, load_data: LoadData, replace: bool) {
+        self.load_url(source_id, load_data, replace);
     }
 
-    fn load_url(&mut self, source_id: PipelineId, load_data: LoadData) -> Option<PipelineId> {
+    fn load_url(&mut self, source_id: PipelineId, load_data: LoadData, replace: bool) -> Option<PipelineId> {
+        
+        
         
         
         
@@ -1391,7 +1399,7 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
                 self.handle_load_start_msg(source_id);
                 
                 
-                let msg = ConstellationControlMsg::Navigate(parent_pipeline_id, source_id, load_data);
+                let msg = ConstellationControlMsg::Navigate(parent_pipeline_id, source_id, load_data, replace);
                 let result = match self.pipelines.get(&parent_pipeline_id) {
                     Some(parent_pipeline) => parent_pipeline.script_chan.send(msg),
                     None => {
@@ -1429,7 +1437,7 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
                 let window_size = self.pipelines.get(&source_id).and_then(|source| source.size);
                 let new_pipeline_id = PipelineId::new();
                 self.new_pipeline(new_pipeline_id, None, None, window_size, None, load_data, false);
-                self.push_pending_frame(new_pipeline_id, Some(source_id));
+                self.push_pending_frame(new_pipeline_id, Some(source_id), replace);
 
                 
                 match self.pipelines.get(&source_id) {
@@ -1744,14 +1752,14 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
                 self.compositor_proxy.send(ToCompositorMsg::ResizeTo(size));
             },
             WebDriverCommandMsg::LoadUrl(pipeline_id, load_data, reply) => {
-                self.load_url_for_webdriver(pipeline_id, load_data, reply);
+                self.load_url_for_webdriver(pipeline_id, load_data, reply, false);
             },
             WebDriverCommandMsg::Refresh(pipeline_id, reply) => {
                 let load_data = match self.pipelines.get(&pipeline_id) {
                     Some(pipeline) => LoadData::new(pipeline.url.clone(), None, None),
                     None => return warn!("Pipeline {:?} Refresh after closure.", pipeline_id),
                 };
-                self.load_url_for_webdriver(pipeline_id, load_data, reply);
+                self.load_url_for_webdriver(pipeline_id, load_data, reply, true);
             }
             WebDriverCommandMsg::ScriptCommand(pipeline_id, cmd) => {
                 let control_msg = ConstellationControlMsg::WebDriverScriptCommand(pipeline_id, cmd);
@@ -1897,8 +1905,9 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
     fn load_url_for_webdriver(&mut self,
                               pipeline_id: PipelineId,
                               load_data: LoadData,
-                              reply: IpcSender<webdriver_msg::LoadStatus>) {
-        let new_pipeline_id = self.load_url(pipeline_id, load_data);
+                              reply: IpcSender<webdriver_msg::LoadStatus>,
+                              replace: bool) {
+        let new_pipeline_id = self.load_url(pipeline_id, load_data, replace);
         if let Some(id) = new_pipeline_id {
             self.webdriver.load_channel = Some((id, reply));
         }
@@ -1931,8 +1940,17 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
                     pipeline.frame = Some(frame_id);
                 }
 
-                if let Some(ref mut frame) = self.frames.get_mut(&frame_id) {
-                    frame.load(frame_change.new_pipeline_id);
+                if frame_change.replace {
+                    let evicted = self.frames.get_mut(&frame_id).map(|frame| {
+                        frame.replace_current(frame_change.new_pipeline_id)
+                    });
+                    if let Some(evicted) = evicted {
+                        self.close_pipeline(evicted.pipeline_id, ExitPipelineMode::Normal);
+                    }
+                } else {
+                    if let Some(ref mut frame) = self.frames.get_mut(&frame_id) {
+                        frame.load(frame_change.new_pipeline_id);
+                    }
                 }
             }
             None => {
@@ -1956,19 +1974,20 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
             }
         }
 
+        if !frame_change.replace {
+            
+            
+            self.trigger_mozbrowserlocationchange(frame_change.new_pipeline_id);
+
+            let frame_id = match self.get_top_level_frame_for_pipeline(Some(frame_change.new_pipeline_id)) {
+                Some(frame_id) => frame_id,
+                None => return warn!("Tried to remove forward history after root frame closure."),
+            };
+            self.clear_joint_session_future(frame_id);
+        }
+
         
         self.send_frame_tree_and_grant_paint_permission();
-
-        
-        
-        self.trigger_mozbrowserlocationchange(frame_change.new_pipeline_id);
-
-        let frame_id = match self.get_top_level_frame_for_pipeline(Some(frame_change.new_pipeline_id)) {
-            Some(frame_id) => frame_id,
-            None => return warn!("Tried to remove forward history after root frame closure."),
-        };
-
-        self.clear_joint_session_future(frame_id);
     }
 
     fn handle_activate_document_msg(&mut self, pipeline_id: PipelineId) {
