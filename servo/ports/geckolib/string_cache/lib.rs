@@ -2,6 +2,8 @@
 
 
 
+#[macro_use]
+extern crate cfg_if;
 extern crate gecko_bindings;
 extern crate heapsize;
 extern crate serde;
