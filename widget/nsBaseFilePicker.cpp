@@ -295,6 +295,12 @@ NS_IMETHODIMP nsBaseFilePicker::GetFiles(nsISimpleEnumerator **aFiles)
 
 NS_IMETHODIMP nsBaseFilePicker::SetDisplayDirectory(nsIFile *aDirectory)
 {
+  
+  
+  if (!mDisplaySpecialDirectory.IsEmpty()) {
+    return NS_OK;
+  }
+
   if (!aDirectory) {
     mDisplayDirectory = nullptr;
     return NS_OK;
@@ -311,6 +317,13 @@ NS_IMETHODIMP nsBaseFilePicker::SetDisplayDirectory(nsIFile *aDirectory)
 NS_IMETHODIMP nsBaseFilePicker::GetDisplayDirectory(nsIFile **aDirectory)
 {
   *aDirectory = nullptr;
+
+  
+  
+  if (!mDisplaySpecialDirectory.IsEmpty()) {
+    return NS_OK;
+  }
+
   if (!mDisplayDirectory)
     return NS_OK;
   nsCOMPtr<nsIFile> directory;
@@ -319,6 +332,31 @@ NS_IMETHODIMP nsBaseFilePicker::GetDisplayDirectory(nsIFile **aDirectory)
     return rv;
   }
   directory.forget(aDirectory);
+  return NS_OK;
+}
+
+
+NS_IMETHODIMP nsBaseFilePicker::SetDisplaySpecialDirectory(const nsAString& aDirectory)
+{
+  
+  if (mDisplayDirectory && mDisplaySpecialDirectory.IsEmpty()) {
+    return NS_OK;
+  }
+
+  mDisplaySpecialDirectory = aDirectory;
+  if (mDisplaySpecialDirectory.IsEmpty()) {
+    mDisplayDirectory = nullptr;
+    return NS_OK;
+  }
+
+  return NS_GetSpecialDirectory(NS_ConvertUTF16toUTF8(mDisplaySpecialDirectory).get(),
+                                getter_AddRefs(mDisplayDirectory));
+}
+
+
+NS_IMETHODIMP nsBaseFilePicker::GetDisplaySpecialDirectory(nsAString& aDirectory)
+{
+  aDirectory = mDisplaySpecialDirectory;
   return NS_OK;
 }
 

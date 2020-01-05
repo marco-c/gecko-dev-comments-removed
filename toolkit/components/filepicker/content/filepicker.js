@@ -47,6 +47,7 @@ function filepickerLoad() {
     if (o.displayDirectory) {
       var directory = o.displayDirectory.path;
     }
+    var specialDirectory = o.displaySpecialDirectory;
 
     const initialText = o.defaultString;
     var filterTitles = o.filters.titles;
@@ -133,21 +134,23 @@ function filepickerLoad() {
   
   
 
-  setTimeout(setInitialDirectory, 0, directory);
+  setTimeout(setInitialDirectory, 0, { directory, specialDirectory });
 }
 
-function setInitialDirectory(directory) {
+function setInitialDirectory(directories) {
   
   var dirService = Components.classes[NS_DIRECTORYSERVICE_CONTRACTID]
                              .getService(nsIProperties);
-  homeDir = dirService.get("Home", Components.interfaces.nsIFile);
+  homeDir = dirService.get(directories.specialDirectory
+                             ? directories.specialDirectory : "Home",
+                           Components.interfaces.nsIFile);
 
-  if (directory) {
-    sfile.initWithPath(directory);
+  if (directories.directory) {
+    sfile.initWithPath(directories.directory);
     if (!sfile.exists() || !sfile.isDirectory())
-      directory = false;
+      directories.directory = false;
   }
-  if (!directory) {
+  if (!directories.directory) {
     sfile.initWithPath(homeDir.path);
   }
 
