@@ -202,8 +202,9 @@ def check_modeline(file_name, lines):
 
 
 def check_length(file_name, idx, line):
-    if file_name.endswith(".lock") or file_name.endswith(".json") or file_name.endswith(".html"):
-        raise StopIteration
+    for suffix in [".lock", ".json", ".html", ".toml"]:
+        if file_name.endswith(suffix):
+            raise StopIteration
     
     if file_name.endswith(".sh"):
         max_length = 80
@@ -297,8 +298,18 @@ def check_lock(file_name, contents):
     
     exceptions = ["lazy_static"]
 
-    import toml
-    content = toml.loads(contents)
+    
+    
+    
+    
+    try:
+        import toml
+        content = toml.loads(contents)
+    except:
+        print "WARNING!"
+        print "WARNING! toml parsing failed for Cargo.lock, but ignoring..."
+        print "WARNING!"
+        raise StopIteration
 
     packages = {}
     for package in content.get("package", []):

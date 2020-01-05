@@ -2,17 +2,36 @@
 
 
 
+extern crate cmake;
 use std::env;
-use std::process::Command;
 use std::time::Instant;
 
 fn main() {
     let start = Instant::now();
-    let num_jobs = env::var("NUM_JOBS").unwrap();
-    assert!(Command::new("make")
-        .args(&["-f", "makefile.cargo", "-j", &num_jobs])
-        .status()
-        .unwrap()
-        .success());
+
+    
+    
+    
+    
+    let mut build = cmake::Config::new(".");
+
+    let target = env::var("TARGET").unwrap();
+    if target.contains("windows-msvc") {
+        
+        
+        build.generator("Ninja");
+        
+        
+        build.define("CMAKE_C_COMPILER", "cl.exe")
+             .define("CMAKE_CXX_COMPILER", "cl.exe");
+        
+        
+        
+        
+        build.define("CMAKE_LINKER", "C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\bin\\amd64\\link.exe");
+    }
+
+    build.build();
+
     println!("Binding generation completed in {}s", start.elapsed().as_secs());
 }

@@ -1,0 +1,13 @@
+
+
+
+
+#[derive(Clone, HeapSizeOf, Debug)]
+pub struct FontContextHandle;
+
+impl FontContextHandle {
+    pub fn new() -> FontContextHandle {
+        FontContextHandle
+    }
+}
+

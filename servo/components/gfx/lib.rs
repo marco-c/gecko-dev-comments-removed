@@ -37,9 +37,9 @@ extern crate euclid;
 extern crate fnv;
 
 
-#[cfg(any(target_os = "linux", target_os = "android", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "android", all(target_os = "windows", target_env = "gnu")))]
 extern crate fontconfig;
-#[cfg(any(target_os = "linux", target_os = "android", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "android", all(target_os = "windows", target_env = "gnu")))]
 extern crate freetype;
 
 extern crate gfx_traits;
