@@ -8,11 +8,6 @@
 
 #include "mozilla/Services.h"
 #include "nsIObserverService.h"
-#include "nsLocalFile.h"
-#include "nsIFileStreams.h"
-
-using mozilla::dom::AutoJSAPI;
-using mozilla::dom::Promise;
 
 namespace mozilla {
 
@@ -50,12 +45,6 @@ ProfileGatherer::GatheredOOPProfile(const nsACString& aProfile)
     return;
   }
 
-  if (NS_WARN_IF(!mPromise && !mFile)) {
-    
-    
-    return;
-  }
-
   MOZ_RELEASE_ASSERT(mWriter.isSome(), "Should always have a writer if mGathering is true");
 
   mWriter->Splice(PromiseFlatCString(aProfile).get());
@@ -75,54 +64,19 @@ ProfileGatherer::WillGatherOOPProfile()
   mPendingProfiles++;
 }
 
-void
-ProfileGatherer::Start(double aSinceTime, Promise* aPromise)
+RefPtr<ProfileGatherer::ProfileGatherPromise>
+ProfileGatherer::Start(double aSinceTime)
 {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
   if (mGathering) {
     
     
-    if (aPromise) {
-      aPromise->MaybeReject(NS_ERROR_NOT_AVAILABLE);
-    }
-    return;
+    return ProfileGatherPromise::CreateAndReject(NS_ERROR_NOT_AVAILABLE, __func__);
   }
-
-  mPromise = aPromise;
-
-  Start2(aSinceTime);
-}
-
-void
-ProfileGatherer::Start(double aSinceTime, const nsACString& aFileName)
-{
-  MOZ_RELEASE_ASSERT(NS_IsMainThread());
-
-  nsCOMPtr<nsIFile> file = do_CreateInstance(NS_LOCAL_FILE_CONTRACTID);
-  nsresult rv = file->InitWithNativePath(aFileName);
-  if (NS_FAILED(rv)) {
-    MOZ_CRASH();
-  }
-
-  if (mGathering) {
-    return;
-  }
-
-  mFile = file;
-
-  Start2(aSinceTime);
-}
-
-
-void
-ProfileGatherer::Start2(double aSinceTime)
-{
-  MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
   mGathering = true;
   mPendingProfiles = 0;
-  mWriter.emplace();
 
   
   
@@ -137,6 +91,8 @@ ProfileGatherer::Start2(double aSinceTime)
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "NotifyObservers failed");
   }
 
+  mWriter.emplace();
+
   
   mWriter->Start(SpliceableJSONWriter::SingleLineStyle);
   if (!profiler_stream_json_for_this_process(*mWriter, aSinceTime)) {
@@ -144,8 +100,7 @@ ProfileGatherer::Start2(double aSinceTime)
     
     
     
-    Cancel();
-    return;
+    return ProfileGatherPromise::CreateAndReject(NS_ERROR_NOT_AVAILABLE, __func__);
   }
 
   mWriter->StartArrayProperty("processes");
@@ -159,6 +114,9 @@ ProfileGatherer::Start2(double aSinceTime)
   }
   mExitProfiles.Clear();
 
+  mPromiseHolder.emplace();
+  RefPtr<ProfileGatherPromise> promise = mPromiseHolder->Ensure(__func__);
+
   
   
   
@@ -167,6 +125,8 @@ ProfileGatherer::Start2(double aSinceTime)
   if (!mPendingProfiles) {
     Finish();
   }
+
+  return promise;
 }
 
 void
@@ -174,6 +134,7 @@ ProfileGatherer::Finish()
 {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
   MOZ_RELEASE_ASSERT(mWriter.isSome());
+  MOZ_RELEASE_ASSERT(mPromiseHolder.isSome());
 
   
   mWriter->EndArray();
@@ -182,47 +143,8 @@ ProfileGatherer::Finish()
   mWriter->End();
 
   UniquePtr<char[]> buf = mWriter->WriteFunc()->CopyData();
-
-  if (mFile) {
-    nsCOMPtr<nsIFileOutputStream> of =
-      do_CreateInstance("@mozilla.org/network/file-output-stream;1");
-    of->Init(mFile, -1, -1, 0);
-    uint32_t sz;
-    of->Write(buf.get(), strlen(buf.get()), &sz);
-    of->Close();
-    Reset();
-    return;
-  }
-
-  AutoJSAPI jsapi;
-  if (NS_WARN_IF(!jsapi.Init(mPromise->GlobalJSObject()))) {
-    
-    Reset();
-    return;
-  }
-
-  JSContext* cx = jsapi.cx();
-
-  
-  JS::RootedValue val(cx);
-  {
-    NS_ConvertUTF8toUTF16 js_string(nsDependentCString(buf.get()));
-    if (!JS_ParseJSON(cx, static_cast<const char16_t*>(js_string.get()),
-                      js_string.Length(), &val)) {
-      if (!jsapi.HasException()) {
-        mPromise->MaybeReject(NS_ERROR_DOM_UNKNOWN_ERR);
-      } else {
-        JS::RootedValue exn(cx);
-        DebugOnly<bool> gotException = jsapi.StealException(&exn);
-        MOZ_ASSERT(gotException);
-
-        jsapi.ClearException();
-        mPromise->MaybeReject(cx, exn);
-      }
-    } else {
-      mPromise->MaybeResolve(val);
-    }
-  }
+  nsCString result(buf.get());
+  mPromiseHolder->Resolve(result, __func__);
 
   Reset();
 }
@@ -230,8 +152,7 @@ ProfileGatherer::Finish()
 void
 ProfileGatherer::Reset()
 {
-  mPromise = nullptr;
-  mFile = nullptr;
+  mPromiseHolder.reset();
   mPendingProfiles = 0;
   mGathering = false;
   mWriter.reset();
@@ -241,8 +162,8 @@ void
 ProfileGatherer::Cancel()
 {
   
-  if (mPromise) {
-    mPromise->MaybeReject(NS_ERROR_DOM_ABORT_ERR);
+  if (mPromiseHolder.isSome()) {
+    mPromiseHolder->RejectIfExists(NS_ERROR_DOM_ABORT_ERR, __func__);
   }
   Reset();
 }
