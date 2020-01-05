@@ -1786,36 +1786,25 @@ MediaCacheStream::NotifyDataReceived(int64_t aSize, const char* aData,
     int32_t blockOffset = int32_t(mChannelOffset - blockIndex*BLOCK_SIZE);
     int32_t chunkSize = std::min<int64_t>(BLOCK_SIZE - blockOffset, size);
 
-    
-    
-    const char* blockDataToStore = nullptr;
-    ReadMode mode = MODE_PLAYBACK;
-    if (blockOffset == 0 && chunkSize == BLOCK_SIZE) {
+    if (blockOffset == 0) {
       
       
-      blockDataToStore = data;
-    } else {
-      if (blockOffset == 0) {
-        
-        
-        mMetadataInPartialBlockBuffer = false;
-      }
-      memcpy(reinterpret_cast<char*>(mPartialBlockBuffer.get()) + blockOffset,
-             data, chunkSize);
-
-      if (blockOffset + chunkSize == BLOCK_SIZE) {
-        
-        blockDataToStore = reinterpret_cast<char*>(mPartialBlockBuffer.get());
-        if (mMetadataInPartialBlockBuffer) {
-          mode = MODE_METADATA;
-        }
-      }
+      mMetadataInPartialBlockBuffer = false;
     }
 
-    if (blockDataToStore) {
-      const uint8_t* p = reinterpret_cast<const uint8_t*>(blockDataToStore);
-      auto data = MakeSpan<const uint8_t>(p, BLOCK_SIZE);
-      gMediaCache->AllocateAndWriteBlock(this, mode, data);
+    ReadMode mode = mMetadataInPartialBlockBuffer
+      ? MODE_METADATA : MODE_PLAYBACK;
+
+    if (blockOffset + chunkSize == BLOCK_SIZE) {
+      
+      auto data1 = MakeSpan<const uint8_t>(
+        reinterpret_cast<uint8_t*>(mPartialBlockBuffer.get()), blockOffset);
+      auto data2 = MakeSpan<const uint8_t>(
+        reinterpret_cast<const uint8_t*>(data), chunkSize);
+      gMediaCache->AllocateAndWriteBlock(this, mode, data1, data2);
+    } else {
+      memcpy(reinterpret_cast<char*>(mPartialBlockBuffer.get()) + blockOffset,
+             data, chunkSize);
     }
 
     mChannelOffset += chunkSize;
