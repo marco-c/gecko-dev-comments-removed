@@ -461,6 +461,7 @@ fn compute_style_for_animation_step(context: &SharedStyleContext,
             let computed =
                 properties::apply_declarations(&context.stylist.device,
                                                 false,
+                                                None,
                                                iter,
                                                previous_style,
                                                previous_style,
