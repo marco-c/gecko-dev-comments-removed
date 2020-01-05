@@ -2,6 +2,9 @@
 
 
 
+
+
+
 var PKT_SIGNUP_OVERLAY = function(options) {
     var myself = this;
     this.inited = false;
@@ -157,6 +160,7 @@ PKT_SIGNUP.prototype = {
 $(function() {
     if (!window.thePKT_SIGNUP) {
         var thePKT_SIGNUP = new PKT_SIGNUP();
+        
         window.thePKT_SIGNUP = thePKT_SIGNUP;
         thePKT_SIGNUP.init();
     }
