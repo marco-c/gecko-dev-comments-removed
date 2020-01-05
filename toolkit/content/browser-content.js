@@ -651,7 +651,25 @@ var Printing = {
       if (printSettings && simplifiedMode)
         printSettings.docURL = contentWindow.document.baseURI;
 
-      docShell.printPreview.printPreview(printSettings, contentWindow, this);
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      let print = content.QueryInterface(Ci.nsIInterfaceRequestor)
+                         .getInterface(Ci.nsIWebBrowserPrint);
+      if (print.doingPrintPreview || content.document.readyState == "complete") {
+        docShell.printPreview.printPreview(printSettings, contentWindow, this);
+      } else if (content.document.readyState != "complete") {
+        addEventListener("DOMContentLoaded", () => {
+          docShell.printPreview.printPreview(printSettings, contentWindow, this);
+        }, {once: true});
+      }
     } catch (error) {
       
       
