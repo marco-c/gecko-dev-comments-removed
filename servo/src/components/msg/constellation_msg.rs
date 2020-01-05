@@ -27,9 +27,16 @@ pub enum IFrameSandboxState {
 }
 
 
+#[deriving(Clone)]
+pub struct Failure {
+    pipeline_id: PipelineId,
+    subpage_id: Option<SubpageId>,
+}
+
+
 pub enum Msg {
     ExitMsg,
-    FailureMsg(PipelineId, Option<SubpageId>),
+    FailureMsg(Failure),
     InitLoadUrlMsg(Url),
     LoadCompleteMsg(PipelineId, Url),
     FrameRectMsg(PipelineId, SubpageId, Rect<f32>),

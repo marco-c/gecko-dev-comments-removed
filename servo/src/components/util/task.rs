@@ -3,9 +3,23 @@
 
 
 use std::task;
+use std::comm::SharedChan;
+use std::task::TaskBuilder;
 
 pub fn spawn_named<S: IntoSendStr>(name: S, f: proc()) {
     let mut builder = task::task();
     builder.name(name);
     builder.spawn(f);
+}
+
+
+
+pub fn send_on_failure<T: Send>(builder: &mut TaskBuilder, msg: T, dest: SharedChan<T>) {
+    let port = builder.future_result();
+    do spawn {
+        match port.recv() {
+            Ok(()) => (),
+            Err(..) => dest.send(msg),
+        }
+    }
 }
