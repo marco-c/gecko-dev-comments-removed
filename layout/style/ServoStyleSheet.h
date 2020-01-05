@@ -63,6 +63,12 @@ public:
 protected:
   ~ServoStyleSheet();
 
+  
+  dom::CSSRuleList* GetCssRulesInternal(ErrorResult& aRv);
+  uint32_t InsertRuleInternal(const nsAString& aRule,
+                              uint32_t aIndex, ErrorResult& aRv);
+  void DeleteRuleInternal(uint32_t aIndex, ErrorResult& aRv);
+
 private:
   void DropSheet();
 

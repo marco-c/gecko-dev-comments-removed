@@ -18,6 +18,7 @@
 
 class nsIDocument;
 class nsINode;
+class nsIPrincipal;
 
 namespace mozilla {
 
@@ -26,6 +27,7 @@ class ServoStyleSheet;
 struct StyleSheetInfo;
 
 namespace dom {
+class CSSRuleList;
 class SRIMetadata;
 } 
 
@@ -126,6 +128,16 @@ public:
   
 
   
+  dom::CSSRuleList* GetCssRules(nsIPrincipal& aSubjectPrincipal,
+                                ErrorResult& aRv);
+  uint32_t InsertRule(const nsAString& aRule, uint32_t aIndex,
+                      nsIPrincipal& aSubjectPrincipal,
+                      ErrorResult& aRv);
+  void DeleteRule(uint32_t aIndex,
+                  nsIPrincipal& aSubjectPrincipal,
+                  ErrorResult& aRv);
+
+  
   NS_IMETHOD GetType(nsAString& aType) final;
   NS_IMETHOD GetDisabled(bool* aDisabled) final;
   NS_IMETHOD SetDisabled(bool aDisabled) final;
@@ -149,7 +161,7 @@ private:
   
   
   
-  bool AreRulesAvailable(const Maybe<nsIPrincipal*>& aSubjectPrincipal,
+  bool AreRulesAvailable(nsIPrincipal& aSubjectPrincipal,
                          ErrorResult& aRv);
 
 protected:
