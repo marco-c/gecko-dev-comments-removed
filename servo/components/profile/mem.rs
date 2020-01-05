@@ -118,7 +118,7 @@ impl Profiler {
         
         
         
-        let system_reporter = Box::new(SystemReporter);
+        let system_reporter = box SystemReporter;
         mem_profiler_chan.send(ProfilerMsg::RegisterReporter("system".to_owned(), system_reporter));
 
         mem_profiler_chan

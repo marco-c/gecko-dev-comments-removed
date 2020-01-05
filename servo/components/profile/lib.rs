@@ -2,6 +2,7 @@
 
 
 
+#![feature(box_syntax)]
 #![feature(collections)]
 #![feature(core)]
 #![cfg_attr(target_os="linux", feature(io))]
