@@ -317,8 +317,6 @@ private:
   const SVGPreserveAspectRatio* GetPreserveAspectRatioProperty() const;
   bool ClearPreserveAspectRatioProperty();
 
-  void SetIsPaintingForSVGImageElement(bool aIsPaintingSVGImageElement);
-
   bool IsRoot() const {
     NS_ASSERTION((IsInUncomposedDoc() && !GetParent()) ==
                  (OwnerDoc() && (OwnerDoc()->GetRootElement() == this)),
@@ -420,7 +418,6 @@ private:
   
   bool     mStartAnimationOnBindToTree;
   bool     mImageNeedsTransformInvalidation;
-  bool     mIsPaintingSVGImageElement;
   bool     mHasChildrenOnlyTransform;
 };
 
@@ -447,8 +444,6 @@ public:
       
       mRootElem->SetImageOverridePreserveAspectRatio(
           *aSVGContext->GetPreserveAspectRatio());
-      mRootElem->SetIsPaintingForSVGImageElement(
-          aSVGContext->IsPaintingForSVGImageElement());
     }
 
     mOriginalTime = mRootElem->GetCurrentTime();
@@ -460,7 +455,6 @@ public:
     mRootElem->SetCurrentTime(mOriginalTime);
     if (mHaveOverrides) {
       mRootElem->ClearImageOverridePreserveAspectRatio();
-      mRootElem->SetIsPaintingForSVGImageElement(false);
     }
   }
 

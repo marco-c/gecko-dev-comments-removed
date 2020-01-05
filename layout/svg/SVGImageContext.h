@@ -23,9 +23,7 @@ namespace mozilla {
 class SVGImageContext
 {
 public:
-  SVGImageContext()
-    : mIsPaintingSVGImageElement(false)
-  { }
+  SVGImageContext() {}
 
   
 
@@ -43,15 +41,10 @@ public:
 
 
 
-
-
-
   explicit SVGImageContext(const Maybe<CSSIntSize>& aViewportSize,
-                           const Maybe<SVGPreserveAspectRatio>& aPreserveAspectRatio  = Nothing(),
-                           bool aIsPaintingSVGImageElement = false)
+                           const Maybe<SVGPreserveAspectRatio>& aPreserveAspectRatio  = Nothing())
     : mViewportSize(aViewportSize)
     , mPreserveAspectRatio(aPreserveAspectRatio)
-    , mIsPaintingSVGImageElement(aIsPaintingSVGImageElement)
   { }
 
   static void MaybeInitAndStoreContextPaint(Maybe<SVGImageContext>& aContext,
@@ -78,10 +71,6 @@ public:
     return mContextPaint.get();
   }
 
-  bool IsPaintingForSVGImageElement() const {
-    return mIsPaintingSVGImageElement;
-  }
-
   bool operator==(const SVGImageContext& aOther) const {
     bool contextPaintIsEqual =
       
@@ -92,8 +81,7 @@ public:
 
     return contextPaintIsEqual &&
            mViewportSize == aOther.mViewportSize &&
-           mPreserveAspectRatio == aOther.mPreserveAspectRatio &&
-           mIsPaintingSVGImageElement == aOther.mIsPaintingSVGImageElement;
+           mPreserveAspectRatio == aOther.mPreserveAspectRatio;
   }
 
   bool operator!=(const SVGImageContext& aOther) const {
@@ -107,8 +95,7 @@ public:
     }
     return HashGeneric(hash,
                        mViewportSize.map(HashSize).valueOr(0),
-                       mPreserveAspectRatio.map(HashPAR).valueOr(0),
-                       mIsPaintingSVGImageElement);
+                       mPreserveAspectRatio.map(HashPAR).valueOr(0));
   }
 
 private:
@@ -123,7 +110,6 @@ private:
   RefPtr<SVGEmbeddingContextPaint> mContextPaint;
   Maybe<CSSIntSize>             mViewportSize;
   Maybe<SVGPreserveAspectRatio> mPreserveAspectRatio;
-  bool                          mIsPaintingSVGImageElement;
 };
 
 } 
