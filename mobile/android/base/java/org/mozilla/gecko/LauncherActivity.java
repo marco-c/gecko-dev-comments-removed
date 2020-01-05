@@ -69,10 +69,7 @@ public class LauncherActivity extends Activity {
         Intent intent = new Intent(getIntent());
         intent.setClassName(getApplicationContext(), AppConstants.MOZ_ANDROID_BROWSER_INTENT_CLASS);
 
-        
-        
-        intent.setFlags(intent.getFlags() & ~Intent.FLAG_ACTIVITY_NEW_TASK);
-        intent.setFlags(intent.getFlags() & ~Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        filterFlags(intent);
 
         startActivity(intent);
     }
@@ -80,7 +77,21 @@ public class LauncherActivity extends Activity {
     private void dispatchCustomTabsIntent() {
         Intent intent = new Intent(getIntent());
         intent.setClassName(getApplicationContext(), CustomTabsActivity.class.getName());
+
+        filterFlags(intent);
+
         startActivity(intent);
+    }
+
+    private static void filterFlags(Intent intent) {
+        
+        
+        intent.setFlags(intent.getFlags() & ~Intent.FLAG_ACTIVITY_NEW_TASK);
+        intent.setFlags(intent.getFlags() & ~Intent.FLAG_ACTIVITY_CLEAR_TASK);
+
+        
+        
+        intent.setFlags(intent.getFlags() & ~Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS);
     }
 
     private static boolean isViewIntentWithURL(@NonNull final SafeIntent safeIntent) {
