@@ -52,8 +52,7 @@ pub mod optimizer;
 
 
 
-
-pub static BOX_SHADOW_INFLATION_FACTOR: i32 = 3;
+pub static BLUR_INFLATION_FACTOR: i32 = 3;
 
 
 
@@ -248,8 +247,8 @@ impl StackingContext {
         {
             let mut paint_subcontext = PaintContext {
                 draw_target: temporary_draw_target.clone(),
-                font_ctx: &mut *paint_context.font_ctx,
-                page_rect: paint_context.page_rect,
+                font_context: &mut *paint_context.font_context,
+                page_rect: *tile_bounds,
                 screen_rect: paint_context.screen_rect,
                 clip_rect: clip_rect.map(|clip_rect| *clip_rect),
                 transient_clip: None,
@@ -714,7 +713,10 @@ impl DisplayItemMetadata {
 
 #[derive(Clone)]
 pub struct SolidColorDisplayItem {
+    
     pub base: BaseDisplayItem,
+
+    
     pub color: Color,
 }
 
@@ -733,8 +735,14 @@ pub struct TextDisplayItem {
     
     pub text_color: Color,
 
+    
     pub baseline_origin: Point2D<Au>,
+
+    
     pub orientation: TextOrientation,
+
+    
+    pub blur_radius: Au,
 }
 
 #[derive(Clone, Eq, PartialEq)]
@@ -859,7 +867,20 @@ pub struct BoxShadowDisplayItem {
     pub spread_radius: Au,
 
     
-    pub inset: bool,
+    pub clip_mode: BoxShadowClipMode,
+}
+
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum BoxShadowClipMode {
+    
+    None,
+    
+    
+    Outset,
+    
+    
+    Inset,
 }
 
 pub enum DisplayItemIterator<'a> {
@@ -947,7 +968,7 @@ impl DisplayItem {
                                               box_shadow.color,
                                               box_shadow.blur_radius,
                                               box_shadow.spread_radius,
-                                              box_shadow.inset)
+                                              box_shadow.clip_mode)
             }
         }
     }
