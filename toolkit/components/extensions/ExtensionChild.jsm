@@ -903,7 +903,7 @@ defineLazyGetter(ExtensionPageContextChild.prototype, "childManager", function()
   return childManager;
 });
 
-class DevToolsContextChild extends ExtensionBaseContextChild {
+class DevtoolsContextChild extends ExtensionBaseContextChild {
   
 
 
@@ -930,7 +930,7 @@ class DevToolsContextChild extends ExtensionBaseContextChild {
   }
 }
 
-defineLazyGetter(DevToolsContextChild.prototype, "childManager", function() {
+defineLazyGetter(DevtoolsContextChild.prototype, "childManager", function() {
   let localApis = {};
   devtoolsAPIManager.generateAPIs(this, localApis);
 
@@ -1091,7 +1091,7 @@ ExtensionChild = {
     let uri = contentWindow.document.documentURIObject;
 
     if (devtoolsToolboxInfo) {
-      context = new DevToolsContextChild(extension, {
+      context = new DevtoolsContextChild(extension, {
         viewType, contentWindow, uri, tabId, devtoolsToolboxInfo,
       });
     } else {
