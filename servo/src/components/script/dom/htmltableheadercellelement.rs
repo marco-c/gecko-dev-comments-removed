@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::BindingDeclarations::HTMLTableHeaderCellElementBinding;
+use dom::bindings::codegen::Bindings::HTMLTableHeaderCellElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLTableHeaderCellElementDerived;
 use dom::bindings::js::{JSRef, Temporary};
 use dom::document::Document;

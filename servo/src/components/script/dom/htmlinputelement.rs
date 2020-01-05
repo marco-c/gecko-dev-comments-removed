@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::BindingDeclarations::HTMLInputElementBinding;
+use dom::bindings::codegen::Bindings::HTMLInputElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLInputElementDerived;
 use dom::bindings::js::{JSRef, Temporary};
 use dom::document::Document;

@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::BindingDeclarations::HTMLSpanElementBinding;
+use dom::bindings::codegen::Bindings::HTMLSpanElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLSpanElementDerived;
 use dom::bindings::js::{JSRef, Temporary};
 use dom::document::Document;

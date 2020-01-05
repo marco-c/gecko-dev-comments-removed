@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::BindingDeclarations::HTMLOptionElementBinding;
+use dom::bindings::codegen::Bindings::HTMLOptionElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLOptionElementDerived;
 use dom::bindings::js::{JSRef, Temporary};
 use dom::document::Document;

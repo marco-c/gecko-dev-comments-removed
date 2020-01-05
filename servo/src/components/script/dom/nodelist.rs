@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::BindingDeclarations::NodeListBinding;
+use dom::bindings::codegen::Bindings::NodeListBinding;
 use dom::bindings::js::{JS, JSRef, Temporary};
 use dom::bindings::utils::{Reflectable, Reflector, reflect_dom_object};
 use dom::node::{Node, NodeHelpers};

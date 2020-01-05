@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::BindingDeclarations::HTMLParamElementBinding;
+use dom::bindings::codegen::Bindings::HTMLParamElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLParamElementDerived;
 use dom::bindings::js::{JSRef, Temporary};
 use dom::document::Document;

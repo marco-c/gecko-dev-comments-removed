@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::BindingDeclarations::HTMLImageElementBinding;
+use dom::bindings::codegen::Bindings::HTMLImageElementBinding;
 use dom::bindings::codegen::InheritTypes::{NodeCast, ElementCast, HTMLElementCast, HTMLImageElementDerived};
 use dom::bindings::js::{JS, JSRef, Temporary};
 use dom::bindings::trace::Untraceable;

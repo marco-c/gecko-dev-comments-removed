@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::BindingDeclarations::HTMLUnknownElementBinding;
+use dom::bindings::codegen::Bindings::HTMLUnknownElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLUnknownElementDerived;
 use dom::bindings::js::{JSRef, Temporary};
 use dom::document::Document;

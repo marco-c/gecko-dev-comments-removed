@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::BindingDeclarations::HTMLTrackElementBinding;
+use dom::bindings::codegen::Bindings::HTMLTrackElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLTrackElementDerived;
 use dom::bindings::js::{JSRef, Temporary};
 use dom::document::Document;

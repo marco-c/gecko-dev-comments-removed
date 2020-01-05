@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::BindingDeclarations::HTMLDataListElementBinding;
+use dom::bindings::codegen::Bindings::HTMLDataListElementBinding;
 use dom::bindings::codegen::InheritTypes::{HTMLDataListElementDerived, NodeCast};
 use dom::bindings::js::{JSRef, Temporary};
 use dom::document::Document;

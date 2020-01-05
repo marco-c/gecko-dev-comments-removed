@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::BindingDeclarations::HTMLTableSectionElementBinding;
+use dom::bindings::codegen::Bindings::HTMLTableSectionElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLTableSectionElementDerived;
 use dom::bindings::js::{JSRef, Temporary};
 use dom::document::Document;

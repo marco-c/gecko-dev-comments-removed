@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::BindingDeclarations::HTMLFrameSetElementBinding;
+use dom::bindings::codegen::Bindings::HTMLFrameSetElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLFrameSetElementDerived;
 use dom::bindings::js::{JSRef, Temporary};
 use dom::document::Document;

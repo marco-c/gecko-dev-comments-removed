@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::BindingDeclarations::HTMLTableDataCellElementBinding;
+use dom::bindings::codegen::Bindings::HTMLTableDataCellElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLTableDataCellElementDerived;
 use dom::bindings::js::{JSRef, Temporary};
 use dom::document::Document;

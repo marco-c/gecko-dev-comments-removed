@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::BindingDeclarations::PerformanceBinding;
+use dom::bindings::codegen::Bindings::PerformanceBinding;
 use dom::bindings::js::{JS, JSRef, Temporary};
 use dom::bindings::utils::{Reflectable, Reflector, reflect_dom_object};
 use dom::performancetiming::{PerformanceTiming, PerformanceTimingMethods};

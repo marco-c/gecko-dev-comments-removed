@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::BindingDeclarations::HTMLTextAreaElementBinding;
+use dom::bindings::codegen::Bindings::HTMLTextAreaElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLTextAreaElementDerived;
 use dom::bindings::js::{JSRef, Temporary};
 use dom::document::Document;

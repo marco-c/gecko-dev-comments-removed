@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::BindingDeclarations::HTMLOListElementBinding;
+use dom::bindings::codegen::Bindings::HTMLOListElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLOListElementDerived;
 use dom::bindings::js::{JSRef, Temporary};
 use dom::document::Document;

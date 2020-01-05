@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::BindingDeclarations::HTMLMapElementBinding;
+use dom::bindings::codegen::Bindings::HTMLMapElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLMapElementDerived;
 use dom::bindings::js::{JSRef, Temporary};
 use dom::document::Document;

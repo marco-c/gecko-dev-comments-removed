@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::BindingDeclarations::HTMLDivElementBinding;
+use dom::bindings::codegen::Bindings::HTMLDivElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLDivElementDerived;
 use dom::bindings::js::{JSRef, Temporary};
 use dom::document::Document;

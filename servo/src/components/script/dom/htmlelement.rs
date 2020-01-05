@@ -2,8 +2,8 @@
 
 
 
-use dom::bindings::codegen::BindingDeclarations::EventHandlerBinding::EventHandlerNonNull;
-use dom::bindings::codegen::BindingDeclarations::HTMLElementBinding;
+use dom::bindings::codegen::Bindings::EventHandlerBinding::EventHandlerNonNull;
+use dom::bindings::codegen::Bindings::HTMLElementBinding;
 use dom::bindings::codegen::InheritTypes::{ElementCast, HTMLFrameSetElementDerived};
 use dom::bindings::codegen::InheritTypes::EventTargetCast;
 use dom::bindings::codegen::InheritTypes::{HTMLElementDerived, HTMLBodyElementDerived};

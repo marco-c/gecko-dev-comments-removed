@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::BindingDeclarations::HTMLProgressElementBinding;
+use dom::bindings::codegen::Bindings::HTMLProgressElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLProgressElementDerived;
 use dom::bindings::js::{JSRef, Temporary};
 use dom::document::Document;

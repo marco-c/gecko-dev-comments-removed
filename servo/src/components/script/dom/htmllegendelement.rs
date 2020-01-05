@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::BindingDeclarations::HTMLLegendElementBinding;
+use dom::bindings::codegen::Bindings::HTMLLegendElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLLegendElementDerived;
 use dom::bindings::js::{JSRef, Temporary};
 use dom::document::Document;

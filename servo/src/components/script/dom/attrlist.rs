@@ -3,7 +3,7 @@
 
 
 use dom::attr::Attr;
-use dom::bindings::codegen::BindingDeclarations::AttrListBinding;
+use dom::bindings::codegen::Bindings::AttrListBinding;
 use dom::bindings::js::{JS, JSRef, Temporary};
 use dom::bindings::utils::{Reflectable, Reflector, reflect_dom_object};
 use dom::element::Element;

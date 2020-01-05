@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::BindingDeclarations::HTMLTemplateElementBinding;
+use dom::bindings::codegen::Bindings::HTMLTemplateElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLTemplateElementDerived;
 use dom::bindings::js::{JSRef, Temporary};
 use dom::document::Document;

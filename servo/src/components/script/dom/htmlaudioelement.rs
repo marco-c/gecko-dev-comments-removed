@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::BindingDeclarations::HTMLAudioElementBinding;
+use dom::bindings::codegen::Bindings::HTMLAudioElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLAudioElementDerived;
 use dom::bindings::js::{JSRef, Temporary};
 use dom::document::Document;

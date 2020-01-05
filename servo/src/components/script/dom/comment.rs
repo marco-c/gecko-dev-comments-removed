@@ -3,7 +3,7 @@
 
 
 use dom::bindings::codegen::InheritTypes::CommentDerived;
-use dom::bindings::codegen::BindingDeclarations::CommentBinding;
+use dom::bindings::codegen::Bindings::CommentBinding;
 use dom::bindings::js::{JSRef, Temporary};
 use dom::bindings::error::Fallible;
 use dom::characterdata::CharacterData;

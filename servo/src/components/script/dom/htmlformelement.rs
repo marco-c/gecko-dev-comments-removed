@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::BindingDeclarations::HTMLFormElementBinding;
+use dom::bindings::codegen::Bindings::HTMLFormElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLFormElementDerived;
 use dom::bindings::js::{JSRef, Temporary};
 use dom::document::Document;

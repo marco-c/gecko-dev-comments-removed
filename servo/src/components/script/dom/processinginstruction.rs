@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::BindingDeclarations::ProcessingInstructionBinding;
+use dom::bindings::codegen::Bindings::ProcessingInstructionBinding;
 use dom::bindings::codegen::InheritTypes::ProcessingInstructionDerived;
 use dom::bindings::js::{JSRef, Temporary};
 use dom::characterdata::CharacterData;

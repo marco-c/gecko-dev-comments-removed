@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::BindingDeclarations::HTMLModElementBinding;
+use dom::bindings::codegen::Bindings::HTMLModElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLModElementDerived;
 use dom::bindings::js::{JSRef, Temporary};
 use dom::document::Document;

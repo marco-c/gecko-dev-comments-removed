@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::BindingDeclarations::MouseEventBinding;
+use dom::bindings::codegen::Bindings::MouseEventBinding;
 use dom::bindings::codegen::InheritTypes::{UIEventCast, MouseEventDerived};
 use dom::bindings::js::{JS, JSRef, RootedReference, Temporary, OptionalSettable};
 use dom::bindings::error::Fallible;

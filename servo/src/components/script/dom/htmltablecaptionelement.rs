@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::BindingDeclarations::HTMLTableCaptionElementBinding;
+use dom::bindings::codegen::Bindings::HTMLTableCaptionElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLTableCaptionElementDerived;
 use dom::bindings::js::{JSRef, Temporary};
 use dom::document::Document;

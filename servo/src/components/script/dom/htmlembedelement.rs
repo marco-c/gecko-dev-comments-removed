@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::BindingDeclarations::HTMLEmbedElementBinding;
+use dom::bindings::codegen::Bindings::HTMLEmbedElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLEmbedElementDerived;
 use dom::bindings::js::{JSRef, Temporary};
 use dom::document::Document;

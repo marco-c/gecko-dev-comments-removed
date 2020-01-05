@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::BindingDeclarations::HTMLAreaElementBinding;
+use dom::bindings::codegen::Bindings::HTMLAreaElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLAreaElementDerived;
 use dom::bindings::js::{JSRef, Temporary};
 use dom::document::Document;

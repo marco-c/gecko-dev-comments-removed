@@ -3,7 +3,7 @@
 
 
 use dom::bindings::codegen::InheritTypes::{ElementCast, NodeCast};
-use dom::bindings::codegen::BindingDeclarations::HTMLCollectionBinding;
+use dom::bindings::codegen::Bindings::HTMLCollectionBinding;
 use dom::bindings::js::{JS, JSRef, Temporary};
 use dom::bindings::utils::{Reflectable, Reflector, reflect_dom_object};
 use dom::element::{Element, AttributeHandlers};

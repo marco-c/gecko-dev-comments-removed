@@ -2,8 +2,8 @@
 
 
 
-use dom::bindings::codegen::BindingDeclarations::DOMParserBinding;
-use dom::bindings::codegen::BindingDeclarations::DOMParserBinding::SupportedTypeValues::{Text_html, Text_xml};
+use dom::bindings::codegen::Bindings::DOMParserBinding;
+use dom::bindings::codegen::Bindings::DOMParserBinding::SupportedTypeValues::{Text_html, Text_xml};
 use dom::bindings::js::{JS, JSRef, Temporary};
 use dom::bindings::utils::{Reflector, Reflectable, reflect_dom_object};
 use dom::bindings::error::{Fallible, FailureUnknown};

@@ -2,8 +2,8 @@
 
 
 
-use dom::bindings::codegen::BindingDeclarations::EventBinding;
-use dom::bindings::codegen::BindingDeclarations::EventBinding::EventConstants;
+use dom::bindings::codegen::Bindings::EventBinding;
+use dom::bindings::codegen::Bindings::EventBinding::EventConstants;
 use dom::bindings::js::{JS, JSRef, Temporary};
 use dom::bindings::utils::{Reflectable, Reflector, reflect_dom_object};
 use dom::bindings::error::Fallible;

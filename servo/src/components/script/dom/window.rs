@@ -2,8 +2,8 @@
 
 
 
-use dom::bindings::codegen::BindingDeclarations::EventHandlerBinding::{OnErrorEventHandlerNonNull, EventHandlerNonNull};
-use dom::bindings::codegen::BindingDeclarations::WindowBinding;
+use dom::bindings::codegen::Bindings::EventHandlerBinding::{OnErrorEventHandlerNonNull, EventHandlerNonNull};
+use dom::bindings::codegen::Bindings::WindowBinding;
 use dom::bindings::codegen::InheritTypes::EventTargetCast;
 use dom::bindings::js::{JS, JSRef, Temporary, OptionalSettable};
 use dom::bindings::trace::{Traceable, Untraceable};

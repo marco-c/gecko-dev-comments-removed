@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::BindingDeclarations::HTMLFontElementBinding;
+use dom::bindings::codegen::Bindings::HTMLFontElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLFontElementDerived;
 use dom::bindings::js::{JSRef, Temporary};
 use dom::document::Document;

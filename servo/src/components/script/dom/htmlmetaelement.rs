@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::BindingDeclarations::HTMLMetaElementBinding;
+use dom::bindings::codegen::Bindings::HTMLMetaElementBinding;
 use dom::bindings::codegen::InheritTypes::HTMLMetaElementDerived;
 use dom::bindings::js::{JSRef, Temporary};
 use dom::document::Document;
