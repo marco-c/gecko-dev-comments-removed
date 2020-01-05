@@ -399,6 +399,11 @@ SimpleTest.requestCompleteLog = function() {
     });
 };
 
+
+if (usesFailurePatterns()) {
+  SimpleTest.requestCompleteLog();
+}
+
 SimpleTest._logResult = function (test, passInfo, failInfo, stack) {
     var url = SimpleTest._getCurrentTestURL();
     var result = test.result ? passInfo : failInfo;
@@ -1705,10 +1710,4 @@ function getAndroidSdk() {
         document.documentElement.removeChild(iframe);
     }
     return gAndroidSdk;
-}
-
-
-
-if (usesFailurePatterns()) {
-  SimpleTest.requestCompleteLog();
 }
