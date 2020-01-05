@@ -3659,17 +3659,17 @@ KeyboardLayout::InitNativeKey(NativeKey& aNativeKey,
   if (IsDeadKey(virtualKey, aModKeyState)) {
     if ((isKeyDown && mActiveDeadKey < 0) ||
         (!isKeyDown && mActiveDeadKey == virtualKey)) {
-      
-      if (isKeyDown) {
-        
-        mActiveDeadKey = virtualKey;
-        mDeadKeyShiftState =
-          VirtualKey::ModifierKeyStateToShiftState(aModKeyState);
-      }
+      ActivateDeadKeyState(aNativeKey, aModKeyState);
+#ifdef DEBUG
       UniCharsAndModifiers deadChars =
         GetNativeUniCharsAndModifiers(virtualKey, aModKeyState);
-      NS_ASSERTION(deadChars.mLength == 1,
-                   "dead key must generate only one character");
+      MOZ_ASSERT(deadChars.mLength == 1,
+                 "dead key must generate only one character");
+#endif
+      
+      
+      
+      aNativeKey.mCommittedCharsAndModifiers.Clear();
       aNativeKey.mKeyNameIndex = KEY_NAME_INDEX_Dead;
       return;
     }
@@ -4075,6 +4075,21 @@ KeyboardLayout::EnsureDeadKeyActive(bool aIsActive,
   } while ((ret < 0) != aIsActive);
 
   return (ret < 0);
+}
+
+void
+KeyboardLayout::ActivateDeadKeyState(const NativeKey& aNativeKey,
+                                     const ModifierKeyState& aModKeyState)
+{
+  
+  if (!aNativeKey.IsKeyDownMessage()) {
+    return;
+  }
+
+  MOZ_RELEASE_ASSERT(IsPrintableCharKey(aNativeKey.mOriginalVirtualKeyCode));
+
+  mActiveDeadKey = aNativeKey.mOriginalVirtualKeyCode;
+  mDeadKeyShiftState = VirtualKey::ModifierKeyStateToShiftState(aModKeyState);
 }
 
 void
