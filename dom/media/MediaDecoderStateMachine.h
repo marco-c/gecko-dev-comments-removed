@@ -533,9 +533,6 @@ protected:
   void FinishDecodeFirstFrame();
 
   
-  void SeekCompleted();
-
-  
   bool CheckIfDecodeComplete();
 
   
