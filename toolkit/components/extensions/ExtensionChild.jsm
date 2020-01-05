@@ -34,6 +34,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "Schemas",
                                   "resource://gre/modules/Schemas.jsm");
 
 const CATEGORY_EXTENSION_SCRIPTS_ADDON = "webextension-scripts-addon";
+const CATEGORY_EXTENSION_SCRIPTS_DEVTOOLS = "webextension-scripts-devtools";
 
 Cu.import("resource://gre/modules/ExtensionCommon.jsm");
 Cu.import("resource://gre/modules/ExtensionUtils.jsm");
@@ -466,6 +467,29 @@ var apiManager = new class extends SchemaAPIManager {
   }
 }();
 
+var devtoolsAPIManager = new class extends SchemaAPIManager {
+  constructor() {
+    super("devtools");
+    this.initialized = false;
+  }
+
+  generateAPIs(...args) {
+    if (!this.initialized) {
+      this.initialized = true;
+      for (let [, value] of XPCOMUtils.enumerateCategoryEntries(CATEGORY_EXTENSION_SCRIPTS_DEVTOOLS)) {
+        this.loadScript(value);
+      }
+    }
+    return super.generateAPIs(...args);
+  }
+
+  registerSchemaAPI(namespace, envType, getAPI) {
+    if (envType == "devtools_child") {
+      super.registerSchemaAPI(namespace, envType, getAPI);
+    }
+  }
+}();
+
 
 
 
@@ -689,6 +713,19 @@ class ChildAPIManager {
     if (allowedContexts.includes("addon_parent_only")) {
       return false;
     }
+
+    
+    if (this.context.envType === "devtools_child" &&
+        !allowedContexts.includes("devtools")) {
+      return false;
+    }
+
+    
+    if (this.context.envType !== "devtools_child" &&
+        allowedContexts.includes("devtools_only")) {
+      return false;
+    }
+
     return true;
   }
 
@@ -714,7 +751,7 @@ class ChildAPIManager {
   }
 }
 
-class ExtensionPageContextChild extends BaseContext {
+class ExtensionBaseContextChild extends BaseContext {
   
 
 
@@ -727,13 +764,12 @@ class ExtensionPageContextChild extends BaseContext {
 
 
 
-
-
-
-
-
   constructor(extension, params) {
-    super("addon_child", extension);
+    if (!params.envType) {
+      throw new Error("Missing envType");
+    }
+
+    super(params.envType, extension);
     let {viewType, uri, contentWindow, tabId} = params;
     this.viewType = viewType;
     this.uri = uri || extension.baseURI;
@@ -766,8 +802,6 @@ class ExtensionPageContextChild extends BaseContext {
       Schemas.inject(chromeObj, chromeApiWrapper);
       return chromeObj;
     });
-
-    this.extension.views.add(this);
   }
 
   get cloneScope() {
@@ -805,11 +839,10 @@ class ExtensionPageContextChild extends BaseContext {
     }
 
     super.unload();
-    this.extension.views.delete(this);
   }
 }
 
-defineLazyGetter(ExtensionPageContextChild.prototype, "messenger", function() {
+defineLazyGetter(ExtensionBaseContextChild.prototype, "messenger", function() {
   let filter = {extensionId: this.extension.id};
   let optionalFilter = {};
   
@@ -820,16 +853,89 @@ defineLazyGetter(ExtensionPageContextChild.prototype, "messenger", function() {
                        filter, optionalFilter);
 });
 
+class ExtensionPageContextChild extends ExtensionBaseContextChild {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  constructor(extension, params) {
+    super(extension, Object.assign(params, {envType: "addon_child"}));
+
+    this.extension.views.add(this);
+  }
+
+  unload() {
+    super.unload();
+    this.extension.views.delete(this);
+  }
+}
+
 defineLazyGetter(ExtensionPageContextChild.prototype, "childManager", function() {
   let localApis = {};
   apiManager.generateAPIs(this, localApis);
+
+  let childManager = new ChildAPIManager(this, this.messageManager, localApis, {
+    envType: "addon_parent",
+    viewType: this.viewType,
+    url: this.uri.spec,
+    incognito: this.incognito,
+  });
+
+  this.callOnClose(childManager);
 
   if (this.viewType == "background") {
     apiManager.global.initializeBackgroundPage(this.contentWindow);
   }
 
+  return childManager;
+});
+
+class DevtoolsContextChild extends ExtensionBaseContextChild {
+  
+
+
+
+
+
+
+
+
+
+
+
+  constructor(extension, params) {
+    super(extension, Object.assign(params, {envType: "devtools_child"}));
+
+    this.devtoolsToolboxInfo = params.devtoolsToolboxInfo;
+
+    this.extension.devtoolsViews.add(this);
+  }
+
+  unload() {
+    super.unload();
+    this.extension.devtoolsViews.delete(this);
+  }
+}
+
+defineLazyGetter(DevtoolsContextChild.prototype, "childManager", function() {
+  let localApis = {};
+  devtoolsAPIManager.generateAPIs(this, localApis);
+
   let childManager = new ChildAPIManager(this, this.messageManager, localApis, {
-    envType: "addon_parent",
+    envType: "devtools_parent",
     viewType: this.viewType,
     url: this.uri.spec,
     incognito: this.incognito,
@@ -885,6 +991,10 @@ class ContentGlobal {
         
         this.global.removeMessageListener("Extension:InitExtensionView", this);
         this.viewType = data.viewType;
+
+        if (data.devtoolsToolboxInfo) {
+          this.devtoolsToolboxInfo = data.devtoolsToolboxInfo;
+        }
 
         promiseEvent(this.global, "DOMContentLoaded", true).then(() => {
           this.global.sendAsyncMessage("Extension:ExtensionViewLoaded");
@@ -976,11 +1086,18 @@ ExtensionChild = {
                           .QueryInterface(Ci.nsIInterfaceRequestor)
                           .getInterface(Ci.nsIContentFrameMessageManager);
 
-    let {viewType, tabId} = this.contentGlobals.get(mm).ensureInitialized();
+    let {viewType, tabId, devtoolsToolboxInfo} = this.contentGlobals.get(mm).ensureInitialized();
 
     let uri = contentWindow.document.documentURIObject;
 
-    context = new ExtensionPageContextChild(extension, {viewType, contentWindow, uri, tabId});
+    if (devtoolsToolboxInfo) {
+      context = new DevtoolsContextChild(extension, {
+        viewType, contentWindow, uri, tabId, devtoolsToolboxInfo,
+      });
+    } else {
+      context = new ExtensionPageContextChild(extension, {viewType, contentWindow, uri, tabId});
+    }
+
     this.extensionContexts.set(windowId, context);
   },
 
