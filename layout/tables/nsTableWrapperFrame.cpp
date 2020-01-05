@@ -360,14 +360,13 @@ nsTableWrapperFrame::GetPrefISize(nsRenderingContext *aRenderingContext)
   return maxISize;
 }
 
-
-
-
-static nscoord
-ChildShrinkWrapISize(nsRenderingContext *aRenderingContext,
-                     nsIFrame *aChildFrame, WritingMode aWM,
-                     LogicalSize aCBSize, nscoord aAvailableISize,
-                     nscoord *aMarginResult = nullptr)
+nscoord
+nsTableWrapperFrame::ChildShrinkWrapISize(nsRenderingContext* aRenderingContext,
+                                          nsIFrame*           aChildFrame,
+                                          WritingMode         aWM,
+                                          LogicalSize         aCBSize,
+                                          nscoord             aAvailableISize,
+                                          nscoord*            aMarginResult) const
 {
   AutoMaybeDisableFontInflation an(aChildFrame);
 
@@ -375,14 +374,13 @@ ChildShrinkWrapISize(nsRenderingContext *aRenderingContext,
   WritingMode childWM = aChildFrame->GetWritingMode();
 
   SizeComputationInput offsets(aChildFrame, aRenderingContext, aWM,
-                           aCBSize.ISize(aWM));
+                               aCBSize.ISize(aWM));
   LogicalSize marginSize =
     offsets.ComputedLogicalMargin().Size(childWM).ConvertTo(aWM, childWM);
   LogicalSize paddingSize =
     offsets.ComputedLogicalPadding().Size(childWM).ConvertTo(aWM, childWM);
   LogicalSize bpSize =
-    offsets.ComputedLogicalBorderPadding().Size(childWM).ConvertTo(aWM,
-                                                                   childWM);
+    offsets.ComputedLogicalBorderPadding().Size(childWM).ConvertTo(aWM, childWM);
   LogicalSize size =
     aChildFrame->ComputeSize(aRenderingContext, aWM, aCBSize, aAvailableISize,
                              marginSize, bpSize - paddingSize, paddingSize,

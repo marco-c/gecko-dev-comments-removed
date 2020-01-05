@@ -262,6 +262,19 @@ protected:
     return static_cast<nsTableFrame*>(mFrames.FirstChild());
   }
 
+  
+
+
+
+
+
+  nscoord ChildShrinkWrapISize(nsRenderingContext*  aRenderingContext,
+                               nsIFrame*            aChildFrame,
+                               mozilla::WritingMode aWM,
+                               mozilla::LogicalSize aCBSize,
+                               nscoord              aAvailableISize,
+                               nscoord*             aMarginResult = nullptr) const;
+
 private:
   nsFrameList   mCaptionFrames;
 };
