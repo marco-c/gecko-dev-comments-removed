@@ -473,19 +473,24 @@ WrapperFactory::Rewrap(JSContext* cx, HandleObject existing, HandleObject obj)
 
     const Wrapper* wrapper;
 
+    CompartmentPrivate* originCompartmentPrivate =
+      CompartmentPrivate::Get(origin);
+    CompartmentPrivate* targetCompartmentPrivate =
+      CompartmentPrivate::Get(target);
+
     
     
     
 
     
     
-    if (xpc::IsUniversalXPConnectEnabled(target)) {
+    if (targetCompartmentPrivate->universalXPConnectEnabled) {
         CrashIfNotInAutomation();
         wrapper = &CrossCompartmentWrapper::singleton;
     }
 
     
-    else if (CompartmentPrivate::Get(origin)->forcePermissiveCOWs) {
+    else if (originCompartmentPrivate->forcePermissiveCOWs) {
         CrashIfNotInAutomation();
         wrapper = &CrossCompartmentWrapper::singleton;
     }
@@ -533,8 +538,8 @@ WrapperFactory::Rewrap(JSContext* cx, HandleObject existing, HandleObject obj)
         
         
         
-        bool sameOriginXrays = CompartmentPrivate::Get(origin)->wantXrays ||
-                               CompartmentPrivate::Get(target)->wantXrays;
+        bool sameOriginXrays = originCompartmentPrivate->wantXrays ||
+                               targetCompartmentPrivate->wantXrays;
         bool wantXrays = !sameOrigin || sameOriginXrays;
 
         XrayType xrayType = wantXrays ? GetXrayType(obj) : NotXray;
@@ -542,14 +547,14 @@ WrapperFactory::Rewrap(JSContext* cx, HandleObject existing, HandleObject obj)
         
         
         bool waiveXrays = wantXrays && !securityWrapper &&
-                          CompartmentPrivate::Get(target)->allowWaivers &&
+                          targetCompartmentPrivate->allowWaivers &&
                           HasWaiveXrayFlag(obj);
 
         wrapper = SelectWrapper(securityWrapper, xrayType, waiveXrays, obj);
 
         
         
-        if (CompartmentPrivate::Get(target)->scope->HasInterposition())
+        if (targetCompartmentPrivate->scope->HasInterposition())
             wrapper = SelectAddonWrapper(cx, obj, wrapper);
     }
 
