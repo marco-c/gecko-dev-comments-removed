@@ -7,8 +7,9 @@ use layout::construct::{ConstructionResult, NoConstructionResult};
 use layout::wrapper::LayoutNode;
 
 use extra::arc::Arc;
+use script::dom::bindings::utils::Reflectable;
 use script::dom::node::AbstractNode;
-use script::layout_interface::LayoutChan;
+use script::layout_interface::{LayoutChan, UntrustedNodeAddress};
 use servo_util::range::Range;
 use std::cast;
 use std::cell::{Ref, RefMut};
@@ -211,21 +212,28 @@ impl OpaqueNode {
     
     pub fn from_layout_node(node: &LayoutNode) -> OpaqueNode {
         unsafe {
-            OpaqueNode(cast::transmute_copy(node))
+            let abstract_node = node.get_abstract();
+            let ptr: uintptr_t = cast::transmute(abstract_node.reflector().get_jsobject());
+            OpaqueNode(ptr)
         }
     }
 
     
     pub fn from_script_node(node: &AbstractNode) -> OpaqueNode {
         unsafe {
-            OpaqueNode(cast::transmute_copy(node))
+            let ptr: uintptr_t = cast::transmute(node.reflector().get_jsobject());
+            OpaqueNode(ptr)
         }
     }
 
     
     
-    pub unsafe fn to_script_node(&self) -> AbstractNode {
-        cast::transmute(**self)
+    pub fn to_untrusted_node_address(&self) -> UntrustedNodeAddress {
+        unsafe {
+            let OpaqueNode(addr) = *self;
+            let addr: UntrustedNodeAddress = cast::transmute(addr);
+            addr
+        }
     }
 
     
