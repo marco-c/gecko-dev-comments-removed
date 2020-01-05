@@ -503,10 +503,6 @@ public:
   bool mMediaSeekableOnlyInBufferedRanges = false;
 
   EncryptionInfo mCrypto;
-
-  
-  
-  media::TimeUnit mStartTime;
 };
 
 class SharedTrackInfo {
