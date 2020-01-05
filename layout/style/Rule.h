@@ -52,12 +52,6 @@ protected:
 
 public:
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_SKIPPABLE_CLASS(Rule)
-  
-  
-  virtual bool IsCCLeaf() const MOZ_MUST_OVERRIDE;
-
 #ifdef DEBUG
   virtual void List(FILE* out = stdout, int32_t aIndent = 0) const = 0;
 #endif
@@ -130,9 +124,6 @@ public:
     const MOZ_MUST_OVERRIDE = 0;
 
 protected:
-  
-  bool IsKnownLive() const;
-
   
   StyleSheet* mSheet;
   
