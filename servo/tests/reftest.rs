@@ -7,10 +7,8 @@
 
 
 
-#![feature(append)]
 #![feature(fs_walk)]
 #![feature(path_ext)]
-#![feature(result_expect)]
 #![feature(slice_patterns)]
 #![feature(test)]
 
