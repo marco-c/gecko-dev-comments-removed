@@ -27,7 +27,8 @@ use selectors::Element;
 use selectors::bloom::BloomFilter;
 use selectors::matching::{AFFECTED_BY_STYLE_ATTRIBUTE, AFFECTED_BY_PRESENTATIONAL_HINTS};
 use selectors::matching::{ElementSelectorFlags, StyleRelations, matches_selector};
-use selectors::parser::{Component, Selector, SelectorInner, SelectorMethods, LocalName as LocalNameSelector};
+use selectors::parser::{Combinator, Component, Selector, SelectorInner, SelectorIter};
+use selectors::parser::{SelectorMethods, LocalName as LocalNameSelector};
 use selectors::visitor::SelectorVisitor;
 use shared_lock::{Locked, SharedRwLockReadGuard, StylesheetGuards};
 use sink::Push;
@@ -375,10 +376,7 @@ impl Stylist {
     #[inline]
     fn note_for_revalidation(&mut self, selector: &Selector<SelectorImpl>) {
         if needs_revalidation(selector) {
-            
-            
-            let revalidation_sel = selector.inner.slice_to_first_ancestor_combinator();
-            self.selectors_for_cache_revalidation.push(revalidation_sel);
+            self.selectors_for_cache_revalidation.push(selector.inner.clone());
         }
     }
 
@@ -924,11 +922,40 @@ impl Drop for Stylist {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 struct RevalidationVisitor;
 
 impl SelectorVisitor for RevalidationVisitor {
     type Impl = SelectorImpl;
 
+
+    fn visit_complex_selector(&mut self,
+                              _: SelectorIter<SelectorImpl>,
+                              combinator: Option<Combinator>) -> bool {
+        let is_sibling_combinator =
+            combinator.map_or(false, |c| c.is_sibling());
+
+        !is_sibling_combinator
+    }
+
+
+    
     
     
     
@@ -970,23 +997,7 @@ impl SelectorVisitor for RevalidationVisitor {
 
 pub fn needs_revalidation(selector: &Selector<SelectorImpl>) -> bool {
     let mut visitor = RevalidationVisitor;
-
-    
-    
-    
-    
-    
-    let mut iter = selector.inner.complex.iter();
-    for ss in &mut iter {
-        if !ss.visit(&mut visitor) {
-            return true;
-        }
-    }
-
-    
-    
-    
-    iter.next_sequence().map_or(false, |c| c.is_sibling())
+    !selector.visit(&mut visitor)
 }
 
 

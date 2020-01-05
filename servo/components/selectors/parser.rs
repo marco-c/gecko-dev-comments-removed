@@ -170,27 +170,6 @@ impl<Impl: SelectorImpl> SelectorInner<Impl> {
     }
 
     
-    
-    
-    
-    
-    
-    
-    
-    pub fn slice_to_first_ancestor_combinator(&self) -> Self {
-        let maybe_pos = self.complex.iter_raw()
-                            .position(|s| s.as_combinator()
-                                           .map_or(false, |c| c.is_ancestor()));
-        match maybe_pos {
-            None => self.clone(),
-            Some(index) => SelectorInner {
-                complex: self.complex.slice_to(index),
-                ancestor_hashes: self.ancestor_hashes.clone(),
-            },
-        }
-    }
-
-    
     pub fn from_vec(vec: Vec<Component<Impl>>) -> Self {
         let complex = ComplexSelector::from_vec(vec);
         Self::new(complex)
