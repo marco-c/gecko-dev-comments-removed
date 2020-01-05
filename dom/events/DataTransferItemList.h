@@ -111,7 +111,18 @@ private:
   RefPtr<FileList> mFiles;
   
   nsCOMPtr<nsIPrincipal> mFilesPrincipal;
+  
+  
+  
+  
   nsTArray<RefPtr<DataTransferItem>> mItems;
+  
+  
+  
+  
+  
+  
+  
   nsTArray<nsTArray<RefPtr<DataTransferItem>>> mIndexedItems;
 };
 
