@@ -979,18 +979,18 @@ impl ToComputedValue for SVGPaintKind {
 }
 
 
-pub type LoPOrNumber = Either<LengthOrPercentage, Number>;
+pub type LengthOrPercentageOrNumber = Either<LengthOrPercentage, Number>;
 
-impl LoPOrNumber {
+impl LengthOrPercentageOrNumber {
     
     pub fn parse_non_negative(_: &ParserContext, input: &mut Parser) -> Result<Self, ()> {
-        if let Ok(lop) = input.try(LengthOrPercentage::parse_non_negative) {
-            Ok(Either::First(lop))
-        } else if let Ok(num) = input.try(Number::parse_non_negative) {
-            Ok(Either::Second(num))
-        } else {
-            Err(())
+        
+        
+        if let Ok(num) = input.try(Number::parse_non_negative) {
+            return Ok(Either::Second(num))
         }
+
+        LengthOrPercentage::parse_non_negative(input).map(Either::First)
     }
 }
 
