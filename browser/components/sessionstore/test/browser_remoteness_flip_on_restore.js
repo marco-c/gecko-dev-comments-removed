@@ -301,7 +301,11 @@ add_task(function*() {
       
       
       
-      expectedFlips: [true, false, false],
+      
+      
+      
+      
+      expectedFlips: [false, true, false],
       
       expectedRemoteness: [true, true, true],
     },
@@ -312,6 +316,12 @@ add_task(function*() {
       initialSelectedTab: 1,
       stateToRestore: SIMPLE_STATE,
       selectedTab: 3,
+      
+      
+      
+      
+      
+      
       
       
       
@@ -333,7 +343,13 @@ add_task(function*() {
       
       
       
-      expectedFlips: [true, false, false],
+      
+      
+      
+      
+      
+      
+      expectedFlips: [false, false, true],
       
       expectedRemoteness: [true, true, true],
     },
