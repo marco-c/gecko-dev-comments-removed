@@ -56,7 +56,7 @@ pub struct NewLayoutInfo {
 
 pub enum ConstellationControlMsg {
     
-    Load(PipelineId, Option<PipelineId>, LoadData),
+    Load(PipelineId, Option<(PipelineId, SubpageId)>, LoadData),
     
     AttachLayout(NewLayoutInfo),
     
