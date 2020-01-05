@@ -8,7 +8,6 @@
 
 #include <cmath>                 
 #include <stdint.h>
-#include <string>
 #include "mozilla/Assertions.h"
 #include "mozilla/Function.h"
 #include "mozilla/gfx/LoggingConstants.h"
@@ -447,6 +446,7 @@ private:
   DECL_GFX_PREF(Live, "layers.acceleration.draw-fps.print-histogram",  FPSPrintHistogram, bool, false);
   DECL_GFX_PREF(Live, "layers.acceleration.draw-fps.write-to-file", WriteFPSToFile, bool, false);
   DECL_GFX_PREF(Once, "layers.acceleration.force-enabled",     LayersAccelerationForceEnabledDoNotUseDirectly, bool, false);
+  DECL_GFX_PREF(Live, "layers.advanced.text-layers",           LayersAllowTextLayers, bool, false);
   DECL_GFX_PREF(Once, "layers.allow-d3d9-fallback",            LayersAllowD3D9Fallback, bool, false);
   DECL_GFX_PREF(Once, "layers.amd-switchable-gfx.enabled",     LayersAMDSwitchableGfxEnabled, bool, false);
   DECL_GFX_PREF(Once, "layers.async-pan-zoom.enabled",         AsyncPanZoomEnabledDoNotUseDirectly, bool, true);
@@ -643,17 +643,14 @@ private:
   static void PrefAddVarCache(int32_t*, const char*, int32_t);
   static void PrefAddVarCache(uint32_t*, const char*, uint32_t);
   static void PrefAddVarCache(float*, const char*, float);
-  static void PrefAddVarCache(std::string*, const char*, std::string);
   static bool PrefGet(const char*, bool);
   static int32_t PrefGet(const char*, int32_t);
   static uint32_t PrefGet(const char*, uint32_t);
   static float PrefGet(const char*, float);
-  static std::string PrefGet(const char*, std::string);
   static void PrefSet(const char* aPref, bool aValue);
   static void PrefSet(const char* aPref, int32_t aValue);
   static void PrefSet(const char* aPref, uint32_t aValue);
   static void PrefSet(const char* aPref, float aValue);
-  static void PrefSet(const char* aPref, std::string aValue);
   static void WatchChanges(const char* aPrefname, Pref* aPref);
   static void UnwatchChanges(const char* aPrefname, Pref* aPref);
   
@@ -661,12 +658,10 @@ private:
   static void CopyPrefValue(const int32_t* aValue, GfxPrefValue* aOutValue);
   static void CopyPrefValue(const uint32_t* aValue, GfxPrefValue* aOutValue);
   static void CopyPrefValue(const float* aValue, GfxPrefValue* aOutValue);
-  static void CopyPrefValue(const std::string* aValue, GfxPrefValue* aOutValue);
   static void CopyPrefValue(const GfxPrefValue* aValue, bool* aOutValue);
   static void CopyPrefValue(const GfxPrefValue* aValue, int32_t* aOutValue);
   static void CopyPrefValue(const GfxPrefValue* aValue, uint32_t* aOutValue);
   static void CopyPrefValue(const GfxPrefValue* aValue, float* aOutValue);
-  static void CopyPrefValue(const GfxPrefValue* aValue, std::string* aOutValue);
 
   static void AssertMainThread();
 
