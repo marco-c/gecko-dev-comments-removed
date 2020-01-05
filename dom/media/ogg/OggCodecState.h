@@ -73,22 +73,28 @@ public:
   OggPacketQueue() : nsDeque(new OggPacketDeallocator()) { }
   ~OggPacketQueue() { Erase(); }
   bool IsEmpty() { return nsDeque::GetSize() == 0; }
-  void Append(ogg_packet* aPacket);
-  ogg_packet* PopFront()
+  void Append(OggPacketPtr aPacket);
+  OggPacketPtr PopFront()
   {
-    return static_cast<ogg_packet*>(nsDeque::PopFront());
+    return OggPacketPtr(static_cast<ogg_packet*>(nsDeque::PopFront()));
   }
   ogg_packet* PeekFront()
   {
     return static_cast<ogg_packet*>(nsDeque::PeekFront());
   }
-  ogg_packet* Pop() { return static_cast<ogg_packet*>(nsDeque::Pop()); }
+  OggPacketPtr Pop()
+  {
+    return OggPacketPtr(static_cast<ogg_packet*>(nsDeque::Pop()));
+  }
   ogg_packet* operator[](size_t aIndex) const
   {
     return static_cast<ogg_packet*>(nsDeque::ObjectAt(aIndex));
   }
   size_t Length() const { return nsDeque::GetSize(); }
-  void PushFront(ogg_packet* aPacket) { nsDeque::PushFront(aPacket); }
+  void PushFront(OggPacketPtr aPacket)
+  {
+    nsDeque::PushFront(aPacket.release());
+  }
   void Erase() { nsDeque::Erase(); }
 };
 
@@ -197,7 +203,7 @@ public:
   
   
   
-  ogg_packet* PacketOut();
+  OggPacketPtr PacketOut();
 
   
   
