@@ -38,6 +38,19 @@ public class GeckoClickHelper {
         sSolo.clickOnText(StringHelper.get().CONTEXT_MENU_ITEMS_IN_NORMAL_TAB[0]);
     }
 
+    
+
+
+
+
+
+    public static void openCentralizedLinkInNewPrivateTab() {
+        openLinkContextMenu();
+
+        
+        sSolo.clickOnText(StringHelper.get().CONTEXT_MENU_ITEMS_IN_NORMAL_TAB[1]);
+    }
+
     private static void openLinkContextMenu() {
         DisplayMetrics dm = new DisplayMetrics();
         sActivity.getWindowManager().getDefaultDisplay().getMetrics(dm);
