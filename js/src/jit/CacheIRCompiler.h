@@ -339,7 +339,6 @@ class MOZ_RAII CacheRegisterAllocator
     
     
     ValueOperand useValueRegister(MacroAssembler& masm, ValOperandId val);
-    ValueOperand useFixedValueRegister(MacroAssembler& masm, ValOperandId valId, ValueOperand reg);
     Register useRegister(MacroAssembler& masm, TypedOperandId typedId);
 
     

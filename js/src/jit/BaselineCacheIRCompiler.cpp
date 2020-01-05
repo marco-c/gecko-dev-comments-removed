@@ -18,8 +18,6 @@ using namespace js::jit;
 
 using mozilla::Maybe;
 
-class AutoStubFrame;
-
 
 class MOZ_RAII BaselineCacheIRCompiler : public CacheIRCompiler
 {
@@ -33,11 +31,6 @@ class MOZ_RAII BaselineCacheIRCompiler : public CacheIRCompiler
     bool makesGCCalls_;
 
     MOZ_MUST_USE bool callVM(MacroAssembler& masm, const VMFunction& fun);
-
-    MOZ_MUST_USE bool callTypeUpdateIC(AutoStubFrame& stubFrame, Register obj, ValueOperand val,
-                                       Register scratch, LiveGeneralRegisterSet saveRegs);
-
-    MOZ_MUST_USE bool emitStoreSlotShared(bool isFixed);
 
   public:
     friend class AutoStubFrame;
@@ -72,8 +65,6 @@ class MOZ_RAII BaselineCacheIRCompiler : public CacheIRCompiler
     CACHE_IR_SHARED_OPS(DEFINE_SHARED_OP)
 #undef DEFINE_SHARED_OP
 
-enum class CallCanGC { CanGC, CanNotGC };
-
 
 
 
@@ -102,7 +93,7 @@ class MOZ_RAII AutoStubFrame
             tail.emplace(compiler.allocator, compiler.masm, ICTailCallReg);
     }
 
-    void enter(MacroAssembler& masm, Register scratch, CallCanGC canGC = CallCanGC::CanGC) {
+    void enter(MacroAssembler& masm, Register scratch) {
         if (compiler.engine_ == ICStubEngine::Baseline) {
             EmitBaselineEnterStubFrame(masm, scratch);
 #ifdef DEBUG
@@ -114,8 +105,7 @@ class MOZ_RAII AutoStubFrame
 
         MOZ_ASSERT(!compiler.inStubFrame_);
         compiler.inStubFrame_ = true;
-        if (canGC == CallCanGC::CanGC)
-            compiler.makesGCCalls_ = true;
+        compiler.makesGCCalls_ = true;
     }
     void leave(MacroAssembler& masm, bool calledIntoIon = false) {
         MOZ_ASSERT(compiler.inStubFrame_);
@@ -660,112 +650,6 @@ BaselineCacheIRCompiler::emitLoadEnvironmentDynamicSlotResult()
 }
 
 bool
-BaselineCacheIRCompiler::callTypeUpdateIC(AutoStubFrame& stubFrame, Register obj, ValueOperand val,
-                                          Register scratch, LiveGeneralRegisterSet saveRegs)
-{
-    
-    MOZ_ASSERT(val == R0);
-    MOZ_ASSERT(scratch == R1.scratchReg());
-
-#if defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64)
-    static const bool CallClobbersTailReg = false;
-#else
-    static const bool CallClobbersTailReg = true;
-#endif
-
-    
-    if (CallClobbersTailReg)
-        masm.push(ICTailCallReg);
-    masm.push(ICStubReg);
-    masm.loadPtr(Address(ICStubReg, ICUpdatedStub::offsetOfFirstUpdateStub()),
-                 ICStubReg);
-    masm.call(Address(ICStubReg, ICStub::offsetOfStubCode()));
-    masm.pop(ICStubReg);
-    if (CallClobbersTailReg)
-        masm.pop(ICTailCallReg);
-
-    
-    
-    Label done;
-    masm.branch32(Assembler::Equal, scratch, Imm32(1), &done);
-
-    stubFrame.enter(masm, scratch, CallCanGC::CanNotGC);
-
-    masm.PushRegsInMask(saveRegs);
-
-    masm.Push(val);
-    masm.Push(TypedOrValueRegister(MIRType::Object, AnyRegister(obj)));
-    masm.Push(ICStubReg);
-
-    
-    masm.loadPtr(Address(BaselineFrameReg, 0), scratch);
-    masm.pushBaselineFramePtr(scratch, scratch);
-
-    if (!callVM(masm, DoTypeUpdateFallbackInfo))
-        return false;
-
-    masm.PopRegsInMask(saveRegs);
-
-    stubFrame.leave(masm);
-
-    masm.bind(&done);
-    return true;
-}
-
-bool
-BaselineCacheIRCompiler::emitStoreSlotShared(bool isFixed)
-{
-    ObjOperandId objId = reader.objOperandId();
-    Address offsetAddr = stubAddress(reader.stubOffset());
-
-    
-    
-    AutoStubFrame stubFrame(*this);
-    AutoScratchRegister scratch(allocator, masm, R1.scratchReg());
-    ValueOperand val = allocator.useFixedValueRegister(masm, reader.valOperandId(), R0);
-
-    Register obj = allocator.useRegister(masm, objId);
-
-    LiveGeneralRegisterSet saveRegs;
-    saveRegs.add(obj);
-    saveRegs.add(val);
-    if (!callTypeUpdateIC(stubFrame, obj, val, scratch, saveRegs))
-        return false;
-
-    masm.load32(offsetAddr, scratch);
-
-    if (isFixed) {
-        BaseIndex slot(obj, scratch, TimesOne);
-        EmitPreBarrier(masm, slot, MIRType::Value);
-        masm.storeValue(val, slot);
-    } else {
-        
-        
-        Register slots = ICStubReg;
-        masm.loadPtr(Address(obj, NativeObject::offsetOfSlots()), slots);
-        BaseIndex slot(slots, scratch, TimesOne);
-        EmitPreBarrier(masm, slot, MIRType::Value);
-        masm.storeValue(val, slot);
-    }
-
-    if (cx_->gc.nursery.exists())
-        BaselineEmitPostWriteBarrierSlot(masm, obj, val, scratch, LiveGeneralRegisterSet(), cx_);
-    return true;
-}
-
-bool
-BaselineCacheIRCompiler::emitStoreFixedSlot()
-{
-    return emitStoreSlotShared(true);
-}
-
-bool
-BaselineCacheIRCompiler::emitStoreDynamicSlot()
-{
-    return emitStoreSlotShared(false);
-}
-
-bool
 BaselineCacheIRCompiler::emitTypeMonitorResult()
 {
     allocator.discardStack(masm);
@@ -864,7 +748,6 @@ BaselineCacheIRCompiler::init(CacheKind kind)
         allocator.initInputLocation(0, R0);
         break;
       case CacheKind::GetElem:
-      case CacheKind::SetProp:
         MOZ_ASSERT(numInputs == 2);
         allocator.initInputLocation(0, R0);
         allocator.initInputLocation(1, R1);
@@ -903,22 +786,9 @@ jit::AttachBaselineCacheIRStub(JSContext* cx, const CacheIRWriter& writer,
     
     MOZ_ASSERT(stub->numOptimizedStubs() < MaxOptimizedCacheIRStubs);
 
-    enum class CacheIRStubKind { Monitored, Updated };
-
-    uint32_t stubDataOffset;
-    CacheIRStubKind stubKind;
-    switch (kind) {
-      case CacheKind::GetProp:
-      case CacheKind::GetElem:
-      case CacheKind::GetName:
-        stubDataOffset = sizeof(ICCacheIR_Monitored);
-        stubKind = CacheIRStubKind::Monitored;
-        break;
-      case CacheKind::SetProp:
-        stubDataOffset = sizeof(ICCacheIR_Updated);
-        stubKind = CacheIRStubKind::Updated;
-        break;
-    }
+    MOZ_ASSERT(kind == CacheKind::GetProp || kind == CacheKind::GetElem ||
+               kind == CacheKind::GetName, "sizeof needs to change for SetProp!");
+    uint32_t stubDataOffset = sizeof(ICCacheIR_Monitored);
 
     JitCompartment* jitCompartment = cx->compartment()->jitCompartment();
 
@@ -952,34 +822,21 @@ jit::AttachBaselineCacheIRStub(JSContext* cx, const CacheIRWriter& writer,
 
     MOZ_ASSERT(code);
     MOZ_ASSERT(stubInfo);
+    MOZ_ASSERT(stub->isMonitoredFallback());
     MOZ_ASSERT(stubInfo->stubDataSize() == writer.stubDataSize());
 
     
     
     
     for (ICStubConstIterator iter = stub->beginChainConst(); !iter.atEnd(); iter++) {
-        switch (stubKind) {
-          case CacheIRStubKind::Monitored: {
-            if (!iter->isCacheIR_Monitored())
-                continue;
-            auto otherStub = iter->toCacheIR_Monitored();
-            if (otherStub->stubInfo() != stubInfo)
-                continue;
-            if (!writer.stubDataEquals(otherStub->stubDataStart()))
-                continue;
-            break;
-          }
-          case CacheIRStubKind::Updated: {
-            if (!iter->isCacheIR_Updated())
-                continue;
-            auto otherStub = iter->toCacheIR_Updated();
-            if (otherStub->stubInfo() != stubInfo)
-                continue;
-            if (!writer.stubDataEquals(otherStub->stubDataStart()))
-                continue;
-            break;
-          }
-        }
+        if (!iter->isCacheIR_Monitored())
+            continue;
+
+        ICCacheIR_Monitored* otherStub = iter->toCacheIR_Monitored();
+        if (otherStub->stubInfo() != stubInfo)
+            continue;
+        if (!writer.stubDataEquals(otherStub->stubDataStart()))
+            continue;
 
         
         
@@ -997,38 +854,16 @@ jit::AttachBaselineCacheIRStub(JSContext* cx, const CacheIRWriter& writer,
     if (!newStubMem)
         return nullptr;
 
-    switch (stubKind) {
-      case CacheIRStubKind::Monitored: {
-        ICStub* monitorStub =
-            stub->toMonitoredFallbackStub()->fallbackMonitorStub()->firstMonitorStub();
-        auto newStub = new(newStubMem) ICCacheIR_Monitored(code, monitorStub, stubInfo);
-        writer.copyStubData(newStub->stubDataStart());
-        stub->addNewStub(newStub);
-        return newStub;
-      }
-      case CacheIRStubKind::Updated: {
-        auto newStub = new(newStubMem) ICCacheIR_Updated(code, stubInfo);
-        if (!newStub->initUpdatingChain(cx, stubSpace)) {
-            cx->recoverFromOutOfMemory();
-            return nullptr;
-        }
-        writer.copyStubData(newStub->stubDataStart());
-        stub->addNewStub(newStub);
-        return newStub;
-      }
-    }
+    ICStub* monitorStub = stub->toMonitoredFallbackStub()->fallbackMonitorStub()->firstMonitorStub();
+    auto newStub = new(newStubMem) ICCacheIR_Monitored(code, monitorStub, stubInfo);
 
-    MOZ_CRASH("Invalid kind");
+    writer.copyStubData(newStub->stubDataStart());
+    stub->addNewStub(newStub);
+    return newStub;
 }
 
 uint8_t*
 ICCacheIR_Monitored::stubDataStart()
-{
-    return reinterpret_cast<uint8_t*>(this) + stubInfo_->stubDataOffset();
-}
-
-uint8_t*
-ICCacheIR_Updated::stubDataStart()
 {
     return reinterpret_cast<uint8_t*>(this) + stubInfo_->stubDataOffset();
 }
