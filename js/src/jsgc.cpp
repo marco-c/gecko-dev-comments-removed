@@ -243,6 +243,7 @@
 #include "jsscriptinlines.h"
 
 #include "gc/Heap-inl.h"
+#include "vm/GeckoProfiler-inl.h"
 #include "vm/Stack-inl.h"
 #include "vm/String-inl.h"
 
@@ -5517,7 +5518,7 @@ GCRuntime::compactPhase(JS::gcreason::Reason reason, SliceBudget& sliceBudget,
     
     
     
-    AutoSuppressProfilerSampling suppressSampling(rt);
+    AutoSuppressProfilerSampling suppressSampling(TlsContext.get());
 
     ZoneList relocatedZones;
     Arena* relocatedArenas = nullptr;

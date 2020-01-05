@@ -297,10 +297,57 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
     AutoUpdateChildRuntimeCount updateChildRuntimeCount;
 #endif
 
+  private:
     
     
     
-    mozilla::Atomic<JSContext*, mozilla::ReleaseAcquire> activeContext;
+    mozilla::Atomic<JSContext*, mozilla::ReleaseAcquire> activeContext_;
+
+    
+    
+    js::ActiveThreadData<js::Vector<JSContext*, 4, js::SystemAllocPolicy>> cooperatingContexts_;
+
+    
+    js::ActiveThreadData<size_t> activeContextChangeProhibited_;
+
+  public:
+    JSContext* activeContext() { return activeContext_; }
+    const void* addressOfActiveContext() { return &activeContext_; }
+
+    void setActiveContext(JSContext* cx);
+
+    js::Vector<JSContext*, 4, js::SystemAllocPolicy>& cooperatingContexts() {
+        return cooperatingContexts_.ref();
+    }
+
+#ifdef DEBUG
+    bool isCooperatingContext(JSContext* cx) {
+        for (size_t i = 0; i < cooperatingContexts().length(); i++) {
+            if (cooperatingContexts()[i] == cx)
+                return true;
+        }
+        return false;
+    }
+#endif
+
+    class MOZ_RAII AutoProhibitActiveContextChange
+    {
+        JSRuntime* rt;
+
+      public:
+        explicit AutoProhibitActiveContextChange(JSRuntime* rt)
+          : rt(rt)
+        {
+            rt->activeContextChangeProhibited_++;
+        }
+
+        ~AutoProhibitActiveContextChange()
+        {
+            rt->activeContextChangeProhibited_--;
+        }
+    };
+
+    bool activeContextChangeProhibited() { return activeContextChangeProhibited_; }
 
     
 

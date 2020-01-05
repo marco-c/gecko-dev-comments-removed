@@ -2832,11 +2832,10 @@ JitFrameIterator::verifyReturnAddressUsingNativeToBytecodeMap()
 #endif 
 
 JitProfilingFrameIterator::JitProfilingFrameIterator(
-        JSRuntime* rt, const JS::ProfilingFrameIterator::RegisterState& state)
+        JSContext* cx, const JS::ProfilingFrameIterator::RegisterState& state)
 {
     
     
-    JSContext* cx = rt->unsafeContextFromAnyThread();
     if (!cx->profilingActivation()) {
         type_ = JitFrame_Entry;
         fp_ = nullptr;
@@ -2862,7 +2861,7 @@ JitProfilingFrameIterator::JitProfilingFrameIterator(
     fp_ = (uint8_t*) act->lastProfilingFrame();
     void* lastCallSite = act->lastProfilingCallSite();
 
-    JitcodeGlobalTable* table = rt->jitRuntime()->getJitcodeGlobalTable();
+    JitcodeGlobalTable* table = cx->runtime()->jitRuntime()->getJitcodeGlobalTable();
 
     
     MOZ_ASSERT(cx->isProfilerSamplingEnabled());
@@ -2872,7 +2871,7 @@ JitProfilingFrameIterator::JitProfilingFrameIterator(
         return;
 
     
-    if (tryInitWithTable(table, state.pc, rt,  false))
+    if (tryInitWithTable(table, state.pc, cx->runtime(),  false))
         return;
 
     
@@ -2881,7 +2880,7 @@ JitProfilingFrameIterator::JitProfilingFrameIterator(
             return;
 
         
-        if (tryInitWithTable(table, lastCallSite, rt,  true))
+        if (tryInitWithTable(table, lastCallSite, cx->runtime(),  true))
             return;
     }
 

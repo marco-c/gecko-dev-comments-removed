@@ -217,24 +217,6 @@ class GeckoProfiler
 #endif
 };
 
-
-
-
-
-class MOZ_RAII AutoSuppressProfilerSampling
-{
-  public:
-    explicit AutoSuppressProfilerSampling(JSContext* cx MOZ_GUARD_OBJECT_NOTIFIER_PARAM);
-    explicit AutoSuppressProfilerSampling(JSRuntime* rt MOZ_GUARD_OBJECT_NOTIFIER_PARAM);
-
-    ~AutoSuppressProfilerSampling();
-
-  private:
-    JSRuntime* rt_;
-    bool previouslyEnabled_;
-    MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
-};
-
 inline size_t
 GeckoProfiler::stringsCount()
 {

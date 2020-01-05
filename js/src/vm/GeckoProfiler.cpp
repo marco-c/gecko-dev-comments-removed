@@ -4,7 +4,7 @@
 
 
 
-#include "vm/GeckoProfiler.h"
+#include "vm/GeckoProfiler-inl.h"
 
 #include "mozilla/DebugOnly.h"
 
@@ -87,9 +87,12 @@ GeckoProfiler::enable(bool enabled)
     rt->resetProfilerSampleBufferLapCount();
 
     
-    if (rt->contextFromMainThread()->jitActivation) {
-        rt->contextFromMainThread()->jitActivation->setLastProfilingFrame(nullptr);
-        rt->contextFromMainThread()->jitActivation->setLastProfilingCallSite(nullptr);
+    for (size_t i = 0; i < rt->cooperatingContexts().length(); i++) {
+        JSContext* cx = rt->cooperatingContexts()[i];
+        if (cx->jitActivation) {
+            cx->jitActivation->setLastProfilingFrame(nullptr);
+            cx->jitActivation->setLastProfilingCallSite(nullptr);
+        }
     }
 
     enabled_ = enabled;
@@ -104,24 +107,27 @@ GeckoProfiler::enable(bool enabled)
     
 
 
-    if (rt->contextFromMainThread()->jitActivation) {
-        
-        if (enabled) {
-            void* lastProfilingFrame = GetTopProfilingJitFrame(rt->contextFromMainThread()->jitTop);
-            jit::JitActivation* jitActivation = rt->contextFromMainThread()->jitActivation;
-            while (jitActivation) {
-                jitActivation->setLastProfilingFrame(lastProfilingFrame);
-                jitActivation->setLastProfilingCallSite(nullptr);
+    for (size_t i = 0; i < rt->cooperatingContexts().length(); i++) {
+        JSContext* cx = rt->cooperatingContexts()[i];
+        if (cx->jitActivation) {
+            
+            if (enabled) {
+                void* lastProfilingFrame = GetTopProfilingJitFrame(cx->jitTop);
+                jit::JitActivation* jitActivation = cx->jitActivation;
+                while (jitActivation) {
+                    jitActivation->setLastProfilingFrame(lastProfilingFrame);
+                    jitActivation->setLastProfilingCallSite(nullptr);
 
-                lastProfilingFrame = GetTopProfilingJitFrame(jitActivation->prevJitTop());
-                jitActivation = jitActivation->prevJitActivation();
-            }
-        } else {
-            jit::JitActivation* jitActivation = rt->contextFromMainThread()->jitActivation;
-            while (jitActivation) {
-                jitActivation->setLastProfilingFrame(nullptr);
-                jitActivation->setLastProfilingCallSite(nullptr);
-                jitActivation = jitActivation->prevJitActivation();
+                    lastProfilingFrame = GetTopProfilingJitFrame(jitActivation->prevJitTop());
+                    jitActivation = jitActivation->prevJitActivation();
+                }
+            } else {
+                jit::JitActivation* jitActivation = cx->jitActivation;
+                while (jitActivation) {
+                    jitActivation->setLastProfilingFrame(nullptr);
+                    jitActivation->setLastProfilingCallSite(nullptr);
+                    jitActivation = jitActivation->prevJitActivation();
+                }
             }
         }
     }
@@ -495,8 +501,12 @@ ProfileEntry::script() const volatile
     
     
     
-    JSRuntime* rt = script->zoneFromAnyThread()->runtimeFromAnyThread();
-    if (!rt->unsafeContextFromAnyThread()->isProfilerSamplingEnabled())
+    
+    
+    
+    
+    JSContext* cx = script->runtimeFromAnyThread()->activeContext();
+    if (!cx->isProfilerSamplingEnabled())
         return nullptr;
 
     MOZ_ASSERT(!IsForwarded(script));
@@ -550,28 +560,19 @@ js::ProfilingGetPC(JSContext* cx, JSScript* script, void* ip)
 
 AutoSuppressProfilerSampling::AutoSuppressProfilerSampling(JSContext* cx
                                                            MOZ_GUARD_OBJECT_NOTIFIER_PARAM_IN_IMPL)
-  : rt_(cx->runtime()),
-    previouslyEnabled_(cx->isProfilerSamplingEnabled())
+  : cx_(cx),
+    previouslyEnabled_(cx->isProfilerSamplingEnabled()),
+    prohibitContextChange_(cx->runtime())
 {
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
     if (previouslyEnabled_)
-        rt_->contextFromMainThread()->disableProfilerSampling();
-}
-
-AutoSuppressProfilerSampling::AutoSuppressProfilerSampling(JSRuntime* rt
-                                                           MOZ_GUARD_OBJECT_NOTIFIER_PARAM_IN_IMPL)
-  : rt_(rt),
-    previouslyEnabled_(rt_->contextFromMainThread()->isProfilerSamplingEnabled())
-{
-    MOZ_GUARD_OBJECT_NOTIFIER_INIT;
-    if (previouslyEnabled_)
-        rt_->contextFromMainThread()->disableProfilerSampling();
+        cx_->disableProfilerSampling();
 }
 
 AutoSuppressProfilerSampling::~AutoSuppressProfilerSampling()
 {
     if (previouslyEnabled_)
-        rt_->contextFromMainThread()->enableProfilerSampling();
+        cx_->enableProfilerSampling();
 }
 
 void*
