@@ -301,6 +301,9 @@ const PanelUI = {
         updateEditUIVisibility();
         
       case "popupshown":
+        if (gPhotonStructure && aEvent.type == "popupshown") {
+          CustomizableUI.addPanelCloseListeners(this.panel);
+        }
         
       case "popuphiding":
         if (aEvent.type == "popuphiding") {
@@ -310,6 +313,9 @@ const PanelUI = {
       case "popuphidden":
         this._updateNotifications();
         this._updatePanelButton(aEvent.target);
+        if (gPhotonStructure && aEvent.type == "popuphidden") {
+          CustomizableUI.removePanelCloseListeners(this.panel);
+        }
         break;
       case "mousedown":
         if (aEvent.button == 0)
