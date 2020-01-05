@@ -33,6 +33,7 @@ class HTMLMediaElement;
 typedef nsRefPtrHashtable<nsStringHashKey, MediaKeySession> KeySessionHashMap;
 typedef nsRefPtrHashtable<nsUint32HashKey, dom::DetailedPromise> PromiseHashMap;
 typedef nsRefPtrHashtable<nsUint32HashKey, MediaKeySession> PendingKeySessionsHashMap;
+typedef nsDataHashtable<nsUint32HashKey, uint32_t> PendingPromiseIdTokenHashMap;
 typedef uint32_t PromiseId;
 
 
@@ -108,6 +109,11 @@ public:
   PromiseId StorePromise(DetailedPromise* aPromise);
 
   
+  
+  
+  void ConnectPendingPromiseIdWithToken(PromiseId aId, uint32_t aToken);
+
+  
   void RejectPromise(PromiseId aId, nsresult aExceptionCode,
                      const nsCString& aReason);
   
@@ -151,6 +157,8 @@ private:
 
   const bool mDistinctiveIdentifierRequired;
   const bool mPersistentStateRequired;
+
+  PendingPromiseIdTokenHashMap mPromiseIdToken;
 };
 
 } 
