@@ -37,7 +37,7 @@ VariableLengthPrefixSet::VariableLengthPrefixSet()
   mFixedPrefixSet = new nsUrlClassifierPrefixSet();
 }
 
-NS_IMETHODIMP
+nsresult
 VariableLengthPrefixSet::Init(const nsACString& aName)
 {
   mMemoryReportPath =
@@ -56,7 +56,7 @@ VariableLengthPrefixSet::~VariableLengthPrefixSet()
   UnregisterWeakMemoryReporter(this);
 }
 
-NS_IMETHODIMP
+nsresult
 VariableLengthPrefixSet::SetPrefixes(const PrefixStringMap& aPrefixMap)
 {
   MutexAutoLock lock(mLock);
@@ -152,10 +152,16 @@ VariableLengthPrefixSet::GetPrefixes(PrefixStringMap& aPrefixMap)
   return NS_OK;
 }
 
+nsresult
+VariableLengthPrefixSet::GetFixedLengthPrefixes(FallibleTArray<uint32_t>& aPrefixes)
+{
+  return mFixedPrefixSet->GetPrefixesNative(aPrefixes);
+}
 
 
 
-NS_IMETHODIMP
+
+nsresult
 VariableLengthPrefixSet::Matches(const nsACString& aFullHash, uint32_t* aLength)
 {
   MutexAutoLock lock(mLock);
@@ -189,7 +195,7 @@ VariableLengthPrefixSet::Matches(const nsACString& aFullHash, uint32_t* aLength)
   return NS_OK;
 }
 
-NS_IMETHODIMP
+nsresult
 VariableLengthPrefixSet::IsEmpty(bool* aEmpty)
 {
   MutexAutoLock lock(mLock);
@@ -202,7 +208,7 @@ VariableLengthPrefixSet::IsEmpty(bool* aEmpty)
   return NS_OK;
 }
 
-NS_IMETHODIMP
+nsresult
 VariableLengthPrefixSet::LoadFromFile(nsIFile* aFile)
 {
   MutexAutoLock lock(mLock);
@@ -241,7 +247,7 @@ VariableLengthPrefixSet::LoadFromFile(nsIFile* aFile)
   return NS_OK;;
 }
 
-NS_IMETHODIMP
+nsresult
 VariableLengthPrefixSet::StoreToFile(nsIFile* aFile)
 {
   NS_ENSURE_ARG_POINTER(aFile);
