@@ -180,17 +180,17 @@ pub fn get_array_index_from_id(_cx: *mut JSContext, id: HandleId) -> Option<u32>
 
 
 
-pub unsafe fn find_enum_string_index(cx: *mut JSContext,
+pub unsafe fn find_enum_value<'a, T>(cx: *mut JSContext,
                                      v: HandleValue,
-                                     values: &[&'static str])
-                                     -> Result<(Option<usize>, DOMString), ()> {
+                                     pairs: &'a [(&'static str, T)])
+                                     -> Result<(Option<&'a T>, DOMString), ()> {
     let jsstr = ToString(cx, v);
     if jsstr.is_null() {
         return Err(());
     }
 
     let search = jsstring_to_str(cx, jsstr);
-    Ok((values.iter().position(|value| search == *value), search))
+    Ok((pairs.iter().find(|&&(key, _)| search == *key).map(|&(_, ref ev)| ev), search))
 }
 
 
