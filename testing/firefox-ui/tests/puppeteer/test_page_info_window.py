@@ -3,7 +3,7 @@
 
 
 from firefox_puppeteer import PuppeteerMixin
-from marionette import MarionetteTestCase
+from marionette_harness import MarionetteTestCase
 
 
 class TestPageInfoWindow(PuppeteerMixin, MarionetteTestCase):

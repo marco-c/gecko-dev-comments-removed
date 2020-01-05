@@ -2,14 +2,18 @@
 
 
 
-from manifestparser import read_ini
 import os
 import sys
 
-from marionette import BaseMarionetteTestRunner, BaseMarionetteArguments
-from marionette.runner import BrowserMobProxyArguments
-from marionette.runtests import MarionetteHarness, cli as mn_cli
 import mozlog
+
+from manifestparser import read_ini
+from marionette_harness import (
+    BaseMarionetteTestRunner,
+    BaseMarionetteArguments,
+    BrowserMobProxyArguments,
+)
+from marionette_harness.runtests import MarionetteHarness, cli as mn_cli
 
 import external_media_tests
 from testcase import MediaTestCase

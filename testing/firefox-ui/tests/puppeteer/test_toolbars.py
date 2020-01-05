@@ -3,9 +3,9 @@
 
 
 from firefox_puppeteer import PuppeteerMixin
-from marionette import MarionetteTestCase
 from marionette_driver import expected, By, Wait
 from marionette_driver.errors import NoSuchElementException
+from marionette_harness import MarionetteTestCase
 
 
 class TestNavBar(PuppeteerMixin, MarionetteTestCase):

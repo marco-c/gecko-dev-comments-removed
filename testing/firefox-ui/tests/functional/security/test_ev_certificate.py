@@ -3,8 +3,8 @@
 
 
 from firefox_puppeteer import PuppeteerMixin
-from marionette import MarionetteTestCase
 from marionette_driver import Wait
+from marionette_harness import MarionetteTestCase
 
 
 class TestEVCertificate(PuppeteerMixin, MarionetteTestCase):

@@ -2,7 +2,7 @@
 
 
 
-from marionette import BaseMarionetteArguments
+from marionette_harness import BaseMarionetteArguments
 
 
 class FirefoxUIBaseArguments(object):

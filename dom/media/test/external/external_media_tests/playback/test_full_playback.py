@@ -2,8 +2,8 @@
 
 
 
+from marionette_harness import Marionette
 
-from marionette import Marionette
 from external_media_harness.testcase import MediaTestCase
 from external_media_tests.media_utils.video_puppeteer import VideoPuppeteer
 

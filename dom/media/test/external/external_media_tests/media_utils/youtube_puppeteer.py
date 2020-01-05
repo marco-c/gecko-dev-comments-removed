@@ -1,14 +1,17 @@
 
 
 
-from collections import namedtuple
-from time import sleep
-import re
-from json import loads
 
-from marionette import Marionette
+import re
+
+from collections import namedtuple
+from json import loads
+from time import sleep
+
 from marionette_driver import By, expected, Wait
 from marionette_driver.errors import TimeoutException, NoSuchElementException
+from marionette_harness import Marionette
+
 from video_puppeteer import VideoPuppeteer, VideoException
 from external_media_tests.utils import verbose_until
 

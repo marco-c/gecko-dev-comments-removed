@@ -4,7 +4,7 @@
 
 
 
-from marionette.runtests import cli as mn_cli
+from marionette_harness.runtests import cli as mn_cli
 
 from firefox_ui_harness.arguments import UpdateArguments
 from firefox_ui_harness.runners import UpdateTestRunner
