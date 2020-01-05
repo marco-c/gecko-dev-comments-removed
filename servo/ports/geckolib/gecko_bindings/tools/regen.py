@@ -102,6 +102,8 @@ COMPILATION_TARGETS = {
             "Maybe",  
                       
                       
+            
+            "StyleShapeSource", "StyleClipPath", "StyleShapeOutside",
         ],
     },
     
