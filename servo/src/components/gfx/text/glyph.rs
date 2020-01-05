@@ -270,7 +270,7 @@ impl DetailedGlyph {
     }
 }
 
-#[deriving(Eq, Clone)]
+#[deriving(Eq, Clone, TotalEq, TotalOrd)]
 struct DetailedGlyphRecord {
     
     entry_offset: CharIndex,
