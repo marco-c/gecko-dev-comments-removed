@@ -1452,14 +1452,21 @@ WASM_DECLARE_POD_VECTOR(MemoryAccess, MemoryAccessVector)
 
 
 
+
+
+
+
+
+
 struct Frame
 {
     
     
-    TlsData* tls;
+    uint8_t* callerFP;
 
     
-    uint8_t* callerFP;
+    
+    TlsData* tls;
 
     
     
