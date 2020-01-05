@@ -1138,7 +1138,7 @@ protected:
 
   
   nsCOMPtr<nsIContent> mContent;
-  DocAccessible* mDoc;
+  RefPtr<DocAccessible> mDoc;
 
   Accessible* mParent;
   nsTArray<Accessible*> mChildren;

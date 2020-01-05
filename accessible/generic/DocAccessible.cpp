@@ -80,7 +80,12 @@ static const uint32_t kRelationAttrsLen = ArrayLength(kRelationAttrs);
 
 DocAccessible::
   DocAccessible(nsIDocument* aDocument, nsIPresShell* aPresShell) :
-  HyperTextAccessibleWrap(nullptr, this),
+    
+    
+    
+    
+    
+  HyperTextAccessibleWrap(nullptr, nullptr),
   
   mAccessibleCache(kDefaultCacheLength),
   mNodeToAccessibleMap(kDefaultCacheLength),
@@ -92,6 +97,7 @@ DocAccessible::
 {
   mGenericTypes |= eDocument;
   mStateFlags |= eNotNodeMapEntry;
+  mDoc = this;
 
   MOZ_ASSERT(mPresShell, "should have been given a pres shell");
   mPresShell->SetDocAccessible(this);
