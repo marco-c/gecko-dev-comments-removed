@@ -181,7 +181,9 @@ TextureClientRecycleAllocator::CreateOrRecycle(ITextureClientAllocationHelper& a
       textureHolder = mPooledClients.top();
       mPooledClients.pop();
       
-      if (!aHelper.IsCompatible(textureHolder->GetTextureClient())) {
+      
+      if (!textureHolder->GetTextureClient()->GetAllocator()->IPCOpen() ||
+          !aHelper.IsCompatible(textureHolder->GetTextureClient())) {
         
         RefPtr<Runnable> task = new TextureClientReleaseTask(textureHolder->GetTextureClient());
         textureHolder->ClearTextureClient();
