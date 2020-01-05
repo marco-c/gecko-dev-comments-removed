@@ -237,6 +237,7 @@ class MOZ_STACK_CLASS ModuleGenerator
     uint32_t                        startOfUnpatchedCallsites_;
     Uint32Vector                    debugTrapFarJumps_;
     FuncArgTypesVector              debugFuncArgTypes_;
+    FuncReturnTypesVector           debugFuncReturnTypes_;
 
     
     bool                            parallel_;
