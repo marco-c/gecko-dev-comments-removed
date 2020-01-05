@@ -12,9 +12,6 @@ Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 var gAdvancedPane = {
   _inited: false,
 
-  
-
-
   init() {
     function setEventListener(aId, aEventType, aCallback) {
       document.getElementById(aId)
@@ -35,99 +32,6 @@ var gAdvancedPane = {
                        gAdvancedPane.updateWritePrefs);
       setEventListener("showUpdateHistory", "command",
                        gAdvancedPane.showUpdates);
-    }
-    this.updateOnScreenKeyboardVisibility();
-
-    setEventListener("layers.acceleration.disabled", "change",
-                     gAdvancedPane.updateHardwareAcceleration);
-  },
-
-
-  
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
-
-
-
-  _storedSpellCheck: 0,
-
-  
-
-
-
-
-  readCheckSpelling() {
-    var pref = document.getElementById("layout.spellcheckDefault");
-    this._storedSpellCheck = pref.value;
-
-    return (pref.value != 0);
-  },
-
-  
-
-
-
-
-  writeCheckSpelling() {
-    var checkbox = document.getElementById("checkSpelling");
-    if (checkbox.checked) {
-      if (this._storedSpellCheck == 2) {
-        return 2;
-      }
-      return 1;
-    }
-    return 0;
-  },
-
-
-  
-
-
-
-  updateHardwareAcceleration() {
-    if (AppConstants.platform == "win") {
-      var fromPref = document.getElementById("layers.acceleration.disabled");
-      var toPref = document.getElementById("gfx.direct2d.disabled");
-      toPref.value = fromPref.value;
-    }
-  },
-
-  updateOnScreenKeyboardVisibility() {
-    if (AppConstants.platform == "win") {
-      let minVersion = Services.prefs.getBoolPref("ui.osk.require_win10") ? 10 : 6.2;
-      if (Services.vc.compare(Services.sysinfo.getProperty("version"), minVersion) >= 0) {
-        document.getElementById("useOnScreenKeyboard").hidden = false;
-      }
     }
   },
 
@@ -235,21 +139,6 @@ var gAdvancedPane = {
   showUpdates() {
     gSubDialog.open("chrome://mozapps/content/update/history.xul");
   },
-
-  
-
-  
-
-
-
-
-
-
-
-
-
-
-
 
   observe(aSubject, aTopic, aData) {
     if (AppConstants.MOZ_UPDATER) {
