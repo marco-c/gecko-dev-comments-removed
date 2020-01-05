@@ -1,0 +1,12 @@
+
+
+
+
+use libc::c_int;
+use types::cef_thread_id_t;
+
+
+#[no_mangle]
+pub extern "C" fn cef_currently_on(tid: cef_thread_id_t) -> c_int {
+    1
+}
