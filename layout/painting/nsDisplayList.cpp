@@ -8536,9 +8536,11 @@ nsDisplayMask::PaintAsLayer(nsDisplayListBuilder* aBuilder,
   
   
   gfxContext* context = aCtx->ThebesContext();
-  context->Clip(NSRectToSnappedRect(mVisibleRect,
-                                    mFrame->PresContext()->AppUnitsPerDevPixel(),
-                                    *aCtx->GetDrawTarget()));
+
+  Rect bounds =
+    NSRectToRect(mVisibleRect, mFrame->PresContext()->AppUnitsPerDevPixel());
+  bounds.RoundOut();
+  context->Clip(bounds);
 
   ComputeMaskGeometry(params);
 
