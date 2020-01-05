@@ -41,9 +41,10 @@ use gfx_traits::Epoch;
 use gfx_traits::LayerId;
 use ipc_channel::ipc::{IpcReceiver, IpcSender};
 use libc::c_void;
-use msg::constellation_msg::{Key, KeyModifiers, KeyState, LoadData};
-use msg::constellation_msg::{PanicMsg, PipelineId, PipelineNamespaceId};
-use msg::constellation_msg::{SubpageId, WindowSizeData, WindowSizeType};
+use msg::constellation_msg::{FrameId, Key, KeyModifiers, KeyState, LoadData};
+use msg::constellation_msg::{NavigationDirection, PanicMsg, PipelineId};
+use msg::constellation_msg::{PipelineNamespaceId, SubpageId, WindowSizeData};
+use msg::constellation_msg::{WebDriverCommandMsg, WindowSizeType};
 use msg::webdriver_msg::WebDriverScriptCommand;
 use net_traits::ResourceThreads;
 use net_traits::bluetooth_thread::BluetoothMethodMsg;
@@ -51,6 +52,8 @@ use net_traits::image_cache_thread::ImageCacheThread;
 use net_traits::response::HttpsState;
 use profile_traits::mem;
 use std::any::Any;
+use std::collections::HashMap;
+use url::Url;
 use util::ipc::OptionalOpaqueIpcSender;
 
 pub use script_msg::{LayoutMsg, ScriptMsg};
@@ -490,4 +493,48 @@ impl MozBrowserErrorType {
             MozBrowserErrorType::Fatal => "fatal",
         }
     }
+}
+
+
+#[derive(Deserialize, Serialize)]
+pub enum AnimationTickType {
+    
+    Script,
+    
+    Layout,
+}
+
+
+#[derive(Deserialize, Serialize)]
+pub enum ConstellationMsg {
+    
+    Exit,
+    
+    FrameSize(PipelineId, Size2D<f32>),
+    
+    
+    GetFrame(PipelineId, IpcSender<Option<FrameId>>),
+    
+    
+    
+    GetPipeline(Option<FrameId>, IpcSender<Option<(PipelineId, bool)>>),
+    
+    
+    GetPipelineTitle(PipelineId),
+    
+    InitLoadUrl(Url),
+    
+    IsReadyToSaveImage(HashMap<PipelineId, Epoch>),
+    
+    KeyEvent(Key, KeyState, KeyModifiers),
+    
+    LoadUrl(PipelineId, LoadData),
+    
+    Navigate(Option<(PipelineId, SubpageId)>, NavigationDirection),
+    
+    WindowSize(WindowSizeData, WindowSizeType),
+    
+    TickAnimation(PipelineId, AnimationTickType),
+    
+    WebDriverCommand(WebDriverCommandMsg),
 }

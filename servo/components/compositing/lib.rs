@@ -29,7 +29,6 @@ extern crate net_traits;
 #[macro_use]
 extern crate profile_traits;
 extern crate script_traits;
-extern crate serde;
 extern crate style_traits;
 extern crate time;
 extern crate url;
@@ -39,18 +38,13 @@ extern crate webrender;
 extern crate webrender_traits;
 
 pub use compositor_thread::{CompositorEventListener, CompositorProxy, CompositorThread};
-use euclid::size::{Size2D, TypedSize2D};
+use euclid::size::TypedSize2D;
 use gfx::paint_thread::ChromeToPaintMsg;
-use gfx_traits::Epoch;
 use ipc_channel::ipc::{IpcSender};
 use layout_traits::LayoutControlChan;
-use msg::constellation_msg::{FrameId, Key, KeyState, KeyModifiers, LoadData};
-use msg::constellation_msg::{NavigationDirection, PipelineId, SubpageId};
-use msg::constellation_msg::{WebDriverCommandMsg, WindowSizeData, WindowSizeType};
+use msg::constellation_msg::PipelineId;
 use script_traits::ConstellationControlMsg;
-use std::collections::HashMap;
 use std::sync::mpsc::Sender;
-use url::Url;
 use util::geometry::PagePx;
 
 mod compositor;
@@ -60,41 +54,6 @@ mod delayed_composition;
 mod surface_map;
 mod touch;
 pub mod windowing;
-
-
-#[derive(Deserialize, Serialize)]
-pub enum AnimationTickType {
-    Script,
-    Layout,
-}
-
-
-#[derive(Deserialize, Serialize)]
-pub enum CompositorMsg {
-    Exit,
-    FrameSize(PipelineId, Size2D<f32>),
-    
-    
-    GetFrame(PipelineId, IpcSender<Option<FrameId>>),
-    
-    
-    
-    GetPipeline(Option<FrameId>, IpcSender<Option<(PipelineId, bool)>>),
-    
-    
-    GetPipelineTitle(PipelineId),
-    InitLoadUrl(Url),
-    
-    IsReadyToSaveImage(HashMap<PipelineId, Epoch>),
-    KeyEvent(Key, KeyState, KeyModifiers),
-    LoadUrl(PipelineId, LoadData),
-    Navigate(Option<(PipelineId, SubpageId)>, NavigationDirection),
-    WindowSize(WindowSizeData, WindowSizeType),
-    
-    TickAnimation(PipelineId, AnimationTickType),
-    
-    WebDriverCommand(WebDriverCommandMsg),
-}
 
 pub struct SendableFrameTree {
     pub pipeline: CompositionPipeline,
