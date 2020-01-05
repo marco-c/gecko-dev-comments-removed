@@ -253,3 +253,10 @@ pub struct PipelineId(pub uint);
 
 #[deriving(Clone, PartialEq, Eq, Hash, Show)]
 pub struct SubpageId(pub uint);
+
+
+
+pub enum PipelineExitType {
+    PipelineOnly,
+    Complete,
+}
