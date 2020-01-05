@@ -43,7 +43,12 @@ public:
 
 
   virtual nsIAtom* GetType() const override;
-  
+
+  mozilla::WritingMode GetWritingMode() const override
+  {
+    return nsFrame::GetWritingModeDeferringToRootElem();
+  }
+
 #ifdef DEBUG_FRAME_DUMP
   
   virtual nsresult  GetFrameName(nsAString& aResult) const override;
