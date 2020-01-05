@@ -165,7 +165,7 @@ nsRubyFrame::Reflow(nsPresContext* aPresContext,
     ReflowSegment(aPresContext, aReflowInput, baseContainer, aStatus);
   }
   
-  MOZ_ASSERT(!NS_FRAME_OVERFLOW_IS_INCOMPLETE(aStatus));
+  MOZ_ASSERT(!aStatus.IsOverflowIncomplete());
 
   aDesiredSize.ISize(lineWM) = aReflowInput.mLineLayout->EndSpan(this);
   if (boxDecorationBreakClone || !GetPrevContinuation()) {

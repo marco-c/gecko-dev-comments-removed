@@ -957,7 +957,7 @@ nsTableCellFrame::Reflow(nsPresContext*           aPresContext,
 
   ReflowChild(firstKid, aPresContext, kidSize, kidReflowInput,
               wm, kidOrigin, containerSize, 0, aStatus);
-  if (NS_FRAME_OVERFLOW_IS_INCOMPLETE(aStatus)) {
+  if (aStatus.IsOverflowIncomplete()) {
     
     
     NS_FRAME_SET_INCOMPLETE(aStatus);

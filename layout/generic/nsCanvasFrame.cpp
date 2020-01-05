@@ -728,7 +728,7 @@ nsCanvasFrame::Reflow(nsPresContext*           aPresContext,
         
         
       }
-      if (NS_FRAME_OVERFLOW_IS_INCOMPLETE(aStatus)) {
+      if (aStatus.IsOverflowIncomplete()) {
         nextFrame->AddStateBits(NS_FRAME_IS_OVERFLOW_CONTAINER);
       }
     }

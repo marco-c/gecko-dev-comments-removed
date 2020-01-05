@@ -703,7 +703,7 @@ nsColumnSetFrame::ReflowChildren(ReflowOutput&     aDesiredSize,
 
       
       
-      if (NS_FRAME_OVERFLOW_IS_INCOMPLETE(aStatus)) {
+      if (aStatus.IsOverflowIncomplete()) {
         if (!(kidNextInFlow->GetStateBits() & NS_FRAME_IS_OVERFLOW_CONTAINER)) {
           aStatus |= NS_FRAME_REFLOW_NEXTINFLOW;
           reflowNext = true;
