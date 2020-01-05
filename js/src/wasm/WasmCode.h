@@ -403,7 +403,6 @@ struct NameInBytecode
 };
 
 typedef Vector<NameInBytecode, 0, SystemAllocPolicy> NameInBytecodeVector;
-typedef Vector<char16_t, 64> TwoByteName;
 
 
 
@@ -494,8 +493,7 @@ struct Metadata : ShareableBase<Metadata>, MetadataCacheablePod
     virtual ScriptSource* maybeScriptSource() const {
         return nullptr;
     }
-    virtual bool getFuncName(JSContext* cx, const Bytes* maybeBytecode, uint32_t funcIndex,
-                             TwoByteName* name) const;
+    virtual bool getFuncName(const Bytes* maybeBytecode, uint32_t funcIndex, UTF8Bytes* name) const;
 
     WASM_DECLARE_SERIALIZABLE_VIRTUAL(Metadata);
 };
@@ -593,7 +591,7 @@ class Code
     
     
 
-    bool getFuncName(JSContext* cx, uint32_t funcIndex, TwoByteName* name) const;
+    bool getFuncName(uint32_t funcIndex, UTF8Bytes* name) const;
     JSAtom* getFuncAtom(JSContext* cx, uint32_t funcIndex) const;
 
     
@@ -609,7 +607,7 @@ class Code
     
     
 
-    MOZ_MUST_USE bool ensureProfilingState(JSContext* cx, bool enabled);
+    MOZ_MUST_USE bool ensureProfilingState(JSRuntime* rt, bool enabled);
     bool profilingEnabled() const { return profilingEnabled_; }
     const char* profilingLabel(uint32_t funcIndex) const { return funcLabels_[funcIndex].get(); }
 
