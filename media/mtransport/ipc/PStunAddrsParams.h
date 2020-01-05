@@ -1,0 +1,20 @@
+
+
+
+
+#ifndef PStunAddrsParams_h
+#define PStunAddrsParams_h
+
+#include "mtransport/nricestunaddr.h"
+#include "nsTArray.h"
+
+namespace mozilla {
+namespace net {
+
+
+typedef nsTArray<NrIceStunAddr> NrIceStunAddrArray;
+
+} 
+} 
+
+#endif 
