@@ -2531,8 +2531,9 @@ void ScrollFrameHelper::MarkNotRecentlyScrolled()
 void ScrollFrameHelper::MarkRecentlyScrolled()
 {
   mHasBeenScrolledRecently = true;
-  if (IsAlwaysActive())
+  if (IsAlwaysActive()) {
     return;
+  }
 
   if (mActivityExpirationState.IsTracked()) {
     gScrollFrameActivityTracker->MarkUsed(this);
@@ -2708,12 +2709,13 @@ ScrollFrameHelper::ScheduleSyntheticMouseMove()
 {
   if (!mScrollActivityTimer) {
     mScrollActivityTimer = do_CreateInstance("@mozilla.org/timer;1");
-    if (!mScrollActivityTimer)
+    if (!mScrollActivityTimer) {
       return;
+    }
   }
 
   mScrollActivityTimer->InitWithFuncCallback(
-        ScrollActivityCallback, this, 100, nsITimer::TYPE_ONE_SHOT);
+    ScrollActivityCallback, this, 100, nsITimer::TYPE_ONE_SHOT);
 }
 
 void
@@ -2756,7 +2758,7 @@ ScrollFrameHelper::ScrollToImpl(nsPoint aPt, const nsRect& aRange, nsIAtom* aOri
   gfxSize scale = FrameLayerBuilder::GetPaintedLayerScaleForFrame(mScrolledFrame);
   nsPoint curPos = GetScrollPosition();
   nsPoint alignWithPos = mScrollPosForLayerPixelAlignment == nsPoint(-1,-1)
-      ? curPos : mScrollPosForLayerPixelAlignment;
+                         ? curPos : mScrollPosForLayerPixelAlignment;
   
   
   
@@ -3055,8 +3057,9 @@ ScrollFrameHelper::AppendScrollPartsTo(nsDisplayListBuilder*   aBuilder,
   AutoTArray<nsIFrame*, 3> scrollParts;
   for (nsIFrame* kid : mOuter->PrincipalChildList()) {
     if (kid == mScrolledFrame ||
-        (kid->IsAbsPosContainingBlock() || overlayScrollbars) != aPositioned)
+        (kid->IsAbsPosContainingBlock() || overlayScrollbars) != aPositioned) {
       continue;
+    }
 
     scrollParts.AppendElement(kid);
   }
@@ -3109,7 +3112,7 @@ ScrollFrameHelper::AppendScrollPartsTo(nsDisplayListBuilder*   aBuilder,
     
     bool isOverlayScrollbar = (flags != 0) && overlayScrollbars;
     bool createLayer = aCreateLayer || isOverlayScrollbar ||
-        gfxPrefs::AlwaysLayerizeScrollbarTrackTestOnly();
+                       gfxPrefs::AlwaysLayerizeScrollbarTrackTestOnly();
 
     nsDisplayListBuilder::AutoCurrentScrollbarInfoSetter
       infoSetter(aBuilder, scrollTargetId, flags, createLayer);
@@ -4042,8 +4045,7 @@ ScrollFrameHelper::ScrollBy(nsIntPoint aDelta,
   }
 
   if (aUnit == nsIScrollableFrame::DEVICE_PIXELS &&
-      !nsLayoutUtils::AsyncPanZoomEnabled(mOuter))
-  {
+      !nsLayoutUtils::AsyncPanZoomEnabled(mOuter)) {
     
     
     mVelocityQueue.Sample(GetScrollPosition());
@@ -4304,8 +4306,7 @@ ScrollFrameHelper::FireScrollPortEvent()
     orient = InternalScrollPortEvent::eBoth;
     mHorizontalOverflow = newHorizontalOverflow;
     mVerticalOverflow = newVerticalOverflow;
-  }
-  else if (vertChanged) {
+  } else if (vertChanged) {
     orient = InternalScrollPortEvent::eVertical;
     mVerticalOverflow = newVerticalOverflow;
     if (horizChanged) {
@@ -4314,8 +4315,7 @@ ScrollFrameHelper::FireScrollPortEvent()
       
       PostOverflowEvent();
     }
-  }
-  else {
+  } else {
     orient = InternalScrollPortEvent::eHorizontal;
     mHorizontalOverflow = newHorizontalOverflow;
   }
@@ -4753,8 +4753,9 @@ ScrollFrameHelper::FireScrollEvent()
 void
 ScrollFrameHelper::PostScrollEvent()
 {
-  if (mScrollEvent)
+  if (mScrollEvent) {
     return;
+  }
 
   
   mScrollEvent = new ScrollEvent(this);
@@ -4773,8 +4774,9 @@ ScrollFrameHelper::AsyncScrollPortEvent::Run()
 bool
 nsXULScrollFrame::AddHorizontalScrollbar(nsBoxLayoutState& aState, bool aOnBottom)
 {
-  if (!mHelper.mHScrollbarBox)
+  if (!mHelper.mHScrollbarBox) {
     return true;
+  }
 
   return AddRemoveScrollbar(aState, aOnBottom, true, true);
 }
@@ -4782,8 +4784,9 @@ nsXULScrollFrame::AddHorizontalScrollbar(nsBoxLayoutState& aState, bool aOnBotto
 bool
 nsXULScrollFrame::AddVerticalScrollbar(nsBoxLayoutState& aState, bool aOnRight)
 {
-  if (!mHelper.mVScrollbarBox)
+  if (!mHelper.mVScrollbarBox) {
     return true;
+  }
 
   return AddRemoveScrollbar(aState, aOnRight, false, true);
 }
@@ -4926,8 +4929,9 @@ nsXULScrollFrame::LayoutScrollArea(nsBoxLayoutState& aState,
 
 void ScrollFrameHelper::PostOverflowEvent()
 {
-  if (mAsyncScrollPortEvent.IsPending())
+  if (mAsyncScrollPortEvent.IsPending()) {
     return;
+  }
 
   
   nsSize scrollportSize = mScrollPort.Size();
@@ -4944,8 +4948,9 @@ void ScrollFrameHelper::PostOverflowEvent()
   }
 
   nsRootPresContext* rpc = mOuter->PresContext()->GetRootPresContext();
-  if (!rpc)
+  if (!rpc) {
     return;
+  }
 
   mAsyncScrollPortEvent = new AsyncScrollPortEvent(this);
   rpc->AddWillPaintObserver(mAsyncScrollPortEvent.get());
@@ -4966,14 +4971,16 @@ ScrollFrameHelper::GetFrameForDir() const
     nsCOMPtr<nsIHTMLDocument> htmlDoc = do_QueryInterface(document);
     if (htmlDoc) {
       Element *bodyElement = document->GetBodyElement();
-      if (bodyElement)
+      if (bodyElement) {
         root = bodyElement; 
+      }
     }
 
     if (root) {
       nsIFrame *rootsFrame = root->GetPrimaryFrame();
-      if (rootsFrame)
+      if (rootsFrame) {
         frame = rootsFrame;
+      }
     }
   }
 
@@ -5014,8 +5021,8 @@ ScrollFrameHelper::IsMaybeScrollingActive() const
   }
 
   return mHasBeenScrolledRecently ||
-      IsAlwaysActive() ||
-      mWillBuildScrollableLayer;
+         IsAlwaysActive() ||
+         mWillBuildScrollableLayer;
 }
 
 bool
@@ -5028,8 +5035,8 @@ ScrollFrameHelper::IsScrollingActive(nsDisplayListBuilder* aBuilder) const
   }
 
   return mHasBeenScrolledRecently ||
-        IsAlwaysActive() ||
-        mWillBuildScrollableLayer;
+         IsAlwaysActive() ||
+         mWillBuildScrollableLayer;
 }
 
 
@@ -5444,8 +5451,9 @@ ScrollFrameHelper::AdjustScrollbarRectForResizer(
                          nsIFrame* aFrame, nsPresContext* aPresContext,
                          nsRect& aRect, bool aHasResizer, bool aVertical)
 {
-  if ((aVertical ? aRect.width : aRect.height) == 0)
+  if ((aVertical ? aRect.width : aRect.height) == 0) {
     return;
+  }
 
   
   
@@ -5457,8 +5465,9 @@ ScrollFrameHelper::AdjustScrollbarRectForResizer(
     nsPoint offset;
     nsIWidget* widget = aFrame->GetNearestWidget(offset);
     LayoutDeviceIntRect widgetRect;
-    if (!widget || !widget->ShowsResizeIndicator(&widgetRect))
+    if (!widget || !widget->ShowsResizeIndicator(&widgetRect)) {
       return;
+    }
 
     resizerRect = nsRect(aPresContext->DevPixelsToAppUnits(widgetRect.x) - offset.x,
                          aPresContext->DevPixelsToAppUnits(widgetRect.y) - offset.y,
@@ -5575,8 +5584,7 @@ ScrollFrameHelper::LayoutScrollbars(nsBoxLayoutState& aState,
       }
 
       nsBoxFrame::LayoutChildAt(aState, mResizerBox, r);
-    }
-    else if (mResizerBox) {
+    } else if (mResizerBox) {
       
       nsBoxFrame::LayoutChildAt(aState, mResizerBox, nsRect());
     }
@@ -5681,8 +5689,9 @@ ScrollFrameHelper::SetCoordAttribute(nsIContent* aContent, nsIAtom* aAtom,
   nsAutoString newValue;
   newValue.AppendInt(pixelSize);
 
-  if (aContent->AttrValueIs(kNameSpaceID_None, aAtom, newValue, eCaseMatters))
+  if (aContent->AttrValueIs(kNameSpaceID_None, aAtom, newValue, eCaseMatters)) {
     return;
+  }
 
   AutoWeakFrame weakFrame(mOuter);
   nsCOMPtr<nsIContent> kungFuDeathGrip = aContent;
@@ -5857,7 +5866,7 @@ ScrollFrameHelper::GetScrolledFrameDir() const
     nsIFrame* childFrame = mScrolledFrame->PrincipalChildList().FirstChild();
     if (childFrame) {
       return (nsBidiPresUtils::ParagraphDirection(childFrame) == NSBIDI_LTR)
-          ? NS_STYLE_DIRECTION_LTR : NS_STYLE_DIRECTION_RTL;
+             ? NS_STYLE_DIRECTION_LTR : NS_STYLE_DIRECTION_RTL;
     }
   }
 
@@ -5909,8 +5918,7 @@ ScrollFrameHelper::GetCoordAttribute(nsIFrame* aBox, nsIAtom* aAtom,
 
     nsAutoString value;
     content->GetAttr(kNameSpaceID_None, aAtom, value);
-    if (!value.IsEmpty())
-    {
+    if (!value.IsEmpty()) {
       nsresult error;
       
       nscoord result = nsPresContext::CSSPixelsToAppUnits(value.ToInteger(&error));
