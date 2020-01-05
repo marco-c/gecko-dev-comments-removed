@@ -471,9 +471,6 @@ extensions.registerSchemaAPI("browserAction", "addon_parent", context => {
       setIcon: function(details) {
         let tab = details.tabId !== null ? TabManager.getTab(details.tabId, context) : null;
 
-        
-        
-        
         let icon = IconDetails.normalize(details, extension, context);
         BrowserAction.for(extension).setProperty(tab, "icon", icon);
       },

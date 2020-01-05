@@ -260,9 +260,6 @@ extensions.registerSchemaAPI("pageAction", "addon_parent", context => {
       setIcon(details) {
         let tab = TabManager.getTab(details.tabId, context);
 
-        
-        
-        
         let icon = IconDetails.normalize(details, extension, context);
         PageAction.for(extension).setProperty(tab, "icon", icon);
       },
