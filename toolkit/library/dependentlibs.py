@@ -58,8 +58,12 @@ def dependentlibs_readelf(lib):
         
         
         
+        
+        
         tmp = line.split(' ', 3)
-        if len(tmp) > 3 and tmp[2] == '(NEEDED)':
+        if len(tmp) > 3 and 'NEEDED' in tmp[2]:
+            
+            
             
             
             match = re.search('\[(.*)\]', tmp[3])
