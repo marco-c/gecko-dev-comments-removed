@@ -1059,12 +1059,6 @@ pref("browser.fixup.hide_user_pass", true);
 
 
 pref("browser.urlbar.autocomplete.enabled", true);
-#ifdef NIGHTLY_BUILD
-pref("browser.urlbar.usepreloadedtopurls.enabled", true);
-#else
-pref("browser.urlbar.usepreloadedtopurls.enabled", false);
-#endif
-pref("browser.urlbar.usepreloadedtopurls.expire_days", 14);
 
 
 
@@ -4456,6 +4450,10 @@ pref("image.infer-src-animation.threshold-ms", 2000);
 
 
 pref("image.mem.discardable", true);
+
+
+
+pref("image.mem.shared", false);
 
 
 pref("image.mem.allow_locking_in_content_processes", true);
