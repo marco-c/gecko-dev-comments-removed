@@ -257,7 +257,7 @@ private:
 
     int64_t                         mContentLength;   
     int64_t                         mContentRead;     
-    int64_t                         mTransferSize; 
+    Atomic<int64_t, ReleaseAcquire> mTransferSize; 
 
     
     
