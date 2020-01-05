@@ -5,11 +5,11 @@ const magic2 = 0x73;
 const magic3 = 0x6d;  
 
 
-const experimentalVersion = 0xd;
-const ver0 = (experimentalVersion >>>  0) & 0xff;
-const ver1 = (experimentalVersion >>>  8) & 0xff;
-const ver2 = (experimentalVersion >>> 16) & 0xff;
-const ver3 = (experimentalVersion >>> 24) & 0xff;
+const encodingVersion = 0x1;
+const ver0 = (encodingVersion >>>  0) & 0xff;
+const ver1 = (encodingVersion >>>  8) & 0xff;
+const ver2 = (encodingVersion >>> 16) & 0xff;
+const ver3 = (encodingVersion >>> 24) & 0xff;
 
 
 const userDefinedId    = 0;
