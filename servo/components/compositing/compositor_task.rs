@@ -202,7 +202,7 @@ pub enum Msg {
     
     ChangePageTitle(PipelineId, Option<String>),
     
-    ChangePageUrl(FrameId, Url),
+    ChangePageUrl(PipelineId, Url),
     
     PaintMsgDiscarded,
     
