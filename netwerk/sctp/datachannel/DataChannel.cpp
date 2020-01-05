@@ -586,10 +586,9 @@ DataChannelConnection::CompleteConnect(TransportFlow *flow, TransportLayer::Stat
       if (errno == EINPROGRESS) {
         
         return;
-      } else {
-        LOG(("usrsctp_connect failed: %d", errno));
-        mState = CLOSED;
       }
+      LOG(("usrsctp_connect failed: %d", errno));
+      mState = CLOSED;
     } else {
       
       
@@ -1783,50 +1782,49 @@ DataChannelConnection::HandleStreamChangeEvent(const struct sctp_stream_change_e
          strchg->strchange_outstrms));
     
     return;
-  } else {
-    if (strchg->strchange_instrms > mStreams.Length()) {
-      LOG(("Other side increased streams from %u to %u",
-           mStreams.Length(), strchg->strchange_instrms));
-    }
-    if (strchg->strchange_outstrms > mStreams.Length() ||
-        strchg->strchange_instrms > mStreams.Length()) {
-      uint16_t old_len = mStreams.Length();
-      uint16_t new_len = std::max(strchg->strchange_outstrms,
-                                  strchg->strchange_instrms);
-      LOG(("Increasing number of streams from %u to %u - adding %u (in: %u)",
-           old_len, new_len, new_len - old_len,
-           strchg->strchange_instrms));
-      
-      mStreams.AppendElements(new_len - old_len);
-      LOG(("New length = %d (was %d)", mStreams.Length(), old_len));
-      for (size_t i = old_len; i < mStreams.Length(); ++i) {
-        mStreams[i] = nullptr;
-      }
-      
-      
-      
-
-      
-      
-      size_t num_needed = mPending.GetSize();
-      LOG(("%d of %d new streams already needed", num_needed,
-           new_len - old_len));
-      num_needed -= (new_len - old_len); 
-      if (num_needed > 0) {
-        if (num_needed < 16)
-          num_needed = 16;
-        LOG(("Not enough new streams, asking for %d more", num_needed));
-        RequestMoreStreams(num_needed);
-      } else if (strchg->strchange_outstrms < strchg->strchange_instrms) {
-        LOG(("Requesting %d output streams to match partner",
-             strchg->strchange_instrms - strchg->strchange_outstrms));
-        RequestMoreStreams(strchg->strchange_instrms - strchg->strchange_outstrms);
-      }
-
-      ProcessQueuedOpens();
+  }
+  if (strchg->strchange_instrms > mStreams.Length()) {
+    LOG(("Other side increased streams from %u to %u",
+         mStreams.Length(), strchg->strchange_instrms));
+  }
+  if (strchg->strchange_outstrms > mStreams.Length() ||
+      strchg->strchange_instrms > mStreams.Length()) {
+    uint16_t old_len = mStreams.Length();
+    uint16_t new_len = std::max(strchg->strchange_outstrms,
+                                strchg->strchange_instrms);
+    LOG(("Increasing number of streams from %u to %u - adding %u (in: %u)",
+         old_len, new_len, new_len - old_len,
+         strchg->strchange_instrms));
+    
+    mStreams.AppendElements(new_len - old_len);
+    LOG(("New length = %d (was %d)", mStreams.Length(), old_len));
+    for (size_t i = old_len; i < mStreams.Length(); ++i) {
+      mStreams[i] = nullptr;
     }
     
+    
+    
+
+    
+    
+    size_t num_needed = mPending.GetSize();
+    LOG(("%d of %d new streams already needed", num_needed,
+         new_len - old_len));
+    num_needed -= (new_len - old_len); 
+    if (num_needed > 0) {
+      if (num_needed < 16)
+        num_needed = 16;
+      LOG(("Not enough new streams, asking for %d more", num_needed));
+      RequestMoreStreams(num_needed);
+    } else if (strchg->strchange_outstrms < strchg->strchange_instrms) {
+      LOG(("Requesting %d output streams to match partner",
+           strchg->strchange_instrms - strchg->strchange_outstrms));
+      RequestMoreStreams(strchg->strchange_instrms - strchg->strchange_outstrms);
+    }
+
+    ProcessQueuedOpens();
   }
+  
 
   for (uint32_t i = 0; i < mStreams.Length(); ++i) {
     channel = mStreams[i];
@@ -2117,22 +2115,21 @@ DataChannelConnection::OpenFinish(already_AddRefed<DataChannel>&& aChannel)
         
         
         return channel.forget();
-      } else {
-        if (channel->mFlags & DATA_CHANNEL_FLAGS_FINISH_OPEN) {
-          
-          NS_ERROR("Failed to send open request");
-          NS_DispatchToMainThread(do_AddRef(new DataChannelOnMessageAvailable(
-                                    DataChannelOnMessageAvailable::ON_CHANNEL_CLOSED, this,
-                                    channel)));
-        }
-        
-        
-        mStreams[stream] = nullptr;
-        channel->mStream = INVALID_STREAM;
-        
-        channel->mState = CLOSED;
-        return nullptr;
       }
+      if (channel->mFlags & DATA_CHANNEL_FLAGS_FINISH_OPEN) {
+        
+        NS_ERROR("Failed to send open request");
+        NS_DispatchToMainThread(do_AddRef(new DataChannelOnMessageAvailable(
+                                            DataChannelOnMessageAvailable::ON_CHANNEL_CLOSED, this,
+                                            channel)));
+      }
+      
+      
+      mStreams[stream] = nullptr;
+      channel->mStream = INVALID_STREAM;
+      
+      channel->mState = CLOSED;
+      return nullptr;
       
     }
   }

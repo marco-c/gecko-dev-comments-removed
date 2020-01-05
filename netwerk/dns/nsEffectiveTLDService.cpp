@@ -286,19 +286,18 @@ nsEffectiveTLDService::GetBaseDomainInternal(nsCString  &aHostname,
         
         eTLD = prevDomain;
         break;
-
-      } else if (entry->IsNormal() || !nextDot) {
+      }
+      if (entry->IsNormal() || !nextDot) {
         
         eTLD = currDomain;
         break;
-
-      } else if (entry->IsException()) {
+      }
+      if (entry->IsException()) {
         
         eTLD = nextDot + 1;
         break;
       }
     }
-
     if (!nextDot) {
       
       eTLD = currDomain;

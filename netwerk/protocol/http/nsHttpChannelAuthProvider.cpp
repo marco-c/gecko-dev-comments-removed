@@ -622,7 +622,7 @@ nsHttpChannelAuthProvider::GetCredentials(const char     *challenges,
 
                 break;
             }
-            else if (rv == NS_ERROR_IN_PROGRESS) {
+            if (rv == NS_ERROR_IN_PROGRESS) {
                 
                 
                 
@@ -1370,7 +1370,7 @@ NS_IMETHODIMP nsHttpChannelAuthProvider::OnAuthCancelled(nsISupports *aContext,
                 mRemainingChallenges.Truncate();
                 return ContinueOnAuthAvailable(creds);
             }
-            else if (rv == NS_ERROR_IN_PROGRESS) {
+            if (rv == NS_ERROR_IN_PROGRESS) {
                 
                 
                 
