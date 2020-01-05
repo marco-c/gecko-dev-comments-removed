@@ -31,42 +31,12 @@ class TabGroup;
 
 
 
-class Dispatcher
-{
-public:
-  NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
-
-  
-  virtual nsresult Dispatch(const char* aName,
-                            TaskCategory aCategory,
-                            already_AddRefed<nsIRunnable>&& aRunnable) = 0;
-
-  
-  
-  virtual nsIEventTarget* EventTargetFor(TaskCategory aCategory) const = 0;
-
-  
-  
-  AbstractThread* AbstractMainThreadFor(TaskCategory aCategory);
-
-  
-  
-  virtual dom::TabGroup* AsTabGroup() { return nullptr; }
-
-  static nsresult UnlabeledDispatch(const char* aName,
-                                    TaskCategory aCategory,
-                                    already_AddRefed<nsIRunnable>&& aRunnable);
-
-protected:
-  
-  
-  virtual AbstractThread* AbstractMainThreadForImpl(TaskCategory aCategory) = 0;
-};
-
-class ValidatingDispatcher : public Dispatcher
+class ValidatingDispatcher
 {
 public:
   ValidatingDispatcher();
+
+  NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
 
   class MOZ_STACK_CLASS AutoProcessEvent final {
   public:
@@ -88,16 +58,28 @@ public:
 
   bool* GetValidAccessPtr() { return &mAccessValid; }
 
-  nsresult Dispatch(const char* aName,
-                    TaskCategory aCategory,
-                    already_AddRefed<nsIRunnable>&& aRunnable) override;
+  virtual nsresult Dispatch(const char* aName,
+                            TaskCategory aCategory,
+                            already_AddRefed<nsIRunnable>&& aRunnable);
 
-  nsIEventTarget* EventTargetFor(TaskCategory aCategory) const override;
+  virtual nsIEventTarget* EventTargetFor(TaskCategory aCategory) const;
+
+  
+  
+  AbstractThread* AbstractMainThreadFor(TaskCategory aCategory);
+
+  
+  
+  virtual dom::TabGroup* AsTabGroup() { return nullptr; }
+
+  static nsresult UnlabeledDispatch(const char* aName,
+                                    TaskCategory aCategory,
+                                    already_AddRefed<nsIRunnable>&& aRunnable);
 
 protected:
   
   
-  AbstractThread* AbstractMainThreadForImpl(TaskCategory aCategory) override;
+  virtual AbstractThread* AbstractMainThreadForImpl(TaskCategory aCategory);
 
   
   virtual already_AddRefed<nsIEventTarget>
