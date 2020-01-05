@@ -34,7 +34,7 @@ class JSObject2WrappedJSMap
 
 public:
     static JSObject2WrappedJSMap* newMap(int length) {
-        auto* map = new JSObject2WrappedJSMap();
+        JSObject2WrappedJSMap* map = new JSObject2WrappedJSMap();
         if (!map->mTable.init(length)) {
             
             
@@ -592,7 +592,7 @@ class JSObject2JSObjectMap
 
 public:
     static JSObject2JSObjectMap* newMap(int length) {
-        auto* map = new JSObject2JSObjectMap();
+        JSObject2JSObjectMap* map = new JSObject2JSObjectMap();
         if (!map->mTable.init(length)) {
             
             
