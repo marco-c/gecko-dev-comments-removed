@@ -1,0 +1,62 @@
+
+
+
+
+use compositing::*;
+
+use geom::size::Size2D;
+use servo_msg::constellation_msg::{ConstellationChan, ResizedWindowMsg};
+use std::comm::Port;
+
+
+
+
+
+
+pub struct NullCompositor {
+    
+    port: Port<Msg>,
+}
+
+impl NullCompositor {
+
+    fn new(port: Port<Msg>) -> NullCompositor {
+
+        NullCompositor {
+            port: port
+        }
+    }
+
+    pub fn create(port: Port<Msg>, constellation_chan: ConstellationChan) {
+        let compositor = NullCompositor::new(port);
+
+        
+        constellation_chan.send(ResizedWindowMsg(Size2D(640u, 480u)));
+        compositor.handle_message();
+    }
+
+    fn handle_message(&self) {
+        loop {
+            match self.port.recv() {
+                Exit => break,
+
+                GetGraphicsMetadata(chan) => {
+                    chan.send(None);
+                }
+
+                SetIds(_, response_chan, _) => {
+                    response_chan.send(());
+                }
+
+                
+                
+                
+
+                NewLayer(*) | SetLayerPageSize(*) | SetLayerClipRect(*) | DeleteLayer(*) |
+                Paint(*) | InvalidateRect(*) | ChangeReadyState(*) | ChangeRenderState(*)|
+                ScrollFragmentPoint(*) | SetUnRenderedColor(*)
+                    => ()
+            }
+        }
+    }
+}
