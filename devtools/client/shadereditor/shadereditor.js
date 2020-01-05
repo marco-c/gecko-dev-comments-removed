@@ -38,7 +38,7 @@ const EVENTS = {
 };
 XPCOMUtils.defineConstant(this, "EVENTS", EVENTS);
 
-const STRINGS_URI = "devtools/client/locales/shadereditor.properties";
+const STRINGS_URI = "devtools/locale/shadereditor.properties";
 const HIGHLIGHT_TINT = [1, 0, 0.25, 1]; 
 const TYPING_MAX_DELAY = 500; 
 const SHADERS_AUTOGROW_ITEMS = 4;
