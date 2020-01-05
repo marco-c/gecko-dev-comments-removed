@@ -455,7 +455,7 @@ public:
         nsLayoutUtils::GetLastLineBaseline(mWM, mFrame, &mAscent);
 
       if (!found) {
-        mAscent = mFrame->GetLogicalBaseline(mWM);
+        mAscent = mFrame->SynthesizeBaselineFromBorderBox(mWM);
       }
     }
     return mAscent;
@@ -2324,6 +2324,10 @@ nsFlexContainerFrame::GetLogicalBaseline(mozilla::WritingMode aWM) const
   NS_ASSERTION(mBaselineFromLastReflow != NS_INTRINSIC_WIDTH_UNKNOWN,
                "baseline has not been set");
 
+  if (HasAnyStateBits(NS_STATE_FLEX_SYNTHESIZE_BASELINE)) {
+    
+    return nsContainerFrame::GetLogicalBaseline(aWM);
+  }
   return mBaselineFromLastReflow;
 }
 
@@ -4259,6 +4263,14 @@ nsFlexContainerFrame::DoFlexLayout(nsPresContext*           aPresContext,
                     aStruts, aAxisTracker,
                     placeholderKids, lines);
 
+  if (lines.getFirst()->IsEmpty() &&
+      !lines.getFirst()->getNext()) {
+    
+    AddStateBits(NS_STATE_FLEX_SYNTHESIZE_BASELINE);
+  } else {
+    RemoveStateBits(NS_STATE_FLEX_SYNTHESIZE_BASELINE);
+  }
+
   aContentBoxMainSize =
     ResolveFlexContainerMainSize(aReflowInput, aAxisTracker,
                                  aContentBoxMainSize, aAvailableBSizeForContent,
@@ -4519,9 +4531,15 @@ nsFlexContainerFrame::DoFlexLayout(nsPresContext*           aPresContext,
     flexContainerAscent = desiredSizeInFlexWM.BSize(flexWM);
   }
 
-  
-  
-  aDesiredSize.SetBlockStartAscent(flexContainerAscent);
+  if (HasAnyStateBits(NS_STATE_FLEX_SYNTHESIZE_BASELINE)) {
+    
+    
+    aDesiredSize.SetBlockStartAscent(ReflowOutput::ASK_FOR_BASELINE);
+  } else {
+    
+    
+    aDesiredSize.SetBlockStartAscent(flexContainerAscent);
+  }
 
   
   mBaselineFromLastReflow = flexContainerAscent;
