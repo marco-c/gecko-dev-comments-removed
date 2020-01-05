@@ -24,7 +24,6 @@ import android.content.res.Configuration;
 import android.graphics.Matrix;
 import android.graphics.RectF;
 import android.media.AudioManager;
-import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
@@ -170,29 +169,6 @@ class GeckoInputConnection
                 break;
         }
         return true;
-    }
-
-    @Override
-    public boolean performPrivateCommand(final String action, final Bundle data) {
-        switch (action) {
-            case "process-gecko-events":
-                
-
-                final Editable editable = getEditable();
-                if (editable == null) {
-                    return false;
-                }
-
-                
-                
-                
-                
-                
-                editable.removeSpan(null);
-                editable.length();
-                return true;
-        }
-        return false;
     }
 
     @Override

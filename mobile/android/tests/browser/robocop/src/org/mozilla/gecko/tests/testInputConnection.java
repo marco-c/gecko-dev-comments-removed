@@ -191,7 +191,7 @@ public class testInputConnection extends JavascriptBridgeTest {
             assertTextAndSelectionAt("Can set the composing text", ic, "bad", 3);
             getJS().asyncCall("test_reflush_changes");
             
-            processGeckoEvents(ic);
+            processGeckoEvents();
             assertTextAndSelectionAt("Can re-flush text changes", ic, "good", 4);
             ic.setComposingText("done", 1);
             assertTextAndSelectionAt("Can update composition after re-flushing", ic, "done", 4);
@@ -206,7 +206,7 @@ public class testInputConnection extends JavascriptBridgeTest {
             assertTextAndSelectionAt("Can set the composing text", ic, "foobar", 6);
             getJS().asyncCall("test_set_selection");
             
-            processGeckoEvents(ic);
+            processGeckoEvents();
             assertTextAndSelectionAt("Can select after committing", ic, "foobar", 3);
             ic.setComposingText("barfoo", 1);
             assertTextAndSelectionAt("Can compose after selecting", ic, "barfoo", 6);
@@ -244,7 +244,7 @@ public class testInputConnection extends JavascriptBridgeTest {
             assertTextAndSelectionAt("Can clear text", ic, "", 0);
 
             
-            processGeckoEvents(ic);
+            processGeckoEvents();
             processInputConnectionEvents();
         }
     }
@@ -275,21 +275,21 @@ public class testInputConnection extends JavascriptBridgeTest {
             
             
             
-            processGeckoEvents(ic);
+            processGeckoEvents();
             processInputConnectionEvents();
-            processGeckoEvents(ic);
+            processGeckoEvents();
             assertTextAndSelectionAt("Can set composing region (resetting)", ic, "foo", 3);
 
             ic.setComposingText("foobar", 1);
-            processGeckoEvents(ic);
+            processGeckoEvents();
             processInputConnectionEvents();
-            processGeckoEvents(ic);
+            processGeckoEvents();
             assertTextAndSelectionAt("Can change composing text (resetting)", ic, "foobar", 6);
 
             ic.setComposingText("baz", 1);
-            processGeckoEvents(ic);
+            processGeckoEvents();
             processInputConnectionEvents();
-            processGeckoEvents(ic);
+            processGeckoEvents();
             assertTextAndSelectionAt("Can reset composing text (resetting)", ic, "baz", 3);
 
             ic.finishComposingText();
@@ -299,7 +299,7 @@ public class testInputConnection extends JavascriptBridgeTest {
             assertTextAndSelectionAt("Can clear text", ic, "", 0);
 
             
-            processGeckoEvents(ic);
+            processGeckoEvents();
             processInputConnectionEvents();
         }
     }
@@ -329,7 +329,7 @@ public class testInputConnection extends JavascriptBridgeTest {
             assertTextAndSelectionAt("Can handle hiding input", ic, "foo", 3);
 
             
-            processGeckoEvents(ic);
+            processGeckoEvents();
             processInputConnectionEvents();
         }
     }
