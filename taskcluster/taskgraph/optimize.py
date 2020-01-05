@@ -206,29 +206,28 @@ def opt_index_search(task, params, index_path):
 def opt_seta(task, params):
     bbb_task = False
 
-    
-    return False, None
 
-    """
-    # for bbb tasks we need to send in the buildbot buildername
+    
     if task.task.get('provisionerId', '') == 'buildbot-bridge':
         label = task.task.get('payload').get('buildername')
         bbb_task = True
+
+        
+        return True, None
     else:
         label = task.label
 
-    # we would like to return 'False, None' while it's high_value_task
-    # and we wouldn't optimize it. Otherwise, it will return 'True, None'
+    
+    
     if is_low_value_task(label,
                          params.get('project'),
                          params.get('pushlog_id'),
                          params.get('pushdate'),
                          bbb_task):
-        # Always optimize away low-value tasks
+        
         return True, None
     else:
         return False, None
-    """
 
 
 @optimization('files-changed')
