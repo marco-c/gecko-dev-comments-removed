@@ -14,7 +14,7 @@ use font::FontHandleMethods;
 use platform::font::FontHandle;
 use servo_util::cache::HashCache;
 
-use std::rc::{Rc, Weak};
+use std::rc::Rc;
 use std::cell::RefCell;
 use sync::Arc;
 
@@ -55,7 +55,7 @@ pub struct FontContext {
     font_cache_task: FontCacheTask,
 
     
-    layout_font_cache: Vec<Weak<RefCell<Font>>>,
+    layout_font_cache: Vec<Rc<RefCell<Font>>>,
 
     
     
@@ -96,9 +96,7 @@ impl FontContext {
     
     pub fn get_layout_font_group_for_style(&mut self, style: &SpecifiedFontStyle) -> FontGroup {
         
-        self.layout_font_cache.retain(|maybe_font| {
-            maybe_font.upgrade().is_some()
-        });
+        
 
         let mut fonts: Vec<Rc<RefCell<Font>>> = vec!();
 
@@ -107,9 +105,9 @@ impl FontContext {
 
             
             let mut cache_hit = false;
-            for maybe_cached_font in self.layout_font_cache.iter() {
-                let cached_font = maybe_cached_font.upgrade().unwrap();
-                if cached_font.borrow().descriptor == desc {
+            for cached_font in self.layout_font_cache.iter() {
+                if cached_font.borrow().descriptor == desc &&
+                   cached_font.borrow().pt_size == style.pt_size {
                     fonts.push(cached_font.clone());
                     cache_hit = true;
                     break;
@@ -119,7 +117,7 @@ impl FontContext {
             if !cache_hit {
                 let font_template = self.font_cache_task.get_font_template(family.clone(), desc.clone());
                 let layout_font = Rc::new(RefCell::new(self.create_layout_font(font_template, desc.clone(), style.pt_size)));
-                self.layout_font_cache.push(layout_font.downgrade());
+                self.layout_font_cache.push(layout_font.clone());
                 fonts.push(layout_font);
             }
         }
