@@ -157,9 +157,9 @@ public:
   explicit nsAsyncInstantiateEvent(nsObjectLoadingContent* aContent)
   : mContent(aContent) {}
 
-  ~nsAsyncInstantiateEvent() override = default;
+  ~nsAsyncInstantiateEvent() {}
 
-  NS_IMETHOD Run() override;
+  NS_IMETHOD Run();
 
 private:
   nsCOMPtr<nsIObjectLoadingContent> mContent;
@@ -190,9 +190,9 @@ public:
   explicit CheckPluginStopEvent(nsObjectLoadingContent* aContent)
   : mContent(aContent) {}
 
-  ~CheckPluginStopEvent() override = default;
+  ~CheckPluginStopEvent() {}
 
-  NS_IMETHOD Run() override;
+  NS_IMETHOD Run();
 
 private:
   nsCOMPtr<nsIObjectLoadingContent> mContent;
@@ -288,9 +288,9 @@ public:
     MOZ_ASSERT(aTarget && aDocument);
   }
 
-  ~nsSimplePluginEvent() override = default;
+  ~nsSimplePluginEvent() {}
 
-  NS_IMETHOD Run() override;
+  NS_IMETHOD Run();
 
 private:
   nsCOMPtr<nsISupports> mTarget;
@@ -336,9 +336,9 @@ public:
       mSubmittedCrashReport(submittedCrashReport)
   {}
 
-  ~nsPluginCrashedEvent() override = default;
+  ~nsPluginCrashedEvent() {}
 
-  NS_IMETHOD Run() override;
+  NS_IMETHOD Run();
 };
 
 NS_IMETHODIMP
@@ -393,7 +393,7 @@ public:
   NS_IMETHOD Notify(nsITimer* timer) override;
 
 protected:
-  ~nsStopPluginRunnable() override = default;
+  virtual ~nsStopPluginRunnable() {}
 
 private:
   nsCOMPtr<nsITimer> mTimer;
@@ -1381,7 +1381,7 @@ public:
   {}
 
 protected:
-  ~ObjectInterfaceRequestorShim() = default;
+  ~ObjectInterfaceRequestorShim() {}
   nsCOMPtr<nsIObjectLoadingContent> mContent;
 };
 
@@ -3348,14 +3348,6 @@ nsObjectLoadingContent::DefaultFallbackType()
 }
 
 NS_IMETHODIMP
-nsObjectLoadingContent::GetHasRunningPlugin(bool *aHasPlugin)
-{
-  NS_ENSURE_TRUE(nsContentUtils::IsCallerChrome(), NS_ERROR_NOT_AVAILABLE);
-  *aHasPlugin = HasRunningPlugin();
-  return NS_OK;
-}
-
-NS_IMETHODIMP
 nsObjectLoadingContent::GetRunID(uint32_t* aRunID)
 {
   if (NS_WARN_IF(!nsContentUtils::IsCallerChrome())) {
@@ -3888,6 +3880,10 @@ nsObjectLoadingContent::MaybeFireErrorEvent()
 nsObjectLoadingContent::SetupProtoChainRunner::SetupProtoChainRunner(
     nsObjectLoadingContent* aContent)
   : mContent(aContent)
+{
+}
+
+nsObjectLoadingContent::SetupProtoChainRunner::~SetupProtoChainRunner()
 {
 }
 
