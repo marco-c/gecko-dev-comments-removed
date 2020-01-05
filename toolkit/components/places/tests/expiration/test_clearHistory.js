@@ -74,10 +74,6 @@ function add_old_anno(aIdentifier, aName, aValue, aExpirePolicy,
   }
 }
 
-function run_test() {
-  run_next_test();
-}
-
 add_task(function* test_historyClear() {
   
   setInterval(3600); 
@@ -126,7 +122,7 @@ add_task(function* test_historyClear() {
   }
 
   
-  yield PlacesUtils.history.clear();
+  yield PlacesTestUtils.clearHistory();
 
   ["expire_days", "expire_weeks", "expire_months", "expire_session",
    "expire"].forEach(function(aAnno) {

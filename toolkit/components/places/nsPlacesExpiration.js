@@ -497,7 +497,7 @@ function nsPlacesExpiration() {
                      getService(Ci.nsIPrefService).
                      getBranch(PREF_BRANCH);
 
-  this._loadPrefs().then(() => {
+  this._loadPrefsPromise = this._loadPrefs().then(() => {
     
     this._prefBranch.addObserver("", this, true);
 
@@ -540,7 +540,7 @@ nsPlacesExpiration.prototype = {
 
       this._finalizeInternalStatements();
     } else if (aTopic == TOPIC_PREF_CHANGED) {
-      this._loadPrefs().then(() => {
+      this._loadPrefsPromise = this._loadPrefs().then(() => {
         if (aData == PREF_INTERVAL_SECONDS) {
           
           this._newTimer();
@@ -705,7 +705,6 @@ nsPlacesExpiration.prototype = {
   _telemetrySteps: 1,
   handleCompletion: function PEX_handleCompletion(aReason) {
     if (aReason == Ci.mozIStorageStatementCallback.REASON_FINISHED) {
-
       if (this._mostRecentExpiredVisitDays) {
         try {
           Services.telemetry
@@ -804,12 +803,11 @@ nsPlacesExpiration.prototype = {
     
     this._urisLimit = this._prefBranch.getIntPref(PREF_MAX_URIS,
                                                   PREF_MAX_URIS_NOTSET);
-
     if (this._urisLimit < 0) {
       
       
       
-      this._urisLimit = 300000;
+      this._urisLimit = 100000;
 
       
       
@@ -841,19 +839,30 @@ nsPlacesExpiration.prototype = {
       );
 
       
-      let db = yield PlacesUtils.promiseDBConnection();
-      let pageSize = (yield db.execute(`PRAGMA page_size`))[0].getResultByIndex(0);
-      let pageCount = (yield db.execute(`PRAGMA page_count`))[0].getResultByIndex(0);
-      let freelistCount = (yield db.execute(`PRAGMA freelist_count`))[0].getResultByIndex(0);
-      let dbSize = (pageCount - freelistCount) * pageSize;
-      let uriCount = (yield db.execute(`SELECT count(*) FROM moz_places`))[0].getResultByIndex(0);
-      let avgURISize = Math.ceil(dbSize / uriCount);
-      
-      
-      if (avgURISize > (URIENTRY_AVG_SIZE * 3)) {
-        avgURISize = URIENTRY_AVG_SIZE;
+      let db;
+      try {
+        db = yield PlacesUtils.promiseDBConnection();
+      } catch (ex) {
+        
+        
+        
+        
+        
       }
-      this._urisLimit = Math.ceil(optimalDatabaseSize / avgURISize);
+      if (db) {
+        let pageSize = (yield db.execute(`PRAGMA page_size`))[0].getResultByIndex(0);
+        let pageCount = (yield db.execute(`PRAGMA page_count`))[0].getResultByIndex(0);
+        let freelistCount = (yield db.execute(`PRAGMA freelist_count`))[0].getResultByIndex(0);
+        let dbSize = (pageCount - freelistCount) * pageSize;
+        let uriCount = (yield db.execute(`SELECT count(*) FROM moz_places`))[0].getResultByIndex(0);
+        let avgURISize = Math.ceil(dbSize / uriCount);
+        
+        
+        if (avgURISize > (URIENTRY_AVG_SIZE * 3)) {
+          avgURISize = URIENTRY_AVG_SIZE;
+        }
+        this._urisLimit = Math.ceil(optimalDatabaseSize / avgURISize);
+      }
     }
 
     
@@ -914,22 +923,32 @@ nsPlacesExpiration.prototype = {
 
   _expireWithActionAndLimit:
   function PEX__expireWithActionAndLimit(aAction, aLimit) {
-    
-    if (this._inBatchMode)
-      return;
-    
-    if (this._shuttingDown && aAction != ACTION.SHUTDOWN_DIRTY) {
-      return;
-    }
+    Task.spawn(function*() {
+      
+      
+      
+      
+      if (!this._shuttingDown)
+        yield this._loadPrefsPromise;
 
-    let boundStatements = [];
-    for (let queryType in EXPIRATION_QUERIES) {
-      if (EXPIRATION_QUERIES[queryType].actions & aAction)
-        boundStatements.push(this._getBoundStatement(queryType, aLimit, aAction));
-    }
+      
+      if (this._inBatchMode)
+        return;
+      
+      if (this._shuttingDown && aAction != ACTION.SHUTDOWN_DIRTY) {
+        return;
+      }
 
-    
-    this._db.executeAsync(boundStatements, boundStatements.length, this);
+      let boundStatements = [];
+      for (let queryType in EXPIRATION_QUERIES) {
+        if (EXPIRATION_QUERIES[queryType].actions & aAction)
+          boundStatements.push(this._getBoundStatement(queryType, aLimit, aAction));
+      }
+
+
+      
+      this._db.executeAsync(boundStatements, boundStatements.length, this);
+    }.bind(this)).catch(Cu.reportError);
   },
 
   
