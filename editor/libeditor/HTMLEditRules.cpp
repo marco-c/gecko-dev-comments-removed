@@ -2175,12 +2175,24 @@ HTMLEditRules::WillDeleteSelection(Selection* aSelection,
         bool handled = false, canceled = false;
         rv = TryToJoinBlocks(*leftNode->AsContent(), *rightNode->AsContent(),
                              &canceled, &handled);
-        
-        
-        *aHandled = true;
+        *aHandled |= handled;
         *aCancel |= canceled;
         NS_ENSURE_SUCCESS(rv, rv);
       }
+
+      
+      
+      
+      if (!*aHandled && !*aCancel && leafNode != startNode) {
+        int32_t offset =
+          aAction == nsIEditor::ePrevious ?
+            static_cast<int32_t>(leafNode->Length()) : 0;
+        aSelection->Collapse(leafNode, offset);
+        return WillDeleteSelection(aSelection, aAction, aStripWrappers,
+                                   aCancel, aHandled);
+      }
+
+      
       aSelection->Collapse(selPointNode, selPointOffset);
       return NS_OK;
     }
