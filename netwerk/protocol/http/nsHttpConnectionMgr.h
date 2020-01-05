@@ -184,7 +184,6 @@ public:
     
     
     MOZ_MUST_USE nsresult CloseIdleConnection(nsHttpConnection *);
-    MOZ_MUST_USE nsresult RemoveIdleConnection(nsHttpConnection *);
 
     
     
@@ -331,9 +330,7 @@ private:
 
         nsHalfOpenSocket(nsConnectionEntry *ent,
                          nsAHttpTransaction *trans,
-                         uint32_t caps,
-                         bool speculative,
-                         bool isFromPredictor);
+                         uint32_t caps);
 
         MOZ_MUST_USE nsresult SetupStreams(nsISocketTransport **,
                                            nsIAsyncInputStream **,
@@ -351,8 +348,10 @@ private:
         nsAHttpTransaction *Transaction() { return mTransaction; }
 
         bool IsSpeculative() { return mSpeculative; }
+        void SetSpeculative(bool val) { mSpeculative = val; }
 
         bool IsFromPredictor() { return mIsFromPredictor; }
+        void SetIsFromPredictor(bool val) { mIsFromPredictor = val; }
 
         bool Allow1918() { return mAllow1918; }
         void SetAllow1918(bool val) { mAllow1918 = val; }
@@ -360,9 +359,6 @@ private:
         bool HasConnected() { return mHasConnected; }
 
         void PrintDiagnostics(nsCString &log);
-
-        bool Claim();
-        void Unclaim();
     private:
         
         
@@ -409,13 +405,6 @@ private:
 
         bool                           mPrimaryConnectedOK;
         bool                           mBackupConnectedOK;
-
-        
-        
-        
-        
-        bool                           mFreeToUse;
-        nsresult                       mPrimaryStreamStatus;
     };
     friend class nsHalfOpenSocket;
 
