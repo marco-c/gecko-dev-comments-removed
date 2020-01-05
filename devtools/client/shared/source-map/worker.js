@@ -54,236 +54,22 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	let _resolveAndFetch = (() => {
-	  var _ref = _asyncToGenerator(function* (generatedSource) {
-	    
-	    const sourceMapURL = _resolveSourceMapURL(generatedSource);
-	    const fetched = yield networkRequest(sourceMapURL, { loadFromCache: false });
-
-	    
-	    const map = new SourceMapConsumer(fetched.content);
-	    _setSourceMapRoot(map, sourceMapURL, generatedSource);
-	    return map;
-	  });
-
-	  return function _resolveAndFetch(_x) {
-	    return _ref.apply(this, arguments);
-	  };
-	})();
-
-	let getOriginalURLs = (() => {
-	  var _ref2 = _asyncToGenerator(function* (generatedSource) {
-	    const map = yield _fetchSourceMap(generatedSource);
-	    return map && map.sources;
-	  });
-
-	  return function getOriginalURLs(_x2) {
-	    return _ref2.apply(this, arguments);
-	  };
-	})();
-
-	let getGeneratedLocation = (() => {
-	  var _ref3 = _asyncToGenerator(function* (location, originalSource) {
-	    if (!isOriginalId(location.sourceId)) {
-	      return location;
-	    }
-
-	    const generatedSourceId = originalToGeneratedId(location.sourceId);
-	    const map = yield _getSourceMap(generatedSourceId);
-	    if (!map) {
-	      return location;
-	    }
-
-	    const { line, column } = map.generatedPositionFor({
-	      source: originalSource.url,
-	      line: location.line,
-	      column: location.column == null ? 0 : location.column,
-	      bias: SourceMapConsumer.LEAST_UPPER_BOUND
-	    });
-
-	    return {
-	      sourceId: generatedSourceId,
-	      line: line,
-	      
-	      column: column === 0 ? undefined : column
-	    };
-	  });
-
-	  return function getGeneratedLocation(_x3, _x4) {
-	    return _ref3.apply(this, arguments);
-	  };
-	})();
-
-	let getOriginalLocation = (() => {
-	  var _ref4 = _asyncToGenerator(function* (location) {
-	    if (!isGeneratedId(location.sourceId)) {
-	      return location;
-	    }
-
-	    const map = yield _getSourceMap(location.sourceId);
-	    if (!map) {
-	      return location;
-	    }
-
-	    const { source: url, line, column } = map.originalPositionFor({
-	      line: location.line,
-	      column: location.column == null ? Infinity : location.column
-	    });
-
-	    if (url == null) {
-	      
-	      return location;
-	    }
-
-	    return {
-	      sourceId: generatedToOriginalId(location.sourceId, url),
-	      line,
-	      column
-	    };
-	  });
-
-	  return function getOriginalLocation(_x5) {
-	    return _ref4.apply(this, arguments);
-	  };
-	})();
-
-	let getOriginalSourceText = (() => {
-	  var _ref5 = _asyncToGenerator(function* (originalSource) {
-	    assert(isOriginalId(originalSource.id), "Source is not an original source");
-
-	    const generatedSourceId = originalToGeneratedId(originalSource.id);
-	    const map = yield _getSourceMap(generatedSourceId);
-	    if (!map) {
-	      return null;
-	    }
-
-	    let text = map.sourceContentFor(originalSource.url);
-	    if (!text) {
-	      text = (yield networkRequest(originalSource.url, { loadFromCache: false })).content;
-	    }
-
-	    return {
-	      text,
-	      contentType: getContentType(originalSource.url || "")
-	    };
-	  });
-
-	  return function getOriginalSourceText(_x6) {
-	    return _ref5.apply(this, arguments);
-	  };
-	})();
-
-	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
-
-	
-
-
-
-
-	const networkRequest = __webpack_require__(70);
-	const { parse } = __webpack_require__(71);
-	const path = __webpack_require__(78);
-	const { SourceMapConsumer, SourceMapGenerator } = __webpack_require__(79);
-	const assert = __webpack_require__(90);
 	const {
-	  originalToGeneratedId,
-	  generatedToOriginalId,
-	  isGeneratedId,
-	  isOriginalId,
-	  getContentType
-	} = __webpack_require__(65);
-
-	let sourceMapRequests = new Map();
-	let sourceMapsEnabled = false;
-
-	function clearSourceMaps() {
-	  sourceMapRequests.clear();
-	}
-
-	function enableSourceMaps() {
-	  sourceMapsEnabled = true;
-	}
-
-	function _resolveSourceMapURL(source) {
-	  const { url = "", sourceMapURL = "" } = source;
-	  if (path.isURL(sourceMapURL) || url == "") {
-	    
-	    
-	    return sourceMapURL;
-	  } else if (path.isAbsolute(sourceMapURL)) {
-	    
-	    
-	    const { protocol = "", host = "" } = parse(url);
-	    return `${protocol}//${host}${sourceMapURL}`;
-	  }
-	  
-	  
-	  return `${path.dirname(url)}/${sourceMapURL}`;
-	}
+	  getOriginalURLs,
+	  getGeneratedLocation,
+	  getOriginalLocation,
+	  getOriginalSourceText,
+	  applySourceMap,
+	  clearSourceMaps
+	} = __webpack_require__(84);
 
 	
-
-
-
-
-	function _setSourceMapRoot(sourceMap, absSourceMapURL, source) {
-	  
-	  
-	  if (sourceMap.hasContentsOfAllSources()) {
-	    return;
-	  }
-
-	  const base = path.dirname(absSourceMapURL.indexOf("data:") === 0 && source.url ? source.url : absSourceMapURL);
-
-	  if (sourceMap.sourceRoot) {
-	    sourceMap.sourceRoot = path.join(base, sourceMap.sourceRoot);
-	  } else {
-	    sourceMap.sourceRoot = base;
-	  }
-
-	  return sourceMap;
-	}
-
-	function _getSourceMap(generatedSourceId) {
-	  return sourceMapRequests.get(generatedSourceId);
-	}
-
-	function _fetchSourceMap(generatedSource) {
-	  const existingRequest = sourceMapRequests.get(generatedSource.id);
-	  if (existingRequest) {
-	    
-	    
-	    
-	    
-	    
-	    
-	    
-	    return existingRequest;
-	  } else if (!generatedSource.sourceMapURL || !sourceMapsEnabled) {
-	    return Promise.resolve(null);
-	  }
-
-	  
-	  const req = _resolveAndFetch(generatedSource).catch(e => console.error(e));
-	  sourceMapRequests.set(generatedSource.id, req);
-	  return req;
-	}
-
-	function applySourceMap(generatedId, url, code, mappings) {
-	  const generator = new SourceMapGenerator({ file: url });
-	  mappings.forEach(mapping => generator.addMapping(mapping));
-	  generator.setSourceContent(url, code);
-
-	  const map = SourceMapConsumer(generator.toJSON());
-	  sourceMapRequests.set(generatedId, Promise.resolve(map));
-	}
-
+	
 	const publicInterface = {
 	  getOriginalURLs,
 	  getGeneratedLocation,
 	  getOriginalLocation,
 	  getOriginalSourceText,
-	  enableSourceMaps,
 	  applySourceMap,
 	  clearSourceMaps
 	};
@@ -299,74 +85,10 @@ return  (function(modules) {
 	};
 
  },
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
 
  function(module, exports, __webpack_require__) {
 
-	const md5 = __webpack_require__(66);
+	const md5 = __webpack_require__(2);
 
 	function originalToGeneratedId(originalId) {
 	  const match = originalId.match(/(.*)\/originalSource/);
@@ -441,38 +163,12 @@ return  (function(modules) {
 	  return "text/plain";
 	}
 
-	let msgId = 1;
-	function workerTask(worker, method) {
-	  return function (...args) {
-	    return new Promise((resolve, reject) => {
-	      const id = msgId++;
-	      worker.postMessage({ id, method, args });
-
-	      const listener = ({ data: result }) => {
-	        if (result.id !== id) {
-	          return;
-	        }
-
-	        worker.removeEventListener("message", listener);
-	        if (result.error) {
-	          reject(result.error);
-	        } else {
-	          resolve(result.response);
-	        }
-	      };
-
-	      worker.addEventListener("message", listener);
-	    });
-	  };
-	}
-
 	module.exports = {
 	  originalToGeneratedId,
 	  generatedToOriginalId,
 	  isOriginalId,
 	  isGeneratedId,
-	  getContentType,
-	  workerTask
+	  getContentType
 	};
 
  },
@@ -480,10 +176,10 @@ return  (function(modules) {
  function(module, exports, __webpack_require__) {
 
 	(function(){
-	  var crypt = __webpack_require__(67),
-	      utf8 = __webpack_require__(68).utf8,
-	      isBuffer = __webpack_require__(69),
-	      bin = __webpack_require__(68).bin,
+	  var crypt = __webpack_require__(3),
+	      utf8 = __webpack_require__(4).utf8,
+	      isBuffer = __webpack_require__(5),
+	      bin = __webpack_require__(4).bin,
 
 	  
 	  md5 = function (message, options) {
@@ -810,6 +506,317 @@ return  (function(modules) {
 
 
  },
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+
+ function(module, exports, __webpack_require__) {
+
+	let _resolveAndFetch = (() => {
+	  var _ref = _asyncToGenerator(function* (generatedSource) {
+	    
+	    const sourceMapURL = _resolveSourceMapURL(generatedSource);
+	    const fetched = yield networkRequest(sourceMapURL, { loadFromCache: false });
+
+	    
+	    const map = new SourceMapConsumer(fetched.content);
+	    _setSourceMapRoot(map, sourceMapURL, generatedSource);
+	    return map;
+	  });
+
+	  return function _resolveAndFetch(_x) {
+	    return _ref.apply(this, arguments);
+	  };
+	})();
+
+	let getOriginalURLs = (() => {
+	  var _ref2 = _asyncToGenerator(function* (generatedSource) {
+	    const map = yield _fetchSourceMap(generatedSource);
+	    return map && map.sources;
+	  });
+
+	  return function getOriginalURLs(_x2) {
+	    return _ref2.apply(this, arguments);
+	  };
+	})();
+
+	let getGeneratedLocation = (() => {
+	  var _ref3 = _asyncToGenerator(function* (location, originalSource) {
+	    if (!isOriginalId(location.sourceId)) {
+	      return location;
+	    }
+
+	    const generatedSourceId = originalToGeneratedId(location.sourceId);
+	    const map = yield _getSourceMap(generatedSourceId);
+	    if (!map) {
+	      return location;
+	    }
+
+	    const { line, column } = map.generatedPositionFor({
+	      source: originalSource.url,
+	      line: location.line,
+	      column: location.column == null ? 0 : location.column,
+	      bias: SourceMapConsumer.LEAST_UPPER_BOUND
+	    });
+
+	    return {
+	      sourceId: generatedSourceId,
+	      line: line,
+	      
+	      column: column === 0 ? undefined : column
+	    };
+	  });
+
+	  return function getGeneratedLocation(_x3, _x4) {
+	    return _ref3.apply(this, arguments);
+	  };
+	})();
+
+	let getOriginalLocation = (() => {
+	  var _ref4 = _asyncToGenerator(function* (location) {
+	    if (!isGeneratedId(location.sourceId)) {
+	      return location;
+	    }
+
+	    const map = yield _getSourceMap(location.sourceId);
+	    if (!map) {
+	      return location;
+	    }
+
+	    const { source: url, line, column } = map.originalPositionFor({
+	      line: location.line,
+	      column: location.column == null ? Infinity : location.column
+	    });
+
+	    if (url == null) {
+	      
+	      return location;
+	    }
+
+	    return {
+	      sourceId: generatedToOriginalId(location.sourceId, url),
+	      line,
+	      column
+	    };
+	  });
+
+	  return function getOriginalLocation(_x5) {
+	    return _ref4.apply(this, arguments);
+	  };
+	})();
+
+	let getOriginalSourceText = (() => {
+	  var _ref5 = _asyncToGenerator(function* (originalSource) {
+	    assert(isOriginalId(originalSource.id), "Source is not an original source");
+
+	    const generatedSourceId = originalToGeneratedId(originalSource.id);
+	    const map = yield _getSourceMap(generatedSourceId);
+	    if (!map) {
+	      return null;
+	    }
+
+	    let text = map.sourceContentFor(originalSource.url);
+	    if (!text) {
+	      text = (yield networkRequest(originalSource.url, { loadFromCache: false })).content;
+	    }
+
+	    return {
+	      text,
+	      contentType: getContentType(originalSource.url || "")
+	    };
+	  });
+
+	  return function getOriginalSourceText(_x6) {
+	    return _ref5.apply(this, arguments);
+	  };
+	})();
+
+	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
+
+	
+
+
+
+
+	const networkRequest = __webpack_require__(85);
+
+	const { parse } = __webpack_require__(86);
+	const path = __webpack_require__(93);
+	const { SourceMapConsumer, SourceMapGenerator } = __webpack_require__(94);
+	const assert = __webpack_require__(105);
+	const {
+	  originalToGeneratedId,
+	  generatedToOriginalId,
+	  isGeneratedId,
+	  isOriginalId,
+	  getContentType
+	} = __webpack_require__(1);
+
+	let sourceMapRequests = new Map();
+
+	function clearSourceMaps() {
+	  sourceMapRequests.clear();
+	}
+
+	function _resolveSourceMapURL(source) {
+	  const { url = "", sourceMapURL = "" } = source;
+	  if (path.isURL(sourceMapURL) || url == "") {
+	    
+	    
+	    return sourceMapURL;
+	  } else if (path.isAbsolute(sourceMapURL)) {
+	    
+	    
+	    const { protocol = "", host = "" } = parse(url);
+	    return `${protocol}//${host}${sourceMapURL}`;
+	  }
+	  
+	  
+	  return `${path.dirname(url)}/${sourceMapURL}`;
+	}
+
+	
+
+
+
+
+	function _setSourceMapRoot(sourceMap, absSourceMapURL, source) {
+	  
+	  
+	  if (sourceMap.hasContentsOfAllSources()) {
+	    return;
+	  }
+
+	  const base = path.dirname(absSourceMapURL.indexOf("data:") === 0 && source.url ? source.url : absSourceMapURL);
+
+	  if (sourceMap.sourceRoot) {
+	    sourceMap.sourceRoot = path.join(base, sourceMap.sourceRoot);
+	  } else {
+	    sourceMap.sourceRoot = base;
+	  }
+
+	  return sourceMap;
+	}
+
+	function _getSourceMap(generatedSourceId) {
+	  return sourceMapRequests.get(generatedSourceId);
+	}
+
+	function _fetchSourceMap(generatedSource) {
+	  const existingRequest = sourceMapRequests.get(generatedSource.id);
+	  if (existingRequest) {
+	    
+	    
+	    
+	    
+	    
+	    
+	    
+	    return existingRequest;
+	  } else if (!generatedSource.sourceMapURL) {
+	    return Promise.resolve(null);
+	  }
+
+	  
+	  const req = _resolveAndFetch(generatedSource).catch(e => console.error(e));
+	  sourceMapRequests.set(generatedSource.id, req);
+	  return req;
+	}
+
+	function applySourceMap(generatedId, url, code, mappings) {
+	  const generator = new SourceMapGenerator({ file: url });
+	  mappings.forEach(mapping => generator.addMapping(mapping));
+	  generator.setSourceContent(url, code);
+
+	  const map = SourceMapConsumer(generator.toJSON());
+	  sourceMapRequests.set(generatedId, Promise.resolve(map));
+	}
+
+	module.exports = {
+	  getOriginalURLs,
+	  getGeneratedLocation,
+	  getOriginalLocation,
+	  getOriginalSourceText,
+	  applySourceMap,
+	  clearSourceMaps
+	};
+
+ },
 
  function(module, exports) {
 
@@ -843,7 +850,6 @@ return  (function(modules) {
 
 	module.exports = networkRequest;
 
-
  },
 
  function(module, exports, __webpack_require__) {
@@ -871,8 +877,8 @@ return  (function(modules) {
 
 	'use strict';
 
-	var punycode = __webpack_require__(72);
-	var util = __webpack_require__(74);
+	var punycode = __webpack_require__(87);
+	var util = __webpack_require__(89);
 
 	exports.parse = urlParse;
 	exports.resolve = urlResolve;
@@ -947,7 +953,7 @@ return  (function(modules) {
 	      'gopher:': true,
 	      'file:': true
 	    },
-	    querystring = __webpack_require__(75);
+	    querystring = __webpack_require__(90);
 
 	function urlParse(url, parseQueryString, slashesDenoteHost) {
 	  if (url && util.isObject(url) && url instanceof Url) return url;
@@ -2115,7 +2121,7 @@ return  (function(modules) {
 
 	}(this));
 
-	}.call(exports, __webpack_require__(73)(module), (function() { return this; }())))
+	}.call(exports, __webpack_require__(88)(module), (function() { return this; }())))
 
  },
 
@@ -2161,8 +2167,8 @@ return  (function(modules) {
 
 	'use strict';
 
-	exports.decode = exports.parse = __webpack_require__(76);
-	exports.encode = exports.stringify = __webpack_require__(77);
+	exports.decode = exports.parse = __webpack_require__(91);
+	exports.encode = exports.stringify = __webpack_require__(92);
 
 
  },
@@ -2359,9 +2365,9 @@ return  (function(modules) {
 
 
 
-	exports.SourceMapGenerator = __webpack_require__(80).SourceMapGenerator;
-	exports.SourceMapConsumer = __webpack_require__(86).SourceMapConsumer;
-	exports.SourceNode = __webpack_require__(89).SourceNode;
+	exports.SourceMapGenerator = __webpack_require__(95).SourceMapGenerator;
+	exports.SourceMapConsumer = __webpack_require__(101).SourceMapConsumer;
+	exports.SourceNode = __webpack_require__(104).SourceNode;
 
 
  },
@@ -2375,10 +2381,10 @@ return  (function(modules) {
 
 
 
-	var base64VLQ = __webpack_require__(81);
-	var util = __webpack_require__(83);
-	var ArraySet = __webpack_require__(84).ArraySet;
-	var MappingList = __webpack_require__(85).MappingList;
+	var base64VLQ = __webpack_require__(96);
+	var util = __webpack_require__(98);
+	var ArraySet = __webpack_require__(99).ArraySet;
+	var MappingList = __webpack_require__(100).MappingList;
 
 	
 
@@ -2815,7 +2821,7 @@ return  (function(modules) {
 
 
 
-	var base64 = __webpack_require__(82);
+	var base64 = __webpack_require__(97);
 
 	
 	
@@ -3427,7 +3433,7 @@ return  (function(modules) {
 
 
 
-	var util = __webpack_require__(83);
+	var util = __webpack_require__(98);
 	var has = Object.prototype.hasOwnProperty;
 
 	
@@ -3537,7 +3543,7 @@ return  (function(modules) {
 
 
 
-	var util = __webpack_require__(83);
+	var util = __webpack_require__(98);
 
 	
 
@@ -3622,11 +3628,11 @@ return  (function(modules) {
 
 
 
-	var util = __webpack_require__(83);
-	var binarySearch = __webpack_require__(87);
-	var ArraySet = __webpack_require__(84).ArraySet;
-	var base64VLQ = __webpack_require__(81);
-	var quickSort = __webpack_require__(88).quickSort;
+	var util = __webpack_require__(98);
+	var binarySearch = __webpack_require__(102);
+	var ArraySet = __webpack_require__(99).ArraySet;
+	var base64VLQ = __webpack_require__(96);
+	var quickSort = __webpack_require__(103).quickSort;
 
 	function SourceMapConsumer(aSourceMap) {
 	  var sourceMap = aSourceMap;
@@ -4947,8 +4953,8 @@ return  (function(modules) {
 
 
 
-	var SourceMapGenerator = __webpack_require__(80).SourceMapGenerator;
-	var util = __webpack_require__(83);
+	var SourceMapGenerator = __webpack_require__(95).SourceMapGenerator;
+	var util = __webpack_require__(98);
 
 	
 	
