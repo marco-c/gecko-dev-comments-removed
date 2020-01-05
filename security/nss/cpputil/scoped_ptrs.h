@@ -2,6 +2,8 @@
 
 
 
+
+
 #ifndef scoped_ptrs_h__
 #define scoped_ptrs_h__
 
@@ -15,17 +17,17 @@ struct ScopedDelete {
   void operator()(CERTCertificateList* list) {
     CERT_DestroyCertificateList(list);
   }
+  void operator()(CERTCertList* list) { CERT_DestroyCertList(list); }
   void operator()(CERTSubjectPublicKeyInfo* spki) {
     SECKEY_DestroySubjectPublicKeyInfo(spki);
   }
   void operator()(PK11SlotInfo* slot) { PK11_FreeSlot(slot); }
   void operator()(PK11SymKey* key) { PK11_FreeSymKey(key); }
+  void operator()(PRFileDesc* fd) { PR_Close(fd); }
   void operator()(SECAlgorithmID* id) { SECOID_DestroyAlgorithmID(id, true); }
   void operator()(SECItem* item) { SECITEM_FreeItem(item, true); }
   void operator()(SECKEYPublicKey* key) { SECKEY_DestroyPublicKey(key); }
   void operator()(SECKEYPrivateKey* key) { SECKEY_DestroyPrivateKey(key); }
-
-  void operator()(CERTCertList* list) { CERT_DestroyCertList(list); }
 };
 
 template <class T>
@@ -42,16 +44,16 @@ struct ScopedMaybeDelete {
 
 SCOPED(CERTCertificate);
 SCOPED(CERTCertificateList);
+SCOPED(CERTCertList);
 SCOPED(CERTSubjectPublicKeyInfo);
 SCOPED(PK11SlotInfo);
 SCOPED(PK11SymKey);
+SCOPED(PRFileDesc);
 SCOPED(SECAlgorithmID);
 SCOPED(SECItem);
 SCOPED(SECKEYPublicKey);
 SCOPED(SECKEYPrivateKey);
 
-SCOPED(CERTCertList);
-
 #undef SCOPED
 
-#endif
+#endif  
