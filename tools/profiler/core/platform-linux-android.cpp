@@ -145,7 +145,13 @@ static void* setup_atfork() {
 }
 #endif 
 
+
+
 static ThreadInfo* gCurrentThreadInfo;
+static int64_t gRssMemory;
+static int64_t gUssMemory;
+
+
 static sem_t gSignalHandlingDone;
 
 static void SetSampleContext(TickSample* sample, void* context)
@@ -185,8 +191,8 @@ SigprofHandler(int signal, siginfo_t* info, void* context)
   SetSampleContext(sample, context);
   sample->threadInfo = gCurrentThreadInfo;
   sample->timestamp = mozilla::TimeStamp::Now();
-  sample->rssMemory = sample->threadInfo->mRssMemory;
-  sample->ussMemory = sample->threadInfo->mUssMemory;
+  sample->rssMemory = gRssMemory;
+  sample->ussMemory = gUssMemory;
 
   Tick(sample);
 
@@ -298,11 +304,11 @@ SigprofSender(void* aArg)
         
         
         if (isFirstProfiledThread && gProfileMemory) {
-          info->mRssMemory = nsMemoryReporterManager::ResidentFast();
-          info->mUssMemory = nsMemoryReporterManager::ResidentUnique();
+          gRssMemory = nsMemoryReporterManager::ResidentFast();
+          gUssMemory = nsMemoryReporterManager::ResidentUnique();
         } else {
-          info->mRssMemory = 0;
-          info->mUssMemory = 0;
+          gRssMemory = 0;
+          gUssMemory = 0;
         }
 
         
@@ -321,6 +327,9 @@ SigprofSender(void* aArg)
         sem_wait(&gSignalHandlingDone);
 
         gCurrentThreadInfo = nullptr;
+        gRssMemory = 0;
+        gUssMemory = 0;
+
         isFirstProfiledThread = false;
       }
 #if defined(USE_LUL_STACKWALK)
@@ -365,6 +374,8 @@ PlatformStart()
 
   
   gCurrentThreadInfo = nullptr;
+  gRssMemory = 0;
+  gUssMemory = 0;
   if (sem_init(&gSignalHandlingDone,  0,  0) != 0) {
     LOG("Error initializing semaphore");
     return;

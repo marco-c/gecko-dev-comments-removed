@@ -106,15 +106,6 @@ private:
 
   mozilla::UniquePtr<mozilla::Mutex> mMutex;
   ThreadResponsiveness mRespInfo;
-
-#if defined(GP_OS_linux) || defined(GP_OS_android)
-  
-  
-  
-public:
-  int64_t mRssMemory;
-  int64_t mUssMemory;
-#endif
 };
 
 #endif
