@@ -598,6 +598,12 @@ public class BrowserApp extends GeckoApp
         final SafeIntent intent = new SafeIntent(getIntent());
         final boolean isInAutomation = IntentUtils.getIsInAutomationFromEnvironment(intent);
 
+        if (!isInAutomation && AppConstants.MOZ_ANDROID_DOWNLOAD_CONTENT_SERVICE) {
+            
+            
+            DownloadContentService.startStudy(this);
+        }
+
         
         
         
@@ -1770,7 +1776,8 @@ public class BrowserApp extends GeckoApp
                     GeckoPreferences.broadcastStumblerPref(BrowserApp.this);
                 }
 
-                if (AppConstants.MOZ_ANDROID_DOWNLOAD_CONTENT_SERVICE) {
+                if (AppConstants.MOZ_ANDROID_DOWNLOAD_CONTENT_SERVICE &&
+                        !IntentUtils.getIsInAutomationFromEnvironment(new SafeIntent(getIntent()))) {
                     
                     DownloadContentService.startSync(this);
                     DownloadContentService.startVerification(this);
