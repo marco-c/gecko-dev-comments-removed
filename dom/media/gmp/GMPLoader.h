@@ -52,58 +52,44 @@ public:
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class GMPLoader {
 public:
-  virtual ~GMPLoader() {}
+  GMPLoader();
 
   
   
   
   
-  virtual bool Load(const char* aUTF8LibPath,
-                    uint32_t aLibPathLen,
-                    char* aOriginSalt,
-                    uint32_t aOriginSaltLen,
-                    const GMPPlatformAPI* aPlatformAPI,
-                    GMPAdapter* aAdapter = nullptr) = 0;
+  bool Load(const char* aUTF8LibPath,
+            uint32_t aLibPathLen,
+            char* aOriginSalt,
+            uint32_t aOriginSaltLen,
+            const GMPPlatformAPI* aPlatformAPI,
+            GMPAdapter* aAdapter = nullptr);
 
   
-  virtual GMPErr GetAPI(const char* aAPIName,
-                        void* aHostAPI,
-                        void** aPluginAPI,
-                        uint32_t aDecryptorId) = 0;
+  GMPErr GetAPI(const char* aAPIName,
+                void* aHostAPI,
+                void** aPluginAPI,
+                uint32_t aDecryptorId);
 
   
   
-  virtual void Shutdown() = 0;
+  void Shutdown();
 
 #if defined(XP_MACOSX) && defined(MOZ_GMP_SANDBOX)
   
   
   
-  virtual void SetSandboxInfo(MacSandboxInfo* aSandboxInfo) = 0;
+  void SetSandboxInfo(MacSandboxInfo* aSandboxInfo);
 #endif
+
+  bool CanSandbox() const;
+
+private:
+  UniquePtr<SandboxStarter> mSandboxStarter;
+  UniquePtr<GMPAdapter> mAdapter;
 };
-
-
-
-UniquePtr<GMPLoader> CreateGMPLoader();
 
 } 
 } 
