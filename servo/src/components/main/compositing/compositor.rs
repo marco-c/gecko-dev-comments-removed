@@ -43,76 +43,76 @@ use time::precise_time_s;
 
 pub struct IOCompositor {
     
-    pub window: Rc<Window>,
+    window: Rc<Window>,
 
     
-    pub port: Receiver<Msg>,
+    port: Receiver<Msg>,
 
     
-    pub context: RenderContext,
+    context: RenderContext,
 
     
-    pub root_layer: Rc<ContainerLayer>,
+    root_layer: Rc<ContainerLayer>,
 
     
-    pub root_pipeline: Option<CompositionPipeline>,
+    root_pipeline: Option<CompositionPipeline>,
 
     
-    pub scene: Scene,
+    scene: Scene,
 
     
-    pub window_size: Size2D<uint>,
+    window_size: Size2D<uint>,
 
     
-    pub graphics_context: NativeCompositingGraphicsContext,
+    graphics_context: NativeCompositingGraphicsContext,
 
     
-    pub composite_ready: bool,
+    composite_ready: bool,
 
     
-    pub shutting_down: bool,
+    shutting_down: bool,
 
     
-    pub done: bool,
+    done: bool,
 
     
-    pub recomposite: bool,
+    recomposite: bool,
 
     
-    pub world_zoom: f32,
+    world_zoom: f32,
 
     
-    pub zoom_action: bool,
+    zoom_action: bool,
 
     
-    pub zoom_time: f64,
+    zoom_time: f64,
 
     
-    pub ready_state: ReadyState,
+    ready_state: ReadyState,
 
     
     
     
-    pub load_complete: bool,
+    load_complete: bool,
 
     
-    pub opts: Opts,
+    opts: Opts,
 
     
-    pub compositor_layer: Option<CompositorLayer>,
+    compositor_layer: Option<CompositorLayer>,
 
     
-    pub constellation_chan: ConstellationChan,
+    constellation_chan: ConstellationChan,
 
     
-    pub profiler_chan: ProfilerChan,
+    profiler_chan: ProfilerChan,
 
     
-    pub fragment_point: Option<Point2D<f32>>
+    fragment_point: Option<Point2D<f32>>
 }
 
 impl IOCompositor {
-    pub fn new(app: &Application,
+    fn new(app: &Application,
                opts: Opts,
                port: Receiver<Msg>,
                constellation_chan: ConstellationChan,
