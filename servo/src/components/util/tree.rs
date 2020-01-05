@@ -152,7 +152,8 @@ impl<NR:TreeNodeRef<N>,N:TreeNode<NR>> TreeUtils for NR {
         }
 
         for self.each_child |kid| {
-            if !kid.traverse_preorder(callback) {
+            
+            if !kid.traverse_preorder(|a| callback(a)) {
                 return false;
             }
         }
@@ -162,7 +163,8 @@ impl<NR:TreeNodeRef<N>,N:TreeNode<NR>> TreeUtils for NR {
 
     fn traverse_postorder(&self, callback: &fn(NR) -> bool) -> bool {
         for self.each_child |kid| {
-            if !kid.traverse_postorder(callback) {
+            
+            if !kid.traverse_postorder(|a| callback(a)) {
                 return false;
             }
         }

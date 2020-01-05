@@ -4,16 +4,8 @@
 
 
 
-use layout::display_list_builder::{ExtraDisplayListData, ToGfxColor};
-use layout::box::RenderBox;
-
-use std::cell::Cell;
 use std::num::Zero;
-use geom::point::Point2D;
-use geom::rect::Rect;
-use geom::size::Size2D;
 use geom::side_offsets::SideOffsets2D;
-use gfx::display_list::{BaseDisplayItem, BorderDisplayItem, BorderDisplayItemClass, DisplayList};
 use gfx::geometry::Au;
 use newcss::complete::CompleteStyle;
 use newcss::units::{Em, Pt, Px};
@@ -150,62 +142,3 @@ impl BoxModel {
         }
     }
 }
-
-
-
-
-
-impl RenderBox {
-    
-    
-    pub fn paint_borders_if_applicable<E:ExtraDisplayListData>(&self,
-                                                               list: &Cell<DisplayList<E>>,
-                                                               abs_bounds: &Rect<Au>) {
-        
-        let border = do self.with_base |base| {
-            base.model.border
-        };
-        if border.is_zero() {
-            return
-        }
-
-        
-        
-        
-        let borders = [ border.top, border.right, border.bottom ];
-        if borders.iter().all(|a| *a == border.left) {
-            let border_width = border.top;
-            let bounds = Rect {
-                origin: Point2D {
-                    x: abs_bounds.origin.x + border_width.scale_by(0.5),
-                    y: abs_bounds.origin.y + border_width.scale_by(0.5),
-                },
-                size: Size2D {
-                    width: abs_bounds.size.width - border_width,
-                    height: abs_bounds.size.height - border_width
-                }
-            };
-
-            let top_color = self.style().border_top_color();
-            let color = top_color.to_gfx_color(); 
-
-            
-            do list.with_mut_ref |list| {
-                let border_display_item = ~BorderDisplayItem {
-                    base: BaseDisplayItem {
-                        bounds: bounds,
-                        extra: ExtraDisplayListData::new(*self),
-                    },
-                    width: border_width,
-                    color: color,
-                };
-
-                list.append_item(BorderDisplayItemClass(border_display_item))
-            }
-        } else {
-            warn!("ignoring unimplemented border widths");
-        }
-    }
-
-}
-

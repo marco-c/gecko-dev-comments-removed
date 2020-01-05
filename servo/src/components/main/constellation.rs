@@ -205,7 +205,7 @@ impl Constellation {
             }
 
             ExitMsg(sender) => {
-                for self.pipelines.each |_, pipeline| {
+                for self.pipelines.iter().advance |(_, pipeline)| {
                     pipeline.exit();
                 }
                 self.image_cache_task.exit();
@@ -240,7 +240,7 @@ impl Constellation {
         
         match pipeline.navigation_type.get() {
             constellation_msg::Load => {
-                let evicted = self.navigation_context.navigate(id);
+                let _evicted = self.navigation_context.navigate(id);
                 
 
 

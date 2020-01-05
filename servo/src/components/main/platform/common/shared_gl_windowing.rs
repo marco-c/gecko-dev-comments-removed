@@ -48,9 +48,6 @@ impl WindowingMethods<Application> for Window {
     }
 
     
-    pub fn set_composite_callback(&mut self, _: CompositeCallback) {}
-
-    
     pub fn set_resize_callback(&mut self, _: ResizeCallback) {}
 
     

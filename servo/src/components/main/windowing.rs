@@ -20,9 +20,6 @@ pub enum WindowNavigateMsg {
 }
 
 
-pub type CompositeCallback = @fn();
-
-
 pub type ResizeCallback = @fn(uint, uint);
 
 
@@ -54,8 +51,6 @@ pub trait WindowMethods<A> {
     pub fn present(&mut self);
 
     
-    pub fn set_composite_callback(&mut self, new_composite_callback: CompositeCallback);
-    
     pub fn set_resize_callback(&mut self, new_resize_callback: ResizeCallback);
     
     pub fn set_load_url_callback(&mut self, new_load_url_callback: LoadUrlCallback);
@@ -70,8 +65,6 @@ pub trait WindowMethods<A> {
 
     
     pub fn check_loop(@mut self);
-    
-    pub fn set_needs_display(@mut self);
     
     pub fn set_ready_state(@mut self, ready_state: ReadyState);
     

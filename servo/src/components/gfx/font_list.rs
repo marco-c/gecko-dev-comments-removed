@@ -126,7 +126,7 @@ impl FontFamily {
         
         
         let this: &mut FontFamily = self; 
-        for this.entries.each |entry| {
+        for this.entries.iter().advance |entry| {
             if (style.weight.is_bold() == entry.is_bold()) && 
                (style.italic == entry.is_italic()) {
 
