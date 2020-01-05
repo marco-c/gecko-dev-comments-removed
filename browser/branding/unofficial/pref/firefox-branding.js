@@ -30,4 +30,4 @@ pref("app.update.badgeWaitTime", 0);
 
 
 
-pref("devtools.selfxss.count", 0);
+pref("devtools.selfxss.count", 5);
