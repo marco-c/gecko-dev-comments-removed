@@ -61,7 +61,7 @@ pub enum ConstellationControlMsg {
     
     SendEvent(PipelineId, CompositorEvent),
     
-    ReflowComplete(PipelineId, uint),
+    ReflowComplete(PipelineId, u32),
     
     Viewport(PipelineId, Rect<f32>),
     

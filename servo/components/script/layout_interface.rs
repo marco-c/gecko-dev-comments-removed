@@ -115,7 +115,7 @@ pub struct Reflow {
     
     pub script_join_chan: Sender<()>,
     
-    pub id: uint,
+    pub id: u32,
     
     pub query_type: ReflowQueryType,
     
