@@ -65,7 +65,8 @@ private:
   
   
   
-  nsresult CreateDecoder(DecoderDoctorDiagnostics* aDiagnostics);
+  nsresult CreateDecoder(const VideoInfo& aConfig,
+                         DecoderDoctorDiagnostics* aDiagnostics);
   nsresult CreateDecoderAndInit(MediaRawData* aSample);
   nsresult CheckForSPSChange(MediaRawData* aSample);
   void UpdateConfigFromExtraData(MediaByteBuffer* aExtraData);
@@ -96,8 +97,6 @@ private:
   Maybe<bool> mNeedAVCC;
   nsresult mLastError;
   bool mNeedKeyframe = true;
-  
-  bool mUseOriginalConfig = true;
   const TrackInfo::TrackType mType;
   MediaEventProducer<TrackInfo::TrackType>* const mOnWaitingForKeyEvent;
   const CreateDecoderParams::OptionSet mDecoderOptions;
