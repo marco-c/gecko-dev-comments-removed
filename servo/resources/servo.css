@@ -132,6 +132,10 @@ textarea {
   -servo-overflow-clip-box: content-box;
 }
 
+textarea {
+  overflow: auto;
+}
+
 
 details {
   display: block;
