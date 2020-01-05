@@ -182,9 +182,10 @@ impl CORSRequest {
         let error = CORSResponse::new_error();
         let mut cors_response = CORSResponse::new();
 
-        let mut preflight = self.clone(); 
-        preflight.method = Method::Options; 
-        preflight.headers = Headers::new(); 
+        
+        let mut preflight = self.clone();
+        preflight.method = Method::Options;
+        preflight.headers = Headers::new();
         
         preflight.headers.set(AccessControlRequestMethod(self.method.clone()));
 
@@ -197,10 +198,6 @@ impl CORSRequest {
         preflight.headers
                  .set(AccessControlRequestHeaders(header_names.into_iter().map(UniCase).collect()));
 
-        
-        
-
-        
         let preflight_request = Request::new(preflight.method, preflight.destination);
         let mut req = match preflight_request {
             Ok(req) => req,
@@ -214,11 +211,13 @@ impl CORSRequest {
             Ok(s) => s,
             Err(_) => return error,
         };
+        
         let response = match stream.send() {
             Ok(r) => r,
             Err(_) => return error,
         };
 
+        
         
         match response.status.class() {
             Success => {}
@@ -272,6 +271,7 @@ impl CORSRequest {
                                                  HeaderOrMethod::MethodData(m.clone())));
             }
         }
+        
         for h in response.headers.iter() {
             let cache_match = cache.match_header_and_update(self, h.name(), max_age);
             if !cache_match {
@@ -282,6 +282,7 @@ impl CORSRequest {
                                                  HeaderOrMethod::HeaderData(h.to_string())));
             }
         }
+        
         cors_response
     }
 }
