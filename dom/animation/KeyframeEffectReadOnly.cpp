@@ -430,6 +430,12 @@ KeyframeEffectReadOnly::EnsureBaseStylesForCompositor(
       continue;
     }
 
+    
+    
+    if (NeedsBaseStyle(property.mProperty)) {
+      continue;
+    }
+
     for (const AnimationPropertySegment& segment : property.mSegments) {
       if (segment.mFromComposite == dom::CompositeOperation::Replace &&
           segment.mToComposite == dom::CompositeOperation::Replace) {
@@ -476,15 +482,12 @@ KeyframeEffectReadOnly::ComposeStyle(
     
     
     
+    
 
     
     
     
-    
-    
-    if (computedTiming.mPhase == ComputedTiming::AnimationPhase::Before) {
-      EnsureBaseStylesForCompositor(aPropertiesToSkip);
-    }
+    EnsureBaseStylesForCompositor(aPropertiesToSkip);
     return;
   }
 
@@ -591,6 +594,14 @@ KeyframeEffectReadOnly::ComposeStyle(
       aStyleRule->AddValue(prop.mProperty, Move(toValue));
     }
   }
+
+  
+  
+  
+  
+  
+  
+  EnsureBaseStylesForCompositor(aPropertiesToSkip);
 }
 
 bool
