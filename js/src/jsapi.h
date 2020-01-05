@@ -1593,10 +1593,6 @@ extern JS_PUBLIC_API(char*)
 JS_strdup(JSContext* cx, const char* s);
 
 
-extern JS_PUBLIC_API(char*)
-JS_strdup(JSRuntime* rt, const char* s);
-
-
 
 
 
