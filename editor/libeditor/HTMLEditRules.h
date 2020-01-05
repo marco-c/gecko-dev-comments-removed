@@ -28,6 +28,7 @@ class nsRange;
 
 namespace mozilla {
 
+class EditActionResult;
 class HTMLEditor;
 class RulesInfo;
 class TextEditor;
@@ -181,12 +182,8 @@ protected:
 
 
 
-
-
-
-
-  nsresult TryToJoinBlocks(nsIContent& aLeftNode, nsIContent& aRightNode,
-                           bool* aCanceled, bool* aHandled);
+  EditActionResult TryToJoinBlocks(nsIContent& aLeftNode,
+                                   nsIContent& aRightNode);
 
   
 
@@ -197,10 +194,8 @@ protected:
 
 
 
-
-  nsresult MoveBlock(Element& aLeftBlock, Element& aRightBlock,
-                     int32_t aLeftOffset, int32_t aRightOffset,
-                     bool* aHandled);
+  EditActionResult MoveBlock(Element& aLeftBlock, Element& aRightBlock,
+                             int32_t aLeftOffset, int32_t aRightOffset);
 
   
 
@@ -211,9 +206,8 @@ protected:
 
 
 
-
-  nsresult MoveNodeSmart(nsIContent& aNode, Element& aDestElement,
-                         int32_t* aInOutDestOffset, bool* aHandled);
+  EditActionResult MoveNodeSmart(nsIContent& aNode, Element& aDestElement,
+                                 int32_t* aInOutDestOffset);
 
   
 
@@ -224,9 +218,8 @@ protected:
 
 
 
-
-  nsresult MoveContents(Element& aElement, Element& aDestElement,
-                        int32_t* aInOutDestOffset, bool* aHandled);
+  EditActionResult MoveContents(Element& aElement, Element& aDestElement,
+                                int32_t* aInOutDestOffset);
 
   nsresult DeleteNonTableElements(nsINode* aNode);
   nsresult WillMakeList(Selection* aSelection,
