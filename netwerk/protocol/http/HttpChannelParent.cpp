@@ -42,6 +42,7 @@
 #include "nsStringStream.h"
 #include "nsQueryObject.h"
 #include "nsIURIClassifier.h"
+#include "mozilla/dom/ContentParent.h"
 
 using mozilla::BasePrincipal;
 using namespace mozilla::dom;
@@ -1126,6 +1127,13 @@ HttpChannelParent::OnStartRequest(nsIRequest *aRequest, nsISupports *aContext)
   MOZ_ASSERT(mChannel == chan,
              "HttpChannelParent getting OnStartRequest from a different nsHttpChannel instance");
 
+  
+  
+  PContentParent* pcp = Manager()->Manager();
+  nsresult rv =
+    static_cast<ContentParent*>(pcp)->TransmitPermissionsFor(chan);
+  MOZ_ASSERT(NS_SUCCEEDED(rv));
+
   nsHttpResponseHead *responseHead = chan->GetResponseHead();
   nsHttpRequestHead  *requestHead = chan->GetRequestHead();
   bool isFromCache = false;
@@ -1192,7 +1200,7 @@ HttpChannelParent::OnStartRequest(nsIRequest *aRequest, nsISupports *aContext)
 
   
   requestHead->Enter();
-  nsresult rv = NS_OK;
+  rv = NS_OK;
   if (mIPCClosed ||
       !SendOnStartRequest(channelStatus,
                           responseHead ? *responseHead : nsHttpResponseHead(),
