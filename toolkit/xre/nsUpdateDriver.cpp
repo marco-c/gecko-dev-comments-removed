@@ -24,6 +24,7 @@
 #include "mozilla/Preferences.h"
 #include "nsPrintfCString.h"
 #include "mozilla/DebugOnly.h"
+#include "mozilla/Printf.h"
 
 #ifdef XP_MACOSX
 #include "nsILocalFileMac.h"
@@ -406,18 +407,15 @@ AppendToLibPath(const char *pathToAppend)
 {
   char *pathValue = getenv(LD_LIBRARY_PATH_ENVVAR_NAME);
   if (nullptr == pathValue || '\0' == *pathValue) {
-    char *s = PR_smprintf("%s=%s", LD_LIBRARY_PATH_ENVVAR_NAME, pathToAppend);
+    
+    char *s = Smprintf("%s=%s", LD_LIBRARY_PATH_ENVVAR_NAME, pathToAppend).release();
     PR_SetEnv(s);
   } else if (!strstr(pathValue, pathToAppend)) {
-    char *s = PR_smprintf("%s=%s" PATH_SEPARATOR "%s",
-                    LD_LIBRARY_PATH_ENVVAR_NAME, pathToAppend, pathValue);
+    
+    char *s = Smprintf("%s=%s" PATH_SEPARATOR "%s",
+                       LD_LIBRARY_PATH_ENVVAR_NAME, pathToAppend, pathValue).release();
     PR_SetEnv(s);
   }
-
-  
-  
-  
-  
 }
 #endif
 
