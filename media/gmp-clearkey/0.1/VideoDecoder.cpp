@@ -22,6 +22,7 @@
 #include "ClearKeyDecryptionManager.h"
 #include "ClearKeyUtils.h"
 #include "VideoDecoder.h"
+#include "mozilla/CheckedInt.h"
 
 using namespace wmf;
 using namespace cdm;
@@ -172,10 +173,12 @@ Status VideoDecoder::OutputFrame(VideoFrame* aVideoFrame) {
     return Status::kDecodeError;
   }
 
+  const IntRect& picture = mDecoder->GetPictureRegion();
   hr = SampleToVideoFrame(result,
-                          mDecoder->GetFrameWidth(),
-                          mDecoder->GetFrameHeight(),
+                          picture.width,
+                          picture.height,
                           mDecoder->GetStride(),
+                          mDecoder->GetFrameHeight(),
                           aVideoFrame);
   if (FAILED(hr)) {
     CK_LOGD("VideoDecoder::OutputFrame Failed!");
@@ -188,9 +191,10 @@ Status VideoDecoder::OutputFrame(VideoFrame* aVideoFrame) {
 
 HRESULT
 VideoDecoder::SampleToVideoFrame(IMFSample* aSample,
-                                 int32_t aWidth,
-                                 int32_t aHeight,
+                                 int32_t aPictureWidth,
+                                 int32_t aPictureHeight,
                                  int32_t aStride,
+                                 int32_t aFrameHeight,
                                  VideoFrame* aVideoFrame)
 {
   CK_LOGD("[%p] VideoDecoder::SampleToVideoFrame()", this);
@@ -227,32 +231,37 @@ VideoDecoder::SampleToVideoFrame(IMFSample* aSample,
   
   
   
+  
   uint32_t padding = 0;
-  if (aHeight % 16 != 0) {
-    padding = 16 - (aHeight % 16);
+  if (aFrameHeight % 16 != 0) {
+    padding = 16 - (aFrameHeight % 16);
   }
-  uint32_t ySize = stride * (aHeight + padding);
-  uint32_t uSize = stride * (aHeight + padding) / 4;
+  uint32_t srcYSize = stride * (aFrameHeight + padding);
+  uint32_t srcUVSize = stride * (aFrameHeight + padding) / 4;
   uint32_t halfStride = (stride + 1) / 2;
-  uint32_t halfHeight = (aHeight + 1) / 2;
 
   aVideoFrame->SetStride(VideoFrame::kYPlane, stride);
   aVideoFrame->SetStride(VideoFrame::kUPlane, halfStride);
   aVideoFrame->SetStride(VideoFrame::kVPlane, halfStride);
 
-  aVideoFrame->SetSize(Size(aWidth, aHeight));
-
-  uint64_t bufferSize = ySize + 2 * uSize;
+  aVideoFrame->SetSize(Size(aPictureWidth, aPictureHeight));
 
   
   
-  if (bufferSize > UINT32_MAX) {
+  
+  using mozilla::CheckedUint32;
+  CheckedUint32 bufferSize = CheckedUint32(stride) * aPictureHeight +
+                             ((CheckedUint32(stride) * aPictureHeight) / 4) * 2;
+
+  
+  
+  if (!bufferSize.isValid()) {
     CK_LOGD("VideoDecoder::SampleToFrame Buffersize bigger than UINT32_MAX");
     return E_FAIL;
   }
 
   
-  Buffer* buffer = mHost->Allocate(bufferSize);
+  Buffer* buffer = mHost->Allocate(bufferSize.value());
   aVideoFrame->SetFrameBuffer(buffer);
 
   
@@ -267,13 +276,22 @@ VideoDecoder::SampleToVideoFrame(IMFSample* aSample,
   aVideoFrame->SetPlaneOffset(VideoFrame::kYPlane, 0);
 
   
-  aVideoFrame->SetPlaneOffset(VideoFrame::kUPlane, ySize);
+  
+  uint32_t dstUOffset = stride * aPictureHeight;
+  aVideoFrame->SetPlaneOffset(VideoFrame::kUPlane, dstUOffset);
 
   
-  aVideoFrame->SetPlaneOffset(VideoFrame::kVPlane, ySize + uSize);
+  
+  uint32_t dstVOffset = stride * aPictureHeight + (stride * aPictureHeight) / 4;
+  aVideoFrame->SetPlaneOffset(VideoFrame::kVPlane, dstVOffset);
 
   
-  memcpy(outBuffer, data, ySize + uSize * 2);
+  memcpy(outBuffer, data, stride * aPictureHeight);
+  memcpy(
+    outBuffer + dstUOffset, data + srcYSize, (stride * aPictureHeight) / 4);
+  memcpy(outBuffer + dstVOffset,
+         data + srcYSize + srcUVSize,
+         (stride * aPictureHeight) / 4);
 
   if (twoDBuffer) {
     twoDBuffer->Unlock2D();
