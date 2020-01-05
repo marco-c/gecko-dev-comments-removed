@@ -10,20 +10,39 @@ this.EXPORTED_SYMBOLS = [ "URLBarZoom" ];
 Components.utils.import("resource://gre/modules/Services.jsm");
 
 var URLBarZoom = {
-
   init(aWindow) {
-    
-    Services.obs.addObserver(updateZoomButton, "browser-fullZoom:zoomChange", false);
-    Services.obs.addObserver(updateZoomButton, "browser-fullZoom:zoomReset", false);
-    Services.obs.addObserver(updateZoomButton, "browser-fullZoom:location-change", false);
+    aWindow.addEventListener("EndSwapDocShells", onEndSwapDocShells, true);
+    aWindow.addEventListener("unload", () => {
+      aWindow.removeEventListener("EndSwapDocShells", onEndSwapDocShells, true);
+    }, {once: true});
   },
 }
 
-function updateZoomButton(aSubject, aTopic) {
-  let win = aSubject.ownerGlobal;
+function fullZoomObserver(aSubject, aTopic) {
+  
+  
+  
+  if (!aSubject.ownerGlobal) {
+    return;
+  }
+
+  
+  let animate = (aTopic != "browser-fullZoom:location-change");
+  updateZoomButton(aSubject, animate);
+}
+
+function onEndSwapDocShells(event) {
+  updateZoomButton(event.originalTarget);
+}
+
+function updateZoomButton(aBrowser, aAnimate = false) {
+  let win = aBrowser.ownerGlobal;
+  if (aBrowser != win.gBrowser.selectedBrowser) {
+    return;
+  }
+
   let customizableZoomControls = win.document.getElementById("zoom-controls");
   let zoomResetButton = win.document.getElementById("urlbar-zoom-button");
-  let zoomFactor = Math.round(win.ZoomManager.zoom * 100);
 
   
   if (customizableZoomControls &&
@@ -31,21 +50,26 @@ function updateZoomButton(aSubject, aTopic) {
     zoomResetButton.hidden = true;
     return;
   }
+
+  let zoomFactor = Math.round(win.ZoomManager.zoom * 100);
   if (zoomFactor != 100) {
     
     if (zoomResetButton.hidden) {
       zoomResetButton.hidden = false;
     }
-    
-    if (aTopic != "browser-fullZoom:location-change") {
+    if (aAnimate) {
       zoomResetButton.setAttribute("animate", "true");
     } else {
       zoomResetButton.removeAttribute("animate");
     }
     zoomResetButton.setAttribute("label",
         win.gNavigatorBundle.getFormattedString("urlbar-zoom-button.label", [zoomFactor]));
-  
   } else {
-      zoomResetButton.hidden = true;
+    
+    zoomResetButton.hidden = true;
   }
 }
+
+Services.obs.addObserver(fullZoomObserver, "browser-fullZoom:zoomChange", false);
+Services.obs.addObserver(fullZoomObserver, "browser-fullZoom:zoomReset", false);
+Services.obs.addObserver(fullZoomObserver, "browser-fullZoom:location-change", false);
