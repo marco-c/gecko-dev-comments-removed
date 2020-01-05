@@ -2,8 +2,7 @@
 
 
 
-use syntax::ast;
-use syntax::ast::MetaItem;
+use syntax::ast::{ItemKind, MetaItem};
 use syntax::codemap::Span;
 use syntax::ext::base::{Annotatable, ExtCtxt};
 use utils::match_ty_unwrap;
@@ -12,7 +11,7 @@ use utils::match_ty_unwrap;
 pub fn expand_reflector(cx: &mut ExtCtxt, span: Span, _: &MetaItem, annotatable: &Annotatable,
                         push: &mut FnMut(Annotatable)) {
     if let &Annotatable::Item(ref item) = annotatable {
-        if let ast::ItemStruct(ref def, _) = item.node {
+        if let ItemKind::Struct(ref def, _) = item.node {
             let struct_name = item.ident;
             
             match def.fields().iter().find(

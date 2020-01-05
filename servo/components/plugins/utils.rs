@@ -18,7 +18,7 @@ use syntax::ptr::P;
 
 pub fn match_ty_unwrap<'a>(ty: &'a ast::Ty, segments: &[&str]) -> Option<&'a [P<ast::Ty>]> {
     match ty.node {
-        ast::TyPath(_, ast::Path { segments: ref seg, .. }) => {
+        ast::TyKind::Path(_, ast::Path { segments: ref seg, .. }) => {
             
             
             
@@ -60,9 +60,9 @@ pub fn match_lang_ty(cx: &LateContext, ty: &hir::Ty, value: &str) -> bool {
 pub fn match_lang_did(cx: &LateContext, did: DefId, value: &str) -> bool {
     cx.tcx.get_attrs(did).iter().any(|attr| {
         match attr.node.value.node {
-            ast::MetaNameValue(ref name, ref val) if &**name == "servo_lang" => {
+            ast::MetaItemKind::NameValue(ref name, ref val) if &**name == "servo_lang" => {
                 match val.node {
-                    ast::LitStr(ref v, _) if &**v == value => {
+                    ast::LitKind::Str(ref v, _) if &**v == value => {
                         mark_used(attr);
                         true
                     },
