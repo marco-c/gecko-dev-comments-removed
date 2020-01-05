@@ -417,9 +417,6 @@ struct Zone : public JS::shadow::Zone,
 
     mozilla::Atomic<bool> usedByExclusiveThread;
 
-    
-    bool active;
-
 #ifdef DEBUG
     unsigned gcLastZoneGroupIndex;
 #endif
