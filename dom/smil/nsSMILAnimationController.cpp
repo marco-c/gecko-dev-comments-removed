@@ -329,6 +329,8 @@ nsSMILAnimationController::DoSample(bool aSkipUnchangedContainers)
     return;
   }
 
+  nsCOMPtr<nsIDocument> document(mDocument);  
+
   
   
   AutoRestore<bool> autoRestoreRunningSample(mRunningSample);
@@ -432,7 +434,6 @@ nsSMILAnimationController::DoSample(bool aSkipUnchangedContainers)
     return;
   }
 
-  nsCOMPtr<nsIDocument> document(mDocument);  
   if (isStyleFlushNeeded) {
     document->FlushPendingNotifications(FlushType::Style);
   }
