@@ -431,8 +431,11 @@ fn combinator_to_restyle_hint(combinator: Option<Combinator>) -> RestyleHint {
 
 #[derive(Debug)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-struct Sensitivities {
+
+pub struct Sensitivities {
+    
     pub states: ElementState,
+    
     pub attrs: bool,
 }
 
@@ -469,11 +472,13 @@ impl Sensitivities {
 
 #[derive(Debug)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-struct Dependency {
+pub struct Dependency {
     #[cfg_attr(feature = "servo", ignore_heap_size_of = "Arc")]
     selector: SelectorInner<SelectorImpl>,
-    hint: RestyleHint,
-    sensitivities: Sensitivities,
+    
+    pub hint: RestyleHint,
+    
+    pub sensitivities: Sensitivities,
 }
 
 
@@ -681,27 +686,9 @@ impl DependencySet {
             }
         }
     }
-}
 
-#[test]
-#[cfg(all(test, feature = "servo"))]
-fn smoke_restyle_hints() {
-    use cssparser::Parser;
-    use selector_parser::SelectorParser;
-    use stylesheets::{Origin, Namespaces};
-    let namespaces = Namespaces::default();
-    let parser = SelectorParser {
-        stylesheet_origin: Origin::Author,
-        namespaces: &namespaces,
-    };
-
-    let mut dependencies = DependencySet::new();
-
-    let mut p = Parser::new(":not(:active) ~ label");
-    let selector = ComplexSelector::parse(&parser, &mut p).unwrap();
-    dependencies.note_selector(&selector);
-    assert_eq!(dependencies.len(), 1);
-    assert_eq!(dependencies.state_deps.len(), 1);
-    assert!(!dependencies.state_deps[0].sensitivities.states.is_empty());
-    assert!(dependencies.state_deps[0].hint.contains(RESTYLE_LATER_SIBLINGS));
+    
+    pub fn get_state_deps(&self) -> &[Dependency] {
+        &self.state_deps
+    }
 }
