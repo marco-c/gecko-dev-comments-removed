@@ -198,7 +198,7 @@ WebrtcVideoConduit::WebrtcVideoConduit(RefPtr<WebRtcCallWrapper> aCall)
   , mCall(aCall) 
   , mSendStreamConfig(this) 
   , mRecvStreamConfig(this) 
-  , mRecvSSRCSet(false)
+  , mRecvSSRC(0)
   , mRecvSSRCSetInProgress(false)
   , mSendCodecPlugin(nullptr)
   , mRecvCodecPlugin(nullptr)
@@ -699,7 +699,6 @@ WebrtcVideoConduit::SetRemoteSSRC(unsigned int ssrc)
   if (!GetRemoteSSRC(&current_ssrc)) {
     return false;
   }
-  mRecvSSRCSet = true;
 
   if (current_ssrc == ssrc) {
     return true;
@@ -1177,7 +1176,8 @@ WebrtcVideoConduit::ConfigureRecvMediaCodecs(
       mRecvStreamConfig.rtp.fec.red_rtx_payload_type = -1;
     }
 
-    if (!mRecvSSRCSet) {
+    
+    if (mRecvSSRC == 0) {
       
       
       
@@ -1191,6 +1191,9 @@ WebrtcVideoConduit::ConfigureRecvMediaCodecs(
 
       mRecvStreamConfig.rtp.remote_ssrc = ssrc;
     }
+    
+    mRecvSSRC = mRecvStreamConfig.rtp.remote_ssrc;
+
     
     
     
@@ -1805,9 +1808,14 @@ MediaConduitErrorCode
 WebrtcVideoConduit::ReceivedRTPPacket(const void* data, int len, uint32_t ssrc)
 {
   bool queue = mRecvSSRCSetInProgress;
-  if (!mRecvSSRCSet && !mRecvSSRCSetInProgress) {
+  if (mRecvSSRC != ssrc && !queue) {
+    
+    mRecvSSRC = ssrc;
     mRecvSSRCSetInProgress = true;
     queue = true;
+    
+    
+    mQueuedPackets.Clear();
     
     
     
@@ -1828,19 +1836,23 @@ WebrtcVideoConduit::ReceivedRTPPacket(const void* data, int len, uint32_t ssrc)
           WebrtcGmpPCHandleSetter setter(self->mPCHandle);
           self->SetRemoteSSRC(ssrc); 
           
-          thread->Dispatch(media::NewRunnableFrom([self]() mutable {
-                self->mRecvSSRCSetInProgress = false;
-                
-                for (auto& packet : self->mQueuedPackets) {
-                  CSFLogDebug(logTag, "%s: seq# %u, Len %d ", __FUNCTION__,
-                              (uint16_t)ntohs(((uint16_t*) packet->mData)[1]), packet->mLen);
+          thread->Dispatch(media::NewRunnableFrom([self, ssrc]() mutable {
+                if (ssrc == self->mRecvSSRC) {
+                  
+                  for (auto& packet : self->mQueuedPackets) {
+                    CSFLogDebug(logTag, "%s: seq# %u, Len %d ", __FUNCTION__,
+                                (uint16_t)ntohs(((uint16_t*) packet->mData)[1]), packet->mLen);
 
-                  if (self->DeliverPacket(packet->mData, packet->mLen) != kMediaConduitNoError) {
-                    CSFLogError(logTag, "%s RTP Processing Failed", __FUNCTION__);
-                    
+                    if (self->DeliverPacket(packet->mData, packet->mLen) != kMediaConduitNoError) {
+                      CSFLogError(logTag, "%s RTP Processing Failed", __FUNCTION__);
+                      
+                    }
                   }
+                  self->mQueuedPackets.Clear();
+                  
+                  self->mRecvSSRCSetInProgress = false;
                 }
-                self->mQueuedPackets.Clear();
+                
 
                 return NS_OK;
               }), NS_DISPATCH_NORMAL);

@@ -503,10 +503,10 @@ private:
   webrtc::VideoCodecH264 mEncoderSpecificH264;
 
   webrtc::VideoReceiveStream::Config mRecvStreamConfig;
+
   
-  
-  
-  Atomic<bool> mRecvSSRCSet;
+  uint32_t mRecvSSRC; 
+
   
   bool mRecvSSRCSetInProgress;
   struct QueuedPacket {
