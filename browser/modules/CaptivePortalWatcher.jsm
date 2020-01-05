@@ -6,15 +6,6 @@
 
 const { classes: Cc, interfaces: Ci, utils: Cu } = Components;
 
-
-
-
-
-const PORTAL_RECHECK_DELAY_MS = 150;
-
-
-const PORTAL_NOTIFICATION_VALUE = "captive-portal-detected";
-
 this.EXPORTED_SYMBOLS = [ "CaptivePortalWatcher" ];
 
 Cu.import("resource://gre/modules/Services.jsm");
@@ -27,6 +18,16 @@ XPCOMUtils.defineLazyServiceGetter(this, "cps",
                                    "nsICaptivePortalService");
 
 this.CaptivePortalWatcher = {
+  
+
+
+
+
+  PORTAL_RECHECK_DELAY_MS: 150,
+
+  
+  PORTAL_NOTIFICATION_VALUE: "captive-portal-detected",
+
   
   
   _captivePortalTab: null,
@@ -42,7 +43,11 @@ this.CaptivePortalWatcher = {
 
 
 
-  _waitingToAddTab: false,
+  _delayedCaptivePortalDetectedInProgress: false,
+
+  
+  
+  _waitingForRecheck: false,
 
   get canonicalURL() {
     return Services.prefs.getCharPref("captivedetect.canonicalURL");
@@ -82,13 +87,13 @@ this.CaptivePortalWatcher = {
         this._captivePortalGone();
         break;
       case "xul-window-visible":
-        this._delayedAddCaptivePortalTab();
+        this._delayedCaptivePortalDetected();
         break;
     }
   },
 
   _captivePortalDetected() {
-    if (this._waitingToAddTab) {
+    if (this._delayedCaptivePortalDetectedInProgress) {
       return;
     }
 
@@ -98,7 +103,7 @@ this.CaptivePortalWatcher = {
     
     
     if (!win || win != Services.ww.activeWindow) {
-      this._waitingToAddTab = true;
+      this._delayedCaptivePortalDetectedInProgress = true;
       Services.obs.addObserver(this, "xul-window-visible", false);
       return;
     }
@@ -127,8 +132,8 @@ this.CaptivePortalWatcher = {
 
 
 
-  _delayedAddCaptivePortalTab() {
-    if (!this._waitingToAddTab) {
+  _delayedCaptivePortalDetected() {
+    if (!this._delayedCaptivePortalDetectedInProgress) {
       return;
     }
 
@@ -142,19 +147,22 @@ this.CaptivePortalWatcher = {
     
     
     cps.recheckCaptivePortal();
+    this._waitingForRecheck = true;
     let requestTime = Date.now();
 
     let self = this;
     Services.obs.addObserver(function observer() {
+      let time = Date.now() - requestTime;
       Services.obs.removeObserver(observer, "captive-portal-check-complete");
-      self._waitingToAddTab = false;
+      self._waitingForRecheck = false;
+      self._delayedCaptivePortalDetectedInProgress = false;
       if (cps.state != cps.LOCKED_PORTAL) {
         
         return;
       }
 
       self._showNotification(win);
-      if (Date.now() - requestTime <= PORTAL_RECHECK_DELAY_MS) {
+      if (time <= self.PORTAL_RECHECK_DELAY_MS) {
         
         
         
@@ -164,9 +172,9 @@ this.CaptivePortalWatcher = {
   },
 
   _captivePortalGone() {
-    if (this._waitingToAddTab) {
+    if (this._delayedCaptivePortalDetectedInProgress) {
       Services.obs.removeObserver(this, "xul-window-visible");
-      this._waitingToAddTab = false;
+      this._delayedCaptivePortalDetectedInProgress = false;
     }
 
     this._removeNotification();
@@ -249,7 +257,7 @@ this.CaptivePortalWatcher = {
     };
 
     let nb = win.document.getElementById("high-priority-global-notificationbox");
-    let n = nb.appendNotification(message, PORTAL_NOTIFICATION_VALUE, "",
+    let n = nb.appendNotification(message, this.PORTAL_NOTIFICATION_VALUE, "",
                                   nb.PRIORITY_INFO_MEDIUM, buttons, closeHandler);
 
     this._captivePortalNotification = Cu.getWeakReference(n);
