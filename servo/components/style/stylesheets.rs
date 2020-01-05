@@ -136,6 +136,30 @@ pub enum CssRule {
     Keyframes(Arc<RwLock<KeyframesRule>>),
 }
 
+pub enum CssRuleType {
+    
+    Style               = 1,
+    Charset             = 2,
+    Import              = 3,
+    Media               = 4,
+    FontFace            = 5,
+    Page                = 6,
+    
+    Keyframes           = 7,
+    Keyframe            = 8,
+    
+    Margin              = 9,
+    Namespace           = 10,
+    
+    CounterStyle        = 11,
+    
+    Supports            = 12,
+    
+    FontFeatureValues   = 14,
+    
+    Viewport            = 15,
+}
+
 
 pub struct MemoryHoleReporter;
 
@@ -157,6 +181,17 @@ pub enum SingleRuleParseError {
 }
 
 impl CssRule {
+    pub fn rule_type(&self) -> CssRuleType {
+        match *self {
+            CssRule::Style(_)     => CssRuleType::Style,
+            CssRule::Media(_)     => CssRuleType::Media,
+            CssRule::FontFace(_)  => CssRuleType::FontFace,
+            CssRule::Keyframes(_) => CssRuleType::Keyframes,
+            CssRule::Namespace(_) => CssRuleType::Namespace,
+            CssRule::Viewport(_)  => CssRuleType::Viewport,
+        }
+    }
+
     
     
     
