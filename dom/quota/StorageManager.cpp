@@ -302,7 +302,12 @@ ExecuteOpOnMainOrWorkerThread(nsIGlobalObject* aGlobal,
         RefPtr<PersistentStoragePermissionRequest> request =
           new PersistentStoragePermissionRequest(principal, window, promise);
 
-        aRv = request->Start();
+        
+        if (nsContentUtils::IsInPrivateBrowsing(doc)) {
+          aRv = request->Cancel();
+        } else {
+          aRv = request->Start();
+        }
 
         break;
       }
