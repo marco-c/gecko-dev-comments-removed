@@ -82,7 +82,7 @@ const ACTIONS = [
 const OBSERVER_TOPICS = ["fxaccounts:onlogin",
                          "fxaccounts:onlogout",
                          "private-browsing",
-                         "quit-application-requested",
+                         "profile-before-change",
                          "sessionstore-windows-restored",
                          "weave:engine:start-tracking",
                          "weave:engine:stop-tracking",
@@ -166,7 +166,7 @@ var TPS = {
           Logger.logInfo("private browsing " + data);
           break;
 
-        case "quit-application-requested":
+        case "profile-before-change":
           OBSERVER_TOPICS.forEach(function(topic) {
             Services.obs.removeObserver(this, topic);
           }, this);
@@ -367,17 +367,18 @@ var TPS = {
       let formdata = new FormData(datum, this._usSinceEpoch);
       switch(action) {
         case ACTION_ADD:
-          formdata.Create();
+          Async.promiseSpinningly(formdata.Create());
           break;
         case ACTION_DELETE:
-          formdata.Remove();
+          Async.promiseSpinningly(formdata.Remove());
           break;
         case ACTION_VERIFY:
-          Logger.AssertTrue(formdata.Find(), "form data not found");
+          Logger.AssertTrue(Async.promiseSpinningly(formdata.Find()),
+                            "form data not found");
           break;
         case ACTION_VERIFY_NOT:
-          Logger.AssertTrue(!formdata.Find(),
-            "form data found, but it shouldn't be present");
+          Logger.AssertTrue(!Async.promiseSpinningly(formdata.Find()),
+                            "form data found, but it shouldn't be present");
           break;
         default:
           Logger.AssertTrue(false, "invalid action: " + action);
@@ -591,7 +592,14 @@ var TPS = {
       Logger.logError("Failed to wipe server: " + Log.exceptionStr(ex));
     }
     try {
-      Authentication.signOut();
+      if (Authentication.isLoggedIn) {
+        
+        Logger.logInfo("signing out");
+        let waiter = this.createEventWaiter("weave:service:start-over:finish");
+        Authentication.signOut();
+        waiter();
+        Logger.logInfo("signout complete");
+      }
     } catch (e) {
       Logger.logError("Failed to sign out: " + Log.exceptionStr(e));
     }
@@ -701,8 +709,8 @@ var TPS = {
       let validator = new FormValidator();
       let serverRecords = validator.getServerItems(engine);
       let clientRecords = Async.promiseSpinningly(validator.getClientItems());
-      clientRecordDumpStr = JSON.stringify(clientRecords);
-      serverRecordDumpStr = JSON.stringify(serverRecords);
+      clientRecordDumpStr = JSON.stringify(clientRecords, undefined, 2);
+      serverRecordDumpStr = JSON.stringify(serverRecords, undefined, 2);
       let { problemData } = validator.compareClientWithServer(clientRecords, serverRecords);
       for (let { name, count } of problemData.getSummary()) {
         if (count) {
@@ -984,15 +992,47 @@ var TPS = {
 
 
 
-  waitForEvent: function waitForEvent(aEventName) {
-    Logger.logInfo("Waiting for " + aEventName + "...");
+
+
+
+
+
+
+
+
+
+
+  createEventWaiter(aEventName) {
+    Logger.logInfo("Setting up wait for " + aEventName + "...");
     let cb = Async.makeSpinningCallback();
     Svc.Obs.add(aEventName, cb);
-    cb.wait();
-    Svc.Obs.remove(aEventName, cb);
-    Logger.logInfo(aEventName + " observed!");
+    return function() {
+      try {
+        cb.wait();
+      } finally {
+        Svc.Obs.remove(aEventName, cb);
+        Logger.logInfo(aEventName + " observed!");
+      }
+    }
   },
 
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  waitForEvent: function waitForEvent(aEventName) {
+    this.createEventWaiter(aEventName)();
+  },
 
   
 
