@@ -10,7 +10,7 @@ import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.helper.ItemTouchHelper;
 import android.view.View;
 
-class TabsTouchHelperCallback extends ItemTouchHelper.Callback {
+abstract class TabsTouchHelperCallback extends ItemTouchHelper.Callback {
     private final DismissListener dismissListener;
 
     interface DismissListener {
@@ -43,7 +43,15 @@ class TabsTouchHelperCallback extends ItemTouchHelper.Callback {
     }
 
     
+
+
+
+    abstract protected float alphaForItemSwipeDx(float dX, int distanceToAlphaMin);
+
     
+
+
+
     @Override
     public void onChildDraw(Canvas c,
                             RecyclerView recyclerView,
@@ -58,8 +66,7 @@ class TabsTouchHelperCallback extends ItemTouchHelper.Callback {
 
         super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive);
 
-        viewHolder.itemView.setAlpha(Math.max(0.1f,
-                Math.min(1f, 1f - 2f * Math.abs(dX) / viewHolder.itemView.getWidth())));
+        viewHolder.itemView.setAlpha(alphaForItemSwipeDx(dX, viewHolder.itemView.getWidth()));
     }
 
     public void clearView(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder) {
