@@ -12,6 +12,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/PodOperations.h"
+#include "mozilla/Unused.h"
 
 #include "jsarray.h"
 #include "jsatom.h"
@@ -1217,6 +1218,7 @@ js::CloseIterator(JSContext* cx, HandleObject obj)
         }
         return LegacyGeneratorObject::close(cx, obj);
     }
+
     return true;
 }
 
@@ -1231,6 +1233,56 @@ js::UnwindIteratorForException(JSContext* cx, HandleObject obj)
     if (!getOk)
         return false;
     cx->setPendingException(v);
+    return true;
+}
+
+bool
+js::IteratorCloseForException(JSContext* cx, HandleObject obj)
+{
+    MOZ_ASSERT(cx->isExceptionPending());
+
+    bool isClosingGenerator = cx->isClosingGenerator();
+    JS::AutoSaveExceptionState savedExc(cx);
+
+    
+    
+
+    
+    
+    
+    RootedValue returnMethod(cx);
+    if (!GetProperty(cx, obj, obj, cx->names().return_, &returnMethod))
+        return false;
+
+    
+    
+    
+    
+    if (returnMethod.isNullOrUndefined())
+        return true;
+    if (!IsCallable(returnMethod))
+        return ReportIsNotFunction(cx, returnMethod);
+
+    
+    
+    
+    RootedValue rval(cx);
+    bool ok = Call(cx, returnMethod, obj, &rval);
+    if (isClosingGenerator) {
+        
+        
+        
+        if (!ok)
+            return false;
+        if (!rval.isObject())
+            return ThrowCheckIsObject(cx, CheckIsObjectKind::IteratorReturn);
+    } else {
+        
+        
+        
+        savedExc.restore();
+    }
+
     return true;
 }
 
