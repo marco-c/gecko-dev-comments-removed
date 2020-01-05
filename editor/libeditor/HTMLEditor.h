@@ -121,6 +121,16 @@ public:
   virtual already_AddRefed<nsIContent> GetInputEventTargetContent() override;
   virtual bool IsEditable(nsINode* aNode) override;
   using EditorBase::IsEditable;
+  virtual nsresult RemoveAttributeOrEquivalent(
+                     Element* aElement,
+                     nsIAtom* aAttribute,
+                     bool aSuppressTransaction) override;
+  virtual nsresult SetAttributeOrEquivalent(Element* aElement,
+                                            nsIAtom* aAttribute,
+                                            const nsAString& aValue,
+                                            bool aSuppressTransaction) override;
+  using EditorBase::RemoveAttributeOrEquivalent;
+  using EditorBase::SetAttributeOrEquivalent;
 
   
   NS_DECL_NSIMUTATIONOBSERVER_CONTENTAPPENDED
@@ -328,14 +338,6 @@ public:
 
 
   virtual nsresult SelectEntireDocument(Selection* aSelection) override;
-
-  NS_IMETHOD SetAttributeOrEquivalent(nsIDOMElement* aElement,
-                                      const nsAString& aAttribute,
-                                      const nsAString& aValue,
-                                      bool aSuppressTransaction) override;
-  NS_IMETHOD RemoveAttributeOrEquivalent(nsIDOMElement* aElement,
-                                         const nsAString& aAttribute,
-                                         bool aSuppressTransaction) override;
 
   
 

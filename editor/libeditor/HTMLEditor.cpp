@@ -4447,93 +4447,83 @@ HTMLEditor::IsEmptyNodeImpl(nsINode* aNode,
 
 
 nsresult
-HTMLEditor::SetAttributeOrEquivalent(nsIDOMElement* aElement,
-                                     const nsAString& aAttribute,
+HTMLEditor::SetAttributeOrEquivalent(Element* aElement,
+                                     nsIAtom* aAttribute,
                                      const nsAString& aValue,
                                      bool aSuppressTransaction)
 {
+  MOZ_ASSERT(aElement);
+  MOZ_ASSERT(aAttribute);
+
   nsAutoScriptBlocker scriptBlocker;
 
-  if (IsCSSEnabled() && mCSSEditUtils) {
-    nsCOMPtr<dom::Element> element = do_QueryInterface(aElement);
-    MOZ_ASSERT(element);
-
-    nsCOMPtr<nsIAtom> attribute = NS_Atomize(aAttribute);
-    MOZ_ASSERT(attribute);
-
-    int32_t count =
-      mCSSEditUtils->SetCSSEquivalentToHTMLStyle(element, nullptr,
-                                                 attribute, &aValue,
-                                                 aSuppressTransaction);
-    if (count) {
-      
-      nsAutoString existingValue;
-      bool wasSet = false;
-      nsresult rv =
-        GetAttributeValue(aElement, aAttribute, existingValue, &wasSet);
-      NS_ENSURE_SUCCESS(rv, rv);
-      if (!wasSet) {
-        return NS_OK;
-      }
-      return aSuppressTransaction ?
-               element->UnsetAttr(kNameSpaceID_None, attribute, true) :
-               RemoveAttribute(aElement, aAttribute);
-    }
-
-    
-    
-    
-    if (attribute == nsGkAtoms::style) {
-      
-      
-      nsAutoString existingValue;
-      bool wasSet = false;
-      nsresult rv = GetAttributeValue(aElement, NS_LITERAL_STRING("style"),
-                                      existingValue, &wasSet);
-      NS_ENSURE_SUCCESS(rv, rv);
-      existingValue.Append(' ');
-      existingValue.Append(aValue);
-      return aSuppressTransaction ?
-        element->SetAttr(kNameSpaceID_None, attribute, existingValue, true) :
-        SetAttribute(aElement, aAttribute, existingValue);
-    }
-
-    
+  if (!IsCSSEnabled() || !mCSSEditUtils) {
     
     return aSuppressTransaction ?
-             element->SetAttr(kNameSpaceID_None, attribute, aValue, true) :
+             aElement->SetAttr(kNameSpaceID_None, aAttribute, aValue, true) :
              SetAttribute(aElement, aAttribute, aValue);
   }
 
+  int32_t count =
+    mCSSEditUtils->SetCSSEquivalentToHTMLStyle(aElement, nullptr,
+                                               aAttribute, &aValue,
+                                               aSuppressTransaction);
+  if (count) {
+    
+    
+    nsAutoString existingValue;
+    if (!aElement->GetAttr(kNameSpaceID_None, aAttribute, existingValue)) {
+      return NS_OK;
+    }
+
+    return aSuppressTransaction ?
+             aElement->UnsetAttr(kNameSpaceID_None, aAttribute, true) :
+             RemoveAttribute(aElement, aAttribute);
+  }
+
   
-  return aSuppressTransaction ? aElement->SetAttribute(aAttribute, aValue) :
-                                SetAttribute(aElement, aAttribute, aValue);
+  
+  
+  if (aAttribute == nsGkAtoms::style) {
+    
+    
+    nsAutoString existingValue;
+    aElement->GetAttr(kNameSpaceID_None, nsGkAtoms::style, existingValue);
+    existingValue.Append(' ');
+    existingValue.Append(aValue);
+    return aSuppressTransaction ?
+       aElement->SetAttr(kNameSpaceID_None, aAttribute, existingValue, true) :
+      SetAttribute(aElement, aAttribute, existingValue);
+  }
+
+  
+  
+  return aSuppressTransaction ?
+           aElement->SetAttr(kNameSpaceID_None, aAttribute, aValue, true) :
+           SetAttribute(aElement, aAttribute, aValue);
 }
 
 nsresult
-HTMLEditor::RemoveAttributeOrEquivalent(nsIDOMElement* aElement,
-                                        const nsAString& aAttribute,
+HTMLEditor::RemoveAttributeOrEquivalent(Element* aElement,
+                                        nsIAtom* aAttribute,
                                         bool aSuppressTransaction)
 {
-  nsCOMPtr<dom::Element> element = do_QueryInterface(aElement);
-  NS_ENSURE_TRUE(element, NS_OK);
-
-  nsCOMPtr<nsIAtom> attribute = NS_Atomize(aAttribute);
-  MOZ_ASSERT(attribute);
+  MOZ_ASSERT(aElement);
+  MOZ_ASSERT(aAttribute);
 
   if (IsCSSEnabled() && mCSSEditUtils) {
     nsresult rv =
       mCSSEditUtils->RemoveCSSEquivalentToHTMLStyle(
-        element, nullptr, attribute, nullptr, aSuppressTransaction);
+        aElement, nullptr, aAttribute, nullptr, aSuppressTransaction);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
-  if (!element->HasAttr(kNameSpaceID_None, attribute)) {
+  if (!aElement->HasAttr(kNameSpaceID_None, aAttribute)) {
     return NS_OK;
   }
 
   return aSuppressTransaction ?
-    element->UnsetAttr(kNameSpaceID_None, attribute,  true) :
+    aElement->UnsetAttr(kNameSpaceID_None, aAttribute,  true) :
     RemoveAttribute(aElement, aAttribute);
 }
 
