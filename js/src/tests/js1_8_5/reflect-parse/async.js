@@ -4,6 +4,10 @@
 assertDecl("async function foo() {}", asyncFunDecl(ident("foo"), [], blockStmt([])));
 
 
+assertExpr("(async function() {})", asyncFunExpr(null, [], blockStmt([])));
+assertExpr("(async function foo() {})", asyncFunExpr(ident("foo"), [], blockStmt([])));
+
+
 assertDecl("async function foo() { await bar }", asyncFunDecl(ident("foo"), [], blockStmt([exprStmt(unExpr("await", ident("bar")))])));
 
 if (typeof reportCompare === 'function')

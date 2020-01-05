@@ -15,8 +15,16 @@ if (typeof Reflect !== "undefined" && Reflect.parse) {
     assertEq(Reflect.parse("async\nfunction a(){}").body[0].expression.name, "async");
 
     
+    assertEq(Reflect.parse("(async function() {})()").body[0].expression.callee.async, true);
+    assertEq(Reflect.parse("var k = async function() {}").body[0].declarations[0].init.async, true);
+    assertEq(Reflect.parse("var nmd = async function named() {}").body[0].declarations[0].init.id.name, "named");
+
+    
     assertEq(Reflect.parse("async function await() {}").body[0].id.name, "await");
     assertThrows(() => Reflect.parse("async function f() { async function await() {} }"), SyntaxError);
+
+    
+    assertThrows(() => Reflect.parse("(async function await() {})"), SyntaxError);
 
     
     assertThrows(() => Reflect.parse("await 4;"), SyntaxError);
@@ -71,6 +79,9 @@ if (typeof Reflect !== "undefined" && Reflect.parse) {
     
     assertEq(Reflect.parse("{ async function a() { return 2; } }")
         .body[0].body[0].async, true);
+
+    
+    Reflect.parse("(async function a() {}.constructor)");
 }
 
 if (typeof reportCompare === "function")

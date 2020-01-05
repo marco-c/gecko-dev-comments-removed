@@ -10,27 +10,41 @@ function assertThrowsSE(code) {
 if (typeof Reflect !== "undefined" && Reflect.parse) {
     
     assertThrowsSE("async function a(k = await 3) {}");
+    assertThrowsSE("(async function(k = await 3) {})");
+    assertThrowsSE("(async function a(k = await 3) {})");
 
     
     assertThrowsSE("'use strict'; async function eval() {}");
+    assertThrowsSE("'use strict'; (async function eval() {})");
 
     assertThrowsSE("'use strict'; async function arguments() {}");
+    assertThrowsSE("'use strict'; (async function arguments() {})");
 
     
     
     assertThrowsSE("async function a(x) { let x; }");
+    assertThrowsSE("(async function(x) { let x; })");
+    assertThrowsSE("(async function a(x) { let x; })");
 
     
     assertThrowsSE("async function a(k = super.prop) { }");
+    assertThrowsSE("(async function(k = super.prop) {})");
+    assertThrowsSE("(async function a(k = super.prop) {})");
 
     
     assertThrowsSE("async function a() { super.prop(); }");
+    assertThrowsSE("(async function() { super.prop(); })");
+    assertThrowsSE("(async function a() { super.prop(); })");
 
     
     assertThrowsSE("async function a(k = super()) {}");
+    assertThrowsSE("(async function(k = super()) {})");
+    assertThrowsSE("(async function a(k = super()) {})");
 
     
     assertThrowsSE("async function a() { super(); }");
+    assertThrowsSE("(async function() { super(); })");
+    assertThrowsSE("(async function a() { super(); })");
 }
 
 if (typeof reportCompare === "function")
