@@ -332,6 +332,15 @@ nsPrintEngine::GetSeqFrameAndCountPagesInternal(nsPrintObject*  aPO,
   NS_ENSURE_ARG_POINTER(aPO);
 
   
+  
+  
+  if (!aPO->mPresShell) {
+    MOZ_DIAGNOSTIC_ASSERT(false,
+                          "GetSeqFrameAndCountPages needs a non-null pres shell");
+    return NS_ERROR_FAILURE;
+  }
+
+  
   nsIPageSequenceFrame* seqFrame = aPO->mPresShell->GetPageSequenceFrame();
   aSeqFrame = do_QueryFrame(seqFrame);
   if (!aSeqFrame) {
