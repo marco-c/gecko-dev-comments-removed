@@ -23,6 +23,7 @@ from voluptuous import Schema, Any, Required, Optional, Extra
 from .gecko_v2_whitelist import JOB_NAME_WHITELIST, JOB_NAME_WHITELIST_ERROR
 
 
+
 taskref_or_string = Any(
     basestring,
     {Required('task-reference'): basestring})
@@ -264,6 +265,26 @@ task_description_schema = Schema({
             
             Required('name'): basestring,
         }],
+    }, {
+        Required('implementation'): 'scriptworker-signing',
+
+        
+        Required('max-run-time', default=600): int,
+
+        
+        Required('upstream-artifacts'): [{
+            
+            Required('taskId'): taskref_or_string,
+
+            
+            Required('taskType'): basestring,
+
+            
+            Required('paths'): [basestring],
+
+            
+            Required('formats'): [basestring],
+        }],
     }),
 
     
@@ -450,6 +471,16 @@ def build_generic_worker_payload(config, task, task_def):
 
     if 'retry-exit-status' in worker:
         raise Exception("retry-exit-status not supported in generic-worker")
+
+
+@payload_builder('scriptworker-signing')
+def build_scriptworker_signing_payload(config, task, task_def):
+    worker = task['worker']
+
+    task_def['payload'] = {
+        'maxRunTime': worker['max-run-time'],
+        'upstreamArtifacts':  worker['upstream-artifacts']
+    }
 
 
 @payload_builder('macosx-engine')
