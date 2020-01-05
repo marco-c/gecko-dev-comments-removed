@@ -26,6 +26,8 @@
 
 
 
+
+
 #include <windows.h>
 #include <mmsystem.h>
 #include <process.h>
@@ -120,6 +122,9 @@ class SamplerThread
                        this,
                         0,
                        (unsigned int*) &mThreadId));
+    if (mThread == 0) {
+      MOZ_CRASH("_beginthreadex failed");
+    }
   }
 
   void Join() {
@@ -276,8 +281,6 @@ PlatformStart(double aInterval)
 {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
-  MOZ_ASSERT(!gIsActive);
-  gIsActive = true;
   SamplerThread::StartSampler(aInterval);
 }
 
@@ -286,8 +289,6 @@ PlatformStop()
 {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
-  MOZ_ASSERT(gIsActive);
-  gIsActive = false;
   SamplerThread::StopSampler();
 }
 

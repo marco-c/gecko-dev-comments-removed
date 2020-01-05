@@ -2,6 +2,8 @@
 
 
 
+
+
 #include <dlfcn.h>
 #include <unistd.h>
 #include <sys/mman.h>
@@ -112,7 +114,9 @@ public:
 
   void Start() {
     pthread_attr_t* attr_ptr = NULL;
-    pthread_create(&mThread, attr_ptr, ThreadEntry, this);
+    if (pthread_create(&mThread, attr_ptr, ThreadEntry, this) != 0) {
+      MOZ_CRASH("pthread_create failed");
+    }
     MOZ_ASSERT(mThread != kNoThread);
   }
 
@@ -265,8 +269,6 @@ PlatformStart(double aInterval)
 {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
-  MOZ_ASSERT(!gIsActive);
-  gIsActive = true;
   SamplerThread::StartSampler(aInterval);
 }
 
@@ -275,8 +277,6 @@ PlatformStop()
 {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
-  MOZ_ASSERT(gIsActive);
-  gIsActive = false;
   SamplerThread::StopSampler();
 }
 

@@ -30,7 +30,6 @@
 
 
 
-
 #include <stdio.h>
 #include <math.h>
 
@@ -76,12 +75,10 @@ using namespace mozilla;
 
 
 
-static bool gIsSigprofHandlerInstalled;
 static struct sigaction gOldSigprofHandler;
 
 
 
-static bool gHasSigprofSenderLaunched;
 static pthread_t gSigprofSenderThread;
 
 #if defined(USE_LUL_STACKWALK)
@@ -381,8 +378,7 @@ PlatformStart(double aInterval)
   gRssMemory = 0;
   gUssMemory = 0;
   if (sem_init(&gSignalHandlingDone,  0,  0) != 0) {
-    LOG("Error initializing semaphore");
-    return;
+    MOZ_CRASH("Error initializing semaphore");
   }
 
   
@@ -392,11 +388,9 @@ PlatformStart(double aInterval)
   sigemptyset(&sa.sa_mask);
   sa.sa_flags = SA_RESTART | SA_SIGINFO;
   if (sigaction(SIGPROF, &sa, &gOldSigprofHandler) != 0) {
-    LOG("Error installing signal");
-    return;
+    MOZ_CRASH("Error installing signal");
   }
   LOG("Signal installed");
-  gIsSigprofHandlerInstalled = true;
 
 #if defined(USE_LUL_STACKWALK)
   
@@ -413,11 +407,8 @@ PlatformStart(double aInterval)
 
   
   
-  
-  MOZ_ASSERT(!gIsActive);
-  gIsActive = true;
-  if (pthread_create(&gSigprofSenderThread, NULL, SigprofSender, NULL) == 0) {
-    gHasSigprofSenderLaunched = true;
+  if (pthread_create(&gSigprofSenderThread, NULL, SigprofSender, NULL) != 0) {
+    MOZ_CRASH("pthread_create failed");
   }
   LOG("Profiler thread started");
 }
@@ -427,23 +418,14 @@ PlatformStop()
 {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
-  MOZ_ASSERT(gIsActive);
-  gIsActive = false;
-
   gIntervalMicro = 0;
 
   
   
-  if (gHasSigprofSenderLaunched) {
-    pthread_join(gSigprofSenderThread, NULL);
-    gHasSigprofSenderLaunched = false;
-  }
+  pthread_join(gSigprofSenderThread, NULL);
 
   
-  if (gIsSigprofHandlerInstalled) {
-    sigaction(SIGPROF, &gOldSigprofHandler, 0);
-    gIsSigprofHandlerInstalled = false;
-  }
+  sigaction(SIGPROF, &gOldSigprofHandler, 0);
 }
 
 #if defined(GP_OS_android)

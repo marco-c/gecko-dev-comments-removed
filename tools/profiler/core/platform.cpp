@@ -2035,9 +2035,9 @@ profiler_start(int aProfileEntries, double aInterval,
 
   gGatherer = new mozilla::ProfileGatherer();
 
-  MOZ_ASSERT(!gIsActive && !gIsPaused);
+  gIsActive = true;  
+  gIsPaused = false;
   PlatformStart(gInterval);
-  MOZ_ASSERT(gIsActive && !gIsPaused);  
 
   if (gProfileJS || privacyMode) {
     mozilla::StaticMutexAutoLock lock(gRegisteredThreadsMutex);
@@ -2127,8 +2127,9 @@ profiler_stop()
   }
   gFeatures.clear();
 
+  gIsActive = false;  
+  gIsPaused = false;
   PlatformStop();
-  MOZ_ASSERT(!gIsActive && !gIsPaused);   
 
   gProfileJava      = false;
   gProfileJS        = false;
