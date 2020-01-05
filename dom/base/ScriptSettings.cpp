@@ -376,6 +376,13 @@ AutoJSAPI::InitInternal(nsIGlobalObject* aGlobalObject, JSObject* aGlobal,
     if (exn.isObject()) {
       JS::Rooted<JSObject*> exnObj(aCx, &exn.toObject());
 
+      
+      
+      
+      
+      exnObj = js::UncheckedUnwrap(exnObj);
+      JSAutoCompartment ac(aCx, exnObj);
+
       nsAutoJSString stack, filename, name, message;
       int32_t line;
 
