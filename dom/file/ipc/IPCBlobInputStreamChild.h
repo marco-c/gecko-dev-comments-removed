@@ -28,9 +28,6 @@ public:
   void
   ActorDestroy(IProtocol::ActorDestroyReason aReason) override;
 
-  bool
-  IsAlive();
-
   already_AddRefed<nsIInputStream>
   CreateStream();
 
@@ -49,12 +46,6 @@ public:
     return mSize;
   }
 
-  void
-  StreamNeeded(IPCBlobInputStream* aStream);
-
-  mozilla::ipc::IPCResult
-  RecvStreamReady(const OptionalIPCStream& aStream) override;
-
 private:
   ~IPCBlobInputStreamChild();
 
@@ -71,14 +62,6 @@ private:
 
   
   bool mActorAlive;
-
-  
-  struct PendingOperation
-  {
-    RefPtr<IPCBlobInputStream> mStream;
-    nsCOMPtr<nsIThread> mThread;
-  };
-  nsTArray<PendingOperation> mPendingOperations;
 
   nsCOMPtr<nsIThread> mOwningThread;
 };

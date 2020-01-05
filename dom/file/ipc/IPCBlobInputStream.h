@@ -7,7 +7,7 @@
 #ifndef mozilla_dom_ipc_IPCBlobInputStream_h
 #define mozilla_dom_ipc_IPCBlobInputStream_h
 
-#include "nsIAsyncInputStream.h"
+#include "nsIInputStream.h"
 #include "nsICloneableInputStream.h"
 #include "nsIIPCSerializableInputStream.h"
 
@@ -16,53 +16,22 @@ namespace dom {
 
 class IPCBlobInputStreamChild;
 
-class IPCBlobInputStream final : public nsIAsyncInputStream
+class IPCBlobInputStream final : public nsIInputStream
                                , public nsICloneableInputStream
                                , public nsIIPCSerializableInputStream
 {
 public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIINPUTSTREAM
-  NS_DECL_NSIASYNCINPUTSTREAM
   NS_DECL_NSICLONEABLEINPUTSTREAM
   NS_DECL_NSIIPCSERIALIZABLEINPUTSTREAM
 
   explicit IPCBlobInputStream(IPCBlobInputStreamChild* aActor);
 
-  void
-  StreamReady(nsIInputStream* aInputStream);
-
 private:
   ~IPCBlobInputStream();
 
   RefPtr<IPCBlobInputStreamChild> mActor;
-
-  
-  enum {
-    
-    
-    eInit,
-
-    
-    
-    ePending,
-
-    
-    
-    
-    eRunning,
-
-    
-    
-    
-    eClosed,
-  } mState;
-
-  nsCOMPtr<nsIInputStream> mRemoteStream;
-
-  
-  nsCOMPtr<nsIInputStreamCallback> mCallback;
-  nsCOMPtr<nsIEventTarget> mCallbackEventTarget;
 };
 
 } 
