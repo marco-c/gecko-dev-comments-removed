@@ -18,7 +18,6 @@ const store = configureStore();
 
 function NewConsoleOutputWrapper(parentNode, jsterm, toolbox, owner) {
   this.parentNode = parentNode;
-  this.parentNode = parentNode;
   this.jsterm = jsterm;
   this.toolbox = toolbox;
   this.owner = owner;
@@ -46,6 +45,11 @@ NewConsoleOutputWrapper.prototype = {
       openLink: (url) => {
         this.owner.openLink(url);
       },
+      emitNewMessage: (node) => {
+        this.jsterm.hud.emit("new-messages", new Set([{
+          node
+        }]));
+      },
     });
     let filterBar = FilterBar({});
     let provider = React.createElement(
@@ -68,12 +72,6 @@ NewConsoleOutputWrapper.prototype = {
   },
   dispatchMessagesClear: () => {
     store.dispatch(actions.messagesClear());
-  },
-  getLastMessage: function() {
-    
-    
-    let messageNodes = this.parentNode.querySelectorAll(".message");
-    return messageNodes[messageNodes.length - 1]
   },
 };
 
