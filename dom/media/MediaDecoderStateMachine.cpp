@@ -726,13 +726,12 @@ public:
              }));
 
     MOZ_ASSERT(!mMaster->mQueuedSeek.Exists());
-    mCurrentSeek = Move(mSeekJob);
   }
 
   void Exit() override
   {
     mSeekTaskRequest.DisconnectIfExists();
-    mCurrentSeek.RejectIfExists(__func__);
+    mSeekJob.RejectIfExists(__func__);
     mSeekTask->Discard();
 
     
@@ -750,16 +749,16 @@ public:
       return true;
     }
     MOZ_ASSERT(!mMaster->mQueuedSeek.Exists());
-    MOZ_ASSERT(mCurrentSeek.Exists());
+    MOZ_ASSERT(mSeekJob.Exists());
     
     
     
     
-    if (mCurrentSeek.mTarget.IsVideoOnly()) {
-      mCurrentSeek.mTarget.SetType(SeekTarget::Accurate);
-      mCurrentSeek.mTarget.SetVideoOnly(false);
+    if (mSeekJob.mTarget.IsVideoOnly()) {
+      mSeekJob.mTarget.SetType(SeekTarget::Accurate);
+      mSeekJob.mTarget.SetVideoOnly(false);
     }
-    mMaster->mQueuedSeek = Move(mCurrentSeek);
+    mMaster->mQueuedSeek = Move(mSeekJob);
     SetState(DECODER_STATE_DORMANT);
     return true;
   }
@@ -875,7 +874,7 @@ private:
 
     
     
-    mCurrentSeek.Resolve(nextState == DECODER_STATE_COMPLETED, __func__);
+    mSeekJob.Resolve(nextState == DECODER_STATE_COMPLETED, __func__);
 
     
     
@@ -902,7 +901,6 @@ private:
   SeekJob mSeekJob;
   MozPromiseRequestHolder<SeekTask::SeekTaskPromise> mSeekTaskRequest;
   RefPtr<SeekTask> mSeekTask;
-  SeekJob mCurrentSeek;
 };
 
 class MediaDecoderStateMachine::BufferingState
