@@ -660,6 +660,10 @@ private:
         RESPONSE_FROM_NETWORK,      
     } mFirstResponseSource = RESPONSE_PENDING;
 
+    
+    
+    nsresult MaybeRaceNetworkWithCache();
+
     nsresult TriggerNetwork(int32_t aTimeout);
     void CancelNetworkRequest(nsresult aStatus);
     

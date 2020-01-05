@@ -1641,6 +1641,11 @@ pref("network.http.keep_empty_response_headers_as_empty_string", true);
 pref("network.http.max_response_header_size", 393216);
 
 
+pref("network.http.rcwn.enabled", true);
+pref("network.http.rcwn.cache_queue_normal_threshold", 50);
+pref("network.http.rcwn.cache_queue_priority_threshold", 10);
+
+
 
 pref("network.http.focused_window_transaction_ratio", "0.9");
 
