@@ -149,20 +149,6 @@ function httpStatusToBucket(httpStatus) {
   return statusBucket;
 }
 
-function FullHashMatch(table, hash, duration) {
-  this.tableName = table;
-  this.fullHash = hash;
-  this.cacheDuration = duration;
-}
-
-FullHashMatch.prototype = {
-  QueryInterface: XPCOMUtils.generateQI([Ci.nsIFullHashMatch]),
-
-  tableName : null,
-  fullHash : null,
-  cacheDuration : null,
-};
-
 function HashCompleter() {
   
   
@@ -329,8 +315,7 @@ HashCompleterRequest.prototype = {
     this._requests.push({
       partialHash: aPartialHash,
       callback: aCallback,
-      tableName: aTableName,
-      response: { matches:[] },
+      responses: []
     });
 
     if (aTableName) {
@@ -552,8 +537,6 @@ HashCompleterRequest.prototype = {
 
   handleResponseV4: function HCR_handleResponseV4() {
     let callback = {
-      
-      
       onCompleteHashFound : (aCompleteHash,
                              aTableNames,
                              aPerHashCacheDuration) => {
@@ -573,16 +556,11 @@ HashCompleterRequest.prototype = {
           log("WARNING: Got complete hash which has ambigious threat type.");
         }
 
-        this.handleItem({
-          completeHash: aCompleteHash,
-          tableName: filteredTables[0],
-          cacheDuration: aPerHashCacheDuration
-        });
+        this.handleItem(aCompleteHash, filteredTables[0], 0);
+
+        
       },
 
-      
-      
-      
       onResponseParsed : (aMinWaitDuration,
                           aNegCacheDuration) => {
         log("V4 fullhash response parsed callback: " +
@@ -592,11 +570,8 @@ HashCompleterRequest.prototype = {
         let minWaitDuration = aMinWaitDuration;
 
         if (aMinWaitDuration > MIN_WAIT_DURATION_MAX_VALUE) {
-          log("WARNING: Minimum wait duration too large, clamping it down " +
-              "to a reasonable value.");
           minWaitDuration = MIN_WAIT_DURATION_MAX_VALUE;
         } else if (aMinWaitDuration < 0) {
-          log("WARNING: Minimum wait duration is negative, reset it to 0");
           minWaitDuration = 0;
         }
 
@@ -604,10 +579,6 @@ HashCompleterRequest.prototype = {
           Date.now() + minWaitDuration;
 
         
-        
-        this._requests.forEach(request => {
-          request.response.negCacheDuration = aNegCacheDuration;
-        });
       },
     };
 
@@ -644,11 +615,8 @@ HashCompleterRequest.prototype = {
 
     let data = body.substr(newlineIndex + 1, dataLength);
     for (let i = 0; i < (dataLength / COMPLETE_LENGTH); i++) {
-      this.handleItem({
-        completeHash: data.substr(i * COMPLETE_LENGTH, COMPLETE_LENGTH),
-        tableName: list,
-        chunkId: addChunk
-      });
+      this.handleItem(data.substr(i * COMPLETE_LENGTH, COMPLETE_LENGTH), list,
+                      addChunk);
     }
 
     return aStart + newlineIndex + 1 + dataLength;
@@ -656,11 +624,15 @@ HashCompleterRequest.prototype = {
 
   
   
-  handleItem: function HCR_handleItem(aData) {
+  handleItem: function HCR_handleItem(aData, aTableName, aChunkId) {
     for (let i = 0; i < this._requests.length; i++) {
       let request = this._requests[i];
-      if (aData.completeHash.startsWith(request.partialHash)) {
-        request.response.matches.push(aData);
+      if (aData.startsWith(request.partialHash)) {
+        request.responses.push({
+          completeHash: aData,
+          tableName: aTableName,
+          chunkId: aChunkId,
+        });
       }
     }
   },
@@ -670,32 +642,16 @@ HashCompleterRequest.prototype = {
   
   
   notifySuccess: function HCR_notifySuccess() {
-    
-    let completionV2 = (req) => {
-      req.response.matches.forEach((m) => {
-        req.callback.completionV2(m.completeHash, m.tableName, m.chunkId);
-      });
+    for (let i = 0; i < this._requests.length; i++) {
+      let request = this._requests[i];
+      for (let j = 0; j < request.responses.length; j++) {
+        let response = request.responses[j];
+        request.callback.completion(response.completeHash, response.tableName,
+                                    response.chunkId);
+      }
 
-      req.callback.completionFinished(Cr.NS_OK);
-    };
-
-    
-    let completionV4 = (req) => {
-      let matches = Cc["@mozilla.org/array;1"].createInstance(Ci.nsIMutableArray);
-
-      req.response.matches.forEach(m => {
-        matches.appendElement(
-          new FullHashMatch(m.tableName, m.completeHash, m.cacheDuration), false);
-      });
-
-      req.callback.completionV4(req.partialHash, req.tableName,
-                                req.response.negCacheDuration, matches);
-
-      req.callback.completionFinished(Cr.NS_OK);
-    };
-
-    let completion = this.isV4 ? completionV4 : completionV2;
-    this._requests.forEach((req) => { completion(req); });
+      request.callback.completionFinished(Cr.NS_OK);
+    }
   },
 
   notifyFailure: function HCR_notifyFailure(aStatus) {
