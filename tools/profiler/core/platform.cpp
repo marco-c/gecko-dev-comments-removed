@@ -818,10 +818,6 @@ const char** mozilla_sampler_get_features()
     
     "tasktracer",
 #endif
-#if defined(XP_WIN)
-    
-    "power",
-#endif
     nullptr
   };
 
