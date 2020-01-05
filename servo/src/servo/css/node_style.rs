@@ -6,12 +6,12 @@ use newcss::complete::CompleteStyle;
 
 
 pub trait StyledNode {
-    fn style(&self) -> CompleteStyle/&self;
+    fn style(&self) -> CompleteStyle<'self>;
 }
 
 impl StyledNode for AbstractNode {
-    fn style(&self) -> CompleteStyle/&self {
-        fail_unless!(self.is_element()); 
+    fn style(&self) -> CompleteStyle<'self> {
+        assert!(self.is_element()); 
         let results = self.get_css_select_results();
         results.computed_style()
     }

@@ -5,13 +5,11 @@
 use resource::resource_task::{ResourceTask, ProgressMsg, Load, Payload, Done};
 
 use core::cell::Cell;
-use core::comm::{Port, Chan};
-use core::pipes;
+use core::comm::Port;
 use core::str;
 use newcss::stylesheet::Stylesheet;
 use newcss::util::DataStream;
 use std::net::url::Url;
-use std::net::url;
 
 
 pub enum StylesheetProvenance {

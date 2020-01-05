@@ -6,7 +6,7 @@ enum CompressionMode {
 }
 
 impl Eq for CompressionMode {
-    pure fn eq(&self, other: &CompressionMode) -> bool {
+    fn eq(&self, other: &CompressionMode) -> bool {
         match (*self, *other) {
             (CompressNone, CompressNone) => true,
             (CompressWhitespace, CompressWhitespace) => true,
@@ -15,21 +15,21 @@ impl Eq for CompressionMode {
             _ => false
         }
     }
-    pure fn ne(&self, other: &CompressionMode) -> bool {
+    fn ne(&self, other: &CompressionMode) -> bool {
         !(*self).eq(other)
     }
 }
 
-// ported from Gecko's nsTextFrameUtils::TransformText. 
-// 
-// High level TODOs:
-//
-// * Issue #113: consider incoming text state (preceding spaces, arabic, etc)
-//               and propogate outgoing text state (dual of above) 
-//
-// * Issue #114: record skipped and kept chars for mapping original to new text
-//
-// * Untracked: various edge cases for bidi, CJK, etc.
+
+
+
+
+
+
+
+
+
+
 pub fn transform_text(text: &str, mode: CompressionMode) -> ~str {
     let mut out_str: ~str = ~"";
     match mode {
