@@ -9198,36 +9198,14 @@ nsRuleNode::ComputeColumnData(void* aStartStruct,
   }
 
   
-  const nsCSSValue& widthValue = *aRuleData->ValueForColumnRuleWidth();
-  if (eCSSUnit_Initial == widthValue.GetUnit() ||
-      eCSSUnit_Unset == widthValue.GetUnit()) {
-    column->SetColumnRuleWidth(
-        nsPresContext::GetBorderWidthForKeyword(NS_STYLE_BORDER_WIDTH_MEDIUM));
-  }
-  else if (eCSSUnit_Enumerated == widthValue.GetUnit()) {
-    NS_ASSERTION(widthValue.GetIntValue() == NS_STYLE_BORDER_WIDTH_THIN ||
-                 widthValue.GetIntValue() == NS_STYLE_BORDER_WIDTH_MEDIUM ||
-                 widthValue.GetIntValue() == NS_STYLE_BORDER_WIDTH_THICK,
-                 "Unexpected enum value");
-    column->SetColumnRuleWidth(
-        nsPresContext::GetBorderWidthForKeyword(widthValue.GetIntValue()));
-  }
-  else if (eCSSUnit_Inherit == widthValue.GetUnit()) {
-    column->SetColumnRuleWidth(parent->GetComputedColumnRuleWidth());
-    conditions.SetUncacheable();
-  }
-  else if (widthValue.IsLengthUnit() || widthValue.IsCalcUnit()) {
-    nscoord len =
-      CalcLength(widthValue, aContext, mPresContext, conditions);
-    if (len < 0) {
-      
-      
-      
-      NS_ASSERTION(widthValue.IsCalcUnit(),
-                   "parser should have rejected negative length");
-      len = 0;
-    }
-    column->SetColumnRuleWidth(len);
+  Maybe<nscoord> coord =
+    ComputeLineWidthValue<eUnsetInitial>(
+      *aRuleData->ValueForColumnRuleWidth(),
+      parent->GetComputedColumnRuleWidth(),
+      nsPresContext::GetBorderWidthForKeyword(NS_STYLE_BORDER_WIDTH_MEDIUM),
+      aContext, mPresContext, conditions);
+  if (coord.isSome()) {
+    column->SetColumnRuleWidth(*coord);
   }
 
   
