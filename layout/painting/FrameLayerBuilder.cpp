@@ -4340,6 +4340,13 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
       } else if (item->GetType() == nsDisplayItem::TYPE_MASK) {
         nsDisplayMask* maskItem = static_cast<nsDisplayMask*>(item);
         SetupMaskLayerForCSSMask(ownLayer, maskItem);
+
+        nsDisplayItem* next = aList->GetBottom();
+        if (next && next->GetType() == nsDisplayItem::TYPE_SCROLL_INFO_LAYER) {
+          
+          
+          aList->RemoveBottom();
+        }
       }
 
       
