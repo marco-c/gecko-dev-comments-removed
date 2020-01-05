@@ -30,6 +30,10 @@
   white-space: nowrap;
 }
 
+.tabs .tabs-menu-item a {
+  cursor: default;
+}
+
 
 
 .tabs .panels {
