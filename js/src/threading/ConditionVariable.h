@@ -21,21 +21,19 @@
 
 namespace js {
 
-template <typename T> using UniqueLock = LockGuard<T>;
-
 enum class CVStatus {
   NoTimeout,
   Timeout
 };
 
+namespace detail {
 
-class ConditionVariable
-{
+class ConditionVariableImpl {
 public:
   struct PlatformData;
 
-  ConditionVariable();
-  ~ConditionVariable();
+  ConditionVariableImpl();
+  ~ConditionVariableImpl();
 
   
   void notify_one();
@@ -45,7 +43,55 @@ public:
 
   
   
-  void wait(UniqueLock<Mutex>& lock);
+  void wait(Mutex& lock);
+
+  CVStatus wait_for(Mutex& lock,
+                    const mozilla::TimeDuration& rel_time);
+
+private:
+  ConditionVariableImpl(const ConditionVariableImpl&) = delete;
+  ConditionVariableImpl& operator=(const ConditionVariableImpl&) = delete;
+
+  PlatformData* platformData();
+
+#ifndef XP_WIN
+  void* platformData_[sizeof(pthread_cond_t) / sizeof(void*)];
+  static_assert(sizeof(pthread_cond_t) / sizeof(void*) != 0 &&
+                sizeof(pthread_cond_t) % sizeof(void*) == 0,
+                "pthread_cond_t must have pointer alignment");
+#else
+  void* platformData_[4];
+#endif
+};
+
+} 
+
+template <typename T> using UniqueLock = LockGuard<T>;
+
+
+class ConditionVariable
+{
+public:
+  struct PlatformData;
+
+  ConditionVariable() = default;
+  ~ConditionVariable() = default;
+
+  
+  void notify_one() {
+    impl_.notify_one();
+  }
+
+  
+  void notify_all() {
+    impl_.notify_all();
+  }
+
+  
+  
+  void wait(UniqueLock<Mutex>& lock) {
+    impl_.wait(lock.lock);
+  }
 
   
   
@@ -88,7 +134,9 @@ public:
   
   
   CVStatus wait_for(UniqueLock<Mutex>& lock,
-                    const mozilla::TimeDuration& rel_time);
+                    const mozilla::TimeDuration& rel_time) {
+    return impl_.wait_for(lock.lock, rel_time);
+  }
 
   
   
@@ -106,16 +154,7 @@ private:
   ConditionVariable(const ConditionVariable&) = delete;
   ConditionVariable& operator=(const ConditionVariable&) = delete;
 
-  PlatformData* platformData();
-
-#ifndef XP_WIN
-  void* platformData_[sizeof(pthread_cond_t) / sizeof(void*)];
-  static_assert(sizeof(pthread_cond_t) / sizeof(void*) != 0 &&
-                sizeof(pthread_cond_t) % sizeof(void*) == 0,
-                "pthread_cond_t must have pointer alignment");
-#else
-  void* platformData_[4];
-#endif
+  detail::ConditionVariableImpl impl_;
 };
 
 } 
