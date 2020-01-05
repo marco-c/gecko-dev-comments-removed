@@ -33,6 +33,15 @@ const int kLeftStickYAxis = 1;
 const int kRightStickXAxis = 2;
 const int kRightStickYAxis = 3;
 
+
+
+
+enum class GamepadServiceType : uint16_t {
+  Standard,
+  VR,
+  NumGamepadServiceType
+};
+
 class Gamepad final : public nsISupports,
                       public nsWrapperCache
 {

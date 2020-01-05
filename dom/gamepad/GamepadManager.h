@@ -47,10 +47,10 @@ class GamepadManager final : public nsIObserver,
 
   
   void AddGamepad(uint32_t aIndex, const nsAString& aID, GamepadMappingType aMapping,
-                  uint32_t aNumButtons, uint32_t aNumAxes);
+                  GamepadServiceType aServiceType, uint32_t aNumButtons, uint32_t aNumAxes);
 
   
-  void RemoveGamepad(uint32_t aIndex);
+  void RemoveGamepad(uint32_t aIndex, GamepadServiceType aServiceType);
 
   
   
@@ -127,6 +127,9 @@ class GamepadManager final : public nsIObserver,
   
   void SetWindowHasSeenGamepad(nsGlobalWindow* aWindow, uint32_t aIndex,
                                bool aHasSeen = true);
+  
+  
+  uint32_t GetGamepadIndexWithServiceType(uint32_t aIndex, GamepadServiceType aServiceType);
 
   
   
