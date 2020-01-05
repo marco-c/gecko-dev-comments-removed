@@ -1137,8 +1137,10 @@ public class Tabs implements BundleEventListener {
         
         
 
+        
+        final int fromPosition;
+        final int toPosition;
         synchronized (this) {
-            final int fromPosition;
             if (tabPositionCache.mTabId == fromTabId) {
                 fromPosition = tabPositionCache.mOrderPosition;
             } else {
@@ -1147,7 +1149,7 @@ public class Tabs implements BundleEventListener {
 
             
             final int adjustedToPositionHint = fromPosition + (toPositionHint - fromPositionHint);
-            final int toPosition = getOrderPositionForTab(toTabId, adjustedToPositionHint, fromPositionHint < toPositionHint);
+            toPosition = getOrderPositionForTab(toTabId, adjustedToPositionHint, fromPositionHint < toPositionHint);
             
             tabPositionCache.cache(fromTabId, toPosition);
 
@@ -1174,5 +1176,12 @@ public class Tabs implements BundleEventListener {
         }
 
         queuePersistAllTabs();
+
+        final GeckoBundle data = new GeckoBundle();
+        data.putInt("fromTabId", fromTabId);
+        data.putInt("fromPosition", fromPosition);
+        data.putInt("toTabId", toTabId);
+        data.putInt("toPosition", toPosition);
+        EventDispatcher.getInstance().dispatch("Tab:Move", data);
     }
 }
