@@ -102,6 +102,20 @@ enum GMPMediaKeyStatus {
   kGMPMediaKeyStatusInvalid = 8 
 };
 
+struct GMPMediaKeyInfo {
+  GMPMediaKeyInfo() {}
+  GMPMediaKeyInfo(const uint8_t* aKeyId,
+                  uint32_t aKeyIdSize,
+                  GMPMediaKeyStatus aStatus)
+    : keyid(aKeyId)
+    , keyid_size(aKeyIdSize)
+    , status(aStatus)
+  {}
+  const uint8_t* keyid;
+  uint32_t keyid_size;
+  GMPMediaKeyStatus status;
+};
+
 
 typedef int64_t GMPTimestamp;
 
@@ -191,6 +205,12 @@ public:
 
   
   virtual void Decrypted(GMPBuffer* aBuffer, GMPErr aResult) = 0;
+
+  
+  virtual void BatchedKeyStatusChanged(const char* aSessionId,
+                                       uint32_t aSessionIdLength,
+                                       const GMPMediaKeyInfo* aKeyInfos,
+                                       uint32_t aKeyInfosLength) = 0;
 
   virtual ~GMPDecryptorCallback() {}
 };
