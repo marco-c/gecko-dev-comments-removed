@@ -357,10 +357,12 @@ extern "C" {
 
 
 
+#ifdef DEBUG
 void Gecko_IncrementStringAdoptCount(void* aData)
 {
   MOZ_LOG_CTOR(aData, "StringAdopt", 1);
 }
+#endif
 
 void Gecko_FinalizeCString(nsACString* aThis)
 {
