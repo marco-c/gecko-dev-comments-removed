@@ -740,7 +740,10 @@ impl Node {
             Err(()) => Err(Error::Syntax),
             
             Ok(selectors) => {
-                Ok(QuerySelectorIterator::new(self.traverse_preorder(), selectors))
+                let mut descendants = self.traverse_preorder();
+                
+                assert!(&*descendants.next().unwrap() == self);
+                Ok(QuerySelectorIterator::new(descendants, selectors))
             }
         }
     }
