@@ -88,10 +88,6 @@ public:
 
   static bool ChildProcessHasCompositorBridge();
 
-  
-  
-  static bool CompositorIsInGPUProcess();
-
   void AddOverfillObserver(ClientLayerManager* aLayerManager);
 
   virtual mozilla::ipc::IPCResult
