@@ -4455,9 +4455,8 @@ WorkerPrivate::GetLoadInfo(JSContext* aCx, nsPIDOMWindowInner* aWindow,
 
     
     
-    
     rv = ChannelFromScriptURLWorkerThread(aCx, aParent, aScriptURL,
-                                          loadInfo.mChannel.StartAssignment());
+                                          loadInfo);
     NS_ENSURE_SUCCESS(rv, rv);
 
     
