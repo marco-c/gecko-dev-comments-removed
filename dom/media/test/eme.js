@@ -411,178 +411,29 @@ function CloseSessions(v, sessions) {
   .then(CleanUpMedia(v));
 }
 
-function SetupEME(test, token, params)
-{
-  var v = document.createElement("video");
-  v.sessions = [];
 
-  v.closeSessions = function() {
-    return Promise.all(v.sessions.map(s => s.close().then(() => s.closed))).then(
-      () => {
-        v.setMediaKeys(null);
-        if (v.parentNode) {
-          v.remove();
-        }
-        v.onerror = null;
-        v.src = null;
-      });
-  };
 
-  
-  [ "canplay", "canplaythrough", "ended", "error", "loadeddata",
-    "loadedmetadata", "loadstart", "pause", "play", "playing", "progress",
-    "stalled", "suspend", "waiting", "waitingforkey",
-  ].forEach(function (e) {
-    v.addEventListener(e, function(event) {
-      Log(token, "" + e);
-    });
-  });
 
-  
-  v.onerror = bail(token + " got error event");
 
-  var onSetKeysFail = (params && params.onSetKeysFail)
-    ? params.onSetKeysFail
-    : bail(token + " Failed to set MediaKeys on <video> element");
 
-  
-  
-  
-  var initDataQueue = [];
-  function pushInitData(ev)
-  {
-    if (initDataQueue === null) {
-      initDataQueue = [];
-    }
-    initDataQueue.push(ev);
-    if (params && params.onInitDataQueued) {
-      params.onInitDataQueued(ev, ev.initDataType, StringToHex(ArrayBufferToString(ev.initData)));
-    }
+function SetupEME(v, test, token, loadParams) {
+  let p = new EMEPromise;
+
+  v.onerror = function() {
+    p.reject(`${token} got an error event.`);
   }
 
-  function processInitDataQueue()
-  {
-    function maybeResolveInitDataPromise() {
-      if (params && params.initDataPromise) {
-        params.initDataPromise.resolve();
-      }
-    }
-    if (initDataQueue === null) {
-      maybeResolveInitDataPromise();
-      return;
-    }
-    
-    if (initDataQueue.length === 0) {
-      initDataQueue = null;
-      maybeResolveInitDataPromise();
-      return;
-    }
-    var ev = initDataQueue.shift();
+  Promise.all([
+    LoadInitData(v, test, token),
+    CreateAndSetMediaKeys(v, test, token),
+    LoadTest(test, v, token, loadParams)])
+  .then(values => {
+    let initData = values[0];
+    return ProcessInitData(v, test, token, initData);
+  })
+  .then(p.resolve, p.reject);
 
-    var sessionType = (params && params.sessionType) ? params.sessionType : "temporary";
-    Log(token, "createSession(" + sessionType + ") for (" + ev.initDataType + ", " + StringToHex(ArrayBufferToString(ev.initData)) + ")");
-    var session = v.mediaKeys.createSession(sessionType);
-    if (params && params.onsessioncreated) {
-      params.onsessioncreated(session);
-    }
-    v.sessions.push(session);
-
-    return new Promise(function (resolve, reject) {
-      session.addEventListener("message", UpdateSessionFunc(test, token, sessionType, resolve, reject));
-      Log(token, "session[" + session.sessionId + "].generateRequest(" + ev.initDataType + ", " + StringToHex(ArrayBufferToString(ev.initData)) + ")");
-      session.generateRequest(ev.initDataType, ev.initData).catch(function(reason) {
-        
-        
-        bail(token + ": session[" + session.sessionId + "].generateRequest(" + ev.initDataType + ", " + StringToHex(ArrayBufferToString(ev.initData)) + ") failed")(reason);
-        reject();
-      });
-    })
-
-    .then(function(aSession) {
-      Log(token, "session[" + session.sessionId + "].generateRequest(" + ev.initDataType + ", " + StringToHex(ArrayBufferToString(ev.initData)) + ") succeeded");
-      if (params && params.onsessionupdated) {
-        params.onsessionupdated(aSession);
-      }
-      processInitDataQueue();
-    });
-  }
-
-  function streamType(type) {
-    var x = test.tracks.find(o => o.name == type);
-    return x ? x.type : undefined;
-  }
-
-  
-  
-  if (params && params.delaySessions) {
-    params.ProcessSessions = processInitDataQueue;
-  }
-
-  
-  var firstInitData = true;
-  v.addEventListener("encrypted", function(ev) {
-    if (firstInitData) {
-      Log(token, "got first encrypted(" + ev.initDataType + ", " + StringToHex(ArrayBufferToString(ev.initData)) + "), setup session");
-      firstInitData = false;
-      pushInitData(ev);
-
-      function chain(promise, onReject) {
-        return promise.then(function(value) {
-          return Promise.resolve(value);
-        }).catch(function(reason) {
-          onReject(reason);
-          return Promise.reject();
-        })
-      }
-
-      var options = { initDataTypes: [ev.initDataType] };
-      if (streamType("video")) {
-        options.videoCapabilities = [{contentType: streamType("video")}];
-      }
-      if (streamType("audio")) {
-        options.audioCapabilities = [{contentType: streamType("audio")}];
-      }
-
-      var p = navigator.requestMediaKeySystemAccess(CLEARKEY_KEYSYSTEM, [options]);
-      var r = bail(token + " Failed to request key system access.");
-      chain(p, r)
-      .then(function(keySystemAccess) {
-        var p = keySystemAccess.createMediaKeys();
-        var r = bail(token +  " Failed to create MediaKeys object");
-        return chain(p, r);
-      })
-
-      .then(function(mediaKeys) {
-        Log(token, "created MediaKeys object ok");
-        mediaKeys.sessions = [];
-        var p = v.setMediaKeys(mediaKeys);
-        return chain(p, onSetKeysFail);
-      })
-
-      .then(function() {
-        Log(token, "set MediaKeys on <video> element ok");
-        if (params && params.onMediaKeysSet) {
-          params.onMediaKeysSet();
-        }
-        if (!(params && params.delaySessions)) {
-          processInitDataQueue();
-        }
-      })
-    } else {
-      if (params && params.delaySessions) {
-        Log(token, "got encrypted(" + ev.initDataType + ", " + StringToHex(ArrayBufferToString(ev.initData)) + ") event, queue it in because we're delaying sessions");
-        pushInitData(ev);
-      } else if (initDataQueue !== null) {
-        Log(token, "got encrypted(" + ev.initDataType + ", " + StringToHex(ArrayBufferToString(ev.initData)) + ") event, queue it for later session update");
-        pushInitData(ev);
-      } else {
-        Log(token, "got encrypted(" + ev.initDataType + ", " + StringToHex(ArrayBufferToString(ev.initData)) + ") event, update session now");
-        pushInitData(ev);
-        processInitDataQueue();
-      }
-    }
-  });
-  return v;
+  return p.promise;
 }
 
 function SetupEMEPref(callback) {
