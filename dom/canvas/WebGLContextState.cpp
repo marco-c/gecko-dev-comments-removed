@@ -264,24 +264,31 @@ WebGLContext::GetParameter(JSContext* cx, GLenum pname, ErrorResult& rv)
         }
     }
 
-    if (IsWebGL2() || IsExtensionEnabled(WebGLExtensionID::EXT_disjoint_timer_query)) {
-        if (pname == LOCAL_GL_TIMESTAMP_EXT) {
-            GLuint64 iv = 0;
-            if (HasTimestampBits()) {
-                gl->fGetInteger64v(pname, (GLint64*)&iv);
-            } else {
-                GenerateWarning("QUERY_COUNTER_BITS_EXT for TIMESTAMP_EXT is 0.");
+    if (IsExtensionEnabled(WebGLExtensionID::EXT_disjoint_timer_query)) {
+        switch (pname) {
+        case LOCAL_GL_TIMESTAMP_EXT:
+            {
+                uint64_t val = 0;
+                if (Has64BitTimestamps()) {
+                    gl->fGetInteger64v(pname, (GLint64*)&val);
+                } else {
+                    gl->fGetIntegerv(pname, (GLint*)&val);
+                }
+                
+                
+                return JS::NumberValue(val);
             }
-            
-            
-            return JS::NumberValue(static_cast<double>(iv));
-        } else if (pname == LOCAL_GL_GPU_DISJOINT_EXT) {
-            
-            realGLboolean disjoint = LOCAL_GL_FALSE;
-            if (gl->IsExtensionSupported(gl::GLContext::EXT_disjoint_timer_query)) {
-                gl->fGetBooleanv(pname, &disjoint);
+
+        case LOCAL_GL_GPU_DISJOINT_EXT:
+            {
+                MOZ_ASSERT(gl->IsExtensionSupported(gl::GLContext::EXT_disjoint_timer_query));
+                realGLboolean val = false;
+                gl->fGetBooleanv(pname, &val);
+                return JS::BooleanValue(val);
             }
-            return JS::BooleanValue(bool(disjoint));
+
+        default:
+            break;
         }
     }
 

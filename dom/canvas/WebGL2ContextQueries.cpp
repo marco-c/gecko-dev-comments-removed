@@ -22,58 +22,35 @@ namespace mozilla {
 
 
 
-static const char*
-GetQueryTargetEnumString(GLenum target)
+WebGLRefPtr<WebGLQuery>*
+WebGLContext::ValidateQuerySlotByTarget(const char* funcName, GLenum target)
 {
-    switch (target)
-    {
-    case LOCAL_GL_ANY_SAMPLES_PASSED:
-        return "ANY_SAMPLES_PASSED";
-    case LOCAL_GL_ANY_SAMPLES_PASSED_CONSERVATIVE:
-        return "ANY_SAMPLES_PASSED_CONSERVATIVE";
-    case LOCAL_GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN:
-        return "TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN";
-    default:
-        break;
+    if (IsWebGL2()) {
+        switch (target) {
+        case LOCAL_GL_ANY_SAMPLES_PASSED:
+        case LOCAL_GL_ANY_SAMPLES_PASSED_CONSERVATIVE:
+            return &mQuerySlot_SamplesPassed;
+
+        case LOCAL_GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN:
+            return &mQuerySlot_TFPrimsWritten;
+
+        default:
+            break;
+        }
     }
 
-    MOZ_ASSERT(false, "Unknown query `target`.");
-    return "UNKNOWN_QUERY_TARGET";
-}
+    if (IsExtensionEnabled(WebGLExtensionID::EXT_disjoint_timer_query)) {
+        switch (target) {
+        case LOCAL_GL_TIME_ELAPSED_EXT:
+            return &mQuerySlot_TimeElapsed;
 
-static inline GLenum
-SimulateOcclusionQueryTarget(const gl::GLContext* gl, GLenum target)
-{
-    MOZ_ASSERT(target == LOCAL_GL_ANY_SAMPLES_PASSED ||
-               target == LOCAL_GL_ANY_SAMPLES_PASSED_CONSERVATIVE,
-               "unknown occlusion query target");
-
-    if (gl->IsSupported(gl::GLFeature::occlusion_query_boolean)) {
-        return target;
-    } else if (gl->IsSupported(gl::GLFeature::occlusion_query2)) {
-        return LOCAL_GL_ANY_SAMPLES_PASSED;
+        default:
+            break;
+        }
     }
 
-    return LOCAL_GL_SAMPLES_PASSED;
-}
-
-WebGLRefPtr<WebGLQuery>&
-WebGLContext::GetQuerySlotByTarget(GLenum target)
-{
-    
-
-
-    switch (target) {
-    case LOCAL_GL_ANY_SAMPLES_PASSED:
-    case LOCAL_GL_ANY_SAMPLES_PASSED_CONSERVATIVE:
-        return mActiveOcclusionQuery;
-
-    case LOCAL_GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN:
-        return mActiveTransformFeedbackQuery;
-
-    default:
-        MOZ_CRASH("GFX: Should not get here.");
-    }
+    ErrorInvalidEnum("%s: Bad `target`.", funcName);
+    return nullptr;
 }
 
 
@@ -81,329 +58,179 @@ WebGLContext::GetQuerySlotByTarget(GLenum target)
 
 
 already_AddRefed<WebGLQuery>
-WebGL2Context::CreateQuery()
+WebGLContext::CreateQuery(const char* funcName)
 {
+    if (!funcName) {
+        funcName = "createQuery";
+    }
+
     if (IsContextLost())
         return nullptr;
 
-    if (mActiveOcclusionQuery && !gl->IsGLES()) {
-        
-
-
-
-
-
-        GenerateWarning("createQuery: The WebGL 2 prototype might generate"
-                        " INVALID_OPERATION when creating a query object while"
-                        " one other is active.");
-        
-
-
-
-    }
-
     RefPtr<WebGLQuery> globj = new WebGLQuery(this);
-
     return globj.forget();
 }
 
 void
-WebGL2Context::DeleteQuery(WebGLQuery* query)
+WebGLContext::DeleteQuery(WebGLQuery* query, const char* funcName)
 {
+    if (!funcName) {
+        funcName = "deleteQuery";
+    }
+
     if (IsContextLost())
         return;
 
     if (!query)
         return;
 
-    if (query->IsDeleted())
+    if (!ValidateObjectAllowDeleted(funcName, query))
         return;
 
-    if (query->IsActive())
-        EndQuery(query->mType);
-
-    if (mActiveOcclusionQuery && !gl->IsGLES()) {
-        
-
-
-
-
-
-        GenerateWarning("deleteQuery: The WebGL 2 prototype might generate"
-                        " INVALID_OPERATION when deleting a query object while"
-                        " one other is active.");
-    }
-
-    query->RequestDelete();
+    query->DeleteQuery();
 }
 
 bool
-WebGL2Context::IsQuery(WebGLQuery* query)
+WebGLContext::IsQuery(const WebGLQuery* query, const char* funcName)
 {
+    if (!funcName) {
+        funcName = "isQuery";
+    }
+
     if (IsContextLost())
         return false;
 
     if (!query)
         return false;
 
-    return (ValidateObjectAllowDeleted("isQuery", query) &&
-            !query->IsDeleted() &&
-            query->HasEverBeenActive());
-}
-
-void
-WebGL2Context::BeginQuery(GLenum target, WebGLQuery* query)
-{
-    if (IsContextLost())
-        return;
-
-    if (!ValidateQueryTarget(target, "beginQuery"))
-        return;
-
-    if (!query) {
-        
-
-
-
-
-
-
-
-
-
-
-        ErrorInvalidOperation("beginQuery: Query should not be null.");
-        return;
-    }
-
-    if (query->IsDeleted()) {
-        
-
-
-
-
-
-        ErrorInvalidOperation("beginQuery: Query has been deleted.");
-        return;
-    }
-
-    if (query->HasEverBeenActive() &&
-        query->mType != target)
-    {
-        ErrorInvalidOperation("beginQuery: Target doesn't match with the query"
-                              " type.");
-        return;
-    }
-
-    WebGLRefPtr<WebGLQuery>& querySlot = GetQuerySlotByTarget(target);
-    WebGLQuery* activeQuery = querySlot.get();
-    if (activeQuery)
-        return ErrorInvalidOperation("beginQuery: An other query already active.");
-
-    if (!query->HasEverBeenActive())
-        query->mType = target;
-
-    MakeContextCurrent();
-
-    if (target == LOCAL_GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN) {
-        gl->fBeginQuery(LOCAL_GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN,
-                        query->mGLName);
-    } else {
-        gl->fBeginQuery(SimulateOcclusionQueryTarget(gl, target),
-                        query->mGLName);
-    }
-
-    UpdateBoundQuery(target, query);
-}
-
-void
-WebGL2Context::EndQuery(GLenum target)
-{
-    if (IsContextLost())
-        return;
-
-    if (!ValidateQueryTarget(target, "endQuery"))
-        return;
-
-    WebGLRefPtr<WebGLQuery>& querySlot = GetQuerySlotByTarget(target);
-    WebGLQuery* activeQuery = querySlot.get();
-
-    if (!activeQuery || target != activeQuery->mType)
-    {
-        
-
-
-
-
-
-
-
-
-
-
-
-
-        ErrorInvalidOperation("endQuery: There is no active query of type %s.",
-                              GetQueryTargetEnumString(target));
-        return;
-    }
-
-    MakeContextCurrent();
-
-    if (target == LOCAL_GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN) {
-        gl->fEndQuery(LOCAL_GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN);
-    } else {
-        gl->fEndQuery(SimulateOcclusionQueryTarget(gl, target));
-    }
-
-    UpdateBoundQuery(target, nullptr);
-    NS_DispatchToCurrentThread(new WebGLQuery::AvailableRunnable(activeQuery));
-}
-
-already_AddRefed<WebGLQuery>
-WebGL2Context::GetQuery(GLenum target, GLenum pname)
-{
-    if (IsContextLost())
-        return nullptr;
-
-    if (!ValidateQueryTarget(target, "getQuery"))
-        return nullptr;
-
-    if (pname != LOCAL_GL_CURRENT_QUERY) {
-        
-
-
-        ErrorInvalidEnum("getQuery: `pname` must be CURRENT_QUERY.");
-        return nullptr;
-    }
-
-    WebGLRefPtr<WebGLQuery>& targetSlot = GetQuerySlotByTarget(target);
-    RefPtr<WebGLQuery> tmp = targetSlot.get();
-    if (tmp && tmp->mType != target) {
-        
-        return nullptr;
-    }
-
-    return tmp.forget();
-}
-
-static bool
-ValidateQueryEnum(WebGLContext* webgl, GLenum pname, const char* info)
-{
-    switch (pname) {
-    case LOCAL_GL_QUERY_RESULT_AVAILABLE:
-    case LOCAL_GL_QUERY_RESULT:
-        return true;
-
-    default:
-        webgl->ErrorInvalidEnum("%s: invalid pname: %s", info, webgl->EnumName(pname));
+    if (!ValidateObjectAllowDeleted("isQuery", query))
         return false;
-    }
+
+    return query->IsQuery();
 }
 
 void
-WebGL2Context::GetQueryParameter(JSContext*, WebGLQuery* query, GLenum pname,
-                                 JS::MutableHandleValue retval)
+WebGLContext::BeginQuery(GLenum target, WebGLQuery* query, const char* funcName)
 {
-    retval.set(JS::NullValue());
+    if (!funcName) {
+        funcName = "beginQuery";
+    }
 
     if (IsContextLost())
         return;
 
-    if (!ValidateQueryEnum(this, pname, "getQueryParameter"))
+    if (!ValidateObject(funcName, query))
         return;
 
-    if (!query) {
-        
-
-
-
-
-
-        ErrorInvalidOperation("getQueryObject: `query` should not be null.");
+    const auto& slot = ValidateQuerySlotByTarget(funcName, target);
+    if (!slot)
         return;
-    }
 
-    if (query->IsDeleted()) {
-        
-        ErrorInvalidOperation("getQueryObject: `query` has been deleted.");
-        return;
-    }
-
-    if (query->IsActive()) {
-        
-        ErrorInvalidOperation("getQueryObject: `query` is active.");
-        return;
-    }
-
-    if (!query->HasEverBeenActive()) {
-        
-
-
-
-        ErrorInvalidOperation("getQueryObject: `query` has never been active.");
-        return;
-    }
+    if (*slot)
+        return ErrorInvalidOperation("%s: Query target already active.", funcName);
 
     
-    if (!query->mCanBeAvailable && !gfxPrefs::WebGLImmediateQueries()) {
-        if (pname == LOCAL_GL_QUERY_RESULT_AVAILABLE) {
-            retval.set(JS::BooleanValue(false));
-        }
+
+    if (!query->BeginQuery(target))
         return;
+
+    *slot = query;
+}
+
+void
+WebGLContext::EndQuery(GLenum target, const char* funcName)
+{
+    if (!funcName) {
+        funcName = "endQuery";
     }
 
-    MakeContextCurrent();
-    GLuint returned = 0;
-    switch (pname) {
-    case LOCAL_GL_QUERY_RESULT_AVAILABLE:
-        gl->fGetQueryObjectuiv(query->mGLName, LOCAL_GL_QUERY_RESULT_AVAILABLE, &returned);
-        retval.set(JS::BooleanValue(returned != 0));
+    if (IsContextLost())
         return;
 
-    case LOCAL_GL_QUERY_RESULT:
-        gl->fGetQueryObjectuiv(query->mGLName, LOCAL_GL_QUERY_RESULT, &returned);
+    const auto& slot = ValidateQuerySlotByTarget(funcName, target);
+    if (!slot)
+        return;
 
-        if (query->mType == LOCAL_GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN) {
-            retval.set(JS::NumberValue(returned));
+    const auto& query = *slot;
+    if (!query)
+        return ErrorInvalidOperation("%s: Query target not active.", funcName);
+
+    query->EndQuery();
+
+    *slot = nullptr;
+}
+
+void
+WebGLContext::GetQuery(JSContext* cx, GLenum target, GLenum pname,
+                       JS::MutableHandleValue retval, const char* funcName)
+{
+    if (!funcName) {
+        funcName = "getQuery";
+    }
+
+    retval.setNull();
+    if (IsContextLost())
+        return;
+
+    switch (pname) {
+    case LOCAL_GL_CURRENT_QUERY_EXT:
+        {
+            const auto& slot = ValidateQuerySlotByTarget(funcName, target);
+            if (!slot || !*slot)
+                return;
+
+            JS::Rooted<JS::Value> v(cx);
+            dom::GetOrCreateDOMReflector(cx, slot->get(), &v);
+            retval.set(v);
+        }
+        return;
+
+    case LOCAL_GL_QUERY_COUNTER_BITS_EXT:
+        if (!IsExtensionEnabled(WebGLExtensionID::EXT_disjoint_timer_query))
+            break;
+
+        if (target != LOCAL_GL_TIME_ELAPSED_EXT &&
+            target != LOCAL_GL_TIMESTAMP_EXT)
+        {
+            ErrorInvalidEnum("%s: Bad pname for target.", funcName);
             return;
         }
 
-        
+        {
+            GLint bits = 0;
+            gl->fGetQueryiv(target, pname, &bits);
 
-
-
-
-        retval.set(JS::BooleanValue(returned != 0));
+            if (!Has64BitTimestamps() && bits > 32) {
+                bits = 32;
+            }
+            retval.set(JS::Int32Value(bits));
+        }
         return;
 
     default:
         break;
     }
 
-    ErrorInvalidEnum("getQueryObject: `pname` must be QUERY_RESULT{_AVAILABLE}.");
+    ErrorInvalidEnum("%s: Bad pname.", funcName);
+    return;
 }
 
 void
-WebGL2Context::UpdateBoundQuery(GLenum target, WebGLQuery* query)
+WebGLContext::GetQueryParameter(JSContext*, const WebGLQuery* query, GLenum pname,
+                                JS::MutableHandleValue retval, const char* funcName)
 {
-    WebGLRefPtr<WebGLQuery>& querySlot = GetQuerySlotByTarget(target);
-    querySlot = query;
-}
-
-bool
-WebGL2Context::ValidateQueryTarget(GLenum target, const char* info)
-{
-    switch (target) {
-    case LOCAL_GL_ANY_SAMPLES_PASSED:
-    case LOCAL_GL_ANY_SAMPLES_PASSED_CONSERVATIVE:
-    case LOCAL_GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN:
-        return true;
-
-    default:
-        ErrorInvalidEnumInfo(info, target);
-        return false;
+    if (!funcName) {
+        funcName = "getQueryParameter";
     }
+
+    retval.setNull();
+    if (IsContextLost())
+        return;
+
+    if (!ValidateObject(funcName, query))
+        return;
+
+    query->GetQueryParameter(pname, retval);
 }
 
 } 
