@@ -355,6 +355,9 @@ struct Statistics
     
     UniqueChars renderJsonSlice(size_t sliceNum) const;
 
+    
+    UniqueChars renderNurseryJson(JSRuntime* rt) const;
+
   private:
     JSRuntime* runtime;
 
