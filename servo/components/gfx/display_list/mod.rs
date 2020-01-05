@@ -25,28 +25,27 @@ use text::TextRun;
 
 use azure::azure::AzFloat;
 use azure::azure_hl::Color;
-
-use std::collections::linked_list::{self, LinkedList};
-use euclid::{Point2D, Rect, SideOffsets2D, Size2D, Matrix2D, Matrix4};
 use euclid::approxeq::ApproxEq;
 use euclid::num::Zero;
+use euclid::{Point2D, Rect, SideOffsets2D, Size2D, Matrix2D, Matrix4};
 use libc::uintptr_t;
-use paint_task::PaintLayer;
 use msg::compositor_msg::{LayerId, LayerKind};
 use net_traits::image::base::Image;
-use util::opts;
-use util::cursor::Cursor;
-use util::linked_list::prepend_from;
-use util::geometry::{self, Au, MAX_RECT, ZERO_RECT};
-use util::mem::HeapSizeOf;
-use util::range::Range;
+use paint_task::PaintLayer;
 use smallvec::SmallVec8;
+use std::collections::linked_list::{self, LinkedList};
 use std::fmt;
 use std::slice::Iter;
 use std::sync::Arc;
 use style::computed_values::{border_style, cursor, filter, image_rendering, mix_blend_mode};
 use style::computed_values::{pointer_events};
 use style::properties::ComputedValues;
+use util::cursor::Cursor;
+use util::geometry::{self, Au, MAX_RECT, ZERO_RECT};
+use util::linked_list::{SerializableLinkedList, prepend_from};
+use util::mem::HeapSizeOf;
+use util::opts;
+use util::range::Range;
 
 
 
@@ -66,7 +65,7 @@ const MIN_INDENTATION_LENGTH: usize = 4;
 
 
 
-#[derive(Clone, PartialEq, Copy, Debug, HeapSizeOf)]
+#[derive(Clone, PartialEq, Copy, Debug, HeapSizeOf, Deserialize, Serialize)]
 pub struct OpaqueNode(pub uintptr_t);
 
 impl OpaqueNode {
@@ -82,22 +81,22 @@ impl OpaqueNode {
 
 
 
-#[derive(HeapSizeOf)]
+#[derive(HeapSizeOf, Deserialize, Serialize)]
 pub struct DisplayList {
     
-    pub background_and_borders: LinkedList<DisplayItem>,
+    pub background_and_borders: SerializableLinkedList<DisplayItem>,
     
-    pub block_backgrounds_and_borders: LinkedList<DisplayItem>,
+    pub block_backgrounds_and_borders: SerializableLinkedList<DisplayItem>,
     
-    pub floats: LinkedList<DisplayItem>,
+    pub floats: SerializableLinkedList<DisplayItem>,
     
-    pub content: LinkedList<DisplayItem>,
+    pub content: SerializableLinkedList<DisplayItem>,
     
-    pub positioned_content: LinkedList<DisplayItem>,
+    pub positioned_content: SerializableLinkedList<DisplayItem>,
     
-    pub outlines: LinkedList<DisplayItem>,
+    pub outlines: SerializableLinkedList<DisplayItem>,
     
-    pub children: LinkedList<Arc<StackingContext>>,
+    pub children: SerializableLinkedList<Arc<StackingContext>>,
 }
 
 impl DisplayList {
@@ -105,13 +104,13 @@ impl DisplayList {
     #[inline]
     pub fn new() -> DisplayList {
         DisplayList {
-            background_and_borders: LinkedList::new(),
-            block_backgrounds_and_borders: LinkedList::new(),
-            floats: LinkedList::new(),
-            content: LinkedList::new(),
-            positioned_content: LinkedList::new(),
-            outlines: LinkedList::new(),
-            children: LinkedList::new(),
+            background_and_borders: SerializableLinkedList::new(LinkedList::new()),
+            block_backgrounds_and_borders: SerializableLinkedList::new(LinkedList::new()),
+            floats: SerializableLinkedList::new(LinkedList::new()),
+            content: SerializableLinkedList::new(LinkedList::new()),
+            positioned_content: SerializableLinkedList::new(LinkedList::new()),
+            outlines: SerializableLinkedList::new(LinkedList::new()),
+            children: SerializableLinkedList::new(LinkedList::new()),
         }
     }
 
@@ -119,34 +118,34 @@ impl DisplayList {
     
     #[inline]
     pub fn append_from(&mut self, other: &mut DisplayList) {
-        self.background_and_borders.append(&mut other.background_and_borders);
-        self.block_backgrounds_and_borders.append(&mut other.block_backgrounds_and_borders);
-        self.floats.append(&mut other.floats);
-        self.content.append(&mut other.content);
-        self.positioned_content.append(&mut other.positioned_content);
-        self.outlines.append(&mut other.outlines);
-        self.children.append(&mut other.children);
+        self.background_and_borders.append(&mut *other.background_and_borders);
+        self.block_backgrounds_and_borders.append(&mut *other.block_backgrounds_and_borders);
+        self.floats.append(&mut *other.floats);
+        self.content.append(&mut *other.content);
+        self.positioned_content.append(&mut *other.positioned_content);
+        self.outlines.append(&mut *other.outlines);
+        self.children.append(&mut *other.children);
     }
 
     
     #[inline]
     pub fn form_float_pseudo_stacking_context(&mut self) {
-        prepend_from(&mut self.floats, &mut self.outlines);
-        prepend_from(&mut self.floats, &mut self.positioned_content);
-        prepend_from(&mut self.floats, &mut self.content);
-        prepend_from(&mut self.floats, &mut self.block_backgrounds_and_borders);
-        prepend_from(&mut self.floats, &mut self.background_and_borders);
+        prepend_from(&mut *self.floats, &mut *self.outlines);
+        prepend_from(&mut *self.floats, &mut *self.positioned_content);
+        prepend_from(&mut *self.floats, &mut *self.content);
+        prepend_from(&mut *self.floats, &mut *self.block_backgrounds_and_borders);
+        prepend_from(&mut *self.floats, &mut *self.background_and_borders);
     }
 
     
     
     #[inline]
     pub fn form_pseudo_stacking_context_for_positioned_content(&mut self) {
-        prepend_from(&mut self.positioned_content, &mut self.outlines);
-        prepend_from(&mut self.positioned_content, &mut self.content);
-        prepend_from(&mut self.positioned_content, &mut self.floats);
-        prepend_from(&mut self.positioned_content, &mut self.block_backgrounds_and_borders);
-        prepend_from(&mut self.positioned_content, &mut self.background_and_borders);
+        prepend_from(&mut *self.positioned_content, &mut *self.outlines);
+        prepend_from(&mut *self.positioned_content, &mut *self.content);
+        prepend_from(&mut *self.positioned_content, &mut *self.floats);
+        prepend_from(&mut *self.positioned_content, &mut *self.block_backgrounds_and_borders);
+        prepend_from(&mut *self.positioned_content, &mut *self.background_and_borders);
     }
 
     
@@ -219,7 +218,7 @@ impl DisplayList {
     }
 }
 
-#[derive(HeapSizeOf)]
+#[derive(HeapSizeOf, Deserialize, Serialize)]
 
 pub struct StackingContext {
     
@@ -443,7 +442,8 @@ impl StackingContext {
 
         } else {
             
-            let display_list = DisplayListOptimizer::new(tile_bounds).optimize(&*self.display_list);
+            let display_list =
+                DisplayListOptimizer::new(tile_bounds).optimize(&*self.display_list);
 
             self.draw_into_context(&display_list,
                                    paint_context,
@@ -515,12 +515,16 @@ impl StackingContext {
                         
                         let interior_rect =
                             Rect::new(
-                                Point2D::new(border.base.bounds.origin.x + border.border_widths.left,
-                                             border.base.bounds.origin.y + border.border_widths.top),
+                                Point2D::new(border.base.bounds.origin.x +
+                                             border.border_widths.left,
+                                             border.base.bounds.origin.y +
+                                             border.border_widths.top),
                                 Size2D::new(border.base.bounds.size.width -
-                                                (border.border_widths.left + border.border_widths.right),
+                                                (border.border_widths.left +
+                                                 border.border_widths.right),
                                             border.base.bounds.size.height -
-                                                (border.border_widths.top + border.border_widths.bottom)));
+                                                (border.border_widths.top +
+                                                 border.border_widths.bottom)));
                         if geometry::rect_contains_point(interior_rect, point) {
                             continue
                         }
@@ -541,7 +545,7 @@ impl StackingContext {
 
         debug_assert!(!topmost_only || result.is_empty());
         let frac_point = self.transform.transform_point(&Point2D::new(point.x.to_f32_px(),
-                                                                 point.y.to_f32_px()));
+                                                                      point.y.to_f32_px()));
         point = Point2D::new(Au::from_f32_px(frac_point.x), Au::from_f32_px(frac_point.y));
 
         
@@ -639,7 +643,7 @@ pub fn find_stacking_context_with_layer_id(this: &Arc<StackingContext>, layer_id
 }
 
 
-#[derive(Clone, HeapSizeOf)]
+#[derive(Clone, Deserialize, HeapSizeOf, Serialize)]
 pub enum DisplayItem {
     SolidColorClass(Box<SolidColorDisplayItem>),
     TextClass(Box<TextDisplayItem>),
@@ -651,7 +655,7 @@ pub enum DisplayItem {
 }
 
 
-#[derive(Clone, HeapSizeOf)]
+#[derive(Clone, Deserialize, HeapSizeOf, Serialize)]
 pub struct BaseDisplayItem {
     
     pub bounds: Rect<Au>,
@@ -679,7 +683,7 @@ impl BaseDisplayItem {
 
 
 
-#[derive(Clone, PartialEq, Debug, HeapSizeOf)]
+#[derive(Clone, PartialEq, Debug, HeapSizeOf, Deserialize, Serialize)]
 pub struct ClippingRegion {
     
     pub main: Rect<Au>,
@@ -693,7 +697,7 @@ pub struct ClippingRegion {
 
 
 
-#[derive(Clone, PartialEq, Debug, HeapSizeOf)]
+#[derive(Clone, PartialEq, Debug, HeapSizeOf, Deserialize, Serialize)]
 pub struct ComplexClippingRegion {
     
     pub rect: Rect<Au>,
@@ -805,7 +809,7 @@ impl ClippingRegion {
 
 
 
-#[derive(Clone, Copy, HeapSizeOf)]
+#[derive(Clone, Copy, HeapSizeOf, Deserialize, Serialize)]
 pub struct DisplayItemMetadata {
     
     pub node: OpaqueNode,
@@ -834,7 +838,7 @@ impl DisplayItemMetadata {
 }
 
 
-#[derive(Clone, HeapSizeOf)]
+#[derive(Clone, HeapSizeOf, Deserialize, Serialize)]
 pub struct SolidColorDisplayItem {
     
     pub base: BaseDisplayItem,
@@ -844,7 +848,7 @@ pub struct SolidColorDisplayItem {
 }
 
 
-#[derive(Clone, HeapSizeOf)]
+#[derive(Clone, HeapSizeOf, Deserialize, Serialize)]
 pub struct TextDisplayItem {
     
     pub base: BaseDisplayItem,
@@ -869,7 +873,7 @@ pub struct TextDisplayItem {
     pub blur_radius: Au,
 }
 
-#[derive(Clone, Eq, PartialEq, HeapSizeOf)]
+#[derive(Clone, Eq, PartialEq, HeapSizeOf, Deserialize, Serialize)]
 pub enum TextOrientation {
     Upright,
     SidewaysLeft,
@@ -877,7 +881,7 @@ pub enum TextOrientation {
 }
 
 
-#[derive(Clone, HeapSizeOf)]
+#[derive(Clone, HeapSizeOf, Deserialize, Serialize)]
 pub struct ImageDisplayItem {
     pub base: BaseDisplayItem,
     #[ignore_heap_size_of = "Because it is non-owning"]
@@ -895,7 +899,7 @@ pub struct ImageDisplayItem {
 
 
 
-#[derive(Clone)]
+#[derive(Clone, Deserialize, Serialize)]
 pub struct GradientDisplayItem {
     
     pub base: BaseDisplayItem,
@@ -926,7 +930,7 @@ impl HeapSizeOf for GradientDisplayItem {
 
 
 
-#[derive(Clone, HeapSizeOf)]
+#[derive(Clone, HeapSizeOf, Deserialize, Serialize)]
 pub struct BorderDisplayItem {
     
     pub base: BaseDisplayItem,
@@ -949,7 +953,7 @@ pub struct BorderDisplayItem {
 
 
 
-#[derive(Clone, Default, PartialEq, Debug, Copy, HeapSizeOf)]
+#[derive(Clone, Default, PartialEq, Debug, Copy, HeapSizeOf, Deserialize, Serialize)]
 pub struct BorderRadii<T> {
     pub top_left: T,
     pub top_right: T,
@@ -979,7 +983,7 @@ impl<T> BorderRadii<T> where T: PartialEq + Zero + Clone {
 }
 
 
-#[derive(Clone, HeapSizeOf)]
+#[derive(Clone, HeapSizeOf, Deserialize, Serialize)]
 pub struct LineDisplayItem {
     pub base: BaseDisplayItem,
 
@@ -991,7 +995,7 @@ pub struct LineDisplayItem {
 }
 
 
-#[derive(Clone, HeapSizeOf)]
+#[derive(Clone, HeapSizeOf, Deserialize, Serialize)]
 pub struct BoxShadowDisplayItem {
     
     pub base: BaseDisplayItem,
@@ -1016,7 +1020,7 @@ pub struct BoxShadowDisplayItem {
 }
 
 
-#[derive(Clone, Copy, Debug, PartialEq, HeapSizeOf)]
+#[derive(Clone, Copy, Debug, PartialEq, HeapSizeOf, Deserialize, Serialize)]
 pub enum BoxShadowClipMode {
     
     None,

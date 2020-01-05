@@ -14,7 +14,7 @@ use std::sync::Arc;
 use text::glyph::{CharIndex, GlyphStore};
 
 
-#[derive(Clone)]
+#[derive(Clone, Deserialize, Serialize)]
 pub struct TextRun {
     
     pub text: Arc<String>,
@@ -26,7 +26,7 @@ pub struct TextRun {
 }
 
 
-#[derive(Clone)]
+#[derive(Clone, Deserialize, Serialize)]
 pub struct GlyphRun {
     
     pub glyph_store: Arc<GlyphStore>,

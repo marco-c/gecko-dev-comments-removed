@@ -10,6 +10,7 @@ use string_cache::Atom;
 
 
 
+#[derive(Deserialize, Serialize)]
 pub struct FontTemplateData {
     pub bytes: Vec<u8>,
     pub identifier: Atom,

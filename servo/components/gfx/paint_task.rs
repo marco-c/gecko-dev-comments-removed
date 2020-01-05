@@ -40,7 +40,7 @@ use util::task_state;
 use util::task::spawn_named;
 
 
-#[derive(Clone)]
+#[derive(Clone, Deserialize, Serialize)]
 pub struct PaintLayer {
     
     pub id: LayerId,
@@ -353,7 +353,8 @@ impl<C> PaintTask<C> where C: PaintListener + Send + 'static {
             let transform = transform.mul(&stacking_context.transform);
             let perspective = perspective.mul(&stacking_context.perspective);
 
-            let (next_parent_id, page_position, transform, perspective) = match stacking_context.layer {
+            let (next_parent_id, page_position, transform, perspective) =
+                match stacking_context.layer {
                 Some(ref paint_layer) => {
                     
                     
@@ -361,10 +362,14 @@ impl<C> PaintTask<C> where C: PaintListener + Send + 'static {
                                                           stacking_context.bounds.origin +
                                                           stacking_context.overflow.origin;
                     let layer_position =
-                        Rect::new(Point2D::new(overflow_relative_page_position.x.to_nearest_px() as f32,
-                                               overflow_relative_page_position.y.to_nearest_px() as f32),
-                                  Size2D::new(stacking_context.overflow.size.width.to_nearest_px() as f32,
-                                              stacking_context.overflow.size.height.to_nearest_px() as f32));
+                        Rect::new(Point2D::new(overflow_relative_page_position.x.to_nearest_px() as
+                                               f32,
+                                               overflow_relative_page_position.y.to_nearest_px() as
+                                               f32),
+                                  Size2D::new(stacking_context.overflow.size.width.to_nearest_px()
+                                              as f32,
+                                              stacking_context.overflow.size.height.to_nearest_px()
+                                              as f32));
 
                     let establishes_3d_context = stacking_context.establishes_3d_context;
 
@@ -395,12 +400,7 @@ impl<C> PaintTask<C> where C: PaintListener + Send + 'static {
             };
 
             for kid in stacking_context.display_list.children.iter() {
-                build(properties,
-                      &**kid,
-                      &page_position,
-                      &transform,
-                      &perspective,
-                      next_parent_id);
+                build(properties, &**kid, &page_position, &transform, &perspective, next_parent_id)
             }
         }
     }

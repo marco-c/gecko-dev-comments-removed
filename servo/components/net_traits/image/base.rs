@@ -10,6 +10,7 @@ use util::vec::byte_swap;
 
 
 
+#[derive(Deserialize, Serialize)]
 pub enum PixelFormat {
     K8,         
     KA8,        
@@ -17,6 +18,7 @@ pub enum PixelFormat {
     RGBA8,      
 }
 
+#[derive(Deserialize, Serialize)]
 pub struct Image {
     pub width: u32,
     pub height: u32,

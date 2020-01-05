@@ -60,7 +60,7 @@ pub enum LayerKind {
 }
 
 
-#[derive(Clone, PartialEq, Eq, Copy)]
+#[derive(Clone, PartialEq, Eq, Copy, Deserialize, Serialize)]
 pub enum ScrollPolicy {
     
     Scrollable,

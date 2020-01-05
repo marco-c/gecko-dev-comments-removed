@@ -19,7 +19,7 @@ use util::vec::*;
 
 
 
-#[derive(Clone, Debug, Copy)]
+#[derive(Clone, Debug, Copy, Deserialize, Serialize)]
 struct GlyphEntry {
     value: u32,
 }
@@ -250,7 +250,7 @@ impl GlyphEntry {
 
 
 
-#[derive(Clone, Debug, Copy)]
+#[derive(Clone, Debug, Copy, Deserialize, Serialize)]
 struct DetailedGlyph {
     id: GlyphId,
     
@@ -269,7 +269,7 @@ impl DetailedGlyph {
     }
 }
 
-#[derive(PartialEq, Clone, Eq, Debug, Copy)]
+#[derive(PartialEq, Clone, Eq, Debug, Copy, Deserialize, Serialize)]
 struct DetailedGlyphRecord {
     
     entry_offset: CharIndex,
@@ -293,7 +293,7 @@ impl Ord for DetailedGlyphRecord {
 
 
 
-#[derive(Clone)]
+#[derive(Clone, Deserialize, Serialize)]
 struct DetailedGlyphStore {
     
     
@@ -500,7 +500,7 @@ impl<'a> GlyphInfo<'a> {
 
 
 
-#[derive(Clone)]
+#[derive(Clone, Deserialize, Serialize)]
 pub struct GlyphStore {
     
     
@@ -515,7 +515,7 @@ pub struct GlyphStore {
 }
 
 int_range_index! {
-    #[derive(RustcEncodable)]
+    #[derive(Deserialize, Serialize, RustcEncodable)]
     #[doc = "An index that refers to a character in a text run. This could \
              point to the middle of a glyph."]
     #[derive(HeapSizeOf)]
