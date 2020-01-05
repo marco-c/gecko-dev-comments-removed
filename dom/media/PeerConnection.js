@@ -301,13 +301,20 @@ RTCStatsReport.prototype = {
   
   
   
+  _specToLegacyFieldMapping: {
+        'inbound-rtp' : 'inboundrtp',
+        'outbound-rtp':'outboundrtp',
+        'candidate-pair':'candidatepair',
+        'local-candidate':'localcandidate',
+        'remote-candidate':'remotecandidate'
+  },
 
   makeStatsPublic: function(warnNullable) {
     let legacyProps = {};
     for (let key in this._report) {
+      this.setInternal(key, Cu.cloneInto(this._report[key], this._win));
       let value = Cu.cloneInto(this._report[key], this._win);
-      this.setInternal(key, value);
-
+      value.type = this._specToLegacyFieldMapping[value.type] || value.type;
       legacyProps[key] = {
         enumerable: true, configurable: false,
         get: Cu.exportFunction(function() {
