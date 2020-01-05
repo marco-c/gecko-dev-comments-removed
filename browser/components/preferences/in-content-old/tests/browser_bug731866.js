@@ -4,6 +4,9 @@
 Components.utils.import("resource://gre/modules/PlacesUtils.jsm");
 Components.utils.import("resource://gre/modules/NetUtil.jsm");
 
+const storageManagerDisabled = !SpecialPowers.getBoolPref("browser.storageManager.enabled");
+const offlineGroupDisabled = !SpecialPowers.getBoolPref("browser.preferences.offlineGroup.enabled");
+
 function test() {
   waitForExplicitFinish();
   open_preferences(runTest);
@@ -20,6 +23,22 @@ function checkElements(expectedPane) {
         element.id === "drmGroup") {
       continue;
     }
+    
+    
+    
+    
+    if (element.id == "siteDataGroup" && storageManagerDisabled) {
+      is_element_hidden(element, "Disabled siteDataGroup should be hidden");
+      continue;
+    }
+    
+    
+    
+    if (element.id == "offlineGroup" && offlineGroupDisabled) {
+      is_element_hidden(element, "Disabled offlineGroup should be hidden");
+      continue;
+    }
+
     let attributeValue = element.getAttribute("data-category");
     let suffix = " (id=" + element.id + ")";
     if (attributeValue == "pane" + expectedPane) {
