@@ -780,11 +780,6 @@ mod bindings {
             "RawGeckoServoStyleRuleList",
         ];
         for &ty in structs_types.iter() {
-            
-            if ty.starts_with("mozilla::css::ImageValue") {
-                builder = builder
-                    .raw_line("#[allow(unused_imports)]");
-            }
             builder = builder.hide_type(ty)
                 .raw_line(format!("use gecko_bindings::structs::{};", ty));
             
