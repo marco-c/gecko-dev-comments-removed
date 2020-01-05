@@ -40,12 +40,14 @@ function isAncestorOrSelf(target, node) {
 
 const browserActionMap = new WeakMap();
 
-const browserAreas = {
-  "navbar": CustomizableUI.AREA_NAVBAR,
-  "menupanel": CustomizableUI.AREA_PANEL,
-  "tabstrip": CustomizableUI.AREA_TABSTRIP,
-  "personaltoolbar": CustomizableUI.AREA_BOOKMARKS,
-};
+XPCOMUtils.defineLazyGetter(this, "browserAreas", () => {
+  return {
+    "navbar": CustomizableUI.AREA_NAVBAR,
+    "menupanel": CustomizableUI.AREA_PANEL,
+    "tabstrip": CustomizableUI.AREA_TABSTRIP,
+    "personaltoolbar": CustomizableUI.AREA_BOOKMARKS,
+  };
+});
 
 
 
