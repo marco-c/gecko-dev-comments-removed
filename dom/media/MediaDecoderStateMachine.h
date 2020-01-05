@@ -538,8 +538,6 @@ protected:
 
   
   void RunStateMachine();
-  
-  void StepDecoding();
 
   bool IsStateMachineScheduled() const;
 
