@@ -2368,7 +2368,22 @@ function BrowserPageInfo(documentURL, initialTab, imageElement, frameOuterWindow
                     "chrome,toolbar,dialog=no,resizable", args);
 }
 
-function URLBarSetURI(aURI) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function URLBarSetURI(aURI, aOptions = {}) {
   var value = gBrowser.userTypedValue;
   var valid = false;
 
@@ -2401,7 +2416,7 @@ function URLBarSetURI(aURI) {
 
   gURLBar.value = value;
   gURLBar.valueIsTyped = !valid;
-  SetPageProxyState(valid ? "valid" : "invalid");
+  SetPageProxyState(valid ? "valid" : "invalid", aOptions);
 }
 
 function losslessDecodeURI(aURI) {
@@ -2500,7 +2515,26 @@ function UpdatePageProxyState()
     SetPageProxyState("invalid");
 }
 
-function SetPageProxyState(aState)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function SetPageProxyState(aState, aOptions = {})
 {
   if (!gURLBar)
     return;
@@ -2514,6 +2548,15 @@ function SetPageProxyState(aState)
     gURLBar.addEventListener("input", UpdatePageProxyState, false);
   } else if (aState == "invalid") {
     gURLBar.removeEventListener("input", UpdatePageProxyState, false);
+  }
+
+  
+  
+  
+  
+  if (!Object.getOwnPropertyDescriptor(window, "PopupNotifications").get &&
+      !aOptions.isForLocationChange) {
+    PopupNotifications.anchorVisibilityChange();
   }
 }
 
@@ -4508,7 +4551,7 @@ var XULBrowserWindow = {
         this.reloadCommand.removeAttribute("disabled");
       }
 
-      URLBarSetURI(aLocationURI);
+      URLBarSetURI(aLocationURI, { isForLocationChange: true });
 
       BookmarkingUI.onLocationChange();
 
@@ -5307,7 +5350,7 @@ var gHomeButton = {
     if (homeButton) {
       var homePage = this.getHomePage();
       homePage = homePage.replace(/\|/g, ', ');
-      if (["about:home", "about:newtab"].includes(homePage.toLowerCase()))
+      if (homePage.toLowerCase() == "about:home")
         homeButton.setAttribute("tooltiptext", homeButton.getAttribute("aboutHomeOverrideTooltip"));
       else
         homeButton.setAttribute("tooltiptext", homePage);

@@ -509,6 +509,19 @@ PopupNotifications.prototype = {
 
 
 
+
+  anchorVisibilityChange: function() {
+    let notifications =
+      this._getNotificationsForBrowser(this.tabbrowser.selectedBrowser);
+    this._update(notifications, this._getAnchorsForNotifications(notifications,
+      getAnchorFromBrowser(this.tabbrowser.selectedBrowser)));
+  },
+
+  
+
+
+
+
   remove: function PopupNotifications_remove(notification) {
     this._remove(notification);
 
@@ -831,6 +844,21 @@ PopupNotifications.prototype = {
 
     this._refreshPanel(notificationsToShow);
 
+    
+    if (!anchorElement || (anchorElement.boxObject.height == 0 &&
+                           anchorElement.boxObject.width == 0)) {
+      anchorElement = this.window.document.getElementById("identity-icon");
+
+      
+      
+      
+      
+      if (!anchorElement || (anchorElement.boxObject.height == 0 &&
+                             anchorElement.boxObject.width == 0)) {
+        anchorElement = this.tabbrowser.selectedTab;
+      }
+    }
+
     if (this.isPanelOpen && this._currentAnchorElement == anchorElement) {
       notificationsToShow.forEach(function(n) {
         this._fireCallback(n, NOTIFICATION_EVENT_SHOWN);
@@ -848,18 +876,6 @@ PopupNotifications.prototype = {
     
     
     this._hidePanel().then(() => {
-      
-      
-      
-      let selectedTab = this.tabbrowser.selectedTab;
-      if (anchorElement) {
-        let bo = anchorElement.boxObject;
-        if (bo.height == 0 && bo.width == 0)
-          anchorElement = selectedTab; 
-      } else {
-        anchorElement = selectedTab; 
-      }
-
       this._currentAnchorElement = anchorElement;
 
       if (notificationsToShow.some(n => n.options.persistent)) {
