@@ -127,10 +127,10 @@ var gCookiesWindow = {
     var rowIndex = 0;
     var cookieItem = null;
     if (!this._view._filtered) {
-      for (let host of this._hostsOrder) { 
+      for (let host of this._hostOrder) {
         ++rowIndex;
         var hostItem = this._hosts[host];
-        if (this._hostOrder[i] == strippedHost) { 
+        if (host == strippedHost) {
           
           
           for (let currCookie of hostItem.cookies) {
@@ -888,7 +888,7 @@ var gCookiesWindow = {
 
     
     this._openIndices = [];
-    for (i = 0; i < this._view.rowCount; ++i) {
+    for (let i = 0; i < this._view.rowCount; ++i) {
       var item = this._view._getItemAtIndex(i);
       if (item && item.container && item.open)
         this._openIndices.push(i);
