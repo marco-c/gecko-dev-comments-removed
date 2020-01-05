@@ -312,8 +312,7 @@ function copyPermanentKey(outer, inner) {
   
   let outerMM = outer[FRAME_LOADER].messageManager;
   let onHistoryEntry = message => {
-    let data = message.data.data;
-    let history = data.history || data.historychange;
+    let history = message.data.data.history;
     if (!history || !history.entries) {
       
       return;
