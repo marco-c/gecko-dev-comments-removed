@@ -1590,6 +1590,10 @@ nsStylePosition::CalcDifference(const nsStylePosition& aNewData,
       
       
       
+      
+      
+      
+      
       hint |= nsChangeHint_NeedReflow |
               nsChangeHint_UpdateComputedBSize |
               nsChangeHint_ReflowChangesSizeOrPosition |
