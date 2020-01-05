@@ -235,6 +235,8 @@ private:
         
         
         
+        
+        
         nsClassHashtable<nsUint64HashKey,
                          nsTArray<RefPtr<PendingTransactionInfo>>> mPendingTransactionTable;
         nsTArray<RefPtr<nsHttpConnection> >  mActiveConns; 

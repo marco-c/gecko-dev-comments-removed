@@ -45,10 +45,35 @@ namespace net {
 
 NS_IMPL_ISUPPORTS(nsHttpConnectionMgr, nsIObserver)
 
+
+
+
+static bool
+TransactionComparator(nsHttpTransaction *t1, nsHttpTransaction *t2)
+{
+    bool t1Blocking =
+        t1->Caps() & (NS_HTTP_LOAD_AS_BLOCKING | NS_HTTP_LOAD_UNBLOCKED);
+    bool t2Blocking =
+        t2->Caps() & (NS_HTTP_LOAD_AS_BLOCKING | NS_HTTP_LOAD_UNBLOCKED);
+
+    if (t1Blocking > t2Blocking) {
+        return false;
+    }
+
+    if (t2Blocking > t1Blocking) {
+        return true;
+    }
+
+    return t1->Priority() >= t2->Priority();
+}
+
 void
 nsHttpConnectionMgr::InsertTransactionSorted(nsTArray<RefPtr<nsHttpConnectionMgr::PendingTransactionInfo> > &pendingQ,
                                              nsHttpConnectionMgr::PendingTransactionInfo *pendingTransInfo)
 {
+    
+    
+    
     
     
     
@@ -57,7 +82,7 @@ nsHttpConnectionMgr::InsertTransactionSorted(nsTArray<RefPtr<nsHttpConnectionMgr
 
     for (int32_t i = pendingQ.Length() - 1; i >= 0; --i) {
         nsHttpTransaction *t = pendingQ[i]->mTransaction;
-        if (trans->Priority() >= t->Priority()) {
+        if (TransactionComparator(trans, t)) {
             if (ChaosMode::isActive(ChaosFeature::NetworkScheduling)) {
                 int32_t samePriorityCount;
                 for (samePriorityCount = 0; i - samePriorityCount >= 0; ++samePriorityCount) {
@@ -1050,6 +1075,11 @@ nsHttpConnectionMgr::ProcessPendingQForEntry(nsConnectionEntry *ent, bool consid
             mCurrentTopLevelOuterContentWindowId,
             pendingQ,
             maxNonFocusedWindowConnections - remainingPendingQ.Length());
+    } else if (pendingQ.Length() < maxFocusedWindowConnections) {
+        ent->AppendPendingQForNonFocusedWindows(
+            mCurrentTopLevelOuterContentWindowId,
+            remainingPendingQ,
+            maxFocusedWindowConnections - pendingQ.Length());
     }
 
     MOZ_ASSERT(pendingQ.Length() + remainingPendingQ.Length() <=
