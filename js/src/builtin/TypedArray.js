@@ -1727,6 +1727,10 @@ function SharedArrayBufferSlice(start, end) {
         ThrowTypeError(JSMSG_SAME_SHARED_ARRAY_BUFFER_RETURNED);
 
     
+    if (SharedArrayBuffersMemorySame(new_, O))
+        ThrowTypeError(JSMSG_SAME_SHARED_ARRAY_BUFFER_RETURNED);
+
+    
     var actualLen = PossiblyWrappedSharedArrayBufferByteLength(new_);
     if (actualLen < newLen)
         ThrowTypeError(JSMSG_SHORT_SHARED_ARRAY_BUFFER_RETURNED, newLen, actualLen);
