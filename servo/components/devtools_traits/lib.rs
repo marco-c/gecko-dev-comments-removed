@@ -51,23 +51,36 @@ pub struct DevtoolsPageInfo {
 
 
 pub enum DevtoolsControlMsg {
+    
     FromChrome(ChromeToDevtoolsControlMsg),
+    
     FromScript(ScriptToDevtoolsControlMsg),
 }
 
+
 pub enum ChromeToDevtoolsControlMsg {
+    
     AddClient(TcpStream),
-    FramerateTick(String, f64),
+    
     ServerExitMsg,
+    
+    
     NetworkEvent(String, NetworkEvent),
 }
 
 #[derive(Deserialize, Serialize)]
+
 pub enum ScriptToDevtoolsControlMsg {
+    
+    
     NewGlobal((PipelineId, Option<WorkerId>),
               IpcSender<DevtoolScriptControlMsg>,
               DevtoolsPageInfo),
+    
     ConsoleAPI(PipelineId, ConsoleMessage, Option<WorkerId>),
+    
+    
+    FramerateTick(String, f64),
 }
 
 
@@ -136,18 +149,37 @@ pub enum TimelineMarkerType {
 
 
 #[derive(Deserialize, Serialize)]
+pub struct ComputedNodeLayout {
+    pub width: f32,
+    pub height: f32,
+}
+
+
+#[derive(Deserialize, Serialize)]
 pub enum DevtoolScriptControlMsg {
+    
     EvaluateJS(PipelineId, String, IpcSender<EvaluateJSReply>),
+    
     GetRootNode(PipelineId, IpcSender<NodeInfo>),
+    
     GetDocumentElement(PipelineId, IpcSender<NodeInfo>),
+    
     GetChildren(PipelineId, String, IpcSender<Vec<NodeInfo>>),
-    GetLayout(PipelineId, String, IpcSender<(f32, f32)>),
+    
+    GetLayout(PipelineId, String, IpcSender<ComputedNodeLayout>),
+    
     GetCachedMessages(PipelineId, CachedConsoleMessageTypes, IpcSender<Vec<CachedConsoleMessage>>),
+    
     ModifyAttribute(PipelineId, String, Vec<Modification>),
+    
     WantsLiveNotifications(PipelineId, bool),
+    
     SetTimelineMarkers(PipelineId, Vec<TimelineMarkerType>, IpcSender<TimelineMarker>),
+    
     DropTimelineMarkers(PipelineId, Vec<TimelineMarkerType>),
-    RequestAnimationFrame(PipelineId, IpcSender<f64>),
+    
+    
+    RequestAnimationFrame(PipelineId, String),
 }
 
 #[derive(RustcEncodable, Deserialize, Serialize)]
