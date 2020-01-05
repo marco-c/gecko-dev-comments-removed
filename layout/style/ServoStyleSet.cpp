@@ -8,6 +8,7 @@
 
 #include "mozilla/DocumentStyleRootIterator.h"
 #include "mozilla/ServoRestyleManager.h"
+#include "mozilla/dom/AnonymousContent.h"
 #include "mozilla/dom/ChildIterator.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/ElementInlines.h"
@@ -60,6 +61,8 @@ ServoStyleSet::Init(nsPresContext* aPresContext)
 void
 ServoStyleSet::BeginShutdown()
 {
+  nsIDocument* doc = mPresContext->Document();
+
   
   
   
@@ -72,9 +75,17 @@ ServoStyleSet::BeginShutdown()
   
   
   
-  DocumentStyleRootIterator iter(mPresContext->Document());
+  DocumentStyleRootIterator iter(doc);
   while (Element* root = iter.GetNextStyleRoot()) {
     ServoRestyleManager::ClearServoDataFromSubtree(root);
+  }
+
+  
+  
+  
+  
+  for (RefPtr<AnonymousContent>& ac : doc->GetAnonymousContents()) {
+    ServoRestyleManager::ClearServoDataFromSubtree(ac->GetContentNode());
   }
 }
 
