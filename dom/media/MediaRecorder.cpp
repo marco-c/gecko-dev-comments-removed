@@ -515,6 +515,10 @@ public:
       
       DoSessionEndTask(NS_OK);
     }
+    
+    
+    
+    nsContentUtils::UnregisterShutdownObserver(this);
   }
 
   nsresult Pause()
@@ -590,6 +594,7 @@ private:
     if (mReadThread) {
       mReadThread->Shutdown();
       mReadThread = nullptr;
+      
       
       
       nsContentUtils::UnregisterShutdownObserver(this);
@@ -824,6 +829,17 @@ private:
     mInputPorts.Clear();
 
     if (mTrackUnionStream) {
+      if (mEncoder) {
+        nsTArray<RefPtr<mozilla::dom::VideoStreamTrack>> videoTracks;
+        DOMMediaStream* domStream = mRecorder->Stream();
+        if (domStream) {
+          domStream->GetVideoTracks(videoTracks);
+          if (!videoTracks.IsEmpty()) {
+            videoTracks[0]->RemoveDirectListener(mEncoder->GetVideoSink());
+          }
+        }
+      }
+
       
       
       if (mEncoder && mSelectedVideoTrackID != TRACK_NONE) {
