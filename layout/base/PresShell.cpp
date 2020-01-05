@@ -200,10 +200,6 @@
 #include "mozilla/dom/ImageTracker.h"
 #include "nsIDocShellTreeOwner.h"
 
-#ifdef MOZ_B2G
-#include "nsIHardwareKeyHandler.h"
-#endif
-
 #ifdef MOZ_TASK_TRACER
 #include "GeckoTaskTracer.h"
 using namespace mozilla::tasktracer;
@@ -6376,7 +6372,7 @@ PresShell::RecordShadowStyleChange(ShadowRoot* aShadowRoot)
 }
 
 void
-PresShell::Paint(nsView*        aViewToPaint,
+PresShell::Paint(nsView*         aViewToPaint,
                  const nsRegion& aDirtyRegion,
                  uint32_t        aFlags)
 {
@@ -6425,7 +6421,6 @@ PresShell::Paint(nsView*        aViewToPaint,
 
   nsAutoNotifyDidPaint notifyDidPaint(this, aFlags);
 
-  
   
   
   
