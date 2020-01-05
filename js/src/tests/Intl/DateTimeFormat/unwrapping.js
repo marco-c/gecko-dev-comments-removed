@@ -20,6 +20,10 @@ function IsObject(o) {
     return Object(o) === o;
 }
 
+function IsPrimitive(o) {
+    return Object(o) !== o;
+}
+
 function intlObjects(ctor) {
     return [
         
@@ -90,8 +94,8 @@ for (let dateTimeFormatFunction of dateTimeFormatFunctions) {
     }
 
     
-    for (let thisValue of thisValues(Intl.DateTimeFormat)) {
-        if (!IsObject(thisValue) || Intl.DateTimeFormat.prototype.isPrototypeOf(thisValue))
+    for (let thisValue of thisValues(Intl.DateTimeFormat).filter(IsObject)) {
+        if (Intl.DateTimeFormat.prototype.isPrototypeOf(thisValue))
             continue;
         Object.defineProperty(thisValue, intlFallbackSymbol, {
             get() { assertEq(false, true); }
@@ -101,7 +105,7 @@ for (let dateTimeFormatFunction of dateTimeFormatFunctions) {
 
     
     
-    for (let thisValue of thisValues(Intl.DateTimeFormat)) {
+    for (let thisValue of thisValues(Intl.DateTimeFormat).filter(IsObject)) {
         let hasInstanceCalled = false, symbolGetterCalled = false;
         Object.defineProperty(Intl.DateTimeFormat, Symbol.hasInstance, {
             value() {
@@ -110,27 +114,43 @@ for (let dateTimeFormatFunction of dateTimeFormatFunctions) {
                 return true;
             }, configurable: true
         });
-        let isUndefinedOrNull = thisValue !== undefined || thisValue !== null;
+        Object.defineProperty(thisValue, intlFallbackSymbol, {
+            get() {
+                assertEq(symbolGetterCalled, false);
+                symbolGetterCalled = true;
+                return null;
+            }, configurable: true
+        });
+
+        assertThrowsInstanceOf(() => dateTimeFormatFunction.call(thisValue), TypeError);
+
+        delete Intl.DateTimeFormat[Symbol.hasInstance];
+
+        assertEq(hasInstanceCalled, true);
+        assertEq(symbolGetterCalled, true);
+    }
+
+    
+    for (let thisValue of thisValues(Intl.DateTimeFormat).filter(IsPrimitive)) {
+        
+        Object.defineProperty(Intl.DateTimeFormat, Symbol.hasInstance, {
+            value() { assertEq(true, false); }, configurable: true
+        });
+        let isUndefinedOrNull = thisValue === undefined || thisValue === null;
         let symbolHolder;
         if (!isUndefinedOrNull) {
-            symbolHolder = IsObject(thisValue) ? thisValue : Object.getPrototypeOf(thisValue);
+            
+            symbolHolder = Object.getPrototypeOf(thisValue);
             Object.defineProperty(symbolHolder, intlFallbackSymbol, {
-                get() {
-                    assertEq(symbolGetterCalled, false);
-                    symbolGetterCalled = true;
-                    return null;
-                }, configurable: true
+                get() { assertEq(true, false); }, configurable: true
             });
         }
 
         assertThrowsInstanceOf(() => dateTimeFormatFunction.call(thisValue), TypeError);
 
         delete Intl.DateTimeFormat[Symbol.hasInstance];
-        if (!isUndefinedOrNull && !IsObject(thisValue))
+        if (!isUndefinedOrNull)
             delete symbolHolder[intlFallbackSymbol];
-
-        assertEq(hasInstanceCalled, true);
-        assertEq(symbolGetterCalled, !isUndefinedOrNull);
     }
 }
 

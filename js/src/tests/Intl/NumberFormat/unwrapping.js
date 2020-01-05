@@ -22,6 +22,10 @@ function IsObject(o) {
     return Object(o) === o;
 }
 
+function IsPrimitive(o) {
+    return Object(o) !== o;
+}
+
 function intlObjects(ctor) {
     return [
         
@@ -92,8 +96,8 @@ for (let numberFormatFunction of numberFormatFunctions) {
     }
 
     
-    for (let thisValue of thisValues(Intl.NumberFormat)) {
-        if (!IsObject(thisValue) || Intl.NumberFormat.prototype.isPrototypeOf(thisValue))
+    for (let thisValue of thisValues(Intl.NumberFormat).filter(IsObject)) {
+        if (Intl.NumberFormat.prototype.isPrototypeOf(thisValue))
             continue;
         Object.defineProperty(thisValue, intlFallbackSymbol, {
             get() { assertEq(false, true); }
@@ -103,7 +107,7 @@ for (let numberFormatFunction of numberFormatFunctions) {
 
     
     
-    for (let thisValue of thisValues(Intl.NumberFormat)) {
+    for (let thisValue of thisValues(Intl.NumberFormat).filter(IsObject)) {
         let hasInstanceCalled = false, symbolGetterCalled = false;
         Object.defineProperty(Intl.NumberFormat, Symbol.hasInstance, {
             value() {
@@ -112,27 +116,43 @@ for (let numberFormatFunction of numberFormatFunctions) {
                 return true;
             }, configurable: true
         });
-        let isUndefinedOrNull = thisValue !== undefined || thisValue !== null;
+        Object.defineProperty(thisValue, intlFallbackSymbol, {
+            get() {
+                assertEq(symbolGetterCalled, false);
+                symbolGetterCalled = true;
+                return null;
+            }, configurable: true
+        });
+
+        assertThrowsInstanceOf(() => numberFormatFunction.call(thisValue), TypeError);
+
+        delete Intl.NumberFormat[Symbol.hasInstance];
+
+        assertEq(hasInstanceCalled, true);
+        assertEq(symbolGetterCalled, true);
+    }
+
+    
+    for (let thisValue of thisValues(Intl.NumberFormat).filter(IsPrimitive)) {
+        
+        Object.defineProperty(Intl.NumberFormat, Symbol.hasInstance, {
+            value() { assertEq(true, false); }, configurable: true
+        });
+        let isUndefinedOrNull = thisValue === undefined || thisValue === null;
         let symbolHolder;
         if (!isUndefinedOrNull) {
-            symbolHolder = IsObject(thisValue) ? thisValue : Object.getPrototypeOf(thisValue);
+            
+            symbolHolder = Object.getPrototypeOf(thisValue);
             Object.defineProperty(symbolHolder, intlFallbackSymbol, {
-                get() {
-                    assertEq(symbolGetterCalled, false);
-                    symbolGetterCalled = true;
-                    return null;
-                }, configurable: true
+                get() { assertEq(true, false); }, configurable: true
             });
         }
 
         assertThrowsInstanceOf(() => numberFormatFunction.call(thisValue), TypeError);
 
         delete Intl.NumberFormat[Symbol.hasInstance];
-        if (!isUndefinedOrNull && !IsObject(thisValue))
+        if (!isUndefinedOrNull)
             delete symbolHolder[intlFallbackSymbol];
-
-        assertEq(hasInstanceCalled, true);
-        assertEq(symbolGetterCalled, !isUndefinedOrNull);
     }
 }
 
