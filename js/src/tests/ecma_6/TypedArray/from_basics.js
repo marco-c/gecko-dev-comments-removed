@@ -1,32 +1,11 @@
-const constructors = [
-    Int8Array,
-    Uint8Array,
-    Uint8ClampedArray,
-    Int16Array,
-    Uint16Array,
-    Int32Array,
-    Uint32Array,
-    Float32Array,
-    Float64Array ];
-
-if (typeof SharedArrayBuffer != "undefined")
-    constructors.push(sharedConstructor(Int8Array),
-		      sharedConstructor(Uint8Array),
-		      sharedConstructor(Int16Array),
-		      sharedConstructor(Uint16Array),
-		      sharedConstructor(Int32Array),
-		      sharedConstructor(Uint32Array),
-		      sharedConstructor(Float32Array),
-		      sharedConstructor(Float64Array));
-
-for (var constructor of constructors) {
+for (var constructor of anyTypedArrayConstructors) {
     
-    assertEq(constructors[0].from === constructor.from, true);
+    assertEq(anyTypedArrayConstructors[0].from === constructor.from, true);
 
     
     var src = new constructor([1, 2, 3]), copy = constructor.from(src);
     assertEq(copy === src, false);
-    assertEq(isSharedConstructor(constructor) || copy instanceof constructor, true);
+    assertEq(copy instanceof constructor, true);
     assertDeepEq(copy, src);
 
     
@@ -37,7 +16,7 @@ for (var constructor of constructors) {
     
     src = {0: 0, 1: 1, length: 2};
     copy = constructor.from(src);
-    assertEq(isSharedConstructor(constructor) || copy instanceof constructor, true);
+    assertEq(copy instanceof constructor, true);
     assertDeepEq(copy, new constructor([0, 1]));
 
     

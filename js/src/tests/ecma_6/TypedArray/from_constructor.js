@@ -1,25 +1,4 @@
-const constructors = [
-    Int8Array,
-    Uint8Array,
-    Uint8ClampedArray,
-    Int16Array,
-    Uint16Array,
-    Int32Array,
-    Uint32Array,
-    Float32Array,
-    Float64Array ];
-
-if (typeof SharedArrayBuffer != "undefined")
-    constructors.push(sharedConstructor(Int8Array),
-		      sharedConstructor(Uint8Array),
-		      sharedConstructor(Int16Array),
-		      sharedConstructor(Uint16Array),
-		      sharedConstructor(Int32Array),
-		      sharedConstructor(Uint32Array),
-		      sharedConstructor(Float32Array),
-		      sharedConstructor(Float64Array));
-
-for (var constructor of constructors) {
+for (var constructor of anyTypedArrayConstructors) {
     
     
     
@@ -71,9 +50,6 @@ for (var constructor of constructors) {
             constructor.from.call(v, arr);
         }, TypeError);
     }
-
-    if (isSharedConstructor(constructor))
-	continue;
 
     
     

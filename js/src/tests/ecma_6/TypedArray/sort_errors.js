@@ -1,12 +1,12 @@
 
-
-
-assertThrowsInstanceOf(() => {
-    let buffer = new ArrayBuffer(32);
-    let array  = new Int32Array(buffer);
-    detachArrayBuffer(buffer);
-    array.sort();
-}, TypeError);
+if (typeof detachArrayBuffer === "function") {
+    assertThrowsInstanceOf(() => {
+        let buffer = new ArrayBuffer(32);
+        let array  = new Int32Array(buffer);
+        detachArrayBuffer(buffer);
+        array.sort();
+    }, TypeError);
+}
 
 
 assertThrowsInstanceOf(() => {

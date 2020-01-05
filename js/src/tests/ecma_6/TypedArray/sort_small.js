@@ -1,17 +1,25 @@
+const testCases = {
+    
+    [Int8Array.name]: [[-128, 127]],
+    [Int16Array.name]: [[-32768, -999, 1942, 32767]],
+    [Int32Array.name]: [[-2147483648, -320000, -244000, 2147483647]],
+    [Uint8Array.name]: [[255]],
+    [Uint16Array.name]: [[0, 65535, 65535]],
+    [Uint32Array.name]: [[0, 987632, 4294967295]],
+    [Uint8ClampedArray.name]: [[255]],
 
-let i32  = [-2147483648, -320000, -244000, 2147483647]
-let u32  = [0, 987632, 4294967295]
-let i16  = [-32768, -999, 1942, 32767]
-let u16  = [0, 65535, 65535]
-let i8   = [-128, 127]
-let u8   = [255]
-
-
-
-
-let f32  = [-2147483647, -2147483646.99, -0, 0, 2147483646.99, NaN]
-let f64  = [-2147483646.99, -0, 0, 4147483646.99, NaN]
-let nans = [1/undefined, NaN, Number.NaN]
+    
+    
+    
+    [Float32Array.name]: [
+        [-2147483647, -2147483646.99, -0, 0, 2147483646.99, NaN],
+        [1/undefined, NaN, Number.NaN]
+    ],
+    [Float64Array.name]: [
+        [-2147483646.99, -0, 0, 4147483646.99, NaN],
+        [1/undefined, NaN, Number.NaN]
+    ],
+};
 
 
 function sortAllPermutations(dataType, testData) {
@@ -20,16 +28,11 @@ function sortAllPermutations(dataType, testData) {
         assertDeepEq((new dataType(permutation)).sort(), reference);
 }
 
-sortAllPermutations(Int32Array,   i32);
-sortAllPermutations(Uint32Array,  u32);
-sortAllPermutations(Int16Array,   i16);
-sortAllPermutations(Uint16Array,  u16);
-sortAllPermutations(Int8Array,    i8);
-sortAllPermutations(Uint8Array,   u8);
-sortAllPermutations(Float32Array, f32);
-sortAllPermutations(Float64Array, f64);
-sortAllPermutations(Float32Array, nans);
-sortAllPermutations(Float64Array, nans);
+for (let constructor of sharedTypedArrayConstructors) {
+    for (let data of testCases[constructor.name]) {
+        sortAllPermutations(constructor, data);
+    }
+}
 
 if (typeof reportCompare === "function")
     reportCompare(true, true);

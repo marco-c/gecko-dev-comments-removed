@@ -1,6 +1,6 @@
 
 let g2 = newGlobal();
-assertDeepEq(
+assertEqArray(
     Int32Array.prototype.sort.call(new g2.Int32Array([3, 2, 1])),
     new Int32Array([1, 2, 3])
 );

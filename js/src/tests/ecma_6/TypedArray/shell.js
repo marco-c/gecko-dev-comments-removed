@@ -1,38 +1,113 @@
+(function(global) {
+    "use strict";
+
+    const {
+        Float32Array, Float64Array, Object, Reflect, SharedArrayBuffer, WeakMap,
+        assertEq
+    } = global;
+    const {
+        apply: Reflect_apply,
+        construct: Reflect_construct,
+    } = Reflect;
+    const {
+        get: WeakMap_prototype_get,
+        has: WeakMap_prototype_has,
+    } = WeakMap.prototype;
+
+    const sharedConstructors = new WeakMap();
+
+    
+    
+    
+    
+    function sharedConstructor(baseConstructor) {
+        
+        
+        class SharedTypedArray extends Object.getPrototypeOf(baseConstructor) {
+            constructor(...args) {
+                var array = Reflect_construct(baseConstructor, args);
+                var {buffer, byteOffset, length} = array;
+                var sharedBuffer = new SharedArrayBuffer(buffer.byteLength);
+                var sharedArray = Reflect_construct(baseConstructor,
+                                                    [sharedBuffer, byteOffset, length],
+                                                    new.target);
+                for (var i = 0; i < length; i++)
+                    sharedArray[i] = array[i];
+                assertEq(sharedArray.buffer, sharedBuffer);
+                return sharedArray;
+            }
+        }
+
+        
+        Object.defineProperty(SharedTypedArray, "BYTES_PER_ELEMENT",
+                              {__proto__: null, value: baseConstructor.BYTES_PER_ELEMENT});
+
+        
+        Object.defineProperty(SharedTypedArray.prototype, "BYTES_PER_ELEMENT",
+                              {__proto__: null, value: baseConstructor.BYTES_PER_ELEMENT});
+
+        
+        
+        Object.defineProperty(SharedTypedArray, "name",
+                              {__proto__: null, value: baseConstructor.name});
+
+        sharedConstructors.set(SharedTypedArray, baseConstructor);
+
+        return SharedTypedArray;
+    }
+
+    
+
+
+    const typedArrayConstructors = Object.freeze([
+        Int8Array,
+        Uint8Array,
+        Uint8ClampedArray,
+        Int16Array,
+        Uint16Array,
+        Int32Array,
+        Uint32Array,
+        Float32Array,
+        Float64Array,
+    ]);
+
+    
+
+
+    const sharedTypedArrayConstructors = Object.freeze(
+        typedArrayConstructors.map(sharedConstructor)
+    );
+
+    
+
+
+    const anyTypedArrayConstructors = Object.freeze([
+        ...typedArrayConstructors,
+        ...(typeof SharedArrayBuffer === "function" ? sharedTypedArrayConstructors : []),
+    ]);
+
+    
+
+
+
+    function isSharedConstructor(constructor) {
+        return Reflect_apply(WeakMap_prototype_has, sharedConstructors, [constructor]);
+    }
+
+    
 
 
 
 
+    function isFloatConstructor(constructor) {
+        if (isSharedConstructor(constructor))
+            constructor = Reflect_apply(WeakMap_prototype_get, sharedConstructors, [constructor]);
+        return constructor == Float32Array || constructor == Float64Array;
+    }
 
-function sharedConstructor(constructor) {
-    var c = function(...args) {
-	if (!new.target)
-	    throw new TypeError("Not callable");
-	var array = new constructor(...args);
-	var buffer = array.buffer;
-	var offset = array.byteOffset;
-	var length = array.length;
-	var sharedBuffer = new SharedArrayBuffer(buffer.byteLength);
-	var sharedArray = new constructor(sharedBuffer, offset, length);
-	for ( var i=0 ; i < length ; i++ )
-	    sharedArray[i] = array[i];
-	assertEq(sharedArray.buffer, sharedBuffer);
-	return sharedArray;
-    };
-    c.prototype = Object.create(constructor.prototype);
-    c.__isShared__ = true;
-    c.__baseConstructor__ = constructor;
-    c.from = constructor.from;
-    c.of = constructor.of;
-    return c;
-}
-
-function isSharedConstructor(x) {
-    return typeof x == "function" && x.__isShared__;
-}
-
-function isFloatingConstructor(c) {
-    return c == Float32Array ||
-	c == Float64Array ||
-	(c.hasOwnProperty("__baseConstructor__") &&
-	 isFloatingConstructor(c.__baseConstructor__));
-}
+    global.typedArrayConstructors = typedArrayConstructors;
+    global.sharedTypedArrayConstructors = sharedTypedArrayConstructors;
+    global.anyTypedArrayConstructors = anyTypedArrayConstructors;
+    global.isSharedConstructor = isSharedConstructor;
+    global.isFloatConstructor = isFloatConstructor;
+})(this);
