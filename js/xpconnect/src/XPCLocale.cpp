@@ -236,7 +236,14 @@ private:
 bool
 xpc_LocalizeContext(JSContext* cx)
 {
-  JS_SetLocaleCallbacks(cx, new XPCLocaleCallbacks());
+  
+  
+  
+  
+  const JSLocaleCallbacks* lc = JS_GetLocaleCallbacks(cx);
+  if (!lc) {
+    JS_SetLocaleCallbacks(cx, new XPCLocaleCallbacks());
+  }
 
   
 
