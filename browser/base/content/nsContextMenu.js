@@ -368,11 +368,10 @@ nsContextMenu.prototype = {
     var canSpell = InlineSpellCheckerUI.canSpellCheck &&
                    !InlineSpellCheckerUI.initialSpellCheckPending &&
                    this.canSpellCheck;
-    let showDictionaries = canSpell && InlineSpellCheckerUI.enabled;
     var onMisspelling = InlineSpellCheckerUI.overMisspelling;
     var showUndo = canSpell && InlineSpellCheckerUI.canUndo();
     this.showItem("spell-check-enabled", canSpell);
-    this.showItem("spell-separator", canSpell);
+    this.showItem("spell-separator", canSpell || this.onEditableArea);
     document.getElementById("spell-check-enabled")
             .setAttribute("checked", canSpell && InlineSpellCheckerUI.enabled);
 
@@ -393,7 +392,7 @@ nsContextMenu.prototype = {
       this.showItem("spell-no-suggestions", false);
 
     
-    this.showItem("spell-dictionaries", showDictionaries);
+    this.showItem("spell-dictionaries", canSpell && InlineSpellCheckerUI.enabled);
     if (canSpell) {
       var dictMenu = document.getElementById("spell-dictionaries-menu");
       var dictSep = document.getElementById("spell-language-separator");
@@ -405,8 +404,7 @@ nsContextMenu.prototype = {
       
       
       
-      this.showItem("spell-language-separator", showDictionaries);
-      this.showItem("spell-add-dictionaries-main", showDictionaries);
+      this.showItem("spell-add-dictionaries-main", true);
     }
     else
       this.showItem("spell-add-dictionaries-main", false);
