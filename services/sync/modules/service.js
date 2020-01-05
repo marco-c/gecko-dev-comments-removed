@@ -831,17 +831,6 @@ Sync11Service.prototype = {
 
     this.identity.deleteSyncCredentials();
 
-    
-    
-    let keepIdentity = false;
-    try {
-      keepIdentity = Services.prefs.getBoolPref("services.sync-testing.startOverKeepIdentity");
-    } catch (_) {  }
-    if (keepIdentity) {
-      Svc.Obs.notify("weave:service:start-over:finish");
-      return;
-    }
-
     try {
       this.identity.finalize();
       
