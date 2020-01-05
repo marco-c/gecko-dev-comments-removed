@@ -126,9 +126,8 @@ WebGLContext::BindFramebuffer(GLenum target, WebGLFramebuffer* wfb)
     if (!ValidateObjectAllowDeletedOrNull("bindFramebuffer", wfb))
         return;
 
-    
     if (wfb && wfb->IsDeleted())
-        return;
+        return ErrorInvalidOperation("bindFramebuffer: Cannot bind a deleted object.");
 
     MakeContextCurrent();
 
@@ -170,9 +169,8 @@ WebGLContext::BindRenderbuffer(GLenum target, WebGLRenderbuffer* wrb)
     if (!ValidateObjectAllowDeletedOrNull("bindRenderbuffer", wrb))
         return;
 
-    
     if (wrb && wrb->IsDeleted())
-        return;
+        return ErrorInvalidOperation("bindRenderbuffer: Cannot bind a deleted object.");
 
     
     
