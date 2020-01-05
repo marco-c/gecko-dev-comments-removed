@@ -3181,13 +3181,16 @@ IonBuilder::binaryArithTryConcat(bool* emitted, JSOp op, MDefinition* left, MDef
     }
 
     
-    
-    if (right->type() != MIRType::String && !IsNumberType(right->type())) {
-        trackOptimizationOutcome(TrackedOutcome::OperandNotStringOrNumber);
+    if (right->type() != MIRType::String &&
+        (right->mightBeType(MIRType::Symbol) || right->mightBeType(MIRType::Object)))
+    {
+        trackOptimizationOutcome(TrackedOutcome::OperandNotEasilyCoercibleToString);
         return Ok();
     }
-    if (left->type() != MIRType::String && !IsNumberType(left->type())) {
-        trackOptimizationOutcome(TrackedOutcome::OperandNotStringOrNumber);
+    if (left->type() != MIRType::String &&
+        (left->mightBeType(MIRType::Symbol) || left->mightBeType(MIRType::Object)))
+    {
+        trackOptimizationOutcome(TrackedOutcome::OperandNotEasilyCoercibleToString);
         return Ok();
     }
 
