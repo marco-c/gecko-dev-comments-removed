@@ -481,6 +481,8 @@ public:
 
 
   virtual bool DragScroll(mozilla::WidgetEvent* aEvent) = 0;
+
+  virtual void AsyncScrollbarDragRejected() = 0;
 };
 
 #endif

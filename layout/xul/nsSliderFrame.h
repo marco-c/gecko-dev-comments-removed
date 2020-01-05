@@ -100,7 +100,7 @@ public:
   nsresult StartDrag(nsIDOMEvent* aEvent);
   nsresult StopDrag();
 
-  bool StartAPZDrag(WidgetGUIEvent* aEvent);
+  void StartAPZDrag(mozilla::WidgetGUIEvent* aEvent);
 
   static int32_t GetCurrentPosition(nsIContent* content);
   static int32_t GetMinPosition(nsIContent* content);
@@ -137,6 +137,11 @@ public:
   
   float GetThumbRatio() const;
 
+  
+  
+  
+  void AsyncScrollbarDragRejected();
+
 private:
 
   bool GetScrollToClick();
@@ -157,6 +162,9 @@ private:
   void AddListener();
   void RemoveListener();
   bool isDraggingThumb();
+
+  void SuppressDisplayport();
+  void UnsuppressDisplayport();
 
   void StartRepeat() {
     nsRepeatService::GetInstance()->Start(Notify, this);
