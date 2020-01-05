@@ -2,35 +2,27 @@
 
 
 
-function test() {
-  waitForExplicitFinish();
-  gBrowser.selectedTab = gBrowser.addTab("data:text/html,<iframe width='700' height='700'></iframe>");
-  
-  BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser).then(function() {
-    return ContentTask.spawn(gBrowser.selectedBrowser, "", function() {
-      return new Promise(resolve => {
-        info("Running content task");
-        let listener = e => {
-          removeEventListener("AboutNetErrorLoad", listener, false, true);
-          resolve();
-        };
-        addEventListener("AboutNetErrorLoad", listener, false, true);
-        let iframe = content.document.querySelector("iframe");
-        iframe.src = "https://expired.example.com/";
-      });
-    }).then(testIframeCert);
+add_task(function* test() {
+  const URL = "data:text/html,<iframe width='700' height='700'></iframe>";
+  yield BrowserTestUtils.withNewTab({ gBrowser, url: URL }, function* (browser) {
+    yield ContentTask.spawn(browser,
+                            { is_element_hidden_: is_element_hidden.toSource(),
+                              is_hidden_: is_hidden.toSource() },
+    function* ({ is_element_hidden_, is_hidden_ }) {
+      let loadError =
+        ContentTaskUtils.waitForEvent(this, "AboutNetErrorLoad", false, null, true);
+      let iframe = content.document.querySelector("iframe");
+      iframe.src = "https://expired.example.com/";
+
+      yield loadError;
+
+      let is_hidden = eval(`(() => ${is_hidden_})()`);
+      let is_element_hidden = eval(`(() => ${is_element_hidden_})()`);
+      let doc = content.document.getElementsByTagName("iframe")[0].contentDocument;
+      let aP = doc.getElementById("badCertAdvancedPanel");
+      ok(aP, "Advanced content should exist");
+      void is_hidden; 
+      is_element_hidden(aP, "Advanced content should not be visible by default")
+    });
   });
-}
-
-function testIframeCert(e) {
-  
-  var doc = gBrowser.contentDocument.getElementsByTagName("iframe")[0].contentDocument;
-  var aP = doc.getElementById("badCertAdvancedPanel");
-  ok(aP, "Advanced content should exist");
-  is_element_hidden(aP, "Advanced content should not be visible by default")
-
-  
-  gBrowser.removeCurrentTab();
-
-  finish();
-}
+});
