@@ -95,7 +95,7 @@ activateWindow( mozIDOMWindowProxy *win ) {
 
 
 struct Win32Mutex {
-    Win32Mutex( const char16_t *name )
+    explicit Win32Mutex( const char16_t *name )
         : mName( name ),
           mHandle( 0 ),
           mState( -1 ) {
