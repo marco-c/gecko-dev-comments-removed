@@ -42,19 +42,19 @@ pub trait LayoutAuxMethods {
 impl LayoutAuxMethods for AbstractNode<LayoutView> {
     
     pub fn layout_data(self) -> @mut LayoutData {
-        unsafe {
+        
             self.unsafe_layout_data()
-        }
+        
     }
     pub fn has_layout_data(self) -> bool {
-        unsafe {
+        
             self.unsafe_has_layout_data()
-        }
+        
     }
     pub fn set_layout_data(self, data: @mut LayoutData) {
-        unsafe {
+        
             self.unsafe_set_layout_data(data)
-        }
+        
     }
 
     
