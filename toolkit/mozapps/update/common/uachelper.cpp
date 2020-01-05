@@ -5,7 +5,7 @@
 #include <windows.h>
 #include <wtsapi32.h>
 #include "uachelper.h"
-#include "updatelogging.h"
+#include "updatecommon.h"
 
 
 

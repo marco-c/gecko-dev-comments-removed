@@ -52,7 +52,7 @@
 #include <errno.h>
 #include <algorithm>
 
-#include "updatelogging.h"
+#include "updatecommon.h"
 #ifdef XP_MACOSX
 #include "updaterfileutils_osx.h"
 #endif 
@@ -281,7 +281,7 @@ private:
 
 
 
-static NS_tchar* gPatchDirPath;
+static NS_tchar gPatchDirPath[MAXPATHLEN];
 static NS_tchar gInstallDirPath[MAXPATHLEN];
 static NS_tchar gWorkingDirPath[MAXPATHLEN];
 static ArchiveReader gArchiveReader;
@@ -1973,13 +1973,29 @@ LaunchWinPostProcess(const WCHAR *installationDir,
   }
 
   
-  if (wcsstr(exefile, L"..") != nullptr) {
+  
+  if (wcsstr(exefile, L"..") != nullptr ||
+      wcsstr(exefile, L"./") != nullptr ||
+      wcsstr(exefile, L".\\") != nullptr ||
+      wcsstr(exefile, L":") != nullptr) {
+    return false;
+  }
+
+  
+  
+  if (exefile[0] == L'.' ||
+      exefile[0] == L'\\' ||
+      exefile[0] == L'/') {
     return false;
   }
 
   WCHAR exefullpath[MAX_PATH + 1] = { L'\0' };
   wcsncpy(exefullpath, installationDir, MAX_PATH);
   if (!PathAppendSafe(exefullpath, exefile)) {
+    return false;
+  }
+
+  if (!IsValidFullPath(exefullpath)) {
     return false;
   }
 
@@ -2089,7 +2105,9 @@ WriteStatusFile(const char* aStatus)
 #if defined(XP_WIN)
   
   
-  GetTempFileNameW(gPatchDirPath, L"sta", 0, filename);
+  if (GetTempFileNameW(gPatchDirPath, L"sta", 0, filename) == 0) {
+    return false;
+  }
 #else
   NS_tsnprintf(filename, sizeof(filename)/sizeof(filename[0]),
                NS_T("%s/update.status"), gPatchDirPath);
@@ -2721,8 +2739,37 @@ int NS_main(int argc, NS_tchar **argv)
   }
 
   
-  gPatchDirPath = argv[1];
+  
+  if (!IsValidFullPath(argv[1])) {
+    
+    
+    fprintf(stderr, "The patch directory path is not valid for this "  \
+            "application (" LOG_S ")\n", argv[1]);
+#ifdef XP_MACOSX
+    if (isElevated) {
+      freeArguments(argc, argv);
+      CleanupElevatedMacUpdate(true);
+    }
+#endif
+    return 1;
+  }
+  
+  NS_tstrncpy(gPatchDirPath, argv[1], MAXPATHLEN);
 
+  
+  
+  if (!IsValidFullPath(argv[2])) {
+    WriteStatusFile(INVALID_INSTALL_DIR_PATH_ERROR);
+    fprintf(stderr, "The install directory path is not valid for this "  \
+            "application (" LOG_S ")\n", argv[2]);
+#ifdef XP_MACOSX
+    if (isElevated) {
+      freeArguments(argc, argv);
+      CleanupElevatedMacUpdate(true);
+    }
+#endif
+    return 1;
+  }
   
   
   
@@ -2797,6 +2844,20 @@ int NS_main(int argc, NS_tchar **argv)
 
   
   
+  if (!IsValidFullPath(argv[3])) {
+    WriteStatusFile(INVALID_WORKING_DIR_PATH_ERROR);
+    fprintf(stderr, "The working directory path is not valid for this "  \
+            "application (" LOG_S ")\n", argv[3]);
+#ifdef XP_MACOSX
+    if (isElevated) {
+      freeArguments(argc, argv);
+      CleanupElevatedMacUpdate(true);
+    }
+#endif
+    return 1;
+  }
+  
+  
   
   
   NS_tstrncpy(gWorkingDirPath, argv[3], MAXPATHLEN);
@@ -2851,6 +2912,8 @@ int NS_main(int argc, NS_tchar **argv)
   LOG(("WORKING DIRECTORY " LOG_S, gWorkingDirPath));
 
 #if defined(XP_WIN)
+  
+  
   if (_wcsnicmp(gWorkingDirPath, gInstallDirPath, MAX_PATH) != 0) {
     if (!sStagedUpdate && !sReplaceRequest) {
       WriteStatusFile(INVALID_APPLYTO_DIR_ERROR);

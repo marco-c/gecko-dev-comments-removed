@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 
-#include "updatelogging.h"
+#include "updatecommon.h"
 
 UpdateLog::UpdateLog() : logFP(nullptr)
 {
@@ -34,12 +34,13 @@ void UpdateLog::Init(NS_tchar* sourcePath,
       (dstFilePathLen <
          static_cast<int>(sizeof(mDstFilePath)/sizeof(mDstFilePath[0])))) {
 #ifdef XP_WIN
-    GetTempFileNameW(sourcePath, L"log", 0, mTmpFilePath);
-    logFP = NS_tfopen(mTmpFilePath, NS_T("w"));
+    if (GetTempFileNameW(sourcePath, L"log", 0, mTmpFilePath) != 0) {
+      logFP = NS_tfopen(mTmpFilePath, NS_T("w"));
 
-    
-    
-    DeleteFileW(mDstFilePath);
+      
+      
+      DeleteFileW(mDstFilePath);
+    }
 #elif XP_MACOSX
     logFP = NS_tfopen(mDstFilePath, NS_T("w"));
 #else
@@ -144,4 +145,69 @@ void UpdateLog::WarnPrintf(const char *fmt, ... )
   vfprintf(logFP, fmt, ap);
   fprintf(logFP, "***\n");
   va_end(ap);
+}
+
+
+
+
+
+
+
+
+bool
+IsValidFullPath(NS_tchar* origFullPath)
+{
+  
+  if (NS_tstrlen(origFullPath) > MAXPATHLEN - 1) {
+    
+    return false;
+  }
+
+#ifdef XP_WIN
+  NS_tchar testPath[MAXPATHLEN] = {NS_T('\0')};
+  
+  if (GetFullPathNameW(origFullPath, MAXPATHLEN, testPath, nullptr) == 0) {
+    
+    return false;
+  }
+
+  NS_tchar canonicalPath[MAXPATHLEN] = {NS_T('\0')};
+  if (!PathCanonicalizeW(canonicalPath, testPath)) {
+    
+    return false;
+  }
+
+  
+  if (NS_tstricmp(origFullPath, canonicalPath) != 0) {
+    
+    
+    
+    return false;
+  }
+
+  NS_tstrncpy(testPath, origFullPath, MAXPATHLEN);
+  if (!PathStripToRootW(testPath)) {
+    
+    return false;
+  }
+
+  if (origFullPath[0] == NS_T('\\')) {
+    
+    if (!PathIsUNCServerShareW(testPath)) {
+      return false;
+    }
+  }
+#else
+  
+  if (origFullPath[0] != NS_T('/')) {
+    return false;
+  }
+
+  
+  if (NS_tstrstr(origFullPath, NS_T("..")) != nullptr ||
+      NS_tstrstr(origFullPath, NS_T("./")) != nullptr) {
+    return false;
+  }
+#endif
+  return true;
 }
