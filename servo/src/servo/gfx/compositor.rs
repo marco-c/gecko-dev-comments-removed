@@ -18,10 +18,16 @@ struct LayerBuffer {
 
 
 
+struct LayerBufferSet {
+    buffers: ~[LayerBuffer]
+}
+
+
+
 
 
 trait Compositor {
-    fn begin_drawing(next_dt: pipes::Chan<LayerBuffer>);
-    fn draw(next_dt: pipes::Chan<LayerBuffer>, +draw_me: LayerBuffer);
+    fn begin_drawing(next_dt: pipes::Chan<LayerBufferSet>);
+    fn draw(next_dt: pipes::Chan<LayerBufferSet>, +draw_me: LayerBufferSet);
 }
 
