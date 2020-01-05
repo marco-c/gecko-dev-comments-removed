@@ -391,7 +391,7 @@ pref("media.gmp.storage.version.expected", 1);
 
 
 
-pref("media.decoder-doctor.notifications-allowed", "MediaWMFNeeded,MediaWidevineNoWMFNoSilverlight,MediaCannotInitializePulseAudio");
+pref("media.decoder-doctor.notifications-allowed", "MediaWMFNeeded,MediaWidevineNoWMFNoSilverlight,MediaCannotInitializePulseAudio,MediaUnsupportedLibavcodec");
 
 pref("media.decoder-doctor.verbose", false);
 
@@ -4809,6 +4809,8 @@ pref("dom.mozPermissionSettings.enabled", false);
 
 #if defined(XP_MACOSX)
 pref("dom.w3c_touch_events.enabled", 0);
+#elif defined(XP_WIN) && !defined(NIGHTLY_BUILD)
+pref("dom.w3c_touch_events.enabled", 0);
 #else
 pref("dom.w3c_touch_events.enabled", 2);
 #endif
@@ -4833,7 +4835,11 @@ pref("media.ondevicechange.fakeDeviceChangeEvent.enabled", false);
 
 
 
+#ifdef NIGHTLY_BUILD
 pref("layout.css.touch_action.enabled", true);
+#else
+pref("layout.css.touch_action.enabled", false);
+#endif
 
 
 
@@ -5208,7 +5214,11 @@ pref("layout.accessiblecaret.enabled", false);
 
 
 
+#ifdef NIGHTLY_BUILD
 pref("layout.accessiblecaret.enabled_on_touch", true);
+#else
+pref("layout.accessiblecaret.enabled_on_touch", false);
+#endif
 
 
 pref("layout.accessiblecaret.width", "34.0");
