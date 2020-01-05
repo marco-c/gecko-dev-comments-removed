@@ -7205,6 +7205,10 @@ def wrapArgIntoCurrentCompartment(arg, value, isMember=True):
     return wrap
 
 
+def needsContainsHack(m):
+    return m.getExtendedAttribute("ReturnValueNeedsContainsHack")
+
+
 class CGPerSignatureCall(CGThing):
     """
     This class handles the guts of generating code for a particular
@@ -7578,6 +7582,22 @@ class CGPerSignatureCall(CGThing):
             
             
             postConversionSteps = ""
+            if needsContainsHack(self.idlNode):
+                
+                
+                
+                postConversionSteps += dedent(
+                    """
+                    if (args.rval().isObject() && nsContentUtils::ThreadsafeIsCallerChrome()) {
+                      JS::Rooted<JSObject*> rvalObj(cx, &args.rval().toObject());
+                      JS::Rooted<JS::Value> includesVal(cx);
+                      if (!JS_GetProperty(cx, rvalObj, "includes", &includesVal) ||
+                          !JS_DefineProperty(cx, rvalObj, "contains", includesVal, JSPROP_ENUMERATE)) {
+                        return false;
+                      }
+                    }
+
+                    """)
             if self.idlNode.getExtendedAttribute("Frozen"):
                 assert self.idlNode.type.isSequence() or self.idlNode.type.isDictionary()
                 freezeValue = CGGeneric(
@@ -13568,7 +13588,8 @@ class CGBindingRoot(CGThing):
         def descriptorHasChromeOnly(desc):
             ctor = desc.interface.ctor()
 
-            return (any(isChromeOnly(a) for a in desc.interface.members) or
+            return (any(isChromeOnly(a) or needsContainsHack(a)
+                        for a in desc.interface.members) or
                     desc.interface.getExtendedAttribute("ChromeOnly") is not None or
                     
                     
