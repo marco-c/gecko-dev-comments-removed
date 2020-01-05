@@ -965,6 +965,18 @@ nsWindowWatcher::OpenWindowInternal(mozIDOMWindowProxy* aParent,
     if (mWindowCreator) {
       nsCOMPtr<nsIWebBrowserChrome> newChrome;
 
+      nsCOMPtr<nsPIDOMWindowInner> parentTopInnerWindow;
+      if (parentWindow) {
+        nsCOMPtr<nsPIDOMWindowOuter> parentTopWindow = parentWindow->GetTop();
+        if (parentTopWindow) {
+          parentTopInnerWindow = parentTopWindow->GetCurrentInnerWindow();
+        }
+      }
+
+      if (parentTopInnerWindow) {
+        parentTopInnerWindow->Suspend();
+      }
+
       
 
 
@@ -982,6 +994,10 @@ nsWindowWatcher::OpenWindowInternal(mozIDOMWindowProxy* aParent,
       } else {
         rv = mWindowCreator->CreateChromeWindow(parentChrome, chromeFlags,
                                                 getter_AddRefs(newChrome));
+      }
+
+      if (parentTopInnerWindow) {
+        parentTopInnerWindow->Resume();
       }
 
       if (newChrome) {
