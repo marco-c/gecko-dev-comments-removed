@@ -4691,13 +4691,23 @@ def getJSToNativeConversionInfo(type, descriptorProvider, failureCode=None,
         
         
         
+        
+        
         if not isinstance(descriptorProvider, Descriptor) or descriptorProvider.interface.isJSImplemented():
             templateBody = fill(
                 """
+                #ifdef __clang__
+                #pragma clang diagnostic push
+                #pragma clang diagnostic ignored "-Wunreachable-code"
+                #pragma clang diagnostic ignored "-Wunreachable-code-return"
+                #endif // __clang__
                 if (($${passedToJSImpl}) && !CallerSubsumes($${val})) {
                   ThrowErrorMessage(cx, MSG_PERMISSION_DENIED_TO_PASS_ARG, "${sourceDescription}");
                   $*{exceptionCode}
                 }
+                #ifdef __clang__
+                #pragma clang diagnostic pop
+                #endif // __clang__
                 """,
                 sourceDescription=sourceDescription,
                 exceptionCode=exceptionCode) + templateBody
@@ -5897,13 +5907,23 @@ def getJSToNativeConversionInfo(type, descriptorProvider, failureCode=None,
         
         
         
+        
+        
         if not isinstance(descriptorProvider, Descriptor) or descriptorProvider.interface.isJSImplemented():
             templateBody = fill(
                 """
+                #ifdef __clang__
+                #pragma clang diagnostic push
+                #pragma clang diagnostic ignored "-Wunreachable-code"
+                #pragma clang diagnostic ignored "-Wunreachable-code-return"
+                #endif // __clang__
                 if (($${passedToJSImpl}) && !CallerSubsumes($${val})) {
                   ThrowErrorMessage(cx, MSG_PERMISSION_DENIED_TO_PASS_ARG, "${sourceDescription}");
                   $*{exceptionCode}
                 }
+                #ifdef __clang__
+                #pragma clang diagnostic pop
+                #endif // __clang__
                 """,
                 sourceDescription=sourceDescription,
                 exceptionCode=exceptionCode) + templateBody
