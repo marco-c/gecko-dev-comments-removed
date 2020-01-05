@@ -73,11 +73,6 @@ GMPDecryptorChild::Init(GMPDecryptor* aSession)
 {
   MOZ_ASSERT(aSession);
   mSession = aSession;
-  
-  
-  
-  
-  SendSetDecryptorId(Id());
 }
 
 void
