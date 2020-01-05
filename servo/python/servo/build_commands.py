@@ -226,6 +226,8 @@ class MachCommands(CommandBase):
         env = self.build_env()
         if android:
             
+            env['RUSTFLAGS'] = env.get('RUSTFLAGS', "") + " -C target-feature=+neon"
+            
             make_cmd = ["make"]
             if jobs is not None:
                 make_cmd += ["-j" + jobs]
