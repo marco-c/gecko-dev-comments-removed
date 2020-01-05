@@ -5,7 +5,6 @@
 
 package org.mozilla.gecko.home;
 
-import org.json.JSONObject;
 import org.mozilla.gecko.EventDispatcher;
 import org.mozilla.gecko.GeckoAppShell;
 import org.mozilla.gecko.R;
@@ -14,7 +13,9 @@ import org.mozilla.gecko.animation.PropertyAnimator.Property;
 import org.mozilla.gecko.animation.ViewHelper;
 import org.mozilla.gecko.util.FloatUtils;
 import org.mozilla.gecko.util.ResourceDrawableUtils;
-import org.mozilla.gecko.util.GeckoEventListener;
+import org.mozilla.gecko.util.BundleEventListener;
+import org.mozilla.gecko.util.EventCallback;
+import org.mozilla.gecko.util.GeckoBundle;
 import org.mozilla.gecko.util.ThreadUtils;
 import org.mozilla.gecko.widget.EllipsisTextView;
 
@@ -31,7 +32,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 
 public class HomeBanner extends LinearLayout
-                        implements GeckoEventListener {
+                        implements BundleEventListener {
     private static final String LOGTAG = "GeckoHomeBanner";
 
     
@@ -100,7 +101,9 @@ public class HomeBanner extends LinearLayout
                 HomeBanner.this.dismiss();
 
                 
-                GeckoAppShell.notifyObservers("HomeBanner:Dismiss", (String) getTag());
+                final GeckoBundle data = new GeckoBundle(1);
+                data.putString("id", (String) getTag());
+                EventDispatcher.getInstance().dispatch("HomeBanner:Dismiss", data);
             }
         });
 
@@ -110,18 +113,21 @@ public class HomeBanner extends LinearLayout
                 HomeBanner.this.dismiss();
 
                 
-                GeckoAppShell.notifyObservers("HomeBanner:Click", (String) getTag());
+                final GeckoBundle data = new GeckoBundle(1);
+                data.putString("id", (String) getTag());
+                EventDispatcher.getInstance().dispatch("HomeBanner:Click", data);
             }
         });
 
-        EventDispatcher.getInstance().registerGeckoThreadListener(this, "HomeBanner:Data");
+        
+        EventDispatcher.getInstance().registerUiThreadListener(this, "HomeBanner:Data");
     }
 
     @Override
     public void onDetachedFromWindow() {
         super.onDetachedFromWindow();
 
-        EventDispatcher.getInstance().unregisterGeckoThreadListener(this, "HomeBanner:Data");
+        EventDispatcher.getInstance().unregisterUiThreadListener(this, "HomeBanner:Data");
     }
 
     public void setScrollingPages(boolean scrollingPages) {
@@ -151,11 +157,12 @@ public class HomeBanner extends LinearLayout
         GeckoAppShell.notifyObservers("HomeBanner:Get", null);
     }
 
-    @Override
-    public void handleMessage(String event, JSONObject message) {
-        final String id = message.optString("id");
-        final String text = message.optString("text");
-        final String iconURI = message.optString("iconURI");
+    @Override 
+    public void handleMessage(final String event, final GeckoBundle message,
+                              final EventCallback callback) {
+        final String id = message.getString("id");
+        final String text = message.getString("text");
+        final String iconURI = message.getString("iconURI");
 
         
         if (TextUtils.isEmpty(id) || TextUtils.isEmpty(text)) {
@@ -163,37 +170,31 @@ public class HomeBanner extends LinearLayout
         }
 
         
-        ThreadUtils.postToUiThread(new Runnable() {
+        setTag(id);
+        mTextView.setOriginalText(Html.fromHtml(text));
+
+        ResourceDrawableUtils.getDrawable(getContext(), iconURI, new ResourceDrawableUtils.BitmapLoader() {
             @Override
-            public void run() {
+            public void onBitmapFound(final Drawable d) {
                 
-                setTag(id);
-                mTextView.setOriginalText(Html.fromHtml(text));
-
-                ResourceDrawableUtils.getDrawable(getContext(), iconURI, new ResourceDrawableUtils.BitmapLoader() {
-                    @Override
-                    public void onBitmapFound(final Drawable d) {
-                        
-                        if (d == null) {
-                            mIconView.setVisibility(View.GONE);
-                        } else {
-                            mIconView.setImageDrawable(d);
-                            mIconView.setVisibility(View.VISIBLE);
-                        }
-                    }
-                });
-
-                GeckoAppShell.notifyObservers("HomeBanner:Shown", id);
-
-                
-                setEnabled(true);
-
-                
-                if (mActive) {
-                    animateUp();
+                if (d == null) {
+                    mIconView.setVisibility(View.GONE);
+                } else {
+                    mIconView.setImageDrawable(d);
+                    mIconView.setVisibility(View.VISIBLE);
                 }
             }
         });
+
+        callback.sendSuccess(id);
+
+        
+        setEnabled(true);
+
+        
+        if (mActive) {
+            animateUp();
+        }
     }
 
     public void setActive(boolean active) {
