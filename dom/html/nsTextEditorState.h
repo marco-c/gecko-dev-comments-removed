@@ -227,20 +227,20 @@ public:
         return mStart == 0 && mEnd == 0 &&
                mDirection == nsITextControlFrame::eForward;
       }
-      int32_t GetStart() const
+      uint32_t GetStart() const
       {
         return mStart;
       }
-      void SetStart(int32_t value)
+      void SetStart(uint32_t value)
       {
         mIsDirty = true;
         mStart = value;
       }
-      int32_t GetEnd() const
+      uint32_t GetEnd() const
       {
         return mEnd;
       }
-      void SetEnd(int32_t value)
+      void SetEnd(uint32_t value)
       {
         mIsDirty = true;
         mEnd = value;
@@ -260,7 +260,7 @@ public:
         return mIsDirty;
       }
     private:
-      int32_t mStart, mEnd;
+      uint32_t mStart, mEnd;
       bool mIsDirty = false;
       nsITextControlFrame::SelectionDirection mDirection;
   };
@@ -276,7 +276,7 @@ public:
   void SyncUpSelectionPropertiesBeforeDestruction();
 
   
-  void GetSelectionRange(int32_t* aSelectionStart, int32_t* aSelectionEnd,
+  void GetSelectionRange(uint32_t* aSelectionStart, uint32_t* aSelectionEnd,
                          mozilla::ErrorResult& aRv);
 
   
@@ -295,15 +295,15 @@ public:
   
   
   
-  void SetSelectionRange(int32_t aStart, int32_t aEnd,
+  void SetSelectionRange(uint32_t aStart, uint32_t aEnd,
                          nsITextControlFrame::SelectionDirection aDirection,
                          mozilla::ErrorResult& aRv);
 
   
   
   
-  void SetSelectionRange(int32_t aSelectionStart,
-                         int32_t aSelectionEnd,
+  void SetSelectionRange(uint32_t aSelectionStart,
+                         uint32_t aSelectionEnd,
                          const mozilla::dom::Optional<nsAString>& aDirection,
                          mozilla::ErrorResult& aRv);
 
@@ -338,8 +338,11 @@ public:
   
   void SetRangeText(const nsAString& aReplacement, uint32_t aStart,
                     uint32_t aEnd, mozilla::dom::SelectionMode aSelectMode,
-                    mozilla::ErrorResult& aRv, int32_t aSelectionStart = -1,
-                    int32_t aSelectionEnd = -1);
+                    mozilla::ErrorResult& aRv,
+                    const mozilla::Maybe<uint32_t>& aSelectionStart =
+                      mozilla::Nothing(),
+                    const mozilla::Maybe<uint32_t>& aSelectionEnd =
+                      mozilla::Nothing());
 
   void UpdateEditableState(bool aNotify) {
     if (mRootNode) {

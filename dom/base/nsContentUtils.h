@@ -2112,6 +2112,23 @@ public:
 
 
 
+  static bool EncodeDecodeURLHash()
+  {
+    return sEncodeDecodeURLHash;
+  }
+
+  
+
+
+  static bool GettersDecodeURLHash()
+  {
+    return sGettersDecodeURLHash && sEncodeDecodeURLHash;
+  }
+
+  
+
+
+
 
   static bool ResistFingerprinting(mozilla::dom::CallerType aCallerType)
   {
@@ -2400,8 +2417,8 @@ public:
 
   static void GetSelectionInTextControl(mozilla::dom::Selection* aSelection,
                                         Element* aRoot,
-                                        int32_t& aOutStartOffset,
-                                        int32_t& aOutEndOffset);
+                                        uint32_t& aOutStartOffset,
+                                        uint32_t& aOutEndOffset);
 
   
 
@@ -2899,6 +2916,8 @@ private:
   static bool sIsFrameTimingPrefEnabled;
   static bool sIsExperimentalAutocompleteEnabled;
   static bool sIsWebComponentsEnabled;
+  static bool sEncodeDecodeURLHash;
+  static bool sGettersDecodeURLHash;
   static bool sPrivacyResistFingerprinting;
   static bool sSendPerformanceTimingNotifications;
   static bool sUseActivityCursor;
