@@ -7,7 +7,6 @@
 #include "DecoderTraits.h"
 #include "MediaContentType.h"
 #include "MediaDecoder.h"
-#include "nsCharSeparatedTokenizer.h"
 #include "nsMimeTypes.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Telemetry.h"
@@ -180,21 +179,11 @@ CanHandleCodecsType(const MediaContentType& aType,
 
   
   
-  nsCharSeparatedTokenizer
-    tokenizer(aType.ExtendedType().Codecs().AsString(), ',');
-  bool expectMoreTokens = false;
-  while (tokenizer.hasMoreTokens()) {
-    const nsSubstring& token = tokenizer.nextToken();
-
+  for (const auto& token : aType.ExtendedType().Codecs().Range()) {
     if (!CodecListContains(codecList, token)) {
       
       return CANPLAY_NO;
     }
-    expectMoreTokens = tokenizer.separatorAfterCurrentToken();
-  }
-  if (expectMoreTokens) {
-    
-    return CANPLAY_NO;
   }
 
   return CANPLAY_YES;
