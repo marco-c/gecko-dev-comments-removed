@@ -11,7 +11,45 @@
 const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr, manager: Cm} = Components;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-let {FormAutoCompleteResult} = Cu.import("resource://gre/modules/nsFormAutoCompleteResult.jsm", {});
+Cu.import("resource://gre/modules/nsFormAutoCompleteResult.jsm");
+
+XPCOMUtils.defineLazyModuleGetter(this, "FormLikeFactory",
+                                  "resource://gre/modules/FormLikeFactory.jsm");
+
+const formFillController = Cc["@mozilla.org/satchel/form-fill-controller;1"]
+                             .getService(Ci.nsIFormFillController);
+
+const AUTOFILL_FIELDS_THRESHOLD = 3;
+
+
+
+
+let FormAutofillHeuristics = {
+  VALID_FIELDS: [
+    "organization",
+    "street-address",
+    "address-level2",
+    "address-level1",
+    "postal-code",
+    "country",
+    "tel",
+    "email",
+  ],
+
+  getInfo(element) {
+    if (!(element instanceof Ci.nsIDOMHTMLInputElement)) {
+      return null;
+    }
+
+    let info = element.getAutocompleteInfo();
+    if (!info || !info.fieldName ||
+        !this.VALID_FIELDS.includes(info.fieldName)) {
+      return null;
+    }
+
+    return info;
+  },
+};
 
 
 
@@ -56,13 +94,8 @@ FormAutofillHandler.prototype = {
 
     for (let element of this.form.elements) {
       
-      if (!(element instanceof Ci.nsIDOMHTMLInputElement)) {
-        continue;
-      }
-
-      
-      let info = element.getAutocompleteInfo();
-      if (!info.fieldName || ["on", "off"].includes(info.fieldName)) {
+      let info = FormAutofillHeuristics.getInfo(element);
+      if (!info) {
         continue;
       }
 
@@ -120,8 +153,9 @@ FormAutofillHandler.prototype = {
         continue;
       }
 
-      let info = fieldDetail.element.getAutocompleteInfo();
-      if (field.section != info.section ||
+      let info = FormAutofillHeuristics.getInfo(fieldDetail.element);
+      if (!info ||
+          field.section != info.section ||
           field.addressType != info.addressType ||
           field.contactType != info.contactType ||
           field.fieldName != info.fieldName) {
@@ -213,9 +247,6 @@ AutofillProfileAutoCompleteSearch.prototype = {
 
 this.NSGetFactory = XPCOMUtils.generateNSGetFactory([AutofillProfileAutoCompleteSearch]);
 
-
-
-
 let ProfileAutocomplete = {
   _registered: false,
   _factory: null,
@@ -240,3 +271,63 @@ let ProfileAutocomplete = {
     this._registered = false;
   },
 };
+
+
+
+
+
+
+var FormAutofillContent = {
+  init() {
+    ProfileAutocomplete.ensureRegistered();
+
+    addEventListener("DOMContentLoaded", this);
+  },
+
+  handleEvent(evt) {
+    if (!evt.isTrusted) {
+      return;
+    }
+
+    switch (evt.type) {
+      case "DOMContentLoaded":
+        let doc = evt.target;
+        if (!(doc instanceof Ci.nsIDOMHTMLDocument)) {
+          return;
+        }
+        this._identifyAutofillFields(doc);
+        break;
+    }
+  },
+
+  _identifyAutofillFields(doc) {
+    let forms = [];
+
+    
+    for (let field of doc.getElementsByTagName("input")) {
+      let formLike = FormLikeFactory.createFromField(field);
+      if (!forms.some(form => form.rootElement === formLike.rootElement)) {
+        forms.push(formLike);
+      }
+    }
+
+    
+    
+    forms.forEach(form => {
+      let formHandler = new FormAutofillHandler(form);
+      formHandler.collectFormFields();
+      if (formHandler.fieldDetails.length < AUTOFILL_FIELDS_THRESHOLD) {
+        return;
+      }
+
+      formHandler.fieldDetails.forEach(
+        detail => this._markAsAutofillField(detail.element));
+    });
+  },
+
+  _markAsAutofillField(field) {
+    formFillController.markAsAutofillField(field);
+  },
+};
+
+FormAutofillContent.init();
