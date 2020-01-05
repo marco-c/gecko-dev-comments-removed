@@ -3,7 +3,7 @@
 
 
 
-
+use animation;
 use context;
 use data;
 use properties::ServoComputedValues;
@@ -15,3 +15,4 @@ pub type Stylesheet = stylesheets::Stylesheet<ServoSelectorImpl>;
 pub type PrivateStyleData = data::PrivateStyleData<ServoSelectorImpl, ServoComputedValues>;
 pub type Stylist = selector_matching::Stylist<ServoSelectorImpl>;
 pub type SharedStyleContext = context::SharedStyleContext<ServoSelectorImpl>;
+pub type Animation = animation::Animation<ServoSelectorImpl>;

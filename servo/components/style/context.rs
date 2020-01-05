@@ -34,16 +34,16 @@ pub struct SharedStyleContext<Impl: SelectorImplExt> {
 
     
     
-    pub new_animations_sender: Mutex<Sender<Animation>>,
+    pub new_animations_sender: Mutex<Sender<Animation<Impl>>>,
 
     
     pub goal: ReflowGoal,
 
     
-    pub running_animations: Arc<RwLock<HashMap<OpaqueNode, Vec<Animation>>>>,
+    pub running_animations: Arc<RwLock<HashMap<OpaqueNode, Vec<Animation<Impl>>>>>,
 
     
-    pub expired_animations: Arc<RwLock<HashMap<OpaqueNode, Vec<Animation>>>>,
+    pub expired_animations: Arc<RwLock<HashMap<OpaqueNode, Vec<Animation<Impl>>>>>,
 
     
     pub error_reporter: Box<ParseErrorReporter + Sync>,
