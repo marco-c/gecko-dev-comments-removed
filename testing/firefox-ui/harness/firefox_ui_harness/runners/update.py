@@ -12,6 +12,8 @@ from firefox_ui_harness.testcases import UpdateTestCase
 
 
 DEFAULT_PREFS = {
+    
+    'app.update.doorhanger': False,
     'app.update.log': True,
     'startup.homepage_override_url': 'about:blank',
 }
