@@ -4,13 +4,13 @@
 
 
 
-use layout::box_::Box;
 use layout::block::BlockFlow;
 use layout::block::WidthAndMarginsComputer;
 use layout::construct::FlowConstructor;
 use layout::context::LayoutContext;
 use layout::flow::{TableRowGroupFlowClass, FlowClass, Flow, ImmutableFlowUtils};
 use layout::flow;
+use layout::fragment::Fragment;
 use layout::table::{InternalTable, TableFlow};
 use layout::wrapper::ThreadSafeLayoutNode;
 
@@ -33,11 +33,11 @@ pub struct TableRowGroupFlow {
 }
 
 impl TableRowGroupFlow {
-    pub fn from_node_and_box(node: &ThreadSafeLayoutNode,
-                             box_: Box)
-                             -> TableRowGroupFlow {
+    pub fn from_node_and_fragment(node: &ThreadSafeLayoutNode,
+                                  fragment: Fragment)
+                                  -> TableRowGroupFlow {
         TableRowGroupFlow {
-            block_flow: BlockFlow::from_node_and_box(node, box_),
+            block_flow: BlockFlow::from_node_and_fragment(node, fragment),
             col_widths: vec!(),
             col_min_widths: vec!(),
             col_pref_widths: vec!(),
@@ -55,8 +55,8 @@ impl TableRowGroupFlow {
         }
     }
 
-    pub fn box_<'a>(&'a mut self) -> &'a Box {
-        &self.block_flow.box_
+    pub fn fragment<'a>(&'a mut self) -> &'a Fragment {
+        &self.block_flow.fragment
     }
 
     fn initialize_offsets(&mut self) -> (Au, Au, Au) {
@@ -87,9 +87,9 @@ impl TableRowGroupFlow {
 
         let height = cur_y - top_offset;
 
-        let mut position = self.block_flow.box_.border_box;
+        let mut position = self.block_flow.fragment.border_box;
         position.size.height = height;
-        self.block_flow.box_.border_box = position;
+        self.block_flow.fragment.border_box = position;
         self.block_flow.base.position.size.height = height;
     }
 
@@ -200,6 +200,6 @@ impl Flow for TableRowGroupFlow {
 
 impl fmt::Show for TableRowGroupFlow {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f.buf, "TableRowGroupFlow: {}", self.block_flow.box_)
+        write!(f.buf, "TableRowGroupFlow: {}", self.block_flow.fragment)
     }
 }

@@ -4,13 +4,13 @@
 
 
 
-use layout::box_::Box;
 use layout::block::{BlockFlow, MarginsMayNotCollapse, WidthAndMarginsComputer};
 use layout::block::{WidthConstraintInput, WidthConstraintSolution};
 use layout::construct::FlowConstructor;
 use layout::context::LayoutContext;
 use layout::floats::FloatKind;
 use layout::flow::{TableWrapperFlowClass, FlowClass, Flow, ImmutableFlowUtils};
+use layout::fragment::Fragment;
 use layout::model::{Specified, Auto, specified};
 use layout::wrapper::ThreadSafeLayoutNode;
 
@@ -36,11 +36,11 @@ pub struct TableWrapperFlow {
 }
 
 impl TableWrapperFlow {
-    pub fn from_node_and_box(node: &ThreadSafeLayoutNode,
-                             box_: Box)
-                             -> TableWrapperFlow {
-        let mut block_flow = BlockFlow::from_node_and_box(node, box_);
-        let table_layout = if block_flow.box_().style().get_table().table_layout ==
+    pub fn from_node_and_fragment(node: &ThreadSafeLayoutNode,
+                                  fragment: Fragment)
+                                  -> TableWrapperFlow {
+        let mut block_flow = BlockFlow::from_node_and_fragment(node, fragment);
+        let table_layout = if block_flow.fragment().style().get_table().table_layout ==
                               table_layout::fixed {
             FixedLayout
         } else {
@@ -57,7 +57,7 @@ impl TableWrapperFlow {
                      node: &ThreadSafeLayoutNode)
                      -> TableWrapperFlow {
         let mut block_flow = BlockFlow::from_node(constructor, node);
-        let table_layout = if block_flow.box_().style().get_table().table_layout ==
+        let table_layout = if block_flow.fragment().style().get_table().table_layout ==
                               table_layout::fixed {
             FixedLayout
         } else {
@@ -75,7 +75,7 @@ impl TableWrapperFlow {
                            float_kind: FloatKind)
                            -> TableWrapperFlow {
         let mut block_flow = BlockFlow::float_from_node(constructor, node, float_kind);
-        let table_layout = if block_flow.box_().style().get_table().table_layout ==
+        let table_layout = if block_flow.fragment().style().get_table().table_layout ==
                               table_layout::fixed {
             FixedLayout
         } else {
@@ -159,8 +159,8 @@ impl Flow for TableWrapperFlow {
         let width_computer = TableWrapper;
         width_computer.compute_used_width_table_wrapper(self, ctx, containing_block_width);
 
-        let left_content_edge = self.block_flow.box_.border_box.origin.x;
-        let content_width = self.block_flow.box_.border_box.size.width;
+        let left_content_edge = self.block_flow.fragment.border_box.origin.x;
+        let content_width = self.block_flow.fragment.border_box.size.width;
 
         match self.table_layout {
             FixedLayout | _ if self.is_float() =>
@@ -194,9 +194,9 @@ impl Flow for TableWrapperFlow {
 impl fmt::Show for TableWrapperFlow {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if self.is_float() {
-            write!(f.buf, "TableWrapperFlow(Float): {}", self.block_flow.box_)
+            write!(f.buf, "TableWrapperFlow(Float): {}", self.block_flow.fragment)
         } else {
-            write!(f.buf, "TableWrapperFlow: {}", self.block_flow.box_)
+            write!(f.buf, "TableWrapperFlow: {}", self.block_flow.fragment)
         }
     }
 }
@@ -232,7 +232,7 @@ impl TableWrapper {
                                                                              |sum, width| sum.add(width));
 
                 let mut computed_width = input.computed_width.specified_or_zero();
-                let style = table_wrapper.block_flow.box_.style();
+                let style = table_wrapper.block_flow.fragment.style();
 
                 
                 
