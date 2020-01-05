@@ -80,9 +80,8 @@ AndroidFlingAnimation::AndroidFlingAnimation(AsyncPanZoomController& aApzc,
   , mFlingDuration(0)
 {
   MOZ_ASSERT(mOverscrollHandoffChain);
-  AndroidSpecificState* state = aPlatformSpecificState->AsAndroidSpecificState();
-  MOZ_ASSERT(state);
-  mOverScroller = state->mOverScroller;
+  MOZ_ASSERT(aPlatformSpecificState->AsAndroidSpecificState());
+  mOverScroller = aPlatformSpecificState->AsAndroidSpecificState()->mOverScroller;
   MOZ_ASSERT(mOverScroller);
 
   
@@ -119,20 +118,12 @@ AndroidFlingAnimation::AndroidFlingAnimation(AsyncPanZoomController& aApzc,
 
   int32_t originX = ClampStart(mStartOffset.x, scrollRangeStartX, scrollRangeEndX);
   int32_t originY = ClampStart(mStartOffset.y, scrollRangeStartY, scrollRangeEndY);
-  if (!state->mLastFling.IsNull()) {
-    
-    
-    TimeDuration flingDuration = TimeStamp::Now() - state->mLastFling;
-    bool unused = false;
-    mOverScroller->ComputeScrollOffset(flingDuration.ToMilliseconds(), &unused);
-  }
   mOverScroller->Fling(originX, originY,
                        
                        (int32_t)(velocity.x * 1000.0f), (int32_t)(velocity.y * 1000.0f),
                        (int32_t)floor(scrollRangeStartX), (int32_t)ceil(scrollRangeEndX),
                        (int32_t)floor(scrollRangeStartY), (int32_t)ceil(scrollRangeEndY),
                        0, 0, 0);
-  state->mLastFling = TimeStamp::Now();
 }
 
 
