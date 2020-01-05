@@ -254,18 +254,6 @@ GMPChild::Init(const nsAString& aPluginPath,
   return true;
 }
 
-mozilla::ipc::IPCResult
-GMPChild::RecvSetNodeId(const nsCString& aNodeId)
-{
-  LOGD("%s nodeId=%s", __FUNCTION__, aNodeId.Data());
-
-  
-  
-  
-  mNodeId = aNodeId;
-  return IPC_OK();
-}
-
 GMPErr
 GMPChild::GetAPI(const char* aAPIName,
                  void* aHostAPI,
@@ -374,8 +362,6 @@ GMPChild::AnswerStartPlugin(const nsString& aAdapter)
   GMPAdapter* adapter = (isWidevine) ? new WidevineAdapter() : nullptr;
   if (!mGMPLoader->Load(libPath.get(),
                         libPath.Length(),
-                        mNodeId.BeginWriting(),
-                        mNodeId.Length(),
                         platformAPI,
                         adapter)) {
     NS_WARNING("Failed to load GMP");

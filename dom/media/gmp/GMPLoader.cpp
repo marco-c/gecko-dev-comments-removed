@@ -86,14 +86,9 @@ private:
 bool
 GMPLoader::Load(const char* aUTF8LibPath,
                 uint32_t aUTF8LibPathLen,
-                char* aOriginSalt,
-                uint32_t aOriginSaltLen,
                 const GMPPlatformAPI* aPlatformAPI,
                 GMPAdapter* aAdapter)
 {
-  
-  
-  
   if (mSandboxStarter && !mSandboxStarter->Start(aUTF8LibPath)) {
     return false;
   }
@@ -122,18 +117,6 @@ GMPLoader::Load(const char* aUTF8LibPath,
     return false;
   }
 
-  GMPInitFunc initFunc = reinterpret_cast<GMPInitFunc>(PR_FindFunctionSymbol(lib, "GMPInit"));
-  if ((initFunc && aAdapter) ||
-      (!initFunc && !aAdapter)) {
-    
-    
-    
-    
-    return false;
-  }
-
-  
-  
   mAdapter.reset((!aAdapter) ? new PassThroughGMPAdapter() : aAdapter);
   mAdapter->SetAdaptee(lib);
 
