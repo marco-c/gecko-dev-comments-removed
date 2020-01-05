@@ -78,7 +78,6 @@ class PlatformData {
  public:
   PlatformData() : profiled_thread_(mach_thread_self())
   {
-    profiled_pthread_ = pthread_from_mach_thread_np(profiled_thread_);
   }
 
   ~PlatformData() {
@@ -87,17 +86,12 @@ class PlatformData {
   }
 
   thread_act_t profiled_thread() { return profiled_thread_; }
-  pthread_t profiled_pthread() { return profiled_pthread_; }
 
  private:
   
   
   
   thread_act_t profiled_thread_;
-  
-  
-  
-  pthread_t profiled_pthread_;
 };
 
  auto
@@ -304,12 +298,6 @@ void Sampler::Stop() {
   ASSERT(IsActive());
   SetActive(false);
   SamplerThread::RemoveActiveSampler(this);
-}
-
-pthread_t
-Sampler::GetProfiledThread(PlatformData* aData)
-{
-  return aData->profiled_pthread();
 }
 
  Thread::tid_t
