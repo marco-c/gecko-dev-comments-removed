@@ -64,8 +64,6 @@ public:
 class nsNSSShutDownList
 {
 public:
-  static void shutdown();
-
   
   static void remember(nsNSSShutDownObject *o);
   static void forget(nsNSSShutDownObject *o);
@@ -76,7 +74,8 @@ public:
   static void forget(nsOnPK11LogoutCancelObject *o);
 
   
-  static nsresult evaporateAllNSSResources();
+  
+  static nsresult evaporateAllNSSResourcesAndShutDown();
 
   
   
@@ -228,7 +227,7 @@ public:
     }
   }
 
-  bool isAlreadyShutDown() const { return mAlreadyShutDown; }
+  bool isAlreadyShutDown() const;
 
 protected:
   virtual void virtualDestroyNSSReference() = 0;
