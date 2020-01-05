@@ -24,10 +24,10 @@ use text::glyph::CharIndex;
 use text::TextRun;
 
 use azure::azure::AzFloat;
-use azure::azure_hl::{Color};
+use azure::azure_hl::Color;
 
 use collections::linked_list::{self, LinkedList};
-use geom::{Matrix2D, Point2D, Rect, SideOffsets2D, Size2D, Matrix4};
+use geom::{Point2D, Rect, SideOffsets2D, Size2D, Matrix2D, Matrix4};
 use geom::approxeq::ApproxEq;
 use geom::num::Zero;
 use libc::uintptr_t;
@@ -66,7 +66,7 @@ const MIN_INDENTATION_LENGTH: usize = 4;
 
 
 
-#[derive(Clone, PartialEq, Copy, Debug)]
+#[derive(Clone, PartialEq, Copy, Debug, HeapSizeOf)]
 pub struct OpaqueNode(pub uintptr_t);
 
 impl OpaqueNode {
@@ -82,6 +82,7 @@ impl OpaqueNode {
 
 
 
+#[derive(HeapSizeOf)]
 pub struct DisplayList {
     
     pub background_and_borders: LinkedList<DisplayItem>,
@@ -218,24 +219,14 @@ impl DisplayList {
     }
 }
 
-impl HeapSizeOf for DisplayList {
-    fn heap_size_of_children(&self) -> usize {
-        self.background_and_borders.heap_size_of_children() +
-            self.block_backgrounds_and_borders.heap_size_of_children() +
-            self.floats.heap_size_of_children() +
-            self.content.heap_size_of_children() +
-            self.positioned_content.heap_size_of_children() +
-            self.outlines.heap_size_of_children() +
-            self.children.heap_size_of_children()
-    }
-}
-
+#[derive(HeapSizeOf)]
 
 pub struct StackingContext {
     
     pub display_list: Box<DisplayList>,
 
     
+    #[ignore_heap_size_of = "FIXME(njn): should measure this at some point"]
     pub layer: Option<Arc<PaintLayer>>,
 
     
@@ -588,14 +579,6 @@ impl StackingContext {
     }
 }
 
-impl HeapSizeOf for StackingContext {
-    fn heap_size_of_children(&self) -> usize {
-        self.display_list.heap_size_of_children()
-
-        
-    }
-}
-
 
 pub fn find_stacking_context_with_layer_id(this: &Arc<StackingContext>, layer_id: LayerId)
                                            -> Option<Arc<StackingContext>> {
@@ -615,7 +598,7 @@ pub fn find_stacking_context_with_layer_id(this: &Arc<StackingContext>, layer_id
 }
 
 
-#[derive(Clone)]
+#[derive(Clone, HeapSizeOf)]
 pub enum DisplayItem {
     SolidColorClass(Box<SolidColorDisplayItem>),
     TextClass(Box<TextDisplayItem>),
@@ -627,7 +610,7 @@ pub enum DisplayItem {
 }
 
 
-#[derive(Clone)]
+#[derive(Clone, HeapSizeOf)]
 pub struct BaseDisplayItem {
     
     pub bounds: Rect<Au>,
@@ -651,17 +634,11 @@ impl BaseDisplayItem {
     }
 }
 
-impl HeapSizeOf for BaseDisplayItem {
-    fn heap_size_of_children(&self) -> usize {
-        self.metadata.heap_size_of_children() +
-            self.clip.heap_size_of_children()
-    }
-}
 
 
 
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug, HeapSizeOf)]
 pub struct ClippingRegion {
     
     pub main: Rect<Au>,
@@ -675,7 +652,7 @@ pub struct ClippingRegion {
 
 
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug, HeapSizeOf)]
 pub struct ComplexClippingRegion {
     
     pub rect: Rect<Au>,
@@ -783,22 +760,11 @@ impl ClippingRegion {
     }
 }
 
-impl HeapSizeOf for ClippingRegion {
-    fn heap_size_of_children(&self) -> usize {
-        self.complex.heap_size_of_children()
-    }
-}
-
-impl HeapSizeOf for ComplexClippingRegion {
-    fn heap_size_of_children(&self) -> usize {
-        0
-    }
-}
 
 
 
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, HeapSizeOf)]
 pub struct DisplayItemMetadata {
     
     pub node: OpaqueNode,
@@ -826,14 +792,8 @@ impl DisplayItemMetadata {
     }
 }
 
-impl HeapSizeOf for DisplayItemMetadata {
-    fn heap_size_of_children(&self) -> usize {
-        0
-    }
-}
 
-
-#[derive(Clone)]
+#[derive(Clone, HeapSizeOf)]
 pub struct SolidColorDisplayItem {
     
     pub base: BaseDisplayItem,
@@ -842,19 +802,14 @@ pub struct SolidColorDisplayItem {
     pub color: Color,
 }
 
-impl HeapSizeOf for SolidColorDisplayItem {
-    fn heap_size_of_children(&self) -> usize {
-        self.base.heap_size_of_children()
-    }
-}
 
-
-#[derive(Clone)]
+#[derive(Clone, HeapSizeOf)]
 pub struct TextDisplayItem {
     
     pub base: BaseDisplayItem,
 
     
+    #[ignore_heap_size_of = "Because it is non-owning"]
     pub text_run: Arc<Box<TextRun>>,
 
     
@@ -873,14 +828,7 @@ pub struct TextDisplayItem {
     pub blur_radius: Au,
 }
 
-impl HeapSizeOf for TextDisplayItem {
-    fn heap_size_of_children(&self) -> usize {
-        self.base.heap_size_of_children()
-        
-    }
-}
-
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone, Eq, PartialEq, HeapSizeOf)]
 pub enum TextOrientation {
     Upright,
     SidewaysLeft,
@@ -888,9 +836,10 @@ pub enum TextOrientation {
 }
 
 
-#[derive(Clone)]
+#[derive(Clone, HeapSizeOf)]
 pub struct ImageDisplayItem {
     pub base: BaseDisplayItem,
+    #[ignore_heap_size_of = "Because it is non-owning"]
     pub image: Arc<Image>,
 
     
@@ -903,12 +852,6 @@ pub struct ImageDisplayItem {
     pub image_rendering: image_rendering::T,
 }
 
-impl HeapSizeOf for ImageDisplayItem {
-    fn heap_size_of_children(&self) -> usize {
-        self.base.heap_size_of_children()
-        
-    }
-}
 
 
 #[derive(Clone)]
@@ -926,6 +869,7 @@ pub struct GradientDisplayItem {
     pub stops: Vec<GradientStop>,
 }
 
+
 impl HeapSizeOf for GradientDisplayItem {
     fn heap_size_of_children(&self) -> usize {
         use libc::c_void;
@@ -941,7 +885,7 @@ impl HeapSizeOf for GradientDisplayItem {
 
 
 
-#[derive(Clone)]
+#[derive(Clone, HeapSizeOf)]
 pub struct BorderDisplayItem {
     
     pub base: BaseDisplayItem,
@@ -961,16 +905,10 @@ pub struct BorderDisplayItem {
     pub radius: BorderRadii<Au>,
 }
 
-impl HeapSizeOf for BorderDisplayItem {
-    fn heap_size_of_children(&self) -> usize {
-        self.base.heap_size_of_children()
-    }
-}
 
 
 
-
-#[derive(Clone, Default, PartialEq, Debug, Copy)]
+#[derive(Clone, Default, PartialEq, Debug, Copy, HeapSizeOf)]
 pub struct BorderRadii<T> {
     pub top_left: T,
     pub top_right: T,
@@ -1000,7 +938,7 @@ impl<T> BorderRadii<T> where T: PartialEq + Zero + Clone {
 }
 
 
-#[derive(Clone)]
+#[derive(Clone, HeapSizeOf)]
 pub struct LineDisplayItem {
     pub base: BaseDisplayItem,
 
@@ -1011,14 +949,8 @@ pub struct LineDisplayItem {
     pub style: border_style::T
 }
 
-impl HeapSizeOf for LineDisplayItem {
-    fn heap_size_of_children(&self) -> usize {
-        self.base.heap_size_of_children()
-    }
-}
 
-
-#[derive(Clone)]
+#[derive(Clone, HeapSizeOf)]
 pub struct BoxShadowDisplayItem {
     
     pub base: BaseDisplayItem,
@@ -1042,14 +974,8 @@ pub struct BoxShadowDisplayItem {
     pub clip_mode: BoxShadowClipMode,
 }
 
-impl HeapSizeOf for BoxShadowDisplayItem {
-    fn heap_size_of_children(&self) -> usize {
-        self.base.heap_size_of_children()
-    }
-}
 
-
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, HeapSizeOf)]
 pub enum BoxShadowClipMode {
     
     None,
@@ -1210,17 +1136,4 @@ impl fmt::Debug for DisplayItem {
     }
 }
 
-impl HeapSizeOf for DisplayItem {
-    fn heap_size_of_children(&self) -> usize {
-        match *self {
-            SolidColorClass(ref item) => item.heap_size_of_children(),
-            TextClass(ref item)       => item.heap_size_of_children(),
-            ImageClass(ref item)      => item.heap_size_of_children(),
-            BorderClass(ref item)     => item.heap_size_of_children(),
-            GradientClass(ref item)   => item.heap_size_of_children(),
-            LineClass(ref item)       => item.heap_size_of_children(),
-            BoxShadowClass(ref item)  => item.heap_size_of_children(),
-        }
-    }
-}
 

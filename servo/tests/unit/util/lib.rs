@@ -2,6 +2,8 @@
 
 
 
+#![feature(plugin, custom_derive, custom_attributes)]
+#![plugin(plugins)]
 extern crate util;
 extern crate geom;
 
@@ -9,3 +11,4 @@ extern crate geom;
 #[cfg(test)] mod logical_geometry;
 #[cfg(test)] mod task;
 #[cfg(test)] mod vec;
+#[cfg(test)] mod mem;
