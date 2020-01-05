@@ -371,6 +371,9 @@ var BrowserApp = {
     return this.isOnLowMemoryPlatform = memory.isLowMemoryPlatform();
   },
 
+  
+  
+  
   deck: null,
 
   startup: function startup() {
@@ -1171,6 +1174,11 @@ var BrowserApp = {
         return tabs[i].browser;
     }
     return null;
+  },
+
+  
+  get selectedTabIndex() {
+    return this._tabs.indexOf(this._selectedTab);
   },
 
   loadURI: function loadURI(aURI, aBrowser, aParams) {
@@ -3505,7 +3513,7 @@ Tab.prototype = {
     
     
     let selectedPanel = BrowserApp.deck.selectedPanel;
-    BrowserApp.deck.insertBefore(this.browser, aParams.sibling || null);
+    BrowserApp.deck.appendChild(this.browser);
     BrowserApp.deck.selectedPanel = selectedPanel;
 
     let attrs = {};
@@ -3780,11 +3788,10 @@ Tab.prototype = {
     
     
     let currentURL = browser.__SS_restore ? data.entries[0].url : browser.currentURI.spec;
-    let sibling = browser.nextSibling;
     let isPrivate = PrivateBrowsingUtils.isBrowserPrivate(browser);
 
     this.destroy();
-    this.create(currentURL, { sibling: sibling, zombifying: true, delayLoad: true, isPrivate: isPrivate });
+    this.create(currentURL, { zombifying: true, delayLoad: true, isPrivate: isPrivate });
 
     
     browser = this.browser;
