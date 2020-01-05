@@ -21,9 +21,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "RecentWindow",
 
 const RECENT_DATA_THRESHOLD = 5 * 1000000;
 
-
-
-
 var Manager = {
   
   listeners: new Map(),
@@ -33,6 +30,8 @@ var Manager = {
     
     this.recentTabTransitionData = new WeakMap();
     Services.obs.addObserver(this, "autocomplete-did-enter-text", true);
+
+    Services.obs.addObserver(this, "webNavigation-createdNavigationTarget", false);
 
     Services.mm.addMessageListener("Content:Click", this);
     Services.mm.addMessageListener("Extension:DOMContentLoaded", this);
@@ -47,6 +46,8 @@ var Manager = {
     
     Services.obs.removeObserver(this, "autocomplete-did-enter-text");
     this.recentTabTransitionData = new WeakMap();
+
+    Services.obs.removeObserver(this, "webNavigation-createdNavigationTarget");
 
     Services.mm.removeMessageListener("Content:Click", this);
     Services.mm.removeMessageListener("Extension:StateChange", this);
@@ -99,9 +100,26 @@ var Manager = {
 
 
 
+
   observe: function(subject, topic, data) {
     if (topic == "autocomplete-did-enter-text") {
       this.onURLBarAutoCompletion(subject);
+    } else if (topic == "webNavigation-createdNavigationTarget") {
+      
+      
+      
+      const {
+        createdTabBrowser,
+        url,
+        sourceFrameOuterWindowID,
+        sourceTabBrowser,
+      } = subject.wrappedJSObject;
+
+      this.fire("onCreatedNavigationTarget", createdTabBrowser, {}, {
+        sourceTabBrowser,
+        sourceWindowId: sourceFrameOuterWindowID,
+        url,
+      });
     }
   },
 
@@ -357,7 +375,7 @@ const EVENTS = [
   "onErrorOccurred",
   "onReferenceFragmentUpdated",
   "onHistoryStateUpdated",
-  
+  "onCreatedNavigationTarget",
 ];
 
 var WebNavigation = {};
