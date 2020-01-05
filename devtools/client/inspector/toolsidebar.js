@@ -84,6 +84,27 @@ ToolSidebar.prototype = {
     this._tabbar = this.ReactDOM.render(sidebar, this._tabbox);
   },
 
+  
+
+
+
+
+
+
+
+  addTab: function (id, title, panel, selected) {
+    this._tabbar.addTab(id, title, selected, panel);
+    this.emit("new-tab-registered", id);
+  },
+
+  
+
+
+
+
+
+
+
   addExistingTab: function (id, title, selected) {
     let panel = this.InspectorTabPanel({
       id: id,
@@ -92,12 +113,13 @@ ToolSidebar.prototype = {
       title: title,
     });
 
-    this._tabbar.addTab(id, title, selected, panel);
-
-    this.emit("new-tab-registered", id);
+    this.addTab(id, title, panel, selected);
   },
 
   
+
+
+
 
 
 
@@ -114,9 +136,7 @@ ToolSidebar.prototype = {
       onMount: this.onSidePanelMounted.bind(this),
     });
 
-    this._tabbar.addTab(id, title, selected, panel);
-
-    this.emit("new-tab-registered", id);
+    this.addTab(id, title, panel, selected);
   },
 
   onSidePanelMounted: function (content, props) {

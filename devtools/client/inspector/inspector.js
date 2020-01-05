@@ -600,6 +600,20 @@ Inspector.prototype = {
     this.sidebar.show(defaultTab);
   },
 
+  
+
+
+
+
+
+
+
+
+
+  addSidebarTab: function (id, title, panel, selected) {
+    this.sidebar.addTab(id, title, panel, selected);
+  },
+
   setupToolbar: function () {
     this.teardownToolbar();
 
