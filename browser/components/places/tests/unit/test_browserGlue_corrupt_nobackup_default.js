@@ -9,8 +9,6 @@
 
 
 
-Components.utils.import("resource://gre/modules/AppConstants.jsm");
-
 function run_test() {
   
   remove_bookmarks_html();
@@ -48,8 +46,5 @@ add_task(function* () {
     parentGuid: PlacesUtils.bookmarks.toolbarGuid,
     index: SMART_BOOKMARKS_ON_TOOLBAR
   });
-
-  
-  let chanTitle = AppConstants.NIGHTLY_BUILD ? "Get Involved" : "Getting Started";
-  do_check_eq(bm.title, chanTitle);
+  do_check_eq(bm.title, "Getting Started");
 });
