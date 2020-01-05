@@ -803,6 +803,12 @@ nsScriptSecurityManager::CheckLoadURIWithPrincipal(nsIPrincipal* aPrincipal,
     nsCaseInsensitiveCStringComparator stringComparator;
     nsCOMPtr<nsIURI> currentURI = sourceURI;
     nsCOMPtr<nsIURI> currentOtherURI = aTargetURI;
+
+    bool denySameSchemeLinks = false;
+    rv = NS_URIChainHasFlags(aTargetURI, nsIProtocolHandler::URI_SCHEME_NOT_SELF_LINKABLE,
+                             &denySameSchemeLinks);
+    if (NS_FAILED(rv)) return rv;
+
     while (currentURI && currentOtherURI) {
         nsAutoCString scheme, otherScheme;
         currentURI->GetScheme(scheme);
@@ -811,7 +817,13 @@ nsScriptSecurityManager::CheckLoadURIWithPrincipal(nsIPrincipal* aPrincipal,
         
         
         
-        if (!scheme.Equals(otherScheme, stringComparator)) {
+        
+        
+        bool equalExceptRef = false;
+        if (!scheme.Equals(otherScheme, stringComparator) ||
+            (denySameSchemeLinks &&
+             (!NS_SUCCEEDED(currentURI->EqualsExceptRef(currentOtherURI, &equalExceptRef)) ||
+              !equalExceptRef))) {
             return CheckLoadURIFlags(currentURI, currentOtherURI,
                                      sourceBaseURI, targetBaseURI, aFlags);
         }
