@@ -3,7 +3,13 @@
 
 "use strict";
 
-const json = require("./json/core");
-const properties = require("./properties/core");
+lazyRequireModule(this, "./json/core", "json");
+lazyRequireModule(this, "./properties/core", "properties");
 
-exports.get = json.usingJSON ? json.get : properties.get;
+const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
+XPCOMUtils.defineLazyGetter(this, "get",
+                            () => json.usingJSON ? json.get : properties.get);
+
+module.exports = Object.freeze({
+  get get() { return get; }, 
+});

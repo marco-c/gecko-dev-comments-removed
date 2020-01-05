@@ -3,8 +3,8 @@
 
 "use strict";
 
-const { on } = require("../system/events");
-const core = require("./core");
+lazyRequire(this, "../system/events", "on");
+lazyRequireModule(this, "./core", "core");
 const { id: jetpackId } = require('../self');
 
 const OPTIONS_DISPLAYED = "addon-options-displayed";
