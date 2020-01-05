@@ -136,18 +136,4 @@ protected:
 } 
 } 
 
-
-
-
-
-#include "js/TypeDecls.h"
-
-namespace mozilla {
-namespace dom {
-template <>
-nsresult
-UnwrapArg(JS::Handle<JSObject*> src, css::Rule** ppArg);
-} 
-} 
-
 #endif 
