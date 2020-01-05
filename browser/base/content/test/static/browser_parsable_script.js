@@ -11,10 +11,6 @@ const kWhitelist = new Set([
 ]);
 
 
-var moduleLocation = gTestPath.replace(/\/[^\/]*$/i, "/parsingTestHelpers.jsm");
-var {generateURIsFromDirTree} = Cu.import(moduleLocation, {});
-
-
 
 
 
@@ -50,7 +46,7 @@ function parsePromise(uri) {
         let scriptText = this.responseText;
         try {
           info("Checking " + uri);
-          Reflect.parse(scriptText);
+          Reflect.parse(scriptText, {source: uri});
           resolve(true);
         } catch (ex) {
           let errorMsg = "Script error reading " + uri + ": " + ex;
@@ -95,7 +91,7 @@ add_task(function* checkAllTheJS() {
   if (parseValue && parseValue.includes(":")) {
     uris = [NetUtil.newURI(parseValue)];
   } else {
-    let appDir = Services.dirsvc.get("XCurProcD", Ci.nsIFile);
+    let appDir = Services.dirsvc.get("GreD", Ci.nsIFile);
     
     
     

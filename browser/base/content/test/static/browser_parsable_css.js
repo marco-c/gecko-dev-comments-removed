@@ -67,9 +67,6 @@ let allowedImageReferences = [
    isFromDevTools: true},
 ];
 
-var moduleLocation = gTestPath.replace(/\/[^\/]*$/i, "/parsingTestHelpers.jsm");
-var {generateURIsFromDirTree} = Cu.import(moduleLocation, {});
-
 
 
 
@@ -300,25 +297,25 @@ add_task(function* checkAllTheCSS() {
   for (let uri of uris) {
     let linkEl = doc.createElement("link");
     linkEl.setAttribute("rel", "stylesheet");
-    let promiseForThisSpec = Promise.defer();
-    let onLoad = (e) => {
-      processCSSRules(linkEl.sheet);
-      promiseForThisSpec.resolve();
-      linkEl.removeEventListener("load", onLoad);
-      linkEl.removeEventListener("error", onError);
-    };
-    let onError = (e) => {
-      ok(false, "Loading " + linkEl.getAttribute("href") + " threw an error!");
-      promiseForThisSpec.resolve();
-      linkEl.removeEventListener("load", onLoad);
-      linkEl.removeEventListener("error", onError);
-    };
-    linkEl.addEventListener("load", onLoad);
-    linkEl.addEventListener("error", onError);
-    linkEl.setAttribute("type", "text/css");
-    let chromeUri = convertToChromeUri(uri);
-    linkEl.setAttribute("href", chromeUri.spec + kPathSuffix);
-    allPromises.push(promiseForThisSpec.promise);
+    allPromises.push(new Promise(resolve => {
+      let onLoad = (e) => {
+        processCSSRules(linkEl.sheet);
+        resolve();
+        linkEl.removeEventListener("load", onLoad);
+        linkEl.removeEventListener("error", onError);
+      };
+      let onError = (e) => {
+        ok(false, "Loading " + linkEl.getAttribute("href") + " threw an error!");
+        resolve();
+        linkEl.removeEventListener("load", onLoad);
+        linkEl.removeEventListener("error", onError);
+      };
+      linkEl.addEventListener("load", onLoad);
+      linkEl.addEventListener("error", onError);
+      linkEl.setAttribute("type", "text/css");
+      let chromeUri = convertToChromeUri(uri);
+      linkEl.setAttribute("href", chromeUri.spec + kPathSuffix);
+    }));
     doc.head.appendChild(linkEl);
   }
 
