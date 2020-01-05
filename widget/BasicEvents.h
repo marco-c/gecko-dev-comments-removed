@@ -410,9 +410,15 @@ public:
   nsString mSpecifiedEventTypeString;
 
   
+  
+  
   nsCOMPtr<dom::EventTarget> mTarget;
   nsCOMPtr<dom::EventTarget> mCurrentTarget;
   nsCOMPtr<dom::EventTarget> mOriginalTarget;
+
+  dom::EventTarget* GetDOMEventTarget() const;
+  dom::EventTarget* GetCurrentDOMEventTarget() const;
+  dom::EventTarget* GetOriginalDOMEventTarget() const;
 
   void AssignEventData(const WidgetEvent& aEvent, bool aCopyTargets)
   {

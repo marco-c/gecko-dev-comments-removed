@@ -5070,19 +5070,16 @@ EditorBase::IsActiveInDOMWindow()
 }
 
 bool
-EditorBase::IsAcceptableInputEvent(nsIDOMEvent* aEvent)
+EditorBase::IsAcceptableInputEvent(WidgetGUIEvent* aGUIEvent)
 {
   
-  NS_ENSURE_TRUE(aEvent, false);
-
-  WidgetEvent* widgetEvent = aEvent->WidgetEventPtr();
-  if (NS_WARN_IF(!widgetEvent)) {
+  if (NS_WARN_IF(!aGUIEvent)) {
     return false;
   }
 
   
   
-  if (widgetEvent->IsUsingCoordinates()) {
+  if (aGUIEvent->IsUsingCoordinates()) {
     nsCOMPtr<nsIContent> focusedContent = GetFocusedContent();
     if (!focusedContent) {
       return false;
@@ -5095,8 +5092,7 @@ EditorBase::IsAcceptableInputEvent(nsIDOMEvent* aEvent)
   
   
   bool needsWidget = false;
-  WidgetGUIEvent* widgetGUIEvent = nullptr;
-  switch (widgetEvent->mMessage) {
+  switch (aGUIEvent->mMessage) {
     case eUnidentifiedEvent:
       
       
@@ -5108,25 +5104,26 @@ EditorBase::IsAcceptableInputEvent(nsIDOMEvent* aEvent)
     case eCompositionCommitAsIs:
       
       
-      widgetGUIEvent = aEvent->WidgetEventPtr()->AsCompositionEvent();
+      if (!aGUIEvent->AsCompositionEvent()) {
+        return false;
+      }
       needsWidget = true;
       break;
     default:
       break;
   }
-  if (needsWidget &&
-      (!widgetGUIEvent || !widgetGUIEvent->mWidget)) {
+  if (needsWidget && !aGUIEvent->mWidget) {
     return false;
   }
 
   
-  if (widgetEvent->IsTrusted()) {
+  if (aGUIEvent->IsTrusted()) {
     return true;
   }
 
   
   
-  if (widgetEvent->AsMouseEventBase()) {
+  if (aGUIEvent->AsMouseEventBase()) {
     return false;
   }
 

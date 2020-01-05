@@ -886,7 +886,7 @@ public:
 
 
 
-  virtual bool IsAcceptableInputEvent(nsIDOMEvent* aEvent);
+  virtual bool IsAcceptableInputEvent(WidgetGUIEvent* aGUIEvent);
 
   
 

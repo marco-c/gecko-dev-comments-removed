@@ -5171,23 +5171,22 @@ HTMLEditor::OurWindowHasFocus()
 }
 
 bool
-HTMLEditor::IsAcceptableInputEvent(nsIDOMEvent* aEvent)
+HTMLEditor::IsAcceptableInputEvent(WidgetGUIEvent* aGUIEvent)
 {
-  if (!EditorBase::IsAcceptableInputEvent(aEvent)) {
+  if (!EditorBase::IsAcceptableInputEvent(aGUIEvent)) {
     return false;
   }
 
   
   
   
-  if (mComposition && aEvent->WidgetEventPtr()->AsCompositionEvent()) {
+  if (mComposition && aGUIEvent->AsCompositionEvent()) {
     return true;
   }
 
   NS_ENSURE_TRUE(mDocWeak, false);
 
-  nsCOMPtr<nsIDOMEventTarget> target;
-  aEvent->GetTarget(getter_AddRefs(target));
+  nsCOMPtr<nsIDOMEventTarget> target = aGUIEvent->GetDOMEventTarget();
   NS_ENSURE_TRUE(target, false);
 
   nsCOMPtr<nsIDocument> document = do_QueryReferent(mDocWeak);
@@ -5211,8 +5210,7 @@ HTMLEditor::IsAcceptableInputEvent(nsIDOMEvent* aEvent)
 
   
   
-  nsCOMPtr<nsIDOMMouseEvent> mouseEvent = do_QueryInterface(aEvent);
-  if (mouseEvent) {
+  if (aGUIEvent->AsMouseEventBase()) {
     nsIContent* editingHost = GetActiveEditingHost();
     
     
