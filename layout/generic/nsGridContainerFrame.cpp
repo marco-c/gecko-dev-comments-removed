@@ -4179,12 +4179,12 @@ nsGridContainerFrame::Tracks::ResolveIntrinsicSize(
         stateBitsPerSpan[span] |= state;
         CachedIntrinsicSizes cache;
         nscoord minSize = 0;
-        if (state & TrackSize::eIntrinsicMinSizing) { 
+        if (state & (TrackSize::eIntrinsicMinSizing |   
+                     TrackSize::eIntrinsicMaxSizing)) { 
           minSize = MinSize(gridItem, aState, rc, wm, mAxis, &cache);
         }
         nscoord minContent = 0;
-        if (state & (contentBasedMinSelector |          
-                     TrackSize::eIntrinsicMaxSizing)) { 
+        if (state & contentBasedMinSelector) { 
           minContent = MinContentContribution(gridItem, aState,
                                               rc, wm, mAxis, &cache);
         }
@@ -4317,7 +4317,7 @@ nsGridContainerFrame::Tracks::ResolveIntrinsicSize(
           if (!(item.mState & TrackSize::eIntrinsicMaxSizing)) {
             continue;
           }
-          nscoord space = item.mMinContentContribution;
+          nscoord space = item.mMinSize;
           if (space <= 0) {
             continue;
           }
