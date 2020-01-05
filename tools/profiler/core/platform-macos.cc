@@ -159,11 +159,11 @@ public:
       gBuffer->deleteExpiredStoredMarkers();
 
       if (!gIsPaused) {
-        StaticMutexAutoLock lock(sRegisteredThreadsMutex);
+        StaticMutexAutoLock lock(gRegisteredThreadsMutex);
 
         bool isFirstProfiledThread = true;
-        for (uint32_t i = 0; i < sRegisteredThreads->size(); i++) {
-          ThreadInfo* info = (*sRegisteredThreads)[i];
+        for (uint32_t i = 0; i < gRegisteredThreads->size(); i++) {
+          ThreadInfo* info = (*gRegisteredThreads)[i];
 
           
           if (!info->hasProfile() || info->IsPendingDelete()) {

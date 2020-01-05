@@ -95,16 +95,16 @@ static pthread_t gSignalSenderThread;
 
 
 
-lul::LUL* sLUL = nullptr;
+lul::LUL* gLUL = nullptr;
 
 
-static void sLUL_initialization_routine(void)
+static void gLUL_initialization_routine(void)
 {
-  MOZ_ASSERT(!sLUL);
+  MOZ_ASSERT(!gLUL);
   MOZ_ASSERT(gettid() == getpid()); 
-  sLUL = new lul::LUL(logging_sink_for_LUL);
+  gLUL = new lul::LUL(logging_sink_for_LUL);
   
-  read_procmaps(sLUL);
+  read_procmaps(gLUL);
 }
 #endif
 
@@ -151,8 +151,8 @@ static void* setup_atfork() {
 }
 #endif 
 
-static mozilla::Atomic<ThreadInfo*> sCurrentThreadInfo;
-static sem_t sSignalHandlingDone;
+static mozilla::Atomic<ThreadInfo*> gCurrentThreadInfo;
+static sem_t gSignalHandlingDone;
 
 static void SetSampleContext(TickSample* sample, void* context)
 {
@@ -202,7 +202,7 @@ void ProfilerSignalHandler(int signal, siginfo_t* info, void* context) {
 
   
   if (!gSampler) {
-    sem_post(&sSignalHandlingDone);
+    sem_post(&gSignalHandlingDone);
     errno = savedErrno;
     return;
   }
@@ -213,15 +213,15 @@ void ProfilerSignalHandler(int signal, siginfo_t* info, void* context) {
 
   
   SetSampleContext(sample, context);
-  sample->threadInfo = sCurrentThreadInfo;
+  sample->threadInfo = gCurrentThreadInfo;
   sample->timestamp = mozilla::TimeStamp::Now();
   sample->rssMemory = sample->threadInfo->mRssMemory;
   sample->ussMemory = sample->threadInfo->mUssMemory;
 
   Tick(sample);
 
-  sCurrentThreadInfo = NULL;
-  sem_post(&sSignalHandlingDone);
+  gCurrentThreadInfo = NULL;
+  sem_post(&gSignalHandlingDone);
   errno = savedErrno;
 }
 
@@ -285,11 +285,11 @@ static void* SignalSender(void* arg) {
     gBuffer->deleteExpiredStoredMarkers();
 
     if (!gIsPaused) {
-      StaticMutexAutoLock lock(sRegisteredThreadsMutex);
+      StaticMutexAutoLock lock(gRegisteredThreadsMutex);
 
       bool isFirstProfiledThread = true;
-      for (uint32_t i = 0; i < sRegisteredThreads->size(); i++) {
-        ThreadInfo* info = (*sRegisteredThreads)[i];
+      for (uint32_t i = 0; i < gRegisteredThreads->size(); i++) {
+        ThreadInfo* info = (*gRegisteredThreads)[i];
 
         
         if (!info->hasProfile() || info->IsPendingDelete()) {
@@ -305,7 +305,7 @@ static void* SignalSender(void* arg) {
 
         
         
-        sCurrentThreadInfo = info;
+        gCurrentThreadInfo = info;
 
         int threadId = info->ThreadId();
         MOZ_ASSERT(threadId != my_tid);
@@ -313,7 +313,7 @@ static void* SignalSender(void* arg) {
         
         
         
-        ProfilerSignalThread(sCurrentThreadInfo, isFirstProfiledThread);
+        ProfilerSignalThread(gCurrentThreadInfo, isFirstProfiledThread);
 
         
         
@@ -328,7 +328,7 @@ static void* SignalSender(void* arg) {
         }
 
         
-        sem_wait(&sSignalHandlingDone);
+        sem_wait(&gSignalHandlingDone);
         isFirstProfiledThread = false;
 
         
@@ -338,7 +338,7 @@ static void* SignalSender(void* arg) {
         
         if ((++nSignalsSent & 0xF) == 0) {
 #          if defined(USE_LUL_STACKWALK)
-           sLUL->MaybeShowStats();
+           gLUL->MaybeShowStats();
 #          endif
         }
       }
@@ -369,14 +369,14 @@ PlatformStart()
 #elif defined(USE_LUL_STACKWALK)
   
   
-  if (!sLUL) {
-     sLUL_initialization_routine();
+  if (!gLUL) {
+     gLUL_initialization_routine();
   }
 #endif
 
   
-  sCurrentThreadInfo = nullptr;
-  if (sem_init(&sSignalHandlingDone,  0,  0) != 0) {
+  gCurrentThreadInfo = nullptr;
+  if (sem_init(&gSignalHandlingDone,  0,  0) != 0) {
     LOG("Error initializing semaphore");
     return;
   }
@@ -398,12 +398,12 @@ PlatformStart()
   
   
   
-  sLUL->EnableUnwinding();
+  gLUL->EnableUnwinding();
 
   
   if (PR_GetEnv("MOZ_PROFILER_LUL_TEST")) {
      int nTests = 0, nTestsPassed = 0;
-     RunLulUnitTests(&nTests, &nTestsPassed, sLUL);
+     RunLulUnitTests(&nTests, &nTestsPassed, gLUL);
   }
 #endif
 

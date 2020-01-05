@@ -19,6 +19,6 @@ void
 logging_sink_for_LUL(const char* str);
 
 
-extern lul::LUL* sLUL;
+extern lul::LUL* gLUL;
 
 #endif 
