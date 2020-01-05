@@ -503,9 +503,9 @@ class BaseCompiler
     ValTypeVector               SigI_;
     ValTypeVector               Sig_;
     Label                       returnLabel_;
-    Label                       outOfLinePrologue_;
-    Label                       bodyLabel_;
+    Label                       stackOverflowLabel_;
     TrapOffset                  prologueTrapOffset_;
+    CodeOffset                  stackAddOffset_;
 
     LatentOp                    latentOp_;       
     ValType                     latentType_;     
@@ -2058,10 +2058,12 @@ class BaseCompiler
         
         
         
-        
 
-        masm.jump(&outOfLinePrologue_);
-        masm.bind(&bodyLabel_);
+        stackAddOffset_ = masm.add32ToPtrWithPatch(StackPointer, ABINonArgReg0);
+        masm.branchPtr(Assembler::AboveOrEqual,
+                       Address(WasmTlsReg, offsetof(TlsData, stackLimit)),
+                       ABINonArgReg0,
+                       &stackOverflowLabel_);
 
         
 
@@ -2123,25 +2125,13 @@ class BaseCompiler
 
         
         
-        
-
-        masm.bind(&outOfLinePrologue_);
-
         MOZ_ASSERT(maxFramePushed_ >= localSize_);
-
-        
-
-        masm.movePtr(masm.getStackPointer(), ABINonArgReg0);
-        if (maxFramePushed_ - localSize_)
-            masm.subPtr(Imm32(maxFramePushed_ - localSize_), ABINonArgReg0);
-        masm.branchPtr(Assembler::Below,
-                       Address(WasmTlsReg, offsetof(TlsData, stackLimit)),
-                       ABINonArgReg0,
-                       &bodyLabel_);
+        masm.patchAdd32ToPtr(stackAddOffset_, Imm32(-int32_t(maxFramePushed_ - localSize_)));
 
         
         
         
+        masm.bind(&stackOverflowLabel_);
         if (localSize_)
             masm.addToStackPtr(Imm32(localSize_));
         masm.jump(TrapDesc(prologueTrapOffset_, Trap::StackOverflow,  0));
@@ -7556,6 +7546,7 @@ BaseCompiler::BaseCompiler(const ModuleEnvironment& env,
       maxFramePushed_(0),
       deadCode_(false),
       prologueTrapOffset_(trapOffset()),
+      stackAddOffset_(0),
       latentOp_(LatentOp::None),
       latentType_(ValType::I32),
       latentIntCmp_(Assembler::Equal),
