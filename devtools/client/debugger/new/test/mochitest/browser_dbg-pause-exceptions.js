@@ -1,12 +1,46 @@
 
 
 
-const {
-  setupTestRunner,
-  pauseOnExceptions
-} = require("devtools/client/debugger/new/integration-tests");
+function uncaughtException() {
+  return invokeInTab("uncaughtException").catch(() => {});
+}
 
-add_task(function*() {
-  setupTestRunner(this);
-  yield pauseOnExceptions(this);
+function caughtException() {
+  return invokeInTab("caughtException");
+}
+
+
+
+
+
+
+
+
+add_task(function* () {
+  const dbg = yield initDebugger("doc-exceptions.html");
+
+  
+  yield togglePauseOnExceptions(dbg, false, false);
+  yield uncaughtException();
+  ok(!isPaused(dbg));
+
+  
+  yield togglePauseOnExceptions(dbg, true, false);
+  uncaughtException();
+  yield waitForPaused(dbg);
+  assertPausedLocation(dbg, "exceptions.js", 2);
+  yield resume(dbg);
+
+  
+  caughtException();
+  yield waitForPaused(dbg);
+  assertPausedLocation(dbg, "exceptions.js", 15);
+  yield resume(dbg);
+
+  
+  yield togglePauseOnExceptions(dbg, true, true);
+  caughtException();
+  yield waitForPaused(dbg);
+  assertPausedLocation(dbg, "exceptions.js", 17);
+  yield resume(dbg);
 });

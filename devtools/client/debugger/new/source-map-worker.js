@@ -55,7 +55,7 @@ return  (function(modules) {
  0:
  function(module, exports, __webpack_require__) {
 
-	module.exports = __webpack_require__(801);
+	module.exports = __webpack_require__(814);
 
 
  },
@@ -200,6 +200,12 @@ return  (function(modules) {
 	  return url.replace(/:formatted$/, "");
 	}
 	
+	function getFilenameFromURL(url) {
+	  url = getRawSourceURL(url || "");
+	  var name = basename(url) || "(index)";
+	  return endTruncateStr(name, 50);
+	}
+	
 	
 
 
@@ -216,9 +222,7 @@ return  (function(modules) {
 	    return `SOURCE${sourceId}`;
 	  }
 	
-	  url = getRawSourceURL(url || "");
-	  var name = basename(url) || "(index)";
-	  return endTruncateStr(name, 50);
+	  return getFilenameFromURL(url);
 	}
 	
 	var contentTypeModeMap = {
@@ -305,6 +309,7 @@ return  (function(modules) {
 	  getPrettySourceURL,
 	  getRawSourceURL,
 	  getFilename,
+	  getFilenameFromURL,
 	  getMode,
 	  getContentType
 	};
@@ -850,7 +855,7 @@ return  (function(modules) {
 
  },
 
- 568:
+ 334:
  function(module, exports, __webpack_require__) {
 
 	
@@ -876,8 +881,8 @@ return  (function(modules) {
 	
 	'use strict';
 	
-	var punycode = __webpack_require__(569);
-	var util = __webpack_require__(570);
+	var punycode = __webpack_require__(335);
+	var util = __webpack_require__(336);
 	
 	exports.parse = urlParse;
 	exports.resolve = urlResolve;
@@ -952,7 +957,7 @@ return  (function(modules) {
 	      'gopher:': true,
 	      'file:': true
 	    },
-	    querystring = __webpack_require__(571);
+	    querystring = __webpack_require__(337);
 	
 	function urlParse(url, parseQueryString, slashesDenoteHost) {
 	  if (url && util.isObject(url) && url instanceof Url) return url;
@@ -1589,7 +1594,7 @@ return  (function(modules) {
 
  },
 
- 569:
+ 335:
  function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_RESULT__;(function(module, global) {
@@ -2125,7 +2130,7 @@ return  (function(modules) {
 
  },
 
- 570:
+ 336:
  function(module, exports) {
 
 	'use strict';
@@ -2148,18 +2153,18 @@ return  (function(modules) {
 
  },
 
- 571:
+ 337:
  function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
-	exports.decode = exports.parse = __webpack_require__(572);
-	exports.encode = exports.stringify = __webpack_require__(573);
+	exports.decode = exports.parse = __webpack_require__(338);
+	exports.encode = exports.stringify = __webpack_require__(339);
 
 
  },
 
- 572:
+ 338:
  function(module, exports) {
 
 	
@@ -2246,7 +2251,7 @@ return  (function(modules) {
 
  },
 
- 573:
+ 339:
  function(module, exports) {
 
 	
@@ -2317,7 +2322,7 @@ return  (function(modules) {
 
  },
 
- 801:
+ 814:
  function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -2455,12 +2460,12 @@ return  (function(modules) {
 	
 	var networkRequest = __webpack_require__(127);
 	
-	var _require = __webpack_require__(568),
+	var _require = __webpack_require__(334),
 	    parse = _require.parse;
 	
 	var path = __webpack_require__(235);
 	
-	var _require2 = __webpack_require__(802),
+	var _require2 = __webpack_require__(815),
 	    SourceMapConsumer = _require2.SourceMapConsumer,
 	    SourceMapGenerator = _require2.SourceMapGenerator;
 	
@@ -2597,7 +2602,7 @@ return  (function(modules) {
 
  },
 
- 802:
+ 815:
  function(module, exports, __webpack_require__) {
 
 	
@@ -2605,14 +2610,14 @@ return  (function(modules) {
 
 
 
-	exports.SourceMapGenerator = __webpack_require__(803).SourceMapGenerator;
-	exports.SourceMapConsumer = __webpack_require__(809).SourceMapConsumer;
-	exports.SourceNode = __webpack_require__(812).SourceNode;
+	exports.SourceMapGenerator = __webpack_require__(816).SourceMapGenerator;
+	exports.SourceMapConsumer = __webpack_require__(822).SourceMapConsumer;
+	exports.SourceNode = __webpack_require__(825).SourceNode;
 
 
  },
 
- 803:
+ 816:
  function(module, exports, __webpack_require__) {
 
 	
@@ -2622,10 +2627,10 @@ return  (function(modules) {
 
 
 	
-	var base64VLQ = __webpack_require__(804);
-	var util = __webpack_require__(806);
-	var ArraySet = __webpack_require__(807).ArraySet;
-	var MappingList = __webpack_require__(808).MappingList;
+	var base64VLQ = __webpack_require__(817);
+	var util = __webpack_require__(819);
+	var ArraySet = __webpack_require__(820).ArraySet;
+	var MappingList = __webpack_require__(821).MappingList;
 	
 	
 
@@ -3023,7 +3028,7 @@ return  (function(modules) {
 
  },
 
- 804:
+ 817:
  function(module, exports, __webpack_require__) {
 
 	
@@ -3063,7 +3068,7 @@ return  (function(modules) {
 
 
 	
-	var base64 = __webpack_require__(805);
+	var base64 = __webpack_require__(818);
 	
 	
 	
@@ -3170,7 +3175,7 @@ return  (function(modules) {
 
  },
 
- 805:
+ 818:
  function(module, exports) {
 
 	
@@ -3244,7 +3249,7 @@ return  (function(modules) {
 
  },
 
- 806:
+ 819:
  function(module, exports) {
 
 	
@@ -3668,7 +3673,7 @@ return  (function(modules) {
 
  },
 
- 807:
+ 820:
  function(module, exports, __webpack_require__) {
 
 	
@@ -3678,7 +3683,7 @@ return  (function(modules) {
 
 
 	
-	var util = __webpack_require__(806);
+	var util = __webpack_require__(819);
 	var has = Object.prototype.hasOwnProperty;
 	
 	
@@ -3779,7 +3784,7 @@ return  (function(modules) {
 
  },
 
- 808:
+ 821:
  function(module, exports, __webpack_require__) {
 
 	
@@ -3789,7 +3794,7 @@ return  (function(modules) {
 
 
 	
-	var util = __webpack_require__(806);
+	var util = __webpack_require__(819);
 	
 	
 
@@ -3865,7 +3870,7 @@ return  (function(modules) {
 
  },
 
- 809:
+ 822:
  function(module, exports, __webpack_require__) {
 
 	
@@ -3875,11 +3880,11 @@ return  (function(modules) {
 
 
 	
-	var util = __webpack_require__(806);
-	var binarySearch = __webpack_require__(810);
-	var ArraySet = __webpack_require__(807).ArraySet;
-	var base64VLQ = __webpack_require__(804);
-	var quickSort = __webpack_require__(811).quickSort;
+	var util = __webpack_require__(819);
+	var binarySearch = __webpack_require__(823);
+	var ArraySet = __webpack_require__(820).ArraySet;
+	var base64VLQ = __webpack_require__(817);
+	var quickSort = __webpack_require__(824).quickSort;
 	
 	function SourceMapConsumer(aSourceMap) {
 	  var sourceMap = aSourceMap;
@@ -4954,7 +4959,7 @@ return  (function(modules) {
 
  },
 
- 810:
+ 823:
  function(module, exports) {
 
 	
@@ -5072,7 +5077,7 @@ return  (function(modules) {
 
  },
 
- 811:
+ 824:
  function(module, exports) {
 
 	
@@ -5193,7 +5198,7 @@ return  (function(modules) {
 
  },
 
- 812:
+ 825:
  function(module, exports, __webpack_require__) {
 
 	
@@ -5203,8 +5208,8 @@ return  (function(modules) {
 
 
 	
-	var SourceMapGenerator = __webpack_require__(803).SourceMapGenerator;
-	var util = __webpack_require__(806);
+	var SourceMapGenerator = __webpack_require__(816).SourceMapGenerator;
+	var util = __webpack_require__(819);
 	
 	
 	
