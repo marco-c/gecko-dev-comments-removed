@@ -31,7 +31,7 @@ const AUTOMATION_GRANULARITY = 2000;
 const AUTOMATION_GRANULARITY_MAX = 6000;
 
 const AUDIO_GLOBALS = [
-  "AudioContext", "AudioNode", "AudioParam"
+  "BaseAudioContext", "AudioContext", "AudioNode", "AudioParam"
 ];
 
 
