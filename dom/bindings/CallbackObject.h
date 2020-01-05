@@ -230,19 +230,13 @@ protected:
   
   
   
+  
+  
   CallbackObject(JSContext* aCx, JS::Handle<JSObject*> aCallback,
                  nsIGlobalObject* aIncumbentGlobal,
                  const FastCallbackConstructor&)
   {
-    if (aCx && JS::ContextOptionsRef(aCx).asyncStack()) {
-      JS::RootedObject stack(aCx);
-      if (!JS::CaptureCurrentStack(aCx, &stack)) {
-        JS_ClearPendingException(aCx);
-      }
-      InitNoHold(aCallback, stack, aIncumbentGlobal);
-    } else {
-      InitNoHold(aCallback, nullptr, aIncumbentGlobal);
-    }
+    InitNoHold(aCallback, nullptr, aIncumbentGlobal);
   }
 
   
