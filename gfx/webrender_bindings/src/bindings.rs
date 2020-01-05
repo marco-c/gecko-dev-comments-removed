@@ -715,6 +715,7 @@ pub extern "C" fn wr_renderer_current_epoch(renderer: &mut WrRenderer,
     return false;
 }
 
+
 #[no_mangle]
 pub unsafe extern "C" fn wr_renderer_delete(renderer: *mut WrRenderer) {
     Box::from_raw(renderer);
@@ -740,6 +741,7 @@ pub unsafe extern "C" fn wr_rendered_epochs_next(pipeline_epochs: &mut WrRendere
     }
     return false;
 }
+
 
 #[no_mangle]
 pub unsafe extern "C" fn wr_rendered_epochs_delete(pipeline_epochs: *mut WrRenderedEpochs) {
@@ -955,6 +957,7 @@ pub unsafe extern "C" fn wr_api_clear_root_display_list(api: &mut WrAPI,
 pub extern "C" fn wr_api_generate_frame(api: &mut WrAPI) {
     api.generate_frame(None);
 }
+
 
 #[no_mangle]
 pub extern "C" fn wr_api_send_external_event(api: &mut WrAPI, evt: usize) {
