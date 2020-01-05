@@ -224,14 +224,6 @@ const DownloadsPanel = {
     }
 
     this.initialize(() => {
-      let downloadsFooterButtons =
-        document.getElementById("downloadsFooterButtons");
-      if (DownloadsCommon.showPanelDropmarker) {
-        downloadsFooterButtons.classList.remove("downloadsHideDropmarker");
-      } else {
-        downloadsFooterButtons.classList.add("downloadsHideDropmarker");
-      }
-
       
       
       
@@ -387,24 +379,6 @@ const DownloadsPanel = {
     this._state = this.kStateHidden;
   },
 
-  onFooterPopupShowing(aEvent) {
-    let itemClearList = document.getElementById("downloadsDropdownItemClearList");
-    if (DownloadsCommon.getData(window).canRemoveFinished) {
-      itemClearList.removeAttribute("hidden");
-    } else {
-      itemClearList.setAttribute("hidden", "true");
-    }
-    DownloadsViewController.updateCommands();
-
-    document.getElementById("downloadsFooter")
-      .setAttribute("showingdropdown", true);
-  },
-
-  onFooterPopupHidden(aEvent) {
-    document.getElementById("downloadsFooter")
-      .removeAttribute("showingdropdown");
-  },
-
   
 
   
@@ -417,13 +391,6 @@ const DownloadsPanel = {
     this.hidePanel();
 
     BrowserDownloadsUI();
-  },
-
-  openDownloadsFolder() {
-    Downloads.getPreferredDownloadsDirectory().then(downloadsPath => {
-      DownloadsCommon.showDirectory(new FileUtils.File(downloadsPath));
-    }).catch(Cu.reportError);
-    this.hidePanel();
   },
 
   
