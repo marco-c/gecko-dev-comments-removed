@@ -62,18 +62,20 @@ class BookmarksListAdapter extends MultiTypeCursorAdapter {
     public static class FolderInfo implements Parcelable {
         public final int id;
         public final String title;
+        public final int position;
 
         public FolderInfo(int id) {
-            this(id, "");
+            this(id, "", 0);
         }
 
         public FolderInfo(Parcel in) {
-            this(in.readInt(), in.readString());
+            this(in.readInt(), in.readString(), in.readInt());
         }
 
-        public FolderInfo(int id, String title) {
+        public FolderInfo(int id, String title, int position) {
             this.id = id;
             this.title = title;
+            this.position = position;
         }
 
         @Override
@@ -85,6 +87,7 @@ class BookmarksListAdapter extends MultiTypeCursorAdapter {
         public void writeToParcel(Parcel dest, int flags) {
             dest.writeInt(id);
             dest.writeString(title);
+            dest.writeInt(position);
         }
 
         public static final Creator<FolderInfo> CREATOR = new Creator<FolderInfo>() {
@@ -104,7 +107,9 @@ class BookmarksListAdapter extends MultiTypeCursorAdapter {
     
     public static interface OnRefreshFolderListener {
         
-        public void onRefreshFolder(FolderInfo folderInfo, RefreshType refreshType);
+        public void onRefreshFolder(FolderInfo folderInfo,
+                                    RefreshType refreshType,
+                                    int targetPosition);
     }
 
     
@@ -164,9 +169,10 @@ class BookmarksListAdapter extends MultiTypeCursorAdapter {
         }
 
         if (mListener != null) {
+            int targetPosition = mParentStack.peek().position;
             
             
-            mListener.onRefreshFolder(mParentStack.get(1), RefreshType.PARENT);
+            mListener.onRefreshFolder(mParentStack.get(1), RefreshType.PARENT, targetPosition);
         }
 
         return true;
@@ -178,11 +184,13 @@ class BookmarksListAdapter extends MultiTypeCursorAdapter {
 
 
 
-    public void moveToChildFolder(int folderId, String folderTitle) {
-        FolderInfo folderInfo = new FolderInfo(folderId, folderTitle);
+
+
+    public void moveToChildFolder(int folderId, String folderTitle, int position) {
+        FolderInfo folderInfo = new FolderInfo(folderId, folderTitle, position);
 
         if (mListener != null) {
-            mListener.onRefreshFolder(folderInfo, RefreshType.CHILD);
+            mListener.onRefreshFolder(folderInfo, RefreshType.CHILD, 0 );
         }
     }
 
