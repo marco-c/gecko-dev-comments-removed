@@ -1193,8 +1193,11 @@ pref("dom.forms.number", true);
 pref("dom.forms.color", true);
 
 
-
 pref("dom.forms.datetime", false);
+
+
+
+pref("dom.forms.datetime.others", false);
 
 
 pref("dom.forms.datetime.timepicker", false);
@@ -2905,7 +2908,7 @@ pref("dom.ipc.plugins.forcedirect.enabled", true);
 #endif
 
 #ifdef NIGHTLY_BUILD
-pref("dom.ipc.processCount", 4);
+pref("dom.ipc.processCount", 2);
 #else
 pref("dom.ipc.processCount", 1);
 #endif

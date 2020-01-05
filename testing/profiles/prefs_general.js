@@ -13,6 +13,7 @@ user_pref("dom.experimental_forms", true);
 user_pref("dom.forms.number", true); 
 user_pref("dom.forms.color", true); 
 user_pref("dom.forms.datetime", true); 
+user_pref("dom.forms.datetime.others", true); 
 user_pref("dom.max_script_run_time", 0); 
 user_pref("hangmonitor.timeout", 0); 
 user_pref("dom.max_chrome_script_run_time", 0);
