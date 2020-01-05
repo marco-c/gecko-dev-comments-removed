@@ -1,0 +1,21 @@
+
+
+
+
+#ifndef ThreadAnnotation_h
+#define ThreadAnnotation_h
+
+#include <functional>
+
+
+namespace CrashReporter {
+
+void InitThreadAnnotation();
+
+void ShutdownThreadAnnotation();
+
+void GetFlatThreadAnnotation(const std::function<void(const char*)>& aCallback);
+
+}
+
+#endif

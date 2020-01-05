@@ -21,6 +21,7 @@
 #include "nsIObserverService.h"
 #include "nsIObserver.h"
 #include "mozilla/Services.h"
+#include "nsThreadUtils.h"
 #include "nsXULAppAPI.h"
 #include "GeckoProfiler.h"
 
@@ -56,7 +57,7 @@ private:
   static void MonitorThread(void* aData)
   {
     AutoProfilerRegister registerThread("BgHangMonitor");
-    PR_SetCurrentThreadName("BgHangManager");
+    NS_SetCurrentThreadName("BgHangManager");
 
     
 
