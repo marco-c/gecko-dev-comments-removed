@@ -424,6 +424,7 @@ private:
 
 
 
+
 class MediaDecoderStateMachine::DormantState
   : public MediaDecoderStateMachine::StateObject
 {
@@ -454,13 +455,7 @@ public:
 
   bool HandleDormant(bool aDormant) override;
 
-  RefPtr<MediaDecoder::SeekPromise> HandleSeek(SeekTarget aTarget) override
-  {
-    SLOG("Not Enough Data to seek at this stage, queuing seek");
-    mPendingSeek.RejectIfExists(__func__);
-    mPendingSeek.mTarget = aTarget;
-    return mPendingSeek.mPromise.Ensure(__func__);
-  }
+  RefPtr<MediaDecoder::SeekPromise> HandleSeek(SeekTarget aTarget) override;
 
   void HandleVideoSuspendTimeout() override
   {
@@ -470,6 +465,14 @@ public:
   void HandleResumeVideoDecoding() override
   {
     
+  }
+
+  void HandlePlayStateChanged(MediaDecoder::PlayState aPlayState) override
+  {
+    if (aPlayState == MediaDecoder::PLAY_STATE_PLAYING) {
+      
+      HandleDormant(false);
+    }
   }
 
 private:
@@ -1358,6 +1361,17 @@ DormantState::HandleDormant(bool aDormant)
     SetState<DecodingFirstFrameState>(Move(mPendingSeek));
   }
   return true;
+}
+
+RefPtr<MediaDecoder::SeekPromise>
+MediaDecoderStateMachine::
+DormantState::HandleSeek(SeekTarget aTarget)
+{
+  
+  mPendingSeek.RejectIfExists(__func__);
+  SeekJob seekJob;
+  seekJob.mTarget = aTarget;
+  return SetState<SeekingState>(Move(seekJob));
 }
 
 bool
