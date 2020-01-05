@@ -8,6 +8,8 @@ Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 XPCOMUtils.defineLazyServiceGetter(this, "aboutNewTabService",
                                    "@mozilla.org/browser/aboutnewtab-service;1",
                                    "nsIAboutNewTabService");
+XPCOMUtils.defineLazyModuleGetter(this, "Preferences",
+                                  "resource://gre/modules/Preferences.jsm");
 
 
 
@@ -17,32 +19,85 @@ XPCOMUtils.defineLazyServiceGetter(this, "aboutNewTabService",
 let overrides = {
   
   newtab: [],
+  
+  home: [],
 };
 
 
-extensions.on("manifest_chrome_url_overrides", (type, directive, extension, manifest) => {
-  if (manifest.chrome_url_overrides.newtab) {
-    let newtab = manifest.chrome_url_overrides.newtab;
-    let url = extension.baseURI.resolve(newtab);
 
-    
-    if (!overrides.newtab.length) {
+
+
+
+function resetPage(page) {
+  switch (page) {
+    case "newtab":
+      aboutNewTabService.resetNewTabURL();
+      break;
+    case "home":
+      Preferences.reset("browser.startup.homepage");
+      break;
+    default:
+      throw new Error("Unrecognized override type");
+  }
+}
+
+
+
+
+
+
+
+function overridePage(page, url) {
+  switch (page) {
+    case "newtab":
       aboutNewTabService.newTabURL = url;
-    }
+      break;
+    case "home":
+      Preferences.set("browser.startup.homepage", url);
+      break;
+    default:
+      throw new Error("Unrecognized override type");
+  }
+}
 
-    overrides.newtab.push({extension, url});
+
+
+
+
+
+
+function updatePage(page) {
+  if (overrides[page].length) {
+    overridePage(page, overrides[page][0].url);
+  } else {
+    resetPage(page);
+  }
+}
+
+
+extensions.on("manifest_chrome_url_overrides", (type, directive, extension, manifest) => {
+  if (Object.keys(overrides).length > 1) {
+    extension.manifestError("Extensions can override only one page.");
+  }
+
+  for (let page of Object.keys(overrides)) {
+    if (manifest.chrome_url_overrides[page]) {
+      let relativeURL = manifest.chrome_url_overrides[page];
+      let url = extension.baseURI.resolve(relativeURL);
+      
+      overrides[page].push({id: extension.id, url});
+      updatePage(page);
+      break;
+    }
   }
 });
 
 extensions.on("shutdown", (type, extension) => {
-  let i = overrides.newtab.findIndex(o => o.extension === extension);
-  if (i !== -1) {
-    overrides.newtab.splice(i, 1);
-
-    if (overrides.newtab.length) {
-      aboutNewTabService.newTabURL = overrides.newtab[0].url;
-    } else {
-      aboutNewTabService.resetNewTabURL();
+  for (let page of Object.keys(overrides)) {
+    let i = overrides[page].findIndex(o => o.id === extension.id);
+    if (i !== -1) {
+      overrides[page].splice(i, 1);
+      updatePage(page);
     }
   }
 });
