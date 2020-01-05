@@ -1545,9 +1545,6 @@ var PARALLEL_TESTS = 2;
 
 var gTestPrefs = [
   ['media.recorder.max_memory', 1024],
-  ["media.preload.default", 2], 
-  ["media.preload.auto", 3], 
-  ["media.test.dumpDebugInfo", true],
 ];
 
 
@@ -1700,14 +1697,6 @@ function mediaTestCleanup(callback) {
       A[i] = null;
     }
     SpecialPowers.exactGC(callback);
-}
-
-function setMediaTestsPrefs(callback, extraPrefs) {
-  var prefs = gTestPrefs;
-  if (extraPrefs) {
-    prefs = prefs.concat(extraPrefs);
-  }
-  SpecialPowers.pushPrefEnv({"set": prefs}, callback);
 }
 
 
