@@ -51,17 +51,78 @@ class XDRBuffer {
         return ptr;
     }
 
+    size_t cursor() const {
+        return cursor_;
+    }
+
   private:
     ExclusiveContext* const context_;
     JS::TranscodeBuffer& buffer_;
     size_t cursor_;
 };
 
+class XDRCoderBase;
+class XDRIncrementalEncoder;
+
+
+
+
+
+
+
+
+
+
+
+
+class MOZ_RAII AutoXDRTree
+{
+  public:
+    
+    
+    
+    
+    
+    using Key = uint64_t;
+
+    AutoXDRTree(XDRCoderBase* xdr, Key key);
+    ~AutoXDRTree();
+
+    
+    static constexpr Key noKey = 0;
+
+    
+    static constexpr Key noSubTree = Key(1) << 32;
+
+    
+    static constexpr Key topLevel = Key(2) << 32;
+
+  private:
+    friend class XDRIncrementalEncoder;
+
+    Key key_;
+    AutoXDRTree* parent_;
+    XDRCoderBase* xdr_;
+};
+
+class XDRCoderBase
+{
+  protected:
+    XDRCoderBase() {}
+
+  public:
+    virtual AutoXDRTree::Key getTopLevelTreeKey() const { return AutoXDRTree::noKey; }
+    virtual AutoXDRTree::Key getTreeKey(JSFunction* fun) const { return AutoXDRTree::noKey; }
+    virtual void createOrReplaceSubTree(AutoXDRTree* child) {};
+    virtual void endSubTree() {};
+};
+
 
 
 
 template <XDRMode mode>
-class XDRState {
+class XDRState : public XDRCoderBase
+{
   public:
     XDRBuffer buf;
   private:
@@ -228,7 +289,8 @@ class XDRState {
 using XDREncoder = XDRState<XDR_ENCODE>;
 using XDRDecoder = XDRState<XDR_DECODE>;
 
-class XDROffThreadDecoder : public XDRDecoder {
+class XDROffThreadDecoder : public XDRDecoder
+{
     const ReadOnlyCompileOptions* options_;
     ScriptSourceObject** sourceObjectOut_;
     LifoAlloc& alloc_;
@@ -268,6 +330,98 @@ class XDROffThreadDecoder : public XDRDecoder {
     ScriptSourceObject** scriptSourceObjectOut() override {
         return sourceObjectOut_;
     }
+};
+
+class XDRIncrementalEncoder : public XDREncoder
+{
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    struct Slice {
+        size_t sliceBegin;
+        size_t sliceLength;
+        AutoXDRTree::Key child;
+    };
+
+    using SlicesNode = Vector<Slice, 1, SystemAllocPolicy>;
+    using SlicesTree = HashMap<AutoXDRTree::Key, SlicesNode, DefaultHasher<AutoXDRTree::Key>,
+                               SystemAllocPolicy>;
+
+    
+    AutoXDRTree* scope_;
+    
+    SlicesNode* node_;
+    
+    SlicesTree tree_;
+    JS::TranscodeBuffer slices_;
+    JS::TranscodeBuffer& buffer_;
+    bool oom_;
+
+  public:
+    XDRIncrementalEncoder(ExclusiveContext* cx, JS::TranscodeBuffer& buffer, size_t cursor)
+      : XDREncoder(cx, slices_, 0),
+        scope_(nullptr),
+        node_(nullptr),
+        buffer_(buffer),
+        oom_(false)
+    {
+        MOZ_ASSERT(buffer.length() == cursor, "NYI");
+    }
+
+    virtual ~XDRIncrementalEncoder() {}
+
+    AutoXDRTree::Key getTopLevelTreeKey() const override;
+    AutoXDRTree::Key getTreeKey(JSFunction* fun) const override;
+
+    MOZ_MUST_USE bool init();
+
+    void createOrReplaceSubTree(AutoXDRTree* child) override;
+    void endSubTree() override;
+
+    
+    
+    MOZ_MUST_USE bool linearize();
 };
 
 } 
