@@ -2526,15 +2526,6 @@ NativeKey::HandleCharMessage(const MSG& aCharMsg,
   }
 
   
-  if (!mModKeyState.IsAlt() && mModKeyState.IsControl() &&
-      mVirtualKeyCode == VK_RETURN) {
-    MOZ_LOG(sNativeKeyLogger, LogLevel::Info,
-      ("%p   NativeKey::HandleCharMessage(), doesn't dispatch keypress "
-       "event due to Ctrl+Enter", this));
-    return false;
-  }
-
-  
   
   
 
@@ -2791,7 +2782,8 @@ NativeKey::NeedsToHandleWithoutFollowingCharMessages() const
 
   
   
-  if (mDOMKeyCode == NS_VK_RETURN || mDOMKeyCode == NS_VK_BACK) {
+  if (mFollowingCharMsgs.Length() == 1 &&
+      IsControlCharMessage(mFollowingCharMsgs[0])) {
     return true;
   }
 
