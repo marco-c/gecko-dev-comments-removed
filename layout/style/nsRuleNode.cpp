@@ -29,7 +29,6 @@
 
 #include "nsAlgorithm.h" 
 #include "nscore.h"
-#include "nsCRT.h" 
 #include "nsIWidget.h"
 #include "nsIPresShell.h"
 #include "nsFontMetrics.h"
@@ -4036,13 +4035,11 @@ nsRuleNode::SetFont(nsPresContext* aPresContext, nsStyleContext* aContext,
     aFont->mFont.languageOverride = aParentFont->mFont.languageOverride;
   } else if (eCSSUnit_Normal == languageOverrideValue->GetUnit() ||
              eCSSUnit_Initial == languageOverrideValue->GetUnit()) {
-    aFont->mFont.languageOverride = NO_FONT_LANGUAGE_OVERRIDE;
+    aFont->mFont.languageOverride.Truncate();
   } else if (eCSSUnit_System_Font == languageOverrideValue->GetUnit()) {
     aFont->mFont.languageOverride = systemFont.languageOverride;
   } else if (eCSSUnit_String == languageOverrideValue->GetUnit()) {
-    nsAutoString lang;
-    languageOverrideValue->GetStringValue(lang);
-    aFont->mFont.languageOverride = ParseFontLanguageOverride(lang);
+    languageOverrideValue->GetStringValue(aFont->mFont.languageOverride);
   }
 
   
@@ -4409,26 +4406,6 @@ nsRuleNode::ComputeFontData(void* aStartStruct,
   }
 
   COMPUTE_END_INHERITED(Font, font)
-}
-
- uint32_t
-nsRuleNode::ParseFontLanguageOverride(const nsAString& aLangTag)
-{
-  if (!aLangTag.Length() || aLangTag.Length() > 4) {
-    return NO_FONT_LANGUAGE_OVERRIDE;
-  }
-  uint32_t index, result = 0;
-  for (index = 0; index < aLangTag.Length(); ++index) {
-    char16_t ch = aLangTag[index];
-    if (!nsCRT::IsAscii(ch)) { 
-      return NO_FONT_LANGUAGE_OVERRIDE;
-    }
-    result = (result << 8) + ch;
-  }
-  while (index++ < 4) {
-    result = (result << 8) + 0x20;
-  }
-  return result;
 }
 
 template <typename T>
@@ -8676,7 +8653,7 @@ nsRuleNode::ComputePositionData(void* aStartStruct,
   if (MOZ_UNLIKELY(justifyItemsValue.GetUnit() == eCSSUnit_Inherit)) {
     if (MOZ_LIKELY(parentContext)) {
       pos->mJustifyItems =
-        parentPos->ComputedJustifyItems(parentContext->GetParentAllowServo());
+        parentPos->ComputedJustifyItems(parentContext->GetParent());
     } else {
       pos->mJustifyItems = NS_STYLE_JUSTIFY_NORMAL;
     }
@@ -9034,7 +9011,7 @@ nsRuleNode::ComputeContentData(void* aStartStruct,
           nsStyleContentType type =
             unit == eCSSUnit_Counter ? eStyleContentType_Counter
                                      : eStyleContentType_Counters;
-          data.SetCounters(type, value.GetThreadSafeArrayValue());
+          data.SetCounters(type, value.GetArrayValue());
           break;
         }
         case eCSSUnit_Enumerated:

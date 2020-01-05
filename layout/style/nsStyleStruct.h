@@ -2661,7 +2661,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
                                            
                                            
   uint8_t mContain;             
-private:
+
   friend class nsComputedDOMStyle;
   friend class nsRuleNode;
   uint8_t mMozAppearance;       
@@ -3034,7 +3034,7 @@ public:
     return mContent.mString;
   }
 
-  nsCSSValue::ThreadSafeArray* GetCounters() const
+  nsCSSValue::Array* GetCounters() const
   {
     MOZ_ASSERT(mType == eStyleContentType_Counter ||
                mType == eStyleContentType_Counters);
@@ -3075,7 +3075,7 @@ public:
     mContent.mString = NS_strdup(aString);
   }
 
-  void SetCounters(nsStyleContentType aType, nsCSSValue::ThreadSafeArray* aCounters)
+  void SetCounters(nsStyleContentType aType, nsCSSValue::Array* aCounters)
   {
     MOZ_ASSERT(aType == eStyleContentType_Counter ||
                aType == eStyleContentType_Counters);
@@ -3108,9 +3108,7 @@ private:
   union {
     char16_t *mString;
     nsStyleImageRequest* mImage;
-    
-    
-    nsCSSValue::ThreadSafeArray* mCounters;
+    nsCSSValue::Array* mCounters;
   } mContent;
 };
 

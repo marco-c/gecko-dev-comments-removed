@@ -1315,7 +1315,7 @@ nsComputedDOMStyle::DoGetContent()
           str.AppendLiteral("counters(");
         }
         
-        nsCSSValue::ThreadSafeArray* a = data.GetCounters();
+        nsCSSValue::Array* a = data.GetCounters();
 
         nsStyleUtil::AppendEscapedCSSIdent(
           nsDependentString(a->Item(0).GetStringBufferValue()), str);
@@ -1799,38 +1799,18 @@ nsComputedDOMStyle::DoGetFontKerning()
   return val.forget();
 }
 
-static void
-SerializeLanguageOverride(uint32_t aLanguageOverride, nsAString& aResult)
-{
-  aResult.Truncate();
-  uint32_t i;
-  for (i = 0; i < 4 ; i++) {
-    char16_t ch = aLanguageOverride >> 24;
-    MOZ_ASSERT(nsCRT::IsAscii(ch),
-               "Invalid tags, we should've handled this during computing!");
-    aResult.Append(ch);
-    aLanguageOverride = aLanguageOverride << 8;
-  }
-  
-  while (i > 0 && aResult[i - 1] == ' ') {
-    i--;
-  }
-  aResult.Truncate(i);
-}
-
 already_AddRefed<CSSValue>
 nsComputedDOMStyle::DoGetFontLanguageOverride()
 {
   RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
 
   const nsStyleFont* font = StyleFont();
-  if (font->mFont.languageOverride == 0) {
+  if (font->mFont.languageOverride.IsEmpty()) {
     val->SetIdent(eCSSKeyword_normal);
   } else {
-    nsAutoString serializedStr, escapedStr;
-    SerializeLanguageOverride(font->mFont.languageOverride, serializedStr);
-    nsStyleUtil::AppendEscapedCSSString(serializedStr, escapedStr);
-    val->SetString(escapedStr);
+    nsAutoString str;
+    nsStyleUtil::AppendEscapedCSSString(font->mFont.languageOverride, str);
+    val->SetString(str);
   }
   return val.forget();
 }
@@ -4654,7 +4634,7 @@ nsComputedDOMStyle::DoGetJustifyItems()
   RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
   nsAutoString str;
   auto justify =
-    StylePosition()->ComputedJustifyItems(mStyleContext->GetParentAllowServo());
+    StylePosition()->ComputedJustifyItems(mStyleContext->GetParent());
   nsCSSValue::AppendAlignJustifyValueToString(justify, str);
   val->SetString(str);
   return val.forget();

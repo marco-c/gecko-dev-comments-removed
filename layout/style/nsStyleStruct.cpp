@@ -1678,8 +1678,8 @@ nsStylePosition::ComputedJustifyItems(nsStyleContext* aParent) const
     return mJustifyItems;
   }
   if (MOZ_LIKELY(aParent)) {
-    auto inheritedJustifyItems = aParent->StylePosition()->ComputedJustifyItems(
-      aParent->GetParentAllowServo());
+    auto inheritedJustifyItems =
+      aParent->StylePosition()->ComputedJustifyItems(aParent->GetParent());
     
     
     if (inheritedJustifyItems & NS_STYLE_JUSTIFY_LEGACY) {
@@ -1696,8 +1696,8 @@ nsStylePosition::UsedJustifySelf(nsStyleContext* aParent) const
     return mJustifySelf;
   }
   if (MOZ_LIKELY(aParent)) {
-    auto inheritedJustifyItems = aParent->StylePosition()->ComputedJustifyItems(
-      aParent->GetParentAllowServo());
+    auto inheritedJustifyItems = aParent->StylePosition()->
+      ComputedJustifyItems(aParent->GetParent());
     return inheritedJustifyItems & ~NS_STYLE_JUSTIFY_LEGACY;
   }
   return NS_STYLE_JUSTIFY_NORMAL;
