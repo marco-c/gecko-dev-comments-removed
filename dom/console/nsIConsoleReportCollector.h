@@ -79,6 +79,15 @@ public:
   
   
   
+  virtual void
+  FlushReportsToConsole(uint64_t aInnerWindowID,
+                        ReportAction aAction = ReportAction::Forget) = 0;
+
+  
+  
+  
+  
+  
   
   
   
@@ -91,19 +100,21 @@ public:
   
   
   
+  
+  
+  
   virtual void
-  FlushConsoleReports(nsIConsoleReportCollector* aCollector) = 0;
+  FlushConsoleReports(nsILoadGroup* aLoadGroup,
+                      ReportAction aAction = ReportAction::Forget) = 0;
+
 
   
   
   
   
   
-  
-  
   virtual void
-  FlushReportsByWindowId(uint64_t aWindowId,
-                         ReportAction aAction = ReportAction::Forget) = 0;
+  FlushConsoleReports(nsIConsoleReportCollector* aCollector) = 0;
 
   
   virtual void

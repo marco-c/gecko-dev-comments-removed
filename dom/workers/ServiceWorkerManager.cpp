@@ -1654,10 +1654,11 @@ ServiceWorkerManager::FlushReportsToAllClients(const nsACString& aScope,
       continue;
     }
 
-    windows.AppendElement(doc->InnerWindowID());
+    uint64_t innerWindowId = doc->InnerWindowID();
+    windows.AppendElement(innerWindowId);
 
-    aReporter->FlushConsoleReports(doc,
-                                   nsIConsoleReportCollector::ReportAction::Save);
+    aReporter->FlushReportsToConsole(
+      innerWindowId, nsIConsoleReportCollector::ReportAction::Save);
   }
 
   
@@ -1682,8 +1683,8 @@ ServiceWorkerManager::FlushReportsToAllClients(const nsACString& aScope,
 
       windows.AppendElement(innerWindowId);
 
-      aReporter->FlushConsoleReports(doc,
-                                     nsIConsoleReportCollector::ReportAction::Save);
+      aReporter->FlushReportsToConsole(
+        innerWindowId, nsIConsoleReportCollector::ReportAction::Save);
     }
 
     if (regList->IsEmpty()) {
@@ -1712,15 +1713,15 @@ ServiceWorkerManager::FlushReportsToAllClients(const nsACString& aScope,
 
       windows.AppendElement(innerWindowId);
 
-      aReporter->FlushReportsByWindowId(innerWindowId,
-                                        nsIConsoleReportCollector::ReportAction::Save);
+      aReporter->FlushReportsToConsole(
+        innerWindowId, nsIConsoleReportCollector::ReportAction::Save);
     }
   }
 
   
   
   if (windows.IsEmpty()) {
-    aReporter->FlushConsoleReports((nsIDocument*)nullptr);
+    aReporter->FlushReportsToConsole(0);
     return;
   }
 
