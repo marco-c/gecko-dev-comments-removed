@@ -4124,6 +4124,13 @@ function OpenBrowserWindow(options) {
   
   
   
+  if (window.windowState == window.STATE_MAXIMIZED) {
+    extraFeatures += ",suppressanimation";
+  }
+
+  
+  
+  
   var win;
   if (window && (wintype == "navigator:browser") && window.content && window.content.document) {
     var DocCharset = window.content.document.characterSet;
