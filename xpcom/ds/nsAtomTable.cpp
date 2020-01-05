@@ -10,6 +10,7 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/DebugOnly.h"
+#include "mozilla/Sprintf.h"
 #include "mozilla/Unused.h"
 
 #include "nsAtomTable.h"
@@ -618,11 +619,20 @@ RegisterStaticAtoms(const nsStaticAtom* aAtoms, uint32_t aAtomCount)
 
     nsIAtom* atom = he->mAtom;
     if (atom) {
+      
+      
+      
+      
       if (!atom->IsStaticAtom()) {
-        
-        
-        
-        static_cast<DynamicAtom*>(atom)->TransmuteToStatic(stringBuffer);
+        nsAutoCString name;
+        atom->ToUTF8String(name);
+
+        static char sCrashReason[1024];
+        SprintfLiteral(sCrashReason,
+                       "static atom registration for %s should be pushed back",
+                       name.get());
+        MOZ_CRASH_ANNOTATE(sCrashReason);
+        MOZ_REALLY_CRASH();
       }
     } else {
       atom = new StaticAtom(stringBuffer, stringLen, hash);
