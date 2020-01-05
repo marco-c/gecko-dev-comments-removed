@@ -186,6 +186,8 @@ add_task(function* test_disableDataUpload() {
   Preferences.set(TelemetryController.Constants.PREF_SERVER, "http://localhost:" + PingServer.port);
 
   
+  yield TelemetrySend.shutdown();
+  
   yield TelemetryController.testReset();
   ping = yield PingServer.promiseNextPing();
   checkPingFormat(ping, DELETION_PING_TYPE, true, false);
