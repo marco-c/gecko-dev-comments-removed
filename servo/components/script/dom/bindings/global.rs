@@ -32,9 +32,9 @@ pub enum GlobalRef<'a> {
 }
 
 
-pub enum GlobalRoot<'a, 'b> {
-    Window(Root<'a, 'b, window::Window>),
-    Worker(Root<'a, 'b, WorkerGlobalScope>),
+pub enum GlobalRoot {
+    Window(Root<window::Window>),
+    Worker(Root<WorkerGlobalScope>),
 }
 
 
@@ -98,13 +98,13 @@ impl<'a> Reflectable for GlobalRef<'a> {
     }
 }
 
-impl<'a, 'b> GlobalRoot<'a, 'b> {
+impl GlobalRoot {
     
     
-    pub fn root_ref<'c>(&'c self) -> GlobalRef<'c> {
+    pub fn r<'c>(&'c self) -> GlobalRef<'c> {
         match *self {
-            GlobalRoot::Window(ref window) => GlobalRef::Window(window.root_ref()),
-            GlobalRoot::Worker(ref worker) => GlobalRef::Worker(worker.root_ref()),
+            GlobalRoot::Window(ref window) => GlobalRef::Window(window.r()),
+            GlobalRoot::Worker(ref worker) => GlobalRef::Worker(worker.r()),
         }
     }
 }
