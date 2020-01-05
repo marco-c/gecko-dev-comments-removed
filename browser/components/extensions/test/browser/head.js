@@ -254,6 +254,14 @@ function* openActionContextMenu(extension, kind, win = window) {
   return menu;
 }
 
+function* openActionSubmenu(submenuItem, win = window) {
+  const submenu = submenuItem.firstChild;
+  const shown = BrowserTestUtils.waitForEvent(submenu, "popupshown");
+  EventUtils.synthesizeMouseAtCenter(submenuItem, {}, win);
+  yield shown;
+  return submenu;
+}
+
 function closeActionContextMenu(itemToSelect, win = window) {
   const menu = win.document.getElementById("toolbar-context-menu");
   const hidden = BrowserTestUtils.waitForEvent(menu, "popuphidden");
