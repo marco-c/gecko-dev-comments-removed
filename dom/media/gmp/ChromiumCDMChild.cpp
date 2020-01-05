@@ -15,6 +15,7 @@
 #include "base/time.h"
 #include "GMPUtils.h"
 #include "mozilla/ScopeExit.h"
+#include "mozilla/SizePrintfMacros.h"
 
 namespace mozilla {
 namespace gmp {
@@ -23,6 +24,7 @@ ChromiumCDMChild::ChromiumCDMChild(GMPContentChild* aPlugin)
   : mPlugin(aPlugin)
 {
   MOZ_ASSERT(IsOnMessageLoopThread());
+  GMP_LOG("ChromiumCDMChild:: ctor this=%p", this);
 }
 
 void
@@ -43,12 +45,111 @@ ChromiumCDMChild::TimerExpired(void* aContext)
   }
 }
 
+class CDMShmemBuffer : public cdm::Buffer
+{
+public:
+  CDMShmemBuffer(ChromiumCDMChild* aProtocol, ipc::Shmem aShmem)
+    : mProtocol(aProtocol)
+    , mSize(aShmem.Size<uint8_t>())
+    , mShmem(aShmem)
+  {
+    CDM_LOG("CDMShmemBuffer(size=%" PRIu32 ") created", Size());
+    
+  }
+
+  ~CDMShmemBuffer() override
+  {
+    CDM_LOG("CDMShmemBuffer(size=%" PRIu32 ") destructed writable=%d",
+            Size(),
+            mShmem.IsWritable());
+    if (mShmem.IsWritable()) {
+      
+      
+      mProtocol->GiveBuffer(Move(mShmem));
+    }
+  }
+
+  void Destroy() override
+  {
+    CDM_LOG("CDMShmemBuffer::Destroy(size=%" PRIu32 ")", Size());
+    delete this;
+  }
+  uint32_t Capacity() const override { return mShmem.Size<uint8_t>(); }
+
+  uint8_t* Data() override { return mShmem.get<uint8_t>(); }
+
+  void SetSize(uint32_t aSize) override
+  {
+    MOZ_ASSERT(aSize <= Capacity());
+    
+    
+    
+    CDM_LOG("CDMShmemBuffer::SetSize(size=%" PRIu32 ")", Size());
+    mSize = aSize;
+  }
+
+  uint32_t Size() const override { return mSize; }
+
+  ipc::Shmem ExtractShmem()
+  {
+    ipc::Shmem shmem = mShmem;
+    mShmem = ipc::Shmem();
+    return shmem;
+  }
+
+private:
+  RefPtr<ChromiumCDMChild> mProtocol;
+  uint32_t mSize;
+  mozilla::ipc::Shmem mShmem;
+  CDMShmemBuffer(const CDMShmemBuffer&);
+  void operator=(const CDMShmemBuffer&);
+};
+
+static nsCString
+ToString(const nsTArray<ipc::Shmem>& aBuffers)
+{
+  nsCString s;
+  for (const ipc::Shmem& shmem : aBuffers) {
+    if (!s.IsEmpty()) {
+      s.AppendLiteral(",");
+    }
+    s.AppendInt(static_cast<uint32_t>(shmem.Size<uint8_t>()));
+  }
+  return s;
+}
+
 cdm::Buffer*
 ChromiumCDMChild::Allocate(uint32_t aCapacity)
 {
+  GMP_LOG("ChromiumCDMChild::Allocate(capacity=%" PRIu32 ") bufferSizes={%s}",
+          aCapacity,
+          ToString(mBuffers).get());
   MOZ_ASSERT(IsOnMessageLoopThread());
-  GMP_LOG("ChromiumCDMChild::Allocate(capacity=%" PRIu32 ")", aCapacity);
-  return new WidevineBuffer(aCapacity);
+
+  
+  
+  
+  
+  const size_t invalid = std::numeric_limits<size_t>::max();
+  size_t best = invalid;
+  auto wastedSpace = [this, aCapacity](size_t index) {
+    return mBuffers[index].Size<uint8_t>() - aCapacity;
+  };
+  for (size_t i = 0; i < mBuffers.Length(); i++) {
+    if (mBuffers[i].Size<uint8_t>() >= aCapacity &&
+        (best == invalid || wastedSpace(i) < wastedSpace(best))) {
+      best = i;
+    }
+  }
+  if (best == invalid) {
+    
+    
+    MOZ_ASSERT(false);
+    return nullptr;
+  }
+  ipc::Shmem shmem = mBuffers[best];
+  mBuffers.RemoveElementAt(best);
+  return new CDMShmemBuffer(this, shmem);
 }
 
 void
@@ -245,6 +346,11 @@ ChromiumCDMChild::CreateFileIO(cdm::FileIOClient * aClient)
   return new WidevineFileIO(aClient);
 }
 
+ChromiumCDMChild::~ChromiumCDMChild()
+{
+  GMP_LOG("ChromiumCDMChild:: dtor this=%p", this);
+}
+
 bool
 ChromiumCDMChild::IsOnMessageLoopThread()
 {
@@ -377,13 +483,6 @@ ChromiumCDMChild::RecvRemoveSession(const uint32_t& aPromiseId,
   return IPC_OK();
 }
 
-void
-ChromiumCDMChild::DecryptFailed(uint32_t aId, cdm::Status aStatus)
-{
-  MOZ_ASSERT(IsOnMessageLoopThread());
-  Unused << SendDecrypted(aId, aStatus, nsTArray<uint8_t>());
-}
-
 static void
 InitInputBuffer(const CDMInputBuffer& aBuffer,
                 nsTArray<cdm::SubsampleEntry>& aSubSamples,
@@ -410,6 +509,17 @@ InitInputBuffer(const CDMInputBuffer& aBuffer,
   aInputBuffer.timestamp = aBuffer.mTimestamp();
 }
 
+bool
+ChromiumCDMChild::HasShmemOfSize(size_t aSize) const
+{
+  for (const ipc::Shmem& shmem : mBuffers) {
+    if (shmem.Size<uint8_t>() == aSize) {
+      return true;
+    }
+  }
+  return false;
+}
+
 mozilla::ipc::IPCResult
 ChromiumCDMChild::RecvDecrypt(const uint32_t& aId,
                               const CDMInputBuffer& aBuffer)
@@ -417,19 +527,37 @@ ChromiumCDMChild::RecvDecrypt(const uint32_t& aId,
   MOZ_ASSERT(IsOnMessageLoopThread());
   GMP_LOG("ChromiumCDMChild::RecvDecrypt()");
 
-  auto autoDeallocateShmem = MakeScopeExit([&,this] {
-    this->DeallocShmem(aBuffer.mData());
+  
+  size_t outputShmemSize = aBuffer.mData().Size<uint8_t>();
+  MOZ_ASSERT(HasShmemOfSize(outputShmemSize));
+
+  
+  RefPtr<ChromiumCDMChild> self = this;
+  auto autoDeallocateInputShmem =
+    MakeScopeExit([&, self] { self->DeallocShmem(aBuffer.mData()); });
+
+  
+  
+  
+  auto autoDeallocateOutputShmem = MakeScopeExit([self, outputShmemSize] {
+    self->mBuffers.RemoveElementsBy([outputShmemSize, self](ipc::Shmem& aShmem) {
+      if (aShmem.Size<uint8_t>() != outputShmemSize) {
+        return false;
+      }
+      self->DeallocShmem(aShmem);
+      return true;
+    });
   });
 
   if (!mCDM) {
     GMP_LOG("ChromiumCDMChild::RecvDecrypt() no CDM");
-    DecryptFailed(aId, cdm::kDecryptError);
+    Unused << SendDecryptFailed(aId, cdm::kDecryptError);
     return IPC_OK();
   }
   if (aBuffer.mClearBytes().Length() != aBuffer.mCipherBytes().Length()) {
     GMP_LOG("ChromiumCDMChild::RecvDecrypt() clear/cipher bytes length doesn't "
             "match");
-    DecryptFailed(aId, cdm::kDecryptError);
+    Unused << SendDecryptFailed(aId, cdm::kDecryptError);
     return IPC_OK();
   }
 
@@ -440,21 +568,24 @@ ChromiumCDMChild::RecvDecrypt(const uint32_t& aId,
   WidevineDecryptedBlock output;
   cdm::Status status = mCDM->Decrypt(input, &output);
 
-  if (status != cdm::kSuccess) {
-    DecryptFailed(aId, status);
+  
+  CDMShmemBuffer* buffer =
+    output.DecryptedBuffer()
+      ? reinterpret_cast<CDMShmemBuffer*>(output.DecryptedBuffer())
+      : nullptr;
+  if (status != cdm::kSuccess || !buffer) {
+    Unused << SendDecryptFailed(aId, status);
     return IPC_OK();
   }
 
-  if (!output.DecryptedBuffer() ||
-      output.DecryptedBuffer()->Size() != aBuffer.mData().Size<uint8_t>()) {
+  
+  MOZ_ASSERT(!HasShmemOfSize(outputShmemSize));
+  ipc::Shmem shmem = buffer->ExtractShmem();
+  if (SendDecrypted(aId, cdm::kSuccess, shmem)) {
     
-    DecryptFailed(aId, cdm::kDecryptError);
-    return IPC_OK();
+    
+    autoDeallocateOutputShmem.release();
   }
-
-  nsTArray<uint8_t> buf =
-    static_cast<WidevineBuffer*>(output.DecryptedBuffer())->ExtractBuffer();
-  Unused << SendDecrypted(aId, cdm::kSuccess, buf);
 
   return IPC_OK();
 }
@@ -493,6 +624,10 @@ ChromiumCDMChild::RecvDeinitializeVideoDecoder()
     mDecoderInitialized = false;
     mCDM->DeinitializeDecoder(cdm::kStreamTypeVideo);
   }
+  for (ipc::Shmem& shmem : mBuffers) {
+    DeallocShmem(shmem);
+  }
+  mBuffers.Clear();
   return IPC_OK();
 }
 
@@ -515,9 +650,11 @@ ChromiumCDMChild::RecvDecryptAndDecodeFrame(const CDMInputBuffer& aBuffer)
   GMP_LOG("ChromiumCDMChild::RecvDecryptAndDecodeFrame() t=%" PRId64 ")",
           aBuffer.mTimestamp());
   MOZ_ASSERT(mDecoderInitialized);
+  MOZ_ASSERT(!mBuffers.IsEmpty());
 
-  auto autoDeallocateShmem = MakeScopeExit([&, this] {
-    this->DeallocShmem(aBuffer.mData());
+  RefPtr<ChromiumCDMChild> self = this;
+  auto autoDeallocateShmem = MakeScopeExit([&, self] {
+    self->DeallocShmem(aBuffer.mData());
   });
 
   
@@ -554,7 +691,7 @@ ChromiumCDMChild::RecvDecryptAndDecodeFrame(const CDMInputBuffer& aBuffer)
       ReturnOutput(frame);
       break;
     case cdm::kNeedMoreData:
-      Unused << SendDecoded(gmp::CDMVideoFrame());
+      Unused << SendDecodeFailed(rv);
       break;
     default:
       Unused << SendDecodeFailed(rv);
@@ -567,14 +704,14 @@ ChromiumCDMChild::RecvDecryptAndDecodeFrame(const CDMInputBuffer& aBuffer)
 void
 ChromiumCDMChild::ReturnOutput(WidevineVideoFrame& aFrame)
 {
-  
-  
+  MOZ_ASSERT(IsOnMessageLoopThread());
   gmp::CDMVideoFrame output;
   output.mFormat() = static_cast<cdm::VideoFormat>(aFrame.Format());
   output.mImageWidth() = aFrame.Size().width;
   output.mImageHeight() = aFrame.Size().height;
-  output.mData() = Move(
-    reinterpret_cast<WidevineBuffer*>(aFrame.FrameBuffer())->ExtractBuffer());
+  CDMShmemBuffer* cdmSharedBuffer =
+    reinterpret_cast<CDMShmemBuffer*>(aFrame.FrameBuffer());
+  output.mData() = cdmSharedBuffer->ExtractShmem();
   output.mYPlane() = { aFrame.PlaneOffset(cdm::VideoFrame::kYPlane),
                        aFrame.Stride(cdm::VideoFrame::kYPlane) };
   output.mUPlane() = { aFrame.PlaneOffset(cdm::VideoFrame::kUPlane),
@@ -594,6 +731,8 @@ ChromiumCDMChild::ReturnOutput(WidevineVideoFrame& aFrame)
 mozilla::ipc::IPCResult
 ChromiumCDMChild::RecvDrain()
 {
+  MOZ_ASSERT(IsOnMessageLoopThread());
+  MOZ_ASSERT(!mBuffers.IsEmpty());
   WidevineVideoFrame frame;
   cdm::InputBuffer sample;
   cdm::Status rv = mCDM->DecryptAndDecodeFrame(sample, &frame);
@@ -623,6 +762,28 @@ ChromiumCDMChild::RecvDestroy()
   Unused << Send__delete__(this);
 
   return IPC_OK();
+}
+
+mozilla::ipc::IPCResult
+ChromiumCDMChild::RecvGiveBuffer(ipc::Shmem&& aBuffer)
+{
+  MOZ_ASSERT(IsOnMessageLoopThread());
+
+  GiveBuffer(Move(aBuffer));
+  return IPC_OK();
+}
+
+void
+ChromiumCDMChild::GiveBuffer(ipc::Shmem&& aBuffer)
+{
+  MOZ_ASSERT(IsOnMessageLoopThread());
+  size_t sz = aBuffer.Size<uint8_t>();
+  mBuffers.AppendElement(Move(aBuffer));
+  GMP_LOG("ChromiumCDMChild::RecvGiveBuffer(capacity=%" PRIuSIZE
+          ") bufferSizes={%s} mDecoderInitialized=%d",
+          sz,
+          ToString(mBuffers).get(),
+          mDecoderInitialized);
 }
 
 } 
