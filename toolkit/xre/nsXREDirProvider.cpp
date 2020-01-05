@@ -1239,15 +1239,6 @@ nsXREDirProvider::DoShutdown()
       static const char16_t kShutdownPersist[] = u"shutdown-persist";
       obsSvc->NotifyObservers(nullptr, "profile-change-net-teardown", kShutdownPersist);
       obsSvc->NotifyObservers(nullptr, "profile-change-teardown", kShutdownPersist);
-
-      
-      
-
-      if (JSContext* cx = dom::danger::GetJSContext()) {
-        JS_GC(cx);
-      }
-
-      
       obsSvc->NotifyObservers(nullptr, "profile-before-change", kShutdownPersist);
       obsSvc->NotifyObservers(nullptr, "profile-before-change-qm", kShutdownPersist);
       obsSvc->NotifyObservers(nullptr, "profile-before-change-telemetry", kShutdownPersist);
