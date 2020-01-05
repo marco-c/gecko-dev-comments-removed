@@ -122,7 +122,9 @@ enum class MediaEventType : int8_t
   SeekStarted,
   Invalidate,
   EnterVideoSuspend,
-  ExitVideoSuspend
+  ExitVideoSuspend,
+  StartVideoSuspendTimer,
+  CancelVideoSuspendTimer
 };
 
 
@@ -395,6 +397,9 @@ protected:
   void VisibilityChanged();
 
   
+  void SuspendTaintChanged();
+
+  
   
   void StopPlayback();
 
@@ -611,7 +616,7 @@ private:
   const char* VideoRequestStatus() const;
 
   void OnSuspendTimerResolved();
-  void OnSuspendTimerRejected();
+  void CancelSuspendTimer();
 
   
   
