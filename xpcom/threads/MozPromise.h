@@ -701,7 +701,6 @@ private:
 
 
 
-
   class ThenCommand
   {
     friend class MozPromise;
@@ -724,14 +723,6 @@ private:
       if (mThenValue) {
         mReceiver->ThenInternal(mResponseThread, mThenValue, mCallSite);
       }
-    }
-
-    
-    operator RefPtr<Request>()
-    {
-      RefPtr<ThenValueBase> thenValue = mThenValue.forget();
-      mReceiver->ThenInternal(mResponseThread, thenValue, mCallSite);
-      return thenValue.forget();
     }
 
     
@@ -759,7 +750,9 @@ private:
 
     void Track(MozPromiseRequestHolder<MozPromise>& aRequestHolder)
     {
-      aRequestHolder.Track(*this);
+      RefPtr<ThenValueBase> thenValue = mThenValue.forget();
+      mReceiver->ThenInternal(mResponseThread, thenValue, mCallSite);
+      aRequestHolder.Track(thenValue.forget());
     }
 
     
