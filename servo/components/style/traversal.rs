@@ -8,7 +8,7 @@
 
 use atomic_refcell::{AtomicRefCell, AtomicRefMut};
 use context::{SharedStyleContext, StyleContext, ThreadLocalStyleContext};
-use data::{ElementData, ElementStyles, StoredRestyleHint};
+use data::{ElementData, ElementStyles, RestyleKind, StoredRestyleHint};
 use dom::{NodeInfo, TElement, TNode};
 use matching::{MatchMethods, StyleSharingResult};
 use restyle_hints::{RESTYLE_DESCENDANTS, RESTYLE_SELF};
@@ -453,9 +453,6 @@ pub fn recalc_style_at<E, D>(traversal: &D,
 
 
 
-
-
-
 fn compute_style<E, D>(_traversal: &D,
                        traversal_data: &mut PerLevelTraversalData,
                        context: &mut StyleContext<E>,
@@ -466,63 +463,75 @@ fn compute_style<E, D>(_traversal: &D,
 {
     context.thread_local.statistics.elements_styled += 1;
     let shared_context = context.shared;
-    
-    let dom_depth = context.thread_local.bloom_filter
-                           .insert_parents_recovering(element, traversal_data.current_dom_depth);
 
     
     
-    
-    
-    traversal_data.current_dom_depth = Some(dom_depth);
+    let cascade_input = match data.restyle_kind() {
+        RestyleKind::MatchAndCascade => {
+            
+            let sharing_result = unsafe {
+                element.share_style_if_possible(&mut context.thread_local.style_sharing_candidate_cache,
+                                                shared_context,
+                                                &mut data)
+            };
 
-    context.thread_local.bloom_filter.assert_complete(element);
-
-    
-    let sharing_result = if element.parent_element().is_none() {
-        StyleSharingResult::CannotShare
-    } else {
-        unsafe { element.share_style_if_possible(&mut context.thread_local.style_sharing_candidate_cache,
-                                                 shared_context, &mut data) }
-    };
-
-    
-    match sharing_result {
-        StyleSharingResult::CannotShare => {
-            let match_results;
-            let shareable_element = {
-                
-                context.thread_local.statistics.elements_matched += 1;
-                let filter = context.thread_local.bloom_filter.filter();
-                match_results = element.match_element(context, Some(filter));
-                if match_results.primary_is_shareable() {
-                    Some(element)
-                } else {
+            match sharing_result {
+                StyleSharingResult::StyleWasShared(index) => {
+                    context.thread_local.statistics.styles_shared += 1;
+                    context.thread_local.style_sharing_candidate_cache.touch(index);
                     None
                 }
-            };
-            let relations = match_results.relations;
+                StyleSharingResult::CannotShare => {
+                    
+                    let dom_depth =
+                        context.thread_local.bloom_filter
+                               .insert_parents_recovering(element,
+                                                          traversal_data.current_dom_depth);
 
-            
-            unsafe {
-                let shareable = match_results.primary_is_shareable();
-                element.cascade_node(context, &mut data,
-                                     element.parent_element(),
-                                     match_results.primary,
-                                     match_results.per_pseudo,
-                                     shareable);
-            }
+                    
+                    
+                    
+                    
+                    traversal_data.current_dom_depth = Some(dom_depth);
 
-            
-            if let Some(element) = shareable_element {
-                context.thread_local
-                       .style_sharing_candidate_cache
-                       .insert_if_possible(&element, &data.styles().primary.values, relations);
+                    context.thread_local.bloom_filter.assert_complete(element);
+
+                    
+                    context.thread_local.statistics.elements_matched += 1;
+
+                    let filter = context.thread_local.bloom_filter.filter();
+                    Some(element.match_element(context, Some(filter)))
+                }
             }
         }
-        StyleSharingResult::StyleWasShared(index) => {
-            context.thread_local.statistics.styles_shared += 1;
-            context.thread_local.style_sharing_candidate_cache.touch(index);
+        RestyleKind::CascadeWithReplacements(hint) => {
+            Some(element.cascade_with_replacements(hint, context, &mut data))
+        }
+        RestyleKind::CascadeOnly => {
+            
+            
+            Some(element.match_results_from_current_style(&*data))
+        }
+    };
+
+    if let Some(match_results) = cascade_input {
+        
+        let shareable = match_results.primary_is_shareable();
+        unsafe {
+            element.cascade_node(context, &mut data,
+                                 element.parent_element(),
+                                 match_results.primary,
+                                 match_results.per_pseudo,
+                                 shareable);
+        }
+
+        if shareable {
+            
+            context.thread_local
+                   .style_sharing_candidate_cache
+                   .insert_if_possible(&element,
+                                       &data.styles().primary.values,
+                                       match_results.relations);
         }
     }
 

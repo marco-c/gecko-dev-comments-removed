@@ -13,19 +13,19 @@ use atomic_refcell::AtomicRefMut;
 use cache::LRUCache;
 use cascade_info::CascadeInfo;
 use context::{SharedStyleContext, StyleContext};
-use data::{ComputedStyle, ElementData, ElementStyles, PseudoStyles};
+use data::{ComputedStyle, ElementData, ElementStyles, PseudoRuleNodes, PseudoStyles};
 use dom::{SendElement, TElement, TNode};
 use properties::{CascadeFlags, ComputedValues, SHAREABLE, SKIP_ROOT_AND_ITEM_BASED_DISPLAY_FIXUP, cascade};
 use properties::longhands::display::computed_value as display;
-use rule_tree::StrongRuleNode;
+use restyle_hints::{RESTYLE_STYLE_ATTRIBUTE, RestyleHint};
+use rule_tree::{CascadeLevel, StrongRuleNode};
 use selector_parser::{PseudoElement, RestyleDamage, SelectorImpl};
 use selectors::MatchAttr;
 use selectors::bloom::BloomFilter;
-use selectors::matching::{AFFECTED_BY_PSEUDO_ELEMENTS, MatchingReason, StyleRelations};
+use selectors::matching::{AFFECTED_BY_PSEUDO_ELEMENTS, AFFECTED_BY_STYLE_ATTRIBUTE, MatchingReason, StyleRelations};
 use servo_config::opts;
 use sink::ForgetfulSink;
 use std::collections::HashMap;
-use std::hash::BuildHasherDefault;
 use std::slice::IterMut;
 use std::sync::Arc;
 use stylist::ApplicableDeclarationBlock;
@@ -59,13 +59,6 @@ fn create_common_style_affecting_attributes_from_element<E: TElement>(element: &
     }
     flags
 }
-
-
-
-
-
-type PseudoRuleNodes = HashMap<PseudoElement, StrongRuleNode,
-                               BuildHasherDefault<::fnv::FnvHasher>>;
 
 
 pub struct MatchResults {
@@ -639,6 +632,59 @@ pub trait MatchMethods : TElement {
     
     
     
+    fn match_results_from_current_style(&self, data: &ElementData) -> MatchResults {
+        let rule_node = data.styles().primary.rules.clone();
+        MatchResults {
+            primary: rule_node,
+            
+            relations: StyleRelations::empty(),
+            
+            
+            per_pseudo: data.styles().pseudos.get_rules(),
+        }
+
+    }
+
+    
+    
+    fn cascade_with_replacements(&self,
+                                 hint: RestyleHint,
+                                 context: &StyleContext<Self>,
+                                 data: &mut AtomicRefMut<ElementData>)
+                                 -> MatchResults {
+        let mut rule_node = data.styles().primary.rules.clone();
+
+        if hint.contains(RESTYLE_STYLE_ATTRIBUTE) {
+            let style_attribute = self.style_attribute();
+
+            rule_node = context.shared.stylist.rule_tree
+                .update_rule_at_level(CascadeLevel::StyleAttributeNormal,
+                                      style_attribute,
+                                      rule_node);
+
+            rule_node = context.shared.stylist.rule_tree
+                .update_rule_at_level(CascadeLevel::StyleAttributeImportant,
+                                      style_attribute,
+                                      rule_node);
+        }
+
+        MatchResults {
+            primary: rule_node,
+            
+            
+            relations: AFFECTED_BY_STYLE_ATTRIBUTE,
+            
+            
+            
+            
+            per_pseudo: data.styles().pseudos.get_rules(),
+        }
+    }
+
+    
+    
+    
+    
     unsafe fn share_style_if_possible(&self,
                                       style_sharing_candidate_cache:
                                         &mut StyleSharingCandidateCache<Self>,
@@ -646,6 +692,10 @@ pub trait MatchMethods : TElement {
                                       data: &mut AtomicRefMut<ElementData>)
                                       -> StyleSharingResult {
         if opts::get().disable_share_style_cache {
+            return StyleSharingResult::CannotShare
+        }
+
+        if self.parent_element().is_none() {
             return StyleSharingResult::CannotShare
         }
 

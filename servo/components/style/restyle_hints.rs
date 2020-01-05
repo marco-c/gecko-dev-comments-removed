@@ -50,6 +50,14 @@ bitflags! {
     }
 }
 
+impl RestyleHint {
+    
+    
+    pub fn for_self() -> Self {
+        RESTYLE_SELF | RESTYLE_STYLE_ATTRIBUTE
+    }
+}
+
 #[cfg(feature = "gecko")]
 impl From<nsRestyleHint> for RestyleHint {
     fn from(raw: nsRestyleHint) -> Self {
