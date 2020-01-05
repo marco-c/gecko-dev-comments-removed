@@ -39,7 +39,7 @@ public class FxAccountPushHandler {
             
             
             
-            Log.d(LOG_TAG, "Skipping empty message");
+            handleVerification(context);
             return;
         }
         try {
@@ -59,6 +59,17 @@ public class FxAccountPushHandler {
         } catch (JSONException e) {
             Log.e(LOG_TAG, "Error while handling FxA push notification", e);
         }
+    }
+
+    private static void handleVerification(Context context) {
+        AndroidFxAccount fxAccount = AndroidFxAccount.fromContext(context);
+        if (fxAccount == null) {
+            Log.e(LOG_TAG, "The Android account does not exist anymore");
+            return;
+        }
+        Log.i(LOG_TAG, "Received 'accountVerified' push event, requesting immediate sync");
+        
+        fxAccount.requestImmediateSync(null, null);
     }
 
     private static void handleCollectionChanged(Context context, JSONObject data) throws JSONException {
