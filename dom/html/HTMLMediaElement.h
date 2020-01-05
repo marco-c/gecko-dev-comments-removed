@@ -355,6 +355,13 @@ public:
 
   void NotifyMediaStreamTracksAvailable(DOMMediaStream* aStream);
 
+  
+
+
+
+  void NotifyOutputTrackStopped(DOMMediaStream* aOwningStream,
+                                TrackID aDestinationTrackID);
+
   virtual bool IsNodeOfType(uint32_t aFlags) const override;
 
   
