@@ -5,24 +5,19 @@
 
 
 
-use canvas_traits::CanvasMsg;
 use compositor_msg::Epoch;
-use euclid::point::Point2D;
 use euclid::scale_factor::ScaleFactor;
 use euclid::size::{Size2D, TypedSize2D};
 use hyper::header::Headers;
 use hyper::method::Method;
 use ipc_channel::ipc::{self, IpcReceiver, IpcSender, IpcSharedMemory};
 use layers::geometry::DevicePixel;
-use offscreen_gl_context::GLContextAttributes;
 use serde::{Deserialize, Serialize};
 use std::cell::Cell;
 use std::collections::HashMap;
 use std::fmt;
 use std::sync::mpsc::channel;
-use style_traits::viewport::ViewportConstraints;
 use url::Url;
-use util::cursor::Cursor;
 use util::geometry::{PagePx, ViewportPx};
 use util::mem::HeapSizeOf;
 use webdriver_msg::{LoadStatus, WebDriverScriptCommand};
@@ -255,54 +250,6 @@ pub enum CompositorMsg {
     TickAnimation(PipelineId),
     
     WebDriverCommand(WebDriverCommandMsg),
-}
-
-
-#[derive(Deserialize, Serialize)]
-pub enum ScriptMsg {
-    
-    ChangeRunningAnimationsState(PipelineId, AnimationState),
-    
-    
-    CreateCanvasPaintTask(Size2D<i32>, IpcSender<(IpcSender<CanvasMsg>, usize)>),
-    
-    
-    CreateWebGLPaintTask(Size2D<i32>,
-                         GLContextAttributes,
-                         IpcSender<Result<(IpcSender<CanvasMsg>, usize), String>>),
-    
-    
-    
-    DOMLoad(PipelineId),
-    Failure(Failure),
-    
-    Focus(PipelineId),
-    
-    ForwardMouseButtonEvent(PipelineId, MouseEventType, MouseButton, Point2D<f32>),
-    
-    ForwardMouseMoveEvent(PipelineId, Point2D<f32>),
-    
-    GetClipboardContents(IpcSender<String>),
-    
-    HeadParsed,
-    LoadComplete(PipelineId),
-    LoadUrl(PipelineId, LoadData),
-    
-    MozBrowserEvent(PipelineId, SubpageId, MozBrowserEvent),
-    Navigate(Option<(PipelineId, SubpageId)>, NavigationDirection),
-    
-    NewFavicon(Url),
-    
-    NodeStatus(Option<String>),
-    
-    RemoveIFrame(PipelineId),
-    ScriptLoadedURLInIFrame(IframeLoadInfo),
-    
-    SetClipboardContents(String),
-    
-    SetCursor(Cursor),
-    
-    ViewportConstrained(PipelineId, ViewportConstraints),
 }
 
 #[derive(Deserialize, HeapSizeOf, Serialize)]
