@@ -4207,7 +4207,7 @@ function updateUserContextUIIndicator() {
     return;
   }
 
-  let identity = ContextualIdentityService.getPublicIdentityFromId(userContextId);
+  let identity = ContextualIdentityService.getIdentityFromId(userContextId);
   if (!identity) {
     hbox.setAttribute("data-identity-color", "");
     hbox.hidden = true;
@@ -7287,6 +7287,11 @@ var gIdentityHandler = {
 
   onPopupShown(event) {
     if (event.target == this._identityPopup) {
+      
+      
+      
+      document.commandDispatcher.advanceFocusIntoSubtree(this._identityPopup);
+
       window.addEventListener("focus", this, true);
     }
   },
