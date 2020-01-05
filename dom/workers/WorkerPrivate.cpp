@@ -1985,6 +1985,57 @@ WorkerLoadInfo::PrincipalIsValid() const
          mPrincipalInfo->type() != PrincipalInfo::T__None &&
          mPrincipalInfo->type() <= PrincipalInfo::T__Last;
 }
+
+bool
+WorkerLoadInfo::PrincipalURIMatchesScriptURL()
+{
+  AssertIsOnMainThread();
+
+  nsAutoCString scheme;
+  nsresult rv = mBaseURI->GetScheme(scheme);
+  NS_ENSURE_SUCCESS(rv, false);
+
+  
+  if (mPrincipal->GetIsSystemPrincipal()) {
+    if (scheme == NS_LITERAL_CSTRING("blob")) {
+      return true;
+    }
+
+    bool isResource = false;
+    nsresult rv = NS_URIChainHasFlags(mBaseURI,
+                                      nsIProtocolHandler::URI_IS_UI_RESOURCE,
+                                      &isResource);
+    NS_ENSURE_SUCCESS(rv, false);
+
+    return isResource;
+  }
+
+  
+  
+  if (mPrincipal->GetIsNullPrincipal()) {
+    return scheme == NS_LITERAL_CSTRING("data") ||
+           scheme == NS_LITERAL_CSTRING("blob");
+  }
+
+  
+  
+  
+  
+  if (scheme == NS_LITERAL_CSTRING("blob")) {
+    return true;
+  }
+
+  nsCOMPtr<nsIURI> principalURI;
+  rv = mPrincipal->GetURI(getter_AddRefs(principalURI));
+  NS_ENSURE_SUCCESS(rv, false);
+  NS_ENSURE_TRUE(principalURI, false);
+
+  bool equal = false;
+  rv = principalURI->Equals(mBaseURI, &equal);
+  NS_ENSURE_SUCCESS(rv, false);
+
+  return equal;
+}
 #endif 
 
 bool
@@ -3868,6 +3919,13 @@ bool
 WorkerPrivateParent<Derived>::FinalChannelPrincipalIsValid(nsIChannel* aChannel)
 {
   return mLoadInfo.FinalChannelPrincipalIsValid(aChannel);
+}
+
+template <class Derived>
+bool
+WorkerPrivateParent<Derived>::PrincipalURIMatchesScriptURL()
+{
+  return mLoadInfo.PrincipalURIMatchesScriptURL();
 }
 #endif
 
