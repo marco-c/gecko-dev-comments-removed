@@ -239,52 +239,57 @@ class Theme {
   }
 }
 
+this.theme = class extends ExtensionAPI {
+  onManifestEntry(entryName) {
+    if (!gThemesEnabled) {
+      
+      return;
+    }
 
-extensions.on("manifest_theme", (type, directive, extension, manifest) => {
-  if (!gThemesEnabled) {
-    
-    return;
+    let {extension} = this;
+    let {manifest} = extension;
+
+    let theme = new Theme(extension.baseURI, extension.logger);
+    theme.load(manifest.theme);
+    themeMap.set(extension, theme);
   }
 
-  let theme = new Theme(extension.baseURI, extension.logger);
-  theme.load(manifest.theme);
-  themeMap.set(extension, theme);
-});
+  onShutdown() {
+    let {extension} = this;
 
-extensions.on("shutdown", (type, extension) => {
-  let theme = themeMap.get(extension);
+    let theme = themeMap.get(extension);
 
-  if (!theme) {
-    
-    return;
+    if (!theme) {
+      
+      return;
+    }
+
+    theme.unload();
   }
 
-  theme.unload();
-});
+  getAPI(context) {
+    let {extension} = context;
+    return {
+      theme: {
+        update(details) {
+          if (!gThemesEnabled) {
+            
+            return;
+          }
 
+          let theme = themeMap.get(extension);
 
-extensions.registerSchemaAPI("theme", "addon_parent", context => {
-  let {extension} = context;
-  return {
-    theme: {
-      update(details) {
-        if (!gThemesEnabled) {
-          
-          return;
-        }
+          if (!theme) {
+            
+            
+            
+            theme = new Theme(extension.baseURI, extension.logger);
+            themeMap.set(extension, theme);
+          }
 
-        let theme = themeMap.get(extension);
-
-        if (!theme) {
-          
-          
-          
-          theme = new Theme(extension.baseURI, extension.logger);
-          themeMap.set(extension, theme);
-        }
-
-        theme.load(details);
+          theme.load(details);
+        },
       },
-    },
-  };
-});
+    };
+  }
+};

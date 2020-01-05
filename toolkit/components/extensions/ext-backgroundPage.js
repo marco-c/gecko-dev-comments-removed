@@ -1,7 +1,5 @@
 "use strict";
 
-var {interfaces: Ci, utils: Cu} = Components;
-
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/Task.jsm");
 
@@ -9,13 +7,13 @@ XPCOMUtils.defineLazyModuleGetter(this, "AddonManager",
                                   "resource://gre/modules/AddonManager.jsm");
 
 Cu.import("resource://gre/modules/ExtensionParent.jsm");
-const {
+var {
   HiddenExtensionPage,
   promiseExtensionViewLoaded,
 } = ExtensionParent;
 
 
-var backgroundPagesMap = new WeakMap();
+let backgroundPagesMap = new WeakMap();
 
 
 class BackgroundPage extends HiddenExtensionPage {
@@ -38,30 +36,35 @@ class BackgroundPage extends HiddenExtensionPage {
     }
   }
 
-  build() {
-    return Task.spawn(function* () {
-      yield this.createBrowserElement();
+  async build() {
+    await this.createBrowserElement();
 
-      extensions.emit("extension-browser-inserted", this.browser);
+    extensions.emit("extension-browser-inserted", this.browser);
 
-      this.browser.loadURI(this.url);
+    this.browser.loadURI(this.url);
 
-      yield promiseExtensionViewLoaded(this.browser);
+    let context = await promiseExtensionViewLoaded(this.browser);
 
-      if (this.browser.docShell) {
-        this.webNav = this.browser.docShell.QueryInterface(Ci.nsIWebNavigation);
-        let window = this.webNav.document.defaultView;
+    if (this.browser.docShell) {
+      this.webNav = this.browser.docShell.QueryInterface(Ci.nsIWebNavigation);
+      let window = this.webNav.document.defaultView;
 
-        
-        
-        if (this.extension.addonData.instanceID) {
-          AddonManager.getAddonByInstanceID(this.extension.addonData.instanceID)
-                      .then(addon => addon.setDebugGlobal(window));
-        }
+      
+      
+      if (this.extension.addonData.instanceID) {
+        AddonManager.getAddonByInstanceID(this.extension.addonData.instanceID)
+                    .then(addon => addon.setDebugGlobal(window));
       }
+    }
 
-      this.extension.emit("startup");
-    }.bind(this));
+    if (context) {
+      
+      
+      await Promise.all(context.listenerPromises);
+    }
+    context.listenerPromises = null;
+
+    this.extension.emit("startup");
   }
 
   shutdown() {
@@ -74,18 +77,23 @@ class BackgroundPage extends HiddenExtensionPage {
   }
 }
 
+this.backgroundPage = class extends ExtensionAPI {
+  onManifestEntry(entryName) {
+    let {extension} = this;
+    let {manifest} = extension;
 
-extensions.on("manifest_background", (type, directive, extension, manifest) => {
-  let bgPage = new BackgroundPage(extension, manifest.background);
+    let bgPage = new BackgroundPage(extension, manifest.background);
 
-  backgroundPagesMap.set(extension, bgPage);
-  return bgPage.build();
-});
-
-extensions.on("shutdown", (type, extension) => {
-  if (backgroundPagesMap.has(extension)) {
-    backgroundPagesMap.get(extension).shutdown();
-    backgroundPagesMap.delete(extension);
+    backgroundPagesMap.set(extension, bgPage);
+    return bgPage.build();
   }
-});
 
+  onShutdown() {
+    let {extension} = this;
+
+    if (backgroundPagesMap.has(extension)) {
+      backgroundPagesMap.get(extension).shutdown();
+      backgroundPagesMap.delete(extension);
+    }
+  }
+};

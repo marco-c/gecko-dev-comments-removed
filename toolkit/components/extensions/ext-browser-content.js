@@ -1,12 +1,10 @@
 
 
 
-
 "use strict";
 
 const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 
-Cu.import("resource://gre/modules/ExtensionUtils.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "clearTimeout",
@@ -22,6 +20,7 @@ XPCOMUtils.defineLazyGetter(this, "colorUtils", () => {
   return require("devtools/shared/css/color").colorUtils;
 });
 
+Cu.import("resource://gre/modules/ExtensionUtils.jsm");
 const {
   getWinUtils,
   stylesheetMap,

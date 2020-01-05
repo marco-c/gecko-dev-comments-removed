@@ -1,9 +1,5 @@
 "use strict";
 
-var {classes: Cc, interfaces: Ci, utils: Cu} = Components;
-
-Cu.import("resource://gre/modules/ExtensionUtils.jsm");
-
 XPCOMUtils.defineLazyModuleGetter(this, "EventEmitter",
                                   "resource://devtools/shared/event-emitter.js");
 
@@ -13,7 +9,7 @@ var {
 } = ExtensionUtils;
 
 
-var notificationsMap = new WeakMap();
+let notificationsMap = new WeakMap();
 
 
 function Notification(extension, id, options) {
@@ -73,89 +69,94 @@ Notification.prototype = {
   },
 };
 
+this.notifications = class extends ExtensionAPI {
+  constructor(extension) {
+    super(extension);
 
-extensions.on("startup", (type, extension) => {
-  let map = new Map();
-  EventEmitter.decorate(map);
-  notificationsMap.set(extension, map);
-});
-
-extensions.on("shutdown", (type, extension) => {
-  if (notificationsMap.has(extension)) {
-    for (let notification of notificationsMap.get(extension).values()) {
-      notification.clear();
-    }
-    notificationsMap.delete(extension);
+    this.nextId = 0;
   }
-});
 
+  onShutdown() {
+    let {extension} = this;
 
-var nextId = 0;
+    if (notificationsMap.has(extension)) {
+      for (let notification of notificationsMap.get(extension).values()) {
+        notification.clear();
+      }
+      notificationsMap.delete(extension);
+    }
+  }
 
-extensions.registerSchemaAPI("notifications", "addon_parent", context => {
-  let {extension} = context;
-  return {
-    notifications: {
-      create: function(notificationId, options) {
-        if (!notificationId) {
-          notificationId = String(nextId++);
-        }
+  getAPI(context) {
+    let {extension} = context;
 
-        let notifications = notificationsMap.get(extension);
-        if (notifications.has(notificationId)) {
-          notifications.get(notificationId).clear();
-        }
+    let map = new Map();
+    EventEmitter.decorate(map);
+    notificationsMap.set(extension, map);
 
-        
-        
-        let notification = new Notification(extension, notificationId, options);
-        notificationsMap.get(extension).set(notificationId, notification);
+    return {
+      notifications: {
+        create: (notificationId, options) => {
+          if (!notificationId) {
+            notificationId = String(this.nextId++);
+          }
 
-        return Promise.resolve(notificationId);
-      },
+          let notifications = notificationsMap.get(extension);
+          if (notifications.has(notificationId)) {
+            notifications.get(notificationId).clear();
+          }
 
-      clear: function(notificationId) {
-        let notifications = notificationsMap.get(extension);
-        if (notifications.has(notificationId)) {
-          notifications.get(notificationId).clear();
-          return Promise.resolve(true);
-        }
-        return Promise.resolve(false);
-      },
-
-      getAll: function() {
-        let result = {};
-        notificationsMap.get(extension).forEach((value, key) => {
-          result[key] = value.options;
-        });
-        return Promise.resolve(result);
-      },
-
-      onClosed: new SingletonEventManager(context, "notifications.onClosed", fire => {
-        let listener = (event, notificationId) => {
           
-          fire.async(notificationId, true);
-        };
+          
+          let notification = new Notification(extension, notificationId, options);
+          notificationsMap.get(extension).set(notificationId, notification);
 
-        notificationsMap.get(extension).on("closed", listener);
-        return () => {
-          notificationsMap.get(extension).off("closed", listener);
-        };
-      }).api(),
+          return Promise.resolve(notificationId);
+        },
 
-      onClicked: new SingletonEventManager(context, "notifications.onClicked", fire => {
-        let listener = (event, notificationId) => {
-          fire.async(notificationId, true);
-        };
+        clear: function(notificationId) {
+          let notifications = notificationsMap.get(extension);
+          if (notifications.has(notificationId)) {
+            notifications.get(notificationId).clear();
+            return Promise.resolve(true);
+          }
+          return Promise.resolve(false);
+        },
 
-        notificationsMap.get(extension).on("clicked", listener);
-        return () => {
-          notificationsMap.get(extension).off("clicked", listener);
-        };
-      }).api(),
+        getAll: function() {
+          let result = {};
+          notificationsMap.get(extension).forEach((value, key) => {
+            result[key] = value.options;
+          });
+          return Promise.resolve(result);
+        },
 
-      
-      onButtonClicked: ignoreEvent(context, "notifications.onButtonClicked"),
-    },
-  };
-});
+        onClosed: new SingletonEventManager(context, "notifications.onClosed", fire => {
+          let listener = (event, notificationId) => {
+            
+            fire.async(notificationId, true);
+          };
+
+          notificationsMap.get(extension).on("closed", listener);
+          return () => {
+            notificationsMap.get(extension).off("closed", listener);
+          };
+        }).api(),
+
+        onClicked: new SingletonEventManager(context, "notifications.onClicked", fire => {
+          let listener = (event, notificationId) => {
+            fire.async(notificationId, true);
+          };
+
+          notificationsMap.get(extension).on("clicked", listener);
+          return () => {
+            notificationsMap.get(extension).off("clicked", listener);
+          };
+        }).api(),
+
+        
+        onButtonClicked: ignoreEvent(context, "notifications.onButtonClicked"),
+      },
+    };
+  }
+};
