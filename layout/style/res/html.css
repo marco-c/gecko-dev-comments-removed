@@ -756,13 +756,6 @@ audio:not([controls]) {
   display: none;
 }
 
-audio[controls] {
-  
-
-
-  writing-mode: horizontal-tb !important;
-}
-
 *|*::-moz-html-canvas-content {
   display: block !important;
   
@@ -803,6 +796,27 @@ details[open] > summary:-moz-native-anonymous {
 details > summary:first-of-type > *|* {
   
   list-style-position: initial;
+}
+
+
+
+dialog {
+  position: absolute;
+  offset-inline-start: 0;
+  offset-inline-end: 0;
+  color: black;
+  margin: auto;
+  border-width: initial;
+  border-style: solid;
+  border-color: initial;
+  border-image: initial;
+  padding: 1em;
+  background: white;
+  width: -moz-fit-content;
+}
+
+dialog:not([open]) {
+  display: none;
 }
 
 
