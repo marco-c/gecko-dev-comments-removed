@@ -2384,7 +2384,7 @@ InitializeLegacyNetscapeObject(JSContext* aCx, JS::Handle<JSObject*> aGlobal)
 }
 
 bool
-nsGlobalWindow::ComputeIsSecureContext(nsIDocument* aDocument, SecureContextFlags aFlags)
+nsGlobalWindow::ComputeIsSecureContext(nsIDocument* aDocument)
 {
   MOZ_ASSERT(IsOuterWindow());
 
@@ -2393,7 +2393,6 @@ nsGlobalWindow::ComputeIsSecureContext(nsIDocument* aDocument, SecureContextFlag
     return true;
   }
 
-  
   
 
   bool hadNonSecureContextCreator = false;
@@ -2420,15 +2419,9 @@ nsGlobalWindow::ComputeIsSecureContext(nsIDocument* aDocument, SecureContextFlag
     MOZ_ASSERT(parentWin ==
                nsGlobalWindow::Cast(parentOuterWin->GetCurrentInnerWindow()),
                "Creator window mismatch while setting Secure Context state");
-    if (aFlags != SecureContextFlags::eIgnoreOpener) {
-      hadNonSecureContextCreator = !parentWin->IsSecureContext();
-    } else {
-      hadNonSecureContextCreator = !parentWin->IsSecureContextIfOpenerIgnored();
-    }
+    hadNonSecureContextCreator = !parentWin->IsSecureContext();
   } else if (mHadOriginalOpener) {
-    if (aFlags != SecureContextFlags::eIgnoreOpener) {
-      hadNonSecureContextCreator = !mOriginalOpenerWasSecureContext;
-    }
+    hadNonSecureContextCreator = !mOriginalOpenerWasSecureContext;
   }
 
   if (hadNonSecureContextCreator) {
@@ -2733,8 +2726,6 @@ nsGlobalWindow::SetNewDocument(nsIDocument* aDocument,
       NS_ASSERTION(NS_SUCCEEDED(rv) && newInnerGlobal &&
                    newInnerWindow->GetWrapperPreserveColor() == newInnerGlobal,
                    "Failed to get script global");
-      newInnerWindow->mIsSecureContextIfOpenerIgnored =
-        ComputeIsSecureContext(aDocument, SecureContextFlags::eIgnoreOpener);
 
       mCreatingInnerWindow = false;
       createdInnerWindow = true;
@@ -3874,12 +3865,6 @@ bool
 nsPIDOMWindowInner::IsSecureContext() const
 {
   return nsGlobalWindow::Cast(this)->IsSecureContext();
-}
-
-bool
-nsPIDOMWindowInner::IsSecureContextIfOpenerIgnored() const
-{
-  return nsGlobalWindow::Cast(this)->IsSecureContextIfOpenerIgnored();
 }
 
 void
@@ -8013,24 +7998,6 @@ nsGlobalWindow::MozScrollSnap()
   if (sf) {
     sf->ScrollSnap();
   }
-}
-
-void
-nsGlobalWindow::MozRequestOverfill(OverfillCallback& aCallback,
-                                   mozilla::ErrorResult& aError)
-{
-  MOZ_ASSERT(IsInnerWindow());
-
-  nsIWidget* widget = nsContentUtils::WidgetForDocument(mDoc);
-  if (widget) {
-    mozilla::layers::LayerManager* manager = widget->GetLayerManager();
-    if (manager) {
-      manager->RequestOverfill(&aCallback);
-      return;
-    }
-  }
-
-  aError.Throw(NS_ERROR_NOT_AVAILABLE);
 }
 
 void
@@ -13840,14 +13807,6 @@ nsGlobalWindow::IsSecureContext() const
   MOZ_RELEASE_ASSERT(IsInnerWindow());
 
   return JS_GetIsSecureContext(js::GetObjectCompartment(GetWrapperPreserveColor()));
-}
-
-bool
-nsGlobalWindow::IsSecureContextIfOpenerIgnored() const
-{
-  MOZ_RELEASE_ASSERT(IsInnerWindow());
-
-  return mIsSecureContextIfOpenerIgnored;
 }
 
 already_AddRefed<External>

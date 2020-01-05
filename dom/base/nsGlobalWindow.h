@@ -911,7 +911,6 @@ public:
 
   
   bool IsSecureContext() const;
-  bool IsSecureContextIfOpenerIgnored() const;
 
   void GetSidebar(mozilla::dom::OwningExternalOrWindowProxy& aResult,
                   mozilla::ErrorResult& aRv);
@@ -1072,7 +1071,6 @@ public:
   {
     return GetScrollY(aError);
   }
-  void MozRequestOverfill(mozilla::dom::OverfillCallback& aCallback, mozilla::ErrorResult& aError);
   void GetScreenX(JSContext* aCx, JS::MutableHandle<JS::Value> aValue,
                   mozilla::dom::CallerType aCallerType,
                   mozilla::ErrorResult& aError);
@@ -1754,16 +1752,9 @@ private:
 
   void DisconnectEventTargetObjects();
 
-
-  enum class SecureContextFlags {
-    eDefault,
-    eIgnoreOpener
-  };
   
   
-  bool ComputeIsSecureContext(nsIDocument* aDocument,
-                              SecureContextFlags aFlags =
-                                SecureContextFlags::eDefault);
+  bool ComputeIsSecureContext(nsIDocument* aDocument);
 
   
   friend class nsPIDOMWindow<mozIDOMWindowProxy>;
@@ -1800,7 +1791,6 @@ protected:
   bool                          mHavePendingClose : 1;
   bool                          mHadOriginalOpener : 1;
   bool                          mOriginalOpenerWasSecureContext : 1;
-  bool                          mIsSecureContextIfOpenerIgnored : 1;
   bool                          mIsPopupSpam : 1;
 
   
