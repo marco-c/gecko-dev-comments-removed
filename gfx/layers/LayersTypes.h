@@ -26,10 +26,6 @@
 
 #define INVALID_OVERLAY -1
 
-namespace IPC {
-template <typename T> struct ParamTraits;
-} 
-
 namespace android {
 class MOZ_EXPORT GraphicBuffer;
 } 
@@ -49,6 +45,7 @@ enum class LayersBackend : int8_t {
   LAYERS_D3D9,
   LAYERS_D3D11,
   LAYERS_CLIENT,
+  LAYERS_WR,
   LAYERS_LAST
 };
 
@@ -68,6 +65,8 @@ enum class SurfaceMode : int8_t {
   SURFACE_SINGLE_CHANNEL_ALPHA,
   SURFACE_COMPONENT_ALPHA
 };
+
+
 
 
 enum class LayerRenderStateFlags : int8_t {
@@ -245,76 +244,6 @@ typedef gfx::Matrix4x4Typed<LayerPixel, CSSTransformedLayerPixel> CSSTransformMa
 
 typedef gfx::Matrix4x4Typed<ParentLayerPixel, ParentLayerPixel> AsyncTransformComponentMatrix;
 typedef gfx::Matrix4x4Typed<CSSTransformedLayerPixel, ParentLayerPixel> AsyncTransformMatrix;
-
-typedef Array<gfx::Color, 4> BorderColors;
-typedef Array<LayerSize, 4> BorderCorners;
-typedef Array<LayerCoord, 4> BorderWidths;
-typedef Array<uint8_t, 4> BorderStyles;
-
-
-
-
-class LayerHandle
-{
-  friend struct IPC::ParamTraits<mozilla::layers::LayerHandle>;
-public:
-  LayerHandle() : mHandle(0)
-  {}
-  LayerHandle(const LayerHandle& aOther) : mHandle(aOther.mHandle)
-  {}
-  explicit LayerHandle(uint64_t aHandle) : mHandle(aHandle)
-  {}
-  bool IsValid() const {
-    return mHandle != 0;
-  }
-  explicit operator bool() const {
-    return IsValid();
-  }
-  bool operator ==(const LayerHandle& aOther) const {
-    return mHandle == aOther.mHandle;
-  }
-  uint64_t Value() const {
-    return mHandle;
-  }
-private:
-  uint64_t mHandle;
-};
-
-
-
-
-
-class CompositableHandle
-{
-  friend struct IPC::ParamTraits<mozilla::layers::CompositableHandle>;
-public:
-  CompositableHandle() : mHandle(0)
-  {}
-  CompositableHandle(const CompositableHandle& aOther) : mHandle(aOther.mHandle)
-  {}
-  explicit CompositableHandle(uint64_t aHandle) : mHandle(aHandle)
-  {}
-  bool IsValid() const {
-    return mHandle != 0;
-  }
-  explicit operator bool() const {
-    return IsValid();
-  }
-  bool operator ==(const CompositableHandle& aOther) const {
-    return mHandle == aOther.mHandle;
-  }
-  uint64_t Value() const {
-    return mHandle;
-  }
-private:
-  uint64_t mHandle;
-};
-
-enum class ScrollDirection : uint32_t {
-  NONE,
-  VERTICAL,
-  HORIZONTAL
-};
 
 } 
 } 

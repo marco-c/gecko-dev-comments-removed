@@ -8,8 +8,8 @@
 
 #include <cmath>                 
 #include <stdint.h>
-#include <string>
 #include "mozilla/Assertions.h"
+#include "mozilla/Function.h"
 #include "mozilla/gfx/LoggingConstants.h"
 #include "nsTArray.h"
 
@@ -69,9 +69,6 @@ static void Set##Name(Type aVal) { MOZ_ASSERT(SingletonExists());             \
     GetSingleton().mPref##Name.Set(UpdatePolicy::Update, Get##Name##PrefName(), aVal); } \
 static const char* Get##Name##PrefName() { return Prefname; }                 \
 static Type Get##Name##PrefDefault() { return Default; }                      \
-static void Set##Name##ChangeCallback(Pref::ChangeCallback aCallback) {       \
-    MOZ_ASSERT(SingletonExists());                                            \
-    GetSingleton().mPref##Name.SetChangeCallback(aCallback); }                \
 private:                                                                      \
 PrefTemplate<UpdatePolicy::Update, Type, Get##Name##PrefDefault, Get##Name##PrefName> mPref##Name
 
@@ -107,7 +104,7 @@ public:
     size_t Index() const { return mIndex; }
     void OnChange();
 
-    typedef void (*ChangeCallback)(const GfxPrefValue&);
+    typedef void (*ChangeCallback)();
     void SetChangeCallback(ChangeCallback aCallback);
 
     virtual const char* Name() const = 0;
@@ -256,6 +253,7 @@ private:
   
   DECL_GFX_PREF(Live, "apz.allow_checkerboarding",             APZAllowCheckerboarding, bool, true);
   DECL_GFX_PREF(Live, "apz.allow_immediate_handoff",           APZAllowImmediateHandoff, bool, true);
+  DECL_GFX_PREF(Once, "apz.allow_with_webrender",              APZAllowWithWebRender, bool, false);
   DECL_GFX_PREF(Live, "apz.allow_zooming",                     APZAllowZooming, bool, false);
   DECL_GFX_PREF(Live, "apz.axis_lock.breakout_angle",          APZAxisBreakoutAngle, float, float(M_PI / 8.0) /* 22.5 degrees */);
   DECL_GFX_PREF(Live, "apz.axis_lock.breakout_threshold",      APZAxisBreakoutThreshold, float, 1.0f / 32.0f);
@@ -381,9 +379,9 @@ private:
   DECL_GFX_PREF(Once, "gfx.direct2d.disabled",                 Direct2DDisabled, bool, false);
   DECL_GFX_PREF(Once, "gfx.direct2d.force-enabled",            Direct2DForceEnabled, bool, false);
   DECL_GFX_PREF(Live, "gfx.direct3d11.reuse-decoder-device",   Direct3D11ReuseDecoderDevice, int32_t, -1);
-  DECL_GFX_PREF(Live, "gfx.direct3d11.allow-intel-mutex",      Direct3D11AllowIntelMutex, bool, true);
   DECL_GFX_PREF(Live, "gfx.draw-color-bars",                   CompositorDrawColorBars, bool, false);
   DECL_GFX_PREF(Once, "gfx.e10s.hide-plugins-for-scroll",      HidePluginsForScroll, bool, true);
+  DECL_GFX_PREF(Live, "gfx.gralloc.fence-with-readpixels",     GrallocFenceWithReadPixels, bool, false);
   DECL_GFX_PREF(Live, "gfx.layerscope.enabled",                LayerScopeEnabled, bool, false);
   DECL_GFX_PREF(Live, "gfx.layerscope.port",                   LayerScopePort, int32_t, 23456);
   
@@ -403,6 +401,7 @@ private:
   DECL_GFX_PREF(Once, "gfx.text.disable-aa",                   DisableAllTextAA, bool, false);
   DECL_GFX_PREF(Live, "gfx.ycbcr.accurate-conversion",         YCbCrAccurateConversion, bool, false);
 
+  DECL_GFX_PREF(Live, "gfx.content.use-native-pushlayer",      UseNativePushLayer, bool, false);
   DECL_GFX_PREF(Live, "gfx.content.always-paint",              AlwaysPaint, bool, false);
 
   
@@ -418,8 +417,9 @@ private:
   DECL_GFX_PREF(Once, "gfx.touch.resample.old-touch-threshold",TouchResampleOldTouchThreshold, int32_t, 17);
   DECL_GFX_PREF(Once, "gfx.touch.resample.vsync-adjust",       TouchVsyncSampleAdjust, int32_t, 5);
 
-  DECL_GFX_PREF(Once, "gfx.vr.openvr-runtime",                 VROpenVRRuntime, std::string, "");
   DECL_GFX_PREF(Live, "gfx.vsync.collect-scroll-transforms",   CollectScrollTransforms, bool, false);
+  
+  
   DECL_GFX_PREF(Once, "gfx.vsync.compositor.unobserve-count",  CompositorUnobserveCount, int32_t, 10);
   
   DECL_GFX_PREF(Once, "gfx.work-around-driver-bugs",           WorkAroundDriverBugs, bool, true);
@@ -443,6 +443,7 @@ private:
   DECL_GFX_PREF(Once, "image.mem.surfacecache.max_size_kb",    ImageMemSurfaceCacheMaxSizeKB, uint32_t, 100 * 1024);
   DECL_GFX_PREF(Once, "image.mem.surfacecache.min_expiration_ms", ImageMemSurfaceCacheMinExpirationMS, uint32_t, 60*1000);
   DECL_GFX_PREF(Once, "image.mem.surfacecache.size_factor",    ImageMemSurfaceCacheSizeFactor, uint32_t, 64);
+  DECL_GFX_PREF(Live, "image.mozsamplesize.enabled",           ImageMozSampleSizeEnabled, bool, false);
   DECL_GFX_PREF(Once, "image.multithreaded_decoding.limit",    ImageMTDecodingLimit, int32_t, -1);
 
   DECL_GFX_PREF(Once, "layers.acceleration.disabled",          LayersAccelerationDisabledDoNotUseDirectly, bool, false);
@@ -450,9 +451,6 @@ private:
   DECL_GFX_PREF(Live, "layers.acceleration.draw-fps.print-histogram",  FPSPrintHistogram, bool, false);
   DECL_GFX_PREF(Live, "layers.acceleration.draw-fps.write-to-file", WriteFPSToFile, bool, false);
   DECL_GFX_PREF(Once, "layers.acceleration.force-enabled",     LayersAccelerationForceEnabledDoNotUseDirectly, bool, false);
-  DECL_GFX_PREF(Live, "layers.advanced.border-layers",         LayersAllowBorderLayers, bool, false);
-  DECL_GFX_PREF(Live, "layers.advanced.text-layers",           LayersAllowTextLayers, bool, false);
-  DECL_GFX_PREF(Live, "layers.advanced.bullet-layers",         LayersAllowBulletLayers, bool, false);
   DECL_GFX_PREF(Once, "layers.allow-d3d9-fallback",            LayersAllowD3D9Fallback, bool, false);
   DECL_GFX_PREF(Once, "layers.amd-switchable-gfx.enabled",     LayersAMDSwitchableGfxEnabled, bool, false);
   DECL_GFX_PREF(Once, "layers.async-pan-zoom.enabled",         AsyncPanZoomEnabledDoNotUseDirectly, bool, true);
@@ -493,10 +491,11 @@ private:
   DECL_GFX_PREF(Live, "layers.flash-borders",                  FlashLayerBorders, bool, false);
   DECL_GFX_PREF(Once, "layers.force-shmem-tiles",              ForceShmemTiles, bool, false);
   DECL_GFX_PREF(Live, "layers.frame-counter",                  DrawFrameCounter, bool, false);
-  DECL_GFX_PREF(Once, "layers.gpu-process.enabled",            GPUProcessEnabled, bool, false);
-  DECL_GFX_PREF(Once, "layers.gpu-process.force-enabled",      GPUProcessForceEnabled, bool, false);
-  DECL_GFX_PREF(Once, "layers.gpu-process.timeout_ms",         GPUProcessTimeoutMs, int32_t, 5000);
-  DECL_GFX_PREF(Live, "layers.gpu-process.max_restarts",       GPUProcessMaxRestarts, int32_t, 0);
+  DECL_GFX_PREF(Once, "layers.gpu-process.dev.enabled",        GPUProcessDevEnabled, bool, false);
+  DECL_GFX_PREF(Once, "layers.gpu-process.dev.force-enabled",  GPUProcessDevForceEnabled, bool, false);
+  DECL_GFX_PREF(Once, "layers.gpu-process.dev.timeout_ms",     GPUProcessDevTimeoutMs, int32_t, 5000);
+  DECL_GFX_PREF(Live, "layers.gpu-process.dev.max_restarts",   GPUProcessDevMaxRestarts, int32_t, 0);
+  DECL_GFX_PREF(Once, "layers.gralloc.disable",                DisableGralloc, bool, false);
   DECL_GFX_PREF(Live, "layers.low-precision-buffer",           UseLowPrecisionBuffer, bool, false);
   DECL_GFX_PREF(Live, "layers.low-precision-opacity",          LowPrecisionOpacity, float, 1.0f);
   DECL_GFX_PREF(Live, "layers.low-precision-resolution",       LowPrecisionResolution, float, 0.25f);
@@ -504,6 +503,7 @@ private:
   DECL_GFX_PREF(Once, "layers.offmainthreadcomposition.force-disabled", LayersOffMainThreadCompositionForceDisabled, bool, false);
   DECL_GFX_PREF(Live, "layers.offmainthreadcomposition.frame-rate", LayersCompositionFrameRate, int32_t,-1);
   DECL_GFX_PREF(Live, "layers.orientation.sync.timeout",       OrientationSyncMillis, uint32_t, (uint32_t)0);
+  DECL_GFX_PREF(Once, "layers.overzealous-gralloc-unlocking",  OverzealousGrallocUnlocking, bool, false);
   DECL_GFX_PREF(Once, "layers.prefer-d3d9",                    LayersPreferD3D9, bool, false);
   DECL_GFX_PREF(Once, "layers.prefer-opengl",                  LayersPreferOpenGL, bool, false);
   DECL_GFX_PREF(Live, "layers.progressive-paint",              ProgressivePaint, bool, false);
@@ -528,14 +528,6 @@ private:
   DECL_GFX_PREF(Once, "layers.uniformity-info",                UniformityInfo, bool, false);
   DECL_GFX_PREF(Once, "layers.use-image-offscreen-surfaces",   UseImageOffscreenSurfaces, bool, true);
   DECL_GFX_PREF(Live, "layers.draw-mask-debug",                DrawMaskLayer, bool, false);
-  DECL_GFX_PREF(Live, "layers.geometry.opengl.enabled",        OGLLayerGeometry, bool, false);
-  DECL_GFX_PREF(Live, "layers.geometry.basic.enabled",         BasicLayerGeometry, bool, false);
-
-  DECL_GFX_PREF(Live, "layout.animation.prerender.partial", PartiallyPrerenderAnimatedContent, bool, false);
-  DECL_GFX_PREF(Live, "layout.animation.prerender.viewport-ratio-limit-x", AnimationPrerenderViewportRatioLimitX, float, 1.125f);
-  DECL_GFX_PREF(Live, "layout.animation.prerender.viewport-ratio-limit-y", AnimationPrerenderViewportRatioLimitY, float, 1.125f);
-  DECL_GFX_PREF(Live, "layout.animation.prerender.absolute-limit-x", AnimationPrerenderAbsoluteLimitX, uint32_t, 4096);
-  DECL_GFX_PREF(Live, "layout.animation.prerender.absolute-limit-y", AnimationPrerenderAbsoluteLimitY, uint32_t, 4096);
 
   DECL_GFX_PREF(Live, "layout.css.scroll-behavior.damping-ratio", ScrollBehaviorDampingRatio, float, 1.0f);
   DECL_GFX_PREF(Live, "layout.css.scroll-behavior.enabled",    ScrollBehaviorEnabled, bool, true);
@@ -552,7 +544,6 @@ private:
 
   
   DECL_GFX_PREF(Once, "layout.scroll.root-frame-containers",   LayoutUseContainersForRootFrames, bool, true);
-  DECL_GFX_PREF(Live, "layout.smaller-painted-layers",         LayoutSmallerPaintedLayers, bool, false);
 
   DECL_GFX_PREF(Once, "media.hardware-video-decoding.force-enabled",
                                                                HardwareVideoDecodingForceEnabled, bool, false);
@@ -617,10 +608,6 @@ private:
   DECL_GFX_PREF(Live, "webgl.prefer-16bpp",                    WebGLPrefer16bpp, bool, false);
   DECL_GFX_PREF(Live, "webgl.restore-context-when-visible",    WebGLRestoreWhenVisible, bool, true);
   DECL_GFX_PREF(Live, "webgl.allow-immediate-queries",         WebGLImmediateQueries, bool, false);
-  DECL_GFX_PREF(Live, "webgl.allow-fb-invalidation",           WebGLFBInvalidation, bool, false);
-
-  DECL_GFX_PREF(Live, "webgl.max-perf-warnings",               WebGLMaxPerfWarnings, int32_t, 0);
-  DECL_GFX_PREF(Live, "webgl.max-acceptable-fb-status-invals", WebGLMaxAcceptableFBStatusInvals, int32_t, 0);
 
   DECL_GFX_PREF(Live, "webgl.webgl2-compat-mode",              WebGL2CompatMode, bool, false);
 
@@ -662,17 +649,14 @@ private:
   static void PrefAddVarCache(int32_t*, const char*, int32_t);
   static void PrefAddVarCache(uint32_t*, const char*, uint32_t);
   static void PrefAddVarCache(float*, const char*, float);
-  static void PrefAddVarCache(std::string*, const char*, std::string);
   static bool PrefGet(const char*, bool);
   static int32_t PrefGet(const char*, int32_t);
   static uint32_t PrefGet(const char*, uint32_t);
   static float PrefGet(const char*, float);
-  static std::string PrefGet(const char*, std::string);
   static void PrefSet(const char* aPref, bool aValue);
   static void PrefSet(const char* aPref, int32_t aValue);
   static void PrefSet(const char* aPref, uint32_t aValue);
   static void PrefSet(const char* aPref, float aValue);
-  static void PrefSet(const char* aPref, std::string aValue);
   static void WatchChanges(const char* aPrefname, Pref* aPref);
   static void UnwatchChanges(const char* aPrefname, Pref* aPref);
   
@@ -680,12 +664,10 @@ private:
   static void CopyPrefValue(const int32_t* aValue, GfxPrefValue* aOutValue);
   static void CopyPrefValue(const uint32_t* aValue, GfxPrefValue* aOutValue);
   static void CopyPrefValue(const float* aValue, GfxPrefValue* aOutValue);
-  static void CopyPrefValue(const std::string* aValue, GfxPrefValue* aOutValue);
   static void CopyPrefValue(const GfxPrefValue* aValue, bool* aOutValue);
   static void CopyPrefValue(const GfxPrefValue* aValue, int32_t* aOutValue);
   static void CopyPrefValue(const GfxPrefValue* aValue, uint32_t* aOutValue);
   static void CopyPrefValue(const GfxPrefValue* aValue, float* aOutValue);
-  static void CopyPrefValue(const GfxPrefValue* aValue, std::string* aOutValue);
 
   static void AssertMainThread();
 

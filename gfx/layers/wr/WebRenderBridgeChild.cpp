@@ -1,0 +1,19 @@
+
+
+
+
+
+
+#include "mozilla/layers/WebRenderBridgeChild.h"
+
+#include "mozilla/layers/WebRenderBridgeParent.h"
+
+namespace mozilla {
+namespace layers {
+
+WebRenderBridgeChild::WebRenderBridgeChild(const uint64_t& aPipelineId)
+{
+}
+
+} 
+} 

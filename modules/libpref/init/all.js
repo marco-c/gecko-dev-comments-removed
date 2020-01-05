@@ -117,7 +117,6 @@ pref("browser.download.forbid_open_with", false);
 
 
 pref("dom.quotaManager.testing", false);
-pref("dom.select_popup_in_parent.enabled", false);
 
 
 pref("dom.indexedDB.enabled", true);
@@ -306,7 +305,19 @@ pref("mathml.disabled",    false);
 
 pref("mathml.scale_stretchy_operators.enabled", true);
 
+
+#ifdef RELEASE_OR_BETA
+pref("dom.MediaError.message.enabled", false);
+#else
+pref("dom.MediaError.message.enabled", true);
+#endif
+
+
+#ifdef NIGHTLY_BUILD
 pref("media.dormant-on-pause-timeout-ms", 5000);
+#else
+pref("media.dormant-on-pause-timeout-ms", -1);
+#endif
 
 
 pref("media.cache_size", 512000);
@@ -347,9 +358,8 @@ pref("media.wmf.decoder.thread-count", -1);
 pref("media.wmf.low-latency.enabled", false);
 pref("media.wmf.skip-blacklist", false);
 pref("media.wmf.vp9.enabled", true);
-pref("media.wmf.allow-unsupported-resolutions", false);
 pref("media.windows-media-foundation.allow-d3d11-dxva", true);
-pref("media.wmf.disable-d3d11-for-dlls", "igd11dxva64.dll: 20.19.15.4463, 20.19.15.4454, 20.19.15.4444, 20.19.15.4416, 20.19.15.4404, 20.19.15.4390, 20.19.15.4380, 20.19.15.4377, 20.19.15.4364, 20.19.15.4360, 20.19.15.4352, 20.19.15.4331, 20.19.15.4326, 20.19.15.4300; igd10iumd32.dll: 20.19.15.4444, 20.19.15.4424, 20.19.15.4409, 20.19.15.4390, 20.19.15.4380, 20.19.15.4360, 10.18.10.4358, 20.19.15.4331, 20.19.15.4312, 20.19.15.4300, 10.18.15.4281, 10.18.15.4279, 10.18.10.4276, 10.18.15.4268, 10.18.15.4256, 10.18.10.4252, 10.18.15.4248, 10.18.14.4112, 10.18.10.3958, 10.18.10.3496, 10.18.10.3431, 10.18.10.3412, 10.18.10.3355, 9.18.10.3234, 9.18.10.3071, 9.18.10.3055, 9.18.10.3006; igd10umd32.dll: 9.17.10.4229, 9.17.10.3040, 9.17.10.2857, 8.15.10.2274, 8.15.10.2272, 8.15.10.2246, 8.15.10.1840, 8.15.10.1808; igd10umd64.dll: 9.17.10.4229, 9.17.10.2857, 10.18.10.3496; isonyvideoprocessor.dll: 4.1.2247.8090, 4.1.2153.6200; tosqep.dll: 1.2.15.526, 1.1.12.201, 1.0.11.318, 1.0.11.215, 1.0.10.1224; tosqep64.dll: 1.1.12.201, 1.0.11.215; nvwgf2um.dll: 10.18.13.6510, 10.18.13.5891, 10.18.13.5887, 10.18.13.5582, 10.18.13.5382, 9.18.13.4195, 9.18.13.3165; atidxx32.dll: 21.19.151.3, 21.19.142.257, 21.19.137.514, 21.19.137.1, 21.19.134.1, 21.19.128.7, 21.19.128.4, 20.19.0.32837, 20.19.0.32832, 8.17.10.682, 8.17.10.671, 8.17.10.661, 8.17.10.648, 8.17.10.644, 8.17.10.625, 8.17.10.605, 8.17.10.581, 8.17.10.569, 8.17.10.560, 8.17.10.545, 8.17.10.539, 8.17.10.531, 8.17.10.525, 8.17.10.520, 8.17.10.519, 8.17.10.514, 8.17.10.511, 8.17.10.494, 8.17.10.489, 8.17.10.483, 8.17.10.453, 8.17.10.451, 8.17.10.441, 8.17.10.436, 8.17.10.432, 8.17.10.425, 8.17.10.418, 8.17.10.414, 8.17.10.401, 8.17.10.395, 8.17.10.385, 8.17.10.378, 8.17.10.362, 8.17.10.355, 8.17.10.342, 8.17.10.331, 8.17.10.318, 8.17.10.310, 8.17.10.286, 8.17.10.269, 8.17.10.261, 8.17.10.247, 8.17.10.240, 8.15.10.212; atidxx64.dll: 21.19.151.3, 21.19.142.257, 21.19.137.514, 21.19.137.1, 21.19.134.1, 21.19.128.7, 21.19.128.4, 20.19.0.32832, 8.17.10.682, 8.17.10.661, 8.17.10.644, 8.17.10.625; nvumdshim.dll: 10.18.13.6822");
+pref("media.wmf.disable-d3d11-for-dlls", "igd10iumd32.dll: 20.19.15.4444, 20.19.15.4424, 20.19.15.4409, 20.19.15.4390, 20.19.15.4380, 20.19.15.4360, 10.18.10.4358, 20.19.15.4331, 20.19.15.4312, 20.19.15.4300, 10.18.15.4281, 10.18.15.4279, 10.18.10.4276, 10.18.15.4268, 10.18.15.4256, 10.18.10.4252, 10.18.15.4248, 10.18.14.4112, 10.18.10.3958, 10.18.10.3496, 10.18.10.3431, 10.18.10.3412, 10.18.10.3355, 9.18.10.3234, 9.18.10.3071, 9.18.10.3055, 9.18.10.3006; igd10umd32.dll: 9.17.10.4229, 9.17.10.3040, 9.17.10.2857, 8.15.10.2274, 8.15.10.2272, 8.15.10.2246, 8.15.10.1840, 8.15.10.1808; igd10umd64.dll: 9.17.10.4229, 10.18.10.3496; isonyvideoprocessor.dll: 4.1.2247.8090, 4.1.2153.6200; tosqep.dll: 1.2.15.526, 1.1.12.201, 1.0.11.318, 1.0.11.215, 1.0.10.1224; tosqep64.dll: 1.1.12.201, 1.0.11.215; nvwgf2um.dll: 10.18.13.6510, 10.18.13.5891, 10.18.13.5887, 10.18.13.5582, 10.18.13.5382, 9.18.13.4195, 9.18.13.3165; atidxx32.dll: 21.19.151.3, 21.19.137.1, 21.19.134.1, 20.19.0.32837, 20.19.0.32832, 8.17.10.682, 8.17.10.671, 8.17.10.661, 8.17.10.648, 8.17.10.644, 8.17.10.625, 8.17.10.605, 8.17.10.581, 8.17.10.569, 8.17.10.560, 8.17.10.545, 8.17.10.539, 8.17.10.531, 8.17.10.525, 8.17.10.520, 8.17.10.519, 8.17.10.514, 8.17.10.511, 8.17.10.494, 8.17.10.489, 8.17.10.483, 8.17.10.453, 8.17.10.451, 8.17.10.441, 8.17.10.436, 8.17.10.432, 8.17.10.425, 8.17.10.418, 8.17.10.414, 8.17.10.401, 8.17.10.395, 8.17.10.385, 8.17.10.378, 8.17.10.362, 8.17.10.355, 8.17.10.342, 8.17.10.331, 8.17.10.318, 8.17.10.310, 8.17.10.286, 8.17.10.269, 8.17.10.261, 8.17.10.247, 8.17.10.240, 8.15.10.212; atidxx64.dll: 21.19.151.3, 21.19.137.1, 21.19.134.1, 20.19.0.32832, 8.17.10.682, 8.17.10.661, 8.17.10.644, 8.17.10.625; nvumdshim.dll: 10.18.13.6822");
 pref("media.wmf.disable-d3d9-for-dlls", "igdumd64.dll: 8.15.10.2189, 8.15.10.2119, 8.15.10.2104, 8.15.10.2102, 8.771.1.0; atiumd64.dll: 7.14.10.833, 7.14.10.867, 7.14.10.885, 7.14.10.903, 7.14.10.911, 8.14.10.768, 9.14.10.1001, 9.14.10.1017, 9.14.10.1080, 9.14.10.1128, 9.14.10.1162, 9.14.10.1171, 9.14.10.1183, 9.14.10.1197, 9.14.10.945, 9.14.10.972, 9.14.10.984, 9.14.10.996");
 #endif
 #if defined(MOZ_FFMPEG)
@@ -391,7 +401,7 @@ pref("media.gmp.storage.version.expected", 1);
 
 
 
-pref("media.decoder-doctor.notifications-allowed", "MediaWMFNeeded,MediaWidevineNoWMF,MediaCannotInitializePulseAudio,MediaCannotPlayNoDecoders,MediaUnsupportedLibavcodec");
+pref("media.decoder-doctor.notifications-allowed", "MediaWMFNeeded,MediaWidevineNoWMFNoSilverlight,MediaCannotInitializePulseAudio,MediaCannotPlayNoDecoders,MediaUnsupportedLibavcodec");
 
 pref("media.decoder-doctor.verbose", false);
 
@@ -457,7 +467,7 @@ pref("media.navigator.video.h264.max_mbps", 0);
 pref("media.peerconnection.video.h264_enabled", false);
 pref("media.peerconnection.video.vp9_enabled", true);
 pref("media.getusermedia.aec", 1);
-pref("media.getusermedia.browser.enabled", false);
+pref("media.getusermedia.browser.enabled", true);
 #endif
 
 
@@ -516,7 +526,7 @@ pref("media.navigator.audio.full_duplex", true);
 #elif defined(ANDROID)
 pref("media.peerconnection.capture_delay", 100);
 pref("media.getusermedia.playout_delay", 100);
-pref("media.navigator.audio.full_duplex", true);
+pref("media.navigator.audio.full_duplex", false);
 
 pref("media.navigator.hardware.vp8_encode.acceleration_enabled", false);
 pref("media.navigator.hardware.vp8_decode.acceleration_enabled", false);
@@ -539,11 +549,13 @@ pref("media.getusermedia.screensharing.enabled", true);
 #endif
 
 #ifdef RELEASE_OR_BETA
-pref("media.getusermedia.screensharing.allowed_domains", "webex.com,*.webex.com,ciscospark.com,*.ciscospark.com,projectsquared.com,*.projectsquared.com,*.room.co,room.co,beta.talky.io,talky.io,*.clearslide.com,appear.in,*.appear.in,tokbox.com,*.tokbox.com,*.sso.francetelecom.fr,*.si.francetelecom.fr,*.sso.infra.ftgroup,*.multimedia-conference.orange-business.com,*.espacecollaboration.orange-business.com,free.gotomeeting.com,g2m.me,*.g2m.me,*.mypurecloud.com,*.mypurecloud.com.au,spreed.me,*.spreed.me,*.spreed.com,air.mozilla.org,*.circuit.com,*.yourcircuit.com,circuit.siemens.com,yourcircuit.siemens.com,circuitsandbox.net,*.unify.com,tandi.circuitsandbox.net,*.ericsson.net,*.cct.ericsson.net,*.opentok.com,*.conf.meetecho.com,meet.jit.si,*.meet.jit.si,web.stage.speakeasyapp.net,web.speakeasyapp.net,*.hipchat.me,*.beta-wspbx.com,*.wspbx.com,*.unifiedcloudit.com,*.smartboxuc.com,*.smartbox-uc.com,*.panterranetworks.com,pexipdemo.com,*.pexipdemo.com,pex.me,*.pex.me,*.rd.pexip.com,1click.io,*.1click.io,*.fuze.com,*.fuzemeeting.com,*.thinkingphones.com,gotomeeting.com,*.gotomeeting.com,gotowebinar.com,*.gotowebinar.com,gototraining.com,*.gototraining.com,citrix.com,*.citrix.com,expertcity.com,*.expertcity.com,citrixonline.com,*.citrixonline.com,g2m.me,*.g2m.me,gotomeet.me,*.gotomeet.me,gotomeet.at,*.gotomeet.at,miriadaxdes.miriadax.net,certificacion.miriadax.net,miriadax.net,*.wire.com,sylaps.com,*.sylaps.com,bluejeans.com,*.bluejeans.com,*.a.bluejeans.com,*.bbcollab.com");
+pref("media.getusermedia.screensharing.allowed_domains", "webex.com,*.webex.com,ciscospark.com,*.ciscospark.com,projectsquared.com,*.projectsquared.com,*.room.co,room.co,beta.talky.io,talky.io,*.clearslide.com,appear.in,*.appear.in,tokbox.com,*.tokbox.com,*.sso.francetelecom.fr,*.si.francetelecom.fr,*.sso.infra.ftgroup,*.multimedia-conference.orange-business.com,*.espacecollaboration.orange-business.com,free.gotomeeting.com,g2m.me,*.g2m.me,*.mypurecloud.com,*.mypurecloud.com.au,spreed.me,*.spreed.me,*.spreed.com,air.mozilla.org,*.circuit.com,*.yourcircuit.com,circuit.siemens.com,yourcircuit.siemens.com,circuitsandbox.net,*.unify.com,tandi.circuitsandbox.net,*.ericsson.net,*.cct.ericsson.net,*.opentok.com,*.conf.meetecho.com,meet.jit.si,*.meet.jit.si,web.stage.speakeasyapp.net,web.speakeasyapp.net,*.hipchat.me,*.beta-wspbx.com,*.wspbx.com,*.unifiedcloudit.com,*.smartboxuc.com,*.smartbox-uc.com,*.panterranetworks.com,pexipdemo.com,*.pexipdemo.com,pex.me,*.pex.me,*.rd.pexip.com,1click.io,*.1click.io,*.fuze.com,*.fuzemeeting.com,*.thinkingphones.com,gotomeeting.com,*.gotomeeting.com,gotowebinar.com,*.gotowebinar.com,gototraining.com,*.gototraining.com,citrix.com,*.citrix.com,expertcity.com,*.expertcity.com,citrixonline.com,*.citrixonline.com,g2m.me,*.g2m.me,gotomeet.me,*.gotomeet.me,gotomeet.at,*.gotomeet.at,miriadaxdes.miriadax.net,certificacion.miriadax.net,miriadax.net,*.wire.com,sylaps.com,*.sylaps.com,bluejeans.com,*.bluejeans.com,*.a.bluejeans.com");
 #else
  
-pref("media.getusermedia.screensharing.allowed_domains", "mozilla.github.io,webex.com,*.webex.com,ciscospark.com,*.ciscospark.com,projectsquared.com,*.projectsquared.com,*.room.co,room.co,beta.talky.io,talky.io,*.clearslide.com,appear.in,*.appear.in,tokbox.com,*.tokbox.com,*.sso.francetelecom.fr,*.si.francetelecom.fr,*.sso.infra.ftgroup,*.multimedia-conference.orange-business.com,*.espacecollaboration.orange-business.com,free.gotomeeting.com,g2m.me,*.g2m.me,*.mypurecloud.com,*.mypurecloud.com.au,spreed.me,*.spreed.me,*.spreed.com,air.mozilla.org,*.circuit.com,*.yourcircuit.com,circuit.siemens.com,yourcircuit.siemens.com,circuitsandbox.net,*.unify.com,tandi.circuitsandbox.net,*.ericsson.net,*.cct.ericsson.net,*.opentok.com,*.conf.meetecho.com,meet.jit.si,*.meet.jit.si,web.stage.speakeasyapp.net,web.speakeasyapp.net,*.hipchat.me,*.beta-wspbx.com,*.wspbx.com,*.unifiedcloudit.com,*.smartboxuc.com,*.smartbox-uc.com,*.panterranetworks.com,pexipdemo.com,*.pexipdemo.com,pex.me,*.pex.me,*.rd.pexip.com,1click.io,*.1click.io,*.fuze.com,*.fuzemeeting.com,*.thinkingphones.com,gotomeeting.com,*.gotomeeting.com,gotowebinar.com,*.gotowebinar.com,gototraining.com,*.gototraining.com,citrix.com,*.citrix.com,expertcity.com,*.expertcity.com,citrixonline.com,*.citrixonline.com,g2m.me,*.g2m.me,gotomeet.me,*.gotomeet.me,gotomeet.at,*.gotomeet.at,miriadaxdes.miriadax.net,certificacion.miriadax.net,miriadax.net,*.wire.com,sylaps.com,*.sylaps.com,bluejeans.com,*.bluejeans.com,*.a.bluejeans.com,*.bbcollab.com");
+pref("media.getusermedia.screensharing.allowed_domains", "mozilla.github.io,webex.com,*.webex.com,ciscospark.com,*.ciscospark.com,projectsquared.com,*.projectsquared.com,*.room.co,room.co,beta.talky.io,talky.io,*.clearslide.com,appear.in,*.appear.in,tokbox.com,*.tokbox.com,*.sso.francetelecom.fr,*.si.francetelecom.fr,*.sso.infra.ftgroup,*.multimedia-conference.orange-business.com,*.espacecollaboration.orange-business.com,free.gotomeeting.com,g2m.me,*.g2m.me,*.mypurecloud.com,*.mypurecloud.com.au,spreed.me,*.spreed.me,*.spreed.com,air.mozilla.org,*.circuit.com,*.yourcircuit.com,circuit.siemens.com,yourcircuit.siemens.com,circuitsandbox.net,*.unify.com,tandi.circuitsandbox.net,*.ericsson.net,*.cct.ericsson.net,*.opentok.com,*.conf.meetecho.com,meet.jit.si,*.meet.jit.si,web.stage.speakeasyapp.net,web.speakeasyapp.net,*.hipchat.me,*.beta-wspbx.com,*.wspbx.com,*.unifiedcloudit.com,*.smartboxuc.com,*.smartbox-uc.com,*.panterranetworks.com,pexipdemo.com,*.pexipdemo.com,pex.me,*.pex.me,*.rd.pexip.com,1click.io,*.1click.io,*.fuze.com,*.fuzemeeting.com,*.thinkingphones.com,gotomeeting.com,*.gotomeeting.com,gotowebinar.com,*.gotowebinar.com,gototraining.com,*.gototraining.com,citrix.com,*.citrix.com,expertcity.com,*.expertcity.com,citrixonline.com,*.citrixonline.com,g2m.me,*.g2m.me,gotomeet.me,*.gotomeet.me,gotomeet.at,*.gotomeet.at,miriadaxdes.miriadax.net,certificacion.miriadax.net,miriadax.net,*.wire.com,sylaps.com,*.sylaps.com,bluejeans.com,*.bluejeans.com,*.a.bluejeans.com");
 #endif
+
+pref("media.getusermedia.screensharing.allow_on_old_platforms", false);
 
 pref("media.getusermedia.audiocapture.enabled", false);
 
@@ -596,13 +608,6 @@ pref("media.video-queue.send-to-compositor-size", 9999);
 pref("media.video_stats.enabled", true);
 
 
-pref("media.decoder.recycle.enabled", false);
-
-
-
-pref("media.cubeb.log_level", "");
-
-
 pref("layers.amd-switchable-gfx.enabled", true);
 
 
@@ -612,15 +617,10 @@ pref("layers.async-pan-zoom.enabled", true);
 pref("layout.event-regions.enabled", false);
 
 
-pref("layers.geometry.opengl.enabled", true);
-
-
-pref("layers.geometry.basic.enabled", true);
-
-
 
 pref("apz.allow_checkerboarding", true);
 pref("apz.allow_immediate_handoff", true);
+pref("apz.allow_with_webrender", false);
 pref("apz.allow_zooming", false);
 
 
@@ -633,11 +633,7 @@ pref("apz.axis_lock.breakout_threshold", "0.03125");
 pref("apz.axis_lock.breakout_angle", "0.3926991");    
 pref("apz.axis_lock.direct_pan_angle", "1.047197");   
 pref("apz.content_response_timeout", 400);
-#ifdef NIGHTLY_BUILD
-pref("apz.drag.enabled", true);
-#else
 pref("apz.drag.enabled", false);
-#endif
 pref("apz.danger_zone_x", 50);
 pref("apz.danger_zone_y", 100);
 pref("apz.disable_for_scroll_linked_effects", false);
@@ -800,6 +796,7 @@ pref("gfx.canvas.skiagl.dynamic-cache", true);
 pref("gfx.text.disable-aa", false);
 
 pref("gfx.work-around-driver-bugs", true);
+pref("gfx.prefer-mesa-llvmpipe", false);
 
 pref("gfx.draw-color-bars", false);
 
@@ -862,6 +859,8 @@ pref("canvas.imagebitmap_extensions.enabled", true);
 
 
 pref("accessibility.force_disabled", 0);
+
+pref("accessibility.ipc_architecture.enabled", true);
 
 pref("accessibility.AOM.enabled", false);
 
@@ -935,6 +934,11 @@ pref("toolkit.telemetry.debugSlowSql", false);
 
 pref("toolkit.telemetry.unified", true);
 
+
+pref("toolkit.identity.enabled", false);
+pref("toolkit.identity.debug", false);
+
+
 pref("toolkit.asyncshutdown.crash_timeout", 60000);
 
 pref("toolkit.asyncshutdown.log", false);
@@ -960,6 +964,8 @@ pref("devtools.debugger.force-local", true);
 pref("devtools.debugger.prompt-connection", true);
 
 pref("devtools.debugger.forbid-certified-apps", true);
+
+pref("devtools.apps.forbidden-permissions", "embed-apps");
 
 
 pref("devtools.defaultColorUnit", "authored");
@@ -1108,7 +1114,10 @@ pref("print.print_edge_right", 0);
 pref("print.print_edge_bottom", 0);
 
 
-#if !defined(MOZ_WIDGET_GONK) && !defined(MOZ_WIDGET_ANDROID)
+
+#if defined(XP_WIN)
+pref("print.print_via_parent", true);
+#elif defined(XP_MACOSX) && defined(NIGHTLY_BUILD)
 pref("print.print_via_parent", true);
 #else
 pref("print.print_via_parent", false);
@@ -1156,7 +1165,6 @@ pref("dom.disable_open_click_delay", 1000);
 
 pref("dom.storage.enabled", true);
 pref("dom.storage.default_quota",      5120);
-pref("dom.storage.testing", false);
 
 pref("dom.send_after_paint_to_content", false);
 
@@ -1189,9 +1197,6 @@ pref("dom.forms.autocomplete.experimental", false);
 pref("dom.forms.requestAutocomplete", false);
 
 
-pref("dom.forms.selectSearch", false);
-
-
 pref("dom.input.dirpicker", false);
 
 
@@ -1216,22 +1221,13 @@ pref("privacy.popups.disable_from_plugins", 2);
 
 pref("privacy.donottrackheader.enabled",    false);
 
-
-
-pref("privacy.permissionPrompts.showCloseButton", false);
-
 pref("privacy.trackingprotection.enabled",  false);
 
 pref("privacy.trackingprotection.pbmode.enabled",  true);
 
-pref("privacy.trackingprotection.annotate_channels",  true);
-
-
-pref("privacy.trackingprotection.lower_network_priority",  false);
-
 pref("dom.event.contextmenu.enabled",       true);
 pref("dom.event.clipboardevents.enabled",   true);
-#if defined(XP_WIN) && !defined(RELEASE_OR_BETA) || defined(MOZ_WIDGET_GTK) && !defined(RELEASE_OR_BETA) || defined(XP_MACOSX) && !defined(RELEASE_OR_BETA)
+#if defined(XP_WIN) && !defined(RELEASE_OR_BETA) || defined(MOZ_WIDGET_GTK) && !defined(RELEASE_OR_BETA)
 pref("dom.event.highrestimestamp.enabled",  true);
 #else
 pref("dom.event.highrestimestamp.enabled",  false);
@@ -1259,9 +1255,6 @@ pref("javascript.options.asyncstack",       false);
 #endif
 pref("javascript.options.throw_on_asmjs_validation_failure", false);
 pref("javascript.options.ion.offthread_compilation", true);
-#ifdef DEBUG
-pref("javascript.options.jit.full_debug_checks", true);
-#endif
 
 
 
@@ -1302,7 +1295,12 @@ pref("javascript.options.mem.gc_max_empty_chunk_count", 30);
 
 pref("javascript.options.showInConsole", false);
 
+#ifdef RELEASE_BUILD
+
+pref("javascript.options.shared_memory", false);
+#else
 pref("javascript.options.shared_memory", true);
+#endif
 
 pref("javascript.options.throw_on_debuggee_would_run", false);
 pref("javascript.options.dump_stack_on_debuggee_would_run", false);
@@ -1462,12 +1460,7 @@ pref("network.http.accept.default", "text/html,application/xhtml+xml,application
 
 pref("network.http.sendRefererHeader",      2);
 
-
-pref("network.http.referer.userControlPolicy", 3);
-
 pref("network.http.referer.spoofSource", false);
-
-pref("network.http.referer.hideOnionSource", false);
 
 pref("network.http.referer.trimmingPolicy", 0);
 
@@ -1820,7 +1813,7 @@ pref("network.IDN.whitelist.xn--zckzah", true);
 
 
 
-pref("network.IDN.blacklist_chars", "\u0020\u00A0\u00BC\u00BD\u00BE\u01C3\u02D0\u0337\u0338\u0589\u058A\u05C3\u05F4\u0609\u060A\u066A\u06D4\u0701\u0702\u0703\u0704\u115F\u1160\u1735\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200A\u200B\u200E\u200F\u2010\u2019\u2024\u2027\u2028\u2029\u202A\u202B\u202C\u202D\u202E\u202F\u2039\u203A\u2041\u2044\u2052\u205F\u2153\u2154\u2155\u2156\u2157\u2158\u2159\u215A\u215B\u215C\u215D\u215E\u215F\u2215\u2236\u23AE\u2571\u29F6\u29F8\u2AFB\u2AFD\u2FF0\u2FF1\u2FF2\u2FF3\u2FF4\u2FF5\u2FF6\u2FF7\u2FF8\u2FF9\u2FFA\u2FFB\u3000\u3002\u3014\u3015\u3033\u30A0\u3164\u321D\u321E\u33AE\u33AF\u33C6\u33DF\uA789\uFE14\uFE15\uFE3F\uFE5D\uFE5E\uFEFF\uFF0E\uFF0F\uFF61\uFFA0\uFFF9\uFFFA\uFFFB\uFFFC\uFFFD");
+pref("network.IDN.blacklist_chars", "\u0020\u00A0\u00BC\u00BD\u00BE\u01C3\u02D0\u0337\u0338\u0589\u05C3\u05F4\u0609\u060A\u066A\u06D4\u0701\u0702\u0703\u0704\u115F\u1160\u1735\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200A\u200B\u200E\u200F\u2024\u2027\u2028\u2029\u202A\u202B\u202C\u202D\u202E\u202F\u2039\u203A\u2041\u2044\u2052\u205F\u2153\u2154\u2155\u2156\u2157\u2158\u2159\u215A\u215B\u215C\u215D\u215E\u215F\u2215\u2236\u23AE\u2571\u29F6\u29F8\u2AFB\u2AFD\u2FF0\u2FF1\u2FF2\u2FF3\u2FF4\u2FF5\u2FF6\u2FF7\u2FF8\u2FF9\u2FFA\u2FFB\u3000\u3002\u3014\u3015\u3033\u3164\u321D\u321E\u33AE\u33AF\u33C6\u33DF\uA789\uFE14\uFE15\uFE3F\uFE5D\uFE5E\uFEFF\uFF0E\uFF0F\uFF61\uFFA0\uFFF9\uFFFA\uFFFB\uFFFC\uFFFD");
 
 
 
@@ -1857,11 +1850,15 @@ pref("network.dns.localDomains", "");
 pref("network.dns.offline-localhost", true);
 
 
+
+pref("network.standard-url.escape-utf8", true);
+
+
+
+pref("network.standard-url.encode-utf8", true);
+
+
 pref("network.standard-url.max-length", 1048576);
-
-
-
-pref("network.standard-url.enable-rust", false);
 
 
 pref("network.ftp.idleConnectionTimeout", 300);
@@ -2059,16 +2056,12 @@ pref("intl.ime.hack.on_ime_unaware_apps.fire_key_events_for_composition", false)
 
 pref("intl.ime.remove_placeholder_character_at_commit", false);
 
-#ifdef ENABLE_INTL_API
-pref("intl.uidirection", -1); 
-#else
 
 pref("intl.uidirection.ar", "rtl");
 pref("intl.uidirection.he", "rtl");
 pref("intl.uidirection.fa", "rtl");
 pref("intl.uidirection.ug", "rtl");
 pref("intl.uidirection.ur", "rtl");
-#endif
 
 
 pref("intl.hyphenation-alias.en", "en-us");
@@ -2130,7 +2123,7 @@ pref("intl.hyphenation-alias.nb-*", "nb");
 pref("intl.hyphenation-alias.nn-*", "nn");
 
 pref("font.name.serif.x-math", "Latin Modern Math");
-pref("font.name-list.serif.x-math", "Latin Modern Math, STIX Two Math, XITS Math, Cambria Math, Libertinus Math, DejaVu Math TeX Gyre, TeX Gyre Bonum Math, TeX Gyre Pagella Math, TeX Gyre Schola, TeX Gyre Termes Math, STIX Math, Asana Math, STIXGeneral, DejaVu Serif, DejaVu Sans, serif");
+pref("font.name-list.serif.x-math", "Latin Modern Math, XITS Math, Cambria Math, Libertinus Math, DejaVu Math TeX Gyre, TeX Gyre Bonum Math, TeX Gyre Pagella Math, TeX Gyre Schola, TeX Gyre Termes Math, STIX Math, Asana Math, STIXGeneral, DejaVu Serif, DejaVu Sans, serif");
 pref("font.name.sans-serif.x-math", "sans-serif");
 pref("font.name.monospace.x-math", "monospace");
 
@@ -2219,10 +2212,6 @@ pref("services.blocklist.addons.collection", "addons");
 pref("services.blocklist.addons.checked", 0);
 pref("services.blocklist.plugins.collection", "plugins");
 pref("services.blocklist.plugins.checked", 0);
-pref("services.blocklist.pinning.enabled", true);
-pref("services.blocklist.pinning.bucket", "pinning");
-pref("services.blocklist.pinning.collection", "pins");
-pref("services.blocklist.pinning.checked", 0);
 pref("services.blocklist.gfx.collection", "gfx");
 pref("services.blocklist.gfx.checked", 0);
 
@@ -2510,7 +2499,7 @@ pref("layout.css.scroll-snap.prediction-max-velocity", 2000);
 pref("layout.css.scroll-snap.prediction-sensitivity", "0.750");
 
 
-pref("layout.css.clip-path-shapes.enabled", true);
+pref("layout.css.clip-path-shapes.enabled", false);
 
 
 pref("layout.css.DOMPoint.enabled", true);
@@ -2553,9 +2542,6 @@ pref("layout.css.image-orientation.enabled", true);
 pref("layout.css.font-display.enabled", false);
 
 
-pref("layout.css.font-variations.enabled", false);
-
-
 pref("layout.css.prefixes.border-image", true);
 pref("layout.css.prefixes.transforms", true);
 pref("layout.css.prefixes.transitions", true);
@@ -2571,6 +2557,16 @@ pref("layout.css.prefixes.webkit", true);
 
 
 pref("layout.css.prefixes.device-pixel-ratio-webkit", false);
+
+
+
+pref("layout.css.unprefixing-service.enabled", true);
+#ifdef NIGHTLY_BUILD
+
+
+
+pref("layout.css.unprefixing-service.globally-whitelisted", false);
+#endif
 
 
 pref("layout.css.scope-pseudo.enabled", true);
@@ -2610,7 +2606,11 @@ pref("layout.css.variables.enabled", true);
 pref("layout.css.overflow-clip-box.enabled", false);
 
 
+#ifdef RELEASE_OR_BETA
+pref("layout.css.grid.enabled", false);
+#else
 pref("layout.css.grid.enabled", true);
+#endif
 
 
 pref("layout.css.grid-template-subgrid-value.enabled", false);
@@ -2619,7 +2619,7 @@ pref("layout.css.grid-template-subgrid-value.enabled", false);
 pref("layout.css.contain.enabled", false);
 
 
-pref("layout.css.display-flow-root.enabled", true);
+pref("layout.css.display-contents.enabled", true);
 
 
 pref("layout.css.box-decoration-break.enabled", true);
@@ -2735,14 +2735,6 @@ pref("dom.animations-api.element-animate.enabled", true);
 pref("dom.animations.offscreen-throttling", true);
 
 
-
-pref("layout.animation.prerender.partial", false);
-pref("layout.animation.prerender.viewport-ratio-limit-x", "1.125");
-pref("layout.animation.prerender.viewport-ratio-limit-y", "1.125");
-pref("layout.animation.prerender.absolute-limit-x", 4096);
-pref("layout.animation.prerender.absolute-limit-y", 4096);
-
-
 pref("capability.policy.default.SOAPCall.invokeVerifySourceHeader", "allAccess");
 
 
@@ -2817,20 +2809,6 @@ pref("plugin.persistentPermissionAlways.intervalInDays", 90);
 
 
 
-
-
-
-pref("plugins.favorfallback.mode", "never");
-
-
-
-
-pref("plugins.favorfallback.rules", "");
-
-
-
-
-
 #if !defined(DEBUG) && !defined(MOZ_ASAN) && !defined(MOZ_VALGRIND) && !defined(MOZ_TSAN)
 
 
@@ -2888,28 +2866,7 @@ pref("dom.ipc.plugins.asyncdrawing.enabled", false);
 pref("dom.ipc.plugins.asyncdrawing.enabled", true);
 #endif
 
-#ifdef NIGHTLY_BUILD
-pref("dom.ipc.processCount", 2);
-#else
 pref("dom.ipc.processCount", 1);
-#endif
-
-
-pref("svg.disabled", false);
-
-
-pref("dom.ipc.processCount.webLargeAllocation", 10);
-
-
-pref("dom.largeAllocationHeader.enabled", true);
-
-
-
-#if defined(NIGHTLY_BUILD)
-pref("browser.tabs.remote.separateFileUriProcess", true);
-#else
-pref("browser.tabs.remote.separateFileUriProcess", false);
-#endif
 
 
 pref("svg.path-caching.enabled", true);
@@ -3408,10 +3365,19 @@ pref("font.minimum-size.th", 10);
 
 pref("font.default.x-devanagari", "sans-serif");
 pref("font.name.serif.x-math", "Latin Modern Math");
-pref("font.name-list.serif.x-math", "Latin Modern Math, STIX Two Math, XITS Math, Cambria Math, Libertinus Math, DejaVu Math TeX Gyre, TeX Gyre Bonum Math, TeX Gyre Pagella Math, TeX Gyre Schola, TeX Gyre Termes Math, STIX Math, Asana Math, STIXGeneral, DejaVu Serif, DejaVu Sans, Times New Roman");
+
+pref("font.name-list.serif.x-math", "Latin Modern Math, XITS Math, Cambria Math, Libertinus Math, DejaVu Math TeX Gyre, TeX Gyre Bonum Math, TeX Gyre Pagella Math, TeX Gyre Schola, TeX Gyre Termes Math, STIX Math, Asana Math, STIXGeneral, DejaVu Serif, DejaVu Sans, Symbol, Times New Roman");
 pref("font.name.sans-serif.x-math", "Arial");
 pref("font.name.monospace.x-math", "Courier New");
 pref("font.name.cursive.x-math", "Comic Sans MS");
+
+
+
+
+pref("gfx.font_rendering.cleartype.use_for_downloadable_fonts", true);
+
+
+pref("gfx.font_rendering.cleartype.always_use_for_content", false);
 
 
 
@@ -3471,6 +3437,15 @@ pref("print.print_extra_margin", 90);
 
 
 pref("print.extend_native_print_dialog", true);
+
+
+pref("plugin.scan.Acrobat", "5.0");
+
+
+pref("plugin.scan.Quicktime", "5.0");
+
+
+pref("plugin.scan.WindowsMediaPlayer", "7.0");
 
 
 
@@ -3862,7 +3837,7 @@ pref("font.size.variable.zh-TW", 15);
 
 pref("font.name.serif.x-math", "Latin Modern Math");
 
-pref("font.name-list.serif.x-math", "Latin Modern Math, STIX Two Math, XITS Math, Cambria Math, Libertinus Math, DejaVu Math TeX Gyre, TeX Gyre Bonum Math, TeX Gyre Pagella Math, TeX Gyre Schola, TeX Gyre Termes Math, STIX Math, Asana Math, STIXGeneral, DejaVu Serif, DejaVu Sans, Symbol, Times");
+pref("font.name-list.serif.x-math", "Latin Modern Math, XITS Math, Cambria Math, Libertinus Math, DejaVu Math TeX Gyre, TeX Gyre Bonum Math, TeX Gyre Pagella Math, TeX Gyre Schola, TeX Gyre Termes Math, STIX Math, Asana Math, STIXGeneral, DejaVu Serif, DejaVu Sans, Symbol, Times");
 pref("font.name.sans-serif.x-math", "Helvetica");
 pref("font.name.monospace.x-math", "Courier");
 pref("font.name.cursive.x-math", "Apple Chancery");
@@ -4276,7 +4251,7 @@ pref("font.name.monospace.zh-TW", "Fira Mono");
 pref("font.name-list.sans-serif.zh-TW", "Fira Sans,Droid Sans Fallback");
 
 pref("font.name.serif.x-math", "Latin Modern Math");
-pref("font.name-list.serif.x-math", "Latin Modern Math, STIX Two Math, XITS Math, Cambria Math, Libertinus Math, DejaVu Math TeX Gyre, TeX Gyre Bonum Math, TeX Gyre Pagella Math, TeX Gyre Schola, TeX Gyre Termes Math, STIX Math, Asana Math, STIXGeneral, DejaVu Serif, DejaVu Sans, Charis SIL Compact");
+pref("font.name-list.serif.x-math", "Latin Modern Math, XITS Math, Cambria Math, Libertinus Math, DejaVu Math TeX Gyre, TeX Gyre Bonum Math, TeX Gyre Pagella Math, TeX Gyre Schola, TeX Gyre Termes Math, STIX Math, Asana Math, STIXGeneral, DejaVu Serif, DejaVu Sans, Charis SIL Compact");
 pref("font.name.sans-serif.x-math", "Fira Sans");
 pref("font.name.monospace.x-math", "Fira Mono");
 
@@ -4295,7 +4270,7 @@ pref("font.name.serif.he", "Droid Serif");
 pref("font.name.sans-serif.he", "Clear Sans");
 pref("font.name.monospace.he", "Droid Sans Mono");
 pref("font.name-list.serif.he", "Noto Serif");
-pref("font.name-list.sans-serif.he", "Droid Sans Hebrew, Clear Sans, Droid Sans, Arial");
+pref("font.name-list.sans-serif.he", "Droid Sans Hebrew, Clear Sans, Droid Sans");
 
 pref("font.name.serif.ja", "Charis SIL Compact");
 pref("font.name.sans-serif.ja", "Clear Sans");
@@ -4357,7 +4332,7 @@ pref("font.name-list.sans-serif.zh-TW", "Roboto, Droid Sans, Noto Sans TC, Noto 
 pref("font.name-list.monospace.zh-TW", "Noto Sans Mono CJK TC, Droid Sans Fallback");
 
 pref("font.name.serif.x-math", "Latin Modern Math");
-pref("font.name-list.serif.x-math", "Latin Modern Math, STIX Two Math, XITS Math, Cambria Math, Libertinus Math, DejaVu Math TeX Gyre, TeX Gyre Bonum Math, TeX Gyre Pagella Math, TeX Gyre Schola, TeX Gyre Termes Math, STIX Math, Asana Math, STIXGeneral, DejaVu Serif, DejaVu Sans, Charis SIL Compact");
+pref("font.name-list.serif.x-math", "Latin Modern Math, XITS Math, Cambria Math, Libertinus Math, DejaVu Math TeX Gyre, TeX Gyre Bonum Math, TeX Gyre Pagella Math, TeX Gyre Schola, TeX Gyre Termes Math, STIX Math, Asana Math, STIXGeneral, DejaVu Serif, DejaVu Sans, Charis SIL Compact");
 pref("font.name.sans-serif.x-math", "Clear Sans");
 pref("font.name.monospace.x-math", "Droid Sans Mono");
 
@@ -4387,7 +4362,7 @@ pref("font.name.monospace.x-unicode", "dt-interface user-ucs2.cjk_japan-0");
 pref("signon.rememberSignons",              true);
 pref("signon.rememberSignons.visibilityToggle", true);
 pref("signon.autofillForms",                true);
-pref("signon.autofillForms.http",           false);
+pref("signon.autofillForms.http",           true);
 pref("signon.autologin.proxy",              false);
 pref("signon.formlessCapture.enabled",      true);
 pref("signon.storeWhenAutocompleteOff",     true);
@@ -4515,15 +4490,17 @@ pref("webgl.enable-privileged-extensions", false);
 pref("webgl.bypass-shader-validation", false);
 pref("webgl.disable-fail-if-major-performance-caveat", false);
 pref("webgl.disable-DOM-blit-uploads", false);
-pref("webgl.allow-fb-invalidation", false);
 pref("webgl.webgl2-compat-mode", false);
-
-pref("webgl.max-perf-warnings", 0);
-pref("webgl.max-acceptable-fb-status-invals", 0);
 
 pref("webgl.enable-webgl2", true);
 
+#ifdef RELEASE_OR_BETA
+
+pref("webgl.enable-debug-renderer-info", false);
+#else
 pref("webgl.enable-debug-renderer-info", true);
+#endif
+
 pref("webgl.renderer-string-override", "");
 pref("webgl.vendor-string-override", "");
 
@@ -4573,8 +4550,8 @@ pref("layers.acceleration.disabled", false);
 
 pref("layers.bench.enabled", false);
 
-#if defined(XP_WIN)
-pref("layers.gpu-process.enabled", true);
+#if defined(XP_WIN) && defined(NIGHTLY_BUILD)
+pref("layers.gpu-process.dev.enabled", true);
 pref("media.gpu-process-decoder", true);
 #endif
 
@@ -4657,6 +4634,9 @@ pref("layers.bufferrotation.enabled", true);
 pref("layers.componentalpha.enabled", true);
 pref("layers.draw-mask-debug", false);
 
+
+pref("gfx.content.use-native-pushlayer", false);
+
 pref("gfx.content.always-paint", false);
 
 #ifdef ANDROID
@@ -4664,12 +4644,15 @@ pref("gfx.apitrace.enabled",false);
 #endif
 
 #ifdef MOZ_X11
+pref("gfx.content.use-native-pushlayer", true);
 #ifdef MOZ_WIDGET_GTK
 pref("gfx.xrender.enabled",false);
 #endif
 #endif
 
 #ifdef XP_WIN
+pref("gfx.content.use-native-pushlayer", true);
+
 
 pref("gfx.direct2d.disabled", false);
 
@@ -4684,15 +4667,10 @@ pref("layers.allow-d3d9-fallback", false);
 #endif
 
 
-pref("layers.shared-buffer-provider.enabled", true);
-
 #ifdef XP_WIN
 pref("layers.shared-buffer-provider.enabled", false);
-#endif
-
-#ifdef XP_MACOSX
-
-pref("layers.shared-buffer-provider.enabled", false);
+#else
+pref("layers.shared-buffer-provider.enabled", true);
 #endif
 
 
@@ -4742,15 +4720,6 @@ pref("extensions.webextensions.keepStorageOnUninstall", false);
 pref("extensions.webextensions.keepUuidOnUninstall", false);
 
 pref("extensions.webextensions.identity.redirectDomain", "extensions.allizom.org");
-pref("extensions.webextensions.remote", false);
-
-
-pref("extensions.webcompat-reporter.newIssueEndpoint", "https://webcompat.com/issues/new");
-#ifdef NIGHTLY_BUILD
-pref("extensions.webcompat-reporter.enabled", true);
-#else
-pref("extensions.webcompat-reporter.enabled", false);
-#endif
 
 pref("network.buffer.cache.count", 24);
 pref("network.buffer.cache.size",  32768);
@@ -4798,6 +4767,7 @@ pref("full-screen-api.warning.timeout", 3000);
 pref("full-screen-api.warning.delay", 500);
 
 
+pref("pointer-lock-api.prefixed.enabled", false);
 
 pref("pointer-lock-api.warning.timeout", 3000);
 
@@ -4859,6 +4829,13 @@ pref("dom.push.requestTimeout", 10000);
 pref("dom.push.http2.reset_retry_count_after_ms", 60000);
 pref("dom.push.http2.maxRetries", 2);
 pref("dom.push.http2.retryInterval", 5000);
+
+
+pref("dom.mozNetworkStats.enabled", false);
+
+
+pref("dom.mozSettings.enabled", false);
+pref("dom.mozPermissionSettings.enabled", false);
 
 
 
@@ -5073,6 +5050,9 @@ pref("dom.forms.inputmode", false);
 pref("dom.forms.inputmode", true);
 #endif
 
+
+pref("dom.mozInputMethod.enabled", false);
+
 pref("dom.flyweb.enabled", false);
 
 
@@ -5101,7 +5081,7 @@ pref("urlclassifier.downloadAllowTable", "goog-downloadwhite-digest256");
 pref("urlclassifier.downloadAllowTable", "");
 #endif
 
-pref("urlclassifier.disallow_completions", "test-malware-simple,test-phish-simple,test-unwanted-simple,test-track-simple,test-trackwhite-simple,test-block-simple,test-flashallow-simple,testexcept-flashallow-simple,test-flash-simple,testexcept-flash-simple,test-flashsubdoc-simple,testexcept-flashsubdoc-simple,goog-downloadwhite-digest256,base-track-digest256,mozstd-trackwhite-digest256,content-track-digest256,mozplugin-block-digest256,mozplugin2-block-digest256");
+pref("urlclassifier.disallow_completions", "test-malware-simple,test-phish-simple,test-unwanted-simple,test-track-simple,test-trackwhite-simple,test-block-simple,goog-downloadwhite-digest256,base-track-digest256,mozstd-trackwhite-digest256,content-track-digest256,mozplugin-block-digest256,mozplugin2-block-digest256");
 
 
 
@@ -5150,8 +5130,7 @@ pref("browser.safebrowsing.provider.google.reportURL", "https://safebrowsing.goo
 pref("browser.safebrowsing.provider.google4.pver", "4");
 pref("browser.safebrowsing.provider.google4.lists", "goog-phish-proto,googpub-phish-proto,goog-malware-proto,goog-unwanted-proto");
 pref("browser.safebrowsing.provider.google4.updateURL", "https://safebrowsing.googleapis.com/v4/threatListUpdates:fetch?$ct=application/x-protobuf&key=%GOOGLE_API_KEY%");
-
-pref("browser.safebrowsing.provider.google4.gethashURL", "");
+pref("browser.safebrowsing.provider.google4.gethashURL", "https://safebrowsing.googleapis.com/v4/fullHashes:find?$req=%REQUEST_BASE64%&$ct=application/x-protobuf&key=%GOOGLE_API_KEY%");
 pref("browser.safebrowsing.provider.google4.reportURL", "https://safebrowsing.google.com/safebrowsing/diagnostic?client=%NAME%&hl=%LOCALE%&site=");
 
 pref("browser.safebrowsing.reportPhishMistakeURL", "https://%LOCALE%.phish-error.mozilla.com/?hl=%LOCALE%&url=");
@@ -5176,15 +5155,6 @@ pref("browser.safebrowsing.provider.mozilla.lists.base.description", "mozstdDesc
 pref("browser.safebrowsing.provider.mozilla.lists.content.name", "mozfullName");
 pref("browser.safebrowsing.provider.mozilla.lists.content.description", "mozfullDesc");
 
-pref("urlclassifier.flashAllowTable", "test-flashallow-simple");
-pref("urlclassifier.flashAllowExceptTable", "testexcept-flashallow-simple");
-pref("urlclassifier.flashTable", "test-flash-simple");
-pref("urlclassifier.flashExceptTable", "testexcept-flash-simple");
-pref("urlclassifier.flashSubDocTable", "test-flashsubdoc-simple");
-pref("urlclassifier.flashSubDocExceptTable", "testexcept-flashsubdoc-simple");
-
-pref("plugins.flashBlock.enabled", false);
-
 
 pref("browser.safebrowsing.allowOverride", true);
 
@@ -5196,12 +5166,8 @@ pref("browser.safebrowsing.id", "navclient-auto-ffox");
 pref("browser.safebrowsing.id", "Firefox");
 #endif
 
-pref("browser.safebrowsing.temporary.take_v4_completion_result", false);
-
 
 pref("snav.enabled", false);
-
-
 
 
 pref("layout.accessiblecaret.enabled", false);
@@ -5262,6 +5228,9 @@ pref("dom.wakelock.enabled", false);
 
 pref("identity.fxaccounts.auth.uri", "https://api.accounts.firefox.com/v1");
 
+
+pref("image.mozsamplesize.enabled", false);
+
 pref("beacon.enabled", true);
 
 
@@ -5281,7 +5250,14 @@ pref("camera.control.low_memory_thresholdMB", 404);
 #endif
 
 
+pref("dom.system_update.enabled", false);
+pref("dom.system_update.debug", false);
+
+
 pref("dom.udpsocket.enabled", false);
+
+
+pref("dom.beforeAfterKeyboardEvent.enabled", false);
 
 
 pref("dom.presentation.enabled", false);
@@ -5291,6 +5267,7 @@ pref("dom.presentation.receiver.enabled", false);
 
 pref("dom.presentation.tcp_server.debug", false);
 pref("dom.presentation.discovery.enabled", false);
+pref("dom.presentation.discovery.legacy.enabled", false);
 pref("dom.presentation.discovery.timeout_ms", 10000);
 pref("dom.presentation.discoverable", false);
 pref("dom.presentation.discoverable.encrypted", true);
@@ -5310,12 +5287,29 @@ pref("intl.allow-insecure-text-input", false);
 pref("dom.meta-viewport.enabled", false);
 
 
+pref("dom.mozSettings.SettingsDB.debug.enabled", false);
+pref("dom.mozSettings.SettingsManager.debug.enabled", false);
+pref("dom.mozSettings.SettingsRequestManager.debug.enabled", false);
+pref("dom.mozSettings.SettingsService.debug.enabled", false);
+
+
+pref("dom.mozSettings.SettingsDB.verbose.enabled", false);
+pref("dom.mozSettings.SettingsManager.verbose.enabled", false);
+pref("dom.mozSettings.SettingsRequestManager.verbose.enabled", false);
+pref("dom.mozSettings.SettingsService.verbose.enabled", false);
+
+
+
+
+pref("dom.mozSettings.allowForceReadOnly", false);
+
+
 #ifdef NIGHTLY_BUILD
 pref("browser.addon-watch.interval", 15000);
 #else
 pref("browser.addon-watch.interval", -1);
 #endif
-pref("browser.addon-watch.ignore", "[\"mochikit@mozilla.org\",\"special-powers@mozilla.org\",\"fxdevtools-adapters@mozilla.org\",\"fx-devtools\",\"webcompat-reporter@mozilla.org\"]");
+pref("browser.addon-watch.ignore", "[\"mochikit@mozilla.org\",\"special-powers@mozilla.org\",\"fxdevtools-adapters@mozilla.org\",\"fx-devtools\"]");
 
 
 pref("browser.search.log", false);
@@ -5437,7 +5431,7 @@ pref("media.gmp.insecure.allow", false);
 pref("dom.audiochannel.mutedByDefault", false);
 
 
-pref("dom.dialog_element.enabled", false);
+pref("dom.details_element.enabled", true);
 
 
 #ifdef MOZ_SECUREELEMENT
@@ -5476,8 +5470,13 @@ pref("webextensions.tests", false);
 
 pref("webextensions.webRequest.requestBodyMaxRawBytes", 16777216);
 
-pref("webextensions.storage.sync.enabled", true);
+
+pref("webextensions.storage.sync.enabled", false);
+#ifdef RELEASE_OR_BETA
 pref("webextensions.storage.sync.serverURL", "https://webextensions.settings.services.mozilla.com/v1");
+#else
+pref("webextensions.storage.sync.serverURL", "https://webextensions.dev.mozaws.net/v1");
+#endif
 
 
 pref("dom.input.fallbackUploadDir", "");
@@ -5495,6 +5494,13 @@ pref("dom.mozBrowserFramesEnabled", false);
 pref("layout.css.color-adjust.enabled", true);
 
 pref("dom.audiochannel.audioCompeting", false);
+
+
+#ifdef RELEASE_OR_BETA
+pref("dom.node.rootNode.enabled", false);
+#else
+pref("dom.node.rootNode.enabled", true);
+#endif
 
 
 pref("media.default_volume", "1.0");
@@ -5520,12 +5526,7 @@ pref("dom.webkitBlink.dirPicker.enabled", true);
 pref("dom.webkitBlink.filesystem.enabled", true);
 #endif
 
-#ifdef NIGHTLY_BUILD
 pref("media.block-autoplay-until-in-foreground", true);
-#else
-pref("media.block-autoplay-until-in-foreground", false);
-#endif
-
 #ifdef MOZ_STYLO
 
 pref("layout.css.servo.enabled", true);
@@ -5534,15 +5535,14 @@ pref("layout.css.servo.enabled", true);
 
 
 
+pref("security.mixed_content.send_hsts_priming", true);
 #ifdef RELEASE_OR_BETA
 
 
-pref("security.mixed_content.send_hsts_priming", false);
 pref("security.mixed_content.use_hsts", false);
 #else
 
 
-pref("security.mixed_content.send_hsts_priming", true);
 pref("security.mixed_content.use_hsts", true);
 #endif
 
@@ -5552,30 +5552,8 @@ pref ("security.mixed_content.hsts_priming_cache_timeout", 10080);
 pref ("security.mixed_content.hsts_priming_request_timeout", 3000);
 
 
-
-pref ("security.data_uri.inherit_security_context", true);
-
-
 #ifdef NIGHTLY_BUILD
 pref("dom.storageManager.enabled", true);
 #else
 pref("dom.storageManager.enabled", false);
-#endif
-
-
-
-
-
-pref("prompts.authentication_dialog_abuse_limit", 3);
-
-
-
-pref("browser.storageManager.enabled", false);
-pref("dom.IntersectionObserver.enabled", false);
-
-
-pref("dom.moduleScripts.enabled", false);
-
-#ifdef FUZZING
-pref("fuzzing.enabled", false);
 #endif

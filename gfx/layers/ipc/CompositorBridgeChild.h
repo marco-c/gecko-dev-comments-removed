@@ -38,7 +38,6 @@ class IAPZCTreeManager;
 class APZCTreeManagerChild;
 class ClientLayerManager;
 class CompositorBridgeParent;
-class CompositorOptions;
 class TextureClient;
 class TextureClientPool;
 struct FrameMetrics;
@@ -81,7 +80,7 @@ public:
     widget::CompositorWidget* aWidget,
     const uint64_t& aLayerTreeId,
     CSSToLayoutDeviceScale aScale,
-    const CompositorOptions& aOptions,
+    bool aUseAPZ,
     bool aUseExternalSurface,
     const gfx::IntSize& aSurfaceSize);
 
@@ -89,9 +88,10 @@ public:
 
   static bool ChildProcessHasCompositorBridge();
 
-  
-  
-  static bool CompositorIsInGPUProcess();
+  void AddOverfillObserver(ClientLayerManager* aLayerManager);
+
+  virtual mozilla::ipc::IPCResult
+  RecvClearCachedResources(const uint64_t& id) override;
 
   virtual mozilla::ipc::IPCResult
   RecvDidComposite(const uint64_t& aId, const uint64_t& aTransactionId,
@@ -104,7 +104,10 @@ public:
   virtual mozilla::ipc::IPCResult
   RecvCompositorUpdated(const uint64_t& aLayersId,
                         const TextureFactoryIdentifier& aNewIdentifier,
-                        const uint64_t& aSequenceNumber) override;
+                        const uint64_t& aSeqNo) override;
+
+  virtual mozilla::ipc::IPCResult
+  RecvOverfill(const uint32_t &aOverfill) override;
 
   virtual mozilla::ipc::IPCResult
   RecvUpdatePluginConfigurations(const LayoutDeviceIntPoint& aContentOffset,
@@ -213,6 +216,8 @@ public:
   PCompositorWidgetChild* AllocPCompositorWidgetChild(const CompositorWidgetInitData& aInitData) override;
   bool DeallocPCompositorWidgetChild(PCompositorWidgetChild* aActor) override;
 
+  RefPtr<IAPZCTreeManager> GetAPZCTreeManager(uint64_t aLayerTreeId);
+
   PAPZCTreeManagerChild* AllocPAPZCTreeManagerChild(const uint64_t& aLayersId) override;
   bool DeallocPAPZCTreeManagerChild(PAPZCTreeManagerChild* aActor) override;
 
@@ -223,9 +228,8 @@ public:
 
   void WillEndTransaction();
 
-  uint64_t DeviceResetSequenceNumber() const {
-    return mDeviceResetSequenceNumber;
-  }
+  PWebRenderBridgeChild* AllocPWebRenderBridgeChild(const uint64_t& aPipelineId) override;
+  bool DeallocPWebRenderBridgeChild(PWebRenderBridgeChild* aActor) override;
 
 private:
   
@@ -301,6 +305,9 @@ private:
   DISALLOW_EVIL_CONSTRUCTORS(CompositorBridgeChild);
 
   
+  AutoTArray<ClientLayerManager*,0> mOverfillObservers;
+
+  
   bool mCanSend;
 
   
@@ -308,11 +315,6 @@ private:
 
 
   uint64_t mFwdTransactionId;
-
-  
-
-
-  uint64_t mDeviceResetSequenceNumber;
 
   
 

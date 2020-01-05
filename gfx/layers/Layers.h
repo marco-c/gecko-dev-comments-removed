@@ -18,7 +18,6 @@
 #include "gfxRect.h"                    
 #include "gfx2DGlue.h"
 #include "mozilla/Assertions.h"         
-#include "mozilla/Array.h"
 #include "mozilla/DebugOnly.h"          
 #include "mozilla/EventForwards.h"      
 #include "mozilla/Maybe.h"              
@@ -33,8 +32,6 @@
 #include "mozilla/gfx/TiledRegion.h"    
 #include "mozilla/gfx/Types.h"          
 #include "mozilla/gfx/UserData.h"       
-#include "mozilla/layers/BSPTree.h"     
-#include "mozilla/layers/LayerAttributes.h"
 #include "mozilla/layers/LayersTypes.h"
 #include "mozilla/mozalloc.h"           
 #include "nsAutoPtr.h"                  
@@ -58,6 +55,7 @@ extern uint8_t gLayerManagerLayerBuilder;
 
 namespace mozilla {
 
+class ComputedTimingFunction;
 class FrameLayerBuilder;
 class StyleAnimationValue;
 
@@ -67,6 +65,10 @@ class GLContext;
 
 namespace gfx {
 class DrawTarget;
+} 
+
+namespace dom {
+class OverfillCallback;
 } 
 
 namespace layers {
@@ -83,13 +85,11 @@ class PaintedLayer;
 class ContainerLayer;
 class ImageLayer;
 class ColorLayer;
-class TextLayer;
 class CanvasLayer;
-class BorderLayer;
 class ReadbackLayer;
 class ReadbackProcessor;
 class RefLayer;
-class HostLayer;
+class LayerComposite;
 class ShadowableLayer;
 class ShadowLayerForwarder;
 class LayerManagerComposite;
@@ -97,8 +97,7 @@ class SpecificLayerAttributes;
 class Compositor;
 class FrameUniformityData;
 class PersistentBufferProvider;
-class GlyphArray;
-struct AnimData;
+class WebRenderLayerManager;
 
 namespace layerscope {
 class LayersPacket;
@@ -200,6 +199,9 @@ public:
   { return nullptr; }
 
   virtual BasicLayerManager* AsBasicLayerManager()
+  { return nullptr; }
+
+  virtual WebRenderLayerManager* AsWebRenderLayerManager()
   { return nullptr; }
 
   
@@ -356,8 +358,12 @@ public:
 
 
 
+#ifdef DEBUG
+  
+  virtual void Mutated(Layer* aLayer);
+#else
   virtual void Mutated(Layer* aLayer) { }
-  virtual void MutatedSimple(Layer* aLayer) { }
+#endif
 
   
 
@@ -398,16 +404,6 @@ public:
 
 
   virtual already_AddRefed<ColorLayer> CreateColorLayer() = 0;
-  
-
-
-
-  virtual already_AddRefed<TextLayer> CreateTextLayer() = 0;
-  
-
-
-
-  virtual already_AddRefed<BorderLayer> CreateBorderLayer() = 0;
   
 
 
@@ -638,6 +634,8 @@ public:
 
   bool IsInTransaction() const { return mInTransaction; }
   virtual void GetFrameUniformity(FrameUniformityData* aOutData) { }
+  virtual bool RequestOverfill(mozilla::dom::OverfillCallback* aCallback) { return true; }
+  virtual void RunOverfillCallback(const uint32_t aOverfill) { }
 
   virtual void SetRegionToClear(const nsIntRegion& aRegion)
   {
@@ -728,14 +726,20 @@ private:
   std::map<FrameMetrics::ViewID,ScrollUpdateInfo> mPendingScrollUpdates;
 };
 
+typedef InfallibleTArray<Animation> AnimationArray;
+
+struct AnimData {
+  InfallibleTArray<mozilla::StyleAnimationValue> mStartValues;
+  InfallibleTArray<mozilla::StyleAnimationValue> mEndValues;
+  InfallibleTArray<Maybe<mozilla::ComputedTimingFunction>> mFunctions;
+};
+
 
 
 
 
 class Layer {
   NS_INLINE_DECL_REFCOUNTING(Layer)
-
-  typedef InfallibleTArray<Animation> AnimationArray;
 
 public:
   
@@ -744,8 +748,6 @@ public:
     TYPE_COLOR,
     TYPE_CONTAINER,
     TYPE_IMAGE,
-    TYPE_TEXT,
-    TYPE_BORDER,
     TYPE_READBACK,
     TYPE_REF,
     TYPE_SHADOW,
@@ -824,9 +826,10 @@ public:
     NS_ASSERTION((aFlags & (CONTENT_OPAQUE | CONTENT_COMPONENT_ALPHA)) !=
                  (CONTENT_OPAQUE | CONTENT_COMPONENT_ALPHA),
                  "Can't be opaque and require component alpha");
-    if (mSimpleAttrs.SetContentFlags(aFlags)) {
+    if (mContentFlags != aFlags) {
       MOZ_LAYERS_LOG_IF_SHADOWABLE(this, ("Layer::Mutated(%p) ContentFlags", this));
-      MutatedSimple();
+      mContentFlags = aFlags;
+      Mutated();
     }
   }
 
@@ -840,9 +843,10 @@ public:
 
   virtual void SetLayerBounds(const gfx::IntRect& aLayerBounds)
   {
-    if (mSimpleAttrs.SetLayerBounds(aLayerBounds)) {
+    if (!mLayerBounds.IsEqualEdges(aLayerBounds)) {
       MOZ_LAYERS_LOG_IF_SHADOWABLE(this, ("Layer::Mutated(%p) LayerBounds", this));
-      MutatedSimple();
+      mLayerBounds = aLayerBounds;
+      Mutated();
     }
   }
 
@@ -964,31 +968,34 @@ public:
 
   void SetOpacity(float aOpacity)
   {
-    if (mSimpleAttrs.SetOpacity(aOpacity)) {
+    if (mOpacity != aOpacity) {
       MOZ_LAYERS_LOG_IF_SHADOWABLE(this, ("Layer::Mutated(%p) Opacity", this));
-      MutatedSimple();
+      mOpacity = aOpacity;
+      Mutated();
     }
   }
 
   void SetMixBlendMode(gfx::CompositionOp aMixBlendMode)
   {
-    if (mSimpleAttrs.SetMixBlendMode(aMixBlendMode)) {
+    if (mMixBlendMode != aMixBlendMode) {
       MOZ_LAYERS_LOG_IF_SHADOWABLE(this, ("Layer::Mutated(%p) MixBlendMode", this));
-      MutatedSimple();
+      mMixBlendMode = aMixBlendMode;
+      Mutated();
     }
   }
 
   void SetForceIsolatedGroup(bool aForceIsolatedGroup)
   {
-    if (mSimpleAttrs.SetForceIsolatedGroup(aForceIsolatedGroup)) {
+    if(mForceIsolatedGroup != aForceIsolatedGroup) {
       MOZ_LAYERS_LOG_IF_SHADOWABLE(this, ("Layer::Mutated(%p) ForceIsolatedGroup", this));
-      MutatedSimple();
+      mForceIsolatedGroup = aForceIsolatedGroup;
+      Mutated();
     }
   }
 
   bool GetForceIsolatedGroup() const
   {
-    return mSimpleAttrs.ForceIsolatedGroup();
+    return mForceIsolatedGroup;
   }
 
   
@@ -1041,9 +1048,10 @@ public:
 
   void SetScrolledClip(const Maybe<LayerClip>& aScrolledClip)
   {
-    if (mSimpleAttrs.SetScrolledClip(aScrolledClip)) {
+    if (mScrolledClip != aScrolledClip) {
       MOZ_LAYERS_LOG_IF_SHADOWABLE(this, ("Layer::Mutated(%p) ScrolledClip", this));
-      MutatedSimple();
+      mScrolledClip = aScrolledClip;
+      Mutated();
     }
   }
 
@@ -1109,11 +1117,12 @@ public:
     NS_ASSERTION(!aMatrix.IsSingular(),
                  "Shouldn't be trying to draw with a singular matrix!");
     mPendingTransform = nullptr;
-    if (!mSimpleAttrs.SetTransform(aMatrix)) {
+    if (mTransform == aMatrix) {
       return;
     }
     MOZ_LAYERS_LOG_IF_SHADOWABLE(this, ("Layer::Mutated(%p) BaseTransform", this));
-    MutatedSimple();
+    mTransform = aMatrix;
+    Mutated();
   }
 
   
@@ -1131,11 +1140,13 @@ public:
 
   void SetPostScale(float aXScale, float aYScale)
   {
-    if (!mSimpleAttrs.SetPostScale(aXScale, aYScale)) {
+    if (mPostXScale == aXScale && mPostYScale == aYScale) {
       return;
     }
     MOZ_LAYERS_LOG_IF_SHADOWABLE(this, ("Layer::Mutated(%p) PostScale", this));
-    MutatedSimple();
+    mPostXScale = aXScale;
+    mPostYScale = aYScale;
+    Mutated();
   }
 
   
@@ -1146,9 +1157,10 @@ public:
 
   void SetIsFixedPosition(bool aFixedPosition)
   {
-    if (mSimpleAttrs.SetIsFixedPosition(aFixedPosition)) {
+    if (mIsFixedPosition != aFixedPosition) {
       MOZ_LAYERS_LOG_IF_SHADOWABLE(this, ("Layer::Mutated(%p) IsFixedPosition", this));
-      MutatedSimple();
+      mIsFixedPosition = aFixedPosition;
+      Mutated();
     }
   }
 
@@ -1160,9 +1172,10 @@ public:
 
   void SetTransformIsPerspective(bool aTransformIsPerspective)
   {
-    if (mSimpleAttrs.SetTransformIsPerspective(aTransformIsPerspective)) {
+    if (mTransformIsPerspective != aTransformIsPerspective) {
       MOZ_LAYERS_LOG_IF_SHADOWABLE(this, ("Layer::Mutated(%p) TransformIsPerspective", this));
-      MutatedSimple();
+      mTransformIsPerspective = aTransformIsPerspective;
+      Mutated();
     }
   }
 
@@ -1210,9 +1223,18 @@ public:
                             const LayerPoint& aAnchor,
                             int32_t aSides)
   {
-    if (mSimpleAttrs.SetFixedPositionData(aScrollId, aAnchor, aSides)) {
+    if (!mFixedPositionData ||
+        mFixedPositionData->mScrollId != aScrollId ||
+        mFixedPositionData->mAnchor != aAnchor ||
+        mFixedPositionData->mSides != aSides) {
       MOZ_LAYERS_LOG_IF_SHADOWABLE(this, ("Layer::Mutated(%p) FixedPositionData", this));
-      MutatedSimple();
+      if (!mFixedPositionData) {
+        mFixedPositionData = MakeUnique<FixedPositionData>();
+      }
+      mFixedPositionData->mScrollId = aScrollId;
+      mFixedPositionData->mAnchor = aAnchor;
+      mFixedPositionData->mSides = aSides;
+      Mutated();
     }
   }
 
@@ -1228,11 +1250,25 @@ public:
   void SetStickyPositionData(FrameMetrics::ViewID aScrollId, LayerRect aOuter,
                              LayerRect aInner)
   {
-    if (mSimpleAttrs.SetStickyPositionData(aScrollId, aOuter, aInner)) {
+    if (!mStickyPositionData ||
+        !mStickyPositionData->mOuter.IsEqualEdges(aOuter) ||
+        !mStickyPositionData->mInner.IsEqualEdges(aInner)) {
       MOZ_LAYERS_LOG_IF_SHADOWABLE(this, ("Layer::Mutated(%p) StickyPositionData", this));
-      MutatedSimple();
+      if (!mStickyPositionData) {
+        mStickyPositionData = new StickyPositionData;
+      }
+      mStickyPositionData->mScrollId = aScrollId;
+      mStickyPositionData->mOuter = aOuter;
+      mStickyPositionData->mInner = aInner;
+      Mutated();
     }
   }
+
+  enum ScrollDirection {
+    NONE,
+    VERTICAL,
+    HORIZONTAL
+  };
 
   
 
@@ -1241,36 +1277,35 @@ public:
 
   void SetScrollbarData(FrameMetrics::ViewID aScrollId, ScrollDirection aDir, float aThumbRatio)
   {
-    if (mSimpleAttrs.SetScrollbarData(aScrollId, aDir, aThumbRatio)) {
+    if (mScrollbarTargetId != aScrollId ||
+        mScrollbarDirection != aDir ||
+        mScrollbarThumbRatio != aThumbRatio)
+    {
       MOZ_LAYERS_LOG_IF_SHADOWABLE(this, ("Layer::Mutated(%p) ScrollbarData", this));
-      MutatedSimple();
+      mScrollbarTargetId = aScrollId;
+      mScrollbarDirection = aDir;
+      mScrollbarThumbRatio = aThumbRatio;
+      Mutated();
     }
   }
 
   
   void SetIsScrollbarContainer()
   {
-    if (mSimpleAttrs.SetIsScrollbarContainer()) {
-      MutatedSimple();
+    if (!mIsScrollbarContainer) {
+      mIsScrollbarContainer = true;
+      Mutated();
     }
   }
 
   
-  void SetSimpleAttributes(const SimpleLayerAttributes& aAttrs) {
-    mSimpleAttrs = aAttrs;
-  }
-  const SimpleLayerAttributes& GetSimpleAttributes() const {
-    return mSimpleAttrs;
-  }
-
-  
-  float GetOpacity() { return mSimpleAttrs.Opacity(); }
-  gfx::CompositionOp GetMixBlendMode() const { return mSimpleAttrs.MixBlendMode(); }
+  float GetOpacity() { return mOpacity; }
+  gfx::CompositionOp GetMixBlendMode() const { return mMixBlendMode; }
   const Maybe<ParentLayerIntRect>& GetClipRect() const { return mClipRect; }
-  const Maybe<LayerClip>& GetScrolledClip() const { return mSimpleAttrs.ScrolledClip(); }
+  const Maybe<LayerClip>& GetScrolledClip() const { return mScrolledClip; }
   Maybe<ParentLayerIntRect> GetScrolledClipRect() const;
-  uint32_t GetContentFlags() { return mSimpleAttrs.ContentFlags(); }
-  const gfx::IntRect& GetLayerBounds() const { return mSimpleAttrs.LayerBounds(); }
+  uint32_t GetContentFlags() { return mContentFlags; }
+  const gfx::IntRect& GetLayerBounds() const { return mLayerBounds; }
   const LayerIntRegion& GetVisibleRegion() const { return mVisibleRegion; }
   const ScrollMetadata& GetScrollMetadata(uint32_t aIndex) const;
   const FrameMetrics& GetFrameMetrics(uint32_t aIndex) const;
@@ -1300,23 +1335,23 @@ public:
   
   
   const CSSTransformMatrix GetTransformTyped() const;
-  const gfx::Matrix4x4& GetBaseTransform() const { return mSimpleAttrs.Transform(); }
+  const gfx::Matrix4x4& GetBaseTransform() const { return mTransform; }
   
-  virtual float GetPostXScale() const { return mSimpleAttrs.PostXScale(); }
-  virtual float GetPostYScale() const { return mSimpleAttrs.PostYScale(); }
-  bool GetIsFixedPosition() { return mSimpleAttrs.IsFixedPosition(); }
-  bool GetTransformIsPerspective() const { return mSimpleAttrs.TransformIsPerspective(); }
-  bool GetIsStickyPosition() { return mSimpleAttrs.IsStickyPosition(); }
-  FrameMetrics::ViewID GetFixedPositionScrollContainerId() { return mSimpleAttrs.FixedPositionScrollContainerId(); }
-  LayerPoint GetFixedPositionAnchor() { return mSimpleAttrs.FixedPositionAnchor(); }
-  int32_t GetFixedPositionSides() { return mSimpleAttrs.FixedPositionSides(); }
-  FrameMetrics::ViewID GetStickyScrollContainerId() { return mSimpleAttrs.StickyScrollContainerId(); }
-  const LayerRect& GetStickyScrollRangeOuter() { return mSimpleAttrs.StickyScrollRangeOuter(); }
-  const LayerRect& GetStickyScrollRangeInner() { return mSimpleAttrs.StickyScrollRangeInner(); }
-  FrameMetrics::ViewID GetScrollbarTargetContainerId() { return mSimpleAttrs.ScrollbarTargetContainerId(); }
-  ScrollDirection GetScrollbarDirection() { return mSimpleAttrs.ScrollbarDirection(); }
-  float GetScrollbarThumbRatio() { return mSimpleAttrs.ScrollbarThumbRatio(); }
-  bool IsScrollbarContainer() { return mSimpleAttrs.IsScrollbarContainer(); }
+  virtual float GetPostXScale() const { return mPostXScale; }
+  virtual float GetPostYScale() const { return mPostYScale; }
+  bool GetIsFixedPosition() { return mIsFixedPosition; }
+  bool GetTransformIsPerspective() const { return mTransformIsPerspective; }
+  bool GetIsStickyPosition() { return mStickyPositionData; }
+  FrameMetrics::ViewID GetFixedPositionScrollContainerId() { return mFixedPositionData ? mFixedPositionData->mScrollId : FrameMetrics::NULL_SCROLL_ID; }
+  LayerPoint GetFixedPositionAnchor() { return mFixedPositionData ? mFixedPositionData->mAnchor : LayerPoint(); }
+  int32_t GetFixedPositionSides() { return mFixedPositionData ? mFixedPositionData->mSides : eSideBitsNone; }
+  FrameMetrics::ViewID GetStickyScrollContainerId() { return mStickyPositionData->mScrollId; }
+  const LayerRect& GetStickyScrollRangeOuter() { return mStickyPositionData->mOuter; }
+  const LayerRect& GetStickyScrollRangeInner() { return mStickyPositionData->mInner; }
+  FrameMetrics::ViewID GetScrollbarTargetContainerId() { return mScrollbarTargetId; }
+  ScrollDirection GetScrollbarDirection() { return mScrollbarDirection; }
+  float GetScrollbarThumbRatio() { return mScrollbarThumbRatio; }
+  bool IsScrollbarContainer() { return mIsScrollbarContainer; }
   Layer* GetMaskLayer() const { return mMaskLayer; }
   void CheckCanary() const { mCanary.Check(); }
 
@@ -1371,11 +1406,6 @@ public:
 
   bool HasTransformAnimation() const;
 
-  StyleAnimationValue GetBaseAnimationStyle() const
-  {
-    return mBaseAnimationStyle;
-  }
-
   
 
 
@@ -1422,7 +1452,7 @@ public:
   {
     if (CanUseOpaqueSurface())
       return SurfaceMode::SURFACE_OPAQUE;
-    if (GetContentFlags() & CONTENT_COMPONENT_ALPHA)
+    if (mContentFlags & CONTENT_COMPONENT_ALPHA)
       return SurfaceMode::SURFACE_COMPONENT_ALPHA;
     return SurfaceMode::SURFACE_SINGLE_CHANNEL_ALPHA;
   }
@@ -1500,31 +1530,7 @@ public:
 
 
 
-  virtual TextLayer* AsTextLayer() { return nullptr; }
-
-  
-
-
-
-  virtual BorderLayer* AsBorderLayer() { return nullptr; }
-
-  
-
-
-
-  virtual CanvasLayer* AsCanvasLayer() { return nullptr; }
-
-  
-
-
-
-  virtual ImageLayer* AsImageLayer() { return nullptr; }
-
-  
-
-
-
-  virtual HostLayer* AsHostLayer() { return nullptr; }
+  virtual LayerComposite* AsLayerComposite() { return nullptr; }
 
   
 
@@ -1656,13 +1662,11 @@ public:
 
 
   void Dump(std::stringstream& aStream, const char* aPrefix="",
-            bool aDumpHtml=false, bool aSorted=false,
-            const Maybe<gfx::Polygon>& aGeometry=Nothing());
+            bool aDumpHtml=false, bool aSorted=false);
   
 
 
-  void DumpSelf(std::stringstream& aStream, const char* aPrefix="",
-                const Maybe<gfx::Polygon>& aGeometry=Nothing());
+  void DumpSelf(std::stringstream& aStream, const char* aPrefix="");
 
   
 
@@ -1755,11 +1759,9 @@ public:
 
   virtual LayerRenderState GetRenderState() { return LayerRenderState(); }
 
-  void Mutated() {
+  void Mutated()
+  {
     mManager->Mutated(this);
-  }
-  void MutatedSimple() {
-    mManager->MutatedSimple(this);
   }
 
   virtual int32_t GetMaxLayerSize() { return Manager()->GetMaxTextureSize(); }
@@ -1854,24 +1856,53 @@ protected:
   
   mozilla::CorruptionCanary mCanary;
   gfx::UserData mUserData;
-  SimpleLayerAttributes mSimpleAttrs;
+  gfx::IntRect mLayerBounds;
   LayerIntRegion mVisibleRegion;
   nsTArray<ScrollMetadata> mScrollMetadata;
   EventRegions mEventRegions;
+  gfx::Matrix4x4 mTransform;
   
   
   
   nsAutoPtr<gfx::Matrix4x4> mPendingTransform;
+  float mPostXScale;
+  float mPostYScale;
   gfx::Matrix4x4 mEffectiveTransform;
   AnimationArray mAnimations;
   
   nsAutoPtr<AnimationArray> mPendingAnimations;
   InfallibleTArray<AnimData> mAnimationData;
+  float mOpacity;
+  gfx::CompositionOp mMixBlendMode;
+  bool mForceIsolatedGroup;
   Maybe<ParentLayerIntRect> mClipRect;
+  Maybe<LayerClip> mScrolledClip;
   gfx::IntRect mTileSourceRect;
   gfx::TiledIntRegion mInvalidRegion;
   nsTArray<RefPtr<AsyncPanZoomController> > mApzcs;
+  uint32_t mContentFlags;
   bool mUseTileSourceRect;
+  bool mIsFixedPosition;
+  bool mTransformIsPerspective;
+  struct FixedPositionData {
+    FrameMetrics::ViewID mScrollId;
+    LayerPoint mAnchor;
+    int32_t mSides;
+  };
+  UniquePtr<FixedPositionData> mFixedPositionData;
+  struct StickyPositionData {
+    FrameMetrics::ViewID mScrollId;
+    LayerRect mOuter;
+    LayerRect mInner;
+  };
+  nsAutoPtr<StickyPositionData> mStickyPositionData;
+  FrameMetrics::ViewID mScrollbarTargetId;
+  ScrollDirection mScrollbarDirection;
+  
+  
+  
+  float mScrollbarThumbRatio;
+  bool mIsScrollbarContainer;
 #ifdef DEBUG
   uint32_t mDebugColorIndex;
 #endif
@@ -1883,8 +1914,6 @@ protected:
 #endif
   
   nsCString mDisplayListLog;
-
-  StyleAnimationValue mBaseAnimationStyle;
 };
 
 
@@ -1920,13 +1949,6 @@ public:
 
 
   void SetAllowResidualTranslation(bool aAllow) { mAllowResidualTranslation = aAllow; }
-
-  void SetValidRegion(const nsIntRegion& aRegion)
-  {
-    MOZ_LAYERS_LOG_IF_SHADOWABLE(this, ("Layer::Mutated(%p) ValidRegion", this));
-    mValidRegion = aRegion;
-    Mutated();
-  }
 
   
 
@@ -1994,6 +2016,7 @@ protected:
     , mUsedForReadback(false)
     , mAllowResidualTranslation(false)
   {
+    mContentFlags = 0; 
   }
 
   virtual void PrintInfo(std::stringstream& aStream, const char* aPrefix) override;
@@ -2092,17 +2115,13 @@ public:
 
   virtual void FillSpecificAttributes(SpecificLayerAttributes& aAttrs) override;
 
-  enum class SortMode {
-    WITH_GEOMETRY,
-    WITHOUT_GEOMETRY,
-  };
+  void SortChildrenBy3DZOrder(nsTArray<Layer*>& aArray);
 
-  nsTArray<LayerPolygon> SortChildrenBy3DZOrder(SortMode aSortMode);
+  
 
   virtual ContainerLayer* AsContainerLayer() override { return this; }
   virtual const ContainerLayer* AsContainerLayer() const override { return this; }
 
-  
   virtual Layer* GetFirstChild() const override { return mFirstChild; }
   virtual Layer* GetLastChild() const override { return mLastChild; }
   float GetPreXScale() const { return mPreXScale; }
@@ -2181,37 +2200,10 @@ public:
 protected:
   friend class ReadbackProcessor;
 
-  
-  
-  
-  
-  void RemoveAllChildren();
-
   void DidInsertChild(Layer* aLayer);
   void DidRemoveChild(Layer* aLayer);
 
-  bool AnyAncestorOrThisIs3DContextLeaf();
-
   void Collect3DContextLeaves(nsTArray<Layer*>& aToSort);
-
-  
-  
-  nsTArray<Layer*> CollectChildren() {
-    nsTArray<Layer*> children;
-
-    for (Layer* layer = GetFirstChild(); layer; layer = layer->GetNextSibling()) {
-      ContainerLayer* container = layer->AsContainerLayer();
-
-      if (container && container->Extend3DContext() &&
-          !container->UseIntermediateSurface()) {
-        container->Collect3DContextLeaves(children);
-      } else {
-        children.AppendElement(layer);
-      }
-    }
-
-    return children;
-  }
 
   ContainerLayer(LayerManager* aManager, void* aImplData);
 
@@ -2330,143 +2322,6 @@ protected:
 
 
 
-class TextLayer : public Layer {
-public:
-  virtual TextLayer* AsTextLayer() override { return this; }
-
-  
-
-
-  void SetBounds(const gfx::IntRect& aBounds)
-  {
-    if (!mBounds.IsEqualEdges(aBounds)) {
-      mBounds = aBounds;
-      Mutated();
-    }
-  }
-
-  const gfx::IntRect& GetBounds()
-  {
-    return mBounds;
-  }
-
-  void SetScaledFont(gfx::ScaledFont* aScaledFont) {
-    if (aScaledFont != mFont) {
-      mFont = aScaledFont;
-      Mutated();
-    }
-  }
-
-  const nsTArray<GlyphArray>& GetGlyphs() { return mGlyphs; }
-
-  gfx::ScaledFont* GetScaledFont() { return mFont; }
-
-  MOZ_LAYER_DECL_NAME("TextLayer", TYPE_TEXT)
-
-  virtual void ComputeEffectiveTransforms(const gfx::Matrix4x4& aTransformToSurface) override
-  {
-    gfx::Matrix4x4 idealTransform = GetLocalTransform() * aTransformToSurface;
-    mEffectiveTransform = SnapTransformTranslation(idealTransform, nullptr);
-    ComputeEffectiveTransformForMaskLayers(aTransformToSurface);
-  }
-
-  virtual void SetGlyphs(nsTArray<GlyphArray>&& aGlyphs);
-protected:
-  TextLayer(LayerManager* aManager, void* aImplData);
-  ~TextLayer();
-
-  virtual void PrintInfo(std::stringstream& aStream, const char* aPrefix) override;
-
-  virtual void DumpPacket(layerscope::LayersPacket* aPacket, const void* aParent) override;
-
-  gfx::IntRect mBounds;
-  nsTArray<GlyphArray> mGlyphs;
-  RefPtr<gfx::ScaledFont> mFont;
-};
-
-
-
-
-class BorderLayer : public Layer {
-public:
-  virtual BorderLayer* AsBorderLayer() override { return this; }
-
-  
-
-
-
-
-  
-  virtual void SetColors(const BorderColors& aColors)
-  {
-    MOZ_LAYERS_LOG_IF_SHADOWABLE(this, ("Layer::Mutated(%p) Colors", this));
-    PodCopy(&mColors[0], &aColors[0], 4);
-    Mutated();
-  }
-
-  virtual void SetRect(const LayerRect& aRect)
-  {
-    MOZ_LAYERS_LOG_IF_SHADOWABLE(this, ("Layer::Mutated(%p) Rect", this));
-    mRect = aRect;
-    Mutated();
-  }
-
-  
-  
-  virtual void SetCornerRadii(const BorderCorners& aCorners)
-  {
-    MOZ_LAYERS_LOG_IF_SHADOWABLE(this, ("Layer::Mutated(%p) Corners", this));
-    PodCopy(&mCorners[0], &aCorners[0], 4);
-    Mutated();
-  }
-
-  virtual void SetWidths(const BorderWidths& aWidths)
-  {
-    MOZ_LAYERS_LOG_IF_SHADOWABLE(this, ("Layer::Mutated(%p) Widths", this));
-    PodCopy(&mWidths[0], &aWidths[0], 4);
-    Mutated();
-  }
-
-  virtual void SetStyles(const BorderStyles& aBorderStyles)
-  {
-    MOZ_LAYERS_LOG_IF_SHADOWABLE(this, ("Layer::Mutated(%p) Widths", this));
-    PodCopy(&mBorderStyles[0], &aBorderStyles[0], 4);
-    Mutated();
-  }
-
-  MOZ_LAYER_DECL_NAME("BorderLayer", TYPE_BORDER)
-
-  virtual void ComputeEffectiveTransforms(const gfx::Matrix4x4& aTransformToSurface) override
-  {
-    gfx::Matrix4x4 idealTransform = GetLocalTransform() * aTransformToSurface;
-    mEffectiveTransform = SnapTransformTranslation(idealTransform, nullptr);
-    ComputeEffectiveTransformForMaskLayers(aTransformToSurface);
-  }
-
-  const BorderColors& GetColors() { return mColors; }
-  const LayerRect& GetRect() { return mRect; }
-  const BorderCorners& GetCorners() { return mCorners; }
-  const BorderWidths& GetWidths() { return mWidths; }
-
-protected:
-  BorderLayer(LayerManager* aManager, void* aImplData)
-    : Layer(aManager, aImplData)
-  {}
-
-  virtual void PrintInfo(std::stringstream& aStream, const char* aPrefix) override;
-
-  virtual void DumpPacket(layerscope::LayersPacket* aPacket, const void* aParent) override;
-
-  BorderColors mColors;
-  LayerRect mRect;
-  BorderCorners mCorners;
-  BorderWidths mWidths;
-  BorderStyles mBorderStyles;
-};
-
-
-
-
 
 
 
@@ -2520,14 +2375,10 @@ public:
 
   virtual void Initialize(const Data& aData) = 0;
 
-  void SetBounds(gfx::IntRect aBounds) { mBounds = aBounds; }
-
   
 
 
   virtual bool IsDataValid(const Data& aData) { return true; }
-
-  virtual CanvasLayer* AsCanvasLayer() override { return this; }
 
   
 

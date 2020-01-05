@@ -8,12 +8,9 @@
 #define mozilla_layers_CrossProcessCompositorBridgeParent_h
 
 #include "mozilla/layers/CompositorBridgeParent.h"
-#include "mozilla/layers/CompositorThread.h"
 
 namespace mozilla {
 namespace layers {
-
-class CompositorOptions;
 
 
 
@@ -50,10 +47,10 @@ public:
                          bool* aResult,
                          TextureFactoryIdentifier* aOutIdentifier) override
   { return IPC_FAIL_NO_REASON(this); }
+  virtual mozilla::ipc::IPCResult RecvRequestOverfill() override { return IPC_OK(); }
   virtual mozilla::ipc::IPCResult RecvWillClose() override { return IPC_OK(); }
   virtual mozilla::ipc::IPCResult RecvPause() override { return IPC_OK(); }
   virtual mozilla::ipc::IPCResult RecvResume() override { return IPC_OK(); }
-  virtual mozilla::ipc::IPCResult RecvForceIsFirstPaint() override { return IPC_OK(); }
   virtual mozilla::ipc::IPCResult RecvNotifyChildCreated(const uint64_t& child) override;
   virtual mozilla::ipc::IPCResult RecvNotifyChildRecreated(const uint64_t& child) override { return IPC_FAIL_NO_REASON(this); }
   virtual mozilla::ipc::IPCResult RecvAdoptChild(const uint64_t& child) override { return IPC_FAIL_NO_REASON(this); }
@@ -96,7 +93,14 @@ public:
   virtual bool DeallocPLayerTransactionParent(PLayerTransactionParent* aLayers) override;
 
   virtual void ShadowLayersUpdated(LayerTransactionParent* aLayerTree,
-                                   const TransactionInfo& aInfo,
+                                   const uint64_t& aTransactionId,
+                                   const TargetConfig& aTargetConfig,
+                                   const InfallibleTArray<PluginWindowData>& aPlugins,
+                                   bool aIsFirstPaint,
+                                   bool aScheduleComposite,
+                                   uint32_t aPaintSequenceNumber,
+                                   bool aIsRepeatTransaction,
+                                   int32_t ,
                                    bool aHitTestUpdate) override;
   virtual void ForceComposite(LayerTransactionParent* aLayerTree) override;
   virtual void NotifyClearCachedResources(LayerTransactionParent* aLayerTree) override;
@@ -114,9 +118,7 @@ public:
 
   virtual AsyncCompositionManager* GetCompositionManager(LayerTransactionParent* aParent) override;
   virtual mozilla::ipc::IPCResult RecvRemotePluginsReady()  override { return IPC_FAIL_NO_REASON(this); }
-  virtual mozilla::ipc::IPCResult RecvAcknowledgeCompositorUpdate(
-    const uint64_t& aLayersId,
-    const uint64_t& aSeqNo) override;
+  virtual mozilla::ipc::IPCResult RecvAcknowledgeCompositorUpdate(const uint64_t& aLayersId) override;
 
   void DidComposite(uint64_t aId,
                     TimeStamp& aCompositeStart,
@@ -141,7 +143,7 @@ public:
     return false;
   }
 
-  virtual mozilla::ipc::IPCResult RecvGetCompositorOptions(const uint64_t& aLayersId, CompositorOptions* aOptions) override;
+  virtual mozilla::ipc::IPCResult RecvAsyncPanZoomEnabled(const uint64_t& aLayersId, bool* aHasAPZ) override;
 
   virtual PAPZCTreeManagerParent* AllocPAPZCTreeManagerParent(const uint64_t& aLayersId) override;
   virtual bool DeallocPAPZCTreeManagerParent(PAPZCTreeManagerParent* aActor) override;
@@ -150,6 +152,9 @@ public:
   virtual bool DeallocPAPZParent(PAPZParent* aActor) override;
 
   virtual void UpdatePaintTime(LayerTransactionParent* aLayerTree, const TimeDuration& aPaintTime) override;
+
+  PWebRenderBridgeParent* AllocPWebRenderBridgeParent(const uint64_t& aPipelineId) override;
+  bool DeallocPWebRenderBridgeParent(PWebRenderBridgeParent* aActor) override;
 
 protected:
   void OnChannelConnected(int32_t pid) override {
