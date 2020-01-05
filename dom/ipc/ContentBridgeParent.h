@@ -20,7 +20,7 @@ class ContentBridgeParent : public PContentBridgeParent
                           , public nsIObserver
 {
 public:
-  explicit ContentBridgeParent(Transport* aTransport);
+  explicit ContentBridgeParent();
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSIOBSERVER
@@ -128,7 +128,6 @@ protected:
 
 protected: 
   RefPtr<ContentBridgeParent> mSelfRef;
-  Transport* mTransport; 
   ContentParentId mChildID;
   bool mIsForBrowser;
 
