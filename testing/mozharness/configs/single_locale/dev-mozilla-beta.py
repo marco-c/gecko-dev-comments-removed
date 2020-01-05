@@ -7,9 +7,6 @@ config = {
     "hg_l10n_base": "https://hg.mozilla.org/releases/l10n/mozilla-beta",
 
     
-    "latest_mar_dir": "fake_kill_me",
-
-    
     
     "mozilla_dir": "date",
     "repos": [{
