@@ -5,73 +5,58 @@
 
 
 use construct::FlowConstructor;
-use context::{LayoutContext, SharedLayoutContext};
+use context::{LayoutContext, SharedLayoutContext, ThreadLocalLayoutContext};
+use context::create_or_get_local_context;
 use display_list_builder::DisplayListBuildState;
 use flow::{self, PreorderFlowTraversal};
 use flow::{CAN_BE_FRAGMENTED, Flow, ImmutableFlowUtils, PostorderFlowTraversal};
 use gfx::display_list::OpaqueNode;
 use script_layout_interface::wrapper_traits::{LayoutNode, ThreadSafeLayoutNode};
 use servo_config::opts;
-use std::mem;
+use std::rc::Rc;
 use style::atomic_refcell::AtomicRefCell;
-use style::context::{LocalStyleContext, SharedStyleContext, StyleContext};
+use style::context::{SharedStyleContext, StyleContext};
 use style::data::ElementData;
 use style::dom::{TElement, TNode};
 use style::selector_parser::RestyleDamage;
 use style::servo::restyle_damage::{BUBBLE_ISIZES, REFLOW, REFLOW_OUT_OF_FLOW, REPAINT};
-use style::traversal::{DomTraversalContext, recalc_style_at, remove_from_bloom_filter};
+use style::traversal::{DomTraversal, recalc_style_at, remove_from_bloom_filter};
 use style::traversal::PerLevelTraversalData;
 use wrapper::{GetRawData, LayoutNodeHelpers, LayoutNodeLayoutData};
 
-pub struct RecalcStyleAndConstructFlows<'lc> {
-    context: LayoutContext<'lc>,
+pub struct RecalcStyleAndConstructFlows {
+    shared: SharedLayoutContext,
     root: OpaqueNode,
 }
 
-#[allow(unsafe_code)]
-impl<'lc, N> DomTraversalContext<N> for RecalcStyleAndConstructFlows<'lc>
-    where N: LayoutNode + TNode,
-          N::ConcreteElement: TElement
+impl RecalcStyleAndConstructFlows {
+    pub fn shared_layout_context(&self) -> &SharedLayoutContext {
+        &self.shared
+    }
+}
 
-{
-    type SharedContext = SharedLayoutContext;
-    #[allow(unsafe_code)]
-    fn new<'a>(shared: &'a Self::SharedContext, root: OpaqueNode) -> Self {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        let shared_lc: &'lc SharedLayoutContext = unsafe { mem::transmute(shared) };
+impl RecalcStyleAndConstructFlows {
+    
+    pub fn new(shared: SharedLayoutContext, root: OpaqueNode) -> Self {
         RecalcStyleAndConstructFlows {
-            context: LayoutContext::new(shared_lc),
+            shared: shared,
             root: root,
         }
     }
+
+    
+    
+    pub fn destroy(self) -> SharedLayoutContext {
+        self.shared
+    }
+}
+
+#[allow(unsafe_code)]
+impl<N> DomTraversal<N> for RecalcStyleAndConstructFlows
+    where N: LayoutNode + TNode,
+          N::ConcreteElement: TElement
+{
+    type ThreadLocalContext = ThreadLocalLayoutContext;
 
     fn process_preorder(&self, node: N, traversal_data: &mut PerLevelTraversalData) {
         
@@ -81,12 +66,19 @@ impl<'lc, N> DomTraversalContext<N> for RecalcStyleAndConstructFlows<'lc>
         if !node.is_text_node() {
             let el = node.as_element().unwrap();
             let mut data = el.mutate_data().unwrap();
-            recalc_style_at::<_, _, Self>(&self.context, traversal_data, el, &mut data);
+            let tlc = create_or_get_local_context(&self.shared);
+            let context = StyleContext {
+                shared: &self.shared.style_context,
+                thread_local: &tlc.style_context,
+            };
+            recalc_style_at(self, traversal_data, &context, el, &mut data);
         }
     }
 
     fn process_postorder(&self, node: N) {
-        construct_flows_at(&self.context, self.root, node);
+        let tlc = create_or_get_local_context(&self.shared);
+        let context = LayoutContext::new(&self.shared, &*tlc);
+        construct_flows_at(&context, self.root, node);
     }
 
     fn text_node_needs_traversal(node: N) -> bool {
@@ -107,8 +99,12 @@ impl<'lc, N> DomTraversalContext<N> for RecalcStyleAndConstructFlows<'lc>
         element.as_node().clear_data();
     }
 
-    fn local_context(&self) -> &LocalStyleContext {
-        self.context.local_context()
+    fn shared_context(&self) -> &SharedStyleContext {
+        &self.shared.style_context
+    }
+
+    fn create_or_get_thread_local_context(&self) -> Rc<ThreadLocalLayoutContext> {
+        create_or_get_local_context(&self.shared)
     }
 }
 
@@ -121,7 +117,9 @@ pub trait PostorderNodeMutTraversal<ConcreteThreadSafeLayoutNode: ThreadSafeLayo
 
 #[inline]
 #[allow(unsafe_code)]
-fn construct_flows_at<'a, N: LayoutNode>(context: &'a LayoutContext<'a>, root: OpaqueNode, node: N) {
+fn construct_flows_at<'a, N>(context: &LayoutContext<'a>, root: OpaqueNode, node: N)
+    where N: LayoutNode,
+{
     debug!("construct_flows_at: {:?}", node);
 
     
@@ -146,7 +144,7 @@ fn construct_flows_at<'a, N: LayoutNode>(context: &'a LayoutContext<'a>, root: O
         el.mutate_data().unwrap().persist();
         unsafe { el.unset_dirty_descendants(); }
 
-        remove_from_bloom_filter(context, root, el);
+        remove_from_bloom_filter(&context.shared.style_context, root, el);
     }
 }
 

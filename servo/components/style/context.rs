@@ -19,13 +19,13 @@ use stylist::Stylist;
 use timer::Timer;
 
 
-pub struct LocalStyleContextCreationInfo {
+pub struct ThreadLocalStyleContextCreationInfo {
     new_animations_sender: Sender<Animation>,
 }
 
-impl LocalStyleContextCreationInfo {
+impl ThreadLocalStyleContextCreationInfo {
     pub fn new(animations_sender: Sender<Animation>) -> Self {
-        LocalStyleContextCreationInfo {
+        ThreadLocalStyleContextCreationInfo {
             new_animations_sender: animations_sender,
         }
     }
@@ -58,32 +58,32 @@ pub struct SharedStyleContext {
     pub error_reporter: Box<ParseErrorReporter + Sync>,
 
     
-    pub local_context_creation_data: Mutex<LocalStyleContextCreationInfo>,
+    pub local_context_creation_data: Mutex<ThreadLocalStyleContextCreationInfo>,
 
     
     
     pub timer: Timer,
 }
 
-pub struct LocalStyleContext {
+pub struct ThreadLocalStyleContext {
     pub style_sharing_candidate_cache: RefCell<StyleSharingCandidateCache>,
     
     
     pub new_animations_sender: Sender<Animation>,
 }
 
-impl LocalStyleContext {
-    pub fn new(local_context_creation_data: &LocalStyleContextCreationInfo) -> Self {
-        LocalStyleContext {
+impl ThreadLocalStyleContext {
+    pub fn new(local_context_creation_data: &ThreadLocalStyleContextCreationInfo) -> Self {
+        ThreadLocalStyleContext {
             style_sharing_candidate_cache: RefCell::new(StyleSharingCandidateCache::new()),
             new_animations_sender: local_context_creation_data.new_animations_sender.clone(),
         }
     }
 }
 
-pub trait StyleContext<'a> {
-    fn shared_context(&self) -> &'a SharedStyleContext;
-    fn local_context(&self) -> &LocalStyleContext;
+pub struct StyleContext<'a> {
+    pub shared: &'a SharedStyleContext,
+    pub thread_local: &'a ThreadLocalStyleContext,
 }
 
 
