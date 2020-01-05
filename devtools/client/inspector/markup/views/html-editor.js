@@ -177,4 +177,4 @@ function stopPropagation(e) {
   e.stopPropagation();
 }
 
-exports.HTMLEditor = HTMLEditor;
+module.exports = HTMLEditor;
