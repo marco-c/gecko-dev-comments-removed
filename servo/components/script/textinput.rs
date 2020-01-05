@@ -42,6 +42,9 @@ pub struct TextInput<T: ClipboardProvider> {
     multiline: bool,
     #[ignore_heap_size_of = "Can't easily measure this generic type"]
     clipboard_provider: T,
+    
+    
+    
     pub max_length: Option<usize>
 }
 
@@ -107,6 +110,32 @@ fn is_printable_key(key: Key) -> bool {
     }
 }
 
+
+
+
+fn len_of_first_n_chars(text: &str, n: usize) -> usize {
+    match text.char_indices().take(n).last() {
+        Some((index, ch)) => index + ch.len_utf8(),
+        None => 0
+    }
+}
+
+
+
+
+fn len_of_first_n_code_units(text: &str, n: usize) -> usize {
+    let mut utf8_len = 0;
+    let mut utf16_len = 0;
+    for c in text.chars() {
+        utf16_len += c.len_utf16();
+        if utf16_len > n {
+            break;
+        }
+        utf8_len += c.len_utf8();
+    }
+    utf8_len
+}
+
 impl<T: ClipboardProvider> TextInput<T> {
     
     pub fn new(lines: Lines, initial: DOMString, clipboard_provider: T, max_length: Option<usize>) -> TextInput<T> {
@@ -155,6 +184,9 @@ impl<T: ClipboardProvider> TextInput<T> {
         })
     }
 
+    
+    
+    
     pub fn get_absolute_selection_range(&self) -> Range<usize> {
         match self.get_sorted_selection() {
             Some((begin, _end)) =>
@@ -165,44 +197,51 @@ impl<T: ClipboardProvider> TextInput<T> {
     }
 
     pub fn get_selection_text(&self) -> Option<String> {
-        self.get_sorted_selection().map(|(begin, end)| {
-            if begin.line != end.line {
-                let mut s = String::new();
-                s.push_str(&self.lines[begin.line][begin.index..]);
-                for (_, line) in self.lines.iter().enumerate().filter(|&(i, _)| begin.line < i && i < end.line) {
-                    s.push_str("\n");
-                    s.push_str(line);
-                }
-                s.push_str("\n");
-                s.push_str(&self.lines[end.line][..end.index]);
-                s
-            } else {
-                self.lines[begin.line][begin.index..end.index].to_owned()
-            }
-        })
+        let text = self.fold_selection_slices(String::new(), |s, slice| s.push_str(slice));
+        if text.is_empty() {
+            return None
+        }
+        Some(text)
     }
 
+    
     fn selection_len(&self) -> usize {
-        if let Some((begin, end)) = self.get_sorted_selection() {
-            let prefix = &self.lines[begin.line][0..begin.index];
-            let suffix = &self.lines[end.line][end.index..];
-            let lines_prefix = &self.lines[..begin.line];
-            let lines_suffix = &self.lines[end.line + 1..];
+        self.fold_selection_slices(0, |len, slice| *len += slice.len())
+    }
 
-            self.len() - (prefix.chars().count() +
-                          suffix.chars().count() +
-                          lines_prefix.iter().fold(0, |m, i| m + i.chars().count() + 1) +
-                          lines_suffix.iter().fold(0, |m, i| m + i.chars().count() + 1))
-        } else {
-            0
+    
+    fn selection_utf16_len(&self) -> usize {
+        self.fold_selection_slices(0usize,
+            |len, slice| *len += slice.chars().map(char::len_utf16).sum())
+    }
+
+    
+    
+    
+    fn fold_selection_slices<B, F: FnMut(&mut B, &str)>(&self, mut acc: B, mut f: F) -> B {
+        match self.get_sorted_selection() {
+            Some((begin, end)) if begin.line == end.line => {
+                f(&mut acc, &self.lines[begin.line][begin.index..end.index])
+            }
+            Some((begin, end)) => {
+                f(&mut acc, &self.lines[begin.line][begin.index..]);
+                for line in &self.lines[begin.line + 1 .. end.line] {
+                    f(&mut acc, "\n");
+                    f(&mut acc, line);
+                }
+                f(&mut acc, "\n");
+                f(&mut acc, &self.lines[end.line][..end.index])
+            }
+            None => {}
         }
+        acc
     }
 
     pub fn replace_selection(&mut self, insert: DOMString) {
         if let Some((begin, end)) = self.get_sorted_selection() {
             let allowed_to_insert_count = if let Some(max_length) = self.max_length {
-                let len_after_selection_replaced = self.len() - self.selection_len();
-                if len_after_selection_replaced > max_length {
+                let len_after_selection_replaced = self.utf16_len() - self.selection_utf16_len();
+                if len_after_selection_replaced >= max_length {
                     
                     
                     return
@@ -213,8 +252,8 @@ impl<T: ClipboardProvider> TextInput<T> {
                 usize::MAX
             };
 
-            let last_char_to_insert = min(allowed_to_insert_count, insert.chars().count());
-            let chars_to_insert = (&insert[0 .. last_char_to_insert]).to_owned();
+            let last_char_index = len_of_first_n_code_units(&*insert, allowed_to_insert_count);
+            let chars_to_insert = &insert[..last_char_index];
 
             self.clear_selection();
 
@@ -225,7 +264,7 @@ impl<T: ClipboardProvider> TextInput<T> {
                 let lines_suffix = &self.lines[end.line + 1..];
 
                 let mut insert_lines = if self.multiline {
-                    chars_to_insert.split('\n').map(|s| DOMString::from(s.to_owned())).collect()
+                    chars_to_insert.split('\n').map(|s| DOMString::from(s)).collect()
                 } else {
                     vec!(DOMString::from(chars_to_insert))
                 };
@@ -288,8 +327,11 @@ impl<T: ClipboardProvider> TextInput<T> {
             return;
         }
 
+
+        let col = self.lines[self.edit_point.line][..self.edit_point.index].chars().count();
+
         self.edit_point.line = target_line as usize;
-        self.edit_point.index = min(self.current_line_length(), self.edit_point.index);
+        self.edit_point.index = len_of_first_n_chars(&self.lines[self.edit_point.line], col);
     }
 
     
@@ -479,9 +521,24 @@ impl<T: ClipboardProvider> TextInput<T> {
         }
     }
 
+    
     pub fn len(&self) -> usize {
         self.lines.iter().fold(0, |m, l| {
-            m + l.len() + 1
+            m + l.len() + 1 
+        }) - 1
+    }
+
+    
+    pub fn utf16_len(&self) -> usize {
+        self.lines.iter().fold(0, |m, l| {
+            m + l.chars().map(char::len_utf16).sum::<usize>() + 1 
+        }) - 1
+    }
+
+    
+    pub fn char_count(&self) -> usize {
+        self.lines.iter().fold(0, |m, l| {
+            m + l.chars().count() + 1 
         }) - 1
     }
 
@@ -510,10 +567,12 @@ impl<T: ClipboardProvider> TextInput<T> {
         self.selection_begin = None;
     }
 
+    
     pub fn get_absolute_insertion_point(&self) -> usize {
         self.get_absolute_point_for_text_point(&self.edit_point)
     }
 
+    
     pub fn get_absolute_point_for_text_point(&self, text_point: &TextPoint) -> usize {
         self.lines.iter().enumerate().fold(0, |acc, (i, val)| {
             if i < text_point.line {
@@ -524,6 +583,7 @@ impl<T: ClipboardProvider> TextInput<T> {
         }) + text_point.index
     }
 
+    
     pub fn get_text_point_for_absolute_point(&self, abs_point: usize) -> TextPoint {
         let mut index = abs_point;
         let mut line = 0;
