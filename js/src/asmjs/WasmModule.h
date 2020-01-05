@@ -29,18 +29,6 @@ namespace wasm {
 
 
 
-JSObject*
-CreateI64Object(JSContext* cx, int64_t i64);
-
-
-
-
-bool
-ReadI64Object(JSContext* cx, HandleValue v, int64_t* i64);
-
-
-
-
 
 
 
