@@ -4,6 +4,8 @@
 
 
 
+
+
 #include "vm/Unicode.h"
 
 using namespace js;
@@ -1522,5 +1524,4 @@ const uint8_t unicode::folding_index2[] = {
       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,
 };
-
 

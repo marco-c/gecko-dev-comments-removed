@@ -5,6 +5,7 @@
 
 
 
+
 var BUGNUMBER = 1135377;
 var summary = "Implement RegExp unicode flag -- ignoreCase flag.";
 

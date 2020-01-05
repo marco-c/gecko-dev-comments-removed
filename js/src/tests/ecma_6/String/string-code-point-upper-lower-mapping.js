@@ -4,6 +4,7 @@
 
 
 
+
 assertEq(String.fromCodePoint(0x10428).toUpperCase().codePointAt(0), 0x10400);
 assertEq(String.fromCodePoint(0x10429).toUpperCase().codePointAt(0), 0x10401);
 assertEq(String.fromCodePoint(0x1042a).toUpperCase().codePointAt(0), 0x10402);
