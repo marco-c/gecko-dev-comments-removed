@@ -105,6 +105,7 @@
 #include "HSTSPrimerListener.h"
 #include "CacheStorageService.h"
 #include "HttpChannelParent.h"
+#include "nsIThrottlingService.h"
 
 #ifdef MOZ_TASK_TRACER
 #include "GeckoTaskTracer.h"
@@ -1348,6 +1349,16 @@ nsHttpChannel::CallOnStartRequest()
     } else {
         NS_WARNING("OnStartRequest skipped because of null listener");
         mOnStartRequestCalled = true;
+    }
+
+    if (mClassOfService & nsIClassOfService::Throttleable) {
+        nsIThrottlingService *throttler = gHttpHandler->GetThrottlingService();
+        if (throttler) {
+            
+            
+            
+            throttler->AddChannel(this);
+        }
     }
 
     
@@ -6117,6 +6128,14 @@ nsHttpChannel::BeginConnect()
     
     if (mCanceled) {
         return mStatus;
+    }
+
+    if (mClassOfService & nsIClassOfService::Throttleable) {
+        nsIThrottlingService *throttler = gHttpHandler->GetThrottlingService();
+        if (throttler) {
+            
+            throttler->AddChannel(this);
+        }
     }
 
     if (!(mLoadFlags & LOAD_CLASSIFY_URI)) {

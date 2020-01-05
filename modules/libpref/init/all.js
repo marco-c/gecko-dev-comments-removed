@@ -1990,6 +1990,12 @@ pref("network.auth.subresource-http-auth-allow", 2);
 
 pref("network.auth.private-browsing-sso", false);
 
+
+
+pref("network.throttle.suspend-for", 2000);
+pref("network.throttle.resume-for", 2000);
+pref("network.throttle.enable", true);
+
 pref("permissions.default.image",           1); 
 
 pref("network.proxy.type",                  5);
@@ -4456,10 +4462,6 @@ pref("image.infer-src-animation.threshold-ms", 2000);
 
 
 pref("image.mem.discardable", true);
-
-
-
-pref("image.mem.shared", false);
 
 
 pref("image.mem.allow_locking_in_content_processes", true);

@@ -27,6 +27,7 @@ class nsIIOService;
 class nsIRequestContextService;
 class nsISiteSecurityService;
 class nsIStreamConverterService;
+class nsIThrottlingService;
 class nsITimer;
 class nsIUUIDGenerator;
 
@@ -265,6 +266,7 @@ public:
     nsresult GetIOService(nsIIOService** service);
     nsICookieService * GetCookieService(); 
     nsISiteSecurityService * GetSSService();
+    nsIThrottlingService * GetThrottlingService();
 
     
     uint32_t Get32BitsOfPseudoRandom();
@@ -406,6 +408,7 @@ private:
     nsMainThreadPtrHandle<nsIStreamConverterService> mStreamConvSvc;
     nsMainThreadPtrHandle<nsICookieService>          mCookieService;
     nsMainThreadPtrHandle<nsISiteSecurityService>    mSSService;
+    nsMainThreadPtrHandle<nsIThrottlingService>      mThrottlingService;
 
     
     nsHttpAuthCache mAuthCache;
