@@ -192,6 +192,12 @@ pub fn compute_damage(old: &Option<Arc<ComputedValues>>, new: &ComputedValues) -
     ]);
 
     
+    
+    if old.transform_requires_layer() != new.transform_requires_layer() {
+        damage.insert(rebuild_and_reflow());
+    }
+
+    
     damage
 }
 
