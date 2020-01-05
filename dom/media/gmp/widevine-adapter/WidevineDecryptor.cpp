@@ -321,7 +321,12 @@ ToGMPDOMException(cdm::Error aError)
   switch (aError) {
     case kNotSupportedError: return kGMPNotSupportedError;
     case kInvalidStateError: return kGMPInvalidStateError;
-    case kInvalidAccessError: return kGMPInvalidAccessError;
+    case kInvalidAccessError:
+      
+      
+      
+      
+      return kGMPTypeError;
     case kQuotaExceededError: return kGMPQuotaExceededError;
     case kUnknownError: return kGMPInvalidModificationError; 
     case kClientError: return kGMPAbortError; 
