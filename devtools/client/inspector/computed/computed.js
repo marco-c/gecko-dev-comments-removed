@@ -183,9 +183,9 @@ function CssComputedView(inspector, document, pageStyle) {
   this._onShortcut = this._onShortcut.bind(this);
   this.shortcuts.on("CmdOrCtrl+F", this._onShortcut);
   this.shortcuts.on("Escape", this._onShortcut);
+  this.styleDocument.addEventListener("copy", this._onCopy);
   this.styleDocument.addEventListener("mousedown", this.focusWindow);
   this.element.addEventListener("click", this._onClick);
-  this.element.addEventListener("copy", this._onCopy);
   this.element.addEventListener("contextmenu", this._onContextMenu);
   this.searchField.addEventListener("input", this._onFilterStyles);
   this.searchField.addEventListener("contextmenu", this.inspector.onTextBoxContextMenu);
@@ -687,8 +687,12 @@ CssComputedView.prototype = {
 
 
   _onCopy: function (event) {
-    this.copySelection();
-    event.preventDefault();
+    let win = this.styleWindow;
+    let text = win.getSelection().toString().trim();
+    if (text !== "") {
+      this.copySelection();
+      event.preventDefault();
+    }
   },
 
   
@@ -698,7 +702,9 @@ CssComputedView.prototype = {
     try {
       let win = this.styleWindow;
       let text = win.getSelection().toString().trim();
-
+      
+      
+      let isPropertyPresent = false;
       
       
       let textArray = text.split(/[\r\n]+/);
@@ -709,10 +715,19 @@ CssComputedView.prototype = {
         for (let prop of textArray) {
           if (CssComputedView.propertyNames.indexOf(prop) !== -1) {
             
+            isPropertyPresent = true;
+            
             result += prop;
-          } else {
+          } else if (isPropertyPresent === true) {
+            
+            
             
             result += ": " + prop + ";\n";
+            isPropertyPresent = false;
+          } else {
+            
+            
+            result += prop + "\n";
           }
         }
       } else {
@@ -757,7 +772,7 @@ CssComputedView.prototype = {
     
     this.styleDocument.removeEventListener("mousedown", this.focusWindow);
     this.element.removeEventListener("click", this._onClick);
-    this.element.removeEventListener("copy", this._onCopy);
+    this.styleDocument.removeEventListener("copy", this._onCopy);
     this.element.removeEventListener("contextmenu", this._onContextMenu);
     this.searchField.removeEventListener("input", this._onFilterStyles);
     this.searchField.removeEventListener("contextmenu",
