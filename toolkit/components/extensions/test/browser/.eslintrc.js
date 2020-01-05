@@ -1,0 +1,18 @@
+"use strict";
+
+module.exports = { 
+  "extends": "../../../../../testing/mochitest/mochitest.eslintrc.js",
+
+  "env": {
+    "webextensions": true,
+  },
+
+  "globals": {
+    "ExtensionTestUtils": false,
+    "XPCOMUtils": true,
+  },
+
+  "rules": {
+    "no-shadow": 0,
+  },
+};
