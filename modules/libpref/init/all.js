@@ -1519,27 +1519,6 @@ pref("network.http.redirection-limit", 20);
 pref("network.http.accept-encoding", "gzip, deflate");
 pref("network.http.accept-encoding.secure", "gzip, deflate, br");
 
-pref("network.http.pipelining"      , false);
-pref("network.http.pipelining.ssl"  , false); 
-pref("network.http.pipelining.abtest", false);
-pref("network.http.proxy.pipelining", false);
-
-
-pref("network.http.pipelining.maxrequests" , 32);
-
-
-
-pref("network.http.pipelining.max-optimistic-requests" , 4);
-
-pref("network.http.pipelining.aggressive", false);
-pref("network.http.pipelining.maxsize" , 300000);
-pref("network.http.pipelining.reschedule-on-timeout", true);
-pref("network.http.pipelining.reschedule-timeout", 1500);
-
-
-
-pref("network.http.pipelining.read-timeout", 30000);
-
 
 pref("network.http.prompt-temp-redirect", false);
 
@@ -4326,7 +4305,11 @@ pref("font.name.monospace.x-math", "Fira Mono");
 #elif defined(ANDROID)
 
 
-
+pref("font.name.serif.ar", "Noto Naskh Arabic");
+pref("font.name.sans-serif.ar", "Noto Naskh Arabic");
+pref("font.name.monospace.ar", "Noto Naskh Arabic");
+pref("font.name-list.serif.ar", "Noto Naskh Arabic, Noto Serif, Droid Serif");
+pref("font.name-list.sans-serif.ar", "Noto Naskh Arabic, Clear Sans, Roboto, Droid Sans");
 
 pref("font.name.serif.el", "Droid Serif"); 
 pref("font.name.sans-serif.el", "Clear Sans");
@@ -4490,6 +4473,10 @@ pref("image.infer-src-animation.threshold-ms", 2000);
 
 
 pref("image.mem.discardable", true);
+
+
+
+pref("image.mem.animated.discardable", false);
 
 
 
@@ -5642,6 +5629,10 @@ pref("dom.IntersectionObserver.enabled", false);
 
 
 pref("dom.moduleScripts.enabled", false);
+
+
+
+pref("dom.timeout.max_consecutive_callbacks", 5);
 
 #ifdef FUZZING
 pref("fuzzing.enabled", false);
