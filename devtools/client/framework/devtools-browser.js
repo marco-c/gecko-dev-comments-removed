@@ -14,10 +14,9 @@
 
 const {Cc, Ci, Cu} = require("chrome");
 const Services = require("Services");
-const promise = require("promise");
 const defer = require("devtools/shared/defer");
 const Telemetry = require("devtools/client/shared/telemetry");
-const { gDevTools } = require("./devtools");
+const {gDevTools} = require("./devtools");
 
 
 loader.lazyRequireGetter(this, "TargetFactory", "devtools/client/framework/target", true);
@@ -68,7 +67,7 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
 
 
   
-  toggleToolboxCommand: function (gBrowser) {
+  toggleToolboxCommand(gBrowser) {
     let target = TargetFactory.forTab(gBrowser.selectedTab);
     let toolbox = gDevTools.getToolbox(target);
 
@@ -84,7 +83,7 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
 
 
 
-  updateCommandAvailability: function (win) {
+  updateCommandAvailability(win) {
     let doc = win.document;
 
     function toggleMenuItem(id, isEnabled) {
@@ -124,10 +123,12 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
 
     
     let chromeEnabled = Services.prefs.getBoolPref("devtools.chrome.enabled");
-    let devtoolsRemoteEnabled = Services.prefs.getBoolPref("devtools.debugger.remote-enabled");
+    let devtoolsRemoteEnabled = Services.prefs.getBoolPref(
+      "devtools.debugger.remote-enabled");
     let remoteEnabled = chromeEnabled && devtoolsRemoteEnabled;
     toggleMenuItem("menu_browserToolbox", remoteEnabled);
-    toggleMenuItem("menu_browserContentToolbox", remoteEnabled && win.gMultiProcessBrowser);
+    toggleMenuItem("menu_browserContentToolbox",
+      remoteEnabled && win.gMultiProcessBrowser);
 
     
     toggleMenuItem("menu_devtools_connect", devtoolsRemoteEnabled);
@@ -138,7 +139,7 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
 
 
 
-  updateDevtoolsThemeAttribute: function(win) {
+  updateDevtoolsThemeAttribute(win) {
     
     
     let devtoolsTheme = Services.prefs.getCharPref("devtools.theme");
@@ -148,8 +149,11 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
 
     
     
-    win.document.getElementById("browser-bottombox").setAttribute("devtoolstheme", devtoolsTheme);
-    win.document.getElementById("content").setAttribute("devtoolstheme", devtoolsTheme);
+    
+    win.document.getElementById("browser-bottombox")
+       .setAttribute("devtoolstheme", devtoolsTheme);
+    win.document.getElementById("content")
+       .setAttribute("devtoolstheme", devtoolsTheme);
 
     
     
@@ -161,14 +165,16 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
     let currentTheme = LightweightThemeManager.currentTheme;
     let currentThemeID = currentTheme && currentTheme.id;
     if (currentThemeID == COMPACT_LIGHT_ID && devtoolsTheme == "dark") {
-      LightweightThemeManager.currentTheme = LightweightThemeManager.getUsedTheme(COMPACT_DARK_ID);
+      LightweightThemeManager.currentTheme =
+        LightweightThemeManager.getUsedTheme(COMPACT_DARK_ID);
     }
     if (currentThemeID == COMPACT_DARK_ID && devtoolsTheme == "light") {
-      LightweightThemeManager.currentTheme = LightweightThemeManager.getUsedTheme(COMPACT_LIGHT_ID);
+      LightweightThemeManager.currentTheme =
+        LightweightThemeManager.getUsedTheme(COMPACT_LIGHT_ID);
     }
   },
 
-  observe: function (subject, topic, prefName) {
+  observe(subject, topic, prefName) {
     switch (topic) {
       case "browser-delayed-startup-finished":
         this._registerBrowserWindow(subject);
@@ -191,7 +197,7 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
       case "sdk:loader:destroy":
         
         
-        if (subject.wrappedJSObject == require('@loader/unload')) {
+        if (subject.wrappedJSObject == require("@loader/unload")) {
           gDevToolsBrowser.destroy({ shuttingDown: false });
         }
         break;
@@ -206,7 +212,7 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
           Services.prefs.setCharPref("devtools.theme", "light");
         }
         if (currentThemeID == COMPACT_DARK_ID && devtoolsTheme == "light") {
-            Services.prefs.setCharPref("devtools.theme", "dark");
+          Services.prefs.setCharPref("devtools.theme", "dark");
         }
         break;
     }
@@ -214,7 +220,7 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
 
   _prefObserverRegistered: false,
 
-  ensurePrefObserver: function () {
+  ensurePrefObserver() {
     if (!this._prefObserverRegistered) {
       this._prefObserverRegistered = true;
       Services.prefs.addObserver("devtools.", this);
@@ -237,29 +243,26 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
 
   
   
-  selectToolCommand: function (gBrowser, toolId) {
+  selectToolCommand(gBrowser, toolId) {
     let target = TargetFactory.forTab(gBrowser.selectedTab);
     let toolbox = gDevTools.getToolbox(target);
     let toolDefinition = gDevTools.getToolDefinition(toolId);
 
     if (toolbox &&
         (toolbox.currentToolId == toolId ||
-          (toolId == "webconsole" && toolbox.splitConsole)))
-    {
+          (toolId == "webconsole" && toolbox.splitConsole))) {
       toolbox.fireCustomKey(toolId);
 
-      if (toolDefinition.preventClosingOnKey || toolbox.hostType == Toolbox.HostType.WINDOW) {
+      if (toolDefinition.preventClosingOnKey ||
+          toolbox.hostType == Toolbox.HostType.WINDOW) {
         toolbox.raise();
       } else {
         gDevTools.closeToolbox(target);
       }
       gDevTools.emit("select-tool-command", toolId);
     } else {
-      gDevTools.showToolbox(target, toolId).then(() => {
-        let target = TargetFactory.forTab(gBrowser.selectedTab);
-        let toolbox = gDevTools.getToolbox(target);
-
-        toolbox.fireCustomKey(toolId);
+      gDevTools.showToolbox(target, toolId).then(newToolbox => {
+        newToolbox.fireCustomKey(toolId);
         gDevTools.emit("select-tool-command", toolId);
       });
     }
@@ -269,7 +272,7 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
 
 
    
-  openAboutDebugging: function (gBrowser, hash) {
+  openAboutDebugging(gBrowser, hash) {
     let url = "about:debugging" + (hash ? "#" + hash : "");
     gBrowser.selectedTab = gBrowser.addTab(url);
   },
@@ -278,7 +281,7 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
 
 
    
-  openConnectScreen: function (gBrowser) {
+  openConnectScreen(gBrowser) {
     gBrowser.selectedTab = gBrowser.addTab("chrome://devtools/content/framework/connect/connect.xhtml");
   },
 
@@ -287,7 +290,7 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
 
    
    
-  openWebIDE: function () {
+  openWebIDE() {
     let win = Services.wm.getMostRecentWindow("devtools:webide");
     if (win) {
       win.focus();
@@ -338,7 +341,7 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
     await inspector.once("inspector-updated");
   },
 
-  _getContentProcessTarget: function (processId) {
+  _getContentProcessTarget(processId) {
     
     if (!DebuggerServer.initialized) {
       DebuggerServer.init();
@@ -376,7 +379,7 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
   },
 
    
-  openContentProcessToolbox: function (gBrowser) {
+  openContentProcessToolbox(gBrowser) {
     let { childCount } = Services.ppmm;
     
     let mm = gBrowser.selectedBrowser.messageManager.processMessageManager;
@@ -404,7 +407,7 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
   
 
 
-  installDeveloperWidget: function () {
+  installDeveloperWidget() {
     let id = "developer-button";
     let widget = CustomizableUI.getWidget(id);
     if (widget && widget.provider == CustomizableUI.PROVIDER_API) {
@@ -419,12 +422,11 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
       defaultArea: AppConstants.MOZ_DEV_EDITION ?
                      CustomizableUI.AREA_NAVBAR :
                      CustomizableUI.AREA_PANEL,
-      onViewShowing: function (aEvent) {
+      onViewShowing(event) {
         
         
         
-        let doc = aEvent.target.ownerDocument;
-        let win = doc.defaultView;
+        let doc = event.target.ownerDocument;
 
         let menu = doc.getElementById("menuWebDeveloperPopup");
 
@@ -440,7 +442,7 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
         clearSubview(developerItems);
         fillSubviewFromMenuItems(itemsToDisplay, developerItems);
       },
-      onBeforeCreated: function (doc) {
+      onBeforeCreated(doc) {
         
         if (doc.getElementById("PanelUI-developerItems")) {
           return;
@@ -459,7 +461,7 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
 
 
   
-  installWebIDEWidget: function () {
+  installWebIDEWidget() {
     if (this.isWebIDEWidgetInstalled()) {
       return;
     }
@@ -477,13 +479,13 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
       label: "devtools-webide-button2.label",
       tooltiptext: "devtools-webide-button2.tooltiptext",
       defaultArea: defaultArea,
-      onCommand: function (aEvent) {
+      onCommand(event) {
         gDevToolsBrowser.openWebIDE();
       }
     });
   },
 
-  isWebIDEWidgetInstalled: function () {
+  isWebIDEWidgetInstalled() {
     let widgetWrapper = CustomizableUI.getWidget("webide-button");
     return !!(widgetWrapper && widgetWrapper.provider == CustomizableUI.PROVIDER_API);
   },
@@ -496,7 +498,7 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
   
 
 
-  uninstallWebIDEWidget: function () {
+  uninstallWebIDEWidget() {
     if (this.isWebIDEWidgetInstalled()) {
       CustomizableUI.removeWidgetFromArea("webide-button");
     }
@@ -507,7 +509,7 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
 
 
    
-  moveWebIDEWidgetInNavbar: function () {
+  moveWebIDEWidgetInNavbar() {
     CustomizableUI.addWidgetToArea("webide-button", CustomizableUI.AREA_NAVBAR);
   },
 
@@ -517,7 +519,7 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
 
 
 
-  _registerBrowserWindow: function (win) {
+  _registerBrowserWindow(win) {
     if (gDevToolsBrowser._trackedBrowserWindows.has(win)) {
       return;
     }
@@ -552,13 +554,13 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
 
 
 
-  setSlowScriptDebugHandler: function DT_setSlowScriptDebugHandler() {
+  setSlowScriptDebugHandler() {
     let debugService = Cc["@mozilla.org/dom/slow-script-debug;1"]
                          .getService(Ci.nsISlowScriptDebug);
     let tm = Cc["@mozilla.org/thread-manager;1"].getService(Ci.nsIThreadManager);
 
-    function slowScriptDebugHandler(aTab, aCallback) {
-      let target = TargetFactory.forTab(aTab);
+    function slowScriptDebugHandler(tab, callback) {
+      let target = TargetFactory.forTab(tab);
 
       gDevTools.showToolbox(target, "jsdebugger").then(toolbox => {
         let threadClient = toolbox.threadClient;
@@ -569,13 +571,13 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
           case "paused":
             
             threadClient.resumeThenPause();
-            aCallback();
+            callback();
             break;
           case "attached":
             
             threadClient.interrupt(() => {
               threadClient.resumeThenPause();
-              aCallback();
+              callback();
             });
             break;
           case "resuming":
@@ -583,7 +585,7 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
             threadClient.addOneTimeListener("resumed", () => {
               threadClient.interrupt(() => {
                 threadClient.resumeThenPause();
-                aCallback();
+                callback();
               });
             });
             break;
@@ -594,8 +596,8 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
       });
     }
 
-    debugService.activationHandler = function (aWindow) {
-      let chromeWindow = aWindow.QueryInterface(Ci.nsIInterfaceRequestor)
+    debugService.activationHandler = function (window) {
+      let chromeWindow = window.QueryInterface(Ci.nsIInterfaceRequestor)
                                 .getInterface(Ci.nsIWebNavigation)
                                 .QueryInterface(Ci.nsIDocShellTreeItem)
                                 .rootTreeItem
@@ -605,11 +607,13 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
 
       let setupFinished = false;
       slowScriptDebugHandler(chromeWindow.gBrowser.selectedTab,
-                             () => { setupFinished = true; });
+        () => {
+          setupFinished = true;
+        });
 
       
       
-      let utils = aWindow.QueryInterface(Ci.nsIInterfaceRequestor)
+      let utils = window.QueryInterface(Ci.nsIInterfaceRequestor)
                          .getInterface(Ci.nsIDOMWindowUtils);
       utils.enterModalState();
       while (!setupFinished) {
@@ -618,23 +622,21 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
       utils.leaveModalState();
     };
 
-    debugService.remoteActivationHandler = function (aBrowser, aCallback) {
-      let chromeWindow = aBrowser.ownerDocument.defaultView;
-      let tab = chromeWindow.gBrowser.getTabForBrowser(aBrowser);
+    debugService.remoteActivationHandler = function (browser, callback) {
+      let chromeWindow = browser.ownerDocument.defaultView;
+      let tab = chromeWindow.gBrowser.getTabForBrowser(browser);
       chromeWindow.gBrowser.selected = tab;
 
-      function callback() {
-        aCallback.finishDebuggerStartup();
-      }
-
-      slowScriptDebugHandler(tab, callback);
+      slowScriptDebugHandler(tab, function () {
+        callback.finishDebuggerStartup();
+      });
     };
   },
 
   
 
 
-  unsetSlowScriptDebugHandler: function DT_unsetSlowScriptDebugHandler() {
+  unsetSlowScriptDebugHandler() {
     let debugService = Cc["@mozilla.org/dom/slow-script-debug;1"]
                          .getService(Ci.nsISlowScriptDebug);
     debugService.activationHandler = undefined;
@@ -646,7 +648,7 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
 
 
 
-  _addToolToWindows: function DT_addToolToWindows(toolDefinition) {
+  _addToolToWindows(toolDefinition) {
     
     if (!toolDefinition.inMenu) {
       return;
@@ -658,7 +660,9 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
          !Services.prefs.getBoolPref(toolDefinition.visibilityswitch)) {
         return;
       }
-    } catch (e) {}
+    } catch (e) {
+      
+    }
 
     
     
@@ -683,9 +687,9 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
     }
   },
 
-  hasToolboxOpened: function (win) {
+  hasToolboxOpened(win) {
     let tab = win.gBrowser.selectedTab;
-    for (let [target, toolbox] of gDevTools._toolboxes) {
+    for (let [target, ] of gDevTools._toolboxes) {
       if (target.tab == tab) {
         return true;
       }
@@ -697,9 +701,8 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
 
 
 
-  _updateMenuCheckbox: function DT_updateMenuCheckbox() {
+  _updateMenuCheckbox() {
     for (let win of gDevToolsBrowser._trackedBrowserWindows) {
-
       let hasToolbox = gDevToolsBrowser.hasToolboxOpened(win);
 
       let menu = win.document.getElementById("menu_devToolbox");
@@ -717,7 +720,7 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
 
 
 
-  _removeToolFromWindows: function DT_removeToolFromWindows(toolId) {
+  _removeToolFromWindows(toolId) {
     for (let win of gDevToolsBrowser._trackedBrowserWindows) {
       BrowserMenus.removeToolFromMenu(toolId, win.document);
     }
@@ -734,7 +737,7 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
 
 
 
-  _forgetBrowserWindow: function (win) {
+  _forgetBrowserWindow(win) {
     if (!gDevToolsBrowser._trackedBrowserWindows.has(win)) {
       return;
     }
@@ -764,7 +767,7 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
     tabContainer.removeEventListener("TabUnpinned", this);
   },
 
-  handleEvent: function (event) {
+  handleEvent(event) {
     switch (event.type) {
       case "TabOpen":
       case "TabClose":
@@ -797,7 +800,7 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
     }
   },
 
-  _pingTelemetry: function () {
+  _pingTelemetry() {
     let mean = function (arr) {
       if (arr.length === 0) {
         return 0;
@@ -823,9 +826,9 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
 
 
 
-  destroy: function ({ shuttingDown }) {
+  destroy({ shuttingDown }) {
     Services.prefs.removeObserver("devtools.", gDevToolsBrowser);
-    Services.obs.removeObserver(gDevToolsBrowser, "lightweight-theme-changed", false);
+    Services.obs.removeObserver(gDevToolsBrowser, "lightweight-theme-changed");
     Services.obs.removeObserver(gDevToolsBrowser, "browser-delayed-startup-finished");
     Services.obs.removeObserver(gDevToolsBrowser, "quit-application");
     Services.obs.removeObserver(gDevToolsBrowser, "sdk:loader:destroy");
