@@ -10,8 +10,8 @@ namespace net {
 struct HuffmanIncomingTable;
 
 struct HuffmanIncomingEntry {
-  const uint16_t mValue:9;      
-  const uint16_t mPrefixLen:7;  
+  uint16_t mValue:9;      
+  uint16_t mPrefixLen:7;  
 };
 
 
