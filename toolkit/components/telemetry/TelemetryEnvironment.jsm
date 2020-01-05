@@ -44,6 +44,9 @@ const MAX_ADDON_STRING_LENGTH = 100;
 
 const MAX_ATTRIBUTION_STRING_LENGTH = 100;
 
+const MAX_EXPERIMENT_ID_LENGTH = 100;
+const MAX_EXPERIMENT_BRANCH_LENGTH = 100;
+
 
 
 
@@ -78,6 +81,42 @@ this.TelemetryEnvironment = {
 
   unregisterChangeListener(name) {
     return getGlobal().unregisterChangeListener(name);
+  },
+
+  
+
+
+
+
+
+
+
+  setExperimentActive(id, branch) {
+    return getGlobal().setExperimentActive(id, branch);
+  },
+
+  
+
+
+
+
+
+  setExperimentInactive(id) {
+    return getGlobal().setExperimentInactive(id);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  getActiveExperiments() {
+    return getGlobal().getActiveExperiments();
   },
 
   shutdown() {
@@ -849,6 +888,47 @@ EnvironmentCache.prototype = {
       return;
     }
     this._changeListeners.delete(name);
+  },
+
+  setExperimentActive(id, branch) {
+    this._log.trace("setExperimentActive");
+    
+    const saneId = limitStringToLength(id, MAX_EXPERIMENT_ID_LENGTH);
+    const saneBranch = limitStringToLength(branch, MAX_EXPERIMENT_BRANCH_LENGTH);
+    if (!saneId || !saneBranch) {
+      this._log.error("setExperimentActive - the provided arguments are not strings.");
+      return;
+    }
+
+    
+    if (saneId.length != id.length || saneBranch.length != branch.length) {
+      this._log.warn("setExperimentActive - the experiment id or branch were truncated.");
+    }
+
+    let oldEnvironment = Cu.cloneInto(this._currentEnvironment, myScope);
+    
+    let experiments = this._currentEnvironment.experiments || {};
+    experiments[saneId] = { "branch": saneBranch };
+    this._currentEnvironment.experiments = experiments;
+    
+    this._onEnvironmentChange("experiment-annotation-changed", oldEnvironment);
+  },
+
+  setExperimentInactive(id) {
+    this._log.trace("setExperimentInactive");
+    let experiments = this._currentEnvironment.experiments || {};
+    if (id in experiments) {
+      
+      let oldEnvironment = Cu.cloneInto(this._currentEnvironment, myScope);
+      
+      delete this._currentEnvironment.experiments[id];
+      
+      this._onEnvironmentChange("experiment-annotation-changed", oldEnvironment);
+    }
+  },
+
+  getActiveExperiments() {
+    return Cu.cloneInto(this._currentEnvironment.experiments || {}, myScope);
   },
 
   shutdown() {
