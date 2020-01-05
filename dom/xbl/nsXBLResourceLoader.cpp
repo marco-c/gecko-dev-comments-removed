@@ -250,10 +250,12 @@ nsXBLResourceLoader::NotifyBoundElements()
           if (!childFrame) {
             
             
-            
-            
             nsStyleContext* sc =
               shell->FrameManager()->GetUndisplayedContent(content);
+
+            if (!sc) {
+              sc = shell->FrameManager()->GetDisplayContentsStyleFor(content);
+            }
 
             if (!sc) {
               shell->PostRecreateFramesFor(content->AsElement());
