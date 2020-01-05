@@ -1141,7 +1141,6 @@ public:
   explicit nsCSSShadowArray(uint32_t aArrayLen) :
     mLength(aArrayLen)
   {
-    MOZ_COUNT_CTOR(nsCSSShadowArray);
     for (uint32_t i = 1; i < mLength; ++i) {
       
       
@@ -1152,7 +1151,6 @@ public:
 private:
   
   ~nsCSSShadowArray() {
-    MOZ_COUNT_DTOR(nsCSSShadowArray);
     for (uint32_t i = 1; i < mLength; ++i) {
       mArray[i].~nsCSSShadowItem();
     }
