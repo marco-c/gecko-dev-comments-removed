@@ -1925,19 +1925,17 @@ IsHTMLStyleGeometryBox(StyleGeometryBox aBox)
 static StyleGeometryBox
 ComputeBoxValue(nsIFrame* aForFrame, StyleGeometryBox aBox)
 {
-  
-  if (aForFrame->IsFrameOfType(nsIFrame::eSVG) &&
-      (aForFrame->GetType() != nsGkAtoms::svgOuterSVGFrame)) {
-    
-    
-    if (IsHTMLStyleGeometryBox(aBox)) {
-      return StyleGeometryBox::Fill;
-    }
-  } else {
+  if (nsLayoutUtils::HasCSSBoxLayout(aForFrame)) {
     
     
     if (IsSVGStyleGeometryBox(aBox)) {
       return StyleGeometryBox::Border;
+    }
+  } else {
+    
+    
+    if (IsHTMLStyleGeometryBox(aBox)) {
+      return StyleGeometryBox::Fill;
     }
   }
 

@@ -2898,6 +2898,11 @@ public:
   static nsRect ComputeGeometryBox(nsIFrame* aFrame,
                                    StyleGeometryBox aGeometryBox);
 
+  
+
+
+  static bool HasCSSBoxLayout(nsIFrame* aFrame);
+
 private:
   static uint32_t sFontSizeInflationEmPerLine;
   static uint32_t sFontSizeInflationMinTwips;
