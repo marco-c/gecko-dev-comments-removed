@@ -171,7 +171,7 @@ gfxASurface::Wrap (cairo_surface_t *csurf, const IntSize& aSize)
     }
 #endif
     else {
-        MOZ_CRASH("Unknown cairo surface type");
+        result = new gfxUnknownSurface(csurf, aSize);
     }
 
     
