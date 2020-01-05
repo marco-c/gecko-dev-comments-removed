@@ -11,8 +11,8 @@ use selector_impl::SelectorImplExt;
 use selectors::Element;
 use selectors::bloom::BloomFilter;
 use std::cell::RefCell;
+use tid::tid;
 use util::opts;
-use util::tid::tid;
 
 
 

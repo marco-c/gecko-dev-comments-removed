@@ -2,7 +2,7 @@
 
 
 
-use util::str::{split_html_space_chars, str_join};
+use style::str::{split_html_space_chars, str_join};
 
 #[test]
 pub fn split_html_space_chars_whitespace() {
