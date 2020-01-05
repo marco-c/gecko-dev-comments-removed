@@ -74,6 +74,8 @@ private:
   bool mDownloadError;
   bool mBeganStream;
 
+  nsCString mDownloadErrorStatusStr;
+
   
   nsCString mStreamTable;
 

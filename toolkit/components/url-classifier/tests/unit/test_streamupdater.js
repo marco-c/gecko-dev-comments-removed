@@ -102,7 +102,7 @@ function testInvalidUrlForward() {
 
   
   var assertions = {
-    "tableData" : "",
+    "tableData" : "test-phish-simple;a:1",
     "urlsExist" : add1Urls
   };
 
@@ -120,7 +120,7 @@ function testErrorUrlForward() {
 
   
   var assertions = {
-    "tableData" : "",
+    "tableData" : "test-phish-simple;a:1",
     "urlsExist" : add1Urls
   };
 
