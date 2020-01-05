@@ -26,18 +26,27 @@ add_task(function* () {
     yield ContentTask.spawn(browser, [index, length], function* ([index, length]) {
       let webNav = content.window.QueryInterface(Ci.nsIInterfaceRequestor)
             .getInterface(Ci.nsIWebNavigation);
+      is(webNav.sessionHistory.globalIndexOffset + webNav.sessionHistory.index,
+         index - 1, "In content index matches");
       is(webNav.canGoForward, index < length, "canGoForward is correct");
       is(webNav.canGoBack, index > 1, "canGoBack is correct");
     });
   }
 
   
+  
   function awaitProcessChange(browser) {
     return new Promise(resolve => {
+      let locChangeListener = {
+        onLocationChange: () => {
+          gBrowser.removeProgressListener(locChangeListener);
+          resolve();
+        },
+      };
+
       browser.addEventListener("BrowserChangedProcess", function bcp(e) {
         browser.removeEventListener("BrowserChangedProcess", bcp);
-        ok(true, "The browser changed process!");
-        resolve();
+        gBrowser.addProgressListener(locChangeListener);
       });
     });
   }
