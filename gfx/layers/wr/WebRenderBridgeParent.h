@@ -71,7 +71,6 @@ public:
   mozilla::ipc::IPCResult RecvRemoveExternalImageId(const uint64_t& aImageId) override;
 
   void ActorDestroy(ActorDestroyReason aWhy) override;
-  void SetWebRenderProfilerEnabled(bool aEnabled);
 
   void Destroy();
 
@@ -99,6 +98,7 @@ private:
   nsDataHashtable<nsUint64HashKey, uint64_t> mExternalImageIds;
 
   bool mDestroyed;
+  uint32_t mEpoch;
 };
 
 } 
