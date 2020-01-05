@@ -140,14 +140,7 @@ this.GeckoDriver = function (appName, server) {
 
   
   this.dialog = null;
-  let handleDialog = (subject, topic) => {
-    let winr;
-    if (topic == modal.COMMON_DIALOG_LOADED) {
-      winr = Cu.getWeakReference(subject);
-    }
-    this.dialog = new modal.Dialog(() => this.curBrowser, winr);
-  };
-  modal.addHandler(handleDialog);
+  this.dialogHandler = this.globalModalDialogHandler.bind(this);
 };
 
 Object.defineProperty(GeckoDriver.prototype, "a11yChecks", {
@@ -222,6 +215,19 @@ GeckoDriver.prototype.QueryInterface = XPCOMUtils.generateQI([
   Ci.nsIObserver,
   Ci.nsISupportsWeakReference,
 ]);
+
+
+
+
+
+GeckoDriver.prototype.globalModalDialogHandler = function (subject, topic) {
+  let winr;
+  if (topic === modal.COMMON_DIALOG_LOADED) {
+    
+    winr = Cu.getWeakReference(subject);
+  }
+  this.dialog = new modal.Dialog(() => this.curBrowser, winr);
+};
 
 
 
@@ -661,6 +667,11 @@ GeckoDriver.prototype.newSession = function* (cmd, resp) {
   if (this.curBrowser.tab) {
     this.curBrowser.contentBrowser.focus();
   }
+
+  
+  
+  modal.addHandler(this.dialogHandler);
+  this.dialog = modal.findModalDialogs(this.curBrowser);
 
   return {
     sessionId: this.sessionId,
@@ -2411,6 +2422,8 @@ GeckoDriver.prototype.deleteSession = function (cmd, resp) {
     this.observing = null;
   }
 
+  modal.removeHandler(this.dialogHandler);
+
   this.sandboxes.clear();
   cert.uninstallOverride();
 
@@ -2660,10 +2673,9 @@ GeckoDriver.prototype.sendKeysToDialog = function (cmd, resp) {
       this.dialog.window ? this.dialog.window : win);
 };
 
-GeckoDriver.prototype._checkIfAlertIsPresent = function() {
+GeckoDriver.prototype._checkIfAlertIsPresent = function () {
   if (!this.dialog || !this.dialog.ui) {
-    throw new NoAlertOpenError(
-        "No tab modal was open when attempting to get the dialog text");
+    throw new NoAlertOpenError("No modal dialog is currently open");
   }
 };
 
