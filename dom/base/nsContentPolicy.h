@@ -31,6 +31,9 @@ class nsContentPolicy : public nsIContentPolicy
     nsCategoryCache<nsIContentPolicy> mPolicies;
     nsCategoryCache<nsISimpleContentPolicy> mSimplePolicies;
 
+    nsCOMPtr<nsIContentPolicy> mMixedContentBlocker;
+    nsCOMPtr<nsIContentPolicy> mCSPService;
+
     
     typedef
     NS_STDCALL_FUNCPROTO(nsresult, CPMethod, nsIContentPolicy,
