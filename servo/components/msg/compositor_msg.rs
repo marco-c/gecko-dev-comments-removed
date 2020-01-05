@@ -6,6 +6,7 @@ use azure::azure_hl::Color;
 use constellation_msg::{Key, KeyState, KeyModifiers};
 use euclid::point::Point2D;
 use euclid::rect::Rect;
+use euclid::Matrix4;
 use layers::platform::surface::NativeGraphicsMetadata;
 use layers::layers::LayerBufferSet;
 use std::fmt::{Formatter, Debug};
@@ -51,6 +52,12 @@ impl LayerId {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum LayerKind {
+    Layer2D,
+    Layer3D,
+}
+
 
 #[derive(Clone, PartialEq, Eq, Copy)]
 pub enum ScrollPolicy {
@@ -67,11 +74,19 @@ pub struct LayerProperties {
     
     pub id: LayerId,
     
+    pub parent_id: Option<LayerId>,
+    
     pub rect: Rect<f32>,
     
     pub background_color: Color,
     
     pub scroll_policy: ScrollPolicy,
+    
+    pub transform: Matrix4,
+    
+    pub perspective: Matrix4,
+    
+    pub establishes_3d_context: bool,
 }
 
 

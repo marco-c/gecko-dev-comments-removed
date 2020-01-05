@@ -29,6 +29,7 @@ use euclid::rect::Rect;
 use euclid::side_offsets::SideOffsets2D;
 use euclid::size::Size2D;
 use libc::types::common::c99::uint32_t;
+use msg::compositor_msg::LayerKind;
 use net_traits::image::base::Image;
 use png::PixelsByColorType;
 use std::default::Default;
@@ -54,6 +55,8 @@ pub struct PaintContext<'a> {
     
     
     pub transient_clip: Option<ClippingRegion>,
+    
+    pub layer_kind: LayerKind,
 }
 
 #[derive(Copy, Clone)]

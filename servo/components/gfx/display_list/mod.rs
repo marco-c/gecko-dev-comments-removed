@@ -32,7 +32,7 @@ use euclid::approxeq::ApproxEq;
 use euclid::num::Zero;
 use libc::uintptr_t;
 use paint_task::PaintLayer;
-use msg::compositor_msg::LayerId;
+use msg::compositor_msg::{LayerId, LayerKind};
 use net_traits::image::base::Image;
 use util::opts;
 use util::cursor::Cursor;
@@ -246,6 +246,12 @@ pub struct StackingContext {
 
     
     pub transform: Matrix4,
+
+    
+    pub perspective: Matrix4,
+
+    
+    pub establishes_3d_context: bool,
 }
 
 impl StackingContext {
@@ -255,30 +261,40 @@ impl StackingContext {
                bounds: &Rect<Au>,
                overflow: &Rect<Au>,
                z_index: i32,
-               transform: &Matrix4,
                filters: filter::T,
                blend_mode: mix_blend_mode::T,
-               layer: Option<Arc<PaintLayer>>)
+               layer: Option<Arc<PaintLayer>>,
+               transform: Matrix4,
+               perspective: Matrix4,
+               establishes_3d_context: bool)
                -> StackingContext {
         StackingContext {
             display_list: display_list,
-            layer: layer,
             bounds: *bounds,
             overflow: *overflow,
             z_index: z_index,
-            transform: *transform,
             filters: filters,
             blend_mode: blend_mode,
+            layer: layer,
+            transform: transform,
+            perspective: perspective,
+            establishes_3d_context: establishes_3d_context,
         }
     }
 
     
-    pub fn optimize_and_draw_into_context(&self,
-                                          paint_context: &mut PaintContext,
-                                          tile_bounds: &Rect<AzFloat>,
-                                          transform: &Matrix4,
-                                          clip_rect: Option<&Rect<Au>>) {
-        let transform = transform.mul(&self.transform);
+    pub fn draw_into_context(&self,
+                             display_list: &DisplayList,
+                             paint_context: &mut PaintContext,
+                             tile_bounds: &Rect<AzFloat>,
+                             transform: &Matrix4,
+                             clip_rect: Option<&Rect<Au>>) {
+        
+        
+        let transform = match self.layer {
+            Some(..) => *transform,
+            None => transform.mul(&self.transform),
+        };
         let temporary_draw_target =
             paint_context.get_or_create_temporary_draw_target(&self.filters, self.blend_mode);
         {
@@ -289,11 +305,8 @@ impl StackingContext {
                 screen_rect: paint_context.screen_rect,
                 clip_rect: clip_rect.map(|clip_rect| *clip_rect),
                 transient_clip: None,
+                layer_kind: paint_context.layer_kind,
             };
-
-            
-            let display_list =
-                DisplayListOptimizer::new(tile_bounds).optimize(&*self.display_list);
 
             if opts::get().dump_display_list_optimized {
                 println!("**** optimized display list. Tile bounds: {:?}", tile_bounds);
@@ -409,6 +422,35 @@ impl StackingContext {
         paint_context.draw_temporary_draw_target_if_necessary(&temporary_draw_target,
                                                               &self.filters,
                                                               self.blend_mode)
+
+    }
+
+    
+    pub fn optimize_and_draw_into_context(&self,
+                                          paint_context: &mut PaintContext,
+                                          tile_bounds: &Rect<AzFloat>,
+                                          transform: &Matrix4,
+                                          clip_rect: Option<&Rect<Au>>) {
+        
+        
+        
+        if paint_context.layer_kind == LayerKind::Layer3D {
+            self.draw_into_context(&self.display_list,
+                                   paint_context,
+                                   tile_bounds,
+                                   transform,
+                                   clip_rect);
+
+        } else {
+            
+            let display_list = DisplayListOptimizer::new(tile_bounds).optimize(&*self.display_list);
+
+            self.draw_into_context(&display_list,
+                                   paint_context,
+                                   tile_bounds,
+                                   transform,
+                                   clip_rect);
+        }
     }
 
     
@@ -1005,7 +1047,7 @@ impl<'a> Iterator for DisplayItemIterator<'a> {
 impl DisplayItem {
     
     fn draw_into_context(&self, paint_context: &mut PaintContext) {
-        {
+        if paint_context.layer_kind == LayerKind::Layer2D {
             let this_clip = &self.base().clip;
             match paint_context.transient_clip {
                 Some(ref transient_clip) if transient_clip == this_clip => {}
