@@ -757,8 +757,7 @@ KeyframeEffectReadOnly::Constructor(const GlobalObject& aGlobal,
                                     KeyframeEffectReadOnly& aSource,
                                     ErrorResult& aRv)
 {
-  
-  return nullptr;
+  return ConstructKeyframeEffect<KeyframeEffectReadOnly>(aGlobal, aSource, aRv);
 }
 
 void
