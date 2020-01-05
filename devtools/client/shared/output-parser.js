@@ -161,12 +161,15 @@ OutputParser.prototype = {
       return (new angleUtils.CssAngle(angle)).valid;
     };
 
+    let spaceNeeded = false;
     while (true) {
       let token = tokenStream.nextToken();
       if (!token) {
         break;
       }
       if (token.tokenType === "comment") {
+        
+        
         continue;
       }
 
@@ -224,6 +227,11 @@ OutputParser.prototype = {
         case "hash": {
           let original = text.substring(token.startOffset, token.endOffset);
           if (colorOK() && colorUtils.isValidCSSColor(original, this.cssColor4)) {
+            if (spaceNeeded) {
+              
+              
+              this._appendTextNode(" ");
+            }
             this._appendColor(original, options);
           } else {
             this._appendTextNode(original);
@@ -259,6 +267,13 @@ OutputParser.prototype = {
             text.substring(token.startOffset, token.endOffset));
           break;
       }
+
+      
+      
+      spaceNeeded = (token.tokenType === "ident" || token.tokenType === "at" ||
+                     token.tokenType === "id" || token.tokenType === "hash" ||
+                     token.tokenType === "number" || token.tokenType === "dimension" ||
+                     token.tokenType === "percentage" || token.tokenType === "dimension");
     }
 
     let result = this._toDOM();
