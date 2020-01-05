@@ -667,11 +667,8 @@ ViewSourceChrome.prototype = {
 
 
 
-
-
-  updateBrowserRemoteness(shouldBeRemote, remoteType) {
-    if (this.browser.isRemoteBrowser == shouldBeRemote &&
-        this.browser.remoteType == remoteType) {
+  updateBrowserRemoteness(shouldBeRemote) {
+    if (this.browser.isRemoteBrowser == shouldBeRemote) {
       return;
     }
 
@@ -688,10 +685,8 @@ ViewSourceChrome.prototype = {
     this.browser.remove();
     if (shouldBeRemote) {
       this.browser.setAttribute("remote", "true");
-      this.browser.setAttribute("remoteType", remoteType);
     } else {
       this.browser.removeAttribute("remote");
-      this.browser.removeAttribute("remoteType");
     }
 
     this.browser.relatedBrowser = relatedBrowser;
