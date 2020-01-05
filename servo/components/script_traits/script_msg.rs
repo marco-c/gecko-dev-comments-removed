@@ -3,10 +3,9 @@
 
 
 use AnimationState;
+use CompositorEvent;
 use DocumentState;
 use IFrameLoadInfo;
-use MouseButton;
-use MouseEventType;
 use MozBrowserEvent;
 use WorkerGlobalScopeInit;
 use WorkerScriptLoadOrigin;
@@ -73,9 +72,7 @@ pub enum ScriptMsg {
     
     Focus(PipelineId),
     
-    ForwardMouseButtonEvent(PipelineId, MouseEventType, MouseButton, Point2D<f32>),
-    
-    ForwardMouseMoveEvent(PipelineId, Point2D<f32>),
+    ForwardEvent(PipelineId, CompositorEvent),
     
     GetClipboardContents(IpcSender<String>),
     
