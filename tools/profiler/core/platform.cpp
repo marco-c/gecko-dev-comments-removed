@@ -1370,38 +1370,36 @@ BuildJavaThreadJSObject(SpliceableJSONWriter& aWriter)
 #endif
 
 static void
-StreamJSON(PS::LockRef aLock, SpliceableJSONWriter& aWriter, double aSinceTime)
+locked_profiler_stream_json_for_this_process(PS::LockRef aLock, SpliceableJSONWriter& aWriter, double aSinceTime)
 {
-  LOG("StreamJSON");
+  LOG("locked_profiler_stream_json_for_this_process");
 
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
   MOZ_RELEASE_ASSERT(gPS && gPS->IsActive(aLock));
 
-  aWriter.Start(SpliceableJSONWriter::SingleLineStyle);
+  
+  aWriter.StartArrayProperty("libs");
+  AppendSharedLibraries(aWriter);
+  aWriter.EndArray();
+
+  
+  aWriter.StartObjectProperty("meta");
   {
-    
-    aWriter.StartArrayProperty("libs");
-    AppendSharedLibraries(aWriter);
-    aWriter.EndArray();
+    StreamMetaJSCustomObject(aLock, aWriter);
+  }
+  aWriter.EndObject();
 
-    
-    aWriter.StartObjectProperty("meta");
-    {
-      StreamMetaJSCustomObject(aLock, aWriter);
-    }
+  
+  if (gPS->FeatureTaskTracer(aLock)) {
+    aWriter.StartObjectProperty("tasktracer");
+    StreamTaskTracer(aLock, aWriter);
     aWriter.EndObject();
+  }
 
-    
-    if (gPS->FeatureTaskTracer(aLock)) {
-      aWriter.StartObjectProperty("tasktracer");
-      StreamTaskTracer(aLock, aWriter);
-      aWriter.EndObject();
-    }
-
-    
-    aWriter.StartArrayProperty("threads");
-    {
-      gPS->SetIsPaused(aLock, true);
+  
+  aWriter.StartArrayProperty("threads");
+  {
+    gPS->SetIsPaused(aLock, true);
 
       const PS::ThreadVector& liveThreads = gPS->LiveThreads(aLock);
       for (size_t i = 0; i < liveThreads.size(); i++) {
@@ -1422,43 +1420,22 @@ StreamJSON(PS::LockRef aLock, SpliceableJSONWriter& aWriter, double aSinceTime)
       }
 
 #if defined(PROFILE_JAVA)
-      if (gPS->FeatureJava(aLock)) {
-        java::GeckoJavaSampler::Pause();
+    if (gPS->FeatureJava(aLock)) {
+      java::GeckoJavaSampler::Pause();
 
-        aWriter.Start();
-        {
-          BuildJavaThreadJSObject(aWriter);
-        }
-        aWriter.End();
-
-        java::GeckoJavaSampler::Unpause();
+      aWriter.Start();
+      {
+        BuildJavaThreadJSObject(aWriter);
       }
+      aWriter.End();
+
+      java::GeckoJavaSampler::Unpause();
+    }
 #endif
 
-      gPS->SetIsPaused(aLock, false);
-    }
-    aWriter.EndArray();
-
-    aWriter.StartArrayProperty("processes");
-    
-    
-    
-    
-    if (CanNotifyObservers()) {
-      
-      
-      SubprocessClosure closure(&aWriter);
-      nsCOMPtr<nsIObserverService> os =
-        mozilla::services::GetObserverService();
-      if (os) {
-        RefPtr<ProfileSaveEvent> pse =
-          new ProfileSaveEvent(SubProcessCallback, &closure);
-        os->NotifyObservers(pse, "profiler-subprocess", nullptr);
-      }
-    }
-    aWriter.EndArray();
+    gPS->SetIsPaused(aLock, false);
   }
-  aWriter.End();
+  aWriter.EndArray();
 }
 
 
@@ -2160,7 +2137,31 @@ profiler_get_profile(double aSinceTime)
   }
 
   SpliceableChunkedJSONWriter b;
-  StreamJSON(lock, b, aSinceTime);
+  b.Start(SpliceableJSONWriter::SingleLineStyle);
+  {
+    locked_profiler_stream_json_for_this_process(lock, b, aSinceTime);
+
+    b.StartArrayProperty("processes");
+    
+    
+    
+    
+    if (CanNotifyObservers()) {
+      
+      
+      SubprocessClosure closure(&b);
+      nsCOMPtr<nsIObserverService> os =
+        mozilla::services::GetObserverService();
+      if (os) {
+        RefPtr<ProfileSaveEvent> pse =
+          new ProfileSaveEvent(SubProcessCallback, &closure);
+        os->NotifyObservers(pse, "profiler-subprocess", nullptr);
+      }
+    }
+    b.EndArray();
+  }
+  b.End();
+
   return b.WriteFunc()->CopyData();
 }
 
@@ -2207,7 +2208,17 @@ locked_profiler_save_profile_to_file(PS::LockRef aLock, const char* aFilename)
   stream.open(aFilename);
   if (stream.is_open()) {
     SpliceableJSONWriter w(mozilla::MakeUnique<OStreamJSONWriteFunc>(stream));
-    StreamJSON(aLock, w,  0);
+    w.Start(SpliceableJSONWriter::SingleLineStyle);
+    {
+      locked_profiler_stream_json_for_this_process(aLock, w,  0);
+
+      
+      
+      w.StartArrayProperty("processes");
+      w.EndArray();
+    }
+    w.End();
+
     stream.close();
   }
 }
