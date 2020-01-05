@@ -120,6 +120,10 @@ window.alert(ev2.getModifierState("ctrl"));
 window.alert(ev2 instanceof Event);
 window.alert(ev2 instanceof UIEvent);
 
+window.alert(document.title);
+document.title = "foo";
+window.alert(document.title);
+
 
 
 
