@@ -6,11 +6,10 @@
 
 #![allow(unsafe_code)]
 
-use context::SharedStyleContext;
-use data::PrivateStyleData;
+use atomic_refcell::{AtomicRef, AtomicRefMut};
+use data::PersistentStyleData;
 use element_state::ElementState;
 use properties::{ComputedValues, PropertyDeclarationBlock};
-use refcell::{Ref, RefMut};
 use restyle_hints::{RESTYLE_DESCENDANTS, RESTYLE_LATER_SIBLINGS, RESTYLE_SELF, RestyleHint};
 use selector_impl::{ElementExt, PseudoElement};
 use selector_matching::ApplicableDeclarationBlock;
@@ -141,15 +140,11 @@ pub trait TNode : Sized + Copy + Clone + NodeInfo {
 
     
     #[inline(always)]
-    unsafe fn borrow_data_unchecked(&self) -> Option<*const PrivateStyleData>;
+    fn borrow_data(&self) -> Option<AtomicRef<PersistentStyleData>>;
 
     
     #[inline(always)]
-    fn borrow_data(&self) -> Option<Ref<PrivateStyleData>>;
-
-    
-    #[inline(always)]
-    fn mutate_data(&self) -> Option<RefMut<PrivateStyleData>>;
+    fn mutate_data(&self) -> Option<AtomicRefMut<PersistentStyleData>>;
 
     
     fn restyle_damage(self) -> Self::ConcreteRestyleDamage;
@@ -166,13 +161,6 @@ pub trait TNode : Sized + Copy + Clone + NodeInfo {
     fn prev_sibling(&self) -> Option<Self>;
 
     fn next_sibling(&self) -> Option<Self>;
-
-
-    
-    
-    fn style(&self, _context: &SharedStyleContext) -> Ref<Arc<ComputedValues>> {
-        Ref::map(self.borrow_data().unwrap(), |data| data.style.as_ref().unwrap())
-    }
 
     
     fn unstyle(self) {

@@ -4,15 +4,15 @@
 
 use construct::ConstructionResult;
 use script_layout_interface::restyle_damage::RestyleDamage;
-use style::data::PrivateStyleData;
+use style::data::PersistentStyleData;
 
 
-pub struct PrivateLayoutData {
+pub struct PersistentLayoutData {
     
     
     
     
-    pub style_data: PrivateStyleData,
+    pub style_data: PersistentStyleData,
 
     
     pub restyle_damage: RestyleDamage,
@@ -34,11 +34,11 @@ pub struct PrivateLayoutData {
     pub flags: LayoutDataFlags,
 }
 
-impl PrivateLayoutData {
+impl PersistentLayoutData {
     
-    pub fn new() -> PrivateLayoutData {
-        PrivateLayoutData {
-            style_data: PrivateStyleData::new(),
+    pub fn new() -> PersistentLayoutData {
+        PersistentLayoutData {
+            style_data: PersistentStyleData::new(),
             restyle_damage: RestyleDamage::empty(),
             flow_construction_result: ConstructionResult::None,
             before_flow_construction_result: ConstructionResult::None,

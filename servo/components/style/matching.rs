@@ -11,7 +11,7 @@ use arc_ptr_eq;
 use cache::{LRUCache, SimpleHashCache};
 use cascade_info::CascadeInfo;
 use context::{SharedStyleContext, StyleContext};
-use data::PrivateStyleData;
+use data::PersistentStyleData;
 use dom::{NodeInfo, TElement, TNode, TRestyleDamage, UnsafeNode};
 use properties::{ComputedValues, PropertyDeclarationBlock, cascade};
 use properties::longhands::display::computed_value as display;
@@ -875,18 +875,8 @@ pub trait MatchMethods : TNode {
         where Ctx: StyleContext<'a>
     {
         
-        
-        
-        
-        
-        let parent_style = match parent {
-            Some(parent_node) => {
-                let parent_style = (*parent_node.borrow_data_unchecked().unwrap()).style.as_ref().unwrap();
-                Some(parent_style)
-            }
-            None => None,
-        };
-
+        let parent_node_data = parent.as_ref().and_then(|x| x.borrow_data());
+        let parent_style = parent_node_data.as_ref().map(|x| x.style.as_ref().unwrap());
 
         
         
@@ -945,7 +935,7 @@ pub trait MatchMethods : TNode {
 
     fn compute_damage_and_cascade_pseudos<'a, Ctx>(&self,
                                                    final_style: Arc<ComputedValues>,
-                                                   data: &mut PrivateStyleData,
+                                                   data: &mut PersistentStyleData,
                                                    context: &Ctx,
                                                    applicable_declarations: &ApplicableDeclarations,
                                                    mut applicable_declarations_cache: &mut ApplicableDeclarationsCache)
