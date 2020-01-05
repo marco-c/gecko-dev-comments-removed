@@ -2737,6 +2737,13 @@ pref("dom.animations-api.element-animate.enabled", true);
 pref("dom.animations.offscreen-throttling", true);
 
 
+
+pref("layout.animation.prerender.viewport-ratio-limit-x", "1.125");
+pref("layout.animation.prerender.viewport-ratio-limit-y", "1.125");
+pref("layout.animation.prerender.absolute-limit-x", 4096);
+pref("layout.animation.prerender.absolute-limit-y", 4096);
+
+
 pref("capability.policy.default.SOAPCall.invokeVerifySourceHeader", "allAccess");
 
 
