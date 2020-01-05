@@ -14,7 +14,9 @@ const EXTENSION_DIR = "chrome://mochitests/content/extensions/mozscreenshots/bro
 let TestRunner;
 
 function* setup() {
-  requestLongerTimeout(10);
+  
+  
+  requestLongerTimeout(100);
 
   info("installing extension temporarily");
   let chromeURL = Services.io.newURI(EXTENSION_DIR);
