@@ -47,6 +47,7 @@
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
+#include "mozilla/Vector.h"
 #include "PlatformMacros.h"
 #include "v8-support.h"
 #include <vector>
@@ -193,9 +194,6 @@ bool is_native_unwinding_avail();
 
 
 
-struct PseudoStack;
-class ThreadProfile;
-
 
 class TickSample {
  public:
@@ -230,31 +228,56 @@ class TickSample {
   int64_t ussMemory;
 };
 
-class ThreadInfo;
+struct JSContext;
+class JSObject;
 class PlatformData;
-class GeckoSampler;
+class ProfileBuffer;
+struct PseudoStack;
+class SpliceableJSONWriter;
 class SyncProfile;
+class ThreadInfo;
+class ThreadProfile;
+
+namespace mozilla {
+class ProfileGatherer;
+
+namespace dom {
+class Promise;
+}
+}
+
+typedef mozilla::Vector<std::string> ThreadNameFilterList;
+typedef mozilla::Vector<std::string> FeatureList;
+
+extern int sFrameNumber;
+extern int sLastFrameNumber;
+
 class Sampler {
- public:
+public:
   
-  explicit Sampler(double interval, bool profiling, int entrySize);
-  virtual ~Sampler();
+  Sampler(double aInterval, int aEntrySize,
+          const char** aFeatures, uint32_t aFeatureCount,
+          const char** aThreadNameFilters, uint32_t aFilterCount);
+  ~Sampler();
 
   double interval() const { return interval_; }
 
   
   
-  virtual void Tick(TickSample* sample) = 0;
+  void Tick(TickSample* sample);
 
   
-  virtual SyncProfile* GetBacktrace() = 0;
+  SyncProfile* GetBacktrace();
 
   
-  virtual void RequestSave() = 0;
+  void RequestSave() { mSaveRequested = true; }
+
   
-  virtual void HandleSaveRequest() = 0;
+  void HandleSaveRequest();
+
   
-  virtual void DeleteExpiredMarkers() = 0;
+  
+  void DeleteExpiredMarkers();
 
   
   void Start();
@@ -269,8 +292,6 @@ class Sampler {
   
   bool IsPaused() const { return paused_; }
   void SetPaused(bool value) { NoBarrier_Store(&paused_, value); }
-
-  virtual bool ProfileThreads() const = 0;
 
   int EntrySize() { return entrySize_; }
 
@@ -323,11 +344,47 @@ class Sampler {
 #endif
   }
 
- protected:
-  static std::vector<ThreadInfo*>* sRegisteredThreads;
+  void RegisterThread(ThreadInfo* aInfo);
 
- private:
+  bool ProfileJS() const { return mProfileJS; }
+  bool ProfileJava() const { return mProfileJava; }
+  bool ProfileGPU() const { return mProfileGPU; }
+  bool ProfileThreads() const { return mProfileThreads; }
+  bool InPrivacyMode() const { return mPrivacyMode; }
+  bool AddMainThreadIO() const { return mAddMainThreadIO; }
+  bool ProfileMemory() const { return mProfileMemory; }
+  bool TaskTracer() const { return mTaskTracer; }
+  bool LayersDump() const { return mLayersDump; }
+  bool DisplayListDump() const { return mDisplayListDump; }
+  bool ProfileRestyle() const { return mProfileRestyle; }
+  const ThreadNameFilterList& ThreadNameFilters() { return mThreadNameFilters; }
+  const FeatureList& Features() { return mFeatures; }
+
+  void ToStreamAsJSON(std::ostream& stream, double aSinceTime = 0);
+  JSObject *ToJSObject(JSContext *aCx, double aSinceTime = 0);
+  void GetGatherer(nsISupports** aRetVal);
+  mozilla::UniquePtr<char[]> ToJSON(double aSinceTime = 0);
+  void ToJSObjectAsync(double aSinceTime = 0,
+                       mozilla::dom::Promise* aPromise = 0);
+  void ToFileAsync(const nsACString& aFileName, double aSinceTime = 0);
+  void StreamMetaJSCustomObject(SpliceableJSONWriter& aWriter);
+  void StreamTaskTracer(SpliceableJSONWriter& aWriter);
+  void FlushOnJSShutdown(JSContext* aContext);
+
+  void GetBufferInfo(uint32_t *aCurrentPosition, uint32_t *aTotalSize, uint32_t *aGeneration);
+
+private:
+  
+  void doNativeBacktrace(ThreadProfile &aProfile, TickSample* aSample);
+
+  void StreamJSON(SpliceableJSONWriter& aWriter, double aSinceTime);
+
+  
+  void InplaceTick(TickSample* sample);
+
   void SetActive(bool value) { NoBarrier_Store(&active_, value); }
+
+  static std::vector<ThreadInfo*>* sRegisteredThreads;
 
   const double interval_;
   const bool profiling_;
@@ -343,6 +400,29 @@ class Sampler {
   bool signal_sender_launched_;
   pthread_t signal_sender_thread_;
 #endif
+
+  RefPtr<ProfileBuffer> mBuffer;
+  bool mSaveRequested;
+  bool mAddLeafAddresses;
+  bool mUseStackWalk;
+  bool mProfileJS;
+  bool mProfileGPU;
+  bool mProfileThreads;
+  bool mProfileJava;
+  bool mLayersDump;
+  bool mDisplayListDump;
+  bool mProfileRestyle;
+
+  
+  
+  ThreadNameFilterList mThreadNameFilters;
+  FeatureList mFeatures;
+  bool mPrivacyMode;
+  bool mAddMainThreadIO;
+  bool mProfileMemory;
+  bool mTaskTracer;
+
+  RefPtr<mozilla::ProfileGatherer> mGatherer;
 };
 
 #endif 

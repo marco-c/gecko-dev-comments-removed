@@ -7,9 +7,9 @@
 #include "mozilla/Services.h"
 #include "nsIObserverService.h"
 #include "nsIProfileSaveEvent.h"
-#include "GeckoSampler.h"
 #include "nsLocalFile.h"
 #include "nsIFileStreams.h"
+#include "platform.h"
 
 using mozilla::dom::AutoJSAPI;
 using mozilla::dom::Promise;
@@ -27,7 +27,7 @@ static const uint32_t MAX_SUBPROCESS_EXIT_PROFILES = 5;
 
 NS_IMPL_ISUPPORTS(ProfileGatherer, nsIObserver)
 
-ProfileGatherer::ProfileGatherer(GeckoSampler* aSampler)
+ProfileGatherer::ProfileGatherer(Sampler* aSampler)
   : mSampler(aSampler)
   , mSinceTime(0)
   , mPendingProfiles(0)
