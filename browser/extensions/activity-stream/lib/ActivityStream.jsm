@@ -2,6 +2,7 @@
 
 
 
+
 "use strict";
 
 const {utils: Cu} = Components;
@@ -10,23 +11,12 @@ const {Store} = Cu.import("resource://activity-stream/lib/Store.jsm", {});
 const {actionTypes: at} = Cu.import("resource://activity-stream/common/Actions.jsm", {});
 
 
-XPCOMUtils.defineLazyModuleGetter(this, "LocalizationFeed",
-  "resource://activity-stream/lib/LocalizationFeed.jsm");
-
 XPCOMUtils.defineLazyModuleGetter(this, "NewTabInit",
   "resource://activity-stream/lib/NewTabInit.jsm");
-
-XPCOMUtils.defineLazyModuleGetter(this, "PlacesFeed",
-  "resource://activity-stream/lib/PlacesFeed.jsm");
-
-XPCOMUtils.defineLazyModuleGetter(this, "SearchFeed",
-  "resource://activity-stream/lib/SearchFeed.jsm");
-
-XPCOMUtils.defineLazyModuleGetter(this, "TelemetryFeed",
-  "resource://activity-stream/lib/TelemetryFeed.jsm");
-
 XPCOMUtils.defineLazyModuleGetter(this, "TopSitesFeed",
   "resource://activity-stream/lib/TopSitesFeed.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "SearchFeed",
+  "resource://activity-stream/lib/SearchFeed.jsm");
 
 const feeds = {
   
@@ -36,12 +26,9 @@ const feeds = {
   
   
   
-  "feeds.localization": () => new LocalizationFeed(),
   "feeds.newtabinit": () => new NewTabInit(),
-  "feeds.places": () => new PlacesFeed(),
-  "feeds.search": () => new SearchFeed(),
-  "feeds.telemetry": () => new TelemetryFeed(),
-  "feeds.topsites": () => new TopSitesFeed()
+  "feeds.topsites": () => new TopSitesFeed(),
+  "feeds.search": () => new SearchFeed()
 };
 
 this.ActivityStream = class ActivityStream {
@@ -54,7 +41,7 @@ this.ActivityStream = class ActivityStream {
 
 
 
-  constructor(options = {}) {
+  constructor(options) {
     this.initialized = false;
     this.options = options;
     this.store = new Store();
@@ -63,10 +50,7 @@ this.ActivityStream = class ActivityStream {
   init() {
     this.initialized = true;
     this.store.init(this.feeds);
-    this.store.dispatch({
-      type: at.INIT,
-      data: {version: this.options.version}
-    });
+    this.store.dispatch({type: at.INIT});
   }
   uninit() {
     this.store.dispatch({type: at.UNINIT});
