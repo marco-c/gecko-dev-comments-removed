@@ -339,6 +339,8 @@ var tests = [
   
   { id: "Test#11",
     *run() {
+      yield SpecialPowers.pushPrefEnv({"set": [["accessibility.tabfocus", 7]]});
+
       function clickAnchor(notifyObj) {
         let anchor = document.getElementById(notifyObj.anchorID);
         EventUtils.synthesizeMouseAtCenter(anchor, {});
@@ -361,8 +363,9 @@ var tests = [
 
       
       
+      
       clickAnchor(notifyObj1);
-      is(document.activeElement, popup.childNodes[0].button);
+      is(document.activeElement, popup.childNodes[0].closebutton);
       ok(!notifyObj1.dismissalCallbackTriggered,
          "Should not have dismissed the notification");
       ok(!notifyObj1.shownCallbackTriggered,

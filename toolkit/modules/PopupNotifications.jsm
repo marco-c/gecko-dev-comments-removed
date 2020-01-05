@@ -1225,16 +1225,16 @@ PopupNotifications.prototype = {
     }
 
     
-    this.panel.removeAttribute("noautofocus");
-
-    
     if (this.panel.state == "closed" || anchor != this._currentAnchorElement) {
-      this._reshowNotifications(anchor);
-    }
+      
+      this.panel.addEventListener("popupshown",
+        () => this.window.document.commandDispatcher.advanceFocusIntoSubtree(this.panel),
+        {once: true});
 
-    
-    if (anchor == this._currentAnchorElement && this.panel.firstChild) {
-      this.panel.firstChild.button.focus();
+      this._reshowNotifications(anchor);
+    } else {
+      
+      this.window.document.commandDispatcher.advanceFocusIntoSubtree(this.panel);
     }
   },
 
@@ -1313,12 +1313,6 @@ PopupNotifications.prototype = {
     if (event.target != this.panel) {
       return;
     }
-
-    
-    
-    
-    
-    this.panel.setAttribute("noautofocus", "true");
 
     
     if (this._ignoreDismissal) {
