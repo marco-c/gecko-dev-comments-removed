@@ -183,6 +183,10 @@ class FullParseHandler
         return new_<NullLiteral>(pos);
     }
 
+    ParseNode* newRawUndefinedLiteral(const TokenPos& pos) {
+        return new_<RawUndefinedLiteral>(pos);
+    }
+
     
     
     

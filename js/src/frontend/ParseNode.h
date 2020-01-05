@@ -54,6 +54,7 @@ class ObjectBox;
     F(TRUE) \
     F(FALSE) \
     F(NULL) \
+    F(RAW_UNDEFINED) \
     F(THIS) \
     F(FUNCTION) \
     F(MODULE) \
@@ -200,6 +201,7 @@ IsTypeofKind(ParseNodeKind kind)
 {
     return PNK_TYPEOFNAME <= kind && kind <= PNK_TYPEOFEXPR;
 }
+
 
 
 
@@ -686,7 +688,8 @@ class ParseNode
                isKind(PNK_STRING) ||
                isKind(PNK_TRUE) ||
                isKind(PNK_FALSE) ||
-               isKind(PNK_NULL);
+               isKind(PNK_NULL) ||
+               isKind(PNK_RAW_UNDEFINED);
     }
 
     
@@ -1141,6 +1144,16 @@ class NullLiteral : public ParseNode
     explicit NullLiteral(const TokenPos& pos) : ParseNode(PNK_NULL, JSOP_NULL, PN_NULLARY, pos) { }
 };
 
+
+
+
+class RawUndefinedLiteral : public ParseNode
+{
+  public:
+    explicit RawUndefinedLiteral(const TokenPos& pos)
+      : ParseNode(PNK_RAW_UNDEFINED, JSOP_UNDEFINED, PN_NULLARY, pos) { }
+};
+
 class BooleanLiteral : public ParseNode
 {
   public:
@@ -1361,6 +1374,7 @@ ParseNode::isConstant()
       case PNK_STRING:
       case PNK_TEMPLATE_STRING:
       case PNK_NULL:
+      case PNK_RAW_UNDEFINED:
       case PNK_FALSE:
       case PNK_TRUE:
         return true;
