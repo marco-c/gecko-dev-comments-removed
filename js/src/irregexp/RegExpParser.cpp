@@ -30,18 +30,10 @@
 
 #include "irregexp/RegExpParser.h"
 
-#include "mozilla/ArrayUtils.h"
-#include "mozilla/Move.h"
-
 #include "frontend/TokenStream.h"
-#include "vm/ErrorReporting.h"
-#include "vm/StringBuffer.h"
 
 using namespace js;
 using namespace js::irregexp;
-
-using mozilla::Move;
-using mozilla::PointerRangeSize;
 
 
 
@@ -234,8 +226,7 @@ RegExpParser<CharT>::RegExpParser(frontend::TokenStream& ts, LifoAlloc* alloc,
   : ts(ts),
     alloc(alloc),
     captures_(nullptr),
-    start_(chars),
-    next_pos_(start_),
+    next_pos_(chars),
     end_(end),
     current_(kEndMarker),
     capture_count_(0),
@@ -251,66 +242,11 @@ RegExpParser<CharT>::RegExpParser(frontend::TokenStream& ts, LifoAlloc* alloc,
 }
 
 template <typename CharT>
-void
-RegExpParser<CharT>::SyntaxError(unsigned errorNumber, va_list args)
+RegExpTree*
+RegExpParser<CharT>::ReportError(unsigned errorNumber, const char* param )
 {
     gc::AutoSuppressGC suppressGC(ts.context());
-
-    ErrorMetadata err;
-
-    ts.fillExcludingContext(&err, ts.currentToken().pos.begin);
-
-    
-    
-    
-    
-    
-    size_t offset = PointerRangeSize(start_, next_pos_ - 1);
-    size_t end = PointerRangeSize(start_, end_);
-
-    const CharT* windowStart = (offset > ErrorMetadata::lineOfContextRadius)
-                               ? start_ + (offset - ErrorMetadata::lineOfContextRadius)
-                               : start_;
-
-    const CharT* windowEnd = (end - offset > ErrorMetadata::lineOfContextRadius)
-                             ? start_ + offset + ErrorMetadata::lineOfContextRadius
-                             : end_;
-
-    size_t windowLength = PointerRangeSize(windowStart, windowEnd);
-    MOZ_ASSERT(windowLength <= ErrorMetadata::lineOfContextRadius * 2);
-
-    
-    
-    StringBuffer windowBuf(ts.context());
-    if (!windowBuf.append(windowStart, windowEnd))
-        return;
-
-    
-    
-    if (!windowBuf.append('\0'))
-        return;
-
-    err.lineOfContext.reset(windowBuf.stealChars());
-    if (!err.lineOfContext)
-        return;
-
-    err.lineLength = windowLength;
-    err.tokenOffset = offset - (windowStart - start_);
-
-    ReportCompileError(ts.context(), Move(err), nullptr, JSREPORT_ERROR, errorNumber, args);
-}
-
-template <typename CharT>
-RegExpTree*
-RegExpParser<CharT>::ReportError(unsigned errorNumber, ...)
-{
-    va_list args;
-    va_start(args, errorNumber);
-
-    SyntaxError(errorNumber, args);
-
-    va_end(args);
-
+    ts.reportError(errorNumber, param);
     return nullptr;
 }
 
