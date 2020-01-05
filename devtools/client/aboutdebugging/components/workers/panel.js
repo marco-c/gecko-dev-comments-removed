@@ -75,7 +75,9 @@ module.exports = createClass({
   },
 
   updateMultiE10S() {
-    let processCount = Services.prefs.getIntPref(PROCESS_COUNT_PREF);
+    
+    
+    let processCount = Services.appinfo.maxWebProcessCount;
     this.setState({ processCount });
   },
 
