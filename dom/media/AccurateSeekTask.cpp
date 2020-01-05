@@ -56,9 +56,6 @@ AccurateSeekTask::Discard()
   
   RejectIfExist(NS_ERROR_DOM_MEDIA_CANCELED, __func__);
 
-  
-  mSeekRequest.DisconnectIfExists();
-
   mIsDiscarded = true;
 }
 
@@ -255,11 +252,6 @@ AccurateSeekTask::Seek(const media::TimeUnit& aDuration)
 {
   AssertOwnerThread();
 
-  
-  mSeekRequest.Begin(mReader->Seek(mTarget, aDuration)
-    ->Then(OwnerThread(), __func__, this,
-           &AccurateSeekTask::OnSeekResolved, &AccurateSeekTask::OnSeekRejected));
-
   return mSeekTaskPromise.Ensure(__func__);
 }
 
@@ -415,7 +407,6 @@ AccurateSeekTask::OnSeekResolved(media::TimeUnit)
 {
   AssertOwnerThread();
 
-  mSeekRequest.Complete();
   
   
   if (!mDoneVideoSeeking) {
@@ -431,7 +422,6 @@ AccurateSeekTask::OnSeekRejected(nsresult aResult)
 {
   AssertOwnerThread();
 
-  mSeekRequest.Complete();
   MOZ_ASSERT(NS_FAILED(aResult), "Cancels should also disconnect mSeekRequest");
   RejectIfExist(aResult, __func__);
 }

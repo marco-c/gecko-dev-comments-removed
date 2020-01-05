@@ -72,11 +72,6 @@ public:
   
   
   RefPtr<MediaData> mFirstVideoFrameAfterSeek;
-
-  
-
-
-  MozPromiseRequestHolder<MediaDecoderReader::SeekPromise> mSeekRequest;
 };
 
 } 
