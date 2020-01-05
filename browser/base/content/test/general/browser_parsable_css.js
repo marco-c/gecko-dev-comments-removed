@@ -36,16 +36,6 @@ let whitelist = [
 
 let allowedImageReferences = [
   
-  {file: "chrome://browser/skin/customizableui/customize-titleBar-toggle.png",
-   from: "chrome://browser/skin/browser.css",
-   platforms: ["linux"],
-   isFromDevTools: false},
-  {file: "chrome://browser/skin/customizableui/customize-titleBar-toggle@2x.png",
-   from: "chrome://browser/skin/browser.css",
-   platforms: ["linux"],
-   isFromDevTools: false},
-
-  
   {file: "chrome://devtools/skin/images/dock-bottom-minimize@2x.png",
    from: "chrome://devtools/skin/toolbox.css",
    isFromDevTools: true},
