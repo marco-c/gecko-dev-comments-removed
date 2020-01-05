@@ -427,10 +427,10 @@ nsComputedDOMStyle::GetAuthoredPropertyValue(const nsAString& aPropertyName,
 
 
 already_AddRefed<nsStyleContext>
-nsComputedDOMStyle::GetStyleContextForElement(Element* aElement,
-                                              nsIAtom* aPseudo,
-                                              nsIPresShell* aPresShell,
-                                              StyleType aStyleType)
+nsComputedDOMStyle::GetStyleContext(Element* aElement,
+                                    nsIAtom* aPseudo,
+                                    nsIPresShell* aPresShell,
+                                    StyleType aStyleType)
 {
   
   
@@ -446,8 +446,7 @@ nsComputedDOMStyle::GetStyleContextForElement(Element* aElement,
 
   presShell->FlushPendingNotifications(FlushType::Style);
 
-  return GetStyleContextForElementNoFlush(aElement, aPseudo, presShell,
-                                          aStyleType);
+  return GetStyleContextNoFlush(aElement, aPseudo, presShell, aStyleType);
 }
 
 namespace {
@@ -536,7 +535,7 @@ public:
                           bool aInDocWithShell)
   {
     MOZ_ASSERT(!aStyleSet->IsServo(),
-      "Servo backend should not use this function");
+      "Bug 1311257: Servo backend does not support the base value yet");
     MOZ_ASSERT(mAnimationFlag == nsComputedDOMStyle::eWithoutAnimation,
       "AnimationFlag should be eWithoutAnimation");
 
@@ -574,12 +573,11 @@ private:
 }
 
 already_AddRefed<nsStyleContext>
-nsComputedDOMStyle::DoGetStyleContextForElementNoFlush(
-  Element* aElement,
-  nsIAtom* aPseudo,
-  nsIPresShell* aPresShell,
-  StyleType aStyleType,
-  AnimationFlag aAnimationFlag)
+nsComputedDOMStyle::DoGetStyleContextNoFlush(Element* aElement,
+                                             nsIAtom* aPseudo,
+                                             nsIPresShell* aPresShell,
+                                             StyleType aStyleType,
+                                             AnimationFlag aAnimationFlag)
 {
   MOZ_ASSERT(aElement, "NULL element");
   
@@ -647,9 +645,8 @@ nsComputedDOMStyle::DoGetStyleContextForElementNoFlush(
   nsIContent* parent = aPseudo ? aElement : aElement->GetParent();
   
   if (parent && parent->IsElement()) {
-    parentContext = GetStyleContextForElementNoFlush(parent->AsElement(),
-                                                     nullptr, aPresShell,
-                                                     aStyleType);
+    parentContext = GetStyleContextNoFlush(parent->AsElement(), nullptr,
+                                           aPresShell, aStyleType);
   }
 
   StyleResolver styleResolver(presContext, aAnimationFlag);
@@ -671,24 +668,23 @@ nsComputedDOMStyle::DoGetStyleContextForElementNoFlush(
 
 
 already_AddRefed<nsStyleContext>
-nsComputedDOMStyle::GetStyleContextForElementNoFlush(Element* aElement,
-                                                     nsIAtom* aPseudo,
-                                                     nsIPresShell* aPresShell,
-                                                     StyleType aStyleType)
+nsComputedDOMStyle::GetStyleContextNoFlush(Element* aElement,
+                                           nsIAtom* aPseudo,
+                                           nsIPresShell* aPresShell,
+                                           StyleType aStyleType)
 {
-  return DoGetStyleContextForElementNoFlush(aElement,
-                                            aPseudo,
-                                            aPresShell,
-                                            aStyleType,
-                                            eWithAnimation);
+  return DoGetStyleContextNoFlush(aElement,
+                                  aPseudo,
+                                  aPresShell,
+                                  aStyleType,
+                                  eWithAnimation);
 }
 
 
 already_AddRefed<nsStyleContext>
-nsComputedDOMStyle::GetStyleContextForElementWithoutAnimation(
-  Element* aElement,
-  nsIAtom* aPseudo,
-  nsIPresShell* aPresShell)
+nsComputedDOMStyle::GetStyleContextWithoutAnimation(Element* aElement,
+                                                    nsIAtom* aPseudo,
+                                                    nsIPresShell* aPresShell)
 {
   
   
@@ -704,11 +700,11 @@ nsComputedDOMStyle::GetStyleContextForElementWithoutAnimation(
 
   presShell->FlushPendingNotifications(FlushType::Style);
 
-  return DoGetStyleContextForElementNoFlush(aElement,
-                                            aPseudo,
-                                            presShell,
-                                            eAll,
-                                            eWithoutAnimation);
+  return DoGetStyleContextNoFlush(aElement,
+                                  aPseudo,
+                                  presShell,
+                                  eAll,
+                                  eWithoutAnimation);
 }
 
 nsMargin
@@ -886,10 +882,10 @@ nsComputedDOMStyle::UpdateCurrentStyleSources(bool aNeedsLayoutFlush)
 #endif
     
     RefPtr<nsStyleContext> resolvedStyleContext =
-      nsComputedDOMStyle::GetStyleContextForElement(mContent->AsElement(),
-                                                    mPseudo,
-                                                    mPresShell,
-                                                    mStyleType);
+      nsComputedDOMStyle::GetStyleContext(mContent->AsElement(),
+                                          mPseudo,
+                                          mPresShell,
+                                          mStyleType);
     if (!resolvedStyleContext) {
       ClearStyleContext();
       return;

@@ -439,7 +439,11 @@ KeyframeEffectReadOnly::CompositeValue(
   CompositeOperation aCompositeOperation)
 {
   MOZ_ASSERT(mTarget, "CompositeValue should be called with target element");
-  MOZ_ASSERT(!mDocument->IsStyledByServo());
+
+  
+  if (mDocument->IsStyledByServo()) {
+    return aValueToComposite;
+  }
 
   StyleAnimationValue underlyingValue =
     GetUnderlyingStyle(aProperty, aAnimationRule);
@@ -505,67 +509,6 @@ KeyframeEffectReadOnly::EnsureBaseStyle(
   MOZ_ASSERT(!result.IsNull(), "Should have a valid StyleAnimationValue");
 
   mBaseStyleValues.Put(aProperty, result);
-}
-
-void
-KeyframeEffectReadOnly::EnsureBaseStyles(
-  const ServoComputedValuesWithParent& aServoValues,
-  const nsTArray<AnimationProperty>& aProperties)
-{
-  if (!mTarget) {
-    return;
-  }
-
-  mBaseStyleValuesForServo.Clear();
-
-  nsPresContext* presContext =
-    nsContentUtils::GetContextForContent(mTarget->mElement);
-  MOZ_ASSERT(presContext,
-             "nsPresContext should not be nullptr since this EnsureBaseStyles "
-             "supposed to be called right after getting computed values with "
-             "a valid nsPresContext");
-
-  RefPtr<ServoComputedValues> baseComputedValues;
-  nsIAtom* pseudoAtom = mTarget->mPseudoType < CSSPseudoElementType::Count
-                      ? nsCSSPseudoElements::GetPseudoAtom(mTarget->mPseudoType)
-                      : nullptr;
-  for (const AnimationProperty& property : aProperties) {
-    EnsureBaseStyle(property,
-                    pseudoAtom,
-                    presContext,
-                    baseComputedValues);
-  }
-}
-
-void
-KeyframeEffectReadOnly::EnsureBaseStyle(
-  const AnimationProperty& aProperty,
-  nsIAtom* aPseudoAtom,
-  nsPresContext* aPresContext,
-  RefPtr<ServoComputedValues>& aBaseComputedValues)
-{
-  bool hasAdditiveValues = false;
-
-  for (const AnimationPropertySegment& segment : aProperty.mSegments) {
-    if (!segment.HasReplaceableValues()) {
-      hasAdditiveValues = true;
-      break;
-    }
-  }
-
-  if (!hasAdditiveValues) {
-    return;
-  }
-
-  if (!aBaseComputedValues) {
-    aBaseComputedValues =
-      aPresContext->StyleSet()->AsServo()->
-        GetBaseComputedValuesForElement(mTarget->mElement, aPseudoAtom);
-  }
-  RefPtr<RawServoAnimationValue> baseValue =
-    Servo_ComputedValues_ExtractAnimationValue(aBaseComputedValues,
-                                               aProperty.mProperty).Consume();
-  mBaseStyleValuesForServo.Put(aProperty.mProperty, baseValue);
 }
 
 void
@@ -667,12 +610,58 @@ KeyframeEffectReadOnly::ComposeStyleRule(
 {
   
   
+  RawServoAnimationValue* servoFromValue = aSegment.mFromValue.mServo;
+  RawServoAnimationValue* servoToValue = aSegment.mToValue.mServo;
 
-  Servo_AnimationCompose(&aAnimationValues,
-                         &mBaseStyleValuesForServo,
-                         aProperty.mProperty,
-                         &aSegment,
-                         &aComputedTiming);
+  
+  if (!servoFromValue || !servoToValue) {
+    NS_ERROR("Compose style for unsupported or non-animatable property, "
+             "so get invalid RawServoAnimationValues");
+    return;
+  }
+
+  
+  if (aSegment.mToKey == aSegment.mFromKey) {
+    if (aComputedTiming.mProgress.Value() < 0) {
+      Servo_AnimationValueMap_Push(&aAnimationValues,
+                                   aProperty.mProperty,
+                                   servoFromValue);
+    } else {
+      Servo_AnimationValueMap_Push(&aAnimationValues,
+                                   aProperty.mProperty,
+                                   servoToValue);
+    }
+    return;
+  }
+
+  double positionInSegment =
+    (aComputedTiming.mProgress.Value() - aSegment.mFromKey) /
+    (aSegment.mToKey - aSegment.mFromKey);
+  double valuePosition =
+    ComputedTimingFunction::GetPortion(aSegment.mTimingFunction,
+                                       positionInSegment,
+                                       aComputedTiming.mBeforeFlag);
+
+  MOZ_ASSERT(IsFinite(valuePosition), "Position value should be finite");
+
+  RefPtr<RawServoAnimationValue> interpolated =
+    Servo_AnimationValues_Interpolate(servoFromValue,
+                                      servoToValue,
+                                      valuePosition).Consume();
+
+  if (interpolated) {
+    Servo_AnimationValueMap_Push(&aAnimationValues,
+                                 aProperty.mProperty,
+                                 interpolated);
+  } else if (valuePosition < 0.5) {
+    Servo_AnimationValueMap_Push(&aAnimationValues,
+                                 aProperty.mProperty,
+                                 servoFromValue);
+  } else {
+    Servo_AnimationValueMap_Push(&aAnimationValues,
+                                 aProperty.mProperty,
+                                 servoToValue);
+  }
 }
 
 template<typename ComposeAnimationResult>
@@ -1061,9 +1050,7 @@ KeyframeEffectReadOnly::GetTargetStyleContext()
                     ? nsCSSPseudoElements::GetPseudoAtom(mTarget->mPseudoType)
                     : nullptr;
 
-  return nsComputedDOMStyle::GetStyleContextForElement(mTarget->mElement,
-                                                       pseudo,
-                                                       shell);
+  return nsComputedDOMStyle::GetStyleContext(mTarget->mElement, pseudo, shell);
 }
 
 #ifdef DEBUG
@@ -1237,8 +1224,6 @@ KeyframeEffectReadOnly::GetKeyframes(JSContext*& aCx,
     return;
   }
 
-  bool isServo = mDocument->IsStyledByServo();
-
   for (const Keyframe& keyframe : mKeyframes) {
     
     BaseComputedKeyframe keyframeDict;
@@ -1266,21 +1251,10 @@ KeyframeEffectReadOnly::GetKeyframes(JSContext*& aCx,
     JS::Rooted<JSObject*> keyframeObject(aCx, &keyframeJSValue.toObject());
     for (const PropertyValuePair& propertyValue : keyframe.mPropertyValues) {
       nsAutoString stringValue;
-      if (isServo) {
-        if (propertyValue.mServoDeclarationBlock) {
-          Servo_DeclarationBlock_SerializeOneValue(
-            propertyValue.mServoDeclarationBlock,
-            propertyValue.mProperty, &stringValue);
-        } else {
-          RawServoAnimationValue* value =
-            mBaseStyleValuesForServo.GetWeak(propertyValue.mProperty);
-
-          if (value) {
-            Servo_AnimationValue_Serialize(value,
-                                           propertyValue.mProperty,
-                                           &stringValue);
-          }
-        }
+      if (propertyValue.mServoDeclarationBlock) {
+        Servo_DeclarationBlock_SerializeOneValue(
+          propertyValue.mServoDeclarationBlock,
+          propertyValue.mProperty, &stringValue);
       } else if (nsCSSProps::IsShorthand(propertyValue.mProperty)) {
          
          
