@@ -132,20 +132,17 @@ IPCStreamSource::Initialize()
   
   
   
-  
   WorkerPrivate* workerPrivate = nullptr;
   if (!NS_IsMainThread()) {
     workerPrivate = GetCurrentThreadWorkerPrivate();
-    if (workerPrivate) {
-      bool result = HoldWorker(workerPrivate, Canceling);
-      if (!result) {
-        return false;
-      }
+    MOZ_RELEASE_ASSERT(workerPrivate);
 
-      mWorkerPrivate = workerPrivate;
-    } else {
-      AssertIsOnBackgroundThread();
+    bool result = HoldWorker(workerPrivate, Canceling);
+    if (!result) {
+      return false;
     }
+
+    mWorkerPrivate = workerPrivate;
   }
 
   return true;
@@ -189,6 +186,7 @@ void
 IPCStreamSource::Start()
 {
   NS_ASSERT_OWNINGTHREAD(IPCStreamSource);
+  MOZ_ASSERT_IF(!NS_IsMainThread(), mWorkerPrivate);
   DoRead();
 }
 
