@@ -220,12 +220,6 @@ protected:
 
   
   
-  uint32_t CaretTimeoutMs() const;
-  void LaunchCaretTimeoutTimer();
-  void CancelCaretTimeoutTimer();
-
-  
-  
   
   
   virtual bool IsTerminated() const { return !mPresShell; }
@@ -279,10 +273,6 @@ protected:
 
   
   AccessibleCaret* mActiveCaret = nullptr;
-
-  
-  
-  nsCOMPtr<nsITimer> mCaretTimeoutTimer;
 
   
   CaretMode mLastUpdateCaretMode = CaretMode::None;
