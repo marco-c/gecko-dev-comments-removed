@@ -485,28 +485,37 @@ namespace {
 
 
 static already_AddRefed<nsIFile>
-DOMFileOrDirectoryToLocalFile(const OwningFileOrDirectory& aData)
+LastUsedDirectory(const OwningFileOrDirectory& aData)
 {
-  nsString path;
-
   if (aData.IsFile()) {
-    ErrorResult rv;
-    aData.GetAsFile()->GetMozFullPathInternal(path, rv);
-    if (rv.Failed() || path.IsEmpty()) {
-      rv.SuppressException();
+    nsAutoString path;
+    ErrorResult error;
+    aData.GetAsFile()->GetMozFullPathInternal(path, error);
+    if (error.Failed() || path.IsEmpty()) {
+      error.SuppressException();
       return nullptr;
     }
-  } else {
-    MOZ_ASSERT(aData.IsDirectory());
-    aData.GetAsDirectory()->GetFullRealPath(path);
+
+    nsCOMPtr<nsIFile> localFile;
+    nsresult rv = NS_NewNativeLocalFile(NS_ConvertUTF16toUTF8(path), true,
+                                        getter_AddRefs(localFile));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return nullptr;
+    }
+
+    nsCOMPtr<nsIFile> parentFile;
+    rv = localFile->GetParent(getter_AddRefs(parentFile));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return nullptr;
+    }
+
+    return parentFile.forget();
   }
 
-  nsCOMPtr<nsIFile> localFile;
-  nsresult rv = NS_NewNativeLocalFile(NS_ConvertUTF16toUTF8(path), true,
-                                      getter_AddRefs(localFile));
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return nullptr;
-  }
+  MOZ_ASSERT(aData.IsDirectory());
+
+  nsCOMPtr<nsIFile> localFile = aData.GetAsDirectory()->GetInternalNsIFile();
+  MOZ_ASSERT(localFile);
 
   return localFile.forget();
 }
@@ -616,12 +625,9 @@ HTMLInputElement::nsFilePickerShownCallback::Done(int16_t aResult)
   }
 
   
-  nsCOMPtr<nsIFile> file =
-    DOMFileOrDirectoryToLocalFile(newFilesOrDirectories[0]);
+  nsCOMPtr<nsIFile> lastUsedDir = LastUsedDirectory(newFilesOrDirectories[0]);
 
-  if (file) {
-    nsCOMPtr<nsIFile> lastUsedDir;
-    file->GetParent(getter_AddRefs(lastUsedDir));
+  if (lastUsedDir) {
     HTMLInputElement::gUploadLastDir->StoreLastUsedDirectory(
       mInput->OwnerDoc(), lastUsedDir);
   }
@@ -1005,15 +1011,11 @@ HTMLInputElement::InitFilePicker(FilePickerType aType)
 
   if (!oldFiles.IsEmpty() &&
       aType != FILE_PICKER_DIRECTORY) {
-    nsString path;
+    nsAutoString path;
 
-    nsCOMPtr<nsIFile> localFile = DOMFileOrDirectoryToLocalFile(oldFiles[0]);
-    if (localFile) {
-      nsCOMPtr<nsIFile> parentFile;
-      nsresult rv = localFile->GetParent(getter_AddRefs(parentFile));
-      if (NS_SUCCEEDED(rv)) {
-        filePicker->SetDisplayDirectory(parentFile);
-      }
+    nsCOMPtr<nsIFile> parentFile = LastUsedDirectory(oldFiles[0]);
+    if (parentFile) {
+      filePicker->SetDisplayDirectory(parentFile);
     }
 
     
