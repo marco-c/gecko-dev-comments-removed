@@ -305,8 +305,7 @@ this.PushService = {
       case "quit-application":
         this.uninit();
         break;
-      case "network-active-changed":         
-      case "network:offline-status-changed": 
+      case "network:offline-status-changed":
         this._stateChangeProcessEnqueue(_ =>
           this._changeStateOfflineEvent(aData === "offline", false)
         );
@@ -382,19 +381,6 @@ this.PushService = {
     }).catch(e => {
       console.error("backgroundUnregister: Error notifying server", e);
     });
-  },
-
-  
-  
-  getNetworkStateChangeEventName: function() {
-    try {
-      let networkManager = Cc["@mozilla.org/network/manager;1"];
-      if (networkManager) {
-        networkManager.getService(Ci.nsINetworkManager);
-        return "network-active-changed";
-      }
-    } catch (e) {}
-    return "network:offline-status-changed";
   },
 
   _findService: function(serverURL) {
@@ -536,23 +522,7 @@ this.PushService = {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    this._networkStateChangeEventName = this.getNetworkStateChangeEventName();
-    Services.obs.addObserver(this, this._networkStateChangeEventName, false);
+    Services.obs.addObserver(this, "network:offline-status-changed", false);
 
     
     prefs.observe("connection.enabled", this);
@@ -640,7 +610,7 @@ this.PushService = {
 
     prefs.ignore("connection.enabled", this);
 
-    Services.obs.removeObserver(this, this._networkStateChangeEventName);
+    Services.obs.removeObserver(this, "network:offline-status-changed");
     Services.obs.removeObserver(this, "clear-origin-data");
     Services.obs.removeObserver(this, "idle-daily");
     Services.obs.removeObserver(this, "perm-changed");
