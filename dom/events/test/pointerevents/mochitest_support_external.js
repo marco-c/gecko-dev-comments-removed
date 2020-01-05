@@ -201,7 +201,6 @@ function runTestInNewWindow(aFile) {
   
   
   testWindow.addEventListener("DOMContentLoaded", function() {
-    const PARENT_ORIGIN = "http://mochi.test:8888/";
     var e = testWindow.document.createElement('script');
     e.type = 'text/javascript';
     e.src = "mochitest_support_internal.js";
