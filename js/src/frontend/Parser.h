@@ -815,7 +815,7 @@ class Parser final : private JS::AutoGCRooter, public StrictModeGetter
 
         
         
-        void setPending(ErrorKind kind, Node pn, unsigned errorNumber);
+        void setPending(ErrorKind kind, const TokenPos& pos, unsigned errorNumber);
 
         
         
@@ -830,12 +830,12 @@ class Parser final : private JS::AutoGCRooter, public StrictModeGetter
         
         
         
-        void setPendingDestructuringError(Node pn, unsigned errorNumber);
+        void setPendingDestructuringErrorAt(const TokenPos& pos, unsigned errorNumber);
 
         
         
         
-        void setPendingExpressionError(Node pn, unsigned errorNumber);
+        void setPendingExpressionErrorAt(const TokenPos& pos, unsigned errorNumber);
 
         
         
