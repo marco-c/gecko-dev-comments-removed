@@ -358,7 +358,7 @@ public:
     RefPtr<Layer> mRoot;
     RefPtr<GeckoContentController> mController;
     APZCTreeManagerParent* mApzcTreeManagerParent;
-    CompositorBridgeParent* mParent;
+    RefPtr<CompositorBridgeParent> mParent;
     LayerManagerComposite* mLayerManager;
     
     
