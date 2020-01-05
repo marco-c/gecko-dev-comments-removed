@@ -27,6 +27,7 @@ const {
 const promise = require("promise");
 const Services = require("Services");
 const EventEmitter = require("devtools/shared/event-emitter");
+const {Task} = require("devtools/shared/task");
 
 const STYLE_INSPECTOR_PROPERTIES = "devtools-shared/locale/styleinspector.properties";
 const {LocalizationHelper} = require("devtools/shared/l10n");
@@ -517,7 +518,7 @@ RuleEditor.prototype = {
 
 
 
-  _onSelectorDone: function (value, commit, direction) {
+  _onSelectorDone: Task.async(function* (value, commit, direction) {
     if (!commit || this.isEditing || value === "" ||
         value === this.rule.selectorText) {
       return;
@@ -531,15 +532,27 @@ RuleEditor.prototype = {
 
     this.isEditing = true;
 
-    this.rule.domRule.modifySelector(element, value).then(response => {
-      this.isEditing = false;
+    try {
+      let response = yield this.rule.domRule.modifySelector(element, value);
 
       if (!supportsUnmatchedRules) {
+        this.isEditing = false;
+
         if (response) {
           this.ruleView.refreshPanel();
         }
         return;
       }
+
+      
+      
+      let applied = yield elementStyle.pageStyle.getApplied(element, {
+        inherited: true,
+        matchedSelectors: true,
+        filter: elementStyle.showUserAgentStyles ? "ua" : undefined
+      });
+
+      this.isEditing = false;
 
       let {ruleProps, isMatching} = response;
       if (!ruleProps) {
@@ -554,11 +567,25 @@ RuleEditor.prototype = {
       let editor = new RuleEditor(ruleView, newRule);
       let rules = elementStyle.rules;
 
-      rules.splice(rules.indexOf(this.rule), 1);
-      rules.push(newRule);
+      let newRuleIndex = applied.findIndex((r) => r.rule == ruleProps.rule);
+      let oldIndex = rules.indexOf(this.rule);
+
+      
+      
+      if (newRuleIndex === -1) {
+        newRuleIndex = oldIndex;
+      }
+
+      
+      rules.splice(oldIndex, 1);
+      rules.splice(newRuleIndex, 0, newRule);
       elementStyle._changed();
       elementStyle.markOverriddenAll();
 
+      
+      
+      
+      
       this.element.parentNode.replaceChild(editor.element, this.element);
 
       
@@ -568,11 +595,11 @@ RuleEditor.prototype = {
       }
 
       editor._moveSelectorFocus(direction);
-    }).then(null, err => {
+    } catch (err) {
       this.isEditing = false;
       promiseWarn(err);
-    });
-  },
+    }
+  }),
 
   
 
