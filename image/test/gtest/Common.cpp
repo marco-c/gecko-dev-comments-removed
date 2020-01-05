@@ -558,6 +558,15 @@ ImageTestCase CorruptICOWithBadBMPHeightTestCase()
                        IntSize(100, 100), TEST_CASE_HAS_ERROR);
 }
 
+ImageTestCase CorruptICOWithBadBppTestCase()
+{
+  
+  
+  
+  return ImageTestCase("corrupt-with-bad-ico-bpp.ico", "image/x-icon",
+                       IntSize(100, 100), TEST_CASE_IS_TRANSPARENT);
+}
+
 ImageTestCase TransparentPNGTestCase()
 {
   return ImageTestCase("transparent.png", "image/png", IntSize(32, 32),

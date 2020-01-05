@@ -374,7 +374,7 @@ nsICODecoder::ReadBIH(const char* aData)
   
   
   uint32_t dataOffset = bmp::FILE_HEADER_LENGTH + BITMAPINFOSIZE;
-  if (mDirEntry.mBitCount <= 8) {
+  if (mBPP <= 8) {
     
     uint16_t numColors = GetNumColors();
     if (numColors == (uint16_t)-1) {
