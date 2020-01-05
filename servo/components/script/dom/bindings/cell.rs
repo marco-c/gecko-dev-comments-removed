@@ -11,7 +11,7 @@ use style::thread_state;
 
 
 
-#[derive(Clone, PartialEq, Debug, HeapSizeOf)]
+#[derive(Clone, Debug, Default, HeapSizeOf, PartialEq)]
 pub struct DOMRefCell<T> {
     value: RefCell<T>,
 }
