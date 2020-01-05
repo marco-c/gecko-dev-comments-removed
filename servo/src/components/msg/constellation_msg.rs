@@ -6,7 +6,8 @@
 
 
 use geom::rect::Rect;
-use geom::size::Size2D;
+use geom::size::TypedSize2D;
+use servo_util::geometry::PagePx;
 use std::comm::{channel, Sender, Receiver};
 use url::Url;
 
@@ -44,7 +45,7 @@ pub enum Msg {
     LoadIframeUrlMsg(Url, PipelineId, SubpageId, IFrameSandboxState),
     NavigateMsg(NavigationDirection),
     RendererReadyMsg(PipelineId),
-    ResizedWindowMsg(Size2D<uint>),
+    ResizedWindowMsg(TypedSize2D<PagePx, f32>),
 }
 
 

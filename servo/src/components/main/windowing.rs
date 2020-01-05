@@ -32,7 +32,7 @@ pub enum WindowEvent {
     
     RefreshWindowEvent,
     
-    ResizeWindowEvent(uint, uint),
+    ResizeWindowEvent(TypedSize2D<DevicePixel, uint>),
     
     LoadUrlWindowEvent(String),
     
@@ -60,7 +60,9 @@ pub trait WindowMethods<A> {
     
     fn new(app: &A, is_foreground: bool) -> Rc<Self>;
     
-    fn size(&self) -> TypedSize2D<DevicePixel, f32>;
+    fn framebuffer_size(&self) -> TypedSize2D<DevicePixel, uint>;
+    
+    fn size(&self) -> TypedSize2D<ScreenPx, f32>;
     
     fn present(&self);
 

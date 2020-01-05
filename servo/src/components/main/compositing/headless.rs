@@ -4,7 +4,7 @@
 
 use compositing::*;
 
-use geom::size::Size2D;
+use geom::size::TypedSize2D;
 use servo_msg::constellation_msg::{ConstellationChan, ExitMsg, ResizedWindowMsg};
 use servo_util::time::ProfilerChan;
 use servo_util::time;
@@ -33,12 +33,12 @@ impl NullCompositor {
         
         {
             let ConstellationChan(ref chan) = constellation_chan;
-            chan.send(ResizedWindowMsg(Size2D(640u, 480u)));
+            chan.send(ResizedWindowMsg(TypedSize2D(640_f32, 480_f32)));
         }
         compositor.handle_message(constellation_chan);
 
-        // Drain compositor port, sometimes messages contain channels that are blocking
-        // another task from finishing (i.e. SetIds)
+        
+        
         loop {
             match compositor.port.try_recv() {
                 Err(_) => break,
