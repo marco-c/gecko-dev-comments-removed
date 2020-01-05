@@ -58,7 +58,7 @@ function openBoxModelView() {
     return {
       toolbox: data.toolbox,
       inspector: data.inspector,
-      view: data.inspector.computedview,
+      view: data.inspector.computedview.boxModelView,
       testActor: data.testActor
     };
   });
@@ -68,35 +68,8 @@ function openBoxModelView() {
 
 
 
-
-
-
-
-
-function waitForUpdate(inspector, waitForSelectionUpdate) {
-  return new Promise(resolve => {
-    inspector.on("boxmodel-view-updated", function onUpdate(e, reasons) {
-      
-      if (waitForSelectionUpdate && !reasons.includes("new-selection")) {
-        return;
-      }
-
-      inspector.off("boxmodel-view-updated", onUpdate);
-      resolve();
-    });
-  });
-}
-
-
-
-
-
-
-function waitForMarkupLoaded(inspector) {
-  return Promise.all([
-    waitForUpdate(inspector),
-    inspector.once("markuploaded"),
-  ]);
+function waitForUpdate(inspector) {
+  return inspector.once("boxmodel-view-updated");
 }
 
 function getStyle(testActor, selector, propertyName) {
@@ -112,15 +85,3 @@ function setStyle(testActor, selector, propertyName, value) {
                     .style.${propertyName} = "${value}";
   `);
 }
-
-
-
-
-
-
-var _selectNode = selectNode;
-selectNode = function* (node, inspector, reason) {
-  let onUpdate = waitForUpdate(inspector, true);
-  yield _selectNode(node, inspector, reason);
-  yield onUpdate;
-};
