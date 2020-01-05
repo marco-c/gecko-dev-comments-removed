@@ -527,9 +527,6 @@ BrowserGlue.prototype = {
 
     SelfSupportBackend.init();
 
-    
-    Cu.import("resource:///modules/AutoMigrate.jsm");
-
     if (AppConstants.INSTALL_COMPACT_THEMES) {
       let vendorShortName = gBrandBundle.GetStringFromName("vendorShortName");
 
