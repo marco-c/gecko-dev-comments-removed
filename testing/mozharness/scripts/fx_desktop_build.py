@@ -124,10 +124,38 @@ class FxDesktopBuild(BuildScript, TryToolsMixin, object):
                 self.fatal("'stage_platform' not determined and is required in your config")
 
         if self.try_message_has_flag('artifact'):
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
             self.info('Artifact build requested in try syntax.')
-            variant = 'artifact'
+
+            default = 'artifact'
             if c.get('build_variant') in ['debug', 'cross-debug']:
-                variant = 'debug-artifact'
+                default = 'debug-artifact'
+
+            variant = None
+            if 'artifact_flag_build_variant_in_try' in c:
+                variant = c.get('artifact_flag_build_variant_in_try')
+                if not variant:
+                    self.info('Build variant has falsy `artifact_flag_build_variant_in_try`; '
+                              'ignoring artifact build request and performing original build.')
+                    return
+
+                self.info('Build variant has non-falsy `artifact_build_variant_in_try`.')
+            else:
+                variant = default
+
+            self.info('Using artifact build variant "%s".' % variant)
+
             self._update_build_variant(rw_config, variant)
 
     
