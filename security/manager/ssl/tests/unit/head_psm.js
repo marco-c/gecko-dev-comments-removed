@@ -274,7 +274,7 @@ function getSSLStatistics() {
     SSL_GetStatistics = _getLibraryFunctionWithNoArguments("SSL_GetStatistics",
                                                            "ssl3",
                                                            SSL3StatisticsPtr);
-  } catch(e) {
+  } catch (e) {
     
     SSL_GetStatistics = _getLibraryFunctionWithNoArguments("SSL_GetStatistics",
                                                            "nss3",
