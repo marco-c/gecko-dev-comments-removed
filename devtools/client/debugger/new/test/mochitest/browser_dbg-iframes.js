@@ -1,26 +1,12 @@
 
 
 
+const {
+  setupTestRunner,
+  iframes
+} = require("devtools/client/debugger/new/integration-tests");
 
-
-
-
-
-add_task(function* () {
-  const dbg = yield initDebugger("doc-iframes.html");
-
-  
-  yield reload(dbg);
-  yield waitForPaused(dbg);
-  assertPausedLocation(dbg, "iframes.html", 8);
-
-  
-  yield resume(dbg);
-  yield waitForPaused(dbg);
-  assertPausedLocation(dbg, "debugger-statements.html", 8);
-
-  
-  yield resume(dbg);
-  yield waitForPaused(dbg);
-  assertPausedLocation(dbg, "debugger-statements.html", 12);
+add_task(function*() {
+  setupTestRunner(this);
+  yield iframes(this);
 });
