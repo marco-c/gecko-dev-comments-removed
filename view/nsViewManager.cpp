@@ -507,13 +507,6 @@ void nsViewManager::FlushDirtyRegionToWidget(nsView* aView)
   nsRegion r =
     ConvertRegionBetweenViews(*dirtyRegion, aView, nearestViewWithWidget);
 
-  
-  
-  if (gfxPrefs::DrawFrameCounter()) {
-    nsRect counterBounds = ToAppUnits(gfxPlatform::FrameCounterBounds(), AppUnitsPerDevPixel());
-    r.OrWith(counterBounds);
-  }
-
   nsViewManager* widgetVM = nearestViewWithWidget->GetViewManager();
   widgetVM->InvalidateWidgetArea(nearestViewWithWidget, r);
   dirtyRegion->SetEmpty();

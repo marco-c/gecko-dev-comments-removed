@@ -29,7 +29,6 @@
     _(Category,        int)               \
     _(CodeLocation,    const char *)      \
     _(EmbeddedString,  void *)            \
-    _(FrameNumber,     int)               \
     _(JitReturnAddr,   void *)            \
     _(LineNumber,      int)               \
     _(NativeLeafAddr,  void *)            \
@@ -317,7 +316,6 @@ private:
 
   nsDataHashtable<nsGenericHashKey<StackKey>, uint32_t> mStackToIndexMap;
 };
-
 
 
 

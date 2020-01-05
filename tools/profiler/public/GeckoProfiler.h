@@ -210,10 +210,6 @@ PROFILER_FUNC(bool profiler_feature_active(const char*), false)
 
 
 
-PROFILER_FUNC_VOID(profiler_set_frame_number(int frameNumber))
-
-
-
 PROFILER_FUNC(mozilla::UniquePtr<char[]> profiler_get_profile(double aSinceTime = 0),
               nullptr)
 

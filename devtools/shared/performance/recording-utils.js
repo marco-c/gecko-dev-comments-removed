@@ -342,9 +342,7 @@ function deflateSamples(samples, uniqueStacks) {
       sample.time,
       sample.responsiveness,
       sample.rss,
-      sample.uss,
-      sample.frameNumber,
-      sample.power
+      sample.uss
     ];
   }
 
@@ -459,9 +457,7 @@ function samplesWithSchema(data) {
       time: slot++,
       responsiveness: slot++,
       rss: slot++,
-      uss: slot++,
-      frameNumber: slot++,
-      power: slot++
+      uss: slot++
     },
     data: data
   };
