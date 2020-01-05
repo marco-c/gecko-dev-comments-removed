@@ -1703,28 +1703,6 @@ Element::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
   
   
   
-  
-  
-  
-  
-  if (aDocument) {
-    CSSPseudoElementType pseudoType = GetPseudoElementType();
-    if (pseudoType != CSSPseudoElementType::NotPseudo &&
-        nsCSSPseudoElements::PseudoElementIsJSCreatedNAC(pseudoType)) {
-      SetFlags(NODE_IS_NATIVE_ANONYMOUS);
-      nsIContent* parent = aParent;
-      while (parent && !parent->IsRootOfNativeAnonymousSubtree()) {
-        MOZ_ASSERT(parent->IsInNativeAnonymousSubtree());
-        parent->SetFlags(NODE_IS_NATIVE_ANONYMOUS);
-        parent = parent->GetParent();
-      }
-      MOZ_ASSERT(parent);
-    }
-  }
-
-  
-  
-  
   NS_POSTCONDITION(aDocument == GetUncomposedDoc(), "Bound to wrong document");
   NS_POSTCONDITION(aParent == GetParent(), "Bound to wrong parent");
   NS_POSTCONDITION(aBindingParent == GetBindingParent(),
