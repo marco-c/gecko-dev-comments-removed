@@ -6,6 +6,7 @@
 
 #include "DataStorage.h"
 
+#include "mozilla/Assertions.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/dom/PContent.h"
 #include "mozilla/dom/ContentChild.h"
@@ -91,7 +92,7 @@ DataStorage::Init(bool& aDataWillPersist)
 {
   
   if (!NS_IsMainThread()) {
-    NS_NOTREACHED("DataStorage::Init called off main thread");
+    MOZ_ASSERT_UNREACHABLE("DataStorage::Init called off main thread");
     return NS_ERROR_NOT_SAME_THREAD;
   }
 
@@ -814,7 +815,7 @@ DataStorage::NotifyObservers(const char* aTopic)
 {
   
   if (!NS_IsMainThread()) {
-    NS_NOTREACHED("DataStorage::NotifyObservers called off main thread");
+    MOZ_ASSERT_UNREACHABLE("DataStorage::NotifyObservers called off main thread");
     return;
   }
 
@@ -854,12 +855,12 @@ DataStorage::ShutdownTimer()
 
 
 NS_IMETHODIMP
-DataStorage::Observe(nsISupports* aSubject, const char* aTopic,
-                     const char16_t* aData)
+DataStorage::Observe(nsISupports* , const char* aTopic,
+                     const char16_t* )
 {
   
   if (!NS_IsMainThread()) {
-    NS_NOTREACHED("DataStorage::Observe called off main thread");
+    MOZ_ASSERT_UNREACHABLE("DataStorage::Observe called off main thread");
     return NS_ERROR_NOT_SAME_THREAD;
   }
 
