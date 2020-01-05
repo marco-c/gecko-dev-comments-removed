@@ -2,7 +2,7 @@
 
 
 
-use dom::attr::{Attr, AttrHelpers};
+use dom::attr::{Attr, AttrHelpers, AttrValue};
 use dom::bindings::codegen::Bindings::HTMLTableElementBinding::HTMLTableElementMethods;
 use dom::bindings::codegen::Bindings::HTMLTableElementBinding;
 use dom::bindings::codegen::Bindings::NodeBinding::NodeMethods;
@@ -17,8 +17,11 @@ use dom::htmltablecaptionelement::HTMLTableCaptionElement;
 use dom::node::{Node, NodeHelpers, NodeTypeId};
 use dom::virtualmethods::VirtualMethods;
 
-use cssparser::RGBA;
 use util::str::{self, DOMString, LengthOrPercentageOrAuto};
+
+use cssparser::RGBA;
+use string_cache::Atom;
+
 use std::cell::Cell;
 
 #[dom_struct]
@@ -156,6 +159,13 @@ impl<'a> VirtualMethods for JSRef<'a, HTMLTableElement> {
             &atom!("cellspacing") => self.cellspacing.set(None),
             &atom!("width") => self.width.set(LengthOrPercentageOrAuto::Auto),
             _ => ()
+        }
+    }
+
+    fn parse_plain_attribute(&self, local_name: &Atom, value: DOMString) -> AttrValue {
+        match local_name {
+            &atom!("border") => AttrValue::from_u32(value, 1),
+            _ => self.super_type().unwrap().parse_plain_attribute(local_name, value),
         }
     }
 }
