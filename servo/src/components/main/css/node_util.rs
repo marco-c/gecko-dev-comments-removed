@@ -3,13 +3,12 @@
 
 
 use layout::incremental::RestyleDamage;
+use layout::util::LayoutDataAccess;
 
 use std::cast;
-use std::cell::Cell;
 use style::ComputedValues;
 use script::dom::node::{AbstractNode, LayoutView};
 use servo_util::tree::TreeNodeRef;
-
 
 pub trait NodeUtil<'self> {
     fn get_css_select_results(self) -> &'self ComputedValues;
@@ -29,23 +28,21 @@ impl<'self> NodeUtil<'self> for AbstractNode<LayoutView> {
 
 
     fn get_css_select_results(self) -> &'self ComputedValues {
-        do self.read_layout_data |layout_data| {
-            match layout_data.style {
-                None => fail!(~"style() called on node without a style!"),
-                Some(ref style) => unsafe { cast::transmute_region(style) }
-            }
+        let layout_data = self.layout_data();
+        match *layout_data.style.borrow().ptr {
+            None => fail!(~"style() called on node without a style!"),
+            Some(ref style) => unsafe { cast::transmute_region(style) }
         }
     }
 
     
     fn have_css_select_results(self) -> bool {
-        self.read_layout_data(|data| data.style.is_some())
+        self.layout_data().style.borrow().ptr.is_some()
     }
 
     
     fn set_css_select_results(self, decl: ComputedValues) {
-        let cell = Cell::new(decl);
-        self.write_layout_data(|data| data.style = Some(cell.take()));
+        *self.layout_data().style.mutate().ptr = Some(decl)
     }
 
     
@@ -59,15 +56,17 @@ impl<'self> NodeUtil<'self> for AbstractNode<LayoutView> {
             RestyleDamage::none()
         };
 
-        do self.read_layout_data |layout_data| {
-            layout_data.restyle_damage
-                .map(|x| RestyleDamage::from_int(x))
-                .unwrap_or(default)
-        }
+        self.layout_data()
+            .restyle_damage
+            .borrow()
+            .ptr
+            .map(|x| RestyleDamage::from_int(x))
+            .unwrap_or(default)
     }
 
     
     fn set_restyle_damage(self, damage: RestyleDamage) {
-        self.write_layout_data(|data| data.restyle_damage = Some(damage.to_int()));
+        *self.layout_data().restyle_damage.mutate().ptr = Some(damage.to_int())
     }
 }
+

@@ -21,12 +21,8 @@ use dom::text::Text;
 use std::cast;
 use std::cast::transmute;
 use std::unstable::raw::Box;
-use extra::arc::Arc;
 use js::jsapi::{JSObject, JSContext};
-use style::{ComputedValues, PropertyDeclaration};
 use servo_util::tree::{TreeNode, TreeNodeRef, TreeNodeRefAsElement};
-use servo_util::range::Range;
-use gfx::display_list::DisplayList;
 
 
 
@@ -93,7 +89,7 @@ pub struct Node<View> {
     child_list: Option<@mut NodeList>,
 
     /// Layout information. Only the layout task may touch this data.
-    priv layout_data: LayoutData,
+    layout_data: Option<~Any>,
 }
 
 /// The different types of nodes.
@@ -543,7 +539,7 @@ impl Node<ScriptView> {
             owner_doc: doc,
             child_list: None,
 
-            layout_data: LayoutData::new(),
+            layout_data: None,
         }
     }
 }
@@ -1093,61 +1089,40 @@ impl Reflectable for Node<ScriptView> {
 }
 
 
-
-
-pub struct DisplayBoxes {
-    display_list: Option<Arc<DisplayList<AbstractNode<()>>>>,
-    range: Option<Range>,
-}
-
-
-pub struct LayoutData {
+pub trait PostorderNodeTraversal {
     
-    applicable_declarations: ~[Arc<~[PropertyDeclaration]>],
-
-    
-    style: Option<ComputedValues>,
-
-    
-    restyle_damage: Option<int>,
+    fn process(&mut self, node: AbstractNode<LayoutView>) -> bool;
 
     
     
-    boxes: DisplayBoxes,
-}
-
-impl LayoutData {
     
-    pub fn new() -> LayoutData {
-        LayoutData {
-            applicable_declarations: ~[],
-            style: None,
-            restyle_damage: None,
-            boxes: DisplayBoxes {
-                display_list: None,
-                range: None,
-            },
-        }
+    fn should_prune(&mut self, _node: AbstractNode<LayoutView>) -> bool {
+        false
     }
-}
-
-
-
-fn assert_is_sendable<T:Send>(_: T) {}
-fn assert_layout_data_is_sendable() {
-    assert_is_sendable(LayoutData::new())
 }
 
 impl AbstractNode<LayoutView> {
     
     
     
-    
-    pub fn read_layout_data<R>(self, blk: &fn(data: &LayoutData) -> R) -> R {
-        blk(&self.node().layout_data)
-    }
+    pub fn traverse_postorder<T:PostorderNodeTraversal>(self, traversal: &mut T) -> bool {
+        if traversal.should_prune(self) {
+            return true
+        }
 
-    pub fn write_layout_data<R>(self, blk: &fn(data: &mut LayoutData) -> R) -> R {
-        blk(&mut self.mut_node().layout_data)
+        let mut opt_kid = self.first_child();
+        loop {
+            match opt_kid {
+                None => break,
+                Some(kid) => {
+                    if !kid.traverse_postorder(traversal) {
+                        return false
+                    }
+                    opt_kid = kid.next_sibling()
+                }
+            }
+        }
+
+        traversal.process(self)
     }
 }
