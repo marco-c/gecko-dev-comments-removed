@@ -12,7 +12,8 @@ var path = require("path");
 var fs = require("fs");
 var ini = require("ini-parser");
 
-var modules = null;
+var gModules = null;
+var gRootDir = null;
 var directoryManifests = new Map();
 
 var definitions = [
@@ -40,6 +41,18 @@ var imports = [
 var workerImportFilenameMatch = /(.*\/)*(.*?\.jsm?)/;
 
 module.exports = {
+  get modulesGlobalData() {
+    if (!gModules) {
+      if (this.isMozillaCentralBased()) {
+        gModules = require(path.join(this.rootDir, "tools", "lint", "eslint", "modules.json"));
+      } else {
+        gModules = require("./modules.json");
+      }
+    }
+
+    return gModules;
+  },
+
   
 
 
@@ -176,16 +189,10 @@ module.exports = {
 
 
 
-
-
-  convertWorkerExpressionToGlobals(node, isGlobal, repository,
-                                             dirname) {
+  convertWorkerExpressionToGlobals(node, isGlobal, dirname) {
     var getGlobalsForFile = require("./globals").getGlobalsForFile;
 
-    if (!modules) {
-      modules = require(path.join(repository,
-        "tools", "lint", "eslint", "modules.json"));
-    }
+    let globalModules = this.modulesGlobalData;
 
     let results = [];
     let expr = node.expression;
@@ -203,8 +210,8 @@ module.exports = {
               let additionalGlobals = getGlobalsForFile(filePath);
               results = results.concat(additionalGlobals);
             }
-          } else if (match[2] in modules) {
-            results = results.concat(modules[match[2]].map(name => {
+          } else if (match[2] in globalModules) {
+            results = results.concat(globalModules[match[2]].map(name => {
               return { name, writable: true };
             }));
           }
@@ -215,12 +222,7 @@ module.exports = {
     return results;
   },
 
-  convertExpressionToGlobals(node, isGlobal, repository) {
-    if (!modules) {
-      modules = require(path.join(repository,
-        "tools", "lint", "eslint", "modules.json"));
-    }
-
+  convertExpressionToGlobals(node, isGlobal) {
     try {
       var source = this.getASTSource(node);
     } catch (e) {
@@ -239,6 +241,8 @@ module.exports = {
       }
     }
 
+    let globalModules = this.modulesGlobalData;
+
     for (reg of imports) {
       let match = source.match(reg);
       if (match) {
@@ -247,8 +251,8 @@ module.exports = {
           return [];
         }
 
-        if (match[1] in modules) {
-          return modules[match[1]];
+        if (match[1] in globalModules) {
+          return globalModules[match[1]];
         }
 
         return [match[2]];
@@ -517,21 +521,22 @@ module.exports = {
 
 
 
+  get rootDir() {
+    if (!gRootDir) {
+      let dirName = path.dirname(module.filename);
 
+      while (dirName && !fs.existsSync(path.join(dirName, ".eslintignore"))) {
+        dirName = path.dirname(dirName);
+      }
 
+      if (!dirName) {
+        throw new Error("Unable to find root of repository");
+      }
 
-  getRootDir(fileName) {
-    var dirName = path.dirname(fileName);
-
-    while (dirName && !fs.existsSync(path.join(dirName, ".eslintignore"))) {
-      dirName = path.dirname(dirName);
+      gRootDir = dirName;
     }
 
-    if (!dirName) {
-      throw new Error("Unable to find root of repository");
-    }
-
-    return dirName;
+    return gRootDir;
   },
 
   
@@ -576,7 +581,7 @@ module.exports = {
   },
 
   get globalScriptsPath() {
-    return path.join(this.getRootDir(module.filename), "browser",
+    return path.join(this.rootDir, "browser",
                      "base", "content", "global-scripts.inc");
   },
 

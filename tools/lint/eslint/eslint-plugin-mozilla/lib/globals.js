@@ -77,7 +77,6 @@ var globalDiscoveryInProgressForFiles = new Set();
 function GlobalsForNode(filePath) {
   this.path = filePath;
   this.dirname = path.dirname(this.path);
-  this.root = helpers.getRootDir(this.path);
 }
 
 GlobalsForNode.prototype = {
@@ -99,7 +98,7 @@ GlobalsForNode.prototype = {
 
   ExpressionStatement(node, parents, globalScope) {
     let isGlobal = helpers.getIsGlobalScope(parents);
-    let globals = helpers.convertExpressionToGlobals(node, isGlobal, this.root);
+    let globals = helpers.convertExpressionToGlobals(node, isGlobal);
     
     globals = globals.map(name => {
       return { name, writable: true };
@@ -110,7 +109,7 @@ GlobalsForNode.prototype = {
     
     if (globalScope && globalScope.set.get("importScripts")) {
       let workerDetails = helpers.convertWorkerExpressionToGlobals(node,
-        isGlobal, this.root, this.dirname);
+        isGlobal, this.dirname);
       globals = globals.concat(workerDetails);
     }
 
