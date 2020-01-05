@@ -235,14 +235,6 @@ impl Flow for TableRowFlow {
         &self.block_flow
     }
 
-    fn column_intrinsic_inline_sizes(&mut self) -> &mut Vec<ColumnIntrinsicInlineSize> {
-        panic!("can't call column_intrinsic_inline_sizes() on table row")
-    }
-
-    fn column_computed_inline_sizes(&mut self) -> &mut Vec<ColumnComputedInlineSize> {
-        &mut self.column_computed_inline_sizes
-    }
-
     
     
     
