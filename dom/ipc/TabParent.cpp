@@ -359,9 +359,11 @@ TabParent::DestroyInternal()
 
   RemoveWindowListeners();
 
+#ifdef ACCESSIBILITY
   if (a11y::DocAccessibleParent* tabDoc = GetTopLevelDocAccessible()) {
     tabDoc->Destroy();
   }
+#endif
 
   
   
