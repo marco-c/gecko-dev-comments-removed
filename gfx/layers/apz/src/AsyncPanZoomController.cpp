@@ -1394,8 +1394,6 @@ nsEventStatus AsyncPanZoomController::OnScale(const PinchGestureInput& aEvent) {
         ScrollBy(neededDisplacement);
       }
 
-      ScheduleComposite();
-
       
       if (!mPinchPaintTimerSet) {
         const int delay = gfxPrefs::APZScaleRepaintDelay();
@@ -1412,6 +1410,10 @@ nsEventStatus AsyncPanZoomController::OnScale(const PinchGestureInput& aEvent) {
 
       UpdateSharedCompositorFrameMetrics();
     }
+
+    
+    
+    ScheduleComposite();
 
     mLastZoomFocus = focusPoint;
   }
