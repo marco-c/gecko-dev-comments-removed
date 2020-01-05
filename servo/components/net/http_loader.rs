@@ -238,27 +238,28 @@ fn strip_url(mut referrer_url: ServoUrl, origin_only: bool) -> Option<ServoUrl> 
 }
 
 
+
 pub fn determine_request_referrer(headers: &mut Headers,
                                   referrer_policy: ReferrerPolicy,
-                                  referrer_url: Option<ServoUrl>,
-                                  url: ServoUrl) -> Option<ServoUrl> {
-    
+                                  referrer_source: ServoUrl,
+                                  current_url: ServoUrl)
+                                  -> Option<ServoUrl> {
     assert!(!headers.has::<Referer>());
-    if let Some(ref_url) = referrer_url {
-        let cross_origin = ref_url.origin() != url.origin();
-        return match referrer_policy {
-            ReferrerPolicy::NoReferrer => None,
-            ReferrerPolicy::Origin => strip_url(ref_url, true),
-            ReferrerPolicy::SameOrigin => if cross_origin { None } else { strip_url(ref_url, false) },
-            ReferrerPolicy::UnsafeUrl => strip_url(ref_url, false),
-            ReferrerPolicy::OriginWhenCrossOrigin => strip_url(ref_url, cross_origin),
-            ReferrerPolicy::StrictOrigin => strict_origin(ref_url, url),
-            ReferrerPolicy::StrictOriginWhenCrossOrigin => strict_origin_when_cross_origin(ref_url, url),
-            ReferrerPolicy::NoReferrerWhenDowngrade =>
-                no_referrer_when_downgrade_header(ref_url, url),
-        };
+    
+    
+    let cross_origin = referrer_source.origin() != current_url.origin();
+    
+    
+    match referrer_policy {
+        ReferrerPolicy::NoReferrer => None,
+        ReferrerPolicy::Origin => strip_url(referrer_source, true),
+        ReferrerPolicy::SameOrigin => if cross_origin { None } else { strip_url(referrer_source, false) },
+        ReferrerPolicy::UnsafeUrl => strip_url(referrer_source, false),
+        ReferrerPolicy::OriginWhenCrossOrigin => strip_url(referrer_source, cross_origin),
+        ReferrerPolicy::StrictOrigin => strict_origin(referrer_source, current_url),
+        ReferrerPolicy::StrictOriginWhenCrossOrigin => strict_origin_when_cross_origin(referrer_source, current_url),
+        ReferrerPolicy::NoReferrerWhenDowngrade => no_referrer_when_downgrade_header(referrer_source, current_url),
     }
-    return None;
 }
 
 pub fn set_request_cookies(url: &ServoUrl, headers: &mut Headers, cookie_jar: &Arc<RwLock<CookieStorage>>) {
