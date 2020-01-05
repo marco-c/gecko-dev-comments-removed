@@ -55,19 +55,19 @@ struct nsFont {
 
   
   uint8_t variantCaps = NS_FONT_VARIANT_CAPS_NORMAL;
-  uint8_t variantNumeric = 0;
+  uint8_t variantNumeric = NS_FONT_VARIANT_NUMERIC_NORMAL;
   uint8_t variantPosition = NS_FONT_VARIANT_POSITION_NORMAL;
   uint8_t variantWidth = NS_FONT_VARIANT_WIDTH_NORMAL;
 
-  uint16_t variantLigatures = 0;
-  uint16_t variantEastAsian = 0;
+  uint16_t variantLigatures = NS_FONT_VARIANT_LIGATURES_NORMAL;
+  uint16_t variantEastAsian = NS_FONT_VARIANT_EAST_ASIAN_NORMAL;
 
   
   
   
 
   
-  uint16_t variantAlternates = 0;
+  uint16_t variantAlternates = NS_FONT_VARIANT_ALTERNATES_NORMAL;
 
   
   uint8_t smoothing = NS_FONT_SMOOTHING_AUTO;
