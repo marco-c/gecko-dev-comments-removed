@@ -651,7 +651,8 @@ ClientLayerManager::ForwardTransaction(bool aScheduleComposite)
   
   
   if (!gfxPlatform::GetPlatform()->DidRenderingDeviceReset()) {
-    if (mForwarder->GetSyncObject()) {
+    if (mForwarder->GetSyncObject() &&
+        mForwarder->GetSyncObject()->IsSyncObjectValid()) {
       mForwarder->GetSyncObject()->FinalizeFrame();
     }
   }
