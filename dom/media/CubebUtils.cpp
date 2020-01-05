@@ -223,17 +223,27 @@ uint32_t PreferredSampleRate()
 
 bool InitPreferredChannelLayout()
 {
-  StaticMutexAutoLock lock(sMutex);
-  if (sPreferredChannelLayout != 0) {
-    return true;
+  {
+    StaticMutexAutoLock lock(sMutex);
+    if (sPreferredChannelLayout != 0) {
+      return true;
+    }
   }
-  cubeb* context = GetCubebContextUnlocked();
+
+  cubeb* context = GetCubebContext();
   if (!context) {
     return false;
   }
-  return cubeb_get_preferred_channel_layout(context,
-                                            &sPreferredChannelLayout) == CUBEB_OK
-         ? true : false;
+
+  
+  cubeb_channel_layout layout;
+  if (cubeb_get_preferred_channel_layout(context, &layout) != CUBEB_OK) {
+    return false;
+  }
+
+  StaticMutexAutoLock lock(sMutex);
+  sPreferredChannelLayout = layout;
+  return true;
 }
 
 uint32_t PreferredChannelMap(uint32_t aChannels)
