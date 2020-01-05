@@ -96,6 +96,11 @@ static mozilla::LazyLogModule sLogModule("ipc");
 
 
 
+
+
+
+
+
 using namespace mozilla;
 using namespace mozilla::ipc;
 using namespace std;
@@ -287,11 +292,11 @@ public:
     explicit AutoEnterTransaction(MessageChannel *aChan,
                                   int32_t aMsgSeqno,
                                   int32_t aTransactionID,
-                                  int aPriority)
+                                  int aNestedLevel)
       : mChan(aChan),
         mActive(true),
         mOutgoing(true),
-        mPriority(aPriority),
+        mNestedLevel(aNestedLevel),
         mSeqno(aMsgSeqno),
         mTransaction(aTransactionID),
         mNext(mChan->mTransactionStack)
@@ -304,7 +309,7 @@ public:
       : mChan(aChan),
         mActive(true),
         mOutgoing(false),
-        mPriority(aMessage.priority()),
+        mNestedLevel(aMessage.nested_level()),
         mSeqno(aMessage.seqno()),
         mTransaction(aMessage.transaction_id()),
         mNext(mChan->mTransactionStack)
@@ -329,7 +334,7 @@ public:
     void Cancel() {
         AutoEnterTransaction *cur = mChan->mTransactionStack;
         MOZ_RELEASE_ASSERT(cur == this);
-        while (cur && cur->mPriority != IPC::Message::PRIORITY_NORMAL) {
+        while (cur && cur->mNestedLevel != IPC::Message::NOT_NESTED) {
             
             
             
@@ -356,12 +361,12 @@ public:
         return mNext ? mNext->AwaitingSyncReply() : false;
     }
 
-    int AwaitingSyncReplyPriority() const {
+    int AwaitingSyncReplyNestedLevel() const {
         MOZ_RELEASE_ASSERT(mActive);
         if (mOutgoing) {
-            return mPriority;
+            return mNestedLevel;
         }
-        return mNext ? mNext->AwaitingSyncReplyPriority() : 0;
+        return mNext ? mNext->AwaitingSyncReplyNestedLevel() : 0;
     }
 
     bool DispatchingSyncMessage() const {
@@ -372,17 +377,17 @@ public:
         return mNext ? mNext->DispatchingSyncMessage() : false;
     }
 
-    int DispatchingSyncMessagePriority() const {
+    int DispatchingSyncMessageNestedLevel() const {
         MOZ_RELEASE_ASSERT(mActive);
         if (!mOutgoing) {
-            return mPriority;
+            return mNestedLevel;
         }
-        return mNext ? mNext->DispatchingSyncMessagePriority() : 0;
+        return mNext ? mNext->DispatchingSyncMessageNestedLevel() : 0;
     }
 
-    int Priority() const {
+    int NestedLevel() const {
         MOZ_RELEASE_ASSERT(mActive);
-        return mPriority;
+        return mNestedLevel;
     }
 
     int32_t SequenceNumber() const {
@@ -456,7 +461,7 @@ private:
     bool mOutgoing;
 
     
-    int mPriority;
+    int mNestedLevel;
     int32_t mSeqno;
     int32_t mTransaction;
 
@@ -480,10 +485,10 @@ MessageChannel::MessageChannel(MessageListener *aListener)
     mNextSeqno(0),
     mLastSendError(SyncSendError::SendSuccess),
     mDispatchingAsyncMessage(false),
-    mDispatchingAsyncMessagePriority(0),
+    mDispatchingAsyncMessageNestedLevel(0),
     mTransactionStack(nullptr),
     mTimedOutMessageSeqno(0),
-    mTimedOutMessagePriority(0),
+    mTimedOutMessageNestedLevel(0),
 #if defined(MOZ_CRASHREPORTER) && defined(OS_WIN)
     mPending(AnnotateAllocator<Message>(*this)),
 #endif
@@ -546,13 +551,13 @@ MessageChannel::~MessageChannel()
 
 
 int32_t
-MessageChannel::CurrentHighPriorityTransaction() const
+MessageChannel::CurrentNestedInsideSyncTransaction() const
 {
     mMonitor->AssertCurrentThreadOwns();
     if (!mTransactionStack) {
         return 0;
     }
-    MOZ_RELEASE_ASSERT(mTransactionStack->Priority() == IPC::Message::PRIORITY_HIGH);
+    MOZ_RELEASE_ASSERT(mTransactionStack->NestedLevel() == IPC::Message::NESTED_INSIDE_SYNC);
     return mTransactionStack->TransactionID();
 }
 
@@ -564,10 +569,10 @@ MessageChannel::AwaitingSyncReply() const
 }
 
 int
-MessageChannel::AwaitingSyncReplyPriority() const
+MessageChannel::AwaitingSyncReplyNestedLevel() const
 {
     mMonitor->AssertCurrentThreadOwns();
-    return mTransactionStack ? mTransactionStack->AwaitingSyncReplyPriority() : 0;
+    return mTransactionStack ? mTransactionStack->AwaitingSyncReplyNestedLevel() : 0;
 }
 
 bool
@@ -578,10 +583,10 @@ MessageChannel::DispatchingSyncMessage() const
 }
 
 int
-MessageChannel::DispatchingSyncMessagePriority() const
+MessageChannel::DispatchingSyncMessageNestedLevel() const
 {
     mMonitor->AssertCurrentThreadOwns();
-    return mTransactionStack ? mTransactionStack->DispatchingSyncMessagePriority() : 0;
+    return mTransactionStack ? mTransactionStack->DispatchingSyncMessageNestedLevel() : 0;
 }
 
 static void
@@ -771,8 +776,7 @@ MessageChannel::Send(Message* aMsg)
     }
 
     MOZ_RELEASE_ASSERT(!aMsg->is_sync());
-    
-    MOZ_RELEASE_ASSERT(aMsg->priority() != IPC::Message::PRIORITY_HIGH);
+    MOZ_RELEASE_ASSERT(aMsg->nested_level() != IPC::Message::NESTED_INSIDE_SYNC);
 
     CxxStackFrame frame(*this, OUT_MESSAGE, aMsg);
 
@@ -797,7 +801,7 @@ class CancelMessage : public IPC::Message
 {
 public:
     explicit CancelMessage(int transaction) :
-        IPC::Message(MSG_ROUTING_NONE, CANCEL_MESSAGE_TYPE, PRIORITY_NORMAL)
+        IPC::Message(MSG_ROUTING_NONE, CANCEL_MESSAGE_TYPE)
     {
         set_transaction_id(transaction);
     }
@@ -841,26 +845,26 @@ MessageChannel::ShouldDeferMessage(const Message& aMsg)
     
     
     
-    if (aMsg.priority() == IPC::Message::PRIORITY_URGENT)
+    if (aMsg.nested_level() == IPC::Message::NESTED_INSIDE_CPOW)
         return false;
 
     
     
     if (!aMsg.is_sync()) {
-        MOZ_RELEASE_ASSERT(aMsg.priority() == IPC::Message::PRIORITY_NORMAL);
+        MOZ_RELEASE_ASSERT(aMsg.nested_level() == IPC::Message::NOT_NESTED);
         return true;
     }
 
-    int msgPrio = aMsg.priority();
-    int waitingPrio = AwaitingSyncReplyPriority();
+    int msgNestedLevel = aMsg.nested_level();
+    int waitingNestedLevel = AwaitingSyncReplyNestedLevel();
 
     
     
-    if (msgPrio < waitingPrio)
+    if (msgNestedLevel < waitingNestedLevel)
         return true;
 
     
-    if (msgPrio > waitingPrio)
+    if (msgNestedLevel > waitingNestedLevel)
         return false;
 
     
@@ -872,7 +876,7 @@ MessageChannel::ShouldDeferMessage(const Message& aMsg)
     
     
     
-    return mSide == ParentSide && aMsg.transaction_id() != CurrentHighPriorityTransaction();
+    return mSide == ParentSide && aMsg.transaction_id() != CurrentNestedInsideSyncTransaction();
 }
 
 
@@ -919,7 +923,7 @@ MessageChannel::OnMessageReceivedFromLink(Message&& aMsg)
 
     
     MOZ_RELEASE_ASSERT(aMsg.compress_type() == IPC::Message::COMPRESSION_NONE ||
-                       aMsg.priority() == IPC::Message::PRIORITY_NORMAL);
+                       aMsg.nested_level() == IPC::Message::NOT_NESTED);
 
     bool compress = false;
     if (aMsg.compress_type() == IPC::Message::COMPRESSION_ENABLED) {
@@ -1042,7 +1046,7 @@ MessageChannel::ProcessPendingRequests(AutoEnterTransaction& aTransaction)
             bool defer = ShouldDeferMessage(msg);
 
             
-            if (msg.is_sync() || msg.priority() == IPC::Message::PRIORITY_URGENT) {
+            if (msg.is_sync() || msg.nested_level() == IPC::Message::NESTED_INSIDE_CPOW) {
                 IPC_LOG("ShouldDeferMessage(seqno=%d) = %d", msg.seqno(), defer);
             }
 
@@ -1101,48 +1105,48 @@ MessageChannel::Send(Message* aMsg, Message* aReply)
         return false;
     }
 
-    if (DispatchingSyncMessagePriority() == IPC::Message::PRIORITY_NORMAL &&
-        msg->priority() > IPC::Message::PRIORITY_NORMAL)
+    if (DispatchingSyncMessageNestedLevel() == IPC::Message::NOT_NESTED &&
+        msg->nested_level() > IPC::Message::NOT_NESTED)
     {
         
         
-        IPC_LOG("Prio forbids send");
+        IPC_LOG("Nested level forbids send");
         mLastSendError = SyncSendError::SendingCPOWWhileDispatchingSync;
         return false;
     }
 
-    if (DispatchingSyncMessagePriority() == IPC::Message::PRIORITY_URGENT ||
-        DispatchingAsyncMessagePriority() == IPC::Message::PRIORITY_URGENT)
+    if (DispatchingSyncMessageNestedLevel() == IPC::Message::NESTED_INSIDE_CPOW ||
+        DispatchingAsyncMessageNestedLevel() == IPC::Message::NESTED_INSIDE_CPOW)
     {
         
         
         
-        MOZ_RELEASE_ASSERT(msg->priority() == IPC::Message::PRIORITY_HIGH);
+        MOZ_RELEASE_ASSERT(msg->nested_level() == IPC::Message::NESTED_INSIDE_SYNC);
         IPC_LOG("Sending while dispatching urgent message");
         mLastSendError = SyncSendError::SendingCPOWWhileDispatchingUrgent;
         return false;
     }
 
-    if (msg->priority() < DispatchingSyncMessagePriority() ||
-        msg->priority() < AwaitingSyncReplyPriority())
+    if (msg->nested_level() < DispatchingSyncMessageNestedLevel() ||
+        msg->nested_level() < AwaitingSyncReplyNestedLevel())
     {
         MOZ_RELEASE_ASSERT(DispatchingSyncMessage() || DispatchingAsyncMessage());
         IPC_LOG("Cancel from Send");
-        CancelMessage *cancel = new CancelMessage(CurrentHighPriorityTransaction());
-        CancelTransaction(CurrentHighPriorityTransaction());
+        CancelMessage *cancel = new CancelMessage(CurrentNestedInsideSyncTransaction());
+        CancelTransaction(CurrentNestedInsideSyncTransaction());
         mLink->SendMessage(cancel);
     }
 
     IPC_ASSERT(msg->is_sync(), "can only Send() sync messages here");
 
-    IPC_ASSERT(msg->priority() >= DispatchingSyncMessagePriority(),
-               "can't send sync message of a lesser priority than what's being dispatched");
-    IPC_ASSERT(AwaitingSyncReplyPriority() <= msg->priority(),
-               "nested sync message sends must be of increasing priority");
-    IPC_ASSERT(DispatchingSyncMessagePriority() != IPC::Message::PRIORITY_URGENT,
+    IPC_ASSERT(msg->nested_level() >= DispatchingSyncMessageNestedLevel(),
+               "can't send sync message of a lesser nested level than what's being dispatched");
+    IPC_ASSERT(AwaitingSyncReplyNestedLevel() <= msg->nested_level(),
+               "nested sync message sends must be of increasing nested level");
+    IPC_ASSERT(DispatchingSyncMessageNestedLevel() != IPC::Message::NESTED_INSIDE_CPOW,
                "not allowed to send messages while dispatching urgent messages");
 
-    IPC_ASSERT(DispatchingAsyncMessagePriority() != IPC::Message::PRIORITY_URGENT,
+    IPC_ASSERT(DispatchingAsyncMessageNestedLevel() != IPC::Message::NESTED_INSIDE_CPOW,
                "not allowed to send messages while dispatching urgent messages");
 
     if (!Connected()) {
@@ -1154,7 +1158,7 @@ MessageChannel::Send(Message* aMsg, Message* aReply)
     msg->set_seqno(NextSeqno());
 
     int32_t seqno = msg->seqno();
-    int prio = msg->priority();
+    int nestedLevel = msg->nested_level();
     msgid_t replyType = msg->type() + 1;
 
     AutoEnterTransaction *stackTop = mTransactionStack;
@@ -1163,12 +1167,12 @@ MessageChannel::Send(Message* aMsg, Message* aReply)
     
     
     
-    bool nest = stackTop && stackTop->Priority() == IPC::Message::PRIORITY_HIGH;
+    bool nest = stackTop && stackTop->NestedLevel() == IPC::Message::NESTED_INSIDE_SYNC;
     int32_t transaction = nest ? stackTop->TransactionID() : seqno;
     msg->set_transaction_id(transaction);
 
     bool handleWindowsMessages = mListener->HandleWindowsMessages(*aMsg);
-    AutoEnterTransaction transact(this, seqno, transaction, prio);
+    AutoEnterTransaction transact(this, seqno, transaction, nestedLevel);
 
     IPC_LOG("Send seqno=%d, xid=%d", seqno, transaction);
 
@@ -1227,7 +1231,7 @@ MessageChannel::Send(Message* aMsg, Message* aReply)
             IPC_LOG("Timing out Send: xid=%d", transaction);
 
             mTimedOutMessageSeqno = seqno;
-            mTimedOutMessagePriority = prio;
+            mTimedOutMessageNestedLevel = nestedLevel;
             mLastSendError = SyncSendError::TimedOut;
             return false;
         }
@@ -1531,8 +1535,8 @@ MessageChannel::DequeueOne(Message *recvd)
     if (mTimedOutMessageSeqno) {
         for (MessageQueue::iterator it = mPending.begin(); it != mPending.end(); it++) {
             Message &msg = *it;
-            if (msg.priority() > mTimedOutMessagePriority ||
-                (msg.priority() == mTimedOutMessagePriority
+            if (msg.nested_level() > mTimedOutMessageNestedLevel ||
+                (msg.nested_level() == mTimedOutMessageNestedLevel
                  && msg.transaction_id() == mTimedOutMessageSeqno))
             {
                 *recvd = Move(msg);
@@ -1626,9 +1630,9 @@ MessageChannel::DispatchSyncMessage(const Message& aMsg, Message*& aReply)
 {
     AssertWorkerThread();
 
-    int prio = aMsg.priority();
+    int nestedLevel = aMsg.nested_level();
 
-    MOZ_RELEASE_ASSERT(prio == IPC::Message::PRIORITY_NORMAL || NS_IsMainThread());
+    MOZ_RELEASE_ASSERT(nestedLevel == IPC::Message::NOT_NESTED || NS_IsMainThread());
 
     MessageChannel* dummy;
     MessageChannel*& blockingVar = mSide == ChildSide && NS_IsMainThread() ? gParentProcessBlocker : dummy;
@@ -1642,7 +1646,7 @@ MessageChannel::DispatchSyncMessage(const Message& aMsg, Message*& aReply)
     if (!MaybeHandleError(rv, aMsg, "DispatchSyncMessage")) {
         aReply = new Message();
         aReply->set_sync();
-        aReply->set_priority(aMsg.priority());
+        aReply->set_nested_level(aMsg.nested_level());
         aReply->set_reply();
         aReply->set_reply_error();
     }
@@ -1662,9 +1666,9 @@ MessageChannel::DispatchAsyncMessage(const Message& aMsg)
 
     Result rv;
     {
-        int prio = aMsg.priority();
+        int nestedLevel = aMsg.nested_level();
         AutoSetValue<bool> async(mDispatchingAsyncMessage, true);
-        AutoSetValue<int> prioSet(mDispatchingAsyncMessagePriority, prio);
+        AutoSetValue<int> nestedLevelSet(mDispatchingAsyncMessageNestedLevel, nestedLevel);
         rv = mListener->OnMessageReceived(aMsg);
     }
     MaybeHandleError(rv, aMsg, "DispatchAsyncMessage");
@@ -1775,7 +1779,7 @@ MessageChannel::MaybeUndeferIncall()
     IPC_ASSERT(0 < mRemoteStackDepthGuess, "fatal logic error");
     --mRemoteStackDepthGuess;
 
-    MOZ_RELEASE_ASSERT(call.priority() == IPC::Message::PRIORITY_NORMAL);
+    MOZ_RELEASE_ASSERT(call.nested_level() == IPC::Message::NOT_NESTED);
     mPending.push_back(Move(call));
 }
 
@@ -2149,7 +2153,7 @@ class GoodbyeMessage : public IPC::Message
 {
 public:
     GoodbyeMessage() :
-        IPC::Message(MSG_ROUTING_NONE, GOODBYE_MESSAGE_TYPE, PRIORITY_NORMAL)
+        IPC::Message(MSG_ROUTING_NONE, GOODBYE_MESSAGE_TYPE)
     {
     }
     static bool Read(const Message* msg) {
@@ -2338,7 +2342,7 @@ MessageChannel::EndTimeout()
 
     IPC_LOG("Ending timeout of seqno=%d", mTimedOutMessageSeqno);
     mTimedOutMessageSeqno = 0;
-    mTimedOutMessagePriority = 0;
+    mTimedOutMessageNestedLevel = 0;
 
     for (size_t i = 0; i < mPending.size(); i++) {
         
@@ -2396,7 +2400,7 @@ MessageChannel::CancelTransaction(int transaction)
         
         
         
-        if (msg.is_sync() && msg.priority() != IPC::Message::PRIORITY_NORMAL) {
+        if (msg.is_sync() && msg.nested_level() != IPC::Message::NOT_NESTED) {
             MOZ_RELEASE_ASSERT(!foundSync);
             MOZ_RELEASE_ASSERT(msg.transaction_id() != transaction);
             IPC_LOG("Removing msg from queue seqno=%d xid=%d", msg.seqno(), msg.transaction_id());
@@ -2420,17 +2424,17 @@ void
 MessageChannel::CancelCurrentTransaction()
 {
     MonitorAutoLock lock(*mMonitor);
-    if (DispatchingSyncMessagePriority() >= IPC::Message::PRIORITY_HIGH) {
-        if (DispatchingSyncMessagePriority() == IPC::Message::PRIORITY_URGENT ||
-            DispatchingAsyncMessagePriority() == IPC::Message::PRIORITY_URGENT)
+    if (DispatchingSyncMessageNestedLevel() >= IPC::Message::NESTED_INSIDE_SYNC) {
+        if (DispatchingSyncMessageNestedLevel() == IPC::Message::NESTED_INSIDE_CPOW ||
+            DispatchingAsyncMessageNestedLevel() == IPC::Message::NESTED_INSIDE_CPOW)
         {
             mListener->IntentionalCrash();
         }
 
-        IPC_LOG("Cancel requested: current xid=%d", CurrentHighPriorityTransaction());
+        IPC_LOG("Cancel requested: current xid=%d", CurrentNestedInsideSyncTransaction());
         MOZ_RELEASE_ASSERT(DispatchingSyncMessage());
-        CancelMessage *cancel = new CancelMessage(CurrentHighPriorityTransaction());
-        CancelTransaction(CurrentHighPriorityTransaction());
+        CancelMessage *cancel = new CancelMessage(CurrentNestedInsideSyncTransaction());
+        CancelTransaction(CurrentNestedInsideSyncTransaction());
         mLink->SendMessage(cancel);
     }
 }
