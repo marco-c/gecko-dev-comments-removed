@@ -148,6 +148,9 @@ const REQUEST_COUNT = EXPECTED_REQUESTS_TOP.length + EXPECTED_REQUESTS_SUB.lengt
 
 add_task(function* () {
   
+  yield SpecialPowers.pushPrefEnv({ set: [["javascript.options.asyncstack", true]] });
+
+  
   
   
   

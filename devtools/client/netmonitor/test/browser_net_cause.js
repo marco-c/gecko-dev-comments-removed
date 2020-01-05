@@ -79,6 +79,9 @@ const EXPECTED_REQUESTS = [
 
 add_task(function* () {
   
+  yield SpecialPowers.pushPrefEnv({ set: [["javascript.options.asyncstack", true]] });
+
+  
   
   
   
