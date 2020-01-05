@@ -13,7 +13,7 @@ const OUTER_VALUE = "outer-value-" + RAND;
 
 add_task(function* test_telemetry() {
   Services.telemetry.canRecordExtended = true;
-  let histogram = Services.telemetry.getHistogramById("FX_SESSION_RESTORE_DOM_STORAGE_SIZE_ESTIMATE_CHARS");
+  let histogram = Services.telemetry.getHistogramById("FX_SESSION_RESTORE_DOM_STORAGE_SIZE_ESTIMATE_CHARS#content");
   let snap1 = histogram.snapshot();
 
   let tab = gBrowser.addTab(URL);
@@ -22,9 +22,14 @@ add_task(function* test_telemetry() {
 
   
   yield TabStateFlusher.flush(browser);
-  let snap2 = histogram.snapshot();
 
-  Assert.ok(snap2.counts[5] > snap1.counts[5]);
+  
+  
+  yield BrowserTestUtils.waitForCondition(() => {
+    return histogram.snapshot().counts[5] > snap1.counts[5];
+  });
+
+  Assert.ok(true);
   yield promiseRemoveTab(tab);
   Services.telemetry.canRecordExtended = false;
 });
