@@ -6429,6 +6429,11 @@ function CanCloseWindow() {
   let timedOutProcesses = new WeakSet();
 
   for (let browser of gBrowser.browsers) {
+    
+    if (!browser.isConnected) {
+      continue;
+    }
+
     let pmm = browser.messageManager.processMessageManager;
 
     if (timedOutProcesses.has(pmm)) {
