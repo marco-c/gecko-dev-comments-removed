@@ -64,6 +64,8 @@ enum class NetscapeStepUpPolicy : uint32_t;
 class PinningTelemetryInfo
 {
 public:
+  PinningTelemetryInfo() { Reset(); }
+
   
   bool accumulateResult;
   Telemetry::ID certPinningResultHistogram;
@@ -78,6 +80,8 @@ public:
 class CertificateTransparencyInfo
 {
 public:
+  CertificateTransparencyInfo() { Reset(); }
+
   
   bool enabled;
   
