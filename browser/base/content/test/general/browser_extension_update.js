@@ -2,6 +2,7 @@ const {AddonManagerPrivate} = Cu.import("resource://gre/modules/AddonManager.jsm
 
 const URL_BASE = "https://example.com/browser/browser/base/content/test/general";
 const ID = "update@tests.mozilla.org";
+const ID_ICON = "update_icon@tests.mozilla.org";
 
 function promiseInstallAddon(url) {
   return AddonManager.getInstallForURL(url, null, "application/x-xpinstall")
@@ -84,7 +85,8 @@ add_task(function setup() {
   ]});
 });
 
-add_task(function* test_background_update() {
+
+function* backgroundUpdateTest(url, id, checkIconFn) {
   yield SpecialPowers.pushPrefEnv({set: [
     
     ["extensions.update.enabled", true],
@@ -94,7 +96,7 @@ add_task(function* test_background_update() {
   ]});
 
   
-  let addon = yield promiseInstallAddon(`${URL_BASE}/browser_webext_update1.xpi`);
+  let addon = yield promiseInstallAddon(url);
 
   ok(addon, "Addon was installed");
   is(getBadgeStatus(), "", "Should not start out with an addon alert badge");
@@ -131,9 +133,10 @@ add_task(function* test_background_update() {
 
   
   let panel = yield popupPromise;
+  checkIconFn(panel.getAttribute("icon"));
   panel.secondaryButton.click();
 
-  addon = yield AddonManager.getAddonByID(ID);
+  addon = yield AddonManager.getAddonByID(id);
   is(addon.version, "1.0", "Should still be running the old version");
 
   yield BrowserTestUtils.removeTab(tab);
@@ -187,7 +190,26 @@ add_task(function* test_background_update() {
 
   addon.uninstall();
   yield SpecialPowers.popPrefEnv();
-});
+}
+
+function checkDefaultIcon(icon) {
+  is(icon, "chrome://mozapps/skin/extensions/extensionGeneric.svg",
+     "Popup has the default extension icon");
+}
+
+add_task(() => backgroundUpdateTest(`${URL_BASE}/browser_webext_update1.xpi`,
+                                    ID, checkDefaultIcon));
+
+function checkNonDefaultIcon(icon) {
+  
+  
+  
+  ok(icon.startsWith("jar:file://"), "Icon is a jar url");
+  ok(icon.endsWith("/icon.png"), "Icon is icon.png inside a jar");
+}
+
+add_task(() => backgroundUpdateTest(`${URL_BASE}/browser_webext_update_icon1.xpi`,
+                                    ID_ICON, checkNonDefaultIcon));
 
 
 
