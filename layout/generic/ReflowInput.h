@@ -218,6 +218,8 @@ public:
     uint32_t mShrinkWrap:1; 
     uint32_t mUseAutoBSize:1; 
     uint32_t mStaticPosIsCBOrigin:1; 
+    uint32_t mIClampMarginBoxMinSize:1; 
+    uint32_t mBClampMarginBoxMinSize:1; 
 
     
     
@@ -730,6 +732,12 @@ public:
     
     
     STATIC_POS_IS_CB_ORIGIN = (1<<4),
+
+    
+    I_CLAMP_MARGIN_BOX_MIN_SIZE = (1<<5),
+
+    
+    B_CLAMP_MARGIN_BOX_MIN_SIZE = (1<<6),
   };
 
   

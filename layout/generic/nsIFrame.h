@@ -1991,11 +1991,22 @@ public:
     
 
 
+
+
     eShrinkWrap =        1 << 0,
     
 
 
-    eUseAutoBSize =      1 << 1
+
+
+    eUseAutoBSize =      1 << 1,
+    
+
+
+
+
+    eIClampMarginBoxMinSize = 1 << 2, 
+    eBClampMarginBoxMinSize = 1 << 3, 
   };
 
   
