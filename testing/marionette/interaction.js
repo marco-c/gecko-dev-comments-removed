@@ -231,7 +231,7 @@ interaction.selectOption = function (el) {
 
 
 
-interaction.uploadFile = function (el, path) {
+interaction.uploadFile = function* (el, path) {
   let file = yield File.createFromFileName(path).then(file => {
     return file;
   }, () => {
