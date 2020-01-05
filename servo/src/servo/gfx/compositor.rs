@@ -6,8 +6,8 @@ use azure::azure_hl::DrawTarget;
 
 
 trait Compositor {
-    fn begin_drawing(+next_dt: pipes::Chan<DrawTarget>);
-    fn draw(+next_dt: pipes::Chan<DrawTarget>, +draw_me: DrawTarget);
+    fn begin_drawing(next_dt: pipes::Chan<DrawTarget>);
+    fn draw(next_dt: pipes::Chan<DrawTarget>, +draw_me: DrawTarget);
     fn add_event_listener(listener: comm::Chan<Event>);
 }
 

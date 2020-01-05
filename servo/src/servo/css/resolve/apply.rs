@@ -40,7 +40,7 @@ struct StyleApplicator {
 }
 
 
-fn apply_style(layout_ctx: &LayoutContext, node: Node, +reflow: fn~()) {
+fn apply_style(layout_ctx: &LayoutContext, node: Node, reflow: fn~()) {
     let applicator = StyleApplicator {
         node: node,
         reflow: reflow
@@ -54,7 +54,7 @@ fn apply_style(layout_ctx: &LayoutContext, node: Node, +reflow: fn~()) {
 
 
 
-fn inheritance_wrapper(layout_ctx: &LayoutContext, node : Node, +reflow: fn~()) {
+fn inheritance_wrapper(layout_ctx: &LayoutContext, node : Node, reflow: fn~()) {
     let applicator = StyleApplicator {
         node: node,
         reflow: reflow
