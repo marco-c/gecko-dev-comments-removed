@@ -20,6 +20,7 @@ use dom::node::{Node, NodeDamage};
 use dom::processinginstruction::ProcessingInstruction;
 use dom::text::Text;
 use std::cell::Ref;
+use util::opts;
 
 
 #[dom_struct]
@@ -94,16 +95,34 @@ impl CharacterDataMethods for CharacterData {
     fn SubstringData(&self, offset: u32, count: u32) -> Fallible<DOMString> {
         let data = self.data.borrow();
         
-        let data_from_offset = match find_utf16_code_unit_offset(&data, offset) {
-            Some(offset_bytes) => &data[offset_bytes..],
+        let mut substring = String::new();
+        let remaining;
+        match split_at_utf16_code_unit_offset(&data, offset) {
+            Ok((_, astral, s)) => {
+                
+                
+                
+                if astral.is_some() {
+                    substring = substring + "\u{FFFD}";
+                }
+                remaining = s;
+            }
             
-            None => return Err(Error::IndexSize),
-        };
-        let substring = match find_utf16_code_unit_offset(data_from_offset, count) {
+            Err(()) => return Err(Error::IndexSize),
+        }
+        match split_at_utf16_code_unit_offset(remaining, count) {
             
-            None => data_from_offset,
+            Err(()) => substring = substring + remaining,
             
-            Some(count_bytes) => &data_from_offset[..count_bytes],
+            Ok((s, astral, _)) => {
+                substring = substring + s;
+                
+                
+                
+                if astral.is_some() {
+                    substring = substring + "\u{FFFD}";
+                }
+            }
         };
         Ok(DOMString::from(substring))
     }
@@ -126,26 +145,54 @@ impl CharacterDataMethods for CharacterData {
 
     
     fn ReplaceData(&self, offset: u32, count: u32, arg: DOMString) -> ErrorResult {
-        let new_data = {
+        let mut new_data;
+        {
             let data = self.data.borrow();
-            let (prefix, data_from_offset) = match find_utf16_code_unit_offset(&data, offset) {
-                Some(offset_bytes) => data.split_at(offset_bytes),
+            let prefix;
+            let replacement_before;
+            let remaining;
+            match split_at_utf16_code_unit_offset(&data, offset) {
+                Ok((p, astral, r)) => {
+                    prefix = p;
+                    
+                    
+                    
+                    replacement_before = if astral.is_some() { "\u{FFFD}" } else { "" };
+                    remaining = r;
+                }
                 
-                None => return Err(Error::IndexSize),
+                Err(()) => return Err(Error::IndexSize),
             };
-            let suffix = match find_utf16_code_unit_offset(data_from_offset, count) {
+            let replacement_after;
+            let suffix;
+            match split_at_utf16_code_unit_offset(remaining, count) {
                 
-                None => "",
-                Some(count_bytes) => &data_from_offset[count_bytes..],
+                Err(()) => {
+                    replacement_after = "";
+                    suffix = "";
+                }
+                Ok((_, astral, s)) => {
+                    
+                    
+                    
+                    replacement_after = if astral.is_some() { "\u{FFFD}" } else { "" };
+                    suffix = s;
+                }
             };
             
             
-            let mut new_data = String::with_capacity(prefix.len() + arg.len() + suffix.len());
+            new_data = String::with_capacity(
+                prefix.len() +
+                replacement_before.len() +
+                arg.len() +
+                replacement_after.len() +
+                suffix.len());
             new_data.push_str(prefix);
+            new_data.push_str(replacement_before);
             new_data.push_str(&arg);
+            new_data.push_str(replacement_after);
             new_data.push_str(suffix);
-            new_data
-        };
+        }
         *self.data.borrow_mut() = DOMString::from(new_data);
         self.content_changed();
         
@@ -204,15 +251,36 @@ impl LayoutCharacterDataHelpers for LayoutJS<CharacterData> {
 
 
 
-fn find_utf16_code_unit_offset(s: &str, offset: u32) -> Option<usize> {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+fn split_at_utf16_code_unit_offset(s: &str, offset: u32) -> Result<(&str, Option<char>, &str), ()> {
     let mut code_units = 0;
     for (i, c) in s.char_indices() {
         if code_units == offset {
-            return Some(i);
+            let (a, b) = s.split_at(i);
+            return Ok((a, None, b));
         }
         code_units += 1;
         if c > '\u{FFFF}' {
             if code_units == offset {
+                if opts::get().replace_surrogates {
+                    debug_assert!(c.len_utf8() == 4);
+                    return Ok((&s[..i], Some(c), &s[i + c.len_utf8()..]))
+                }
                 panic!("\n\n\
                     Would split a surrogate pair in CharacterData API.\n\
                     If you see this in real content, please comment with the URL\n\
@@ -223,8 +291,8 @@ fn find_utf16_code_unit_offset(s: &str, offset: u32) -> Option<usize> {
         }
     }
     if code_units == offset {
-        Some(s.len())
+        Ok((s, None, ""))
     } else {
-        None
+        Err(())
     }
 }
