@@ -39,23 +39,26 @@ if (win != null)
         self.open_new_window()
         
         self.assertEqual(self.marionette.current_window_handle, orig_win)
-        now_available = self.marionette.window_handles
         
         Wait(self.marionette).until(
-            lambda _: len(now_available) == len(orig_available) + 1,
+            lambda _: len(self.marionette.window_handles) == len(orig_available) + 1,
             message="The new window has not been opened.")
         
-        self.assertTrue(orig_win in now_available)
+        now_available = self.marionette.window_handles
+        self.assertIn(orig_win, now_available)
         new_win = None
         for win in now_available:
             if win != orig_win:
-                new_win = orig_win
+                new_win = win
         
         self.marionette.switch_to_window(new_win)
         self.assertEqual(self.marionette.current_window_handle, new_win)
+        self.assertNotEqual(self.marionette.current_window_handle, orig_win)
         
         self.marionette.switch_to_window(orig_win)
+        self.assertEqual(self.marionette.current_window_handle, orig_win)
         self.close_new_window()
+        self.assertNotIn(new_win, self.marionette.window_handles)
         self.assertEqual(self.marionette.current_window_handle, orig_win)
         self.assertEqual(len(self.marionette.window_handles), len(orig_available))
 
