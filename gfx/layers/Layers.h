@@ -1821,6 +1821,8 @@ protected:
 
   gfx::Matrix4x4 SnapTransformTranslation(const gfx::Matrix4x4& aTransform,
                                           gfx::Matrix* aResidualTransform);
+  gfx::Matrix4x4 SnapTransformTranslation3D(const gfx::Matrix4x4& aTransform,
+                                            gfx::Matrix* aResidualTransform);
   
 
 
