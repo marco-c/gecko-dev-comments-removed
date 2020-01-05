@@ -987,7 +987,7 @@ class GCParallelTask
     void joinWithLockHeld(AutoLockHelperThreadState& locked);
 
     
-    void runFromMainThread(JSRuntime* rt);
+    void runFromActiveCooperatingThread(JSRuntime* rt);
 
     
     enum CancelMode { CancelNoWait, CancelAndWait};

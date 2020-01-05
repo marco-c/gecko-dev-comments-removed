@@ -650,7 +650,7 @@ class MOZ_STACK_CLASS AutoWritableJitCode
       : AutoWritableJitCode(TlsContext.get()->runtime(), addr, size)
     {}
     explicit AutoWritableJitCode(JitCode* code)
-      : AutoWritableJitCode(code->runtimeFromMainThread(), code->raw(), code->bufferSize())
+      : AutoWritableJitCode(code->runtimeFromActiveCooperatingThread(), code->raw(), code->bufferSize())
     {}
     ~AutoWritableJitCode() {
         if (!ExecutableAllocator::makeExecutable(addr_, size_))

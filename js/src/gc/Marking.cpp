@@ -3000,7 +3000,7 @@ TypedUnmarkGrayCellRecursively(T* t)
 {
     MOZ_ASSERT(t);
 
-    JSRuntime* rt = t->runtimeFromMainThread();
+    JSRuntime* rt = t->runtimeFromActiveCooperatingThread();
     MOZ_ASSERT(!JS::CurrentThreadIsHeapCollecting());
     MOZ_ASSERT(!JS::CurrentThreadIsHeapCycleCollecting());
 

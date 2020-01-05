@@ -121,6 +121,36 @@ class Simulator;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class FreeOp : public JSFreeOp
 {
     Vector<void*, 0, SystemAllocPolicy> freeLaterList;
@@ -134,11 +164,11 @@ class FreeOp : public JSFreeOp
     explicit FreeOp(JSRuntime* maybeRuntime);
     ~FreeOp();
 
-    bool onMainThread() const {
+    bool onActiveCooperatingThread() const {
         return runtime_ != nullptr;
     }
 
-    bool maybeOffMainThread() const {
+    bool maybeOnHelperThread() const {
         
         
         return !runtime_;
@@ -538,7 +568,7 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
 
     js::Mutex exclusiveAccessLock;
 #ifdef DEBUG
-    bool mainThreadHasExclusiveAccess;
+    bool activeThreadHasExclusiveAccess;
 #endif
 
     
@@ -556,7 +586,7 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
 
 #ifdef DEBUG
     bool currentThreadHasExclusiveAccess() const {
-        return (!exclusiveThreadsPresent() && mainThreadHasExclusiveAccess) ||
+        return (!exclusiveThreadsPresent() && activeThreadHasExclusiveAccess) ||
             exclusiveAccessLock.ownedByCurrentThread();
     }
 #endif

@@ -131,7 +131,7 @@ JSRuntime::JSRuntime(JSRuntime* parentRuntime)
     windowProxyClass_(nullptr),
     exclusiveAccessLock(mutexid::RuntimeExclusiveAccess),
 #ifdef DEBUG
-    mainThreadHasExclusiveAccess(false),
+    activeThreadHasExclusiveAccess(false),
 #endif
     numExclusiveThreads(0),
     numCompartments(0),
@@ -815,7 +815,7 @@ JSRuntime::IonBuilderList&
 JSRuntime::ionLazyLinkList()
 {
     MOZ_ASSERT(CurrentThreadCanAccessRuntime(this),
-               "Should only be mutated by the main thread.");
+               "Should only be mutated by the active thread.");
     return ionLazyLinkList_.ref();
 }
 
@@ -823,7 +823,7 @@ void
 JSRuntime::ionLazyLinkListRemove(jit::IonBuilder* builder)
 {
     MOZ_ASSERT(CurrentThreadCanAccessRuntime(this),
-               "Should only be mutated by the main thread.");
+               "Should only be mutated by the active thread.");
     MOZ_ASSERT(ionLazyLinkListSize_ > 0);
 
     builder->removeFrom(ionLazyLinkList());
@@ -836,7 +836,7 @@ void
 JSRuntime::ionLazyLinkListAdd(jit::IonBuilder* builder)
 {
     MOZ_ASSERT(CurrentThreadCanAccessRuntime(this),
-               "Should only be mutated by the main thread.");
+               "Should only be mutated by the active thread.");
     ionLazyLinkList().insertFront(builder);
     ionLazyLinkListSize_++;
 }

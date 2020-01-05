@@ -47,7 +47,7 @@ JSString::sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf)
     
     
     if (isExternal()) {
-        if (auto* cb = runtimeFromMainThread()->externalStringSizeofCallback.ref()) {
+        if (auto* cb = runtimeFromActiveCooperatingThread()->externalStringSizeofCallback.ref()) {
             
             JS::AutoSuppressGCAnalysis nogc;
             return cb(this, mallocSizeOf);

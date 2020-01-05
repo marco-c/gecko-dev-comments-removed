@@ -105,7 +105,7 @@ Zone::setNeedsIncrementalBarrier(bool needs, ShouldUpdateJit updateJit)
         jitUsingBarriers_ = needs;
     }
 
-    MOZ_ASSERT_IF(needs && isAtomsZone(), !runtimeFromMainThread()->exclusiveThreadsPresent());
+    MOZ_ASSERT_IF(needs && isAtomsZone(), !runtimeFromActiveCooperatingThread()->exclusiveThreadsPresent());
     MOZ_ASSERT_IF(needs, canCollect());
     needsIncrementalBarrier_ = needs;
 }
@@ -295,7 +295,7 @@ Zone::gcNumber()
 {
     
     
-    return usedByExclusiveThread ? 0 : runtimeFromMainThread()->gc.gcNumber();
+    return usedByExclusiveThread ? 0 : runtimeFromActiveCooperatingThread()->gc.gcNumber();
 }
 
 js::jit::JitZone*

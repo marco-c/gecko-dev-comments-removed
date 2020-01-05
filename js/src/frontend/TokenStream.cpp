@@ -650,6 +650,7 @@ TokenStream::reportCompileErrorNumberVA(uint32_t offset, unsigned flags, unsigne
 
     
     
+    
     CompileError tempErr;
     CompileError* tempErrPtr = &tempErr;
     if (cx->helperThread() && !cx->addPendingCompileError(&tempErrPtr))

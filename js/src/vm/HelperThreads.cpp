@@ -126,8 +126,8 @@ GetSelectorRuntime(CompilationSelector selector)
 {
     struct Matcher
     {
-        JSRuntime* match(JSScript* script)    { return script->runtimeFromMainThread(); }
-        JSRuntime* match(JSCompartment* comp) { return comp->runtimeFromMainThread(); }
+        JSRuntime* match(JSScript* script)    { return script->runtimeFromActiveCooperatingThread(); }
+        JSRuntime* match(JSCompartment* comp) { return comp->runtimeFromActiveCooperatingThread(); }
         JSRuntime* match(ZonesInState zbs)    { return zbs.runtime; }
         JSRuntime* match(JSRuntime* runtime)  { return runtime; }
         JSRuntime* match(AllCompilations all) { return nullptr; }
@@ -267,7 +267,7 @@ js::HasOffThreadIonCompile(JSCompartment* comp)
             return true;
     }
 
-    jit::IonBuilder* builder = comp->runtimeFromMainThread()->ionLazyLinkList().getFirst();
+    jit::IonBuilder* builder = comp->runtimeFromActiveCooperatingThread()->ionLazyLinkList().getFirst();
     while (builder) {
         if (builder->script()->compartment() == comp)
             return true;
@@ -1180,7 +1180,7 @@ js::GCParallelTask::join()
 }
 
 void
-js::GCParallelTask::runFromMainThread(JSRuntime* rt)
+js::GCParallelTask::runFromActiveCooperatingThread(JSRuntime* rt)
 {
     MOZ_ASSERT(state == NotStarted);
     MOZ_ASSERT(js::CurrentThreadCanAccessRuntime(rt));

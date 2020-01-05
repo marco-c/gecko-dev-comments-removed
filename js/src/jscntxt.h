@@ -1134,9 +1134,9 @@ class MOZ_RAII AutoLockForExclusiveAccess
         if (runtime->numExclusiveThreads) {
             runtime->exclusiveAccessLock.lock();
         } else {
-            MOZ_ASSERT(!runtime->mainThreadHasExclusiveAccess);
+            MOZ_ASSERT(!runtime->activeThreadHasExclusiveAccess);
 #ifdef DEBUG
-            runtime->mainThreadHasExclusiveAccess = true;
+            runtime->activeThreadHasExclusiveAccess = true;
 #endif
         }
     }
@@ -1154,9 +1154,9 @@ class MOZ_RAII AutoLockForExclusiveAccess
         if (runtime->numExclusiveThreads) {
             runtime->exclusiveAccessLock.unlock();
         } else {
-            MOZ_ASSERT(runtime->mainThreadHasExclusiveAccess);
+            MOZ_ASSERT(runtime->activeThreadHasExclusiveAccess);
 #ifdef DEBUG
-            runtime->mainThreadHasExclusiveAccess = false;
+            runtime->activeThreadHasExclusiveAccess = false;
 #endif
         }
     }

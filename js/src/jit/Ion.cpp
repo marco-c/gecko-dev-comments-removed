@@ -1387,7 +1387,7 @@ IonScript::unlinkFromRuntime(FreeOp* fop)
 void
 jit::ToggleBarriers(JS::Zone* zone, bool needs)
 {
-    JSRuntime* rt = zone->runtimeFromMainThread();
+    JSRuntime* rt = zone->runtimeFromActiveCooperatingThread();
     if (!rt->hasJitRuntime())
         return;
 
@@ -2430,8 +2430,8 @@ CheckScriptSize(JSContext* cx, JSScript* script)
 
     uint32_t numLocalsAndArgs = NumLocalsAndArgs(script);
 
-    if (script->length() > MAX_MAIN_THREAD_SCRIPT_SIZE ||
-        numLocalsAndArgs > MAX_MAIN_THREAD_LOCALS_AND_ARGS)
+    if (script->length() > MAX_ACTIVE_THREAD_SCRIPT_SIZE ||
+        numLocalsAndArgs > MAX_ACTIVE_THREAD_LOCALS_AND_ARGS)
     {
         if (!OffThreadCompilationAvailable(cx)) {
             JitSpew(JitSpew_IonAbort, "Script too large (%" PRIuSIZE " bytes) (%u locals/args)",

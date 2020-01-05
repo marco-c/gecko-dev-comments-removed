@@ -193,7 +193,7 @@ using ThreadLocalData = ProtectedDataNoCheckArgs<CheckThreadLocal, T>;
 
 
 
-enum class AllowedBackgroundThread
+enum class AllowedHelperThread
 {
     None,
     GCTask,
@@ -201,7 +201,7 @@ enum class AllowedBackgroundThread
     GCTaskOrIonCompile
 };
 
-template <AllowedBackgroundThread Background>
+template <AllowedHelperThread Helper>
 class CheckActiveThread
 {
   public:
@@ -212,18 +212,18 @@ class CheckActiveThread
 
 template <typename T>
 using ActiveThreadData =
-    ProtectedDataNoCheckArgs<CheckActiveThread<AllowedBackgroundThread::None>, T>;
+    ProtectedDataNoCheckArgs<CheckActiveThread<AllowedHelperThread::None>, T>;
 
 
 
 template <typename T>
 using ActiveThreadOrGCTaskData =
-    ProtectedDataNoCheckArgs<CheckActiveThread<AllowedBackgroundThread::GCTask>, T>;
+    ProtectedDataNoCheckArgs<CheckActiveThread<AllowedHelperThread::GCTask>, T>;
 template <typename T>
 using ActiveThreadOrIonCompileData =
-    ProtectedDataNoCheckArgs<CheckActiveThread<AllowedBackgroundThread::IonCompile>, T>;
+    ProtectedDataNoCheckArgs<CheckActiveThread<AllowedHelperThread::IonCompile>, T>;
 
-template <AllowedBackgroundThread Background>
+template <AllowedHelperThread Helper>
 class CheckZoneGroup
 {
 #ifdef DEBUG
@@ -242,19 +242,19 @@ class CheckZoneGroup
 
 template <typename T>
 using ZoneGroupData =
-    ProtectedDataZoneGroupArg<CheckZoneGroup<AllowedBackgroundThread::None>, T>;
+    ProtectedDataZoneGroupArg<CheckZoneGroup<AllowedHelperThread::None>, T>;
 
 
 
 template <typename T>
 using ZoneGroupOrGCTaskData =
-    ProtectedDataZoneGroupArg<CheckZoneGroup<AllowedBackgroundThread::GCTask>, T>;
+    ProtectedDataZoneGroupArg<CheckZoneGroup<AllowedHelperThread::GCTask>, T>;
 template <typename T>
 using ZoneGroupOrIonCompileData =
-    ProtectedDataZoneGroupArg<CheckZoneGroup<AllowedBackgroundThread::IonCompile>, T>;
+    ProtectedDataZoneGroupArg<CheckZoneGroup<AllowedHelperThread::IonCompile>, T>;
 template <typename T>
 using ZoneGroupOrGCTaskOrIonCompileData =
-    ProtectedDataZoneGroupArg<CheckZoneGroup<AllowedBackgroundThread::GCTaskOrIonCompile>, T>;
+    ProtectedDataZoneGroupArg<CheckZoneGroup<AllowedHelperThread::GCTaskOrIonCompile>, T>;
 
 
 enum class GlobalLock
@@ -264,7 +264,7 @@ enum class GlobalLock
     HelperThreadLock
 };
 
-template <GlobalLock Lock, AllowedBackgroundThread Background>
+template <GlobalLock Lock, AllowedHelperThread Helper>
 class CheckGlobalLock
 {
 #ifdef DEBUG
@@ -276,24 +276,24 @@ class CheckGlobalLock
 
 template <typename T>
 using GCLockData =
-    ProtectedDataNoCheckArgs<CheckGlobalLock<GlobalLock::GCLock, AllowedBackgroundThread::None>, T>;
+    ProtectedDataNoCheckArgs<CheckGlobalLock<GlobalLock::GCLock, AllowedHelperThread::None>, T>;
 
 
 template <typename T>
 using ExclusiveAccessLockData =
-    ProtectedDataNoCheckArgs<CheckGlobalLock<GlobalLock::ExclusiveAccessLock, AllowedBackgroundThread::None>, T>;
+    ProtectedDataNoCheckArgs<CheckGlobalLock<GlobalLock::ExclusiveAccessLock, AllowedHelperThread::None>, T>;
 
 
 
 
 template <typename T>
 using ExclusiveAccessLockOrGCTaskData =
-    ProtectedDataNoCheckArgs<CheckGlobalLock<GlobalLock::ExclusiveAccessLock, AllowedBackgroundThread::GCTask>, T>;
+    ProtectedDataNoCheckArgs<CheckGlobalLock<GlobalLock::ExclusiveAccessLock, AllowedHelperThread::GCTask>, T>;
 
 
 template <typename T>
 using HelperThreadLockData =
-    ProtectedDataNoCheckArgs<CheckGlobalLock<GlobalLock::HelperThreadLock, AllowedBackgroundThread::None>, T>;
+    ProtectedDataNoCheckArgs<CheckGlobalLock<GlobalLock::HelperThreadLock, AllowedHelperThread::None>, T>;
 
 
 
@@ -356,7 +356,7 @@ using WriteOnceData = ProtectedDataWriteOnce<CheckUnprotected, T>;
 
 template <typename T>
 using ExclusiveAccessLockWriteOnceData =
-    ProtectedDataWriteOnce<CheckGlobalLock<GlobalLock::ExclusiveAccessLock, AllowedBackgroundThread::None>, T>;
+    ProtectedDataWriteOnce<CheckGlobalLock<GlobalLock::ExclusiveAccessLock, AllowedHelperThread::None>, T>;
 
 #undef DECLARE_ASSIGNMENT_OPERATOR
 #undef DECLARE_ONE_BOOL_OPERATOR

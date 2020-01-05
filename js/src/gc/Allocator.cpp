@@ -284,13 +284,13 @@ GCRuntime::refillFreeListFromAnyThread(JSContext* cx, AllocKind thingKind, size_
     cx->arenas()->checkEmptyFreeList(thingKind);
 
     if (!cx->helperThread())
-        return refillFreeListFromMainThread(cx, thingKind, thingSize);
+        return refillFreeListFromActiveCooperatingThread(cx, thingKind, thingSize);
 
-    return refillFreeListOffMainThread(cx, thingKind);
+    return refillFreeListFromHelperThread(cx, thingKind);
 }
 
  TenuredCell*
-GCRuntime::refillFreeListFromMainThread(JSContext* cx, AllocKind thingKind, size_t thingSize)
+GCRuntime::refillFreeListFromActiveCooperatingThread(JSContext* cx, AllocKind thingKind, size_t thingSize)
 {
     
     
@@ -302,7 +302,7 @@ GCRuntime::refillFreeListFromMainThread(JSContext* cx, AllocKind thingKind, size
 }
 
  TenuredCell*
-GCRuntime::refillFreeListOffMainThread(JSContext* cx, AllocKind thingKind)
+GCRuntime::refillFreeListFromHelperThread(JSContext* cx, AllocKind thingKind)
 {
     
     
@@ -321,7 +321,7 @@ GCRuntime::refillFreeListInGC(Zone* zone, AllocKind thingKind)
 
 
     zone->arenas.checkEmptyFreeList(thingKind);
-    mozilla::DebugOnly<JSRuntime*> rt = zone->runtimeFromMainThread();
+    mozilla::DebugOnly<JSRuntime*> rt = zone->runtimeFromActiveCooperatingThread();
     MOZ_ASSERT(JS::CurrentThreadIsHeapCollecting());
     MOZ_ASSERT_IF(!JS::CurrentThreadIsHeapMinorCollecting(), !rt->gc.isBackgroundSweeping());
 

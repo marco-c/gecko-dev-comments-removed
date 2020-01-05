@@ -401,25 +401,8 @@ SetArrayLength(JSContext* cx, HandleObject obj, HandleValue value, bool strict)
 
     RootedId id(cx, NameToId(cx->names().length));
     ObjectOpResult result;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (array->lengthIsWritable()) {
-        if (!ArraySetLength(cx, array, id, JSPROP_PERMANENT, value, result))
-            return false;
-    } else {
-        MOZ_ALWAYS_TRUE(result.fail(JSMSG_READ_ONLY));
-    }
-
-    return result.checkStrictErrorOrWarning(cx, obj, id, strict);
+    return ArraySetLength(cx, array, id, JSPROP_PERMANENT, value, result) &&
+           result.checkStrictErrorOrWarning(cx, obj, id, strict);
 }
 
 bool
@@ -1207,7 +1190,7 @@ AssertValidObjectPtr(JSContext* cx, JSObject* obj)
     
     
     MOZ_ASSERT(obj->compartment() == cx->compartment());
-    MOZ_ASSERT(obj->runtimeFromMainThread() == cx->runtime());
+    MOZ_ASSERT(obj->runtimeFromActiveCooperatingThread() == cx->runtime());
 
     MOZ_ASSERT_IF(!obj->hasLazyGroup() && obj->maybeShape(),
                   obj->group()->clasp() == obj->maybeShape()->getObjectClass());

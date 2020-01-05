@@ -1015,7 +1015,7 @@ CanOptimizeDenseOrUnboxedArraySetElem(JSObject* obj, uint32_t index,
         return false;
 
     
-    if (obj->is<UnboxedArrayObject>() && !obj->runtimeFromMainThread()->jitSupportsFloatingPoint)
+    if (obj->is<UnboxedArrayObject>() && !obj->runtimeFromActiveCooperatingThread()->jitSupportsFloatingPoint)
         return false;
 
     Shape* shape = obj->maybeShape();

@@ -455,7 +455,6 @@ JitcodeGlobalTable::lookupForSamplerInfallible(void* ptr, JSRuntime* rt, uint32_
     
     
     
-    
 
     return *entry;
 }

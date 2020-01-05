@@ -508,12 +508,12 @@ FinalizeTypedArenas(FreeOp* fop,
 {
     
     Maybe<AutoLockGC> maybeLock;
-    if (fop->onMainThread())
+    if (fop->onActiveCooperatingThread())
         maybeLock.emplace(fop->runtime());
 
     
     
-    MOZ_ASSERT_IF(!fop->onMainThread(), keepArenas == ArenaLists::KEEP_ARENAS);
+    MOZ_ASSERT_IF(!fop->onActiveCooperatingThread(), keepArenas == ArenaLists::KEEP_ARENAS);
 
     size_t thingSize = Arena::thingSize(thingKind);
     size_t thingsPerArena = Arena::thingsPerArena(thingKind);
@@ -2133,7 +2133,7 @@ MovingTracer::onScopeEdge(Scope** scopep)
 void
 Zone::prepareForCompacting()
 {
-    FreeOp* fop = runtimeFromMainThread()->defaultFreeOp();
+    FreeOp* fop = runtimeFromActiveCooperatingThread()->defaultFreeOp();
     discardJitCode(fop);
 }
 
@@ -2415,7 +2415,7 @@ GCRuntime::updateCellPointers(MovingTracer* trc, Zone* zone, AllocKinds kinds, s
         }
     }
 
-    fgTask->runFromMainThread(rt);
+    fgTask->runFromActiveCooperatingThread(rt);
 
     {
         AutoLockHelperThreadState lock;
@@ -3138,7 +3138,7 @@ GCRuntime::startDecommit()
     if (sweepOnBackgroundThread && decommitTask.start())
         return;
 
-    decommitTask.runFromMainThread(rt);
+    decommitTask.runFromActiveCooperatingThread(rt);
 }
 
 void
@@ -3457,7 +3457,7 @@ JS::Zone::sweepUniqueIds(js::FreeOp* fop)
 void
 Zone::sweepCompartments(FreeOp* fop, bool keepAtleastOne, bool destroyingRuntime)
 {
-    JSRuntime* rt = runtimeFromMainThread();
+    JSRuntime* rt = runtimeFromActiveCooperatingThread();
     JSDestroyCompartmentCallback callback = rt->destroyCompartmentCallback;
 
     JSCompartment** read = compartments().begin();
@@ -3759,7 +3759,7 @@ RelazifyFunctions(Zone* zone, AllocKind kind)
 
     AutoAssertEmptyNursery empty(TlsContext.get());
 
-    JSRuntime* rt = zone->runtimeFromMainThread();
+    JSRuntime* rt = zone->runtimeFromActiveCooperatingThread();
     for (auto i = zone->cellIter<JSObject>(kind, empty); !i.done(); i.next()) {
         JSFunction* fun = &i->as<JSFunction>();
         if (fun->hasScript())
@@ -4477,7 +4477,7 @@ Zone::findOutgoingEdges(ZoneComponentFinder& finder)
 
 
 
-    JSRuntime* rt = runtimeFromMainThread();
+    JSRuntime* rt = runtimeFromActiveCooperatingThread();
     Zone* atomsZone = rt->atomsCompartment(finder.lock)->zone();
     if (atomsZone->isGCMarking())
         finder.addEdgeTo(atomsZone);
@@ -4971,7 +4971,7 @@ GCRuntime::startTask(GCParallelTask& task, gcstats::Phase phase, AutoLockHelperT
     if (!task.startWithLockHeld(locked)) {
         AutoUnlockHelperThreadState unlock(locked);
         gcstats::AutoPhase ap(stats(), phase);
-        task.runFromMainThread(rt);
+        task.runFromActiveCooperatingThread(rt);
     }
 }
 
@@ -4985,12 +4985,12 @@ GCRuntime::joinTask(GCParallelTask& task, gcstats::Phase phase, AutoLockHelperTh
 using WeakCacheTaskVector = mozilla::Vector<SweepWeakCacheTask, 0, SystemAllocPolicy>;
 
 static void
-SweepWeakCachesFromMainThread(JSRuntime* rt)
+SweepWeakCachesFromActiveCooperatingThread(JSRuntime* rt)
 {
     for (GCZoneGroupIter zone(rt); !zone.done(); zone.next()) {
         for (JS::WeakCache<void*>* cache : zone->weakCaches()) {
             SweepWeakCacheTask task(rt, *cache);
-            task.runFromMainThread(rt);
+            task.runFromActiveCooperatingThread(rt);
         }
     }
 }
@@ -5002,7 +5002,7 @@ PrepareWeakCacheTasks(JSRuntime* rt)
     for (GCZoneGroupIter zone(rt); !zone.done(); zone.next()) {
         for (JS::WeakCache<void*>* cache : zone->weakCaches()) {
             if (!out.append(SweepWeakCacheTask(rt, *cache))) {
-                SweepWeakCachesFromMainThread(rt);
+                SweepWeakCachesFromActiveCooperatingThread(rt);
                 return WeakCacheTaskVector();
             }
         }
@@ -6877,7 +6877,7 @@ gc::MergeCompartments(JSCompartment* source, JSCompartment* target)
     MOZ_ASSERT(source->creationOptions().addonIdOrNull() ==
                target->creationOptions().addonIdOrNull());
 
-    JSContext* cx = source->runtimeFromMainThread()->activeContextFromOwnThread();
+    JSContext* cx = source->runtimeFromActiveCooperatingThread()->activeContextFromOwnThread();
 
     AutoPrepareForTracing prepare(cx, SkipAtoms);
 
@@ -7835,7 +7835,7 @@ js::gc::detail::CellIsMarkedGrayIfKnown(const Cell* cell)
     
     
     auto tc = &cell->asTenured();
-    auto rt = tc->runtimeFromMainThread();
+    auto rt = tc->runtimeFromActiveCooperatingThread();
     if (!rt->gc.areGrayBitsValid() ||
         (rt->gc.isIncrementalGCInProgress() && !tc->zone()->wasGCStarted()))
     {
