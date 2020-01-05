@@ -369,8 +369,15 @@ public:
 
 
 
-  static nsINode* GetCommonAncestor(nsINode* aNode1,
-                                    nsINode* aNode2);
+
+  static nsINode* GetCommonAncestor(nsINode* aNode1, nsINode* aNode2);
+
+  
+
+
+
+  static nsIContent* GetCommonFlattenedTreeAncestor(nsIContent* aContent1,
+                                                    nsIContent* aContent2);
 
   
 
