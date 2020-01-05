@@ -2423,13 +2423,40 @@ GeckoDriver.prototype.getWindowSize = function (cmd, resp) {
 
 
 
-GeckoDriver.prototype.setWindowSize = function (cmd, resp) {
+
+
+
+
+
+
+
+
+GeckoDriver.prototype.setWindowSize = function* (cmd, resp) {
   assert.firefox()
 
-  let {width, height} = cmd.parameters;
-  let win = this.getCurrentWindow();
-  win.resizeTo(width, height);
-  this.getWindowSize(cmd, resp);
+  const {width, height} = cmd.parameters;
+  const win = this.getCurrentWindow();
+
+  yield new Promise(resolve => {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    const fps15 = 66;
+    const synchronousResize = () => win.setTimeout(resolve, fps15);
+    win.addEventListener("resize", synchronousResize, {once: true});
+    win.resizeTo(width, height);
+  });
+
+  return {
+    width: win.outerWidth,
+    height: win.outerHeight,
+  };
 };
 
 
