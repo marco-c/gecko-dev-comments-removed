@@ -23,7 +23,7 @@ const rootDir = helpers.getRootDir(module.filename);
 
 
 const EXTRA_SCRIPTS = [
-  
+  "browser/base/content/nsContextMenu.js",
   "toolkit/content/contentAreaUtils.js",
   "browser/components/places/content/editBookmarkOverlay.js",
   "browser/components/downloads/content/downloads.js",
@@ -116,5 +116,6 @@ function mapGlobals(fileGlobals) {
 }
 
 module.exports = {
-  globals: mapGlobals(getScriptGlobals())
+  globals: mapGlobals(getScriptGlobals()),
+  browserjsScripts: getGlobalScriptsIncludes().concat(EXTRA_SCRIPTS)
 };

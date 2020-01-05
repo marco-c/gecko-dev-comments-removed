@@ -296,6 +296,8 @@ module.exports = {
     "ChromeWorker": false,
     "ChromeUtils": false,
     "Components": false,
+    "CSSPrimitiveValue": false,
+    "CSSValueList": false,
     "dump": true,
     
     
