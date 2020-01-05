@@ -53,14 +53,14 @@ use libc::c_void;
 use restyle_damage::RestyleDamage;
 use std::sync::atomic::AtomicIsize;
 use style::atomic_refcell::AtomicRefCell;
-use style::data::PersistentStyleData;
+use style::data::NodeData;
 
 pub struct PartialPersistentLayoutData {
     
     
     
     
-    pub style_data: PersistentStyleData,
+    pub style_data: NodeData,
 
     
     pub restyle_damage: RestyleDamage,
@@ -72,7 +72,7 @@ pub struct PartialPersistentLayoutData {
 impl PartialPersistentLayoutData {
     pub fn new() -> Self {
         PartialPersistentLayoutData {
-            style_data: PersistentStyleData::new(),
+            style_data: NodeData::new(),
             restyle_damage: RestyleDamage::empty(),
             parallel: DomParallelInfo::new(),
         }

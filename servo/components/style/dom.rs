@@ -6,7 +6,8 @@
 
 #![allow(unsafe_code)]
 
-use data::PseudoStyles;
+use atomic_refcell::{AtomicRef, AtomicRefMut};
+use data::NodeData;
 use element_state::ElementState;
 use parking_lot::RwLock;
 use properties::{ComputedValues, PropertyDeclarationBlock};
@@ -143,25 +144,14 @@ pub trait TNode : Sized + Copy + Clone + NodeInfo {
     
     
     
-    
-    
-    
-    
-    
-    fn get_existing_style(&self) -> Option<Arc<ComputedValues>>;
+    fn begin_styling(&self) -> AtomicRefMut<NodeData>;
 
     
-    fn set_style(&self, style: Arc<ComputedValues>);
-
-    
-    
-    fn take_pseudo_styles(&self) -> PseudoStyles;
-
-    
-    fn set_pseudo_styles(&self, styles: PseudoStyles);
-
     
     fn style_text_node(&self, style: Arc<ComputedValues>);
+
+    
+    fn borrow_data(&self) -> Option<AtomicRef<NodeData>>;
 
     
     fn restyle_damage(self) -> Self::ConcreteRestyleDamage;

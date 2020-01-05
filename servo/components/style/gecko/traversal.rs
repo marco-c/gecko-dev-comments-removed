@@ -29,10 +29,6 @@ impl<'lc, 'ln> DomTraversalContext<GeckoNode<'ln>> for RecalcStyleOnly<'lc> {
     }
 
     fn process_preorder(&self, node: GeckoNode<'ln>) -> RestyleResult {
-        
-        
-        node.initialize_data();
-
         recalc_style_at(&self.context, self.root, node)
     }
 

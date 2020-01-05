@@ -253,8 +253,9 @@ pub extern "C" fn Servo_StyleSheet_Release(sheet: RawServoStyleSheetBorrowed) ->
 pub extern "C" fn Servo_ComputedValues_Get(node: RawGeckoNodeBorrowed)
      -> ServoComputedValuesStrong {
     let node = GeckoNode(node);
-    let arc_cv = match node.get_existing_style() {
-        Some(style) => style,
+    let data = node.borrow_data();
+    let arc_cv = match data.as_ref().and_then(|x| x.get_current_styles()) {
+        Some(styles) => styles.primary.clone(),
         None => {
             
             
