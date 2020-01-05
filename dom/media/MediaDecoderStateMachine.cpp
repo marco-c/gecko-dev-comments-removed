@@ -438,6 +438,7 @@ public:
     mDecodeStartTime = TimeStamp::Now();
 
     mMaster->mIsPrerolling = true;
+    mMaster->MaybeStopPrerolling();
 
     
     mMaster->DispatchDecodeTasksIfNeeded();
