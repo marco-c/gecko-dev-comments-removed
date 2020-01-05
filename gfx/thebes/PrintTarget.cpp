@@ -16,6 +16,10 @@ PrintTarget::PrintTarget(cairo_surface_t* aCairoSurface, const IntSize& aSize)
   : mCairoSurface(aCairoSurface)
   , mSize(aSize)
   , mIsFinished(false)
+#ifdef DEBUG
+  , mHasActivePage(false)
+#endif
+
 {
 #if 0
   
@@ -51,6 +55,10 @@ PrintTarget::MakeDrawTarget(const IntSize& aSize,
 {
   MOZ_ASSERT(mCairoSurface,
              "We shouldn't have been constructed without a cairo surface");
+
+  
+  
+  MOZ_ASSERT(mHasActivePage, "We can't guarantee a valid DrawTarget");
 
   if (cairo_surface_status(mCairoSurface)) {
     return nullptr;

@@ -36,6 +36,10 @@ already_AddRefed<DrawTarget>
 PrintTargetThebes::MakeDrawTarget(const IntSize& aSize,
                                   DrawEventRecorder* aRecorder)
 {
+  
+  
+  MOZ_ASSERT(mHasActivePage, "We can't guarantee a valid DrawTarget");
+
   RefPtr<gfx::DrawTarget> dt =
     gfxPlatform::GetPlatform()->CreateDrawTargetForSurface(mGfxSurface, aSize);
   if (!dt || !dt->IsValid()) {

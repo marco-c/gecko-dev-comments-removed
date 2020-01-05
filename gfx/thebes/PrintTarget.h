@@ -37,12 +37,22 @@ public:
     return NS_OK;
   }
   virtual nsresult AbortPrinting() {
+#ifdef DEBUG
+    mHasActivePage = false;
+#endif
     return NS_OK;
   }
   virtual nsresult BeginPage() {
+#ifdef DEBUG
+    MOZ_ASSERT(!mHasActivePage, "Missing EndPage() call");
+    mHasActivePage = true;
+#endif
     return NS_OK;
   }
   virtual nsresult EndPage() {
+#ifdef DEBUG
+    mHasActivePage = false;
+#endif
     return NS_OK;
   }
 
@@ -69,6 +79,10 @@ public:
   }
 
   
+
+
+
+
 
 
 
@@ -135,6 +149,9 @@ protected:
   RefPtr<DrawTarget> mRefDT; 
   IntSize mSize;
   bool mIsFinished;
+#ifdef DEBUG
+  bool mHasActivePage;
+#endif
 };
 
 } 
