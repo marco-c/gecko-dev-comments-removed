@@ -28,7 +28,6 @@ namespace media {
 
 class AudioSink : private AudioStream::DataSource {
   using PlaybackParams = MediaSink::PlaybackParams;
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(AudioSink)
 
 public:
   AudioSink(AbstractThread* aThread,
@@ -36,6 +35,8 @@ public:
             int64_t aStartTime,
             const AudioInfo& aInfo,
             dom::AudioChannel aChannel);
+
+  ~AudioSink();
 
   
   
@@ -65,8 +66,6 @@ public:
   }
 
 private:
-  virtual ~AudioSink();
-
   
   nsresult InitializeAudioStream(const PlaybackParams& aParams);
 
