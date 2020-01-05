@@ -71,6 +71,12 @@ function* doTest() {
   let tab = yield promise;
 
   
+  promise = promiseEvent(searchPopup, "popuphidden");
+  info("Closing search panel");
+  EventUtils.synthesizeKey("VK_ESCAPE", {});
+  yield promise;
+
+  
   Assert.equal(tab.linkedBrowser.currentURI.spec,
                "http://mochi.test:8888/browser/browser/components/search/test/",
                "Expected search tab should have loaded");
