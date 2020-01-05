@@ -112,6 +112,8 @@ pub struct ServoCefBrowser {
     
     pub loading: Cell<bool>,
     
+    pub favicons: RefCell<Vec<String>>,
+    
     window_handle: cef_window_handle_t,
 
     id: isize,
@@ -154,6 +156,7 @@ impl ServoCefBrowser {
             back: Cell::new(false),
             forward: Cell::new(false),
             loading: Cell::new(false),
+            favicons: RefCell::new(vec!()),
             window_handle: window_handle,
         }
     }

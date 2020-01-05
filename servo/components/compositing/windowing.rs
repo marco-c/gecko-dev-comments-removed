@@ -110,6 +110,8 @@ pub trait WindowMethods {
     fn load_end(&self, back: bool, forward: bool);
     
     fn load_error(&self, code: NetError, url: String);
+    
+    fn head_parsed(&self);
 
     
     fn hidpi_factor(&self) -> ScaleFactor<ScreenPx, DevicePixel, f32>;
@@ -138,4 +140,7 @@ pub trait WindowMethods {
 
     
     fn supports_clipboard(&self) -> bool;
+
+    
+    fn set_favicon(&self, url: Url);
 }

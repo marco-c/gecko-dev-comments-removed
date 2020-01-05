@@ -149,7 +149,7 @@ pub struct _cef_drag_data_t {
   
   
   pub get_file_names: Option<extern "C" fn(this: *mut cef_drag_data_t,
-      names: types::cef_string_list_t) -> libc::c_int>,
+      names: &types::cef_string_list_t) -> libc::c_int>,
 
   
   
@@ -499,7 +499,7 @@ impl CefDragData {
   
   
   
-  pub fn get_file_names(&self, names: Vec<String>) -> libc::c_int {
+  pub fn get_file_names(&self, names: &Vec<String>) -> libc::c_int {
     if self.c_object.is_null() ||
        self.c_object as usize == mem::POST_DROP_USIZE {
       panic!("called a CEF method on a null object")

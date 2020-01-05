@@ -1099,7 +1099,7 @@ pub struct _cef_dictionary_value_t {
   
   
   pub get_keys: Option<extern "C" fn(this: *mut cef_dictionary_value_t,
-      keys: types::cef_string_list_t) -> libc::c_int>,
+      keys: &types::cef_string_list_t) -> libc::c_int>,
 
   
   
@@ -1489,7 +1489,7 @@ impl CefDictionaryValue {
   
   
   
-  pub fn get_keys(&self, keys: Vec<String>) -> libc::c_int {
+  pub fn get_keys(&self, keys: &Vec<String>) -> libc::c_int {
     if self.c_object.is_null() ||
        self.c_object as usize == mem::POST_DROP_USIZE {
       panic!("called a CEF method on a null object")

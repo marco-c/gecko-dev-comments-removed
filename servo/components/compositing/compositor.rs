@@ -454,6 +454,14 @@ impl<Window: WindowMethods> IOCompositor<Window> {
                 self.composite_if_necessary(CompositingReason::Headless);
             }
 
+            (Msg::NewFavicon(url), ShutdownState::NotShuttingDown) => {
+                self.window.set_favicon(url);
+            }
+
+            (Msg::HeadParsed, ShutdownState::NotShuttingDown) => {
+                self.window.head_parsed();
+            }
+
             
             
             

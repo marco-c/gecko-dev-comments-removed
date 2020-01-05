@@ -97,6 +97,7 @@ pub struct _cef_browser_process_handler_t {
   
   
   
+  
   pub on_work_available: Option<extern "C" fn(
       this: *mut cef_browser_process_handler_t) -> ()>,
 
@@ -260,6 +261,7 @@ impl CefBrowserProcessHandler {
     }
   }
 
+  
   
   
   

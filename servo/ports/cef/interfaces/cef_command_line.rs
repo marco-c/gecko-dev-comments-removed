@@ -109,7 +109,7 @@ pub struct _cef_command_line_t {
   
   
   pub get_argv: Option<extern "C" fn(this: *mut cef_command_line_t,
-      argv: types::cef_string_list_t) -> ()>,
+      argv: &types::cef_string_list_t) -> ()>,
 
   
   
@@ -183,7 +183,7 @@ pub struct _cef_command_line_t {
   
   
   pub get_arguments: Option<extern "C" fn(this: *mut cef_command_line_t,
-      arguments: types::cef_string_list_t) -> ()>,
+      arguments: &types::cef_string_list_t) -> ()>,
 
   
   
@@ -392,7 +392,7 @@ impl CefCommandLine {
   
   
   
-  pub fn get_argv(&self, argv: Vec<String>) -> () {
+  pub fn get_argv(&self, argv: &Vec<String>) -> () {
     if self.c_object.is_null() ||
        self.c_object as usize == mem::POST_DROP_USIZE {
       panic!("called a CEF method on a null object")
@@ -572,7 +572,7 @@ impl CefCommandLine {
   
   
   
-  pub fn get_arguments(&self, arguments: Vec<String>) -> () {
+  pub fn get_arguments(&self, arguments: &Vec<String>) -> () {
     if self.c_object.is_null() ||
        self.c_object as usize == mem::POST_DROP_USIZE {
       panic!("called a CEF method on a null object")

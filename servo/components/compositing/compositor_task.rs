@@ -180,6 +180,10 @@ pub enum Msg {
     ViewportConstrained(PipelineId, ViewportConstraints),
     
     IsReadyToSaveImageReply(bool),
+    
+    NewFavicon(Url),
+    
+    HeadParsed,
 }
 
 impl Debug for Msg {
@@ -206,6 +210,8 @@ impl Debug for Msg {
             Msg::PaintTaskExited(..) => write!(f, "PaintTaskExited"),
             Msg::ViewportConstrained(..) => write!(f, "ViewportConstrained"),
             Msg::IsReadyToSaveImageReply(..) => write!(f, "IsReadyToSaveImageReply"),
+            Msg::NewFavicon(..) => write!(f, "NewFavicon"),
+            Msg::HeadParsed => write!(f, "HeadParsed"),
         }
     }
 }

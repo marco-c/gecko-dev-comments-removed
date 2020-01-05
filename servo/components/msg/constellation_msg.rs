@@ -248,6 +248,10 @@ pub enum Msg {
     IsReadyToSaveImage(HashMap<PipelineId, Epoch>),
     
     RemoveIFrame(PipelineId, SubpageId),
+    
+    NewFavicon(Url),
+    
+    HeadParsed,
 }
 
 #[derive(Clone, Eq, PartialEq)]

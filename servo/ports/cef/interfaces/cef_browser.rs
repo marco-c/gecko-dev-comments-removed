@@ -174,7 +174,7 @@ pub struct _cef_browser_t {
   
   
   pub get_frame_names: Option<extern "C" fn(this: *mut cef_browser_t,
-      names: types::cef_string_list_t) -> ()>,
+      names: &types::cef_string_list_t) -> ()>,
 
   
   
@@ -567,7 +567,7 @@ impl CefBrowser {
   
   
   
-  pub fn get_frame_names(&self, names: Vec<String>) -> () {
+  pub fn get_frame_names(&self, names: &Vec<String>) -> () {
     if self.c_object.is_null() ||
        self.c_object as usize == mem::POST_DROP_USIZE {
       panic!("called a CEF method on a null object")
@@ -647,7 +647,7 @@ pub struct _cef_run_file_dialog_callback_t {
   pub on_file_dialog_dismissed: Option<extern "C" fn(
       this: *mut cef_run_file_dialog_callback_t,
       selected_accept_filter: libc::c_int,
-      file_paths: types::cef_string_list_t) -> ()>,
+      file_paths: &types::cef_string_list_t) -> ()>,
 
   
   
@@ -742,7 +742,7 @@ impl CefRunFileDialogCallback {
   
   
   pub fn on_file_dialog_dismissed(&self, selected_accept_filter: libc::c_int,
-      file_paths: Vec<String>) -> () {
+      file_paths: &Vec<String>) -> () {
     if self.c_object.is_null() ||
        self.c_object as usize == mem::POST_DROP_USIZE {
       panic!("called a CEF method on a null object")
@@ -1047,7 +1047,7 @@ pub struct _cef_browser_host_t {
   pub run_file_dialog: Option<extern "C" fn(this: *mut cef_browser_host_t,
       mode: types::cef_file_dialog_mode_t, title: *const types::cef_string_t,
       default_file_path: *const types::cef_string_t,
-      accept_filters: types::cef_string_list_t,
+      accept_filters: &types::cef_string_list_t,
       selected_accept_filter: libc::c_int,
       callback: *mut interfaces::cef_run_file_dialog_callback_t) -> ()>,
 
@@ -1606,7 +1606,7 @@ impl CefBrowserHost {
   
   
   pub fn run_file_dialog(&self, mode: types::cef_file_dialog_mode_t,
-      title: &[u16], default_file_path: &[u16], accept_filters: Vec<String>,
+      title: &[u16], default_file_path: &[u16], accept_filters: &Vec<String>,
       selected_accept_filter: libc::c_int,
       callback: interfaces::CefRunFileDialogCallback) -> () {
     if self.c_object.is_null() ||
