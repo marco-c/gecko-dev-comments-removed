@@ -7919,7 +7919,9 @@ IonBuilder::getElemTryDense(bool* emitted, MDefinition* obj, MDefinition* index)
 
     
     
-    if (ElementAccessHasExtraIndexedProperty(this, obj) && failedBoundsCheck_) {
+    bool hasExtraIndexedProperty;
+    MOZ_TRY_VAR(hasExtraIndexedProperty, ElementAccessHasExtraIndexedProperty(this, obj));
+    if (hasExtraIndexedProperty && failedBoundsCheck_) {
         trackOptimizationOutcome(TrackedOutcome::ProtoIndexedProps);
         return Ok();
     }
@@ -7938,7 +7940,7 @@ IonBuilder::getElemTryDense(bool* emitted, MDefinition* obj, MDefinition* index)
     return Ok();
 }
 
-JSObject*
+AbortReasonOr<JSObject*>
 IonBuilder::getStaticTypedArrayObject(MDefinition* obj, MDefinition* index)
 {
     Scalar::Type arrayType;
@@ -7952,7 +7954,9 @@ IonBuilder::getStaticTypedArrayObject(MDefinition* obj, MDefinition* index)
         return nullptr;
     }
 
-    if (ElementAccessHasExtraIndexedProperty(this, obj)) {
+    bool hasExtraIndexedProperty;
+    MOZ_TRY_VAR(hasExtraIndexedProperty, ElementAccessHasExtraIndexedProperty(this, obj));
+    if (hasExtraIndexedProperty) {
         trackOptimizationOutcome(TrackedOutcome::ProtoIndexedProps);
         return nullptr;
     }
@@ -7982,7 +7986,8 @@ IonBuilder::getElemTryTypedStatic(bool* emitted, MDefinition* obj, MDefinition* 
 {
     MOZ_ASSERT(*emitted == false);
 
-    JSObject* tarrObj = getStaticTypedArrayObject(obj, index);
+    JSObject* tarrObj;
+    MOZ_TRY_VAR(tarrObj, getStaticTypedArrayObject(obj, index));
     if (!tarrObj)
         return Ok();
 
@@ -8312,9 +8317,12 @@ IonBuilder::jsop_getelem_dense(MDefinition* obj, MDefinition* index, JSValueType
     
     
     
-    bool readOutOfBounds =
-        types->hasType(TypeSet::UndefinedType()) &&
-        !ElementAccessHasExtraIndexedProperty(this, obj);
+    bool readOutOfBounds = false;
+    if (types->hasType(TypeSet::UndefinedType())) {
+        bool hasExtraIndexedProperty;
+        MOZ_TRY_VAR(hasExtraIndexedProperty, ElementAccessHasExtraIndexedProperty(this, obj));
+        readOutOfBounds = !hasExtraIndexedProperty;
+    }
 
     MIRType knownType = MIRType::Value;
     if (unboxedType == JSVAL_TYPE_MAGIC && barrier == BarrierKind::NoBarrier)
@@ -8796,7 +8804,8 @@ IonBuilder::setElemTryTypedStatic(bool* emitted, MDefinition* object,
 {
     MOZ_ASSERT(*emitted == false);
 
-    JSObject* tarrObj = getStaticTypedArrayObject(object, index);
+    JSObject* tarrObj;
+    MOZ_TRY_VAR(tarrObj, getStaticTypedArrayObject(object, index));
     if (!tarrObj)
         return Ok();
 
@@ -8896,7 +8905,9 @@ IonBuilder::setElemTryDense(bool* emitted, MDefinition* object,
 
     
     
-    if (ElementAccessHasExtraIndexedProperty(this, object) && failedBoundsCheck_) {
+    bool hasExtraIndexedProperty;
+    MOZ_TRY_VAR(hasExtraIndexedProperty, ElementAccessHasExtraIndexedProperty(this, object));
+    if (hasExtraIndexedProperty && failedBoundsCheck_) {
         trackOptimizationOutcome(TrackedOutcome::ProtoIndexedProps);
         return Ok();
     }
@@ -8959,7 +8970,8 @@ IonBuilder::setElemTryCache(bool* emitted, MDefinition* object,
     
     
     
-    bool guardHoles = ElementAccessHasExtraIndexedProperty(this, object);
+    bool guardHoles;
+    MOZ_TRY_VAR(guardHoles, ElementAccessHasExtraIndexedProperty(this, object));
 
     
     const Class* clasp = object->resultTypeSet() ? object->resultTypeSet()->getKnownClass(constraints()) : nullptr;
@@ -9001,11 +9013,12 @@ IonBuilder::jsop_setelem_dense(TemporaryTypeSet::DoubleConversion conversion,
 
     
     
-    bool hasNoExtraIndexedProperty = !ElementAccessHasExtraIndexedProperty(this, obj);
+    bool hasExtraIndexedProperty;
+    MOZ_TRY_VAR(hasExtraIndexedProperty, ElementAccessHasExtraIndexedProperty(this, obj));
 
     bool mayBeFrozen = ElementAccessMightBeFrozen(constraints(), obj);
 
-    if (mayBeFrozen && !hasNoExtraIndexedProperty) {
+    if (mayBeFrozen && hasExtraIndexedProperty) {
         
         
         
@@ -9062,7 +9075,7 @@ IonBuilder::jsop_setelem_dense(TemporaryTypeSet::DoubleConversion conversion,
     
     MInstruction* store;
     MStoreElementCommon* common = nullptr;
-    if (writeHole && hasNoExtraIndexedProperty && !mayBeFrozen) {
+    if (writeHole && !hasExtraIndexedProperty && !mayBeFrozen) {
         MStoreElementHole* ins = MStoreElementHole::New(alloc(), obj, elements, id, newValue, unboxedType);
         store = ins;
         common = ins;
@@ -9070,7 +9083,7 @@ IonBuilder::jsop_setelem_dense(TemporaryTypeSet::DoubleConversion conversion,
         current->add(ins);
         current->push(value);
     } else if (mayBeFrozen) {
-        MOZ_ASSERT(hasNoExtraIndexedProperty,
+        MOZ_ASSERT(!hasExtraIndexedProperty,
                    "FallibleStoreElement codegen assumes no extra indexed properties");
 
         bool strict = IsStrictSetPC(pc);
@@ -9085,7 +9098,7 @@ IonBuilder::jsop_setelem_dense(TemporaryTypeSet::DoubleConversion conversion,
         MInstruction* initLength = initializedLength(obj, elements, unboxedType);
 
         id = addBoundsCheck(id, initLength);
-        bool needsHoleCheck = !packed && !hasNoExtraIndexedProperty;
+        bool needsHoleCheck = !packed && hasExtraIndexedProperty;
 
         if (unboxedType != JSVAL_TYPE_MAGIC) {
             store = storeUnboxedValue(obj, elements, 0, id, unboxedType, newValue);
@@ -12355,7 +12368,9 @@ IonBuilder::inTryDense(bool* emitted, MDefinition* obj, MDefinition* id)
             return Ok();
     }
 
-    if (ElementAccessHasExtraIndexedProperty(this, obj))
+    bool hasExtraIndexedProperty;
+    MOZ_TRY_VAR(hasExtraIndexedProperty, ElementAccessHasExtraIndexedProperty(this, obj));
+    if (hasExtraIndexedProperty)
         return Ok();
 
     *emitted = true;
