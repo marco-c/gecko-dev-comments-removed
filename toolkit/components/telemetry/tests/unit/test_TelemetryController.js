@@ -15,6 +15,7 @@ Cu.import("resource://gre/modules/TelemetryController.jsm", this);
 Cu.import("resource://gre/modules/TelemetryStorage.jsm", this);
 Cu.import("resource://gre/modules/TelemetrySend.jsm", this);
 Cu.import("resource://gre/modules/TelemetryArchive.jsm", this);
+Cu.import("resource://gre/modules/TelemetryUtils.jsm", this);
 Cu.import("resource://gre/modules/Task.jsm", this);
 Cu.import("resource://gre/modules/Promise.jsm", this);
 Cu.import("resource://gre/modules/Preferences.jsm");
@@ -289,7 +290,7 @@ add_task(function* test_pingHasEnvironmentAndClientId() {
 
 add_task(function* test_pingIdCanBeOverridden() {
   
-  const myPingId = generateUUID();
+  const myPingId = TelemetryUtils.generateUUID();
   yield sendPing( false,
                   false,
                  myPingId);
