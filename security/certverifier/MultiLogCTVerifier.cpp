@@ -155,6 +155,8 @@ MultiLogCTVerifier::VerifySingleSCT(SignedCertificateTimestamp&& sct,
                             VerifiedSCT::Status::UnknownLog);
   }
 
+  verifiedSct.logOperatorId = matchingLog->operatorId();
+
   if (!matchingLog->SignatureParametersMatch(verifiedSct.sct.signature)) {
     
     return StoreVerifiedSct(result, Move(verifiedSct),
@@ -184,6 +186,14 @@ MultiLogCTVerifier::VerifySingleSCT(SignedCertificateTimestamp&& sct,
   }
 
   
+  
+  
+  if (matchingLog->isDisqualified()) {
+    verifiedSct.logDisqualificationTime = matchingLog->disqualificationTime();
+    return StoreVerifiedSct(result, Move(verifiedSct),
+                            VerifiedSCT::Status::ValidFromDisqualifiedLog);
+  }
+
   return StoreVerifiedSct(result, Move(verifiedSct),
                           VerifiedSCT::Status::Valid);
 }

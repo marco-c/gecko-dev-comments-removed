@@ -7,6 +7,7 @@
 #ifndef CTVerifyResult_h
 #define CTVerifyResult_h
 
+#include "CTLog.h"
 #include "mozilla/Vector.h"
 #include "SignedCertificateTimestamp.h"
 
@@ -22,10 +23,14 @@ struct VerifiedSCT
   
   SignedCertificateTimestamp sct;
 
-  enum class Status {
+  enum class Status
+  {
     None,
     
     Valid,
+    
+    
+    ValidFromDisqualifiedLog,
     
     UnknownLog,
     
@@ -35,7 +40,8 @@ struct VerifiedSCT
     InvalidTimestamp,
   };
 
-  enum class Origin {
+  enum class Origin
+  {
     Unknown,
     Embedded,
     TLSExtension,
@@ -44,6 +50,8 @@ struct VerifiedSCT
 
   Status status;
   Origin origin;
+  CTLogOperatorId logOperatorId;
+  uint64_t logDisqualificationTime;
 };
 
 typedef Vector<VerifiedSCT> VerifiedSCTList;

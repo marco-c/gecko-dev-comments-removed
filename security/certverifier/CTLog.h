@@ -1,0 +1,34 @@
+
+
+
+
+
+
+#ifndef CTLog_h
+#define CTLog_h
+
+#include <stdint.h>
+
+namespace mozilla { namespace ct {
+
+
+
+
+
+typedef int16_t CTLogOperatorId;
+
+
+
+enum class CTLogStatus
+{
+  
+  Unknown,
+  
+  Included,
+  
+  Disqualified,
+};
+
+} } 
+
+#endif 

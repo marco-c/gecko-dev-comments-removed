@@ -7,6 +7,7 @@
 #ifndef CTLogVerifier_h
 #define CTLogVerifier_h
 
+#include "CTLog.h"
 #include "pkix/Input.h"
 #include "pkix/pkix.h"
 #include "SignedCertificateTimestamp.h"
@@ -30,11 +31,23 @@ public:
   
   
   
-  pkix::Result Init(pkix::Input subjectPublicKeyInfo);
+  
+  
+  
+  
+  
+  pkix::Result Init(pkix::Input subjectPublicKeyInfo,
+                    CTLogOperatorId operatorId,
+                    CTLogStatus logStatus,
+                    uint64_t disqualificationTime);
 
   
   
   const Buffer& keyId() const { return mKeyId; }
+
+  CTLogOperatorId operatorId() const { return mOperatorId; }
+  bool isDisqualified() const { return mDisqualified; }
+  uint64_t disqualificationTime() const { return mDisqualificationTime; }
 
   
   
@@ -61,6 +74,9 @@ private:
   Buffer mSubjectPublicKeyInfo;
   Buffer mKeyId;
   DigitallySigned::SignatureAlgorithm mSignatureAlgorithm;
+  CTLogOperatorId mOperatorId;
+  bool mDisqualified;
+  uint64_t mDisqualificationTime;
 };
 
 } } 
