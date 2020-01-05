@@ -91,24 +91,23 @@ LoginManager.prototype = {
 
     
     this._prefBranch = Services.prefs.getBranch("signon.");
-    this._prefBranch.addObserver("rememberSignons", this._observer, false);
+    this._prefBranch.addObserver("rememberSignons", this._observer);
 
     this._remember = this._prefBranch.getBoolPref("rememberSignons");
     this._autoCompleteLookupPromise = null;
 
     
-    Services.obs.addObserver(this._observer, "xpcom-shutdown", false);
+    Services.obs.addObserver(this._observer, "xpcom-shutdown");
 
     if (Services.appinfo.processType ===
         Services.appinfo.PROCESS_TYPE_DEFAULT) {
-      Services.obs.addObserver(this._observer, "passwordmgr-storage-replace",
-                               false);
+      Services.obs.addObserver(this._observer, "passwordmgr-storage-replace");
 
       
       this._initStorage();
     }
 
-    Services.obs.addObserver(this._observer, "gather-telemetry", false);
+    Services.obs.addObserver(this._observer, "gather-telemetry");
   },
 
 

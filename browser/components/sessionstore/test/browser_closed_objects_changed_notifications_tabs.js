@@ -60,7 +60,7 @@ add_task(function* test_closedObjectsChangedNotifications() {
   yield awaitNotification(() => Services.obs.notifyObservers(null, "browser:purge-session-history", 0));
 
   
-  Services.obs.addObserver(countingObserver, TOPIC, false);
+  Services.obs.addObserver(countingObserver, TOPIC);
 
   
   let win = yield openWindow("about:robots");

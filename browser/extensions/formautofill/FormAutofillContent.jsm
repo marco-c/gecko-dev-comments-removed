@@ -178,7 +178,7 @@ let ProfileAutocomplete = {
     this._factory.register(AutofillProfileAutoCompleteSearch);
     this._registered = true;
 
-    Services.obs.addObserver(this, "autocomplete-will-enter-text", false);
+    Services.obs.addObserver(this, "autocomplete-will-enter-text");
   },
 
   ensureUnregistered() {
@@ -287,7 +287,6 @@ let ProfileAutocomplete = {
 
 
 var FormAutofillContent = {
-  QueryInterface: XPCOMUtils.generateQI([Ci.nsIFormSubmitObserver]),
   
 
 
@@ -303,7 +302,6 @@ var FormAutofillContent = {
 
     Services.cpmm.addMessageListener("FormAutofill:enabledStatus", this);
     Services.cpmm.addMessageListener("FormAutofill:savedFieldNames", this);
-    Services.obs.addObserver(this, "earlyformsubmit", false);
 
     if (Services.cpmm.initialProcessData.autofillEnabled) {
       ProfileAutocomplete.ensureRegistered();
@@ -311,23 +309,6 @@ var FormAutofillContent = {
 
     this.savedFieldNames =
       Services.cpmm.initialProcessData.autofillSavedFieldNames || new Set();
-  },
-
-  _onFormSubmit(handler) {
-    
-  },
-
-  notify(formElement) {
-    this.log.debug("notified for form early submission");
-
-    let handler = this._formsDetails.get(formElement);
-    if (!handler) {
-      this.log.debug("Form element could not map to an existing handler");
-    } else {
-      this._onFormSubmit(handler);
-    }
-
-    return true;
   },
 
   receiveMessage({name, data}) {

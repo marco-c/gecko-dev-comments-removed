@@ -627,7 +627,7 @@ exports.WebAudioActor = protocol.ActorClassWithSpec(webAudioSpec, {
 
 
   _onStartContext: function () {
-    observerService.addObserver(this, "webaudio-node-demise", false);
+    observerService.addObserver(this, "webaudio-node-demise");
     emit(this, "start-context");
   },
 

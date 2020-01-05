@@ -135,7 +135,7 @@ function EthernetManager() {
   
   this.lastStaticConfig = {};
 
-  Services.obs.addObserver(this, "xpcom-shutdown", false);
+  Services.obs.addObserver(this, "xpcom-shutdown");
 }
 
 EthernetManager.prototype = {

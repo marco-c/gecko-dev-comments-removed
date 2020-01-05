@@ -20,7 +20,7 @@ function test() {
 
       finish();
     }
-  }, "cookie-rejected", false);
+  }, "cookie-rejected");
 
   
   gBrowser.setIcon(gBrowser.selectedTab, "http://example.org/tests/extensions/cookie/test/damonbowling.jpg",

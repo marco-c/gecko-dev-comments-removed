@@ -34,7 +34,7 @@ const PrefsTarget = Class({
 
     
     let observer = prefTargetNS(this).observer = onChange.bind(this);
-    branch.addObserver('', observer, false);
+    branch.addObserver('', observer);
 
     
     unload(destroy.bind(this));

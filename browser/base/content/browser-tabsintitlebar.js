@@ -12,7 +12,7 @@ var TabsInTitlebar = {
       return;
     }
     this._readPref();
-    Services.prefs.addObserver(this._prefName, this, false);
+    Services.prefs.addObserver(this._prefName, this);
 
     
     

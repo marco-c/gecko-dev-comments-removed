@@ -566,7 +566,7 @@ PerformanceMonitor.makeId = function() {
 
 Services.obs.addObserver(function(subject, topic, value) {
   PerformanceMonitor.dispose(value);
-}, FINALIZATION_TOPIC, false);
+}, FINALIZATION_TOPIC);
 
 
 this.PerformanceStats = {

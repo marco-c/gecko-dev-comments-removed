@@ -64,7 +64,7 @@ function test() {
       finish();
     }
   }
-  Services.obs.addObserver(observer, "sessionstore-browser-state-restored", false);
+  Services.obs.addObserver(observer, "sessionstore-browser-state-restored");
 
   
   ss.setBrowserState(JSON.stringify(testState));

@@ -359,7 +359,7 @@ var tests = [
             done();
           }
         };
-        Services.obs.addObserver(observe, "browser-search-engine-modified", false);
+        Services.obs.addObserver(observe, "browser-search-engine-modified");
         registerCleanupFunction(() => {
           
           Services.obs.removeObserver(observe, "browser-search-engine-modified");

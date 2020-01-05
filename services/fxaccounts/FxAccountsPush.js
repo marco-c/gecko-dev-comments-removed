@@ -79,9 +79,9 @@ FxAccountsPushService.prototype = {
     }
 
     
-    Services.obs.addObserver(this, this.pushService.pushTopic, false);
-    Services.obs.addObserver(this, this.pushService.subscriptionChangeTopic, false);
-    Services.obs.addObserver(this, ONLOGOUT_NOTIFICATION, false);
+    Services.obs.addObserver(this, this.pushService.pushTopic);
+    Services.obs.addObserver(this, this.pushService.subscriptionChangeTopic);
+    Services.obs.addObserver(this, ONLOGOUT_NOTIFICATION);
 
     this.log.debug("FxAccountsPush initialized");
     return true;

@@ -1828,13 +1828,13 @@ const UpdateServiceFactory = {
 
 function UpdateService() {
   LOG("Creating UpdateService");
-  Services.obs.addObserver(this, "xpcom-shutdown", false);
-  Services.prefs.addObserver(PREF_APP_UPDATE_LOG, this, false);
+  Services.obs.addObserver(this, "xpcom-shutdown");
+  Services.prefs.addObserver(PREF_APP_UPDATE_LOG, this);
   if (AppConstants.platform == "gonk") {
     
     
     
-    Services.obs.addObserver(this, "profile-change-net-teardown", false);
+    Services.obs.addObserver(this, "profile-change-net-teardown");
   }
 }
 
@@ -1893,8 +1893,7 @@ UpdateService.prototype = {
           
           
           
-          Services.obs.addObserver(this, APPID_TO_TOPIC[Services.appinfo.ID],
-                                   false);
+          Services.obs.addObserver(this, APPID_TO_TOPIC[Services.appinfo.ID]);
           break;
         }
         
@@ -2141,7 +2140,7 @@ UpdateService.prototype = {
     LOG("UpdateService:_registerOnlineObserver - waiting for the network to " +
         "be online, then forcing another check");
 
-    Services.obs.addObserver(this, "network:offline-status-changed", false);
+    Services.obs.addObserver(this, "network:offline-status-changed");
     this._registeredOnlineObserver = true;
   },
 
@@ -4496,7 +4495,7 @@ UpdatePrompt.prototype = {
     }
 
     observer.service = Services.obs;
-    observer.service.addObserver(observer, "quit-application", false);
+    observer.service.addObserver(observer, "quit-application");
 
     
     if (page == "updatesavailable") {
@@ -4554,7 +4553,7 @@ UpdatePrompt.prototype = {
         }
       };
       idleService.addIdleObserver(observer, IDLE_TIME);
-      Services.obs.addObserver(observer, "quit-application", false);
+      Services.obs.addObserver(observer, "quit-application");
     }
   },
 

@@ -104,11 +104,11 @@ function observe(subject, topic, data) {
   }
 }
 
-Services.obs.addObserver(observe, "weave:engine:sync:finish", false);
-Services.obs.addObserver(observe, "weave:service:start-over", false);
+Services.obs.addObserver(observe, "weave:engine:sync:finish");
+Services.obs.addObserver(observe, "weave:service:start-over");
 
 
-Services.prefs.addObserver(PREF_SHOW_REMOTE_ICONS, observe, false);
+Services.prefs.addObserver(PREF_SHOW_REMOTE_ICONS, observe);
 observe(null, "nsPref:changed", PREF_SHOW_REMOTE_ICONS);
 
 

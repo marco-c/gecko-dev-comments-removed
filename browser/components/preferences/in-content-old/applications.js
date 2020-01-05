@@ -885,22 +885,22 @@ var gApplicationsPane = {
 
     
     
-    this._prefSvc.addObserver(PREF_SHOW_PLUGINS_IN_LIST, this, false);
-    this._prefSvc.addObserver(PREF_HIDE_PLUGINS_WITHOUT_EXTENSIONS, this, false);
-    this._prefSvc.addObserver(PREF_FEED_SELECTED_APP, this, false);
-    this._prefSvc.addObserver(PREF_FEED_SELECTED_WEB, this, false);
-    this._prefSvc.addObserver(PREF_FEED_SELECTED_ACTION, this, false);
-    this._prefSvc.addObserver(PREF_FEED_SELECTED_READER, this, false);
+    this._prefSvc.addObserver(PREF_SHOW_PLUGINS_IN_LIST, this);
+    this._prefSvc.addObserver(PREF_HIDE_PLUGINS_WITHOUT_EXTENSIONS, this);
+    this._prefSvc.addObserver(PREF_FEED_SELECTED_APP, this);
+    this._prefSvc.addObserver(PREF_FEED_SELECTED_WEB, this);
+    this._prefSvc.addObserver(PREF_FEED_SELECTED_ACTION, this);
+    this._prefSvc.addObserver(PREF_FEED_SELECTED_READER, this);
 
-    this._prefSvc.addObserver(PREF_VIDEO_FEED_SELECTED_APP, this, false);
-    this._prefSvc.addObserver(PREF_VIDEO_FEED_SELECTED_WEB, this, false);
-    this._prefSvc.addObserver(PREF_VIDEO_FEED_SELECTED_ACTION, this, false);
-    this._prefSvc.addObserver(PREF_VIDEO_FEED_SELECTED_READER, this, false);
+    this._prefSvc.addObserver(PREF_VIDEO_FEED_SELECTED_APP, this);
+    this._prefSvc.addObserver(PREF_VIDEO_FEED_SELECTED_WEB, this);
+    this._prefSvc.addObserver(PREF_VIDEO_FEED_SELECTED_ACTION, this);
+    this._prefSvc.addObserver(PREF_VIDEO_FEED_SELECTED_READER, this);
 
-    this._prefSvc.addObserver(PREF_AUDIO_FEED_SELECTED_APP, this, false);
-    this._prefSvc.addObserver(PREF_AUDIO_FEED_SELECTED_WEB, this, false);
-    this._prefSvc.addObserver(PREF_AUDIO_FEED_SELECTED_ACTION, this, false);
-    this._prefSvc.addObserver(PREF_AUDIO_FEED_SELECTED_READER, this, false);
+    this._prefSvc.addObserver(PREF_AUDIO_FEED_SELECTED_APP, this);
+    this._prefSvc.addObserver(PREF_AUDIO_FEED_SELECTED_WEB, this);
+    this._prefSvc.addObserver(PREF_AUDIO_FEED_SELECTED_ACTION, this);
+    this._prefSvc.addObserver(PREF_AUDIO_FEED_SELECTED_READER, this);
 
 
     setEventListener("focusSearch1", "command", gApplicationsPane.focusFilterBox);

@@ -491,13 +491,13 @@ Services.prefs.addObserver(PREF_OSFILE_LOG,
       
       Scheduler.post("SET_DEBUG", [SharedAll.Config.DEBUG]);
     }
-  }, false);
+  });
 SharedAll.Config.DEBUG = readDebugPref(PREF_OSFILE_LOG, false);
 
 Services.prefs.addObserver(PREF_OSFILE_LOG_REDIRECT,
   function prefObserver(aSubject, aTopic, aData) {
     SharedAll.Config.TEST = readDebugPref(PREF_OSFILE_LOG_REDIRECT, OS.Shared.TEST);
-  }, false);
+  });
 SharedAll.Config.TEST = readDebugPref(PREF_OSFILE_LOG_REDIRECT, false);
 
 
@@ -510,7 +510,7 @@ const PREF_OSFILE_NATIVE = "toolkit.osfile.native";
 Services.prefs.addObserver(PREF_OSFILE_NATIVE,
   function prefObserver(aSubject, aTopic, aData) {
     nativeWheneverAvailable = readDebugPref(PREF_OSFILE_NATIVE, nativeWheneverAvailable);
-  }, false);
+  });
 
 
 
@@ -563,7 +563,7 @@ Services.prefs.addObserver(PREF_OSFILE_TEST_SHUTDOWN_OBSERVER,
         () => Scheduler.kill({shutdown: false, reset: false})
       );
     }
-  }, false);
+  });
 
 
 
