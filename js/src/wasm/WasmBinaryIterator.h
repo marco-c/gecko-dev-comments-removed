@@ -631,6 +631,11 @@ class MOZ_STACK_CLASS OpIter : private Policy
 
     
     
+    
+    uint16_t peekOp();
+
+    
+    
 
     
     void setResult(Value value) {
@@ -856,6 +861,25 @@ OpIter<Policy>::readOp(uint16_t* op)
     op_ = Op(*op);  
 
     return true;
+}
+
+template <typename Policy>
+inline uint16_t
+OpIter<Policy>::peekOp()
+{
+    const uint8_t* pos = d_.currentPosition();
+    uint16_t op;
+
+    if (Validate) {
+        if (MOZ_UNLIKELY(!d_.readOp(&op)))
+            op = uint16_t(Op::Limit);
+    } else {
+        op = uint16_t(d_.uncheckedReadOp());
+    }
+
+    d_.rollbackPosition(pos);
+
+    return op;
 }
 
 template <typename Policy>

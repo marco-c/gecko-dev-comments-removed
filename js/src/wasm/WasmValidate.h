@@ -340,6 +340,10 @@ class Decoder
         MOZ_ASSERT(end_ >= cur_);
         return size_t(end_ - cur_);
     }
+    
+    void rollbackPosition(const uint8_t* pos) {
+        cur_ = pos;
+    }
     const uint8_t* currentPosition() const {
         return cur_;
     }
