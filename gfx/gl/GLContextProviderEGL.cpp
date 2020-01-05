@@ -71,7 +71,7 @@ using namespace mozilla::widget;
 } while (0)
 
 static bool
-CreateConfig(EGLConfig* aConfig, nsIWidget* aWidget);
+CreateConfig(EGLConfig* aConfig);
 
 
 
@@ -535,7 +535,7 @@ static const EGLint kEGLConfigAttribsRGBA32[] = {
 };
 
 static bool
-CreateConfig(EGLConfig* aConfig, int32_t depth, nsIWidget* aWidget)
+CreateConfig(EGLConfig* aConfig, int32_t depth)
 {
     EGLConfig configs[64];
     const EGLint* attribs;
@@ -590,20 +590,20 @@ CreateConfig(EGLConfig* aConfig, int32_t depth, nsIWidget* aWidget)
 
 
 static bool
-CreateConfig(EGLConfig* aConfig, nsIWidget* aWidget)
+CreateConfig(EGLConfig* aConfig)
 {
     int32_t depth = gfxPlatform::GetPlatform()->GetScreenDepth();
-    if (!CreateConfig(aConfig, depth, aWidget)) {
+    if (!CreateConfig(aConfig, depth)) {
 #ifdef MOZ_WIDGET_ANDROID
         
         
         if (depth == 16) {
-            return CreateConfig(aConfig, 24, aWidget);
+            return CreateConfig(aConfig, 24);
         }
         
         
         if (depth == 24) {
-            return CreateConfig(aConfig, 16, aWidget);
+            return CreateConfig(aConfig, 16);
         }
 #endif
         return false;
@@ -653,7 +653,7 @@ GLContextProviderEGL::CreateForWindow(nsIWidget* aWidget, bool aForceAccelerated
     bool doubleBuffered = true;
 
     EGLConfig config;
-    if (!CreateConfig(&config, aWidget)) {
+    if (!CreateConfig(&config)) {
         MOZ_CRASH("GFX: Failed to create EGLConfig!\n");
         return nullptr;
     }
@@ -684,13 +684,14 @@ GLContextProviderEGL::CreateForWindow(nsIWidget* aWidget, bool aForceAccelerated
 EGLSurface
 GLContextProviderEGL::CreateEGLSurface(void* aWindow)
 {
+    
     nsCString discardFailureId;
     if (!sEGLLibrary.EnsureInitialized(false, &discardFailureId)) {
         MOZ_CRASH("GFX: Failed to load EGL library 4!\n");
     }
 
     EGLConfig config;
-    if (!CreateConfig(&config, static_cast<nsIWidget*>(aWindow))) {
+    if (!CreateConfig(&config)) {
         MOZ_CRASH("GFX: Failed to create EGLConfig 2!\n");
     }
 
