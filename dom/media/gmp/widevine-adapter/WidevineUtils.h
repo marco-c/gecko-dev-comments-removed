@@ -61,7 +61,21 @@ void InitInputBuffer(const GMPEncryptedBufferMetadata* aCrypto,
                      cdm::InputBuffer &aInputBuffer,
                      nsTArray<cdm::SubsampleEntry> &aSubsamples);
 
-class WidevineBuffer : public cdm::Buffer
+namespace gmp {
+class CDMShmemBuffer;
+}
+class WidevineBuffer;
+
+
+
+class CDMBuffer : public cdm::Buffer
+{
+public:
+  virtual WidevineBuffer* AsArrayBuffer() { return nullptr; }
+  virtual gmp::CDMShmemBuffer* AsShmemBuffer() { return nullptr; }
+};
+
+class WidevineBuffer : public CDMBuffer
 {
 public:
   explicit WidevineBuffer(size_t aSize);
@@ -75,6 +89,8 @@ public:
   
   
   nsTArray<uint8_t> ExtractBuffer();
+
+  WidevineBuffer* AsArrayBuffer() override { return this; }
 
 private:
   nsTArray<uint8_t> mBuffer;

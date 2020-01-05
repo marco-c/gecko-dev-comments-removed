@@ -22,6 +22,7 @@ ChromiumCDMParent::ChromiumCDMParent(GMPContentParent* aContentParent,
                                      uint32_t aPluginId)
   : mPluginId(aPluginId)
   , mContentParent(aContentParent)
+  , mVideoShmemCount(MediaPrefs::EMEChromiumAPIVideoShmemCount())
 {
   GMP_LOG(
     "ChromiumCDMParent::ChromiumCDMParent(this=%p, contentParent=%p, id=%u)",
@@ -600,35 +601,82 @@ ChromiumCDMParent::RecvDecrypted(const uint32_t& aId,
 }
 
 ipc::IPCResult
-ChromiumCDMParent::RecvDecoded(const CDMVideoFrame& aFrame)
+ChromiumCDMParent::RecvDecodedData(const CDMVideoFrame& aFrame,
+                                   nsTArray<uint8_t>&& aData)
+{
+  GMP_LOG("ChromiumCDMParent::RecvDecodedData(this=%p) "
+          "mVideoShmemCount=%" PRIu32,
+          this,
+          mVideoShmemCount);
+  
+  
+  
+  
+  
+  Shmem shmem;
+  if (mVideoShmemCount >= 50 || !AllocShmem(mVideoFrameBufferSize,
+                                            Shmem::SharedMemory::TYPE_BASIC,
+                                            &shmem)) {
+    GMP_LOG("ChromiumCDMParent::RecvDecodedData(this=%p) "
+            "failed to allocate shmem for CDM.",
+            this);
+    mVideoDecoderInitialized = false;
+    mDecodePromise.RejectIfExists(
+      MediaResult(
+        NS_ERROR_DOM_MEDIA_FATAL_ERR,
+        RESULT_DETAIL("Failled to send shmems to CDM after decode init.")),
+      __func__);
+    return IPC_OK();
+  }
+  mVideoShmemCount++;
+
+  ProcessDecoded(aFrame, aData, Move(shmem));
+
+  return IPC_OK();
+}
+
+ipc::IPCResult
+ChromiumCDMParent::RecvDecodedShmem(const CDMVideoFrame& aFrame,
+                                    ipc::Shmem&& aShmem)
+{
+  ProcessDecoded(
+    aFrame,
+    MakeSpan<uint8_t>(aShmem.get<uint8_t>(), aShmem.Size<uint8_t>()),
+    Move(aShmem));
+  return IPC_OK();
+}
+
+void
+ChromiumCDMParent::ProcessDecoded(const CDMVideoFrame& aFrame,
+                                  Span<uint8_t> aData,
+                                  ipc::Shmem&& aGiftShmem)
 {
   
   
   auto autoDeallocateShmem =
-    MakeScopeExit([&, this] { this->DeallocShmem(aFrame.mData()); });
+    MakeScopeExit([&, this] { this->DeallocShmem(aGiftShmem); });
 
   if (mIsShutdown || mDecodePromise.IsEmpty()) {
-    return IPC_OK();
+    return;
   }
   VideoData::YCbCrBuffer b;
-  uint8_t* data = aFrame.mData().get<uint8_t>();
-  MOZ_ASSERT(aFrame.mData().Size<uint8_t>() > 0);
+  MOZ_ASSERT(aData.Length() > 0);
 
-  b.mPlanes[0].mData = data;
+  b.mPlanes[0].mData = aData.Elements();
   b.mPlanes[0].mWidth = aFrame.mImageWidth();
   b.mPlanes[0].mHeight = aFrame.mImageHeight();
   b.mPlanes[0].mStride = aFrame.mYPlane().mStride();
   b.mPlanes[0].mOffset = aFrame.mYPlane().mPlaneOffset();
   b.mPlanes[0].mSkip = 0;
 
-  b.mPlanes[1].mData = data;
+  b.mPlanes[1].mData = aData.Elements();
   b.mPlanes[1].mWidth = (aFrame.mImageWidth() + 1) / 2;
   b.mPlanes[1].mHeight = (aFrame.mImageHeight() + 1) / 2;
   b.mPlanes[1].mStride = aFrame.mUPlane().mStride();
   b.mPlanes[1].mOffset = aFrame.mUPlane().mPlaneOffset();
   b.mPlanes[1].mSkip = 0;
 
-  b.mPlanes[2].mData = data;
+  b.mPlanes[2].mData = aData.Elements();
   b.mPlanes[2].mWidth = (aFrame.mImageWidth() + 1) / 2;
   b.mPlanes[2].mHeight = (aFrame.mImageHeight() + 1) / 2;
   b.mPlanes[2].mStride = aFrame.mVPlane().mStride();
@@ -649,12 +697,12 @@ ChromiumCDMParent::RecvDecoded(const CDMVideoFrame& aFrame)
 
   
   
-  if (!SendGiveBuffer(aFrame.mData())) {
+  if (!SendGiveBuffer(aGiftShmem)) {
     mDecodePromise.RejectIfExists(
       MediaResult(NS_ERROR_OUT_OF_MEMORY,
                   RESULT_DETAIL("Can't return shmem to CDM process")),
       __func__);
-    return IPC_OK();
+    return;
   }
   
   
@@ -668,8 +716,6 @@ ChromiumCDMParent::RecvDecoded(const CDMVideoFrame& aFrame)
                   RESULT_DETAIL("CallBack::CreateAndCopyData")),
       __func__);
   }
-
-  return IPC_OK();
 }
 
 ipc::IPCResult
@@ -799,9 +845,16 @@ ChromiumCDMParent::RecvOnDecoderInitDone(const uint32_t& aStatus)
     
     
     
-    const uint32_t count =
-      std::max<uint32_t>(2u, MediaPrefs::EMEChromiumAPIVideoShmemCount());
-    for (uint32_t i = 0; i < count; i++) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    for (uint32_t i = 0; i < mVideoShmemCount; i++) {
       if (!SendBufferToCDM(mVideoFrameBufferSize)) {
         mVideoDecoderInitialized = false;
         mInitVideoDecoderPromise.RejectIfExists(
