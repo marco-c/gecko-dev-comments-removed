@@ -101,6 +101,19 @@ nsFormControlFrame::GetLogicalBaseline(WritingMode aWritingMode) const
 {
   NS_ASSERTION(!NS_SUBTREE_DIRTY(this),
                "frame must not be dirty");
+
+
+
+
+#if !defined(MOZ_WIDGET_ANDROID)
+  
+  
+  if (StyleDisplay()->mAppearance == NS_THEME_NONE) {
+    return nsAtomicContainerFrame::GetLogicalBaseline(aWritingMode);
+  }
+#endif
+
+  
   
   
   
