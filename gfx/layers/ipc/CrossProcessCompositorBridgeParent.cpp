@@ -95,9 +95,7 @@ CrossProcessCompositorBridgeParent::AllocPLayerTransactionParent(
   }
 
   NS_WARNING("Created child without a matching parent?");
-  
-  
-  *aSuccess = true;
+  *aSuccess = false;
   LayerTransactionParent* p = new LayerTransactionParent(nullptr, this, aId);
   p->AddIPDLReference();
   return p;
