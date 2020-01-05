@@ -27,6 +27,7 @@ public:
   void ReleaseIPDLReference();
   
   virtual mozilla::ipc::IPCResult RecvError(const nsresult& err) override;
+  virtual mozilla::ipc::IPCResult RecvDeleteSelf() override;
 
 private:
   virtual ~AltDataOutputStreamChild();

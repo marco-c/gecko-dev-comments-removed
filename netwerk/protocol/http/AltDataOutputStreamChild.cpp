@@ -17,8 +17,9 @@ NS_IMETHODIMP_(MozExternalRefCountType) AltDataOutputStreamChild::Release()
   if (mRefCnt == 1 && mIPCOpen) {
     
     
-    PAltDataOutputStreamChild::Send__delete__(this);
-    return 0;
+    
+    SendDeleteSelf();
+    return 1;
   }
 
   if (mRefCnt == 0) {
@@ -146,6 +147,12 @@ AltDataOutputStreamChild::RecvError(const nsresult& err)
   return IPC_OK();
 }
 
+mozilla::ipc::IPCResult
+AltDataOutputStreamChild::RecvDeleteSelf()
+{
+  PAltDataOutputStreamChild::Send__delete__(this);
+  return IPC_OK();
+}
 
 } 
 } 

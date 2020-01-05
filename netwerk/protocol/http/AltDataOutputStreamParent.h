@@ -37,6 +37,7 @@ public:
 
   
   void SetError(nsresult status) { mStatus = status; }
+  virtual mozilla::ipc::IPCResult RecvDeleteSelf() override;
 
 private:
   virtual ~AltDataOutputStreamParent();
