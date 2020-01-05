@@ -128,7 +128,7 @@ impl PaintListener for Box<CompositorProxy + 'static + Send> {
         
         
         
-        port.recv().ok()
+        port.recv().unwrap_or(None)
     }
 
     fn assign_painted_buffers(&mut self,
@@ -179,7 +179,7 @@ pub enum Msg {
     
     
     
-    GetNativeDisplay(Sender<NativeDisplay>),
+    GetNativeDisplay(Sender<Option<NativeDisplay>>),
 
     
     
