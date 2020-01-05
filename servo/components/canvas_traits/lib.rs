@@ -539,3 +539,16 @@ impl ToAzColor for RGBA {
                     self.alpha as AzFloat)
     }
 }
+
+
+pub fn byte_swap(data: &mut [u8]) {
+    let length = data.len();
+    
+    let mut i = 0;
+    while i < length {
+        let r = data[i + 2];
+        data[i + 2] = data[i + 0];
+        data[i + 0] = r;
+        i += 4;
+    }
+}

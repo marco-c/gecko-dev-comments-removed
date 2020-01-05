@@ -7,6 +7,8 @@
 
 
 
+#![allow(unsafe_code)]
+
 #[cfg(windows)]
 extern crate kernel32;
 
@@ -16,8 +18,8 @@ use libc::usleep;
 use rand::{Rng, XorShiftRng, weak_rng};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::mpsc::{Receiver, Sender, channel};
-use thread::spawn_named;
-use thread_state;
+use util::thread::spawn_named;
+use util::thread_state;
 
 
 
