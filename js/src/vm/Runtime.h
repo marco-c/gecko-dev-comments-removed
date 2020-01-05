@@ -340,11 +340,11 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
     js::ActiveThreadData<js::Vector<js::CooperatingContext, 4, js::SystemAllocPolicy>> cooperatingContexts_;
 
     
-    mozilla::Atomic<size_t> activeContextChangeProhibited_;
+    js::ActiveThreadData<size_t> activeContextChangeProhibited_;
 
     
     
-    mozilla::Atomic<size_t> singleThreadedExecutionRequired_;
+    js::ActiveThreadData<size_t> singleThreadedExecutionRequired_;
 
     
     

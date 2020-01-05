@@ -342,6 +342,13 @@ JSRuntime::destroyRuntime()
 static void
 CheckCanChangeActiveContext(JSRuntime* rt)
 {
+    
+    
+    
+    
+    
+    AutoNoteSingleThreadedRegion anstr;
+
     MOZ_RELEASE_ASSERT(!rt->activeContextChangeProhibited());
     MOZ_RELEASE_ASSERT(!rt->activeContext() || rt->gc.canChangeActiveContext(rt->activeContext()));
 
