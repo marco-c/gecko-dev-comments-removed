@@ -29,7 +29,8 @@ mozilla::detail::MutexImpl::MutexImpl()
 
   
   
-#if defined(__linux__) && defined(__GLIBC__)
+  
+#if (defined(__linux__) && defined(__GLIBC__)) || defined(__FreeBSD__)
 #define ADAPTIVE_MUTEX_SUPPORTED
 #endif
 
