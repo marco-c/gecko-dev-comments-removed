@@ -27,7 +27,6 @@ mod gecko {
     use properties::longhands::color::SystemColor;
     use std::fmt;
     use style_traits::ToCss;
-    use values::HasViewportPercentage;
 
     
     #[derive(Clone, Copy, PartialEq, Debug)]

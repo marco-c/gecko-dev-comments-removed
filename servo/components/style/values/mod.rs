@@ -56,7 +56,7 @@ macro_rules! define_numbered_css_keyword_enum {
 
 macro_rules! no_viewport_percentage {
     ($name: ident) => {
-        impl HasViewportPercentage for $name {
+        impl $crate::values::HasViewportPercentage for $name {
             #[inline]
             fn has_viewport_percentage(&self) -> bool {
                 false
