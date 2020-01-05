@@ -42,7 +42,7 @@ use style::computed_values::{pointer_events};
 use style::properties::ComputedValues;
 use util::cursor::Cursor;
 use util::geometry::{self, Au, MAX_RECT, ZERO_RECT};
-use util::linked_list::{SerializableLinkedList, prepend_from};
+use util::linked_list::prepend_from;
 use util::mem::HeapSizeOf;
 use util::opts;
 use util::range::Range;
@@ -84,19 +84,19 @@ impl OpaqueNode {
 #[derive(HeapSizeOf, Deserialize, Serialize)]
 pub struct DisplayList {
     
-    pub background_and_borders: SerializableLinkedList<DisplayItem>,
+    pub background_and_borders: LinkedList<DisplayItem>,
     
-    pub block_backgrounds_and_borders: SerializableLinkedList<DisplayItem>,
+    pub block_backgrounds_and_borders: LinkedList<DisplayItem>,
     
-    pub floats: SerializableLinkedList<DisplayItem>,
+    pub floats: LinkedList<DisplayItem>,
     
-    pub content: SerializableLinkedList<DisplayItem>,
+    pub content: LinkedList<DisplayItem>,
     
-    pub positioned_content: SerializableLinkedList<DisplayItem>,
+    pub positioned_content: LinkedList<DisplayItem>,
     
-    pub outlines: SerializableLinkedList<DisplayItem>,
+    pub outlines: LinkedList<DisplayItem>,
     
-    pub children: SerializableLinkedList<Arc<StackingContext>>,
+    pub children: LinkedList<Arc<StackingContext>>,
 }
 
 impl DisplayList {
@@ -104,13 +104,13 @@ impl DisplayList {
     #[inline]
     pub fn new() -> DisplayList {
         DisplayList {
-            background_and_borders: SerializableLinkedList::new(LinkedList::new()),
-            block_backgrounds_and_borders: SerializableLinkedList::new(LinkedList::new()),
-            floats: SerializableLinkedList::new(LinkedList::new()),
-            content: SerializableLinkedList::new(LinkedList::new()),
-            positioned_content: SerializableLinkedList::new(LinkedList::new()),
-            outlines: SerializableLinkedList::new(LinkedList::new()),
-            children: SerializableLinkedList::new(LinkedList::new()),
+            background_and_borders: LinkedList::new(),
+            block_backgrounds_and_borders: LinkedList::new(),
+            floats: LinkedList::new(),
+            content: LinkedList::new(),
+            positioned_content: LinkedList::new(),
+            outlines: LinkedList::new(),
+            children: LinkedList::new(),
         }
     }
 
@@ -118,34 +118,34 @@ impl DisplayList {
     
     #[inline]
     pub fn append_from(&mut self, other: &mut DisplayList) {
-        self.background_and_borders.append(&mut *other.background_and_borders);
-        self.block_backgrounds_and_borders.append(&mut *other.block_backgrounds_and_borders);
-        self.floats.append(&mut *other.floats);
-        self.content.append(&mut *other.content);
-        self.positioned_content.append(&mut *other.positioned_content);
-        self.outlines.append(&mut *other.outlines);
-        self.children.append(&mut *other.children);
+        self.background_and_borders.append(&mut other.background_and_borders);
+        self.block_backgrounds_and_borders.append(&mut other.block_backgrounds_and_borders);
+        self.floats.append(&mut other.floats);
+        self.content.append(&mut other.content);
+        self.positioned_content.append(&mut other.positioned_content);
+        self.outlines.append(&mut other.outlines);
+        self.children.append(&mut other.children);
     }
 
     
     #[inline]
     pub fn form_float_pseudo_stacking_context(&mut self) {
-        prepend_from(&mut *self.floats, &mut *self.outlines);
-        prepend_from(&mut *self.floats, &mut *self.positioned_content);
-        prepend_from(&mut *self.floats, &mut *self.content);
-        prepend_from(&mut *self.floats, &mut *self.block_backgrounds_and_borders);
-        prepend_from(&mut *self.floats, &mut *self.background_and_borders);
+        prepend_from(&mut self.floats, &mut self.outlines);
+        prepend_from(&mut self.floats, &mut self.positioned_content);
+        prepend_from(&mut self.floats, &mut self.content);
+        prepend_from(&mut self.floats, &mut self.block_backgrounds_and_borders);
+        prepend_from(&mut self.floats, &mut self.background_and_borders);
     }
 
     
     
     #[inline]
     pub fn form_pseudo_stacking_context_for_positioned_content(&mut self) {
-        prepend_from(&mut *self.positioned_content, &mut *self.outlines);
-        prepend_from(&mut *self.positioned_content, &mut *self.content);
-        prepend_from(&mut *self.positioned_content, &mut *self.floats);
-        prepend_from(&mut *self.positioned_content, &mut *self.block_backgrounds_and_borders);
-        prepend_from(&mut *self.positioned_content, &mut *self.background_and_borders);
+        prepend_from(&mut self.positioned_content, &mut self.outlines);
+        prepend_from(&mut self.positioned_content, &mut self.content);
+        prepend_from(&mut self.positioned_content, &mut self.floats);
+        prepend_from(&mut self.positioned_content, &mut self.block_backgrounds_and_borders);
+        prepend_from(&mut self.positioned_content, &mut self.background_and_borders);
     }
 
     
