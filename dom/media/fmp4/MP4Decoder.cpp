@@ -141,6 +141,12 @@ MP4Decoder::CanHandleMediaType(const MediaContentType& aType,
             NS_LITERAL_CSTRING("audio/opus"), aType));
         continue;
       }
+      if (codec.EqualsLiteral("flac")) {
+        trackInfos.AppendElement(
+          CreateTrackInfoWithMIMETypeAndContentTypeExtraParameters(
+            NS_LITERAL_CSTRING("audio/flac"), aType));
+        continue;
+      }
       
       
       if (IsWhitelistedH264Codec(codec) && isMP4Video) {
