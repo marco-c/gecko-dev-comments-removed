@@ -21,10 +21,11 @@
 
     
     global.makeIterator = function makeIterator(overrides) {
+        var throwMethod;
+        if (overrides && overrides.throw)
+            throwMethod = overrides.throw;
         var iterator = {
-            throw: function(e) {
-                throw e;
-            },
+            throw: throwMethod,
             next: function(x) {
                 if (overrides && overrides.next)
                     return overrides.next(x);

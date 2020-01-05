@@ -5149,8 +5149,7 @@ BytecodeEmitter::emitIteratorNext(ParseNode* pn, bool allowSelfHosted)
 }
 
 bool
-BytecodeEmitter::emitIteratorClose(const Maybe<JumpTarget>& yieldStarTryStart,
-                                   bool allowSelfHosted)
+BytecodeEmitter::emitIteratorClose(bool allowSelfHosted)
 {
     MOZ_ASSERT(allowSelfHosted || emitterMode != BytecodeEmitter::SelfHosting,
                ".close() on iterators is prohibited in self-hosted code because it "
@@ -5189,86 +5188,11 @@ BytecodeEmitter::emitIteratorClose(const Maybe<JumpTarget>& yieldStarTryStart,
     
     if (!emit1(JSOP_SWAP))                                
         return false;
-
-    
-    
-    
-    
-    
-    if (yieldStarTryStart) {
-        IfThenElseEmitter ifGeneratorClosing(this);
-        if (!emitDupAt(2))                                
-            return false;
-        if (!emit1(JSOP_ISGENCLOSING))                    
-            return false;
-        if (!emit1(JSOP_SWAP))                            
-            return false;
-        if (!emit1(JSOP_POP))                             
-            return false;
-        if (!ifGeneratorClosing.emitIfElse())             
-            return false;
-
-        if (!emit1(JSOP_GETRVAL))                         
-            return false;
-        if (!emitAtomOp(cx->names().value, JSOP_GETPROP)) 
-            return false;
-        if (!emitCall(JSOP_CALL, 1))                      
-            return false;
-        checkTypeSet(JSOP_CALL);
-        if (!emitCheckIsObj(CheckIsObjectKind::IteratorReturn)) 
-            return false;
-
-        IfThenElseEmitter ifReturnDone(this);
-        if (!emit1(JSOP_DUP))                             
-            return false;
-        if (!emitAtomOp(cx->names().done, JSOP_GETPROP))  
-            return false;
-        if (!ifReturnDone.emitIfElse())                   
-            return false;
-        if (!emitAtomOp(cx->names().value, JSOP_GETPROP)) 
-            return false;
-        if (!emitPrepareIteratorResult())                 
-            return false;
-        if (!emit1(JSOP_SWAP))                            
-            return false;
-        if (!emitFinishIteratorResult(true))              
-            return false;
-        if (!emit1(JSOP_DUP))                             
-            return false;
-        if (!emit1(JSOP_SETRVAL))                         
-            return false;
-        if (!ifReturnDone.emitElse())                     
-            return false;
-        int32_t savedDepth = this->stackDepth;
-        if (!emit2(JSOP_UNPICK, 3))                       
-            return false;
-        if (!emitUint16Operand(JSOP_POPN, 3))             
-            return false;
-        JumpList beq;
-        JumpTarget breakTarget{ -1 };
-        if (!emitBackwardJump(JSOP_GOTO, *yieldStarTryStart, &beq, &breakTarget)) 
-            return false;
-        this->stackDepth = savedDepth;
-        if (!ifReturnDone.emitEnd())
-            return false;
-
-        if (!ifGeneratorClosing.emitElse())               
-            return false;
-        if (!emitCall(JSOP_CALL, 0))                      
-            return false;
-        checkTypeSet(JSOP_CALL);
-        if (!emitCheckIsObj(CheckIsObjectKind::IteratorReturn)) 
-            return false;
-
-        if (!ifGeneratorClosing.emitEnd())
-            return false;
-    } else {
-        if (!emitCall(JSOP_CALL, 0))                      
-            return false;
-        checkTypeSet(JSOP_CALL);
-        if (!emitCheckIsObj(CheckIsObjectKind::IteratorReturn)) 
-            return false;
-    }
+    if (!emitCall(JSOP_CALL, 0))                          
+        return false;
+    checkTypeSet(JSOP_CALL);
+    if (!emitCheckIsObj(CheckIsObjectKind::IteratorReturn)) 
+        return false;
 
     if (!ifReturnMethodIsDefined.emitElse())
         return false;
@@ -8239,93 +8163,202 @@ BytecodeEmitter::emitYieldStar(ParseNode* iter, ParseNode* gen)
     MOZ_ASSERT(sc->isFunctionBox());
     MOZ_ASSERT(sc->asFunctionBox()->isStarGenerator());
 
-    if (!emitTree(iter))                                         
+    if (!emitTree(iter))                                  
         return false;
-    if (!emitIterator())                                         
+    if (!emitIterator())                                  
         return false;
 
     
-    if (!emit1(JSOP_UNDEFINED))                                  
+    if (!emit1(JSOP_UNDEFINED))                           
         return false;
 
-    int depth = stackDepth;
-    MOZ_ASSERT(depth >= 2);
+    int32_t savedDepthTemp;
+    int32_t startDepth = stackDepth;
+    MOZ_ASSERT(startDepth >= 2);
 
     TryEmitter tryCatch(this, TryEmitter::TryCatchFinally, TryEmitter::DontUseRetVal,
                         TryEmitter::DontUseControl);
-    if (!tryCatch.emitJumpOverCatchAndFinally())                 
+    if (!tryCatch.emitJumpOverCatchAndFinally())          
         return false;
 
     JumpTarget tryStart{ offset() };
-    if (!tryCatch.emitTry())                                     
+    if (!tryCatch.emitTry())                              
         return false;
 
-    MOZ_ASSERT(this->stackDepth == depth);
-
-    
-    if (!emitTree(gen))                                          
-        return false;
+    MOZ_ASSERT(this->stackDepth == startDepth);
 
     
-    if (!emitYieldOp(JSOP_YIELD))                                
+    if (!emitTree(gen))                                   
         return false;
 
-    if (!tryCatch.emitCatch())                                   
+    
+    if (!emitYieldOp(JSOP_YIELD))                         
         return false;
 
-    stackDepth = uint32_t(depth);                                
-    if (!emit1(JSOP_EXCEPTION))                                  
+    if (!tryCatch.emitCatch())                            
         return false;
-    if (!emitDupAt(2))                                           
+
+    stackDepth = startDepth;                              
+    if (!emit1(JSOP_EXCEPTION))                           
         return false;
-    if (!emit1(JSOP_DUP))                                        
+    if (!emitDupAt(2))                                    
         return false;
-    if (!emitAtomOp(cx->names().throw_, JSOP_CALLPROP))          
+    if (!emit1(JSOP_DUP))                                 
         return false;
-    if (!emit1(JSOP_DUP))                                        
+    if (!emitAtomOp(cx->names().throw_, JSOP_CALLPROP))   
         return false;
-    if (!emit1(JSOP_UNDEFINED))                                  
+    if (!emit1(JSOP_DUP))                                 
         return false;
-    if (!emit1(JSOP_EQ))                                         
+    if (!emit1(JSOP_UNDEFINED))                           
+        return false;
+    if (!emit1(JSOP_EQ))                                  
         return false;
 
     IfThenElseEmitter ifThrowMethodIsNotDefined(this);
-    if (!ifThrowMethodIsNotDefined.emitIf())                     
+    if (!ifThrowMethodIsNotDefined.emitIf())              
+        return false;
+    savedDepthTemp = stackDepth;
+    if (!emit1(JSOP_POP))                                 
+        return false;
+    
+    
+    
+    
+    if (!emitIteratorClose())                             
         return false;
     if (!emitUint16Operand(JSOP_THROWMSG, JSMSG_ITERATOR_NO_THROW)) 
         return false;
-    if (!ifThrowMethodIsNotDefined.emitEnd())                    
+    stackDepth = savedDepthTemp;
+    if (!ifThrowMethodIsNotDefined.emitEnd())             
         return false;
     
     
-    if (!emit1(JSOP_SWAP))                                       
+    if (!emit1(JSOP_SWAP))                                
         return false;
-    if (!emit2(JSOP_PICK, 2))                                    
+    if (!emit2(JSOP_PICK, 2))                             
         return false;
-    if (!emitCall(JSOP_CALL, 1, iter))                           
+    if (!emitCall(JSOP_CALL, 1, iter))                    
         return false;
     checkTypeSet(JSOP_CALL);
-    if (!emitCheckIsObj(CheckIsObjectKind::IteratorThrow))       
+    if (!emitCheckIsObj(CheckIsObjectKind::IteratorThrow)) 
         return false;
-    if (!emit1(JSOP_SWAP))                                       
+    if (!emit1(JSOP_SWAP))                                
         return false;
-    if (!emit1(JSOP_POP))                                        
+    if (!emit1(JSOP_POP))                                 
         return false;
-    MOZ_ASSERT(this->stackDepth == depth);
+    MOZ_ASSERT(this->stackDepth == startDepth);
     JumpList checkResult;
     
     
     
-    if (!emitJump(JSOP_GOTO, &checkResult))                      
+    
+    if (!emitJump(JSOP_GOTO, &checkResult))               
         return false;
 
-    
     if (!tryCatch.emitFinally())
          return false;
 
-    if (!emitDupAt(3))                                           
+    
+    
+    
+    
+
+    IfThenElseEmitter ifGeneratorClosing(this);
+    if (!emit1(JSOP_ISGENCLOSING))                        
         return false;
-    if (!emitIteratorClose(Some(tryStart)))                      
+    if (!ifGeneratorClosing.emitIf())                     
+        return false;
+
+    
+    
+    
+    if (!emitDupAt(3))                                    
+        return false;
+    if (!emit1(JSOP_DUP))                                 
+        return false;
+    if (!emitAtomOp(cx->names().return_, JSOP_CALLPROP))  
+        return false;
+
+    
+    
+    
+    IfThenElseEmitter ifReturnMethodIsDefined(this);
+    if (!emit1(JSOP_DUP))                                 
+        return false;
+    if (!emit1(JSOP_UNDEFINED))                           
+        return false;
+    if (!emit1(JSOP_NE))                                  
+        return false;
+
+    
+    
+    
+    
+    if (!ifReturnMethodIsDefined.emitIfElse())            
+        return false;
+    if (!emit1(JSOP_SWAP))                                
+        return false;
+    if (!emit1(JSOP_GETRVAL))                             
+        return false;
+    if (!emitAtomOp(cx->names().value, JSOP_GETPROP))     
+        return false;
+    if (!emitCall(JSOP_CALL, 1))                          
+        return false;
+    checkTypeSet(JSOP_CALL);
+
+    
+    if (!emitCheckIsObj(CheckIsObjectKind::IteratorReturn)) 
+        return false;
+
+    
+    
+    
+    
+    IfThenElseEmitter ifReturnDone(this);
+    if (!emit1(JSOP_DUP))                                 
+        return false;
+    if (!emitAtomOp(cx->names().done, JSOP_GETPROP))      
+        return false;
+    if (!ifReturnDone.emitIfElse())                       
+        return false;
+    if (!emitAtomOp(cx->names().value, JSOP_GETPROP))     
+        return false;
+    if (!emitPrepareIteratorResult())                     
+        return false;
+    if (!emit1(JSOP_SWAP))                                
+        return false;
+    if (!emitFinishIteratorResult(true))                  
+        return false;
+    if (!emit1(JSOP_SETRVAL))                             
+        return false;
+    savedDepthTemp = this->stackDepth;
+    if (!ifReturnDone.emitElse())                         
+        return false;
+    if (!emit2(JSOP_UNPICK, 3))                           
+        return false;
+    if (!emitUint16Operand(JSOP_POPN, 3))                 
+        return false;
+    {
+        
+        JumpList beq;
+        JumpTarget breakTarget{ -1 };
+        if (!emitBackwardJump(JSOP_GOTO, tryStart, &beq, &breakTarget)) 
+            return false;
+    }
+    this->stackDepth = savedDepthTemp;
+    if (!ifReturnDone.emitEnd())
+        return false;
+
+    if (!ifReturnMethodIsDefined.emitElse())              
+        return false;
+    if (!emit1(JSOP_POP))                                 
+        return false;
+    if (!emit1(JSOP_POP))                                 
+        return false;
+    if (!ifReturnMethodIsDefined.emitEnd())
+        return false;
+
+    if (!ifGeneratorClosing.emitEnd())
         return false;
 
     if (!tryCatch.emitEnd())
@@ -8350,7 +8383,7 @@ BytecodeEmitter::emitYieldStar(ParseNode* iter, ParseNode* gen)
     if (!emitCheckIsObj(CheckIsObjectKind::IteratorNext))        
         return false;
     checkTypeSet(JSOP_CALL);
-    MOZ_ASSERT(this->stackDepth == depth);
+    MOZ_ASSERT(this->stackDepth == startDepth);
 
     if (!emitJumpTargetAndPatch(checkResult))                    
         return false;
@@ -8361,10 +8394,12 @@ BytecodeEmitter::emitYieldStar(ParseNode* iter, ParseNode* gen)
     if (!emitAtomOp(cx->names().done, JSOP_GETPROP))             
         return false;
     
-    JumpList beq;
-    JumpTarget breakTarget{ -1 };
-    if (!emitBackwardJump(JSOP_IFEQ, tryStart, &beq, &breakTarget)) 
-        return false;
+    {
+        JumpList beq;
+        JumpTarget breakTarget{ -1 };
+        if (!emitBackwardJump(JSOP_IFEQ, tryStart, &beq, &breakTarget)) 
+            return false;
+    }
 
     
     if (!emit1(JSOP_SWAP))                                       
@@ -8374,7 +8409,7 @@ BytecodeEmitter::emitYieldStar(ParseNode* iter, ParseNode* gen)
     if (!emitAtomOp(cx->names().value, JSOP_GETPROP))            
         return false;
 
-    MOZ_ASSERT(this->stackDepth == depth - 1);
+    MOZ_ASSERT(this->stackDepth == startDepth - 1);
 
     return true;
 }

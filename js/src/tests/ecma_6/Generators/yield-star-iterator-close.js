@@ -6,6 +6,8 @@ function test() {
     var returnCalledExpected = 0;
     var nextCalled = 0;
     var nextCalledExpected = 0;
+    var throwCalled = 0;
+    var throwCalledExpected = 0;
     var iterable = {};
     iterable[Symbol.iterator] = makeIterator({
         next: function() {
@@ -25,9 +27,9 @@ function test() {
     
     var g1 = y();
     g1.next();
-    assertThrowsValue(function() {
+    assertThrowsInstanceOf(function() {
         g1.throw("foo");
-    }, "foo");
+    }, TypeError);
     assertEq(returnCalled, ++returnCalledExpected);
     assertEq(nextCalled, ++nextCalledExpected);
     g1.next();
@@ -98,9 +100,18 @@ function test() {
     
     var g6 = y();
     g6.next();
-    assertThrowsInstanceOf(function() {
+    var exc;
+    try {
         g6.throw("foo");
-    }, TypeError);
+    } catch (e) {
+        exc = e;
+    } finally {
+        assertEq(exc instanceof TypeError, true);
+        
+        
+        
+        assertEq(exc.toString().indexOf("non-object") > 0, true);
+    }
     assertEq(returnCalled, ++returnCalledExpected);
 
     
@@ -115,6 +126,25 @@ function test() {
     g7.next();
     g7.return("in test");
     assertEq(returnCalled, ++returnCalledExpected);
+
+    
+    iterable[Symbol.iterator] = makeIterator({
+        throw: function(e) {
+            throwCalled++;
+            throw e;
+        },
+        ret: function(x) {
+            returnCalled++;
+            return { done: true };
+        }
+    });
+    var g8 = y();
+    g8.next();
+    assertThrowsValue(function() {
+        g8.throw("foo");
+    }, "foo");
+    assertEq(throwCalled, ++throwCalledExpected);
+    assertEq(returnCalled, returnCalledExpected);
 }
 
 test();
