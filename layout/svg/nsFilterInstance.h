@@ -202,13 +202,6 @@ private:
 
   nsRect ComputeSourceNeededRect();
 
-  
-
-
-  gfxMatrix GetFilterSpaceToDeviceSpaceTransform() const {
-    return mFilterSpaceToDeviceSpaceTransform;
-  }
-
   struct SourceInfo {
     
     
@@ -336,11 +329,6 @@ private:
 
 
   nsIntRect mTargetBBoxInFilterSpace;
-
-  
-
-
-  gfxMatrix mFilterSpaceToDeviceSpaceTransform;
 
   
 

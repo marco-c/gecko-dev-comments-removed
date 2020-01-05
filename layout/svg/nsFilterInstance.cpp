@@ -39,10 +39,10 @@ nsFilterInstance::GetFilterDescription(nsIContent* aFilteredElement,
                                        const gfxRect& aBBox,
                                        nsTArray<RefPtr<SourceSurface>>& aOutAdditionalImages)
 {
-  gfxMatrix unused; 
+  gfxMatrix identity;
   nsFilterInstance instance(nullptr, aFilteredElement, aMetrics,
                             aFilterChain, aFilterInputIsTainted, nullptr,
-                            unused, nullptr, nullptr, nullptr, &aBBox);
+                            identity, nullptr, nullptr, nullptr, &aBBox);
   if (!instance.IsInitialized()) {
     return FilterDescription();
   }
@@ -70,9 +70,10 @@ nsFilterInstance::PaintFilteredFrame(nsIFrame *aFilteredFrame,
   UniquePtr<UserSpaceMetrics> metrics = UserSpaceMetricsForFrame(aFilteredFrame);
   
   
-  nsFilterInstance instance(aFilteredFrame, aFilteredFrame->GetContent(), *metrics,
-                            filterChain,  true, aPaintCallback,
-                            aTransform, aDirtyArea, nullptr, nullptr, nullptr);
+  nsFilterInstance instance(aFilteredFrame, aFilteredFrame->GetContent(),
+                            *metrics, filterChain,  true,
+                            aPaintCallback, aTransform, aDirtyArea, nullptr,
+                            nullptr, nullptr);
   if (!instance.IsInitialized()) {
     return DrawResult::BAD_IMAGE;
   }
@@ -88,14 +89,14 @@ nsFilterInstance::GetPostFilterDirtyArea(nsIFrame *aFilteredFrame,
     return nsRegion();
   }
 
-  gfxMatrix unused; 
+  gfxMatrix tm = nsSVGUtils::GetCanvasTM(aFilteredFrame);
   auto& filterChain = aFilteredFrame->StyleEffects()->mFilters;
   UniquePtr<UserSpaceMetrics> metrics = UserSpaceMetricsForFrame(aFilteredFrame);
   
   
-  nsFilterInstance instance(aFilteredFrame, aFilteredFrame->GetContent(), *metrics,
-                            filterChain,  true, nullptr, unused,
-                            nullptr, &aPreFilterDirtyRegion);
+  nsFilterInstance instance(aFilteredFrame, aFilteredFrame->GetContent(),
+                            *metrics, filterChain,  true,
+                            nullptr, tm, nullptr, &aPreFilterDirtyRegion);
   if (!instance.IsInitialized()) {
     return nsRegion();
   }
@@ -110,14 +111,14 @@ nsRegion
 nsFilterInstance::GetPreFilterNeededArea(nsIFrame *aFilteredFrame,
                                          const nsRegion& aPostFilterDirtyRegion)
 {
-  gfxMatrix unused; 
+  gfxMatrix tm = nsSVGUtils::GetCanvasTM(aFilteredFrame);
   auto& filterChain = aFilteredFrame->StyleEffects()->mFilters;
   UniquePtr<UserSpaceMetrics> metrics = UserSpaceMetricsForFrame(aFilteredFrame);
   
   
-  nsFilterInstance instance(aFilteredFrame, aFilteredFrame->GetContent(), *metrics,
-                            filterChain,  true, nullptr, unused,
-                            &aPostFilterDirtyRegion);
+  nsFilterInstance instance(aFilteredFrame, aFilteredFrame->GetContent(),
+                            *metrics, filterChain,  true,
+                            nullptr, tm, &aPostFilterDirtyRegion);
   if (!instance.IsInitialized()) {
     return nsRect();
   }
@@ -143,15 +144,15 @@ nsFilterInstance::GetPostFilterBounds(nsIFrame *aFilteredFrame,
     preFilterRegionPtr = &preFilterRegion;
   }
 
-  gfxMatrix unused; 
+  gfxMatrix tm = nsSVGUtils::GetCanvasTM(aFilteredFrame);
   auto& filterChain = aFilteredFrame->StyleEffects()->mFilters;
   UniquePtr<UserSpaceMetrics> metrics = UserSpaceMetricsForFrame(aFilteredFrame);
   
   
-  nsFilterInstance instance(aFilteredFrame, aFilteredFrame->GetContent(), *metrics,
-                            filterChain,  true, nullptr, unused,
-                            nullptr, preFilterRegionPtr, aPreFilterBounds,
-                            aOverrideBBox);
+  nsFilterInstance instance(aFilteredFrame, aFilteredFrame->GetContent(),
+                            *metrics, filterChain,  true,
+                            nullptr, tm, nullptr, preFilterRegionPtr,
+                            aPreFilterBounds, aOverrideBBox);
   if (!instance.IsInitialized()) {
     return nsRect();
   }
@@ -203,11 +204,6 @@ nsFilterInstance::nsFilterInstance(nsIFrame *aTargetFrame,
                               0.0f, mFilterSpaceToUserSpaceScale.height,
                               0.0f, 0.0f);
 
-  
-  if (mPaintCallback) {
-    mFilterSpaceToDeviceSpaceTransform = filterToUserSpace * mPaintTransform;
-  }
-
   mFilterSpaceToFrameSpaceInCSSPxTransform =
     filterToUserSpace * GetUserSpaceToFrameSpaceInCSSPxTransform();
   
@@ -243,22 +239,19 @@ nsFilterInstance::ComputeUserSpaceToFilterSpaceScale()
 {
   gfxMatrix canvasTransform;
   if (mTargetFrame) {
-    canvasTransform = nsSVGUtils::GetCanvasTM(mTargetFrame);
-    if (canvasTransform.IsSingular()) {
+    mUserSpaceToFilterSpaceScale = mPaintTransform.ScaleFactors(true);
+    if (mUserSpaceToFilterSpaceScale.width <= 0.0f ||
+        mUserSpaceToFilterSpaceScale.height <= 0.0f) {
       
       return NS_ERROR_FAILURE;
     }
+  } else {
+    mUserSpaceToFilterSpaceScale = gfxSize(1.0, 1.0);
   }
 
-  mUserSpaceToFilterSpaceScale = canvasTransform.ScaleFactors(true);
-  if (mUserSpaceToFilterSpaceScale.width <= 0.0f ||
-      mUserSpaceToFilterSpaceScale.height <= 0.0f) {
-    
-    return NS_ERROR_FAILURE;
-  }
-
-  mFilterSpaceToUserSpaceScale = gfxSize(1.0f / mUserSpaceToFilterSpaceScale.width,
-                                         1.0f / mUserSpaceToFilterSpaceScale.height);
+  mFilterSpaceToUserSpaceScale =
+    gfxSize(1.0f / mUserSpaceToFilterSpaceScale.width,
+            1.0f / mUserSpaceToFilterSpaceScale.height);
   return NS_OK;
 }
 
@@ -374,30 +367,22 @@ nsFilterInstance::BuildSourcePaint(SourceInfo *aSource)
     return DrawResult::TEMPORARY_ERROR;
   }
 
-  gfxMatrix deviceToFilterSpace = GetFilterSpaceToDeviceSpaceTransform();
-  DebugOnly<bool> invertible = deviceToFilterSpace.Invert();
-  MOZ_ASSERT(invertible,
-             "The returning matix of GetFilterSpaceToDeviceSpaceTransform must"
-             "be an invertible matrix(not a singular one), since we already"
-             "checked it and early return if it's not from the caller side"
-             "(nsFilterInstance::Render)");
+  RefPtr<gfxContext> ctx = gfxContext::CreateOrNull(offscreenDT);
+  MOZ_ASSERT(ctx); 
+  gfxContextAutoSaveRestore saver(ctx);
 
-  if (!mPaintTransform.IsSingular()) {
-    RefPtr<gfxContext> sourceCtx = gfxContext::CreateOrNull(offscreenDT);
-    MOZ_ASSERT(sourceCtx); 
-    sourceCtx->Multiply(mPaintTransform *
-                  deviceToFilterSpace *
-                  gfxMatrix::Translation(-neededRect.TopLeft()));
-    GeneralPattern pattern;
-    if (aSource == &mFillPaint) {
-      nsSVGUtils::MakeFillPatternFor(mTargetFrame, sourceCtx, &pattern);
-    } else if (aSource == &mStrokePaint) {
-      nsSVGUtils::MakeStrokePatternFor(mTargetFrame, sourceCtx, &pattern);
-    }
-    if (pattern.GetPattern()) {
-      offscreenDT->FillRect(ToRect(FilterSpaceToUserSpace(ThebesRect(neededRect))),
-                            pattern);
-    }
+  ctx->SetMatrix(mPaintTransform *
+                 gfxMatrix::Translation(-neededRect.TopLeft()));
+  GeneralPattern pattern;
+  if (aSource == &mFillPaint) {
+    nsSVGUtils::MakeFillPatternFor(mTargetFrame, ctx, &pattern);
+  } else if (aSource == &mStrokePaint) {
+    nsSVGUtils::MakeStrokePatternFor(mTargetFrame, ctx, &pattern);
+  }
+
+  if (pattern.GetPattern()) {
+    offscreenDT->FillRect(ToRect(FilterSpaceToUserSpace(ThebesRect(neededRect))),
+                          pattern);
   }
 
   aSource->mSourceSurface = offscreenDT->Snapshot();
@@ -461,19 +446,13 @@ nsFilterInstance::BuildSourceImage()
   
   
   
-  gfxMatrix deviceToFilterSpace = GetFilterSpaceToDeviceSpaceTransform();
-  DebugOnly<bool> invertible = deviceToFilterSpace.Invert();
-  MOZ_ASSERT(invertible,
-             "The returning matix of GetFilterSpaceToDeviceSpaceTransform must"
-             "be an invertible matrix(not a singular one), since we already"
-             "checked it and early return if it's not from the caller side"
-             "(nsFilterInstance::Render)");
-
   RefPtr<gfxContext> ctx = gfxContext::CreateOrNull(offscreenDT);
   MOZ_ASSERT(ctx); 
-  ctx->SetMatrix(
-    ctx->CurrentMatrix().Translate(-neededRect.TopLeft()).
-                         PreMultiply(deviceToFilterSpace));
+  gfxMatrix devPxToCssPxTM = nsSVGUtils::GetCSSPxToDevPxMatrix(mTargetFrame);
+  DebugOnly<bool> invertible = devPxToCssPxTM.Invert();
+  MOZ_ASSERT(invertible);
+  ctx->SetMatrix(devPxToCssPxTM * mPaintTransform *
+                 gfxMatrix::Translation(-neededRect.TopLeft()));
 
   DrawResult result =
     mPaintCallback->Paint(*ctx, mTargetFrame, mPaintTransform, &dirty);
@@ -496,18 +475,22 @@ nsFilterInstance::Render(DrawTarget* aDrawTarget)
 
   nsIntRect filterRect =
     mPostFilterDirtyRegion.GetBounds().Intersect(OutputFilterSpaceBounds());
-  gfxMatrix ctm = GetFilterSpaceToDeviceSpaceTransform();
-
-  if (filterRect.IsEmpty() || ctm.IsSingular()) {
+  if (filterRect.IsEmpty() || mPaintTransform.IsSingular()) {
     return DrawResult::SUCCESS;
   }
 
   AutoRestoreTransform autoRestoreTransform(aDrawTarget);
-  Matrix newTM = ToMatrix(ctm).PreTranslate(filterRect.x, filterRect.y) *
-                 aDrawTarget->GetTransform();
-  aDrawTarget->SetTransform(newTM);
+  gfxMatrix filterSpaceToUserSpace = mPaintTransform;
+  DebugOnly<bool> invertible = filterSpaceToUserSpace.Invert();
+  MOZ_ASSERT(invertible);
+  filterSpaceToUserSpace *= nsSVGUtils::GetCSSPxToDevPxMatrix(mTargetFrame);
+
+  aDrawTarget->SetTransform(ToMatrix(filterSpaceToUserSpace) *
+                            aDrawTarget->GetTransform() *
+                            Matrix::Translation(filterRect.TopLeft()));
 
   ComputeNeededBoxes();
+
   DrawResult result = BuildSourceImage();
   if (result != DrawResult::SUCCESS){
     return result;
