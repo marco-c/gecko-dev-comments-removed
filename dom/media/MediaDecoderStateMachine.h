@@ -372,7 +372,7 @@ protected:
   
   
   
-  int64_t GetClock(TimeStamp* aTimeStamp = nullptr) const;
+  media::TimeUnit GetClock(TimeStamp* aTimeStamp = nullptr) const;
 
   void SetStartTime(int64_t aStartTimeUsecs);
 

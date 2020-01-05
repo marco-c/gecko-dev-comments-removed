@@ -489,7 +489,7 @@ public:
 
     
     auto t = mMaster->mMediaSink->IsStarted()
-      ? mMaster->GetClock() : mMaster->GetMediaTime().ToMicroseconds();
+      ? mMaster->GetClock() : mMaster->GetMediaTime();
     mPendingSeek.mTarget.emplace(t, SeekTarget::Accurate);
     
     
@@ -2316,7 +2316,7 @@ DecodingState::NeedToSkipToNextKeyframe()
     && (mMaster->GetDecodedAudioDuration()
         < mMaster->mLowAudioThreshold.ToMicroseconds() * mMaster->mPlaybackRate);
   bool isLowOnDecodedVideo =
-    (mMaster->GetClock() - mMaster->mDecodedVideoEndTime)
+    (mMaster->GetClock().ToMicroseconds() - mMaster->mDecodedVideoEndTime)
     * mMaster->mPlaybackRate
     > LOW_VIDEO_THRESHOLD.ToMicroseconds();
   bool lowBuffered = mMaster->HasLowBufferedData();
@@ -2759,7 +2759,8 @@ MediaDecoderStateMachine::GetDecodedAudioDuration()
     
     
     
-    return std::max<int64_t>(mDecodedAudioEndTime - GetClock(), 0);
+    return std::max<int64_t>(
+      mDecodedAudioEndTime - GetClock().ToMicroseconds(), 0);
   }
   
   return AudioQueue().Duration();
@@ -3494,13 +3495,13 @@ MediaDecoderStateMachine::ResetDecode(TrackSet aTracks)
   mReader->ResetDecode(aTracks);
 }
 
-int64_t
+media::TimeUnit
 MediaDecoderStateMachine::GetClock(TimeStamp* aTimeStamp) const
 {
   MOZ_ASSERT(OnTaskQueue());
   auto clockTime = mMediaSink->GetPosition(aTimeStamp);
   NS_ASSERTION(GetMediaTime() <= clockTime, "Clock should go forwards.");
-  return clockTime.ToMicroseconds();
+  return clockTime;
 }
 
 void
@@ -3517,7 +3518,7 @@ MediaDecoderStateMachine::UpdatePlaybackPositionPeriodically()
   
   if (VideoEndTime() > TimeUnit::Zero() || AudioEndTime() > TimeUnit::Zero()) {
 
-    const auto clockTime = TimeUnit::FromMicroseconds(GetClock());
+    const auto clockTime = GetClock();
     
     
     
@@ -3830,7 +3831,7 @@ MediaDecoderStateMachine::GetDebugInfo()
            " mDecodedVideoEndTime=%" PRId64 "mAudioCompleted=%d "
            "mVideoCompleted=%d",
            GetMediaTime().ToMicroseconds(),
-           mMediaSink->IsStarted() ? GetClock() : -1,
+           mMediaSink->IsStarted() ? GetClock().ToMicroseconds() : -1,
            mMediaSink.get(), ToStateStr(), mPlayState.Ref(),
            mSentFirstFrameLoadedEvent, IsPlaying(), AudioRequestStatus(),
            VideoRequestStatus(), mDecodedAudioEndTime, mDecodedVideoEndTime,
