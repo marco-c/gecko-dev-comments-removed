@@ -8,6 +8,7 @@
 #define mozilla_dom_Dispatcher_h
 
 #include "mozilla/AlreadyAddRefed.h"
+#include "mozilla/TaskCategory.h"
 #include "nsISupports.h"
 
 class nsIEventTarget;
@@ -16,34 +17,7 @@ class nsIRunnable;
 namespace mozilla {
 class AbstractThread;
 namespace dom {
-
 class TabGroup;
-class DocGroup;
-
-enum class TaskCategory {
-  
-  UI,
-
-  
-  Network,
-
-  
-  Timer,
-
-  
-  Worker,
-
-  
-  IdleCallback,
-
-  
-  RefreshDriver,
-
-  
-  Other,
-
-  Count
-};
 
 
 
