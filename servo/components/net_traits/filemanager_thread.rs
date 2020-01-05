@@ -8,6 +8,7 @@ use num_traits::ToPrimitive;
 use std::cmp::{max, min};
 use std::ops::Range;
 use std::path::PathBuf;
+use uuid::Uuid;
 
 
 
@@ -99,14 +100,9 @@ impl RelativePos {
 }
 
 
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct SelectedFileId(pub String);
-
-
 #[derive(Debug, Deserialize, Serialize)]
 pub struct SelectedFile {
-    pub id: SelectedFileId,
+    pub id: Uuid,
     pub filename: PathBuf,
     pub modified: u64,
     pub size: u64,
@@ -128,24 +124,24 @@ pub enum FileManagerThreadMsg {
     SelectFiles(Vec<FilterPattern>, IpcSender<FileManagerResult<Vec<SelectedFile>>>, FileOrigin, Option<Vec<String>>),
 
     
-    ReadFile(IpcSender<FileManagerResult<ReadFileProgress>>, SelectedFileId, bool, FileOrigin),
+    ReadFile(IpcSender<FileManagerResult<ReadFileProgress>>, Uuid, bool, FileOrigin),
 
     
     
-    PromoteMemory(BlobBuf, bool, IpcSender<Result<SelectedFileId, BlobURLStoreError>>, FileOrigin),
+    PromoteMemory(BlobBuf, bool, IpcSender<Result<Uuid, BlobURLStoreError>>, FileOrigin),
 
     
     
-    AddSlicedURLEntry(SelectedFileId, RelativePos, IpcSender<Result<SelectedFileId, BlobURLStoreError>>, FileOrigin),
+    AddSlicedURLEntry(Uuid, RelativePos, IpcSender<Result<Uuid, BlobURLStoreError>>, FileOrigin),
 
     
-    DecRef(SelectedFileId, FileOrigin, IpcSender<Result<(), BlobURLStoreError>>),
+    DecRef(Uuid, FileOrigin, IpcSender<Result<(), BlobURLStoreError>>),
 
     
-    ActivateBlobURL(SelectedFileId, IpcSender<Result<(), BlobURLStoreError>>, FileOrigin),
+    ActivateBlobURL(Uuid, IpcSender<Result<(), BlobURLStoreError>>, FileOrigin),
 
     
-    RevokeBlobURL(SelectedFileId, FileOrigin, IpcSender<Result<(), BlobURLStoreError>>),
+    RevokeBlobURL(Uuid, FileOrigin, IpcSender<Result<(), BlobURLStoreError>>),
 }
 
 #[derive(Debug, Deserialize, Serialize)]
