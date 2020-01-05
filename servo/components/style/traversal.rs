@@ -13,7 +13,7 @@ use dom::{DirtyDescendants, NodeInfo, TElement, TNode};
 use matching::{MatchMethods, StyleSharingBehavior};
 use restyle_hints::{RESTYLE_DESCENDANTS, RESTYLE_SELF};
 use selector_parser::RestyleDamage;
-use servo_config::opts;
+#[cfg(feature = "servo")] use servo_config::opts;
 use std::borrow::BorrowMut;
 use stylist::Stylist;
 
@@ -100,6 +100,16 @@ impl TraversalDriver {
     }
 }
 
+#[cfg(feature = "servo")]
+fn is_servo_nonincremental_layout() -> bool {
+    opts::get().nonincremental_layout
+}
+
+#[cfg(not(feature = "servo"))]
+fn is_servo_nonincremental_layout() -> bool {
+    false
+}
+
 
 
 pub trait DomTraversal<E: TElement> : Sync {
@@ -175,7 +185,7 @@ pub trait DomTraversal<E: TElement> : Sync {
     
     fn node_needs_traversal(node: E::ConcreteNode, animation_only: bool) -> bool {
         
-        if cfg!(feature = "servo") && opts::get().nonincremental_layout {
+        if is_servo_nonincremental_layout() {
             return true;
         }
 
