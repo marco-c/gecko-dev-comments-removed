@@ -324,6 +324,9 @@ class SpreadArgs extends Array {
 
 let IconDetails = {
   
+  iconCache: new DefaultWeakMap(() => new Map()),
+
+  
   
   
   
@@ -333,6 +336,24 @@ let IconDetails = {
   
   
   normalize(details, extension, context = null) {
+    if (!details.imageData && typeof details.path === "string") {
+      let icons = this.iconCache.get(extension);
+
+      let baseURI = context ? context.uri : extension.baseURI;
+      let url = baseURI.resolve(details.path);
+
+      let icon = icons.get(url);
+      if (!icon) {
+        icon = this._normalize(details, extension, context);
+        icons.set(url, icon);
+      }
+      return icon;
+    }
+
+    return this._normalize(details, extension, context);
+  },
+
+  _normalize(details, extension, context = null) {
     let result = {};
 
     try {
