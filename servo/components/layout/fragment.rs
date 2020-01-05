@@ -2060,8 +2060,8 @@ impl Fragment {
         
         let relative_position =
             self.relative_position(&LogicalSize::zero(self.style.writing_mode));
-        border_box =
-            border_box.translate_by_size(&relative_position.to_physical(self.style.writing_mode));
+        border_box = border_box.translate_by_size(&relative_position.to_physical(
+                self.style.writing_mode));
         let mut overflow = border_box;
 
         
