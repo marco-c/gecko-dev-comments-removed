@@ -69,15 +69,9 @@ public:
   using nsICSSDeclaration::GetPropertyCSSValue;
   virtual void IndexedGetter(uint32_t aIndex, bool& aFound, nsAString& aPropName) override;
 
-  enum StyleType {
-    eDefaultOnly, 
-    eAll 
-  };
-
   nsComputedDOMStyle(mozilla::dom::Element* aElement,
                      const nsAString& aPseudoElt,
-                     nsIPresShell* aPresShell,
-                     StyleType aStyleType);
+                     nsIPresShell* aPresShell);
 
   virtual nsINode *GetParentObject() override
   {
@@ -86,8 +80,7 @@ public:
 
   static already_AddRefed<nsStyleContext>
   GetStyleContext(mozilla::dom::Element* aElement, nsIAtom* aPseudo,
-                  nsIPresShell* aPresShell,
-                  StyleType aStyleType = eAll);
+                  nsIPresShell* aPresShell);
 
   enum AnimationFlag {
     eWithAnimation,
@@ -97,26 +90,22 @@ public:
   static already_AddRefed<nsStyleContext>
   GetStyleContextNoFlush(mozilla::dom::Element* aElement,
                          nsIAtom* aPseudo,
-                         nsIPresShell* aPresShell,
-                         StyleType aStyleType = eAll)
+                         nsIPresShell* aPresShell)
   {
     return DoGetStyleContextNoFlush(aElement,
                                     aPseudo,
                                     aPresShell,
-                                    aStyleType,
                                     eWithAnimation);
   }
 
   static already_AddRefed<nsStyleContext>
   GetUnanimatedStyleContextNoFlush(mozilla::dom::Element* aElement,
                                    nsIAtom* aPseudo,
-                                   nsIPresShell* aPresShell,
-                                   StyleType aStyleType = eAll)
+                                   nsIPresShell* aPresShell)
   {
     return DoGetStyleContextNoFlush(aElement,
                                     aPseudo,
                                     aPresShell,
-                                    aStyleType,
                                     eWithoutAnimation);
   }
 
@@ -174,7 +163,6 @@ private:
   DoGetStyleContextNoFlush(mozilla::dom::Element* aElement,
                            nsIAtom* aPseudo,
                            nsIPresShell* aPresShell,
-                           StyleType aStyleType,
                            AnimationFlag aAnimationFlag);
 
 #define STYLE_STRUCT(name_, checkdata_cb_)                              \
@@ -748,11 +736,6 @@ private:
   
 
 
-  StyleType mStyleType;
-
-  
-
-
 
   uint64_t mStyleContextGeneration;
 
@@ -772,8 +755,6 @@ private:
 already_AddRefed<nsComputedDOMStyle>
 NS_NewComputedDOMStyle(mozilla::dom::Element* aElement,
                        const nsAString& aPseudoElt,
-                       nsIPresShell* aPresShell,
-                       nsComputedDOMStyle::StyleType aStyleType =
-                         nsComputedDOMStyle::eAll);
+                       nsIPresShell* aPresShell);
 
 #endif 
