@@ -19,6 +19,12 @@
 #  define MOZ_INCLUDE_MOZALLOC_H_FROM_${HEADER}
 #endif
 
+
+
+#ifndef mozilla_Throw_h
+#  include "mozilla/throw_msvc.h"
+#endif
+
 #ifdef _DEBUG
 
 
