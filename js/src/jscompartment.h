@@ -434,9 +434,6 @@ struct JSCompartment
 
     js::WrapperMap               crossCompartmentWrappers;
 
-    using CCKeyVector = mozilla::Vector<js::CrossCompartmentKey, 0, js::SystemAllocPolicy>;
-    CCKeyVector                  nurseryCCKeys;
-
     
     
     
@@ -590,8 +587,10 @@ struct JSCompartment
     MOZ_MUST_USE bool wrap(JSContext* cx, JS::MutableHandle<JS::GCVector<JS::Value>> vec);
     MOZ_MUST_USE bool rewrap(JSContext* cx, JS::MutableHandleObject obj, JS::HandleObject existing);
 
-    MOZ_MUST_USE bool putWrapper(JSContext* cx, const js::CrossCompartmentKey& wrapped,
-                                 const js::Value& wrapper);
+    MOZ_MUST_USE bool putNewWrapper(JSContext* cx, const js::CrossCompartmentKey& wrapped,
+                                    const js::Value& wrapper);
+    MOZ_MUST_USE bool putWrapperMaybeUpdate(JSContext* cx, const js::CrossCompartmentKey& wrapped,
+                                            const js::Value& wrapper);
 
     js::WrapperMap::Ptr lookupWrapper(const js::Value& wrapped) const {
         return crossCompartmentWrappers.lookup(js::CrossCompartmentKey(wrapped));
