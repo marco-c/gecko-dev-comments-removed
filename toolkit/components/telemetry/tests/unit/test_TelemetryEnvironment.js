@@ -938,6 +938,24 @@ add_task(function* test_prefWatch_prefReset() {
   TelemetryEnvironment.unregisterChangeListener("testWatchPrefs_reset");
 });
 
+add_task(function* test_prefDefault() {
+  const PREF_TEST = "toolkit.telemetry.test.defaultpref1";
+  const expectedValue = "some-test-value";
+
+  const PREFS_TO_WATCH = new Map([
+    [PREF_TEST, {what: TelemetryEnvironment.RECORD_DEFAULTPREF_VALUE}],
+  ]);
+
+  
+  Services.prefs.getDefaultBranch(null).setCharPref(PREF_TEST, expectedValue);
+
+  
+  
+  TelemetryEnvironment.testWatchPreferences(PREFS_TO_WATCH);
+
+  Assert.strictEqual(TelemetryEnvironment.currentEnvironment.settings.userPrefs[PREF_TEST], expectedValue);
+});
+
 add_task(function* test_addonsWatch_InterestingChange() {
   const ADDON_INSTALL_URL = gDataRoot + "restartless.xpi";
   const ADDON_ID = "tel-restartless-xpi@tests.mozilla.org";

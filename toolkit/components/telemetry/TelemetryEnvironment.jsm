@@ -88,6 +88,7 @@ this.TelemetryEnvironment = {
   
   RECORD_PREF_STATE: 1, 
   RECORD_PREF_VALUE: 2, 
+  RECORD_DEFAULTPREF_VALUE: 3, 
 
   
   testWatchPreferences(prefMap) {
@@ -118,6 +119,7 @@ this.TelemetryEnvironment = {
 
 const RECORD_PREF_STATE = TelemetryEnvironment.RECORD_PREF_STATE;
 const RECORD_PREF_VALUE = TelemetryEnvironment.RECORD_PREF_VALUE;
+const RECORD_DEFAULTPREF_VALUE = TelemetryEnvironment.RECORD_DEFAULTPREF_VALUE;
 const DEFAULT_ENVIRONMENT_PREFS = new Map([
   ["app.feedback.baseURL", {what: RECORD_PREF_VALUE}],
   ["app.support.baseURL", {what: RECORD_PREF_VALUE}],
@@ -244,7 +246,7 @@ function getSystemLocale() {
   try {
     return Cc["@mozilla.org/intl/ospreferences;1"].
              getService(Ci.mozIOSPreferences).
-             systemLocale;
+             getSystemLocale();
   } catch (e) {
     return null;
   }
@@ -874,8 +876,13 @@ EnvironmentCache.prototype = {
   _getPrefData() {
     let prefData = {};
     for (let [pref, policy] of this._watchedPrefs.entries()) {
-      
-      if (!Preferences.isSet(pref)) {
+      if (policy.what == TelemetryEnvironment.RECORD_DEFAULTPREF_VALUE) {
+        
+        if (!Preferences.has(pref)) {
+          continue;
+        }
+      } else if (!Preferences.isSet(pref)) {
+        
         continue;
       }
 
