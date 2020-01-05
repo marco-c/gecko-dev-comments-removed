@@ -752,6 +752,7 @@ pub fn propagate_column_inline_sizes_to_child(
     
     match child_flow.class() {
         FlowClass::TableRowGroup => {
+            incoming_rowspan.clear();
             let child_table_rowgroup_flow = child_flow.as_mut_table_rowgroup();
             child_table_rowgroup_flow.spacing = *border_spacing;
             for kid in child_table_rowgroup_flow.block_flow.base.child_iter_mut() {
@@ -789,7 +790,11 @@ pub fn propagate_column_inline_sizes_to_child(
                         if incoming_rowspan.len() < col + 1 {
                             incoming_rowspan.resize(col + 1, 1);
                         }
-                        incoming_rowspan[col] = max(cell.row_span, incoming_rowspan[col]);
+                        
+                        
+                        if cell.row_span > incoming_rowspan[col] || cell.row_span == 0 {
+                            incoming_rowspan[col] = cell.row_span;
+                        }
                     }
                     col += 1;
                 }
