@@ -2792,8 +2792,6 @@ using StyleShapeOutside = StyleShapeSource<StyleShapeOutsideShapeBox>;
 
 struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
 {
-  typedef mozilla::StyleGeometryBox StyleGeometryBox;
-
   explicit nsStyleDisplay(const nsPresContext* aContext);
   nsStyleDisplay(const nsStyleDisplay& aOther);
   ~nsStyleDisplay();
@@ -2882,7 +2880,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
   
   uint8_t mBackfaceVisibility;
   uint8_t mTransformStyle;
-  StyleGeometryBox mTransformBox; 
+  uint8_t mTransformBox;        
   RefPtr<nsCSSValueSharedList> mSpecifiedTransform; 
   nsStyleCoord mTransformOrigin[3]; 
   nsStyleCoord mChildPerspective; 

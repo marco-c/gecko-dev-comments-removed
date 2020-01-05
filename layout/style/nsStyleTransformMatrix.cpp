@@ -58,12 +58,14 @@ TransformReferenceBox::EnsureDimensionsAreCached()
       mWidth = nsPresContext::CSSPixelsToAppUnits(contextSize.width);
       mHeight = nsPresContext::CSSPixelsToAppUnits(contextSize.height);
     } else
-    if (mFrame->StyleDisplay()->mTransformBox == StyleGeometryBox::Fill) {
+    if (mFrame->StyleDisplay()->mTransformBox ==
+          NS_STYLE_TRANSFORM_BOX_FILL_BOX) {
       
       
+      gfxRect bbox = nsSVGUtils::GetBBox(const_cast<nsIFrame*>(mFrame));
       nsRect bboxInAppUnits =
-        nsLayoutUtils::ComputeGeometryBox(const_cast<nsIFrame*>(mFrame),
-                                          StyleGeometryBox::Fill);
+        nsLayoutUtils::RoundGfxRectToAppRect(bbox,
+                                             mFrame->PresContext()->AppUnitsPerCSSPixel());
       
       
       
@@ -75,9 +77,9 @@ TransformReferenceBox::EnsureDimensionsAreCached()
     } else {
       
       MOZ_ASSERT(mFrame->StyleDisplay()->mTransformBox ==
-                   StyleGeometryBox::View ||
+                   NS_STYLE_TRANSFORM_BOX_VIEW_BOX ||
                  mFrame->StyleDisplay()->mTransformBox ==
-                   StyleGeometryBox::Border,
+                   NS_STYLE_TRANSFORM_BOX_BORDER_BOX,
                  "Unexpected value for 'transform-box'");
       
       
