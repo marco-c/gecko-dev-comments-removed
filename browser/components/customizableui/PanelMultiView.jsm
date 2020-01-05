@@ -469,6 +469,7 @@ this.PanelMultiView = class {
         nodeToAnimate.style.transition = "transform ease-" + (reverse ? "in" : "out") +
           " var(--panelui-subview-transition-duration)";
         nodeToAnimate.style.willChange = "transform";
+        nodeToAnimate.style.borderInlineStart = "1px solid var(--panel-separator-color)";
 
         
         
@@ -526,6 +527,7 @@ this.PanelMultiView = class {
               
               
               window.addEventListener("MozAfterPaint", () => {
+                nodeToAnimate.style.removeProperty("border-inline-start");
                 nodeToAnimate.style.removeProperty("transition");
                 nodeToAnimate.style.removeProperty("transform");
                 nodeToAnimate.style.removeProperty("width");

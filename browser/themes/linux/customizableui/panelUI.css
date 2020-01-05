@@ -96,3 +96,13 @@ menu.subviewbutton > .menu-right:-moz-locale-dir(rtl) {
 .subviewradio > .radio-label-box {
   -moz-appearance: none;
 }
+
+
+
+photonpanelmultiview .subviewbutton > .toolbarbutton-text,
+photonpanelmultiview .subviewbutton > .toolbarbutton-icon {
+  padding: 0;
+  margin: 0;
+}
+
+

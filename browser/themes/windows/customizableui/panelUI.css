@@ -145,3 +145,12 @@ menu.subviewbutton > .menu-right:-moz-locale-dir(rtl) {
   }
 }
 
+
+
+photonpanelmultiview .subviewbutton > .toolbarbutton-text,
+photonpanelmultiview .subviewbutton > .toolbarbutton-icon {
+  padding: 0;
+  margin: 0;
+}
+
+
