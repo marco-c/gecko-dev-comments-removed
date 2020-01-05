@@ -517,13 +517,6 @@ HasLiveStackValueAtDepth(JSScript* script, jsbytecode* pc, uint32_t stackDepth)
                 return true;
             break;
 
-          case JSTRY_ITERCLOSE:
-            
-            
-            if (stackDepth == tn->stackDepth)
-                return true;
-            break;
-
           case JSTRY_DESTRUCTURING_ITERCLOSE:
             
             

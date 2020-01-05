@@ -474,6 +474,9 @@ struct MOZ_STACK_CLASS BytecodeEmitter
     MOZ_MUST_USE bool emitCheckIsObj(CheckIsObjectKind kind);
 
     
+    MOZ_MUST_USE bool emitCheckIsCallable(CheckIsCallableKind kind);
+
+    
     
     MOZ_MUST_USE bool emitUint16Operand(JSOp op, uint32_t operand);
 
@@ -681,7 +684,8 @@ struct MOZ_STACK_CLASS BytecodeEmitter
     
     
     MOZ_MUST_USE bool emitIteratorNext(ParseNode* pn, bool allowSelfHosted = false);
-    MOZ_MUST_USE bool emitIteratorClose(bool allowSelfHosted = false);
+    MOZ_MUST_USE bool emitIteratorClose(CompletionKind completionKind = CompletionKind::Normal,
+                                        bool allowSelfHosted = false);
 
     template <typename InnerEmitter>
     MOZ_MUST_USE bool wrapWithDestructuringIteratorCloseTryNote(int32_t iterDepth,
