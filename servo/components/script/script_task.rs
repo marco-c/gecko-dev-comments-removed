@@ -155,6 +155,10 @@ pub trait Runnable {
     fn handler(self: Box<Self>);
 }
 
+pub trait MainThreadRunnable {
+    fn handler(self: Box<Self>, script_task: &ScriptTask);
+}
+
 
 
 pub enum ScriptMsg {
@@ -176,6 +180,8 @@ pub enum ScriptMsg {
     DOMMessage(StructuredCloneData),
     
     RunnableMsg(Box<Runnable+Send>),
+    
+    MainThreadRunnableMsg(Box<MainThreadRunnable+Send>),
     
     RefcountCleanup(TrustedReference),
     
@@ -675,6 +681,8 @@ impl ScriptTask {
                 panic!("unexpected message"),
             ScriptMsg::RunnableMsg(runnable) =>
                 runnable.handler(),
+            ScriptMsg::MainThreadRunnableMsg(runnable) =>
+                runnable.handler(self),
             ScriptMsg::RefcountCleanup(addr) =>
                 LiveDOMReferences::cleanup(self.get_cx(), addr),
             ScriptMsg::PageFetchComplete(id, subpage, response) =>
