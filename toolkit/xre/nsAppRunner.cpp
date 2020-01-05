@@ -4793,7 +4793,7 @@ enum {
   
   kE10sDisabledForAccessibility = 4,
   
-  kE10sDisabledForBidi = 6,
+  
   kE10sDisabledForAddons = 7,
   kE10sForceDisabled = 8,
   
@@ -4886,25 +4886,6 @@ MultiprocessBlockPolicy() {
   if (Preferences::GetDefaultCString("app.update.channel").EqualsLiteral("release") &&
       !IsVistaOrLater()) {
     gMultiprocessBlockPolicy = kE10sDisabledForOperatingSystem;
-    return gMultiprocessBlockPolicy;
-  }
-#endif 
-
-#if defined(MOZ_WIDGET_GTK)
-  
-
-
-
-  bool disabledForBidi = false;
-
-  nsCOMPtr<nsIXULChromeRegistry> registry =
-   mozilla::services::GetXULChromeRegistryService();
-  if (registry) {
-     registry->IsLocaleRTL(NS_LITERAL_CSTRING("global"), &disabledForBidi);
-  }
-
-  if (disabledForBidi) {
-    gMultiprocessBlockPolicy = kE10sDisabledForBidi;
     return gMultiprocessBlockPolicy;
   }
 #endif 
