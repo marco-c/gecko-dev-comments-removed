@@ -676,9 +676,6 @@ private:
                 const nsAString& aRemoteType);
 
   
-  void InitializeMembers();
-
-  
   
   bool LaunchSubprocess(hal::ProcessPriority aInitialPriority = hal::PROCESS_PRIORITY_FOREGROUND);
 
