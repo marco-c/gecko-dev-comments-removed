@@ -25,6 +25,8 @@
 #include "pathhash.h"
 #include "errors.h"
 
+#define PATCH_DIR_PATH L"\\updates\\0"
+
 
 
 
@@ -593,6 +595,20 @@ ExecuteServiceCommand(int argc, LPWSTR *argv)
       
       
       LOG_WARN(("The patch directory path is not valid for this application."));
+      return FALSE;
+    }
+
+    
+    
+    size_t fullPathLen = NS_tstrlen(argv[4]);
+    size_t relPathLen = NS_tstrlen(PATCH_DIR_PATH);
+    if (relPathLen > fullPathLen) {
+      LOG_WARN(("The patch directory path length is not valid for this application."));
+      return FALSE;
+    }
+
+    if (_wcsnicmp(argv[4] + fullPathLen - relPathLen, PATCH_DIR_PATH, relPathLen) != 0) {
+      LOG_WARN(("The patch directory path subdirectory is not valid for this application."));
       return FALSE;
     }
 
