@@ -94,17 +94,6 @@ class RestrictedToken {
   
   
   
-  
-  
-  
-  DWORD AddDenyOnlySids(const std::vector<Sid>& deny_only_sids);
-
-  
-  
-  
-  
-  
-  
   DWORD AddSidForDenyOnly(const Sid &sid);
 
   
