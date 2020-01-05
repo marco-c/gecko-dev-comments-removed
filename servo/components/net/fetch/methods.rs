@@ -7,10 +7,10 @@ use fetch::response::ResponseMethods;
 use http_loader::{NetworkHttpRequestFactory, WrappedHttpResponse};
 use http_loader::{create_http_connector, obtain_response};
 use hyper::client::response::Response as HyperResponse;
-use hyper::header::{Accept, IfMatch, IfRange, IfUnmodifiedSince, Location};
-use hyper::header::{AcceptLanguage, ContentLength, ContentLanguage, HeaderView};
+use hyper::header::{Accept, CacheControl, IfMatch, IfRange, IfUnmodifiedSince, Location};
+use hyper::header::{AcceptLanguage, ContentLength, ContentLanguage, HeaderView, Pragma};
 use hyper::header::{AccessControlAllowCredentials, AccessControlAllowOrigin};
-use hyper::header::{Authorization, Basic, ContentEncoding, Encoding};
+use hyper::header::{Authorization, Basic, CacheDirective, ContentEncoding, Encoding};
 use hyper::header::{ContentType, Header, Headers, IfModifiedSince, IfNoneMatch};
 use hyper::header::{QualityItem, q, qitem, Referer as RefererHeader, UserAgent};
 use hyper::method::Method;
@@ -29,7 +29,7 @@ use std::rc::Rc;
 use std::str::FromStr;
 use std::thread;
 use url::idna::domain_to_ascii;
-use url::{Origin, Url, UrlParser, whatwg_scheme_type_mapper};
+use url::{Origin, OpaqueOrigin, Url, UrlParser, whatwg_scheme_type_mapper};
 use util::thread::spawn_named;
 
 pub fn fetch_async(request: Request, cors_flag: bool, listener: Box<AsyncFetchListener + Send>) {
@@ -137,7 +137,7 @@ fn main_fetch(request: Rc<Request>, cors_flag: bool, recursive_flag: bool) -> Re
     let mut response = if response.is_none() {
 
         let current_url = request.current_url();
-        let origin_match = request.origin == current_url.origin();
+        let origin_match = *request.origin.borrow() == current_url.origin();
 
         if (!cors_flag && origin_match) ||
             (current_url.scheme == "data" && request.same_origin_data.get()) ||
@@ -238,7 +238,7 @@ fn main_fetch(request: Rc<Request>, cors_flag: bool, recursive_flag: bool) -> Re
     }
 
     
-    if request.body.is_some() && match &*request.current_url().scheme {
+    if request.body.borrow().is_some() && match &*request.current_url().scheme {
         "http" | "https" => true,
         _ => false }
         {
@@ -347,6 +347,8 @@ fn http_fetch(request: Rc<Request>,
                 request.mode != RequestMode::NoCORS) ||
                (res.response_type == ResponseType::OpaqueRedirect &&
                 request.redirect_mode.get() != RedirectMode::Manual) ||
+               (res.url_list.borrow().len() > 1 &&
+                request.redirect_mode.get() != RedirectMode::Follow) ||
                res.response_type == ResponseType::Error {
                 return Response::network_error();
             }
@@ -371,7 +373,7 @@ fn http_fetch(request: Rc<Request>,
             let mut method_mismatch = false;
             let mut header_mismatch = false;
 
-            let origin = request.origin.clone();
+            let origin = request.origin.borrow().clone();
             let url = request.current_url();
             let credentials = request.credentials_mode == CredentialsMode::Include;
             let method_cache_match = cache.match_method(CacheRequestDetails {
@@ -406,8 +408,8 @@ fn http_fetch(request: Rc<Request>,
         
         let credentials = match request.credentials_mode {
             CredentialsMode::Include => true,
-            CredentialsMode::CredentialsSameOrigin if (!cors_flag ||
-                request.response_tainting.get() == ResponseTainting::Opaque)
+            CredentialsMode::CredentialsSameOrigin if
+                request.response_tainting.get() == ResponseTainting::Basic
                 => true,
             _ => false
         };
@@ -435,98 +437,21 @@ fn http_fetch(request: Rc<Request>,
         StatusCode::MovedPermanently | StatusCode::Found | StatusCode::SeeOther |
         StatusCode::TemporaryRedirect | StatusCode::PermanentRedirect => {
 
-            
-            if request.redirect_mode.get() == RedirectMode::Error {
-                return Response::network_error();
-            }
-
-            
-            if !actual_response.headers.has::<Location>() {
-                drop(actual_response);
-                return Rc::try_unwrap(response).ok().unwrap();
-            }
-
-            
-            let location = match actual_response.headers.get::<Location>() {
-                Some(&Location(ref location)) => location.clone(),
-                
-                _ => return Response::network_error(),
-            };
-
-            
-            let location_url = UrlParser::new().base_url(&request.current_url()).parse(&*location);
-
-            
-            let location_url = match location_url {
-                Ok(url) => url,
-                _ => { return Response::network_error(); }
-            };
-
-            
-            if request.redirect_count.get() >= 20 {
-                return Response::network_error();
-            }
-
-            
-            request.redirect_count.set(request.redirect_count.get() + 1);
-
-            
-            request.same_origin_data.set(false);
-
-            match request.redirect_mode.get() {
-
-                
+            response = match request.redirect_mode.get() {
+                RedirectMode::Error => Rc::new(Response::network_error()),
                 RedirectMode::Manual => {
-                    response = Rc::new(Response::to_filtered(actual_response, ResponseType::OpaqueRedirect));
-                }
-
-                
-                RedirectMode::Follow => {
-
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-
-                    
-                    if cors_flag && has_credentials(&location_url) {
-                        return Response::network_error();
-                    }
-
-                    
-                    
-                    
-                    
-                    
-
-                    
-                    if actual_response.status.unwrap() == StatusCode::SeeOther ||
-                       ((actual_response.status.unwrap() == StatusCode::MovedPermanently ||
-                         actual_response.status.unwrap() == StatusCode::Found) &&
-                        *request.method.borrow() == Method::Post) {
-                        *request.method.borrow_mut() = Method::Get;
-                    }
-
-                    
-                    request.url_list.borrow_mut().push(location_url);
-
-                    
-                    return main_fetch(request.clone(), cors_flag, true);
-                }
-                RedirectMode::Error => { panic!("RedirectMode is Error after step 8") }
+                   Rc::new(Response::to_filtered(actual_response, ResponseType::OpaqueRedirect))
+                },
+                RedirectMode::Follow => Rc::new(http_redirect_fetch(request, response, cors_flag))
             }
-        }
+        },
 
         
         StatusCode::Unauthorized => {
 
             
             
-            if cors_flag {
+            if cors_flag || request.credentials_mode != CredentialsMode::Include {
                 drop(actual_response);
                 return Rc::try_unwrap(response).ok().unwrap();
             }
@@ -574,6 +499,87 @@ fn http_fetch(request: Rc<Request>,
 }
 
 
+fn http_redirect_fetch(request: Rc<Request>,
+                       response: Rc<Response>,
+                       cors_flag: bool) -> Response {
+
+    
+    let actual_response = match response.internal_response {
+        Some(ref res) => res.clone(),
+        _ => response.clone()
+    };
+
+    
+    
+    
+    if !actual_response.headers.has::<Location>() {
+        drop(actual_response);
+        return Rc::try_unwrap(response).ok().unwrap();
+    }
+
+    
+    let location = match actual_response.headers.get::<Location>() {
+        Some(&Location(ref location)) => location.clone(),
+        
+        _ => return Response::network_error(),
+    };
+
+    
+    let location_url = UrlParser::new().base_url(&request.current_url()).parse(&*location);
+
+    
+    let location_url = match location_url {
+        Ok(url) => url,
+        _ => return Response::network_error()
+    };
+
+    
+    if request.redirect_count.get() >= 20 {
+        return Response::network_error();
+    }
+
+    
+    request.redirect_count.set(request.redirect_count.get() + 1);
+
+    
+    request.same_origin_data.set(false);
+
+    let same_origin = *request.origin.borrow() == location_url.origin();
+    let has_credentials = has_credentials(&location_url);
+
+    
+    if request.mode == RequestMode::CORSMode && !same_origin && has_credentials {
+        return Response::network_error();
+    }
+
+    
+    if cors_flag && has_credentials {
+        return Response::network_error();
+    }
+
+    
+    if cors_flag && !same_origin {
+        *request.origin.borrow_mut() = Origin::UID(OpaqueOrigin::new());
+    }
+
+    
+    let status_code = actual_response.status.unwrap();
+    if ((status_code == StatusCode::MovedPermanently || status_code == StatusCode::Found) &&
+        *request.method.borrow() == Method::Post) ||
+        status_code == StatusCode::SeeOther {
+
+        *request.method.borrow_mut() = Method::Get;
+        *request.body.borrow_mut() = None;
+    }
+
+    
+    request.url_list.borrow_mut().push(location_url);
+
+    
+    main_fetch(request, cors_flag, true)
+}
+
+
 fn http_network_or_cache_fetch(request: Rc<Request>,
                                credentials_flag: bool,
                                authentication_fetch_flag: bool) -> Response {
@@ -589,7 +595,7 @@ fn http_network_or_cache_fetch(request: Rc<Request>,
         Rc::new((*request).clone())
     };
 
-    let content_length_value = match http_request.body {
+    let content_length_value = match *http_request.body.borrow() {
         None =>
             match *http_request.method.borrow() {
                 
@@ -636,39 +642,57 @@ fn http_network_or_cache_fetch(request: Rc<Request>,
     }
 
     
+    if http_request.cache_mode.get() == CacheMode::Reload {
+
+        
+        if !http_request.headers.borrow().has::<Pragma>() {
+            http_request.headers.borrow_mut().set(Pragma::NoCache);
+        }
+
+        
+        if !http_request.headers.borrow().has::<CacheControl>() {
+            http_request.headers.borrow_mut().set(CacheControl(vec![CacheDirective::NoCache]));
+        }
+    }
+
+    
     
 
     
     
     if credentials_flag {
-        
-        
-
-        
-        let mut authorization_value = None;
 
         
         
 
         
-        if authentication_fetch_flag {
+        if !http_request.headers.borrow().has::<Authorization<String>>() {
 
-            let current_url = http_request.current_url();
+            
+            let mut authorization_value = None;
 
-            authorization_value = if includes_credentials(&current_url) {
-                Some(Basic {
-                    username: current_url.username().unwrap_or("").to_owned(),
-                    password: current_url.password().map(str::to_owned)
-                })
+            
+            
 
-            } else {
-                None
+            
+            if authentication_fetch_flag {
+
+                let current_url = http_request.current_url();
+
+                authorization_value = if includes_credentials(&current_url) {
+                    Some(Basic {
+                        username: current_url.username().unwrap_or("").to_owned(),
+                        password: current_url.password().map(str::to_owned)
+                    })
+                } else {
+                    None
+                }
             }
-        }
 
-        
-        if let Some(basic) = authorization_value {
-            http_request.headers.borrow_mut().set(Authorization(basic));
+            
+            if let Some(basic) = authorization_value {
+                http_request.headers.borrow_mut().set(Authorization(basic));
+            }
         }
     }
 
@@ -835,10 +859,6 @@ fn http_network_fetch(request: Rc<Request>,
 
     
     
-        
-        
-        
-        
 
     
     
@@ -884,7 +904,7 @@ fn cors_check(request: Rc<Request>, response: &Response) -> Result<(), ()> {
     };
 
     
-    match ascii_serialise_origin(&request.origin) {
+    match ascii_serialise_origin(&request.origin.borrow()) {
         Ok(request_origin) => {
             if request_origin != origin {
                 return Err(());
