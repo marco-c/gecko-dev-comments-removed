@@ -2029,8 +2029,24 @@ IsRegExpHoistableCall(MCall* call, MDefinition* def)
 }
 
 static bool
-CanCompareWithoutToPrimitive(MCompare* compare, MDefinition* def)
+CanCompareRegExp(MCompare* compare, MDefinition* def)
 {
+    MDefinition* value;
+    if (compare->lhs() == def) {
+        value = compare->rhs();
+    } else {
+        MOZ_ASSERT(compare->rhs() == def);
+        value = compare->lhs();
+    }
+
+    
+    
+    if (value->mightBeType(MIRType::Object))
+        return false;
+
+    
+    
+
     JSOp op = compare->jsop();
     
     if (op == JSOP_STRICTEQ || op == JSOP_STRICTNE)
@@ -2043,14 +2059,6 @@ CanCompareWithoutToPrimitive(MCompare* compare, MDefinition* def)
     }
 
     
-    MDefinition* value;
-    if (compare->lhs() == def) {
-        value = compare->rhs();
-    } else {
-        MOZ_ASSERT(compare->rhs() == def);
-        value = compare->lhs();
-    }
-
     if (value->mightBeType(MIRType::Boolean) || value->mightBeType(MIRType::String) ||
         value->mightBeType(MIRType::Int32) ||
         value->mightBeType(MIRType::Double) || value->mightBeType(MIRType::Float32) ||
@@ -2116,7 +2124,7 @@ IsRegExpHoistable(MIRGenerator* mir, MDefinition* regexp, MDefinitionVector& wor
             } else if (useDef->isLoadFixedSlot() || useDef->isTypeOf()) {
                 continue;
             } else if (useDef->isCompare()) {
-                if (CanCompareWithoutToPrimitive(useDef->toCompare(), def))
+                if (CanCompareRegExp(useDef->toCompare(), def))
                     continue;
             }
             
