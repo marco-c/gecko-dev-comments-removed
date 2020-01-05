@@ -574,6 +574,7 @@ HTMLTooltip.prototype = {
     panel.setAttribute("noautofocus", true);
     panel.setAttribute("noautohide", true);
     panel.setAttribute("ignorekeys", true);
+    panel.setAttribute("tooltip", "aHTMLTooltip");
 
     
     panel.setAttribute("type", "arrow");
