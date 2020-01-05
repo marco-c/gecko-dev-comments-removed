@@ -35,12 +35,7 @@ function* testImageDimension(ruleView) {
 
   
   
-  yield assertHoverTooltipOn(tooltip, uriSpan);
-
-  info("Showing the tooltip");
-  let onShown = tooltip.once("shown");
-  tooltip.show(uriSpan);
-  yield onShown;
+  let previewTooltip = yield assertShowPreviewTooltip(ruleView, uriSpan);
 
   
   
@@ -52,9 +47,7 @@ function* testImageDimension(ruleView) {
   ok(panelRect.height >= imageRect.height,
     "The panel is high enough to show the image");
 
-  let onHidden = tooltip.once("hidden");
-  tooltip.hide();
-  yield onHidden;
+  yield assertTooltipHiddenOnMouseOut(previewTooltip, uriSpan);
 }
 
 function* testPickerDimension(ruleView) {
