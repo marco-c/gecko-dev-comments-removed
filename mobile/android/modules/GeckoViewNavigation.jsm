@@ -8,6 +8,7 @@ this.EXPORTED_SYMBOLS = ["GeckoViewNavigation"];
 
 const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 
+Cu.import("resource://gre/modules/GeckoViewModule.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "EventDispatcher",
@@ -28,9 +29,8 @@ function debug(msg) {
 
 
 
-class GeckoViewNavigation {
-  constructor(window) {
-    this.window = window;
+class GeckoViewNavigation extends GeckoViewModule {
+  init() {
     this.window.QueryInterface(Ci.nsIDOMChromeWindow).browserDOMWindow = this;
 
     
@@ -43,18 +43,6 @@ class GeckoViewNavigation {
       "GeckoView:GoBack",
       "GeckoView:GoForward",
     ]);
-  }
-
-  get browser() {
-    return this.window.browser;
-  }
-
-  get messageManager() {
-    return this.browser.messageManager;
-  }
-
-  get eventDispatcher() {
-    return EventDispatcher.for(this.window);
   }
 
   
