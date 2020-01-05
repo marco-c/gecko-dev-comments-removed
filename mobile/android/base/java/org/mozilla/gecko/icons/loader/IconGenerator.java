@@ -21,6 +21,7 @@ import android.util.TypedValue;
 import org.mozilla.gecko.R;
 import org.mozilla.gecko.icons.IconRequest;
 import org.mozilla.gecko.icons.IconResponse;
+import org.mozilla.gecko.util.StringUtils;
 
 
 
@@ -41,14 +42,6 @@ public class IconGenerator implements IconLoader {
             0xFF1f386e,
             0xFF7a2f7a,
             0xFFea385e,
-    };
-
-    
-    
-    private static final String[] COMMON_PREFIXES = {
-            "www.",
-            "m.",
-            "mobile.",
     };
 
     private static final int TEXT_SIZE_DP = 12;
@@ -157,11 +150,7 @@ public class IconGenerator implements IconLoader {
         }
 
         
-        for (String prefix : COMMON_PREFIXES) {
-            if (snippet.startsWith(prefix)) {
-                snippet = snippet.substring(prefix.length());
-            }
-        }
+        snippet = StringUtils.stripCommonSubdomains(snippet);
 
         return snippet;
     }
