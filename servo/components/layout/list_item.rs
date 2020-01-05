@@ -1,9 +1,9 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
+//! Layout for elements with a CSS `display` property of `list-item`. These elements consist of a
+//! block and an extra inline fragment for the marker.
 
 #![deny(unsafe_code)]
 
@@ -17,7 +17,6 @@ use generated_content;
 use incremental::RESOLVE_GENERATED_CONTENT;
 use inline::InlineMetrics;
 use text;
-use wrapper::ThreadSafeLayoutNode;
 
 use euclid::{Point2D, Rect};
 use gfx::display_list::DisplayList;
@@ -28,24 +27,23 @@ use style::properties::ComputedValues;
 use style::computed_values::list_style_type;
 use std::sync::Arc;
 
-
+/// A block with the CSS `display` property equal to `list-item`.
 #[derive(Debug)]
 pub struct ListItemFlow {
-    
+    /// Data common to all block flows.
     pub block_flow: BlockFlow,
-    
-    
+    /// The marker, if outside. (Markers that are inside are instead just fragments on the interior
+    /// `InlineFlow`.)
     pub marker: Option<Fragment>,
 }
 
 impl ListItemFlow {
-    pub fn from_node_fragments_and_flotation(node: &ThreadSafeLayoutNode,
-                                             main_fragment: Fragment,
-                                             marker_fragment: Option<Fragment>,
-                                             flotation: Option<FloatKind>)
-                                             -> ListItemFlow {
+    pub fn from_fragments_and_flotation(main_fragment: Fragment,
+                                        marker_fragment: Option<Fragment>,
+                                        flotation: Option<FloatKind>)
+                                        -> ListItemFlow {
         let mut this = ListItemFlow {
-            block_flow: BlockFlow::from_node_and_fragment(node, main_fragment, flotation),
+            block_flow: BlockFlow::from_fragment(main_fragment, flotation),
             marker: marker_fragment,
         };
 
@@ -79,7 +77,7 @@ impl Flow for ListItemFlow {
     }
 
     fn bubble_inline_sizes(&mut self) {
-        
+        // The marker contributes no intrinsic inline-size, so…
         self.block_flow.bubble_inline_sizes()
     }
 
@@ -90,8 +88,8 @@ impl Flow for ListItemFlow {
             let containing_block_inline_size = self.block_flow.base.block_container_inline_size;
             marker.assign_replaced_inline_size_if_necessary(containing_block_inline_size);
 
-            
-            
+            // Do this now. There's no need to do this in bubble-widths, since markers do not
+            // contribute to the inline size of this flow.
             let intrinsic_inline_sizes = marker.compute_intrinsic_inline_sizes();
 
             marker.border_box.size.inline =
@@ -194,7 +192,7 @@ impl Flow for ListItemFlow {
     }
 }
 
-
+/// The kind of content that `list-style-type` results in.
 pub enum ListStyleTypeContent {
     None,
     StaticText(char),
@@ -202,10 +200,10 @@ pub enum ListStyleTypeContent {
 }
 
 impl ListStyleTypeContent {
-    
+    /// Returns the content to be used for the given value of the `list-style-type` property.
     pub fn from_list_style_type(list_style_type: list_style_type::T) -> ListStyleTypeContent {
-        
-        
+        // Just to keep things simple, use a nonbreaking space (Unicode 0xa0) to provide the marker
+        // separation.
         match list_style_type {
             list_style_type::T::none => ListStyleTypeContent::None,
             list_style_type::T::disc | list_style_type::T::circle | list_style_type::T::square |

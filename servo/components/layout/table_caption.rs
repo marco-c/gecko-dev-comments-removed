@@ -1,8 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
+//! CSS table formatting contexts.
 
 #![deny(unsafe_code)]
 
@@ -10,7 +10,6 @@ use block::BlockFlow;
 use context::LayoutContext;
 use flow::{FlowClass, Flow, OpaqueFlow};
 use fragment::{Fragment, FragmentBorderBoxIterator};
-use wrapper::ThreadSafeLayoutNode;
 
 use euclid::{Point2D, Rect};
 use util::geometry::Au;
@@ -19,16 +18,15 @@ use std::fmt;
 use style::properties::ComputedValues;
 use std::sync::Arc;
 
-
+/// A table formatting context.
 pub struct TableCaptionFlow {
     pub block_flow: BlockFlow,
 }
 
 impl TableCaptionFlow {
-    pub fn from_node_and_fragment(node: &ThreadSafeLayoutNode, fragment: Fragment)
-                                  -> TableCaptionFlow {
+    pub fn from_fragment(fragment: Fragment) -> TableCaptionFlow {
         TableCaptionFlow {
-            block_flow: BlockFlow::from_node_and_fragment(node, fragment, None)
+            block_flow: BlockFlow::from_fragment(fragment, None)
         }
     }
 }
