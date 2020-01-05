@@ -140,11 +140,9 @@ const SUPPORTED_HTTP_CODES = [
     "511"
 ];
 
+const MDN_URL = "https://developer.mozilla.org/docs/";
 const GA_PARAMS =
   "?utm_source=mozilla&utm_medium=devtools-netmonitor&utm_campaign=default";
-
-const NETWORK_MONITOR_TIMINGS_MDN_URL =
-  "https://developer.mozilla.org/docs/Tools/Network_Monitor#Timings";
 
 
 
@@ -158,7 +156,7 @@ function getHeadersURL(header) {
   let idx = SUPPORTED_HEADERS.findIndex(item =>
     item.toLowerCase() === lowerCaseHeader);
   return idx > -1 ?
-    `https://developer.mozilla.org/docs/Web/HTTP/Headers/${SUPPORTED_HEADERS[idx] + GA_PARAMS}` : null;
+    `${MDN_URL}Web/HTTP/Headers/${SUPPORTED_HEADERS[idx] + GA_PARAMS}` : null;
 }
 
 
@@ -170,7 +168,8 @@ function getHeadersURL(header) {
 
 function getHTTPStatusCodeURL(statusCode) {
   let idx = SUPPORTED_HTTP_CODES.indexOf(statusCode);
-  return idx > -1 ? `https://developer.mozilla.org/docs/Web/HTTP/Status/${SUPPORTED_HTTP_CODES[idx] + GA_PARAMS}` : null;
+  return idx > -1 ?
+    `${MDN_URL}Web/HTTP/Status/${SUPPORTED_HTTP_CODES[idx] + GA_PARAMS}` : null;
 }
 
 
@@ -179,11 +178,21 @@ function getHTTPStatusCodeURL(statusCode) {
 
 
 function getNetMonitorTimingsURL() {
-  return NETWORK_MONITOR_TIMINGS_MDN_URL;
+  return `${MDN_URL}Tools/Network_Monitor${GA_PARAMS}#Timings`;
+}
+
+
+
+
+
+
+function getPerformanceAnalysisURL() {
+  return `${MDN_URL}Tools/Network_Monitor${GA_PARAMS}#Performance_analysis`;
 }
 
 module.exports = {
   getHeadersURL,
   getHTTPStatusCodeURL,
   getNetMonitorTimingsURL,
+  getPerformanceAnalysisURL,
 };
