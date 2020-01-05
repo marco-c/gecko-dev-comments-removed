@@ -360,34 +360,71 @@ CanNotifyObservers()
 
 
 
+
+
 class TickSample {
 public:
-  explicit TickSample(ThreadInfo* aThreadInfo)
-    : mPC(nullptr)
+  
+  
+  
+  TickSample(ThreadInfo* aThreadInfo, int64_t aRSSMemory, int64_t aUSSMemory)
+    : mIsSynchronous(false)
+    , mTimeStamp(mozilla::TimeStamp::Now())
+    , mThreadInfo(aThreadInfo)
+    , mRSSMemory(aRSSMemory)    
+    , mUSSMemory(aUSSMemory)    
+#if !defined(GP_OS_darwin)
+    , mContext(nullptr)
+#endif
+    , mPC(nullptr)
     , mSP(nullptr)
     , mFP(nullptr)
     , mLR(nullptr)
-    , mContext(nullptr)
-    , mIsSamplingCurrentThread(false)
-    , mThreadInfo(aThreadInfo)
-    , mTimeStamp(mozilla::TimeStamp::Now())
-    , mRSSMemory(0)
-    , mUSSMemory(0)
   {}
 
+  
+  
+  
+  explicit TickSample(ThreadInfo* aThreadInfo)
+    : mIsSynchronous(true)
+    , mTimeStamp(mozilla::TimeStamp::Now())
+    , mThreadInfo(aThreadInfo)
+    , mRSSMemory(0)
+    , mUSSMemory(0)
+#if !defined(GP_OS_darwin)
+    , mContext(nullptr)
+#endif
+    , mPC(nullptr)
+    , mSP(nullptr)
+    , mFP(nullptr)
+    , mLR(nullptr)
+  {}
+
+  
   void PopulateContext(tick_context_t* aContext);
 
+  
+  const bool mIsSynchronous;
+
+  const mozilla::TimeStamp mTimeStamp;
+
+  ThreadInfo* const mThreadInfo;
+
+  const int64_t mRSSMemory;                       
+  const int64_t mUSSMemory;                       
+
+  
+  
+  
+  
+  
+#if !defined(GP_OS_darwin)
+  void* mContext; 
+#endif
   Address mPC;    
   Address mSP;    
   Address mFP;    
   Address mLR;    
-  void* mContext; 
-                  
-  bool mIsSamplingCurrentThread;
-  ThreadInfo* mThreadInfo;
-  mozilla::TimeStamp mTimeStamp;
-  int64_t mRSSMemory;
-  int64_t mUSSMemory;
 };
 
 static void
@@ -532,7 +569,7 @@ MergeStacksIntoProfile(PS::LockRef aLock, ProfileBuffer* aBuffer,
   
   
   uint32_t startBufferGen;
-  startBufferGen = aSample->mIsSamplingCurrentThread
+  startBufferGen = aSample->mIsSynchronous
                  ? UINT32_MAX
                  : aBuffer->mGeneration;
   uint32_t jsCount = 0;
@@ -556,7 +593,7 @@ MergeStacksIntoProfile(PS::LockRef aLock, ProfileBuffer* aBuffer,
                                         startBufferGen);
       for (; jsCount < maxFrames && !jsIter.done(); ++jsIter) {
         
-        if (aSample->mIsSamplingCurrentThread || jsIter.isWasm()) {
+        if (aSample->mIsSynchronous || jsIter.isWasm()) {
           uint32_t extracted =
             jsIter.extractStack(jsFrames, jsCount, maxFrames);
           jsCount += extracted;
@@ -671,7 +708,7 @@ MergeStacksIntoProfile(PS::LockRef aLock, ProfileBuffer* aBuffer,
       
       
       
-      if (aSample->mIsSamplingCurrentThread ||
+      if (aSample->mIsSynchronous ||
           jsFrame.kind == JS::ProfilingFrameIterator::Frame_Wasm) {
         AddDynamicCodeLocationTag(aBuffer, jsFrame.label);
       } else {
@@ -701,7 +738,7 @@ MergeStacksIntoProfile(PS::LockRef aLock, ProfileBuffer* aBuffer,
   
   
   
-  if (!aSample->mIsSamplingCurrentThread && pseudoStack->mContext) {
+  if (!aSample->mIsSynchronous && pseudoStack->mContext) {
     MOZ_ASSERT(aBuffer->mGeneration >= startBufferGen);
     uint32_t lapCount = aBuffer->mGeneration - startBufferGen;
     JS::UpdateJSContextProfilerSampleBufferGen(pseudoStack->mContext,
@@ -1012,7 +1049,7 @@ Tick(PS::LockRef aLock, ProfileBuffer* aBuffer, TickSample* aSample)
 
   
   
-  if (!aSample->mIsSamplingCurrentThread) {
+  if (!aSample->mIsSynchronous) {
     ProfilerMarkerLinkedList* pendingMarkersList = stack->getPendingMarkers();
     while (pendingMarkersList && pendingMarkersList->peek()) {
       ProfilerMarker* marker = pendingMarkersList->popHead();
@@ -1630,15 +1667,17 @@ SamplerThread::Run()
 
           info->UpdateThreadResponsiveness();
 
-          TickSample sample(info);
-
           
+          int64_t rssMemory = 0;
+          int64_t ussMemory = 0;
           if (i == 0 && gPS->FeatureMemory(lock)) {
-            sample.mRSSMemory = nsMemoryReporterManager::ResidentFast();
+            rssMemory = nsMemoryReporterManager::ResidentFast();
 #if defined(GP_OS_linux) || defined(GP_OS_android)
-            sample.mUSSMemory = nsMemoryReporterManager::ResidentUnique();
+            ussMemory = nsMemoryReporterManager::ResidentUnique();
 #endif
           }
+
+          TickSample sample(info, rssMemory, ussMemory);
 
           SuspendAndSampleAndResumeThread(lock, &sample);
         }
@@ -2914,7 +2953,6 @@ profiler_get_backtrace()
   threadInfo.SetHasProfile();
 
   TickSample sample(&threadInfo);
-  sample.mIsSamplingCurrentThread = true;
 
 #if defined(HAVE_NATIVE_UNWIND)
 #if defined(GP_OS_windows) || defined(GP_OS_linux) || defined(GP_OS_android)

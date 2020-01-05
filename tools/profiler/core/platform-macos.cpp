@@ -212,7 +212,9 @@ PlatformInit(PS::LockRef aLock)
 void
 TickSample::PopulateContext(void* aContext)
 {
+  MOZ_ASSERT(mIsSynchronous);
   MOZ_ASSERT(!aContext);
+
   
 #if defined(GP_ARCH_amd64)
   asm (
