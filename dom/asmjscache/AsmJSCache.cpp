@@ -351,7 +351,6 @@ public:
     mWriteParams(aWriteParams),
     mState(eInitial),
     mResult(JS::AsmJSCache_InternalError),
-    mEnforcingQuota(true),
     mDeleteReceived(false),
     mActorDestroyed(false),
     mOpened(false)
@@ -580,7 +579,6 @@ private:
   State mState;
   JS::AsmJSCacheResult mResult;
 
-  bool mEnforcingQuota;
   bool mDeleteReceived;
   bool mActorDestroyed;
   bool mOpened;
@@ -603,9 +601,6 @@ ParentRunnable::InitOnMainThread()
   rv = QuotaManager::GetInfoFromPrincipal(principal, &mSuffix, &mGroup,
                                           &mOrigin);
   NS_ENSURE_SUCCESS(rv, rv);
-
-  mEnforcingQuota =
-    QuotaManager::IsQuotaEnforced(quota::PERSISTENCE_TYPE_TEMPORARY);
 
   return NS_OK;
 }
@@ -711,26 +706,24 @@ ParentRunnable::OpenCacheFileForWrite()
   QuotaManager* qm = QuotaManager::Get();
   MOZ_ASSERT(qm, "We are on the QuotaManager's IO thread");
 
-  if (mEnforcingQuota) {
-    
-    
-    
-    mQuotaObject = qm->GetQuotaObject(quota::PERSISTENCE_TYPE_TEMPORARY, mGroup,
-                                      mOrigin, file);
-    NS_ENSURE_STATE(mQuotaObject);
+  
+  
+  
+  mQuotaObject = qm->GetQuotaObject(quota::PERSISTENCE_TYPE_TEMPORARY, mGroup,
+                                    mOrigin, file);
+  NS_ENSURE_STATE(mQuotaObject);
 
+  if (!mQuotaObject->MaybeUpdateSize(mWriteParams.mSize,
+                                      false)) {
+    
+    
+    
+    
+    EvictEntries(mDirectory, mGroup, mOrigin, mWriteParams.mSize, mMetadata);
     if (!mQuotaObject->MaybeUpdateSize(mWriteParams.mSize,
                                         false)) {
-      
-      
-      
-      
-      EvictEntries(mDirectory, mGroup, mOrigin, mWriteParams.mSize, mMetadata);
-      if (!mQuotaObject->MaybeUpdateSize(mWriteParams.mSize,
-                                          false)) {
-        mResult = JS::AsmJSCache_QuotaExceeded;
-        return NS_ERROR_FAILURE;
-      }
+      mResult = JS::AsmJSCache_QuotaExceeded;
+      return NS_ERROR_FAILURE;
     }
   }
 
@@ -766,14 +759,12 @@ ParentRunnable::OpenCacheFileForRead()
   QuotaManager* qm = QuotaManager::Get();
   MOZ_ASSERT(qm, "We are on the QuotaManager's IO thread");
 
-  if (mEnforcingQuota) {
-    
-    
-    
-    mQuotaObject = qm->GetQuotaObject(quota::PERSISTENCE_TYPE_TEMPORARY, mGroup,
-                                      mOrigin, file);
-    NS_ENSURE_STATE(mQuotaObject);
-  }
+  
+  
+  
+  mQuotaObject = qm->GetQuotaObject(quota::PERSISTENCE_TYPE_TEMPORARY, mGroup,
+                                    mOrigin, file);
+  NS_ENSURE_STATE(mQuotaObject);
 
   rv = file->GetFileSize(&mFileSize);
   NS_ENSURE_SUCCESS(rv, rv);
