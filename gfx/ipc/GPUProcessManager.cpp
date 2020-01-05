@@ -258,6 +258,14 @@ GPUProcessManager::OnProcessLaunchComplete(GPUProcessHost* aHost)
 }
 
 void
+GPUProcessManager::OnProcessDeviceReset(GPUProcessHost* aHost)
+{
+  for (auto& session : mRemoteSessions) {
+    session->NotifyDeviceReset();
+  }
+}
+
+void
 GPUProcessManager::OnProcessUnexpectedShutdown(GPUProcessHost* aHost)
 {
   MOZ_ASSERT(mProcess && mProcess == aHost);
@@ -415,7 +423,7 @@ GPUProcessManager::DestroyProcess()
 
 RefPtr<CompositorSession>
 GPUProcessManager::CreateTopLevelCompositor(nsBaseWidget* aWidget,
-                                            LayerManager* aLayerManager,
+                                            ClientLayerManager* aLayerManager,
                                             CSSToLayoutDeviceScale aScale,
                                             bool aUseAPZ,
                                             bool aUseExternalSurfaceSize,
@@ -456,7 +464,7 @@ GPUProcessManager::CreateTopLevelCompositor(nsBaseWidget* aWidget,
 
 RefPtr<CompositorSession>
 GPUProcessManager::CreateRemoteSession(nsBaseWidget* aWidget,
-                                       LayerManager* aLayerManager,
+                                       ClientLayerManager* aLayerManager,
                                        const uint64_t& aRootLayerTreeId,
                                        CSSToLayoutDeviceScale aScale,
                                        bool aUseAPZ,

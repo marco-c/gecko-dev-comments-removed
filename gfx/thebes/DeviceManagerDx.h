@@ -82,6 +82,11 @@ public:
 
   
   
+  
+  bool MaybeResetAndReacquireDevices();
+
+  
+  
   bool CheckRemotePresentSupport();
 
 private:

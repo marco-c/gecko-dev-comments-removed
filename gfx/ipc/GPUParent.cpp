@@ -114,6 +114,30 @@ GPUParent::Init(base::ProcessId aParentPid,
   return true;
 }
 
+void
+GPUParent::NotifyDeviceReset()
+{
+  if (!NS_IsMainThread()) {
+    NS_DispatchToMainThread(NS_NewRunnableFunction([] () -> void {
+      GPUParent::GetSingleton()->NotifyDeviceReset();
+    }));
+    return;
+  }
+
+  
+#ifdef XP_WIN
+  if (!DeviceManagerDx::Get()->MaybeResetAndReacquireDevices()) {
+    
+    
+    return;
+  }
+#endif
+
+  
+  
+  Unused << SendNotifyDeviceReset();
+}
+
 bool
 GPUParent::RecvInit(nsTArray<GfxPrefSetting>&& prefs,
                     nsTArray<GfxVarUpdate>&& vars,

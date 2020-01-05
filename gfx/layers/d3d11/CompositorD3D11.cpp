@@ -12,6 +12,7 @@
 #include "nsIWidget.h"
 #include "mozilla/gfx/D3D11Checks.h"
 #include "mozilla/gfx/DeviceManagerDx.h"
+#include "mozilla/gfx/GPUParent.h"
 #include "mozilla/layers/ImageHost.h"
 #include "mozilla/layers/ContentHost.h"
 #include "mozilla/layers/Effects.h"
@@ -992,6 +993,13 @@ CompositorD3D11::BeginFrame(const nsIntRegion& aInvalidRegion,
     gfxCriticalNote << "GFX: D3D11 skip BeginFrame with device-removed.";
     ReadUnlockTextures();
     *aRenderBoundsOut = IntRect();
+
+    
+    
+    if (XRE_IsGPUProcess()) {
+      GPUParent::GetSingleton()->NotifyDeviceReset();
+    }
+
     return;
   }
 

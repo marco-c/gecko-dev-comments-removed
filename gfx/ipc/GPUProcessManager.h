@@ -25,6 +25,7 @@ namespace mozilla {
 namespace layers {
 class IAPZCTreeManager;
 class CompositorSession;
+class ClientLayerManager;
 class CompositorUpdateObserver;
 class PCompositorBridgeChild;
 class PImageBridgeChild;
@@ -56,10 +57,10 @@ class GPUProcessManager final : public GPUProcessHost::Listener
 {
   friend class layers::RemoteCompositorSession;
 
+  typedef layers::ClientLayerManager ClientLayerManager;
   typedef layers::CompositorSession CompositorSession;
-  typedef layers::CompositorUpdateObserver CompositorUpdateObserver;
   typedef layers::IAPZCTreeManager IAPZCTreeManager;
-  typedef layers::LayerManager LayerManager;
+  typedef layers::CompositorUpdateObserver CompositorUpdateObserver;
   typedef layers::PCompositorBridgeChild PCompositorBridgeChild;
   typedef layers::PImageBridgeChild PImageBridgeChild;
   typedef layers::RemoteCompositorSession RemoteCompositorSession;
@@ -81,7 +82,7 @@ public:
 
   RefPtr<CompositorSession> CreateTopLevelCompositor(
     nsBaseWidget* aWidget,
-    LayerManager* aLayerManager,
+    ClientLayerManager* aLayerManager,
     CSSToLayoutDeviceScale aScale,
     bool aUseAPZ,
     bool aUseExternalSurfaceSize,
@@ -120,6 +121,7 @@ public:
 
   void OnProcessLaunchComplete(GPUProcessHost* aHost) override;
   void OnProcessUnexpectedShutdown(GPUProcessHost* aHost) override;
+  void OnProcessDeviceReset(GPUProcessHost* aHost) override;
 
   
   
@@ -182,7 +184,7 @@ private:
 
   RefPtr<CompositorSession> CreateRemoteSession(
     nsBaseWidget* aWidget,
-    LayerManager* aLayerManager,
+    ClientLayerManager* aLayerManager,
     const uint64_t& aRootLayerTreeId,
     CSSToLayoutDeviceScale aScale,
     bool aUseAPZ,
