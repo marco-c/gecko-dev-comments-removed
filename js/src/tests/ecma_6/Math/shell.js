@@ -3,7 +3,7 @@ const ONE_PLUS_EPSILON = 1 + Math.pow(2, -52);
 const ONE_MINUS_EPSILON = 1 - Math.pow(2, -53);  
 
 {
-    var fail = function (msg) {
+    const fail = function (msg) {
         var exc = new Error(msg);
         try {
             
@@ -21,7 +21,7 @@ const ONE_MINUS_EPSILON = 1 - Math.pow(2, -53);
         throw exc;
     };
 
-    var ENDIAN;  
+    let ENDIAN;  
 
     
     
@@ -33,9 +33,9 @@ const ONE_MINUS_EPSILON = 1 - Math.pow(2, -53);
     
     
     
-    var f = new Float64Array([0, 0]);
-    var u = new Uint32Array(f.buffer);
-    var diff = function (a, b) {
+    const f = new Float64Array([0, 0]);
+    const u = new Uint32Array(f.buffer);
+    const diff = function (a, b) {
         f[0] = a;
         f[1] = b;
         
