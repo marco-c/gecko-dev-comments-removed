@@ -37,6 +37,8 @@
 #include "threading/Thread.h"
 #include "vm/MutexIDs.h"
 
+#include "mozilla/Atomics.h"
+
 namespace js {
 namespace jit {
 
@@ -345,9 +347,29 @@ class Simulator
     
     void instructionDecode(SimInstruction* instr);
 
+  private:
+    
+    struct ICacheHasher {
+        typedef void* Key;
+        typedef void* Lookup;
+        static HashNumber hash(const Lookup& l);
+        static bool match(const Key& k, const Lookup& l);
+    };
+
+  public:
+    typedef HashMap<void*, CachePage*, ICacheHasher, SystemAllocPolicy> ICacheMap;
+
   public:
     static bool ICacheCheckingEnabled;
     static void FlushICache(void* start, size_t size);
+
+    
+    
+    
+    
+    mozilla::Atomic<bool, mozilla::ReleaseAcquire> cacheInvalidatedBySignalHandler_;
+
+    void checkICacheLocked(ICacheMap& i_cache, SimInstruction* instr);
 
     static int64_t StopSimAt;
 
@@ -449,18 +471,6 @@ class Simulator
     int64_t icount() {
         return icount_;
     }
-
-  private:
-    
-    struct ICacheHasher {
-        typedef void* Key;
-        typedef void* Lookup;
-        static HashNumber hash(const Lookup& l);
-        static bool match(const Key& k, const Lookup& l);
-    };
-
-  public:
-    typedef HashMap<void*, CachePage*, ICacheHasher, SystemAllocPolicy> ICacheMap;
 
   private:
     

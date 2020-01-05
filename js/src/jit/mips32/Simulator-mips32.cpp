@@ -1193,8 +1193,8 @@ FlushICacheLocked(Simulator::ICacheMap& i_cache, void* start_addr, size_t size)
     }
 }
 
-static void
-CheckICacheLocked(Simulator::ICacheMap& i_cache, SimInstruction* instr)
+void
+Simulator::checkICacheLocked(Simulator::ICacheMap& i_cache, SimInstruction* instr)
 {
     intptr_t address = reinterpret_cast<intptr_t>(instr);
     void* page = reinterpret_cast<void*>(address & (~CachePage::kPageMask));
@@ -1204,11 +1204,27 @@ CheckICacheLocked(Simulator::ICacheMap& i_cache, SimInstruction* instr)
     char* cache_valid_byte = cache_page->validityByte(offset);
     bool cache_hit = (*cache_valid_byte == CachePage::LINE_VALID);
     char* cached_line = cache_page->cachedData(offset & ~CachePage::kLineMask);
+
+    
+    int cmpret = 0;
     if (cache_hit) {
         
-        MOZ_ASSERT(memcmp(reinterpret_cast<void*>(instr),
-                          cache_page->cachedData(offset),
-                          SimInstruction::kInstrSize) == 0);
+        cmpret = memcmp(reinterpret_cast<void*>(instr),
+                        cache_page->cachedData(offset),
+                        SimInstruction::kInstrSize);
+    }
+
+    
+    
+    
+    if (cacheInvalidatedBySignalHandler_) {
+        i_cache.clear();
+        cacheInvalidatedBySignalHandler_ = false;
+        return;
+    }
+
+    if (cache_hit) {
+        MOZ_ASSERT(cmpret == 0);
     } else {
         
         memcpy(cached_line, line, CachePage::kLineLength);
@@ -1241,7 +1257,8 @@ Simulator::FlushICache(void* start_addr, size_t size)
 }
 
 Simulator::Simulator()
-  : cacheLock_(mutexid::SimulatorCacheLock)
+  : cacheLock_(mutexid::SimulatorCacheLock),
+    cacheInvalidatedBySignalHandler_(false)
 {
     
     
@@ -3300,7 +3317,7 @@ Simulator::instructionDecode(SimInstruction* instr)
 {
     if (Simulator::ICacheCheckingEnabled) {
         AutoLockSimulatorCache als(this);
-        CheckICacheLocked(icache(), instr);
+        checkICacheLocked(icache(), instr);
     }
     pc_modified_ = false;
 

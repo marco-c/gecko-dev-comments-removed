@@ -35,6 +35,8 @@
 #include "threading/Thread.h"
 #include "vm/MutexIDs.h"
 
+#include "mozilla/Atomics.h"
+
 namespace js {
 namespace jit {
 
@@ -387,6 +389,15 @@ class Simulator {
 
     Redirection* redirection_;
     ICacheMap icache_;
+
+  private:
+    
+    
+    
+    
+    mozilla::Atomic<bool, mozilla::ReleaseAcquire> cacheInvalidatedBySignalHandler_;
+
+    void checkICacheLocked(ICacheMap& i_cache, SimInstruction* instr);
 
   public:
     ICacheMap& icache() {
