@@ -22,6 +22,10 @@
 #include "winsock2.h"
 #endif
 
+#ifndef AF_LOCAL
+#define AF_LOCAL 1  // used for named pipe
+#endif
+
 #define IPv6ADDR_IS_LOOPBACK(a) \
   (((a)->u32[0] == 0)     &&    \
    ((a)->u32[1] == 0)     &&    \
@@ -103,8 +107,9 @@ union NetAddr {
     IPv6Addr ip;                    
     uint32_t scope_id;              
   } inet6;
-#if defined(XP_UNIX)
+#if defined(XP_UNIX) || defined(XP_WIN)
   struct {                          
+
     uint16_t family;                
     char path[104];                 
   } local;
