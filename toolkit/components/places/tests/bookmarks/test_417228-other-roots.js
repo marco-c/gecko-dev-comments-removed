@@ -20,7 +20,6 @@ var tests = [];
 
 
 tests.push({
-  excludeItemsFromRestore: [],
   populate: function populate() {
     
     var rootNode = PlacesUtils.getFolderContents(PlacesUtils.placesRootId,
@@ -59,7 +58,6 @@ tests.push({
                                          "excluded",
                                          PlacesUtils.bookmarks.DEFAULT_INDEX);
     do_check_eq(rootNode.childCount, 7);
-    this.excludeItemsFromRestore.push(excludedFolderId);
 
     
     PlacesUtils.bookmarks.insertBookmark(excludedFolderId, this._testURI,
@@ -134,9 +132,6 @@ add_task(function* () {
     aTest.populate();
     
     aTest.validate();
-
-    if (aTest.excludedItemsFromRestore)
-      excludedItemsFromRestore = excludedItems.concat(aTest.excludedItemsFromRestore);
   });
 
   yield BookmarkJSONUtils.exportToFile(jsonFile);
