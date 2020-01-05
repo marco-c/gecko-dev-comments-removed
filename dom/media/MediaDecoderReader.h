@@ -222,20 +222,6 @@ public:
     return &mBuffered;
   }
 
-  void DispatchSetStartTime(int64_t aStartTime)
-  {
-    RefPtr<MediaDecoderReader> self = this;
-    nsCOMPtr<nsIRunnable> r =
-      NS_NewRunnableFunction([self, aStartTime] () -> void
-    {
-      MOZ_ASSERT(self->OnTaskQueue());
-      MOZ_ASSERT(!self->HaveStartTime());
-      self->mStartTime.emplace(aStartTime);
-      self->UpdateBuffered();
-    });
-    OwnerThread()->Dispatch(r.forget());
-  }
-
   TaskQueue* OwnerThread() const
   {
     return mTaskQueue;
@@ -300,14 +286,6 @@ protected:
 
   RefPtr<MediaDataPromise> DecodeToFirstVideoData();
 
-  bool HaveStartTime()
-  {
-    MOZ_ASSERT(OnTaskQueue());
-    return mStartTime.isSome();
-  }
-
-  int64_t StartTime() { MOZ_ASSERT(HaveStartTime()); return mStartTime.ref(); }
-
   
   
   MediaQueue<AudioData> mAudioQueue;
@@ -344,18 +322,6 @@ protected:
   
   
   bool mIgnoreAudioOutputFormat;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  Maybe<int64_t> mStartTime;
 
   
   

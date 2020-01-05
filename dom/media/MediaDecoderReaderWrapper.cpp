@@ -229,10 +229,6 @@ MediaDecoderReaderWrapper::OnMetadataRead(MetadataHolder* aMetadata)
 
   if (mStartTime.isNothing()) {
     mStartTime.emplace(aMetadata->mInfo.mStartTime);
-    
-    
-    
-    mReader->DispatchSetStartTime(StartTime().ToMicroseconds());
   }
 }
 
