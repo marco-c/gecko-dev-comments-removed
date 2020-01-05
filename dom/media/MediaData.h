@@ -642,6 +642,10 @@ public:
   
   bool mEOS = false;
 
+  
+  
+  uint32_t mDiscardPadding = 0;
+
   RefPtr<SharedTrackInfo> mTrackInfo;
 
   
