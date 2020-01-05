@@ -24,13 +24,8 @@ class TestMixedContentPage(FirefoxTestCase):
         with self.marionette.using_context('content'):
             self.marionette.navigate(self.url)
 
-        
-        icon = self.locationbar.connection_icon
-        self.assertEqual('url("chrome://browser/skin/connection-mixed-passive-loaded.svg#icon")',
-                         icon.value_of_css_property('list-style-image'))
-
-        self.assertEqual(self.locationbar.identity_box.get_attribute('className'),
-                         'unknownIdentity mixedDisplayContent')
+        self.assertIn('identity-mixed-passive-loaded',
+                      self.locationbar.connection_icon.value_of_css_property('list-style-image'))
 
         
         self.locationbar.open_identity_popup()
