@@ -510,8 +510,7 @@ private:
   
   
   
-  
-  UniquePtr<int64_t[]> mPartialBlockBuffer;
+  UniquePtr<uint8_t[]> mPartialBlockBuffer = MakeUnique<uint8_t[]>(BLOCK_SIZE);
 
   
   const bool mIsPrivateBrowsing;
