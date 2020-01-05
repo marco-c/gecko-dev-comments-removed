@@ -168,8 +168,7 @@ def check_call(*args, **kwargs):
 
 
 def is_windows():
-    """ Detect windows, mingw, cygwin """
-    return sys.platform == 'win32' or sys.platform == 'msys' or sys.platform == 'cygwin'
+    return sys.platform == 'win32'
 
 
 def is_macosx():
@@ -421,9 +420,6 @@ class CommandBase(object):
                 or self.config["tools"]["rust-root"]:
             env["RUST_ROOT"] = self.config["tools"]["rust-root"]
             
-            if sys.platform == "msys":
-                extra_path += [path.join(os.sep, "mingw64", "bin")]
-            
             extra_path += [path.join(self.config["tools"]["rust-root"], "rustc", "bin")]
             extra_lib += [path.join(self.config["tools"]["rust-root"], "rustc", "lib")]
             
@@ -489,7 +485,7 @@ class CommandBase(object):
             env['RUSTFLAGS'] = env.get('RUSTFLAGS', "") + " " + self.config["build"]["rustflags"]
 
         
-        if self.config["tools"]["rustc-with-gold"] and sys.platform not in ("win32", "msys"):
+        if self.config["tools"]["rustc-with-gold"] and sys.platform != "win32":
             if subprocess.call(['which', 'ld.gold'], stdout=PIPE, stderr=PIPE) == 0:
                 env['RUSTFLAGS'] = env.get('RUSTFLAGS', "") + " -C link-args=-fuse-ld=gold"
 

@@ -245,13 +245,10 @@ class MachCommands(CommandBase):
         env = self.build_env()
         env["RUST_BACKTRACE"] = "1"
 
-        if sys.platform in ("win32", "msys"):
-            if "msvc" in host_triple():
-                
-                
-                env["PATH"] = "%s%s%s" % (path.dirname(self.get_binary_path(False, False)), os.pathsep, env["PATH"])
-            else:
-                env["RUSTFLAGS"] = "-C link-args=-Wl,--subsystem,windows"
+        if "msvc" in host_triple():
+            
+            
+            env["PATH"] = "%s%s%s" % (path.dirname(self.get_binary_path(False, False)), os.pathsep, env["PATH"])
 
         features = self.servo_features()
         if len(packages) > 0:
