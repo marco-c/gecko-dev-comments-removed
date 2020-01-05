@@ -24,7 +24,7 @@ const uint32_t kMagicInt = 0xc001feed;
 
 
 
-const uint16_t kMajorRevision = 7;
+const uint16_t kMajorRevision = 8;
 
 
 const uint16_t kMinorRevision = 0;
