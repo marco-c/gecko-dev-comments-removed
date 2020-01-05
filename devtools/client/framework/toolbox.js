@@ -1938,12 +1938,7 @@ Toolbox.prototype = {
 
 
 
-
   _toolUnregistered: function (event, toolId) {
-    if (typeof toolId != "string") {
-      toolId = toolId.id;
-    }
-
     if (this._toolPanels.has(toolId)) {
       let instance = this._toolPanels.get(toolId);
       instance.destroy();
