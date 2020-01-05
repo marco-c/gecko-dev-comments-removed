@@ -271,9 +271,14 @@ protected:
   bool ShowList(bool aShowList);
   void CheckFireOnChange();
   void FireValueChangeEvent();
-  nsresult RedisplayText(int32_t aIndex);
+  nsresult RedisplayText();
   void HandleRedisplayTextEvent();
   void ActuallyDisplayText(bool aNotify);
+  void GetPreviewText(nsAString& aValue)
+  {
+    aValue = mPreviewText;
+  }
+  void SetPreviewText(const nsAString& aValue);
 
 private:
   
@@ -297,7 +302,8 @@ protected:
 
   int32_t               mRecentSelectedIndex;
   int32_t               mDisplayedIndex;
-  nsString              mDisplayedOptionText;
+  nsString              mDisplayedOptionTextOrPreview;
+  nsString              mPreviewText;
 
   
   
