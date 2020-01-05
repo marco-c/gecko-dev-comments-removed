@@ -335,14 +335,9 @@ nsBaseWidget::OnRenderingDeviceReset()
     return;
   }
 
-  RefPtr<CompositorBridgeParent> parent = mCompositorSession->GetInProcessBridge();
-  if (!parent) {
-    return;
-  }
-
   
   TextureFactoryIdentifier identifier;
-  if (!parent->ResetCompositor(backendHints, &identifier)) {
+  if (!mCompositorSession->Reset(backendHints, &identifier)) {
     
     return;
   }
@@ -1331,42 +1326,35 @@ void nsBaseWidget::CreateCompositor(int aWidth, int aHeight)
     mInitialZoomConstraints.reset();
   }
 
-  ShadowLayerForwarder* lf = lm->AsShadowForwarder();
-  
-  MOZ_ASSERT(lf);
+  TextureFactoryIdentifier textureFactoryIdentifier;
+  PLayerTransactionChild* shadowManager = nullptr;
 
-  if (lf) {
-    TextureFactoryIdentifier textureFactoryIdentifier;
-    PLayerTransactionChild* shadowManager = nullptr;
+  nsTArray<LayersBackend> backendHints;
+  gfxPlatform::GetPlatform()->GetCompositorBackends(ComputeShouldAccelerate(), backendHints);
 
-    nsTArray<LayersBackend> backendHints;
-    gfxPlatform::GetPlatform()->GetCompositorBackends(ComputeShouldAccelerate(), backendHints);
-
-    bool success = false;
-    if (!backendHints.IsEmpty()) {
-      shadowManager = mCompositorBridgeChild->SendPLayerTransactionConstructor(
-        backendHints, 0, &textureFactoryIdentifier, &success);
-    }
-
-    if (!success) {
-      NS_WARNING("Failed to create an OMT compositor.");
-      DestroyCompositor();
-      mLayerManager = nullptr;
-      return;
-    }
-
-    lf->SetShadowManager(shadowManager);
-    if (ClientLayerManager* clm = lm->AsClientLayerManager()) {
-      clm->UpdateTextureFactoryIdentifier(textureFactoryIdentifier);
-    }
-    
-    
-    if (WidgetTypeSupportsAcceleration()) {
-      ImageBridgeChild::IdentifyCompositorTextureHost(textureFactoryIdentifier);
-      gfx::VRManagerChild::IdentifyTextureHost(textureFactoryIdentifier);
-    }
+  bool success = false;
+  if (!backendHints.IsEmpty()) {
+    shadowManager = mCompositorBridgeChild->SendPLayerTransactionConstructor(
+      backendHints, 0, &textureFactoryIdentifier, &success);
   }
 
+  ShadowLayerForwarder* lf = lm->AsShadowForwarder();
+
+  if (!success || !lf) {
+    NS_WARNING("Failed to create an OMT compositor.");
+    DestroyCompositor();
+    mLayerManager = nullptr;
+    return;
+  }
+
+  lf->SetShadowManager(shadowManager);
+  lm->UpdateTextureFactoryIdentifier(textureFactoryIdentifier);
+  
+  
+  if (WidgetTypeSupportsAcceleration()) {
+    ImageBridgeChild::IdentifyCompositorTextureHost(textureFactoryIdentifier);
+    gfx::VRManagerChild::IdentifyTextureHost(textureFactoryIdentifier);
+  }
   WindowUsesOMTC();
 
   mLayerManager = lm.forget();
