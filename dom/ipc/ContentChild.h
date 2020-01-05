@@ -335,6 +335,10 @@ public:
 
   virtual bool DeallocPHandlerServiceChild(PHandlerServiceChild*) override;
 
+  virtual PSmsChild* AllocPSmsChild() override;
+
+  virtual bool DeallocPSmsChild(PSmsChild*) override;
+
   virtual PTelephonyChild* AllocPTelephonyChild() override;
 
   virtual bool DeallocPTelephonyChild(PTelephonyChild*) override;
@@ -442,7 +446,7 @@ public:
 
   virtual bool RecvFlushMemory(const nsString& reason) override;
 
-  virtual bool RecvActivateA11y() override;
+  virtual bool RecvActivateA11y(const uint32_t& aMsaaID) override;
   virtual bool RecvShutdownA11y() override;
 
   virtual bool RecvGarbageCollect() override;
@@ -563,6 +567,10 @@ public:
 
   ContentParentId GetID() const { return mID; }
 
+#if defined(XP_WIN) && defined(ACCESSIBILITY)
+  uint32_t GetMsaaID() const { return mMsaaID; }
+#endif
+
   bool IsForApp() const { return mIsForApp; }
   bool IsForBrowser() const { return mIsForBrowser; }
 
@@ -682,6 +690,14 @@ private:
 
 
   ContentParentId mID;
+
+#if defined(XP_WIN) && defined(ACCESSIBILITY)
+  
+
+
+
+  uint32_t mMsaaID;
+#endif
 
   AppInfo mAppInfo;
 

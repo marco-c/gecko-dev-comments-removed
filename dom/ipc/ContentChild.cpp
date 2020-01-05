@@ -172,6 +172,7 @@
 #include "mozilla/dom/File.h"
 #include "mozilla/dom/icc/IccChild.h"
 #include "mozilla/dom/mobileconnection/MobileConnectionChild.h"
+#include "mozilla/dom/mobilemessage/SmsChild.h"
 #include "mozilla/dom/devicestorage/DeviceStorageRequestChild.h"
 #include "mozilla/dom/bluetooth/PBluetoothChild.h"
 #include "mozilla/dom/PPresentationChild.h"
@@ -207,6 +208,7 @@ using namespace mozilla::dom::devicestorage;
 using namespace mozilla::dom::icc;
 using namespace mozilla::dom::ipc;
 using namespace mozilla::dom::mobileconnection;
+using namespace mozilla::dom::mobilemessage;
 using namespace mozilla::dom::telephony;
 using namespace mozilla::dom::workers;
 using namespace mozilla::media;
@@ -505,6 +507,9 @@ ContentChild* ContentChild::sSingleton;
 
 ContentChild::ContentChild()
  : mID(uint64_t(-1))
+#if defined(XP_WIN) && defined(ACCESSIBILITY)
+ , mMsaaID(0)
+#endif
  , mCanOverrideProcessName(true)
  , mIsAlive(true)
  , mShuttingDown(false)
@@ -1975,6 +1980,19 @@ bool ContentChild::DeallocPHandlerServiceChild(PHandlerServiceChild* aHandlerSer
   return true;
 }
 
+PSmsChild*
+ContentChild::AllocPSmsChild()
+{
+  return new SmsChild();
+}
+
+bool
+ContentChild::DeallocPSmsChild(PSmsChild* aSms)
+{
+  delete aSms;
+  return true;
+}
+
 PTelephonyChild*
 ContentChild::AllocPTelephonyChild()
 {
@@ -2430,13 +2448,18 @@ ContentChild::RecvFlushMemory(const nsString& reason)
 }
 
 bool
-ContentChild::RecvActivateA11y()
+ContentChild::RecvActivateA11y(const uint32_t& aMsaaID)
 {
 #ifdef ACCESSIBILITY
+#ifdef XP_WIN
+  MOZ_ASSERT(aMsaaID != 0);
+  mMsaaID = aMsaaID;
+#endif 
+
   
   
   GetOrCreateAccService(nsAccessibilityService::eMainProcess);
-#endif
+#endif 
   return true;
 }
 

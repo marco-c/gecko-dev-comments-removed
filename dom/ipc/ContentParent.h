@@ -553,9 +553,6 @@ public:
   virtual bool
   RecvUnstoreAndBroadcastBlobURLUnregistration(const nsCString& aURI) override;
 
-  virtual bool
-  RecvGetA11yContentId(uint32_t* aContentId) override;
-
   virtual int32_t Pid() const override;
 
   
@@ -842,6 +839,10 @@ private:
   virtual PHandlerServiceParent* AllocPHandlerServiceParent() override;
 
   virtual bool DeallocPHandlerServiceParent(PHandlerServiceParent*) override;
+
+  virtual PSmsParent* AllocPSmsParent() override;
+
+  virtual bool DeallocPSmsParent(PSmsParent*) override;
 
   virtual PTelephonyParent* AllocPTelephonyParent() override;
 
