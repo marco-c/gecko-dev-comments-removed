@@ -1416,11 +1416,12 @@ HelperThread::handleWasmWorkload(AutoLockHelperThreadState& locked)
 
     currentTask.emplace(HelperThreadState().wasmWorklist(locked).popCopy());
     bool success = false;
+    UniqueChars error;
 
     wasm::CompileTask* task = wasmTask();
     {
         AutoUnlockHelperThreadState unlock(locked);
-        success = wasm::CompileFunction(task);
+        success = wasm::CompileFunction(task, &error);
     }
 
     
@@ -1428,8 +1429,10 @@ HelperThread::handleWasmWorkload(AutoLockHelperThreadState& locked)
         success = HelperThreadState().wasmFinishedList(locked).append(task);
 
     
-    if (!success)
+    if (!success) {
         HelperThreadState().noteWasmFailure(locked);
+        HelperThreadState().setWasmError(locked, Move(error));
+    }
 
     
     HelperThreadState().notifyAll(GlobalHelperThreadState::CONSUMER, locked);

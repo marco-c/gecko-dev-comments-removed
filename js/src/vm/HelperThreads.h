@@ -220,9 +220,16 @@ class GlobalHelperThreadState
         numWasmFailedJobs = 0;
         return n;
     }
+    UniqueChars harvestWasmError(const AutoLockHelperThreadState&) {
+        return Move(firstWasmError);
+    }
     void noteWasmFailure(const AutoLockHelperThreadState&) {
         
         numWasmFailedJobs++;
+    }
+    void setWasmError(const AutoLockHelperThreadState&, UniqueChars error) {
+        if (!firstWasmError)
+          firstWasmError = Move(error);
     }
     bool wasmFailed(const AutoLockHelperThreadState&) {
         return bool(numWasmFailedJobs);
@@ -243,6 +250,11 @@ class GlobalHelperThreadState
 
 
     uint32_t numWasmFailedJobs;
+    
+
+
+
+    UniqueChars firstWasmError;
 
   public:
     JSScript* finishScriptParseTask(JSContext* cx, void* token);
@@ -404,7 +416,7 @@ namespace wasm {
 
 
 MOZ_MUST_USE bool
-CompileFunction(CompileTask* task);
+CompileFunction(CompileTask* task, UniqueChars* error);
 
 }
 
