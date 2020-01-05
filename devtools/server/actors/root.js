@@ -7,6 +7,7 @@
 "use strict";
 
 const { Cc, Ci, Cu } = require("chrome");
+const Services = require("Services");
 const { ActorPool, appendExtraActors, createExtraActors } = require("devtools/server/actors/common");
 const { DebuggerServer } = require("devtools/server/main");
 
@@ -14,6 +15,8 @@ loader.lazyGetter(this, "ppmm", () => {
   return Cc["@mozilla.org/parentprocessmessagemanager;1"].getService(
     Ci.nsIMessageBroadcaster);
 });
+loader.lazyRequireGetter(this, "WindowActor",
+  "devtools/server/actors/window", true);
 
 
 
@@ -173,6 +176,9 @@ RootActor.prototype = {
     
     
     
+    
+    
+    
     get allowChromeProcess() {
       return DebuggerServer.allowChromeProcess;
     },
@@ -232,6 +238,7 @@ RootActor.prototype = {
     this.conn = null;
     this._tabActorPool = null;
     this._globalActorPool = null;
+    this._windowActorPool = null;
     this._parameters = null;
     this._chromeActor = null;
     this._processActors.clear();
@@ -336,6 +343,38 @@ RootActor.prototype = {
                       message: "Unexpected error while calling getTab(): " + error
                     };
                   });
+  },
+
+  onGetWindow: function ({ outerWindowID }) {
+    if (!DebuggerServer.allowChromeProcess) {
+      return {
+        from: this.actorID,
+        error: "forbidden",
+        message: "You are not allowed to debug windows."
+      };
+    }
+    let window = Services.wm.getOuterWindowWithId(outerWindowID);
+    if (!window) {
+      return {
+        from: this.actorID,
+        error: "notFound",
+        message: `No window found with outerWindowID ${outerWindowID}`,
+      };
+    }
+
+    if (!this._windowActorPool) {
+      this._windowActorPool = new ActorPool(this.conn);
+      this.conn.addActorPool(this._windowActorPool);
+    }
+
+    let actor = new WindowActor(this.conn, window);
+    actor.parentID = this.actorID;
+    this._windowActorPool.addActor(actor);
+
+    return {
+      from: this.actorID,
+      window: actor.form(),
+    };
   },
 
   onTabListChanged: function () {
@@ -539,6 +578,7 @@ RootActor.prototype = {
 RootActor.prototype.requestTypes = {
   "listTabs": RootActor.prototype.onListTabs,
   "getTab": RootActor.prototype.onGetTab,
+  "getWindow": RootActor.prototype.onGetWindow,
   "listAddons": RootActor.prototype.onListAddons,
   "listWorkers": RootActor.prototype.onListWorkers,
   "listServiceWorkerRegistrations": RootActor.prototype.onListServiceWorkerRegistrations,
