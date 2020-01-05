@@ -110,6 +110,9 @@
 
 
 #define NS_APP_CONTENT_PROCESS_TEMP_DIR         "ContentTmpD"
+#else
+
+#define NS_APP_CONTENT_PROCESS_TEMP_DIR         "TmpD"
 #endif 
 
 #endif 

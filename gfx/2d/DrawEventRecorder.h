@@ -78,6 +78,25 @@ public:
   explicit DrawEventRecorderFile(const char *aFilename);
   ~DrawEventRecorderFile();
 
+  
+
+
+  bool IsOpen();
+
+  
+
+
+
+
+  void OpenNew(const char *aFilename);
+
+  
+
+
+
+
+  void Close();
+
 private:
   virtual void Flush();
 
