@@ -190,19 +190,6 @@ GlobalPCList.prototype = {
       } else if (data == "online") {
         this._networkdown = false;
       }
-    } else if (topic == "network:app-offline-status-changed") {
-      
-      
-      let appId = subject.QueryInterface(Ci.nsIAppOfflineInfo).appId;
-      let ios = Cc['@mozilla.org/network/io-service;1'].getService(Ci.nsIIOService);
-      for (let winId in this._list) {
-        if (appId != this._list[winId]._appId) {
-          continue;
-        }
-        if (ios.isAppOffline(appId)) {
-          cleanupWinId(this._list, winId);
-        }
-      }
     } else if (topic == "gmp-plugin-crash") {
       if (subject instanceof Ci.nsIWritablePropertyBag2) {
         let pluginID = subject.getPropertyAsUint32("pluginID");
@@ -384,20 +371,10 @@ RTCPeerConnection.prototype = {
       this._mustValidateRTCConfiguration(rtcConfig,
         "RTCPeerConnection constructor passed invalid RTCConfiguration");
     }
-    
     var principal = Cu.getWebIDLCallerPrincipal();
-    this._appId = principal.appId;
     this._isChrome = Services.scriptSecurityManager.isSystemPrincipal(principal);
 
-    
-    let appOffline = false;
-    if (this._appId != Ci.nsIScriptSecurityManager.NO_APP_ID &&
-        this._appId != Ci.nsIScriptSecurityManager.UNKNOWN_APP_ID) {
-      let ios = Cc['@mozilla.org/network/io-service;1'].getService(Ci.nsIIOService);
-      appOffline = ios.isAppOffline(this._appId);
-    }
-
-    if (_globalPCList._networkdown || appOffline) {
+    if (_globalPCList._networkdown) {
       throw new this._win.DOMException(
           "Can't create RTCPeerConnections when the network is down",
           "InvalidStateError");
