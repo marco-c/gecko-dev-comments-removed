@@ -2,18 +2,15 @@
 
 
 
-use collections::hash::Writer;
 use std::collections::hashmap::HashMap;
 use std::ascii::StrAsciiExt;
-use std::hash::Hash;
-use std::hash::sip::SipState;
 use std::num::div_rem;
 use sync::Arc;
 
+use servo_util::atom::Atom;
 use servo_util::namespace;
 use servo_util::smallvec::VecLike;
 use servo_util::sort;
-use servo_util::str::DOMString;
 
 use media_queries::{Device, Screen};
 use node::{TElement, TNode};
@@ -29,35 +26,6 @@ pub enum StylesheetOrigin {
 
 
 static SELECTOR_WHITESPACE: &'static [char] = &[' ', '\t', '\n', '\r', '\x0C'];
-
-
-
-struct LowercaseAsciiString<'a>(&'a str);
-
-impl<'a> Equiv<DOMString> for LowercaseAsciiString<'a> {
-    fn equiv(&self, other: &DOMString) -> bool {
-        let LowercaseAsciiString(this) = *self;
-        this.eq_ignore_ascii_case(other.as_slice())
-    }
-}
-
-impl<'a> Hash for LowercaseAsciiString<'a> {
-    #[inline]
-    fn hash(&self, state: &mut SipState) {
-        let LowercaseAsciiString(this) = *self;
-        for b in this.bytes() {
-            
-            
-            
-            unsafe {
-                state.write(&[b.to_ascii_nocheck().to_lowercase().to_byte()])
-            };
-        }
-        
-        
-        state.write(&[0xff]);
-    }
-}
 
 
 
@@ -80,10 +48,9 @@ impl<'a> Hash for LowercaseAsciiString<'a> {
 
 struct SelectorMap {
     
-    
-    id_hash: HashMap<DOMString, Vec<Rule>>,
-    class_hash: HashMap<DOMString, Vec<Rule>>,
-    element_hash: HashMap<DOMString, Vec<Rule>>,
+    id_hash: HashMap<Atom, Vec<Rule>>,
+    class_hash: HashMap<Atom, Vec<Rule>>,
+    element_hash: HashMap<Atom, Vec<Rule>>,
     
     universal_rules: Vec<Rule>,
     
@@ -119,11 +86,11 @@ impl SelectorMap {
         
         let init_len = matching_rules_list.vec_len();
         let element = node.as_element();
-        match element.get_attr(&namespace::Null, "id") {
+        match element.get_id() {
             Some(id) => {
                 SelectorMap::get_matching_rules_from_hash(node,
                                                           &self.id_hash,
-                                                          id,
+                                                          &id,
                                                           matching_rules_list,
                                                           shareable)
             }
@@ -132,10 +99,11 @@ impl SelectorMap {
 
         match element.get_attr(&namespace::Null, "class") {
             Some(ref class_attr) => {
+                
                 for class in class_attr.split(SELECTOR_WHITESPACE) {
                     SelectorMap::get_matching_rules_from_hash(node,
                                                                 &self.class_hash,
-                                                                class,
+                                                                &Atom::from_slice(class),
                                                                 matching_rules_list,
                                                                 shareable);
                 }
@@ -164,11 +132,11 @@ impl SelectorMap {
                                     N:TNode<E>,
                                     V:VecLike<MatchedProperty>>(
                                     node: &N,
-                                    hash: &HashMap<DOMString, Vec<Rule>>,
-                                    key: &str,
+                                    hash: &HashMap<Atom, Vec<Rule>>,
+                                    key: &Atom,
                                     matching_rules: &mut V,
                                     shareable: &mut bool) {
-        match hash.find_equiv(&key) {
+        match hash.find(key) {
             Some(rules) => {
                 SelectorMap::get_matching_rules(node, rules.as_slice(), matching_rules, shareable)
             }
@@ -180,11 +148,12 @@ impl SelectorMap {
                                                   N:TNode<E>,
                                                   V:VecLike<MatchedProperty>>(
                                                   node: &N,
-                                                  hash: &HashMap<DOMString, Vec<Rule>>,
+                                                  hash: &HashMap<Atom, Vec<Rule>>,
                                                   key: &str,
                                                   matching_rules: &mut V,
                                                   shareable: &mut bool) {
-        match hash.find_equiv(&LowercaseAsciiString(key)) {
+        
+        match hash.find(&Atom::from_slice(key.to_ascii_lower().as_slice())) {
             Some(rules) => {
                 SelectorMap::get_matching_rules(node, rules.as_slice(), matching_rules, shareable)
             }
@@ -261,13 +230,13 @@ impl SelectorMap {
     }
 
     
-    fn get_id_name(rule: &Rule) -> Option<String> {
+    fn get_id_name(rule: &Rule) -> Option<Atom> {
         let simple_selector_sequence = &rule.selector.simple_selectors;
         for ss in simple_selector_sequence.iter() {
             match *ss {
                 
                 
-                IDSelector(ref id) => return Some(id.as_slice().clone().to_string()),
+                IDSelector(ref id) => return Some(id.clone()),
                 _ => {}
             }
         }
@@ -275,7 +244,7 @@ impl SelectorMap {
     }
 
     
-    fn get_class_name(rule: &Rule) -> Option<String> {
+    fn get_class_name(rule: &Rule) -> Option<Atom> {
         let simple_selector_sequence = &rule.selector.simple_selectors;
         for ss in simple_selector_sequence.iter() {
             match *ss {
@@ -289,13 +258,15 @@ impl SelectorMap {
     }
 
     
-    fn get_element_name(rule: &Rule) -> Option<String> {
+    fn get_element_name(rule: &Rule) -> Option<Atom> {
         let simple_selector_sequence = &rule.selector.simple_selectors;
         for ss in simple_selector_sequence.iter() {
             match *ss {
                 
                 
-                LocalNameSelector(ref name) => return Some(name.as_slice().to_ascii_lower()),
+                LocalNameSelector(ref name) => {
+                    return Some(Atom::from_slice(name.as_slice().to_ascii_lower().as_slice()));
+                }
                 _ => {}
             }
         }
@@ -965,6 +936,7 @@ fn matches_last_child<E:TElement,N:TNode<E>>(element: &N) -> bool {
 
 #[cfg(test)]
 mod tests {
+    use servo_util::atom::Atom;
     use sync::Arc;
     use super::{MatchedProperty, Rule, SelectorMap};
 
@@ -1003,23 +975,23 @@ mod tests {
     fn test_get_id_name(){
         let rules_list = get_mock_rules([".intro", "#top"]);
         assert_eq!(SelectorMap::get_id_name(&rules_list[0][0]), None);
-        assert_eq!(SelectorMap::get_id_name(&rules_list[1][0]), Some("top".to_string()));
+        assert_eq!(SelectorMap::get_id_name(&rules_list[1][0]), Some(Atom::from_slice("top")));
     }
 
     #[test]
     fn test_get_class_name(){
         let rules_list = get_mock_rules([".intro.foo", "#top"]);
-        assert_eq!(SelectorMap::get_class_name(&rules_list[0][0]), Some("intro".to_string()));
-        assert_eq!(SelectorMap::get_class_name(&rules_list[1][0]), None);
+        assert_eq!(SelectorMap::get_class_name(&rules_list[0][0]), Some(Atom::from_slice("intro")));
+        assert_eq!(SelectorMap::get_class_name(rules_list.get(1).get(0)), None);
     }
 
     #[test]
     fn test_get_element_name(){
         let rules_list = get_mock_rules(["img.foo", "#top", "IMG", "ImG"]);
-        assert_eq!(SelectorMap::get_element_name(&rules_list[0][0]), Some("img".to_string()));
+        assert_eq!(SelectorMap::get_element_name(&rules_list[0][0]), Some(Atom::from_slice("img")));
         assert_eq!(SelectorMap::get_element_name(&rules_list[1][0]), None);
-        assert_eq!(SelectorMap::get_element_name(&rules_list[2][0]), Some("img".to_string()));
-        assert_eq!(SelectorMap::get_element_name(&rules_list[3][0]), Some("img".to_string()));
+        assert_eq!(SelectorMap::get_element_name(&rules_list[2][0]), Some(Atom::from_slice("img")));
+        assert_eq!(SelectorMap::get_element_name(&rules_list[3][0]), Some(Atom::from_slice("img")));
     }
 
     #[test]
@@ -1027,9 +999,9 @@ mod tests {
         let rules_list = get_mock_rules([".intro.foo", "#top"]);
         let mut selector_map = SelectorMap::new();
         selector_map.insert(rules_list[1][0].clone());
-        assert_eq!(1, selector_map.id_hash.find_equiv(&("top")).unwrap()[0].property.source_order);
+        assert_eq!(1, selector_map.id_hash.find(&Atom::from_slice("top")).unwrap()[0].property.source_order);
         selector_map.insert(rules_list[0][0].clone());
-        assert_eq!(0, selector_map.class_hash.find_equiv(&("intro")).unwrap()[0].property.source_order);
-        assert!(selector_map.class_hash.find_equiv(&("foo")).is_none());
+        assert_eq!(0, selector_map.class_hash.find(&Atom::from_slice("intro")).unwrap()[0].property.source_order);
+        assert!(selector_map.class_hash.find(&Atom::from_slice("foo")).is_none());
     }
 }
