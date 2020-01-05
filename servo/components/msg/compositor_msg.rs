@@ -6,8 +6,6 @@ use azure::azure_hl::Color;
 use constellation_msg::{Key, KeyModifiers, KeyState, PipelineId};
 use euclid::{Matrix4, Point2D, Rect, Size2D};
 use ipc_channel::ipc::IpcSender;
-use layers::layers::{BufferRequest, LayerBufferSet};
-use layers::platform::surface::NativeDisplay;
 use std::fmt::{self, Debug, Formatter};
 
 
@@ -126,32 +124,6 @@ pub struct LayerProperties {
     pub scrolls_overflow_area: bool,
 }
 
-
-
-pub trait PaintListener {
-    fn native_display(&mut self) -> Option<NativeDisplay>;
-
-    
-    
-    fn initialize_layers_for_pipeline(&mut self,
-                                      pipeline_id: PipelineId,
-                                      properties: Vec<LayerProperties>,
-                                      epoch: Epoch);
-
-    
-    fn assign_painted_buffers(&mut self,
-                              pipeline_id: PipelineId,
-                              epoch: Epoch,
-                              replies: Vec<(LayerId, Box<LayerBufferSet>)>,
-                              frame_tree_id: FrameTreeId);
-
-    
-    fn ignore_buffer_requests(&mut self, buffer_requests: Vec<BufferRequest>);
-
-    
-    fn notify_paint_task_exiting(&mut self, pipeline_id: PipelineId);
-}
-
 #[derive(Deserialize, Serialize)]
 pub enum ScriptToCompositorMsg {
     ScrollFragmentPoint(PipelineId, LayerId, Point2D<f32>, bool),
@@ -169,4 +141,3 @@ pub enum EventResult {
     DefaultAllowed,
     DefaultPrevented,
 }
-
