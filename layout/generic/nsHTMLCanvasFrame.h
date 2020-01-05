@@ -99,6 +99,12 @@ public:
     return PrincipalChildList().FirstChild()->GetContentInsertionFrame();
   }
 
+  
+
+
+  void DoUpdateStyleOfOwnedAnonBoxes(mozilla::ServoStyleSet& aStyleSet,
+                                     nsStyleChangeList& aChangeList,
+                                     nsChangeHint aHintForThisFrame) override;
 protected:
   virtual ~nsHTMLCanvasFrame();
 

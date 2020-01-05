@@ -4000,6 +4000,8 @@ nsCSSFrameConstructor::ConstructFrameFromItemInternal(FrameConstructionItem& aIt
 
       SetInitialSingleChild(container, outerFrame);
 
+      container->AddStateBits(NS_FRAME_OWNS_ANON_BOXES);
+
       
       
       auto outerDisplay = outerSC->StyleDisplay();

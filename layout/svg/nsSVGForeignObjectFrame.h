@@ -89,6 +89,13 @@ public:
 
   nsRect GetInvalidRegion();
 
+  
+
+
+  void DoUpdateStyleOfOwnedAnonBoxes(mozilla::ServoStyleSet& aStyleSet,
+                                     nsStyleChangeList& aChangeList,
+                                     nsChangeHint aHintForThisFrame) override;
+
 protected:
   
   void DoReflow();
