@@ -215,6 +215,7 @@ public class DownloadAction extends BaseAction {
     protected void extract(File sourceFile, File destinationFile, String checksum)
             throws UnrecoverableDownloadContentException, RecoverableDownloadContentException {
         InputStream inputStream = null;
+        InputStream gzInputStream = null;
         OutputStream outputStream = null;
         File temporaryFile = null;
 
@@ -226,13 +227,15 @@ public class DownloadAction extends BaseAction {
 
             temporaryFile = new File(destinationDirectory, destinationFile.getName() + ".tmp");
 
-            inputStream = new GZIPInputStream(new BufferedInputStream(new FileInputStream(sourceFile)));
+            
+            
+            
+            
+            inputStream = new BufferedInputStream(new FileInputStream(sourceFile));
+            gzInputStream = new GZIPInputStream(inputStream);
             outputStream = new BufferedOutputStream(new FileOutputStream(temporaryFile));
 
-            IOUtils.copy(inputStream, outputStream);
-
-            inputStream.close();
-            outputStream.close();
+            IOUtils.copy(gzInputStream, outputStream);
 
             if (!verify(temporaryFile, checksum)) {
                 Log.w(LOGTAG, "Checksum of extracted file does not match.");
@@ -244,6 +247,7 @@ public class DownloadAction extends BaseAction {
             
             throw new RecoverableDownloadContentException(RecoverableDownloadContentException.DISK_IO, e);
         } finally {
+            IOUtils.safeStreamClose(gzInputStream);
             IOUtils.safeStreamClose(inputStream);
             IOUtils.safeStreamClose(outputStream);
 
