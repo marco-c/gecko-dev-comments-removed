@@ -1325,6 +1325,10 @@ public:
 
   virtual bool IsNodeApzAwareInternal() const;
 
+  
+  
+  virtual bool IsHTMLShadowElement() const { return false; }
+
 protected:
   nsIURI* GetExplicitBaseURI() const {
     if (HasExplicitBaseURI()) {
