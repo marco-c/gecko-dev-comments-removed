@@ -186,5 +186,15 @@ function getTemporaryDisqualification() {
 
 
 function getTemporaryQualification() {
+  
+  
+  
+  
+  const PREF_OPENED_DEVTOOLS = "devtools.telemetry.tools.opened.version";
+  let hasOpenedDevTools = Preferences.isSet(PREF_OPENED_DEVTOOLS);
+  if (hasOpenedDevTools) {
+    return "devtools";
+  }
+
   return "";
 }
