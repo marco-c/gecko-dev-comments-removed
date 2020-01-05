@@ -6401,14 +6401,14 @@ class Parser(Tokenizer):
     
     
     
+    
     def p_NonAnyTypePromiseType(self, p):
         """
-            NonAnyType : PROMISE LT ReturnType GT Null
+            NonAnyType : PROMISE LT ReturnType GT
         """
         innerType = p[3]
         promiseIdent = IDLUnresolvedIdentifier(self.getLocation(p, 1), "Promise")
-        type = IDLUnresolvedType(self.getLocation(p, 1), promiseIdent, p[3])
-        p[0] = self.handleNullable(type, p[5])
+        p[0] = IDLUnresolvedType(self.getLocation(p, 1), promiseIdent, p[3])
 
     def p_NonAnyTypeMozMapType(self, p):
         """
