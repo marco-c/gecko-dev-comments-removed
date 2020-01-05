@@ -49,7 +49,8 @@ class PlatformData {
   
   
   
-  PlatformData(int aThreadId) : profiled_thread_(OpenThread(THREAD_GET_CONTEXT |
+  explicit PlatformData(int aThreadId) : profiled_thread_(OpenThread(
+                                               THREAD_GET_CONTEXT |
                                                THREAD_SUSPEND_RESUME |
                                                THREAD_QUERY_INFORMATION,
                                                false,
