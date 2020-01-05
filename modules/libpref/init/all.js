@@ -5009,16 +5009,6 @@ pref("dom.flyweb.enabled", false);
 
 
 #ifdef MOZ_B2G_RIL
-pref("dom.telephony.enabled", true);
-#else
-pref("dom.telephony.enabled", false);
-#endif
-
-
-pref("dom.telephony.defaultServiceId", 0);
-
-
-#ifdef MOZ_B2G_RIL
 pref("dom.icc.enabled", true);
 #else
 pref("dom.icc.enabled", false);
