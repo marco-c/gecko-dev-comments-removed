@@ -49,6 +49,13 @@ public:
   
 
 
+  static already_AddRefed<MediaList> Create(StyleBackendType aBackendType) {
+    return Create(aBackendType, nsString());
+  }
+
+  
+
+
   static already_AddRefed<MediaList> Create(const nsIDocument& aDocument,
                                             const nsAString& aMedia);
 
