@@ -638,6 +638,23 @@ exports.getCurrentZoom = getCurrentZoom;
 
 
 
+
+
+
+
+
+function getDisplayPixelRatio(node) {
+  let win = getWindowFor(node);
+  return win.devicePixelRatio / utilsFor(win).fullZoom;
+}
+exports.getDisplayPixelRatio = getDisplayPixelRatio;
+
+
+
+
+
+
+
 function getWindowDimensions(window) {
   
   let windowUtils = utilsFor(window);
