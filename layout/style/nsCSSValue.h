@@ -938,6 +938,8 @@ public:
   
   void SetCalcValue(const nsStyleCoord::CalcValue* aCalc);
 
+  nsStyleCoord::CalcValue GetCalcValue() const;
+
   
   
   nsCSSRect& SetRectValue();
