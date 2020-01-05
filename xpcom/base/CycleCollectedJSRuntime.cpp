@@ -819,7 +819,7 @@ CycleCollectedJSRuntime::GCCallback(JSContext* aContext,
   MOZ_ASSERT(CycleCollectedJSContext::Get()->Context() == aContext);
   MOZ_ASSERT(CycleCollectedJSContext::Get()->Runtime() == self);
 
-  self->OnGC(aStatus);
+  self->OnGC(aContext, aStatus);
 }
 
  void
@@ -1423,7 +1423,8 @@ CycleCollectedJSRuntime::AnnotateAndSetOutOfMemory(OOMState* aStatePtr,
 }
 
 void
-CycleCollectedJSRuntime::OnGC(JSGCStatus aStatus)
+CycleCollectedJSRuntime::OnGC(JSContext* aContext,
+                              JSGCStatus aStatus)
 {
   switch (aStatus) {
     case JSGC_BEGIN:
@@ -1441,9 +1442,18 @@ CycleCollectedJSRuntime::OnGC(JSGCStatus aStatus)
 #endif
 
       
-      FinalizeDeferredThings(JS::WasIncrementalGC(mJSRuntime)
+      
+      
+      
+      
+      
+      
+      
+      bool finalizeIncrementally = JS::WasIncrementalGC(mJSRuntime) || JS_IsExceptionPending(aContext);
+      FinalizeDeferredThings(finalizeIncrementally
                              ? CycleCollectedJSContext::FinalizeIncrementally
                              : CycleCollectedJSContext::FinalizeNow);
+
       break;
     }
     default:
