@@ -416,16 +416,23 @@ zone_force_unlock(malloc_zone_t *zone)
 
 #define JEMALLOC_ZONE_VERSION 6
 
-
+extern void _malloc_prefork(void);
+extern void _malloc_postfork(void);
 
 static void
 zone_force_lock(malloc_zone_t *zone)
 {
+  
+
+  _malloc_prefork();
 }
 
 static void
 zone_force_unlock(malloc_zone_t *zone)
 {
+  
+
+  _malloc_postfork();
 }
 
 #endif
