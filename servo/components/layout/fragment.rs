@@ -2107,11 +2107,11 @@ impl Fragment {
     }
 
     
-    pub fn needs_layer(&self) -> bool {
+    pub fn needs_layered_stacking_context(&self) -> bool {
         
         
         match self.specific {
-            SpecificFragmentInfo::Canvas(_) | SpecificFragmentInfo::Iframe(_) => true,
+            SpecificFragmentInfo::Canvas(_) => true,
             _ => false,
         }
     }
@@ -2140,7 +2140,7 @@ impl Fragment {
             transform_style::T::auto => {}
         }
 
-        if self.needs_layer() {
+        if self.needs_layered_stacking_context() {
             return true
         }
 

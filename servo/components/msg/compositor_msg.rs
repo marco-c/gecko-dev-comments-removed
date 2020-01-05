@@ -2,7 +2,6 @@
 
 
 
-use app_units::Au;
 use azure::azure_hl::Color;
 use constellation_msg::{Key, KeyModifiers, KeyState, PipelineId};
 use euclid::{Matrix4, Point2D, Rect, Size2D};
@@ -120,7 +119,7 @@ pub struct LayerProperties {
     pub perspective: Matrix4,
     
     
-    pub subpage_layer_info: Option<SubpageLayerInfo>,
+    pub subpage_pipeline_id: Option<PipelineId>,
     
     pub establishes_3d_context: bool,
     
@@ -163,13 +162,3 @@ pub enum ScriptToCompositorMsg {
     ResizeTo(Size2D<u32>),
     Exit,
 }
-
-
-#[derive(Clone, Copy, Debug, Deserialize, Serialize, HeapSizeOf)]
-pub struct SubpageLayerInfo {
-    
-    pub pipeline_id: PipelineId,
-    
-    pub origin: Point2D<Au>,
-}
-
