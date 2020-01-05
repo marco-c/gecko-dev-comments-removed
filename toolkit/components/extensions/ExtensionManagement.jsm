@@ -246,7 +246,7 @@ var Service = {
 
 
 function getAddonIdForWindow(window) {
-  return Cu.getObjectPrincipal(window).originAttributes.addonId;
+  return Cu.getObjectPrincipal(window).addonId;
 }
 
 const API_LEVELS = Object.freeze({
