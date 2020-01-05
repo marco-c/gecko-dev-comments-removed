@@ -635,51 +635,45 @@ pub fn load<A>(load_data: LoadData,
 
         
         if response.status().class() == StatusClass::Redirection {
-            match response.headers().get::<Location>() {
-                Some(&Location(ref new_url)) => {
-                    
-                    match load_data.cors {
-                        Some(ref c) => {
-                            if c.preflight {
-                                return Err(
-                                    LoadError::Cors(
-                                        url,
-                                        "Preflight fetch inconsistent with main fetch".to_owned()));
-                            } else {
-                                
-                                
-                            }
-                        }
-                        _ => {}
+            if let Some(&Location(ref new_url)) = response.headers().get::<Location>() {
+                
+                if let Some(ref c) = load_data.cors {
+                    if c.preflight {
+                        return Err(
+                            LoadError::Cors(
+                                url,
+                                "Preflight fetch inconsistent with main fetch".to_owned()));
+                    } else {
+                        
+                        
                     }
-
-                    let new_doc_url = match UrlParser::new().base_url(&doc_url).parse(&new_url) {
-                        Ok(u) => u,
-                        Err(e) => {
-                            return Err(LoadError::InvalidRedirect(doc_url, e.to_string()));
-                        }
-                    };
-
-                    info!("redirecting to {}", new_doc_url);
-                    url = replace_hosts(&new_doc_url);
-                    doc_url = new_doc_url;
-
-                    
-                    
-                    if method == Method::Post &&
-                        (response.status() == StatusCode::MovedPermanently ||
-                         response.status() == StatusCode::Found) {
-                        method = Method::Get;
-                    }
-
-                    if redirected_to.contains(&url) {
-                        return Err(LoadError::InvalidRedirect(doc_url, "redirect loop".to_owned()));
-                    }
-
-                    redirected_to.insert(doc_url.clone());
-                    continue;
                 }
-                None => ()
+
+                let new_doc_url = match UrlParser::new().base_url(&doc_url).parse(&new_url) {
+                    Ok(u) => u,
+                    Err(e) => {
+                        return Err(LoadError::InvalidRedirect(doc_url, e.to_string()));
+                    }
+                };
+
+                info!("redirecting to {}", new_doc_url);
+                url = replace_hosts(&new_doc_url);
+                doc_url = new_doc_url;
+
+                
+                
+                if method == Method::Post &&
+                    (response.status() == StatusCode::MovedPermanently ||
+                        response.status() == StatusCode::Found) {
+                    method = Method::Get;
+                }
+
+                if redirected_to.contains(&url) {
+                    return Err(LoadError::InvalidRedirect(doc_url, "redirect loop".to_owned()));
+                }
+
+                redirected_to.insert(doc_url.clone());
+                continue;
             }
         }
 
