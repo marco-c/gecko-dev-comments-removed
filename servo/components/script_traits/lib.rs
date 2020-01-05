@@ -6,18 +6,24 @@
 
 
 
+#![feature(custom_derive, plugin)]
+#![plugin(serde_macros)]
 #![deny(missing_docs)]
 
 extern crate devtools_traits;
 extern crate euclid;
+extern crate ipc_channel;
 extern crate libc;
 extern crate msg;
 extern crate net_traits;
+extern crate serde;
 extern crate util;
 extern crate url;
 
 use devtools_traits::DevtoolsControlChan;
+use ipc_channel::ipc::{IpcReceiver, IpcSender};
 use libc::c_void;
+use msg::compositor_msg::{Epoch, LayerId};
 use msg::constellation_msg::{ConstellationChan, PipelineId, Failure, WindowSizeData};
 use msg::constellation_msg::{LoadData, SubpageId, Key, KeyState, KeyModifiers};
 use msg::constellation_msg::{MozBrowserEvent, PipelineExitType};
@@ -29,6 +35,7 @@ use net_traits::storage_task::StorageTask;
 use std::any::Any;
 use std::sync::mpsc::{Sender, Receiver};
 use url::Url;
+use util::geometry::Au;
 
 use euclid::point::Point2D;
 use euclid::rect::Rect;
@@ -41,6 +48,19 @@ pub struct UntrustedNodeAddress(pub *const c_void);
 unsafe impl Send for UntrustedNodeAddress {}
 
 
+#[derive(Deserialize, Serialize)]
+pub enum LayoutControlMsg {
+    
+    ExitNow(PipelineExitType),
+    
+    GetCurrentEpoch(IpcSender<Epoch>),
+    
+    TickAnimations,
+    
+    SetVisibleRects(Vec<(LayerId, Rect<Au>)>),
+}
+
+
 pub struct NewLayoutInfo {
     
     pub containing_pipeline_id: PipelineId,
@@ -49,10 +69,18 @@ pub struct NewLayoutInfo {
     
     pub subpage_id: SubpageId,
     
-    
-    pub layout_chan: Box<Any+Send>,
-    
     pub load_data: LoadData,
+    
+    
+    
+    
+    pub paint_chan: Box<Any + Send>,
+    
+    pub failure: Failure,
+    
+    pub pipeline_port: IpcReceiver<LayoutControlMsg>,
+    
+    pub layout_shutdown_chan: Sender<()>,
 }
 
 
