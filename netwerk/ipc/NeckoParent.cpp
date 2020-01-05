@@ -114,16 +114,32 @@ NeckoParent::GetValidatedAppInfo(const SerializedLoadContext& aSerialized,
                                  PContentParent* aContent,
                                  DocShellOriginAttributes& aAttrs)
 {
-  if (UsingNeckoIPCSecurity()) {
-    if (!aSerialized.IsNotNull()) {
+  if (!aSerialized.IsNotNull()) {
+    if (UsingNeckoIPCSecurity()) {
       CrashWithReason("GetValidatedAppInfo | SerializedLoadContext from child is null");
       return "SerializedLoadContext from child is null";
     }
+
+    
+    
+    aAttrs = DocShellOriginAttributes(NECKO_NO_APP_ID, false);
+    return nullptr;
+  }
+
+  nsTArray<TabContext> contextArray =
+    static_cast<ContentParent*>(aContent)->GetManagedTabContext();
+  if (contextArray.IsEmpty()) {
+    if (UsingNeckoIPCSecurity()) {
+      CrashWithReason("GetValidatedAppInfo | ContentParent does not have any PBrowsers");
+      return "ContentParent does not have any PBrowsers";
+    }
+
+    
+    aAttrs = aSerialized.mOriginAttributes;
+    return nullptr;
   }
 
   nsAutoCString debugString;
-  nsTArray<TabContext> contextArray =
-    static_cast<ContentParent*>(aContent)->GetManagedTabContext();
   for (uint32_t i = 0; i < contextArray.Length(); i++) {
     TabContext tabContext = contextArray[i];
     uint32_t appId = tabContext.OwnOrContainingAppId();
@@ -166,31 +182,16 @@ NeckoParent::GetValidatedAppInfo(const SerializedLoadContext& aSerialized,
     return nullptr;
   }
 
-  if (contextArray.Length() != 0) {
-    nsAutoCString errorString;
-    errorString.Append("GetValidatedAppInfo | App does not have permission -");
-    errorString.Append(debugString);
+  nsAutoCString errorString;
+  errorString.Append("GetValidatedAppInfo | App does not have permission -");
+  errorString.Append(debugString);
 
-    
-    
-    
-    char * error = strdup(errorString.BeginReading());
-    CrashWithReason(error);
-    return "App does not have permission";
-  }
-
-  if (!UsingNeckoIPCSecurity()) {
-    
-    if (aSerialized.IsNotNull()) {
-      aAttrs = aSerialized.mOriginAttributes;
-    } else {
-      aAttrs = DocShellOriginAttributes(NECKO_NO_APP_ID, false);
-    }
-    return nullptr;
-  }
-
-  CrashWithReason("GetValidatedAppInfo | ContentParent does not have any PBrowsers");
-  return "ContentParent does not have any PBrowsers";
+  
+  
+  
+  char * error = strdup(errorString.BeginReading());
+  CrashWithReason(error);
+  return "App does not have permission";
 }
 
 const char *
