@@ -4612,75 +4612,15 @@ class CGBindingRoot(CGThing):
                           'js::jsapi::*',
                           'js::jsfriendapi::bindgen::*',
                           'js::glue::*',
-                          'dom::characterdata::CharacterData', 
-                          'dom::node::{AbstractNode, Node, Text}', 
-                          'dom::document::{Document, AbstractDocument}', 
-                          'dom::element::{Element, HTMLHeadElement, HTMLHtmlElement}', 
-                          'dom::element::{HTMLDivElement, HTMLSpanElement, HTMLParagraphElement}', 
-                          'dom::htmlanchorelement::HTMLAnchorElement', 
-                          'dom::htmlappletelement::HTMLAppletElement', 
-                          'dom::htmlareaelement::HTMLAreaElement', 
-                          'dom::htmlbaseelement::HTMLBaseElement', 
-                          'dom::htmlbodyelement::HTMLBodyElement', 
-                          'dom::htmlbrelement::HTMLBRElement', 
-                          'dom::htmlbuttonelement::HTMLButtonElement', 
-                          'dom::htmlcanvaselement::HTMLCanvasElement',
-                          'dom::htmldataelement::HTMLDataElement', 
-                          'dom::htmldatalistelement::HTMLDataListElement',
-                          'dom::htmldlistelement::HTMLDListElement',
-                          'dom::htmldirectoryelement::HTMLDirectoryElement',
-                          'dom::htmlelement::HTMLElement', 
-                          'dom::htmlembedelement::HTMLEmbedElement', 
-                          'dom::htmlfieldsetelement::HTMLFieldSetElement', 
-                          'dom::htmlfontelement::HTMLFontElement', 
-                          'dom::htmlframeelement::HTMLFrameElement', 
-                          'dom::htmlframesetelement::HTMLFrameSetElement', 
-                          'dom::htmldocument::HTMLDocument', 
-                          'dom::htmlheadingelement::HTMLHeadingElement',
-                          'dom::htmlhrelement::HTMLHRElement',
-                          'dom::htmliframeelement::HTMLIFrameElement', 
-                          'dom::htmlimageelement::HTMLImageElement', 
-                          'dom::htmlinputelement::HTMLInputElement',
-                          'dom::htmllielement::HTMLLIElement',
-                          'dom::htmllinkelement::HTMLLinkElement', 
-                          'dom::htmlmapelement::HTMLMapElement',
-                          'dom::htmlmetaelement::HTMLMetaElement',
-                          'dom::htmlolistelement::HTMLOListElement',
-                          'dom::htmlprogresselement::HTMLProgressElement',
-                          'dom::htmlquoteelement::HTMLQuoteElement',
-                          'dom::htmlscriptelement::HTMLScriptElement',
-                          'dom::htmlsourceelement::HTMLSourceElement',
-                          'dom::htmlstyleelement::HTMLStyleElement',
-                          'dom::htmltablecaptionelement::HTMLTableCaptionElement',
-                          'dom::htmltableelement::HTMLTableElement',
-                          'dom::htmltablecellelement::HTMLTableCellElement',
-                          'dom::htmltablecolelement::HTMLTableColElement',
-                          'dom::htmltablerowelement::HTMLTableRowElement',
-                          'dom::htmltablesectionelement::HTMLTableSectionElement',
-                          'dom::htmltextareaelement::HTMLTextAreaElement',
-                          'dom::htmltimeelement::HTMLTimeElement',
-                          'dom::htmltitleelement::HTMLTitleElement', 
-                          'dom::htmlulistelement::HTMLUListElement',
+                          'dom::types::*',
                           'dom::bindings::utils::*',
                           'dom::bindings::conversions::*',
-                          'dom::blob::*', 
-                          'dom::clientrect::*', 
-                          'dom::clientrectlist::*', 
-                          'dom::htmlcollection::*', 
-                          'dom::bindings::proxyhandler::*',
-                          'dom::domparser::*', 
-                          'dom::event::*', 
-                          'dom::eventtarget::*', 
-                          'dom::formdata::*', 
-                          'dom::mouseevent::*', 
-                          'dom::uievent::*', 
-                          'dom::validitystate::*', 
-                          'dom::windowproxy::*', 
-                          'dom::window::Window', 
                           'dom::bindings::codegen::*', 
                           'script_task::{JSPageInfo, page_from_context}',
                           'dom::bindings::utils::EnumEntry',
-                          'dom::node::ScriptView',
+                          'dom::bindings::proxyhandler::*',
+                          'dom::document::AbstractDocument',
+                          'dom::node::{AbstractNode, ScriptView}',
                           'servo_util::vec::zip_copies',
                           'std::cast',
                           'std::libc',
@@ -4782,3 +4722,18 @@ class GlobalGenRoots():
         
         return curr
 
+    @staticmethod
+    def InterfaceTypes(config):
+
+        descriptors = [d.name for d in config.getDescriptors(register=True)]
+        curr = CGList([CGGeneric(declare="pub use dom::%s::%s;\n" % (name.lower(), name)) for name in descriptors])
+        curr = CGWrapper(curr, pre=AUTOGENERATED_WARNING_COMMENT)
+        return curr
+
+    @staticmethod
+    def BindingDeclarations(config):
+
+        descriptors = [d.name for d in config.getDescriptors(register=True)]
+        curr = CGList([CGGeneric(declare="pub mod %sBinding;\n" % name) for name in descriptors])
+        curr = CGWrapper(curr, pre=AUTOGENERATED_WARNING_COMMENT)
+        return curr

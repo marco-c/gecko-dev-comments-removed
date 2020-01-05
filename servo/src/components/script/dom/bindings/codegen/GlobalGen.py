@@ -81,6 +81,12 @@ def main():
     generate_file(config, 'RegisterBindings', 'declare+define')
 
     
+    generate_file(config, 'InterfaceTypes', 'declare+define')
+
+    
+    generate_file(config, 'BindingDeclarations', 'declare+define')
+
+    
     
     
 
