@@ -477,9 +477,13 @@ DataTransferItem::Data(nsIPrincipal* aPrincipal, ErrorResult& aRv)
   
   
   
+  
+  
+  
+  
+  
   if (Principal() && checkItemPrincipal &&
       !aPrincipal->Subsumes(Principal())) {
-    aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
     return nullptr;
   }
 
@@ -494,13 +498,11 @@ DataTransferItem::Data(nsIPrincipal* aPrincipal, ErrorResult& aRv)
     if (pt) {
       nsIScriptContext* c = pt->GetContextForEventHandlers(&rv);
       if (NS_WARN_IF(NS_FAILED(rv) || !c)) {
-        aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
         return nullptr;
       }
 
       nsIGlobalObject* go = c->GetGlobalObject();
       if (NS_WARN_IF(!go)) {
-        aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
         return nullptr;
       }
 
@@ -509,7 +511,6 @@ DataTransferItem::Data(nsIPrincipal* aPrincipal, ErrorResult& aRv)
 
       nsIPrincipal* dataPrincipal = sp->GetPrincipal();
       if (NS_WARN_IF(!dataPrincipal || !aPrincipal->Equals(dataPrincipal))) {
-        aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
         return nullptr;
       }
     }
