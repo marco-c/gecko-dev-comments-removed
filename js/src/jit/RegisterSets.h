@@ -1305,7 +1305,7 @@ class ABIArg
 
 
 inline LiveGeneralRegisterSet
-SavedNonVolatileRegisters(AllocatableGeneralRegisterSet unused)
+SavedNonVolatileRegisters(const AllocatableGeneralRegisterSet& unused)
 {
     LiveGeneralRegisterSet result;
 
