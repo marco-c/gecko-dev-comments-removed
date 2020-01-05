@@ -38,7 +38,7 @@ function parseBooleanConfig(string, comment) {
     }
 
     let pos = name.indexOf(":");
-    let value = undefined;
+    let value;
     if (pos !== -1) {
       value = name.substring(pos + 1, name.length);
       name = name.substring(0, pos);
@@ -77,7 +77,7 @@ var globalDiscoveryInProgressForFiles = new Set();
 
 function GlobalsForNode(filePath) {
   this.path = filePath;
-  this.dirname = path.dirname(this.path)
+  this.dirname = path.dirname(this.path);
   this.root = helpers.getRootDir(this.path);
 }
 
@@ -102,7 +102,9 @@ GlobalsForNode.prototype = {
     let isGlobal = helpers.getIsGlobalScope(parents);
     let globals = helpers.convertExpressionToGlobals(node, isGlobal, this.root);
     
-    globals = globals.map(name => { return { name, writable: true }});
+    globals = globals.map(name => {
+      return { name, writable: true };
+    });
 
     
     
@@ -114,7 +116,7 @@ GlobalsForNode.prototype = {
     }
 
     return globals;
-  },
+  }
 };
 
 module.exports = {
@@ -156,7 +158,7 @@ module.exports = {
 
     let globals = Object.keys(globalScope.variables).map(v => ({
       name: globalScope.variables[v].name,
-      writable: true,
+      writable: true
     }));
 
     
@@ -175,7 +177,7 @@ module.exports = {
             globals.push({
               name,
               writable: values[name].value
-            })
+            });
           }
         }
       }
@@ -218,7 +220,7 @@ module.exports = {
         }
         let globals = handler[type](node, context.getAncestors(), globalScope);
         helpers.addGlobals(globals, globalScope);
-      }
+      };
     }
 
     return parser;
