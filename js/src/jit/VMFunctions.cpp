@@ -832,7 +832,7 @@ bool
 NormalSuspend(JSContext* cx, HandleObject obj, BaselineFrame* frame, jsbytecode* pc,
               uint32_t stackDepth)
 {
-    MOZ_ASSERT(*pc == JSOP_YIELD);
+    MOZ_ASSERT(*pc == JSOP_YIELD || *pc == JSOP_AWAIT);
 
     
     MOZ_ASSERT(stackDepth >= 1);
@@ -913,7 +913,7 @@ GeneratorThrowOrClose(JSContext* cx, BaselineFrame* frame, Handle<GeneratorObjec
     
     
     JSScript* script = frame->script();
-    uint32_t offset = script->yieldOffsets()[genObj->yieldIndex()];
+    uint32_t offset = script->yieldAndAwaitOffsets()[genObj->yieldAndAwaitIndex()];
     frame->setOverridePc(script->offsetToPC(offset));
 
     MOZ_ALWAYS_TRUE(DebugAfterYield(cx, frame));

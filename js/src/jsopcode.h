@@ -657,6 +657,7 @@ inline bool
 FlowsIntoNext(JSOp op)
 {
     
+    
     switch (op) {
       case JSOP_RETRVAL:
       case JSOP_RETURN:

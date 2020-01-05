@@ -207,6 +207,7 @@ namespace jit {
     _(JSOP_GENERATOR)          \
     _(JSOP_INITIALYIELD)       \
     _(JSOP_YIELD)              \
+    _(JSOP_AWAIT)              \
     _(JSOP_DEBUGAFTERYIELD)    \
     _(JSOP_FINALYIELDRVAL)     \
     _(JSOP_RESUME)             \
@@ -256,7 +257,7 @@ class BaselineCompiler : public BaselineCompilerSpecific
 
     
     
-    Vector<uint32_t>            yieldOffsets_;
+    Vector<uint32_t>            yieldAndAwaitOffsets_;
 
     
     bool modifiesArguments_;
@@ -348,7 +349,7 @@ class BaselineCompiler : public BaselineCompilerSpecific
 
     MOZ_MUST_USE bool addPCMappingEntry(bool addIndexEntry);
 
-    MOZ_MUST_USE bool addYieldOffset();
+    MOZ_MUST_USE bool addYieldAndAwaitOffset();
 
     void getEnvironmentCoordinateObject(Register reg);
     Address getEnvironmentCoordinateAddressFromObject(Register objReg, Register reg);

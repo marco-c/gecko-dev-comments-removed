@@ -98,13 +98,13 @@ struct CGScopeNoteList {
     void finish(ScopeNoteArray* array, uint32_t prologueLength);
 };
 
-struct CGYieldOffsetList {
+struct CGYieldAndAwaitOffsetList {
     Vector<uint32_t> list;
-    explicit CGYieldOffsetList(JSContext* cx) : list(cx) {}
+    explicit CGYieldAndAwaitOffsetList(JSContext* cx) : list(cx) {}
 
     MOZ_MUST_USE bool append(uint32_t offset) { return list.append(offset); }
     size_t length() const { return list.length(); }
-    void finish(YieldOffsetArray& array, uint32_t prologueLength);
+    void finish(YieldAndAwaitOffsetArray& array, uint32_t prologueLength);
 };
 
 
@@ -231,7 +231,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter
 
 
 
-    CGYieldOffsetList yieldOffsetList;
+    CGYieldAndAwaitOffsetList yieldAndAwaitOffsetList;
 
     uint16_t        typesetCount;   
 
