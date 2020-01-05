@@ -717,6 +717,9 @@ add_task(function* test_checkSubsessionEvents() {
   yield TelemetryController.testReset();
 
   
+  Telemetry.setEventRecordingEnabled("telemetry.test", true);
+
+  
   let expected = [
     ["telemetry.test", "test1", "object1", "a", null],
     ["telemetry.test", "test1", "object1", null, {key1: "value"}],

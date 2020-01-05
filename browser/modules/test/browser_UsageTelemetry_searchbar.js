@@ -71,10 +71,14 @@ add_task(function* setup() {
   yield SpecialPowers.pushPrefEnv({"set": [["toolkit.telemetry.enabled", true]]});
 
   
+  Services.telemetry.setEventRecordingEnabled("navigation", true);
+
+  
   registerCleanupFunction(function* () {
     Services.search.currentEngine = originalEngine;
     Services.search.removeEngine(engineDefault);
     Services.search.removeEngine(engineOneOff);
+    Services.telemetry.setEventRecordingEnabled("navigation", false);
   });
 });
 

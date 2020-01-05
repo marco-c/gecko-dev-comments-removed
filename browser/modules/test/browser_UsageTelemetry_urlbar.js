@@ -82,6 +82,9 @@ add_task(function* setup() {
   Services.telemetry.canRecordExtended = true;
 
   
+  Services.telemetry.setEventRecordingEnabled("navigation", true);
+
+  
   registerCleanupFunction(function* () {
     Services.telemetry.canRecordExtended = oldCanRecord;
     Services.search.currentEngine = originalEngine;
@@ -89,6 +92,7 @@ add_task(function* setup() {
     Services.prefs.clearUserPref(SUGGEST_URLBAR_PREF, true);
     Services.prefs.clearUserPref(ONEOFF_URLBAR_PREF);
     yield PlacesTestUtils.clearHistory();
+    Services.telemetry.setEventRecordingEnabled("navigation", false);
   });
 });
 

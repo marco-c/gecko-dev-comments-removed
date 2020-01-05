@@ -93,7 +93,7 @@ const uint32_t kMaxValueByteLength = 80;
 
 const uint32_t kMaxExtraValueByteLength = 80;
 
-typedef nsDataHashtable<nsCStringHashKey, uint32_t> EventMapType;
+typedef nsDataHashtable<nsCStringHashKey, uint32_t> StringUintMap;
 typedef nsClassHashtable<nsCStringHashKey, nsCString> StringMap;
 
 enum class RecordEventResult {
@@ -250,7 +250,13 @@ bool gCanRecordBase;
 bool gCanRecordExtended;
 
 
-EventMapType gEventNameIDMap(kEventCount);
+StringUintMap gEventNameIDMap(kEventCount);
+
+
+StringUintMap gCategoryNameIDMap;
+
+
+nsTHashtable<nsUint32HashKey> gEnabledCategories;
 
 
 StaticAutoPtr<nsTArray<EventRecord>> gEventRecords;
@@ -271,7 +277,11 @@ CanRecordEvent(const StaticMutexAutoLock& lock, const CommonEventInfo& info)
     return false;
   }
 
-  return CanRecordDataset(info.dataset, gCanRecordBase, gCanRecordExtended);
+  if (!CanRecordDataset(info.dataset, gCanRecordBase, gCanRecordExtended)) {
+    return false;
+  }
+
+  return gEnabledCategories.GetEntry(info.category_offset);
 }
 
 RecordEventResult
@@ -369,10 +379,15 @@ TelemetryEvent::InitializeGlobalState(bool aCanRecordBase, bool aCanRecordExtend
     }
 
     gEventNameIDMap.Put(UniqueEventName(info), eventId);
+    if (!gCategoryNameIDMap.Contains(nsDependentCString(info.common_info.category()))) {
+      gCategoryNameIDMap.Put(nsDependentCString(info.common_info.category()),
+                             info.common_info.category_offset);
+    }
   }
 
 #ifdef DEBUG
   gEventNameIDMap.MarkImmutable();
+  gCategoryNameIDMap.MarkImmutable();
 #endif
   gInitDone = true;
 }
@@ -387,6 +402,8 @@ TelemetryEvent::DeInitializeGlobalState()
   gCanRecordExtended = false;
 
   gEventNameIDMap.Clear();
+  gCategoryNameIDMap.Clear();
+  gEnabledCategories.Clear();
   gEventRecords->Clear();
   gEventRecords = nullptr;
 
@@ -667,6 +684,25 @@ TelemetryEvent::ClearEvents()
   gEventRecords->Clear();
 }
 
+void
+TelemetryEvent::SetEventRecordingEnabled(const nsACString& category, bool enabled)
+{
+  StaticMutexAutoLock locker(gTelemetryEventsMutex);
+
+  uint32_t categoryId;
+  if (!gCategoryNameIDMap.Get(category, &categoryId)) {
+    LogToBrowserConsole(nsIScriptError::warningFlag,
+                        NS_LITERAL_STRING("Unkown category for SetEventRecordingEnabled."));
+    return;
+  }
+
+  if (enabled) {
+    gEnabledCategories.PutEntry(categoryId);
+  } else {
+    gEnabledCategories.RemoveEntry(categoryId);
+  }
+}
+
 size_t
 TelemetryEvent::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf)
 {
@@ -682,6 +718,13 @@ TelemetryEvent::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf)
   for (auto iter = gEventNameIDMap.ConstIter(); !iter.Done(); iter.Next()) {
     n += iter.Key().SizeOfExcludingThisIfUnshared(aMallocSizeOf);
   }
+
+  n += gCategoryNameIDMap.ShallowSizeOfExcludingThis(aMallocSizeOf);
+  for (auto iter = gCategoryNameIDMap.ConstIter(); !iter.Done(); iter.Next()) {
+    n += iter.Key().SizeOfExcludingThisIfUnshared(aMallocSizeOf);
+  }
+
+  n += gEnabledCategories.ShallowSizeOfExcludingThis(aMallocSizeOf);
 
   return n;
 }

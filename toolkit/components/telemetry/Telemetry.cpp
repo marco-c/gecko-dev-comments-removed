@@ -2635,6 +2635,12 @@ TelemetryImpl::ClearEvents()
   return NS_OK;
 }
 
+NS_IMETHODIMP
+TelemetryImpl::SetEventRecordingEnabled(const nsACString& aCategory, bool aEnabled)
+{
+  TelemetryEvent::SetEventRecordingEnabled(aCategory, aEnabled);
+  return NS_OK;
+}
 
 NS_IMETHODIMP
 TelemetryImpl::FlushBatchedChildTelemetry()
@@ -2927,7 +2933,7 @@ GetStackAndModules(const std::vector<uintptr_t>& aPCs)
     const SharedLibrary &info = rawModules.GetEntry(i);
     const std::string &name = info.GetName();
     std::string basename = name;
-#if defined(XP_MACOSX) || defined(XP_LINUX)
+#ifdef XP_MACOSX
     
     
     
