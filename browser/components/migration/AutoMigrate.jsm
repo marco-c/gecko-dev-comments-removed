@@ -638,10 +638,8 @@ const AutoMigrate = {
       
       
       surveyLocales = new Set(surveyLocales.filter(str => !!str));
-      let chromeRegistry = Cc["@mozilla.org/chrome/chrome-registry;1"]
-                             .getService(Ci.nsIXULChromeRegistry);
       canDoSurveyInLocale =
-        surveyLocales.has(chromeRegistry.getSelectedLocale("global"));
+        surveyLocales.has(Services.locale.getAppLocaleAsLangTag());
     } catch (ex) {
       
     }
