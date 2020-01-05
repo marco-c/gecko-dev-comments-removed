@@ -2524,17 +2524,17 @@ nsTextEditorState::SetValue(const nsAString& aValue, uint32_t aFlags)
     AutoWeakFrame weakFrame(mBoundFrame);
 
     
+    
+    if (newValue.FindChar(char16_t('\r')) != -1) {
+      if (!nsContentUtils::PlatformToDOMLineBreaks(newValue, fallible)) {
+        return false;
+      }
+    }
+
+    
     if (!currentValue.Equals(newValue))
     {
       ValueSetter valueSetter(mEditor);
-
-      
-      
-      if (newValue.FindChar(char16_t('\r')) != -1) {
-        if (!nsContentUtils::PlatformToDOMLineBreaks(newValue, fallible)) {
-          return false;
-        }
-      }
 
       nsCOMPtr<nsIDOMDocument> domDoc;
       mEditor->GetDocument(getter_AddRefs(domDoc));
