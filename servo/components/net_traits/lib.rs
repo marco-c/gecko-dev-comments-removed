@@ -125,6 +125,10 @@ pub enum ReferrerPolicy {
     OriginWhenCrossOrigin,
     
     UnsafeUrl,
+    
+    StrictOrigin,
+    
+    StrictOriginWhenCrossOrigin,
 }
 
 #[derive(Clone, Deserialize, Serialize, HeapSizeOf)]
