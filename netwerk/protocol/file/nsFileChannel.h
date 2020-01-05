@@ -29,11 +29,13 @@ protected:
   
   
   
-  nsresult MakeFileInputStream(nsIFile *file, nsCOMPtr<nsIInputStream> &stream,
-                               nsCString &contentType, bool async);
+  MOZ_MUST_USE nsresult MakeFileInputStream(nsIFile *file,
+                                            nsCOMPtr<nsIInputStream> &stream,
+                                            nsCString &contentType, bool async);
 
-  virtual nsresult OpenContentStream(bool async, nsIInputStream **result,
-                                     nsIChannel** channel) override;
+  virtual MOZ_MUST_USE nsresult OpenContentStream(bool async,
+                                                  nsIInputStream **result,
+                                                  nsIChannel** channel) override;
 
 private:
   nsCOMPtr<nsIInputStream> mUploadStream;
