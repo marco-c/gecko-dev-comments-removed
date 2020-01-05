@@ -767,11 +767,6 @@ public class GeckoAppShell
         
     }
 
-    @WrapForJNI(calledFrom = "gecko")
-    public static void scheduleRestart() {
-        getGeckoInterface().doRestart();
-    }
-
     
     
     @WrapForJNI(calledFrom = "gecko")
