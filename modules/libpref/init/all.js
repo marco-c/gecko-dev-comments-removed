@@ -2577,6 +2577,9 @@ pref("layout.css.convertFromNode.enabled", true);
 pref("layout.css.text-align-unsafe-value.enabled", false);
 
 
+pref("layout.css.text-justify.enabled", false);
+
+
 
 #if defined(MOZ_B2G) || !defined(RELEASE_OR_BETA)
 pref("layout.css.float-logical-values.enabled", true);
@@ -4914,7 +4917,11 @@ pref("dom.w3c_touch_events.enabled", 2);
 #endif
 
 
+#if defined(XP_WIN) && defined(NIGHTLY_BUILD)
+pref("dom.w3c_pointer_events.enabled", true);
+#else
 pref("dom.w3c_pointer_events.enabled", false);
+#endif
 
 
 pref("dom.w3c_pointer_events.implicit_capture", false);
