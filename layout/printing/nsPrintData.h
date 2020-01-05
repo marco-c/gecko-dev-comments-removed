@@ -7,6 +7,7 @@
 #define nsPrintData_h___
 
 #include "mozilla/Attributes.h"
+#include "mozilla/UniquePtr.h"
 
 
 #include "nsDeviceContext.h"
@@ -57,15 +58,19 @@ public:
   RefPtr<nsDeviceContext>   mPrintDC;
   FILE                        *mDebugFilePtr;    
 
-  nsPrintObject *                mPrintObject;
-  nsPrintObject *                mSelectedPO;
+  mozilla::UniquePtr<nsPrintObject> mPrintObject;
+  nsPrintObject* mSelectedPO; 
 
   nsCOMArray<nsIWebProgressListener> mPrintProgressListeners;
   nsCOMPtr<nsIPrintProgressParams> mPrintProgressParams;
 
   nsCOMPtr<nsPIDOMWindowOuter> mCurrentFocusWin; 
 
+  
+  
+  
   nsTArray<nsPrintObject*>    mPrintDocList;
+
   bool                        mIsIFrameSelected;
   bool                        mIsParentAFrameSet;
   bool                        mOnStartSent;
