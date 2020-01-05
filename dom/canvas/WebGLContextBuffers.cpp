@@ -137,6 +137,13 @@ WebGLContext::BindBuffer(GLenum target, WebGLBuffer* buffer)
     if (buffer) {
         buffer->SetContentAfterBind(target);
     }
+
+    switch (target) {
+    case LOCAL_GL_PIXEL_PACK_BUFFER:
+    case LOCAL_GL_PIXEL_UNPACK_BUFFER:
+        gl->fBindBuffer(target, 0);
+        break;
+    }
 }
 
 
@@ -429,6 +436,8 @@ WebGLContext::BufferSubDataT(GLenum target,
     }
 
     MakeContextCurrent();
+    const ScopedLazyBind lazyBind(gl, target, buffer);
+
     
     gl->fBufferSubData(target, byteOffset, data.LengthAllowShared(),
                        data.DataAllowShared());
