@@ -471,15 +471,15 @@ class TSymbolTable : angle::NonCopyable
 
     bool setDefaultPrecision(const TPublicType &type, TPrecision prec)
     {
-        if (!SupportsPrecision(type.type))
+        if (!SupportsPrecision(type.getBasicType()))
             return false;
-        if (type.type == EbtUInt)
+        if (type.getBasicType() == EbtUInt)
             return false;  
         if (type.isAggregate())
             return false; 
         int indexOfLastElement = static_cast<int>(precisionStack.size()) - 1;
         
-        (*precisionStack[indexOfLastElement])[type.type] = prec;
+        (*precisionStack[indexOfLastElement])[type.getBasicType()] = prec;
         return true;
     }
 

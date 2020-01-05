@@ -147,10 +147,8 @@ TEST_F(IntermNodeTest, DeepCopyBinaryNode)
 {
     TType type(EbtFloat, EbpHigh);
 
-    TIntermBinary *original = new TIntermBinary(EOpAdd);
+    TIntermBinary *original = new TIntermBinary(EOpAdd, createTestSymbol(), createTestSymbol());
     original->setLine(getTestSourceLoc());
-    original->setLeft(createTestSymbol());
-    original->setRight(createTestSymbol());
     TIntermTyped *copyTyped = original->deepCopy();
     TIntermBinary *copy = copyTyped->getAsBinaryNode();
     ASSERT_NE(nullptr, copy);
@@ -168,9 +166,8 @@ TEST_F(IntermNodeTest, DeepCopyUnaryNode)
 {
     TType type(EbtFloat, EbpHigh);
 
-    TIntermUnary *original = new TIntermUnary(EOpPreIncrement);
+    TIntermUnary *original = new TIntermUnary(EOpPreIncrement, createTestSymbol());
     original->setLine(getTestSourceLoc());
-    original->setOperand(createTestSymbol());
     TIntermTyped *copyTyped = original->deepCopy();
     TIntermUnary *copy = copyTyped->getAsUnaryNode();
     ASSERT_NE(nullptr, copy);
@@ -212,22 +209,22 @@ TEST_F(IntermNodeTest, DeepCopyAggregateNode)
 
 
 
-TEST_F(IntermNodeTest, DeepCopySelectionNode)
+TEST_F(IntermNodeTest, DeepCopyTernaryNode)
 {
     TType type(EbtFloat, EbpHigh);
 
-    TIntermSelection *original = new TIntermSelection(
-        createTestSymbol(TType(EbtBool, EbpUndefined)), createTestSymbol(), createTestSymbol());
+    TIntermTernary *original = new TIntermTernary(createTestSymbol(TType(EbtBool, EbpUndefined)),
+                                                  createTestSymbol(), createTestSymbol());
     original->setLine(getTestSourceLoc());
     TIntermTyped *copyTyped = original->deepCopy();
-    TIntermSelection *copy = copyTyped->getAsSelectionNode();
+    TIntermTernary *copy    = copyTyped->getAsTernaryNode();
     ASSERT_NE(nullptr, copy);
     ASSERT_NE(original, copy);
     checkTestSourceLoc(copy->getLine());
     checkTypeEqualWithQualifiers(original->getType(), copy->getType());
 
     checkSymbolCopy(original->getCondition(), copy->getCondition());
-    checkSymbolCopy(original->getTrueBlock(), copy->getTrueBlock());
-    checkSymbolCopy(original->getFalseBlock(), copy->getFalseBlock());
+    checkSymbolCopy(original->getTrueExpression(), copy->getTrueExpression());
+    checkSymbolCopy(original->getFalseExpression(), copy->getFalseExpression());
 }
 

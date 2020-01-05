@@ -101,10 +101,8 @@ bool DeferGlobalInitializersTraverser::visitBinary(Visit visit, TIntermBinary *n
             
             
             
-            TIntermBinary *deferredInit = new TIntermBinary(EOpAssign);
-            deferredInit->setLeft(symbolNode->deepCopy());
-            deferredInit->setRight(node->getRight());
-            deferredInit->setType(node->getType());
+            TIntermBinary *deferredInit =
+                new TIntermBinary(EOpAssign, symbolNode->deepCopy(), node->getRight());
             mDeferredInitializers.push_back(deferredInit);
 
             

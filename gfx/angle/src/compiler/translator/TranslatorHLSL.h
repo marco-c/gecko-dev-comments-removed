@@ -21,11 +21,11 @@ class TranslatorHLSL : public TCompiler
     const std::map<std::string, unsigned int> *getUniformRegisterMap() const;
 
   protected:
-    void translate(TIntermNode *root, int compileOptions) override;
+    void translate(TIntermNode *root, ShCompileOptions compileOptions) override;
     bool shouldFlattenPragmaStdglInvariantAll() override;
 
     
-    bool shouldCollectVariables(int compileOptions) override { return true; }
+    bool shouldCollectVariables(ShCompileOptions compileOptions) override { return true; }
 
     std::map<std::string, unsigned int> mInterfaceBlockRegisterMap;
     std::map<std::string, unsigned int> mUniformRegisterMap;

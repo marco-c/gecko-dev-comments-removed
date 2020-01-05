@@ -44,38 +44,20 @@ TIntermSymbol *TIntermediate::addSymbol(
 
 
 
-TIntermTyped *TIntermediate::addIndex(
-    TOperator op, TIntermTyped *base, TIntermTyped *index, const TSourceLoc &line)
+TIntermTyped *TIntermediate::addIndex(TOperator op,
+                                      TIntermTyped *base,
+                                      TIntermTyped *index,
+                                      const TSourceLoc &line,
+                                      TDiagnostics *diagnostics)
 {
-    TIntermBinary *node = new TIntermBinary(op);
+    TIntermBinary *node = new TIntermBinary(op, base, index);
     node->setLine(line);
-    node->setLeft(base);
-    node->setRight(index);
 
-    
-
-    return node;
-}
-
-
-
-
-
-
-TIntermTyped *TIntermediate::addUnaryMath(
-    TOperator op, TIntermTyped *child, const TSourceLoc &line, const TType *funcReturnType)
-{
-    
-    
-    
-    TIntermUnary *node = new TIntermUnary(op);
-    node->setLine(line);
-    node->setOperand(child);
-    node->promote(funcReturnType);
-
-    TIntermTyped *foldedNode = node->fold(mInfoSink);
-    if (foldedNode)
-        return foldedNode;
+    TIntermTyped *folded = node->fold(diagnostics);
+    if (folded)
+    {
+        return folded;
+    }
 
     return node;
 }
@@ -260,37 +242,31 @@ TIntermTyped *TIntermediate::addComma(TIntermTyped *left,
 
 
 
-
-TIntermTyped *TIntermediate::addSelection(TIntermTyped *cond, TIntermTyped *trueBlock, TIntermTyped *falseBlock,
-                                          const TSourceLoc &line)
+TIntermTyped *TIntermediate::AddTernarySelection(TIntermTyped *cond,
+                                                 TIntermTyped *trueExpression,
+                                                 TIntermTyped *falseExpression,
+                                                 const TSourceLoc &line)
 {
-    TQualifier resultQualifier = EvqTemporary;
-    if (cond->getQualifier() == EvqConst && trueBlock->getQualifier() == EvqConst &&
-        falseBlock->getQualifier() == EvqConst)
-    {
-        resultQualifier = EvqConst;
-    }
     
     
     if (cond->getAsConstantUnion())
     {
+        TQualifier resultQualifier =
+            TIntermTernary::DetermineQualifier(cond, trueExpression, falseExpression);
         if (cond->getAsConstantUnion()->getBConst(0))
         {
-            trueBlock->getTypePointer()->setQualifier(resultQualifier);
-            return trueBlock;
+            trueExpression->getTypePointer()->setQualifier(resultQualifier);
+            return trueExpression;
         }
         else
         {
-            falseBlock->getTypePointer()->setQualifier(resultQualifier);
-            return falseBlock;
+            falseExpression->getTypePointer()->setQualifier(resultQualifier);
+            return falseExpression;
         }
     }
 
     
-    
-    
-    TIntermSelection *node = new TIntermSelection(cond, trueBlock, falseBlock, trueBlock->getType());
-    node->getTypePointer()->setQualifier(resultQualifier);
+    TIntermTernary *node = new TIntermTernary(cond, trueExpression, falseExpression);
     node->setLine(line);
 
     return node;
@@ -335,6 +311,7 @@ TIntermTyped *TIntermediate::addSwizzle(
 {
 
     TIntermAggregate *node = new TIntermAggregate(EOpSequence);
+    node->getTypePointer()->setQualifier(EvqConst);
 
     node->setLine(line);
     TIntermConstantUnion *constIntNode;
@@ -388,7 +365,7 @@ TIntermBranch* TIntermediate::addBranch(
 
 
 
-TIntermAggregate *TIntermediate::postProcess(TIntermNode *root)
+TIntermAggregate *TIntermediate::PostProcess(TIntermNode *root)
 {
     if (root == nullptr)
         return nullptr;
@@ -411,7 +388,8 @@ TIntermAggregate *TIntermediate::postProcess(TIntermNode *root)
     return aggRoot;
 }
 
-TIntermTyped *TIntermediate::foldAggregateBuiltIn(TIntermAggregate *aggregate)
+TIntermTyped *TIntermediate::foldAggregateBuiltIn(TIntermAggregate *aggregate,
+                                                  TDiagnostics *diagnostics)
 {
     switch (aggregate->getOp())
     {
@@ -438,12 +416,12 @@ TIntermTyped *TIntermediate::foldAggregateBuiltIn(TIntermAggregate *aggregate)
         case EOpFaceForward:
         case EOpReflect:
         case EOpRefract:
-            return aggregate->fold(mInfoSink);
+            return aggregate->fold(diagnostics);
         default:
             
             if (aggregate->isConstructor() && !aggregate->isArray())
             {
-                return aggregate->fold(mInfoSink);
+                return aggregate->fold(diagnostics);
             }
             
             return nullptr;

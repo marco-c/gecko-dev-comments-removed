@@ -27,11 +27,9 @@ bool isSingleStatement(TIntermNode *node)
         return (aggregate->getOp() != EOpFunction) &&
                (aggregate->getOp() != EOpSequence);
     }
-    else if (const TIntermSelection *selection = node->getAsSelectionNode())
+    else if (node->getAsSelectionNode())
     {
-        
-        
-        return selection->usesTernaryOperator();
+        return false;
     }
     else if (node->getAsLoopNode())
     {
@@ -711,40 +709,40 @@ bool TOutputGLSLBase::visitUnary(Visit visit, TIntermUnary *node)
     return true;
 }
 
+bool TOutputGLSLBase::visitTernary(Visit visit, TIntermTernary *node)
+{
+    TInfoSinkBase &out = objSink();
+    
+    
+    
+    
+    out << "((";
+    node->getCondition()->traverse(this);
+    out << ") ? (";
+    node->getTrueExpression()->traverse(this);
+    out << ") : (";
+    node->getFalseExpression()->traverse(this);
+    out << "))";
+    return false;
+}
+
 bool TOutputGLSLBase::visitSelection(Visit visit, TIntermSelection *node)
 {
     TInfoSinkBase &out = objSink();
 
-    if (node->usesTernaryOperator())
-    {
-        
-        
-        
-        
-        out << "((";
-        node->getCondition()->traverse(this);
-        out << ") ? (";
-        node->getTrueBlock()->traverse(this);
-        out << ") : (";
-        node->getFalseBlock()->traverse(this);
-        out << "))";
-    }
-    else
-    {
-        out << "if (";
-        node->getCondition()->traverse(this);
-        out << ")\n";
+    out << "if (";
+    node->getCondition()->traverse(this);
+    out << ")\n";
 
-        incrementDepth(node);
-        visitCodeBlock(node->getTrueBlock());
+    incrementDepth(node);
+    visitCodeBlock(node->getTrueBlock());
 
-        if (node->getFalseBlock())
-        {
-            out << "else\n";
-            visitCodeBlock(node->getFalseBlock());
-        }
-        decrementDepth();
+    if (node->getFalseBlock())
+    {
+        out << "else\n";
+        visitCodeBlock(node->getFalseBlock());
     }
+    decrementDepth();
     return false;
 }
 

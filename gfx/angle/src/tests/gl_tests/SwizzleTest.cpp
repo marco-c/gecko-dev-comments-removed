@@ -400,6 +400,37 @@ TEST_P(SwizzleIntegerTest, RGB8UI_2D)
 }
 
 
+TEST_P(SwizzleTest, SubUpdate)
+{
+    GLColor data(1, 64, 128, 200);
+    init2DTexture(GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE, &data);
+
+    glUseProgram(mProgram);
+    glBindTexture(GL_TEXTURE_2D, mTexture);
+    glUniform1i(mTextureUniformLocation, 0);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_RED);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_RED);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_A, GL_RED);
+
+    glClear(GL_COLOR_BUFFER_BIT);
+    drawQuad(mProgram, "position", 0.5f);
+
+    GLColor expectedData(data.R, data.R, data.R, data.R);
+    EXPECT_PIXEL_COLOR_EQ(0, 0, expectedData);
+
+    GLColor updateData(32, 234, 28, 232);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, &updateData);
+
+    glClear(GL_COLOR_BUFFER_BIT);
+    drawQuad(mProgram, "position", 0.5f);
+
+    GLColor expectedUpdateData(updateData.R, updateData.R, updateData.R, updateData.R);
+    EXPECT_PIXEL_COLOR_EQ(0, 0, expectedUpdateData);
+}
+
+
 ANGLE_INSTANTIATE_TEST(SwizzleTest, ES3_D3D11(), ES3_OPENGL(), ES3_OPENGL(3, 3), ES3_OPENGLES());
 ANGLE_INSTANTIATE_TEST(SwizzleIntegerTest,
                        ES3_D3D11(),

@@ -75,6 +75,16 @@ struct WorkaroundsD3D
     
     
     bool preAddTexelFetchOffsets = false;
+
+    
+    
+    
+    bool emulateTinyStencilTextures = false;
+
+    
+    
+    
+    bool disableB5G6R5Support = false;
 };
 
 }  

@@ -21,7 +21,9 @@ struct WorkaroundsGL
           doWhileGLSLCausesGPUHang(false),
           finishDoesNotCauseQueriesToBeAvailable(false),
           alwaysCallUseProgramAfterLink(false),
-          unpackOverlappingRowsSeparatelyUnpackBuffer(false)
+          unpackOverlappingRowsSeparatelyUnpackBuffer(false),
+          emulateAbsIntFunction(false),
+          addAndTrueToLoopCondition(false)
     {
     }
 
@@ -67,6 +69,17 @@ struct WorkaroundsGL
 
     
     bool unpackOverlappingRowsSeparatelyUnpackBuffer;
+
+    
+    bool initializeCurrentVertexAttributes;
+
+    
+    
+    bool emulateAbsIntFunction;
+
+    
+    
+    bool addAndTrueToLoopCondition;
 };
 }
 
