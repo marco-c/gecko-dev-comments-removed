@@ -4,14 +4,13 @@
 
 package org.mozilla.gecko.preferences;
 
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.mozilla.gecko.R;
 import org.mozilla.gecko.SnackbarBuilder;
 import org.mozilla.gecko.icons.IconCallback;
 import org.mozilla.gecko.icons.IconDescriptor;
 import org.mozilla.gecko.icons.IconResponse;
 import org.mozilla.gecko.icons.Icons;
+import org.mozilla.gecko.util.GeckoBundle;
 import org.mozilla.gecko.widget.FaviconView;
 
 import android.app.Activity;
@@ -142,21 +141,20 @@ public class SearchEnginePreference extends CustomListPreference {
 
 
 
-
-    public void setSearchEngineFromJSON(JSONObject geckoEngineJSON) throws JSONException {
-        mIdentifier = geckoEngineJSON.getString("identifier");
+    public void setSearchEngineFromBundle(GeckoBundle geckoEngine) {
+        mIdentifier = geckoEngine.getString("identifier");
 
         
         if (mIdentifier.equals("null")) {
             mIdentifier = "other";
         }
 
-        final String engineName = geckoEngineJSON.getString("name");
+        final String engineName = geckoEngine.getString("name");
         final SpannableString titleSpannable = new SpannableString(engineName);
 
         setTitle(titleSpannable);
 
-        final String iconURI = geckoEngineJSON.getString("iconURI");
+        final String iconURI = geckoEngine.getString("iconURI");
         
         try {
             Icons.with(getContext())

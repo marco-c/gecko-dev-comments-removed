@@ -6005,7 +6005,7 @@ var SearchEngines = {
     }
 
     
-    Messaging.sendRequest({
+    GlobalEventDispatcher.sendRequest({
       type: "SearchEngines:Data",
       searchEngines: searchEngines,
       suggest: {

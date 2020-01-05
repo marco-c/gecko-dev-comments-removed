@@ -7,13 +7,11 @@ package org.mozilla.gecko.tests;
 import java.io.File;
 import java.util.ArrayList;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.mozilla.gecko.Actions;
 import org.mozilla.gecko.GeckoProfile;
 import org.mozilla.gecko.home.HomePager;
 import org.mozilla.gecko.home.SearchEngineBar;
+import org.mozilla.gecko.util.GeckoBundle;
 import org.mozilla.gecko.R;
 
 import android.widget.ImageView;
@@ -45,23 +43,20 @@ public class testAddSearchEngine extends AboutHomeTest {
 
         
         
-        Actions.EventExpecter searchEngineDataEventExpector = mActions.expectGeckoEvent("SearchEngines:Data");
+        Actions.EventExpecter searchEngineDataEventExpector =
+                mActions.expectGlobalEvent(Actions.EventType.UI, "SearchEngines:Data");
         focusUrlBar();
         mActions.sendKeys(SEARCH_TEXT);
-        String eventData = searchEngineDataEventExpector.blockForEventData();
+
+        GeckoBundle eventData = searchEngineDataEventExpector.blockForBundle();
         searchEngineDataEventExpector.unregisterListener();
 
-        ArrayList<String> searchEngines;
-        try {
-            
-            searchEngines = getSearchEnginesNames(eventData);
-        } catch (JSONException e) {
-            mAsserter.ok(false, "Fatal exception in testAddSearchEngine while decoding JSON search engine string from Gecko prior to addition of new engine.", e.toString());
-            return;
-        }
+        
+        ArrayList<String> searchEngines = getSearchEnginesNames(eventData);
         final int initialNumSearchEngines = searchEngines.size();
         mAsserter.dumpLog("Search Engines list = " + searchEngines.toString());
 
+        
         
         verifyDisplayedSearchEnginesCount(initialNumSearchEngines);
 
@@ -71,7 +66,8 @@ public class testAddSearchEngine extends AboutHomeTest {
 
         
         getInstrumentation().waitForIdleSync();
-        mAsserter.dumpLog("Long Clicking at width = " + String.valueOf(width) + " and height = " + String.valueOf(height));
+        mAsserter.dumpLog("Long Clicking at width = " + String.valueOf(width) +
+                          " and height = " + String.valueOf(height));
         mSolo.clickLongOnScreen(width,height);
 
         ImageView view = waitForViewWithDescription(ImageView.class, ADD_SEARCHENGINE_OPTION_TEXT);
@@ -90,29 +86,29 @@ public class testAddSearchEngine extends AboutHomeTest {
         waitForText(mStringHelper.ROBOCOP_BLANK_PAGE_01_TITLE);
 
         
-        searchEngineDataEventExpector = mActions.expectGeckoEvent("SearchEngines:Data");
+        searchEngineDataEventExpector =
+                mActions.expectGlobalEvent(Actions.EventType.UI, "SearchEngines:Data");
         focusUrlBar();
         mActions.sendKeys(SEARCH_TEXT);
-        eventData = searchEngineDataEventExpector.blockForEventData();
 
-        try {
-            
-            searchEngines = getSearchEnginesNames(eventData);
-        } catch (JSONException e) {
-            mAsserter.ok(false, "Fatal exception in testAddSearchEngine while decoding JSON search engine string from Gecko after adding of new engine.", e.toString());
-            return;
-        }
+        eventData = searchEngineDataEventExpector.blockForBundle();
+        
+        searchEngines = getSearchEnginesNames(eventData);
 
         mAsserter.dumpLog("Search Engines list = " + searchEngines.toString());
-        mAsserter.is(searchEngines.size(), initialNumSearchEngines + 1, "Checking the number of Search Engines has increased");
+        mAsserter.is(searchEngines.size(), initialNumSearchEngines + 1,
+                     "Checking the number of Search Engines has increased");
 
+        
         
         verifyDisplayedSearchEnginesCount(initialNumSearchEngines + 1);
         searchEngineDataEventExpector.unregisterListener();
 
         
         
-        final File f = GeckoProfile.get(getActivity()).getFile("searchplugins/robocop-search-engine.xml");
+        
+        final File f = GeckoProfile.get(getActivity())
+                                   .getFile("searchplugins/robocop-search-engine.xml");
         mAsserter.ok(f.exists(), "Checking that new search plugin file exists", "");
     }
 
@@ -123,15 +119,13 @@ public class testAddSearchEngine extends AboutHomeTest {
 
 
 
-
-    public ArrayList<String> getSearchEnginesNames(String searchEngineData) throws JSONException {
-        JSONObject data = new JSONObject(searchEngineData);
-        JSONArray engines = data.getJSONArray("searchEngines");
+    public ArrayList<String> getSearchEnginesNames(final GeckoBundle data) {
+        final GeckoBundle[] engines = data.getBundleArray("searchEngines");
 
         ArrayList<String> searchEngineNames = new ArrayList<String>();
-        for (int i = 0; i < engines.length(); i++) {
-            JSONObject engineJSON = engines.getJSONObject(i);
-            searchEngineNames.add(engineJSON.getString("name"));
+        for (int i = 0; i < engines.length; i++) {
+            final GeckoBundle engine = engines[i];
+            searchEngineNames.add(engine.getString("name"));
         }
         return searchEngineNames;
     }

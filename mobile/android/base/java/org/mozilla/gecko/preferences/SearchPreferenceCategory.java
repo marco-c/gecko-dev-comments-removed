@@ -9,7 +9,6 @@ import android.preference.Preference;
 import android.util.AttributeSet;
 import android.util.Log;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -18,10 +17,12 @@ import org.mozilla.gecko.GeckoAppShell;
 import org.mozilla.gecko.Telemetry;
 import org.mozilla.gecko.TelemetryContract;
 import org.mozilla.gecko.TelemetryContract.Method;
-import org.mozilla.gecko.util.GeckoEventListener;
+import org.mozilla.gecko.util.BundleEventListener;
+import org.mozilla.gecko.util.EventCallback;
+import org.mozilla.gecko.util.GeckoBundle;
 import org.mozilla.gecko.util.ThreadUtils;
 
-public class SearchPreferenceCategory extends CustomListCategory implements GeckoEventListener {
+public class SearchPreferenceCategory extends CustomListCategory implements BundleEventListener {
     public static final String LOGTAG = "SearchPrefCategory";
 
     public SearchPreferenceCategory(Context context) {
@@ -41,7 +42,7 @@ public class SearchPreferenceCategory extends CustomListCategory implements Geck
         super.onAttachedToActivity();
 
         
-        EventDispatcher.getInstance().registerGeckoThreadListener(this, "SearchEngines:Data");
+        EventDispatcher.getInstance().registerUiThreadListener(this, "SearchEngines:Data");
         GeckoAppShell.notifyObservers("SearchEngines:GetVisible", null);
     }
 
@@ -49,7 +50,7 @@ public class SearchPreferenceCategory extends CustomListCategory implements Geck
     protected void onPrepareForRemoval() {
         super.onPrepareForRemoval();
 
-        EventDispatcher.getInstance().unregisterGeckoThreadListener(this, "SearchEngines:Data");
+        EventDispatcher.getInstance().unregisterUiThreadListener(this, "SearchEngines:Data");
     }
 
     @Override
@@ -72,56 +73,44 @@ public class SearchPreferenceCategory extends CustomListCategory implements Geck
         Telemetry.sendUIEvent(TelemetryContract.Event.SEARCH_REMOVE, Method.DIALOG, identifier);
     }
 
-    @Override
-    public void handleMessage(String event, final JSONObject data) {
+    @Override 
+    public void handleMessage(final String event, final GeckoBundle data,
+                              final EventCallback callback) {
         if (event.equals("SearchEngines:Data")) {
             
-            JSONArray engines;
-            try {
-                engines = data.getJSONArray("searchEngines");
-            } catch (JSONException e) {
-                Log.e(LOGTAG, "Unable to decode search engine data from Gecko.", e);
-                return;
-            }
+            final GeckoBundle[] engines = data.getBundleArray("searchEngines");
 
             
             this.removeAll();
 
             
-            for (int i = 0; i < engines.length(); i++) {
-                try {
-                    final JSONObject engineJSON = engines.getJSONObject(i);
-
-                    final SearchEnginePreference enginePreference = new SearchEnginePreference(getContext(), this);
-                    enginePreference.setSearchEngineFromJSON(engineJSON);
-                    enginePreference.setOnPreferenceClickListener(new OnPreferenceClickListener() {
-                        @Override
-                        public boolean onPreferenceClick(Preference preference) {
-                            SearchEnginePreference sPref = (SearchEnginePreference) preference;
-                            
-                            sPref.showDialog();
-                            return true;
-                        }
-                    });
-
-                    addPreference(enginePreference);
-
-                    
-                    if (i == 0) {
+            for (int i = 0; i < engines.length; i++) {
+                final GeckoBundle engine = engines[i];
+                final SearchEnginePreference enginePreference =
+                        new SearchEnginePreference(getContext(), this);
+                enginePreference.setSearchEngineFromBundle(engine);
+                enginePreference.setOnPreferenceClickListener(new OnPreferenceClickListener() {
+                    @Override
+                    public boolean onPreferenceClick(Preference preference) {
+                        SearchEnginePreference sPref = (SearchEnginePreference) preference;
                         
-                        
-                        
-                        ThreadUtils.postToUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                enginePreference.setIsDefault(true);
-                            }
-                        });
-                        mDefaultReference = enginePreference;
+                        sPref.showDialog();
+                        return true;
                     }
-                } catch (JSONException e) {
-                    Log.e(LOGTAG, "JSONException parsing engine at index " + i, e);
+                });
+
+                addPreference(enginePreference);
+
+                if (i != 0) {
+                    continue;
                 }
+
+                
+                
+                
+                
+                enginePreference.setIsDefault(true);
+                mDefaultReference = enginePreference;
             }
         }
     }
