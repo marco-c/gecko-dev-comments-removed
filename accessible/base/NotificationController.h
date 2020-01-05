@@ -162,6 +162,17 @@ public:
   
 
 
+
+  bool QueueMutationEvent(AccTreeMutationEvent* aEvent);
+
+  
+
+
+  void CoalesceMutationEvents();
+
+  
+
+
   void ScheduleChildDocBinding(DocAccessible* aDocument);
 
   
@@ -294,6 +305,16 @@ private:
   
 
 
+  void DropMutationEvent(AccTreeMutationEvent* aEvent);
+
+  
+
+
+  void ProcessMutationEvents();
+
+  
+
+
 
   enum eObservingState {
     eNotObservingRefresh,
@@ -380,6 +401,13 @@ private:
   
 
 
+
+  RefPtr<AccTreeMutationEvent> mFirstMutationEvent;
+  RefPtr<AccTreeMutationEvent> mLastMutationEvent;
+
+  
+
+
   class EventMap
   {
   public:
@@ -402,6 +430,7 @@ private:
   };
 
   EventMap mMutationMap;
+  uint32_t mEventGeneration;
 };
 
 } 
