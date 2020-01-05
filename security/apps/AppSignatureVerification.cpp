@@ -643,7 +643,8 @@ VerifyCertificate(CERTCertificate* signerCert, void* voidContext, void* pinArg)
     return MapSECStatus(SECFailure);
   }
   Input certDER;
-  Result rv = certDER.Init(signerCert->derCert.data, signerCert->derCert.len);
+  mozilla::pkix::Result rv = certDER.Init(signerCert->derCert.data,
+                                          signerCert->derCert.len);
   if (rv != Success) {
     return mozilla::psm::GetXPCOMFromNSSError(MapResultToPRErrorCode(rv));
   }
@@ -654,7 +655,7 @@ VerifyCertificate(CERTCertificate* signerCert, void* voidContext, void* pinArg)
                       KeyPurposeId::id_kp_codeSigning,
                       CertPolicyId::anyPolicy,
                       nullptr);
-  if (rv == Result::ERROR_EXPIRED_CERTIFICATE) {
+  if (rv == mozilla::pkix::Result::ERROR_EXPIRED_CERTIFICATE) {
     
     
     

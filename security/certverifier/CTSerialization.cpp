@@ -16,6 +16,8 @@ namespace mozilla { namespace ct {
 
 using namespace mozilla::pkix;
 
+typedef mozilla::pkix::Result Result;
+
 
 
 static const size_t kVersionLength = 1;
