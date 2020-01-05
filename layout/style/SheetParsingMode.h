@@ -31,10 +31,20 @@ namespace css {
 
 
 
+
+
+
+
+
+
+
+
+
 enum SheetParsingMode {
   eAuthorSheetFeatures = 0,
   eUserSheetFeatures,
-  eAgentSheetFeatures
+  eAgentSheetFeatures,
+  eSafeAgentSheetFeatures,
 };
 
 } 
