@@ -656,7 +656,6 @@ this.Engine = function Engine(name, service) {
   let level = Svc.Prefs.get("log.logger.engine." + this.name, "Debug");
   this._log.level = Log.Level[level];
 
-  this._modified = this.emptyChangeset();
   this._tracker; 
   this._log.debug("Engine initialized");
 }
@@ -664,11 +663,6 @@ Engine.prototype = {
   
   _storeObj: Store,
   _trackerObj: Tracker,
-
-  
-  emptyChangeset() {
-    return new Changeset();
-  },
 
   
   
@@ -932,15 +926,6 @@ SyncEngine.prototype = {
   },
 
   
-  _createTombstone(id) {
-    let tombstone = new this._recordObj(this.name, id);
-    tombstone.id = id;
-    tombstone.collection = this.name;
-    tombstone.deleted = true;
-    return tombstone;
-  },
-
-  
   _syncStartup() {
 
     
@@ -991,14 +976,12 @@ SyncEngine.prototype = {
     
     
     this.lastSyncLocal = Date.now();
-    let initialChanges;
     if (this.lastSync) {
-      initialChanges = this.pullNewChanges();
+      this._modified = this.pullNewChanges();
     } else {
       this._log.debug("First sync, uploading all items");
-      initialChanges = this.pullAllChanges();
+      this._modified = this.pullAllChanges();
     }
-    this._modified.replace(initialChanges);
     
     
     this._tracker.clearChangedIDs();
@@ -1463,7 +1446,7 @@ SyncEngine.prototype = {
           localAge = this._tracker._now() - this._modified.getModifiedTimestamp(localDupeGUID);
           remoteIsNewer = remoteAge < localAge;
 
-          this._modified.changeID(localDupeGUID, item.id);
+          this._modified.swap(localDupeGUID, item.id);
         } else {
           locallyModified = false;
           localAge = null;
@@ -1786,11 +1769,11 @@ SyncEngine.prototype = {
 
 
   pullAllChanges() {
-    let changes = {};
+    let changeset = new Changeset();
     for (let id in this._store.getAllIDs()) {
-      changes[id] = 0;
+      changeset.set(id, 0);
     }
-    return changes;
+    return changeset;
   },
 
   
@@ -1801,7 +1784,7 @@ SyncEngine.prototype = {
 
 
   pullNewChanges() {
-    return this.getChangedIDs();
+    return new Changeset(this.getChangedIDs());
   },
 
   
@@ -1824,8 +1807,8 @@ SyncEngine.prototype = {
 
 class Changeset {
   
-  constructor() {
-    this.changes = {};
+  constructor(changes = {}) {
+    this.changes = changes;
   }
 
   
@@ -1845,11 +1828,6 @@ class Changeset {
   }
 
   
-  replace(changes) {
-    this.changes = changes;
-  }
-
-  
   has(id) {
     return id in this.changes;
   }
@@ -1862,7 +1840,7 @@ class Changeset {
 
   
   
-  changeID(oldID, newID) {
+  swap(oldID, newID) {
     this.changes[newID] = this.changes[oldID];
     delete this.changes[oldID];
   }
