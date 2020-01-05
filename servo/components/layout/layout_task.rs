@@ -50,7 +50,7 @@ use query::{MarginPadding, MarginRetrievingFragmentBorderBoxIterator, PositionPr
 use query::{PositionRetrievingFragmentBorderBoxIterator, Side};
 use script::dom::node::LayoutData;
 use script::layout_interface::Animation;
-use script::layout_interface::{LayoutChan, LayoutRPC, OffsetParentResponse};
+use script::layout_interface::{LayoutRPC, OffsetParentResponse};
 use script::layout_interface::{Msg, NewLayoutTaskInfo, Reflow, ReflowGoal, ReflowQueryType};
 use script::layout_interface::{ScriptLayoutChan, ScriptReflow, TrustedNodeAddress};
 use script_traits::{ConstellationControlMsg, LayoutControlMsg, OpaqueScriptLayoutChannel};
@@ -122,19 +122,19 @@ pub struct LayoutTaskData {
 
 pub struct LayoutTask {
     
-    pub id: PipelineId,
+    id: PipelineId,
 
     
-    pub url: Url,
+    url: Url,
 
     
-    pub is_iframe: bool,
+    is_iframe: bool,
 
     
-    pub port: Receiver<Msg>,
+    port: Receiver<Msg>,
 
     
-    pub pipeline_port: Receiver<LayoutControlMsg>,
+    pipeline_port: Receiver<LayoutControlMsg>,
 
     
     image_cache_receiver: Receiver<ImageCacheResult>,
@@ -149,36 +149,33 @@ pub struct LayoutTask {
     font_cache_sender: Sender<()>,
 
     
-    pub chan: LayoutChan,
+    constellation_chan: ConstellationChan,
 
     
-    pub constellation_chan: ConstellationChan,
+    script_chan: Sender<ConstellationControlMsg>,
 
     
-    pub script_chan: Sender<ConstellationControlMsg>,
+    paint_chan: OptionalIpcSender<LayoutToPaintMsg>,
 
     
-    pub paint_chan: OptionalIpcSender<LayoutToPaintMsg>,
+    time_profiler_chan: time::ProfilerChan,
 
     
-    pub time_profiler_chan: time::ProfilerChan,
+    mem_profiler_chan: mem::ProfilerChan,
 
     
-    pub mem_profiler_chan: mem::ProfilerChan,
+    image_cache_task: ImageCacheTask,
 
     
-    pub image_cache_task: ImageCacheTask,
+    font_cache_task: FontCacheTask,
 
     
-    pub font_cache_task: FontCacheTask,
-
-    
-    pub first_reflow: bool,
+    first_reflow: bool,
 
     
     
-    pub canvas_layers_receiver: Receiver<(LayerId, IpcSender<CanvasMsg>)>,
-    pub canvas_layers_sender: Sender<(LayerId, IpcSender<CanvasMsg>)>,
+    canvas_layers_receiver: Receiver<(LayerId, IpcSender<CanvasMsg>)>,
+    canvas_layers_sender: Sender<(LayerId, IpcSender<CanvasMsg>)>,
 
     
     parallel_traversal: Option<WorkQueue<SharedLayoutContext, WorkQueueData>>,
@@ -218,7 +215,7 @@ pub struct LayoutTask {
     
     
     
-    pub rw_data: Arc<Mutex<LayoutTaskData>>,
+    rw_data: Arc<Mutex<LayoutTaskData>>,
 }
 
 impl LayoutTaskFactory for LayoutTask {
@@ -244,12 +241,10 @@ impl LayoutTaskFactory for LayoutTask {
                                          move || {
             { 
                 let sender = chan.sender();
-                let layout_chan = LayoutChan(sender);
                 let layout = LayoutTask::new(id,
                                              url,
                                              is_iframe,
                                              chan.receiver(),
-                                             layout_chan.clone(),
                                              pipeline_port,
                                              constellation_chan,
                                              script_chan,
@@ -262,7 +257,7 @@ impl LayoutTaskFactory for LayoutTask {
                 let reporter_name = format!("layout-reporter-{}", id);
                 mem_profiler_chan.run_with_memory_reporting(|| {
                     layout.start();
-                }, reporter_name, layout_chan.0, Msg::CollectReports);
+                }, reporter_name, sender, Msg::CollectReports);
             }
             shutdown_chan.send(()).unwrap();
         }, ConstellationMsg::Failure(failure_msg), con_chan);
@@ -358,7 +353,6 @@ impl LayoutTask {
            url: Url,
            is_iframe: bool,
            port: Receiver<Msg>,
-           chan: LayoutChan,
            pipeline_port: IpcReceiver<LayoutControlMsg>,
            constellation_chan: ConstellationChan,
            script_chan: Sender<ConstellationControlMsg>,
@@ -408,7 +402,6 @@ impl LayoutTask {
             is_iframe: is_iframe,
             port: port,
             pipeline_port: pipeline_receiver,
-            chan: chan,
             script_chan: script_chan,
             constellation_chan: constellation_chan.clone(),
             paint_chan: paint_chan,
@@ -1294,7 +1287,11 @@ impl LayoutTask {
 
     fn tick_all_animations<'a, 'b>(&mut self, possibly_locked_rw_data: &mut RwData<'a, 'b>) {
         let mut rw_data = possibly_locked_rw_data.lock();
-        animation::tick_all_animations(self, &mut rw_data)
+        self.tick_animations(&mut rw_data);
+
+        self.script_chan
+          .send(ConstellationControlMsg::TickAllAnimations(self.id))
+          .unwrap();
     }
 
     pub fn tick_animations(&mut self, rw_data: &mut LayoutTaskData) {
