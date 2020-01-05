@@ -37,22 +37,5 @@ GetHRESULT(nsresult aResult)
   }
 }
 
-int
-FilterExceptions(unsigned int aCode, EXCEPTION_POINTERS* aExceptionInfo)
-{
-  if (aCode == EXCEPTION_ACCESS_VIOLATION) {
-#ifdef MOZ_CRASHREPORTER
-    
-    
-    
-    CrashReporter::WriteMinidumpForException(aExceptionInfo);
-#endif
-  } else {
-    NS_NOTREACHED("We should only be catching crash exceptions");
-  }
-
-  return EXCEPTION_CONTINUE_SEARCH;
-}
-
 } 
 } 
