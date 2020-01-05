@@ -116,6 +116,7 @@ GetWindowsFolder(int aFolder, nsIFile** aFile)
   return NS_NewLocalFile(nsDependentString(path, len), true, aFile);
 }
 
+#if WINVER < 0x0601
 __inline HRESULT
 SHLoadLibraryFromKnownFolder(REFKNOWNFOLDERID aFolderId, DWORD aMode,
                              REFIID riid, void** ppv)
@@ -134,6 +135,7 @@ SHLoadLibraryFromKnownFolder(REFKNOWNFOLDERID aFolderId, DWORD aMode,
   }
   return hr;
 }
+#endif
 
 
 
