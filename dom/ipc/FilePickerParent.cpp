@@ -17,7 +17,7 @@
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/TabParent.h"
-#include "mozilla/dom/IPCBlobUtils.h"
+#include "mozilla/dom/ipc/BlobParent.h"
 
 using mozilla::Unused;
 using namespace mozilla::dom;
@@ -43,6 +43,11 @@ FilePickerParent::FilePickerShownCallback::Destroy()
 FilePickerParent::~FilePickerParent()
 {
 }
+
+
+
+
+
 
 
 
@@ -164,23 +169,18 @@ FilePickerParent::SendFilesOrDirectories(const nsTArray<BlobImplOrString>& aData
     return;
   }
 
-  InfallibleTArray<IPCBlob> ipcBlobs;
+  InfallibleTArray<PBlobParent*> blobs;
 
   for (unsigned i = 0; i < aData.Length(); i++) {
-    IPCBlob ipcBlob;
-
     MOZ_ASSERT(aData[i].mType == BlobImplOrString::eBlobImpl);
-    nsresult rv = IPCBlobUtils::Serialize(aData[i].mBlobImpl, parent, ipcBlob);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      break;
+    BlobParent* blobParent = parent->GetOrCreateActorForBlobImpl(aData[i].mBlobImpl);
+    if (blobParent) {
+      blobs.AppendElement(blobParent);
     }
-
-    ipcBlobs.AppendElement(ipcBlob);
   }
 
   InputBlobs inblobs;
-  inblobs.blobs().SwapElements(ipcBlobs);
-
+  inblobs.blobsParent().SwapElements(blobs);
   Unused << Send__delete__(this, inblobs, mResult);
 }
 
