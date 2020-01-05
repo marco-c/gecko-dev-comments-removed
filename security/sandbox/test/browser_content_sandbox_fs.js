@@ -41,6 +41,38 @@ function deleteFile(path) {
 
 
 
+
+
+function readDir(path) {
+  Components.utils.import("resource://gre/modules/osfile.jsm");
+  let numEntries = 0;
+  let iterator = new OS.File.DirectoryIterator(path);
+  let promise = iterator.forEach(function (dirEntry) {
+    numEntries++;
+  }).then(function () {
+    iterator.close();
+    return {ok: true, numEntries: numEntries};
+  }).catch(function () {
+    return {ok: false, numEntries: numEntries};
+  });
+  return promise;
+}
+
+
+
+
+function readFile(path) {
+  Components.utils.import("resource://gre/modules/osfile.jsm");
+  let promise = OS.File.read(path).then(function (binaryData) {
+    return {ok: true};
+  }).catch(function (error) {
+    return {ok: false};
+  });
+  return promise;
+}
+
+
+
 function isContentFileIOSandboxed(level) {
   let fileIOSandboxMinLevel = 0;
 
@@ -63,6 +95,25 @@ function isContentFileIOSandboxed(level) {
 
   return (level >= fileIOSandboxMinLevel);
 }
+
+
+
+function minProfileReadSandboxLevel(level) {
+  switch (Services.appinfo.OS) {
+    case "WINNT":
+      return 3;
+    case "Darwin":
+      return 2;
+    case "Linux":
+      return 3;
+    default:
+      Assert.ok(false, "Unknown OS");
+  }
+}
+
+
+
+
 
 
 
@@ -137,33 +188,164 @@ add_task(function*() {
     return;
   }
 
+  
+  add_task(createFileInHome);
+
+  
+  add_task(createTempFile);
+
+  
+  add_task(testFileAccess);
+});
+
+
+function* createFileInHome() {
   let browser = gBrowser.selectedBrowser;
-
-  {
+  let homeFile = fileInHomeDir();
+  let path = homeFile.path;
+  let fileCreated = yield ContentTask.spawn(browser, path, createFile);
+  ok(fileCreated == false, "creating a file in home dir is not permitted");
+  if (fileCreated == true) {
     
-    let homeFile = fileInHomeDir();
-    let path = homeFile.path;
-    let fileCreated = yield ContentTask.spawn(browser, path, createFile);
-    ok(fileCreated == false, "creating a file in home dir is not permitted");
-    if (fileCreated == true) {
-      
-      homeFile.remove(false);
-    }
+    homeFile.remove(false);
   }
+}
 
-  {
+
+function* createTempFile() {
+  let browser = gBrowser.selectedBrowser;
+  let path = fileInTempDir().path;
+  let fileCreated = yield ContentTask.spawn(browser, path, createFile);
+  if (!fileCreated && isWin()) {
     
-    let path = fileInTempDir().path;
-    let fileCreated = yield ContentTask.spawn(browser, path, createFile);
-    if (!fileCreated && isWin()) {
-      
-      
-      info("ignoring failure to write to content temp due to 1329294\n");
-      return;
-    }
+    
+    info("ignoring failure to write to content temp due to 1329294\n");
+  } else {
     ok(fileCreated == true, "creating a file in content temp is permitted");
     
     let fileDeleted = yield ContentTask.spawn(browser, path, deleteFile);
     ok(fileDeleted == true, "deleting a file in content temp is permitted");
   }
-});
+}
+
+
+function* testFileAccess() {
+  
+  let webBrowser = gBrowser.selectedBrowser;
+
+  
+  
+  
+  
+  
+  
+  
+  let fileContentProcessEnabled =
+    prefs.getBoolPref("browser.tabs.remote.separateFileUriProcess");
+  if (isNightly()) {
+    ok(fileContentProcessEnabled, "separate file content process is enabled");
+  } else {
+    todo(fileContentProcessEnabled, "separate file content process is enabled");
+  }
+
+  
+  let fileBrowser = undefined;
+  if (fileContentProcessEnabled) {
+    
+    gBrowser.selectedTab =
+      gBrowser.addTab("about:blank", {preferredRemoteType: "file"});
+    
+    fileBrowser = gBrowser.getBrowserForTab(gBrowser.selectedTab);
+  }
+
+  
+  
+  
+  
+  
+  let tests = [];
+
+  let profileDir = GetProfileDir();
+  tests.push({
+    desc:     "profile dir",                
+    ok:       false,                        
+    browser:  webBrowser,                   
+    file:     profileDir,                   
+    minLevel: minProfileReadSandboxLevel(), 
+  });
+  if (fileContentProcessEnabled) {
+    tests.push({
+      desc:     "profile dir",
+      ok:       true,
+      browser:  fileBrowser,
+      file:     profileDir,
+      minLevel: 0,
+    });
+  }
+
+  let extensionsDir = GetProfileEntry("extensions");
+  if (extensionsDir.exists() && extensionsDir.isDirectory()) {
+    tests.push({
+      desc:     "extensions dir",
+      ok:       true,
+      browser:  webBrowser,
+      file:     extensionsDir,
+      minLevel: 0,
+    });
+  } else {
+    ok(false, `${extensionsDir.path} is a valid dir`);
+  }
+
+  let chromeDir = GetProfileEntry("chrome");
+  if (chromeDir.exists() && chromeDir.isDirectory()) {
+    tests.push({
+      desc:     "chrome dir",
+      ok:       true,
+      browser:  webBrowser,
+      file:     chromeDir,
+      minLevel: 0,
+    });
+  } else {
+    ok(false, `${chromeDir.path} is valid dir`);
+  }
+
+  let cookiesFile = GetProfileEntry("cookies.sqlite");
+  if (cookiesFile.exists() && !cookiesFile.isDirectory()) {
+    tests.push({
+      desc:     "cookies file",
+      ok:       false,
+      browser:  webBrowser,
+      file:     cookiesFile,
+      minLevel: minProfileReadSandboxLevel(),
+    });
+  } else {
+    ok(false, `${cookiesFile.path} is a valid file`);
+  }
+
+  
+  let level = prefs.getIntPref("security.sandbox.content.level");
+  tests = tests.filter((test) => { return (test.minLevel <= level); });
+
+  for (let test of tests) {
+    let testFunc = test.file.isDirectory? readDir : readFile;
+    let okString = test.ok? "allowed" : "blocked";
+    let processType = test.browser === webBrowser ? "web" : "file";
+
+    let result = yield ContentTask.spawn(test.browser, test.file.path,
+        testFunc);
+
+    ok(result.ok == test.ok,
+        `reading ${test.desc} from a ${processType} process ` +
+        `is ${okString} (${test.file.path})`);
+
+    
+    
+    if (test.file.isDirectory() && !test.ok) {
+      ok(result.numEntries == 0, `directory list is empty (${test.file.path})`);
+    }
+  }
+
+  if (fileContentProcessEnabled) {
+    gBrowser.removeTab(gBrowser.selectedTab);
+  }
+}
