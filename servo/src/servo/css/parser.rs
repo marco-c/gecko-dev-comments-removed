@@ -3,8 +3,8 @@
 
 
 
-use css::values::{DisInline, DisBlock, DisNone, Display, TextColor, BackgroundColor, FontSize,
-                     Height, Width, StyleDeclaration};
+use css::values::{TextColor, BackgroundColor, FontSize, Height, Width,
+                     Display, StyleDeclaration};
 
 use css = css::values;
 use tok = lexer;
