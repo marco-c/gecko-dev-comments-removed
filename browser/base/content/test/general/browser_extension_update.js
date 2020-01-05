@@ -74,8 +74,8 @@ function promiseInstallEvent(addon, event) {
 }
 
 
-add_task(function setup() {
-  return SpecialPowers.pushPrefEnv({set: [
+add_task(function* setup() {
+  yield SpecialPowers.pushPrefEnv({set: [
     
     ["extensions.install.requireBuiltInCerts", false],
     ["extensions.update.requireBuiltInCerts", false],
@@ -83,6 +83,17 @@ add_task(function setup() {
     
     ["extensions.webextPermissionPrompts", true],
   ]});
+
+  
+  
+  gBrowser.selectedBrowser.loadURI("about:robots");
+  yield BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
+
+  registerCleanupFunction(function*() {
+    
+    gBrowser.selectedBrowser.loadURI("about:blank");
+    yield BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
+  });
 });
 
 
@@ -123,7 +134,7 @@ function* backgroundUpdateTest(url, id, checkIconFn) {
 
   
   let tab = yield tabPromise;
-  is(tab.linkedBrowser.currentURI.spec, "about:addons");
+  is(tab.linkedBrowser.currentURI.spec, "about:addons", "Browser is at about:addons");
 
   const VIEW = "addons://list/extension";
   yield promiseViewLoaded(tab, VIEW);
@@ -210,6 +221,49 @@ function checkNonDefaultIcon(icon) {
 
 add_task(() => backgroundUpdateTest(`${URL_BASE}/browser_webext_update_icon1.xpi`,
                                     ID_ICON, checkNonDefaultIcon));
+
+
+
+add_task(function*() {
+  yield SpecialPowers.pushPrefEnv({set: [
+    
+    ["extensions.update.enabled", true],
+
+    
+    ["extensions.update.background.url", `${URL_BASE}/browser_webext_update.json`],
+  ]});
+
+  
+  let addon = yield promiseInstallAddon(`${URL_BASE}/browser_webext_update_perms1.xpi`);
+
+  ok(addon, "Addon was installed");
+
+  let sawPopup = false;
+  PopupNotifications.panel.addEventListener("popupshown",
+                                            () => sawPopup = true,
+                                            {once: true});
+
+  
+  let updatePromise = promiseInstallEvent(addon, "onInstallEnded");
+  AddonManagerPrivate.backgroundUpdateCheck();
+  yield updatePromise;
+
+  
+  is(getBadgeStatus(), "", "Should not have addon alert badge");
+
+  yield PanelUI.show();
+  let addons = document.getElementById("PanelUI-footer-addons");
+  is(addons.children.length, 0, "Have 0 updates in the PanelUI menu");
+  yield PanelUI.hide();
+
+  ok(!sawPopup, "Should not have seen permissions notification");
+
+  addon = yield AddonManager.getAddonByID("update_perms@tests.mozilla.org");
+  is(addon.version, "2.0", "Update should have applied");
+
+  addon.uninstall();
+  yield SpecialPowers.popPrefEnv();
+});
 
 
 
