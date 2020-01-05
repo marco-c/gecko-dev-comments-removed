@@ -605,11 +605,10 @@ trait PrivateMatchMethods: TElement {
         
         let had_running_animations = context.running_animations
                                             .read()
-                                            .unwrap()
                                             .get(&this_opaque)
                                             .is_some();
         if had_running_animations {
-            let mut all_running_animations = context.running_animations.write().unwrap();
+            let mut all_running_animations = context.running_animations.write();
             for mut running_animation in all_running_animations.get_mut(&this_opaque).unwrap() {
                 
                 
