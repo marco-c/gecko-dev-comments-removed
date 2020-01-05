@@ -87,6 +87,11 @@ namespace {
 
 
 
+static int32_t sPreloadPermissionCount = 0;
+
+
+
+
 
 
 
@@ -118,7 +123,6 @@ static const char* kPreloadPermissions[] = {
   "fetch",
   "image",
   "manifest"
-  
 };
 
 
@@ -1781,6 +1785,12 @@ nsPermissionManager::AddInternal(nsIPrincipal* aPrincipal,
                                                             aExpireType, aExpireTime,
                                                             aModificationTime));
 
+      
+      
+      if (IsPreloadPermission(mTypeArray[typeIndex].get())) {
+        sPreloadPermissionCount++;
+      }
+
       if (aDBOperation == eWriteToDB && aExpireType != nsIPermissionManager::EXPIRE_SESSION) {
         UpdateDB(op, mStmtInsert, id, origin, aType, aPermission, aExpireType, aExpireTime, aModificationTime);
       }
@@ -1802,6 +1812,12 @@ nsPermissionManager::AddInternal(nsIPrincipal* aPrincipal,
       PermissionEntry oldPermissionEntry = entry->GetPermissions()[index];
       id = oldPermissionEntry.mID;
       entry->GetPermissions().RemoveElementAt(index);
+
+      
+      
+      if (IsPreloadPermission(mTypeArray[typeIndex].get())) {
+        sPreloadPermissionCount--;
+      }
 
       if (aDBOperation == eWriteToDB)
         
@@ -3246,5 +3262,12 @@ nsPermissionManager::WhenPermissionsAvailable(nsIPrincipal* aPrincipal,
     [] () {
       NS_WARNING("nsPermissionManager permission promise rejected. We're probably shutting down.");
     });
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsPermissionManager::GetHasPreloadPermissions(bool* aResult)
+{
+  *aResult = sPreloadPermissionCount > 0;
   return NS_OK;
 }
