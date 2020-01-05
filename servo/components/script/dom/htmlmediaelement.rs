@@ -133,9 +133,8 @@ impl AsyncResponseListener for HTMLMediaElementContext {
 
             
             elem.fire_simple_event("error");
-        }
-        
-        else {
+        } else {
+            
             elem.queue_dedicated_media_source_failure_steps();
         }
 
