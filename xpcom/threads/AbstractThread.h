@@ -33,6 +33,7 @@ class TaskDispatcher;
 
 
 
+
 class AbstractThread
 {
 public:
@@ -42,8 +43,13 @@ public:
 
   AbstractThread(bool aSupportsTailDispatch) : mSupportsTailDispatch(aSupportsTailDispatch) {}
 
+  
   static already_AddRefed<AbstractThread>
   CreateXPCOMThreadWrapper(nsIThread* aThread, bool aRequireTailDispatch);
+
+  
+  static already_AddRefed<AbstractThread>
+  CreateEventTargetWrapper(nsIEventTarget* aEventTarget, bool aRequireTailDispatch);
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(AbstractThread);
 
@@ -85,8 +91,10 @@ public:
   bool RequiresTailDispatchFromCurrentThread() const;
 
   virtual TaskQueue* AsTaskQueue() { MOZ_CRASH("Not a task queue!"); }
-  virtual nsIThread* AsXPCOMThread() { MOZ_CRASH("Not an XPCOM thread!"); }
+  virtual nsIEventTarget* AsEventTarget() { MOZ_CRASH("Not an event target!"); }
 
+  
+  
   
   static AbstractThread* MainThread();
 
@@ -96,6 +104,14 @@ public:
   void DispatchStateChange(already_AddRefed<nsIRunnable> aRunnable);
 
   static void DispatchDirectTask(already_AddRefed<nsIRunnable> aRunnable);
+
+  
+  
+  virtual already_AddRefed<nsIRunnable>
+  CreateDirectTaskDrainer(already_AddRefed<nsIRunnable> aRunnable)
+  {
+    MOZ_CRASH("Not support!");
+  }
 
 protected:
   virtual ~AbstractThread() {}
