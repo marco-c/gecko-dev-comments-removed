@@ -10,7 +10,6 @@
 #include "RecordedEvent.h"
 #include <ostream>
 #include <fstream>
-#include <string>
 
 #if defined(_MSC_VER)
 #include <unordered_set>
@@ -79,24 +78,9 @@ public:
   explicit DrawEventRecorderFile(const char *aFilename);
   ~DrawEventRecorderFile();
 
-  
-
-
-
-
-  void OpenAndTruncate();
-
-  
-
-
-
-
-  void Close();
-
 private:
   virtual void Flush();
 
-  std::string mOutputFilename;
   std::ofstream mOutputFile;
 };
 

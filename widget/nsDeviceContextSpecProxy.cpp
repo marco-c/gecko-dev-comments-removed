@@ -14,11 +14,8 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/Unused.h"
 #include "nsComponentManagerUtils.h"
-#include "nsAppDirectoryServiceDefs.h"
-#include "nsDirectoryServiceUtils.h"
 #include "nsIPrintSession.h"
 #include "nsIPrintSettings.h"
-#include "nsIUUIDGenerator.h"
 
 using mozilla::Unused;
 
@@ -137,37 +134,7 @@ nsDeviceContextSpecProxy::BeginDocument(const nsAString& aTitle,
                                         const nsAString& aPrintToFileName,
                                         int32_t aStartPage, int32_t aEndPage)
 {
-  nsCOMPtr<nsIFile> recordingFile;
-  nsresult rv = NS_GetSpecialDirectory(NS_APP_CONTENT_PROCESS_TEMP_DIR,
-                                       getter_AddRefs(recordingFile));
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  nsCOMPtr<nsIUUIDGenerator> uuidgen =
-    do_GetService("@mozilla.org/uuid-generator;1", &rv);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  nsID uuid;
-  rv = uuidgen->GenerateUUIDInPlace(&uuid);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  char uuidChars[NSID_LENGTH];
-  uuid.ToProvidedString(uuidChars);
-  mRecorderFile.AssignASCII(uuidChars);
-  rv = recordingFile->AppendNative(mRecorderFile);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  nsAutoCString recordingPath;
-  rv = recordingFile->GetNativePath(recordingPath);
-
-  mRecorder = new mozilla::gfx::DrawEventRecorderFile(recordingPath.get());
+  mRecorder = new mozilla::gfx::DrawEventRecorderMemory();
   return mRemotePrintJob->InitializePrint(nsString(aTitle),
                                           nsString(aPrintToFileName),
                                           aStartPage, aEndPage);
@@ -190,9 +157,6 @@ nsDeviceContextSpecProxy::AbortDocument()
 NS_IMETHODIMP
 nsDeviceContextSpecProxy::BeginPage()
 {
-  
-  mRecorder->OpenAndTruncate();
-
   return NS_OK;
 }
 
@@ -200,8 +164,27 @@ NS_IMETHODIMP
 nsDeviceContextSpecProxy::EndPage()
 {
   
-  mRecorder->Close();
-  mRemotePrintJob->ProcessPage(mRecorderFile);
+  mozilla::ipc::Shmem storedPage;
+  size_t recordingSize = mRecorder->RecordingSize();
+  if (!mRemotePrintJob->AllocShmem(recordingSize,
+                                   mozilla::ipc::SharedMemory::TYPE_BASIC,
+                                   &storedPage)) {
+    NS_WARNING("Failed to create shared memory for remote printing.");
+    return NS_ERROR_FAILURE;
+  }
+
+  bool success = mRecorder->CopyRecording(storedPage.get<char>(), recordingSize);
+  if (!success) {
+    NS_WARNING("Copying recording to shared memory was not succesful.");
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  
+  mRecorder->WipeRecording();
+
+  
+  mRemotePrintJob->ProcessPage(storedPage);
 
   return NS_OK;
 }
