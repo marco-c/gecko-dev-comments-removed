@@ -29,6 +29,7 @@ const INSPECTOR_L10N =
   new LocalizationHelper("devtools/client/locales/inspector.properties");
 
 const SHOW_GRID_LINE_NUMBERS = "devtools.gridinspector.showGridLineNumbers";
+const SHOW_GRID_OUTLINE_PREF = "devtools.gridinspector.showGridOutline";
 const SHOW_INFINITE_LINES_PREF = "devtools.gridinspector.showInfiniteLines";
 
 
@@ -113,6 +114,12 @@ LayoutView.prototype = {
 
 
       showBoxModelProperties: true,
+
+      
+
+
+
+      showGridOutline: Services.prefs.getBoolPref(SHOW_GRID_OUTLINE_PREF),
 
       onHideBoxModelHighlighter,
 
