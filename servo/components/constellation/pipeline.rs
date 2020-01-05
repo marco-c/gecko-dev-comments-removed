@@ -122,7 +122,7 @@ pub struct InitialPipelineState {
     
     pub pipeline_namespace_id: PipelineNamespaceId,
     
-    pub parent_visibility: Option<bool>,
+    pub prev_visibility: Option<bool>,
     
     pub webrender_api_sender: Option<webrender_traits::RenderApiSender>,
     
@@ -263,7 +263,7 @@ impl Pipeline {
                                      state.is_private,
                                      state.load_data.url,
                                      state.window_size,
-                                     state.parent_visibility.unwrap_or(true));
+                                     state.prev_visibility.unwrap_or(true));
 
         pipeline.notify_visibility();
 
