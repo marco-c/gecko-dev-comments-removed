@@ -358,6 +358,16 @@ public:
     
 
 
+
+
+
+
+    nsString GetDefaultFontName(const nsACString& aLangGroup,
+                                const nsACString& aGenericFamily);
+
+    
+
+
     virtual gfxFontGroup*
     CreateFontGroup(const mozilla::FontFamilyList& aFontFamilyList,
                     const gfxFontStyle *aStyle,

@@ -176,6 +176,12 @@ public:
     
     virtual bool GetStandardFamilyName(const nsAString& aFontName, nsAString& aFamilyName);
 
+    
+    
+    
+    gfxFontFamily* GetDefaultFontFamily(const nsACString& aLangGroup,
+                                        const nsACString& aGenericFamily);
+
     virtual void AddSizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf,
                                         FontListSizes* aSizes) const;
     virtual void AddSizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf,
