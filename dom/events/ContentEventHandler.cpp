@@ -2164,7 +2164,7 @@ ContentEventHandler::OnQueryTextRect(WidgetQueryContentEvent* aEvent)
     }
 
     
-    ErrorResult erv;
+    IgnoredErrorResult erv;
     range->SelectNodeContents(*mRootContent, erv);
     if (NS_WARN_IF(erv.Failed())) {
       return NS_ERROR_UNEXPECTED;
