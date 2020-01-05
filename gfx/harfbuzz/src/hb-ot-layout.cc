@@ -102,9 +102,17 @@ _hb_ot_layout_create (hb_face_t *face)
       
       || (940 == gdef_len && 60732 == gpos_len && 23310 == gsub_len)
       
+      || (964 == gdef_len && 60072 == gpos_len && 23836 == gsub_len)
+      
+      || (976 == gdef_len && 61456 == gpos_len && 23832 == gsub_len)
+      
       || (994 == gdef_len && 60336 == gpos_len && 24474 == gsub_len)
       
       || (1006 == gdef_len && 61740 == gpos_len && 24470 == gsub_len)
+      
+      || (1006 == gdef_len && 61346 == gpos_len && 24576 == gsub_len)
+      
+      || (1018 == gdef_len && 62828 == gpos_len && 24572 == gsub_len)
       
       || (1006 == gdef_len && 61352 == gpos_len && 24576 == gsub_len)
       
@@ -125,6 +133,14 @@ _hb_ot_layout_create (hb_face_t *face)
       
       
       || (188 == gdef_len && 3426 == gpos_len && 264 == gsub_len)
+      
+      || (1058 == gdef_len && 11818 == gpos_len && 47032 == gsub_len)
+      
+      || (1046 == gdef_len && 12600 == gpos_len && 47030 == gsub_len)
+      
+      || (1058 == gdef_len && 16770 == gpos_len && 71796 == gsub_len)
+      
+      || (1046 == gdef_len && 17862 == gpos_len && 71790 == gsub_len)
       
       || (1046 == gdef_len && 17112 == gpos_len && 71788 == gsub_len)
       
