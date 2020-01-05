@@ -210,6 +210,8 @@ add_test(function test_observe_prefs_function() {
   let observer = function() { observed = !observed };
 
   Preferences.observe("test_observe_prefs_function", observer);
+  Preferences.set("test_observe_prefs_function.subpref", "something");
+  do_check_false(observed);
   Preferences.set("test_observe_prefs_function", "something");
   do_check_true(observed);
 
@@ -219,6 +221,7 @@ add_test(function test_observe_prefs_function() {
 
   
   Preferences.reset("test_observe_prefs_function");
+  Preferences.reset("test_observe_prefs_function.subpref");
 
   run_next_test();
 });
@@ -232,6 +235,8 @@ add_test(function test_observe_prefs_object() {
   };
 
   Preferences.observe("test_observe_prefs_object", observer.observe, observer);
+  Preferences.set("test_observe_prefs_object.subpref", "something");
+  do_check_false(observer.observed);
   Preferences.set("test_observe_prefs_object", "something");
   do_check_true(observer.observed);
 
@@ -241,6 +246,7 @@ add_test(function test_observe_prefs_object() {
 
   
   Preferences.reset("test_observe_prefs_object");
+  Preferences.reset("test_observe_prefs_object.subpref");
 
   run_next_test();
 });
@@ -257,6 +263,7 @@ add_test(function test_observe_prefs_nsIObserver() {
   };
 
   Preferences.observe("test_observe_prefs_nsIObserver", observer);
+  Preferences.set("test_observe_prefs_nsIObserver.subpref", "something");
   Preferences.set("test_observe_prefs_nsIObserver", "something");
   do_check_true(observer.observed);
 
@@ -266,6 +273,7 @@ add_test(function test_observe_prefs_nsIObserver() {
 
   
   Preferences.reset("test_observe_prefs_nsIObserver");
+  Preferences.reset("test_observe_prefs_nsIObserver.subpref");
 
   run_next_test();
 });
@@ -276,26 +284,32 @@ add_test(function test_observe_prefs_nsIObserver() {
 
 
 
+add_test(function test_observe_exact_pref() {
+  let observed = false;
+  let observer = function() { observed = !observed };
 
+  Preferences.observe("test_observe_exact_pref", observer);
+  Preferences.set("test_observe_exact_pref.sub-pref", "something");
+  do_check_false(observed);
 
+  
+  Preferences.ignore("test_observe_exact_pref", observer);
+  Preferences.reset("test_observe_exact_pref.sub-pref");
 
-
-
-
-
-
-
-
+  run_next_test();
+});
 
 add_test(function test_observe_value_of_set_pref() {
   let observer = function(newVal) { do_check_eq(newVal, "something") };
 
   Preferences.observe("test_observe_value_of_set_pref", observer);
+  Preferences.set("test_observe_value_of_set_pref.subpref", "somethingelse");
   Preferences.set("test_observe_value_of_set_pref", "something");
 
   
   Preferences.ignore("test_observe_value_of_set_pref", observer);
   Preferences.reset("test_observe_value_of_set_pref");
+  Preferences.reset("test_observe_value_of_set_pref.subpref");
 
   run_next_test();
 });

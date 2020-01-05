@@ -402,11 +402,11 @@ PrefObserver.prototype = {
     
     
     
-    if (data.indexOf(this.prefName) != 0)
+    if (data != this.prefName)
       return;
 
     if (typeof this.callback == "function") {
-      let prefValue = Preferences.get(data);
+      let prefValue = Preferences.get(this.prefName);
 
       if (this.thisObject)
         this.callback.call(this.thisObject, prefValue);
