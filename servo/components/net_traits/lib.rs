@@ -275,16 +275,6 @@ impl PendingAsyncLoad {
     }
 
     
-    pub fn load(mut self) -> IpcReceiver<LoadResponse> {
-        self.guard.neuter();
-        let load_data = LoadData::new(self.url, self.pipeline);
-        let (sender, receiver) = ipc::channel().unwrap();
-        let consumer = LoadConsumer::Channel(sender);
-        self.resource_task.send(ControlMsg::Load(load_data, consumer)).unwrap();
-        receiver
-    }
-
-    
     pub fn load_async(mut self, listener: AsyncResponseTarget) {
         self.guard.neuter();
         let load_data = LoadData::new(self.url, self.pipeline);
@@ -396,36 +386,6 @@ pub fn load_whole_resource(resource_task: &ResourceTask, url: Url, pipeline_id: 
             ProgressMsg::Payload(data) => buf.push_all(&data),
             ProgressMsg::Done(Ok(())) => return Ok((response.metadata, buf)),
             ProgressMsg::Done(Err(e)) => return Err(e)
-        }
-    }
-}
-
-
-pub fn load_bytes_iter(pending: PendingAsyncLoad) -> (Metadata, ProgressMsgPortIterator) {
-    let input_port = pending.load();
-    let response = input_port.recv().unwrap();
-    let iter = ProgressMsgPortIterator {
-        progress_port: response.progress_port
-    };
-    (response.metadata, iter)
-}
-
-
-pub struct ProgressMsgPortIterator {
-    progress_port: IpcReceiver<ProgressMsg>,
-}
-
-impl Iterator for ProgressMsgPortIterator {
-    type Item = Vec<u8>;
-
-    fn next(&mut self) -> Option<Vec<u8>> {
-        match self.progress_port.recv().unwrap() {
-            ProgressMsg::Payload(data) => Some(data),
-            ProgressMsg::Done(Ok(()))  => None,
-            ProgressMsg::Done(Err(e))  => {
-                error!("error receiving bytes: {}", e);
-                None
-            }
         }
     }
 }
