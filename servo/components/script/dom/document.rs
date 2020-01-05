@@ -2852,12 +2852,12 @@ impl DocumentProgressHandler {
         let wintarget = window.upcast::<EventTarget>();
         event.set_trusted(true);
 
-        
+        // http://w3c.github.io/navigation-timing/#widl-PerformanceNavigationTiming-loadEventStart
         update_with_current_time_ms(&document.load_event_start);
 
         let _ = wintarget.dispatch_event_with_target(document.upcast(), &event);
 
-        
+        // http://w3c.github.io/navigation-timing/#widl-PerformanceNavigationTiming-loadEventEnd
         update_with_current_time_ms(&document.load_event_end);
 
         document.notify_constellation_load();
@@ -2869,6 +2869,8 @@ impl DocumentProgressHandler {
 }
 
 impl Runnable for DocumentProgressHandler {
+    fn name(&self) -> &'static str { "DocumentProgressHandler" }
+
     fn handler(self: Box<DocumentProgressHandler>) {
         let document = self.addr.root();
         let window = document.window();
