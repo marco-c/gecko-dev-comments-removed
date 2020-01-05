@@ -269,6 +269,37 @@ class StrictModeGetter {
     virtual bool strictMode() = 0;
 };
 
+
+
+
+
+struct ErrorMetadata
+{
+    
+    const char* filename;
+
+    
+    
+    
+    uint32_t lineNumber;
+    uint32_t columnNumber;
+
+    
+    
+    
+    
+    
+    
+    UniqueTwoByteChars lineOfContext;
+
+    
+    size_t lineLength;
+
+    
+    
+    size_t tokenOffset;
+};
+
 class TokenStreamBase
 {
   protected:
@@ -646,10 +677,24 @@ class MOZ_STACK_CLASS TokenStream final : public TokenStreamBase
     
     MOZ_MUST_USE bool warning(unsigned errorNumber, ...);
 
+  private:
     
     
     
-    bool reportCompileErrorNumberVA(UniquePtr<JSErrorNotes> notes, uint32_t offset, unsigned flags,
+    MOZ_MUST_USE bool computeLineOfContext(ErrorMetadata* err, uint32_t offset);
+
+  public:
+    
+    void computeErrorMetadataNoOffset(ErrorMetadata* err);
+
+    
+    MOZ_MUST_USE bool computeErrorMetadata(ErrorMetadata* err, uint32_t offset);
+
+    
+    
+    
+    bool reportCompileErrorNumberVA(ErrorMetadata&& metadata,
+                                    UniquePtr<JSErrorNotes> notes, unsigned flags,
                                     unsigned errorNumber, va_list args);
     bool reportStrictModeErrorNumberVA(UniquePtr<JSErrorNotes> notes, uint32_t offset,
                                        bool strictMode, unsigned errorNumber, va_list args);
