@@ -258,13 +258,6 @@ function errorHandler(event)
   finishTest();
 }
 
-
-function errorCallbackHandler(err)
-{
-  ok(false, "got unexpected error callback: " + err);
-  finishTest();
-}
-
 function expectUncaughtException(expecting)
 {
   SimpleTest.expectUncaughtException(expecting);

@@ -79,7 +79,6 @@
 #include "nsIInterfaceRequestor.h"
 #include "nsInterfaceHashtable.h"
 #include "nsIOutputStream.h"
-#include "nsIPipe.h"
 #include "nsIPrincipal.h"
 #include "nsIScriptSecurityManager.h"
 #include "nsISupports.h"
@@ -6636,36 +6635,6 @@ private:
   Cleanup() override;
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class DatabaseFile final
   : public PBackgroundIDBDatabaseFileParent
 {
@@ -6685,54 +6654,20 @@ public:
     return mFileInfo;
   }
 
-  
-
-
-
-  bool
-  HasBlobImpl() const
-  {
-    return (bool)mBlobImpl;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   already_AddRefed<nsIInputStream>
-  GetBlockingInputStream(ErrorResult &rv) const;
+  GetInputStream() const
+  {
+    AssertIsOnBackgroundThread();
+
+    nsCOMPtr<nsIInputStream> inputStream;
+    if (mBlobImpl) {
+      ErrorResult rv;
+      mBlobImpl->GetInternalStream(getter_AddRefs(inputStream), rv);
+      MOZ_ALWAYS_TRUE(!rv.Failed());
+    }
+
+    return inputStream.forget();
+  }
 
   void
   ClearInputStream()
@@ -6767,83 +6702,11 @@ private:
   ActorDestroy(ActorDestroyReason aWhy) override
   {
     AssertIsOnBackgroundThread();
+
+    mBlobImpl = nullptr;
+    mFileInfo = nullptr;
   }
 };
-
-already_AddRefed<nsIInputStream>
-DatabaseFile::GetBlockingInputStream(ErrorResult &rv) const
-{
-  
-  
-  MOZ_ASSERT(!IsOnBackgroundThread());
-
-  if (!mBlobImpl) {
-    return nullptr;
-  }
-
-  nsCOMPtr<nsIInputStream> inputStream;
-  mBlobImpl->GetInternalStream(getter_AddRefs(inputStream), rv);
-  if (rv.Failed()) {
-    return nullptr;
-  }
-
-  
-  bool pipeNeeded;
-  rv = inputStream->IsNonBlocking(&pipeNeeded);
-  if (rv.Failed()) {
-    return nullptr;
-  }
-
-  
-  if (pipeNeeded) {
-    uint64_t available;
-    rv = inputStream->Available(&available);
-    if (rv.Failed()) {
-      return nullptr;
-    }
-
-    uint64_t blobSize = mBlobImpl->GetSize(rv);
-    if (rv.Failed()) {
-      return nullptr;
-    }
-
-    if (available == blobSize) {
-      pipeNeeded = false;
-    }
-  }
-
-  if (pipeNeeded) {
-    nsCOMPtr<nsIEventTarget> target =
-      do_GetService(NS_STREAMTRANSPORTSERVICE_CONTRACTID);
-    if (!target) {
-      rv.Throw(NS_ERROR_UNEXPECTED);
-      return nullptr;
-    }
-
-    nsCOMPtr<nsIInputStream> pipeInputStream;
-    nsCOMPtr<nsIOutputStream> pipeOutputStream;
-
-    rv = NS_NewPipe(
-      getter_AddRefs(pipeInputStream),
-      getter_AddRefs(pipeOutputStream),
-      0, 0, 
-      false, 
-      true); 
-    if (rv.Failed()) {
-      return nullptr;
-    }
-
-    rv = NS_AsyncCopy(inputStream, pipeOutputStream, target);
-    if (rv.Failed()) {
-      return nullptr;
-    }
-
-    inputStream = pipeInputStream;
-  }
-
-  return inputStream.forget();
-}
-
 
 class TransactionBase
 {
@@ -8357,8 +8220,6 @@ struct ObjectStoreAddOrPutRequestOp::StoredFileInfo final
 {
   RefPtr<DatabaseFile> mFileActor;
   RefPtr<FileInfo> mFileInfo;
-  
-  
   nsCOMPtr<nsIInputStream> mInputStream;
   StructuredCloneFile::FileType mType;
   bool mCopiedSuccessfully;
@@ -8590,7 +8451,7 @@ protected:
     , mMetadata(IndexMetadataForParams(aTransaction, aParams))
   { }
 
-
+  
   ~IndexRequestOpBase() override = default;
 
 private:
@@ -8799,7 +8660,7 @@ protected:
     MOZ_ASSERT(aCursor);
   }
 
-
+  
   ~CursorOpBase() override = default;
 
   bool
@@ -26185,7 +26046,9 @@ ObjectStoreAddOrPutRequestOp::Init(TransactionBase* aTransaction)
           storedFileInfo->mFileInfo = storedFileInfo->mFileActor->GetFileInfo();
           MOZ_ASSERT(storedFileInfo->mFileInfo);
 
-          if (storedFileInfo->mFileActor->HasBlobImpl() && !mFileManager) {
+          storedFileInfo->mInputStream =
+            storedFileInfo->mFileActor->GetInputStream();
+          if (storedFileInfo->mInputStream && !mFileManager) {
             mFileManager = fileManager;
           }
 
@@ -26222,7 +26085,9 @@ ObjectStoreAddOrPutRequestOp::Init(TransactionBase* aTransaction)
           storedFileInfo->mFileInfo = storedFileInfo->mFileActor->GetFileInfo();
           MOZ_ASSERT(storedFileInfo->mFileInfo);
 
-          if (storedFileInfo->mFileActor->HasBlobImpl() && !mFileManager) {
+          storedFileInfo->mInputStream =
+            storedFileInfo->mFileActor->GetInputStream();
+          if (storedFileInfo->mInputStream && !mFileManager) {
             mFileManager = fileManager;
           }
 
@@ -26460,29 +26325,8 @@ ObjectStoreAddOrPutRequestOp::DoDatabaseWork(DatabaseConnection* aConnection)
       StoredFileInfo& storedFileInfo = mStoredFileInfos[index];
       MOZ_ASSERT(storedFileInfo.mFileInfo);
 
-      
-      
-      
-      
-      
-      
-      
-      
-      MOZ_ASSERT(storedFileInfo.mInputStream || storedFileInfo.mFileActor ||
-                 storedFileInfo.mType == StructuredCloneFile::eMutableFile);
-
       nsCOMPtr<nsIInputStream> inputStream;
-      
       storedFileInfo.mInputStream.swap(inputStream);
-      
-      if (!inputStream && storedFileInfo.mFileActor) {
-        ErrorResult streamRv;
-        inputStream =
-          storedFileInfo.mFileActor->GetBlockingInputStream(streamRv);
-        if (NS_WARN_IF(streamRv.Failed())) {
-          return streamRv.StealNSResult();
-        }
-      }
 
       if (inputStream) {
         RefPtr<FileInfo>& fileInfo = storedFileInfo.mFileInfo;
