@@ -21,7 +21,7 @@
 
   
   } else {
-    var g
+    var g;
     if (typeof window !== "undefined") {
       g = window;
     } else if (typeof global !== "undefined") {
