@@ -6,3 +6,9 @@ self.oninstall = function(event) {
       addEventListener('fetch', handleFetch);
       self.onfetch = handleFetch;
 }
+
+
+
+addEventListener('push', function() {})
+addEventListener('message', function() {})
+addEventListener('non-sw-event', function() {})
