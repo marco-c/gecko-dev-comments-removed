@@ -168,8 +168,10 @@ nsSVGIntegrationUtils::UsingMaskOrClipPathForFrame(const nsIFrame* aFrame)
          style->mMask.HasLayerWithImage();
 }
 
-nsPoint
-nsSVGIntegrationUtils::GetOffsetToBoundingBox(nsIFrame* aFrame)
+
+
+static nsPoint
+GetOffsetToBoundingBox(nsIFrame* aFrame)
 {
   if ((aFrame->GetStateBits() & NS_FRAME_SVG_LAYOUT)) {
     
@@ -411,7 +413,82 @@ private:
   nsPoint mOffset;
 };
 
+static IntRect
+ComputeClipExtsInDeviceSpace(gfxContext& aCtx)
+{
+  gfxContextMatrixAutoSaveRestore matRestore(&aCtx);
+
+  
+  aCtx.SetMatrix(gfxMatrix());
+  gfxRect clippedFrameSurfaceRect = aCtx.GetClipExtents();
+  clippedFrameSurfaceRect.RoundOut();
+
+  IntRect result;
+  ToRect(clippedFrameSurfaceRect).ToIntRect(&result);
+  return mozilla::gfx::Factory::CheckSurfaceSize(result.Size()) ? result
+                                                                : IntRect();
+}
+
 typedef nsSVGIntegrationUtils::PaintFramesParams PaintFramesParams;
+
+static IntRect
+ComputeMaskGeometry(const PaintFramesParams& aParams,
+                    const nsStyleSVGReset *svgReset,
+                    const nsPoint& aOffsetToUserSpace,
+                    const nsTArray<nsSVGMaskFrame *>& aMaskFrames)
+{
+  gfxContext& ctx = aParams.ctx;
+  nsIFrame* frame = aParams.frame;
+
+  
+  int32_t appUnitsPerDevPixel = frame->PresContext()->AppUnitsPerDevPixel();
+  nsRect userSpaceBorderArea = aParams.borderArea - aOffsetToUserSpace;
+  nsRect userSpaceDirtyRect = aParams.dirtyRect - aOffsetToUserSpace;
+
+  
+  gfxRect maskInUserSpace;
+  for (size_t i = 0; i < aMaskFrames.Length() ; i++) {
+    nsSVGMaskFrame* maskFrame = aMaskFrames[i];
+    gfxRect currentMaskSurfaceRect;
+
+    if (maskFrame) {
+      currentMaskSurfaceRect = maskFrame->GetMaskArea(aParams.frame);
+    } else {
+      nsCSSRendering::ImageLayerClipState clipState;
+      nsCSSRendering::GetImageLayerClip(svgReset->mMask.mLayers[i],
+                                       frame,
+                                       *frame->StyleBorder(),
+                                       userSpaceBorderArea,
+                                       userSpaceDirtyRect,
+                                       false, 
+                                       appUnitsPerDevPixel,
+                                       &clipState);
+      currentMaskSurfaceRect = clipState.mDirtyRectGfx;
+    }
+
+    maskInUserSpace = maskInUserSpace.Union(currentMaskSurfaceRect);
+  }
+
+  ctx.Save();
+
+  
+  gfxRect frameVisualOverflowRect =
+    nsLayoutUtils::RectToGfxRect(frame->GetVisualOverflowRectRelativeToSelf(),
+                                 appUnitsPerDevPixel);
+  ctx.Clip(frameVisualOverflowRect);
+  
+  
+  
+  
+  if (!maskInUserSpace.IsEmpty()) {
+    ctx.Clip(maskInUserSpace);
+  }
+
+  IntRect result = ComputeClipExtsInDeviceSpace(ctx);
+  ctx.Restore();
+
+  return result;
+}
 
 static DrawResult
 GenerateMaskSurface(const PaintFramesParams& aParams,
@@ -441,7 +518,9 @@ GenerateMaskSurface(const PaintFramesParams& aParams,
     return DrawResult::SUCCESS;
   }
 
-  const IntRect& maskSurfaceRect = aParams.maskRect;
+  IntRect maskSurfaceRect = ComputeMaskGeometry(aParams, svgReset,
+                                                aOffsetToUserSpace,
+                                                aMaskFrames);
   if (maskSurfaceRect.IsEmpty()) {
     return DrawResult::SUCCESS;
   }
@@ -608,7 +687,7 @@ SetupContextMatrix(nsIFrame* aFrame, const PaintFramesParams& aParams,
                    bool aClipCtx)
 {
   aOffsetToBoundingBox = aParams.builder->ToReferenceFrame(aFrame) -
-                         nsSVGIntegrationUtils::GetOffsetToBoundingBox(aFrame);
+                         GetOffsetToBoundingBox(aFrame);
   if (!aFrame->IsFrameOfType(nsIFrame::eSVG)) {
     
 
@@ -967,7 +1046,7 @@ PaintFrameCallback::operator()(gfxContext* aContext,
   
   
   int32_t appUnitsPerDevPixel = mFrame->PresContext()->AppUnitsPerDevPixel();
-  nsPoint offset = nsSVGIntegrationUtils::GetOffsetToBoundingBox(mFrame);
+  nsPoint offset = GetOffsetToBoundingBox(mFrame);
   gfxPoint devPxOffset = gfxPoint(offset.x, offset.y) / appUnitsPerDevPixel;
   aContext->Multiply(gfxMatrix::Translation(devPxOffset));
 
