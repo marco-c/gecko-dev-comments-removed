@@ -1271,15 +1271,19 @@ InterpretDollar(JSLinearString* matched, JSLinearString* string, size_t position
         }
 
         const CharT* currentChar = currentDollar + 2;
-        if (currentChar < replacementEnd && (c = *currentChar, JS7_ISDEC(c))) {
-            unsigned tmpNum = 10 * num + JS7_UNDEC(c);
-            
-            
-            if (tmpNum <= captures.length()) {
-                currentChar++;
-                num = tmpNum;
+        if (currentChar < replacementEnd) {
+            c = *currentChar;
+            if (JS7_ISDEC(c)) {
+                unsigned tmpNum = 10 * num + JS7_UNDEC(c);
+                
+                
+                if (tmpNum <= captures.length()) {
+                    currentChar++;
+                    num = tmpNum;
+                }
             }
         }
+
         if (num == 0) {
             
             
