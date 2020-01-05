@@ -19,6 +19,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/ComputedTimingFunction.h"
 #include "mozilla/EffectCompositor.h"
+#include "mozilla/Keyframe.h"
 #include "mozilla/KeyframeEffectParams.h"
 
 #include "mozilla/ServoBindingTypes.h"
@@ -53,70 +54,6 @@ enum class IterationCompositeOperation : uint8_t;
 enum class CompositeOperation : uint8_t;
 struct AnimationPropertyDetails;
 }
-
-
-
-
-struct PropertyValuePair
-{
-  nsCSSPropertyID mProperty;
-  
-  
-  
-  nsCSSValue mValue;
-
-  
-  
-  
-  RefPtr<RawServoDeclarationBlock> mServoDeclarationBlock;
-
-  bool operator==(const PropertyValuePair&) const;
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-struct Keyframe
-{
-  Keyframe() = default;
-  Keyframe(const Keyframe& aOther) = default;
-  Keyframe(Keyframe&& aOther)
-  {
-    *this = Move(aOther);
-  }
-
-  Keyframe& operator=(const Keyframe& aOther) = default;
-  Keyframe& operator=(Keyframe&& aOther)
-  {
-    mOffset         = aOther.mOffset;
-    mComputedOffset = aOther.mComputedOffset;
-    mTimingFunction = Move(aOther.mTimingFunction);
-    mComposite      = Move(aOther.mComposite);
-    mPropertyValues = Move(aOther.mPropertyValues);
-    return *this;
-  }
-
-  Maybe<double>                 mOffset;
-  static constexpr double kComputedOffsetNotSet = -1.0;
-  double                        mComputedOffset = kComputedOffsetNotSet;
-  Maybe<ComputedTimingFunction> mTimingFunction; 
-                                                 
-  Maybe<dom::CompositeOperation> mComposite;
-  nsTArray<PropertyValuePair>   mPropertyValues;
-};
 
 struct AnimationPropertySegment
 {
