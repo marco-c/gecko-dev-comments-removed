@@ -22,6 +22,10 @@ namespace layers {
 class TextureForwarder : public ClientIPCAllocator
 {
 public:
+  TextureForwarder()
+    : mSerial(++sSerialCounter)
+  {}
+
   
 
 
@@ -34,6 +38,49 @@ public:
   virtual TextureForwarder* AsTextureForwarder() override { return this; }
 
   virtual FixedSizeSmallShmemSectionAllocator* GetTileLockAllocator() { return nullptr; }
+
+  int32_t GetSerial() { return mSerial; }
+
+  void IdentifyTextureHost(const TextureFactoryIdentifier& aIdentifier);
+
+  virtual int32_t GetMaxTextureSize() const override
+  {
+    return mTextureFactoryIdentifier.mMaxTextureSize;
+  }
+
+  
+
+
+
+
+  LayersBackend GetCompositorBackendType() const
+  {
+    return mTextureFactoryIdentifier.mParentBackend;
+  }
+
+  bool SupportsTextureBlitting() const
+  {
+    return mTextureFactoryIdentifier.mSupportsTextureBlitting;
+  }
+
+  bool SupportsPartialUploads() const
+  {
+    return mTextureFactoryIdentifier.mSupportsPartialUploads;
+  }
+
+  const TextureFactoryIdentifier& GetTextureFactoryIdentifier() const
+  {
+    return mTextureFactoryIdentifier;
+  }
+
+  SyncObject* GetSyncObject() { return mSyncObject; }
+
+protected:
+  TextureFactoryIdentifier mTextureFactoryIdentifier;
+  RefPtr<SyncObject> mSyncObject;
+
+  const int32_t mSerial;
+  static mozilla::Atomic<int32_t> sSerialCounter;
 };
 
 } 

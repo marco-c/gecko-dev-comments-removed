@@ -17,6 +17,7 @@
 #include "mozilla/gfx/Point.h"          
 #include "mozilla/layers/GonkNativeHandle.h"
 #include "mozilla/layers/LayersTypes.h"  
+#include "mozilla/layers/CompositorTypes.h"
 #include "mozilla/mozalloc.h"           
 #include "nsAutoPtr.h"                  
 #include "nsAutoRef.h"                  
@@ -150,7 +151,7 @@ class PImageContainerChild;
 class SharedPlanarYCbCrImage;
 class PlanarYCbCrImage;
 class TextureClient;
-class CompositableClient;
+class TextureForwarder;
 class GrallocImage;
 class NVImage;
 
@@ -227,7 +228,7 @@ public:
 
 
 
-  virtual TextureClient* GetTextureClient(CompositableClient* aClient) { return nullptr; }
+  virtual TextureClient* GetTextureClient(TextureForwarder* aForwarder) { return nullptr; }
 
   
   virtual EGLImageImage* AsEGLImageImage() { return nullptr; }
@@ -888,7 +889,8 @@ public:
     return surface.forget();
   }
 
-  virtual TextureClient* GetTextureClient(CompositableClient* aClient) override;
+  void SetTextureFlags(TextureFlags aTextureFlags) { mTextureFlags = aTextureFlags; }
+  virtual TextureClient* GetTextureClient(TextureForwarder* aForwarder) override;
 
   virtual gfx::IntSize GetSize() override { return mSize; }
 
@@ -900,6 +902,7 @@ private:
   gfx::IntSize mSize;
   nsCountedRef<nsOwningThreadSourceSurfaceRef> mSourceSurface;
   nsDataHashtable<nsUint32HashKey, RefPtr<TextureClient> >  mTextureClients;
+  TextureFlags mTextureFlags;
 };
 
 #ifdef MOZ_WIDGET_GONK

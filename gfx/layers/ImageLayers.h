@@ -75,18 +75,6 @@ public:
     return mEffectiveTransformForBuffer;
   }
 
-  
-
-
-  void SetDisallowBigImage(bool aDisallowBigImage)
-  {
-    if (mDisallowBigImage != aDisallowBigImage) {
-      MOZ_LAYERS_LOG_IF_SHADOWABLE(this, ("Layer::Mutated(%p) DisallowBigImage", this));
-      mDisallowBigImage = aDisallowBigImage;
-      Mutated();
-    }
-  }
-
 protected:
   ImageLayer(LayerManager* aManager, void* aImplData);
   ~ImageLayer();
@@ -97,7 +85,6 @@ protected:
   gfx::SamplingFilter mSamplingFilter;
   gfx::IntSize mScaleToSize;
   ScaleMode mScaleMode;
-  bool mDisallowBigImage;
   gfx::Matrix4x4 mEffectiveTransformForBuffer;
 };
 
