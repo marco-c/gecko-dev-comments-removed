@@ -1913,28 +1913,6 @@ nsStyleGradient::HasCalc()
 
 
 
-static void
-MaybeUntrackAndUnlock(nsStyleImageRequest::Mode aModeFlags,
-                      imgRequestProxy* aRequestProxy,
-                      ImageTracker* aImageTracker)
-{
-  MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(aRequestProxy);
-  MOZ_ASSERT(aImageTracker);
-
-  if (aModeFlags & nsStyleImageRequest::Mode::Lock) {
-    aRequestProxy->UnlockImage();
-  }
-
-  if (aModeFlags & nsStyleImageRequest::Mode::Discard) {
-    aRequestProxy->RequestDiscard();
-  }
-
-  if (aModeFlags & nsStyleImageRequest::Mode::Track) {
-    aImageTracker->Remove(aRequestProxy);
-  }
-}
-
 
 
 
@@ -1954,14 +1932,30 @@ public:
     , mImageValue(aImageValue)
     , mImageTracker(aImageTracker)
   {
-    MOZ_ASSERT(!!mRequestProxy == !!mImageTracker);
   }
 
   NS_IMETHOD Run() final
   {
-    if (mRequestProxy) {
-      MaybeUntrackAndUnlock(mModeFlags, mRequestProxy, mImageTracker);
+    MOZ_ASSERT(NS_IsMainThread());
+
+    if (!mRequestProxy) {
+      return NS_OK;
     }
+
+    MOZ_ASSERT(mImageTracker);
+
+    if (mModeFlags & Mode::Lock) {
+      mRequestProxy->UnlockImage();
+    }
+
+    if (mModeFlags & Mode::Discard) {
+      mRequestProxy->RequestDiscard();
+    }
+
+    if (mModeFlags & Mode::Track) {
+      mImageTracker->Remove(mRequestProxy);
+    }
+
     return NS_OK;
   }
 
@@ -1982,14 +1976,14 @@ nsStyleImageRequest::nsStyleImageRequest(Mode aModeFlags,
                                          css::ImageValue* aImageValue,
                                          ImageTracker* aImageTracker)
   : mRequestProxy(aRequestProxy)
+  , mImageValue(aImageValue)
   , mImageTracker(aImageTracker)
-  , mBaseURI(aImageValue->mBaseURI)
-  , mURIString(aImageValue->mString)
   , mModeFlags(aModeFlags)
   , mResolved(true)
 {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aRequestProxy);
+  MOZ_ASSERT(aImageValue);
   MOZ_ASSERT(aImageTracker);
 
   MaybeTrackAndLock();
@@ -2006,32 +2000,29 @@ nsStyleImageRequest::nsStyleImageRequest(
 {
   mImageValue = new css::ImageValue(aURLBuffer, Move(aBaseURI),
                                     Move(aReferrer), Move(aPrincipal));
-  mBaseURI = mImageValue->mBaseURI;
-  mURIString = mImageValue->mString;
 }
 
 nsStyleImageRequest::~nsStyleImageRequest()
 {
-  if (NS_IsMainThread()) {
-    
-    
-    
-    if (mRequestProxy) {
-      MaybeUntrackAndUnlock(mModeFlags, mRequestProxy, mImageTracker);
-    }
-  } else {
-    
-    
-    
-    if (mRequestProxy || mImageValue) {
-      RefPtr<StyleImageRequestCleanupTask> task =
-          new StyleImageRequestCleanupTask(mModeFlags,
-                                           mRequestProxy.forget(),
-                                           mImageValue.forget(),
-                                           mImageTracker.forget());
+  
+  
+  
+  {
+    RefPtr<StyleImageRequestCleanupTask> task =
+        new StyleImageRequestCleanupTask(mModeFlags,
+                                         mRequestProxy.forget(),
+                                         mImageValue.forget(),
+                                         mImageTracker.forget());
+    if (NS_IsMainThread()) {
+      task->Run();
+    } else {
       NS_DispatchToMainThread(task.forget());
     }
   }
+
+  MOZ_ASSERT(!mRequestProxy);
+  MOZ_ASSERT(!mImageValue);
+  MOZ_ASSERT(!mImageTracker);
 }
 
 bool
@@ -2052,9 +2043,6 @@ nsStyleImageRequest::Resolve(nsPresContext* aPresContext)
   value.SetImageValue(mImageValue);
   mRequestProxy = value.GetPossiblyStaticImageValue(aPresContext->Document(),
                                                     aPresContext);
-
-  
-  mImageValue = nullptr;
 
   if (!mRequestProxy) {
     
@@ -2083,22 +2071,10 @@ nsStyleImageRequest::MaybeTrackAndLock()
   }
 }
 
-static const char16_t*
-GetBufferValue(nsStringBuffer* aBuffer)
-{
-  
-  
-  
-  return static_cast<char16_t*>(aBuffer->Data());
-}
-
 bool
 nsStyleImageRequest::DefinitelyEquals(const nsStyleImageRequest& aOther) const
 {
-  return mBaseURI == aOther.mBaseURI &&
-         (mURIString == aOther.mURIString ||
-          NS_strcmp(GetBufferValue(mURIString),
-                    GetBufferValue(aOther.mURIString)) == 0);
+  return DefinitelyEqualURIs(mImageValue, aOther.mImageValue);
 }
 
 
