@@ -1954,6 +1954,13 @@ public:
 
 
 
+    virtual bool SynchronouslyRepaintOnResize()
+    { return true; }
+
+    
+
+
+
 
     virtual int32_t RoundsWidgetCoordinatesTo() { return 1; }
 
