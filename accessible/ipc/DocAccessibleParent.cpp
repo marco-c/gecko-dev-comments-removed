@@ -35,13 +35,13 @@ DocAccessibleParent::RecvShowEvent(const ShowEventData& aData,
   
   if (!parent) {
     NS_ERROR("adding child to unknown accessible");
-    return IPC_OK();
+    return IPC_FAIL(this, "unknown parent accessible");
   }
 
   uint32_t newChildIdx = aData.Idx();
   if (newChildIdx > parent->ChildrenCount()) {
     NS_ERROR("invalid index to add child at");
-    return IPC_OK();
+    return IPC_FAIL(this, "invalid index");
   }
 
   uint32_t consumed = AddSubtree(parent, aData.NewTree(), 0, newChildIdx);
@@ -50,7 +50,7 @@ DocAccessibleParent::RecvShowEvent(const ShowEventData& aData,
   
   
   if (!consumed) {
-    return IPC_OK();
+    return IPC_FAIL(this, "failed to add children");
   }
 
 #ifdef DEBUG
