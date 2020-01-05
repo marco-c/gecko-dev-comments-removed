@@ -138,18 +138,22 @@ class InputPipe extends Pipe {
     return buffer;
   }
 
-
   
 
 
 
+
+
+
   onReady() {
+    let result = false;
     let reads = this.pending;
     while (reads.length) {
       let {resolve, length} = reads[0];
 
       let buffer = this.readBuffer(length);
       if (buffer) {
+        result = true;
         this.shiftPending();
         resolve(buffer);
       } else {
@@ -160,6 +164,7 @@ class InputPipe extends Pipe {
     if (reads.length == 0) {
       io.updatePollFds();
     }
+    return result;
   }
 }
 
@@ -567,10 +572,16 @@ io = {
 
         let handler = handlers[i];
         try {
+          let success = false;
           if (pollfd.revents & handler.pollEvents) {
-            handler.onReady();
+            success = handler.onReady();
           }
-          if (pollfd.revents & (LIBC.POLLERR | LIBC.POLLHUP | LIBC.POLLNVAL)) {
+          
+          
+          
+          
+          
+          if (!success && (pollfd.revents & (LIBC.POLLERR | LIBC.POLLHUP | LIBC.POLLNVAL))) {
             handler.onError();
           }
         } catch (e) {
