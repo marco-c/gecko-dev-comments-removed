@@ -1255,15 +1255,25 @@ AccessibleWrap::GetHWNDFor(Accessible* aAccessible)
     return nullptr;
   }
 
-  
-  
-  
   if (aAccessible->IsProxy()) {
     ProxyAccessible* proxy = aAccessible->Proxy();
     if (!proxy) {
       return nullptr;
     }
 
+    
+    
+    if (nsWinUtils::IsWindowEmulationStarted()) {
+      DocAccessibleParent* doc = proxy->Document();
+      HWND hWnd = doc->GetEmulatedWindowHandle();
+      if (hWnd) {
+        return hWnd;
+      }
+    }
+
+    
+    
+    
     Accessible* outerDoc = proxy->OuterDocOfRemoteBrowser();
     NS_ASSERTION(outerDoc, "no outer doc for accessible remote tab!");
     if (!outerDoc) {
