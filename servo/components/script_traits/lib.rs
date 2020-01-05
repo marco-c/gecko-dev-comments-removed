@@ -17,6 +17,7 @@ extern crate devtools_traits;
 extern crate euclid;
 extern crate gfx_traits;
 extern crate heapsize;
+extern crate hyper;
 extern crate hyper_serde;
 extern crate ipc_channel;
 extern crate libc;
@@ -46,9 +47,11 @@ use gfx_traits::DevicePixel;
 use gfx_traits::Epoch;
 use gfx_traits::StackingContextId;
 use heapsize::HeapSizeOf;
+use hyper::header::Headers;
+use hyper::method::Method;
 use ipc_channel::ipc::{IpcReceiver, IpcSender};
 use libc::c_void;
-use msg::constellation_msg::{FrameId, FrameType, Image, Key, KeyModifiers, KeyState, LoadData};
+use msg::constellation_msg::{FrameId, FrameType, Image, Key, KeyModifiers, KeyState};
 use msg::constellation_msg::{PipelineId, PipelineNamespaceId, ReferrerPolicy};
 use msg::constellation_msg::{TraversalDirection, WindowSizeType};
 use net_traits::{LoadOrigin, ResourceThreads};
@@ -117,6 +120,43 @@ pub enum LayoutControlMsg {
     
     
     GetWebFontLoadState(IpcSender<bool>),
+}
+
+
+
+
+#[derive(Clone, Deserialize, Serialize)]
+pub struct LoadData {
+    
+    pub url: Url,
+    
+    #[serde(deserialize_with = "::hyper_serde::deserialize",
+            serialize_with = "::hyper_serde::serialize")]
+    pub method: Method,
+    
+    #[serde(deserialize_with = "::hyper_serde::deserialize",
+            serialize_with = "::hyper_serde::serialize")]
+    pub headers: Headers,
+    
+    pub data: Option<Vec<u8>>,
+    
+    pub referrer_policy: Option<ReferrerPolicy>,
+    
+    pub referrer_url: Option<Url>,
+}
+
+impl LoadData {
+    
+    pub fn new(url: Url, referrer_policy: Option<ReferrerPolicy>, referrer_url: Option<Url>) -> LoadData {
+        LoadData {
+            url: url,
+            method: Method::Get,
+            headers: Headers::new(),
+            data: None,
+            referrer_policy: referrer_policy,
+            referrer_url: referrer_url,
+        }
+    }
 }
 
 
