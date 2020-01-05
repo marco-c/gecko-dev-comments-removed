@@ -133,8 +133,12 @@ public:
   template <typename... Ts>
   void Dispatch(Ts&&... aEvents)
   {
-    DispatchTask(NewRunnableMethod<typename Decay<Ts>::Type&&...>(
-      this, &Listener::Apply, Forward<Ts>(aEvents)...));
+    if (CanTakeArgs()) {
+      DispatchTask(NewRunnableMethod<typename Decay<Ts>::Type&&...>(
+        this, &Listener::ApplyWithArgs, Forward<Ts>(aEvents)...));
+    } else {
+      DispatchTask(NewRunnableMethod(this, &Listener::ApplyWithNoArgs));
+    }
   }
 
 protected:
@@ -145,7 +149,15 @@ protected:
 
 private:
   virtual void DispatchTask(already_AddRefed<nsIRunnable> aTask) = 0;
-  virtual void Apply(As&&... aEvents) = 0;
+
+  
+  virtual bool CanTakeArgs() const = 0;
+  
+  
+  virtual void ApplyWithArgs(As&&... aEvents) = 0;
+  
+  
+  virtual void ApplyWithNoArgs() = 0;
 };
 
 
@@ -168,10 +180,15 @@ private:
     EventTarget<Target>::Dispatch(mTarget.get(), Move(aTask));
   }
 
+  bool CanTakeArgs() const override
+  {
+    return TakeArgs<Function>::value;
+  }
+
   
   template <typename F>
   typename EnableIf<TakeArgs<F>::value, void>::Type
-  ApplyImpl(const F& aFunc, As&&... aEvents)
+  ApplyWithArgsImpl(const F& aFunc, As&&... aEvents)
   {
     aFunc(Move(aEvents)...);
   }
@@ -179,16 +196,42 @@ private:
   
   template <typename F>
   typename EnableIf<!TakeArgs<F>::value, void>::Type
-  ApplyImpl(const F& aFunc, As&&... aEvents)
+  ApplyWithArgsImpl(const F& aFunc, As&&... aEvents)
+  {
+    MOZ_CRASH("Call ApplyWithNoArgs instead.");
+  }
+
+  void ApplyWithArgs(As&&... aEvents) override
+  {
+    MOZ_RELEASE_ASSERT(TakeArgs<Function>::value);
+    
+    if (!RevocableToken::IsRevoked()) {
+      ApplyWithArgsImpl(mFunction, Move(aEvents)...);
+    }
+  }
+
+  
+  template <typename F>
+  typename EnableIf<TakeArgs<F>::value, void>::Type
+  ApplyWithNoArgsImpl(const F& aFunc)
+  {
+    MOZ_CRASH("Call ApplyWithArgs instead.");
+  }
+
+  
+  template <typename F>
+  typename EnableIf<!TakeArgs<F>::value, void>::Type
+  ApplyWithNoArgsImpl(const F& aFunc)
   {
     aFunc();
   }
 
-  void Apply(As&&... aEvents) override
+  virtual void ApplyWithNoArgs() override
   {
+    MOZ_RELEASE_ASSERT(!TakeArgs<Function>::value);
     
     if (!RevocableToken::IsRevoked()) {
-      ApplyImpl(mFunction, Move(aEvents)...);
+      ApplyWithNoArgsImpl(mFunction);
     }
   }
 
