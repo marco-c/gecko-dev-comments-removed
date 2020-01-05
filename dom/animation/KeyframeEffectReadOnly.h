@@ -418,8 +418,9 @@ protected:
   }
 
   
-  StyleAnimationValue ResolveBaseStyle(nsCSSPropertyID aProperty,
-                                       nsStyleContext* aStyleContext);
+  
+  void EnsureBaseStyle(nsCSSPropertyID aProperty,
+                       nsStyleContext* aStyleContext);
 
   Maybe<OwningAnimationTarget> mTarget;
 
