@@ -9,7 +9,11 @@ struct LayerBuffer {
     cairo_surface: ImageSurface,
 
     draw_target: DrawTarget,
-    size: Size2D<uint>
+
+    size: Size2D<uint>,
+
+    
+    stride: uint
 }
 
 
