@@ -81,20 +81,10 @@ WatchpointMap::watch(JSContext* cx, HandleObject obj, HandleId id,
 }
 
 void
-WatchpointMap::unwatch(JSObject* obj, jsid id,
-                       JSWatchPointHandler* handlerp, JSObject** closurep)
+WatchpointMap::unwatch(JSObject* obj, jsid id)
 {
-    if (Map::Ptr p = map.lookup(WatchKey(obj, id))) {
-        if (handlerp)
-            *handlerp = p->value().handler;
-        if (closurep) {
-            
-            
-            JS::ExposeObjectToActiveJS(p->value().closure);
-            *closurep = p->value().closure;
-        }
+    if (Map::Ptr p = map.lookup(WatchKey(obj, id)))
         map.remove(p);
-    }
 }
 
 void
