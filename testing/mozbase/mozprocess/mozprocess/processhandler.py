@@ -152,12 +152,24 @@ class ProcessHandlerMixin(object):
                         winprocess.GetExitCodeProcess(self._handle)
                         self._cleanup()
             else:
-                def send_sig(sig):
+                def send_sig(sig, retries=0):
                     pid = self.detached_pid or self.pid
                     if not self._ignore_children:
                         try:
                             os.killpg(pid, sig)
                         except BaseException as e:
+                            
+                            
+                            
+                            
+                            
+                            
+                            if retries < 1 and getattr(e, "errno", None) == errno.EPERM:
+                                try:
+                                    os.waitpid(-pid, 0)
+                                finally:
+                                    return send_sig(sig, retries + 1)
+
                             
                             
                             
