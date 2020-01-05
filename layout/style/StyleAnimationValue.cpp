@@ -3244,7 +3244,7 @@ StyleAnimationValue::ComputeValues(
     return false;
   }
 
-  RefPtr<ServoComputedValues> previousStyle =
+  const ServoComputedValues* previousStyle =
     aStyleContext->StyleSource().AsServoComputedValues();
 
   
