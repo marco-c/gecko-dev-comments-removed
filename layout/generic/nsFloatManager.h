@@ -377,6 +377,12 @@ private:
                     aRect.ISize(aWM), aRect.BSize(aWM));
     }
 
+    static mozilla::UniquePtr<ShapeInfo> CreateShapeBox(
+      nsIFrame* const aFrame,
+      const mozilla::LogicalRect& aShapeBoxRect,
+      mozilla::WritingMode aWM,
+      const nsSize& aContainerSize);
+
     static mozilla::UniquePtr<ShapeInfo> CreateCircleOrEllipse(
       mozilla::StyleBasicShape* const aBasicShape,
       const mozilla::LogicalRect& aShapeBoxRect,
@@ -406,17 +412,23 @@ private:
     static nsPoint ConvertToFloatLogical(const nsPoint& aPoint,
                                          mozilla::WritingMode aWM,
                                          const nsSize& aContainerSize);
+
+    
+    
+    static mozilla::UniquePtr<nscoord[]> ConvertToFloatLogical(
+      const nscoord aRadii[8],
+      mozilla::WritingMode aWM);
   };
 
   
   class BoxShapeInfo final : public ShapeInfo
   {
   public:
-    BoxShapeInfo(const nsRect& aShapeBoxRect, nsIFrame* const aFrame)
+    BoxShapeInfo(const nsRect& aShapeBoxRect,
+                 mozilla::UniquePtr<nscoord[]> aRadii)
       : mShapeBoxRect(aShapeBoxRect)
-      , mFrame(aFrame)
-    {
-    }
+      , mRadii(Move(aRadii))
+    {}
 
     nscoord LineLeft(mozilla::WritingMode aWM,
                      const nscoord aBStart,
@@ -439,7 +451,9 @@ private:
     
     nsRect mShapeBoxRect;
     
-    nsIFrame* const mFrame;
+    
+    
+    mozilla::UniquePtr<nscoord[]> mRadii;
   };
 
   
