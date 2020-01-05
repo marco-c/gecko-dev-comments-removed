@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 package org.mozilla.gecko.tests;
 
@@ -52,8 +52,8 @@ public class testFindInPage extends JavascriptTest implements GeckoEventListener
         super.setUp();
 
         EventDispatcher.getInstance().registerGeckoThreadListener(this,
-                "Test:FindInPage",
-                "Test:CloseFindInPage");
+                                                                  "Test:FindInPage",
+                                                                  "Test:CloseFindInPage");
     }
 
     @Override
@@ -61,8 +61,8 @@ public class testFindInPage extends JavascriptTest implements GeckoEventListener
         super.tearDown();
 
         EventDispatcher.getInstance().unregisterGeckoThreadListener(this,
-                "Test:FindInPage",
-                "Test:CloseFindInPage");
+                                                                    "Test:FindInPage",
+                                                                    "Test:CloseFindInPage");
     }
 
     public void findText(String text, int nrOfMatches){
@@ -81,14 +81,14 @@ public class testFindInPage extends JavascriptTest implements GeckoEventListener
         }, WAIT_FOR_CONDITION_MS);
         mAsserter.ok(success, "Looking for the next search match button in the Find in Page UI", "Found the next match button");
 
-        
-        
+        // TODO: Find a better way to wait and then enter the text
+        // Without the sleep this seems to work but the actions are not updated in the UI
         mSolo.sleep(500);
 
         mActions.sendKeys(text);
         mActions.sendSpecialKey(Actions.SpecialKey.ENTER);
 
-        
+        // Advance a few matches to scroll the page
         for (int i=1;i < nrOfMatches;i++) {
             success = waitForCondition ( new Condition() {
                 @Override
@@ -100,7 +100,7 @@ public class testFindInPage extends JavascriptTest implements GeckoEventListener
                     }
                 }
             }, WAIT_FOR_CONDITION_MS);
-            mSolo.sleep(500); 
+            mSolo.sleep(500); // TODO: Find a better way to wait here because waitForCondition is not enough
             mAsserter.ok(success, "Checking if the next button was clicked", "button was clicked");
         }
     }

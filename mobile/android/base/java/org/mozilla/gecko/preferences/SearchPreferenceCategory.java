@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 package org.mozilla.gecko.preferences;
 
@@ -14,6 +14,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import org.mozilla.gecko.EventDispatcher;
+import org.mozilla.gecko.GeckoApp;
 import org.mozilla.gecko.GeckoAppShell;
 import org.mozilla.gecko.Telemetry;
 import org.mozilla.gecko.TelemetryContract;
@@ -40,8 +41,8 @@ public class SearchPreferenceCategory extends CustomListCategory implements Geck
     protected void onAttachedToActivity() {
         super.onAttachedToActivity();
 
-        
-        EventDispatcher.getInstance().registerGeckoThreadListener(this, "SearchEngines:Data");
+        // Register for SearchEngines messages and request list of search engines from Gecko.
+        GeckoApp.getEventDispatcher().registerGeckoThreadListener(this, "SearchEngines:Data");
         GeckoAppShell.notifyObservers("SearchEngines:GetVisible", null);
     }
 
@@ -49,7 +50,7 @@ public class SearchPreferenceCategory extends CustomListCategory implements Geck
     protected void onPrepareForRemoval() {
         super.onPrepareForRemoval();
 
-        EventDispatcher.getInstance().unregisterGeckoThreadListener(this, "SearchEngines:Data");
+        GeckoApp.getEventDispatcher().unregisterGeckoThreadListener(this, "SearchEngines:Data");
     }
 
     @Override
@@ -75,7 +76,7 @@ public class SearchPreferenceCategory extends CustomListCategory implements Geck
     @Override
     public void handleMessage(String event, final JSONObject data) {
         if (event.equals("SearchEngines:Data")) {
-            
+            // Parse engines array from JSON.
             JSONArray engines;
             try {
                 engines = data.getJSONArray("searchEngines");
@@ -84,10 +85,10 @@ public class SearchPreferenceCategory extends CustomListCategory implements Geck
                 return;
             }
 
-            
+            // Clear the preferences category from this thread.
             this.removeAll();
 
-            
+            // Create an element in this PreferenceCategory for each engine.
             for (int i = 0; i < engines.length(); i++) {
                 try {
                     final JSONObject engineJSON = engines.getJSONObject(i);
@@ -98,7 +99,7 @@ public class SearchPreferenceCategory extends CustomListCategory implements Geck
                         @Override
                         public boolean onPreferenceClick(Preference preference) {
                             SearchEnginePreference sPref = (SearchEnginePreference) preference;
-                            
+                            // Display the configuration dialog associated with the tapped engine.
                             sPref.showDialog();
                             return true;
                         }
@@ -106,11 +107,11 @@ public class SearchPreferenceCategory extends CustomListCategory implements Geck
 
                     addPreference(enginePreference);
 
-                    
+                    // The first element in the array is the default engine.
                     if (i == 0) {
-                        
-                        
-                        
+                        // We set this here, not in setSearchEngineFromJSON, because it allows us to
+                        // keep a reference  to the default engine to use when the AlertDialog
+                        // callbacks are used.
                         ThreadUtils.postToUiThread(new Runnable() {
                             @Override
                             public void run() {
@@ -126,11 +127,11 @@ public class SearchPreferenceCategory extends CustomListCategory implements Geck
         }
     }
 
-    
-
-
-
-
+    /**
+     * Helper method to send a particular event string to Gecko with an associated engine name.
+     * @param event The type of event to send.
+     * @param engine The engine to which the event relates.
+     */
     private void sendGeckoEngineEvent(String event, String engineName) {
         JSONObject json = new JSONObject();
         try {

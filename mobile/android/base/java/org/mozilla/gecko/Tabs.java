@@ -489,7 +489,6 @@ public class Tabs implements GeckoEventListener {
                                           message.getString("title"),
                                           message.getBoolean("isPrivate"),
                                           message.getInt("tabIndex"));
-
                     
                     
                     if (message.getBoolean("selected"))

@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 package org.mozilla.gecko.toolbar;
 
@@ -20,6 +20,7 @@ import org.mozilla.gecko.AboutPages;
 import org.mozilla.gecko.AppConstants;
 import org.mozilla.gecko.EventDispatcher;
 import org.mozilla.gecko.R;
+import org.mozilla.gecko.GeckoApp;
 import org.mozilla.gecko.GeckoAppShell;
 import org.mozilla.gecko.SiteIdentity;
 import org.mozilla.gecko.SiteIdentity.SecurityMode;
@@ -46,12 +47,12 @@ import android.widget.TextView;
 import org.mozilla.gecko.widget.DoorhangerConfig;
 import org.mozilla.gecko.widget.SiteLogins;
 
-
-
-
-
-
-
+/**
+ * SiteIdentityPopup is a singleton class that displays site identity data in
+ * an arrow panel popup hanging from the lock icon in the browser toolbar.
+ *
+ * A site identity icon may be displayed in the url, and is set in <code>ToolbarDisplayLayout</code>.
+ */
 public class SiteIdentityPopup extends AnchoredPopup implements GeckoEventListener {
 
     public static enum ButtonType { DISABLE, ENABLE, KEEP_BLOCKING, CANCEL, COPY }
@@ -63,7 +64,7 @@ public class SiteIdentityPopup extends AnchoredPopup implements GeckoEventListen
     private static final String TRACKING_CONTENT_SUPPORT_URL =
         "https://support.mozilla.org/kb/firefox-android-tracking-protection";
 
-    
+    // Placeholder string.
     private final static String FORMAT_S = "%s";
 
     private final Resources mResources;
@@ -96,16 +97,18 @@ public class SiteIdentityPopup extends AnchoredPopup implements GeckoEventListen
         mResources = mContext.getResources();
 
         mContentButtonClickListener = new ContentNotificationButtonListener();
-        EventDispatcher.getInstance().registerGeckoThreadListener(this, "Doorhanger:Logins");
-        EventDispatcher.getInstance().registerGeckoThreadListener(this, "Permissions:CheckResult");
+
+        GeckoApp.getEventDispatcher().registerGeckoThreadListener(this,
+                                                                  "Doorhanger:Logins",
+                                                                  "Permissions:CheckResult");
     }
 
     @Override
     protected void init() {
         super.init();
 
-        
-        
+        // Make the popup focusable so it doesn't inadvertently trigger click events elsewhere
+        // which may reshow the popup (see bug 785156)
         setFocusable(true);
 
         LayoutInflater inflater = LayoutInflater.from(mContext);
@@ -209,7 +212,7 @@ public class SiteIdentityPopup extends AnchoredPopup implements GeckoEventListen
 
         final JSONObject login = (JSONObject) logins.get(0);
 
-        
+        // Create button click listener for copying a password to the clipboard.
         final OnButtonClickListener buttonClickListener = new OnButtonClickListener() {
             Activity activity = (Activity) mContext;
             @Override
@@ -220,7 +223,7 @@ public class SiteIdentityPopup extends AnchoredPopup implements GeckoEventListen
                         final ClipboardManager manager = (ClipboardManager) mContext.getSystemService(Context.CLIPBOARD_SERVICE);
                         String password;
                         if (response.has("password")) {
-                            
+                            // Click listener being called from List Dialog.
                             password = response.optString("password");
                         } else {
                             password = login.getString("password");
@@ -248,11 +251,11 @@ public class SiteIdentityPopup extends AnchoredPopup implements GeckoEventListen
 
         final DoorhangerConfig config = new DoorhangerConfig(DoorHanger.Type.LOGIN, buttonClickListener);
 
-        
+        // Set buttons.
         config.setButton(mContext.getString(R.string.button_cancel), ButtonType.CANCEL.ordinal(), false);
         config.setButton(mContext.getString(R.string.button_copy), ButtonType.COPY.ordinal(), true);
 
-        
+        // Set message.
         String username = ((JSONObject) logins.get(0)).getString("username");
         if (TextUtils.isEmpty(username)) {
             username = mContext.getString(R.string.doorhanger_login_no_username);
@@ -261,10 +264,10 @@ public class SiteIdentityPopup extends AnchoredPopup implements GeckoEventListen
         final String message = mContext.getString(R.string.doorhanger_login_select_message).replace(FORMAT_S, username);
         config.setMessage(message);
 
-        
+        // Set options.
         final JSONObject options = new JSONObject();
 
-        
+        // Add action text only if there are other logins to select.
         if (logins.length() > 1) {
 
             final JSONObject actionText = new JSONObject();
@@ -307,16 +310,16 @@ public class SiteIdentityPopup extends AnchoredPopup implements GeckoEventListen
         mIdentityKnownContainer.setVisibility(identityInfoVisibility);
     }
 
-    
-
-
-
-
-
-
-
-
-
+    /**
+     * Update the Site Identity content to reflect connection state.
+     *
+     * The connection state should reflect the combination of:
+     * a) Connection encryption
+     * b) Mixed Content state (Active/Display Mixed content, loaded, blocked, none, etc)
+     * and update the icons and strings to inform the user of that state.
+     *
+     * @param siteIdentity SiteIdentity information about the connection.
+     */
     private void updateConnectionState(final SiteIdentity siteIdentity) {
         if (siteIdentity.getSecurityMode() == SecurityMode.CHROMEUI) {
             mSecurityState.setText(R.string.identity_connection_chromeui);
@@ -329,7 +332,7 @@ public class SiteIdentityPopup extends AnchoredPopup implements GeckoEventListen
             mLink.setVisibility(View.GONE);
         } else if (!siteIdentity.isSecure()) {
             if (siteIdentity.getMixedModeActive() == MixedMode.MIXED_CONTENT_LOADED) {
-                
+                // Active Mixed Content loaded because user has disabled blocking.
                 mIcon.setImageResource(R.drawable.lock_disabled);
                 clearSecurityStateIcon();
                 mMixedContentActivity.setVisibility(View.VISIBLE);
@@ -337,7 +340,7 @@ public class SiteIdentityPopup extends AnchoredPopup implements GeckoEventListen
 
                 mLink.setVisibility(View.VISIBLE);
             } else if (siteIdentity.getMixedModeDisplay() == MixedMode.MIXED_CONTENT_LOADED) {
-                
+                // Passive Mixed Content loaded.
                 mIcon.setImageResource(R.drawable.lock_inactive);
                 setSecurityStateIcon(R.drawable.warning_major, 1);
                 mMixedContentActivity.setVisibility(View.VISIBLE);
@@ -349,7 +352,7 @@ public class SiteIdentityPopup extends AnchoredPopup implements GeckoEventListen
                 mLink.setVisibility(View.VISIBLE);
 
             } else {
-                
+                // Unencrypted connection with no mixed content.
                 mIcon.setImageResource(R.drawable.globe_light);
                 clearSecurityStateIcon();
 
@@ -360,14 +363,14 @@ public class SiteIdentityPopup extends AnchoredPopup implements GeckoEventListen
             mSecurityState.setText(R.string.identity_connection_insecure);
             mSecurityState.setTextColor(ContextCompat.getColor(mContext, R.color.placeholder_active_grey));
         } else {
-            
+            // Connection is secure.
             mIcon.setImageResource(R.drawable.lock_secure);
 
             setSecurityStateIcon(R.drawable.img_check, 2);
             mSecurityState.setTextColor(ContextCompat.getColor(mContext, R.color.affirmative_green));
             mSecurityState.setText(R.string.identity_connection_secure);
 
-            
+            // Mixed content has been blocked, if present.
             if (siteIdentity.getMixedModeActive() == MixedMode.MIXED_CONTENT_BLOCKED ||
                 siteIdentity.getMixedModeDisplay() == MixedMode.MIXED_CONTENT_BLOCKED) {
                 mMixedContentActivity.setVisibility(View.VISIBLE);
@@ -400,7 +403,7 @@ public class SiteIdentityPopup extends AnchoredPopup implements GeckoEventListen
             mOwner.setVisibility(View.VISIBLE);
             mOwner.setText(owner);
 
-            
+            // Supplemental data is optional.
             final String supplemental = siteIdentity.getSupplemental();
             if (!TextUtils.isEmpty(supplemental)) {
                 mOwnerSupplemental.setText(supplemental);
@@ -415,7 +418,7 @@ public class SiteIdentityPopup extends AnchoredPopup implements GeckoEventListen
     }
 
     private void addTrackingContentNotification(boolean blocked) {
-        
+        // Remove any existing tracking content notification.
         removeTrackingContentNotification();
 
         final DoorhangerConfig config = new DoorhangerConfig(DoorHanger.Type.TRACKING, mContentButtonClickListener);
@@ -459,9 +462,9 @@ public class SiteIdentityPopup extends AnchoredPopup implements GeckoEventListen
         }
     }
 
-    
-
-
+    /*
+     * @param identityData A JSONObject that holds the current tab's identity data.
+     */
     void setSiteIdentity(SiteIdentity siteIdentity) {
         mSiteIdentity = siteIdentity;
     }
@@ -473,9 +476,9 @@ public class SiteIdentityPopup extends AnchoredPopup implements GeckoEventListen
             return;
         }
 
-        
-        
-        
+        // Verified about: pages have the CHROMEUI SiteIdentity, however there can also
+        // be unverified about: pages for which  "This site's identity is unknown" or
+        // "This is a secure Firefox page" are both misleading, so don't show a popup.
         final Tab selectedTab = Tabs.getInstance().getSelectedTab();
         if (selectedTab != null &&
                 AboutPages.isAboutPage(selectedTab.getURL()) &&
@@ -498,9 +501,9 @@ public class SiteIdentityPopup extends AnchoredPopup implements GeckoEventListen
         }
 
         if (mSiteIdentity.getSecurityMode() == SecurityMode.CHROMEUI) {
-            
-            
-            
+            // For about: pages we display the product icon in place of the verified/globe
+            // image, hence we don't also set the favicon (for most about pages the
+            // favicon is the product icon, hence we'd be showing the same icon twice).
             mTitle.setText(R.string.moz_app_displayname);
         } else {
             mTitle.setText(selectedTab.getBaseDomain());
@@ -521,7 +524,7 @@ public class SiteIdentityPopup extends AnchoredPopup implements GeckoEventListen
         super.show();
     }
 
-    
+    // Show the right dividers
     private void showDividers() {
         final int count = mContent.getChildCount();
         DoorHanger lastVisibleDoorHanger = null;
@@ -546,8 +549,9 @@ public class SiteIdentityPopup extends AnchoredPopup implements GeckoEventListen
     }
 
     void destroy() {
-        EventDispatcher.getInstance().unregisterGeckoThreadListener(this, "Doorhanger:Logins");
-        EventDispatcher.getInstance().unregisterGeckoThreadListener(this, "Permissions:CheckResult");
+        GeckoApp.getEventDispatcher().unregisterGeckoThreadListener(this,
+                                                                    "Doorhanger:Logins",
+                                                                    "Permissions:CheckResult");
     }
 
     @Override

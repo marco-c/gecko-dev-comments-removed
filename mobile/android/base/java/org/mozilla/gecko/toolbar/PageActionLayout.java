@@ -1,11 +1,12 @@
-
-
-
-
+/* -*- Mode: Java; c-basic-offset: 4; tab-width: 20; indent-tabs-mode: nil; -*-
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 package org.mozilla.gecko.toolbar;
 
 import org.mozilla.gecko.EventDispatcher;
+import org.mozilla.gecko.GeckoApp;
 import org.mozilla.gecko.GeckoAppShell;
 import org.mozilla.gecko.R;
 import org.mozilla.gecko.gfx.BitmapUtils;
@@ -44,7 +45,7 @@ public class PageActionLayout extends LinearLayout implements NativeEventListene
 
     private GeckoPopupMenu mPageActionsMenu;
 
-    
+    // By default it's two, can be changed by calling setNumberShown(int)
     private int mMaxVisiblePageActions;
 
     public PageActionLayout(Context context, AttributeSet attrs) {
@@ -61,14 +62,14 @@ public class PageActionLayout extends LinearLayout implements NativeEventListene
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
 
-        EventDispatcher.getInstance().registerGeckoThreadListener(this,
+        GeckoApp.getEventDispatcher().registerGeckoThreadListener(this,
             "PageActions:Add",
             "PageActions:Remove");
     }
 
     @Override
     protected void onDetachedFromWindow() {
-        EventDispatcher.getInstance().unregisterGeckoThreadListener(this,
+        GeckoApp.getEventDispatcher().unregisterGeckoThreadListener(this,
             "PageActions:Add",
             "PageActions:Remove");
 
@@ -89,7 +90,7 @@ public class PageActionLayout extends LinearLayout implements NativeEventListene
 
     @Override
     public void handleMessage(final String event, final NativeJSObject message, final EventCallback callback) {
-        
+        // NativeJSObject cannot be used off of the Gecko thread, so convert it to a Bundle.
         final Bundle bundle = message.toBundle();
 
         ThreadUtils.postToUiThread(new Runnable() {
@@ -225,8 +226,8 @@ public class PageActionLayout extends LinearLayout implements NativeEventListene
             final ImageButton v = (ImageButton) this.getChildAt(i);
             final PageAction pageAction = getPageActionForViewAt(i);
 
-            
-            
+            // If there are more page actions than buttons, set the menu icon.
+            // Otherwise, set the page action's icon if there is a page action.
             if ((i == this.getChildCount() - 1) && (mPageActionList.size() > mMaxVisiblePageActions)) {
                 v.setTag(MENU_BUTTON_KEY);
                 v.setImageDrawable(resources.getDrawable(R.drawable.icon_pageaction));
@@ -241,20 +242,20 @@ public class PageActionLayout extends LinearLayout implements NativeEventListene
     private PageAction getPageActionForViewAt(int index) {
         ThreadUtils.assertOnUiThread();
 
-        
-
-
-
-
-
-
-
-
+        /**
+         * We show the user the most recent pageaction added since this keeps the user aware of any new page actions being added
+         * Also, the order of the pageAction is important i.e. if a page action is added, instead of shifting the pagactions to the
+         * left to make space for the new one, it would be more visually appealing to have the pageaction appear in the blank space.
+         *
+         * buttonIndex is needed for this reason because every new View added to PageActionLayout gets added to the right of its neighbouring View.
+         * Hence the button on the very leftmost has the index 0. We want our pageactions to start from the rightmost
+         * and hence we maintain the insertion order of the child Views which is essentially the reverse of their index
+         */
 
         final int buttonIndex = (this.getChildCount() - 1) - index;
 
         if (mPageActionList.size() > buttonIndex) {
-            
+            // Return the pageactions starting from the end of the list for the number of visible pageactions.
             final int buttonCount = Math.min(mPageActionList.size(), getChildCount());
             return mPageActionList.get((mPageActionList.size() - buttonCount) + buttonIndex);
         }

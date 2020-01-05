@@ -578,6 +578,7 @@ public class BrowserApp extends GeckoApp
         
         
         ((GeckoApplication) getApplication()).prepareLightweightTheme();
+
         super.onCreate(savedInstanceState);
 
         final Context appContext = getApplicationContext();
