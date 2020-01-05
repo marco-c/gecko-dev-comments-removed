@@ -121,8 +121,6 @@ var whitelist = new Set([
   {file: "chrome://browser/locale/taskbar.properties",
    platforms: ["linux", "macosx"]},
   
-  {file: "chrome://browser/skin/click-to-play-warning-stripes.png"},
-  
   {file: "chrome://browser/skin/customizableui/customize-illustration-rtl@2x.png",
    platforms: ["linux", "win"]},
   {file: "chrome://browser/skin/customizableui/customize-illustration@2x.png",
