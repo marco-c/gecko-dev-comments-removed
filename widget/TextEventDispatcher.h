@@ -12,13 +12,12 @@
 #include "mozilla/EventForwards.h"
 #include "mozilla/TextEventDispatcherListener.h"
 #include "mozilla/TextRange.h"
+#include "mozilla/widget/IMEData.h"
 
 class nsIWidget;
 
 namespace mozilla {
 namespace widget {
-
-struct IMENotification;
 
 
 
@@ -74,6 +73,11 @@ public:
   void OnDestroyWidget();
 
   nsIWidget* GetWidget() const { return mWidget; }
+
+  const IMENotificationRequests& IMENotificationRequestsRef() const
+  {
+    return mIMENotificationRequests;
+  }
 
   
 
@@ -307,6 +311,9 @@ private:
   
   
   nsWeakPtr mListener;
+  
+  
+  IMENotificationRequests mIMENotificationRequests;
 
   
   
@@ -414,6 +421,10 @@ private:
 
   
   
+  bool mHasFocus;
+
+  
+  
   static bool sDispatchKeyEventsDuringComposition;
 
   nsresult BeginInputTransactionInternal(
@@ -495,6 +506,19 @@ private:
                                      void* aData,
                                      uint32_t aIndexOfKeypress = 0,
                                      bool aNeedsCallback = false);
+
+  
+
+
+  void ClearNotificationRequests();
+
+  
+
+
+
+
+
+  void UpdateNotificationRequests();
 };
 
 } 

@@ -19,6 +19,7 @@
 #include "mozilla/layers/WebRenderLayerManager.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/TextComposition.h"
+#include "mozilla/TextEventDispatcher.h"
 #include "mozilla/TextEvents.h"
 #include "mozilla/Unused.h"
 #include "BasicLayers.h"
@@ -80,7 +81,8 @@ const size_t PuppetWidget::kMaxDimension = 4000;
 static bool gRemoteDesktopBehaviorEnabled = false;
 static bool gRemoteDesktopBehaviorInitialized = false;
 
-NS_IMPL_ISUPPORTS_INHERITED0(PuppetWidget, nsBaseWidget)
+NS_IMPL_ISUPPORTS_INHERITED(PuppetWidget, nsBaseWidget
+                                        , TextEventDispatcherListener)
 
 PuppetWidget::PuppetWidget(TabChild* aTabChild)
   : mTabChild(aTabChild)
@@ -866,33 +868,6 @@ PuppetWidget::NotifyIMEOfCompositionUpdate(
   return NS_OK;
 }
 
-IMENotificationRequests
-PuppetWidget::GetIMENotificationRequests()
-{
-  if (mNativeTextEventDispatcherListener) {
-    
-    
-    return mNativeTextEventDispatcherListener->GetIMENotificationRequests();
-  }
-
-  
-  
-  
-  
-  if (mInputContext.mIMEState.mEnabled == IMEState::PLUGIN) {
-    
-    
-    
-    return IMENotificationRequests(
-             mIMENotificationRequestsOfParent.mWantUpdates |
-             IMENotificationRequests::NOTIFY_POSITION_CHANGE);
-  }
-  return IMENotificationRequests(
-           mIMENotificationRequestsOfParent.mWantUpdates |
-           IMENotificationRequests::NOTIFY_TEXT_CHANGE |
-           IMENotificationRequests::NOTIFY_POSITION_CHANGE);
-}
-
 nsresult
 PuppetWidget::NotifyIMEOfTextChange(const IMENotification& aIMENotification)
 {
@@ -1545,6 +1520,49 @@ PuppetWidget::OnWindowedPluginKeyEvent(const NativeEventData& aKeyEventData,
   }
   mKeyEventInPluginCallbacks.AppendElement(aCallback);
   return NS_SUCCESS_EVENT_HANDLED_ASYNCHRONOUSLY;
+}
+
+
+
+NS_IMETHODIMP
+PuppetWidget::NotifyIME(TextEventDispatcher* aTextEventDispatcher,
+                        const IMENotification& aNotification)
+{
+  MOZ_ASSERT(aTextEventDispatcher == mTextEventDispatcher);
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP_(IMENotificationRequests)
+PuppetWidget::GetIMENotificationRequests()
+{
+  if (mInputContext.mIMEState.mEnabled == IMEState::PLUGIN) {
+    
+    
+    
+    return IMENotificationRequests(
+             mIMENotificationRequestsOfParent.mWantUpdates |
+             IMENotificationRequests::NOTIFY_POSITION_CHANGE);
+  }
+  return IMENotificationRequests(
+           mIMENotificationRequestsOfParent.mWantUpdates |
+           IMENotificationRequests::NOTIFY_TEXT_CHANGE |
+           IMENotificationRequests::NOTIFY_POSITION_CHANGE);
+}
+
+NS_IMETHODIMP_(void)
+PuppetWidget::OnRemovedFrom(TextEventDispatcher* aTextEventDispatcher)
+{
+  MOZ_ASSERT(aTextEventDispatcher == mTextEventDispatcher);
+}
+
+NS_IMETHODIMP_(void)
+PuppetWidget::WillDispatchKeyboardEvent(
+                TextEventDispatcher* aTextEventDispatcher,
+                WidgetKeyboardEvent& aKeyboardEvent,
+                uint32_t aIndexOfKeypress,
+                void* aData)
+{
+  MOZ_ASSERT(aTextEventDispatcher == mTextEventDispatcher);
 }
 
 } 

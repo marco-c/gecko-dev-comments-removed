@@ -433,7 +433,7 @@ IMEContentObserver::ObserveEditableNode()
     mEditor->AddEditorObserver(this);
   }
 
-  mIMENotificationRequests = mWidget->GetIMENotificationRequests();
+  mIMENotificationRequests = mWidget->IMENotificationRequestsRef();
   if (!WasInitializedWithPlugin()) {
     
     

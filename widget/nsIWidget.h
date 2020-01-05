@@ -1820,7 +1820,10 @@ public:
     
 
 
-    virtual IMENotificationRequests GetIMENotificationRequests() = 0;
+
+
+
+    const IMENotificationRequests& IMENotificationRequestsRef();
 
     
 
