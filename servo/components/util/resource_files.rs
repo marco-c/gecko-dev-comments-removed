@@ -2,6 +2,7 @@
 
 
 
+#[cfg(not(target_os = "android"))]
 use std::env;
 use std::fs::File;
 use std::io::{self, Read};

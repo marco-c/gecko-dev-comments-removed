@@ -21,14 +21,13 @@
 #[macro_use]
 extern crate android_glue;
 extern crate env_logger;
-extern crate gleam;
 
 extern crate glutin_app as app;
 #[cfg(target_os = "android")]
 extern crate libc;
+#[cfg(target_os = "android")]
 #[macro_use]
 extern crate log;
-extern crate offscreen_gl_context;
 
 extern crate servo;
 
