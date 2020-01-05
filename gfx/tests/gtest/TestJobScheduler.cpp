@@ -20,6 +20,7 @@ namespace test_scheduler {
 
 using namespace mozilla::gfx;
 using namespace mozilla;
+using mozilla::gfx::SyncObject;
 
 
 
