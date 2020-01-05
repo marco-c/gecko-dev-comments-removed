@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 use dom::attr::{Attr, AttrHelpers, AttrValue};
 use dom::bindings::cell::DOMRefCell;
@@ -9,7 +9,6 @@ use dom::bindings::codegen::Bindings::DocumentBinding::{DocumentMethods, Documen
 use dom::bindings::codegen::Bindings::EventHandlerBinding::EventHandlerNonNull;
 use dom::bindings::codegen::Bindings::NodeBinding::NodeMethods;
 use dom::bindings::codegen::Bindings::NodeFilterBinding::NodeFilter;
-use dom::bindings::codegen::Bindings::WindowBinding::WindowMethods;
 use dom::bindings::codegen::InheritTypes::{DocumentDerived, EventCast, HTMLElementCast};
 use dom::bindings::codegen::InheritTypes::{HTMLHeadElementCast, TextCast, ElementCast};
 use dom::bindings::codegen::InheritTypes::{DocumentTypeCast, HTMLHtmlElementCast, NodeCast};
@@ -86,6 +85,7 @@ pub struct Document {
     window: JS<Window>,
     idmap: DOMRefCell<HashMap<Atom, Vec<JS<Element>>>>,
     implementation: MutNullableJS<DOMImplementation>,
+    location: MutNullableJS<Location>,
     content_type: DOMString,
     last_modified: DOMRefCell<Option<DOMString>>,
     encoding_name: DOMRefCell<DOMString>,
@@ -100,9 +100,9 @@ pub struct Document {
     anchors: MutNullableJS<HTMLCollection>,
     applets: MutNullableJS<HTMLCollection>,
     ready_state: Cell<DocumentReadyState>,
-    /// The element that has most recently requested focus for itself.
+    
     possibly_focused: MutNullableJS<Element>,
-    /// The element that currently has the document focus context.
+    
     focused: MutNullableJS<Element>,
 }
 
@@ -209,7 +209,7 @@ impl<'a> DocumentHelpers<'a> for JSRef<'a, Document> {
         self.is_html_document
     }
 
-    // http://dom.spec.whatwg.org/#dom-document-url
+    
     fn url(self) -> Url {
         self.url.clone()
     }
@@ -250,7 +250,7 @@ impl<'a> DocumentHelpers<'a> for JSRef<'a, Document> {
         node.dirty(damage);
     }
 
-    /// Remove any existing association between the provided id and any elements in this document.
+    
     fn unregister_named_element(self,
                                 to_unregister: JSRef<Element>,
                                 id: Atom) {
@@ -271,7 +271,7 @@ impl<'a> DocumentHelpers<'a> for JSRef<'a, Document> {
         }
     }
 
-    /// Associate an element present in this document with the provided id.
+    
     fn register_named_element(self,
                               element: JSRef<Element>,
                               id: Atom) {
@@ -320,8 +320,8 @@ impl<'a> DocumentHelpers<'a> for JSRef<'a, Document> {
         window.r().load_url(href);
     }
 
-    /// Attempt to find a named element in this page's document.
-    /// https://html.spec.whatwg.org/multipage/#the-indicated-part-of-the-document
+    
+    
     fn find_fragment_node(self, fragid: DOMString) -> Option<Temporary<Element>> {
         self.GetElementById(fragid.clone()).or_else(|| {
             let check_anchor = |&:&node: &JSRef<HTMLAnchorElement>| {
@@ -425,6 +425,7 @@ impl Document {
             window: JS::from_rooted(window),
             idmap: DOMRefCell::new(HashMap::new()),
             implementation: Default::default(),
+            location: Default::default(),
             content_type: match content_type {
                 Some(string) => string.clone(),
                 None => match is_html_document {
@@ -976,7 +977,8 @@ impl<'a> DocumentMethods for JSRef<'a, Document> {
 
     fn Location(self) -> Temporary<Location> {
         let window = self.window.root();
-        window.r().Location()
+        let window = window.r();
+        self.location.or_init(|| Location::new(window, window.page_clone()))
     }
 
     // http://dom.spec.whatwg.org/#dom-parentnode-children
@@ -1023,9 +1025,9 @@ impl<'a> DocumentMethods for JSRef<'a, Document> {
         Ok(cookies.unwrap_or("".to_owned()))
     }
 
-    // https://html.spec.whatwg.org/multipage/dom.html#dom-document-cookie
+    
     fn SetCookie(self, cookie: DOMString) -> ErrorResult {
-        //TODO: ignore for cookie-averse Document
+        
         let url = self.url();
         if !is_scheme_host_port_tuple(&url) {
             return Err(Security);
