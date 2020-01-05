@@ -2423,6 +2423,13 @@ HttpChannelChild::ContinueAsyncOpen()
     return NS_ERROR_FAILURE;
   }
 
+  openArgs.launchServiceWorkerStart() = mLaunchServiceWorkerStart;
+  openArgs.launchServiceWorkerEnd()   = mLaunchServiceWorkerEnd;
+  openArgs.dispatchFetchEventStart()  = mDispatchFetchEventStart;
+  openArgs.dispatchFetchEventEnd()    = mDispatchFetchEventEnd;
+  openArgs.handleFetchEventStart()    = mHandleFetchEventStart;
+  openArgs.handleFetchEventEnd()      = mHandleFetchEventEnd;
+
   
   
   
