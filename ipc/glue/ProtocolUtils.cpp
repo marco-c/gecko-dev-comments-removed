@@ -547,27 +547,10 @@ IProtocol::SetEventTargetForActor(IProtocol* aActor, nsIEventTarget* aEventTarge
 }
 
 void
-IProtocol::ReplaceEventTargetForActor(IProtocol* aActor,
-                                      nsIEventTarget* aEventTarget)
-{
-  
-  MOZ_ASSERT(aActor->Manager());
-
-  Manager()->ReplaceEventTargetForActorInternal(aActor, aEventTarget);
-}
-
-void
 IProtocol::SetEventTargetForActorInternal(IProtocol* aActor,
                                           nsIEventTarget* aEventTarget)
 {
   Manager()->SetEventTargetForActorInternal(aActor, aEventTarget);
-}
-
-void
-IProtocol::ReplaceEventTargetForActorInternal(IProtocol* aActor,
-                                              nsIEventTarget* aEventTarget)
-{
-  Manager()->ReplaceEventTargetForActorInternal(aActor, aEventTarget);
 }
 
 nsIEventTarget*
@@ -891,22 +874,6 @@ IToplevelProtocol::SetEventTargetForActorInternal(IProtocol* aActor,
 
   MutexAutoLock lock(mEventTargetMutex);
   mEventTargetMap.AddWithID(aEventTarget, id);
-}
-
-void
-IToplevelProtocol::ReplaceEventTargetForActorInternal(
-  IProtocol* aActor,
-  nsIEventTarget* aEventTarget)
-{
-  
-  MOZ_RELEASE_ASSERT(aActor != this);
-
-  int32_t id = aActor->Id();
-  
-  MOZ_RELEASE_ASSERT(id!= kNullActorId && id!= kFreedActorId);
-
-  MutexAutoLock lock(mEventTargetMutex);
-  mEventTargetMap.ReplaceWithID(aEventTarget, id);
 }
 
 } 
