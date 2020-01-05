@@ -2052,6 +2052,9 @@ class BaseCompiler
 
     bool endFunction() {
         
+        masm.breakpoint();
+
+        
         
         
 
