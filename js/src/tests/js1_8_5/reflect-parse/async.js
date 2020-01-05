@@ -8,6 +8,11 @@ assertExpr("(async function() {})", asyncFunExpr(null, [], blockStmt([])));
 assertExpr("(async function foo() {})", asyncFunExpr(ident("foo"), [], blockStmt([])));
 
 
+assertExpr("async a => 1", asyncArrowExpr(true, [ident("a")], literal(1)));
+assertExpr("async a => { 1 }", asyncArrowExpr(false, [ident("a")], blockStmt([exprStmt(literal(1))])));
+assertExpr("async a => { return 1 }", asyncArrowExpr(false, [ident("a")], blockStmt([returnStmt(literal(1))])));
+
+
 assertExpr("({ async foo() {} })", objExpr([{ key: ident("foo"), value: asyncFunExpr(ident("foo"), [], blockStmt([]))}]));
 
 assertStmt("class C { async foo() {} }", classStmt(ident("C"), null, [classMethod(ident("foo"), asyncFunExpr(ident("foo"), [], blockStmt([])), "method", false)]));
