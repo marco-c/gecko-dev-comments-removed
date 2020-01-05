@@ -27,7 +27,6 @@ class CompositableForwarder;
 class CompositableChild;
 class PCompositableChild;
 class TextureClientRecycleAllocator;
-class ContentClientRemote;
 
 
 
@@ -114,6 +113,8 @@ public:
 
   bool IsConnected() const;
 
+  PCompositableChild* GetIPDLActor() const;
+
   CompositableForwarder* GetForwarder() const
   {
     return mForwarder;
@@ -127,14 +128,7 @@ public:
 
 
 
-  CompositableHandle GetAsyncHandle() const;
-
-  
-
-
-  CompositableHandle GetIPCHandle() const {
-    return mHandle;
-  }
+  uint64_t GetAsyncID() const;
 
   
 
@@ -166,9 +160,9 @@ public:
 
   virtual void RemoveTexture(TextureClient* aTexture);
 
-  virtual ContentClientRemote* AsContentClientRemote() { return nullptr; }
+  static RefPtr<CompositableClient> FromIPDLActor(PCompositableChild* aActor);
 
-  void InitIPDL(const CompositableHandle& aHandle);
+  void InitIPDLActor(PCompositableChild* aActor, uint64_t aAsyncID = 0);
 
   TextureFlags GetTextureFlags() const { return mTextureFlags; }
 
@@ -180,14 +174,14 @@ public:
                                 TextureClient* aTexture,
                                 TextureDumpMode aCompress);
 protected:
+  RefPtr<CompositableChild> mCompositableChild;
   RefPtr<CompositableForwarder> mForwarder;
   
   
   TextureFlags mTextureFlags;
   RefPtr<TextureClientRecycleAllocator> mTextureClientRecycler;
 
-  CompositableHandle mHandle;
-  bool mIsAsync;
+  uint64_t mAsyncID;
 
   friend class CompositableChild;
 };

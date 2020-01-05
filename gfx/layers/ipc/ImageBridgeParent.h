@@ -77,15 +77,15 @@ public:
   virtual mozilla::ipc::IPCResult RecvUpdateNoSwap(EditArray&& aEdits, OpDestroyArray&& aToDestroy,
                                                 const uint64_t& aFwdTransactionId) override;
 
+  PCompositableParent* AllocPCompositableParent(const TextureInfo& aInfo,
+                                                const uint64_t& aID) override;
+  bool DeallocPCompositableParent(PCompositableParent* aActor) override;
+
   virtual PTextureParent* AllocPTextureParent(const SurfaceDescriptor& aSharedData,
                                               const LayersBackend& aLayersBackend,
                                               const TextureFlags& aFlags,
                                               const uint64_t& aSerial) override;
   virtual bool DeallocPTextureParent(PTextureParent* actor) override;
-
-  virtual mozilla::ipc::IPCResult RecvNewCompositable(const CompositableHandle& aHandle,
-                                                      const TextureInfo& aInfo) override;
-  virtual mozilla::ipc::IPCResult RecvReleaseCompositable(const CompositableHandle& aHandle) override;
 
   PMediaSystemResourceManagerParent* AllocPMediaSystemResourceManagerParent() override;
   bool DeallocPMediaSystemResourceManagerParent(PMediaSystemResourceManagerParent* aActor) override;
@@ -123,6 +123,8 @@ public:
 
   virtual bool IPCOpen() const override { return !mClosed; }
 
+  CompositableHost* FindCompositable(uint64_t aId);
+
 protected:
   void OnChannelConnected(int32_t pid) override;
 
@@ -146,6 +148,33 @@ private:
   static MessageLoop* sMainLoop;
 
   RefPtr<CompositorThreadHolder> mCompositorThreadHolder;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  std::map<uint64_t, CompositableHost*> mCompositables;
 };
 
 } 

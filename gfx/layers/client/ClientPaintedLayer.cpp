@@ -99,7 +99,7 @@ ClientPaintedLayer::PaintThebes()
     mValidRegion.Or(mValidRegion, state.mRegionToDraw);
 
     ContentClientRemote* contentClientRemote = static_cast<ContentClientRemote*>(mContentClient.get());
-    MOZ_ASSERT(contentClientRemote->GetIPCHandle());
+    MOZ_ASSERT(contentClientRemote->GetIPDLActor());
 
     
     

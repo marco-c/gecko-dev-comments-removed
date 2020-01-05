@@ -7,6 +7,8 @@
 
 #include "LayerTransactionChild.h"
 #include "mozilla/gfx/Logging.h"
+#include "mozilla/layers/CompositableChild.h"
+#include "mozilla/layers/PCompositableChild.h"  
 #include "mozilla/layers/ShadowLayers.h"  
 #include "mozilla/mozalloc.h"           
 #include "nsDebug.h"                    
@@ -32,6 +34,21 @@ LayerTransactionChild::Destroy()
   mDestroyed = true;
 
   SendShutdown();
+}
+
+
+PCompositableChild*
+LayerTransactionChild::AllocPCompositableChild(const TextureInfo& aInfo)
+{
+  MOZ_ASSERT(!mDestroyed);
+  return CompositableChild::CreateActor();
+}
+
+bool
+LayerTransactionChild::DeallocPCompositableChild(PCompositableChild* actor)
+{
+  CompositableChild::DestroyActor(actor);
+  return true;
 }
 
 void
