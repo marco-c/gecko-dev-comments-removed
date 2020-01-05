@@ -57,6 +57,9 @@ public class Experiments {
     public static final String HLS_VIDEO_PLAYBACK = "hls-video-playback";
 
     
+    public static final String ACTIVITY_STREAM = "activity-stream";
+
+    
 
 
 
