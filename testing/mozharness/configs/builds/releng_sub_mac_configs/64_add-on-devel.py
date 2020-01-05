@@ -7,7 +7,6 @@ config = {
         'checkout-sources',
 
         'build',
-
         'upload-files',
 
         'check-test',

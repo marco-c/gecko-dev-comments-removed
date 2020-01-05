@@ -8,7 +8,6 @@ config = {
         'checkout-sources',
         'setup-mock',
         'build',
-        
         'sendchange',
     ],
     "buildbot_json_path": "buildprops.json",
