@@ -363,7 +363,7 @@ protected:
   bool HasLowBufferedData();
 
   
-  bool HasLowBufferedData(int64_t aUsecs);
+  bool HasLowBufferedData(const media::TimeUnit& aThreshold);
 
   void UpdateNextFrameStatus(NextFrameStatus aStatus);
 
