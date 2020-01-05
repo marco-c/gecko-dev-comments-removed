@@ -34,7 +34,6 @@ class nsIContent;
 class nsIDocument;
 class nsIFrame;
 class nsIPresShell;
-class nsPresContext;
 
 namespace mozilla {
 
@@ -211,11 +210,9 @@ public:
   {
     mEffectOptions.GetSpacingAsString(aRetVal);
   }
-
   void NotifyAnimationTimingUpdated();
-
+  void RequestRestyle(EffectCompositor::RestyleType aRestyleType);
   void SetAnimation(Animation* aAnimation) override;
-
   void SetKeyframes(JSContext* aContext, JS::Handle<JSObject*> aKeyframes,
                     ErrorResult& aRv);
   void SetKeyframes(nsTArray<Keyframe>&& aKeyframes,
@@ -297,7 +294,6 @@ public:
   }
 
   nsIDocument* GetRenderedDocument() const;
-  nsPresContext* GetPresContext() const;
   nsIPresShell* GetPresShell() const;
 
   
@@ -378,8 +374,6 @@ protected:
 
   
   void UnregisterTarget();
-
-  void RequestRestyle(EffectCompositor::RestyleType aRestyleType);
 
   
   
