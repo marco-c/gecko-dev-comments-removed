@@ -566,7 +566,9 @@ public:
   explicit AdjustedTarget(CanvasRenderingContext2D* aCtx,
                           const gfx::Rect *aBounds = nullptr)
   {
-    mTarget = aCtx->mTarget;
+    
+    
+    mTarget = nullptr;
 
     
 
@@ -595,7 +597,7 @@ public:
     
     if (aCtx->NeedToDrawShadow()) {
       mShadowTarget = MakeUnique<AdjustedTargetForShadow>(
-        aCtx, mTarget, boundsAfterFilter, op);
+        aCtx, aCtx->mTarget, boundsAfterFilter, op);
       mTarget = mShadowTarget->DT();
       offsetToFinalDT = mShadowTarget->OffsetToFinalDT();
 
@@ -610,12 +612,18 @@ public:
 
       gfx::IntRect intBounds;
       if (!bounds.ToIntRect(&intBounds)) {
+        if (!mTarget) {
+          mTarget = static_cast<DrawTarget *>(aCtx->mTarget);
+        }
         return;
       }
       mFilterTarget = MakeUnique<AdjustedTargetForFilter>(
-        aCtx, mTarget, offsetToFinalDT, intBounds,
+        aCtx, aCtx->mTarget, offsetToFinalDT, intBounds,
         gfx::RoundedToInt(boundsAfterFilter), op);
       mTarget = mFilterTarget->DT();
+    }
+    if (!mTarget) {
+      mTarget = static_cast<DrawTarget *>(aCtx->mTarget);
     }
   }
 
