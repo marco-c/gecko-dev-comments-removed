@@ -471,7 +471,7 @@ this.TabCrashHandler = {
     };
 
     if (emailMe) {
-      data.email = this.prefs.getCharPref("email", "");
+      data.email = this.prefs.getCharPref("email");
     }
 
     
