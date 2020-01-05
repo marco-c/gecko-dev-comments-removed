@@ -31,7 +31,6 @@
 #include <windows.h>
 #include <mmsystem.h>
 #include <process.h>
-#include "ProfileEntry.h"
 
 
 #include "nsMemoryReporterManager.h"

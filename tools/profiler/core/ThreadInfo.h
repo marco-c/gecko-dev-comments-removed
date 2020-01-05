@@ -57,7 +57,7 @@ class ThreadInfo {
 public:
   bool hasProfile() { return !!mBuffer; }
 
-  void addTag(const ProfileEntry& aTag);
+  void addTag(const ProfileBufferEntry& aTag);
 
   
   

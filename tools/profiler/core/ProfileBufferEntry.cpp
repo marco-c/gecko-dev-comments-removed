@@ -16,7 +16,7 @@
 #include "js/TrackedOptimizationInfo.h"
 
 
-#include "ProfileEntry.h"
+#include "ProfileBufferEntry.h"
 
 using mozilla::JSONWriter;
 using mozilla::MakeUnique;
@@ -29,48 +29,48 @@ using mozilla::UniquePtr;
 
 
 
-ProfileEntry::ProfileEntry()
+ProfileBufferEntry::ProfileBufferEntry()
   : mTagData(nullptr)
   , mKind(Kind::INVALID)
 { }
 
 
-ProfileEntry::ProfileEntry(Kind aKind, const char *aTagData)
+ProfileBufferEntry::ProfileBufferEntry(Kind aKind, const char *aTagData)
   : mTagData(aTagData)
   , mKind(aKind)
 { }
 
-ProfileEntry::ProfileEntry(Kind aKind, ProfilerMarker *aTagMarker)
+ProfileBufferEntry::ProfileBufferEntry(Kind aKind, ProfilerMarker *aTagMarker)
   : mTagMarker(aTagMarker)
   , mKind(aKind)
 { }
 
-ProfileEntry::ProfileEntry(Kind aKind, void *aTagPtr)
+ProfileBufferEntry::ProfileBufferEntry(Kind aKind, void *aTagPtr)
   : mTagPtr(aTagPtr)
   , mKind(aKind)
 { }
 
-ProfileEntry::ProfileEntry(Kind aKind, double aTagDouble)
+ProfileBufferEntry::ProfileBufferEntry(Kind aKind, double aTagDouble)
   : mTagDouble(aTagDouble)
   , mKind(aKind)
 { }
 
-ProfileEntry::ProfileEntry(Kind aKind, uintptr_t aTagOffset)
+ProfileBufferEntry::ProfileBufferEntry(Kind aKind, uintptr_t aTagOffset)
   : mTagOffset(aTagOffset)
   , mKind(aKind)
 { }
 
-ProfileEntry::ProfileEntry(Kind aKind, Address aTagAddress)
+ProfileBufferEntry::ProfileBufferEntry(Kind aKind, Address aTagAddress)
   : mTagAddress(aTagAddress)
   , mKind(aKind)
 { }
 
-ProfileEntry::ProfileEntry(Kind aKind, int aTagInt)
+ProfileBufferEntry::ProfileBufferEntry(Kind aKind, int aTagInt)
   : mTagInt(aTagInt)
   , mKind(aKind)
 { }
 
-ProfileEntry::ProfileEntry(Kind aKind, char aTagChar)
+ProfileBufferEntry::ProfileBufferEntry(Kind aKind, char aTagChar)
   : mTagChar(aTagChar)
   , mKind(aKind)
 { }
@@ -589,13 +589,13 @@ void ProfileBuffer::StreamSamplesToJSON(SpliceableJSONWriter& aWriter, int aThre
   UniquePtr<char[]> tagBuff = MakeUnique<char[]>(DYNAMIC_MAX_STRING);
 
   while (readPos != mWritePos) {
-    ProfileEntry entry = mEntries[readPos];
+    ProfileBufferEntry entry = mEntries[readPos];
     if (entry.isThreadId()) {
       currentThreadID = entry.mTagInt;
       currentTime.reset();
       int readAheadPos = (readPos + 1) % mEntrySize;
       if (readAheadPos != mWritePos) {
-        ProfileEntry readAheadEntry = mEntries[readAheadPos];
+        ProfileBufferEntry readAheadEntry = mEntries[readAheadPos];
         if (readAheadEntry.isTime()) {
           currentTime = Some(readAheadEntry.mTagDouble);
         }
@@ -603,27 +603,27 @@ void ProfileBuffer::StreamSamplesToJSON(SpliceableJSONWriter& aWriter, int aThre
     }
     if (currentThreadID == aThreadId && (currentTime.isNothing() || *currentTime >= aSinceTime)) {
       switch (entry.kind()) {
-      case ProfileEntry::Kind::Responsiveness:
+      case ProfileBufferEntry::Kind::Responsiveness:
         if (sample.isSome()) {
           sample->mResponsiveness = Some(entry.mTagDouble);
         }
         break;
-      case ProfileEntry::Kind::ResidentMemory:
+      case ProfileBufferEntry::Kind::ResidentMemory:
         if (sample.isSome()) {
           sample->mRSS = Some(entry.mTagDouble);
         }
         break;
-      case ProfileEntry::Kind::UnsharedMemory:
+      case ProfileBufferEntry::Kind::UnsharedMemory:
         if (sample.isSome()) {
           sample->mUSS = Some(entry.mTagDouble);
          }
         break;
-      case ProfileEntry::Kind::FrameNumber:
+      case ProfileBufferEntry::Kind::FrameNumber:
         if (sample.isSome()) {
           sample->mFrameNumber = Some(entry.mTagInt);
         }
         break;
-      case ProfileEntry::Kind::Sample:
+      case ProfileBufferEntry::Kind::Sample:
         {
           
           if (sample.isSome()) {
@@ -642,7 +642,7 @@ void ProfileBuffer::StreamSamplesToJSON(SpliceableJSONWriter& aWriter, int aThre
             aUniqueStacks.BeginStack(UniqueStacks::OnStackFrameKey("(root)"));
 
           int framePos = (readPos + 1) % mEntrySize;
-          ProfileEntry frame = mEntries[framePos];
+          ProfileBufferEntry frame = mEntries[framePos];
           while (framePos != mWritePos && !frame.isSample() && !frame.isThreadId()) {
             int incBy = 1;
             frame = mEntries[framePos];
@@ -725,7 +725,7 @@ void ProfileBuffer::StreamMarkersToJSON(SpliceableJSONWriter& aWriter, int aThre
   int readPos = mReadPos;
   int currentThreadID = -1;
   while (readPos != mWritePos) {
-    ProfileEntry entry = mEntries[readPos];
+    ProfileBufferEntry entry = mEntries[readPos];
     if (entry.isThreadId()) {
       currentThreadID = entry.mTagInt;
     } else if (currentThreadID == aThreadId && entry.isMarker()) {
@@ -745,7 +745,7 @@ int ProfileBuffer::FindLastSampleOfThread(int aThreadId)
   for (int readPos  = (mWritePos + mEntrySize - 1) % mEntrySize;
            readPos !=  (mReadPos + mEntrySize - 1) % mEntrySize;
            readPos  =   (readPos + mEntrySize - 1) % mEntrySize) {
-    ProfileEntry entry = mEntries[readPos];
+    ProfileBufferEntry entry = mEntries[readPos];
     if (entry.isThreadId() && entry.mTagInt == aThreadId) {
       return readPos;
     }
@@ -771,14 +771,15 @@ ProfileBuffer::DuplicateLastSample(int aThreadId, const TimeStamp& aStartTime)
        readPos != mWritePos;
        readPos = (readPos + 1) % mEntrySize) {
     switch (mEntries[readPos].kind()) {
-      case ProfileEntry::Kind::ThreadId:
+      case ProfileBufferEntry::Kind::ThreadId:
         
         return;
-      case ProfileEntry::Kind::Time:
+      case ProfileBufferEntry::Kind::Time:
         
-        addTag(ProfileEntry::Time((TimeStamp::Now() - aStartTime).ToMilliseconds()));
+        addTag(ProfileBufferEntry::Time((TimeStamp::Now() -
+                                         aStartTime).ToMilliseconds()));
         break;
-      case ProfileEntry::Kind::Marker:
+      case ProfileBufferEntry::Kind::Marker:
         
         break;
       default:

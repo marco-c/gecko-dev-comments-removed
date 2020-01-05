@@ -6,7 +6,7 @@
 #ifndef MOZ_PROFILE_BUFFER_H
 #define MOZ_PROFILE_BUFFER_H
 
-#include "ProfileEntry.h"
+#include "ProfileBufferEntry.h"
 #include "platform.h"
 #include "ProfileJSONWriter.h"
 #include "mozilla/RefPtr.h"
@@ -21,7 +21,7 @@ public:
 
   virtual ~ProfileBuffer();
 
-  void addTag(const ProfileEntry& aTag);
+  void addTag(const ProfileBufferEntry& aTag);
   void StreamSamplesToJSON(SpliceableJSONWriter& aWriter, int aThreadId, double aSinceTime,
                            JSContext* cx, UniqueStacks& aUniqueStacks);
   void StreamMarkersToJSON(SpliceableJSONWriter& aWriter, int aThreadId, double aSinceTime,
@@ -42,7 +42,7 @@ protected:
 
 public:
   
-  mozilla::UniquePtr<ProfileEntry[]> mEntries;
+  mozilla::UniquePtr<ProfileBufferEntry[]> mEntries;
 
   
   
