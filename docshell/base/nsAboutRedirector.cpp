@@ -29,7 +29,7 @@ struct RedirEntry
 
 
 
-static RedirEntry kRedirMap[] = {
+static const RedirEntry kRedirMap[] = {
   {
     "", "chrome://global/content/about.xhtml",
     nsIAboutModule::ALLOW_SCRIPT
