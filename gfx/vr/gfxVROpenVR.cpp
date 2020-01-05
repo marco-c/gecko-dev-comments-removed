@@ -945,12 +945,7 @@ VRSystemManagerOpenVR::ScanForControllers()
   }
 
   if (newControllerCount != mControllerCount) {
-    
-    for (uint32_t i = 0; i < mOpenVRController.Length(); ++i) {
-      RemoveGamepad(i);
-    }
-    mControllerCount = 0;
-    mOpenVRController.Clear();
+    RemoveControllers();
 
     
     for (::vr::TrackedDeviceIndex_t i = 0; i < newControllerCount; ++i) {
@@ -1028,6 +1023,10 @@ VRSystemManagerOpenVR::ScanForControllers()
 void
 VRSystemManagerOpenVR::RemoveControllers()
 {
+  
+  for (uint32_t i = 0; i < mOpenVRController.Length(); ++i) {
+    RemoveGamepad(i);
+  }
   mOpenVRController.Clear();
   mControllerCount = 0;
 }
