@@ -6,9 +6,9 @@
 
 
 
-var DevEdition = {
+var CompactTheme = {
   _devtoolsThemePrefName: "devtools.theme",
-  styleSheetLocation: "chrome://browser/skin/devedition.css",
+  styleSheetLocation: "chrome://browser/skin/compacttheme.css",
   styleSheet: null,
   initialized: false,
 
@@ -124,6 +124,6 @@ var DevEdition = {
 
 
 if (!AppConstants.RELEASE_OR_BETA &&
-    this != Services.appShell.hiddenDOMWindow && DevEdition.isThemeCurrentlyApplied) {
-  DevEdition.createStyleSheet();
+    this != Services.appShell.hiddenDOMWindow && CompactTheme.isThemeCurrentlyApplied) {
+  CompactTheme.createStyleSheet();
 }
