@@ -17,6 +17,7 @@ use std::rc::Rc;
 
 #[jstraceable]
 #[must_root]
+#[privatize]
 pub struct Location {
     reflector_: Reflector, 
     page: Rc<Page>,
