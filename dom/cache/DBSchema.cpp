@@ -2564,7 +2564,9 @@ Migrate(mozIStorageConnection* aConn)
     MOZ_DIAGNOSTIC_ASSERT(currentVersion > lastVersion);
   }
 
-  MOZ_DIAGNOSTIC_ASSERT(currentVersion == kLatestSchemaVersion);
+  
+  
+  MOZ_ASSERT(currentVersion == kLatestSchemaVersion);
 
   if (rewriteSchema) {
     
