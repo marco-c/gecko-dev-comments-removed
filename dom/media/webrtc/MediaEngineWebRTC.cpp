@@ -199,7 +199,7 @@ MediaEngineWebRTC::EnumerateVideoDevices(dom::MediaSourceEnum aMediaSource,
   for (int i = 0; i < num; i++) {
     char deviceName[MediaEngineSource::kMaxDeviceNameLength];
     char uniqueId[MediaEngineSource::kMaxUniqueIdLength];
-    bool scaryWindow = false;
+    bool scarySource = false;
 
     
     deviceName[0] = '\0';
@@ -211,23 +211,14 @@ MediaEngineWebRTC::EnumerateVideoDevices(dom::MediaSourceEnum aMediaSource,
       capEngine,
       i, deviceName,
       sizeof(deviceName), uniqueId,
-      sizeof(uniqueId));
+      sizeof(uniqueId),
+      &scarySource);
     if (error) {
       LOG(("camera:GetCaptureDevice: Failed %d", error ));
       continue;
     }
 #ifdef DEBUG
     LOG(("  Capture Device Index %d, Name %s", i, deviceName));
-
-    if (aMediaSource == dom::MediaSourceEnum::Window) {
-      
-      
-    }
-
-    if (aMediaSource == dom::MediaSourceEnum::Application) {
-      
-      
-    }
 
     webrtc::CaptureCapability cap;
     int numCaps = mozilla::camera::GetChildAndCall(
@@ -262,7 +253,7 @@ MediaEngineWebRTC::EnumerateVideoDevices(dom::MediaSourceEnum aMediaSource,
       aVSources->AppendElement(vSource.get());
     } else {
       vSource = new MediaEngineRemoteVideoSource(i, capEngine, aMediaSource,
-                                                 scaryKind || scaryWindow);
+                                                 scaryKind || scarySource);
       mVideoSources.Put(uuid, vSource); 
       aVSources->AppendElement(vSource);
     }

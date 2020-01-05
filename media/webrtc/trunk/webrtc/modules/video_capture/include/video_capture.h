@@ -58,6 +58,7 @@ class VideoCaptureModule: public RefCountedModule {
     
     
     
+    
     virtual int32_t GetDeviceName(
         uint32_t deviceNumber,
         char* deviceNameUTF8,
@@ -65,7 +66,8 @@ class VideoCaptureModule: public RefCountedModule {
         char* deviceUniqueIdUTF8,
         uint32_t deviceUniqueIdUTF8Length,
         char* productUniqueIdUTF8 = 0,
-        uint32_t productUniqueIdUTF8Length = 0) = 0;
+        uint32_t productUniqueIdUTF8Length = 0,
+        int32_t* pid = 0) = 0;
 
 
     
