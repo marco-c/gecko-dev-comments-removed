@@ -188,7 +188,7 @@ impl<'a> DocumentHelpers for JSRef<'a, Document> {
 impl Document {
     pub fn reflect_document(document: Box<Document>,
                             window: &JSRef<Window>,
-                            wrap_fn: extern "Rust" fn(*JSContext, &JSRef<Window>, Box<Document>) -> JS<Document>)
+                            wrap_fn: extern "Rust" fn(*mut JSContext, &JSRef<Window>, Box<Document>) -> JS<Document>)
              -> Temporary<Document> {
         assert!(document.reflector().get_jsobject().is_null());
         let mut raw_doc = reflect_dom_object(document, window, wrap_fn).root();
@@ -215,22 +215,22 @@ impl Document {
             content_type: match content_type {
                 Some(string) => string.clone(),
                 None => match is_html_document {
-                    // http://dom.spec.whatwg.org/#dom-domimplementation-createhtmldocument
+                    
                     HTMLDocument => "text/html".to_owned(),
-                    // http://dom.spec.whatwg.org/#concept-document-content-type
+                    
                     NonHTMLDocument => "application/xml".to_owned()
                 }
             },
             url: Untraceable::new(url),
-            // http://dom.spec.whatwg.org/#concept-document-quirks
+            
             quirks_mode: Untraceable::new(NoQuirks),
-            // http://dom.spec.whatwg.org/#concept-document-encoding
+            
             encoding_name: "utf-8".to_owned(),
             is_html_document: is_html_document == HTMLDocument,
         }
     }
 
-    // http://dom.spec.whatwg.org/#dom-document
+    
     pub fn Constructor(owner: &JSRef<Window>) -> Fallible<Temporary<Document>> {
         Ok(Document::new(owner, None, NonHTMLDocument, None))
     }

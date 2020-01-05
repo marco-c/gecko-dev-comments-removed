@@ -82,7 +82,7 @@ pub struct Window {
 }
 
 impl Window {
-    pub fn get_cx(&self) -> *JSContext {
+    pub fn get_cx(&self) -> *mut JSContext {
         let js_info = self.page().js_info();
         (**js_info.get_ref().js_context).ptr
     }
@@ -104,9 +104,9 @@ impl Drop for Window {
     }
 }
 
-// Holder for the various JS values associated with setTimeout
-// (ie. function value to invoke and all arguments to pass
-//      to the function when calling it)
+
+
+
 #[deriving(Encodable)]
 pub struct TimerData {
     pub is_interval: bool,
@@ -132,10 +132,10 @@ pub trait WindowMethods {
     fn Confirm(&self, _message: DOMString) -> bool;
     fn Prompt(&self, _message: DOMString, _default: DOMString) -> Option<DOMString>;
     fn Print(&self);
-    fn ShowModalDialog(&self, _cx: *JSContext, _url: DOMString, _argument: Option<JSVal>) -> JSVal;
-    fn SetTimeout(&mut self, _cx: *JSContext, callback: JSVal, timeout: i32) -> i32;
+    fn ShowModalDialog(&self, _cx: *mut JSContext, _url: DOMString, _argument: Option<JSVal>) -> JSVal;
+    fn SetTimeout(&mut self, _cx: *mut JSContext, callback: JSVal, timeout: i32) -> i32;
     fn ClearTimeout(&mut self, handle: i32);
-    fn SetInterval(&mut self, _cx: *JSContext, callback: JSVal, timeout: i32) -> i32;
+    fn SetInterval(&mut self, _cx: *mut JSContext, callback: JSVal, timeout: i32) -> i32;
     fn ClearInterval(&mut self, handle: i32);
     fn Window(&self) -> Temporary<Window>;
     fn Self(&self) -> Temporary<Window>;
@@ -146,7 +146,7 @@ pub trait WindowMethods {
 
 impl<'a> WindowMethods for JSRef<'a, Window> {
     fn Alert(&self, s: DOMString) {
-        // Right now, just print to the console
+        
         println!("ALERT: {:s}", s);
     }
 
@@ -227,11 +227,11 @@ impl<'a> WindowMethods for JSRef<'a, Window> {
     fn Print(&self) {
     }
 
-    fn ShowModalDialog(&self, _cx: *JSContext, _url: DOMString, _argument: Option<JSVal>) -> JSVal {
+    fn ShowModalDialog(&self, _cx: *mut JSContext, _url: DOMString, _argument: Option<JSVal>) -> JSVal {
         NullValue()
     }
 
-    fn SetTimeout(&mut self, _cx: *JSContext, callback: JSVal, timeout: i32) -> i32 {
+    fn SetTimeout(&mut self, _cx: *mut JSContext, callback: JSVal, timeout: i32) -> i32 {
         self.set_timeout_or_interval(callback, timeout, false)
     }
 
@@ -244,7 +244,7 @@ impl<'a> WindowMethods for JSRef<'a, Window> {
         self.active_timers.remove(&TimerId(handle));
     }
 
-    fn SetInterval(&mut self, _cx: *JSContext, callback: JSVal, timeout: i32) -> i32 {
+    fn SetInterval(&mut self, _cx: *mut JSContext, callback: JSVal, timeout: i32) -> i32 {
         self.set_timeout_or_interval(callback, timeout, true)
     }
 
@@ -302,16 +302,16 @@ trait PrivateWindowHelpers {
 
 impl<'a> WindowHelpers for JSRef<'a, Window> {
     fn damage_and_reflow(&self, damage: DocumentDamageLevel) {
-        // FIXME This should probably be ReflowForQuery, not Display. All queries currently
-        // currently rely on the display list, which means we can't destroy it by
-        // doing a query reflow.
+        
+        
+        
         self.page().damage(damage);
         self.page().reflow(ReflowForDisplay, self.script_chan.clone(), *self.compositor);
     }
 
     fn wait_until_safe_to_modify_dom(&self) {
-        // FIXME: This disables concurrent layout while we are modifying the DOM, since
-        //        our current architecture is entirely unsafe in the presence of races.
+        
+        
         self.page().join_layout();
     }
 
@@ -319,7 +319,7 @@ impl<'a> WindowHelpers for JSRef<'a, Window> {
         self.browser_context = Some(BrowserContext::new(doc));
     }
 
-    /// Commence a new URL load which will either replace this window or scroll to a fragment.
+    
     fn load_url(&self, href: DOMString) {
         let base_url = Some(self.page().get_url());
         debug!("current page url is {:?}", base_url);
@@ -339,8 +339,8 @@ impl<'a> PrivateWindowHelpers for JSRef<'a, Window> {
         let handle = self.next_timer_handle;
         self.next_timer_handle += 1;
 
-        // Post a delayed message to the per-window timer task; it will dispatch it
-        // to the relevant script handler that will deal with it.
+        
+        
         let tm = Timer::new().unwrap();
         let (cancel_chan, cancel_port) = channel();
         let chan = self.script_chan.clone();
@@ -394,7 +394,7 @@ impl<'a> PrivateWindowHelpers for JSRef<'a, Window> {
 }
 
 impl Window {
-    pub fn new(cx: *JSContext,
+    pub fn new(cx: *mut JSContext,
                page: Rc<Page>,
                script_chan: ScriptChan,
                compositor: Box<ScriptListener>,

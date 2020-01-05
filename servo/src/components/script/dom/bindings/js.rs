@@ -69,17 +69,17 @@ impl<T: Reflectable> Drop for Temporary<T> {
     fn drop(&mut self) {
         let cx = cx_for_dom_object(&self.inner);
         unsafe {
-            JS_RemoveObjectRoot(cx, self.inner.reflector().rootable());
+            JS_RemoveObjectRoot(cx, self.inner.mut_reflector().rootable());
         }
     }
 }
 
 impl<T: Reflectable> Temporary<T> {
     
-    pub fn new(inner: JS<T>) -> Temporary<T> {
+    pub fn new(mut inner: JS<T>) -> Temporary<T> {
         let cx = cx_for_dom_object(&inner);
         unsafe {
-            JS_AddObjectRoot(cx, inner.reflector().rootable());
+            JS_AddObjectRoot(cx, inner.mut_reflector().rootable());
         }
         Temporary {
             inner: inner,
@@ -351,30 +351,30 @@ impl<T: Assignable<U>, U: Reflectable> TemporaryPushable<T> for Vec<JS<U>> {
 
 
 pub struct RootCollection {
-    roots: RefCell<Vec<*JSObject>>,
+    roots: RefCell<Vec<*mut JSObject>>,
 }
 
 impl RootCollection {
-    /// Create an empty collection of roots
+    
     pub fn new() -> RootCollection {
         RootCollection {
             roots: RefCell::new(vec!()),
         }
     }
 
-    /// Create a new stack-bounded root that will not outlive this collection
+    
     fn new_root<'a, 'b, T: Reflectable>(&'a self, unrooted: &JS<T>) -> Root<'a, 'b, T> {
         Root::new(self, unrooted)
     }
 
-    /// Track a stack-based root to ensure LIFO root ordering
+    
     fn root<'a, 'b, T: Reflectable>(&self, untracked: &Root<'a, 'b, T>) {
         let mut roots = self.roots.borrow_mut();
         roots.push(untracked.js_ptr);
         debug!("  rooting {:?}", untracked.js_ptr);
     }
 
-    /// Stop tracking a stack-based root, asserting if LIFO root ordering has been violated
+    
     fn unroot<'a, 'b, T: Reflectable>(&self, rooted: &Root<'a, 'b, T>) {
         let mut roots = self.roots.borrow_mut();
         debug!("unrooting {:?} (expecting {:?}", roots.last().unwrap(), rooted.js_ptr);
@@ -396,7 +396,7 @@ pub struct Root<'a, 'b, T> {
     
     ptr: RefCell<*mut T>,
     
-    js_ptr: *JSObject,
+    js_ptr: *mut JSObject,
 }
 
 impl<'a, 'b, T: Reflectable> Root<'a, 'b, T> {
