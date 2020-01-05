@@ -232,7 +232,7 @@ function DO_LOG(aText) {
 
 
 
-var LOG = function(){};
+var LOG = function() {};
 
 if (AppConstants.DEBUG) {
   LOG = function (aText) {
@@ -400,7 +400,7 @@ function geoSpecificDefaultsEnabled() {
   let geoSpecificDefaults = false;
   try {
     geoSpecificDefaults = Services.prefs.getBoolPref("browser.search.geoSpecificDefaults");
-  } catch(e) {}
+  } catch (e) {}
 
   return geoSpecificDefaults;
 }
@@ -465,7 +465,7 @@ function getIsUS() {
   
   try {
     return Services.prefs.getCharPref("browser.search.region") == "US";
-  } catch(e) {}
+  } catch (e) {}
 
   
   let isNA = isUSTimezone();
@@ -510,7 +510,7 @@ var ensureKnownCountryCode = Task.async(function* (ss) {
   let countryCode;
   try {
     countryCode = Services.prefs.getCharPref("browser.search.countryCode");
-  } catch(e) {}
+  } catch (e) {}
 
   if (!countryCode) {
     
@@ -736,7 +736,7 @@ var fetchRegionDefault = (ss) => new Promise(resolve => {
   let cohort;
   try {
     cohort = Services.prefs.getCharPref(cohortPref);
-  } catch(e) {}
+  } catch (e) {}
   if (cohort)
     endpoint += "/" + cohort;
 
@@ -2264,7 +2264,7 @@ Engine.prototype = {
       let path;
       try {
         path = getDir(knownDirs[key]).path;
-      } catch(e) {
+      } catch (e) {
         
         continue;
       }
@@ -3214,7 +3214,7 @@ SearchService.prototype = {
       if (!json.engines || !json.engines.length)
         throw "no engine in the file";
       return json;
-    } catch(ex) {
+    } catch (ex) {
       LOG("_readCacheFile: Error reading cache file: " + ex);
     } finally {
       stream.close();
@@ -3244,7 +3244,7 @@ SearchService.prototype = {
       json._oldMetadata = metadata;
 
       return json;
-    } catch(ex) {
+    } catch (ex) {
       LOG("_readCacheFile: failed to read old metadata: " + ex);
       return {};
     } finally {
@@ -3651,7 +3651,7 @@ SearchService.prototype = {
     let searchSettings;
     try {
       searchSettings = JSON.parse(list);
-    } catch(e) {
+    } catch (e) {
       LOG("failing to parse list.json: " + e);
       return;
     }
@@ -3957,7 +3957,7 @@ SearchService.prototype = {
     this._ensureInitialized();
     function isDefault(engine) {
       return engine._isDefault;
-    };
+    }
     var engines = this._sortedEngines.filter(isDefault);
     var engineOrder = {};
     var engineName;
@@ -4293,7 +4293,7 @@ SearchService.prototype = {
     let engine;
     try {
       engine = this.defaultEngine;
-    } catch(e) {
+    } catch (e) {
       
       
       
@@ -4336,7 +4336,7 @@ SearchService.prototype = {
               sendSubmissionURL = true;
               break;
             }
-          } catch(e) {}
+          } catch (e) {}
         }
 
         let prefNameBase = getGeoSpecificPrefName(BROWSER_SEARCH_PREF + "order");
@@ -4469,8 +4469,14 @@ SearchService.prototype = {
     
     let getSortedFormData = data => {
       return data.filter(a => a.name && a.value).sort((a, b) => {
-        return (a.name > b.name) ? 1 : (b.name > a.name) ? -1 :
-               (a.value > b.value) ? 1 : (b.value > a.value) ? -1 : 0;
+        if (a.name > b.name) {
+          return 1;
+        } else if (b.name > a.name) {
+          return -1;
+        } else if (a.value > b.value) {
+          return 1;
+        }
+        return (b.value > a.value) ? -1 : 0;
       });
     };
 
@@ -4487,7 +4493,7 @@ SearchService.prototype = {
             url.template != template ||
             url.params.length != sortedFormLength) {
           return false;
-        };
+        }
 
         
         
@@ -4499,8 +4505,8 @@ SearchService.prototype = {
               param.value != formData.value ||
               param.purpose != formData.purpose) {
             return false;
-          };
-        };
+          }
+        }
         
         return true;
       });
