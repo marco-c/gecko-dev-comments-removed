@@ -133,7 +133,7 @@ nsSVGClipPathFrame::PaintClipMask(gfxContext& aMaskContext,
   
   static int16_t sRefChainLengthCounter = AutoReferenceLimiter::notReferencing;
   AutoReferenceLimiter
-    refChainLengthLimiter(&sRefChainLengthCounter,
+    refChainLengthLimiter(this, &sRefChainLengthCounter,
                           MAX_SVG_CLIP_PATH_REFERENCE_CHAIN_LENGTH);
   if (!refChainLengthLimiter.Reference()) {
     return DrawResult::SUCCESS; 
@@ -141,7 +141,7 @@ nsSVGClipPathFrame::PaintClipMask(gfxContext& aMaskContext,
 
   
   
-  AutoReferenceLimiter refLoopDetector(&mReferencing, 1);
+  AutoReferenceLimiter refLoopDetector(this, &mReferencing, 1);
   if (!refLoopDetector.Reference()) {
     return DrawResult::SUCCESS; 
   }
@@ -302,7 +302,7 @@ nsSVGClipPathFrame::PointIsInsideClipPath(nsIFrame* aClippedFrame,
   
   static int16_t sRefChainLengthCounter = AutoReferenceLimiter::notReferencing;
   AutoReferenceLimiter
-    refChainLengthLimiter(&sRefChainLengthCounter,
+    refChainLengthLimiter(this, &sRefChainLengthCounter,
                           MAX_SVG_CLIP_PATH_REFERENCE_CHAIN_LENGTH);
   if (!refChainLengthLimiter.Reference()) {
     return false; 
@@ -310,7 +310,7 @@ nsSVGClipPathFrame::PointIsInsideClipPath(nsIFrame* aClippedFrame,
 
   
   
-  AutoReferenceLimiter refLoopDetector(&mReferencing, 1);
+  AutoReferenceLimiter refLoopDetector(this, &mReferencing, 1);
   if (!refLoopDetector.Reference()) {
     return true; 
   }
@@ -397,7 +397,7 @@ nsSVGClipPathFrame::IsValid()
   
   static int16_t sRefChainLengthCounter = AutoReferenceLimiter::notReferencing;
   AutoReferenceLimiter
-    refChainLengthLimiter(&sRefChainLengthCounter,
+    refChainLengthLimiter(this, &sRefChainLengthCounter,
                           MAX_SVG_CLIP_PATH_REFERENCE_CHAIN_LENGTH);
   if (!refChainLengthLimiter.Reference()) {
     return false; 
@@ -405,7 +405,7 @@ nsSVGClipPathFrame::IsValid()
 
   
   
-  AutoReferenceLimiter refLoopDetector(&mReferencing, 1);
+  AutoReferenceLimiter refLoopDetector(this, &mReferencing, 1);
   if (!refLoopDetector.Reference()) {
     return false; 
   }
