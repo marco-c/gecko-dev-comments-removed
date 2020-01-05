@@ -2969,61 +2969,6 @@ Parser<ParseHandler>::functionArguments(YieldHandling yieldHandling, FunctionSyn
     return true;
 }
 
-template <typename ParseHandler>
-bool
-Parser<ParseHandler>::checkFunctionDefinition(HandlePropertyName funName, Node pn,
-                                              GeneratorKind generatorKind, bool* tryAnnexB)
-{
-    TokenPos pos = handler.getPosition(pn);
-
-    
-    
-    ParseContext::Statement* declaredInStmt = pc->innermostStatement();
-    if (declaredInStmt && declaredInStmt->kind() == StatementKind::Label) {
-        MOZ_ASSERT(!pc->sc()->strict(),
-                   "labeled functions shouldn't be parsed in strict mode");
-
-        
-        
-        
-        while (declaredInStmt && declaredInStmt->kind() == StatementKind::Label)
-            declaredInStmt = declaredInStmt->enclosing();
-
-        if (declaredInStmt && !StatementKindIsBraced(declaredInStmt->kind())) {
-            reportWithOffset(ParseError, false, pos.begin, JSMSG_SLOPPY_FUNCTION_LABEL);
-            return false;
-        }
-    }
-
-    if (declaredInStmt) {
-        MOZ_ASSERT(declaredInStmt->kind() != StatementKind::Label);
-        MOZ_ASSERT(StatementKindIsBraced(declaredInStmt->kind()));
-
-        if (!pc->sc()->strict() && generatorKind == NotGenerator) {
-            
-            
-            
-            
-            
-
-            if (!tryDeclareVarForAnnexBLexicalFunction(funName, tryAnnexB))
-                return false;
-        }
-
-        if (!noteDeclaredName(funName, DeclarationKind::LexicalFunction, pos))
-            return false;
-    } else {
-        if (!noteDeclaredName(funName, DeclarationKind::BodyLevelFunction, pos))
-            return false;
-
-        
-        if (pc->atModuleLevel())
-            pc->varScope().lookupDeclaredName(funName)->value()->setClosedOver();
-    }
-
-    return true;
-}
-
 template <>
 bool
 Parser<FullParseHandler>::skipLazyInnerFunction(ParseNode* pn, FunctionSyntaxKind kind,
@@ -3551,12 +3496,30 @@ Parser<ParseHandler>::functionStmt(YieldHandling yieldHandling, DefaultHandling 
 {
     MOZ_ASSERT(tokenStream.isCurrentTokenType(TOK_FUNCTION));
 
-    RootedPropertyName name(context);
-    GeneratorKind generatorKind = asyncKind == AsyncFunction ? StarGenerator : NotGenerator;
+    
+    
+    ParseContext::Statement* declaredInStmt = pc->innermostStatement();
+    if (declaredInStmt && declaredInStmt->kind() == StatementKind::Label) {
+        MOZ_ASSERT(!pc->sc()->strict(),
+                   "labeled functions shouldn't be parsed in strict mode");
+
+        
+        
+        
+        while (declaredInStmt && declaredInStmt->kind() == StatementKind::Label)
+            declaredInStmt = declaredInStmt->enclosing();
+
+        if (declaredInStmt && !StatementKindIsBraced(declaredInStmt->kind())) {
+            error(JSMSG_SLOPPY_FUNCTION_LABEL);
+            return null();
+        }
+    }
+
     TokenKind tt;
     if (!tokenStream.getToken(&tt))
         return null();
 
+    GeneratorKind generatorKind = asyncKind == AsyncFunction ? StarGenerator : NotGenerator;
     if (tt == TOK_MUL) {
         if (asyncKind != SyncFunction) {
             error(JSMSG_ASYNC_GENERATOR);
@@ -3567,6 +3530,7 @@ Parser<ParseHandler>::functionStmt(YieldHandling yieldHandling, DefaultHandling 
             return null();
     }
 
+    RootedPropertyName name(context);
     if (tt == TOK_NAME || tt == TOK_YIELD) {
         name = bindingIdentifier(yieldHandling);
         if (!name)
@@ -3580,13 +3544,35 @@ Parser<ParseHandler>::functionStmt(YieldHandling yieldHandling, DefaultHandling 
         return null();
     }
 
-    Node pn = handler.newFunctionStatement();
-    if (!pn)
-        return null();
-
     
     bool tryAnnexB = false;
-    if (!checkFunctionDefinition(name, pn, generatorKind, &tryAnnexB))
+    if (declaredInStmt) {
+        MOZ_ASSERT(declaredInStmt->kind() != StatementKind::Label);
+        MOZ_ASSERT(StatementKindIsBraced(declaredInStmt->kind()));
+
+        if (!pc->sc()->strict() && generatorKind == NotGenerator) {
+            
+            
+            
+            
+            
+            if (!tryDeclareVarForAnnexBLexicalFunction(name, &tryAnnexB))
+                return null();
+        }
+
+        if (!noteDeclaredName(name, DeclarationKind::LexicalFunction, pos()))
+            return null();
+    } else {
+        if (!noteDeclaredName(name, DeclarationKind::BodyLevelFunction, pos()))
+            return null();
+
+        
+        if (pc->atModuleLevel())
+            pc->varScope().lookupDeclaredName(name)->value()->setClosedOver();
+    }
+
+    Node pn = handler.newFunctionStatement();
+    if (!pn)
         return null();
 
     YieldHandling newYieldHandling = GetYieldHandling(generatorKind, asyncKind);
