@@ -161,7 +161,7 @@ private:
   RefPtr<GenericPromise> ParseChromiumManifest(const nsAString& aJSON); 
   RefPtr<GenericPromise> ReadChromiumManifestFile(nsIFile* aFile); 
 #ifdef MOZ_CRASHREPORTER
-  void WriteExtraDataForMinidump(CrashReporter::AnnotationTable& notes);
+  void WriteExtraDataForMinidump();
   bool GetCrashID(nsString& aResult);
 #endif
   void ActorDestroy(ActorDestroyReason aWhy) override;
