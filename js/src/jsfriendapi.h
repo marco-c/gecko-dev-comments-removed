@@ -648,30 +648,19 @@ ProtoKeyToClass(JSProtoKey key);
 
 
 
-inline bool
-StandardClassIsDependent(JSProtoKey key)
-{
-    const Class* clasp = ProtoKeyToClass(key);
-    return clasp && clasp->specDefined() && clasp->specDependent();
-}
-
-
-
-
-
 
 
 
 inline JSProtoKey
-ParentKeyForStandardClass(JSProtoKey key)
+InheritanceProtoKeyForStandardClass(JSProtoKey key)
 {
     
     if (key == JSProto_Object)
         return JSProto_Null;
 
     
-    if (StandardClassIsDependent(key))
-        return ProtoKeyToClass(key)->specParentKey();
+    if (ProtoKeyToClass(key)->specDefined())
+        return ProtoKeyToClass(key)->specInheritanceProtoKey();
 
     
     return JSProto_Object;

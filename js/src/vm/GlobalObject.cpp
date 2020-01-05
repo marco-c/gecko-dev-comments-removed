@@ -230,9 +230,7 @@ GlobalObject::resolveConstructor(JSContext* cx, Handle<GlobalObject*> global, JS
 
     
     
-    
-    
-    if (!StandardClassIsDependent(key) && !cx->runtime()->isSelfHostingGlobal(global)) {
+    if (!cx->runtime()->isSelfHostingGlobal(global)) {
         if (const JSFunctionSpec* funs = clasp->specPrototypeFunctions()) {
             if (!JS_DefineFunctions(cx, proto, funs))
                 return false;
