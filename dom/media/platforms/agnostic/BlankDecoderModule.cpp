@@ -5,7 +5,7 @@
 
 
 #include "mozilla/CheckedInt.h"
-#include "mozilla/UniquePtr.h"
+#include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/RefPtr.h"
 #include "nsRect.h"
 #include "nsSize.h"
@@ -37,7 +37,10 @@ public:
     
     
     
-    auto frame = MakeUnique<uint8_t[]>(mFrameWidth * mFrameHeight);
+    auto frame = MakeUniqueFallible<uint8_t[]>(mFrameWidth * mFrameHeight);
+    if (!frame) {
+      return nullptr;
+    }
     memset(frame.get(), 0, mFrameWidth * mFrameHeight);
     VideoData::YCbCrBuffer buffer;
 
