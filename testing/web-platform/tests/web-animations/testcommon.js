@@ -158,3 +158,19 @@ function waitForAnimationFrames(frameCount) {
     window.requestAnimationFrame(handleFrame);
   });
 }
+
+
+
+
+function waitForAnimationFramesWithDelay(minDelay) {
+  var startTime = document.timeline.currentTime;
+  return new Promise(function(resolve) {
+    (function handleFrame() {
+      if (document.timeline.currentTime - startTime >= minDelay) {
+        resolve();
+      } else {
+        window.requestAnimationFrame(handleFrame);
+      }
+    }());
+  });
+}
