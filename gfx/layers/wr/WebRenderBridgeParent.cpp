@@ -10,6 +10,7 @@
 #include "GLContext.h"
 #include "GLContextProvider.h"
 #include "mozilla/Range.h"
+#include "mozilla/layers/AnimationHelper.h"
 #include "mozilla/layers/Compositor.h"
 #include "mozilla/layers/CompositorBridgeParent.h"
 #include "mozilla/layers/CompositorThread.h"
@@ -21,6 +22,10 @@
 #include "mozilla/layers/WebRenderTextureHost.h"
 #include "mozilla/webrender/RenderThread.h"
 #include "mozilla/widget/CompositorWidget.h"
+
+#if defined(MOZ_WIDGET_ANDROID)
+# include "mozilla/widget/AndroidCompositorWidget.h"
+#endif
 
 bool is_in_main_thread()
 {
@@ -139,11 +144,10 @@ WebRenderBridgeParent::RecvCreate(const gfx::IntSize& aSize)
 #ifdef MOZ_WIDGET_ANDROID
   
   
-  
-
-
-
-
+  widget::AndroidCompositorWidget* widget = mWidget->AsAndroid();
+  if (widget) {
+    widget->SetFirstPaintViewport(LayerIntPoint(0, 0), CSSToLayerScale(), CSSRect(0, 0, aSize.width, aSize.height));
+  }
 #endif
 
   return IPC_OK();
@@ -409,6 +413,19 @@ WebRenderBridgeParent::ProcessWebRenderCommands(const gfx::IntSize &aSize,
       case WebRenderParentCommand::TCompositableOperation: {
         if (!ReceiveCompositableUpdate(cmd.get_CompositableOperation())) {
           NS_ERROR("ReceiveCompositableUpdate failed");
+        }
+        break;
+      }
+      case WebRenderParentCommand::TOpAddCompositorAnimations: {
+        const OpAddCompositorAnimations& op = cmd.get_OpAddCompositorAnimations();
+        CompositorAnimations data(Move(op.data()));
+        if (data.animations().Length()) {
+          uint64_t id = mWidget ? 0 : mPipelineId.mHandle;
+          CompositorAnimationStorage* storage =
+            mCompositorBridge->GetAnimationStorage(id);
+          if (storage) {
+            storage->SetAnimations(data.id(), data.animations());
+          }
         }
         break;
       }
