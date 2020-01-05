@@ -1303,13 +1303,6 @@ DataTransfer::CacheExternalData(const char* aFormat, uint32_t aIndex,
   return NS_OK;
 }
 
-
-
-
-const char* kFormats[] = { kFileMime, kHTMLMime, kURLMime, kURLDataMime,
-                           kUnicodeMime, kPNGImageMime, kJPEGImageMime,
-                           kGIFImageMime };
-
 void
 DataTransfer::CacheExternalDragFormats()
 {
@@ -1332,8 +1325,9 @@ DataTransfer::CacheExternalDragFormats()
   
   
   
-  const char* formats[] = { kFileMime, kHTMLMime, kRTFMime,
-                            kURLMime, kURLDataMime, kUnicodeMime };
+  
+  const char* formats[] = { kFileMime, kHTMLMime, kURLMime, kURLDataMime,
+                            kUnicodeMime, kPNGImageMime };
 
   uint32_t count;
   dragSession->GetNumDropItems(&count);
@@ -1354,11 +1348,11 @@ DataTransfer::CacheExternalDragFormats()
       
       
       bool supported;
-      dragSession->IsDataFlavorSupported(kFormats[f], &supported);
+      dragSession->IsDataFlavorSupported(formats[f], &supported);
       
       
       if (supported) {
-        CacheExternalData(kFormats[f], c, sysPrincipal,  f && hasFileData);
+        CacheExternalData(formats[f], c, sysPrincipal,  f && hasFileData);
       }
     }
   }
@@ -1393,8 +1387,7 @@ DataTransfer::CacheExternalClipboardFormats()
   
   
   const char* formats[] = { kCustomTypesMime, kFileMime, kHTMLMime, kRTFMime,
-                            kURLMime, kURLDataMime, kUnicodeMime, kPNGImageMime,
-                            kJPEGImageMime, kGIFImageMime };
+                            kURLMime, kURLDataMime, kUnicodeMime, kPNGImageMime };
 
   for (uint32_t f = 0; f < mozilla::ArrayLength(formats); ++f) {
     
