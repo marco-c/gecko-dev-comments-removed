@@ -95,6 +95,8 @@ var {
   flushJarCache,
 } = ExtensionUtils;
 
+XPCOMUtils.defineLazyGetter(this, "console", ExtensionUtils.getConsole);
+
 const LOGGER_ID_BASE = "addons.webextension.";
 const UUID_MAP_PREF = "extensions.webextensions.uuids";
 const LEAVE_STORAGE_PREF = "extensions.webextensions.keepStorageOnUninstall";
@@ -698,9 +700,10 @@ GlobalManager = {
         return context.extension.hasPermission(permission);
       },
 
-      shouldInject(namespace, name, allowedContexts) {
+      shouldInject(namespace, name, restrictions) {
         
-        if (context.envType === "content_parent" && !allowedContexts.includes("content")) {
+        if (context.envType === "content_parent" &&
+            (!restrictions || !restrictions.includes("content"))) {
           return false;
         }
         return findPathInObject(apis, namespace) !== null;

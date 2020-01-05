@@ -371,6 +371,11 @@ HttpObserverManager = {
     let headers = [];
     let visitor = {
       visitHeader(name, value) {
+        try {
+          value = channel.getProperty(`webrequest-header-${name.toLowerCase()}`);
+        } catch (e) {
+          
+        }
         headers.push({name, value});
       },
 
@@ -379,6 +384,7 @@ HttpObserverManager = {
     };
 
     try {
+      channel.QueryInterface(Ci.nsIPropertyBag);
       channel[method](visitor);
     } catch (e) {
       Cu.reportError(`webRequest Error: ${e} trying to perform ${method} in ${event}@${channel.name}`);
@@ -613,7 +619,20 @@ HttpObserverManager = {
       if (opts.responseHeaders && result.responseHeaders) {
         this.replaceHeaders(
           result.responseHeaders, responseHeaderNames,
-          (name, value) => channel.setResponseHeader(name, value, false)
+          (name, value) => {
+            if (name.toLowerCase() === "content-type" && value) {
+              
+              
+              
+              
+              channel.contentType = value;
+
+              channel.QueryInterface(Ci.nsIWritablePropertyBag);
+              channel.setProperty("webrequest-header-content-type", value);
+            } else {
+              channel.setResponseHeader(name, value, false);
+            }
+          }
         );
       }
     }
