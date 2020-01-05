@@ -104,25 +104,6 @@ typedef uint8_t* Address;
 
 
 
-class OS {
-public:
-  
-  static void Sleep(const int milliseconds);
-
-  
-  static void SleepMicro(const int microseconds);
-
-  
-  static void Startup();
-};
-
-
-
-
-
-
-
-
 class Thread {
 public:
 #if defined(GP_OS_windows)

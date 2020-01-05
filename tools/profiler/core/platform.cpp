@@ -1589,6 +1589,11 @@ RegisterCurrentThread(const char* aName, PseudoStack* aPseudoStack,
   gRegisteredThreads->push_back(info);
 }
 
+
+static void PlatformInit();
+static void PlatformStart();
+static void PlatformStop();
+
 void
 profiler_init(void* stackTop)
 {
@@ -1636,7 +1641,7 @@ profiler_init(void* stackTop)
   read_profiler_env_vars();
 
   
-  OS::Startup();
+  PlatformInit();
 
   set_stderr_callback(profiler_log);
 
@@ -1929,10 +1934,6 @@ hasFeature(const char** aFeatures, uint32_t aFeatureCount, const char* aFeature)
   }
   return false;
 }
-
-
-static void PlatformStart();
-static void PlatformStop();
 
 
 class Sampler {};
