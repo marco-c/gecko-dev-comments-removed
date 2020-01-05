@@ -119,6 +119,10 @@ function test_apply_same_record_with_different_times() {
   
   
   
+
+  
+  
+
   var timePasswordChanged = 100;
   timePasswordChanged = changePassword("A", "http://a.tn", "password", 1, 100,
                                        100, 100, timePasswordChanged, true);
@@ -133,6 +137,7 @@ function test_apply_same_record_with_different_times() {
                                        true, true);
   timePasswordChanged = changePassword("A", "http://a.tn", "password2", 1, 500,
                                        100, 800, timePasswordChanged, true, true);
+  
 }
 
 

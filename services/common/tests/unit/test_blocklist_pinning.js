@@ -98,7 +98,7 @@ add_task(function* test_something() {
   ok(!sss.isSecureHost(sss.HEADER_HSTS, "five.example.com", 0));
 
   
-  let result = yield PinningPreloadClient.maybeSync(2000, Date.now());
+  yield PinningPreloadClient.maybeSync(2000, Date.now());
 
   let connection = yield FirefoxAdapter.openConnection({path: KINTO_STORAGE_PATH});
 
@@ -112,7 +112,7 @@ add_task(function* test_something() {
   ok(sss.isSecureHost(sss.HEADER_HPKP, "one.example.com", 0));
 
   
-  result = yield PinningPreloadClient.maybeSync(4000, Date.now());
+  yield PinningPreloadClient.maybeSync(4000, Date.now());
 
   
   

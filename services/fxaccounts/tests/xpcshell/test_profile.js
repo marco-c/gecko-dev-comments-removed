@@ -191,7 +191,7 @@ add_task(function* fetchAndCacheProfileOnce() {
   let profile = CreateFxAccountsProfile(fxa, client);
 
   let request1 = profile._fetchAndCacheProfile();
-  let request2 = profile._fetchAndCacheProfile();
+  profile._fetchAndCacheProfile();
 
   
   
