@@ -33,7 +33,6 @@ use std::cell::Cell;
 use std::sync::{Arc, Mutex};
 use string_cache::Atom;
 use task_source::TaskSource;
-use task_source::dom_manipulation::DOMManipulationTask;
 use time::{self, Timespec, Duration};
 use url::Url;
 
@@ -238,14 +237,14 @@ impl HTMLMediaElement {
             }
         }
 
-        let task = Task {
+        let task = box Task {
             elem: Trusted::new(self),
         };
         let win = window_from_node(self);
-        let _ = win.dom_manipulation_task_source().queue(DOMManipulationTask::Runnable(box task));
+        let _ = win.dom_manipulation_task_source().queue(task, win.r());
     }
 
-    // https://html.spec.whatwg.org/multipage/#internal-pause-steps step 2.2
+    
     fn queue_internal_pause_steps_task(&self) {
         struct Task {
             elem: Trusted<HTMLMediaElement>,
@@ -254,25 +253,25 @@ impl HTMLMediaElement {
         impl Runnable for Task {
             fn handler(self: Box<Task>) {
                 let elem = self.elem.root();
-                // 2.2.1
+                
                 elem.fire_simple_event("timeupdate");
-                // 2.2.2
+                
                 elem.fire_simple_event("pause");
-                // TODO 2.2.3
+                
             }
         }
 
-        let task = Task {
+        let task = box Task {
             elem: Trusted::new(self),
         };
         let win = window_from_node(self);
-        let _ = win.dom_manipulation_task_source().queue(DOMManipulationTask::Runnable(box task));
+        let _ = win.dom_manipulation_task_source().queue(task, win.r());
     }
 
     fn queue_fire_simple_event(&self, type_: &'static str) {
         let win = window_from_node(self);
-        let task = FireSimpleEventTask::new(self, type_);
-        let _ = win.dom_manipulation_task_source().queue(DOMManipulationTask::Runnable(box task));
+        let task = box FireSimpleEventTask::new(self, type_);
+        let _ = win.dom_manipulation_task_source().queue(task, win.r());
     }
 
     fn fire_simple_event(&self, type_: &str) {
@@ -284,7 +283,7 @@ impl HTMLMediaElement {
         event.fire(self.upcast());
     }
 
-    // https://html.spec.whatwg.org/multipage/#ready-states
+    
     fn change_ready_state(&self, ready_state: u16) {
         let old_ready_state = self.ready_state.get();
         self.ready_state.set(ready_state);
@@ -293,16 +292,16 @@ impl HTMLMediaElement {
             return;
         }
 
-        // Step 1
+        
         match (old_ready_state, ready_state) {
-            // previous ready state was HAVE_NOTHING, and the new ready state is
-            // HAVE_METADATA
+            
+            
             (HAVE_NOTHING, HAVE_METADATA) => {
                 self.queue_fire_simple_event("loadedmetadata");
             }
 
-            // previous ready state was HAVE_METADATA and the new ready state is
-            // HAVE_CURRENT_DATA or greater
+            
+            
             (HAVE_METADATA, HAVE_CURRENT_DATA) |
             (HAVE_METADATA, HAVE_FUTURE_DATA) |
             (HAVE_METADATA, HAVE_ENOUGH_DATA) => {
@@ -312,26 +311,26 @@ impl HTMLMediaElement {
                 }
             }
 
-            // previous ready state was HAVE_FUTURE_DATA or more, and the new ready
-            // state is HAVE_CURRENT_DATA or less
+            
+            
             (HAVE_FUTURE_DATA, HAVE_CURRENT_DATA) |
             (HAVE_ENOUGH_DATA, HAVE_CURRENT_DATA) |
             (HAVE_FUTURE_DATA, HAVE_METADATA) |
             (HAVE_ENOUGH_DATA, HAVE_METADATA) |
             (HAVE_FUTURE_DATA, HAVE_NOTHING) |
             (HAVE_ENOUGH_DATA, HAVE_NOTHING) => {
-                // TODO: timeupdate event logic + waiting
+                
             }
 
             _ => (),
         }
 
-        // Step 1
-        // If the new ready state is HAVE_FUTURE_DATA or HAVE_ENOUGH_DATA,
-        // then the relevant steps below must then be run also.
+        
+        
+        
         match (old_ready_state, ready_state) {
-            // previous ready state was HAVE_CURRENT_DATA or less, and the new ready
-            // state is HAVE_FUTURE_DATA
+            
+            
             (HAVE_CURRENT_DATA, HAVE_FUTURE_DATA) |
             (HAVE_METADATA, HAVE_FUTURE_DATA) |
             (HAVE_NOTHING, HAVE_FUTURE_DATA) => {
@@ -342,7 +341,7 @@ impl HTMLMediaElement {
                 }
             }
 
-            // new ready state is HAVE_ENOUGH_DATA
+            
             (_, HAVE_ENOUGH_DATA) => {
                 if old_ready_state <= HAVE_CURRENT_DATA {
                     self.queue_fire_simple_event("canplay");
@@ -352,18 +351,18 @@ impl HTMLMediaElement {
                     }
                 }
 
-                //TODO: check sandboxed automatic features browsing context flag
+                
                 if self.autoplaying.get() &&
                    self.Paused() &&
                    self.Autoplay() {
-                    // Step 1
+                    
                     self.paused.set(false);
-                    // TODO step 2: show poster
-                    // Step 3
+                    
+                    
                     self.queue_fire_simple_event("play");
-                    // Step 4
+                    
                     self.queue_notify_about_playing();
-                    // Step 5
+                    
                     self.autoplaying.set(false);
                 }
 
@@ -373,70 +372,70 @@ impl HTMLMediaElement {
             _ => (),
         }
 
-        // TODO Step 2: media controller
+        
     }
 
-    // https://html.spec.whatwg.org/multipage/#concept-media-load-algorithm
+    
     fn invoke_resource_selection_algorithm(&self) {
-        // Step 1
+        
         self.network_state.set(NETWORK_NO_SOURCE);
 
-        // TODO step 2 (show poster)
-        // TODO step 3 (delay load event)
+        
+        
 
-        // Step 4
+        
         let doc = document_from_node(self);
         ScriptThread::await_stable_state(ResourceSelectionTask::new(self, doc.base_url()));
     }
 
-    // https://html.spec.whatwg.org/multipage/#concept-media-load-algorithm
+    
     fn resource_selection_algorithm_sync(&self, base_url: Url) {
-        // TODO step 5 (populate pending text tracks)
+        
 
-        // Step 6
+        
         let mode = if false {
-            // TODO media provider object
+            
             ResourceSelectionMode::Object
         } else if let Some(attr) = self.upcast::<Element>().get_attribute(&ns!(), &atom!("src")) {
             ResourceSelectionMode::Attribute(attr.Value().to_string())
         } else if false {
-            // TODO <source> child
+            
             ResourceSelectionMode::Children(panic!())
         } else {
             self.network_state.set(NETWORK_EMPTY);
             return;
         };
 
-        // Step 7
+        
         self.network_state.set(NETWORK_LOADING);
 
-        // Step 8
+        
         self.queue_fire_simple_event("loadstart");
 
-        // Step 9
+        
         match mode {
             ResourceSelectionMode::Object => {
-                // Step 1
+                
                 *self.current_src.borrow_mut() = "".to_owned();
 
-                // Step 4
+                
                 self.resource_fetch_algorithm(Resource::Object);
             }
 
             ResourceSelectionMode::Attribute(src) => {
-                // Step 1
+                
                 if src.is_empty() {
                     self.queue_dedicated_media_source_failure_steps();
                     return;
                 }
 
-                // Step 2
+                
                 let absolute_url = base_url.join(&src).map_err(|_| ());
 
-                // Step 3
+                
                 if let Ok(url) = absolute_url {
                     *self.current_src.borrow_mut() = url.as_str().into();
-                    // Step 4
+                    
                     self.resource_fetch_algorithm(Resource::Url(url));
                 } else {
                     self.queue_dedicated_media_source_failure_steps();
@@ -444,33 +443,33 @@ impl HTMLMediaElement {
             }
 
             ResourceSelectionMode::Children(_child) => {
-                // TODO
+                
                 self.queue_dedicated_media_source_failure_steps()
             }
         }
     }
 
-    // https://html.spec.whatwg.org/multipage/#concept-media-load-resource
+    
     fn resource_fetch_algorithm(&self, resource: Resource) {
-        // TODO step 3 (remove text tracks)
+        
 
-        // Step 4
+        
         if let Resource::Url(url) = resource {
-            // 4.1
+            
             if self.Preload() == "none" && !self.autoplaying.get() {
-                // 4.1.1
+                
                 self.network_state.set(NETWORK_IDLE);
 
-                // 4.1.2
+                
                 self.queue_fire_simple_event("suspend");
 
-                // TODO 4.1.3 (delay load flag)
+                
 
-                // TODO 4.1.5-7 (state for load that initiates later)
+                
                 return;
             }
 
-            // 4.2
+            
             let context = Arc::new(Mutex::new(HTMLMediaElementContext::new(self, url.clone())));
             let (action_sender, action_receiver) = ipc::channel().unwrap();
             let window = window_from_node(self);
@@ -498,8 +497,8 @@ impl HTMLMediaElement {
     }
 
     fn queue_dedicated_media_source_failure_steps(&self) {
-        let _ = window_from_node(self).dom_manipulation_task_source().queue(
-            DOMManipulationTask::Runnable(box DedicatedMediaSourceFailureTask::new(self)));
+        let window = window_from_node(self);
+        let _ = window.dom_manipulation_task_source().queue(box DedicatedMediaSourceFailureTask::new(self), window.r());
     }
 
     // https://html.spec.whatwg.org/multipage/#dedicated-media-source-failure-steps

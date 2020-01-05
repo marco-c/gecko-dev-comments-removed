@@ -174,23 +174,29 @@ pub struct RunnableWrapper {
 }
 
 impl RunnableWrapper {
-    pub fn wrap_runnable<T: Runnable + Send + 'static>(&self, runnable: T) -> Box<Runnable + Send> {
+    pub fn wrap_runnable<T: Runnable + Send + 'static>(&self, runnable: Box<T>) -> Box<Runnable + Send> {
         box CancellableRunnable {
             cancelled: self.cancelled.clone(),
-            inner: box runnable,
+            inner: runnable,
         }
     }
 }
 
-/// A runnable that can be discarded by toggling a shared flag.
+
 pub struct CancellableRunnable<T: Runnable + Send> {
     cancelled: Arc<AtomicBool>,
     inner: Box<T>,
 }
 
 impl<T: Runnable + Send> Runnable for CancellableRunnable<T> {
+    fn name(&self) -> &'static str { self.inner.name() }
+
     fn is_cancelled(&self) -> bool {
         self.cancelled.load(Ordering::SeqCst)
+    }
+
+    fn main_thread_handler(self: Box<CancellableRunnable<T>>, script_thread: &ScriptThread) {
+        self.inner.main_thread_handler(script_thread);
     }
 
     fn handler(self: Box<CancellableRunnable<T>>) {
@@ -214,21 +220,21 @@ enum MixedMessage {
     FromNetwork(IpcSender<Option<CustomResponse>>),
 }
 
-/// Messages used to control the script event loop
+
 pub enum MainThreadScriptMsg {
-    /// Common variants associated with the script messages
+    
     Common(CommonScriptMsg),
-    /// Notify a document that all pending loads are complete.
+    
     DocumentLoadsComplete(PipelineId),
-    /// Notifies the script that a window associated with a particular pipeline
-    /// should be closed (only dispatched to ScriptThread).
+    
+    
     ExitWindow(PipelineId),
-    /// Begins a content-initiated load on the specified pipeline (only
-    /// dispatched to ScriptThread).
+    
+    
     Navigate(PipelineId, LoadData),
-    /// Tasks that originate from the DOM manipulation task source
+    
     DOMManipulation(DOMManipulationTask),
-    /// Tasks that originate from the user interaction task source
+    
     UserInteraction(UserInteractionTask),
 }
 
@@ -276,7 +282,7 @@ impl ScriptPort for Receiver<(TrustedServiceWorkerAddress, CommonScriptMsg)> {
     }
 }
 
-/// Encapsulates internal communication of shared messages within the script thread.
+
 #[derive(JSTraceable)]
 pub struct SendableMainThreadScriptChan(pub Sender<CommonScriptMsg>);
 
@@ -290,7 +296,7 @@ impl ScriptChan for SendableMainThreadScriptChan {
     }
 }
 
-/// Encapsulates internal communication of main thread messages within the script thread.
+
 #[derive(JSTraceable)]
 pub struct MainThreadScriptChan(pub Sender<MainThreadScriptMsg>);
 
@@ -310,36 +316,36 @@ impl OpaqueSender<CommonScriptMsg> for Sender<MainThreadScriptMsg> {
     }
 }
 
-/// Information for an entire page. Pages are top-level browsing contexts and can contain multiple
-/// frames.
+
+
 #[derive(JSTraceable)]
-// ScriptThread instances are rooted on creation, so this is okay
+
 #[allow(unrooted_must_root)]
 pub struct ScriptThread {
-    /// A handle to the information pertaining to page layout
+    
     browsing_context: MutNullableHeap<JS<BrowsingContext>>,
-    /// A list of data pertaining to loads that have not yet received a network response
+    
     incomplete_loads: DOMRefCell<Vec<InProgressLoad>>,
-    /// A map to store service worker registrations for a given origin
+    
     registration_map: DOMRefCell<HashMap<Url, JS<ServiceWorkerRegistration>>>,
-    /// A handle to the image cache thread.
+    
     image_cache_thread: ImageCacheThread,
-    /// A handle to the resource thread. This is an `Arc` to avoid running out of file descriptors if
-    /// there are many iframes.
+    
+    
     resource_threads: ResourceThreads,
-    /// A handle to the bluetooth thread.
+    
     bluetooth_thread: IpcSender<BluetoothMethodMsg>,
 
-    /// The port on which the script thread receives messages (load URL, exit, etc.)
+    
     port: Receiver<MainThreadScriptMsg>,
-    /// A channel to hand out to script thread-based entities that need to be able to enqueue
-    /// events in the event queue.
+    
+    
     chan: MainThreadScriptChan,
 
-    /// A handle to network event messages
+    
     custom_message_chan: IpcSender<CustomResponseSender>,
 
-    /// The port which receives a sender from the network
+    
     custom_message_port: Receiver<CustomResponseSender>,
 
     dom_manipulation_task_source: DOMManipulationTaskSource,
@@ -352,42 +358,42 @@ pub struct ScriptThread {
 
     file_reading_task_source: FileReadingTaskSource,
 
-    /// A channel to hand out to threads that need to respond to a message from the script thread.
+    
     control_chan: IpcSender<ConstellationControlMsg>,
 
-    /// The port on which the constellation and layout threads can communicate with the
-    /// script thread.
+    
+    
     control_port: Receiver<ConstellationControlMsg>,
 
-    /// For communicating load url messages to the constellation
+    
     constellation_chan: IpcSender<ConstellationMsg>,
 
-    /// The port on which we receive messages from the image cache
+    
     image_cache_port: Receiver<ImageCacheResult>,
 
-    /// The channel on which the image cache can send messages to ourself.
+    
     image_cache_channel: ImageCacheChan,
 
-    /// For providing contact with the time profiler.
+    
     time_profiler_chan: time::ProfilerChan,
 
-    /// For providing contact with the memory profiler.
+    
     mem_profiler_chan: mem::ProfilerChan,
 
-    /// For providing instructions to an optional devtools server.
+    
     devtools_chan: Option<IpcSender<ScriptToDevtoolsControlMsg>>,
-    /// For receiving commands from an optional devtools server. Will be ignored if
-    /// no such server exists.
+    
+    
     devtools_port: Receiver<DevtoolScriptControlMsg>,
     devtools_sender: IpcSender<DevtoolScriptControlMsg>,
 
-    /// The JavaScript runtime.
+    
     js_runtime: Rc<Runtime>,
 
-    /// The topmost element over the mouse.
+    
     topmost_mouse_over_target: MutNullableHeap<JS<Element>>,
 
-    /// List of pipelines that have been owned and closed by this script thread.
+    
     closed_pipelines: DOMRefCell<HashSet<PipelineId>>,
 
     scheduler_chan: IpcSender<TimerEventRequest>,
@@ -399,10 +405,10 @@ pub struct ScriptThread {
     panic_chan: IpcSender<PanicMsg>,
 }
 
-/// In the event of thread panic, all data on the stack runs its destructor. However, there
-/// are no reachable, owning pointers to the DOM memory, so it never gets freed by default
-/// when the script thread fails. The ScriptMemoryFailsafe uses the destructor bomb pattern
-/// to forcibly tear down the JS compartments for pages associated with the failing ScriptThread.
+
+
+
+
 struct ScriptMemoryFailsafe<'a> {
     owner: Option<&'a ScriptThread>,
 }
@@ -479,7 +485,7 @@ impl ScriptThreadFactory for ScriptThread {
                 let _ = script_thread.content_process_shutdown_chan.send(());
             }, reporter_name, script_chan, CommonScriptMsg::CollectReports);
 
-            // This must always be the very last operation performed before the thread completes
+            
             failsafe.neuter();
         }, Some(pipeline_id), panic_chan);
 
@@ -489,7 +495,7 @@ impl ScriptThreadFactory for ScriptThread {
 
 pub unsafe extern "C" fn shadow_check_callback(_cx: *mut JSContext,
     _object: HandleObject, _id: HandleId) -> DOMProxyShadowsResult {
-    // XXX implement me
+    
     DOMProxyShadowsResult::ShadowCheckFailed
 }
 
@@ -502,7 +508,7 @@ impl ScriptThread {
         })
     }
 
-    // stores a service worker registration
+    
     pub fn set_registration(scope_url: Url, registration:&ServiceWorkerRegistration) {
         SCRIPT_THREAD_ROOT.with(|root| {
             let script_thread = unsafe { &*root.get().unwrap() };
@@ -526,9 +532,9 @@ impl ScriptThread {
         });
     }
 
-    // https://html.spec.whatwg.org/multipage/#await-a-stable-state
+    
     pub fn await_stable_state<T: Runnable + Send + 'static>(task: T) {
-        //TODO use microtasks when they exist
+        
         SCRIPT_THREAD_ROOT.with(|root| {
             if let Some(script_thread) = root.get() {
                 let script_thread = unsafe { &*script_thread };
@@ -982,7 +988,7 @@ impl ScriptThread {
             MainThreadScriptMsg::DOMManipulation(task) =>
                 task.handle_task(self),
             MainThreadScriptMsg::UserInteraction(task) =>
-                task.handle_task(),
+                task.handle_task(self),
         }
     }
 
@@ -1221,7 +1227,7 @@ impl ScriptThread {
 
         // https://html.spec.whatwg.org/multipage/#the-end step 7
         let handler = box DocumentProgressHandler::new(Trusted::new(doc));
-        self.dom_manipulation_task_source.queue(DOMManipulationTask::Runnable(handler)).unwrap();
+        self.dom_manipulation_task_source.queue(handler, doc.window()).unwrap();
 
         self.constellation_chan.send(ConstellationMsg::LoadComplete(pipeline)).unwrap();
     }
