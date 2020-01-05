@@ -338,7 +338,7 @@ GfxInfo::Init()
   
   
   
-  if (mWindowsVersion == kWindows8 &&
+  if (mWindowsVersion >= kWindows8 &&
       mDeviceID.Length() == 0 &&
       mDeviceString.EqualsLiteral("RDPUDD Chained DD"))
   {
