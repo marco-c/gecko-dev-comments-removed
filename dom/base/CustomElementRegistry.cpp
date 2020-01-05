@@ -868,30 +868,40 @@ CustomElementRegistry::Upgrade(Element* aElement,
   }
 
   MOZ_ASSERT(aElement->IsHTMLElement(aDefinition->mLocalName));
-  nsWrapperCache* cache;
-  CallQueryInterface(aElement, &cache);
-  MOZ_ASSERT(cache, "Element doesn't support wrapper cache?");
 
   AutoJSAPI jsapi;
   if (NS_WARN_IF(!jsapi.Init(mWindow))) {
     return;
   }
 
-  JSContext *cx = jsapi.cx();
-  
-  
-  
-  JS::RootedObject wrapper(cx);
-  JS::Rooted<JSObject*> prototype(cx, aDefinition->mPrototype);
-  { 
-    JSAutoCompartment ac(cx, prototype);
+  JSContext* cx = jsapi.cx();
 
-    if ((wrapper = cache->GetWrapper()) && JS_WrapObject(cx, &wrapper)) {
-      if (!JS_SetPrototype(cx, wrapper, prototype)) {
+  JS::Rooted<JSObject*> reflector(cx, aElement->GetWrapper());
+  if (reflector) {
+    Maybe<JSAutoCompartment> ac;
+    JS::Rooted<JSObject*> prototype(cx, aDefinition->mPrototype);
+    if (aElement->NodePrincipal()->SubsumesConsideringDomain(nsContentUtils::ObjectPrincipal(prototype))) {
+      ac.emplace(cx, reflector);
+      if (!JS_WrapObject(cx, &prototype) ||
+          !JS_SetPrototype(cx, reflector, prototype)) {
+        return;
+      }
+    } else {
+      
+      
+      
+      
+      
+      
+      
+      
+      ac.emplace(cx, prototype);
+      if (!JS_WrapObject(cx, &reflector) ||
+          !JS_SetPrototype(cx, reflector, prototype)) {
         return;
       }
     }
-  } 
+  }
 
   EnqueueLifecycleCallback(nsIDocument::eCreated, aElement, nullptr, aDefinition);
 }
