@@ -377,6 +377,377 @@
 
 
 
+
+
+
+  
+  
+  function testPassesUnlessItThrows() {
+    print(PASSED);
+  }
+  global.testPassesUnlessItThrows = testPassesUnlessItThrows;
+
+  
+
+
+
+  function AddTestCase( description, expect, actual ) {
+    new TestCase( SECTION, description, expect, actual );
+  }
+  global.AddTestCase = AddTestCase;
+
+  function TestCase(n, d, e, a)
+  {
+    this.name = n;
+    this.description = d;
+    this.expect = e;
+    this.actual = a;
+    this.passed = getTestCaseResult(e, a);
+    this.reason = '';
+    this.bugnumber = typeof(BUGNUMER) != 'undefined' ? BUGNUMBER : '';
+    this.type = (typeof window == 'undefined' ? 'shell' : 'browser');
+    ({}).constructor.defineProperty(
+      gTestcases,
+      gTc++,
+      {
+        value: this,
+        enumerable: true,
+        configurable: true,
+        writable: true
+      }
+    );
+  }
+  global.TestCase = TestCase;
+
+  TestCase.prototype.dump = function () {
+    
+    
+    if (typeof document != "object" ||
+        !document.location.href.match(/jsreftest.html/))
+    {
+      dump('\njstest: ' + this.path + ' ' +
+          'bug: '         + this.bugnumber + ' ' +
+          'result: '      + (this.passed ? 'PASSED':'FAILED') + ' ' +
+          'type: '        + this.type + ' ' +
+          'description: ' + toPrinted(this.description) + ' ' +
+  
+  
+          'reason: '      + toPrinted(this.reason) + '\n');
+    }
+  };
+
+  TestCase.prototype.testPassed = (function TestCase_testPassed() { return this.passed; });
+  TestCase.prototype.testFailed = (function TestCase_testFailed() { return !this.passed; });
+  TestCase.prototype.testDescription = (function TestCase_testDescription() { return this.description + ' ' + this.reason; });
+
+  function getTestCases()
+  {
+    return gTestcases;
+  }
+  global.getTestCases = getTestCases;
+
+  
+
+
+
+  function expectExitCode(n)
+  {
+    print('--- NOTE: IN THIS TESTCASE, WE EXPECT EXIT CODE ' + n + ' ---');
+  }
+  global.expectExitCode = expectExitCode;
+
+  
+
+
+  function inSection(x)
+  {
+    return "Section " + x + " of test - ";
+  }
+  global.inSection = inSection;
+
+  
+
+
+  function reportFailure (msg)
+  {
+    var lines = msg.split ("\n");
+    var l;
+    var funcName = currentFunc();
+    var prefix = (funcName) ? "[reported from " + funcName + "] ": "";
+
+    for (var i=0; i<lines.length; i++)
+      print (FAILED + prefix + lines[i]);
+  }
+  global.reportFailure = reportFailure;
+
+  
+
+
+  function printStatus (msg)
+  {
+  
+
+
+
+    msg = msg.toString();
+    var lines = msg.split ("\n");
+    var l;
+
+    for (var i=0; i<lines.length; i++)
+      print (STATUS + lines[i]);
+  }
+  global.printStatus = printStatus;
+
+  
+
+
+  function printBugNumber (num)
+  {
+    BUGNUMBER = num;
+    print ('BUGNUMBER: ' + num);
+  }
+  global.printBugNumber = printBugNumber;
+
+  
+
+
+
+
+  function reportCompare (expected, actual, description) {
+    var expected_t = typeof expected;
+    var actual_t = typeof actual;
+    var output = "";
+
+    if (typeof description == "undefined")
+      description = '';
+
+    if (expected_t != actual_t) {
+      output += "Type mismatch, expected type " + expected_t +
+        ", actual type " + actual_t + " ";
+    }
+
+    if (expected != actual) {
+      output += "Expected value '" + toPrinted(expected) +
+        "', Actual value '" + toPrinted(actual) + "' ";
+    }
+
+    var testcase = new TestCase("unknown-test-name", description, expected, actual);
+    testcase.reason = output;
+
+    
+    if (typeof document != "object" ||
+        !document.location.href.match(/jsreftest.html/)) {
+      if (testcase.passed)
+      {
+        print(PASSED + description);
+      }
+      else
+      {
+        reportFailure (description + " : " + output);
+      }
+    }
+    return testcase.passed;
+  }
+  global.reportCompare = reportCompare;
+
+  
+
+
+
+
+
+  function reportMatch (expectedRegExp, actual, description) {
+    var expected_t = "string";
+    var actual_t = typeof actual;
+    var output = "";
+
+    if (typeof description == "undefined")
+      description = '';
+
+    if (expected_t != actual_t) {
+      output += "Type mismatch, expected type " + expected_t +
+        ", actual type " + actual_t + " ";
+    }
+
+    var matches = expectedRegExp.test(actual);
+    if (!matches) {
+      output += "Expected match to '" + toPrinted(expectedRegExp) +
+        "', Actual value '" + toPrinted(actual) + "' ";
+    }
+
+    var testcase = new TestCase("unknown-test-name", description, true, matches);
+    testcase.reason = output;
+
+    
+    if (typeof document != "object" ||
+        !document.location.href.match(/jsreftest.html/)) {
+      if (testcase.passed)
+      {
+        print(PASSED + description);
+      }
+      else
+      {
+        reportFailure (description + " : " + output);
+      }
+    }
+    return testcase.passed;
+  }
+  global.reportMatch = reportMatch;
+
+  function compareSource(expect, actual, summary)
+  {
+    
+    var expectP = expect.
+      replace(/([(){},.:\[\]])/mg, ' $1 ').
+      replace(/(\w+)/mg, ' $1 ').
+      replace(/<(\/)? (\w+) (\/)?>/mg, '<$1$2$3>').
+      replace(/\s+/mg, ' ').
+      replace(/new (\w+)\s*\(\s*\)/mg, 'new $1');
+
+    var actualP = actual.
+      replace(/([(){},.:\[\]])/mg, ' $1 ').
+      replace(/(\w+)/mg, ' $1 ').
+      replace(/<(\/)? (\w+) (\/)?>/mg, '<$1$2$3>').
+      replace(/\s+/mg, ' ').
+      replace(/new (\w+)\s*\(\s*\)/mg, 'new $1');
+
+    print('expect:\n' + expectP);
+    print('actual:\n' + actualP);
+
+    reportCompare(expectP, actualP, summary);
+
+    
+    try
+    {
+      var expectCompile = 'No Error';
+      var actualCompile;
+
+      eval(expect);
+      try
+      {
+        eval(actual);
+        actualCompile = 'No Error';
+      }
+      catch(ex1)
+      {
+        actualCompile = ex1 + '';
+      }
+      reportCompare(expectCompile, actualCompile,
+                    summary + ': compile actual');
+    }
+    catch(ex)
+    {
+    }
+  }
+  global.compareSource = compareSource;
+
+  function getTestCaseResult(expected, actual)
+  {
+    if (typeof expected != typeof actual)
+      return false;
+    if (typeof expected != 'number')
+      
+      return actual == expected;
+
+    
+    
+    if (actual != actual)
+      return expected != expected;
+    if (expected != expected)
+      return false;
+
+    
+    if (actual != expected)
+      return Math.abs(actual - expected) <= 1E-10;
+
+    
+    
+    
+    
+    
+    
+    return true;
+  }
+
+  function test() {
+    for ( gTc=0; gTc < gTestcases.length; gTc++ ) {
+      
+      try
+      {
+        gTestcases[gTc].passed = writeTestCaseResult(
+          gTestcases[gTc].expect,
+          gTestcases[gTc].actual,
+          gTestcases[gTc].description +" = "+ gTestcases[gTc].actual );
+        gTestcases[gTc].reason += ( gTestcases[gTc].passed ) ? "" : "wrong value ";
+      }
+      catch(e)
+      {
+        print('test(): empty testcase for gTc = ' + gTc + ' ' + e);
+      }
+    }
+    return ( gTestcases );
+  }
+  global.test = test;
+
+  
+
+
+
+
+  function writeTestCaseResult( expect, actual, string ) {
+    var passed = getTestCaseResult( expect, actual );
+    
+    if (typeof document != "object" ||
+        !document.location.href.match(/jsreftest.html/)) {
+      writeFormattedResult( expect, actual, string, passed );
+    }
+    return passed;
+  }
+  global.writeTestCaseResult = writeTestCaseResult;
+
+  
+  function writeHeaderToLog( string ) {
+    print( string );
+  }
+  global.writeHeaderToLog = writeHeaderToLog;
+  
+
+  
+  function jsTestDriverEnd()
+  {
+    
+    
+    
+    
+    
+    
+    
+
+    if (gDelayTestDriverEnd)
+    {
+      return;
+    }
+
+    try
+    {
+      optionsReset();
+    }
+    catch(ex)
+    {
+      dump('jsTestDriverEnd ' + ex);
+    }
+
+    for (var i = 0; i < gTestcases.length; i++)
+    {
+      gTestcases[i].dump();
+    }
+  }
+  global.jsTestDriverEnd = jsTestDriverEnd;
+
+  
+
+
+
   function inRhino() {
     return typeof global.defineClass === "function";
   }
@@ -425,6 +796,7 @@
 var STATUS = "STATUS: ";
 
 var gDelayTestDriverEnd = false;
+var gFailureExpected = false;
 
 var gTestcases = new Array();
 var gTc = gTestcases.length;
@@ -441,263 +813,6 @@ var GLOBAL = this + '';
 
 var DESCRIPTION;
 var EXPECTED;
-
-
-
-
-
-
-
-
-function testPassesUnlessItThrows() {
-  print(PASSED);
-}
-
-
-
-
-
-
-function AddTestCase( description, expect, actual ) {
-  new TestCase( SECTION, description, expect, actual );
-}
-
-function TestCase(n, d, e, a)
-{
-  this.name = n;
-  this.description = d;
-  this.expect = e;
-  this.actual = a;
-  this.passed = getTestCaseResult(e, a);
-  this.reason = '';
-  this.bugnumber = typeof(BUGNUMER) != 'undefined' ? BUGNUMBER : '';
-  this.type = (typeof window == 'undefined' ? 'shell' : 'browser');
-  ({}).constructor.defineProperty(
-    gTestcases,
-    gTc++,
-    {
-      value: this,
-      enumerable: true,
-      configurable: true,
-      writable: true
-    }
-  );
-}
-
-gFailureExpected = false;
-
-TestCase.prototype.dump = function () {
-  
-  
-  if (typeof document != "object" ||
-      !document.location.href.match(/jsreftest.html/))
-  {
-    dump('\njstest: ' + this.path + ' ' +
-         'bug: '         + this.bugnumber + ' ' +
-         'result: '      + (this.passed ? 'PASSED':'FAILED') + ' ' +
-         'type: '        + this.type + ' ' +
-         'description: ' + toPrinted(this.description) + ' ' +
-
-
-         'reason: '      + toPrinted(this.reason) + '\n');
-  }
-};
-
-TestCase.prototype.testPassed = (function TestCase_testPassed() { return this.passed; });
-TestCase.prototype.testFailed = (function TestCase_testFailed() { return !this.passed; });
-TestCase.prototype.testDescription = (function TestCase_testDescription() { return this.description + ' ' + this.reason; });
-
-function getTestCases()
-{
-  return gTestcases;
-}
-
-
-
-
-
-function expectExitCode(n)
-{
-  print('--- NOTE: IN THIS TESTCASE, WE EXPECT EXIT CODE ' + n + ' ---');
-}
-
-
-
-
-function inSection(x)
-{
-  return "Section " + x + " of test - ";
-}
-
-
-
-
-function reportFailure (msg)
-{
-  var lines = msg.split ("\n");
-  var l;
-  var funcName = currentFunc();
-  var prefix = (funcName) ? "[reported from " + funcName + "] ": "";
-
-  for (var i=0; i<lines.length; i++)
-    print (FAILED + prefix + lines[i]);
-}
-
-
-
-
-function printStatus (msg)
-{
-
-
-
-
-  msg = msg.toString();
-  var lines = msg.split ("\n");
-  var l;
-
-  for (var i=0; i<lines.length; i++)
-    print (STATUS + lines[i]);
-}
-
-
-
-
-function printBugNumber (num)
-{
-  BUGNUMBER = num;
-  print ('BUGNUMBER: ' + num);
-}
-
-
-
-
-
-
-function reportCompare (expected, actual, description) {
-  var expected_t = typeof expected;
-  var actual_t = typeof actual;
-  var output = "";
-
-  if (typeof description == "undefined")
-    description = '';
-
-  if (expected_t != actual_t) {
-    output += "Type mismatch, expected type " + expected_t +
-      ", actual type " + actual_t + " ";
-  }
-
-  if (expected != actual) {
-    output += "Expected value '" + toPrinted(expected) +
-      "', Actual value '" + toPrinted(actual) + "' ";
-  }
-
-  var testcase = new TestCase("unknown-test-name", description, expected, actual);
-  testcase.reason = output;
-
-  
-  if (typeof document != "object" ||
-      !document.location.href.match(/jsreftest.html/)) {
-    if (testcase.passed)
-    {
-      print(PASSED + description);
-    }
-    else
-    {
-      reportFailure (description + " : " + output);
-    }
-  }
-  return testcase.passed;
-}
-
-
-
-
-
-
-
-function reportMatch (expectedRegExp, actual, description) {
-  var expected_t = "string";
-  var actual_t = typeof actual;
-  var output = "";
-
-  if (typeof description == "undefined")
-    description = '';
-
-  if (expected_t != actual_t) {
-    output += "Type mismatch, expected type " + expected_t +
-      ", actual type " + actual_t + " ";
-  }
-
-  var matches = expectedRegExp.test(actual);
-  if (!matches) {
-    output += "Expected match to '" + toPrinted(expectedRegExp) +
-      "', Actual value '" + toPrinted(actual) + "' ";
-  }
-
-  var testcase = new TestCase("unknown-test-name", description, true, matches);
-  testcase.reason = output;
-
-  
-  if (typeof document != "object" ||
-      !document.location.href.match(/jsreftest.html/)) {
-    if (testcase.passed)
-    {
-      print(PASSED + description);
-    }
-    else
-    {
-      reportFailure (description + " : " + output);
-    }
-  }
-  return testcase.passed;
-}
-
-function compareSource(expect, actual, summary)
-{
-  
-  var expectP = expect.
-    replace(/([(){},.:\[\]])/mg, ' $1 ').
-    replace(/(\w+)/mg, ' $1 ').
-    replace(/<(\/)? (\w+) (\/)?>/mg, '<$1$2$3>').
-    replace(/\s+/mg, ' ').
-    replace(/new (\w+)\s*\(\s*\)/mg, 'new $1');
-
-  var actualP = actual.
-    replace(/([(){},.:\[\]])/mg, ' $1 ').
-    replace(/(\w+)/mg, ' $1 ').
-    replace(/<(\/)? (\w+) (\/)?>/mg, '<$1$2$3>').
-    replace(/\s+/mg, ' ').
-    replace(/new (\w+)\s*\(\s*\)/mg, 'new $1');
-
-  print('expect:\n' + expectP);
-  print('actual:\n' + actualP);
-
-  reportCompare(expectP, actualP, summary);
-
-  
-  try
-  {
-    var expectCompile = 'No Error';
-    var actualCompile;
-
-    eval(expect);
-    try
-    {
-      eval(actual);
-      actualCompile = 'No Error';
-    }
-    catch(ex1)
-    {
-      actualCompile = ex1 + '';
-    }
-    reportCompare(expectCompile, actualCompile,
-                  summary + ': compile actual');
-  }
-  catch(ex)
-  {
-  }
-}
 
 function optionsInit() {
 
@@ -797,104 +912,4 @@ if (typeof options == 'function')
 {
   optionsInit();
   optionsClear();
-}
-
-function getTestCaseResult(expected, actual)
-{
-  if (typeof expected != typeof actual)
-    return false;
-  if (typeof expected != 'number')
-    
-    return actual == expected;
-
-  
-  
-  if (actual != actual)
-    return expected != expected;
-  if (expected != expected)
-    return false;
-
-  
-  if (actual != expected)
-    return Math.abs(actual - expected) <= 1E-10;
-
-  
-  
-  
-  
-  
-  
-  return true;
-}
-
-function test() {
-  for ( gTc=0; gTc < gTestcases.length; gTc++ ) {
-    
-    try
-    {
-      gTestcases[gTc].passed = writeTestCaseResult(
-        gTestcases[gTc].expect,
-        gTestcases[gTc].actual,
-        gTestcases[gTc].description +" = "+ gTestcases[gTc].actual );
-      gTestcases[gTc].reason += ( gTestcases[gTc].passed ) ? "" : "wrong value ";
-    }
-    catch(e)
-    {
-      print('test(): empty testcase for gTc = ' + gTc + ' ' + e);
-    }
-  }
-  return ( gTestcases );
-}
-
-
-
-
-
-
-
-function writeTestCaseResult( expect, actual, string ) {
-  var passed = getTestCaseResult( expect, actual );
-  
-  if (typeof document != "object" ||
-      !document.location.href.match(/jsreftest.html/)) {
-    writeFormattedResult( expect, actual, string, passed );
-  }
-  return passed;
-}
-
-function writeHeaderToLog( string ) {
-  print( string );
-}
-
-
-
-function jsTestDriverEnd()
-{
-  
-  
-  
-  
-  
-  
-  
-
-  if (gDelayTestDriverEnd)
-  {
-    return;
-  }
-
-  try
-  {
-    optionsReset();
-  }
-  catch(ex)
-  {
-    dump('jsTestDriverEnd ' + ex);
-  }
-
-  for (var i = 0; i < gTestcases.length; i++)
-  {
-    gTestcases[i].dump();
-  }
-
 }
