@@ -25,7 +25,6 @@ use script::dom::htmlimageelement::HTMLImageElement;
 use script::dom::node::{DocumentNodeTypeId, ElementNodeTypeId, Node, NodeTypeId, NodeHelpers};
 use script::dom::text::Text;
 use servo_msg::constellation_msg::{PipelineId, SubpageId};
-use servo_util::concurrentmap::{ConcurrentHashMap, ConcurrentHashMapIterator};
 use servo_util::namespace;
 use servo_util::namespace::Namespace;
 use std::cast;
@@ -492,35 +491,6 @@ pub type UnsafeLayoutNode = (uint, uint, uint);
 pub fn layout_node_to_unsafe_layout_node(node: &LayoutNode) -> UnsafeLayoutNode {
     unsafe {
         cast::transmute_copy(node)
-    }
-}
-
-
-pub struct DomLeafSet {
-    priv set: ConcurrentHashMap<UnsafeLayoutNode,()>,
-}
-
-impl DomLeafSet {
-    
-    pub fn new() -> DomLeafSet {
-        DomLeafSet {
-            set: ConcurrentHashMap::with_locks_and_buckets(64, 256),
-        }
-    }
-
-    
-    pub fn insert(&self, node: &LayoutNode) {
-        self.set.insert(layout_node_to_unsafe_layout_node(node), ());
-    }
-
-    
-    pub fn clear(&self) {
-        self.set.clear()
-    }
-
-    
-    pub fn iter<'a>(&'a self) -> ConcurrentHashMapIterator<'a,UnsafeLayoutNode,()> {
-        self.set.iter()
     }
 }
 
