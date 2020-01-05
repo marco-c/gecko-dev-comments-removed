@@ -13,7 +13,6 @@ use geom::rect::Rect;
 use geom::point::Point2D;
 use gfx::display_list::DisplayList;
 use gfx::geometry::Au;
-use gfx::util::range::{Range, MutableRange};
 
 
 
