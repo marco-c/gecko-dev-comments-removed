@@ -44,7 +44,9 @@ define(function (require, exports, module) {
       let grip = this.props.object;
 
       return (
-        span({className: "objectBox objectBox-function"},
+        
+        
+        span({dir: "ltr", className: "objectBox objectBox-function"},
           this.getTitle(grip),
           this.summarizeFunction(grip)
         )
