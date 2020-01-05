@@ -473,13 +473,6 @@ public:
 
   void Enter(SeekJob aPendingSeek);
 
-  void Exit() override
-  {
-    
-    
-    mPendingSeek.RejectIfExists(__func__);
-  }
-
   State GetState() const override
   {
     return DECODER_STATE_DECODING_FIRSTFRAME;
@@ -502,8 +495,6 @@ public:
     MaybeFinishDecodeFirstFrame();
   }
 
-  RefPtr<MediaDecoder::SeekPromise> HandleSeek(SeekTarget aTarget) override;
-
   void HandleVideoSuspendTimeout() override
   {
     
@@ -519,8 +510,6 @@ private:
   
   
   void MaybeFinishDecodeFirstFrame();
-
-  SeekJob mPendingSeek;
 };
 
 
@@ -1310,9 +1299,7 @@ MediaDecoderStateMachine::
 DecodingFirstFrameState::Enter(SeekJob aPendingSeek)
 {
   
-  if (aPendingSeek.Exists() &&
-      (mMaster->mSentFirstFrameLoadedEvent ||
-       Reader()->ForceZeroStartTime())) {
+  if (aPendingSeek.Exists()) {
     SetState<SeekingState>(Move(aPendingSeek), EventVisibility::Observable);
     return;
   }
@@ -1325,32 +1312,8 @@ DecodingFirstFrameState::Enter(SeekJob aPendingSeek)
 
   MOZ_ASSERT(!mMaster->mVideoDecodeSuspended);
 
-  mPendingSeek = Move(aPendingSeek);
-
   
   mMaster->DispatchDecodeTasksIfNeeded();
-}
-
-RefPtr<MediaDecoder::SeekPromise>
-MediaDecoderStateMachine::
-DecodingFirstFrameState::HandleSeek(SeekTarget aTarget)
-{
-  
-  
-  MOZ_ASSERT(!mMaster->mSentFirstFrameLoadedEvent);
-
-  if (!Reader()->ForceZeroStartTime()) {
-    SLOG("Not Enough Data to seek at this stage, queuing seek");
-    mPendingSeek.RejectIfExists(__func__);
-    mPendingSeek.mTarget = aTarget;
-    return mPendingSeek.mPromise.Ensure(__func__);
-  }
-
-  
-  
-  MOZ_ASSERT(!mPendingSeek.Exists());
-
-  return StateObject::HandleSeek(aTarget);
 }
 
 void
@@ -1365,12 +1328,7 @@ DecodingFirstFrameState::MaybeFinishDecodeFirstFrame()
   }
 
   mMaster->FinishDecodeFirstFrame();
-
-  if (mPendingSeek.Exists()) {
-    SetState<SeekingState>(Move(mPendingSeek), EventVisibility::Observable);
-  } else {
-    SetState<DecodingState>();
-  }
+  SetState<DecodingState>();
 }
 
 void
