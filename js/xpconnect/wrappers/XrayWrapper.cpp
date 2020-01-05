@@ -2410,16 +2410,35 @@ XrayWrapper<Base, Traits>::getPrototype(JSContext* cx, JS::HandleObject wrapper,
     
     
 
-    RootedValue v(cx);
     if (expando) {
-        JSAutoCompartment ac(cx, expando);
-        v = JS_GetReservedSlot(expando, JSSLOT_EXPANDO_PROTOTYPE);
+        RootedValue v(cx);
+        { 
+            JSAutoCompartment ac(cx, expando);
+            v = JS_GetReservedSlot(expando, JSSLOT_EXPANDO_PROTOTYPE);
+        }
+        if (!v.isUndefined()) {
+            protop.set(v.toObjectOrNull());
+            return JS_WrapObject(cx, protop);
+        }
     }
-    if (v.isUndefined())
-        return getPrototypeHelper(cx, wrapper, target, protop);
 
-    protop.set(v.toObjectOrNull());
-    return JS_WrapObject(cx, protop);
+    
+    RootedObject holder(cx, Traits::singleton.ensureHolder(cx, wrapper));
+    if (!holder)
+        return false;
+
+    Value cached = js::GetReservedSlot(holder,
+                                       Traits::HOLDER_SLOT_CACHED_PROTO);
+    if (cached.isUndefined()) {
+        if (!getPrototypeHelper(cx, wrapper, target, protop))
+            return false;
+
+        js::SetReservedSlot(holder, Traits::HOLDER_SLOT_CACHED_PROTO,
+                            ObjectOrNullValue(protop));
+    } else {
+        protop.set(cached.toObjectOrNull());
+    }
+    return true;
 }
 
 template <typename Base, typename Traits>
