@@ -76,6 +76,18 @@ function chromeTimeToDate(aTime) {
 
 
 
+function dateToChromeTime(aDate) {
+  return (aDate * 10000 + S100NS_FROM1601TO1970) / S100NS_PER_MS;
+}
+
+
+
+
+
+
+
+
+
 
 
 function* insertBookmarkItems(parentGuid, items, errorAccumulator) {
@@ -310,8 +322,20 @@ function GetHistoryResource(aProfileFolder) {
 
     migrate(aCallback) {
       Task.spawn(function* () {
-        let rows = yield MigrationUtils.getRowsFromDBWithoutLocks(historyFile.path, "Chrome history",
-          `SELECT url, title, last_visit_time, typed_count FROM urls WHERE hidden = 0`);
+        const MAX_AGE_IN_DAYS = Services.prefs.getIntPref("browser.migrate.chrome.history.maxAgeInDays");
+        const LIMIT = Services.prefs.getIntPref("browser.migrate.chrome.history.limit");
+
+        let query = "SELECT url, title, last_visit_time, typed_count FROM urls WHERE hidden = 0";
+        if (MAX_AGE_IN_DAYS) {
+          let maxAge = dateToChromeTime(Date.now() - MAX_AGE_IN_DAYS * 24 * 60 * 60 * 1000);
+          query += " AND last_visit_time > " + maxAge;
+        }
+        if (LIMIT) {
+          query += " ORDER BY last_visit_time DESC LIMIT " + LIMIT;
+        }
+
+        let rows =
+          yield MigrationUtils.getRowsFromDBWithoutLocks(historyFile.path, "Chrome history", query);
         let places = [];
         for (let row of rows) {
           try {
