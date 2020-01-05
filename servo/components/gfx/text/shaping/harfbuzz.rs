@@ -393,9 +393,8 @@ impl Shaper {
 
     fn advance_for_shaped_glyph(&self, mut advance: Au, character: char, options: &ShapingOptions)
                                 -> Au {
-        match options.letter_spacing {
-            None => {}
-            Some(letter_spacing) => advance = advance + letter_spacing,
+        if let Some(letter_spacing) = options.letter_spacing {
+            advance = advance + letter_spacing;
         };
 
         
