@@ -10469,25 +10469,6 @@ nsDocShell::InternalLoad(nsIURI* aURI,
 
   
   
-  nsCOMPtr<nsIWebBrowserChrome3> browserChrome3 = do_GetInterface(mTreeOwner);
-  if (browserChrome3) {
-    
-    
-    
-    nsIURI* uriForShouldLoadCheck = aURI;
-    if (IsAboutNewtab(aOriginalURI)) {
-      uriForShouldLoadCheck = aOriginalURI;
-    }
-    bool shouldLoad;
-    rv = browserChrome3->ShouldLoadURI(this, uriForShouldLoadCheck, aReferrer,
-                                       &shouldLoad);
-    if (NS_SUCCEEDED(rv) && !shouldLoad) {
-      return NS_OK;
-    }
-  }
-
-  
-  
   
   
   nsCOMPtr<nsIDocShell> kungFuDeathGrip(this);
@@ -10522,6 +10503,25 @@ nsDocShell::InternalLoad(nsIURI* aURI,
 
   if (mTiming && timeBeforeUnload) {
     mTiming->NotifyUnloadAccepted(mCurrentURI);
+  }
+
+  
+  
+  nsCOMPtr<nsIWebBrowserChrome3> browserChrome3 = do_GetInterface(mTreeOwner);
+  if (browserChrome3) {
+    
+    
+    
+    nsIURI* uriForShouldLoadCheck = aURI;
+    if (IsAboutNewtab(aOriginalURI)) {
+      uriForShouldLoadCheck = aOriginalURI;
+    }
+    bool shouldLoad;
+    rv = browserChrome3->ShouldLoadURI(this, uriForShouldLoadCheck, aReferrer,
+                                       &shouldLoad);
+    if (NS_SUCCEEDED(rv) && !shouldLoad) {
+      return NS_OK;
+    }
   }
 
   if (browserChrome3 && aCheckForPrerender) {
