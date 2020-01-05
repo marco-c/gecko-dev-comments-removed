@@ -147,13 +147,6 @@ void AccumulateChildKeyed(const nsTArray<KeyedAccumulation>& aAccumulations);
 
 
 
-void ClearHistogram(ID id);
-
-
-
-
-
-
 
 
 
