@@ -18,8 +18,29 @@ class Message;
 class PickleIterator;
 
 namespace mozilla {
-namespace dom {
 namespace ipc {
+
+class PBackgroundChild;
+class PBackgroundParent;
+
+} 
+
+namespace dom {
+
+class nsIContentChild;
+class nsIContentParent;
+
+namespace ipc {
+
+
+
+
+
+
+
+
+
+
 
 class SharedJSAllocatedData final
 {
@@ -63,14 +84,74 @@ private:
   JSStructuredCloneData mData;
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class StructuredCloneData : public StructuredCloneHolder
 {
 public:
   StructuredCloneData()
-    : StructuredCloneHolder(StructuredCloneHolder::CloningSupported,
-                            StructuredCloneHolder::TransferringSupported,
-                            StructuredCloneHolder::StructuredCloneScope::DifferentProcess)
-    , mInitialized(false)
+    : StructuredCloneData(StructuredCloneHolder::TransferringSupported)
   {}
 
   StructuredCloneData(const StructuredCloneData&) = delete;
@@ -111,6 +192,41 @@ public:
              JS::Handle<JS::Value> aTransfers,
              ErrorResult &aRv);
 
+  
+  
+  
+  
+  bool BuildClonedMessageDataForParent(nsIContentParent* aParent,
+                                       ClonedMessageData& aClonedData);
+  bool BuildClonedMessageDataForChild(nsIContentChild* aChild,
+                                      ClonedMessageData& aClonedData);
+  bool BuildClonedMessageDataForBackgroundParent(mozilla::ipc::PBackgroundParent* aParent,
+                                                 ClonedMessageData& aClonedData);
+  bool BuildClonedMessageDataForBackgroundChild(mozilla::ipc::PBackgroundChild* aChild,
+                                                ClonedMessageData& aClonedData);
+
+  
+  
+  void BorrowFromClonedMessageDataForParent(const ClonedMessageData& aClonedData);
+  void BorrowFromClonedMessageDataForChild(const ClonedMessageData& aClonedData);
+  void BorrowFromClonedMessageDataForBackgroundParent(const ClonedMessageData& aClonedData);
+  void BorrowFromClonedMessageDataForBackgroundChild(const ClonedMessageData& aClonedData);
+
+  void CopyFromClonedMessageDataForParent(const ClonedMessageData& aClonedData);
+  void CopyFromClonedMessageDataForChild(const ClonedMessageData& aClonedData);
+  void CopyFromClonedMessageDataForBackgroundParent(const ClonedMessageData& aClonedData);
+  void CopyFromClonedMessageDataForBackgroundChild(const ClonedMessageData& aClonedData);
+
+  
+  void StealFromClonedMessageDataForParent(ClonedMessageData& aClonedData);
+  void StealFromClonedMessageDataForChild(ClonedMessageData& aClonedData);
+  void StealFromClonedMessageDataForBackgroundParent(ClonedMessageData& aClonedData);
+  void StealFromClonedMessageDataForBackgroundChild(ClonedMessageData& aClonedData);
+
+
+  
+  
+  
   bool UseExternalData(const JSStructuredCloneData& aData)
   {
     auto iter = aData.Iter();
@@ -121,7 +237,19 @@ public:
     return success;
   }
 
+  
+  
   bool CopyExternalData(const char* aData, size_t aDataLength);
+  
+  
+  
+  bool CopyExternalData(const JSStructuredCloneData& aData);
+
+  
+  
+  
+  
+  bool StealExternalData(JSStructuredCloneData& aData);
 
   JSStructuredCloneData& Data()
   {
@@ -143,14 +271,38 @@ public:
     return mSharedData;
   }
 
+  bool SupportsTransferring()
+  {
+    return mSupportsTransferring;
+  }
+
   
   void WriteIPCParams(IPC::Message* aMessage) const;
   bool ReadIPCParams(const IPC::Message* aMessage, PickleIterator* aIter);
+
+protected:
+  explicit StructuredCloneData(TransferringSupport aSupportsTransferring)
+    : StructuredCloneHolder(StructuredCloneHolder::CloningSupported,
+                            aSupportsTransferring,
+                            StructuredCloneHolder::StructuredCloneScope::DifferentProcess)
+    , mInitialized(false)
+  {}
+
 
 private:
   JSStructuredCloneData mExternalData;
   RefPtr<SharedJSAllocatedData> mSharedData;
   bool mInitialized;
+};
+
+
+
+
+class StructuredCloneDataNoTransfers : public StructuredCloneData {
+public:
+  StructuredCloneDataNoTransfers()
+    : StructuredCloneData(StructuredCloneHolder::TransferringNotSupported)
+  {}
 };
 
 } 
