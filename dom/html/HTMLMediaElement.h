@@ -693,6 +693,13 @@ public:
 
   double MozFragmentEnd();
 
+  AudioChannel MozAudioChannelType() const
+  {
+    return mAudioChannel;
+  }
+
+  void SetMozAudioChannelType(AudioChannel aValue, ErrorResult& aRv);
+
   AudioTrackList* AudioTracks();
 
   VideoTrackList* VideoTracks();
@@ -743,6 +750,9 @@ public:
   
   
   bool IsBeingDestroyed();
+
+  IMPL_EVENT_HANDLER(mozinterruptbegin)
+  IMPL_EVENT_HANDLER(mozinterruptend)
 
   
   float ComputedVolume() const;
@@ -1239,6 +1249,9 @@ protected:
   void ReportEMETelemetry();
 
   void ReportTelemetry();
+
+  
+  bool CheckAudioChannelPermissions(const nsAString& aType);
 
   
   

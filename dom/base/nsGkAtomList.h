@@ -627,6 +627,7 @@ GK_ATOM(mouseout, "mouseout")
 GK_ATOM(mouseover, "mouseover")
 GK_ATOM(mousethrough, "mousethrough")
 GK_ATOM(mouseup, "mouseup")
+GK_ATOM(mozaudiochannel, "mozaudiochannel")
 GK_ATOM(mozfullscreenchange, "mozfullscreenchange")
 GK_ATOM(mozfullscreenerror, "mozfullscreenerror")
 GK_ATOM(mozpointerlockchange, "mozpointerlockchange")
@@ -1957,6 +1958,10 @@ GK_ATOM(onuserproximity, "onuserproximity")
 
 
 GK_ATOM(ondevicelight, "ondevicelight")
+
+
+GK_ATOM(onmozinterruptbegin, "onmozinterruptbegin")
+GK_ATOM(onmozinterruptend, "onmozinterruptend")
 
 
 GK_ATOM(ondevicechange, "ondevicechange")
