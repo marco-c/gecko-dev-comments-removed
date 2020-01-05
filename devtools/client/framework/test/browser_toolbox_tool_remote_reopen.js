@@ -16,6 +16,9 @@ const { DebuggerServer } = require("devtools/server/main");
 const { DebuggerClient } = require("devtools/shared/client/main");
 
 
+requestLongerTimeout(2);
+
+
 
 
 
