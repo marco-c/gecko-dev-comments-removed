@@ -3,117 +3,92 @@
 
 
 use image::base::Image;
-use LoadConsumer::Channel;
-use {ControlMsg, LoadData, ProgressMsg, ResourceTask};
 use url::Url;
-
 use std::sync::Arc;
 use std::sync::mpsc::{channel, Sender};
 
-pub enum Msg {
+
+
+
+
+pub trait ImageResponder : Send {
+    fn respond(&self, Option<Arc<Image>>);
+}
+
+
+#[derive(PartialEq, Copy)]
+pub enum ImageState {
+    Pending,
+    LoadError,
+    NotRequested,
+}
+
+
+#[derive(Clone)]
+pub struct ImageCacheChan(pub Sender<ImageCacheResult>);
+
+
+
+pub struct ImageCacheResult {
+    pub responder: Option<Box<ImageResponder>>,
+    pub image: Option<Arc<Image>>,
+}
+
+
+pub enum ImageCacheCommand {
     
     
-    Prefetch(Url),
+    
+    RequestImage(Url, ImageCacheChan, Option<Box<ImageResponder>>),
 
     
-    Decode(Url),
-
     
     
-    GetImage(Url, Sender<ImageResponseMsg>),
-
     
-    WaitForImage(Url, Sender<ImageResponseMsg>),
+    GetImageIfAvailable(Url, Sender<Result<Arc<Image>, ImageState>>),
 
     
     Exit(Sender<()>),
-
-    
-    StorePrefetchedImageData(Url, Result<Vec<u8>, ()>),
-
-    
-    StoreImage(Url, Option<Arc<Image>>),
-
-    
-    WaitForStore(Sender<()>),
-
-    
-    WaitForStorePrefetched(Sender<()>),
 }
 
-#[derive(Clone)]
-pub enum ImageResponseMsg {
-    ImageReady(Arc<Image>),
-    ImageNotReady,
-    ImageFailed
-}
 
-impl PartialEq for ImageResponseMsg {
-    fn eq(&self, other: &ImageResponseMsg) -> bool {
-        match (self, other) {
-            (&ImageResponseMsg::ImageReady(..), &ImageResponseMsg::ImageReady(..)) => panic!("unimplemented comparison"),
-            (&ImageResponseMsg::ImageNotReady, &ImageResponseMsg::ImageNotReady) => true,
-            (&ImageResponseMsg::ImageFailed, &ImageResponseMsg::ImageFailed) => true,
-
-            (&ImageResponseMsg::ImageReady(..), _) | (&ImageResponseMsg::ImageNotReady, _) | (&ImageResponseMsg::ImageFailed, _) => false
-        }
-    }
-}
 
 #[derive(Clone)]
 pub struct ImageCacheTask {
-    pub chan: Sender<Msg>,
+    chan: Sender<ImageCacheCommand>,
 }
+
 
 impl ImageCacheTask {
-    pub fn send(&self, msg: Msg) {
+
+    
+    pub fn new(chan: Sender<ImageCacheCommand>) -> ImageCacheTask {
+        ImageCacheTask {
+            chan: chan,
+        }
+    }
+
+    
+    pub fn request_image(&self,
+                         url: Url,
+                         result_chan: ImageCacheChan,
+                         responder: Option<Box<ImageResponder>>) {
+        let msg = ImageCacheCommand::RequestImage(url, result_chan, responder);
         self.chan.send(msg).unwrap();
     }
-}
 
-pub trait ImageCacheTaskClient {
-    fn exit(&self);
-}
+    
+    pub fn get_image_if_available(&self, url: Url) -> Result<Arc<Image>, ImageState> {
+        let (sender, receiver) = channel();
+        let msg = ImageCacheCommand::GetImageIfAvailable(url, sender);
+        self.chan.send(msg).unwrap();
+        receiver.recv().unwrap()
+    }
 
-impl ImageCacheTaskClient for ImageCacheTask {
-    fn exit(&self) {
+    
+    pub fn exit(&self) {
         let (response_chan, response_port) = channel();
-        self.send(Msg::Exit(response_chan));
+        self.chan.send(ImageCacheCommand::Exit(response_chan)).unwrap();
         response_port.recv().unwrap();
     }
 }
-
-pub fn load_image_data(url: Url, resource_task: ResourceTask, placeholder: &[u8]) -> Result<Vec<u8>, ()> {
-    let (response_chan, response_port) = channel();
-    resource_task.send(ControlMsg::Load(LoadData::new(url.clone()), Channel(response_chan))).unwrap();
-
-    let mut image_data = vec!();
-
-    let progress_port = response_port.recv().unwrap().progress_port;
-    loop {
-        match progress_port.recv().unwrap() {
-            ProgressMsg::Payload(data) => {
-                image_data.push_all(&data);
-            }
-            ProgressMsg::Done(Ok(..)) => {
-                return Ok(image_data);
-            }
-            ProgressMsg::Done(Err(..)) => {
-                
-                
-                
-                if placeholder.len() != 0 {
-                    debug!("image_cache_task: failed to load {:?}, use placeholder instead.", url);
-                    
-                    image_data.clear();
-                    image_data.push_all(&placeholder);
-                    return Ok(image_data);
-                } else {
-                    debug!("image_cache_task: invalid placeholder.");
-                    return Err(());
-                }
-            }
-        }
-    }
-}
-

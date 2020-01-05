@@ -6,7 +6,6 @@
 #![feature(collections)]
 #![feature(core)]
 #![feature(rustc_private)]
-#![feature(std_misc)]
 
 extern crate geom;
 extern crate hyper;
@@ -28,7 +27,6 @@ use std::borrow::IntoCow;
 use std::sync::mpsc::{channel, Receiver, Sender};
 
 pub mod image_cache_task;
-pub mod local_image_cache;
 pub mod storage_task;
 
 
@@ -38,7 +36,6 @@ pub mod storage_task;
 
 pub mod image {
     pub mod base;
-    pub mod holder;
 }
 
 #[derive(Clone)]

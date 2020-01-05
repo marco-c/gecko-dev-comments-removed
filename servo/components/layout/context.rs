@@ -13,17 +13,18 @@ use gfx::display_list::OpaqueNode;
 use gfx::font_cache_task::FontCacheTask;
 use gfx::font_context::FontContext;
 use msg::constellation_msg::ConstellationChan;
+use net_traits::image::base::Image;
+use net_traits::image_cache_task::{ImageCacheChan, ImageCacheTask, ImageState};
 use script::layout_interface::{Animation, LayoutChan};
-use script_traits::UntrustedNodeAddress;
-use net_traits::local_image_cache::LocalImageCache;
 use std::boxed;
 use std::cell::Cell;
 use std::ptr;
-use std::sync::mpsc::Sender;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
+use std::sync::mpsc::{channel, Sender};
 use style::selector_matching::Stylist;
 use url::Url;
 use util::geometry::Au;
+use util::opts;
 
 struct LocalLayoutContext {
     font_context: FontContext,
@@ -56,7 +57,10 @@ fn create_or_get_local_context(shared_layout_context: &SharedLayoutContext)
 
 pub struct SharedLayoutContext {
     
-    pub image_cache: Arc<Mutex<LocalImageCache<UntrustedNodeAddress>>>,
+    pub image_cache_task: ImageCacheTask,
+
+    
+    pub image_cache_sender: ImageCacheChan,
 
     
     pub screen_size: Size2D<Au>,
@@ -137,6 +141,44 @@ impl<'a> LayoutContext<'a> {
         unsafe {
             let cached_context = &mut *self.cached_local_layout_context;
             &mut cached_context.style_sharing_candidate_cache
+        }
+    }
+
+    pub fn get_or_request_image(&self, url: Url) -> Option<Arc<Image>> {
+        
+        let result = self.shared.image_cache_task.get_image_if_available(url.clone());
+
+        match result {
+            Ok(image) => Some(image),
+            Err(state) => {
+                
+                
+                let is_sync = opts::get().output_file.is_some();
+
+                match (state, is_sync) {
+                    
+                    (ImageState::LoadError, _) => None,
+                    
+                    (_, true) => {
+                        let (sync_tx, sync_rx) = channel();
+                        self.shared.image_cache_task.request_image(url,
+                                                                   ImageCacheChan(sync_tx),
+                                                                   None);
+                        sync_rx.recv().unwrap().image
+                    }
+                    
+                    (ImageState::NotRequested, false) => {
+                        self.shared.image_cache_task.request_image(url,
+                                                                   self.shared.image_cache_sender.clone(),
+                                                                   None);
+                        None
+                    }
+                    
+                    
+                    
+                    (ImageState::Pending, false) => None,
+                }
+            }
         }
     }
 }
