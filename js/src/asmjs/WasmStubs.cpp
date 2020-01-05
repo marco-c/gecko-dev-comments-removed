@@ -264,7 +264,7 @@ wasm::GenerateEntry(MacroAssembler& masm, const FuncDefExport& func)
 
     
     masm.assertStackAlignment(AsmJSStackAlignment);
-    masm.call(CallSiteDesc(CallSiteDesc::Relative), func.funcDefIndex());
+    masm.call(CallSiteDesc(CallSiteDesc::FuncDef), func.funcDefIndex());
 
     
     masm.loadWasmActivationFromTls(scratch);
