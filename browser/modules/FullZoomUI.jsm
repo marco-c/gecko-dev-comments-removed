@@ -1,0 +1,116 @@
+
+
+
+
+
+"use strict";
+
+this.EXPORTED_SYMBOLS = [ "FullZoomUI" ];
+
+Components.utils.import("resource://gre/modules/Services.jsm");
+
+var FullZoomUI = {
+  init(aWindow) {
+    aWindow.addEventListener("EndSwapDocShells", onEndSwapDocShells, true);
+    aWindow.addEventListener("FullZoomChange", onFullZoomChange);
+    aWindow.addEventListener("unload", () => {
+      aWindow.removeEventListener("EndSwapDocShells", onEndSwapDocShells, true);
+      aWindow.removeEventListener("FullZoomChange", onFullZoomChange);
+    }, {once: true});
+  },
+}
+
+function fullZoomLocationChangeObserver(aSubject, aTopic) {
+  
+  
+  
+  if (!aSubject.ownerGlobal) {
+    return;
+  }
+  updateZoomUI(aSubject, false);
+}
+Services.obs.addObserver(fullZoomLocationChangeObserver, "browser-fullZoom:location-change", false);
+
+function onEndSwapDocShells(event) {
+  updateZoomUI(event.originalTarget);
+}
+
+function onFullZoomChange(event) {
+  let browser;
+  if (event.target.nodeType == event.target.DOCUMENT_NODE) {
+    
+    
+    let gBrowser = event.currentTarget.gBrowser;
+    let topDoc = event.target.defaultView.top.document;
+    browser = gBrowser.getBrowserForDocument(topDoc);
+  } else {
+    browser = event.originalTarget;
+  }
+  updateZoomUI(browser, true);
+}
+
+
+
+
+
+
+
+
+function updateZoomUI(aBrowser, aAnimate = false) {
+  let win = aBrowser.ownerGlobal;
+  if (aBrowser != win.gBrowser.selectedBrowser) {
+    return;
+  }
+
+  let customizableZoomControls = win.document.getElementById("zoom-controls");
+  let customizableZoomReset = win.document.getElementById("zoom-reset-button");
+  let urlbarZoomButton = win.document.getElementById("urlbar-zoom-button");
+  let zoomFactor = Math.round(win.ZoomManager.zoom * 100);
+
+  
+  
+  urlbarZoomButton.hidden =
+    (zoomFactor == 100 ||
+     (customizableZoomControls &&
+      customizableZoomControls.getAttribute("cui-areatype") == "toolbar"));
+
+  let label = win.gNavigatorBundle.getFormattedString("zoom-button.label", [zoomFactor]);
+  if (customizableZoomReset) {
+    customizableZoomReset.setAttribute("label", label);
+  }
+  if (!urlbarZoomButton.hidden) {
+    if (aAnimate) {
+      urlbarZoomButton.setAttribute("animate", "true");
+    } else {
+      urlbarZoomButton.removeAttribute("animate");
+    }
+    urlbarZoomButton.setAttribute("label", label);
+  }
+}
+
+Components.utils.import("resource:///modules/CustomizableUI.jsm");
+let customizationListener = {
+  onAreaNodeRegistered(aAreaType, aAreaNode) {
+    if (aAreaType == CustomizableUI.AREA_PANEL) {
+      updateZoomUI(aAreaNode.ownerGlobal.gBrowser.selectedBrowser);
+    }
+  }
+};
+customizationListener.onWidgetAdded =
+customizationListener.onWidgetRemoved =
+customizationListener.onWidgetMoved =
+customizationListener.onWidgetInstanceRemoved = function(aWidgetId) {
+  if (aWidgetId == "zoom-controls") {
+    for (let window of CustomizableUI.windows) {
+      updateZoomUI(window.gBrowser.selectedBrowser);
+    }
+  }
+};
+customizationListener.onWidgetReset =
+customizationListener.onWidgetUndoMove = function(aWidgetNode) {
+  if (aWidgetNode.id == "zoom-controls") {
+    updateZoomUI(aWidgetNode.ownerGlobal.gBrowser.selectedBrowser);
+  }
+};
+CustomizableUI.addListener(customizationListener);
+
