@@ -17,9 +17,6 @@ public:
   MediaDecoder* Clone(MediaDecoderOwner* aOwner) override;
   MediaDecoderStateMachine* CreateStateMachine() override;
 
-  
-  
-  static bool IsEnabled();
   static bool CanHandleMediaType(const nsACString& aType,
                                  const nsAString& aCodecs);
 };
