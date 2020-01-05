@@ -108,7 +108,7 @@ use servo_config::opts;
 use servo_config::prefs::PREFS;
 use servo_rand::{Rng, SeedableRng, ServoRng, random};
 use servo_remutex::ReentrantMutex;
-use servo_url::ServoUrl;
+use servo_url::{Host, ServoUrl};
 use std::borrow::ToOwned;
 use std::collections::{HashMap, VecDeque};
 use std::iter::once;
@@ -235,7 +235,7 @@ pub struct Constellation<Message, LTF, STF> {
     
     
     
-    event_loops: HashMap<FrameId, HashMap<String, Weak<EventLoop>>>,
+    event_loops: HashMap<FrameId, HashMap<Host, Weak<EventLoop>>>,
 
     
     
@@ -604,16 +604,18 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
             None => self.root_frame_id,
         };
 
+        debug!("Creating new pipeline {} in top-level frame {}.", pipeline_id, top_level_frame_id);
+
         let (event_loop, host) = match sandbox {
             IFrameSandboxState::IFrameSandboxed => (None, None),
             IFrameSandboxState::IFrameUnsandboxed => match reg_host(&load_data.url) {
                 None => (None, None),
                 Some(host) => {
                     let event_loop = self.event_loops.get(&top_level_frame_id)
-                        .and_then(|map| map.get(host))
+                        .and_then(|map| map.get(&host))
                         .and_then(|weak| weak.upgrade());
                     match event_loop {
-                        None => (None, Some(String::from(host))),
+                        None => (None, Some(host)),
                         Some(event_loop) => (Some(event_loop.clone()), None),
                     }
                 },
@@ -677,6 +679,7 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
         };
 
         if let Some(host) = host {
+            debug!("Adding new host entry {} for top-level frame {}.", host, top_level_frame_id);
             self.event_loops.entry(top_level_frame_id)
                 .or_insert_with(HashMap::new)
                 .insert(host, Rc::downgrade(&pipeline.event_loop));
