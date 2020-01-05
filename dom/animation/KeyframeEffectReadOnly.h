@@ -234,10 +234,6 @@ public:
   {
     return mProperties;
   }
-  InfallibleTArray<AnimationProperty>& Properties()
-  {
-    return mProperties;
-  }
 
   
   
