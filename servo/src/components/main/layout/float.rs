@@ -312,8 +312,11 @@ impl FlowContext for FloatFlow {
                         _: &mut Au,
                         collapsing: &mut Au,
                         _: &mut Au) {
-        
+        // Margins between a floated box and any other box do not collapse.
         *collapsing = Au::new(0);
+    }
+    fn debug_str(&self) -> ~str {
+        ~"FloatFlow"
     }
 }
 

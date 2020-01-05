@@ -735,44 +735,44 @@ impl FlowContext for InlineFlow {
                 // To calculate text-top and text-bottom value of 'vertical-align',
                 //  we should find the top and bottom of the content area of parent box.
                 // The content area is defined in "http://www.w3.org/TR/CSS2/visudet.html#inline-non-replaced". 
-                
-                
+                // TODO: We should extract em-box info from font size of parent
+                //  and calcuate the distances from baseline to the top and the bottom of parent's content area.
 
-                
-                
+                // It should calculate the distance from baseline to the top of parent's content area.
+                // But, it is assumed now as font size of parent.
                 let mut parent_text_top;
-                
-                
+                // It should calculate the distance from baseline to the bottom of parent's content area.
+                // But, it is assumed now as 0.
                 let parent_text_bottom  = Au::new(0);
                 let cur_box_base = cur_box.base();
-                
+                // Get parent node
                 let parent = cur_box_base.node.parent_node();
 
                 let font_size = parent.unwrap().style().Font.font_size;
                 parent_text_top = font_size;
 
-                
-                
+                // This flag decides whether topmost and bottommost are updated or not.
+                // That is, if the box has top or bottom value, no_update_flag becomes true.
                 let mut no_update_flag = false;
-                
+                // Calculate a relative offset from baseline.
                 let offset = match cur_box_base.vertical_align() {
                     vertical_align::baseline => {
                         -ascent
                     },
                     vertical_align::middle => {
-                        
+                        // TODO: x-height value should be used from font info.
                         let xheight = Au::new(0);
                         -(xheight + cur_box.box_height()).scale_by(0.5)
                     },
                     vertical_align::sub => {
-                        
-                        
+                        // TODO: The proper position for subscripts should be used.
+                        // Lower the baseline to the proper position for subscripts
                         let sub_offset = Au::new(0);
                         (sub_offset - ascent)
                     },
                     vertical_align::super_ => {
-                        
-                        
+                        // TODO: The proper position for superscripts should be used.
+                        // Raise the baseline to the proper position for superscripts
                         let super_offset = Au::new(0);
                         (-super_offset - ascent)
                     },
@@ -818,8 +818,8 @@ impl FlowContext for InlineFlow {
                     }
                 };
 
-                
-                
+                // If the current box has 'top' or 'bottom' value, no_update_flag is true.
+                // Otherwise, topmost and bottomost are updated.
                 if !no_update_flag && top_from_base > topmost {
                     topmost = top_from_base;
                 }
@@ -830,24 +830,24 @@ impl FlowContext for InlineFlow {
                 cur_box.base().position.mutate().ptr.origin.y = line.bounds.origin.y + offset;
             }
 
-            
-            
+            // Calculate the distance from baseline to the top of the biggest box with 'bottom' value.
+            // Then, if necessary, update the topmost.
             let topmost_of_bottom = biggest_bottom - bottommost;
             if topmost_of_bottom > topmost {
                 topmost = topmost_of_bottom;
             }
 
-            
-            
+            // Calculate the distance from baseline to the bottom of the biggest box with 'top' value.
+            // Then, if necessary, update the bottommost.
             let bottommost_of_top = biggest_top - topmost;
             if bottommost_of_top > bottommost {
                 bottommost = bottommost_of_top;
             }
 
-            
+            // Now, the baseline offset from the top of linebox is set as topmost.
             let baseline_offset = topmost;
 
-            
+            // All boxes' y position is updated following the new baseline offset.
             for box_i in line.range.eachi() {
                 let cur_box = self.boxes[box_i];
                 let cur_box_base = cur_box.base();
@@ -861,10 +861,10 @@ impl FlowContext for InlineFlow {
                     cur_box_base.position.get().origin.y + adjust_offset;
             }
 
-            
+            // This is used to set the top y position of the next linebox in the next loop.
             line_height_offset = line_height_offset + topmost + bottommost - line.bounds.size.height;
             line.bounds.size.height = topmost + bottommost;
-        } 
+        } // End of `lines.each` loop.
 
         self.base.position.size.height = 
             if self.lines.len() > 0 {
@@ -886,10 +886,14 @@ impl FlowContext for InlineFlow {
                         collapsing: &mut Au,
                         collapsible: &mut Au) {
         *collapsing = Au::new(0);
-        
+        // Non-empty inline flows prevent collapsing between the previous margion and the next.
         if self.base.position.size.height > Au::new(0) {
             *collapsible = Au::new(0);
         }
+    }
+
+    fn debug_str(&self) -> ~str {
+        ~"InlineFlow"
     }
 }
 

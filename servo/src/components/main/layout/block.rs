@@ -464,8 +464,8 @@ impl FlowContext for BlockFlow {
 
     fn assign_height(&mut self, ctx: &mut LayoutContext) {
         debug!("assign_height: assigning height for block {}", self.base.id);
-        
-        
+        // This is the only case in which a block flow can start an inorder
+        // subtraversal.
         if self.is_root && self.base.num_floats > 0 {
             self.assign_height_inorder(ctx);
             return;
@@ -485,26 +485,40 @@ impl FlowContext for BlockFlow {
             let mut model_ref = base.model.mutate();
             let model = &mut model_ref.ptr;
 
-            
-            
+            // The top margin collapses with its first in-flow block-level child's
+            // top margin if the parent has no top border, no top padding.
             if *first_in_flow && top_margin_collapsible {
-                
-                
+                // If top-margin of parent is less than top-margin of its first child, 
+                // the parent box goes down until its top is aligned with the child.
                 if *margin_top < model.margin.top {
-                    
-                    
+                    // TODO: The position of child floats should be updated and this
+                    // would influence clearance as well. See #725
                     let extra_margin = model.margin.top - *margin_top;
                     *top_offset = *top_offset + extra_margin;
                     *margin_top = model.margin.top;
                 }
             }
-            
-            
+            // The bottom margin of an in-flow block-level element collapses 
+            // with the top margin of its next in-flow block-level sibling.
             *collapsing = geometry::min(model.margin.top, *collapsible);
             *collapsible = model.margin.bottom;
         }
 
         *first_in_flow = false;
+    }
+
+    fn debug_str(&self) -> ~str {
+        if self.is_root {
+            ~"BlockFlow(root)"
+        } else {
+            let txt = ~"BlockFlow: ";
+            txt.append(match self.box {
+                Some(rb) => {
+                    rb.debug_str()
+                }
+                None => { ~"" }
+            })
+        }
     }
 }
 
