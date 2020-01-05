@@ -1,0 +1,16 @@
+
+
+
+
+
+pref("marionette.enabled", false);
+
+
+pref("marionette.port", 2828);
+
+
+pref("marionette.forcelocal", true);
+
+
+
+pref("marionette.log.level", "info");
