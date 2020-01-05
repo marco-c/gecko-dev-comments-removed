@@ -7796,7 +7796,7 @@ void nsWindow::PickerClosed()
 }
 
 bool
-nsWindow::WidgetTypeSupportsAcceleration()
+nsWindow::ComputeShouldAccelerate()
 {
   
   
@@ -7805,8 +7805,12 @@ nsWindow::WidgetTypeSupportsAcceleration()
   
   
   
-  return mTransparencyMode != eTransparencyTransparent &&
-         !(IsPopup() && DeviceManagerDx::Get()->IsWARP());
+  if (mTransparencyMode == eTransparencyTransparent ||
+      (IsPopup() && DeviceManagerDx::Get()->IsWARP()))
+  {
+    return false;
+  }
+  return nsBaseWidget::ComputeShouldAccelerate();
 }
 
 void
