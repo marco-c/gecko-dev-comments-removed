@@ -2,7 +2,6 @@
 
 
 const { Doctor, REPAIR_ADVANCE_PERIOD } = Cu.import("resource://services-sync/doctor.js", {});
-Cu.import("resource://gre/modules/Services.jsm");
 
 initTestLogging("Trace");
 
@@ -10,52 +9,6 @@ function mockDoctor(mocks) {
   
   return Object.assign({}, Doctor, mocks);
 }
-
-add_task(async function test_validation_interval() {
-  let now = 1000;
-  let doctor = mockDoctor({
-    _now() {
-      
-      return now;
-    },
-  });
-
-  let engine = {
-    name: "test-engine",
-    getValidator() {
-      return {
-        validate(engine) {
-          return {};
-        }
-      }
-    },
-  }
-
-  
-  Services.prefs.setBoolPref("services.sync.engine.test-engine.validation.enabled", true);
-  Services.prefs.setIntPref("services.sync.engine.test-engine.validation.percentageChance", 100);
-  Services.prefs.setIntPref("services.sync.engine.test-engine.validation.maxRecords", 1);
-  
-  Services.prefs.setIntPref("services.sync.engine.test-engine.validation.interval", 10);
-
-  deepEqual(doctor._getEnginesToValidate([engine]), {
-    "test-engine": {
-      engine,
-      maxRecords: 1,
-    }
-  });
-  
-  deepEqual(doctor._getEnginesToValidate([engine]), {});
-  
-  now += 11;
-  
-  deepEqual(doctor._getEnginesToValidate([engine]), {
-    "test-engine": {
-      engine,
-      maxRecords: 1,
-    }
-  });
-});
 
 add_task(async function test_repairs_start() {
   let repairStarted = false;

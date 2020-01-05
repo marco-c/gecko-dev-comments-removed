@@ -106,7 +106,7 @@ this.Doctor = {
       
       
       
-      Svc.Prefs.set(prefPrefix + "validation.lastTime", Math.floor(nowSeconds));
+      Svc.Prefs.set("validation.lastTime", Math.floor(nowSeconds));
 
       
       let validationProbability = Svc.Prefs.get(prefPrefix + "validation.percentageChance", 0) / 100.0;
