@@ -24,7 +24,6 @@
 #include "mozilla/IMEStateManager.h"
 #include "mozilla/ipc/DocumentRendererChild.h"
 #include "mozilla/ipc/URIUtils.h"
-#include "mozilla/ipc/FileDescriptorUtils.h"
 #include "mozilla/layers/APZChild.h"
 #include "mozilla/layers/APZCCallbackHelper.h"
 #include "mozilla/layers/APZCTreeManager.h"
@@ -62,7 +61,6 @@
 #include "nsGlobalWindow.h"
 #include "nsIBaseWindow.h"
 #include "nsIBrowserDOMWindow.h"
-#include "nsICachedFileDescriptorListener.h"
 #include "nsIDocumentInlines.h"
 #include "nsIDocShellTreeOwner.h"
 #include "nsIDOMChromeWindow.h"
@@ -289,98 +287,6 @@ ContentListener::HandleEvent(nsIDOMEvent* aEvent)
   return NS_OK;
 }
 
-class TabChild::CachedFileDescriptorInfo
-{
-    struct PathOnlyComparatorHelper
-    {
-        bool Equals(const nsAutoPtr<CachedFileDescriptorInfo>& a,
-                    const CachedFileDescriptorInfo& b) const
-        {
-            return a->mPath == b.mPath;
-        }
-    };
-
-    struct PathAndCallbackComparatorHelper
-    {
-        bool Equals(const nsAutoPtr<CachedFileDescriptorInfo>& a,
-                    const CachedFileDescriptorInfo& b) const
-        {
-            return a->mPath == b.mPath &&
-                   a->mCallback == b.mCallback;
-        }
-    };
-
-public:
-    nsString mPath;
-    FileDescriptor mFileDescriptor;
-    nsCOMPtr<nsICachedFileDescriptorListener> mCallback;
-    bool mCanceled;
-
-    explicit CachedFileDescriptorInfo(const nsAString& aPath)
-      : mPath(aPath), mCanceled(false)
-    { }
-
-    CachedFileDescriptorInfo(const nsAString& aPath,
-                             const FileDescriptor& aFileDescriptor)
-      : mPath(aPath), mFileDescriptor(aFileDescriptor), mCanceled(false)
-    { }
-
-    CachedFileDescriptorInfo(const nsAString& aPath,
-                             nsICachedFileDescriptorListener* aCallback)
-      : mPath(aPath), mCallback(aCallback), mCanceled(false)
-    { }
-
-    PathOnlyComparatorHelper PathOnlyComparator() const
-    {
-        return PathOnlyComparatorHelper();
-    }
-
-    PathAndCallbackComparatorHelper PathAndCallbackComparator() const
-    {
-        return PathAndCallbackComparatorHelper();
-    }
-
-    void FireCallback() const
-    {
-        mCallback->OnCachedFileDescriptor(mPath, mFileDescriptor);
-    }
-};
-
-class TabChild::CachedFileDescriptorCallbackRunnable : public Runnable
-{
-    typedef TabChild::CachedFileDescriptorInfo CachedFileDescriptorInfo;
-
-    nsAutoPtr<CachedFileDescriptorInfo> mInfo;
-
-public:
-    explicit CachedFileDescriptorCallbackRunnable(CachedFileDescriptorInfo* aInfo)
-      : mInfo(aInfo)
-    {
-        MOZ_ASSERT(NS_IsMainThread());
-        MOZ_ASSERT(aInfo);
-        MOZ_ASSERT(!aInfo->mPath.IsEmpty());
-        MOZ_ASSERT(aInfo->mCallback);
-    }
-
-    void Dispatch()
-    {
-        MOZ_ASSERT(NS_IsMainThread());
-
-        nsresult rv = NS_DispatchToCurrentThread(this);
-        NS_ENSURE_SUCCESS_VOID(rv);
-    }
-
-private:
-    NS_IMETHOD Run() override
-    {
-        MOZ_ASSERT(NS_IsMainThread());
-        MOZ_ASSERT(mInfo);
-
-        mInfo->FireCallback();
-        return NS_OK;
-    }
-};
-
 class TabChild::DelayedDeleteRunnable final
   : public Runnable
 {
@@ -538,7 +444,6 @@ TabChild::TabChild(nsIContentChild* aManager,
   , mChromeFlags(aChromeFlags)
   , mActiveSuppressDisplayport(0)
   , mLayersId(0)
-  , mAppPackageFileDescriptorRecved(false)
   , mDidFakeShow(false)
   , mNotified(false)
   , mTriedBrowserInit(false)
@@ -1267,25 +1172,6 @@ TabChild::DestroyWindow()
       }
       mLayersId = 0;
     }
-
-    for (uint32_t index = 0, count = mCachedFileDescriptorInfos.Length();
-         index < count;
-         index++) {
-        nsAutoPtr<CachedFileDescriptorInfo>& info =
-            mCachedFileDescriptorInfos[index];
-
-        MOZ_ASSERT(!info->mCallback);
-
-        if (info->mFileDescriptor.IsValid()) {
-            MOZ_ASSERT(!info->mCanceled);
-
-            RefPtr<CloseFileRunnable> runnable =
-                new CloseFileRunnable(info->mFileDescriptor);
-            runnable->Dispatch();
-        }
-    }
-
-    mCachedFileDescriptorInfos.Clear();
 }
 
 void
@@ -1372,153 +1258,6 @@ TabChild::RecvLoadURL(const nsCString& aURI,
 #endif
 
   return true;
-}
-
-bool
-TabChild::RecvCacheFileDescriptor(const nsString& aPath,
-                                  const FileDescriptor& aFileDescriptor)
-{
-    MOZ_ASSERT(NS_IsMainThread());
-    MOZ_ASSERT(!aPath.IsEmpty());
-    MOZ_ASSERT(!mAppPackageFileDescriptorRecved);
-
-    mAppPackageFileDescriptorRecved = true;
-
-    
-    
-
-    
-    const CachedFileDescriptorInfo search(aPath);
-    size_t index =
-        mCachedFileDescriptorInfos.IndexOf(search, 0,
-                                           search.PathOnlyComparator());
-    if (index == mCachedFileDescriptorInfos.NoIndex) {
-        
-        
-        mCachedFileDescriptorInfos.AppendElement(
-            new CachedFileDescriptorInfo(aPath, aFileDescriptor));
-        return true;
-    }
-
-    nsAutoPtr<CachedFileDescriptorInfo>& info =
-        mCachedFileDescriptorInfos[index];
-
-    MOZ_ASSERT(info);
-    MOZ_ASSERT(info->mPath == aPath);
-    MOZ_ASSERT(!info->mFileDescriptor.IsValid());
-    MOZ_ASSERT(info->mCallback);
-
-    
-    
-    if (info->mCanceled) {
-        
-        if (aFileDescriptor.IsValid()) {
-            RefPtr<CloseFileRunnable> runnable =
-                new CloseFileRunnable(aFileDescriptor);
-            runnable->Dispatch();
-        }
-    } else {
-        
-        info->mFileDescriptor = aFileDescriptor;
-
-        
-        
-        info->FireCallback();
-    }
-
-    mCachedFileDescriptorInfos.RemoveElementAt(index);
-    return true;
-}
-
-bool
-TabChild::GetCachedFileDescriptor(const nsAString& aPath,
-                                  nsICachedFileDescriptorListener* aCallback)
-{
-    MOZ_ASSERT(NS_IsMainThread());
-    MOZ_ASSERT(!aPath.IsEmpty());
-    MOZ_ASSERT(aCallback);
-
-    
-    
-    const CachedFileDescriptorInfo search(aPath);
-    size_t index =
-        mCachedFileDescriptorInfos.IndexOf(search, 0,
-                                           search.PathOnlyComparator());
-    if (index == mCachedFileDescriptorInfos.NoIndex) {
-        
-        
-        if (!mAppPackageFileDescriptorRecved) {
-          mCachedFileDescriptorInfos.AppendElement(
-              new CachedFileDescriptorInfo(aPath, aCallback));
-        }
-        return false;
-    }
-
-    nsAutoPtr<CachedFileDescriptorInfo>& info =
-        mCachedFileDescriptorInfos[index];
-
-    MOZ_ASSERT(info);
-    MOZ_ASSERT(info->mPath == aPath);
-
-    
-    
-    
-    if (info->mCanceled) {
-        
-        
-        mCachedFileDescriptorInfos.InsertElementAt(index,
-            new CachedFileDescriptorInfo(aPath, aCallback));
-        return false;
-    }
-
-    MOZ_ASSERT(!info->mCallback);
-    info->mCallback = aCallback;
-
-    RefPtr<CachedFileDescriptorCallbackRunnable> runnable =
-        new CachedFileDescriptorCallbackRunnable(info.forget());
-    runnable->Dispatch();
-
-    mCachedFileDescriptorInfos.RemoveElementAt(index);
-    return true;
-}
-
-void
-TabChild::CancelCachedFileDescriptorCallback(
-                                     const nsAString& aPath,
-                                     nsICachedFileDescriptorListener* aCallback)
-{
-    MOZ_ASSERT(NS_IsMainThread());
-    MOZ_ASSERT(!aPath.IsEmpty());
-    MOZ_ASSERT(aCallback);
-
-    if (mAppPackageFileDescriptorRecved) {
-      
-      return;
-    }
-
-    const CachedFileDescriptorInfo search(aPath, aCallback);
-    size_t index =
-        mCachedFileDescriptorInfos.IndexOf(search, 0,
-                                           search.PathAndCallbackComparator());
-    if (index == mCachedFileDescriptorInfos.NoIndex) {
-        
-        return;
-    }
-
-    nsAutoPtr<CachedFileDescriptorInfo>& info =
-        mCachedFileDescriptorInfos[index];
-
-    MOZ_ASSERT(info);
-    MOZ_ASSERT(info->mPath == aPath);
-    MOZ_ASSERT(!info->mFileDescriptor.IsValid());
-    MOZ_ASSERT(info->mCallback == aCallback);
-    MOZ_ASSERT(!info->mCanceled);
-
-    
-    info->mCallback = nullptr;
-
-    
-    info->mCanceled = true;
 }
 
 void

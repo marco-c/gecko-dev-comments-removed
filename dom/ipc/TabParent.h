@@ -683,8 +683,6 @@ private:
   bool mIsDestroyed;
   
   bool mIsDetached;
-  
-  bool mAppPackageFileDescriptorSent;
 
   uint32_t mChromeFlags;
 
