@@ -12,7 +12,7 @@
 
 
 
-var performanceNamespace = window.performance;
+var performanceNamespace = self.performance;
 var timingAttributes = [
     'connectEnd',
     'connectStart',

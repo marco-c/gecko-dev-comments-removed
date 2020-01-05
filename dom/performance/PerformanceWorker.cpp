@@ -23,29 +23,6 @@ PerformanceWorker::~PerformanceWorker()
   mWorkerPrivate->AssertIsOnWorkerThread();
 }
 
-
-bool
-PerformanceWorker::IsPerformanceTimingAttribute(const nsAString& aName)
-{
-  
-  return aName.EqualsASCII("navigationStart");
-}
-
-DOMHighResTimeStamp
-PerformanceWorker::GetPerformanceTimingFromString(const nsAString& aProperty)
-{
-  if (!IsPerformanceTimingAttribute(aProperty)) {
-    return 0;
-  }
-
-  if (aProperty.EqualsLiteral("navigationStart")) {
-    return mWorkerPrivate->CreationTime();
-  }
-
-  MOZ_CRASH("IsPerformanceTimingAttribute and GetPerformanceTimingFromString are out of sync");
-  return 0;
-}
-
 void
 PerformanceWorker::InsertUserEntry(PerformanceEntry* aEntry)
 {
