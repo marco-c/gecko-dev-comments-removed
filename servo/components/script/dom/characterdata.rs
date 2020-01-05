@@ -21,7 +21,6 @@ use util::str::DOMString;
 
 use std::borrow::ToOwned;
 use std::cell::Ref;
-use std::cmp;
 
 
 #[dom_struct]
@@ -72,15 +71,14 @@ impl<'a> CharacterDataMethods for JSRef<'a, CharacterData> {
     fn SubstringData(self, offset: u32, count: u32) -> Fallible<DOMString> {
         let data = self.data.borrow();
         
-        let len = data.chars().count();
-        if offset as usize > len {
+        let length = data.chars().count() as u32;
+        if offset > length {
             
             return Err(IndexSize);
         }
         
-        let end = cmp::min((offset + count) as usize, len);
-        
-        Ok(data.slice_chars(offset as usize, end).to_owned())
+        let end = if length - offset < count { length } else { offset + count };
+        Ok(data.slice_chars(offset as usize, end as usize).to_owned())
     }
 
     
@@ -100,15 +98,19 @@ impl<'a> CharacterDataMethods for JSRef<'a, CharacterData> {
 
     
     fn ReplaceData(self, offset: u32, count: u32, arg: DOMString) -> ErrorResult {
+        
         let length = self.data.borrow().chars().count() as u32;
         if offset > length {
+            
             return Err(IndexSize);
         }
-        let count = if offset + count > length {
-            length - offset
-        } else {
-            count
+        
+        let count = match length - offset {
+            diff if diff < count => diff,
+            _ => count,
         };
+        
+        
         let mut data = self.data.borrow().slice_chars(0, offset as usize).to_owned();
         data.push_str(&arg);
         data.push_str(&self.data.borrow().slice_chars((offset + count) as usize, length as usize));
