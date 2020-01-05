@@ -193,6 +193,9 @@ test_description_schema = Schema({
                 [basestring]),
 
             
+            Optional('mochitest-flavor'): basestring,
+
+            
             Optional('actions'): [basestring],
 
             
