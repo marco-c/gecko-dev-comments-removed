@@ -8,6 +8,7 @@
 #include "nsPresContext.h"
 #include "nsRenderingContext.h"
 #include <algorithm>
+#include "gfxMathTable.h"
 
 using mozilla::WritingMode;
 
@@ -195,8 +196,8 @@ nsMathMLmmultiscriptsFrame::PlaceMultiScript(nsPresContext*  aPresContext,
   
   nscoord scriptSpace;
   if (mathFont) {
-    scriptSpace =
-      mathFont->GetMathConstant(gfxFontEntry::SpaceAfterScript, oneDevPixel);
+    scriptSpace = mathFont->MathTable()->
+      Constant(gfxMathTable::SpaceAfterScript, oneDevPixel);
   } else {
     
     scriptSpace = nsPresContext::CSSPointsToAppUnits(0.5f);
@@ -204,10 +205,10 @@ nsMathMLmmultiscriptsFrame::PlaceMultiScript(nsPresContext*  aPresContext,
 
   
   if (mathFont) {
-    subDrop = mathFont->
-      GetMathConstant(gfxFontEntry::SubscriptBaselineDropMin, oneDevPixel);
-    supDrop = mathFont->
-      GetMathConstant(gfxFontEntry::SuperscriptBaselineDropMax, oneDevPixel);
+    subDrop = mathFont->MathTable()->
+      Constant(gfxMathTable::SubscriptBaselineDropMin, oneDevPixel);
+    supDrop = mathFont->MathTable()->
+      Constant(gfxMathTable::SuperscriptBaselineDropMax, oneDevPixel);
   }
 
   
@@ -221,8 +222,8 @@ nsMathMLmmultiscriptsFrame::PlaceMultiScript(nsPresContext*  aPresContext,
   if (mathFont) {
     
     
-    subScriptShift =
-      mathFont->GetMathConstant(gfxFontEntry::SubscriptShiftDown, oneDevPixel);
+    subScriptShift = mathFont->MathTable()->
+      Constant(gfxMathTable::SubscriptShiftDown, oneDevPixel);
   } else {
     
     
@@ -253,10 +254,10 @@ nsMathMLmmultiscriptsFrame::PlaceMultiScript(nsPresContext*  aPresContext,
     
     
     supScriptShift = mathFont->
-      GetMathConstant(NS_MATHML_IS_COMPRESSED(presentationData.flags) ?
-                      gfxFontEntry::SuperscriptShiftUpCramped :
-                      gfxFontEntry::SuperscriptShiftUp,
-                      oneDevPixel);
+      MathTable()->Constant(NS_MATHML_IS_COMPRESSED(presentationData.flags) ?
+                            gfxMathTable::SuperscriptShiftUpCramped :
+                            gfxMathTable::SuperscriptShiftUp,
+                            oneDevPixel);
   } else {
     
     
@@ -424,8 +425,8 @@ nsMathMLmmultiscriptsFrame::PlaceMultiScript(nsPresContext*  aPresContext,
           nscoord subscriptTopMax;
           if (mathFont) {
             subscriptTopMax =
-              mathFont->GetMathConstant(gfxFontEntry::SubscriptTopMax,
-                                        oneDevPixel);
+              mathFont->MathTable()->Constant(gfxMathTable::SubscriptTopMax,
+                                              oneDevPixel);
           } else {
             
             
@@ -450,8 +451,8 @@ nsMathMLmmultiscriptsFrame::PlaceMultiScript(nsPresContext*  aPresContext,
         nscoord superscriptBottomMin;
         if (mathFont) {
           superscriptBottomMin =
-            mathFont->GetMathConstant(gfxFontEntry::SuperscriptBottomMin,
-                                      oneDevPixel);
+            mathFont->MathTable()->Constant(gfxMathTable::SuperscriptBottomMin,
+                                            oneDevPixel);
         } else {
           
           
@@ -495,9 +496,8 @@ nsMathMLmmultiscriptsFrame::PlaceMultiScript(nsPresContext*  aPresContext,
             tag == nsGkAtoms::msubsup_) {
           nscoord subSuperscriptGapMin;
           if (mathFont) {
-            subSuperscriptGapMin =
-              mathFont->GetMathConstant(gfxFontEntry::SubSuperscriptGapMin,
-                                        oneDevPixel);
+            subSuperscriptGapMin = mathFont->MathTable()->
+              Constant(gfxMathTable::SubSuperscriptGapMin, oneDevPixel);
           } else {
             nscoord ruleSize;
             GetRuleThickness(aDrawTarget, fm, ruleSize);
@@ -515,9 +515,9 @@ nsMathMLmmultiscriptsFrame::PlaceMultiScript(nsPresContext*  aPresContext,
           
           nscoord superscriptBottomMaxWithSubscript;
           if (mathFont) {
-            superscriptBottomMaxWithSubscript = mathFont->
-              GetMathConstant(gfxFontEntry::SuperscriptBottomMaxWithSubscript,
-                              oneDevPixel);
+            superscriptBottomMaxWithSubscript = mathFont->MathTable()->
+              Constant(gfxMathTable::SuperscriptBottomMaxWithSubscript,
+                       oneDevPixel);
           } else {
             superscriptBottomMaxWithSubscript =
               NSToCoordRound((4.0f / 5.0f) * xHeight);

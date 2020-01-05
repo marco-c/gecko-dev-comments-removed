@@ -7,14 +7,6 @@
 
 #include "gfxFont.h"
 
-struct Coverage;
-struct GlyphAssembly;
-struct MATHTableHeader;
-struct MathConstants;
-struct MathGlyphConstruction;
-struct MathGlyphInfo;
-struct MathVariants;
-
 
 
 
@@ -26,27 +18,94 @@ public:
 
 
 
-
-
-
-    explicit gfxMathTable(hb_blob_t* aMathTable);
+    gfxMathTable(hb_face_t *aFace, gfxFloat aSize);
 
     
 
 
     ~gfxMathTable();
 
+    enum MathConstant {
+        
+        
+        ScriptPercentScaleDown,
+        ScriptScriptPercentScaleDown,
+        DelimitedSubFormulaMinHeight,
+        DisplayOperatorMinHeight,
+        MathLeading,
+        AxisHeight,
+        AccentBaseHeight,
+        FlattenedAccentBaseHeight,
+        SubscriptShiftDown,
+        SubscriptTopMax,
+        SubscriptBaselineDropMin,
+        SuperscriptShiftUp,
+        SuperscriptShiftUpCramped,
+        SuperscriptBottomMin,
+        SuperscriptBaselineDropMax,
+        SubSuperscriptGapMin,
+        SuperscriptBottomMaxWithSubscript,
+        SpaceAfterScript,
+        UpperLimitGapMin,
+        UpperLimitBaselineRiseMin,
+        LowerLimitGapMin,
+        LowerLimitBaselineDropMin,
+        StackTopShiftUp,
+        StackTopDisplayStyleShiftUp,
+        StackBottomShiftDown,
+        StackBottomDisplayStyleShiftDown,
+        StackGapMin,
+        StackDisplayStyleGapMin,
+        StretchStackTopShiftUp,
+        StretchStackBottomShiftDown,
+        StretchStackGapAboveMin,
+        StretchStackGapBelowMin,
+        FractionNumeratorShiftUp,
+        FractionNumeratorDisplayStyleShiftUp,
+        FractionDenominatorShiftDown,
+        FractionDenominatorDisplayStyleShiftDown,
+        FractionNumeratorGapMin,
+        FractionNumDisplayStyleGapMin,
+        FractionRuleThickness,
+        FractionDenominatorGapMin,
+        FractionDenomDisplayStyleGapMin,
+        SkewedFractionHorizontalGap,
+        SkewedFractionVerticalGap,
+        OverbarVerticalGap,
+        OverbarRuleThickness,
+        OverbarExtraAscender,
+        UnderbarVerticalGap,
+        UnderbarRuleThickness,
+        UnderbarExtraDescender,
+        RadicalVerticalGap,
+        RadicalDisplayStyleVerticalGap,
+        RadicalRuleThickness,
+        RadicalExtraAscender,
+        RadicalKernBeforeDegree,
+        RadicalKernAfterDegree,
+        RadicalDegreeBottomRaisePercent
+    };
+
     
 
 
-    int32_t GetMathConstant(gfxFontEntry::MathConstant aConstant);
+    gfxFloat Constant(MathConstant aConstant) const;
+
+    
+
+
+    nscoord Constant(MathConstant aConstant,
+                     uint32_t aAppUnitsPerDevPixel) const
+    {
+        return NSToCoordRound(Constant(aConstant) * aAppUnitsPerDevPixel);
+    }
 
     
 
 
 
-    bool
-    GetMathItalicsCorrection(uint32_t aGlyphID, int16_t* aItalicCorrection);
+    gfxFloat
+    ItalicsCorrection(uint32_t aGlyphID) const;
 
     
 
@@ -56,8 +115,8 @@ public:
 
 
 
-    uint32_t GetMathVariantsSize(uint32_t aGlyphID, bool aVertical,
-                                 uint16_t aSize);
+    uint32_t VariantsSize(uint32_t aGlyphID, bool aVertical,
+                          uint16_t aSize) const;
 
     
 
@@ -73,52 +132,24 @@ public:
 
 
 
-    bool GetMathVariantsParts(uint32_t aGlyphID, bool aVertical,
-                              uint32_t aGlyphs[4]);
-
-    size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
-
-protected:
-    friend class gfxFontEntry;
-    
-    
-    bool HasValidHeaders();
+    bool VariantsParts(uint32_t aGlyphID, bool aVertical,
+                       uint32_t aGlyphs[4]) const;
 
 private:
     
-    hb_blob_t*    mMathTable;
+    hb_font_t *mHBFont;
 
-    
-    
-    
-    
-    
-    
-    const MathGlyphConstruction* mGlyphConstruction;
-    uint32_t mGlyphID;
-    bool     mVertical;
-    void     SelectGlyphConstruction(uint32_t aGlyphID, bool aVertical);
-
-    
-    
-    
-    
-    
-    
-    const MATHTableHeader* GetMATHTableHeader();
-    const MathConstants*   GetMathConstants();
-    const MathGlyphInfo*   GetMathGlyphInfo();
-    const MathVariants*    GetMathVariants();
-    const GlyphAssembly*   GetGlyphAssembly(uint32_t aGlyphID, bool aVertical);
-
-    
-    
-    bool ValidStructure(const char* aStructStart, uint16_t aStructSize);
-    bool ValidOffset(const char* aOffsetStart, uint16_t aOffset);
-
-    
-    
-    int32_t GetCoverageIndex(const Coverage* aCoverage, uint32_t aGlyph);
+    static const unsigned int kMaxCachedSizeCount = 10;
+    struct MathVariantCacheEntry {
+      uint32_t glyphID;
+      bool vertical;
+      uint32_t sizes[kMaxCachedSizeCount];
+      uint32_t parts[4];
+      bool arePartsValid;
+    };
+    mutable MathVariantCacheEntry mMathVariantCache;
+    void ClearCache() const;
+    void UpdateMathVariantCache(uint32_t aGlyphID, bool aVertical) const;
 };
 
 #endif
