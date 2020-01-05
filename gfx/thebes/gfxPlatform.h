@@ -181,6 +181,8 @@ public:
 
     static void InitNullMetadata();
 
+    static void InitMoz2DLogging();
+
     
 
 
