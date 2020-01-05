@@ -83,7 +83,6 @@ function run_test() {
 
   
   
-  var tagFolders = [];
   var child = tagRoot.getChild(0);
   var tagId = child.itemId;
   var tagTitle = child.title;

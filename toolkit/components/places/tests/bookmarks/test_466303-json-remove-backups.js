@@ -25,7 +25,6 @@ add_task(function* check_max_backups_is_respected() {
   
   
   yield PlacesBackups.create(2);
-  let backupFilename = PlacesBackups.getFilenameForDate();
 
   let count = 0;
   let lastBackupPath = null;
@@ -53,7 +52,6 @@ add_task(function* check_max_backups_greater_than_backups() {
   
   
   yield PlacesBackups.create(3);
-  let backupFilename = PlacesBackups.getFilenameForDate();
 
   let count = 0;
   let lastBackupPath = null;
@@ -79,7 +77,6 @@ add_task(function* check_max_backups_null() {
   
   
   yield PlacesBackups.create(null);
-  let backupFilename = PlacesBackups.getFilenameForDate();
 
   let count = 0;
   let lastBackupPath = null;
@@ -105,7 +102,6 @@ add_task(function* check_max_backups_undefined() {
   
   
   yield PlacesBackups.create();
-  let backupFilename = PlacesBackups.getFilenameForDate();
 
   let count = 0;
   let lastBackupPath = null;

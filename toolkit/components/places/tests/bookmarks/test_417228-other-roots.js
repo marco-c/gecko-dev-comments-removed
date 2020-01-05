@@ -130,9 +130,6 @@ add_task(function* () {
   let jsonFile = OS.Path.join(OS.Constants.Path.profileDir, "bookmarks.json");
 
   
-  var excludedItemsFromRestore = [];
-
-  
   tests.forEach(function(aTest) {
     aTest.populate();
     

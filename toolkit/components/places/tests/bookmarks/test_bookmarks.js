@@ -92,13 +92,13 @@ add_task(function* test_bookmarks() {
 
   
   try {
-    let id = bs.getFolderIdForItem(0);
+    bs.getFolderIdForItem(0);
     do_throw("getFolderIdForItem accepted bad input");
   } catch (ex) {}
 
   
   try {
-    let id = bs.getFolderIdForItem(-1);
+    bs.getFolderIdForItem(-1);
     do_throw("getFolderIdForItem accepted bad input");
   } catch (ex) {}
 
