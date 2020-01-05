@@ -148,14 +148,15 @@ function gotoPref(aCategory) {
   let categories = document.getElementById("categories");
   const kDefaultCategoryInternalName = "paneGeneral";
   let hash = document.location.hash;
-  
-  
-  let breakIndex = hash.indexOf("-");
-  let subcategory = breakIndex != -1 && hash.substring(breakIndex + 1);
-  if (subcategory) {
-    hash = hash.substring(0, breakIndex);
-  }
+
   let category = aCategory || hash.substr(1) || kDefaultCategoryInternalName;
+  let breakIndex = category.indexOf("-");
+  
+  
+  let subcategory = breakIndex != -1 && category.substring(breakIndex + 1);
+  if (subcategory) {
+    category = category.substring(0, breakIndex);
+  }
   category = friendlyPrefCategoryNameToInternalName(category);
 
   
