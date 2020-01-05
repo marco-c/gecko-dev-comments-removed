@@ -10,6 +10,7 @@
 #include <sys/types.h>                  
 #include "gfxFontFamilyList.h"
 #include "gfxFontFeatures.h"
+#include "gfxFontVariations.h"
 #include "mozilla/RefPtr.h"             
 #include "nsCoord.h"                    
 #include "nsStringFwd.h"                
@@ -102,6 +103,9 @@ struct nsFont {
   nsTArray<gfxFontFeature> fontFeatureSettings;
 
   
+  nsTArray<gfxFontVariation> fontVariationSettings;
+
+  
   
   
   nsString languageOverride;
@@ -136,6 +140,8 @@ struct nsFont {
 
   
   void AddFontFeaturesToStyle(gfxFontStyle *aStyle) const;
+
+  void AddFontVariationsToStyle(gfxFontStyle *aStyle) const;
 
 protected:
   void Init(); 
