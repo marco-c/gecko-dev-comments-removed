@@ -205,9 +205,6 @@ NeckoParent::GetValidatedOriginAttributes(const SerializedLoadContext& aSerializ
   
   
   if (aRequestingPrincipal) {
-    MOZ_ASSERT(BasePrincipal::Cast(aRequestingPrincipal)->OriginAttributesRef() ==
-                 aSerialized.mOriginAttributes);
-
     RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
     if (swm &&
         swm->MayHaveActiveServiceWorkerInstance(static_cast<ContentParent*>(aContent),
