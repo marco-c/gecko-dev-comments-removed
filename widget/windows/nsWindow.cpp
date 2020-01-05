@@ -4012,6 +4012,19 @@ nsWindow::DispatchMouseEvent(EventMessage aEventMessage, WPARAM wParam,
     return result;
   }
 
+  LayoutDeviceIntPoint eventPoint(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+  LayoutDeviceIntPoint mpScreen = eventPoint + WidgetToScreenOffset();
+
+  
+  
+  if (aEventMessage == eMouseMove) {
+    if ((sLastMouseMovePoint.x == mpScreen.x) && (sLastMouseMovePoint.y == mpScreen.y)) {
+      return result;
+    }
+    sLastMouseMovePoint.x = mpScreen.x;
+    sLastMouseMovePoint.y = mpScreen.y;
+  }
+
   if (WinUtils::GetIsMouseFromTouch(aEventMessage)) {
     if (aEventMessage == eMouseDown) {
       Telemetry::Accumulate(Telemetry::FX_TOUCH_USED, 1);
@@ -4057,8 +4070,6 @@ nsWindow::DispatchMouseEvent(EventMessage aEventMessage, WPARAM wParam,
 
   } 
 
-  LayoutDeviceIntPoint eventPoint(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
-
   WidgetMouseEvent event(true, aEventMessage, this, WidgetMouseEvent::eReal,
                          aIsContextMenuKey ? WidgetMouseEvent::eContextMenuKey :
                                              WidgetMouseEvent::eNormal);
@@ -4077,16 +4088,6 @@ nsWindow::DispatchMouseEvent(EventMessage aEventMessage, WPARAM wParam,
   
   
   event.convertToPointer = true;
-
-  LayoutDeviceIntPoint mpScreen = eventPoint + WidgetToScreenOffset();
-
-  
-  if (aEventMessage == eMouseMove) {
-    if ((sLastMouseMovePoint.x == mpScreen.x) && (sLastMouseMovePoint.y == mpScreen.y))
-      return result;
-    sLastMouseMovePoint.x = mpScreen.x;
-    sLastMouseMovePoint.y = mpScreen.y;
-  }
 
   bool insideMovementThreshold = (DeprecatedAbs(sLastMousePoint.x - eventPoint.x) < (short)::GetSystemMetrics(SM_CXDOUBLECLK)) &&
                                    (DeprecatedAbs(sLastMousePoint.y - eventPoint.y) < (short)::GetSystemMetrics(SM_CYDOUBLECLK));
