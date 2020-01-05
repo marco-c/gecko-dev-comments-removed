@@ -3366,6 +3366,12 @@ XPCJSContext::Initialize()
                                                               : 120 * 1024;  
     
     
+#elif defined(ANDROID)
+    
+    
+    
+    const size_t kStackQuota = kDefaultStackQuota + kDefaultStackQuota / 2;
+    const size_t kTrustedScriptBuffer = sizeof(size_t) * 12800;
 #elif defined(DEBUG)
     
     
