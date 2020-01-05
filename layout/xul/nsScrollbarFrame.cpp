@@ -250,9 +250,6 @@ nsScrollbarFrame::MoveToNewPosition()
   int32_t maxpos = nsSliderFrame::GetMaxPosition(content);
 
   
-  int32_t oldCurpos = curpos;
-
-  
   if (mIncrement) {
     curpos += mIncrement;
   }
@@ -291,19 +288,6 @@ nsScrollbarFrame::MoveToNewPosition()
           return curpos;
         }
       }
-    }
-  }
-  
-  const nsStyleDisplay* disp = StyleDisplay();
-  nsPresContext* presContext = PresContext();
-  if (disp->UsedAppearance()) {
-    nsITheme *theme = presContext->GetTheme();
-    if (theme && theme->ThemeSupportsWidget(presContext, this, disp->UsedAppearance())) {
-      bool repaint;
-      nsAttrValue oldValue;
-      oldValue.SetTo(oldCurpos);
-      theme->WidgetStateChanged(this, disp->UsedAppearance(), nsGkAtoms::curpos,
-          &repaint, &oldValue);
     }
   }
   content->UnsetAttr(kNameSpaceID_None, nsGkAtoms::smooth, false);
