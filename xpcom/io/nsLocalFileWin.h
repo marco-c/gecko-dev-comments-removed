@@ -57,6 +57,9 @@ public:
   static void GlobalInit();
   static void GlobalShutdown();
 
+  
+  static bool CleanupCmdHandlerPath(nsAString& aCommandHandler);
+
 private:
   
   enum CopyFileOption {
