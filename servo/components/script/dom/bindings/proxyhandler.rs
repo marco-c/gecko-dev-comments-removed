@@ -186,7 +186,7 @@ pub fn ensure_expando_object(cx: *mut JSContext, obj: HandleObject) -> *mut JSOb
 
 
 
-pub fn fill_property_descriptor(desc: &mut PropertyDescriptor,
+pub fn fill_property_descriptor(mut desc: MutableHandle<PropertyDescriptor>,
                                 obj: *mut JSObject,
                                 attrs: u32) {
     desc.obj = obj;
