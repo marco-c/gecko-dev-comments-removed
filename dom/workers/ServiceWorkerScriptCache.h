@@ -39,13 +39,21 @@ public:
   ComparisonResult(nsresult aStatus,
                    bool aInCacheAndEqual,
                    const nsAString& aNewCacheName,
-                   const nsACString& aMaxScope,
-                   nsLoadFlags aLoadFlags) = 0;
+                   const nsACString& aMaxScope) = 0;
+
+  
+
+
+
+
+
+  virtual void
+  SaveLoadFlags(nsLoadFlags aLoadFlags) = 0;
 
   NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
 };
 
-void
+nsresult
 Compare(ServiceWorkerRegistrationInfo* aRegistration,
         nsIPrincipal* aPrincipal, const nsAString& aCacheName,
         const nsAString& aURL, CompareCallback* aCallback, nsILoadGroup* aLoadGroup);
