@@ -281,8 +281,12 @@ nsUrlClassifierDBServiceWorker::DoLookup(const nsACString& spec,
   nsAutoPtr<LookupResultArray> completes(new LookupResultArray());
 
   for (uint32_t i = 0; i < results->Length(); i++) {
-    if (!mMissCache.Contains(results->ElementAt(i).hash.fixedLengthPrefix)) {
-      completes->AppendElement(results->ElementAt(i));
+    const LookupResult& lookupResult = results->ElementAt(i);
+
+    
+    if (!lookupResult.mProtocolV2 ||
+        !mMissCache.Contains(lookupResult.hash.fixedLengthPrefix)) {
+      completes->AppendElement(lookupResult);
     }
   }
 
@@ -1145,11 +1149,12 @@ nsUrlClassifierLookupCallback::HandleResults()
   
   
   
+  
   nsAutoPtr<PrefixArray> cacheMisses(new PrefixArray());
   if (cacheMisses) {
     for (uint32_t i = 0; i < mResults->Length(); i++) {
       LookupResult &result = mResults->ElementAt(i);
-      if (!result.Confirmed() && !result.mNoise) {
+      if (result.mProtocolV2 && !result.Confirmed() && !result.mNoise) {
         cacheMisses->AppendElement(result.hash.fixedLengthPrefix);
       }
     }

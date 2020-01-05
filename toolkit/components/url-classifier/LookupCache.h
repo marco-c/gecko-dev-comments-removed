@@ -26,7 +26,8 @@ namespace safebrowsing {
 class LookupResult {
 public:
   LookupResult() : mNoise(false), mProtocolConfirmed(false),
-                   mPartialHashLength(0), mConfirmed(false) {}
+                   mPartialHashLength(0), mConfirmed(false),
+                   mProtocolV2(true) {}
 
   
   union {
@@ -72,6 +73,8 @@ public:
 
   
   bool mConfirmed;
+
+  bool mProtocolV2;
 };
 
 typedef nsTArray<LookupResult> LookupResultArray;
