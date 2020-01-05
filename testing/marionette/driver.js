@@ -2187,16 +2187,7 @@ GeckoDriver.prototype.closeChromeWindow = function (cmd, resp) {
 };
 
 
-
-
-
-
-
-
-
-
-
-GeckoDriver.prototype.sessionTearDown = function (cmd, resp) {
+GeckoDriver.prototype.deleteSession = function (cmd, resp) {
   if (this.curBrowser !== null) {
     
     Preferences.set(CONTENT_LISTENER_PREF, false);
@@ -2249,14 +2240,6 @@ GeckoDriver.prototype.sessionTearDown = function (cmd, resp) {
 
   this.sessionId = null;
   this.capabilities = new session.Capabilities();
-};
-
-
-
-
-
-GeckoDriver.prototype.deleteSession = function (cmd, resp) {
-  this.sessionTearDown();
 };
 
 
@@ -2576,7 +2559,7 @@ GeckoDriver.prototype.quitApplication = function (cmd, resp) {
   this._server.acceptConnections = false;
   resp.send();
 
-  this.sessionTearDown();
+  this.deleteSession();
   Services.startup.quit(flags);
 };
 
