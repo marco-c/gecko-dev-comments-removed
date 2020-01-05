@@ -1602,7 +1602,7 @@ nsScriptLoader::ProcessScriptElement(nsIScriptElement *aElement)
       }
       return false;
     }
-    if (!aElement->GetParserCreated() && !request->IsModuleRequest()) {
+    if (!aElement->GetParserCreated()) {
       
       
       
