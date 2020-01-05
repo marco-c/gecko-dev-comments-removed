@@ -44,6 +44,10 @@ class MessageManagerReporter;
 
 namespace ipc {
 
+
+
+static const uint32_t kMinTelemetrySyncMessageManagerLatencyMs = 1;
+
 enum MessageManagerFlags {
   MM_CHILD = 0,
   MM_CHROME = 1,
