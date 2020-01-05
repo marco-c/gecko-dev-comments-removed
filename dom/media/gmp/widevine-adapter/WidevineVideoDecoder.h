@@ -73,7 +73,6 @@ private:
   
   
   bool mResetInProgress;
-  cdm::Size mCodedSize;
 };
 
 } 

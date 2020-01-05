@@ -78,7 +78,7 @@ WidevineVideoDecoder::InitDecode(const GMPVideoCodec& aCodecSettings,
     return;
   }
   config.format = kYv12;
-  config.coded_size = mCodedSize = Size(aCodecSettings.mWidth, aCodecSettings.mHeight);
+  config.coded_size = Size(aCodecSettings.mWidth, aCodecSettings.mHeight);
   nsTArray<uint8_t> extraData;
   if (aCodecSpecificLength > 0) {
     
@@ -128,18 +128,7 @@ WidevineVideoDecoder::Decode(GMPVideoEncodedFrame* aInputFrame,
   aInputFrame->Destroy();
   aInputFrame = nullptr;
 
-  if (rv == kSuccess || rv == kNoKey) {
-    if (rv == kNoKey) {
-      CDM_LOG("NoKey for sample at time=%lld!", sample.timestamp);
-      
-      
-      
-      
-      
-      
-      
-      frame.InitToBlack(mCodedSize.width, mCodedSize.height, sample.timestamp);
-    }
+  if (rv == kSuccess) {
     if (!ReturnOutput(frame)) {
       CDM_LOG("WidevineVideoDecoder::Decode() Failed in ReturnOutput()");
       mCallback->Error(GMPDecodeErr);
