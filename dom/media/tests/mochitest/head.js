@@ -233,9 +233,38 @@ function realCreateHTML(meta) {
   document.body.appendChild(content);
 }
 
-function getMediaElement(label, direction, streamId) {
-  var id = label + '_' + direction + '_' + streamId;
-  return document.getElementById(id);
+
+
+
+
+
+
+
+
+
+function createMediaElement(type, id) {
+  const element = document.createElement(type);
+  element.setAttribute('id', id);
+  element.setAttribute('height', 100);
+  element.setAttribute('width', 150);
+  element.setAttribute('controls', 'controls');
+  element.setAttribute('autoplay', 'autoplay');
+  document.getElementById('content').appendChild(element);
+
+  return element;
+}
+
+
+
+
+
+
+
+
+
+
+function getMediaElementForTrack(track, idPrefix) {
+  return document.getElementById(idPrefix + '_' + track.id);
 }
 
 
@@ -248,28 +277,10 @@ function getMediaElement(label, direction, streamId) {
 
 
 
-
-function createMediaElement(label, direction, streamId, audioOnly) {
-  var id = label + '_' + direction + '_' + streamId;
-  var element = document.getElementById(id);
-
-  
-  if (element) {
-    return element;
-  }
-
-  if (!audioOnly) {
-    
-    element = document.createElement('video');
-  } else {
-    element = document.createElement('audio');
-  }
-  element.setAttribute('id', id);
-  element.setAttribute('height', 100);
-  element.setAttribute('width', 150);
-  element.setAttribute('controls', 'controls');
-  element.setAttribute('autoplay', 'autoplay');
-  document.getElementById('content').appendChild(element);
+function createMediaElementForTrack(track, idPrefix) {
+  const id = idPrefix + '_' + track.id;
+  const element = createMediaElement(track.kind, id);
+  element.srcObject = new MediaStream([track]);
 
   return element;
 }

@@ -862,12 +862,12 @@ PeerConnectionWrapper.prototype = {
     this._pc.setIdentityProvider(provider, protocol, identity);
   },
 
-  ensureMediaElement : function(track, stream, direction) {
-    var element = getMediaElement(this.label, direction, stream.id);
+  ensureMediaElement : function(track, direction) {
+    const idPrefix = [this.label, direction].join('_');
+    var element = getMediaElementForTrack(track, idPrefix);
 
     if (!element) {
-      element = createMediaElement(this.label, direction, stream.id,
-                                   this.audioElementsOnly);
+      element = createMediaElementForTrack(track, idPrefix);
       if (direction == "local") {
         this.localMediaElements.push(element);
       } else if (direction == "remote") {
@@ -878,7 +878,7 @@ PeerConnectionWrapper.prototype = {
     
     
     
-    element.srcObject = stream;
+    element.srcObject = new MediaStream([track]);
     element.play();
   },
 
@@ -912,7 +912,7 @@ PeerConnectionWrapper.prototype = {
     
     
     
-    this.ensureMediaElement(track, new MediaStream([track]), "local");
+    this.ensureMediaElement(track, "local");
 
     return this.observedNegotiationNeeded;
   },
@@ -950,7 +950,7 @@ PeerConnectionWrapper.prototype = {
           type: track.kind,
           streamId: stream.id
         };
-      this.ensureMediaElement(track, stream, "local");
+      this.ensureMediaElement(track, "local");
     });
   },
 
@@ -1181,7 +1181,7 @@ PeerConnectionWrapper.prototype = {
                                 this.observedRemoteTrackInfoById);
       ok(this.isTrackOnPC(event.track), "Found track " + event.track.id);
 
-      this.ensureMediaElement(event.track, event.streams[0], 'remote');
+      this.ensureMediaElement(event.track, 'remote');
     });
   },
 
@@ -1380,33 +1380,30 @@ PeerConnectionWrapper.prototype = {
 
 
 
+
   waitForMediaElementFlow : function(element) {
-    return new Promise(resolve => {
-      info("Checking data flow to element: " + element.id);
-      if (element.ended && element.readyState >= element.HAVE_CURRENT_DATA) {
-        resolve();
-        return;
-      }
-      var haveEnoughData = false;
-      var oncanplay = () => {
-        info("Element " + element.id + " saw 'canplay', " +
-             "meaning HAVE_ENOUGH_DATA was just reached.");
-        haveEnoughData = true;
-        element.removeEventListener("canplay", oncanplay);
-      };
-      var ontimeupdate = () => {
-        info("Element " + element.id + " saw 'timeupdate'" +
-             ", currentTime=" + element.currentTime +
-             "s, readyState=" + element.readyState);
-        if (haveEnoughData || element.readyState == element.HAVE_ENOUGH_DATA) {
-          element.removeEventListener("timeupdate", ontimeupdate);
-          ok(true, "Media flowing for element: " + element.id);
-          resolve();
-        }
-      };
-      element.addEventListener("canplay", oncanplay);
-      element.addEventListener("timeupdate", ontimeupdate);
-    });
+    info("Checking data flow for element: " + element.id);
+    is(element.ended, !element.srcObject.active,
+       "Element ended should be the inverse of the MediaStream's active state");
+    if (element.ended) {
+      is(element.readyState, element.HAVE_CURRENT_DATA,
+         "Element " + element.id + " is ended and should have had data");
+      return Promise.resolve();
+    }
+
+    const haveEnoughData = (element.readyState == element.HAVE_ENOUGH_DATA ?
+        Promise.resolve() :
+        haveEvent(element, "canplay", wait(60000,
+            new Error("Timeout for element " + element.id))))
+      .then(_ => info("Element " + element.id + " has enough data."));
+
+    const startTime = element.currentTime;
+    const timeProgressed = timeout(
+        listenUntil(element, "timeupdate", _ => element.currentTime > startTime),
+        60000, "Element " + element.id + " should progress currentTime")
+      .then();
+
+    return Promise.all([haveEnoughData, timeProgressed]);
   },
 
   
