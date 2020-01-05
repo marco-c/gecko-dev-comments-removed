@@ -198,7 +198,6 @@ nsHttpTransaction::Init(uint32_t caps,
                         nsHttpConnectionInfo *cinfo,
                         nsHttpRequestHead *requestHead,
                         nsIInputStream *requestBody,
-                        uint64_t requestContentLength,
                         bool requestBodyHasHeaders,
                         nsIEventTarget *target,
                         nsIInterfaceRequestor *callbacks,
@@ -327,11 +326,14 @@ nsHttpTransaction::Init(uint32_t caps,
     if (NS_FAILED(rv)) return rv;
 
     mHasRequestBody = !!requestBody;
-    if (mHasRequestBody && !requestContentLength) {
-        mHasRequestBody = false;
+    if (mHasRequestBody) {
+        
+        
+        uint64_t size;
+        if (NS_SUCCEEDED(requestBody->Available(&size)) && !size) {
+            mHasRequestBody = false;
+        }
     }
-
-    requestContentLength += mReqHeaderBuf.Length();
 
     if (mHasRequestBody) {
         
@@ -351,9 +353,9 @@ nsHttpTransaction::Init(uint32_t caps,
         rv = NS_NewBufferedInputStream(getter_AddRefs(mRequestStream), multi,
                                        nsIOService::gDefaultSegmentSize);
         if (NS_FAILED(rv)) return rv;
-    } else {
-        mRequestStream = headers;
     }
+    else
+        mRequestStream = headers;
 
     nsCOMPtr<nsIThrottledInputChannel> throttled = do_QueryInterface(mChannel);
     nsIInputChannelThrottleQueue* queue;
@@ -374,8 +376,14 @@ nsHttpTransaction::Init(uint32_t caps,
         }
     }
 
+    uint64_t size_u64;
+    rv = mRequestStream->Available(&size_u64);
+    if (NS_FAILED(rv)) {
+        return rv;
+    }
+
     
-    mRequestSize = InScriptableRange(requestContentLength) ? static_cast<int64_t>(requestContentLength) : -1;
+    mRequestSize = InScriptableRange(size_u64) ? static_cast<int64_t>(size_u64) : -1;
 
     
     rv = NS_NewPipe2(getter_AddRefs(mPipeIn),
