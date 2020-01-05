@@ -33,7 +33,8 @@ public:
   struct Module
   {
     
-    std::string mName;
+    
+    nsString mName;
     std::string mBreakpadId;
 
     bool operator==(const Module& other) const;
