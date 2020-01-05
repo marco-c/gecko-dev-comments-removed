@@ -192,69 +192,67 @@ Zone::discardJitCode(FreeOp* fop, bool discardBaselineCode)
     if (!jitZone())
         return;
 
-    if (isPreservingCode()) {
-        PurgeJITCaches(this);
-    } else {
+    if (isPreservingCode())
+        return;
 
-        if (discardBaselineCode) {
+    if (discardBaselineCode) {
 #ifdef DEBUG
-            
-            for (auto script = cellIter<JSScript>(); !script.done(); script.next())
-                MOZ_ASSERT_IF(script->hasBaselineScript(), !script->baselineScript()->active());
+        
+        for (auto script = cellIter<JSScript>(); !script.done(); script.next())
+            MOZ_ASSERT_IF(script->hasBaselineScript(), !script->baselineScript()->active());
 #endif
 
-            
-            jit::MarkActiveBaselineScripts(this);
-        }
-
         
-        jit::InvalidateAll(fop, this);
-
-        for (auto script = cellIter<JSScript>(); !script.done(); script.next())  {
-            jit::FinishInvalidation(fop, script);
-
-            
-
-
-
-            if (discardBaselineCode)
-                jit::FinishDiscardBaselineScript(fop, script);
-
-            
-
-
-
-
-            script->resetWarmUpCounter();
-
-            
-
-
-
-            if (script->hasBaselineScript())
-                script->baselineScript()->setControlFlowGraph(nullptr);
-        }
-
-        
-
-
-
-
-
-
-
-        if (discardBaselineCode) {
-            jitZone()->optimizedStubSpace()->freeAllAfterMinorGC(this);
-            jitZone()->purgeIonCacheIRStubInfo();
-        }
-
-        
-
-
-
-
-        jitZone()->cfgSpace()->lifoAlloc().freeAll();
+        jit::MarkActiveBaselineScripts(this);
     }
+
+    
+    jit::InvalidateAll(fop, this);
+
+    for (auto script = cellIter<JSScript>(); !script.done(); script.next())  {
+        jit::FinishInvalidation(fop, script);
+
+        
+
+
+
+        if (discardBaselineCode)
+            jit::FinishDiscardBaselineScript(fop, script);
+
+        
+
+
+
+
+        script->resetWarmUpCounter();
+
+        
+
+
+
+        if (script->hasBaselineScript())
+            script->baselineScript()->setControlFlowGraph(nullptr);
+    }
+
+    
+
+
+
+
+
+
+
+    if (discardBaselineCode) {
+        jitZone()->optimizedStubSpace()->freeAllAfterMinorGC(this);
+        jitZone()->purgeIonCacheIRStubInfo();
+    }
+
+    
+
+
+
+
+    jitZone()->cfgSpace()->lifoAlloc().freeAll();
 }
 
 #ifdef JSGC_HASH_TABLE_CHECKS

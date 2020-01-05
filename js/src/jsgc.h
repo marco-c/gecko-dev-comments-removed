@@ -1405,9 +1405,6 @@ struct MOZ_RAII AutoDisableCompactingGC
     JSContext* cx;
 };
 
-void
-PurgeJITCaches(JS::Zone* zone);
-
 
 bool
 UninlinedIsInsideNursery(const gc::Cell* cell);
