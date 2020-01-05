@@ -4,6 +4,10 @@
 
 
 
+"use strict";
+
+
+
 
 
 
@@ -43,8 +47,7 @@ workerHelper.createTask(self, "pretty-print", ({ url, indent, source }) => {
       code: prettified.code,
       mappings: prettified.map._mappings
     };
-  }
-  catch (e) {
+  } catch (e) {
     return new Error(e.message + "\n" + e.stack);
   }
 });

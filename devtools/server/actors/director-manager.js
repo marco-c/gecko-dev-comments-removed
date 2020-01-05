@@ -9,8 +9,7 @@ const protocol = require("devtools/shared/protocol");
 
 const { Cu, Ci } = require("chrome");
 
-const { on, once, off, emit } = events;
-const { method, Arg, Option, RetVal, types } = protocol;
+const { on, off, emit } = events;
 
 const { sandbox, evaluate } = require("sdk/loader/sandbox");
 const { Class } = require("sdk/core/heritage");
@@ -38,7 +37,7 @@ const ERR_DIRECTOR_UNINSTALLED_SCRIPTID = "uninstalled director-script id";
 
 
 
-var MessagePortActor = exports.MessagePortActor = protocol.ActorClassWithSpec(messagePortSpec, {
+var MessagePortActor = protocol.ActorClassWithSpec(messagePortSpec, {
   
 
 
@@ -91,7 +90,7 @@ var MessagePortActor = exports.MessagePortActor = protocol.ActorClassWithSpec(me
     
     
     this.port.onmessage = (evt) => {
-      var ports;
+      let ports;
 
       
       if (Array.isArray(evt.ports)) {
@@ -138,6 +137,7 @@ var MessagePortActor = exports.MessagePortActor = protocol.ActorClassWithSpec(me
   },
 });
 
+exports.MessagePortActor = MessagePortActor;
 
 
 
@@ -149,7 +149,8 @@ var MessagePortActor = exports.MessagePortActor = protocol.ActorClassWithSpec(me
 
 
 
-var DirectorScriptActor = exports.DirectorScriptActor = protocol.ActorClassWithSpec(directorScriptSpec, {
+
+var DirectorScriptActor = protocol.ActorClassWithSpec(directorScriptSpec, {
   
 
 
@@ -205,6 +206,7 @@ var DirectorScriptActor = exports.DirectorScriptActor = protocol.ActorClassWithS
     on(this.tabActor, "window-destroyed", this._onGlobalDestroyed);
 
     
+    
     if (skipAttach) {
       return;
     }
@@ -213,7 +215,11 @@ var DirectorScriptActor = exports.DirectorScriptActor = protocol.ActorClassWithS
       this.window.location.reload();
     } else {
       
-      this._onGlobalCreated({ id: getWindowID(this.window), window: this.window, isTopLevel: true });
+      this._onGlobalCreated({
+        id: getWindowID(this.window),
+        window: this.window,
+        isTopLevel: true
+      });
     }
   },
 
@@ -272,7 +278,7 @@ var DirectorScriptActor = exports.DirectorScriptActor = protocol.ActorClassWithS
 
       
       this._lastAttachedWinId = id;
-      var port = this._scriptSandbox.attach(window, id);
+      let port = this._scriptSandbox.attach(window, id);
       this._onDirectorScriptAttach(window, port);
     } catch (e) {
       this._onDirectorScriptError(e);
@@ -334,10 +340,13 @@ var DirectorScriptActor = exports.DirectorScriptActor = protocol.ActorClassWithS
   }
 });
 
+exports.DirectorScriptActor = DirectorScriptActor;
 
 
 
-const DirectorManagerActor = exports.DirectorManagerActor = protocol.ActorClassWithSpec(directorManagerSpec, {
+
+
+exports.DirectorManagerActor = protocol.ActorClassWithSpec(directorManagerSpec, {
   
   initialize: function (conn, tabActor) {
     protocol.Actor.prototype.initialize.call(this, conn);
@@ -438,7 +447,7 @@ const DirectorManagerActor = exports.DirectorManagerActor = protocol.ActorClassW
 
 
   getByScriptId: function (scriptId) {
-    var id = scriptId;
+    let id = scriptId;
     
     if (!DirectorRegistry.checkInstalled(id)) {
       console.error(ERR_DIRECTOR_UNKNOWN_SCRIPTID, id);
@@ -454,7 +463,6 @@ const DirectorManagerActor = exports.DirectorManagerActor = protocol.ActorClassW
 
       
       if (!directorScriptDefinition) {
-
         console.error(ERR_DIRECTOR_UNINSTALLED_SCRIPTID, id);
         throw Error(ERR_DIRECTOR_UNINSTALLED_SCRIPTID);
       }
@@ -491,12 +499,12 @@ const DirectorScriptSandbox = Class({
   },
 
   attach: function (window, innerId) {
-    this._innerId = innerId,
+    this._innerId = innerId;
     this._window = window;
     this._proto = Cu.createObjectIn(this._window);
 
-    var id = this._scriptId;
-    var uri = this._scriptCode;
+    let id = this._scriptId;
+    let uri = this._scriptCode;
 
     this._sandbox = sandbox(window, {
       sandboxName: uri,
@@ -515,7 +523,7 @@ const DirectorScriptSandbox = Class({
 
     
     
-    var module = Cu.cloneInto(Object.create(null, {
+    let module = Cu.cloneInto(Object.create(null, {
       id: { enumerable: true, value: id },
       uri: { enumerable: true, value: uri },
       exports: { enumerable: true, value: Cu.createObjectIn(this._sandbox) }
@@ -530,7 +538,11 @@ const DirectorScriptSandbox = Class({
       exports: { enumerable: true, value: module.exports },
       console: {
         enumerable: true,
-        value: Cu.cloneInto(directorScriptConsole, this._sandbox, { cloneFunctions: true })
+        value: Cu.cloneInto(
+          directorScriptConsole,
+          this._sandbox,
+          { cloneFunctions: true }
+        )
       }
     });
 
@@ -545,6 +557,7 @@ const DirectorScriptSandbox = Class({
 
     
     
+    
 
     
     evaluate(this._sandbox, this._scriptCode, "javascript:" + this._scriptCode);
@@ -553,14 +566,17 @@ const DirectorScriptSandbox = Class({
     let { port1, port2 } = new this._window.MessageChannel();
 
     
-    var sandboxOnUnloadQueue = this._sandboxOnUnloadQueue = [];
+    let sandboxOnUnloadQueue = this._sandboxOnUnloadQueue = [];
 
     
-    var attachOptions = this._attachOptions = Cu.createObjectIn(this._sandbox);
+    let attachOptions = this._attachOptions = Cu.createObjectIn(this._sandbox);
     Object.defineProperties(attachOptions, {
       port: { enumerable: true, value: port1 },
       window: { enumerable: true, value: window },
-      scriptOptions: { enumerable: true, value: Cu.cloneInto(this._scriptOptions, this._sandbox) },
+      scriptOptions: {
+        enumerable: true,
+        value: Cu.cloneInto(this._scriptOptions, this._sandbox)
+      },
       onUnload: {
         enumerable: true,
         value: Cu.cloneInto(function (cb) {
@@ -573,7 +589,7 @@ const DirectorScriptSandbox = Class({
     });
 
     
-    var exports = this._proto.module.exports;
+    let exports = this._proto.module.exports;
     if (this._scriptOptions && "attachMethod" in this._scriptOptions) {
       this._sandboxOnAttach = exports[this._scriptOptions.attachMethod];
     } else {
@@ -591,7 +607,7 @@ const DirectorScriptSandbox = Class({
 
     return port2;
   },
-  destroy:  function (onError) {
+  destroy: function (onError) {
     
     while (this._sandboxOnUnloadQueue && this._sandboxOnUnloadQueue.length > 0) {
       let cb = this._sandboxOnUnloadQueue.pop();

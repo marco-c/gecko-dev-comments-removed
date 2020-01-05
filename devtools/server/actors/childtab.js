@@ -26,8 +26,7 @@ var { TabActor } = require("devtools/server/actors/tab");
 
 
 
-function ContentActor(connection, chromeGlobal, prefix)
-{
+function ContentActor(connection, chromeGlobal, prefix) {
   this._chromeGlobal = chromeGlobal;
   this._prefix = prefix;
   TabActor.call(this, connection, chromeGlobal);

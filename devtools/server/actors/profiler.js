@@ -16,7 +16,7 @@ loader.lazyRequireGetter(this, "events", "sdk/event/core");
 
 
 
-var ProfilerActor = exports.ProfilerActor = ActorClassWithSpec(profilerSpec, {
+exports.ProfilerActor = ActorClassWithSpec(profilerSpec, {
   initialize: function (conn) {
     Actor.prototype.initialize.call(this, conn);
     this._onProfilerEvent = this._onProfilerEvent.bind(this);

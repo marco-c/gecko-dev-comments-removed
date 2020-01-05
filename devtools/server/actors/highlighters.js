@@ -82,7 +82,7 @@ exports.register = register;
 
 
 
-var HighlighterActor = exports.HighlighterActor = protocol.ActorClassWithSpec(highlighterSpec, {
+exports.HighlighterActor = protocol.ActorClassWithSpec(highlighterSpec, {
   initialize: function (inspector, autohide) {
     protocol.Actor.prototype.initialize.call(this, null);
 
@@ -255,7 +255,8 @@ var HighlighterActor = exports.HighlighterActor = protocol.ActorClassWithSpec(hi
       
       
       if (event.shiftKey) {
-        events.emit(this._walker, "picker-node-previewed", this._findAndAttachElement(event));
+        events.emit(this._walker, "picker-node-previewed",
+          this._findAndAttachElement(event));
         return;
       }
 
@@ -351,8 +352,8 @@ var HighlighterActor = exports.HighlighterActor = protocol.ActorClassWithSpec(hi
             (!IS_OSX && event.ctrlKey && event.shiftKey)) {
             this.cancelPick();
             events.emit(this._walker, "picker-node-canceled");
-            return;
           }
+          return;
         default: return;
       }
 
@@ -370,7 +371,7 @@ var HighlighterActor = exports.HighlighterActor = protocol.ActorClassWithSpec(hi
   
 
 
-  pickAndFocus: function() {
+  pickAndFocus: function () {
     
     let pickResults = this.pick();
     this._highlighterEnv.window.focus();
@@ -429,7 +430,7 @@ var HighlighterActor = exports.HighlighterActor = protocol.ActorClassWithSpec(hi
 
 
 
-var CustomHighlighterActor = exports.CustomHighlighterActor = protocol.ActorClassWithSpec(customHighlighterSpec, {
+exports.CustomHighlighterActor = protocol.ActorClassWithSpec(customHighlighterSpec, {
   
 
 

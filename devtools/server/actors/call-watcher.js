@@ -3,13 +3,14 @@
 
 "use strict";
 
-const {Cc, Ci, Cu, Cr} = require("chrome");
+
+
+const {Ci, Cu} = require("chrome");
 const events = require("sdk/event/core");
 const protocol = require("devtools/shared/protocol");
 const {serializeStack, parseStack} = require("toolkit/loader");
 
-const {on, once, off, emit} = events;
-const {method, Arg, Option, RetVal} = protocol;
+const {on, off, emit} = events;
 
 const { functionCallSpec, callWatcherSpec } = require("devtools/shared/specs/call-watcher");
 const { CallWatcherFront } = require("devtools/shared/fronts/call-watcher");
@@ -48,7 +49,11 @@ var FunctionCallActor = protocol.ActorClassWithSpec(functionCallSpec, {
 
 
 
-  initialize: function (conn, [window, global, caller, type, name, stack, timestamp, args, result], holdWeak) {
+  initialize: function (
+    conn,
+    [window, global, caller, type, name, stack, timestamp, args, result],
+    holdWeak
+  ) {
     protocol.Actor.prototype.initialize.call(this, conn);
 
     this.details = {
@@ -76,9 +81,8 @@ var FunctionCallActor = protocol.ActorClassWithSpec(functionCallSpec, {
         args: { get: () => weakRefs.args.get() },
         result: { get: () => weakRefs.result.get() },
       });
-    }
-    
-    else {
+    } else {
+      
       this.details.window = window;
       this.details.caller = caller;
       this.details.args = args;
@@ -226,7 +230,7 @@ var FunctionCallActor = protocol.ActorClassWithSpec(functionCallSpec, {
 
 
 
-var CallWatcherActor = exports.CallWatcherActor = protocol.ActorClassWithSpec(callWatcherSpec, {
+exports.CallWatcherActor = protocol.ActorClassWithSpec(callWatcherSpec, {
   initialize: function (conn, tabActor) {
     protocol.Actor.prototype.initialize.call(this, conn);
     this.tabActor = tabActor;
@@ -255,7 +259,9 @@ var CallWatcherActor = exports.CallWatcherActor = protocol.ActorClassWithSpec(ca
 
 
 
-  setup: function ({ tracedGlobals, tracedFunctions, startRecording, performReload, holdWeak, storeCalls }) {
+  setup: function ({
+    tracedGlobals, tracedFunctions, startRecording, performReload, holdWeak, storeCalls
+  }) {
     if (this._initialized) {
       return;
     }
@@ -362,23 +368,22 @@ var CallWatcherActor = exports.CallWatcherActor = protocol.ActorClassWithSpec(ca
 
 
 
-    function overrideSymbol(global, target, name, callback) {
+    function overrideSymbol(global, target, name, subcallback) {
       let propertyDescriptor = Object.getOwnPropertyDescriptor(target, name);
 
       if (propertyDescriptor.get || propertyDescriptor.set) {
-        overrideAccessor(global, target, name, propertyDescriptor, callback);
+        overrideAccessor(global, target, name, propertyDescriptor, subcallback);
         return;
       }
       if (propertyDescriptor.writable && typeof propertyDescriptor.value == "function") {
-        overrideFunction(global, target, name, propertyDescriptor, callback);
-        return;
+        overrideFunction(global, target, name, propertyDescriptor, subcallback);
       }
     }
 
     
 
 
-    function overrideFunction(global, target, name, descriptor, callback) {
+    function overrideFunction(global, target, name, descriptor, subcallback) {
       
       
       let originalFunc = Cu.unwaiveXrays(target[name]);
@@ -395,7 +400,8 @@ var CallWatcherActor = exports.CallWatcherActor = protocol.ActorClassWithSpec(ca
           let type = CallWatcherFront.METHOD_FUNCTION;
           let stack = getStack(name);
           let timestamp = self.tabActor.window.performance.now() - self._timestampEpoch;
-          callback(unwrappedWindow, global, this, type, name, stack, timestamp, args, result);
+          subcallback(unwrappedWindow, global, this, type, name, stack, timestamp,
+            args, result);
         }
         return result;
       }, target, { defineAs: name });
@@ -410,7 +416,7 @@ var CallWatcherActor = exports.CallWatcherActor = protocol.ActorClassWithSpec(ca
     
 
 
-    function overrideAccessor(global, target, name, descriptor, callback) {
+    function overrideAccessor(global, target, name, descriptor, subcallback) {
       
       
       let originalGetter = Cu.unwaiveXrays(target.__lookupGetter__(name));
@@ -418,26 +424,32 @@ var CallWatcherActor = exports.CallWatcherActor = protocol.ActorClassWithSpec(ca
 
       Object.defineProperty(target, name, {
         get: function (...args) {
-          if (!originalGetter) return undefined;
+          if (!originalGetter) {
+            return undefined;
+          }
           let result = Cu.waiveXrays(originalGetter.apply(this, args));
 
           if (self._recording) {
             let type = CallWatcherFront.GETTER_FUNCTION;
             let stack = getStack(name);
             let timestamp = self.tabActor.window.performance.now() - self._timestampEpoch;
-            callback(unwrappedWindow, global, this, type, name, stack, timestamp, args, result);
+            subcallback(unwrappedWindow, global, this, type, name, stack, timestamp,
+              args, result);
           }
           return result;
         },
         set: function (...args) {
-          if (!originalSetter) return;
+          if (!originalSetter) {
+            return;
+          }
           originalSetter.apply(this, args);
 
           if (self._recording) {
             let type = CallWatcherFront.SETTER_FUNCTION;
             let stack = getStack(name);
             let timestamp = self.tabActor.window.performance.now() - self._timestampEpoch;
-            callback(unwrappedWindow, global, this, type, name, stack, timestamp, args, undefined);
+            subcallback(unwrappedWindow, global, this, type, name, stack, timestamp,
+              args, undefined);
           }
         },
         configurable: descriptor.configurable,
@@ -450,12 +462,13 @@ var CallWatcherActor = exports.CallWatcherActor = protocol.ActorClassWithSpec(ca
 
 
     function getStack(caller) {
+      let stack;
       try {
         
         
         throw new Error();
       } catch (e) {
-        var stack = e.stack;
+        stack = e.stack;
       }
 
       
@@ -588,8 +601,10 @@ function getBitToEnumValue(type, object, arg) {
   }
 
   
-  return table[arg] = flags.join(" | ") || arg;
+  table[arg] = flags.join(" | ") || arg;
+  return table[arg];
 }
+
 
 
 
@@ -614,14 +629,15 @@ function createContentError(e, win) {
     error = new constructor(message, name);
     Object.defineProperties(error, {
       code: { value: e.code },
-      columnNumber: { value: 0 }, 
-      filename: { value: fileName }, 
+      
+      columnNumber: { value: 0 },
+      
+      filename: { value: fileName },
       lineNumber: { value: lineNumber },
       result: { value: e.result },
       stack: { value: serializeStack(parsedStack) }
     });
-  }
-  else {
+  } else {
     
     
     

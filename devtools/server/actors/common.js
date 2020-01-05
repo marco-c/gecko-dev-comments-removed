@@ -78,7 +78,8 @@ function RegisteredActorFactory(options, prefix) {
     }
   }
 }
-RegisteredActorFactory.prototype.createObservedActorFactory = function (conn, parentActor) {
+RegisteredActorFactory.prototype.createObservedActorFactory = function (conn,
+  parentActor) {
   return new ObservedActorFactory(this._getConstructor, this._prefix, conn, parentActor);
 };
 exports.RegisteredActorFactory = RegisteredActorFactory;
@@ -110,9 +111,9 @@ function ObservedActorFactory(getConstructor, prefix, conn, parentActor) {
 }
 ObservedActorFactory.prototype.createActor = function () {
   
-  let c = this._getConstructor();
+  let C = this._getConstructor();
   
-  let instance = new c(this._conn, this._parentActor);
+  let instance = new C(this._conn, this._parentActor);
   instance.conn = this._conn;
   instance.parentID = this._parentActor.actorID;
   
@@ -161,24 +162,23 @@ exports.ObservedActorFactory = ObservedActorFactory;
 
 
 
-
-exports.createExtraActors = function createExtraActors(aFactories, aPool) {
+exports.createExtraActors = function createExtraActors(factories, pool) {
   
-  for (let name in aFactories) {
+  for (let name in factories) {
     let actor = this._extraActors[name];
     if (!actor) {
       
       
       
       
-      actor = aFactories[name].createObservedActorFactory(this.conn, this);
+      actor = factories[name].createObservedActorFactory(this.conn, this);
       this._extraActors[name] = actor;
     }
 
     
     
-    if (!aPool.has(actor.actorID)) {
-      aPool.addActor(actor);
+    if (!pool.has(actor.actorID)) {
+      pool.addActor(actor);
     }
   }
 };
@@ -196,10 +196,10 @@ exports.createExtraActors = function createExtraActors(aFactories, aPool) {
 
 
 
-exports.appendExtraActors = function appendExtraActors(aObject) {
+exports.appendExtraActors = function appendExtraActors(object) {
   for (let name in this._extraActors) {
     let actor = this._extraActors[name];
-    aObject[name] = actor.actorID;
+    object[name] = actor.actorID;
   }
 };
 
@@ -210,9 +210,8 @@ exports.appendExtraActors = function appendExtraActors(aObject) {
 
 
 
-function ActorPool(aConnection)
-{
-  this.conn = aConnection;
+function ActorPool(connection) {
+  this.conn = connection;
   this._actors = {};
 }
 
@@ -220,7 +219,7 @@ ActorPool.prototype = {
   
 
 
-  destroy: function AP_destroy() {
+  destroy: function APDestroy() {
     for (let id in this._actors) {
       this.removeActor(this._actors[id]);
     }
@@ -233,24 +232,24 @@ ActorPool.prototype = {
 
 
 
-  addActor: function AP_addActor(aActor) {
-    aActor.conn = this.conn;
-    if (!aActor.actorID) {
-      let prefix = aActor.actorPrefix;
-      if (!prefix && typeof aActor == "function") {
+  addActor: function APAddActor(actor) {
+    actor.conn = this.conn;
+    if (!actor.actorID) {
+      let prefix = actor.actorPrefix;
+      if (!prefix && typeof actor == "function") {
         
-        prefix = aActor.prototype.actorPrefix || aActor.prototype.typeName;
+        prefix = actor.prototype.actorPrefix || actor.prototype.typeName;
       }
-      aActor.actorID = this.conn.allocID(prefix || undefined);
+      actor.actorID = this.conn.allocID(prefix || undefined);
     }
 
     
-    if (aActor.registeredPool) {
-      delete aActor.registeredPool._actors[aActor.actorID];
+    if (actor.registeredPool) {
+      delete actor.registeredPool._actors[actor.actorID];
     }
-    aActor.registeredPool = this;
+    actor.registeredPool = this;
 
-    this._actors[aActor.actorID] = aActor;
+    this._actors[actor.actorID] = actor;
   },
 
   
@@ -268,26 +267,26 @@ ActorPool.prototype = {
     }
   },
 
-  get: function AP_get(aActorID) {
-    return this._actors[aActorID] || undefined;
+  get: function APGet(actorID) {
+    return this._actors[actorID] || undefined;
   },
 
-  has: function AP_has(aActorID) {
-    return aActorID in this._actors;
+  has: function APHas(actorID) {
+    return actorID in this._actors;
   },
 
   
 
 
-  isEmpty: function AP_isEmpty() {
+  isEmpty: function APIsEmpty() {
     return Object.keys(this._actors).length == 0;
   },
 
   
 
 
-  unmanage: function (aActor) {
-    return this.removeActor(aActor);
+  unmanage: function (actor) {
+    return this.removeActor(actor);
   },
 
   forEach: function (callback) {
@@ -482,7 +481,7 @@ exports.GeneratedLocation = GeneratedLocation;
 
 
 
-function expectState(expectedState, method, activity) {
+function expectState(expectedState, methodFunc, activity) {
   return function (...args) {
     if (this.state !== expectedState) {
       const msg = `Wrong state while ${activity}:` +
@@ -491,7 +490,7 @@ function expectState(expectedState, method, activity) {
       return promise.reject(new Error(msg));
     }
 
-    return method.apply(this, args);
+    return methodFunc.apply(this, args);
   };
 }
 
@@ -517,7 +516,7 @@ exports.actorBridge = actorBridge;
 
 
 
-function actorBridgeWithSpec (methodName) {
+function actorBridgeWithSpec(methodName) {
   return method(function () {
     return this.bridge[methodName].apply(this.bridge, arguments);
   });

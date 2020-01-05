@@ -34,7 +34,6 @@ const AddonsActor = protocol.ActorClassWithSpec(addonsSpec, {
     
     
     return { id: addon.id, actor: false };
-
   }),
 });
 

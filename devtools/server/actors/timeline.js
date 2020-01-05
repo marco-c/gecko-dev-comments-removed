@@ -26,7 +26,7 @@ const events = require("sdk/event/core");
 
 
 
-var TimelineActor = exports.TimelineActor = protocol.ActorClassWithSpec(timelineSpec, {
+exports.TimelineActor = protocol.ActorClassWithSpec(timelineSpec, {
   
 
 

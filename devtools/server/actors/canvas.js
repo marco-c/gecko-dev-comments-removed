@@ -3,27 +3,21 @@
 
 "use strict";
 
-const {Cc, Ci, Cu, Cr} = require("chrome");
-const events = require("sdk/event/core");
+
+
 const promise = require("promise");
 const protocol = require("devtools/shared/protocol");
 const {CallWatcherActor} = require("devtools/server/actors/call-watcher");
 const {CallWatcherFront} = require("devtools/shared/fronts/call-watcher");
-const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 const {WebGLPrimitiveCounter} = require("devtools/server/primitive");
 const {
   frameSnapshotSpec,
   canvasSpec,
   CANVAS_CONTEXTS,
   ANIMATION_GENERATORS,
-  LOOP_GENERATORS,
-  DRAW_CALLS,
-  INTERESTING_CALLS,
+  LOOP_GENERATORS
 } = require("devtools/shared/specs/canvas");
 const {CanvasFront} = require("devtools/shared/fronts/canvas");
-
-const {on, once, off, emit} = events;
-const {method, custom, Arg, Option, RetVal} = protocol;
 
 
 
@@ -73,7 +67,6 @@ var FrameSnapshotActor = protocol.ActorClassWithSpec(frameSnapshotSpec, {
 
 
   generateScreenshotFor: function (functionCall) {
-    let caller = functionCall.details.caller;
     let global = functionCall.details.global;
 
     let canvas = this._contentCanvas;
@@ -91,14 +84,20 @@ var FrameSnapshotActor = protocol.ActorClassWithSpec(frameSnapshotSpec, {
       last: index
     });
 
-    let { replayContext, replayContextScaling, lastDrawCallIndex, doCleanup } = replayData;
+    let {
+      replayContext,
+      replayContextScaling,
+      lastDrawCallIndex,
+      doCleanup
+    } = replayData;
     let [left, top, width, height] = replayData.replayViewport;
     let screenshot;
 
     
     
     if (global == "WebGLRenderingContext") {
-      screenshot = ContextUtils.getPixelsForWebGL(replayContext, left, top, width, height);
+      screenshot = ContextUtils.getPixelsForWebGL(replayContext, left, top,
+        width, height);
       screenshot.flipped = true;
     } else if (global == "CanvasRenderingContext2D") {
       screenshot = ContextUtils.getPixelsFor2D(replayContext, left, top, width, height);
@@ -120,7 +119,7 @@ var FrameSnapshotActor = protocol.ActorClassWithSpec(frameSnapshotSpec, {
 
 
 
-var CanvasActor = exports.CanvasActor = protocol.ActorClassWithSpec(canvasSpec, {
+exports.CanvasActor = protocol.ActorClassWithSpec(canvasSpec, {
   
   
   _animationContainsDrawCall: false,
@@ -192,6 +191,7 @@ var CanvasActor = exports.CanvasActor = protocol.ActorClassWithSpec(canvasSpec, 
 
 
 
+
   recordAnimationFrame: function () {
     if (this._callWatcher.isRecording()) {
       return this._currentAnimationFrameSnapshot.promise;
@@ -251,7 +251,6 @@ var CanvasActor = exports.CanvasActor = protocol.ActorClassWithSpec(canvasSpec, 
     if (CanvasFront.DRAW_CALLS.has(name) && this._animationStarted) {
       this._handleDrawCall(functionCall);
       this._webGLPrimitiveCounter.handleDrawPrimitive(functionCall);
-      return;
     }
   },
 
@@ -261,11 +260,10 @@ var CanvasActor = exports.CanvasActor = protocol.ActorClassWithSpec(canvasSpec, 
   _handleAnimationFrame: function (functionCall) {
     if (!this._animationStarted) {
       this._handleAnimationFrameBegin();
-    }
-    
-    
-    
-    else if (this._animationContainsDrawCall) {
+    } else if (this._animationContainsDrawCall) {
+      
+      
+      
       this._handleAnimationFrameEnd(functionCall);
     }
   },
@@ -294,7 +292,8 @@ var CanvasActor = exports.CanvasActor = protocol.ActorClassWithSpec(canvasSpec, 
     let index = this._lastDrawCallIndex;
     let width = this._lastContentCanvasWidth;
     let height = this._lastContentCanvasHeight;
-    let flipped = !!this._lastThumbnailFlipped; 
+    
+    let flipped = !!this._lastThumbnailFlipped;
     let pixels = ContextUtils.getPixelStorage()["8bit"];
     let primitiveResult = this._webGLPrimitiveCounter.getCounts();
     let animationFrameEndScreenshot = {
@@ -409,8 +408,8 @@ var ContextUtils = {
     srcX = 0, srcY = 0,
     srcWidth = gl.canvas.width,
     srcHeight = gl.canvas.height,
-    dstHeight = srcHeight)
-  {
+    dstHeight = srcHeight
+  ) {
     let contentPixels = ContextUtils.getPixelStorage(srcWidth, srcHeight);
     let { "8bit": charView, "32bit": intView } = contentPixels;
     gl.readPixels(srcX, srcY, srcWidth, srcHeight, gl.RGBA, gl.UNSIGNED_BYTE, charView);
@@ -441,8 +440,8 @@ var ContextUtils = {
     srcX = 0, srcY = 0,
     srcWidth = ctx.canvas.width,
     srcHeight = ctx.canvas.height,
-    dstHeight = srcHeight)
-  {
+    dstHeight = srcHeight
+  ) {
     let { data } = ctx.getImageData(srcX, srcY, srcWidth, srcHeight);
     let { "32bit": intView } = ContextUtils.usePixelStorage(data.buffer);
     return this.resizePixels(intView, srcWidth, srcHeight, dstHeight);
@@ -564,9 +563,8 @@ var ContextUtils = {
         gl.bindFramebuffer(gl.FRAMEBUFFER, oldFramebuffer);
         gl.viewport.apply(gl, oldViewport);
       };
-    }
-    
-    else if (contextType == "CanvasRenderingContext2D") {
+    } else if (contextType == "CanvasRenderingContext2D") {
+      
       let contentDocument = canvas.ownerDocument;
       let replayCanvas = contentDocument.createElement("canvas");
       replayCanvas.width = w;
@@ -589,7 +587,8 @@ var ContextUtils = {
       
       
       if (name == "viewport") {
-        let framebufferBinding = replayContext.getParameter(replayContext.FRAMEBUFFER_BINDING);
+        let framebufferBinding = replayContext.getParameter(
+          replayContext.FRAMEBUFFER_BINDING);
         if (framebufferBinding == customFramebuffer) {
           replayContext.viewport.apply(replayContext, customViewport);
           continue;
@@ -645,10 +644,11 @@ var ContextUtils = {
   usePixelStorage: function (buffer) {
     let array8bit = new Uint8Array(buffer);
     let array32bit = new Uint32Array(buffer);
-    return this._currentPixelStorage = {
+    this._currentPixelStorage = {
       "8bit": array8bit,
       "32bit": array32bit
     };
+    return this._currentPixelStorage;
   },
 
   
@@ -680,14 +680,17 @@ var ContextUtils = {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA,
+      gl.UNSIGNED_BYTE, null);
 
     let depthBuffer = gl.createRenderbuffer();
     gl.bindRenderbuffer(gl.RENDERBUFFER, depthBuffer);
     gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, width, height);
 
-    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, colorBuffer, 0);
-    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, depthBuffer);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D,
+      colorBuffer, 0);
+    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER,
+      depthBuffer);
 
     gl.bindTexture(gl.TEXTURE_2D, oldTextureBinding);
     gl.bindRenderbuffer(gl.RENDERBUFFER, oldRenderbufferBinding);
