@@ -310,11 +310,6 @@ user_pref("extensions.shield-recipe-client.api_url", "https://example.com/selfsu
 
 user_pref("media.eme.enabled", true);
 
-
-
-
-user_pref("media.eme.chromium-api.video-shmems", 0);
-
 user_pref("media.autoplay.enabled", true);
 
 
