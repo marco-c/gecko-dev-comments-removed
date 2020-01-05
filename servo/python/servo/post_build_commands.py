@@ -56,7 +56,7 @@ class MachCommands(CommandBase):
         env = self.build_env()
         env["RUST_BACKTRACE"] = "1"
 
-        args = self.get_binary_path(release)
+        args = [self.get_binary_path(release)]
 
         
         
