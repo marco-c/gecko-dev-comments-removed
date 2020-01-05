@@ -218,17 +218,20 @@ public:
     return mTextCtrlElement->GetRows();
   }
 
+  void UpdateOverlayTextVisibility(bool aNotify);
+
   
-  void UpdatePlaceholderVisibility(bool aNotify);
   bool GetPlaceholderVisibility() {
     return mPlaceholderVisibility;
   }
-
   void UpdatePlaceholderText(bool aNotify);
 
   
   void SetPreviewText(const nsAString& aValue, bool aNotify);
   void GetPreviewText(nsAString& aValue);
+  bool GetPreviewVisibility() {
+    return mPreviewVisibility;
+  }
 
   
 
@@ -450,6 +453,7 @@ private:
   bool mSelectionCached; 
   mutable bool mSelectionRestoreEagerInit; 
   bool mPlaceholderVisibility;
+  bool mPreviewVisibility;
   bool mIsCommittingComposition;
 };
 

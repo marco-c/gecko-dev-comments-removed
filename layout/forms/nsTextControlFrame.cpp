@@ -364,7 +364,7 @@ nsTextControlFrame::CreateAnonymousContent(nsTArray<ContentInfo>& aElements)
       
       
       
-      txtCtrl->UpdatePlaceholderVisibility(true);
+      txtCtrl->UpdateOverlayTextVisibility(true);
     }
   }
 
@@ -656,7 +656,7 @@ void nsTextControlFrame::SetFocus(bool aOn, bool aRepaint)
   
   
   if (mUsePlaceholder) {
-    txtCtrl->UpdatePlaceholderVisibility(true);
+    txtCtrl->UpdateOverlayTextVisibility(true);
   }
 
   if (!aOn) {
@@ -1183,7 +1183,7 @@ nsTextControlFrame::SetValueChanged(bool aValueChanged)
 
   if (mUsePlaceholder) {
     AutoWeakFrame weakFrame(this);
-    txtCtrl->UpdatePlaceholderVisibility(true);
+    txtCtrl->UpdateOverlayTextVisibility(true);
     if (!weakFrame.IsAlive()) {
       return;
     }
@@ -1236,10 +1236,10 @@ nsTextControlFrame::UpdateValueDisplay(bool aNotify,
   
   
   
-  if (mUsePlaceholder && !aBeforeEditorInit)
+  if ((mUsePlaceholder || mUsePreview) && !aBeforeEditorInit)
   {
     AutoWeakFrame weakFrame(this);
-    txtCtrl->UpdatePlaceholderVisibility(aNotify);
+    txtCtrl->UpdateOverlayTextVisibility(aNotify);
     NS_ENSURE_STATE(weakFrame.IsAlive());
   }
 
@@ -1357,8 +1357,10 @@ nsTextControlFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
   while (kid) {
     
     
-    if (kid->GetContent() != txtCtrl->GetPlaceholderNode() ||
-        txtCtrl->GetPlaceholderVisibility()) {
+    if (!((kid->GetContent() == txtCtrl->GetPlaceholderNode() &&
+           !txtCtrl->GetPlaceholderVisibility()) ||
+          (kid->GetContent() == txtCtrl->GetPreviewNode() &&
+           !txtCtrl->GetPreviewVisibility()))) {
       BuildDisplayListForChild(aBuilder, kid, aDirtyRect, set, 0);
     }
     kid = kid->GetNextSibling();
