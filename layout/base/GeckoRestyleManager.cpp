@@ -970,18 +970,7 @@ GeckoRestyleManager::ReparentStyleContext(nsIFrame* aFrame)
       
       
       if (!copyFromContinuation) {
-        uint32_t equalStructs;
-        uint32_t samePointerStructs;
-        DebugOnly<nsChangeHint> styleChange =
-          oldContext->CalcStyleDifference(newContext, nsChangeHint(0),
-                                          &equalStructs,
-                                          &samePointerStructs);
-        
-        
-        
-        
-        NS_ASSERTION(!(styleChange & nsChangeHint_ReconstructFrame),
-                     "Our frame tree is likely to be bogus!");
+        newContext->EnsureSameStructsCached(oldContext);
       }
 
       aFrame->SetStyleContext(newContext);
@@ -1035,21 +1024,7 @@ GeckoRestyleManager::ReparentStyleContext(nsIFrame* aFrame)
           if (newExtraContext != oldExtraContext) {
             
             
-            
-            uint32_t equalStructs;
-            uint32_t samePointerStructs;
-            DebugOnly<nsChangeHint> styleChange =
-              oldExtraContext->CalcStyleDifference(newExtraContext,
-                                                   nsChangeHint(0),
-                                                   &equalStructs,
-                                                   &samePointerStructs);
-            
-            
-            
-            
-            
-            NS_ASSERTION(!(styleChange & nsChangeHint_ReconstructFrame),
-                         "Our frame tree is likely to be bogus!");
+            newContext->EnsureSameStructsCached(oldContext);
           }
 
           aFrame->SetAdditionalStyleContext(contextIndex, newExtraContext);

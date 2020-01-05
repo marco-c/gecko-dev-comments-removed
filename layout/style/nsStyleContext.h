@@ -392,14 +392,6 @@ public:
 
 
 
-  void EnsureStructsForServo(const nsStyleContext* aOldContext);
-
-  
-
-
-
-
-
 
 
 
@@ -435,6 +427,12 @@ private:
                                            uint32_t* aSamePointerStructs);
 
 public:
+  
+
+
+
+  void EnsureSameStructsCached(nsStyleContext* aOldContext);
+
   
 
 
@@ -688,8 +686,6 @@ private:
         Servo_GetStyle##name_(mSource.AsServoComputedValues());         \
       /* perform any remaining main thread work on the struct */        \
       if (needToCompute) {                                              \
-        MOZ_ASSERT(NS_IsMainThread());                                  \
-        MOZ_ASSERT(!mozilla::ServoStyleSet::IsInServoTraversal());      \
         const_cast<nsStyle##name_*>(data)->FinishStyle(PresContext());  \
         /* the Servo-backed StyleContextSource owns the struct */       \
         AddStyleBit(NS_STYLE_INHERIT_BIT(name_));                       \
