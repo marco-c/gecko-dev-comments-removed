@@ -9,34 +9,199 @@
 
 
 
-
-
 "use strict";
 
+const Ci = Components.interfaces;
 const Cu = Components.utils;
+const Cc = Components.classes;
 
-Cu.import("resource://gre/modules/Task.jsm");
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 const { ManifestObtainer } =
-  Cu.import('resource://gre/modules/ManifestObtainer.jsm', {});
+  Cu.import("resource://gre/modules/ManifestObtainer.jsm", {});
 const { ManifestIcons } =
-  Cu.import('resource://gre/modules/ManifestIcons.jsm', {});
+  Cu.import("resource://gre/modules/ManifestIcons.jsm", {});
 
-function Manifest(browser) {
-  this.browser = browser;
-  this.data = null;
+XPCOMUtils.defineLazyModuleGetter(this, "OS",
+                                  "resource://gre/modules/osfile.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "JSONFile",
+                                  "resource://gre/modules/JSONFile.jsm");
+
+
+
+
+
+
+
+function generateHash(aString) {
+  const cryptoHash = Cc["@mozilla.org/security/hash;1"]
+    .createInstance(Ci.nsICryptoHash);
+  cryptoHash.init(Ci.nsICryptoHash.MD5);
+  const stringStream = Cc["@mozilla.org/io/string-input-stream;1"]
+    .createInstance(Ci.nsIStringInputStream);
+  stringStream.data = aString;
+  cryptoHash.updateFromStream(stringStream, -1);
+  
+  return cryptoHash.finish(true).replace(/\//g, "-");
 }
 
-Manifest.prototype.install = Task.async(function* () {
-  this.data = yield ManifestObtainer.browserObtainManifest(this.browser);
-});
 
-Manifest.prototype.icon = Task.async(function* (expectedSize) {
-  return yield ManifestIcons.browserFetchIcon(this.browser, this.data, expectedSize);
-});
 
-Manifest.prototype.name = function () {
-  return this.data.short_name || this.data.short_url;
+
+function stripQuery(url) {
+  return url.split("?")[0];
 }
 
-this.EXPORTED_SYMBOLS = ["Manifest"]; 
+
+const MANIFESTS_DIR = OS.Path.join(OS.Constants.Path.profileDir, "manifests");
+
+
+
+const MANIFESTS_FILE = "manifest-scopes.json";
+
+
+
+
+
+class Manifest {
+
+  constructor(browser, manifestUrl) {
+    this._manifestUrl = manifestUrl;
+    
+    
+    const fileName = generateHash(manifestUrl) + ".json";
+    this._path = OS.Path.join(MANIFESTS_DIR, fileName);
+    this._browser = browser;
+  }
+
+  async initialise() {
+    this._store = new JSONFile({path: this._path});
+    await this._store.load();
+  }
+
+  async install() {
+    const manifestData = await ManifestObtainer.browserObtainManifest(this._browser);
+    this._store.data = {
+      installed: true,
+      manifest: manifestData
+    };
+    Manifests.manifestInstalled(this);
+    this._store.saveSoon();
+  }
+
+  async icon(expectedSize) {
+    return await ManifestIcons
+      .browserFetchIcon(this._browser, this._store.data.manifest, expectedSize);
+  }
+
+  get scope() {
+    const scope = this._store.data.manifest.scope ||
+      this._store.data.manifest.start_url;
+    return stripQuery(scope);
+  }
+
+  get name() {
+    return this._store.data.manifest.short_name ||
+      this._store.data.manifest.short_url;
+  }
+
+  get url() {
+    return this._manifestUrl;
+  }
+
+  get installed() {
+    return this._store.data && this._store.data.installed || false;
+  }
+
+  get start_url() {
+    return this._store.data.manifest.start_url;
+  }
+}
+
+
+
+
+var Manifests = {
+
+  async initialise () {
+
+    if (this.started) {
+      return this.started;
+    }
+
+    this.started = (async function() {
+
+      
+      await OS.File.makeDir(MANIFESTS_DIR, {ignoreExisting: true});
+
+      
+      this._path = OS.Path.join(OS.Constants.Path.profileDir, MANIFESTS_FILE);
+      this._store = new JSONFile({path: this._path});
+      await this._store.load();
+
+      
+      if (!this._store.data.hasOwnProperty("scopes")) {
+        this._store.data.scopes = new Map();
+      }
+
+      
+      
+      this.manifestObjs = {};
+
+    }).bind(this)();
+
+    return this.started;
+  },
+
+  
+  
+  manifestInstalled(manifest) {
+    this._store.data.scopes[manifest.scope] = manifest.url;
+    this._store.saveSoon();
+  },
+
+  
+  
+  findManifestUrl(url) {
+    for (let scope in this._store.data.scopes) {
+      if (url.startsWith(scope)) {
+        return this._store.data.scopes[scope];
+      }
+    }
+    return null;
+  },
+
+  
+  
+  async getManifest(browser, manifestUrl) {
+
+    
+    await this.initialise();
+
+    
+    
+    
+    if (!manifestUrl) {
+      const url = stripQuery(browser.currentURI.spec);
+      manifestUrl = this.findManifestUrl(url);
+    }
+
+    
+    if (manifestUrl === null) {
+      return null;
+    }
+
+    
+    if (manifestUrl in this.manifestObjs) {
+      return this.manifestObjs[manifestUrl];
+    }
+
+    
+    this.manifestObjs[manifestUrl] = new Manifest(browser, manifestUrl);
+    await this.manifestObjs[manifestUrl].initialise();
+    return this.manifestObjs[manifestUrl];
+  }
+
+};
+
+this.EXPORTED_SYMBOLS = ["Manifests"]; 
