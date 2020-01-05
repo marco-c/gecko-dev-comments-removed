@@ -335,7 +335,7 @@ const load = iced(function load(loader, module) {
   });
 
   let sandbox;
-  if (loader.sharedGlobalSandbox &&
+  if ((loader.useSharedGlobalSandbox || isSystemURI(module.uri)) &&
       loader.sharedGlobalBlocklist.indexOf(module.id) == -1) {
     
     
@@ -343,6 +343,7 @@ const load = iced(function load(loader, module) {
     
     getOwnIdentifiers(globals).forEach(function(name) {
       descriptors[name] = getOwnPropertyDescriptor(globals, name)
+      descriptors[name].configurable = true;
     });
     Object.defineProperties(sandbox, descriptors);
   }
@@ -626,6 +627,14 @@ const Require = iced(function Require(loader, requirer) {
     requireHook
   } = loader;
 
+  if (isSystemURI(requirer.uri)) {
+    
+    
+    
+    isNative = false;
+    loaderResolve = Loader.resolve;
+  }
+
   function require(id) {
     if (!id) 
       throw Error('You must provide a module name when calling require() from '
@@ -756,6 +765,9 @@ const Require = iced(function Require(loader, requirer) {
       if (!requirement) {
         requirement = isRelative(id) ? Loader.resolve(id, requirer.id) : id;
       }
+    }
+    else if (modules[id]) {
+      uri = requirement = id;
     }
     else if (requirer) {
       
@@ -933,24 +945,21 @@ function Loader(options) {
     modules[uri] = freeze(module);
   }
 
-  let sharedGlobalSandbox;
-  if (sharedGlobal) {
-    
-    
-    
-    
-    sharedGlobalSandbox = Sandbox({
-      name: "Addon-SDK",
-      wantXrays: false,
-      wantGlobalProperties: [],
-      invisibleToDebugger: options.invisibleToDebugger || false,
-      metadata: {
-        addonID: options.id,
-        URI: "Addon-SDK"
-      },
-      prototype: options.sandboxPrototype || {}
-    });
-  }
+  
+  
+  
+  
+  let sharedGlobalSandbox = Sandbox({
+    name: "Addon-SDK",
+    wantXrays: false,
+    wantGlobalProperties: [],
+    invisibleToDebugger: options.invisibleToDebugger || false,
+    metadata: {
+      addonID: options.id,
+      URI: "Addon-SDK"
+    },
+    prototype: options.sandboxPrototype || {}
+  });
 
   
   
@@ -962,6 +971,7 @@ function Loader(options) {
     
     modules: { enumerable: false, value: modules },
     metadata: { enumerable: false, value: metadata },
+    useSharedGlobalSandbox: { enumerable: false, value: !!sharedGlobal },
     sharedGlobalSandbox: { enumerable: false, value: sharedGlobalSandbox },
     sharedGlobalBlocklist: { enumerable: false, value: sharedGlobalBlocklist },
     sharedGlobalBlacklist: { enumerable: false, value: sharedGlobalBlocklist },
@@ -1000,6 +1010,8 @@ function Loader(options) {
   return freeze(Object.create(null, returnObj));
 };
 Loader.Loader = Loader;
+
+var isSystemURI = uri => /^resource:\/\/(gre|devtools|testing-common)\//.test(uri);
 
 var isJSONURI = uri => uri.endsWith('.json');
 var isJSMURI = uri => uri.endsWith('.jsm');

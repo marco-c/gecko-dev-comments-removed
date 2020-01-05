@@ -298,8 +298,11 @@ function loadSandbox(uri) {
 }
 
 function unloadSandbox(sandbox) {
-  if ("nukeSandbox" in Cu)
-    Cu.nukeSandbox(sandbox);
+  if ("nukeSandbox" in Cu) {
+    try {
+      Cu.nukeSandbox(sandbox);
+    } catch (e) {}
+  }
 }
 
 function setTimeout(callback, delay) {
@@ -346,6 +349,7 @@ function nukeModules() {
     
     unloadSandbox(sandbox);
   }
+  unloadSandbox(loader.sharedGlobalSandbox);
   loader = null;
 
   
