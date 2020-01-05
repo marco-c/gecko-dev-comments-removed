@@ -341,6 +341,34 @@ nsCaret::GetGeometryForFrame(nsIFrame* aFrame,
     framePos.y = baseline - ascent;
   }
   Metrics caretMetrics = ComputeMetrics(aFrame, aFrameOffset, height);
+
+  nsTextFrame* textFrame = do_QueryFrame(aFrame);
+  if (textFrame) {
+    gfxTextRun* textRun =
+      textFrame->GetTextRun(nsTextFrame::TextRunType::eInflated);
+    if (textRun) {
+      
+      
+      
+      bool textRunDirIsReverseOfFrame =
+        wm.IsInlineReversed() != textRun->IsInlineReversed();
+      
+      
+      
+      
+      
+      
+      if (textRunDirIsReverseOfFrame != textRun->IsSidewaysLeft()) {
+        int dir = wm.IsBidiLTR() ? -1 : 1;
+        if (vertical) {
+          framePos.y += dir * caretMetrics.mCaretWidth;
+        } else {
+          framePos.x += dir * caretMetrics.mCaretWidth;
+        }
+      }
+    }
+  }
+
   rect = nsRect(framePos, vertical ? nsSize(height, caretMetrics.mCaretWidth) :
                                      nsSize(caretMetrics.mCaretWidth, height));
 
