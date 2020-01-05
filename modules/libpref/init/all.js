@@ -1700,12 +1700,7 @@ pref("dom.server-events.default-reconnection-time", 5000);
 
 pref("network.jar.open-unsafe-types", false);
 
-#ifdef RELEASE_OR_BETA
-
-pref("network.jar.block-remote-files", false);
-#else
 pref("network.jar.block-remote-files", true);
-#endif
 
 
 
@@ -4914,12 +4909,6 @@ pref("dom.w3c_touch_events.enabled", 2);
 pref("dom.w3c_pointer_events.enabled", true);
 #else
 pref("dom.w3c_pointer_events.enabled", false);
-#endif
-
-
-
-#if defined(XP_WIN)
-pref("dom.w3c_pointer_events.dispatch_by_pointer_messages", false);
 #endif
 
 
