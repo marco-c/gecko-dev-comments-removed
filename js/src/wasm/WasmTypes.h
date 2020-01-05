@@ -1629,7 +1629,9 @@ class DebugFrame
 
     
 #if JS_BITS_PER_WORD == 32
+  protected: 
     void* padding_;
+  private:
 #endif
 
     
