@@ -400,9 +400,12 @@ BackgroundHangThread::ReportHang(PRIntervalTime aHangTime)
   
 
   
-  for (const char** f = &mHangStack.back(); f >= mHangStack.begin(); f--) {
+  for (size_t i = 0; i < mHangStack.length(); ) {
+    const char** f = mHangStack.begin() + i;
     if (!mHangStack.IsInBuffer(*f) && !strcmp(*f, "js::RunScript")) {
       mHangStack.erase(f);
+    } else {
+      i++;
     }
   }
 
