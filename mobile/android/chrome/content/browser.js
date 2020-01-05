@@ -4344,12 +4344,23 @@ Tab.prototype = {
 
   onLocationChange: function(aWebProgress, aRequest, aLocationURI, aFlags) {
     let contentWin = aWebProgress.DOMWindow;
+    let webNav = contentWin.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIWebNavigation);
 
     
     
     
-    if (BrowserApp.getBrowserForWindow(contentWin) == null)
+    if (BrowserApp.getBrowserForWindow(contentWin) == null) {
+      
+      let message = {
+        type: "Content:SubframeNavigation",
+        tabID: this.id,
+        canGoBack: webNav.canGoBack,
+        canGoForward: webNav.canGoForward,
+      };
+
+      GlobalEventDispatcher.sendRequest(message);
       return;
+    }
 
     this._hostChanged = true;
 
@@ -4432,8 +4443,6 @@ Tab.prototype = {
     if (BrowserApp.selectedTab == this) {
       ExternalApps.updatePageActionUri(fixedURI);
     }
-
-    let webNav = contentWin.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIWebNavigation);
 
     let message = {
       type: "Content:LocationChange",
