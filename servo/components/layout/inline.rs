@@ -943,7 +943,14 @@ impl InlineFlow {
     
     pub fn compute_minimum_ascent_and_descent(&self,
                                               font_context: &mut FontContext,
-                                              style: &ComputedValues) -> (Au, Au) {
+                                              style: &ComputedValues)
+                                              -> (Au, Au) {
+        
+        
+        if self.fragments.fragments.iter().all(|fragment| fragment.is_hypothetical()) {
+            return (Au(0), Au(0))
+        }
+
         let font_style = text::computed_style_to_font_style(style);
         let font_metrics = text::font_metrics_for_style(font_context, &font_style);
         let line_height = text::line_height_from_style(style, &font_metrics);
