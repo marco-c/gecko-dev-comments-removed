@@ -232,8 +232,6 @@ var whitelist = new Set([
   {file: "resource://gre-resources/indeterminate-checkmark.svg"},
   {file: "resource://gre-resources/radio.svg"},
   
-  {file: "resource://gre/modules/AsyncSpellCheckTestHelper.jsm"},
-  
   {file: "resource://gre/modules/Battery.jsm"},
   
   {file: "resource://gre/modules/ContentPrefInstance.jsm"},
