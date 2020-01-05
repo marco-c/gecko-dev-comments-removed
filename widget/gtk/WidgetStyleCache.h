@@ -28,7 +28,6 @@ GetWidget(WidgetNodeType aNodeType);
 GtkStyleContext*
 CreateStyleForWidget(GtkWidget* aWidget, GtkStyleContext* aParentStyle);
 
-
 GtkStyleContext*
 CreateCSSNode(const char*      aName,
               GtkStyleContext* aParentStyle,
