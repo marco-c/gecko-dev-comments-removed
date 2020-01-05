@@ -382,7 +382,7 @@ Statement::internalFinalize(bool aDestructing)
     
     
 
-    char *msg = ::mozilla::Smprintf("SQL statement (%p) should have been finalized"
+    SmprintfPointer msg = ::mozilla::Smprintf("SQL statement (%p) should have been finalized"
       " before garbage-collection. For more details on this statement, set"
       " NSPR_LOG_MESSAGES=mozStorage:5 .",
       mDBStatement);
@@ -397,13 +397,11 @@ Statement::internalFinalize(bool aDestructing)
 #if 0
     
     
-    NS_WARNING(msg);
+    NS_WARNING(msg.get());
 #endif 
 
     
-    MOZ_LOG(gStorageLog, LogLevel::Warning, ("%s", msg));
-
-    ::mozilla::SmprintfFree(msg);
+    MOZ_LOG(gStorageLog, LogLevel::Warning, ("%s", msg.get()));
   }
 
 #endif
