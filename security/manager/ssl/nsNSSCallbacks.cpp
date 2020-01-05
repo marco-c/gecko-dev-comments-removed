@@ -1067,9 +1067,10 @@ AccumulateCipherSuite(Telemetry::HistogramID probe, const SSLChannelInfo& channe
 
 
 
+
 static void
-DetermineEVStatusAndSetNewCert(RefPtr<nsSSLStatus> sslStatus, PRFileDesc* fd,
-                               nsNSSSocketInfo* infoObject)
+DetermineEVAndCTStatusAndSetNewCert(RefPtr<nsSSLStatus> sslStatus,
+                                    PRFileDesc* fd, nsNSSSocketInfo* infoObject)
 {
   MOZ_ASSERT(sslStatus);
   MOZ_ASSERT(fd);
@@ -1115,6 +1116,7 @@ DetermineEVStatusAndSetNewCert(RefPtr<nsSSLStatus> sslStatus, PRFileDesc* fd,
   }
 
   SECOidTag evOidPolicy;
+  CertificateTransparencyInfo certificateTransparencyInfo;
   UniqueCERTCertList unusedBuiltChain;
   const bool saveIntermediates = false;
   mozilla::pkix::Result rv = certVerifier->VerifySSLServerCert(
@@ -1128,10 +1130,16 @@ DetermineEVStatusAndSetNewCert(RefPtr<nsSSLStatus> sslStatus, PRFileDesc* fd,
     saveIntermediates,
     flags,
     infoObject->GetOriginAttributes(),
-    &evOidPolicy);
+    &evOidPolicy,
+    nullptr, 
+    nullptr, 
+    nullptr, 
+    nullptr, 
+    &certificateTransparencyInfo);
 
   RefPtr<nsNSSCertificate> nssc(nsNSSCertificate::Create(cert.get()));
   if (rv == Success && evOidPolicy != SEC_OID_UNKNOWN) {
+    sslStatus->SetCertificateTransparencyInfo(certificateTransparencyInfo);
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
             ("HandshakeCallback using NEW cert %p (is EV)", nssc.get()));
     sslStatus->SetServerCert(nssc, EVStatus::EV);
@@ -1139,6 +1147,10 @@ DetermineEVStatusAndSetNewCert(RefPtr<nsSSLStatus> sslStatus, PRFileDesc* fd,
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
             ("HandshakeCallback using NEW cert %p (is not EV)", nssc.get()));
     sslStatus->SetServerCert(nssc, EVStatus::NotEV);
+  }
+
+  if (rv == Success) {
+    sslStatus->SetCertificateTransparencyInfo(certificateTransparencyInfo);
   }
 }
 
@@ -1290,7 +1302,7 @@ void HandshakeCallback(PRFileDesc* fd, void* client_data) {
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
            ("HandshakeCallback KEEPING existing cert\n"));
   } else {
-    DetermineEVStatusAndSetNewCert(status, fd, infoObject);
+    DetermineEVAndCTStatusAndSetNewCert(status, fd, infoObject);
   }
 
   bool domainMismatch;
