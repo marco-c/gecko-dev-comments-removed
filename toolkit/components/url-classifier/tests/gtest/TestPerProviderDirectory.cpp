@@ -1,5 +1,4 @@
 #include "LookupCache.h"
-#include "LookupCacheV4.h"
 #include "HashStore.h"
 #include "gtest/gtest.h"
 #include "nsIThread.h"
@@ -82,12 +81,12 @@ TEST(PerProviderDirectory, LookupCache)
 
     
     
-    VerifyPrivateStorePath<LookupCacheV2>("goog-phish-shavar", "google", rootDir, false);
+    VerifyPrivateStorePath<LookupCache>("goog-phish-shavar", "google", rootDir, false);
 
     
     
-    VerifyPrivateStorePath<LookupCacheV4>("goog-noprovider-proto", "", rootDir, false);
-    VerifyPrivateStorePath<LookupCacheV4>("goog-phish-proto", "google4", rootDir, true);
+    VerifyPrivateStorePath<LookupCache>("goog-noprovider-proto", "", rootDir, false);
+    VerifyPrivateStorePath<LookupCache>("goog-phish-proto", "google4", rootDir, true);
   });
 }
 
