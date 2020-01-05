@@ -12,7 +12,7 @@ namespace mozilla {
 
 
 
-enum class StyleBackendType : int
+enum class StyleBackendType : uint8_t
 {
   Gecko = 1,
   Servo
