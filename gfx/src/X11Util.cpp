@@ -57,13 +57,15 @@ ScopedXErrorHandler::ErrorHandler(Display *, XErrorEvent *ev)
     return 0;
 }
 
-ScopedXErrorHandler::ScopedXErrorHandler()
+ScopedXErrorHandler::ScopedXErrorHandler(bool aAllowOffMainThread)
 {
-    
-    
-    NS_WARNING_ASSERTION(
+    if (!aAllowOffMainThread) {
+      
+      
+      NS_WARNING_ASSERTION(
         NS_IsMainThread(),
         "ScopedXErrorHandler being called off main thread, may cause issues");
+    }
     
     
     mOldXErrorPtr = sXErrorPtr;
