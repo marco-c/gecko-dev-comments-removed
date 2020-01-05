@@ -1454,6 +1454,55 @@ var TelemetryStorageImpl = {
     }
   },
 
+  
+
+
+
+  async _migrateAppDataPings() {
+    this._log.trace("_migrateAppDataPings");
+
+    
+    
+    
+    if (!OS.Constants.Path.userApplicationDataDir) {
+      this._log.trace("_migrateAppDataPings - userApplicationDataDir is not defined. Is this a test?");
+      return;
+    }
+
+    const appDataPendingPings =
+      OS.Path.join(OS.Constants.Path.userApplicationDataDir, "Pending Pings");
+
+    
+    let iter = new OS.File.DirectoryIterator(appDataPendingPings);
+    try {
+      
+      if (!(await iter.exists())) {
+        this._log.trace("_migrateAppDataPings - the AppData pending pings directory doesn't exist.");
+        return;
+      }
+
+      let files = (await iter.nextBatch()).filter(e => !e.isDir);
+      for (let file of files) {
+        try {
+          
+          const pingData = await this.loadPingFile(file.path);
+
+          
+          
+          await TelemetryStorage.savePing(pingData, true);
+
+          
+          await OS.File.remove(file.path);
+        } catch (ex) {
+          this._log.error("_migrateAppDataPings - failed to remove file " + file.path, ex);
+          continue;
+        }
+      }
+    } finally {
+      await iter.close();
+    }
+  },
+
   loadPendingPingList() {
     
     if (this._scanPendingPingsTask) {
@@ -1483,6 +1532,10 @@ var TelemetryStorageImpl = {
 
   async _scanPendingPings() {
     this._log.trace("_scanPendingPings");
+
+    
+    
+    await this._migrateAppDataPings();
 
     let directory = TelemetryStorage.pingDirectoryPath;
     let iter = new OS.File.DirectoryIterator(directory);
