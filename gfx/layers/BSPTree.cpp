@@ -57,19 +57,13 @@ BSPTree::BuildTree(BSPTreeNode* aRoot,
   }
 
   const gfx::Polygon& plane = aRoot->First();
-  MOZ_ASSERT(!plane.IsEmpty());
-
-  const gfx::Point4D& planeNormal = plane.GetNormal();
-  const gfx::Point4D& planePoint = plane.GetPoints()[0];
 
   std::list<LayerPolygon> backLayers, frontLayers;
   for (LayerPolygon& layerPolygon : aLayers) {
-    const nsTArray<gfx::Point4D>& geometry = layerPolygon.geometry->GetPoints();
+    const Maybe<gfx::Polygon>& geometry = layerPolygon.geometry;
 
-    
     size_t pos = 0, neg = 0;
-    nsTArray<float> distances =
-      CalculatePointPlaneDistances(geometry, planeNormal, planePoint, pos, neg);
+    nsTArray<float> dots = geometry->CalculateDotProducts(plane, pos, neg);
 
     
     if (pos == 0 && neg > 0) {
@@ -86,13 +80,10 @@ BSPTree::BuildTree(BSPTreeNode* aRoot,
     
     else if (pos > 0 && neg > 0) {
       nsTArray<gfx::Point4D> backPoints, frontPoints;
-      
-      
-      ClipPointsWithPlane(geometry, planeNormal, distances,
-                          backPoints, frontPoints);
+      geometry->SplitPolygon(plane.GetNormal(), dots, backPoints, frontPoints);
 
-      const gfx::Point4D& normal = layerPolygon.geometry->GetNormal();
-      Layer* layer = layerPolygon.layer;
+      const gfx::Point4D& normal = geometry->GetNormal();
+      Layer *layer = layerPolygon.layer;
 
       if (backPoints.Length() >= 3) {
         backLayers.emplace_back(layer, Move(backPoints), normal);
