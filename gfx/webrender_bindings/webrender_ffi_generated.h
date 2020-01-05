@@ -6,6 +6,8 @@
 
 
 
+
+
 enum class WrBorderStyle : uint32_t {
   None = 0,
   Solid = 1,
@@ -49,6 +51,7 @@ enum class WrImageFormat : uint32_t {
   RGB8 = 2,
   RGBA8 = 3,
   RGBAF32 = 4,
+  RG8 = 5,
 
   Sentinel 
 };
@@ -126,6 +129,14 @@ struct WrByteSlice {
   bool operator==(const WrByteSlice& aOther) const {
     return buffer == aOther.buffer &&
       len == aOther.len;
+  }
+};
+
+struct WrExternalImageId {
+  uint64_t mHandle;
+
+  bool operator==(const WrExternalImageId& aOther) const {
+    return mHandle == aOther.mHandle;
   }
 };
 
@@ -463,14 +474,6 @@ struct WrExternalImage {
   }
 };
 
-struct WrExternalImageId {
-  uint64_t mHandle;
-
-  bool operator==(const WrExternalImageId& aOther) const {
-    return mHandle == aOther.mHandle;
-  }
-};
-
 typedef WrExternalImage (*LockExternalImageCallback)(void*, WrExternalImageId);
 
 typedef void (*UnlockExternalImageCallback)(void*, WrExternalImageId);
@@ -522,14 +525,14 @@ WR_INLINE void
 wr_api_add_external_image_buffer(WrAPI* api,
     WrImageKey image_key,
     const WrImageDescriptor* descriptor,
-    uint64_t external_image_id)
+    WrExternalImageId external_image_id)
 WR_FUNC;
 
 WR_INLINE void
 wr_api_add_external_image_handle(WrAPI* api,
     WrImageKey image_key,
     const WrImageDescriptor* descriptor,
-    uint64_t external_image_id)
+    WrExternalImageId external_image_id)
 WR_FUNC;
 
 WR_INLINE void

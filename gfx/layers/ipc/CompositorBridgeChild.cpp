@@ -654,7 +654,7 @@ CompositorBridgeChild::SharedFrameMetricsData::SharedFrameMetricsData(
   , mAPZCId(aAPZCId)
 {
   mBuffer = new ipc::SharedMemoryBasic;
-  mBuffer->SetHandle(metrics, ipc::SharedMemory::RightsReadOnly);
+  mBuffer->SetHandle(metrics);
   mBuffer->Map(sizeof(FrameMetrics));
   mMutex = new CrossProcessMutex(handle);
   MOZ_COUNT_CTOR(SharedFrameMetricsData);
@@ -672,8 +672,7 @@ CompositorBridgeChild::SharedFrameMetricsData::~SharedFrameMetricsData()
 void
 CompositorBridgeChild::SharedFrameMetricsData::CopyFrameMetrics(FrameMetrics* aFrame)
 {
-  const FrameMetrics* frame =
-    static_cast<const FrameMetrics*>(mBuffer->memory());
+  FrameMetrics* frame = static_cast<FrameMetrics*>(mBuffer->memory());
   MOZ_ASSERT(frame);
   mMutex->Lock();
   *aFrame = *frame;
@@ -683,8 +682,7 @@ CompositorBridgeChild::SharedFrameMetricsData::CopyFrameMetrics(FrameMetrics* aF
 FrameMetrics::ViewID
 CompositorBridgeChild::SharedFrameMetricsData::GetViewID()
 {
-  const FrameMetrics* frame =
-    static_cast<const FrameMetrics*>(mBuffer->memory());
+  FrameMetrics* frame = static_cast<FrameMetrics*>(mBuffer->memory());
   MOZ_ASSERT(frame);
   
   
@@ -1185,7 +1183,7 @@ CompositorBridgeChild::DeallocPWebRenderBridgeChild(PWebRenderBridgeChild* aActo
   return true;
 }
 
-uint64_t
+wr::ExternalImageId
 CompositorBridgeChild::GetNextExternalImageId()
 {
   static uint32_t sNextID = 1;
@@ -1194,7 +1192,7 @@ CompositorBridgeChild::GetNextExternalImageId()
 
   uint64_t imageId = mNamespace;
   imageId = imageId << 32 | sNextID;
-  return imageId;
+  return wr::ToExternalImageId(imageId);
 }
 
 } 
