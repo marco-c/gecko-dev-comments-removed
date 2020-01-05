@@ -268,6 +268,15 @@ protected:
   Master* mMaster;
 };
 
+
+
+
+
+
+
+
+
+
 class MediaDecoderStateMachine::DecodeMetadataState
   : public MediaDecoderStateMachine::StateObject
 {
@@ -346,6 +355,13 @@ private:
   bool mPendingDormant = false;
 };
 
+
+
+
+
+
+
+
 class MediaDecoderStateMachine::WaitForCDMState
   : public MediaDecoderStateMachine::StateObject
 {
@@ -390,6 +406,12 @@ private:
   bool mPendingDormant = false;
 };
 
+
+
+
+
+
+
 class MediaDecoderStateMachine::DormantState
   : public MediaDecoderStateMachine::StateObject
 {
@@ -430,6 +452,15 @@ public:
     
   }
 };
+
+
+
+
+
+
+
+
+
 
 class MediaDecoderStateMachine::DecodingFirstFrameState
   : public MediaDecoderStateMachine::StateObject
@@ -484,6 +515,16 @@ private:
   
   void MaybeFinishDecodeFirstFrame();
 };
+
+
+
+
+
+
+
+
+
+
 
 class MediaDecoderStateMachine::DecodingState
   : public MediaDecoderStateMachine::StateObject
@@ -647,6 +688,16 @@ private:
   
   bool mIsPrerolling = true;
 };
+
+
+
+
+
+
+
+
+
+
 
 class MediaDecoderStateMachine::SeekingState
   : public MediaDecoderStateMachine::StateObject
@@ -817,6 +868,16 @@ private:
   RefPtr<SeekTask> mSeekTask;
 };
 
+
+
+
+
+
+
+
+
+
+
 class MediaDecoderStateMachine::BufferingState
   : public MediaDecoderStateMachine::StateObject
 {
@@ -884,6 +945,13 @@ private:
   
   const uint32_t mBufferingWait = 15;
 };
+
+
+
+
+
+
+
 
 class MediaDecoderStateMachine::CompletedState
   : public MediaDecoderStateMachine::StateObject
@@ -966,6 +1034,15 @@ public:
 private:
   bool mSentPlaybackEndedEvent = false;
 };
+
+
+
+
+
+
+
+
+
 
 class MediaDecoderStateMachine::ShutdownState
   : public MediaDecoderStateMachine::StateObject
