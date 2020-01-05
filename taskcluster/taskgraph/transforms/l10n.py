@@ -24,7 +24,6 @@ from taskgraph.util.treeherder import split_symbol, join_symbol
 from taskgraph.transforms.job import job_description_schema
 from voluptuous import (
     Any,
-    Extra,
     Optional,
     Required,
 )
@@ -103,17 +102,6 @@ l10n_description_schema = Schema({
         
         Required('tier'): _by_platform(int),
     },
-    Required('attributes'): {
-        
-        Optional('nightly'): bool,
-
-        
-        Required('build_platform'): basestring,
-
-        
-        Required('build_type'): basestring,
-        Extra: object,
-    },
 
     
     Optional('env'): _by_platform({basestring: taskref_or_string}),
@@ -131,6 +119,7 @@ l10n_description_schema = Schema({
     },
 
     
+    Optional('attributes'): job_description_schema['attributes'],
     Optional('extra'): job_description_schema['extra'],
 })
 

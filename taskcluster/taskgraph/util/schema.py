@@ -135,9 +135,6 @@ def resolve_keyed_by(item, field, item_name, **extra_values):
 WHITELISTED_SCHEMA_IDENTIFIERS = [
     
     lambda path: "[u'upstream-artifacts']" in path,
-
-    
-    lambda path: path.startswith("schema[u'attributes']"),
 ]
 
 
