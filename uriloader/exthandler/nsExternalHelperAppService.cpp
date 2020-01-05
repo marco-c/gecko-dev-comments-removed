@@ -382,7 +382,10 @@ static nsresult GetDownloadDirectory(nsIFile **_directory,
   
   
   
-  auto downloadDir = java::DownloadsIntegration::GetTemporaryDownloadDirectory();
+  jni::String::LocalRef downloadDir;
+  if (jni::IsFennec()) {
+    downloadDir = java::DownloadsIntegration::GetTemporaryDownloadDirectory();
+  }
 
   nsresult rv;
   if (downloadDir) {

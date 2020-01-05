@@ -135,6 +135,12 @@ struct AbstractCall
 
 void DispatchToGeckoThread(UniquePtr<AbstractCall>&& aCall);
 
+
+
+
+
+bool IsFennec();
+
 } 
 } 
 
