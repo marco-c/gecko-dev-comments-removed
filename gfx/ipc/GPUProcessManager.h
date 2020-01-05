@@ -80,7 +80,7 @@ public:
   
   
   
-  void EnsureGPUReady();
+  bool EnsureGPUReady();
 
   RefPtr<CompositorSession> CreateTopLevelCompositor(
     nsBaseWidget* aWidget,
