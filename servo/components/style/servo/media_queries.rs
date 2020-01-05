@@ -180,6 +180,7 @@ impl Range<specified::Length> {
             is_root_element: false,
             viewport_size: viewport_size,
             inherited_style: default_values,
+            layout_parent_style: default_values,
             
             
             style: default_values.clone(),

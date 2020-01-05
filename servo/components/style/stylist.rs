@@ -313,9 +313,24 @@ impl Stylist {
             flags.insert(INHERIT_ALL)
         }
 
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         let computed =
             properties::cascade(self.device.au_viewport_size(),
                                 &rule_node,
+                                parent.map(|p| &**p),
                                 parent.map(|p| &**p),
                                 default,
                                 None,
@@ -389,9 +404,14 @@ impl Stylist {
             self.rule_tree.insert_ordered_rules(
                 declarations.into_iter().map(|a| (a.source, a.level)));
 
+        
+        
+        
+        
         let computed =
             properties::cascade(self.device.au_viewport_size(),
                                 &rule_node,
+                                Some(&**parent),
                                 Some(&**parent),
                                 default,
                                 None,

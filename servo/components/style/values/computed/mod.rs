@@ -46,6 +46,12 @@ pub struct Context<'a> {
     
     
     
+    
+    pub layout_parent_style: &'a ComputedValues,
+
+    
+    
+    
     pub style: ComputedValues,
 
     
