@@ -29,14 +29,39 @@ XPCOMUtils.defineLazyModuleGetter(this, "Task",
 
 var PlacesSyncUtils = {};
 
-const SMART_BOOKMARKS_ANNO = "Places/SmartBookmark";
-const DESCRIPTION_ANNO = "bookmarkProperties/description";
-const SIDEBAR_ANNO = "bookmarkProperties/loadInSidebar";
-const PARENT_ANNO = "sync/parent";
-
 const { SOURCE_SYNC } = Ci.nsINavBookmarksService;
 
+
+
+XPCOMUtils.defineLazyGetter(this, "ROOT_SYNC_ID_TO_GUID", () => ({
+  menu: PlacesUtils.bookmarks.menuGuid,
+  places: PlacesUtils.bookmarks.rootGuid,
+  tags: PlacesUtils.bookmarks.tagsGuid,
+  toolbar: PlacesUtils.bookmarks.toolbarGuid,
+  unfiled: PlacesUtils.bookmarks.unfiledGuid,
+  mobile: PlacesUtils.bookmarks.mobileGuid,
+}));
+
+XPCOMUtils.defineLazyGetter(this, "ROOT_GUID_TO_SYNC_ID", () => ({
+  [PlacesUtils.bookmarks.menuGuid]: "menu",
+  [PlacesUtils.bookmarks.rootGuid]: "places",
+  [PlacesUtils.bookmarks.tagsGuid]: "tags",
+  [PlacesUtils.bookmarks.toolbarGuid]: "toolbar",
+  [PlacesUtils.bookmarks.unfiledGuid]: "unfiled",
+  [PlacesUtils.bookmarks.mobileGuid]: "mobile",
+}));
+
+XPCOMUtils.defineLazyGetter(this, "ROOTS", () =>
+  Object.keys(ROOT_SYNC_ID_TO_GUID)
+);
+
 const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
+  SMART_BOOKMARKS_ANNO: "Places/SmartBookmark",
+  DESCRIPTION_ANNO: "bookmarkProperties/description",
+  SIDEBAR_ANNO: "bookmarkProperties/loadInSidebar",
+  SYNC_PARENT_ANNO: "sync/parent",
+  SYNC_MOBILE_ROOT_ANNO: "mobile/bookmarksRoot",
+
   KINDS: {
     BOOKMARK: "bookmark",
     
@@ -49,15 +74,38 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
     SEPARATOR: "separator",
   },
 
+  get ROOTS() {
+    return ROOTS;
+  },
+
   
 
 
-  fetchChildGuids: Task.async(function* (parentGuid) {
-    PlacesUtils.SYNC_BOOKMARK_VALIDATORS.guid(parentGuid);
+
+  guidToSyncId(guid) {
+    return ROOT_GUID_TO_SYNC_ID[guid] || guid;
+  },
+
+  
+
+
+  syncIdToGuid(syncId) {
+    return ROOT_SYNC_ID_TO_GUID[syncId] || syncId;
+  },
+
+  
+
+
+
+  fetchChildSyncIds: Task.async(function* (parentSyncId) {
+    PlacesUtils.SYNC_BOOKMARK_VALIDATORS.syncId(parentSyncId);
+    let parentGuid = BookmarkSyncUtils.syncIdToGuid(parentSyncId);
 
     let db = yield PlacesUtils.promiseDBConnection();
     let children = yield fetchAllChildren(db, parentGuid);
-    return children.map(child => child.guid);
+    return children.map(child =>
+      BookmarkSyncUtils.guidToSyncId(child.guid)
+    );
   }),
 
   
@@ -69,18 +117,22 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
 
 
 
-  order: Task.async(function* (parentGuid, childGuids) {
-    PlacesUtils.SYNC_BOOKMARK_VALIDATORS.guid(parentGuid);
-    for (let guid of childGuids) {
-      PlacesUtils.SYNC_BOOKMARK_VALIDATORS.guid(guid);
+  order: Task.async(function* (parentSyncId, childSyncIds) {
+    PlacesUtils.SYNC_BOOKMARK_VALIDATORS.syncId(parentSyncId);
+    if (!childSyncIds.length) {
+      return;
     }
+    for (let syncId of childSyncIds) {
+      PlacesUtils.SYNC_BOOKMARK_VALIDATORS.syncId(syncId);
+    }
+    let parentGuid = BookmarkSyncUtils.syncIdToGuid(parentSyncId);
 
     if (parentGuid == PlacesUtils.bookmarks.rootGuid) {
       
       
-      return Promise.resolve();
+      return;
     }
-    return PlacesUtils.withConnectionWrapper("BookmarkSyncUtils: order",
+    yield PlacesUtils.withConnectionWrapper("BookmarkSyncUtils: order",
       Task.async(function* (db) {
         let children = yield fetchAllChildren(db, parentGuid);
         if (!children.length) {
@@ -89,12 +141,13 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
 
         
         let delta = 0;
-        for (let i = 0; i < childGuids.length; ++i) {
-          let guid = childGuids[i];
+        for (let i = 0; i < childSyncIds.length; ++i) {
+          let guid = BookmarkSyncUtils.syncIdToGuid(childSyncIds[i]);
           let child = findChildByGuid(children, guid);
           if (!child) {
             delta++;
-            BookmarkSyncLog.trace(`order: Ignoring missing child ${guid}`);
+            BookmarkSyncLog.trace(`order: Ignoring missing child ${
+              childSyncIds[i]}`);
             continue;
           }
           let newIndex = i - delta;
@@ -112,7 +165,12 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
   
 
 
-  remove: Task.async(function* (guid) {
+  remove: Task.async(function* (syncId) {
+    let guid = BookmarkSyncUtils.syncIdToGuid(syncId);
+    if (guid in ROOT_GUID_TO_SYNC_ID) {
+      BookmarkSyncLog.warn(`remove: Refusing to remove root ${syncId}`);
+      return null;
+    }
     return PlacesUtils.bookmarks.remove(guid, {
       source: SOURCE_SYNC,
     });
@@ -123,21 +181,12 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
 
 
 
-  clear: Task.async(function* (folderGuid) {
-    let folderId = yield PlacesUtils.promiseItemId(folderGuid);
-    PlacesUtils.bookmarks.removeFolderChildren(folderId, SOURCE_SYNC);
-  }),
-
-  
-
-
-
 
 
 
   changeGuid: Task.async(function* (oldGuid, newGuid) {
-    PlacesUtils.SYNC_BOOKMARK_VALIDATORS.guid(oldGuid);
-    PlacesUtils.SYNC_BOOKMARK_VALIDATORS.guid(newGuid);
+    PlacesUtils.BOOKMARK_VALIDATORS.guid(oldGuid);
+    PlacesUtils.BOOKMARK_VALIDATORS.guid(newGuid);
 
     let itemId = yield PlacesUtils.promiseItemId(oldGuid);
     if (PlacesUtils.isRootItem(itemId)) {
@@ -179,12 +228,8 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
 
   update: Task.async(function* (info) {
     let updateInfo = validateSyncBookmarkObject(info,
-      { guid: { required: true }
-      , type: { validIf: () => false }
-      , index: { validIf: () => false }
-      , source: { validIf: () => false }
+      { syncId: { required: true }
       });
-    updateInfo.source = SOURCE_SYNC;
 
     return updateSyncBookmark(updateInfo);
   }),
@@ -293,90 +338,94 @@ var GUIDMissing = Task.async(function* (guid) {
 
 
 
-var updateTagQueryFolder = Task.async(function* (item) {
-  if (item.kind != BookmarkSyncUtils.KINDS.QUERY || !item.folder || !item.url ||
-      item.url.protocol != "place:") {
-    return item;
+var updateTagQueryFolder = Task.async(function* (info) {
+  if (info.kind != BookmarkSyncUtils.KINDS.QUERY || !info.folder || !info.url ||
+      info.url.protocol != "place:") {
+    return info;
   }
 
-  let params = new URLSearchParams(item.url.pathname);
+  let params = new URLSearchParams(info.url.pathname);
   let type = +params.get("type");
 
   if (type != Ci.nsINavHistoryQueryOptions.RESULTS_AS_TAG_CONTENTS) {
-    return item;
+    return info;
   }
 
-  let id = yield getOrCreateTagFolder(item.folder);
+  let id = yield getOrCreateTagFolder(info.folder);
   BookmarkSyncLog.debug(`updateTagQueryFolder: Tag query folder: ${
-    item.folder} = ${id}`);
+    info.folder} = ${id}`);
 
   
   params.set("folder", id);
-  item.url = new URL(item.url.protocol + params);
+  info.url = new URL(info.url.protocol + params);
 
-  return item;
+  return info;
 });
 
-var annotateOrphan = Task.async(function* (item, requestedParentGuid) {
-  let itemId = yield PlacesUtils.promiseItemId(item.guid);
+var annotateOrphan = Task.async(function* (item, requestedParentSyncId) {
+  let guid = BookmarkSyncUtils.syncIdToGuid(item.syncId);
+  let itemId = yield PlacesUtils.promiseItemId(guid);
   PlacesUtils.annotations.setItemAnnotation(itemId,
-    PARENT_ANNO, requestedParentGuid, 0,
+    BookmarkSyncUtils.SYNC_PARENT_ANNO, requestedParentSyncId, 0,
     PlacesUtils.annotations.EXPIRE_NEVER,
     SOURCE_SYNC);
 });
 
 var reparentOrphans = Task.async(function* (item) {
-  if (item.type != PlacesUtils.bookmarks.TYPE_FOLDER) {
+  if (item.kind != BookmarkSyncUtils.KINDS.FOLDER) {
     return;
   }
-  let orphanIds = findAnnoItems(PARENT_ANNO, item.guid);
+  let orphanIds = findAnnoItems(BookmarkSyncUtils.SYNC_PARENT_ANNO, item.syncId);
   
   
   
   let orphanGuids = yield Promise.all(orphanIds.map(id =>
     PlacesUtils.promiseItemGuid(id)));
+  let folderGuid = BookmarkSyncUtils.syncIdToGuid(item.syncId);
   BookmarkSyncLog.debug(`reparentOrphans: Reparenting ${
-    JSON.stringify(orphanGuids)} to ${item.guid}`);
+    JSON.stringify(orphanGuids)} to ${item.syncId}`);
   for (let i = 0; i < orphanGuids.length; ++i) {
     let isReparented = false;
     try {
       
       
       BookmarkSyncLog.trace(`reparentOrphans: Attempting to move item ${
-        orphanGuids[i]} to new parent ${item.guid}`);
+        orphanGuids[i]} to new parent ${item.syncId}`);
       yield PlacesUtils.bookmarks.update({
         guid: orphanGuids[i],
-        parentGuid: item.guid,
+        parentGuid: folderGuid,
         index: PlacesUtils.bookmarks.DEFAULT_INDEX,
         source: SOURCE_SYNC,
       });
       isReparented = true;
     } catch (ex) {
       BookmarkSyncLog.error(`reparentOrphans: Failed to reparent item ${
-        orphanGuids[i]} to ${item.guid}`, ex);
+        orphanGuids[i]} to ${item.syncId}`, ex);
     }
     if (isReparented) {
       
       PlacesUtils.annotations.removeItemAnnotation(orphanIds[i],
-        PARENT_ANNO, SOURCE_SYNC);
+        BookmarkSyncUtils.SYNC_PARENT_ANNO, SOURCE_SYNC);
     }
   }
 });
 
 
 var insertSyncBookmark = Task.async(function* (insertInfo) {
-  let requestedParentGuid = insertInfo.parentGuid;
-  let isOrphan = yield GUIDMissing(insertInfo.parentGuid);
+  let requestedParentSyncId = insertInfo.parentSyncId;
+  let requestedParentGuid =
+    BookmarkSyncUtils.syncIdToGuid(insertInfo.parentSyncId);
+  let isOrphan = yield GUIDMissing(requestedParentGuid);
 
   
   if (!isOrphan) {
     BookmarkSyncLog.debug(`insertSyncBookmark: Item ${
-      insertInfo.guid} is not an orphan`);
+      insertInfo.syncId} is not an orphan`);
   } else {
     BookmarkSyncLog.debug(`insertSyncBookmark: Item ${
-      insertInfo.guid} is an orphan: parent ${
-      requestedParentGuid} doesn't exist; reparenting to unfiled`);
-    insertInfo.parentGuid = PlacesUtils.bookmarks.unfiledGuid;
+      insertInfo.syncId} is an orphan: parent ${
+      insertInfo.parentSyncId} doesn't exist; reparenting to unfiled`);
+    insertInfo.parentSyncId = "unfiled";
   }
 
   
@@ -387,9 +436,9 @@ var insertSyncBookmark = Task.async(function* (insertInfo) {
   if (insertInfo.kind == BookmarkSyncUtils.KINDS.LIVEMARK) {
     newItem = yield insertSyncLivemark(insertInfo);
   } else {
-    let item = yield PlacesUtils.bookmarks.insert(insertInfo);
-    let newId = yield PlacesUtils.promiseItemId(item.guid);
-    newItem = yield insertBookmarkMetadata(newId, item, insertInfo);
+    let bookmarkInfo = syncBookmarkToPlacesBookmark(insertInfo);
+    let bookmarkItem = yield PlacesUtils.bookmarks.insert(bookmarkInfo);
+    newItem = yield insertBookmarkMetadata(bookmarkItem, insertInfo);
   }
 
   if (!newItem) {
@@ -398,7 +447,7 @@ var insertSyncBookmark = Task.async(function* (insertInfo) {
 
   
   if (isOrphan) {
-    yield annotateOrphan(newItem, requestedParentGuid);
+    yield annotateOrphan(newItem, requestedParentSyncId);
   }
 
   
@@ -409,74 +458,70 @@ var insertSyncBookmark = Task.async(function* (insertInfo) {
 
 
 var insertSyncLivemark = Task.async(function* (insertInfo) {
-  let parentId = yield PlacesUtils.promiseItemId(insertInfo.parentGuid);
+  let livemarkInfo = syncBookmarkToPlacesBookmark(insertInfo);
+  let parentId = yield PlacesUtils.promiseItemId(livemarkInfo.parentGuid);
   let parentIsLivemark = PlacesUtils.annotations.itemHasAnnotation(parentId,
     PlacesUtils.LMANNO_FEEDURI);
   if (parentIsLivemark) {
     
     BookmarkSyncLog.debug(`insertSyncLivemark: Invalid parent ${
-      insertInfo.parentGuid}; skipping livemark record ${insertInfo.guid}`);
+      insertInfo.parentSyncId}; skipping livemark record ${
+      insertInfo.syncId}`);
     return null;
   }
 
-  let feedURI = PlacesUtils.toURI(insertInfo.feed);
-  let siteURI = insertInfo.site ? PlacesUtils.toURI(insertInfo.site) : null;
-  let item = yield PlacesUtils.livemarks.addLivemark({
-    title: insertInfo.title,
-    parentGuid: insertInfo.parentGuid,
-    index: PlacesUtils.bookmarks.DEFAULT_INDEX,
-    feedURI,
-    siteURI,
-    guid: insertInfo.guid,
-    source: SOURCE_SYNC,
-  });
+  let livemarkItem = yield PlacesUtils.livemarks.addLivemark(livemarkInfo);
 
-  return insertBookmarkMetadata(item.id, item, insertInfo);
+  return insertBookmarkMetadata(livemarkItem, insertInfo);
 });
 
 
-var insertBookmarkMetadata = Task.async(function* (itemId, item, insertInfo) {
+
+var insertBookmarkMetadata = Task.async(function* (bookmarkItem, insertInfo) {
+  let itemId = yield PlacesUtils.promiseItemId(bookmarkItem.guid);
+  let newItem = yield placesBookmarkToSyncBookmark(bookmarkItem);
+
   if (insertInfo.query) {
     PlacesUtils.annotations.setItemAnnotation(itemId,
-      SMART_BOOKMARKS_ANNO, insertInfo.query, 0,
+      BookmarkSyncUtils.SMART_BOOKMARKS_ANNO, insertInfo.query, 0,
       PlacesUtils.annotations.EXPIRE_NEVER,
       SOURCE_SYNC);
-    item.query = insertInfo.query;
+    newItem.query = insertInfo.query;
   }
 
   try {
-    item.tags = yield tagItem(item, insertInfo.tags);
+    newItem.tags = yield tagItem(bookmarkItem, insertInfo.tags);
   } catch (ex) {
     BookmarkSyncLog.warn(`insertBookmarkMetadata: Error tagging item ${
-      item.guid}`, ex);
+      insertInfo.syncId}`, ex);
   }
 
   if (insertInfo.keyword) {
     yield PlacesUtils.keywords.insert({
       keyword: insertInfo.keyword,
-      url: item.url.href,
+      url: bookmarkItem.url.href,
       source: SOURCE_SYNC,
     });
-    item.keyword = insertInfo.keyword;
+    newItem.keyword = insertInfo.keyword;
   }
 
   if (insertInfo.description) {
     PlacesUtils.annotations.setItemAnnotation(itemId,
-      DESCRIPTION_ANNO, insertInfo.description, 0,
+      BookmarkSyncUtils.DESCRIPTION_ANNO, insertInfo.description, 0,
       PlacesUtils.annotations.EXPIRE_NEVER,
       SOURCE_SYNC);
-    item.description = insertInfo.description;
+    newItem.description = insertInfo.description;
   }
 
   if (insertInfo.loadInSidebar) {
     PlacesUtils.annotations.setItemAnnotation(itemId,
-      SIDEBAR_ANNO, insertInfo.loadInSidebar, 0,
+      BookmarkSyncUtils.SIDEBAR_ANNO, insertInfo.loadInSidebar, 0,
       PlacesUtils.annotations.EXPIRE_NEVER,
       SOURCE_SYNC);
-    item.loadInSidebar = insertInfo.loadInSidebar;
+    newItem.loadInSidebar = insertInfo.loadInSidebar;
   }
 
-  return item;
+  return newItem;
 });
 
 
@@ -527,8 +572,9 @@ var shouldReinsertLivemark = Task.async(function* (updateInfo) {
   if (!hasFeed && !hasSite) {
     return false;
   }
+  let guid = BookmarkSyncUtils.syncIdToGuid(updateInfo.syncId);
   let livemark = yield PlacesUtils.livemarks.getLivemark({
-    guid: updateInfo.guid,
+    guid,
   });
   if (hasFeed) {
     let feedURI = PlacesUtils.toURI(updateInfo.feed);
@@ -549,35 +595,42 @@ var shouldReinsertLivemark = Task.async(function* (updateInfo) {
 });
 
 var updateSyncBookmark = Task.async(function* (updateInfo) {
-  let oldItem = yield PlacesUtils.bookmarks.fetch(updateInfo.guid);
-  if (!oldItem) {
-    throw new Error(`Bookmark with GUID ${updateInfo.guid} does not exist`);
+  let guid = BookmarkSyncUtils.syncIdToGuid(updateInfo.syncId);
+  let oldBookmarkItem = yield PlacesUtils.bookmarks.fetch(guid);
+  if (!oldBookmarkItem) {
+    throw new Error(`Bookmark with sync ID ${
+      updateInfo.syncId} does not exist`);
   }
 
   let shouldReinsert = false;
-  let oldKind = yield getKindForItem(oldItem);
+  let oldKind = yield getKindForItem(oldBookmarkItem);
   if (updateInfo.hasOwnProperty("kind") && updateInfo.kind != oldKind) {
     
     
     shouldReinsert = true;
-    BookmarkSyncLog.warn(`updateSyncBookmark: Local ${
-      oldItem.guid} kind = (${oldKind}); remote ${
-      updateInfo.guid} kind = ${updateInfo.kind}. Deleting and recreating`);
+    if (BookmarkSyncLog.level <= Log.Level.Warn) {
+      let oldSyncId = BookmarkSyncUtils.guidToSyncId(oldBookmarkItem.guid);
+      BookmarkSyncLog.warn(`updateSyncBookmark: Local ${
+        oldSyncId} kind = ${oldKind}; remote ${
+        updateInfo.syncId} kind = ${
+        updateInfo.kind}. Deleting and recreating`);
+    }
   } else if (oldKind == BookmarkSyncUtils.KINDS.LIVEMARK) {
     
     
     shouldReinsert = yield shouldReinsertLivemark(updateInfo);
-    if (shouldReinsert) {
+    if (BookmarkSyncLog.level <= Log.Level.Debug) {
+      let oldSyncId = BookmarkSyncUtils.guidToSyncId(oldBookmarkItem.guid);
       BookmarkSyncLog.debug(`updateSyncBookmark: Local ${
-        oldItem.guid} and remote ${
-        updateInfo.guid} livemarks have different URLs`);
+        oldSyncId} and remote ${
+        updateInfo.syncId} livemarks have different URLs`);
     }
   }
+
   if (shouldReinsert) {
-    delete updateInfo.source;
-    let newItem = validateNewBookmark(updateInfo);
+    let newInfo = validateNewBookmark(updateInfo);
     yield PlacesUtils.bookmarks.remove({
-      guid: oldItem.guid,
+      guid,
       source: SOURCE_SYNC,
     });
     
@@ -586,52 +639,53 @@ var updateSyncBookmark = Task.async(function* (updateInfo) {
     
     
     
-    return insertSyncBookmark(newItem);
+    return insertSyncBookmark(newInfo);
   }
 
-  let isOrphan = false, requestedParentGuid;
-  if (updateInfo.hasOwnProperty("parentGuid")) {
-    requestedParentGuid = updateInfo.parentGuid;
-    if (requestedParentGuid != oldItem.parentGuid) {
-      let oldId = yield PlacesUtils.promiseItemId(oldItem.guid);
+  let isOrphan = false, requestedParentSyncId;
+  if (updateInfo.hasOwnProperty("parentSyncId")) {
+    requestedParentSyncId = updateInfo.parentSyncId;
+    let oldParentSyncId =
+      BookmarkSyncUtils.guidToSyncId(oldBookmarkItem.parentGuid);
+    if (requestedParentSyncId != oldParentSyncId) {
+      let oldId = yield PlacesUtils.promiseItemId(oldBookmarkItem.guid);
       if (PlacesUtils.isRootItem(oldId)) {
         throw new Error(`Cannot move Places root ${oldId}`);
       }
+      let requestedParentGuid =
+        BookmarkSyncUtils.syncIdToGuid(requestedParentSyncId);
       isOrphan = yield GUIDMissing(requestedParentGuid);
       if (!isOrphan) {
         BookmarkSyncLog.debug(`updateSyncBookmark: Item ${
-          updateInfo.guid} is not an orphan`);
+          updateInfo.syncId} is not an orphan`);
       } else {
         
         
         
         BookmarkSyncLog.trace(`updateSyncBookmark: Item ${
-          updateInfo.guid} is an orphan: could not find parent ${
-          requestedParentGuid}`);
-        delete updateInfo.parentGuid;
+          updateInfo.syncId} is an orphan: could not find parent ${
+          requestedParentSyncId}`);
+        delete updateInfo.parentSyncId;
       }
-      
-      
-      
-      updateInfo.index = PlacesUtils.bookmarks.DEFAULT_INDEX;
     } else {
       
       
-      delete updateInfo.parentGuid;
+      delete updateInfo.parentSyncId;
     }
   }
 
   updateInfo = yield updateTagQueryFolder(updateInfo);
 
-  let newItem = shouldUpdateBookmark(updateInfo) ?
-                yield PlacesUtils.bookmarks.update(updateInfo) : oldItem;
-  let itemId = yield PlacesUtils.promiseItemId(newItem.guid);
-
-  newItem = yield updateBookmarkMetadata(itemId, oldItem, newItem, updateInfo);
+  let bookmarkInfo = syncBookmarkToPlacesBookmark(updateInfo);
+  let newBookmarkItem = shouldUpdateBookmark(bookmarkInfo) ?
+                        yield PlacesUtils.bookmarks.update(bookmarkInfo) :
+                        oldBookmarkItem;
+  let newItem = yield updateBookmarkMetadata(oldBookmarkItem, newBookmarkItem,
+                                             updateInfo);
 
   
   if (isOrphan) {
-    yield annotateOrphan(newItem, requestedParentGuid);
+    yield annotateOrphan(newItem, requestedParentSyncId);
   }
 
   
@@ -640,18 +694,25 @@ var updateSyncBookmark = Task.async(function* (updateInfo) {
   return newItem;
 });
 
-var updateBookmarkMetadata = Task.async(function* (itemId, oldItem, newItem, updateInfo) {
+
+
+var updateBookmarkMetadata = Task.async(function* (oldBookmarkItem,
+                                                   newBookmarkItem,
+                                                   updateInfo) {
+  let itemId = yield PlacesUtils.promiseItemId(newBookmarkItem.guid);
+  let newItem = yield placesBookmarkToSyncBookmark(newBookmarkItem);
+
   try {
-    newItem.tags = yield tagItem(newItem, updateInfo.tags);
+    newItem.tags = yield tagItem(newBookmarkItem, updateInfo.tags);
   } catch (ex) {
     BookmarkSyncLog.warn(`updateBookmarkMetadata: Error tagging item ${
-      newItem.guid}`, ex);
+      updateInfo.syncId}`, ex);
   }
 
   if (updateInfo.hasOwnProperty("keyword")) {
     
     let entry = yield PlacesUtils.keywords.fetch({
-      url: oldItem.url.href,
+      url: oldBookmarkItem.url.href,
     });
     if (entry) {
       yield PlacesUtils.keywords.remove({
@@ -672,12 +733,12 @@ var updateBookmarkMetadata = Task.async(function* (itemId, oldItem, newItem, upd
   if (updateInfo.hasOwnProperty("description")) {
     if (updateInfo.description) {
       PlacesUtils.annotations.setItemAnnotation(itemId,
-        DESCRIPTION_ANNO, updateInfo.description, 0,
+        BookmarkSyncUtils.DESCRIPTION_ANNO, updateInfo.description, 0,
         PlacesUtils.annotations.EXPIRE_NEVER,
         SOURCE_SYNC);
     } else {
       PlacesUtils.annotations.removeItemAnnotation(itemId,
-        DESCRIPTION_ANNO, SOURCE_SYNC);
+        BookmarkSyncUtils.DESCRIPTION_ANNO, SOURCE_SYNC);
     }
     newItem.description = updateInfo.description;
   }
@@ -685,19 +746,19 @@ var updateBookmarkMetadata = Task.async(function* (itemId, oldItem, newItem, upd
   if (updateInfo.hasOwnProperty("loadInSidebar")) {
     if (updateInfo.loadInSidebar) {
       PlacesUtils.annotations.setItemAnnotation(itemId,
-        SIDEBAR_ANNO, updateInfo.loadInSidebar, 0,
+        BookmarkSyncUtils.SIDEBAR_ANNO, updateInfo.loadInSidebar, 0,
         PlacesUtils.annotations.EXPIRE_NEVER,
         SOURCE_SYNC);
     } else {
       PlacesUtils.annotations.removeItemAnnotation(itemId,
-        SIDEBAR_ANNO, SOURCE_SYNC);
+        BookmarkSyncUtils.SIDEBAR_ANNO, SOURCE_SYNC);
     }
     newItem.loadInSidebar = updateInfo.loadInSidebar;
   }
 
   if (updateInfo.hasOwnProperty("query")) {
     PlacesUtils.annotations.setItemAnnotation(itemId,
-      SMART_BOOKMARKS_ANNO, updateInfo.query, 0,
+      BookmarkSyncUtils.SMART_BOOKMARKS_ANNO, updateInfo.query, 0,
       PlacesUtils.annotations.EXPIRE_NEVER,
       SOURCE_SYNC);
     newItem.query = updateInfo.query;
@@ -716,23 +777,14 @@ var setGuid = Task.async(function* (db, itemId, newGuid) {
 function validateNewBookmark(info) {
   let insertInfo = validateSyncBookmarkObject(info,
     { kind: { required: true }
-    
-    , type: { validIf: () => false }
-    
-    
-    
-    
-    , index: { validIf: () => false }
-    
-    , source: { validIf: () => false }
-    , guid: { required: true }
+    , syncId: { required: true }
     , url: { requiredIf: b => [ BookmarkSyncUtils.KINDS.BOOKMARK
                               , BookmarkSyncUtils.KINDS.MICROSUMMARY
                               , BookmarkSyncUtils.KINDS.QUERY ].includes(b.kind)
            , validIf: b => [ BookmarkSyncUtils.KINDS.BOOKMARK
                            , BookmarkSyncUtils.KINDS.MICROSUMMARY
                            , BookmarkSyncUtils.KINDS.QUERY ].includes(b.kind) }
-    , parentGuid: { required: true }
+    , parentSyncId: { required: true }
     , title: { validIf: b => [ BookmarkSyncUtils.KINDS.BOOKMARK
                              , BookmarkSyncUtils.KINDS.MICROSUMMARY
                              , BookmarkSyncUtils.KINDS.QUERY
@@ -752,18 +804,12 @@ function validateNewBookmark(info) {
                                    , BookmarkSyncUtils.KINDS.FOLDER
                                    , BookmarkSyncUtils.KINDS.LIVEMARK ].includes(b.kind) }
     , loadInSidebar: { validIf: b => [ BookmarkSyncUtils.KINDS.BOOKMARK
-                                     , BookmarkSyncUtils.KINDS.MICROSUMMARY ].includes(b.kind) }
+                                     , BookmarkSyncUtils.KINDS.MICROSUMMARY
+                                     , BookmarkSyncUtils.KINDS.QUERY ].includes(b.kind) }
     , feed: { requiredIf: b => b.kind == BookmarkSyncUtils.KINDS.LIVEMARK
             , validIf: b => b.kind == BookmarkSyncUtils.KINDS.LIVEMARK }
     , site: { validIf: b => b.kind == BookmarkSyncUtils.KINDS.LIVEMARK }
     });
-
-  
-  let time = new Date();
-  insertInfo.dateAdded = insertInfo.lastModified = time;
-
-  insertInfo.type = getTypeForKind(insertInfo.kind);
-  insertInfo.source = SOURCE_SYNC;
 
   return insertInfo;
 }
@@ -797,20 +843,10 @@ var tagItem = Task.async(function (item, tags) {
 
 
 
-
-function shouldUpdateBookmark(updateInfo) {
-  let propsToUpdate = 0;
-  for (let prop in PlacesUtils.BOOKMARK_VALIDATORS) {
-    if (!updateInfo.hasOwnProperty(prop)) {
-      continue;
-    }
-    
-    
-    if (++propsToUpdate >= 3) {
-      return true;
-    }
-  }
-  return false;
+function shouldUpdateBookmark(bookmarkInfo) {
+  return bookmarkInfo.hasOwnProperty("parentGuid") ||
+         bookmarkInfo.hasOwnProperty("title") ||
+         bookmarkInfo.hasOwnProperty("url");
 }
 
 var getTagFolder = Task.async(function* (tag) {
@@ -834,3 +870,101 @@ var getOrCreateTagFolder = Task.async(function* (tag) {
   });
   return PlacesUtils.promiseItemId(item.guid);
 });
+
+
+
+
+var placesBookmarkToSyncBookmark = Task.async(function* (bookmarkItem) {
+  let item = {};
+
+  for (let prop in bookmarkItem) {
+    switch (prop) {
+      
+      case "guid":
+        item.syncId = BookmarkSyncUtils.guidToSyncId(bookmarkItem.guid);
+        break;
+
+      case "parentGuid":
+        item.parentSyncId =
+          BookmarkSyncUtils.guidToSyncId(bookmarkItem.parentGuid);
+        break;
+
+      
+      
+      case "type":
+        item.kind = yield getKindForItem(bookmarkItem);
+        break;
+
+      case "title":
+      case "url":
+        item[prop] = bookmarkItem[prop];
+        break;
+
+      
+      
+      case "feedURI":
+        item.feed = new URL(bookmarkItem.feedURI.spec);
+        break;
+
+      case "siteURI":
+        if (bookmarkItem.siteURI) {
+          item.site = new URL(bookmarkItem.siteURI.spec);
+        }
+        break;
+    }
+  }
+
+  return item;
+});
+
+
+
+
+
+
+function syncBookmarkToPlacesBookmark(info) {
+  let bookmarkInfo = {
+    source: SOURCE_SYNC,
+  };
+
+  for (let prop in info) {
+    switch (prop) {
+      case "kind":
+        bookmarkInfo.type = getTypeForKind(info.kind);
+        break;
+
+      
+      case "syncId":
+        bookmarkInfo.guid = BookmarkSyncUtils.syncIdToGuid(info.syncId);
+        break;
+
+      case "parentSyncId":
+        bookmarkInfo.parentGuid =
+          BookmarkSyncUtils.syncIdToGuid(info.parentSyncId);
+        
+        
+        
+        
+        bookmarkInfo.index = PlacesUtils.bookmarks.DEFAULT_INDEX;
+        break;
+
+      case "title":
+      case "url":
+        bookmarkInfo[prop] = info[prop];
+        break;
+
+      
+      case "feed":
+        bookmarkInfo.feedURI = PlacesUtils.toURI(info.feed);
+        break;
+
+      case "site":
+        if (info.site) {
+          bookmarkInfo.siteURI = PlacesUtils.toURI(info.site);
+        }
+        break;
+    }
+  }
+
+  return bookmarkInfo;
+}

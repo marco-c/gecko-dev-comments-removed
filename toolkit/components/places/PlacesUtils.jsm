@@ -256,7 +256,12 @@ const BOOKMARK_VALIDATORS = Object.freeze({
 });
 
 
-const SYNC_BOOKMARK_VALIDATORS = Object.freeze(Object.assign({
+const SYNC_BOOKMARK_VALIDATORS = Object.freeze({
+  
+  syncId: simpleValidateFunc(v => typeof v == "string" && (
+                                  (PlacesSyncUtils.bookmarks.ROOTS.includes(v) ||
+                                   PlacesUtils.isValidGuid(v)))),
+  parentSyncId: v => SYNC_BOOKMARK_VALIDATORS.syncId(v),
   
   
   kind: simpleValidateFunc(v => typeof v == "string" &&
@@ -284,7 +289,9 @@ const SYNC_BOOKMARK_VALIDATORS = Object.freeze(Object.assign({
   loadInSidebar: simpleValidateFunc(v => v === true || v === false),
   feed: BOOKMARK_VALIDATORS.url,
   site: v => v === null ? v : BOOKMARK_VALIDATORS.url(v),
-}, BOOKMARK_VALIDATORS));
+  title: BOOKMARK_VALIDATORS.title,
+  url: BOOKMARK_VALIDATORS.url,
+});
 
 this.PlacesUtils = {
   
