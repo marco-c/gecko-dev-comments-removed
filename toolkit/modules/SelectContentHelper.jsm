@@ -30,12 +30,11 @@ this.EXPORTED_SYMBOLS = [
   "SelectContentHelper"
 ];
 
-this.SelectContentHelper = function (aElement, aOptions, aGlobal) {
+this.SelectContentHelper = function (aElement, aGlobal) {
   this.element = aElement;
   this.initialSelection = aElement[aElement.selectedIndex] || null;
   this.global = aGlobal;
   this.closedWithEnter = false;
-  this.isOpenedViaTouch = aOptions.isOpenedViaTouch;
   this.init();
   this.showDropDown();
   this._updateTimer = new DeferredTask(this._update.bind(this), 0);
@@ -88,8 +87,7 @@ this.SelectContentHelper.prototype = {
       rect: rect,
       options: this._buildOptionList(),
       selectedIndex: this.element.selectedIndex,
-      direction: getComputedDirection(this.element),
-      isOpenedViaTouch: this.isOpenedViaTouch
+      direction: getComputedStyles(this.element).direction
     });
     gOpen = true;
   },
@@ -194,12 +192,14 @@ this.SelectContentHelper.prototype = {
 
 }
 
-function getComputedDirection(element) {
-  return element.ownerDocument.defaultView.getComputedStyle(element).getPropertyValue("direction");
+function getComputedStyles(element) {
+  return element.ownerDocument.defaultView.getComputedStyle(element);
 }
 
 function buildOptionListForChildren(node) {
   let result = [];
+
+  let win = node.ownerDocument.defaultView;
 
   for (let child of node.children) {
     let tagName = child.tagName.toUpperCase();
@@ -216,15 +216,17 @@ function buildOptionListForChildren(node) {
         textContent = "";
       }
 
+      let cs = getComputedStyles(child);
+
       let info = {
         index: child.index,
         tagName: tagName,
         textContent: textContent,
         disabled: child.disabled,
-        display: child.style.display,
+        display: cs.display,
         
         
-        textDirection: getComputedDirection(child),
+        textDirection: cs.direction,
         tooltip: child.title,
         
         
