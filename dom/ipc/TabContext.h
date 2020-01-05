@@ -7,7 +7,6 @@
 #ifndef mozilla_dom_TabContext_h
 #define mozilla_dom_TabContext_h
 
-#include "mozIApplication.h"
 #include "nsCOMPtr.h"
 #include "mozilla/BasePrincipal.h"
 #include "nsPIDOMWindow.h"
@@ -17,8 +16,6 @@ namespace mozilla {
 namespace dom {
 
 class IPCTabContext;
-
-
 
 
 
@@ -48,17 +45,9 @@ public:
 
 
 
-
-
-
-
-
-
-
   bool IsMozBrowserElement() const;
 
   
-
 
 
 
@@ -72,52 +61,7 @@ public:
 
 
 
-  bool IsMozBrowserOrApp() const;
-
-  
-
-
-
-
-
-
-
-  uint32_t OwnAppId() const;
-  already_AddRefed<mozIApplication> GetOwnApp() const;
-  bool HasOwnApp() const;
-
-  
-
-
-
-
-
-
-
-  uint32_t BrowserOwnerAppId() const;
-  already_AddRefed<mozIApplication> GetBrowserOwnerApp() const;
-  bool HasBrowserOwnerApp() const;
-
-  
-
-
-
-
-
-
-
-  uint32_t AppOwnerAppId() const;
-  already_AddRefed<mozIApplication> GetAppOwnerApp() const;
-  bool HasAppOwnerApp() const;
-
-  
-
-
-
-
-  uint32_t OwnOrContainingAppId() const;
-  already_AddRefed<mozIApplication> GetOwnOrContainingApp() const;
-  bool HasOwnOrContainingApp() const;
+  bool IsMozBrowser() const;
 
   
 
@@ -157,17 +101,8 @@ protected:
 
   void SetPrivateBrowsingAttributes(bool aIsPrivateBrowsing);
 
-  
-
-
-
-
-
-
   bool SetTabContext(bool aIsMozBrowserElement,
                      bool aIsPrerendered,
-                     mozIApplication* aOwnApp,
-                     mozIApplication* aAppFrameOwnerApp,
                      UIStateChangeType aShowAccelerators,
                      UIStateChangeType aShowFocusRings,
                      const DocShellOriginAttributes& aOriginAttributes,
@@ -206,24 +141,6 @@ private:
   
 
 
-
-  nsCOMPtr<mozIApplication> mOwnApp;
-
-  
-
-
-
-
-  nsCOMPtr<mozIApplication> mContainingApp;
-
-  
-
-
-  uint32_t mContainingAppId;
-
-  
-
-
   DocShellOriginAttributes mOriginAttributes;
 
   
@@ -254,8 +171,6 @@ public:
   bool
   SetTabContext(bool aIsMozBrowserElement,
                 bool aIsPrerendered,
-                mozIApplication* aOwnApp,
-                mozIApplication* aAppFrameOwnerApp,
                 UIStateChangeType aShowAccelerators,
                 UIStateChangeType aShowFocusRings,
                 const DocShellOriginAttributes& aOriginAttributes,
@@ -263,15 +178,12 @@ public:
   {
     return TabContext::SetTabContext(aIsMozBrowserElement,
                                      aIsPrerendered,
-                                     aOwnApp,
-                                     aAppFrameOwnerApp,
                                      aShowAccelerators,
                                      aShowFocusRings,
                                      aOriginAttributes,
                                      aPresentationURL);
   }
 };
-
 
 
 

@@ -122,11 +122,9 @@ nsIContentParent::AllocPBrowserParent(const TabId& aTabId,
                                       const IPCTabContext& aContext,
                                       const uint32_t& aChromeFlags,
                                       const ContentParentId& aCpId,
-                                      const bool& aIsForApp,
                                       const bool& aIsForBrowser)
 {
   Unused << aCpId;
-  Unused << aIsForApp;
   Unused << aIsForBrowser;
 
   if (!CanOpenBrowser(aContext)) {
@@ -212,7 +210,7 @@ nsIContentParent::GetOrCreateActorForBlobImpl(BlobImpl* aImpl)
   return actor;
 }
 
-mozilla::ipc::IPCResult
+bool
 nsIContentParent::RecvSyncMessage(const nsString& aMsg,
                                   const ClonedMessageData& aData,
                                   InfallibleTArray<CpowEntry>&& aCpows,
@@ -225,7 +223,7 @@ nsIContentParent::RecvSyncMessage(const nsString& aMsg,
     ContentParent* parent = AsContentParent();
     if (!ContentParent::IgnoreIPCPrincipal() &&
         parent && principal && !AssertAppPrincipal(parent, principal)) {
-      return IPC_FAIL_NO_REASON(parent);
+      return false;
     }
   }
 
@@ -238,10 +236,10 @@ nsIContentParent::RecvSyncMessage(const nsString& aMsg,
     ppm->ReceiveMessage(static_cast<nsIContentFrameMessageManager*>(ppm.get()), nullptr,
                         aMsg, true, &data, &cpows, aPrincipal, aRetvals);
   }
-  return IPC_OK();
+  return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 nsIContentParent::RecvRpcMessage(const nsString& aMsg,
                                  const ClonedMessageData& aData,
                                  InfallibleTArray<CpowEntry>&& aCpows,
@@ -254,7 +252,7 @@ nsIContentParent::RecvRpcMessage(const nsString& aMsg,
     ContentParent* parent = AsContentParent();
     if (!ContentParent::IgnoreIPCPrincipal() &&
         parent && principal && !AssertAppPrincipal(parent, principal)) {
-      return IPC_FAIL_NO_REASON(parent);
+      return false;
     }
   }
 
@@ -267,7 +265,7 @@ nsIContentParent::RecvRpcMessage(const nsString& aMsg,
     ppm->ReceiveMessage(static_cast<nsIContentFrameMessageManager*>(ppm.get()), nullptr,
                         aMsg, true, &data, &cpows, aPrincipal, aRetvals);
   }
-  return IPC_OK();
+  return true;
 }
 
 PFileDescriptorSetParent*
@@ -296,7 +294,7 @@ nsIContentParent::DeallocPSendStreamParent(PSendStreamParent* aActor)
   return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 nsIContentParent::RecvAsyncMessage(const nsString& aMsg,
                                    InfallibleTArray<CpowEntry>&& aCpows,
                                    const IPC::Principal& aPrincipal,
@@ -308,7 +306,7 @@ nsIContentParent::RecvAsyncMessage(const nsString& aMsg,
     ContentParent* parent = AsContentParent();
     if (!ContentParent::IgnoreIPCPrincipal() &&
         parent && principal && !AssertAppPrincipal(parent, principal)) {
-      return IPC_FAIL_NO_REASON(parent);
+      return false;
     }
   }
 
@@ -321,7 +319,7 @@ nsIContentParent::RecvAsyncMessage(const nsString& aMsg,
     ppm->ReceiveMessage(static_cast<nsIContentFrameMessageManager*>(ppm.get()), nullptr,
                         aMsg, false, &data, &cpows, aPrincipal, nullptr);
   }
-  return IPC_OK();
+  return true;
 }
 
 } 

@@ -168,8 +168,7 @@ protected:
 
   
   
-  
-  bool mIsBrowserOrAppFrame;
+  bool mIsBrowserFrame;
   bool mPreventEventsEscaping;
 
   

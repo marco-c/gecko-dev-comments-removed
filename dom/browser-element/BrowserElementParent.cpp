@@ -56,23 +56,6 @@ CreateIframe(Element* aOpenerFrameElement, const nsAString& aName, bool aRemote)
   popupFrameElement->SetMozbrowser(true);
 
   
-  if (aOpenerFrameElement->HasAttr(kNameSpaceID_None, nsGkAtoms::mozapp)) {
-    nsAutoString mozapp;
-    aOpenerFrameElement->GetAttr(kNameSpaceID_None, nsGkAtoms::mozapp, mozapp);
-    popupFrameElement->SetAttr(kNameSpaceID_None, nsGkAtoms::mozapp,
-                               mozapp,  false);
-  }
-
-  
-  if (aOpenerFrameElement->HasAttr(kNameSpaceID_None, nsGkAtoms::parentapp)) {
-    nsAutoString parentApp;
-    aOpenerFrameElement->GetAttr(kNameSpaceID_None, nsGkAtoms::parentapp,
-                                 parentApp);
-    popupFrameElement->SetAttr(kNameSpaceID_None, nsGkAtoms::parentapp,
-                               parentApp,  false);
-  }
-
-  
   popupFrameElement->SetAttr(kNameSpaceID_None, nsGkAtoms::name,
                              aName,  false);
 

@@ -17,6 +17,7 @@
 #include "nsIURI.h"
 #include "nsThreadUtils.h"
 #include "mozilla/Logging.h"
+#include "nsPIDOMWindow.h"
 
 NS_IMPL_ISUPPORTS(ThirdPartyUtil, mozIThirdPartyUtil)
 

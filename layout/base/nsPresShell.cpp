@@ -6996,20 +6996,6 @@ CheckPermissionForBeforeAfterKeyboardEvent(Element* aElement)
     if (permission == nsIPermissionManager::ALLOW_ACTION) {
       return true;
     }
-
-    
-    permission = nsIPermissionManager::DENY_ACTION;
-    permMgr->TestPermissionFromPrincipal(principal, "embed-apps", &permission);
-  }
-
-  
-  
-  
-  
-  nsCOMPtr<nsIMozBrowserFrame> browserFrame(do_QueryInterface(aElement));
-  if ((permission == nsIPermissionManager::ALLOW_ACTION) &&
-      browserFrame && browserFrame->GetReallyIsApp()) {
-    return true;
   }
 
   return false;

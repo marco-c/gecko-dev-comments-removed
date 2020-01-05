@@ -73,13 +73,7 @@ TCPSocketParentBase::~TCPSocketParentBase()
 uint32_t
 TCPSocketParent::GetAppId()
 {
-  const PContentParent *content = Manager()->Manager();
-  if (PBrowserParent* browser = SingleManagedOrNull(content->ManagedPBrowserParent())) {
-    TabParent *tab = TabParent::GetFrom(browser);
-    return tab->OwnAppId();
-  } else {
-    return nsIScriptSecurityManager::UNKNOWN_APP_ID;
-  }
+  return nsIScriptSecurityManager::UNKNOWN_APP_ID;
 };
 
 bool
@@ -120,7 +114,7 @@ NS_IMETHODIMP_(MozExternalRefCountType) TCPSocketParent::Release(void)
   return refcnt;
 }
 
-mozilla::ipc::IPCResult
+bool
 TCPSocketParent::RecvOpen(const nsString& aHost, const uint16_t& aPort, const bool& aUseSSL,
                           const bool& aUseArrayBuffers)
 {
@@ -129,7 +123,7 @@ TCPSocketParent::RecvOpen(const nsString& aHost, const uint16_t& aPort, const bo
   if (net::UsingNeckoIPCSecurity() &&
       !AssertAppProcessPermission(Manager()->Manager(), "tcp-socket")) {
     FireInteralError(this, __LINE__);
-    return IPC_OK();
+    return true;
   }
 
   
@@ -139,11 +133,11 @@ TCPSocketParent::RecvOpen(const nsString& aHost, const uint16_t& aPort, const bo
   mSocket = new TCPSocket(nullptr, aHost, aPort, aUseSSL, aUseArrayBuffers);
   mSocket->SetAppIdAndBrowser(appId, inIsolatedMozBrowser);
   mSocket->SetSocketBridgeParent(this);
-  NS_ENSURE_SUCCESS(mSocket->Init(), IPC_OK());
-  return IPC_OK();
+  NS_ENSURE_SUCCESS(mSocket->Init(), true);
+  return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 TCPSocketParent::RecvOpenBind(const nsCString& aRemoteHost,
                               const uint16_t& aRemotePort,
                               const nsCString& aLocalAddr,
@@ -155,7 +149,7 @@ TCPSocketParent::RecvOpenBind(const nsCString& aRemoteHost,
   if (net::UsingNeckoIPCSecurity() &&
       !AssertAppProcessPermission(Manager()->Manager(), "tcp-socket")) {
     FireInteralError(this, __LINE__);
-    return IPC_OK();
+    return true;
   }
 
   nsresult rv;
@@ -163,7 +157,7 @@ TCPSocketParent::RecvOpenBind(const nsCString& aRemoteHost,
     do_GetService("@mozilla.org/network/socket-transport-service;1", &rv);
   if (NS_FAILED(rv)) {
     FireInteralError(this, __LINE__);
-    return IPC_OK();
+    return true;
   }
 
   nsCOMPtr<nsISocketTransport> socketTransport;
@@ -172,17 +166,17 @@ TCPSocketParent::RecvOpenBind(const nsCString& aRemoteHost,
                             nullptr, getter_AddRefs(socketTransport));
   if (NS_FAILED(rv)) {
     FireInteralError(this, __LINE__);
-    return IPC_OK();
+    return true;
   }
 
   PRNetAddr prAddr;
   if (PR_SUCCESS != PR_InitializeNetAddr(PR_IpAddrAny, aLocalPort, &prAddr)) {
     FireInteralError(this, __LINE__);
-    return IPC_OK();
+    return true;
   }
   if (PR_SUCCESS != PR_StringToNetAddr(aLocalAddr.BeginReading(), &prAddr)) {
     FireInteralError(this, __LINE__);
-    return IPC_OK();
+    return true;
   }
 
   mozilla::net::NetAddr addr;
@@ -190,7 +184,7 @@ TCPSocketParent::RecvOpenBind(const nsCString& aRemoteHost,
   rv = socketTransport->Bind(&addr);
   if (NS_FAILED(rv)) {
     FireInteralError(this, __LINE__);
-    return IPC_OK();
+    return true;
   }
 
   if (!aFilter.IsEmpty()) {
@@ -201,71 +195,66 @@ TCPSocketParent::RecvOpenBind(const nsCString& aRemoteHost,
     if (!filterHandler) {
       NS_ERROR("Content doesn't have a valid filter");
       FireInteralError(this, __LINE__);
-      return IPC_OK();
+      return true;
     }
     rv = filterHandler->NewFilter(getter_AddRefs(mFilter));
     if (NS_FAILED(rv)) {
       NS_ERROR("Cannot create filter that content specified");
       FireInteralError(this, __LINE__);
-      return IPC_OK();
+      return true;
     }
   }
 
-  
-  uint32_t appId = nsIScriptSecurityManager::NO_APP_ID;
   bool     inIsolatedMozBrowser = false;
   const PContentParent *content = Manager()->Manager();
   if (PBrowserParent* browser = SingleManagedOrNull(content->ManagedPBrowserParent())) {
-    
-    
     TabParent *tab = TabParent::GetFrom(browser);
-    appId = tab->OwnAppId();
     inIsolatedMozBrowser = tab->IsIsolatedMozBrowserElement();
   }
 
   mSocket = new TCPSocket(nullptr, NS_ConvertUTF8toUTF16(aRemoteHost), aRemotePort, aUseSSL, aUseArrayBuffers);
-  mSocket->SetAppIdAndBrowser(appId, inIsolatedMozBrowser);
+  mSocket->SetAppIdAndBrowser(nsIScriptSecurityManager::NO_APP_ID, inIsolatedMozBrowser);
   mSocket->SetSocketBridgeParent(this);
   rv = mSocket->InitWithUnconnectedTransport(socketTransport);
-  NS_ENSURE_SUCCESS(rv, IPC_OK());
-  return IPC_OK();
+  NS_ENSURE_SUCCESS(rv, true);
+  return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 TCPSocketParent::RecvStartTLS()
 {
-  NS_ENSURE_TRUE(mSocket, IPC_OK());
+  NS_ENSURE_TRUE(mSocket, true);
   ErrorResult rv;
   mSocket->UpgradeToSecure(rv);
   if (NS_WARN_IF(rv.Failed())) {
     rv.SuppressException();
   }
 
-  return IPC_OK();
+  return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 TCPSocketParent::RecvSuspend()
 {
-  NS_ENSURE_TRUE(mSocket, IPC_OK());
+  NS_ENSURE_TRUE(mSocket, true);
   mSocket->Suspend();
-  return IPC_OK();
+  return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 TCPSocketParent::RecvResume()
 {
-  NS_ENSURE_TRUE(mSocket, IPC_OK());
+  NS_ENSURE_TRUE(mSocket, true);
   ErrorResult rv;
   mSocket->Resume(rv);
   if (NS_WARN_IF(rv.Failed())) {
     rv.SuppressException();
   }
 
-  return IPC_OK();
+  return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 TCPSocketParent::RecvData(const SendableData& aData,
                           const uint32_t& aTrackingNumber)
 {
@@ -285,7 +274,7 @@ TCPSocketParent::RecvData(const SendableData& aData,
     
     if (NS_WARN_IF(NS_FAILED(nsrv)) || !allowed) {
       TCPSOCKET_LOG(("%s: Dropping outgoing TCP packet", __FUNCTION__));
-      return IPC_FAIL_NO_REASON(this);
+      return false;
     }
   }
 
@@ -295,7 +284,7 @@ TCPSocketParent::RecvData(const SendableData& aData,
       JS::Rooted<JS::Value> val(autoCx);
       const nsTArray<uint8_t>& buffer = aData.get_ArrayOfuint8_t();
       bool ok = IPC::DeserializeArrayBuffer(autoCx, buffer, &val);
-      NS_ENSURE_TRUE(ok, IPC_OK());
+      NS_ENSURE_TRUE(ok, true);
       RootedTypedArray<ArrayBuffer> data(autoCx);
       data.Init(&val.toObject());
       Optional<uint32_t> byteLength(buffer.Length());
@@ -312,16 +301,16 @@ TCPSocketParent::RecvData(const SendableData& aData,
     default:
       MOZ_CRASH("unexpected SendableData type");
   }
-  NS_ENSURE_SUCCESS(rv.StealNSResult(), IPC_OK());
-  return IPC_OK();
+  NS_ENSURE_SUCCESS(rv.StealNSResult(), true);
+  return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 TCPSocketParent::RecvClose()
 {
-  NS_ENSURE_TRUE(mSocket, IPC_OK());
+  NS_ENSURE_TRUE(mSocket, true);
   mSocket->Close();
-  return IPC_OK();
+  return true;
 }
 
 void
@@ -413,11 +402,11 @@ TCPSocketParent::ActorDestroy(ActorDestroyReason why)
   mSocket = nullptr;
 }
 
-mozilla::ipc::IPCResult
+bool
 TCPSocketParent::RecvRequestDelete()
 {
   mozilla::Unused << Send__delete__(this);
-  return IPC_OK();
+  return true;
 }
 
 } 

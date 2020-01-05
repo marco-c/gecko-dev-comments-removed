@@ -384,7 +384,7 @@ class DOMEventListenerManagersHashReporter final : public nsIMemoryReporter
 {
   MOZ_DEFINE_MALLOC_SIZE_OF(MallocSizeOf)
 
-  ~DOMEventListenerManagersHashReporter() = default;
+  ~DOMEventListenerManagersHashReporter() {}
 
 public:
   NS_DECL_ISUPPORTS
@@ -450,7 +450,7 @@ EventListenerManagerHashClearEntry(PLDHashTable *table, PLDHashEntryHdr *entry)
 class SameOriginCheckerImpl final : public nsIChannelEventSink,
                                     public nsIInterfaceRequestor
 {
-  ~SameOriginCheckerImpl() = default;
+  ~SameOriginCheckerImpl() {}
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSICHANNELEVENTSINK
@@ -4556,7 +4556,7 @@ nsContentUtils::CreateContextualFragment(nsINode* aContextNode,
           } else {
             setDefaultNamespace = true;
           }
-          tagName.AppendLiteral(R"(=")");
+          tagName.AppendLiteral("=\"");
           tagName.Append(uriStr);
           tagName.Append('"');
         }
@@ -4571,7 +4571,7 @@ nsContentUtils::CreateContextualFragment(nsINode* aContextNode,
         
         
         info->GetNamespaceURI(uriStr);
-        tagName.AppendLiteral(R"( xmlns=")");
+        tagName.AppendLiteral(" xmlns=\"");
         tagName.Append(uriStr);
         tagName.Append('"');
       }
@@ -6323,7 +6323,7 @@ nsContentUtils::AllocClassMatchingInfo(nsINode* aRootNode,
   nsAttrValue attrValue;
   attrValue.ParseAtomArray(*aClasses);
   
-  auto* info = new ClassMatchingInfo;
+  ClassMatchingInfo* info = new ClassMatchingInfo;
   if (attrValue.Type() == nsAttrValue::eAtomArray) {
     info->mClasses.SwapElements(*(attrValue.GetAtomArrayValue()));
   } else if (attrValue.Type() == nsAttrValue::eAtom) {
@@ -6400,7 +6400,7 @@ nsContentUtils::IsUserFocusIgnored(nsINode* aNode)
     nsCOMPtr<nsIMozBrowserFrame> browserFrame = do_QueryInterface(aNode);
     if (browserFrame &&
         aNode->AsElement()->HasAttr(kNameSpaceID_None, nsGkAtoms::ignoreuserfocus) &&
-        browserFrame->GetReallyIsBrowserOrApp()) {
+        browserFrame->GetReallyIsBrowser()) {
       return true;
     }
     nsPIDOMWindowOuter* win = aNode->OwnerDoc()->GetWindow();
@@ -7125,8 +7125,8 @@ nsContentUtils::IsForbiddenSystemRequestHeader(const nsACString& aHeader)
     "cookie", "cookie2", "date", "dnt", "expect", "host", "keep-alive",
     "origin", "referer", "te", "trailer", "transfer-encoding", "upgrade", "via"
   };
-  for (auto& kInvalidHeader : kInvalidHeaders) {
-    if (aHeader.LowerCaseEqualsASCII(kInvalidHeader)) {
+  for (uint32_t i = 0; i < ArrayLength(kInvalidHeaders); ++i) {
+    if (aHeader.LowerCaseEqualsASCII(kInvalidHeaders[i])) {
       return true;
     }
   }
@@ -7907,7 +7907,7 @@ struct GetSurfaceDataShmem
   }
 
   static BufferType
-  GetBuffer(const ReturnType& aReturnValue)
+  GetBuffer(ReturnType aReturnValue)
   {
     return aReturnValue.get<char>();
   }
@@ -8197,7 +8197,7 @@ nsContentUtils::SendKeyEvent(nsIWidget* aWidget,
 }
 
 nsresult
-nsContentUtils::SendMouseEvent(const nsCOMPtr<nsIPresShell>& aPresShell,
+nsContentUtils::SendMouseEvent(nsCOMPtr<nsIPresShell> aPresShell,
                                const nsAString& aType,
                                float aX,
                                float aY,
@@ -9064,7 +9064,7 @@ StartElement(Element* aContent, StringBuilder& aBuilder)
       continue;
     }
 
-    auto* attValue = new nsAutoString();
+    nsAutoString* attValue = new nsAutoString();
     aContent->GetAttr(attNs, attName, *attValue);
 
     
@@ -9097,9 +9097,9 @@ StartElement(Element* aContent, StringBuilder& aBuilder)
     }
 
     aBuilder.Append(attName);
-    aBuilder.Append(R"(=")");
+    aBuilder.Append("=\"");
     AppendEncodedAttributeValue(attValue, aBuilder);
-    aBuilder.Append(R"(")");
+    aBuilder.Append("\"");
   }
 
   aBuilder.Append(">");
@@ -9146,15 +9146,15 @@ ShouldEscape(nsIContent* aParent)
   static bool sInitialized = false;
   if (!sInitialized) {
     sInitialized = true;
-    for (auto& nonEscapingElement : nonEscapingElements) {
-      sFilter.add(nonEscapingElement);
+    for (uint32_t i = 0; i < ArrayLength(nonEscapingElements); ++i) {
+      sFilter.add(nonEscapingElements[i]);
     }
   }
 
   nsIAtom* tag = aParent->NodeInfo()->NameAtom();
   if (sFilter.mightContain(tag)) {
-    for (auto& nonEscapingElement : nonEscapingElements) {
-      if (tag == nonEscapingElement) {
+    for (uint32_t i = 0; i < ArrayLength(nonEscapingElements); ++i) {
+      if (tag == nonEscapingElements[i]) {
         return false;
       }
     }

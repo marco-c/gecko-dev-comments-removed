@@ -177,19 +177,7 @@ NeckoParent::GetValidatedAppInfo(const SerializedLoadContext& aSerialized,
   nsAutoCString debugString;
   for (uint32_t i = 0; i < contextArray.Length(); i++) {
     TabContext tabContext = contextArray[i];
-    uint32_t appId = tabContext.OwnOrContainingAppId();
     bool inBrowserElement = aSerialized.mOriginAttributes.mInIsolatedMozBrowser;
-
-    if (appId == NECKO_UNKNOWN_APP_ID) {
-      debugString.Append("u,");
-      continue;
-    }
-    
-    if (appId == NECKO_NO_APP_ID && tabContext.HasOwnApp()) {
-      
-      debugString.Append("h,");
-      continue;
-    }
 
     if (aSerialized.mOriginAttributes.mUserContextId != tabContext.OriginAttributesRef().mUserContextId) {
       debugString.Append("(");
@@ -200,7 +188,7 @@ NeckoParent::GetValidatedAppInfo(const SerializedLoadContext& aSerialized,
       continue;
     }
     aAttrs = DocShellOriginAttributes();
-    aAttrs.mAppId = appId;
+    aAttrs.mAppId = nsIScriptSecurityManager::NO_APP_ID;
     aAttrs.mInIsolatedMozBrowser = inBrowserElement;
     aAttrs.mUserContextId = aSerialized.mOriginAttributes.mUserContextId;
     aAttrs.mPrivateBrowsingId = aSerialized.mOriginAttributes.mPrivateBrowsingId;
@@ -331,7 +319,7 @@ NeckoParent::DeallocPHttpChannelParent(PHttpChannelParent* channel)
   return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 NeckoParent::RecvPHttpChannelConstructor(
                       PHttpChannelParent* aActor,
                       const PBrowserOrId& aBrowser,
@@ -339,10 +327,7 @@ NeckoParent::RecvPHttpChannelConstructor(
                       const HttpChannelCreationArgs& aOpenArgs)
 {
   HttpChannelParent* p = static_cast<HttpChannelParent*>(aActor);
-  if (!p->Init(aOpenArgs)) {
-    return IPC_FAIL_NO_REASON(this);
-  }
-  return IPC_OK();
+  return p->Init(aOpenArgs);
 }
 
 PAltDataOutputStreamParent*
@@ -401,7 +386,7 @@ NeckoParent::DeallocPFTPChannelParent(PFTPChannelParent* channel)
   return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 NeckoParent::RecvPFTPChannelConstructor(
                       PFTPChannelParent* aActor,
                       const PBrowserOrId& aBrowser,
@@ -409,10 +394,7 @@ NeckoParent::RecvPFTPChannelConstructor(
                       const FTPChannelCreationArgs& aOpenArgs)
 {
   FTPChannelParent* p = static_cast<FTPChannelParent*>(aActor);
-  if (!p->Init(aOpenArgs)) {
-    return IPC_FAIL_NO_REASON(this);
-  }
-  return IPC_OK();
+  return p->Init(aOpenArgs);
 }
 
 PCookieServiceParent*
@@ -509,13 +491,13 @@ NeckoParent::DeallocPDataChannelParent(PDataChannelParent* actor)
   return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 NeckoParent::RecvPDataChannelConstructor(PDataChannelParent* actor,
                                          const uint32_t& channelId)
 {
   DataChannelParent* p = static_cast<DataChannelParent*>(actor);
   MOZ_DIAGNOSTIC_ASSERT(p->Init(channelId));
-  return IPC_OK();
+  return true;
 }
 
 PRtspControllerParent*
@@ -553,7 +535,7 @@ NeckoParent::AllocPRtspChannelParent(const RtspChannelConnectArgs& aArgs)
 #endif
 }
 
-mozilla::ipc::IPCResult
+bool
 NeckoParent::RecvPRtspChannelConstructor(
                       PRtspChannelParent* aActor,
                       const RtspChannelConnectArgs& aConnectArgs)
@@ -562,7 +544,7 @@ NeckoParent::RecvPRtspChannelConstructor(
   RtspChannelParent* p = static_cast<RtspChannelParent*>(aActor);
   return p->Init(aConnectArgs);
 #else
-  return IPC_FAIL_NO_REASON(this);
+  return false;
 #endif
 }
 
@@ -606,14 +588,14 @@ NeckoParent::AllocPTCPServerSocketParent(const uint16_t& aLocalPort,
   return p;
 }
 
-mozilla::ipc::IPCResult
+bool
 NeckoParent::RecvPTCPServerSocketConstructor(PTCPServerSocketParent* aActor,
                                              const uint16_t& aLocalPort,
                                              const uint16_t& aBacklog,
                                              const bool& aUseArrayBuffers)
 {
   static_cast<TCPServerSocketParent*>(aActor)->Init();
-  return IPC_OK();
+  return true;
 }
 
 bool
@@ -633,15 +615,12 @@ NeckoParent::AllocPUDPSocketParent(const Principal& ,
   return p.forget().take();
 }
 
-mozilla::ipc::IPCResult
+bool
 NeckoParent::RecvPUDPSocketConstructor(PUDPSocketParent* aActor,
                                        const Principal& aPrincipal,
                                        const nsCString& aFilter)
 {
-  if (!static_cast<UDPSocketParent*>(aActor)->Init(aPrincipal, aFilter)) {
-    return IPC_FAIL_NO_REASON(this);
-  }
-  return IPC_OK();
+  return static_cast<UDPSocketParent*>(aActor)->Init(aPrincipal, aFilter);
 }
 
 bool
@@ -662,7 +641,7 @@ NeckoParent::AllocPDNSRequestParent(const nsCString& aHost,
   return p;
 }
 
-mozilla::ipc::IPCResult
+bool
 NeckoParent::RecvPDNSRequestConstructor(PDNSRequestParent* aActor,
                                         const nsCString& aHost,
                                         const uint32_t& aFlags,
@@ -670,7 +649,7 @@ NeckoParent::RecvPDNSRequestConstructor(PDNSRequestParent* aActor,
 {
   static_cast<DNSRequestParent*>(aActor)->DoAsyncResolve(aHost, aFlags,
                                                          aNetworkInterface);
-  return IPC_OK();
+  return true;
 }
 
 bool
@@ -681,7 +660,7 @@ NeckoParent::DeallocPDNSRequestParent(PDNSRequestParent* aParent)
   return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 NeckoParent::RecvSpeculativeConnect(const URIParams& aURI,
                                     const Principal& aPrincipal,
                                     const bool& aAnonymous)
@@ -697,24 +676,24 @@ NeckoParent::RecvSpeculativeConnect(const URIParams& aURI,
     }
 
   }
-  return IPC_OK();
+  return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 NeckoParent::RecvHTMLDNSPrefetch(const nsString& hostname,
                                  const uint16_t& flags)
 {
   nsHTMLDNSPrefetch::Prefetch(hostname, flags);
-  return IPC_OK();
+  return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 NeckoParent::RecvCancelHTMLDNSPrefetch(const nsString& hostname,
                                  const uint16_t& flags,
                                  const nsresult& reason)
 {
   nsHTMLDNSPrefetch::CancelPrefetch(hostname, flags, reason);
-  return IPC_OK();
+  return true;
 }
 
 PChannelDiverterParent*
@@ -723,13 +702,13 @@ NeckoParent::AllocPChannelDiverterParent(const ChannelDiverterArgs& channel)
   return new ChannelDiverterParent();
 }
 
-mozilla::ipc::IPCResult
+bool
 NeckoParent::RecvPChannelDiverterConstructor(PChannelDiverterParent* actor,
                                              const ChannelDiverterArgs& channel)
 {
   auto parent = static_cast<ChannelDiverterParent*>(actor);
   parent->Init(channel);
-  return IPC_OK();
+  return true;
 }
 
 bool
@@ -802,7 +781,7 @@ NeckoParent::NestedFrameAuthPrompt::AsyncPromptAuth(
   return NS_ERROR_FAILURE;
 }
 
-mozilla::ipc::IPCResult
+bool
 NeckoParent::RecvOnAuthAvailable(const uint64_t& aCallbackId,
                                  const nsString& aUser,
                                  const nsString& aPassword,
@@ -810,7 +789,7 @@ NeckoParent::RecvOnAuthAvailable(const uint64_t& aCallbackId,
 {
   nsCOMPtr<nsIAuthPromptCallback> callback = CallbackMap()[aCallbackId];
   if (!callback) {
-    return IPC_OK();
+    return true;
   }
   CallbackMap().erase(aCallbackId);
 
@@ -821,24 +800,24 @@ NeckoParent::RecvOnAuthAvailable(const uint64_t& aCallbackId,
   holder->SetDomain(aDomain);
 
   callback->OnAuthAvailable(nullptr, holder);
-  return IPC_OK();
+  return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 NeckoParent::RecvOnAuthCancelled(const uint64_t& aCallbackId,
                                  const bool& aUserCancel)
 {
   nsCOMPtr<nsIAuthPromptCallback> callback = CallbackMap()[aCallbackId];
   if (!callback) {
-    return IPC_OK();
+    return true;
   }
   CallbackMap().erase(aCallbackId);
   callback->OnAuthCancelled(nullptr, aUserCancel);
-  return IPC_OK();
+  return true;
 }
 
 
-mozilla::ipc::IPCResult
+bool
 NeckoParent::RecvPredPredict(const ipc::OptionalURIParams& aTargetURI,
                              const ipc::OptionalURIParams& aSourceURI,
                              const uint32_t& aReason,
@@ -862,17 +841,17 @@ NeckoParent::RecvPredPredict(const ipc::OptionalURIParams& aTargetURI,
   nsresult rv = NS_OK;
   nsCOMPtr<nsINetworkPredictor> predictor =
     do_GetService("@mozilla.org/network/predictor;1", &rv);
-  NS_ENSURE_SUCCESS(rv, IPC_FAIL_NO_REASON(this));
+  NS_ENSURE_SUCCESS(rv, false);
 
   nsCOMPtr<nsINetworkPredictorVerifier> verifier;
   if (hasVerifier) {
     verifier = do_QueryInterface(predictor);
   }
   predictor->Predict(targetURI, sourceURI, aReason, loadContext, verifier);
-  return IPC_OK();
+  return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 NeckoParent::RecvPredLearn(const ipc::URIParams& aTargetURI,
                            const ipc::OptionalURIParams& aSourceURI,
                            const uint32_t& aReason,
@@ -895,39 +874,39 @@ NeckoParent::RecvPredLearn(const ipc::URIParams& aTargetURI,
   nsresult rv = NS_OK;
   nsCOMPtr<nsINetworkPredictor> predictor =
     do_GetService("@mozilla.org/network/predictor;1", &rv);
-  NS_ENSURE_SUCCESS(rv, IPC_FAIL_NO_REASON(this));
+  NS_ENSURE_SUCCESS(rv, false);
 
   predictor->Learn(targetURI, sourceURI, aReason, loadContext);
-  return IPC_OK();
+  return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 NeckoParent::RecvPredReset()
 {
   
   nsresult rv = NS_OK;
   nsCOMPtr<nsINetworkPredictor> predictor =
     do_GetService("@mozilla.org/network/predictor;1", &rv);
-  NS_ENSURE_SUCCESS(rv, IPC_FAIL_NO_REASON(this));
+  NS_ENSURE_SUCCESS(rv, false);
 
   predictor->Reset();
-  return IPC_OK();
+  return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 NeckoParent::RecvRemoveRequestContext(const nsCString& rcid)
 {
   nsCOMPtr<nsIRequestContextService> rcsvc =
     do_GetService("@mozilla.org/network/request-context-service;1");
   if (!rcsvc) {
-    return IPC_OK();
+    return true;
   }
 
   nsID id;
   id.Parse(rcid.BeginReading());
   rcsvc->RemoveRequestContext(id);
 
-  return IPC_OK();
+  return true;
 }
 
 } 

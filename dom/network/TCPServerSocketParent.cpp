@@ -65,13 +65,7 @@ TCPServerSocketParent::Init()
 uint32_t
 TCPServerSocketParent::GetAppId()
 {
-  const PContentParent *content = Manager()->Manager();
-  if (PBrowserParent* browser = SingleManagedOrNull(content->ManagedPBrowserParent())) {
-    TabParent *tab = TabParent::GetFrom(browser);
-    return tab->OwnAppId();
-  } else {
-    return nsIScriptSecurityManager::UNKNOWN_APP_ID;
-  }
+  return nsIScriptSecurityManager::UNKNOWN_APP_ID;
 }
 
 bool
@@ -121,12 +115,12 @@ TCPServerSocketParent::SendCallbackAccept(TCPSocketParent *socket)
   return NS_OK;
 }
 
-mozilla::ipc::IPCResult
+bool
 TCPServerSocketParent::RecvClose()
 {
-  NS_ENSURE_TRUE(mServerSocket, IPC_OK());
+  NS_ENSURE_TRUE(mServerSocket, true);
   mServerSocket->Close();
-  return IPC_OK();
+  return true;
 }
 
 void
@@ -139,11 +133,11 @@ TCPServerSocketParent::ActorDestroy(ActorDestroyReason why)
   mNeckoParent = nullptr;
 }
 
-mozilla::ipc::IPCResult
+bool
 TCPServerSocketParent::RecvRequestDelete()
 {
   mozilla::Unused << Send__delete__(this);
-  return IPC_OK();
+  return true;
 }
 
 void
