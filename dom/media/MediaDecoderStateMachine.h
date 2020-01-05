@@ -737,9 +737,7 @@ private:
   
   
   
-  
-  bool mIsAudioPrerolling;
-  bool mIsVideoPrerolling;
+  bool mIsPrerolling = false;
 
   
   
