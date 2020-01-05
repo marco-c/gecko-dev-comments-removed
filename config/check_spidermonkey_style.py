@@ -63,7 +63,7 @@ included_inclnames_to_ignore = set([
     'devtools/Instruments.h',   
     'double-conversion.h',      
     'javascript-trace.h',       
-    'jsautokw.h',               
+    'frontend/ReservedWordsGenerated.h', 
     'jscustomallocator.h',      
     'js-config.h',              
     'fdlibm.h',                 
@@ -101,7 +101,7 @@ included_inclnames_to_ignore = set([
 
 oddly_ordered_inclnames = set([
     'ctypes/typedefs.h',        
-    'jsautokw.h',               
+    'frontend/ReservedWordsGenerated.h', 
     'jswin.h',                  
     'machine/endian.h',         
     'winbase.h',                

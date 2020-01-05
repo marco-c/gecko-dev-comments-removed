@@ -26,13 +26,12 @@
 #include "js/UniquePtr.h"
 #include "js/Vector.h"
 #include "vm/RegExpObject.h"
+#include "vm/String.h"
 
 struct KeywordInfo;
 
 namespace js {
 namespace frontend {
-
-class AutoAwaitIsKeyword;
 
 struct TokenPos {
     uint32_t    begin;  
@@ -121,9 +120,6 @@ struct Token
         Operand,
 
         
-        KeywordIsName,
-
-        
         
         
         
@@ -164,10 +160,6 @@ struct Token
         
         
         OperandIsNone,
-
-        
-        
-        NoneIsKeywordIsName,
     };
     friend class TokenStream;
 
@@ -224,11 +216,6 @@ struct Token
         return u.name->JSAtom::asPropertyName(); 
     }
 
-    bool nameContainsEscape() const {
-        PropertyName* n = name();
-        return pos.begin + n->length() != pos.end;
-    }
-
     JSAtom* atom() const {
         MOZ_ASSERT(type == TOK_STRING ||
                    type == TOK_TEMPLATE_HEAD ||
@@ -254,9 +241,21 @@ struct Token
 };
 
 class CompileError : public JSErrorReport {
-public:
+  public:
     void throwError(JSContext* cx);
 };
+
+extern const char*
+ReservedWordToCharZ(PropertyName* str);
+
+extern MOZ_MUST_USE bool
+IsFutureReservedWord(JSLinearString* str);
+
+extern MOZ_MUST_USE bool
+IsReservedWordLiteral(JSLinearString* str);
+
+extern MOZ_MUST_USE bool
+IsStrictReservedWord(JSLinearString* str);
 
 
 
@@ -344,25 +343,24 @@ class MOZ_STACK_CLASS TokenStream
     JSVersion versionNumber() const { return VersionNumber(options().version); }
     JSVersion versionWithFlags() const { return options().version; }
 
+  private:
+    PropertyName* reservedWordToPropertyName(TokenKind tt) const;
+
+  public:
     PropertyName* currentName() const {
-        if (isCurrentTokenType(TOK_YIELD))
-            return cx->names().yield;
-        MOZ_ASSERT(isCurrentTokenType(TOK_NAME));
-        return currentToken().name();
+        if (isCurrentTokenType(TOK_NAME))
+            return currentToken().name();
+
+        MOZ_ASSERT(TokenKindIsPossibleIdentifierName(currentToken().type));
+        return reservedWordToPropertyName(currentToken().type);
     }
 
     PropertyName* nextName() const {
-        if (nextToken().type == TOK_YIELD)
-            return cx->names().yield;
-        MOZ_ASSERT(nextToken().type == TOK_NAME);
-        return nextToken().name();
-    }
+        if (nextToken().type != TOK_NAME)
+            return nextToken().name();
 
-    bool nextNameContainsEscape() const {
-        if (nextToken().type == TOK_YIELD)
-            return false;
-        MOZ_ASSERT(nextToken().type == TOK_NAME);
-        return nextToken().nameContainsEscape();
+        MOZ_ASSERT(TokenKindIsPossibleIdentifierName(nextToken().type));
+        return reservedWordToPropertyName(nextToken().type);
     }
 
     bool isCurrentTokenAssignment() const {
@@ -497,9 +495,6 @@ class MOZ_STACK_CLASS TokenStream
         {}
     };
 
-    bool awaitIsKeyword = false;
-    friend class AutoAwaitIsKeyword;
-
     uint32_t invalidTemplateEscapeOffset = 0;
     InvalidEscapeType invalidTemplateEscapeType = InvalidEscapeType::None;
 
@@ -507,14 +502,12 @@ class MOZ_STACK_CLASS TokenStream
     typedef Token::Modifier Modifier;
     static constexpr Modifier None = Token::None;
     static constexpr Modifier Operand = Token::Operand;
-    static constexpr Modifier KeywordIsName = Token::KeywordIsName;
     static constexpr Modifier TemplateTail = Token::TemplateTail;
 
     typedef Token::ModifierException ModifierException;
     static constexpr ModifierException NoException = Token::NoException;
     static constexpr ModifierException NoneIsOperand = Token::NoneIsOperand;
     static constexpr ModifierException OperandIsNone = Token::OperandIsNone;
-    static constexpr ModifierException NoneIsKeywordIsName = Token::NoneIsKeywordIsName;
 
     void addModifierException(ModifierException modifierException) {
 #ifdef DEBUG
@@ -543,10 +536,6 @@ class MOZ_STACK_CLASS TokenStream
             MOZ_ASSERT(next.type != TOK_DIV && next.type != TOK_REGEXP,
                        "next token requires contextual specifier to be parsed unambiguously");
             break;
-          case NoneIsKeywordIsName:
-            MOZ_ASSERT(next.modifier == KeywordIsName);
-            MOZ_ASSERT(next.type != TOK_NAME);
-            break;
           default:
             MOZ_CRASH("unexpected modifier exception");
         }
@@ -570,12 +559,6 @@ class MOZ_STACK_CLASS TokenStream
         if (lookaheadToken.modifierException == NoneIsOperand) {
             
             if (modifier == None && lookaheadToken.modifier == Operand)
-                return;
-        }
-
-        if (lookaheadToken.modifierException == NoneIsKeywordIsName) {
-            
-            if (modifier == None && lookaheadToken.modifier == KeywordIsName)
                 return;
         }
 
@@ -713,36 +696,6 @@ class MOZ_STACK_CLASS TokenStream
         MOZ_ALWAYS_TRUE(matched);
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    MOZ_MUST_USE bool matchContextualKeyword(bool* matchedp, Handle<PropertyName*> keyword,
-                                             Modifier modifier = None)
-    {
-        TokenKind token;
-        if (!getToken(&token, modifier))
-            return false;
-        if (token == TOK_NAME && currentToken().name() == keyword) {
-            if (currentToken().nameContainsEscape()) {
-                reportError(JSMSG_ESCAPED_KEYWORD);
-                return false;
-            }
-
-            *matchedp = true;
-        } else {
-            *matchedp = false;
-            ungetToken();
-        }
-        return true;
-    }
-
     MOZ_MUST_USE bool nextTokenEndsExpr(bool* endsExpr) {
         TokenKind tt;
         if (!peekToken(&tt))
@@ -807,19 +760,6 @@ class MOZ_STACK_CLASS TokenStream
     char16_t* sourceMapURL() {
         return sourceMapURL_.get();
     }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    MOZ_MUST_USE bool checkForKeyword(JSAtom* atom, TokenKind* ttp);
-
-    
-    MOZ_MUST_USE bool checkForKeyword(const KeywordInfo* kw, TokenKind* ttp);
 
     
     
@@ -1100,25 +1040,6 @@ class MOZ_STACK_CLASS TokenStream
     JSContext* const    cx;
     bool                mutedErrors;
     StrictModeGetter*   strictModeGetter;  
-};
-
-class MOZ_STACK_CLASS AutoAwaitIsKeyword
-{
-private:
-    TokenStream* ts_;
-    bool oldAwaitIsKeyword_;
-
-public:
-    AutoAwaitIsKeyword(TokenStream* ts, bool awaitIsKeyword) {
-        ts_ = ts;
-        oldAwaitIsKeyword_ = ts_->awaitIsKeyword;
-        ts_->awaitIsKeyword = awaitIsKeyword;
-    }
-
-    ~AutoAwaitIsKeyword() {
-        ts_->awaitIsKeyword = oldAwaitIsKeyword_;
-        ts_ = nullptr;
-    }
 };
 
 extern const char*
