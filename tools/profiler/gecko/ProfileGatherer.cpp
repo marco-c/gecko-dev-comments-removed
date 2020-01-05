@@ -73,6 +73,7 @@ ProfileGatherer::Start(double aSinceTime,
                        Promise* aPromise)
 {
   MOZ_ASSERT(NS_IsMainThread());
+
   if (mGathering) {
     
     
@@ -82,23 +83,9 @@ ProfileGatherer::Start(double aSinceTime,
     return;
   }
 
-  mSinceTime = aSinceTime;
   mPromise = aPromise;
-  mGathering = true;
-  mPendingProfiles = 0;
 
-  nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
-  if (os) {
-    DebugOnly<nsresult> rv =
-      os->AddObserver(this, "profiler-subprocess", false);
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "AddObserver failed");
-    rv = os->NotifyObservers(this, "profiler-subprocess-gather", nullptr);
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "NotifyObservers failed");
-  }
-
-  if (!mPendingProfiles) {
-    Finish();
-  }
+  Start2(aSinceTime);
 }
 
 void
@@ -117,8 +104,16 @@ ProfileGatherer::Start(double aSinceTime,
     return;
   }
 
-  mSinceTime = aSinceTime;
   mFile = file;
+
+  Start2(aSinceTime);
+}
+
+
+void
+ProfileGatherer::Start2(double aSinceTime)
+{
+  mSinceTime = aSinceTime;
   mGathering = true;
   mPendingProfiles = 0;
 
