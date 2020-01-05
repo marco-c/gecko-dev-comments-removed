@@ -74,14 +74,7 @@ public:
 
   
   
-  
-  
-  
-  
-  
-  void LazilyResolveServoDeclaration(nsRuleData* aRuleData,
-                                     nsCSSPropertyID* aIndexToIdMapping,
-                                     size_t aRuleDataSize);
+  void LazilyResolveServoDeclaration(nsPresContext* aPresContext);
 
   
   
