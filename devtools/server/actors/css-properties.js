@@ -75,6 +75,8 @@ function generateCssProperties() {
       values.unshift("COLOR");
     }
 
+    let subproperties = DOMUtils.getSubpropertiesForCSSProperty(name);
+
     
     
     
@@ -82,7 +84,8 @@ function generateCssProperties() {
     const serverDefinition = {
       isInherited: DOMUtils.isInheritedProperty(name),
       values,
-      supports
+      supports,
+      subproperties,
     };
     properties[name] = Object.assign(clientDefinition, serverDefinition);
   });

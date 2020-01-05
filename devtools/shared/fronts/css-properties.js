@@ -118,7 +118,26 @@ CssProperties.prototype = {
 
   getNames(property) {
     return Object.keys(this.properties);
-  }
+  },
+
+  
+
+
+
+
+
+
+
+
+  getSubproperties(name) {
+    if (this.isKnown(name)) {
+      if (this.properties[name] && this.properties[name].subproperties) {
+        return this.properties[name].subproperties;
+      }
+      return [name];
+    }
+    return [];
+  },
 };
 
 
@@ -230,6 +249,15 @@ function normalizeCssData(db) {
         if (typeof CSS_PROPERTIES_DB.properties[name] === "object") {
           db.properties[name].values = CSS_PROPERTIES_DB.properties[name].values;
         }
+      }
+    }
+
+    
+    
+    if (!db.properties.background.subproperties) {
+      for (let name in db.properties) {
+        db.properties[name].subproperties =
+          CSS_PROPERTIES_DB.properties[name].subproperties;
       }
     }
   }
