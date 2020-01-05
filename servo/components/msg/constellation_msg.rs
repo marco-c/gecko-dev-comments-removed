@@ -261,7 +261,7 @@ pub enum Msg {
     GetPipeline(Option<FrameId>, IpcSender<Option<PipelineId>>),
     
     
-    GetFrame(PipelineId, SubpageId, IpcSender<Option<FrameId>>),
+    GetFrame(PipelineId, IpcSender<Option<FrameId>>),
     
     Focus(PipelineId),
     
