@@ -85,14 +85,17 @@ function run_test() {
       equal(typeof endHangs.hangs[0].stack[0], "string");
 
       
-      
-      ok(endHangs.hangs.some((hang) => (
-        hang.nativeStack &&
-        Array.isArray(hang.nativeStack.memoryMap) &&
-        hang.nativeStack.memoryMap.length !== 0 &&
-        Array.isArray(hang.nativeStack.stacks) &&
-        hang.nativeStack.stacks.length !== 0
-      )));
+      if (mozinfo.os == "win") {
+        
+        
+        ok(endHangs.hangs.some((hang) => (
+          hang.nativeStack &&
+          Array.isArray(hang.nativeStack.memoryMap) &&
+          hang.nativeStack.memoryMap.length !== 0 &&
+          Array.isArray(hang.nativeStack.stacks) &&
+          hang.nativeStack.stacks.length !== 0
+        )));
+      }
 
       check_histogram(endHangs.hangs[0].histogram);
 
