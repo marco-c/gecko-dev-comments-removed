@@ -386,16 +386,14 @@ MediaFormatReader::DecoderData::ShutdownDecoder()
 
   if (mFlushing) {
     
-    if (mShutdownPromise.IsEmpty()) {
-      mOwner->mShutdownPromisePool->Track(mShutdownPromise.Ensure(__func__));
-    }
-    return;
-  }
-
-  if (!mShutdownPromise.IsEmpty()) {
+    MOZ_DIAGNOSTIC_ASSERT(mShutdownPromise);
+    mOwner->mShutdownPromisePool->Track(mShutdownPromise->Ensure(__func__));
     
     
-    mDecoder->Shutdown()->ChainTo(mShutdownPromise.Steal(), __func__);
+    
+    
+    mShutdownPromise = nullptr;
+    mFlushing = false;
   } else {
     
     mOwner->mShutdownPromisePool->Track(mDecoder->Shutdown());
@@ -426,28 +424,36 @@ MediaFormatReader::DecoderData::Flush()
   mNumSamplesOutput = 0;
   mSizeOfQueue = 0;
   if (mDecoder) {
-    RefPtr<MediaFormatReader> owner = mOwner;
     TrackType type = mType == MediaData::AUDIO_DATA
                      ? TrackType::kAudioTrack
                      : TrackType::kVideoTrack;
     mFlushing = true;
+    MOZ_DIAGNOSTIC_ASSERT(!mShutdownPromise);
+    mShutdownPromise = new SharedShutdownPromiseHolder();
+    RefPtr<SharedShutdownPromiseHolder> p = mShutdownPromise;
+    RefPtr<MediaDataDecoder> d = mDecoder;
     mDecoder->Flush()
       ->Then(mOwner->OwnerThread(), __func__,
-             [owner, type, this]() {
-               mFlushing = false;
-               if (!mShutdownPromise.IsEmpty()) {
-                 ShutdownDecoder();
+             [type, this, p, d]() {
+               if (!p->IsEmpty()) {
+                 
+                 
+                 
+                 d->Shutdown()->ChainTo(p->Steal(), __func__);
                  return;
                }
-               owner->ScheduleUpdate(type);
+               mFlushing = false;
+               mShutdownPromise = nullptr;
+               mOwner->ScheduleUpdate(type);
              },
-             [owner, type, this](const MediaResult& aError) {
-               mFlushing = false;
-               if (!mShutdownPromise.IsEmpty()) {
-                 ShutdownDecoder();
+             [type, this, p, d](const MediaResult& aError) {
+               if (!p->IsEmpty()) {
+                 d->Shutdown()->ChainTo(p->Steal(), __func__);
                  return;
                }
-               owner->NotifyError(type, aError);
+               mFlushing = false;
+               mShutdownPromise = nullptr;
+               mOwner->NotifyError(type, aError);
              });
   }
   mFlushed = true;
