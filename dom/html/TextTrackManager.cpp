@@ -590,7 +590,7 @@ TextTrackManager::TimeMarchesOn()
   mTimeMarchesOnDispatched = false;
 
   
-  if (!mTextTracks || mTextTracks->Length() == 0) {
+  if (!mTextTracks || mTextTracks->Length() == 0 || mShutdown) {
     return;
   }
 
