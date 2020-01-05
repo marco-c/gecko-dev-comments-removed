@@ -12,8 +12,8 @@ use canvas_traits::CanvasMsg;
 use euclid::point::Point2D;
 use euclid::size::Size2D;
 use ipc_channel::ipc::IpcSender;
-use msg::constellation_msg::{Failure, NavigationDirection, PipelineId};
 use msg::constellation_msg::{LoadData, SubpageId};
+use msg::constellation_msg::{NavigationDirection, PipelineId};
 use offscreen_gl_context::{GLContextAttributes, GLLimits};
 use style_traits::cursor::Cursor;
 use style_traits::viewport::ViewportConstraints;
@@ -25,17 +25,9 @@ pub enum LayoutMsg {
     
     ChangeRunningAnimationsState(PipelineId, AnimationState),
     
-    Failure(Failure),
-    
     SetCursor(Cursor),
     
     ViewportConstrained(PipelineId, ViewportConstraints),
-}
-
-impl From<Failure> for LayoutMsg {
-    fn from(failure: Failure) -> LayoutMsg {
-        LayoutMsg::Failure(failure)
-    }
 }
 
 
@@ -55,8 +47,6 @@ pub enum ScriptMsg {
     
     
     DOMLoad(PipelineId),
-    
-    Failure(Failure),
     
     Focus(PipelineId),
     
@@ -91,10 +81,4 @@ pub enum ScriptMsg {
     SetDocumentState(PipelineId, DocumentState),
     
     SetFinalUrl(PipelineId, Url),
-}
-
-impl From<Failure> for ScriptMsg {
-    fn from(failure: Failure) -> ScriptMsg {
-        ScriptMsg::Failure(failure)
-    }
 }
