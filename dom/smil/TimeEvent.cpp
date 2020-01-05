@@ -56,6 +56,8 @@ void
 TimeEvent::InitTimeEvent(const nsAString& aType, nsGlobalWindow* aView,
                          int32_t aDetail)
 {
+  NS_ENSURE_TRUE_VOID(!mEvent->mFlags.mIsBeingDispatched);
+
   Event::InitEvent(aType, false , false );
   mDetail = aDetail;
   mView = aView ? aView->GetOuterWindow() : nullptr;
