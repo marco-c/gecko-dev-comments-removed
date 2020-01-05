@@ -57,7 +57,7 @@ use std::sync::mpsc::{Sender, Receiver};
 use url::Url;
 use util::ipc::OptionalOpaqueIpcSender;
 
-pub use script_msg::{LayoutMsg, ScriptMsg};
+pub use script_msg::{LayoutMsg, ScriptMsg, EventResult};
 
 
 
@@ -305,8 +305,6 @@ pub struct InitialScriptState {
     
     pub parent_info: Option<(PipelineId, SubpageId)>,
     
-    pub compositor: IpcSender<ScriptToCompositorMsg>,
-    
     pub control_chan: IpcSender<ConstellationControlMsg>,
     
     pub control_port: IpcReceiver<ConstellationControlMsg>,
@@ -347,41 +345,6 @@ pub trait ScriptThreadFactory {
     fn create(state: InitialScriptState,
               load_data: LoadData)
               -> (Sender<Self::Message>, Receiver<Self::Message>);
-}
-
-
-#[derive(Deserialize, Serialize)]
-pub enum ScriptToCompositorMsg {
-    
-    ScrollFragmentPoint(PipelineId, LayerId, Point2D<f32>, bool),
-    
-    
-    SetTitle(PipelineId, Option<String>),
-    
-    SendKeyEvent(Key, KeyState, KeyModifiers),
-    
-    GetClientWindow(IpcSender<(Size2D<u32>, Point2D<i32>)>),
-    
-    MoveTo(Point2D<i32>),
-    
-    ResizeTo(Size2D<u32>),
-    
-    TouchEventProcessed(EventResult),
-    
-    GetScrollOffset(PipelineId, LayerId, IpcSender<Point2D<f32>>),
-    
-    Exit,
-    
-    Exited,
-}
-
-
-#[derive(Deserialize, Serialize)]
-pub enum EventResult {
-    
-    DefaultAllowed,
-    
-    DefaultPrevented,
 }
 
 

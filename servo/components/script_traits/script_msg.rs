@@ -11,9 +11,10 @@ use MozBrowserEvent;
 use canvas_traits::CanvasMsg;
 use euclid::point::Point2D;
 use euclid::size::Size2D;
+use gfx_traits::LayerId;
 use ipc_channel::ipc::IpcSender;
-use msg::constellation_msg::{LoadData, SubpageId};
-use msg::constellation_msg::{NavigationDirection, PipelineId};
+use msg::constellation_msg::{Key, KeyModifiers, KeyState, LoadData};
+use msg::constellation_msg::{NavigationDirection, PipelineId, SubpageId};
 use offscreen_gl_context::{GLContextAttributes, GLLimits};
 use style_traits::cursor::Cursor;
 use style_traits::viewport::ViewportConstraints;
@@ -28,6 +29,15 @@ pub enum LayoutMsg {
     SetCursor(Cursor),
     
     ViewportConstrained(PipelineId, ViewportConstraints),
+}
+
+
+#[derive(Deserialize, Serialize)]
+pub enum EventResult {
+    
+    DefaultAllowed,
+    
+    DefaultPrevented,
 }
 
 
@@ -83,4 +93,23 @@ pub enum ScriptMsg {
     SetFinalUrl(PipelineId, Url),
     
     Alert(PipelineId, String, IpcSender<bool>),
+    
+    ScrollFragmentPoint(PipelineId, LayerId, Point2D<f32>, bool),
+    
+    
+    SetTitle(PipelineId, Option<String>),
+    
+    SendKeyEvent(Key, KeyState, KeyModifiers),
+    
+    GetClientWindow(IpcSender<(Size2D<u32>, Point2D<i32>)>),
+    
+    MoveTo(Point2D<i32>),
+    
+    ResizeTo(Size2D<u32>),
+    
+    TouchEventProcessed(EventResult),
+    
+    GetScrollOffset(PipelineId, LayerId, IpcSender<Point2D<f32>>),
+    
+    Exit,
 }
