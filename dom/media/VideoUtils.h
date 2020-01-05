@@ -7,11 +7,13 @@
 #ifndef VideoUtils_h
 #define VideoUtils_h
 
+#include "MediaInfo.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/ReentrantMonitor.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/UniquePtr.h"
 
 #include "nsAutoPtr.h"
 #include "nsIThread.h"
@@ -38,6 +40,8 @@ using mozilla::CheckedUint32;
 
 
 namespace mozilla {
+
+class MediaContentType;
 
 
 extern const nsLiteralCString kEMEKeySystemClearkey;
@@ -346,6 +350,17 @@ IsVP8CodecString(const nsAString& aCodec);
 
 bool
 IsVP9CodecString(const nsAString& aCodec);
+
+
+UniquePtr<TrackInfo>
+CreateTrackInfoWithMIMEType(const nsACString& aCodecMIMEType);
+
+
+
+UniquePtr<TrackInfo>
+CreateTrackInfoWithMIMETypeAndContentTypeExtraParameters(
+  const nsACString& aCodecMIMEType,
+  const MediaContentType& aContentType);
 
 template <typename String>
 class StringListRange
