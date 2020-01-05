@@ -328,13 +328,16 @@ function getContexts(contextData) {
     contexts.add("browser_action");
   }
 
+  if (contextData.onTab) {
+    contexts.add("tab");
+  }
+
   if (contexts.size === 0) {
     contexts.add("page");
   }
 
-  if (contextData.onTab) {
-    contexts.add("tab");
-  } else {
+  
+  if (!contextData.onTab) {
     contexts.add("all");
   }
 
