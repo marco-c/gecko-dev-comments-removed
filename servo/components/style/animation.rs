@@ -814,7 +814,7 @@ fn interpolate_transform_list(from_list: &[TransformOperation],
         }
     } else {
         
-        result.push_all(from_list);
+        result.extend_from_slice(from_list);
     }
 
     TransformList(Some(result))
