@@ -33,11 +33,12 @@ namespace mozilla {
 
 
 
-struct UndisplayedNode {
+struct UndisplayedNode
+{
   UndisplayedNode(nsIContent* aContent, nsStyleContext* aStyle)
-    : mContent(aContent),
-      mStyle(aStyle),
-      mNext(nullptr)
+    : mContent(aContent)
+    , mStyle(aStyle)
+    , mNext(nullptr)
   {
     MOZ_COUNT_CTOR(mozilla::UndisplayedNode);
   }
@@ -56,9 +57,9 @@ struct UndisplayedNode {
     }
   }
 
-  nsCOMPtr<nsIContent>      mContent;
-  RefPtr<nsStyleContext>  mStyle;
-  UndisplayedNode*          mNext;
+  nsCOMPtr<nsIContent> mContent;
+  RefPtr<nsStyleContext> mStyle;
+  UndisplayedNode* mNext;
 };
 
 } 
@@ -99,7 +100,7 @@ public:
   void RegisterPlaceholderFrame(nsPlaceholderFrame* aPlaceholderFrame);
   void UnregisterPlaceholderFrame(nsPlaceholderFrame* aPlaceholderFrame);
 
-  void      ClearPlaceholderFrameMap();
+  void ClearPlaceholderFrameMap();
 
   
   nsStyleContext* GetUndisplayedContent(const nsIContent* aContent)
@@ -156,8 +157,7 @@ public:
   
 
 
-  void SetDisplayContents(nsIContent* aContent,
-                          nsStyleContext* aStyleContext);
+  void SetDisplayContents(nsIContent* aContent, nsStyleContext* aStyleContext);
   
 
 
@@ -172,52 +172,47 @@ public:
 
 
 
-  void ClearDisplayContentsIn(nsIContent* aContent,
-                              nsIContent* aParentContent);
+  void ClearDisplayContentsIn(nsIContent* aContent, nsIContent* aParentContent);
   void ClearAllDisplayContentsIn(nsIContent* aParentContent);
 
   
   void AppendFrames(nsContainerFrame* aParentFrame,
-                    ChildListID       aListID,
-                    nsFrameList&      aFrameList);
+                    ChildListID aListID,
+                    nsFrameList& aFrameList);
 
   void InsertFrames(nsContainerFrame* aParentFrame,
-                    ChildListID       aListID,
-                    nsIFrame*         aPrevFrame,
-                    nsFrameList&      aFrameList);
+                    ChildListID aListID,
+                    nsIFrame* aPrevFrame,
+                    nsFrameList& aFrameList);
 
-  void RemoveFrame(ChildListID     aListID,
-                   nsIFrame*       aOldFrame);
-
-  
-
-
-
-  void     NotifyDestroyingFrame(nsIFrame* aFrame);
+  void RemoveFrame(ChildListID aListID, nsIFrame* aOldFrame);
 
   
 
 
 
-
-
-
-
-
-  void CaptureFrameState(nsIFrame*              aFrame,
-                                     nsILayoutHistoryState* aState);
-
-  void RestoreFrameState(nsIFrame*              aFrame,
-                                     nsILayoutHistoryState* aState);
+  void NotifyDestroyingFrame(nsIFrame* aFrame);
 
   
 
 
-  void CaptureFrameStateFor(nsIFrame*              aFrame,
-                                        nsILayoutHistoryState* aState);
 
-  void RestoreFrameStateFor(nsIFrame*              aFrame,
-                                        nsILayoutHistoryState* aState);
+
+
+
+
+
+  void CaptureFrameState(nsIFrame* aFrame, nsILayoutHistoryState* aState);
+
+  void RestoreFrameState(nsIFrame* aFrame, nsILayoutHistoryState* aState);
+
+  
+
+
+  void CaptureFrameStateFor(nsIFrame* aFrame, nsILayoutHistoryState* aState);
+
+  void RestoreFrameStateFor(nsIFrame* aFrame, nsILayoutHistoryState* aState);
+
 protected:
   static nsStyleContext* GetStyleContextInMap(UndisplayedMap* aMap,
                                               const nsIContent* aContent);
