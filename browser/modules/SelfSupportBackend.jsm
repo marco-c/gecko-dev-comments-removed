@@ -11,7 +11,6 @@ const Cc = Components.classes;
 const Ci = Components.interfaces;
 
 Cu.import("resource://gre/modules/Log.jsm");
-Cu.import("resource://gre/modules/Preferences.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/Timer.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -48,7 +47,7 @@ const UITOUR_FRAME_SCRIPT = "chrome://browser/content/content-UITour.js";
 
 
 
-const IS_UNIFIED_TELEMETRY = Preferences.get(PREF_TELEMETRY_UNIFIED, false);
+const IS_UNIFIED_TELEMETRY = Services.prefs.getBoolPref(PREF_TELEMETRY_UNIFIED, false);
 
 var gLogAppenderDump = null;
 
@@ -76,6 +75,10 @@ var SelfSupportBackendInternal = {
   _testing: false,
 
   
+  
+  _lazyStartupEnabled: false,
+
+  
 
 
   init() {
@@ -93,25 +96,30 @@ var SelfSupportBackendInternal = {
     }
 
     
-    let uiTourEnabled = Preferences.get(PREF_UITOUR_ENABLED, false);
+    let uiTourEnabled = Services.prefs.getBoolPref(PREF_UITOUR_ENABLED, false);
     if (!uiTourEnabled) {
       this._log.config("init - Disabling SelfSupport because UITour is disabled.");
       return;
     }
 
     
-    if (!Preferences.get(PREF_ENABLED, true)) {
+    if (!Services.prefs.getBoolPref(PREF_ENABLED, true)) {
       this._log.config("init - SelfSupport is disabled.");
       return;
     }
 
-    Services.obs.addObserver(this, "sessionstore-windows-restored");
+    this._lazyStartupEnabled = true;
   },
 
   
 
 
   uninit() {
+    if (!this._log) {
+      
+      return;
+    }
+
     this._log.trace("uninit");
 
     Services.prefs.removeObserver(PREF_BRANCH_LOG, this);
@@ -148,12 +156,15 @@ var SelfSupportBackendInternal = {
 
 
 
+  
   observe(aSubject, aTopic, aData) {
     this._log.trace("observe - Topic " + aTopic);
 
     if (aTopic === "sessionstore-windows-restored") {
-      Services.obs.removeObserver(this, "sessionstore-windows-restored");
-      this._delayedLoadTimerId = setTimeout(this._loadSelfSupport.bind(this), STARTUP_DELAY_MS);
+      if (this._lazyStartupEnabled) {
+        this._delayedLoadTimerId = setTimeout(this._loadSelfSupport.bind(this), STARTUP_DELAY_MS);
+        this._lazyStartupEnabled = false;
+      }
     } else if (aTopic === "nsPref:changed") {
       this._configureLogging();
     }
@@ -172,10 +183,10 @@ var SelfSupportBackendInternal = {
     }
 
     
-    this._log.level = Log.Level[Preferences.get(PREF_LOG_LEVEL, "Warn")];
+    this._log.level = Log.Level[Services.prefs.getStringPref(PREF_LOG_LEVEL, "Warn")];
 
     
-    let logDumping = Preferences.get(PREF_LOG_DUMP, false);
+    let logDumping = Services.prefs.getBoolPref(PREF_LOG_DUMP, false);
     if (logDumping != !!gLogAppenderDump) {
       if (logDumping) {
         gLogAppenderDump = new Log.DumpAppender(new Log.BasicFormatter());
@@ -253,7 +264,7 @@ var SelfSupportBackendInternal = {
 
   _loadSelfSupport() {
     
-    let unformattedURL = Preferences.get(PREF_URL, null);
+    let unformattedURL = Services.prefs.getStringPref(PREF_URL, "");
     let url = Services.urlFormatter.formatURL(unformattedURL);
     if (!url.startsWith("https:")) {
       this._log.error("_loadSelfSupport - Non HTTPS URL provided: " + url);
