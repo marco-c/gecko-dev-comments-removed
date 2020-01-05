@@ -29,6 +29,14 @@ public:
     SANDBOX_FILE_OPEN,
     SANDBOX_FILE_ACCESS,
     SANDBOX_FILE_STAT,
+    SANDBOX_FILE_CHMOD,
+    SANDBOX_FILE_LINK,
+    SANDBOX_FILE_SYMLINK,
+    SANDBOX_FILE_MKDIR,
+    SANDBOX_FILE_RENAME,
+    SANDBOX_FILE_RMDIR,
+    SANDBOX_FILE_UNLINK,
+    SANDBOX_FILE_READLINK,
   };
 
   struct Request {
@@ -36,11 +44,14 @@ public:
     
     int mFlags;
     
+    size_t mBufSize;
+    
     
   };
 
   struct Response {
-    int mError; 
+    
+    int mError;
     
     
   };

@@ -40,12 +40,15 @@ SandboxBrokerPolicyFactory::IsSystemSupported() {
   return false;
 }
 
-#if defined(MOZ_CONTENT_SANDBOX) && defined(MOZ_WIDGET_GONK)
+#if defined(MOZ_CONTENT_SANDBOX)
 namespace {
 static const int rdonly = SandboxBroker::MAY_READ;
 static const int wronly = SandboxBroker::MAY_WRITE;
 static const int rdwr = rdonly | wronly;
+static const int rdwrcr = rdwr | SandboxBroker::MAY_CREATE;
+#if defined(MOZ_WIDGET_GONK)
 static const int wrlog = wronly | SandboxBroker::MAY_CREATE;
+#endif
 }
 #endif
 
@@ -111,6 +114,12 @@ SandboxBrokerPolicyFactory::SandboxBrokerPolicyFactory()
                   SandboxBroker::Policy::AddAlways); 
 
   mCommonContentPolicy.reset(policy);
+#elif defined(MOZ_CONTENT_SANDBOX)
+  SandboxBroker::Policy* policy = new SandboxBroker::Policy;
+  policy->AddDir(rdonly, "/");
+  policy->AddDir(rdwrcr, "/dev/shm");
+  policy->AddDir(rdwrcr, "/tmp");
+  mCommonContentPolicy.reset(policy);
 #endif
 }
 
@@ -119,16 +128,20 @@ UniquePtr<SandboxBroker::Policy>
 SandboxBrokerPolicyFactory::GetContentPolicy(int aPid)
 {
   
-  if (!IsSystemSupported() &&
-      Preferences::GetInt("security.sandbox.content.level") <= 1) {
+  
+
+  MOZ_ASSERT(NS_IsMainThread());
+  
+  if (Preferences::GetInt("security.sandbox.content.level") <= 1) {
     return nullptr;
   }
 
-  
-  
-#if defined(MOZ_WIDGET_GONK)
-  MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(mCommonContentPolicy);
+#if defined(MOZ_WIDGET_GONK)
+  
+  if (!IsSystemSupported()) {
+    return nullptr;
+  }
   UniquePtr<SandboxBroker::Policy>
     policy(new SandboxBroker::Policy(*mCommonContentPolicy));
 
@@ -145,9 +158,11 @@ SandboxBrokerPolicyFactory::GetContentPolicy(int aPid)
   policy->AddPath(rdonly, nsPrintfCString("/proc/%d/smaps", aPid).get());
 
   return policy;
-#else 
+#else
+  UniquePtr<SandboxBroker::Policy>
+    policy(new SandboxBroker::Policy(*mCommonContentPolicy));
   
-  return nullptr;
+  return policy;
 #endif
 }
 
