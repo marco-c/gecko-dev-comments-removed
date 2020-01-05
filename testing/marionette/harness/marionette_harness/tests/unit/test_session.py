@@ -2,7 +2,7 @@
 
 
 
-from marionette_driver.errors import SessionNotCreatedException
+from marionette_driver import errors
 
 from marionette_harness import MarionetteTestCase
 
@@ -29,21 +29,28 @@ class TestSession(MarionetteTestCase):
         
         self.assertIn("rotatable", caps)
 
-    def test_we_can_get_the_session_id(self):
+    def test_get_session_id(self):
         
         self.marionette.start_session()
 
         self.assertTrue(self.marionette.session_id is not None)
         self.assertTrue(isinstance(self.marionette.session_id, unicode))
 
-    def test_we_can_set_the_session_id(self):
+    def test_set_the_session_id(self):
         
         self.marionette.start_session(session_id="ILoveCheese")
 
         self.assertEqual(self.marionette.session_id, "ILoveCheese")
         self.assertTrue(isinstance(self.marionette.session_id, unicode))
 
-    def test_we_only_support_one_active_session_at_a_time(self):
+    def test_session_already_started(self):
         self.marionette.start_session()
         self.assertTrue(isinstance(self.marionette.session_id, unicode))
-        self.assertRaises(SessionNotCreatedException, self.marionette._send_message, "newSession", {})
+        with self.assertRaises(errors.SessionNotCreatedException):
+            self.marionette._send_message("newSession", {})
+
+    def test_no_session(self):
+        with self.assertRaises(errors.InvalidSessionIdException):
+            self.marionette.get_url()
+        self.marionette.start_session()
+        self.marionette.get_url()
