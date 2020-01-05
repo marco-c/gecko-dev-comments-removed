@@ -739,7 +739,7 @@ pub trait MatchMethods : TElement {
             
             
             
-            debug_assert!(cfg!(gecko) || d.has_current_styles());
+            debug_assert!(cfg!(feature = "gecko") || d.has_current_styles());
             &d.styles().primary.values
         });
 
