@@ -233,18 +233,6 @@ def convertTestFile(test262parser, testSource, testName, includeSet, strictTests
         includeSet.update(testRec["includes"])
 
     
-    if pathStartsWith(testName, "intl402"):
-        refTestSkipIf.append(("!this.hasOwnProperty('Intl')", "needs Intl"))
-
-    
-    if pathStartsWith(testName, "intl402", "PluralRules"):
-        refTestSkipIf.append(("!this.hasOwnProperty('addIntlExtras')", "needs addIntlExtras"))
-
-    
-    if pathStartsWith(testName, "built-ins", "Simd"):
-        refTestSkipIf.append(("!this.hasOwnProperty('SIMD')", "needs SIMD"))
-
-    
     if not isNegative and not async:
         testEpilogue = """
 reportCompare(0, 0);
