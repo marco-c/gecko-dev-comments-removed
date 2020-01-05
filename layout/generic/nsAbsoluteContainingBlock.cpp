@@ -256,22 +256,6 @@ nsAbsoluteContainingBlock::FrameDependsOnContainer(nsIFrame* f,
         !IsFixedMarginSize(margin->mMargin.GetIEnd(wm))) {
       return true;
     }
-    if (!wm.IsBidiLTR()) {
-      
-      
-      
-      
-      
-      
-      if (!IsFixedOffset(pos->mOffset.GetIStart(wm)) ||
-          pos->mOffset.GetIEndUnit(wm) != eStyleUnit_Auto) {
-        return true;
-      }
-    } else {
-      if (!IsFixedOffset(pos->mOffset.GetIStart(wm))) {
-        return true;
-      }
-    }
   }
   if (wm.IsVertical() ? aCBWidthChanged : aCBHeightChanged) {
     
@@ -296,10 +280,42 @@ nsAbsoluteContainingBlock::FrameDependsOnContainer(nsIFrame* f,
         !IsFixedMarginSize(margin->mMargin.GetBEnd(wm))) {
       return true;
     }
-    if (!IsFixedOffset(pos->mOffset.GetBStart(wm))) {
+  }
+
+  
+  
+  
+  
+  
+  
+  if (aCBWidthChanged) {
+    if (!IsFixedOffset(pos->mOffset.GetLeft())) {
+      return true;
+    }
+    
+    
+    
+    
+    
+    
+    
+    if ((wm.GetInlineDir() == WritingMode::eInlineRTL ||
+         wm.GetBlockDir() == WritingMode::eBlockRL) &&
+        pos->mOffset.GetRightUnit() != eStyleUnit_Auto) {
       return true;
     }
   }
+  if (aCBHeightChanged) {
+    if (!IsFixedOffset(pos->mOffset.GetTop())) {
+      return true;
+    }
+    
+    if (wm.GetInlineDir() == WritingMode::eInlineBTT &&
+        pos->mOffset.GetBottomUnit() != eStyleUnit_Auto) {
+      return true;
+    }
+  }
+
   return false;
 }
 
