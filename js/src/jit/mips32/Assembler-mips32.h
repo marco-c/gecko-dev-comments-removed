@@ -127,6 +127,9 @@ class Assembler : public AssemblerMIPSShared
       : AssemblerMIPSShared()
     { }
 
+    static Condition UnsignedCondition(Condition cond);
+    static Condition ConditionWithoutEqual(Condition cond);
+
     
     void trace(JSTracer* trc);
 
