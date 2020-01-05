@@ -99,7 +99,8 @@ struct RNGContextStr {
 
     PRUint8 additionalDataCache[PRNG_ADDITONAL_DATA_CACHE_SIZE];
     PRUint32 additionalAvail;
-    PRBool isValid; 
+    PRBool isValid;   
+    PRBool isKatTest; 
 };
 
 typedef struct RNGContextStr RNGContext;
@@ -158,8 +159,10 @@ prng_Hash_df(PRUint8 *requested_bytes, unsigned int no_of_bytes_to_return,
 static SECStatus
 prng_instantiate(RNGContext *rng, const PRUint8 *bytes, unsigned int len)
 {
-    if (len < PRNG_SEEDLEN) {
+    if (!rng->isKatTest && len < PRNG_SEEDLEN) {
         
+
+
 
         PORT_SetError(SEC_ERROR_NEED_RANDOM);
         return SECFailure;
@@ -272,7 +275,7 @@ prng_reseed_test(RNGContext *rng, const PRUint8 *entropy,
 
 #define PRNG_ADD_BITS_AND_CARRY(dest, dest_len, add, len, carry) \
     PRNG_ADD_BITS(dest, dest_len, add, len, carry)               \
-    PRNG_ADD_CARRY_ONLY(dest, dest_len - len, carry)
+    PRNG_ADD_CARRY_ONLY(dest, dest_len - len - 1, carry)
 
 
 
@@ -445,6 +448,7 @@ rng_init(void)
 
         
         globalrng->isValid = PR_TRUE;
+        globalrng->isKatTest = PR_FALSE;
 
         
 
@@ -699,6 +703,17 @@ RNG_RNGShutdown(void)
 
 
 RNGContext testContext;
+
+SECStatus
+PRNGTEST_Instantiate_Kat(const PRUint8 *entropy, unsigned int entropy_len,
+                         const PRUint8 *nonce, unsigned int nonce_len,
+                         const PRUint8 *personal_string, unsigned int ps_len)
+{
+    testContext.isKatTest = PR_TRUE;
+    return PRNGTEST_Instantiate(entropy, entropy_len,
+                                nonce, nonce_len,
+                                personal_string, ps_len);
+}
 
 
 
