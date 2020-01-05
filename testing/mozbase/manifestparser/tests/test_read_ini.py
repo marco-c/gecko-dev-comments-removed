@@ -46,27 +46,6 @@ kittens = true # This test requires kittens
         control = parser.get('test_felinicity.py', 'kittens')
         self.assertEqual(result, control)
 
-        
-        string = string.replace('#', ';')
-        buffer = StringIO()
-        buffer.write(string)
-        buffer.seek(0)
-        result = read_ini(buffer)[0][1]['kittens']
-        self.assertEqual(result, "true ; This test requires kittens")
-
-        
-        
-        
-        
-        
-        
-        
-        buffer.seek(0)
-        parser = ConfigParser()
-        parser.readfp(buffer)
-        control = parser.get('test_felinicity.py', 'kittens')
-        self.assertNotEqual(result, control)
-
 
 if __name__ == '__main__':
     mozunit.main()
