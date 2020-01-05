@@ -31,7 +31,7 @@ pub enum ProfilerMsg {
     
     Print,
     
-    Exit,
+    Exit(IpcSender<()>),
 }
 
 #[repr(u32)]
