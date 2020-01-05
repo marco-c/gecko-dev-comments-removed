@@ -1022,7 +1022,7 @@ JS_ResolveStandardClass(JSContext* cx, HandleObject obj, HandleId id, bool* reso
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, obj, id);
 
-    Rooted<GlobalObject*> global(cx, &obj->as<GlobalObject>());
+    Handle<GlobalObject*> global = obj.as<GlobalObject>();
     *resolved = false;
 
     if (!JSID_IS_ATOM(id))
@@ -1030,11 +1030,26 @@ JS_ResolveStandardClass(JSContext* cx, HandleObject obj, HandleId id, bool* reso
 
     
     JSAtom* idAtom = JSID_TO_ATOM(id);
-    JSAtom* undefinedAtom = cx->names().undefined;
-    if (idAtom == undefinedAtom) {
+    if (idAtom == cx->names().undefined) {
         *resolved = true;
         return DefineProperty(cx, global, id, UndefinedHandleValue, nullptr, nullptr,
                               JSPROP_PERMANENT | JSPROP_READONLY | JSPROP_RESOLVING);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (idAtom == cx->names().global) {
+        *resolved = true;
+        RootedValue v(cx, ObjectValue(*ToWindowProxyIfWindow(global)));
+        return DefineProperty(cx, global, id, v, nullptr, nullptr, JSPROP_RESOLVING);
     }
 
     
@@ -1066,10 +1081,7 @@ JS_ResolveStandardClass(JSContext* cx, HandleObject obj, HandleId id, bool* reso
     
     
     
-    if (!global->getOrCreateObjectPrototype(cx))
-        return false;
-
-    return true;
+    return global->getOrCreateObjectPrototype(cx);
 }
 
 JS_PUBLIC_API(bool)
@@ -1092,6 +1104,7 @@ JS_MayResolveStandardClass(const JSAtomState& names, jsid id, JSObject* maybeObj
     
 
     return atom == names.undefined ||
+           atom == names.global ||
            LookupStdName(names, atom, standard_class_names) ||
            LookupStdName(names, atom, builtin_property_names);
 }
