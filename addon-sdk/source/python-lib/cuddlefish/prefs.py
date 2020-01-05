@@ -71,7 +71,6 @@ DEFAULT_NO_CONNECTIONS_PREFS = {
 
     
     'browser.newtabpage.directory.source': 'data:application/json,{"jetpack":1}',
-    'browser.newtabpage.directory.ping': '',
 
     
     'extensions.update.url' : 'http://localhost/extensions-dummy/updateURL',

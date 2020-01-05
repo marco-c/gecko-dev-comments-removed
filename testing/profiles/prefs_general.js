@@ -289,7 +289,6 @@ user_pref("browser.aboutHomeSnippets.updateUrl", "nonexistent://test");
 
 
 user_pref("browser.newtabpage.directory.source", 'data:application/json,{"testing":1}');
-user_pref("browser.newtabpage.directory.ping", "");
 
 
 user_pref("browser.uitour.pinnedTabUrl", "http://%(server)s/uitour-dummy/pinnedTab");

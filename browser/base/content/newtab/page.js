@@ -178,12 +178,7 @@ var gPage = {
     
     
     let delta = Math.round((Date.now() - this._firstVisibleTime) / 500);
-    if (this._suggestedTilePresent) {
-      Services.telemetry.getHistogramById("NEWTAB_PAGE_LIFE_SPAN_SUGGESTED").add(delta);
-    }
-    else {
-      Services.telemetry.getHistogramById("NEWTAB_PAGE_LIFE_SPAN").add(delta);
-    }
+    Services.telemetry.getHistogramById("NEWTAB_PAGE_LIFE_SPAN").add(delta);
   },
 
   
@@ -240,10 +235,7 @@ var gPage = {
 
     for (let site of gGrid.sites) {
       if (site) {
-        
-        
-        
-        site.onFirstVisible();
+        site.captureIfMissing();
       }
     }
 
@@ -259,36 +251,7 @@ var gPage = {
 
   onPageVisibleAndLoaded() {
     
-    this.reportLastVisibleTileIndex();
-    
     this.maybeShowAutoMigrationUndoNotification();
-  },
-
-  reportLastVisibleTileIndex() {
-    let cwu = window.QueryInterface(Ci.nsIInterfaceRequestor)
-                    .getInterface(Ci.nsIDOMWindowUtils);
-
-    let rect = cwu.getBoundsWithoutFlushing(gGrid.node);
-    let nodes = cwu.nodesFromRect(rect.left, rect.top, 0, rect.width,
-                                  rect.height, 0, true, false);
-
-    let i = -1;
-    let lastIndex = -1;
-    let sites = gGrid.sites;
-
-    for (let node of nodes) {
-      if (node.classList && node.classList.contains("newtab-cell")) {
-        if (sites[++i]) {
-          lastIndex = i;
-          if (sites[i].link.targetedSite) {
-            
-            this._suggestedTilePresent = true;
-          }
-        }
-      }
-    }
-
-    DirectoryLinksProvider.reportSitesAction(sites, "view", lastIndex);
   },
 
   maybeShowAutoMigrationUndoNotification() {

@@ -9,23 +9,7 @@ requestLongerTimeout(2);
 
 
 
-gDirectorySource = "data:application/json," + JSON.stringify({
-  "suggested": [{
-    url: "http://suggested.com/",
-    imageURI: "data:image/png;base64,helloWORLD3",
-    title: "title",
-    type: "affiliate",
-    adgroup_name: "test",
-    frecent_sites: ["example0.com"]
-  }]
-});
-
 add_task(function* () {
-  let origGetFrecentSitesName = DirectoryLinksProvider.getFrecentSitesName;
-  DirectoryLinksProvider.getFrecentSitesName = () => "";
-  let origIsTopPlacesSite = NewTabUtils.isTopPlacesSite;
-  NewTabUtils.isTopPlacesSite = (site) => false;
-
   
   
   yield setLinks("0,1,2,3,4,5,6,7,8,9");
@@ -78,18 +62,4 @@ add_task(function* () {
 
   yield blockCell(0);
   yield* checkGrid("1,2,3,4,5,6,7,9,8p");
-
-  
-  NewTabUtils.isTopPlacesSite = origIsTopPlacesSite;
-  yield restore();
-  yield setLinks("0,1,2,3,4,5,6,7,8,9");
-  yield customizeNewTabPage("enhanced"); 
-  yield* addNewTabPageTab();
-
-  yield* checkGrid("http://suggested.com/,0,1,2,3,4,5,6,7,8,9");
-
-  yield blockCell(1);
-  yield* addNewTabPageTab();
-  yield* checkGrid("1,2,3,4,5,6,7,8,9");
-  DirectoryLinksProvider.getFrecentSitesName = origGetFrecentSitesName;
 });
