@@ -101,13 +101,10 @@ public:
   enum {
     SCROLL_SYNCHRONOUS = 1<<1,
     SCROLL_FIRST_ANCESTOR_ONLY = 1<<2,
-    SCROLL_DO_FLUSH = 1<<3,  
+    SCROLL_DO_FLUSH = 1<<3,
     SCROLL_OVERFLOW_HIDDEN = 1<<5,
     SCROLL_FOR_CARET_MOVE = 1<<6
   };
-  
-  
-  
   
   
   nsresult      ScrollIntoView(SelectionRegion aRegion,
