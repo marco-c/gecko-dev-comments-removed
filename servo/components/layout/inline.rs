@@ -1346,7 +1346,7 @@ impl Flow for InlineFlow {
 
         
         let containing_block_block_size =
-            self.base.block_container_explicit_block_size.unwrap_or(Au(0));
+            self.base.block_container_explicit_block_size;
         for fragment in self.fragments.fragments.iter_mut() {
             fragment.update_late_computed_replaced_inline_size_if_necessary();
             fragment.assign_replaced_block_size_if_necessary(
