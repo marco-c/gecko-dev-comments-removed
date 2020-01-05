@@ -64,6 +64,10 @@ import android.util.Log;
 public class Distribution {
     private static final String LOGTAG = "GeckoDistribution";
 
+    
+    public static final String PREF_KEY_PROFILE_PREFERENCES = "AndroidPreferences";
+    public static final String PREF_KEY_APPLICATION_PREFERENCES = "ApplicationPreferences";
+
     private static final int STATE_UNKNOWN = 0;
     private static final int STATE_NONE = 1;
     private static final int STATE_SET = 2;
@@ -413,7 +417,8 @@ public class Distribution {
 
 
 
-    public JSONObject getAndroidPreferences() {
+
+    public JSONObject getPreferences(String key) {
         final File descFile = getDistributionFile("preferences.json");
         if (descFile == null) {
             
@@ -423,11 +428,11 @@ public class Distribution {
         try {
             final JSONObject all = FileUtils.readJSONObjectFromFile(descFile);
 
-            if (!all.has("AndroidPreferences")) {
+            if (!all.has(key)) {
                 return new JSONObject();
             }
 
-            return all.getJSONObject("AndroidPreferences");
+            return all.getJSONObject(key);
 
         } catch (IOException e) {
             Log.e(LOGTAG, "Error getting distribution descriptor file.", e);
