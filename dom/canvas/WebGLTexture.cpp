@@ -238,16 +238,26 @@ WebGLTexture::IsMipmapComplete(uint32_t texUnit) const
 
         
         
-        if (refWidth == 1 &&
-            refHeight == 1 &&
-            refDepth == 1)
-        {
-            break;
+        if (mTarget == LOCAL_GL_TEXTURE_3D) {
+            if (refWidth == 1 &&
+                refHeight == 1 &&
+                refDepth == 1)
+            {
+                break;
+            }
+
+            refDepth = std::max(uint32_t(1), refDepth / 2);
+        } else {
+            
+            if (refWidth == 1 &&
+                refHeight == 1)
+            {
+                break;
+            }
         }
 
         refWidth  = std::max(uint32_t(1), refWidth  / 2);
         refHeight = std::max(uint32_t(1), refHeight / 2);
-        refDepth  = std::max(uint32_t(1), refDepth  / 2);
     }
 
     return true;
