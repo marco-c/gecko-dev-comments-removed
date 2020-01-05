@@ -63,9 +63,6 @@ static already_AddRefed<Compositor> CreateTestCompositor(LayersBackend backend, 
   } else if (backend == LayersBackend::LAYERS_D3D11) {
     
     MOZ_CRASH(); 
-  } else if (backend == LayersBackend::LAYERS_D3D9) {
-    
-    MOZ_CRASH(); 
 #endif
   }
   nsCString failureReason;

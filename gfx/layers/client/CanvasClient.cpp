@@ -336,9 +336,7 @@ TexClientFromReadback(SharedSurface* src, CompositableForwarder* allocator,
 
     
     
-    
     bool layersNeedsManualSwap = layersBackend == LayersBackend::LAYERS_BASIC ||
-                                 layersBackend == LayersBackend::LAYERS_D3D9 ||
                                  layersBackend == LayersBackend::LAYERS_D3D11;
     if (texClient->HasFlags(TextureFlags::RB_SWAPPED) &&
         layersNeedsManualSwap)
