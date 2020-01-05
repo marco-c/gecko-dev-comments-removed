@@ -5181,13 +5181,15 @@ BaseCompiler::emitBrTable()
     
     
     
+    
+    
+    
 
     for (uint32_t i = 0; i < tableLength; i++) {
         PooledLabel* stubLabel = newLabel();
-        
-        
         if (!stubLabel)
             return false;
+
         stubs.infallibleAppend(stubLabel);
         masm.bind(stubLabel);
         uint32_t k = depths[i];
@@ -7210,6 +7212,9 @@ BaseCompiler::emitFunction()
     beginFunction();
 
     UniquePooledLabel functionEnd(newLabel());
+    if (!functionEnd)
+        return false;
+
     if (!pushControl(&functionEnd))
         return false;
 
