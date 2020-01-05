@@ -1391,7 +1391,7 @@ nsTableRowGroupFrame::Reflow(nsPresContext*           aPresContext,
   
   if (aReflowInput.mFlags.mTableIsSplittable &&
       NS_UNCONSTRAINEDSIZE != aReflowInput.AvailableHeight() &&
-      (NS_FRAME_NOT_COMPLETE == aStatus || splitDueToPageBreak ||
+      (aStatus == NS_FRAME_NOT_COMPLETE || splitDueToPageBreak ||
        aDesiredSize.Height() > aReflowInput.AvailableHeight())) {
     
     bool specialReflow = (bool)aReflowInput.mFlags.mSpecialBSizeReflow;
