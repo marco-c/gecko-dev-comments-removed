@@ -61,9 +61,10 @@ XPCOMUtils.defineLazyModuleGetter(this, "isAddonPartOfE10SRollout",
 XPCOMUtils.defineLazyModuleGetter(this, "LegacyExtensionsUtils",
                                   "resource://gre/modules/LegacyExtensionsUtils.jsm");
 
+const {nsIBlocklistService} = Ci;
 XPCOMUtils.defineLazyServiceGetter(this, "Blocklist",
                                    "@mozilla.org/extensions/blocklist;1",
-                                   Ci.nsIBlocklistService);
+                                   "nsIBlocklistService");
 XPCOMUtils.defineLazyServiceGetter(this,
                                    "ChromeRegistry",
                                    "@mozilla.org/chrome/chrome-registry;1",
@@ -204,10 +205,10 @@ const PENDING_INSTALL_METADATA =
 
 const STATIC_BLOCKLIST_PATTERNS = [
   { creator: "Mozilla Corp.",
-    level: Blocklist.STATE_BLOCKED,
+    level: nsIBlocklistService.STATE_BLOCKED,
     blockID: "i162" },
   { creator: "Mozilla.org",
-    level: Blocklist.STATE_BLOCKED,
+    level: nsIBlocklistService.STATE_BLOCKED,
     blockID: "i162" }
 ];
 
@@ -768,7 +769,7 @@ function isUsableAddon(aAddon) {
     return false;
   }
 
-  if (aAddon.blocklistState == Blocklist.STATE_BLOCKED) {
+  if (aAddon.blocklistState == nsIBlocklistService.STATE_BLOCKED) {
     logger.warn(`Add-on ${aAddon.id} is blocklisted.`);
     return false;
   }
@@ -1074,7 +1075,7 @@ var loadManifestFromWebManifest = Task.async(function*(aUri) {
   addon.targetPlatforms = [];
   
   addon.userDisabled = theme;
-  addon.softDisabled = addon.blocklistState == Blocklist.STATE_SOFTBLOCKED;
+  addon.softDisabled = addon.blocklistState == nsIBlocklistService.STATE_SOFTBLOCKED;
 
   return addon;
 });
@@ -1347,7 +1348,7 @@ let loadManifestFromRDF = Task.async(function*(aUri, aStream) {
     addon.userDisabled = false;
   }
 
-  addon.softDisabled = addon.blocklistState == Blocklist.STATE_SOFTBLOCKED;
+  addon.softDisabled = addon.blocklistState == nsIBlocklistService.STATE_SOFTBLOCKED;
   addon.applyBackgroundUpdates = AddonManager.AUTOUPDATE_DEFAULT;
 
   
@@ -4832,8 +4833,9 @@ this.XPIProvider = {
         activeAddon.bootstrapScope[feature] = gGlobalScope[feature];
 
       
-      activeAddon.bootstrapScope["console"] = new ConsoleAPI(
-        { consoleID: "addon/" + aId });
+      XPCOMUtils.defineLazyGetter(
+        activeAddon.bootstrapScope, "console",
+        () => new ConsoleAPI({ consoleID: "addon/" + aId }));
 
       
       
