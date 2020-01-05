@@ -3182,7 +3182,6 @@ public:
   JustificationInfo ComputeJustification(
     Range aRange, nsTArray<JustificationAssignment>* aAssignments = nullptr);
 
-  const nsStyleText* StyleText() { return mTextStyle; }
   nsTextFrame* GetFrame() { return mFrame; }
   
   
@@ -3597,6 +3596,16 @@ PropertyProvider::GetHyphenWidth()
   return mHyphenWidth + mLetterSpacing;
 }
 
+static inline bool
+IS_HYPHEN(char16_t u)
+{
+  return (u == char16_t('-') ||
+          u == 0x058A || 
+          u == 0x2010 || 
+          u == 0x2012 || 
+          u == 0x2013);  
+}
+
 void
 PropertyProvider::GetHyphenationBreaks(Range aRange, HyphenType* aBreakBefore)
 {
@@ -3642,7 +3651,7 @@ PropertyProvider::GetHyphenationBreaks(Range aRange, HyphenType* aBreakBefore)
           allowHyphenBreakBeforeNextChar &&
           (!(mFrame->GetStateBits() & TEXT_START_OF_LINE) ||
            run.GetSkippedOffset() > mStart.GetSkippedOffset())
-          ? HyphenType::Manual
+          ? HyphenType::Soft
           : HyphenType::None;
       allowHyphenBreakBeforeNextChar = false;
     }
@@ -3650,8 +3659,16 @@ PropertyProvider::GetHyphenationBreaks(Range aRange, HyphenType* aBreakBefore)
 
   if (mTextStyle->mHyphens == StyleHyphens::Auto) {
     for (uint32_t i = 0; i < aRange.Length(); ++i) {
-      if (mTextRun->CanHyphenateBefore(aRange.start + i)) {
-        aBreakBefore[i] = HyphenType::Auto;
+      int32_t fragIndex = mFrag->GetLength() > aRange.end ?
+                          aRange.start + i : i;
+      if (IS_HYPHEN(mFrag->CharAt(fragIndex))) {
+        aBreakBefore[i] = HyphenType::Explicit;
+        continue;
+      }
+
+      if (mTextRun->CanHyphenateBefore(aRange.start + i) &&
+          aBreakBefore[i] == HyphenType::None) {
+        aBreakBefore[i] = HyphenType::AutoWithoutManualInSameWord;
       }
     }
   }
