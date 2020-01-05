@@ -105,7 +105,7 @@ pub trait LayoutRPC {
     
     fn node_geometry(&self) -> NodeGeometryResponse;
     
-    fn hit_test(&self, point: Point2D<f32>, update_cursor: bool) -> Result<HitTestResponse, ()>;
+    fn hit_test(&self) -> HitTestResponse;
     
     fn resolved_style(&self) -> ResolvedStyleResponse;
     fn offset_parent(&self) -> OffsetParentResponse;
@@ -134,10 +134,12 @@ impl MarginStyleResponse {
 
 pub struct ContentBoxResponse(pub Rect<Au>);
 pub struct ContentBoxesResponse(pub Vec<Rect<Au>>);
+pub struct HitTestResponse {
+    pub node_address: Option<UntrustedNodeAddress>,
+}
 pub struct NodeGeometryResponse {
     pub client_rect: Rect<i32>,
 }
-pub struct HitTestResponse(pub UntrustedNodeAddress);
 pub struct ResolvedStyleResponse(pub Option<String>);
 
 #[derive(Clone)]
@@ -161,6 +163,7 @@ pub enum ReflowQueryType {
     NoQuery,
     ContentBoxQuery(TrustedNodeAddress),
     ContentBoxesQuery(TrustedNodeAddress),
+    HitTestQuery(Point2D<f32>, bool),
     NodeGeometryQuery(TrustedNodeAddress),
     ResolvedStyleQuery(TrustedNodeAddress, Option<PseudoElement>, Atom),
     OffsetParentQuery(TrustedNodeAddress),
