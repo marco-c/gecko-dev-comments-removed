@@ -15,7 +15,7 @@
 #![allow(missing_copy_implementations)]
 #![allow(unstable)]
 
-extern crate "msg" as servo_msg;
+extern crate msg;
 extern crate serialize;
 extern crate url;
 extern crate util;
@@ -25,7 +25,7 @@ pub use self::DevtoolScriptControlMsg::*;
 pub use self::EvaluateJSReply::*;
 
 use serialize::{Decodable, Decoder};
-use servo_msg::constellation_msg::PipelineId;
+use msg::constellation_msg::PipelineId;
 use util::str::DOMString;
 use url::Url;
 
@@ -34,23 +34,23 @@ use std::sync::mpsc::{Sender, Receiver};
 pub type DevtoolsControlChan = Sender<DevtoolsControlMsg>;
 pub type DevtoolsControlPort = Receiver<DevtoolScriptControlMsg>;
 
-// Information would be attached to NewGlobal to be received and show in devtools.
-// Extend these fields if we need more information.
+
+
 pub struct DevtoolsPageInfo {
     pub title: DOMString,
     pub url: Url
 }
 
-/// Messages to the instruct the devtools server to update its known actors/state
-/// according to changes in the browser.
+
+
 pub enum DevtoolsControlMsg {
     NewGlobal(PipelineId, Sender<DevtoolScriptControlMsg>, DevtoolsPageInfo),
     SendConsoleMessage(PipelineId, ConsoleMessage),
     ServerExitMsg
 }
 
-/// Serialized JS return values
-/// TODO: generalize this beyond the EvaluateJS message?
+
+
 pub enum EvaluateJSReply {
     VoidValue,
     NullValue,
@@ -87,7 +87,7 @@ pub struct NodeInfo {
     pub incompleteValue: bool,
 }
 
-/// Messages to process in a particular script task, as instructed by a devtools client.
+
 pub enum DevtoolScriptControlMsg {
     EvaluateJS(PipelineId, String, Sender<EvaluateJSReply>),
     GetRootNode(PipelineId, Sender<NodeInfo>),
@@ -98,10 +98,10 @@ pub enum DevtoolScriptControlMsg {
     WantsLiveNotifications(PipelineId, bool),
 }
 
-/// Messages to instruct devtools server to update its state relating to a particular
-/// tab.
+
+
 pub enum ScriptDevtoolControlMsg {
-    /// Report a new JS error message
+    
     ReportConsoleMsg(String),
 }
 
