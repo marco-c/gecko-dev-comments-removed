@@ -2347,11 +2347,13 @@ nsHttpConnection::CloseConnectionFastOpenTakesTooLongOrError(bool aCloseSocketTr
 
     mFastOpenStatus = TFO_FAILED;
     RefPtr<nsAHttpTransaction> trans;
+
+    DontReuse();
+
     if (mUsingSpdyVersion) {
         
         
         
-        DontReuse();
         mUsingSpdyVersion = 0;
         if (mSpdySession) {
             mTransaction->SetFastOpenStatus(TFO_FAILED);

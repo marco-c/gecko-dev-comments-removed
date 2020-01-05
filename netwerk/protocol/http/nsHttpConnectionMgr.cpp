@@ -3445,7 +3445,6 @@ nsHalfOpenSocket::OnOutputStreamReady(nsIAsyncOutputStream *out)
         
         
         MOZ_ASSERT(out == mBackupStreamOut);
-        MOZ_ASSERT(mTransaction->IsNullTransaction());
         
         
         

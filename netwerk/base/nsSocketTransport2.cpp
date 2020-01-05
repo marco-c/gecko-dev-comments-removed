@@ -1046,6 +1046,15 @@ nsSocketTransport::SendStatus(nsresult status)
         switch (status) {
         case NS_NET_STATUS_SENDING_TO:
             progress = mOutput.ByteCount();
+            
+            
+            
+            
+            
+            
+            if (progress == 0) {
+                return;
+            }
             break;
         case NS_NET_STATUS_RECEIVING_FROM:
             progress = mInput.ByteCount();
@@ -1525,7 +1534,7 @@ nsSocketTransport::InitiateSocket()
     }
 
     bool tfo = false;
-    if (mFastOpenCallback &&
+    if (fd && mFastOpenCallback &&
         mFastOpenCallback->FastOpenEnabled()) {
         if (NS_SUCCEEDED(AttachTCPFastOpenIOLayer(fd))) {
             tfo = true;
@@ -1714,7 +1723,8 @@ nsSocketTransport::RecoverFromError()
     bool tryAgain = false;
     if (mFDFastOpenInProgress &&
         ((mCondition == NS_ERROR_CONNECTION_REFUSED) ||
-         (mCondition == NS_ERROR_NET_TIMEOUT))) {
+         (mCondition == NS_ERROR_NET_TIMEOUT) ||
+         (mCondition == NS_ERROR_PROXY_CONNECTION_REFUSED))) {
         
         
         tryAgain = true;
