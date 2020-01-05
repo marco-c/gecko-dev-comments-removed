@@ -416,6 +416,7 @@ private:
     PRFileDesc *GetFD_Locked();
     PRFileDesc *GetFD_LockedAlsoDuringFastOpen();
     void        ReleaseFD_Locked(PRFileDesc *fd);
+    bool FastOpenInProgress();
 
     
     
@@ -475,6 +476,7 @@ private:
 
     
     TCPFastOpen *mFastOpenCallback;
+    bool mFastOpenLayerHasBufferedData;
 };
 
 } 

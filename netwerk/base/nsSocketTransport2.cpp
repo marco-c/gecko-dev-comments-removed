@@ -600,6 +600,7 @@ nsSocketOutputStream::Write(const char *buf, uint32_t count, uint32_t *countWrit
     
 
     PRFileDesc* fd = nullptr;
+    bool fastOpenInProgress;
     {
         MutexAutoLock lock(mTransport->mLock);
 
@@ -609,6 +610,8 @@ nsSocketOutputStream::Write(const char *buf, uint32_t count, uint32_t *countWrit
         fd = mTransport->GetFD_LockedAlsoDuringFastOpen();
         if (!fd)
             return NS_BASE_STREAM_WOULD_BLOCK;
+
+        fastOpenInProgress = mTransport->FastOpenInProgress();
     }
 
     SOCKET_LOG(("  calling PR_Write [count=%u]\n", count));
@@ -646,8 +649,14 @@ nsSocketOutputStream::Write(const char *buf, uint32_t count, uint32_t *countWrit
 
     
     
-    if (n > 0)
+    
+    
+    
+    
+    if ((n > 0) && !fastOpenInProgress) {
         mTransport->SendStatus(NS_NET_STATUS_SENDING_TO);
+    }
+
     return rv;
 }
 
@@ -769,6 +778,7 @@ nsSocketTransport::nsSocketTransport()
     , mKeepaliveRetryIntervalS(-1)
     , mKeepaliveProbeCount(-1)
     , mFastOpenCallback(nullptr)
+    , mFastOpenLayerHasBufferedData(false)
 {
     SOCKET_LOG(("creating nsSocketTransport @%p\n", this));
 
@@ -1524,6 +1534,18 @@ nsSocketTransport::InitiateSocket()
         bool fastOpenNotSupported = false;
         uint8_t tfoStatus = TFO_NOT_TRIED;
         TCPFastOpenFinish(fd, code, fastOpenNotSupported, tfoStatus);
+
+        
+        if (tfoStatus == TFO_DATA_SENT) {
+            SendStatus(NS_NET_STATUS_SENDING_TO);
+        }
+
+        
+        
+        
+        
+        mFastOpenLayerHasBufferedData = TCPFastOpenGetCurrentBufferSize(fd);
+
         mFastOpenCallback->SetFastOpenStatus(tfoStatus);
         SOCKET_LOG(("called StartFastOpen - code=%d; fastOpen is %s "
                     "supported.\n", code,
@@ -1888,6 +1910,13 @@ nsSocketTransport::GetFD_LockedAlsoDuringFastOpen()
     return mFD;
 }
 
+bool
+nsSocketTransport::FastOpenInProgress()
+{
+    mLock.AssertCurrentThreadOwns();
+    return mFDFastOpenInProgress;
+}
+
 class ThunkPRClose : public Runnable
 {
 public:
@@ -2070,6 +2099,23 @@ nsSocketTransport::OnSocketReady(PRFileDesc *fd, int16_t outFlags)
         return;
     }
 
+    if ((mState == STATE_TRANSFERRING) && mFastOpenLayerHasBufferedData) {
+        
+        
+        
+        mFastOpenLayerHasBufferedData = TCPFastOpenFlushBuffer(fd);
+        if (mFastOpenLayerHasBufferedData) {
+            return;
+        } else {
+            SendStatus(NS_NET_STATUS_SENDING_TO);
+        }
+        
+        
+        
+        
+        mFastOpenLayerHasBufferedData = false;
+    }
+
     if (mState == STATE_TRANSFERRING) {
         
         if ((mPollFlags & PR_POLL_WRITE) && (outFlags & ~PR_POLL_READ)) {
@@ -2200,6 +2246,8 @@ nsSocketTransport::OnSocketDetached(PRFileDesc *fd)
           mCondition = NS_ERROR_ABORT;
         }
     }
+
+    mFastOpenLayerHasBufferedData = false;
 
     
     if (!gIOService->IsNetTearingDown() && RecoverFromError())
