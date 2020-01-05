@@ -522,6 +522,9 @@ struct ExceptionHandlerState
 
     
     Thread handlerThread;
+
+    
+    ~ExceptionHandlerState() { MemoryProtectionExceptionHandler::uninstall(); }
 };
 
 
