@@ -18,7 +18,6 @@ import java.util.Locale;
 import android.content.SharedPreferences;
 
 import org.mozilla.gecko.EventDispatcher;
-import org.mozilla.gecko.GeckoAppShell;
 import org.mozilla.gecko.GeckoSharedPrefs;
 import org.mozilla.gecko.PrefsHelper;
 import org.mozilla.gecko.R;
@@ -497,7 +496,9 @@ public class BrowserSearch extends HomeFragment
         }
 
         
-        GeckoAppShell.notifyObservers("Session:Prefetch", "http://" + autocompletion);
+        final GeckoBundle data = new GeckoBundle(1);
+        data.putString("url", "http://" + autocompletion);
+        EventDispatcher.getInstance().dispatch("Session:Prefetch", data);
 
         mAutocompleteHandler.onAutocomplete(autocompletion);
         mAutocompleteHandler = null;
@@ -597,7 +598,9 @@ public class BrowserSearch extends HomeFragment
 
             if (searchCount == 0) {
                 
-                GeckoAppShell.notifyObservers("Session:Prefetch", url);
+                final GeckoBundle data = new GeckoBundle(1);
+                data.putString("url", url);
+                EventDispatcher.getInstance().dispatch("Session:Prefetch", data);
             }
 
             

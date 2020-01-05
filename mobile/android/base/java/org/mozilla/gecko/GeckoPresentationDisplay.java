@@ -5,8 +5,8 @@
 
 package org.mozilla.gecko;
 
-import org.json.JSONObject;
 import org.mozilla.gecko.util.EventCallback;
+import org.mozilla.gecko.util.GeckoBundle;
 
 
 
@@ -16,7 +16,7 @@ interface GeckoPresentationDisplay {
     
 
 
-    JSONObject toJSON();
+    GeckoBundle toBundle();
     void start(EventCallback callback);
     void stop(EventCallback callback);
 }

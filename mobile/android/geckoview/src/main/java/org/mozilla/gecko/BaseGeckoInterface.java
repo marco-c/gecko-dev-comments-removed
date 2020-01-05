@@ -95,11 +95,6 @@ public class BaseGeckoInterface implements GeckoAppShell.GeckoInterface {
         return null;
     }
 
-    @Override
-    public void notifyCheckUpdateResult(String result) {
-        GeckoAppShell.notifyObservers("Update:CheckResult", result);
-    }
-
     
     @Override
     public void invalidateOptionsMenu() {}

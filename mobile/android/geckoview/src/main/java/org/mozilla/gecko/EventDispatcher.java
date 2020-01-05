@@ -234,7 +234,9 @@ public final class EventDispatcher extends JNIObject {
             }
         }
 
-        dispatchToThreads(type, message,  callback);
+        if (!dispatchToThreads(type, message,  callback)) {
+            Log.w(LOGTAG, "No listener for " + type);
+        }
     }
 
     @WrapForJNI(calledFrom = "gecko")

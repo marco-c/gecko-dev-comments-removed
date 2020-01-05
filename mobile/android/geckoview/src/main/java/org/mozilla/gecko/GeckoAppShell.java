@@ -1725,7 +1725,6 @@ public class GeckoAppShell
         public void notifyWakeLockChanged(String topic, String state);
         public boolean areTabsShown();
         public AbsoluteLayout getPluginContainer();
-        public void notifyCheckUpdateResult(String result);
         public void invalidateOptionsMenu();
         public boolean isForegrounded();
 
@@ -1992,7 +1991,7 @@ public class GeckoAppShell
         if (imeIsEnabled && !sImeWasEnabledOnLastResize) {
             
             
-            notifyObservers("ScrollTo:FocusedInput", "");
+            EventDispatcher.getInstance().dispatch("ScrollTo:FocusedInput", null);
         }
         sImeWasEnabledOnLastResize = imeIsEnabled;
     }

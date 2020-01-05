@@ -8,10 +8,8 @@ package org.mozilla.gecko.distribution;
 import org.mozilla.gecko.AdjustConstants;
 import org.mozilla.gecko.annotation.RobocopTarget;
 import org.mozilla.gecko.AppConstants;
-import org.mozilla.gecko.GeckoAppShell;
-
-import org.json.JSONException;
-import org.json.JSONObject;
+import org.mozilla.gecko.EventDispatcher;
+import org.mozilla.gecko.util.GeckoBundle;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -92,16 +90,10 @@ public class ReferrerReceiver extends BroadcastReceiver {
             return;
         }
 
-        try {
-            final JSONObject data = new JSONObject();
-            data.put("id", "playstore");
-            data.put("version", referrer.campaign);
-            String payload = data.toString();
-
-            
-            GeckoAppShell.notifyObservers("Campaign:Set", payload);
-        } catch (JSONException e) {
-            Log.e(LOGTAG, "Error propagating campaign identifier.", e);
-        }
+        final GeckoBundle data = new GeckoBundle(2);
+        data.putString("id", "playstore");
+        data.putString("version", referrer.campaign);
+        
+        EventDispatcher.getInstance().dispatch("Campaign:Set", data);
     }
 }

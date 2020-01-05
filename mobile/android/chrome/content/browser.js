@@ -152,10 +152,6 @@ lazilyLoadedBrowserScripts.forEach(function (aScript) {
 var lazilyLoadedObserverScripts = [
   ["MemoryObserver", ["memory-pressure", "Memory:Dump"], "chrome://browser/content/MemoryObserver.js"],
   ["ConsoleAPI", ["console-api-log-event"], "chrome://browser/content/ConsoleAPI.js"],
-  ["FeedHandler", ["Feeds:Subscribe"], "chrome://browser/content/FeedHandler.js"],
-  ["Feedback", ["Feedback:Show"], "chrome://browser/content/Feedback.js"],
-  ["EmbedRT", ["GeckoView:ImportScript"], "chrome://browser/content/EmbedRT.js"],
-  ["Reader", ["Reader:AddToCache", "Reader:RemoveFromCache"], "chrome://browser/content/Reader.js"],
 ];
 
 if (AppConstants.MOZ_WEBRTC) {
@@ -231,6 +227,15 @@ lazilyLoadedObserverScripts.forEach(function (aScript) {
   ["ActionBarHandler", WindowEventDispatcher,
    ["TextSelection:Get", "TextSelection:Action", "TextSelection:End"],
    "chrome://browser/content/ActionBarHandler.js"],
+  ["EmbedRT", WindowEventDispatcher,
+   ["GeckoView:ImportScript"],
+   "chrome://browser/content/EmbedRT.js"],
+  ["Feedback", GlobalEventDispatcher,
+   ["Feedback:Show"],
+   "chrome://browser/content/Feedback.js"],
+  ["FeedHandler", GlobalEventDispatcher,
+   ["Feeds:Subscribe"],
+   "chrome://browser/content/FeedHandler.js"],
   ["FindHelper", GlobalEventDispatcher,
    ["FindInPage:Opened", "FindInPage:Closed"],
    "chrome://browser/content/FindHelper.js"],
@@ -244,6 +249,9 @@ lazilyLoadedObserverScripts.forEach(function (aScript) {
   ["PrintHelper", GlobalEventDispatcher,
    ["Print:PDF"],
    "chrome://browser/content/PrintHelper.js"],
+  ["Reader", GlobalEventDispatcher,
+   ["Reader:AddToCache", "Reader:RemoveFromCache"],
+   "chrome://browser/content/Reader.js"],
 ].forEach(module => {
   let [name, dispatcher, events, script] = module;
   XPCOMUtils.defineLazyGetter(window, name, function() {
@@ -383,28 +391,33 @@ var BrowserApp = {
       "Tab:Selected",
       "Tab:Closed",
       "Browser:LoadManifest",
+      "Browser:Quit",
+      "Fonts:Reload",
+      "FormHistory:Init",
+      "FullScreen:Exit",
+      "Locale:OS",
+      "Locale:Changed",
+      "Passwords:Init",
+      "Sanitize:ClearData",
+      "SaveAs:PDF",
+      "ScrollTo:FocusedInput",
+      "Session:Back",
+      "Session:Forward",
       "Session:GetHistory",
+      "Session:Navigate",
       "Session:Reload",
+      "Session:Stop",
     ]);
 
-    Services.obs.addObserver(this, "Locale:OS", false);
-    Services.obs.addObserver(this, "Locale:Changed", false);
-    Services.obs.addObserver(this, "Session:Back", false);
-    Services.obs.addObserver(this, "Session:Forward", false);
-    Services.obs.addObserver(this, "Session:Navigate", false);
-    Services.obs.addObserver(this, "Session:Stop", false);
-    Services.obs.addObserver(this, "SaveAs:PDF", false);
-    Services.obs.addObserver(this, "Browser:Quit", false);
-    Services.obs.addObserver(this, "ScrollTo:FocusedInput", false);
-    Services.obs.addObserver(this, "Sanitize:ClearData", false);
-    Services.obs.addObserver(this, "FullScreen:Exit", false);
-    Services.obs.addObserver(this, "Passwords:Init", false);
-    Services.obs.addObserver(this, "FormHistory:Init", false);
+    
+    
+    Services.obs.addObserver((subject, topic, data) =>
+        this.quit(data ? JSON.parse(data) : undefined), "Browser:Quit", false);
+
     Services.obs.addObserver(this, "android-get-pref", false);
     Services.obs.addObserver(this, "android-set-pref", false);
     Services.obs.addObserver(this, "gather-telemetry", false);
     Services.obs.addObserver(this, "keyword-search", false);
-    Services.obs.addObserver(this, "Fonts:Reload", false);
     Services.obs.addObserver(this, "Vibration:Request", false);
 
     window.addEventListener("fullscreen", function() {
@@ -973,8 +986,8 @@ var BrowserApp = {
 
   onAppUpdated: function() {
     
-    Services.obs.notifyObservers(null, "FormHistory:Init", "");
-    Services.obs.notifyObservers(null, "Passwords:Init", "");
+    GlobalEventDispatcher.dispatch("FormHistory:Init", null);
+    GlobalEventDispatcher.dispatch("Passwords:Init", null);
 
     if (this._startupStatus === "upgrade") {
       this._migrateUI();
@@ -1632,8 +1645,134 @@ var BrowserApp = {
         break;
       }
 
+      case "Browser:Quit":
+        this.quit(data);
+        break;
+
+      case "Fonts:Reload":
+        FontEnumerator.updateFontList();
+        break;
+
+      case "FormHistory:Init": {
+        
+        FormHistory.count({});
+        GlobalEventDispatcher.unregisterListener(this, event);
+        break;
+      }
+
+      case "FullScreen:Exit":
+        browser.contentDocument.exitFullscreen();
+        break;
+
+      case "Locale:OS": {
+        
+        let languageTag = data.languageTag;
+        console.log("Locale:OS: " + languageTag);
+        let currentOSLocale = this.getOSLocalePref();
+        if (currentOSLocale == languageTag) {
+          break;
+        }
+
+        console.log("New OS locale.");
+
+        
+        
+        Services.prefs.setCharPref("intl.locale.os", languageTag);
+        Services.prefs.savePrefFile(null);
+
+        let appLocale = this.getUALocalePref();
+
+        this.computeAcceptLanguages(languageTag, appLocale);
+        break;
+      }
+
+      case "Locale:Changed": {
+        if (data) {
+          
+          
+          console.log("Locale:Changed: " + data.languageTag);
+
+          
+          
+          this.setLocalizedPref("general.useragent.locale", data.languageTag);
+        } else {
+          
+          console.log("Switching to system locale.");
+          Services.prefs.clearUserPref("general.useragent.locale");
+        }
+
+        Services.prefs.setBoolPref("intl.locale.matchOS", !data);
+
+        
+        
+        Services.prefs.savePrefFile(null);
+
+        
+        
+        Strings.flush();
+
+        
+        let osLocale;
+        try {
+          
+          osLocale = Services.prefs.getCharPref("intl.locale.os");
+        } catch (e) {
+        }
+
+        this.computeAcceptLanguages(osLocale, data && data.languageTag);
+        break;
+      }
+
+      case "Passwords:Init": {
+        let storage = Cc["@mozilla.org/login-manager/storage/mozStorage;1"].
+                      getService(Ci.nsILoginManagerStorage);
+        storage.initialize();
+        GlobalEventDispatcher.unregisterListener(this, event);
+        break;
+      }
+
+      case "Sanitize:ClearData":
+        this.sanitize(data);
+        break;
+
+      case "SaveAs:PDF":
+        this.saveAsPDF(browser);
+        break;
+
+      case "ScrollTo:FocusedInput": {
+        
+        
+        this.scrollToFocusedInput(browser, false);
+        break;
+      }
+
       case "Session:GetHistory": {
         callback.onSuccess(this.getHistory(data));
+        break;
+      }
+
+      case "Session:Back":
+        browser.goBack();
+        break;
+
+      case "Session:Forward":
+        browser.goForward();
+        break;
+
+      case "Session:Navigate": {
+        let index = data.index;
+        let webNav = BrowserApp.selectedTab.window.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIWebNavigation);
+        let historySize = webNav.sessionHistory.count;
+
+        if (index < 0) {
+          index = 0;
+          Log.e("Browser", "Negative index truncated to zero");
+        } else if (index >= historySize) {
+          Log.e("Browser", "Incorrect index " + index + " truncated to " + historySize - 1);
+          index = historySize - 1;
+        }
+
+        browser.gotoIndex(index);
         break;
       }
 
@@ -1688,6 +1827,10 @@ var BrowserApp = {
         webNav.reload(flags);
         break;
       }
+
+      case "Session:Stop":
+        browser.stop();
+        break;
 
       case "Tab:Load": {
         let url = data.url;
@@ -1754,34 +1897,6 @@ var BrowserApp = {
     let browser = this.selectedBrowser;
 
     switch (aTopic) {
-      case "Session:Back":
-        browser.goBack();
-        break;
-
-      case "Session:Forward":
-        browser.goForward();
-        break;
-
-      case "Session:Navigate":
-          let index = JSON.parse(aData);
-          let webNav = BrowserApp.selectedTab.window.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIWebNavigation);
-          let historySize = webNav.sessionHistory.count;
-
-          if (index < 0) {
-            index = 0;
-            Log.e("Browser", "Negative index truncated to zero");
-          } else if (index >= historySize) {
-            Log.e("Browser", "Incorrect index " + index + " truncated to " + historySize - 1);
-            index = historySize - 1;
-          }
-
-          browser.gotoIndex(index);
-          break;
-
-      case "Session:Stop":
-        browser.stop();
-        break;
-
       case "keyword-search":
         
         
@@ -1800,45 +1915,6 @@ var BrowserApp = {
           query: query
         });
         break;
-
-      case "Browser:Quit":
-        
-        
-        this.quit(aData ? JSON.parse(aData) : undefined);
-        break;
-
-      case "SaveAs:PDF":
-        this.saveAsPDF(browser);
-        break;
-
-      case "ScrollTo:FocusedInput":
-        
-        
-        this.scrollToFocusedInput(browser, false);
-        break;
-
-      case "Sanitize:ClearData":
-        this.sanitize(JSON.parse(aData));
-        break;
-
-      case "FullScreen:Exit":
-        browser.contentDocument.exitFullscreen();
-        break;
-
-      case "Passwords:Init": {
-        let storage = Cc["@mozilla.org/login-manager/storage/mozStorage;1"].
-                      getService(Ci.nsILoginManagerStorage);
-        storage.initialize();
-        Services.obs.removeObserver(this, "Passwords:Init");
-        break;
-      }
-
-      case "FormHistory:Init": {
-        
-        FormHistory.count({});
-        Services.obs.removeObserver(this, "FormHistory:Init");
-        break;
-      }
 
       case "android-get-pref": {
         
@@ -1941,66 +2017,6 @@ var BrowserApp = {
 
       case "gather-telemetry":
         GlobalEventDispatcher.sendRequest({ type: "Telemetry:Gather" });
-        break;
-
-      case "Locale:OS":
-        
-        console.log("Locale:OS: " + aData);
-        let currentOSLocale = this.getOSLocalePref();
-        if (currentOSLocale == aData) {
-          break;
-        }
-
-        console.log("New OS locale.");
-
-        
-        
-        Services.prefs.setCharPref("intl.locale.os", aData);
-        Services.prefs.savePrefFile(null);
-
-        let appLocale = this.getUALocalePref();
-
-        this.computeAcceptLanguages(aData, appLocale);
-        break;
-
-      case "Locale:Changed":
-        if (aData) {
-          
-          
-          console.log("Locale:Changed: " + aData);
-
-          
-          
-          this.setLocalizedPref("general.useragent.locale", aData);
-        } else {
-          
-          console.log("Switching to system locale.");
-          Services.prefs.clearUserPref("general.useragent.locale");
-        }
-
-        Services.prefs.setBoolPref("intl.locale.matchOS", !aData);
-
-        
-        
-        Services.prefs.savePrefFile(null);
-
-        
-        
-        Strings.flush();
-
-        
-        let osLocale;
-        try {
-          
-          osLocale = Services.prefs.getCharPref("intl.locale.os");
-        } catch (e) {
-        }
-
-        this.computeAcceptLanguages(osLocale, aData);
-        break;
-
-      case "Fonts:Reload":
-        FontEnumerator.updateFontList();
         break;
 
       case "Vibration:Request":
@@ -2189,8 +2205,8 @@ var NativeWindow = {
   init: function() {
     GlobalEventDispatcher.registerListener(this, [
       "Doorhanger:Reply",
+      "Menu:Clicked",
     ]);
-    Services.obs.addObserver(this, "Menu:Clicked", false);
     this.contextmenus.init();
   },
 
@@ -2338,13 +2354,10 @@ var NativeWindow = {
           }
         }
       }
-    }
-  },
-
-  observe: function(aSubject, aTopic, aData) {
-    if (aTopic == "Menu:Clicked") {
-      if (this.menu._callbacks[aData])
-        this.menu._callbacks[aData]();
+    } else if (aTopic == "Menu:Clicked") {
+      if (this.menu._callbacks[data.item]) {
+        this.menu._callbacks[data.item]();
+      }
     }
   },
 
@@ -3214,7 +3227,7 @@ var DesktopUserAgent = {
   TCO_REPLACE: / Gecko.*/,
 
   init: function ua_init() {
-    Services.obs.addObserver(this, "DesktopMode:Change", false);
+    GlobalEventDispatcher.registerListener(this, "DesktopMode:Change");
     UserAgentOverrides.addComplexOverride(this.onRequest.bind(this));
 
     
@@ -3289,15 +3302,14 @@ var DesktopUserAgent = {
     return null;
   },
 
-  observe: function ua_observe(aSubject, aTopic, aData) {
-    if (aTopic === "DesktopMode:Change") {
-      let args = JSON.parse(aData);
-      let tab = BrowserApp.getTabForId(args.tabId);
+  onEvent: function ua_onEvent(event, data, callback) {
+    if (event === "DesktopMode:Change") {
+      let tab = BrowserApp.getTabForId(data.tabId);
       if (tab) {
-        tab.reloadWithMode(args.desktopMode);
+        tab.reloadWithMode(data.desktopMode);
       }
     }
-  }
+  },
 };
 
 
@@ -5560,14 +5572,13 @@ var XPInstallObserver = {
 
 var ViewportHandler = {
   init: function init() {
-    Services.obs.addObserver(this, "Window:Resize", false);
+    GlobalEventDispatcher.registerListener(this, "Window:Resize");
   },
 
-  observe: function(aSubject, aTopic, aData) {
-    if (aTopic == "Window:Resize" && aData) {
-      let scrollChange = JSON.parse(aData);
+  onEvent: function (event, data, callback) {
+    if (event == "Window:Resize" && data) {
       let windowUtils = window.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindowUtils);
-      windowUtils.setNextPaintSyncId(scrollChange.id);
+      windowUtils.setNextPaintSyncId(data.id);
     }
   }
 };
@@ -5752,18 +5763,20 @@ var CharacterEncoding = {
   _charsets: [],
 
   init: function init() {
-    Services.obs.addObserver(this, "CharEncoding:Get", false);
-    Services.obs.addObserver(this, "CharEncoding:Set", false);
+    GlobalEventDispatcher.registerListener(this, [
+      "CharEncoding:Get",
+      "CharEncoding:Set",
+    ]);
     InitLater(() => this.sendState());
   },
 
-  observe: function observe(aSubject, aTopic, aData) {
-    switch (aTopic) {
+  onEvent: function onEvent(event, data, callback) {
+    switch (event) {
       case "CharEncoding:Get":
         this.getEncoding();
         break;
       case "CharEncoding:Set":
-        this.setEncoding(aData);
+        this.setEncoding(data.encoding);
         break;
     }
   },
@@ -6480,8 +6493,7 @@ var Experiments = {
   init() {
     GlobalEventDispatcher.sendRequestForResult({
       type: "Experiments:GetActive"
-    }).then(experiments => {
-      let names = JSON.parse(experiments);
+    }).then(names => {
       for (let name of names) {
         switch (name) {
           case this.MALWARE_DOWNLOAD_PROTECTION: {
@@ -6672,10 +6684,12 @@ var Distribution = {
   _preferencesJSON: null,
 
   init: function dc_init() {
-    Services.obs.addObserver(this, "Distribution:Changed", false);
-    Services.obs.addObserver(this, "Distribution:Set", false);
+    GlobalEventDispatcher.registerListener(this, [
+      "Campaign:Set",
+      "Distribution:Changed",
+      "Distribution:Set",
+    ]);
     Services.obs.addObserver(this, "prefservice:after-app-defaults", false);
-    Services.obs.addObserver(this, "Campaign:Set", false);
 
     
     
@@ -6684,8 +6698,23 @@ var Distribution = {
     this.readJSON(this._file, this.update);
   },
 
-  observe: function dc_observe(aSubject, aTopic, aData) {
-    switch (aTopic) {
+  onEvent: function dc_onEvent(event, data, callback) {
+    switch (event) {
+      case "Campaign:Set": {
+        
+        try {
+          this.update(data);
+        } catch (ex) {
+          Cu.reportError("Distribution: Could not parse JSON: " + ex);
+          return;
+        }
+
+        
+        let array = new TextEncoder().encode(JSON.stringify(data));
+        OS.File.writeAtomic(this._file.path, array, { tmpPath: this._file.path + ".tmp" });
+        break;
+      }
+
       case "Distribution:Changed":
         
         try {
@@ -6696,9 +6725,9 @@ var Distribution = {
         
 
       case "Distribution:Set":
-        if (aData) {
+        if (data) {
           try {
-            this._preferencesJSON = JSON.parse(aData);
+            this._preferencesJSON = JSON.parse(data.preferences);
           } catch (e) {
             console.log("Invalid distribution JSON.");
           }
@@ -6707,25 +6736,14 @@ var Distribution = {
         Services.prefs.QueryInterface(Ci.nsIObserver).observe(null, "reload-default-prefs", null);
         this.installDistroAddons();
         break;
+    }
+  },
 
+  observe: function dc_observe(aSubject, aTopic, aData) {
+    switch (aTopic) {
       case "prefservice:after-app-defaults":
         this.getPrefs();
         break;
-
-      case "Campaign:Set": {
-        
-        try {
-          this.update(JSON.parse(aData));
-        } catch (ex) {
-          Cu.reportError("Distribution: Could not parse JSON: " + ex);
-          return;
-        }
-
-        
-        let array = new TextEncoder().encode(aData);
-        OS.File.writeAtomic(this._file.path, array, { tmpPath: this._file.path + ".tmp" });
-        break;
-      }
     }
   },
 
@@ -6903,8 +6921,10 @@ var Tabs = {
       Services.obs.addObserver(this, "memory-pressure", false);
     }
 
-    
-    Services.obs.addObserver(this, "Session:Prefetch", false);
+    GlobalEventDispatcher.registerListener(this, [
+      
+      "Session:Prefetch",
+    ]);
 
     
     
@@ -6914,6 +6934,24 @@ var Tabs = {
 
     BrowserApp.deck.addEventListener("pageshow", this);
     BrowserApp.deck.addEventListener("TabOpen", this);
+  },
+
+  onEvent: function(event, data, callback) {
+    switch (event) {
+      case "Session:Prefetch":
+        if (!data.url) {
+          break;
+        }
+        try {
+          let uri = Services.io.newURI(data.url);
+          if (uri && !this._domains.has(uri.host)) {
+            Services.io.QueryInterface(Ci.nsISpeculativeConnect).speculativeConnect2(
+                uri, BrowserApp.selectedBrowser.contentDocument.nodePrincipal, null);
+            this._domains.add(uri.host);
+          }
+        } catch (e) {}
+        break;
+    }
   },
 
   observe: function(aSubject, aTopic, aData) {
@@ -6927,21 +6965,6 @@ var Tabs = {
         } else {
           
           this.expireLruTab();
-        }
-        break;
-      case "Session:Prefetch":
-        if (aData) {
-          try {
-            let uri = Services.io.newURI(aData);
-            if (uri && !this._domains.has(uri.host)) {
-              Services.io.QueryInterface(Ci.nsISpeculativeConnect).speculativeConnect2(uri,
-                                                                                       BrowserApp.selectedBrowser
-                                                                                                 .contentDocument
-                                                                                                 .nodePrincipal,
-                                                                                       null);
-              this._domains.add(uri.host);
-            }
-          } catch (e) {}
         }
         break;
       case "network:link-status-changed":
