@@ -146,6 +146,8 @@ pub struct StackingContext {
     pub clip_rect: Rect<Au>,
     
     pub z_index: i32,
+    
+    pub opacity: AzFloat,
 }
 
 impl StackingContext {
@@ -157,6 +159,7 @@ impl StackingContext {
     pub fn new(display_list: Box<DisplayList>,
                bounds: Rect<Au>,
                z_index: i32,
+               opacity: AzFloat,
                layer: Option<Arc<RenderLayer>>)
                -> StackingContext {
         StackingContext {
@@ -165,6 +168,7 @@ impl StackingContext {
             bounds: bounds,
             clip_rect: bounds,
             z_index: z_index,
+            opacity: opacity,
         }
     }
 
@@ -174,82 +178,107 @@ impl StackingContext {
                                           tile_bounds: &Rect<AzFloat>,
                                           current_transform: &Matrix2D<AzFloat>,
                                           current_clip_stack: &mut Vec<Rect<Au>>) {
-        
-        let display_list = DisplayListOptimizer::new(tile_bounds).optimize(&*self.display_list);
+        let temporary_draw_target =
+            render_context.get_or_create_temporary_draw_target(self.opacity);
+        {
+            let mut render_subcontext = RenderContext {
+                draw_target: temporary_draw_target.clone(),
+                font_ctx: &mut *render_context.font_ctx,
+                page_rect: render_context.page_rect,
+                screen_rect: render_context.screen_rect,
+                ..*render_context
+            };
 
-        
-        let mut positioned_children = SmallVec8::new();
-        for kid in display_list.children.iter() {
-            positioned_children.push((*kid).clone());
-        }
-        positioned_children.as_slice_mut().sort_by(|this, other| this.z_index.cmp(&other.z_index));
+            
+            let display_list =
+                DisplayListOptimizer::new(tile_bounds).optimize(&*self.display_list);
 
-        
-        for display_item in display_list.background_and_borders.iter() {
-            display_item.draw_into_context(render_context, current_transform, current_clip_stack)
-        }
-
-        
-        for positioned_kid in positioned_children.iter() {
-            if positioned_kid.z_index >= 0 {
-                break
+            
+            let mut positioned_children = SmallVec8::new();
+            for kid in display_list.children.iter() {
+                positioned_children.push((*kid).clone());
             }
-            if positioned_kid.layer.is_none() {
-                let new_transform =
-                    current_transform.translate(positioned_kid.bounds.origin.x.to_nearest_px()
-                                                    as AzFloat,
-                                                positioned_kid.bounds.origin.y.to_nearest_px()
-                                                    as AzFloat);
-                let new_tile_rect =
-                    self.compute_tile_rect_for_child_stacking_context(tile_bounds,
-                                                                      &**positioned_kid);
-                positioned_kid.optimize_and_draw_into_context(render_context,
-                                                              &new_tile_rect,
-                                                              &new_transform,
-                                                              current_clip_stack);
-            }
-        }
+            positioned_children.as_slice_mut()
+                               .sort_by(|this, other| this.z_index.cmp(&other.z_index));
 
-        
-        for display_item in display_list.block_backgrounds_and_borders.iter() {
-            display_item.draw_into_context(render_context, current_transform, current_clip_stack)
-        }
-
-        
-        for display_item in display_list.floats.iter() {
-            display_item.draw_into_context(render_context, current_transform, current_clip_stack)
-        }
-
-        
-
-        
-        for display_item in display_list.content.iter() {
-            display_item.draw_into_context(render_context, current_transform, current_clip_stack)
-        }
-
-        
-        for positioned_kid in positioned_children.iter() {
-            if positioned_kid.z_index < 0 {
-                continue
+            
+            for display_item in display_list.background_and_borders.iter() {
+                display_item.draw_into_context(&mut render_subcontext,
+                                               current_transform,
+                                               current_clip_stack)
             }
 
-            if positioned_kid.layer.is_none() {
-                let new_transform =
-                    current_transform.translate(positioned_kid.bounds.origin.x.to_nearest_px()
-                                                    as AzFloat,
-                                                positioned_kid.bounds.origin.y.to_nearest_px()
-                                                    as AzFloat);
-                let new_tile_rect =
-                    self.compute_tile_rect_for_child_stacking_context(tile_bounds,
-                                                                      &**positioned_kid);
-                positioned_kid.optimize_and_draw_into_context(render_context,
-                                                              &new_tile_rect,
-                                                              &new_transform,
-                                                              current_clip_stack);
+            
+            for positioned_kid in positioned_children.iter() {
+                if positioned_kid.z_index >= 0 {
+                    break
+                }
+                if positioned_kid.layer.is_none() {
+                    let new_transform =
+                        current_transform.translate(positioned_kid.bounds.origin.x.to_nearest_px()
+                                                        as AzFloat,
+                                                    positioned_kid.bounds.origin.y.to_nearest_px()
+                                                        as AzFloat);
+                    let new_tile_rect =
+                        self.compute_tile_rect_for_child_stacking_context(tile_bounds,
+                                                                          &**positioned_kid);
+                    positioned_kid.optimize_and_draw_into_context(&mut render_subcontext,
+                                                                  &new_tile_rect,
+                                                                  &new_transform,
+                                                                  current_clip_stack);
+                }
             }
+
+            
+            for display_item in display_list.block_backgrounds_and_borders.iter() {
+                display_item.draw_into_context(&mut render_subcontext,
+                                               current_transform,
+                                               current_clip_stack)
+            }
+
+            
+            for display_item in display_list.floats.iter() {
+                display_item.draw_into_context(&mut render_subcontext,
+                                               current_transform,
+                                               current_clip_stack)
+            }
+
+            
+
+            
+            for display_item in display_list.content.iter() {
+                display_item.draw_into_context(&mut render_subcontext,
+                                               current_transform,
+                                               current_clip_stack)
+            }
+
+            
+            for positioned_kid in positioned_children.iter() {
+                if positioned_kid.z_index < 0 {
+                    continue
+                }
+
+                if positioned_kid.layer.is_none() {
+                    let new_transform =
+                        current_transform.translate(positioned_kid.bounds.origin.x.to_nearest_px()
+                                                        as AzFloat,
+                                                    positioned_kid.bounds.origin.y.to_nearest_px()
+                                                        as AzFloat);
+                    let new_tile_rect =
+                        self.compute_tile_rect_for_child_stacking_context(tile_bounds,
+                                                                          &**positioned_kid);
+                    positioned_kid.optimize_and_draw_into_context(&mut render_subcontext,
+                                                                  &new_tile_rect,
+                                                                  &new_transform,
+                                                                  current_clip_stack);
+                }
+            }
+
+            
         }
 
-        
+        render_context.draw_temporary_draw_target_if_necessary(&temporary_draw_target,
+                                                               self.opacity)
     }
 
     
