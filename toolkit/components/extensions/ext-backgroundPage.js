@@ -58,8 +58,8 @@ class BackgroundPage extends HiddenExtensionPage {
       
       
       await Promise.all(context.listenerPromises);
+      context.listenerPromises = null;
     }
-    context.listenerPromises = null;
 
     this.extension.emit("startup");
   }
