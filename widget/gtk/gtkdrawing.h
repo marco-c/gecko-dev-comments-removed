@@ -68,9 +68,6 @@ typedef enum {
 } GtkTabFlags;
 
 
-typedef gint (*style_prop_t)(GtkStyle*, const gchar*, gint);
-
-
 #define MOZ_GTK_SUCCESS 0
 #define MOZ_GTK_UNKNOWN_WIDGET -1
 #define MOZ_GTK_UNSAFE_THEME -2
@@ -270,15 +267,6 @@ typedef enum {
 
 
 gint moz_gtk_init();
-
-
-
-
-
-
-
-
-gint moz_gtk_enable_style_props(style_prop_t styleGetProp);
 
 
 
