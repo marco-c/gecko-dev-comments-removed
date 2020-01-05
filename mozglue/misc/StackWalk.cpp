@@ -191,6 +191,11 @@ StackWalkInitCriticalAddress()
 #include "mozilla/Atomics.h"
 #include "mozilla/StackWalk_windows.h"
 
+#ifdef MOZ_STATIC_JS 
+#include "nsWindowsDllInterceptor.h"
+#define STACKWALK_HAS_DLL_INTERCEPTOR
+#endif
+
 #include <imagehlp.h>
 
 
@@ -276,6 +281,22 @@ UnregisterJitCodeRegion(uint8_t* aStart, size_t aSize)
   sJitCodeRegionStart = nullptr;
   sJitCodeRegionSize = 0;
 }
+
+#ifdef STACKWALK_HAS_DLL_INTERCEPTOR
+static WindowsDllInterceptor NtDllInterceptor;
+
+typedef NTSTATUS (NTAPI *LdrUnloadDll_func)(HMODULE module);
+static LdrUnloadDll_func stub_LdrUnloadDll;
+
+static NTSTATUS NTAPI
+patched_LdrUnloadDll(HMODULE module)
+{
+  
+  
+  AutoSuppressStackWalking suppress;
+  return stub_LdrUnloadDll(module);
+}
+#endif 
 #endif 
 
 
@@ -361,6 +382,13 @@ EnsureWalkThreadReady()
   ::CloseHandle(readyEvent);
   stackWalkThread = nullptr;
   readyEvent = nullptr;
+
+#if defined(_M_AMD64) && defined(STACKWALK_HAS_DLL_INTERCEPTOR)
+  NtDllInterceptor.Init("ntdll.dll");
+  NtDllInterceptor.AddHook("LdrUnloadDll",
+                           reinterpret_cast<intptr_t>(patched_LdrUnloadDll),
+                           (void**)&stub_LdrUnloadDll);
+#endif
 
   InitializeDbgHelpCriticalSection();
 
