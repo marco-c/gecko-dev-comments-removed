@@ -6,7 +6,7 @@ use dom::bindings::str::USVString;
 use std::borrow::ToOwned;
 use std::fmt::Write;
 use url::urlutils::{UrlUtils, UrlUtilsWrapper};
-use url::{SchemeData, Url, UrlParser};
+use url::{Origin, SchemeData, Url, UrlParser};
 
 #[derive(HeapSizeOf)]
 pub struct UrlHelper;
@@ -41,6 +41,34 @@ impl UrlHelper {
     pub fn SetHost(url: &mut Url, value: USVString) {
         let mut wrapper = UrlUtilsWrapper { url: url, parser: &UrlParser::new() };
         let _ = wrapper.set_host(&value.0);
+    }
+
+    pub fn Origin(url: &Url) -> USVString {
+        USVString(match url.origin() {
+            Origin::UID(_) => {
+                
+                
+                
+                "null".to_owned()
+            },
+            Origin::Tuple(protocol, host, _) => {
+                let mut origin =
+                    format!(
+                        "{protocol}://{host}",
+                        protocol = protocol,
+                        host = host
+                    );
+                if let Some(port) =
+                    
+                    
+                    
+                    
+                    url.relative_scheme_data().and_then(|scheme| scheme.port) {
+                        write!(origin, ":{}", port).unwrap();
+                    };
+                origin
+            }
+        })
     }
 
     pub fn Hostname(url: &Url) -> USVString {

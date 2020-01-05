@@ -177,6 +177,11 @@ impl URLMethods for URL {
     }
 
     
+    fn Origin(&self) -> USVString {
+        UrlHelper::Origin(&self.url.borrow())
+    }
+
+    
     fn Search(&self) -> USVString {
         UrlHelper::Search(&self.url.borrow())
     }

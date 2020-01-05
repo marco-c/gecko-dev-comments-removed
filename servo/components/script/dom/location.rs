@@ -82,6 +82,11 @@ impl LocationMethods for Location {
     }
 
     
+    fn Origin(&self) -> USVString {
+        UrlHelper::Origin(&self.get_url())
+    }
+
+    
     fn Hostname(&self) -> USVString {
         UrlHelper::Hostname(&self.get_url())
     }
