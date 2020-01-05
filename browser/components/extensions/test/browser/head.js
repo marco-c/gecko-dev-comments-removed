@@ -19,7 +19,6 @@
 
 
 
-
 const {AppConstants} = Cu.import("resource://gre/modules/AppConstants.jsm", {});
 const {CustomizableUI} = Cu.import("resource:///modules/CustomizableUI.jsm", {});
 
@@ -231,16 +230,6 @@ function closeBrowserAction(extension, win = window) {
   CustomizableUI.hidePanelForNode(node);
 
   return Promise.resolve();
-}
-
-async function openContextMenuInPopup(extension, selector = "body") {
-  let contentAreaContextMenu = document.getElementById("contentAreaContextMenu");
-  let browser = await awaitExtensionPanel(extension);
-  let popupShownPromise = BrowserTestUtils.waitForEvent(contentAreaContextMenu, "popupshown");
-  await BrowserTestUtils.synthesizeMouseAtCenter(selector, {type: "mousedown", button: 2}, browser);
-  await BrowserTestUtils.synthesizeMouseAtCenter(selector, {type: "contextmenu"}, browser);
-  await popupShownPromise;
-  return contentAreaContextMenu;
 }
 
 async function openContextMenuInSidebar(selector = "body") {
