@@ -10,6 +10,7 @@ var gExceptionPaths = [
   "chrome://browser/content/defaultthemes/",
   "chrome://browser/locale/searchplugins/",
   "resource://app/defaults/blocklists/",
+  "resource://app/defaults/pinning/",
   "resource://app/defaults/preferences/",
   "resource://gre/modules/commonjs/",
   "resource://gre/defaults/pref/",
@@ -286,7 +287,7 @@ const ignorableWhitelist = new Set([
   "resource://gre/gmp-clearkey/0.1/manifest.json",
 
   
-  "resource://app/defaults/pinning/pins.json",
+  "resource://app/defaults/profile/prefs.js",
 
   
   "resource://gre/res/test.properties",
