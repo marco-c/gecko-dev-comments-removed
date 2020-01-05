@@ -39,7 +39,9 @@ use serialize::{Encodable, Encoder};
 
 
 
-pub type UntrustedNodeAddress = *const c_void;
+#[allow(raw_pointer_deriving)]
+#[deriving(Copy, Clone)]
+pub struct UntrustedNodeAddress(pub *const c_void);
 
 pub struct NewLayoutInfo {
     pub old_pipeline_id: PipelineId,
