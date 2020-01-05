@@ -1559,6 +1559,12 @@ class MOZ_STACK_CLASS TryEmitter
     
     
     
+    
+    
+    
+    
+    
+    
     Maybe<TryFinallyControl> controlInfo_;
 
     int depth_;
@@ -1726,7 +1732,17 @@ class MOZ_STACK_CLASS TryEmitter
 
   public:
     bool emitFinally(const Maybe<uint32_t>& finallyPos = Nothing()) {
-        MOZ_ASSERT(hasFinally());
+        
+        
+        
+        
+        
+        if (!controlInfo_) {
+            if (kind_ == TryCatch)
+                kind_ = TryCatchFinally;
+        } else {
+            MOZ_ASSERT(hasFinally());
+        }
 
         if (state_ == Try) {
             if (!emitTryEnd())
@@ -2022,6 +2038,10 @@ class ForOfLoopControl : public LoopControl
     
     Maybe<TryEmitter> tryCatch_;
 
+    
+    
+    uint32_t numYieldsAtBeginCodeNeedingIterClose_;
+
     bool allowSelfHosted_;
 
     IteratorKind iterKind_;
@@ -2031,16 +2051,22 @@ class ForOfLoopControl : public LoopControl
                      IteratorKind iterKind)
       : LoopControl(bce, StatementKind::ForOfLoop),
         iterDepth_(iterDepth),
+        numYieldsAtBeginCodeNeedingIterClose_(UINT32_MAX),
         allowSelfHosted_(allowSelfHosted),
         iterKind_(iterKind)
     {
     }
 
     bool emitBeginCodeNeedingIteratorClose(BytecodeEmitter* bce) {
-        tryCatch_.emplace(bce, TryEmitter::TryCatch, TryEmitter::DontUseRetVal);
+        tryCatch_.emplace(bce, TryEmitter::TryCatch, TryEmitter::DontUseRetVal,
+                          TryEmitter::DontUseControl);
 
         if (!tryCatch_->emitTry())
             return false;
+
+        MOZ_ASSERT(numYieldsAtBeginCodeNeedingIterClose_ == UINT32_MAX);
+        numYieldsAtBeginCodeNeedingIterClose_ = bce->yieldAndAwaitOffsetList.numYields;
+
         return true;
     }
 
@@ -2078,10 +2104,33 @@ class ForOfLoopControl : public LoopControl
         if (!bce->emit1(JSOP_THROW))              
             return false;
 
+        
+        
+        
+        uint32_t numYieldsEmitted = bce->yieldAndAwaitOffsetList.numYields;
+        if (numYieldsEmitted > numYieldsAtBeginCodeNeedingIterClose_) {
+            if (!tryCatch_->emitFinally())
+                return false;
+
+            IfThenElseEmitter ifGeneratorClosing(bce);
+            if (!bce->emit1(JSOP_ISGENCLOSING))   
+                return false;
+            if (!ifGeneratorClosing.emitIf())     
+                return false;
+            if (!bce->emitDupAt(slotFromTop + 1)) 
+                return false;
+            if (!emitIteratorClose(bce, CompletionKind::Normal)) 
+                return false;
+            if (!ifGeneratorClosing.emitEnd())    
+                return false;
+        }
+
         if (!tryCatch_->emitEnd())
             return false;
 
         tryCatch_.reset();
+        numYieldsAtBeginCodeNeedingIterClose_ = UINT32_MAX;
+
         return true;
     }
 
@@ -4828,6 +4877,11 @@ BytecodeEmitter::emitYieldOp(JSOp op)
         reportError(nullptr, JSMSG_TOO_MANY_YIELDS);
         return false;
     }
+
+    if (op == JSOP_AWAIT)
+        yieldAndAwaitOffsetList.numAwaits++;
+    else
+        yieldAndAwaitOffsetList.numYields++;
 
     SET_UINT24(code(off), yieldAndAwaitIndex);
 
