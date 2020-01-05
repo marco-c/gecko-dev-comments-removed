@@ -133,7 +133,14 @@ SVGFETurbulenceElement::GetPrimitiveDescription(nsSVGFilterInstance* aInstance,
   uint16_t stitch = mEnumAttributes[STITCHTILES].GetAnimValue();
 
   if (fX == 0 || fY == 0) {
-    return FilterPrimitiveDescription(PrimitiveType::Empty);
+    
+    
+    if (type == SVG_TURBULENCE_TYPE_TURBULENCE) {
+      return FilterPrimitiveDescription(PrimitiveType::Empty);
+    }
+    FilterPrimitiveDescription descr(PrimitiveType::Flood);
+    descr.Attributes().Set(eFloodColor, Color(0.5, 0.5, 0.5, 0.5));
+    return descr;
   }
 
   
