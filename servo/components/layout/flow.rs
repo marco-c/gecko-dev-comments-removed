@@ -324,17 +324,13 @@ pub trait Flow: fmt::Debug + Sync {
         self.positioning() == position::T::fixed
     }
 
-    fn is_positioned(&self) -> bool {
-        self.is_relatively_positioned() || base(self).flags.contains(IS_ABSOLUTELY_POSITIONED)
+    fn contains_positioned_fragments(&self) -> bool {
+        self.contains_relatively_positioned_fragments() ||
+            base(self).flags.contains(IS_ABSOLUTELY_POSITIONED)
     }
 
-    fn is_relatively_positioned(&self) -> bool {
+    fn contains_relatively_positioned_fragments(&self) -> bool {
         self.positioning() == position::T::relative
-    }
-
-    
-    fn is_root_of_absolute_flow_tree(&self) -> bool {
-        false
     }
 
     
@@ -355,9 +351,7 @@ pub trait Flow: fmt::Debug + Sync {
     
     
     
-    fn generated_containing_block_rect(&self) -> LogicalRect<Au> {
-        panic!("generated_containing_block_rect not yet implemented for this flow")
-    }
+    fn generated_containing_block_size(&self, _: OpaqueFlow) -> LogicalSize<Au>;
 
     
     #[allow(unsafe_code)]
@@ -441,6 +435,9 @@ pub trait ImmutableFlowUtils {
     fn generate_missing_child_flow(self, node: &ThreadSafeLayoutNode) -> FlowRef;
 
     
+    fn contains_roots_of_absolute_flow_tree(&self) -> bool;
+
+    
     fn is_leaf(self) -> bool;
 
     
@@ -470,6 +467,21 @@ pub trait MutableFlowUtils {
 
     
     fn traverse_postorder<T:PostorderFlowTraversal>(self, traversal: &T);
+
+    
+    
+    
+    
+    
+    
+    fn traverse_preorder_absolute_flows<T>(&mut self, traversal: &mut T)
+                                           where T: PreorderFlowTraversal;
+
+    
+    
+    
+    fn traverse_postorder_absolute_flows<T>(&mut self, traversal: &mut T)
+                                            where T: PostorderFlowTraversal;
 
     
 
@@ -1184,6 +1196,11 @@ impl<'a> ImmutableFlowUtils for &'a (Flow + 'a) {
     }
 
     
+    fn contains_roots_of_absolute_flow_tree(&self) -> bool {
+        self.contains_relatively_positioned_fragments() || self.is_root()
+    }
+
+    
     fn is_leaf(self) -> bool {
         base(self).children.len() == 0
     }
@@ -1276,6 +1293,34 @@ impl<'a> MutableFlowUtils for &'a mut (Flow + 'a) {
         self.repair_style(style);
         self.bubble_inline_sizes();
     }
+
+    
+    
+    
+    
+    
+    
+    fn traverse_preorder_absolute_flows<T>(&mut self, traversal: &mut T)
+                                           where T: PreorderFlowTraversal {
+        traversal.process(*self);
+
+        let descendant_offset_iter = mut_base(*self).abs_descendants.iter();
+        for ref mut descendant_link in descendant_offset_iter {
+            descendant_link.traverse_preorder_absolute_flows(traversal)
+        }
+    }
+
+    
+    
+    
+    fn traverse_postorder_absolute_flows<T>(&mut self, traversal: &mut T)
+                                            where T: PostorderFlowTraversal {
+        for mut descendant_link in mut_base(*self).abs_descendants.iter() {
+            descendant_link.traverse_postorder_absolute_flows(traversal);
+        }
+
+        traversal.process(*self)
+    }
 }
 
 impl MutableOwnedFlowUtils for FlowRef {
@@ -1288,13 +1333,11 @@ impl MutableOwnedFlowUtils for FlowRef {
     
     fn set_absolute_descendants(&mut self, abs_descendants: AbsDescendants) {
         let this = self.clone();
-
-        let block = self.as_block();
-        block.base.abs_descendants = abs_descendants;
-
-        for descendant_link in block.base.abs_descendants.iter() {
-            let base = mut_base(descendant_link);
-            base.absolute_cb.set(this.clone());
+        let base = mut_base(&mut **self);
+        base.abs_descendants = abs_descendants;
+        for descendant_link in base.abs_descendants.iter() {
+            let descendant_base = mut_base(descendant_link);
+            descendant_base.absolute_cb.set(this.clone());
         }
     }
 }
@@ -1329,10 +1372,33 @@ impl ContainingBlockLink {
     }
 
     #[inline]
-    pub fn generated_containing_block_rect(&mut self) -> LogicalRect<Au> {
+    pub fn generated_containing_block_size(&mut self, for_flow: OpaqueFlow) -> LogicalSize<Au> {
         match self.link {
-            None => panic!("haven't done it"),
-            Some(ref mut link) => link.generated_containing_block_rect(),
+            None => {
+                panic!("Link to containing block not established; perhaps you forgot to call \
+                        `set_absolute_descendants`?")
+            }
+            Some(ref mut link) => link.generated_containing_block_size(for_flow),
         }
     }
 }
+
+
+
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
+pub struct OpaqueFlow(pub usize);
+
+impl OpaqueFlow {
+    #[allow(unsafe_code)]
+    pub fn from_flow(flow: &Flow) -> OpaqueFlow {
+        unsafe {
+            let object = mem::transmute::<&Flow,raw::TraitObject>(flow);
+            OpaqueFlow(object.data as usize)
+        }
+    }
+
+    pub fn from_base_flow(base_flow: &BaseFlow) -> OpaqueFlow {
+        OpaqueFlow(base_flow as *const BaseFlow as usize)
+    }
+}
+
