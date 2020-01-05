@@ -10,7 +10,6 @@ use dom::OpaqueNode;
 use error_reporting::ParseErrorReporter;
 use euclid::Size2D;
 use matching::{ApplicableDeclarationsCache, StyleSharingCandidateCache};
-use selector_impl::SelectorImplExt;
 use selector_matching::Stylist;
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -18,19 +17,19 @@ use std::sync::mpsc::Sender;
 use std::sync::{Arc, Mutex, RwLock};
 
 
-pub struct LocalStyleContextCreationInfo<Impl: SelectorImplExt> {
-    new_animations_sender: Sender<Animation<Impl>>,
+pub struct LocalStyleContextCreationInfo {
+    new_animations_sender: Sender<Animation>,
 }
 
-impl<Impl: SelectorImplExt> LocalStyleContextCreationInfo<Impl> {
-    pub fn new(animations_sender: Sender<Animation<Impl>>) -> Self {
+impl LocalStyleContextCreationInfo {
+    pub fn new(animations_sender: Sender<Animation>) -> Self {
         LocalStyleContextCreationInfo {
             new_animations_sender: animations_sender,
         }
     }
 }
 
-pub struct SharedStyleContext<Impl: SelectorImplExt> {
+pub struct SharedStyleContext {
     
     pub viewport_size: Size2D<Au>,
 
@@ -38,7 +37,7 @@ pub struct SharedStyleContext<Impl: SelectorImplExt> {
     pub screen_size_changed: bool,
 
     
-    pub stylist: Arc<Stylist<Impl>>,
+    pub stylist: Arc<Stylist>,
 
     
     
@@ -48,28 +47,28 @@ pub struct SharedStyleContext<Impl: SelectorImplExt> {
     pub goal: ReflowGoal,
 
     
-    pub running_animations: Arc<RwLock<HashMap<OpaqueNode, Vec<Animation<Impl>>>>>,
+    pub running_animations: Arc<RwLock<HashMap<OpaqueNode, Vec<Animation>>>>,
 
     
-    pub expired_animations: Arc<RwLock<HashMap<OpaqueNode, Vec<Animation<Impl>>>>>,
+    pub expired_animations: Arc<RwLock<HashMap<OpaqueNode, Vec<Animation>>>>,
 
     
     pub error_reporter: Box<ParseErrorReporter + Sync>,
 
     
-    pub local_context_creation_data: Mutex<LocalStyleContextCreationInfo<Impl>>,
+    pub local_context_creation_data: Mutex<LocalStyleContextCreationInfo>,
 }
 
-pub struct LocalStyleContext<Impl: SelectorImplExt> {
-    pub applicable_declarations_cache: RefCell<ApplicableDeclarationsCache<Impl::ComputedValues>>,
-    pub style_sharing_candidate_cache: RefCell<StyleSharingCandidateCache<Impl::ComputedValues>>,
+pub struct LocalStyleContext {
+    pub applicable_declarations_cache: RefCell<ApplicableDeclarationsCache>,
+    pub style_sharing_candidate_cache: RefCell<StyleSharingCandidateCache>,
     
     
-    pub new_animations_sender: Sender<Animation<Impl>>,
+    pub new_animations_sender: Sender<Animation>,
 }
 
-impl<Impl: SelectorImplExt> LocalStyleContext<Impl> {
-    pub fn new(local_context_creation_data: &LocalStyleContextCreationInfo<Impl>) -> Self {
+impl LocalStyleContext {
+    pub fn new(local_context_creation_data: &LocalStyleContextCreationInfo) -> Self {
         LocalStyleContext {
             applicable_declarations_cache: RefCell::new(ApplicableDeclarationsCache::new()),
             style_sharing_candidate_cache: RefCell::new(StyleSharingCandidateCache::new()),
@@ -78,9 +77,9 @@ impl<Impl: SelectorImplExt> LocalStyleContext<Impl> {
     }
 }
 
-pub trait StyleContext<'a, Impl: SelectorImplExt> {
-    fn shared_context(&self) -> &'a SharedStyleContext<Impl>;
-    fn local_context(&self) -> &LocalStyleContext<Impl>;
+pub trait StyleContext<'a> {
+    fn shared_context(&self) -> &'a SharedStyleContext;
+    fn local_context(&self) -> &LocalStyleContext;
 }
 
 

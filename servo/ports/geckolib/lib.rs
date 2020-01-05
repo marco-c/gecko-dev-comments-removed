@@ -3,8 +3,6 @@
 
 
 extern crate app_units;
-#[macro_use]
-extern crate cssparser;
 extern crate env_logger;
 extern crate euclid;
 extern crate gecko_bindings;
@@ -26,17 +24,8 @@ mod context;
 mod data;
 #[allow(non_snake_case)]
 pub mod glue;
-mod selector_impl;
 mod traversal;
-mod values;
 mod wrapper;
-
-
-#[macro_use]
-#[allow(unsafe_code)]
-pub mod properties {
-    include!(concat!(env!("OUT_DIR"), "/properties.rs"));
-}
 
 
 #[no_mangle]

@@ -5,27 +5,26 @@
 
 
 use properties::ComputedValues;
-use selectors::parser::SelectorImpl;
+use selector_impl::PseudoElement;
 use std::collections::HashMap;
 use std::hash::BuildHasherDefault;
 use std::sync::Arc;
 use std::sync::atomic::AtomicIsize;
 
-pub struct PrivateStyleData<Impl: SelectorImpl, ConcreteComputedValues: ComputedValues> {
+pub struct PrivateStyleData {
     
-    pub style: Option<Arc<ConcreteComputedValues>>,
+    pub style: Option<Arc<ComputedValues>>,
 
     
-    pub per_pseudo: HashMap<Impl::PseudoElement, Arc<ConcreteComputedValues>,
+    pub per_pseudo: HashMap<PseudoElement, Arc<ComputedValues>,
                             BuildHasherDefault<::fnv::FnvHasher>>,
 
     
     pub parallel: DomParallelInfo,
 }
 
-impl<Impl, ConcreteComputedValues> PrivateStyleData<Impl, ConcreteComputedValues>
-    where Impl: SelectorImpl, ConcreteComputedValues: ComputedValues {
-    pub fn new() -> PrivateStyleData<Impl, ConcreteComputedValues> {
+impl PrivateStyleData {
+    pub fn new() -> Self {
         PrivateStyleData {
             style: None,
             per_pseudo: HashMap::with_hasher(Default::default()),

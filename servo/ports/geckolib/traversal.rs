@@ -3,8 +3,8 @@
 
 
 use context::StandaloneStyleContext;
-use selector_impl::SharedStyleContext;
 use std::mem;
+use style::context::SharedStyleContext;
 use style::dom::OpaqueNode;
 use style::traversal::{DomTraversalContext, recalc_style_at};
 use wrapper::GeckoNode;
