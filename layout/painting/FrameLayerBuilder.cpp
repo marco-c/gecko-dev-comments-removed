@@ -654,10 +654,6 @@ public:
   
 
 
-  nsIntRect mBounds;
-  
-
-
 
 
   nsIntRegion mVisibleAboveRegion;
@@ -1320,6 +1316,7 @@ protected:
 
   nsIntRegion ComputeOpaqueRect(nsDisplayItem* aItem,
                                 AnimatedGeometryRoot* aAnimatedGeometryRoot,
+                                const ActiveScrolledRoot* aASR,
                                 const DisplayItemClip& aClip,
                                 nsDisplayList* aList,
                                 bool* aHideAllLayersBelow,
@@ -1951,7 +1948,7 @@ FrameLayerBuilder::RemoveFrameFromLayerManager(const nsIFrame* aFrame,
     if (t) {
       PaintedDisplayItemLayerUserData* paintedData =
           static_cast<PaintedDisplayItemLayerUserData*>(t->GetUserData(&gPaintedDisplayItemLayerUserData));
-      if (paintedData) {
+      if (paintedData && data->mGeometry) {
         nsRegion old = data->mGeometry->ComputeInvalidationRegion();
         nsIntRegion rgn = old.ScaleToOutsidePixels(paintedData->mXScale, paintedData->mYScale, paintedData->mAppUnitsPerDevPixel);
         rgn.MoveBy(-GetTranslationForPaintedLayer(t));
@@ -1992,6 +1989,7 @@ FrameLayerBuilder::StoreOptimizedLayerForFrame(nsDisplayItem* aItem, Layer* aLay
   DisplayItemData* data = GetDisplayItemDataForManager(aItem, aLayer->Manager());
   NS_ASSERTION(data, "Must have already stored data for this item!");
   data->mOptLayer = aLayer;
+  data->mItem = nullptr;
 }
 
 void
@@ -3143,7 +3141,6 @@ ContainerState::PrepareImageLayer(PaintedLayerData* aData)
     imageLayer->SetClipRect(Nothing());
   }
 
-  mLayerBuilder->StoreOptimizedLayerForFrame(aData->mImage, imageLayer);
   FLB_LOG_PAINTED_LAYER_DECISION(aData,
                                  "  Selected image layer=%p\n", imageLayer.get());
 
@@ -3248,6 +3245,10 @@ void ContainerState::FinishPaintedLayerData(PaintedLayerData& aData, FindOpaqueB
       data->mLayer->SetVisibleRegion(LayerIntRegion());
       data->mLayer->InvalidateRegion(data->mLayer->GetValidRegion().GetBounds());
       data->mLayer->SetEventRegions(EventRegions());
+
+      for (auto& item : data->mAssignedDisplayItems) {
+        mLayerBuilder->StoreOptimizedLayerForFrame(item.mItem, layer);
+      }
     }
   }
 
@@ -3266,10 +3267,6 @@ void ContainerState::FinishPaintedLayerData(PaintedLayerData& aData, FindOpaqueB
   } else {
     SetOuterVisibleRegionForLayer(layer, data->mVisibleRegion);
   }
-
-  nsIntRect layerBounds = data->mBounds;
-  layerBounds.MoveBy(-GetTranslationForPaintedLayer(data->mLayer));
-  layer->SetLayerBounds(layerBounds);
 
 #ifdef MOZ_DUMP_PAINTING
   if (!data->mLog.IsEmpty()) {
@@ -3466,10 +3463,6 @@ PaintedLayerData::Accumulate(ContainerState* aState,
                             LayerState aLayerState)
 {
   FLB_LOG_PAINTED_LAYER_DECISION(this, "Accumulating dp=%s(%p), f=%p against pld=%p\n", aItem->Name(), aItem, aItem->Frame(), this);
-
-  bool snap;
-  nsRect itemBounds = aItem->GetBounds(aState->mBuilder, &snap);
-  mBounds = mBounds.Union(aState->ScaleToOutsidePixels(itemBounds, snap));
 
   if (aState->mBuilder->NeedToForceTransparentSurfaceForItem(aItem)) {
     mForceTransparentSurface = true;
@@ -3792,7 +3785,7 @@ ContainerState::GetDisplayPortForAnimatedGeometryRoot(AnimatedGeometryRoot* aAni
   mLastDisplayPortAGR = aAnimatedGeometryRoot;
 
   nsIScrollableFrame* sf = nsLayoutUtils::GetScrollableFrameFor(*aAnimatedGeometryRoot);
-  if (sf == nullptr) {
+  if (sf == nullptr || nsLayoutUtils::UsesAsyncScrolling(*aAnimatedGeometryRoot)) {
     mLastDisplayPortRect = nsRect();
     return mLastDisplayPortRect;
   }
@@ -3813,6 +3806,7 @@ ContainerState::GetDisplayPortForAnimatedGeometryRoot(AnimatedGeometryRoot* aAni
 nsIntRegion
 ContainerState::ComputeOpaqueRect(nsDisplayItem* aItem,
                                   AnimatedGeometryRoot* aAnimatedGeometryRoot,
+                                  const ActiveScrolledRoot* aASR,
                                   const DisplayItemClip& aClip,
                                   nsDisplayList* aList,
                                   bool* aHideAllLayersBelow,
@@ -3831,6 +3825,7 @@ ContainerState::ComputeOpaqueRect(nsDisplayItem* aItem,
                      aClip.ApproximateIntersectInward(iter.Get()));
   }
   if (aAnimatedGeometryRoot == mContainerAnimatedGeometryRoot &&
+      aASR == mContainerASR &&
       opaqueClipped.Contains(mContainerBounds)) {
     *aHideAllLayersBelow = true;
     aList->SetIsOpaque();
@@ -4415,7 +4410,7 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
           newLayerEntry->mVisibleRegion = itemVisibleRegion;
         }
         newLayerEntry->mOpaqueRegion = ComputeOpaqueRect(item,
-          animatedGeometryRoot, itemClip, aList,
+          animatedGeometryRoot, itemASR, itemClip, aList,
           &newLayerEntry->mHideAllLayersBelow,
           &newLayerEntry->mOpaqueForAnimatedGeometryRootParent);
       } else {
@@ -4471,7 +4466,7 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
           paintedLayerData->UpdateCommonClipCount(itemClip);
         }
         nsIntRegion opaquePixels = ComputeOpaqueRect(item,
-            animatedGeometryRoot, itemClip, aList,
+            animatedGeometryRoot, itemASR, itemClip, aList,
             &paintedLayerData->mHideAllLayersBelow,
             &paintedLayerData->mOpaqueForAnimatedGeometryRootParent);
         MOZ_ASSERT(nsIntRegion(itemDrawRect).Contains(opaquePixels));
@@ -4541,7 +4536,9 @@ FrameLayerBuilder::ComputeGeometryChangeForItem(DisplayItemData* aData)
 {
   nsDisplayItem *item = aData->mItem;
   PaintedLayer* paintedLayer = aData->mLayer->AsPaintedLayer();
-  if (!item || !paintedLayer) {
+  
+  
+  if (aData->mOptLayer || !item || !paintedLayer) {
     aData->EndUpdate();
     return;
   }
@@ -4952,16 +4949,19 @@ ContainerState::CollectOldLayers()
 
 struct OpaqueRegionEntry {
   AnimatedGeometryRoot* mAnimatedGeometryRoot;
+  const ActiveScrolledRoot* mASR;
   nsIntRegion mOpaqueRegion;
 };
 
 static OpaqueRegionEntry*
 FindOpaqueRegionEntry(nsTArray<OpaqueRegionEntry>& aEntries,
-                      AnimatedGeometryRoot* aAnimatedGeometryRoot)
+                      AnimatedGeometryRoot* aAnimatedGeometryRoot,
+                      const ActiveScrolledRoot* aASR)
 {
   for (uint32_t i = 0; i < aEntries.Length(); ++i) {
     OpaqueRegionEntry* d = &aEntries[i];
-    if (d->mAnimatedGeometryRoot == aAnimatedGeometryRoot) {
+    if (d->mAnimatedGeometryRoot == aAnimatedGeometryRoot &&
+        d->mASR == aASR) {
       return d;
     }
   }
@@ -5191,7 +5191,7 @@ ContainerState::PostprocessRetainedLayers(nsIntRegion* aOpaqueRegionForContainer
       continue;
     }
 
-    OpaqueRegionEntry* data = FindOpaqueRegionEntry(opaqueRegions, e->mAnimatedGeometryRoot);
+    OpaqueRegionEntry* data = FindOpaqueRegionEntry(opaqueRegions, e->mAnimatedGeometryRoot, e->mASR);
 
     SetupScrollingMetadata(e);
 
@@ -5214,19 +5214,23 @@ ContainerState::PostprocessRetainedLayers(nsIntRegion* aOpaqueRegionForContainer
 
     if (!e->mOpaqueRegion.IsEmpty()) {
       AnimatedGeometryRoot* animatedGeometryRootToCover = e->mAnimatedGeometryRoot;
+      const ActiveScrolledRoot* asrToCover = e->mASR;
       if (e->mOpaqueForAnimatedGeometryRootParent &&
           e->mAnimatedGeometryRoot->mParentAGR == mContainerAnimatedGeometryRoot) {
         animatedGeometryRootToCover = mContainerAnimatedGeometryRoot;
-        data = FindOpaqueRegionEntry(opaqueRegions, animatedGeometryRootToCover);
+        asrToCover = mContainerASR;
+        data = FindOpaqueRegionEntry(opaqueRegions, animatedGeometryRootToCover, asrToCover);
       }
 
       if (!data) {
-        if (animatedGeometryRootToCover == mContainerAnimatedGeometryRoot) {
+        if (animatedGeometryRootToCover == mContainerAnimatedGeometryRoot &&
+            asrToCover == mContainerASR) {
           NS_ASSERTION(opaqueRegionForContainer == -1, "Already found it?");
           opaqueRegionForContainer = opaqueRegions.Length();
         }
         data = opaqueRegions.AppendElement();
         data->mAnimatedGeometryRoot = animatedGeometryRootToCover;
+        data->mASR = asrToCover;
       }
 
       nsIntRegion clippedOpaque = e->mOpaqueRegion;
