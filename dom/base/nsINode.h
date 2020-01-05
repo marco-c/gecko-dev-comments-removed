@@ -761,9 +761,8 @@ public:
 
 
 
-  virtual void* GetProperty(uint16_t aCategory,
-                            nsIAtom *aPropertyName,
-                            nsresult *aStatus = nullptr) const;
+  void* GetProperty(uint16_t aCategory, nsIAtom *aPropertyName,
+                    nsresult *aStatus = nullptr) const;
 
   
 
@@ -782,8 +781,7 @@ public:
 
 
 
-  nsresult SetProperty(nsIAtom *aPropertyName,
-                       void *aValue,
+  nsresult SetProperty(nsIAtom *aPropertyName, void *aValue,
                        NSPropertyDtorFunc aDtor = nullptr,
                        bool aTransfer = false)
   {
@@ -809,12 +807,11 @@ public:
 
 
 
-  virtual nsresult SetProperty(uint16_t aCategory,
-                               nsIAtom *aPropertyName,
-                               void *aValue,
-                               NSPropertyDtorFunc aDtor = nullptr,
-                               bool aTransfer = false,
-                               void **aOldValue = nullptr);
+  nsresult SetProperty(uint16_t aCategory,
+                       nsIAtom *aPropertyName, void *aValue,
+                       NSPropertyDtorFunc aDtor = nullptr,
+                       bool aTransfer = false,
+                       void **aOldValue = nullptr);
 
   
 
@@ -843,7 +840,7 @@ public:
 
 
 
-  virtual void DeleteProperty(uint16_t aCategory, nsIAtom *aPropertyName);
+  void DeleteProperty(uint16_t aCategory, nsIAtom *aPropertyName);
 
   
 
@@ -878,9 +875,8 @@ public:
 
 
 
-  virtual void* UnsetProperty(uint16_t aCategory,
-                              nsIAtom *aPropertyName,
-                              nsresult *aStatus = nullptr);
+  void* UnsetProperty(uint16_t aCategory, nsIAtom *aPropertyName,
+                      nsresult *aStatus = nullptr);
 
   bool HasProperties() const
   {
