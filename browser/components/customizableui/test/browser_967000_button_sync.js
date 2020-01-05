@@ -42,8 +42,18 @@ add_task(function* setup() {
   let oldInternal = SyncedTabs._internal;
   SyncedTabs._internal = mockedInternal;
 
+  
+  
+  let initialObserverStates = {};
+  for (let id of ["sync-reauth-state", "sync-setup-state", "sync-syncnow-state"]) {
+    initialObserverStates[id] = document.getElementById(id).hidden;
+  }
+
   registerCleanupFunction(() => {
     SyncedTabs._internal = oldInternal;
+    for (let [id, initial] of Object.entries(initialObserverStates)) {
+      document.getElementById(id).hidden = initial;
+    }
   });
 });
 
