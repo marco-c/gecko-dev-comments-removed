@@ -571,7 +571,6 @@ public:
 
     mDecodeStartTime = TimeStamp::Now();
 
-    mMaster->mIsPrerolling = true;
     MaybeStopPrerolling();
 
     
@@ -586,7 +585,6 @@ public:
       TimeDuration decodeDuration = TimeStamp::Now() - mDecodeStartTime;
       SLOG("Exiting DECODING, decoded for %.3lfs", decodeDuration.ToSeconds());
     }
-    mMaster->mIsPrerolling = false;
   }
 
   void Step() override
@@ -599,7 +597,7 @@ public:
     }
 
     
-    if (!mMaster->mIsPrerolling) {
+    if (!mIsPrerolling) {
       mMaster->MaybeStartPlayback();
     }
 
@@ -669,7 +667,7 @@ public:
 
   void DumpDebugInfo() override
   {
-    SDUMP("mIsPrerolling=%d", mMaster->mIsPrerolling);
+    SDUMP("mIsPrerolling=%d", mIsPrerolling);
   }
 
 private:
@@ -706,10 +704,10 @@ private:
 
   void MaybeStopPrerolling()
   {
-    if (mMaster->mIsPrerolling &&
+    if (mIsPrerolling &&
         (mMaster->DonePrerollingAudio() || Reader()->IsWaitingAudioData()) &&
         (mMaster->DonePrerollingVideo() || Reader()->IsWaitingVideoData())) {
-      mMaster->mIsPrerolling = false;
+      mIsPrerolling = false;
       
       mMaster->ScheduleStateMachine();
     }
@@ -717,6 +715,15 @@ private:
 
   
   TimeStamp mDecodeStartTime;
+
+  
+  
+  
+  
+  
+  
+  
+  bool mIsPrerolling = true;
 };
 
 class MediaDecoderStateMachine::SeekingState

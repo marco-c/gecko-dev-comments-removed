@@ -694,15 +694,6 @@ private:
 
   
   
-  
-  
-  
-  
-  
-  bool mIsPrerolling = false;
-
-  
-  
 
   MediaEventListener mAudioCallback;
   MediaEventListener mVideoCallback;
