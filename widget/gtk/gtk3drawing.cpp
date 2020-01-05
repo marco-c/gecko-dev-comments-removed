@@ -40,6 +40,17 @@ static gint
 moz_gtk_menu_item_paint(WidgetNodeType widget, cairo_t *cr, GdkRectangle* rect,
                         GtkWidgetState* state, GtkTextDirection direction);
 
+
+
+
+
+
+
+
+
+
+
+
 static GtkStateFlags
 GetStateFlagsFromGtkWidgetState(GtkWidgetState* state)
 {
@@ -874,7 +885,16 @@ moz_gtk_text_view_paint(cairo_t *cr, GdkRectangle* aRect,
                         GtkWidgetState* state,
                         GtkTextDirection direction)
 {
-    GtkStateFlags state_flags = GetStateFlagsFromGtkWidgetState(state);
+    
+    
+    
+    
+    
+    
+    GtkStateFlags state_flags =
+        state->disabled ? GTK_STATE_FLAG_INSENSITIVE :
+        state->focused ? GTK_STATE_FLAG_FOCUSED :
+        GTK_STATE_FLAG_NORMAL;
 
     GtkStyleContext* style_frame =
         ClaimStyleContext(MOZ_GTK_SCROLLED_WINDOW, direction, state_flags);
