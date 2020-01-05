@@ -37,7 +37,6 @@ import uuid
 import zipfile
 import bisection
 
-from ctypes.util import find_library
 from datetime import datetime
 from manifestparser import TestManifest
 from manifestparser.filters import (
@@ -628,7 +627,7 @@ def checkAndConfigureV4l2loopback(device):
     if not mozinfo.isLinux:
         return False, ''
 
-    libc = ctypes.cdll.LoadLibrary(find_library("c"))
+    libc = ctypes.cdll.LoadLibrary('libc.so.6')
     O_RDWR = 2
     
 
@@ -1483,14 +1482,6 @@ toolbar#nav-bar {
         
         
         browserEnv["XPCOM_DEBUG_BREAK"] = "stack"
-
-        
-        
-        
-        
-        
-        if options.flavor == 'plain':
-            browserEnv["MOZ_WIN_INHERIT_STD_HANDLES_PRE_VISTA"] = "1"
 
         
         try:
