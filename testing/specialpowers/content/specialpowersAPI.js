@@ -1595,6 +1595,14 @@ SpecialPowersAPI.prototype = {
       removeSystemEventListener(target, type, listener, useCapture);
   },
 
+  
+  
+  defaultPreventedInAnyGroup: function(event) {
+    
+    
+    return event.defaultPrevented;
+  },
+
   getDOMRequestService: function() {
     var serv = Services.DOMRequest;
     var res = {};
