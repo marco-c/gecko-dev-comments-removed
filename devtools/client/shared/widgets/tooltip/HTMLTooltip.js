@@ -175,6 +175,15 @@ function (anchorRect, viewportRect, width, type, offset, isRtl) {
 
 const getRelativeRect = function (node, relativeTo) {
   
+  
+  if (!node.getBoxQuads) {
+    let {top, left, width, height} = node.getBoundingClientRect();
+    let right = left + width;
+    let bottom = top + height;
+    return {top, right, bottom, left, width, height};
+  }
+
+  
   let {width, height} = node.getBoundingClientRect();
 
   let quads = node.getBoxQuads({relativeTo});
