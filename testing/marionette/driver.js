@@ -505,8 +505,7 @@ GeckoDriver.prototype.registerBrowser = function (id, be) {
     
     
     
-    this.curBrowser.frameManager.currentRemoteFrame.targetFrameId =
-        this.generateFrameId(id);
+    this.curBrowser.frameManager.currentRemoteFrame.targetFrameId = id;
   }
 
   let reg = {};
@@ -520,9 +519,8 @@ GeckoDriver.prototype.registerBrowser = function (id, be) {
   if (this.appName != "Firefox" || be.namespaceURI != XUL_NS ||
       be.nodeName != "browser" || be.getTabBrowser()) {
     
-    let uid = this.generateFrameId(id);
-    reg.id = uid;
-    reg.remotenessChange = this.curBrowser.register(uid, be);
+    reg.id = id;
+    reg.remotenessChange = this.curBrowser.register(id, be);
   }
 
   
@@ -1233,7 +1231,6 @@ GeckoDriver.prototype.getIdForBrowser = function (browser) {
 
   let winId = browser.outerWindowID;
   if (winId) {
-    winId = winId.toString();
     this._browserIds.set(permKey, winId);
     return winId;
   }
@@ -1256,13 +1253,13 @@ GeckoDriver.prototype.getWindowHandle = function (cmd, resp) {
 
   
   if (this.curBrowser.curFrameId) {
-    resp.body.value = this.curBrowser.curFrameId;
+    resp.body.value = this.curBrowser.curFrameId.toString();
     return;
   }
 
   for (let i in this.browsers) {
     if (this.curBrowser == this.browsers[i]) {
-      resp.body.value = i;
+      resp.body.value = i.toString();
       return;
     }
   }
@@ -1439,14 +1436,20 @@ GeckoDriver.prototype.setWindowRect = function* (cmd, resp) {
 
 
 GeckoDriver.prototype.switchToWindow = function* (cmd, resp) {
-  let switchTo = cmd.parameters.name;
   let focus = (cmd.parameters.focus !== undefined) ? cmd.parameters.focus : true;
-  let found;
+
+  
+  
+  let switchTo = parseInt(cmd.parameters.name);
+  if (isNaN(switchTo)) {
+    switchTo = cmd.parameters.name;
+  }
 
   let byNameOrId = function (name, windowId) {
     return switchTo === name || switchTo === windowId;
   };
 
+  let found;
   let winEn = Services.wm.getEnumerator(null);
   while (winEn.hasMoreElements()) {
     let win = winEn.getNext();
@@ -2608,7 +2611,7 @@ GeckoDriver.prototype.close = function (cmd, resp) {
     this.mm.removeDelayedFrameScript(FRAME_SCRIPT);
   }
 
-  return this.curBrowser.closeTab().then(() => this.windowHandles);
+  return this.curBrowser.closeTab().then(() => this.windowHandles.map(String));
 };
 
 
@@ -2647,7 +2650,7 @@ GeckoDriver.prototype.closeChromeWindow = function (cmd, resp) {
     this.mm.removeDelayedFrameScript(FRAME_SCRIPT);
   }
 
-  return this.curBrowser.closeWindow().then(() => this.chromeWindowHandles);
+  return this.curBrowser.closeWindow().then(() => this.chromeWindowHandles.map(String));
 };
 
 
@@ -3157,15 +3160,6 @@ GeckoDriver.prototype.uninstallAddon = function (cmd, resp) {
 };
 
 
-
-
-
-GeckoDriver.prototype.generateFrameId = function (id) {
-  let uid = id + (this.appName == "B2G" ? "-b2g" : "");
-  return uid;
-};
-
-
 GeckoDriver.prototype.receiveMessage = function (message) {
   switch (message.name) {
     case "Marionette:ok":
@@ -3433,9 +3427,7 @@ function copy (obj) {
 
 
 function getOuterWindowId(win) {
-  let id = win.QueryInterface(Ci.nsIInterfaceRequestor)
+  return win.QueryInterface(Ci.nsIInterfaceRequestor)
       .getInterface(Ci.nsIDOMWindowUtils)
       .outerWindowID;
-
-  return id.toString();
 }
