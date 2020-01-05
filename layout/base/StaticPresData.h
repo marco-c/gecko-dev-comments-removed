@@ -104,6 +104,12 @@ public:
 
 
 
+  already_AddRefed<nsIAtom> GetUncachedLangGroup(nsIAtom* aLanguage) const;
+
+  
+
+
+
 
 
 
