@@ -383,8 +383,6 @@ ServoRestyleManager::ProcessPendingRestyles()
   
   mInStyleRefresh = true;
   while (styleSet->StyleDocument()) {
-    PresContext()->EffectCompositor()->ClearElementsToRestyle();
-
     
     
     nsStyleChangeList currentChanges(StyleBackendType::Servo);

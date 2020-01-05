@@ -159,14 +159,6 @@ public:
                                             CSSPseudoElementType aPseudoType,
                                             CascadeLevel aCascadeLevel);
 
-  
-  
-  
-  
-  
-  
-  void ClearElementsToRestyle();
-
   bool HasPendingStyleUpdates() const;
   bool HasThrottledStyleUpdates() const;
 
