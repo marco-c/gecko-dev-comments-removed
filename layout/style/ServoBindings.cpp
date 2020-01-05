@@ -1846,8 +1846,18 @@ Gecko_GetFontMetrics(RawGeckoPresContextBorrowed aPresContext,
   MOZ_ASSERT(NS_IsMainThread());
   MutexAutoLock lock(*sServoFontMetricsLock);
   GeckoFontMetrics ret;
+
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+
   nsPresContext* presContext = const_cast<nsPresContext*>(aPresContext);
   presContext->SetUsesExChUnits(true);
   RefPtr<nsFontMetrics> fm = nsRuleNode::GetMetricsFor(presContext, aIsVertical,
