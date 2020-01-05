@@ -223,6 +223,10 @@ public:
 
   virtual void DumpDebugInfo() {}
 
+private:
+  template <class S, typename R, typename... As>
+  auto ReturnTypeHelper(R(S::*)(As...)) -> R;
+
 protected:
   using Master = MediaDecoderStateMachine;
   explicit StateObject(Master* aPtr) : mMaster(aPtr) {}
@@ -243,7 +247,7 @@ protected:
   
   template <class S, typename... Ts>
   auto SetState(Ts... aArgs)
-    -> decltype(DeclVal<S>().Enter(Move(aArgs)...))
+    -> decltype(ReturnTypeHelper(&S::Enter))
   {
     
     
