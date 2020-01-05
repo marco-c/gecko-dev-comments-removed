@@ -94,6 +94,9 @@ typedef uint8_t nsHttpVersion;
 #define NS_HTTP_BE_CONSERVATIVE      (1<<11)
 
 
+#define NS_HTTP_URGENT_START         (1<<12)
+
+
 
 
 
