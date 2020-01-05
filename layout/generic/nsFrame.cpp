@@ -555,8 +555,7 @@ nsFrame::Init(nsIContent*       aContent,
   }
   const nsStyleDisplay *disp = StyleDisplay();
   if (disp->HasTransform(this) ||
-      (IsFrameOfType(eSupportsCSSTransforms) &&
-       nsLayoutUtils::HasAnimationOfProperty(this, eCSSProperty_transform))) {
+      nsLayoutUtils::HasAnimationOfProperty(this, eCSSProperty_transform)) {
     
     
     mState |= NS_FRAME_MAY_BE_TRANSFORMED;
