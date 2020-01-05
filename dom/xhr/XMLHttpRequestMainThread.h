@@ -55,6 +55,7 @@ namespace mozilla {
 namespace dom {
 
 class Blob;
+class BlobSet;
 class FormData;
 class MutableBlobStorage;
 class URLSearchParams;
@@ -647,6 +648,9 @@ protected:
   
   
   nsAutoPtr<MutableBlobStorage> mBlobStorage;
+  
+  
+  nsAutoPtr<BlobSet> mBlobSet;
 
   nsString mOverrideMimeType;
 
