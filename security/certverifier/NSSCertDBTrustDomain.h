@@ -80,6 +80,7 @@ public:
                        ValidityCheckingMode validityCheckingMode,
                        CertVerifier::SHA1Mode sha1Mode,
                        NetscapeStepUpPolicy netscapeStepUpPolicy,
+                       const char* firstPartyDomain,
                        UniqueCERTCertList& builtChain,
            PinningTelemetryInfo* pinningTelemetryInfo = nullptr,
            const char* hostname = nullptr);
@@ -183,6 +184,7 @@ private:
   ValidityCheckingMode mValidityCheckingMode;
   CertVerifier::SHA1Mode mSHA1Mode;
   NetscapeStepUpPolicy mNetscapeStepUpPolicy;
+  const char* mFirstPartyDomain;
   UniqueCERTCertList& mBuiltChain; 
   PinningTelemetryInfo* mPinningTelemetryInfo;
   const char* mHostname; 

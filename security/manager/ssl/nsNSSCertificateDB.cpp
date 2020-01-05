@@ -1501,6 +1501,7 @@ VerifyCertAtTime(nsIX509Cert* aCert,
                                                resultChain,
                                                false, 
                                                aFlags,
+                                               nullptr, 
                                                &evOidPolicy);
   } else {
     result = certVerifier->VerifyCert(nssCert.get(), aUsage, aTime,
@@ -1508,6 +1509,7 @@ VerifyCertAtTime(nsIX509Cert* aCert,
                                       aHostname,
                                       resultChain,
                                       aFlags,
+                                      nullptr, 
                                       nullptr, 
                                       nullptr, 
                                       &evOidPolicy);

@@ -328,6 +328,7 @@ CertVerifier::VerifyCert(CERTCertificate* cert, SECCertificateUsage usage,
              const Flags flags,
              const SECItem* stapledOCSPResponseSECItem,
              const SECItem* sctsFromTLSSECItem,
+             const char* firstPartyDomain,
          SECOidTag* evOidPolicy,
          OCSPStaplingStatus* ocspStaplingStatus,
          KeySizeStatus* keySizeStatus,
@@ -421,6 +422,7 @@ CertVerifier::VerifyCert(CERTCertificate* cert, SECCertificateUsage usage,
                                        ValidityCheckingMode::CheckingOff,
                                        SHA1Mode::Allowed,
                                        NetscapeStepUpPolicy::NeverMatch,
+                                       firstPartyDomain,
                                        builtChain, nullptr, nullptr);
       rv = BuildCertChain(trustDomain, certDER, time,
                           EndEntityOrCA::MustBeEndEntity,
@@ -495,7 +497,8 @@ CertVerifier::VerifyCert(CERTCertificate* cert, SECCertificateUsage usage,
                       mCertShortLifetimeInDays, mPinningMode, MIN_RSA_BITS,
                       ValidityCheckingMode::CheckForEV,
                       sha1ModeConfigurations[i], mNetscapeStepUpPolicy,
-                      builtChain, pinningTelemetryInfo, hostname);
+                      firstPartyDomain, builtChain, pinningTelemetryInfo,
+                      hostname);
         rv = BuildCertChainForOneKeyUsage(trustDomain, certDER, time,
                                           KeyUsage::digitalSignature,
                                           KeyUsage::keyEncipherment, 
@@ -582,7 +585,8 @@ CertVerifier::VerifyCert(CERTCertificate* cert, SECCertificateUsage usage,
                                            mPinningMode, keySizeOptions[i],
                                            ValidityCheckingMode::CheckingOff,
                                            sha1ModeConfigurations[j],
-                                           mNetscapeStepUpPolicy, builtChain,
+                                           mNetscapeStepUpPolicy,
+                                           firstPartyDomain, builtChain,
                                            pinningTelemetryInfo, hostname);
           rv = BuildCertChainForOneKeyUsage(trustDomain, certDER, time,
                                             KeyUsage::digitalSignature,
@@ -647,7 +651,8 @@ CertVerifier::VerifyCert(CERTCertificate* cert, SECCertificateUsage usage,
                                        pinningDisabled, MIN_RSA_BITS_WEAK,
                                        ValidityCheckingMode::CheckingOff,
                                        SHA1Mode::Allowed, mNetscapeStepUpPolicy,
-                                       builtChain, nullptr, nullptr);
+                                       firstPartyDomain, builtChain, nullptr,
+                                       nullptr);
       rv = BuildCertChain(trustDomain, certDER, time,
                           EndEntityOrCA::MustBeCA, KeyUsage::keyCertSign,
                           KeyPurposeId::id_kp_serverAuth,
@@ -663,7 +668,8 @@ CertVerifier::VerifyCert(CERTCertificate* cert, SECCertificateUsage usage,
                                        ValidityCheckingMode::CheckingOff,
                                        SHA1Mode::Allowed,
                                        NetscapeStepUpPolicy::NeverMatch,
-                                       builtChain, nullptr, nullptr);
+                                       firstPartyDomain, builtChain, nullptr,
+                                       nullptr);
       rv = BuildCertChain(trustDomain, certDER, time,
                           EndEntityOrCA::MustBeEndEntity,
                           KeyUsage::digitalSignature,
@@ -690,7 +696,8 @@ CertVerifier::VerifyCert(CERTCertificate* cert, SECCertificateUsage usage,
                                        ValidityCheckingMode::CheckingOff,
                                        SHA1Mode::Allowed,
                                        NetscapeStepUpPolicy::NeverMatch,
-                                       builtChain, nullptr, nullptr);
+                                       firstPartyDomain, builtChain, nullptr,
+                                       nullptr);
       rv = BuildCertChain(trustDomain, certDER, time,
                           EndEntityOrCA::MustBeEndEntity,
                           KeyUsage::keyEncipherment, 
@@ -714,7 +721,8 @@ CertVerifier::VerifyCert(CERTCertificate* cert, SECCertificateUsage usage,
                                        ValidityCheckingMode::CheckingOff,
                                        SHA1Mode::Allowed,
                                        NetscapeStepUpPolicy::NeverMatch,
-                                       builtChain, nullptr, nullptr);
+                                       firstPartyDomain, builtChain, nullptr,
+                                       nullptr);
       rv = BuildCertChain(trustDomain, certDER, time,
                           EndEntityOrCA::MustBeEndEntity,
                           KeyUsage::digitalSignature,
@@ -747,7 +755,8 @@ CertVerifier::VerifyCert(CERTCertificate* cert, SECCertificateUsage usage,
                                     ValidityCheckingMode::CheckingOff,
                                     SHA1Mode::Allowed,
                                     NetscapeStepUpPolicy::NeverMatch,
-                                    builtChain, nullptr, nullptr);
+                                    firstPartyDomain, builtChain, nullptr,
+                                    nullptr);
       rv = BuildCertChain(sslTrust, certDER, time, endEntityOrCA,
                           keyUsage, eku, CertPolicyId::anyPolicy,
                           stapledOCSPResponse);
@@ -759,7 +768,8 @@ CertVerifier::VerifyCert(CERTCertificate* cert, SECCertificateUsage usage,
                                         ValidityCheckingMode::CheckingOff,
                                         SHA1Mode::Allowed,
                                         NetscapeStepUpPolicy::NeverMatch,
-                                        builtChain, nullptr, nullptr);
+                                        firstPartyDomain, builtChain, nullptr,
+                                        nullptr);
         rv = BuildCertChain(emailTrust, certDER, time, endEntityOrCA,
                             keyUsage, eku, CertPolicyId::anyPolicy,
                             stapledOCSPResponse);
@@ -773,7 +783,8 @@ CertVerifier::VerifyCert(CERTCertificate* cert, SECCertificateUsage usage,
                                                   ValidityCheckingMode::CheckingOff,
                                                   SHA1Mode::Allowed,
                                                   NetscapeStepUpPolicy::NeverMatch,
-                                                  builtChain, nullptr, nullptr);
+                                                  firstPartyDomain, builtChain,
+                                                  nullptr, nullptr);
           rv = BuildCertChain(objectSigningTrust, certDER, time,
                               endEntityOrCA, keyUsage, eku,
                               CertPolicyId::anyPolicy, stapledOCSPResponse);
@@ -804,6 +815,7 @@ CertVerifier::VerifySSLServerCert(const UniqueCERTCertificate& peerCert,
                            UniqueCERTCertList& builtChain,
                       bool saveIntermediatesInPermanentDatabase,
                       Flags flags,
+                      const char* firstPartyDomain,
                   SECOidTag* evOidPolicy,
                   OCSPStaplingStatus* ocspStaplingStatus,
                   KeySizeStatus* keySizeStatus,
@@ -828,9 +840,9 @@ CertVerifier::VerifySSLServerCert(const UniqueCERTCertificate& peerCert,
   
   Result rv = VerifyCert(peerCert.get(), certificateUsageSSLServer, time,
                          pinarg, hostname, builtChain, flags,
-                         stapledOCSPResponse, sctsFromTLS, evOidPolicy,
-                         ocspStaplingStatus, keySizeStatus, sha1ModeResult,
-                         pinningTelemetryInfo, ctInfo);
+                         stapledOCSPResponse, sctsFromTLS, firstPartyDomain,
+                         evOidPolicy, ocspStaplingStatus, keySizeStatus,
+                         sha1ModeResult, pinningTelemetryInfo, ctInfo);
   if (rv != Success) {
     return rv;
   }
