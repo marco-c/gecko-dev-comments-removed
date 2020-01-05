@@ -195,7 +195,7 @@ nsFirstLetterFrame::Reflow(nsPresContext*          aPresContext,
     
     
     
-    WritingMode kidWritingMode = GetWritingMode(wm, kid);
+    WritingMode kidWritingMode = WritingModeForLine(wm, kid);
     LogicalSize kidAvailSize = availSize.ConvertTo(kidWritingMode, wm);
     ReflowInput rs(aPresContext, aReflowInput, kid, kidAvailSize);
     nsLineLayout ll(aPresContext, nullptr, &aReflowInput, nullptr, nullptr);

@@ -772,8 +772,9 @@ public:
 
 
 
-  mozilla::WritingMode GetWritingMode(mozilla::WritingMode aSelfWM,
-                                      nsIFrame* aSubFrame) const;
+
+  mozilla::WritingMode WritingModeForLine(mozilla::WritingMode aSelfWM,
+                                          nsIFrame* aSubFrame) const;
 
   
 
