@@ -39,6 +39,7 @@
 #include "nsIURI.h"
 #include "nsIDocument.h"
 #include <algorithm>
+#include "ImageLoader.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -2019,6 +2020,15 @@ nsStyleImageRequest::nsStyleImageRequest(
 {
 }
 
+nsStyleImageRequest::nsStyleImageRequest(
+    Mode aModeFlags,
+    mozilla::css::ImageValue* aImageValue)
+  : mImageValue(aImageValue)
+  , mModeFlags(aModeFlags)
+  , mResolved(false)
+{
+}
+
 nsStyleImageRequest::~nsStyleImageRequest()
 {
   
@@ -3488,6 +3498,8 @@ nsStyleDisplay::CalcDifference(const nsStyleDisplay& aNewData) const
       || mDisplay != aNewData.mDisplay
       || mContain != aNewData.mContain
       || (mFloat == StyleFloat::None) != (aNewData.mFloat == StyleFloat::None)
+      || mOverflowX != aNewData.mOverflowX
+      || mOverflowY != aNewData.mOverflowY
       || mScrollBehavior != aNewData.mScrollBehavior
       || mScrollSnapTypeX != aNewData.mScrollSnapTypeX
       || mScrollSnapTypeY != aNewData.mScrollSnapTypeY
@@ -3497,11 +3509,6 @@ nsStyleDisplay::CalcDifference(const nsStyleDisplay& aNewData) const
       || mTopLayer != aNewData.mTopLayer
       || mResize != aNewData.mResize) {
     hint |= nsChangeHint_ReconstructFrame;
-  }
-
-  if (mOverflowX != aNewData.mOverflowX
-      || mOverflowY != aNewData.mOverflowY) {
-    hint |= nsChangeHint_CSSOverflowChange;
   }
 
   
