@@ -8,12 +8,12 @@
 
 
 
-
-#include "xpcprivate.h"
+#include "nsScriptError.h"
 #include "jsprf.h"
 #include "MainThreadUtils.h"
 #include "mozilla/Assertions.h"
 #include "nsGlobalWindow.h"
+#include "nsNetUtil.h"
 #include "nsPIDOMWindow.h"
 #include "nsILoadContext.h"
 #include "nsIDocShell.h"

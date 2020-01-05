@@ -10,12 +10,14 @@
 
 
 
-#include "xpcprivate.h"
+#include "nsScriptError.h"
 #include "MainThreadUtils.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/dom/ScriptSettings.h"
 #include "nsGlobalWindow.h"
 #include "nsCycleCollectionParticipant.h"
 
+using namespace mozilla::dom;
 
 namespace {
 
