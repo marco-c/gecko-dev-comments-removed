@@ -57,7 +57,16 @@ job_description_schema = Schema({
     Optional('coalesce-name'): task_description_schema['coalesce-name'],
     Optional('optimizations'): task_description_schema['optimizations'],
     Optional('needs-sccache'): task_description_schema['needs-sccache'],
-    Optional('when'): task_description_schema['when'],
+
+    
+    
+    
+    Optional('when'): Any({
+        
+        
+        
+        Optional('files-changed'): [basestring],
+    }),
 
     
     'run': {
@@ -87,6 +96,30 @@ def validate(config, jobs):
     for job in jobs:
         yield validate_schema(job_description_schema, job,
                               "In job {!r}:".format(job['name']))
+
+
+@transforms.add
+def rewrite_when_to_optimization(config, jobs):
+    for job in jobs:
+        when = job.pop('when', {})
+        files_changed = when.get('files-changed')
+        if not files_changed:
+            yield job
+            continue
+
+        
+        files_changed.extend([
+            '{}/**'.format(config.path),
+            'taskcluster/taskgraph/**',
+        ])
+        if 'in-tree' in job['worker'].get('docker-image', {}):
+            files_changed.append('taskcluster/docker/{}/**'.format(
+                job['worker']['docker-image']['in-tree']))
+
+        job.setdefault('optimizations', []).append(['files-changed', files_changed])
+
+        assert 'when' not in job
+        yield job
 
 
 @transforms.add
