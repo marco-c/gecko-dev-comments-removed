@@ -4,18 +4,37 @@
 
 
 
+#[cfg(feature = "gecko")]
+use atomic_refcell::{AtomicRefCell, AtomicRef, AtomicRefMut};
+#[cfg(feature = "servo")]
 use parking_lot::RwLock;
 use std::cell::UnsafeCell;
 use std::fmt;
 use std::sync::Arc;
 
 
+
+
+
+
+
+
+
+
+
 #[derive(Clone)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct SharedRwLock {
+    #[cfg(feature = "servo")]
     #[cfg_attr(feature = "servo", ignore_heap_size_of = "Arc")]
     arc: Arc<RwLock<()>>,
+
+    #[cfg(feature = "gecko")]
+    cell: Arc<AtomicRefCell<SomethingZeroSizedButTyped>>,
 }
+
+#[cfg(feature = "gecko")]
+struct SomethingZeroSizedButTyped;
 
 impl fmt::Debug for SharedRwLock {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -25,9 +44,18 @@ impl fmt::Debug for SharedRwLock {
 
 impl SharedRwLock {
     
+    #[cfg(feature = "servo")]
     pub fn new() -> Self {
         SharedRwLock {
             arc: Arc::new(RwLock::new(()))
+        }
+    }
+
+    
+    #[cfg(feature = "gecko")]
+    pub fn new() -> Self {
+        SharedRwLock {
+            cell: Arc::new(AtomicRefCell::new(SomethingZeroSizedButTyped))
         }
     }
 
@@ -40,18 +68,62 @@ impl SharedRwLock {
     }
 
     
+    #[cfg(feature = "servo")]
     pub fn read(&self) -> SharedRwLockReadGuard {
         self.arc.raw_read();
-        SharedRwLockReadGuard {
-            shared_lock: self
-        }
+        SharedRwLockReadGuard(self)
     }
 
     
+    #[cfg(feature = "gecko")]
+    pub fn read(&self) -> SharedRwLockReadGuard {
+        SharedRwLockReadGuard(self.cell.borrow())
+    }
+
+    
+    #[cfg(feature = "servo")]
     pub fn write(&self) -> SharedRwLockWriteGuard {
         self.arc.raw_write();
-        SharedRwLockWriteGuard {
-            shared_lock: self
+        SharedRwLockWriteGuard(self)
+    }
+
+    
+    #[cfg(feature = "gecko")]
+    pub fn write(&self) -> SharedRwLockWriteGuard {
+        SharedRwLockWriteGuard(self.cell.borrow_mut())
+    }
+}
+
+
+#[cfg(feature = "servo")]
+pub struct SharedRwLockReadGuard<'a>(&'a SharedRwLock);
+
+#[cfg(feature = "gecko")]
+pub struct SharedRwLockReadGuard<'a>(AtomicRef<'a, SomethingZeroSizedButTyped>);
+#[cfg(feature = "servo")]
+impl<'a> Drop for SharedRwLockReadGuard<'a> {
+    fn drop(&mut self) {
+        
+        
+        unsafe {
+            self.0.arc.raw_unlock_read()
+        }
+    }
+}
+
+
+#[cfg(feature = "servo")]
+pub struct SharedRwLockWriteGuard<'a>(&'a SharedRwLock);
+
+#[cfg(feature = "gecko")]
+pub struct SharedRwLockWriteGuard<'a>(AtomicRefMut<'a, SomethingZeroSizedButTyped>);
+#[cfg(feature = "servo")]
+impl<'a> Drop for SharedRwLockWriteGuard<'a> {
+    fn drop(&mut self) {
+        
+        
+        unsafe {
+            self.0.arc.raw_unlock_write()
         }
     }
 }
@@ -75,13 +147,19 @@ impl<T: fmt::Debug> fmt::Debug for Locked<T> {
 }
 
 impl<T> Locked<T> {
+    #[cfg(feature = "servo")]
     fn same_lock_as(&self, lock: &SharedRwLock) -> bool {
         ::arc_ptr_eq(&self.shared_lock.arc, &lock.arc)
     }
 
+    #[cfg(feature = "gecko")]
+    fn same_lock_as(&self, derefed_guard: &SomethingZeroSizedButTyped) -> bool {
+        ::ptr_eq(self.shared_lock.cell.as_ptr(), derefed_guard)
+    }
+
     
     pub fn read_with<'a>(&'a self, guard: &'a SharedRwLockReadGuard) -> &'a T {
-        assert!(self.same_lock_as(&guard.shared_lock),
+        assert!(self.same_lock_as(&guard.0),
                 "Locked::read_with called with a guard from an unrelated SharedRwLock");
         let ptr = self.data.get();
 
@@ -98,7 +176,7 @@ impl<T> Locked<T> {
 
     
     pub fn write_with<'a>(&'a self, guard: &'a mut SharedRwLockWriteGuard) -> &'a mut T {
-        assert!(self.same_lock_as(&guard.shared_lock),
+        assert!(self.same_lock_as(&guard.0),
                 "Locked::write_with called with a guard from an unrelated SharedRwLock");
         let ptr = self.data.get();
 
@@ -112,36 +190,6 @@ impl<T> Locked<T> {
         
         unsafe {
             &mut *ptr
-        }
-    }
-}
-
-
-pub struct SharedRwLockReadGuard<'a> {
-    shared_lock: &'a SharedRwLock,
-}
-
-
-pub struct SharedRwLockWriteGuard<'a> {
-    shared_lock: &'a SharedRwLock,
-}
-
-impl<'a> Drop for SharedRwLockReadGuard<'a> {
-    fn drop(&mut self) {
-        
-        
-        unsafe {
-            self.shared_lock.arc.raw_unlock_read()
-        }
-    }
-}
-
-impl<'a> Drop for SharedRwLockWriteGuard<'a> {
-    fn drop(&mut self) {
-        
-        
-        unsafe {
-            self.shared_lock.arc.raw_unlock_write()
         }
     }
 }
