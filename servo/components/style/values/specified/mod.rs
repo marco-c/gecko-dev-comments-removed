@@ -998,3 +998,6 @@ impl Parse for ClipRect {
 
 
 pub type ClipRectOrAuto = Either<ClipRect, Auto>;
+
+
+pub type ColorOrAuto = Either<CSSColor, Auto>;
