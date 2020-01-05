@@ -99,7 +99,6 @@ public:
   
 
 
-
   nsTArray<TabContext>
   GetTabContextByContentProcess(const ContentParentId& aChildCpId);
 

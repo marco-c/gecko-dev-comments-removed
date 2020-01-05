@@ -9,7 +9,6 @@
 #include "jsfriendapi.h"
 #include "nsJSUtils.h"
 #include "mozilla/Unused.h"
-#include "mozilla/AppProcessChecker.h"
 #include "mozilla/net/NeckoCommon.h"
 #include "mozilla/net/PNeckoParent.h"
 #include "mozilla/dom/ContentParent.h"
@@ -119,14 +118,6 @@ TCPSocketParent::RecvOpen(const nsString& aHost, const uint16_t& aPort, const bo
                           const bool& aUseArrayBuffers)
 {
   
-  
-  if (net::UsingNeckoIPCSecurity() &&
-      !AssertAppProcessPermission(Manager()->Manager(), "tcp-socket")) {
-    FireInteralError(this, __LINE__);
-    return IPC_OK();
-  }
-
-  
   uint32_t appId = GetAppId();
   bool     inIsolatedMozBrowser = GetInIsolatedMozBrowser();
 
@@ -146,12 +137,6 @@ TCPSocketParent::RecvOpenBind(const nsCString& aRemoteHost,
                               const bool&     aUseArrayBuffers,
                               const nsCString& aFilter)
 {
-  if (net::UsingNeckoIPCSecurity() &&
-      !AssertAppProcessPermission(Manager()->Manager(), "tcp-socket")) {
-    FireInteralError(this, __LINE__);
-    return IPC_OK();
-  }
-
   nsresult rv;
   nsCOMPtr<nsISocketTransportService> sts =
     do_GetService("@mozilla.org/network/socket-transport-service;1", &rv);

@@ -349,11 +349,6 @@ MessageManagerTunnel.prototype = {
 
 
   PASS_THROUGH_METHODS: [
-    "killChild",
-    "assertPermission",
-    "assertContainApp",
-    "assertAppHasPermission",
-    "assertAppHasStatus",
     "removeDelayedFrameScript",
     "getDelayedFrameScripts",
     "loadProcessScript",
