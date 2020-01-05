@@ -160,10 +160,14 @@ pub trait TNode<'ln> : Sized + Copy + Clone {
 
     
     
-    fn style(&self) -> Ref<Arc<ComputedValues>>;
+    fn style(&self) -> Ref<Arc<ComputedValues>> {
+        Ref::map(self.borrow_data().unwrap(), |data| data.style.as_ref().unwrap())
+    }
 
     
-    fn unstyle(self);
+    fn unstyle(self) {
+        self.mutate_data().unwrap().style = None;
+    }
 }
 
 pub trait TDocument<'ld> : Sized + Copy + Clone {
