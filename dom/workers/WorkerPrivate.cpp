@@ -1891,10 +1891,14 @@ WorkerLoadInfo::SetPrincipalOnMainThread(nsIPrincipal* aPrincipal,
 }
 
 nsresult
-WorkerLoadInfo::SetPrincipalFromChannel(nsIChannel* aChannel)
+WorkerLoadInfo::GetPrincipalAndLoadGroupFromChannel(nsIChannel* aChannel,
+                                                    nsIPrincipal** aPrincipalOut,
+                                                    nsILoadGroup** aLoadGroupOut)
 {
   AssertIsOnMainThread();
   MOZ_DIAGNOSTIC_ASSERT(aChannel);
+  MOZ_DIAGNOSTIC_ASSERT(aPrincipalOut);
+  MOZ_DIAGNOSTIC_ASSERT(aLoadGroupOut);
 
   
   MOZ_DIAGNOSTIC_ASSERT(mPrincipal);
@@ -1947,9 +1951,58 @@ WorkerLoadInfo::SetPrincipalFromChannel(nsIChannel* aChannel)
   
   MOZ_ASSERT(NS_LoadGroupMatchesPrincipal(channelLoadGroup, channelPrincipal));
 
-  SetPrincipalOnMainThread(channelPrincipal, channelLoadGroup);
+  channelPrincipal.forget(aPrincipalOut);
+  channelLoadGroup.forget(aLoadGroupOut);
+
   return NS_OK;
 }
+
+nsresult
+WorkerLoadInfo::SetPrincipalFromChannel(nsIChannel* aChannel)
+{
+  AssertIsOnMainThread();
+
+  nsCOMPtr<nsIPrincipal> principal;
+  nsCOMPtr<nsILoadGroup> loadGroup;
+  nsresult rv = GetPrincipalAndLoadGroupFromChannel(aChannel,
+                                                    getter_AddRefs(principal),
+                                                    getter_AddRefs(loadGroup));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  SetPrincipalOnMainThread(principal, loadGroup);
+  return NS_OK;
+}
+
+#if defined(DEBUG) || !defined(RELEASE_OR_BETA)
+bool
+WorkerLoadInfo::FinalChannelPrincipalIsValid(nsIChannel* aChannel)
+{
+  AssertIsOnMainThread();
+
+  nsCOMPtr<nsIPrincipal> principal;
+  nsCOMPtr<nsILoadGroup> loadGroup;
+  nsresult rv = GetPrincipalAndLoadGroupFromChannel(aChannel,
+                                                    getter_AddRefs(principal),
+                                                    getter_AddRefs(loadGroup));
+  NS_ENSURE_SUCCESS(rv, false);
+
+
+  
+  
+  
+  if (principal->GetIsNullPrincipal() && mPrincipal->GetIsNullPrincipal()) {
+    return true;
+  }
+
+  
+  
+  if (principal->Equals(mPrincipal)) {
+    return true;
+  }
+
+  return false;
+}
+#endif 
 
 template <class Derived>
 class WorkerPrivateParent<Derived>::EventTarget final
@@ -3768,6 +3821,15 @@ WorkerPrivateParent<Derived>::SetPrincipalFromChannel(nsIChannel* aChannel)
 {
   return mLoadInfo.SetPrincipalFromChannel(aChannel);
 }
+
+#if defined(DEBUG) || !defined(RELEASE_OR_BETA)
+template <class Derived>
+bool
+WorkerPrivateParent<Derived>::FinalChannelPrincipalIsValid(nsIChannel* aChannel)
+{
+  return mLoadInfo.FinalChannelPrincipalIsValid(aChannel);
+}
+#endif
 
 template <class Derived>
 void

@@ -1129,6 +1129,8 @@ private:
       
       mWorkerPrivate->InitChannelInfo(channel);
 
+      MOZ_DIAGNOSTIC_ASSERT(mWorkerPrivate->FinalChannelPrincipalIsValid(channel));
+
       
       
       if (!mWorkerPrivate->GetCSP() && CSPService::sCSPEnabled) {
