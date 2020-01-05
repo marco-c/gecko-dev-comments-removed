@@ -598,6 +598,16 @@ protected:
       return !mKeyDownHandled && !mKeyPressHandled;
     }
 
+    bool IsEnterKeyEvent() const
+    {
+      if (NS_WARN_IF(!mKeyEvent)) {
+        return false;
+      }
+      KeyNameIndex keyNameIndex =
+        TISInputSourceWrapper::ComputeGeckoKeyNameIndex([mKeyEvent keyCode]);
+      return keyNameIndex == KEY_NAME_INDEX_Enter;
+    }
+
     void InitKeyEvent(TextInputHandlerBase* aHandler,
                       WidgetKeyboardEvent& aKeyEvent);
 
@@ -1132,6 +1142,15 @@ public:
 
   void InsertText(NSAttributedString *aAttrString,
                   NSRange* aReplacementRange = nullptr);
+
+  
+
+
+
+
+
+
+  void InsertNewline();
 
   
 
