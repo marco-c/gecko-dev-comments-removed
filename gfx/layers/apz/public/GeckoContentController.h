@@ -8,6 +8,7 @@
 #define mozilla_layers_GeckoContentController_h
 
 #include "FrameMetrics.h"               
+#include "InputData.h"                  
 #include "Units.h"                      
 #include "mozilla/Assertions.h"         
 #include "mozilla/EventForwards.h"      
@@ -61,6 +62,27 @@ public:
                          Modifiers aModifiers,
                          const ScrollableLayerGuid& aGuid,
                          uint64_t aInputBlockId) = 0;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  virtual void NotifyPinchGesture(PinchGestureInput::PinchGestureType aType,
+                                  const ScrollableLayerGuid& aGuid,
+                                  LayoutDeviceCoord aSpanChange,
+                                  Modifiers aModifiers) = 0;
 
   
 

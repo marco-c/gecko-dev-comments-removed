@@ -8,6 +8,7 @@
 
 #include "InputData.h"                  
 #include "mozilla/dom/TabParent.h"      
+#include "mozilla/layers/APZCCallbackHelper.h" 
 #include "mozilla/layers/RemoteCompositorSession.h" 
 
 namespace mozilla {
@@ -237,6 +238,26 @@ APZCTreeManagerChild::RecvHandleTap(const TapType& aType,
   dom::TabParent* tab = dom::TabParent::GetTabParentFromLayersId(aGuid.mLayersId);
   if (tab) {
     tab->SendHandleTap(aType, aPoint, aModifiers, aGuid, aInputBlockId);
+  }
+  return true;
+}
+
+bool
+APZCTreeManagerChild::RecvNotifyPinchGesture(const PinchGestureType& aType,
+                                             const ScrollableLayerGuid& aGuid,
+                                             const LayoutDeviceCoord& aSpanChange,
+                                             const Modifiers& aModifiers)
+{
+  
+  
+  MOZ_ASSERT(XRE_IsParentProcess());
+  MOZ_ASSERT(NS_IsMainThread());
+
+  
+  
+  if (mCompositorSession &&
+      mCompositorSession->GetWidget()) {
+    APZCCallbackHelper::NotifyPinchGesture(aType, aSpanChange, aModifiers, mCompositorSession->GetWidget());
   }
   return true;
 }

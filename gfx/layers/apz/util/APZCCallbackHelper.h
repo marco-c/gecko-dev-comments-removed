@@ -7,6 +7,7 @@
 #define mozilla_layers_APZCCallbackHelper_h
 
 #include "FrameMetrics.h"
+#include "InputData.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/Function.h"
 #include "mozilla/layers/APZUtils.h"
@@ -187,6 +188,15 @@ public:
 
     static bool
     IsScrollInProgress(nsIScrollableFrame* aFrame);
+
+    
+
+
+
+    static void NotifyPinchGesture(PinchGestureInput::PinchGestureType aType,
+                                   LayoutDeviceCoord aSpanChange,
+                                   Modifiers aModifiers,
+                                   nsIWidget* aWidget);
 private:
   static uint64_t sLastTargetAPZCNotificationInputBlock;
 };
