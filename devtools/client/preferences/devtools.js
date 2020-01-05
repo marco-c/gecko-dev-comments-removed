@@ -315,7 +315,11 @@ pref("devtools.webconsole.timestampMessages", false);
 pref("devtools.webconsole.autoMultiline", true);
 
 
+#if defined(NIGHTLY_BUILD)
+pref("devtools.webconsole.new-frontend-enabled", true);
+#else
 pref("devtools.webconsole.new-frontend-enabled", false);
+#endif
 
 
 pref("devtools.sourcemap.locations.enabled", false);
