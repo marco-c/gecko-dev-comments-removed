@@ -365,7 +365,8 @@ static const char kthawte_Primary_Root_CA___G3Fingerprint[] =
 
 
 struct StaticFingerprints {
-  const size_t size;
+  
+  size_t size;
   const char* const* data;
 };
 
@@ -662,11 +663,12 @@ static const StaticFingerprints kPinset_nightx = {
 
 
 struct TransportSecurityPreload {
+  
   const char* mHost;
-  const bool mIncludeSubdomains;
-  const bool mTestMode;
-  const bool mIsMoz;
-  const int32_t mId;
+  bool mIncludeSubdomains;
+  bool mTestMode;
+  bool mIsMoz;
+  int32_t mId;
   const StaticFingerprints* pinset;
 };
 
@@ -1155,4 +1157,4 @@ static const TransportSecurityPreload kPublicKeyPinningPreloadList[] = {
 
 static const int32_t kUnknownId = -1;
 
-static const PRTime kPreloadPKPinsExpirationTime = INT64_C(1495379956043000);
+static const PRTime kPreloadPKPinsExpirationTime = INT64_C(1495465368089000);
