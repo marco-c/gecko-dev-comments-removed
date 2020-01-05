@@ -1,0 +1,32 @@
+
+
+
+
+#ifndef HttpAuthUtils_h__
+#define HttpAuthUtils_h__
+
+
+class nsIURI;
+
+namespace mozilla { namespace net { namespace auth {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+bool URIMatchesPrefPattern(nsIURI *uri, const char *pref);
+
+} 
+} 
+} 
+
+#endif 

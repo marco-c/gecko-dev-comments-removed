@@ -31,13 +31,6 @@ private:
     bool TestNonFqdn(nsIURI *uri);
 
     
-    bool TestPref(nsIURI *, const char *pref);
-
-    bool MatchesBaseURI(const nsCSubstring &scheme,
-                        const nsCSubstring &host,
-                        int32_t             port,
-                        nsDependentCSubstring const& url);
-    
     RefPtr<mozilla::LazyIdleThread> mNegotiateThread;
 };
 #endif 
