@@ -3,7 +3,6 @@
 
 
 #![feature(proc_macro)]
-#![feature(rustc_attrs)]
 #![feature(step_trait)]
 
 #![deny(unsafe_code)]

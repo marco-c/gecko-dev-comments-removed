@@ -3,7 +3,6 @@
 
 
 #![feature(box_syntax)]
-#![feature(custom_derive)]
 #![feature(mpsc_select)]
 #![feature(plugin)]
 #![feature(proc_macro)]
