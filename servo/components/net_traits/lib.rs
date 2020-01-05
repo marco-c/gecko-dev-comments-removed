@@ -312,6 +312,9 @@ pub struct Metadata {
     #[ignore_heap_size_of = "Defined in hyper"]
     
     pub status: Option<RawStatus>,
+
+    
+    pub https_state: response::HttpsState,
 }
 
 impl Metadata {
@@ -324,6 +327,7 @@ impl Metadata {
             headers: None,
             
             status: Some(RawStatus(200, "OK".into())),
+            https_state: response::HttpsState::None,
         }
     }
 

@@ -48,7 +48,7 @@ pub enum CacheState {
 }
 
 
-#[derive(Clone)]
+#[derive(Clone, Copy, HeapSizeOf, Deserialize, Serialize)]
 pub enum HttpsState {
     None,
     Deprecated,
