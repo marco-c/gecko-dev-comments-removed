@@ -3,7 +3,7 @@
 
 
 
-#include "RenderTextureHost.h"
+#include "RenderBufferTextureHost.h"
 
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/layers/ImageDataSerializer.h"
