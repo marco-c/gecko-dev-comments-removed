@@ -4077,7 +4077,7 @@ public:
 
   nsDisplayTransform(nsDisplayListBuilder* aBuilder, nsIFrame *aFrame,
                      nsDisplayList *aList, const nsRect& aChildrenVisibleRect,
-                     uint32_t aIndex = 0, bool aAllowAsyncAnimation = false);
+                     uint32_t aIndex = 0, bool aIsFullyVisible = false);
   nsDisplayTransform(nsDisplayListBuilder* aBuilder, nsIFrame *aFrame,
                      nsDisplayItem *aItem, const nsRect& aChildrenVisibleRect,
                      uint32_t aIndex = 0);
@@ -4381,7 +4381,8 @@ private:
   
   bool mTransformPreserves3DInited;
   
-  bool mAllowAsyncAnimation;
+  
+  bool mIsFullyVisible;
 };
 
 
