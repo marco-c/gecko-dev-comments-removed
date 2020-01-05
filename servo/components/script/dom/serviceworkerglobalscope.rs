@@ -28,6 +28,7 @@ use net_traits::request::{CredentialsMode, Destination, RequestInit, Type as Req
 use rand::random;
 use script_runtime::{CommonScriptMsg, StackRootTLS, get_reports, new_rt_and_cx, ScriptChan};
 use script_traits::{TimerEvent, WorkerGlobalScopeInit, ScopeThings, ServiceWorkerMsg, WorkerScriptLoadOrigin};
+use servo_atoms::Atom;
 use std::sync::mpsc::{Receiver, RecvError, Select, Sender, channel};
 use std::thread;
 use std::time::Duration;
@@ -268,7 +269,7 @@ impl ServiceWorkerGlobalScope {
                 
                 
                 
-                self.upcast::<EventTarget>().fire_simple_event("fetch");
+                self.upcast::<EventTarget>().fire_event(Atom::from("fetch"));
                 let _ = mediator.response_chan.send(None);
             }
         }
