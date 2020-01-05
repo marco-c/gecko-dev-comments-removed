@@ -1451,11 +1451,19 @@ Toolbox.prototype = {
     }
 
     if (this.currentToolId == id) {
-      
-      this.focusTool(id);
+      let panel = this._toolPanels.get(id);
+      if (panel) {
+        
 
+        
+        this.focusTool(id);
+
+        
+        return promise.resolve(panel);
+      }
       
-      return promise.resolve(this._toolPanels.get(id));
+      
+      return this.once("select").then(() => promise.resolve(this._toolPanels.get(id)));
     }
 
     if (!this.isReady) {
