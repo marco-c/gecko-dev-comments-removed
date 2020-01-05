@@ -1107,7 +1107,7 @@ protected:
   
 
 
-  void HandleTypeChange(uint8_t aNewType);
+  void HandleTypeChange(uint8_t aNewType, bool aNotify);
 
   
 
