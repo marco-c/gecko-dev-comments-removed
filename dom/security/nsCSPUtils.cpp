@@ -271,7 +271,7 @@ CSP_CreateHostSrcFromURI(nsIURI* aURI)
 {
   
   nsCString host;
-  aURI->GetHost(host);
+  aURI->GetAsciiHost(host);
   nsCSPHostSrc *hostsrc = new nsCSPHostSrc(NS_ConvertUTF8toUTF16(host));
 
   
@@ -643,7 +643,7 @@ nsCSPHostSrc::permits(nsIURI* aUri, const nsAString& aNonce, bool aWasRedirected
   
   
   nsAutoCString uriHost;
-  nsresult rv = aUri->GetHost(uriHost);
+  nsresult rv = aUri->GetAsciiHost(uriHost);
   NS_ENSURE_SUCCESS(rv, false);
 
   nsString decodedUriHost;
