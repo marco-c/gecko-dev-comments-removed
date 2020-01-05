@@ -134,18 +134,6 @@ typedef Vector<Export, 0, SystemAllocPolicy> ExportVector;
 
 
 
-struct DataSegment
-{
-    InitExpr offset;
-    uint32_t bytecodeOffset;
-    uint32_t length;
-};
-
-typedef Vector<DataSegment, 0, SystemAllocPolicy> DataSegmentVector;
-
-
-
-
 struct ElemSegment
 {
     uint32_t tableIndex;

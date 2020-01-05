@@ -802,6 +802,9 @@ class Decoder
     size_t currentOffset() const {
         return cur_ - beg_;
     }
+    const uint8_t* begin() const {
+        return beg_;
+    }
 
     
     
