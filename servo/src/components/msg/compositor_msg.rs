@@ -30,9 +30,6 @@ pub struct LayerBuffer {
 
     
     pub stride: uint,
-
-    
-    pub render_idx: uint
 }
 
 
