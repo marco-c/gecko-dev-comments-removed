@@ -195,7 +195,14 @@ class KintoServer {
 
       const records = this.collections.get(collectionId);
       
-      const data = Array.from(records);
+      let data = Array.from(records);
+      if (request.queryString.includes("_since=")) {
+        data = data.filter(r => !(r._inPast || false));
+      }
+
+      
+      
+      
       for (const record of records) {
         if (record._onlyOnce) {
           records.delete(record);
@@ -254,9 +261,27 @@ class KintoServer {
                      "storage-sync-crypto", keysRecord);
   }
 
+  
+  addRecord(collectionId, record) {
+    this.collections.get(collectionId).add(record);
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  addRecordInPast(collectionId, record) {
+    record._inPast = true;
+    this.addRecord(collectionId, record);
+  }
+
   encryptAndAddRecord(transformer, collectionId, record) {
     return transformer.encode(record).then(encrypted => {
-      this.collections.get(collectionId).add(encrypted);
+      this.addRecord(collectionId, encrypted);
     });
   }
 
@@ -265,10 +290,13 @@ class KintoServer {
   
   
   
+  
+  
+  
   encryptAndAddRecordOnlyOnce(transformer, collectionId, record) {
     return transformer.encode(record).then(encrypted => {
       encrypted._onlyOnce = true;
-      this.collections.get(collectionId).add(encrypted);
+      this.addRecord(collectionId, encrypted);
     });
   }
 
@@ -405,7 +433,7 @@ const defaultCollectionId = extensionIdToCollectionId(loggedInUser, defaultExten
 
 function uuid() {
   const uuidgen = Cc["@mozilla.org/uuid-generator;1"].getService(Ci.nsIUUIDGenerator);
-  return uuidgen.generateUUID();
+  return uuidgen.generateUUID().toString();
 }
 
 add_task(function* test_key_to_id() {
@@ -463,6 +491,29 @@ add_task(function* ensureKeysFor_posts_new_keys() {
       assertPostedNewRecord(post);
       const body = yield assertPostedEncryptedKeys(post);
       ok(body.keys.collections[extensionId], `keys object should have a key for ${extensionId}`);
+
+      
+      
+      yield cryptoCollection._clear();
+      server.clearPosts();
+      
+      server.addRecordInPast("storage-sync-crypto", post.body.data);
+      const extensionId2 = uuid();
+      newKeys = yield ExtensionStorageSync.ensureKeysFor([extensionId2]);
+      ok(newKeys.hasKeysFor([extensionId]), `didn't forget key for ${extensionId}`);
+      ok(newKeys.hasKeysFor([extensionId2]), `new key generated for ${extensionId2}`);
+
+      posts = server.getPosts();
+      
+      
+      
+      
+      
+      const newPost = posts[posts.length - 1];
+      const newBody = yield assertPostedEncryptedKeys(newPost);
+      ok(newBody.keys.collections[extensionId], `keys object should have a key for ${extensionId}`);
+      ok(newBody.keys.collections[extensionId2], `keys object should have a key for ${extensionId2}`);
+
     });
   });
 });
@@ -668,6 +719,7 @@ add_task(function* checkSyncKeyRing_overwrites_on_conflict() {
 
         let body = yield new KeyRingEncryptionRemoteTransformer().decode(postedKeys.body.data);
         ok(body.uuid, "new keyring should have a UUID");
+        equal(typeof body.uuid, "string", "keyring UUIDs should be strings");
         notEqual(body.uuid, "abcd",
                  "new keyring should not have the same UUID as previous keyring");
         ok(body.keys,
