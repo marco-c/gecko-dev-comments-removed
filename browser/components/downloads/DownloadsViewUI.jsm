@@ -197,16 +197,8 @@ this.DownloadsViewUI.DownloadElementShell.prototype = {
     if (!this.download.stopped) {
       let totalBytes = this.download.hasProgress ? this.download.totalBytes
                                                  : -1;
-      
-      
-      
-      [text] = DownloadUtils.getDownloadStatusNoRate(
-                                          this.download.currentBytes,
-                                          totalBytes,
-                                          this.download.speed,
-                                          this.lastEstimatedSecondsLeft);
       let newEstimatedSecondsLeft;
-      [tip, newEstimatedSecondsLeft] = DownloadUtils.getDownloadStatus(
+      [text, newEstimatedSecondsLeft] = DownloadUtils.getDownloadStatus(
                                           this.download.currentBytes,
                                           totalBytes,
                                           this.download.speed,
