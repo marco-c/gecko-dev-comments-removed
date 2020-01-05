@@ -87,10 +87,6 @@ protected:
   virtual already_AddRefed<gfxPattern> CreateGradient() = 0;
 
   
-  class AutoGradientReferencer;
-  nsSVGGradientFrame* GetReferencedGradientIfNotInUse();
-
-  
   uint16_t GetEnumValue(uint32_t aIndex, nsIContent *aDefault);
   uint16_t GetEnumValue(uint32_t aIndex)
   {
