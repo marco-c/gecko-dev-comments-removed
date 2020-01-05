@@ -929,3 +929,28 @@ async function compareFavicons(icon1, icon2, msg) {
   Assert.ok(data2.length > 0, "Should fetch icon data");
   Assert.deepEqual(data1, data2, msg);
 }
+
+
+
+
+
+
+
+
+
+
+function mapItemIdToInternalRootName(aItemId) {
+  switch (aItemId) {
+    case PlacesUtils.placesRootId:
+      return "placesRoot";
+    case PlacesUtils.bookmarksMenuFolderId:
+      return "bookmarksMenuFolder";
+    case PlacesUtils.toolbarFolderId:
+      return "toolbarFolder";
+    case PlacesUtils.unfiledBookmarksFolderId:
+      return "unfiledBookmarksFolder";
+    case PlacesUtils.mobileFolderId:
+      return "mobileFolder";
+  }
+  return null;
+}
