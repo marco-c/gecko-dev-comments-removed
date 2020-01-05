@@ -285,51 +285,50 @@ static int nr_socket_buffered_stun_recvfrom(void *obj,void * restrict buf,
     ABORT(R_FAILED);
   }
 
-reread:
-  
-  assert(sock->bytes_needed <= sock->buffer_size - sock->bytes_read);
+  while (sock->bytes_needed) {
+    
+    assert(sock->bytes_needed <= sock->buffer_size - sock->bytes_read);
 
-  if(r=nr_socket_read(sock->inner,
-                      sock->buffer + sock->bytes_read,
-                      sock->bytes_needed, &bytes_read, 0))
-    ABORT(r);
+    if(r=nr_socket_read(sock->inner,
+                        sock->buffer + sock->bytes_read,
+                        sock->bytes_needed, &bytes_read, 0))
+      ABORT(r);
 
-  assert(bytes_read <= sock->bytes_needed);
-  sock->bytes_needed -= bytes_read;
-  sock->bytes_read += bytes_read;
+    assert(bytes_read <= sock->bytes_needed);
+    sock->bytes_needed -= bytes_read;
+    sock->bytes_read += bytes_read;
 
-  
-  if (sock->bytes_needed)
-    ABORT(R_WOULDBLOCK);
+    
+    if (sock->bytes_needed)
+      ABORT(R_WOULDBLOCK);
 
-  
-  if (sock->read_state == NR_ICE_SOCKET_READ_NONE) {
-    size_t remaining_length;
-    if (sock->framing_type == ICE_TCP_FRAMING) {
-      if (sock->bytes_read < sizeof(nr_frame_header))
-        ABORT(R_BAD_DATA);
-      remaining_length = ntohs(frame->frame_length);
-    } else {
-      int tmp_length;
+    
+    if (sock->read_state == NR_ICE_SOCKET_READ_NONE) {
+      size_t remaining_length;
+      if (sock->framing_type == ICE_TCP_FRAMING) {
+        if (sock->bytes_read < sizeof(nr_frame_header))
+          ABORT(R_BAD_DATA);
+        remaining_length = ntohs(frame->frame_length);
+      } else {
+        int tmp_length;
 
+        
+        if (r = nr_stun_message_length(sock->buffer, sock->bytes_read, &tmp_length))
+          ABORT(r);
+        assert(tmp_length >= 0);
+        if (tmp_length < 0)
+          ABORT(R_BAD_DATA);
+        remaining_length = tmp_length;
+
+      }
       
-      if (r = nr_stun_message_length(sock->buffer, sock->bytes_read, &tmp_length))
-        ABORT(r);
-      assert(tmp_length >= 0);
-      if (tmp_length < 0)
+      if ((sock->buffer_size - sock->bytes_read) < remaining_length)
         ABORT(R_BAD_DATA);
-      remaining_length = tmp_length;
 
+      sock->read_state = NR_ICE_SOCKET_READ_HDR;
+      
+      sock->bytes_needed = remaining_length;
     }
-    
-    if ((sock->buffer_size - sock->bytes_read) < remaining_length)
-      ABORT(R_BAD_DATA);
-
-    
-    sock->bytes_needed = remaining_length;
-
-    sock->read_state = NR_ICE_SOCKET_READ_HDR;
-    goto reread;
   }
 
   assert(skip_hdr_size <= sock->bytes_read);
