@@ -300,10 +300,10 @@ MediaDecoder::NotifyOwnerActivityChanged(bool aIsVisible)
 
   RefPtr<LayerManager> layerManager =
     nsContentUtils::LayerManagerForDocument(element->OwnerDoc());
-  NS_ENSURE_TRUE_VOID(layerManager);
-
-  RefPtr<KnowsCompositor> knowsCompositor = layerManager->AsShadowForwarder();
-  mCompositorUpdatedEvent.Notify(knowsCompositor);
+  if (layerManager) {
+    RefPtr<KnowsCompositor> knowsCompositor = layerManager->AsShadowForwarder();
+    mCompositorUpdatedEvent.Notify(knowsCompositor);
+  }
 }
 
 void
@@ -1738,10 +1738,10 @@ MediaDecoder::DumpDebugInfo()
            mInfo ? mInfo->HasAudio() : 0, mInfo ? mInfo->HasVideo() : 0,
            PlayStateStr(), GetStateMachine());
 
-  nsAutoCString str;
+  nsString str;
   GetMozDebugReaderData(str);
   if (!str.IsEmpty()) {
-    DUMP_LOG("reader data:\n%s", str.get());
+    DUMP_LOG("reader data:\n%s", NS_ConvertUTF16toUTF8(str).get());
   }
 
   if (GetStateMachine()) {
