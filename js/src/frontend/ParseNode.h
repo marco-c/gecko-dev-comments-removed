@@ -194,6 +194,11 @@ IsDeleteKind(ParseNodeKind kind)
     return PNK_DELETENAME <= kind && kind <= PNK_DELETEEXPR;
 }
 
+inline bool
+IsTypeofKind(ParseNodeKind kind)
+{
+    return PNK_TYPEOFNAME <= kind && kind <= PNK_TYPEOFEXPR;
+}
 
 
 

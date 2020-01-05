@@ -129,6 +129,11 @@ class SyntaxParseHandler
 
         
         
+        
+        NodeUnparenthesizedUnary,
+
+        
+        
         NodeSuperBase
     };
 
@@ -220,14 +225,26 @@ class SyntaxParseHandler
     Node newElision() { return NodeGeneric; }
 
     Node newDelete(uint32_t begin, Node expr) {
-        return NodeGeneric;
+        return NodeUnparenthesizedUnary;
     }
 
     Node newTypeof(uint32_t begin, Node kid) {
-        return NodeGeneric;
+        return NodeUnparenthesizedUnary;
     }
 
     Node newUnary(ParseNodeKind kind, JSOp op, uint32_t begin, Node kid) {
+        return NodeUnparenthesizedUnary;
+    }
+
+    Node newUpdate(ParseNodeKind kind, uint32_t begin, Node kid) {
+        return NodeGeneric;
+    }
+
+    Node newSpread(uint32_t begin, Node kid) {
+        return NodeGeneric;
+    }
+
+    Node newArrayPush(uint32_t begin, Node kid) {
         return NodeGeneric;
     }
 
@@ -441,6 +458,10 @@ class SyntaxParseHandler
         return node == NodeUnparenthesizedAssignment;
     }
 
+    bool isUnparenthesizedUnaryExpression(Node node) {
+        return node == NodeUnparenthesizedUnary;
+    }
+
     bool isReturnStatement(Node node) {
         return node == NodeReturn;
     }
@@ -478,7 +499,8 @@ class SyntaxParseHandler
         
         if (node == NodeUnparenthesizedString ||
             node == NodeUnparenthesizedCommaExpr ||
-            node == NodeUnparenthesizedAssignment)
+            node == NodeUnparenthesizedAssignment ||
+            node == NodeUnparenthesizedUnary)
         {
             return NodeGeneric;
         }
