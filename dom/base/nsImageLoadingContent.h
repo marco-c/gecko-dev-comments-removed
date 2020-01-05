@@ -131,8 +131,10 @@ protected:
 
 
 
+
   nsresult LoadImage(nsIURI* aNewURI, bool aForce, bool aNotify,
-                     ImageLoadType aImageLoadType, nsIDocument* aDocument = nullptr,
+                     ImageLoadType aImageLoadType, bool aLoadStart = true,
+                     nsIDocument* aDocument = nullptr,
                      nsLoadFlags aLoadFlags = nsIRequest::LOAD_NORMAL);
 
   
