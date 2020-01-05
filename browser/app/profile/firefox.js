@@ -66,6 +66,9 @@ pref("extensions.systemAddon.update.url", "https://aus5.mozilla.org/update/3/Sys
 pref("extensions.autoDisableScopes", 15);
 
 
+pref("extensions.webextensions.themes.enabled", false);
+
+
 pref("extensions.webextensions.base-content-security-policy", "script-src 'self' https://* moz-extension: blob: filesystem: 'unsafe-eval' 'unsafe-inline'; object-src 'self' https://* moz-extension: blob: filesystem:;");
 pref("extensions.webextensions.default-content-security-policy", "script-src 'self'; object-src 'self';");
 
@@ -1526,11 +1529,7 @@ pref("browser.esedbreader.loglevel", "Error");
 
 pref("browser.laterrun.enabled", false);
 
-#ifdef EARLY_BETA_OR_EARLIER
-pref("browser.migrate.automigrate.enabled", true);
-#else
 pref("browser.migrate.automigrate.enabled", false);
-#endif
 
 
 pref("browser.migrate.automigrate.daysToOfferUndo", 4);
@@ -1581,12 +1580,6 @@ pref("browser.crashReports.unsubmittedCheck.enabled", false);
 
 pref("browser.crashReports.unsubmittedCheck.chancesUntilSuppress", 4);
 pref("browser.crashReports.unsubmittedCheck.autoSubmit", false);
-
-#ifdef NIGHTLY_BUILD
-
-
-pref("services.sync.validation.enabled", true);
-#endif
 
 
 pref("browser.formautofill.experimental", false);

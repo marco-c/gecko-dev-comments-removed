@@ -62,6 +62,7 @@ browser/base/content/test/general/file_csp_block_all_mixedcontent.html
 browser/base/content/test/urlbar/file_blank_but_not_blank.html
 browser/base/content/newtab/**
 browser/components/downloads/**
+browser/components/privatebrowsing/**
 browser/components/sessionstore/**
 browser/components/tabview/**
 # generated files in cld2
@@ -288,6 +289,7 @@ security/nss/**
 
 # Uses `#filter substitution`
 services/sync/modules/constants.js
+services/sync/services-sync.js
 
 # Third party services
 services/common/kinto-http-client.js

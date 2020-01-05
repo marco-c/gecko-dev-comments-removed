@@ -65,16 +65,21 @@ pref("services.sync.fxa.privacyURL", "https://accounts.firefox.com/legal/privacy
 pref("services.sync.telemetry.submissionInterval", 43200); 
 pref("services.sync.telemetry.maxPayloadCount", 500);
 
+#ifndef RELEASE_OR_BETA
+
+pref("services.sync.engine.bookmarks.validation.enabled", true);
+
+pref("services.sync.engine.bookmarks.repair.enabled", true);
+#endif
+
+
+
+pref("services.sync.engine.bookmarks.validation.interval", 86400); 
 
 
 
 
-pref("services.sync.validation.interval", 86400); 
+pref("services.sync.engine.bookmarks.validation.percentageChance", 10);
 
 
-
-
-pref("services.sync.validation.percentageChance", 10);
-
-
-pref("services.sync.validation.maxRecords", 1000);
+pref("services.sync.engine.bookmarks.validation.maxRecords", 1000);
