@@ -263,7 +263,7 @@ public:
   
   
   
-  virtual void SetVideoNullDecode(bool aIsNullDecode) { }
+  virtual void SetVideoBlankDecode(bool aIsBlankDecode) { }
 
 protected:
   virtual ~MediaDecoderReader();

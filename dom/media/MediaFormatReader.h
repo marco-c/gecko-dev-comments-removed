@@ -78,7 +78,7 @@ public:
   
   void GetMozDebugReaderData(nsACString& aString);
 
-  void SetVideoNullDecode(bool aIsNullDecode) override;
+  void SetVideoBlankDecode(bool aIsBlankDecode) override;
 
 private:
   nsresult InitInternal() override;
@@ -204,7 +204,7 @@ private:
       , mSizeOfQueue(0)
       , mIsHardwareAccelerated(false)
       , mLastStreamSourceID(UINT32_MAX)
-      , mIsNullDecode(false)
+      , mIsBlankDecode(false)
     {
     }
 
@@ -387,7 +387,7 @@ private:
     RefPtr<TrackInfoSharedPtr> mInfo;
     Maybe<media::TimeUnit> mFirstDemuxedSampleTime;
     
-    bool mIsNullDecode;
+    bool mIsBlankDecode;
 
   };
 
@@ -531,7 +531,7 @@ private:
 
   RefPtr<GMPCrashHelper> mCrashHelper;
 
-  void SetNullDecode(TrackType aTrack, bool aIsNullDecode);
+  void SetBlankDecode(TrackType aTrack, bool aIsBlankDecode);
 
   class DecoderFactory;
   UniquePtr<DecoderFactory> mDecoderFactory;
