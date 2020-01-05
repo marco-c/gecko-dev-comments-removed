@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 const Services = require("Services");
@@ -69,8 +67,7 @@ function OptionsPanel(iframeWindow, toolbox) {
   this._themeUnregistered = this._themeUnregistered.bind(this);
   this._disableJSClicked = this._disableJSClicked.bind(this);
 
-  this.disableJSNode = this.panelDoc.getElementById(
-    "devtools-disable-javascript");
+  this.disableJSNode = this.panelDoc.getElementById("devtools-disable-javascript");
 
   this._addListeners();
 
@@ -116,9 +113,8 @@ OptionsPanel.prototype = {
 
   _prefChanged: function (subject, topic, prefName) {
     if (prefName === "devtools.cache.disabled") {
-      let cacheDisabled = data.newValue;
+      let cacheDisabled = GetPref(prefName);
       let cbx = this.panelDoc.getElementById("devtools-disable-cache");
-
       cbx.checked = cacheDisabled;
     } else if (prefName === "devtools.theme") {
       this.updateCurrentTheme();
@@ -359,7 +355,7 @@ OptionsPanel.prototype = {
     }
   },
 
-  populatePreferences: function () {
+  populatePreferences: Task.async(function* () {
     let prefCheckboxes = this.panelDoc.querySelectorAll(
       "input[type=checkbox][data-pref]");
     for (let prefCheckbox of prefCheckboxes) {
@@ -399,6 +395,7 @@ OptionsPanel.prototype = {
           prefSelect.selectedIndex = options.indexOf(option);
           return true;
         }
+        return false;
       });
 
       prefSelect.addEventListener("change", function (e) {
@@ -409,16 +406,15 @@ OptionsPanel.prototype = {
     }
 
     if (this.target.activeTab) {
-      return this.target.client.attachTab(this.target.activeTab._actor)
-        .then(([response, client]) => {
-          this._origJavascriptEnabled = !response.javascriptEnabled;
-          this.disableJSNode.checked = this._origJavascriptEnabled;
-          this.disableJSNode.addEventListener("click",
-            this._disableJSClicked);
-        });
+      let [ response ] = yield this.target.client.attachTab(this.target.activeTab._actor);
+      this._origJavascriptEnabled = !response.javascriptEnabled;
+      this.disableJSNode.checked = this._origJavascriptEnabled;
+      this.disableJSNode.addEventListener("click", this._disableJSClicked);
+    } else {
+      
+      this.disableJSNode.parentNode.style.display = "none";
     }
-    this.disableJSNode.hidden = true;
-  },
+  }),
 
   updateCurrentTheme: function () {
     let currentTheme = GetPref("devtools.theme");

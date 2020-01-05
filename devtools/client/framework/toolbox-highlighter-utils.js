@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 const promise = require("promise");
@@ -33,7 +31,6 @@ const flags = require("devtools/shared/flags");
 exports.getHighlighterUtils = function (toolbox) {
   if (!toolbox || !toolbox.target) {
     throw new Error("Missing or invalid toolbox passed to getHighlighterUtils");
-    return;
   }
 
   
@@ -97,12 +94,11 @@ exports.getHighlighterUtils = function (toolbox) {
 
 
 
-  let togglePicker = exported.togglePicker = function (doFocus) {
+  exported.togglePicker = function (doFocus) {
     if (isPicking) {
       return cancelPicker();
-    } else {
-      return startPicker(doFocus);
     }
+    return startPicker(doFocus);
   };
 
   
@@ -250,8 +246,7 @@ exports.getHighlighterUtils = function (toolbox) {
 
 
 
-  let highlightDomValueGrip = exported.highlightDomValueGrip = requireInspector(
-  function* (valueGrip, options = {}) {
+  exported.highlightDomValueGrip = requireInspector(function* (valueGrip, options = {}) {
     let nodeFront = yield gripToNodeFront(valueGrip);
     if (nodeFront) {
       yield highlightNodeFront(nodeFront, options);
@@ -279,13 +274,13 @@ exports.getHighlighterUtils = function (toolbox) {
 
 
 
-  let unhighlight = exported.unhighlight = Task.async(
-  function* (forceHide = false) {
+  exported.unhighlight = Task.async(function* (forceHide = false) {
     forceHide = forceHide || !flags.testing;
 
     
     
-    if (isNodeFrontHighlighted && forceHide && toolbox.highlighter && isRemoteHighlightable()) {
+    if (isNodeFrontHighlighted && forceHide && toolbox.highlighter &&
+        isRemoteHighlightable()) {
       isNodeFrontHighlighted = false;
       yield toolbox.highlighter.hideBoxModel();
     }
@@ -306,8 +301,7 @@ exports.getHighlighterUtils = function (toolbox) {
 
 
 
-  let getHighlighterByType = exported.getHighlighterByType = requireInspector(
-  function* (typeName) {
+  exported.getHighlighterByType = requireInspector(function* (typeName) {
     let highlighter = null;
 
     if (supportsCustomHighlighters()) {
@@ -316,7 +310,6 @@ exports.getHighlighterUtils = function (toolbox) {
 
     return highlighter || promise.reject("The target doesn't support " +
         `creating highlighters by types or ${typeName} is unknown`);
-
   });
 
   

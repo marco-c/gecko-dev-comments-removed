@@ -5,7 +5,6 @@
 "use strict";
 
 const { Ci } = require("chrome");
-const promise = require("promise");
 const defer = require("devtools/shared/defer");
 const EventEmitter = require("devtools/shared/event-emitter");
 const Services = require("Services");
@@ -486,30 +485,30 @@ TabTarget.prototype = {
   _setupRemoteListeners: function () {
     this.client.addListener("closed", this.destroy);
 
-    this._onTabDetached = (aType, aPacket) => {
+    this._onTabDetached = (type, packet) => {
       
-      if (aPacket.from == this._form.actor) {
+      if (packet.from == this._form.actor) {
         this.destroy();
       }
     };
     this.client.addListener("tabDetached", this._onTabDetached);
 
-    this._onTabNavigated = (aType, aPacket) => {
+    this._onTabNavigated = (type, packet) => {
       let event = Object.create(null);
-      event.url = aPacket.url;
-      event.title = aPacket.title;
-      event.nativeConsoleAPI = aPacket.nativeConsoleAPI;
-      event.isFrameSwitching = aPacket.isFrameSwitching;
+      event.url = packet.url;
+      event.title = packet.title;
+      event.nativeConsoleAPI = packet.nativeConsoleAPI;
+      event.isFrameSwitching = packet.isFrameSwitching;
 
-      if (!aPacket.isFrameSwitching) {
+      if (!packet.isFrameSwitching) {
         
-        this._url = aPacket.url;
-        this._title = aPacket.title;
+        this._url = packet.url;
+        this._title = packet.title;
       }
 
       
       
-      if (aPacket.state == "start") {
+      if (packet.state == "start") {
         event._navPayload = this._navRequest;
         this.emit("will-navigate", event);
         this._navRequest = null;
@@ -521,8 +520,8 @@ TabTarget.prototype = {
     };
     this.client.addListener("tabNavigated", this._onTabNavigated);
 
-    this._onFrameUpdate = (aType, aPacket) => {
-      this.emit("frame-update", aPacket);
+    this._onFrameUpdate = (type, packet) => {
+      this.emit("frame-update", packet);
     };
     this.client.addListener("frameUpdate", this._onFrameUpdate);
 
@@ -566,8 +565,10 @@ TabTarget.prototype = {
   },
 
   
-  
-  
+
+
+
+
   onRemotenessChange: function () {
     
     
@@ -690,8 +691,8 @@ TabTarget.prototype = {
 
 
 
-function TabWebProgressListener(aTarget) {
-  this.target = aTarget;
+function TabWebProgressListener(target) {
+  this.target = target;
 }
 
 TabWebProgressListener.prototype = {

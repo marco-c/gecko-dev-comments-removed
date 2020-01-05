@@ -1,5 +1,10 @@
+
+
+
+
+"use strict";
+
 const Services = require("Services");
-const {Ci} = require("chrome");
 const {LocalizationHelper} = require("devtools/shared/l10n");
 const L10N = new LocalizationHelper("devtools/client/locales/toolbox.properties");
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
@@ -67,10 +72,13 @@ ToolboxHostManager.prototype = {
     
     this.host.frame.addEventListener("unload", this, true);
 
-    let toolbox = new Toolbox(this.target, toolId, this.host.type, this.host.frame.contentWindow, this.frameId);
+    let toolbox = new Toolbox(this.target, toolId, this.host.type,
+                              this.host.frame.contentWindow, this.frameId);
 
     
-    if (!this.host.frame.contentWindow.location.href.startsWith("about:devtools-toolbox")) {
+    
+    let location = this.host.frame.contentWindow.location;
+    if (!location.href.startsWith("about:devtools-toolbox")) {
       this.host.frame.setAttribute("src", "about:devtools-toolbox");
     }
 
@@ -78,7 +86,7 @@ ToolboxHostManager.prototype = {
   }),
 
   handleEvent(event) {
-    switch(event.type) {
+    switch (event.type) {
       case "message":
         this.onMessage(event);
         break;
