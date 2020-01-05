@@ -7453,9 +7453,47 @@ nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
   }
 #endif 
 
-  if (aContainer && aContainer->HasFlag(NODE_IS_IN_SHADOW_TREE) &&
-      !aContainer->IsInNativeAnonymousSubtree() &&
-      !aFirstNewContent->IsInNativeAnonymousSubtree()) {
+  
+  
+  
+  
+  
+  bool isNewlyAddedContentForServo = aContainer->IsStyledByServo() &&
+                                     !RestyleManager()->IsInStyleRefresh();
+
+  bool isNewShadowTreeContent =
+    aContainer && aContainer->HasFlag(NODE_IS_IN_SHADOW_TREE) &&
+    !aContainer->IsInNativeAnonymousSubtree() &&
+    !aFirstNewContent->IsInNativeAnonymousSubtree();
+
+  if (!isNewShadowTreeContent) {
+    
+    if (!GetContentInsertionFrameFor(aContainer) &&
+        !aContainer->IsActiveChildrenElement()) {
+      
+      
+      
+      if (isNewlyAddedContentForServo) {
+        aContainer->AsElement()->NoteDirtyDescendantsForServo();
+      }
+      return;
+    }
+
+    if (aAllowLazyConstruction &&
+        MaybeConstructLazily(CONTENTAPPEND, aContainer, aFirstNewContent)) {
+      if (isNewlyAddedContentForServo) {
+        aContainer->AsElement()->NoteDirtyDescendantsForServo();
+      }
+      return;
+    }
+  }
+
+  
+  if (isNewlyAddedContentForServo) {
+    StyleNewChildRange(aFirstNewContent, nullptr);
+  }
+
+  if (isNewShadowTreeContent) {
     
     
     
@@ -7466,39 +7504,6 @@ nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
                              REMOVE_FOR_RECONSTRUCTION, nullptr);
     LAYOUT_PHASE_TEMP_REENTER();
     return;
-  }
-
-  
-  
-  
-  
-  
-  bool isNewlyAddedContentForServo = aContainer->IsStyledByServo() &&
-                                     !RestyleManager()->IsInStyleRefresh();
-
-  
-  if (!GetContentInsertionFrameFor(aContainer) &&
-      !aContainer->IsActiveChildrenElement()) {
-    
-    
-    
-    if (isNewlyAddedContentForServo) {
-      aContainer->AsElement()->NoteDirtyDescendantsForServo();
-    }
-    return;
-  }
-
-  if (aAllowLazyConstruction &&
-      MaybeConstructLazily(CONTENTAPPEND, aContainer, aFirstNewContent)) {
-    if (isNewlyAddedContentForServo) {
-      aContainer->AsElement()->NoteDirtyDescendantsForServo();
-    }
-    return;
-  }
-
-  
-  if (isNewlyAddedContentForServo) {
-    StyleNewChildRange(aFirstNewContent, nullptr);
   }
 
   LAYOUT_PHASE_TEMP_EXIT();
@@ -7918,22 +7923,6 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
     return;
   }
 
-  if (aContainer->HasFlag(NODE_IS_IN_SHADOW_TREE) &&
-      !aContainer->IsInNativeAnonymousSubtree() &&
-      (!aStartChild || !aStartChild->IsInNativeAnonymousSubtree()) &&
-      (!aEndChild || !aEndChild->IsInNativeAnonymousSubtree())) {
-    
-    
-    
-    
-    nsIContent* bindingParent = aContainer->GetBindingParent();
-    LAYOUT_PHASE_TEMP_EXIT();
-    RecreateFramesForContent(bindingParent, false,
-                             REMOVE_FOR_RECONSTRUCTION, nullptr);
-    LAYOUT_PHASE_TEMP_REENTER();
-    return;
-  }
-
   
   
   
@@ -7942,10 +7931,13 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
   bool isNewlyAddedContentForServo = aContainer->IsStyledByServo() &&
                                      !RestyleManager()->IsInStyleRefresh();
 
+  bool isNewShadowTreeContent =
+    aContainer->HasFlag(NODE_IS_IN_SHADOW_TREE) &&
+    !aContainer->IsInNativeAnonymousSubtree() &&
+    (!aStartChild || !aStartChild->IsInNativeAnonymousSubtree()) &&
+    (!aEndChild || !aEndChild->IsInNativeAnonymousSubtree());
 
-  
-  
-  {
+  if (!isNewShadowTreeContent) {
     nsContainerFrame* parentFrame = GetContentInsertionFrameFor(aContainer);
     
     
@@ -7976,6 +7968,19 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
   
   if (isNewlyAddedContentForServo) {
     StyleNewChildRange(aStartChild, aEndChild);
+  }
+
+  if (isNewShadowTreeContent) {
+    
+    
+    
+    
+    nsIContent* bindingParent = aContainer->GetBindingParent();
+    LAYOUT_PHASE_TEMP_EXIT();
+    RecreateFramesForContent(bindingParent, false,
+                             REMOVE_FOR_RECONSTRUCTION, nullptr);
+    LAYOUT_PHASE_TEMP_REENTER();
+    return;
   }
 
   InsertionPoint insertion;
