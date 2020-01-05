@@ -9,7 +9,9 @@ use parser::{ParserContext, log_css_error};
 use properties::{Importance, PropertyDeclaration, PropertyDeclarationBlock};
 use properties::PropertyDeclarationParseResult;
 use properties::animated_properties::TransitionProperty;
+use std::fmt;
 use std::sync::Arc;
+use style_traits::ToCss;
 
 
 
@@ -80,6 +82,21 @@ pub struct Keyframe {
     
     #[cfg_attr(feature = "servo", ignore_heap_size_of = "Arc")]
     pub block: Arc<RwLock<PropertyDeclarationBlock>>,
+}
+
+impl ToCss for Keyframe {
+    fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
+        let mut iter = self.selector.percentages().iter();
+        try!(write!(dest, "{}%", iter.next().unwrap().0));
+        for percentage in iter {
+            try!(write!(dest, ", "));
+            try!(write!(dest, "{}%", percentage.0));
+        }
+        try!(dest.write_str(" { "));
+        try!(self.block.read().to_css(dest));
+        try!(dest.write_str(" }"));
+        Ok(())
+    }
 }
 
 
