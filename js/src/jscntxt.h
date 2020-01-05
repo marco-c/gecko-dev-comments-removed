@@ -450,9 +450,6 @@ struct JSContext : public js::ExclusiveContext,
 
     bool asyncCallIsExplicit;
 
-    
-    bool currentlyRunning() const;
-
     bool currentlyRunningInInterpreter() const {
         return activation()->isInterpreter();
     }

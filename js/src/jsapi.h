@@ -4602,13 +4602,6 @@ typedef bool
 extern JS_PUBLIC_API(void)
 SetAsyncTaskCallbacks(JSContext* cx, StartAsyncTaskCallback start, FinishAsyncTaskCallback finish);
 
-} 
-
-extern JS_PUBLIC_API(bool)
-JS_IsRunning(JSContext* cx);
-
-namespace JS {
-
 
 
 
