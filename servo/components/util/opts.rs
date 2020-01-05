@@ -151,6 +151,9 @@ pub struct Opts {
     pub dump_display_list_optimized: bool,
 
     
+    pub dump_layer_tree: bool,
+
+    
     pub relayout_event: bool,
 
     
@@ -204,6 +207,9 @@ pub struct DebugOptions {
 
     
     pub dump_display_list_optimized: bool,
+
+    
+    pub dump_layer_tree: bool,
 
     
     pub relayout_event: bool,
@@ -264,6 +270,7 @@ impl DebugOptions {
                 "dump-display-list" => debug_options.dump_display_list = true,
                 "dump-display-list-json" => debug_options.dump_display_list_json = true,
                 "dump-display-list-optimized" => debug_options.dump_display_list_optimized = true,
+                "dump-layer-tree" => debug_options.dump_layer_tree = true,
                 "relayout-event" => debug_options.relayout_event = true,
                 "profile-tasks" => debug_options.profile_tasks = true,
                 "profile-script-events" => debug_options.profile_script_events = true,
@@ -406,6 +413,7 @@ pub fn default_opts() -> Opts {
         dump_display_list: false,
         dump_display_list_json: false,
         dump_display_list_optimized: false,
+        dump_layer_tree: false,
         relayout_event: false,
         validate_display_list_geometry: false,
         profile_tasks: false,
@@ -613,6 +621,7 @@ pub fn from_cmdline_args(args: &[String]) {
         dump_display_list: debug_options.dump_display_list,
         dump_display_list_json: debug_options.dump_display_list_json,
         dump_display_list_optimized: debug_options.dump_display_list_optimized,
+        dump_layer_tree: debug_options.dump_layer_tree,
         relayout_event: debug_options.relayout_event,
         validate_display_list_geometry: debug_options.validate_display_list_geometry,
         sniff_mime_types: opt_match.opt_present("sniff-mime-types"),
