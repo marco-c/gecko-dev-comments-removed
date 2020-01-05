@@ -18,13 +18,16 @@ pub struct SelectedFile {
     pub type_string: String,
 }
 
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct FilterPattern(pub String);
+
 #[derive(Deserialize, Serialize)]
 pub enum FileManagerThreadMsg {
     
-    SelectFile(IpcSender<FileManagerResult<SelectedFile>>),
+    SelectFile(Vec<FilterPattern>, IpcSender<FileManagerResult<SelectedFile>>),
 
     
-    SelectFiles(IpcSender<FileManagerResult<Vec<SelectedFile>>>),
+    SelectFiles(Vec<FilterPattern>, IpcSender<FileManagerResult<Vec<SelectedFile>>>),
 
     
     ReadFile(IpcSender<FileManagerResult<Vec<u8>>>, SelectedFileId),
@@ -45,6 +48,8 @@ pub type FileManagerResult<T> = Result<T, FileManagerThreadError>;
 pub enum FileManagerThreadError {
     
     InvalidSelection,
+    
+    UserCancelled,
     
     FileInfoProcessingError,
     
