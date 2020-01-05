@@ -2012,6 +2012,16 @@ XMLHttpRequestMainThread::OnStartRequest(nsIRequest *request, nsISupports *ctxt)
     mResponseXML->SetChromeXHRDocURI(chromeXHRDocURI);
     mResponseXML->SetChromeXHRDocBaseURI(chromeXHRDocBaseURI);
 
+    
+    
+    uint32_t responseStatus;
+    if (NS_SUCCEEDED(GetStatus(&responseStatus)) &&
+        (responseStatus == 201 || responseStatus == 202 ||
+         responseStatus == 204 || responseStatus == 205 ||
+         responseStatus == 304)) {
+      mResponseXML->SetSuppressParserErrorConsoleMessages(true);
+    }
+
     if (nsContentUtils::IsSystemPrincipal(mPrincipal)) {
       mResponseXML->ForceEnableXULXBL();
     }
@@ -2075,15 +2085,6 @@ XMLHttpRequestMainThread::OnStopRequest(nsIRequest *request, nsISupports *ctxt, 
     NS_ASSERTION(mFirstStartRequestSeen, "Inconsistent state!");
     mFirstStartRequestSeen = false;
     mRequestObserver->OnStopRequest(request, ctxt, status);
-  }
-
-  
-  if (mResponseXML) {
-    uint32_t responseStatus;
-    if (NS_SUCCEEDED(GetStatus(&responseStatus)) &&
-        (responseStatus == 204 || responseStatus == 304)) {
-      mResponseXML->SetSuppressParserErrorConsoleMessages(true);
-    }
   }
 
   
