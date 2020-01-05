@@ -64,6 +64,7 @@ public class Tabs implements BundleEventListener {
     private static final String LOGTAG = "GeckoTabs";
 
     public static final String INTENT_EXTRA_TAB_ID = "TabId";
+    public static final String INTENT_EXTRA_SESSION_UUID = "SessionUUID";
     private static final String PRIVATE_TAB_INTENT_EXTRA = "private_tab";
 
     
@@ -353,7 +354,7 @@ public class Tabs implements BundleEventListener {
     
 
 
-    private boolean currentActivityMatchesTab(Tab tab) {
+    public boolean currentActivityMatchesTab(Tab tab) {
         final Activity currentActivity = GeckoActivityMonitor.getInstance().getCurrentActivity();
 
         if (currentActivity == null) {
@@ -394,6 +395,7 @@ public class Tabs implements BundleEventListener {
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         intent.putExtra(BrowserContract.SKIP_TAB_QUEUE_FLAG, true);
         intent.putExtra(INTENT_EXTRA_TAB_ID, tab.getId());
+        intent.putExtra(INTENT_EXTRA_SESSION_UUID, GeckoApplication.getSessionUUID());
         mAppContext.startActivity(intent);
     }
 
