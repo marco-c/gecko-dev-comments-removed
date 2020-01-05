@@ -281,8 +281,11 @@ pub trait Flow: fmt::Debug + Sync {
     fn compute_overflow(&self) -> Rect<Au>;
 
     
+    
+    
     fn iterate_through_fragment_border_boxes(&self,
                                              iterator: &mut FragmentBorderBoxIterator,
+                                             level: i32,
                                              stacking_context_position: &Point2D<Au>);
 
     

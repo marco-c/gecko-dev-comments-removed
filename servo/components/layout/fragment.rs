@@ -2164,7 +2164,7 @@ bitflags! {
 
 pub trait FragmentBorderBoxIterator {
     
-    fn process(&mut self, fragment: &Fragment, overflow: &Rect<Au>);
+    fn process(&mut self, fragment: &Fragment, level: i32, overflow: &Rect<Au>);
 
     
     
