@@ -502,6 +502,10 @@ class ParseContext : public Nestable<ParseContext>
         return sc_->isFunctionBox() && sc_->asFunctionBox()->isAsync();
     }
 
+    FunctionAsyncKind asyncKind() const {
+        return isAsync() ? AsyncFunction : SyncFunction;
+    }
+
     bool isArrowFunction() const {
         return sc_->isFunctionBox() && sc_->asFunctionBox()->function()->isArrow();
     }
@@ -1035,7 +1039,7 @@ class Parser final : private JS::AutoGCRooter, public StrictModeGetter
     
     
     bool yieldExpressionsSupported() {
-        return versionNumber() >= JSVERSION_1_7 || pc->isGenerator();
+        return (versionNumber() >= JSVERSION_1_7 || pc->isGenerator()) && !pc->isAsync();
     }
 
     
@@ -1074,7 +1078,8 @@ class Parser final : private JS::AutoGCRooter, public StrictModeGetter
 
 
 
-    Node functionStmt(YieldHandling yieldHandling, DefaultHandling defaultHandling);
+    Node functionStmt(YieldHandling yieldHandling, DefaultHandling defaultHandling,
+                      FunctionAsyncKind asyncKind = SyncFunction);
     Node functionExpr(InvokedPrediction invoked = PredictUninvoked);
 
     Node statementList(YieldHandling yieldHandling);
