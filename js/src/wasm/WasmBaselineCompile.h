@@ -24,21 +24,13 @@
 namespace js {
 namespace wasm {
 
-class FunctionGenerator;
 class CompileTask;
 class FuncCompileUnit;
 
 
 
-
-
-
-
-
-
-
 bool
-BaselineCanCompile(const FunctionGenerator* fg);
+BaselineCanCompile();
 
 
 bool

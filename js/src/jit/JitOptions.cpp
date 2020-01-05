@@ -239,13 +239,9 @@ DefaultJitOptions::DefaultJitOptions()
 
     
     
-    SET_DEFAULT(wasmBatchThreshold, 10000);
-
     
-    
-    
-    
-    SET_DEFAULT(wasmBatchIonScaleFactor, 9);
+    SET_DEFAULT(wasmBatchBaselineThreshold, 10000);
+    SET_DEFAULT(wasmBatchIonThreshold, 1100);
 
     
     
