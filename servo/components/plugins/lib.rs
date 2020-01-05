@@ -2,6 +2,16 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
 #![feature(macro_rules, plugin_registrar, quote, phase)]
 
 #![deny(unused_imports, unused_variable)]
@@ -19,10 +29,12 @@ use syntax::ext::base::{Decorator, Modifier};
 
 use syntax::parse::token::intern;
 
-mod lints;
-mod macros;
-mod jstraceable;
 
+
+pub mod jstraceable;
+pub mod lints;
+
+mod macros;
 #[plugin_registrar]
 pub fn plugin_registrar(reg: &mut Registry) {
     reg.register_syntax_extension(intern("dom_struct"), Modifier(box jstraceable::expand_dom_struct));

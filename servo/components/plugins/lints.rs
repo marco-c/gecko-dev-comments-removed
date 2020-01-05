@@ -18,8 +18,27 @@ declare_lint!(UNROOTED_MUST_ROOT, Deny,
 declare_lint!(PRIVATIZE, Deny,
               "Allows to enforce private fields for struct definitions")
 
+
+
+
+
 pub struct TransmutePass;
+
+
+
+
+
+
+
+
+
+
+
 pub struct UnrootedPass;
+
+
+
+
 pub struct PrivatizePass;
 
 impl LintPass for TransmutePass {
@@ -51,6 +70,9 @@ impl LintPass for TransmutePass {
     }
 }
 
+
+
+
 fn lint_unrooted_ty(cx: &Context, ty: &ast::Ty, warning: &str) {
     match ty.node {
         ast::TyBox(ref t) | ast::TyUniq(ref t) |
@@ -74,7 +96,7 @@ impl LintPass for UnrootedPass {
     fn get_lints(&self) -> LintArray {
         lint_array!(UNROOTED_MUST_ROOT)
     }
-
+    
     fn check_struct_def(&mut self, cx: &Context, def: &ast::StructDef, _i: ast::Ident, _gen: &ast::Generics, id: ast::NodeId) {
         if cx.tcx.map.expect_item(id).attrs.iter().all(|a| !a.check_name("must_root")) {
             for ref field in def.fields.iter() {
@@ -83,7 +105,7 @@ impl LintPass for UnrootedPass {
             }
         }
     }
-
+    
     fn check_variant(&mut self, cx: &Context, var: &ast::Variant, _gen: &ast::Generics) {
         let ref map = cx.tcx.map;
         if map.expect_item(map.get_parent(var.node.id)).attrs.iter().all(|a| !a.check_name("must_root")) {
@@ -98,7 +120,7 @@ impl LintPass for UnrootedPass {
             }
         }
     }
-
+    
     fn check_fn(&mut self, cx: &Context, kind: visit::FnKind, decl: &ast::FnDecl,
                 block: &ast::Block, _span: codemap::Span, _id: ast::NodeId) {
         match kind {
@@ -124,13 +146,26 @@ impl LintPass for UnrootedPass {
     
     
     fn check_stmt(&mut self, cx: &Context, s: &ast::Stmt) {
-        
         let expr = match s.node {
+            
             ast::StmtDecl(ref decl, _) => match decl.node {
                 ast::DeclLocal(ref loc) => match loc.init {
-                        Some(ref e) => &**e,
-                        _ => return
+                    Some(ref e) => &**e,
+                    _ => return
                 },
+                _ => return
+            },
+            ast::StmtExpr(ref expr, _) => match expr.node {
+                
+                ast::ExprAssign(_, ref e) |
+                
+                
+                
+                
+                ast::ExprMatch(ref e, _) |
+                
+                ast::ExprForLoop(_, ref e, _, _) => &**e,
+                
                 _ => return
             },
             _ => return
