@@ -1029,8 +1029,8 @@ nsDisplayListBuilder::FindAnimatedGeometryRootFor(nsDisplayItem* aItem)
     
     
     
-    nsIFrame* viewportFrame =
-      nsLayoutUtils::GetClosestFrameOfType(aItem->Frame(), FrameType::Viewport, RootReferenceFrame());
+    nsIFrame* viewportFrame = nsLayoutUtils::GetClosestFrameOfType(
+      aItem->Frame(), LayoutFrameType::Viewport, RootReferenceFrame());
     if (viewportFrame) {
       return FindAnimatedGeometryRootFor(viewportFrame);
     }
@@ -1510,10 +1510,10 @@ nsDisplayListBuilder::IsAnimatedGeometryRoot(nsIFrame* aFrame, nsIFrame** aParen
   if (!parent)
     return true;
 
-  FrameType parentType = parent->Type();
+  LayoutFrameType parentType = parent->Type();
   
   
-  if (parentType == FrameType::Slider &&
+  if (parentType == LayoutFrameType::Slider &&
       nsLayoutUtils::IsScrollbarThumbLayerized(aFrame)) {
     return true;
   }
@@ -1524,7 +1524,8 @@ nsDisplayListBuilder::IsAnimatedGeometryRoot(nsIFrame* aFrame, nsIFrame** aParen
     return true;
   }
 
-  if (parentType == FrameType::Scroll || parentType == FrameType::ListControl) {
+  if (parentType == LayoutFrameType::Scroll ||
+      parentType == LayoutFrameType::ListControl) {
     nsIScrollableFrame* sf = do_QueryFrame(parent);
     if (sf->IsScrollingActive(this) && sf->GetScrolledFrame() == aFrame) {
       return true;
