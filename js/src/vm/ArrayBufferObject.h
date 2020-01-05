@@ -440,7 +440,7 @@ class ArrayBufferViewObject : public JSObject
 
     
     
-    uint8_t* dataPointerUnshared();
+    uint8_t* dataPointerUnshared(const JS::AutoAssertOnGC&);
     void setDataPointerUnshared(uint8_t* data);
 
     static void trace(JSTracer* trc, JSObject* obj);

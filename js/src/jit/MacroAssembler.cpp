@@ -1261,8 +1261,9 @@ MacroAssembler::initGCThing(Register obj, Register temp, JSObject* templateObj,
             }
         }
     } else if (templateObj->is<InlineTypedObject>()) {
+        JS::AutoAssertOnGC nogc; 
         size_t nbytes = templateObj->as<InlineTypedObject>().size();
-        const uint8_t* memory = templateObj->as<InlineTypedObject>().inlineTypedMem();
+        const uint8_t* memory = templateObj->as<InlineTypedObject>().inlineTypedMem(nogc);
 
         
         size_t offset = 0;
