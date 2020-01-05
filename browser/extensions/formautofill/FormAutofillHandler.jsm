@@ -55,13 +55,8 @@ FormAutofillHandler.prototype = {
   
 
 
-
-
-
-
-
   collectFormFields() {
-    let autofillData = [];
+    this.fieldDetails = [];
 
     for (let element of this.form.elements) {
       
@@ -77,28 +72,21 @@ FormAutofillHandler.prototype = {
                                       f.fieldName == info.fieldName)) {
         
         log.debug("Not collecting a field matching another with the same info:", info);
-        return null;
+        continue;
       }
 
-      let inputFormat = {
+      let formatWithElement = {
         section: info.section,
         addressType: info.addressType,
         contactType: info.contactType,
         fieldName: info.fieldName,
+        element, 
       };
-      
-      let formatWithElement = Object.assign({}, inputFormat);
 
-      inputFormat.index = autofillData.length;
-      autofillData.push(inputFormat);
-
-      formatWithElement.element = element;
       this.fieldDetails.push(formatWithElement);
     }
 
-    log.debug("Collected details on", autofillData.length, "fields");
-
-    return autofillData;
+    log.debug("Collected details on", this.fieldDetails.length, "fields");
   },
 
   
