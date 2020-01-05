@@ -201,7 +201,8 @@ public class TwoLinePageRow extends LinearLayout
 
 
     protected void updateDisplayedUrl() {
-        boolean isPrivate = Tabs.getInstance().getSelectedTab().isPrivate();
+        final Tab selectedTab = Tabs.getInstance().getSelectedTab();
+        final boolean isPrivate = (selectedTab != null) && (selectedTab.isPrivate());
 
         
         
