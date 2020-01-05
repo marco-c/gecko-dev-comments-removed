@@ -231,7 +231,7 @@ def check_lock(file_name, contents):
         raise StopIteration
 
     
-    exceptions = ["bitflags", "xml-rs", "lazy_static"]
+    exceptions = ["bitflags", "lazy_static"]
 
     import toml
     content = toml.loads(contents)
