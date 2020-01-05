@@ -14,7 +14,7 @@ wasmEvalText(
     
     
     if (!String(e).match(/out of memory/))
-	throw e;
+        throw e;
 }
 
 
@@ -24,6 +24,6 @@ wasmEvalText(
 function locals() {
     var s = "";
     for ( var i=0 ; i < 64000 ; i++ )
-	s += "(local f64)\n";
+        s += "(local f64)\n";
     return s;
 }
