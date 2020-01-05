@@ -704,6 +704,13 @@ DecodedStream::NotifyOutput(int64_t aTime)
 {
   AssertOwnerThread();
   mLastOutputTime = aTime;
+
+  
+  RefPtr<MediaData> a = mAudioQueue.PeekFront();
+  for (; a && a->mTime < aTime;) {
+    RefPtr<MediaData> releaseMe = mAudioQueue.PopFront();
+    a = mAudioQueue.PeekFront();
+  }
 }
 
 void

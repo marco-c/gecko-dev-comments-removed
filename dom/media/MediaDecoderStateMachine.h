@@ -333,8 +333,6 @@ private:
   
   void ScheduleStateMachineIn(int64_t aMicroseconds);
 
-  
-  void DiscardStreamData();
   bool HaveEnoughDecodedAudio();
   bool HaveEnoughDecodedVideo();
 

@@ -907,28 +907,6 @@ MediaDecoderStateMachine::GetDecodedAudioDuration()
   return AudioQueue().Duration();
 }
 
-void MediaDecoderStateMachine::DiscardStreamData()
-{
-  MOZ_ASSERT(OnTaskQueue());
-
-  const auto clockTime = GetClock();
-  while (true) {
-    RefPtr<MediaData> a = AudioQueue().PeekFront();
-
-    
-    
-    
-    
-    
-    
-    if (a && a->mTime < clockTime) {
-      RefPtr<MediaData> releaseMe = AudioQueue().PopFront();
-      continue;
-    }
-    break;
-  }
-}
-
 bool MediaDecoderStateMachine::HaveEnoughDecodedAudio()
 {
   MOZ_ASSERT(OnTaskQueue());
@@ -2642,10 +2620,6 @@ MediaDecoderStateMachine::UpdatePlaybackPositionPeriodically()
 
   if (!IsPlaying()) {
     return;
-  }
-
-  if (mAudioCaptured) {
-    DiscardStreamData();
   }
 
   
