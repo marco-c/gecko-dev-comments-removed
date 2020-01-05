@@ -68,12 +68,30 @@ const globalCache = new Map();
 
 
 
-function GlobalsForNode(path) {
-  this.path = path;
-  this.root = helpers.getRootDir(path);
+function GlobalsForNode(filePath) {
+  this.path = filePath;
+  this.dirname = path.dirname(this.path)
+  this.root = helpers.getRootDir(this.path);
+  this.isWorker = helpers.getIsWorker(this.path);
 }
 
 GlobalsForNode.prototype = {
+  Program(node) {
+    if (!this.isWorker) {
+      return [];
+    }
+
+    return [
+      {name: "importScripts", writable: false},
+      
+      {name: "FileReaderSync", writable: false},
+      {name: "onmessage", writable: true},
+      
+      
+      {name: "ctypes", writable: false}
+    ];
+  },
+
   BlockComment(node, parents) {
     let value = node.value.trim();
     let match = /^import-globals-from\s+(.+)$/.exec(value);
@@ -84,8 +102,7 @@ GlobalsForNode.prototype = {
     let filePath = match[1].trim();
 
     if (!path.isAbsolute(filePath)) {
-      let dirName = path.dirname(this.path);
-      filePath = path.resolve(dirName, filePath);
+      filePath = path.resolve(this.dirname, filePath);
     }
 
     return module.exports.getGlobalsForFile(filePath);
@@ -93,13 +110,30 @@ GlobalsForNode.prototype = {
 
   ExpressionStatement(node, parents) {
     let isGlobal = helpers.getIsGlobalScope(parents);
-    let names = helpers.convertExpressionToGlobals(node, isGlobal, this.root);
-    return names.map(name => { return { name, writable: true }});
+    let globals = helpers.convertExpressionToGlobals(node, isGlobal, this.root);
+    
+    globals = globals.map(name => { return { name, writable: true }});
+
+    if (this.isWorker) {
+      let workerDetails = helpers.convertWorkerExpressionToGlobals(node,
+        isGlobal, this.root, this.dirname);
+      globals = globals.concat(workerDetails.map(name => {
+        return { name, writable: true };
+      }));
+    }
+
+    return globals;
   },
 };
 
 module.exports = {
   
+
+
+
+
+
+
 
 
 
@@ -179,6 +213,9 @@ module.exports = {
 
     for (let type of Object.keys(GlobalsForNode.prototype)) {
       parser[type] = function(node) {
+        if (type === "Program") {
+          globalScope = context.getScope();
+        }
         let globals = handler[type](node, context.getAncestors());
         helpers.addGlobals(globals, globalScope);
       }
