@@ -10866,10 +10866,19 @@ nsCSSFrameConstructor::AddFCItemsForAnonymousContent(
     
     
     
+    
+    
+    
+    
+    
+    
     nsIFrame* inheritFrame = aFrame;
-    while (inheritFrame->GetContent()->IsNativeAnonymous()) {
-      inheritFrame = inheritFrame->GetInFlowParent();
+    if (!content->IsNativeScrollbarContent()) {
+      while (inheritFrame->GetContent()->IsNativeAnonymous()) {
+        inheritFrame = inheritFrame->GetInFlowParent();
+      }
     }
+
     if (inheritFrame->GetType() == nsGkAtoms::canvasFrame) {
       
       

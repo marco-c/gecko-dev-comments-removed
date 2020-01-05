@@ -960,6 +960,14 @@ public:
   }
 
   
+  bool IsNativeScrollbarContent() const {
+    return IsNativeAnonymous() &&
+           IsAnyOfXULElements(nsGkAtoms::scrollbar,
+                              nsGkAtoms::resizer,
+                              nsGkAtoms::scrollcorner);
+  }
+
+  
   virtual already_AddRefed<nsIURI> GetBaseURI(bool aTryUseXHRDocBaseURI = false) const override;
 
   virtual nsresult GetEventTargetParent(
