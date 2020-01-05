@@ -123,21 +123,10 @@ public:
           mIndex->mFrecencyArray.ReplaceRecord(mOldRecord, entry->mRec);
         } else {
           
-          
-          
-          
-          
-          MOZ_ASSERT(entry->mRec->mFrecency == 0 ||
-                     entry->mRec->mFrecency > mOldFrecency);
-
-          
           mIndex->mFrecencyArray.RemoveRecord(mOldRecord);
           mIndex->mFrecencyArray.AppendRecord(entry->mRec);
         }
       } else if (entry->mRec->mFrecency != mOldFrecency) {
-        MOZ_ASSERT(entry->mRec->mFrecency == 0 ||
-                   entry->mRec->mFrecency > mOldFrecency);
-
         
         mIndex->mFrecencyArray.RemoveRecord(entry->mRec);
         mIndex->mFrecencyArray.AppendRecord(entry->mRec);
