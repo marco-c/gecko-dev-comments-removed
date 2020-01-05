@@ -463,6 +463,8 @@ public:
 
   void AsyncScrollbarDragRejected();
 
+  bool IsRootScrollFrameOfDocument() const { return mIsRoot; }
+
   
   nsCOMPtr<nsIContent> mHScrollbarContent;
   nsCOMPtr<nsIContent> mVScrollbarContent;
@@ -1037,6 +1039,10 @@ public:
     return mHelper.AsyncScrollbarDragRejected();
   }
 
+  virtual bool IsRootScrollFrameOfDocument() const override {
+    return mHelper.IsRootScrollFrameOfDocument();
+  }
+
   
   virtual void DoUpdateStyleOfOwnedAnonBoxes(mozilla::ServoStyleSet& aStyleSet,
                                              nsStyleChangeList& aChangeList,
@@ -1477,6 +1483,10 @@ public:
 
   virtual void AsyncScrollbarDragRejected() override {
     return mHelper.AsyncScrollbarDragRejected();
+  }
+
+  virtual bool IsRootScrollFrameOfDocument() const override {
+    return mHelper.IsRootScrollFrameOfDocument();
   }
 
   virtual void DoUpdateStyleOfOwnedAnonBoxes(mozilla::ServoStyleSet& aStyleSet,
