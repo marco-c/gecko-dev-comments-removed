@@ -220,18 +220,12 @@ Narrator.prototype = {
           return;
         }
 
-        
-        
-        let reWordBoundary = /\S+/g;
-        
-        reWordBoundary.lastIndex = e.charIndex;
-        let firstIndex = reWordBoundary.exec(paragraph.textContent);
-        if (firstIndex) {
-          highlighter.highlight(firstIndex.index, reWordBoundary.lastIndex);
+        if (e.charLength) {
+          highlighter.highlight(e.charIndex, e.charLength);
           if (this._inTest) {
             this._sendTestEvent("wordhighlight", {
-              start: firstIndex.index,
-              end: reWordBoundary.lastIndex
+              start: e.charIndex,
+              end: e.charIndex + e.charLength
             });
           }
         }
@@ -322,9 +316,9 @@ Highlighter.prototype = {
 
 
 
-  highlight: function(startOffset, endOffset) {
+  highlight: function(startOffset, length) {
     let containerRect = this.container.getBoundingClientRect();
-    let range = this._getRange(startOffset, endOffset);
+    let range = this._getRange(startOffset, startOffset + length);
     let rangeRects = range.getClientRects();
     let win = this.container.ownerDocument.defaultView;
     let computedStyle = win.getComputedStyle(range.endContainer.parentNode);
