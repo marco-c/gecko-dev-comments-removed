@@ -1063,7 +1063,7 @@ nsBulletFrame::Reflow(nsPresContext* aPresContext,
   
   aMetrics.SetOverflowAreasToDesiredBounds();
 
-  aStatus = NS_FRAME_COMPLETE;
+  aStatus.Reset();
   NS_FRAME_SET_TRUNCATION(aStatus, aReflowInput, aMetrics);
 }
 

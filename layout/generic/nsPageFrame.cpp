@@ -58,7 +58,7 @@ nsPageFrame::Reflow(nsPresContext*           aPresContext,
   MarkInReflow();
   DO_GLOBAL_REFLOW_COUNT("nsPageFrame");
   DISPLAY_REFLOW(aPresContext, this, aReflowInput, aDesiredSize, aStatus);
-  aStatus = NS_FRAME_COMPLETE;  
+  aStatus.Reset();  
 
   NS_ASSERTION(mFrames.FirstChild() &&
                nsGkAtoms::pageContentFrame == mFrames.FirstChild()->GetType(),
@@ -731,7 +731,7 @@ nsPageBreakFrame::Reflow(nsPresContext*           aPresContext,
   
   
   mHaveReflowed = true;
-  aStatus = NS_FRAME_COMPLETE; 
+  aStatus.Reset(); 
 }
 
 nsIAtom*

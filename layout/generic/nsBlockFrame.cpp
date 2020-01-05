@@ -1195,7 +1195,7 @@ nsBlockFrame::Reflow(nsPresContext*           aPresContext,
 
   
   nsOverflowAreas ocBounds;
-  nsReflowStatus ocStatus = NS_FRAME_COMPLETE;
+  nsReflowStatus ocStatus;
   if (GetPrevInFlow()) {
     ReflowOverflowContainerChildren(aPresContext, *reflowInput, ocBounds, 0,
                                     ocStatus);
@@ -1209,7 +1209,7 @@ nsBlockFrame::Reflow(nsPresContext*           aPresContext,
   
   DrainPushedFloats();
   nsOverflowAreas fcBounds;
-  nsReflowStatus fcStatus = NS_FRAME_COMPLETE;
+  nsReflowStatus fcStatus;
   ReflowPushedFloats(state, fcBounds, fcStatus);
 
   
@@ -3458,7 +3458,7 @@ nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
           aState.mReflowInput.mDiscoveredClearance;
       }
 
-      frameReflowStatus = NS_FRAME_COMPLETE;
+      frameReflowStatus.Reset();
       brc.ReflowBlock(availSpace, applyBStartMargin, aState.mPrevBEndMargin,
                       clearance, aState.IsAdjacentWithTop(),
                       aLine.get(), *blockHtmlRI, frameReflowStatus, aState);
@@ -6215,7 +6215,7 @@ nsBlockFrame::ReflowFloat(BlockReflowInput& aState,
   NS_PRECONDITION(aFloat->GetStateBits() & NS_FRAME_OUT_OF_FLOW,
                   "aFloat must be an out-of-flow frame");
   
-  aReflowStatus = NS_FRAME_COMPLETE;
+  aReflowStatus.Reset();
 
   WritingMode wm = aState.mReflowInput.GetWritingMode();
 #ifdef NOISY_FLOAT
@@ -6282,7 +6282,7 @@ nsBlockFrame::ReflowFloat(BlockReflowInput& aState,
              (NS_UNCONSTRAINEDSIZE == aAdjustedAvailableSpace.BSize(wm))) {
     
     
-    aReflowStatus = NS_FRAME_COMPLETE;
+    aReflowStatus.Reset();
   }
 
   if (aReflowStatus.NextInFlowNeedsReflow()) {
@@ -6294,7 +6294,7 @@ nsBlockFrame::ReflowFloat(BlockReflowInput& aState,
     
     
     if (aReflowStatus.IsIncomplete())
-      aReflowStatus = NS_FRAME_COMPLETE;
+      aReflowStatus.Reset();
   }
 
   

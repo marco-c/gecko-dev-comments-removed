@@ -28,7 +28,7 @@ nsPageContentFrame::Reflow(nsPresContext*           aPresContext,
   MarkInReflow();
   DO_GLOBAL_REFLOW_COUNT("nsPageContentFrame");
   DISPLAY_REFLOW(aPresContext, this, aReflowInput, aDesiredSize, aStatus);
-  aStatus = NS_FRAME_COMPLETE;  
+  aStatus.Reset();  
 
   if (GetPrevInFlow() && (GetStateBits() & NS_FRAME_FIRST_REFLOW)) {
     nsresult rv = aPresContext->PresShell()->FrameConstructor()
@@ -93,7 +93,7 @@ nsPageContentFrame::Reflow(nsPresContext*           aPresContext,
   }
 
   
-  nsReflowStatus fixedStatus = NS_FRAME_COMPLETE;
+  nsReflowStatus fixedStatus;
   ReflowAbsoluteFrames(aPresContext, aDesiredSize, aReflowInput, fixedStatus);
   NS_ASSERTION(fixedStatus.IsComplete(), "fixed frames can be truncated, but not incomplete");
 

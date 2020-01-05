@@ -901,7 +901,7 @@ nsComboboxControlFrame::Reflow(nsPresContext*          aPresContext,
       !aStatus.IsFullyComplete()) {
     
     
-    aStatus = NS_FRAME_COMPLETE;
+    aStatus.Reset();
   }
 }
 
@@ -1328,7 +1328,7 @@ nsComboboxDisplayFrame::Reflow(nsPresContext*           aPresContext,
   }
   state.SetComputedISize(computedISize);
   nsBlockFrame::Reflow(aPresContext, aDesiredSize, state, aStatus);
-  aStatus = NS_FRAME_COMPLETE; 
+  aStatus.Reset(); 
 }
 
 void

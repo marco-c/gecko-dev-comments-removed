@@ -855,7 +855,7 @@ nsTableWrapperFrame::Reflow(nsPresContext*           aPresContext,
 
   
   aDesiredSize.ClearSize();
-  aStatus = NS_FRAME_COMPLETE;
+  aStatus.Reset();
 
   if (!HasAnyStateBits(NS_FRAME_FIRST_REFLOW)) {
     

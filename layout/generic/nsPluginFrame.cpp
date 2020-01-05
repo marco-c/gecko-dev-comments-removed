@@ -506,13 +506,13 @@ nsPluginFrame::Reflow(nsPresContext*           aPresContext,
   
   
   if (!GetContent()->IsDoneAddingChildren()) {
-    aStatus = NS_FRAME_COMPLETE;
+    aStatus.Reset();
     return;
   }
 
   
   if (aPresContext->Medium() == nsGkAtoms::print) {
-    aStatus = NS_FRAME_COMPLETE;
+    aStatus.Reset();
     return;
   }
 
@@ -531,7 +531,7 @@ nsPluginFrame::Reflow(nsPresContext*           aPresContext,
     aPresContext->PresShell()->PostReflowCallback(this);
   }
 
-  aStatus = NS_FRAME_COMPLETE;
+  aStatus.Reset();
 
   NS_FRAME_SET_TRUNCATION(aStatus, aReflowInput, aMetrics);
 }

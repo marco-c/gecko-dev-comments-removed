@@ -116,7 +116,7 @@ nsRubyFrame::Reflow(nsPresContext* aPresContext,
   if (!aReflowInput.mLineLayout) {
     NS_ASSERTION(aReflowInput.mLineLayout,
                  "No line layout provided to RubyFrame reflow method.");
-    aStatus = NS_FRAME_COMPLETE;
+    aStatus.Reset();
     return;
   }
 
@@ -143,7 +143,7 @@ nsRubyFrame::Reflow(nsPresContext* aPresContext,
   aReflowInput.mLineLayout->BeginSpan(this, &aReflowInput,
                                       startEdge, availableISize, &mBaseline);
 
-  aStatus = NS_FRAME_COMPLETE;
+  aStatus.Reset();
   for (RubySegmentEnumerator e(this); !e.AtEnd(); e.Next()) {
     ReflowSegment(aPresContext, aReflowInput, e.GetBaseContainer(), aStatus);
 
@@ -155,7 +155,7 @@ nsRubyFrame::Reflow(nsPresContext* aPresContext,
   }
 
   ContinuationTraversingState pullState(this);
-  while (aStatus == NS_FRAME_COMPLETE) {
+  while (aStatus.IsEmpty()) {
     nsRubyBaseContainerFrame* baseContainer =
       PullOneSegment(aReflowInput.mLineLayout, pullState);
     if (!baseContainer) {
@@ -308,7 +308,7 @@ nsRubyFrame::ReflowSegment(nsPresContext* aPresContext,
     
     
     
-    NS_ASSERTION(textReflowStatus == NS_FRAME_COMPLETE,
+    NS_ASSERTION(textReflowStatus.IsEmpty(),
                  "Ruby text container must not break itself inside");
     
     

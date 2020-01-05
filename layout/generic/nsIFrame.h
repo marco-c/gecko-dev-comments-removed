@@ -262,6 +262,17 @@ public:
   }
 
   
+  bool IsEmpty() const {
+    return (!mIncomplete &&
+            !mOverflowIncomplete &&
+            !mNextInFlowNeedsReflow &&
+            !mTruncated &&
+            !mInlineBreak &&
+            !mInlineBreakAfter &&
+            !mFirstLetterComplete);
+  }
+
+  
   
   
   
@@ -368,8 +379,6 @@ private:
   bool mInlineBreakAfter : 1;
   bool mFirstLetterComplete : 1;
 };
-
-#define NS_FRAME_COMPLETE             0       // Note: not a bit!
 
 #define NS_FRAME_SET_TRUNCATION(aStatus, aReflowInput, aMetrics) \
   aStatus.UpdateTruncated(aReflowInput, aMetrics);

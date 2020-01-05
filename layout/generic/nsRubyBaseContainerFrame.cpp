@@ -307,7 +307,7 @@ nsRubyBaseContainerFrame::Reflow(nsPresContext* aPresContext,
   MarkInReflow();
   DO_GLOBAL_REFLOW_COUNT("nsRubyBaseContainerFrame");
   DISPLAY_REFLOW(aPresContext, this, aReflowInput, aDesiredSize, aStatus);
-  aStatus = NS_FRAME_COMPLETE;
+  aStatus.Reset();
 
   if (!aReflowInput.mLineLayout) {
     NS_ASSERTION(
@@ -470,8 +470,8 @@ nsRubyBaseContainerFrame::ReflowColumns(const RubyReflowInput& aReflowInput,
   const uint32_t rtcCount = aReflowInput.mTextContainers.Length();
   nscoord icoord = lineLayout->GetCurrentICoord();
   MOZ_ASSERT(icoord == 0, "border/padding of rbc should have been suppressed");
-  nsReflowStatus reflowStatus = NS_FRAME_COMPLETE;
-  aStatus = NS_FRAME_COMPLETE;
+  nsReflowStatus reflowStatus;
+  aStatus.Reset();
 
   uint32_t columnIndex = 0;
   RubyColumn column;
@@ -487,14 +487,14 @@ nsRubyBaseContainerFrame::ReflowColumns(const RubyReflowInput& aReflowInput,
       break;
     }
     
-    MOZ_ASSERT(reflowStatus == NS_FRAME_COMPLETE);
+    MOZ_ASSERT(reflowStatus.IsEmpty());
   }
 
   bool isComplete = false;
   PullFrameState pullFrameState(this, aReflowInput.mTextContainers);
   while (!reflowStatus.IsInlineBreak()) {
     
-    MOZ_ASSERT(reflowStatus == NS_FRAME_COMPLETE);
+    MOZ_ASSERT(reflowStatus.IsEmpty());
 
     
     

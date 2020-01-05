@@ -214,13 +214,13 @@ nsHTMLButtonControlFrame::Reflow(nsPresContext* aPresContext,
   
   
 
-  aStatus = NS_FRAME_COMPLETE;
+  aStatus.Reset();
   FinishReflowWithAbsoluteFrames(aPresContext, aDesiredSize,
                                  aReflowInput, aStatus);
 
   
   
-  aStatus = NS_FRAME_COMPLETE;
+  aStatus.Reset();
   MOZ_ASSERT(!GetNextInFlow());
 
   NS_FRAME_SET_TRUNCATION(aStatus, aReflowInput, aDesiredSize);

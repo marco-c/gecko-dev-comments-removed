@@ -803,7 +803,7 @@ nsTableRowFrame::ReflowChildren(nsPresContext*           aPresContext,
                                 nsTableFrame&            aTableFrame,
                                 nsReflowStatus&          aStatus)
 {
-  aStatus = NS_FRAME_COMPLETE;
+  aStatus.Reset();
 
   
   const bool isPaginated = aPresContext->IsPaginated();

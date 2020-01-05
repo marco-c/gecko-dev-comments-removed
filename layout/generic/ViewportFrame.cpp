@@ -290,7 +290,7 @@ ViewportFrame::Reflow(nsPresContext*           aPresContext,
   NS_FRAME_TRACE_REFLOW_IN("ViewportFrame::Reflow");
 
   
-  aStatus = NS_FRAME_COMPLETE;
+  aStatus.Reset();
 
   
   

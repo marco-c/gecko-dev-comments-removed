@@ -133,7 +133,7 @@ nsRubyTextContainerFrame::Reflow(nsPresContext* aPresContext,
   
   
   
-  aStatus = NS_FRAME_COMPLETE;
+  aStatus.Reset();
   WritingMode lineWM = aReflowInput.mLineLayout->GetWritingMode();
 
   nscoord minBCoord = nscoord_MAX;

@@ -649,7 +649,7 @@ nsCanvasFrame::Reflow(nsPresContext*           aPresContext,
   NS_FRAME_TRACE_REFLOW_IN("nsCanvasFrame::Reflow");
 
   
-  aStatus = NS_FRAME_COMPLETE;
+  aStatus.Reset();
 
   nsCanvasFrame* prevCanvasFrame = static_cast<nsCanvasFrame*>
                                                (GetPrevInFlow());
