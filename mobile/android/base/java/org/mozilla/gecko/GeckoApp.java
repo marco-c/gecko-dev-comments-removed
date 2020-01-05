@@ -185,7 +185,7 @@ public abstract class GeckoApp
 
     private static boolean sAlreadyLoaded;
 
-    protected boolean mResumingAfterOnCreate;
+    protected boolean mIgnoreLastSelectedTab;
     protected static WeakReference<GeckoApp> mLastActiveGeckoApp;
 
     protected RelativeLayout mRootLayout;
@@ -1299,8 +1299,6 @@ public abstract class GeckoApp
             return;
         }
 
-        mResumingAfterOnCreate = true;
-
         if (sAlreadyLoaded) {
             
             
@@ -1310,6 +1308,9 @@ public abstract class GeckoApp
             Telemetry.addToHistogram("FENNEC_RESTORING_ACTIVITY", 1);
 
         } else {
+            
+            mIgnoreLastSelectedTab = true;
+
             final String action = intent.getAction();
             final String args = intent.getStringExtra("args");
 
@@ -2288,6 +2289,7 @@ public abstract class GeckoApp
 
         final boolean isFirstTab = !mWasFirstTabShownAfterActivityUnhidden;
         mWasFirstTabShownAfterActivityUnhidden = true; 
+        mIgnoreLastSelectedTab = true;
 
         
         
@@ -2414,6 +2416,7 @@ public abstract class GeckoApp
             mCheckTabSelectionOnResume = false;
             restoreLastSelectedTab();
         }
+        mIgnoreLastSelectedTab = false;
 
         int newOrientation = getResources().getConfiguration().orientation;
         if (GeckoScreenOrientation.getInstance().update(newOrientation)) {
@@ -2463,8 +2466,6 @@ public abstract class GeckoApp
         });
 
         Restrictions.update(this);
-
-        mResumingAfterOnCreate = false;
     }
 
     

@@ -1159,7 +1159,9 @@ public class BrowserApp extends GeckoApp
 
     @Override
     protected void restoreLastSelectedTab() {
-        if (mResumingAfterOnCreate && !mIsRestoringActivity) {
+        if (mIgnoreLastSelectedTab) {
+            
+            
             
             return;
         }
