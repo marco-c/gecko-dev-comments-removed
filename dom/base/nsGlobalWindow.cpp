@@ -5169,6 +5169,14 @@ nsGlobalWindow::IsShowModalDialogEnabled(JSContext*, JSObject*)
   return !sIsDisabled && !XRE_IsContentProcess();
 }
 
+ bool
+nsGlobalWindow::IsRequestIdleCallbackEnabled(JSContext* aCx, JSObject* aObj)
+{
+  
+  return nsContentUtils::RequestIdleCallbackEnabled() ||
+         nsContentUtils::IsSystemCaller(aCx);
+}
+
 nsIDOMOfflineResourceList*
 nsGlobalWindow::GetApplicationCache(ErrorResult& aError)
 {
