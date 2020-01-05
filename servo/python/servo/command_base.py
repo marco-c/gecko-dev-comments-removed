@@ -381,7 +381,8 @@ class CommandBase(object):
 
         env['RUSTDOC'] = path.join(self.context.topdir, 'etc', 'rustdoc-with-private')
 
-        if self.config["tools"]["rustc-with-gold"]:
+        
+        if self.config["tools"]["rustc-with-gold"] and sys.platform not in ("win32", "msys"):
             if subprocess.call(['which', 'ld.gold'], stdout=PIPE, stderr=PIPE) == 0:
                 env['RUSTC'] = path.join(self.context.topdir, 'etc', 'rustc-with-gold')
 
