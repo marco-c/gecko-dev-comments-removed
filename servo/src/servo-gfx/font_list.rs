@@ -54,6 +54,8 @@ pub impl FontList {
         let mut result : Option<@FontEntry> = None;
 
         
+
+        
         do family.iter |fam| {
             result = fam.find_font_for_style(style);
         }
