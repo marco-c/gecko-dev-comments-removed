@@ -1380,8 +1380,6 @@ var SessionStoreInternal = {
 
       if (isFullyLoaded) {
         winData.title = tabbrowser.selectedBrowser.contentTitle || tabbrowser.selectedTab.label;
-        winData.title = this._replaceLoadingTitle(winData.title, tabbrowser,
-                                                  tabbrowser.selectedTab);
       }
 
       if (AppConstants.platform != "macosx") {
@@ -1934,7 +1932,7 @@ var SessionStoreInternal = {
 
     
     let tabbrowser = aWindow.gBrowser;
-    let tabTitle = this._replaceLoadingTitle(aTab.label, tabbrowser, aTab);
+    let tabTitle = aTab.label;
     let {permanentKey} = aTab.linkedBrowser;
 
     let tabData = {
@@ -2321,7 +2319,6 @@ var SessionStoreInternal = {
 
     
     
-    aWindow.gBrowser.setTabTitleLoading(newTab);
     newTab.setAttribute("busy", "true");
 
     
@@ -2862,7 +2859,6 @@ var SessionStoreInternal = {
 
     
     
-    window.gBrowser.setTabTitleLoading(tab);
     tab.setAttribute("busy", "true");
 
     
@@ -4469,22 +4465,6 @@ var SessionStoreInternal = {
 
   _isWindowLoaded: function ssi_isWindowLoaded(aWindow) {
     return !aWindow.__SS_restoreID;
-  },
-
-  
-
-
-
-
-
-
-
-  _replaceLoadingTitle: function ssi_replaceLoadingTitle(aString, aTabbrowser, aTab) {
-    if (aString == aTabbrowser.mStringBundle.getString("tabs.connecting")) {
-      aTabbrowser.setTabTitle(aTab);
-      [aString, aTab.label] = [aTab.label, aString];
-    }
-    return aString;
   },
 
   
