@@ -344,6 +344,7 @@ private:
                   nsTArray<RefPtr<ServoStyleSheet>>> mSheets;
   int32_t mBatching;
   bool mAllowResolveStaleStyles;
+  bool mAuthorStyleDisabled;
 
   
   

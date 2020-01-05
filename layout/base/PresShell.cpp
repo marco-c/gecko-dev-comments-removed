@@ -4608,7 +4608,9 @@ nsIPresShell::RestyleForCSSRuleChanges()
   
   
   
-  if (mStyleSet->IsServo()) {
+  
+  
+  if (mStyleSet->IsServo() && !mStyleSet->AsServo()->GetAuthorStyleDisabled()) {
     mStyleSet->AsServo()->NoteStyleSheetsChanged();
   }
 

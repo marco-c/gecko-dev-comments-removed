@@ -30,6 +30,7 @@ ServoStyleSet::ServoStyleSet()
   : mPresContext(nullptr)
   , mBatching(0)
   , mAllowResolveStaleStyles(false)
+  , mAuthorStyleDisabled(false)
 {
 }
 
@@ -124,13 +125,28 @@ ServoStyleSet::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
 bool
 ServoStyleSet::GetAuthorStyleDisabled() const
 {
-  return false;
+  return mAuthorStyleDisabled;
 }
 
 nsresult
 ServoStyleSet::SetAuthorStyleDisabled(bool aStyleDisabled)
 {
-  MOZ_CRASH("stylo: not implemented");
+  if (mAuthorStyleDisabled == aStyleDisabled) {
+    return NS_OK;
+  }
+
+  mAuthorStyleDisabled = aStyleDisabled;
+
+  
+  
+  if (mAuthorStyleDisabled) {
+    NoteStyleSheetsChanged();
+    Servo_StyleSet_FlushStyleSheets(mRawSet.get());
+  }
+  
+  
+
+  return NS_OK;
 }
 
 void
