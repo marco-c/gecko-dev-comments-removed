@@ -620,8 +620,8 @@ WINDOW_ONLY_EVENT(vrdisplaypresentchange,
                   EventNameType_None,
                   eBasicEventClass)
 
-WINDOW_ONLY_EVENT(install,
-                  eInstall,
+WINDOW_ONLY_EVENT(appinstalled,
+                  eAppInstalled,
                   EventNameType_None,
                   eBasicEventClass)
 

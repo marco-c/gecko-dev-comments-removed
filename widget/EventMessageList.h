@@ -63,6 +63,7 @@ NS_EVENT_MESSAGE(eScroll)
 
 
 NS_EVENT_MESSAGE(eInstall)
+NS_EVENT_MESSAGE(eAppInstalled)
 
 
 
