@@ -33,6 +33,9 @@ public:
                   net::ReferrerPolicy aReferrerPolicy,
                   const dom::SRIMetadata& aIntegrity);
 
+  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(ServoStyleSheet, StyleSheet)
+
   bool HasRules() const;
 
   void SetOwningDocument(nsIDocument* aDocument);
@@ -67,6 +70,9 @@ public:
   }
 
   
+  nsMediaList* Media() final;
+
+  
   
   
   
@@ -84,10 +90,9 @@ protected:
                               uint32_t aIndex, ErrorResult& aRv);
   void DeleteRuleInternal(uint32_t aIndex, ErrorResult& aRv);
 
-  void EnabledStateChangedInternal() {}
-
 private:
   void DropSheet();
+  void DropRuleList();
 
   RefPtr<RawServoStyleSheet> mSheet;
   RefPtr<ServoCSSRuleList> mRuleList;
