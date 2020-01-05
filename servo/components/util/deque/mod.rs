@@ -339,7 +339,7 @@ impl<T: Send + 'static> Drop for Deque<T> {
         let a = self.array.load(SeqCst);
         
         
-        for i in range(t, b) {
+        for i in t..b {
             let _: T = unsafe { (*a).get(i) };
         }
         self.pool.free(unsafe { transmute(a) });
@@ -392,7 +392,7 @@ impl<T: Send> Buffer<T> {
         
         
         let buf = Buffer::new(self.log_size.wrapping_add(delta as usize));
-        for i in range(t, b) {
+        for i in t..b {
             buf.put(i, self.get(i));
         }
         return buf;

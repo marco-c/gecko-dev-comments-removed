@@ -3,11 +3,10 @@
 
 
 use std::cmp::{max, min};
-use std::iter;
 use std::fmt;
-use std::num;
-use std::num::Int;
 use std::marker::PhantomData;
+use std::num::{self, Int};
+use std::ops;
 
 
 pub trait RangeIndex: Int + fmt::Debug {
@@ -239,12 +238,12 @@ impl<I: RangeIndex> fmt::Debug for Range<I> {
 
 
 pub struct EachIndex<T, I> {
-    it: iter::Range<T>,
+    it: ops::Range<T>,
     phantom: PhantomData<I>,
 }
 
 pub fn each_index<T: Int, I: RangeIndex<Index=T>>(start: I, stop: I) -> EachIndex<T, I> {
-    EachIndex { it: iter::range(start.get(), stop.get()), phantom: PhantomData }
+    EachIndex { it: start.get()..stop.get(), phantom: PhantomData }
 }
 
 impl<T: Int, I: RangeIndex<Index=T>> Iterator for EachIndex<T, I> {
