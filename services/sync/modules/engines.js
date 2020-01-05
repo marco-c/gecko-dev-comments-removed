@@ -711,6 +711,15 @@ Engine.prototype = {
 
   wipeClient: function () {
     this._notify("wipe-client", this.name, this._wipeClient)();
+  },
+
+  
+
+
+
+
+  getValidator: function () {
+    return null;
   }
 };
 
@@ -961,7 +970,7 @@ SyncEngine.prototype = {
 
 
 
-  _itemSource: function () {
+  itemSource: function () {
     return new Collection(this.engineURL, this._recordObj, this.service);
   },
 
@@ -978,7 +987,7 @@ SyncEngine.prototype = {
     let isMobile = (Svc.Prefs.get("client.type") == "mobile");
 
     if (!newitems) {
-      newitems = this._itemSource();
+      newitems = this.itemSource();
     }
 
     if (this._defaultSort) {

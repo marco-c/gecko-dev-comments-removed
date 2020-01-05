@@ -1526,3 +1526,9 @@ pref("browser.crashReports.unsubmittedCheck.enabled", true);
 
 pref("browser.crashReports.unsubmittedCheck.chancesUntilSuppress", 4);
 pref("browser.crashReports.unsubmittedCheck.autoSubmit", false);
+
+#ifdef NIGHTLY_BUILD
+
+
+pref("services.sync.validation.enabled", true);
+#endif

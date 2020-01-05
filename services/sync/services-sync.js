@@ -78,3 +78,17 @@ pref("services.sync.fxa.privacyURL", "https://accounts.firefox.com/legal/privacy
 
 pref("services.sync.telemetry.submissionInterval", 43200); 
 pref("services.sync.telemetry.maxPayloadCount", 500);
+
+
+
+
+
+pref("services.sync.validation.interval", 86400); 
+
+
+
+
+pref("services.sync.validation.percentageChance", 10);
+
+
+pref("services.sync.validation.maxRecords", 100);
