@@ -13,6 +13,8 @@
 
 namespace mozilla {
 
+class MediaContentType;
+
 
 class MP4Decoder : public MediaDecoder
 {
@@ -30,13 +32,7 @@ public:
 
   
   
-  
-  
-  static bool CanHandleMediaType(const nsACString& aMIMETypeExcludingCodecs,
-                                 const nsAString& aCodecs,
-                                 DecoderDoctorDiagnostics* aDiagnostics);
-
-  static bool CanHandleMediaType(const nsAString& aMIMEType,
+  static bool CanHandleMediaType(const MediaContentType& aType,
                                  DecoderDoctorDiagnostics* aDiagnostics);
 
   
