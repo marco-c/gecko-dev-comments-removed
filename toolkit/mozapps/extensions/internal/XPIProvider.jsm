@@ -3238,36 +3238,15 @@ this.XPIProvider = {
       return true;
     }
 
-    try {
-      if (!Array.from(addonList.values()).every(item => item.path && item.addon && validateAddon(item))) {
-        throw new Error("Rejecting updated system add-on set that either could not " +
-                        "be downloaded or contained unusable add-ons.");
-      }
-
-      
-      logger.info("Installing new system add-on set");
-      yield systemAddonLocation.installAddonSet(Array.from(addonList.values())
-        .map(a => a.addon));
-
-      
+    if (!Array.from(addonList.values()).every(item => item.path && item.addon && validateAddon(item))) {
+      throw new Error("Rejecting updated system add-on set that either could not " +
+                      "be downloaded or contained unusable add-ons.");
     }
-    finally {
-      
-      logger.info("Deleting temporary files");
-      for (let item of addonList.values()) {
-        
-        if (item.path) {
-          try {
-            yield OS.File.remove(item.path);
-          }
-          catch (e) {
-            logger.warn(`Failed to remove temporary file ${item.path}.`, e);
-          }
-        }
-      }
 
-      yield systemAddonLocation.cleanDirectories();
-    }
+    
+    logger.info("Installing new system add-on set");
+    yield systemAddonLocation.installAddonSet(Array.from(addonList.values())
+      .map(a => a.addon));
   }),
 
   
@@ -3371,8 +3350,9 @@ this.XPIProvider = {
     for (let location of this.installLocations) {
       aManifests[location.name] = {};
       
-      if (location.locked)
+      if (location.locked) {
         continue;
+      }
 
       let stagingDir = location.getStagingDir();
 
@@ -5784,7 +5764,9 @@ AddonInstall.prototype = {
 
     for (let { entryName, file } of aFiles) {
       logger.debug("Creating linked install from " + entryName);
-      let install = yield new Promise(resolve => AddonInstall.createInstall(resolve, file));
+      let install = yield new Promise(
+        resolve => AddonInstall.createInstall(resolve, file)
+      );
 
       
       install.ownsTempFile = true;
@@ -6318,49 +6300,13 @@ AddonInstall.prototype = {
         
         
         if (AddonManagerPrivate.hasUpgradeListener(this.addon.id)) {
-          logger.info(`${this.addon.id} has an upgrade listener, postponing until restart`);
-          this.state = AddonManager.STATE_POSTPONED;
-
-          let stagingDir = this.installLocation.getStagingDir();
-          let stagedAddon = stagingDir.clone();
-
-          Task.spawn((function*() {
-            yield this.installLocation.requestStagingDir();
-
-            yield this.unstageInstall(stagedAddon);
-
-            stagedAddon.append(this.addon.id);
-            stagedAddon.leafName = this.addon.id + ".xpi";
-
-            yield this.stageInstall(true, stagedAddon, true);
-
-            AddonManagerPrivate.callInstallListeners("onInstallPostponed",
-                                                     this.listeners, this.wrapper)
-
-            
-            
-            let callback = AddonManagerPrivate.getUpgradeListener(this.addon.id);
-            callback({
-              version: this.version,
-              install: () => {
-                switch (this.state) {
-                  case AddonManager.STATE_INSTALLED:
-                    
-                    logger.warn(`${this.addon.id} tried to resume postponed upgrade, but it's already installed`);
-                    break;
-                  case AddonManager.STATE_POSTPONED:
-                    logger.info(`${this.addon.id} has resumed a previously postponed upgrade`);
-                    this.state = AddonManager.STATE_DOWNLOADED;
-                    this.installLocation.releaseStagingDir();
-                    this.install();
-                    break;
-                  default:
-                    logger.warn(`${this.addon.id} cannot resume postponed upgrade from state (${this.state})`);
-                    break;
-                }
-              },
-            });
-          }).bind(this));
+          logger.info(`add-on ${this.addon.id} has an upgrade listener, postponing upgrade until restart`);
+          let resumeFn = () => {
+            logger.info(`${this.addon.id} has resumed a previously postponed upgrade`);
+            this.state = AddonManager.STATE_DOWNLOADED;
+            this.install();
+          }
+          this.postpone(resumeFn);
         } else {
           
           this.install();
@@ -6412,8 +6358,7 @@ AddonInstall.prototype = {
                                            this.addon.wrapper,
                                            requiresRestart);
 
-    let stagingDir = this.installLocation.getStagingDir();
-    let stagedAddon = stagingDir.clone();
+    let stagedAddon = this.installLocation.getStagingDir();
 
     Task.spawn((function*() {
       let installedUnpacked = 0;
@@ -6535,7 +6480,8 @@ AddonInstall.prototype = {
         recordAddonTelemetry(this.addon);
       }
     }).bind(this)).then(null, (e) => {
-      logger.warn("Failed to install " + this.file.path + " from " + this.sourceURI.spec + " to " + stagedAddon.path, e);
+      logger.warn(`Failed to install ${this.file.path} from ${this.sourceURI.spec} to ${stagedAddon.path}`, e);
+
       if (stagedAddon.exists())
         recursiveRemove(stagedAddon);
       this.state = AddonManager.STATE_INSTALL_FAILED;
@@ -6571,9 +6517,9 @@ AddonInstall.prototype = {
       installedUnpacked = 1;
     }
     else {
-      logger.debug("Addon " + this.addon.id + " will be installed as " +
-          "a packed xpi");
+      logger.debug(`Addon ${this.addon.id} will be installed as a packed xpi`);
       stagedAddon.leafName = this.addon.id + ".xpi";
+
       yield OS.File.copy(this.file.path, stagedAddon.path);
     }
 
@@ -6633,8 +6579,58 @@ AddonInstall.prototype = {
     }
 
     return this.badCertHandler.getInterface(iid);
+  },
+
+  
+
+
+
+
+
+  postpone: Task.async(function*(resumeFn) {
+    this.state = AddonManager.STATE_POSTPONED;
+
+    let stagingDir = this.installLocation.getStagingDir();
+    let stagedAddon = stagingDir.clone();
+
+    yield this.installLocation.requestStagingDir();
+    yield this.unstageInstall(stagedAddon);
+
+    stagedAddon.append(this.addon.id);
+    stagedAddon.leafName = this.addon.id + ".xpi";
+
+    yield this.stageInstall(true, stagedAddon, true);
+
+    AddonManagerPrivate.callInstallListeners("onInstallPostponed",
+                                             this.listeners, this.wrapper)
+
+    
+    
+    let callback = AddonManagerPrivate.getUpgradeListener(this.addon.id);
+    if (callback) {
+      callback({
+        version: this.version,
+        install: () => {
+          switch (this.state) {
+            case AddonManager.STATE_POSTPONED:
+              if (resumeFn) {
+                resumeFn();
+              }
+              break;
+            default:
+              logger.warn(`${this.addon.id} cannot resume postponed upgrade from state (${this.state})`);
+              break;
+          }
+        },
+      });
+    }
+    
+    
+    
+    this.installLocation.releaseStagingDir();
   }
-}
+)}
+
 
 
 
@@ -6649,6 +6645,7 @@ AddonInstall.createStagedInstall = function(aInstallLocation, aDir, aManifest) {
   let url = Services.io.newFileURI(aDir);
 
   let install = new AddonInstall(aInstallLocation, aDir);
+
   install.initStagedInstall(aManifest);
 };
 
@@ -6661,12 +6658,15 @@ AddonInstall.createStagedInstall = function(aInstallLocation, aDir, aManifest) {
 
 
 
-AddonInstall.createInstall = function(aCallback, aFile) {
-  let location = XPIProvider.installLocationsByName[KEY_APP_PROFILE];
+
+AddonInstall.createInstall = function(aCallback, aFile, aLocation = undefined) {
+  if (!aLocation) {
+    aLocation = XPIProvider.installLocationsByName[KEY_APP_PROFILE];
+  }
   let url = Services.io.newFileURI(aFile);
 
   try {
-    let install = new AddonInstall(location, url);
+    let install = new AddonInstall(aLocation, url);
     install.initLocalInstall(aCallback);
   }
   catch (e) {
@@ -7345,7 +7345,11 @@ AddonInternal.prototype = {
     if (!this._installLocation.locked && !this.pendingUninstall) {
       
       
-      if (this.type != "experiment" && !this._installLocation.isLinkedAddon(this.id)) {
+      let isSystem = (this._installLocation.name == KEY_APP_SYSTEM_DEFAULTS ||
+                      this._installLocation.name == KEY_APP_SYSTEM_ADDONS);
+      
+      if (this.type != "experiment" &&
+          !this._installLocation.isLinkedAddon(this.id) && !isSystem) {
         permissions |= AddonManager.PERM_CAN_UPGRADE;
       }
 
@@ -8562,9 +8566,12 @@ Object.assign(MutableDirectoryInstallLocation.prototype, {
 
 
 
+
 function SystemAddonInstallLocation(aName, aDirectory, aScope, aResetSet) {
   this._baseDir = aDirectory;
   this._nextDir = null;
+
+  this._stagingDirLock = 0;
 
   if (aResetSet)
     this.resetAddonSet();
@@ -8582,11 +8589,104 @@ function SystemAddonInstallLocation(aName, aDirectory, aScope, aResetSet) {
   }
 
   DirectoryInstallLocation.call(this, aName, this._directory, aScope);
-  this.locked = true;
+  this.locked = false;
 }
 
 SystemAddonInstallLocation.prototype = Object.create(DirectoryInstallLocation.prototype);
 Object.assign(SystemAddonInstallLocation.prototype, {
+  
+
+
+
+
+
+
+
+  cleanStagingDir: function(aLeafNames = []) {
+    let dir = this.getStagingDir();
+
+    for (let name of aLeafNames) {
+      let file = dir.clone();
+      file.append(name);
+      recursiveRemove(file);
+    }
+
+    if (this._stagingDirLock > 0)
+      return;
+
+    let dirEntries = dir.directoryEntries.QueryInterface(Ci.nsIDirectoryEnumerator);
+    try {
+      if (dirEntries.nextFile)
+        return;
+    }
+    finally {
+      dirEntries.close();
+    }
+
+    try {
+      setFilePermissions(dir, FileUtils.PERMS_DIRECTORY);
+      dir.remove(false);
+    }
+    catch (e) {
+      logger.warn("Failed to remove staging dir", e);
+      
+    }
+  },
+
+  
+
+
+
+
+
+  getStagingDir: function() {
+    this._addonSet = this._loadAddonSet();
+    let dir = null;
+    if (this._addonSet.directory) {
+      this._directory = this._baseDir.clone();
+      this._directory.append(this._addonSet.directory);
+      dir = this._directory.clone();
+      dir.append(DIR_STAGE);
+    }
+    else {
+      logger.info("SystemAddonInstallLocation directory is missing");
+    }
+
+    return dir;
+  },
+
+  requestStagingDir: function() {
+    this._stagingDirLock++;
+    if (this._stagingDirPromise)
+      return this._stagingDirPromise;
+
+    this._addonSet = this._loadAddonSet();
+    if (this._addonSet.directory) {
+      this._directory = this._baseDir.clone();
+      this._directory.append(this._addonSet.directory);
+    }
+
+    OS.File.makeDir(this._directory.path);
+    let stagepath = OS.Path.join(this._directory.path, DIR_STAGE);
+    return this._stagingDirPromise = OS.File.makeDir(stagepath).then(null, (e) => {
+      if (e instanceof OS.File.Error && e.becauseExists)
+        return;
+      logger.error("Failed to create staging directory", e);
+      throw e;
+    });
+  },
+
+  releaseStagingDir: function() {
+    this._stagingDirLock--;
+
+    if (this._stagingDirLock == 0) {
+      this._stagingDirPromise = null;
+      this.cleanStagingDir();
+    }
+
+    return Promise.resolve();
+  },
+
   
 
 
@@ -8607,6 +8707,9 @@ Object.assign(SystemAddonInstallLocation.prototype, {
   },
 
   
+
+
+
 
 
   _saveAddonSet: function(aAddonSet) {
@@ -8687,7 +8790,23 @@ Object.assign(SystemAddonInstallLocation.prototype, {
 
 
   resetAddonSet: function() {
-    this._saveAddonSet({ schema: 1, addons: {} });
+
+    if (this._addonSet) {
+      logger.info("Removing all system add-on upgrades.");
+
+      
+      
+      
+      this._saveAddonSet({ schema: 1, addons: {} });
+
+      for (let id of Object.keys(this._addonSet.addons)) {
+        AddonManager.getAddonByID(id, addon => {
+          if (addon) {
+            addon.uninstall();
+          }
+        });
+      }
+    }
   },
 
   
@@ -8752,9 +8871,20 @@ Object.assign(SystemAddonInstallLocation.prototype, {
 
 
 
+
+
   installAddonSet: Task.async(function*(aAddons) {
     
     yield OS.File.makeDir(this._baseDir.path, { ignoreExisting: true });
+
+    let addonSet = this._loadAddonSet();
+
+    
+    for (let addonID of Object.keys(addonSet.addons)) {
+      if (!aAddons.includes(addonID)) {
+        AddonManager.getAddonByID(addonID, a => a.uninstall());
+      }
+    }
 
     let newDir = this._baseDir.clone();
 
@@ -8770,47 +8900,184 @@ Object.assign(SystemAddonInstallLocation.prototype, {
         break;
       }
       catch (e) {
-        
+        logger.debug("Could not create new system add-on updates dir, retrying", e);
       }
-    }
-
-    let copyAddon = Task.async(function*(addon) {
-      let target = OS.Path.join(newDir.path, addon.id + ".xpi");
-      logger.info(`Copying ${addon.id} from ${addon._sourceBundle.path} to ${target}.`);
-      try {
-        yield OS.File.copy(addon._sourceBundle.path, target);
-      }
-      catch (e) {
-        logger.error(`Failed to copy ${addon.id} from ${addon._sourceBundle.path} to ${target}.`, e);
-        throw e;
-      }
-      addon._sourceBundle = new nsIFile(target);
-    });
-
-    try {
-      yield waitForAllPromises(aAddons.map(copyAddon));
-    }
-    catch (e) {
-      try {
-        yield OS.File.removeDir(newDir.path, { ignorePermissions: true });
-      }
-      catch (e) {
-        logger.warn(`Failed to remove new system add-on directory ${newDir.path}.`, e);
-      }
-      throw e;
     }
 
     
     let state = { schema: 1, directory: newDir.leafName, addons: {} };
+    this._saveAddonSet(state);
+
+    this._nextDir = newDir;
+    let location = this;
+
+    let installs = [];
     for (let addon of aAddons) {
-      state.addons[addon.id] = {
-        version: addon.version
+      let install = yield new Promise(resolve => {
+        AddonInstall.createInstall(resolve, addon._sourceBundle, location);
+      });
+      installs.push(install);
+    }
+
+    let installAddon = Task.async(function*(install) {
+      
+      install.ownsTempFile = true;
+      install.install();
+    });
+
+    let postponeAddon = Task.async(function*(install) {
+      let resumeFn;
+      if (AddonManagerPrivate.hasUpgradeListener(install.addon.id)) {
+        logger.info(`system add-on ${install.addon.id} has an upgrade listener, postponing upgrade set until restart`);
+        resumeFn = () => {
+          logger.info(`${install.addon.id} has resumed a previously postponed addon set`);
+          install.installLocation.resumeAddonSet(installs);
+        }
+      }
+      yield install.postpone(resumeFn);
+    });
+
+    let previousState;
+
+    try {
+      
+      state = { schema: 1, directory: newDir.leafName, addons: {} };
+      for (let addon of aAddons) {
+        state.addons[addon.id] = {
+          version: addon.version
+        }
+      }
+
+      previousState = this._loadAddonSet();
+      this._saveAddonSet(state);
+
+      let blockers = aAddons.filter(
+        addon => AddonManagerPrivate.hasUpgradeListener(addon.id)
+      );
+
+      if (blockers.length > 0) {
+        yield waitForAllPromises(installs.map(postponeAddon));
+      } else {
+        yield waitForAllPromises(installs.map(installAddon));
+      }
+    }
+    catch (e) {
+      
+      if (previousState) {
+        this._saveAddonSet(previousState);
+      }
+      
+      
+      this.resetAddonSet();
+
+      try {
+        yield OS.File.removeDir(newDir.path, { ignorePermissions: true });
+      }
+      catch (e) {
+        logger.warn(`Failed to remove failed system add-on directory ${newDir.path}.`, e);
+      }
+      throw e;
+    }
+  }),
+
+ 
+
+
+  resumeAddonSet: Task.async(function*(installs) {
+    let resumeAddon = Task.async(function*(install) {
+      install.state = AddonManager.STATE_DOWNLOADED;
+      install.installLocation.releaseStagingDir();
+      install.install();
+    });
+
+    let addonSet = this._loadAddonSet();
+    let addonIDs = Object.keys(addonSet.addons);
+
+    let blockers = installs.filter(
+      install => AddonManagerPrivate.hasUpgradeListener(install.addon.id)
+    );
+
+    if (blockers.length > 1) {
+      logger.warn("Attempted to resume system add-on install but upgrade blockers are still present");
+    } else {
+      yield waitForAllPromises(installs.map(resumeAddon));
+    }
+  }),
+
+  
+
+
+
+
+
+
+
+  getTrashDir: function() {
+    let trashDir = this._directory.clone();
+    trashDir.append(DIR_TRASH);
+    let trashDirExists = trashDir.exists();
+    try {
+      if (trashDirExists)
+        recursiveRemove(trashDir);
+      trashDirExists = false;
+    } catch (e) {
+      logger.warn("Failed to remove trash directory", e);
+    }
+    if (!trashDirExists)
+      trashDir.create(Ci.nsIFile.DIRECTORY_TYPE, FileUtils.PERMS_DIRECTORY);
+
+    return trashDir;
+  },
+
+  
+
+
+
+
+
+
+
+
+  installAddon: function({id, source}) {
+    let trashDir = this.getTrashDir();
+    let transaction = new SafeInstallOperation();
+
+    
+    
+    try {
+      if (source.isFile()) {
+        flushJarCache(source);
+      }
+
+      transaction.moveUnder(source, this._directory);
+    }
+    finally {
+      
+      
+      try {
+        recursiveRemove(trashDir);
+      }
+      catch (e) {
+        logger.warn("Failed to remove trash directory when installing " + id, e);
       }
     }
 
-    this._saveAddonSet(state);
-    this._nextDir = newDir;
-  }),
+    let newFile = this._directory.clone();
+    newFile.append(source.leafName);
+
+    try {
+      newFile.lastModifiedTime = Date.now();
+    } catch (e)  {
+      logger.warn("failed to set lastModifiedTime on " + newFile.path, e);
+    }
+    this._IDToFileMap[id] = newFile;
+    XPIProvider._addURIMapping(id, newFile);
+
+    return newFile;
+  },
+
+  
+  uninstallAddon: (aAddon) => {},
 });
 
 

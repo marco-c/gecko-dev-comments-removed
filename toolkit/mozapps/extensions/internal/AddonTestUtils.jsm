@@ -306,7 +306,28 @@ var AddonTestUtils = {
         testScope.do_print(`Got exception removing addon app dir: ${ex}`);
       }
 
-      var testDir = this.profileDir.clone();
+      
+      let featuresDir = this.profileDir.clone();
+      featuresDir.append("features");
+      
+      let systemAddonDirs = [];
+      if (featuresDir.exists()) {
+        let featuresDirEntries = featuresDir.directoryEntries
+                                            .QueryInterface(Ci.nsIDirectoryEnumerator);
+        while (featuresDirEntries.hasMoreElements()) {
+          let entry = featuresDirEntries.getNext();
+          entry.QueryInterface(Components.interfaces.nsIFile);
+          systemAddonDirs.push(entry);
+        }
+
+        systemAddonDirs.map(dir => {
+          dir.append("stage");
+          pathShouldntExist(dir);
+        });
+      }
+
+      
+      let testDir = this.profileDir.clone();
       testDir.append("extensions");
       testDir.append("trash");
       pathShouldntExist(testDir);
