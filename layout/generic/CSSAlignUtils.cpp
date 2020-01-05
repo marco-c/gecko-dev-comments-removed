@@ -84,10 +84,14 @@ CSSAlignUtils::AlignJustifySelf(uint8_t aAlignment, LogicalAxis aAxis,
   const auto& styleMargin = aRI.mStyleMargin->mMargin;
   bool hasAutoMarginStart;
   bool hasAutoMarginEnd;
-  if (aAxis == eLogicalAxisBlock) {
+  if (aFlags & AlignJustifyFlags::eIgnoreAutoMargins) {
+    
+    
+    hasAutoMarginStart = hasAutoMarginEnd = false;
+  } else if (aAxis == eLogicalAxisBlock) {
     hasAutoMarginStart = styleMargin.GetBStartUnit(wm) == eStyleUnit_Auto;
     hasAutoMarginEnd = styleMargin.GetBEndUnit(wm) == eStyleUnit_Auto;
-  } else {
+  } else { 
     hasAutoMarginStart = styleMargin.GetIStartUnit(wm) == eStyleUnit_Auto;
     hasAutoMarginEnd = styleMargin.GetIEndUnit(wm) == eStyleUnit_Auto;
   }

@@ -24,6 +24,10 @@ public:
     
     
     eSameSide          = 1 << 1,
+    
+    
+    
+    eIgnoreAutoMargins = 1 << 2,
   };
 
   
