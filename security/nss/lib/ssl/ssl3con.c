@@ -2726,10 +2726,7 @@ ssl3_SendRecord(sslSocket *ss,
 
 
         PR_ASSERT(type == content_alert);
-        rv = ssl3_InitState(ss);
-        if (rv != SECSuccess) {
-            return SECFailure; 
-        }
+        ssl3_InitState(ss);
     }
 
     
@@ -2935,6 +2932,7 @@ ssl3_SendApplicationData(sslSocket *ss, const unsigned char *in,
             ssl_GetXmitBufLock(ss);
         }
         toSend = PR_MIN(len - totalSent, MAX_FRAGMENT_LENGTH);
+
         
 
 
@@ -4101,11 +4099,9 @@ ssl3_InitHandshakeHashes(sslSocket *ss)
     return SECSuccess;
 }
 
-SECStatus
+void
 ssl3_RestartHandshakeHashes(sslSocket *ss)
 {
-    SECStatus rv = SECSuccess;
-
     SSL_TRC(30, ("%d: SSL3[%d]: reset handshake hashes",
                  SSL_GETPID(), ss->fd));
     ss->ssl3.hs.hashType = handshake_hash_unknown;
@@ -4118,7 +4114,6 @@ ssl3_RestartHandshakeHashes(sslSocket *ss)
         PK11_DestroyContext(ss->ssl3.hs.sha, PR_TRUE);
         ss->ssl3.hs.sha = NULL;
     }
-    return rv;
 }
 
 
@@ -5024,15 +5019,8 @@ ssl3_SendClientHello(sslSocket *ss, sslClientHelloType type)
     if (ss->ssl3.hs.helloRetry) {
         PORT_Assert(type == client_hello_retry);
     } else {
-        rv = ssl3_InitState(ss);
-        if (rv != SECSuccess) {
-            return rv; 
-        }
-
-        rv = ssl3_RestartHandshakeHashes(ss);
-        if (rv != SECSuccess) {
-            return rv;
-        }
+        ssl3_InitState(ss);
+        ssl3_RestartHandshakeHashes(ss);
     }
 
     
@@ -9164,16 +9152,8 @@ ssl3_HandleV2ClientHello(sslSocket *ss, unsigned char *buffer, int length,
         goto loser;
     }
 
-    rv = ssl3_InitState(ss);
-    if (rv != SECSuccess) {
-        ssl_ReleaseSSL3HandshakeLock(ss);
-        return rv; 
-    }
-    rv = ssl3_RestartHandshakeHashes(ss);
-    if (rv != SECSuccess) {
-        ssl_ReleaseSSL3HandshakeLock(ss);
-        return rv;
-    }
+    ssl3_InitState(ss);
+    ssl3_RestartHandshakeHashes(ss);
 
     if (ss->ssl3.hs.ws != wait_client_hello) {
         desc = unexpected_message;
@@ -11795,10 +11775,7 @@ ssl3_HandleHandshakeMessage(sslSocket *ss, SSL3Opaque *b, PRUint32 length,
     
 
     if (ss->ssl3.hs.msg_type == client_hello && !ss->ssl3.hs.helloRetry) {
-        rv = ssl3_RestartHandshakeHashes(ss);
-        if (rv != SECSuccess) {
-            return rv;
-        }
+        ssl3_RestartHandshakeHashes(ss);
     }
     
 
@@ -12590,11 +12567,8 @@ ssl3_HandleRecord(sslSocket *ss, SSL3Ciphertext *cText, sslBuffer *databuf)
 
     if (!ss->ssl3.initialized) {
         ssl_GetSSL3HandshakeLock(ss);
-        rv = ssl3_InitState(ss);
+        ssl3_InitState(ss);
         ssl_ReleaseSSL3HandshakeLock(ss);
-        if (rv != SECSuccess) {
-            return rv; 
-        }
     }
 
     
@@ -12914,15 +12888,13 @@ ssl3_InitCipherSpec(ssl3CipherSpec *spec)
 
 
 
-
-
-SECStatus
+void
 ssl3_InitState(sslSocket *ss)
 {
     PORT_Assert(ss->opt.noLocks || ssl_HaveSSL3HandshakeLock(ss));
 
     if (ss->ssl3.initialized)
-        return SECSuccess; 
+        return; 
 
     ss->ssl3.policy = SSL_ALLOWED;
 
@@ -12977,7 +12949,6 @@ ssl3_InitState(sslSocket *ss)
     ssl_FilterSupportedGroups(ss);
 
     ss->ssl3.initialized = PR_TRUE;
-    return SECSuccess;
 }
 
 

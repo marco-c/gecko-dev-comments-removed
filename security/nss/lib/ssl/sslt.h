@@ -305,6 +305,15 @@ typedef struct SSLPreliminaryChannelInfoStr {
     PRBool canSendEarlyData;
 
     
+    
+
+
+
+
+
+    PRUint32 maxEarlyDataSize;
+
+    
 
 } SSLPreliminaryChannelInfo;
 

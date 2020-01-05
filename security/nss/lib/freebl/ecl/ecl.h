@@ -11,27 +11,16 @@
 #include "blapi.h"
 #include "ecl-exp.h"
 #include "mpi.h"
+#include "eclt.h"
 
 struct ECGroupStr;
 typedef struct ECGroupStr ECGroup;
-
-
-ECGroup *ECGroup_fromHex(const ECCurveParams *params);
 
 
 ECGroup *ECGroup_fromName(const ECCurveName name);
 
 
 void ECGroup_free(ECGroup *group);
-
-
-ECCurveParams *EC_GetNamedCurveParams(const ECCurveName name);
-
-
-ECCurveParams *ECCurveParams_dup(const ECCurveParams *params);
-
-
-void EC_FreeCurveParams(ECCurveParams *params);
 
 
 
