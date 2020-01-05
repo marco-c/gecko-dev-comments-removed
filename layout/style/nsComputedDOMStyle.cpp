@@ -2088,6 +2088,20 @@ AppendCSSGradientToBoxPosition(const nsStyleGradient* aGradient,
     aString.AppendLiteral("to ");
   }
 
+  if (xValue == 0.0f) {
+    aString.AppendLiteral("left");
+  } else if (xValue == 1.0f) {
+    aString.AppendLiteral("right");
+  } else if (xValue != 0.5f) { 
+    NS_NOTREACHED("invalid box position");
+  }
+
+  if (xValue != 0.5f && yValue != 0.5f) {
+    
+    
+    aString.AppendLiteral(" ");
+  }
+
   if (yValue == 0.0f) {
     aString.AppendLiteral("top");
   } else if (yValue == 1.0f) {
@@ -2096,19 +2110,6 @@ AppendCSSGradientToBoxPosition(const nsStyleGradient* aGradient,
     NS_NOTREACHED("invalid box position");
   }
 
-  if (yValue != 0.5f && xValue != 0.5f) {
-    
-    
-    aString.AppendLiteral(" ");
-  }
-
-  if (xValue == 0.0f) {
-    aString.AppendLiteral("left");
-  } else if (xValue == 1.0f) {
-    aString.AppendLiteral("right");
-  } else if (xValue != 0.5f) { 
-    NS_NOTREACHED("invalid box position");
-  }
 
   aNeedSep = true;
 }
