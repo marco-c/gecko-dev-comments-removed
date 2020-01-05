@@ -174,6 +174,13 @@ AndroidDecoderModule::SupportsMimeType(const nsACString& aMimeType,
 already_AddRefed<MediaDataDecoder>
 AndroidDecoderModule::CreateVideoDecoder(const CreateDecoderParams& aParams)
 {
+  
+  
+  
+  
+  if (aParams.VideoConfig().HasAlpha()) {
+    return nullptr;
+  }
   MediaFormat::LocalRef format;
 
   const VideoInfo& config = aParams.VideoConfig();

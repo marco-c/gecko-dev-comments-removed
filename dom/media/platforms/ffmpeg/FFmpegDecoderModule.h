@@ -33,6 +33,13 @@ public:
   already_AddRefed<MediaDataDecoder>
   CreateVideoDecoder(const CreateDecoderParams& aParams) override
   {
+    
+    
+    
+    
+    if (aParams.VideoConfig().HasAlpha()) {
+      return nullptr;
+    }
     RefPtr<MediaDataDecoder> decoder =
       new FFmpegVideoDecoder<V>(mLib,
                                 aParams.mTaskQueue,
