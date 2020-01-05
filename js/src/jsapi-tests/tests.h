@@ -269,7 +269,7 @@ class JSAPITest
     {
         const size_t MAX_STACK_SIZE =
 
-#if (defined(DEBUG) && defined(__SUNPRO_CC))  || defined(JS_CPU_SPARC)
+#if (defined(DEBUG) && defined(__SUNPRO_CC)) || defined(__sparc__)
             
 
 
