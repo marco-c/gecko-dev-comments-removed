@@ -447,14 +447,18 @@ class CompileInfo
     
     
     
-    bool isObservableSlot(uint32_t slot) const {
-        if (isObservableFrameSlot(slot))
-            return true;
+    inline bool isObservableSlot(uint32_t slot) const {
+        if (slot >= firstLocalSlot()) {
+            
+            if (thisSlotForDerivedClassConstructor_)
+                return *thisSlotForDerivedClassConstructor_ == slot;
+            return false;
+        }
 
-        if (isObservableArgumentSlot(slot))
-            return true;
+        if (slot < firstArgSlot())
+            return isObservableFrameSlot(slot);
 
-        return false;
+        return isObservableArgumentSlot(slot);
     }
 
     bool isObservableFrameSlot(uint32_t slot) const {
