@@ -11,6 +11,8 @@ import org.mozilla.gecko.animation.ViewHelper;
 
 import android.content.Context;
 import android.graphics.drawable.Drawable;
+import android.support.v4.view.MarginLayoutParamsCompat;
+import android.support.v4.view.ViewCompat;
 import android.util.AttributeSet;
 
 
@@ -41,7 +43,7 @@ class BrowserToolbarTablet extends BrowserToolbarTabletBase {
         
         
         
-        ViewHelper.setTranslationX(forwardButton, -forwardButtonTranslationWidth);
+        ViewHelper.setTranslationX(forwardButton, forwardButtonTranslationWidth * (isLayoutRtl() ? 1 : -1));
 
         
         
@@ -50,6 +52,10 @@ class BrowserToolbarTablet extends BrowserToolbarTabletBase {
         forwardButton.setEnabled(true);
 
         updateForwardButtonState(ForwardButtonState.HIDDEN);
+    }
+
+    private boolean isLayoutRtl() {
+        return ViewCompat.getLayoutDirection(this) == ViewCompat.LAYOUT_DIRECTION_RTL;
     }
 
     private void updateForwardButtonState(final ForwardButtonState state) {
@@ -93,11 +99,11 @@ class BrowserToolbarTablet extends BrowserToolbarTabletBase {
                     
                     MarginLayoutParams layoutParams =
                         (MarginLayoutParams) urlDisplayLayout.getLayoutParams();
-                    layoutParams.leftMargin = 0;
+                    MarginLayoutParamsCompat.setMarginStart(layoutParams, 0);
 
                     
                     layoutParams = (MarginLayoutParams) urlEditLayout.getLayoutParams();
-                    layoutParams.leftMargin = 0;
+                    MarginLayoutParamsCompat.setMarginStart(layoutParams, 0);
 
                     requestLayout();
                     
@@ -113,10 +119,10 @@ class BrowserToolbarTablet extends BrowserToolbarTabletBase {
                     
                     MarginLayoutParams layoutParams =
                         (MarginLayoutParams) urlDisplayLayout.getLayoutParams();
-                    layoutParams.leftMargin = forwardButtonTranslationWidth;
+                    MarginLayoutParamsCompat.setMarginStart(layoutParams, forwardButtonTranslationWidth);
 
                     layoutParams = (MarginLayoutParams) urlEditLayout.getLayoutParams();
-                    layoutParams.leftMargin = forwardButtonTranslationWidth;
+                    MarginLayoutParamsCompat.setMarginStart(layoutParams, forwardButtonTranslationWidth);
 
                     newForwardButtonState = ForwardButtonState.DISPLAYED;
                 } else {
@@ -135,10 +141,11 @@ class BrowserToolbarTablet extends BrowserToolbarTabletBase {
     }
 
     private void prepareForwardAnimation(PropertyAnimator anim, ForwardButtonAnimation animation, int width) {
+        boolean isLayoutRtl = isLayoutRtl();
         if (animation == ForwardButtonAnimation.HIDE) {
             anim.attach(forwardButton,
                       PropertyAnimator.Property.TRANSLATION_X,
-                      -width);
+                      width * (isLayoutRtl ? 1 : -1));
             anim.attach(forwardButton,
                       PropertyAnimator.Property.ALPHA,
                       0);
