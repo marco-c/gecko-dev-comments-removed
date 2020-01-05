@@ -34,9 +34,6 @@ class AsyncPanZoomController;
 
 
 
-
-
-
 class GestureEventListener final {
 public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(GestureEventListener)
