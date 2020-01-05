@@ -10,15 +10,14 @@ use servo_util::str::DOMString;
 
 
 pub struct ProcessingInstruction {
-    
-    element: CharacterData,
+    characterdata: CharacterData,
     target: DOMString,
 }
 
 impl ProcessingInstruction {
     pub fn new_inherited(target: DOMString, data: DOMString, document: AbstractDocument) -> ProcessingInstruction {
         ProcessingInstruction {
-            element: CharacterData::new_inherited(ProcessingInstructionNodeTypeId, data, document),
+            characterdata: CharacterData::new_inherited(ProcessingInstructionNodeTypeId, data, document),
             target: target
         }
     }
