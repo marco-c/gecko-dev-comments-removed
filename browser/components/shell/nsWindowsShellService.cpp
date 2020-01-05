@@ -5,7 +5,6 @@
 
 #include "nsWindowsShellService.h"
 
-#include "city.h"
 #include "imgIContainer.h"
 #include "imgIRequest.h"
 #include "mozilla/gfx/2D.h"
@@ -152,38 +151,13 @@ OpenKeyForReading(HKEY aKeyRoot, const nsAString& aKeyName, HKEY* aKey)
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 typedef struct {
   const char* keyName;
   const char* valueData;
   const char* oldValueData;
 } SETTING;
 
-#define APP_REG_NAME_BASE L"Firefox-"
+#define APP_REG_NAME L"Firefox"
 #define VAL_FILE_ICON "%APPPATH%,1"
 #define VAL_OPEN "\"%APPPATH%\" -osint -url \"%1\""
 #define OLD_VAL_OPEN "\"%APPPATH%\" -requestPending -osint -url \"%1\""
@@ -241,7 +215,7 @@ nsresult
 GetHelperPath(nsAutoString& aPath)
 {
   nsresult rv;
-  nsCOMPtr<nsIProperties> directoryService =
+  nsCOMPtr<nsIProperties> directoryService = 
     do_GetService(NS_DIRECTORY_SERVICE_CONTRACTID, &rv);
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -367,7 +341,7 @@ IsAARDefault(const RefPtr<IApplicationAssociationRegistration>& pAAR,
   }
 
   LPCWSTR progID = isProtocol ? L"FirefoxURL" : L"FirefoxHTML";
-  bool isDefault = !wcsnicmp(registeredApp, progID, wcslen(progID));
+  bool isDefault = !wcsicmp(registeredApp, progID);
   CoTaskMemFree(registeredApp);
 
   return isDefault;
@@ -396,38 +370,6 @@ IsDefaultBrowserWin8(bool aCheckAllTypes, bool* aIsDefaultBrowser)
   }
 }
 
-static nsresult
-GetAppRegName(nsAutoString &aAppRegName)
-{
-  nsresult rv;
-  nsCOMPtr<nsIProperties> dirSvc =
-    do_GetService(NS_DIRECTORY_SERVICE_CONTRACTID, &rv);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  nsCOMPtr<nsIFile> exeFile;
-  rv = dirSvc->Get(XRE_EXECUTABLE_FILE,
-                   NS_GET_IID(nsIFile),
-                   getter_AddRefs(exeFile));
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  nsCOMPtr<nsIFile> appDir;
-  rv = exeFile->GetParent(getter_AddRefs(appDir));
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  nsAutoString path;
-  rv = appDir->GetPath(path);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  uint64_t hash = CityHash64(static_cast<const char *>(path.get()),
-                             path.Length() * sizeof(nsAutoString::char_type));
-
-  aAppRegName = APP_REG_NAME_BASE;
-  aAppRegName.AppendInt((int)hash, 16);
-  aAppRegName.AppendInt((int)(hash >> 32), 16);
-
-  return rv;
-}
-
 
 
 
@@ -450,10 +392,8 @@ nsWindowsShellService::IsDefaultBrowserVista(bool aCheckAllTypes,
 
   if (aCheckAllTypes) {
     BOOL res;
-    nsAutoString appRegName;
-    GetAppRegName(appRegName);
     hr = pAAR->QueryAppIsDefaultAll(AL_EFFECTIVE,
-                                    appRegName.get(),
+                                    APP_REG_NAME,
                                     &res);
     *aIsDefaultBrowser = res;
   } else if (!IsWin8OrLater()) {
@@ -697,9 +637,7 @@ nsWindowsShellService::LaunchControlPanelDefaultsSelectionUI()
                                 IID_IApplicationAssociationRegistrationUI,
                                 (void**)&pAARUI);
   if (SUCCEEDED(hr)) {
-    nsAutoString appRegName;
-    GetAppRegName(appRegName);
-    hr = pAARUI->LaunchAdvancedAssociationUI(appRegName.get());
+    hr = pAARUI->LaunchAdvancedAssociationUI(APP_REG_NAME);
     pAARUI->Release();
   }
   return SUCCEEDED(hr) ? NS_OK : NS_ERROR_FAILURE;
@@ -721,17 +659,14 @@ nsWindowsShellService::LaunchControlPanelDefaultPrograms()
     return NS_ERROR_FAILURE;
   }
 
-  nsAutoString params(NS_LITERAL_STRING("control.exe /name Microsoft.DefaultPrograms "
-    "/page pageDefaultProgram\\pageAdvancedSettings?pszAppName="));
-  nsAutoString appRegName;
-  GetAppRegName(appRegName);
-  params.Append(appRegName);
+  WCHAR params[] = L"control.exe /name Microsoft.DefaultPrograms /page "
+    "pageDefaultProgram\\pageAdvancedSettings?pszAppName=" APP_REG_NAME;
   STARTUPINFOW si = {sizeof(si), 0};
   si.dwFlags = STARTF_USESHOWWINDOW;
   si.wShowWindow = SW_SHOWDEFAULT;
   PROCESS_INFORMATION pi = {0};
-  if (!CreateProcessW(controlEXEPath, static_cast<LPWSTR>(params.get()), nullptr,
-                      nullptr, FALSE, 0, nullptr, nullptr, &si, &pi)) {
+  if (!CreateProcessW(controlEXEPath, params, nullptr, nullptr, FALSE,
+                      0, nullptr, nullptr, &si, &pi)) {
     return NS_ERROR_FAILURE;
   }
   CloseHandle(pi.hProcess);
@@ -860,7 +795,7 @@ nsWindowsShellService::LaunchHTTPHandlerPane()
   OPENASINFO info;
   info.pcszFile = L"http";
   info.pcszClass = nullptr;
-  info.oaifInFlags = OAIF_FORCE_REGISTRATION |
+  info.oaifInFlags = OAIF_FORCE_REGISTRATION | 
                      OAIF_URL_PROTOCOL |
                      OAIF_REGISTER_EXT;
   return DynSHOpenWithDialog(nullptr, &info);
@@ -1014,7 +949,7 @@ WriteBitmap(nsIFile* aFile, imgIContainer* aImage)
 }
 
 NS_IMETHODIMP
-nsWindowsShellService::SetDesktopBackground(nsIDOMElement* aElement,
+nsWindowsShellService::SetDesktopBackground(nsIDOMElement* aElement, 
                                             int32_t aPosition)
 {
   nsresult rv;
@@ -1024,7 +959,7 @@ nsWindowsShellService::SetDesktopBackground(nsIDOMElement* aElement,
   if (!imgElement) {
     
     return NS_ERROR_NOT_AVAILABLE;
-  }
+  } 
   else {
     nsCOMPtr<nsIImageLoadingContent> imageContent =
       do_QueryInterface(aElement, &rv);
@@ -1051,7 +986,7 @@ nsWindowsShellService::SetDesktopBackground(nsIDOMElement* aElement,
   rv = bundleService->CreateBundle(SHELLSERVICE_PROPERTIES,
                                    getter_AddRefs(shellBundle));
   NS_ENSURE_SUCCESS(rv, rv);
-
+ 
   
   nsString fileLeafName;
   rv = shellBundle->GetStringFromName
@@ -1145,7 +1080,7 @@ nsWindowsShellService::OpenApplication(int32_t aApplication)
   
   
   
-
+  
   
 
   
@@ -1192,7 +1127,7 @@ nsWindowsShellService::OpenApplication(int32_t aApplication)
   ::ZeroMemory(buf, sizeof(buf));
   do {
     cursor = path.FindChar('%', cursor);
-    if (cursor < 0)
+    if (cursor < 0) 
       break;
 
     temp = path.FindChar('%', cursor + 1);
@@ -1202,7 +1137,7 @@ nsWindowsShellService::OpenApplication(int32_t aApplication)
 
     ::GetEnvironmentVariableW(nsAutoString(Substring(path, cursor, temp - cursor)).get(),
                               buf, sizeof(buf));
-
+    
     
     
     path.Replace((cursor - 1), temp - cursor + 2, nsDependentString(buf));
@@ -1278,15 +1213,15 @@ nsWindowsShellService::OpenApplicationWithURI(nsIFile* aApplication,
                                               const nsACString& aURI)
 {
   nsresult rv;
-  nsCOMPtr<nsIProcess> process =
+  nsCOMPtr<nsIProcess> process = 
     do_CreateInstance("@mozilla.org/process/util;1", &rv);
   if (NS_FAILED(rv))
     return rv;
-
+  
   rv = process->Init(aApplication);
   if (NS_FAILED(rv))
     return rv;
-
+  
   const nsCString spec(aURI);
   const char* specStr = spec.get();
   return process->Run(false, &specStr, 1);
