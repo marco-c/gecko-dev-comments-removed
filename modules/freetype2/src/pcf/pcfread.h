@@ -25,8 +25,8 @@
 
 
 
-#ifndef __PCFREAD_H__
-#define __PCFREAD_H__
+#ifndef PCFREAD_H_
+#define PCFREAD_H_
 
 
 #include <ft2build.h>

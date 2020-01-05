@@ -15,8 +15,9 @@
 
 
 
-#ifndef __T42PARSE_H__
-#define __T42PARSE_H__
+
+#ifndef T42PARSE_H_
+#define T42PARSE_H_
 
 
 #include "t42objs.h"
@@ -42,11 +43,11 @@ FT_BEGIN_HEADER
   {
     T42_ParserRec  parser;          
 
-    FT_UInt        num_chars;       
+    FT_Int         num_chars;       
     PS_TableRec    encoding_table;  
                                     
 
-    FT_UInt        num_glyphs;
+    FT_Int         num_glyphs;
     PS_TableRec    glyph_names;
     PS_TableRec    charstrings;
     PS_TableRec    swap_table;      

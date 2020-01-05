@@ -16,8 +16,8 @@
 
 
 
-#ifndef __TTBDF_H__
-#define __TTBDF_H__
+#ifndef TTBDF_H_
+#define TTBDF_H_
 
 
 #include <ft2build.h>

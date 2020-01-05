@@ -16,31 +16,14 @@
 
 
 
-#ifndef __TTINTERP_H__
-#define __TTINTERP_H__
+#ifndef TTINTERP_H_
+#define TTINTERP_H_
 
 #include <ft2build.h>
 #include "ttobjs.h"
 
 
 FT_BEGIN_HEADER
-
-
-#ifndef TT_CONFIG_OPTION_STATIC_INTERPRETER 
-
-#define EXEC_OP_   TT_ExecContext  exc,
-#define EXEC_OP    TT_ExecContext  exc
-#define EXEC_ARG_  exc,
-#define EXEC_ARG   exc
-
-#else                                       
-
-#define EXEC_OP_
-#define EXEC_OP
-#define EXEC_ARG_
-#define EXEC_ARG
-
-#endif 
 
 
   
@@ -67,33 +50,38 @@ FT_BEGIN_HEADER
 
   
   typedef FT_F26Dot6
-  (*TT_Round_Func)( EXEC_OP_ FT_F26Dot6  distance,
-                             FT_F26Dot6  compensation );
+  (*TT_Round_Func)( TT_ExecContext  exc,
+                    FT_F26Dot6      distance,
+                    FT_F26Dot6      compensation );
 
   
   typedef void
-  (*TT_Move_Func)( EXEC_OP_ TT_GlyphZone  zone,
-                            FT_UShort     point,
-                            FT_F26Dot6    distance );
+  (*TT_Move_Func)( TT_ExecContext  exc,
+                   TT_GlyphZone    zone,
+                   FT_UShort       point,
+                   FT_F26Dot6      distance );
 
   
   typedef FT_F26Dot6
-  (*TT_Project_Func)( EXEC_OP_ FT_Pos   dx,
-                               FT_Pos   dy );
+  (*TT_Project_Func)( TT_ExecContext  exc,
+                      FT_Pos          dx,
+                      FT_Pos          dy );
 
   
   typedef FT_Long
-  (*TT_Cur_Ppem_Func)( EXEC_OP );
+  (*TT_Cur_Ppem_Func)( TT_ExecContext  exc );
 
   
   typedef FT_F26Dot6
-  (*TT_Get_CVT_Func)( EXEC_OP_ FT_ULong  idx );
+  (*TT_Get_CVT_Func)( TT_ExecContext  exc,
+                      FT_ULong        idx );
 
   
   
   typedef void
-  (*TT_Set_CVT_Func)( EXEC_OP_ FT_ULong    idx,
-                               FT_F26Dot6  value );
+  (*TT_Set_CVT_Func)( TT_ExecContext  exc,
+                      FT_ULong        idx,
+                      FT_F26Dot6      value );
 
 
   
@@ -111,7 +99,7 @@ FT_BEGIN_HEADER
   } TT_CallRec, *TT_CallStack;
 
 
-#ifdef TT_CONFIG_OPTION_SUBPIXEL_HINTING
+#ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
 
   
   
@@ -170,11 +158,11 @@ FT_BEGIN_HEADER
 
     FT_Long            top;        
 
-    FT_UInt            stackSize;  
+    FT_Long            stackSize;  
     FT_Long*           stack;      
 
     FT_Long            args;
-    FT_UInt            new_top;    
+    FT_Long            new_top;    
 
     TT_GlyphZoneRec    zp0,        
                        zp1,
@@ -182,6 +170,7 @@ FT_BEGIN_HEADER
                        pts,
                        twilight;
 
+    FT_Long            pointSize;  
     FT_Size_Metrics    metrics;
     TT_Size_Metrics    tt_metrics; 
 
@@ -260,11 +249,137 @@ FT_BEGIN_HEADER
     TT_Set_CVT_Func    func_move_cvt;  
 
     FT_Bool            grayscale;      
+                                       
 
-#ifdef TT_CONFIG_OPTION_SUBPIXEL_HINTING
+#ifdef TT_SUPPORT_SUBPIXEL_HINTING_MINIMAL
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+    
+    
+    FT_Bool            subpixel_hinting_lean;
+
+    
+    
+    
+    FT_Bool            vertical_lcd_lean;
+
+    
+    
+    
+    FT_Bool            backwards_compatibility;
+
+    
+    
+    FT_Bool            iupx_called;
+    FT_Bool            iupy_called;
+
+    
+    
+    
+    
+    
+    
+    FT_Bool            grayscale_cleartype;
+#endif 
+
+#ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
     TT_Round_Func      func_round_sphn;   
 
-    FT_Bool            subpixel;          
+    FT_Bool            subpixel_hinting;  
     FT_Bool            ignore_x_mode;     
                                           
                                           
@@ -274,7 +389,11 @@ FT_BEGIN_HEADER
     FT_Bool            compatible_widths;     
     FT_Bool            symmetrical_smoothing; 
     FT_Bool            bgr;                   
+    FT_Bool            vertical_lcd;          
+                                              
     FT_Bool            subpixel_positioned;   
+                                              
+    FT_Bool            gray_cleartype;        
                                               
 
     FT_Int             rasterizer_version;    
@@ -315,12 +434,13 @@ FT_BEGIN_HEADER
   FT_LOCAL( FT_Error )
   Update_Max( FT_Memory  memory,
               FT_ULong*  size,
-              FT_Long    multiplier,
+              FT_ULong   multiplier,
               void*      _pbuff,
               FT_ULong   new_max );
 #endif 
 
 
+  
   
   
   
@@ -358,8 +478,7 @@ FT_BEGIN_HEADER
                    TT_Size         ins );
 
   FT_LOCAL( FT_Error )
-  TT_Run_Context( TT_ExecContext  exec,
-                  FT_Bool         debug );
+  TT_Run_Context( TT_ExecContext  exec );
 #endif 
 
 

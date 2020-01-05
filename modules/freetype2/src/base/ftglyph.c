@@ -82,7 +82,7 @@
     }
     else
     {
-      FT_Bitmap_New( &glyph->bitmap );
+      FT_Bitmap_Init( &glyph->bitmap );
       error = FT_Bitmap_Copy( library, &slot->bitmap, &glyph->bitmap );
     }
 
@@ -125,10 +125,10 @@
     FT_BitmapGlyph  glyph = (FT_BitmapGlyph)bitmap_glyph;
 
 
-    cbox->xMin = glyph->left << 6;
-    cbox->xMax = cbox->xMin + ( glyph->bitmap.width << 6 );
-    cbox->yMax = glyph->top << 6;
-    cbox->yMin = cbox->yMax - ( glyph->bitmap.rows << 6 );
+    cbox->xMin = glyph->left * 64;
+    cbox->xMax = cbox->xMin + (FT_Pos)( glyph->bitmap.width * 64 );
+    cbox->yMax = glyph->top * 64;
+    cbox->yMin = cbox->yMax - (FT_Pos)( glyph->bitmap.rows * 64 );
   }
 
 
@@ -173,7 +173,9 @@
     }
 
     
-    error = FT_Outline_New( library, source->n_points, source->n_contours,
+    error = FT_Outline_New( library,
+                            (FT_UInt)source->n_points,
+                            source->n_contours,
                             &glyph->outline );
     if ( error )
       goto Exit;
@@ -205,8 +207,10 @@
     FT_Library       library = FT_GLYPH( source )->library;
 
 
-    error = FT_Outline_New( library, source->outline.n_points,
-                            source->outline.n_contours, &target->outline );
+    error = FT_Outline_New( library,
+                            (FT_UInt)source->outline.n_points,
+                            source->outline.n_contours,
+                            &target->outline );
     if ( !error )
       FT_Outline_Copy( &source->outline, &target->outline );
 
@@ -287,7 +291,7 @@
      FT_Glyph   glyph  = NULL;
 
 
-     *aglyph = 0;
+     *aglyph = NULL;
 
      if ( !FT_ALLOC( glyph, clazz->glyph_size ) )
      {
@@ -400,8 +404,8 @@
       goto Exit;
 
     
-    glyph->advance.x = slot->advance.x << 10;
-    glyph->advance.y = slot->advance.y << 10;
+    glyph->advance.x = slot->advance.x * 1024;
+    glyph->advance.y = slot->advance.y * 1024;
 
     
     error = clazz->glyph_init( glyph, slot );

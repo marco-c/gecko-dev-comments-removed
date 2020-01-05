@@ -16,8 +16,8 @@
 
 
 
-#ifndef __CIDOBJS_H__
-#define __CIDOBJS_H__
+#ifndef CIDOBJS_H_
+#define CIDOBJS_H_
 
 
 #include <ft2build.h>

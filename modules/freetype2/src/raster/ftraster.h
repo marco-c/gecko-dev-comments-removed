@@ -16,8 +16,8 @@
 
 
 
-#ifndef __FTRASTER_H__
-#define __FTRASTER_H__
+#ifndef FTRASTER_H_
+#define FTRASTER_H_
 
 
 #include <ft2build.h>

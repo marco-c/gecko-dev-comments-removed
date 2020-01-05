@@ -88,16 +88,16 @@
 
 
   FT_LOCAL_DEF( FTC_Node* )
-  ftc_get_top_node_for_hash( FTC_Cache   cache,
-                             FT_PtrDist  hash )
+  ftc_get_top_node_for_hash( FTC_Cache  cache,
+                             FT_Offset  hash )
   {
     FTC_Node*  pnode;
-    FT_UInt    idx;
+    FT_Offset  idx;
 
 
-    idx = (FT_UInt)( hash & cache->mask );
+    idx = hash & cache->mask;
     if ( idx < cache->p )
-      idx = (FT_UInt)( hash & ( 2 * cache->mask + 1 ) );
+      idx = hash & ( 2 * cache->mask + 1 );
     pnode = cache->buckets + idx;
     return pnode;
   }
@@ -224,7 +224,7 @@
   ftc_node_hash_unlink( FTC_Node   node0,
                         FTC_Cache  cache )
   {
-    FTC_Node  *pnode = FTC_NODE__TOP_FOR_HASH( cache, node0->hash );
+    FTC_Node  *pnode = FTC_NODE_TOP_FOR_HASH( cache, node0->hash );
 
 
     for (;;)
@@ -257,7 +257,7 @@
   ftc_node_hash_link( FTC_Node   node,
                       FTC_Cache  cache )
   {
-    FTC_Node  *pnode = FTC_NODE__TOP_FOR_HASH( cache, node->hash );
+    FTC_Node  *pnode = FTC_NODE_TOP_FOR_HASH( cache, node->hash );
 
 
     node->link = *pnode;
@@ -414,7 +414,7 @@
 
   static void
   ftc_cache_add( FTC_Cache  cache,
-                 FT_PtrDist hash,
+                 FT_Offset  hash,
                  FTC_Node   node )
   {
     node->hash        = hash;
@@ -442,7 +442,7 @@
 
   FT_LOCAL_DEF( FT_Error )
   FTC_Cache_NewNode( FTC_Cache   cache,
-                     FT_PtrDist  hash,
+                     FT_Offset   hash,
                      FT_Pointer  query,
                      FTC_Node   *anode )
   {
@@ -481,7 +481,7 @@
 
   FT_LOCAL_DEF( FT_Error )
   FTC_Cache_Lookup( FTC_Cache   cache,
-                    FT_PtrDist  hash,
+                    FT_Offset   hash,
                     FT_Pointer  query,
                     FTC_Node   *anode )
   {
@@ -498,7 +498,7 @@
       return FT_THROW( Invalid_Argument );
 
     
-    bucket = pnode = FTC_NODE__TOP_FOR_HASH( cache, hash );
+    bucket = pnode = FTC_NODE_TOP_FOR_HASH( cache, hash );
 
     
     
@@ -518,7 +518,7 @@
     if ( list_changed )
     {
       
-      bucket = pnode = FTC_NODE__TOP_FOR_HASH( cache, hash );
+      bucket = pnode = FTC_NODE_TOP_FOR_HASH( cache, hash );
 
       
       while ( *pnode != node )
@@ -576,7 +576,7 @@
       FTC_Node*  pnode  = bucket;
 
 
-      for ( ;; )
+      for (;;)
       {
         FTC_Node  node = *pnode;
         FT_Bool   list_changed = FALSE;

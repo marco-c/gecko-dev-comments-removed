@@ -17,8 +17,8 @@
 
 
 
-#ifndef __TTPOST_H__
-#define __TTPOST_H__
+#ifndef TTPOST_H_
+#define TTPOST_H_
 
 
 #include <ft2build.h>

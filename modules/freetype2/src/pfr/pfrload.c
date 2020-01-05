@@ -27,6 +27,93 @@
 
 
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
   
   
   
@@ -75,7 +162,8 @@
           if ( extra->type == item_type )
           {
             error = extra->parser( p, p + item_size, item_data );
-            if ( error ) goto Exit;
+            if ( error )
+              goto Exit;
 
             break;
           }
@@ -183,7 +271,8 @@
     {
       result = 0;
     }
-    return  result;
+
+    return result;
   }
 
 
@@ -199,20 +288,37 @@
   FT_LOCAL_DEF( FT_Error )
   pfr_log_font_count( FT_Stream  stream,
                       FT_UInt32  section_offset,
-                      FT_UInt   *acount )
+                      FT_Long   *acount )
   {
     FT_Error  error;
     FT_UInt   count;
     FT_UInt   result = 0;
 
 
-    if ( FT_STREAM_SEEK( section_offset ) || FT_READ_USHORT( count ) )
+    if ( FT_STREAM_SEEK( section_offset ) ||
+         FT_READ_USHORT( count )          )
       goto Exit;
+
+    
+    
+    
+    
+    
+    
+    if ( count > ( ( 1 << 16 ) - 2 ) / 5                ||
+         2 + count * 5 >= stream->size - section_offset ||
+         95 + count * ( 5 + 18 ) >= stream->size        )
+    {
+      FT_ERROR(( "pfr_log_font_count:"
+                 " invalid number of logical fonts\n" ));
+      error = FT_THROW( Invalid_Table );
+      goto Exit;
+    }
 
     result = count;
 
   Exit:
-    *acount = result;
+    *acount = (FT_Long)result;
     return error;
   }
 
@@ -254,13 +360,14 @@
       FT_UInt   local;
 
 
-      if ( FT_STREAM_SEEK( offset ) || FT_FRAME_ENTER( size ) )
+      if ( FT_STREAM_SEEK( offset ) ||
+           FT_FRAME_ENTER( size )   )
         goto Exit;
 
       p     = stream->cursor;
       limit = p + size;
 
-      PFR_CHECK(13);
+      PFR_CHECK( 13 );
 
       log_font->matrix[0] = PFR_NEXT_LONG( p );
       log_font->matrix[1] = PFR_NEXT_LONG( p );
@@ -276,7 +383,7 @@
         if ( flags & PFR_LOG_2BYTE_STROKE )
           local++;
 
-        if ( (flags & PFR_LINE_JOIN_MASK) == PFR_LINE_JOIN_MITER )
+        if ( ( flags & PFR_LINE_JOIN_MASK ) == PFR_LINE_JOIN_MITER )
           local += 3;
       }
       if ( flags & PFR_LOG_BOLD )
@@ -308,10 +415,11 @@
       if ( flags & PFR_LOG_EXTRA_ITEMS )
       {
         error = pfr_extra_items_skip( &p, limit );
-        if (error) goto Fail;
+        if ( error )
+          goto Fail;
       }
 
-      PFR_CHECK(5);
+      PFR_CHECK( 5 );
       log_font->phys_size   = PFR_NEXT_USHORT( p );
       log_font->phys_offset = PFR_NEXT_ULONG( p );
       if ( size_increment )
@@ -358,7 +466,7 @@
 
     PFR_CHECK( 5 );
 
-    p += 3;  
+    p     += 3;  
     flags0 = PFR_NEXT_BYTE( p );
     count  = PFR_NEXT_BYTE( p );
 
@@ -449,9 +557,9 @@
                                FT_Byte*     limit,
                                PFR_PhyFont  phy_font )
   {
-    FT_Error    error  = FT_Err_Ok;
-    FT_Memory   memory = phy_font->memory;
-    FT_PtrDist  len    = limit - p;
+    FT_Error   error  = FT_Err_Ok;
+    FT_Memory  memory = phy_font->memory;
+    FT_UInt    len    = (FT_UInt)( limit - p );
 
 
     if ( phy_font->font_id != NULL )
@@ -507,7 +615,7 @@
 
   Too_Short:
     error = FT_THROW( Invalid_Table );
-    FT_ERROR(( "pfr_exta_item_load_stem_snaps:"
+    FT_ERROR(( "pfr_extra_item_load_stem_snaps:"
                " invalid stem snaps table\n" ));
     goto Exit;
   }
@@ -525,8 +633,6 @@
     FT_Memory     memory = phy_font->memory;
 
 
-    FT_TRACE2(( "pfr_extra_item_load_kerning_pairs()\n" ));
-
     if ( FT_NEW( item ) )
       goto Exit;
 
@@ -535,7 +641,8 @@
     item->pair_count = PFR_NEXT_BYTE( p );
     item->base_adj   = PFR_NEXT_SHORT( p );
     item->flags      = PFR_NEXT_BYTE( p );
-    item->offset     = phy_font->offset + ( p - phy_font->cursor );
+    item->offset     = phy_font->offset +
+                       (FT_Offset)( p - phy_font->cursor );
 
 #ifndef PFR_CONFIG_NO_CHECKS
     item->pair_size = 3;
@@ -611,7 +718,6 @@
   }
 
 
-
   static const PFR_ExtraItemRec  pfr_phy_font_extra_items[] =
   {
     { 1, (PFR_ExtraItem_ParseFunc)pfr_extra_item_load_bitmap_info },
@@ -625,6 +731,7 @@
   
 
 
+
   static FT_Error
   pfr_aux_name_load( FT_Byte*     p,
                      FT_UInt      len,
@@ -636,12 +743,14 @@
     FT_UInt     n, ok;
 
 
+    if ( *astring )
+      FT_FREE( *astring );
+
     if ( len > 0 && p[len - 1] == 0 )
       len--;
 
     
-
-
+    
     ok = ( len > 0 );
     for ( n = 0; n < len; n++ )
       if ( p[n] < 32 || p[n] > 127 )
@@ -658,6 +767,7 @@
       FT_MEM_COPY( result, p, len );
       result[len] = 0;
     }
+
   Exit:
     *astring = result;
     return error;
@@ -728,7 +838,8 @@
     phy_font->kern_items      = NULL;
     phy_font->kern_items_tail = &phy_font->kern_items;
 
-    if ( FT_STREAM_SEEK( offset ) || FT_FRAME_ENTER( size ) )
+    if ( FT_STREAM_SEEK( offset ) ||
+         FT_FRAME_ENTER( size )   )
       goto Exit;
 
     phy_font->cursor = stream->cursor;
@@ -756,8 +867,8 @@
     
     if ( flags & PFR_PHY_EXTRA_ITEMS )
     {
-      error =  pfr_extra_items_parse( &p, limit,
-                                      pfr_phy_font_extra_items, phy_font );
+      error = pfr_extra_items_parse( &p, limit,
+                                     pfr_phy_font_extra_items, phy_font );
 
       if ( error )
         goto Fail;
@@ -775,7 +886,7 @@
       FT_Byte*  q2;
 
 
-      PFR_CHECK( num_aux );
+      PFR_CHECK_SIZE( num_aux );
       p += num_aux;
 
       while ( num_aux > 0 )
@@ -797,8 +908,7 @@
         {
         case 1:
           
-
-
+          
           error = pfr_aux_name_load( q, length - 4U, memory,
                                      &phy_font->family_name );
           if ( error )
@@ -817,8 +927,7 @@
 
         case 3:
           
-
-
+          
           error = pfr_aux_name_load( q, length - 4U, memory,
                                      &phy_font->style_name );
           if ( error )
@@ -864,10 +973,7 @@
 
 
       phy_font->num_chars    = count = PFR_NEXT_USHORT( p );
-      phy_font->chars_offset = offset + ( p - stream->cursor );
-
-      if ( FT_NEW_ARRAY( phy_font->chars, count ) )
-        goto Fail;
+      phy_font->chars_offset = offset + (FT_Offset)( p - stream->cursor );
 
       Size = 1 + 1 + 2;
       if ( flags & PFR_PHY_2BYTE_CHARCODE )
@@ -885,7 +991,10 @@
       if ( flags & PFR_PHY_3BYTE_GPS_OFFSET )
         Size += 1;
 
-      PFR_CHECK( count * Size );
+      PFR_CHECK_SIZE( count * Size );
+
+      if ( FT_NEW_ARRAY( phy_font->chars, count ) )
+        goto Fail;
 
       for ( n = 0; n < count; n++ )
       {
@@ -898,7 +1007,7 @@
 
         cur->advance   = ( flags & PFR_PHY_PROPORTIONAL )
                          ? PFR_NEXT_SHORT( p )
-                         : (FT_Int) phy_font->standard_advance;
+                         : phy_font->standard_advance;
 
 #if 0
         cur->ascii     = ( flags & PFR_PHY_ASCII_CODE )

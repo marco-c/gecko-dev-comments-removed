@@ -16,6 +16,7 @@
 
 
 
+
 #include <ft2build.h>
 #include FT_INTERNAL_DEBUG_H
 #include FT_INTERNAL_STREAM_H
@@ -36,11 +37,11 @@
   
   
 
-  static int
-  multiply_alpha( int  alpha,
-                  int  color )
+  static unsigned int
+  multiply_alpha( unsigned int  alpha,
+                  unsigned int  color )
   {
-    int  temp = ( alpha * color ) + 0x80;
+    unsigned int  temp = alpha * color + 0x80;
 
 
     return ( temp + ( temp >> 8 ) ) >> 8;
@@ -81,10 +82,10 @@
           blue  = multiply_alpha( alpha, blue  );
         }
 
-        base[0] = blue;
-        base[1] = green;
-        base[2] = red;
-        base[3] = alpha;
+        base[0] = (unsigned char)blue;
+        base[1] = (unsigned char)green;
+        base[2] = (unsigned char)red;
+        base[3] = (unsigned char)alpha;
       }
     }
   }
@@ -109,9 +110,9 @@
       unsigned int    blue  = base[2];
 
 
-      base[0] = blue;
-      base[1] = green;
-      base[2] = red;
+      base[0] = (unsigned char)blue;
+      base[1] = (unsigned char)green;
+      base[2] = (unsigned char)red;
       base[3] = 0xFF;
     }
   }
@@ -257,16 +258,16 @@
 
     if ( populate_map_and_metrics )
     {
-      FT_Long  size;
+      FT_ULong  size;
 
 
-      metrics->width  = (FT_Int)imgWidth;
-      metrics->height = (FT_Int)imgHeight;
+      metrics->width  = (FT_UShort)imgWidth;
+      metrics->height = (FT_UShort)imgHeight;
 
       map->width      = metrics->width;
       map->rows       = metrics->height;
       map->pixel_mode = FT_PIXEL_MODE_BGRA;
-      map->pitch      = map->width * 4;
+      map->pitch      = (int)( map->width * 4 );
       map->num_grays  = 256;
 
       
@@ -277,7 +278,7 @@
       }
 
       
-      size = map->rows * map->pitch;
+      size = map->rows * (FT_ULong)map->pitch;
 
       error = ft_glyphslot_alloc_bitmap( slot, size );
       if ( error )

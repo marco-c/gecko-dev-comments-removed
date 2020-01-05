@@ -16,11 +16,9 @@
 
 
 
-#ifndef __PSHPIC_H__
-#define __PSHPIC_H__
+#ifndef PSHPIC_H_
+#define PSHPIC_H_
 
-
-FT_BEGIN_HEADER
 
 #include FT_INTERNAL_PIC_H
 
@@ -32,6 +30,8 @@ FT_BEGIN_HEADER
 #else 
 
 #include FT_INTERNAL_POSTSCRIPT_HINTS_H
+
+FT_BEGIN_HEADER
 
   typedef struct  PSHinterPIC_
   {
@@ -51,11 +51,11 @@ FT_BEGIN_HEADER
   FT_Error
   pshinter_module_class_pic_init( FT_Library  library );
 
+FT_END_HEADER
+
 #endif 
 
  
-
-FT_END_HEADER
 
 #endif 
 

@@ -138,7 +138,7 @@
 #include FT_CONFIG_MODULES_H
 
     FT_FREE( classes );
-    pic_container->default_module_classes = 0;
+    pic_container->default_module_classes = NULL;
   }
 
 
@@ -164,7 +164,7 @@
 
     memory = library->memory;
 
-    pic_container->default_module_classes = 0;
+    pic_container->default_module_classes = NULL;
 
     if ( FT_ALLOC( classes, sizeof ( FT_Module_Class* ) *
                               ( FT_NUM_MODULE_CLASSES + 1 ) ) )
@@ -172,8 +172,8 @@
 
     
     for ( i = 0; i < FT_NUM_MODULE_CLASSES; i++ )
-      classes[i] = 0;
-    classes[FT_NUM_MODULE_CLASSES] = 0;
+      classes[i] = NULL;
+    classes[FT_NUM_MODULE_CLASSES] = NULL;
 
     i = 0;
 
@@ -226,6 +226,115 @@
   }
 
 
+#ifdef FT_CONFIG_OPTION_ENVIRONMENT_PROPERTIES
+
+#define MAX_LENGTH  128
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static void
+  ft_set_default_properties( FT_Library  library )
+  {
+    const char*  env;
+    const char*  p;
+    const char*  q;
+
+    char  module_name[MAX_LENGTH + 1];
+    char  property_name[MAX_LENGTH + 1];
+    char  property_value[MAX_LENGTH + 1];
+
+    int  i;
+
+
+    env = ft_getenv( "FREETYPE_PROPERTIES" );
+    if ( !env )
+      return;
+
+    for ( p = env; *p; p++ )
+    {
+      
+      if ( *p == ' ' || *p == '\t' )
+        continue;
+
+      
+      q = p;
+      for ( i = 0; i < MAX_LENGTH; i++ )
+      {
+        if ( !*p || *p == ':' )
+          break;
+        module_name[i] = *p++;
+      }
+      module_name[i] = '\0';
+
+      if ( !*p || *p != ':' || p == q )
+        break;
+
+      
+      q = ++p;
+      for ( i = 0; i < MAX_LENGTH; i++ )
+      {
+        if ( !*p || *p == '=' )
+          break;
+        property_name[i] = *p++;
+      }
+      property_name[i] = '\0';
+
+      if ( !*p || *p != '=' || p == q )
+        break;
+
+      
+      q = ++p;
+      for ( i = 0; i < MAX_LENGTH; i++ )
+      {
+        if ( !*p || *p == ' ' || *p == '\t' )
+          break;
+        property_value[i] = *p++;
+      }
+      property_value[i] = '\0';
+
+      if ( !( *p == '\0' || *p == ' ' || *p == '\t' ) || p == q )
+        break;
+
+      
+      ft_property_string_set( library,
+                              module_name,
+                              property_name,
+                              property_value );
+    }
+  }
+
+#else
+
+  static void
+  ft_set_default_properties( FT_Library  library )
+  {
+    FT_UNUSED( library );
+  }
+
+#endif
+
+
   
 
   FT_EXPORT_DEF( FT_Error )
@@ -255,6 +364,8 @@
       FT_Done_Memory( memory );
     else
       FT_Add_Default_Modules( *alibrary );
+
+    ft_set_default_properties( *alibrary );
 
     return error;
   }

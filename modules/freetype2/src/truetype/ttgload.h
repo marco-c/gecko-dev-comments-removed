@@ -16,8 +16,8 @@
 
 
 
-#ifndef __TTGLOAD_H__
-#define __TTGLOAD_H__
+#ifndef TTGLOAD_H_
+#define TTGLOAD_H_
 
 
 #include <ft2build.h>

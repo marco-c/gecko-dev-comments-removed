@@ -16,8 +16,8 @@
 
 
 
-#ifndef __OTVALID_H__
-#define __OTVALID_H__
+#ifndef OTVALID_H_
+#define OTVALID_H_
 
 
 #include <ft2build.h>

@@ -16,8 +16,8 @@
 
 
 
-#ifndef __PFRDRIVR_H__
-#define __PFRDRIVR_H__
+#ifndef PFRDRIVR_H_
+#define PFRDRIVR_H_
 
 
 #include <ft2build.h>

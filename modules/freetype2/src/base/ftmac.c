@@ -228,7 +228,7 @@
 
 
     if ( !fontName || !face_index )
-      return FT_THROW( Invalid_Argument) ;
+      return FT_THROW( Invalid_Argument);
 
     err = FT_GetFileRef_From_Mac_ATS_Name( fontName, &ref, face_index );
     if ( err )
@@ -618,11 +618,11 @@
           total_size += 6; 
       }
 
-      total_size += GetHandleSize( post_data ) - 2;
+      total_size += (FT_ULong)GetHandleSize( post_data ) - 2;
       last_code = code;
 
       
-      if ( total_size < old_total_size )
+      if ( FT_MAC_RFORK_MAX_LEN < total_size )
       {
         error = FT_THROW( Array_Too_Large );
         goto Error;
@@ -747,6 +747,11 @@
       return FT_THROW( Invalid_Handle );
 
     sfnt_size = (FT_ULong)GetHandleSize( sfnt );
+
+    
+    if ( FT_MAC_RFORK_MAX_LEN < sfnt_size )
+      return FT_THROW( Array_Too_Large );
+
     if ( FT_ALLOC( sfnt_data, (FT_Long)sfnt_size ) )
     {
       ReleaseResource( sfnt );

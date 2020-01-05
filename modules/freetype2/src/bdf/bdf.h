@@ -22,8 +22,8 @@
 
 
 
-#ifndef __BDF_H__
-#define __BDF_H__
+#ifndef BDF_H_
+#define BDF_H_
 
 
 
@@ -33,6 +33,7 @@
 #include <ft2build.h>
 #include FT_INTERNAL_OBJECTS_H
 #include FT_INTERNAL_STREAM_H
+#include FT_INTERNAL_HASH_H
 
 
 FT_BEGIN_HEADER
@@ -40,12 +41,12 @@ FT_BEGIN_HEADER
 
 
 
-#define _bdf_glyph_modified( map, e )                 \
-          ( (map)[(e) >> 5] & ( 1 << ( (e) & 31 ) ) )
-#define _bdf_set_glyph_modified( map, e )              \
-          ( (map)[(e) >> 5] |= ( 1 << ( (e) & 31 ) ) )
-#define _bdf_clear_glyph_modified( map, e )             \
-          ( (map)[(e) >> 5] &= ~( 1 << ( (e) & 31 ) ) )
+#define _bdf_glyph_modified( map, e )                     \
+          ( (map)[(e) >> 5] & ( 1UL << ( (e) & 31 ) ) )
+#define _bdf_set_glyph_modified( map, e )                 \
+          ( (map)[(e) >> 5] |= ( 1UL << ( (e) & 31 ) ) )
+#define _bdf_clear_glyph_modified( map, e )               \
+          ( (map)[(e) >> 5] &= ~( 1UL << ( (e) & 31 ) ) )
 
 
 
@@ -157,24 +158,6 @@ FT_BEGIN_HEADER
   } bdf_glyph_t;
 
 
-  typedef struct  _hashnode_
-  {
-    const char*  key;
-    size_t       data;
-
-  } _hashnode, *hashnode;
-
-
-  typedef struct  hashtable_
-  {
-    int        limit;
-    int        size;
-    int        used;
-    hashnode*  table;
-
-  } hashtable;
-
-
   typedef struct  bdf_glyphlist_t_
   {
     unsigned short  pad;          
@@ -194,7 +177,7 @@ FT_BEGIN_HEADER
     char*            name;           
     bdf_bbx_t        bbx;            
 
-    long             point_size;     
+    unsigned long    point_size;     
     unsigned long    resolution_x;   
     unsigned long    resolution_y;   
 
@@ -238,7 +221,7 @@ FT_BEGIN_HEADER
 
     bdf_property_t*  user_props;
     unsigned long    nuser_props;
-    hashtable        proptbl;
+    FT_HashRec       proptbl;
 
   } bdf_font_t;
 

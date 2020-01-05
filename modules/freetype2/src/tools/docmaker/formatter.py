@@ -56,6 +56,11 @@ class  Formatter:
         self.block_index = self.identifiers.keys()
         self.block_index.sort( key = index_key )
 
+        
+        
+        for section in self.sections:
+            self.add_identifier( section.name, section )
+
     def  add_identifier( self, name, block ):
         if name in self.identifiers:
             

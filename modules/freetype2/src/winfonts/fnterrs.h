@@ -23,12 +23,12 @@
   
   
 
-#ifndef __FNTERRS_H__
-#define __FNTERRS_H__
+#ifndef FNTERRS_H_
+#define FNTERRS_H_
 
 #include FT_MODULE_ERRORS_H
 
-#undef __FTERRORS_H__
+#undef FTERRORS_H_
 
 #undef  FT_ERR_PREFIX
 #define FT_ERR_PREFIX  FNT_Err_

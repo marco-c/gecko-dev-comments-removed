@@ -20,7 +20,7 @@
 #include FT_INTERNAL_DEBUG_H
 #include FT_INTERNAL_STREAM_H
 #include FT_SERVICE_PFR_H
-#include FT_SERVICE_XFREE86_NAME_H
+#include FT_SERVICE_FONT_FORMAT_H
 #include "pfrdrivr.h"
 #include "pfrobjs.h"
 
@@ -43,12 +43,14 @@
     if ( phys->outline_resolution != phys->metrics_resolution )
     {
       if ( avector->x != 0 )
-        avector->x = FT_MulDiv( avector->x, phys->outline_resolution,
-                                            phys->metrics_resolution );
+        avector->x = FT_MulDiv( avector->x,
+                                (FT_Long)phys->outline_resolution,
+                                (FT_Long)phys->metrics_resolution );
 
       if ( avector->y != 0 )
-        avector->y = FT_MulDiv( avector->x, phys->outline_resolution,
-                                            phys->metrics_resolution );
+        avector->y = FT_MulDiv( avector->y,
+                                (FT_Long)phys->outline_resolution,
+                                (FT_Long)phys->metrics_resolution );
     }
 
     return FT_Err_Ok;
@@ -118,10 +120,10 @@
     if ( size )
     {
       x_scale = FT_DivFix( size->metrics.x_ppem << 6,
-                           phys->metrics_resolution );
+                           (FT_Long)phys->metrics_resolution );
 
       y_scale = FT_DivFix( size->metrics.y_ppem << 6,
-                           phys->metrics_resolution );
+                           (FT_Long)phys->metrics_resolution );
     }
 
     if ( ametrics_x_scale )
@@ -137,9 +139,9 @@
   static
   const FT_Service_PfrMetricsRec  pfr_metrics_service_rec =
   {
-    pfr_get_metrics,
-    pfr_face_get_kerning,
-    pfr_get_advance
+    pfr_get_metrics,          
+    pfr_face_get_kerning,     
+    pfr_get_advance           
   };
 
 
@@ -151,7 +153,7 @@
   static const FT_ServiceDescRec  pfr_services[] =
   {
     { FT_SERVICE_ID_PFR_METRICS, &pfr_metrics_service_rec },
-    { FT_SERVICE_ID_XF86_NAME,   FT_XF86_FORMAT_PFR },
+    { FT_SERVICE_ID_FONT_FORMAT, FT_FONT_FORMAT_PFR },
     { NULL, NULL }
   };
 
@@ -179,31 +181,32 @@
       0x10000L,
       0x20000L,
 
-      NULL,
+      0,    
 
-      0,                
-      0,                
-      pfr_get_service
+      0,                        
+      0,                        
+      pfr_get_service           
     },
 
     sizeof ( PFR_FaceRec ),
     sizeof ( PFR_SizeRec ),
     sizeof ( PFR_SlotRec ),
 
-    pfr_face_init,
-    pfr_face_done,
-    0,                  
-    0,                  
-    pfr_slot_init,
-    pfr_slot_done,
+    pfr_face_init,              
+    pfr_face_done,              
+    0,                          
+    0,                          
+    pfr_slot_init,              
+    pfr_slot_done,              
 
-    pfr_slot_load,
+    pfr_slot_load,              
 
-    pfr_get_kerning,
-    0,                  
-    0,                  
-    0,                  
-    0,                  
+    pfr_get_kerning,            
+    0,                          
+    0,                          
+
+    0,                          
+    0,                          
   };
 
 

@@ -16,8 +16,8 @@
 
 
 
-#ifndef __PSCONV_H__
-#define __PSCONV_H__
+#ifndef PSCONV_H_
+#define PSCONV_H_
 
 
 #include <ft2build.h>

@@ -36,8 +36,8 @@
 
 
 
-#ifndef __CF2INTRP_H__
-#define __CF2INTRP_H__
+#ifndef CF2INTRP_H_
+#define CF2INTRP_H_
 
 
 #include "cf2ft.h"

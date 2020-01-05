@@ -16,11 +16,9 @@
 
 
 
-#ifndef __AFPIC_H__
-#define __AFPIC_H__
+#ifndef AFPIC_H_
+#define AFPIC_H_
 
-
-FT_BEGIN_HEADER
 
 #include FT_INTERNAL_PIC_H
 
@@ -42,6 +40,8 @@ FT_BEGIN_HEADER
 
 #include "aftypes.h"
 
+
+FT_BEGIN_HEADER
 
   typedef struct  AFModulePIC_
   {
@@ -93,11 +93,11 @@ FT_BEGIN_HEADER
   FT_Error
   autofit_module_class_pic_init( FT_Library  library );
 
+FT_END_HEADER
+
 #endif 
 
  
-
-FT_END_HEADER
 
 #endif 
 

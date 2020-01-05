@@ -16,8 +16,8 @@
 
 
 
-#ifndef __TTOBJS_H__
-#define __TTOBJS_H__
+#ifndef TTOBJS_H_
+#define TTOBJS_H_
 
 
 #include <ft2build.h>
@@ -37,17 +37,6 @@ FT_BEGIN_HEADER
   
   
   typedef struct TT_DriverRec_*  TT_Driver;
-
-
-  
-  
-  
-  
-  
-  
-  
-  
-  typedef struct TT_SizeRec_*  TT_Size;
 
 
   
@@ -82,10 +71,6 @@ FT_BEGIN_HEADER
     FT_UnitVector  dualVector;
     FT_UnitVector  projVector;
     FT_UnitVector  freeVector;
-
-#ifdef TT_CONFIG_OPTION_UNPATENTED_HINTING
-    FT_Bool        both_x_axis;
-#endif
 
     FT_Long        loop;
     FT_F26Dot6     minimum_distance;
@@ -160,7 +145,7 @@ FT_BEGIN_HEADER
   typedef struct  TT_CodeRange_
   {
     FT_Byte*  base;
-    FT_ULong  size;
+    FT_Long   size;
 
   } TT_CodeRange;
 
@@ -301,6 +286,8 @@ FT_BEGIN_HEADER
 
 #ifdef TT_USE_BYTECODE_INTERPRETER
 
+    FT_Long            point_size;    
+
     FT_UInt            num_function_defs; 
     FT_UInt            max_function_defs;
     TT_DefArray        function_defs;     
@@ -324,13 +311,6 @@ FT_BEGIN_HEADER
 
     TT_GlyphZoneRec    twilight;     
 
-    
-
-    
-    
-    
-
-    FT_Bool            debug;
     TT_ExecContext     context;
 
     
@@ -351,7 +331,6 @@ FT_BEGIN_HEADER
   {
     FT_DriverRec  root;
 
-    TT_ExecContext   context;  
     TT_GlyphZoneRec  zone;     
 
     FT_UInt  interpreter_version;

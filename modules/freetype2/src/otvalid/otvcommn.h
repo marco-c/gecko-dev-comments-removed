@@ -16,8 +16,8 @@
 
 
 
-#ifndef __OTVCOMMN_H__
-#define __OTVCOMMN_H__
+#ifndef OTVCOMMN_H_
+#define OTVCOMMN_H_
 
 
 #include <ft2build.h>

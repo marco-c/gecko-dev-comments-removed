@@ -16,8 +16,9 @@
 
 
 
-#ifndef __PNGSHIM_H__
-#define __PNGSHIM_H__
+
+#ifndef PNGSHIM_H_
+#define PNGSHIM_H_
 
 
 #include <ft2build.h>

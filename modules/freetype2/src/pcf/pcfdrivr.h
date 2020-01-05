@@ -25,8 +25,8 @@
 
 
 
-#ifndef __PCFDRIVR_H__
-#define __PCFDRIVR_H__
+#ifndef PCFDRIVR_H_
+#define PCFDRIVR_H_
 
 #include <ft2build.h>
 #include FT_INTERNAL_DRIVER_H

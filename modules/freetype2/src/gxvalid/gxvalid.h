@@ -24,8 +24,9 @@
 
 
 
-#ifndef __GXVALID_H__
-#define __GXVALID_H__
+
+#ifndef GXVALID_H_
+#define GXVALID_H_
 
 #include <ft2build.h>
 #include FT_FREETYPE_H

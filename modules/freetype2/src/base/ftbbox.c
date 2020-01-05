@@ -255,6 +255,7 @@
     FT_Pos  peak = 0;
     FT_Int  shift;
 
+
     
     
     
@@ -264,8 +265,10 @@
     
     
 
-    shift = 27 -
-      FT_MSB( FT_ABS( q1 ) | FT_ABS( q2 ) | FT_ABS( q3 ) | FT_ABS( q4 ) );
+    shift = 27 - FT_MSB( (FT_UInt32)( FT_ABS( q1 ) |
+                                      FT_ABS( q2 ) |
+                                      FT_ABS( q3 ) |
+                                      FT_ABS( q4 ) ) );
 
     if ( shift > 0 )
     {

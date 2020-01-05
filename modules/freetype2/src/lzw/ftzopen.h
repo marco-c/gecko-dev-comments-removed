@@ -18,8 +18,9 @@
 
 
 
-#ifndef __FT_ZOPEN_H__
-#define __FT_ZOPEN_H__
+
+#ifndef FTZOPEN_H_
+#define FTZOPEN_H_
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -115,8 +116,8 @@
     FT_Int       in_eof;
 
     FT_Byte      buf_tab[16];
-    FT_Int       buf_offset;
-    FT_Int       buf_size;
+    FT_UInt      buf_offset;
+    FT_UInt      buf_size;
     FT_Bool      buf_clear;
     FT_Offset    buf_total;
 

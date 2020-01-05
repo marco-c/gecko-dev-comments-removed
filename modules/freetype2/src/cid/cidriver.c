@@ -24,7 +24,7 @@
 #include "ciderrs.h"
 
 #include FT_SERVICE_POSTSCRIPT_NAME_H
-#include FT_SERVICE_XFREE86_NAME_H
+#include FT_SERVICE_FONT_FORMAT_H
 #include FT_SERVICE_POSTSCRIPT_INFO_H
 #include FT_SERVICE_CID_H
 
@@ -59,7 +59,7 @@
 
   static const FT_Service_PsFontNameRec  cid_service_ps_name =
   {
-    (FT_PsName_GetFunc) cid_get_postscript_name
+    (FT_PsName_GetFunc)cid_get_postscript_name    
   };
 
 
@@ -88,11 +88,14 @@
 
   static const FT_Service_PsInfoRec  cid_service_ps_info =
   {
-    (PS_GetFontInfoFunc)   cid_ps_get_font_info,
-    (PS_GetFontExtraFunc)  cid_ps_get_font_extra,
-    (PS_HasGlyphNamesFunc) NULL,        
-    (PS_GetFontPrivateFunc)NULL,        
-    (PS_GetFontValueFunc)  NULL         
+    (PS_GetFontInfoFunc)   cid_ps_get_font_info,   
+    (PS_GetFontExtraFunc)  cid_ps_get_font_extra,  
+    
+    (PS_HasGlyphNamesFunc) NULL,                   
+    
+    (PS_GetFontPrivateFunc)NULL,                   
+    
+    (PS_GetFontValueFunc)  NULL                    
   };
 
 
@@ -155,9 +158,12 @@
 
   static const FT_Service_CIDRec  cid_service_cid_info =
   {
-     (FT_CID_GetRegistryOrderingSupplementFunc)cid_get_ros,
-     (FT_CID_GetIsInternallyCIDKeyedFunc)      cid_get_is_cid,
-     (FT_CID_GetCIDFromGlyphIndexFunc)         cid_get_cid_from_glyph_index
+    (FT_CID_GetRegistryOrderingSupplementFunc)
+      cid_get_ros,                             
+    (FT_CID_GetIsInternallyCIDKeyedFunc)
+      cid_get_is_cid,                          
+    (FT_CID_GetCIDFromGlyphIndexFunc)
+      cid_get_cid_from_glyph_index             
   };
 
 
@@ -168,7 +174,7 @@
 
   static const FT_ServiceDescRec  cid_services[] =
   {
-    { FT_SERVICE_ID_XF86_NAME,            FT_XF86_FORMAT_CID },
+    { FT_SERVICE_ID_FONT_FORMAT,          FT_FONT_FORMAT_CID },
     { FT_SERVICE_ID_POSTSCRIPT_FONT_NAME, &cid_service_ps_name },
     { FT_SERVICE_ID_POSTSCRIPT_INFO,      &cid_service_ps_info },
     { FT_SERVICE_ID_CID,                  &cid_service_cid_info },
@@ -190,46 +196,42 @@
   FT_CALLBACK_TABLE_DEF
   const FT_Driver_ClassRec  t1cid_driver_class =
   {
-    
     {
       FT_MODULE_FONT_DRIVER       |
       FT_MODULE_DRIVER_SCALABLE   |
       FT_MODULE_DRIVER_HAS_HINTER,
-
       sizeof ( FT_DriverRec ),
+
       "t1cid",   
       0x10000L,  
       0x20000L,  
 
-      0,
+      0,    
 
-      cid_driver_init,
-      cid_driver_done,
-      cid_get_interface
+      cid_driver_init,          
+      cid_driver_done,          
+      cid_get_interface         
     },
 
-    
     sizeof ( CID_FaceRec ),
     sizeof ( CID_SizeRec ),
     sizeof ( CID_GlyphSlotRec ),
 
-    cid_face_init,
-    cid_face_done,
+    cid_face_init,              
+    cid_face_done,              
+    cid_size_init,              
+    cid_size_done,              
+    cid_slot_init,              
+    cid_slot_done,              
 
-    cid_size_init,
-    cid_size_done,
-    cid_slot_init,
-    cid_slot_done,
+    cid_slot_load_glyph,        
 
-    cid_slot_load_glyph,
+    0,                          
+    0,                          
+    0,                          
 
-    0,                      
-    0,                      
-
-    0,                      
-
-    cid_size_request,
-    0                       
+    cid_size_request,           
+    0                           
   };
 
 

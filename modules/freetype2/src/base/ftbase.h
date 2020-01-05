@@ -16,8 +16,8 @@
 
 
 
-#ifndef __FTBASE_H__
-#define __FTBASE_H__
+#ifndef FTBASE_H_
+#define FTBASE_H_
 
 
 #include <ft2build.h>
@@ -25,6 +25,11 @@
 
 
 FT_BEGIN_HEADER
+
+
+  
+  
+#define FT_MAC_RFORK_MAX_LEN  0x00FFFFFFUL
 
 
   

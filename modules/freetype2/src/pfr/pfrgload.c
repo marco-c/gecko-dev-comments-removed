@@ -143,7 +143,7 @@
     error = FT_GLYPHLOADER_CHECK_POINTS( loader, 1, 0 );
     if ( !error )
     {
-      FT_UInt  n = outline->n_points;
+      FT_Int  n = outline->n_points;
 
 
       outline->points[n] = *to;
@@ -215,8 +215,10 @@
     
     error = FT_GLYPHLOADER_CHECK_POINTS( loader, 1, 1 );
     if ( !error )
+    {
       
       error = pfr_glyph_line_to( glyph, to );
+    }
 
     return error;
   }
@@ -304,8 +306,8 @@
 
     glyph->y_control = glyph->x_control + x_count;
 
-    mask  = 0;
-    x     = 0;
+    mask = 0;
+    x    = 0;
 
     for ( i = 0; i < count; i++ )
     {
@@ -334,7 +336,7 @@
     
     
     
-    if ( flags & PFR_GLYPH_EXTRA_ITEMS )
+    if ( flags & PFR_GLYPH_SINGLE_EXTRA_ITEMS )
     {
       error = pfr_extra_items_skip( &p, limit );
       if ( error )
@@ -366,27 +368,27 @@
 
         switch ( format >> 4 )
         {
-        case 0:                             
+        case 0:                                               
           FT_TRACE6(( "- end glyph" ));
           args_count = 0;
           break;
 
-        case 1:                             
+        case 1:                                  
           FT_TRACE6(( "- general line" ));
           goto Line1;
 
-        case 4:                             
+        case 4:                                 
           FT_TRACE6(( "- move to inside" ));
           goto Line1;
 
-        case 5:                             
+        case 5:                                 
           FT_TRACE6(( "- move to outside" ));
         Line1:
           args_format = format_low;
           args_count  = 1;
           break;
 
-        case 2:                             
+        case 2:                                      
           FT_TRACE6(( "- horizontal line to cx.%d", format_low ));
           if ( format_low >= x_count )
             goto Failure;
@@ -396,7 +398,7 @@
           args_count = 0;
           break;
 
-        case 3:                             
+        case 3:                                        
           FT_TRACE6(( "- vertical line to cy.%d", format_low ));
           if ( format_low >= y_count )
             goto Failure;
@@ -406,19 +408,19 @@
           args_count = 0;
           break;
 
-        case 6:                             
+        case 6:                            
           FT_TRACE6(( "- hv curve " ));
           args_format = 0xB8E;
           args_count  = 3;
           break;
 
-        case 7:                             
+        case 7:                            
           FT_TRACE6(( "- vh curve" ));
           args_format = 0xE2B;
           args_count  = 3;
           break;
 
-        default:                            
+        default:                                       
           FT_TRACE6(( "- general curve" ));
           args_count  = 4;
           args_format = format_low;
@@ -439,7 +441,7 @@
           {
           case 0:                           
             PFR_CHECK( 1 );
-            idx  = PFR_NEXT_BYTE( p );
+            idx = PFR_NEXT_BYTE( p );
             if ( idx >= x_count )
               goto Failure;
             cur->x = glyph->x_control[idx];
@@ -516,22 +518,22 @@
         
         switch ( format >> 4 )
         {
-        case 0:                             
+        case 0:                                       
           pfr_glyph_end( glyph );
           goto Exit;
 
-        case 1:                             
+        case 1:                                         
         case 2:
         case 3:
           error = pfr_glyph_line_to( glyph, pos );
           goto Test_Error;
 
-        case 4:                             
-        case 5:                             
+        case 4:                                 
+        case 5:                                 
           error = pfr_glyph_move_to( glyph, pos );
           goto Test_Error;
 
-        default:                            
+        default:                                       
           error = pfr_glyph_curve_to( glyph, pos, pos + 1, pos + 2 );
 
         Test_Error:  
@@ -577,10 +579,11 @@
 
     
     
-    if ( flags & PFR_GLYPH_EXTRA_ITEMS )
+    if ( flags & PFR_GLYPH_COMPOUND_EXTRA_ITEMS )
     {
       error = pfr_extra_items_skip( &p, limit );
-      if (error) goto Exit;
+      if ( error )
+        goto Exit;
     }
 
     
@@ -632,14 +635,14 @@
       if ( format & PFR_SUBGLYPH_XSCALE )
       {
         PFR_CHECK( 2 );
-        subglyph->x_scale = PFR_NEXT_SHORT( p ) << 4;
+        subglyph->x_scale = PFR_NEXT_SHORT( p ) * 16;
       }
 
       subglyph->y_scale = 0x10000L;
       if ( format & PFR_SUBGLYPH_YSCALE )
       {
         PFR_CHECK( 2 );
-        subglyph->y_scale = PFR_NEXT_SHORT( p ) << 4;
+        subglyph->y_scale = PFR_NEXT_SHORT( p ) * 16;
       }
 
       
@@ -693,7 +696,7 @@
       if ( format & PFR_SUBGLYPH_3BYTE_OFFSET )
       {
         PFR_CHECK( 3 );
-        subglyph->gps_offset = PFR_NEXT_LONG( p );
+        subglyph->gps_offset = PFR_NEXT_ULONG( p );
       }
       else
       {
@@ -736,7 +739,7 @@
 
     if ( size > 0 && *p & PFR_GLYPH_IS_COMPOUND )
     {
-      FT_Int          n, old_count, count;
+      FT_UInt         n, old_count, count;
       FT_GlyphLoader  loader = glyph->loader;
       FT_Outline*     base   = &loader->base.outline;
 

@@ -16,16 +16,15 @@
 
 
 
-#ifndef __AFLOADER_H__
-#define __AFLOADER_H__
+#ifndef AFLOADER_H_
+#define AFLOADER_H_
 
 #include "afhints.h"
+#include "afmodule.h"
 #include "afglobal.h"
 
 
 FT_BEGIN_HEADER
-
-  typedef struct AF_ModuleRec_*  AF_Module;
 
   
 
@@ -42,8 +41,7 @@ FT_BEGIN_HEADER
     AF_FaceGlobals    globals;
 
     
-    FT_GlyphLoader    gloader;
-    AF_GlyphHintsRec  hints;
+    AF_GlyphHints     hints;
     AF_StyleMetrics   metrics;
     FT_Bool           transformed;
     FT_Matrix         trans_matrix;
@@ -55,24 +53,32 @@ FT_BEGIN_HEADER
   } AF_LoaderRec, *AF_Loader;
 
 
-  FT_LOCAL( FT_Error )
-  af_loader_init( AF_Module  module );
+  FT_LOCAL( void )
+  af_loader_init( AF_Loader      loader,
+                  AF_GlyphHints  hints );
 
 
   FT_LOCAL( FT_Error )
-  af_loader_reset( AF_Module  module,
+  af_loader_reset( AF_Loader  loader,
+                   AF_Module  module,
                    FT_Face    face );
 
 
   FT_LOCAL( void )
-  af_loader_done( AF_Module  module );
+  af_loader_done( AF_Loader  loader );
 
 
   FT_LOCAL( FT_Error )
-  af_loader_load_glyph( AF_Module  module,
+  af_loader_load_glyph( AF_Loader  loader,
+                        AF_Module  module,
                         FT_Face    face,
                         FT_UInt    gindex,
                         FT_Int32   load_flags );
+
+  FT_LOCAL_DEF( FT_Int32 )
+  af_loader_compute_darkening( AF_Loader  loader,
+                               FT_Face    face,
+                               FT_Pos     standard_width );
 
 
 

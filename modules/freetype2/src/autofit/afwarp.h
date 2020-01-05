@@ -16,8 +16,8 @@
 
 
 
-#ifndef __AFWARP_H__
-#define __AFWARP_H__
+#ifndef AFWARP_H_
+#define AFWARP_H_
 
 #include "afhints.h"
 
@@ -25,7 +25,7 @@ FT_BEGIN_HEADER
 
 #define AF_WARPER_SCALE
 
-#define AF_WARPER_FLOOR( x )  ( (x) & ~63 )
+#define AF_WARPER_FLOOR( x )  ( (x) & ~FT_TYPEOF( x )63 )
 #define AF_WARPER_CEIL( x )   AF_WARPER_FLOOR( (x) + 63 )
 
 

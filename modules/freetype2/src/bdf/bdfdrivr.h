@@ -25,8 +25,8 @@
 
 
 
-#ifndef __BDFDRIVR_H__
-#define __BDFDRIVR_H__
+#ifndef BDFDRIVR_H_
+#define BDFDRIVR_H_
 
 #include <ft2build.h>
 #include FT_INTERNAL_DRIVER_H
@@ -43,7 +43,7 @@ FT_BEGIN_HEADER
 
   typedef struct  BDF_encoding_el_
   {
-    FT_ULong   enc;
+    FT_Long    enc;
     FT_UShort  glyph;
 
   } BDF_encoding_el;

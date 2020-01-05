@@ -16,8 +16,8 @@
 
 
 
-#ifndef __CFFCMAP_H__
-#define __CFFCMAP_H__
+#ifndef CFFCMAP_H_
+#define CFFCMAP_H_
 
 #include "cffobjs.h"
 

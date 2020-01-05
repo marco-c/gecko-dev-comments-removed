@@ -16,8 +16,8 @@
 
 
 
-#ifndef __PFRGLOAD_H__
-#define __PFRGLOAD_H__
+#ifndef PFRGLOAD_H_
+#define PFRGLOAD_H_
 
 #include "pfrtypes.h"
 

@@ -16,8 +16,8 @@
 
 
 
-#ifndef __AFWRTSYS_H__
-#define __AFWRTSYS_H__
+#ifndef AFWRTSYS_H_
+#define AFWRTSYS_H_
 
 
 

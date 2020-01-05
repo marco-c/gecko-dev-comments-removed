@@ -25,6 +25,7 @@
 
 
 
+
 #include "gxvmorx.h"
 
 
@@ -188,7 +189,8 @@
       
       if ( ( offset & 0x3FFF0000UL ) == 0x3FFF0000UL )
       { 
-        gid_limit = gxvalid->face->num_glyphs - ( offset & 0x0000FFFFUL );
+        gid_limit = gxvalid->face->num_glyphs -
+                    (FT_Long)( offset & 0x0000FFFFUL );
         if ( gid_limit > 0 )
           return;
 

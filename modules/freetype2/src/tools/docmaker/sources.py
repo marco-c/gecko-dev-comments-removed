@@ -143,7 +143,19 @@ re_markup_tags = [re_markup_tag1, re_markup_tag2]
 
 
 
-re_crossref = re.compile( r'@((?:\w|-)*)(.*)' )    
+
+
+
+
+
+
+
+re_crossref = re.compile( r"""
+                            @
+                            (?P<name>(?:\w|-)+
+                                     (?:\[(?:\w|-)+\])?)
+                            (?P<rest>.*)
+                          """, re.VERBOSE )
 
 
 
@@ -152,8 +164,9 @@ re_crossref = re.compile( r'@((?:\w|-)*)(.*)' )
 
 
 
-re_italic = re.compile( r"_(\w(?:\w|')*)_(.*)" )     
-re_bold   = re.compile( r"\*(\w(?:\w|')*)\*(.*)" )   
+
+re_italic = re.compile( r"_((?:\w|-)(?:\w|'|-)*)_(.*)" )     
+re_bold   = re.compile( r"\*((?:\w|-)(?:\w|'|-)*)\*(.*)" )   
 
 
 

@@ -16,8 +16,8 @@
 
 
 
-#ifndef __TTMTX_H__
-#define __TTMTX_H__
+#ifndef TTMTX_H_
+#define TTMTX_H_
 
 
 #include <ft2build.h>

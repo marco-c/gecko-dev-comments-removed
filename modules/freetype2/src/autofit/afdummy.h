@@ -17,8 +17,8 @@
 
 
 
-#ifndef __AFDUMMY_H__
-#define __AFDUMMY_H__
+#ifndef AFDUMMY_H_
+#define AFDUMMY_H_
 
 #include "aftypes.h"
 

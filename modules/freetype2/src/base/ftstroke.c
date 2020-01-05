@@ -24,6 +24,16 @@
 #include FT_INTERNAL_DEBUG_H
 #include FT_INTERNAL_OBJECTS_H
 
+#include "basepic.h"
+
+
+  
+  
+  
+#ifndef FT_CONFIG_OPTION_PIC
+  FT_CALLBACK_TABLE const FT_Glyph_Class  ft_outline_glyph_class;
+#endif
+
 
   
 
@@ -347,7 +357,7 @@
   ft_stroke_border_close( FT_StrokeBorder  border,
                           FT_Bool          reverse )
   {
-    FT_UInt  start = border->start;
+    FT_UInt  start = (FT_UInt)border->start;
     FT_UInt  count = border->num_points;
 
 
@@ -599,7 +609,7 @@
     if ( border->start >= 0 )
       ft_stroke_border_close( border, FALSE );
 
-    border->start = border->num_points;
+    border->start = (FT_Int)border->num_points;
     border->movable = FALSE;
 
     return ft_stroke_border_lineto( border, to, FALSE );
@@ -702,9 +712,10 @@
                            FT_Outline*      outline )
   {
     
-    FT_ARRAY_COPY( outline->points + outline->n_points,
-                   border->points,
-                   border->num_points );
+    if ( border->num_points )
+      FT_ARRAY_COPY( outline->points + outline->n_points,
+                     border->points,
+                     border->num_points );
 
     
     {
@@ -742,7 +753,7 @@
       }
     }
 
-    outline->n_points = (short)( outline->n_points + border->num_points );
+    outline->n_points += (short)border->num_points;
 
     FT_ASSERT( FT_Outline_Check( outline ) == 0 );
   }
@@ -999,7 +1010,9 @@
 
     
     
-    if ( !border->movable || line_length == 0 )
+    
+    if ( !border->movable || line_length == 0  ||
+         theta > 0x59C000 || theta < -0x59C000 )
       intersect = FALSE;
     else
     {
@@ -1220,11 +1233,8 @@
       goto Exit;
 
     
-    inside_side = 0;
-
     
-    if ( turn < 0 )
-      inside_side = 1;
+    inside_side = ( turn < 0 );
 
     
     error = ft_stroker_inside( stroker, inside_side, line_length );
@@ -1232,7 +1242,7 @@
       goto Exit;
 
     
-    error = ft_stroker_outside( stroker, 1 - inside_side, line_length );
+    error = ft_stroker_outside( stroker, !inside_side, line_length );
 
   Exit:
     return error;
@@ -1822,7 +1832,7 @@
 
     FT_ASSERT( left->start >= 0 );
 
-    new_points = left->num_points - left->start;
+    new_points = (FT_Int)left->num_points - left->start;
     if ( new_points > 0 )
     {
       error = ft_stroke_border_grow( right, (FT_UInt)new_points );
@@ -1862,8 +1872,8 @@
         }
       }
 
-      left->num_points   = left->start;
-      right->num_points += new_points;
+      left->num_points   = (FT_UInt)left->start;
+      right->num_points += (FT_UInt)new_points;
 
       right->movable = FALSE;
       left->movable  = FALSE;
@@ -1941,11 +1951,8 @@
       if ( turn != 0 )
       {
         
-        inside_side = 0;
-
         
-        if ( turn < 0 )
-          inside_side = 1;
+        inside_side = ( turn < 0 );
 
         error = ft_stroker_inside( stroker,
                                    inside_side,
@@ -1955,7 +1962,7 @@
 
         
         error = ft_stroker_outside( stroker,
-                                    1 - inside_side,
+                                    !inside_side,
                                     stroker->subpath_line_length );
         if ( error )
           goto Exit;
@@ -2118,7 +2125,7 @@
       FT_UInt  last;  
 
 
-      last  = outline->contours[n];
+      last  = (FT_UInt)outline->contours[n];
       limit = outline->points + last;
 
       
@@ -2290,15 +2297,6 @@
 
 
   
-  
-  
-#ifndef FT_CONFIG_OPTION_PIC
-  extern const FT_Glyph_Class  ft_outline_glyph_class;
-#endif
-#include "basepic.h"
-
-
-  
 
   FT_EXPORT_DEF( FT_Error )
   FT_Glyph_Stroke( FT_Glyph    *pglyph,
@@ -2347,7 +2345,9 @@
       FT_Outline_Done( glyph->library, outline );
 
       error = FT_Outline_New( glyph->library,
-                              num_points, num_contours, outline );
+                              num_points,
+                              (FT_Int)num_contours,
+                              outline );
       if ( error )
         goto Fail;
 
@@ -2437,7 +2437,7 @@
 
       error = FT_Outline_New( glyph->library,
                               num_points,
-                              num_contours,
+                              (FT_Int)num_contours,
                               outline );
       if ( error )
         goto Fail;

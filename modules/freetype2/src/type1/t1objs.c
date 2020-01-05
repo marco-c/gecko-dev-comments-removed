@@ -67,7 +67,7 @@
                             "pshinter" );
     return ( module && pshinter && pshinter->get_globals_funcs )
            ? pshinter->get_globals_funcs( module )
-           : 0 ;
+           : 0;
   }
 
 
@@ -86,7 +86,7 @@
       if ( funcs )
         funcs->destroy( (PSH_Globals)size->root.internal );
 
-      size->root.internal = 0;
+      size->root.internal = NULL;
     }
   }
 
@@ -144,7 +144,7 @@
   FT_LOCAL_DEF( void )
   T1_GlyphSlot_Done( FT_GlyphSlot  slot )
   {
-    slot->internal->glyph_hints = 0;
+    slot->internal->glyph_hints = NULL;
   }
 
 
@@ -224,7 +224,7 @@
     }
 
     T1_Done_Blend( face );
-    face->blend = 0;
+    face->blend = NULL;
 #endif
 
     
@@ -246,6 +246,9 @@
 
     FT_FREE( type1->subrs );
     FT_FREE( type1->subrs_len );
+
+    ft_hash_num_free( type1->subrs_hash, memory );
+    FT_FREE( type1->subrs_hash );
 
     FT_FREE( type1->subrs_block );
     FT_FREE( type1->charstrings_block );
@@ -345,7 +348,7 @@
       goto Exit;
 
     
-    if ( face_index > 0 )
+    if ( ( face_index & 0xFFFF ) > 0 )
     {
       FT_ERROR(( "T1_Face_Init: invalid face index\n" ));
       error = FT_THROW( Invalid_Argument );
@@ -374,9 +377,6 @@
 
       if ( face->blend )
         root->face_flags |= FT_FACE_FLAG_MULTIPLE_MASTERS;
-
-      
-
 
       
       
@@ -457,7 +457,7 @@
 
       
       root->num_fixed_sizes = 0;
-      root->available_sizes = 0;
+      root->available_sizes = NULL;
 
       root->bbox.xMin =   type1->font_bbox.xMin            >> 16;
       root->bbox.yMin =   type1->font_bbox.yMin            >> 16;

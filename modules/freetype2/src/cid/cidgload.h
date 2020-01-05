@@ -16,8 +16,8 @@
 
 
 
-#ifndef __CIDGLOAD_H__
-#define __CIDGLOAD_H__
+#ifndef CIDGLOAD_H_
+#define CIDGLOAD_H_
 
 
 #include <ft2build.h>

@@ -164,7 +164,8 @@ html_footer = """\
 """
 
 
-section_title_header = "<h1>"
+section_title_header1 = '<h1 id="'
+section_title_header2 = '">'
 section_title_footer = "</h1>"
 
 
@@ -309,7 +310,14 @@ class  HtmlFormatter( Formatter ):
     def  make_block_url( self, block, name = None ):
         if name == None:
             name = block.name
-        return self.make_section_url( block.section ) + "#" + name
+
+        try:
+            section_url = self.make_section_url( block.section )
+        except:
+            
+            section_url = self.make_section_url( block )
+
+        return section_url + "#" + name
 
     def  make_html_word( self, word ):
         """Analyze a simple word to detect cross-references and markup."""
@@ -317,11 +325,27 @@ class  HtmlFormatter( Formatter ):
         m = re_crossref.match( word )
         if m:
             try:
-                name = m.group( 1 )
-                rest = m.group( 2 )
+                name = m.group( 'name' )
+                rest = m.group( 'rest' )
                 block = self.identifiers[name]
                 url   = self.make_block_url( block )
-                return '<a href="' + url + '">' + name + '</a>' + rest
+                
+                name = re.sub( r'\[.*\]', '', name )
+                
+                url = string.replace( url, "[", "(" )
+                url = string.replace( url, "]", ")" )
+
+                try:
+                    
+                    url = ( '&lsquo;<a href="' + url + '">'
+                            + block.title + '</a>&rsquo;'
+                            + rest )
+                except:
+                    url = ( '<a href="' + url + '">'
+                            + name + '</a>'
+                            + rest )
+
+                return url
             except:
                 
                 sys.stderr.write( "WARNING: undefined cross reference"
@@ -366,7 +390,7 @@ class  HtmlFormatter( Formatter ):
         """Convert a code sequence to HTML."""
         line = code_header + '\n'
         for l in lines:
-            line = line + html_quote( l ) + '\n'
+            line = line + html_quote( l ).rstrip() + '\n'
 
         return line + code_footer
 
@@ -417,16 +441,22 @@ class  HtmlFormatter( Formatter ):
                     id = block.name
 
                     
-                    for markup in block.markups:
-                        if markup.tag == 'values':
-                            for field in markup.fields:
-                                if field.name:
-                                    id = name
+                    try:
+                      for markup in block.markups:
+                          if markup.tag == 'values':
+                              for field in markup.fields:
+                                  if field.name:
+                                      id = name
 
-                    result = ( result + prefix
-                               + '<a href="'
-                               + self.make_block_url( block, id )
-                               + '">' + name + '</a>' )
+                      result = ( result + prefix
+                                 + '<a href="'
+                                 + self.make_block_url( block, id )
+                                 + '">' + name + '</a>' )
+                    except:
+                      
+                      
+                      result = result + html_quote( line[:length] )
+
                 else:
                     result = result + html_quote( line[:length] )
 
@@ -490,6 +520,12 @@ class  HtmlFormatter( Formatter ):
                 if i < count:
                     bname = self.block_index[r + c * rows]
                     url   = self.index_items[bname]
+                    
+                    bname = string.replace( bname, "[", " (" )
+                    bname = string.replace( bname, "]", ")"  )
+                    
+                    url = string.replace( url, "[", "(" )
+                    url = string.replace( url, "]", ")" )
                     line  = ( line + '<td><a href="' + url + '">'
                               + bname + '</a></td>' )
                 else:
@@ -564,7 +600,9 @@ class  HtmlFormatter( Formatter ):
     def  section_enter( self, section ):
         print self.html_header
 
-        print section_title_header + section.title + section_title_footer
+        print ( section_title_header1 + section.name + section_title_header2
+                + section.title
+                + section_title_footer )
 
         maxwidth = 0
         for b in section.blocks.values():
@@ -601,7 +639,13 @@ class  HtmlFormatter( Formatter ):
                             
                             line = line + "&nbsp;"
                         else:
-                            line = ( line + '<a href="#' + name + '">'
+                            url = name
+                            
+                            name = re.sub( r'\[.*\]', '', name )
+                            
+                            url = string.replace( url, "[", "(" )
+                            url = string.replace( url, "]", ")" )
+                            line = ( line + '<a href="#' + url + '">'
                                      + name + '</a>' )
 
                     line = line + '</td>'
@@ -620,7 +664,13 @@ class  HtmlFormatter( Formatter ):
 
         
         if block.name:
-            print( '<h3 id="' + block.name + '">' + block.name + '</h3>' )
+            url = block.name
+            
+            name = re.sub( r'\[.*\]', '', block.name )
+            
+            url = string.replace( url, "[", "(" )
+            url = string.replace( url, "]", ")" )
+            print( '<h3 id="' + url + '">' + name + '</h3>' )
 
         
         if block.code:

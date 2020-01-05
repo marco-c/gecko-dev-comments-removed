@@ -16,8 +16,8 @@
 
 
 
-#ifndef __FTOPTION_H__
-#define __FTOPTION_H__
+#ifndef FTOPTION_H_
+#define FTOPTION_H_
 
 
 #include <ft2build.h>
@@ -92,6 +92,36 @@ FT_BEGIN_HEADER
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+#define FT_CONFIG_OPTION_ENVIRONMENT_PROPERTIES
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #define FT_CONFIG_OPTION_SUBPIXEL_RENDERING
 
 
@@ -214,6 +244,17 @@ FT_BEGIN_HEADER
 
 
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 #define FT_CONFIG_OPTION_USE_PNG
 
 
@@ -241,44 +282,33 @@ FT_BEGIN_HEADER
 
 
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -378,10 +408,6 @@ FT_BEGIN_HEADER
 
 
 
-
-
-
-
 #define FT_RENDER_POOL_SIZE  16384L
 
 
@@ -414,6 +440,8 @@ FT_BEGIN_HEADER
   
 #define FT_DEBUG_LEVEL_ERROR
 #define FT_DEBUG_LEVEL_TRACE
+
+
 
 
 
@@ -484,6 +512,20 @@ FT_BEGIN_HEADER
 #undef FT_CONFIG_OPTION_USE_MODULE_ERRORS
 
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   
@@ -604,7 +646,6 @@ FT_BEGIN_HEADER
 
 
 
-#define TT_CONFIG_OPTION_SUBPIXEL_HINTING
 
 
 
@@ -635,26 +676,7 @@ FT_BEGIN_HEADER
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#define TT_CONFIG_OPTION_SUBPIXEL_HINTING     ( 1 | 2 )
 
 
   
@@ -667,25 +689,12 @@ FT_BEGIN_HEADER
   
   
   
-#define TT_CONFIG_OPTION_INTERPRETER_SWITCH
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  
+  
+  
+  
+  
+  
 #undef TT_CONFIG_OPTION_COMPONENT_OFFSET_SCALED
 
 
@@ -720,8 +729,26 @@ FT_BEGIN_HEADER
 
 
 
+#ifndef TT_CONFIG_OPTION_MAX_RUNNABLE_OPCODES
+#define TT_CONFIG_OPTION_MAX_RUNNABLE_OPCODES  1000000L
+#endif
 
 
+  
+  
+  
+  
+  
+  
+  
+
+
+  
+  
+  
+  
+  
+  
 #define T1_MAX_DICT_DEPTH  5
 
 
@@ -838,6 +865,8 @@ FT_BEGIN_HEADER
 
 
 
+
+
 #define AF_CONFIG_OPTION_USE_WARPER
 
 
@@ -856,9 +885,14 @@ FT_BEGIN_HEADER
 
 #ifdef TT_CONFIG_OPTION_BYTECODE_INTERPRETER
 #define  TT_USE_BYTECODE_INTERPRETER
-#undef   TT_CONFIG_OPTION_UNPATENTED_HINTING
-#elif defined TT_CONFIG_OPTION_UNPATENTED_HINTING
-#define  TT_USE_BYTECODE_INTERPRETER
+
+#if TT_CONFIG_OPTION_SUBPIXEL_HINTING & 1
+#define  TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
+#endif
+
+#if TT_CONFIG_OPTION_SUBPIXEL_HINTING & 2
+#define  TT_SUPPORT_SUBPIXEL_HINTING_MINIMAL
+#endif
 #endif
 
 

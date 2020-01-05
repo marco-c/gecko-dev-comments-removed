@@ -312,7 +312,7 @@
 
     
     table->num_maps = 0;
-    table->maps     = 0;
+    table->maps     = NULL;
 
     if ( !FT_NEW_ARRAY( table->maps, num_glyphs + EXTRA_GLYPH_LIST_SIZE ) )
     {
@@ -525,31 +525,31 @@
 
   FT_DEFINE_SERVICE_PSCMAPSREC(
     pscmaps_interface,
-    (PS_Unicode_ValueFunc)     ps_unicode_value,
-    (PS_Unicodes_InitFunc)     ps_unicodes_init,
-    (PS_Unicodes_CharIndexFunc)ps_unicodes_char_index,
-    (PS_Unicodes_CharNextFunc) ps_unicodes_char_next,
+    (PS_Unicode_ValueFunc)     ps_unicode_value,        
+    (PS_Unicodes_InitFunc)     ps_unicodes_init,        
+    (PS_Unicodes_CharIndexFunc)ps_unicodes_char_index,  
+    (PS_Unicodes_CharNextFunc) ps_unicodes_char_next,   
 
-    (PS_Macintosh_NameFunc)    ps_get_macintosh_name,
-    (PS_Adobe_Std_StringsFunc) ps_get_standard_strings,
+    (PS_Macintosh_NameFunc)    ps_get_macintosh_name,   
+    (PS_Adobe_Std_StringsFunc) ps_get_standard_strings, 
 
-    t1_standard_encoding,
-    t1_expert_encoding )
+    t1_standard_encoding,                               
+    t1_expert_encoding )                                
 
 #else
 
   FT_DEFINE_SERVICE_PSCMAPSREC(
     pscmaps_interface,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
+    NULL,                                               
+    NULL,                                               
+    NULL,                                               
+    NULL,                                               
 
-    (PS_Macintosh_NameFunc)    ps_get_macintosh_name,
-    (PS_Adobe_Std_StringsFunc) ps_get_standard_strings,
+    (PS_Macintosh_NameFunc)    ps_get_macintosh_name,   
+    (PS_Adobe_Std_StringsFunc) ps_get_standard_strings, 
 
-    t1_standard_encoding,
-    t1_expert_encoding )
+    t1_standard_encoding,                               
+    t1_expert_encoding )                                
 
 #endif 
 

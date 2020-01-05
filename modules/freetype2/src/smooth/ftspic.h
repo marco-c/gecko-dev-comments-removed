@@ -16,13 +16,14 @@
 
 
 
-#ifndef __FTSPIC_H__
-#define __FTSPIC_H__
+#ifndef FTSPIC_H_
+#define FTSPIC_H_
+
+
+#include FT_INTERNAL_PIC_H
 
 
 FT_BEGIN_HEADER
-
-#include FT_INTERNAL_PIC_H
 
 #ifndef FT_CONFIG_OPTION_PIC
 

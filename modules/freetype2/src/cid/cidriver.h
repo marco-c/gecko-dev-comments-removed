@@ -16,8 +16,8 @@
 
 
 
-#ifndef __CIDRIVER_H__
-#define __CIDRIVER_H__
+#ifndef CIDRIVER_H_
+#define CIDRIVER_H_
 
 
 #include <ft2build.h>

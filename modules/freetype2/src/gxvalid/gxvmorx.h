@@ -24,8 +24,9 @@
 
 
 
-#ifndef __GXVMORX_H__
-#define __GXVMORX_H__
+
+#ifndef GXVMORX_H_
+#define GXVMORX_H_
 
 
 #include "gxvalid.h"

@@ -143,13 +143,13 @@
     FT_ULong   size;
 
 
-    psaux->ps_parser_funcs->init( &parser->root, 0, 0, memory );
+    psaux->ps_parser_funcs->init( &parser->root, NULL, NULL, memory );
 
     parser->stream       = stream;
     parser->base_len     = 0;
-    parser->base_dict    = 0;
+    parser->base_dict    = NULL;
     parser->private_len  = 0;
-    parser->private_dict = 0;
+    parser->private_dict = NULL;
     parser->in_pfb       = 0;
     parser->in_memory    = 0;
     parser->single_block = 0;
@@ -273,7 +273,7 @@
       
       
       
-      FT_Long    start_pos = FT_STREAM_POS();
+      FT_ULong   start_pos = FT_STREAM_POS();
       FT_UShort  tag;
 
 
@@ -334,7 +334,6 @@
       
       FT_Byte*    cur   = parser->base_dict;
       FT_Byte*    limit = cur + parser->base_len;
-      FT_Byte     c;
       FT_Pointer  pos_lf;
       FT_Bool     test_cr;
 
@@ -342,9 +341,9 @@
     Again:
       for (;;)
       {
-        c = cur[0];
-        if ( c == 'e' && cur + 9 < limit )  
-                                            
+        if ( cur[0] == 'e'   &&
+             cur + 9 < limit )      
+                                    
         {
           if ( cur[1] == 'e' &&
                cur[2] == 'x' &&
@@ -374,8 +373,15 @@
 
       while ( cur < limit )
       {
-        if ( *cur == 'e' && ft_strncmp( (char*)cur, "eexec", 5 ) == 0 )
-          goto Found;
+        if ( cur[0] == 'e'   &&
+             cur + 5 < limit )
+        {
+          if ( cur[1] == 'e' &&
+               cur[2] == 'x' &&
+               cur[3] == 'e' &&
+               cur[4] == 'c' )
+            goto Found;
+        }
 
         T1_Skip_PS_Token( parser );
         if ( parser->root.error )
@@ -389,6 +395,15 @@
 
       cur   = limit;
       limit = parser->base_dict + parser->base_len;
+
+      if ( cur >= limit )
+      {
+        FT_ERROR(( "T1_Get_Private_Dict:"
+                   " premature end in private dictionary\n" ));
+        error = FT_THROW( Invalid_File_Format );
+        goto Exit;
+      }
+
       goto Again;
 
       
@@ -411,9 +426,11 @@
       
       
 
-      pos_lf  = ft_memchr( cur, '\n', limit - cur );
-      test_cr = FT_BOOL( !pos_lf                                      ||
-                         pos_lf > ft_memchr( cur, '\r', limit - cur ) );
+      pos_lf  = ft_memchr( cur, '\n', (size_t)( limit - cur ) );
+      test_cr = FT_BOOL( !pos_lf                                       ||
+                         pos_lf > ft_memchr( cur,
+                                             '\r',
+                                             (size_t)( limit - cur ) ) );
 
       while ( cur < limit                    &&
               ( *cur == ' '                ||
@@ -429,7 +446,7 @@
         goto Exit;
       }
 
-      size = (FT_ULong)( parser->base_len - ( cur - parser->base_dict ) );
+      size = parser->base_len - (FT_ULong)( cur - parser->base_dict );
 
       if ( parser->in_memory )
       {
@@ -443,7 +460,7 @@
         parser->single_block = 1;
         parser->private_dict = parser->base_dict;
         parser->private_len  = size;
-        parser->base_dict    = 0;
+        parser->base_dict    = NULL;
         parser->base_len     = 0;
       }
 
@@ -459,7 +476,7 @@
            ft_isxdigit( cur[2] ) && ft_isxdigit( cur[3] ) )
       {
         
-        FT_Long  len;
+        FT_ULong  len;
 
 
         parser->root.cursor = cur;

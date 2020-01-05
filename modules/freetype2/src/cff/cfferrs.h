@@ -22,12 +22,12 @@
   
   
 
-#ifndef __CFFERRS_H__
-#define __CFFERRS_H__
+#ifndef CFFERRS_H_
+#define CFFERRS_H_
 
 #include FT_MODULE_ERRORS_H
 
-#undef __FTERRORS_H__
+#undef FTERRORS_H_
 
 #undef  FT_ERR_PREFIX
 #define FT_ERR_PREFIX  CFF_Err_

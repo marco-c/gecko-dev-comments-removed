@@ -41,7 +41,7 @@
 #include "t42error.h"
 #include FT_INTERNAL_DEBUG_H
 
-#include FT_SERVICE_XFREE86_NAME_H
+#include FT_SERVICE_FONT_FORMAT_H
 #include FT_SERVICE_GLYPH_DICT_H
 #include FT_SERVICE_POSTSCRIPT_NAME_H
 #include FT_SERVICE_POSTSCRIPT_INFO_H
@@ -81,7 +81,8 @@
 
 
       if ( glyph_name[0] == gname[0] && !ft_strcmp( glyph_name, gname ) )
-        return (FT_UInt)ft_atol( (const char *)face->type1.charstrings[i] );
+        return (FT_UInt)ft_strtol( (const char *)face->type1.charstrings[i],
+                                   NULL, 10 );
     }
 
     return 0;
@@ -90,8 +91,8 @@
 
   static const FT_Service_GlyphDictRec  t42_service_glyph_dict =
   {
-    (FT_GlyphDict_GetNameFunc)  t42_get_glyph_name,
-    (FT_GlyphDict_NameIndexFunc)t42_get_name_index
+    (FT_GlyphDict_GetNameFunc)  t42_get_glyph_name,    
+    (FT_GlyphDict_NameIndexFunc)t42_get_name_index     
   };
 
 
@@ -110,7 +111,7 @@
 
   static const FT_Service_PsFontNameRec  t42_service_ps_font_name =
   {
-    (FT_PsName_GetFunc)t42_get_ps_font_name
+    (FT_PsName_GetFunc)t42_get_ps_font_name   
   };
 
 
@@ -161,11 +162,12 @@
 
   static const FT_Service_PsInfoRec  t42_service_ps_info =
   {
-    (PS_GetFontInfoFunc)   t42_ps_get_font_info,
-    (PS_GetFontExtraFunc)  t42_ps_get_font_extra,
-    (PS_HasGlyphNamesFunc) t42_ps_has_glyph_names,
-    (PS_GetFontPrivateFunc)t42_ps_get_font_private,
-    (PS_GetFontValueFunc)  NULL             
+    (PS_GetFontInfoFunc)   t42_ps_get_font_info,    
+    (PS_GetFontExtraFunc)  t42_ps_get_font_extra,   
+    (PS_HasGlyphNamesFunc) t42_ps_has_glyph_names,  
+    (PS_GetFontPrivateFunc)t42_ps_get_font_private, 
+    
+    (PS_GetFontValueFunc)  NULL                     
   };
 
 
@@ -180,7 +182,7 @@
     { FT_SERVICE_ID_GLYPH_DICT,           &t42_service_glyph_dict },
     { FT_SERVICE_ID_POSTSCRIPT_FONT_NAME, &t42_service_ps_font_name },
     { FT_SERVICE_ID_POSTSCRIPT_INFO,      &t42_service_ps_info },
-    { FT_SERVICE_ID_XF86_NAME,            FT_XF86_FORMAT_TYPE_42 },
+    { FT_SERVICE_ID_FONT_FORMAT,          FT_FONT_FORMAT_TYPE_42 },
     { NULL, NULL }
   };
 
@@ -214,30 +216,30 @@
 
       0,    
 
-      T42_Driver_Init,
-      T42_Driver_Done,
-      T42_Get_Interface,
+      T42_Driver_Init,          
+      T42_Driver_Done,          
+      T42_Get_Interface,        
     },
 
     sizeof ( T42_FaceRec ),
     sizeof ( T42_SizeRec ),
     sizeof ( T42_GlyphSlotRec ),
 
-    T42_Face_Init,
-    T42_Face_Done,
-    T42_Size_Init,
-    T42_Size_Done,
-    T42_GlyphSlot_Init,
-    T42_GlyphSlot_Done,
+    T42_Face_Init,              
+    T42_Face_Done,              
+    T42_Size_Init,              
+    T42_Size_Done,              
+    T42_GlyphSlot_Init,         
+    T42_GlyphSlot_Done,         
 
-    T42_GlyphSlot_Load,
+    T42_GlyphSlot_Load,         
 
-    0,                 
-    0,                 
+    0,                          
+    0,                          
+    0,                          
 
-    0,                 
-    T42_Size_Request,
-    T42_Size_Select
+    T42_Size_Request,           
+    T42_Size_Select             
   };
 
 

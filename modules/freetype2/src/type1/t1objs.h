@@ -16,8 +16,8 @@
 
 
 
-#ifndef __T1OBJS_H__
-#define __T1OBJS_H__
+#ifndef T1OBJS_H_
+#define T1OBJS_H_
 
 
 #include <ft2build.h>

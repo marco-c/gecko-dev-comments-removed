@@ -16,8 +16,8 @@
 
 
 
-#ifndef __FTSMOOTH_H__
-#define __FTSMOOTH_H__
+#ifndef FTSMOOTH_H_
+#define FTSMOOTH_H_
 
 
 #include <ft2build.h>

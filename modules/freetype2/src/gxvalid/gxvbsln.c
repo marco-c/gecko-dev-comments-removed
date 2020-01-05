@@ -24,6 +24,7 @@
 
 
 
+
 #include "gxvalid.h"
 #include "gxvcommn.h"
 
@@ -226,7 +227,7 @@
           FT_INVALID_DATA;
       }
       else
-        gxv_ctlPoint_validate( stdGlyph, (FT_Short)ctlPoint, gxvalid );
+        gxv_ctlPoint_validate( stdGlyph, ctlPoint, gxvalid );
     }
 
     GXV_EXIT;

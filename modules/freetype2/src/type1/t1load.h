@@ -16,8 +16,8 @@
 
 
 
-#ifndef __T1LOAD_H__
-#define __T1LOAD_H__
+#ifndef T1LOAD_H_
+#define T1LOAD_H_
 
 
 #include <ft2build.h>
@@ -46,6 +46,7 @@ FT_BEGIN_HEADER
 
     FT_Int        num_subrs;
     PS_TableRec   subrs;
+    FT_Hash       subrs_hash;
     FT_Bool       fontdata;
 
     FT_UInt       keywords_encountered; 

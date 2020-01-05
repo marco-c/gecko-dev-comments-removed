@@ -16,8 +16,8 @@
 
 
 
-#ifndef __CIDLOAD_H__
-#define __CIDLOAD_H__
+#ifndef CIDLOAD_H_
+#define CIDLOAD_H_
 
 
 #include <ft2build.h>
@@ -36,7 +36,7 @@ FT_BEGIN_HEADER
   } CID_Loader;
 
 
-  FT_LOCAL( FT_Long )
+  FT_LOCAL( FT_ULong )
   cid_get_offset( FT_Byte**  start,
                   FT_Byte    offsize );
 

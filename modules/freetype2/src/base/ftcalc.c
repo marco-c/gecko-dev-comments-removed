@@ -86,8 +86,7 @@
   FT_EXPORT_DEF( FT_Fixed )
   FT_RoundFix( FT_Fixed  a )
   {
-    return a >= 0 ?   ( a + 0x8000L ) & ~0xFFFFL
-                  : -((-a + 0x8000L ) & ~0xFFFFL );
+    return ( a + 0x8000L - ( a < 0 ) ) & ~0xFFFFL;
   }
 
 
@@ -96,8 +95,7 @@
   FT_EXPORT_DEF( FT_Fixed )
   FT_CeilFix( FT_Fixed  a )
   {
-    return a >= 0 ?   ( a + 0xFFFFL ) & ~0xFFFFL
-                  : -((-a + 0xFFFFL ) & ~0xFFFFL );
+    return ( a + 0xFFFFL ) & ~0xFFFFL;
   }
 
 
@@ -106,8 +104,7 @@
   FT_EXPORT_DEF( FT_Fixed )
   FT_FloorFix( FT_Fixed  a )
   {
-    return a >= 0 ?   a & ~0xFFFFL
-                  : -((-a) & ~0xFFFFL );
+    return a & ~0xFFFFL;
   }
 
 #ifndef FT_MSB
@@ -173,69 +170,77 @@
   
 
   FT_EXPORT_DEF( FT_Long )
-  FT_MulDiv( FT_Long  a,
-             FT_Long  b,
-             FT_Long  c )
+  FT_MulDiv( FT_Long  a_,
+             FT_Long  b_,
+             FT_Long  c_ )
   {
-    FT_Int   s = 1;
-    FT_Long  d;
+    FT_Int     s = 1;
+    FT_UInt64  a, b, c, d;
+    FT_Long    d_;
 
 
-    FT_MOVE_SIGN( a, s );
-    FT_MOVE_SIGN( b, s );
-    FT_MOVE_SIGN( c, s );
+    FT_MOVE_SIGN( a_, s );
+    FT_MOVE_SIGN( b_, s );
+    FT_MOVE_SIGN( c_, s );
 
-    d = (FT_Long)( c > 0 ? ( (FT_Int64)a * b + ( c >> 1 ) ) / c
-                         : 0x7FFFFFFFL );
+    a = (FT_UInt64)a_;
+    b = (FT_UInt64)b_;
+    c = (FT_UInt64)c_;
 
-    return s < 0 ? -d : d;
+    d = c > 0 ? ( a * b + ( c >> 1 ) ) / c
+              : 0x7FFFFFFFUL;
+
+    d_ = (FT_Long)d;
+
+    return s < 0 ? -d_ : d_;
   }
 
 
   
 
   FT_BASE_DEF( FT_Long )
-  FT_MulDiv_No_Round( FT_Long  a,
-                      FT_Long  b,
-                      FT_Long  c )
+  FT_MulDiv_No_Round( FT_Long  a_,
+                      FT_Long  b_,
+                      FT_Long  c_ )
   {
-    FT_Int   s = 1;
-    FT_Long  d;
+    FT_Int     s = 1;
+    FT_UInt64  a, b, c, d;
+    FT_Long    d_;
 
 
-    FT_MOVE_SIGN( a, s );
-    FT_MOVE_SIGN( b, s );
-    FT_MOVE_SIGN( c, s );
+    FT_MOVE_SIGN( a_, s );
+    FT_MOVE_SIGN( b_, s );
+    FT_MOVE_SIGN( c_, s );
 
-    d = (FT_Long)( c > 0 ? (FT_Int64)a * b / c
-                         : 0x7FFFFFFFL );
+    a = (FT_UInt64)a_;
+    b = (FT_UInt64)b_;
+    c = (FT_UInt64)c_;
 
-    return s < 0 ? -d : d;
+    d = c > 0 ? a * b / c
+              : 0x7FFFFFFFUL;
+
+    d_ = (FT_Long)d;
+
+    return s < 0 ? -d_ : d_;
   }
 
 
   
 
   FT_EXPORT_DEF( FT_Long )
-  FT_MulFix( FT_Long  a,
-             FT_Long  b )
+  FT_MulFix( FT_Long  a_,
+             FT_Long  b_ )
   {
 #ifdef FT_MULFIX_ASSEMBLER
 
-    return FT_MULFIX_ASSEMBLER( a, b );
+    return FT_MULFIX_ASSEMBLER( (FT_Int32)a_, (FT_Int32)b_ );
 
 #else
 
-    FT_Int   s = 1;
-    FT_Long  c;
+    FT_Int64  ab = (FT_Int64)a_ * (FT_Int64)b_;
 
-
-    FT_MOVE_SIGN( a, s );
-    FT_MOVE_SIGN( b, s );
-
-    c = (FT_Long)( ( (FT_Int64)a * b + 0x8000L ) >> 16 );
-
-    return s < 0 ? -c : c;
+    
+    return (FT_Long)( ( ab + 0x8000L - ( ab < 0 ) ) >> 16 );
 
 #endif 
   }
@@ -244,20 +249,26 @@
   
 
   FT_EXPORT_DEF( FT_Long )
-  FT_DivFix( FT_Long  a,
-             FT_Long  b )
+  FT_DivFix( FT_Long  a_,
+             FT_Long  b_ )
   {
-    FT_Int   s = 1;
-    FT_Long  q;
+    FT_Int     s = 1;
+    FT_UInt64  a, b, q;
+    FT_Long    q_;
 
 
-    FT_MOVE_SIGN( a, s );
-    FT_MOVE_SIGN( b, s );
+    FT_MOVE_SIGN( a_, s );
+    FT_MOVE_SIGN( b_, s );
 
-    q = (FT_Long)( b > 0 ? ( ( (FT_UInt64)a << 16 ) + ( b >> 1 ) ) / b
-                         : 0x7FFFFFFFL );
+    a = (FT_UInt64)a_;
+    b = (FT_UInt64)b_;
 
-    return s < 0 ? -q : q;
+    q = b > 0 ? ( ( a << 16 ) + ( b >> 1 ) ) / b
+              : 0x7FFFFFFFUL;
+
+    q_ = (FT_Long)q;
+
+    return s < 0 ? -q_ : q_;
   }
 
 
@@ -401,26 +412,29 @@
   
 
   FT_EXPORT_DEF( FT_Long )
-  FT_MulDiv( FT_Long  a,
-             FT_Long  b,
-             FT_Long  c )
+  FT_MulDiv( FT_Long  a_,
+             FT_Long  b_,
+             FT_Long  c_ )
   {
-    FT_Int  s = 1;
+    FT_Int     s = 1;
+    FT_UInt32  a, b, c;
 
 
     
-    if ( a == 0 || b == c )
-      return a;
 
-    FT_MOVE_SIGN( a, s );
-    FT_MOVE_SIGN( b, s );
-    FT_MOVE_SIGN( c, s );
+    FT_MOVE_SIGN( a_, s );
+    FT_MOVE_SIGN( b_, s );
+    FT_MOVE_SIGN( c_, s );
+
+    a = (FT_UInt32)a_;
+    b = (FT_UInt32)b_;
+    c = (FT_UInt32)c_;
 
     if ( c == 0 )
-      a = 0x7FFFFFFFL;
+      a = 0x7FFFFFFFUL;
 
-    else if ( (FT_ULong)a + b <= 129894UL - ( c >> 17 ) )
-      a = ( (FT_ULong)a * b + ( c >> 1 ) ) / c;
+    else if ( a + b <= 129894UL - ( c >> 17 ) )
+      a = ( a * b + ( c >> 1 ) ) / c;
 
     else
     {
@@ -439,30 +453,36 @@
                        : ft_div64by32( temp.hi, temp.lo, c );
     }
 
-    return s < 0 ? -a : a;
+    a_ = (FT_Long)a;
+
+    return s < 0 ? -a_ : a_;
   }
 
 
   FT_BASE_DEF( FT_Long )
-  FT_MulDiv_No_Round( FT_Long  a,
-                      FT_Long  b,
-                      FT_Long  c )
+  FT_MulDiv_No_Round( FT_Long  a_,
+                      FT_Long  b_,
+                      FT_Long  c_ )
   {
-    FT_Int  s = 1;
+    FT_Int     s = 1;
+    FT_UInt32  a, b, c;
 
 
-    if ( a == 0 || b == c )
-      return a;
+    
 
-    FT_MOVE_SIGN( a, s );
-    FT_MOVE_SIGN( b, s );
-    FT_MOVE_SIGN( c, s );
+    FT_MOVE_SIGN( a_, s );
+    FT_MOVE_SIGN( b_, s );
+    FT_MOVE_SIGN( c_, s );
+
+    a = (FT_UInt32)a_;
+    b = (FT_UInt32)b_;
+    c = (FT_UInt32)c_;
 
     if ( c == 0 )
-      a = 0x7FFFFFFFL;
+      a = 0x7FFFFFFFUL;
 
-    else if ( (FT_ULong)a + b <= 131071UL )
-      a = (FT_ULong)a * b / c;
+    else if ( a + b <= 131071UL )
+      a = a * b / c;
 
     else
     {
@@ -476,19 +496,21 @@
                        : ft_div64by32( temp.hi, temp.lo, c );
     }
 
-    return s < 0 ? -a : a;
+    a_ = (FT_Long)a;
+
+    return s < 0 ? -a_ : a_;
   }
 
 
   
 
   FT_EXPORT_DEF( FT_Long )
-  FT_MulFix( FT_Long  a,
-             FT_Long  b )
+  FT_MulFix( FT_Long  a_,
+             FT_Long  b_ )
   {
 #ifdef FT_MULFIX_ASSEMBLER
 
-    return FT_MULFIX_ASSEMBLER( a, b );
+    return FT_MULFIX_ASSEMBLER( a_, b_ );
 
 #elif 0
 
@@ -499,12 +521,9 @@
 
 
 
-    FT_Long   sa, sb;
-    FT_ULong  ua, ub;
+    FT_Long    sa, sb;
+    FT_UInt32  a, b;
 
-
-    if ( a == 0 || b == 0x10000L )
-      return a;
 
     
 
@@ -524,57 +543,58 @@
 
 
 
-    sa = ( a >> ( sizeof ( a ) * 8 - 1 ) );
-    a  = ( a ^ sa ) - sa;
-    sb = ( b >> ( sizeof ( b ) * 8 - 1 ) );
-    b  = ( b ^ sb ) - sb;
+    sa = ( a_ >> ( sizeof ( a_ ) * 8 - 1 ) );
+    a  = ( a_ ^ sa ) - sa;
+    sb = ( b_ >> ( sizeof ( b_ ) * 8 - 1 ) );
+    b  = ( b_ ^ sb ) - sb;
 
-    ua = (FT_ULong)a;
-    ub = (FT_ULong)b;
+    a = (FT_UInt32)a_;
+    b = (FT_UInt32)b_;
 
-    if ( ua + ( ub >> 8 ) <= 8190UL )
-      ua = ( ua * ub + 0x8000U ) >> 16;
+    if ( a + ( b >> 8 ) <= 8190UL )
+      a = ( a * b + 0x8000U ) >> 16;
     else
     {
-      FT_ULong  al = ua & 0xFFFFU;
+      FT_UInt32  al = a & 0xFFFFUL;
 
 
-      ua = ( ua >> 16 ) * ub +  al * ( ub >> 16 ) +
-           ( ( al * ( ub & 0xFFFFU ) + 0x8000U ) >> 16 );
+      a = ( a >> 16 ) * b + al * ( b >> 16 ) +
+          ( ( al * ( b & 0xFFFFUL ) + 0x8000UL ) >> 16 );
     }
 
-    sa ^= sb,
-    ua  = (FT_ULong)(( ua ^ sa ) - sa);
+    sa ^= sb;
+    a   = ( a ^ sa ) - sa;
 
-    return (FT_Long)ua;
+    return (FT_Long)a;
 
 #else 
 
-    FT_Int    s = 1;
-    FT_ULong  ua, ub;
+    FT_Int     s = 1;
+    FT_UInt32  a, b;
 
 
-    if ( a == 0 || b == 0x10000L )
-      return a;
+    
 
-    FT_MOVE_SIGN( a, s );
-    FT_MOVE_SIGN( b, s );
+    FT_MOVE_SIGN( a_, s );
+    FT_MOVE_SIGN( b_, s );
 
-    ua = (FT_ULong)a;
-    ub = (FT_ULong)b;
+    a = (FT_UInt32)a_;
+    b = (FT_UInt32)b_;
 
-    if ( ua + ( ub >> 8 ) <= 8190UL )
-      ua = ( ua * ub + 0x8000UL ) >> 16;
+    if ( a + ( b >> 8 ) <= 8190UL )
+      a = ( a * b + 0x8000UL ) >> 16;
     else
     {
-      FT_ULong  al = ua & 0xFFFFUL;
+      FT_UInt32  al = a & 0xFFFFUL;
 
 
-      ua = ( ua >> 16 ) * ub +  al * ( ub >> 16 ) +
-           ( ( al * ( ub & 0xFFFFUL ) + 0x8000UL ) >> 16 );
+      a = ( a >> 16 ) * b + al * ( b >> 16 ) +
+          ( ( al * ( b & 0xFFFFUL ) + 0x8000UL ) >> 16 );
     }
 
-    return s < 0 ? -(FT_Long)ua : (FT_Long)ua;
+    a_ = (FT_Long)a;
+
+    return s < 0 ? -a_ : a_;
 
 #endif 
 
@@ -584,27 +604,31 @@
   
 
   FT_EXPORT_DEF( FT_Long )
-  FT_DivFix( FT_Long  a,
-             FT_Long  b )
+  FT_DivFix( FT_Long  a_,
+             FT_Long  b_ )
   {
-    FT_Int   s = 1;
-    FT_Long  q;
+    FT_Int     s = 1;
+    FT_UInt32  a, b, q;
+    FT_Long    q_;
 
 
     
 
-    FT_MOVE_SIGN( a, s );
-    FT_MOVE_SIGN( b, s );
+    FT_MOVE_SIGN( a_, s );
+    FT_MOVE_SIGN( b_, s );
+
+    a = (FT_UInt32)a_;
+    b = (FT_UInt32)b_;
 
     if ( b == 0 )
     {
       
-      q = 0x7FFFFFFFL;
+      q = 0x7FFFFFFFUL;
     }
-    else if ( a <= 65535L - ( b >> 17 ) )
+    else if ( a <= 65535UL - ( b >> 17 ) )
     {
       
-      q = (FT_Long)( ( ( (FT_ULong)a << 16 ) + ( b >> 1 ) ) / b );
+      q = ( ( a << 16 ) + ( b >> 1 ) ) / b;
     }
     else
     {
@@ -618,10 +642,12 @@
       temp2.lo = b >> 1;
 
       FT_Add64( &temp, &temp2, &temp );
-      q = (FT_Long)ft_div64by32( temp.hi, temp.lo, b );
+      q = ft_div64by32( temp.hi, temp.lo, b );
     }
 
-    return s < 0 ? -q : q;
+    q_ = (FT_Long)q;
+
+    return s < 0 ? -q_ : q_;
   }
 
 
@@ -732,6 +758,102 @@
   }
 
 
+  
+
+  FT_BASE_DEF( FT_UInt32 )
+  FT_Vector_NormLen( FT_Vector*  vector )
+  {
+    FT_Int32   x_ = vector->x;
+    FT_Int32   y_ = vector->y;
+    FT_Int32   b, z;
+    FT_UInt32  x, y, u, v, l;
+    FT_Int     sx = 1, sy = 1, shift;
+
+
+    FT_MOVE_SIGN( x_, sx );
+    FT_MOVE_SIGN( y_, sy );
+
+    x = (FT_UInt32)x_;
+    y = (FT_UInt32)y_;
+
+    
+    if ( x == 0 )
+    {
+      if ( y > 0 )
+        vector->y = sy * 0x10000;
+      return y;
+    }
+    else if ( y == 0 )
+    {
+      if ( x > 0 )
+        vector->x = sx * 0x10000;
+      return x;
+    }
+
+    
+    
+    
+    
+    l = x > y ? x + ( y >> 1 )
+              : y + ( x >> 1 );
+
+    shift  = 31 - FT_MSB( l );
+    shift -= 15 + ( l >= ( 0xAAAAAAAAUL >> shift ) );
+
+    if ( shift > 0 )
+    {
+      x <<= shift;
+      y <<= shift;
+
+      
+      l = x > y ? x + ( y >> 1 )
+                : y + ( x >> 1 );
+    }
+    else
+    {
+      x >>= -shift;
+      y >>= -shift;
+      l >>= -shift;
+    }
+
+    
+    b = 0x10000 - (FT_Int32)l;
+
+    x_ = (FT_Int32)x;
+    y_ = (FT_Int32)y;
+
+    
+    do
+    {
+      u = (FT_UInt32)( x_ + ( x_ * b >> 16 ) );
+      v = (FT_UInt32)( y_ + ( y_ * b >> 16 ) );
+
+      
+      
+      
+      z = -(FT_Int32)( u * u + v * v ) / 0x200;
+      z = z * ( ( 0x10000 + b ) >> 8 ) / 0x10000;
+
+      b += z;
+
+    } while ( z > 0 );
+
+    vector->x = sx < 0 ? -(FT_Pos)u : (FT_Pos)u;
+    vector->y = sy < 0 ? -(FT_Pos)v : (FT_Pos)v;
+
+    
+    
+    
+    l = (FT_UInt32)( 0x10000 + (FT_Int32)( u * x + v * y ) / 0x10000 );
+    if ( shift > 0 )
+      l = ( l + ( 1 << ( shift - 1 ) ) ) >> shift;
+    else
+      l <<= -shift;
+
+    return l;
+  }
+
+
 #if 0
 
   
@@ -748,7 +870,7 @@
     if ( x > 0 )
     {
       rem_hi = 0;
-      rem_lo = x;
+      rem_lo = (FT_UInt32)x;
       count  = 24;
       do
       {
@@ -779,58 +901,40 @@
                          FT_Pos  out_x,
                          FT_Pos  out_y )
   {
-    FT_Long  result; 
-
-
-    
-    if ( in_y == 0 )
-    {
-      if ( in_x >= 0 )
-        result = out_y;
-      else
-        result = -out_y;
-    }
-    else if ( in_x == 0 )
-    {
-      if ( in_y >= 0 )
-        result = -out_x;
-      else
-        result = out_x;
-    }
-    else if ( out_y == 0 )
-    {
-      if ( out_x >= 0 )
-        result = in_y;
-      else
-        result = -in_y;
-    }
-    else if ( out_x == 0 )
-    {
-      if ( out_y >= 0 )
-        result = -in_x;
-      else
-        result =  in_x;
-    }
-    else 
-    {
 #ifdef FT_LONG64
 
-      FT_Int64  delta = (FT_Int64)in_x * out_y - (FT_Int64)in_y * out_x;
+    FT_Int64  delta = (FT_Int64)in_x * out_y - (FT_Int64)in_y * out_x;
 
 
-      if ( delta == 0 )
-        result = 0;
-      else
-        result = 1 - 2 * ( delta < 0 );
+    return ( delta > 0 ) - ( delta < 0 );
 
 #else
 
+    FT_Int  result;
+
+
+    if ( (FT_ULong)FT_ABS( in_x ) + (FT_ULong)FT_ABS( out_y ) <= 131071UL &&
+         (FT_ULong)FT_ABS( in_y ) + (FT_ULong)FT_ABS( out_x ) <= 131071UL )
+    {
+      FT_Long  z1 = in_x * out_y;
+      FT_Long  z2 = in_y * out_x;
+
+
+      if ( z1 > z2 )
+        result = +1;
+      else if ( z1 < z2 )
+        result = -1;
+      else
+        result = 0;
+    }
+    else 
+    {
       FT_Int64  z1, z2;
 
 
       
-      ft_multo64( (FT_Int32)in_x, (FT_Int32)out_y, &z1 );
-      ft_multo64( (FT_Int32)in_y, (FT_Int32)out_x, &z2 );
+      ft_multo64( (FT_UInt32)in_x, (FT_UInt32)out_y, &z1 );
+      ft_multo64( (FT_UInt32)in_y, (FT_UInt32)out_x, &z2 );
 
       if ( z1.hi > z2.hi )
         result = +1;
@@ -842,12 +946,12 @@
         result = -1;
       else
         result = 0;
-
-#endif
     }
 
     
-    return (FT_Int)result;
+    return result;
+
+#endif
   }
 
 

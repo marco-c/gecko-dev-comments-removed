@@ -15,8 +15,9 @@
 
 
 
-#ifndef __T42DRIVR_H__
-#define __T42DRIVR_H__
+
+#ifndef T42DRIVR_H_
+#define T42DRIVR_H_
 
 
 #include <ft2build.h>

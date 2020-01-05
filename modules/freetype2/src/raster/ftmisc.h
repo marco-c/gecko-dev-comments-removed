@@ -24,8 +24,8 @@
   
   
 
-#ifndef __FTMISC_H__
-#define __FTMISC_H__
+#ifndef FTMISC_H_
+#define FTMISC_H_
 
 
 

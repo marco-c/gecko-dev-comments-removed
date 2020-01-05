@@ -16,8 +16,8 @@
 
 
 
-#ifndef __T1AFM_H__
-#define __T1AFM_H__
+#ifndef T1AFM_H_
+#define T1AFM_H_
 
 #include <ft2build.h>
 #include "t1objs.h"

@@ -16,8 +16,8 @@
 
 
 
-#ifndef __CFFDRIVER_H__
-#define __CFFDRIVER_H__
+#ifndef CFFDRIVER_H_
+#define CFFDRIVER_H_
 
 
 #include <ft2build.h>

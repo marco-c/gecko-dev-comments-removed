@@ -58,7 +58,7 @@
     CF2_Stack  stack = NULL;
 
 
-    if ( !FT_QNEW( stack ) )
+    if ( !FT_NEW( stack ) )
     {
       
       stack->memory = memory;
@@ -191,6 +191,86 @@
       return cf2_fracToFixed( stack->buffer[idx].u.f );
     default:
       return stack->buffer[idx].u.r;
+    }
+  }
+
+
+  FT_LOCAL( void )
+  cf2_stack_roll( CF2_Stack  stack,
+                  CF2_Int    count,
+                  CF2_Int    shift )
+  {
+    
+    CF2_StackNumber  last = { { 0 }, CF2_NumberInt };
+
+    CF2_Int  start_idx, idx, i;
+
+
+    if ( count < 2 )
+      return; 
+
+    if ( (CF2_UInt)count > cf2_stack_count( stack ) )
+    {
+      CF2_SET_ERROR( stack->error, Stack_Overflow );
+      return;
+    }
+
+    if ( shift < 0 )
+      shift = -( ( -shift ) % count );
+    else
+      shift %= count;
+
+    if ( shift == 0 )
+      return; 
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    start_idx = -1;
+    idx       = -1;
+    for ( i = 0; i < count; i++ )
+    {
+      CF2_StackNumber  tmp;
+
+
+      if ( start_idx == idx )
+      {
+        start_idx++;
+        idx  = start_idx;
+        last = stack->buffer[idx];
+      }
+
+      idx += shift;
+      if ( idx >= count )
+        idx -= count;
+      else if ( idx < 0 )
+        idx += count;
+
+      tmp                = stack->buffer[idx];
+      stack->buffer[idx] = last;
+      last               = tmp;
     }
   }
 

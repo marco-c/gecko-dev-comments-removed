@@ -23,12 +23,12 @@
   
   
 
-#ifndef __PSNAMERR_H__
-#define __PSNAMERR_H__
+#ifndef PSNAMERR_H_
+#define PSNAMERR_H_
 
 #include FT_MODULE_ERRORS_H
 
-#undef __FTERRORS_H__
+#undef FTERRORS_H_
 
 #undef  FT_ERR_PREFIX
 #define FT_ERR_PREFIX  PSnames_Err_

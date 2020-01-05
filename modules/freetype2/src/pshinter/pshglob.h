@@ -16,8 +16,8 @@
 
 
 
-#ifndef __PSHGLOB_H__
-#define __PSHGLOB_H__
+#ifndef PSHGLOB_H_
+#define PSHGLOB_H_
 
 
 #include FT_FREETYPE_H

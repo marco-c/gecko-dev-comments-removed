@@ -24,6 +24,7 @@
 
 
 
+
 #include "gxvalid.h"
 #include "gxvcommn.h"
 
@@ -278,7 +279,7 @@
     GXV_INIT;
 
     GXV_LIMIT_CHECK( 4 + 2 + 2 );
-    version     = FT_NEXT_ULONG( p );
+    version     = FT_NEXT_LONG( p );
     format      = FT_NEXT_USHORT( p );
     defaultProp = FT_NEXT_USHORT( p );
 

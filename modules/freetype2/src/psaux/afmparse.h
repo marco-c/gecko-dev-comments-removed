@@ -16,8 +16,8 @@
 
 
 
-#ifndef __AFMPARSE_H__
-#define __AFMPARSE_H__
+#ifndef AFMPARSE_H_
+#define AFMPARSE_H_
 
 
 #include <ft2build.h>
@@ -61,6 +61,7 @@ FT_BEGIN_HEADER
       char*     s;
       FT_Fixed  f;
       FT_Int    i;
+      FT_UInt   u;
       FT_Bool   b;
 
     } u;
@@ -72,7 +73,7 @@ FT_BEGIN_HEADER
   FT_LOCAL( FT_Int )
   afm_parser_read_vals( AFM_Parser  parser,
                         AFM_Value   vals,
-                        FT_UInt     n );
+                        FT_Int      n );
 
   
   FT_LOCAL( char* )

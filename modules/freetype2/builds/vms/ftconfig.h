@@ -33,8 +33,8 @@
   
   
 
-#ifndef __FTCONFIG_H__
-#define __FTCONFIG_H__
+#ifndef FTCONFIG_H_
+#define FTCONFIG_H_
 
 #include <ft2build.h>
 #include FT_CONFIG_OPTIONS_H
@@ -248,7 +248,13 @@ FT_BEGIN_HEADER
   
 #elif !defined( __STDC__ ) || defined( FT_CONFIG_OPTION_FORCE_INT64 )
 
-#if defined( _MSC_VER ) && _MSC_VER >= 900  
+#if defined( __STDC_VERSION__ ) && __STDC_VERSION__ >= 199901L
+
+#define FT_LONG64
+#define FT_INT64   long long int
+#define FT_UINT64  unsigned long long int
+
+#elif defined( _MSC_VER ) && _MSC_VER >= 900  
 
   
 #define FT_LONG64
@@ -292,9 +298,26 @@ FT_BEGIN_HEADER
 #endif
 
 
+  
+  
+  
+  
+  
+
+
 #define FT_BEGIN_STMNT  do {
 #define FT_END_STMNT    } while ( 0 )
 #define FT_DUMMY_STMNT  FT_BEGIN_STMNT FT_END_STMNT
+
+
+  
+#if ( __GNUC__ >= 2                         || \
+      defined( __IBM__TYPEOF__ )            || \
+      ( __SUNPRO_C >= 0x5110 && !__STDC__ ) )
+#define FT_TYPEOF( type )  (__typeof__ (type))
+#else
+#define FT_TYPEOF( type )
+#endif
 
 
 #ifdef FT_MAKE_OPTION_SINGLE_OBJECT

@@ -15,8 +15,9 @@
 
 
 
-#ifndef __T42OBJS_H__
-#define __T42OBJS_H__
+
+#ifndef T42OBJS_H_
+#define T42OBJS_H_
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -55,7 +56,6 @@ FT_BEGIN_HEADER
   {
     FT_DriverRec     root;
     FT_Driver_Class  ttclazz;
-    void*            extension_component;
 
   } T42_DriverRec, *T42_Driver;
 

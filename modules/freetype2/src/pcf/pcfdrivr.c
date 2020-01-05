@@ -48,7 +48,7 @@
 #define FT_COMPONENT  trace_pcfread
 
 #include FT_SERVICE_BDF_H
-#include FT_SERVICE_XFREE86_NAME_H
+#include FT_SERVICE_FONT_FORMAT_H
 
 
   
@@ -64,7 +64,7 @@
   typedef struct  PCF_CMapRec_
   {
     FT_CMapRec    root;
-    FT_UInt       num_encodings;
+    FT_ULong      num_encodings;
     PCF_Encoding  encodings;
 
   } PCF_CMapRec, *PCF_CMap;
@@ -80,7 +80,7 @@
     FT_UNUSED( init_data );
 
 
-    cmap->num_encodings = (FT_UInt)face->nencodings;
+    cmap->num_encodings = face->nencodings;
     cmap->encodings     = face->encodings;
 
     return FT_Err_Ok;
@@ -104,7 +104,7 @@
   {
     PCF_CMap      cmap      = (PCF_CMap)pcfcmap;
     PCF_Encoding  encodings = cmap->encodings;
-    FT_UInt       min, max, mid;
+    FT_ULong      min, max, mid;
     FT_UInt       result    = 0;
 
 
@@ -117,7 +117,7 @@
 
 
       mid  = ( min + max ) >> 1;
-      code = encodings[mid].enc;
+      code = (FT_ULong)encodings[mid].enc;
 
       if ( charcode == code )
       {
@@ -141,7 +141,7 @@
   {
     PCF_CMap      cmap      = (PCF_CMap)pcfcmap;
     PCF_Encoding  encodings = cmap->encodings;
-    FT_UInt       min, max, mid;
+    FT_ULong      min, max, mid;
     FT_ULong      charcode  = *acharcode + 1;
     FT_UInt       result    = 0;
 
@@ -155,7 +155,7 @@
 
 
       mid  = ( min + max ) >> 1;
-      code = encodings[mid].enc;
+      code = (FT_ULong)encodings[mid].enc;
 
       if ( charcode == code )
       {
@@ -172,7 +172,7 @@
     charcode = 0;
     if ( min < cmap->num_encodings )
     {
-      charcode = encodings[min].enc;
+      charcode = (FT_ULong)encodings[min].enc;
       result   = encodings[min].glyph + 1;
     }
 
@@ -271,7 +271,7 @@
 
     FT_TRACE2(( "PCF driver\n" ));
 
-    error = pcf_load_font( stream, face );
+    error = pcf_load_font( stream, face, face_index );
     if ( error )
     {
       PCF_Face_Done( pcfface );
@@ -332,7 +332,7 @@
 
       stream = pcfface->stream;
 
-      error = pcf_load_font( stream, face );
+      error = pcf_load_font( stream, face, face_index );
       if ( error )
         goto Fail;
 
@@ -351,7 +351,10 @@
 
 
 
-    if ( face_index > 0 ) {
+    if ( face_index < 0 )
+      goto Exit;
+    else if ( face_index > 0 && ( face_index & 0xFFFF ) > 0 )
+    {
       FT_ERROR(( "PCF_Face_Init: invalid face index\n" ));
       PCF_Face_Done( pcfface );
       return FT_THROW( Invalid_Argument );
@@ -430,9 +433,9 @@
 
     FT_Select_Metrics( size->face, strike_index );
 
-    size->metrics.ascender    =  accel->fontAscent << 6;
-    size->metrics.descender   = -accel->fontDescent << 6;
-    size->metrics.max_advance =  accel->maxbounds.characterWidth << 6;
+    size->metrics.ascender    =  accel->fontAscent * 64;
+    size->metrics.descender   = -accel->fontDescent * 64;
+    size->metrics.max_advance =  accel->maxbounds.characterWidth * 64;
 
     return FT_Err_Ok;
   }
@@ -487,7 +490,7 @@
     FT_Error    error  = FT_Err_Ok;
     FT_Bitmap*  bitmap = &slot->bitmap;
     PCF_Metric  metric;
-    FT_Offset   bytes;
+    FT_ULong    bytes;
 
     FT_UNUSED( load_flags );
 
@@ -513,8 +516,10 @@
 
     metric = face->metrics + glyph_index;
 
-    bitmap->rows       = metric->ascent + metric->descent;
-    bitmap->width      = metric->rightSideBearing - metric->leftSideBearing;
+    bitmap->rows       = (unsigned int)( metric->ascent +
+                                         metric->descent );
+    bitmap->width      = (unsigned int)( metric->rightSideBearing -
+                                         metric->leftSideBearing );
     bitmap->num_grays  = 1;
     bitmap->pixel_mode = FT_PIXEL_MODE_MONO;
 
@@ -526,19 +531,19 @@
     switch ( PCF_GLYPH_PAD( face->bitmapsFormat ) )
     {
     case 1:
-      bitmap->pitch = ( bitmap->width + 7 ) >> 3;
+      bitmap->pitch = (int)( ( bitmap->width + 7 ) >> 3 );
       break;
 
     case 2:
-      bitmap->pitch = ( ( bitmap->width + 15 ) >> 4 ) << 1;
+      bitmap->pitch = (int)( ( ( bitmap->width + 15 ) >> 4 ) << 1 );
       break;
 
     case 4:
-      bitmap->pitch = ( ( bitmap->width + 31 ) >> 5 ) << 2;
+      bitmap->pitch = (int)( ( ( bitmap->width + 31 ) >> 5 ) << 2 );
       break;
 
     case 8:
-      bitmap->pitch = ( ( bitmap->width + 63 ) >> 6 ) << 3;
+      bitmap->pitch = (int)( ( ( bitmap->width + 63 ) >> 6 ) << 3 );
       break;
 
     default:
@@ -546,7 +551,7 @@
     }
 
     
-    bytes = bitmap->pitch * bitmap->rows;
+    bytes = (FT_ULong)bitmap->pitch * bitmap->rows;
 
     error = ft_glyphslot_alloc_bitmap( slot, (FT_ULong)bytes );
     if ( error )
@@ -581,16 +586,16 @@
     slot->bitmap_left = metric->leftSideBearing;
     slot->bitmap_top  = metric->ascent;
 
-    slot->metrics.horiAdvance  = metric->characterWidth << 6;
-    slot->metrics.horiBearingX = metric->leftSideBearing << 6;
-    slot->metrics.horiBearingY = metric->ascent << 6;
-    slot->metrics.width        = ( metric->rightSideBearing -
-                                   metric->leftSideBearing ) << 6;
-    slot->metrics.height       = bitmap->rows << 6;
+    slot->metrics.horiAdvance  = (FT_Pos)( metric->characterWidth * 64 );
+    slot->metrics.horiBearingX = (FT_Pos)( metric->leftSideBearing * 64 );
+    slot->metrics.horiBearingY = (FT_Pos)( metric->ascent * 64 );
+    slot->metrics.width        = (FT_Pos)( ( metric->rightSideBearing -
+                                             metric->leftSideBearing ) * 64 );
+    slot->metrics.height       = (FT_Pos)( bitmap->rows * 64 );
 
     ft_synthesize_vertical_metrics( &slot->metrics,
                                     ( face->accel.fontAscent +
-                                      face->accel.fontDescent ) << 6 );
+                                      face->accel.fontDescent ) * 64 );
 
   Exit:
     return error;
@@ -654,8 +659,8 @@
 
   static const FT_Service_BDFRec  pcf_service_bdf =
   {
-    (FT_BDF_GetCharsetIdFunc)pcf_get_charset_id,
-    (FT_BDF_GetPropertyFunc) pcf_get_bdf_property
+    (FT_BDF_GetCharsetIdFunc)pcf_get_charset_id,     
+    (FT_BDF_GetPropertyFunc) pcf_get_bdf_property    
   };
 
 
@@ -667,8 +672,8 @@
 
   static const FT_ServiceDescRec  pcf_services[] =
   {
-    { FT_SERVICE_ID_BDF,       &pcf_service_bdf },
-    { FT_SERVICE_ID_XF86_NAME, FT_XF86_FORMAT_PCF },
+    { FT_SERVICE_ID_BDF,         &pcf_service_bdf },
+    { FT_SERVICE_ID_FONT_FORMAT, FT_FONT_FORMAT_PCF },
     { NULL, NULL }
   };
 
@@ -695,32 +700,32 @@
       0x10000L,
       0x20000L,
 
-      0,
+      0,    
 
-      0,                    
-      0,                    
-      pcf_driver_requester
+      0,                        
+      0,                        
+      pcf_driver_requester      
     },
 
     sizeof ( PCF_FaceRec ),
     sizeof ( FT_SizeRec ),
     sizeof ( FT_GlyphSlotRec ),
 
-    PCF_Face_Init,
-    PCF_Face_Done,
-    0,                      
-    0,                      
-    0,                      
-    0,                      
+    PCF_Face_Init,              
+    PCF_Face_Done,              
+    0,                          
+    0,                          
+    0,                          
+    0,                          
 
-    PCF_Glyph_Load,
+    PCF_Glyph_Load,             
 
-    0,                      
-    0,                      
-    0,                      
+    0,                          
+    0,                          
+    0,                          
 
-    PCF_Size_Request,
-    PCF_Size_Select
+    PCF_Size_Request,           
+    PCF_Size_Select             
   };
 
 

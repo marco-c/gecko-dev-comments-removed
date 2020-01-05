@@ -17,8 +17,8 @@
 
 
 
-#ifndef __AFLATIN_H__
-#define __AFLATIN_H__
+#ifndef AFLATIN_H_
+#define AFLATIN_H_
 
 #include "afhints.h"
 
@@ -53,6 +53,8 @@ FT_BEGIN_HEADER
 
 #define AF_LATIN_IS_TOP_BLUE( b ) \
           ( (b)->properties & AF_BLUE_PROPERTY_LATIN_TOP )
+#define AF_LATIN_IS_SUB_TOP_BLUE( b ) \
+          ( (b)->properties & AF_BLUE_PROPERTY_LATIN_SUB_TOP )
 #define AF_LATIN_IS_NEUTRAL_BLUE( b ) \
           ( (b)->properties & AF_BLUE_PROPERTY_LATIN_NEUTRAL )
 #define AF_LATIN_IS_X_HEIGHT_BLUE( b ) \
@@ -63,21 +65,21 @@ FT_BEGIN_HEADER
 #define AF_LATIN_MAX_WIDTHS  16
 
 
-  enum
-  {
-    AF_LATIN_BLUE_ACTIVE     = 1 << 0, 
-    AF_LATIN_BLUE_TOP        = 1 << 1, 
-    AF_LATIN_BLUE_NEUTRAL    = 1 << 2, 
-    AF_LATIN_BLUE_ADJUSTMENT = 1 << 3, 
-                                       
-    AF_LATIN_BLUE_FLAG_MAX
-  };
+#define AF_LATIN_BLUE_ACTIVE      ( 1U << 0 ) /* zone height is <= 3/4px   */
+#define AF_LATIN_BLUE_TOP         ( 1U << 1 ) /* we have a top blue zone   */
+#define AF_LATIN_BLUE_SUB_TOP     ( 1U << 2 ) /* we have a subscript top   */
+                                              
+#define AF_LATIN_BLUE_NEUTRAL     ( 1U << 3 ) /* we have neutral blue zone */
+#define AF_LATIN_BLUE_ADJUSTMENT  ( 1U << 4 ) /* used for scale adjustment */
+                                              
 
 
   typedef struct  AF_LatinBlueRec_
   {
     AF_WidthRec  ref;
     AF_WidthRec  shoot;
+    FT_Pos       ascender;
+    FT_Pos       descender;
     FT_UInt      flags;
 
   } AF_LatinBlueRec, *AF_LatinBlue;
@@ -138,15 +140,11 @@ FT_BEGIN_HEADER
   
   
 
-  enum
-  {
-    AF_LATIN_HINTS_HORZ_SNAP   = 1 << 0, 
-    AF_LATIN_HINTS_VERT_SNAP   = 1 << 1, 
-    AF_LATIN_HINTS_STEM_ADJUST = 1 << 2, 
-                                         
-    AF_LATIN_HINTS_MONO        = 1 << 3  
-                                         
-  };
+#define AF_LATIN_HINTS_HORZ_SNAP    ( 1U << 0 ) /* stem width snapping  */
+#define AF_LATIN_HINTS_VERT_SNAP    ( 1U << 1 ) /* stem height snapping */
+#define AF_LATIN_HINTS_STEM_ADJUST  ( 1U << 2 ) /* stem width/height    */
+                                                
+#define AF_LATIN_HINTS_MONO         ( 1U << 3 ) /* monochrome rendering */
 
 
 #define AF_LATIN_HINTS_DO_HORZ_SNAP( h )             \

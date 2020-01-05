@@ -36,8 +36,8 @@
 
 
 
-#ifndef __CF2HINTS_H__
-#define __CF2HINTS_H__
+#ifndef CF2HINTS_H_
+#define CF2HINTS_H_
 
 
 FT_BEGIN_HEADER

@@ -16,8 +16,8 @@
 
 
 
-#ifndef __PFRSBIT_H__
-#define __PFRSBIT_H__
+#ifndef PFRSBIT_H_
+#define PFRSBIT_H_
 
 #include "pfrobjs.h"
 

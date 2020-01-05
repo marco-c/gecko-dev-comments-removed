@@ -25,6 +25,7 @@
 
 
 
+
 #include "gxvmort.h"
 
 
@@ -155,7 +156,7 @@
     setMark       = (FT_UShort)(   flags >> 15            );
     dontAdvance   = (FT_UShort)( ( flags >> 14 ) & 1      );
 #endif
-    reserved      = (FT_Short)(    flags         & 0x3FFF );
+    reserved      = (FT_UShort)(    flags        & 0x3FFF );
 
     markOffset    = (FT_Short)( glyphOffset_p->ul >> 16 );
     currentOffset = (FT_Short)( glyphOffset_p->ul       );
@@ -191,7 +192,7 @@
 
 
     GXV_NAME_ENTER( "validating contents of substitutionTable" );
-    for ( i = 0; i < num_gids ; i ++ )
+    for ( i = 0; i < num_gids; i++ )
     {
       FT_UShort  dst_gid;
 

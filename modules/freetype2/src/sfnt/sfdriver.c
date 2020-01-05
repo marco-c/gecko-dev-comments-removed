@@ -139,9 +139,9 @@
 
   FT_DEFINE_SERVICE_SFNT_TABLEREC(
     sfnt_service_sfnt_table,
-    (FT_SFNT_TableLoadFunc)tt_face_load_any,
-    (FT_SFNT_TableGetFunc) get_sfnt_table,
-    (FT_SFNT_TableInfoFunc)sfnt_table_info )
+    (FT_SFNT_TableLoadFunc)tt_face_load_any,     
+    (FT_SFNT_TableGetFunc) get_sfnt_table,       
+    (FT_SFNT_TableInfoFunc)sfnt_table_info )     
 
 
 #ifdef TT_CONFIG_OPTION_POSTSCRIPT_NAMES
@@ -205,8 +205,8 @@
 
   FT_DEFINE_SERVICE_GLYPHDICTREC(
     sfnt_service_glyph_dict,
-    (FT_GlyphDict_GetNameFunc)  sfnt_get_glyph_name,
-    (FT_GlyphDict_NameIndexFunc)sfnt_get_name_index )
+    (FT_GlyphDict_GetNameFunc)  sfnt_get_glyph_name,    
+    (FT_GlyphDict_NameIndexFunc)sfnt_get_name_index )   
 
 
 #endif 
@@ -266,7 +266,7 @@
       {
         FT_Stream   stream = face->name_table.stream;
         FT_String*  r      = (FT_String*)result;
-        FT_Byte*    p;
+        FT_Char*    p;
 
 
         if ( FT_STREAM_SEEK( name->stringOffset ) ||
@@ -280,11 +280,11 @@
           goto Exit;
         }
 
-        p = (FT_Byte*)stream->cursor;
+        p = (FT_Char*)stream->cursor;
 
         for ( ; len > 0; len--, p += 2 )
         {
-          if ( p[0] == 0 && p[1] >= 32 && p[1] < 128 )
+          if ( p[0] == 0 && p[1] >= 32 )
             *r++ = p[1];
         }
         *r = '\0';
@@ -330,7 +330,7 @@
 
   FT_DEFINE_SERVICE_PSFONTNAMEREC(
     sfnt_service_ps_name,
-    (FT_PsName_GetFunc)sfnt_get_ps_name )
+    (FT_PsName_GetFunc)sfnt_get_ps_name )     
 
 
   
@@ -338,7 +338,7 @@
 
   FT_DEFINE_SERVICE_TTCMAPSREC(
     tt_service_get_cmap_info,
-    (TT_CMap_Info_GetFunc)tt_get_cmap_info )
+    (TT_CMap_Info_GetFunc)tt_get_cmap_info )  
 
 
 #ifdef TT_CONFIG_OPTION_BDF
@@ -381,8 +381,8 @@
 
   FT_DEFINE_SERVICE_BDFRec(
     sfnt_service_bdf,
-    (FT_BDF_GetCharsetIdFunc)sfnt_get_charset_id,
-    (FT_BDF_GetPropertyFunc) tt_face_find_bdf_prop )
+    (FT_BDF_GetCharsetIdFunc)sfnt_get_charset_id,     
+    (FT_BDF_GetPropertyFunc) tt_face_find_bdf_prop )  
 
 
 #endif 
@@ -459,53 +459,62 @@
 
   FT_DEFINE_SFNT_INTERFACE(
     sfnt_interface,
-    tt_face_goto_table,
+    tt_face_goto_table,     
 
-    sfnt_init_face,
-    sfnt_load_face,
-    sfnt_done_face,
-    sfnt_get_interface,
+    sfnt_init_face,         
+    sfnt_load_face,         
+    sfnt_done_face,         
+    sfnt_get_interface,     
 
-    tt_face_load_any,
+    tt_face_load_any,       
 
-    tt_face_load_head,
-    tt_face_load_hhea,
-    tt_face_load_cmap,
-    tt_face_load_maxp,
-    tt_face_load_os2,
-    tt_face_load_post,
+    tt_face_load_head,      
+    tt_face_load_hhea,      
+    tt_face_load_cmap,      
+    tt_face_load_maxp,      
+    tt_face_load_os2,       
+    tt_face_load_post,      
 
-    tt_face_load_name,
-    tt_face_free_name,
+    tt_face_load_name,      
+    tt_face_free_name,      
 
-    tt_face_load_kern,
-    tt_face_load_gasp,
-    tt_face_load_pclt,
+    tt_face_load_kern,      
+    tt_face_load_gasp,      
+    tt_face_load_pclt,      
 
     
     PUT_EMBEDDED_BITMAPS( tt_face_load_bhed ),
-
+                            
     PUT_EMBEDDED_BITMAPS( tt_face_load_sbit_image ),
+                            
 
     
     PUT_PS_NAMES( tt_face_get_ps_name   ),
+                            
     PUT_PS_NAMES( tt_face_free_ps_names ),
+                            
 
     
-    tt_face_get_kerning,
+    tt_face_get_kerning,    
 
     
-    tt_face_load_font_dir,
-    tt_face_load_hmtx,
+    tt_face_load_font_dir,  
+    tt_face_load_hmtx,      
 
     
     PUT_EMBEDDED_BITMAPS( tt_face_load_sbit ),
+                            
     PUT_EMBEDDED_BITMAPS( tt_face_free_sbit ),
+                            
 
     PUT_EMBEDDED_BITMAPS( tt_face_set_sbit_strike     ),
+                            
     PUT_EMBEDDED_BITMAPS( tt_face_load_strike_metrics ),
+                    
 
-    tt_face_get_metrics
+    tt_face_get_metrics,    
+
+    tt_face_get_name        
   )
 
 

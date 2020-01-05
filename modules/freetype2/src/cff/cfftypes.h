@@ -17,8 +17,8 @@
 
 
 
-#ifndef __CFFTYPES_H__
-#define __CFFTYPES_H__
+#ifndef CFFTYPES_H_
+#define CFFTYPES_H_
 
 
 #include <ft2build.h>
@@ -145,6 +145,12 @@ FT_BEGIN_HEADER
     FT_ULong   cid_fd_select_offset;
     FT_UInt    cid_font_name;
 
+    
+    
+    
+    FT_UShort  num_designs;
+    FT_UShort  num_axes;
+
   } CFF_FontRecDictRec, *CFF_FontRecDict;
 
 
@@ -250,6 +256,7 @@ FT_BEGIN_HEADER
     FT_UInt          num_strings;
     FT_Byte**        strings;
     FT_Byte*         string_pool;
+    FT_ULong         string_pool_size;
 
     CFF_SubFontRec   top_font;
     FT_UInt          num_subfonts;

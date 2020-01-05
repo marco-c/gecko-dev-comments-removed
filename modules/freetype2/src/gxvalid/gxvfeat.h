@@ -24,8 +24,9 @@
 
 
 
-#ifndef __GXVFEAT_H__
-#define __GXVFEAT_H__
+
+#ifndef GXVFEAT_H_
+#define GXVFEAT_H_
 
 
 #include "gxvalid.h"

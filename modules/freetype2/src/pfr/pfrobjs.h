@@ -16,8 +16,8 @@
 
 
 
-#ifndef __PFROBJS_H__
-#define __PFROBJS_H__
+#ifndef PFROBJS_H_
+#define PFROBJS_H_
 
 #include "pfrtypes.h"
 

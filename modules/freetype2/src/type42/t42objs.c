@@ -92,8 +92,8 @@
     
     type1->glyph_names_block    = loader.glyph_names.block;
     type1->glyph_names          = (FT_String**)loader.glyph_names.elements;
-    loader.glyph_names.block    = 0;
-    loader.glyph_names.elements = 0;
+    loader.glyph_names.block    = NULL;
+    loader.glyph_names.elements = NULL;
 
     
     if ( type1->encoding_type == T1_ENCODING_TYPE_ARRAY )
@@ -208,7 +208,7 @@
       goto Exit;
 
     
-    if ( face_index > 0 )
+    if ( ( face_index & 0xFFFF ) > 0 )
     {
       FT_ERROR(( "T42_Face_Init: invalid face index\n" ));
       error = FT_THROW( Invalid_Argument );
@@ -231,9 +231,6 @@
     if ( info->is_fixed_pitch )
       root->face_flags |= FT_FACE_FLAG_FIXED_WIDTH;
 
-    
-    
-    
 #ifdef TT_CONFIG_OPTION_BYTECODE_INTERPRETER
     root->face_flags |= FT_FACE_FLAG_HINTER;
 #endif
@@ -285,7 +282,7 @@
 
     
     root->num_fixed_sizes = 0;
-    root->available_sizes = 0;
+    root->available_sizes = NULL;
 
     
     {
@@ -461,8 +458,8 @@
     FT_FREE( face->unicode_map.maps );
     face->unicode_map.num_maps = 0;
 
-    face->root.family_name = 0;
-    face->root.style_name  = 0;
+    face->root.family_name = NULL;
+    face->root.style_name  = NULL;
   }
 
 
@@ -632,10 +629,10 @@
     slot->bitmap_left   = 0;
     slot->bitmap_top    = 0;
     slot->num_subglyphs = 0;
-    slot->subglyphs     = 0;
-    slot->control_data  = 0;
+    slot->subglyphs     = NULL;
+    slot->control_data  = NULL;
     slot->control_len   = 0;
-    slot->other         = 0;
+    slot->other         = NULL;
     slot->format        = FT_GLYPH_FORMAT_NONE;
 
     slot->linearHoriAdvance = 0;
@@ -652,10 +649,16 @@
     FT_Error         error;
     T42_GlyphSlot    t42slot = (T42_GlyphSlot)glyph;
     T42_Size         t42size = (T42_Size)size;
+    T42_Face         t42face = (T42_Face)size->face;
     FT_Driver_Class  ttclazz = ((T42_Driver)glyph->face->driver)->ttclazz;
 
 
     FT_TRACE1(( "T42_GlyphSlot_Load: glyph index %d\n", glyph_index ));
+
+    
+    glyph_index = (FT_UInt)ft_strtol(
+                    (const char *)t42face->type1.charstrings[glyph_index],
+                    NULL, 10 );
 
     t42_glyphslot_clear( t42slot->ttslot );
     error = ttclazz->load_glyph( t42slot->ttslot,

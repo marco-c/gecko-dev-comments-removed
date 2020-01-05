@@ -16,8 +16,8 @@
 
 
 
-#ifndef __TTCMAP_H__
-#define __TTCMAP_H__
+#ifndef TTCMAP_H_
+#define TTCMAP_H_
 
 
 #include <ft2build.h>

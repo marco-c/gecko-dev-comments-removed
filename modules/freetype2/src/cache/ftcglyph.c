@@ -106,7 +106,7 @@
   FTC_Family_Init( FTC_Family  family,
                    FTC_Cache   cache )
   {
-    FTC_GCacheClass  clazz = FTC_CACHE__GCACHE_CLASS( cache );
+    FTC_GCacheClass  clazz = FTC_CACHE_GCACHE_CLASS( cache );
 
 
     family->clazz     = clazz->family_class;
@@ -185,7 +185,7 @@
 
   FT_LOCAL_DEF( FT_Error )
   FTC_GCache_Lookup( FTC_GCache   cache,
-                     FT_PtrDist   hash,
+                     FT_Offset    hash,
                      FT_UInt      gindex,
                      FTC_GQuery   query,
                      FTC_Node    *anode )

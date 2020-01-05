@@ -36,8 +36,8 @@
 
 
 
-#ifndef __CF2GLUE_H__
-#define __CF2GLUE_H__
+#ifndef CF2GLUE_H_
+#define CF2GLUE_H_
 
 
 

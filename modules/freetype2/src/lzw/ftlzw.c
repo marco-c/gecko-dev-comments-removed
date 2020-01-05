@@ -21,7 +21,6 @@
 
 
 
-
 #include <ft2build.h>
 #include FT_INTERNAL_MEMORY_H
 #include FT_INTERNAL_STREAM_H
@@ -32,7 +31,7 @@
 
 #include FT_MODULE_ERRORS_H
 
-#undef __FTERRORS_H__
+#undef FTERRORS_H_
 
 #undef  FT_ERR_PREFIX
 #define FT_ERR_PREFIX  LZW_Err_
@@ -331,16 +330,16 @@
   }
 
 
-  static FT_ULong
-  ft_lzw_stream_io( FT_Stream  stream,
-                    FT_ULong   pos,
-                    FT_Byte*   buffer,
-                    FT_ULong   count )
+  static unsigned long
+  ft_lzw_stream_io( FT_Stream       stream,
+                    unsigned long   offset,
+                    unsigned char*  buffer,
+                    unsigned long   count )
   {
     FT_LZWFile  zip = (FT_LZWFile)stream->descriptor.pointer;
 
 
-    return ft_lzw_file_io( zip, pos, buffer, count );
+    return ft_lzw_file_io( zip, offset, buffer, count );
   }
 
 

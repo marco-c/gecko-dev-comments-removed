@@ -61,6 +61,7 @@
 
     
     
+    
     if ( pic_container->raster )
     {
       ((RasterPIC*)pic_container->raster)->ref_count++;
@@ -80,21 +81,6 @@
     FT_Init_Class_ft_standard_raster( &container->ft_standard_raster );
 
     return error;
-  }
-
-
-  
-  FT_Error
-  ft_raster5_renderer_class_pic_init( FT_Library  library )
-  {
-    return ft_raster1_renderer_class_pic_init( library );
-  }
-
-
-  void
-  ft_raster5_renderer_class_pic_free( FT_Library  library )
-  {
-    ft_raster1_renderer_class_pic_free( library );
   }
 
 #endif 

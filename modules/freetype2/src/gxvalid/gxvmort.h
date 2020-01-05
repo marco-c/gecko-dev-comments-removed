@@ -24,8 +24,9 @@
 
 
 
-#ifndef __GXVMORT_H__
-#define __GXVMORT_H__
+
+#ifndef GXVMORT_H_
+#define GXVMORT_H_
 
 #include "gxvalid.h"
 #include "gxvcommn.h"

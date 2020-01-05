@@ -16,15 +16,15 @@
 
 
 
-#ifndef __FTGRAYS_H__
-#define __FTGRAYS_H__
+#ifndef FTGRAYS_H_
+#define FTGRAYS_H_
 
 #ifdef __cplusplus
   extern "C" {
 #endif
 
 
-#ifdef _STANDALONE_
+#ifdef STANDALONE_
 #include "ftimage.h"
 #else
 #include <ft2build.h>

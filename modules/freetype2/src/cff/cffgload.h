@@ -16,8 +16,8 @@
 
 
 
-#ifndef __CFFGLOAD_H__
-#define __CFFGLOAD_H__
+#ifndef CFFGLOAD_H_
+#define CFFGLOAD_H_
 
 
 #include <ft2build.h>
@@ -29,7 +29,12 @@ FT_BEGIN_HEADER
 
 
 #define CFF_MAX_OPERANDS        48
-#define CFF_MAX_SUBRS_CALLS     32
+#define CFF_MAX_SUBRS_CALLS     16  /* maximum subroutine nesting;         */
+                                    
+                                    
+                                    
+                                    
+                                    
 #define CFF_MAX_TRANS_ELEMENTS  32
 
 
@@ -222,7 +227,8 @@ FT_BEGIN_HEADER
   FT_LOCAL( FT_Error )
   cff_decoder_parse_charstrings( CFF_Decoder*  decoder,
                                  FT_Byte*      charstring_base,
-                                 FT_ULong      charstring_len );
+                                 FT_ULong      charstring_len,
+                                 FT_Bool       in_dict );
 #endif
 
   FT_LOCAL( FT_Error )

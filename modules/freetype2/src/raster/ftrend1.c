@@ -104,7 +104,7 @@
   {
     FT_Error     error;
     FT_Outline*  outline;
-    FT_BBox      cbox;
+    FT_BBox      cbox, cbox0;
     FT_UInt      width, height, pitch;
     FT_Bitmap*   bitmap;
     FT_Memory    memory;
@@ -120,38 +120,11 @@
     }
 
     
-#ifndef FT_CONFIG_OPTION_PIC
     if ( mode != FT_RENDER_MODE_MONO )
     {
       
-      if ( render->clazz == &ft_raster1_renderer_class )
-        return FT_THROW( Cannot_Render_Glyph );
+      return FT_THROW( Cannot_Render_Glyph );
     }
-    else
-    {
-      
-      if ( render->clazz == &ft_raster5_renderer_class )
-        return FT_THROW( Cannot_Render_Glyph );
-    }
-#else 
-    
-    
-    
-    
-    
-    if ( mode != FT_RENDER_MODE_MONO )
-    {
-      
-      if ( render->clazz->root.module_name[6] == '1' )
-        return FT_THROW( Cannot_Render_Glyph );
-    }
-    else
-    {
-      
-      if ( render->clazz->root.module_name[6] == '5' )
-        return FT_THROW( Cannot_Render_Glyph );
-    }
-#endif 
 
     outline = &slot->outline;
 
@@ -160,14 +133,14 @@
       FT_Outline_Translate( outline, origin->x, origin->y );
 
     
-    FT_Outline_Get_CBox( outline, &cbox );
+    FT_Outline_Get_CBox( outline, &cbox0 );
 
     
 #if 1
-    cbox.xMin = FT_PIX_ROUND( cbox.xMin );
-    cbox.yMin = FT_PIX_ROUND( cbox.yMin );
-    cbox.xMax = FT_PIX_ROUND( cbox.xMax );
-    cbox.yMax = FT_PIX_ROUND( cbox.yMax );
+    cbox.xMin = FT_PIX_ROUND( cbox0.xMin );
+    cbox.yMin = FT_PIX_ROUND( cbox0.yMin );
+    cbox.xMax = FT_PIX_ROUND( cbox0.xMax );
+    cbox.yMax = FT_PIX_ROUND( cbox0.yMax );
 #else
     cbox.xMin = FT_PIX_FLOOR( cbox.xMin );
     cbox.yMin = FT_PIX_FLOOR( cbox.yMin );
@@ -175,8 +148,28 @@
     cbox.yMax = FT_PIX_CEIL( cbox.yMax );
 #endif
 
+    
+    
+    
+    
+    
     width  = (FT_UInt)( ( cbox.xMax - cbox.xMin ) >> 6 );
+    if ( width == 0 )
+    {
+      cbox.xMin = FT_PIX_FLOOR( cbox0.xMin );
+      cbox.xMax = FT_PIX_CEIL( cbox0.xMax );
+
+      width = (FT_UInt)( ( cbox.xMax - cbox.xMin ) >> 6 );
+    }
+
     height = (FT_UInt)( ( cbox.yMax - cbox.yMin ) >> 6 );
+    if ( height == 0 )
+    {
+      cbox.yMin = FT_PIX_FLOOR( cbox0.yMin );
+      cbox.yMax = FT_PIX_CEIL( cbox0.yMax );
+
+      height = (FT_UInt)( ( cbox.yMax - cbox.yMin ) >> 6 );
+    }
 
     if ( width > FT_USHORT_MAX || height > FT_USHORT_MAX )
     {
@@ -194,23 +187,12 @@
       slot->internal->flags &= ~FT_GLYPH_OWN_BITMAP;
     }
 
-    
-    if ( !( mode & FT_RENDER_MODE_MONO ) )
-    {
-      
-      pitch              = FT_PAD_CEIL( width, 4 );
-      bitmap->pixel_mode = FT_PIXEL_MODE_GRAY;
-      bitmap->num_grays  = 256;
-    }
-    else
-    {
-      pitch              = ( ( width + 15 ) >> 4 ) << 1;
-      bitmap->pixel_mode = FT_PIXEL_MODE_MONO;
-    }
+    pitch              = ( ( width + 15 ) >> 4 ) << 1;
+    bitmap->pixel_mode = FT_PIXEL_MODE_MONO;
 
     bitmap->width = width;
     bitmap->rows  = height;
-    bitmap->pitch = pitch;
+    bitmap->pitch = (int)pitch;
 
     if ( FT_ALLOC_MULT( bitmap->buffer, pitch, height ) )
       goto Exit;
@@ -224,9 +206,6 @@
     params.target = bitmap;
     params.source = outline;
     params.flags  = 0;
-
-    if ( bitmap->pixel_mode == FT_PIXEL_MODE_GRAY )
-      params.flags |= FT_RASTER_FLAG_AA;
 
     
     error = render->raster_render( render->raster, &params );
@@ -251,37 +230,6 @@
       sizeof ( FT_RendererRec ),
 
       "raster1",
-      0x10000L,
-      0x20000L,
-
-      0,    
-
-      (FT_Module_Constructor)ft_raster1_init,
-      (FT_Module_Destructor) 0,
-      (FT_Module_Requester)  0
-    ,
-
-    FT_GLYPH_FORMAT_OUTLINE,
-
-    (FT_Renderer_RenderFunc)   ft_raster1_render,
-    (FT_Renderer_TransformFunc)ft_raster1_transform,
-    (FT_Renderer_GetCBoxFunc)  ft_raster1_get_cbox,
-    (FT_Renderer_SetModeFunc)  ft_raster1_set_mode,
-
-    (FT_Raster_Funcs*)    &FT_STANDARD_RASTER_GET
-  )
-
-
-  
-  
-  
-  
-  FT_DEFINE_RENDERER( ft_raster5_renderer_class,
-
-      FT_MODULE_RENDERER,
-      sizeof ( FT_RendererRec ),
-
-      "raster5",
       0x10000L,
       0x20000L,
 

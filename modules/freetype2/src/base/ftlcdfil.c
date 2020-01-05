@@ -48,7 +48,7 @@
 
       
       if ( bitmap->pitch < 0 )
-        line -= bitmap->pitch * ( bitmap->rows - 1 );
+        line -= bitmap->pitch * (FT_Int)( bitmap->rows - 1 );
 
       
       
@@ -112,7 +112,7 @@
 
       
       if ( bitmap->pitch < 0 )
-        column -= bitmap->pitch * ( bitmap->rows - 1 );
+        column -= bitmap->pitch * (FT_Int)( bitmap->rows - 1 );
 
       for ( ; width > 0; width--, column++ )
       {
@@ -182,7 +182,7 @@
     FT_UInt  height = (FT_UInt)bitmap->rows;
     FT_Int   pitch  = bitmap->pitch;
 
-    static const int  filters[3][3] =
+    static const unsigned int  filters[3][3] =
     {
       { 65538 * 9/13, 65538 * 1/6, 65538 * 1/13 },
       { 65538 * 3/13, 65538 * 4/6, 65538 * 3/13 },
@@ -200,7 +200,7 @@
 
       
       if ( bitmap->pitch < 0 )
-        line -= bitmap->pitch * ( bitmap->rows - 1 );
+        line -= bitmap->pitch * (FT_Int)( bitmap->rows - 1 );
 
       for ( ; height > 0; height--, line += pitch )
       {
@@ -243,12 +243,12 @@
 
       
       if ( bitmap->pitch < 0 )
-        column -= bitmap->pitch * ( bitmap->rows - 1 );
+        column -= bitmap->pitch * (FT_Int)( bitmap->rows - 1 );
 
       for ( ; width > 0; width--, column++ )
       {
         FT_Byte*  col     = column;
-        FT_Byte*  col_end = col + height * pitch;
+        FT_Byte*  col_end = col + (FT_Int)height * pitch;
 
 
         for ( ; col < col_end; col += 3 * pitch )
@@ -296,6 +296,8 @@
       return FT_THROW( Invalid_Argument );
 
     ft_memcpy( library->lcd_weights, weights, 5 );
+    library->lcd_filter_func = _ft_lcd_filter_fir;
+    library->lcd_extra       = 2;
 
     return FT_Err_Ok;
   }
@@ -305,12 +307,10 @@
   FT_Library_SetLcdFilter( FT_Library    library,
                            FT_LcdFilter  filter )
   {
+    static const FT_Byte  default_filter[5] =
+                            { 0x08, 0x4d, 0x56, 0x4d, 0x08 };
     static const FT_Byte  light_filter[5] =
                             { 0x00, 0x55, 0x56, 0x55, 0x00 };
-    
-    
-    static const FT_Byte  default_filter[5] =
-                            { 0x10, 0x40, 0x70, 0x40, 0x10 };
 
 
     if ( !library )
@@ -324,25 +324,9 @@
       break;
 
     case FT_LCD_FILTER_DEFAULT:
-#if defined( FT_FORCE_LEGACY_LCD_FILTER )
-
-      library->lcd_filter_func = _ft_lcd_filter_legacy;
-      library->lcd_extra       = 0;
-
-#elif defined( FT_FORCE_LIGHT_LCD_FILTER )
-
-      ft_memcpy( library->lcd_weights, light_filter, 5 );
-      library->lcd_filter_func = _ft_lcd_filter_fir;
-      library->lcd_extra       = 2;
-
-#else
-
       ft_memcpy( library->lcd_weights, default_filter, 5 );
       library->lcd_filter_func = _ft_lcd_filter_fir;
       library->lcd_extra       = 2;
-
-#endif
-
       break;
 
     case FT_LCD_FILTER_LIGHT:
@@ -354,6 +338,7 @@
 #ifdef USE_LEGACY
 
     case FT_LCD_FILTER_LEGACY:
+    case FT_LCD_FILTER_LEGACY1:
       library->lcd_filter_func = _ft_lcd_filter_legacy;
       library->lcd_extra       = 0;
       break;

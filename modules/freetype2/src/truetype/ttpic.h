@@ -16,11 +16,12 @@
 
 
 
-#ifndef __TTPIC_H__
-#define __TTPIC_H__
+#ifndef TTPIC_H_
+#define TTPIC_H_
 
 
-FT_BEGIN_HEADER
+#include FT_INTERNAL_PIC_H
+
 
 #ifndef FT_CONFIG_OPTION_PIC
 
@@ -36,6 +37,8 @@ FT_BEGIN_HEADER
 #include FT_SERVICE_TRUETYPE_GLYF_H
 #include FT_SERVICE_PROPERTIES_H
 
+
+FT_BEGIN_HEADER
 
   typedef struct  TTModulePIC_
   {
@@ -68,12 +71,11 @@ FT_BEGIN_HEADER
   FT_Error
   tt_driver_class_pic_init( FT_Library  library );
 
+FT_END_HEADER
+
 #endif 
 
  
-
-
-FT_END_HEADER
 
 #endif 
 

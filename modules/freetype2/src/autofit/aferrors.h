@@ -23,12 +23,12 @@
   
   
 
-#ifndef __AFERRORS_H__
-#define __AFERRORS_H__
+#ifndef AFERRORS_H_
+#define AFERRORS_H_
 
 #include FT_MODULE_ERRORS_H
 
-#undef __FTERRORS_H__
+#undef FTERRORS_H_
 
 #undef  FT_ERR_PREFIX
 #define FT_ERR_PREFIX  AF_Err_
@@ -37,5 +37,6 @@
 #include FT_ERRORS_H
 
 #endif 
+
 
 

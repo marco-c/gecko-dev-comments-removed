@@ -48,7 +48,25 @@ re_code_end   = re.compile( r"(\s*)}\s*$" )
 
 
 
-re_identifier = re.compile( r'((?:\w|-)*)' )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+re_identifier = re.compile( r"""
+                              ((?:\w|-)+
+                               (?:\[(?:\w|-)+\])?)
+                            """, re.VERBOSE )
+
 
 
 

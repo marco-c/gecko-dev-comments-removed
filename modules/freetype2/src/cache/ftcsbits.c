@@ -52,7 +52,9 @@
     if ( pitch < 0 )
       pitch = -pitch;
 
-    size = (FT_ULong)( pitch * bitmap->rows );
+    size = (FT_ULong)pitch * bitmap->rows;
+    if ( !size )
+      return FT_Err_Ok;
 
     if ( !FT_ALLOC( sbit->buffer, size ) )
       FT_MEM_COPY( sbit->buffer, bitmap->buffer, size );
@@ -181,7 +183,7 @@
 
       
       if ( asize )
-        *asize = FT_ABS( sbit->pitch ) * sbit->height;
+        *asize = (FT_ULong)FT_ABS( sbit->pitch ) * sbit->height;
 
     } 
 
@@ -215,7 +217,7 @@
     FT_UInt     gindex = gquery->gindex;
     FTC_Family  family = gquery->family;
 
-    FTC_SFamilyClass  clazz = FTC_CACHE__SFAMILY_CLASS( cache );
+    FTC_SFamilyClass  clazz = FTC_CACHE_SFAMILY_CLASS( cache );
     FT_UInt           total;
     FT_UInt           node_count;
 
@@ -302,7 +304,7 @@
           pitch = -pitch;
 
         
-        size += pitch * sbit->height;
+        size += (FT_Offset)pitch * sbit->height;
       }
     }
 

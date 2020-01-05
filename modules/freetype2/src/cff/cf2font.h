@@ -36,8 +36,8 @@
 
 
 
-#ifndef __CF2FONT_H__
-#define __CF2FONT_H__
+#ifndef CF2FONT_H_
+#define CF2FONT_H_
 
 
 #include "cf2ft.h"
@@ -48,7 +48,13 @@ FT_BEGIN_HEADER
 
 
 #define CF2_OPERAND_STACK_SIZE  48
-#define CF2_MAX_SUBR            10 /* maximum subroutine nesting */
+#define CF2_MAX_SUBR            16 /* maximum subroutine nesting;         */
+                                   
+                                   
+                                   
+                                   
+                                   
+#define CF2_STORAGE_SIZE        32
 
 
   

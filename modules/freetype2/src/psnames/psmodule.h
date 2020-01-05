@@ -16,8 +16,8 @@
 
 
 
-#ifndef __PSMODULE_H__
-#define __PSMODULE_H__
+#ifndef PSMODULE_H_
+#define PSMODULE_H_
 
 
 #include <ft2build.h>

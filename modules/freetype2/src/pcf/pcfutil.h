@@ -25,8 +25,8 @@
 
 
 
-#ifndef __PCFUTIL_H__
-#define __PCFUTIL_H__
+#ifndef PCFUTIL_H_
+#define PCFUTIL_H_
 
 
 #include <ft2build.h>

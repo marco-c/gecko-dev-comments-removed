@@ -16,8 +16,8 @@
 
 
 
-#ifndef __AFRANGES_H__
-#define __AFRANGES_H__
+#ifndef AFRANGES_H_
+#define AFRANGES_H_
 
 
 #include "aftypes.h"
@@ -26,8 +26,14 @@
 FT_BEGIN_HEADER
 
 #undef  SCRIPT
-#define SCRIPT( s, S, d, h, sc1, sc2, sc3 )                             \
+#define SCRIPT( s, S, d, h, H, ss )                                     \
           extern const AF_Script_UniRangeRec  af_ ## s ## _uniranges[];
+
+#include "afscript.h"
+
+#undef  SCRIPT
+#define SCRIPT( s, S, d, h, H, ss )                                             \
+          extern const AF_Script_UniRangeRec  af_ ## s ## _nonbase_uniranges[];
 
 #include "afscript.h"
 

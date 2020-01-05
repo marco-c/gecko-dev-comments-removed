@@ -15,8 +15,8 @@
 
 
 
-#ifndef __FTCCBACK_H__
-#define __FTCCBACK_H__
+#ifndef FTCCBACK_H_
+#define FTCCBACK_H_
 
 #include <ft2build.h>
 #include FT_CACHE_H
@@ -87,5 +87,6 @@
 
 
 #endif 
+
 
 

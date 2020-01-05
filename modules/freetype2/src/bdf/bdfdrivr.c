@@ -33,7 +33,7 @@
 #include FT_TRUETYPE_IDS_H
 
 #include FT_SERVICE_BDF_H
-#include FT_SERVICE_XFREE86_NAME_H
+#include FT_SERVICE_FONT_FORMAT_H
 
 #include "bdf.h"
 #include "bdfdrivr.h"
@@ -106,7 +106,7 @@
 
 
       mid  = ( min + max ) >> 1;
-      code = encodings[mid].enc;
+      code = (FT_ULong)encodings[mid].enc;
 
       if ( charcode == code )
       {
@@ -146,7 +146,7 @@
 
 
       mid  = ( min + max ) >> 1;
-      code = encodings[mid].enc;
+      code = (FT_ULong)encodings[mid].enc;
 
       if ( charcode == code )
       {
@@ -165,7 +165,7 @@
     charcode = 0;
     if ( min < cmap->num_encodings )
     {
-      charcode = encodings[min].enc;
+      charcode = (FT_ULong)encodings[min].enc;
       result   = encodings[min].glyph + 1;
     }
 
@@ -379,7 +379,8 @@
 
 
 
-    if ( face_index > 0 ) {
+    if ( face_index > 0 && ( face_index & 0xFFFF ) > 0 )
+    {
       FT_ERROR(( "BDF_Face_Init: invalid face index\n" ));
       BDF_Face_Done( bdfface );
       return FT_THROW( Invalid_Argument );
@@ -420,14 +421,14 @@
           goto Exit;
       }
       else
-        bdfface->family_name = 0;
+        bdfface->family_name = NULL;
 
       if ( ( error = bdf_interpret_style( face ) ) != 0 )
         goto Exit;
 
       
       
-      bdfface->num_glyphs = font->glyphs_size + 1;
+      bdfface->num_glyphs = (FT_Long)( font->glyphs_size + 1 );
 
       bdfface->num_fixed_sizes = 1;
       if ( FT_NEW_ARRAY( bdfface->available_sizes, 1 ) )
@@ -494,7 +495,7 @@
         {
           (face->en_table[n]).enc = cur[n].encoding;
           FT_TRACE4(( "  idx %d, val 0x%lX\n", n, cur[n].encoding ));
-          (face->en_table[n]).glyph = (FT_Short)n;
+          (face->en_table[n]).glyph = (FT_UShort)n;
 
           if ( cur[n].encoding == font->default_char )
           {
@@ -509,7 +510,7 @@
 
       
       {
-        bdf_property_t  *charset_registry = 0, *charset_encoding = 0;
+        bdf_property_t  *charset_registry, *charset_encoding;
         FT_Bool          unicode_charmap  = 0;
 
 
@@ -615,9 +616,9 @@
 
     FT_Select_Metrics( size->face, strike_index );
 
-    size->metrics.ascender    = bdffont->font_ascent << 6;
-    size->metrics.descender   = -bdffont->font_descent << 6;
-    size->metrics.max_advance = bdffont->bbx.width << 6;
+    size->metrics.ascender    = bdffont->font_ascent * 64;
+    size->metrics.descender   = -bdffont->font_descent * 64;
+    size->metrics.max_advance = bdffont->bbx.width * 64;
 
     return FT_Err_Ok;
   }
@@ -734,18 +735,18 @@
     slot->bitmap_left = glyph.bbx.x_offset;
     slot->bitmap_top  = glyph.bbx.ascent;
 
-    slot->metrics.horiAdvance  = glyph.dwidth << 6;
-    slot->metrics.horiBearingX = glyph.bbx.x_offset << 6;
-    slot->metrics.horiBearingY = glyph.bbx.ascent << 6;
-    slot->metrics.width        = bitmap->width << 6;
-    slot->metrics.height       = bitmap->rows << 6;
+    slot->metrics.horiAdvance  = (FT_Pos)( glyph.dwidth * 64 );
+    slot->metrics.horiBearingX = (FT_Pos)( glyph.bbx.x_offset * 64 );
+    slot->metrics.horiBearingY = (FT_Pos)( glyph.bbx.ascent * 64 );
+    slot->metrics.width        = (FT_Pos)( bitmap->width * 64 );
+    slot->metrics.height       = (FT_Pos)( bitmap->rows * 64 );
 
     
 
 
 
     ft_synthesize_vertical_metrics( &slot->metrics,
-                                    bdf->bdffont->bbx.height << 6 );
+                                    bdf->bdffont->bbx.height * 64 );
 
   Exit:
     return error;
@@ -823,8 +824,8 @@
 
   static const FT_Service_BDFRec  bdf_service_bdf =
   {
-    (FT_BDF_GetCharsetIdFunc)bdf_get_charset_id,
-    (FT_BDF_GetPropertyFunc) bdf_get_bdf_property
+    (FT_BDF_GetCharsetIdFunc)bdf_get_charset_id,       
+    (FT_BDF_GetPropertyFunc) bdf_get_bdf_property      
   };
 
 
@@ -836,8 +837,8 @@
 
   static const FT_ServiceDescRec  bdf_services[] =
   {
-    { FT_SERVICE_ID_BDF,       &bdf_service_bdf },
-    { FT_SERVICE_ID_XF86_NAME, FT_XF86_FORMAT_BDF },
+    { FT_SERVICE_ID_BDF,         &bdf_service_bdf },
+    { FT_SERVICE_ID_FONT_FORMAT, FT_FONT_FORMAT_BDF },
     { NULL, NULL }
   };
 
@@ -865,32 +866,32 @@
       0x10000L,
       0x20000L,
 
-      0,
+      0,    
 
       0,                        
       0,                        
-      bdf_driver_requester
+      bdf_driver_requester      
     },
 
     sizeof ( BDF_FaceRec ),
     sizeof ( FT_SizeRec ),
     sizeof ( FT_GlyphSlotRec ),
 
-    BDF_Face_Init,
-    BDF_Face_Done,
+    BDF_Face_Init,              
+    BDF_Face_Done,              
     0,                          
     0,                          
     0,                          
     0,                          
 
-    BDF_Glyph_Load,
+    BDF_Glyph_Load,             
 
     0,                          
     0,                          
     0,                          
 
-    BDF_Size_Request,
-    BDF_Size_Select
+    BDF_Size_Request,           
+    BDF_Size_Select             
   };
 
 

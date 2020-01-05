@@ -34,9 +34,9 @@
 
 #ifndef __MORPHOS__
 #ifdef __SASC
-#include "FT:include/config/ftconfig.h"
+#include "FT:include/freetype/config/ftconfig.h"
 #else
-#include "/FT/include/config/ftconfig.h"
+#include "/FT/include/freetype/config/ftconfig.h"
 #endif
 #else
 
@@ -45,7 +45,7 @@
 
 
 #define _LIBC_LIMITS_H_
-#include "/FT/include/config/ftconfig.h"
+#include "/FT/include/freetype/config/ftconfig.h"
 #endif
 
 

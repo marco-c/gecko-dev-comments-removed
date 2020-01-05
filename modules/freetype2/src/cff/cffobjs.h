@@ -16,8 +16,8 @@
 
 
 
-#ifndef __CFFOBJS_H__
-#define __CFFOBJS_H__
+#ifndef CFFOBJS_H_
+#define CFFOBJS_H_
 
 
 #include <ft2build.h>

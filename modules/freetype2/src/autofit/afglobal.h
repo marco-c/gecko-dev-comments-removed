@@ -17,13 +17,13 @@
 
 
 
-#ifndef __AFGLOBAL_H__
-#define __AFGLOBAL_H__
+#ifndef AFGLOBAL_H_
+#define AFGLOBAL_H_
 
 
 #include "aftypes.h"
 #include "afmodule.h"
-#include "hbshim.h"
+#include "afshaper.h"
 
 
 FT_BEGIN_HEADER
@@ -34,7 +34,7 @@ FT_BEGIN_HEADER
 
 
 #undef  SCRIPT
-#define SCRIPT( s, S, d, h, sc1, sc2, sc3 )                    \
+#define SCRIPT( s, S, d, h, H, ss )                            \
           AF_DECLARE_SCRIPT_CLASS( af_ ## s ## _script_class )
 
 #include "afscript.h"
@@ -72,10 +72,16 @@ FT_BEGIN_HEADER
 #endif
   
 #define AF_SCRIPT_DEFAULT    AF_SCRIPT_LATN
+
   
-#define AF_STYLE_UNASSIGNED  0x7F
+#define AF_STYLE_MASK        0x3FFF
   
-#define AF_DIGIT             0x80
+#define AF_STYLE_UNASSIGNED  AF_STYLE_MASK
+
+  
+#define AF_DIGIT             0x8000U
+  
+#define AF_NONBASE           0x4000U
 
   
 #define AF_PROP_INCREASE_X_HEIGHT_MIN  6
@@ -100,10 +106,11 @@ FT_BEGIN_HEADER
   {
     FT_Face          face;
     FT_Long          glyph_count;    
-    FT_Byte*         glyph_styles;
+    FT_UShort*       glyph_styles;
 
 #ifdef FT_CONFIG_OPTION_USE_HARFBUZZ
     hb_font_t*       hb_font;
+    hb_buffer_t*     hb_buf;           
 #endif
 
     
@@ -111,6 +118,22 @@ FT_BEGIN_HEADER
 
     AF_StyleMetrics  metrics[AF_STYLE_MAX];
 
+    
+    
+    FT_UShort        stem_darkening_for_ppem;
+    
+    
+    FT_Pos           standard_vertical_width;
+    
+    
+    FT_Pos           standard_horizontal_width;
+    
+    FT_Pos           darken_x;
+    
+    FT_Pos           darken_y;
+    
+    
+    FT_Fixed         scale_down_factor;
     AF_Module        module;         
 
   } AF_FaceGlobalsRec;

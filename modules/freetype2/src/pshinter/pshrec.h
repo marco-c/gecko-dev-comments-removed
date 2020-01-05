@@ -28,8 +28,8 @@
   
 
 
-#ifndef __PSHREC_H__
-#define __PSHREC_H__
+#ifndef PSHREC_H_
+#define PSHREC_H_
 
 
 #include <ft2build.h>
@@ -61,12 +61,8 @@ FT_BEGIN_HEADER
 
 
   
-  typedef enum  PS_Hint_Flags_
-  {
-    PS_HINT_FLAG_GHOST  = 1,
-    PS_HINT_FLAG_BOTTOM = 2
-
-  } PS_Hint_Flags;
+#define PS_HINT_FLAG_GHOST   1U
+#define PS_HINT_FLAG_BOTTOM  2U
 
 
   

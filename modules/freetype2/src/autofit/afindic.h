@@ -17,8 +17,8 @@
 
 
 
-#ifndef __AFINDIC_H__
-#define __AFINDIC_H__
+#ifndef AFINDIC_H_
+#define AFINDIC_H_
 
 #include "afhints.h"
 

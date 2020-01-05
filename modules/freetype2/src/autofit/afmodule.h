@@ -16,14 +16,12 @@
 
 
 
-#ifndef __AFMODULE_H__
-#define __AFMODULE_H__
+#ifndef AFMODULE_H_
+#define AFMODULE_H_
 
 #include <ft2build.h>
 #include FT_INTERNAL_OBJECTS_H
 #include FT_MODULE_H
-
-#include "afloader.h"
 
 
 FT_BEGIN_HEADER
@@ -34,21 +32,22 @@ FT_BEGIN_HEADER
 
 
 
-
-
   typedef struct  AF_ModuleRec_
   {
     FT_ModuleRec  root;
 
     FT_UInt       fallback_style;
     FT_UInt       default_script;
+#ifdef AF_CONFIG_OPTION_USE_WARPER
+    FT_Bool       warping;
+#endif
+    FT_Bool       no_stem_darkening;
+    FT_Int        darken_params[8];
 
-    AF_LoaderRec  loader[1];
-
-  } AF_ModuleRec;
+  } AF_ModuleRec, *AF_Module;
 
 
-FT_DECLARE_MODULE(autofit_module_class)
+FT_DECLARE_MODULE( autofit_module_class )
 
 
 FT_END_HEADER
