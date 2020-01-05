@@ -470,13 +470,6 @@ NS_IMPL_ISUPPORTS(VPXReporter, nsIMemoryReporter)
 CountingAllocatorBase<VPXReporter>::sAmount(0);
 #endif 
 
-static double
-TimeSinceProcessCreation()
-{
-  bool ignore;
-  return (TimeStamp::Now() - TimeStamp::ProcessCreation(ignore)).ToMilliseconds();
-}
-
 static bool sInitializedJS = false;
 
 
@@ -499,8 +492,6 @@ NS_InitXPCOM2(nsIServiceManager** aResult,
   NS_InitAtomTable();
 
   mozilla::LogModule::Init();
-
-  JS_SetCurrentEmbedderTimeFunction(TimeSinceProcessCreation);
 
   char aLocal;
   profiler_init(&aLocal);
