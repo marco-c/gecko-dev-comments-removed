@@ -24,6 +24,7 @@
 #include "nsXULAppAPI.h"
 
 #ifdef MOZ_X11
+# include "nsX11ErrorHandler.h"
 # include "mozilla/X11Util.h"
 #endif
 #include "mozilla/ipc/ProcessChild.h"
@@ -608,7 +609,7 @@ PluginModuleChild::InitGraphics()
 #endif
 #ifdef MOZ_X11
     
-    XRE_InstallX11ErrorHandler();
+    InstallX11ErrorHandler();
 #endif
     return true;
 }
