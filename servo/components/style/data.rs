@@ -245,7 +245,7 @@ static NO_SNAPSHOT: Option<Snapshot> = None;
 
 
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct SnapshotOption {
     snapshot: Option<Snapshot>,
     destroyed: bool,
@@ -292,7 +292,7 @@ impl Deref for SnapshotOption {
 
 
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct RestyleData {
     
     
@@ -308,18 +308,17 @@ pub struct RestyleData {
 
     
     
-    pub snapshot: SnapshotOption,
-}
+    
+    
+    
+    
+    
+    #[cfg(feature = "gecko")]
+    pub damage_handled: RestyleDamage,
 
-impl Default for RestyleData {
-    fn default() -> Self {
-        RestyleData {
-            hint: StoredRestyleHint::default(),
-            recascade: false,
-            damage: RestyleDamage::empty(),
-            snapshot: SnapshotOption::empty(),
-        }
-    }
+    
+    
+    pub snapshot: SnapshotOption,
 }
 
 impl RestyleData {
@@ -354,6 +353,28 @@ impl RestyleData {
             self.recascade ||
             self.snapshot.is_some()
     }
+
+    
+    #[cfg(feature = "gecko")]
+    pub fn damage_handled(&self) -> RestyleDamage {
+        self.damage_handled
+    }
+
+    
+    #[cfg(feature = "servo")]
+    pub fn damage_handled(&self) -> RestyleDamage {
+        RestyleDamage::empty()
+    }
+
+    
+    #[cfg(feature = "gecko")]
+    pub fn set_damage_handled(&mut self, d: RestyleDamage) {
+        self.damage_handled = d;
+    }
+
+    
+    #[cfg(feature = "servo")]
+    pub fn set_damage_handled(&mut self, _: RestyleDamage) {}
 }
 
 

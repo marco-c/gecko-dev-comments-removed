@@ -455,7 +455,10 @@ pub fn recalc_style_at<E, D>(traversal: &D,
     
     if traversal.should_traverse_children(&mut context.thread_local, element, &data, DontLog) &&
        (element.has_dirty_descendants() || !propagated_hint.is_empty() || inherited_style_changed) {
-        preprocess_children(traversal, element, propagated_hint, inherited_style_changed);
+        let damage_handled = data.get_restyle().map_or(RestyleDamage::empty(), |r| {
+            r.damage_handled() | r.damage.handled_for_descendants()
+        });
+        preprocess_children(traversal, element, propagated_hint, damage_handled, inherited_style_changed);
     }
 
     
@@ -557,6 +560,7 @@ fn compute_style<E, D>(_traversal: &D,
 fn preprocess_children<E, D>(traversal: &D,
                              element: E,
                              mut propagated_hint: StoredRestyleHint,
+                             damage_handled: RestyleDamage,
                              parent_inherited_style_changed: bool)
     where E: TElement,
           D: DomTraversal<E>
@@ -580,8 +584,7 @@ fn preprocess_children<E, D>(traversal: &D,
         
         
         if propagated_hint.is_empty() && !parent_inherited_style_changed &&
-           !child_data.has_restyle()
-        {
+           damage_handled.is_empty() && !child_data.has_restyle() {
             continue;
         }
         let mut restyle_data = child_data.ensure_restyle();
@@ -597,6 +600,9 @@ fn preprocess_children<E, D>(traversal: &D,
         if later_siblings {
             propagated_hint.insert(&(RESTYLE_SELF | RESTYLE_DESCENDANTS).into());
         }
+
+        
+        restyle_data.set_damage_handled(damage_handled);
 
         
         

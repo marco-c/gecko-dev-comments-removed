@@ -570,6 +570,35 @@ trait PrivateMatchMethods: TElement {
     }
 
     
+    #[cfg(feature = "gecko")]
+    fn accumulate_damage(&self,
+                         restyle: &mut RestyleData,
+                         old_values: &Arc<ComputedValues>,
+                         new_values: &Arc<ComputedValues>,
+                         pseudo: Option<&PseudoElement>) {
+        
+        
+        if restyle.damage_handled.contains(RestyleDamage::reconstruct()) {
+            restyle.damage = RestyleDamage::empty();
+            return;
+        }
+
+        
+        
+        
+        
+        
+        
+        if !restyle.damage.contains(RestyleDamage::reconstruct()) {
+            let new_damage = self.compute_restyle_damage(&old_values, &new_values, pseudo);
+            if !restyle.damage_handled.contains(new_damage) {
+                restyle.damage |= new_damage;
+            }
+        }
+    }
+
+    
+    #[cfg(feature = "servo")]
     fn accumulate_damage(&self,
                          restyle: &mut RestyleData,
                          old_values: &Arc<ComputedValues>,
@@ -712,7 +741,7 @@ pub trait MatchMethods : TElement {
             if let Some(r) = data.get_restyle_mut() {
                 
                 
-                r.damage |= RestyleDamage::rebuild_and_reflow();
+                r.damage |= RestyleDamage::reconstruct();
             }
         }
 
@@ -924,7 +953,7 @@ pub trait MatchMethods : TElement {
                     RestyleDamage::empty()
                 } else {
                     
-                    RestyleDamage::rebuild_and_reflow()
+                    RestyleDamage::reconstruct()
                 }
             }
         }

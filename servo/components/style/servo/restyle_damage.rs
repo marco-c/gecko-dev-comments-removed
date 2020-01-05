@@ -67,9 +67,17 @@ impl ServoRestyleDamage {
 
     
     
+    
+    
+    
     pub fn rebuild_and_reflow() -> ServoRestyleDamage {
         REPAINT | REPOSITION | STORE_OVERFLOW | BUBBLE_ISIZES | REFLOW_OUT_OF_FLOW | REFLOW |
             RECONSTRUCT_FLOW
+    }
+
+    
+    pub fn reconstruct() -> ServoRestyleDamage {
+        RECONSTRUCT_FLOW
     }
 
     
@@ -111,6 +119,17 @@ impl ServoRestyleDamage {
                 self & (REPAINT | REPOSITION | REFLOW)
             }
         }
+    }
+
+    
+    pub fn handled_for_descendants(self) -> Self {
+        Self::empty()
+    }
+}
+
+impl Default for ServoRestyleDamage {
+    fn default() -> Self {
+        Self::empty()
     }
 }
 
