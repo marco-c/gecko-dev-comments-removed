@@ -1308,6 +1308,27 @@ nsMenuPopupFrame::FlipOrResize(nscoord& aScreenPoint, nscoord aSize,
   return std::min(popupSize, aScreenEnd - aScreenPoint);
 }
 
+nsRect
+nsMenuPopupFrame::ComputeAnchorRect(nsPresContext* aRootPresContext, nsIFrame* aAnchorFrame)
+{
+  
+  nsIFrame* rootFrame = aRootPresContext->FrameManager()->GetRootFrame();
+
+  
+  nsRect anchorRect = aAnchorFrame->GetRectRelativeToSelf();
+
+  
+  anchorRect = nsLayoutUtils::TransformFrameRectToAncestor(aAnchorFrame,
+                                                           anchorRect,
+                                                           rootFrame);
+  
+  anchorRect.MoveBy(rootFrame->GetScreenRectInAppUnits().TopLeft());
+
+  
+  return anchorRect.ScaleToOtherAppUnitsRoundOut(aRootPresContext->AppUnitsPerDevPixel(),
+                                                 PresContext()->AppUnitsPerDevPixel());
+}
+
 nsresult
 nsMenuPopupFrame::SetPopupPosition(nsIFrame* aAnchorFrame, bool aIsMove, bool aSizedToPopup, bool aNotify)
 {
@@ -1364,22 +1385,7 @@ nsMenuPopupFrame::SetPopupPosition(nsIFrame* aAnchorFrame, bool aIsMove, bool aS
         }
       }
 
-      
-      nsIFrame* referenceFrame = rootPresContext->FrameManager()->GetRootFrame();
-
-      
-      nsRect parentRect = aAnchorFrame->GetRectRelativeToSelf();
-      
-      anchorRect = nsLayoutUtils::TransformFrameRectToAncestor(aAnchorFrame,
-                                                               parentRect,
-                                                               referenceFrame);
-      
-      anchorRect.MoveBy(referenceFrame->GetScreenRectInAppUnits().TopLeft());
-
-      
-      anchorRect =
-        anchorRect.ScaleToOtherAppUnitsRoundOut(rootPresContext->AppUnitsPerDevPixel(),
-                                                presContext->AppUnitsPerDevPixel());
+      anchorRect = ComputeAnchorRect(rootPresContext, aAnchorFrame);
     }
 
     
@@ -2214,6 +2220,13 @@ nsMenuPopupFrame::AttributeChanged(int32_t aNameSpaceID,
   }
 #endif
 
+  if (aAttribute == nsGkAtoms::followanchor) {
+    nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
+    if (pm) {
+      pm->UpdateFollowAnchor(this);
+    }
+  }
+
   if (aAttribute == nsGkAtoms::label) {
     
     nsView* view = GetView();
@@ -2358,6 +2371,10 @@ void
 nsMenuPopupFrame::SetAutoPosition(bool aShouldAutoPosition)
 {
   mShouldAutoPosition = aShouldAutoPosition;
+  nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
+  if (pm) {
+    pm->UpdateFollowAnchor(this);
+  }
 }
 
 void
@@ -2445,4 +2462,98 @@ nsMenuPopupFrame::CreatePopupView()
 
   NS_FRAME_LOG(NS_FRAME_TRACE_CALLS,
     ("nsMenuPopupFrame::CreatePopupView: frame=%p view=%p", this, view));
+}
+
+bool
+nsMenuPopupFrame::ShouldFollowAnchor()
+{
+  if (!mShouldAutoPosition ||
+      mAnchorType != MenuPopupAnchorType_Node || !mAnchorContent) {
+    return false;
+  }
+
+  
+  if (mContent->AttrValueIs(kNameSpaceID_None, nsGkAtoms::followanchor,
+                            nsGkAtoms::_true, eCaseMatters)) {
+    return true;
+  }
+
+  if (mContent->AttrValueIs(kNameSpaceID_None, nsGkAtoms::followanchor,
+                            nsGkAtoms::_false, eCaseMatters)) {
+    return false;
+  }
+
+  return (mPopupType == ePopupTypePanel &&
+          mContent->AttrValueIs(kNameSpaceID_None, nsGkAtoms::type,
+                                nsGkAtoms::arrow, eCaseMatters));
+}
+
+bool
+nsMenuPopupFrame::ShouldFollowAnchor(nsRect& aRect)
+{
+  if (!ShouldFollowAnchor()) {
+    return false;
+  }
+
+  nsIFrame* anchorFrame = mAnchorContent->GetPrimaryFrame();
+  if (anchorFrame) {
+    nsPresContext* rootPresContext = PresContext()->GetRootPresContext();
+    if (rootPresContext) {
+      aRect = ComputeAnchorRect(rootPresContext, anchorFrame);
+    }
+  }
+
+  return true;
+}
+
+void
+nsMenuPopupFrame::CheckForAnchorChange(nsRect& aRect)
+{
+  
+  if (!IsVisible() || !ShouldFollowAnchor()) {
+    return;
+  }
+
+  bool shouldHide = false;
+
+  nsPresContext* rootPresContext = PresContext()->GetRootPresContext();
+
+  
+  nsIFrame* anchor = mAnchorContent->GetPrimaryFrame();
+  if (!anchor || !rootPresContext) {
+    shouldHide = true;
+  } else if (!anchor->IsVisibleConsideringAncestors(VISIBILITY_CROSS_CHROME_CONTENT_BOUNDARY)) {
+    
+    shouldHide = true;
+  } else {
+    
+    nsIFrame* frame = anchor;
+    while (frame) {
+      nsMenuPopupFrame* popup = do_QueryFrame(frame);
+      if (popup && popup->PopupState() != ePopupShown) {
+        shouldHide = true;
+        break;
+      }
+
+      frame = frame->GetParent();
+    }
+  }
+
+  if (shouldHide) {
+    nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
+    if (pm) {
+      
+      pm->HidePopup(mContent, false, true, true, false);
+    }
+
+    return;
+  }
+
+  nsRect anchorRect = ComputeAnchorRect(rootPresContext, anchor);
+
+  
+  if (!anchorRect.IsEqualEdges(aRect)) {
+    aRect = anchorRect;
+    SetPopupPosition(nullptr, true, false, true);
+  }
 }

@@ -55,6 +55,7 @@ class nsMenuParent;
 class nsIDOMKeyEvent;
 class nsIDocShellTreeItem;
 class nsPIDOMWindowOuter;
+class nsRefreshDriver;
 
 
 
@@ -138,6 +139,13 @@ private:
   bool mOnMenuBar; 
   nsIgnoreKeys mIgnoreKeys; 
 
+  
+  
+  bool mFollowAnchor;
+
+  
+  nsRect mCurrentRect;
+
   nsMenuChainItem* mParent;
   nsMenuChainItem* mChild;
 
@@ -148,6 +156,7 @@ public:
       mIsContext(aIsContext),
       mOnMenuBar(false),
       mIgnoreKeys(eIgnoreKeys_False),
+      mFollowAnchor(false),
       mParent(nullptr),
       mChild(nullptr)
   {
@@ -171,6 +180,9 @@ public:
   void SetOnMenuBar(bool aOnMenuBar) { mOnMenuBar = aOnMenuBar; }
   nsMenuChainItem* GetParent() { return mParent; }
   nsMenuChainItem* GetChild() { return mChild; }
+  bool FollowsAnchor() { return mFollowAnchor; }
+  void UpdateFollowAnchor();
+  void CheckForAnchorChange();
 
   
   
@@ -503,12 +515,6 @@ public:
 
 
 
-  void HidePopup(nsIFrame* aFrame);
-
-  
-
-
-
 
   void HidePopupAfterDelay(nsMenuPopupFrame* aPopup);
 
@@ -525,6 +531,19 @@ public:
 
 
   void EnableRollup(nsIContent* aPopup, bool aShouldRollup);
+
+  
+
+
+
+
+
+  void UpdatePopupPositions(nsRefreshDriver* aRefreshDriver);
+
+  
+
+
+  void UpdateFollowAnchor(nsMenuPopupFrame* aPopup);
 
   
 

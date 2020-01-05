@@ -438,6 +438,13 @@ public:
   }
 
   
+  
+  
+  
+  
+  void CheckForAnchorChange(nsRect& aRect);
+
+  
   virtual bool ReflowFinished() override;
   virtual void ReflowCallbackCanceled() override;
 
@@ -503,6 +510,10 @@ protected:
                         nscoord *aOffset);
 
   
+  
+  nsRect ComputeAnchorRect(nsPresContext* aRootPresContext, nsIFrame* aAnchorFrame);
+
+  
   void MoveToAttributePosition();
 
   
@@ -522,6 +533,17 @@ protected:
   
   void CreatePopupView();
 
+  
+  
+  
+  
+  
+  
+  bool ShouldFollowAnchor();
+public:
+  bool ShouldFollowAnchor(nsRect& aRect);
+
+protected:
   nsString     mIncrementalString;  
 
   
