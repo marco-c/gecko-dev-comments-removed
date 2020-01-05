@@ -1913,8 +1913,6 @@ Navigator::GetUserAgent(nsPIDOMWindowInner* aWindow,
     return NS_OK;
   }
 
-  MOZ_ASSERT(aWindow->GetDocShell());
-
   
   
   nsCOMPtr<nsIDocument> doc = aWindow->GetExtantDoc();
