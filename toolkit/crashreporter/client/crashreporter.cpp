@@ -196,6 +196,27 @@ static string GetDumpLocalID()
   return localId.substr(0, dot);
 }
 
+
+
+static void AppendStackTracesToEventFile(const string& aStackTraces)
+{
+  if (gEventsPath.empty()) {
+    
+    return;
+  }
+
+  string localId = GetDumpLocalID();
+  string path = gEventsPath + UI_DIR_SEPARATOR + localId;
+  ofstream* f = UIOpenWrite(path.c_str(), true);
+
+  if (f->is_open()) {
+    *f << "StackTraces=" << aStackTraces;
+    f->close();
+  }
+
+  delete f;
+}
+
 static void WriteSubmissionEvent(SubmissionResult result,
                                  const string& remoteId)
 {
@@ -492,6 +513,17 @@ bool CheckEndOfLifed(string version)
   return UIFileExists(reportPath);
 }
 
+static string
+GetMinidumpAnalyzerPath()
+{
+  string path = gArgv[0];
+  size_t pos = path.rfind(UI_CRASH_REPORTER_FILENAME BIN_SUFFIX);
+  path.erase(pos);
+  path.append(UI_MINIDUMP_ANALYZER_FILENAME BIN_SUFFIX);
+
+  return path;
+}
+
 int main(int argc, char** argv)
 {
   gArgc = argc;
@@ -513,6 +545,10 @@ int main(int argc, char** argv)
     
     UIShowDefaultUI();
   } else {
+    
+    UIRunMinidumpAnalyzer(GetMinidumpAnalyzerPath(), gReporterDumpFile);
+
+    
     gExtraFile = GetAdditionalFilename(gReporterDumpFile, kExtraDataExtension);
     if (gExtraFile.empty()) {
       UIError(gStrings[ST_ERROR_BADARGUMENTS]);
@@ -595,6 +631,12 @@ int main(int argc, char** argv)
 #endif
     else {
       gEventsPath.clear();
+    }
+
+    
+    auto stackTracesItr = queryParameters.find("StackTraces");
+    if (stackTracesItr != queryParameters.end()) {
+      AppendStackTracesToEventFile(stackTracesItr->second);
     }
 
     if (!UIFileExists(gReporterDumpFile)) {
