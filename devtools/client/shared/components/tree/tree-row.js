@@ -16,6 +16,9 @@ define(function (require, exports, module) {
   const LabelCell = React.createFactory(require("./label-cell"));
 
   
+  const { scrollIntoViewIfNeeded } = require("devtools/client/shared/scroll");
+
+  
   const { tr } = React.DOM;
   const PropTypes = React.PropTypes;
 
@@ -40,13 +43,17 @@ define(function (require, exports, module) {
         open: PropTypes.bool.isRequired,
         path: PropTypes.string.isRequired,
         hidden: PropTypes.bool,
+        selected: PropTypes.bool,
       }),
       decorator: PropTypes.object,
       renderCell: PropTypes.object,
       renderLabelCell: PropTypes.object,
       columns: PropTypes.array.isRequired,
+      id: PropTypes.string.isRequired,
       provider: PropTypes.object.isRequired,
-      onClick: PropTypes.func.isRequired
+      onClick: PropTypes.func.isRequired,
+      onMouseOver: PropTypes.func,
+      onMouseOut: PropTypes.func
     },
 
     componentWillReceiveProps(nextProps) {
@@ -67,7 +74,7 @@ define(function (require, exports, module) {
 
 
     shouldComponentUpdate: function (nextProps) {
-      let props = ["name", "open", "value", "loading"];
+      let props = ["name", "open", "value", "loading", "selected", "hasChildren"];
       for (let p in props) {
         if (nextProps.member[props[p]] != this.props.member[props[p]]) {
           return true;
@@ -75,6 +82,17 @@ define(function (require, exports, module) {
       }
 
       return false;
+    },
+
+    componentDidUpdate: function () {
+      if (this.props.member.selected) {
+        let row = ReactDOM.findDOMNode(this);
+        
+        
+        if (row.ownerDocument.defaultView) {
+          scrollIntoViewIfNeeded(row);
+        }
+      }
     },
 
     getRowClass: function (object) {
@@ -99,6 +117,15 @@ define(function (require, exports, module) {
     render: function () {
       let member = this.props.member;
       let decorator = this.props.decorator;
+      let props = {
+        id: this.props.id,
+        role: "treeitem",
+        "aria-level": member.level,
+        "aria-selected": !!member.selected,
+        onClick: this.props.onClick,
+        onMouseOver: this.props.onMouseOver,
+        onMouseOut: this.props.onMouseOut
+      };
 
       
       let classNames = this.getRowClass(member.object) || [];
@@ -107,19 +134,27 @@ define(function (require, exports, module) {
 
       if (member.hasChildren) {
         classNames.push("hasChildren");
+        props["aria-expanded"] = false;
       }
 
       if (member.open) {
         classNames.push("opened");
+        props["aria-expanded"] = true;
       }
 
       if (member.loading) {
         classNames.push("loading");
       }
 
+      if (member.selected) {
+        classNames.push("selected");
+      }
+
       if (member.hidden) {
         classNames.push("hidden");
       }
+
+      props.className = classNames.join(" ");
 
       
       
@@ -137,7 +172,7 @@ define(function (require, exports, module) {
 
       
       this.props.columns.forEach(col => {
-        let props = Object.assign({}, this.props, {
+        let cellProps = Object.assign({}, this.props, {
           key: col.id,
           id: col.id,
           value: this.props.provider.getValue(member.object, col.id)
@@ -154,17 +189,13 @@ define(function (require, exports, module) {
         
         
         if (render) {
-          cells.push(render(props));
+          cells.push(render(cellProps));
         }
       });
 
       
       return (
-        tr({
-          className: classNames.join(" "),
-          onClick: this.props.onClick},
-          cells
-        )
+        tr(props, cells)
       );
     }
   });
