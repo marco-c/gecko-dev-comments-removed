@@ -153,6 +153,11 @@ enum class GlobalFlags
     AllowedMask                          = 0x1
 };
 
+enum class MemoryTableFlags
+{
+    Default                              = 0x0
+};
+
 enum class Expr : uint32_t 
 {
     
