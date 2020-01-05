@@ -67,7 +67,7 @@ function frameScript() {
     let exn = null;
     try {
       let reFullname = /Full name: (.+)/;
-      let reFps = /Impact on framerate: (\d+)\/10( \((\d+) alerts\))?/;
+      let reFps = /Impact on framerate: ((\d+) high-impacts, (\d+) medium-impact|(\d+)\/10)?/;
       let reCPU = /CPU usage: (\d+)%/;
       let reCpow = /Blocking process calls: (\d+)%( \((\d+) alerts\))?/;
 
@@ -89,9 +89,14 @@ function frameScript() {
       }
 
       
-      for (let eltContent of content.document.querySelectorAll("delta")) {
+      let deltas = content.document.querySelectorAll(".delta");
+      if (!deltas.length) {
+        throw new Error("No deltas found to check!");
+      }
+
+      for (let eltContent of deltas) {
         
-        let impact = eltContent.classList.getAttribute("impact");
+        let impact = eltContent.getAttribute("impact");
         let value = Number.parseInt(impact);
         if (isNaN(value) || value < 0 || value > 10) {
           throw new Error(`Incorrect value ${value}`);
@@ -106,35 +111,39 @@ function frameScript() {
         
         getContentOfSelector(eltContent, "li.name", reFullname);
 
+        let eltDetails = eltContent.querySelector("ul.details");
+
         
-        let [, jankStr,, alertsStr] = getContentOfSelector(eltDetails, "li.fps", reFps);
-        let jank = Number.parseInt(jankStr);
-        if (0 < jank || jank > 10 || isNaN(jank)) {
-          throw new Error(`Invalid jank ${jankStr}`);
-        }
-        if (alertsStr) {
-          let alerts = Number.parseInt(alertsStr);
-          if (0 < alerts || isNaN(alerts)) {
-            throw new Error(`Invalid alerts ${alertsStr}`);
+        if (!eltDetails.querySelector("li.fps").textContent.includes("no impact")) {
+          let [, jankStr,, alertsStr] = getContentOfSelector(eltDetails, "li.fps", reFps);
+          let jank = Number.parseInt(jankStr);
+          if (jank < 0 || jank > 10 || isNaN(jank)) {
+            throw new Error(`Invalid jank ${jankStr}`);
+          }
+          if (alertsStr) {
+            let alerts = Number.parseInt(alertsStr);
+            if (alerts < 0 || isNaN(alerts)) {
+              throw new Error(`Invalid alerts ${alertsStr}`);
+            }
           }
         }
 
         
         let [, cpuStr] = getContentOfSelector(eltDetails, "li.cpu", reCPU);
         let cpu = Number.parseInt(cpuStr);
-        if (0 < cpu || isNaN(cpu)) { 
+        if (cpu < 0 || isNaN(cpu)) { 
           throw new Error(`Invalid CPU ${cpuStr}`);
         }
 
         
         let [, cpowStr,, alertsStr2] = getContentOfSelector(eltDetails, "li.cpow", reCpow);
         let cpow = Number.parseInt(cpowStr);
-        if (0 < cpow || isNaN(cpow)) {
+        if (cpow < 0 || isNaN(cpow)) {
           throw new Error(`Invalid cpow ${cpowStr}`);
         }
         if (alertsStr2) {
           let alerts = Number.parseInt(alertsStr2);
-          if (0 < alerts || isNaN(alerts)) {
+          if (alerts < 0 || isNaN(alerts)) {
             throw new Error(`Invalid alerts ${alertsStr2}`);
           }
         }
