@@ -27,7 +27,33 @@ public class ViewUtil {
 
 
 
-    public static void enableTouchRipple(View view) {
+    public static void enableTouchRipple(final View view) {
+        
+        
+        
+
+        
+        
+        int paddingLeft = -1;
+        int paddingTop = -1;
+        int paddingRight = -1;
+        int paddingBottom = -1;
+
+        if (!AppConstants.Versions.feature21Plus) {
+            paddingLeft = view.getPaddingLeft();
+            paddingTop = view.getPaddingTop();
+            paddingRight = view.getPaddingRight();
+            paddingBottom = view.getPaddingBottom();
+        }
+
+        setTouchRipple(view);
+
+        if (!AppConstants.Versions.feature21Plus) {
+            view.setPadding(paddingLeft, paddingTop, paddingRight, paddingBottom);
+        }
+    }
+
+    private static void setTouchRipple(final View view) {
         final TypedArray backgroundDrawableArray;
         if (AppConstants.Versions.feature21Plus) {
             backgroundDrawableArray = view.getContext().obtainStyledAttributes(new int[] { R.attr.selectableItemBackgroundBorderless });
