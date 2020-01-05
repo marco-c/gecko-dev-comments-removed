@@ -319,6 +319,8 @@ inline nsChangeHint operator^=(nsChangeHint& aLeft, nsChangeHint aRight)
           nsChangeHint_UpdateUsesOpacity | \
           nsChangeHint_UpdateBackgroundPosition)
 
+
+
 inline nsChangeHint NS_HintsNotHandledForDescendantsIn(nsChangeHint aChangeHint) {
   nsChangeHint result = nsChangeHint(aChangeHint & (
     nsChangeHint_UpdateTransformLayer |
