@@ -986,43 +986,55 @@ class XPCShellTests(object):
         """
           Run node for HTTP/2 tests, if available, and updates mozinfo as appropriate.
         """
-        nodeBin = None
-
-        
-        
-        localPath = os.getenv('MOZ_NODE_PATH', None)
-        if localPath and os.path.exists(localPath) and os.path.isfile(localPath):
-            nodeBin = localPath
-
         if os.getenv('MOZ_ASSUME_NODE_RUNNING', None):
             self.log.info('Assuming required node servers are already running')
-        elif nodeBin:
-            self.log.info('Found node at %s' % (nodeBin,))
+            if not os.getenv('MOZHTTP2_PORT', None):
+                self.log.warning('MOZHTTP2_PORT environment variable not set. Tests requiring http/2 will fail.')
+            return
 
-            def startServer(name, serverJs):
-                if os.path.exists(serverJs):
-                    
-                    self.log.info('Found %s at %s' % (name, serverJs))
-                    try:
-                        
-                        
-                        process = Popen([nodeBin, serverJs], stdin=PIPE, stdout=PIPE,
-                                stderr=PIPE, env=self.env, cwd=os.getcwd())
-                        self.nodeProc[name] = process
+        
+        
+        nodeBin = os.getenv('MOZ_NODE_PATH', None)
+        if not nodeBin:
+            self.log.warning('MOZ_NODE_PATH environment variable not set. Tests requiring http/2 will fail.')
+            return
 
-                        
-                        
-                        msg = process.stdout.readline()
-                        if 'server listening' in msg:
-                            searchObj = re.search( r'HTTP2 server listening on port (.*)', msg, 0)
-                            if searchObj:
-                              self.env["MOZHTTP2_PORT"] = searchObj.group(1)
-                    except OSError, e:
-                        
-                        self.log.error('Could not run %s server: %s' % (name, str(e)))
+        if not os.path.exists(nodeBin) or not os.path.isfile(nodeBin):
+            error = 'node not found at MOZ_NODE_PATH %s' % (nodeBin)
+            self.log.error(error)
+            raise IOError(error)
 
-            myDir = os.path.split(os.path.abspath(__file__))[0]
-            startServer('moz-http2', os.path.join(myDir, 'moz-http2', 'moz-http2.js'))
+        self.log.info('Found node at %s' % (nodeBin,))
+
+        def startServer(name, serverJs):
+            if not os.path.exists(serverJs):
+                error = '%s not found at %s' % (name, serverJs)
+                self.log.error(error)
+                raise IOError(error)
+
+            
+            self.log.info('Found %s at %s' % (name, serverJs))
+            try:
+                
+                
+                process = Popen([nodeBin, serverJs], stdin=PIPE, stdout=PIPE,
+                        stderr=PIPE, env=self.env, cwd=os.getcwd())
+                self.nodeProc[name] = process
+
+                
+                
+                msg = process.stdout.readline()
+                if 'server listening' in msg:
+                    searchObj = re.search( r'HTTP2 server listening on port (.*)', msg, 0)
+                    if searchObj:
+                      self.env["MOZHTTP2_PORT"] = searchObj.group(1)
+            except OSError, e:
+                
+                self.log.error('Could not run %s server: %s' % (name, str(e)))
+                raise
+
+        myDir = os.path.split(os.path.abspath(__file__))[0]
+        startServer('moz-http2', os.path.join(myDir, 'moz-http2', 'moz-http2.js'))
 
     def shutdownNode(self):
         """
