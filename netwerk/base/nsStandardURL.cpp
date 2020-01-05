@@ -1391,6 +1391,8 @@ nsStandardURL::GetAsciiSpec(nsACString &result)
 
     result = Substring(mSpec, 0, mScheme.mLen + 3);
 
+    
+    
     NS_EscapeURL(Userpass(true), esc_OnlyNonASCII | esc_AlwaysCopy, result);
 
     
@@ -1398,6 +1400,8 @@ nsStandardURL::GetAsciiSpec(nsACString &result)
     MOZ_ALWAYS_SUCCEEDS(GetAsciiHostPort(hostport));
     result += hostport;
 
+    
+    
     NS_EscapeURL(Path(), esc_OnlyNonASCII | esc_AlwaysCopy, result);
     CALL_RUST_GETTER_STR(result, GetAsciiSpec, result);
     return NS_OK;
