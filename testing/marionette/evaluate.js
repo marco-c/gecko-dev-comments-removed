@@ -113,7 +113,7 @@ evaluate.sandbox = function (sb, script, args = [], opts = {}) {
       if (opts.async) {
         sb[CALLBACK] = sb[COMPLETE];
       }
-      sb[ARGUMENTS] = sandbox.cloneInto(args, sb);
+      sb[ARGUMENTS] = Cu.cloneInto(args, sb, {wrapReflectors: true});
 
       
       
@@ -138,18 +138,20 @@ evaluate.sandbox = function (sb, script, args = [], opts = {}) {
     
     if (opts.debug) {
       sb.window.onerror = (msg, url, line) => {
-        let err = new JavaScriptError(`${msg} at ${url}:${line}`);
+        let err = new JavaScriptError(`${msg} at: ${url} line: ${line}`);
         reject(err);
       };
     }
 
     
-    scriptTimeoutID = setTimeout(timeoutHandler, opts.timeout || DEFAULT_TIMEOUT);
-    sb.window.onunload = sandbox.cloneInto(unloadHandler, sb);
+    scriptTimeoutID = setTimeout(
+        timeoutHandler, opts.timeout || DEFAULT_TIMEOUT);
+    sb.window.addEventListener("unload", unloadHandler);
 
     let res;
     try {
-      res = Cu.evalInSandbox(src, sb, "1.8", opts.filename || "dummy file", 0);
+      res = Cu.evalInSandbox(
+          src, sb, "1.8", opts.filename || "dummy file", 0);
     } catch (e) {
       let err = new JavaScriptError(
           e,
@@ -173,18 +175,6 @@ evaluate.sandbox = function (sb, script, args = [], opts = {}) {
 };
 
 this.sandbox = {};
-
-
-
-
-
-
-
-
-
-sandbox.cloneInto = function (obj, sb) {
-  return Cu.cloneInto(obj, sb, {cloneFunctions: true, wrapReflectors: true});
-};
 
 
 

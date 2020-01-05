@@ -36,14 +36,7 @@ class TestNavigate(WindowManagerMixin, MarionetteTestCase):
 
     @property
     def location_href(self):
-        
-        
-        
-        
-        
-        
-        
-        return self.marionette.execute_script("return window.location.href").encode("utf-8")
+        return self.marionette.execute_script("return window.location.href")
 
     def test_set_location_through_execute_script(self):
         self.marionette.execute_script(
