@@ -840,6 +840,8 @@ NS_IMETHODIMP nsExternalHelperAppService::DoContent(const nsACString& aMimeConte
   nsAutoCString buf;
   mimeInfo->GetPrimaryExtension(buf);
 
+  
+  
   nsExternalAppHandler * handler = new nsExternalAppHandler(mimeInfo,
                                                             buf,
                                                             aContentContext,
