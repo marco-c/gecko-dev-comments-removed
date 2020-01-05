@@ -967,7 +967,7 @@ function TypeOfTypedObject(obj) {
 
 
 
-function TypedObjectArrayTypeBuild(a,b,c) {
+function TypedObjectArrayTypeBuild(a, b, c) {
   
 
   if (!IsObject(this) || !ObjectIsTypeDescr(this))
