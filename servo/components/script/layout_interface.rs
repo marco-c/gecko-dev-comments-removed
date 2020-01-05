@@ -176,13 +176,9 @@ pub struct ScriptReflow {
     
     pub document: TrustedNodeAddress,
     
-    pub script_chan: Sender<ConstellationControlMsg>,
-    
     pub window_size: WindowSizeData,
     
     pub script_join_chan: Sender<()>,
-    
-    pub id: u32,
     
     pub query_type: ReflowQueryType,
 }
