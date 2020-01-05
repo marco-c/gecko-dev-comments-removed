@@ -64,6 +64,7 @@ NS_IMPL_RELEASE(IPCBlobInputStream);
 NS_INTERFACE_MAP_BEGIN(IPCBlobInputStream)
   NS_INTERFACE_MAP_ENTRY(nsIInputStream)
   NS_INTERFACE_MAP_ENTRY(nsIAsyncInputStream)
+  NS_INTERFACE_MAP_ENTRY(nsIInputStreamCallback)
   NS_INTERFACE_MAP_ENTRY(nsICloneableInputStream)
   NS_INTERFACE_MAP_ENTRY(nsIIPCSerializableInputStream)
   NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIInputStream)
@@ -222,10 +223,7 @@ IPCBlobInputStream::AsyncWait(nsIInputStreamCallback* aCallback,
 
   
   case eRunning:
-    if (aCallback) {
-      CallbackRunnable::Execute(aCallback, aEventTarget, this);
-    }
-    return NS_OK;
+    return MaybeExecuteCallback(aCallback, aEventTarget);
 
   
   default:
@@ -249,18 +247,84 @@ IPCBlobInputStream::StreamReady(nsIInputStream* aInputStream)
   
   
 
-  if (aInputStream && mCallback) {
+  nsCOMPtr<nsIInputStreamCallback> callback;
+  callback.swap(mCallback);
+
+  nsCOMPtr<nsIEventTarget> callbackEventTarget;
+  callbackEventTarget.swap(mCallbackEventTarget);
+
+  if (aInputStream && callback) {
     MOZ_ASSERT(mState == ePending);
-    MOZ_ASSERT(mCallback);
 
     mRemoteStream = aInputStream;
     mState = eRunning;
 
-    CallbackRunnable::Execute(mCallback, mCallbackEventTarget, this);
+    MaybeExecuteCallback(callback, callbackEventTarget);
   }
+}
+
+nsresult
+IPCBlobInputStream::MaybeExecuteCallback(nsIInputStreamCallback* aCallback,
+                                         nsIEventTarget* aCallbackEventTarget)
+{
+  MOZ_ASSERT(mState == eRunning);
+  MOZ_ASSERT(mRemoteStream);
+
+  
+  
+  nsCOMPtr<nsIAsyncInputStream> asyncStream = do_QueryInterface(mRemoteStream);
+  if (asyncStream) {
+    
+    if (mCallback && aCallback) {
+      return NS_ERROR_FAILURE;
+    }
+
+    mCallback = aCallback;
+    mCallbackEventTarget = aCallbackEventTarget;
+
+    if (!mCallback) {
+      return NS_OK;
+    }
+
+    nsCOMPtr<nsIEventTarget> target = NS_GetCurrentThread();
+    return asyncStream->AsyncWait(this, 0, 0, target);
+  }
+
+  MOZ_ASSERT(!mCallback);
+  MOZ_ASSERT(!mCallbackEventTarget);
+
+  if (!aCallback) {
+    return NS_OK;
+  }
+
+  CallbackRunnable::Execute(aCallback, aCallbackEventTarget, this);
+  return NS_OK;
+}
+
+
+
+NS_IMETHODIMP
+IPCBlobInputStream::OnInputStreamReady(nsIAsyncInputStream* aStream)
+{
+  
+  if (mState == eClosed) {
+    return NS_OK;
+  }
+
+  MOZ_ASSERT(mState == eRunning);
+  MOZ_ASSERT(mRemoteStream == aStream);
+
+  
+  if (!mCallback) {
+    return NS_OK;
+  }
+
+  CallbackRunnable::Execute(mCallback, mCallbackEventTarget, this);
 
   mCallback = nullptr;
   mCallbackEventTarget = nullptr;
+
+  return NS_OK;
 }
 
 
