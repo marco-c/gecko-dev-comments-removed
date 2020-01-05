@@ -60,9 +60,9 @@ pub enum Msg {
 
 pub trait LayoutRPC {
     
-    fn content_box(&self, node: TrustedNodeAddress) -> ContentBoxResponse;
+    fn content_box(&self) -> ContentBoxResponse;
     
-    fn content_boxes(&self, node: TrustedNodeAddress) -> ContentBoxesResponse;
+    fn content_boxes(&self) -> ContentBoxesResponse;
     
     fn hit_test(&self, node: TrustedNodeAddress, point: Point2D<f32>) -> Result<HitTestResponse, ()>;
     fn mouse_over(&self, node: TrustedNodeAddress, point: Point2D<f32>) -> Result<MouseOverResponse, ()>;
@@ -83,6 +83,13 @@ pub enum ReflowGoal {
 }
 
 
+pub enum ReflowQueryType {
+    NoQuery,
+    ContentBoxQuery(TrustedNodeAddress),
+    ContentBoxesQuery(TrustedNodeAddress),
+}
+
+
 pub struct Reflow {
     
     pub document_root: TrustedNodeAddress,
@@ -99,7 +106,9 @@ pub struct Reflow {
     
     pub script_join_chan: Sender<()>,
     
-    pub id: uint
+    pub id: uint,
+    
+    pub query_type: ReflowQueryType,
 }
 
 
