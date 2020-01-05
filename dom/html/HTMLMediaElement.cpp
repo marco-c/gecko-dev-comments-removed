@@ -5361,6 +5361,15 @@ void HTMLMediaElement::NotifyOwnerDocumentActivityChanged()
   bool pauseElement = ShouldElementBePaused();
   SuspendOrResumeElement(pauseElement, !IsActive());
 
+  
+  if (!OwnerDoc()->IsCurrentActiveDocument() && mMediaKeys) {
+      mMediaKeys->Shutdown();
+      mMediaKeys = nullptr;
+      if (mDecoder) {
+        ShutdownDecoder();
+      }
+    }
+
   AddRemoveSelfReference();
 }
 
