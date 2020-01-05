@@ -661,6 +661,13 @@ private:
   void InitNativeKey(NativeKey& aNativeKey,
                      const ModifierKeyState& aModKeyState);
 
+  
+
+
+  UniCharsAndModifiers GetUniCharsAndModifiers(
+                         uint8_t aVirtualKey,
+                         VirtualKey::ShiftState aShiftState) const;
+
 public:
   static KeyboardLayout* GetInstance();
   static void Shutdown();
@@ -695,9 +702,16 @@ public:
 
 
 
+
+
   UniCharsAndModifiers GetUniCharsAndModifiers(
                          uint8_t aVirtualKey,
-                         const ModifierKeyState& aModKeyState) const;
+                         const ModifierKeyState& aModKeyState) const
+  {
+    VirtualKey::ShiftState shiftState =
+      VirtualKey::ModifierKeyStateToShiftState(aModKeyState);
+    return GetUniCharsAndModifiers(aVirtualKey, shiftState);
+  }
 
   
 
