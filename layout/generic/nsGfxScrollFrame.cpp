@@ -2255,7 +2255,8 @@ ScrollFrameHelper::ScrollToWithOrigin(nsPoint aScrollPosition,
 
   nsRect scrollRange = GetScrollRangeForClamping();
   mDestination = scrollRange.ClampPoint(aScrollPosition);
-  if (mDestination != aScrollPosition && aOrigin == nsGkAtoms::restore && !PageIsStillLoading()) {
+  if (mDestination != aScrollPosition && aOrigin == nsGkAtoms::restore &&
+      GetPageLoadingState() != LoadingState::Loading) {
     
     
     aOrigin = nsGkAtoms::other;
@@ -4232,6 +4233,10 @@ ScrollFrameHelper::ScrollToRestoredPosition()
     
     
     if (mRestorePos != mLastPos ) {
+      LoadingState state = GetPageLoadingState();
+      if (state == LoadingState::Stopped && !NS_SUBTREE_DIRTY(mOuter)) {
+        return;
+      }
       nsPoint scrollToPos = mRestorePos;
       if (!IsPhysicalLTR()) {
         
@@ -4244,7 +4249,7 @@ ScrollFrameHelper::ScrollToRestoredPosition()
       if (!weakFrame.IsAlive()) {
         return;
       }
-      if (PageIsStillLoading() || NS_SUBTREE_DIRTY(mOuter)) {
+      if (state == LoadingState::Loading || NS_SUBTREE_DIRTY(mOuter)) {
         
         
         
@@ -4267,17 +4272,19 @@ ScrollFrameHelper::ScrollToRestoredPosition()
   }
 }
 
-bool
-ScrollFrameHelper::PageIsStillLoading()
+auto
+ScrollFrameHelper::GetPageLoadingState() -> LoadingState
 {
-  bool loadCompleted = false;
+  bool loadCompleted = false, stopped = false;
   nsCOMPtr<nsIDocShell> ds = mOuter->GetContent()->GetComposedDoc()->GetDocShell();
   if (ds) {
     nsCOMPtr<nsIContentViewer> cv;
     ds->GetContentViewer(getter_AddRefs(cv));
     cv->GetLoadCompleted(&loadCompleted);
+    cv->GetIsStopped(&stopped);
   }
-  return !loadCompleted;
+  return loadCompleted ? (stopped ? LoadingState::Stopped : LoadingState::Loaded)
+                       : LoadingState::Loading;
 }
 
 nsresult
