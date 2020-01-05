@@ -11,6 +11,9 @@ XPCOMUtils.defineLazyGetter(this, "gThemesEnabled", () => {
   return Preferences.get("extensions.webextensions.themes.enabled");
 });
 
+
+let themeMap = new WeakMap();
+
 const ICONS = Preferences.get("extensions.webextensions.themes.icons.buttons", "").split(",");
 
 
@@ -246,40 +249,45 @@ this.theme = class extends ExtensionAPI {
     let {extension} = this;
     let {manifest} = extension;
 
-    if (!gThemesEnabled) {
+    let theme = new Theme(extension.baseURI, extension.logger);
+    theme.load(manifest.theme);
+    themeMap.set(extension, theme);
+  }
+
+  onShutdown() {
+    let {extension} = this;
+
+    let theme = themeMap.get(extension);
+
+    if (!theme) {
       
       return;
     }
 
-    this.theme = new Theme(extension.baseURI, extension.logger);
-    this.theme.load(manifest.theme);
-  }
-
-  onShutdown() {
-    if (this.theme) {
-      this.theme.unload();
-    }
+    theme.unload();
   }
 
   getAPI(context) {
     let {extension} = context;
-
     return {
       theme: {
-        update: (details) => {
+        update(details) {
           if (!gThemesEnabled) {
             
             return;
           }
 
-          if (!this.theme) {
+          let theme = themeMap.get(extension);
+
+          if (!theme) {
             
             
             
-            this.theme = new Theme(extension.baseURI, extension.logger);
+            theme = new Theme(extension.baseURI, extension.logger);
+            themeMap.set(extension, theme);
           }
 
-          this.theme.load(details);
+          theme.load(details);
         },
       },
     };
