@@ -114,6 +114,7 @@ registerCleanupFunction(function* cleanup() {
 
 
 
+
 var addTab = Task.async(function* (url, options = { background: false, window: window }) {
   info("Adding a new tab with URL: " + url);
 
@@ -121,7 +122,8 @@ var addTab = Task.async(function* (url, options = { background: false, window: w
   let { gBrowser } = options.window ? options.window : window;
   let { userContextId } = options;
 
-  let tab = gBrowser.addTab(url, {userContextId});
+  let tab = gBrowser.addTab(url,
+    {userContextId, preferredRemoteType: options.preferredRemoteType});
   if (!background) {
     gBrowser.selectedTab = tab;
   }
