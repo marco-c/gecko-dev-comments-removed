@@ -2708,7 +2708,7 @@ profiler_unregister_thread()
   ThreadInfo* info = FindThreadInfo(lock, &i);
   if (info) {
     DEBUG_LOG("profiler_unregister_thread: %s", info->Name());
-    if (gPS->IsActive(lock)) {
+    if (gPS->IsActive(lock) && info->HasProfile()) {
       
       
       
