@@ -52,6 +52,7 @@ namespace jit {
     _(LoadUnboxedArrayElementResult)      \
     _(LoadTypedElementResult)             \
     _(MegamorphicLoadSlotByValueResult)   \
+    _(MegamorphicHasOwnResult)            \
     _(WrapResult)
 
 
