@@ -434,14 +434,33 @@ server.TCPConnection = class {
 
 
   onPacket (data) {
-    let msg = Message.fromMsg(data);
-    msg.origin = MessageOrigin.Client;
-    this.log_(msg);
+    
+    if (!Array.isArray(data)) {
+      let e = new TypeError(
+          "Unable to unmarshal packet data: " + JSON.stringify(data));
+      error.report(e);
+      return;
+    }
 
+    
+    let msg;
+    try {
+      msg = Message.fromMsg(data);
+      msg.origin = MessageOrigin.Client;
+      this.log_(msg);
+    } catch (e) {
+      let resp = this.createResponse(data[1]);
+      resp.sendError(e);
+      return;
+    }
+
+    
     if (msg instanceof Response) {
       let cmd = this.commands_.get(msg.id);
       this.commands_.delete(msg.id);
       cmd.onresponse(msg);
+
+    
     } else if (msg instanceof Command) {
       this.lastID = msg.id;
       this.execute(msg);
@@ -469,11 +488,11 @@ server.TCPConnection = class {
 
 
   execute (cmd) {
-    let resp = new Response(cmd.id, this.send.bind(this));
+    let resp = this.createResponse(cmd.id);
     let sendResponse = () => resp.sendConditionally(resp => !resp.sent);
     let sendError = resp.sendError.bind(resp);
 
-    let req = Task.spawn(function*() {
+    let req = Task.spawn(function* () {
       let fn = this.driver.commands[cmd.name];
       if (typeof fn == "undefined") {
         throw new UnknownCommandError(cmd.name);
@@ -495,6 +514,22 @@ server.TCPConnection = class {
     }.bind(this));
 
     req.then(sendResponse, sendError).catch(error.report);
+  }
+
+  
+
+
+
+
+
+
+
+
+  createResponse (msgID) {
+    if (typeof msgID != "number") {
+      msgID = -1;
+    }
+    return new Response(msgID, this.send.bind(this));
   }
 
   sendError (err, cmdID) {
