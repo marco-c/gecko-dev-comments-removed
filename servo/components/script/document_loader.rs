@@ -9,7 +9,7 @@ use dom::bindings::js::JS;
 use dom::document::Document;
 use msg::constellation_msg::PipelineId;
 use net_traits::AsyncResponseTarget;
-use net_traits::{PendingAsyncLoad, ResourceThread, LoadContext};
+use net_traits::{PendingAsyncLoad, CoreResourceThread, LoadContext};
 use std::sync::Arc;
 use std::thread;
 use url::Url;
@@ -96,7 +96,7 @@ pub struct DocumentLoader {
     
     
     #[ignore_heap_size_of = "channels are hard"]
-    pub resource_thread: Arc<ResourceThread>,
+    pub resource_thread: Arc<CoreResourceThread>,
     pipeline: Option<PipelineId>,
     blocking_loads: Vec<LoadType>,
     events_inhibited: bool,
@@ -109,7 +109,7 @@ impl DocumentLoader {
 
     
     
-    pub fn new_with_thread(resource_thread: Arc<ResourceThread>,
+    pub fn new_with_thread(resource_thread: Arc<CoreResourceThread>,
                          pipeline: Option<PipelineId>,
                          initial_load: Option<Url>)
                          -> DocumentLoader {
