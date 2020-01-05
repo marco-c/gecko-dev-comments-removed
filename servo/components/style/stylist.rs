@@ -330,9 +330,9 @@ impl Stylist {
                                                   pseudo: &PseudoElement,
                                                   parent: &Arc<ComputedValues>)
                                                   -> Option<(Arc<ComputedValues>, StrongRuleNode)>
-        where E: Element<Impl=SelectorImpl> +
-              fmt::Debug +
-              PresentationalHintsSynthetizer
+        where E: ElementExt +
+                 fmt::Debug +
+                 PresentationalHintsSynthetizer
     {
         debug_assert!(SelectorImpl::pseudo_element_cascade_type(pseudo).is_lazy());
         if self.pseudos_map.get(pseudo).is_none() {
@@ -418,7 +418,7 @@ impl Stylist {
                                         pseudo_element: Option<&PseudoElement>,
                                         applicable_declarations: &mut V,
                                         reason: MatchingReason) -> StyleRelations
-        where E: Element<Impl=SelectorImpl> +
+        where E: ElementExt +
                  fmt::Debug +
                  PresentationalHintsSynthetizer,
               V: Push<ApplicableDeclarationBlock> + VecLike<ApplicableDeclarationBlock>
@@ -456,66 +456,71 @@ impl Stylist {
         }
         debug!("preshints: {:?}", relations);
 
-        
-        map.user.get_all_matching_rules(element,
-                                        parent_bf,
-                                        applicable_declarations,
-                                        &mut relations,
-                                        reason,
-                                        Importance::Normal);
-        debug!("user normal: {:?}", relations);
-        map.author.get_all_matching_rules(element,
-                                          parent_bf,
-                                          applicable_declarations,
-                                          &mut relations,
-                                          reason,
-                                          Importance::Normal);
-        debug!("author normal: {:?}", relations);
+        if element.matches_user_and_author_rules() {
+            
+            map.user.get_all_matching_rules(element,
+                                            parent_bf,
+                                            applicable_declarations,
+                                            &mut relations,
+                                            reason,
+                                            Importance::Normal);
+            debug!("user normal: {:?}", relations);
+            map.author.get_all_matching_rules(element,
+                                              parent_bf,
+                                              applicable_declarations,
+                                              &mut relations,
+                                              reason,
+                                              Importance::Normal);
+            debug!("author normal: {:?}", relations);
 
-        
-        if let Some(sa) = style_attribute {
-            if sa.read().any_normal() {
-                relations |= AFFECTED_BY_STYLE_ATTRIBUTE;
-                Push::push(
-                    applicable_declarations,
-                    ApplicableDeclarationBlock::from_declarations(sa.clone(), Importance::Normal));
+            
+            if let Some(sa) = style_attribute {
+                if sa.read().any_normal() {
+                    relations |= AFFECTED_BY_STYLE_ATTRIBUTE;
+                    Push::push(
+                        applicable_declarations,
+                        ApplicableDeclarationBlock::from_declarations(sa.clone(), Importance::Normal));
+                }
             }
+
+            debug!("style attr: {:?}", relations);
+
+            
+            map.author.get_all_matching_rules(element,
+                                              parent_bf,
+                                              applicable_declarations,
+                                              &mut relations,
+                                              reason,
+                                              Importance::Important);
+
+            debug!("author important: {:?}", relations);
+
+            
+            if let Some(sa) = style_attribute {
+                if sa.read().any_important() {
+                    relations |= AFFECTED_BY_STYLE_ATTRIBUTE;
+                    Push::push(
+                        applicable_declarations,
+                        ApplicableDeclarationBlock::from_declarations(sa.clone(), Importance::Important));
+                }
+            }
+
+            debug!("style attr important: {:?}", relations);
+
+            
+            map.user.get_all_matching_rules(element,
+                                            parent_bf,
+                                            applicable_declarations,
+                                            &mut relations,
+                                            reason,
+                                            Importance::Important);
+
+            debug!("user important: {:?}", relations);
+        } else {
+            debug!("skipping non-agent rules");
         }
 
-        debug!("style attr: {:?}", relations);
-
         
-        map.author.get_all_matching_rules(element,
-                                          parent_bf,
-                                          applicable_declarations,
-                                          &mut relations,
-                                          reason,
-                                          Importance::Important);
-
-        debug!("author important: {:?}", relations);
-
-        
-        if let Some(sa) = style_attribute {
-            if sa.read().any_important() {
-                relations |= AFFECTED_BY_STYLE_ATTRIBUTE;
-                Push::push(
-                    applicable_declarations,
-                    ApplicableDeclarationBlock::from_declarations(sa.clone(), Importance::Important));
-            }
-        }
-
-        debug!("style attr important: {:?}", relations);
-
-        
-        map.user.get_all_matching_rules(element,
-                                        parent_bf,
-                                        applicable_declarations,
-                                        &mut relations,
-                                        reason,
-                                        Importance::Important);
-
-        debug!("user important: {:?}", relations);
-
         map.user_agent.get_all_matching_rules(element,
                                               parent_bf,
                                               applicable_declarations,
