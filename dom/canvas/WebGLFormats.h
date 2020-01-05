@@ -158,7 +158,7 @@ enum class UnsizedFormat : uint8_t {
     A,
     D,
     S,
-    DS,
+    DEPTH_STENCIL, 
 };
 
 
