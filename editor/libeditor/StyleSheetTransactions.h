@@ -6,13 +6,12 @@
 #ifndef StylesheetTransactions_h
 #define StylesheetTransactions_h
 
+#include "mozilla/EditorBase.h"         
 #include "mozilla/EditTransactionBase.h" 
 #include "mozilla/StyleSheet.h"   
 #include "nsCycleCollectionParticipant.h"
 #include "nsID.h"                       
 #include "nscore.h"                     
-
-class nsIEditor;
 
 namespace mozilla {
 
@@ -23,10 +22,7 @@ public:
 
 
 
-
-  NS_IMETHOD Init(nsIEditor* aEditor, StyleSheet* aSheet);
-
-  AddStyleSheetTransaction();
+  AddStyleSheetTransaction(EditorBase& aEditor, StyleSheet* aSheet);
 
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(AddStyleSheetTransaction,
                                            EditTransactionBase)
@@ -36,7 +32,7 @@ public:
 
 protected:
   
-  nsIEditor* mEditor;
+  EditorBase& mEditor;
   
   RefPtr<mozilla::StyleSheet> mSheet;
 };
@@ -49,10 +45,7 @@ public:
 
 
 
-
-  NS_IMETHOD Init(nsIEditor* aEditor, StyleSheet* aSheet);
-
-  RemoveStyleSheetTransaction();
+  RemoveStyleSheetTransaction(EditorBase& aEditor, StyleSheet* aSheet);
 
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(RemoveStyleSheetTransaction,
                                            EditTransactionBase)
@@ -62,7 +55,7 @@ public:
 
 protected:
   
-  nsIEditor* mEditor;
+  EditorBase& mEditor;
   
   RefPtr<StyleSheet> mSheet;
 
