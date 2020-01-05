@@ -275,6 +275,12 @@ nsPluginHost::nsPluginHost()
   
   if (XRE_IsParentProcess()) {
     IncrementChromeEpoch();
+  } else {
+    
+    
+    
+    nsCOMPtr<nsIProtocolProxyService> proxyService =
+      do_GetService(NS_PROTOCOLPROXYSERVICE_CONTRACTID);
   }
 
   
