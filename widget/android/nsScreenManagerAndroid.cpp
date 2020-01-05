@@ -3,33 +3,18 @@
 
 
 
-
 #define MOZ_FATAL_ASSERTIONS_FOR_THREAD_SAFETY
 
 #include "nsScreenManagerAndroid.h"
 #include "nsWindow.h"
 #include "GeneratedJNIWrappers.h"
-#include "AndroidBridge.h"
 #include "AndroidRect.h"
 #include <mozilla/jni/Refs.h>
 
-#define ALOG(args...) __android_log_print(ANDROID_LOG_INFO, "nsScreenManagerAndroid", ## args)
-
 using namespace mozilla;
 
-static uint32_t sScreenId = 0;
-const uint32_t PRIMARY_SCREEN_ID = 0;
-
-nsScreenAndroid::nsScreenAndroid(DisplayType aDisplayType, nsIntRect aRect)
-    : mId(sScreenId++)
-    , mDisplayType(aDisplayType)
-    , mRect(aRect)
-    , mDensity(mozilla::java::GeckoAppShell::GetDensity())
+nsScreenAndroid::nsScreenAndroid(void *nativeScreen)
 {
-    
-    if (mDisplayType == DisplayType::DISPLAY_PRIMARY) {
-        mId = PRIMARY_SCREEN_ID;
-    }
 }
 
 nsScreenAndroid::~nsScreenAndroid()
@@ -39,22 +24,13 @@ nsScreenAndroid::~nsScreenAndroid()
 NS_IMETHODIMP
 nsScreenAndroid::GetId(uint32_t *outId)
 {
-    *outId = mId;
+    *outId = 1;
     return NS_OK;
 }
 
 NS_IMETHODIMP
 nsScreenAndroid::GetRect(int32_t *outLeft, int32_t *outTop, int32_t *outWidth, int32_t *outHeight)
 {
-    if (mDisplayType != DisplayType::DISPLAY_PRIMARY) {
-        *outLeft   = mRect.x;
-        *outTop    = mRect.y;
-        *outWidth  = mRect.width;
-        *outHeight = mRect.height;
-
-        return NS_OK;
-    }
-
     if (!mozilla::jni::IsAvailable()) {
       
       *outLeft = *outTop = *outWidth = *outHeight = 0;
@@ -99,13 +75,11 @@ nsScreenAndroid::GetColorDepth(int32_t *aColorDepth)
     return GetPixelDepth(aColorDepth);
 }
 
-
 void
 nsScreenAndroid::ApplyMinimumBrightness(uint32_t aBrightness)
 {
-    if (mDisplayType == DisplayType::DISPLAY_PRIMARY &&
-        mozilla::jni::IsAvailable()) {
-        java::GeckoAppShell::SetKeepScreenOn(aBrightness == BRIGHTNESS_FULL);
+    if (mozilla::jni::IsAvailable()) {
+      java::GeckoAppShell::SetKeepScreenOn(aBrightness == BRIGHTNESS_FULL);
     }
 }
 
@@ -113,8 +87,7 @@ NS_IMPL_ISUPPORTS(nsScreenManagerAndroid, nsIScreenManager)
 
 nsScreenManagerAndroid::nsScreenManagerAndroid()
 {
-    nsCOMPtr<nsIScreen> screen = AddScreen(DisplayType::DISPLAY_PRIMARY);
-    MOZ_ASSERT(screen);
+    mOneScreen = new nsScreenAndroid(nullptr);
 }
 
 nsScreenManagerAndroid::~nsScreenManagerAndroid()
@@ -124,7 +97,7 @@ nsScreenManagerAndroid::~nsScreenManagerAndroid()
 NS_IMETHODIMP
 nsScreenManagerAndroid::GetPrimaryScreen(nsIScreen **outScreen)
 {
-    ScreenForId(PRIMARY_SCREEN_ID, outScreen);
+    NS_IF_ADDREF(*outScreen = mOneScreen.get());
     return NS_OK;
 }
 
@@ -132,16 +105,7 @@ NS_IMETHODIMP
 nsScreenManagerAndroid::ScreenForId(uint32_t aId,
                                     nsIScreen **outScreen)
 {
-    for (size_t i = 0; i < mScreens.Length(); ++i) {
-        if (aId == mScreens[i]->GetId()) {
-            nsCOMPtr<nsIScreen> screen = (nsIScreen*) mScreens[i];
-            screen.forget(outScreen);
-            return NS_OK;
-        }
-    }
-
-    *outScreen = nullptr;
-    return NS_OK;
+    return GetPrimaryScreen(outScreen);
 }
 
 NS_IMETHODIMP
@@ -151,21 +115,19 @@ nsScreenManagerAndroid::ScreenForRect(int32_t inLeft,
                                       int32_t inHeight,
                                       nsIScreen **outScreen)
 {
-    
     return GetPrimaryScreen(outScreen);
 }
 
 NS_IMETHODIMP
 nsScreenManagerAndroid::ScreenForNativeWidget(void *aWidget, nsIScreen **outScreen)
 {
-    
     return GetPrimaryScreen(outScreen);
 }
 
 NS_IMETHODIMP
 nsScreenManagerAndroid::GetNumberOfScreens(uint32_t *aNumberOfScreens)
 {
-    *aNumberOfScreens = mScreens.Length();
+    *aNumberOfScreens = 1;
     return NS_OK;
 }
 
@@ -174,26 +136,4 @@ nsScreenManagerAndroid::GetSystemDefaultScale(float *aDefaultScale)
 {
     *aDefaultScale = 1.0f;
     return NS_OK;
-}
-
-already_AddRefed<nsScreenAndroid>
-nsScreenManagerAndroid::AddScreen(DisplayType aDisplayType, nsIntRect aRect)
-{
-    ALOG("nsScreenManagerAndroid: add %s screen",
-        (aDisplayType == DisplayType::DISPLAY_PRIMARY  ? "PRIMARY"  :
-        (aDisplayType == DisplayType::DISPLAY_EXTERNAL ? "EXTERNAL" :
-                                                         "VIRTUAL")));
-    RefPtr<nsScreenAndroid> screen = new nsScreenAndroid(aDisplayType, aRect);
-    mScreens.AppendElement(screen);
-    return screen.forget();
-}
-
-void
-nsScreenManagerAndroid::RemoveScreen(uint32_t aScreenId)
-{
-    for (size_t i = 0; i < mScreens.Length(); i++) {
-        if (aScreenId == mScreens[i]->GetId()) {
-            mScreens.RemoveElementAt(i);
-        }
-    }
 }
