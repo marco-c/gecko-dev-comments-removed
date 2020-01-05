@@ -2114,7 +2114,6 @@ private:
   
   
   nsContainerFrame*   mDocElementContainingBlock;
-  nsIFrame*           mGfxScrollFrame;
   nsIFrame*           mPageSequenceFrame;
   nsQuoteList         mQuoteList;
   nsCounterManager    mCounterManager;
