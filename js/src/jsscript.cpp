@@ -3127,8 +3127,6 @@ static JSObject*
 CloneInnerInterpretedFunction(JSContext* cx, HandleScope enclosingScope, HandleFunction srcFun)
 {
     
-    MOZ_ASSERT(!srcFun->isAsync());
-    
     RootedObject cloneProto(cx);
     if (srcFun->isStarGenerator()) {
         cloneProto = GlobalObject::getOrCreateStarGeneratorFunctionPrototype(cx, cx->global());
