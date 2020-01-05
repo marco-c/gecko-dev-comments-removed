@@ -194,6 +194,8 @@ protected:
   typedef uint8_t RenderFlags; 
 
 public:
+  nsIPresShell();
+
   
 
 

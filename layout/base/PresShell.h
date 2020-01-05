@@ -84,8 +84,6 @@ class PresShell final : public nsIPresShell,
 public:
   PresShell();
 
-  NS_DECL_AND_IMPL_ZEROING_OPERATOR_NEW
-
   
   NS_DECL_ISUPPORTS
 
