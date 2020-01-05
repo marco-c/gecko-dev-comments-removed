@@ -1258,10 +1258,8 @@ var PageInfoListener = {
       try {
         
         
-        if (elem.href.baseVal) {
-          let href = Services.io.newURI(elem.href.baseVal, null, Services.io.newURI(elem.baseURI)).spec;
-          addImage(href, strings.mediaImg, "", elem, false);
-        }
+        let href = makeURLAbsolute(elem.baseURI, elem.href.baseVal);
+        addImage(href, strings.mediaImg, "", elem, false);
       } catch (e) { }
     } else if (elem instanceof content.HTMLVideoElement) {
       addImage(elem.currentSrc, strings.mediaVideo, "", elem, false);
