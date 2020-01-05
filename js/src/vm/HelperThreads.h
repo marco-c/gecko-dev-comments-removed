@@ -19,6 +19,7 @@
 #include "mozilla/TimeStamp.h"
 #include "mozilla/Variant.h"
 
+#include "jsapi.h"
 #include "jscntxt.h"
 
 #include "frontend/TokenStream.h"
@@ -50,7 +51,8 @@ namespace wasm {
 enum class ParseTaskKind
 {
     Script,
-    Module
+    Module,
+    ScriptDecode
 };
 
 
@@ -258,6 +260,7 @@ class GlobalHelperThreadState
 
   public:
     JSScript* finishScriptParseTask(JSContext* cx, void* token);
+    JSScript* finishScriptDecodeTask(JSContext* cx, void* token);
     JSObject* finishModuleParseTask(JSContext* cx, void* token);
     bool compressionInProgress(SourceCompressionTask* task, const AutoLockHelperThreadState& lock);
     SourceCompressionTask* compressionTaskForSource(ScriptSource* ss, const AutoLockHelperThreadState& lock);
@@ -504,6 +507,11 @@ StartOffThreadParseModule(JSContext* cx, const ReadOnlyCompileOptions& options,
                           const char16_t* chars, size_t length,
                           JS::OffThreadCompileCallback callback, void* callbackData);
 
+bool
+StartOffThreadDecodeScript(JSContext* cx, const ReadOnlyCompileOptions& options,
+                           JS::TranscodeBuffer& buffer, size_t cursor,
+                           JS::OffThreadCompileCallback callback, void* callbackData);
+
 
 
 
@@ -556,8 +564,21 @@ struct ParseTask
     ParseTaskKind kind;
     ExclusiveContext* cx;
     OwningCompileOptions options;
-    const char16_t* chars;
-    size_t length;
+    
+    
+    union {
+        struct {
+            const char16_t* chars;
+            size_t length;
+        };
+        struct {
+            
+            
+            
+            JS::TranscodeBuffer* const buffer;
+            size_t cursor;
+        };
+    };
     LifoAlloc alloc;
 
     
@@ -583,6 +604,9 @@ struct ParseTask
 
     ParseTask(ParseTaskKind kind, ExclusiveContext* cx, JSObject* exclusiveContextGlobal,
               JSContext* initCx, const char16_t* chars, size_t length,
+              JS::OffThreadCompileCallback callback, void* callbackData);
+    ParseTask(ParseTaskKind kind, ExclusiveContext* cx, JSObject* exclusiveContextGlobal,
+              JSContext* initCx, JS::TranscodeBuffer& buffer, size_t cursor,
               JS::OffThreadCompileCallback callback, void* callbackData);
     bool init(JSContext* cx, const ReadOnlyCompileOptions& options);
 
@@ -612,6 +636,14 @@ struct ModuleParseTask : public ParseTask
     ModuleParseTask(ExclusiveContext* cx, JSObject* exclusiveContextGlobal,
                     JSContext* initCx, const char16_t* chars, size_t length,
                     JS::OffThreadCompileCallback callback, void* callbackData);
+    void parse() override;
+};
+
+struct ScriptDecodeTask : public ParseTask
+{
+    ScriptDecodeTask(ExclusiveContext* cx, JSObject* exclusiveContextGlobal,
+                     JSContext* initCx, JS::TranscodeBuffer& buffer, size_t cursor,
+                     JS::OffThreadCompileCallback callback, void* callbackData);
     void parse() override;
 };
 
