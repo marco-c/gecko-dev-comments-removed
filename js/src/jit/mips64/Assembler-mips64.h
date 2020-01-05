@@ -155,7 +155,7 @@ class Assembler : public AssemblerMIPSShared
 
     
     
-    void executableCopy(uint8_t* buffer);
+    void executableCopy(uint8_t* buffer, bool flushICache = true);
 
     static uint32_t PatchWrite_NearCallSize();
 

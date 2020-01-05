@@ -1134,10 +1134,8 @@ ModuleGenerator::finish(const ShareableBytes& bytecode)
 
     
     
-    {
-        AutoFlushICache afc("ModuleGenerator::finish",  true);
-        masm_.executableCopy(code.begin());
-    }
+    
+    masm_.executableCopy(code.begin(),  false);
 
     
     memset(code.begin() + bytesNeeded, 0, padding);

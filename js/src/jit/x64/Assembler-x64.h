@@ -316,7 +316,7 @@ class Assembler : public AssemblerX86Shared
 
     
     
-    void executableCopy(uint8_t* buffer);
+    void executableCopy(uint8_t* buffer, bool flushICache = true);
 
     
 
