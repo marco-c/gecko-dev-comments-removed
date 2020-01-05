@@ -9217,18 +9217,12 @@ CodeGenerator::visitIteratorStartO(LIteratorStartO* lir)
 
     
     
-    
     {
-        Label skipBarrier;
-        masm.branchPtrInNurseryChunk(Assembler::NotEqual, obj, temp1, &skipBarrier);
-
-        LiveRegisterSet temps;
-        temps.add(temp1);
-        temps.add(temp2);
-        saveVolatile(temps);
-        emitPostWriteBarrier(output);
-        restoreVolatile(temps);
-        masm.bind(&skipBarrier);
+        
+        
+        
+        Address objAddr(niTemp, offsetof(NativeIterator, obj));
+        masm.branchPtr(Assembler::NotEqual, objAddr, obj, ool->entry());
     }
 
     
