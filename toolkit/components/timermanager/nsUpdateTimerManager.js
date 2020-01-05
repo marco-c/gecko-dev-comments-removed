@@ -93,12 +93,19 @@ TimerManager.prototype = {
         minInterval = 500;
         minFirstInterval = 500;
       case "profile-after-change":
-        
-        
         this._timerMinimumDelay = Math.max(1000 * getPref("getIntPref", PREF_APP_UPDATE_TIMERMINIMUMDELAY, 120),
                                            minInterval);
+        
+        
+        this._timerMinimumDelay = Math.min(this._timerMinimumDelay, 300000);
+        
         let firstInterval = Math.max(getPref("getIntPref", PREF_APP_UPDATE_TIMERFIRSTINTERVAL,
-                                             this._timerMinimumDelay), minFirstInterval);
+                                             30000), minFirstInterval);
+        
+        
+        firstInterval = Math.min(firstInterval, 120000);
+        
+        
         this._canEnsureTimer = true;
         this._ensureTimer(firstInterval);
         break;
@@ -171,7 +178,7 @@ TimerManager.prototype = {
     while (entries.hasMoreElements()) {
       let entry = entries.getNext().QueryInterface(Ci.nsISupportsCString).data;
       let value = catMan.getCategoryEntry(CATEGORY_UPDATE_TIMER, entry);
-      let [cid, method, timerID, prefInterval, defaultInterval] = value.split(",");
+      let [cid, method, timerID, prefInterval, defaultInterval, maxInterval] = value.split(",");
 
       defaultInterval = parseInt(defaultInterval);
       
@@ -183,6 +190,12 @@ TimerManager.prototype = {
       }
 
       let interval = getPref("getIntPref", prefInterval, defaultInterval);
+      
+      
+      maxInterval = parseInt(maxInterval);
+      if (maxInterval && !isNaN(maxInterval)) {
+        interval = Math.min(interval, maxInterval);
+      }
       let prefLastUpdate = PREF_APP_UPDATE_LASTUPDATETIME_FMT.replace(/%ID%/,
                                                                       timerID);
       
