@@ -28,22 +28,22 @@ add_task(function* test_aboutPreferencesPrivacy() {
     yield ContentTask.spawn(browser, TEST_SELECTORS, (args) => {
       is(content.document.querySelector(args.group).hidden, false,
         "Form Autofill group should be visible");
-      is(content.document.querySelector(args.checkbox).checked, false,
-        "Checkbox should be unchecked");
+      is(content.document.querySelector(args.checkbox).checked, true,
+        "Checkbox should be checked");
     });
   });
 });
 
 
-add_task(function* test_autofillEnabledCheckbox() {
-  SpecialPowers.pushPrefEnv({set: [[PREF_AUTOFILL_ENABLED, true]]});
+add_task(function* test_autofillDisabledCheckbox() {
+  SpecialPowers.pushPrefEnv({set: [[PREF_AUTOFILL_ENABLED, false]]});
 
   yield BrowserTestUtils.withNewTab({gBrowser, url: PAGE_PRIVACY}, function* (browser) {
     yield ContentTask.spawn(browser, TEST_SELECTORS, (args) => {
       is(content.document.querySelector(args.group).hidden, false,
         "Form Autofill group should be visible");
-      is(content.document.querySelector(args.checkbox).checked, true,
-        "Checkbox should be checked when Form Autofill is enabled");
+      is(content.document.querySelector(args.checkbox).checked, false,
+        "Checkbox should be unchecked when Form Autofill is disabled");
     });
   });
 });

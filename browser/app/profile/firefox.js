@@ -1634,7 +1634,7 @@ pref("browser.crashReports.unsubmittedCheck.autoSubmit", false);
 
 
 pref("browser.formautofill.experimental", false);
-pref("browser.formautofill.enabled", false);
+pref("browser.formautofill.enabled", true);
 pref("browser.formautofill.loglevel", "Warn");
 
 
