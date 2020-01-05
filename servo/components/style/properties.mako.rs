@@ -4,8 +4,6 @@
 
 
 
-#![macro_use]
-
 use std::ascii::AsciiExt;
 use std::borrow::ToOwned;
 use std::default::Default;
