@@ -492,6 +492,7 @@ impl Document {
         
         
         
+        self.stylesheets_changed_since_reflow.get() ||
         match self.GetDocumentElement() {
             Some(root) => {
                 root.upcast::<Node>().has_dirty_descendants() ||
