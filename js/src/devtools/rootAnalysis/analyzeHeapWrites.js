@@ -408,6 +408,9 @@ function ignoreContents(entry)
             /nsCOMArray_base::AppendElement/,
 
             
+            /mozilla::UniquePtr/,
+
+            
             
             /nsStyleImage::DoCopy/,
         ];
