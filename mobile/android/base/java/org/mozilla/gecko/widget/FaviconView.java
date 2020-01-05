@@ -10,11 +10,14 @@ import org.mozilla.gecko.icons.IconCallback;
 import org.mozilla.gecko.icons.IconResponse;
 
 import android.content.Context;
+import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.RectF;
+import android.support.v4.graphics.drawable.RoundedBitmapDrawable;
+import android.support.v4.graphics.drawable.RoundedBitmapDrawableFactory;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.TypedValue;
@@ -33,7 +36,7 @@ public class FaviconView extends ImageView {
     private static String DEFAULT_FAVICON_KEY = FaviconView.class.getSimpleName() + "DefaultFavicon";
 
     
-    private static final int DEFAULT_CORNER_RADIUS_DP = 4;
+    private static final int DEFAULT_CORNER_RADIUS_DP = 2;
 
     private Bitmap mIconBitmap;
 
@@ -68,6 +71,8 @@ public class FaviconView extends ImageView {
     
     private final boolean areRoundCornersEnabled;
 
+    private final Resources mResources;
+
     
     static {
         sBackgroundPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -94,6 +99,8 @@ public class FaviconView extends ImageView {
 
         mBackgroundRect = new RectF(0, 0, 0, 0);
         mBackgroundCornerRadius = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, DEFAULT_CORNER_RADIUS_DP, metrics);
+
+        mResources = getResources();
     }
 
     @Override
@@ -147,7 +154,20 @@ public class FaviconView extends ImageView {
             mScalingExpected = false;
         }
 
-        setImageBitmap(mIconBitmap);
+        
+        
+        if (areRoundCornersEnabled) {
+            
+            if (mActualWidth < mIconBitmap.getWidth()) {
+                scaleBitmap();
+            }
+            RoundedBitmapDrawable roundedBitmapDrawable = RoundedBitmapDrawableFactory.create(mResources, mIconBitmap);
+            roundedBitmapDrawable.setCornerRadius(mBackgroundCornerRadius);
+            roundedBitmapDrawable.setAntiAlias(true);
+            setImageDrawable(roundedBitmapDrawable);
+        } else {
+            setImageBitmap(mIconBitmap);
+        }
 
         
         
