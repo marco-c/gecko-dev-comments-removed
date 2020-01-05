@@ -356,16 +356,6 @@ public:
 
 
 
-  bool IsDataSourceSurface() const {
-    SurfaceType type = GetType();
-    return type == SurfaceType::DATA ||
-           type == SurfaceType::DATA_SHARED;
-  }
-
-  
-
-
-
   virtual already_AddRefed<DataSourceSurface> GetDataSurface() = 0;
 
   

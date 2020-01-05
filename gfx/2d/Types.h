@@ -29,8 +29,7 @@ enum class SurfaceType : int8_t {
   DUAL_DT, 
   D2D1_1_IMAGE, 
   RECORDING, 
-  TILED, 
-  DATA_SHARED, 
+  TILED 
 };
 
 enum class SurfaceFormat : int8_t {
