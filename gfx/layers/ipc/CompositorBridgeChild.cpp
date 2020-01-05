@@ -477,8 +477,7 @@ CompositorBridgeChild::RecvUpdatePluginConfigurations(const LayoutDeviceIntPoint
       widget->Enable(isVisible);
 
       
-      rv = widget->Show(isVisible);
-      NS_ASSERTION(NS_SUCCEEDED(rv), "widget call failure");
+      widget->Show(isVisible);
 
       
       if (isVisible) {

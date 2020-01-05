@@ -636,7 +636,7 @@ class nsIWidget : public nsISupports
 
 
 
-    NS_IMETHOD Show(bool aState) = 0;
+    virtual void Show(bool aState) = 0;
 
     
 
