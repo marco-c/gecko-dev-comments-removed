@@ -842,14 +842,14 @@ WebGLContext::AssertCachedGlobalState()
     gl->fGetFloatv(LOCAL_GL_DEPTH_CLEAR_VALUE, &depthClearValue);
     MOZ_ASSERT(IsCacheCorrect(mDepthClearValue, depthClearValue));
 
-    AssertUintParamCorrect(gl, LOCAL_GL_STENCIL_CLEAR_VALUE, mStencilClearValue);
+    const int maxStencilBits = 8;
+    const GLuint maxStencilBitsMask = (1 << maxStencilBits) - 1;
+    AssertMaskedUintParamCorrect(gl, LOCAL_GL_STENCIL_CLEAR_VALUE, maxStencilBitsMask, mStencilClearValue);
 
     
     
     
     
-    const int maxStencilBits = 8;
-    const GLuint maxStencilBitsMask = (1 << maxStencilBits) - 1;
     AssertMaskedUintParamCorrect(gl, LOCAL_GL_STENCIL_VALUE_MASK,      maxStencilBitsMask, mStencilValueMaskFront);
     AssertMaskedUintParamCorrect(gl, LOCAL_GL_STENCIL_BACK_VALUE_MASK, maxStencilBitsMask, mStencilValueMaskBack);
 
