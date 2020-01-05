@@ -644,6 +644,9 @@ DOMMediaStream::RemoveTrack(MediaStreamTrack& aTrack)
     return;
   }
 
+  DebugOnly<bool> removed = mTracks.RemoveElement(toRemove);
+  NS_ASSERTION(removed, "If there's a track port we should be able to remove it");
+
   
   
   
@@ -652,11 +655,7 @@ DOMMediaStream::RemoveTrack(MediaStreamTrack& aTrack)
   
   if (!aTrack.Ended()) {
     BlockPlaybackTrack(toRemove);
-
-    bool removed = mTracks.RemoveElement(toRemove);
-    if (removed) {
-      NotifyTrackRemoved(&aTrack);
-    }
+    NotifyTrackRemoved(&aTrack);
   }
 
   LOG(LogLevel::Debug, ("DOMMediaStream %p Removed track %p", this, &aTrack));
