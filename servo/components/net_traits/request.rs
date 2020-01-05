@@ -77,6 +77,7 @@ pub enum RequestMode {
     SameOrigin,
     NoCors,
     CorsMode,
+    WebSocket
 }
 
 

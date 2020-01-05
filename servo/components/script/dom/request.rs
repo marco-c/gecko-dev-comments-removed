@@ -633,30 +633,30 @@ impl RequestMethods for Request {
             return Err(Error::Type("Request is disturbed".to_string()));
         }
 
-        
+        // Step 2
         Request::clone_from(self)
     }
 
     #[allow(unrooted_must_root)]
-    
+    // https://fetch.spec.whatwg.org/#dom-body-text
     fn Text(&self) -> Rc<Promise> {
         consume_body(self, BodyType::Text)
     }
 
     #[allow(unrooted_must_root)]
-    
+    // https://fetch.spec.whatwg.org/#dom-body-blob
     fn Blob(&self) -> Rc<Promise> {
         consume_body(self, BodyType::Blob)
     }
 
     #[allow(unrooted_must_root)]
-    
+    // https://fetch.spec.whatwg.org/#dom-body-formdata
     fn FormData(&self) -> Rc<Promise> {
         consume_body(self, BodyType::FormData)
     }
 
     #[allow(unrooted_must_root)]
-    
+    // https://fetch.spec.whatwg.org/#dom-body-json
     fn Json(&self) -> Rc<Promise> {
         consume_body(self, BodyType::Json)
     }
@@ -826,6 +826,7 @@ impl Into<RequestMode> for NetTraitsRequestMode {
             NetTraitsRequestMode::SameOrigin => RequestMode::Same_origin,
             NetTraitsRequestMode::NoCors => RequestMode::No_cors,
             NetTraitsRequestMode::CorsMode => RequestMode::Cors,
+            NetTraitsRequestMode::WebSocket => unreachable!("Websocket request mode should never be exposed to JS"),
         }
     }
 }
