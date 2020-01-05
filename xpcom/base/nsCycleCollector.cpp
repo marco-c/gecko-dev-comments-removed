@@ -3519,9 +3519,20 @@ nsCycleCollector::FixGrayBits(bool aForceGC, TimeLog& aTimeLog)
     mResults.mForcedGC = true;
   }
 
-  mJSContext->GarbageCollect(aForceGC ? JS::gcreason::SHUTDOWN_CC :
-                                        JS::gcreason::CC_FORCED);
-  aTimeLog.Checkpoint("FixGrayBits GC");
+  uint32_t count = 0;
+  do {
+    mJSContext->GarbageCollect(aForceGC ? JS::gcreason::SHUTDOWN_CC :
+                                          JS::gcreason::CC_FORCED);
+
+    mJSContext->FixWeakMappingGrayBits();
+
+    
+    
+    
+    MOZ_RELEASE_ASSERT(count++ < 2);
+  } while (!mJSContext->AreGCGrayBitsValid());
+
+  aTimeLog.Checkpoint("FixGrayBits");
 }
 
 bool
