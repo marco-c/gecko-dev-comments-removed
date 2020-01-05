@@ -11,6 +11,7 @@
 #define nsMenuPopupFrame_h__
 
 #include "mozilla/Attributes.h"
+#include "mozilla/gfx/Types.h"
 #include "nsIAtom.h"
 #include "nsGkAtoms.h"
 #include "nsCOMPtr.h"
@@ -393,9 +394,8 @@ public:
   
   
   
-  
-  void CanAdjustEdges(int8_t aHorizontalSide,
-                      int8_t aVerticalSide,
+  void CanAdjustEdges(mozilla::Side aHorizontalSide,
+                      mozilla::Side aVerticalSide,
                       mozilla::LayoutDeviceIntPoint& aChange);
 
   
