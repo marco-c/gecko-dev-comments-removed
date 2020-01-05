@@ -16,6 +16,7 @@ import sys
 from automation import Automation
 from mozdevice import DMError, DeviceManager
 from mozlog import get_default_logger
+from mozscreenshot import dump_screen
 import mozcrash
 
 
@@ -108,6 +109,7 @@ class RemoteAutomation(Automation):
             If maxTime seconds elapse or no output is detected for timeout
             seconds, kill the process and fail the test.
         """
+        proc.utilityPath = utilityPath
         
         status = proc.wait(timeout = maxTime, noOutputTimeout = timeout)
         self.lastTestSeen = proc.getLastTestSeen
@@ -284,6 +286,7 @@ class RemoteAutomation(Automation):
             self.lastTestSeen = "remoteautomation.py"
             self.proc = dm.launchProcess(cmd, stdout, cwd, env, True)
             self.messageLogger = messageLogger
+            self.utilityPath = None
 
             if (self.proc is None):
                 if cmd[0] == 'am':
@@ -408,6 +411,13 @@ class RemoteAutomation(Automation):
             return status
 
         def kill(self, stagedShutdown = False):
+            if self.utilityPath:
+                
+                
+                
+                
+                
+                dump_screen(self.utilityPath, get_default_logger())
             if stagedShutdown:
                 
                 self.dm.killProcess(self.procName, 3)
