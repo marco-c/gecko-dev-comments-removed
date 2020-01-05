@@ -29,55 +29,70 @@ pub trait Activatable {
 
     
     fn implicit_submission(&self, ctrlKey: bool, shiftKey: bool, altKey: bool, metaKey: bool);
+}
 
-    
-    fn synthetic_click_activation(&self,
+
+#[derive(PartialEq)]
+pub enum ActivationSource {
+    FromClick,
+    NotFromClick,
+}
+
+
+pub fn synthetic_click_activation(element: &Element,
                                   ctrlKey: bool,
                                   shiftKey: bool,
                                   altKey: bool,
-                                  metaKey: bool) {
-        let element = self.as_element();
-        
-        if element.click_in_progress() {
-            return;
-        }
-        
-        element.set_click_in_progress(true);
-        
-        self.pre_click_activation();
+                                  metaKey: bool,
+                                  source: ActivationSource) {
+    
+    if element.click_in_progress() {
+        return;
+    }
+    
+    element.set_click_in_progress(true);
+    
+    let activatable = element.as_maybe_activatable();
+    if let Some(a) = activatable {
+        a.pre_click_activation();
+    }
 
-        
-        
-        let win = window_from_node(element);
-        let target = element.upcast();
-        let mouse = MouseEvent::new(win.r(),
-                                    DOMString::from("click"),
-                                    EventBubbles::DoesNotBubble,
-                                    EventCancelable::NotCancelable,
-                                    Some(win.r()),
-                                    1,
-                                    0,
-                                    0,
-                                    0,
-                                    0,
-                                    ctrlKey,
-                                    shiftKey,
-                                    altKey,
-                                    metaKey,
-                                    0,
-                                    None);
-        let event = mouse.upcast::<Event>();
-        event.fire(target);
+    
+    
+    let win = window_from_node(element);
+    let target = element.upcast::<EventTarget>();
+    let mouse = MouseEvent::new(win.r(),
+                                DOMString::from("click"),
+                                EventBubbles::DoesNotBubble,
+                                EventCancelable::NotCancelable,
+                                Some(win.r()),
+                                1,
+                                0,
+                                0,
+                                0,
+                                0,
+                                ctrlKey,
+                                shiftKey,
+                                altKey,
+                                metaKey,
+                                0,
+                                None);
+    let event = mouse.upcast::<Event>();
+    if source == ActivationSource::FromClick {
+        event.set_trusted(false);
+    }
+    target.dispatch_event(event);
 
-        
+    
+    if let Some(a) = activatable {
         if event.DefaultPrevented() {
-            self.canceled_activation();
+            a.canceled_activation();
         } else {
             
-            self.activation_behavior(event, target);
+            a.activation_behavior(event, target);
         }
-
-        
-        element.set_click_in_progress(false);
     }
+
+    
+    element.set_click_in_progress(false);
 }
