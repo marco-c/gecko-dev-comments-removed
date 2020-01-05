@@ -4,7 +4,6 @@
 
 
 #include "nsUnicharUtils.h"
-#include "nsXPCOMStrings.h"
 #include "nsUTF8Utils.h"
 #include "nsUnicodeProperties.h"
 #include "mozilla/Likely.h"

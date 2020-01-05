@@ -64,7 +64,6 @@
 #include "nsContentUtils.h"
 #include "nsJSUtils.h"
 #include "nsILoadInfo.h"
-#include "nsXPCOMStrings.h"
 
 
 #define WEBAPPS_PERM_NAME "webapps-manage"
