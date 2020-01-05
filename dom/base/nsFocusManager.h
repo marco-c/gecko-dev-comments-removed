@@ -287,11 +287,27 @@ protected:
 
 
 
+
   void SendFocusOrBlurEvent(mozilla::EventMessage aEventMessage,
                             nsIPresShell* aPresShell,
                             nsIDocument* aDocument,
                             nsISupports* aTarget,
                             uint32_t aFocusMethod,
+                            bool aWindowRaised,
+                            bool aIsRefocus = false,
+                            mozilla::dom::EventTarget* aRelatedTarget = nullptr);
+
+  
+
+
+
+
+
+
+
+  void FireFocusOrBlurEvent(mozilla::EventMessage aEventMessage,
+                            nsIPresShell* aPresShell,
+                            nsISupports* aTarget,
                             bool aWindowRaised,
                             bool aIsRefocus = false,
                             mozilla::dom::EventTarget* aRelatedTarget = nullptr);
@@ -313,7 +329,7 @@ protected:
 
 
 
-  void SendFocusInOrOutEvent(mozilla::EventMessage aEventMessage,
+  void FireFocusInOrOutEvent(mozilla::EventMessage aEventMessage,
                              nsIPresShell* aPresShell,
                              nsISupports* aTarget,
                              nsPIDOMWindowOuter* aCurrentFocusedWindow,
