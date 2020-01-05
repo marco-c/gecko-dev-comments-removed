@@ -11,6 +11,7 @@
 
 namespace mozilla {
 
+class MediaCodecs;
 class MediaContentType;
 
 
@@ -36,7 +37,7 @@ public:
   
   
   static bool GetSupportedCodecs(const MediaContentType& aType,
-                                 char const *const ** aCodecList);
+                                 MediaCodecs* aOutCodecs);
 
   
   static bool IsEnabled();
