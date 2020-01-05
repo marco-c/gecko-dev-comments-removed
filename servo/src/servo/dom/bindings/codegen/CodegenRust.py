@@ -1738,8 +1738,8 @@ class CGMemberJITInfo(CGThing):
         return ""
 
     def defineJitInfo(self, infoName, opName, infallible):
-        protoID = 0 
-        depth = 0 
+        protoID =  "prototypes::id::%s as uint" % self.descriptor.name
+        depth = self.descriptor.interface.inheritanceDepth()
         failstr = "true" if infallible else "false"
         return ("\n"
                 "const %s: JSJitInfo = JSJitInfo {\n"
