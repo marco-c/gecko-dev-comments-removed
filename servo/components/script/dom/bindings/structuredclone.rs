@@ -5,8 +5,6 @@
 
 
 
-#![deny(missing_docs)]
-
 use dom::bindings::error::Fallible;
 use dom::bindings::error::Error::DataClone;
 use dom::bindings::global::GlobalRef;

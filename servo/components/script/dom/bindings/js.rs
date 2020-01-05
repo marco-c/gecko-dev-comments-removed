@@ -44,8 +44,6 @@
 
 
 
-#![deny(missing_docs)]
-
 use dom::bindings::trace::JSTraceable;
 use dom::bindings::utils::{Reflector, Reflectable};
 use dom::node::Node;

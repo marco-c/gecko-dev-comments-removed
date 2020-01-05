@@ -2,8 +2,6 @@
 
 
 
-#![deny(missing_docs)]
-
 
 
 use dom::bindings::codegen::PrototypeList;

@@ -7,8 +7,6 @@
 
 
 
-#[deny(missing_docs)]
-
 use dom::bindings::conversions::FromJSValConvertible;
 use dom::bindings::js::{JS, JSRef, Root};
 use dom::bindings::utils::{Reflectable, Reflector};

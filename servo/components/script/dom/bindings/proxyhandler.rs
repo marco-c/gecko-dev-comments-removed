@@ -4,6 +4,8 @@
 
 
 
+#![deny(missing_docs)]
+
 use dom::bindings::conversions::is_dom_proxy;
 use dom::bindings::utils::delete_property_by_id;
 use js::jsapi::{JSContext, jsid, JSPropertyDescriptor, JSObject, JSString};
@@ -24,6 +26,10 @@ use std::mem;
 use std::ptr;
 
 static JSPROXYSLOT_EXPANDO: u32 = 0;
+
+
+
+
 
 pub unsafe extern fn getPropertyDescriptor(cx: *mut JSContext, proxy: *mut JSObject,
                                            id: jsid, set: bool,
@@ -47,6 +53,7 @@ pub unsafe extern fn getPropertyDescriptor(cx: *mut JSContext, proxy: *mut JSObj
     JS_GetPropertyDescriptorById(cx, proto, id, JSRESOLVE_QUALIFIED, desc) != 0
 }
 
+
 pub unsafe extern fn defineProperty_(cx: *mut JSContext, proxy: *mut JSObject, id: jsid,
                               desc: *mut JSPropertyDescriptor) -> bool {
     static JSMSG_GETTER_ONLY: libc::c_uint = 160;
@@ -63,23 +70,22 @@ pub unsafe extern fn defineProperty_(cx: *mut JSContext, proxy: *mut JSObject, i
     }
 
     let expando = EnsureExpandoObject(cx, proxy);
-    if expando.is_null() {
-        return false;
-    }
-
     return JS_DefinePropertyById(cx, expando, id, (*desc).value, (*desc).getter,
                                  (*desc).setter, (*desc).attrs) != 0;
 }
 
+
 pub unsafe extern fn delete_(cx: *mut JSContext, proxy: *mut JSObject, id: jsid,
                              bp: *mut bool) -> bool {
-    let expando = EnsureExpandoObject(cx, proxy);
+    let expando = GetExpandoObject(proxy);
     if expando.is_null() {
-        return false;
+        *bp = true;
+        return true;
     }
 
     return delete_property_by_id(cx, expando, id, &mut *bp);
 }
+
 
 pub fn _obj_toString(cx: *mut JSContext, name: &str) -> *mut JSString {
     unsafe {
@@ -94,6 +100,7 @@ pub fn _obj_toString(cx: *mut JSContext, name: &str) -> *mut JSString {
     }
 }
 
+
 pub fn GetExpandoObject(obj: *mut JSObject) -> *mut JSObject {
     unsafe {
         assert!(is_dom_proxy(obj));
@@ -106,6 +113,8 @@ pub fn GetExpandoObject(obj: *mut JSObject) -> *mut JSObject {
     }
 }
 
+
+
 pub fn EnsureExpandoObject(cx: *mut JSContext, obj: *mut JSObject) -> *mut JSObject {
     unsafe {
         assert!(is_dom_proxy(obj));
@@ -114,15 +123,15 @@ pub fn EnsureExpandoObject(cx: *mut JSContext, obj: *mut JSObject) -> *mut JSObj
             expando = JS_NewObjectWithGivenProto(cx, ptr::null_mut(),
                                                  ptr::null_mut(),
                                                  GetObjectParent(obj));
-            if expando.is_null() {
-                return ptr::null_mut();
-            }
+            assert!(!expando.is_null());
 
             SetProxyExtra(obj, JSPROXYSLOT_EXPANDO, ObjectValue(&*expando));
         }
         return expando;
     }
 }
+
+
 
 pub fn FillPropertyDescriptor(desc: &mut JSPropertyDescriptor, obj: *mut JSObject, readonly: bool) {
     desc.obj = obj;
@@ -132,11 +141,13 @@ pub fn FillPropertyDescriptor(desc: &mut JSPropertyDescriptor, obj: *mut JSObjec
     desc.shortid = 0;
 }
 
+
 pub unsafe extern fn getOwnPropertyNames_(_cx: *mut JSContext,
                                           _obj: *mut JSObject,
                                           _v: *mut AutoIdVector) -> bool {
     true
 }
+
 
 pub unsafe extern fn enumerate_(_cx: *mut JSContext, _obj: *mut JSObject,
                                 _v: *mut AutoIdVector) -> bool {

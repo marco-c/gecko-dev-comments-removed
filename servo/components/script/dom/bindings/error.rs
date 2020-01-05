@@ -4,8 +4,6 @@
 
 
 
-#![deny(missing_docs)]
-
 use dom::bindings::conversions::ToJSValConvertible;
 use dom::bindings::global::GlobalRef;
 use dom::domexception::DOMException;

@@ -2,8 +2,6 @@
 
 
 
-#![deny(missing_docs)]
-
 
 
 use dom::bindings::global::global_object_for_js_object;
