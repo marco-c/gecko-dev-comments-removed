@@ -41,7 +41,10 @@ class MozLog(object):
         if not self._started:
             
             
-            self.logger.suite_start(tests=tests, time=self.start_time)
+            self.logger.suite_start(
+                tests=tests,
+                time=self.start_time,
+                run_info=self.run_info)
             self._started = True
 
     def pytest_configure(self, config):
@@ -52,6 +55,7 @@ class MozLog(object):
     def pytest_sessionstart(self, session):
         '''Called before test collection; records suite start time to log later'''
         self.start_time = int(time.time() * 1000)  
+        self.run_info = getattr(session.config, '_metadata', None)
 
     def pytest_collection_finish(self, session):
         '''Called after test collection is completed, just before tests are run (suite start)'''
