@@ -1,8 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
+//! The `Fragment` type, which represents the leaves of the layout tree.
 
 #![deny(unsafe_code)]
 
@@ -38,9 +38,9 @@ use std::collections::LinkedList;
 use std::fmt;
 use std::sync::{Arc, Mutex};
 use style::computed_values::content::ContentItem;
-use style::computed_values::{border_collapse, clear, display, mix_blend_mode, overflow_wrap};
-use style::computed_values::{overflow_x, position, text_decoration, transform_style};
-use style::computed_values::{vertical_align, white_space, word_break, z_index};
+use style::computed_values::{border_collapse, clear, color, display, mix_blend_mode};
+use style::computed_values::{overflow_wrap, overflow_x, position, text_decoration};
+use style::computed_values::{transform_style, vertical_align, white_space, word_break, z_index};
 use style::dom::TRestyleDamage;
 use style::logical_geometry::{LogicalMargin, LogicalRect, LogicalSize, WritingMode};
 use style::properties::{ComputedValues, ServoComputedValues};
@@ -51,81 +51,81 @@ use text::TextRunScanner;
 use url::Url;
 use util;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/// Fragments (`struct Fragment`) are the leaves of the layout tree. They cannot position
+/// themselves. In general, fragments do not have a simple correspondence with CSS fragments in the
+/// specification:
+///
+/// * Several fragments may correspond to the same CSS box or DOM node. For example, a CSS text box
+/// broken across two lines is represented by two fragments.
+///
+/// * Some CSS fragments are not created at all, such as some anonymous block fragments induced by
+///   inline fragments with block-level sibling fragments. In that case, Servo uses an `InlineFlow`
+///   with `BlockFlow` siblings; the `InlineFlow` is block-level, but not a block container. It is
+///   positioned as if it were a block fragment, but its children are positioned according to
+///   inline flow.
+///
+/// A `SpecificFragmentInfo::Generic` is an empty fragment that contributes only borders, margins,
+/// padding, and backgrounds. It is analogous to a CSS nonreplaced content box.
+///
+/// A fragment's type influences how its styles are interpreted during layout. For example,
+/// replaced content such as images are resized differently from tables, text, or other content.
+/// Different types of fragments may also contain custom data; for example, text fragments contain
+/// text.
+///
+/// Do not add fields to this structure unless they're really really mega necessary! Fragments get
+/// moved around a lot and thus their size impacts performance of layout quite a bit.
+///
+/// FIXME(#2260, pcwalton): This can be slimmed down some by (at least) moving `inline_context`
+/// to be on `InlineFlow` only.
 #[derive(Clone)]
 pub struct Fragment {
-    
+    /// An opaque reference to the DOM node that this `Fragment` originates from.
     pub node: OpaqueNode,
 
-    
+    /// The CSS style of this fragment.
     pub style: Arc<ServoComputedValues>,
 
-    
+    /// The CSS style of this fragment when it's selected
     pub selected_style: Arc<ServoComputedValues>,
 
-    
-    
-    
-    
-    
+    /// The position of this fragment relative to its owning flow. The size includes padding and
+    /// border, but not margin.
+    ///
+    /// NB: This does not account for relative positioning.
+    /// NB: Collapsed borders are not included in this.
     pub border_box: LogicalRect<Au>,
 
-    
-    
+    /// The sum of border and padding; i.e. the distance from the edge of the border box to the
+    /// content edge of the fragment.
     pub border_padding: LogicalMargin<Au>,
 
-    
+    /// The margin of the content box.
     pub margin: LogicalMargin<Au>,
 
-    
+    /// Info specific to the kind of fragment. Keep this enum small.
     pub specific: SpecificFragmentInfo,
 
-    
-    
+    /// Holds the style context information for fragments that are part of an inline formatting
+    /// context.
     pub inline_context: Option<InlineFragmentContext>,
 
-    
+    /// How damaged this fragment is since last reflow.
     pub restyle_damage: RestyleDamage,
 
-    
+    /// The pseudo-element that this fragment represents.
     pub pseudo: PseudoElementType<()>,
 
-    
+    /// Various flags for this fragment.
     pub flags: FragmentFlags,
 
-    
-    
-    
+    /// A debug ID that is consistent for the life of this fragment (via transform etc).
+    /// This ID should not be considered stable across multiple layouts or fragment
+    /// manipulations.
     debug_id: DebugId,
 
-    
-    
-    
+    /// The ID of the StackingContext that contains this fragment. This is initialized
+    /// to 0, but it assigned during the collect_stacking_contexts phase of display
+    /// list construction.
     pub stacking_context_id: StackingContextId,
 }
 
@@ -139,29 +139,29 @@ impl Encodable for Fragment {
     }
 }
 
-
-
-
+/// Info specific to the kind of fragment.
+///
+/// Keep this enum small. As in, no more than one word. Or pcwalton will yell at you.
 #[derive(Clone)]
 pub enum SpecificFragmentInfo {
     Generic,
 
-    
-    
+    /// A piece of generated content that cannot be resolved into `ScannedText` until the generated
+    /// content resolution phase (e.g. an ordered list item marker).
     GeneratedContent(Box<GeneratedContentInfo>),
 
     Iframe(IframeFragmentInfo),
     Image(Box<ImageFragmentInfo>),
     Canvas(Box<CanvasFragmentInfo>),
 
-    
-    
+    /// A hypothetical box (see CSS 2.1 § 10.3.7) for an absolutely-positioned block that was
+    /// declared with `display: inline;`.
     InlineAbsoluteHypothetical(InlineAbsoluteHypotheticalFragmentInfo),
 
     InlineBlock(InlineBlockFragmentInfo),
 
-    
-    
+    /// An inline fragment that establishes an absolute containing block for its descendants (i.e.
+    /// a positioned inline fragment).
     InlineAbsolute(InlineAbsoluteFragmentInfo),
 
     ScannedText(Box<ScannedTextFragmentInfo>),
@@ -236,7 +236,7 @@ impl fmt::Debug for SpecificFragmentInfo {
     }
 }
 
-
+/// Clamp a value obtained from style_length, based on min / max lengths.
 fn clamp_size(size: Au,
               min_size: LengthOrPercentage,
               max_size: LengthOrPercentageOrNone,
@@ -251,20 +251,20 @@ fn clamp_size(size: Au,
     })
 }
 
-
+/// Information for generated content.
 #[derive(Clone)]
 pub enum GeneratedContentInfo {
     ListItem,
     ContentItem(ContentItem),
-    
+    /// Placeholder for elements with generated content that did not generate any fragments.
     Empty,
 }
 
-
-
-
-
-
+/// A hypothetical box (see CSS 2.1 § 10.3.7) for an absolutely-positioned block that was declared
+/// with `display: inline;`.
+///
+/// FIXME(pcwalton): Stop leaking this `FlowRef` to layout; that is not memory safe because layout
+/// can clone it.
 #[derive(Clone)]
 pub struct InlineAbsoluteHypotheticalFragmentInfo {
     pub flow_ref: FlowRef,
@@ -278,10 +278,10 @@ impl InlineAbsoluteHypotheticalFragmentInfo {
     }
 }
 
-
-
-
-
+/// A fragment that represents an inline-block element.
+///
+/// FIXME(pcwalton): Stop leaking this `FlowRef` to layout; that is not memory safe because layout
+/// can clone it.
 #[derive(Clone)]
 pub struct InlineBlockFragmentInfo {
     pub flow_ref: FlowRef,
@@ -295,11 +295,11 @@ impl InlineBlockFragmentInfo {
     }
 }
 
-
-
-
-
-
+/// An inline fragment that establishes an absolute containing block for its descendants (i.e.
+/// a positioned inline fragment).
+///
+/// FIXME(pcwalton): Stop leaking this `FlowRef` to layout; that is not memory safe because layout
+/// can clone it.
 #[derive(Clone)]
 pub struct InlineAbsoluteFragmentInfo {
     pub flow_ref: FlowRef,
@@ -332,7 +332,7 @@ impl CanvasFragmentInfo {
         }
     }
 
-    
+    /// Returns the original inline-size of the canvas.
     pub fn canvas_inline_size(&self) -> Au {
         if self.replaced_image_fragment_info.writing_mode_is_vertical {
             self.dom_height
@@ -341,7 +341,7 @@ impl CanvasFragmentInfo {
         }
     }
 
-    
+    /// Returns the original block-size of the canvas.
     pub fn canvas_block_size(&self) -> Au {
         if self.replaced_image_fragment_info.writing_mode_is_vertical {
             self.dom_width
@@ -352,20 +352,20 @@ impl CanvasFragmentInfo {
 }
 
 
-
+/// A fragment that represents a replaced content image and its accompanying borders, shadows, etc.
 #[derive(Clone)]
 pub struct ImageFragmentInfo {
-    
+    /// The image held within this fragment.
     pub replaced_image_fragment_info: ReplacedImageFragmentInfo,
     pub image: Option<Arc<Image>>,
     pub metadata: Option<ImageMetadata>,
 }
 
 impl ImageFragmentInfo {
-    
-    
-    
-    
+    /// Creates a new image fragment from the given URL and local image cache.
+    ///
+    /// FIXME(pcwalton): The fact that image fragments store the cache in the fragment makes little
+    /// sense to me.
     pub fn new<N: ThreadSafeLayoutNode>(node: &N, url: Option<Url>,
                                         layout_context: &LayoutContext) -> ImageFragmentInfo {
         let image_or_metadata = url.and_then(|url| {
@@ -391,7 +391,7 @@ impl ImageFragmentInfo {
         }
     }
 
-    
+    /// Returns the original inline-size of the image.
     pub fn image_inline_size(&mut self) -> Au {
         match self.metadata {
             Some(ref metadata) => {
@@ -405,7 +405,7 @@ impl ImageFragmentInfo {
         }
     }
 
-    
+    /// Returns the original block-size of the image.
     pub fn image_block_size(&mut self) -> Au {
         match self.metadata {
             Some(ref metadata) => {
@@ -419,9 +419,9 @@ impl ImageFragmentInfo {
         }
     }
 
-    
+    /// Tile an image
     pub fn tile_image(position: &mut Au, size: &mut Au, virtual_position: Au, image_size: u32) {
-        
+        // Avoid division by zero below!
         let image_size = image_size as i32;
         if image_size == 0 {
             return
@@ -454,20 +454,20 @@ impl ReplacedImageFragmentInfo {
         }
     }
 
-    
+    /// Returns the calculated inline-size of the image, accounting for the inline-size attribute.
     pub fn computed_inline_size(&self) -> Au {
         self.computed_inline_size.expect("image inline_size is not computed yet!")
     }
 
-    
+    /// Returns the calculated block-size of the image, accounting for the block-size attribute.
     pub fn computed_block_size(&self) -> Au {
         self.computed_block_size.expect("image block_size is not computed yet!")
     }
 
-    
-    
-    
-    
+    // Return used value for inline-size or block-size.
+    //
+    // `dom_length`: inline-size or block-size as specified in the `img` tag.
+    // `style_length`: inline-size as given in the CSS
     pub fn style_length(style_length: LengthOrPercentageOrAuto,
                         container_size: Option<Au>) -> MaybeAuto {
         match (style_length, container_size) {
@@ -499,7 +499,7 @@ impl ReplacedImageFragmentInfo {
         let style_min_block_size = style.min_block_size();
         let style_max_block_size = style.max_block_size();
 
-        
+        // TODO(ksh8281): compute border,margin
         let inline_size = ReplacedImageFragmentInfo::style_length(
             style_inline_size,
             Some(container_inline_size));
@@ -547,7 +547,7 @@ impl ReplacedImageFragmentInfo {
                                          fragment_inline_size: Au,
                                          fragment_block_size: Au)
                                          -> Au {
-        
+        // TODO(ksh8281): compute border,margin,padding
         let style_block_size = style.content_block_size();
         let style_min_block_size = style.min_block_size();
         let style_max_block_size = style.max_block_size();
@@ -579,16 +579,16 @@ impl ReplacedImageFragmentInfo {
     }
 }
 
-
-
+/// A fragment that represents an inline frame (iframe). This stores the pipeline ID so that the
+/// size of this iframe can be communicated via the constellation to the iframe's own layout thread.
 #[derive(Clone)]
 pub struct IframeFragmentInfo {
-    
+    /// The pipeline ID of this iframe.
     pub pipeline_id: PipelineId,
 }
 
 impl IframeFragmentInfo {
-    
+    /// Creates the information specific to an iframe fragment.
     pub fn new<N: ThreadSafeLayoutNode>(node: &N) -> IframeFragmentInfo {
         let pipeline_id = node.iframe_pipeline_id();
         IframeFragmentInfo {
@@ -599,7 +599,7 @@ impl IframeFragmentInfo {
     #[inline]
     pub fn calculate_replaced_inline_size(&self, style: &ServoComputedValues, containing_size: Au)
                                           -> Au {
-        
+        // Calculate the replaced inline size (or default) as per CSS 2.1 § 10.3.2
         IframeFragmentInfo::calculate_replaced_size(style.content_inline_size(),
                                                     style.min_inline_size(),
                                                     style.max_inline_size(),
@@ -610,7 +610,7 @@ impl IframeFragmentInfo {
     #[inline]
     pub fn calculate_replaced_block_size(&self, style: &ServoComputedValues, containing_size: Option<Au>)
                                          -> Au {
-        
+        // Calculate the replaced block size (or default) as per CSS 2.1 § 10.3.2
         IframeFragmentInfo::calculate_replaced_size(style.content_block_size(),
                                                     style.min_block_size(),
                                                     style.max_block_size(),
@@ -643,27 +643,27 @@ impl IframeFragmentInfo {
     }
 }
 
-
-
-
-
+/// A scanned text fragment represents a single run of text with a distinct style. A `TextFragment`
+/// may be split into two or more fragments across line breaks. Several `TextFragment`s may
+/// correspond to a single DOM text node. Split text fragments are implemented by referring to
+/// subsets of a single `TextRun` object.
 #[derive(Clone)]
 pub struct ScannedTextFragmentInfo {
-    
+    /// The text run that this represents.
     pub run: Arc<TextRun>,
 
-    
+    /// The intrinsic size of the text fragment.
     pub content_size: LogicalSize<Au>,
 
-    
+    /// The byte offset of the insertion point, if any.
     pub insertion_point: Option<ByteIndex>,
 
-    
+    /// The range within the above text run that this represents.
     pub range: Range<ByteIndex>,
 
-    
-    
-    
+    /// The endpoint of the above range, including whitespace that was stripped out. This exists
+    /// so that we can restore the range to its original value (before line breaking occurred) when
+    /// performing incremental reflow.
     pub range_end_including_stripped_whitespace: ByteIndex,
 
     pub flags: ScannedTextFlags,
@@ -681,7 +681,7 @@ bitflags! {
 }
 
 impl ScannedTextFragmentInfo {
-    
+    /// Creates the information specific to a scanned text fragment from a range and a text run.
     pub fn new(run: Arc<TextRun>,
                range: Range<ByteIndex>,
                content_size: LogicalSize<Au>,
@@ -711,12 +711,12 @@ impl ScannedTextFragmentInfo {
     }
 }
 
-
-
+/// Describes how to split a fragment. This is used during line breaking as part of the return
+/// value of `find_split_info_for_inline_size()`.
 #[derive(Debug, Clone)]
 pub struct SplitInfo {
-    
-    
+    // TODO(bjz): this should only need to be a single character index, but both values are
+    // currently needed for splitting in the `inline::try_append_*` functions.
     pub range: Range<ByteIndex>,
     pub inline_size: Au,
 }
@@ -731,37 +731,37 @@ impl SplitInfo {
     }
 }
 
-
+/// Describes how to split a fragment into two. This contains up to two `SplitInfo`s.
 pub struct SplitResult {
-    
+    /// The part of the fragment that goes on the first line.
     pub inline_start: Option<SplitInfo>,
-    
+    /// The part of the fragment that goes on the second line.
     pub inline_end: Option<SplitInfo>,
-    
+    /// The text run which is being split.
     pub text_run: Arc<TextRun>,
 }
 
-
+/// Describes how a fragment should be truncated.
 pub struct TruncationResult {
-    
+    /// The part of the fragment remaining after truncation.
     pub split: SplitInfo,
-    
+    /// The text run which is being truncated.
     pub text_run: Arc<TextRun>,
 }
 
-
-
+/// Data for an unscanned text fragment. Unscanned text fragments are the results of flow
+/// construction that have not yet had their inline-size determined.
 #[derive(Clone)]
 pub struct UnscannedTextFragmentInfo {
-    
+    /// The text inside the fragment.
     pub text: Box<str>,
 
-    
+    /// The selected text range.  An empty range represents the insertion point.
     pub selection: Option<Range<ByteIndex>>,
 }
 
 impl UnscannedTextFragmentInfo {
-    
+    /// Creates a new instance of `UnscannedTextFragmentInfo` from the given text.
     #[inline]
     pub fn new(text: String, selection: Option<Range<ByteIndex>>) -> UnscannedTextFragmentInfo {
         UnscannedTextFragmentInfo {
@@ -771,15 +771,15 @@ impl UnscannedTextFragmentInfo {
     }
 }
 
-
+/// A fragment that represents a table column.
 #[derive(Copy, Clone)]
 pub struct TableColumnFragmentInfo {
-    
+    /// the number of columns a <col> element should span
     pub span: u32,
 }
 
 impl TableColumnFragmentInfo {
-    
+    /// Create the information specific to an table column fragment.
     pub fn new<N: ThreadSafeLayoutNode>(node: &N) -> TableColumnFragmentInfo {
         let element = node.as_element();
         let span = element.get_attr(&ns!(), &atom!("span"))
@@ -792,7 +792,7 @@ impl TableColumnFragmentInfo {
 }
 
 impl Fragment {
-    
+    /// Constructs a new `Fragment` instance.
     pub fn new<N: ThreadSafeLayoutNode>(node: &N, specific: SpecificFragmentInfo, ctx: &LayoutContext) -> Fragment {
         let style_context = ctx.style_context();
         let style = node.style(style_context).clone();
@@ -818,7 +818,7 @@ impl Fragment {
         }
     }
 
-    
+    /// Constructs a new `Fragment` instance from an opaque node.
     pub fn from_opaque_node_and_style(node: OpaqueNode,
                                       pseudo: PseudoElementType<()>,
                                       style: Arc<ServoComputedValues>,
@@ -847,8 +847,8 @@ impl Fragment {
         }
     }
 
-    
-    
+    /// Transforms this fragment into another fragment of the given type, with the given size,
+    /// preserving all the other data.
     pub fn transform(&self, size: LogicalSize<Au>, info: SpecificFragmentInfo)
                      -> Fragment {
         let new_border_box = LogicalRect::from_point_size(self.style.writing_mode,
@@ -875,7 +875,7 @@ impl Fragment {
         }
     }
 
-    
+    /// Transforms this fragment using the given `SplitInfo`, preserving all the other data.
     pub fn transform_with_split_info(&self, split: &SplitInfo, text_run: Arc<TextRun>)
                                      -> Fragment {
         let size = LogicalSize::new(self.style.writing_mode,
@@ -885,7 +885,7 @@ impl Fragment {
             SpecificFragmentInfo::ScannedText(ref info) => info.flags,
             _ => ScannedTextFlags::empty()
         };
-        
+        // FIXME(pcwalton): This should modify the insertion point as necessary.
         let info = box ScannedTextFragmentInfo::new(
             text_run,
             split.range,
@@ -895,7 +895,7 @@ impl Fragment {
         self.transform(size, SpecificFragmentInfo::ScannedText(info))
     }
 
-    
+    /// Transforms this fragment into an ellipsis fragment, preserving all the other data.
     pub fn transform_into_ellipsis(&self, layout_context: &LayoutContext) -> Fragment {
         let mut unscanned_ellipsis_fragments = LinkedList::new();
         unscanned_ellipsis_fragments.push_back(self.transform(
@@ -1302,6 +1302,10 @@ impl Fragment {
 
     pub fn white_space(&self) -> white_space::T {
         self.style().get_inheritedtext().white_space
+    }
+
+    pub fn color(&self) -> color::T {
+        self.style().get_color().color
     }
 
     /// Returns the text decoration of this fragment, according to the style of the nearest ancestor
@@ -2042,7 +2046,8 @@ impl Fragment {
                 // FIXME: Should probably use a whitelist of styles that can safely differ (#3165)
                 if self.style().get_font() != other.style().get_font() ||
                         self.text_decoration() != other.text_decoration() ||
-                        self.white_space() != other.white_space() {
+                        self.white_space() != other.white_space() ||
+                        self.color() != other.color() {
                     return false
                 }
 
