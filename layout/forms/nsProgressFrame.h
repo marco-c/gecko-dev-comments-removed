@@ -87,10 +87,10 @@ public:
 
 protected:
   
-  void ReflowBarFrame(nsIFrame*                aBarFrame,
-                      nsPresContext*           aPresContext,
-                      const ReflowInput& aReflowInput,
-                      nsReflowStatus&          aStatus);
+  void ReflowChildFrame(nsIFrame*          aChild,
+                        nsPresContext*     aPresContext,
+                        const ReflowInput& aReflowInput,
+                        nsReflowStatus&    aStatus);
 
   
 
@@ -100,4 +100,3 @@ protected:
 };
 
 #endif
-
