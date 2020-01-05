@@ -98,6 +98,8 @@ pub struct DisplayList {
     pub outlines: LinkedList<DisplayItem>,
     
     pub children: LinkedList<Arc<StackingContext>>,
+    
+    pub layered_children: LinkedList<Arc<StackingContext>>,
 }
 
 impl DisplayList {
@@ -112,6 +114,28 @@ impl DisplayList {
             positioned_content: LinkedList::new(),
             outlines: LinkedList::new(),
             children: LinkedList::new(),
+            layered_children: LinkedList::new(),
+        }
+    }
+
+    
+    
+    
+    
+    #[inline]
+    pub fn sort_and_layerize_children(&mut self) {
+        let mut children: SmallVec<[Arc<StackingContext>; 8]> = SmallVec::new();
+        while let Some(stacking_context) = self.children.pop_front() {
+            children.push(stacking_context);
+        }
+        children.sort_by(|this, other| this.z_index.cmp(&other.z_index));
+
+        for stacking_context in children.into_iter() {
+            if stacking_context.layer.is_some() {
+                self.layered_children.push_back(stacking_context);
+            } else {
+                self.children.push_back(stacking_context);
+            }
         }
     }
 
@@ -126,6 +150,7 @@ impl DisplayList {
         self.positioned_content.append(&mut other.positioned_content);
         self.outlines.append(&mut other.outlines);
         self.children.append(&mut other.children);
+        self.layered_children.append(&mut other.children);
     }
 
     
@@ -222,6 +247,15 @@ impl DisplayList {
                                        &indentation[0..MIN_INDENTATION_LENGTH]);
             }
         }
+        if !self.layered_children.is_empty() {
+            println!("{} Layered children stacking contexts list length: {}",
+                     indentation,
+                     self.layered_children.len());
+            for stacking_context in &self.layered_children {
+                stacking_context.print(indentation.clone() +
+                                       &indentation[0..MIN_INDENTATION_LENGTH]);
+            }
+        }
     }
 }
 
@@ -266,7 +300,7 @@ pub struct StackingContext {
 impl StackingContext {
     
     #[inline]
-    pub fn new(display_list: Box<DisplayList>,
+    pub fn new(mut display_list: Box<DisplayList>,
                bounds: &Rect<Au>,
                overflow: &Rect<Au>,
                z_index: i32,
@@ -278,6 +312,7 @@ impl StackingContext {
                establishes_3d_context: bool,
                scrolls_overflow_area: bool)
                -> StackingContext {
+        display_list.sort_and_layerize_children();
         StackingContext {
             display_list: display_list,
             bounds: *bounds,
@@ -318,15 +353,6 @@ impl StackingContext {
             }
 
             
-            let mut positioned_children: SmallVec<[Arc<StackingContext>; 8]> = SmallVec::new();
-            for kid in &display_list.children {
-                if kid.layer.is_none() {
-                    positioned_children.push((*kid).clone());
-                }
-            }
-            positioned_children.sort_by(|this, other| this.z_index.cmp(&other.z_index));
-
-            
             let old_transform = paint_subcontext.draw_target.get_transform();
             let xform_2d = Matrix2D::new(transform.m11, transform.m12,
                                          transform.m21, transform.m22,
@@ -340,7 +366,7 @@ impl StackingContext {
             }
 
             
-            for positioned_kid in &*positioned_children {
+            for positioned_kid in &display_list.children {
                 if positioned_kid.z_index >= 0 {
                     break
                 }
@@ -382,7 +408,7 @@ impl StackingContext {
             }
 
             
-            for positioned_kid in &*positioned_children {
+            for positioned_kid in &self.display_list.children {
                 if positioned_kid.z_index < 0 {
                     continue
                 }
@@ -614,7 +640,7 @@ pub fn find_stacking_context_with_layer_id(this: &Arc<StackingContext>, layer_id
         Some(_) | None => {}
     }
 
-    for kid in &this.display_list.children {
+    for kid in &this.display_list.layered_children {
         match find_stacking_context_with_layer_id(kid, layer_id) {
             Some(stacking_context) => return Some(stacking_context),
             None => {}
