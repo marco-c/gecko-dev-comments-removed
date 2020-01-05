@@ -165,40 +165,42 @@ public:
 } 
 
 void
-ThreadStackHelper::GetStack(Stack& aStack)
+ThreadStackHelper::GetPseudoStack(Stack& aStack)
 {
-  GetStackInternal(aStack,  false);
+  GetStacksInternal(&aStack, nullptr);
 }
 
 void
-ThreadStackHelper::GetStackInternal(Stack& aStack, bool aAppendNativeStack)
+ThreadStackHelper::GetStacksInternal(Stack* aStack, NativeStack* aNativeStack)
 {
   
-  if (!PrepareStackBuffer(aStack)) {
+  if (aStack && !PrepareStackBuffer(*aStack)) {
     
     return;
   }
 
-  ScopedSetPtr<Stack> stackPtr(mStackToFill, &aStack);
+  ScopedSetPtr<Stack> stackPtr(mStackToFill, aStack);
 
 #if defined(XP_LINUX)
   if (!sInitialized) {
     MOZ_ASSERT(false);
     return;
   }
-  siginfo_t uinfo = {};
-  uinfo.si_signo = sFillStackSignum;
-  uinfo.si_code = SI_QUEUE;
-  uinfo.si_pid = getpid();
-  uinfo.si_uid = getuid();
-  uinfo.si_value.sival_ptr = this;
-  if (::syscall(SYS_rt_tgsigqueueinfo, uinfo.si_pid,
-                mThreadID, sFillStackSignum, &uinfo)) {
-    
-    
-    return;
+  if (aStack) {
+    siginfo_t uinfo = {};
+    uinfo.si_signo = sFillStackSignum;
+    uinfo.si_code = SI_QUEUE;
+    uinfo.si_pid = getpid();
+    uinfo.si_uid = getuid();
+    uinfo.si_value.sival_ptr = this;
+    if (::syscall(SYS_rt_tgsigqueueinfo, uinfo.si_pid,
+                  mThreadID, sFillStackSignum, &uinfo)) {
+      
+      
+      return;
+    }
+    MOZ_ALWAYS_TRUE(!::sem_wait(&mSem));
   }
-  MOZ_ALWAYS_TRUE(!::sem_wait(&mSem));
 
 #elif defined(XP_WIN)
   if (!mInitialized) {
@@ -210,8 +212,8 @@ ThreadStackHelper::GetStackInternal(Stack& aStack, bool aAppendNativeStack)
   
   
 #ifndef MOZ_THREADSTACKHELPER_X64
-  if (aAppendNativeStack) {
-    aStack.EnsureNativeFrameCapacity(Telemetry::HangStack::sMaxNativeFrames);
+  if (aNativeStack) {
+    aNativeStack->reserve(Telemetry::HangStack::sMaxNativeFrames);
   }
 #endif
 
@@ -227,45 +229,47 @@ ThreadStackHelper::GetStackInternal(Stack& aStack, bool aAppendNativeStack)
   memset(&context, 0, sizeof(context));
   context.ContextFlags = CONTEXT_CONTROL;
   if (::GetThreadContext(mThreadID, &context)) {
-    FillStackBuffer();
-  }
+    if (aStack) {
+      FillStackBuffer();
+    }
 
 #ifndef MOZ_THREADSTACKHELPER_X64
-  if (aAppendNativeStack) {
-    auto callback = [](uint32_t, void* aPC, void*, void* aClosure) {
-      Stack* stack = static_cast<Stack*>(aClosure);
-      stack->AppendNativeFrame(reinterpret_cast<uintptr_t>(aPC));
-    };
+    if (aNativeStack) {
+      auto callback = [](uint32_t, void* aPC, void*, void* aClosure) {
+        NativeStack* stack = static_cast<NativeStack*>(aClosure);
+        stack->push_back(reinterpret_cast<uintptr_t>(aPC));
+      };
 
-    
-    
-    
-    void** framePointer = reinterpret_cast<void**>(context.Ebp);
-    void** stackPointer = reinterpret_cast<void**>(context.Esp);
+      
+      
+      
+      void** framePointer = reinterpret_cast<void**>(context.Ebp);
+      void** stackPointer = reinterpret_cast<void**>(context.Esp);
 
-    MOZ_ASSERT(mStackTop, "The thread should be registered by the profiler");
+      MOZ_ASSERT(mStackTop, "The thread should be registered by the profiler");
 
-    
-    
-    if (mStackTop && framePointer >= stackPointer && framePointer < mStackTop) {
       
       
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      FramePointerStackWalk(callback,  0,
-                             Telemetry::HangStack::sMaxNativeFrames,
-                            reinterpret_cast<void*>(&aStack), framePointer,
-                            mStackTop);
+      if (mStackTop && framePointer >= stackPointer && framePointer < mStackTop) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        FramePointerStackWalk(callback,  0,
+                               Telemetry::HangStack::sMaxNativeFrames,
+                              reinterpret_cast<void*>(aNativeStack), framePointer,
+                              mStackTop);
+      }
     }
-  }
 #endif
+  }
 
   MOZ_ALWAYS_TRUE(::ResumeThread(mThreadID) != DWORD(-1));
 
@@ -278,24 +282,32 @@ ThreadStackHelper::GetStackInternal(Stack& aStack, bool aAppendNativeStack)
   }
 # endif
 
-  if (::thread_suspend(mThreadID) != KERN_SUCCESS) {
-    MOZ_ASSERT(false);
-    return;
+  if (aStack) {
+    if (::thread_suspend(mThreadID) != KERN_SUCCESS) {
+      MOZ_ASSERT(false);
+      return;
+    }
+
+    FillStackBuffer();
+
+    MOZ_ALWAYS_TRUE(::thread_resume(mThreadID) == KERN_SUCCESS);
   }
-
-  FillStackBuffer();
-
-  MOZ_ALWAYS_TRUE(::thread_resume(mThreadID) == KERN_SUCCESS);
 
 #endif
 }
 
 void
-ThreadStackHelper::GetNativeStack(Stack& aStack)
+ThreadStackHelper::GetNativeStack(NativeStack& aNativeStack)
 {
 #ifdef MOZ_THREADSTACKHELPER_NATIVE
-  GetStackInternal(aStack,  true);
+  GetStacksInternal(nullptr, &aNativeStack);
 #endif 
+}
+
+void
+ThreadStackHelper::GetPseudoAndNativeStack(Stack& aStack, NativeStack& aNativeStack)
+{
+  GetStacksInternal(&aStack, &aNativeStack);
 }
 
 #ifdef XP_LINUX

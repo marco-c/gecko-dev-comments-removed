@@ -60,6 +60,12 @@ class ThreadStackHelper
 public:
   typedef Telemetry::HangStack Stack;
 
+  
+  
+  
+  
+  typedef Telemetry::NativeHangStack NativeStack;
+
 private:
   Stack* mStackToFill;
 #ifdef MOZ_THREADSTACKHELPER_PSEUDO
@@ -99,7 +105,7 @@ public:
 
 
 
-  void GetStack(Stack& aStack);
+  void GetPseudoStack(Stack& aStack);
 
   
 
@@ -107,10 +113,23 @@ public:
 
 
 
-  void GetNativeStack(Stack& aStack);
+  void GetNativeStack(NativeStack& aNativeStack);
+
+  
+
+
+
+
+
+
+
+  void GetPseudoAndNativeStack(Stack& aStack, NativeStack& aNativeStack);
 
 private:
-  void GetStackInternal(Stack& aStack, bool aAppendNativeStack);
+  
+  
+  
+  void GetStacksInternal(Stack* aStack, NativeStack* aNativeStack);
 #if defined(XP_LINUX)
 private:
   static int sInitialized;

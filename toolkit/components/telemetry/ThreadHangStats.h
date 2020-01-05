@@ -47,10 +47,16 @@ public:
 
 
 
+typedef std::vector<uintptr_t> NativeHangStack;
+
+
+
 class HangStack
 {
 public:
   static const size_t sMaxInlineStorage = 8;
+
+  
   
   static const size_t sMaxNativeFrames = 25;
 
@@ -61,11 +67,6 @@ private:
   
   
   mozilla::Vector<char, 0> mBuffer;
-  
-  
-  
-  
-  std::vector<uintptr_t> mNativeFrames;
 
 public:
   HangStack() {}
@@ -73,14 +74,12 @@ public:
   HangStack(HangStack&& aOther)
     : mImpl(mozilla::Move(aOther.mImpl))
     , mBuffer(mozilla::Move(aOther.mBuffer))
-    , mNativeFrames(mozilla::Move(aOther.mNativeFrames))
   {
   }
 
   HangStack& operator=(HangStack&& aOther) {
     mImpl = mozilla::Move(aOther.mImpl);
     mBuffer = mozilla::Move(aOther.mBuffer);
-    mNativeFrames = mozilla::Move(aOther.mNativeFrames);
     return *this;
   }
 
@@ -126,7 +125,6 @@ public:
   void clear() {
     mImpl.clear();
     mBuffer.clear();
-    mNativeFrames.clear();
   }
 
   bool IsInBuffer(const char* aEntry) const {
@@ -152,21 +150,6 @@ public:
 
   const char* InfallibleAppendViaBuffer(const char* aText, size_t aLength);
   const char* AppendViaBuffer(const char* aText, size_t aLength);
-
-  void EnsureNativeFrameCapacity(size_t aCapacity) {
-    mNativeFrames.reserve(aCapacity);
-  }
-
-  void AppendNativeFrame(uintptr_t aPc) {
-    MOZ_ASSERT(mNativeFrames.size() <= sMaxNativeFrames);
-    if (mNativeFrames.size() < sMaxNativeFrames) {
-      mNativeFrames.push_back(aPc);
-    }
-  }
-
-  const std::vector<uintptr_t>& GetNativeFrames() const {
-    return mNativeFrames;
-  }
 };
 
 
@@ -178,7 +161,7 @@ private:
 
   HangStack mStack;
   
-  HangStack mNativeStack;
+  NativeHangStack mNativeStack;
   
   const uint32_t mHash;
   
@@ -190,6 +173,15 @@ public:
     , mHash(GetHash(mStack))
   {
   }
+
+  explicit HangHistogram(HangStack&& aStack,
+                         NativeHangStack&& aNativeStack)
+    : mStack(mozilla::Move(aStack))
+    , mNativeStack(mozilla::Move(aNativeStack))
+    , mHash(GetHash(mStack))
+  {
+  }
+
   HangHistogram(HangHistogram&& aOther)
     : TimeHistogram(mozilla::Move(aOther))
     , mStack(mozilla::Move(aOther.mStack))
@@ -206,10 +198,10 @@ public:
   const HangStack& GetStack() const {
     return mStack;
   }
-  HangStack& GetNativeStack() {
+  NativeHangStack& GetNativeStack() {
     return mNativeStack;
   }
-  const HangStack& GetNativeStack() const {
+  const NativeHangStack& GetNativeStack() const {
     return mNativeStack;
   }
   const HangMonitor::HangAnnotationsVector& GetAnnotations() const {
