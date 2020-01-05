@@ -25,16 +25,7 @@ var FormValidationHandler =
 
 
 
-  init() {
-    let mm = Cc["@mozilla.org/globalmessagemanager;1"].getService(Ci.nsIMessageListenerManager);
-    mm.addMessageListener("FormValidation:ShowPopup", this);
-    mm.addMessageListener("FormValidation:HidePopup", this);
-  },
-
   uninit() {
-    let mm = Cc["@mozilla.org/globalmessagemanager;1"].getService(Ci.nsIMessageListenerManager);
-    mm.removeMessageListener("FormValidation:ShowPopup", this);
-    mm.removeMessageListener("FormValidation:HidePopup", this);
     this._panel = null;
     this._anchor = null;
   },
@@ -47,6 +38,7 @@ var FormValidationHandler =
 
 
 
+  
   receiveMessage(aMessage) {
     let window = aMessage.target.ownerGlobal;
     let json = aMessage.json;
