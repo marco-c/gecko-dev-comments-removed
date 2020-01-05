@@ -1625,6 +1625,10 @@ protected:
   bool mMediaSecurityVerified;
 
   
+  
+  bool mUseUrgentStartForChannel = false;
+
+  
   CORSMode mCORSMode;
 
   

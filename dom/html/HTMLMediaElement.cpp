@@ -22,6 +22,7 @@
 #include "nsGenericHTMLElement.h"
 #include "nsAttrValueInlines.h"
 #include "nsPresContext.h"
+#include "nsIClassOfService.h"
 #include "nsIPresShell.h"
 #include "nsGkAtoms.h"
 #include "nsSize.h"
@@ -1157,6 +1158,12 @@ public:
       
       aElement->NotifyLoadError();
       return;
+    }
+
+    nsCOMPtr<nsIClassOfService> cos;
+    if (aElement->mUseUrgentStartForChannel &&
+        (cos = do_QueryInterface(channel))) {
+      cos->AddClassFlags(nsIClassOfService::UrgentStart);
     }
 
     
@@ -3890,6 +3897,14 @@ HTMLMediaElement::PlayInternal(ErrorResult& aRv)
 
   
   mHasUserInteraction = true;
+
+  if (mPreloadAction == HTMLMediaElement::PRELOAD_NONE) {
+    
+    
+    
+    
+    mUseUrgentStartForChannel = true;
+  }
 
   StopSuspendingAfterFirstFrame();
   SetPlayedOrSeeked(true);
