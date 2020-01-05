@@ -198,10 +198,24 @@ static ExtraPhaseInfo phaseExtra[PHASE_LIMIT] = { { 0, 0 } };
 
 static mozilla::Vector<Phase, 0, SystemAllocPolicy> dagDescendants[Statistics::NumTimingArrays];
 
+
+
+
+
 struct AllPhaseIterator {
+    
     int current;
+
+    
+    
     int baseLevel;
+
+    
+    
     size_t activeSlot;
+
+    
+    
     mozilla::Vector<Phase, 0, SystemAllocPolicy>::Range descendants;
 
     explicit AllPhaseIterator(const Statistics::PhaseTimeTable table)
@@ -224,10 +238,14 @@ struct AllPhaseIterator {
         MOZ_ASSERT(!done());
 
         if (!descendants.empty()) {
+            
             descendants.popFront();
             if (!descendants.empty())
                 return;
 
+            
+            
+            
             ++current;
             activeSlot = PHASE_DAG_NONE;
             baseLevel = 0;
@@ -235,6 +253,8 @@ struct AllPhaseIterator {
         }
 
         if (phaseExtra[current].dagSlot != PHASE_DAG_NONE) {
+            
+            
             activeSlot = phaseExtra[current].dagSlot;
             descendants = dagDescendants[activeSlot].all();
             MOZ_ASSERT(!descendants.empty());
@@ -316,11 +336,9 @@ SumChildTimes(size_t phaseSlot, Phase phase, const Statistics::PhaseTimeTable ph
     
     size_t dagSlot = phaseExtra[phase].dagSlot;
     if (dagSlot != PHASE_DAG_NONE) {
-        for (size_t i = 0; i < mozilla::ArrayLength(dagChildEdges); i++) {
-            if (dagChildEdges[i].parent == phase) {
-                Phase child = dagChildEdges[i].child;
-                total += phaseTimes[dagSlot][child];
-            }
+        for (auto edge : dagChildEdges) {
+            if (edge.parent == phase)
+                total += phaseTimes[dagSlot][edge.child];
         }
     }
     return total;
@@ -886,6 +904,8 @@ Statistics::getMaxGCPauseSinceClear()
 {
     return maxPauseInInterval;
 }
+
+
 
 static int64_t
 SumPhase(Phase phase, const Statistics::PhaseTimeTable times)
