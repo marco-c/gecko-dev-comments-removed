@@ -874,12 +874,6 @@ public:
 
   
 
-
-
-  bool RecalculateRowIndices();
-
-  
-
   bool IsDeletedRowIndexRangesEmpty() const {
     return mDeletedRowIndexRanges.empty();
   }
