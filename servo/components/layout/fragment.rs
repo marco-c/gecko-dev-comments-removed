@@ -882,16 +882,23 @@ impl Fragment {
         let size = LogicalSize::new(self.style.writing_mode,
                                     split.inline_size,
                                     self.border_box.size.block);
-        let flags = match self.specific {
-            SpecificFragmentInfo::ScannedText(ref info) => info.flags,
-            _ => ScannedTextFlags::empty()
-        };
         
+        let (flags, insertion_point) = match self.specific {
+            SpecificFragmentInfo::ScannedText(ref info) => {
+                match info.insertion_point {
+                    Some(index) if split.range.contains(index) => (info.flags, info.insertion_point),
+                    Some(index) if index == ByteIndex(text_run.text.chars().count() as isize - 1) &&
+                        index == split.range.end() => (info.flags, info.insertion_point),
+                    _ => (info.flags, None)
+                }
+            },
+            _ => (ScannedTextFlags::empty(), None)
+        };
         let info = box ScannedTextFragmentInfo::new(
             text_run,
             split.range,
             size,
-            None,
+            insertion_point,
             flags);
         self.transform(size, SpecificFragmentInfo::ScannedText(info))
     }
