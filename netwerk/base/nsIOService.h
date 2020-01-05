@@ -96,9 +96,6 @@ public:
     bool IsLinkUp();
 
     
-    void SetAppOfflineInternal(uint32_t appId, int32_t status);
-
-    
     nsresult RecheckCaptivePortal();
 private:
     
@@ -131,10 +128,6 @@ private:
     
     void LookupProxyInfo(nsIURI *aURI, nsIURI *aProxyURI, uint32_t aProxyFlags,
                          nsCString *aScheme, nsIProxyInfo **outPI);
-
-    
-    
-    void NotifyAppOfflineStatus(uint32_t appId, int32_t status);
 
     nsresult NewChannelFromURIWithProxyFlagsInternal(nsIURI* aURI,
                                                      nsIURI* aProxyURI,
@@ -179,10 +172,6 @@ private:
     nsTArray<int32_t>                    mRestrictedPortList;
 
     bool                                 mNetworkNotifyChanged;
-    int32_t                              mPreviousWifiState;
-    
-    
-    nsDataHashtable<nsUint32HashKey, int32_t> mAppsOfflineStatus;
 
     static bool                          sTelemetryEnabled;
 
@@ -200,39 +189,6 @@ public:
     
     static uint32_t   gDefaultSegmentSize;
     static uint32_t   gDefaultSegmentCount;
-};
-
-
-
-
-
-
-class nsAppOfflineInfo : public nsIAppOfflineInfo
-{
-    NS_DECL_THREADSAFE_ISUPPORTS
-public:
-    nsAppOfflineInfo(uint32_t aAppId, int32_t aMode)
-        : mAppId(aAppId), mMode(aMode)
-    {
-    }
-
-    NS_IMETHOD GetMode(int32_t *aMode) override
-    {
-        *aMode = mMode;
-        return NS_OK;
-    }
-
-    NS_IMETHOD GetAppId(uint32_t *aAppId) override
-    {
-        *aAppId = mAppId;
-        return NS_OK;
-    }
-
-private:
-    virtual ~nsAppOfflineInfo() {}
-
-    uint32_t mAppId;
-    int32_t mMode;
 };
 
 
