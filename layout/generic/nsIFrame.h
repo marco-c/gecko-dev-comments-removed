@@ -202,8 +202,7 @@ class nsReflowStatus final {
 public:
   nsReflowStatus()
     : mBreakType(StyleClear::None)
-    , mIncomplete(false)
-    , mOverflowIncomplete(false)
+    , mCompletion(Completion::FullyComplete)
     , mNextInFlowNeedsReflow(false)
     , mTruncated(false)
     , mInlineBreak(false)
@@ -214,8 +213,7 @@ public:
   
   void Reset() {
     mBreakType = StyleClear::None;
-    mIncomplete = false;
-    mOverflowIncomplete = false;
+    mCompletion = Completion::FullyComplete;
     mNextInFlowNeedsReflow = false;
     mTruncated = false;
     mInlineBreak = false;
@@ -225,8 +223,7 @@ public:
 
   
   bool IsEmpty() const {
-    return (!mIncomplete &&
-            !mOverflowIncomplete &&
+    return (IsFullyComplete() &&
             !mNextInFlowNeedsReflow &&
             !mTruncated &&
             !mInlineBreak &&
@@ -248,20 +245,31 @@ public:
   
   
   
-  bool IsComplete() const { return !mIncomplete; }
-  bool IsIncomplete() const { return mIncomplete; }
-  bool IsOverflowIncomplete() const { return mOverflowIncomplete; }
-  bool IsFullyComplete() const {
-    return !IsIncomplete() && !IsOverflowIncomplete();
+  
+  
+  enum class Completion : uint8_t {
+    
+    
+    FullyComplete,
+    OverflowIncomplete,
+    Incomplete,
+  };
+
+  bool IsIncomplete() const { return mCompletion == Completion::Incomplete; }
+  bool IsOverflowIncomplete() const {
+    return mCompletion == Completion::OverflowIncomplete;
   }
+  bool IsFullyComplete() const {
+    return mCompletion == Completion::FullyComplete;
+  }
+  
+  bool IsComplete() const { return !IsIncomplete(); }
 
   void SetIncomplete() {
-    mIncomplete = true;
-    mOverflowIncomplete = false;
+    mCompletion = Completion::Incomplete;
   }
   void SetOverflowIncomplete() {
-    mIncomplete = false;
-    mOverflowIncomplete = true;
+    mCompletion = Completion::OverflowIncomplete;
   }
 
   
@@ -283,13 +291,18 @@ public:
   
   void MergeCompletionStatusFrom(const nsReflowStatus& aStatus)
   {
-    mIncomplete |= aStatus.mIncomplete;
-    mOverflowIncomplete |= aStatus.mOverflowIncomplete;
+    if (mCompletion < aStatus.mCompletion) {
+      mCompletion = aStatus.mCompletion;
+    }
+
+    
+    
+    static_assert(Completion::Incomplete > Completion::OverflowIncomplete &&
+                  Completion::OverflowIncomplete > Completion::FullyComplete,
+                  "mCompletion merging won't work without this!");
+
     mNextInFlowNeedsReflow |= aStatus.mNextInFlowNeedsReflow;
     mTruncated |= aStatus.mTruncated;
-    if (mIncomplete) {
-      mOverflowIncomplete = false;
-    }
   }
 
   
@@ -327,10 +340,7 @@ public:
 
 private:
   StyleClear mBreakType;
-
-  
-  bool mIncomplete : 1;
-  bool mOverflowIncomplete : 1;
+  Completion mCompletion;
   bool mNextInFlowNeedsReflow : 1;
   bool mTruncated : 1;
 
