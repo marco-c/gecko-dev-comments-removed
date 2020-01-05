@@ -954,8 +954,13 @@ AccessibleCaretManager::ExtendPhoneNumberSelection(const nsAString& aDirection) 
     RefPtr<nsRange> oldAnchorFocusRange = anchorFocusRange->CloneRange();
 
     
-    nsINode* focusNode = selection->GetFocusNode();
-    uint32_t focusOffset = selection->FocusOffset();
+    
+    nsINode* oldFocusNode = selection->GetFocusNode();
+    uint32_t oldFocusOffset = selection->FocusOffset();
+    nsAutoString oldSelectedText;
+    selection->Stringify(oldSelectedText);
+
+    
     selection->Modify(NS_LITERAL_STRING("extend"),
                       aDirection,
                       NS_LITERAL_STRING("character"));
@@ -964,17 +969,22 @@ AccessibleCaretManager::ExtendPhoneNumberSelection(const nsAString& aDirection) 
     }
 
     
-    if (selection->GetFocusNode() == focusNode &&
-        selection->FocusOffset() == focusOffset) {
+    if (selection->GetFocusNode() == oldFocusNode &&
+        selection->FocusOffset() == oldFocusOffset) {
       return;
     }
 
     
+    
+    
+    
+    
     nsAutoString selectedText;
     selection->Stringify(selectedText);
-    nsAutoString phoneRegex(NS_LITERAL_STRING("(^\\+)?[0-9\\s,\\-.()*#pw]{1,30}$"));
+    nsAutoString phoneRegex(NS_LITERAL_STRING("(^\\+)?[0-9 ,\\-.()*#pw]{1,30}$"));
 
-    if (!nsContentUtils::IsPatternMatching(selectedText, phoneRegex, doc)) {
+    if (!nsContentUtils::IsPatternMatching(selectedText, phoneRegex, doc) ||
+        oldSelectedText == selectedText) {
       
       
       selection->SetAnchorFocusToRange(oldAnchorFocusRange);
