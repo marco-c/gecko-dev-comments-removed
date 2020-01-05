@@ -329,7 +329,14 @@ DoTypeUpdateFallback(JSContext* cx, BaselineFrame* frame, ICUpdatedStub* stub, H
         MOZ_CRASH("Invalid stub");
     }
 
-    return stub->addUpdateStubForValue(cx, script , obj, id, value);
+    if (!stub->addUpdateStubForValue(cx, script , obj, id, value)) {
+        
+        
+        
+        cx->recoverFromOutOfMemory();
+    }
+
+    return true;
 }
 
 typedef bool (*DoTypeUpdateFallbackFn)(JSContext*, BaselineFrame*, ICUpdatedStub*, HandleValue,
