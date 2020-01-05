@@ -646,6 +646,13 @@ protected:
   static void InitMouseWheelScrollData();
 
   double mSizeConstraintsScale; 
+
+  
+  
+  
+  
+  static WPARAM sMouseExitwParam;
+  static LPARAM sMouseExitlParamScreen;
 };
 
 
