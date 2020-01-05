@@ -10990,20 +10990,6 @@ class CGProxyIndexedSetter(CGProxyIndexedOperation):
                                          argumentHandleValue=argumentHandleValue)
 
 
-class CGProxyIndexedDeleter(CGProxyIndexedOperation):
-    """
-    Class to generate a call to an indexed deleter.
-
-    resultVar: See the docstring for CGCallGenerator.
-
-    foundVar: See the docstring for CGProxySpecialOperation.
-    """
-    def __init__(self, descriptor, resultVar=None, foundVar=None):
-        CGProxyIndexedOperation.__init__(self, descriptor, 'IndexedDeleter',
-                                         resultVar=resultVar,
-                                         foundVar=foundVar)
-
-
 class CGProxyNamedOperation(CGProxySpecialOperation):
     """
     Class to generate a call to a named operation.
@@ -11389,6 +11375,8 @@ class CGDOMJSProxyHandler_delete(ClassMethod):
             assert type in ("Named", "Indexed")
             deleter = self.descriptor.operations[type + 'Deleter']
             if deleter:
+                assert type == "Named"
+                assert foundVar is not None
                 if self.descriptor.hasUnforgeableMembers:
                     raise TypeError("Can't handle a deleter on an interface "
                                     "that has unforgeables.  Figure out how "
@@ -11399,10 +11387,6 @@ class CGDOMJSProxyHandler_delete(ClassMethod):
                     
                     
                     
-                    decls = ""
-                    if foundVar is None:
-                        foundVar = "found"
-                        decls += "bool found = false;\n"
                     setDS = fill(
                         """
                         if (!${foundVar}) {
@@ -11413,13 +11397,11 @@ class CGDOMJSProxyHandler_delete(ClassMethod):
                 else:
                     
                     
-                    decls = ""
                     setDS = "deleteSucceeded = true;\n"
 
-                deleterClass = globals()["CGProxy%sDeleter" % type]
-                body = (decls +
-                        deleterClass(self.descriptor, resultVar="deleteSucceeded",
-                                     foundVar=foundVar).define() +
+                body = (CGProxyNamedDeleter(self.descriptor,
+                                            resultVar="deleteSucceeded",
+                                            foundVar=foundVar).define() +
                         setDS)
             elif getattr(self.descriptor, "supports%sProperties" % type)():
                 presenceCheckerClass = globals()["CGProxy%sPresenceChecker" % type]
