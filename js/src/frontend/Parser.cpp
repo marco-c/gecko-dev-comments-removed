@@ -2409,6 +2409,16 @@ Parser<ParseHandler>::functionBody(InHandling inHandling, YieldHandling yieldHan
     } else {
         MOZ_ASSERT(type == ExpressionBody);
 
+        
+        
+        
+        Node stmtList = null();
+        if (pc->isAsync()) {
+            stmtList = handler.newStatementList(pos());
+            if (!stmtList)
+                return null();
+        }
+
         Node kid = assignExpr(inHandling, yieldHandling, TripledotProhibited);
         if (!kid)
             return null();
@@ -2416,6 +2426,11 @@ Parser<ParseHandler>::functionBody(InHandling inHandling, YieldHandling yieldHan
         pn = handler.newReturnStatement(kid, handler.getPosition(kid));
         if (!pn)
             return null();
+
+        if (pc->isAsync()) {
+            handler.addStatementToList(stmtList, pn);
+            pn = stmtList;
+        }
     }
 
     switch (pc->generatorKind()) {
@@ -2436,13 +2451,13 @@ Parser<ParseHandler>::functionBody(InHandling inHandling, YieldHandling yieldHan
         break;
 
       case StarGenerator:
-        MOZ_ASSERT(kind != Arrow);
-        MOZ_ASSERT(type == StatementListBody);
+        MOZ_ASSERT_IF(!pc->isAsync(), kind != Arrow);
+        MOZ_ASSERT_IF(!pc->isAsync(), type == StatementListBody);
         break;
     }
 
     if (pc->isGenerator()) {
-        MOZ_ASSERT(type == StatementListBody);
+        MOZ_ASSERT_IF(!pc->isAsync(), type == StatementListBody);
         if (!declareDotGeneratorName())
             return null();
         Node generator = newDotGeneratorName();
@@ -2634,19 +2649,47 @@ Parser<ParseHandler>::functionArguments(YieldHandling yieldHandling, FunctionSyn
     FunctionBox* funbox = pc->functionBox();
 
     bool parenFreeArrow = false;
-    TokenStream::Modifier modifier = TokenStream::None;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    TokenStream::Modifier firstTokenModifier = TokenStream::None;
+
+    
+    
+    
+    
+    TokenStream::Modifier argModifier = TokenStream::Operand;
     if (kind == Arrow) {
         TokenKind tt;
-        if (!tokenStream.peekToken(&tt, TokenStream::Operand))
+        
+        
+        
+        
+        firstTokenModifier = funbox->isAsync() ? TokenStream::None : TokenStream::Operand;
+        if (!tokenStream.peekToken(&tt, firstTokenModifier))
             return false;
-        if (tt == TOK_NAME || tt == TOK_YIELD)
+        if (tt == TOK_NAME || tt == TOK_YIELD) {
             parenFreeArrow = true;
-        else
-            modifier = TokenStream::Operand;
+            argModifier = firstTokenModifier;
+        }
     }
     if (!parenFreeArrow) {
         TokenKind tt;
-        if (!tokenStream.getToken(&tt, modifier))
+        if (!tokenStream.getToken(&tt, firstTokenModifier))
             return false;
         if (tt != TOK_LP) {
             report(ParseError, false, null(),
@@ -2693,8 +2736,9 @@ Parser<ParseHandler>::functionArguments(YieldHandling yieldHandling, FunctionSyn
             }
 
             TokenKind tt;
-            if (!tokenStream.getToken(&tt, TokenStream::Operand))
+            if (!tokenStream.getToken(&tt, argModifier))
                 return false;
+            argModifier = TokenStream::Operand;
             MOZ_ASSERT_IF(parenFreeArrow, tt == TOK_NAME || tt == TOK_YIELD);
 
             if (tt == TOK_TRIPLEDOT) {
@@ -2751,6 +2795,15 @@ Parser<ParseHandler>::functionArguments(YieldHandling yieldHandling, FunctionSyn
               case TOK_YIELD: {
                 if (parenFreeArrow)
                     funbox->setStart(tokenStream);
+
+                if (funbox->isAsync() && tokenStream.currentName() == context->names().await) {
+                    
+                    
+                    
+                    
+                    report(ParseError, false, null(), JSMSG_RESERVED_ID, "await");
+                    return false;
+                }
 
                 RootedPropertyName name(context, bindingIdentifier(yieldHandling));
                 if (!name)
@@ -3380,7 +3433,7 @@ Parser<ParseHandler>::functionFormalParametersAndBody(InHandling inHandling,
     if (!tokenStream.getToken(&tt, TokenStream::Operand))
         return false;
     if (tt != TOK_LC) {
-        if (funbox->isStarGenerator() || kind == Method ||
+        if ((funbox->isStarGenerator() && !funbox->isAsync()) || kind == Method ||
             kind == GetterNoExpressionClosure || kind == SetterNoExpressionClosure ||
             IsConstructorKind(kind)) {
             report(ParseError, false, null(), JSMSG_CURLY_BEFORE_BODY);
@@ -7514,6 +7567,16 @@ Parser<ParseHandler>::assignExpr(InHandling inHandling, YieldHandling yieldHandl
     if (tt == TOK_YIELD && yieldExpressionsSupported())
         return yieldExpression(inHandling);
 
+    bool maybeAsyncArrow = false;
+    if (tt == TOK_NAME && tokenStream.currentName() == context->names().async) {
+        TokenKind nextSameLine = TOK_EOF;
+        if (!tokenStream.peekTokenSameLine(&nextSameLine))
+            return null();
+
+        if (nextSameLine == TOK_NAME || nextSameLine == TOK_YIELD)
+            maybeAsyncArrow = true;
+    }
+
     tokenStream.ungetToken();
 
     
@@ -7522,9 +7585,35 @@ Parser<ParseHandler>::assignExpr(InHandling inHandling, YieldHandling yieldHandl
     tokenStream.tell(&start);
 
     PossibleError possibleErrorInner(*this);
-    Node lhs = condExpr1(inHandling, yieldHandling, tripledotHandling, &possibleErrorInner, invoked);
-    if (!lhs)
-        return null();
+    Node lhs;
+    if (maybeAsyncArrow) {
+        tokenStream.consumeKnownToken(TOK_NAME, TokenStream::Operand);
+        MOZ_ASSERT(tokenStream.currentName() == context->names().async);
+
+        TokenKind tt;
+        if (!tokenStream.getToken(&tt))
+            return null();
+        MOZ_ASSERT(tt == TOK_NAME || tt == TOK_YIELD);
+
+        
+        RootedPropertyName name(context, bindingIdentifier(yieldHandling));
+        if (!name)
+            return null();
+
+        if (!tokenStream.getToken(&tt))
+            return null();
+        if (tt != TOK_ARROW) {
+            report(ParseError, false, null(), JSMSG_UNEXPECTED_TOKEN,
+                   "'=>' after argument list", TokenKindToDesc(tt));
+
+            return null();
+        }
+    } else {
+        lhs = condExpr1(inHandling, yieldHandling, tripledotHandling, &possibleErrorInner, invoked);
+        if (!lhs) {
+            return null();
+        }
+    }
 
     ParseNodeKind kind;
     JSOp op;
@@ -7566,12 +7655,33 @@ Parser<ParseHandler>::assignExpr(InHandling inHandling, YieldHandling yieldHandl
 
         tokenStream.seek(start);
 
-        TokenKind ignored;
-        if (!tokenStream.peekToken(&ignored, TokenStream::Operand))
+        if (!tokenStream.peekToken(&next, TokenStream::Operand))
             return null();
 
+        GeneratorKind generatorKind = NotGenerator;
+        FunctionAsyncKind asyncKind = SyncFunction;
+
+        if (next == TOK_NAME) {
+            tokenStream.consumeKnownToken(next, TokenStream::Operand);
+
+            if (tokenStream.currentName() == context->names().async) {
+                TokenKind nextSameLine = TOK_EOF;
+                if (!tokenStream.peekTokenSameLine(&nextSameLine))
+                    return null();
+
+                if (nextSameLine == TOK_ARROW) {
+                    tokenStream.ungetToken();
+                } else {
+                    generatorKind = StarGenerator;
+                    asyncKind = AsyncFunction;
+                }
+            } else {
+                tokenStream.ungetToken();
+            }
+        }
+
         Node arrowFunc = functionDefinition(inHandling, yieldHandling, nullptr,
-                                            Arrow, NotGenerator, SyncFunction);
+                                            Arrow, generatorKind, asyncKind);
         if (!arrowFunc)
             return null();
 
@@ -7600,6 +7710,7 @@ Parser<ParseHandler>::assignExpr(InHandling inHandling, YieldHandling yieldHandl
             
             
             
+            TokenKind ignored;
             if (!tokenStream.peekToken(&ignored, TokenStream::Operand))
                 return null();
             tokenStream.addModifierException(TokenStream::NoneIsOperand);
