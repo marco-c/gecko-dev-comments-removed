@@ -243,6 +243,12 @@ protected:
 
   void QueueEvents(StickyTimeDuration activeTime = StickyTimeDuration());
 
+
+  enum class TransitionPhase;
+  
+  
+  TransitionPhase GetTransitionPhaseWithoutEffect() const;
+
   
   
   
