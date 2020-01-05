@@ -164,14 +164,6 @@ protected:
   NS_IMETHOD GetResponseSynthesized(bool* aSynthesized) override;
 
 private:
-  
-  
-  nsCOMPtr<nsISupports> mCacheKey;
-
-  
-  void ReleaseMainThreadOnlyReferences();
-
-private:
 
   class OverrideRunnable : public Runnable {
   public:
@@ -220,10 +212,6 @@ private:
 
   void ForceIntercepted(nsIInputStream* aSynthesizedInput);
 
-  
-  
-  void TrySendDeletingChannel();
-
   RequestHeaderTuples mClientSetRequestHeaders;
   nsCOMPtr<nsIChildChannel> mRedirectChannelChild;
   RefPtr<InterceptStreamListener> mInterceptListener;
@@ -235,6 +223,7 @@ private:
   bool mCacheEntryAvailable;
   uint32_t     mCacheExpirationTime;
   nsCString    mCachedCharset;
+  nsCOMPtr<nsISupports> mCacheKey;
 
   nsCString mProtocolVersion;
 

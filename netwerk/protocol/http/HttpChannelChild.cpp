@@ -192,24 +192,9 @@ HttpChannelChild::HttpChannelChild()
 HttpChannelChild::~HttpChannelChild()
 {
   LOG(("Destroying HttpChannelChild @%p\n", this));
-
-  ReleaseMainThreadOnlyReferences();
 }
 
-void
-HttpChannelChild::ReleaseMainThreadOnlyReferences()
-{
-  if (NS_IsMainThread()) {
-      
-      
-      return;
-  }
 
-  nsTArray<nsCOMPtr<nsISupports>> arrayToRelease;
-  arrayToRelease.AppendElement(mCacheKey.forget());
-
-  NS_DispatchToMainThread(new ProxyReleaseRunnable(Move(arrayToRelease)));
-}
 
 
 
@@ -218,28 +203,29 @@ NS_IMPL_ADDREF(HttpChannelChild)
 
 NS_IMETHODIMP_(MozExternalRefCountType) HttpChannelChild::Release()
 {
-  nsrefcnt count = --mRefCnt;
-  MOZ_ASSERT(int32_t(count) >= 0, "dup release");
-  NS_LOG_RELEASE(this, count, "HttpChannelChild");
+  NS_PRECONDITION(0 != mRefCnt, "dup release");
+  NS_ASSERT_OWNINGTHREAD(HttpChannelChild);
+  --mRefCnt;
+  NS_LOG_RELEASE(this, mRefCnt, "HttpChannelChild");
 
   
   
   
   
-  if (mKeptAlive && count == 1 && mIPCOpen) {
+  if (mKeptAlive && mRefCnt == 1 && mIPCOpen) {
     mKeptAlive = false;
     
     
-    TrySendDeletingChannel();
+    SendDeletingChannel();
     return 1;
   }
 
-  if (count == 0) {
+  if (mRefCnt == 0) {
     mRefCnt = 1; 
     delete this;
     return 0;
   }
-  return count;
+  return mRefCnt;
 }
 
 NS_INTERFACE_MAP_BEGIN(HttpChannelChild)
@@ -964,7 +950,7 @@ HttpChannelChild::OnStopRequest(const nsresult& channelStatus,
   } else {
     
     
-    TrySendDeletingChannel();
+    SendDeletingChannel();
   }
 }
 
@@ -1165,7 +1151,7 @@ HttpChannelChild::FailedAsyncOpen(const nsresult& status)
   HandleAsyncAbort();
 
   if (mIPCOpen) {
-    TrySendDeletingChannel();
+    SendDeletingChannel();
   }
 }
 
@@ -2876,20 +2862,6 @@ HttpChannelChild::GetResponseSynthesized(bool* aSynthesized)
   NS_ENSURE_ARG_POINTER(aSynthesized);
   *aSynthesized = mSynthesizedResponse;
   return NS_OK;
-}
-
-void
-HttpChannelChild::TrySendDeletingChannel()
-{
-  if (NS_IsMainThread()) {
-    Unused << PHttpChannelChild::SendDeletingChannel();
-    return;
-  }
-
-  DebugOnly<nsresult> rv =
-    NS_DispatchToMainThread(
-      NewNonOwningRunnableMethod(this, &HttpChannelChild::TrySendDeletingChannel));
-  MOZ_ASSERT(NS_SUCCEEDED(rv));
 }
 
 void
