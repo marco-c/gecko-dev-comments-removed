@@ -1947,8 +1947,12 @@ Debugger::slowPathOnNewScript(JSContext* cx, HandleScript script)
             return JSTRAP_CONTINUE;
         });
 
-    if (status == JSTRAP_ERROR)
+    
+    
+    if (status == JSTRAP_ERROR) {
+        cx->clearPendingException();
         return;
+    }
 
     MOZ_ASSERT(status == JSTRAP_CONTINUE);
 }
@@ -1967,8 +1971,12 @@ Debugger::slowPathOnNewWasmInstance(JSContext* cx, Handle<WasmInstanceObject*> w
             return JSTRAP_CONTINUE;
         });
 
-    if (status == JSTRAP_ERROR)
+    
+    
+    if (status == JSTRAP_ERROR) {
+        cx->clearPendingException();
         return;
+    }
 
     MOZ_ASSERT(status == JSTRAP_CONTINUE);
 }
