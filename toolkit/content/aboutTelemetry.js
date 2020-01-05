@@ -245,9 +245,9 @@ var Settings = {
           
           
           if (Preferences.get("browser.preferences.useOldOrganization", false)) {
-            mainWindow.openAdvancedPreferences("dataChoicesTab");
+            mainWindow.openAdvancedPreferences("dataChoicesTab", {origin: "aboutTelemetry"});
           } else {
-            mainWindow.openPreferences("paneAdvanced");
+            mainWindow.openPreferences("paneAdvanced", {origin: "aboutTelemetry"});
           }
         }
       });

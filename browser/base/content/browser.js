@@ -527,9 +527,9 @@ const gStoragePressureObserver = {
           
           let win = gBrowser.ownerGlobal;
           if (Preferences.get("browser.preferences.useOldOrganization", false)) {
-            win.openAdvancedPreferences("networkTab");
+            win.openAdvancedPreferences("networkTab", {origin: "storagePressure"});
           } else {
-            win.openPreferences("panePrivacy");
+            win.openPreferences("panePrivacy", {origin: "storagePressure"});
           }
         }
       });
@@ -6371,9 +6371,9 @@ var OfflineApps = {
     
     
     if (Preferences.get("browser.preferences.useOldOrganization", false)) {
-      openAdvancedPreferences("networkTab");
+      openAdvancedPreferences("networkTab", {origin: "offlineApps"});
     } else {
-      openPreferences("panePrivacy");
+      openPreferences("panePrivacy", {origin: "offlineApps"});
     }
   },
 

@@ -69,9 +69,9 @@ var gDataNotificationInfoBar = {
         
         
         if (Preferences.get("browser.preferences.useOldOrganization", false)) {
-          window.openAdvancedPreferences("dataChoicesTab");
+          window.openAdvancedPreferences("dataChoicesTab", {origin: "dataReporting"});
         } else {
-          window.openPreferences("privacy-reports");
+          window.openPreferences("privacy-reports", {origin: "dataReporting"});
         }
       },
     }];
