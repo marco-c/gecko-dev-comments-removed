@@ -182,7 +182,7 @@ public:
 
 
 
-  void AttachAsyncCompositable(uint64_t aCompositableID,
+  void AttachAsyncCompositable(const CompositableHandle& aHandle,
                                ShadowableLayer* aLayer);
 
   

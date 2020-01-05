@@ -270,7 +270,7 @@ public:
 
   void Destroy(CompositableChild* aCompositable) override;
 
-  void ForgetImageContainer(uint64_t aAsyncContainerID);
+  void ForgetImageContainer(const CompositableHandle& aHandle);
 
   
 
