@@ -2404,18 +2404,6 @@ GK_ATOM(onremovesourcebuffer, "onremovesourcebuffer")
 
 GK_ATOM(xlink, "xlink")
 
-GK_ATOM(k, "k")
-
-GK_ATOM(cap_height, "cap-height")
-
-GK_ATOM(g1, "g1")
-
-GK_ATOM(u1, "u1")
-
-GK_ATOM(g2, "g2")
-
-GK_ATOM(u2, "u2")
-
 GK_ATOM(xml_space, "xml:space")
 
 GK_ATOM(xml_lang, "xml:lang")
@@ -2432,45 +2420,19 @@ GK_ATOM(aria_templateid, "aria-templateid")
 
 GK_ATOM(aria_datatype, "aria-datatype")
 
-GK_ATOM(dataformatas, "dataformatas")
-
-GK_ATOM(datafld, "datafld")
-
-GK_ATOM(datasrc, "datasrc")
-
 GK_ATOM(local, "local")
-
-GK_ATOM(ondatasetchanged, "ondatasetchanged")
-
-GK_ATOM(ondatasetcomplete, "ondatasetcomplete")
-
-GK_ATOM(v_mathematical, "v-mathematical")
-
-GK_ATOM(v_hanging, "v-hanging")
 
 GK_ATOM(xchannelselector, "xchannelselector")
 
 GK_ATOM(ychannelselector, "ychannelselector")
 
-GK_ATOM(arabic_form, "arabic-form")
-
 GK_ATOM(enable_background, "enable-background")
 
 GK_ATOM(calcmode, "calcmode")
 
-GK_ATOM(descent, "descent")
-
 GK_ATOM(specularexponent, "specularexponent")
 
 GK_ATOM(specularconstant, "specularconstant")
-
-GK_ATOM(specification, "specification")
-
-GK_ATOM(thickmathspace, "thickmathspace")
-
-GK_ATOM(unicode_, "unicode")
-
-GK_ATOM(unicode_range, "unicode-range")
 
 GK_ATOM(gradienttransform, "gradienttransform")
 
@@ -2480,12 +2442,6 @@ GK_ATOM(rendering_intent, "rendering-intent")
 
 GK_ATOM(stddeviation, "stddeviation")
 
-GK_ATOM(v_ideographic, "v-ideographic")
-
-GK_ATOM(accent_height, "accent-height")
-
-GK_ATOM(ascent, "ascent")
-
 GK_ATOM(basefrequency, "basefrequency")
 
 GK_ATOM(baseprofile, "baseprofile")
@@ -2494,59 +2450,17 @@ GK_ATOM(baseProfile, "baseProfile")
 
 GK_ATOM(edgemode, "edgemode")
 
-GK_ATOM(hidefocus, "hidefocus")
-
-GK_ATOM(irrelevant, "irrelevant")
-
-GK_ATOM(oncellchange, "oncellchange")
-
-GK_ATOM(onhelp, "onhelp")
-
-GK_ATOM(onbeforeupdate, "onbeforeupdate")
-
-GK_ATOM(ondeactivate, "ondeactivate")
-
-GK_ATOM(onbeforeactivate, "onbeforeactivate")
-
-GK_ATOM(onbefordeactivate, "onbefordeactivate")
-
-GK_ATOM(onbeforeeditfocus, "onbeforeeditfocus")
-
-GK_ATOM(repeat_max, "repeat-max")
-
-GK_ATOM(repeat_min, "repeat-min")
-
 GK_ATOM(repeatcount, "repeatcount")
-
-GK_ATOM(repeat_start, "repeat-start")
-
-GK_ATOM(repeat_template, "repeat-template")
 
 GK_ATOM(repeatdur, "repeatdur")
 
-GK_ATOM(speed, "speed")
-
 GK_ATOM(spreadmethod, "spreadmethod")
-
-GK_ATOM(unselectable, "unselectable")
-
-GK_ATOM(underline_position, "underline-position")
-
-GK_ATOM(underline_thickness, "underline-thickness")
-
-GK_ATOM(x_height, "x-height")
 
 GK_ATOM(diffuseconstant, "diffuseconstant")
 
-GK_ATOM(onafterupdate, "onafterupdate")
-
 GK_ATOM(surfacescale, "surfacescale")
 
-GK_ATOM(hanging, "hanging")
-
 GK_ATOM(lengthadjust, "lengthadjust")
-
-GK_ATOM(nargs, "nargs")
 
 GK_ATOM(origin, "origin")
 
@@ -2554,29 +2468,11 @@ GK_ATOM(targetx, "targetx")
 
 GK_ATOM(targety, "targety")
 
-GK_ATOM(alphabetic, "alphabetic")
-
-GK_ATOM(mathematical, "mathematical")
-
 GK_ATOM(pathlength, "pathlength")
 
 GK_ATOM(definitionurl, "definitionurl")
 
-GK_ATOM(horiz_adv_x, "horiz-adv-x")
-
-GK_ATOM(horiz_origin_x, "horiz-origin-x")
-
-GK_ATOM(horiz_origin_y, "horiz-origin-y")
-
 GK_ATOM(limitingconeangle, "limitingconeangle")
-
-GK_ATOM(mediummathspace, "mediummathspace")
-
-GK_ATOM(onfilterchange, "onfilterchange")
-
-GK_ATOM(strikethrough_position, "strikethrough-position")
-
-GK_ATOM(strikethrough_thickness, "strikethrough-thickness")
 
 GK_ATOM(markerheight, "markerheight")
 
@@ -2590,15 +2486,7 @@ GK_ATOM(maskcontentunits, "maskcontentunits")
 
 GK_ATOM(tablevalues, "tablevalues")
 
-GK_ATOM(v_alphabetic, "v-alphabetic")
-
 GK_ATOM(primitiveunits, "primitiveunits")
-
-GK_ATOM(stemh, "stemh")
-
-GK_ATOM(stemv, "stemv")
-
-GK_ATOM(seamless, "seamless")
 
 GK_ATOM(zoomandpan, "zoomandpan")
 
@@ -2613,8 +2501,6 @@ GK_ATOM(pointsatx, "pointsatx")
 GK_ATOM(pointsaty, "pointsaty")
 
 GK_ATOM(pointsatz, "pointsatz")
-
-GK_ATOM(thinmathspace, "thinmathspace")
 
 GK_ATOM(xlink_href, "xlink:href")
 
@@ -2634,43 +2520,11 @@ GK_ATOM(xlink_show, "xlink:show")
 
 GK_ATOM(xlink_actuate, "xlink:actuate")
 
-GK_ATOM(autosubmit, "autosubmit")
-
 GK_ATOM(color_rendering, "color-rendering")
-
-GK_ATOM(ideographic, "ideographic")
-
-GK_ATOM(panose_1, "panose-1")
 
 GK_ATOM(numoctaves, "numoctaves")
 
-GK_ATOM(onbounce, "onbounce")
-
-GK_ATOM(oncontrolselect, "oncontrolselect")
-
-GK_ATOM(onrowsinserted, "onrowsinserted")
-
 GK_ATOM(onmousewheel, "onmousewheel")
-
-GK_ATOM(onrowenter, "onrowenter")
-
-GK_ATOM(onformchange, "onformchange")
-
-GK_ATOM(onrowexit, "onrowexit")
-
-GK_ATOM(onmoveend, "onmoveend")
-
-GK_ATOM(onlosecapture, "onlosecapture")
-
-GK_ATOM(onmovestart, "onmovestart")
-
-GK_ATOM(onrowsdelete, "onrowsdelete")
-
-GK_ATOM(onmove, "onmove")
-
-GK_ATOM(onforminput, "onforminput")
-
-GK_ATOM(scrolldelay, "scrolldelay")
 
 GK_ATOM(clippathunits, "clippathunits")
 
@@ -2680,23 +2534,11 @@ GK_ATOM(glyph_orientation_horizontal, "glyph-orientation-horizontal")
 
 GK_ATOM(glyphref, "glyphref")
 
-GK_ATOM(glyph_name, "glyph-name")
-
 GK_ATOM(keypoints, "keypoints")
 
 GK_ATOM(attributename, "attributename")
 
 GK_ATOM(attributetype, "attributetype")
-
-GK_ATOM(macros, "macros")
-
-GK_ATOM(onpropertychange, "onpropertychange")
-
-GK_ATOM(overline_position, "overline-position")
-
-GK_ATOM(onerrorupdate, "onerrorupdate")
-
-GK_ATOM(overline_thickness, "overline-thickness")
 
 GK_ATOM(startoffset, "startoffset")
 
@@ -2722,19 +2564,7 @@ GK_ATOM(stitchtiles, "stitchtiles")
 
 GK_ATOM(systemlanguage, "systemlanguage")
 
-GK_ATOM(vert_origin_x, "vert-origin-x")
-
-GK_ATOM(vert_adv_y, "vert-adv-y")
-
-GK_ATOM(vert_origin_y, "vert-origin-y")
-
 GK_ATOM(textlength, "textlength")
-
-GK_ATOM(units_per_em, "units-per-em")
-
-GK_ATOM(widths, "widths")
-
-GK_ATOM(occurrence, "occurrence")
 
 GK_ATOM(requiredfeatures, "requiredfeatures")
 
@@ -2744,19 +2574,9 @@ GK_ATOM(viewtarget, "viewtarget")
 
 GK_ATOM(viewbox, "viewbox")
 
-GK_ATOM(bbox, "bbox")
-
 GK_ATOM(refx, "refx")
 
 GK_ATOM(refy, "refy")
-
-GK_ATOM(verythinmathspace, "verythinmathspace")
-
-GK_ATOM(verythickmathspace, "verythickmathspace")
-
-GK_ATOM(veryverythinmathspace, "veryverythinmathspace")
-
-GK_ATOM(veryverythickmathspace, "veryverythickmathspace")
 
 GK_ATOM(isindex, "isindex")
 
