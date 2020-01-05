@@ -1,0 +1,12 @@
+
+
+
+
+use dom::htmlmediaelement::HTMLMediaElement;
+
+pub struct HTMLAudioElement {
+    parent: HTMLMediaElement
+}
+
+impl HTMLAudioElement {
+}

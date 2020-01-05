@@ -1,0 +1,19 @@
+
+
+
+
+use dom::bindings::utils::{ErrorResult};
+use dom::htmlelement::HTMLElement;
+
+pub struct HTMLPreElement {
+    parent: HTMLElement,
+}
+
+impl HTMLPreElement {
+    pub fn Width(&self) -> i32 {
+        0
+    }
+
+    pub fn SetWidth(&mut self, _width: i32, _rv: &mut ErrorResult) {
+    }
+}

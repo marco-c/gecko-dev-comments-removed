@@ -1,0 +1,12 @@
+
+
+
+
+use dom::htmlelement::HTMLElement;
+
+pub struct HTMLTemplateElement {
+    parent: HTMLElement,
+}
+
+impl HTMLTemplateElement {
+}
