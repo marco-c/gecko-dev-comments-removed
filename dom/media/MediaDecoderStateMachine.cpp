@@ -1394,7 +1394,7 @@ private:
                OnSeekTaskRejected(aValue);
              }));
 
-    if (!mTask->IsVideoRequestPending() && NeedMoreVideo()) {
+    if (!IsVideoRequestPending() && NeedMoreVideo()) {
       RequestVideoData();
     }
     MaybeFinishSeek(); 
@@ -1602,6 +1602,11 @@ private:
            !mTask->mIsVideoQueueFinished;
   }
 
+  bool IsVideoRequestPending() const
+  {
+    return Reader()->IsRequestingVideoData() || Reader()->IsWaitingVideoData();
+  }
+
   bool IsAudioSeekComplete() const
   {
     
@@ -1613,7 +1618,7 @@ private:
   {
     
     
-    return !mTask->IsVideoRequestPending() && !NeedMoreVideo();
+    return !IsVideoRequestPending() && !NeedMoreVideo();
   }
 
   void MaybeFinishSeek()

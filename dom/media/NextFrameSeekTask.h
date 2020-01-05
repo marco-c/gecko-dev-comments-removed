@@ -54,8 +54,6 @@ public:
 
   ~NextFrameSeekTask();
 
-  bool IsVideoRequestPending() const;
-
   
   
   void UpdateSeekTargetTime();
