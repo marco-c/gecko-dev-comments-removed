@@ -13,7 +13,12 @@ XPCOMUtils.defineLazyModuleGetter(this, "PrivateBrowsingUtils",
 Cu.import("resource://gre/modules/ExtensionUtils.jsm");
 var {
   EventManager,
+  promiseObserved,
 } = ExtensionUtils;
+
+function onXULFrameLoaderCreated({target}) {
+  target.messageManager.sendAsyncMessage("AllowScriptsToClose", {});
+}
 
 extensions.registerSchemaAPI("windows", "addon_parent", context => {
   let {extension} = context;
@@ -94,6 +99,10 @@ extensions.registerSchemaAPI("windows", "addon_parent", context => {
             return Promise.reject({message: "`tabId` may not be used in conjunction with `url`"});
           }
 
+          if (createData.allowScriptsToClose) {
+            return Promise.reject({message: "`tabId` may not be used in conjunction with `allowScriptsToClose`"});
+          }
+
           let tab = TabManager.getTab(createData.tabId, context);
 
           
@@ -136,6 +145,11 @@ extensions.registerSchemaAPI("windows", "addon_parent", context => {
           }
         }
 
+        let {allowScriptsToClose, url} = createData;
+        if (allowScriptsToClose === null) {
+          allowScriptsToClose = typeof url === "string" && url.startsWith("moz-extension://");
+        }
+
         let window = Services.ww.openWindow(null, "chrome://browser/content/browser.xul", "_blank",
                                             features.join(","), args);
 
@@ -152,22 +166,21 @@ extensions.registerSchemaAPI("windows", "addon_parent", context => {
               window.document.documentElement.setAttribute("sizemode", createData.state);
             } else if (createData.state !== null) {
               
-              
-
-              let obs = doc => {
-                if (doc === window.document) {
-                  Services.obs.removeObserver(obs, "document-shown");
-                  WindowManager.setState(window, createData.state);
-                  resolve();
-                }
-              };
-              Services.obs.addObserver(obs, "document-shown", false);
-              return;
+              return promiseObserved("document-shown", doc => doc == window.document).then(() => {
+                WindowManager.setState(window, createData.state);
+                resolve();
+              });
             }
-
             resolve();
           });
         }).then(() => {
+          if (allowScriptsToClose) {
+            for (let {linkedBrowser} of window.gBrowser.tabs) {
+              onXULFrameLoaderCreated({target: linkedBrowser});
+              linkedBrowser.addEventListener( 
+                                             "XULFrameLoaderCreated", onXULFrameLoaderCreated);
+            }
+          }
           return WindowManager.convert(extension, window);
         });
       },
