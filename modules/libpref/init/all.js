@@ -391,7 +391,7 @@ pref("media.gmp.storage.version.expected", 1);
 
 
 
-pref("media.decoder-doctor.notifications-allowed", "MediaWMFNeeded,MediaWidevineNoWMFNoSilverlight,MediaCannotInitializePulseAudio,MediaUnsupportedLibavcodec,MediaCannotPlayNoDecoders,MediaNoDecoders");
+pref("media.decoder-doctor.notifications-allowed", "MediaWMFNeeded,MediaWidevineNoWMFNoSilverlight,MediaCannotInitializePulseAudio,MediaUnsupportedLibavcodec");
 
 pref("media.decoder-doctor.verbose", false);
 
