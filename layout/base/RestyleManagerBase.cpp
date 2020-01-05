@@ -5,7 +5,7 @@
 
 
 #include "mozilla/RestyleManagerBase.h"
-#include "mozilla/StyleSetHandle.h"
+#include "mozilla/StyleSetHandleInlines.h"
 #include "nsIFrame.h"
 
 namespace mozilla {
