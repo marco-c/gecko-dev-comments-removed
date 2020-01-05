@@ -45,7 +45,7 @@ class GenericPrinter
 
     
     bool printf(const char* fmt, ...) MOZ_FORMAT_PRINTF(2, 3);
-    bool vprintf(const char* fmt, va_list ap);
+    bool vprintf(const char* fmt, va_list ap) MOZ_FORMAT_PRINTF(2, 0);
 
     
     

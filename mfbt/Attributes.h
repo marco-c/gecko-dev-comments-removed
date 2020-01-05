@@ -637,6 +637,9 @@
 
 
 
+
+
+
 #ifdef __MINGW32__
 #define MOZ_FORMAT_PRINTF(stringIndex, firstToCheck)  \
     __attribute__ ((format (__MINGW_PRINTF_FORMAT, stringIndex, firstToCheck)))

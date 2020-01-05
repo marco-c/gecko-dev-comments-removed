@@ -393,7 +393,7 @@ void printf_stderr(const char* aFmt, ...) MOZ_FORMAT_PRINTF(1, 2);
 
 
 
-void vprintf_stderr(const char* aFmt, va_list aArgs);
+void vprintf_stderr(const char* aFmt, va_list aArgs) MOZ_FORMAT_PRINTF(1, 0);
 
 
 
