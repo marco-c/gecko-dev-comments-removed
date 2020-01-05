@@ -28,6 +28,8 @@ loadHelperScript("helper_html_tooltip.js");
 
 add_task(function* () {
   let [,, doc] = yield createHost("bottom", TEST_URI);
+  
+  yield waitUntil(() => doc.readyState === "complete");
 
   let width = 100, height = 50;
   let tooltipContent = doc.createElementNS(HTML_NS, "div");
