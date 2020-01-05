@@ -183,8 +183,6 @@ class MessageChannel : HasResultCodes
 
     int32_t GetTopmostMessageRoutingId() const;
 
-    void FlushPendingInterruptQueue();
-
     
     
     
