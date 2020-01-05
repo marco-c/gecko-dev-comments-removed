@@ -64,7 +64,7 @@ use string_cache::{Atom, Namespace};
 pub struct WindowProxyHandler(pub *const libc::c_void);
 
 #[allow(raw_pointer_derive)]
-#[jstraceable]
+#[derive(JSTraceable)]
 
 pub struct GlobalStaticData {
     

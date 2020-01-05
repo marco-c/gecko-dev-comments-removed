@@ -164,7 +164,7 @@ impl<T: Reflectable> HeapGCValue for JS<T> {
 
 
 #[must_root]
-#[jstraceable]
+#[derive(JSTraceable)]
 pub struct MutHeapJSVal {
     val: UnsafeCell<Heap<JSVal>>,
 }
@@ -196,7 +196,7 @@ impl MutHeapJSVal {
 
 
 #[must_root]
-#[jstraceable]
+#[derive(JSTraceable)]
 pub struct MutHeap<T: HeapGCValue+Copy> {
     val: Cell<T>,
 }
@@ -225,7 +225,7 @@ impl<T: HeapGCValue+Copy> MutHeap<T> {
 
 
 #[must_root]
-#[jstraceable]
+#[derive(JSTraceable)]
 pub struct MutNullableHeap<T: HeapGCValue+Copy> {
     ptr: Cell<Option<T>>
 }

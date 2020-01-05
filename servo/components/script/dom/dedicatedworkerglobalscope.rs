@@ -45,8 +45,7 @@ use std::sync::mpsc::{Sender, Receiver, channel};
 
 
 
-#[derive(Clone)]
-#[jstraceable]
+#[derive(JSTraceable, Clone)]
 pub struct SendableWorkerScriptChan {
     sender: Sender<(TrustedWorkerAddress, ScriptMsg)>,
     worker: TrustedWorkerAddress,

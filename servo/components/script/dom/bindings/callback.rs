@@ -33,8 +33,7 @@ pub enum ExceptionHandling {
 }
 
 
-#[derive(PartialEq)]
-#[jstraceable]
+#[derive(JSTraceable, PartialEq)]
 pub struct CallbackFunction {
     object: CallbackObject
 }
@@ -57,8 +56,7 @@ impl CallbackFunction {
 }
 
 
-#[derive(PartialEq)]
-#[jstraceable]
+#[derive(JSTraceable, PartialEq)]
 pub struct CallbackInterface {
     object: CallbackObject
 }
@@ -66,7 +64,7 @@ pub struct CallbackInterface {
 
 
 #[allow(raw_pointer_derive)]
-#[jstraceable]
+#[derive(JSTraceable)]
 struct CallbackObject {
     
     callback: Heap<*mut JSObject>,

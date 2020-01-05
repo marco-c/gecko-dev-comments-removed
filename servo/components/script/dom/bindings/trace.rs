@@ -410,7 +410,7 @@ impl RootedTraceableSet {
 
 
 
-#[jstraceable]
+#[derive(JSTraceable)]
 pub struct RootedTraceable<'a, T: 'a + JSTraceable> {
     ptr: &'a T
 }
@@ -434,7 +434,7 @@ impl<'a, T: JSTraceable> Drop for RootedTraceable<'a, T> {
 
 #[allow(unrooted_must_root)]
 #[no_move]
-#[jstraceable]
+#[derive(JSTraceable)]
 pub struct RootedVec<T: JSTraceable + Reflectable> {
     v: Vec<T>
 }

@@ -121,7 +121,7 @@ unsafe extern fn trace_rust_roots(tr: *mut JSTracer, _data: *mut libc::c_void) {
 
 
 
-#[jstraceable]
+#[derive(JSTraceable)]
 struct InProgressLoad {
     
     pipeline_id: PipelineId,
@@ -226,7 +226,7 @@ impl ScriptPort for Receiver<(TrustedWorkerAddress, ScriptMsg)> {
 }
 
 
-#[jstraceable]
+#[derive(JSTraceable)]
 pub struct NonWorkerScriptChan(pub Sender<ScriptMsg>);
 
 impl ScriptChan for NonWorkerScriptChan {
@@ -269,7 +269,7 @@ impl Drop for StackRootTLS {
 
 
 
-#[jstraceable]
+#[derive(JSTraceable)]
 pub struct ScriptTask {
     
     page: DOMRefCell<Option<Rc<Page>>>,

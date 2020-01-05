@@ -14,7 +14,7 @@ use std::rc::Rc;
 use url::Url;
 
 
-#[jstraceable]
+#[derive(JSTraceable)]
 pub struct Page {
     
     id: PipelineId,
@@ -133,7 +133,7 @@ impl Page {
 }
 
 
-#[jstraceable]
+#[derive(JSTraceable)]
 #[must_root]
 pub struct Frame {
     

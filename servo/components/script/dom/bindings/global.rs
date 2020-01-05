@@ -46,7 +46,7 @@ pub enum GlobalRoot {
 
 
 
-#[jstraceable]
+#[derive(JSTraceable)]
 #[must_root]
 pub enum GlobalField {
     

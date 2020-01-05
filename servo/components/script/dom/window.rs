@@ -70,8 +70,7 @@ use std::sync::mpsc::TryRecvError::{Empty, Disconnected};
 use time;
 
 
-#[derive(Copy, Clone, Debug, PartialEq)]
-#[jstraceable]
+#[derive(JSTraceable, Copy, Clone, Debug, PartialEq)]
 enum WindowState {
     Alive,
     Zombie,     

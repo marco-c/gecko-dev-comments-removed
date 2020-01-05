@@ -21,8 +21,7 @@ pub enum Selection {
     NotSelected
 }
 
-#[jstraceable]
-#[derive(Copy, Clone)]
+#[derive(JSTraceable, Copy, Clone)]
 pub struct TextPoint {
     
     pub line: usize,
@@ -31,7 +30,7 @@ pub struct TextPoint {
 }
 
 
-#[jstraceable]
+#[derive(JSTraceable)]
 pub struct TextInput<T: ClipboardProvider> {
     
     lines: Vec<DOMString>,

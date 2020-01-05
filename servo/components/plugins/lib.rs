@@ -43,7 +43,7 @@ pub mod casing;
 #[plugin_registrar]
 pub fn plugin_registrar(reg: &mut Registry) {
     reg.register_syntax_extension(intern("dom_struct"), MultiModifier(box jstraceable::expand_dom_struct));
-    reg.register_syntax_extension(intern("jstraceable"), MultiDecorator(box jstraceable::expand_jstraceable));
+    reg.register_syntax_extension(intern("derive_JSTraceable"), MultiDecorator(box jstraceable::expand_jstraceable));
     reg.register_syntax_extension(intern("_generate_reflector"), MultiDecorator(box reflector::expand_reflector));
     reg.register_syntax_extension(intern("derive_HeapSizeOf"), MultiDecorator(box heap_size::expand_heap_size));
     reg.register_macro("to_lower", casing::expand_lower);
