@@ -6665,13 +6665,7 @@ function checkEmptyPageOrigin(browser = gBrowser.selectedBrowser,
     
     
     
-    
-    
-    
-    
-    
-    let uriToCheck = browser.documentURI || uri;
-    if ((uriToCheck.spec == "about:blank" && contentPrincipal.isNullPrincipal) ||
+    if ((uri.spec == "about:blank" && contentPrincipal.isNullPrincipal) ||
         contentPrincipal.URI.spec == "about:blank") {
       return true;
     }
