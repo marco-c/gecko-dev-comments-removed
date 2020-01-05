@@ -2271,6 +2271,9 @@ var Keywords = {
             `, { url: url.href, keyword: keyword, post_data: postData });
         }
 
+        yield PlacesSyncUtils.bookmarks.addSyncChangesForBookmarksWithURL(
+          db, url, PlacesSyncUtils.bookmarks.determineSyncChangeDelta(source));
+
         cache.set(keyword, { keyword, url, postData });
 
         
@@ -2307,6 +2310,9 @@ var Keywords = {
 
       yield db.execute(`DELETE FROM moz_keywords WHERE keyword = :keyword`,
                        { keyword });
+
+      yield PlacesSyncUtils.bookmarks.addSyncChangesForBookmarksWithURL(
+        db, url, PlacesSyncUtils.bookmarks.determineSyncChangeDelta(source));
 
       
       yield notifyKeywordChange(url.href, "", source);

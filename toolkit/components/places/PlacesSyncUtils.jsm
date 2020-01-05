@@ -342,6 +342,62 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
       return getKindForItem(item)
     });
   },
+
+  
+
+
+  determineSyncChangeDelta(source) {
+    
+    
+    return source == PlacesUtils.bookmarks.SOURCES.SYNC ? 0 : 1;
+  },
+
+  
+
+
+  determineInitialSyncStatus(source) {
+    if (source == PlacesUtils.bookmarks.SOURCES.SYNC) {
+      
+      return PlacesUtils.bookmarks.SYNC_STATUS.NORMAL;
+    }
+    if (source == PlacesUtils.bookmarks.SOURCES.IMPORT_REPLACE) {
+      
+      
+      
+      
+      return PlacesUtils.bookmarks.SYNC_STATUS.UNKNOWN;
+    }
+    
+    
+    return PlacesUtils.bookmarks.SYNC_STATUS.NEW;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  addSyncChangesForBookmarksWithURL(db, url, syncChangeDelta) {
+    if (!url || !syncChangeDelta) {
+      return Promise.resolve();
+    }
+    return db.executeCached(`
+      UPDATE moz_bookmarks
+        SET syncChangeCounter = syncChangeCounter + :syncChangeDelta
+      WHERE type = :type AND
+            fk = (SELECT id FROM moz_places WHERE url_hash = hash(:url) AND
+                  url = :url)`,
+      { syncChangeDelta, type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
+        url: url.href });
+  },
 });
 
 XPCOMUtils.defineLazyGetter(this, "BookmarkSyncLog", () => {
@@ -434,7 +490,6 @@ var reparentOrphans = Task.async(function* (item) {
   BookmarkSyncLog.debug(`reparentOrphans: Reparenting ${
     JSON.stringify(orphanGuids)} to ${item.syncId}`);
   for (let i = 0; i < orphanGuids.length; ++i) {
-    let isReparented = false;
     try {
       
       
@@ -446,16 +501,9 @@ var reparentOrphans = Task.async(function* (item) {
         index: PlacesUtils.bookmarks.DEFAULT_INDEX,
         source: SOURCE_SYNC,
       });
-      isReparented = true;
     } catch (ex) {
       BookmarkSyncLog.error(`reparentOrphans: Failed to reparent item ${
         orphanGuids[i]} to ${item.syncId}`, ex);
-    }
-    if (isReparented) {
-      
-      let orphanId = yield PlacesUtils.promiseItemId(orphanGuids[i]);
-      PlacesUtils.annotations.removeItemAnnotation(orphanId,
-        BookmarkSyncUtils.SYNC_PARENT_ANNO, SOURCE_SYNC);
     }
   }
 });
