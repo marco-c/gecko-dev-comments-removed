@@ -653,10 +653,9 @@ gfxPlatform::Init()
                                gfxPrefs::WebGLForceLayersReadback(),
                                gfxPrefs::WebGLForceMSAA());
       
-      forcedPrefs.AppendPrintf("-T%d%d%d%d) ",
+      forcedPrefs.AppendPrintf("-T%d%d%d) ",
                                gfxPrefs::AndroidRGB16Force(),
                                gfxPrefs::CanvasAzureAccelerated(),
-                               gfxPrefs::DisableGralloc(),
                                gfxPrefs::ForceShmemTiles());
       ScopedGfxFeatureReporter::AppNote(forcedPrefs);
     }
@@ -795,26 +794,9 @@ gfxPlatform::Init()
     InitNullMetadata();
     InitOpenGLConfig();
 
-    if (XRE_IsParentProcess()) {
-      gfxVars::SetDXInterop2Blocked(IsDXInterop2Blocked());
-    }
-
     if (obs) {
       obs->NotifyObservers(nullptr, "gfx-features-ready", nullptr);
     }
-}
-
- bool
-gfxPlatform::IsDXInterop2Blocked()
-{
-  nsCOMPtr<nsIGfxInfo> gfxInfo = services::GetGfxInfo();
-  nsCString blockId;
-  int32_t status;
-  if (!NS_SUCCEEDED(gfxInfo->GetFeatureStatus(nsIGfxInfo::FEATURE_DX_INTEROP2,
-                                              blockId, &status))) {
-    return true;
-  }
-  return status != nsIGfxInfo::FEATURE_STATUS_OK;
 }
 
  void
@@ -2424,7 +2406,7 @@ gfxPlatform::GetTilesSupportInfo(mozilla::widget::InfoObject& aObj)
  bool
 gfxPlatform::AsyncPanZoomEnabled()
 {
-#if !defined(MOZ_B2G) && !defined(MOZ_WIDGET_ANDROID) && !defined(MOZ_WIDGET_UIKIT)
+#if !defined(MOZ_WIDGET_ANDROID) && !defined(MOZ_WIDGET_UIKIT)
   
   
   

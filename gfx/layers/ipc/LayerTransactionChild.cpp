@@ -72,15 +72,6 @@ void
 LayerTransactionChild::ActorDestroy(ActorDestroyReason why)
 {
   mDestroyed = true;
-#ifdef MOZ_B2G
-  
-  
-  
-  
-  if (why == AbnormalShutdown) {
-    NS_RUNTIMEABORT("ActorDestroy by IPC channel failure at LayerTransactionChild");
-  }
-#endif
 }
 
 } 

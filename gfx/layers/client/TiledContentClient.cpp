@@ -1234,8 +1234,6 @@ ClientMultiTiledLayerBuffer::ComputeProgressiveUpdateRegion(const nsIntRegion& a
   
   
   
-  
-  
   IntRect coherentUpdateRect(RoundedOut(
 #ifdef MOZ_WIDGET_ANDROID
     transformedCompositionBounds->Intersect(aPaintData->mCompositionBounds)

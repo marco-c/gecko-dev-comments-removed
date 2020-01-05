@@ -157,9 +157,6 @@ private:
   
   uint32_t mOutstandingClients;
 
-  
-  
-  
   std::stack<RefPtr<TextureClient> > mTextureClients;
 
   std::list<RefPtr<TextureClient>> mTextureClientsDeferred;

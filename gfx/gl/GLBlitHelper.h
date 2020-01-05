@@ -18,7 +18,6 @@ namespace mozilla {
 namespace layers {
 class Image;
 class PlanarYCbCrImage;
-class GrallocImage;
 class SurfaceTextureImage;
 class MacIOSurfaceImage;
 class EGLImageImage;
@@ -50,13 +49,10 @@ class GLBlitHelper final
 
 
 
-
-
     enum BlitType
     {
         BlitTex2D,
         BlitTexRect,
-        ConvertGralloc,
         ConvertPlanarYCbCr,
         ConvertSurfaceTexture,
         ConvertEGLImage,

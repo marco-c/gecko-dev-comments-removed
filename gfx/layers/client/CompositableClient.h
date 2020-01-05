@@ -158,7 +158,6 @@ public:
 
 
 
-
   virtual void RemoveTexture(TextureClient* aTexture);
 
   static RefPtr<CompositableClient> FromIPDLActor(PCompositableChild* aActor);

@@ -323,7 +323,6 @@ gfxAndroidPlatform::RequiresLinearZoom()
     
     
     
-    
     return true;
 #endif
 

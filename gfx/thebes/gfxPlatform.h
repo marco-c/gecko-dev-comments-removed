@@ -413,8 +413,6 @@ public:
 
 
 
-
-
     virtual bool RequiresLinearZoom() { return false; }
 
     

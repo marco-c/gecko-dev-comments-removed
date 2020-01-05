@@ -20,7 +20,6 @@
 #include "mozilla/layers/CompositableTransactionParent.h"
 #include "mozilla/layers/LayerManagerComposite.h"
 #include "mozilla/layers/LayersMessages.h"  
-#include "mozilla/layers/LayersSurfaces.h"  
 #include "mozilla/layers/PCompositableParent.h"
 #include "mozilla/layers/PImageBridgeParent.h"
 #include "mozilla/layers/TextureHostOGL.h"  
@@ -124,15 +123,15 @@ ImageBridgeParent::ActorDestroy(ActorDestroyReason aWhy)
   
 }
 
-mozilla::ipc::IPCResult
+bool
 ImageBridgeParent::RecvImageBridgeThreadId(const PlatformThreadId& aThreadId)
 {
   MOZ_ASSERT(!mSetChildThreadPriority);
   if (mSetChildThreadPriority) {
-    return IPC_FAIL_NO_REASON(this);
+    return false;
   }
   mSetChildThreadPriority = true;
-  return IPC_OK();
+  return true;
 }
 
 class MOZ_STACK_CLASS AutoImageBridgeParentAsyncMessageSender
@@ -160,7 +159,7 @@ private:
   InfallibleTArray<OpDestroy>* mToDestroy;
 };
 
-mozilla::ipc::IPCResult
+bool
 ImageBridgeParent::RecvUpdate(EditArray&& aEdits, OpDestroyArray&& aToDestroy,
                               const uint64_t& aFwdTransactionId,
                               EditReplyArray* aReply)
@@ -173,7 +172,7 @@ ImageBridgeParent::RecvUpdate(EditArray&& aEdits, OpDestroyArray&& aToDestroy,
   EditReplyVector replyv;
   for (EditArray::index_type i = 0; i < aEdits.Length(); ++i) {
     if (!ReceiveCompositableUpdate(aEdits[i], replyv)) {
-      return IPC_FAIL_NO_REASON(this);
+      return false;
     }
   }
 
@@ -189,20 +188,17 @@ ImageBridgeParent::RecvUpdate(EditArray&& aEdits, OpDestroyArray&& aToDestroy,
     LayerManagerComposite::PlatformSyncBeforeReplyUpdate();
   }
 
-  return IPC_OK();
+  return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 ImageBridgeParent::RecvUpdateNoSwap(EditArray&& aEdits, OpDestroyArray&& aToDestroy,
                                     const uint64_t& aFwdTransactionId)
 {
   InfallibleTArray<EditReply> noReplies;
   bool success = RecvUpdate(Move(aEdits), Move(aToDestroy), aFwdTransactionId, &noReplies);
   MOZ_ASSERT(noReplies.Length() == 0, "RecvUpdateNoSwap requires a sync Update to carry Edits");
-  if (!success) {
-    return IPC_FAIL_NO_REASON(this);
-  }
-  return IPC_OK();
+  return success;
 }
 
  bool
@@ -225,7 +221,7 @@ ImageBridgeParent::Bind(Endpoint<PImageBridgeParent>&& aEndpoint)
   mSelfRef = this;
 }
 
-mozilla::ipc::IPCResult ImageBridgeParent::RecvWillClose()
+bool ImageBridgeParent::RecvWillClose()
 {
   
   
@@ -237,7 +233,7 @@ mozilla::ipc::IPCResult ImageBridgeParent::RecvWillClose()
     RefPtr<TextureHost> tex = TextureHost::AsTextureHost(textures[i]);
     tex->DeallocateDeviceData();
   }
-  return IPC_OK();
+  return true;
 }
 
 static  uint64_t GenImageContainerID() {

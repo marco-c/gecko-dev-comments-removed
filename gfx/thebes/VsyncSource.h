@@ -42,7 +42,6 @@ public:
       
       
       
-      
       virtual void NotifyVsync(TimeStamp aVsyncTimestamp);
 
       RefPtr<RefreshTimerVsyncDispatcher> GetRefreshTimerVsyncDispatcher();

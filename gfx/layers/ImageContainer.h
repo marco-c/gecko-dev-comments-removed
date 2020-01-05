@@ -15,7 +15,6 @@
 #include "mozilla/ReentrantMonitor.h"   
 #include "mozilla/TimeStamp.h"          
 #include "mozilla/gfx/Point.h"          
-#include "mozilla/layers/GonkNativeHandle.h"
 #include "mozilla/layers/LayersTypes.h"  
 #include "mozilla/layers/CompositorTypes.h"
 #include "mozilla/mozalloc.h"           

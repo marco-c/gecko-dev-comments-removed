@@ -108,46 +108,6 @@ protected:
 
 
 
-
-
-
-
-
-
-
-class PerFrameTexturePoolOGL : public CompositorTexturePoolOGL
-{
-public:
-  explicit PerFrameTexturePoolOGL(gl::GLContext* aGL)
-  : mTextureTarget(0) 
-  , mGL(aGL)
-  {}
-
-  virtual ~PerFrameTexturePoolOGL()
-  {
-    DestroyTextures();
-  }
-
-  virtual void Clear() override
-  {
-    DestroyTextures();
-  }
-
-  virtual GLuint GetTexture(GLenum aTarget, GLenum aUnit) override;
-
-  virtual void EndFrame() override;
-
-protected:
-  void DestroyTextures();
-
-  GLenum mTextureTarget;
-  RefPtr<gl::GLContext> mGL;
-  nsTArray<GLuint> mCreatedTextures;
-  nsTArray<GLuint> mUnusedTextures;
-};
-
-
-
 class CompositorOGL final : public Compositor
 {
   typedef mozilla::gl::GLContext GLContext;
@@ -212,7 +172,6 @@ public:
                             const gfx::Rect& aVisibleRect) override;
 
   virtual void EndFrame() override;
-  virtual void EndFrameForExternalComposition(const gfx::Matrix& aTransform) override;
 
   virtual bool SupportsPartialTextureUpdate() override;
 
@@ -249,19 +208,6 @@ public:
   virtual void Pause() override;
   virtual bool Resume() override;
 
-  virtual bool HasImageHostOverlays() override
-  {
-    return false;
-  }
-
-  virtual void AddImageHostOverlay(ImageHostOverlay* aOverlay) override
-  {
-  }
-
-  virtual void RemoveImageHostOverlay(ImageHostOverlay* aOverlay) override
-  {
-  }
-
   GLContext* gl() const { return mGLContext; }
   
 
@@ -275,8 +221,6 @@ public:
   GLBlitTextureImageHelper* BlitTextureImageHelper();
 
   
-
-
 
 
 

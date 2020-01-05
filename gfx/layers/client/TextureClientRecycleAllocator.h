@@ -126,9 +126,6 @@ protected:
   std::map<TextureClient*, RefPtr<TextureClientHolder> > mInUseClients;
 
   
-  
-  
-  
   std::stack<RefPtr<TextureClientHolder> > mPooledClients;
   Mutex mLock;
   bool mIsDestroyed;

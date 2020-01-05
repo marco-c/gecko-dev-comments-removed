@@ -119,12 +119,6 @@ public:
 
 
 
-  virtual void EndFrameForExternalComposition(const gfx::Matrix& aTransform) override {}
-
-  
-
-
-
   virtual void PrepareViewport(const gfx::IntSize& aSize);
   virtual void PrepareViewport(const gfx::IntSize& aSize, const gfx::Matrix4x4& aProjection,
                                float aZNear, float aZFar);

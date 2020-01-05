@@ -200,7 +200,6 @@ public:
 
 BasicCompositor::BasicCompositor(CompositorBridgeParent* aParent, widget::CompositorWidget* aWidget)
   : Compositor(aWidget, aParent)
-  , mDidExternalComposition(false)
   , mIsPendingEndRemoteDrawing(false)
 {
   MOZ_COUNT_CTOR(BasicCompositor);
@@ -784,16 +783,9 @@ BasicCompositor::BeginFrame(const nsIntRegion& aInvalidRegion,
   IntRect rect = IntRect(0, 0, intRect.width, intRect.height);
 
   LayoutDeviceIntRegion invalidRegionSafe;
-  if (mDidExternalComposition) {
-    
-    
-    invalidRegionSafe = intRect;
-    mDidExternalComposition = false;
-  } else {
-    
-    invalidRegionSafe.And(
+  
+  invalidRegionSafe.And(
       LayoutDeviceIntRegion::FromUnknownRegion(aInvalidRegion), intRect);
-  }
 
   mInvalidRegion = invalidRegionSafe;
   mInvalidRect = mInvalidRegion.GetBounds();
@@ -971,16 +963,6 @@ void
 BasicCompositor::FinishPendingComposite()
 {
   TryToEndRemoteDrawing( true);
-}
-
-void
-BasicCompositor::EndFrameForExternalComposition(const gfx::Matrix& aTransform)
-{
-  MOZ_ASSERT(!mTarget);
-  MOZ_ASSERT(!mDrawTarget);
-  MOZ_ASSERT(!mRenderTarget);
-
-  mDidExternalComposition = true;
 }
 
 BasicCompositor*

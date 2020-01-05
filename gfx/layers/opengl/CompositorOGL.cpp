@@ -1629,15 +1629,6 @@ CompositorOGL::EndFrame()
 }
 
 void
-CompositorOGL::EndFrameForExternalComposition(const gfx::Matrix& aTransform)
-{
-  MOZ_ASSERT(!mTarget);
-  if (mTexturePool) {
-    mTexturePool->EndFrame();
-  }
-}
-
-void
 CompositorOGL::SetDestinationSurfaceSize(const IntSize& aSize)
 {
   mSurfaceSize.width = aSize.width;
@@ -1811,90 +1802,6 @@ PerUnitTexturePoolOGL::DestroyTextures()
     }
   }
   mTextures.SetLength(0);
-}
-
-void
-PerFrameTexturePoolOGL::DestroyTextures()
-{
-  if (!mGL->MakeCurrent()) {
-    return;
-  }
-
-  if (mUnusedTextures.Length() > 0) {
-    mGL->fDeleteTextures(mUnusedTextures.Length(), &mUnusedTextures[0]);
-    mUnusedTextures.Clear();
-  }
-
-  if (mCreatedTextures.Length() > 0) {
-    mGL->fDeleteTextures(mCreatedTextures.Length(), &mCreatedTextures[0]);
-    mCreatedTextures.Clear();
-  }
-}
-
-GLuint
-PerFrameTexturePoolOGL::GetTexture(GLenum aTarget, GLenum)
-{
-  if (mTextureTarget == 0) {
-    mTextureTarget = aTarget;
-  }
-
-  
-  
-  
-  
-  
-  
-  MOZ_ASSERT(mTextureTarget == aTarget);
-
-  GLuint texture = 0;
-
-  if (!mUnusedTextures.IsEmpty()) {
-    
-    texture = mUnusedTextures[0];
-    mUnusedTextures.RemoveElementAt(0);
-  } else if (mGL->MakeCurrent()) {
-    
-    mGL->fGenTextures(1, &texture);
-    mGL->fBindTexture(aTarget, texture);
-    mGL->fTexParameteri(aTarget, LOCAL_GL_TEXTURE_WRAP_S, LOCAL_GL_CLAMP_TO_EDGE);
-    mGL->fTexParameteri(aTarget, LOCAL_GL_TEXTURE_WRAP_T, LOCAL_GL_CLAMP_TO_EDGE);
-  }
-
-  if (texture) {
-    mCreatedTextures.AppendElement(texture);
-  }
-
-  return texture;
-}
-
-void
-PerFrameTexturePoolOGL::EndFrame()
-{
-  if (!mGL->MakeCurrent()) {
-    
-    
-    mCreatedTextures.Clear();
-    mUnusedTextures.Clear();
-    return;
-  }
-
-  
-  
-  if (gfxPrefs::OverzealousGrallocUnlocking()) {
-    mUnusedTextures.AppendElements(mCreatedTextures);
-    mCreatedTextures.Clear();
-  }
-
-  
-  for (size_t i = 0; i < mUnusedTextures.Length(); i++) {
-    GLuint texture = mUnusedTextures[i];
-    mGL->fDeleteTextures(1, &texture);
-  }
-  mUnusedTextures.Clear();
-
-  
-  mUnusedTextures.AppendElements(mCreatedTextures);
-  mCreatedTextures.Clear();
 }
 
 } 

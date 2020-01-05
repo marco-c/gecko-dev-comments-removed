@@ -66,8 +66,6 @@ enum class SurfaceMode : int8_t {
 };
 
 
-
-
 enum class LayerRenderStateFlags : int8_t {
   LAYER_RENDER_STATE_DEFAULT = 0,
   ORIGIN_BOTTOM_LEFT = 1 << 0,

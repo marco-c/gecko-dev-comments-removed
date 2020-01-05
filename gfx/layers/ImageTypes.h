@@ -27,23 +27,6 @@ enum class ImageFormat {
 
 
 
-  GRALLOC_PLANAR_YCBCR,
-
-  
-
-
-
-
-
-
-
-  GONK_CAMERA_IMAGE,
-
-  
-
-
-
-
   SHARED_RGB,
 
   

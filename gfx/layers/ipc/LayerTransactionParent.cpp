@@ -24,7 +24,6 @@
 #include "mozilla/layers/ImageLayerComposite.h"
 #include "mozilla/layers/LayerManagerComposite.h"
 #include "mozilla/layers/LayersMessages.h"  
-#include "mozilla/layers/LayersSurfaces.h"  
 #include "mozilla/layers/LayersTypes.h"  
 #include "mozilla/layers/PCompositableParent.h"
 #include "mozilla/layers/PLayerParent.h"  
@@ -160,14 +159,11 @@ LayerTransactionParent::~LayerTransactionParent()
 {
 }
 
-mozilla::ipc::IPCResult
+bool
 LayerTransactionParent::RecvShutdown()
 {
   Destroy();
-  if (!Send__delete__(this)) {
-    return IPC_FAIL_NO_REASON(this);
-  }
-  return IPC_OK();
+  return Send__delete__(this);
 }
 
 void
@@ -182,7 +178,7 @@ LayerTransactionParent::Destroy()
   mDestroyed = true;
 }
 
-mozilla::ipc::IPCResult
+bool
 LayerTransactionParent::RecvUpdateNoSwap(InfallibleTArray<Edit>&& cset,
                                          InfallibleTArray<OpDestroy>&& aToDestroy,
                                          const uint64_t& aFwdTransactionId,
@@ -231,15 +227,15 @@ private:
   InfallibleTArray<OpDestroy>* mActorsToDestroy;
 };
 
-mozilla::ipc::IPCResult
+bool
 LayerTransactionParent::RecvPaintTime(const uint64_t& aTransactionId,
                                       const TimeDuration& aPaintTime)
 {
   mCompositorBridge->UpdatePaintTime(this, aPaintTime);
-  return IPC_OK();
+  return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 LayerTransactionParent::RecvUpdate(InfallibleTArray<Edit>&& cset,
                                    InfallibleTArray<OpDestroy>&& aToDestroy,
                                    const uint64_t& aFwdTransactionId,
@@ -270,7 +266,7 @@ LayerTransactionParent::RecvUpdate(InfallibleTArray<Edit>&& cset,
     for (const auto& op : aToDestroy) {
       DestroyActor(op);
     }
-    return IPC_OK();
+    return true;
   }
 
   
@@ -358,7 +354,7 @@ LayerTransactionParent::RecvUpdate(InfallibleTArray<Edit>&& cset,
       ShadowLayerParent* layerParent = AsLayerComposite(osla);
       Layer* layer = layerParent->AsLayer();
       if (!layer) {
-        return IPC_FAIL_NO_REASON(this);
+        return false;
       }
       const LayerAttributes& attrs = osla.attrs();
 
@@ -423,7 +419,7 @@ LayerTransactionParent::RecvUpdate(InfallibleTArray<Edit>&& cset,
 
         PaintedLayerComposite* paintedLayer = layerParent->AsPaintedLayerComposite();
         if (!paintedLayer) {
-          return IPC_FAIL_NO_REASON(this);
+          return false;
         }
         const PaintedLayerAttributes& attrs =
           specific.get_PaintedLayerAttributes();
@@ -437,7 +433,7 @@ LayerTransactionParent::RecvUpdate(InfallibleTArray<Edit>&& cset,
 
         ContainerLayerComposite* containerLayer = layerParent->AsContainerLayerComposite();
         if (!containerLayer) {
-          return IPC_FAIL_NO_REASON(this);
+          return false;
         }
         const ContainerLayerAttributes& attrs =
           specific.get_ContainerLayerAttributes();
@@ -454,7 +450,7 @@ LayerTransactionParent::RecvUpdate(InfallibleTArray<Edit>&& cset,
 
         ColorLayerComposite* colorLayer = layerParent->AsColorLayerComposite();
         if (!colorLayer) {
-          return IPC_FAIL_NO_REASON(this);
+          return false;
         }
         colorLayer->SetColor(specific.get_ColorLayerAttributes().color().value());
         colorLayer->SetBounds(specific.get_ColorLayerAttributes().bounds());
@@ -465,7 +461,7 @@ LayerTransactionParent::RecvUpdate(InfallibleTArray<Edit>&& cset,
 
         CanvasLayerComposite* canvasLayer = layerParent->AsCanvasLayerComposite();
         if (!canvasLayer) {
-          return IPC_FAIL_NO_REASON(this);
+          return false;
         }
         canvasLayer->SetSamplingFilter(specific.get_CanvasLayerAttributes().samplingFilter());
         canvasLayer->SetBounds(specific.get_CanvasLayerAttributes().bounds());
@@ -476,7 +472,7 @@ LayerTransactionParent::RecvUpdate(InfallibleTArray<Edit>&& cset,
 
         RefLayerComposite* refLayer = layerParent->AsRefLayerComposite();
         if (!refLayer) {
-          return IPC_FAIL_NO_REASON(this);
+          return false;
         }
         refLayer->SetReferentId(specific.get_RefLayerAttributes().id());
         refLayer->SetEventRegionsOverride(specific.get_RefLayerAttributes().eventRegionsOverride());
@@ -487,7 +483,7 @@ LayerTransactionParent::RecvUpdate(InfallibleTArray<Edit>&& cset,
 
         ImageLayerComposite* imageLayer = layerParent->AsImageLayerComposite();
         if (!imageLayer) {
-          return IPC_FAIL_NO_REASON(this);
+          return false;
         }
         const ImageLayerAttributes& attrs = specific.get_ImageLayerAttributes();
         imageLayer->SetSamplingFilter(attrs.samplingFilter());
@@ -516,11 +512,11 @@ LayerTransactionParent::RecvUpdate(InfallibleTArray<Edit>&& cset,
 
       Layer* newRoot = AsLayerComposite(edit.get_OpSetRoot())->AsLayer();
       if (!newRoot) {
-        return IPC_FAIL_NO_REASON(this);
+        return false;
       }
       if (newRoot->GetParent()) {
         
-        return IPC_FAIL_NO_REASON(this);
+        return false;
       }
       mRoot = newRoot;
 
@@ -533,13 +529,13 @@ LayerTransactionParent::RecvUpdate(InfallibleTArray<Edit>&& cset,
       const OpInsertAfter& oia = edit.get_OpInsertAfter();
       Layer* child = ShadowChild(oia)->AsLayer();
       if (!child) {
-        return IPC_FAIL_NO_REASON(this);
+        return false;
       }
       ContainerLayerComposite* container = ShadowContainer(oia)->AsContainerLayerComposite();
       if (!container ||
           !container->InsertAfter(child, ShadowAfter(oia)->AsLayer()))
       {
-        return IPC_FAIL_NO_REASON(this);
+        return false;
       }
 
       updateHitTestingTree = true;
@@ -551,13 +547,13 @@ LayerTransactionParent::RecvUpdate(InfallibleTArray<Edit>&& cset,
       const OpPrependChild& oac = edit.get_OpPrependChild();
       Layer* child = ShadowChild(oac)->AsLayer();
       if (!child) {
-        return IPC_FAIL_NO_REASON(this);
+        return false;
       }
       ContainerLayerComposite* container = ShadowContainer(oac)->AsContainerLayerComposite();
       if (!container ||
           !container->InsertAfter(child, nullptr))
       {
-        return IPC_FAIL_NO_REASON(this);
+        return false;
       }
 
       updateHitTestingTree = true;
@@ -569,13 +565,13 @@ LayerTransactionParent::RecvUpdate(InfallibleTArray<Edit>&& cset,
       const OpRemoveChild& orc = edit.get_OpRemoveChild();
       Layer* childLayer = ShadowChild(orc)->AsLayer();
       if (!childLayer) {
-        return IPC_FAIL_NO_REASON(this);
+        return false;
       }
       ContainerLayerComposite* container = ShadowContainer(orc)->AsContainerLayerComposite();
       if (!container ||
           !container->RemoveChild(childLayer))
       {
-        return IPC_FAIL_NO_REASON(this);
+        return false;
       }
 
       updateHitTestingTree = true;
@@ -587,13 +583,13 @@ LayerTransactionParent::RecvUpdate(InfallibleTArray<Edit>&& cset,
       const OpRepositionChild& orc = edit.get_OpRepositionChild();
       Layer* child = ShadowChild(orc)->AsLayer();
       if (!child) {
-        return IPC_FAIL_NO_REASON(this);
+        return false;
       }
       ContainerLayerComposite* container = ShadowContainer(orc)->AsContainerLayerComposite();
       if (!container ||
           !container->RepositionChild(child, ShadowAfter(orc)->AsLayer()))
       {
-        return IPC_FAIL_NO_REASON(this);
+        return false;
       }
 
       updateHitTestingTree = true;
@@ -605,13 +601,13 @@ LayerTransactionParent::RecvUpdate(InfallibleTArray<Edit>&& cset,
       const OpRaiseToTopChild& rtc = edit.get_OpRaiseToTopChild();
       Layer* child = ShadowChild(rtc)->AsLayer();
       if (!child) {
-        return IPC_FAIL_NO_REASON(this);
+        return false;
       }
       ContainerLayerComposite* container = ShadowContainer(rtc)->AsContainerLayerComposite();
       if (!container ||
           !container->RepositionChild(child, nullptr))
       {
-        return IPC_FAIL_NO_REASON(this);
+        return false;
       }
 
       updateHitTestingTree = true;
@@ -620,7 +616,7 @@ LayerTransactionParent::RecvUpdate(InfallibleTArray<Edit>&& cset,
     case Edit::TCompositableOperation: {
       if (!ReceiveCompositableUpdate(edit.get_CompositableOperation(),
                                 replyv)) {
-        return IPC_FAIL_NO_REASON(this);
+        return false;
       }
       break;
     }
@@ -630,10 +626,10 @@ LayerTransactionParent::RecvUpdate(InfallibleTArray<Edit>&& cset,
       if (mPendingCompositorUpdates) {
         
         
-        return IPC_OK();
+        return true;
       }
       if (!Attach(cast(op.layerParent()), host, false)) {
-        return IPC_FAIL_NO_REASON(this);
+        return false;
       }
       host->SetCompositorID(mLayerManager->GetCompositor()->GetCompositorID());
       break;
@@ -643,16 +639,16 @@ LayerTransactionParent::RecvUpdate(InfallibleTArray<Edit>&& cset,
       PCompositableParent* compositableParent = CompositableMap::Get(op.containerID());
       if (!compositableParent) {
         NS_ERROR("CompositableParent not found in the map");
-        return IPC_FAIL_NO_REASON(this);
+        return false;
       }
       if (mPendingCompositorUpdates) {
         
         
-        return IPC_OK();
+        return true;
       }
       CompositableHost* host = CompositableHost::FromIPDLActor(compositableParent);
       if (!Attach(cast(op.layerParent()), host, true)) {
-        return IPC_FAIL_NO_REASON(this);
+        return false;
       }
       host->SetCompositorID(mLayerManager->GetCompositor()->GetCompositorID());
       break;
@@ -713,14 +709,14 @@ LayerTransactionParent::RecvUpdate(InfallibleTArray<Edit>&& cset,
   }
 
   profiler_tracing("Paint", "LayerTransaction", TRACING_INTERVAL_END);
-  return IPC_OK();
+  return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 LayerTransactionParent::RecvSetLayerObserverEpoch(const uint64_t& aLayerObserverEpoch)
 {
   mChildEpoch = aLayerObserverEpoch;
-  return IPC_OK();
+  return true;
 }
 
 bool
@@ -734,59 +730,56 @@ LayerTransactionParent::ShouldParentObserveEpoch()
   return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 LayerTransactionParent::RecvSetTestSampleTime(const TimeStamp& aTime)
 {
-  if (!mCompositorBridge->SetTestSampleTime(this, aTime)) {
-    return IPC_FAIL_NO_REASON(this);
-  }
-  return IPC_OK();
+  return mCompositorBridge->SetTestSampleTime(this, aTime);
 }
 
-mozilla::ipc::IPCResult
+bool
 LayerTransactionParent::RecvLeaveTestMode()
 {
   mCompositorBridge->LeaveTestMode(this);
-  return IPC_OK();
+  return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 LayerTransactionParent::RecvGetAnimationOpacity(PLayerParent* aParent,
                                                 float* aOpacity,
                                                 bool* aHasAnimationOpacity)
 {
   *aHasAnimationOpacity = false;
   if (mDestroyed || !layer_manager() || layer_manager()->IsDestroyed()) {
-    return IPC_FAIL_NO_REASON(this);
+    return false;
   }
 
   Layer* layer = cast(aParent)->AsLayer();
   if (!layer) {
-    return IPC_FAIL_NO_REASON(this);
+    return false;
   }
 
   mCompositorBridge->ApplyAsyncProperties(this);
 
   if (!layer->AsLayerComposite()->GetShadowOpacitySetByAnimation()) {
-    return IPC_OK();
+    return true;
   }
 
   *aOpacity = layer->GetLocalOpacity();
   *aHasAnimationOpacity = true;
-  return IPC_OK();
+  return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 LayerTransactionParent::RecvGetAnimationTransform(PLayerParent* aParent,
                                                   MaybeTransform* aTransform)
 {
   if (mDestroyed || !layer_manager() || layer_manager()->IsDestroyed()) {
-    return IPC_FAIL_NO_REASON(this);
+    return false;
   }
 
   Layer* layer = cast(aParent)->AsLayer();
   if (!layer) {
-    return IPC_FAIL_NO_REASON(this);
+    return false;
   }
 
   
@@ -803,7 +796,7 @@ LayerTransactionParent::RecvGetAnimationTransform(PLayerParent* aParent,
   
   if (!layer->AsLayerComposite()->GetShadowTransformSetByAnimation()) {
     *aTransform = mozilla::void_t();
-    return IPC_OK();
+    return true;
   }
 
   
@@ -854,7 +847,7 @@ LayerTransactionParent::RecvGetAnimationTransform(PLayerParent* aParent,
   transform._43 *= devPerCss;
 
   *aTransform = transform;
-  return IPC_OK();
+  return true;
 }
 
 static AsyncPanZoomController*
@@ -876,71 +869,69 @@ GetAPZCForViewID(Layer* aLayer, FrameMetrics::ViewID aScrollID)
   return resultApzc;
 }
 
-mozilla::ipc::IPCResult
+bool
 LayerTransactionParent::RecvSetAsyncScrollOffset(const FrameMetrics::ViewID& aScrollID,
                                                  const float& aX, const float& aY)
 {
   if (mDestroyed || !layer_manager() || layer_manager()->IsDestroyed()) {
-    return IPC_FAIL_NO_REASON(this);
+    return false;
   }
 
   AsyncPanZoomController* controller = GetAPZCForViewID(mRoot, aScrollID);
   if (!controller) {
-    return IPC_FAIL_NO_REASON(this);
+    return false;
   }
   controller->SetTestAsyncScrollOffset(CSSPoint(aX, aY));
-  return IPC_OK();
+  return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 LayerTransactionParent::RecvSetAsyncZoom(const FrameMetrics::ViewID& aScrollID,
                                          const float& aValue)
 {
   if (mDestroyed || !layer_manager() || layer_manager()->IsDestroyed()) {
-    return IPC_FAIL_NO_REASON(this);
+    return false;
   }
 
   AsyncPanZoomController* controller = GetAPZCForViewID(mRoot, aScrollID);
   if (!controller) {
-    return IPC_FAIL_NO_REASON(this);
+    return false;
   }
   controller->SetTestAsyncZoom(LayerToParentLayerScale(aValue));
-  return IPC_OK();
+  return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 LayerTransactionParent::RecvFlushApzRepaints()
 {
   mCompositorBridge->FlushApzRepaints(this);
-  return IPC_OK();
+  return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 LayerTransactionParent::RecvGetAPZTestData(APZTestData* aOutData)
 {
   mCompositorBridge->GetAPZTestData(this, aOutData);
-  return IPC_OK();
+  return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 LayerTransactionParent::RecvRequestProperty(const nsString& aProperty, float* aValue)
 {
   if (aProperty.Equals(NS_LITERAL_STRING("overdraw"))) {
     *aValue = layer_manager()->GetCompositor()->GetFillRatio();
-  } else if (aProperty.Equals(NS_LITERAL_STRING("missed_hwc"))) {
-    *aValue = layer_manager()->LastFrameMissedHWC() ? 1 : 0;
   } else {
     *aValue = -1;
   }
-  return IPC_OK();
+  return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 LayerTransactionParent::RecvSetConfirmedTargetAPZC(const uint64_t& aBlockId,
                                                    nsTArray<ScrollableLayerGuid>&& aTargets)
 {
   mCompositorBridge->SetConfirmedTargetAPZC(this, aBlockId, aTargets);
-  return IPC_OK();
+  return true;
 }
 
 bool
@@ -977,7 +968,7 @@ LayerTransactionParent::Attach(ShadowLayerParent* aLayerParent,
   return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 LayerTransactionParent::RecvClearCachedResources()
 {
   if (mRoot) {
@@ -987,14 +978,14 @@ LayerTransactionParent::RecvClearCachedResources()
     mLayerManager->ClearCachedResources(mRoot);
   }
   mCompositorBridge->NotifyClearCachedResources(this);
-  return IPC_OK();
+  return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 LayerTransactionParent::RecvForceComposite()
 {
   mCompositorBridge->ForceComposite(this);
-  return IPC_OK();
+  return true;
 }
 
 PLayerParent*
