@@ -850,6 +850,15 @@ ChooseFontSize(gfxFontconfigFontEntry* aEntry,
             bestSize = size;
         }
     }
+    
+    if (bestSize >= 0.0) {
+        FcBool scalable;
+        if (FcPatternGetBool(aEntry->GetPattern(),
+                             FC_SCALABLE, 0, &scalable) == FcResultMatch &&
+            scalable) {
+            return requestedSize;
+        }
+    }
     return bestSize;
 }
 
@@ -1012,6 +1021,12 @@ gfxFontconfigFontFamily::AddFontPattern(FcPattern* aFontPattern)
     if (FcPatternGetBool(aFontPattern, FC_OUTLINE, 0, &outline) != FcResultMatch ||
         !outline) {
         mHasNonScalableFaces = true;
+
+        FcBool scalable;
+        if (FcPatternGetBool(aFontPattern, FC_SCALABLE, 0, &scalable) == FcResultMatch &&
+            scalable) {
+            mForceScalable = true;
+        }
     }
 
     nsCountedRef<FcPattern> pattern(aFontPattern);
@@ -1023,7 +1038,9 @@ static const double kRejectDistance = 10000.0;
 
 
 static double
-SizeDistance(gfxFontconfigFontEntry* aEntry, const gfxFontStyle& aStyle)
+SizeDistance(gfxFontconfigFontEntry* aEntry,
+             const gfxFontStyle& aStyle,
+             bool aForceScalable)
 {
     double requestedSize = SizeForStyle(aEntry, aStyle);
     double bestDist = -1.0;
@@ -1040,7 +1057,7 @@ SizeDistance(gfxFontconfigFontEntry* aEntry, const gfxFontStyle& aStyle)
     if (bestDist < 0.0) {
         
         return -1.0;
-    } else if (5.0 * bestDist < requestedSize) {
+    } else if (aForceScalable || 5.0 * bestDist < requestedSize) {
         
         
         return bestDist;
@@ -1074,7 +1091,7 @@ gfxFontconfigFontFamily::FindAllFontsForStyle(const gfxFontStyle& aFontStyle,
     for (size_t i = 0; i < aFontEntryList.Length(); i++) {
         gfxFontconfigFontEntry* entry =
             static_cast<gfxFontconfigFontEntry*>(aFontEntryList[i]);
-        double dist = SizeDistance(entry, aFontStyle);
+        double dist = SizeDistance(entry, aFontStyle, mForceScalable);
         
         
         if (dist < 0.0 ||
