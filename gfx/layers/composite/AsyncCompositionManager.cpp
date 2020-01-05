@@ -931,6 +931,7 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
             }
           }
 #else
+          *aOutFoundRoot = false;
           
           
           mIsFirstPaint = false;
