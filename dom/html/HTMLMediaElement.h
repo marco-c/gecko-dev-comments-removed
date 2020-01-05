@@ -421,10 +421,7 @@ public:
 
   
 
-  MediaError* GetError() const
-  {
-    return mError;
-  }
+  MediaError* GetError() const;
 
   
   void SetSrc(const nsAString& aSrc, ErrorResult& aRv)
@@ -761,6 +758,7 @@ protected:
   virtual ~HTMLMediaElement();
 
   class ChannelLoader;
+  class ErrorSink;
   class MediaLoadListener;
   class MediaStreamTracksAvailableCallback;
   class MediaStreamTrackListener;
@@ -1358,9 +1356,6 @@ protected:
   RefPtr<ChannelLoader> mChannelLoader;
 
   
-  RefPtr<MediaError> mError;
-
-  
   
   
   uint32_t mCurrentLoadID;
@@ -1745,6 +1740,8 @@ private:
   bool mAudible;
 
   Visibility mVisibilityState;
+
+  UniquePtr<ErrorSink> mErrorSink;
 };
 
 } 
