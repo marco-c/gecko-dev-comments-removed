@@ -86,22 +86,22 @@ impl StorageManager {
         }
     }
 
-    fn length(&self, sender: Sender<u32>, url: Url, storage_type: StorageType) {
+    fn length(&self, sender: Sender<usize>, url: Url, storage_type: StorageType) {
         let origin = self.get_origin_as_string(url);
         let data = self.select_data(storage_type);
-        sender.send(data.get(&origin).map_or(0u, |entry| entry.len()) as u32).unwrap();
+        sender.send(data.get(&origin).map_or(0, |entry| entry.len())).unwrap();
     }
 
     fn key(&self, sender: Sender<Option<DOMString>>, url: Url, storage_type: StorageType, index: u32) {
         let origin = self.get_origin_as_string(url);
         let data = self.select_data(storage_type);
         sender.send(data.get(&origin)
-                    .and_then(|entry| entry.keys().nth(index as uint))
+                    .and_then(|entry| entry.keys().nth(index as usize))
                     .map(|key| key.clone())).unwrap();
     }
 
-    /// Sends Some(old_value) in case there was a previous value with the same key name but with different
-    /// value name, otherwise sends None
+    
+    
     fn set_item(&mut self, sender: Sender<(bool, Option<DOMString>)>, url: Url, storage_type: StorageType, name: DOMString, value: DOMString) {
         let origin = self.get_origin_as_string(url);
         let data = self.select_data_mut(storage_type);
@@ -129,7 +129,7 @@ impl StorageManager {
                     .map(|value| value.to_string())).unwrap();
     }
 
-    /// Sends Some(old_value) in case there was a previous value with the key name, otherwise sends None
+    
     fn remove_item(&mut self, sender: Sender<Option<DOMString>>, url: Url, storage_type: StorageType, name: DOMString) {
         let origin = self.get_origin_as_string(url);
         let data = self.select_data_mut(storage_type);

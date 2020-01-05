@@ -16,7 +16,7 @@ pub enum StorageType {
 
 pub enum StorageTaskMsg {
     
-    Length(Sender<u32>, Url, StorageType),
+    Length(Sender<usize>, Url, StorageType),
 
     
     Key(Sender<Option<DOMString>>, Url, StorageType, u32),

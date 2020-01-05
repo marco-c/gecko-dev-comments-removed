@@ -70,8 +70,8 @@ fn load(mut load_data: LoadData, classifier: Arc<MIMEClassifier>, cookies_chan: 
     
     
     
-    let max_redirects = 50u;
-    let mut iters = 0u;
+    let max_redirects = 50;
+    let mut iters = 0;
     let start_chan = load_data.consumer;
     let mut url = load_data.url.clone();
     let mut redirected_to = HashSet::new();
