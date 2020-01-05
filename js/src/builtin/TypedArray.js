@@ -1074,10 +1074,43 @@ function TypedArraySome(callbackfn) {
 
 
 
+
 function TypedArrayCompare(x, y) {
     
     assert(typeof x === "number" && typeof y === "number",
            "x and y are not numbers.");
+
+    
+
+    
+    if (x < y)
+        return -1;
+
+    
+    if (x > y)
+        return 1;
+
+    
+    if (x === 0 && y === 0)
+        return (1/x > 0 ? 1 : 0) - (1/y > 0 ? 1 : 0);
+
+    
+    if (Number_isNaN(x))
+        return Number_isNaN(y) ? 0 : 1;
+
+    
+    return Number_isNaN(y) ? -1 : 0;
+}
+
+
+function TypedArrayCompareInt(x, y) {
+    
+    assert(typeof x === "number" && typeof y === "number",
+           "x and y are not numbers.");
+    assert((x === (x|0) || x === (x>>>0)) && (y === (y|0) || y === (y>>>0)),
+           "x and y are not int32/uint32 numbers.");
+
+    
 
     
     var diff = x - y;
@@ -1085,19 +1118,9 @@ function TypedArrayCompare(x, y) {
         return diff;
 
     
-    if (x === 0 && y === 0)
-        return (1/x > 0 ? 1 : 0) - (1/y > 0 ? 1 : 0);
 
     
-
-    
-    if (Number_isNaN(x) && Number_isNaN(y))
-        return 0;
-
-    
-    if (Number_isNaN(x) || Number_isNaN(y))
-        return Number_isNaN(x) ? 1 : -1;
-
+    return 0;
 }
 
 
@@ -1132,13 +1155,13 @@ function TypedArraySort(comparefn) {
         } else if (IsInt8TypedArray(obj)) {
             return CountingSort(obj, len, true );
         } else if (IsUint16TypedArray(obj)) {
-            return RadixSort(obj, len, buffer, 2 , false , false , TypedArrayCompare);
+            return RadixSort(obj, len, buffer, 2 , false , false , TypedArrayCompareInt);
         } else if (IsInt16TypedArray(obj)) {
-            return RadixSort(obj, len, buffer, 2 , true , false , TypedArrayCompare);
+            return RadixSort(obj, len, buffer, 2 , true , false , TypedArrayCompareInt);
         } else if (IsUint32TypedArray(obj)) {
-            return RadixSort(obj, len, buffer, 4 , false , false , TypedArrayCompare);
+            return RadixSort(obj, len, buffer, 4 , false , false , TypedArrayCompareInt);
         } else if (IsInt32TypedArray(obj)) {
-            return RadixSort(obj, len, buffer, 4 , true , false , TypedArrayCompare);
+            return RadixSort(obj, len, buffer, 4 , true , false , TypedArrayCompareInt);
         } else if (IsFloat32TypedArray(obj)) {
             return RadixSort(obj, len, buffer, 4 , true , true , TypedArrayCompare);
         }
