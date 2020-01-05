@@ -385,6 +385,9 @@ private:
   RefPtr<mozilla::css::ImageValue> mImageValue;
   RefPtr<mozilla::dom::ImageTracker> mImageTracker;
 
+  
+  RefPtr<mozilla::dom::DocGroup> mDocGroup;
+
   Mode mModeFlags;
   bool mResolved;
 };
