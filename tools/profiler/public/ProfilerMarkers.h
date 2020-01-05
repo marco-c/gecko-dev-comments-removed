@@ -139,6 +139,26 @@ private:
   uint16_t mPhase;
 };
 
+class UserTimingMarkerPayload : public ProfilerMarkerPayload
+{
+public:
+  UserTimingMarkerPayload(const nsAString& aName,
+                          const mozilla::TimeStamp& aStartTime);
+  UserTimingMarkerPayload(const nsAString& aName,
+                          const mozilla::TimeStamp& aStartTime,
+                          const mozilla::TimeStamp& aEndTime);
+  ~UserTimingMarkerPayload();
+
+  virtual void StreamPayload(SpliceableJSONWriter& aWriter,
+                             const mozilla::TimeStamp& aStartTime,
+                             UniqueStacks& aUniqueStacks) override;
+
+private:
+  
+  const char* mEntryType;
+  nsString mName;
+};
+
 
 
 
