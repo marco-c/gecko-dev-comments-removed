@@ -1865,7 +1865,7 @@ impl NodeMethods for Node {
 
     
     fn BaseURI(&self) -> DOMString {
-        self.owner_doc().URL()
+        DOMString::from(self.owner_doc().base_url().as_str())
     }
 
     
