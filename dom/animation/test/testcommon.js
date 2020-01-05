@@ -237,6 +237,15 @@ function waitForAnimationFrames(frameCount, onFrame) {
 
 
 
+function waitForIdle() {
+  return new Promise(resolve => {
+    requestIdleCallback(resolve);
+  });
+}
+
+
+
+
 
 
 function waitForAllAnimations(animations) {
