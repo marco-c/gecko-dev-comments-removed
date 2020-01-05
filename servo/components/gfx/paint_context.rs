@@ -40,6 +40,10 @@ pub struct PaintContext<'a> {
     pub page_rect: Rect<f32>,
     
     pub screen_rect: Rect<uint>,
+    
+    
+    
+    pub transient_clip_rect: Option<Rect<Au>>,
 }
 
 enum Direction {
@@ -130,11 +134,11 @@ impl<'a> PaintContext<'a>  {
                                                                             size,
                                                                             stride as i32,
                                                                             source_format);
-        let source_rect = Rect(Point2D(0u as AzFloat, 0u as AzFloat),
+        let source_rect = Rect(Point2D(0.0, 0.0),
                                Size2D(image.width as AzFloat, image.height as AzFloat));
         let dest_rect = bounds.to_azure_rect();
         let draw_surface_options = DrawSurfaceOptions::new(Linear, true);
-        let draw_options = DrawOptions::new(1.0f64 as AzFloat, 0);
+        let draw_options = DrawOptions::new(1.0, 0);
         draw_target_ref.draw_surface(azure_surface,
                                      dest_rect,
                                      source_rect,
@@ -173,7 +177,7 @@ impl<'a> PaintContext<'a>  {
             }
             border_style::hidden                       => {
             }
-            //FIXME(sammykim): This doesn't work with dash_pattern and cap_style well. I referred firefox code.
+            
             border_style::dotted                       => {
                 self.draw_dashed_border_segment(direction, bounds, border, color_select, DottedBorder);
             }
@@ -221,86 +225,86 @@ impl<'a> PaintContext<'a>  {
         }
     }
 
-    // The following comment is wonderful, and stolen from
-    // gecko:gfx/thebes/gfxContext.cpp:RoundedRectangle for reference.
-    //
-    // It does not currently apply to the code, but will be extremely useful in
-    // the future when the below TODO is addressed.
-    //
-    // TODO(cgaebel): Switch from arcs to beziers for drawing the corners.
-    //                Then, add http://www.subcide.com/experiments/fail-whale/
-    //                to the reftest suite.
-    //
-    // ---------------------------------------------------------------
-    //
-    // For CW drawing, this looks like:
-    //
-    //  ...******0**      1    C
-    //              ****
-    //                  ***    2
-    //                     **
-    //                       *
-    //                        *
-    //                         3
-    //                         *
-    //                         *
-    //
-    // Where 0, 1, 2, 3 are the control points of the Bezier curve for
-    // the corner, and C is the actual corner point.
-    //
-    // At the start of the loop, the current point is assumed to be
-    // the point adjacent to the top left corner on the top
-    // horizontal.  Note that corner indices start at the top left and
-    // continue clockwise, whereas in our loop i = 0 refers to the top
-    // right corner.
-    //
-    // When going CCW, the control points are swapped, and the first
-    // corner that's drawn is the top left (along with the top segment).
-    //
-    // There is considerable latitude in how one chooses the four
-    // control points for a Bezier curve approximation to an ellipse.
-    // For the overall path to be continuous and show no corner at the
-    // endpoints of the arc, points 0 and 3 must be at the ends of the
-    // straight segments of the rectangle; points 0, 1, and C must be
-    // collinear; and points 3, 2, and C must also be collinear.  This
-    // leaves only two free parameters: the ratio of the line segments
-    // 01 and 0C, and the ratio of the line segments 32 and 3C.  See
-    // the following papers for extensive discussion of how to choose
-    // these ratios:
-    //
-    //   Dokken, Tor, et al. "Good approximation of circles by
-    //      curvature-continuous Bezier curves."  Computer-Aided
-    //      Geometric Design 7(1990) 33--41.
-    //   Goldapp, Michael. "Approximation of circular arcs by cubic
-    //      polynomials." Computer-Aided Geometric Design 8(1991) 227--238.
-    //   Maisonobe, Luc. "Drawing an elliptical arc using polylines,
-    //      quadratic, or cubic Bezier curves."
-    //      http://www.spaceroots.org/documents/ellipse/elliptical-arc.pdf
-    //
-    // We follow the approach in section 2 of Goldapp (least-error,
-    // Hermite-type approximation) and make both ratios equal to
-    //
-    //          2   2 + n - sqrt(2n + 28)
-    //  alpha = - * ---------------------
-    //          3           n - 4
-    //
-    // where n = 3( cbrt(sqrt(2)+1) - cbrt(sqrt(2)-1) ).
-    //
-    // This is the result of Goldapp's equation (10b) when the angle
-    // swept out by the arc is pi/2, and the parameter "a-bar" is the
-    // expression given immediately below equation (21).
-    //
-    // Using this value, the maximum radial error for a circle, as a
-    // fraction of the radius, is on the order of 0.2 x 10^-3.
-    // Neither Dokken nor Goldapp discusses error for a general
-    // ellipse; Maisonobe does, but his choice of control points
-    // follows different constraints, and Goldapp's expression for
-    // 'alpha' gives much smaller radial error, even for very flat
-    // ellipses, than Maisonobe's equivalent.
-    //
-    // For the various corners and for each axis, the sign of this
-    // constant changes, or it might be 0 -- it's multiplied by the
-    // appropriate multiplier from the list before using.
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
     #[allow(non_snake_case)]
     fn draw_border_path(&self,
@@ -309,7 +313,7 @@ impl<'a> PaintContext<'a>  {
                         border:    SideOffsets2D<f32>,
                         radius:    &BorderRadii<AzFloat>,
                         color:     Color) {
-        // T = top, B = bottom, L = left, R = right
+        
 
         let box_TL = bounds.origin;
         let box_TR = box_TL + Point2D(bounds.size.width, 0.0);
@@ -358,9 +362,9 @@ impl<'a> PaintContext<'a>  {
                 path_builder.line_to(corner_TR);
 
                 if radius.top_right != 0. {
-                    // the origin is the center of the arcs we're about to draw.
+                    
                     let origin = edge_TR + Point2D((border.right - radius.top_right).max(0.), radius.top_right);
-                    // the elbow is the inside of the border's curve.
+                    
                     let distance_to_elbow = (radius.top_right - border.top).max(0.);
 
                     path_builder.arc(origin, radius.top_right,  rad_T, rad_TR, false);
@@ -628,9 +632,9 @@ impl<'a> PaintContext<'a>  {
         self.draw_border_path(&original_bounds, direction, border, radius, scaled_color);
     }
 
-    pub fn draw_text(&mut self,
-                     text: &TextDisplayItem,
-                     current_transform: &Matrix2D<AzFloat>) {
+    pub fn draw_text(&mut self, text: &TextDisplayItem) {
+        let current_transform = self.draw_target.get_transform();
+
         
         
         
@@ -669,7 +673,7 @@ impl<'a> PaintContext<'a>  {
 
         
         if text.orientation != Upright {
-            self.draw_target.set_transform(current_transform)
+            self.draw_target.set_transform(&current_transform)
         }
     }
 
