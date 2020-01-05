@@ -2,7 +2,7 @@
 
 
 
-use bindings::ServoStyleSetData;
+use bindings::RawServoStyleSet;
 use euclid::Size2D;
 use euclid::size::TypedSize2D;
 use num_cpus;
@@ -61,7 +61,7 @@ impl PerDocumentStyleData {
         }
     }
 
-    pub fn borrow_mut_from_raw<'a>(data: *mut ServoStyleSetData) -> &'a mut Self {
+    pub fn borrow_mut_from_raw<'a>(data: *mut RawServoStyleSet) -> &'a mut Self {
         unsafe { &mut *(data as *mut PerDocumentStyleData) }
     }
 }
