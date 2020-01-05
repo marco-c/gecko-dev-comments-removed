@@ -1396,15 +1396,23 @@ nsAutoCompleteController::EnterMatch(bool aIsPopupSelection,
     if (selectedIndex >= 0) {
       nsAutoString inputValue;
       input->GetTextValue(inputValue);
-      bool defaultCompleted = mDefaultIndexCompleted &&
-                              inputValue.Equals(mPlaceholderCompletionString,
-                                                nsCaseInsensitiveStringComparator());
-      if (aIsPopupSelection || (!completeSelection && !defaultCompleted)) {
+      if (aIsPopupSelection || !completeSelection) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
         
         
         
         GetResultValueAt(selectedIndex, true, value);
-      } else if (defaultCompleted) {
+      } else if (mDefaultIndexCompleted &&
+                 inputValue.Equals(mPlaceholderCompletionString,
+                                   nsCaseInsensitiveStringComparator())) {
         
         
         
