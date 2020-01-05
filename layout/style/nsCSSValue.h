@@ -92,6 +92,7 @@ namespace css {
 
 struct URLValueData
 {
+protected:
   
   
   
@@ -111,6 +112,7 @@ struct URLValueData
                already_AddRefed<PtrHolder<nsIURI>> aReferrer,
                already_AddRefed<PtrHolder<nsIPrincipal>> aOriginPrincipal);
 
+public:
   bool operator==(const URLValueData& aOther) const;
 
   
@@ -128,9 +130,9 @@ struct URLValueData
 
   nsIURI* GetURI() const;
 
-  size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
-
   bool GetLocalURLFlag() const { return mLocalURLFlag; }
+
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(URLValueData)
 
 private:
   
@@ -147,11 +149,17 @@ private:
   
   bool mLocalURLFlag;
 
+protected:
+  virtual ~URLValueData() = default;
+
+  size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
+
+private:
   URLValueData(const URLValueData& aOther) = delete;
   URLValueData& operator=(const URLValueData& aOther) = delete;
 };
 
-struct URLValue : public URLValueData
+struct URLValue final : public URLValueData
 {
   
   URLValue(nsStringBuffer* aString, nsIURI* aBaseURI, nsIURI* aReferrer,
@@ -171,15 +179,9 @@ struct URLValue : public URLValueData
   URLValue& operator=(const URLValue&) = delete;
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
-
-protected:
-  ~URLValue() {}
-
-public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(URLValue)
 };
 
-struct ImageValue : public URLValueData
+struct ImageValue final : public URLValueData
 {
   
   
@@ -196,15 +198,13 @@ struct ImageValue : public URLValueData
 
   
 
-private:
+protected:
   ~ImageValue();
 
 public:
   
 
   nsRefPtrHashtable<nsPtrHashKey<nsIDocument>, imgRequestProxy> mRequests;
-
-  NS_INLINE_DECL_REFCOUNTING(ImageValue)
 };
 
 struct GridNamedArea {
@@ -1892,5 +1892,5 @@ protected:
   static const corner_type corners[4];
 };
 
-#endif
+#endif 
 
