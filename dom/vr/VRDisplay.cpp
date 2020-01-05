@@ -355,6 +355,7 @@ VRDisplay::VRDisplay(nsPIDOMWindowInner* aWindow, gfx::VRDisplayClient* aClient)
   , mClient(aClient)
   , mDepthNear(0.01f) 
   , mDepthFar(10000.0f) 
+  , mVRNavigationEventDepth(0)
 {
   const gfx::VRDisplayInfo& info = aClient->GetDisplayInfo();
   mDisplayId = info.GetDisplayID();
@@ -451,6 +452,34 @@ VRDisplay::ResetPose()
   mClient->ZeroSensor();
 }
 
+void
+VRDisplay::StartHandlingVRNavigationEvent()
+{
+  mHandlingVRNavigationEventStart = TimeStamp::Now();
+  ++mVRNavigationEventDepth;
+}
+
+void
+VRDisplay::StopHandlingVRNavigationEvent()
+{
+  MOZ_ASSERT(mVRNavigationEventDepth > 0);
+  --mVRNavigationEventDepth;
+}
+
+bool
+VRDisplay::IsHandlingVRNavigationEvent()
+{
+  if (mVRNavigationEventDepth == 0) {
+    return false;
+  }
+  if (mHandlingVRNavigationEventStart.IsNull()) {
+    return false;
+  }
+  TimeDuration timeout = TimeDuration::FromMilliseconds(gfxPrefs::VRNavigationTimeout());
+  return timeout <= TimeDuration(0) ||
+    (TimeStamp::Now() - mHandlingVRNavigationEventStart) <= timeout;
+}
+
 already_AddRefed<Promise>
 VRDisplay::RequestPresent(const nsTArray<VRLayer>& aLayers,
                           CallerType aCallerType,
@@ -470,6 +499,7 @@ VRDisplay::RequestPresent(const nsTArray<VRLayer>& aLayers,
 
   if (!EventStateManager::IsHandlingUserInput() &&
       aCallerType != CallerType::System &&
+      !IsHandlingVRNavigationEvent() &&
       gfxPrefs::VRRequireGesture()) {
     
     

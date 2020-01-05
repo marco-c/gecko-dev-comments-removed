@@ -5031,6 +5031,13 @@ pref("dom.vr.enabled", false);
 #else
 pref("dom.vr.enabled", true);
 #endif
+
+
+
+
+
+pref("dom.vr.navigation.timeout", 5000);
+
 pref("dom.vr.oculus.enabled", true);
 
 pref("dom.vr.osvr.enabled", false);
@@ -5629,7 +5636,7 @@ pref("prompts.authentication_dialog_abuse_limit", 3);
 pref("browser.storageManager.enabled", false);
 pref("browser.storageManager.pressureNotification.minIntervalMS", 1200000);
 pref("browser.storageManager.pressureNotification.usageThresholdGB", 5);
-pref("dom.IntersectionObserver.enabled", true);
+pref("dom.IntersectionObserver.enabled", false);
 
 
 pref("dom.moduleScripts.enabled", false);
@@ -5654,7 +5661,3 @@ pref("layers.advanced.boxshadow-outer-layers", 2);
 pref("layers.advanced.caret-layers", 2);
 pref("layers.advanced.displaybuttonborder-layers", 2);
 pref("layers.advanced.outline-layers", 2);
-
-
-
-user_pref("extensions.throw_on_docgroup_mismatch.enabled", true);

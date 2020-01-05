@@ -13687,7 +13687,12 @@ nsGlobalWindow::DispatchVRDisplayActivate(uint32_t aDisplayID,
       
       event->SetTrusted(true);
       bool defaultActionEnabled;
+      
+      
+      
+      display->StartHandlingVRNavigationEvent();
       Unused << DispatchEvent(event, &defaultActionEnabled);
+      display->StopHandlingVRNavigationEvent();
       
       
       return;
