@@ -7,6 +7,7 @@
 
 use canvas_traits::CanvasMsg;
 use compositor_msg::Epoch;
+use euclid::point::Point2D;
 use euclid::scale_factor::ScaleFactor;
 use euclid::size::{Size2D, TypedSize2D};
 use hyper::header::Headers;
@@ -284,6 +285,10 @@ pub enum ScriptMsg {
     
     Focus(PipelineId),
     
+    ForwardMouseButtonEvent(PipelineId, MouseEventType, MouseButton, Point2D<f32>),
+    
+    ForwardMouseMoveEvent(PipelineId, Point2D<f32>),
+    
     GetClipboardContents(IpcSender<String>),
     
     HeadParsed,
@@ -305,6 +310,24 @@ pub enum ScriptMsg {
     SetCursor(Cursor),
     
     ViewportConstrained(PipelineId, ViewportConstraints),
+}
+
+#[derive(Deserialize, HeapSizeOf, Serialize)]
+pub enum MouseEventType {
+    Click,
+    MouseDown,
+    MouseUp,
+}
+
+
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+pub enum MouseButton {
+    
+    Left,
+    
+    Middle,
+    
+    Right,
 }
 
 

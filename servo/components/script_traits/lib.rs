@@ -34,6 +34,7 @@ use msg::compositor_msg::{Epoch, LayerId, ScriptToCompositorMsg};
 use msg::constellation_msg::ScriptMsg as ConstellationMsg;
 use msg::constellation_msg::{ConstellationChan, Failure, PipelineId, WindowSizeData};
 use msg::constellation_msg::{Key, KeyModifiers, KeyState, LoadData, SubpageId};
+use msg::constellation_msg::{MouseButton, MouseEventType};
 use msg::constellation_msg::{MozBrowserEvent, PipelineNamespaceId};
 use msg::webdriver_msg::WebDriverScriptCommand;
 use net_traits::ResourceTask;
@@ -148,17 +149,6 @@ pub enum ConstellationControlMsg {
 
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
-pub enum MouseButton {
-    
-    Left,
-    
-    Middle,
-    
-    Right,
-}
-
-
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub enum TouchEventType {
     
     Down,
@@ -182,11 +172,7 @@ pub enum CompositorEvent {
     
     ResizeEvent(WindowSizeData),
     
-    ClickEvent(MouseButton, Point2D<f32>),
-    
-    MouseDownEvent(MouseButton, Point2D<f32>),
-    
-    MouseUpEvent(MouseButton, Point2D<f32>),
+    MouseButtonEvent(MouseEventType, MouseButton, Point2D<f32>),
     
     MouseMoveEvent(Option<Point2D<f32>>),
     
