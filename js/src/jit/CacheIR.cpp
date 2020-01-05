@@ -1219,6 +1219,10 @@ GetNameIRGenerator::tryAttachGlobalNameValue(ObjOperandId objId, HandleId id)
         return false;
 
     
+    if (holder->getSlot(shape->slot()).isMagic())
+        return false;
+
+    
     if (IsIonEnabled(cx_))
         EnsureTrackPropertyTypes(cx_, holder, id);
 
@@ -1331,6 +1335,8 @@ GetNameIRGenerator::tryAttachEnvironmentName(ObjOperandId objId, HandleId id)
 
     holder = &env->as<NativeObject>();
     if (!IsCacheableGetPropReadSlotForIonOrCacheIR(holder, holder, shape))
+        return false;
+    if (holder->getSlot(shape->slot()).isMagic())
         return false;
 
     ObjOperandId lastObjId = objId;
