@@ -133,6 +133,7 @@ public abstract class GeckoApp
     BundleEventListener,
     ContextGetter,
     GeckoAppShell.GeckoInterface,
+    ScreenOrientationDelegate,
     GeckoMenu.Callback,
     GeckoMenu.MenuPresenter,
     Tabs.OnTabsChangedListener,
@@ -1129,6 +1130,7 @@ public abstract class GeckoApp
         
         GeckoAppShell.setContextGetter(this);
         GeckoAppShell.setGeckoInterface(this);
+        GeckoAppShell.setScreenOrientationDelegate(this);
 
         
         
@@ -2080,6 +2082,7 @@ public abstract class GeckoApp
         foregrounded = true;
 
         GeckoAppShell.setGeckoInterface(this);
+        GeckoAppShell.setScreenOrientationDelegate(this);
 
         if (lastSelectedTabId >= 0 && (lastActiveGeckoApp == null || lastActiveGeckoApp.get() != this)) {
             Tabs.getInstance().selectTab(lastSelectedTabId);
@@ -2862,5 +2865,16 @@ public abstract class GeckoApp
 
     public GeckoView getGeckoView() {
         return mLayerView;
+    }
+
+    @Override
+    public boolean setRequestedOrientationForCurrentActivity(int requestedActivityInfoOrientation) {
+        
+        
+        if (getRequestedOrientation() == requestedActivityInfoOrientation) {
+            return false;
+        }
+        setRequestedOrientation(requestedActivityInfoOrientation);
+        return true;
     }
 }

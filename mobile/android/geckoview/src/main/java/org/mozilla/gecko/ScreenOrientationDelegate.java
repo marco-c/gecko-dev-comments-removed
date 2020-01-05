@@ -1,0 +1,26 @@
+
+
+
+
+
+package org.mozilla.gecko;
+
+
+
+
+
+
+
+
+
+
+
+public interface ScreenOrientationDelegate {
+    
+
+
+
+
+
+    boolean setRequestedOrientationForCurrentActivity(int requestedActivityInfoOrientation);
+}
