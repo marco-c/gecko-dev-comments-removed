@@ -741,7 +741,7 @@ public:
     , mResult(new TypedArrayResult(TimeStamp::Now()))
   { }
 
-  ~DoReadToTypedArrayEvent() override {
+  ~DoReadToTypedArrayEvent() {
     
     
     if (!mResult) {
@@ -778,7 +778,7 @@ public:
     , mResult(new StringResult(TimeStamp::Now()))
   { }
 
-  ~DoReadToStringEvent() override {
+  ~DoReadToStringEvent() {
     
     
     if (!mResult) {
