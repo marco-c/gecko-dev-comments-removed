@@ -454,9 +454,8 @@ class GeckoMigration(MercurialScript, BalrogMixin, VirtualenvMixin,
         
         next_version[1] = str(int(next_version[1]) + 1)
         
-        if len(next_version) > 2:
-            next_version[2] = '0'
-        next_version = ".".join(next_version)
+        
+        next_version = ".".join(next_version[:2] + ['0'])
         for f in self.config["version_files"]:
             self.replace(os.path.join(dirs['abs_to_dir'], f["file"]),
                          curr_version, next_version + f["suffix"])
