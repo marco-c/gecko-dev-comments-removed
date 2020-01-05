@@ -93,10 +93,10 @@ struct JSContext : public JS::RootingContext,
     bool init();
 
   private:
-    JSRuntime* const runtime_;
+    js::UnprotectedData<JSRuntime*> runtime_;
 
     
-    size_t threadNative_;
+    js::WriteOnceData<size_t> threadNative_;
 
     
     js::ThreadLocalData<js::HelperThread*> helperThread_;
@@ -106,6 +106,10 @@ struct JSContext : public JS::RootingContext,
     js::ThreadLocalData<js::gc::ArenaLists*> arenas_;
 
   public:
+    
+    
+    void setRuntime(JSRuntime* rt);
+
     size_t threadNative() const { return threadNative_; }
 
     inline js::gc::ArenaLists* arenas() const { return arenas_; }
