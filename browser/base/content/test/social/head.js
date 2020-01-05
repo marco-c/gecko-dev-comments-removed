@@ -12,10 +12,10 @@ XPCOMUtils.defineLazyModuleGetter(this, "PlacesUtils",
 
 function promiseObserverNotified(aTopic) {
   return new Promise(resolve => {
-    Services.obs.addObserver(function onNotification(subject, topic, data) {
-      dump("notification promised " + topic);
-      Services.obs.removeObserver(onNotification, topic);
-      TestUtils.executeSoon(() => resolve({subject, data}));
+    Services.obs.addObserver(function onNotification(aSubject, aTopic, aData) {
+      dump("notification promised "+aTopic);
+      Services.obs.removeObserver(onNotification, aTopic);
+      TestUtils.executeSoon(() => resolve({subject: aSubject, data: aData}));
     }, aTopic, false);
   });
 }
@@ -87,7 +87,7 @@ function runSocialTestWithProvider(manifest, callback, finishcallback) {
   function removeAddedProviders(cleanup) {
     manifests.forEach(function (m) {
       
-      let finishCb = cleanup ? function () {} : finishIfDone;
+      let callback = cleanup ? function () {} : finishIfDone;
       
       let removeProvider = SocialService.disableProvider.bind(SocialService);
       if (cleanup) {
@@ -102,7 +102,7 @@ function runSocialTestWithProvider(manifest, callback, finishcallback) {
           }
         }
       }
-      removeProvider(m.origin, finishCb);
+      removeProvider(m.origin, callback);
     });
   }
   function finishSocialTest(cleanup) {
@@ -235,13 +235,13 @@ function ensureFrameLoaded(frame, uri) {
 
 var origProxyType = Services.prefs.getIntPref('network.proxy.type');
 
-function toggleOfflineStatus(goOfflineState) {
+function toggleOfflineStatus(goOffline) {
   
   return new Promise(resolve => {
-    if (!goOfflineState) {
+    if (!goOffline) {
       Services.prefs.setIntPref('network.proxy.type', origProxyType);
     }
-    if (goOfflineState != Services.io.offline) {
+    if (goOffline != Services.io.offline) {
       info("initial offline state " + Services.io.offline);
       let expect = !Services.io.offline;
       Services.obs.addObserver(function offlineChange(subject, topic, data) {
@@ -254,7 +254,7 @@ function toggleOfflineStatus(goOfflineState) {
     } else {
       resolve();
     }
-    if (goOfflineState) {
+    if (goOffline) {
       Services.prefs.setIntPref('network.proxy.type', 0);
       
       Services.cache2.clear();

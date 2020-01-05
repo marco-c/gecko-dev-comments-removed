@@ -66,14 +66,14 @@ function checkKeyedScalar(scalars, scalarName, key, expectedValue) {
 
 
 let typeInSearchField = Task.async(function* (browser, text, fieldName) {
-  yield ContentTask.spawn(browser, [fieldName, text], function* ([contentFieldName, contentText]) {
+  yield ContentTask.spawn(browser, { fieldName, text }, function* ({fieldName, text}) {
     
-    if (contentFieldName === "searchText") {
+    if (fieldName === "searchText") {
       content.wrappedJSObject.gContentSearchController.remoteTimeout = 5000;
     }
     
-    let searchInput = content.document.getElementById(contentFieldName);
+    let searchInput = content.document.getElementById(fieldName);
     searchInput.focus();
-    searchInput.value = contentText;
+    searchInput.value = text;
   });
 });

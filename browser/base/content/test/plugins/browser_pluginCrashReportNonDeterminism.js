@@ -49,7 +49,7 @@ const CRASHED_MESSAGE = "BrowserPlugins:NPAPIPluginProcessCrashed";
 
 
 function preparePlugin(browser, pluginFallbackState) {
-  return ContentTask.spawn(browser, pluginFallbackState, function* (contentPluginFallbackState) {
+  return ContentTask.spawn(browser, pluginFallbackState, function* (pluginFallbackState) {
     let plugin = content.document.getElementById("plugin");
     plugin.QueryInterface(Ci.nsIObjectLoadingContent);
     
@@ -69,7 +69,7 @@ function preparePlugin(browser, pluginFallbackState) {
     
     Object.defineProperty(plugin, "pluginFallbackType", {
       get: function() {
-        return contentPluginFallbackState;
+        return pluginFallbackState;
       }
     });
     return plugin.runID;

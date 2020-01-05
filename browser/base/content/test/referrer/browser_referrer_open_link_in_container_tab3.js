@@ -5,13 +5,13 @@
 
 
 function getReferrerTest(aTestNumber) {
-  let testCase = _referrerTests[aTestNumber];
-  if (testCase) {
+  let test = _referrerTests[aTestNumber];
+  if (test) {
     
-    testCase.result = "";
+    test.result = "";
   }
 
-  return testCase;
+  return test;
 }
 
 function startNewTabTestCase(aTestNumber) {

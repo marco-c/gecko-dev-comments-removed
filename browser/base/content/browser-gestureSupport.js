@@ -134,9 +134,9 @@ var gGestureSupport = {
     let isLatched = false;
 
     
-    this._doUpdate = function GS__doUpdate(updateEvent) {
+    this._doUpdate = function GS__doUpdate(aEvent) {
       
-      offset += updateEvent.delta;
+      offset += aEvent.delta;
 
       
       if (Math.abs(offset) > aPref["threshold"]) {
@@ -145,7 +145,7 @@ var gGestureSupport = {
         
         let sameDir = (latchDir ^ offset) >= 0;
         if (!aPref["latched"] || (isLatched ^ sameDir)) {
-          this._doAction(updateEvent, [aGesture, offset > 0 ? aInc : aDec]);
+          this._doAction(aEvent, [aGesture, offset > 0 ? aInc : aDec]);
 
           
           isLatched = !isLatched;
@@ -242,8 +242,8 @@ var gGestureSupport = {
     this._doEnd = function GS__doEnd(aEvent) {
       gHistorySwipeAnimation.swipeEndEventReceived();
 
-      this._doUpdate = function () {};
-      this._doEnd = function () {};
+      this._doUpdate = function (aEvent) {};
+      this._doEnd = function (aEvent) {};
     }
   },
 

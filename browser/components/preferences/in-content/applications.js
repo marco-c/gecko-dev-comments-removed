@@ -1411,8 +1411,8 @@ var gApplicationsPane = {
 
     
     
-    let menuseparator = document.createElement("menuseparator");
-    menuPopup.appendChild(menuseparator);
+    let menuItem = document.createElement("menuseparator");
+    menuPopup.appendChild(menuItem);
 
     
     if (handlerInfo.hasDefaultHandler) {
@@ -1760,8 +1760,8 @@ var gApplicationsPane = {
           handlerApp.executable = fp.file;
 
           
-          let handler = this._handledTypes[this._list.selectedItem.type];
-          handler.addPossibleApplicationHandler(handlerApp);
+          let handlerInfo = this._handledTypes[this._list.selectedItem.type];
+          handlerInfo.addPossibleApplicationHandler(handlerApp);
 
           chooseAppCallback(handlerApp);
         }

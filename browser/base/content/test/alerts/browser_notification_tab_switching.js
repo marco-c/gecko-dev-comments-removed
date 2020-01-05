@@ -24,11 +24,11 @@ add_task(function* test_notificationPreventDefaultAndSwitchTabs() {
 
     
     function promiseNotificationEvent(evt) {
-      return ContentTask.spawn(aBrowser, evt, function* (contentEvt) {
+      return ContentTask.spawn(aBrowser, evt, function* (evt) {
         return yield new Promise(resolve => {
-          let contentNotification = content.wrappedJSObject._notification;
-          contentNotification.addEventListener(contentEvt, function l(event) {
-            contentNotification.removeEventListener(contentEvt, l);
+          let notification = content.wrappedJSObject._notification;
+          notification.addEventListener(evt, function l(event) {
+            notification.removeEventListener(evt, l);
             resolve({ defaultPrevented: event.defaultPrevented });
           });
         });

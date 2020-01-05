@@ -149,12 +149,12 @@ function ensureSnippetsMapThen(aCallback)
   openRequest.onsuccess = function (event) {
     let db = event.target.result;
 
-    db.onerror = function () {
+    db.onerror = function (event) {
       invokeCallbacks();
     }
 
-    db.onversionchange = function (versionChangeEvent) {
-      versionChangeEvent.target.close();
+    db.onversionchange = function (event) {
+      event.target.close();
       invokeCallbacks();
     }
 
@@ -169,12 +169,12 @@ function ensureSnippetsMapThen(aCallback)
       return;
     }
 
-    cursorRequest.onerror = function () {
+    cursorRequest.onerror = function (event) {
       invokeCallbacks();
     }
 
-    cursorRequest.onsuccess = function(cursorRequestEvent) {
-      let cursor = cursorRequestEvent.target.result;
+    cursorRequest.onsuccess = function(event) {
+      let cursor = event.target.result;
 
       
       if (cursor) {
@@ -283,7 +283,7 @@ function loadSnippets()
     
     
     gSnippetsMap.set("snippets-last-update", Date.now());
-    xhr.onloadend = function () {
+    xhr.onloadend = function (event) {
       if (xhr.status == 200) {
         gSnippetsMap.set("snippets", xhr.responseText);
         gSnippetsMap.set("snippets-cached-version", currentVersion);
