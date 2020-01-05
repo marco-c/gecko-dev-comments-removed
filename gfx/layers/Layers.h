@@ -209,7 +209,7 @@ public:
 
 
 
-  virtual void BeginTransaction() = 0;
+  virtual bool BeginTransaction() = 0;
   
 
 
@@ -217,7 +217,7 @@ public:
 
 
 
-  virtual void BeginTransactionWithTarget(gfxContext* aTarget) = 0;
+  virtual bool BeginTransactionWithTarget(gfxContext* aTarget) = 0;
 
   enum EndTransactionFlags {
     END_DEFAULT = 0,
