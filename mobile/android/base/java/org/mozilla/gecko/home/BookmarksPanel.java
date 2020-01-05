@@ -72,6 +72,9 @@ public class BookmarksPanel extends HomeFragment {
     
     private CursorLoaderCallbacks mLoaderCallbacks;
 
+    
+    private int mLastLoaderHash;
+
     @Override
     public void restoreData(@NonNull Bundle data) {
         final ArrayList<FolderInfo> stack = data.getParcelableArrayList("parentStack");
@@ -318,8 +321,13 @@ public class BookmarksPanel extends HomeFragment {
                 mPanelStateChangeListener.onStateChanged(bundle);
             }
 
-            if (mList != null) {
+            
+            
+            
+            int currentLoaderHash = bl.hashCode();
+            if (mList != null && currentLoaderHash != mLastLoaderHash) {
                 mList.setSelection(bl.getTargetPosition());
+                mLastLoaderHash = currentLoaderHash;
             }
             updateUiFromCursor(c);
         }
