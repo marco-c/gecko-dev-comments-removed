@@ -9,32 +9,36 @@
 
 #include "nsString.h"
 #include "mozilla/CheckedInt.h"
+#include "mozilla/UniquePtr.h"
+#include "nsTArray.h"
 
 namespace mozilla {
 
-
-
-
-
-
-
-
-
-class Tokenizer {
+class TokenizerBase
+{
 public:
   
 
 
 
-  enum TokenType {
+  enum TokenType : uint32_t
+  {
     TOKEN_UNKNOWN,
+    TOKEN_RAW,
     TOKEN_ERROR,
     TOKEN_INTEGER,
     TOKEN_WORD,
     TOKEN_CHAR,
     TOKEN_WS,
     TOKEN_EOL,
-    TOKEN_EOF
+    TOKEN_EOF,
+    TOKEN_CUSTOM0 = 1000
+  };
+
+  enum ECaseSensitivity
+  {
+    CASE_SENSITIVE,
+    CASE_INSENSITIVE
   };
 
   
@@ -42,23 +46,29 @@ public:
 
 
 
-  class Token {
+  class Token
+  {
     TokenType mType;
     nsDependentCSubstring mWord;
+    nsCString mCustom;
     char mChar;
     uint64_t mInteger;
+    ECaseSensitivity mCustomCaseInsensitivity;
+    bool mCustomEnabled;
 
     
     
     
     nsDependentCSubstring mFragment;
 
-    friend class Tokenizer;
+    friend class TokenizerBase;
     void AssignFragment(nsACString::const_char_iterator begin,
                         nsACString::const_char_iterator end);
 
+    static Token Raw();
+
   public:
-    Token() : mType(TOKEN_UNKNOWN), mChar(0), mInteger(0) {}
+    Token();
     Token(const Token& aOther);
     Token& operator=(const Token& aOther);
 
@@ -83,6 +93,120 @@ public:
     nsDependentCSubstring Fragment() const { return mFragment; }
   };
 
+  
+
+
+
+
+
+  Token AddCustomToken(const nsACString& aValue, ECaseSensitivity aCaseInsensitivity, bool aEnabled = true);
+  template <uint32_t N>
+  Token AddCustomToken(const char(&aValue)[N], ECaseSensitivity aCaseInsensitivity, bool aEnabled = true)
+  {
+    return AddCustomToken(nsDependentCSubstring(aValue, N - 1), aCaseInsensitivity, aEnabled);
+  }
+  void RemoveCustomToken(Token& aToken);
+  
+
+
+
+
+  void EnableCustomToken(Token const& aToken, bool aEnable);
+
+  
+
+
+
+
+
+
+  enum class Mode
+  {
+    FULL,
+    CUSTOM_ONLY
+  };
+  void SetTokenizingMode(Mode aMode);
+
+  
+
+
+
+  MOZ_MUST_USE bool HasFailed() const;
+
+protected:
+  explicit TokenizerBase(const char* aWhitespaces = nullptr,
+                         const char* aAdditionalWordChars = nullptr);
+
+  
+  bool HasInput() const;
+  
+  
+  nsACString::const_char_iterator Parse(Token& aToken) const;
+  
+  bool IsEnd(const nsACString::const_char_iterator& caret) const;
+  
+  
+  bool IsPending(const nsACString::const_char_iterator & caret) const;
+  
+  bool IsWordFirst(const char aInput) const;
+  
+  bool IsWord(const char aInput) const;
+  
+  
+  bool IsNumber(const char aInput) const;
+  
+  bool IsCustom(const nsACString::const_char_iterator& caret,
+                const Token& aCustomToken, uint32_t* aLongest = nullptr) const;
+
+  
+  static void AssignFragment(Token& aToken,
+                             nsACString::const_char_iterator begin,
+                             nsACString::const_char_iterator end);
+
+  
+  bool mPastEof;
+  
+  bool mHasFailed;
+  
+  
+  bool mInputFinished;
+  
+  Mode mMode;
+  
+  uint32_t mMinRawDelivery;
+
+  
+  const char* mWhitespaces;
+  
+  const char* mAdditionalWordChars;
+
+  
+  
+  nsACString::const_char_iterator mCursor; 
+  nsACString::const_char_iterator mEnd; 
+
+  
+  nsTArray<UniquePtr<Token>> mCustomTokens;
+  uint32_t mNextCustomTokenID;
+
+private:
+  TokenizerBase() = delete;
+  TokenizerBase(const TokenizerBase&) = delete;
+  TokenizerBase(TokenizerBase&&) = delete;
+  TokenizerBase(const TokenizerBase&&) = delete;
+  TokenizerBase &operator=(const TokenizerBase&) = delete;
+};
+
+
+
+
+
+
+
+
+
+class Tokenizer : public TokenizerBase
+{
 public:
   
 
@@ -132,13 +256,6 @@ public:
 
   MOZ_MUST_USE
   bool Check(const Token& aToken);
-
-  
-
-
-
-  MOZ_MUST_USE
-  bool HasFailed() const;
 
   
 
@@ -313,35 +430,8 @@ public:
 
 protected:
   
-  bool HasInput() const;
-  
-  
-  nsACString::const_char_iterator Parse(Token& aToken) const;
-  
-  bool IsEnd(const nsACString::const_char_iterator& caret) const;
-  
-  bool IsWordFirst(const char aInput) const;
-  
-  bool IsWord(const char aInput) const;
-  
-  
-  bool IsNumber(const char aInput) const;
-
-  
-  bool mPastEof;
-  
-  bool mHasFailed;
-
-  
-  const char* mWhitespaces;
-  
-  const char* mAdditionalWordChars;
-
-  
   nsACString::const_char_iterator mRecord; 
   nsACString::const_char_iterator mRollback; 
-  nsACString::const_char_iterator mCursor; 
-  nsACString::const_char_iterator mEnd; 
 
 private:
   Tokenizer() = delete;
