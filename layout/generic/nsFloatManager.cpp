@@ -530,6 +530,91 @@ nsFloatManager::ClearContinues(StyleClear aBreakType) const
 
 
 
+nscoord
+nsFloatManager::BoxShapeInfo::LineLeft(WritingMode aWM,
+                                       const nscoord aBStart,
+                                       const nscoord aBEnd) const
+{
+  nscoord radii[8];
+  bool hasRadii = mFrame->GetShapeBoxBorderRadii(radii);
+
+  if (!hasRadii) {
+    return mShapeBoxRect.x;
+  }
+
+  
+  
+  mozilla::Side lineLeftSide =
+    aWM.PhysicalSide(aWM.LogicalSideForLineRelativeDir(eLineRelativeDirLeft));
+  nscoord blockStartCornerRadiusL =
+    radii[SideToHalfCorner(lineLeftSide, true, false)];
+  nscoord blockStartCornerRadiusB =
+    radii[SideToHalfCorner(lineLeftSide, true, true)];
+  nscoord blockEndCornerRadiusL =
+    radii[SideToHalfCorner(lineLeftSide, false, false)];
+  nscoord blockEndCornerRadiusB =
+    radii[SideToHalfCorner(lineLeftSide, false, true)];
+
+  if (aWM.IsLineInverted()) {
+    
+    
+    std::swap(blockStartCornerRadiusL, blockEndCornerRadiusL);
+    std::swap(blockStartCornerRadiusB, blockEndCornerRadiusB);
+  }
+
+  nscoord lineLeftDiff =
+    ComputeEllipseLineInterceptDiff(
+      mShapeBoxRect.y, mShapeBoxRect.YMost(),
+      blockStartCornerRadiusL, blockStartCornerRadiusB,
+      blockEndCornerRadiusL, blockEndCornerRadiusB,
+      aBStart, aBEnd);
+  return mShapeBoxRect.x + lineLeftDiff;
+}
+
+nscoord
+nsFloatManager::BoxShapeInfo::LineRight(WritingMode aWM,
+                                        const nscoord aBStart,
+                                        const nscoord aBEnd) const
+{
+  nscoord radii[8];
+  bool hasRadii = mFrame->GetShapeBoxBorderRadii(radii);
+
+  if (!hasRadii) {
+    return mShapeBoxRect.XMost();
+  }
+
+  
+  
+  mozilla::Side lineRightSide =
+    aWM.PhysicalSide(aWM.LogicalSideForLineRelativeDir(eLineRelativeDirRight));
+  nscoord blockStartCornerRadiusL =
+    radii[SideToHalfCorner(lineRightSide, false, false)];
+  nscoord blockStartCornerRadiusB =
+    radii[SideToHalfCorner(lineRightSide, false, true)];
+  nscoord blockEndCornerRadiusL =
+    radii[SideToHalfCorner(lineRightSide, true, false)];
+  nscoord blockEndCornerRadiusB =
+    radii[SideToHalfCorner(lineRightSide, true, true)];
+
+  if (aWM.IsLineInverted()) {
+    
+    
+    std::swap(blockStartCornerRadiusL, blockEndCornerRadiusL);
+    std::swap(blockStartCornerRadiusB, blockEndCornerRadiusB);
+  }
+
+  nscoord lineRightDiff =
+    ComputeEllipseLineInterceptDiff(
+      mShapeBoxRect.y, mShapeBoxRect.YMost(),
+      blockStartCornerRadiusL, blockStartCornerRadiusB,
+      blockEndCornerRadiusL, blockEndCornerRadiusB,
+      aBStart, aBEnd);
+  return mShapeBoxRect.XMost() - lineRightDiff;
+}
+
+
+
+
 nsFloatManager::FloatInfo::FloatInfo(nsIFrame* aFrame,
                                      nscoord aLineLeft, nscoord aBlockStart,
                                      const LogicalRect& aMarginRect,
@@ -545,31 +630,36 @@ nsFloatManager::FloatInfo::FloatInfo(nsIFrame* aFrame,
 
   const StyleShapeOutside& shapeOutside = mFrame->StyleDisplay()->mShapeOutside;
 
+  if (shapeOutside.GetType() == StyleShapeSourceType::None) {
+    return;
+  }
+
+  
+  LogicalRect rect = aMarginRect;
+
+  switch (shapeOutside.GetReferenceBox()) {
+    case StyleShapeOutsideShapeBox::Content:
+      rect.Deflate(aWM, mFrame->GetLogicalUsedPadding(aWM));
+      MOZ_FALLTHROUGH;
+    case StyleShapeOutsideShapeBox::Padding:
+      rect.Deflate(aWM, mFrame->GetLogicalUsedBorder(aWM));
+      MOZ_FALLTHROUGH;
+    case StyleShapeOutsideShapeBox::Border:
+      rect.Deflate(aWM, mFrame->GetLogicalUsedMargin(aWM));
+      break;
+    case StyleShapeOutsideShapeBox::Margin:
+      
+      break;
+    case StyleShapeOutsideShapeBox::NoBox:
+      MOZ_ASSERT_UNREACHABLE("Why don't we have a shape-box?");
+      break;
+  }
+
   if (shapeOutside.GetType() == StyleShapeSourceType::Box) {
-    
-    LogicalRect rect = aMarginRect;
-
-    switch (shapeOutside.GetReferenceBox()) {
-      case StyleShapeOutsideShapeBox::Content:
-        rect.Deflate(aWM, mFrame->GetLogicalUsedPadding(aWM));
-        MOZ_FALLTHROUGH;
-      case StyleShapeOutsideShapeBox::Padding:
-        rect.Deflate(aWM, mFrame->GetLogicalUsedBorder(aWM));
-        MOZ_FALLTHROUGH;
-      case StyleShapeOutsideShapeBox::Border:
-        rect.Deflate(aWM, mFrame->GetLogicalUsedMargin(aWM));
-        break;
-      case StyleShapeOutsideShapeBox::Margin:
-        
-        break;
-      case StyleShapeOutsideShapeBox::NoBox:
-        MOZ_ASSERT_UNREACHABLE("Why don't we have a shape-box?");
-        break;
-    }
-
-    mShapeBoxRect.emplace(rect.LineLeft(aWM, aContainerSize) + aLineLeft,
-                          rect.BStart(aWM) + aBlockStart,
-                          rect.ISize(aWM), rect.BSize(aWM));
+    nsRect shapeBoxRect(rect.LineLeft(aWM, aContainerSize) + aLineLeft,
+                        rect.BStart(aWM) + aBlockStart,
+                        rect.ISize(aWM), rect.BSize(aWM));
+    mShapeInfo = MakeUnique<BoxShapeInfo>(shapeBoxRect, mFrame);
   }
 }
 
@@ -579,7 +669,7 @@ nsFloatManager::FloatInfo::FloatInfo(FloatInfo&& aOther)
   , mLeftBEnd(Move(aOther.mLeftBEnd))
   , mRightBEnd(Move(aOther.mRightBEnd))
   , mRect(Move(aOther.mRect))
-  , mShapeBoxRect(Move(aOther.mShapeBoxRect))
+  , mShapeInfo(Move(aOther.mShapeInfo))
 {
   MOZ_COUNT_CTOR(nsFloatManager::FloatInfo);
 }
@@ -601,51 +691,10 @@ nsFloatManager::FloatInfo::LineLeft(WritingMode aWM,
   }
 
   MOZ_ASSERT(aShapeType == ShapeType::ShapeOutside);
-  const StyleShapeOutside& shapeOutside = mFrame->StyleDisplay()->mShapeOutside;
-  if (shapeOutside.GetType() == StyleShapeSourceType::None) {
+  if (!mShapeInfo) {
     return LineLeft();
   }
-
-  if (shapeOutside.GetType() == StyleShapeSourceType::Box) {
-    nscoord radii[8];
-    bool hasRadii = mFrame->GetShapeBoxBorderRadii(radii);
-
-    if (!hasRadii) {
-      return ShapeBoxRect().x;
-    }
-
-    
-    
-    mozilla::Side lineLeftSide =
-      aWM.PhysicalSide(aWM.LogicalSideForLineRelativeDir(eLineRelativeDirLeft));
-    nscoord blockStartCornerRadiusL =
-      radii[SideToHalfCorner(lineLeftSide, true, false)];
-    nscoord blockStartCornerRadiusB =
-      radii[SideToHalfCorner(lineLeftSide, true, true)];
-    nscoord blockEndCornerRadiusL =
-      radii[SideToHalfCorner(lineLeftSide, false, false)];
-    nscoord blockEndCornerRadiusB =
-      radii[SideToHalfCorner(lineLeftSide, false, true)];
-
-    if (aWM.IsLineInverted()) {
-      
-      
-      std::swap(blockStartCornerRadiusL, blockEndCornerRadiusL);
-      std::swap(blockStartCornerRadiusB, blockEndCornerRadiusB);
-    }
-
-    nscoord lineLeftDiff =
-      ComputeEllipseLineInterceptDiff(
-        ShapeBoxRect().y, ShapeBoxRect().YMost(),
-        blockStartCornerRadiusL, blockStartCornerRadiusB,
-        blockEndCornerRadiusL, blockEndCornerRadiusB,
-        aBStart, aBEnd);
-    return ShapeBoxRect().x + lineLeftDiff;
-  }
-
-  
-
-  return LineLeft();
+  return mShapeInfo->LineLeft(aWM, aBStart, aBEnd);
 }
 
 nscoord
@@ -659,55 +708,42 @@ nsFloatManager::FloatInfo::LineRight(WritingMode aWM,
   }
 
   MOZ_ASSERT(aShapeType == ShapeType::ShapeOutside);
-  const StyleShapeOutside& shapeOutside = mFrame->StyleDisplay()->mShapeOutside;
-  if (shapeOutside.GetType() == StyleShapeSourceType::None) {
+  if (!mShapeInfo) {
     return LineRight();
   }
+  return mShapeInfo->LineRight(aWM, aBStart, aBEnd);
+}
 
-  if (shapeOutside.GetType() == StyleShapeSourceType::Box) {
-    nscoord radii[8];
-    bool hasRadii = mFrame->GetShapeBoxBorderRadii(radii);
-
-    if (!hasRadii) {
-      return ShapeBoxRect().XMost();
-    }
-
-    
-    
-    mozilla::Side lineRightSide =
-      aWM.PhysicalSide(aWM.LogicalSideForLineRelativeDir(eLineRelativeDirRight));
-    nscoord blockStartCornerRadiusL =
-      radii[SideToHalfCorner(lineRightSide, false, false)];
-    nscoord blockStartCornerRadiusB =
-      radii[SideToHalfCorner(lineRightSide, false, true)];
-    nscoord blockEndCornerRadiusL =
-      radii[SideToHalfCorner(lineRightSide, true, false)];
-    nscoord blockEndCornerRadiusB =
-      radii[SideToHalfCorner(lineRightSide, true, true)];
-
-    if (aWM.IsLineInverted()) {
-      
-      
-      std::swap(blockStartCornerRadiusL, blockEndCornerRadiusL);
-      std::swap(blockStartCornerRadiusB, blockEndCornerRadiusB);
-    }
-
-    nscoord lineRightDiff =
-      ComputeEllipseLineInterceptDiff(
-        ShapeBoxRect().y, ShapeBoxRect().YMost(),
-        blockStartCornerRadiusL, blockStartCornerRadiusB,
-        blockEndCornerRadiusL, blockEndCornerRadiusB,
-        aBStart, aBEnd);
-    return ShapeBoxRect().XMost() - lineRightDiff;
+nscoord
+nsFloatManager::FloatInfo::BStart(ShapeType aShapeType) const
+{
+  if (aShapeType == ShapeType::Margin) {
+    return BStart();
   }
 
-  
+  MOZ_ASSERT(aShapeType == ShapeType::ShapeOutside);
+  if (!mShapeInfo) {
+    return BStart();
+  }
+  return mShapeInfo->BStart();
+}
 
-  return LineRight();
+nscoord
+nsFloatManager::FloatInfo::BEnd(ShapeType aShapeType) const
+{
+  if (aShapeType == ShapeType::Margin) {
+    return BEnd();
+  }
+
+  MOZ_ASSERT(aShapeType == ShapeType::ShapeOutside);
+  if (!mShapeInfo) {
+    return BEnd();
+  }
+  return mShapeInfo->BEnd();
 }
 
  nscoord
-nsFloatManager::FloatInfo::ComputeEllipseLineInterceptDiff(
+nsFloatManager::ShapeInfo::ComputeEllipseLineInterceptDiff(
   const nscoord aShapeBoxBStart, const nscoord aShapeBoxBEnd,
   const nscoord aBStartCornerRadiusL, const nscoord aBStartCornerRadiusB,
   const nscoord aBEndCornerRadiusL, const nscoord aBEndCornerRadiusB,
@@ -777,7 +813,7 @@ nsFloatManager::FloatInfo::ComputeEllipseLineInterceptDiff(
 }
 
  nscoord
-nsFloatManager::FloatInfo::XInterceptAtY(const nscoord aY,
+nsFloatManager::ShapeInfo::XInterceptAtY(const nscoord aY,
                                          const nscoord aRadiusX,
                                          const nscoord aRadiusY)
 {
