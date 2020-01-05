@@ -164,6 +164,11 @@ impl Blob {
     }
 
     
+    pub fn get_type_string(&self) -> String {
+        self.type_string.clone()
+    }
+
+    
     
     pub fn get_blob_url_id(&self) -> Uuid {
         let opt_sliced_parent = match *self.blob_impl.borrow() {
