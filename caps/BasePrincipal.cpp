@@ -286,6 +286,31 @@ OriginAttributes::IsFirstPartyEnabled()
 
 
 bool
+OriginAttributes::IsRestrictOpenerAccessForFPI()
+{
+  bool isFirstPartyEnabled = IsFirstPartyEnabled();
+
+  
+  static bool sRestrictedOpenerAccess = false;
+  static bool sCachedRestrictedAccessPref = false;
+  if (!sCachedRestrictedAccessPref) {
+    MOZ_ASSERT(NS_IsMainThread());
+    sCachedRestrictedAccessPref = true;
+    Preferences::AddBoolVarCache(&sRestrictedOpenerAccess,
+                                 "privacy.firstparty.isolate.restrict_opener_access");
+  }
+
+  
+  
+  if (!isFirstPartyEnabled) {
+    return true;
+  }
+
+  return isFirstPartyEnabled && sRestrictedOpenerAccess;
+}
+
+
+bool
 OriginAttributes::IsPrivateBrowsing(const nsACString& aOrigin)
 {
   nsAutoCString dummy;
