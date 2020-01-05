@@ -11,7 +11,7 @@ SyncProfile::SyncProfile(int aThreadId, PseudoStack* aStack)
                 nullptr)
 {
   MOZ_COUNT_CTOR(SyncProfile);
-  SetProfile(new ProfileBuffer(GET_BACKTRACE_DEFAULT_ENTRIES));
+  SetHasProfile();
 }
 
 SyncProfile::~SyncProfile()
@@ -22,7 +22,9 @@ SyncProfile::~SyncProfile()
 
 
 void
-SyncProfile::StreamJSON(SpliceableJSONWriter& aWriter, UniqueStacks& aUniqueStacks)
+SyncProfile::StreamJSON(ProfileBuffer* aBuffer, SpliceableJSONWriter& aWriter,
+                        UniqueStacks& aUniqueStacks)
 {
-  ThreadInfo::StreamSamplesAndMarkers(aWriter,  0, aUniqueStacks);
+  ThreadInfo::StreamSamplesAndMarkers(aBuffer, aWriter,  0,
+                                      aUniqueStacks);
 }

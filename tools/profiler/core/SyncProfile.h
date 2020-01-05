@@ -17,7 +17,8 @@ public:
 
   
   
-  void StreamJSON(SpliceableJSONWriter& aWriter, UniqueStacks& aUniqueStacks);
+  void StreamJSON(ProfileBuffer* aBuffer, SpliceableJSONWriter& aWriter,
+                  UniqueStacks& aUniqueStacks);
 
 private:
   friend class ProfilerBacktrace;
