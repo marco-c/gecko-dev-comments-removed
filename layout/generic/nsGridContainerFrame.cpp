@@ -5973,10 +5973,51 @@ nsGridContainerFrame::IntrinsicISize(nsRenderingContext* aRenderingContext,
   
   GridReflowInput state(this, *aRenderingContext);
   InitImplicitNamedAreas(state.mGridStyle); 
+
+  auto GetDefiniteSizes = [] (const nsStyleCoord& aMinCoord,
+                              const nsStyleCoord& aSizeCoord,
+                              const nsStyleCoord& aMaxCoord,
+                              nscoord* aMin,
+                              nscoord* aSize,
+                              nscoord* aMax) {
+    if (aMinCoord.ConvertsToLength()) {
+      *aMin = aMinCoord.ToLength();
+    }
+    if (aMaxCoord.ConvertsToLength()) {
+      *aMax = std::max(*aMin, aMaxCoord.ToLength());
+    }
+    if (aSizeCoord.ConvertsToLength()) {
+      *aSize = Clamp(aSizeCoord.ToLength(), *aMin, *aMax);
+    }
+  };
+  
+  
+  
   LogicalSize min(state.mWM, 0, 0);
-  LogicalSize indefinite(state.mWM, NS_UNCONSTRAINEDSIZE, NS_UNCONSTRAINEDSIZE);
+  LogicalSize sz(state.mWM, NS_UNCONSTRAINEDSIZE, NS_UNCONSTRAINEDSIZE);
+  LogicalSize max(state.mWM, NS_UNCONSTRAINEDSIZE, NS_UNCONSTRAINEDSIZE);
+  if (state.mColFunctions.mHasRepeatAuto) {
+    GetDefiniteSizes(state.mGridStyle->MinISize(state.mWM),
+                     state.mGridStyle->ISize(state.mWM),
+                     state.mGridStyle->MaxISize(state.mWM),
+                     &min.ISize(state.mWM),
+                     &sz.ISize(state.mWM),
+                     &max.ISize(state.mWM));
+  }
+  if (state.mRowFunctions.mHasRepeatAuto &&
+      !(state.mGridStyle->mGridAutoFlow & NS_STYLE_GRID_AUTO_FLOW_ROW)) {
+    
+    
+    GetDefiniteSizes(state.mGridStyle->MinBSize(state.mWM),
+                     state.mGridStyle->BSize(state.mWM),
+                     state.mGridStyle->MaxBSize(state.mWM),
+                     &min.BSize(state.mWM),
+                     &sz.BSize(state.mWM),
+                     &max.BSize(state.mWM));
+  }
+
   Grid grid;
-  grid.PlaceGridItems(state, min, indefinite, indefinite);  
+  grid.PlaceGridItems(state, min, sz, max);  
   if (grid.mGridColEnd == 0) {
     return 0;
   }
