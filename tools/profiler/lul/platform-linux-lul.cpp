@@ -32,7 +32,7 @@ read_procmaps(lul::LUL* aLUL)
   for (size_t i = 0; i < info.GetSize(); i++) {
     const SharedLibrary& lib = info.GetEntry(i);
 
-    std::string nativeName = lib.GetNativeDebugName();
+    std::string nativePath = lib.GetNativeDebugPath();
 
 #   if defined(USE_FAULTY_LIB)
     
@@ -46,10 +46,10 @@ read_procmaps(lul::LUL* aLUL)
     
     void*  image = nullptr;
     size_t size  = 0;
-    bool ok = mapper.Map(&image, &size, nativeName);
+    bool ok = mapper.Map(&image, &size, nativePath);
     if (ok && image && size > 0) {
       aLUL->NotifyAfterMap(lib.GetStart(), lib.GetEnd()-lib.GetStart(),
-                           nativeName.c_str(), image);
+                           nativePath.c_str(), image);
     } else if (!ok && lib.GetDebugName().IsEmpty()) {
       
       

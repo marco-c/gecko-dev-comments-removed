@@ -638,7 +638,7 @@ void EHAddrSpace::Update() {
       
       continue;
     EHTable tab(reinterpret_cast<const void *>(lib.GetStart()),
-              lib.GetEnd() - lib.GetStart(), lib.GetNativeDebugName());
+              lib.GetEnd() - lib.GetStart(), lib.GetNativeDebugPath());
     if (tab.isValid())
       tables.push_back(tab);
   }
