@@ -45,14 +45,12 @@ def replaceFileIfChanged(filename, newContents):
     
     
     
-    
 
     
     
 
-    f = open(filename, 'wb')
-    f.write(newContents)
-    f.close()
+    with open(filename, 'wb') as f:
+        f.write(newContents)
 
     return True
 

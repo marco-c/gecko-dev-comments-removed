@@ -39,9 +39,8 @@ def main():
     webIDLFile = os.path.normpath(args[2])
 
     
-    f = open('ParserResults.pkl', 'rb')
-    parserData = cPickle.load(f)
-    f.close()
+    with open('ParserResults.pkl', 'rb') as f:
+        parserData = cPickle.load(f)
 
     
     config = Configuration(configFile, parserData)
