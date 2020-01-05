@@ -60,6 +60,11 @@ public:
            : "apple software VT decoder";
   }
 
+  ConversionRequired NeedsConversion() const override
+  {
+    return ConversionRequired::kNeedAVCC;
+  }
+
   
   
   void OutputFrame(CVPixelBufferRef aImage, AppleFrameRef aFrameRef);

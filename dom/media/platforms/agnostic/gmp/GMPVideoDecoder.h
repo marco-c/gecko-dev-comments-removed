@@ -42,6 +42,10 @@ public:
   {
     return "GMP video decoder";
   }
+  ConversionRequired NeedsConversion() const override
+  {
+    return ConversionRequired::kNeedAVCC;
+  }
 
   
   
