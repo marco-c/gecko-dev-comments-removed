@@ -956,36 +956,6 @@ public:
 
   bool IsInsideAlert() const { return mContextFlags & eInsideAlert; }
 
-  
-
-
-  bool ReorderEventTarget() const { return mReorderEventTarget; }
-
-  
-
-
-  bool ShowEventTarget() const { return mShowEventTarget; }
-
-  
-
-
-  bool HideEventTarget() const { return mHideEventTarget; }
-
-  
-
-
-  void SetReorderEventTarget(bool aTarget) { mReorderEventTarget = aTarget; }
-
-  
-
-
-  void SetShowEventTarget(bool aTarget) { mShowEventTarget = aTarget; }
-
-  
-
-
-  void SetHideEventTarget(bool aTarget) { mHideEventTarget = aTarget; }
-
 protected:
   virtual ~Accessible();
 
@@ -1162,9 +1132,6 @@ protected:
   uint32_t mContextFlags : kContextFlagsBits;
   uint32_t mType : kTypeBits;
   uint32_t mGenericTypes : kGenericTypesBits;
-  uint32_t mReorderEventTarget : 1;
-  uint32_t mShowEventTarget : 1;
-  uint32_t mHideEventTarget : 1;
 
   void StaticAsserts() const;
 
