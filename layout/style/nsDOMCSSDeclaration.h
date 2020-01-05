@@ -20,8 +20,8 @@ struct JSContext;
 class JSObject;
 
 namespace mozilla {
+class DeclarationBlock;
 namespace css {
-class Declaration;
 class Loader;
 class Rule;
 } 
@@ -119,8 +119,8 @@ protected:
     
     eOperation_RemoveProperty
   };
-  virtual mozilla::css::Declaration* GetCSSDeclaration(Operation aOperation) = 0;
-  virtual nsresult SetCSSDeclaration(mozilla::css::Declaration* aDecl) = 0;
+  virtual mozilla::DeclarationBlock* GetCSSDeclaration(Operation aOperation) = 0;
+  virtual nsresult SetCSSDeclaration(mozilla::DeclarationBlock* aDecl) = 0;
   
   
   

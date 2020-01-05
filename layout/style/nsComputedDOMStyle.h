@@ -105,8 +105,8 @@ public:
   
   
   
-  virtual mozilla::css::Declaration* GetCSSDeclaration(Operation) override;
-  virtual nsresult SetCSSDeclaration(mozilla::css::Declaration*) override;
+  virtual mozilla::DeclarationBlock* GetCSSDeclaration(Operation) override;
+  virtual nsresult SetCSSDeclaration(mozilla::DeclarationBlock*) override;
   virtual nsIDocument* DocToUpdate() override;
   virtual void GetCSSParsingEnvironment(CSSParsingEnvironment& aCSSParseEnv) override;
 
