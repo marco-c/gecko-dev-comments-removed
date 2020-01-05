@@ -84,7 +84,8 @@ CreateElementTransaction::DoTransaction()
   
   mRefNode = mParent->GetChildAt(mOffsetInParent);
 
-  mParent->InsertBefore(*mNewNode, mRefNode, rv);
+  nsCOMPtr<nsIContent> refNode = mRefNode;
+  mParent->InsertBefore(*mNewNode, refNode, rv);
   NS_ENSURE_TRUE(!rv.Failed(), rv.StealNSResult());
 
   
@@ -124,7 +125,8 @@ CreateElementTransaction::RedoTransaction()
 
   
   ErrorResult rv;
-  mParent->InsertBefore(*mNewNode, mRefNode, rv);
+  nsCOMPtr<nsIContent> refNode = mRefNode;
+  mParent->InsertBefore(*mNewNode, refNode, rv);
   return rv.StealNSResult();
 }
 

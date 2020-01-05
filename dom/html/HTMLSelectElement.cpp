@@ -587,7 +587,8 @@ HTMLSelectElement::Add(nsGenericHTMLElement& aElement,
 
   
   
-  parent->InsertBefore(aElement, aBefore, aError);
+  nsCOMPtr<nsINode> refNode = aBefore;
+  parent->InsertBefore(aElement, refNode, aError);
 }
 
 NS_IMETHODIMP

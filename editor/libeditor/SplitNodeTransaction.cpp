@@ -106,7 +106,8 @@ SplitNodeTransaction::RedoTransaction()
     }
   }
   
-  mParent->InsertBefore(*mNewLeftNode, mExistingRightNode, rv);
+  nsCOMPtr<nsIContent> refNode = mExistingRightNode;
+  mParent->InsertBefore(*mNewLeftNode, refNode, rv);
   return rv.StealNSResult();
 }
 

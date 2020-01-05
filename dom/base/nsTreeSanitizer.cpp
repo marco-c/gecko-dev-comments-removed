@@ -1419,7 +1419,8 @@ nsTreeSanitizer::SanitizeChildren(nsINode* aRoot)
         nsCOMPtr<nsIContent> child; 
         ErrorResult rv;
         while ((child = node->GetFirstChild())) {
-          parent->InsertBefore(*child, node, rv);
+          nsCOMPtr<nsINode> refNode = node;
+          parent->InsertBefore(*child, refNode, rv);
           if (rv.Failed()) {
             break;
           }

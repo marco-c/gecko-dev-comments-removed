@@ -94,7 +94,8 @@ JoinNodeTransaction::UndoTransaction()
     }
   }
   
-  mParent->InsertBefore(*mLeftNode, mRightNode, rv);
+  nsCOMPtr<nsINode> refNode = mRightNode;
+  mParent->InsertBefore(*mLeftNode, refNode, rv);
   return rv.StealNSResult();
 }
 
