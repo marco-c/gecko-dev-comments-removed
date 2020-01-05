@@ -9,6 +9,7 @@
 
 use {Atom, Namespace, LocalName};
 use atomic_refcell::{AtomicRef, AtomicRefCell, AtomicRefMut};
+#[cfg(feature = "gecko")] use context::UpdateAnimationsTasks;
 use data::ElementData;
 use element_state::ElementState;
 use properties::{ComputedValues, PropertyDeclarationBlock};
@@ -367,8 +368,14 @@ pub trait TElement : PartialEq + Debug + Sized + Copy + Clone + ElementExt + Pre
     fn has_selector_flags(&self, flags: ElementSelectorFlags) -> bool;
 
     
+    #[cfg(feature = "gecko")]
+    fn update_animations(&self, _pseudo: Option<&PseudoElement>,
+                         tasks: UpdateAnimationsTasks);
+
     
-    fn update_animations(&self, _pseudo: Option<&PseudoElement>);
+    
+    
+    fn has_animations(&self, _pseudo: Option<&PseudoElement>) -> bool;
 
     
     fn has_css_animations(&self, _pseudo: Option<&PseudoElement>) -> bool;
