@@ -129,7 +129,7 @@ pub enum ConstellationControlMsg {
     
     MozBrowserEvent(PipelineId, SubpageId, MozBrowserEvent),
     
-    UpdateSubpageId(PipelineId, SubpageId, SubpageId),
+    UpdateSubpageId(PipelineId, SubpageId, SubpageId, PipelineId),
     
     FocusIFrame(PipelineId, SubpageId),
     
