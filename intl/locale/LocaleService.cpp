@@ -29,7 +29,10 @@ ReadAppLocales(nsTArray<nsCString>& aRetVal)
   nsCOMPtr<nsIToolkitChromeRegistry> cr =
     mozilla::services::GetToolkitChromeRegistryService();
   if (cr) {
-    cr->GetSelectedLocale(NS_LITERAL_CSTRING("global"), true, uaLangTag);
+    
+    
+    
+    cr->GetSelectedLocale(NS_LITERAL_CSTRING("global"), false, uaLangTag);
   }
   if (!uaLangTag.IsEmpty()) {
     aRetVal.AppendElement(uaLangTag);
