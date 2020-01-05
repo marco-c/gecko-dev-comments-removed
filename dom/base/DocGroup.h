@@ -12,6 +12,7 @@
 #include "nsTHashtable.h"
 #include "nsString.h"
 
+#include "mozilla/dom/TabGroup.h"
 #include "mozilla/Dispatcher.h"
 #include "mozilla/RefPtr.h"
 
@@ -33,8 +34,6 @@ namespace dom {
 
 
 
-
-class TabGroup;
 
 class DocGroup final : public Dispatcher
 {
@@ -75,6 +74,17 @@ public:
                             already_AddRefed<nsIRunnable>&& aRunnable) override;
 
   virtual nsIEventTarget* EventTargetFor(TaskCategory aCategory) const override;
+
+  
+  void ValidateAccess() const
+  {
+    mTabGroup->ValidateAccess();
+  }
+
+  
+  
+  
+  bool* GetValidAccessPtr();
 
 private:
   virtual AbstractThread*
