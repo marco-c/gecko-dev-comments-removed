@@ -30,8 +30,10 @@
 #include "nsIChildChannel.h"
 #include "nsIHttpChannelChild.h"
 #include "nsIDivertableChannel.h"
+#include "nsIThreadRetargetableRequest.h"
 #include "mozilla/net/DNS.h"
 
+class nsIEventTarget;
 class nsInputStreamPump;
 
 namespace mozilla {
@@ -51,6 +53,7 @@ class HttpChannelChild final : public PHttpChannelChild
                              , public nsIChildChannel
                              , public nsIHttpChannelChild
                              , public nsIDivertableChannel
+                             , public nsIThreadRetargetableRequest
 {
   virtual ~HttpChannelChild();
 public:
@@ -64,6 +67,7 @@ public:
   NS_DECL_NSICHILDCHANNEL
   NS_DECL_NSIHTTPCHANNELCHILD
   NS_DECL_NSIDIVERTABLECHANNEL
+  NS_DECL_NSITHREADRETARGETABLEREQUEST
 
   HttpChannelChild();
 
@@ -201,6 +205,9 @@ private:
   
   already_AddRefed<nsIEventTarget> GetNeckoTarget();
 
+  
+  already_AddRefed<nsIEventTarget> GetODATarget();
+
   MOZ_MUST_USE nsresult ContinueAsyncOpen();
 
   void DoOnStartRequest(nsIRequest* aRequest, nsISupports* aContext);
@@ -227,6 +234,10 @@ private:
   
   
   void TrySendDeletingChannel();
+
+  
+  
+  void CancelOnMainThread(nsresult aRv);
 
   RequestHeaderTuples mClientSetRequestHeaders;
   nsCOMPtr<nsIChildChannel> mRedirectChannelChild;
@@ -302,6 +313,8 @@ private:
   
   nsCOMPtr<nsIEventTarget> mNeckoTarget;
   
+  nsCOMPtr<nsIEventTarget> mODATarget;
+  
   Mutex mEventTargetMutex;
 
   void FinishInterceptedRedirect();
@@ -376,6 +389,7 @@ private:
   friend class Redirect3Event;
   friend class DeleteSelfEvent;
   friend class HttpFlushedForDiversionEvent;
+  friend class CancelEvent;
   friend class HttpAsyncAborter<HttpChannelChild>;
   friend class InterceptStreamListener;
   friend class InterceptedChannelContent;

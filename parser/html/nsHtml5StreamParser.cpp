@@ -982,11 +982,7 @@ nsHtml5StreamParser::OnStartRequest(nsIRequest* aRequest, nsISupports* aContext)
   }
 
   if (NS_FAILED(rv)) {
-    
-    
-    if (!XRE_IsContentProcess()) {
-      NS_WARNING("Failed to retarget HTML data delivery to the parser thread.");
-    }
+    NS_WARNING("Failed to retarget HTML data delivery to the parser thread.");
   }
 
   if (mCharsetSource == kCharsetFromParentFrame) {
