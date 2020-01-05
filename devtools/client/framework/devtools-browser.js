@@ -18,6 +18,7 @@ const promise = require("promise");
 const defer = require("devtools/shared/defer");
 const Telemetry = require("devtools/client/shared/telemetry");
 const { gDevTools } = require("./devtools");
+const { when: unload } = require("sdk/system/unload");
 
 
 loader.lazyRequireGetter(this, "TargetFactory", "devtools/client/framework/target", true);
@@ -139,16 +140,6 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
           for (let win of this._trackedBrowserWindows) {
             this.updateCommandAvailability(win);
           }
-        }
-        break;
-      case "quit-application":
-        gDevToolsBrowser.destroy({ shuttingDown: true });
-        break;
-      case "sdk:loader:destroy":
-        
-        
-        if (subject.wrappedJSObject == require('@loader/unload')) {
-          gDevToolsBrowser.destroy({ shuttingDown: false });
         }
         break;
     }
@@ -741,17 +732,10 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
   
 
 
-
-
-
-
-
-
-  destroy: function ({ shuttingDown }) {
+  destroy: function () {
     Services.prefs.removeObserver("devtools.", gDevToolsBrowser);
     Services.obs.removeObserver(gDevToolsBrowser, "browser-delayed-startup-finished");
-    Services.obs.removeObserver(gDevToolsBrowser, "quit-application");
-    Services.obs.removeObserver(gDevToolsBrowser, "sdk:loader:destroy");
+    Services.obs.removeObserver(gDevToolsBrowser.destroy, "quit-application");
 
     gDevToolsBrowser._pingTelemetry();
     gDevToolsBrowser._telemetry = null;
@@ -759,8 +743,6 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
     for (let win of gDevToolsBrowser._trackedBrowserWindows) {
       gDevToolsBrowser._forgetBrowserWindow(win);
     }
-
-    gDevTools.destroy({ shuttingDown });
   },
 };
 
@@ -784,10 +766,8 @@ gDevTools.on("tool-unregistered", function (ev, toolId) {
 gDevTools.on("toolbox-ready", gDevToolsBrowser._updateMenuCheckbox);
 gDevTools.on("toolbox-destroyed", gDevToolsBrowser._updateMenuCheckbox);
 
-Services.obs.addObserver(gDevToolsBrowser, "quit-application", false);
+Services.obs.addObserver(gDevToolsBrowser.destroy, "quit-application", false);
 Services.obs.addObserver(gDevToolsBrowser, "browser-delayed-startup-finished", false);
-
-Services.obs.addObserver(gDevToolsBrowser, "sdk:loader:destroy", false);
 
 
 
@@ -798,3 +778,8 @@ while (enumerator.hasMoreElements()) {
     gDevToolsBrowser._registerBrowserWindow(win);
   }
 }
+
+
+unload(function () {
+  gDevToolsBrowser.destroy();
+});
