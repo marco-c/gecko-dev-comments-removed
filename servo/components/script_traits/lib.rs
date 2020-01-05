@@ -6,7 +6,7 @@
 
 
 
-#[deny(missing_docs)]
+#![deny(missing_docs)]
 
 extern crate devtools_traits;
 extern crate euclid;
@@ -55,14 +55,19 @@ pub struct NewLayoutInfo {
     pub load_data: LoadData,
 }
 
+
+
 pub trait StylesheetLoadResponder {
+    
     fn respond(self: Box<Self>);
 }
 
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum ScriptState {
+    
     DocumentLoaded,
+    
     DocumentLoading,
 }
 
@@ -141,7 +146,10 @@ pub struct OpaqueScriptLayoutChannel(pub (Box<Any+Send>, Box<Any+Send>));
 #[derive(Clone)]
 pub struct ScriptControlChan(pub Sender<ConstellationControlMsg>);
 
+
+
 pub trait ScriptTaskFactory {
+    
     fn create<C>(_phantom: Option<&mut Self>,
                  id: PipelineId,
                  parent_info: Option<(PipelineId, SubpageId)>,
@@ -158,7 +166,9 @@ pub trait ScriptTaskFactory {
                  window_size: Option<WindowSizeData>,
                  load_data: LoadData)
                  where C: ScriptListener + Send;
+    
     fn create_layout_channel(_phantom: Option<&mut Self>) -> OpaqueScriptLayoutChannel;
+    
     fn clone_layout_channel(_phantom: Option<&mut Self>, pair: &OpaqueScriptLayoutChannel)
                             -> Box<Any+Send>;
 }
