@@ -3713,6 +3713,13 @@ XREMain::XRE_mainStartup(bool* aExitFlag)
   }
 #endif 
 
+#if defined(XP_WIN)
+  
+  
+  
+  HeapSetInformation(NULL, HeapEnableTerminationOnCorruption, NULL, 0);
+#endif 
+
 #if defined(MOZ_WIDGET_GTK) || defined(MOZ_ENABLE_XREMOTE)
   
 #define HAVE_DESKTOP_STARTUP_ID
