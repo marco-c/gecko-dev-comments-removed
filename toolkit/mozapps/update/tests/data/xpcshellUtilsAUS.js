@@ -161,9 +161,6 @@ var gAppDirOrig;
 
 var gApplyToDirOverride;
 
-var gServiceLaunchedCallbackLog = null;
-var gServiceLaunchedCallbackArgs = null;
-
 
 
 var gCallbackBinFile = "callback_app" + BIN_SUFFIX;
@@ -836,6 +833,9 @@ function setupTestCommon() {
   
   
   adjustGeneralPaths();
+  
+  
+  debugDump("Updates Directory (UpdRootD) Path: " + getMockUpdRootD().path);
 
   
   
@@ -1456,7 +1456,6 @@ function getMockUpdRootDWin() {
   let updatesDir = Cc["@mozilla.org/file/local;1"].
                    createInstance(Ci.nsILocalFile);
   updatesDir.initWithPath(localAppDataDir.path + "\\" + relPathUpdates);
-  debugDump("returning UpdRootD Path: " + updatesDir.path);
   return updatesDir;
 }
 
@@ -1496,7 +1495,6 @@ function getMockUpdRootDMac() {
   let updatesDir = Cc["@mozilla.org/file/local;1"].
                    createInstance(Ci.nsILocalFile);
   updatesDir.initWithPath(pathUpdates);
-  debugDump("returning UpdRootD Path: " + updatesDir.path);
   return updatesDir;
 }
 
@@ -3284,50 +3282,6 @@ function checkPostUpdateAppLog() {
   }
 
   do_execute_soon(checkPostUpdateAppLogFinished);
-}
-
-
-
-
-
-
-function checkCallbackServiceLog() {
-  let expectedLogContents = gServiceLaunchedCallbackArgs.join("\n") + "\n";
-  let logFile = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsILocalFile);
-  logFile.initWithPath(gServiceLaunchedCallbackLog);
-  let logContents = readFile(logFile);
-  
-  
-  
-  
-  
-  if (logContents != expectedLogContents) {
-    gFileInUseTimeoutRuns++;
-    if (gFileInUseTimeoutRuns > FILE_IN_USE_MAX_TIMEOUT_RUNS) {
-      if (logContents == null) {
-        if (logFile.exists()) {
-          logTestInfo("callback service log exists but readFile returned null");
-        } else {
-          logTestInfo("callback service log does not exist");
-        }
-      } else {
-        logTestInfo("callback service log contents are not correct");
-        let aryLog = logContents.split("\n");
-        
-        logTestInfo("contents of " + logFile.path + ":");
-        for (let i = 0; i < aryLog.length; ++i) {
-          logTestInfo(aryLog[i]);
-        }
-      }
-      
-      do_throw("Unable to find incorrect service callback log contents!");
-    }
-    do_timeout(FILE_IN_USE_TIMEOUT_MS, checkCallbackServiceLog);
-    return;
-  }
-  Assert.ok(true, "the callback service log contents" + MSG_SHOULD_EQUAL);
-
-  waitForFilesInUse();
 }
 
 
