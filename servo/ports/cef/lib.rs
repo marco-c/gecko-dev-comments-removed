@@ -3,7 +3,6 @@
 
 
 #![feature(borrow_state)]
-#![feature(box_raw)]
 #![feature(box_syntax)]
 #![feature(convert)]
 #![feature(core_intrinsics)]
