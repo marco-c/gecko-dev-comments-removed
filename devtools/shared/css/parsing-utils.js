@@ -486,18 +486,12 @@ function parseDeclarations(isCssPropertyKnown, inputString,
 
 function RuleRewriter(isCssPropertyKnown, rule, inputString) {
   this.rule = rule;
-  this.inputString = inputString;
-  
-  this.hasNewLine = /[\r\n]/.test(this.inputString);
+  this.isCssPropertyKnown = isCssPropertyKnown;
+
   
   
   this.changedDeclarations = {};
-  
-  this.declarations = parseDeclarations(isCssPropertyKnown, this.inputString,
-                                        true);
 
-  this.decl = null;
-  this.result = null;
   
   
   this.editPromise = null;
@@ -507,9 +501,28 @@ function RuleRewriter(isCssPropertyKnown, rule, inputString) {
   
   
   this.defaultIndentation = null;
+
+  this.startInitialization(inputString);
 }
 
 RuleRewriter.prototype = {
+  
+
+
+
+
+
+  startInitialization: function (inputString) {
+    this.inputString = inputString;
+    
+    this.hasNewLine = /[\r\n]/.test(this.inputString);
+    
+    this.declarations = parseDeclarations(this.isCssPropertyKnown, this.inputString,
+                                          true);
+    this.decl = null;
+    this.result = null;
+  },
+
   
 
 
@@ -922,6 +935,17 @@ RuleRewriter.prototype = {
     
     if (!this.decl) {
       return;
+    }
+
+    
+    
+    
+    
+    
+    if (this.decl.commentOffsets) {
+      this.setPropertyEnabled(index, name, true);
+      this.startInitialization(this.result);
+      this.completeInitialization(index);
     }
 
     let copyOffset = this.decl.offsets[1];
