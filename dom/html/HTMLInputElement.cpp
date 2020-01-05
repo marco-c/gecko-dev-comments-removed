@@ -5314,6 +5314,15 @@ HTMLInputElement::SanitizeValue(nsAString& aValue)
         }
       }
       break;
+    case NS_FORM_INPUT_DATETIME_LOCAL:
+      {
+        if (!aValue.IsEmpty() && !IsValidDateTimeLocal(aValue)) {
+          aValue.Truncate();
+        } else {
+          NormalizeDateTimeLocal(aValue);
+        }
+      }
+      break;
     case NS_FORM_INPUT_COLOR:
       {
         if (IsValidSimpleColor(aValue)) {
@@ -5401,7 +5410,15 @@ HTMLInputElement::IsValidDate(const nsAString& aValue) const
   return ParseDate(aValue, &year, &month, &day);
 }
 
-bool HTMLInputElement::ParseYear(const nsAString& aValue, uint32_t* aYear) const
+bool
+HTMLInputElement::IsValidDateTimeLocal(const nsAString& aValue) const
+{
+  uint32_t year, month, day, time;
+  return ParseDateTimeLocal(aValue, &year, &month, &day, &time);
+}
+
+bool
+HTMLInputElement::ParseYear(const nsAString& aValue, uint32_t* aYear) const
 {
   if (aValue.Length() < 4) {
     return false;
@@ -5411,9 +5428,9 @@ bool HTMLInputElement::ParseYear(const nsAString& aValue, uint32_t* aYear) const
       *aYear > 0;
 }
 
-bool HTMLInputElement::ParseMonth(const nsAString& aValue,
-                                  uint32_t* aYear,
-                                  uint32_t* aMonth) const
+bool
+HTMLInputElement::ParseMonth(const nsAString& aValue, uint32_t* aYear,
+                             uint32_t* aMonth) const
 {
   
   if (aValue.Length() < 7) {
@@ -5434,9 +5451,9 @@ bool HTMLInputElement::ParseMonth(const nsAString& aValue,
          *aMonth > 0 && *aMonth <= 12;
 }
 
-bool HTMLInputElement::ParseWeek(const nsAString& aValue,
-                                 uint32_t* aYear,
-                                 uint32_t* aWeek) const
+bool
+HTMLInputElement::ParseWeek(const nsAString& aValue, uint32_t* aYear,
+                            uint32_t* aWeek) const
 {
   
   if (aValue.Length() < 8) {
@@ -5462,10 +5479,9 @@ bool HTMLInputElement::ParseWeek(const nsAString& aValue,
 
 }
 
-bool HTMLInputElement::ParseDate(const nsAString& aValue,
-                                 uint32_t* aYear,
-                                 uint32_t* aMonth,
-                                 uint32_t* aDay) const
+bool
+HTMLInputElement::ParseDate(const nsAString& aValue, uint32_t* aYear,
+                            uint32_t* aMonth, uint32_t* aDay) const
 {
 
 
@@ -5490,6 +5506,85 @@ bool HTMLInputElement::ParseDate(const nsAString& aValue,
 
   return DigitSubStringToNumber(aValue, endOfMonthOffset + 1, 2, aDay) &&
          *aDay > 0 && *aDay <= NumberOfDaysInMonth(*aMonth, *aYear);
+}
+
+bool
+HTMLInputElement::ParseDateTimeLocal(const nsAString& aValue, uint32_t* aYear,
+                                     uint32_t* aMonth, uint32_t* aDay,
+                                     uint32_t* aTime) const
+{
+  
+  
+  
+  
+  
+  if (aValue.Length() < 16) {
+    return false;
+  }
+
+  const uint32_t sepIndex = 10;
+  if (aValue[sepIndex] != 'T' && aValue[sepIndex] != ' ') {
+    return false;
+  }
+
+  const nsAString& dateStr = Substring(aValue, 0, sepIndex);
+  if (!ParseDate(dateStr, aYear, aMonth, aDay)) {
+    return false;
+  }
+
+  const nsAString& timeStr = Substring(aValue, sepIndex + 1,
+                                       aValue.Length() - sepIndex + 1);
+  if (!ParseTime(timeStr, aTime)) {
+    return false;
+  }
+
+  return true;
+}
+
+void
+HTMLInputElement::NormalizeDateTimeLocal(nsAString& aValue) const
+{
+  if (aValue.IsEmpty()) {
+    return;
+  }
+
+  
+  const uint32_t sepIndex = 10;
+  if (aValue[sepIndex] == ' ') {
+    aValue.Replace(sepIndex, 1, NS_LITERAL_STRING("T"));
+  }
+
+  
+  if (aValue.Length() == 16) {
+    return;
+  }
+
+  
+  if (aValue.Length() > 19) {
+    uint32_t milliseconds;
+    if (!DigitSubStringToNumber(aValue, 20, aValue.Length() - 20,
+                                &milliseconds)) {
+      return;
+    }
+
+    if (milliseconds != 0) {
+      return;
+    }
+
+    aValue.Cut(19, aValue.Length() - 19);
+  }
+
+  
+  uint32_t seconds;
+  if (!DigitSubStringToNumber(aValue, 17, aValue.Length() - 17, &seconds)) {
+    return;
+  }
+
+  if (seconds != 0) {
+    return;
+  }
+
+  aValue.Cut(16, aValue.Length() - 16);
 }
 
 double

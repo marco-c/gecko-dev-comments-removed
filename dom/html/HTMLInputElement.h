@@ -1220,6 +1220,16 @@ protected:
 
 
 
+  bool IsValidDateTimeLocal(const nsAString& aValue) const;
+
+  
+
+
+
+
+
+
+
   bool ParseYear(const nsAString& aValue, uint32_t* aYear) const;
 
   
@@ -1255,6 +1265,26 @@ protected:
                  uint32_t* aMonth,
                  uint32_t* aDay) const;
 
+  
+
+
+
+
+
+
+
+
+  bool ParseDateTimeLocal(const nsAString& aValue,
+                          uint32_t* aYear,
+                          uint32_t* aMonth,
+                          uint32_t* aDay,
+                          uint32_t* aTime) const;
+
+  
+
+
+
+  void NormalizeDateTimeLocal(nsAString& aValue) const;
   
 
 
