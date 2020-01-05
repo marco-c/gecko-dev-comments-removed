@@ -25,6 +25,7 @@ const {
   DefaultWeakMap,
   EventEmitter,
   ExtensionError,
+  defineLazyGetter,
   getWinUtils,
 } = ExtensionUtils;
 
@@ -180,7 +181,7 @@ class TabBase {
 
 
 
-  get incognito() {
+  get _incognito() {
     return PrivateBrowsingUtils.isBrowserPrivate(this.browser);
   }
 
@@ -641,6 +642,8 @@ class TabBase {
     return this._execute(context, details, "css", "removeCSS").then(() => {});
   }
 }
+
+defineLazyGetter(TabBase.prototype, "incognito", function() { return this._incognito; });
 
 
 const WINDOW_ID_NONE = -1;
