@@ -11,7 +11,10 @@
 
 namespace mozilla {
 
-class ADTSDecoder : public MediaDecoder {
+class MediaContentType;
+
+class ADTSDecoder : public MediaDecoder
+{
 public:
   
   explicit ADTSDecoder(MediaDecoderOwner* aOwner) : MediaDecoder(aOwner) {}
@@ -21,8 +24,7 @@ public:
   
   
   static bool IsEnabled();
-  static bool CanHandleMediaType(const nsACString& aType,
-                                 const nsAString& aCodecs);
+  static bool IsSupportedType(const MediaContentType& aContentType);
 };
 
 } 
