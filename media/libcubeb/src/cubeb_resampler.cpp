@@ -4,7 +4,6 @@
 
 
 
-
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif 
@@ -15,9 +14,6 @@
 #include <cstring>
 #include <cstddef>
 #include <cstdio>
-#if defined(HAVE_CONFIG_H)
-#include "config.h"
-#endif
 #include "cubeb_resampler.h"
 #include "cubeb-speex-resampler.h"
 #include "cubeb_resampler_internal.h"
