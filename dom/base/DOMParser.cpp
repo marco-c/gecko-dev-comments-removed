@@ -28,6 +28,7 @@ using namespace mozilla::dom;
 
 DOMParser::DOMParser()
   : mAttemptedInit(false)
+  , mOriginalPrincipalWasSystem(false)
 {
 }
 
@@ -94,7 +95,7 @@ DOMParser::ParseFromString(const nsAString& str,
 
     
 
-    if (nsContentUtils::IsSystemPrincipal(mOriginalPrincipal)) {
+    if (mOriginalPrincipalWasSystem) {
       document->ForceEnableXULXBL();
     }
 
@@ -260,7 +261,7 @@ DOMParser::ParseFromStream(nsIInputStream *stream,
 
   
 
-  if (nsContentUtils::IsSystemPrincipal(mOriginalPrincipal)) {
+  if (mOriginalPrincipalWasSystem) {
     document->ForceEnableXULXBL();
   }
 
@@ -339,12 +340,11 @@ DOMParser::Init(nsIPrincipal* principal, nsIURI* documentURI,
     OriginAttributes attrs;
     mPrincipal = BasePrincipal::CreateCodebasePrincipal(mDocumentURI, attrs);
     NS_ENSURE_TRUE(mPrincipal, NS_ERROR_FAILURE);
-    mOriginalPrincipal = mPrincipal;
   } else {
-    mOriginalPrincipal = mPrincipal;
     if (nsContentUtils::IsSystemPrincipal(mPrincipal)) {
       
       
+      mOriginalPrincipalWasSystem = true;
       mPrincipal = nsNullPrincipal::Create();
 
       if (!mDocumentURI) {
@@ -357,7 +357,6 @@ DOMParser::Init(nsIPrincipal* principal, nsIURI* documentURI,
   mBaseURI = baseURI;
 
   NS_POSTCONDITION(mPrincipal, "Must have principal");
-  NS_POSTCONDITION(mOriginalPrincipal, "Must have original principal");
   NS_POSTCONDITION(mDocumentURI, "Must have document URI");
   return NS_OK;
 }
