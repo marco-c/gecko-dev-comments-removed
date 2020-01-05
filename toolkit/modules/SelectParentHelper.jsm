@@ -23,7 +23,6 @@ var currentMenulist = null;
 var currentZoom = 1;
 var closedWithEnter = false;
 var selectRect;
-var customStylingEnabled = Services.prefs.getBoolPref("dom.forms.select.customstyling");
 
 this.SelectParentHelper = {
   populate(menulist, items, selectedIndex, zoom, uaBackgroundColor, uaColor,
@@ -36,38 +35,18 @@ this.SelectParentHelper = {
     }
 
     let doc = menulist.ownerDocument;
-    let sheet;
-    if (customStylingEnabled) {
-      stylesheet = doc.createElementNS("http://www.w3.org/1999/xhtml", "style");
-      stylesheet.setAttribute("id", "ContentSelectDropdownScopedStylesheet");
-      stylesheet.scoped = true;
-      stylesheet.hidden = true;
-      stylesheet = menulist.appendChild(stylesheet);
-      sheet = stylesheet.sheet;
-    }
+    stylesheet = doc.createElementNS("http://www.w3.org/1999/xhtml", "style");
+    stylesheet.setAttribute("id", "ContentSelectDropdownScopedStylesheet");
+    stylesheet.scoped = true;
+    stylesheet.hidden = true;
+    stylesheet = menulist.appendChild(stylesheet);
 
-    let ruleBody = "";
-
-    
-    
-    if (customStylingEnabled &&
-        selectBackgroundColor != uaSelectBackgroundColor &&
-        selectBackgroundColor != "transparent" &&
-        selectBackgroundColor != selectColor) {
-      ruleBody = `background-color: ${selectBackgroundColor};`;
-    }
-
-    if (customStylingEnabled &&
-        selectColor != uaSelectColor &&
-        selectColor != selectBackgroundColor &&
-        (selectBackgroundColor != "transparent" ||
-         selectColor != uaSelectBackgroundColor)) {
-      ruleBody += `color: ${selectColor};`;
-    }
-
-    if (ruleBody) {
+    let sheet = stylesheet.sheet;
+    if (selectBackgroundColor != uaSelectBackgroundColor ||
+        selectColor != uaSelectColor) {
       sheet.insertRule(`menupopup {
-        ${ruleBody}
+        background-color: ${selectBackgroundColor};
+        color: ${selectColor};
       }`, 0);
       menulist.menupopup.setAttribute("customoptionstyling", "true");
     } else {
@@ -251,15 +230,13 @@ function populateChildren(menulist, options, selectedIndex, zoom,
     item.setAttribute("tooltiptext", option.tooltip);
 
     let ruleBody = "";
-    if (customStylingEnabled &&
-        option.backgroundColor &&
-        option.backgroundColor != "transparent" &&
+    if (option.backgroundColor &&
+        option.backgroundColor != "rgba(0, 0, 0, 0)" &&
         option.backgroundColor != uaBackgroundColor) {
       ruleBody = `background-color: ${option.backgroundColor};`;
     }
 
-    if (customStylingEnabled &&
-        option.color &&
+    if (option.color &&
         option.color != uaColor) {
       ruleBody += `color: ${option.color};`;
     }
