@@ -2836,7 +2836,7 @@ NativeKey::GetFollowingCharMessage(MSG& aCharMsg)
   
   
   
-  for (uint32_t i = 0; i < 5; i++) {
+  for (uint32_t i = 0; i < 50; i++) {
     MSG removedMsg, nextKeyMsgInAllWindows;
     bool doCrash = false;
     if (!WinUtils::PeekMessage(&removedMsg, mMsg.hwnd,
@@ -2978,12 +2978,51 @@ NativeKey::GetFollowingCharMessage(MSG& aCharMsg)
     }
 
     
+    
+    
+    
+    
     if (removedMsg.message == WM_NULL) {
       MOZ_LOG(sNativeKeyLogger, LogLevel::Warning,
         ("%p   NativeKey::GetFollowingCharMessage(), WARNING, failed to "
          "remove a char message, instead, removed WM_NULL message, ",
          "removedMsg=%s",
          this, ToString(removedMsg).get()));
+      
+      MSG newNextKeyMsg;
+      if (!WinUtils::PeekMessage(&newNextKeyMsg, mMsg.hwnd,
+                                 WM_KEYFIRST, WM_KEYLAST,
+                                 PM_NOREMOVE | PM_NOYIELD)) {
+        
+        
+        MOZ_LOG(sNativeKeyLogger, LogLevel::Warning,
+          ("%p   NativeKey::GetFollowingCharMessage(), WARNING, failed to "
+           "remove a char message because it's gone during removing it from "
+           "the queue, nextKeyMsg=%s",
+           this, ToString(nextKeyMsg).get()));
+        MOZ_ASSERT(!mCharMessageHasGone);
+        mFollowingCharMsgs.Clear();
+        mCharMessageHasGone = true;
+        return false;
+      }
+      if (!IsCharMessage(newNextKeyMsg)) {
+        
+        
+        
+        MOZ_LOG(sNativeKeyLogger, LogLevel::Warning,
+          ("%p   NativeKey::GetFollowingCharMessage(), WARNING, failed to "
+           "remove a char message because it's gone during removing it from "
+           "the queue, nextKeyMsg=%s, newNextKeyMsg=%s",
+           this, ToString(nextKeyMsg).get(), ToString(newNextKeyMsg).get()));
+        MOZ_ASSERT(!mCharMessageHasGone);
+        mFollowingCharMsgs.Clear();
+        mCharMessageHasGone = true;
+        return false;
+      }
+      MOZ_LOG(sNativeKeyLogger, LogLevel::Debug,
+        ("%p   NativeKey::GetFollowingCharMessage(), there is the message "
+         "which is being tried to be removed from the queue, trying again...",
+         this));
       continue;
     }
 
