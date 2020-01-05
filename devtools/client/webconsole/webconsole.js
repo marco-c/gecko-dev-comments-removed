@@ -581,7 +581,9 @@ WebConsoleFrame.prototype = {
     if (this.NEW_CONSOLE_OUTPUT_ENABLED) {
       
       this.window.jsterm = this.jsterm;
-      console.log("Entering experimental mode for console frontend");
+
+      
+      this.outputWrapper.removeAttribute("context");
 
       
       
