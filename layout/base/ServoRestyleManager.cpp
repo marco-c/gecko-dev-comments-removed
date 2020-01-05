@@ -37,6 +37,13 @@ ServoRestyleManager::PostRestyleEvent(Element* aElement,
     return;
   }
 
+  if (mInStyleRefresh && aRestyleHint == eRestyle_CSSAnimations) {
+    
+    
+    
+    return;
+  }
+
   if (aRestyleHint == 0 && !aMinChangeHint && !HasPendingRestyles()) {
     return; 
   }
@@ -169,7 +176,7 @@ ServoRestyleManager::RecreateStyleContexts(Element* aElement,
 
     RefPtr<nsStyleContext> newContext =
       aStyleSet->GetContext(computedValues.forget(), aParentContext, nullptr,
-                            CSSPseudoElementType::NotPseudo);
+                            CSSPseudoElementType::NotPseudo, aElement);
 
     
     
