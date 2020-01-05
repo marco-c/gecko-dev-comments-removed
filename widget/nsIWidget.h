@@ -1417,7 +1417,7 @@ class nsIWidget : public nsISupports
 
 
 
-    NS_IMETHOD GetAttention(int32_t aCycleCount) = 0;
+    virtual MOZ_MUST_USE nsresult GetAttention(int32_t aCycleCount) = 0;
 
     
 
@@ -1475,14 +1475,16 @@ class nsIWidget : public nsISupports
     
 
 
-    NS_IMETHOD BeginResizeDrag(mozilla::WidgetGUIEvent* aEvent,
-                               int32_t aHorizontal,
-                               int32_t aVertical) = 0;
+    virtual MOZ_MUST_USE nsresult
+    BeginResizeDrag(mozilla::WidgetGUIEvent* aEvent,
+                    int32_t aHorizontal,
+                    int32_t aVertical) = 0;
 
     
 
 
-    NS_IMETHOD BeginMoveDrag(mozilla::WidgetMouseEvent* aEvent) = 0;
+    virtual MOZ_MUST_USE nsresult
+    BeginMoveDrag(mozilla::WidgetMouseEvent* aEvent) = 0;
 
     enum Modifiers {
         CAPS_LOCK = 0x01, 
@@ -1811,7 +1813,8 @@ public:
 
 
 
-    NS_IMETHOD AttachNativeKeyEvent(mozilla::WidgetKeyboardEvent& aEvent) = 0;
+    virtual MOZ_MUST_USE nsresult
+    AttachNativeKeyEvent(mozilla::WidgetKeyboardEvent& aEvent) = 0;
 
     
 
@@ -1838,7 +1841,8 @@ public:
 
 
 
-    NS_IMETHOD OnDefaultButtonLoaded(const LayoutDeviceIntRect& aButtonRect) = 0;
+    virtual MOZ_MUST_USE nsresult
+    OnDefaultButtonLoaded(const LayoutDeviceIntRect& aButtonRect) = 0;
 
     
 

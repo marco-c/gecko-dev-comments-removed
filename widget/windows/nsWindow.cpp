@@ -1483,7 +1483,7 @@ NS_IMETHODIMP nsWindow::Show(bool bState)
               ::ShowWindow(mWnd, SW_SHOWNORMAL);
             } else {
               ::ShowWindow(mWnd, SW_SHOWNOACTIVATE);
-              GetAttention(2);
+              Unused << GetAttention(2);
             }
             break;
         }
@@ -1866,7 +1866,7 @@ NS_IMETHODIMP nsWindow::Resize(double aX, double aY, double aWidth,
   return NS_OK;
 }
 
-NS_IMETHODIMP
+nsresult
 nsWindow::BeginResizeDrag(WidgetGUIEvent* aEvent,
                           int32_t aHorizontal,
                           int32_t aVertical)
@@ -3720,7 +3720,7 @@ nsWindow::CaptureRollupEvents(nsIRollupListener* aListener, bool aDoCapture)
 
 
 
-NS_IMETHODIMP
+nsresult
 nsWindow::GetAttention(int32_t aCycleCount)
 {
   
@@ -3838,8 +3838,8 @@ nsWindow::GetLayerManager(PLayerTransactionChild* aShadowManager,
 
 
 
- 
-NS_IMETHODIMP
+
+nsresult
 nsWindow::OnDefaultButtonLoaded(const LayoutDeviceIntRect& aButtonRect)
 {
   if (aButtonRect.IsEmpty())
