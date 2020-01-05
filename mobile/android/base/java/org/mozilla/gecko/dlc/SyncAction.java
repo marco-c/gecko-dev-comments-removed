@@ -130,7 +130,7 @@ public class SyncAction extends BaseAction {
             }
             
             builder.appendQueryParameter(KINTO_PARAMETER_FIELDS,
-                    "attachment.location,attachment.original.filename,attachment.original.hash,attachment.hash,type,kind,attachment.original.size,match");
+                    "type,kind,attachment.location,attachment.hash,attachment.original.size,attachment.original.filename,attachment.original.hash,match");
 
             
             
