@@ -1997,7 +1997,9 @@ XMLHttpRequestMainThread::OnStartRequest(nsIRequest *request, nsISupports *ctxt)
             mIsMappedArrayBuffer = false;
           } else {
             rv = mArrayBufferBuilder.mapToFileInPackage(file, jarFile);
-            if (NS_WARN_IF(NS_FAILED(rv))) {
+            
+            
+            if (NS_FAILED(rv)) {
               mIsMappedArrayBuffer = false;
             } else {
               channel->SetContentType(NS_LITERAL_CSTRING("application/mem-mapped"));
