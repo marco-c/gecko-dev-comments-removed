@@ -61,8 +61,7 @@
 #include "mozilla/OperatorNewExtensions.h"
 #include "mozilla/PendingAnimationTracker.h"
 #include "mozilla/Preferences.h"
-#include "mozilla/StyleAnimationValue.h"
-#include "mozilla/ServoBindings.h"
+#include "mozilla/StyleAnimationValueInlines.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
@@ -923,6 +922,8 @@ nsDisplayListBuilder::nsDisplayListBuilder(nsIFrame* aReferenceFrame,
       mHitTestShouldStopAtFirstOpaque(false)
 {
   MOZ_COUNT_CTOR(nsDisplayListBuilder);
+  PL_InitArenaPool(&mPool, "displayListArena", 4096,
+                   std::max(NS_ALIGNMENT_OF(void*),NS_ALIGNMENT_OF(double))-1);
 
   nsPresContext* pc = aReferenceFrame->PresContext();
   nsIPresShell *shell = pc->PresShell();
@@ -1110,6 +1111,7 @@ nsDisplayListBuilder::~nsDisplayListBuilder() {
     c->DisplayItemClipChain::~DisplayItemClipChain();
   }
 
+  PL_FinishArenaPool(&mPool);
   MOZ_COUNT_DTOR(nsDisplayListBuilder);
 }
 
@@ -1333,7 +1335,12 @@ nsDisplayListBuilder::MarkPreserve3DFramesForDisplayList(nsIFrame* aDirtyFrame)
 void*
 nsDisplayListBuilder::Allocate(size_t aSize)
 {
-  return mPool.Allocate(aSize);
+  void *tmp;
+  PL_ARENA_ALLOCATE(tmp, &mPool, aSize);
+  if (!tmp) {
+    NS_ABORT_OOM(aSize);
+  }
+  return tmp;
 }
 
 ActiveScrolledRoot*
@@ -2306,12 +2313,6 @@ nsDisplayItem* nsDisplayList::RemoveBottom() {
 void nsDisplayList::DeleteAll() {
   nsDisplayItem* item;
   while ((item = RemoveBottom()) != nullptr) {
-#ifdef NIGHTLY_BUILD
-    if (XRE_IsContentProcess()) {
-      mozilla::Telemetry::Accumulate(mozilla::Telemetry::DISPLAY_ITEM_USAGE_COUNT,
-                                     item->GetType());
-    }
-#endif
     item->~nsDisplayItem();
   }
 }
@@ -2752,6 +2753,40 @@ nsDisplaySolidColor::GetBounds(nsDisplayListBuilder* aBuilder, bool* aSnap)
 {
   *aSnap = true;
   return mBounds;
+}
+
+LayerState
+nsDisplaySolidColor::GetLayerState(nsDisplayListBuilder* aBuilder,
+                                   LayerManager* aManager,
+                                   const ContainerLayerParameters& aParameters)
+{
+  if (ForceActiveLayers() || gfxPrefs::LayersAllowSolidColorLayers()) {
+    return LAYER_ACTIVE;
+  }
+  return LAYER_NONE;
+}
+
+already_AddRefed<Layer>
+nsDisplaySolidColor::BuildLayer(nsDisplayListBuilder* aBuilder,
+                                LayerManager* aManager,
+                                const ContainerLayerParameters& aContainerParameters)
+{
+  RefPtr<ColorLayer> layer = static_cast<ColorLayer*>
+    (aManager->GetLayerBuilder()->GetLeafLayerFor(aBuilder, this));
+  if (!layer) {
+    layer = aManager->CreateColorLayer();
+    if (!layer) {
+      return nullptr;
+    }
+  }
+  layer->SetColor(gfx::Color::FromABGR(mColor));
+
+  const int32_t appUnitsPerDevPixel = mFrame->PresContext()->AppUnitsPerDevPixel();
+  layer->SetBounds(mBounds.ToNearestPixels(appUnitsPerDevPixel));
+  layer->SetBaseTransform(gfx::Matrix4x4::Translation(aContainerParameters.mOffset.x,
+                                                      aContainerParameters.mOffset.y, 0));
+
+  return layer.forget();
 }
 
 void

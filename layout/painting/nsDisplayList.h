@@ -13,17 +13,16 @@
 #ifndef NSDISPLAYLIST_H_
 #define NSDISPLAYLIST_H_
 
-#include "mozilla/ArenaAllocator.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Array.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/EnumSet.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/TemplateLib.h" 
 #include "nsCOMPtr.h"
 #include "nsContainerFrame.h"
 #include "nsPoint.h"
 #include "nsRect.h"
+#include "plarena.h"
 #include "nsRegion.h"
 #include "nsDisplayListInvalidation.h"
 #include "nsRenderingContext.h"
@@ -1456,11 +1455,7 @@ private:
   nsIFrame* const                mReferenceFrame;
   nsIFrame*                      mIgnoreScrollFrame;
   nsDisplayLayerEventRegions*    mLayerEventRegions;
-
-  static const size_t kArenaAlignment =
-      mozilla::tl::Max<NS_ALIGNMENT_OF(void*), NS_ALIGNMENT_OF(double)>::value;
-  mozilla::ArenaAllocator<4096, kArenaAlignment> mPool;
-
+  PLArenaPool                    mPool;
   nsCOMPtr<nsISelection>         mBoundingSelection;
   AutoTArray<PresShellState,8> mPresShellStates;
   AutoTArray<nsIFrame*,100>    mFramesMarkedForDisplay;
@@ -2982,6 +2977,13 @@ public:
 #endif
 
   virtual nsRect GetBounds(nsDisplayListBuilder* aBuilder, bool* aSnap) override;
+
+  virtual LayerState GetLayerState(nsDisplayListBuilder* aBuilder,
+                                   LayerManager* aManager,
+                                   const ContainerLayerParameters& aParameters) override;
+  virtual already_AddRefed<Layer> BuildLayer(nsDisplayListBuilder* aBuilder,
+                                             LayerManager* aManager,
+                                             const ContainerLayerParameters& aContainerParameters) override;
 
   virtual void Paint(nsDisplayListBuilder* aBuilder, nsRenderingContext* aCtx) override;
 
