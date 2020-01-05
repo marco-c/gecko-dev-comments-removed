@@ -1899,6 +1899,44 @@ SetupDirtyRects(const nsRect& aBGClipArea, const nsRect& aCallerDirtyRect,
              "second should be empty if first is");
 }
 
+static bool
+IsSVGStyleGeometryBox(StyleGeometryBox aBox)
+{
+  return (aBox == StyleGeometryBox::Fill || aBox == StyleGeometryBox::Stroke ||
+          aBox == StyleGeometryBox::View);
+}
+
+static bool
+IsHTMLStyleGeometryBox(StyleGeometryBox aBox)
+{
+  return (aBox == StyleGeometryBox::Content ||
+          aBox == StyleGeometryBox::Padding ||
+          aBox == StyleGeometryBox::Border ||
+          aBox == StyleGeometryBox::Margin);
+}
+
+static StyleGeometryBox
+ComputeBoxValue(nsIFrame* aForFrame, StyleGeometryBox aBox)
+{
+  
+  if (aForFrame->IsFrameOfType(nsIFrame::eSVG) &&
+      (aForFrame->GetType() != nsGkAtoms::svgOuterSVGFrame)) {
+    
+    
+    if (IsHTMLStyleGeometryBox(aBox)) {
+      return StyleGeometryBox::Fill;
+    }
+  } else {
+    
+    
+    if (IsSVGStyleGeometryBox(aBox)) {
+      return StyleGeometryBox::Border;
+    }
+  }
+
+  return aBox;
+}
+
  void
 nsCSSRendering::GetImageLayerClip(const nsStyleImageLayers::Layer& aLayer,
                                   nsIFrame* aForFrame, const nsStyleBorder& aBorder,
@@ -1906,7 +1944,40 @@ nsCSSRendering::GetImageLayerClip(const nsStyleImageLayers::Layer& aLayer,
                                   bool aWillPaintBorder, nscoord aAppUnitsPerPixel,
                                    ImageLayerClipState* aClipState)
 {
-  StyleGeometryBox backgroundClip = aLayer.mClip;
+  StyleGeometryBox backgroundClip = ComputeBoxValue(aForFrame, aLayer.mClip);
+
+  if (IsSVGStyleGeometryBox(backgroundClip)) {
+    MOZ_ASSERT(aForFrame->IsFrameOfType(nsIFrame::eSVG) &&
+               (aForFrame->GetType() != nsGkAtoms::svgOuterSVGFrame));
+
+    aClipState->mHasAdditionalBGClipArea = false;
+    aClipState->mCustomClip = false;
+
+    
+    nsRect clipArea =
+      nsLayoutUtils::ComputeGeometryBox(aForFrame, backgroundClip);
+
+    nsRect strokeBox = (backgroundClip == StyleGeometryBox::Stroke)
+      ? clipArea
+      : nsLayoutUtils::ComputeGeometryBox(aForFrame, StyleGeometryBox::Stroke);
+    nsRect clipAreaRelativeToStrokeBox = clipArea - strokeBox.TopLeft();
+
+    
+    
+    
+    
+    
+    
+    
+    
+    aClipState->mBGClipArea =
+      clipAreaRelativeToStrokeBox + aBorderArea.TopLeft();
+
+    SetupDirtyRects(aClipState->mBGClipArea, aCallerDirtyRect,
+                    aAppUnitsPerPixel, &aClipState->mDirtyRect,
+                    &aClipState->mDirtyRectGfx);
+    return;
+  }
 
   if (backgroundClip == StyleGeometryBox::NoClip) {
     aClipState->mBGClipArea = aCallerDirtyRect;
@@ -1919,6 +1990,9 @@ nsCSSRendering::GetImageLayerClip(const nsStyleImageLayers::Layer& aLayer,
     return;
   }
 
+  MOZ_ASSERT(!aForFrame->IsFrameOfType(nsIFrame::eSVG) ||
+             aForFrame->GetType() == nsGkAtoms::svgOuterSVGFrame);
+
   
   
   Sides skipSides = aForFrame->GetSkipSides();
@@ -1927,15 +2001,6 @@ nsCSSRendering::GetImageLayerClip(const nsStyleImageLayers::Layer& aLayer,
 
   bool haveRoundedCorners = GetRadii(aForFrame, aBorder, aBorderArea,
                                      clipBorderArea, aClipState->mRadii);
-
-  
-  
-  
-  if (backgroundClip == StyleGeometryBox::Fill ||
-      backgroundClip == StyleGeometryBox::Stroke ||
-      backgroundClip == StyleGeometryBox::View) {
-    backgroundClip = StyleGeometryBox::Border;
-  }
 
   bool isSolidBorder =
       aWillPaintBorder && IsOpaqueBorder(aBorder);
