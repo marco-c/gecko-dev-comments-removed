@@ -196,11 +196,11 @@ public:
   
   virtual void HandleCDMProxyReady() { }
   virtual void HandleAudioCaptured() { }
-  virtual void HandleAudioDecoded(MediaData* aAudio)
+  virtual void HandleAudioDecoded(AudioData* aAudio)
   {
     Crash("Unexpected event!", __func__);
   }
-  virtual void HandleVideoDecoded(MediaData* aVideo, TimeStamp aDecodeStart)
+  virtual void HandleVideoDecoded(VideoData* aVideo, TimeStamp aDecodeStart)
   {
     Crash("Unexpected event!", __func__);
   }
@@ -283,8 +283,8 @@ protected:
            || mMaster->IsWaitingAudioData()
            || mMaster->IsWaitingVideoData();
   }
-  MediaQueue<MediaData>& AudioQueue() const { return mMaster->mAudioQueue; }
-  MediaQueue<MediaData>& VideoQueue() const { return mMaster->mVideoQueue; }
+  MediaQueue<AudioData>& AudioQueue() const { return mMaster->mAudioQueue; }
+  MediaQueue<VideoData>& VideoQueue() const { return mMaster->mVideoQueue; }
 
   template <class S, typename... Args, size_t... Indexes>
   auto
@@ -555,13 +555,13 @@ public:
     return DECODER_STATE_DECODING_FIRSTFRAME;
   }
 
-  void HandleAudioDecoded(MediaData* aAudio) override
+  void HandleAudioDecoded(AudioData* aAudio) override
   {
     mMaster->PushAudio(aAudio);
     MaybeFinishDecodeFirstFrame();
   }
 
-  void HandleVideoDecoded(MediaData* aVideo, TimeStamp aDecodeStart) override
+  void HandleVideoDecoded(VideoData* aVideo, TimeStamp aDecodeStart) override
   {
     mMaster->PushVideo(aVideo);
     MaybeFinishDecodeFirstFrame();
@@ -702,14 +702,14 @@ public:
     return DECODER_STATE_DECODING;
   }
 
-  void HandleAudioDecoded(MediaData* aAudio) override
+  void HandleAudioDecoded(AudioData* aAudio) override
   {
     mMaster->PushAudio(aAudio);
     DispatchDecodeTasksIfNeeded();
     MaybeStopPrerolling();
   }
 
-  void HandleVideoDecoded(MediaData* aVideo, TimeStamp aDecodeStart) override
+  void HandleVideoDecoded(VideoData* aVideo, TimeStamp aDecodeStart) override
   {
     mMaster->PushVideo(aVideo);
     DispatchDecodeTasksIfNeeded();
@@ -970,8 +970,8 @@ public:
     return DECODER_STATE_SEEKING;
   }
 
-  void HandleAudioDecoded(MediaData* aAudio) override = 0;
-  void HandleVideoDecoded(MediaData* aVideo,
+  void HandleAudioDecoded(AudioData* aAudio) override = 0;
+  void HandleVideoDecoded(VideoData* aVideo,
                           TimeStamp aDecodeStart) override = 0;
   void HandleAudioWaited(MediaData::Type aType) override = 0;
   void HandleVideoWaited(MediaData::Type aType) override = 0;
@@ -1026,7 +1026,7 @@ public:
     mWaitRequest.DisconnectIfExists();
   }
 
-  void HandleAudioDecoded(MediaData* aAudio) override
+  void HandleAudioDecoded(AudioData* aAudio) override
   {
     MOZ_ASSERT(!mDoneAudioSeeking || !mDoneVideoSeeking,
                "Seek shouldn't be finished");
@@ -1048,7 +1048,7 @@ public:
       mMaster->PushAudio(aAudio);
       mDoneAudioSeeking = true;
     } else {
-      nsresult rv = DropAudioUpToSeekTarget(aAudio->As<AudioData>());
+      nsresult rv = DropAudioUpToSeekTarget(aAudio);
       if (NS_FAILED(rv)) {
         mMaster->DecodeError(rv);
         return;
@@ -1062,7 +1062,7 @@ public:
     MaybeFinishSeek();
   }
 
-  void HandleVideoDecoded(MediaData* aVideo, TimeStamp aDecodeStart) override
+  void HandleVideoDecoded(VideoData* aVideo, TimeStamp aDecodeStart) override
   {
     MOZ_ASSERT(!mDoneAudioSeeking || !mDoneVideoSeeking,
                "Seek shouldn't be finished");
@@ -1205,8 +1205,8 @@ private:
     
     
     if (mSeekJob.mTarget->IsFast()) {
-      RefPtr<MediaData> audio = AudioQueue().PeekFront();
-      RefPtr<MediaData> video = VideoQueue().PeekFront();
+      RefPtr<AudioData> audio = AudioQueue().PeekFront();
+      RefPtr<VideoData> video = VideoQueue().PeekFront();
 
       
       if (!audio && !video) {
@@ -1378,35 +1378,34 @@ private:
     return NS_OK;
   }
 
-  nsresult DropVideoUpToSeekTarget(MediaData* aSample)
+  nsresult DropVideoUpToSeekTarget(VideoData* aVideo)
   {
-    RefPtr<VideoData> video(aSample->As<VideoData>());
-    MOZ_ASSERT(video);
+    MOZ_ASSERT(aVideo);
     SLOG("DropVideoUpToSeekTarget() frame [%" PRId64 ", %" PRId64 "]",
-         video->mTime, video->GetEndTime());
+         aVideo->mTime, aVideo->GetEndTime());
     const int64_t target = mSeekJob.mTarget->GetTime().ToMicroseconds();
 
     
     
-    if (target >= video->GetEndTime()) {
+    if (target >= aVideo->GetEndTime()) {
       SLOG("DropVideoUpToSeekTarget() pop video frame [%" PRId64 ", %" PRId64 "] target=%" PRId64,
-           video->mTime, video->GetEndTime(), target);
-      mFirstVideoFrameAfterSeek = video;
+           aVideo->mTime, aVideo->GetEndTime(), target);
+      mFirstVideoFrameAfterSeek = aVideo;
     } else {
-      if (target >= video->mTime && video->GetEndTime() >= target) {
+      if (target >= aVideo->mTime && aVideo->GetEndTime() >= target) {
         
         
-        video->UpdateTimestamp(target);
+        aVideo->UpdateTimestamp(target);
       }
       mFirstVideoFrameAfterSeek = nullptr;
 
       SLOG("DropVideoUpToSeekTarget() found video frame [%" PRId64 ", %" PRId64 "] "
            "containing target=%" PRId64,
-           video->mTime, video->GetEndTime(), target);
+           aVideo->mTime, aVideo->GetEndTime(), target);
 
       MOZ_ASSERT(VideoQueue().GetSize() == 0,
                  "Should be the 1st sample after seeking");
-      mMaster->PushVideo(video);
+      mMaster->PushVideo(aVideo);
       mDoneVideoSeeking = true;
     }
 
@@ -1437,7 +1436,7 @@ private:
   
   
   
-  RefPtr<MediaData> mFirstVideoFrameAfterSeek;
+  RefPtr<VideoData> mFirstVideoFrameAfterSeek;
 };
 
 
@@ -1445,12 +1444,13 @@ private:
 
 
 
-template <typename Function> static void
-DiscardFrames(MediaQueue<MediaData>& aQueue, const Function& aCompare)
+template <typename Type, typename Function>
+static void
+DiscardFrames(MediaQueue<Type>& aQueue, const Function& aCompare)
 {
   while(aQueue.GetSize() > 0) {
     if (aCompare(aQueue.PeekFront()->mTime)) {
-      RefPtr<MediaData> releaseMe = aQueue.PopFront();
+      RefPtr<Type> releaseMe = aQueue.PopFront();
       continue;
     }
     break;
@@ -1538,12 +1538,12 @@ private:
     OwnerThread()->Dispatch(r.forget());
   }
 
-  void HandleAudioDecoded(MediaData* aAudio) override
+  void HandleAudioDecoded(AudioData* aAudio) override
   {
     mMaster->PushAudio(aAudio);
   }
 
-  void HandleVideoDecoded(MediaData* aVideo, TimeStamp aDecodeStart) override
+  void HandleVideoDecoded(VideoData* aVideo, TimeStamp aDecodeStart) override
   {
     MOZ_ASSERT(aVideo);
     MOZ_ASSERT(!mSeekJob.mPromise.IsEmpty(), "Seek shouldn't be finished");
@@ -1639,7 +1639,7 @@ private:
   
   void UpdateSeekTargetTime()
   {
-    RefPtr<MediaData> data = VideoQueue().PeekFront();
+    RefPtr<VideoData> data = VideoQueue().PeekFront();
     if (data) {
       mSeekJob.mTarget->SetTime(TimeUnit::FromMicroseconds(data->mTime));
     } else {
@@ -1710,7 +1710,7 @@ public:
     return DECODER_STATE_BUFFERING;
   }
 
-  void HandleAudioDecoded(MediaData* aAudio) override
+  void HandleAudioDecoded(AudioData* aAudio) override
   {
     
     
@@ -1718,7 +1718,7 @@ public:
     mMaster->ScheduleStateMachine();
   }
 
-  void HandleVideoDecoded(MediaData* aVideo, TimeStamp aDecodeStart) override
+  void HandleVideoDecoded(VideoData* aVideo, TimeStamp aDecodeStart) override
   {
     
     
@@ -2760,7 +2760,7 @@ bool MediaDecoderStateMachine::HaveEnoughDecodedVideo()
 }
 
 void
-MediaDecoderStateMachine::PushAudio(MediaData* aSample)
+MediaDecoderStateMachine::PushAudio(AudioData* aSample)
 {
   MOZ_ASSERT(OnTaskQueue());
   MOZ_ASSERT(aSample);
@@ -2768,23 +2768,23 @@ MediaDecoderStateMachine::PushAudio(MediaData* aSample)
 }
 
 void
-MediaDecoderStateMachine::PushVideo(MediaData* aSample)
+MediaDecoderStateMachine::PushVideo(VideoData* aSample)
 {
   MOZ_ASSERT(OnTaskQueue());
   MOZ_ASSERT(aSample);
-  aSample->As<VideoData>()->mFrameID = ++mCurrentFrameID;
+  aSample->mFrameID = ++mCurrentFrameID;
   VideoQueue().Push(aSample);
 }
 
 void
-MediaDecoderStateMachine::OnAudioPopped(const RefPtr<MediaData>& aSample)
+MediaDecoderStateMachine::OnAudioPopped(const RefPtr<AudioData>& aSample)
 {
   MOZ_ASSERT(OnTaskQueue());
   mPlaybackOffset = std::max(mPlaybackOffset.Ref(), aSample->mOffset);
 }
 
 void
-MediaDecoderStateMachine::OnVideoPopped(const RefPtr<MediaData>& aSample)
+MediaDecoderStateMachine::OnVideoPopped(const RefPtr<VideoData>& aSample)
 {
   MOZ_ASSERT(OnTaskQueue());
   mPlaybackOffset = std::max(mPlaybackOffset.Ref(), aSample->mOffset);
@@ -3138,7 +3138,7 @@ MediaDecoderStateMachine::RequestAudioData()
   RefPtr<MediaDecoderStateMachine> self = this;
   mReader->RequestAudioData()->Then(
     OwnerThread(), __func__,
-    [this, self] (MediaData* aAudio) {
+    [this, self] (AudioData* aAudio) {
       MOZ_ASSERT(aAudio);
       mAudioDataRequest.Complete();
       
@@ -3185,7 +3185,7 @@ MediaDecoderStateMachine::RequestVideoData(bool aSkipToNextKeyframe,
   RefPtr<MediaDecoderStateMachine> self = this;
   mReader->RequestVideoData(aSkipToNextKeyframe, aCurrentTime)->Then(
     OwnerThread(), __func__,
-    [this, self, videoDecodeStartTime] (MediaData* aVideo) {
+    [this, self, videoDecodeStartTime] (VideoData* aVideo) {
       MOZ_ASSERT(aVideo);
       mVideoDataRequest.Complete();
       

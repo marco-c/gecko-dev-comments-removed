@@ -34,7 +34,7 @@ static const int64_t AUDIO_FUZZ_FRAMES = 1;
 static const int32_t LOW_AUDIO_USECS = 300000;
 
 DecodedAudioDataSink::DecodedAudioDataSink(AbstractThread* aThread,
-                                           MediaQueue<MediaData>& aAudioQueue,
+                                           MediaQueue<AudioData>& aAudioQueue,
                                            int64_t aStartTime,
                                            const AudioInfo& aInfo,
                                            dom::AudioChannel aChannel)
@@ -260,6 +260,27 @@ DecodedAudioDataSink::PopFrames(uint32_t aFrames)
     AudioDataValue* const mData;
   };
 
+  class SilentChunk : public AudioStream::Chunk {
+  public:
+    SilentChunk(uint32_t aFrames, uint32_t aChannels, uint32_t aRate)
+      : mFrames(aFrames)
+      , mChannels(aChannels)
+      , mRate(aRate)
+      , mData(MakeUnique<AudioDataValue[]>(aChannels * aFrames)) {
+      memset(mData.get(), 0, aChannels * aFrames * sizeof(AudioDataValue));
+    }
+    const AudioDataValue* Data() const { return mData.get(); }
+    uint32_t Frames() const { return mFrames; }
+    uint32_t Channels() const { return mChannels; }
+    uint32_t Rate() const { return mRate; }
+    AudioDataValue* GetWritable() const { return mData.get(); }
+  private:
+    const uint32_t mFrames;
+    const uint32_t mChannels;
+    const uint32_t mRate;
+    UniquePtr<AudioDataValue[]> mData;
+  };
+
   bool needPopping = false;
   if (!mCurrentData) {
     
@@ -343,14 +364,14 @@ DecodedAudioDataSink::CheckIsAudible(const AudioData* aData)
 }
 
 void
-DecodedAudioDataSink::OnAudioPopped(const RefPtr<MediaData>& aSample)
+DecodedAudioDataSink::OnAudioPopped(const RefPtr<AudioData>& aSample)
 {
   SINK_LOG_V("AudioStream has used an audio packet.");
   NotifyAudioNeeded();
 }
 
 void
-DecodedAudioDataSink::OnAudioPushed(const RefPtr<MediaData>& aSample)
+DecodedAudioDataSink::OnAudioPushed(const RefPtr<AudioData>& aSample)
 {
   SINK_LOG_V("One new audio packet available.");
   NotifyAudioNeeded();
@@ -367,8 +388,7 @@ DecodedAudioDataSink::NotifyAudioNeeded()
   while (AudioQueue().GetSize() && (AudioQueue().IsFinished() ||
                                     mProcessedQueueLength < LOW_AUDIO_USECS ||
                                     mProcessedQueue.GetSize() < 2)) {
-    RefPtr<AudioData> data =
-      dont_AddRef(AudioQueue().PopFront().take()->As<AudioData>());
+    RefPtr<AudioData> data = AudioQueue().PopFront();
 
     
     if (!data->mFrames) {

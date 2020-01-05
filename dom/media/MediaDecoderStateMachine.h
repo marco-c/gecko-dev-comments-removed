@@ -327,11 +327,11 @@ protected:
 
   
   
-  void PushAudio(MediaData* aSample);
-  void PushVideo(MediaData* aSample);
+  void PushAudio(AudioData* aSample);
+  void PushVideo(VideoData* aSample);
 
-  void OnAudioPopped(const RefPtr<MediaData>& aSample);
-  void OnVideoPopped(const RefPtr<MediaData>& aSample);
+  void OnAudioPopped(const RefPtr<AudioData>& aSample);
+  void OnVideoPopped(const RefPtr<VideoData>& aSample);
 
   void AudioAudibleChanged(bool aAudible);
 
@@ -339,8 +339,8 @@ protected:
   void SetPlaybackRate(double aPlaybackRate);
   void PreservesPitchChanged();
 
-  MediaQueue<MediaData>& AudioQueue() { return mAudioQueue; }
-  MediaQueue<MediaData>& VideoQueue() { return mVideoQueue; }
+  MediaQueue<AudioData>& AudioQueue() { return mAudioQueue; }
+  MediaQueue<VideoData>& VideoQueue() { return mVideoQueue; }
 
   
   
@@ -506,10 +506,10 @@ private:
 
   
   
-  MediaQueue<MediaData> mAudioQueue;
+  MediaQueue<AudioData> mAudioQueue;
   
   
-  MediaQueue<MediaData> mVideoQueue;
+  MediaQueue<VideoData> mVideoQueue;
 
   UniquePtr<StateObject> mStateObj;
 
