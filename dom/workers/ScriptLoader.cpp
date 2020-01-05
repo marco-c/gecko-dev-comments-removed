@@ -671,7 +671,6 @@ private:
     RefPtr<mozilla::dom::InternalResponse> ir =
       new mozilla::dom::InternalResponse(200, NS_LITERAL_CSTRING("OK"));
     ir->SetBody(loadInfo.mCacheReadStream, InternalResponse::UNKNOWN_BODY_SIZE);
-
     
     
     loadInfo.mCacheReadStream = nullptr;
@@ -700,7 +699,6 @@ private:
     }
 
     ir->SetPrincipalInfo(Move(principalInfo));
-    ir->Headers()->FillResponseHeaders(loadInfo.mChannel);
 
     RefPtr<mozilla::dom::Response> response =
       new mozilla::dom::Response(mCacheCreator->Global(), ir);
