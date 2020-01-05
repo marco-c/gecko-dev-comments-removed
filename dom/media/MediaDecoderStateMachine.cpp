@@ -447,6 +447,11 @@ public:
 
   RefPtr<MediaDecoder::SeekPromise> HandleSeek(SeekTarget aTarget) override;
 
+  void HandleVideoSuspendTimeout() override
+  {
+    
+  }
+
 private:
   
   
