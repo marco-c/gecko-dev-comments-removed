@@ -2,7 +2,7 @@
 
 
 
-use font::{Font, FontDescriptor, FontGroup, FontHandleMethods, FontStyle,
+use font::{Font, FontDescriptor, FontGroup, FontHandleMethods,
            SelectorPlatformIdentifier};
 use font::{SpecifiedFontStyle, UsedFontStyle};
 use font_list::FontList;
@@ -11,24 +11,12 @@ use servo_util::time::ProfilerChan;
 
 use platform::font::FontHandle;
 use platform::font_context::FontContextHandle;
-use style::computed_values::font_weight;
 
 use azure::azure_hl::BackendType;
 use std::hashmap::HashMap;
 
 use std::rc::RcMut;
 
-
-
-pub fn dummy_style() -> FontStyle {
-    return FontStyle {
-        pt_size: 20f64,
-        weight: font_weight::Weight300,
-        italic: false,
-        oblique: false,
-        families: ~"serif, sans-serif",
-    }
-}
 
 pub trait FontContextHandleMethods {
     fn create_font_from_identifier(&self, ~str, UsedFontStyle) -> Result<FontHandle, ()>;
