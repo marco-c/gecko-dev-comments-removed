@@ -19,13 +19,13 @@ use gfx::geometry::Au;
 use servo_util::tree::{TreeNodeRef, TreeUtils};
 
 pub struct BlockFlowData {
-    
+    /// Data common to all flows.
     common: FlowData,
 
-    
+    /// The associated render box.
     box: Option<RenderBox>,
 
-    
+    /// Whether this block flow is the root flow.
     is_root: bool
 }
 
@@ -77,20 +77,20 @@ impl BlockLayout for FlowContext {
 }
 
 impl BlockFlowData {
-    
+    /* Recursively (bottom-up) determine the context's preferred and
+    minimum widths.  When called on this context, all child contexts
+    have had their min/pref widths set. This function must decide
+    min/pref widths based on child context widths and dimensions of
+    any boxes it is responsible for flowing.  */
 
-
-
-
-
-    
-    
-    
+    /* TODO: floats */
+    /* TODO: absolute contexts */
+    /* TODO: inline-blocks */
     pub fn bubble_widths_block(@mut self, ctx: &LayoutContext) {
         let mut min_width = Au(0);
         let mut pref_width = Au(0);
 
-        
+        /* find max width from child block contexts */
         for BlockFlow(self).each_child |child_ctx| {
             assert!(child_ctx.starts_block_flow() || child_ctx.starts_inline_flow());
 
@@ -111,13 +111,15 @@ impl BlockFlowData {
         self.common.pref_width = pref_width;
     }
  
-    
-    
-    
-    
-    
+    /// Recursively (top-down) determines the actual width of child contexts and boxes. When called
+    /// on this context, the context has had its width set by the parent context.
+    ///
+    /// Dual boxes consume some width first, and the remainder is assigned to all child (block)
+    /// contexts.
     pub fn assign_widths_block(@mut self, ctx: &LayoutContext) { 
+        debug!("assign_widths_block: assigning width for flow %?",  self.common.id);
         if self.is_root {
+            debug!("Setting root position");
             self.common.position.origin = Au::zero_point();
             self.common.position.size.width = ctx.screen_size.size.width;
         }
