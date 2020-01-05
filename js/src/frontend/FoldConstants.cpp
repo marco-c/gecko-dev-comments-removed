@@ -1350,13 +1350,6 @@ FoldElement(JSContext* cx, ParseNode** nodePtr, Parser<FullParseHandler, char16_
 
     
     
-    if (NameToId(name) != IdToTypeId(NameToId(name)))
-        return true;
-
-    
-    
-    
-    
     ParseNode* dottedAccess = parser.handler.newPropertyAccess(expr, name, node->pn_pos.end);
     if (!dottedAccess)
         return false;
