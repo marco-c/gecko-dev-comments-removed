@@ -53,9 +53,10 @@ import org.mozilla.gecko.tokenserver.TokenServerToken;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.EnumSet;
+import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -123,7 +124,14 @@ public class FxAccountSyncAdapter extends AbstractThreadedSyncAdapter {
       super.rejectSync();
     }
 
+     void requestFollowUpSync(String stage) {
+      this.stageNamesForFollowUpSync.add(stage);
+    }
+
     protected final Collection<String> stageNamesToSync;
+
+    
+    private final List<String> stageNamesForFollowUpSync = Collections.synchronizedList(new ArrayList<String>());
 
     public SyncDelegate(BlockingQueue<Result> latch, SyncResult syncResult, AndroidFxAccount fxAccount, Collection<String> stageNamesToSync) {
       super(latch, syncResult);
@@ -181,6 +189,15 @@ public class FxAccountSyncAdapter extends AbstractThreadedSyncAdapter {
 
     @Override
     public void handleStageCompleted(Stage currentState, GlobalSession globalSession) {
+    }
+
+    
+
+
+    @Override
+    public void handleIncompleteStage(Stage currentState,
+                                      GlobalSession globalSession) {
+      syncDelegate.requestFollowUpSync(currentState.getRepositoryName());
     }
 
     @Override
@@ -574,7 +591,24 @@ public class FxAccountSyncAdapter extends AbstractThreadedSyncAdapter {
       fxAccount.releaseSharedAccountStateLock();
     }
 
-    Logger.info(LOG_TAG, "Syncing done.");
+    
+    
+    
+    
+    
+    final String[] stagesToSyncAgain;
+    synchronized (syncDelegate.stageNamesForFollowUpSync) {
+      stagesToSyncAgain = syncDelegate.stageNamesForFollowUpSync.toArray(
+              new String[syncDelegate.stageNamesForFollowUpSync.size()]
+      );
+    }
+
+    if (stagesToSyncAgain.length > 0) {
+      Logger.info(LOG_TAG, "Syncing done. Requesting an immediate follow-up sync.");
+      fxAccount.requestImmediateSync(stagesToSyncAgain, null);
+    } else {
+      Logger.info(LOG_TAG, "Syncing done.");
+    }
     lastSyncRealtimeMillis = SystemClock.elapsedRealtime();
   }
 }

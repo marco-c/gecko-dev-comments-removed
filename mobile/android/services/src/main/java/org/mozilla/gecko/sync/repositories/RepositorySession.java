@@ -161,14 +161,6 @@ public abstract class RepositorySession {
   
 
 
-
-
-  public void sourceFailed(Exception e) {
-  }
-
-  
-
-
   public void performCleanup() {
   }
 

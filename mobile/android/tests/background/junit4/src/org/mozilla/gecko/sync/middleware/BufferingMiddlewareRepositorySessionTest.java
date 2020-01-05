@@ -82,12 +82,7 @@ public class BufferingMiddlewareRepositorySessionTest {
     @Test
     public void storeDone() throws Exception {
         
-        verify(bufferStorageMocked, times(0)).flush();
-        bufferingSessionMocked.doStoreDonePrepare();
-        verify(bufferStorageMocked, times(1)).flush();
-
-        
-        bufferingSession.doStoreDone(123L);
+        bufferingSession.doMergeBuffer(123L);
         verify(innerRepositorySession, times(1)).storeDone(123L);
         verify(innerRepositorySession, never()).store(any(Record.class));
 
@@ -109,7 +104,7 @@ public class BufferingMiddlewareRepositorySessionTest {
         bufferingSession.store(record4);
 
         
-        bufferingSession.doStoreDone(123L);
+        bufferingSession.doMergeBuffer(123L);
 
         
         verify(innerRepositorySession, times(1)).store(record);
@@ -152,32 +147,6 @@ public class BufferingMiddlewareRepositorySessionTest {
         
         bufferingSession.performCleanup();
         assertEquals(0, bufferStorage.all().size());
-    }
-
-    @Test
-    public void sourceFailed() throws Exception {
-        
-        bufferingSession.sourceFailed(new Exception());
-        assertEquals(0, bufferStorage.all().size());
-
-        
-        MockRecord record = new MockRecord("guid1", null, 1, false);
-        bufferingSession.store(record);
-
-        MockRecord record2 = new MockRecord("guid2", null, 13, false);
-        bufferingSession.store(record2);
-
-        MockRecord record3 = new MockRecord("guid3", null, 5, false);
-        bufferingSession.store(record3);
-
-        
-        bufferingSession.sourceFailed(new Exception());
-        assertEquals(3, bufferStorage.all().size());
-
-        
-        verify(bufferStorageMocked, times(0)).flush();
-        bufferingSessionMocked.sourceFailed(new Exception());
-        verify(bufferStorageMocked, times(1)).flush();
     }
 
     @Test

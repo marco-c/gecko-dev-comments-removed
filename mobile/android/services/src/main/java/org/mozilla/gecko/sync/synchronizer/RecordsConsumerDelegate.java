@@ -9,15 +9,19 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import org.mozilla.gecko.sync.repositories.domain.Record;
 
 interface RecordsConsumerDelegate {
-  public abstract ConcurrentLinkedQueue<Record> getQueue();
+  ConcurrentLinkedQueue<Record> getQueue();
 
   
 
 
 
+  void consumerIsDoneFull();
+
+  
 
 
 
-  public abstract void consumerIsDone(boolean forced);
-  public abstract void store(Record record);
+  void consumerIsDonePartial();
+
+  void store(Record record);
 }

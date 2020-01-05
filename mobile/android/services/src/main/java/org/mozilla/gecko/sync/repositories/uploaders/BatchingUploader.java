@@ -8,7 +8,9 @@ import android.net.Uri;
 import android.support.annotation.VisibleForTesting;
 
 import org.mozilla.gecko.background.common.log.Logger;
+import org.mozilla.gecko.sync.CollectionConcurrentModificationException;
 import org.mozilla.gecko.sync.InfoConfiguration;
+import org.mozilla.gecko.sync.Server15PreviousPostFailedException;
 import org.mozilla.gecko.sync.net.AuthHeaderProvider;
 import org.mozilla.gecko.sync.repositories.RepositorySession;
 import org.mozilla.gecko.sync.repositories.delegates.RepositorySessionStoreDelegate;
@@ -16,6 +18,7 @@ import org.mozilla.gecko.sync.repositories.domain.Record;
 
 import java.util.ArrayList;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicLong;
 
 
@@ -70,6 +73,7 @@ public class BatchingUploader {
     }
 
     
+    private final ExecutorService executor;
     
     private volatile Payload payload;
 
@@ -88,7 +92,7 @@ public class BatchingUploader {
     private final Object payloadLock = new Object();
 
     public BatchingUploader(
-            final RepositorySession repositorySession, final Executor workQueue,
+            final RepositorySession repositorySession, final ExecutorService workQueue,
             final RepositorySessionStoreDelegate sessionStoreDelegate, final Uri baseCollectionUri,
             final Long localCollectionLastModified, final InfoConfiguration infoConfiguration,
             final AuthHeaderProvider authHeaderProvider) {
@@ -102,12 +106,29 @@ public class BatchingUploader {
         this.payload = new Payload(
                 payloadLock, infoConfiguration.maxPostBytes, infoConfiguration.maxPostRecords);
 
-        this.payloadDispatcher = new PayloadDispatcher(workQueue, this, localCollectionLastModified);
+        this.payloadDispatcher = createPayloadDispatcher(workQueue, localCollectionLastModified);
+
+        this.executor = workQueue;
     }
 
     
     public void process(final Record record) {
         final String guid = record.guid;
+
+        
+        if (payloadDispatcher.storeFailed) {
+            return;
+        }
+
+        
+        
+        if (payloadDispatcher.recordUploadFailed) {
+            sessionStoreDelegate.deferredStoreDelegate(executor).onRecordStoreFailed(
+                    new Server15PreviousPostFailedException(), guid
+            );
+            return;
+        }
+
         final byte[] recordBytes = record.toJSONBytes();
         final long recordDeltaByteCount = recordBytes.length + PER_RECORD_OVERHEAD_BYTE_COUNT;
 
@@ -218,7 +239,15 @@ public class BatchingUploader {
         }
     }
 
-     static class BatchingUploaderException extends Exception {
+    
+
+
+    @VisibleForTesting
+    PayloadDispatcher createPayloadDispatcher(ExecutorService workQueue, Long localCollectionLastModified) {
+        return new PayloadDispatcher(workQueue, this, localCollectionLastModified);
+    }
+
+    public static class BatchingUploaderException extends Exception {
         private static final long serialVersionUID = 1L;
     }
      static class LastModifiedDidNotChange extends BatchingUploaderException {

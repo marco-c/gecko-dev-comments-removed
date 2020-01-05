@@ -7,6 +7,7 @@ package org.mozilla.gecko.sync.middleware;
 import android.os.SystemClock;
 import android.support.annotation.VisibleForTesting;
 
+import org.mozilla.gecko.sync.SyncDeadlineReachedException;
 import org.mozilla.gecko.sync.middleware.storage.BufferStorage;
 import org.mozilla.gecko.sync.repositories.InactiveSessionException;
 import org.mozilla.gecko.sync.repositories.NoStoreDelegateException;
@@ -34,8 +35,6 @@ import java.util.concurrent.Executors;
     private final long syncDeadlineMillis;
 
     private ExecutorService storeDelegateExecutor = Executors.newSingleThreadExecutor();
-
-    private volatile boolean storeMarkedIncomplete = false;
 
      BufferingMiddlewareRepositorySession(
             RepositorySession repositorySession, MiddlewareRepository repository,
@@ -75,9 +74,23 @@ import java.util.concurrent.Executors;
         bufferStorage.addOrReplace(record);
     }
 
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
     @Override
     public void storeIncomplete() {
-        storeMarkedIncomplete = true;
+        bufferStorage.flush();
     }
 
     @Override
@@ -92,41 +105,33 @@ import java.util.concurrent.Executors;
 
     @Override
     public void storeDone(final long end) {
-        doStoreDonePrepare();
+        bufferStorage.flush();
 
         
         
-        
-        
-        if (storeMarkedIncomplete || !mayProceedToMergeBuffer()) {
+        if (!mayProceedToMergeBuffer()) {
             super.abort();
-            storeDelegate.deferredStoreDelegate(storeDelegateExecutor).onStoreCompleted(end);
+            storeDelegate.deferredStoreDelegate(storeDelegateExecutor).onStoreFailed(new SyncDeadlineReachedException());
             return;
         }
 
-        
-        doStoreDone(end);
+        doMergeBuffer(end);
     }
 
     @VisibleForTesting
-    public void doStoreDonePrepare() {
-        
-        bufferStorage.flush();
-    }
-
-    @VisibleForTesting
-    public void doStoreDone(final long end) {
-        final Collection<Record> buffer = bufferStorage.all();
+     void doMergeBuffer(long end) {
+        final Collection<Record> bufferData = bufferStorage.all();
 
         
-        if (buffer.isEmpty()) {
+        if (bufferData.isEmpty()) {
             super.storeDone(end);
             return;
         }
 
         
+        
         try {
-            for (Record record : buffer) {
+            for (Record record : bufferData) {
                 this.inner.store(record);
             }
         } catch (NoStoreDelegateException e) {
@@ -135,24 +140,6 @@ import java.util.concurrent.Executors;
 
         
         super.storeDone(end);
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-    @Override
-    public void sourceFailed(Exception e) {
-        bufferStorage.flush();
-        super.sourceFailed(e);
     }
 
     

@@ -14,6 +14,7 @@ import org.mozilla.gecko.sync.HTTPFailureException;
 import org.mozilla.gecko.sync.MetaGlobalException;
 import org.mozilla.gecko.sync.NoCollectionKeysSetException;
 import org.mozilla.gecko.sync.NonObjectJSONException;
+import org.mozilla.gecko.sync.ReflowIsNecessaryException;
 import org.mozilla.gecko.sync.SynchronizerConfiguration;
 import org.mozilla.gecko.sync.Utils;
 import org.mozilla.gecko.sync.crypto.KeyBundle;
@@ -620,6 +621,12 @@ public abstract class ServerSyncStage extends AbstractSessionManagingSyncStage i
       } else {
         session.interpretHTTPFailure(response.httpResponse()); 
       }
+    }
+
+    
+    
+    if (lastException instanceof ReflowIsNecessaryException) {
+      session.handleIncompleteStage();
     }
 
     Logger.info(LOG_TAG, "Advancing session even though stage failed (took " + getStageDurationString() +

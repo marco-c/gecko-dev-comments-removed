@@ -8,6 +8,7 @@ import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 
 import org.mozilla.gecko.background.common.log.Logger;
+import org.mozilla.gecko.sync.CollectionConcurrentModificationException;
 import org.mozilla.gecko.sync.Server15RecordPostFailedException;
 import org.mozilla.gecko.sync.net.SyncResponse;
 import org.mozilla.gecko.sync.net.SyncStorageResponse;
@@ -30,11 +31,14 @@ class PayloadDispatcher {
     volatile BatchMeta batchWhiteboard;
     private final AtomicLong uploadTimestamp = new AtomicLong(0);
 
-    
-    private volatile boolean recordUploadFailed = false;
-
     private final Executor executor;
     private final BatchingUploader uploader;
+
+    
+    
+    
+    volatile boolean recordUploadFailed = false;
+    volatile boolean storeFailed = false;
 
     PayloadDispatcher(Executor executor, BatchingUploader uploader, @Nullable Long initialLastModified) {
         
@@ -53,21 +57,7 @@ class PayloadDispatcher {
         executor.execute(new BatchContextRunnable(isCommit) {
             @Override
             public void run() {
-                new RecordUploadRunnable(
-                        new BatchingAtomicUploaderMayUploadProvider(),
-                        uploader.collectionUri,
-                        batchWhiteboard.getToken(),
-                        new PayloadUploadDelegate(
-                                uploader.getRepositorySession().getServerRepository().getAuthHeaderProvider(),
-                                PayloadDispatcher.this,
-                                outgoingGuids,
-                                isCommit,
-                                isLastPayload
-                        ),
-                        outgoing,
-                        byteCount,
-                        isCommit
-                ).run();
+                createRecordUploadRunnable(outgoing, outgoingGuids, byteCount, isCommit, isLastPayload).run();
             }
         });
     }
@@ -142,6 +132,12 @@ class PayloadDispatcher {
         uploader.sessionStoreDelegate.onRecordStoreFailed(e, recordGuid);
     }
 
+    void concurrentModificationDetected() {
+        recordUploadFailed = true;
+        storeFailed = true;
+        uploader.sessionStoreDelegate.onStoreFailed(new CollectionConcurrentModificationException());
+    }
+
     void prepareForNextBatch() {
         batchWhiteboard = batchWhiteboard.nextBatchMeta();
     }
@@ -162,6 +158,31 @@ class PayloadDispatcher {
 
 
     @VisibleForTesting
+    Runnable createRecordUploadRunnable(final ArrayList<byte[]> outgoing,
+                                                  final ArrayList<String> outgoingGuids,
+                                                  final long byteCount,
+                                                  final boolean isCommit, final boolean isLastPayload) {
+        return new RecordUploadRunnable(
+                new BatchingAtomicUploaderMayUploadProvider(),
+                uploader.collectionUri,
+                batchWhiteboard.getToken(),
+                new PayloadUploadDelegate(
+                        uploader.authHeaderProvider,
+                        PayloadDispatcher.this,
+                        outgoingGuids,
+                        isCommit,
+                        isLastPayload
+                ),
+                outgoing,
+                byteCount,
+                isCommit
+        );
+    }
+
+    
+
+
+    @VisibleForTesting
     abstract static class BatchContextRunnable implements Runnable {
         boolean isCommit;
 
@@ -176,6 +197,7 @@ class PayloadDispatcher {
     @VisibleForTesting
     abstract static class NonPayloadContextRunnable implements Runnable {}
 
+    
     private class BatchingAtomicUploaderMayUploadProvider implements MayUploadProvider {
         public boolean mayUpload() {
             return !recordUploadFailed;

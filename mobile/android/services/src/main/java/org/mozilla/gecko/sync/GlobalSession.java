@@ -479,6 +479,11 @@ public class GlobalSession implements HttpResponseObserver {
     this.callback.handleError(this, e);
   }
 
+  public void handleIncompleteStage() {
+    
+    callback.handleIncompleteStage(this.currentState, this);
+  }
+
   public void handleHTTPError(SyncStorageResponse response, String reason) {
     
     

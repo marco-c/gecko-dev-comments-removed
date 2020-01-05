@@ -4,11 +4,15 @@
 
 package org.mozilla.gecko.sync.synchronizer;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.mozilla.gecko.background.common.log.Logger;
+import org.mozilla.gecko.sync.ReflowIsNecessaryException;
 import org.mozilla.gecko.sync.ThreadPool;
 import org.mozilla.gecko.sync.repositories.InvalidSessionTransitionException;
 import org.mozilla.gecko.sync.repositories.NoStoreDelegateException;
@@ -72,6 +76,8 @@ public class RecordsChannel implements
   private final RecordsChannelDelegate delegate;
   private long fetchEnd = -1;
 
+  private volatile ReflowIsNecessaryException reflowException;
+
   protected final AtomicInteger numFetched = new AtomicInteger();
   protected final AtomicInteger numFetchFailed = new AtomicInteger();
   protected final AtomicInteger numStored = new AtomicInteger();
@@ -93,7 +99,7 @@ public class RecordsChannel implements
 
 
   private RecordConsumer consumer;
-  private boolean waitingForQueueDone = false;
+  private volatile boolean waitingForQueueDone = false;
   private final ConcurrentLinkedQueue<Record> toProcess = new ConcurrentLinkedQueue<Record>();
 
   @Override
@@ -204,9 +210,12 @@ public class RecordsChannel implements
 
   @Override
   public void onFetchFailed(Exception ex) {
-    Logger.warn(LOG_TAG, "onFetchFailed. Informing sink, calling for immediate stop.", ex);
-    sink.sourceFailed(ex);
+    Logger.warn(LOG_TAG, "onFetchFailed. Calling for immediate stop.", ex);
     numFetchFailed.incrementAndGet();
+    if (ex instanceof ReflowIsNecessaryException) {
+      setReflowException((ReflowIsNecessaryException) ex);
+    }
+    
     this.consumer.halt();
     delegate.onFlowFetchFailed(this, ex);
   }
@@ -246,16 +255,27 @@ public class RecordsChannel implements
     this.consumer.stored();
   }
 
-
   @Override
-  public void consumerIsDone(boolean allRecordsQueued) {
-    Logger.trace(LOG_TAG, "Consumer is done. Are we waiting for it? " + waitingForQueueDone);
+  public void consumerIsDoneFull() {
+    Logger.trace(LOG_TAG, "Consumer is done, processed all records. Are we waiting for it? " + waitingForQueueDone);
     if (waitingForQueueDone) {
       waitingForQueueDone = false;
-      if (!allRecordsQueued) {
-        this.sink.storeIncomplete();
-      }
-      this.sink.storeDone(); 
+
+      
+      this.sink.storeDone();
+    }
+  }
+
+  @Override
+  public void consumerIsDonePartial() {
+    Logger.trace(LOG_TAG, "Consumer is done, processed some records. Are we waiting for it? " + waitingForQueueDone);
+    if (waitingForQueueDone) {
+      waitingForQueueDone = false;
+
+      
+      this.sink.storeIncomplete();
+
+      delegate.onFlowCompleted(this, fetchEnd, System.currentTimeMillis());
     }
   }
 
@@ -265,9 +285,40 @@ public class RecordsChannel implements
                           "Fetch end is " + fetchEnd + ", store end is " + storeEnd);
     
     
-    this.source.performCleanup();
     
+    
+    this.source.performCleanup();
     delegate.onFlowCompleted(this, fetchEnd, storeEnd);
+
+  }
+
+  @Override
+  public void onStoreFailed(Exception ex) {
+    Logger.warn(LOG_TAG, "onStoreFailed. Calling for immediate stop.", ex);
+    if (ex instanceof ReflowIsNecessaryException) {
+      setReflowException((ReflowIsNecessaryException) ex);
+    }
+
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+
+    
+    
+    waitingForQueueDone = false;
+
+    
+    this.consumer.halt();
+
+    delegate.onFlowCompleted(this, fetchEnd, System.currentTimeMillis());
   }
 
   @Override
@@ -309,5 +360,18 @@ public class RecordsChannel implements
   public RepositorySessionFetchRecordsDelegate deferredFetchDelegate(ExecutorService executor) {
     
     return this;
+  }
+
+  @Nullable
+   synchronized ReflowIsNecessaryException getReflowException() {
+    return reflowException;
+  }
+
+  private synchronized void setReflowException(@NonNull ReflowIsNecessaryException e) {
+    
+    if (reflowException != null) {
+      throw new IllegalStateException("Reflow exception already set: " + reflowException);
+    }
+    reflowException = e;
   }
 }
