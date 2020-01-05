@@ -7,16 +7,10 @@
 
 "use strict";
 
-const { Cu, Cc, Ci } = require("chrome");
+const { Cu } = require("chrome");
 const Services = require("Services");
 
 const { XPCOMUtils } = Cu.import("resource://gre/modules/XPCOMUtils.jsm", {});
-
-XPCOMUtils.defineLazyGetter(this, "chrome", function () {
-  return Cc["@mozilla.org/appshell/window-mediator;1"]
-    .getService(Ci.nsIWindowMediator)
-    .getMostRecentWindow("navigator:browser");
-});
 
 XPCOMUtils.defineLazyGetter(this, "JsonViewUtils", function () {
   return require("devtools/client/jsonview/utils");
@@ -56,28 +50,9 @@ var JsonView = {
 
 
   onSave: function (message) {
-    let browser = chrome.gBrowser.selectedBrowser;
-    if (message.data.url === null) {
-      
-      chrome.saveBrowser(browser, false, message.data.windowID);
-    } else {
-      
-      
-      
-      let persistable = browser.QueryInterface(Ci.nsIFrameLoaderOwner)
-        .frameLoader.QueryInterface(Ci.nsIWebBrowserPersistable);
-      persistable.startPersistence(message.data.windowID, {
-        onDocumentReady(doc) {
-          let uri = chrome.makeURI(doc.documentURI, doc.characterSet);
-          let filename = chrome.getDefaultFileName(undefined, uri, doc, null);
-          chrome.internalSave(message.data.url, doc, filename, null, doc.contentType,
-            false, null, null, null, doc, false, null, undefined);
-        },
-        onError(status) {
-          throw new Error("JSON Viewer's onSave failed in startPersistence");
-        }
-      });
-    }
+    JsonViewUtils.getTargetFile().then(file => {
+      JsonViewUtils.saveToFile(file, message.data);
+    }, () => {});
   }
 };
 
