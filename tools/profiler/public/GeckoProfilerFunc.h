@@ -6,9 +6,7 @@
 #ifndef PROFILER_FUNCS_H
 #define PROFILER_FUNCS_H
 
-#ifndef SPS_STANDALONE
 #include "js/TypeDecls.h"
-#endif
 #include "js/ProfilingStack.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Vector.h"
@@ -67,7 +65,6 @@ void mozilla_sampler_save();
 
 mozilla::UniquePtr<char[]> mozilla_sampler_get_profile(double aSinceTime);
 
-#ifndef SPS_STANDALONE
 JSObject *mozilla_sampler_get_profile_data(JSContext* aCx, double aSinceTime);
 void mozilla_sampler_get_profile_data_async(double aSinceTime,
                                             mozilla::dom::Promise* aPromise);
@@ -79,7 +76,6 @@ void mozilla_sampler_get_profiler_start_params(int* aEntrySize,
                                                mozilla::Vector<const char*>* aFilters,
                                                mozilla::Vector<const char*>* aFeatures);
 void mozilla_sampler_get_gatherer(nsISupports** aRetVal);
-#endif
 
 
 

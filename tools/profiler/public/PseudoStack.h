@@ -11,9 +11,7 @@
 #include "js/ProfilingStack.h"
 #include <stdlib.h>
 #include "mozilla/Atomics.h"
-#ifndef SPS_STANDALONE
 #include "nsISupportsImpl.h"
-#endif
 
 
 
@@ -316,7 +314,6 @@ public:
   }
 
   void sampleContext(JSContext* context) {
-#ifndef SPS_STANDALONE
     if (mContext && !context) {
       
       
@@ -337,9 +334,7 @@ public:
                                  (uint32_t) mozilla::ArrayLength(mStack));
     if (mStartJSSampling)
       enableJSSampling();
-#endif
   }
-#ifndef SPS_STANDALONE
   void enableJSSampling() {
     if (mContext) {
       js::EnableContextProfilingStack(mContext, true);
@@ -358,7 +353,6 @@ public:
     if (mContext)
       js::EnableContextProfilingStack(mContext, false);
   }
-#endif
 
   
   StackEntry volatile mStack[1024];
@@ -371,9 +365,7 @@ public:
     , mSleepIdObserved(0)
     , mSleeping(false)
     , mRefCnt(1)
-#ifndef SPS_STANDALONE
     , mContext(nullptr)
-#endif
     , mStartJSSampling(false)
     , mPrivacyMode(false)
   {
@@ -416,10 +408,8 @@ public:
   mozilla::Atomic<int> mRefCnt;
 
  public:
-#ifndef SPS_STANDALONE
   
   JSContext *mContext;
-#endif
   
   bool mStartJSSampling;
   bool mPrivacyMode;

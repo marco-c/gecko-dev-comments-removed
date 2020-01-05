@@ -46,9 +46,7 @@ public:
   void DuplicateLastSample();
 
   ThreadInfo* GetThreadInfo() const { return mThreadInfo; }
-#ifndef SPS_STANDALONE
   ThreadResponsiveness* GetThreadResponsiveness() { return &mRespInfo; }
-#endif
 
   bool CanInvokeJS() const { return mThreadInfo->CanInvokeJS(); }
 
@@ -90,9 +88,7 @@ private:
   bool           mIsMainThread;
   PlatformData*  mPlatformData;  
   void* const    mStackTop;
-#ifndef SPS_STANDALONE
   ThreadResponsiveness mRespInfo;
-#endif
 
   
   
