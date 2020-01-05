@@ -258,9 +258,8 @@ MainThreadHandoff::FixArrayElements(ICallFrame* aFrame,
     PVOID stackBase = aFrame->GetStackLocation();
     
     
-    
-    arrayPtr = **reinterpret_cast<PVOID**>(reinterpret_cast<PBYTE>(stackBase) +
-                                           paramInfo.stackOffset);
+    arrayPtr = *reinterpret_cast<PVOID*>(reinterpret_cast<PBYTE>(stackBase) +
+                                         paramInfo.stackOffset);
   } else if (FAILED(hr)) {
     return hr;
   } else {
