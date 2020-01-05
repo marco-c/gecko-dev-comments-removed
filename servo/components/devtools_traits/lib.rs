@@ -11,25 +11,27 @@
 #![allow(non_snake_case)]
 
 extern crate "msg" as servo_msg;
+extern crate serialize;
 
+/// This module contains shared types and messages for use by devtools/script.
+/// The traits are here instead of in script so that the devtools crate can be
+/// modified independently of the rest of Servo.
 
-
-
-
+use serialize::{Decodable, Decoder};
 use servo_msg::constellation_msg::PipelineId;
 
 pub type DevtoolsControlChan = Sender<DevtoolsControlMsg>;
 pub type DevtoolsControlPort = Receiver<DevtoolScriptControlMsg>;
 
-
-
+/// Messages to the instruct the devtools server to update its known actors/state
+/// according to changes in the browser.
 pub enum DevtoolsControlMsg {
     NewGlobal(PipelineId, Sender<DevtoolScriptControlMsg>),
     ServerExitMsg
 }
 
-
-
+/// Serialized JS return values
+/// TODO: generalize this beyond the EvaluateJS message?
 pub enum EvaluateJSReply {
     VoidValue,
     NullValue,
@@ -66,18 +68,39 @@ pub struct NodeInfo {
     pub incompleteValue: bool,
 }
 
-
+/// Messages to process in a particular script task, as instructed by a devtools client.
 pub enum DevtoolScriptControlMsg {
     EvaluateJS(PipelineId, String, Sender<EvaluateJSReply>),
     GetRootNode(PipelineId, Sender<NodeInfo>),
     GetDocumentElement(PipelineId, Sender<NodeInfo>),
     GetChildren(PipelineId, String, Sender<Vec<NodeInfo>>),
     GetLayout(PipelineId, String, Sender<(f32, f32)>),
+    ModifyAttribute(PipelineId, String, Vec<Modification>),
 }
 
-
-
+/// Messages to instruct devtools server to update its state relating to a particular
+/// tab.
 pub enum ScriptDevtoolControlMsg {
-    
+    /// Report a new JS error message
     ReportConsoleMsg(String),
+}
+
+#[deriving(Encodable)]
+pub struct Modification{
+    pub attributeName: String,
+    pub newValue: Option<String>,
+}
+
+impl<D:Decoder<E>, E> Decodable<D, E> for Modification {
+    fn decode(d: &mut D) -> Result<Modification, E> {
+        d.read_struct("Modification", 2u, |d|
+            Ok(Modification {
+                attributeName: try!(d.read_struct_field("attributeName", 0u, |d| Decodable::decode(d))),
+                newValue: match d.read_struct_field("newValue", 1u, |d| Decodable::decode(d)) {
+                    Ok(opt) => opt,
+                    Err(_) => None
+                }
+            })
+        )
+    }
 }

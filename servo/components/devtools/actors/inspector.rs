@@ -5,7 +5,7 @@
 
 
 use devtools_traits::{GetRootNode, GetDocumentElement, GetChildren, DevtoolScriptControlMsg};
-use devtools_traits::{GetLayout, NodeInfo};
+use devtools_traits::{GetLayout, NodeInfo, ModifyAttribute};
 
 use actor::{Actor, ActorRegistry};
 use protocol::JsonPacketStream;
@@ -41,6 +41,12 @@ struct HighlighterActor {
     name: String,
 }
 
+pub struct NodeActor {
+    pub name: String,
+    script_chan: Sender<DevtoolScriptControlMsg>,
+    pipeline: PipelineId,
+}
+
 #[deriving(Encodable)]
 struct ShowBoxModelReply {
     from: String,
@@ -52,7 +58,7 @@ struct HideBoxModelReply {
 }
 
 impl Actor for HighlighterActor {
-        fn name(&self) -> String {
+    fn name(&self) -> String {
         self.name.clone()
     }
 
@@ -75,6 +81,44 @@ impl Actor for HighlighterActor {
                     from: self.name(),
                 };
                 stream.write_json_packet(&msg);
+                true
+            }
+
+            _ => false,
+        }
+    }
+}
+
+#[deriving(Encodable)]
+struct ModifyAttributeReply{
+    from: String,
+}
+
+impl Actor for NodeActor {
+    fn name(&self) -> String {
+        self.name.clone()
+    }
+
+    fn handle_message(&self,
+                      registry: &ActorRegistry,
+                      msg_type: &String,
+                      msg: &json::JsonObject,
+                      stream: &mut TcpStream) -> bool {
+        match msg_type.as_slice() {
+            "modifyAttributes" => {
+                let target = msg.get(&"to".to_string()).unwrap().as_string().unwrap();
+                let mods = msg.get(&"modifications".to_string()).unwrap().as_list().unwrap();
+                let modifications = mods.iter().map(|json_mod| {
+                    json::decode(json_mod.to_string().as_slice()).unwrap()
+                }).collect();
+
+                self.script_chan.send(ModifyAttribute(self.pipeline,
+                                                      registry.actor_to_script(target.to_string()),
+                                                      modifications));
+                let reply = ModifyAttributeReply{
+                    from: self.name(),
+                };
+                stream.write_json_packet(&reply);
                 true
             }
 
@@ -131,14 +175,28 @@ struct NodeActorMsg {
 }
 
 trait NodeInfoToProtocol {
-    fn encode(self, actors: &ActorRegistry, display: bool) -> NodeActorMsg;
+    fn encode(self,
+              actors: &ActorRegistry,
+              display: bool,
+              script_chan: Sender<DevtoolScriptControlMsg>,
+              pipeline: PipelineId) -> NodeActorMsg;
 }
 
 impl NodeInfoToProtocol for NodeInfo {
-    fn encode(self, actors: &ActorRegistry, display: bool) -> NodeActorMsg {
+    fn encode(self,
+              actors: &ActorRegistry,
+              display: bool,
+              script_chan: Sender<DevtoolScriptControlMsg>,
+              pipeline: PipelineId) -> NodeActorMsg {
         let actor_name = if !actors.script_actor_registered(self.uniqueId.clone()) {
             let name = actors.new_name("node");
+            let node_actor = NodeActor {
+                name: name.clone(),
+                script_chan: script_chan,
+                pipeline: pipeline.clone(),
+            };
             actors.register_script_actor(self.uniqueId, name.clone());
+            actors.register_later(box node_actor);
             name
         } else {
             actors.script_to_actor(self.uniqueId)
@@ -165,11 +223,11 @@ impl NodeInfoToProtocol for NodeInfo {
                 }
             }).collect(),
 
-            pseudoClassLocks: vec!(), 
+            pseudoClassLocks: vec!(), //TODO get this data from script
 
             isDisplayed: display,
 
-            hasEventListeners: false, 
+            hasEventListeners: false, //TODO get this data from script
 
             isDocumentElement: self.isDocumentElement,
 
@@ -232,8 +290,7 @@ impl Actor for WalkerActor {
                 let (tx, rx) = channel();
                 self.script_chan.send(GetDocumentElement(self.pipeline, tx));
                 let doc_elem_info = rx.recv();
-
-                let node = doc_elem_info.encode(registry, true);
+                let node = doc_elem_info.encode(registry, true, self.script_chan.clone(), self.pipeline);
 
                 let msg = DocumentElementReply {
                     from: self.name(),
@@ -263,7 +320,7 @@ impl Actor for WalkerActor {
                     hasFirst: true,
                     hasLast: true,
                     nodes: children.into_iter().map(|child| {
-                        child.encode(registry, true)
+                        child.encode(registry, true, self.script_chan.clone(), self.pipeline)
                     }).collect(),
                     from: self.name(),
                 };
@@ -303,7 +360,7 @@ struct GetAppliedReply {
 
 #[deriving(Encodable)]
 struct GetComputedReply {
-    computed: Vec<uint>, 
+    computed: Vec<uint>, //XXX all css props
     from: String,
 }
 
@@ -367,7 +424,7 @@ impl Actor for PageStyleActor {
                       stream: &mut TcpStream) -> bool {
         match msg_type.as_slice() {
             "getApplied" => {
-                
+                //TODO: query script for relevant applied styles to node (msg.node)
                 let msg = GetAppliedReply {
                     entries: vec!(),
                     rules: vec!(),
@@ -379,7 +436,7 @@ impl Actor for PageStyleActor {
             }
 
             "getComputed" => {
-                
+                //TODO: query script for relevant computed styles on node (msg.node)
                 let msg = GetComputedReply {
                     computed: vec!(),
                     from: self.name(),
@@ -388,7 +445,7 @@ impl Actor for PageStyleActor {
                 true
             }
 
-            
+            //TODO: query script for box layout properties of node (msg.node)
             "getLayout" => {
                 let target = msg.get(&"node".to_string()).unwrap().as_string().unwrap();
                 let (tx, rx) = channel();
@@ -399,13 +456,13 @@ impl Actor for PageStyleActor {
 
                 let auto_margins = msg.get(&"autoMargins".to_string()).unwrap().as_boolean().unwrap();
 
-                
-                
+                //TODO: the remaining layout properties (margin, border, padding, position)
+                //      as specified in getLayout in http://mxr.mozilla.org/mozilla-central/source/toolkit/devtools/server/actors/styles.js
                 let msg = GetLayoutReply {
                     width: width.round() as int,
                     height: height.round() as int,
                     autoMargins: if auto_margins {
-                        
+                        //TODO: real values like processMargins in http://mxr.mozilla.org/mozilla-central/source/toolkit/devtools/server/actors/styles.js
                         let mut m = TreeMap::new();
                         m.insert("top".to_string(), "auto".to_string().to_json());
                         m.insert("bottom".to_string(), "auto".to_string().to_json());
@@ -453,7 +510,7 @@ impl Actor for InspectorActor {
                 self.script_chan.send(GetRootNode(self.pipeline, tx));
                 let root_info = rx.recv();
 
-                let node = root_info.encode(registry, false);
+                let node = root_info.encode(registry, false, self.script_chan.clone(), self.pipeline);
 
                 let msg = GetWalkerReply {
                     from: self.name(),
