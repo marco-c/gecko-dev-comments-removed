@@ -2,6 +2,10 @@
 
 
 
+#searchBoxContainer {
+  -moz-box-align: center;
+}
+
 #sitesList {
   min-height: 20em;
 }
