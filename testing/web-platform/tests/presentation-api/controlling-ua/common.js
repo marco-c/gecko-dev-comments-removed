@@ -13,13 +13,4 @@
     'support/presentation.html',
     castUrl
   ];
-
-  
-  
-  
-  
-  window.stashIds = {
-    toController: '9bf08fea-a71a-42f9-b3c4-fa19499e4d12',
-    toReceiver: 'f1fdfd10-b606-4748-a644-0a8e9df3bdd6'
-  }
 })(window);

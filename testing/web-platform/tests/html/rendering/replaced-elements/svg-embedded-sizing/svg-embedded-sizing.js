@@ -85,7 +85,7 @@ function testPlaceholderWithHeight(placeholder,
                         
                         
                         
-                        step_timeout(t.step_func(checkSize), 0);
+                        setTimeout(t.step_func(checkSize), 0);
                     });
                     testContainer.appendChild(container);
                 });

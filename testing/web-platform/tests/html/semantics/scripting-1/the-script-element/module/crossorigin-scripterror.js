@@ -1,8 +1,0 @@
-export var foo = {};
-
-
-document._log.push("running");
-
-
-
-nonExistentMethod();

@@ -400,7 +400,7 @@ var SVGSizing = (function() {
                     var next = function() {func(config, id, cont)};
                     
                     if (id % 20 === 0) {
-                        step_timeout(next, 0);
+                        setTimeout(next, 0);
                     } else {
                         next();
                     }

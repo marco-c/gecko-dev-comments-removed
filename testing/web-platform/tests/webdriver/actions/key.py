@@ -1,5 +1,3 @@
-
-
 import pytest
 
 from support.keys import Keys

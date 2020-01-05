@@ -4916,11 +4916,6 @@ function normalizeTest(command, test, styleWithCss) {
     
     
     
-    
-    
-    
-    
-    
     if (command == "multitest") {
         if (typeof test == "string") {
             test = JSON.parse(test);
@@ -5545,7 +5540,6 @@ function runConformanceTest(browserTest) {
     var expectedQueryResults = browserTest[4];
     var actualQueryResults = {};
     var actualQueryExceptions = {};
-    var subtestName;
 
     try {
         var points = setupDiv(testDiv, browserTest[0]);
@@ -5583,17 +5577,12 @@ function runConformanceTest(browserTest) {
     }
 
     for (var i = 0; i < browserTest[1].length; i++) {
-        subtestName = testName + ": execCommand(" +
-            format_value(browserTest[1][i][0]) + ", false, " +
-            format_value(browserTest[1][i][1]) + ") " +
-            (browserTest[1][i][2] ? browserTest[1][i][2] + " " : "") +
-            "return value"
         test(function() {
             assert_equals(exception, null, "Setup must not throw an exception");
 
             assert_equals(document.execCommand(browserTest[1][i][0], false, browserTest[1][i][1]),
                 expectedExecCommandReturnValues[i]);
-        }, subtestName);
+        }, testName + ": execCommand(" + format_value(browserTest[1][i][0]) + ", false, " + format_value(browserTest[1][i][1]) + ") return value");
     }
 
     if (exception === null) {

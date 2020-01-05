@@ -1,4 +1,0 @@
-
-
-postMessage(self.origin);
-

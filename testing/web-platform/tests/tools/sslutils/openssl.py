@@ -4,12 +4,7 @@ import random
 import shutil
 import subprocess
 import tempfile
-from datetime import datetime, timedelta
-
-
-
-
-CERT_EXPIRY_BUFFER = dict(hours=6)
+from datetime import datetime
 
 class OpenSSL(object):
     def __init__(self, logger, binary, base_path, conf_path, hosts, duration,
@@ -67,10 +62,7 @@ class OpenSSL(object):
         
         env = {}
         for k, v in os.environ.iteritems():
-            try:
-                env[k.encode("utf8")] = v.encode("utf8")
-            except UnicodeDecodeError:
-                pass
+            env[k.encode("utf8")] = v.encode("utf8")
 
         if self.base_conf_path is not None:
             env["OPENSSL_CONF"] = self.base_conf_path.encode("utf8")
@@ -313,11 +305,8 @@ class OpenSSLEnvironment(object):
                                    "-in", cert_path).split("=", 1)[1].strip()
             
             end_date = datetime.strptime(end_date_str, "%b %d %H:%M:%S %Y %Z")
-            time_buffer = timedelta(**CERT_EXPIRY_BUFFER)
             
-            
-            
-            if end_date < datetime.utcnow() + time_buffer:
+            if end_date < datetime.now():
                 return False
 
         
