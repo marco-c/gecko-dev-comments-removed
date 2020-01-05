@@ -2188,18 +2188,9 @@ MediaDecoderStateMachine::
 DecodingState::NeedToSkipToNextKeyframe()
 {
   
-  if (!mMaster->mSentFirstFrameLoadedEvent) {
-    return false;
-  }
-
-  
   
   
   if (!mMaster->mMediaSink->IsStarted()) {
-    return false;
-  }
-
-  if (!mMaster->IsVideoDecoding()) {
     return false;
   }
 
