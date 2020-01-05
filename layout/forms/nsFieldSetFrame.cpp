@@ -341,42 +341,6 @@ nsFieldSetFrame::GetPrefISize(nsRenderingContext* aRenderingContext)
 }
 
 
-LogicalSize
-nsFieldSetFrame::ComputeSize(nsRenderingContext *aRenderingContext,
-                             WritingMode aWM,
-                             const LogicalSize& aCBSize,
-                             nscoord aAvailableISize,
-                             const LogicalSize& aMargin,
-                             const LogicalSize& aBorder,
-                             const LogicalSize& aPadding,
-                             ComputeSizeFlags aFlags)
-{
-  LogicalSize result =
-    nsContainerFrame::ComputeSize(aRenderingContext, aWM,
-                                  aCBSize, aAvailableISize,
-                                  aMargin, aBorder, aPadding, aFlags);
-
-  
-  
-  
-  if (aWM.IsVertical() != GetWritingMode().IsVertical()) {
-    return result;
-  }
-
-  
-
-  
-  
-  AutoMaybeDisableFontInflation an(this);
-
-  nscoord minISize = GetMinISize(aRenderingContext);
-  if (minISize > result.ISize(aWM)) {
-    result.ISize(aWM) = minISize;
-  }
-
-  return result;
-}
-
 void
 nsFieldSetFrame::Reflow(nsPresContext*           aPresContext,
                         ReflowOutput&     aDesiredSize,
@@ -424,18 +388,6 @@ nsFieldSetFrame::Reflow(nsPresContext*           aPresContext,
   LogicalSize legendAvailSize = aReflowInput.ComputedSizeWithPadding(legendWM);
   innerAvailSize.BSize(innerWM) = legendAvailSize.BSize(legendWM) =
     NS_UNCONSTRAINEDSIZE;
-  NS_ASSERTION(!inner ||
-      nsLayoutUtils::IntrinsicForContainer(aReflowInput.mRenderingContext,
-                                           inner,
-                                           nsLayoutUtils::MIN_ISIZE) <=
-               innerAvailSize.ISize(innerWM),
-               "Bogus availSize.ISize; should be bigger");
-  NS_ASSERTION(!legend ||
-      nsLayoutUtils::IntrinsicForContainer(aReflowInput.mRenderingContext,
-                                           legend,
-                                           nsLayoutUtils::MIN_ISIZE) <=
-               legendAvailSize.ISize(legendWM),
-               "Bogus availSize.ISize; should be bigger");
 
   
   LogicalMargin border = aReflowInput.ComputedLogicalBorderPadding() -
@@ -601,9 +553,6 @@ nsFieldSetFrame::Reflow(nsPresContext*           aPresContext,
     } else {
       
       mLegendRect.IStart(wm) = innerContentRect.IStart(wm);
-      innerContentRect.ISize(wm) = mLegendRect.ISize(wm);
-      contentRect.ISize(wm) = mLegendRect.ISize(wm) +
-        aReflowInput.ComputedLogicalPadding().IStartEnd(wm);
     }
 
     
