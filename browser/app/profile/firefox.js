@@ -754,6 +754,9 @@ pref("gecko.handlerService.schemes.ircs.2.uriTemplate", "chrome://browser-region
 pref("gecko.handlerService.schemes.ircs.3.name", "chrome://browser-region/locale/region.properties");
 pref("gecko.handlerService.schemes.ircs.3.uriTemplate", "chrome://browser-region/locale/region.properties");
 
+
+pref("gecko.handlerService.allowRegisterFromDifferentHost", false);
+
 pref("browser.geolocation.warning.infoURL", "https://www.mozilla.org/%LOCALE%/firefox/geolocation/");
 
 pref("browser.EULA.version", 3);
