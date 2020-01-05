@@ -310,6 +310,18 @@ private:
     Maybe<uint32_t> mNextInsertionIndex;
     
     TrackBuffer mQueuedSamples;
+    const TrackBuffer& GetTrackBuffer() const
+    {
+      MOZ_RELEASE_ASSERT(mBuffers.Length(),
+                         "TrackBuffer must have been created");
+      return mBuffers.LastElement();
+    }
+    TrackBuffer& GetTrackBuffer()
+    {
+      MOZ_RELEASE_ASSERT(mBuffers.Length(),
+                         "TrackBuffer must have been created");
+      return mBuffers.LastElement();
+    }
     
     nsTArray<TrackBuffer> mBuffers;
     
