@@ -9,9 +9,12 @@ extern crate js;
 
 use js::jsval::JSVal;
 use std::cell::Cell;
+use std::cell::UnsafeCell;
 
 struct Foo {
-    bar: Cell<JSVal>
+    bar: Cell<JSVal>,
+    
+    foo: UnsafeCell<JSVal>
     
 }
 
