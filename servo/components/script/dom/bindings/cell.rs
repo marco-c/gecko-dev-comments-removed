@@ -4,15 +4,14 @@
 
 
 
-use refcell::{BorrowError, BorrowMutError, Ref, RefCell, RefMut};
-use thread_state;
+use std::cell::{BorrowError, BorrowMutError, Ref, RefCell, RefMut};
+use style::thread_state;
 
 
 
 
 
-#[derive(Clone)]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[derive(Clone, PartialEq, Debug, HeapSizeOf)]
 pub struct DOMRefCell<T> {
     value: RefCell<T>,
 }

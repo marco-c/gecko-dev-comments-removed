@@ -4,6 +4,7 @@
 
 use cssparser::{AtRuleParser, Parser, QualifiedRuleParser, RuleListParser};
 use cssparser::{DeclarationListParser, DeclarationParser};
+use parking_lot::RwLock;
 use parser::{ParserContext, log_css_error};
 use properties::{Importance, PropertyDeclaration, PropertyDeclarationBlock};
 use properties::PropertyDeclarationParseResult;
@@ -68,7 +69,7 @@ impl KeyframeSelector {
 }
 
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct Keyframe {
     pub selector: KeyframeSelector,
@@ -77,23 +78,27 @@ pub struct Keyframe {
     
     
     
-    pub block: Arc<PropertyDeclarationBlock>,
+    #[cfg_attr(feature = "servo", ignore_heap_size_of = "Arc")]
+    pub block: Arc<RwLock<PropertyDeclarationBlock>>,
 }
 
 
 
 
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub enum KeyframesStepValue {
     
-    Declarations(Arc<PropertyDeclarationBlock>),
+    Declarations {
+        #[cfg_attr(feature = "servo", ignore_heap_size_of = "Arc")]
+        block: Arc<RwLock<PropertyDeclarationBlock>>
+    },
     ComputedValues,
 }
 
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct KeyframesStep {
     
@@ -109,12 +114,13 @@ pub struct KeyframesStep {
 }
 
 impl KeyframesStep {
+    #[allow(unsafe_code)]
     #[inline]
     fn new(percentage: KeyframePercentage,
            value: KeyframesStepValue) -> Self {
         let declared_timing_function = match value {
-            KeyframesStepValue::Declarations(ref block) => {
-                block.declarations.iter().any(|&(ref prop_decl, _)| {
+            KeyframesStepValue::Declarations { ref block } => {
+                block.read().declarations.iter().any(|&(ref prop_decl, _)| {
                     match *prop_decl {
                         PropertyDeclaration::AnimationTimingFunction(..) => true,
                         _ => false,
@@ -136,7 +142,7 @@ impl KeyframesStep {
 
 
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct KeyframesAnimation {
     pub steps: Vec<KeyframesStep>,
@@ -150,11 +156,12 @@ pub struct KeyframesAnimation {
 
 
 
+#[allow(unsafe_code)]
 fn get_animated_properties(keyframe: &Keyframe) -> Vec<TransitionProperty> {
     let mut ret = vec![];
     
     
-    for &(ref declaration, _) in keyframe.block.declarations.iter() {
+    for &(ref declaration, _) in keyframe.block.read().declarations.iter() {
         if let Some(property) = TransitionProperty::from_declaration(declaration) {
             ret.push(property);
         }
@@ -178,8 +185,9 @@ impl KeyframesAnimation {
 
         for keyframe in keyframes {
             for percentage in keyframe.selector.0.iter() {
-                steps.push(KeyframesStep::new(*percentage,
-                                              KeyframesStepValue::Declarations(keyframe.block.clone())));
+                steps.push(KeyframesStep::new(*percentage, KeyframesStepValue::Declarations {
+                    block: keyframe.block.clone(),
+                }));
             }
         }
 
@@ -265,10 +273,10 @@ impl<'a> QualifiedRuleParser for KeyframeListParser<'a> {
         }
         Ok(Arc::new(Keyframe {
             selector: prelude,
-            block: Arc::new(PropertyDeclarationBlock {
+            block: Arc::new(RwLock::new(PropertyDeclarationBlock {
                 declarations: declarations,
                 important_count: 0,
-            }),
+            })),
         }))
     }
 }
