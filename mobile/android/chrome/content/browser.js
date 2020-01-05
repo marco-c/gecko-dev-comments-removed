@@ -3297,6 +3297,7 @@ nsBrowserAccess.prototype = {
                                                                       referrerURI: referrer,
                                                                       external: isExternal,
                                                                       parentId: parentId,
+                                                                      opener: aOpener,
                                                                       selected: true,
                                                                       isPrivate: isPrivate,
                                                                       pinned: pinned });
@@ -3403,6 +3404,11 @@ Tab.prototype = {
     }
 
     this.browser.permanentKey = {};
+
+    
+    if ("opener" in aParams) {
+      this.browser.presetOpenerWindow(aParams.opener);
+    }
 
     
     
