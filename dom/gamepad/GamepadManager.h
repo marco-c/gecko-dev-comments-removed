@@ -52,7 +52,7 @@ class GamepadManager final : public nsIObserver,
   
   void AddGamepad(uint32_t aIndex, const nsAString& aID, GamepadMappingType aMapping,
                   GamepadHand aHand, GamepadServiceType aServiceType,
-                  uint32_t aNumButtons, uint32_t aNumAxes);
+                  uint32_t aNumButtons, uint32_t aNumAxes, uint32_t aNumHaptics);
 
   
   void RemoveGamepad(uint32_t aIndex, GamepadServiceType aServiceType);
@@ -83,6 +83,10 @@ class GamepadManager final : public nsIObserver,
 
   
   void Update(const GamepadChangeEvent& aGamepadEvent);
+
+  
+  void VibrateHaptic(uint32_t aControllerIdx, uint32_t aHapticIndex,
+                     double aIntensity, double aDuration);
 
  protected:
   GamepadManager();
