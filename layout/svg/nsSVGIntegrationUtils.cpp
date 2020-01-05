@@ -576,19 +576,6 @@ CreateAndPaintMaskSurface(const PaintFramesParams& aParams,
   return DrawResult::SUCCESS;
 }
 
-static float
-ComputeOpacity(nsIFrame* aFrame, bool aHandleOpacity)
-{
-  float opacity = aFrame->StyleEffects()->mOpacity;
-
-  if (opacity != 1.0f &&
-      (nsSVGUtils::CanOptimizeOpacity(aFrame) || !aHandleOpacity)) {
-    return 1.0f;
-  }
-
-  return opacity;
-}
-
 static bool
 ValidateSVGFrame(nsIFrame* aFrame)
 {
@@ -685,72 +672,6 @@ SetupContextMatrix(nsIFrame* aFrame, const PaintFramesParams& aParams,
   }
 }
 
-void
-nsSVGIntegrationUtils::DetermineMaskUsage(nsIFrame* aFrame,
-                                          bool aHandleOpacity,
-                                          MaskUsage& aUsage)
-{
-  aUsage.opacity = ComputeOpacity(aFrame, aHandleOpacity);
-
-  nsIFrame* firstFrame =
-    nsLayoutUtils::FirstContinuationOrIBSplitSibling(aFrame);
-
-  nsSVGEffects::EffectProperties effectProperties =
-    nsSVGEffects::GetEffectProperties(firstFrame);
-  const nsStyleSVGReset *svgReset = firstFrame->StyleSVGReset();
-
-  nsTArray<nsSVGMaskFrame*> maskFrames = effectProperties.GetMaskFrames();
-
-#ifdef MOZ_ENABLE_MASK_AS_SHORTHAND
-  
-  
-  
-  
-  
-  
-  
-  
-  aUsage.shouldGenerateMaskLayer =
-    (aFrame->GetStateBits() & NS_FRAME_SVG_LAYOUT)
-      ? maskFrames.Length() == 1 && maskFrames[0]
-      : maskFrames.Length() > 0;
-#else
-  
-  
-  
-  
-  aUsage.shouldGenerateMaskLayer = maskFrames.Length() == 1 && maskFrames[0];
-#endif
-
-  bool isOK = effectProperties.HasNoFilterOrHasValidFilter();
-  nsSVGClipPathFrame *clipPathFrame = effectProperties.GetClipPathFrame(&isOK);
-  MOZ_ASSERT_IF(clipPathFrame,
-                svgReset->mClipPath.GetType() == StyleShapeSourceType::URL);
-
-  switch (svgReset->mClipPath.GetType()) {
-    case StyleShapeSourceType::URL:
-      if (clipPathFrame) {
-        if (clipPathFrame->IsTrivial()) {
-          aUsage.shouldApplyClipPath = true;
-        } else {
-          aUsage.shouldGenerateClipMaskLayer = true;
-        }
-      }
-      break;
-    case StyleShapeSourceType::Shape:
-    case StyleShapeSourceType::Box:
-      aUsage.shouldApplyBasicShape = true;
-      break;
-    case StyleShapeSourceType::None:
-      MOZ_ASSERT(!aUsage.shouldGenerateClipMaskLayer &&
-                 !aUsage.shouldApplyClipPath && !aUsage.shouldApplyBasicShape);
-      break;
-    default:
-      MOZ_ASSERT_UNREACHABLE("Unsupported clip-path type.");
-      break;
-  }
-}
-
 bool
 nsSVGIntegrationUtils::IsMaskResourceReady(nsIFrame* aFrame)
 {
@@ -780,8 +701,9 @@ nsSVGIntegrationUtils::IsMaskResourceReady(nsIFrame* aFrame)
 DrawResult
 nsSVGIntegrationUtils::PaintMask(const PaintFramesParams& aParams)
 {
-  MaskUsage maskUsage;
-  DetermineMaskUsage(aParams.frame, aParams.handleOpacity, maskUsage);
+  nsSVGUtils::MaskUsage maskUsage;
+  nsSVGUtils::DetermineMaskUsage(aParams.frame, aParams.handleOpacity,
+                                 maskUsage);
   MOZ_ASSERT(maskUsage.shouldGenerateMaskLayer);
 
   nsIFrame* frame = aParams.frame;
@@ -841,8 +763,9 @@ nsSVGIntegrationUtils::PaintMaskAndClipPath(const PaintFramesParams& aParams)
     return result;
   }
 
-  MaskUsage maskUsage;
-  DetermineMaskUsage(aParams.frame, aParams.handleOpacity, maskUsage);
+  nsSVGUtils::MaskUsage maskUsage;
+  nsSVGUtils::DetermineMaskUsage(aParams.frame, aParams.handleOpacity,
+                                 maskUsage);
 
   if (maskUsage.opacity == 0.0f) {
     return DrawResult::SUCCESS;
@@ -1007,7 +930,7 @@ nsSVGIntegrationUtils::PaintFilter(const PaintFramesParams& aParams)
     return DrawResult::SUCCESS;
   }
 
-  float opacity = ComputeOpacity(frame, aParams.handleOpacity);
+  float opacity = nsSVGUtils::ComputeOpacity(frame, aParams.handleOpacity);
   if (opacity == 0.0f) {
     return DrawResult::SUCCESS;
   }
