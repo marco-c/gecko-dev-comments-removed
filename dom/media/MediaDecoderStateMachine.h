@@ -583,7 +583,7 @@ private:
   
   
   
-  int64_t mLowAudioThresholdUsecs;
+  media::TimeUnit mLowAudioThresholdUsecs;
 
   
   
