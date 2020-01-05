@@ -27,6 +27,7 @@ import org.mozilla.gecko.sync.net.SyncStorageRequestDelegate;
 import org.mozilla.gecko.sync.net.SyncStorageResponse;
 import org.mozilla.gecko.sync.stage.AndroidBrowserBookmarksServerSyncStage;
 import org.mozilla.gecko.sync.stage.AndroidBrowserHistoryServerSyncStage;
+import org.mozilla.gecko.sync.stage.AndroidBrowserRecentHistoryServerSyncStage;
 import org.mozilla.gecko.sync.stage.CheckPreconditionsStage;
 import org.mozilla.gecko.sync.stage.CompletedStage;
 import org.mozilla.gecko.sync.stage.EnsureCrypto5KeysStage;
@@ -188,9 +189,14 @@ public class GlobalSession implements HttpResponseObserver {
 
     stages.put(Stage.syncTabs,                new FennecTabsServerSyncStage());
     stages.put(Stage.syncPasswords,           new PasswordsServerSyncStage());
+
+    
+    
+    stages.put(Stage.syncRecentHistory,       new AndroidBrowserRecentHistoryServerSyncStage());
+
     stages.put(Stage.syncBookmarks,           new AndroidBrowserBookmarksServerSyncStage());
-    stages.put(Stage.syncHistory,             new AndroidBrowserHistoryServerSyncStage());
     stages.put(Stage.syncFormHistory,         new FormHistoryServerSyncStage());
+    stages.put(Stage.syncFullHistory,         new AndroidBrowserHistoryServerSyncStage());
 
     stages.put(Stage.uploadMetaGlobal,        new UploadMetaGlobalStage());
     stages.put(Stage.completed,               new CompletedStage());
