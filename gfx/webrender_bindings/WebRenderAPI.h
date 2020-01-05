@@ -96,14 +96,14 @@ protected:
 
 class DisplayListBuilder {
 public:
-  DisplayListBuilder(const LayerIntSize& aSize, wr::PipelineId aId);
+  explicit DisplayListBuilder(wr::PipelineId aId);
   DisplayListBuilder(DisplayListBuilder&&) = default;
 
   ~DisplayListBuilder();
 
   void Begin(const LayerIntSize& aSize);
 
-  void End(WebRenderAPI& aApi, wr::Epoch aEpoch);
+  void End();
 
   void PushStackingContext(const WrRect& aBounds, 
                            const WrRect& aOverflow,
