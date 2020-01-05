@@ -549,6 +549,10 @@ WebConsoleFrame.prototype = {
 
     
     
+    this.outputScroller = this.outputWrapper;
+
+    
+    
     this._updateCharSize();
 
     this.jsterm = new JSTerm(this);
