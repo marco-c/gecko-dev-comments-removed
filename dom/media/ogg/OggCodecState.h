@@ -7,18 +7,7 @@
 #define OggCodecState_h_
 
 #include <ogg/ogg.h>
-#include <theora/theoradec.h>
-#ifdef MOZ_TREMOR
-#include <tremor/ivorbiscodec.h>
-#else
-#include <vorbis/codec.h>
-#endif
-#include <opus/opus.h>
-#include "opus/opus_multistream.h"
 
-#include "mozilla/dom/HTMLMediaElement.h"
-#include "MediaDecoderStateMachine.h"
-#include "MediaDecoderReader.h"
 #include <nsAutoPtr.h>
 #include <nsAutoRef.h>
 #include <nsDeque.h>
@@ -27,7 +16,12 @@
 #include "VideoUtils.h"
 #include "FlacFrameParser.h"
 
-#include <stdint.h>
+#include <theora/theoradec.h>
+#ifdef MOZ_TREMOR
+#include <tremor/ivorbiscodec.h>
+#else
+#include <vorbis/codec.h>
+#endif
 
 
 
@@ -36,9 +30,11 @@
 #include <map>
 #endif
 
-#include "OpusParser.h"
+struct OpusMSDecoder;
 
 namespace mozilla {
+
+class OpusParser;
 
 
 class OggPacketDeallocator : public nsDequeFunctor
@@ -94,11 +90,11 @@ public:
   };
 
   virtual ~OggCodecState();
-  
+
   
   
   static OggCodecState* Create(ogg_page* aPage);
-  
+
   virtual CodecType GetType() { return TYPE_UNKNOWN; }
 
   
@@ -224,7 +220,7 @@ public:
 
   
   bool mActive;
-  
+
   
   bool mDoneReadingHeaders;
 
@@ -360,7 +356,7 @@ public:
   int64_t MaxKeyframeOffset();
 
   
-  static int64_t Time(th_info* aInfo, int64_t aGranulePos); 
+  static int64_t Time(th_info* aInfo, int64_t aGranulePos);
 
   th_info mInfo;
   th_comment mComment;
@@ -566,7 +562,7 @@ private:
   {
   public:
 
-    nsKeyFrameIndex(int64_t aStartTime, int64_t aEndTime) 
+    nsKeyFrameIndex(int64_t aStartTime, int64_t aEndTime)
       : mStartTime(aStartTime)
       , mEndTime(aEndTime)
     {

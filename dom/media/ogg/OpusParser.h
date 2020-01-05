@@ -6,11 +6,6 @@
 #if !defined(OpusParser_h_)
 #define OpusParser_h_
 
-#include <stdint.h>
-
-#include <opus/opus.h>
-#include "opus/opus_multistream.h"
-
 #include "nsTArray.h"
 #include "nsString.h"
 
@@ -46,7 +41,6 @@ public:
   nsTArray<nsCString> mTags; 
 
   nsCString mVendorString;   
-
 };
 
 } 

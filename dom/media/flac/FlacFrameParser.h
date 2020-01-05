@@ -26,6 +26,7 @@ class FlacFrameParser
 {
 public:
   FlacFrameParser();
+  ~FlacFrameParser();
 
   bool IsHeaderBlock(const uint8_t* aPacket, size_t aLength) const;
   
@@ -56,7 +57,6 @@ private:
 
   
   nsAutoPtr<OpusParser> mParser;
-
 };
 
 }
