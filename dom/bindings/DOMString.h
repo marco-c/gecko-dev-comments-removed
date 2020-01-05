@@ -38,17 +38,28 @@ namespace dom {
 
 
 
+
+
+
+
+
+
 class MOZ_STACK_CLASS DOMString {
 public:
   DOMString()
     : mStringBuffer(nullptr)
     , mLength(0)
     , mIsNull(false)
+    , mStringBufferOwned(false)
   {}
   ~DOMString()
   {
     MOZ_ASSERT(!mString || !mStringBuffer,
                "Shouldn't have both present!");
+    if (mStringBufferOwned) {
+      MOZ_ASSERT(mStringBuffer);
+      mStringBuffer->Release();
+    }
   }
 
   operator nsString&()
@@ -105,6 +116,20 @@ public:
 
   
   
+  void RelinquishBufferOwnership()
+  {
+    MOZ_ASSERT(HasStringBuffer(), "Don't call this if there is no stringbuffer");
+    if (mStringBufferOwned) {
+      
+      mStringBufferOwned = false;
+    } else {
+      
+      mStringBuffer->AddRef();
+    }
+  }
+
+  
+  
   
   void SetStringBuffer(nsStringBuffer* aStringBuffer, uint32_t aLength)
   {
@@ -114,6 +139,15 @@ public:
     MOZ_ASSERT(aStringBuffer, "Why are we getting null?");
     mStringBuffer = aStringBuffer;
     mLength = aLength;
+  }
+
+  
+  void SetEphemeralStringBuffer(nsStringBuffer* aStringBuffer, uint32_t aLength)
+  {
+    
+    SetStringBuffer(aStringBuffer, aLength);
+    aStringBuffer->AddRef();
+    mStringBufferOwned = true;
   }
 
   void SetOwnedString(const nsAString& aString)
@@ -202,6 +236,7 @@ private:
                                  "assertions") mStringBuffer;
   uint32_t mLength;
   bool mIsNull;
+  bool mStringBufferOwned;
 };
 
 } 
