@@ -3656,96 +3656,123 @@ KeyboardLayout::InitNativeKey(NativeKey& aNativeKey,
 
   bool isKeyDown = aNativeKey.IsKeyDownMessage();
 
-  if (IsDeadKey(virtualKey, aModKeyState)) {
-    if ((isKeyDown && mActiveDeadKey < 0) ||
-        (!isKeyDown && mActiveDeadKey == virtualKey)) {
-      ActivateDeadKeyState(aNativeKey, aModKeyState);
-#ifdef DEBUG
-      UniCharsAndModifiers deadChars =
-        GetNativeUniCharsAndModifiers(virtualKey, aModKeyState);
-      MOZ_ASSERT(deadChars.mLength == 1,
-                 "dead key must generate only one character");
-#endif
-      
-      
-      
-      aNativeKey.mCommittedCharsAndModifiers.Clear();
-      aNativeKey.mKeyNameIndex = KEY_NAME_INDEX_Dead;
-      return;
-    }
-
-    
-    
-    
-    
-    
-    if (mActiveDeadKey < 0) {
-      aNativeKey.mCommittedCharsAndModifiers =
-        GetUniCharsAndModifiers(virtualKey, aModKeyState);
-      return;
-    }
-
-    if (NS_WARN_IF(!IsPrintableCharKey(mActiveDeadKey))) {
-#if defined(DEBUG) || defined(MOZ_CRASHREPORTER)
-      nsPrintfCString warning("The virtual key index (%d) of mActiveDeadKey "
-                              "(0x%02X) is not a printable key (virtualKey="
-                              "0x%02X)",
-                              GetKeyIndex(mActiveDeadKey), mActiveDeadKey,
-                              virtualKey);
-      NS_WARNING(warning.get());
-#ifdef MOZ_CRASHREPORTER
-      CrashReporter::AppendAppNotesToCrashReport(
-                       NS_LITERAL_CSTRING("\n") + warning);
-#endif 
-#endif 
-      MOZ_CRASH("Trying to reference out of range of mVirtualKeys");
-    }
-
-    
-    
-    if (MaybeInitNativeKeyWithCompositeChar(aNativeKey, aModKeyState)) {
-      return;
-    }
-
-    
-    
-    UniCharsAndModifiers prevDeadChars =
-      GetUniCharsAndModifiers(mActiveDeadKey, mDeadKeyShiftState);
-    UniCharsAndModifiers newChars =
-      GetUniCharsAndModifiers(virtualKey, aModKeyState);
-    
-    aNativeKey.mCommittedCharsAndModifiers = prevDeadChars + newChars;
-    if (isKeyDown) {
-      DeactivateDeadKeyState();
-    }
+  
+  
+  if (MaybeInitNativeKeyAsDeadKey(aNativeKey, aModKeyState)) {
     return;
   }
 
+  
+  
+  
   if (MaybeInitNativeKeyWithCompositeChar(aNativeKey, aModKeyState)) {
     return;
   }
 
   UniCharsAndModifiers baseChars =
     GetUniCharsAndModifiers(virtualKey, aModKeyState);
+
+  
+  
   if (mActiveDeadKey < 0) {
-    
     aNativeKey.mCommittedCharsAndModifiers = baseChars;
     return;
   }
 
+  
+  
+  
+  
   if (NS_WARN_IF(!IsPrintableCharKey(mActiveDeadKey))) {
     return;
   }
 
   
   
+  
   UniCharsAndModifiers deadChars =
     GetUniCharsAndModifiers(mActiveDeadKey, mDeadKeyShiftState);
-  
   aNativeKey.mCommittedCharsAndModifiers = deadChars + baseChars;
   if (isKeyDown) {
     DeactivateDeadKeyState();
   }
+}
+
+bool
+KeyboardLayout::MaybeInitNativeKeyAsDeadKey(
+                  NativeKey& aNativeKey,
+                  const ModifierKeyState& aModKeyState)
+{
+  uint8_t virtualKey = aNativeKey.mOriginalVirtualKeyCode;
+  if (!IsDeadKey(virtualKey, aModKeyState)) {
+    return false;
+  }
+
+  
+  
+  
+  if ((aNativeKey.IsKeyDownMessage() && mActiveDeadKey < 0) ||
+      (!aNativeKey.IsKeyDownMessage() && mActiveDeadKey == virtualKey)) {
+    ActivateDeadKeyState(aNativeKey, aModKeyState);
+#ifdef DEBUG
+    UniCharsAndModifiers deadChars =
+      GetNativeUniCharsAndModifiers(virtualKey, aModKeyState);
+    MOZ_ASSERT(deadChars.mLength == 1,
+               "dead key must generate only one character");
+#endif
+    
+    
+    
+    aNativeKey.mCommittedCharsAndModifiers.Clear();
+    aNativeKey.mKeyNameIndex = KEY_NAME_INDEX_Dead;
+    return true;
+  }
+
+  
+  
+  
+  
+  
+  if (mActiveDeadKey < 0) {
+    aNativeKey.mCommittedCharsAndModifiers =
+      GetUniCharsAndModifiers(virtualKey, aModKeyState);
+    return true;
+  }
+
+  if (NS_WARN_IF(!IsPrintableCharKey(mActiveDeadKey))) {
+#if defined(DEBUG) || defined(MOZ_CRASHREPORTER)
+    nsPrintfCString warning("The virtual key index (%d) of mActiveDeadKey "
+                            "(0x%02X) is not a printable key (virtualKey="
+                            "0x%02X)",
+                            GetKeyIndex(mActiveDeadKey), mActiveDeadKey,
+                            virtualKey);
+    NS_WARNING(warning.get());
+#ifdef MOZ_CRASHREPORTER
+    CrashReporter::AppendAppNotesToCrashReport(
+                     NS_LITERAL_CSTRING("\n") + warning);
+#endif 
+#endif 
+    MOZ_CRASH("Trying to reference out of range of mVirtualKeys");
+  }
+
+  
+  
+  if (MaybeInitNativeKeyWithCompositeChar(aNativeKey, aModKeyState)) {
+    return true;
+  }
+
+  
+  
+  UniCharsAndModifiers prevDeadChars =
+    GetUniCharsAndModifiers(mActiveDeadKey, mDeadKeyShiftState);
+  UniCharsAndModifiers newChars =
+    GetUniCharsAndModifiers(virtualKey, aModKeyState);
+  
+  aNativeKey.mCommittedCharsAndModifiers = prevDeadChars + newChars;
+  if (aNativeKey.IsKeyDownMessage()) {
+    DeactivateDeadKeyState();
+  }
+  return true;
 }
 
 bool

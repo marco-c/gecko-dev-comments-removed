@@ -670,6 +670,27 @@ private:
   
 
 
+
+
+
+
+
+
+  bool MaybeInitNativeKeyAsDeadKey(NativeKey& aNativeKey,
+                                   const ModifierKeyState& aModKeyState);
+
+  
+
+
+
+
+  bool MaybeInitNativeKeyWithCompositeChar(
+         NativeKey& aNativeKey,
+         const ModifierKeyState& aModKeyState);
+
+  
+
+
   UniCharsAndModifiers GetUniCharsAndModifiers(
                          uint8_t aVirtualKey,
                          VirtualKey::ShiftState aShiftState) const;
@@ -705,15 +726,6 @@ public:
 
   bool IsSysKey(uint8_t aVirtualKey,
                 const ModifierKeyState& aModKeyState) const;
-
-  
-
-
-
-
-  bool MaybeInitNativeKeyWithCompositeChar(
-         NativeKey& aNativeKey,
-         const ModifierKeyState& aModKeyState);
 
   
 
