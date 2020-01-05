@@ -1394,7 +1394,7 @@ private:
                OnSeekTaskRejected(aValue);
              }));
 
-    if (!mTask->IsVideoRequestPending() && mTask->NeedMoreVideo()) {
+    if (!mTask->IsVideoRequestPending() && NeedMoreVideo()) {
       RequestVideoData();
     }
     MaybeFinishSeek(); 
@@ -1430,7 +1430,7 @@ private:
       mTask->mSeekedVideoData = aVideo;
     }
 
-    if (mTask->NeedMoreVideo()) {
+    if (NeedMoreVideo()) {
       RequestVideoData();
       return;
     }
@@ -1465,7 +1465,7 @@ private:
       }
 
       
-      if (mTask->NeedMoreVideo()) {
+      if (NeedMoreVideo()) {
         switch (aError.Code()) {
           case NS_ERROR_DOM_MEDIA_WAITING_FOR_DATA:
             Reader()->WaitForData(MediaData::VIDEO_DATA);
@@ -1505,7 +1505,7 @@ private:
   {
     MOZ_ASSERT(mSeekTaskRequest.Exists(), "Seek shouldn't be finished");
 
-    if (mTask->NeedMoreVideo()) {
+    if (NeedMoreVideo()) {
       RequestVideoData();
       return;
     }
@@ -1526,7 +1526,7 @@ private:
     }
     case MediaData::VIDEO_DATA:
     {
-      if (mTask->NeedMoreVideo()) {
+      if (NeedMoreVideo()) {
         
         mTask->RejectIfExist(NS_ERROR_DOM_MEDIA_CANCELED, __func__);
         return;
@@ -1593,6 +1593,15 @@ private:
     Reader()->RequestVideoData(false, media::TimeUnit());
   }
 
+  bool NeedMoreVideo() const
+  {
+    
+    return mTask->mVideoQueue.GetSize() == 0 &&
+           !mTask->mSeekedVideoData &&
+           !mTask->mVideoQueue.IsFinished() &&
+           !mTask->mIsVideoQueueFinished;
+  }
+
   bool IsAudioSeekComplete() const
   {
     
@@ -1604,7 +1613,7 @@ private:
   {
     
     
-    return !mTask->IsVideoRequestPending() && !mTask->NeedMoreVideo();
+    return !mTask->IsVideoRequestPending() && !NeedMoreVideo();
   }
 
   void MaybeFinishSeek()
