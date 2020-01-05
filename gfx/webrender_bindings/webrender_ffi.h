@@ -23,6 +23,8 @@ bool is_glcontext_egl(void* glcontext_ptr);
 void gfx_critical_note(const char* msg);
 void* get_proc_address_from_glcontext(void* glcontext_ptr, const char* procname);
 
+} 
+
 
 
 
@@ -44,7 +46,6 @@ void* get_proc_address_from_glcontext(void* glcontext_ptr, const char* procname)
 
 #undef WR_FUNC
 #undef WR_DESTRUCTOR_SAFE_FUNC
-} 
 
 struct WrGlyphArray
 {
