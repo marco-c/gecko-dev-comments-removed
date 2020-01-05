@@ -22,12 +22,6 @@
 
 class nsRange;
 
-
-
-#define NS_FRAME_SELECTION_IID      \
-{ 0x3c6ae2d0, 0x4cf1, 0x44a1, \
-  { 0x9e, 0x9d, 0x24, 0x11, 0x86, 0x7f, 0x19, 0xc6 } }
-
 #define BIDI_LEVEL_UNDEFINED 0x80
 
 
@@ -52,7 +46,6 @@ struct SelectionDetails
 };
 
 class nsIPresShell;
-class nsIScrollableFrame;
 
 
 
@@ -178,8 +171,8 @@ class nsIScrollableFrame;
 
 
 
-
-class nsFrameSelection final {
+class nsFrameSelection final
+{
 public:
   typedef mozilla::CaretAssociationHint CaretAssociateHint;
 
@@ -247,7 +240,7 @@ public:
 
 
 
-  virtual nsresult SelectCellElement(nsIContent *aCell);
+  nsresult SelectCellElement(nsIContent *aCell);
 
   
 
@@ -258,11 +251,11 @@ public:
 
 
 
-  virtual nsresult AddCellsToSelection(nsIContent *aTable,
-                                       int32_t aStartRowIndex,
-                                       int32_t aStartColumnIndex,
-                                       int32_t aEndRowIndex,
-                                       int32_t aEndColumnIndex);
+  nsresult AddCellsToSelection(nsIContent* aTable,
+                               int32_t aStartRowIndex,
+                               int32_t aStartColumnIndex,
+                               int32_t aEndRowIndex,
+                               int32_t aEndColumnIndex);
 
   
 
@@ -273,11 +266,11 @@ public:
 
 
 
-  virtual nsresult RemoveCellsFromSelection(nsIContent *aTable,
-                                            int32_t aStartRowIndex,
-                                            int32_t aStartColumnIndex,
-                                            int32_t aEndRowIndex,
-                                            int32_t aEndColumnIndex);
+  nsresult RemoveCellsFromSelection(nsIContent* aTable,
+                                    int32_t aStartRowIndex,
+                                    int32_t aStartColumnIndex,
+                                    int32_t aEndRowIndex,
+                                    int32_t aEndColumnIndex);
 
   
 
@@ -288,11 +281,11 @@ public:
 
 
 
-  virtual nsresult RestrictCellsToSelection(nsIContent *aTable,
-                                            int32_t aStartRowIndex,
-                                            int32_t aStartColumnIndex,
-                                            int32_t aEndRowIndex,
-                                            int32_t aEndColumnIndex);
+  nsresult RestrictCellsToSelection(nsIContent* aTable,
+                                    int32_t aStartRowIndex,
+                                    int32_t aStartColumnIndex,
+                                    int32_t aEndRowIndex,
+                                    int32_t aEndColumnIndex);
 
   
 
@@ -382,10 +375,10 @@ public:
 
 
 
-  virtual nsIFrame* GetFrameForNodeOffset(nsIContent*        aNode,
-                                          int32_t            aOffset,
-                                          CaretAssociateHint aHint,
-                                          int32_t*           aReturnOffset) const;
+  nsIFrame* GetFrameForNodeOffset(nsIContent*        aNode,
+                                  int32_t            aOffset,
+                                  CaretAssociateHint aHint,
+                                  int32_t*           aReturnOffset) const;
 
   
 
@@ -411,15 +404,17 @@ public:
 
 
 
-  virtual void SetCaretBidiLevel(nsBidiLevel aLevel);
+  void SetCaretBidiLevel(nsBidiLevel aLevel);
+
   
 
 
-  virtual nsBidiLevel GetCaretBidiLevel() const;
+  nsBidiLevel GetCaretBidiLevel() const;
+
   
 
 
-  virtual void UndefineCaretBidiLevel();
+  void UndefineCaretBidiLevel();
 
   
 
@@ -563,10 +558,9 @@ public:
 
 
 
-
-  virtual nsPrevNextBidiLevels GetPrevNextBidiLevels(nsIContent *aNode,
-                                                     uint32_t aContentOffset,
-                                                     bool aJumpLines) const;
+  nsPrevNextBidiLevels GetPrevNextBidiLevels(nsIContent* aNode,
+                                             uint32_t aContentOffset,
+                                             bool aJumpLines) const;
 
   
 
