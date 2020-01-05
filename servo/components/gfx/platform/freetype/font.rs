@@ -2,8 +2,6 @@
 
 
 
-extern crate freetype;
-
 use app_units::Au;
 use font::{FontHandleMethods, FontMetrics, FontTableMethods};
 use font::{FontTableTag, FractionalPixel, GPOS, GSUB, KERN};

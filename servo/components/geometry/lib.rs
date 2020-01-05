@@ -3,7 +3,7 @@
 
 
 extern crate app_units;
-#[macro_use] extern crate euclid;
+extern crate euclid;
 #[macro_use] extern crate heapsize;
 
 use app_units::{Au, MAX_AU};

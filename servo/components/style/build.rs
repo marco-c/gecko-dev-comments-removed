@@ -2,6 +2,7 @@
 
 
 
+#[cfg(feature = "gecko")]
 #[macro_use]
 extern crate lazy_static;
 #[cfg(feature = "bindgen")]
