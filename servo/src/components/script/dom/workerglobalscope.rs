@@ -2,6 +2,7 @@
 
 
 
+use dom::bindings::codegen::Bindings::WorkerGlobalScopeBinding::WorkerGlobalScopeMethods;
 use dom::bindings::trace::Untraceable;
 use dom::bindings::global;
 use dom::bindings::js::{JS, JSRef, Temporary, OptionalSettable};
@@ -65,11 +66,6 @@ impl WorkerGlobalScope {
     pub fn script_chan<'a>(&'a self) -> &'a ScriptChan {
         &self.script_chan
     }
-}
-
-pub trait WorkerGlobalScopeMethods {
-    fn Self(&self) -> Temporary<WorkerGlobalScope>;
-    fn Console(&self) -> Temporary<Console>;
 }
 
 impl<'a> WorkerGlobalScopeMethods for JSRef<'a, WorkerGlobalScope> {

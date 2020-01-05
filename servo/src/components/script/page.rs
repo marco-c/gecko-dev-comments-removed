@@ -2,12 +2,13 @@
 
 
 
+use dom::bindings::codegen::Bindings::DocumentBinding::DocumentMethods;
 use dom::bindings::codegen::InheritTypes::{NodeCast, ElementCast};
 use dom::bindings::js::{JS, JSRef, Temporary};
 use dom::bindings::js::OptionalRootable;
 use dom::bindings::trace::{Traceable, Untraceable};
 use dom::bindings::utils::GlobalStaticData;
-use dom::document::{Document, DocumentMethods, DocumentHelpers};
+use dom::document::{Document, DocumentHelpers};
 use dom::element::{Element, AttributeHandlers};
 use dom::node::{Node, NodeHelpers};
 use dom::window::Window;

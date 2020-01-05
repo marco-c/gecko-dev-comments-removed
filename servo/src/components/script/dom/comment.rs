@@ -2,8 +2,9 @@
 
 
 
-use dom::bindings::codegen::InheritTypes::CommentDerived;
 use dom::bindings::codegen::Bindings::CommentBinding;
+use dom::bindings::codegen::Bindings::WindowBinding::WindowMethods;
+use dom::bindings::codegen::InheritTypes::CommentDerived;
 use dom::bindings::error::Fallible;
 use dom::bindings::global::GlobalRef;
 use dom::bindings::js::{JSRef, Temporary};
@@ -12,7 +13,6 @@ use dom::characterdata::CharacterData;
 use dom::document::Document;
 use dom::eventtarget::{EventTarget, NodeTargetTypeId};
 use dom::node::{CommentNodeTypeId, Node};
-use dom::window::WindowMethods;
 use servo_util::str::DOMString;
 
 

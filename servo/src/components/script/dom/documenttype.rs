@@ -2,8 +2,9 @@
 
 
 
-use dom::bindings::codegen::InheritTypes::{DocumentTypeDerived, NodeCast};
 use dom::bindings::codegen::Bindings::DocumentTypeBinding;
+use dom::bindings::codegen::Bindings::DocumentTypeBinding::DocumentTypeMethods;
+use dom::bindings::codegen::InheritTypes::{DocumentTypeDerived, NodeCast};
 use dom::bindings::js::{JSRef, Temporary};
 use dom::bindings::utils::{Reflectable, Reflector};
 use dom::document::Document;
@@ -51,13 +52,6 @@ impl DocumentType {
                                                        document);
         Node::reflect_node(box documenttype, document, DocumentTypeBinding::Wrap)
     }
-}
-
-pub trait DocumentTypeMethods {
-    fn Name(&self) -> DOMString;
-    fn PublicId(&self) -> DOMString;
-    fn SystemId(&self) -> DOMString;
-    fn Remove(&self);
 }
 
 impl<'a> DocumentTypeMethods for JSRef<'a, DocumentType> {

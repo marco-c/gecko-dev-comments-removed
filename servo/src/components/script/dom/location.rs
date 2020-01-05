@@ -3,6 +3,7 @@
 
 
 use dom::bindings::codegen::Bindings::LocationBinding;
+use dom::bindings::codegen::Bindings::LocationBinding::LocationMethods;
 use dom::bindings::global::Window;
 use dom::bindings::js::{JSRef, Temporary};
 use dom::bindings::utils::{Reflectable, Reflector, reflect_dom_object};
@@ -32,12 +33,6 @@ impl Location {
                            &Window(*window),
                            LocationBinding::Wrap)
     }
-}
-
-pub trait LocationMethods {
-    fn Href(&self) -> DOMString;
-    fn Search(&self) -> DOMString;
-    fn Hash(&self) -> DOMString;
 }
 
 impl<'a> LocationMethods for JSRef<'a, Location> {
