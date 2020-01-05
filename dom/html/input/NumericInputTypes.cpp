@@ -7,6 +7,7 @@
 #include "NumericInputTypes.h"
 
 #include "mozilla/dom/HTMLInputElement.h"
+#include "nsTextEditorState.h"
 
 bool
 NumberInputType::IsMutable() const
@@ -14,6 +15,62 @@ NumberInputType::IsMutable() const
   return !mInputElement->IsDisabled() &&
          !mInputElement->HasAttr(kNameSpaceID_None, nsGkAtoms::readonly);
 }
+
+bool
+NumericInputTypeBase::IsRangeOverflow() const
+{
+  mozilla::Decimal maximum = mInputElement->GetMaximum();
+  if (maximum.isNaN()) {
+    return false;
+  }
+
+  mozilla::Decimal value = mInputElement->GetValueAsDecimal();
+  if (value.isNaN()) {
+    return false;
+  }
+
+  return value > maximum;
+}
+
+bool
+NumericInputTypeBase::IsRangeUnderflow() const
+{
+  mozilla::Decimal minimum = mInputElement->GetMinimum();
+  if (minimum.isNaN()) {
+    return false;
+  }
+
+  mozilla::Decimal value = mInputElement->GetValueAsDecimal();
+  if (value.isNaN()) {
+    return false;
+  }
+
+  return value < minimum;
+}
+
+bool
+NumericInputTypeBase::HasStepMismatch(bool aUseZeroIfValueNaN) const
+{
+  mozilla::Decimal value = mInputElement->GetValueAsDecimal();
+  if (value.isNaN()) {
+    if (aUseZeroIfValueNaN) {
+      value = mozilla::Decimal(0);
+    } else {
+      
+      return false;
+    }
+  }
+
+  mozilla::Decimal step = mInputElement->GetStep();
+  if (step == kStepAny) {
+    return false;
+  }
+
+  
+  return NS_floorModulo(value - GetStepBase(), step) != mozilla::Decimal(0);
+}
+
+
 
 bool
 NumberInputType::IsValueMissing() const
@@ -27,4 +84,23 @@ NumberInputType::IsValueMissing() const
   }
 
   return IsValueEmpty();
+}
+
+
+nsresult
+RangeInputType::MinMaxStepAttrChanged()
+{
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsAutoString value;
+  GetNonFileValueInternal(value);
+  return SetValueInternal(value, nsTextEditorState::eSetValue_Internal);
 }

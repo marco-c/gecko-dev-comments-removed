@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "InputType.h"
 
@@ -16,14 +16,15 @@
 #include "NumericInputTypes.h"
 #include "SingleLineTextInputTypes.h"
 
+const mozilla::Decimal InputType::kStepAny = mozilla::Decimal(0);
 
- mozilla::UniquePtr<InputType, DoNotDelete>
+/* static */ mozilla::UniquePtr<InputType, DoNotDelete>
 InputType::Create(mozilla::dom::HTMLInputElement* aInputElement, uint8_t aType,
                   void* aMemory)
 {
   mozilla::UniquePtr<InputType, DoNotDelete> inputType;
   switch(aType) {
-    
+    // Single line text
     case NS_FORM_INPUT_TEXT:
       inputType.reset(TextInputType::Create(aInputElement, aMemory));
       break;
@@ -42,7 +43,7 @@ InputType::Create(mozilla::dom::HTMLInputElement* aInputElement, uint8_t aType,
     case NS_FORM_INPUT_URL:
       inputType.reset(URLInputType::Create(aInputElement, aMemory));
       break;
-    
+    // Button
     case NS_FORM_INPUT_BUTTON:
       inputType.reset(ButtonInputType::Create(aInputElement, aMemory));
       break;
@@ -55,21 +56,21 @@ InputType::Create(mozilla::dom::HTMLInputElement* aInputElement, uint8_t aType,
     case NS_FORM_INPUT_RESET:
       inputType.reset(ResetInputType::Create(aInputElement, aMemory));
       break;
-    
+    // Checkable
     case NS_FORM_INPUT_CHECKBOX:
       inputType.reset(CheckboxInputType::Create(aInputElement, aMemory));
       break;
     case NS_FORM_INPUT_RADIO:
       inputType.reset(RadioInputType::Create(aInputElement, aMemory));
       break;
-    
+    // Numeric
     case NS_FORM_INPUT_NUMBER:
       inputType.reset(NumberInputType::Create(aInputElement, aMemory));
       break;
     case NS_FORM_INPUT_RANGE:
       inputType.reset(RangeInputType::Create(aInputElement, aMemory));
       break;
-    
+    // DateTime
     case NS_FORM_INPUT_DATE:
       inputType.reset(DateInputType::Create(aInputElement, aMemory));
       break;
@@ -85,7 +86,7 @@ InputType::Create(mozilla::dom::HTMLInputElement* aInputElement, uint8_t aType,
     case NS_FORM_INPUT_DATETIME_LOCAL:
       inputType.reset(DateTimeLocalInputType::Create(aInputElement, aMemory));
       break;
-    
+    // Others
     case NS_FORM_INPUT_COLOR:
       inputType.reset(ColorInputType::Create(aInputElement, aMemory));
       break;
@@ -120,10 +121,22 @@ InputType::GetNonFileValueInternal(nsAString& aValue) const
   return mInputElement->GetNonFileValueInternal(aValue);
 }
 
+nsresult
+InputType::SetValueInternal(const nsAString& aValue, uint32_t aFlags)
+{
+  return mInputElement->SetValueInternal(aValue, aFlags);
+}
+
+mozilla::Decimal
+InputType::GetStepBase() const
+{
+  return mInputElement->GetStepBase();
+}
+
 void
 InputType::DropReference()
 {
-  
+  // Drop our (non ref-counted) reference.
   mInputElement = nullptr;
 }
 
@@ -155,4 +168,28 @@ bool
 InputType::HasPatternMismatch() const
 {
   return false;
+}
+
+bool
+InputType::IsRangeOverflow() const
+{
+  return false;
+}
+
+bool
+InputType::IsRangeUnderflow() const
+{
+  return false;
+}
+
+bool
+InputType::HasStepMismatch(bool aUseZeroIfValueNaN) const
+{
+  return false;
+}
+
+nsresult
+InputType::MinMaxStepAttrChanged()
+{
+  return NS_OK;
 }

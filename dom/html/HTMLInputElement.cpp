@@ -127,14 +127,6 @@ NS_IMPL_NS_NEW_HTML_ELEMENT_CHECK_PARSER(Input)
 
 static NS_DEFINE_CID(kXULControllersCID,  NS_XULCONTROLLERS_CID);
 
-
-
-inline mozilla::Decimal
-NS_floorModulo(mozilla::Decimal x, mozilla::Decimal y)
-{
-  return (x - y * (x / y).floor());
-}
-
 namespace mozilla {
 namespace dom {
 
@@ -1473,24 +1465,8 @@ HTMLInputElement::AfterSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
       UpdateTypeMismatchValidityState();
     } else if (aName == nsGkAtoms::max) {
       UpdateHasRange();
-      if (mType == NS_FORM_INPUT_RANGE) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        nsAutoString value;
-        GetNonFileValueInternal(value);
-        nsresult rv =
-          SetValueInternal(value, nsTextEditorState::eSetValue_Internal);
-        NS_ENSURE_SUCCESS(rv, rv);
-      }
+      nsresult rv = mInputType->MinMaxStepAttrChanged();
+      NS_ENSURE_SUCCESS(rv, rv);
       
       
       
@@ -1502,14 +1478,8 @@ HTMLInputElement::AfterSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
                  "HTML5 spec does not allow underflow for type=range");
     } else if (aName == nsGkAtoms::min) {
       UpdateHasRange();
-      if (mType == NS_FORM_INPUT_RANGE) {
-        
-        nsAutoString value;
-        GetNonFileValueInternal(value);
-        nsresult rv =
-          SetValueInternal(value, nsTextEditorState::eSetValue_Internal);
-        NS_ENSURE_SUCCESS(rv, rv);
-      }
+      nsresult rv = mInputType->MinMaxStepAttrChanged();
+      NS_ENSURE_SUCCESS(rv, rv);
       
       UpdateRangeUnderflowValidityState();
       UpdateStepMismatchValidityState();
@@ -1518,14 +1488,8 @@ HTMLInputElement::AfterSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
                  !GetValidityState(VALIDITY_STATE_RANGE_UNDERFLOW),
                  "HTML5 spec does not allow underflow for type=range");
     } else if (aName == nsGkAtoms::step) {
-      if (mType == NS_FORM_INPUT_RANGE) {
-        
-        nsAutoString value;
-        GetNonFileValueInternal(value);
-        nsresult rv =
-          SetValueInternal(value, nsTextEditorState::eSetValue_Internal);
-        NS_ENSURE_SUCCESS(rv, rv);
-      }
+      nsresult rv = mInputType->MinMaxStepAttrChanged();
+      NS_ENSURE_SUCCESS(rv, rv);
       
       UpdateStepMismatchValidityState();
       MOZ_ASSERT(!mDoneCreating ||
@@ -7548,67 +7512,19 @@ HTMLInputElement::HasPatternMismatch() const
 bool
 HTMLInputElement::IsRangeOverflow() const
 {
-  if (!DoesMinMaxApply()) {
-    return false;
-  }
-
-  Decimal maximum = GetMaximum();
-  if (maximum.isNaN()) {
-    return false;
-  }
-
-  Decimal value = GetValueAsDecimal();
-  if (value.isNaN()) {
-    return false;
-  }
-
-  return value > maximum;
+  return mInputType->IsRangeOverflow();
 }
 
 bool
 HTMLInputElement::IsRangeUnderflow() const
 {
-  if (!DoesMinMaxApply()) {
-    return false;
-  }
-
-  Decimal minimum = GetMinimum();
-  if (minimum.isNaN()) {
-    return false;
-  }
-
-  Decimal value = GetValueAsDecimal();
-  if (value.isNaN()) {
-    return false;
-  }
-
-  return value < minimum;
+  return mInputType->IsRangeUnderflow();
 }
 
 bool
 HTMLInputElement::HasStepMismatch(bool aUseZeroIfValueNaN) const
 {
-  if (!DoesStepApply()) {
-    return false;
-  }
-
-  Decimal value = GetValueAsDecimal();
-  if (value.isNaN()) {
-    if (aUseZeroIfValueNaN) {
-      value = Decimal(0);
-    } else {
-      
-      return false;
-    }
-  }
-
-  Decimal step = GetStep();
-  if (step == kStepAny) {
-    return false;
-  }
-
-  
-  return NS_floorModulo(value - GetStepBase(), step) != Decimal(0);
+  return mInputType->HasStepMismatch(aUseZeroIfValueNaN);
 }
 
 
