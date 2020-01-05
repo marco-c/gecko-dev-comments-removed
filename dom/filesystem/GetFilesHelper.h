@@ -64,12 +64,7 @@ protected:
   bool mRecursiveFlag;
 
   
-  
-  struct FileData {
-    nsString mDomPath;
-    nsString mRealPath;
-  };
-  FallibleTArray<FileData> mTargetPathArray;
+  FallibleTArray<RefPtr<BlobImpl>> mTargetBlobImplArray;
   nsTHashtable<nsCStringHashKey> mExploredDirectories;
 };
 

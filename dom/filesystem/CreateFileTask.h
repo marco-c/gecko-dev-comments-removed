@@ -59,6 +59,8 @@ private:
   RefPtr<Promise> mPromise;
   nsCOMPtr<nsIFile> mTargetPath;
 
+  
+  
   RefPtr<BlobImpl> mBlobImpl;
 
   

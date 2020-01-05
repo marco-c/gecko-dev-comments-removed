@@ -60,12 +60,7 @@ private:
   bool mRecursiveFlag;
 
   
-  struct FileData {
-    nsString mRealPath;
-    nsString mDOMPath;
-  };
-
-  FallibleTArray<FileData> mTargetData;
+  FallibleTArray<RefPtr<File>> mTargetData;
 };
 
 class GetFilesTaskParent final : public FileSystemTaskParentBase

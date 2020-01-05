@@ -58,9 +58,7 @@ private:
   nsCOMPtr<nsIFile> mTargetPath;
   nsString mFilters;
 
-  
-  
-  FallibleTArray<Directory::FileOrDirectoryPath> mTargetData;
+  FallibleTArray<OwningFileOrDirectory> mTargetData;
 };
 
 class GetDirectoryListingTaskParent final : public FileSystemTaskParentBase
@@ -87,11 +85,20 @@ private:
   IOWork() override;
 
   nsCOMPtr<nsIFile> mTargetPath;
+  nsString mDOMPath;
   nsString mFilters;
 
-  
-  
-  FallibleTArray<Directory::FileOrDirectoryPath> mTargetData;
+  struct FileOrDirectoryPath
+  {
+    nsString mPath;
+
+    enum {
+      eFilePath,
+      eDirectoryPath
+    } mType;
+  };
+
+  FallibleTArray<FileOrDirectoryPath> mTargetData;
 };
 
 } 
