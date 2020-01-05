@@ -40,6 +40,7 @@ function HighlightersOverlay(inspector) {
   };
 
   this.onClick = this.onClick.bind(this);
+  this.onMarkupMutation = this.onMarkupMutation.bind(this);
   this.onMouseMove = this.onMouseMove.bind(this);
   this.onMouseOut = this.onMouseOut.bind(this);
   this.onWillNavigate = this.onWillNavigate.bind(this);
@@ -47,6 +48,7 @@ function HighlightersOverlay(inspector) {
   this._handleRejection = this._handleRejection.bind(this);
 
   
+  this.inspector.on("markupmutation", this.onMarkupMutation);
   this.inspector.target.on("navigate", this.onNavigate);
   this.inspector.target.on("will-navigate", this.onWillNavigate);
 
@@ -378,6 +380,30 @@ HighlightersOverlay.prototype = {
   
 
 
+
+  onMarkupMutation: Task.async(function* (evt, mutations) {
+    let hasInterestingMutation = mutations.some(mut => mut.type === "childList");
+    if (!hasInterestingMutation || !this.gridHighlighterShown) {
+      
+      
+      return;
+    }
+
+    let nodeFront = this.gridHighlighterShown;
+
+    try {
+      let isInTree = yield this.inspector.walker.isInDOMTree(nodeFront);
+      if (!isInTree) {
+        this.hideGridHighlighter(nodeFront);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }),
+
+  
+
+
   onNavigate: Task.async(function* () {
     try {
       yield this.restoreState();
@@ -411,6 +437,7 @@ HighlightersOverlay.prototype = {
     }
 
     
+    this.inspector.off("markupmutation", this.onMarkupMutation);
     this.inspector.target.off("navigate", this.onNavigate);
     this.inspector.target.off("will-navigate", this.onWillNavigate);
 
