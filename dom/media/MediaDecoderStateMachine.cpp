@@ -946,6 +946,12 @@ public:
 
     
     
+    if (mSeekJob.mTarget->IsVideoOnly()) {
+      mMaster->mOnPlaybackEvent.Notify(MediaEventType::VideoOnlySeekBegin);
+    }
+
+    
+    
     
     if (mMaster->mVideoDecodeSuspended) {
       mMaster->mVideoDecodeSuspended = false;
