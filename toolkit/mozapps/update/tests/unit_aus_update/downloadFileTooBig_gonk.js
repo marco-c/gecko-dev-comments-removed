@@ -3,7 +3,7 @@
 
 
 
-const KEY_UPDATE_ARCHIVE_DIR = "UpdArchD"
+const KEY_UPDATE_ARCHIVE_DIR = "UpdArchD";
 
 var gActiveUpdate;
 var gDirService;

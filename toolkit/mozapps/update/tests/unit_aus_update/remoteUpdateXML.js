@@ -153,7 +153,7 @@ function check_test_pt02() {
   
   
   
-  Assert.equal(typeof(patch.state), "string",
+  Assert.equal(typeof patch.state, "string",
                "the update patch state typeof value should equal |string|");
   Assert.equal(patch.state, STATE_NONE,
                "the update patch state attribute" + MSG_SHOULD_EQUAL);
