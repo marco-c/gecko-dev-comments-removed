@@ -2075,16 +2075,16 @@ nsTreeBodyFrame::GetTwistyRect(int32_t aRowIndex,
   bool useTheme = false;
   nsITheme *theme = nullptr;
   const nsStyleDisplay* twistyDisplayData = aTwistyContext->StyleDisplay();
-  if (twistyDisplayData->UsedAppearance()) {
+  if (twistyDisplayData->mAppearance) {
     theme = aPresContext->GetTheme();
-    if (theme && theme->ThemeSupportsWidget(aPresContext, nullptr, twistyDisplayData->UsedAppearance()))
+    if (theme && theme->ThemeSupportsWidget(aPresContext, nullptr, twistyDisplayData->mAppearance))
       useTheme = true;
   }
 
   if (useTheme) {
     LayoutDeviceIntSize minTwistySizePx;
     bool canOverride = true;
-    theme->GetMinimumWidgetSize(aPresContext, this, twistyDisplayData->UsedAppearance(),
+    theme->GetMinimumWidgetSize(aPresContext, this, twistyDisplayData->mAppearance,
                                 &minTwistySizePx, &canOverride);
 
     
@@ -2851,7 +2851,7 @@ nsTreeBodyFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
   
   
   if (selection && treeFrame && theme &&
-      treeFrame->StyleDisplay()->UsedAppearance() == NS_THEME_MAC_SOURCE_LIST) {
+      treeFrame->StyleDisplay()->mAppearance == NS_THEME_MAC_SOURCE_LIST) {
     
     
     const auto end = std::min(mRowCount, LastVisibleRow() + 1);
@@ -2865,7 +2865,7 @@ nsTreeBodyFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
         nsTreeUtils::TokenizeProperties(properties, mScratchArray);
         nsStyleContext* rowContext =
           GetPseudoStyleContext(nsCSSAnonBoxes::moztreerow);
-        auto appearance = rowContext->StyleDisplay()->UsedAppearance();
+        auto appearance = rowContext->StyleDisplay()->mAppearance;
         if (appearance) {
           if (theme->ThemeSupportsWidget(PresContext(), this, appearance)) {
             nsITheme::ThemeGeometryType type =
@@ -3045,7 +3045,7 @@ nsTreeBodyFrame::PaintRow(int32_t              aRowIndex,
 
   
   nsITheme* theme = nullptr;
-  auto appearance = rowContext->StyleDisplay()->UsedAppearance();
+  auto appearance = rowContext->StyleDisplay()->mAppearance;
   if (appearance) {
     theme = aPresContext->GetTheme();
   }
@@ -3186,9 +3186,9 @@ nsTreeBodyFrame::PaintSeparator(int32_t              aRowIndex,
   bool useTheme = false;
   nsITheme *theme = nullptr;
   const nsStyleDisplay* displayData = separatorContext->StyleDisplay();
-  if ( displayData->UsedAppearance() ) {
+  if ( displayData->mAppearance ) {
     theme = aPresContext->GetTheme();
-    if (theme && theme->ThemeSupportsWidget(aPresContext, nullptr, displayData->UsedAppearance()))
+    if (theme && theme->ThemeSupportsWidget(aPresContext, nullptr, displayData->mAppearance))
       useTheme = true;
   }
 
@@ -3199,7 +3199,7 @@ nsTreeBodyFrame::PaintSeparator(int32_t              aRowIndex,
     nsRect dirty;
     dirty.IntersectRect(aSeparatorRect, aDirtyRect);
     theme->DrawWidgetBackground(&aRenderingContext, this,
-                                displayData->UsedAppearance(), aSeparatorRect, dirty); 
+                                displayData->mAppearance, aSeparatorRect, dirty); 
   }
   else {
     const nsStylePosition* stylePosition = separatorContext->StylePosition();
@@ -3503,7 +3503,7 @@ nsTreeBodyFrame::PaintTwisty(int32_t              aRowIndex,
       nsRect dirty;
       dirty.IntersectRect(twistyRect, aDirtyRect);
       theme->DrawWidgetBackground(&aRenderingContext, this, 
-                                  twistyContext->StyleDisplay()->UsedAppearance(), twistyRect, dirty);
+                                  twistyContext->StyleDisplay()->mAppearance, twistyRect, dirty);
     }
     else {
       
