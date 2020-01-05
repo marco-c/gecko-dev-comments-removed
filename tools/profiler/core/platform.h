@@ -306,9 +306,6 @@ public:
   
   static void Shutdown();
 
-  static mozilla::StaticMutex sRegisteredThreadsMutex;
-  static std::vector<ThreadInfo*>* sRegisteredThreads;
-
   static bool CanNotifyObservers() {
 #ifdef MOZ_WIDGET_GONK
     
