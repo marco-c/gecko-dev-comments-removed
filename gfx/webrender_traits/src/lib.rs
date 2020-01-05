@@ -3,6 +3,7 @@
 
 
 #![cfg_attr(feature = "nightly", feature(nonzero))]
+#![cfg_attr(feature = "cargo-clippy", allow(too_many_arguments, float_cmp))]
 
 extern crate app_units;
 extern crate byteorder;

@@ -150,7 +150,7 @@ impl FontContext {
     
     
     #[allow(dead_code)]
-    fn print_glyph_data(&self, data: &Vec<u8>, width: usize, height: usize) {
+    fn print_glyph_data(&self, data: &[u8], width: usize, height: usize) {
         
         for i in 0..height {
             let current_height = i * width * 3;
@@ -218,7 +218,7 @@ impl FontContext {
 
     
     
-    fn convert_to_rgba(&self, pixels: &Vec<u8>, render_mode: FontRenderMode) -> Vec<u8> {
+    fn convert_to_rgba(&self, pixels: &[u8], render_mode: FontRenderMode) -> Vec<u8> {
         match render_mode {
             FontRenderMode::Mono => {
                 let mut rgba_pixels: Vec<u8> = vec![0; pixels.len() * 4];
