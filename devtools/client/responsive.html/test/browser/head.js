@@ -188,11 +188,21 @@ function getElRect(selector, win) {
 
 
 function dragElementBy(selector, x, y, win) {
+  let React = win.require("devtools/client/shared/vendor/react");
+  let { Simulate } = React.addons.TestUtils;
   let rect = getElRect(selector, win);
-  let startPoint = [ rect.left + rect.width / 2, rect.top + rect.height / 2 ];
-  let endPoint = [ startPoint[0] + x, startPoint[1] + y ];
+  let startPoint = {
+    clientX: rect.left + Math.floor(rect.width / 2),
+    clientY: rect.top + Math.floor(rect.height / 2),
+  };
+  let endPoint = [ startPoint.clientX + x, startPoint.clientY + y ];
 
-  EventUtils.synthesizeMouseAtPoint(...startPoint, { type: "mousedown" }, win);
+  let elem = win.document.querySelector(selector);
+
+  
+  Simulate.mouseDown(elem, startPoint);
+
+  
   EventUtils.synthesizeMouseAtPoint(...endPoint, { type: "mousemove" }, win);
   EventUtils.synthesizeMouseAtPoint(...endPoint, { type: "mouseup" }, win);
 
