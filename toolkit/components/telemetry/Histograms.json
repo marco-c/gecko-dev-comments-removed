@@ -377,9 +377,9 @@
   "CREATE_EVENT_BEFOREUNLOADEVENT" : {
     "alert_emails": ["ayg@aryeh.name"],
     "description": "Was document.createEvent(\"beforeunloadevent\") ever called",
-    "expires_in_version": "60",
+    "expires_in_version": "56",
     "kind": "count",
-    "bug_numbers": [1295588, 1251198, 1358893]
+    "bug_numbers": [1295588, 1251198]
   },
   "CREATE_EVENT_COMPOSITIONEVENT" : {
     "alert_emails": ["ayg@aryeh.name"],
@@ -2056,14 +2056,6 @@
       "high": 60000,
       "n_buckets": 100,
       "description": "Time in milliseconds that http channel spent suspended between AsyncOpen and OnStartRequest."
-  },
-  "NETWORK_RACE_CACHE_WITH_NETWORK_USAGE": {
-    "expires_in_version": "58",
-    "alert_emails": ["necko@mozilla.com"],
-    "bug_numbers": [1354409],
-    "kind": "enumerated",
-    "n_values": 4,
-    "description": "Whether we raced network with the cache. (0=network & no racing, 1=cache & no racing, 2=network & raced, 3=cache & raced)"
   },
   "HTTP_AUTH_DIALOG_STATS": {
     "expires_in_version": "never",
@@ -4227,15 +4219,6 @@
     "bug_numbers": [1336903],
     "description": "Server response time to update request (ms). Keyed by provider"
   },
-  "URLCLASSIFIER_UPDATE_TIMEOUT": {
-    "alert_emails": ["safebrowsing-telemetry@mozilla.org"],
-    "expires_in_version": "61",
-    "kind": "enumerated",
-    "keyed": true,
-    "n_values": 4,
-    "bug_numbers": [1336904],
-    "description": " Whether or not an update timed out (0 = no timeout, 1 = server respond timeout, 2 = overall timeout). Keyed by provider"
-  },
   "URLCLASSIFIER_COMPLETE_REMOTE_STATUS2": {
     "alert_emails": ["safebrowsing-telemetry@mozilla.org"],
     "expires_in_version": "never",
@@ -4271,6 +4254,7 @@
     "bug_numbers": [1336903],
     "description": "Server response time to getHash request (ms). Keyed by provider"
   },
+
   "URLCLASSIFIER_UPDATE_ERROR": {
     "alert_emails": ["safebrowsing-telemetry@mozilla.org"],
     "expires_in_version": "59",
@@ -11267,6 +11251,47 @@
     "kind": "enumerated",
     "n_values": 99,
     "description": "Count of which layout display items are being created. Display items are created by layout to determine what content to render. A full description is above the class definition for nsDisplayItem. The list of types is kept in nsDisplayItemTypes.h."
+  },
+  "TIMEOUT_EXECUTION_FG_MS":
+  {
+    "alert_emails": ["farre@mozilla.com"],
+    "bug_numbers": [1355480],
+    "expires_in_version": "61",
+    "kind": "exponential",
+    "high": 1000,
+    "n_buckets": 20,
+    "description": "Time in ms used to execute callbacks from setTimeout/setInterval, when the script belongs to a tab in the foreground and the script is not on the tracking list. Multiple events are aggregated over a 1s interval."
+  },
+  "TIMEOUT_EXECUTION_FG_TRACKING_MS":
+  {
+    "alert_emails": ["farre@mozilla.com"],
+    "bug_numbers": [1355480],
+    "expires_in_version": "61",
+    "kind": "exponential",
+    "high": 1000,
+    "n_buckets": 20,
+    "description": "Time in ms used to execute callbacks from setTimeout/setInterval, when the script belongs to a tab in the foreground and the script is on the tracking list. Multiple events are aggregated over a 1s interval."
+  },
+  "TIMEOUT_EXECUTION_BG_MS":
+  {
+    "alert_emails": ["farre@mozilla.com"],
+    "bug_numbers": [1355480],
+    "expires_in_version": "61",
+    "kind": "exponential",
+    "high": 1000,
+    "n_buckets": 20,
+    "description": "Time in ms used to execute callbacks from setTimeout/setInterval, when the script belongs to a tab in the background and the script is not on the tracking list. Multiple events are aggregated over a 1s interval."
+  },
+  "TIMEOUT_EXECUTION_BG_TRACKING_MS":
+  {
+    "alert_emails": ["farre@mozilla.com"],
+    "bug_numbers": [1355480],
+    "expires_in_version": "61",
+    "kind": "exponential",
+    "low": 1,
+    "high": 1000,
+    "n_buckets": 10,
+    "description": "Time in ms used to execute callbacks from setTimeout/setInterval, when the script belongs to a tab in the background and the script is on the tracking list. Multiple events are aggregated over a 1s interval."
   },
   "TIME_TO_DOM_LOADING_MS": {
     "alert_emails": ["wpan@mozilla.com"],
