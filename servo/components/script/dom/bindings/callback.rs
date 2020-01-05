@@ -4,6 +4,7 @@
 
 
 
+use dom::bindings::error::{Fallible, Error};
 use dom::bindings::global::global_object_for_js_object;
 use dom::bindings::js::JSRef;
 use dom::bindings::utils::Reflectable;
@@ -94,21 +95,19 @@ impl CallbackInterface {
 
     
     
-    
     pub fn get_callable_property(&self, cx: *mut JSContext, name: &str)
-                                 -> Result<JSVal, ()> {
+                                 -> Fallible<JSVal> {
         let mut callable = UndefinedValue();
         unsafe {
-            let name = CString::new(name).unwrap();
-            if JS_GetProperty(cx, self.callback(), name.as_ptr(), &mut callable) == 0 {
-                return Err(());
+            let c_name = CString::new(name).unwrap();
+            if JS_GetProperty(cx, self.callback(), c_name.as_ptr(), &mut callable) == 0 {
+                return Err(Error::JSFailed);
             }
 
             if !callable.is_object() ||
                JS_ObjectIsCallable(cx, callable.to_object()) == 0 {
-                
-                
-                return Err(());
+                return Err(Error::Type(
+                    format!("The value of the {} property is not callable", name)));
             }
         }
         Ok(callable)
