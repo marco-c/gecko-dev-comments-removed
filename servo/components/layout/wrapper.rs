@@ -888,3 +888,15 @@ pub unsafe fn layout_node_from_unsafe_layout_node(node: &UnsafeLayoutNode) -> La
     let (node, _) = *node;
     mem::transmute(node)
 }
+
+
+pub trait PreorderDOMTraversal {
+    
+    fn process(&self, _node: LayoutNode);
+}
+
+
+pub trait PostorderDOMTraversal {
+    
+    fn process(&self, _node: LayoutNode);
+}
