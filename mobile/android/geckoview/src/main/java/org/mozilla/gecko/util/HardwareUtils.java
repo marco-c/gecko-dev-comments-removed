@@ -82,11 +82,6 @@ public final class HardwareUtils {
 
 
     public static boolean isSupportedSystem() {
-        if (Build.VERSION.SDK_INT < AppConstants.Versions.MIN_SDK_VERSION ||
-            Build.VERSION.SDK_INT > AppConstants.Versions.MAX_SDK_VERSION) {
-            return false;
-        }
-
         
         boolean isSystemARM = Build.CPU_ABI != null && Build.CPU_ABI.startsWith("arm");
         boolean isSystemX86 = Build.CPU_ABI != null && Build.CPU_ABI.startsWith("x86");
