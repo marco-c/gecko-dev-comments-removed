@@ -264,9 +264,11 @@ nsBaseChannel::BeginPumpingData()
   
   
   
- 
+
+  nsCOMPtr<nsIEventTarget> target =
+    nsContentUtils::GetEventTargetByLoadInfo(mLoadInfo, TaskCategory::Other);
   rv = nsInputStreamPump::Create(getter_AddRefs(mPump), stream, -1, -1, 0, 0,
-                                 true);
+                                 true, target);
   if (NS_SUCCEEDED(rv)) {
     mPumpingData = true;
     mRequest = mPump;
