@@ -92,6 +92,10 @@ public:
   bool IsTimeoutTracking(uint32_t aTimeoutId);
 
   
+  void OnDocumentLoaded();
+  void StartThrottlingTrackingTimeouts();
+
+  
   
   template <class Callable>
   void ForEachUnorderedTimeout(Callable c)
@@ -208,6 +212,9 @@ private:
   uint32_t                    mIdleCallbackTimeoutCounter;
 
   int32_t                     mBackPressureDelayMS;
+
+  nsCOMPtr<nsITimer>          mThrottleTrackingTimeoutsTimer;
+  bool                        mThrottleTrackingTimeouts;
 
   static uint32_t             sNestingLevel;
 };
