@@ -191,6 +191,9 @@ hb_ot_shape_complex_categorize (const hb_ot_shape_planner_t *planner)
     case HB_SCRIPT_MANICHAEAN:
     case HB_SCRIPT_PSALTER_PAHLAVI:
 
+    
+    case HB_SCRIPT_ADLAM:
+
       
 
 

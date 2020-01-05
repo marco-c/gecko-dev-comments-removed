@@ -78,10 +78,10 @@ struct DeltaSetIndexMap
   { return (format & 0xF) + 1; }
 
   protected:
-  USHORT format;		
+  USHORT	format;		
 
-  USHORT mapCount;		
-  BYTE mapData[VAR];		
+  USHORT	mapCount;	
+  BYTE		mapData[VAR];	
 
   public:
   DEFINE_SIZE_ARRAY (4, mapData);
