@@ -8,12 +8,14 @@
 
 #include "nsCSSParser.h"
 
+#include "mozilla/Attributes.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Move.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/TypedEnumBits.h"
+#include "mozilla/Unused.h"
 
 #include <algorithm> 
 #include <limits> 
@@ -641,7 +643,7 @@ protected:
 
   void SkipRuleSet(bool aInsideBraces);
   bool SkipAtRule(bool aInsideBlock);
-  bool SkipDeclaration(bool aCheckForBraces);
+  MOZ_MUST_USE bool SkipDeclaration(bool aCheckForBraces);
 
   void PushGroup(css::GroupRule* aRule);
   void PopGroup();
@@ -1218,9 +1220,10 @@ protected:
 
   
   
-  bool ParseSingleTokenVariant(nsCSSValue& aValue,
-                               int32_t aVariantMask,
-                               const KTableEntry aKeywordTable[])
+
+  MOZ_MUST_USE bool ParseSingleTokenVariant(nsCSSValue& aValue,
+                                            int32_t aVariantMask,
+                                            const KTableEntry aKeywordTable[])
   {
     MOZ_ASSERT(!(aVariantMask & VARIANT_MULTIPLE_TOKENS),
                "use ParseVariant for variants in VARIANT_MULTIPLE_TOKENS");
@@ -4086,7 +4089,7 @@ CSSParserImpl::ParseFontDescriptor(nsCSSFontFaceRule* aRule)
        !Preferences::GetBool("layout.css.font-display.enabled"))) {
     if (NonMozillaVendorIdentifier(descName)) {
       
-      SkipDeclaration(true);
+      Unused << SkipDeclaration(true);
       return true;
     } else {
       REPORT_UNEXPECTED_P(PEUnknownFontDesc, descName);
@@ -15490,10 +15493,13 @@ CSSParserImpl::ParseTextEmphasisStyle(nsCSSValue& aValue)
   nsCSSValue first, second;
   const auto& fillKTable = nsCSSProps::kTextEmphasisStyleFillKTable;
   const auto& shapeKTable = nsCSSProps::kTextEmphasisStyleShapeKTable;
+
+  
+  
   if (ParseSingleTokenVariant(first, VARIANT_KEYWORD, fillKTable)) {
-    ParseSingleTokenVariant(second, VARIANT_KEYWORD, shapeKTable);
+    Unused << ParseSingleTokenVariant(second, VARIANT_KEYWORD, shapeKTable);
   } else if (ParseSingleTokenVariant(first, VARIANT_KEYWORD, shapeKTable)) {
-    ParseSingleTokenVariant(second, VARIANT_KEYWORD, fillKTable);
+    Unused << ParseSingleTokenVariant(second, VARIANT_KEYWORD, fillKTable);
   } else {
     return false;
   }
@@ -17058,8 +17064,8 @@ CSSParserImpl::ParseShadowItem(nsCSSValue& aValue, bool aIsBoxShadow)
 
   if (aIsBoxShadow) {
     
-    ParseSingleTokenVariant(val->Item(IndexInset), VARIANT_KEYWORD,
-                            nsCSSProps::kBoxShadowTypeKTable);
+    Unused << ParseSingleTokenVariant(val->Item(IndexInset), VARIANT_KEYWORD,
+                                      nsCSSProps::kBoxShadowTypeKTable);
   }
 
   nsCSSValue xOrColor;
@@ -17126,8 +17132,8 @@ CSSParserImpl::ParseShadowItem(nsCSSValue& aValue, bool aIsBoxShadow)
 
   if (aIsBoxShadow && val->Item(IndexInset).GetUnit() == eCSSUnit_Null) {
     
-    ParseSingleTokenVariant(val->Item(IndexInset), VARIANT_KEYWORD,
-                            nsCSSProps::kBoxShadowTypeKTable);
+    Unused << ParseSingleTokenVariant(val->Item(IndexInset), VARIANT_KEYWORD,
+                                      nsCSSProps::kBoxShadowTypeKTable);
   }
 
   aValue.SetArrayValue(val, eCSSUnit_Array);
