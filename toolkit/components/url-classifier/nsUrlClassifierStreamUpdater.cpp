@@ -35,6 +35,8 @@ const uint32_t MAX_FILE_SIZE = (32 * 1024 * 1024);
 
 
 static mozilla::LazyLogModule gUrlClassifierStreamUpdaterLog("UrlClassifierStreamUpdater");
+
+#define LOG_ENABLED() MOZ_LOG_TEST(gUrlClassifierStreamUpdaterLog, mozilla::LogLevel::Debug)
 #define LOG(args) TrimAndLog args
 
 
@@ -678,7 +680,13 @@ nsUrlClassifierStreamUpdater::OnStartRequest(nsIRequest *request,
     }
 
     mDownloadError = true;
+
     status = NS_ERROR_ABORT;
+    if (LOG_ENABLED()) {
+      
+      
+      status = NS_OK;
+    }
   } else if (NS_SUCCEEDED(status)) {
     MOZ_ASSERT(mDownloadErrorCallback);
     mBeganStream = true;
@@ -699,8 +707,9 @@ nsUrlClassifierStreamUpdater::OnDataAvailable(nsIRequest *request,
                                               uint64_t aSourceOffset,
                                               uint32_t aLength)
 {
-  if (!mDBService)
+  if (!mDBService && !mDownloadError) {
     return NS_ERROR_NOT_INITIALIZED;
+  }
 
   LOG(("OnDataAvailable (%d bytes)", aLength));
 
@@ -716,6 +725,11 @@ nsUrlClassifierStreamUpdater::OnDataAvailable(nsIRequest *request,
   rv = NS_ConsumeStream(aIStream, aLength, chunk);
   NS_ENSURE_SUCCESS(rv, rv);
 
+  if (mDownloadError) {
+    mDownloadErrorMessage.Append(chunk);
+    return NS_OK;
+  }
+
   
   rv = mDBService->UpdateStream(chunk);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -727,6 +741,11 @@ NS_IMETHODIMP
 nsUrlClassifierStreamUpdater::OnStopRequest(nsIRequest *request, nsISupports* context,
                                             nsresult aStatus)
 {
+  if (mDownloadError) {
+    LOG(("Download error message: %s", mDownloadErrorMessage.get()));
+    return NS_ERROR_ABORT; 
+  }
+
   if (!mDBService)
     return NS_ERROR_NOT_INITIALIZED;
 
