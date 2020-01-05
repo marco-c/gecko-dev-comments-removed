@@ -15,7 +15,7 @@
 
 
 
-class nsTLiteralString_CharT : public nsTString_CharT
+class nsTLiteralString_CharT : public mozilla::detail::nsTStringRepr_CharT
 {
 public:
 
@@ -29,8 +29,23 @@ public:
 
   template<size_type N>
   explicit nsTLiteralString_CharT(const char_type (&aStr)[N])
-    : string_type(const_cast<char_type*>(aStr), N - 1, F_TERMINATED | F_LITERAL)
+    : base_string_type(const_cast<char_type*>(aStr), N - 1, F_TERMINATED | F_LITERAL)
   {
+  }
+
+  
+
+
+
+
+  const nsTString_CharT& AsString() const
+  {
+    return *reinterpret_cast<const nsTString_CharT*>(this);
+  }
+
+  operator const nsTString_CharT&() const
+  {
+    return AsString();
   }
 
   
@@ -53,4 +68,10 @@ private:
   
   template<size_type N>
   nsTLiteralString_CharT(char_type (&aStr)[N]) = delete;
+
+  self_type& operator=(const self_type&) = delete;
 };
+
+static_assert(sizeof(nsTLiteralString_CharT) == sizeof(nsTString_CharT),
+              "nsTLiteralString_CharT can masquerade as nsTString_CharT, "
+              "so they must have identical layout");
