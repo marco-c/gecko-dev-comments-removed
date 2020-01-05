@@ -277,7 +277,6 @@ nsHttpChannel::nsHttpChannel()
     , mPushedStream(nullptr)
     , mLocalBlocklist(false)
     , mWarningReporter(nullptr)
-    , mIsReadingFromCache(false)
     , mDidReval(false)
 {
     LOG(("Creating nsHttpChannel [this=%p]\n", this));
@@ -2186,6 +2185,11 @@ nsHttpChannel::ContinueProcessResponse2(nsresult rv)
             }
         }
 
+        
+        if (mCustomConditionalRequest) {
+            CloseCacheEntry(false);
+        }
+
         if (ShouldBypassProcessNotModified() || NS_FAILED(rv)) {
             rv = ProcessNormal();
         }
@@ -3545,6 +3549,15 @@ nsHttpChannel::OpenCacheEntry(bool isHttps)
                             | nsICacheStorage::CHECK_MULTITHREADED;
     }
 
+    
+    
+    mCustomConditionalRequest =
+        mRequestHead.HasHeader(nsHttp::If_Modified_Since) ||
+        mRequestHead.HasHeader(nsHttp::If_None_Match) ||
+        mRequestHead.HasHeader(nsHttp::If_Unmodified_Since) ||
+        mRequestHead.HasHeader(nsHttp::If_Match) ||
+        mRequestHead.HasHeader(nsHttp::If_Range);
+
     if (!mPostID && mApplicationCache) {
         rv = cacheStorageService->AppCacheStorage(info,
             mApplicationCache,
@@ -3711,15 +3724,6 @@ nsHttpChannel::OnCacheEntryCheck(nsICacheEntry* entry, nsIApplicationCache* appC
         *aResult = ENTRY_NOT_WANTED;
         return NS_OK;
     }
-
-    
-    
-    mCustomConditionalRequest =
-        mRequestHead.HasHeader(nsHttp::If_Modified_Since) ||
-        mRequestHead.HasHeader(nsHttp::If_None_Match) ||
-        mRequestHead.HasHeader(nsHttp::If_Unmodified_Since) ||
-        mRequestHead.HasHeader(nsHttp::If_Match) ||
-        mRequestHead.HasHeader(nsHttp::If_Range);
 
     
     *aResult = ENTRY_WANTED;
@@ -3938,6 +3942,13 @@ nsHttpChannel::OnCacheEntryCheck(nsICacheEntry* entry, nsIApplicationCache* appC
     else if (mCachedResponseHead->MustValidate()) {
         LOG(("Validating based on MustValidate() returning TRUE\n"));
         doValidation = true;
+    
+    
+    } else if (mCustomConditionalRequest &&
+               !mRequestHead.HasHeader(nsHttp::If_Match) &&
+               !mRequestHead.HasHeader(nsHttp::If_Unmodified_Since)) {
+        LOG(("Validating based on a custom conditional request\n"));
+        doValidation = true;
     } else {
         
         
@@ -4022,6 +4033,9 @@ nsHttpChannel::OnCacheEntryCheck(nsICacheEntry* entry, nsIApplicationCache* appC
             doValidation = true;
         }
     }
+
+    
+    rv = NS_OK;
 
     if (!doValidation) {
         
@@ -6943,8 +6957,6 @@ nsHttpChannel::OnDataAvailable(nsIRequest *request, nsISupports *ctxt,
         uint32_t n;
         return input->ReadSegments(NS_DiscardSegment, nullptr, count, &n);
     }
-
-    mIsReadingFromCache = (request == mCachePump);
 
     if (mListener) {
         
