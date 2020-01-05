@@ -2,7 +2,7 @@
 
 
 
-use std::fs::{File, PathExt};
+use std::fs::File;
 use std::io::{self, Read};
 use std::path::PathBuf;
 
@@ -15,6 +15,7 @@ pub fn resources_dir_path() -> PathBuf {
 pub fn resources_dir_path() -> PathBuf {
     use opts;
     use std::env;
+    use std::fs::PathExt;
 
     match opts::get().resources_path {
         Some(ref path) => PathBuf::new(path),
