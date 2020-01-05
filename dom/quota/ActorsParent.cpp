@@ -1662,6 +1662,10 @@ private:
                       bool* aRemoved);
 
   nsresult
+  MaybeStripObsoleteOriginAttributes(const OriginProps& aOriginProps,
+                                     bool* aStripped);
+
+  nsresult
   ProcessOriginDirectory(const OriginProps& aOriginProps) override;
 };
 
@@ -4298,6 +4302,22 @@ QuotaManager::UpgradeStorageFrom1_0To2_0(mozIStorageConnection* aConnection)
   AssertIsOnIOThread();
   MOZ_ASSERT(aConnection);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   
@@ -8240,12 +8260,92 @@ UpgradeStorageFrom1_0To2_0Helper::MaybeRemoveAppsData(
 }
 
 nsresult
+UpgradeStorageFrom1_0To2_0Helper::MaybeStripObsoleteOriginAttributes(
+                                                const OriginProps& aOriginProps,
+                                                bool* aStripped)
+{
+  AssertIsOnIOThread();
+  MOZ_ASSERT(aOriginProps.mDirectory);
+
+  const nsAString& oldLeafName = aOriginProps.mLeafName;
+
+  nsCString originSanitized(aOriginProps.mOrigin);
+  SanitizeOriginString(originSanitized);
+
+  NS_ConvertUTF8toUTF16 newLeafName(originSanitized);
+
+  if (oldLeafName == newLeafName) {
+    *aStripped = false;
+    return NS_OK;
+  }
+
+  nsresult rv = CreateDirectoryMetadata(aOriginProps.mDirectory,
+                                        aOriginProps.mTimestamp,
+                                        aOriginProps.mSuffix,
+                                        aOriginProps.mGroup,
+                                        aOriginProps.mOrigin);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  rv = CreateDirectoryMetadata2(aOriginProps.mDirectory,
+                                aOriginProps.mTimestamp,
+                                aOriginProps.mSuffix,
+                                aOriginProps.mGroup,
+                                aOriginProps.mOrigin);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  nsCOMPtr<nsIFile> newFile;
+  rv = aOriginProps.mDirectory->GetParent(getter_AddRefs(newFile));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  rv = newFile->Append(newLeafName);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  bool exists;
+  rv = newFile->Exists(&exists);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  if (exists) {
+    QM_WARNING("Can't rename %s directory, %s directory already exists, "
+               "removing!",
+               NS_ConvertUTF16toUTF8(oldLeafName).get(),
+               NS_ConvertUTF16toUTF8(newLeafName).get());
+
+    rv = aOriginProps.mDirectory->Remove( true);
+  } else {
+    rv = aOriginProps.mDirectory->RenameTo(nullptr, newLeafName);
+  }
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  *aStripped = true;
+  return NS_OK;
+}
+
+nsresult
 UpgradeStorageFrom1_0To2_0Helper::ProcessOriginDirectory(
                                                 const OriginProps& aOriginProps)
 {
   AssertIsOnIOThread();
 
-  nsresult rv;
+  bool stripped;
+  nsresult rv = MaybeStripObsoleteOriginAttributes(aOriginProps, &stripped);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  if (stripped) {
+    return NS_OK;
+  }
 
   if (aOriginProps.mNeedsRestore) {
     rv = CreateDirectoryMetadata(aOriginProps.mDirectory,
