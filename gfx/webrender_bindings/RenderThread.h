@@ -59,8 +59,10 @@ public:
   
   static RenderThread* Get();
 
+  
   static void Start();
 
+  
   static void ShutDown();
 
   

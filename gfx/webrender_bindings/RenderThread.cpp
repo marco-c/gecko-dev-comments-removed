@@ -15,7 +15,7 @@ namespace wr {
 static StaticRefPtr<RenderThread> sRenderThread;
 
 RenderThread::RenderThread(base::Thread* aThread)
-: mThread(aThread)
+  : mThread(aThread)
 {
 
 }

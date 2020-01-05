@@ -21,12 +21,12 @@ namespace gl {
 class GLContext;
 }
 
-namespace widget {
-class CompositorWidget;
-}
-
 namespace layers {
 class CompositorBridgeParentBase;
+}
+
+namespace widget {
+class CompositorWidget;
 }
 
 namespace wr {
@@ -61,6 +61,7 @@ public:
               wr::WindowId aWindowId,
               WrRenderer* aWrRenderer,
               layers::CompositorBridgeParentBase* aBridge);
+
 protected:
 
   RefPtr<RenderThread> mThread;
@@ -71,8 +72,7 @@ protected:
   wr::WindowId mWindowId;
 };
 
-}
-}
-
+} 
+} 
 
 #endif

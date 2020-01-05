@@ -10,10 +10,10 @@
 #include "AsyncPanZoomController.h"     
 #include "base/task.h"                  
 #include "gfxPrefs.h"                   
+#include "InputBlockState.h"            
 #include "mozilla/SizePrintfMacros.h"   
 #include "nsDebug.h"                    
 #include "nsMathUtils.h"                
-#include "InputBlockState.h"
 
 #define GEL_LOG(...)
 

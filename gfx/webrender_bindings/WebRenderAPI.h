@@ -32,7 +32,8 @@ class RendererEvent;
 
 class WebRenderAPI
 {
-NS_INLINE_DECL_REFCOUNTING(WebRenderAPI);
+  NS_INLINE_DECL_REFCOUNTING(WebRenderAPI);
+
 public:
   
   static already_AddRefed<WebRenderAPI> Create(bool aEnableProfiler,
@@ -76,9 +77,9 @@ public:
 
 protected:
   WebRenderAPI(WrAPI* aRawApi, wr::WindowId aId, GLint aMaxTextureSize)
-  : mWrApi(aRawApi)
-  , mId(aId)
-  , mMaxTextureSize(aMaxTextureSize)
+    : mWrApi(aRawApi)
+    , mId(aId)
+    , mMaxTextureSize(aMaxTextureSize)
   {}
 
   ~WebRenderAPI();
