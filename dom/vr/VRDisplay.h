@@ -150,6 +150,13 @@ struct VRFrameInfo
   gfx::Matrix4x4 mRightProjection;
   gfx::Matrix4x4 mRightView;
 
+  
+
+
+
+
+
+  double mTimeStampOffset;
 };
 
 class VRFrameData final : public nsWrapperCache
