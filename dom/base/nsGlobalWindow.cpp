@@ -1143,9 +1143,12 @@ static const js::ClassExtension OuterWindowProxyClassExtension = PROXY_MAKE_EXT(
     nsOuterWindowProxy::ObjectMoved
 );
 
+
+
+
 const js::Class OuterWindowProxyClass = PROXY_CLASS_WITH_EXT(
     "Proxy",
-    0, 
+    JSCLASS_HAS_RESERVED_SLOTS(2), 
     &OuterWindowProxyClassExtension);
 
 const char *

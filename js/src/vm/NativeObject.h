@@ -876,7 +876,7 @@ class NativeObject : public ShapedObject
 
     
     
-    static const uint32_t MAX_FIXED_SLOTS = 16;
+    static const uint32_t MAX_FIXED_SLOTS = shadow::Object::MAX_FIXED_SLOTS;
 
   protected:
     MOZ_ALWAYS_INLINE bool updateSlotsForSpan(JSContext* cx, size_t oldSpan, size_t newSpan);

@@ -528,7 +528,9 @@ class CGDOMProxyJSClass(CGThing):
         return ""
 
     def define(self):
-        flags = ["JSCLASS_IS_DOMJSCLASS"]
+        
+        flags = ["JSCLASS_IS_DOMJSCLASS",
+                 "JSCLASS_HAS_RESERVED_SLOTS(1)"]
         
         
         

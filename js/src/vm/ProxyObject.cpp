@@ -20,6 +20,10 @@ GetProxyGCObjectKind(const Class* clasp, const BaseProxyHandler* handler, const 
     MOZ_ASSERT(clasp->isProxy());
 
     uint32_t nreserved = JSCLASS_RESERVED_SLOTS(clasp);
+
+    
+    
+    
     MOZ_ASSERT(nreserved > 0);
 
     MOZ_ASSERT(js::detail::ProxyValueArray::sizeOf(nreserved) % sizeof(Value) == 0,
