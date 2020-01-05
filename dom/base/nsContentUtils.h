@@ -2165,6 +2165,14 @@ public:
   
 
 
+  static bool GetBoxQuadsEnabled()
+  {
+    return sGetBoxQuadsEnabled;
+  }
+
+  
+
+
   static bool IsControlledByServiceWorker(nsIDocument* aDocument);
 
   
@@ -2965,6 +2973,7 @@ private:
   static bool sUseActivityCursor;
   static bool sAnimationsAPICoreEnabled;
   static bool sAnimationsAPIElementAnimateEnabled;
+  static bool sGetBoxQuadsEnabled;
   static uint32_t sCookiesLifetimePolicy;
   static uint32_t sCookiesBehavior;
 
