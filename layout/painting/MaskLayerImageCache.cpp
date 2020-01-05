@@ -4,7 +4,9 @@
 
 
 #include "MaskLayerImageCache.h"
+
 #include "ImageContainer.h"
+#include "mozilla/layers/ShadowLayers.h"
 
 using namespace mozilla::layers;
 
