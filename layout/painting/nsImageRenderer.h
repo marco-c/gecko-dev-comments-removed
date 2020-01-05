@@ -262,7 +262,7 @@ private:
 
 
   already_AddRefed<gfxDrawable> DrawableForElement(const nsRect& aImageRect,
-                                                   nsRenderingContext&  aRenderingContext);
+                                                   gfxContext&  aContext);
 
   nsIFrame*                 mForFrame;
   const nsStyleImage*       mImage;
