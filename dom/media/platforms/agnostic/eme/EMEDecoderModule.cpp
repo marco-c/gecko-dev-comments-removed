@@ -100,10 +100,6 @@ public:
     } else {
       MOZ_ASSERT(!mIsShutdown);
       
-      
-      
-      
-      
       UniquePtr<MediaRawDataWriter> writer(aDecrypted.mSample->CreateWriter());
       writer->mCrypto = CryptoSample();
       mDecoder->Input(aDecrypted.mSample);
