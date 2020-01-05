@@ -1392,6 +1392,13 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleOutline
     return mActualOutlineWidth;
   }
 
+  bool ShouldPaintOutline() const
+  {
+    return mOutlineStyle == NS_STYLE_BORDER_STYLE_AUTO ||
+           (GetOutlineWidth() > 0 &&
+            mOutlineStyle != NS_STYLE_BORDER_STYLE_NONE);
+  }
+
 protected:
   
   
