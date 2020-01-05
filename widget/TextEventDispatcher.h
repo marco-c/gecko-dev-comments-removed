@@ -332,6 +332,16 @@ private:
     TextRange mCaret;
 
     void EnsureClauseArray();
+
+    
+
+
+
+
+
+
+
+    static void AdjustRange(TextRange& aRange, const nsAString& aNativeString);
   };
   PendingComposition mPendingComposition;
 
