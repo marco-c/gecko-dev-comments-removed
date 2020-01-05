@@ -910,7 +910,7 @@ nsParser::DidBuildModel(nsresult anErrorCode)
       }
 
       
-      mParserContext->mRequest = 0;
+      mParserContext->mRequest = nullptr;
     }
   }
 

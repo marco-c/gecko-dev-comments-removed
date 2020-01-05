@@ -178,7 +178,7 @@ nsHttpConnectionMgr::Shutdown()
         
         
         mIsShuttingDown = true;
-        mSocketThreadTarget = 0;
+        mSocketThreadTarget = nullptr;
 
         if (NS_FAILED(rv)) {
             NS_WARNING("unable to post SHUTDOWN message");

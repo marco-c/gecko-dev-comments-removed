@@ -37,7 +37,7 @@ nsStreamListenerTee::OnStopRequest(nsIRequest *request,
     
     if (mInputTee) {
         mInputTee->SetSink(nullptr);
-        mInputTee = 0;
+        mInputTee = nullptr;
     }
 
     
@@ -45,13 +45,13 @@ nsStreamListenerTee::OnStopRequest(nsIRequest *request,
       NS_ProxyRelease(mEventTarget, mSink.forget());
     }
     else {
-        mSink = 0;
+        mSink = nullptr;
     }
 
     nsresult rv = mListener->OnStopRequest(request, context, status);
     if (mObserver)
         mObserver->OnStopRequest(request, context, status);
-    mObserver = 0;
+    mObserver = nullptr;
     return rv;
 }
 

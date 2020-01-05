@@ -788,7 +788,7 @@ HttpChannelParent::RecvDocumentChannelCleanup()
 {
   
   mChannel = nullptr;          
-  mCacheEntry = 0;  
+  mCacheEntry = nullptr;  
   return true;
 }
 

@@ -243,7 +243,7 @@ HTMLURIRefObject::SetNode(nsIDOMNode* aNode)
 
   
   
-  mNode = 0;
+  mNode = nullptr;
   return NS_ERROR_INVALID_ARG;
 }
 

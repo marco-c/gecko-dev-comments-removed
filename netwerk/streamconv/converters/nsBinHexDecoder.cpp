@@ -274,7 +274,7 @@ nsresult nsBinHexDecoder::ProcessNextState(nsIRequest * aRequest, nsISupports * 
         {
           
           mNextListener->OnStopRequest(aRequest, aContext, NS_OK);
-          mNextListener = 0;
+          mNextListener = nullptr;
 
           
           ++mState;

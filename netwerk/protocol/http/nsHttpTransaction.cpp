@@ -1298,7 +1298,7 @@ nsHttpTransaction::Restart()
         seekable->Seek(nsISeekableStream::NS_SEEK_SET, 0);
 
     
-    mSecurityInfo = 0;
+    mSecurityInfo = nullptr;
     if (mConnection) {
         if (!mReuseOnRestart) {
             mConnection->DontReuse();

@@ -111,9 +111,9 @@ nsStreamLoader::OnStopRequest(nsIRequest* request, nsISupports *ctxt,
     }
     
     ReleaseData();
-    mRequest = 0;
-    mObserver = 0;
-    mContext = 0;
+    mRequest = nullptr;
+    mObserver = nullptr;
+    mContext = nullptr;
   }
 
   if (mRequestObserver) {

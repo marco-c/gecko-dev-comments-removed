@@ -500,7 +500,7 @@ HTMLEditRules::AfterEditInner(EditAction action,
     
     if (mNewBlock) {
       rv = PinSelectionToNewBlock(selection);
-      mNewBlock = 0;
+      mNewBlock = nullptr;
     }
 
     
@@ -3079,7 +3079,7 @@ HTMLEditRules::WillMakeList(Selection* aSelection,
       NS_ENSURE_STATE(mHTMLEditor);
       rv = mHTMLEditor->DeleteNode(curNode);
       NS_ENSURE_SUCCESS(rv, rv);
-      prevListItem = 0;
+      prevListItem = nullptr;
       continue;
     } else if (IsEmptyInline(curNode)) {
       
@@ -3112,7 +3112,7 @@ HTMLEditRules::WillMakeList(Selection* aSelection,
         NS_ENSURE_SUCCESS(rv, rv);
         curList = newBlock;
       }
-      prevListItem = 0;
+      prevListItem = nullptr;
       continue;
     }
 
@@ -3206,7 +3206,7 @@ HTMLEditRules::WillMakeList(Selection* aSelection,
       
       mNewBlock = curList;
       
-      prevListItem = 0;
+      prevListItem = nullptr;
     }
 
     

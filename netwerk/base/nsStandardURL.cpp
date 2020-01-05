@@ -393,7 +393,7 @@ void
 nsStandardURL::InvalidateCache(bool invalidateCachedFile)
 {
     if (invalidateCachedFile)
-        mFile = 0;
+        mFile = nullptr;
     if (mHostA) {
         free(mHostA);
         mHostA = nullptr;
@@ -3107,7 +3107,7 @@ nsStandardURL::SetFile(nsIFile *file)
         if (NS_FAILED(file->Clone(getter_AddRefs(mFile)))) {
             NS_WARNING("nsIFile::Clone failed");
             
-            mFile = 0;
+            mFile = nullptr;
         }
     }
     return rv;

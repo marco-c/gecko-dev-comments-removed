@@ -161,7 +161,7 @@ nsFtpControlConnection::Disconnect(nsresult status)
     if (NS_FAILED(status)) {
         
         mSocket->Close(status);
-        mSocket = 0;
+        mSocket = nullptr;
         mSocketInput->AsyncWait(nullptr, 0, 0, nullptr);  
         mSocketInput = nullptr;
         mSocketOutput = nullptr;

@@ -95,7 +95,7 @@ nsEmbedStream::CloseStream(void)
   
   NS_ENSURE_STATE(mOutputStream);
   mOutputStream->Close();
-  mOutputStream = 0;
+  mOutputStream = nullptr;
 
   return rv;
 }
