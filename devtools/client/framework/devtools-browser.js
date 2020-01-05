@@ -146,7 +146,10 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
       devtoolsTheme = "light";
     }
 
-    win.document.documentElement.setAttribute("devtoolstheme", devtoolsTheme);
+    
+    
+    win.document.getElementById("browser-bottombox").setAttribute("devtoolstheme", devtoolsTheme);
+    win.document.getElementById("content").setAttribute("devtoolstheme", devtoolsTheme);
 
     
     

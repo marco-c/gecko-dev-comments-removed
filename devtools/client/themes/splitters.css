@@ -20,13 +20,12 @@
   --devtools-splitter-inline-end-width: 4px;
 }
 
-:root[devtoolstheme="light"] {
+#content[devtoolstheme="light"] {
   
   --devtools-splitter-color: #dde1e4;
 }
 
-:root[devtoolstheme="dark"],
-:root[devtoolstheme="firebug"] {
+#content[devtoolstheme="dark"] {
   --devtools-splitter-color: #42484f;
 }
 

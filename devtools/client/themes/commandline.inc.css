@@ -9,7 +9,7 @@
 
 
 
-:root[devtoolstheme="light"] #developer-toolbar {
+#browser-bottombox[devtoolstheme="light"] #developer-toolbar {
   --gcli-background-color: #fcfcfc; 
   --gcli-input-background: #fcfcfc; 
   --gcli-input-focused-background: #ffffff; 
@@ -21,7 +21,7 @@
   --command-line-image-focus: url(chrome://devtools/skin/images/commandline-icon.svg#light-theme-focus); 
 }
 
-:root[devtoolstheme="dark"] #developer-toolbar {
+#browser-bottombox[devtoolstheme="dark"] #developer-toolbar {
   --gcli-background-color: #272b35; 
   --gcli-input-background: #272b35; 
   --gcli-input-focused-background: #272b35; 
@@ -54,8 +54,8 @@
   margin: auto 10px;
 }
 
-:root[devtoolstheme="light"] #developer-toolbar > .developer-toolbar-button:not([checked=true]) > image,
-:root[devtoolstheme="light"] .gclitoolbar-input-node:not([focused=true])::before  {
+#browser-bottombox[devtoolstheme="light"] #developer-toolbar > .developer-toolbar-button:not([checked=true]) > image,
+#browser-bottombox[devtoolstheme="light"] .gclitoolbar-input-node:not([focused=true])::before  {
   filter: invert(1);
 }
 
@@ -65,7 +65,7 @@
 }
 
 
-:root[devtoolstheme="dark"] #developer-toolbar > .close-icon:not(:hover) > image {
+#browser-bottombox[devtoolstheme="dark"] #developer-toolbar > .close-icon:not(:hover) > image {
   filter: invert(1);
 }
 
