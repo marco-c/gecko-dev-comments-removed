@@ -468,7 +468,8 @@ Cookies.prototype = {
       let cookiesFolder = Services.dirsvc.get("CookD", Ci.nsIFile);
       if (cookiesFolder.exists() && cookiesFolder.isReadable()) {
         
-        if (Services.appinfo.QueryInterface(Ci.nsIWinAppHelper).userCanElevate) {
+        if (AppConstants.isPlatformAndVersionAtMost("win", "6.1") &&
+            Services.appinfo.QueryInterface(Ci.nsIWinAppHelper).userCanElevate) {
           cookiesFolder.append("Low");
         }
         this.__cookiesFolder = cookiesFolder;
@@ -512,7 +513,7 @@ Cookies.prototype = {
         while (entries.hasMoreElements()) {
           let entry = entries.getNext().QueryInterface(Ci.nsIFile);
           
-          if (!entry.isFile() || !/\.txt$/.test(entry.leafName))
+          if (!entry.isFile() || !/\.(cookie|txt)$/.test(entry.leafName))
             continue;
 
           this._readCookieFile(entry, function(aSuccess) {
