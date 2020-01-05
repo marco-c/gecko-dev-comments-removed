@@ -54,7 +54,7 @@ protected:
                                      int32_t aStartOffset,
                                      int32_t aEndOffset);
 
-  nsresult CreateTxnsToDeleteNodesBetween();
+  nsresult CreateTxnsToDeleteNodesBetween(nsRange* aRangeToDelete);
 
   nsresult CreateTxnsToDeleteContent(nsINode* aParent,
                                      int32_t aOffset,
@@ -63,6 +63,7 @@ protected:
   
   RefPtr<EditorBase> mEditorBase;
 
+  
   
   RefPtr<nsRange> mRangeToDelete;
 

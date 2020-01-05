@@ -49,10 +49,17 @@ DeleteRangeTransaction::DoTransaction()
   }
 
   
-  nsCOMPtr<nsINode> startParent = mRangeToDelete->GetStartParent();
-  int32_t startOffset = mRangeToDelete->StartOffset();
-  nsCOMPtr<nsINode> endParent = mRangeToDelete->GetEndParent();
-  int32_t endOffset = mRangeToDelete->EndOffset();
+  
+  
+  
+  RefPtr<nsRange> rangeToDelete;
+  rangeToDelete.swap(mRangeToDelete);
+
+  
+  nsCOMPtr<nsINode> startParent = rangeToDelete->GetStartParent();
+  int32_t startOffset = rangeToDelete->StartOffset();
+  nsCOMPtr<nsINode> endParent = rangeToDelete->GetEndParent();
+  int32_t endOffset = rangeToDelete->EndOffset();
   MOZ_ASSERT(startParent && endParent);
 
   if (startParent == endParent) {
@@ -67,7 +74,7 @@ DeleteRangeTransaction::DoTransaction()
       CreateTxnsToDeleteContent(startParent, startOffset, nsIEditor::eNext);
     NS_ENSURE_SUCCESS(rv, rv);
     
-    rv = CreateTxnsToDeleteNodesBetween();
+    rv = CreateTxnsToDeleteNodesBetween(rangeToDelete);
     NS_ENSURE_SUCCESS(rv, rv);
     
     rv = CreateTxnsToDeleteContent(endParent, endOffset, nsIEditor::ePrevious);
@@ -95,16 +102,12 @@ DeleteRangeTransaction::DoTransaction()
 NS_IMETHODIMP
 DeleteRangeTransaction::UndoTransaction()
 {
-  MOZ_ASSERT(mRangeToDelete);
-
   return EditAggregateTransaction::UndoTransaction();
 }
 
 NS_IMETHODIMP
 DeleteRangeTransaction::RedoTransaction()
 {
-  MOZ_ASSERT(mRangeToDelete);
-
   return EditAggregateTransaction::RedoTransaction();
 }
 
@@ -211,7 +214,7 @@ DeleteRangeTransaction::CreateTxnsToDeleteContent(nsINode* aNode,
 }
 
 nsresult
-DeleteRangeTransaction::CreateTxnsToDeleteNodesBetween()
+DeleteRangeTransaction::CreateTxnsToDeleteNodesBetween(nsRange* aRangeToDelete)
 {
   if (NS_WARN_IF(!mEditorBase)) {
     return NS_ERROR_NOT_AVAILABLE;
@@ -219,7 +222,7 @@ DeleteRangeTransaction::CreateTxnsToDeleteNodesBetween()
 
   nsCOMPtr<nsIContentIterator> iter = NS_NewContentSubtreeIterator();
 
-  nsresult rv = iter->Init(mRangeToDelete);
+  nsresult rv = iter->Init(aRangeToDelete);
   NS_ENSURE_SUCCESS(rv, rv);
 
   while (!iter->IsDone()) {
