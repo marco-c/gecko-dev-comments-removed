@@ -98,6 +98,10 @@ pub fn run_script_listener_thread(compositor_proxy: Box<CompositorProxy + 'stati
                 compositor_proxy.send(Msg::TouchEventProcessed(result))
             }
 
+            ScriptToCompositorMsg::GetScrollOffset(pid, lid, send) => {
+                compositor_proxy.send(Msg::GetScrollOffset(pid, lid, send));
+            }
+
             ScriptToCompositorMsg::Exited => break,
         }
     }
@@ -232,6 +236,8 @@ pub enum Msg {
     
     ResizeTo(Size2D<u32>),
     
+    GetScrollOffset(PipelineId, LayerId, IpcSender<Point2D<f32>>),
+    
     
     
     
@@ -272,6 +278,7 @@ impl Debug for Msg {
             Msg::MoveTo(..) => write!(f, "MoveTo"),
             Msg::ResizeTo(..) => write!(f, "ResizeTo"),
             Msg::PipelineExited(..) => write!(f, "PipelineExited"),
+            Msg::GetScrollOffset(..) => write!(f, "GetScrollOffset"),
         }
     }
 }

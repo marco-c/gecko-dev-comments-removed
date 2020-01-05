@@ -614,6 +614,12 @@ impl Node {
         }
     }
 
+    pub fn scroll_offset(&self) -> Point2D<f32> {
+        let document = self.owner_doc();
+        let window = document.window();
+        window.scroll_offset_query(self.to_trusted_node_address())
+    }
+
     
     pub fn before(&self, nodes: Vec<NodeOrString>) -> ErrorResult {
         
