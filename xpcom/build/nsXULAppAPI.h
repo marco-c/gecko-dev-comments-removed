@@ -201,11 +201,8 @@
 
 
 
-
-
 XRE_API(int,
-        XRE_main, (int argc, char* argv[], const mozilla::XREAppData& aAppData,
-                   uint32_t aFlags))
+        XRE_main, (int argc, char* argv[], const mozilla::XREAppData& aAppData))
 
 
 

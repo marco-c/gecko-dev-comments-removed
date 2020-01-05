@@ -211,7 +211,6 @@ static int do_main(int argc, char* argv[], char* envp[])
 {
   nsCOMPtr<nsIFile> appini;
   nsresult rv;
-  uint32_t mainFlags = 0;
 
   
   
@@ -315,7 +314,7 @@ static int do_main(int argc, char* argv[], char* envp[])
     XRE_LibFuzzerSetMain(argc, argv, libfuzzer_main);
 #endif
 
-  return XRE_main(argc, argv, appData, mainFlags);
+  return XRE_main(argc, argv, appData);
 }
 
 static bool
