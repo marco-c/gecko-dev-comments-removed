@@ -345,7 +345,7 @@ impl Window {
         
         
         
-        if opts::get().output_file.is_some() {
+        if opts::get().output_file.is_some() || opts::get().exit_after_load {
             while let Some(event) = self.window.poll_events().next() {
                 close_event = self.handle_window_event(event) || close_event;
             }

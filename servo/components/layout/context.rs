@@ -183,7 +183,8 @@ impl<'a> LayoutContext<'a> {
             Err(state) => {
                 
                 
-                let is_sync = opts::get().output_file.is_some();
+                let is_sync = opts::get().output_file.is_some() ||
+                              opts::get().exit_after_load;
 
                 match (state, is_sync) {
                     
