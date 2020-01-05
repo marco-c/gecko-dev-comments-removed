@@ -877,6 +877,10 @@ impl TextureCache {
                 None => {
                     
                     
+                    self.pending_updates.push(TextureUpdate {
+                        id: item.texture_id,
+                        op: TextureUpdateOp::Free,
+                    });
                     self.cache_id_list.free(item.texture_id);
                 }
             }
