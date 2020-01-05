@@ -65,13 +65,6 @@ wasm::HasCompilerSupport(JSContext* cx)
     if (!wasm::HaveSignalHandlers())
         return false;
 
-#if defined(JS_CODEGEN_ARM)
-    
-    
-    if (!HasMOVWT())
-        return false;
-#endif
-
 #if defined(JS_CODEGEN_NONE) || defined(JS_CODEGEN_ARM64)
     return false;
 #else
