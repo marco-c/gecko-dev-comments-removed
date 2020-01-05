@@ -20,7 +20,6 @@ typedef struct vpx_image vpx_image_t;
 
 
 
-
 class VP8TrackEncoder : public VideoTrackEncoder
 {
   enum EncodeOperation {
@@ -42,13 +41,6 @@ protected:
 
 private:
   
-  StreamTime CalculateEncodedDuration(StreamTime aDurationCopied);
-
-  
-  StreamTime CalculateRemainingTicks(StreamTime aDurationCopied,
-                                     StreamTime aEncodedDuration);
-
-  
   EncodeOperation GetNextEncodeOperation(TimeDuration aTimeElapsed,
                                          StreamTime aProcessedDuration);
 
@@ -61,13 +53,7 @@ private:
   nsresult PrepareRawFrame(VideoChunk &aChunk);
 
   
-  uint32_t mEncodedFrameRate;
-  
-  StreamTime mEncodedFrameDuration;
-  
   StreamTime mEncodedTimestamp;
-  
-  StreamTime mRemainingTicks;
 
   
   RefPtr<layers::Image> mMuteFrame;
@@ -76,8 +62,6 @@ private:
   nsTArray<uint8_t> mI420Frame;
 
   
-
-
 
 
 

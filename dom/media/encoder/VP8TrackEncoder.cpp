@@ -24,7 +24,6 @@ LazyLogModule gVP8TrackEncoderLog("VP8TrackEncoder");
 
 
 #define DEFAULT_BITRATE_BPS 2500000
-#define DEFAULT_ENCODE_FRAMERATE 30
 
 using namespace mozilla::gfx;
 using namespace mozilla::layers;
@@ -56,9 +55,7 @@ GetSourceSurface(already_AddRefed<Image> aImg)
 
 VP8TrackEncoder::VP8TrackEncoder(TrackRate aTrackRate)
   : VideoTrackEncoder(aTrackRate)
-  , mEncodedFrameDuration(0)
   , mEncodedTimestamp(0)
-  , mRemainingTicks(0)
   , mVPXContext(new vpx_codec_ctx_t())
   , mVPXImageWrapper(new vpx_image_t())
 {
@@ -87,8 +84,6 @@ VP8TrackEncoder::Init(int32_t aWidth, int32_t aHeight, int32_t aDisplayWidth,
 
   ReentrantMonitorAutoEnter mon(mReentrantMonitor);
 
-  mEncodedFrameRate = DEFAULT_ENCODE_FRAMERATE;
-  mEncodedFrameDuration = mTrackRate / mEncodedFrameRate;
   mFrameWidth = aWidth;
   mFrameHeight = aHeight;
   mDisplayWidth = aDisplayWidth;
@@ -147,7 +142,7 @@ VP8TrackEncoder::Init(int32_t aWidth, int32_t aHeight, int32_t aDisplayWidth,
 
   config.kf_mode = VPX_KF_AUTO;
   
-  config.kf_max_dist = mEncodedFrameRate;
+  config.kf_max_dist = 60;
 
   vpx_codec_flags_t flags = 0;
   flags |= VPX_CODEC_USE_OUTPUT_PARTITION;
@@ -472,8 +467,7 @@ VP8TrackEncoder::GetNextEncodeOperation(TimeDuration aTimeElapsed,
                                         StreamTime aProcessedDuration)
 {
   int64_t durationInUsec =
-    FramesToUsecs(aProcessedDuration + mEncodedFrameDuration,
-                  mTrackRate).value();
+    FramesToUsecs(aProcessedDuration, mTrackRate).value();
   if (aTimeElapsed.ToMicroseconds() > (durationInUsec * SKIP_FRAME_RATIO)) {
     
     
@@ -486,57 +480,6 @@ VP8TrackEncoder::GetNextEncodeOperation(TimeDuration aTimeElapsed,
     return ENCODE_NORMAL_FRAME;
   }
 }
-
-StreamTime
-VP8TrackEncoder::CalculateRemainingTicks(StreamTime aDurationCopied,
-                                         StreamTime aEncodedDuration)
-{
-  return mRemainingTicks + aEncodedDuration - aDurationCopied;
-}
-
-
-
-StreamTime
-VP8TrackEncoder::CalculateEncodedDuration(StreamTime aDurationCopied)
-{
-  StreamTime temp64 = aDurationCopied;
-  StreamTime encodedDuration = mEncodedFrameDuration;
-  temp64 -= mRemainingTicks;
-  while (temp64 > mEncodedFrameDuration) {
-    temp64 -= mEncodedFrameDuration;
-    encodedDuration += mEncodedFrameDuration;
-  }
-  return encodedDuration;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -566,8 +509,8 @@ VP8TrackEncoder::GetEncodedTrack(EncodedFrameContainer& aData)
     
     
     while (!mCanceled && (!mInitialized ||
-           (mRawSegment.GetDuration() + mSourceSegment.GetDuration() <
-            mEncodedFrameDuration && !mEndOfStream))) {
+           (mRawSegment.GetDuration() + mSourceSegment.GetDuration() == 0 &&
+            !mEndOfStream))) {
       mon.Wait();
     }
     if (mCanceled || mEncodingComplete) {
@@ -577,75 +520,54 @@ VP8TrackEncoder::GetEncodedTrack(EncodedFrameContainer& aData)
     EOS = mEndOfStream;
   }
 
-  VideoSegment::ChunkIterator iter(mSourceSegment);
-  StreamTime durationCopied = 0;
   StreamTime totalProcessedDuration = 0;
   TimeStamp timebase = TimeStamp::Now();
   EncodeOperation nextEncodeOperation = ENCODE_NORMAL_FRAME;
 
-  for (; !iter.IsEnded(); iter.Next()) {
+  for (VideoSegment::ChunkIterator iter(mSourceSegment);
+       !iter.IsEnded(); iter.Next()) {
     VideoChunk &chunk = *iter;
+    VP8LOG("nextEncodeOperation is %d for frame of duration %lld\n",
+           nextEncodeOperation, chunk.GetDuration());
+
     
-    
-    durationCopied += chunk.GetDuration();
-    MOZ_ASSERT(mRemainingTicks <= mEncodedFrameDuration);
-    VP8LOG("durationCopied %lld mRemainingTicks %lld\n",
-           durationCopied, mRemainingTicks);
-    if (durationCopied >= mRemainingTicks) {
-      VP8LOG("nextEncodeOperation is %d\n",nextEncodeOperation);
-      
-      StreamTime encodedDuration = CalculateEncodedDuration(durationCopied);
+    if (nextEncodeOperation != SKIP_FRAME) {
+      nsresult rv = PrepareRawFrame(chunk);
+      NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
 
       
-      if (nextEncodeOperation != SKIP_FRAME) {
-        nsresult rv = PrepareRawFrame(chunk);
-        NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
-
-        
-        int flags = (nextEncodeOperation == ENCODE_NORMAL_FRAME) ?
-                    0 : VPX_EFLAG_FORCE_KF;
-        if (vpx_codec_encode(mVPXContext, mVPXImageWrapper, mEncodedTimestamp,
-                             (unsigned long)encodedDuration, flags,
-                             VPX_DL_REALTIME)) {
-          return NS_ERROR_FAILURE;
-        }
-        
-        GetEncodedPartitions(aData);
-      } else {
-        
-        
-        
-        RefPtr<EncodedFrame> last = nullptr;
-        last = aData.GetEncodedFrames().LastElement();
-        if (last) {
-          last->SetDuration(last->GetDuration() + encodedDuration);
-        }
+      int flags = (nextEncodeOperation == ENCODE_NORMAL_FRAME) ?
+                  0 : VPX_EFLAG_FORCE_KF;
+      if (vpx_codec_encode(mVPXContext, mVPXImageWrapper, mEncodedTimestamp,
+                           (unsigned long)chunk.GetDuration(), flags,
+                           VPX_DL_REALTIME)) {
+        return NS_ERROR_FAILURE;
       }
       
-      mEncodedTimestamp += encodedDuration;
-      totalProcessedDuration += durationCopied;
+      GetEncodedPartitions(aData);
+    } else {
       
-      mRemainingTicks = CalculateRemainingTicks(durationCopied,
-                                                encodedDuration);
-
       
-      if (mSourceSegment.GetDuration() - totalProcessedDuration
-          >= mEncodedFrameDuration) {
-        TimeDuration elapsedTime = TimeStamp::Now() - timebase;
-        nextEncodeOperation = GetNextEncodeOperation(elapsedTime,
-                                                     totalProcessedDuration);
-        
-        durationCopied = 0;
-      } else {
-        
-        
-        break;
+      
+      NS_WARNING("MediaRecorder lagging behind. Skipping a frame.");
+      RefPtr<EncodedFrame> last = aData.GetEncodedFrames().LastElement();
+      if (last) {
+        last->SetDuration(last->GetDuration() + chunk.GetDuration());
       }
     }
+
+    
+    mEncodedTimestamp += chunk.GetDuration();
+    totalProcessedDuration += chunk.GetDuration();
+
+    
+    TimeDuration elapsedTime = TimeStamp::Now() - timebase;
+    nextEncodeOperation = GetNextEncodeOperation(elapsedTime,
+                                                 totalProcessedDuration);
   }
+
   
-  mSourceSegment.RemoveLeading(totalProcessedDuration);
-  VP8LOG("RemoveLeading %lld\n",totalProcessedDuration);
+  mSourceSegment.Clear();
 
   
   if (EOS) {
@@ -656,7 +578,7 @@ VP8TrackEncoder::GetEncodedTrack(EncodedFrameContainer& aData)
 
     do {
       if (vpx_codec_encode(mVPXContext, nullptr, mEncodedTimestamp,
-                           mEncodedFrameDuration, 0, VPX_DL_REALTIME)) {
+                           0, 0, VPX_DL_REALTIME)) {
         return NS_ERROR_FAILURE;
       }
     } while(GetEncodedPartitions(aData));
