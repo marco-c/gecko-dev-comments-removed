@@ -3629,7 +3629,7 @@ Tab.prototype = {
     this.browser.addEventListener("pageshow", this, true);
     this.browser.addEventListener("MozApplicationManifest", this, true);
     this.browser.addEventListener("TabPreZombify", this, true);
-    this.browser.addEventListener("DOMServiceWorkerFocusClient", this, true);
+    this.browser.addEventListener("DOMWindowFocus", this, true);
 
     
     this.browser.addEventListener("PluginBindingAttached", this, true, true);
@@ -3745,7 +3745,7 @@ Tab.prototype = {
     this.browser.removeEventListener("pageshow", this, true);
     this.browser.removeEventListener("MozApplicationManifest", this, true);
     this.browser.removeEventListener("TabPreZombify", this, true);
-    this.browser.removeEventListener("DOMServiceWorkerFocusClient", this, true);
+    this.browser.removeEventListener("DOMWindowFocus", this, true);
 
     this.browser.removeEventListener("PluginBindingAttached", this, true, true);
     this.browser.removeEventListener("VideoBindingAttached", this, true, true);
@@ -4268,7 +4268,7 @@ Tab.prototype = {
         break;
       }
 
-      case "DOMServiceWorkerFocusClient": {
+      case "DOMWindowFocus": {
         GlobalEventDispatcher.sendRequest({
           type: "Tab:Select",
           tabID: this.id,
@@ -4437,21 +4437,13 @@ Tab.prototype = {
     this.shouldShowPluginDoorhanger = true;
     this.clickToPlayPluginsActivated = false;
 
-    let documentURI = contentWin.document.documentURIObject.spec;
-
-    
-    let strippedURI = this._stripAboutReaderURL(documentURI);
-
-    
-    let matchedURL = strippedURI.match(/^((?:[a-z]+:\/\/)?(?:[^\/]+@)?)(.+?)(?::\d+)?(?:\/|$)/);
     let baseDomain = "";
-    if (matchedURL) {
-      var domain = "";
-      [, , domain] = matchedURL;
-
+    
+    let principalURI = contentWin.document.nodePrincipal.URI;
+    if (principalURI && ["http", "https", "ftp"].includes(principalURI.scheme) && principalURI.host) {
       try {
-        baseDomain = Services.eTLD.getBaseDomainFromHost(domain);
-        if (!domain.endsWith(baseDomain)) {
+        baseDomain = Services.eTLD.getBaseDomainFromHost(principalURI.host);
+        if (!principalURI.host.endsWith(baseDomain)) {
           
           let IDNService = Cc["@mozilla.org/network/idn-service;1"].getService(Ci.nsIIDNService);
           baseDomain = IDNService.convertACEtoUTF8(baseDomain);

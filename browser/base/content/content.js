@@ -698,12 +698,8 @@ ContentLinkHandler.init(this);
 
 var pluginContent = new PluginContent(global);
 
-addEventListener("DOMWebNotificationClicked", function(event) {
-  sendAsyncMessage("DOMWebNotificationClicked", {});
-}, false);
-
-addEventListener("DOMServiceWorkerFocusClient", function(event) {
-  sendAsyncMessage("DOMServiceWorkerFocusClient", {});
+addEventListener("DOMWindowFocus", function(event) {
+  sendAsyncMessage("DOMWindowFocus", {});
 }, false);
 
 ContentWebRTC.init();

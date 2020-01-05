@@ -10199,6 +10199,19 @@ nsDocShell::InternalLoad(nsIURI* aURI,
         
         
       }
+
+      
+      
+      
+      bool isTargetActive = false;
+      targetDocShell->GetIsActive(&isTargetActive);
+      if (mIsActive && !isTargetActive &&
+          !Preferences::GetBool("browser.tabs.loadDivertedInBackground", false)) {
+        if (NS_FAILED(nsContentUtils::DispatchFocusChromeEvent(
+            targetDocShell->GetWindow()))) {
+          return NS_ERROR_FAILURE;
+        }
+      }
     }
 
     
