@@ -13,6 +13,8 @@
 class nsContainerFrame;
 class nsStyleContext;
 
+namespace mozilla {
+
 
 
 
@@ -58,5 +60,7 @@ public:
 private:
   nsCOMPtr<nsIContent> mDefaultSummary;
 };
+
+} 
 
 #endif 
