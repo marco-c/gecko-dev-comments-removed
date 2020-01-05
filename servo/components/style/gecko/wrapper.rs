@@ -511,7 +511,17 @@ impl<'le> TElement for GeckoElement<'le> {
     }
 
     unsafe fn note_descendants<B: DescendantsBit<Self>>(&self) {
-        debug_assert!(self.get_data().is_some());
+        
+        
+        
+        
+        
+        
+        
+        if self.get_data().is_none() {
+            return;
+        }
+
         if dom::raw_note_descendants::<Self, B>(*self) {
             bindings::Gecko_SetOwnerDocumentNeedsStyleFlush(self.0);
         }
