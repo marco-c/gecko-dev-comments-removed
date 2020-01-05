@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 use compositor_data::CompositorData;
 use compositor_task::{Msg, CompositorTask, Exit, ChangeReadyState, SetUnRenderedColor};
@@ -31,7 +31,7 @@ use layers::platform::surface::NativeCompositingGraphicsContext;
 use layers::rendergl;
 use layers::rendergl::RenderContext;
 use layers::scene::Scene;
-use layers::layers::ContainerLayer;
+use layers::layers::Layer;
 use opengles::gl2;
 use png;
 use servo_msg::compositor_msg::{Blank, Epoch, FinishedLoading, IdleRenderState};
@@ -51,76 +51,76 @@ use time::precise_time_s;
 
 
 pub struct IOCompositor {
-    /// The application window.
+    
     window: Rc<Window>,
 
-    /// The port on which we receive messages.
+    
     port: Receiver<Msg>,
 
-    /// The render context.
+    
     context: RenderContext,
 
-    /// The root pipeline.
+    
     root_pipeline: Option<CompositionPipeline>,
 
-    /// The canvas to paint a page.
+    
     scene: Scene<CompositorData>,
 
-    /// The application window size.
+    
     window_size: TypedSize2D<DevicePixel, uint>,
 
-    /// "Mobile-style" zoom that does not reflow the page.
+    
     viewport_zoom: ScaleFactor<PagePx, ViewportPx, f32>,
 
-    /// "Desktop-style" zoom that resizes the viewport to fit the window.
-    /// See `ViewportPx` docs in util/geom.rs for details.
+    
+    
     page_zoom: ScaleFactor<ViewportPx, ScreenPx, f32>,
 
-    /// The device pixel ratio for this window.
+    
     hidpi_factor: ScaleFactor<ScreenPx, DevicePixel, f32>,
 
-    /// The platform-specific graphics context.
+    
     graphics_context: NativeCompositingGraphicsContext,
 
-    /// Tracks whether the renderer has finished its first rendering
+    
     composite_ready: bool,
 
-    /// Tracks whether we are in the process of shutting down.
+    
     shutting_down: bool,
 
-    /// Tracks whether we should close compositor.
+    
     done: bool,
 
-    /// Tracks whether we need to re-composite a page.
+    
     recomposite: bool,
 
-    /// Tracks whether the zoom action has happend recently.
+    
     zoom_action: bool,
 
-    /// The time of the last zoom action has started.
+    
     zoom_time: f64,
 
-    /// Current display/reflow status of the page
+    
     ready_state: ReadyState,
 
-    /// Whether the page being rendered has loaded completely.
-    /// Differs from ReadyState because we can finish loading (ready)
-    /// many times for a single page.
+    
+    
+    
     load_complete: bool,
 
-    /// The command line option flags.
+    
     opts: Opts,
 
-    /// The channel on which messages can be sent to the constellation.
+    
     constellation_chan: ConstellationChan,
 
-    /// The channel on which messages can be sent to the time profiler.
+    
     time_profiler_chan: TimeProfilerChan,
 
-    /// The channel on which messages can be sent to the memory profiler.
+    
     memory_profiler_chan: MemoryProfilerChan,
 
-    /// Pending scroll to fragment event, if any
+    
     fragment_point: Option<Point2D<f32>>
 }
 
@@ -133,10 +133,10 @@ impl IOCompositor {
                memory_profiler_chan: MemoryProfilerChan) -> IOCompositor {
         let window: Rc<Window> = WindowMethods::new(app, opts.output_file.is_none());
 
-        // Create an initial layer tree.
-        //
-        // TODO: There should be no initial layer tree until the renderer creates one from the display
-        // list. This is only here because we don't have that logic in the renderer yet.
+        
+        
+        
+        
         let window_size = window.framebuffer_size();
         let hidpi_factor = window.hidpi_factor();
 
@@ -181,31 +181,31 @@ impl IOCompositor {
                                                memory_profiler_chan);
         compositor.update_zoom_transform();
 
-        // Starts the compositor, which listens for messages on the specified port.
+        
         compositor.run();
     }
 
     fn run (&mut self) {
-        // Tell the constellation about the initial window size.
+        
         self.send_window_size();
 
-        // Enter the main event loop.
+        
         while !self.done {
-            // Check for new messages coming from the rendering task.
+            
             self.handle_message();
 
             if self.done {
-                // We have exited the compositor and passing window
-                // messages to script may crash.
+                
+                
                 debug!("Exiting the compositor due to a request from script.");
                 break;
             }
 
-            // Check for messages coming from the windowing system.
+            
             let msg = self.window.recv();
             self.handle_window_message(msg);
 
-            // If asked to recomposite and renderer has run at least once
+            
             if self.recomposite && self.composite_ready {
                 self.recomposite = false;
                 self.composite();
@@ -213,7 +213,7 @@ impl IOCompositor {
 
             sleep(10);
 
-            // If a pinch-zoom happened recently, ask for tiles at the new resolution
+            
             if self.zoom_action && precise_time_s() - self.zoom_time > 0.3 {
                 self.zoom_action = false;
                 self.ask_for_tiles();
@@ -221,14 +221,14 @@ impl IOCompositor {
 
         }
 
-        // Clear out the compositor layers so that painting tasks can destroy the buffers.
+        
         match self.scene.root {
             None => {}
             Some(ref layer) => CompositorData::forget_all_tiles(layer.clone()),
         }
 
-        // Drain compositor port, sometimes messages contain channels that are blocking
-        // another task from finishing (i.e. SetIds)
+        
+        
         loop {
             match self.port.try_recv() {
                 Err(_) => break,
@@ -236,7 +236,7 @@ impl IOCompositor {
             }
         }
 
-        // Tell the profiler and memory profiler to shut down.
+        
         let TimeProfilerChan(ref time_profiler_chan) = self.time_profiler_chan;
         time_profiler_chan.send(time::ExitMsg);
 
@@ -319,9 +319,9 @@ impl IOCompositor {
                     self.load_complete = true;
                 }
 
-                // When we are shutting_down, we need to avoid performing operations
-                // such as Paint that may crash because we have begun tearing down
-                // the rest of our resources.
+                
+                
+                
                 (_, true) => { }
             }
         }
@@ -349,7 +349,7 @@ impl IOCompositor {
 
         self.root_pipeline = Some(frame_tree.pipeline.clone());
 
-        // Initialize the new constellation channel by sending it the root window size.
+        
         self.constellation_chan = new_constellation_chan;
         self.send_window_size();
     }
@@ -375,8 +375,8 @@ impl IOCompositor {
 
         if layer_id != root_layer_id {
             let root_pipeline_id = root_pipeline.id;
-            let new_root = Rc::new(ContainerLayer::new(Some(size), self.opts.tile_size,
-                                                       CompositorData::new_root(root_pipeline,
+            let new_root = Rc::new(Layer::new(size, self.opts.tile_size,
+                                              CompositorData::new_root(root_pipeline,
                                                                                 size, self.opts.cpu_painting)));
             new_root.extra_data.borrow_mut().unrendered_color = unrendered_color;
 
@@ -389,7 +389,7 @@ impl IOCompositor {
                                                            size,
                                                            Scrollable));
 
-            // Release all tiles from the layer before dropping it.
+            
             for layer in self.scene.root.mut_iter() {
                 CompositorData::clear_all_tiles(layer.clone());
             }
@@ -422,7 +422,7 @@ impl IOCompositor {
         self.ask_for_tiles();
     }
 
-    /// The size of the content area in CSS px at the current zoom level
+    
     fn page_window(&self) -> TypedSize2D<PagePx, f32> {
         self.window_size.as_f32() / self.device_pixels_per_page_px()
     }
