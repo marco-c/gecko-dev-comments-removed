@@ -72,7 +72,7 @@ impl TableWrapperFlow {
     }
     fn border_padding_and_spacing(&mut self) -> (Au, Au) {
         let (mut table_border_padding, mut spacing) = (Au(0), Au(0));
-        for kid in self.block_flow.base.child_iter() {
+        for kid in self.block_flow.base.child_iter_mut() {
             if kid.is_table() {
                 let kid_table = kid.as_table();
                 spacing = kid_table.total_horizontal_spacing();
@@ -95,7 +95,7 @@ impl TableWrapperFlow {
         
         
         let available_inline_size = self.block_flow.fragment.border_box.size.inline;
-        for kid in self.block_flow.base.child_iter() {
+        for kid in self.block_flow.base.child_iter_mut() {
             if !kid.is_table() {
                 continue
             }
@@ -308,7 +308,7 @@ impl Flow for TableWrapperFlow {
 
     fn bubble_inline_sizes(&mut self) {
         
-        for kid in self.block_flow.base.child_iter() {
+        for kid in self.block_flow.base.child_iter_mut() {
             debug_assert!(kid.is_table_caption() || kid.is_table());
             if kid.is_table() {
                 self.column_intrinsic_inline_sizes = kid.column_intrinsic_inline_sizes().clone()
