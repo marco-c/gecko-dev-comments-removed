@@ -43,10 +43,6 @@ impl<'a> ParserContext<'a> {
 
 
 
-pub fn log_css_error(input: &mut Parser, position: SourcePosition, message: &str) {
-    if log_enabled!(log::LogLevel::Info) {
-        let location = input.source_location(position);
-        
-        info!("{}:{} {}", location.line, location.column, message)
-    }
+pub fn log_css_error(input: &mut Parser, position: SourcePosition, message: &str, parsercontext: &ParserContext) {
+    parsercontext.error_reporter.report_error(input, position, message);
 }
