@@ -50,7 +50,6 @@
 #include "ImageRegion.h"
 
 #include "gfxContext.h"
-#include "gfxImageSurface.h"
 #include "gfxPlatform.h"
 #include "gfxFont.h"
 #include "gfxBlur.h"
@@ -5810,17 +5809,26 @@ CanvasRenderingContext2D::PutImageData_explicit(int32_t aX, int32_t aY, uint32_t
 
   uint32_t copyWidth = dirtyRect.Width();
   uint32_t copyHeight = dirtyRect.Height();
-  RefPtr<gfxImageSurface> imgsurf = new gfxImageSurface(gfx::IntSize(copyWidth, copyHeight),
-                                                          SurfaceFormat::A8R8G8B8_UINT32,
-                                                          false);
-  if (!imgsurf || imgsurf->CairoStatus()) {
+  RefPtr<DataSourceSurface> sourceSurface =
+    gfx::Factory::CreateDataSourceSurface(gfx::IntSize(copyWidth, copyHeight),
+                                          SurfaceFormat::B8G8R8A8,
+                                          false);
+  
+  
+  
+  
+  if (!sourceSurface) {
     return NS_ERROR_FAILURE;
   }
 
+  uint8_t *dstLine = sourceSurface->GetData();
+  if (!dstLine) {
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
+  int32_t dstStride = sourceSurface->Stride();
+
   uint32_t copyX = dirtyRect.x - aX;
   uint32_t copyY = dirtyRect.y - aY;
-  
-  uint8_t *dst = imgsurf->Data();
   uint8_t* srcLine = aArray->Data() + copyY * (aW * 4) + copyX * 4;
   
   uint8_t alphaMask = mOpaque ? 255 : 0;
@@ -5832,6 +5840,7 @@ CanvasRenderingContext2D::PutImageData_explicit(int32_t aX, int32_t aY, uint32_t
 #endif
   for (uint32_t j = 0; j < copyHeight; j++) {
     uint8_t *src = srcLine;
+    uint8_t *dst = dstLine;
     for (uint32_t i = 0; i < copyWidth; i++) {
       uint8_t r = *src++;
       uint8_t g = *src++;
@@ -5852,6 +5861,10 @@ CanvasRenderingContext2D::PutImageData_explicit(int32_t aX, int32_t aY, uint32_t
 #endif
     }
     srcLine += aW * 4;
+    
+    
+    
+    dstLine += dstStride;
   }
 
   
@@ -5861,17 +5874,6 @@ CanvasRenderingContext2D::PutImageData_explicit(int32_t aX, int32_t aY, uint32_t
   EnsureTarget(&putRect);
 
   if (!IsTargetValid()) {
-    return NS_ERROR_FAILURE;
-  }
-
-  RefPtr<SourceSurface> sourceSurface =
-    mTarget->CreateSourceSurfaceFromData(imgsurf->Data(), IntSize(copyWidth, copyHeight), imgsurf->Stride(), SurfaceFormat::B8G8R8A8);
-
-  
-  
-  
-  
-  if (!sourceSurface) {
     return NS_ERROR_FAILURE;
   }
 
