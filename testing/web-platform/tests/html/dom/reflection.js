@@ -790,7 +790,6 @@ for (var element in elements) {
     
     ReflectionTests.reflects({type: "long", defaultVal: null}, "tabIndex", element);
     
-    
 
     for (var idlAttrName in elements[element]) {
         var type = elements[element][idlAttrName];

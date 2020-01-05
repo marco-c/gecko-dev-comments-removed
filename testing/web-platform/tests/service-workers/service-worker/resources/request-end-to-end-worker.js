@@ -1,9 +1,20 @@
 var port = undefined;
 
+function createPending() {
+  return { then: createPending };
+}
+
 onmessage = function(e) {
   var message = e.data;
   if (typeof message === 'object' && 'port' in message) {
     port = message.port;
+
+    port.postMessage('received port');
+    
+    
+    
+    
+    e.waitUntil(createPending());
   }
 };
 

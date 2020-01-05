@@ -23,6 +23,9 @@ function testExtendSubSet(startIndex, optionalEndIndex) {
     
     for (var i = startIndex; i < endIndex; i++) {
         var endpoints = eval(testRanges[i]);
+        
+        if (!isSelectableNode(endpoints[0]) || !isSelectableNode(endpoints[2]))
+            continue;
         for (var j = 0; j < testPoints.length; j++) {
             if (endpoints[0] == endpoints[2]
             && endpoints[1] == endpoints[3]) {
@@ -55,6 +58,15 @@ function testExtend(endpoints, target) {
 
     var node = target[0];
     var offset = target[1];
+
+    
+    
+    if (!document.contains(node)) {
+        assertSelectionNoChange(function() {
+            selection.extend(node, offset);
+        });
+        return;
+    }
 
     
     
