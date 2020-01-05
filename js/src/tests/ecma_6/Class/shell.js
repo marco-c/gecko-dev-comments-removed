@@ -1,9 +1,3 @@
-
-
-
-if (typeof version != 'undefined')
-  version(185);
-
 function assertThrownErrorContains(thunk, substr) {
     try {
         thunk();
