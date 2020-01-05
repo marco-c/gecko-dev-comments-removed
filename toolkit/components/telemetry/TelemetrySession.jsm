@@ -1911,7 +1911,7 @@ var Impl = {
         
         
         Services.obs.notifyObservers(null, "gather-telemetry", null);
-      }).bind(this), Ci.nsIThread.DISPATCH_NORMAL);
+      }), Ci.nsIThread.DISPATCH_NORMAL);
       break;
 
     case "application-background":

@@ -79,6 +79,9 @@ module.exports = {
     "no-duplicate-case": "error",
 
     
+    "no-extra-bind": "error",
+
+    
     "no-labels": "error",
 
     
