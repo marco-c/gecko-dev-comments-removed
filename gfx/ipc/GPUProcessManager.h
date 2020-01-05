@@ -22,6 +22,7 @@ class nsBaseWidget;
 
 
 namespace mozilla {
+class MemoryReportingProcess;
 namespace layers {
 class IAPZCTreeManager;
 class CompositorOptions;
@@ -139,6 +140,10 @@ public:
 
   
   base::ProcessId GPUProcessPid();
+
+  
+  
+  RefPtr<MemoryReportingProcess> GetProcessMemoryReporter();
 
   
   GPUChild* GetGPUChild() {
