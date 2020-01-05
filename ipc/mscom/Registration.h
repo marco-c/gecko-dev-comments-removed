@@ -56,7 +56,9 @@ private:
   IUnknown* mClassObject;
   uint32_t  mRegCookie;
   ITypeLib* mTypeLib;
+#if defined(MOZILLA_INTERNAL_API)
   bool      mIsRegisteredInMTA;
+#endif 
 };
 
 enum class RegistrationFlags
@@ -77,6 +79,8 @@ UniquePtr<RegisteredProxy> RegisterProxy(const wchar_t* aLeafName,
 UniquePtr<RegisteredProxy> RegisterTypelib(const wchar_t* aLeafName,
                                            RegistrationFlags aFlags =
                                              RegistrationFlags::eUseBinDirectory);
+
+#if defined(MOZILLA_INTERNAL_API)
 
 
 
@@ -143,6 +147,8 @@ RegisterArrayData(const ArrayData (&aData)[N])
 
 const ArrayData*
 FindArrayData(REFIID aIid, ULONG aMethodIndex);
+
+#endif 
 
 } 
 } 
