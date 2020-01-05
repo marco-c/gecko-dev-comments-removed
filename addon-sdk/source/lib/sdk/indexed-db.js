@@ -28,9 +28,8 @@ var sanitizeId = function(id){
 const PSEUDOURI = "indexeddb://" + sanitizeId(id) 
 
 
-var principaluri = Cc["@mozilla.org/network/io-service;1"].
-              getService(Ci.nsIIOService).
-              newURI(PSEUDOURI, null, null);
+var principaluri = Cc["@mozilla.org/network/io-service;1"]
+                     .getService(Ci.nsIIOService).newURI(PSEUDOURI);
 
 var ssm = Cc["@mozilla.org/scriptsecuritymanager;1"]
             .getService(Ci.nsIScriptSecurityManager);
