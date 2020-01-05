@@ -982,6 +982,12 @@ nsThread::RegisterIdlePeriod(already_AddRefed<nsIIdlePeriod> aIdlePeriod)
 NS_IMETHODIMP
 nsThread::IdleDispatch(already_AddRefed<nsIRunnable> aEvent)
 {
+  
+  
+  
+  
+  MOZ_ASSERT(PR_GetCurrentThread() == mThread);
+
   MutexAutoLock lock(mLock);
   LeakRefPtr<nsIRunnable> event(Move(aEvent));
 
