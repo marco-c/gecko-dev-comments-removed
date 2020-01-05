@@ -114,6 +114,7 @@
 #include "nsIPrefService.h"
 #include "nsIPrefBranch.h"
 #include "nsISocketFilter.h"
+#include "nsDebug.h"
 
 #ifdef XP_WIN
 #include "mozilla/WindowsVersion.h"
@@ -178,8 +179,9 @@ private:
   ~SingletonThreadHolder()
   {
     r_log(LOG_GENERIC,LOG_DEBUG,"Deleting SingletonThreadHolder");
-    MOZ_ASSERT(!mThread, "SingletonThreads should be Released and shut down before exit!");
     if (mThread) {
+      
+      NS_WARNING("SingletonThreads should be Released and shut down before exit!");
       mThread->Shutdown();
       mThread = nullptr;
     }
@@ -251,7 +253,7 @@ static StaticRefPtr<SingletonThreadHolder> sThread;
 
 static void ClearSingletonOnShutdown()
 {
-  ClearOnShutdown(&sThread);
+  ClearOnShutdown(&sThread, ShutdownPhase::ShutdownThreads);
 }
 #endif
 
