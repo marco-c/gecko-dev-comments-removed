@@ -126,7 +126,6 @@ class AutoIPCStream final
   IPCStream* mValue;
   OptionalIPCStream* mOptionalValue;
   bool mTaken;
-  bool mDelayedStart;
 
   bool
   IsSet() const;
@@ -134,17 +133,16 @@ class AutoIPCStream final
 public:
   
   
-  explicit AutoIPCStream(bool aDelayedStart = false);
+  AutoIPCStream();
 
   
   
   
-  explicit AutoIPCStream(IPCStream& aTarget, bool aDelayedStart = false);
+  explicit AutoIPCStream(IPCStream& aTarget);
 
   
   
-  explicit AutoIPCStream(OptionalIPCStream& aTarget,
-                         bool aDelayedStart = false);
+  explicit AutoIPCStream(OptionalIPCStream& aTarget);
 
   ~AutoIPCStream();
 

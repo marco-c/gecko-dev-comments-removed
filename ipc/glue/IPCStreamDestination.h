@@ -31,17 +31,8 @@ public:
   static IPCStreamDestination*
   Cast(PParentToChildStreamChild* aActor);
 
-  void
-  SetDelayedStart(bool aDelayedStart);
-
-  already_AddRefed<nsIInputStream>
+  virtual already_AddRefed<nsIInputStream>
   TakeReader();
-
-  bool
-  IsOnOwningThread() const;
-
-  void
-  DispatchRunnable(already_AddRefed<nsIRunnable>&& aRunnable);
 
 protected:
   IPCStreamDestination();
@@ -60,18 +51,7 @@ protected:
   void
   CloseReceived(nsresult aRv);
 
-#ifdef DEBUG
-  bool
-  HasDelayedStart() const
-  {
-    return mDelayedStart;
-  }
-#endif
-
   
-
-  virtual void
-  StartReading() = 0;
 
   virtual void
   RequestClose(nsresult aRv) = 0;
@@ -79,18 +59,8 @@ protected:
   virtual void
   TerminateDestination() = 0;
 
-private:
   nsCOMPtr<nsIAsyncInputStream> mReader;
   nsCOMPtr<nsIAsyncOutputStream> mWriter;
-
-  
-  
-  
-  class DelayedStartInputStream;
-  RefPtr<DelayedStartInputStream> mDelayedStartInputStream;
-
-  nsCOMPtr<nsIThread> mOwningThread;
-  bool mDelayedStart;
 };
 
 } 
