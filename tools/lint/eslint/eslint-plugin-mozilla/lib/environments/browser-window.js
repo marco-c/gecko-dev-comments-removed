@@ -52,11 +52,9 @@ const globalScriptsRegExp =
   /<script type=\"application\/javascript\" src=\"(.*)\"\/>/;
 
 function getGlobalScriptsIncludes() {
-  let globalScriptsPath = path.join(rootDir, "browser", "base", "content",
-                                    "global-scripts.inc");
   let fileData;
   try {
-    fileData = fs.readFileSync(globalScriptsPath, {encoding: "utf8"});
+    fileData = fs.readFileSync(helpers.globalScriptsPath, {encoding: "utf8"});
   } catch (ex) {
     
     return null;
@@ -111,14 +109,20 @@ function getScriptGlobals() {
 function mapGlobals(fileGlobals) {
   
   
-  var globalObjects = Object.assign({}, placesGlobals);
+  let globalObjects = Object.assign({}, placesGlobals);
   for (let global of fileGlobals) {
     globalObjects[global.name] = global.writable;
   }
   return globalObjects;
 }
 
-module.exports = {
-  globals: mapGlobals(getScriptGlobals()),
-  browserjsScripts: getGlobalScriptsIncludes().concat(EXTRA_SCRIPTS)
-};
+function getMozillaCentralItems() {
+  return {
+    globals: mapGlobals(getScriptGlobals()),
+    browserjsScripts: getGlobalScriptsIncludes().concat(EXTRA_SCRIPTS)
+  };
+}
+
+module.exports = helpers.isMozillaCentralBased() ?
+ getMozillaCentralItems() :
+ helpers.getSavedEnvironmentItems("browser-window");
