@@ -21,6 +21,19 @@
 
 
 
+
+
+
+#ifndef CSS_NON_INHERITING_ANON_BOX
+#  ifdef DEFINED_CSS_NON_INHERITING_ANON_BOX
+#    error "Recursive includes of nsCSSAnonBoxList.h?"
+#  endif 
+#  define CSS_NON_INHERITING_ANON_BOX CSS_ANON_BOX
+#  define DEFINED_CSS_NON_INHERITING_ANON_BOX
+#endif 
+
+
+
 CSS_ANON_BOX(mozText, ":-moz-text")
 
 
@@ -102,3 +115,8 @@ CSS_ANON_BOX(mozSVGMarkerAnonChild, ":-moz-svg-marker-anon-child")
 CSS_ANON_BOX(mozSVGOuterSVGAnonChild, ":-moz-svg-outer-svg-anon-child")
 CSS_ANON_BOX(mozSVGForeignContent, ":-moz-svg-foreign-content")
 CSS_ANON_BOX(mozSVGText, ":-moz-svg-text")
+
+#ifdef DEFINED_CSS_NON_INHERITING_ANON_BOX
+#  undef DEFINED_CSS_NON_INHERITING_ANON_BOX
+#  undef CSS_NON_INHERITING_ANON_BOX
+#endif 

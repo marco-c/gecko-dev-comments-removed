@@ -32,6 +32,36 @@ public:
 #define CSS_ANON_BOX(_name, _value) static nsICSSAnonBoxPseudo* _name;
 #include "nsCSSAnonBoxList.h"
 #undef CSS_ANON_BOX
+
+  typedef uint8_t NonInheritingBase;
+  enum class NonInheriting : NonInheritingBase {
+#define CSS_ANON_BOX(_name, _value) 
+#define CSS_NON_INHERITING_ANON_BOX(_name, _value) _name,
+#include "nsCSSAnonBoxList.h"
+#undef CSS_NON_INHERITING_ANON_BOX
+#undef CSS_ANON_BOX
+    _Count
+  };
+
+  
+  
+  
+  
+  
+  static bool IsNonInheritingAnonBox(nsIAtom* aPseudo)
+  {
+    return
+#define CSS_ANON_BOX(_name, _value)
+#define CSS_NON_INHERITING_ANON_BOX(_name, _value) _name == aPseudo ||
+#include "nsCSSAnonBoxList.h"
+#undef CSS_NON_INHERITING_ANON_BOX
+#undef CSS_ANON_BOX
+      0;
+  }
+
+  
+  
+  static nsIAtom* GetNonInheritingPseudoAtom(NonInheriting aBoxType);
 };
 
 #endif 
