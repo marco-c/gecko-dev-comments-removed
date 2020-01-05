@@ -40,7 +40,7 @@ ProxyStream::ProxyStream(const BYTE* aInitBuf, const int aInitBufSize)
   
   
   
-  MOZ_ASSERT(mStream);
+  MOZ_DIAGNOSTIC_ASSERT(mStream);
   if (!mStream) {
     return;
   }
@@ -54,10 +54,10 @@ ProxyStream::ProxyStream(const BYTE* aInitBuf, const int aInitBufSize)
     IUnknown* rawUnmarshaledProxy = nullptr;
     
     
-    DebugOnly<HRESULT> hr =
-      ::CoGetInterfaceAndReleaseStream(mStream.forget().take(), IID_IUnknown,
-                                       (void**)&rawUnmarshaledProxy);
-    MOZ_ASSERT(SUCCEEDED(hr));
+    HRESULT hr = ::CoGetInterfaceAndReleaseStream(mStream.forget().take(),
+                                                  IID_IUnknown,
+                                                  (void**)&rawUnmarshaledProxy);
+    MOZ_DIAGNOSTIC_ASSERT(SUCCEEDED(hr));
     mUnmarshaledProxy.reset(rawUnmarshaledProxy);
   };
 
@@ -77,9 +77,12 @@ ProxyStream::InitStream(const BYTE* aInitBuf, const UINT aInitBufSize)
   
   static DynamicallyLinkedFunctionPtr<decltype(&::SHCreateMemStream)>
     pSHCreateMemStream(L"shlwapi.dll", reinterpret_cast<const char*>(12));
+
+  MOZ_DIAGNOSTIC_ASSERT(pSHCreateMemStream);
   if (!pSHCreateMemStream) {
     return nullptr;
   }
+
   return already_AddRefed<IStream>(pSHCreateMemStream(aInitBuf, aInitBufSize));
 }
 
@@ -128,8 +131,8 @@ bool
 ProxyStream::GetInterface(REFIID aIID, void** aOutInterface) const
 {
   
-  MOZ_ASSERT(!mGlobalLockedBuf);
-  MOZ_ASSERT(aOutInterface);
+  MOZ_DIAGNOSTIC_ASSERT(!mGlobalLockedBuf);
+  MOZ_DIAGNOSTIC_ASSERT(aOutInterface);
 
   if (!aOutInterface) {
     return false;
@@ -152,6 +155,8 @@ ProxyStream::GetInterface(REFIID aIID, void** aOutInterface) const
     
     EnsureMTA mta(qiFn);
   }
+
+  MOZ_DIAGNOSTIC_ASSERT(SUCCEEDED(hr));
   return SUCCEEDED(hr);
 }
 
@@ -166,18 +171,20 @@ ProxyStream::ProxyStream(REFIID aIID, IUnknown* aObject)
   auto marshalFn = [&]() -> void
   {
     HRESULT hr = ::CreateStreamOnHGlobal(nullptr, TRUE, getter_AddRefs(stream));
+    MOZ_DIAGNOSTIC_ASSERT(SUCCEEDED(hr));
     if (FAILED(hr)) {
       return;
     }
 
     hr = ::CoMarshalInterface(stream, aIID, aObject, MSHCTX_LOCAL, nullptr,
                               MSHLFLAGS_NORMAL);
+    MOZ_DIAGNOSTIC_ASSERT(SUCCEEDED(hr));
     if (FAILED(hr)) {
       return;
     }
 
     hr = ::GetHGlobalFromStream(stream, &hglobal);
-    MOZ_ASSERT(SUCCEEDED(hr));
+    MOZ_DIAGNOSTIC_ASSERT(SUCCEEDED(hr));
   };
 
   if (XRE_IsParentProcess()) {
