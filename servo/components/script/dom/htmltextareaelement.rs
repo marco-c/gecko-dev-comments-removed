@@ -91,7 +91,10 @@ impl LayoutHTMLTextAreaElementHelpers for LayoutJS<HTMLTextAreaElement> {
     }
 }
 
+
 static DEFAULT_COLS: u32 = 20;
+
+
 static DEFAULT_ROWS: u32 = 2;
 
 impl HTMLTextAreaElement {
