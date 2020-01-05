@@ -21,6 +21,7 @@
 #include "nsMemoryInfoDumper.h"
 #endif
 #include "mozilla/Attributes.h"
+#include "mozilla/MemoryReportingProcess.h"
 #include "mozilla/PodOperations.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Services.h"
@@ -1898,7 +1899,7 @@ nsMemoryReporterManager::HandleChildReport(
 }
 
  bool
-nsMemoryReporterManager::StartChildReport(mozilla::dom::ContentParent* aChild,
+nsMemoryReporterManager::StartChildReport(mozilla::MemoryReportingProcess* aChild,
                                           const PendingProcessesState* aState)
 {
   if (!aChild->IsAlive()) {
@@ -1950,7 +1951,7 @@ nsMemoryReporterManager::EndProcessReport(uint32_t aGeneration, bool aSuccess)
   while (s->mNumProcessesRunning < s->mConcurrencyLimit &&
          !s->mChildrenPending.IsEmpty()) {
     
-    RefPtr<ContentParent> nextChild;
+    RefPtr<MemoryReportingProcess> nextChild;
     nextChild.swap(s->mChildrenPending.LastElement());
     s->mChildrenPending.TruncateLength(s->mChildrenPending.Length() - 1);
     
