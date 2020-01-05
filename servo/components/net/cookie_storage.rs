@@ -33,9 +33,30 @@ impl CookieStorage {
     }
 
     
-    pub fn remove(&mut self, cookie: &Cookie, source: CookieSource) -> Result<Option<Cookie>, ()> {
+    pub fn remove(&mut self, cookie: &Cookie, url: &ServoUrl, source: CookieSource) -> Result<Option<Cookie>, ()> {
         let domain = reg_host(cookie.cookie.domain.as_ref().unwrap_or(&"".to_string()));
         let cookies = self.cookies_map.entry(domain).or_insert(vec![]);
+
+        
+        if !cookie.cookie.secure && url.scheme() != "https" && url.scheme() != "wss" {
+            let new_domain = cookie.cookie.domain.as_ref().unwrap();
+            let new_path = cookie.cookie.path.as_ref().unwrap();
+
+            let any_overlapping = cookies.iter().any(|c| {
+                let existing_domain = c.cookie.domain.as_ref().unwrap();
+                let existing_path = c.cookie.path.as_ref().unwrap();
+
+                c.cookie.name == cookie.cookie.name &&
+                c.cookie.secure &&
+                (Cookie::domain_match(new_domain, existing_domain) ||
+                 Cookie::domain_match(existing_domain, new_domain)) &&
+                Cookie::path_match(new_path, existing_path)
+            });
+
+            if any_overlapping {
+                return Err(());
+            }
+        }
 
         
         let position = cookies.iter().position(|c| {
@@ -45,15 +66,16 @@ impl CookieStorage {
         });
 
         if let Some(ind) = position {
+            
             let c = cookies.remove(ind);
 
             
-            if !c.cookie.httponly || source == CookieSource::HTTP {
-                Ok(Some(c))
-            } else {
+            if c.cookie.httponly && source == CookieSource::NonHTTP {
                 
                 cookies.push(c);
                 Err(())
+            } else {
+                Ok(Some(c))
             }
         } else {
             Ok(None)
@@ -61,8 +83,13 @@ impl CookieStorage {
     }
 
     
-    pub fn push(&mut self, mut cookie: Cookie, source: CookieSource) {
-        let old_cookie = self.remove(&cookie, source);
+    pub fn push(&mut self, mut cookie: Cookie, url: &ServoUrl, source: CookieSource) {
+        
+        if cookie.cookie.secure && url.scheme() != "https" && url.scheme() != "wss" {
+            return;
+        }
+
+        let old_cookie = self.remove(&cookie, url, source);
         if old_cookie.is_err() {
             
             return;
@@ -119,7 +146,6 @@ impl CookieStorage {
             
             c.appropriate_for_url(url, source)
         };
-
         
         let domain = reg_host(url.host_str().unwrap_or(""));
         let cookies = self.cookies_map.entry(domain).or_insert(vec![]);
@@ -159,6 +185,7 @@ impl CookieStorage {
         }))
     }
 }
+
 fn reg_host<'a>(url: &'a str) -> String {
     reg_suffix(url).to_string()
 }
