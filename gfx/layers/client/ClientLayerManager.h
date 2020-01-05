@@ -159,7 +159,7 @@ public:
 
   CompositorBridgeChild* GetRemoteRenderer();
 
-  CompositorBridgeChild* GetCompositorBridgeChild();
+  virtual CompositorBridgeChild* GetCompositorBridgeChild() override;
 
   
   virtual bool ShouldAvoidComponentAlphaLayers() override { return !IsCompositingCheap(); }
