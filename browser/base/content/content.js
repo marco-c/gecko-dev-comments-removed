@@ -129,14 +129,10 @@ var handleContentContextMenu = function(event) {
   let parentAllowsMixedContent = !!docShell.mixedContentChannel;
 
   
-  
-  
-  if (Services.prefs.getBoolPref("network.http.enablePerElementReferrer")) {
-    let referrerAttrValue = Services.netUtils.parseAttributePolicyString(event.target.
-                            getAttribute("referrerpolicy"));
-    if (referrerAttrValue !== Ci.nsIHttpChannel.REFERRER_POLICY_UNSET) {
-      referrerPolicy = referrerAttrValue;
-    }
+  let referrerAttrValue = Services.netUtils.parseAttributePolicyString(event.target.
+                          getAttribute("referrerpolicy"));
+  if (referrerAttrValue !== Ci.nsIHttpChannel.REFERRER_POLICY_UNSET) {
+    referrerPolicy = referrerAttrValue;
   }
 
   let disableSetDesktopBg = null;
@@ -527,8 +523,7 @@ var ClickEventHandler = {
     
     
     let referrerPolicy = ownerDoc.referrerPolicy;
-    if (Services.prefs.getBoolPref("network.http.enablePerElementReferrer") &&
-        node) {
+    if (node) {
       let referrerAttrValue = Services.netUtils.parseAttributePolicyString(node.
                               getAttribute("referrerpolicy"));
       if (referrerAttrValue !== Ci.nsIHttpChannel.REFERRER_POLICY_UNSET) {

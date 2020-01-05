@@ -1549,9 +1549,6 @@ pref("network.http.referer.XOriginTrimmingPolicy", 0);
 pref("network.http.referer.XOriginPolicy", 0);
 
 
-pref("network.http.enablePerElementReferrer", true);
-
-
 pref("network.http.redirection-limit", 20);
 
 
