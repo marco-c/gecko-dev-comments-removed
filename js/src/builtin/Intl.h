@@ -13,12 +13,15 @@
 #include "jsalloc.h"
 #include "NamespaceImports.h"
 
+#include "js/Class.h"
 #include "js/GCAPI.h"
 #include "js/GCHashTable.h"
 
 #if ENABLE_INTL_API
 #include "unicode/utypes.h"
 #endif
+
+#include "vm/NativeObject.h"
 
 class JSLinearString;
 
@@ -28,6 +31,8 @@ class JSLinearString;
 
 
 namespace js {
+
+class FreeOp;
 
 
 
@@ -177,6 +182,20 @@ class SharedIntlData
 
 
 
+class CollatorObject : public NativeObject
+{
+  public:
+    static const Class class_;
+
+    static constexpr uint32_t UCOLLATOR_SLOT = 0;
+    static constexpr uint32_t SLOT_COUNT = 1;
+
+  private:
+    static const ClassOps classOps_;
+
+    static void finalize(FreeOp* fop, JSObject* obj);
+};
+
 
 
 
@@ -225,6 +244,20 @@ intl_CompareStrings(JSContext* cx, unsigned argc, Value* vp);
 
 
 
+class NumberFormatObject : public NativeObject
+{
+  public:
+    static const Class class_;
+
+    static constexpr uint32_t UNUMBER_FORMAT_SLOT = 0;
+    static constexpr uint32_t SLOT_COUNT = 1;
+
+  private:
+    static const ClassOps classOps_;
+
+    static void finalize(FreeOp* fop, JSObject* obj);
+};
+
 
 
 
@@ -269,6 +302,20 @@ intl_FormatNumber(JSContext* cx, unsigned argc, Value* vp);
 
 
 
+
+class DateTimeFormatObject : public NativeObject
+{
+  public:
+    static const Class class_;
+
+    static constexpr uint32_t UDATE_FORMAT_SLOT = 0;
+    static constexpr uint32_t SLOT_COUNT = 1;
+
+  private:
+    static const ClassOps classOps_;
+
+    static void finalize(FreeOp* fop, JSObject* obj);
+};
 
 
 
@@ -365,6 +412,20 @@ intl_FormatDateTime(JSContext* cx, unsigned argc, Value* vp);
 
 
 
+
+class PluralRulesObject : public NativeObject
+{
+  public:
+    static const Class class_;
+
+    static constexpr uint32_t UPLURAL_RULES_SLOT = 0;
+    static constexpr uint32_t SLOT_COUNT = 1;
+
+  private:
+    static const ClassOps classOps_;
+
+    static void finalize(FreeOp* fop, JSObject* obj);
+};
 
 
 
