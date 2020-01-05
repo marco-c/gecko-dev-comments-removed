@@ -889,9 +889,21 @@ element.getContainer = function (el) {
 
 
 
+
+
+
+
+
+
 element.isInView = function (el) {
-  let tree = element.getPointerInteractablePaintTree(el);
-  return tree.includes(el);
+  let originalPointerEvents = el.style.pointerEvents;
+  try {
+    el.style.pointerEvents = "auto";
+    const tree = element.getPointerInteractablePaintTree(el);
+    return tree.includes(el);
+  } finally {
+    el.style.pointerEvents = originalPointerEvents;
+  }
 };
 
 
