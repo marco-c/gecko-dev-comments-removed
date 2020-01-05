@@ -2645,10 +2645,6 @@ XMLHttpRequestMainThread::InitiateFetch(nsIInputStream* aUploadStream,
 
   
   
-  AddLoadFlags(mChannel, nsIRequest::INHIBIT_PIPELINE);
-
-  
-  
   nsCOMPtr<nsIClassOfService> cos(do_QueryInterface(mChannel));
   if (cos) {
     cos->AddClassFlags(nsIClassOfService::Unblocked);
