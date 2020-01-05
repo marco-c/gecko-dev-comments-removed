@@ -931,82 +931,6 @@ var ActivityStreamProvider = {
 
 
 
-  init() {
-    PlacesUtils.history.addObserver(this.historyObserver, true);
-    PlacesUtils.bookmarks.addObserver(this.bookmarksObsever, true);
-  },
-
-  
-
-
-
-  historyObserver: {
-    onDeleteURI(uri) {
-      Services.obs.notifyObservers(null, "newtab-deleteURI", {url: uri.spec});
-    },
-
-    onClearHistory() {
-      Services.obs.notifyObservers(null, "newtab-clearHistory");
-    },
-
-    onFrecencyChanged(uri, newFrecency, guid, hidden, lastVisitDate) {
-      if (!hidden && lastVisitDate) {
-        Services.obs.notifyObservers(null, "newtab-linkChanged", {
-          url: uri.spec,
-          frecency: newFrecency,
-          lastVisitDate,
-          type: "history"
-        });
-      }
-    },
-
-    onManyFrecenciesChanged() {
-      Services.obs.notifyObservers(null, "newtab-manyLinksChanged");
-    },
-
-    onTitleChanged(uri, newTitle) {
-      Services.obs.notifyObservers(null, "newtab-linkChanged", {url: uri.spec, title: newTitle});
-    },
-
-    QueryInterface: XPCOMUtils.generateQI([Ci.nsINavHistoryObserver,
-                                           Ci.nsISupportsWeakReference])
-  },
-
-  
-
-
-
-  bookmarksObsever: {
-    onItemAdded(id, folderId, index, type, uri, title, dateAdded, guid) {
-      if (type === PlacesUtils.bookmarks.TYPE_BOOKMARK) {
-        ActivityStreamProvider.getBookmark(guid).then(bookmark => {
-          Services.obs.notifyObservers(null, "newtab-bookmarkAdded", bookmark);
-        }).catch(Cu.reportError);
-      }
-    },
-
-    onItemRemoved(id, folderId, index, type, uri) {
-      if (type === PlacesUtils.bookmarks.TYPE_BOOKMARK) {
-        Services.obs.notifyObservers(null, "newtab-bookmarkRemoved", {bookmarkId: id, url: uri.spec});
-      }
-    },
-
-    onItemChanged(id, property, isAnnotation, value, lastModified, type, parent, guid) {
-      if (type === PlacesUtils.bookmarks.TYPE_BOOKMARK) {
-        ActivityStreamProvider.getBookmark(guid).then(bookmark => {
-          Services.obs.notifyObservers(null, "newtab-bookmarkChanged", bookmark);
-        }).catch(Cu.reportError);
-      }
-    },
-
-    QueryInterface: XPCOMUtils.generateQI([Ci.nsINavBookmarkObserver,
-                                           Ci.nsISupportsWeakReference])
-  },
-
-  
-
-
-
 
 
 
@@ -1172,7 +1096,7 @@ var ActivityStreamLinks = {
   },
 
   onLinkBlocked(aLink) {
-    Services.obs.notifyObservers(null, "newtab-linkChanged", {url: aLink.url, blocked: true})
+    Services.obs.notifyObservers(null, "newtab-linkBlocked", aLink.url);
   },
 
   
@@ -1843,7 +1767,6 @@ this.NewTabUtils = {
   init: function NewTabUtils_init() {
     if (this.initWithoutProviders()) {
       PlacesProvider.init();
-      ActivityStreamProvider.init();
       Links.addProvider(PlacesProvider);
       BlockedLinks.addObserver(Links);
       BlockedLinks.addObserver(ActivityStreamLinks);
