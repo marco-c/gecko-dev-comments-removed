@@ -11,7 +11,8 @@ use http_loader::{HttpState, determine_request_referrer, http_fetch, set_default
 use hyper::Error;
 use hyper::error::Result as HyperResult;
 use hyper::header::{Accept, AcceptLanguage, ContentLanguage, ContentType};
-use hyper::header::{Header, HeaderFormat, HeaderView, QualityItem, Referer as RefererHeader, q, qitem};
+use hyper::header::{Header, HeaderFormat, HeaderView, Headers, QualityItem};
+use hyper::header::{Referer as RefererHeader, q, qitem};
 use hyper::method::Method;
 use hyper::mime::{Mime, SubLevel, TopLevel};
 use hyper::status::StatusCode;
@@ -282,13 +283,14 @@ pub fn main_fetch(request: Rc<Request>,
         
         
         let blocked_error_response;
-        let internal_response = if !response.is_network_error() && should_block_nosniff(&request, &response) {
-            
-            blocked_error_response = Response::network_error(NetworkError::Internal("Blocked by nosniff".into()));
-            &blocked_error_response
-        } else {
-            internal_response
-        };
+        let internal_response =
+            if !response.is_network_error() && should_be_blocked_due_to_nosniff(request.type_, &response.headers) {
+                
+                blocked_error_response = Response::network_error(NetworkError::Internal("Blocked by nosniff".into()));
+                &blocked_error_response
+            } else {
+                internal_response
+            };
 
         
         
@@ -525,7 +527,7 @@ fn is_null_body_status(status: &Option<StatusCode>) -> bool {
 }
 
 
-fn should_block_nosniff(request: &Request, response: &Response) -> bool {
+fn should_be_blocked_due_to_nosniff(request_type: Type, response_headers: &Headers) -> bool {
     
     
     
@@ -533,7 +535,7 @@ fn should_block_nosniff(request: &Request, response: &Response) -> bool {
     
     
     #[derive(Debug, Clone, Copy)]
-    struct XContentTypeOptions();
+    struct XContentTypeOptions;
 
     impl Header for XContentTypeOptions {
         fn header_name() -> &'static str {
@@ -545,7 +547,7 @@ fn should_block_nosniff(request: &Request, response: &Response) -> bool {
             raw.first()
                 .and_then(|v| str::from_utf8(v).ok())
                 .and_then(|s| match s.trim().to_lowercase().as_str() {
-                    "nosniff" => Some(XContentTypeOptions()),
+                    "nosniff" => Some(XContentTypeOptions),
                     _ => None
                 })
                 .ok_or(Error::Header)
@@ -558,16 +560,14 @@ fn should_block_nosniff(request: &Request, response: &Response) -> bool {
         }
     }
 
-    match response.headers.get::<XContentTypeOptions>() {
-        None => return false, 
-        _ => () 
-    };
+    
+    if response_headers.get::<XContentTypeOptions>().is_none() {
+        return false;
+    }
 
     
     
-    let content_type_header = response.headers.get::<ContentType>();
-    
-    let type_ = request.type_;
+    let content_type_header = response_headers.get::<ContentType>();
 
     
     #[inline]
@@ -596,7 +596,7 @@ fn should_block_nosniff(request: &Request, response: &Response) -> bool {
 
     let text_css: Mime = mime!(Text / Css);
     
-    return match type_ {
+    return match request_type {
         
         Type::Script => {
             match content_type_header {
