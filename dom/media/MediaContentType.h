@@ -7,42 +7,46 @@
 #ifndef MediaContentType_h_
 #define MediaContentType_h_
 
-#include "MediaMIMETypes.h"
 #include "mozilla/Maybe.h"
 #include "nsString.h"
 
 namespace mozilla {
 
 
+
 class MediaContentType
 {
 public:
-  explicit MediaContentType(const MediaMIMEType& aType)
-    : mExtendedMIMEType(aType)
-  {}
-  explicit MediaContentType(MediaMIMEType&& aType)
-    : mExtendedMIMEType(Move(aType))
-  {}
-  explicit MediaContentType(const MediaExtendedMIMEType& aType)
-    : mExtendedMIMEType(aType)
-  {
-  }
-  explicit MediaContentType(MediaExtendedMIMEType&& aType)
-    : mExtendedMIMEType(Move(aType))
-  {
-  }
-
-  const MediaMIMEType& Type() const { return mExtendedMIMEType.Type(); }
-  const MediaExtendedMIMEType& ExtendedType() const { return mExtendedMIMEType; }
+  
+  const nsACString& GetMIMEType() const { return mMIMEType; }
 
   
+  bool HaveCodecs() const { return mHaveCodecs; }
   
-  const nsACString& OriginalString() const { return mExtendedMIMEType.OriginalString(); }
+  const nsAString& GetCodecs() const { return mCodecs; }
 
-  size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
+  
+  Maybe<int32_t> GetWidth() const { return GetMaybeNumber(mWidth); }
+  Maybe<int32_t> GetHeight() const { return GetMaybeNumber(mHeight); }
+  Maybe<int32_t> GetFramerate() const { return GetMaybeNumber(mFramerate); }
+  Maybe<int32_t> GetBitrate() const { return GetMaybeNumber(mBitrate); }
 
 private:
-  MediaExtendedMIMEType mExtendedMIMEType;
+  friend Maybe<MediaContentType> MakeMediaContentType(const nsAString& aType);
+  bool Populate(const nsAString& aType);
+
+  Maybe<int32_t> GetMaybeNumber(int32_t aNumber) const
+  {
+    return (aNumber < 0) ? Maybe<int32_t>(Nothing()) : Some(int32_t(aNumber));
+  }
+
+  nsCString mMIMEType; 
+  bool mHaveCodecs; 
+  nsString mCodecs;
+  int32_t mWidth; 
+  int32_t mHeight; 
+  int32_t mFramerate; 
+  int32_t mBitrate; 
 };
 
 Maybe<MediaContentType> MakeMediaContentType(const nsAString& aType);
