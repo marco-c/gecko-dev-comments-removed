@@ -6,21 +6,24 @@
 #if defined(MOZ_WIDGET_GTK)
     #include <gdk/gdkx.h>
     
-    #define GET_NATIVE_WINDOW_FROM_REAL_WIDGET(aWidget) ((EGLNativeWindowType)GDK_WINDOW_XID((GdkWindow*)aWidget->GetNativeData(NS_NATIVE_WINDOW)))
-    #define GET_NATIVE_WINDOW_FROM_COMPOSITOR_WIDGET(aWidget) ((EGLNativeWindowType)GDK_WINDOW_XID((GdkWindow*)aWidget->RealWidget()->GetNativeData(NS_NATIVE_WINDOW)))
-#elif defined(MOZ_WIDGET_ANDROID)
-    #define GET_NATIVE_WINDOW_FROM_REAL_WIDGET(aWidget) ((EGLNativeWindowType)aWidget->GetNativeData(NS_JAVA_SURFACE))
-    #define GET_NATIVE_WINDOW_FROM_COMPOSITOR_WIDGET(aWidget) (aWidget->AsAndroid()->GetEGLNativeWindow())
+    #define GET_NATIVE_WINDOW(aWidget) ((EGLNativeWindowType)GDK_WINDOW_XID((GdkWindow*)aWidget->GetNativeData(NS_NATIVE_WINDOW)))
 #else
-    #define GET_NATIVE_WINDOW_FROM_REAL_WIDGET(aWidget) ((EGLNativeWindowType)aWidget->GetNativeData(NS_NATIVE_WINDOW))
-    #define GET_NATIVE_WINDOW_FROM_COMPOSITOR_WIDGET(aWidget) ((EGLNativeWindowType)aWidget->RealWidget()->GetNativeData(NS_NATIVE_WINDOW))
+    #define GET_NATIVE_WINDOW(aWidget) ((EGLNativeWindowType)aWidget->GetNativeData(NS_NATIVE_WINDOW))
+#endif
+
+#ifdef MOZ_WIDGET_ANDROID
+    #define GET_JAVA_SURFACE(aWidget) (aWidget->GetNativeData(NS_JAVA_SURFACE))
 #endif
 
 #if defined(XP_UNIX)
     #ifdef MOZ_WIDGET_ANDROID
         #include <android/native_window.h>
         #include <android/native_window_jni.h>
-        #include "mozilla/widget/AndroidCompositorWidget.h"
+    #endif
+
+    #ifdef ANDROID
+        #include <android/log.h>
+        #define LOG(args...)  __android_log_print(ANDROID_LOG_INFO, "Gonk" , ## args)
     #endif
 
     #define GLES2_LIB "libGLESv2.so"
@@ -36,6 +39,41 @@
     #endif
 
     #include <windows.h>
+
+    
+    class AutoDestroyHWND {
+    public:
+        AutoDestroyHWND(HWND aWnd = nullptr)
+            : mWnd(aWnd)
+        {
+        }
+
+        ~AutoDestroyHWND() {
+            if (mWnd) {
+                ::DestroyWindow(mWnd);
+            }
+        }
+
+        operator HWND() {
+            return mWnd;
+        }
+
+        HWND forget() {
+            HWND w = mWnd;
+            mWnd = nullptr;
+            return w;
+        }
+
+        HWND operator=(HWND aWnd) {
+            if (mWnd && mWnd != aWnd) {
+                ::DestroyWindow(mWnd);
+            }
+            mWnd = aWnd;
+            return mWnd;
+        }
+
+        HWND mWnd;
+    };
 #else
     #error "Platform not recognized"
 #endif
@@ -75,7 +113,7 @@ using namespace mozilla::widget;
 } while (0)
 
 static bool
-CreateConfig(EGLConfig* aConfig);
+CreateConfig(EGLConfig* aConfig, nsIWidget* aWidget);
 
 
 
@@ -123,77 +161,27 @@ DestroySurface(EGLSurface oldSurface) {
 }
 
 static EGLSurface
-CreateSurfaceFromNativeWindow(EGLNativeWindowType window, const EGLConfig& config) {
+CreateSurfaceForWindow(nsIWidget* widget, const EGLConfig& config) {
     EGLSurface newSurface = nullptr;
 
-    MOZ_ASSERT(window);
+    MOZ_ASSERT(widget);
 #ifdef MOZ_WIDGET_ANDROID
+    void* javaSurface = GET_JAVA_SURFACE(widget);
+    if (!javaSurface) {
+        MOZ_CRASH("GFX: Failed to get Java surface.\n");
+    }
     JNIEnv* const env = jni::GetEnvForThread();
     ANativeWindow* const nativeWindow = ANativeWindow_fromSurface(
-            env, reinterpret_cast<jobject>(window));
+            env, reinterpret_cast<jobject>(javaSurface));
     newSurface = sEGLLibrary.fCreateWindowSurface(
             sEGLLibrary.fGetDisplay(EGL_DEFAULT_DISPLAY),
             config, nativeWindow, 0);
     ANativeWindow_release(nativeWindow);
 #else
     newSurface = sEGLLibrary.fCreateWindowSurface(EGL_DISPLAY(), config,
-                                                  window, 0);
+                                                  GET_NATIVE_WINDOW(widget), 0);
 #endif
     return newSurface;
-}
-
-
-
-
-
-
-class GLContextEGLFactory {
-public:
-    static already_AddRefed<GLContext> Create(EGLNativeWindowType aWindow);
-private:
-    GLContextEGLFactory(){}
-    ~GLContextEGLFactory(){}
-};
-
-already_AddRefed<GLContext>
-GLContextEGLFactory::Create(EGLNativeWindowType aWindow)
-{
-    MOZ_ASSERT(aWindow);
-    nsCString discardFailureId;
-    if (!sEGLLibrary.EnsureInitialized(false, &discardFailureId)) {
-        MOZ_CRASH("GFX: Failed to load EGL library 3!\n");
-        return nullptr;
-    }
-
-    bool doubleBuffered = true;
-
-    EGLConfig config;
-    if (!CreateConfig(&config)) {
-        MOZ_CRASH("GFX: Failed to create EGLConfig!\n");
-        return nullptr;
-    }
-
-    EGLSurface surface = mozilla::gl::CreateSurfaceFromNativeWindow(aWindow, config);
-
-    if (!surface) {
-        MOZ_CRASH("GFX: Failed to create EGLSurface!\n");
-        return nullptr;
-    }
-
-    SurfaceCaps caps = SurfaceCaps::Any();
-    RefPtr<GLContextEGL> gl = GLContextEGL::CreateGLContext(CreateContextFlags::NONE,
-                                                            caps, nullptr, false, config,
-                                                            surface, &discardFailureId);
-    if (!gl) {
-        MOZ_CRASH("GFX: Failed to create EGLContext!\n");
-        mozilla::gl::DestroySurface(surface);
-        return nullptr;
-    }
-
-    gl->MakeCurrent();
-    gl->SetIsDoubleBuffered(doubleBuffered);
-
-    return gl.forget();
 }
 
 GLContextEGL::GLContextEGL(CreateContextFlags flags, const SurfaceCaps& caps,
@@ -386,15 +374,14 @@ GLContextEGL::IsCurrent() {
 }
 
 bool
-GLContextEGL::RenewSurface(CompositorWidget* aWidget) {
+GLContextEGL::RenewSurface(nsIWidget* aWidget) {
     if (!mOwnsContext) {
         return false;
     }
     
     
     ReleaseSurface();
-    MOZ_ASSERT(aWidget);
-    mSurface = mozilla::gl::CreateSurfaceFromNativeWindow(GET_NATIVE_WINDOW_FROM_COMPOSITOR_WIDGET(aWidget), mConfig);
+    mSurface = mozilla::gl::CreateSurfaceForWindow(aWidget, mConfig);
     if (!mSurface) {
         return false;
     }
@@ -432,29 +419,42 @@ GLContextEGL::SwapBuffers()
     }
 }
 
-void
-GLContextEGL::GetWSIInfo(nsCString* const out) const
-{
-    out->AppendLiteral("EGL_VENDOR: ");
-    out->Append((const char*)sEGLLibrary.fQueryString(EGL_DISPLAY(), LOCAL_EGL_VENDOR));
-
-    out->AppendLiteral("\nEGL_VERSION: ");
-    out->Append((const char*)sEGLLibrary.fQueryString(EGL_DISPLAY(), LOCAL_EGL_VERSION));
-
-    out->AppendLiteral("\nEGL_EXTENSIONS: ");
-    out->Append((const char*)sEGLLibrary.fQueryString(EGL_DISPLAY(), LOCAL_EGL_EXTENSIONS));
-
-#ifndef ANDROID 
-    out->AppendLiteral("\nEGL_EXTENSIONS(nullptr): ");
-    out->Append((const char*)sEGLLibrary.fQueryString(nullptr, LOCAL_EGL_EXTENSIONS));
-#endif
-}
-
 
 
 void
 GLContextEGL::HoldSurface(gfxASurface* aSurf) {
     mThebesSurface = aSurf;
+}
+
+ EGLSurface
+GLContextEGL::CreateSurfaceForWindow(nsIWidget* aWidget)
+{
+    nsCString discardFailureId;
+    if (!sEGLLibrary.EnsureInitialized(false, &discardFailureId)) {
+        MOZ_CRASH("GFX: Failed to load EGL library!\n");
+        return nullptr;
+    }
+
+    EGLConfig config;
+    if (!CreateConfig(&config, aWidget)) {
+        MOZ_CRASH("GFX: Failed to create EGLConfig!\n");
+        return nullptr;
+    }
+
+    EGLSurface surface = mozilla::gl::CreateSurfaceForWindow(aWidget, config);
+    if (!surface) {
+        MOZ_CRASH("GFX: Failed to create EGLSurface for window!\n");
+        return nullptr;
+    }
+    return surface;
+}
+
+ void
+GLContextEGL::DestroySurface(EGLSurface aSurface)
+{
+    if (aSurface != EGL_NO_SURFACE) {
+        sEGLLibrary.fDestroySurface(EGL_DISPLAY(), aSurface);
+    }
 }
 
 already_AddRefed<GLContextEGL>
@@ -607,7 +607,7 @@ static const EGLint kEGLConfigAttribsRGBA32[] = {
 };
 
 static bool
-CreateConfig(EGLConfig* aConfig, int32_t depth)
+CreateConfig(EGLConfig* aConfig, int32_t depth, nsIWidget* aWidget)
 {
     EGLConfig configs[64];
     const EGLint* attribs;
@@ -662,20 +662,20 @@ CreateConfig(EGLConfig* aConfig, int32_t depth)
 
 
 static bool
-CreateConfig(EGLConfig* aConfig)
+CreateConfig(EGLConfig* aConfig, nsIWidget* aWidget)
 {
     int32_t depth = gfxPlatform::GetPlatform()->GetScreenDepth();
-    if (!CreateConfig(aConfig, depth)) {
+    if (!CreateConfig(aConfig, depth, aWidget)) {
 #ifdef MOZ_WIDGET_ANDROID
         
         
         if (depth == 16) {
-            return CreateConfig(aConfig, 24);
+            return CreateConfig(aConfig, 24, aWidget);
         }
         
         
         if (depth == 24) {
-            return CreateConfig(aConfig, 16);
+            return CreateConfig(aConfig, 16, aWidget);
         }
 #endif
         return false;
@@ -710,29 +710,63 @@ GLContextProviderEGL::CreateWrappingExisting(void* aContext, void* aSurface)
 already_AddRefed<GLContext>
 GLContextProviderEGL::CreateForCompositorWidget(CompositorWidget* aCompositorWidget, bool aForceAccelerated)
 {
-    MOZ_ASSERT(aCompositorWidget);
-    return GLContextEGLFactory::Create(GET_NATIVE_WINDOW_FROM_COMPOSITOR_WIDGET(aCompositorWidget));
+    return CreateForWindow(aCompositorWidget->RealWidget(), aForceAccelerated);
 }
 
 already_AddRefed<GLContext>
 GLContextProviderEGL::CreateForWindow(nsIWidget* aWidget, bool aForceAccelerated)
 {
-    MOZ_ASSERT(aWidget);
-    return GLContextEGLFactory::Create(GET_NATIVE_WINDOW_FROM_REAL_WIDGET(aWidget));
+    nsCString discardFailureId;
+    if (!sEGLLibrary.EnsureInitialized(false, &discardFailureId)) {
+        MOZ_CRASH("GFX: Failed to load EGL library 3!\n");
+        return nullptr;
+    }
+
+    bool doubleBuffered = true;
+
+    EGLConfig config;
+    if (!CreateConfig(&config, aWidget)) {
+        MOZ_CRASH("GFX: Failed to create EGLConfig!\n");
+        return nullptr;
+    }
+
+    EGLSurface surface = mozilla::gl::CreateSurfaceForWindow(aWidget, config);
+    if (!surface) {
+        MOZ_CRASH("GFX: Failed to create EGLSurface!\n");
+        return nullptr;
+    }
+
+    CreateContextFlags flags = CreateContextFlags::NONE;
+    if (gfxPrefs::WebRenderEnabled()) {
+        flags |= CreateContextFlags::PREFER_ES3;
+    }
+    SurfaceCaps caps = SurfaceCaps::Any();
+    RefPtr<GLContextEGL> gl = GLContextEGL::CreateGLContext(flags,
+                                                            caps, nullptr, false, config,
+                                                            surface, &discardFailureId);
+    if (!gl) {
+        MOZ_CRASH("GFX: Failed to create EGLContext!\n");
+        mozilla::gl::DestroySurface(surface);
+        return nullptr;
+    }
+
+    gl->MakeCurrent();
+    gl->SetIsDoubleBuffered(doubleBuffered);
+
+    return gl.forget();
 }
 
 #if defined(ANDROID)
 EGLSurface
 GLContextProviderEGL::CreateEGLSurface(void* aWindow)
 {
-    
     nsCString discardFailureId;
     if (!sEGLLibrary.EnsureInitialized(false, &discardFailureId)) {
         MOZ_CRASH("GFX: Failed to load EGL library 4!\n");
     }
 
     EGLConfig config;
-    if (!CreateConfig(&config)) {
+    if (!CreateConfig(&config, static_cast<nsIWidget*>(aWindow))) {
         MOZ_CRASH("GFX: Failed to create EGLConfig 2!\n");
     }
 
