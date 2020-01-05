@@ -1091,6 +1091,10 @@ Gecko_NewCSSValueSharedList(uint32_t aLen)
 void
 Gecko_CSSValue_SetAbsoluteLength(nsCSSValueBorrowedMut aCSSValue, nscoord aLen)
 {
+  MOZ_ASSERT(aCSSValue->GetUnit() == eCSSUnit_Null || aCSSValue->IsLengthUnit());
+  
+  
+  
   aCSSValue->SetIntegerCoordValue(aLen);
 }
 
