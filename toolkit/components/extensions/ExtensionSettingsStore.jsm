@@ -36,6 +36,7 @@
 
 
 
+
 "use strict";
 
 this.EXPORTED_SYMBOLS = ["ExtensionSettingsStore"];
@@ -57,14 +58,14 @@ const STORE_PATH = OS.Path.join(Services.dirsvc.get("ProfD", Ci.nsIFile).path, J
 let _store;
 
 
-async function getStore(type) {
+function getStore(type) {
   if (!_store) {
-    _store = new JSONFile({
+    let initStore = new JSONFile({
       path: STORE_PATH,
     });
-    await _store.load();
+    initStore.ensureDataReady();
+    _store = initStore;
   }
-  _store.ensureDataReady();
 
   
   if (!_store.data[type]) {
@@ -77,18 +78,103 @@ async function getStore(type) {
 
 
 async function getTopItem(type, key) {
-  let store = await getStore(type);
+  let store = getStore(type);
 
   let keyInfo = store.data[type][key];
   if (!keyInfo) {
     return null;
   }
 
-  if (!keyInfo.precedenceList.length) {
-    return {key, initialValue: keyInfo.initialValue};
+  
+  for (let item of keyInfo.precedenceList) {
+    if (item.enabled) {
+      return {key, value: item.value};
+    }
   }
 
-  return {key, value: keyInfo.precedenceList[0].value};
+  
+  return {key, initialValue: keyInfo.initialValue};
+}
+
+
+function precedenceComparator(a, b) {
+  if (a.enabled && !b.enabled) {
+    return -1;
+  }
+  if (b.enabled && !a.enabled) {
+    return 1;
+  }
+  return b.installDate - a.installDate;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function alterSetting(extension, type, key, action) {
+  let returnItem;
+  let store = getStore(type);
+
+  let keyInfo = store.data[type][key];
+  if (!keyInfo) {
+    throw new Error(
+      `Cannot alter the setting for ${type}:${key} as it does not exist.`);
+  }
+
+  let id = extension.id;
+  let foundIndex = keyInfo.precedenceList.findIndex(item => item.id == id);
+
+  if (foundIndex === -1) {
+    throw new Error(
+      `Cannot alter the setting for ${type}:${key} as it does not exist.`);
+  }
+
+  switch (action) {
+    case "remove":
+      keyInfo.precedenceList.splice(foundIndex, 1);
+      break;
+
+    case "enable":
+      keyInfo.precedenceList[foundIndex].enabled = true;
+      keyInfo.precedenceList.sort(precedenceComparator);
+      foundIndex = keyInfo.precedenceList.findIndex(item => item.id == id);
+      break;
+
+    case "disable":
+      keyInfo.precedenceList[foundIndex].enabled = false;
+      keyInfo.precedenceList.sort(precedenceComparator);
+      break;
+
+    default:
+      throw new Error(`${action} is not a valid action for alterSetting.`);
+  }
+
+  if (foundIndex === 0) {
+    returnItem = await getTopItem(type, key);
+  }
+
+  if (action === "remove" && keyInfo.precedenceList.length === 0) {
+    delete store.data[type][key];
+  }
+
+  store.saveSoon();
+
+  return returnItem;
 }
 
 this.ExtensionSettingsStore = {
@@ -124,7 +210,7 @@ this.ExtensionSettingsStore = {
     }
 
     let id = extension.id;
-    let store = await getStore(type);
+    let store = getStore(type);
 
     if (!store.data[type][key]) {
       
@@ -137,19 +223,17 @@ this.ExtensionSettingsStore = {
     let keyInfo = store.data[type][key];
     
     let foundIndex = keyInfo.precedenceList.findIndex(item => item.id == id);
-    if (foundIndex == -1) {
+    if (foundIndex === -1) {
       
       let addon = await AddonManager.getAddonByID(id);
-      keyInfo.precedenceList.push({id, installDate: addon.installDate, value});
+      keyInfo.precedenceList.push({id, installDate: addon.installDate, value, enabled: true});
     } else {
       
       keyInfo.precedenceList[foundIndex].value = value;
     }
 
     
-    keyInfo.precedenceList.sort((a, b) => {
-      return b.installDate - a.installDate;
-    });
+    keyInfo.precedenceList.sort(precedenceComparator);
 
     store.saveSoon();
 
@@ -173,36 +257,51 @@ this.ExtensionSettingsStore = {
 
 
 
+
+
+
   async removeSetting(extension, type, key) {
-    let returnItem;
-    let store = await getStore(type);
+    return await alterSetting(extension, type, key, "remove");
+  },
 
-    let keyInfo = store.data[type][key];
-    if (!keyInfo) {
-      throw new Error(
-        `Cannot remove setting for ${type}:${key} as it does not exist.`);
-    }
+  
 
-    let id = extension.id;
-    let foundIndex = keyInfo.precedenceList.findIndex(item => item.id == id);
 
-    if (foundIndex == -1) {
-      throw new Error(
-        `Cannot remove setting for ${type}:${key} as it does not exist.`);
-    }
 
-    keyInfo.precedenceList.splice(foundIndex, 1);
 
-    if (foundIndex == 0) {
-      returnItem = await getTopItem(type, key);
-    }
 
-    if (keyInfo.precedenceList.length == 0) {
-      delete store.data[type][key];
-    }
-    store.saveSoon();
 
-    return returnItem;
+
+
+
+
+
+
+
+
+
+  async enable(extension, type, key) {
+    return await alterSetting(extension, type, key, "enable");
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async disable(extension, type, key) {
+    return await alterSetting(extension, type, key, "disable");
   },
 
   
@@ -214,7 +313,7 @@ this.ExtensionSettingsStore = {
 
 
   async getAllForExtension(extension, type) {
-    let store = await getStore(type);
+    let store = getStore(type);
 
     let keysObj = store.data[type];
     let items = [];
@@ -259,8 +358,11 @@ this.ExtensionSettingsStore = {
 
 
 
+
+
+
   async getLevelOfControl(extension, type, key) {
-    let store = await getStore(type);
+    let store = getStore(type);
 
     let keyInfo = store.data[type][key];
     if (!keyInfo || !keyInfo.precedenceList.length) {
@@ -268,7 +370,12 @@ this.ExtensionSettingsStore = {
     }
 
     let id = extension.id;
-    let topItem = keyInfo.precedenceList[0];
+    let enabledItems = keyInfo.precedenceList.filter(item => item.enabled);
+    if (!enabledItems.length) {
+      return "controllable_by_this_extension";
+    }
+
+    let topItem = enabledItems[0];
     if (topItem.id == id) {
       return "controlled_by_this_extension";
     }
