@@ -4,10 +4,11 @@
 
 use dom::bindings::callback::ReportExceptions;
 use dom::bindings::codegen::InheritTypes::{EventTargetCast, NodeCast, NodeDerived};
-use dom::bindings::js::{JSRef, OptionalSettable, Root};
+use dom::bindings::js::{JSRef, OptionalSettable, OptionalRootable, Root};
 use dom::eventtarget::{Capturing, Bubbling, EventTarget};
 use dom::event::{Event, PhaseAtTarget, PhaseNone, PhaseBubbling, PhaseCapturing, EventMethods};
 use dom::node::{Node, NodeHelpers};
+use dom::virtualmethods::vtable_for;
 
 
 pub fn dispatch_event<'a, 'b>(target: &JSRef<'a, EventTarget>,
@@ -113,6 +114,22 @@ pub fn dispatch_event<'a, 'b>(target: &JSRef<'a, EventTarget>,
                 break;
             }
         }
+    }
+
+    
+    let target = event.GetTarget().root();
+    match target {
+        Some(mut target) => {
+            let node: Option<&mut JSRef<Node>> = NodeCast::to_mut_ref(&mut *target);
+            match node {
+                Some(node) =>{
+                    let vtable = vtable_for(node);
+                    vtable.handle_event(event);
+                }
+                None => {}
+            }
+        }
+        None => {}
     }
 
     

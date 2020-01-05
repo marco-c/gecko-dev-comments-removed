@@ -5,7 +5,6 @@
 
 
 
-use dom::attr::AttrMethods;
 use dom::bindings::codegen::RegisterBindings;
 use dom::bindings::codegen::InheritTypes::{EventTargetCast, NodeCast, ElementCast, EventCast};
 use dom::bindings::js::{JS, JSRef, RootCollection, Temporary, OptionalSettable};
@@ -51,9 +50,9 @@ use servo_msg::constellation_msg;
 use servo_net::image_cache_task::ImageCacheTask;
 use servo_net::resource_task::ResourceTask;
 use servo_util::geometry::to_frac_px;
-use servo_util::url::parse_url;
 use servo_util::task::send_on_failure;
 use servo_util::namespace::Null;
+use servo_util::str::DOMString;
 use std::cast;
 use std::cell::{Cell, RefCell, Ref, RefMut};
 use std::comm::{channel, Sender, Receiver, Empty, Disconnected};
@@ -71,6 +70,10 @@ local_data_key!(pub StackRoots: *RootCollection)
 pub enum ScriptMsg {
     
     LoadMsg(PipelineId, Url),
+    
+    TriggerFragmentMsg(PipelineId, Url),
+    
+    TriggerLoadMsg(PipelineId, Url),
     
     AttachLayoutMsg(NewLayoutInfo),
     
@@ -440,7 +443,8 @@ impl Page {
         }
     }
 
-    fn find_fragment_node(&self, fragid: ~str) -> Option<Temporary<Element>> {
+    
+    fn find_fragment_node(&self, fragid: DOMString) -> Option<Temporary<Element>> {
         let document = self.frame().get_ref().document.root();
         match document.deref().GetElementById(fragid.to_owned()) {
             Some(node) => Some(node),
@@ -502,21 +506,21 @@ impl Page {
     }
 }
 
-/// Information for one frame in the browsing context.
+
 #[deriving(Encodable)]
 pub struct Frame {
-    /// The document for this frame.
+    
     pub document: JS<Document>,
-    /// The window object for this frame.
+    
     pub window: JS<Window>,
 }
 
-/// Encapsulation of the javascript information associated with each frame.
+
 #[deriving(Encodable)]
 pub struct JSPageInfo {
-    /// Global static data related to the DOM.
+    
     pub dom_static: GlobalStaticData,
-    /// The JavaScript context.
+    
     pub js_context: Untraceable<Rc<Cx>>,
 }
 
@@ -774,6 +778,8 @@ impl ScriptTask {
                 // TODO(tkuehn) need to handle auxiliary layouts for iframes
                 AttachLayoutMsg(new_layout_info) => self.handle_new_layout(new_layout_info),
                 LoadMsg(id, url) => self.load(id, url),
+                TriggerLoadMsg(id, url) => self.trigger_load(id, url),
+                TriggerFragmentMsg(id, url) => self.trigger_fragment(id, url),
                 SendEventMsg(id, event) => self.handle_event(id, event),
                 FireTimerMsg(id, timer_id) => self.handle_fire_timer_msg(id, timer_id),
                 NavigateMsg(direction) => self.handle_navigate_msg(direction),
@@ -1064,12 +1070,6 @@ impl ScriptTask {
     ///
     /// TODO: Actually perform DOM event dispatch.
     fn handle_event(&self, pipeline_id: PipelineId, event: Event_) {
-        fn get_page(page: &Rc<Page>, pipeline_id: PipelineId) -> Rc<Page> {
-            page.find(pipeline_id).expect("ScriptTask: received an event \
-                message for a layout channel that is not associated with this script task.\
-                This is a bug.")
-        }
-
         match event {
             ResizeEvent(new_width, new_height) => {
                 debug!("script got resize event: {:u}, {:u}", new_width, new_height);
@@ -1130,12 +1130,20 @@ impl ScriptTask {
                                 node::from_untrusted_node_address(
                                     self.js_runtime.deref().ptr, node_address);
 
-                        let maybe_node = temp_node.root().ancestors().find(|node| node.is_anchor_element());
+                        let maybe_node = temp_node.root().ancestors().find(|node| node.is_element());
                         match maybe_node {
                             Some(node) => {
                                 debug!("clicked on {:s}", node.debug_str());
-                                let element: &JSRef<Element> = ElementCast::to_ref(&node).unwrap();
-                                self.load_url_from_element(&*page, element);
+                                match *page.frame() {
+                                    Some(ref frame) => {
+                                        let window = frame.window.root();
+                                        let mut event = Event::new(&*window).root();
+                                        event.InitEvent("click".to_owned(), true, true);
+                                        let eventtarget: &JSRef<EventTarget> = EventTargetCast::from_ref(&node);
+                                        eventtarget.dispatch_event_with_target(None, &mut *event);
+                                    }
+                                    None => {}
+                                }
                             }
                             None => {}
                         }
@@ -1213,61 +1221,65 @@ impl ScriptTask {
         }
     }
 
-    fn load_url_from_element(&self, page: &Page, element: &JSRef<Element>) {
-        // if the node's element is "a," load url from href attr
-        let attr = element.get_attribute(Null, "href");
-        for href in attr.root().iter() {
-            debug!("ScriptTask: clicked on link to {:s}", href.Value());
-            let click_frag = href.deref().value_ref().starts_with("#");
-            let base_url = Some(page.get_url());
-            debug!("ScriptTask: current url is {:?}", base_url);
-            let url = parse_url(href.deref().value_ref(), base_url);
-
-            if click_frag {
-                match page.find_fragment_node(url.fragment.unwrap()).root() {
-                    Some(node) => self.scroll_fragment_point(page.id, &*node),
-                    None => {}
-                }
-            } else {
-                let ConstellationChan(ref chan) = self.constellation_chan;
-                chan.send(LoadUrlMsg(page.id, url));
-            }
-        }
+    /// The entry point for content to notify that a new load has been requested
+    /// for the given pipeline.
+    fn trigger_load(&self, pipeline_id: PipelineId, url: Url) {
+        let ConstellationChan(ref const_chan) = self.constellation_chan;
+        const_chan.send(LoadUrlMsg(pipeline_id, url));
     }
+
+    /// The entry point for content to notify that a fragment url has been requested
+    /// for the given pipeline.
+    fn trigger_fragment(&self, pipeline_id: PipelineId, url: Url) {
+        let page = get_page(&*self.page.borrow(), pipeline_id);
+        match page.find_fragment_node(url.fragment.unwrap()).root() {
+            Some(node) => {
+                self.scroll_fragment_point(pipeline_id, &*node);
+            }
+            None => {}
+         }
+     }
 }
 
-
+/// Shuts down layout for the given page tree.
 fn shut_down_layout(page_tree: &Rc<Page>, rt: *JSRuntime) {
     for page in page_tree.iter() {
         page.join_layout();
 
-        
-        
+        // Tell the layout task to begin shutting down, and wait until it
+        // processed this message.
         let (response_chan, response_port) = channel();
         let LayoutChan(ref chan) = *page.layout_chan;
         chan.send(layout_interface::PrepareToExitMsg(response_chan));
         response_port.recv();
     }
 
-    
+    // Remove our references to the DOM objects in this page tree.
     for page in page_tree.iter() {
         *page.mut_frame() = None;
     }
 
-    
+    // Drop our references to the JSContext, potentially triggering a GC.
     for page in page_tree.iter() {
         *page.mut_js_info() = None;
     }
 
-    
-    
+    // Force a GC to make sure that our DOM reflectors are released before we tell
+    // layout to exit.
     unsafe {
         JS_GC(rt);
     }
 
-    
+    // Destroy the layout task. If there were node leaks, layout will now crash safely.
     for page in page_tree.iter() {
         let LayoutChan(ref chan) = *page.layout_chan;
         chan.send(layout_interface::ExitNowMsg);
     }
+}
+
+
+fn get_page(page: &Rc<Page>, pipeline_id: PipelineId) -> Rc<Page> {
+    page.find(pipeline_id).expect("ScriptTask: received an event \
+        message for a layout channel that is not associated with this script task.\
+         This is a bug.")
 }
