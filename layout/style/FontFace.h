@@ -199,11 +199,23 @@ private:
 
   void TakeBuffer(uint8_t*& aBuffer, uint32_t& aLength);
 
+  
+  
+  void Reject(nsresult aResult);
+
+  
+  
+  void EnsurePromise();
+
   nsCOMPtr<nsISupports> mParent;
 
   
   
+  
   RefPtr<mozilla::dom::Promise> mLoaded;
+
+  
+  nsresult mLoadedRejection;
 
   
   
