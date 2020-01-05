@@ -5440,6 +5440,9 @@ pref("webextensions.tests", false);
 pref("webextensions.webRequest.requestBodyMaxRawBytes", 16777216);
 
 
+pref("webextensions.storage.sync.enabled", false);
+
+
 pref("dom.input.fallbackUploadDir", "");
 
 
