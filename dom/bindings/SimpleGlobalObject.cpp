@@ -110,7 +110,7 @@ SimpleGlobalObject::Create(GlobalType globalType, JS::Handle<JS::Value> proto)
            
            
            
-          .setZone(JS::SystemZone);
+           .setSystemZone();
 
     if (NS_IsMainThread()) {
       nsCOMPtr<nsIPrincipal> principal = nsNullPrincipal::Create();

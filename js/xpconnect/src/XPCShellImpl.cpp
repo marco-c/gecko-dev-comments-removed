@@ -1522,7 +1522,7 @@ XRE_XPCShellMain(int argc, char** argv, char** envp,
         
         
         JS::CompartmentOptions options;
-        options.creationOptions().setZone(JS::FreshZone);
+        options.creationOptions().setNewZoneInSystemZoneGroup();
         if (xpc::SharedMemoryEnabled())
             options.creationOptions().setSharedMemoryAndAtomicsEnabled(true);
         options.behaviors().setVersion(JSVERSION_LATEST);

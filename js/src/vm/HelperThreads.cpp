@@ -541,7 +541,7 @@ CreateGlobalForOffThreadParse(JSContext* cx, ParseTaskKind kind, const gc::AutoS
 
     creationOptions.setInvisibleToDebugger(true)
                    .setMergeable(true)
-                   .setZone(JS::FreshZone);
+                   .setNewZoneInSystemZoneGroup();
 
     
     creationOptions.setTrace(nullptr);
@@ -1565,14 +1565,23 @@ HelperThread::handleIonWorkload(AutoLockHelperThreadState& locked)
     }
 
     FinishOffThreadIonCompile(builder, locked);
-    currentTask.reset();
-    pause = false;
 
     
     
     
     
-    rt->unsafeContextFromAnyThread()->requestInterrupt(JSContext::RequestInterruptCanWait);
+    
+    
+    
+    
+    
+    
+    JSContext* target = builder->script()->zoneFromAnyThread()->group()->ownerContext().context();
+    if (target)
+        target->requestInterrupt(JSContext::RequestInterruptCanWait);
+
+    currentTask.reset();
+    pause = false;
 
     
     HelperThreadState().notifyAll(GlobalHelperThreadState::CONSUMER, locked);
