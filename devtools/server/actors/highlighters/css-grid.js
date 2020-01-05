@@ -17,8 +17,7 @@ const {
   getCurrentZoom,
   getDisplayPixelRatio,
   setIgnoreLayoutChanges,
-  getWindowDimensions,
-  getMaxSurfaceSize,
+  getViewportDimensions,
 } = require("devtools/shared/layout/utils");
 const { stringifyGridFragments } = require("devtools/server/actors/utils/css-grid-utils");
 
@@ -61,14 +60,18 @@ const gCachedGridPattern = new Map();
 
 
 
-const MAX_ALLOC_SIZE = 500000000;
 
 
-const BYTES_PER_PIXEL = 4;
 
-const MAX_ALLOC_PIXELS = MAX_ALLOC_SIZE / BYTES_PER_PIXEL;
 
-const MAX_ALLOC_PIXELS_PER_SIDE = Math.sqrt(MAX_ALLOC_PIXELS)|0;
+
+
+
+
+
+
+
+const CANVAS_SIZE = 4096;
 
 
 
@@ -132,17 +135,6 @@ const MAX_ALLOC_PIXELS_PER_SIDE = Math.sqrt(MAX_ALLOC_PIXELS)|0;
 function CssGridHighlighter(highlighterEnv) {
   AutoRefreshHighlighter.call(this, highlighterEnv);
 
-  this.maxCanvasSizePerSide = getMaxSurfaceSize(this.highlighterEnv.window);
-
-  
-  
-  
-  
-  this._contentSize = {
-    width: 0,
-    height: 0
-  };
-
   this.markup = new CanvasFrameAnonymousContentHelper(this.highlighterEnv,
     this._buildMarkup.bind(this));
 
@@ -155,6 +147,16 @@ function CssGridHighlighter(highlighterEnv) {
 
   let { pageListenerTarget } = highlighterEnv;
   pageListenerTarget.addEventListener("pagehide", this.onPageHide);
+
+  
+  this._canvasPosition = {
+    x: 0,
+    y: 0
+  };
+
+  
+  
+  this.calculateCanvasPosition();
 }
 
 CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
@@ -187,7 +189,9 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
       attributes: {
         "id": "canvas",
         "class": "canvas",
-        "hidden": "true"
+        "hidden": "true",
+        "width": CANVAS_SIZE,
+        "height": CANVAS_SIZE
       },
       prefix: this.ID_CLASS_PREFIX
     });
@@ -543,12 +547,15 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     
     
     root.setAttribute("style", "display: none");
-    this.currentNode.offsetWidth;
+    this.win.document.documentElement.offsetWidth;
 
-    let { width, height } = getWindowDimensions(this.win);
+    let { width, height } = this._winDimensions;
 
     
-    this.clearCanvas(width, height);
+    
+    this.updateCanvasElement();
+
+    
     this.clearGridAreas();
     this.clearGridCell();
 
@@ -651,74 +658,94 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     moveInfobar(container, bounds, this.win);
   },
 
-  clearCanvas(width, height) {
+  
+
+
+
+  _scrollUpdate() {
+    let hasPositionChanged = this.calculateCanvasPosition();
+
+    if (hasPositionChanged) {
+      this._update();
+    }
+  },
+
+  
+
+
+
+
+
+
+
+  calculateCanvasPosition() {
+    let cssCanvasSize = CANVAS_SIZE / this.win.devicePixelRatio;
+    let viewportSize = getViewportDimensions(this.win);
+    let documentSize = this._winDimensions;
+    let pageX = this._scroll.x;
+    let pageY = this._scroll.y;
+    let canvasWidth = cssCanvasSize;
+    let canvasHeight = cssCanvasSize;
+    let hasUpdated = false;
+
+    
+    
+    
+    
+    
+    
+    let bufferSizeX = (canvasWidth - viewportSize.width) >> 2;
+    let bufferSizeY = (canvasHeight - viewportSize.height) >> 2;
+
+    let { x, y } = this._canvasPosition;
+
+    
+    let topBoundary = 0;
+    let bottomBoundary = documentSize.height - canvasHeight;
+    let leftBoundary = 0;
+    let rightBoundary = documentSize.width - canvasWidth;
+
+    
+    let topThreshold = pageY - bufferSizeY;
+    let bottomThreshold = pageY - canvasHeight + viewportSize.height + bufferSizeY;
+    let leftThreshold = pageX - bufferSizeX;
+    let rightThreshold = pageX - canvasWidth + viewportSize.width + bufferSizeX;
+
+    if (y < bottomBoundary && y < bottomThreshold) {
+      this._canvasPosition.y = Math.min(topThreshold, bottomBoundary);
+      hasUpdated = true;
+    } else if (y > topBoundary && y > topThreshold) {
+      this._canvasPosition.y = Math.max(bottomThreshold, topBoundary);
+      hasUpdated = true;
+    }
+
+    if (x < rightBoundary && x < rightThreshold) {
+      this._canvasPosition.x = Math.min(leftThreshold, rightBoundary);
+      hasUpdated = true;
+    } else if (x > leftBoundary && x > leftThreshold) {
+      this._canvasPosition.x = Math.max(rightThreshold, leftBoundary);
+      hasUpdated = true;
+    }
+
+    return hasUpdated;
+  },
+
+  
+
+
+
+
+  updateCanvasElement() {
     let ratio = parseFloat((this.win.devicePixelRatio || 1).toFixed(2));
-
-    height *= ratio;
-    width *= ratio;
-
-    let hasResolutionChanged = false;
-    if (height !== this._contentSize.height || width !== this._contentSize.width) {
-      hasResolutionChanged = true;
-      this._contentSize.width = width;
-      this._contentSize.height = height;
-    }
-
-    let isCanvasClipped = false;
-
-    if (height > this.maxCanvasSizePerSide) {
-      height = this.maxCanvasSizePerSide;
-      isCanvasClipped = true;
-    }
-
-    if (width > this.maxCanvasSizePerSide) {
-      width = this.maxCanvasSizePerSide;
-      isCanvasClipped = true;
-    }
+    let size = CANVAS_SIZE / ratio;
+    let { x, y } = this._canvasPosition;
 
     
     
-    
-    if (width * height > MAX_ALLOC_PIXELS) {
-      isCanvasClipped = true;
-      
-      
-      
-      
-      if (height > width && width < MAX_ALLOC_PIXELS_PER_SIDE) {
-        height = (MAX_ALLOC_PIXELS / width) |0;
-      } else if (width > height && height < MAX_ALLOC_PIXELS_PER_SIDE) {
-        width = (MAX_ALLOC_PIXELS / height) |0;
-      } else {
-        
-        height = width = MAX_ALLOC_PIXELS_PER_SIDE;
-      }
-    }
-
-    
-    
-    
-    
-    
-    if (hasResolutionChanged && isCanvasClipped) {
-      
-      
-      
-      
-      
-      this.win.console.warn("The CSS Grid Highlighter could have been clipped, due " +
-                            "the size of the document inspected\n" +
-                            "See https://bugzilla.mozilla.org/show_bug.cgi?id=1343217 " +
-                            "for further information.");
-    }
-
-    
-    this.canvas.setAttribute("width", width);
-    this.canvas.setAttribute("height", height);
     this.canvas.setAttribute("style",
-      `width:${width / ratio}px;height:${height / ratio}px;`);
+      `width:${size}px;height:${size}px; transform: translate(${x}px, ${y}px);`);
 
-    this.ctx.clearRect(0, 0, width, height);
+    this.ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
   },
 
   getFirstRowLinePos(fragment) {
@@ -791,19 +818,20 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
   renderLines(gridDimension, {bounds}, dimensionType, mainSide, crossSide,
               mainSize, startPos, endPos) {
-    let lineStartPos = (bounds[crossSide] / getCurrentZoom(this.win)) + startPos;
-    let lineEndPos = (bounds[crossSide] / getCurrentZoom(this.win)) + endPos;
+    let currentZoom = getCurrentZoom(this.win);
+    let lineStartPos = (bounds[crossSide] / currentZoom) + startPos;
+    let lineEndPos = (bounds[crossSide] / currentZoom) + endPos;
 
     if (this.options.showInfiniteLines) {
       lineStartPos = 0;
-      lineEndPos = parseInt(this.canvas.getAttribute(mainSize), 10);
+      lineEndPos = Infinity;
     }
 
     let lastEdgeLineIndex = this.getLastEdgeLineIndex(gridDimension.tracks);
 
     for (let i = 0; i < gridDimension.lines.length; i++) {
       let line = gridDimension.lines[i];
-      let linePos = (bounds[mainSide] / getCurrentZoom(this.win)) + line.start;
+      let linePos = (bounds[mainSide] / currentZoom) + line.start;
 
       if (this.options.showGridLineNumbers) {
         this.renderGridLineNumber(line.number, linePos, lineStartPos, dimensionType);
@@ -846,20 +874,24 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     let lineWidth = getDisplayPixelRatio(this.win);
     let offset = (lineWidth / 2) % 1;
 
+    let x = Math.round(this._canvasPosition.x * devicePixelRatio);
+    let y = Math.round(this._canvasPosition.y * devicePixelRatio);
+
     linePos = Math.round(linePos * devicePixelRatio);
     startPos = Math.round(startPos * devicePixelRatio);
-    endPos = Math.round(endPos * devicePixelRatio);
 
     this.ctx.save();
     this.ctx.setLineDash(GRID_LINES_PROPERTIES[lineType].lineDash);
     this.ctx.beginPath();
-    this.ctx.translate(offset, offset);
+    this.ctx.translate(offset - x, offset - y);
     this.ctx.lineWidth = lineWidth;
 
     if (dimensionType === COLUMNS) {
+      endPos = isFinite(endPos) ? endPos * devicePixelRatio : CANVAS_SIZE + y;
       this.ctx.moveTo(linePos, startPos);
       this.ctx.lineTo(linePos, endPos);
     } else {
+      endPos = isFinite(endPos) ? endPos * devicePixelRatio : CANVAS_SIZE + x;
       this.ctx.moveTo(startPos, linePos);
       this.ctx.lineTo(endPos, linePos);
     }
@@ -887,11 +919,14 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
   renderGridLineNumber(lineNumber, linePos, startPos, dimensionType) {
     let { devicePixelRatio } = this.win;
     let displayPixelRatio = getDisplayPixelRatio(this.win);
+    let x = Math.round(this._canvasPosition.x * devicePixelRatio);
+    let y = Math.round(this._canvasPosition.y * devicePixelRatio);
 
     linePos = Math.round(linePos * devicePixelRatio);
     startPos = Math.round(startPos * devicePixelRatio);
 
     this.ctx.save();
+    this.ctx.translate(.5 - x, .5 - y);
 
     let fontSize = (GRID_FONT_SIZE * displayPixelRatio);
     this.ctx.font = fontSize + "px " + GRID_FONT_FAMILY;
@@ -926,18 +961,22 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
   renderGridGap(linePos, startPos, endPos, breadth, dimensionType) {
     let { devicePixelRatio } = this.win;
+    let x = Math.round(this._canvasPosition.x * devicePixelRatio);
+    let y = Math.round(this._canvasPosition.y * devicePixelRatio);
 
     linePos = Math.round(linePos * devicePixelRatio);
     startPos = Math.round(startPos * devicePixelRatio);
-    endPos = Math.round(endPos * devicePixelRatio);
     breadth = Math.round(breadth * devicePixelRatio);
 
     this.ctx.save();
     this.ctx.fillStyle = this.getGridGapPattern(devicePixelRatio, dimensionType);
+    this.ctx.translate(.5 - x, .5 - y);
 
     if (dimensionType === COLUMNS) {
+      endPos = isFinite(endPos) ? Math.round(endPos * devicePixelRatio) : CANVAS_SIZE + y;
       this.ctx.fillRect(linePos, startPos, breadth, endPos - startPos);
     } else {
+      endPos = isFinite(endPos) ? Math.round(endPos * devicePixelRatio) : CANVAS_SIZE + x;
       this.ctx.fillRect(startPos, linePos, endPos - startPos, breadth);
     }
     this.ctx.restore();
