@@ -196,9 +196,10 @@ public class Tabs implements BundleEventListener {
         
         
         boolean getPrivate = mSelectedTab != null && mSelectedTab.isPrivate();
+        TabType type = mSelectedTab != null ? mSelectedTab.getType() : TabType.BROWSING;
         int count = 0;
         for (Tab tab : mOrder) {
-            if (tab.isPrivate() == getPrivate) {
+            if (tab.isPrivate() == getPrivate && tab.getType() == type) {
                 count++;
             }
         }
@@ -252,7 +253,7 @@ public class Tabs implements BundleEventListener {
         
         if (mInitialTabsAdded) {
             notifyListeners(tab, TabEvents.ADDED,
-                    Integer.toString(getPrivacySpecificTabIndex(tabIndex, isPrivate)));
+                    Integer.toString(getPrivacySpecificTabIndex(tabIndex, isPrivate, type)));
         }
 
         return tab;
@@ -260,11 +261,12 @@ public class Tabs implements BundleEventListener {
 
     
     
-    private int getPrivacySpecificTabIndex(int index, boolean isPrivate) {
+    
+    private int getPrivacySpecificTabIndex(int index, boolean isPrivate, TabType type) {
         int privacySpecificIndex = -1;
         for (int i = 0; i <= index; i++) {
             final Tab tab = mOrder.get(i);
-            if (tab.isPrivate() == isPrivate) {
+            if (tab.isPrivate() == isPrivate && tab.getType() == type) {
                 privacySpecificIndex++;
             }
         }
@@ -324,23 +326,23 @@ public class Tabs implements BundleEventListener {
         return mOrder.lastIndexOf(tab);
     }
 
-    private Tab getNextTabFrom(Tab tab, boolean getPrivate) {
+    private Tab getNextTabFrom(Tab tab, boolean getPrivate, TabType type) {
         int numTabs = mOrder.size();
         int index = getIndexOf(tab);
         for (int i = index + 1; i < numTabs; i++) {
             Tab next = mOrder.get(i);
-            if (next.isPrivate() == getPrivate) {
+            if (next.isPrivate() == getPrivate && next.getType() == type) {
                 return next;
             }
         }
         return null;
     }
 
-    private Tab getPreviousTabFrom(Tab tab, boolean getPrivate) {
+    private Tab getPreviousTabFrom(Tab tab, boolean getPrivate, TabType type) {
         int index = getIndexOf(tab);
         for (int i = index - 1; i >= 0; i--) {
             Tab prev = mOrder.get(i);
-            if (prev.isPrivate() == getPrivate) {
+            if (prev.isPrivate() == getPrivate && prev.getType() == type) {
                 return prev;
             }
         }
@@ -441,16 +443,17 @@ public class Tabs implements BundleEventListener {
             return selectedTab;
 
         boolean getPrivate = tab.isPrivate();
-        Tab nextTab = getNextTabFrom(tab, getPrivate);
+        TabType type = tab.getType();
+        Tab nextTab = getNextTabFrom(tab, getPrivate, type);
         if (nextTab == null)
-            nextTab = getPreviousTabFrom(tab, getPrivate);
+            nextTab = getPreviousTabFrom(tab, getPrivate, type);
         if (nextTab == null && getPrivate) {
             
             Tab lastTab = mOrder.get(mOrder.size() - 1);
             if (!lastTab.isPrivate()) {
                 nextTab = lastTab;
             } else {
-                nextTab = getPreviousTabFrom(lastTab, false);
+                nextTab = getPreviousTabFrom(lastTab, false, type);
             }
         }
 
@@ -801,7 +804,7 @@ public class Tabs implements BundleEventListener {
 
 
     public Tab getFirstTabForUrl(String url) {
-        return getFirstTabForUrlHelper(url, null);
+        return getFirstTabForUrlHelper(url, null, TabType.BROWSING);
     }
 
     
@@ -812,17 +815,18 @@ public class Tabs implements BundleEventListener {
 
 
 
-    public Tab getFirstTabForUrl(String url, boolean isPrivate) {
-        return getFirstTabForUrlHelper(url, isPrivate);
+
+    public Tab getFirstTabForUrl(String url, boolean isPrivate, TabType type) {
+        return getFirstTabForUrlHelper(url, isPrivate, type);
     }
 
-    private Tab getFirstTabForUrlHelper(String url, Boolean isPrivate) {
+    private Tab getFirstTabForUrlHelper(String url, Boolean isPrivate, TabType type) {
         if (url == null) {
             return null;
         }
 
         for (Tab tab : mOrder) {
-            if (isPrivate != null && isPrivate != tab.isPrivate()) {
+            if (isPrivate != null && isPrivate != tab.isPrivate() || type != tab.getType()) {
                 continue;
             }
             if (url.equals(tab.getURL())) {
@@ -847,7 +851,9 @@ public class Tabs implements BundleEventListener {
 
 
 
-    public Tab getFirstReaderTabForUrl(String url, boolean isPrivate) {
+
+
+    public Tab getFirstReaderTabForUrl(String url, boolean isPrivate, TabType type) {
         if (url == null) {
             return null;
         }
@@ -855,7 +861,7 @@ public class Tabs implements BundleEventListener {
         url = ReaderModeUtils.stripAboutReaderUrl(url);
 
         for (Tab tab : mOrder) {
-            if (isPrivate != tab.isPrivate()) {
+            if (isPrivate != tab.isPrivate() || type != tab.getType()) {
                 continue;
             }
             String tabUrl = tab.getURL();
