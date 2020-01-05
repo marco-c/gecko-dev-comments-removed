@@ -504,8 +504,6 @@ pref("privacy.cpd.offlineApps",             false);
 pref("privacy.cpd.siteSettings",            false);
 pref("privacy.cpd.openWindows",             false);
 
-pref("privacy.history.custom",              false);
-
 
 
 
