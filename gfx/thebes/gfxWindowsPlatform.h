@@ -209,7 +209,6 @@ public:
     bool SupportsApzWheelInput() const override {
       return true;
     }
-    bool SupportsApzTouchInput() const override;
 
     
     
