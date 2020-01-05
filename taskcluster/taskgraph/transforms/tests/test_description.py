@@ -131,6 +131,9 @@ test_description_schema = Schema({
     ),
 
     
+    Optional('retry-exit-status'): int,
+
+    
     Required('checkout', default=False): bool,
 
     
