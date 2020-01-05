@@ -450,9 +450,13 @@ var singleton;
 
 
 this.EnsureFxAccountsWebChannel = function() {
+  let contentUri = Services.urlFormatter.formatURLPref("identity.fxaccounts.remote.webchannel.uri");
+  if (singleton && singleton._contentUri !== contentUri) {
+    singleton.tearDown();
+    singleton = null;
+  }
   if (!singleton) {
     try {
-      let contentUri = Services.urlFormatter.formatURLPref("identity.fxaccounts.remote.webchannel.uri");
       if (contentUri) {
         
         

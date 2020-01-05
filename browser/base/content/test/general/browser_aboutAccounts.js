@@ -318,7 +318,7 @@ var gTests = [
 
     let response = yield readyPromise;
     
-    let expected = fxAccounts.getAccountsSignUpURI();
+    let expected = yield fxAccounts.promiseAccountsSignUpURI();
     is(response.data.url, expected);
 
     
