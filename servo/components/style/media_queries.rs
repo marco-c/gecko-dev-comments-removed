@@ -7,6 +7,7 @@
 
 
 use Atom;
+use context::QuirksMode;
 use cssparser::{Delimiter, Parser, Token};
 use parser::ParserContext;
 use serialize_comma_separated_list;
@@ -280,7 +281,7 @@ pub fn parse_media_query_list(context: &ParserContext, input: &mut Parser) -> Me
 
 impl MediaList {
     
-    pub fn evaluate(&self, device: &Device) -> bool {
+    pub fn evaluate(&self, device: &Device, quirks_mode: QuirksMode) -> bool {
         
         
         self.media_queries.is_empty() || self.media_queries.iter().any(|mq| {
@@ -290,7 +291,7 @@ impl MediaList {
             let query_match =
                 media_match &&
                 mq.expressions.iter()
-                    .all(|expression| expression.matches(&device));
+                    .all(|expression| expression.matches(&device, quirks_mode));
 
             
             match mq.qualifier {

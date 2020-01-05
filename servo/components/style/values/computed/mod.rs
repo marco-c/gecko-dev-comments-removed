@@ -4,6 +4,7 @@
 
 
 
+use context::QuirksMode;
 use euclid::size::Size2D;
 use font_metrics::FontMetricsProvider;
 use media_queries::Device;
@@ -63,6 +64,9 @@ pub struct Context<'a> {
 
     
     pub in_media_query: bool,
+
+    
+    pub quirks_mode: QuirksMode,
 }
 
 impl<'a> Context<'a> {

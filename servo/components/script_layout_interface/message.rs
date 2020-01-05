@@ -17,7 +17,7 @@ use script_traits::{LayoutMsg as ConstellationMsg, StackingContextScrollState, W
 use servo_url::ServoUrl;
 use std::sync::Arc;
 use std::sync::mpsc::{Receiver, Sender};
-use style::context::ReflowGoal;
+use style::context::{QuirksMode, ReflowGoal};
 use style::properties::PropertyId;
 use style::selector_parser::PseudoElement;
 use style::stylesheets::Stylesheet;
@@ -28,7 +28,7 @@ pub enum Msg {
     AddStylesheet(Arc<Stylesheet>),
 
     
-    SetQuirksMode,
+    SetQuirksMode(QuirksMode),
 
     
     Reflow(ScriptReflow),
