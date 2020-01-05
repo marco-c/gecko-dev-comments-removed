@@ -15,6 +15,7 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/GuardObjects.h"
+#include "mozilla/MaybeOneOf.h"
 #include "mozilla/PodOperations.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/Variant.h"
@@ -534,7 +535,7 @@ StartOffThreadParseModule(JSContext* cx, const ReadOnlyCompileOptions& options,
 
 bool
 StartOffThreadDecodeScript(JSContext* cx, const ReadOnlyCompileOptions& options,
-                           JS::TranscodeBuffer& buffer, size_t cursor,
+                           const JS::TranscodeRange& range,
                            JS::OffThreadCompileCallback callback, void* callbackData);
 
 
@@ -593,21 +594,9 @@ struct ParseTask
 {
     ParseTaskKind kind;
     OwningCompileOptions options;
-    
-    
-    union {
-        struct {
-            const char16_t* chars;
-            size_t length;
-        };
-        struct {
-            
-            
-            
-            JS::TranscodeBuffer* const buffer;
-            size_t cursor;
-        };
-    };
+
+    mozilla::MaybeOneOf<const JS::TranscodeRange, JS::TwoByteChars> data;
+
     LifoAlloc alloc;
 
     
@@ -635,7 +624,7 @@ struct ParseTask
               const char16_t* chars, size_t length,
               JS::OffThreadCompileCallback callback, void* callbackData);
     ParseTask(ParseTaskKind kind, JSContext* cx, JSObject* parseGlobal,
-              JS::TranscodeBuffer& buffer, size_t cursor,
+              const JS::TranscodeRange& range,
               JS::OffThreadCompileCallback callback, void* callbackData);
     bool init(JSContext* cx, const ReadOnlyCompileOptions& options);
 
@@ -671,7 +660,7 @@ struct ModuleParseTask : public ParseTask
 struct ScriptDecodeTask : public ParseTask
 {
     ScriptDecodeTask(JSContext* cx, JSObject* parseGlobal,
-                     JS::TranscodeBuffer& buffer, size_t cursor,
+                     const JS::TranscodeRange& range,
                      JS::OffThreadCompileCallback callback, void* callbackData);
     void parse(JSContext* cx) override;
 };
