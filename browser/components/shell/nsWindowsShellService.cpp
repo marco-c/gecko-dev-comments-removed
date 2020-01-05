@@ -647,11 +647,6 @@ nsresult
 nsWindowsShellService::LaunchControlPanelDefaultPrograms()
 {
   
-  if (!IsWin7OrLater()) {
-    return NS_ERROR_FAILURE;
-  }
-
-  
   WCHAR controlEXEPath[MAX_PATH + 1] = { '\0' };
   if (!GetSystemDirectoryW(controlEXEPath, MAX_PATH)) {
     return NS_ERROR_FAILURE;

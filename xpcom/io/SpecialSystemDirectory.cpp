@@ -19,9 +19,6 @@
 #include <shlobj.h>
 #include <knownfolders.h>
 #include <guiddef.h>
-#include "mozilla/WindowsVersion.h"
-
-using mozilla::IsWin7OrLater;
 
 #elif defined(XP_UNIX)
 
@@ -117,16 +114,10 @@ SHLoadLibraryFromKnownFolder(REFKNOWNFOLDERID aFolderId, DWORD aMode,
 
 
 
-
 static nsresult
 GetLibrarySaveToPath(int aFallbackFolderId, REFKNOWNFOLDERID aFolderId,
                      nsIFile** aFile)
 {
-  
-  if (!IsWin7OrLater()) {
-    return GetWindowsFolder(aFallbackFolderId, aFile);
-  }
-
   RefPtr<IShellLibrary> shellLib;
   RefPtr<IShellItem> savePath;
   HRESULT hr =
@@ -715,8 +706,6 @@ GetSpecialSystemDirectory(SystemDirectories aSystemSystemDirectory,
     }
 #if defined(MOZ_CONTENT_SANDBOX)
     case Win_LocalAppdataLow: {
-      
-      
       GUID localAppDataLowGuid = FOLDERID_LocalAppDataLow;
       return GetKnownFolder(&localAppDataLowGuid, aFile);
     }
