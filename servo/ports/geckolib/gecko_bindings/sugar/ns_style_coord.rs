@@ -3,8 +3,19 @@
 
 
 use bindings::{Gecko_ResetStyleCoord, Gecko_SetStyleCoordCalcValue, Gecko_AddRefCalcArbitraryThread};
+use std::mem;
 use structs::{nsStyleCoord_Calc, nsStyleUnit, nsStyleUnion, nsStyleCoord, nsStyleSides, nsStyleCorners};
 use structs::{nsStyleCoord_CalcValue, nscoord};
+
+impl nsStyleCoord {
+    #[inline]
+    pub fn null() -> Self {
+        
+        let mut coord: Self = unsafe { mem::zeroed() };
+        coord.leaky_set_null();
+        coord
+    }
+}
 
 impl CoordData for nsStyleCoord {
     #[inline]
