@@ -6910,8 +6910,7 @@ bool
 nsIFrame::IsBlockWrapper() const
 {
   nsIAtom *pseudoType = StyleContext()->GetPseudo();
-  return (pseudoType == nsCSSAnonBoxes::mozAnonymousBlock ||
-          pseudoType == nsCSSAnonBoxes::mozAnonymousPositionedBlock ||
+  return (pseudoType == nsCSSAnonBoxes::mozBlockInsideInlineWrapper ||
           pseudoType == nsCSSAnonBoxes::buttonContent ||
           pseudoType == nsCSSAnonBoxes::cellContent);
 }
@@ -8822,12 +8821,10 @@ ComputeAndIncludeOutlineArea(nsIFrame* aFrame, nsOverflowAreas& aOverflowAreas,
   
   
   
-  
   nsIFrame *frameForArea = aFrame;
   do {
     nsIAtom *pseudoType = frameForArea->StyleContext()->GetPseudo();
-    if (pseudoType != nsCSSAnonBoxes::mozAnonymousBlock &&
-        pseudoType != nsCSSAnonBoxes::mozAnonymousPositionedBlock)
+    if (pseudoType != nsCSSAnonBoxes::mozBlockInsideInlineWrapper)
       break;
     
     frameForArea = frameForArea->PrincipalChildList().FirstChild();
@@ -9177,8 +9174,7 @@ GetIBSplitSiblingForAnonymousBlock(const nsIFrame* aFrame)
                "GetIBSplitSibling should only be called on ib-split frames");
 
   nsIAtom* type = aFrame->StyleContext()->GetPseudo();
-  if (type != nsCSSAnonBoxes::mozAnonymousBlock &&
-      type != nsCSSAnonBoxes::mozAnonymousPositionedBlock) {
+  if (type != nsCSSAnonBoxes::mozBlockInsideInlineWrapper) {
     
     return nullptr;
   }
@@ -9279,8 +9275,7 @@ nsFrame::CorrectStyleParentFrame(nsIFrame* aProspectiveParent,
     
     if (!nsCSSAnonBoxes::IsNonElement(aChildPseudo) &&
         nsCSSAnonBoxes::IsAnonBox(aChildPseudo)) {
-      NS_ASSERTION(aChildPseudo != nsCSSAnonBoxes::mozAnonymousBlock &&
-                   aChildPseudo != nsCSSAnonBoxes::mozAnonymousPositionedBlock,
+      NS_ASSERTION(aChildPseudo != nsCSSAnonBoxes::mozBlockInsideInlineWrapper,
                    "Should have dealt with kids that have "
                    "NS_FRAME_PART_OF_IBSPLIT elsewhere");
       return aProspectiveParent;

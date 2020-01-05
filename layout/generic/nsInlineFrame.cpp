@@ -1049,15 +1049,11 @@ nsInlineFrame::DoUpdateStyleOfOwnedAnonBoxes(ServoStyleSet& aStyleSet,
   nsIFrame* blockFrame = propTable->Get(this, nsIFrame::IBSplitSibling());
   MOZ_ASSERT(blockFrame, "Why did we have an IB split?");
 
-  nsIAtom* pseudo = blockFrame->StyleContext()->GetPseudo();
-  MOZ_ASSERT(pseudo == nsCSSAnonBoxes::mozAnonymousBlock ||
-             pseudo == nsCSSAnonBoxes::mozAnonymousPositionedBlock,
-             "Unexpected kind of style context");
-
   
   
   RefPtr<nsStyleContext> newContext =
-    aStyleSet.ResolveInheritingAnonymousBoxStyle(pseudo, StyleContext());
+    aStyleSet.ResolveInheritingAnonymousBoxStyle(
+      nsCSSAnonBoxes::mozBlockInsideInlineWrapper, StyleContext());
 
   
   
@@ -1068,6 +1064,11 @@ nsInlineFrame::DoUpdateStyleOfOwnedAnonBoxes(ServoStyleSet& aStyleSet,
   while (blockFrame) {
     MOZ_ASSERT(!blockFrame->GetPrevContinuation(),
                "Must be first continuation");
+
+    MOZ_ASSERT(blockFrame->StyleContext()->GetPseudo() ==
+               nsCSSAnonBoxes::mozBlockInsideInlineWrapper,
+               "Unexpected kind of style context");
+
     
     
     
