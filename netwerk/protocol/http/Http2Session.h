@@ -484,6 +484,9 @@ private:
   uint64_t        mSerial;
 
   
+  uint32_t        mAggregatedHeaderSize;
+
+  
   
   
   
