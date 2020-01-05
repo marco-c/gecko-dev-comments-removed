@@ -7877,11 +7877,20 @@ nsContentUtils::TransferableToIPCTransferable(nsITransferable* aTransferable,
             }
 
             blobImpl = new BlobImplFile(file);
-            ErrorResult rv;
+
+            IgnoredErrorResult rv;
+
             
             
             blobImpl->GetSize(rv);
+            if (NS_WARN_IF(rv.Failed())) {
+              continue;
+            }
+
             blobImpl->GetLastModified(rv);
+            if (NS_WARN_IF(rv.Failed())) {
+              continue;
+            }
           } else {
             if (aInSyncMessage) {
               
