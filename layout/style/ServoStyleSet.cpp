@@ -247,7 +247,21 @@ ServoStyleSet::ResolveStyleForText(nsIContent* aTextNode,
 }
 
 already_AddRefed<nsStyleContext>
-ServoStyleSet::ResolveStyleForOtherNonElement(nsStyleContext* aParentContext)
+ServoStyleSet::ResolveStyleForFirstLetterContinuation(nsStyleContext* aParentContext)
+{
+  const ServoComputedValues* parent = aParentContext->StyleSource().AsServoComputedValues();
+  RefPtr<ServoComputedValues> computedValues =
+    Servo_ComputedValues_Inherit(mRawSet.get(), parent).Consume();
+  MOZ_ASSERT(computedValues);
+
+  return GetContext(computedValues.forget(), aParentContext,
+                    nsCSSAnonBoxes::firstLetterContinuation,
+                    CSSPseudoElementType::AnonBox,
+                    nullptr);
+}
+
+already_AddRefed<nsStyleContext>
+ServoStyleSet::ResolveStyleForPlaceholder(nsStyleContext* aParentContext)
 {
   
   
@@ -258,7 +272,7 @@ ServoStyleSet::ResolveStyleForOtherNonElement(nsStyleContext* aParentContext)
   MOZ_ASSERT(computedValues);
 
   return GetContext(computedValues.forget(), aParentContext,
-                    nsCSSAnonBoxes::mozOtherNonElement,
+                    nsCSSAnonBoxes::oofPlaceholder,
                     CSSPseudoElementType::AnonBox,
                     nullptr);
 }

@@ -220,7 +220,18 @@ class nsStyleSet final
   
   
   already_AddRefed<nsStyleContext>
-  ResolveStyleForOtherNonElement(nsStyleContext* aParentContext);
+  ResolveStyleForFirstLetterContinuation(nsStyleContext* aParentContext);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  already_AddRefed<nsStyleContext>
+  ResolveStyleForPlaceholder(nsStyleContext* aParentContext);
 
   
   

@@ -25,7 +25,9 @@ CSS_ANON_BOX(mozText, ":-moz-text")
 
 
 
-CSS_ANON_BOX(mozOtherNonElement, ":-moz-other-non-element")
+CSS_ANON_BOX(oofPlaceholder, ":-moz-oof-placeholder")
+
+CSS_ANON_BOX(firstLetterContinuation, ":-moz-first-letter-continuation")
 
 CSS_ANON_BOX(mozAnonymousBlock, ":-moz-anonymous-block")
 CSS_ANON_BOX(mozAnonymousPositionedBlock, ":-moz-anonymous-positioned-block")

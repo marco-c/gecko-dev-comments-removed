@@ -82,13 +82,46 @@ public:
                   LazyComputeBehavior aMayCompute,
                   TreeMatchContext& aTreeMatchContext);
 
+  
+  
+  
+  
+  
+  
+  
   already_AddRefed<nsStyleContext>
   ResolveStyleForText(nsIContent* aTextNode,
                       nsStyleContext* aParentContext);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   already_AddRefed<nsStyleContext>
-  ResolveStyleForOtherNonElement(nsStyleContext* aParentContext);
+  ResolveStyleForFirstLetterContinuation(nsStyleContext* aParentContext);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  already_AddRefed<nsStyleContext>
+  ResolveStyleForPlaceholder(nsStyleContext* aParentContext);
+
+  
+  
+  
+  
+  
   already_AddRefed<nsStyleContext>
   ResolvePseudoElementStyle(dom::Element* aOriginatingElement,
                             mozilla::CSSPseudoElementType aType,

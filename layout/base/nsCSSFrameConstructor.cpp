@@ -3040,7 +3040,7 @@ nsCSSFrameConstructor::CreatePlaceholderFrameFor(nsIPresShell*     aPresShell,
                                                  nsFrameState      aTypeBit)
 {
   RefPtr<nsStyleContext> placeholderStyle = aPresShell->StyleSet()->
-    ResolveStyleForOtherNonElement(aParentStyle);
+    ResolveStyleForPlaceholder(aParentStyle);
 
   
   nsPlaceholderFrame* placeholderFrame =
