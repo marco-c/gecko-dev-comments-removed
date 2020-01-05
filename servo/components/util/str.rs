@@ -17,9 +17,10 @@ pub type StaticStringVec = &'static [&'static str];
 
 pub fn null_str_as_empty(s: &Option<DOMString>) -> DOMString {
     
+    
     match *s {
         Some(ref s) => s.clone(),
-        None => "".to_string()
+        None => "".into_string()
     }
 }
 
