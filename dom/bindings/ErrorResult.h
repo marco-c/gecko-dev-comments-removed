@@ -165,9 +165,46 @@ public:
   operator ErrorResult&();
   operator OOMReporter&();
 
-  void Throw(nsresult rv) {
+  void MOZ_MUST_RETURN_FROM_CALLER Throw(nsresult rv) {
     MOZ_ASSERT(NS_FAILED(rv), "Please don't try throwing success");
     AssignErrorCode(rv);
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void ThrowWithCustomCleanup(nsresult rv) {
+    Throw(rv);
   }
 
   
@@ -307,7 +344,7 @@ public:
   }
 
   
-  void ThrowUncatchableException() {
+  void MOZ_MUST_RETURN_FROM_CALLER ThrowUncatchableException() {
     Throw(NS_ERROR_UNCATCHABLE_EXCEPTION);
   }
   bool IsUncatchableException() const {

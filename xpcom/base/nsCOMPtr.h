@@ -717,7 +717,7 @@ public:
 
   
   
-  already_AddRefed<T> forget()
+  already_AddRefed<T> MOZ_MAY_CALL_AFTER_MUST_RETURN forget()
   {
     T* temp = nullptr;
     swap(temp);
