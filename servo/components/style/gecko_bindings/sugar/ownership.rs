@@ -204,7 +204,7 @@ pub struct Owned<T> {
 
 impl<T> Owned<T> {
     
-    pub fn into_box<U>(self) -> Box<T> where U: HasBoxFFI<FFIType = T> {
+    pub fn into_box<U>(self) -> Box<U> where U: HasBoxFFI<FFIType = T> {
         unsafe { transmute(self) }
     }
     pub fn maybe(self) -> OwnedOrNull<T> {
@@ -238,7 +238,7 @@ impl<T> OwnedOrNull<T> {
         self.ptr == ptr::null_mut()
     }
     
-    pub fn into_box_opt<U>(self) -> Option<Box<T>> where U: HasBoxFFI<FFIType = T> {
+    pub fn into_box_opt<U>(self) -> Option<Box<U>> where U: HasBoxFFI<FFIType = T> {
         if self.is_null() {
             None
         } else {
