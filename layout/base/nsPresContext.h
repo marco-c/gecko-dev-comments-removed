@@ -888,6 +888,29 @@ public:
     return mFramesReflowed;
   }
 
+  
+
+
+
+  void SetTelemetryScrollY(nscoord aScrollY)
+  {
+    nscoord delta = abs(aScrollY - mTelemetryScrollLastY);
+    mTelemetryScrollLastY = aScrollY;
+
+    mTelemetryScrollTotalY += delta;
+    if (aScrollY > mTelemetryScrollMaxY) {
+      mTelemetryScrollMaxY = aScrollY;
+    }
+  }
+  nscoord TelemetryScrollMaxY() const
+  {
+    return mTelemetryScrollMaxY;
+  }
+  nscoord TelemetryScrollTotalY() const
+  {
+    return mTelemetryScrollTotalY;
+  }
+
   static nscoord GetBorderWidthForKeyword(unsigned int aBorderWidthKeyword)
   {
     
@@ -1358,6 +1381,10 @@ protected:
 
   
   mozilla::TimeStamp    mLastStyleUpdateForAllAnimations;
+
+  nscoord mTelemetryScrollLastY;
+  nscoord mTelemetryScrollMaxY;
+  nscoord mTelemetryScrollTotalY;
 
   unsigned              mHasPendingInterrupt : 1;
   unsigned              mPendingInterruptFromTest : 1;
