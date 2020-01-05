@@ -38,6 +38,9 @@ XPCOMUtils.defineLazyModuleGetter(this, "LightweightThemeManager",
 XPCOMUtils.defineLazyModuleGetter(this, "SessionStore",
                                   "resource:///modules/sessionstore/SessionStore.jsm");
 
+XPCOMUtils.defineLazyPreferenceGetter(this, "gPhotonStructure",
+  "browser.photon.structure.enabled", false);
+
 let gDebug;
 XPCOMUtils.defineLazyGetter(this, "log", () => {
   let scope = {};
@@ -278,39 +281,50 @@ CustomizeMode.prototype = {
       
       
       window.PanelUI.hide();
-      window.PanelUI.menuButton.addEventListener("command", this);
-      window.PanelUI.menuButton.open = true;
-      window.PanelUI.beginBatchUpdate();
 
-      
-      
-      
-      
-      
-      if (!window.PanelUI.isReady) {
-        yield window.PanelUI.ensureReady(true);
-      }
-
-      
-      this.visiblePalette.hidden = true;
-      this.visiblePalette.removeAttribute("showing");
-
-      
-      
-      let panelContents = window.PanelUI.contents;
-      panelContents.setAttribute("customize-transitioning", "true");
-
-      
-      
-      let mainView = window.PanelUI.mainView;
       let panelHolder = document.getElementById("customization-panelHolder");
-      panelHolder.appendChild(mainView);
+      if (gPhotonStructure) {
+        panelHolder.appendChild(window.PanelUI.overflowFixedList);
+        window.PanelUI.overflowFixedList.setAttribute("customizing", true);
+        window.PanelUI.menuButton.disabled = true;
+      } else {
+        window.PanelUI.menuButton.addEventListener("command", this);
+        window.PanelUI.menuButton.open = true;
+        window.PanelUI.beginBatchUpdate();
 
-      let customizeButton = document.getElementById("PanelUI-customize");
-      customizeButton.setAttribute("enterLabel", customizeButton.getAttribute("label"));
-      customizeButton.setAttribute("label", customizeButton.getAttribute("exitLabel"));
-      customizeButton.setAttribute("enterTooltiptext", customizeButton.getAttribute("tooltiptext"));
-      customizeButton.setAttribute("tooltiptext", customizeButton.getAttribute("exitTooltiptext"));
+        
+        
+        
+        
+        
+        if (!window.PanelUI.isReady) {
+          yield window.PanelUI.ensureReady(true);
+        }
+
+        
+        this.visiblePalette.hidden = true;
+        this.visiblePalette.removeAttribute("showing");
+
+        
+        
+        window.PanelUI.contents.setAttribute("customize-transitioning", "true");
+
+        
+        
+        let mainView = window.PanelUI.mainView;
+        panelHolder.appendChild(mainView);
+
+        let customizeButton = document.getElementById("PanelUI-customize");
+        customizeButton.setAttribute("enterLabel", customizeButton.getAttribute("label"));
+        customizeButton.setAttribute("label", customizeButton.getAttribute("exitLabel"));
+        customizeButton.setAttribute("enterTooltiptext", customizeButton.getAttribute("tooltiptext"));
+        customizeButton.setAttribute("tooltiptext", customizeButton.getAttribute("exitTooltiptext"));
+
+        this._mainViewContext = mainView.getAttribute("context");
+        if (this._mainViewContext) {
+          mainView.removeAttribute("context");
+        }
+      }
 
       this._transitioning = true;
 
@@ -331,12 +345,9 @@ CustomizeMode.prototype = {
       
       CustomizableUI.dispatchToolboxEvent("customizationstarting", {}, window);
 
-      this._mainViewContext = mainView.getAttribute("context");
-      if (this._mainViewContext) {
-        mainView.removeAttribute("context");
+      if (!gPhotonStructure) {
+        this._showPanelCustomizationPlaceholders();
       }
-
-      this._showPanelCustomizationPlaceholders();
 
       yield this._wrapToolbarItems();
       this.populatePalette();
@@ -345,8 +356,10 @@ CustomizeMode.prototype = {
 
       window.gNavToolbox.addEventListener("toolbarvisibilitychange", this);
 
-      document.getElementById("PanelUI-help").setAttribute("disabled", true);
-      document.getElementById("PanelUI-quit").setAttribute("disabled", true);
+      if (!gPhotonStructure) {
+        document.getElementById("PanelUI-help").setAttribute("disabled", true);
+        document.getElementById("PanelUI-quit").setAttribute("disabled", true);
+      }
 
       this._updateResetButton();
       this._updateUndoResetButton();
@@ -355,7 +368,9 @@ CustomizeMode.prototype = {
                                   Services.prefs.getBoolPref(kSkipSourceNodePref);
 
       CustomizableUI.addListener(this);
-      window.PanelUI.endBatchUpdate();
+      if (!gPhotonStructure) {
+        window.PanelUI.endBatchUpdate();
+      }
       this._customizing = true;
       this._transitioning = false;
 
@@ -373,12 +388,16 @@ CustomizeMode.prototype = {
       this.maybeShowTip(panelHolder);
 
       this._handler.isEnteringCustomizeMode = false;
-      panelContents.removeAttribute("customize-transitioning");
+      if (!gPhotonStructure) {
+        window.PanelUI.contents.removeAttribute("customize-transitioning");
+      }
 
       CustomizableUI.dispatchToolboxEvent("customizationready", {}, window);
       this._enableOutlinesTimeout = window.setTimeout(() => {
         this.document.getElementById("nav-bar").setAttribute("showoutline", "true");
-        this.panelUIContents.setAttribute("showoutline", "true");
+        if (!gPhotonStructure) {
+          this.panelUIContents.setAttribute("showoutline", "true");
+        }
         delete this._enableOutlinesTimeout;
       }, 0);
 
@@ -431,12 +450,14 @@ CustomizeMode.prototype = {
     CustomizableUI.removeListener(this);
 
     this.document.removeEventListener("keypress", this);
-    this.window.PanelUI.menuButton.removeEventListener("command", this);
-    this.window.PanelUI.menuButton.open = false;
+    if (!gPhotonStructure) {
+      this.window.PanelUI.menuButton.removeEventListener("command", this);
+      this.window.PanelUI.menuButton.open = false;
 
-    this.window.PanelUI.beginBatchUpdate();
+      this.window.PanelUI.beginBatchUpdate();
 
-    this._removePanelCustomizationPlaceholders();
+      this._removePanelCustomizationPlaceholders();
+    }
 
     let window = this.window;
     let document = this.document;
@@ -446,10 +467,12 @@ CustomizeMode.prototype = {
     this.visiblePalette.removeAttribute("showing");
     this.paletteEmptyNotice.hidden = true;
 
-    
-    
-    let panelContents = window.PanelUI.contents;
-    panelContents.setAttribute("customize-transitioning", "true");
+    if (!gPhotonStructure) {
+      
+      
+      let panelContents = window.PanelUI.contents;
+      panelContents.setAttribute("customize-transitioning", "true");
+    }
 
     
     let resetButton = this.document.getElementById("customization-reset-button");
@@ -500,38 +523,46 @@ CustomizeMode.prototype = {
       
       CustomizableUI.dispatchToolboxEvent("customizationending", {}, window);
 
-      window.PanelUI.setMainView(window.PanelUI.mainView);
       window.PanelUI.menuButton.disabled = false;
+      if (gPhotonStructure) {
+        let overflowContainer = document.getElementById("widget-overflow-scroller");
+        overflowContainer.insertBefore(window.PanelUI.overflowFixedList, overflowContainer.firstElementChild);
+      } else {
+        window.PanelUI.setMainView(window.PanelUI.mainView);
 
-      let customizeButton = document.getElementById("PanelUI-customize");
-      customizeButton.setAttribute("exitLabel", customizeButton.getAttribute("label"));
-      customizeButton.setAttribute("label", customizeButton.getAttribute("enterLabel"));
-      customizeButton.setAttribute("exitTooltiptext", customizeButton.getAttribute("tooltiptext"));
-      customizeButton.setAttribute("tooltiptext", customizeButton.getAttribute("enterTooltiptext"));
+        let customizeButton = document.getElementById("PanelUI-customize");
+        customizeButton.setAttribute("exitLabel", customizeButton.getAttribute("label"));
+        customizeButton.setAttribute("label", customizeButton.getAttribute("enterLabel"));
+        customizeButton.setAttribute("exitTooltiptext", customizeButton.getAttribute("tooltiptext"));
+        customizeButton.setAttribute("tooltiptext", customizeButton.getAttribute("enterTooltiptext"));
 
-      
-      
-      
-      document.getElementById("PanelUI-help").removeAttribute("disabled");
-      document.getElementById("PanelUI-quit").removeAttribute("disabled");
-
-      panelContents.removeAttribute("customize-transitioning");
+        
+        
+        
+        document.getElementById("PanelUI-help").removeAttribute("disabled");
+        document.getElementById("PanelUI-quit").removeAttribute("disabled");
+        this.panelUIContents.removeAttribute("customize-transitioning");
+      }
 
       
       
       
       this._customizing = false;
 
-      let mainView = window.PanelUI.mainView;
-      if (this._mainViewContext) {
-        mainView.setAttribute("context", this._mainViewContext);
+      if (!gPhotonStructure) {
+        let mainView = window.PanelUI.mainView;
+        if (this._mainViewContext) {
+          mainView.setAttribute("context", this._mainViewContext);
+        }
       }
 
       let customizableToolbars = document.querySelectorAll("toolbar[customizable=true]:not([autohide=true])");
       for (let toolbar of customizableToolbars)
         toolbar.removeAttribute("customizing");
 
-      this.window.PanelUI.endBatchUpdate();
+      if (!gPhotonStructure) {
+        this.window.PanelUI.endBatchUpdate();
+      }
       delete this._lastLightweightTheme;
       this._changed = false;
       this._transitioning = false;
@@ -544,8 +575,10 @@ CustomizeMode.prototype = {
       }
     }.bind(this)).then(null, e => {
       log.error("Error exiting customize mode", e);
-      
-      window.PanelUI.endBatchUpdate();
+      if (!gPhotonStructure) {
+        
+        window.PanelUI.endBatchUpdate();
+      }
       this._handler.isExitingCustomizeMode = false;
     });
   },
@@ -1528,6 +1561,20 @@ CustomizeMode.prototype = {
     Services.prefs.setBoolPref(kDrawInTitlebarPref, !aShouldShowTitlebar);
   },
 
+  get _dwu() {
+    if (!this.__dwu) {
+      this.__dwu = this.window.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindowUtils);
+    }
+    return this.__dwu;
+  },
+
+  get _dir() {
+    if (!this.__dir) {
+      this.__dir = this.window.getComputedStyle(this.document.documentElement).direction;
+    }
+    return this.__dir;
+  },
+
   _onDragStart(aEvent) {
     __dumpDragData(aEvent);
     let item = aEvent.target;
@@ -1548,12 +1595,11 @@ CustomizeMode.prototype = {
 
     let dt = aEvent.dataTransfer;
     let documentId = aEvent.target.ownerDocument.documentElement.id;
-    let isInToolbar = placeForItem == "toolbar";
 
     dt.mozSetDataAt(kDragDataTypePrefix + documentId, draggedItem.id, 0);
     dt.effectAllowed = "move";
 
-    let itemRect = draggedItem.getBoundingClientRect();
+    let itemRect = this._dwu.getBoundsWithoutFlushing(draggedItem);
     let itemCenter = {x: itemRect.left + itemRect.width / 2,
                       y: itemRect.top + itemRect.height / 2};
     this._dragOffset = {x: aEvent.clientX - itemCenter.x,
@@ -1571,11 +1617,13 @@ CustomizeMode.prototype = {
         item.hidden = true;
         this._showPanelCustomizationPlaceholders();
         DragPositionManager.start(this.window);
+        let canUsePrevSibling = placeForItem == "toolbar" ||
+                                (placeForItem == "panel" && gPhotonStructure);
         if (item.nextSibling) {
-          this._setDragActive(item.nextSibling, "before", draggedItem.id, isInToolbar);
+          this._setDragActive(item.nextSibling, "before", draggedItem.id, placeForItem);
           this._dragOverItem = item.nextSibling;
-        } else if (isInToolbar && item.previousSibling) {
-          this._setDragActive(item.previousSibling, "after", draggedItem.id, isInToolbar);
+        } else if (canUsePrevSibling && item.previousSibling) {
+          this._setDragActive(item.previousSibling, "after", draggedItem.id, placeForItem);
           this._dragOverItem = item.previousSibling;
         }
       }
@@ -1624,8 +1672,8 @@ CustomizeMode.prototype = {
       return;
     }
 
-    let targetIsToolbar = CustomizableUI.getAreaType(targetArea.id) == "toolbar";
-    let targetNode = this._getDragOverNode(aEvent, targetArea, targetIsToolbar, draggedItemId);
+    let targetAreaType = CustomizableUI.getAreaType(targetArea.id);
+    let targetNode = this._getDragOverNode(aEvent, targetArea, targetAreaType, draggedItemId);
 
     
     
@@ -1633,34 +1681,45 @@ CustomizeMode.prototype = {
     if (targetNode == targetArea.customizationTarget) {
       
       
-      dragOverItem = (targetIsToolbar ? this._findVisiblePreviousSiblingNode(targetNode.lastChild) :
-                                        targetNode.lastChild) || targetNode;
+      dragOverItem = (targetAreaType == "toolbar"
+                        ? this._findVisiblePreviousSiblingNode(targetNode.lastChild)
+                        : targetNode.lastChild) ||
+                     targetNode;
       dragValue = "after";
     } else {
       let targetParent = targetNode.parentNode;
       let position = Array.indexOf(targetParent.children, targetNode);
       if (position == -1) {
-        dragOverItem = targetIsToolbar ? this._findVisiblePreviousSiblingNode(targetNode.lastChild) :
-                                         targetParent.lastChild;
+        dragOverItem = (targetAreaType == "toolbar"
+                          ? this._findVisiblePreviousSiblingNode(targetNode.lastChild)
+                          : targetNode.lastChild);
         dragValue = "after";
       } else {
         dragOverItem = targetParent.children[position];
-        if (!targetIsToolbar) {
-          dragValue = "before";
-        } else {
+        if (targetAreaType == "toolbar") {
           
-          let window = dragOverItem.ownerGlobal;
-          let direction = window.getComputedStyle(dragOverItem).direction;
-          let itemRect = dragOverItem.getBoundingClientRect();
+          let itemRect = this._dwu.getBoundsWithoutFlushing(dragOverItem);
           let dropTargetCenter = itemRect.left + (itemRect.width / 2);
           let existingDir = dragOverItem.getAttribute("dragover");
-          if ((existingDir == "before") == (direction == "ltr")) {
-            dropTargetCenter += (parseInt(dragOverItem.style.borderLeftWidth) || 0) / 2;
+          if (existingDir == "before") {
+            dropTargetCenter += (parseInt(dragOverItem.style.borderInlineStartWidth) || 0) / 2;
           } else {
-            dropTargetCenter -= (parseInt(dragOverItem.style.borderRightWidth) || 0) / 2;
+            dropTargetCenter -= (parseInt(dragOverItem.style.borderInlineEndWidth) || 0) / 2;
           }
-          let before = direction == "ltr" ? aEvent.clientX < dropTargetCenter : aEvent.clientX > dropTargetCenter;
+          let before = this._dir == "ltr" ? aEvent.clientX < dropTargetCenter : aEvent.clientX > dropTargetCenter;
           dragValue = before ? "before" : "after";
+        } else if (targetAreaType == "menu-panel" && gPhotonStructure) {
+          let itemRect = this._dwu.getBoundsWithoutFlushing(dragOverItem);
+          let dropTargetCenter = itemRect.top + (itemRect.height / 2);
+          let existingDir = dragOverItem.getAttribute("dragover");
+          if (existingDir == "before") {
+            dropTargetCenter += (parseInt(dragOverItem.style.borderBlockStartWidth) || 0) / 2;
+          } else {
+            dropTargetCenter -= (parseInt(dragOverItem.style.borderBlockEndWidth) || 0) / 2;
+          }
+          dragValue = aEvent.clientY < dropTargetCenter ? "before" : "after";
+        } else {
+          dragValue = "before";
         }
       }
     }
@@ -1671,8 +1730,8 @@ CustomizeMode.prototype = {
 
     if (dragOverItem != this._dragOverItem || dragValue != dragOverItem.getAttribute("dragover")) {
       if (dragOverItem != targetArea.customizationTarget) {
-        this._setDragActive(dragOverItem, dragValue, draggedItemId, targetIsToolbar);
-      } else if (targetIsToolbar) {
+        this._setDragActive(dragOverItem, dragValue, draggedItemId, targetAreaType);
+      } else if (targetAreaType == "toolbar") {
         this._updateToolbarCustomizationOutline(this.window, targetArea);
       }
       this._dragOverItem = dragOverItem;
@@ -1941,17 +2000,22 @@ CustomizeMode.prototype = {
            mozSourceNode.ownerGlobal != this.window;
   },
 
-  _setDragActive(aItem, aValue, aDraggedItemId, aInToolbar) {
+  _setDragActive(aItem, aValue, aDraggedItemId, aAreaType) {
     if (!aItem) {
       return;
     }
 
+    
+    
+    if (aAreaType == "panel") {
+      aAreaType = "menu-panel";
+    }
     if (aItem.getAttribute("dragover") != aValue) {
       aItem.setAttribute("dragover", aValue);
 
       let window = aItem.ownerGlobal;
       let draggedItem = window.document.getElementById(aDraggedItemId);
-      if (!aInToolbar) {
+      if (aAreaType == "palette" || (aAreaType == "menu-panel" && !gPhotonStructure)) {
         this._setGridDragActive(aItem, draggedItem, aValue);
       } else {
         let targetArea = this._getCustomizableParent(aItem);
@@ -1963,23 +2027,22 @@ CustomizeMode.prototype = {
           let originArea = this._getCustomizableParent(draggedWrapper);
           makeSpaceImmediately = originArea == targetArea;
         }
+        let propertyToMeasure = aAreaType == "toolbar" ? "width" : "height";
         
-        let width = this._getDragItemSize(aItem, draggedItem).width;
-        let direction = window.getComputedStyle(aItem).direction;
+        let borderWidth = this._getDragItemSize(aItem, draggedItem)[propertyToMeasure];
+        let layoutSide = aAreaType == "toolbar" ? "Inline" : "Block";
         let prop, otherProp;
-        
-        if ((aValue == "before") == (direction == "ltr")) {
-          prop = "borderLeftWidth";
-          otherProp = "border-right-width";
+        if (aValue == "before") {
+          prop = "border" + layoutSide + "StartWidth";
+          otherProp = "border-" + layoutSide.toLowerCase() + "-end-width";
         } else {
-          
-          prop = "borderRightWidth";
-          otherProp = "border-left-width";
+          prop = "border" + layoutSide + "EndWidth";
+          otherProp = "border-" + layoutSide.toLowerCase() + "-start-width";
         }
         if (makeSpaceImmediately) {
           aItem.setAttribute("notransition", "true");
         }
-        aItem.style[prop] = width + "px";
+        aItem.style[prop] = borderWidth + "px";
         aItem.style.removeProperty(otherProp);
         if (makeSpaceImmediately) {
           
@@ -1995,16 +2058,19 @@ CustomizeMode.prototype = {
     if (!currentArea) {
       return;
     }
-    let isToolbar = CustomizableUI.getAreaType(currentArea.id) == "toolbar";
-    if (isToolbar) {
+    let areaType = CustomizableUI.getAreaType(currentArea.id);
+    let needPositionManager = !areaType || (areaType == "menu-panel" && !gPhotonStructure);
+    if (!needPositionManager) {
       if (aNoTransition) {
         aItem.setAttribute("notransition", "true");
       }
       aItem.removeAttribute("dragover");
       
       
-      aItem.style.removeProperty("border-left-width");
-      aItem.style.removeProperty("border-right-width");
+      aItem.style.removeProperty("border-inline-start-width");
+      aItem.style.removeProperty("border-inline-end-width");
+      aItem.style.removeProperty("border-block-start-width");
+      aItem.style.removeProperty("border-block-end-width");
       if (aNoTransition) {
         
         aItem.getBoundingClientRect();
@@ -2108,7 +2174,7 @@ CustomizeMode.prototype = {
     return null;
   },
 
-  _getDragOverNode(aEvent, aAreaElement, aInToolbar, aDraggedItemId) {
+  _getDragOverNode(aEvent, aAreaElement, aAreaType, aDraggedItemId) {
     let expectedParent = aAreaElement.customizationTarget || aAreaElement;
     
     if (!aEvent.clientX && !aEvent.clientY) {
@@ -2133,7 +2199,7 @@ CustomizeMode.prototype = {
     dragY = Math.min(bounds.bottom, Math.max(dragY, bounds.top));
 
     let targetNode;
-    if (aInToolbar) {
+    if (aAreaType == "toolbar" || (aAreaType == "menu-panel" && gPhotonStructure)) {
       targetNode = aAreaElement.ownerDocument.elementFromPoint(dragX, dragY);
       while (targetNode && targetNode.parentNode != expectedParent) {
         targetNode = targetNode.parentNode;
