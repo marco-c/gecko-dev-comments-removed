@@ -17,7 +17,6 @@
 #include "mozilla/gfx/2D.h"             
 #include "mozilla/gfx/Point.h"          
 #include "mozilla/gfx/Types.h"          
-#include "mozilla/layers/FenceUtils.h"  
 #include "mozilla/ipc/Shmem.h"          
 #include "mozilla/layers/AtomicRefCountedWithFinalize.h"
 #include "mozilla/layers/CompositorTypes.h"  
@@ -286,10 +285,6 @@ public:
   virtual bool UpdateFromSurface(gfx::SourceSurface* aSurface) { return false; };
 
   virtual bool ReadBack(TextureReadbackSink* aReadbackSink) { return false; }
-
-  
-  
-  virtual void WaitForFence(FenceHandle* aFence) {};
 
   virtual void SyncWithObject(SyncObject* aFence) {};
 

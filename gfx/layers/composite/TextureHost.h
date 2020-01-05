@@ -17,7 +17,6 @@
 #include "mozilla/gfx/Types.h"          
 #include "mozilla/layers/Compositor.h"  
 #include "mozilla/layers/CompositorTypes.h"  
-#include "mozilla/layers/FenceUtils.h"  
 #include "mozilla/layers/LayersTypes.h"  
 #include "mozilla/layers/LayersSurfaces.h"
 #include "mozilla/mozalloc.h"           
