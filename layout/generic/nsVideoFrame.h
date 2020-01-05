@@ -128,6 +128,9 @@ protected:
   
   void UpdatePosterSource(bool aNotify);
 
+  
+  void UpdateTextTrack();
+
   virtual ~nsVideoFrame();
 
   
