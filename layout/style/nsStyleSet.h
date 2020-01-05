@@ -298,7 +298,7 @@ class nsStyleSet final
   
   already_AddRefed<nsStyleContext>
   ResolveXULTreePseudoStyle(mozilla::dom::Element* aParentElement,
-                            nsIAtom* aPseudoTag,
+                            nsICSSAnonBoxPseudo* aPseudoTag,
                             nsStyleContext* aParentContext,
                             nsICSSPseudoComparator* aComparator);
 #endif
