@@ -1635,6 +1635,185 @@ GetNSSProfilePath(nsAutoCString& aProfilePath)
   return NS_OK;
 }
 
+#ifndef ANDROID
+
+
+
+
+
+static nsresult
+AttemptToRenamePKCS11ModuleDB(const nsACString& profilePath)
+{
+  
+  
+  
+  const char* dbDirOverride = getenv("MOZPSM_NSSDBDIR_OVERRIDE");
+  if (dbDirOverride && strlen(dbDirOverride) > 0) {
+    MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
+            ("MOZPSM_NSSDBDIR_OVERRIDE set - not renaming PKCS#11 module DB"));
+    return NS_OK;
+  }
+  NS_NAMED_LITERAL_CSTRING(moduleDBFilename, "secmod.db");
+  NS_NAMED_LITERAL_CSTRING(destModuleDBFilename, "secmod.db.fips");
+  nsCOMPtr<nsIFile> dbFile = do_CreateInstance("@mozilla.org/file/local;1");
+  if (!dbFile) {
+    return NS_ERROR_FAILURE;
+  }
+  nsresult rv = dbFile->InitWithNativePath(profilePath);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  rv = dbFile->AppendNative(moduleDBFilename);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  
+  bool exists;
+  rv = dbFile->Exists(&exists);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  
+  if (!exists) {
+    MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
+            ("%s doesn't exist?", moduleDBFilename.get()));
+    return NS_OK;
+  }
+  nsCOMPtr<nsIFile> destDBFile = do_CreateInstance("@mozilla.org/file/local;1");
+  if (!destDBFile) {
+    return NS_ERROR_FAILURE;
+  }
+  rv = destDBFile->InitWithNativePath(profilePath);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  rv = destDBFile->AppendNative(destModuleDBFilename);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  
+  
+  rv = destDBFile->Exists(&exists);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  
+  if (exists) {
+    MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
+            ("%s already exists - not overwriting",
+             destModuleDBFilename.get()));
+    return NS_OK;
+  }
+  
+  nsCOMPtr<nsIFile> profileDir = do_CreateInstance("@mozilla.org/file/local;1");
+  if (!profileDir) {
+    return NS_ERROR_FAILURE;
+  }
+  rv = profileDir->InitWithNativePath(profilePath);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  
+  
+  
+  Unused << dbFile->MoveToNative(profileDir, destModuleDBFilename);
+  return NS_OK;
+}
+#endif 
+
+
+
+
+
+
+
+
+
+
+
+static nsresult
+InitializeNSSWithFallbacks(const nsACString& profilePath, bool nocertdb,
+                           bool safeMode)
+{
+  if (nocertdb || profilePath.IsEmpty()) {
+    MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
+            ("nocertdb mode or empty profile path -> NSS_NoDB_Init"));
+    SECStatus srv = NSS_NoDB_Init(nullptr);
+    return srv == SECSuccess ? NS_OK : NS_ERROR_FAILURE;
+  }
+
+  const char* profilePathCStr = PromiseFlatCString(profilePath).get();
+  
+#ifndef ANDROID
+  PRErrorCode savedPRErrorCode1;
+#endif 
+  SECStatus srv = ::mozilla::psm::InitializeNSS(profilePathCStr, false,
+                                                !safeMode);
+  if (srv == SECSuccess) {
+    MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("initialized NSS in r/w mode"));
+    return NS_OK;
+  }
+#ifndef ANDROID
+  savedPRErrorCode1 = PR_GetError();
+  PRErrorCode savedPRErrorCode2;
+#endif 
+  
+  srv = ::mozilla::psm::InitializeNSS(profilePathCStr, true, !safeMode);
+  if (srv == SECSuccess) {
+    MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("initialized NSS in r-o mode"));
+    return NS_OK;
+  }
+#ifndef ANDROID
+  savedPRErrorCode2 = PR_GetError();
+#endif 
+
+#ifndef ANDROID
+  
+  
+  
+  if (!safeMode && (savedPRErrorCode1 == SEC_ERROR_LEGACY_DATABASE ||
+                    savedPRErrorCode2 == SEC_ERROR_LEGACY_DATABASE)) {
+    MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("attempting no-module db init"));
+    
+    
+    
+    
+    
+    srv = ::mozilla::psm::InitializeNSS(profilePathCStr, false, false);
+    if (srv == SECSuccess) {
+      MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("FIPS may be the problem"));
+      
+      srv = NSS_Shutdown();
+      if (srv != SECSuccess) {
+        return NS_ERROR_FAILURE;
+      }
+      MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("trying to rename module db"));
+      
+      
+      
+      nsresult rv = AttemptToRenamePKCS11ModuleDB(profilePath);
+      if (NS_FAILED(rv)) {
+        return rv;
+      }
+      srv = ::mozilla::psm::InitializeNSS(profilePathCStr, false, true);
+      if (srv == SECSuccess) {
+        MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("initialized in r/w mode"));
+        return NS_OK;
+      }
+      srv = ::mozilla::psm::InitializeNSS(profilePathCStr, true, true);
+      if (srv == SECSuccess) {
+        MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("initialized in r-o mode"));
+        return NS_OK;
+      }
+    }
+  }
+#endif
+
+  MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("last-resort NSS_NoDB_Init"));
+  srv = NSS_NoDB_Init(nullptr);
+  return srv == SECSuccess ? NS_OK : NS_ERROR_FAILURE;
+}
+
 nsresult
 nsNSSComponent::InitializeNSS()
 {
@@ -1664,7 +1843,6 @@ nsNSSComponent::InitializeNSS()
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  SECStatus init_rv = SECFailure;
   bool nocertdb = Preferences::GetBool("security.nocertdb", false);
   bool inSafeMode = true;
   nsCOMPtr<nsIXULRuntime> runtime(do_GetService("@mozilla.org/xre/runtime;1"));
@@ -1679,39 +1857,10 @@ nsNSSComponent::InitializeNSS()
   }
   MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("inSafeMode: %u\n", inSafeMode));
 
-  PRErrorCode savedPRErrorCode1 = 0;
-  PRErrorCode savedPRErrorCode2 = 0;
-
-  if (!nocertdb && !profileStr.IsEmpty()) {
-    
-    
-    init_rv = ::mozilla::psm::InitializeNSS(profileStr.get(), false, !inSafeMode);
-    
-    if (init_rv != SECSuccess) {
-      savedPRErrorCode1 = PR_GetError();
-      MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("could not init NSS r/w in %s\n", profileStr.get()));
-      init_rv = ::mozilla::psm::InitializeNSS(profileStr.get(), true, !inSafeMode);
-    }
-    if (init_rv != SECSuccess) {
-      savedPRErrorCode2 = PR_GetError();
-      MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("could not init in r/o either\n"));
-    }
-  }
-  
-  
-  
-  if (nocertdb || init_rv != SECSuccess) {
-    init_rv = NSS_NoDB_Init(nullptr);
-    if (init_rv != SECSuccess) {
-      PRErrorCode savedPRErrorCode3 = PR_GetError();
-      MOZ_CRASH_UNSAFE_PRINTF("NSS initialization failed PRErrorCodes %d %d %d",
-                              savedPRErrorCode1, savedPRErrorCode2,
-                              savedPRErrorCode3);
-    }
-  }
-  if (init_rv != SECSuccess) {
-    MOZ_LOG(gPIPNSSLog, LogLevel::Error, ("could not initialize NSS - panicking\n"));
-    return NS_ERROR_NOT_AVAILABLE;
+  rv = InitializeNSSWithFallbacks(profileStr, nocertdb, inSafeMode);
+  if (NS_FAILED(rv)) {
+    MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("failed to initialize NSS"));
+    return rv;
   }
 
   
