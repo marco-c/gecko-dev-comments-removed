@@ -961,7 +961,7 @@ GeckoDriver.prototype.executeJSScript = function* (cmd, resp) {
 
 
 
-GeckoDriver.prototype.get = function*(cmd, resp) {
+GeckoDriver.prototype.get = function* (cmd, resp) {
   assert.content(this.context);
   assert.window(this.getCurrentWindow());
 
@@ -980,7 +980,7 @@ GeckoDriver.prototype.get = function*(cmd, resp) {
       startTime: new Date().getTime(),
     };
     this.mm.broadcastAsyncMessage(
-        "Marionette:pollForReadyState" + this.curBrowser.curFrameId,
+        "Marionette:waitForPageLoaded" + this.curBrowser.curFrameId,
         parameters);
   });
 
@@ -1081,9 +1081,7 @@ GeckoDriver.prototype.goBack = function* (cmd, resp) {
       startTime: new Date().getTime(),
     };
     this.mm.broadcastAsyncMessage(
-        
-        
-        "Marionette:pollForReadyState" + this.curBrowser.curFrameId,
+        "Marionette:waitForPageLoaded" + this.curBrowser.curFrameId,
         parameters);
   });
 
@@ -1123,9 +1121,7 @@ GeckoDriver.prototype.goForward = function* (cmd, resp) {
       startTime: new Date().getTime(),
     };
     this.mm.broadcastAsyncMessage(
-        
-        
-        "Marionette:pollForReadyState" + this.curBrowser.curFrameId,
+        "Marionette:waitForPageLoaded" + this.curBrowser.curFrameId,
         parameters);
   });
 
