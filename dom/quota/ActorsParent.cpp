@@ -1640,6 +1640,9 @@ public:
 
 private:
   nsresult
+  MaybeRemoveCorruptData(const OriginProps& aOriginProps);
+
+  nsresult
   DoProcessOriginDirectories() override;
 };
 
@@ -3869,37 +3872,6 @@ QuotaManager::InitializeRepository(PersistenceType aPersistenceType)
   return NS_OK;
 }
 
-namespace {
-
-
-
-
-
-bool
-MaybeRemoveCorruptDirectory(const nsAString& aLeafName, nsIFile* aDir)
-{
-#ifdef NIGHTLY_BUILD
-  MOZ_ASSERT(aDir);
-
-  if (aLeafName != NS_LITERAL_STRING("morgue")) {
-    return false;
-  }
-
-  NS_WARNING("QuotaManager removing corrupt morgue directory!");
-
-  nsresult rv = aDir->Remove(true );
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return false;
-  }
-
-  return true;
-#else
-  return false;
-#endif 
-}
-
-} 
-
 nsresult
 QuotaManager::InitializeOrigin(PersistenceType aPersistenceType,
                                const nsACString& aGroup,
@@ -3961,10 +3933,6 @@ QuotaManager::InitializeOrigin(PersistenceType aPersistenceType,
 
       UNKNOWN_FILE_WARNING(leafName);
       return NS_ERROR_UNEXPECTED;
-    }
-
-    if (MaybeRemoveCorruptDirectory(leafName, file)) {
-      continue;
     }
 
     Client::Type clientType;
@@ -4311,6 +4279,21 @@ QuotaManager::UpgradeStorageFrom1_0To2_0(mozIStorageConnection* aConnection)
   AssertIsOnIOThread();
   MOZ_ASSERT(aConnection);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   
@@ -6219,10 +6202,6 @@ GetUsageOp::AddToUsage(QuotaManager* aQuotaManager,
         continue;
       }
 
-      if (MaybeRemoveCorruptDirectory(leafName, file)) {
-        continue;
-      }
-
       Client::Type clientType;
       rv = Client::TypeFromText(leafName, clientType);
       if (NS_FAILED(rv)) {
@@ -8034,6 +8013,15 @@ UpgradeStorageFrom1_0To2_0Helper::DoUpgrade()
       return rv;
     }
 
+    
+    
+    
+    
+    rv = MaybeRemoveCorruptData(originProps);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
     int64_t timestamp;
     nsCString group;
     nsCString origin;
@@ -8072,6 +8060,79 @@ UpgradeStorageFrom1_0To2_0Helper::DoUpgrade()
   }
 
   rv = ProcessOriginDirectories();
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  return NS_OK;
+}
+
+nsresult
+UpgradeStorageFrom1_0To2_0Helper::MaybeRemoveCorruptData(
+                                                const OriginProps& aOriginProps)
+{
+  AssertIsOnIOThread();
+  MOZ_ASSERT(aOriginProps.mDirectory);
+
+  nsCOMPtr<nsISimpleEnumerator> entries;
+  nsresult rv =
+    aOriginProps.mDirectory->GetDirectoryEntries(getter_AddRefs(entries));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  bool hasMore;
+  while (NS_SUCCEEDED((rv = entries->HasMoreElements(&hasMore))) && hasMore) {
+    nsCOMPtr<nsISupports> entry;
+    rv = entries->GetNext(getter_AddRefs(entry));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
+    nsCOMPtr<nsIFile> file = do_QueryInterface(entry);
+    if (NS_WARN_IF(!file)) {
+      return rv;
+    }
+
+    bool isDirectory;
+    rv = file->IsDirectory(&isDirectory);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
+    nsString leafName;
+    rv = file->GetLeafName(leafName);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
+    if (!isDirectory) {
+      
+      if (!IsOriginMetadata(leafName) &&
+          !IsTempMetadata(leafName)) {
+        UNKNOWN_FILE_WARNING(leafName);
+      }
+      continue;
+    }
+
+    if (leafName.EqualsLiteral("morgue")) {
+      QM_WARNING("Deleting accidental morgue directory!");
+
+      rv = file->Remove( true);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
+
+      continue;
+    }
+
+    Client::Type clientType;
+    rv = Client::TypeFromText(leafName, clientType);
+    if (NS_FAILED(rv)) {
+      UNKNOWN_FILE_WARNING(leafName);
+      continue;
+    }
+  }
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
