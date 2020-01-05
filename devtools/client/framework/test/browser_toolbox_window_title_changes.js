@@ -28,28 +28,35 @@ function test() {
       .then(() => toolbox.selectTool(TOOL_ID_1))
 
     
-      .then(() => toolbox.switchHost(Toolbox.HostType.WINDOW))
+      .then(() => {
+        
+        
+        return toolbox.switchHost(Toolbox.HostType.WINDOW)
+          .then(() => waitForTitleChange(toolbox));
+      })
       .then(checkTitle.bind(null, NAME_1, URL_1, "toolbox undocked"))
 
     
-      .then(() => toolbox.selectTool(TOOL_ID_2))
+      .then(() => {
+        let onTitleChanged = waitForTitleChange(toolbox);
+        toolbox.selectTool(TOOL_ID_2);
+        return onTitleChanged;
+      })
       .then(checkTitle.bind(null, NAME_1, URL_1, "tool changed"))
 
     
       .then(function () {
-        let deferred = defer();
-        target.once("navigate", () => deferred.resolve());
+        let onTitleChanged = waitForTitleChange(toolbox);
         gBrowser.loadURI(URL_2);
-        return deferred.promise;
+        return onTitleChanged;
       })
       .then(checkTitle.bind(null, NAME_2, URL_2, "url changed"))
 
     
       .then(() => {
-        let deferred = defer();
-        target.once("navigate", () => deferred.resolve());
+        let onTitleChanged = waitForTitleChange(toolbox);
         gBrowser.loadURI(URL_3);
-        return deferred.promise;
+        return onTitleChanged;
       })
       .then(checkTitle.bind(null, NAME_3, URL_3, "url changed"))
 
@@ -66,7 +73,11 @@ function test() {
               return gDevTools.showToolbox(target, null, Toolbox.HostType.WINDOW);
             })
             .then(function (aToolbox) { toolbox = aToolbox; })
-            .then(() => toolbox.selectTool(TOOL_ID_1))
+            .then(() => {
+              let onTitleChanged = waitForTitleChange(toolbox);
+              toolbox.selectTool(TOOL_ID_1);
+              return onTitleChanged;
+            })
             .then(checkTitle.bind(null, NAME_3, URL_3,
                                   "toolbox destroyed and recreated"))
 

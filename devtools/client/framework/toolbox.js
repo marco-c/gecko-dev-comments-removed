@@ -40,8 +40,6 @@ loader.lazyRequireGetter(this, "CommandUtils",
   "devtools/client/shared/developer-toolbar", true);
 loader.lazyRequireGetter(this, "getHighlighterUtils",
   "devtools/client/framework/toolbox-highlighter-utils", true);
-loader.lazyRequireGetter(this, "Hosts",
-  "devtools/client/framework/toolbox-hosts", true);
 loader.lazyRequireGetter(this, "Selection",
   "devtools/client/framework/selection", true);
 loader.lazyRequireGetter(this, "InspectorFront",
@@ -83,9 +81,14 @@ loader.lazyGetter(this, "registerHarOverlay", () => {
 
 
 
-function Toolbox(target, selectedTool, hostType, hostOptions) {
+
+
+
+function Toolbox(target, selectedTool, hostType, contentWindow, frameId) {
   this._target = target;
-  this._win = null;
+  this._win = contentWindow;
+  this.frameId = frameId;
+
   this._toolPanels = new Map();
   this._telemetry = new Telemetry();
   if (Services.prefs.getBoolPref("devtools.sourcemap.locations.enabled")) {
@@ -113,6 +116,7 @@ function Toolbox(target, selectedTool, hostType, hostOptions) {
   this._prefChanged = this._prefChanged.bind(this);
   this._saveSplitConsoleHeight = this._saveSplitConsoleHeight.bind(this);
   this._onFocus = this._onFocus.bind(this);
+  this._onBrowserMessage = this._onBrowserMessage.bind(this);
   this._showDevEditionPromo = this._showDevEditionPromo.bind(this);
   this._updateTextBoxMenuItems = this._updateTextBoxMenuItems.bind(this);
   this._onBottomHostMinimized = this._onBottomHostMinimized.bind(this);
@@ -130,16 +134,12 @@ function Toolbox(target, selectedTool, hostType, hostOptions) {
 
   this._target.on("close", this.destroy);
 
-  if (!hostType) {
-    hostType = Services.prefs.getCharPref(this._prefs.LAST_HOST);
-  }
   if (!selectedTool) {
     selectedTool = Services.prefs.getCharPref(this._prefs.LAST_TOOL);
   }
   this._defaultToolId = selectedTool;
 
-  this._hostOptions = hostOptions;
-  this._host = this._createHost(hostType, hostOptions);
+  this._hostType = hostType;
 
   EventEmitter.decorate(this);
 
@@ -174,10 +174,8 @@ Toolbox.prototype = {
   _URL: "about:devtools-toolbox",
 
   _prefs: {
-    LAST_HOST: "devtools.toolbox.host",
     LAST_TOOL: "devtools.toolbox.selectedTool",
     SIDE_ENABLED: "devtools.toolbox.sideEnabled",
-    PREVIOUS_HOST: "devtools.toolbox.previousHost"
   },
 
   currentToolId: null,
@@ -254,7 +252,7 @@ Toolbox.prototype = {
 
 
   get hostType() {
-    return this._host.type;
+    return this._hostType;
   },
 
   
@@ -337,27 +335,18 @@ Toolbox.prototype = {
 
   open: function () {
     return Task.spawn(function* () {
-      let iframe = yield this._host.create();
-      this._win = iframe.contentWindow;
-
-      let domReady = defer();
-
-      
-      let location = iframe.contentWindow.location.href;
-      if (!location.startsWith(this._URL)) {
-        iframe.setAttribute("src", this._URL);
-      } else {
-        
-        this._URL = location;
-      }
-
       this.browserRequire = BrowserLoader({
         window: this.doc.defaultView,
         useOnlyShared: true
       }).require;
 
-      iframe.setAttribute("aria-label", L10N.getStr("toolbox.label"));
-      let domHelper = new DOMHelpers(iframe.contentWindow);
+      if (this.win.location.href.startsWith(this._URL)) {
+        
+        this._URL = this.win.location.href;
+      }
+
+      let domReady = defer();
+      let domHelper = new DOMHelpers(this.win);
       domHelper.onceDOMReady(() => {
         domReady.resolve();
       }, this._URL);
@@ -610,6 +599,7 @@ Toolbox.prototype = {
     this.doc.addEventListener("keypress", this._splitConsoleOnKeypress, false);
     this.doc.addEventListener("focus", this._onFocus, true);
     this.win.addEventListener("unload", this.destroy);
+    this.win.addEventListener("message", this._onBrowserMessage, true);
   },
 
   _removeHostListeners: function () {
@@ -618,6 +608,29 @@ Toolbox.prototype = {
       this.doc.removeEventListener("keypress", this._splitConsoleOnKeypress, false);
       this.doc.removeEventListener("focus", this._onFocus, true);
       this.win.removeEventListener("unload", this.destroy);
+      this.win.removeEventListener("message", this._onBrowserMessage, true);
+    }
+  },
+
+  
+  _onBrowserMessage: function (event) {
+    if (!event.data) {
+      return;
+    }
+    switch (event.data.name) {
+      case "switched-host":
+        this._onSwitchedHost(event.data);
+        break;
+      case "host-minimized":
+        if (this.hostType == Toolbox.HostType.BOTTOM) {
+          this._onBottomHostMinimized();
+        }
+        break;
+      case "host-maximized":
+        if (this.hostType == Toolbox.HostType.BOTTOM) {
+          this._onBottomHostMaximized();
+        }
+        break;
     }
   },
 
@@ -782,9 +795,6 @@ Toolbox.prototype = {
       this._onBottomHostMaximized();
 
       
-      this._host.on("minimized", this._onBottomHostMinimized);
-      this._host.on("maximized", this._onBottomHostMaximized);
-      
       this.on("before-select", this._onToolSelectWhileMinimized);
       
       this.once("host-will-change", this._onBottomHostWillChange);
@@ -842,14 +852,27 @@ Toolbox.prototype = {
   },
 
   _onToolSelectWhileMinimized: function () {
-    this._host.maximize();
+    this.postMessage({
+      name: "maximize-host"
+    });
+  },
+
+  postMessage: function (msg) {
+    
+    
+    if (this.win.parent) {
+      
+      
+      msg.frameId = this.frameId;
+      this.win.parent.postMessage(msg, "*");
+    }
   },
 
   _onBottomHostWillChange: function () {
-    this._host.maximize();
+    this.postMessage({
+      name: "maximize-host"
+    });
 
-    this._host.off("minimized", this._onBottomHostMinimized);
-    this._host.off("maximized", this._onBottomHostMaximized);
     this.off("before-select", this._onToolSelectWhileMinimized);
   },
 
@@ -862,7 +885,10 @@ Toolbox.prototype = {
     
     let toolbarHeight = this.tabbar.getBoxQuads({box: "content"})[0].bounds
                                                                     .height;
-    this._host.toggleMinimizeMode(toolbarHeight);
+    this.postMessage({
+      name: "toggle-minimize-mode",
+      toolbarHeight
+    });
   },
 
   
@@ -1625,7 +1651,9 @@ Toolbox.prototype = {
 
 
   raise: function () {
-    this._host.raise();
+    this.postMessage({
+      name: "raise-host"
+    });
   },
 
   
@@ -1639,7 +1667,10 @@ Toolbox.prototype = {
     } else {
       title = L10N.getFormatStr("toolbox.titleTemplate1", this.target.url);
     }
-    this._host.setTitle(title);
+    this.postMessage({
+      name: "set-host-title",
+      title
+    });
   },
 
   
@@ -1820,45 +1851,8 @@ Toolbox.prototype = {
   
 
 
-
-
-
-
-
-
-
-
-
-
-  _createHost: function (hostType, options) {
-    if (!Hosts[hostType]) {
-      throw new Error("Unknown hostType: " + hostType);
-    }
-
-    
-    let newHost = new Hosts[hostType](this.target.tab, options);
-    newHost.on("window-closed", this.destroy);
-    return newHost;
-  },
-
-  
-
-
-
   switchToPreviousHost: function () {
-    let hostType = Services.prefs.getCharPref(this._prefs.PREVIOUS_HOST);
-
-    
-    
-    if (hostType === this.hostType) {
-      if (hostType === Toolbox.HostType.BOTTOM) {
-        hostType = Toolbox.HostType.SIDE;
-      } else {
-        hostType = Toolbox.HostType.BOTTOM;
-      }
-    }
-
-    return this.switchHost(hostType);
+    return this.switchHost("previous");
   },
 
   
@@ -1878,36 +1872,30 @@ Toolbox.prototype = {
     
     
     
-    
     this.focusTool(this.currentToolId, false);
 
-    let newHost = this._createHost(hostType);
-    return newHost.create().then(iframe => {
-      
-      iframe.QueryInterface(Ci.nsIFrameLoaderOwner);
-      iframe.swapFrameLoaders(this._host.frame);
-
-      this._host.off("window-closed", this.destroy);
-      this.destroyHost();
-
-      let prevHostType = this._host.type;
-      this._host = newHost;
-
-      if (this.hostType != Toolbox.HostType.CUSTOM) {
-        Services.prefs.setCharPref(this._prefs.LAST_HOST, this._host.type);
-        Services.prefs.setCharPref(this._prefs.PREVIOUS_HOST, prevHostType);
-      }
-
-      this._buildDockButtons();
-      this._addKeysToWindow();
-
-      
-      this.focusTool(this.currentToolId, true);
-
-      this.emit("host-changed");
-
-      this._telemetry.log(HOST_HISTOGRAM, this._getTelemetryHostId());
+    
+    
+    this.postMessage({
+      name: "switch-host",
+      hostType
     });
+
+    return this.once("host-changed");
+  },
+
+  _onSwitchedHost: function ({ hostType }) {
+    this._hostType = hostType;
+
+    this._buildDockButtons();
+    this._addKeysToWindow();
+
+    
+    
+    this.focusTool(this.currentToolId, true);
+
+    this.emit("host-changed");
+    this._telemetry.log(HOST_HISTOGRAM, this._getTelemetryHostId());
   },
 
   
@@ -2082,16 +2070,6 @@ Toolbox.prototype = {
   
 
 
-
-
-  destroyHost: function () {
-    this._removeHostListeners();
-    return this._host.destroy();
-  },
-
-  
-
-
   destroy: function () {
     
     
@@ -2197,10 +2175,18 @@ Toolbox.prototype = {
     
     deferred.resolve(settleAll(outstanding)
         .catch(console.error)
-        .then(() => this.destroyHost())
-        .catch(console.error)
         .then(() => {
-          this._win = null;
+          this._removeHostListeners();
+
+          
+          
+          
+          
+          
+          
+          if (win.location) {
+            win.location.replace("about:blank");
+          }
 
           
           
@@ -2220,6 +2206,7 @@ Toolbox.prototype = {
           
           
           this._host = null;
+          this._win = null;
           this._toolPanels.clear();
 
           
