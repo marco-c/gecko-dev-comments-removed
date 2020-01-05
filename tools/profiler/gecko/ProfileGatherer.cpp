@@ -27,8 +27,8 @@ static const uint32_t MAX_SUBPROCESS_EXIT_PROFILES = 5;
 
 NS_IMPL_ISUPPORTS(ProfileGatherer, nsIObserver)
 
-ProfileGatherer::ProfileGatherer(Sampler* aSampler)
-  : mSampler(aSampler)
+ProfileGatherer::ProfileGatherer()
+  : mIsCancelled(false)
   , mSinceTime(0)
   , mPendingProfiles(0)
   , mGathering(false)
@@ -145,7 +145,7 @@ ProfileGatherer::Finish()
 {
   MOZ_ASSERT(NS_IsMainThread());
 
-  if (!mSampler) {
+  if (mIsCancelled) {
     
     
     return;
@@ -224,8 +224,7 @@ ProfileGatherer::Cancel()
   mPromise = nullptr;
   mFile = nullptr;
 
-  
-  mSampler = nullptr;
+  mIsCancelled = true;
 }
 
 void
