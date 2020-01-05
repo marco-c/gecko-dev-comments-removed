@@ -6,8 +6,8 @@
 
 #![deny(unsafe_block)]
 
-use block::{BlockFlow, MarginsMayNotCollapse, WidthAndMarginsComputer};
-use block::{WidthConstraintInput, WidthConstraintSolution};
+use block::{BlockFlow, MarginsMayNotCollapse, ISizeAndMarginsComputer};
+use block::{ISizeConstraintInput, ISizeConstraintSolution};
 use construct::FlowConstructor;
 use context::LayoutContext;
 use floats::FloatKind;
@@ -31,7 +31,7 @@ pub struct TableWrapperFlow {
     pub block_flow: BlockFlow,
 
     
-    pub col_widths: Vec<Au>,
+    pub col_inline_sizes: Vec<Au>,
 
     
     pub table_layout: TableLayout,
@@ -50,7 +50,7 @@ impl TableWrapperFlow {
         };
         TableWrapperFlow {
             block_flow: block_flow,
-            col_widths: vec!(),
+            col_inline_sizes: vec!(),
             table_layout: table_layout
         }
     }
@@ -67,7 +67,7 @@ impl TableWrapperFlow {
         };
         TableWrapperFlow {
             block_flow: block_flow,
-            col_widths: vec!(),
+            col_inline_sizes: vec!(),
             table_layout: table_layout
         }
     }
@@ -85,7 +85,7 @@ impl TableWrapperFlow {
         };
         TableWrapperFlow {
             block_flow: block_flow,
-            col_widths: vec!(),
+            col_inline_sizes: vec!(),
             table_layout: table_layout
         }
     }
@@ -100,8 +100,8 @@ impl TableWrapperFlow {
     
     
     #[inline(always)]
-    fn assign_height_table_wrapper_base(&mut self, layout_context: &mut LayoutContext) {
-        self.block_flow.assign_height_block_base(layout_context, MarginsMayNotCollapse);
+    fn assign_block_size_table_wrapper_base(&mut self, layout_context: &mut LayoutContext) {
+        self.block_flow.assign_block_size_block_base(layout_context, MarginsMayNotCollapse);
     }
 
     pub fn build_display_list_table_wrapper(&mut self, layout_context: &LayoutContext) {
@@ -129,17 +129,17 @@ impl Flow for TableWrapperFlow {
 
 
 
-    fn bubble_widths(&mut self, ctx: &mut LayoutContext) {
+    fn bubble_inline_sizes(&mut self, ctx: &mut LayoutContext) {
         
         for kid in self.block_flow.base.child_iter() {
             assert!(kid.is_table_caption() || kid.is_table());
 
             if kid.is_table() {
-                self.col_widths.push_all(kid.as_table().col_widths.as_slice());
+                self.col_inline_sizes.push_all(kid.as_table().col_inline_sizes.as_slice());
             }
         }
 
-        self.block_flow.bubble_widths(ctx);
+        self.block_flow.bubble_inline_sizes(ctx);
     }
 
     
@@ -147,8 +147,8 @@ impl Flow for TableWrapperFlow {
     
     
     
-    fn assign_widths(&mut self, ctx: &mut LayoutContext) {
-        debug!("assign_widths({}): assigning width for flow",
+    fn assign_inline_sizes(&mut self, ctx: &mut LayoutContext) {
+        debug!("assign_inline_sizes({}): assigning inline_size for flow",
                if self.is_float() {
                    "floated table_wrapper"
                } else {
@@ -156,35 +156,35 @@ impl Flow for TableWrapperFlow {
                });
 
         
-        let containing_block_width = self.block_flow.base.position.size.width;
+        let containing_block_inline_size = self.block_flow.base.position.size.inline;
 
-        let width_computer = TableWrapper;
-        width_computer.compute_used_width_table_wrapper(self, ctx, containing_block_width);
+        let inline_size_computer = TableWrapper;
+        inline_size_computer.compute_used_inline_size_table_wrapper(self, ctx, containing_block_inline_size);
 
-        let left_content_edge = self.block_flow.fragment.border_box.origin.x;
-        let content_width = self.block_flow.fragment.border_box.size.width;
+        let inline_start_content_edge = self.block_flow.fragment.border_box.start.i;
+        let content_inline_size = self.block_flow.fragment.border_box.size.inline;
 
         match self.table_layout {
             FixedLayout | _ if self.is_float() =>
-                self.block_flow.base.position.size.width = content_width,
+                self.block_flow.base.position.size.inline = content_inline_size,
             _ => {}
         }
 
         
-        let assigned_col_widths = match self.table_layout {
+        let assigned_col_inline_sizes = match self.table_layout {
             FixedLayout => None,
-            AutoLayout => Some(self.col_widths.clone())
+            AutoLayout => Some(self.col_inline_sizes.clone())
         };
-        self.block_flow.propagate_assigned_width_to_children(left_content_edge, content_width, assigned_col_widths);
+        self.block_flow.propagate_assigned_inline_size_to_children(inline_start_content_edge, content_inline_size, assigned_col_inline_sizes);
     }
 
-    fn assign_height(&mut self, ctx: &mut LayoutContext) {
+    fn assign_block_size(&mut self, ctx: &mut LayoutContext) {
         if self.is_float() {
-            debug!("assign_height_float: assigning height for floated table_wrapper");
-            self.block_flow.assign_height_float(ctx);
+            debug!("assign_block_size_float: assigning block_size for floated table_wrapper");
+            self.block_flow.assign_block_size_float(ctx);
         } else {
-            debug!("assign_height: assigning height for table_wrapper");
-            self.assign_height_table_wrapper_base(ctx);
+            debug!("assign_block_size: assigning block_size for table_wrapper");
+            self.assign_block_size_table_wrapper_base(ctx);
         }
     }
 
@@ -206,119 +206,120 @@ impl fmt::Show for TableWrapperFlow {
 struct TableWrapper;
 
 impl TableWrapper {
-    fn compute_used_width_table_wrapper(&self,
+    fn compute_used_inline_size_table_wrapper(&self,
                                         table_wrapper: &mut TableWrapperFlow,
                                         ctx: &mut LayoutContext,
-                                        parent_flow_width: Au) {
-        let input = self.compute_width_constraint_inputs_table_wrapper(table_wrapper,
-                                                                       parent_flow_width,
+                                        parent_flow_inline_size: Au) {
+        let input = self.compute_inline_size_constraint_inputs_table_wrapper(table_wrapper,
+                                                                       parent_flow_inline_size,
                                                                        ctx);
 
-        let solution = self.solve_width_constraints(&mut table_wrapper.block_flow, &input);
+        let solution = self.solve_inline_size_constraints(&mut table_wrapper.block_flow, &input);
 
-        self.set_width_constraint_solutions(&mut table_wrapper.block_flow, solution);
+        self.set_inline_size_constraint_solutions(&mut table_wrapper.block_flow, solution);
         self.set_flow_x_coord_if_necessary(&mut table_wrapper.block_flow, solution);
     }
 
-    fn compute_width_constraint_inputs_table_wrapper(&self,
+    fn compute_inline_size_constraint_inputs_table_wrapper(&self,
                                                      table_wrapper: &mut TableWrapperFlow,
-                                                     parent_flow_width: Au,
+                                                     parent_flow_inline_size: Au,
                                                      ctx: &mut LayoutContext)
-                                                     -> WidthConstraintInput {
-        let mut input = self.compute_width_constraint_inputs(&mut table_wrapper.block_flow,
-                                                             parent_flow_width,
+                                                     -> ISizeConstraintInput {
+        let mut input = self.compute_inline_size_constraint_inputs(&mut table_wrapper.block_flow,
+                                                             parent_flow_inline_size,
                                                              ctx);
-        let computed_width = match table_wrapper.table_layout {
+        let computed_inline_size = match table_wrapper.table_layout {
             FixedLayout => {
-                let fixed_cells_width = table_wrapper.col_widths.iter().fold(Au(0),
-                                                                             |sum, width| sum.add(width));
+                let fixed_cells_inline_size = table_wrapper.col_inline_sizes.iter().fold(Au(0),
+                                                                             |sum, inline_size| sum.add(inline_size));
 
-                let mut computed_width = input.computed_width.specified_or_zero();
+                let mut computed_inline_size = input.computed_inline_size.specified_or_zero();
                 let style = table_wrapper.block_flow.fragment.style();
 
                 
                 
                 
-                let padding_left = specified(style.get_padding().padding_left,
-                                             input.available_width);
-                let padding_right = specified(style.get_padding().padding_right,
-                                              input.available_width);
-                let border_left = style.get_border().border_left_width;
-                let border_right = style.get_border().border_right_width;
-                let padding_and_borders = padding_left + padding_right + border_left + border_right;
+                let padding = style.logical_padding();
+                let border = style.logical_border_width();
+                let padding_and_borders =
+                    specified(padding.inline_start, input.available_inline_size) +
+                    specified(padding.inline_end, input.available_inline_size) +
+                    border.inline_start +
+                    border.inline_end;
                 
                 
-                computed_width = geometry::max(fixed_cells_width + padding_and_borders, computed_width);
-                computed_width
+                computed_inline_size = geometry::max(
+                    fixed_cells_inline_size + padding_and_borders, computed_inline_size);
+                computed_inline_size
             },
             AutoLayout => {
                 
                 let mut cap_min = Au(0);
                 let mut cols_min = Au(0);
                 let mut cols_max = Au(0);
-                let mut col_min_widths = &vec!();
-                let mut col_pref_widths = &vec!();
+                let mut col_min_inline_sizes = &vec!();
+                let mut col_pref_inline_sizes = &vec!();
                 for kid in table_wrapper.block_flow.base.child_iter() {
                     if kid.is_table_caption() {
-                        cap_min = kid.as_block().base.intrinsic_widths.minimum_width;
+                        cap_min = kid.as_block().base.intrinsic_inline_sizes.minimum_inline_size;
                     } else {
                         assert!(kid.is_table());
-                        cols_min = kid.as_block().base.intrinsic_widths.minimum_width;
-                        cols_max = kid.as_block().base.intrinsic_widths.preferred_width;
-                        col_min_widths = kid.col_min_widths();
-                        col_pref_widths = kid.col_pref_widths();
+                        cols_min = kid.as_block().base.intrinsic_inline_sizes.minimum_inline_size;
+                        cols_max = kid.as_block().base.intrinsic_inline_sizes.preferred_inline_size;
+                        col_min_inline_sizes = kid.col_min_inline_sizes();
+                        col_pref_inline_sizes = kid.col_pref_inline_sizes();
                     }
                 }
                 
                 
-                let (width, extra_width) = match input.computed_width {
+                let (inline_size, extra_inline_size) = match input.computed_inline_size {
                     Auto => {
-                        if input.available_width > geometry::max(cols_max, cap_min) {
+                        if input.available_inline_size > geometry::max(cols_max, cap_min) {
                             if cols_max > cap_min {
-                                table_wrapper.col_widths = col_pref_widths.clone();
+                                table_wrapper.col_inline_sizes = col_pref_inline_sizes.clone();
                                 (cols_max, Au(0))
                             } else {
                                 (cap_min, cap_min - cols_min)
                             }
                         } else {
-                            let max = if cols_min >= input.available_width && cols_min >= cap_min {
-                                table_wrapper.col_widths = col_min_widths.clone();
+                            let max = if cols_min >= input.available_inline_size && cols_min >= cap_min {
+                                table_wrapper.col_inline_sizes = col_min_inline_sizes.clone();
                                 cols_min
                             } else {
-                                geometry::max(input.available_width, cap_min)
+                                geometry::max(input.available_inline_size, cap_min)
                             };
                             (max, max - cols_min)
                         }
                     },
-                    Specified(width) => {
-                        let max = if cols_min >= width && cols_min >= cap_min {
-                            table_wrapper.col_widths = col_min_widths.clone();
+                    Specified(inline_size) => {
+                        let max = if cols_min >= inline_size && cols_min >= cap_min {
+                            table_wrapper.col_inline_sizes = col_min_inline_sizes.clone();
                             cols_min
                         } else {
-                            geometry::max(width, cap_min)
+                            geometry::max(inline_size, cap_min)
                         };
                         (max, max - cols_min)
                     }
                 };
                 
-                if extra_width > Au(0) {
-                    let cell_len = table_wrapper.col_widths.len() as f64;
-                    table_wrapper.col_widths = col_min_widths.iter().map(|width| {
-                        width + extra_width.scale_by(1.0 / cell_len)
+                if extra_inline_size > Au(0) {
+                    let cell_len = table_wrapper.col_inline_sizes.len() as f64;
+                    table_wrapper.col_inline_sizes = col_min_inline_sizes.iter().map(|inline_size| {
+                        inline_size + extra_inline_size.scale_by(1.0 / cell_len)
                     }).collect();
                 }
-                width
+                inline_size
             }
         };
-        input.computed_width = Specified(computed_width);
+        input.computed_inline_size = Specified(computed_inline_size);
         input
     }
 }
 
-impl WidthAndMarginsComputer for TableWrapper {
+impl ISizeAndMarginsComputer for TableWrapper {
     
-    fn solve_width_constraints(&self, block: &mut BlockFlow, input: &WidthConstraintInput)
-                               -> WidthConstraintSolution {
-        self.solve_block_width_constraints(block, input)
+    fn solve_inline_size_constraints(&self, block: &mut BlockFlow, input: &ISizeConstraintInput)
+                               -> ISizeConstraintSolution {
+        self.solve_block_inline_size_constraints(block, input)
     }
 }

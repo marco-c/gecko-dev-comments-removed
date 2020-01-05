@@ -27,7 +27,7 @@ pub struct TableColGroupFlow {
     pub cols: Vec<Fragment>,
 
     
-    pub widths: Vec<Au>,
+    pub inline_sizes: Vec<Au>,
 }
 
 impl TableColGroupFlow {
@@ -38,7 +38,7 @@ impl TableColGroupFlow {
             base: BaseFlow::new((*node).clone()),
             fragment: Some(fragment),
             cols: fragments,
-            widths: vec!(),
+            inline_sizes: vec!(),
         }
     }
 }
@@ -52,10 +52,10 @@ impl Flow for TableColGroupFlow {
         self
     }
 
-    fn bubble_widths(&mut self, _: &mut LayoutContext) {
+    fn bubble_inline_sizes(&mut self, _: &mut LayoutContext) {
         for fragment in self.cols.iter() {
             
-            let width = MaybeAuto::from_style(fragment.style().get_box().width,
+            let inline_size = MaybeAuto::from_style(fragment.style().content_inline_size(),
                                               Au::new(0)).specified_or_zero();
 
             let span: int = match fragment.specific {
@@ -63,18 +63,18 @@ impl Flow for TableColGroupFlow {
                 _ => fail!("Other fragment come out in TableColGroupFlow. {:?}", fragment.specific)
             };
             for _ in range(0, span) {
-                self.widths.push(width);
+                self.inline_sizes.push(inline_size);
             }
         }
     }
 
     
     
-    fn assign_widths(&mut self, _ctx: &mut LayoutContext) {
+    fn assign_inline_sizes(&mut self, _ctx: &mut LayoutContext) {
     }
 
     
-    fn assign_height(&mut self, _ctx: &mut LayoutContext) {
+    fn assign_block_size(&mut self, _ctx: &mut LayoutContext) {
     }
 }
 

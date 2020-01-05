@@ -7,7 +7,7 @@
 #![deny(unsafe_block)]
 
 use block::BlockFlow;
-use block::WidthAndMarginsComputer;
+use block::ISizeAndMarginsComputer;
 use construct::FlowConstructor;
 use context::LayoutContext;
 use flow::{TableRowGroupFlowClass, FlowClass, Flow, ImmutableFlowUtils};
@@ -25,13 +25,13 @@ pub struct TableRowGroupFlow {
     pub block_flow: BlockFlow,
 
     
-    pub col_widths: Vec<Au>,
+    pub col_inline_sizes: Vec<Au>,
 
     
-    pub col_min_widths: Vec<Au>,
+    pub col_min_inline_sizes: Vec<Au>,
 
     
-    pub col_pref_widths: Vec<Au>,
+    pub col_pref_inline_sizes: Vec<Au>,
 }
 
 impl TableRowGroupFlow {
@@ -40,9 +40,9 @@ impl TableRowGroupFlow {
                                   -> TableRowGroupFlow {
         TableRowGroupFlow {
             block_flow: BlockFlow::from_node_and_fragment(node, fragment),
-            col_widths: vec!(),
-            col_min_widths: vec!(),
-            col_pref_widths: vec!(),
+            col_inline_sizes: vec!(),
+            col_min_inline_sizes: vec!(),
+            col_pref_inline_sizes: vec!(),
         }
     }
 
@@ -51,9 +51,9 @@ impl TableRowGroupFlow {
                      -> TableRowGroupFlow {
         TableRowGroupFlow {
             block_flow: BlockFlow::from_node(constructor, node),
-            col_widths: vec!(),
-            col_min_widths: vec!(),
-            col_pref_widths: vec!(),
+            col_inline_sizes: vec!(),
+            col_min_inline_sizes: vec!(),
+            col_pref_inline_sizes: vec!(),
         }
     }
 
@@ -74,25 +74,25 @@ impl TableRowGroupFlow {
     
     
     #[inline(always)]
-    fn assign_height_table_rowgroup_base(&mut self, layout_context: &mut LayoutContext) {
-        let (top_offset, _, _) = self.initialize_offsets();
+    fn assign_block_size_table_rowgroup_base(&mut self, layout_context: &mut LayoutContext) {
+        let (block_start_offset, _, _) = self.initialize_offsets();
 
-        let mut cur_y = top_offset;
+        let mut cur_y = block_start_offset;
 
         for kid in self.block_flow.base.child_iter() {
-            kid.assign_height_for_inorder_child_if_necessary(layout_context);
+            kid.assign_block_size_for_inorder_child_if_necessary(layout_context);
 
             let child_node = flow::mut_base(kid);
-            child_node.position.origin.y = cur_y;
-            cur_y = cur_y + child_node.position.size.height;
+            child_node.position.start.b = cur_y;
+            cur_y = cur_y + child_node.position.size.block;
         }
 
-        let height = cur_y - top_offset;
+        let block_size = cur_y - block_start_offset;
 
         let mut position = self.block_flow.fragment.border_box;
-        position.size.height = height;
+        position.size.block = block_size;
         self.block_flow.fragment.border_box = position;
-        self.block_flow.base.position.size.height = height;
+        self.block_flow.base.position.size.block = block_size;
     }
 
     pub fn build_display_list_table_rowgroup(&mut self, layout_context: &LayoutContext) {
@@ -114,16 +114,16 @@ impl Flow for TableRowGroupFlow {
         &mut self.block_flow
     }
 
-    fn col_widths<'a>(&'a mut self) -> &'a mut Vec<Au> {
-        &mut self.col_widths
+    fn col_inline_sizes<'a>(&'a mut self) -> &'a mut Vec<Au> {
+        &mut self.col_inline_sizes
     }
 
-    fn col_min_widths<'a>(&'a self) -> &'a Vec<Au> {
-        &self.col_min_widths
+    fn col_min_inline_sizes<'a>(&'a self) -> &'a Vec<Au> {
+        &self.col_min_inline_sizes
     }
 
-    fn col_pref_widths<'a>(&'a self) -> &'a Vec<Au> {
-        &self.col_pref_widths
+    fn col_pref_inline_sizes<'a>(&'a self) -> &'a Vec<Au> {
+        &self.col_pref_inline_sizes
     }
 
     
@@ -133,9 +133,9 @@ impl Flow for TableRowGroupFlow {
     
     
     
-    fn bubble_widths(&mut self, _: &mut LayoutContext) {
-        let mut min_width = Au(0);
-        let mut pref_width = Au(0);
+    fn bubble_inline_sizes(&mut self, _: &mut LayoutContext) {
+        let mut min_inline_size = Au(0);
+        let mut pref_inline_size = Au(0);
 
         for kid in self.block_flow.base.child_iter() {
             assert!(kid.is_table_row());
@@ -143,56 +143,57 @@ impl Flow for TableRowGroupFlow {
             
             
             
-            if self.col_widths.is_empty() { 
-                assert!(self.col_min_widths.is_empty() && self.col_pref_widths.is_empty());
+            if self.col_inline_sizes.is_empty() { 
+                assert!(self.col_min_inline_sizes.is_empty() && self.col_pref_inline_sizes.is_empty());
                 
-                self.col_widths = kid.col_widths().clone();
-                self.col_min_widths = kid.col_min_widths().clone();
-                self.col_pref_widths = kid.col_pref_widths().clone();
+                self.col_inline_sizes = kid.col_inline_sizes().clone();
+                self.col_min_inline_sizes = kid.col_min_inline_sizes().clone();
+                self.col_pref_inline_sizes = kid.col_pref_inline_sizes().clone();
             } else {
-                min_width = TableFlow::update_col_widths(&mut self.col_min_widths, kid.col_min_widths());
-                pref_width = TableFlow::update_col_widths(&mut self.col_pref_widths, kid.col_pref_widths());
+                min_inline_size = TableFlow::update_col_inline_sizes(&mut self.col_min_inline_sizes, kid.col_min_inline_sizes());
+                pref_inline_size = TableFlow::update_col_inline_sizes(&mut self.col_pref_inline_sizes, kid.col_pref_inline_sizes());
 
                 
-                let num_cols = self.col_widths.len();
-                let num_child_cols = kid.col_min_widths().len();
+                let num_cols = self.col_inline_sizes.len();
+                let num_child_cols = kid.col_min_inline_sizes().len();
                 for i in range(num_cols, num_child_cols) {
-                    self.col_widths.push(Au::new(0));
-                    let new_kid_min = *kid.col_min_widths().get(i);
-                    self.col_min_widths.push(*kid.col_min_widths().get(i));
-                    let new_kid_pref = *kid.col_pref_widths().get(i);
-                    self.col_pref_widths.push(*kid.col_pref_widths().get(i));
-                    min_width = min_width + new_kid_min;
-                    pref_width = pref_width + new_kid_pref;
+                    self.col_inline_sizes.push(Au::new(0));
+                    let new_kid_min = *kid.col_min_inline_sizes().get(i);
+                    self.col_min_inline_sizes.push(*kid.col_min_inline_sizes().get(i));
+                    let new_kid_pref = *kid.col_pref_inline_sizes().get(i);
+                    self.col_pref_inline_sizes.push(*kid.col_pref_inline_sizes().get(i));
+                    min_inline_size = min_inline_size + new_kid_min;
+                    pref_inline_size = pref_inline_size + new_kid_pref;
                 }
             }
         }
 
-        self.block_flow.base.intrinsic_widths.minimum_width = min_width;
-        self.block_flow.base.intrinsic_widths.preferred_width = geometry::max(min_width,
-                                                                              pref_width);
+        self.block_flow.base.intrinsic_inline_sizes.minimum_inline_size = min_inline_size;
+        self.block_flow.base.intrinsic_inline_sizes.preferred_inline_size = geometry::max(min_inline_size,
+                                                                              pref_inline_size);
     }
 
     
     
-    fn assign_widths(&mut self, ctx: &mut LayoutContext) {
-        debug!("assign_widths({}): assigning width for flow", "table_rowgroup");
+    fn assign_inline_sizes(&mut self, ctx: &mut LayoutContext) {
+        debug!("assign_inline_sizes({}): assigning inline_size for flow", "table_rowgroup");
 
         
-        let containing_block_width = self.block_flow.base.position.size.width;
+        let containing_block_inline_size = self.block_flow.base.position.size.inline;
         
-        let left_content_edge = Au::new(0);
-        let content_width = containing_block_width;
+        
+        let inline_start_content_edge = Au::new(0);
+        let content_inline_size = containing_block_inline_size;
 
-        let width_computer = InternalTable;
-        width_computer.compute_used_width(&mut self.block_flow, ctx, containing_block_width);
+        let inline_size_computer = InternalTable;
+        inline_size_computer.compute_used_inline_size(&mut self.block_flow, ctx, containing_block_inline_size);
 
-        self.block_flow.propagate_assigned_width_to_children(left_content_edge, content_width, Some(self.col_widths.clone()));
+        self.block_flow.propagate_assigned_inline_size_to_children(inline_start_content_edge, content_inline_size, Some(self.col_inline_sizes.clone()));
     }
 
-    fn assign_height(&mut self, ctx: &mut LayoutContext) {
-        debug!("assign_height: assigning height for table_rowgroup");
-        self.assign_height_table_rowgroup_base(ctx);
+    fn assign_block_size(&mut self, ctx: &mut LayoutContext) {
+        debug!("assign_block_size: assigning block_size for table_rowgroup");
+        self.assign_block_size_table_rowgroup_base(ctx);
     }
 
     fn compute_absolute_position(&mut self) {
