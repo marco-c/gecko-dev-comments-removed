@@ -64,7 +64,6 @@ private:
   friend class MediaSourceTrackDemuxer;
   
   bool ScanSourceBuffersForContent();
-  RefPtr<InitPromise> AttemptInit();
   TrackBuffersManager* GetManager(TrackInfo::TrackType aType);
   TrackInfo* GetTrackInfo(TrackInfo::TrackType);
   void DoAttachSourceBuffer(TrackBuffersManager* aSourceBuffer);
