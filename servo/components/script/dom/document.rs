@@ -13,7 +13,6 @@ use dom::bindings::codegen::Bindings::DOMRectBinding::DOMRectMethods;
 use dom::bindings::codegen::Bindings::DocumentBinding;
 use dom::bindings::codegen::Bindings::DocumentBinding::{DocumentMethods, DocumentReadyState};
 use dom::bindings::codegen::Bindings::ElementBinding::ElementMethods;
-use dom::bindings::codegen::Bindings::EventBinding::EventMethods;
 use dom::bindings::codegen::Bindings::EventHandlerBinding::EventHandlerNonNull;
 use dom::bindings::codegen::Bindings::EventHandlerBinding::OnErrorEventHandlerNonNull;
 use dom::bindings::codegen::Bindings::NodeBinding::NodeMethods;
@@ -41,7 +40,7 @@ use dom::documenttype::DocumentType;
 use dom::domimplementation::DOMImplementation;
 use dom::element::{Element, ElementCreator, ElementPerformFullscreenEnter, ElementPerformFullscreenExit};
 use dom::errorevent::ErrorEvent;
-use dom::event::{Event, EventBubbles, EventCancelable};
+use dom::event::{Event, EventBubbles, EventCancelable, EventDefault};
 use dom::eventdispatcher::EventStatus;
 use dom::eventtarget::EventTarget;
 use dom::focusevent::FocusEvent;
@@ -1308,10 +1307,10 @@ impl Document {
                                           props.key_code);
         let event = keyevent.upcast::<Event>();
         event.fire(target);
-        let mut prevented = event.DefaultPrevented();
+        let mut cancel_state = event.get_cancel_state();
 
         
-        if state != KeyState::Released && props.is_printable() && !prevented {
+        if state != KeyState::Released && props.is_printable() && cancel_state != EventDefault::Prevented {
             
             let event = KeyboardEvent::new(&self.window,
                                            DOMString::from("keypress"),
@@ -1334,40 +1333,39 @@ impl Document {
                                            0);
             let ev = event.upcast::<Event>();
             ev.fire(target);
-            prevented = ev.DefaultPrevented();
-            
+            cancel_state = ev.get_cancel_state();
         }
 
-        if !prevented {
+        if cancel_state == EventDefault::Allowed {
             constellation.send(ConstellationMsg::SendKeyEvent(ch, key, state, modifiers)).unwrap();
-        }
 
-        
-        
-        
-        
-        
-        match key {
-            Key::Space if !prevented && state == KeyState::Released => {
-                let maybe_elem = target.downcast::<Element>();
-                if let Some(el) = maybe_elem {
-                    synthetic_click_activation(el,
-                                               false,
-                                               false,
-                                               false,
-                                               false,
-                                               ActivationSource::NotFromClick)
-                }
-            }
-            Key::Enter if !prevented && state == KeyState::Released => {
-                let maybe_elem = target.downcast::<Element>();
-                if let Some(el) = maybe_elem {
-                    if let Some(a) = el.as_maybe_activatable() {
-                        a.implicit_submission(ctrl, alt, shift, meta);
+            
+            
+            
+            
+            
+            match key {
+                Key::Space if state == KeyState::Released => {
+                    let maybe_elem = target.downcast::<Element>();
+                    if let Some(el) = maybe_elem {
+                        synthetic_click_activation(el,
+                                                   false,
+                                                   false,
+                                                   false,
+                                                   false,
+                                                   ActivationSource::NotFromClick)
                     }
                 }
+                Key::Enter if state == KeyState::Released => {
+                    let maybe_elem = target.downcast::<Element>();
+                    if let Some(el) = maybe_elem {
+                        if let Some(a) = el.as_maybe_activatable() {
+                            a.implicit_submission(ctrl, alt, shift, meta);
+                        }
+                    }
+                }
+                _ => (),
             }
-            _ => (),
         }
 
         self.window.reflow(ReflowGoal::ForDisplay,
