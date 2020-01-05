@@ -255,6 +255,19 @@ function openLinkIn(url, where, params) {
     aRelatedToCurrent = false;
   }
 
+  
+  
+  
+  
+  
+  if (aPrincipal && aPrincipal.isCodebasePrincipal) {
+    let attrs = {
+      userContextId: aUserContextId,
+      privateBrowsingId: aIsPrivate || (w && PrivateBrowsingUtils.isWindowPrivate(w)),
+    };
+    aPrincipal = Services.scriptSecurityManager.createCodebasePrincipal(aPrincipal.URI, attrs);
+  }
+
   if (!w || where == "window") {
     
     var sa = Cc["@mozilla.org/array;1"].
