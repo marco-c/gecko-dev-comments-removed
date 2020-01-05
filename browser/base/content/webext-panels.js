@@ -16,7 +16,6 @@ var {
 
 const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 
-
 function getBrowser(sidebar) {
   let browser = document.getElementById("webext-panels-browser");
   if (browser) {
@@ -40,11 +39,6 @@ function getBrowser(sidebar) {
                          E10SUtils.getRemoteTypeForURI(sidebar.uri, true,
                                                        E10SUtils.EXTENSION_REMOTE_TYPE));
     readyPromise = promiseEvent(browser, "XULFrameLoaderCreated");
-
-    window.messageManager.addMessageListener("contextmenu", openContextMenu);
-    window.addEventListener("unload", () => {
-      window.messageManager.removeMessageListener("contextmenu", openContextMenu);
-    }, {once: true});
   } else {
     readyPromise = Promise.resolve();
   }
