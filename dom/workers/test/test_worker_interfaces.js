@@ -85,6 +85,8 @@ var interfaceNamesInGlobalScope =
 
     "CacheStorage",
 
+    "CloseEvent",
+
     "Crypto",
 
     "CustomEvent",
@@ -103,6 +105,8 @@ var interfaceNamesInGlobalScope =
 
     "DOMStringList",
 
+    "ErrorEvent",
+
     "Event",
 
     "EventSource",
@@ -110,6 +114,8 @@ var interfaceNamesInGlobalScope =
     "EventTarget",
 
     "File",
+
+    "FileList",
 
     "FileReader",
 
@@ -170,6 +176,8 @@ var interfaceNamesInGlobalScope =
     { name: "PerformanceObserver", nightly: true },
 
     { name: "PerformanceObserverEntryList", nightly: true },
+
+    "ProgressEvent",
 
     "PushManager",
 
