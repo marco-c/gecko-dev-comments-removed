@@ -503,6 +503,9 @@ MediaDecoder::Shutdown()
     mResource->Close();
   }
 
+  
+  GetOwner()->RemoveMediaTracks();
+
   ChangeState(PLAY_STATE_SHUTDOWN);
   mOwner = nullptr;
 }
