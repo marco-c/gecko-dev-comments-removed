@@ -1,12 +1,12 @@
-pub struct QuartzFontContext {
-    ctx: u8,
+pub struct QuartzFontContextHandle {
+    ctx: (),
 
     drop { }
 }
 
-pub impl QuartzFontContext {
+pub impl QuartzFontContextHandle {
     
-    static pub fn new() -> QuartzFontContext {
-        QuartzFontContext { ctx: 42 }
+    static pub fn new() -> QuartzFontContextHandle {
+        QuartzFontContextHandle { ctx: () }
     }
 }

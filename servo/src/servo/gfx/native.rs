@@ -4,5 +4,5 @@
 
 
 
-pub use font_handle::FontHandle;
+pub use font::FontHandle;
 pub use font_context::FontContextHandle;

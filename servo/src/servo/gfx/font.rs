@@ -15,9 +15,39 @@ use text::{
 
 use core::dvec::DVec;
 
-use native::FontHandle;
 
 
+
+
+
+#[cfg(target_os = "macos")]
+pub type FontHandle/& = quartz::font::QuartzFontHandle;
+
+#[cfg(target_os = "linux")]
+pub type FontHandle/& = freetype::font::FreeTypeFontHandle;
+
+// TODO: `new` should be part of trait FontHandle
+
+// TODO(Issue #163): this is a workaround for static methods and
+// typedefs not working well together. It should be removed.
+
+// TODO(Rust #1723): #cfg doesn't work for impl methods, so we have
+// to conditionally define the entire impl.
+#[cfg(target_os = "macos")]
+impl FontHandle {
+    static pub fn new(fctx: &native::FontContextHandle, buf: @~[u8], pt_size: float) -> Result<FontHandle, ()> {
+        quartz::font::QuartzFontHandle::new(fctx, buf, pt_size)
+    }
+}
+
+#[cfg(target_os = "linux")]
+impl FontHandle {
+    static pub fn new(fctx: &native::FontContextHandle, buf: @~[u8], pt_size: float) -> Result<FontHandle, ()> {
+        freetype::font::FreeTypeFontHandle::new(fctx, buf, pt_size)
+    }
+}
+
+// Used to abstract over the shaper's choice of fixed int representation.
 type FractionalPixel = float;
 
 struct FontMetrics {
@@ -31,7 +61,7 @@ struct FontMetrics {
     max_advance:      Au
 }
 
-
+// TODO: use enum from CSS bindings
 enum CSSFontWeight {
     FontWeight100,
     FontWeight200,
