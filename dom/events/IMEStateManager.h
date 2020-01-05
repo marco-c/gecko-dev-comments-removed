@@ -13,13 +13,13 @@
 #include "nsIWidget.h"
 
 class nsIContent;
-class nsIEditor;
 class nsINode;
 class nsPresContext;
 class nsISelection;
 
 namespace mozilla {
 
+class EditorBase;
 class EventDispatchingCallback;
 class IMEContentObserver;
 class TextCompositionArray;
@@ -134,7 +134,7 @@ public:
   
   static void UpdateIMEState(const IMEState &aNewIMEState,
                              nsIContent* aContent,
-                             nsIEditor* aEditor);
+                             EditorBase& aEditorBase);
 
   
   
@@ -265,9 +265,27 @@ protected:
 
   static nsIContent* GetRootContent(nsPresContext* aPresContext);
 
+  
+
+
+  static bool CanHandleWith(nsPresContext* aPresContext);
+
+  
+  
+  
   static StaticRefPtr<nsIContent> sContent;
   static StaticRefPtr<nsPresContext> sPresContext;
+  
+  
+  
+  static nsIWidget* sWidget;
+  
+  
+  
+  
   static nsIWidget* sFocusedIMEWidget;
+  
+  
   
   
   static nsIWidget* sActiveInputContextWidget;
