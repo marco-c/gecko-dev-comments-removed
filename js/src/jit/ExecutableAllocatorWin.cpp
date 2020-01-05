@@ -25,7 +25,9 @@
 
 
 
+#ifdef MOZ_STACKWALKING
 #include "mozilla/StackWalk_windows.h"
+#endif
 
 #include "mozilla/WindowsVersion.h"
 
@@ -169,11 +171,15 @@ RegisterExecutableMemory(void* p, size_t bytes, size_t pageSize)
 
     
     
+#ifdef MOZ_STACKWALKING
     AcquireStackWalkWorkaroundLock();
+#endif
 
     bool success = RtlAddFunctionTable(&r->runtimeFunction, 1, reinterpret_cast<DWORD64>(p));
 
+#ifdef MOZ_STACKWALKING
     ReleaseStackWalkWorkaroundLock();
+#endif
 
     return success;
 }
@@ -185,11 +191,15 @@ UnregisterExecutableMemory(void* p, size_t bytes, size_t pageSize)
 
     
     
+#ifdef MOZ_STACKWALKING
     AcquireStackWalkWorkaroundLock();
+#endif
 
     RtlDeleteFunctionTable(&r->runtimeFunction);
 
+#ifdef MOZ_STACKWALKING
     ReleaseStackWalkWorkaroundLock();
+#endif
 }
 #endif
 

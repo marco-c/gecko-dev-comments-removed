@@ -15,7 +15,9 @@
 #include "mozilla/sandboxing/loggingTypes.h"
 #include "nsContentUtils.h"
 
+#ifdef MOZ_STACKWALKING
 #include "mozilla/StackWalk.h"
+#endif
 
 namespace mozilla {
 
@@ -25,6 +27,7 @@ static LazyLogModule sSandboxTargetLog("SandboxTarget");
 
 namespace sandboxing {
 
+#ifdef MOZ_STACKWALKING
 static uint32_t sStackTraceDepth = 0;
 
 
@@ -40,6 +43,7 @@ StackFrameToOStringStream(uint32_t aFrameNumber, void* aPC, void* aSP,
   *stream << std::endl << "--" << buf;
   stream->flush();
 }
+#endif
 
 
 static void
@@ -55,6 +59,7 @@ Log(const char* aMessageType,
     msgStream << " for : " << aContext;
   }
 
+#ifdef MOZ_STACKWALKING
   if (aShouldLogStackTrace) {
     if (sStackTraceDepth) {
       msgStream << std::endl << "Stack Trace:";
@@ -62,6 +67,7 @@ Log(const char* aMessageType,
                    &msgStream, 0, nullptr);
     }
   }
+#endif
 
   std::string msg = msgStream.str();
 #if defined(DEBUG)
@@ -90,7 +96,7 @@ InitLoggingIfRequired(ProvideLogFunctionCb aProvideLogFunctionCb)
       PR_GetEnv("MOZ_WIN_SANDBOX_LOGGING")) {
     aProvideLogFunctionCb(Log);
 
-#if defined(MOZ_CONTENT_SANDBOX)
+#if defined(MOZ_CONTENT_SANDBOX) && defined(MOZ_STACKWALKING)
     
     
     if (XRE_IsContentProcess()) {

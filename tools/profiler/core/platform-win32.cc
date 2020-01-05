@@ -37,7 +37,9 @@
 
 #include "nsMemoryReporterManager.h"
 
+#ifdef MOZ_STACKWALKING
 #include "mozilla/StackWalk_windows.h"
+#endif
 
 
 class PlatformData {
@@ -208,6 +210,7 @@ class SamplerThread : public Thread {
       return;
     }
 
+#ifdef MOZ_STACKWALKING
     
     
     
@@ -230,6 +233,7 @@ class SamplerThread : public Thread {
       
       ReleaseStackWalkWorkaroundLock();
     }
+#endif
 
 #if V8_HOST_ARCH_X64
     sample->pc = reinterpret_cast<Address>(context.Rip);
