@@ -6,6 +6,7 @@
 package org.mozilla.gecko.icons;
 
 import android.support.annotation.IntDef;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 
@@ -30,21 +31,21 @@ public class IconDescriptor {
     
 
 
-    public static IconDescriptor createGenericIcon(String url) {
+    public static IconDescriptor createGenericIcon(@NonNull String url) {
         return new IconDescriptor(TYPE_GENERIC, url, 0, null);
     }
 
     
 
 
-    public static IconDescriptor createFavicon(String url, int size, String mimeType) {
+    public static IconDescriptor createFavicon(@NonNull String url, int size, String mimeType) {
         return new IconDescriptor(TYPE_FAVICON, url, size, mimeType);
     }
 
     
 
 
-    public static IconDescriptor createTouchicon(String url, int size, String mimeType) {
+    public static IconDescriptor createTouchicon(@NonNull String url, int size, String mimeType) {
         return new IconDescriptor(TYPE_TOUCHICON, url, size, mimeType);
     }
 
@@ -53,11 +54,11 @@ public class IconDescriptor {
 
 
 
-    public static IconDescriptor createLookupIcon(String url) {
+    public static IconDescriptor createLookupIcon(@NonNull String url) {
         return new IconDescriptor(TYPE_LOOKUP, url, 0, null);
     }
 
-    private IconDescriptor(@IconType int type, String url, int size, String mimeType) {
+    private IconDescriptor(@IconType int type, @NonNull String url, int size, String mimeType) {
         this.type = type;
         this.url = url;
         this.size = size;
