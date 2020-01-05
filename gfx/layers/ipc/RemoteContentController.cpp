@@ -64,11 +64,9 @@ RemoteContentController::HandleTap(TapType aTapType,
     return;
   }
 
-  bool callTakeFocusForClickFromTap = (aTapType == TapType::eSingleTap);
-
   if (mCanSend) {
     Unused << SendHandleTap(aTapType, aPoint,
-            aModifiers, aGuid, aInputBlockId, callTakeFocusForClickFromTap);
+            aModifiers, aGuid, aInputBlockId);
   }
 }
 
@@ -137,9 +135,7 @@ RemoteContentController::UpdateOverscrollVelocity(float aX, float aY, bool aIsRo
                                              aX, aY, aIsRootContent));
     return;
   }
-  if (mCanSend) {
-    Unused << SendUpdateOverscrollVelocity(aX, aY, aIsRootContent);
-  }
+  Unused << SendUpdateOverscrollVelocity(aX, aY, aIsRootContent);
 }
 
 void
@@ -152,9 +148,7 @@ RemoteContentController::UpdateOverscrollOffset(float aX, float aY, bool aIsRoot
                                              aX, aY, aIsRootContent));
     return;
   }
-  if (mCanSend) {
-    Unused << SendUpdateOverscrollOffset(aX, aY, aIsRootContent);
-  }
+  Unused << SendUpdateOverscrollOffset(aX, aY, aIsRootContent);
 }
 
 void
@@ -166,9 +160,7 @@ RemoteContentController::SetScrollingRootContent(bool aIsRootContent)
                                              aIsRootContent));
     return;
   }
-  if (mCanSend) {
-    Unused << SendSetScrollingRootContent(aIsRootContent);
-  }
+  Unused << SendSetScrollingRootContent(aIsRootContent);
 }
 
 void
@@ -219,7 +211,6 @@ void
 RemoteContentController::Destroy()
 {
   if (mCanSend) {
-    mCanSend = false;
     Unused << SendDestroy();
   }
 }
