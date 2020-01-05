@@ -1090,7 +1090,7 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
         if opts::get().hard_fail {
             
             
-            println!("Pipeline failed in hard-fail mode.  Crashing!\n{}\n{}", reason, backtrace.unwrap_or_default());
+            println!("Pipeline failed in hard-fail mode.  Crashing!");
             process::exit(1);
         }
 
