@@ -77,7 +77,7 @@ fn establish_a_websocket_connection(url: (Host, String, bool), origin: String)
 
 
 impl WebSocket {
-    pub fn new_inherited(global: GlobalRef, url: Url) -> WebSocket {
+    fn new_inherited(global: GlobalRef, url: Url) -> WebSocket {
         WebSocket {
             eventtarget: EventTarget::new_inherited(EventTargetTypeId::WebSocket),
             url: url,
@@ -94,24 +94,29 @@ impl WebSocket {
 
     }
 
-    pub fn new(global: GlobalRef,
-               url: DOMString,
-               protocols: Option<DOMString>)
-               -> Fallible<Root<WebSocket>> {
-        
+    fn new(global: GlobalRef, url: Url) -> Root<WebSocket> {
+        reflect_dom_object(box WebSocket::new_inherited(global, url),
+                           global, WebSocketBinding::Wrap)
+    }
+
+    pub fn Constructor(global: GlobalRef,
+                       url: DOMString,
+                       protocols: Option<DOMString>)
+                       -> Fallible<Root<WebSocket>> {
+        // Step 1.
         let parsed_url = try!(Url::parse(&url).map_err(|_| Error::Syntax));
         let url = try!(parse_url(&parsed_url).map_err(|_| Error::Syntax));
 
-        
-        
+        // Step 2: Disallow https -> ws connections.
+        // Step 3: Potentially block access to some ports.
 
-        
+        // Step 4.
         let protocols = protocols.as_slice();
 
-        
+        // Step 5.
         for (i, protocol) in protocols.iter().enumerate() {
-            
-            
+            // https://tools.ietf.org/html/rfc6455#section-4.1
+            // Handshake requirements, step 10
             if protocol.is_empty() {
                 return Err(Syntax);
             }
@@ -125,12 +130,10 @@ impl WebSocket {
             }
         }
 
-        
+        // Step 6: Origin.
 
-        
-        let ws = reflect_dom_object(box WebSocket::new_inherited(global, parsed_url),
-                                    global,
-                                    WebSocketBinding::Wrap);
+        // Step 7.
+        let ws = WebSocket::new(global, parsed_url);
         let address = Trusted::new(global.get_cx(), ws.r(), global.script_chan());
 
         let origin = global.get_url().serialize();
@@ -161,13 +164,6 @@ impl WebSocket {
 
         // Step 7.
         Ok(ws)
-    }
-
-    pub fn Constructor(global: GlobalRef,
-                       url: DOMString,
-                       protocols: Option<DOMString>)
-                       -> Fallible<Root<WebSocket>> {
-        WebSocket::new(global, url, protocols)
     }
 }
 
