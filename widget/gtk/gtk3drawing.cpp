@@ -437,6 +437,18 @@ calculate_arrow_rect(GtkWidget* arrow, GdkRectangle* rect,
     return MOZ_GTK_SUCCESS;
 }
 
+static MozGtkSize
+GetMinContentBox(GtkStyleContext* style)
+{
+    GtkStateFlags state_flags = gtk_style_context_get_state(style);
+    gint width, height;
+    gtk_style_context_get(style, state_flags,
+                          "min-width", &width,
+                          "min-height", &height,
+                          nullptr);
+    return {width, height};
+}
+
 
 
 
@@ -2639,34 +2651,42 @@ GetScrollbarMetrics(GtkOrientation aOrientation)
     
     style = ClaimStyleContext(track);
     metrics->border.track = GetMarginBorderPadding(style);
+    MozGtkSize trackMinSize = GetMinContentBox(style) + metrics->border.track;
     ReleaseStyleContext(style);
     MozGtkSize trackSizeForThumb = metrics->size.thumb + metrics->border.track;
     
     if (hasButtons) {
         metrics->size.button = GetMinMarginBox(MOZ_GTK_SCROLLBAR_BUTTON);
-        if (aOrientation == GTK_ORIENTATION_HORIZONTAL) {
-            metrics->size.button.Rotate();
+    } else {
+        metrics->size.button = {0, 0};
+    }
+    if (aOrientation == GTK_ORIENTATION_HORIZONTAL) {
+        metrics->size.button.Rotate();
+        
+        
+        
+        
+        gint extra =
+            std::max(trackMinSize.height,
+                     metrics->size.button.height) - trackSizeForThumb.height;
+        if (extra > 0) {
             
             
+            metrics->border.track.top += extra / 2;
+            metrics->border.track.bottom += extra - extra / 2;
             
-            gint extra = metrics->size.button.height - trackSizeForThumb.height;
-            if (extra > 0) {
-                
-                
-                metrics->border.track.top += extra / 2;
-                metrics->border.track.bottom += extra - extra / 2;
-                
-                trackSizeForThumb.height += extra;
-            }
-        } else {
-            gint extra = metrics->size.button.width - trackSizeForThumb.width;
-            if (extra > 0) {
-                
-                
-                metrics->border.track.left += extra / 2;
-                metrics->border.track.right += extra - extra / 2;
-                trackSizeForThumb.width += extra;
-            }
+            trackSizeForThumb.height += extra;
+        }
+    } else {
+        gint extra =
+            std::max(trackMinSize.width,
+                     metrics->size.button.width) - trackSizeForThumb.width;
+        if (extra > 0) {
+            
+            
+            metrics->border.track.left += extra / 2;
+            metrics->border.track.right += extra - extra / 2;
+            trackSizeForThumb.width += extra;
         }
     }
 
