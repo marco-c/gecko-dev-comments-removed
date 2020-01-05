@@ -110,9 +110,6 @@ pub struct SharedLayoutContext {
     pub url: Url,
 
     
-    pub dirty: Rect<Au>,
-
-    
     
     pub generation: u32,
 

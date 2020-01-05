@@ -60,7 +60,7 @@ pub enum LayerKind {
 }
 
 
-#[derive(Clone, PartialEq, Eq, Copy, Deserialize, Serialize)]
+#[derive(Clone, PartialEq, Eq, Copy, Deserialize, Serialize, Debug)]
 pub enum ScrollPolicy {
     
     Scrollable,
@@ -88,6 +88,8 @@ pub struct LayerProperties {
     pub perspective: Matrix4,
     
     pub establishes_3d_context: bool,
+    
+    pub scrolls_overflow_area: bool,
 }
 
 

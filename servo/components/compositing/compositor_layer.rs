@@ -19,6 +19,7 @@ use msg::compositor_msg::{Epoch, LayerId, LayerProperties, ScrollPolicy};
 use msg::constellation_msg::PipelineId;
 use std::rc::Rc;
 
+#[derive(Debug)]
 pub struct CompositorData {
     
     
@@ -143,7 +144,7 @@ pub trait CompositorLayer {
     fn pipeline_id(&self) -> PipelineId;
 }
 
-#[derive(Copy, PartialEq, Clone)]
+#[derive(Copy, PartialEq, Clone, Debug)]
 pub enum WantsScrollEventsFlag {
     WantsScrollEvents,
     DoesntWantScrollEvents,
@@ -293,12 +294,6 @@ impl CompositorLayer for Layer<CompositorData> {
                            cursor: TypedPoint2D<LayerPixel, f32>)
                            -> ScrollEventResult {
         
-        
-        if self.wants_scroll_events() != WantsScrollEventsFlag::WantsScrollEvents {
-            return ScrollEventResult::ScrollEventUnhandled;
-        }
-
-        
         let scroll_offset = self.extra_data.borrow().scroll_offset;
         let new_cursor = cursor - scroll_offset;
         for child in self.children().iter() {
@@ -309,6 +304,11 @@ impl CompositorLayer for Layer<CompositorData> {
                     return result;
                 }
             }
+        }
+
+        
+        if self.wants_scroll_events() != WantsScrollEventsFlag::WantsScrollEvents {
+            return ScrollEventResult::ScrollEventUnhandled;
         }
 
         self.clamp_scroll_offset_and_scroll_layer(scroll_offset + delta)
