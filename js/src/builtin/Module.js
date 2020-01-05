@@ -231,7 +231,7 @@ function ModuleDeclarationInstantiation()
 
     
     if (GetModuleEnvironment(module) !== undefined)
-        return;
+        return undefined;
 
     
     CreateModuleEnvironment(module);
