@@ -1887,24 +1887,33 @@ PeerConnectionWrapper.prototype = {
 
 function addLoadEvent() {}
 
-var scriptsReady = Promise.all([
-  "/tests/SimpleTest/SimpleTest.js",
-  "../../test/manifest.js",
-  "head.js",
-  "templates.js",
-  "turnConfig.js",
-  "dataChannel.js",
-  "network.js",
-  "sdpUtils.js"
-].map(script  => {
-  var el = document.createElement("script");
-  if (typeof scriptRelativePath === 'string' && script.charAt(0) !== '/') {
-    script = scriptRelativePath + script;
-  }
-  el.src = script;
-  document.head.appendChild(el);
-  return new Promise(r => { el.onload = r; el.onerror = r; });
-}));
+function loadScript(...scripts) {
+  return Promise.all(scripts.map(script => {
+    var el = document.createElement("script");
+    if (typeof scriptRelativePath === 'string' && script.charAt(0) !== '/') {
+      script = scriptRelativePath + script;
+    }
+    el.src = script;
+    document.head.appendChild(el);
+    return new Promise(r => {
+      el.onload = r;
+      el.onerror = r;
+    });
+  }));
+}
+
+
+var scriptsReady = loadScript("/tests/SimpleTest/SimpleTest.js").then(() => {
+  return loadScript(
+    "../../test/manifest.js",
+    "head.js",
+    "templates.js",
+    "turnConfig.js",
+    "dataChannel.js",
+    "network.js",
+    "sdpUtils.js"
+  );
+});
 
 function createHTML(options) {
   return scriptsReady.then(() => realCreateHTML(options));
