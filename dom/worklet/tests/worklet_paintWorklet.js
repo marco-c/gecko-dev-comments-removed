@@ -1,0 +1,3 @@
+
+registerPaint("sure!", () => {});
+console.log(this instanceof PaintWorkletGlobalScope ? "So far so good" : "error");
