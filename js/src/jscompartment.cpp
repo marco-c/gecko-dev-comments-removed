@@ -462,7 +462,7 @@ JSCompartment::wrap(JSContext* cx, MutableHandleObject obj)
 
     
     
-    MOZ_ASSERT(!ObjectIsMarkedGray(obj));
+    MOZ_ASSERT(JS::ObjectIsNotGray(obj));
 
     
     

@@ -104,6 +104,8 @@ TestMarking()
     CHECK(IsMarkedBlack(sameTarget));
     CHECK(IsMarkedBlack(crossTarget));
 
+    CHECK(!JS::ObjectIsMarkedGray(sameSource));
+
     
 
     blackRoot1 = nullptr;
@@ -115,6 +117,8 @@ TestMarking()
     CHECK(IsMarkedGray(crossSource));
     CHECK(IsMarkedGray(sameTarget));
     CHECK(IsMarkedGray(crossTarget));
+
+    CHECK(JS::ObjectIsMarkedGray(sameSource));
 
     
 
@@ -478,11 +482,12 @@ TestWatchpoints()
 bool
 TestCCWs()
 {
-    RootedObject target(cx, AllocPlainObject());
+    JSObject* target = AllocPlainObject();
     CHECK(target);
 
     
 
+    RootedObject blackRoot(cx, target);
     JSObject* wrapper = GetCrossCompartmentWrapper(target);
     CHECK(wrapper);
     CHECK(!IsMarkedGray(wrapper));
@@ -519,7 +524,43 @@ TestCCWs()
 
     JS::FinishIncrementalGC(cx, JS::gcreason::API);
 
-    target = nullptr;
+    
+    
+
+    
+    blackRoot = nullptr;
+    grayRoots.grayRoot1 = wrapper;
+    grayRoots.grayRoot2 = nullptr;
+    JS_GC(cx);
+    CHECK(IsMarkedGray(wrapper));
+    CHECK(IsMarkedGray(target));
+
+    
+    JS_SetGCParameter(cx, JSGC_MODE, JSGC_MODE_INCREMENTAL);
+    JS::PrepareZoneForGC(wrapper->zone());
+    budget = js::SliceBudget(js::WorkBudget(1));
+    cx->runtime()->gc.startDebugGC(GC_NORMAL, budget);
+    CHECK(JS::IsIncrementalGCInProgress(cx));
+    CHECK(wrapper->zone()->isGCMarkingBlack());
+    CHECK(!target->zone()->wasGCStarted());
+    CHECK(!IsMarkedBlack(wrapper));
+    CHECK(!IsMarkedGray(wrapper));
+    CHECK(IsMarkedGray(target));
+
+    
+    
+    
+    grayRoots.grayRoot1.get();
+    CHECK(IsMarkedBlack(wrapper));
+    CHECK(IsMarkedGray(target));
+    CHECK(!JS::ObjectIsMarkedGray(target));
+    MOZ_ASSERT(JS::ObjectIsNotGray(target));
+
+    
+    JS::FinishIncrementalGC(cx, JS::gcreason::API);
+    CHECK(IsMarkedBlack(wrapper));
+    CHECK(IsMarkedBlack(target));
+
     grayRoots.grayRoot1 = nullptr;
     grayRoots.grayRoot2 = nullptr;
 
@@ -531,8 +572,8 @@ JS::PersistentRootedObject global2;
 
 struct GrayRoots
 {
-    JSObject* grayRoot1;
-    JSObject* grayRoot2;
+    JS::Heap<JSObject*> grayRoot1;
+    JS::Heap<JSObject*> grayRoot2;
 };
 
 GrayRoots grayRoots;
@@ -567,10 +608,8 @@ static void
 TraceGrayRoots(JSTracer* trc, void* data)
 {
     auto grayRoots = static_cast<GrayRoots*>(data);
-    if (grayRoots->grayRoot1)
-        UnsafeTraceManuallyBarrieredEdge(trc, &grayRoots->grayRoot1, "gray root 1");
-    if (grayRoots->grayRoot2)
-        UnsafeTraceManuallyBarrieredEdge(trc, &grayRoots->grayRoot2, "gray root 2");
+    TraceEdge(trc, &grayRoots->grayRoot1, "gray root 1");
+    TraceEdge(trc, &grayRoots->grayRoot2, "gray root 2");
 }
 
 JSObject*
