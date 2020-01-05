@@ -14,7 +14,6 @@ const icon =
   '</svg>';
 
 function run_test() {
-  updateAppInfo();
   useHttpServer(); 
 
   requestHandled = new Promise(resolve => {

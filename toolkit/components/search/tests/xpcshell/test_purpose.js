@@ -10,7 +10,6 @@
 
 function run_test() {
   removeMetadata();
-  updateAppInfo();
 
   
   

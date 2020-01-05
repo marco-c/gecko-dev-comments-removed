@@ -7,8 +7,6 @@
 "use strict";
 
 function run_test() {
-  updateAppInfo();
-
   
   
   let url = "resource://test/data/";

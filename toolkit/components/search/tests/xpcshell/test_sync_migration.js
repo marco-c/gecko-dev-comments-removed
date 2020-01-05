@@ -5,7 +5,6 @@
 
 
 function run_test() {
-  updateAppInfo();
   installTestEngine();
 
   do_get_file("data/metadata.json").copyTo(gProfD, "search-metadata.json");
