@@ -7,7 +7,6 @@
 
 
 
-#include "mozilla/UniquePtr.h"
 #include "nsFlexContainerFrame.h"
 #include "nsContentUtils.h"
 #include "nsCSSAnonBoxes.h"
@@ -18,10 +17,12 @@
 #include "nsPresContext.h"
 #include "nsRenderingContext.h"
 #include "nsStyleContext.h"
+#include "mozilla/CSSOrderAwareFrameIterator.h"
 #include "mozilla/Logging.h"
 #include <algorithm>
 #include "mozilla/LinkedList.h"
 #include "mozilla/FloatingPoint.h"
+#include "mozilla/UniquePtr.h"
 #include "WritingModes.h"
 
 using namespace mozilla;
@@ -99,6 +100,16 @@ IsLegacyBox(const nsIFrame* aFlexContainer)
   MOZ_ASSERT(aFlexContainer->GetType() == nsGkAtoms::flexContainerFrame,
              "only flex containers may be passed to this function");
   return aFlexContainer->HasAnyStateBits(NS_STATE_FLEX_IS_LEGACY_WEBKIT_BOX);
+}
+
+
+
+static CSSOrderAwareFrameIterator::OrderingProperty
+OrderingPropertyForIter(const nsFlexContainerFrame* aFlexContainer)
+{
+  return IsLegacyBox(aFlexContainer)
+    ? CSSOrderAwareFrameIterator::OrderingProperty::eUseBoxOrdinalGroup
+    : CSSOrderAwareFrameIterator::OrderingProperty::eUseOrder;
 }
 
 
@@ -1011,196 +1022,6 @@ BuildStrutInfoFromCollapsedItems(const FlexLine* aFirstLine,
       itemIdxInContainer++;
     }
   }
-}
-
-
-
-
-static int32_t
-GetOrderOrBoxOrdinalGroup(nsIFrame* aFlexItem, bool aIsLegacyBox)
-{
-  if (aIsLegacyBox) {
-    
-    
-    
-    
-    
-    
-    
-    uint32_t clampedBoxOrdinal = std::min(aFlexItem->StyleXUL()->mBoxOrdinal,
-                                          static_cast<uint32_t>(INT32_MAX));
-    return static_cast<int32_t>(clampedBoxOrdinal);
-  }
-
-  
-  return aFlexItem->StylePosition()->mOrder;
-}
-
-
-static nsIFrame*
-GetFirstNonAnonBoxDescendant(nsIFrame* aFrame)
-{
-  while (aFrame) {
-    nsIAtom* pseudoTag = aFrame->StyleContext()->GetPseudo();
-
-    
-    if (!pseudoTag ||                                 
-        !nsCSSAnonBoxes::IsAnonBox(pseudoTag) ||      
-        nsCSSAnonBoxes::IsNonElement(pseudoTag)) {    
-      break;
-    }
-
-    
-
-    
-    
-    
-    
-    
-    
-    
-    if (MOZ_UNLIKELY(aFrame->GetType() == nsGkAtoms::tableWrapperFrame)) {
-      nsIFrame* captionDescendant =
-        GetFirstNonAnonBoxDescendant(aFrame->GetChildList(kCaptionList).FirstChild());
-      if (captionDescendant) {
-        return captionDescendant;
-      }
-    } else if (MOZ_UNLIKELY(aFrame->GetType() == nsGkAtoms::tableFrame)) {
-      nsIFrame* colgroupDescendant =
-        GetFirstNonAnonBoxDescendant(aFrame->GetChildList(kColGroupList).FirstChild());
-      if (colgroupDescendant) {
-        return colgroupDescendant;
-      }
-    }
-
-    
-    aFrame = aFrame->PrincipalChildList().FirstChild();
-  }
-  return aFrame;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-bool
-IsOrderLEQWithDOMFallback(nsIFrame* aFrame1,
-                          nsIFrame* aFrame2)
-{
-  MOZ_ASSERT(aFrame1->IsFlexItem() && aFrame2->IsFlexItem(),
-             "this method only intended for comparing flex items");
-  MOZ_ASSERT(aFrame1->GetParent() == aFrame2->GetParent(),
-             "this method only intended for comparing siblings");
-  if (aFrame1 == aFrame2) {
-    
-    
-    NS_ERROR("Why are we checking if a frame is LEQ itself?");
-    return true;
-  }
-
-  if (aFrame1->GetType() == nsGkAtoms::placeholderFrame ||
-      aFrame2->GetType() == nsGkAtoms::placeholderFrame) {
-    
-    
-    
-    return true;
-  }
-
-  const bool isInLegacyBox = IsLegacyBox(aFrame1->GetParent());
-
-  int32_t order1 = GetOrderOrBoxOrdinalGroup(aFrame1, isInLegacyBox);
-  int32_t order2 = GetOrderOrBoxOrdinalGroup(aFrame2, isInLegacyBox);
-
-  if (order1 != order2) {
-    return order1 < order2;
-  }
-
-  
-  
-  
-  aFrame1 = GetFirstNonAnonBoxDescendant(aFrame1);
-  aFrame2 = GetFirstNonAnonBoxDescendant(aFrame2);
-  MOZ_ASSERT(aFrame1 && aFrame2,
-             "why do we have an anonymous box without any "
-             "non-anonymous descendants?");
-
-
-  
-  
-  
-  
-  
-  
-  nsIAtom* pseudo1 = aFrame1->StyleContext()->GetPseudo();
-  nsIAtom* pseudo2 = aFrame2->StyleContext()->GetPseudo();
-
-  if (pseudo1 == nsCSSPseudoElements::before ||
-      pseudo2 == nsCSSPseudoElements::after) {
-    
-    return true;
-  }
-  if (pseudo1 == nsCSSPseudoElements::after ||
-      pseudo2 == nsCSSPseudoElements::before) {
-    
-    return false;
-  }
-
-  
-  nsIContent* content1 = aFrame1->GetContent();
-  nsIContent* content2 = aFrame2->GetContent();
-  MOZ_ASSERT(content1 != content2,
-             "Two different flex items are using the same nsIContent node for "
-             "comparison, so we may be sorting them in an arbitrary order");
-
-  return nsContentUtils::PositionIsBefore(content1, content2);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-bool
-IsOrderLEQ(nsIFrame* aFrame1,
-           nsIFrame* aFrame2)
-{
-  MOZ_ASSERT(aFrame1->IsFlexItem() && aFrame2->IsFlexItem(),
-             "this method only intended for comparing flex items");
-  MOZ_ASSERT(aFrame1->GetParent() == aFrame2->GetParent(),
-             "this method only intended for comparing siblings");
-
-  if (aFrame1->GetType() == nsGkAtoms::placeholderFrame ||
-      aFrame2->GetType() == nsGkAtoms::placeholderFrame) {
-    
-    
-    
-    return true;
-  }
-
-  const bool isInLegacyBox = IsLegacyBox(aFrame1->GetParent());
-
-  int32_t order1 = GetOrderOrBoxOrdinalGroup(aFrame1, isInLegacyBox);
-  int32_t order2 = GetOrderOrBoxOrdinalGroup(aFrame2, isInLegacyBox);
-
-  return order1 <= order2;
 }
 
 uint8_t
@@ -2383,18 +2204,6 @@ nsFlexContainerFrame::Init(nsIContent*       aContent,
   }
 }
 
-template<bool IsLessThanOrEqual(nsIFrame*, nsIFrame*)>
- bool
-nsFlexContainerFrame::SortChildrenIfNeeded()
-{
-  if (nsIFrame::IsFrameListSorted<IsLessThanOrEqual>(mFrames)) {
-    return false;
-  }
-
-  nsIFrame::SortFrameList<IsLessThanOrEqual>(mFrames);
-  return true;
-}
-
 
 nsIAtom*
 nsFlexContainerFrame::GetType() const
@@ -2446,22 +2255,24 @@ nsFlexContainerFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
                                        const nsRect&           aDirtyRect,
                                        const nsDisplayListSet& aLists)
 {
-  
-  
-  
-  
-  NS_ASSERTION(
-    (!mFrames.IsEmpty() &&
-     mFrames.FirstChild()->GetContent()->GetContainingShadow()) ||
-    nsIFrame::IsFrameListSorted<IsOrderLEQWithDOMFallback>(mFrames),
-    "Child frames aren't sorted correctly");
-
   DisplayBorderBackgroundOutline(aBuilder, aLists);
 
   
   
   nsDisplayListSet childLists(aLists, aLists.BlockBorderBackgrounds());
-  for (nsIFrame* childFrame : mFrames) {
+
+  typedef CSSOrderAwareFrameIterator::OrderState OrderState;
+  OrderState orderState =
+    HasAnyStateBits(NS_STATE_FLEX_CHILDREN_REORDERED)
+    ? OrderState::eKnownUnordered
+    : OrderState::eKnownOrdered;
+
+  CSSOrderAwareFrameIterator iter(this, kPrincipalList,
+                                  CSSOrderAwareFrameIterator::eIncludeAll,
+                                  orderState,
+                                  OrderingPropertyForIter(this));
+  for (; !iter.AtEnd(); iter.Next()) {
+    nsIFrame* childFrame = *iter;
     BuildDisplayListForChild(aBuilder, childFrame, aDirtyRect, childLists,
                              GetDisplayFlagsForFlexItem(childFrame));
   }
@@ -3764,7 +3575,19 @@ nsFlexContainerFrame::GenerateFlexLines(
   
   uint32_t itemIdxInContainer = 0;
 
-  for (nsIFrame* childFrame : mFrames) {
+  CSSOrderAwareFrameIterator iter(this, kPrincipalList,
+                                  CSSOrderAwareFrameIterator::eIncludeAll,
+                                  CSSOrderAwareFrameIterator::eUnknownOrder,
+                                  OrderingPropertyForIter(this));
+
+  if (iter.ItemsAreAlreadyInOrder()) {
+    RemoveStateBits(NS_STATE_FLEX_CHILDREN_REORDERED);
+  } else {
+    AddStateBits(NS_STATE_FLEX_CHILDREN_REORDERED);
+  }
+
+  for (; !iter.AtEnd(); iter.Next()) {
+    nsIFrame* childFrame = *iter;
     
     if (childFrame->GetType() == nsGkAtoms::placeholderFrame) {
       aPlaceholders.AppendElement(childFrame);
@@ -4153,24 +3976,6 @@ nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
        eStyleUnit_Auto != stylePos->mOffset.GetBStartUnit(wm) &&
        eStyleUnit_Auto != stylePos->mOffset.GetBEndUnit(wm))) {
     AddStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE);
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  if (!HasAnyStateBits(NS_STATE_FLEX_CHILDREN_REORDERED)) {
-    if (SortChildrenIfNeeded<IsOrderLEQ>()) {
-      AddStateBits(NS_STATE_FLEX_CHILDREN_REORDERED);
-    }
-  } else {
-    SortChildrenIfNeeded<IsOrderLEQWithDOMFallback>();
   }
 
   RenumberList();
