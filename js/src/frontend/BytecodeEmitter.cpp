@@ -6958,14 +6958,13 @@ BytecodeEmitter::emitFunction(ParseNode* pn, bool needsProto)
     RootedFunction fun(cx, funbox->function());
     RootedAtom name(cx, fun->explicitName());
     MOZ_ASSERT_IF(fun->isInterpretedLazy(), fun->lazyScript());
-    MOZ_ASSERT_IF(pn->isOp(JSOP_FUNWITHPROTO), needsProto);
 
     
 
 
 
 
-    if (funbox->wasEmitted && pn->functionIsHoisted()) {
+    if (funbox->wasEmitted) {
         
         
         
@@ -7094,7 +7093,7 @@ BytecodeEmitter::emitFunction(ParseNode* pn, bool needsProto)
         }
 
         if (needsProto) {
-            MOZ_ASSERT(pn->getOp() == JSOP_FUNWITHPROTO || pn->getOp() == JSOP_LAMBDA);
+            MOZ_ASSERT(pn->getOp() == JSOP_LAMBDA);
             pn->setOp(JSOP_FUNWITHPROTO);
         }
 
@@ -10030,15 +10029,6 @@ CGConstList::finish(ConstArray* array)
         array->vector[i] = list[i];
 }
 
-bool
-CGObjectList::isAdded(ObjectBox* objbox)
-{
-    
-    
-    
-    return objbox->emitLink || objbox == firstbox;
-}
-
 
 
 
@@ -10050,15 +10040,9 @@ CGObjectList::isAdded(ObjectBox* objbox)
 unsigned
 CGObjectList::add(ObjectBox* objbox)
 {
-    if (isAdded(objbox))
-        return indexOf(objbox->object);
-
+    MOZ_ASSERT(!objbox->emitLink);
     objbox->emitLink = lastbox;
     lastbox = objbox;
-
-    
-    if (!firstbox)
-        firstbox = objbox;
     return length++;
 }
 
@@ -10085,12 +10069,7 @@ CGObjectList::finish(ObjectArray* array)
         MOZ_ASSERT(!*cursor);
         MOZ_ASSERT(objbox->object->isTenured());
         *cursor = objbox->object;
-
-        ObjectBox* tmp = objbox->emitLink;
-        
-        objbox->emitLink = nullptr;
-        objbox = tmp;
-    } while (objbox != nullptr);
+    } while ((objbox = objbox->emitLink) != nullptr);
     MOZ_ASSERT(cursor == array->vector);
 }
 
