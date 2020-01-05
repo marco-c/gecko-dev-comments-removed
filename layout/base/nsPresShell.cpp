@@ -7799,11 +7799,12 @@ PresShell::HandleEvent(nsIFrame* aFrame,
       MOZ_ASSERT(!frame->GetContent() || shell->GetDocument() == frame->GetContent()->OwnerDoc());
     }
 
+    
+    
+    nsCOMPtr<nsIPresShell> kungFuDeathGrip(shell);
     nsresult rv;
     if (shell != this) {
       
-      
-      nsCOMPtr<nsIPresShell> kungFuDeathGrip(shell);
       
       
       
