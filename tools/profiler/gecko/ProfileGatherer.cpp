@@ -10,7 +10,6 @@
 #include "nsIObserverService.h"
 #include "nsLocalFile.h"
 #include "nsIFileStreams.h"
-#include "ProfileJSONWriter.h"
 
 using mozilla::dom::AutoJSAPI;
 using mozilla::dom::Promise;
@@ -29,8 +28,7 @@ static const uint32_t MAX_SUBPROCESS_EXIT_PROFILES = 5;
 NS_IMPL_ISUPPORTS0(ProfileGatherer)
 
 ProfileGatherer::ProfileGatherer()
-  : mSinceTime(0)
-  , mPendingProfiles(0)
+  : mPendingProfiles(0)
   , mGathering(false)
 {
 }
@@ -58,7 +56,9 @@ ProfileGatherer::GatheredOOPProfile(const nsACString& aProfile)
     return;
   }
 
-  mResponseProfiles.AppendElement(aProfile);
+  MOZ_RELEASE_ASSERT(mWriter.isSome(), "Should always have a writer if mGathering is true");
+
+  mWriter->Splice(PromiseFlatCString(aProfile).get());
 
   mPendingProfiles--;
 
@@ -120,16 +120,49 @@ ProfileGatherer::Start2(double aSinceTime)
 {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
-  mSinceTime = aSinceTime;
   mGathering = true;
   mPendingProfiles = 0;
+  mWriter.emplace();
 
+  
+  
+  
+  
+  
+  
   nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
   if (os) {
     DebugOnly<nsresult> rv =
       os->NotifyObservers(this, "profiler-subprocess-gather", nullptr);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "NotifyObservers failed");
   }
+
+  
+  mWriter->Start(SpliceableJSONWriter::SingleLineStyle);
+  if (!profiler_stream_json_for_this_process(*mWriter, aSinceTime)) {
+    
+    
+    
+    
+    Cancel();
+    return;
+  }
+
+  mWriter->StartArrayProperty("processes");
+
+  
+  
+  for (size_t i = 0; i < mExitProfiles.Length(); ++i) {
+    if (!mExitProfiles[i].IsEmpty()) {
+      mWriter->Splice(mExitProfiles[i].get());
+    }
+  }
+  mExitProfiles.Clear();
+
+  
+  
+  
+  
 
   if (!mPendingProfiles) {
     Finish();
@@ -140,45 +173,15 @@ void
 ProfileGatherer::Finish()
 {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(mWriter.isSome());
 
-  SpliceableChunkedJSONWriter b;
-  b.Start(SpliceableJSONWriter::SingleLineStyle);
-  {
-    if (!profiler_stream_json_for_this_process(b, mSinceTime)) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      Cancel();
-      return;
-    }
+  
+  mWriter->EndArray();
 
-    b.StartArrayProperty("processes");
-    for (size_t i = 0; i < mExitProfiles.Length(); ++i) {
-      if (!mExitProfiles[i].IsEmpty()) {
-        b.Splice(mExitProfiles[i].get());
-      }
-    }
-    mExitProfiles.Clear();
-    for (size_t i = 0; i < mResponseProfiles.Length(); ++i) {
-      if (!mResponseProfiles[i].IsEmpty()) {
-        b.Splice(mResponseProfiles[i].get());
-      }
-    }
-    mResponseProfiles.Clear();
-    b.EndArray();
-  }
-  b.End();
+  
+  mWriter->End();
 
-  UniquePtr<char[]> buf = b.WriteFunc()->CopyData();
+  UniquePtr<char[]> buf = mWriter->WriteFunc()->CopyData();
 
   if (mFile) {
     nsCOMPtr<nsIFileOutputStream> of =
@@ -227,28 +230,31 @@ ProfileGatherer::Finish()
 void
 ProfileGatherer::Reset()
 {
-  mSinceTime = 0;
   mPromise = nullptr;
   mFile = nullptr;
   mPendingProfiles = 0;
   mGathering = false;
+  mWriter.reset();
 }
 
 void
 ProfileGatherer::Cancel()
 {
   
-  
   if (mPromise) {
     mPromise->MaybeReject(NS_ERROR_DOM_ABORT_ERR);
   }
-  mPromise = nullptr;
-  mFile = nullptr;
+  Reset();
 }
 
 void
 ProfileGatherer::OOPExitProfile(const nsACString& aProfile)
 {
+  
+  
+  
+  
+  
   if (mExitProfiles.Length() >= MAX_SUBPROCESS_EXIT_PROFILES) {
     mExitProfiles.RemoveElementAt(0);
   }
