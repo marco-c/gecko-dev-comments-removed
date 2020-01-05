@@ -134,10 +134,13 @@
           
           throw new Error("Could not find module " + path);
         }
+        
+        
+        
+        
         let code = new Function("exports", "require", "module",
-          source + "\n//# sourceURL=" + uri + "\n"
-        );
-        code(exports, require, module);
+          `eval(arguments[3] + "\\n//# sourceURL=" + arguments[4] + "\\n")`);
+        code(exports, require, module, source, uri);
       } catch (ex) {
         
         
