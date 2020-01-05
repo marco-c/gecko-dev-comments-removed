@@ -22,7 +22,6 @@ using media::TimeIntervals;
 
 MediaSourceDemuxer::MediaSourceDemuxer(AbstractThread* aAbstractMainThread)
   : mTaskQueue(new AutoTaskQueue(GetMediaThreadPool(MediaThreadType::PLAYBACK),
-                                 aAbstractMainThread,
                                   false))
   , mMonitor("MediaSourceDemuxer")
 {
