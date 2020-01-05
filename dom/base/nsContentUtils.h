@@ -2863,6 +2863,13 @@ public:
   static already_AddRefed<nsIEventTarget>
   GetEventTargetByLoadInfo(nsILoadInfo* aLoadInfo, mozilla::TaskCategory aCategory);
 
+  
+
+
+
+  static bool
+  IsLocalRefURL(const nsString& aString);
+
 private:
   static bool InitializeEventTable();
 
@@ -2903,16 +2910,6 @@ private:
   static bool CallOnAllRemoteChildren(nsIMessageBroadcaster* aManager,
                                       CallOnRemoteChildFunction aCallback,
                                       void* aArg);
-
-  
-
-
-
-
-
-  static void GetCookieBehaviorForPrincipal(nsIPrincipal* aPrincipal,
-                                            uint32_t* aLifetimePolicy,
-                                            uint32_t* aBehavior);
 
   
 
