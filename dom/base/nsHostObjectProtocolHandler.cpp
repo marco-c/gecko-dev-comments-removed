@@ -433,7 +433,9 @@ public:
   {
     RefPtr<ReleasingTimerHolder> holder = new ReleasingTimerHolder(Move(aArray));
     holder->mTimer = do_CreateInstance(NS_TIMER_CONTRACTID);
-    if (NS_WARN_IF(!holder->mTimer)) {
+
+    
+    if (!holder->mTimer) {
       return;
     }
 
