@@ -220,7 +220,6 @@ pub struct Request {
     
     
     pub origin: Origin,
-    pub omit_origin_header: bool,
     
     pub referrer: Referrer,
     
@@ -273,7 +272,6 @@ impl Request {
             type_: Type::None,
             destination: Destination::None,
             origin: origin.unwrap_or(Origin::Client),
-            omit_origin_header: false,
             referrer: Referrer::Client,
             referrer_policy: None,
             pipeline_id: pipeline_id,
