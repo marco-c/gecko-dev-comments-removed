@@ -2412,6 +2412,10 @@ this.DownloadLegacySaver.prototype = {
 
   onTransferStarted(aRequest, aAlreadyAddedToHistory) {
     
+    
+    this.request = aRequest;
+
+    
     if (this.download.tryToKeepPartialData &&
         aRequest instanceof Ci.nsIResumableChannel) {
       try {
@@ -2441,12 +2445,7 @@ this.DownloadLegacySaver.prototype = {
 
 
 
-
-
-  onTransferFinished: function DLS_onTransferFinished(aRequest, aStatus) {
-    
-    this.request = aRequest;
-
+  onTransferFinished: function DLS_onTransferFinished(aStatus) {
     if (Components.isSuccessCode(aStatus)) {
       this.deferExecuted.resolve();
     } else {

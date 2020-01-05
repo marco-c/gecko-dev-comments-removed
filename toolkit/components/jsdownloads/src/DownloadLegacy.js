@@ -127,7 +127,7 @@ DownloadLegacyTransfer.prototype = {
             this._cancelable.cancel(Cr.NS_ERROR_ABORT);
             if (this._cancelable instanceof Ci.nsIWebBrowserPersist) {
               
-              download.saver.onTransferFinished(aRequest, Cr.NS_ERROR_ABORT);
+              download.saver.onTransferFinished(Cr.NS_ERROR_ABORT);
               this._cancelable = null;
             }
           }
@@ -145,7 +145,7 @@ DownloadLegacyTransfer.prototype = {
           download.saver.setSignatureInfo(this._signatureInfo);
           download.saver.setRedirects(this._redirects);
         }
-        download.saver.onTransferFinished(aRequest, aStatus);
+        download.saver.onTransferFinished(aStatus);
       }).then(null, Cu.reportError);
 
       
@@ -175,7 +175,7 @@ DownloadLegacyTransfer.prototype = {
 
       
       this._deferDownload.promise.then(function DLT_OSC_onDownload(aDownload) {
-        aDownload.saver.onTransferFinished(aRequest, aStatus);
+        aDownload.saver.onTransferFinished(aStatus);
       }).then(null, Cu.reportError);
     }
   },
