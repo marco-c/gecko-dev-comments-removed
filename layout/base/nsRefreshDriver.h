@@ -419,8 +419,8 @@ private:
   mozilla::RefreshDriverTimer* ChooseTimer() const;
   mozilla::RefreshDriverTimer* mActiveTimer;
 
-  ProfilerBacktrace* mReflowCause;
-  ProfilerBacktrace* mStyleCause;
+  UniqueProfilerBacktrace mReflowCause;
+  UniqueProfilerBacktrace mStyleCause;
 
   
   mozilla::WeakPtr<nsPresContext> mPresContext;

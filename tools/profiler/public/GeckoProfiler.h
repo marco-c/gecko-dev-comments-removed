@@ -56,6 +56,7 @@
 #endif
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Vector.h"
+#include "GeckoProfilerTypes.h"
 
 namespace mozilla {
 class TimeStamp;
@@ -155,11 +156,8 @@ static inline void profiler_resume() {}
 
 
 
-static inline ProfilerBacktrace* profiler_get_backtrace() { return nullptr; }
+static inline UniqueProfilerBacktrace profiler_get_backtrace() { return nullptr; }
 static inline void profiler_get_backtrace_noalloc(char *output, size_t outputSize) { return; }
-
-
-static inline void profiler_free_backtrace(ProfilerBacktrace* aBacktrace) {}
 
 static inline bool profiler_is_active() { return false; }
 
@@ -247,14 +245,6 @@ static inline bool profiler_in_privacy_mode() { return false; }
 
 static inline void profiler_log(const char *str) {}
 static inline void profiler_log(const char *fmt, va_list args) {}
-
-class AutoProfilerRegister final MOZ_STACK_CLASS
-{
-  AutoProfilerRegister(const char* aName) {}
-private:
-  AutoProfilerRegister(const AutoProfilerRegister&) = delete;
-  AutoProfilerRegister& operator=(const AutoProfilerRegister&) = delete;
-};
 
 #else
 

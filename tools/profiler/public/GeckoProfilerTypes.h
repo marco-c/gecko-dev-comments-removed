@@ -1,0 +1,21 @@
+
+
+
+
+
+
+#ifndef PROFILER_TYPES_H
+#define PROFILER_TYPES_H
+
+#include "mozilla/UniquePtr.h"
+
+class ProfilerBacktrace;
+
+struct ProfilerBacktraceDestructor
+{
+  void operator()(ProfilerBacktrace*);
+};
+using UniqueProfilerBacktrace =
+  mozilla::UniquePtr<ProfilerBacktrace, ProfilerBacktraceDestructor>;
+
+#endif 
