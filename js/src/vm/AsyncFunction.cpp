@@ -8,8 +8,9 @@
 
 #include "jscompartment.h"
 
-#include "builtin/SelfHostingDefines.h"
+#include "builtin/Promise.h"
 #include "vm/GlobalObject.h"
+#include "vm/Interpreter.h"
 #include "vm/SelfHosting.h"
 
 using namespace js;
@@ -46,73 +47,267 @@ GlobalObject::initAsyncFunction(JSContext* cx, Handle<GlobalObject*> global)
     return true;
 }
 
+static bool AsyncFunctionStart(JSContext* cx, HandleValue generatorVal, MutableHandleValue rval);
+
+#define UNWRAPPED_ASYNC_WRAPPED_SLOT 1
+#define WRAPPED_ASYNC_UNWRAPPED_SLOT 0
+
+
+static bool
+WrappedAsyncFunction(JSContext* cx, unsigned argc, Value* vp)
+{
+    CallArgs args = CallArgsFromVp(argc, vp);
+
+    RootedFunction wrapped(cx, &args.callee().as<JSFunction>());
+    RootedValue unwrappedVal(cx, wrapped->getExtendedSlot(WRAPPED_ASYNC_UNWRAPPED_SLOT));
+    RootedFunction unwrapped(cx, &unwrappedVal.toObject().as<JSFunction>());
+    RootedValue thisValue(cx, args.thisv());
+
+    
+    
+    RootedValue generatorVal(cx);
+    InvokeArgs args2(cx);
+    if (!args2.init(cx, argc))
+        return false;
+    for (size_t i = 0, len = argc; i < len; i++)
+        args2[i].set(args[i]);
+    if (Call(cx, unwrappedVal, thisValue, args2, &generatorVal)) {
+        
+        return AsyncFunctionStart(cx, generatorVal, args.rval());
+    }
+
+    
+    RootedValue exc(cx);
+    if (!GetAndClearException(cx, &exc))
+        return false;
+    RootedObject rejectPromise(cx, PromiseObject::unforgeableReject(cx, exc));
+    if (!rejectPromise)
+        return false;
+
+    
+    args.rval().setObject(*rejectPromise);
+    return true;
+}
+
+
+
+
+
+
+JSObject*
+js::WrapAsyncFunction(JSContext* cx, HandleFunction unwrapped)
+{
+    MOZ_ASSERT(unwrapped->isStarGenerator());
+
+    
+    
+
+    
+    RootedObject proto(cx, GlobalObject::getOrCreateAsyncFunctionPrototype(cx, cx->global()));
+    if (!proto)
+        return nullptr;
+
+    RootedAtom funName(cx, unwrapped->name());
+    uint16_t length;
+    if (!unwrapped->getLength(cx, &length))
+        return nullptr;
+
+    
+    RootedFunction wrapped(cx, NewFunctionWithProto(cx, WrappedAsyncFunction, length,
+                                                    JSFunction::NATIVE_FUN, nullptr,
+                                                    funName, proto,
+                                                    AllocKind::FUNCTION_EXTENDED,
+                                                    TenuredObject));
+    if (!wrapped)
+        return nullptr;
+
+    
+    
+    unwrapped->setExtendedSlot(UNWRAPPED_ASYNC_WRAPPED_SLOT, ObjectValue(*wrapped));
+    wrapped->setExtendedSlot(WRAPPED_ASYNC_UNWRAPPED_SLOT, ObjectValue(*unwrapped));
+
+    return wrapped;
+}
+
+
+static bool
+AsyncFunctionThrown(JSContext* cx, MutableHandleValue rval)
+{
+    
+    RootedValue exc(cx);
+    if (!GetAndClearException(cx, &exc))
+        return false;
+
+    RootedObject rejectPromise(cx, PromiseObject::unforgeableReject(cx, exc));
+    if (!rejectPromise)
+        return false;
+
+    
+    rval.setObject(*rejectPromise);
+    return true;
+}
+
+
+static bool
+AsyncFunctionReturned(JSContext* cx, HandleValue value, MutableHandleValue rval)
+{
+    
+    RootedObject resolveObj(cx, PromiseObject::unforgeableResolve(cx, value));
+    if (!resolveObj)
+        return false;
+
+    
+    rval.setObject(*resolveObj);
+    return true;
+}
+
+static bool AsyncFunctionAwait(JSContext* cx, HandleValue generatorVal, HandleValue value,
+                               MutableHandleValue rval);
+
+enum class ResumeKind {
+    Normal,
+    Throw
+};
+
+
+static bool
+AsyncFunctionResume(JSContext* cx, HandleValue generatorVal, ResumeKind kind,
+                    HandleValue valueOrReason, MutableHandleValue rval)
+{
+    
+    HandlePropertyName funName = kind == ResumeKind::Normal
+                                 ? cx->names().StarGeneratorNext
+                                 : cx->names().StarGeneratorThrow;
+    FixedInvokeArgs<1> args(cx);
+    args[0].set(valueOrReason);
+    RootedValue result(cx);
+    if (!CallSelfHostedFunction(cx, funName, generatorVal, args, &result))
+        return AsyncFunctionThrown(cx, rval);
+
+    RootedObject resultObj(cx, &result.toObject());
+    RootedValue doneVal(cx);
+    RootedValue value(cx);
+    if (!GetProperty(cx, resultObj, resultObj, cx->names().done, &doneVal))
+        return false;
+    if (!GetProperty(cx, resultObj, resultObj, cx->names().value, &value))
+        return false;
+
+    if (doneVal.toBoolean())
+        return AsyncFunctionReturned(cx, value, rval);
+
+    return AsyncFunctionAwait(cx, generatorVal, value, rval);
+}
+
+
+static bool
+AsyncFunctionStart(JSContext* cx, HandleValue generatorVal, MutableHandleValue rval)
+{
+    return AsyncFunctionResume(cx, generatorVal, ResumeKind::Normal, UndefinedHandleValue, rval);
+}
+
+#define AWAITED_FUNC_GENERATOR_SLOT 0
+
+static bool AsyncFunctionAwaitedFulfilled(JSContext* cx, unsigned argc, Value* vp);
+static bool AsyncFunctionAwaitedRejected(JSContext* cx, unsigned argc, Value* vp);
+
+
+static bool
+AsyncFunctionAwait(JSContext* cx, HandleValue generatorVal, HandleValue value,
+                   MutableHandleValue rval)
+{
+    
+
+    
+    RootedObject resolveObj(cx, PromiseObject::unforgeableResolve(cx, value));
+    if (!resolveObj)
+        return false;
+
+    Rooted<PromiseObject*> resolvePromise(cx, resolveObj.as<PromiseObject>());
+
+    
+    RootedAtom funName(cx, cx->names().empty);
+    RootedFunction onFulfilled(cx, NewNativeFunction(cx, AsyncFunctionAwaitedFulfilled, 1,
+                                                      funName, gc::AllocKind::FUNCTION_EXTENDED,
+                                                      GenericObject));
+    if (!onFulfilled)
+        return false;
+
+    
+    RootedFunction onRejected(cx, NewNativeFunction(cx, AsyncFunctionAwaitedRejected, 1,
+                                                    funName, gc::AllocKind::FUNCTION_EXTENDED,
+                                                    GenericObject));
+    if (!onRejected)
+        return false;
+
+    
+    onFulfilled->setExtendedSlot(AWAITED_FUNC_GENERATOR_SLOT, generatorVal);
+    onRejected->setExtendedSlot(AWAITED_FUNC_GENERATOR_SLOT, generatorVal);
+
+    
+    RootedValue onFulfilledVal(cx, ObjectValue(*onFulfilled));
+    RootedValue onRejectedVal(cx, ObjectValue(*onRejected));
+    RootedObject resultPromise(cx, OriginalPromiseThen(cx, resolvePromise, onFulfilledVal,
+                                                       onRejectedVal));
+    if (!resultPromise)
+        return false;
+
+    rval.setObject(*resultPromise);
+    return true;
+}
+
+
+static bool
+AsyncFunctionAwaitedFulfilled(JSContext* cx, unsigned argc, Value* vp)
+{
+    CallArgs args = CallArgsFromVp(argc, vp);
+    MOZ_ASSERT(args.length() == 1);
+
+    RootedFunction F(cx, &args.callee().as<JSFunction>());
+    RootedValue value(cx, args[0]);
+
+    
+    RootedValue generatorVal(cx, F->getExtendedSlot(AWAITED_FUNC_GENERATOR_SLOT));
+
+    
+    return AsyncFunctionResume(cx, generatorVal, ResumeKind::Normal, value, args.rval());
+}
+
+
+static bool
+AsyncFunctionAwaitedRejected(JSContext* cx, unsigned argc, Value* vp)
+{
+    CallArgs args = CallArgsFromVp(argc, vp);
+    MOZ_ASSERT(args.length() == 1);
+
+    RootedFunction F(cx, &args.callee().as<JSFunction>());
+    RootedValue reason(cx, args[0]);
+
+    
+    RootedValue generatorVal(cx, F->getExtendedSlot(AWAITED_FUNC_GENERATOR_SLOT));
+
+    
+    return AsyncFunctionResume(cx, generatorVal, ResumeKind::Throw, reason, args.rval());
+}
+
 JSFunction*
 js::GetWrappedAsyncFunction(JSFunction* unwrapped)
 {
     MOZ_ASSERT(unwrapped->isAsync());
-    return &unwrapped->getExtendedSlot(ASYNC_WRAPPED_SLOT).toObject().as<JSFunction>();
+    return &unwrapped->getExtendedSlot(UNWRAPPED_ASYNC_WRAPPED_SLOT).toObject().as<JSFunction>();
 }
 
 JSFunction*
-js::GetUnwrappedAsyncFunction(JSFunction* wrapper)
+js::GetUnwrappedAsyncFunction(JSFunction* wrapped)
 {
-    JSFunction* unwrapped = &wrapper->getExtendedSlot(ASYNC_UNWRAPPED_SLOT).toObject().as<JSFunction>();
+    MOZ_ASSERT(IsWrappedAsyncFunction(wrapped));
+    JSFunction* unwrapped = &wrapped->getExtendedSlot(WRAPPED_ASYNC_UNWRAPPED_SLOT).toObject().as<JSFunction>();
     MOZ_ASSERT(unwrapped->isAsync());
     return unwrapped;
 }
 
 bool
-js::IsWrappedAsyncFunction(JSContext* cx, JSFunction* wrapper)
+js::IsWrappedAsyncFunction(JSFunction* fun)
 {
-    return IsSelfHostedFunctionWithName(wrapper, cx->names().AsyncWrapped);
+    return fun->maybeNative() == WrappedAsyncFunction;
 }
 
-bool
-js::CreateAsyncFunction(JSContext* cx, HandleFunction wrapper, HandleFunction unwrapped,
-                        MutableHandleFunction result)
-{
-    
-    
-    
-    RootedObject proto(cx, GlobalObject::getOrCreateAsyncFunctionPrototype(cx, cx->global()));
-    RootedObject scope(cx, wrapper->environment());
-    RootedAtom atom(cx, unwrapped->name());
-    RootedFunction wrapped(cx, NewFunctionWithProto(cx, nullptr, 0,
-                                                    JSFunction::INTERPRETED_LAMBDA,
-                                                    scope, atom, proto,
-                                                    AllocKind::FUNCTION_EXTENDED, TenuredObject));
-    if (!wrapped)
-        return false;
-
-    wrapped->initScript(wrapper->nonLazyScript());
-
-    
-    
-    unwrapped->setExtendedSlot(ASYNC_WRAPPED_SLOT, ObjectValue(*wrapped));
-    wrapped->setExtendedSlot(ASYNC_UNWRAPPED_SLOT, ObjectValue(*unwrapped));
-
-    
-    
-    wrapped->setIsSelfHostedBuiltin();
-
-    
-    
-    wrapped->setExtendedSlot(LAZY_FUNCTION_NAME_SLOT, StringValue(cx->names().AsyncWrapped));
-
-    
-    
-    
-    uint16_t length;
-    if (!unwrapped->getLength(cx, &length))
-        return false;
-
-    RootedValue lengthValue(cx, NumberValue(length));
-    if (!DefineProperty(cx, wrapped, cx->names().length, lengthValue,
-                        nullptr, nullptr, JSPROP_READONLY))
-    {
-        return false;
-    }
-
-    result.set(wrapped);
-    return true;
-}

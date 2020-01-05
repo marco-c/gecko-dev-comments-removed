@@ -7135,7 +7135,8 @@ BytecodeEmitter::emitAsyncWrapperLambda(unsigned index, bool isArrow) {
 }
 
 bool
-BytecodeEmitter::emitAsyncWrapper(unsigned index, bool needsHomeObject, bool isArrow) {
+BytecodeEmitter::emitAsyncWrapper(unsigned index, bool needsHomeObject, bool isArrow)
+{
     
     
     
@@ -7160,24 +7161,13 @@ BytecodeEmitter::emitAsyncWrapper(unsigned index, bool needsHomeObject, bool isA
     
     
     
-    
-    
-    if (needsHomeObject) {
-        if (!emitAsyncWrapperLambda(index, isArrow))
-            return false;
-    }
-    if (!emitAtomOp(cx->names().AsyncFunction_wrap, JSOP_GETINTRINSIC))
-        return false;
-    if (!emit1(JSOP_UNDEFINED))
+    if (!emitAsyncWrapperLambda(index, isArrow))
         return false;
     if (needsHomeObject) {
-        if (!emitDupAt(2))
-            return false;
-    } else {
-        if (!emitAsyncWrapperLambda(index, isArrow))
+        if (!emit1(JSOP_DUP))
             return false;
     }
-    if (!emitCall(JSOP_CALL, 1))
+    if (!emit1(JSOP_TOASYNC))
         return false;
     return true;
 }
