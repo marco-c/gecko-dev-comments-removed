@@ -139,6 +139,10 @@ impl<T: Clone + Default, L: GpuStoreLayout> GpuStore<T, L> {
         &mut self.data[offset..offset + count]
     }
 
+    pub fn clear(&mut self) {
+        self.data.clear()
+    }
+
     
     
     

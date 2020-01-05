@@ -587,6 +587,12 @@ impl ClipId {
     }
 
     pub fn new(id: u64, pipeline_id: PipelineId) -> ClipId {
+        
+        
+        if id == 0 {
+            return ClipId::root_scroll_node(pipeline_id);
+        }
+
         ClipId::ClipExternalId(id, pipeline_id)
     }
 

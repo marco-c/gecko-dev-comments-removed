@@ -272,6 +272,11 @@ impl ClipScrollNode {
         };
 
         
+        if (local_transform.m13, local_transform.m23) != (0.0, 0.0) {
+            self.combined_local_viewport_rect = self.local_clip_rect;
+        }
+
+        
         
         
         

@@ -94,7 +94,7 @@ pub mod rect;
 pub mod scale_factor;
 pub mod side_offsets;
 pub mod size;
-mod trig;
+pub mod trig;
 
 
 #[derive(Clone, Copy, RustcDecodable, RustcEncodable)]
