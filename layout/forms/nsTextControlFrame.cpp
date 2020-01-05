@@ -146,12 +146,12 @@ nsTextControlFrame::GetType() const
   return nsGkAtoms::textInputFrame;
 }
 
-nsresult
+LogicalSize
 nsTextControlFrame::CalcIntrinsicSize(nsRenderingContext* aRenderingContext,
                                       WritingMode aWM,
-                                      LogicalSize& aIntrinsicSize,
-                                      float aFontSizeInflation)
+                                      float aFontSizeInflation) const
 {
+  LogicalSize intrinsicSize(aWM);
   
   nscoord lineHeight  = 0;
   nscoord charWidth   = 0;
@@ -168,7 +168,7 @@ nsTextControlFrame::CalcIntrinsicSize(nsRenderingContext* aRenderingContext,
 
   
   int32_t cols = GetCols();
-  aIntrinsicSize.ISize(aWM) = cols * charWidth;
+  intrinsicSize.ISize(aWM) = cols * charWidth;
 
   
   
@@ -185,12 +185,12 @@ nsTextControlFrame::CalcIntrinsicSize(nsRenderingContext* aRenderingContext,
       internalPadding += t - rest;
     }
     
-    aIntrinsicSize.ISize(aWM) += internalPadding;
+    intrinsicSize.ISize(aWM) += internalPadding;
   } else {
     
     
     if (PresContext()->CompatibilityMode() == eCompatibility_FullStandards) {
-      aIntrinsicSize.ISize(aWM) += 1;
+      intrinsicSize.ISize(aWM) += 1;
     }
   }
 
@@ -200,14 +200,14 @@ nsTextControlFrame::CalcIntrinsicSize(nsRenderingContext* aRenderingContext,
     if (eStyleUnit_Coord == lsCoord.GetUnit()) {
       nscoord letterSpacing = lsCoord.GetCoordValue();
       if (letterSpacing != 0) {
-        aIntrinsicSize.ISize(aWM) += cols * letterSpacing;
+        intrinsicSize.ISize(aWM) += cols * letterSpacing;
       }
     }
   }
 
   
   
-  aIntrinsicSize.BSize(aWM) = lineHeight * GetRows();
+  intrinsicSize.BSize(aWM) = lineHeight * GetRows();
 
   
   if (IsTextArea()) {
@@ -221,12 +221,11 @@ nsTextControlFrame::CalcIntrinsicSize(nsRenderingContext* aRenderingContext,
         scrollableFrame->GetDesiredScrollbarSizes(PresContext(),
                                                   aRenderingContext));
 
-      aIntrinsicSize.ISize(aWM) += scrollbarSizes.IStartEnd(aWM);
-      aIntrinsicSize.BSize(aWM) += scrollbarSizes.BStartEnd(aWM);
+      intrinsicSize.ISize(aWM) += scrollbarSizes.IStartEnd(aWM);
+      intrinsicSize.BSize(aWM) += scrollbarSizes.BStartEnd(aWM);
     }
   }
-
-  return NS_OK;
+  return intrinsicSize;
 }
 
 nsresult
@@ -447,15 +446,12 @@ nsTextControlFrame::AppendAnonymousContentTo(nsTArray<nsIContent*>& aElements,
 nscoord
 nsTextControlFrame::GetPrefISize(nsRenderingContext* aRenderingContext)
 {
-    DebugOnly<nscoord> result = 0;
-    DISPLAY_PREF_WIDTH(this, result);
-
-    float inflation = nsLayoutUtils::FontSizeInflationFor(this);
-    WritingMode wm = GetWritingMode();
-    LogicalSize autoSize(wm);
-    CalcIntrinsicSize(aRenderingContext, wm, autoSize, inflation);
-
-    return autoSize.ISize(wm);
+  nscoord result = 0;
+  DISPLAY_PREF_WIDTH(this, result);
+  float inflation = nsLayoutUtils::FontSizeInflationFor(this);
+  WritingMode wm = GetWritingMode();
+  result = CalcIntrinsicSize(aRenderingContext, wm, inflation).ISize(wm);
+  return result;
 }
 
 nscoord
@@ -464,9 +460,7 @@ nsTextControlFrame::GetMinISize(nsRenderingContext* aRenderingContext)
   
   nscoord result;
   DISPLAY_MIN_WIDTH(this, result);
-
   result = GetPrefISize(aRenderingContext);
-
   return result;
 }
 
@@ -481,15 +475,10 @@ nsTextControlFrame::ComputeAutoSize(nsRenderingContext* aRenderingContext,
                                     ComputeSizeFlags    aFlags)
 {
   float inflation = nsLayoutUtils::FontSizeInflationFor(this);
-  LogicalSize autoSize(aWM);
-  nsresult rv = CalcIntrinsicSize(aRenderingContext, aWM, autoSize, inflation);
-  if (NS_FAILED(rv)) {
-    
-    autoSize.SizeTo(aWM, 0, 0);
-  }
+  LogicalSize autoSize = CalcIntrinsicSize(aRenderingContext, aWM, inflation);
 #ifdef DEBUG
   
-  else {
+  {
     const nsStyleCoord& inlineStyleCoord =
       aWM.IsVertical() ? StylePosition()->mHeight : StylePosition()->mWidth;
     if (inlineStyleCoord.GetUnit() == eStyleUnit_Auto) {
