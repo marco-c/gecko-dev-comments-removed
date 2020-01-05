@@ -69,7 +69,13 @@ public:
 
 
 
-  nsresult InsertPlace(VisitData& aVisitData);
+
+
+
+
+
+  nsresult InsertPlace(VisitData& aVisitData,
+                       bool aShouldNotifyFrecencyChanged = true);
 
   
 

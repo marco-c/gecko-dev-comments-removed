@@ -865,6 +865,22 @@ CanAddURI(nsIURI* aURI,
   return false;
 }
 
+class NotifyManyFrecenciesChanged final : public Runnable
+{
+public:
+  NotifyManyFrecenciesChanged() {}
+
+  NS_IMETHOD Run() override
+  {
+    MOZ_ASSERT(NS_IsMainThread(), "This should be called on the main thread");
+    nsNavHistory* navHistory = nsNavHistory::GetHistoryService();
+    NS_ENSURE_STATE(navHistory);
+    navHistory->NotifyManyFrecenciesChanged();
+    return NS_OK;
+  }
+};
+
+
 
 
 
@@ -881,9 +897,13 @@ public:
 
 
 
+
+
+
   static nsresult Start(mozIStorageConnection* aConnection,
                         nsTArray<VisitData>& aPlaces,
-                        mozIVisitInfoCallback* aCallback = nullptr)
+                        mozIVisitInfoCallback* aCallback = nullptr,
+                        bool aGroupNotifications = false)
   {
     MOZ_ASSERT(NS_IsMainThread(), "This should be called on the main thread");
     MOZ_ASSERT(aPlaces.Length() > 0, "Must pass a non-empty array!");
@@ -898,7 +918,7 @@ public:
     nsMainThreadPtrHandle<mozIVisitInfoCallback>
       callback(new nsMainThreadPtrHolder<mozIVisitInfoCallback>(aCallback));
     RefPtr<InsertVisitedURIs> event =
-      new InsertVisitedURIs(aConnection, aPlaces, callback);
+      new InsertVisitedURIs(aConnection, aPlaces, callback, aGroupNotifications);
 
     
     nsCOMPtr<nsIEventTarget> target = do_GetInterface(aConnection);
@@ -1000,14 +1020,23 @@ public:
     nsresult rv = transaction.Commit();
     NS_ENSURE_SUCCESS(rv, rv);
 
+    if (mGroupNotifications) {
+      nsCOMPtr<nsIRunnable> event =
+        new NotifyManyFrecenciesChanged();
+      rv = NS_DispatchToMainThread(event);
+      NS_ENSURE_SUCCESS(rv, rv);
+    }
+
     return NS_OK;
   }
 private:
   InsertVisitedURIs(mozIStorageConnection* aConnection,
                     nsTArray<VisitData>& aPlaces,
-                    const nsMainThreadPtrHandle<mozIVisitInfoCallback>& aCallback)
+                    const nsMainThreadPtrHandle<mozIVisitInfoCallback>& aCallback,
+                    bool aGroupNotifications)
   : mDBConn(aConnection)
   , mCallback(aCallback)
+  , mGroupNotifications(aGroupNotifications)
   , mHistory(History::GetService())
   {
     MOZ_ASSERT(NS_IsMainThread(), "This should be called on the main thread");
@@ -1047,7 +1076,7 @@ private:
     }
     
     else {
-      rv = mHistory->InsertPlace(aPlace);
+      rv = mHistory->InsertPlace(aPlace, !mGroupNotifications);
       NS_ENSURE_SUCCESS(rv, rv);
       aPlace.placeId = nsNavHistory::sLastInsertedPlaceId;
     }
@@ -1166,14 +1195,25 @@ private:
     nsresult rv;
     { 
       nsCOMPtr<mozIStorageStatement> stmt;
-      stmt = mHistory->GetStatement(
-        "UPDATE moz_places "
-        "SET frecency = NOTIFY_FRECENCY("
-          "CALCULATE_FRECENCY(:page_id, :redirect), "
-          "url, guid, hidden, last_visit_date"
-        ") "
-        "WHERE id = :page_id"
-      );
+      if (!mGroupNotifications) {
+        
+        
+        stmt = mHistory->GetStatement(
+          "UPDATE moz_places "
+          "SET frecency = NOTIFY_FRECENCY("
+            "CALCULATE_FRECENCY(:page_id, :redirect), "
+            "url, guid, hidden, last_visit_date"
+          ") "
+          "WHERE id = :page_id"
+        );
+      } else {
+        
+        stmt = mHistory->GetStatement(
+          "UPDATE moz_places "
+          "SET frecency = CALCULATE_FRECENCY(:page_id, :redirect) "
+          "WHERE id = :page_id"
+        );
+      }
       NS_ENSURE_STATE(stmt);
       mozStorageStatementScoper scoper(stmt);
 
@@ -1213,6 +1253,8 @@ private:
   nsTArray<VisitData> mPlaces;
 
   nsMainThreadPtrHandle<mozIVisitInfoCallback> mCallback;
+
+  bool mGroupNotifications;
 
   
 
@@ -2037,7 +2079,7 @@ History::GetIsVisitedStatement(mozIStorageCompletionCallback* aCallback)
 }
 
 nsresult
-History::InsertPlace(VisitData& aPlace)
+History::InsertPlace(VisitData& aPlace, bool aShouldNotifyFrecencyChanged)
 {
   MOZ_ASSERT(aPlace.placeId == 0, "should not have a valid place id!");
   MOZ_ASSERT(!aPlace.shouldUpdateHidden, "We should not need to update hidden");
@@ -2085,12 +2127,14 @@ History::InsertPlace(VisitData& aPlace)
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  const nsNavHistory* navHistory = nsNavHistory::GetConstHistoryService();
-  NS_ENSURE_STATE(navHistory);
-  navHistory->DispatchFrecencyChangedNotification(aPlace.spec, frecency,
-                                                  aPlace.guid,
-                                                  aPlace.hidden,
-                                                  aPlace.visitTime);
+  if (aShouldNotifyFrecencyChanged) {
+    const nsNavHistory* navHistory = nsNavHistory::GetConstHistoryService();
+    NS_ENSURE_STATE(navHistory);
+    navHistory->DispatchFrecencyChangedNotification(aPlace.spec, frecency,
+                                                    aPlace.guid,
+                                                    aPlace.hidden,
+                                                    aPlace.visitTime);
+  }
 
   return NS_OK;
 }
@@ -2787,6 +2831,7 @@ History::GetPlacesInfo(JS::Handle<JS::Value> aPlaceIdentifiers,
 NS_IMETHODIMP
 History::UpdatePlaces(JS::Handle<JS::Value> aPlaceInfos,
                       mozIVisitInfoCallback* aCallback,
+                      bool aGroupNotifications,
                       JSContext* aCtx)
 {
   NS_ENSURE_TRUE(NS_IsMainThread(), NS_ERROR_UNEXPECTED);
@@ -2906,7 +2951,8 @@ History::UpdatePlaces(JS::Handle<JS::Value> aPlaceInfos,
   
   
   if (visitData.Length()) {
-    nsresult rv = InsertVisitedURIs::Start(dbConn, visitData, callback);
+    nsresult rv = InsertVisitedURIs::Start(dbConn, visitData,
+                                           callback, aGroupNotifications);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
