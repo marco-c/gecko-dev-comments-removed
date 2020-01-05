@@ -50,14 +50,14 @@ public:
 protected:
   ~nsICOEncoder();
 
-  nsresult ParseOptions(const nsAString& aOptions, uint16_t& aBppOut,
+  nsresult ParseOptions(const nsAString& aOptions, uint32_t& aBppOut,
                         bool& aUsePNGOut);
   void NotifyListener();
 
   
   void InitFileHeader();
   
-  void InitInfoHeader(uint16_t aBPP, uint8_t aWidth, uint8_t aHeight);
+  void InitInfoHeader(uint32_t aBPP, uint8_t aWidth, uint8_t aHeight);
   
   void EncodeFileHeader();
   

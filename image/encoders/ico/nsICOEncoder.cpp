@@ -228,11 +228,10 @@ nsICOEncoder::StartImageEncode(uint32_t aWidth,
   }
 
   
-  uint16_t bpp = 24;
+  uint32_t bpp = 24;
   bool usePNG = true;
   nsresult rv = ParseOptions(aOutputOptions, bpp, usePNG);
   NS_ENSURE_SUCCESS(rv, rv);
-  MOZ_ASSERT(bpp <= 32);
 
   mUsePNG = usePNG;
 
@@ -266,7 +265,7 @@ nsICOEncoder::EndImageEncode()
 
 
 nsresult
-nsICOEncoder::ParseOptions(const nsAString& aOptions, uint16_t& aBppOut,
+nsICOEncoder::ParseOptions(const nsAString& aOptions, uint32_t& aBppOut,
                            bool& aUsePNGOut)
 {
   
@@ -470,7 +469,7 @@ nsICOEncoder::InitFileHeader()
 
 
 void
-nsICOEncoder::InitInfoHeader(uint16_t aBPP, uint8_t aWidth, uint8_t aHeight)
+nsICOEncoder::InitInfoHeader(uint32_t aBPP, uint8_t aWidth, uint8_t aHeight)
 {
   memset(&mICODirEntry, 0, sizeof(mICODirEntry));
   mICODirEntry.mBitCount = aBPP;
