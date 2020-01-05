@@ -293,12 +293,37 @@ HTMLTrackElement::LoadResource()
     mChannel = nullptr;
   }
 
+  
+  
+  
+  
+  
+  
+  CORSMode corsMode = mMediaParent ? mMediaParent->GetCORSMode() : CORS_NONE;
+
+  
+  nsSecurityFlags secFlags;
+  if (CORS_NONE == corsMode) {
+    
+    secFlags = nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_INHERITS;
+  } else {
+    secFlags = nsILoadInfo::SEC_REQUIRE_CORS_DATA_INHERITS;
+    if (CORS_ANONYMOUS == corsMode) {
+      secFlags |= nsILoadInfo::SEC_COOKIES_SAME_ORIGIN;
+    } else if (CORS_USE_CREDENTIALS == corsMode) {
+      secFlags |= nsILoadInfo::SEC_COOKIES_INCLUDE;
+    } else {
+      NS_WARNING("Unknown CORS mode.");
+      secFlags = nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_INHERITS;
+    }
+  }
+
   nsCOMPtr<nsIChannel> channel;
   nsCOMPtr<nsILoadGroup> loadGroup = OwnerDoc()->GetDocumentLoadGroup();
   rv = NS_NewChannel(getter_AddRefs(channel),
                      uri,
                      static_cast<Element*>(this),
-                     nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_INHERITS,
+                     secFlags,
                      nsIContentPolicy::TYPE_INTERNAL_TRACK,
                      loadGroup,
                      nullptr,   
@@ -313,7 +338,11 @@ HTMLTrackElement::LoadResource()
 
   LOG(LogLevel::Debug, ("opening webvtt channel"));
   rv = channel->AsyncOpen2(mListener);
-  NS_ENSURE_TRUE_VOID(NS_SUCCEEDED(rv));
+
+  if (NS_FAILED(rv)) {
+    SetReadyState(TextTrackReadyState::FailedToLoad);
+    return;
+  }
 
   mChannel = channel;
 }
