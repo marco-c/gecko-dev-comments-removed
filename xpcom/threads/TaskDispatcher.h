@@ -124,7 +124,15 @@ public:
                already_AddRefed<nsIRunnable> aRunnable,
                AbstractThread::DispatchFailureHandling aFailureHandling) override
   {
-    PerThreadTaskGroup& group = EnsureTaskGroup(aThread);
+    
+    
+    
+    
+    if (mTaskGroups.Length() == 0 || mTaskGroups.LastElement()->mThread != aThread) {
+      mTaskGroups.AppendElement(new PerThreadTaskGroup(aThread));
+    }
+
+    PerThreadTaskGroup& group = *mTaskGroups.LastElement();
     group.mRegularTasks.AppendElement(aRunnable);
 
     
@@ -142,11 +150,11 @@ public:
 
   void DispatchTasksFor(AbstractThread* aThread) override
   {
+    
     for (size_t i = 0; i < mTaskGroups.Length(); ++i) {
       if (mTaskGroups[i]->mThread == aThread) {
         DispatchTaskGroup(Move(mTaskGroups[i]));
-        mTaskGroups.RemoveElementAt(i);
-        return;
+        mTaskGroups.RemoveElementAt(i--);
       }
     }
   }
