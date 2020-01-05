@@ -79,6 +79,34 @@ const SUPPORTED_HEADERS = [
 
 
 
+const SUPPORTED_HTTP_CODES = [
+    "100",
+    "200",
+    "201",
+    "204",
+    "206",
+    "301",
+    "302",
+    "303",
+    "304",
+    "307",
+    "308",
+    "404",
+    "406",
+    "410",
+    "412",
+    "451",
+    "500",
+    "501",
+    "502",
+    "503",
+    "504"
+];
+
+
+
+
+
 
 
 
@@ -90,6 +118,19 @@ function getHeadersURL(header) {
     `https://developer.mozilla.org/docs/Web/HTTP/Headers/${SUPPORTED_HEADERS[idx]}?utm_source=mozilla&utm_medium=devtools-netmonitor&utm_campaign=default` : null;
 }
 
+
+
+
+
+
+
+
+function getHTTPStatusCodeURL(statusCode) {
+  let idx = SUPPORTED_HTTP_CODES.indexOf(statusCode);
+  return idx > -1 ? `https://developer.mozilla.org/docs/Web/HTTP/Status/${SUPPORTED_HTTP_CODES[idx]}` : null;
+}
+
 module.exports = {
   getHeadersURL,
+  getHTTPStatusCodeURL,
 };
