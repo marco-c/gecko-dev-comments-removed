@@ -7,7 +7,7 @@
 #ifndef nsStringBuffer_h__
 #define nsStringBuffer_h__
 
-#include "mozilla/Atomics.h"
+#include <atomic>
 #include "mozilla/MemoryReporting.h"
 
 template<class T> struct already_AddRefed;
@@ -26,7 +26,7 @@ class nsStringBuffer
 private:
   friend class CheckStaticAtomSizes;
 
-  mozilla::Atomic<int32_t> mRefCount;
+  std::atomic<uint32_t> mRefCount;
   uint32_t mStorageSize;
 
 public:
@@ -109,7 +109,27 @@ public:
 
   bool IsReadonly() const
   {
-    return mRefCount > 1;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    return mRefCount.load(std::memory_order_relaxed) > 1;
   }
 
   

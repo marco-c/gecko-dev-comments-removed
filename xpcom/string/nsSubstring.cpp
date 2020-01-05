@@ -186,17 +186,35 @@ public:
 void
 nsStringBuffer::AddRef()
 {
-  ++mRefCount;
+  
+  
+  
+  
+  
+  
+  
+  
+  uint32_t count = mRefCount.fetch_add(1, std::memory_order_relaxed) + 1;
   STRING_STAT_INCREMENT(Share);
-  NS_LOG_ADDREF(this, mRefCount, "nsStringBuffer", sizeof(*this));
+  NS_LOG_ADDREF(this, count, "nsStringBuffer", sizeof(*this));
 }
 
 void
 nsStringBuffer::Release()
 {
-  int32_t count = --mRefCount;
+  
+  
+  
+  
+  uint32_t count = mRefCount.fetch_sub(1, std::memory_order_release) - 1;
   NS_LOG_RELEASE(this, count, "nsStringBuffer");
   if (count == 0) {
+    
+    
+    
+    
+    count = mRefCount.load(std::memory_order_acquire);
+
     STRING_STAT_INCREMENT(Free);
     free(this); 
   }
