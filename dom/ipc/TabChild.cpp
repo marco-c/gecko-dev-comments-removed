@@ -429,8 +429,8 @@ TabChild::AsyncPanZoomEnabled() const
 {
   
   
-  return mCompositorOptions ? mCompositorOptions->UseAPZ()
-                            : gfxPlatform::AsyncPanZoomEnabled();
+  MOZ_RELEASE_ASSERT(mCompositorOptions);
+  return mCompositorOptions->UseAPZ();
 }
 
 NS_IMETHODIMP
