@@ -161,9 +161,8 @@ PathBuildingStep::Check(Input potentialIssuerDER,
   
   
   
-  bool loopDetected = false;
-  for (const BackCert* prev = potentialIssuer.childCert;
-       !loopDetected && prev != nullptr; prev = prev->childCert) {
+  for (const BackCert* prev = potentialIssuer.childCert; prev;
+       prev = prev->childCert) {
     if (InputsAreEqual(potentialIssuer.GetSubjectPublicKeyInfo(),
                        prev->GetSubjectPublicKeyInfo()) &&
         InputsAreEqual(potentialIssuer.GetSubject(), prev->GetSubject())) {
