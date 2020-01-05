@@ -6,6 +6,7 @@ Components.utils.import("resource://gre/modules/NetUtil.jsm");
 
 const storageManagerDisabled = !SpecialPowers.getBoolPref("browser.storageManager.enabled");
 const offlineGroupDisabled = !SpecialPowers.getBoolPref("browser.preferences.offlineGroup.enabled");
+const browserContainersGroupDisabled = !SpecialPowers.getBoolPref("privacy.userContext.ui.enabled");
 
 function test() {
   waitForExplicitFinish();
@@ -36,6 +37,11 @@ function checkElements(expectedPane) {
     
     if (element.id == "offlineGroup" && offlineGroupDisabled) {
       is_element_hidden(element, "Disabled offlineGroup should be hidden");
+      continue;
+    }
+    
+    if (element.id == "browserContainersGroup" && browserContainersGroupDisabled) {
+      is_element_hidden(element, "Disabled browserContainersGroup should be hidden");
       continue;
     }
 
