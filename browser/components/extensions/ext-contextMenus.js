@@ -240,6 +240,18 @@ var gMenuBuilder = {
         info.modifiers.push("MacCtrl");
       }
 
+      
+      
+      let actionFor = {
+        _execute_page_action: pageActionFor,
+        _execute_browser_action: browserActionFor,
+        _execute_sidebar_action: sidebarActionFor,
+      }[item.command];
+      if (actionFor) {
+        let win = event.target.ownerGlobal;
+        actionFor(item.extension).triggerAction(win);
+      }
+
       item.extension.emit("webext-contextmenu-menuitem-click", info, tab);
     });
 
