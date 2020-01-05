@@ -2694,16 +2694,20 @@ nsCSSRendering::PaintStyleImageLayerWithSC(const PaintBGParams& aParams,
 
     
     
-    if (clipState.mDirtyRectInDevPx.IsEmpty() ||
-        (aParams.layer >= 0 && i != (uint32_t)aParams.layer)) {
+    if (aParams.layer >= 0 && i != (uint32_t)aParams.layer) {
       continue;
     }
-
     nsBackgroundLayerState state =
       PrepareImageLayer(&aParams.presCtx, aParams.frame,
                         aParams.paintFlags, paintBorderArea,
                         clipState.mBGClipArea, layer, nullptr);
     result &= state.mImageRenderer.PrepareResult();
+
+    
+    if (clipState.mDirtyRectInDevPx.IsEmpty()) {
+      continue;
+    }
+
     if (!state.mFillArea.IsEmpty()) {
       CompositionOp co = DetermineCompositionOp(aParams, layers, i);
       if (co != CompositionOp::OP_OVER) {
