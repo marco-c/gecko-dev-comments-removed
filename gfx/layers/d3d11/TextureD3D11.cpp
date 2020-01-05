@@ -1220,6 +1220,21 @@ SyncObjectD3D11::SyncObjectD3D11(SyncHandle aSyncHandle, ID3D11Device* aDevice)
   mD3D11Device = aDevice;
 }
 
+static inline bool
+ShouldDevCrashOnSyncInitFailure()
+{
+  
+  
+  
+  if (!NS_IsMainThread()) {
+    return false;
+  }
+
+  
+  return !CompositorBridgeChild::CompositorIsInGPUProcess() &&
+         !DeviceManagerDx::Get()->HasDeviceReset();
+}
+
 bool
 SyncObjectD3D11::Init()
 {
@@ -1233,13 +1248,10 @@ SyncObjectD3D11::Init()
     (void**)(ID3D11Texture2D**)getter_AddRefs(mD3D11Texture));
   if (FAILED(hr) || !mD3D11Texture) {
     gfxCriticalNote << "Failed to OpenSharedResource for SyncObjectD3D11: " << hexa(hr);
-    if (!CompositorBridgeChild::CompositorIsInGPUProcess() &&
-        !DeviceManagerDx::Get()->HasDeviceReset())
-    {
+    if (ShouldDevCrashOnSyncInitFailure()) {
       gfxDevCrash(LogReason::D3D11FinalizeFrame) << "Without device reset: " << hexa(hr);
-    } else {
-      return false;
     }
+    return false;
   }
 
   hr = mD3D11Texture->QueryInterface(__uuidof(IDXGIKeyedMutex), getter_AddRefs(mKeyedMutex));
