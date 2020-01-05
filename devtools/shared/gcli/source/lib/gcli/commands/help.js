@@ -69,7 +69,7 @@ function getHelpManData(commandData, context) {
       }
       else {
         
-        input = l10n.lookupFormat('helpManOptional');
+        input = l10n.lookup('helpManOptional');
         
 
 

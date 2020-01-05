@@ -338,7 +338,7 @@ Parameter.prototype.toJson = function() {
   
   
   if (this.paramSpec.defaultValue !== undefined) {
-    json.defaultValue = {};
+    json.defaultValue = (this.paramSpec.defaultValue === null) ? null : {};
   }
   if (this.paramSpec.description != null) {
     json.description = this.paramSpec.description;
