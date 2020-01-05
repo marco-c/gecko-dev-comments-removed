@@ -22,6 +22,20 @@ struct extent_node_s {
 
 
 
+
+
+
+
+
+
+
+
+	size_t			en_sn;
+
+	
+
+
+
 	bool			en_zeroed;
 
 	
@@ -46,7 +60,7 @@ struct extent_node_s {
 
 	union {
 		
-		rb_node(extent_node_t)	szad_link;
+		rb_node(extent_node_t)	szsnad_link;
 
 		
 		ql_elm(extent_node_t)	ql_link;
@@ -61,7 +75,7 @@ typedef rb_tree(extent_node_t) extent_tree_t;
 
 #ifdef JEMALLOC_H_EXTERNS
 
-rb_proto(, extent_tree_szad_, extent_tree_t, extent_node_t)
+rb_proto(, extent_tree_szsnad_, extent_tree_t, extent_node_t)
 
 rb_proto(, extent_tree_ad_, extent_tree_t, extent_node_t)
 
@@ -73,6 +87,7 @@ rb_proto(, extent_tree_ad_, extent_tree_t, extent_node_t)
 arena_t	*extent_node_arena_get(const extent_node_t *node);
 void	*extent_node_addr_get(const extent_node_t *node);
 size_t	extent_node_size_get(const extent_node_t *node);
+size_t	extent_node_sn_get(const extent_node_t *node);
 bool	extent_node_zeroed_get(const extent_node_t *node);
 bool	extent_node_committed_get(const extent_node_t *node);
 bool	extent_node_achunk_get(const extent_node_t *node);
@@ -80,12 +95,13 @@ prof_tctx_t	*extent_node_prof_tctx_get(const extent_node_t *node);
 void	extent_node_arena_set(extent_node_t *node, arena_t *arena);
 void	extent_node_addr_set(extent_node_t *node, void *addr);
 void	extent_node_size_set(extent_node_t *node, size_t size);
+void	extent_node_sn_set(extent_node_t *node, size_t sn);
 void	extent_node_zeroed_set(extent_node_t *node, bool zeroed);
 void	extent_node_committed_set(extent_node_t *node, bool committed);
 void	extent_node_achunk_set(extent_node_t *node, bool achunk);
 void	extent_node_prof_tctx_set(extent_node_t *node, prof_tctx_t *tctx);
 void	extent_node_init(extent_node_t *node, arena_t *arena, void *addr,
-    size_t size, bool zeroed, bool committed);
+    size_t size, size_t sn, bool zeroed, bool committed);
 void	extent_node_dirty_linkage_init(extent_node_t *node);
 void	extent_node_dirty_insert(extent_node_t *node,
     arena_runs_dirty_link_t *runs_dirty, extent_node_t *chunks_dirty);
@@ -112,6 +128,13 @@ extent_node_size_get(const extent_node_t *node)
 {
 
 	return (node->en_size);
+}
+
+JEMALLOC_INLINE size_t
+extent_node_sn_get(const extent_node_t *node)
+{
+
+	return (node->en_sn);
 }
 
 JEMALLOC_INLINE bool
@@ -165,6 +188,13 @@ extent_node_size_set(extent_node_t *node, size_t size)
 }
 
 JEMALLOC_INLINE void
+extent_node_sn_set(extent_node_t *node, size_t sn)
+{
+
+	node->en_sn = sn;
+}
+
+JEMALLOC_INLINE void
 extent_node_zeroed_set(extent_node_t *node, bool zeroed)
 {
 
@@ -194,12 +224,13 @@ extent_node_prof_tctx_set(extent_node_t *node, prof_tctx_t *tctx)
 
 JEMALLOC_INLINE void
 extent_node_init(extent_node_t *node, arena_t *arena, void *addr, size_t size,
-    bool zeroed, bool committed)
+    size_t sn, bool zeroed, bool committed)
 {
 
 	extent_node_arena_set(node, arena);
 	extent_node_addr_set(node, addr);
 	extent_node_size_set(node, size);
+	extent_node_sn_set(node, sn);
 	extent_node_zeroed_set(node, zeroed);
 	extent_node_committed_set(node, committed);
 	extent_node_achunk_set(node, false);
