@@ -2107,16 +2107,6 @@ impl Fragment {
     }
 
     
-    pub fn needs_layered_stacking_context(&self) -> bool {
-        
-        
-        match self.specific {
-            SpecificFragmentInfo::Canvas(_) => true,
-            _ => false,
-        }
-    }
-
-    
     pub fn establishes_stacking_context(&self) -> bool {
         if self.flags.contains(HAS_LAYER) {
             return true
@@ -2138,10 +2128,6 @@ impl Fragment {
                 return true
             }
             transform_style::T::auto => {}
-        }
-
-        if self.needs_layered_stacking_context() {
-            return true
         }
 
         
