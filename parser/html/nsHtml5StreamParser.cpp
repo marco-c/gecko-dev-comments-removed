@@ -981,12 +981,14 @@ nsHtml5StreamParser::OnStartRequest(nsIRequest* aRequest, nsISupports* aContext)
   }
   
   nsCOMPtr<nsIWyciwygChannel> wyciwygChannel(do_QueryInterface(mRequest));
-  if (!wyciwygChannel) {
+  if (mCharsetSource < kCharsetFromUtf8OnlyMime && !wyciwygChannel) {
     
     
     return NS_OK;
   }
 
+  
+  
   
   mReparseForbidden = true;
   mFeedChardet = false;
