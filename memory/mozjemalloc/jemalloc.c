@@ -3048,6 +3048,11 @@ chunk_dealloc(void *chunk, size_t size)
 
 
 
+MOZ_JEMALLOC_API void
+jemalloc_thread_local_arena_impl(bool enabled)
+{
+}
+
 
 
 

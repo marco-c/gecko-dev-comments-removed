@@ -14,6 +14,7 @@
 
 
 
+
 #ifndef MOZ_MEMORY
 #  error Should not include mozmemory.h when MOZ_MEMORY is not set
 #endif
@@ -85,6 +86,8 @@ MOZ_JEMALLOC_API void jemalloc_purge_freed_pages();
 
 
 MOZ_JEMALLOC_API void jemalloc_free_dirty_pages();
+
+MOZ_JEMALLOC_API void jemalloc_thread_local_arena(jemalloc_bool enabled);
 
 MOZ_END_EXTERN_C
 
