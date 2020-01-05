@@ -258,8 +258,6 @@ var whitelist = new Set([
   
   {file: "resource://gre/modules/addons/AddonLogging.jsm"},
   
-  {file: "resource://gre/modules/psm/X509.jsm"},
-  
   {file: "resource://gre/modules/sdk/bootstrap.js"},
   
   {file: "resource://gre/res/langGroups.properties", platforms: ["macosx"]},
