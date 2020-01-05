@@ -222,7 +222,7 @@ public:
 
   
 
-  T * output(size_t output_frame_count)
+  T * output(size_t output_frame_count, size_t * input_frames_used)
   {
     if (resampling_out_buffer.capacity() < frames_to_samples(output_frame_count)) {
       resampling_out_buffer.reserve(frames_to_samples(output_frame_count));
@@ -239,6 +239,7 @@ public:
     
 
     resampling_in_buffer.pop(nullptr, frames_to_samples(in_len));
+    *input_frames_used = in_len;
 
     return resampling_out_buffer.data();
   }
@@ -376,7 +377,7 @@ public:
 
 
 
-  T * output(uint32_t frames_needed)
+  T * output(uint32_t frames_needed, size_t * input_frames_used)
   {
     if (delay_output_buffer.capacity() < frames_to_samples(frames_needed)) {
       delay_output_buffer.reserve(frames_to_samples(frames_needed));
@@ -386,6 +387,7 @@ public:
     delay_output_buffer.push(delay_input_buffer.data(),
                              frames_to_samples(frames_needed));
     delay_input_buffer.pop(nullptr, frames_to_samples(frames_needed));
+    *input_frames_used = frames_needed;
 
     return delay_output_buffer.data();
   }

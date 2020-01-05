@@ -717,7 +717,8 @@ TEST(cubeb, resampler_passthrough_duplex_callback_reordering)
 
   output_seq_idx += BUF_BASE_SIZE;
 
-  ASSERT_EQ(prebuffer_frames, static_cast<long>(ARRAY_LENGTH(input_buffer_prebuffer) / input_params.channels));
+  
+  ASSERT_EQ(prebuffer_frames, BUF_BASE_SIZE);
   ASSERT_EQ(got, BUF_BASE_SIZE);
 
   for (uint32_t i = 0; i < 300; i++) {
