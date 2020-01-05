@@ -2,6 +2,7 @@
 
 
 
+use dom::bindings::codegen::Bindings::EventBinding::EventMethods;
 use dom::bindings::codegen::Bindings::WebGLContextEventBinding;
 use dom::bindings::codegen::Bindings::WebGLContextEventBinding::WebGLContextEventInit;
 use dom::bindings::codegen::Bindings::WebGLContextEventBinding::WebGLContextEventMethods;
@@ -24,6 +25,11 @@ impl WebGLContextEventMethods for WebGLContextEvent {
     
     fn StatusMessage(&self) -> DOMString {
         self.status_message.clone()
+    }
+
+    
+    fn IsTrusted(&self) -> bool {
+        self.event.IsTrusted()
     }
 }
 

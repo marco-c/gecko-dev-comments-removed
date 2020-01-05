@@ -2,6 +2,7 @@
 
 
 
+use dom::bindings::codegen::Bindings::EventBinding::EventMethods;
 use dom::bindings::codegen::Bindings::ProgressEventBinding;
 use dom::bindings::codegen::Bindings::ProgressEventBinding::ProgressEventMethods;
 use dom::bindings::error::Fallible;
@@ -69,5 +70,10 @@ impl ProgressEventMethods for ProgressEvent {
     
     fn Total(&self) -> u64 {
         self.total
+    }
+
+    
+    fn IsTrusted(&self) -> bool {
+        self.event.IsTrusted()
     }
 }

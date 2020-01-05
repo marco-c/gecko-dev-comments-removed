@@ -2,6 +2,7 @@
 
 
 
+use dom::bindings::codegen::Bindings::EventBinding::EventMethods;
 use dom::bindings::codegen::Bindings::StorageEventBinding;
 use dom::bindings::codegen::Bindings::StorageEventBinding::{StorageEventMethods};
 use dom::bindings::error::Fallible;
@@ -107,5 +108,10 @@ impl StorageEventMethods for StorageEvent {
     
     fn GetStorageArea(&self) -> Option<Root<Storage>> {
         self.storageArea.get()
+    }
+
+    
+    fn IsTrusted(&self) -> bool {
+        self.event.IsTrusted()
     }
 }

@@ -2,6 +2,7 @@
 
 
 
+use dom::bindings::codegen::Bindings::EventBinding::EventMethods;
 use dom::bindings::codegen::Bindings::MessageEventBinding;
 use dom::bindings::codegen::Bindings::MessageEventBinding::MessageEventMethods;
 use dom::bindings::error::Fallible;
@@ -98,5 +99,10 @@ impl MessageEventMethods for MessageEvent {
     
     fn LastEventId(&self) -> DOMString {
         self.lastEventId.clone()
+    }
+
+    
+    fn IsTrusted(&self) -> bool {
+        self.event.IsTrusted()
     }
 }

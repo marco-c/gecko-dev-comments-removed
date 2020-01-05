@@ -4,6 +4,7 @@
 
 use dom::bindings::codegen::Bindings::CloseEventBinding;
 use dom::bindings::codegen::Bindings::CloseEventBinding::CloseEventMethods;
+use dom::bindings::codegen::Bindings::EventBinding::EventMethods;
 use dom::bindings::error::Fallible;
 use dom::bindings::global::GlobalRef;
 use dom::bindings::inheritance::Castable;
@@ -89,5 +90,10 @@ impl CloseEventMethods for CloseEvent {
     
     fn Reason(&self) -> DOMString {
         self.reason.clone()
+    }
+
+    
+    fn IsTrusted(&self) -> bool {
+        self.event.IsTrusted()
     }
 }

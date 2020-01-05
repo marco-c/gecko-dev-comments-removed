@@ -2,6 +2,7 @@
 
 
 
+use dom::bindings::codegen::Bindings::EventBinding::EventMethods;
 use dom::bindings::codegen::Bindings::UIEventBinding;
 use dom::bindings::codegen::Bindings::UIEventBinding::UIEventMethods;
 use dom::bindings::error::Fallible;
@@ -94,5 +95,10 @@ impl UIEventMethods for UIEvent {
         event.init_event(Atom::from(&*type_), can_bubble, cancelable);
         self.view.set(view);
         self.detail.set(detail);
+    }
+
+    
+    fn IsTrusted(&self) -> bool {
+        self.event.IsTrusted()
     }
 }
