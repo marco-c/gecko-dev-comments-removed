@@ -150,6 +150,7 @@ pub struct NativePropertyHooks {
 }
 
 
+#[allow(raw_pointer_derive)]
 #[derive(Copy, Clone)]
 pub struct DOMClass {
     
@@ -161,6 +162,9 @@ pub struct DOMClass {
 
     
     pub native_hooks: &'static NativePropertyHooks,
+
+    
+    pub heap_size_of: unsafe fn(*const libc::c_void) -> usize,
 }
 unsafe impl Sync for DOMClass {}
 
