@@ -19,6 +19,19 @@ function promiseAddonEvent(event) {
   });
 }
 
+function promiseWebExtensionStartup() {
+  const {Management} = Components.utils.import("resource://gre/modules/Extension.jsm", {});
+
+  return new Promise(resolve => {
+    let listener = (evt, extension) => {
+      Management.off("ready", listener);
+      resolve(extension);
+    };
+
+    Management.on("ready", listener);
+  });
+}
+
 function* findAddonInRootList(client, addonId) {
   const result = yield client.listAddons();
   const addonActor = result.addons.filter(addon => addon.id === addonId)[0];
@@ -26,11 +39,11 @@ function* findAddonInRootList(client, addonId) {
   return addonActor;
 }
 
-function* reloadAddon(client, addonActor) {
+async function reloadAddon(client, addonActor) {
   
   const onInstalled = promiseAddonEvent("onInstalled");
-  yield client.request({to: addonActor.actor, type: "reload"});
-  yield onInstalled;
+  await client.request({to: addonActor.actor, type: "reload"});
+  await onInstalled;
 }
 
 function getSupportFile(path) {
@@ -45,17 +58,24 @@ add_task(function* testReloadExitedAddon() {
 
   
   const addonFile = getSupportFile("addons/web-extension");
-  const installedAddon = yield AddonManager.installTemporaryAddon(
-    addonFile);
+  const [installedAddon] = yield Promise.all([
+    AddonManager.installTemporaryAddon(addonFile),
+    promiseWebExtensionStartup(),
+  ]);
 
   
   const addonFile2 = getSupportFile("addons/web-extension2");
-  const installedAddon2 = yield AddonManager.installTemporaryAddon(
-    addonFile2);
+  const [installedAddon2] = yield Promise.all([
+    AddonManager.installTemporaryAddon(addonFile2),
+    promiseWebExtensionStartup(),
+  ]);
 
   let addonActor = yield findAddonInRootList(client, installedAddon.id);
 
-  yield reloadAddon(client, addonActor);
+  yield Promise.all([
+    reloadAddon(client, addonActor),
+    promiseWebExtensionStartup(),
+  ]);
 
   
   const onUninstalled = promiseAddonEvent("onUninstalled");
@@ -79,8 +99,10 @@ add_task(function* testReloadExitedAddon() {
 
   
   const addonUpgradeFile = getSupportFile("addons/web-extension-upgrade");
-  const upgradedAddon = yield AddonManager.installTemporaryAddon(
-    addonUpgradeFile);
+  const [upgradedAddon] = yield Promise.all([
+    AddonManager.installTemporaryAddon(addonUpgradeFile),
+    promiseWebExtensionStartup(),
+  ]);
 
   
   yield onAddonListChanged;

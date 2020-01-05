@@ -550,7 +550,7 @@ SpecialPowersObserverAPI.prototype = {
         
         
         let extensionData = new ExtensionData(extension.rootURI);
-        extensionData.readManifest().then(
+        extensionData.loadManifest().then(
           () => {
             return extensionData.initAllLocales().then(() => {
               if (extensionData.errors.length) {
