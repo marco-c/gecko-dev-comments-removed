@@ -286,7 +286,7 @@ protected:
 
   
   
-  nsTArray<ogg_packet*> mUnstamped;
+  nsTArray<OggPacketPtr> mUnstamped;
 
   bool SetCodecSpecificConfig(MediaByteBuffer* aBuffer,
                               OggPacketQueue& aHeaders);
