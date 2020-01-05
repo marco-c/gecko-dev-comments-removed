@@ -305,12 +305,6 @@ public class MediaControlService extends Service implements Tabs.OnTabsChangedLi
             return;
         }
 
-        
-        
-        if (!AppConstants.NIGHTLY_BUILD) {
-            return;
-        }
-
         final Tab tab = mTabReference.get();
 
         if (tab == null) {
