@@ -1161,10 +1161,8 @@ struct nsGridContainerFrame::TrackSizingFunctions
       return 1;
     }
     nscoord repeatTrackSize = 0;
-    float repeatTrackPercent = 0.0f;
     
     nscoord sum = 0;
-    float percentSum = 0.0f;
     const nscoord percentBasis = aSize;
     for (uint32_t i = 0; i < numTracks; ++i) {
       
@@ -1178,9 +1176,7 @@ struct nsGridContainerFrame::TrackSizingFunctions
           return 1;
         }
       }
-      float trackPercent;
-      nscoord trackSize;
-      ResolvePercentSizeParts(*coord, percentBasis, &trackSize, &trackPercent);
+      nscoord trackSize = ::ResolveToDefiniteSize(*coord, percentBasis);
       if (i == mRepeatAutoStart) {
         if (percentBasis != NS_UNCONSTRAINEDSIZE) {
           
@@ -1189,18 +1185,17 @@ struct nsGridContainerFrame::TrackSizingFunctions
           }
         }
         repeatTrackSize = trackSize;
-        repeatTrackPercent = trackPercent;
       }
       sum += trackSize;
-      percentSum += trackPercent;
     }
     nscoord gridGap;
+    float percentSum = 0.0f;
     float gridGapPercent;
     ResolvePercentSizeParts(aGridGap, percentBasis, &gridGap, &gridGapPercent);
     if (numTracks > 1) {
       
       sum += gridGap * (numTracks - 1);
-      percentSum += gridGapPercent * (numTracks - 1);
+      percentSum = gridGapPercent * (numTracks - 1);
     }
     
     nscoord available = maxFill != NS_UNCONSTRAINEDSIZE ? maxFill : aMinSize;
@@ -1213,7 +1208,7 @@ struct nsGridContainerFrame::TrackSizingFunctions
     bool exactFit = false;
     while (true) {
       sum += gridGap + repeatTrackSize;
-      percentSum += gridGapPercent + repeatTrackPercent;
+      percentSum += gridGapPercent;
       nscoord newSize = nsLayoutUtils::AddPercents(sum, percentSum);
       if (newSize <= size) {
         
