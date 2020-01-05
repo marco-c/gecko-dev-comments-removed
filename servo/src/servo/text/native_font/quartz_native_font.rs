@@ -39,12 +39,14 @@ class QuartzNativeFont/& {
     }
 
     fn glyph_index(_codepoint: char) -> option<GlyphIndex> {
-        fail;
+        
+        some(40u)
     }
 
     
     fn glyph_h_advance(_glyph: GlyphIndex) -> option<int> {
-        fail;
+        
+        some(15)
     }
 }
 
