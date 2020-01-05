@@ -121,6 +121,118 @@ XPCOMUtils.defineLazyModuleGetter(this, "Task",
 
 
 
+
+
+
+class MessageManagerProxy {
+  constructor(target) {
+    if (target instanceof Ci.nsIMessageSender) {
+      Object.defineProperty(this, "messageManager", {
+        value: target,
+        configurable: true,
+        writable: true,
+      });
+    } else {
+      this.addListeners(target);
+    }
+  }
+
+  
+
+
+
+
+
+
+
+  dispose() {
+    if (this.eventTarget) {
+      this.removeListeners(this.eventTarget);
+      this.eventTarget = null;
+    } else {
+      this.messageManager = null;
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static matches(target, messageManager) {
+    return target === messageManager || target.messageManager === messageManager;
+  }
+
+  
+
+
+
+
+
+  get messageManager() {
+    return this.eventTarget && this.eventTarget.messageManager;
+  }
+
+  
+
+
+
+
+
+
+
+  sendAsyncMessage(...args) {
+    return this.messageManager.sendAsyncMessage(...args);
+  }
+
+  
+
+
+
+
+
+
+  addListeners(target) {
+    target.addEventListener("SwapDocShells", this);
+    this.eventTarget = target;
+  }
+
+  
+
+
+
+
+
+
+  removeListeners(target) {
+    target.removeEventListener("SwapDocShells", this);
+  }
+
+  handleEvent(event) {
+    if (event.type == "SwapDocShells") {
+      this.removeListeners(this.eventTarget);
+      this.addListeners(event.detail);
+    }
+  }
+}
+
+
+
+
+
+
+
+
 class FilteringMessageManager {
   
 
@@ -610,14 +722,6 @@ this.MessageChannel = {
 
 
   _handleMessage(handlers, data) {
-    
-    
-    
-    let {target} = data;
-    if (!(target instanceof Ci.nsIMessageSender)) {
-      target = target.messageManager;
-    }
-
     if (data.responseType == this.RESPONSE_NONE) {
       handlers.forEach(handler => {
         
@@ -630,6 +734,8 @@ this.MessageChannel = {
       
       return;
     }
+
+    let target = new MessageManagerProxy(data.target);
 
     let deferred = {
       sender: data.sender,
@@ -673,6 +779,10 @@ this.MessageChannel = {
         }
 
         target.sendAsyncMessage(MESSAGE_RESPONSE, response);
+      }).catch(e => {
+        Cu.reportError(e);
+      }).then(() => {
+        target.dispose();
       });
 
     this._addPendingResponse(deferred);
@@ -771,7 +881,7 @@ this.MessageChannel = {
 
   abortMessageManager(target, reason) {
     for (let response of this.pendingResponses) {
-      if (response.messageManager === target) {
+      if (MessageManagerProxy.matches(response.messageManager, target)) {
         response.reject(reason);
       }
     }
