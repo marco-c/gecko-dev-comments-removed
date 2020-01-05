@@ -3451,6 +3451,25 @@ JS_StealArrayBufferContents(JSContext* cx, JS::HandleObject obj);
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API(void*)
+JS_ExternalizeArrayBufferContents(JSContext* cx, JS::HandleObject obj);
+
+
+
+
+
+
 extern JS_PUBLIC_API(JSObject*)
 JS_NewMappedArrayBufferWithContents(JSContext* cx, size_t nbytes, void* contents);
 
