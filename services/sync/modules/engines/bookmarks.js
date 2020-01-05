@@ -620,52 +620,9 @@ BookmarksEngine.prototype = {
   
   
   _switchItemToDupe(localDupeGUID, incomingItem) {
-    
-    
-    
-    this._log.debug("Switching local ID to incoming: " + localDupeGUID + " -> " +
-                    incomingItem.id);
-    this._store.changeItemID(localDupeGUID, incomingItem.id);
-
-    
-    
-    
-    
-    let now = this._tracker._now();
-    let localID = this._store.idForGUID(incomingItem.id);
-    let localParentID = PlacesUtils.bookmarks.getFolderIdForItem(localID);
-    let localParentGUID = this._store.GUIDForId(localParentID);
-    this._modified.set(localParentGUID, { modified: now, deleted: false });
-
-    
-    
-    
-    
-    
-    
-    
-    if (localParentGUID != incomingItem.parentid) {
-      let remoteParentID = this._store.idForGUID(incomingItem.parentid);
-      if (remoteParentID > 0) {
-        
-        
-        
-        
-        this._modified.set(incomingItem.parentid, { modified: now, deleted: false });
-      } else {
-        
-        
-        
-        
-        this._log.debug(`Incoming duplicate item ${incomingItem.id} specifies ` +
-                        `non-existing parent ${incomingItem.parentid}`);
-      }
-    }
-
-    
-    
-    
-    this._modified.set(localDupeGUID, { modified: now, deleted: true });
+    let newChanges = Async.promiseSpinningly(PlacesSyncUtils.bookmarks.dedupe(
+      localDupeGUID, incomingItem.id, incomingItem.parentid));
+    this._modified.insert(newChanges);
   },
 
   
@@ -917,12 +874,6 @@ BookmarksStore.prototype = {
     }
     return [...needUpdate];
   }),
-
-  changeItemID: function BStore_changeItemID(oldID, newID) {
-    this._log.debug("Changing GUID " + oldID + " to " + newID);
-
-    Async.promiseSpinningly(PlacesSyncUtils.bookmarks.changeGuid(oldID, newID));
-  },
 
   
   createRecord: function createRecord(id, collection) {

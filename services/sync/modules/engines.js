@@ -1792,6 +1792,11 @@ class Changeset {
   }
 
   
+  insert(changes) {
+    Object.assign(this.changes, changes);
+  }
+
+  
   has(id) {
     return id in this.changes;
   }

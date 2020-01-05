@@ -297,21 +297,28 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
 
 
 
-  changeGuid: Task.async(function* (oldGuid, newGuid) {
-    PlacesUtils.BOOKMARK_VALIDATORS.guid(oldGuid);
-    PlacesUtils.BOOKMARK_VALIDATORS.guid(newGuid);
 
-    let itemId = yield PlacesUtils.promiseItemId(oldGuid);
-    if (PlacesUtils.isRootItem(itemId)) {
-      throw new Error(`Cannot change GUID of Places root ${oldGuid}`);
-    }
-    return PlacesUtils.withConnectionWrapper("BookmarkSyncUtils: changeGuid",
-      Task.async(function* (db) {
-        yield db.executeCached(`UPDATE moz_bookmarks SET guid = :newGuid
-          WHERE id = :itemId`, { newGuid, itemId });
-        PlacesUtils.invalidateCachedGuidFor(itemId);
-        return newGuid;
-      })
+
+
+
+
+
+
+
+
+
+
+
+
+  dedupe: Task.async(function* (localSyncId, remoteSyncId, remoteParentSyncId) {
+    PlacesUtils.SYNC_BOOKMARK_VALIDATORS.syncId(localSyncId);
+    PlacesUtils.SYNC_BOOKMARK_VALIDATORS.syncId(remoteSyncId);
+    PlacesUtils.SYNC_BOOKMARK_VALIDATORS.syncId(remoteParentSyncId);
+
+    return PlacesUtils.withConnectionWrapper("BookmarkSyncUtils: dedupe", db =>
+      dedupeSyncBookmark(db, BookmarkSyncUtils.syncIdToGuid(localSyncId),
+                         BookmarkSyncUtils.syncIdToGuid(remoteSyncId),
+                         BookmarkSyncUtils.syncIdToGuid(remoteParentSyncId))
     );
   }),
 
@@ -1381,6 +1388,93 @@ var pullSyncChanges = Task.async(function* (db) {
     row => addRowToChangeRecords(row, changeRecords));
 
   yield markChangesAsSyncing(db, changeRecords);
+
+  return changeRecords;
+});
+
+var dedupeSyncBookmark = Task.async(function* (db, localGuid, remoteGuid,
+                                               remoteParentGuid) {
+  let rows = yield db.executeCached(`
+    SELECT b.id, p.guid AS parentGuid, b.syncStatus
+    FROM moz_bookmarks b
+    JOIN moz_bookmarks p ON p.id = b.parent
+    WHERE b.guid = :localGuid`,
+    { localGuid });
+  if (!rows.length) {
+    throw new Error(`Local item ${localGuid} does not exist`);
+  }
+
+  let localId = rows[0].getResultByName("id");
+  if (PlacesUtils.isRootItem(localId)) {
+    throw new Error(`Cannot de-dupe local root ${localGuid}`);
+  }
+
+  let localParentGuid = rows[0].getResultByName("parentGuid");
+  let sameParent = localParentGuid == remoteParentGuid;
+  let modified = PlacesUtils.toPRTime(Date.now());
+
+  yield db.executeTransaction(function* () {
+    
+    
+    BookmarkSyncLog.debug("dedupeSyncBookmark: Switching local GUID " +
+                          localGuid + " to incoming GUID " + remoteGuid);
+    yield db.executeCached(`UPDATE moz_bookmarks
+      SET guid = :remoteGuid
+      WHERE id = :localId`,
+      { remoteGuid, localId });
+    PlacesUtils.invalidateCachedGuidFor(localId);
+
+    
+    
+    
+    
+    
+    
+    yield db.executeCached(`UPDATE moz_bookmarks
+      SET syncChangeCounter = syncChangeCounter + 1
+      WHERE guid = :localParentGuid`,
+      { localParentGuid });
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (!sameParent) {
+      yield db.executeCached(`UPDATE moz_bookmarks
+        SET syncChangeCounter = syncChangeCounter + 1
+        WHERE guid = :remoteParentGuid`,
+        { remoteParentGuid });
+    }
+
+    
+    
+    let localSyncStatus = rows[0].getResultByName("syncStatus");
+    if (localSyncStatus == PlacesUtils.bookmarks.SYNC_STATUS.NORMAL) {
+      yield db.executeCached(`
+        INSERT INTO moz_bookmarks_deleted (guid, dateRemoved)
+        VALUES (:localGuid, :modified)`,
+        { localGuid, modified });
+    }
+  });
+
+  
+  
+  
+  let changeRecords = yield pullSyncChanges(db);
+
+  if (BookmarkSyncLog.level <= Log.Level.Debug && !sameParent) {
+    let remoteParentSyncId = BookmarkSyncUtils.guidToSyncId(remoteParentGuid);
+    if (!changeRecords.hasOwnProperty(remoteParentSyncId)) {
+      BookmarkSyncLog.debug("dedupeSyncBookmark: Incoming duplicate item " +
+                            remoteGuid + " specifies non-existing parent " +
+                            remoteParentGuid);
+    }
+  }
 
   return changeRecords;
 });

@@ -293,7 +293,11 @@ add_task(function* test_dupe_reparented_locally_changed_bookmark() {
     
     
     
-    engine._tracker.addChangedID(bmk1_guid, Date.now() / 1000 + 60);
+    yield PlacesTestUtils.setBookmarkSyncFields({
+      guid: bmk1_guid,
+      syncChangeCounter: 1,
+      lastModified: Date.now() + 60000,
+    });
 
     _("Syncing so new dupe record is processed");
     engine.lastSync = engine.lastSync - 0.01;
