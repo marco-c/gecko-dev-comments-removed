@@ -108,6 +108,10 @@ NewConsoleOutputWrapper.prototype = {
   dispatchMessagesClear: function () {
     store.dispatch(actions.messagesClear());
   },
+  
+  getStore: function () {
+    return store;
+  }
 };
 
 function batchedMessageAdd(action) {
