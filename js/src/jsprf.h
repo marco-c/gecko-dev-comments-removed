@@ -27,6 +27,8 @@
 
 
 
+#include "mozilla/Assertions.h"
+#include "mozilla/Attributes.h"
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/SizePrintfMacros.h"
 #include "mozilla/Types.h"
@@ -65,6 +67,48 @@ extern MFBT_API char* SmprintfAppend(char* last, const char* fmt, ...)
 
 extern MFBT_API char* Vsmprintf(const char* fmt, va_list ap);
 extern MFBT_API char* VsmprintfAppend(char* last, const char* fmt, va_list ap);
+
+
+
+
+
+class PrintfTarget
+{
+public:
+    
+    bool MFBT_API print(const char* format, ...) MOZ_FORMAT_PRINTF(2, 3);
+
+    
+    bool MFBT_API vprint(const char* format, va_list);
+
+protected:
+    MFBT_API PrintfTarget() : mEmitted(0) { }
+    virtual ~PrintfTarget() { }
+
+    
+
+
+    virtual bool append(const char* sp, size_t len) = 0;
+
+private:
+
+    
+    size_t mEmitted;
+
+    
+
+    bool emit(const char* sp, size_t len) {
+        mEmitted += len;
+        return append(sp, len);
+    }
+
+    bool fill2(const char* src, int srclen, int width, int flags);
+    bool fill_n(const char* src, int srclen, int width, int prec, int type, int flags);
+    bool cvt_l(long num, int width, int prec, int radix, int type, int flags, const char* hxp);
+    bool cvt_ll(int64_t num, int width, int prec, int radix, int type, int flags, const char* hexp);
+    bool cvt_f(double d, const char* fmt0, const char* fmt1);
+    bool cvt_s(const char* s, int width, int prec, int flags);
+};
 
 } 
 
