@@ -27,6 +27,7 @@ function checkIdentityPopup(icon) {
 }
 
 add_task(function* () {
+  yield BrowserTestUtils.openNewForegroundTab(gBrowser);
 
   
   yield loadBadCertPage(MIXED_CONTENT_URL);
@@ -47,5 +48,7 @@ add_task(function* () {
   let certOverrideService = Cc["@mozilla.org/security/certoverride;1"]
                               .getService(Ci.nsICertOverrideService);
   certOverrideService.clearValidityOverride("self-signed.example.com", -1);
+
+  yield BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 
