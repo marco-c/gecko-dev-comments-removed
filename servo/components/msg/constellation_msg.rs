@@ -261,6 +261,7 @@ pub enum MozBrowserEvent {
     
     Close,
     
+    
     ContextMenu,
     
     Error,
