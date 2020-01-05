@@ -239,8 +239,7 @@ var Service = {
 
 
 function getAddonIdForWindow(window) {
-  let principal = window.document.nodePrincipal;
-  return principal.originAttributes.addonId;
+  return Cu.getObjectPrincipal(window).originAttributes.addonId;
 }
 
 const API_LEVELS = Object.freeze({
