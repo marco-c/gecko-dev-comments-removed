@@ -977,8 +977,7 @@ nsFrame::DidSetStyleContext(nsStyleContext* aOldStyleContext)
     PresContext()->SetBidiEnabled();
   }
 
-  RemoveStateBits(NS_FRAME_SIMPLE_EVENT_REGIONS |
-                  NS_FRAME_SIMPLE_DISPLAYLIST);
+  RemoveStateBits(NS_FRAME_SIMPLE_EVENT_REGIONS);
 }
 
 void
@@ -2158,9 +2157,7 @@ nsIFrame::GetClipPropClipRect(const nsStyleDisplay* aDisp,
 
 
 
-
-
-static bool
+static void
 ApplyOverflowClipping(nsDisplayListBuilder* aBuilder,
                       const nsIFrame* aFrame,
                       const nsStyleDisplay* aDisp,
@@ -2172,7 +2169,7 @@ ApplyOverflowClipping(nsDisplayListBuilder* aBuilder,
   
   
   if (!nsFrame::ShouldApplyOverflowClipping(aFrame, aDisp)) {
-    return false;
+    return;
   }
   nsRect clipRect;
   bool haveRadii = false;
@@ -2188,7 +2185,6 @@ ApplyOverflowClipping(nsDisplayListBuilder* aBuilder,
     
   }
   aClipState.ClipContainingBlockDescendantsExtra(clipRect, haveRadii ? radii : nullptr);
-  return true;
 }
 
 #ifdef DEBUG
@@ -2868,45 +2864,6 @@ WrapInWrapList(nsDisplayListBuilder* aBuilder,
   return item;
 }
 
-
-
-
-static bool
-DescendIntoChild(nsDisplayListBuilder* aBuilder, nsIFrame *aChild,
-                 const nsRect& aDirty)
-{
-  nsIFrame* child = aChild;
-  const nsRect& dirty = aDirty;
-
-  if (!(child->GetStateBits() & NS_FRAME_FORCE_DISPLAY_LIST_DESCEND_INTO)) {
-    
-    
-
-    
-    
-    
-    
-    
-    
-    
-    
-    nsIPresShell* shell = child->PresContext()->PresShell();
-    bool keepDescending = child == aBuilder->GetIgnoreScrollFrame() ||
-      (shell->IgnoringViewportScrolling() && child == shell->GetRootScrollFrame());
-    if (!keepDescending) {
-      nsRect childDirty;
-      if (!childDirty.IntersectRect(dirty, child->GetVisualOverflowRect()))
-        return false;
-      
-      
-      
-      
-      
-    }
-  }
-  return true;
-}
-
 void
 nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
                                    nsIFrame*               aChild,
@@ -2929,59 +2886,11 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
   if (child->GetStateBits() & NS_FRAME_TOO_DEEP_IN_FRAME_TREE)
     return;
 
-  const bool doingShortcut =
-    (child->GetStateBits() & NS_FRAME_SIMPLE_DISPLAYLIST) &&
-    aBuilder->IsPaintingToWindow() &&
-    
-    aBuilder->IsBuildingLayerEventRegions() &&
-    
-    !(child->GetContent() &&
-      child->GetContent()->MayHaveAnimations());
-  if (doingShortcut) {
-    
-    
-    MOZ_ASSERT(child->GetType() != nsGkAtoms::placeholderFrame);
-    MOZ_ASSERT(!aBuilder->GetSelectedFramesOnly() &&
-               !aBuilder->GetIncludeAllOutOfFlows(),
-               "It should be held for painting to window");
-
-    
-    nsRect dirty = aDirtyRect - child->GetOffsetTo(this);
-    if (!DescendIntoChild(aBuilder, child, dirty)) {
-      return;
-    }
-
-    nsDisplayListBuilder::AutoBuildingDisplayList
-      buildingForChild(aBuilder, child, dirty, false);
-
-    CheckForApzAwareEventHandlers(aBuilder, child);
-
-    nsDisplayLayerEventRegions* eventRegions = aBuilder->GetLayerEventRegions();
-    if (eventRegions) {
-      eventRegions->AddFrame(aBuilder, child);
-    }
-
-    child->MarkAbsoluteFramesForDisplayList(aBuilder, dirty);
-    aBuilder->AdjustWindowDraggingRegion(child);
-    child->BuildDisplayList(aBuilder, dirty, aLists);
-    aBuilder->DisplayCaret(child, dirty, aLists.Content());
-#ifdef DEBUG
-    DisplayDebugBorders(aBuilder, child, aLists);
-#endif
-    return;
-  }
-
   bool isSVG = (child->GetStateBits() & NS_FRAME_SVG_LAYOUT);
-
-  
-  
-  
-  bool awayFromCommonPath = false;
 
   
   bool pseudoStackingContext =
     (aFlags & DISPLAY_CHILD_FORCE_PSEUDO_STACKING_CONTEXT) != 0;
-  awayFromCommonPath |= pseudoStackingContext;
   if (!isSVG &&
       (aFlags & DISPLAY_CHILD_INLINE) &&
       !child->IsFrameOfType(eLineParticipant)) {
@@ -2989,7 +2898,6 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
     
     
     pseudoStackingContext = true;
-    awayFromCommonPath = true;
   }
 
   
@@ -3035,7 +2943,6 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
       dirty.SetEmpty();
     }
     pseudoStackingContext = true;
-    awayFromCommonPath = true;
   }
 
   NS_ASSERTION(childType != nsGkAtoms::placeholderFrame,
@@ -3049,9 +2956,31 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
   if (aBuilder->GetIncludeAllOutOfFlows() &&
       (child->GetStateBits() & NS_FRAME_OUT_OF_FLOW)) {
     dirty = child->GetVisualOverflowRect();
-    awayFromCommonPath = true;
-  } else if (!DescendIntoChild(aBuilder, child, dirty)) {
-    return;
+  } else if (!(child->GetStateBits() & NS_FRAME_FORCE_DISPLAY_LIST_DESCEND_INTO)) {
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    nsIPresShell* shell = PresContext()->PresShell();
+    bool keepDescending = child == aBuilder->GetIgnoreScrollFrame() ||
+        (shell->IgnoringViewportScrolling() && child == shell->GetRootScrollFrame());
+    if (!keepDescending) {
+      nsRect childDirty;
+      if (!childDirty.IntersectRect(dirty, child->GetVisualOverflowRect()))
+        return;
+      
+      
+      
+      
+      
+    }
   }
 
   
@@ -3068,7 +2997,6 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
   
   if (aBuilder->IsPaintingToWindow() && child->TrackingVisibility()) {
     child->PresContext()->PresShell()->EnsureFrameInApproximatelyVisibleList(child);
-    awayFromCommonPath = true;
   }
 
   
@@ -3100,7 +3028,6 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
       (aFlags & DISPLAY_CHILD_FORCE_STACKING_CONTEXT)) {
     
     pseudoStackingContext = true;
-    awayFromCommonPath = true;
   }
   NS_ASSERTION(!isStackingContext || pseudoStackingContext,
                "Stacking contexts must also be pseudo-stacking-contexts");
@@ -3118,7 +3045,6 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
       savedOutOfFlowData->mContainingBlockClipChain);
     asrSetter.SetCurrentActiveScrolledRoot(
       savedOutOfFlowData->mContainingBlockActiveScrolledRoot);
-    MOZ_ASSERT(awayFromCommonPath, "It is impossible when savedOutOfFlowData is true");
   } else if (GetStateBits() & NS_FRAME_FORCE_DISPLAY_LIST_DESCEND_INTO &&
              isPlaceholder) {
     NS_ASSERTION(dirty.IsEmpty(), "should have empty dirty rect");
@@ -3132,7 +3058,6 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
     
     
     clipState.SetClipChainForContainingBlockDescendants(nullptr);
-    awayFromCommonPath = true;
   }
 
   
@@ -3146,9 +3071,7 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
   nsIFrame* parent = child->GetParent();
   const nsStyleDisplay* parentDisp =
     parent == this ? ourDisp : parent->StyleDisplay();
-  if (ApplyOverflowClipping(aBuilder, parent, parentDisp, clipState)) {
-    awayFromCommonPath = true;
-  }
+  ApplyOverflowClipping(aBuilder, parent, parentDisp, clipState);
 
   nsDisplayList list;
   nsDisplayList extraPositionedDescendants;
@@ -3171,7 +3094,6 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
       dirty.IntersectRect(dirty, *clipPropClip);
       clipState.ClipContentDescendants(
         *clipPropClip + aBuilder->ToReferenceFrame(child));
-      awayFromCommonPath = true;
     }
 
     child->MarkAbsoluteFramesForDisplayList(aBuilder, dirty);
@@ -3196,11 +3118,6 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
         nsDisplayLayerEventRegions* eventRegions = aBuilder->GetLayerEventRegions();
         if (eventRegions) {
           eventRegions->AddFrame(aBuilder, child);
-        }
-        if (!awayFromCommonPath &&
-            aBuilder->IsPaintingToWindow()) {
-          
-          child->AddStateBits(NS_FRAME_SIMPLE_DISPLAYLIST);
         }
       }
     }
