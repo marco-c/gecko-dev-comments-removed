@@ -1,9 +1,9 @@
+/* -*- indent-tabs-mode: nil; js-indent-level: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
+/* global ADDON_ENABLE:false, ADDON_DISABLE:false, APP_SHUTDOWN: false */
 
 const {classes: Cc, interfaces: Ci, utils: Cu, manager: Cm} = Components;
 
@@ -16,7 +16,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "RecentWindow",
                                   "resource:///modules/RecentWindow.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "CustomizableUI",
                                   "resource:///modules/CustomizableUI.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "AddonManagerPrivate",
+XPCOMUtils.defineLazyModuleGetter(this, "AddonManager",
                                   "resource://gre/modules/AddonManager.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "ReaderMode",
                                   "resource://gre/modules/ReaderMode.jsm");
@@ -31,13 +31,13 @@ XPCOMUtils.defineLazyGetter(this, "gPocketStyleURI", function() {
   return Services.io.newURI("chrome://pocket/skin/pocket.css");
 });
 
-
-
+// Due to bug 1051238 frame scripts are cached forever, so we can't update them
+// as a restartless add-on. The Math.random() is the work around for this.
 const PROCESS_SCRIPT = "chrome://pocket/content/pocket-content-process.js?" + Math.random();
 
 const PREF_BRANCH = "extensions.pocket.";
 const PREFS = {
-  enabled: true, 
+  enabled: true, // bug 1229937, figure out ui tour support
   api: "api.getpocket.com",
   site: "getpocket.com",
   oAuthConsumerKey: "40249-e88c401e1b1f2242d9e441c4"
@@ -46,8 +46,8 @@ const PREFS = {
 function setDefaultPrefs() {
   let branch = Services.prefs.getDefaultBranch(PREF_BRANCH);
   for (let [key, val] of Object.entries(PREFS)) {
-    
-    
+    // If someone beat us to setting a default, don't overwrite it.  This can
+    // happen if distribution.ini sets the default first.
     if (branch.getPrefType(key) != branch.PREF_INVALID)
       continue;
     switch (typeof val) {
@@ -75,13 +75,13 @@ function createElementWithAttrs(document, type, attrs) {
 function CreatePocketWidget(reason) {
   let id = "pocket-button"
   let widget = CustomizableUI.getWidget(id);
-  
-  
-  
+  // The widget is only null if we've created then destroyed the widget.
+  // Once we've actually called createWidget the provider will be set to
+  // PROVIDER_API.
   if (widget && widget.provider == CustomizableUI.PROVIDER_API)
     return;
-  
-  
+  // if upgrading from builtin version and the button was placed in ui,
+  // seenWidget will not be null
   let seenWidget = CustomizableUI.getPlacementOfWidget("pocket-button", false, true);
   let pocketButton = {
     id: "pocket-button",
@@ -92,7 +92,7 @@ function CreatePocketWidget(reason) {
     viewId: "PanelUI-pocketView",
     label: gPocketBundle.GetStringFromName("pocket-button.label"),
     tooltiptext: gPocketBundle.GetStringFromName("pocket-button.tooltiptext"),
-    
+    // Use forwarding functions here to avoid loading Pocket.jsm on startup:
     onViewShowing() {
       return Pocket.onPanelViewShowing.apply(this, arguments);
     },
@@ -100,7 +100,7 @@ function CreatePocketWidget(reason) {
       return Pocket.onPanelViewHiding.apply(this, arguments);
     },
     onBeforeCreated(doc) {
-      
+      // Bug 1223127,CUI should make this easier to do.
       if (doc.getElementById("PanelUI-pocketView"))
         return;
       let view = doc.createElement("panelview");
@@ -114,14 +114,14 @@ function CreatePocketWidget(reason) {
 
   CustomizableUI.createWidget(pocketButton);
   CustomizableUI.addListener(pocketButton);
-  
+  // placed is null if location is palette
   let placed = CustomizableUI.getPlacementOfWidget("pocket-button");
 
-  
-  
-  
+  // a first time install will always have placed the button somewhere, and will
+  // not have a placement prior to creating the widget. Thus, !seenWidget &&
+  // placed.
   if (reason == ADDON_ENABLE && !seenWidget && placed) {
-    
+    // initially place the button after the bookmarks button if it is in the UI
     let widgets = CustomizableUI.getWidgetIdsInArea(CustomizableUI.AREA_NAVBAR);
     let bmbtn = widgets.indexOf("bookmarks-menu-button");
     if (bmbtn > -1) {
@@ -129,13 +129,13 @@ function CreatePocketWidget(reason) {
     }
   }
 
-  
-  
-  
-  
+  // Uninstall the Pocket social provider if it exists, but only if we haven't
+  // already uninstalled it in this manner.  That way the user can reinstall
+  // it if they prefer it without its being uninstalled every time they start
+  // the browser.
   let SocialService;
   try {
-    
+    // For Firefox 51+
     SocialService = Cu.import("resource:///modules/SocialService.jsm", {}).SocialService;
   } catch (e) {
     SocialService = Cu.import("resource://gre/modules/SocialService.jsm", {}).SocialService;
@@ -154,16 +154,16 @@ function CreatePocketWidget(reason) {
 
 }
 
-
-
+// PocketContextMenu
+// When the context menu is opened check if we need to build and enable pocket UI.
 var PocketContextMenu = {
   init() {
     Services.obs.addObserver(this, "on-build-contextmenu");
   },
   shutdown() {
     Services.obs.removeObserver(this, "on-build-contextmenu");
-    
-    
+    // loop through windows and remove context menus
+    // iterate through all windows and add pocket to them
     for (let win of CustomizableUI.windows) {
       let document = win.document;
       for (let id of ["context-pocket", "context-savelinktopocket"]) {
@@ -188,7 +188,7 @@ var PocketContextMenu = {
 
     let showSaveLinkToPocket = canPocket && !showSaveCurrentPageToPocket && subject.onLink;
 
-    
+    // create menu entries if necessary
     let menu = document.getElementById("context-pocket");
     if (!menu) {
       menu = createElementWithAttrs(document, "menuitem", {
@@ -225,8 +225,8 @@ var PocketContextMenu = {
   }
 }
 
-
-
+// PocketReader
+// Listen for reader mode setup and add our button to the reader toolbar
 var PocketReader = {
   _hidden: true,
   get hidden() {
@@ -240,8 +240,8 @@ var PocketReader = {
     this.update();
   },
   startup() {
-    
-    
+    // Setup the listeners, update will be called when the widget is added,
+    // no need to do that now.
     let mm = Services.mm;
     mm.addMessageListener("Reader:OnSetup", this);
     mm.addMessageListener("Reader:Clicked-pocket-button", this);
@@ -265,7 +265,7 @@ var PocketReader = {
   receiveMessage(message) {
     switch (message.name) {
       case "Reader:OnSetup": {
-        
+        // Tell the reader about our button.
         if (this.hidden)
           break;
         message.target.messageManager.
@@ -281,7 +281,7 @@ var PocketReader = {
         if (placement) {
           if (placement.area == CustomizableUI.AREA_PANEL) {
             doc.defaultView.PanelUI.show().then(function() {
-              
+              // The DOM node might not exist yet if the panel wasn't opened before.
               pocketWidget = doc.getElementById("pocket-button");
               pocketWidget.doCommand();
             });
@@ -299,7 +299,7 @@ var PocketReader = {
 function pktUIGetter(prop, window) {
   return {
     get() {
-      
+      // delete any getters for properties loaded from main.js so we only load main.js once
       delete window.pktUI;
       delete window.pktApi;
       delete window.pktUIMessaging;
@@ -332,9 +332,9 @@ var PocketOverlay = {
     let ppmm = Cc["@mozilla.org/parentprocessmessagemanager;1"]
                  .getService(Ci.nsIMessageBroadcaster);
     ppmm.broadcastAsyncMessage("PocketShuttingDown");
-    
-    
-    
+    // Although the ppmm loads the scripts into the chrome process as well,
+    // we need to manually unregister here anyway to ensure these aren't part
+    // of the chrome process and avoid errors.
     AboutPocket.aboutSaved.unregister();
     AboutPocket.aboutSignup.unregister();
 
@@ -348,7 +348,7 @@ var PocketOverlay = {
           element.remove();
       }
       this.removeStyles(window);
-      
+      // remove script getters/objects
       delete window.Pocket;
       delete window.pktApi;
       delete window.pktUI;
@@ -368,25 +368,25 @@ var PocketOverlay = {
   setWindowScripts(window) {
     XPCOMUtils.defineLazyModuleGetter(window, "Pocket",
                                       "chrome://pocket/content/Pocket.jsm");
-    
-    
+    // Can't use XPCOMUtils for these because the scripts try to define the variables
+    // on window, and so the defineProperty inside defineLazyGetter fails.
     Object.defineProperty(window, "pktApi", pktUIGetter("pktApi", window));
     Object.defineProperty(window, "pktUI", pktUIGetter("pktUI", window));
     Object.defineProperty(window, "pktUIMessaging", pktUIGetter("pktUIMessaging", window));
   },
-  
+  // called for each window as it is opened
   updateWindow(window) {
-    
+    // insert our three menu items
     let document = window.document;
     let hidden = !CustomizableUI.getPlacementOfWidget("pocket-button");
 
-    
+    // add to bookmarksMenu
     let sib = document.getElementById("menu_bookmarkThisPage");
     if (sib && !document.getElementById("menu_pocket")) {
       let menu = createElementWithAttrs(document, "menuitem", {
         "id": "menu_pocket",
         "label": gPocketBundle.GetStringFromName("pocketMenuitem.label"),
-        "class": "menuitem-iconic", 
+        "class": "menuitem-iconic", // OSX only
         "oncommand": "openUILink(Pocket.listURL, event);",
         "hidden": hidden
       });
@@ -398,7 +398,7 @@ var PocketOverlay = {
       sib.parentNode.insertBefore(sep, sib);
     }
 
-    
+    // add to bookmarks-menu-button
     sib = document.getElementById("BMB_bookmarksToolbar");
     if (sib && !document.getElementById("BMB_pocket")) {
       let menu = createElementWithAttrs(document, "menuitem", {
@@ -416,7 +416,7 @@ var PocketOverlay = {
       sib.parentNode.insertBefore(sep, sib);
     }
 
-    
+    // add to PanelUI-bookmarks
     sib = document.getElementById("panelMenuBookmarkThisPage");
     if (sib && !document.getElementById("panelMenu_pocket")) {
       let menu = createElementWithAttrs(document, "toolbarbutton", {
@@ -430,8 +430,8 @@ var PocketOverlay = {
         "id": "panelMenu_pocketSeparator",
         "hidden": hidden
       });
-      
-      
+      // nextSibling is no-id toolbarseparator
+      // insert separator first then button
       sib = sib.nextSibling;
       sib.parentNode.insertBefore(sep, sib);
       sib.parentNode.insertBefore(menu, sib);
@@ -450,7 +450,7 @@ var PocketOverlay = {
         doc.getElementById(prefix + "pocketSeparator").hidden = hidden;
       }
     }
-    
+    // enable or disable reader button
     PocketReader.hidden = hidden;
   },
 
@@ -466,8 +466,8 @@ var PocketOverlay = {
 
 }
 
-
-
+// use enabled pref as a way for tests (e.g. test_contextmenu.html) to disable
+// the addon when running.
 function prefObserver(aSubject, aTopic, aData) {
   let enabled = Services.prefs.getBoolPref("extensions.pocket.enabled");
   if (enabled)
@@ -477,25 +477,26 @@ function prefObserver(aSubject, aTopic, aData) {
 }
 
 function startup(data, reason) {
-  if (AddonManagerPrivate.addonIsActive("isreaditlater@ideashower.com"))
-    return;
-
-  setDefaultPrefs();
-  
-  if (Services.prefs.prefHasUserValue("browser.pocket.enabled")) {
-    Services.prefs.setBoolPref("extensions.pocket.enabled", Services.prefs.getBoolPref("browser.pocket.enabled"));
-    Services.prefs.clearUserPref("browser.pocket.enabled");
-  }
-  
-  Services.prefs.addObserver("extensions.pocket.enabled", prefObserver);
-  if (!Services.prefs.getBoolPref("extensions.pocket.enabled"))
-    return;
-  PocketOverlay.startup(reason);
+  AddonManager.getAddonByID("isreaditlater@ideashower.com", addon => {
+    if (addon && addon.isActive)
+      return;
+    setDefaultPrefs();
+    // migrate enabled pref
+    if (Services.prefs.prefHasUserValue("browser.pocket.enabled")) {
+      Services.prefs.setBoolPref("extensions.pocket.enabled", Services.prefs.getBoolPref("browser.pocket.enabled"));
+      Services.prefs.clearUserPref("browser.pocket.enabled");
+    }
+    // watch pref change and enable/disable if necessary
+    Services.prefs.addObserver("extensions.pocket.enabled", prefObserver);
+    if (!Services.prefs.getBoolPref("extensions.pocket.enabled"))
+      return;
+    PocketOverlay.startup(reason);
+  });
 }
 
 function shutdown(data, reason) {
-  
-  
+  // For speed sake, we should only do a shutdown if we're being disabled.
+  // On an app shutdown, just let it fade away...
   if (reason != APP_SHUTDOWN) {
     Services.prefs.removeObserver("extensions.pocket.enabled", prefObserver);
     PocketOverlay.shutdown(reason);
