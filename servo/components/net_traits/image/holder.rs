@@ -20,7 +20,7 @@ use url::Url;
 pub struct ImageHolder<NodeAddress> {
     url: Url,
     image: Option<Arc<Box<Image>>>,
-    cached_size: Size2D<int>,
+    cached_size: Size2D<u32>,
     local_image_cache: Arc<Mutex<LocalImageCache<NodeAddress>>>,
 }
 
@@ -55,16 +55,15 @@ impl<NodeAddress: Send + 'static> ImageHolder<NodeAddress> {
     
     
     
-    pub fn size(&self) -> Size2D<int> {
+    pub fn size(&self) -> Size2D<u32> {
         self.cached_size
     }
 
     
-    pub fn get_size(&mut self, node_address: NodeAddress) -> Option<Size2D<int>> {
+    pub fn get_size(&mut self, node_address: NodeAddress) -> Option<Size2D<u32>> {
         debug!("get_size() {}", self.url.serialize());
         self.get_image(node_address).map(|img| {
-            self.cached_size = Size2D(img.width as int,
-                                      img.height as int);
+            self.cached_size = Size2D(img.width, img.height);
             self.cached_size.clone()
         })
     }
