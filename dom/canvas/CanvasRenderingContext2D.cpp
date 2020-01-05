@@ -1075,7 +1075,7 @@ CanvasRenderingContext2D::CanvasRenderingContext2D()
   nsContentUtils::RegisterShutdownObserver(mShutdownObserver);
 
   
-  if (gfxPlatform::GetPlatform()->UseAcceleratedCanvas()) {
+  if (gfxPlatform::GetPlatform()->AllowOpenGLCanvas()) {
     mDrawObserver = new CanvasDrawObserver(this);
   } else {
     mRenderingMode = RenderingMode::SoftwareBackendMode;
@@ -1332,7 +1332,7 @@ bool CanvasRenderingContext2D::SwitchRenderingMode(RenderingMode aRenderingMode)
 #ifdef USE_SKIA_GPU
   
   if ((aRenderingMode == RenderingMode::OpenGLBackendMode) &&
-      !gfxPlatform::GetPlatform()->UseAcceleratedCanvas()) {
+      !gfxPlatform::GetPlatform()->AllowOpenGLCanvas()) {
       return false;
   }
 #endif
@@ -1712,7 +1712,7 @@ CanvasRenderingContext2D::TrySkiaGLTarget(RefPtr<gfx::DrawTarget>& aOutDT,
   mIsSkiaGL = false;
 
   IntSize size(mWidth, mHeight);
-  if (!gfxPlatform::GetPlatform()->UseAcceleratedCanvas() ||
+  if (!gfxPlatform::GetPlatform()->AllowOpenGLCanvas() ||
       !CheckSizeForSkiaGL(size)) {
 
     return false;
@@ -4752,7 +4752,7 @@ CanvasRenderingContext2D::DrawImage(const CanvasImageSource& aImage,
       mIsSkiaGL &&
       !srcSurf &&
       aImage.IsHTMLVideoElement() &&
-      gfxPlatform::GetPlatform()->UseAcceleratedCanvas()) {
+      gfxPlatform::GetPlatform()->AllowOpenGLCanvas()) {
     mozilla::gl::GLContext* gl = gfxPlatform::GetPlatform()->GetSkiaGLGlue()->GetGLContext();
     MOZ_ASSERT(gl);
 
