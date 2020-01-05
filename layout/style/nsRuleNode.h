@@ -755,6 +755,7 @@ protected:
 
   
   static void SetFontSize(nsPresContext* aPresContext,
+                          nsStyleContext* aContext,
                           const nsRuleData* aRuleData,
                           const nsStyleFont* aFont,
                           const nsStyleFont* aParentFont,
