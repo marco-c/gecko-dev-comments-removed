@@ -31,6 +31,7 @@ add_task(function* test() {
             }, true);
 
             history.removeSHistoryListener(listener);
+            delete content._testListener;
             content.setTimeout(() => { content.location.reload(); }, 0);
           }
 
@@ -55,7 +56,14 @@ add_task(function* test() {
       };
 
       history.addSHistoryListener(listener);
+      
+      
+      
+      
+      
+      content._testListener = listener;
       content.location = URL;
+
       yield testDone.promise;
     });
   });
