@@ -389,12 +389,21 @@ impl<T: VecRootableType> RootedVec<T> {
     
     
     pub fn new() -> RootedVec<T> {
+        let addr = unsafe {
+            return_address() as *const libc::c_void
+        };
+
+        RootedVec::new_with_destination_address(addr)
+    }
+
+    
+    
+    pub fn new_with_destination_address(addr: *const libc::c_void) -> RootedVec<T> {
         unsafe {
-            RootedCollectionSet::add::<T>(&*(return_address() as *const _));
+            RootedCollectionSet::add::<T>(&*(addr as *const _));
         }
         RootedVec::<T> { v: vec!() }
     }
-
 }
 
 #[unsafe_destructor]
