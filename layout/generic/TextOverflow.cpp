@@ -490,6 +490,24 @@ TextOverflow::ExamineLineFrames(nsLineBox*      aLine,
 
   LogicalRect contentArea = mContentArea;
   bool snapStart = true, snapEnd = true;
+  nscoord startEdge, endEdge;
+  if (aLine->GetFloatEdges(&startEdge, &endEdge)) {
+    
+    
+    nscoord delta = endEdge - contentArea.IEnd(mBlockWM);
+    if (delta < 0) {
+      nscoord newSize = contentArea.ISize(mBlockWM) + delta;
+      contentArea.ISize(mBlockWM) = std::max(nscoord(0), newSize);
+      snapEnd = false;
+    }
+    delta = startEdge - contentArea.IStart(mBlockWM);
+    if (delta > 0) {
+      contentArea.IStart(mBlockWM) = startEdge;
+      nscoord newSize = contentArea.ISize(mBlockWM) - delta;
+      contentArea.ISize(mBlockWM) = std::max(nscoord(0), newSize);
+      snapStart = false;
+    }
+  }
   
   
   LogicalRect nonSnappedContentArea = contentArea;
