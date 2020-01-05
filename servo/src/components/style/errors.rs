@@ -28,20 +28,5 @@ impl<T, I: Iterator<Result<T, SyntaxError>>> Iterator<T> for ErrorLoggerIterator
 
 pub fn log_css_error(location: SourceLocation, message: &str) {
     
-    if log_enabled!(::log::INFO) {
-        if silence_errors.get().is_none() {
-            
-            info!("{:u}:{:u} {:s}", location.line, location.column, message)
-        }
-    }
-}
-
-
-local_data_key!(silence_errors: ())
-
-pub fn with_errors_silenced<T>(f: || -> T) -> T {
-    silence_errors.replace(Some(()));
-    let result = f();
-    silence_errors.replace(None);
-    result
+    info!("{:u}:{:u} {:s}", location.line, location.column, message)
 }
