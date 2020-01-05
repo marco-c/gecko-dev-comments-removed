@@ -290,10 +290,6 @@ TabTracker.prototype = {
 
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver]),
 
-  loadChangedIDs: function () {
-    
-  },
-
   clearChangedIDs: function () {
     this.modified = false;
   },

@@ -94,10 +94,6 @@ ExtensionStorageTracker.prototype = {
 
   
   
-  saveChangedIDs: function() {
-  },
-  loadChangedIDs: function() {
-  },
   ignoreID: function() {
   },
   unignoreID: function() {
