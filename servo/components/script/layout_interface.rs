@@ -143,6 +143,8 @@ pub struct Reflow {
     
     pub url: Url,
     
+    pub iframe: bool,
+    
     pub script_chan: ScriptControlChan,
     
     pub window_size: WindowSizeData,

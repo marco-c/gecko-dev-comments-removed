@@ -922,7 +922,7 @@ impl IOCompositor {
     }
 
     fn composite(&mut self) {
-        profile(time::CompositingCategory, self.time_profiler_chan.clone(), || {
+        profile(time::CompositingCategory, None, self.time_profiler_chan.clone(), || {
             debug!("compositor: compositing");
             
             self.scene.size = self.window_size.as_f32().to_untyped();
@@ -993,4 +993,3 @@ impl IOCompositor {
         self.recomposite = result || self.recomposite;
     }
 }
-
