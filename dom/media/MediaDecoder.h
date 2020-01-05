@@ -252,14 +252,8 @@ protected:
 
 public:
   
-  void SetMediaSeekableOnlyInBufferedRanges(bool aMediaSeekableOnlyInBufferedRanges);
-
-  
   
   bool IsMediaSeekable();
-  
-  
-  bool IsMediaSeekableOnlyInBufferedRanges();
   
   
   bool IsTransportSeekable();
@@ -768,6 +762,7 @@ protected:
   
   Canonical<int64_t> mDecoderPosition;
 
+  
   
   Canonical<bool> mMediaSeekableOnlyInBufferedRanges;
 

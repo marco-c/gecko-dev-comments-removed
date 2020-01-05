@@ -782,7 +782,7 @@ MediaDecoder::MetadataLoaded(nsAutoPtr<MediaInfo> aInfo,
               aInfo->HasAudio(), aInfo->HasVideo());
 
   mMediaSeekable = aInfo->mMediaSeekable;
-  SetMediaSeekableOnlyInBufferedRanges(aInfo->mMediaSeekableOnlyInBufferedRanges);
+  mMediaSeekableOnlyInBufferedRanges = aInfo->mMediaSeekableOnlyInBufferedRanges;
   mInfo = aInfo.forget();
   ConstructMediaTracks();
 
@@ -1276,12 +1276,6 @@ MediaDecoder::UpdateEstimatedMediaDuration(int64_t aDuration)
   mEstimatedDuration = Some(TimeUnit::FromMicroseconds(aDuration));
 }
 
-void
-MediaDecoder::SetMediaSeekableOnlyInBufferedRanges(bool aMediaSeekableOnlyInBufferedRanges){
-  MOZ_ASSERT(NS_IsMainThread());
-  mMediaSeekableOnlyInBufferedRanges = aMediaSeekableOnlyInBufferedRanges;
-}
-
 bool
 MediaDecoder::IsTransportSeekable()
 {
@@ -1297,13 +1291,6 @@ MediaDecoder::IsMediaSeekable()
   return mMediaSeekable;
 }
 
-bool
-MediaDecoder::IsMediaSeekableOnlyInBufferedRanges()
-{
-  MOZ_ASSERT(NS_IsMainThread());
-  return mMediaSeekableOnlyInBufferedRanges;
-}
-
 media::TimeIntervals
 MediaDecoder::GetSeekable()
 {
@@ -1317,7 +1304,7 @@ MediaDecoder::GetSeekable()
   
   
   
-  if (IsMediaSeekableOnlyInBufferedRanges()) {
+  if (mMediaSeekableOnlyInBufferedRanges) {
     return GetBuffered();
   } else if (!IsMediaSeekable()) {
     return media::TimeIntervals();
