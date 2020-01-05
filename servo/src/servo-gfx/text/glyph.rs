@@ -33,24 +33,11 @@ pure fn GlyphEntry(value: u32) -> GlyphEntry { GlyphEntry { value: value } }
 pub type GlyphIndex = u32;
 
 
+#[deriving_eq]
 pub enum BreakType {
     BreakTypeNone,
     BreakTypeNormal,
     BreakTypeHyphen
-}
-
-impl BreakType : Eq {
-    pure fn eq(&self, other: &BreakType) -> bool {
-        match (*self, *other) {
-            (BreakTypeNone, BreakTypeNone) => true,
-            (BreakTypeNormal, BreakTypeNormal) => true,
-            (BreakTypeHyphen, BreakTypeHyphen) => true,
-            (_,_) => false,
-        }
-    }
-    pure fn ne(&self, other: &BreakType) -> bool {
-        !(*self).eq(other)
-    }
 }
 
 const BREAK_TYPE_NONE   : u8 = 0x0u8;
@@ -71,32 +58,32 @@ pure fn break_enum_to_flag(e: BreakType) -> u8 {
     }
 }
 
-// TODO: make this more type-safe.
+
 
 const FLAG_CHAR_IS_SPACE : u32             = 0x10000000u32;
-// These two bits store some BREAK_TYPE_* flags
+
 const FLAG_CAN_BREAK_MASK : u32            = 0x60000000u32;
 const FLAG_CAN_BREAK_SHIFT : u32           = 29;
 const FLAG_IS_SIMPLE_GLYPH : u32           = 0x80000000u32;
 
-// glyph advance; in Au's.
+
 const GLYPH_ADVANCE_MASK : u32             = 0x0FFF0000u32;
 const GLYPH_ADVANCE_SHIFT : u32            = 16;
 const GLYPH_ID_MASK : u32                  = 0x0000FFFFu32;
 
-// Non-simple glyphs (more than one glyph per char; missing glyph,
-// newline, tab, large advance, or nonzero x/y offsets) may have one
-// or more detailed glyphs associated with them. They are stored in a
-// side array so that there is a 1:1 mapping of GlyphEntry to
-// unicode char.
 
-// The number of detailed glyphs for this char. If the char couldn't
-// be mapped to a glyph (!FLAG_NOT_MISSING), then this actually holds
-// the UTF8 code point instead.
+
+
+
+
+
+
+
+
 const GLYPH_COUNT_MASK : u32               = 0x00FFFF00u32;
 const GLYPH_COUNT_SHIFT : u32              = 8;
-// N.B. following Gecko, these are all inverted so that a lot of
-// missing chars can be memset with zeros in one fell swoop.
+
+
 const FLAG_NOT_MISSING : u32               = 0x00000001u32;
 const FLAG_NOT_CLUSTER_START : u32         = 0x00000002u32;
 const FLAG_NOT_LIGATURE_GROUP_START : u32  = 0x00000004u32;
@@ -121,7 +108,7 @@ pure fn InitialGlyphEntry() -> GlyphEntry {
     GlyphEntry { value: 0 }
 }
 
-// Creates a GlyphEntry for the common case
+
 pure fn SimpleGlyphEntry(index: GlyphIndex, advance: Au) -> GlyphEntry {
     assert is_simple_glyph_id(index);
     assert is_simple_advance(advance);
@@ -134,8 +121,8 @@ pure fn SimpleGlyphEntry(index: GlyphIndex, advance: Au) -> GlyphEntry {
     }
 }
 
-// Create a GlyphEntry for uncommon case; should be accompanied by
-// initialization of the actual DetailedGlyph data in DetailedGlyphStore
+
+
 pure fn ComplexGlyphEntry(startsCluster: bool, startsLigature: bool, glyphCount: uint) -> GlyphEntry {
     assert glyphCount <= u16::max_value as uint;
 
@@ -281,6 +268,7 @@ fn DetailedGlyph(index: GlyphIndex,
     }
 }
 
+#[deriving_eq]
 struct DetailedGlyphRecord {
     // source string offset/GlyphEntry offset in the TextRun
     entry_offset: uint,
@@ -288,7 +276,7 @@ struct DetailedGlyphRecord {
     detail_offset: uint
 }
 
-impl DetailedGlyphRecord : Ord {
+impl Ord for DetailedGlyphRecord {
     pure fn lt(&self, other: &DetailedGlyphRecord) -> bool {
 		self.entry_offset <  other.entry_offset
 	}
@@ -300,15 +288,6 @@ impl DetailedGlyphRecord : Ord {
 	}
     pure fn gt(&self, other: &DetailedGlyphRecord) -> bool {
 		self.entry_offset >  other.entry_offset
-	}
-}
-
-impl DetailedGlyphRecord : Eq {
-    pure fn eq(&self, other : &DetailedGlyphRecord) -> bool {
-		self.entry_offset == other.entry_offset
-	}
-    pure fn ne(&self, other : &DetailedGlyphRecord) -> bool {
-		self.entry_offset != other.entry_offset
 	}
 }
 
@@ -361,7 +340,7 @@ impl DetailedGlyphStore {
         // FIXME: Is this right? --pcwalton
         // TODO: should fix this somewhere else
         if count == 0 {
-            return vec::view(self.detail_buffer, 0, 0);
+            return vec::slice(self.detail_buffer, 0, 0);
         }
 
         assert (count as uint) <= self.detail_buffer.len();
@@ -378,8 +357,8 @@ impl DetailedGlyphStore {
             None => fail!(~"Invalid index not found in detailed glyph lookup table!"),
             Some(i) => {
                 assert i + (count as uint) <= self.detail_buffer.len();
-                // return a view into the buffer
-                vec::view(self.detail_buffer, i, i + count as uint)
+                // return a slice into the buffer
+                vec::slice(self.detail_buffer, i, i + count as uint)
             }
         }
     }
@@ -419,9 +398,9 @@ impl DetailedGlyphStore {
         // Thar be dragons here. You have been warned. (Tips accepted.)
         let mut unsorted_records : ~[DetailedGlyphRecord] = ~[];
         core::util::swap(&mut self.detail_lookup, &mut unsorted_records);
-        let mut_records : ~[mut DetailedGlyphRecord] = vec::cast_to_mut(move unsorted_records);
+        let mut_records : ~[mut DetailedGlyphRecord] = vec::cast_to_mut(unsorted_records);
         sort::quick_sort3(mut_records);
-        let mut sorted_records = vec::cast_from_mut(move mut_records);
+        let mut sorted_records = vec::cast_from_mut(mut_records);
         core::util::swap(&mut self.detail_lookup, &mut sorted_records);
 
         self.lookup_is_sorted = true;
@@ -601,13 +580,14 @@ pub impl GlyphStore {
         match entry.is_simple() {
             true => { 
                 let proxy = SimpleGlyphInfo(&self, i);
-                cb(i, move proxy);
+                cb(i, proxy);
             },
             false => {
-                let glyphs = self.detail_store.get_detailed_glyphs_for_entry(i, entry.glyph_count());
+                let glyphs = self.detail_store.get_detailed_glyphs_for_entry(i,
+                                                                             entry.glyph_count());
                 for uint::range(0, glyphs.len()) |j| {
                     let proxy = DetailGlyphInfo(&self, i, j as u16);
-                    cb(i, move proxy);
+                    cb(i, proxy);
                 }
             }
         }
