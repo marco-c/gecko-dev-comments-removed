@@ -354,15 +354,14 @@ nsContentIterator::Init(nsIDOMRange* aDOMRange)
 
   nsIContent* cChild = nullptr;
 
-  if (!startIsData && startNode->HasChildren()) {
+  
+  
+  if (!startIsData && uint32_t(startIndx) < startNode->GetChildCount()) {
     cChild = startNode->GetChildAt(startIndx);
     NS_WARNING_ASSERTION(cChild, "GetChildAt returned null");
   }
 
   if (!cChild) {
-    
-    
-    
     
 
     if (mPre) {
@@ -370,6 +369,7 @@ nsContentIterator::Init(nsIDOMRange* aDOMRange)
       
       
 
+      
       
       
       
@@ -430,8 +430,8 @@ nsContentIterator::Init(nsIDOMRange* aDOMRange)
         
         
         if (!endIsData && !endNode->HasChildren() && !endIndx) {
-          mLast = GetPrevSibling(endNode);
-          NS_WARNING_ASSERTION(mLast, "GetPrevSibling returned null");
+          mLast = PrevNode(endNode);
+          NS_WARNING_ASSERTION(mLast, "PrevNode returned null");
           if (NS_WARN_IF(!NodeIsInTraversalRange(mLast, mPre,
                                                  startNode, startIndx,
                                                  endNode, endIndx))) {
