@@ -177,24 +177,14 @@ TimeoutManager::SetTimeout(nsITimeoutHandler* aHandler,
     realInterval = std::max(realInterval, uint32_t(DOMMinTimeoutValue()));
   }
 
-  TimeDuration delta = TimeDuration::FromMilliseconds(realInterval);
+  timeout->mWindow = &mWindow;
 
-  if (mWindow.IsFrozen()) {
-    
-    
-    
-    
-    timeout->mTimeRemaining = delta;
-  } else {
-    
-    
-    
-    timeout->mWhen = TimeStamp::Now() + delta;
-  }
+  TimeDuration delta = TimeDuration::FromMilliseconds(realInterval);
+  timeout->SetWhenOrTimeRemaining(TimeStamp::Now(), delta);
 
   
   if (!mWindow.IsSuspended()) {
-    MOZ_ASSERT(!timeout->mWhen.IsNull());
+    MOZ_ASSERT(!timeout->When().IsNull());
 
     nsresult rv;
     timeout->mTimer = do_CreateInstance("@mozilla.org/timer;1", &rv);
@@ -213,8 +203,6 @@ TimeoutManager::SetTimeout(nsITimeoutHandler* aHandler,
     
     Unused << copy.forget();
   }
-
-  timeout->mWindow = &mWindow;
 
   if (!aIsInterval) {
     timeout->mNestingLevel = nestingLevel;
@@ -335,14 +323,14 @@ TimeoutManager::RunTimeout(Timeout* aTimeout)
   TimeStamp now = TimeStamp::Now();
   TimeStamp deadline;
 
-  if (aTimeout && aTimeout->mWhen > now) {
+  if (aTimeout && aTimeout->When() > now) {
     
     
     
     
     
 
-    deadline = aTimeout->mWhen;
+    deadline = aTimeout->When();
   } else {
     deadline = now;
   }
@@ -362,7 +350,7 @@ TimeoutManager::RunTimeout(Timeout* aTimeout)
                                        nullptr);
     while (true) {
       Timeout* timeout = expiredIter.Next();
-      if (!timeout || timeout->mWhen > deadline) {
+      if (!timeout || timeout->When() > deadline) {
         break;
       }
 
@@ -410,14 +398,14 @@ TimeoutManager::RunTimeout(Timeout* aTimeout)
   
   RefPtr<Timeout> dummy_normal_timeout = new Timeout();
   dummy_normal_timeout->mFiringDepth = firingDepth;
-  dummy_normal_timeout->mWhen = now;
+  dummy_normal_timeout->SetDummyWhen(now);
   if (last_expired_timeout_is_normal) {
     last_expired_normal_timeout->setNext(dummy_normal_timeout);
   }
 
   RefPtr<Timeout> dummy_tracking_timeout = new Timeout();
   dummy_tracking_timeout->mFiringDepth = firingDepth;
-  dummy_tracking_timeout->mWhen = now;
+  dummy_tracking_timeout->SetDummyWhen(now);
   if (!last_expired_timeout_is_normal) {
     last_expired_tracking_timeout->setNext(dummy_tracking_timeout);
   }
@@ -702,7 +690,7 @@ TimeoutManager::RescheduleTimeout(Timeout* aTimeout, const TimeStamp& now,
   if (aRunningPendingTimeouts) {
     firingTime = now + nextInterval;
   } else {
-    firingTime = aTimeout->mWhen + nextInterval;
+    firingTime = aTimeout->When() + nextInterval;
   }
 
   TimeStamp currentNow = TimeStamp::Now();
@@ -715,25 +703,12 @@ TimeoutManager::RescheduleTimeout(Timeout* aTimeout, const TimeStamp& now,
     delay = TimeDuration(0);
   }
 
+  aTimeout->SetWhenOrTimeRemaining(currentNow, delay);
+
   if (!aTimeout->mTimer) {
-    if (mWindow.IsFrozen()) {
-      
-      
-      
-      
-      aTimeout->mTimeRemaining = delay;
-    } else if (mWindow.IsSuspended()) {
-    
-    
-    
-      aTimeout->mWhen = currentNow + delay;
-    } else {
-      MOZ_ASSERT_UNREACHABLE("Window should be frozen or suspended.");
-    }
+    MOZ_DIAGNOSTIC_ASSERT(mWindow.IsFrozen() || mWindow.IsSuspended());
     return true;
   }
-
-  aTimeout->mWhen = currentNow + delay;
 
   
   
@@ -817,12 +792,12 @@ TimeoutManager::Timeouts::ResetTimersForThrottleReduction(int32_t aPreviousThrot
     
     
     
-    if (timeout->mWhen <= now) {
+    if (timeout->When() <= now) {
       timeout = timeout->getNext();
       continue;
     }
 
-    if (timeout->mWhen - now >
+    if (timeout->When() - now >
         TimeDuration::FromMilliseconds(aPreviousThrottleDelayMS)) {
       
       
@@ -842,13 +817,14 @@ TimeoutManager::Timeouts::ResetTimersForThrottleReduction(int32_t aPreviousThrot
     if (oldInterval > interval) {
       
       TimeStamp firingTime =
-        std::max(timeout->mWhen - oldInterval + interval, now);
+        std::max(timeout->When() - oldInterval + interval, now);
 
-      NS_ASSERTION(firingTime < timeout->mWhen,
+      NS_ASSERTION(firingTime < timeout->When(),
                    "Our firing time should strictly decrease!");
 
       TimeDuration delay = firingTime - now;
-      timeout->mWhen = firingTime;
+      timeout->SetWhenOrTimeRemaining(now, delay);
+      MOZ_DIAGNOSTIC_ASSERT(timeout->When() == firingTime);
 
       
       
@@ -861,7 +837,7 @@ TimeoutManager::Timeouts::ResetTimersForThrottleReduction(int32_t aPreviousThrot
       
       
       NS_ASSERTION(!nextTimeout ||
-                   timeout->mWhen < nextTimeout->mWhen, "How did that happen?");
+                   timeout->When() < nextTimeout->When(), "How did that happen?");
       timeout->remove();
       
       
@@ -939,8 +915,8 @@ TimeoutManager::Timeouts::Insert(Timeout* aTimeout, SortBy aSortBy)
          
          
          (aSortBy == SortBy::TimeRemaining ?
-          prevSibling->mTimeRemaining > aTimeout->mTimeRemaining :
-          prevSibling->mWhen > aTimeout->mWhen);
+          prevSibling->TimeRemaining() > aTimeout->TimeRemaining() :
+          prevSibling->When() > aTimeout->When());
        prevSibling = prevSibling->getPrevious()) {
     
   }
@@ -1035,8 +1011,8 @@ TimeoutManager::Resume()
     
     
     int32_t remaining = 0;
-    if (aTimeout->mWhen > now) {
-      remaining = static_cast<int32_t>((aTimeout->mWhen - now).ToMilliseconds());
+    if (aTimeout->When() > now) {
+      remaining = static_cast<int32_t>((aTimeout->When() - now).ToMilliseconds());
     }
     uint32_t delay = std::max(remaining, DOMMinTimeoutValue());
 
@@ -1068,11 +1044,12 @@ TimeoutManager::Freeze()
     
     
     
-    if (aTimeout->mWhen > now) {
-      aTimeout->mTimeRemaining = aTimeout->mWhen - now;
-    } else {
-      aTimeout->mTimeRemaining = TimeDuration(0);
+    TimeDuration delta(0);
+    if (aTimeout->When() > now) {
+      delta = aTimeout->When() - now;
     }
+    aTimeout->SetWhenOrTimeRemaining(now, delta);
+    MOZ_DIAGNOSTIC_ASSERT(aTimeout->TimeRemaining() == delta);
 
     
     
@@ -1097,7 +1074,8 @@ TimeoutManager::Thaw()
     }
 
     
-    aTimeout->mWhen = now + aTimeout->mTimeRemaining;
+    aTimeout->SetWhenOrTimeRemaining(now, aTimeout->TimeRemaining());
+    MOZ_DIAGNOSTIC_ASSERT(!aTimeout->When().IsNull());
 
     MOZ_ASSERT(!aTimeout->mTimer);
   });

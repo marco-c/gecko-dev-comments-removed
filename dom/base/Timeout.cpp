@@ -108,5 +108,54 @@ Timeout::HasRefCnt(uint32_t aCount) const
 }
 #endif 
 
+void
+Timeout::SetWhenOrTimeRemaining(const TimeStamp& aBaseTime,
+                                const TimeDuration& aDelay)
+{
+  
+  MOZ_DIAGNOSTIC_ASSERT(mWindow);
+
+  
+  
+  
+  
+  if (mWindow->IsFrozen()) {
+    mWhen = TimeStamp();
+    mTimeRemaining = aDelay;
+    return;
+  }
+
+  
+  
+  
+  mWhen = aBaseTime + aDelay;
+  mTimeRemaining = TimeDuration(0);
+}
+
+void
+Timeout::SetDummyWhen(const TimeStamp& aWhen)
+{
+  MOZ_DIAGNOSTIC_ASSERT(!mWindow);
+  mWhen = aWhen;
+}
+
+const TimeStamp&
+Timeout::When() const
+{
+  MOZ_DIAGNOSTIC_ASSERT(!mWhen.IsNull());
+  
+  
+  return mWhen;
+}
+
+const TimeDuration&
+Timeout::TimeRemaining() const
+{
+  MOZ_DIAGNOSTIC_ASSERT(mWhen.IsNull());
+  
+  
+  return mTimeRemaining;
+}
+
 } 
 } 

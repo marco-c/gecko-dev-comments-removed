@@ -11,7 +11,6 @@
 #include "mozilla/TimeStamp.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
-#include "nsPIDOMWindow.h"
 
 class nsGlobalWindow;
 class nsIEventTarget;
@@ -48,6 +47,17 @@ public:
   bool HasRefCnt(uint32_t aCount) const;
 #endif 
 
+  void SetWhenOrTimeRemaining(const TimeStamp& aBaseTime,
+                              const TimeDuration& aDelay);
+
+  void SetDummyWhen(const TimeStamp& aWhen);
+
+  
+  const TimeStamp& When() const;
+
+  
+  const TimeDuration& TimeRemaining() const;
+
   
   RefPtr<nsGlobalWindow> mWindow;
 
@@ -72,14 +82,6 @@ public:
   uint32_t mInterval;
 
   
-  
-  
-  
-  TimeStamp mWhen;
-  
-  TimeDuration mTimeRemaining;
-
-  
   nsCOMPtr<nsIPrincipal> mPrincipal;
 
   
@@ -95,6 +97,14 @@ public:
   nsCOMPtr<nsITimeoutHandler> mScriptHandler;
 
 private:
+  
+  
+  
+  
+  TimeStamp mWhen;
+  
+  TimeDuration mTimeRemaining;
+
   ~Timeout();
 };
 
