@@ -321,6 +321,12 @@ nsSMILAnimationController::DoSample(bool aSkipUnchangedContainers)
 
   bool isStyleFlushNeeded = mResampleNeeded;
   mResampleNeeded = false;
+
+  if (mDocument->IsStyledByServo()) {
+    NS_ERROR("stylo: SMIL animations not supported yet");
+    return;
+  }
+
   
   
   AutoRestore<bool> autoRestoreRunningSample(mRunningSample);
