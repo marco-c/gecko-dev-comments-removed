@@ -280,7 +280,7 @@ HTMLEditor::Init(nsIDOMDocument* aDoc,
     }
 
     
-    mCSSEditUtils = new CSSEditUtils(this);
+    mCSSEditUtils = MakeUnique<CSSEditUtils>(this);
 
     
     nsCOMPtr<nsIPresShell> presShell = GetPresShell();
