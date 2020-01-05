@@ -33,7 +33,8 @@ function getScriptGlobals() {
     try {
       fileGlobals = fileGlobals.concat(globals.getGlobalsForFile(fileName));
     } catch (e) {
-      throw new Error(`Could not load globals from file ${fileName}: ${e}`);
+      
+      return [];
     }
   }
 
