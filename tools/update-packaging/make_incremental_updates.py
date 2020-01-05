@@ -351,6 +351,16 @@ def create_partial_patch(from_dir_path, to_dir_path, patch_filename, shas, patch
     else:
         raise Exception, "missing removed-files file in: "+to_dir_path
 
+    if "chrome.manifest" in to_file_set:
+        forced_list.append("chrome.manifest")
+    elif "Contents/Resources/chrome.manifest" in to_file_set:
+        forced_list.append("Contents/Resources/chrome.manifest")
+    
+    elif "Contents\Resources\\chrome.manifest" in to_file_set:
+        forced_list.append("Contents\Resources\\chrome.manifest")
+    else:
+        raise Exception, "missing chrome.manifest file in: "+to_dir_path
+
     
     patch_filenames = list(from_file_set.intersection(to_file_set))
     patch_filenames.sort(reverse=True)
