@@ -70,16 +70,6 @@
 #include "mozilla/DebugOnly.h"
 #include "ProfileEntry.h"
 
-#if defined(__ARM_EABI__) && defined(ANDROID)
- 
-# define USE_EHABI_STACKWALK
-# include "EHABIStackWalk.h"
-#elif defined(SPS_PLAT_amd64_linux) || defined(SPS_PLAT_x86_linux)
-# define USE_LUL_STACKWALK
-# include "lul/LulMain.h"
-# include "lul/platform-linux-lul.h"
-#endif
-
 
 #include "nsMemoryReporterManager.h"
 
@@ -226,8 +216,7 @@ void ProfilerSignalHandler(int signal, siginfo_t* info, void* context) {
   sample->rssMemory = sample->threadInfo->mRssMemory;
   sample->ussMemory = sample->threadInfo->mUssMemory;
 
-  
-  gSampler->Tick(sample);
+  Tick(sample);
 
   sCurrentThreadInfo = NULL;
   sem_post(&sSignalHandlingDone);

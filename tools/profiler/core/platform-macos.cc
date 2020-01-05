@@ -247,8 +247,7 @@ public:
       sample->timestamp = mozilla::TimeStamp::Now();
       sample->threadInfo = aThreadInfo;
 
-      
-      gSampler->Tick(sample);
+      Tick(sample);
     }
     thread_resume(profiled_thread);
   }

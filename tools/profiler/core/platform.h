@@ -191,36 +191,6 @@ bool is_native_unwinding_avail();
 
 class ThreadInfo;
 
-
-class TickSample {
- public:
-  TickSample()
-      : pc(NULL)
-      , sp(NULL)
-      , fp(NULL)
-      , lr(NULL)
-      , context(NULL)
-      , isSamplingCurrentThread(false)
-      , threadInfo(nullptr)
-      , rssMemory(0)
-      , ussMemory(0)
-  {}
-
-  void PopulateContext(void* aContext);
-
-  Address pc;  
-  Address sp;  
-  Address fp;  
-  Address lr;  
-  void*   context;   
-                     
-  bool    isSamplingCurrentThread;
-  ThreadInfo* threadInfo;
-  mozilla::TimeStamp timestamp;
-  int64_t rssMemory;
-  int64_t ussMemory;
-};
-
 struct JSContext;
 class JSObject;
 class PlatformData;
@@ -242,10 +212,6 @@ public:
   ~Sampler();
 
   
-  
-  void Tick(TickSample* sample);
-
-  
   void Start();
   void Stop();
 
@@ -259,13 +225,6 @@ public:
   typedef mozilla::UniquePtr<PlatformData, PlatformDataDestructor>
     UniquePlatformData;
   static UniquePlatformData AllocPlatformData(int aThreadId);
-
-  
-  
-#ifdef XP_WIN
-  
-  static uintptr_t GetThreadHandle(PlatformData*);
-#endif
 
   static bool CanNotifyObservers() {
 #ifdef MOZ_WIDGET_GONK
@@ -291,13 +250,7 @@ public:
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
 private:
-  
-  void doNativeBacktrace(ThreadInfo& aInfo, TickSample* aSample);
-
   void StreamJSON(SpliceableJSONWriter& aWriter, double aSinceTime);
-
-  
-  void InplaceTick(TickSample* sample);
 };
 
 #endif 
