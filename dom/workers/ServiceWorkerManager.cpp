@@ -2561,7 +2561,7 @@ ServiceWorkerManager::IsControlled(nsIDocument* aDoc, ErrorResult& aRv)
 {
   MOZ_ASSERT(aDoc);
 
-  if (aDoc->NodePrincipal()->OriginAttributesRef().mPrivateBrowsingId) {
+  if (nsContentUtils::IsInPrivateBrowsing(aDoc)) {
     
     
     return false;
