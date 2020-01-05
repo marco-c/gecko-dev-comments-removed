@@ -40,6 +40,16 @@ private:
   uint64_t mServiceWorkerID;
 
   
+  PRTime mCreationTime;
+  TimeStamp mCreationTimeStamp;
+
+  
+  
+  PRTime mInstalledTime;
+  PRTime mActivatedTime;
+  PRTime mRedundantTime;
+
+  
   
   
   
@@ -173,6 +183,15 @@ public:
 
   already_AddRefed<ServiceWorker>
   GetOrCreateInstance(nsPIDOMWindowInner* aWindow);
+
+  void
+  UpdateInstalledTime();
+
+  void
+  UpdateActivatedTime();
+
+  void
+  UpdateRedundantTime();
 };
 
 } 
