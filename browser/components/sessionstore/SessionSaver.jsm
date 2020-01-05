@@ -187,6 +187,9 @@ var SessionSaverInternal = {
     PrivacyFilter.filterPrivateWindowsAndTabs(state);
 
     
+    SessionStore.keepOnlyWorthSavingTabs(state);
+
+    
     
     if (state.deferredInitialState) {
       state.windows = state.deferredInitialState.windows || [];
