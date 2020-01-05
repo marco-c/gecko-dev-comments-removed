@@ -1056,6 +1056,12 @@ public:
 
   bool IsRootContentDocument() const;
 
+  bool HadNonBlankPaint() const {
+    return mHadNonBlankPaint;
+  }
+
+  void NotifyNonBlankPaint();
+
   bool IsGlyph() const {
     return mIsGlyph;
   }
@@ -1398,6 +1404,9 @@ protected:
 
   
   unsigned              mNeedsPrefUpdate : 1;
+
+  
+  unsigned              mHadNonBlankPaint : 1;
 
 #ifdef RESTYLE_LOGGING
   
