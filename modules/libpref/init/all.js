@@ -5356,9 +5356,7 @@ pref("browser.search.reset.enabled", false);
 pref("browser.search.reset.whitelist", "");
 pref("browser.search.geoSpecificDefaults", false);
 pref("browser.search.geoip.url", "https://location.services.mozilla.com/v1/country?key=%MOZILLA_API_KEY%");
-
-
-pref("browser.search.geoip.timeout", 2000);
+pref("browser.search.geoip.timeout", 3000);
 
 #ifdef MOZ_OFFICIAL_BRANDING
 
