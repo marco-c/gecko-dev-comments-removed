@@ -5,6 +5,7 @@
 
 
 
+use dom::bindings::cell::DOMRefCell;
 use dom::bindings::codegen::Bindings::DocumentBinding::DocumentMethods;
 use dom::bindings::codegen::Bindings::DOMRectBinding::DOMRectMethods;
 use dom::bindings::codegen::Bindings::ElementBinding::ElementMethods;
@@ -64,7 +65,6 @@ use url::Url;
 
 use libc::size_t;
 use std::any::{Any, AnyRefExt};
-use std::cell::RefCell;
 use std::collections::HashSet;
 use std::comm::{channel, Sender, Receiver, Select};
 use std::mem::replace;
@@ -143,7 +143,7 @@ impl Drop for StackRootTLS {
 
 pub struct ScriptTask {
     
-    page: RefCell<Rc<Page>>,
+    page: DOMRefCell<Rc<Page>>,
     
     image_cache_task: ImageCacheTask,
     
@@ -176,9 +176,9 @@ pub struct ScriptTask {
     
     js_runtime: js::rust::rt,
     
-    js_context: RefCell<Option<Rc<Cx>>>,
+    js_context: DOMRefCell<Option<Rc<Cx>>>,
 
-    mouse_over_targets: RefCell<Option<Vec<JS<Node>>>>
+    mouse_over_targets: DOMRefCell<Option<Vec<JS<Node>>>>
 }
 
 
@@ -327,7 +327,7 @@ impl ScriptTask {
         });
 
         ScriptTask {
-            page: RefCell::new(Rc::new(page)),
+            page: DOMRefCell::new(Rc::new(page)),
 
             image_cache_task: img_cache_task,
             resource_task: resource_task,
@@ -342,8 +342,8 @@ impl ScriptTask {
             devtools_port: devtools_receiver,
 
             js_runtime: js_runtime,
-            js_context: RefCell::new(Some(js_context)),
-            mouse_over_targets: RefCell::new(None)
+            js_context: DOMRefCell::new(Some(js_context)),
+            mouse_over_targets: DOMRefCell::new(None)
         }
     }
 
