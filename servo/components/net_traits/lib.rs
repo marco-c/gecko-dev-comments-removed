@@ -667,7 +667,7 @@ pub enum NetworkError {
     Internal(String),
     LoadCancelled,
     
-    SslValidation(Url),
+    SslValidation(Url, String),
 }
 
 
