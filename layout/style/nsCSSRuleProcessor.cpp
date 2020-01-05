@@ -2134,75 +2134,74 @@ static bool SelectorMatches(Element* aElement,
     if (!aElement->HasAttrs()) {
       
       return false;
-    } else {
-      result = true;
-      nsAttrSelector* attr = aSelector->mAttrList;
-      nsIAtom* matchAttribute;
+    }
+    result = true;
+    nsAttrSelector* attr = aSelector->mAttrList;
+    nsIAtom* matchAttribute;
 
-      do {
-        bool isHTML =
-          (aTreeMatchContext.mIsHTMLDocument && aElement->IsHTMLElement());
-        matchAttribute = isHTML ? attr->mLowercaseAttr : attr->mCasedAttr;
-        if (attr->mNameSpace == kNameSpaceID_Unknown) {
-          
-          
-          
-          
-          
-          
-          
-          result = false;
-          const nsAttrName* attrName;
-          for (uint32_t i = 0; (attrName = aElement->GetAttrNameAt(i)); ++i) {
-            if (attrName->LocalName() != matchAttribute) {
-              continue;
-            }
-            if (attr->mFunction == NS_ATTR_FUNC_SET) {
-              result = true;
-            } else {
-              nsAutoString value;
+    do {
+      bool isHTML =
+        (aTreeMatchContext.mIsHTMLDocument && aElement->IsHTMLElement());
+      matchAttribute = isHTML ? attr->mLowercaseAttr : attr->mCasedAttr;
+      if (attr->mNameSpace == kNameSpaceID_Unknown) {
+        
+        
+        
+        
+        
+        
+        
+        result = false;
+        const nsAttrName* attrName;
+        for (uint32_t i = 0; (attrName = aElement->GetAttrNameAt(i)); ++i) {
+          if (attrName->LocalName() != matchAttribute) {
+            continue;
+          }
+          if (attr->mFunction == NS_ATTR_FUNC_SET) {
+            result = true;
+          } else {
+            nsAutoString value;
 #ifdef DEBUG
-              bool hasAttr =
+            bool hasAttr =
 #endif
-                aElement->GetAttr(attrName->NamespaceID(),
-                                  attrName->LocalName(), value);
-              NS_ASSERTION(hasAttr, "GetAttrNameAt lied");
-              result = AttrMatchesValue(attr, value, isHTML);
-            }
+              aElement->GetAttr(attrName->NamespaceID(),
+                                attrName->LocalName(), value);
+            NS_ASSERTION(hasAttr, "GetAttrNameAt lied");
+            result = AttrMatchesValue(attr, value, isHTML);
+          }
 
-            
-            
-            
-            
-            
-            if (result) {
-              break;
-            }
+          
+          
+          
+          
+          
+          if (result) {
+            break;
           }
         }
-        else if (attr->mFunction == NS_ATTR_FUNC_EQUALS) {
-          result =
-            aElement->
-              AttrValueIs(attr->mNameSpace, matchAttribute, attr->mValue,
-                          attr->IsValueCaseSensitive(isHTML) ? eCaseMatters
-                                                             : eIgnoreCase);
-        }
-        else if (!aElement->HasAttr(attr->mNameSpace, matchAttribute)) {
-          result = false;
-        }
-        else if (attr->mFunction != NS_ATTR_FUNC_SET) {
-          nsAutoString value;
+      }
+      else if (attr->mFunction == NS_ATTR_FUNC_EQUALS) {
+        result =
+          aElement->
+          AttrValueIs(attr->mNameSpace, matchAttribute, attr->mValue,
+                      attr->IsValueCaseSensitive(isHTML) ? eCaseMatters
+                                                         : eIgnoreCase);
+      }
+      else if (!aElement->HasAttr(attr->mNameSpace, matchAttribute)) {
+        result = false;
+      }
+      else if (attr->mFunction != NS_ATTR_FUNC_SET) {
+        nsAutoString value;
 #ifdef DEBUG
-          bool hasAttr =
+        bool hasAttr =
 #endif
-              aElement->GetAttr(attr->mNameSpace, matchAttribute, value);
-          NS_ASSERTION(hasAttr, "HasAttr lied");
-          result = AttrMatchesValue(attr, value, isHTML);
-        }
-        
-        attr = attr->mNext;
-      } while (attr && result);
-    }
+          aElement->GetAttr(attr->mNameSpace, matchAttribute, value);
+        NS_ASSERTION(hasAttr, "HasAttr lied");
+        result = AttrMatchesValue(attr, value, isHTML);
+      }
+
+      attr = attr->mNext;
+    } while (attr && result);
   }
 
   
