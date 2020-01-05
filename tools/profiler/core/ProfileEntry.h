@@ -142,13 +142,9 @@ class UniqueStacks
 {
 public:
   struct FrameKey {
-#ifdef SPS_STANDALONE
-    std::string mLocation;
-#else
     
     
     nsCString mLocation;
-#endif
     mozilla::Maybe<unsigned> mLine;
     mozilla::Maybe<unsigned> mCategory;
     mozilla::Maybe<void*> mJITAddress;
@@ -289,14 +285,7 @@ private:
 
   SpliceableChunkedJSONWriter mStackTableWriter;
 
-  
-  
-  
-#ifdef SPS_STANDALONE
-  std::map<StackKey, uint32_t> mStackToIndexMap;
-#else
   nsDataHashtable<nsGenericHashKey<StackKey>, uint32_t> mStackToIndexMap;
-#endif
 };
 
 
