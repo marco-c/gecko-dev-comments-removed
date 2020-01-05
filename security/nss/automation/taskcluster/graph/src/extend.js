@@ -30,7 +30,7 @@ queue.filter(task => {
     }
   }
 
-  if (task.tests == "bogo") {
+  if (task.tests == "bogo" || task.tests == "interop") {
     
     if (task.platform == "windows2012-64") {
       return false;
@@ -40,6 +40,11 @@ queue.filter(task => {
     if (task.collection == "arm-debug") {
       return false;
     }
+  }
+
+  
+  if (task.tests == "ssl" && task.collection == "arm-debug") {
+    return false;
   }
 
   
@@ -363,7 +368,7 @@ async function scheduleTestBuilds() {
       "/bin/bash",
       "-c",
       "bin/checkout.sh && " +
-      "nss/automation/taskcluster/scripts/build_gyp.sh -g -v --test"
+      "nss/automation/taskcluster/scripts/build_gyp.sh -g -v --test --ct-verif"
     ],
     artifacts: {
       public: {
@@ -470,6 +475,9 @@ function scheduleTests(task_build, task_cert, test_base) {
   }));
   queue.scheduleTask(merge(no_cert_base, {
     name: "Bogo tests", symbol: "Bogo", tests: "bogo", cycle: "standard"
+  }));
+  queue.scheduleTask(merge(no_cert_base, {
+    name: "Interop tests", symbol: "Interop", tests: "interop", cycle: "standard"
   }));
   queue.scheduleTask(merge(no_cert_base, {
     name: "Chains tests", symbol: "Chains", tests: "chains"

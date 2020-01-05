@@ -894,6 +894,9 @@ RNG_SystemInfoForRNG(void)
 
     
     bytes = RNG_FileUpdate("/dev/urandom", SYSTEM_RNG_SEED_COUNT);
+    if (!bytes) {
+        PORT_SetError(SEC_ERROR_NEED_RANDOM);
+    }
 
     
     randfile = PR_GetEnvSecure("NSRANDFILE");
@@ -1022,20 +1025,6 @@ RNG_FileForRNG(const char *fileName)
     RNG_FileUpdate(fileName, TOTAL_FILE_LIMIT);
 }
 
-void
-ReadSingleFile(const char *fileName)
-{
-    FILE *file;
-    unsigned char buffer[BUFSIZ];
-
-    file = fopen(fileName, "rb");
-    if (file != NULL) {
-        while (fread(buffer, 1, sizeof(buffer), file) > 0)
-            ;
-        fclose(file);
-    }
-}
-
 #define _POSIX_PTHREAD_SEMANTICS
 #include <dirent.h>
 
@@ -1055,89 +1044,6 @@ ReadFileOK(char *dir, char *file)
     return S_ISREG(stat_buf.st_mode) ? PR_TRUE : PR_FALSE;
 }
 
-
-
-
-
-
-
-static int
-ReadOneFile(int fileToRead)
-{
-    char *dir = "/etc";
-    DIR *fd = opendir(dir);
-    int resetCount = 0;
-    struct dirent *entry;
-#if defined(__sun)
-    char firstName[256];
-#else
-    char firstName[NAME_MAX + 1];
-#endif
-    const char *name = NULL;
-    int i;
-
-    if (fd == NULL) {
-        dir = PR_GetEnvSecure("HOME");
-        if (dir) {
-            fd = opendir(dir);
-        }
-    }
-    if (fd == NULL) {
-        return 1;
-    }
-
-    firstName[0] = '\0';
-    for (i = 0; i <= fileToRead; i++) {
-        do {
-            
-
-
-            entry = readdir(fd);
-        } while (entry != NULL && !ReadFileOK(dir, &entry->d_name[0]));
-        if (entry == NULL) {
-            resetCount = 1; 
-            if (firstName[0]) {
-                
-                name = firstName;
-            }
-            break;
-        }
-        name = entry->d_name;
-        if (i == 0) {
-            
-            PORT_Assert(PORT_Strlen(name) < sizeof(firstName));
-            PORT_Strncpy(firstName, name, sizeof(firstName) - 1);
-            firstName[sizeof(firstName) - 1] = '\0';
-        }
-    }
-
-    if (name) {
-        char filename[PATH_MAX];
-        int count = snprintf(filename, sizeof(filename), "%s/%s", dir, name);
-        if (count >= 1) {
-            ReadSingleFile(filename);
-        }
-    }
-
-    closedir(fd);
-    return resetCount;
-}
-
-
-
-
-static void
-rng_systemJitter(void)
-{
-    static int fileToRead = 1;
-
-    if (ReadOneFile(fileToRead)) {
-        fileToRead = 1;
-    } else {
-        fileToRead++;
-    }
-}
-
 size_t
 RNG_SystemRNG(void *dest, size_t maxLen)
 {
@@ -1149,7 +1055,8 @@ RNG_SystemRNG(void *dest, size_t maxLen)
 
     file = fopen("/dev/urandom", "r");
     if (file == NULL) {
-        return rng_systemFromNoise(dest, maxLen);
+        PORT_SetError(SEC_ERROR_NEED_RANDOM);
+        return 0;
     }
     
 
