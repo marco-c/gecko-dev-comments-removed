@@ -1503,6 +1503,15 @@ HttpBaseChannel::SetReferrerWithPolicy(nsIURI *referrer,
 
   
   
+  if (isCrossOrigin) {
+    int userReferrerXOriginTrimmingPolicy =
+      gHttpHandler->ReferrerXOriginTrimmingPolicy();
+    userReferrerTrimmingPolicy =
+      std::max(userReferrerTrimmingPolicy, userReferrerXOriginTrimmingPolicy);
+  }
+
+  
+  
   
   
   
