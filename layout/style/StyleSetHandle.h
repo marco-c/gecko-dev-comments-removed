@@ -24,6 +24,7 @@ namespace dom {
 class Element;
 } 
 } 
+struct nsFontFaceRuleContainer;
 class nsIAtom;
 class nsIContent;
 class nsIDocument;
@@ -172,6 +173,8 @@ public:
 
     inline void RootStyleContextAdded();
     inline void RootStyleContextRemoved();
+
+    inline bool AppendFontFaceRules(nsTArray<nsFontFaceRuleContainer>& aArray);
 
   private:
     
