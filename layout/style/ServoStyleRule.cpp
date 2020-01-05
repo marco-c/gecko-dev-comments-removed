@@ -8,6 +8,8 @@
 
 #include "mozilla/ServoStyleRule.h"
 
+#include "mozilla/ServoBindings.h"
+
 #include "nsDOMClassInfoID.h"
 
 namespace mozilla {
@@ -62,7 +64,8 @@ ServoStyleRule::GetType(uint16_t* aType)
 NS_IMETHODIMP
 ServoStyleRule::GetCssText(nsAString& aCssText)
 {
-  return NS_ERROR_NOT_IMPLEMENTED;
+  Servo_StyleRule_GetCssText(mRawRule, &aCssText);
+  return NS_OK;
 }
 
 NS_IMETHODIMP
@@ -95,13 +98,17 @@ ServoStyleRule::GetCSSRule()
 NS_IMETHODIMP
 ServoStyleRule::GetSelectorText(nsAString& aSelectorText)
 {
-  return NS_ERROR_NOT_IMPLEMENTED;
+  Servo_StyleRule_GetSelectorText(mRawRule, &aSelectorText);
+  return NS_OK;
 }
 
 NS_IMETHODIMP
 ServoStyleRule::SetSelectorText(const nsAString& aSelectorText)
 {
-  return NS_ERROR_NOT_IMPLEMENTED;
+  
+  
+  
+  return NS_OK;
 }
 
 NS_IMETHODIMP
