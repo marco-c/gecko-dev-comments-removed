@@ -7,6 +7,7 @@
 #include "gfxMatrix.h"
 #include "mozilla/dom/SVGAElement.h"
 #include "nsAutoPtr.h"
+#include "nsIDOMMutationEvent.h"
 #include "nsSVGContainerFrame.h"
 #include "nsSVGIntegrationUtils.h"
 #include "nsSVGUtils.h"
@@ -92,6 +93,21 @@ nsSVGAFrame::AttributeChanged(int32_t         aNameSpaceID,
     
     
     NotifySVGChanged(TRANSFORM_CHANGED);
+  }
+
+  
+  
+  
+  if (aModType == nsIDOMMutationEvent::SMIL &&
+      aAttribute == nsGkAtoms::href &&
+      (aNameSpaceID == kNameSpaceID_None ||
+       aNameSpaceID == kNameSpaceID_XLink)) {
+
+    dom::SVGAElement* content = static_cast<dom::SVGAElement*>(mContent);
+
+    
+    
+    content->ResetLinkState(true, content->ElementHasHref());
   }
 
  return NS_OK;

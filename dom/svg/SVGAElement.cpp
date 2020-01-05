@@ -83,6 +83,16 @@ SVGAElement::Href()
 
 
 
+bool
+SVGAElement::ElementHasHref() const
+{
+  return mStringAttributes[HREF].IsExplicitlySet() ||
+         mStringAttributes[XLINK_HREF].IsExplicitlySet();
+}
+
+
+
+
 nsresult
 SVGAElement::GetEventTargetParent(EventChainPreVisitor& aVisitor)
 {
@@ -277,13 +287,9 @@ SVGAElement::IsLink(nsIURI** aURI) const
     { &nsGkAtoms::_empty, &nsGkAtoms::onRequest, nullptr };
 
   
-  bool useXLink = !HasAttr(kNameSpaceID_None, nsGkAtoms::href);
-  const nsAttrValue* href =
-    useXLink
-    ? mAttrsAndChildren.GetAttr(nsGkAtoms::href, kNameSpaceID_XLink)
-    : mAttrsAndChildren.GetAttr(nsGkAtoms::href, kNameSpaceID_None);
+  bool useBareHref = mStringAttributes[HREF].IsExplicitlySet();
 
-  if (href &&
+  if ((useBareHref || mStringAttributes[XLINK_HREF].IsExplicitlySet()) &&
       FindAttrValueIn(kNameSpaceID_XLink, nsGkAtoms::type,
                       sTypeVals, eCaseMatters) !=
                       nsIContent::ATTR_VALUE_NO_MATCH &&
@@ -296,7 +302,7 @@ SVGAElement::IsLink(nsIURI** aURI) const
     nsCOMPtr<nsIURI> baseURI = GetBaseURI();
     
     nsAutoString str;
-    const uint8_t idx = useXLink ? XLINK_HREF : HREF;
+    const uint8_t idx = useBareHref ? HREF : XLINK_HREF;
     mStringAttributes[idx].GetAnimValue(str, this);
     nsContentUtils::NewURIWithDocumentCharset(aURI, str, OwnerDoc(), baseURI);
     
@@ -373,9 +379,7 @@ SVGAElement::UnsetAttr(int32_t aNameSpaceID, nsIAtom* aAttr,
   if (aAttr == nsGkAtoms::href &&
       (aNameSpaceID == kNameSpaceID_XLink ||
        aNameSpaceID == kNameSpaceID_None)) {
-    bool hasHref = HasAttr(kNameSpaceID_None, nsGkAtoms::href) ||
-                   HasAttr(kNameSpaceID_XLink, nsGkAtoms::href);
-    Link::ResetLinkState(!!aNotify, hasHref);
+    Link::ResetLinkState(!!aNotify, Link::ElementHasHref());
   }
 
   return rv;

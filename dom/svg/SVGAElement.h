@@ -69,6 +69,9 @@ public:
                              bool aNotify) override;
 
   
+  virtual bool ElementHasHref() const override;
+
+  
   already_AddRefed<SVGAnimatedString> Href();
   already_AddRefed<SVGAnimatedString> Target();
   void GetDownload(nsAString & aDownload);
