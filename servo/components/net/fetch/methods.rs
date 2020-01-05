@@ -312,15 +312,18 @@ fn main_fetch(request: Rc<Request>, cache: &mut CORSCache, cors_flag: bool,
                     Data::Done => break,
                 }
             }
-        } else if let ResponseBody::Done(ref vec) = *response.body.lock().unwrap() {
-            
-            
-            
-            if let Some(ref mut target) = *target {
-                target.process_response_chunk(vec.clone());
-            }
         } else {
-            assert!(*response.body.lock().unwrap() == ResponseBody::Empty)
+            let body = response.body.lock().unwrap();
+            if let ResponseBody::Done(ref vec) = *body {
+                
+                
+                
+                if let Some(ref mut target) = *target {
+                    target.process_response_chunk(vec.clone());
+                }
+            } else {
+                assert!(*body == ResponseBody::Empty)
+            }
         }
 
         
