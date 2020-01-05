@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 <%namespace name="helpers" file="/helpers.mako.rs" />
 <% from data import Method %>
@@ -309,8 +309,7 @@ ${helpers.single_keyword("font-variant-caps",
 
     impl HasViewportPercentage for SpecifiedValue {
         fn has_viewport_percentage(&self) -> bool {
-            let &SpecifiedValue(length) = self;
-            return length.has_viewport_percentage()
+            return self.0.has_viewport_percentage()
         }
     }
 
@@ -340,13 +339,13 @@ ${helpers.single_keyword("font-variant-caps",
                 LengthOrPercentage::Length(Length::ServoCharacterWidth(value)) => {
                     value.to_computed_value(context.inherited_style().get_font().clone_font_size())
                 }
-                LengthOrPercentage::Length(l) => {
+                LengthOrPercentage::Length(ref l) => {
                     l.to_computed_value(context)
                 }
                 LengthOrPercentage::Percentage(Percentage(value)) => {
                     context.inherited_style().get_font().clone_font_size().scale_by(value)
                 }
-                LengthOrPercentage::Calc(calc) => {
+                LengthOrPercentage::Calc(ref calc) => {
                     let calc = calc.to_computed_value(context);
                     calc.length() + context.inherited_style().get_font().clone_font_size()
                                            .scale_by(calc.percentage())

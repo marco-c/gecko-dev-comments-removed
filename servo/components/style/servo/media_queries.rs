@@ -100,7 +100,7 @@ impl Device {
 
 
 
-#[derive(PartialEq, Copy, Clone, Debug)]
+#[derive(PartialEq, Clone, Debug)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub enum ExpressionKind {
     
