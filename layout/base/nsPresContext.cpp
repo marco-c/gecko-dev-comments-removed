@@ -231,7 +231,6 @@ nsPresContext::nsPresContext(nsIDocument* aDocument, nsPresContextType aType)
     mFocusBackgroundColor(mBackgroundColor),
     mFocusTextColor(mDefaultColor),
     mBodyTextColor(mDefaultColor),
-    mViewportScrollbarOverrideNode(nullptr),
     mViewportStyleScrollbar(NS_STYLE_OVERFLOW_AUTO, NS_STYLE_OVERFLOW_AUTO),
     mFocusRingWidth(1),
     mExistThrottledUpdates(false),
@@ -1497,10 +1496,10 @@ nsPresContext::UpdateViewportScrollbarStylesOverride()
   
   mViewportStyleScrollbar = ScrollbarStyles(NS_STYLE_OVERFLOW_AUTO,
                                             NS_STYLE_OVERFLOW_AUTO);
-  mViewportScrollbarOverrideNode = nullptr;
+  nsIContent* propagatedFrom = nullptr;
   
   if (!IsPaginated()) {
-    mViewportScrollbarOverrideNode =
+    propagatedFrom =
       GetPropagatedScrollbarStylesForViewport(this, &mViewportStyleScrollbar);
   }
 
@@ -1512,12 +1511,13 @@ nsPresContext::UpdateViewportScrollbarStylesOverride()
     
     
     if (fullscreenElement != document->GetRootElement() &&
-        fullscreenElement != mViewportScrollbarOverrideNode) {
+        fullscreenElement != propagatedFrom) {
       mViewportStyleScrollbar = ScrollbarStyles(NS_STYLE_OVERFLOW_HIDDEN,
                                                 NS_STYLE_OVERFLOW_HIDDEN);
     }
   }
-  return mViewportScrollbarOverrideNode;
+
+  return propagatedFrom;
 }
 
 bool

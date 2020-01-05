@@ -454,7 +454,7 @@ RestyleManager::ChangeHintToString(nsChangeHint aHint)
     "NeutralChange", "InvalidateRenderingObservers",
     "ReflowChangesSizeOrPosition", "UpdateComputedBSize",
     "UpdateUsesOpacity", "UpdateBackgroundPosition",
-    "AddOrRemoveTransform", "CSSOverflowChange",
+    "AddOrRemoveTransform"
   };
   static_assert(nsChangeHint_AllHints == (1 << ArrayLength(names)) - 1,
                 "Name list doesn't match change hints.");
@@ -1347,62 +1347,6 @@ RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList)
   nsPresContext* presContext = PresContext();
   FramePropertyTable* propTable = presContext->PropertyTable();
   nsCSSFrameConstructor* frameConstructor = presContext->FrameConstructor();
-
-  
-  
-  for (nsStyleChangeData& data : aChangeList) {
-    if (data.mHint & nsChangeHint_CSSOverflowChange) {
-      data.mHint &= ~nsChangeHint_CSSOverflowChange;
-      bool doReconstruct = true; 
-
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if (data.mContent->IsAnyOfHTMLElements(nsGkAtoms::body,
-                                             nsGkAtoms::html)) {
-        
-        
-        
-        
-        
-        
-        nsIContent* prevOverrideNode =
-          presContext->GetViewportScrollbarStylesOverrideNode();
-        nsIContent* newOverrideNode =
-          presContext->UpdateViewportScrollbarStylesOverride();
-
-        if (data.mContent == prevOverrideNode ||
-            data.mContent == newOverrideNode) {
-          
-          
-          if (!prevOverrideNode || !newOverrideNode ||
-              prevOverrideNode == newOverrideNode) {
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            data.mHint |= nsChangeHint_AllReflowHints;
-            doReconstruct = false;
-          }
-        }
-      }
-      if (doReconstruct) {
-        data.mHint |= nsChangeHint_ReconstructFrame;
-      }
-    }
-  }
 
   
   

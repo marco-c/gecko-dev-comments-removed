@@ -223,16 +223,6 @@ enum nsChangeHint : uint32_t {
   nsChangeHint_AddOrRemoveTransform = 1 << 27,
 
   
-
-
-
-
-
-
-
-  nsChangeHint_CSSOverflowChange = 1 << 28,
-
-  
   
   
   
@@ -247,7 +237,7 @@ enum nsChangeHint : uint32_t {
   
 
 
-  nsChangeHint_AllHints = (1 << 29) - 1,
+  nsChangeHint_AllHints = (1 << 28) - 1,
 };
 
 
@@ -336,7 +326,6 @@ inline nsChangeHint operator^=(nsChangeHint& aLeft, nsChangeHint aRight)
 #define nsChangeHint_Hints_NeverHandledForDescendants (    \
   nsChangeHint_BorderStyleNoneChange |                     \
   nsChangeHint_ChildrenOnlyTransform |                     \
-  nsChangeHint_CSSOverflowChange |                         \
   nsChangeHint_InvalidateRenderingObservers |              \
   nsChangeHint_RecomputePosition |                         \
   nsChangeHint_UpdateBackgroundPosition |                  \
