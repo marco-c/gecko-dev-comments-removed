@@ -267,6 +267,8 @@ public:
 
   
   bool FastEquals(nsIPrincipal* aOther);
+  
+  bool FastSubsumes(nsIPrincipal* aOther);
 
 protected:
   virtual ~BasePrincipal();
@@ -293,6 +295,7 @@ protected:
   nsCOMPtr<nsIAtom> mOriginSuffix;
   OriginAttributes mOriginAttributes;
   PrincipalKind mKind;
+  bool mDomainSet;
 };
 
 } 

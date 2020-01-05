@@ -367,6 +367,7 @@ nsPrincipal::SetDomain(nsIURI* aDomain)
 {
   mDomain = NS_TryToMakeImmutable(aDomain);
   mDomainImmutable = URIIsImmutable(mDomain);
+  mDomainSet = true;
 
   
   

@@ -289,6 +289,7 @@ OriginAttributes::IsPrivateBrowsing(const nsACString& aOrigin)
 
 BasePrincipal::BasePrincipal(PrincipalKind aKind)
   : mKind(aKind)
+  , mDomainSet(false)
 {}
 
 BasePrincipal::~BasePrincipal()
@@ -381,16 +382,39 @@ NS_IMETHODIMP
 BasePrincipal::EqualsConsideringDomain(nsIPrincipal *aOther, bool *aResult)
 {
   NS_ENSURE_TRUE(aOther, NS_ERROR_INVALID_ARG);
+
+  
+  
+  auto other = Cast(aOther);
+  if (!mDomainSet && !other->mDomainSet) {
+    *aResult = FastEquals(aOther);
+    return NS_OK;
+  }
+
   *aResult = Subsumes(aOther, ConsiderDocumentDomain) &&
-             Cast(aOther)->Subsumes(this, ConsiderDocumentDomain);
+             other->Subsumes(this, ConsiderDocumentDomain);
   return NS_OK;
 }
 
-NS_IMETHODIMP
-BasePrincipal::Subsumes(nsIPrincipal *aOther, bool *aResult)
+bool
+BasePrincipal::EqualsIgnoringAddonId(nsIPrincipal *aOther)
 {
-  NS_ENSURE_TRUE(aOther, NS_ERROR_INVALID_ARG);
+  MOZ_ASSERT(aOther);
 
+  
+  
+  if (!dom::ChromeUtils::IsOriginAttributesEqualIgnoringAddonId(
+          OriginAttributesRef(), Cast(aOther)->OriginAttributesRef())) {
+    return false;
+  }
+
+  return SubsumesInternal(aOther, DontConsiderDocumentDomain) &&
+         Cast(aOther)->SubsumesInternal(this, DontConsiderDocumentDomain);
+}
+
+bool
+BasePrincipal::FastSubsumes(nsIPrincipal* aOther)
+{
   
   
   
@@ -400,16 +424,23 @@ BasePrincipal::Subsumes(nsIPrincipal *aOther, bool *aResult)
   
   auto other = Cast(aOther);
   if (Kind() == eNullPrincipal && other->Kind() == eNullPrincipal) {
-    *aResult = (this == other);
-    return NS_OK;
+    return this == other;
   }
   if (mOriginNoSuffix && FastEquals(aOther)) {
-    *aResult = true;
-    return NS_OK;
+    return true;
   }
 
   
-  *aResult = Subsumes(aOther, DontConsiderDocumentDomain);
+  return Subsumes(aOther, DontConsiderDocumentDomain);
+}
+
+NS_IMETHODIMP
+BasePrincipal::Subsumes(nsIPrincipal *aOther, bool *aResult)
+{
+  NS_ENSURE_TRUE(aOther, NS_ERROR_INVALID_ARG);
+
+  *aResult = FastSubsumes(aOther);
+
   return NS_OK;
 }
 
@@ -417,6 +448,15 @@ NS_IMETHODIMP
 BasePrincipal::SubsumesConsideringDomain(nsIPrincipal *aOther, bool *aResult)
 {
   NS_ENSURE_TRUE(aOther, NS_ERROR_INVALID_ARG);
+
+  
+  
+  
+  if (!mDomainSet && !Cast(aOther)->mDomainSet) {
+    *aResult = FastSubsumes(aOther);
+    return NS_OK;
+  }
+
   *aResult = Subsumes(aOther, ConsiderDocumentDomain);
   return NS_OK;
 }
