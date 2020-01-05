@@ -112,11 +112,3 @@ WinPointerEvents::GetPointerPenInfo(uint32_t aPointerId,
   }
   return getPointerPenInfo(aPointerId, aPenInfo);
 }
-
-bool
-WinPointerEvents::ShouldEnableInkCollector()
-{
-  
-  
-  return !IsWin8OrLater();
-}
