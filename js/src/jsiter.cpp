@@ -938,28 +938,30 @@ js::GetIteratorObject(JSContext* cx, HandleObject obj, uint32_t flags)
     return iterator;
 }
 
+
 JSObject*
-js::CreateItrResultObject(JSContext* cx, HandleValue value, bool done)
+js::CreateIterResultObject(JSContext* cx, HandleValue value, bool done)
 {
     
-    AssertHeapIsIdle();
 
-    RootedObject proto(cx, GlobalObject::getOrCreateObjectPrototype(cx, cx->global()));
-    if (!proto)
+    
+    RootedObject resultObj(cx, NewBuiltinClassInstance<PlainObject>(cx));
+    if (!resultObj)
         return nullptr;
 
-    RootedPlainObject obj(cx, NewObjectWithGivenProto<PlainObject>(cx, proto));
-    if (!obj)
+    
+    if (!DefineProperty(cx, resultObj, cx->names().value, value))
         return nullptr;
 
-    if (!DefineProperty(cx, obj, cx->names().value, value))
+    
+    if (!DefineProperty(cx, resultObj, cx->names().done,
+                        done ? TrueHandleValue : FalseHandleValue))
+    {
         return nullptr;
+    }
 
-    RootedValue doneBool(cx, BooleanValue(done));
-    if (!DefineProperty(cx, obj, cx->names().done, doneBool))
-        return nullptr;
-
-    return obj;
+    
+    return resultObj;
 }
 
 bool

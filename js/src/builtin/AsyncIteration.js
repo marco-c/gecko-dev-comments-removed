@@ -1,0 +1,7 @@
+
+
+
+
+function AsyncIteratorIdentity() {
+    return this;
+}

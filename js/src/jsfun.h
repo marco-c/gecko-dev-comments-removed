@@ -647,6 +647,9 @@ Generator(JSContext* cx, unsigned argc, Value* vp);
 extern bool
 AsyncFunctionConstructor(JSContext* cx, unsigned argc, Value* vp);
 
+extern bool
+AsyncGeneratorConstructor(JSContext* cx, unsigned argc, Value* vp);
+
 
 
 extern JSFunction*
