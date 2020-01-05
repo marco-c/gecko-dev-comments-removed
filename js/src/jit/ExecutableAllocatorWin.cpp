@@ -25,9 +25,8 @@
 
 
 
-#include "mozilla/StackWalk_windows.h"
-
 #include "mozilla/ScopeExit.h"
+#include "mozilla/StackWalk_windows.h"
 #include "mozilla/WindowsVersion.h"
 
 #include "jsfriendapi.h"
