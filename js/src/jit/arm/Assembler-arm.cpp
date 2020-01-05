@@ -1674,12 +1674,33 @@ Assembler::SpewNodes::remove(uint32_t key)
 #endif 
 
 
+BufferOffset
+Assembler::writeInst(uint32_t x)
+{
+    BufferOffset offs = m_buffer.putInt(x);
+#ifdef JS_DISASM_ARM
+    spew(m_buffer.getInstOrNull(offs));
+#endif
+    return offs;
+}
+
+BufferOffset
+Assembler::writeBranchInst(uint32_t x, Label* documentation)
+{
+    BufferOffset offs = m_buffer.putInt(x,  true);
+#ifdef JS_DISASM_ARM
+    spewBranch(m_buffer.getInstOrNull(offs), documentation);
+#endif
+    return offs;
+}
+
+
 
 
 BufferOffset
 Assembler::allocBranchInst()
 {
-    return m_buffer.putInt(Always | InstNOP::NopInst);
+    return m_buffer.putInt(Always | InstNOP::NopInst,  true);
 }
 
 void
@@ -2133,12 +2154,17 @@ Assembler::as_dtm(LoadStore ls, Register rn, uint32_t mask,
     return writeInst(0x08000000 | RN(rn) | ls | mode | mask | c | wb);
 }
 
+
+
+
+
+
 BufferOffset
 Assembler::allocEntry(size_t numInst, unsigned numPoolEntries,
                       uint8_t* inst, uint8_t* data, ARMBuffer::PoolEntry* pe,
-                      bool loadToPC)
+                      bool markAsBranch, bool loadToPC)
 {
-    BufferOffset offs = m_buffer.allocEntry(numInst, numPoolEntries, inst, data, pe);
+    BufferOffset offs = m_buffer.allocEntry(numInst, numPoolEntries, inst, data, pe, markAsBranch);
     propagateOOM(offs.assigned());
 #ifdef JS_DISASM_ARM
     spewData(offs, numInst, loadToPC);
@@ -2154,7 +2180,8 @@ Assembler::as_Imm32Pool(Register dest, uint32_t value, Condition c)
 {
     PoolHintPun php;
     php.phd.init(0, c, PoolHintData::PoolDTR, dest);
-    BufferOffset offs = allocEntry(1, 1, (uint8_t*)&php.raw, (uint8_t*)&value, nullptr, dest == pc);
+    BufferOffset offs = allocEntry(1, 1, (uint8_t*)&php.raw, (uint8_t*)&value, nullptr, false,
+                                   dest == pc);
     return offs;
 }
 
@@ -2173,7 +2200,7 @@ Assembler::as_BranchPool(uint32_t value, RepatchLabel* label, ARMBuffer::PoolEnt
     PoolHintPun php;
     php.phd.init(0, c, PoolHintData::PoolBranch, pc);
     BufferOffset ret = allocEntry(1, 1, (uint8_t*)&php.raw, (uint8_t*)&value, pe,
-                                   true);
+                                   true,  true);
     
     
     if (label->bound()) {

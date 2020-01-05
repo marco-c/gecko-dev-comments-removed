@@ -1237,7 +1237,7 @@ class Assembler : public AssemblerShared
     
     BufferOffset allocEntry(size_t numInst, unsigned numPoolEntries,
                             uint8_t* inst, uint8_t* data, ARMBuffer::PoolEntry* pe = nullptr,
-                            bool loadToPC = false);
+                            bool markAsBranch = false, bool loadToPC = false);
 
     Instruction* editSrc(BufferOffset bo) {
         return m_buffer.getInst(bo);
@@ -1429,23 +1429,10 @@ class Assembler : public AssemblerShared
 
     
     
-    MOZ_ALWAYS_INLINE BufferOffset writeInst(uint32_t x) {
-        BufferOffset offs = m_buffer.putInt(x);
-#ifdef JS_DISASM_ARM
-        spew(m_buffer.getInstOrNull(offs));
-#endif
-        return offs;
-    }
+    BufferOffset writeInst(uint32_t x);
 
     
-    
-    MOZ_ALWAYS_INLINE BufferOffset writeBranchInst(uint32_t x, Label* documentation = nullptr) {
-        BufferOffset offs = m_buffer.putInt(x);
-#ifdef JS_DISASM_ARM
-        spewBranch(m_buffer.getInstOrNull(offs), documentation);
-#endif
-        return offs;
-    }
+    BufferOffset writeBranchInst(uint32_t x, Label* documentation = nullptr);
 
     
     
