@@ -705,7 +705,12 @@ function attachUpdateHandler(install) {
   }
 
   install.promptHandler = (info) => {
-    let oldPerms = info.existingAddon.userPermissions || {hosts: [], permissions: []};
+    let oldPerms = info.existingAddon.userPermissions;
+    if (!oldPerms) {
+      
+      return Promise.resolve();
+    }
+
     let newPerms = info.addon.userPermissions;
 
     let difference = Extension.comparePermissions(oldPerms, newPerms);
