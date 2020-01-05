@@ -136,7 +136,7 @@ macro_rules! int_range_index {
 }
 
 
-#[derive(Clone, RustcEncodable, Copy, Deserialize, Serialize)]
+#[derive(Clone, Copy, Deserialize, HeapSizeOf, RustcEncodable, Serialize)]
 pub struct Range<I> {
     begin: I,
     length: I,

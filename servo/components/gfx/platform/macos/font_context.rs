@@ -2,7 +2,7 @@
 
 
 
-use util::mem::HeapSizeOf;
+use heapsize::HeapSizeOf;
 
 #[derive(Clone, Debug)]
 pub struct FontContextHandle {

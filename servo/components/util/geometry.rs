@@ -23,7 +23,7 @@ use std::i32;
 
 
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Clone, Copy, Debug, HeapSizeOf)]
 pub enum ScreenPx {}
 
 
@@ -35,7 +35,7 @@ pub enum ScreenPx {}
 
 
 
-#[derive(RustcEncodable, Debug, Copy, Clone)]
+#[derive(Clone, Copy, Debug, HeapSizeOf)]
 pub enum ViewportPx {}
 
 
@@ -44,7 +44,7 @@ pub enum ViewportPx {}
 
 
 
-#[derive(RustcEncodable, Debug, Copy, Clone)]
+#[derive(Clone, Copy, Debug, HeapSizeOf)]
 pub enum PagePx {}
 
 

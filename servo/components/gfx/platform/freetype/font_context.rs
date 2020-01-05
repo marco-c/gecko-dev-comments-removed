@@ -10,10 +10,10 @@ use freetype::freetype::FT_Library;
 use freetype::freetype::FT_Memory;
 use freetype::freetype::FT_New_Library;
 use freetype::freetype::struct_FT_MemoryRec_;
+use heapsize::{HeapSizeOf, heap_size_of};
 use libc::{c_long, c_void};
 use std::ptr;
 use std::rc::Rc;
-use util::mem::{HeapSizeOf, heap_size_of};
 
 
 

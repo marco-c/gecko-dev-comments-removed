@@ -10,7 +10,6 @@ use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::sync::Arc;
 use string_cache::Atom;
-use util::mem::HeapSizeOf;
 
 
 pub type Name = Atom;

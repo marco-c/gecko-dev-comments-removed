@@ -3,11 +3,12 @@
 
 
 #![feature(custom_attribute, custom_derive, plugin)]
-#![plugin(serde_macros, plugins)]
+#![plugin(heapsize_plugin, serde_macros, plugins)]
 
 #[macro_use]
 extern crate bitflags;
 extern crate euclid;
+extern crate heapsize;
 extern crate hyper;
 extern crate ipc_channel;
 extern crate layers;

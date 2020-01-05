@@ -3,13 +3,14 @@
 
 
 #![feature(custom_derive, plugin)]
-#![plugin(plugins, serde_macros)]
+#![plugin(heapsize_plugin, plugins, serde_macros)]
 
 #![crate_name = "gfx_traits"]
 #![crate_type = "rlib"]
 
 extern crate azure;
 extern crate euclid;
+extern crate heapsize;
 extern crate layers;
 extern crate msg;
 extern crate serde;

@@ -84,7 +84,6 @@ use style::properties::{PropertyDeclaration, PropertyDeclarationBlock, parse_sty
 use style::selector_impl::{NonTSPseudoClass, ServoSelectorImpl};
 use style::values::CSSFloat;
 use style::values::specified::{self, CSSColor, CSSRGBA, LengthOrPercentage};
-use util::mem::HeapSizeOf;
 use util::str::{DOMString, LengthOrPercentageOrAuto};
 
 
