@@ -80,6 +80,11 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
   SYNC_PARENT_ANNO: "sync/parent",
   SYNC_MOBILE_ROOT_ANNO: "mobile/bookmarksRoot",
 
+  
+  
+  
+  EARLIEST_BOOKMARK_TIMESTAMP: Date.UTC(1993, 0, 23),
+
   KINDS: {
     BOOKMARK: "bookmark",
     
@@ -110,6 +115,19 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
   syncIdToGuid(syncId) {
     return ROOT_SYNC_ID_TO_GUID[syncId] || syncId;
   },
+
+  
+
+
+
+  getChangedIds: Task.async(function* () {
+    let db = yield PlacesUtils.promiseDBConnection();
+    let result = yield db.executeCached(`
+      SELECT guid FROM moz_bookmarks
+      WHERE syncChangeCounter >= 1`);
+    return result.map(row =>
+      BookmarkSyncUtils.guidToSyncId(row.getResultByName("guid")));
+  }),
 
   
 
@@ -651,6 +669,8 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
 
 
 
+
+
   fetch: Task.async(function* (syncId) {
     let guid = BookmarkSyncUtils.syncIdToGuid(syncId);
     let bookmarkItem = yield PlacesUtils.bookmarks.fetch(guid);
@@ -779,6 +799,19 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
       { syncChangeDelta, type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
         url: url.href });
   },
+
+  
+
+
+
+
+  ratchetTimestampBackwards(existingMillis, serverMillis, lowerBound = BookmarkSyncUtils.EARLIEST_BOOKMARK_TIMESTAMP) {
+    const possible = [+existingMillis, +serverMillis].filter(n => !isNaN(n) && n > lowerBound);
+    if (!possible.length) {
+      return undefined;
+    }
+    return Math.min(...possible);
+  }
 });
 
 XPCOMUtils.defineLazyGetter(this, "BookmarkSyncLog", () => {
@@ -1129,6 +1162,16 @@ var updateSyncBookmark = Task.async(function* (updateInfo) {
       updateInfo.syncId} does not exist`);
   }
 
+  if (updateInfo.hasOwnProperty("dateAdded")) {
+    let newDateAdded = BookmarkSyncUtils.ratchetTimestampBackwards(
+      oldBookmarkItem.dateAdded, updateInfo.dateAdded);
+    if (!newDateAdded || newDateAdded === oldBookmarkItem.dateAdded) {
+      delete updateInfo.dateAdded;
+    } else {
+      updateInfo.dateAdded = newDateAdded;
+    }
+  }
+
   let shouldReinsert = false;
   let oldKind = yield getKindForItem(oldBookmarkItem);
   if (updateInfo.hasOwnProperty("kind") && updateInfo.kind != oldKind) {
@@ -1155,6 +1198,9 @@ var updateSyncBookmark = Task.async(function* (updateInfo) {
   }
 
   if (shouldReinsert) {
+    if (!updateInfo.hasOwnProperty("dateAdded")) {
+      updateInfo.dateAdded = oldBookmarkItem.dateAdded.getTime();
+    }
     let newInfo = validateNewBookmark(updateInfo);
     yield PlacesUtils.bookmarks.remove({
       guid,
@@ -1320,6 +1366,7 @@ function validateNewBookmark(info) {
                                      , BookmarkSyncUtils.KINDS.QUERY ].includes(b.kind) }
     , feed: { validIf: b => b.kind == BookmarkSyncUtils.KINDS.LIVEMARK }
     , site: { validIf: b => b.kind == BookmarkSyncUtils.KINDS.LIVEMARK }
+    , dateAdded: { required: false }
     });
 
   return insertInfo;
@@ -1439,6 +1486,10 @@ var placesBookmarkToSyncBookmark = Task.async(function* (bookmarkItem) {
         item[prop] = bookmarkItem[prop];
         break;
 
+      case "dateAdded":
+        item[prop] = new Date(bookmarkItem[prop]).getTime();
+        break;
+
       
       
       case "feedURI":
@@ -1475,6 +1526,10 @@ function syncBookmarkToPlacesBookmark(info) {
       
       case "syncId":
         bookmarkInfo.guid = BookmarkSyncUtils.syncIdToGuid(info.syncId);
+        break;
+
+      case "dateAdded":
+        bookmarkInfo.dateAdded = new Date(info.dateAdded);
         break;
 
       case "parentSyncId":

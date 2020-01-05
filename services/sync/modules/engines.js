@@ -763,6 +763,22 @@ this.SyncEngine = function SyncEngine(name, service) {
 
   this.loadToFetch();
   this.loadPreviousFailed();
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  this._needWeakReupload = new Set();
 }
 
 
@@ -1008,6 +1024,7 @@ SyncEngine.prototype = {
 
     
     this._delete = {};
+    this._needWeakReupload.clear();
   },
 
   
@@ -1551,15 +1568,15 @@ SyncEngine.prototype = {
   _uploadOutgoing() {
     this._log.trace("Uploading local changes to server.");
 
+    
+    let up = new Collection(this.engineURL, null, this.service);
     let modifiedIDs = this._modified.ids();
+    let counts = { failed: 0, sent: 0 };
     if (modifiedIDs.length) {
       this._log.trace("Preparing " + modifiedIDs.length +
                       " outgoing records");
 
-      let counts = { sent: modifiedIDs.length, failed: 0 };
-
-      
-      let up = new Collection(this.engineURL, null, this.service);
+      counts.sent = modifiedIDs.length;
 
       let failed = [];
       let successful = [];
@@ -1625,6 +1642,7 @@ SyncEngine.prototype = {
             throw ex;
           }
         }
+        this._needWeakReupload.delete(id);
         if (ok) {
           let { enqueued, error } = postQueue.enqueue(out);
           if (!enqueued) {
@@ -1639,8 +1657,68 @@ SyncEngine.prototype = {
         this._store._sleep(0);
       }
       postQueue.flush(true);
+    }
+
+    if (this._needWeakReupload.size) {
+      try {
+        const { sent, failed } = this._weakReupload(up);
+        counts.sent += sent;
+        counts.failed += failed;
+      } catch (e) {
+        if (Async.isShutdownException(e)) {
+          throw e;
+        }
+        this._log.warn("Weak reupload failed", e);
+      }
+    }
+    if (counts.sent || counts.failed) {
       Observers.notify("weave:engine:sync:uploaded", counts, this.name);
     }
+  },
+
+  _weakReupload(collection) {
+    const counts = { sent: 0, failed: 0 };
+    let pendingSent = 0;
+    let postQueue = collection.newPostQueue(this._log, this.lastSync, (resp, batchOngoing = false) => {
+      if (!resp.success) {
+        this._needWeakReupload.clear();
+        this._log.warn("Uploading records (weak) failed: " + resp);
+        resp.failureCode = resp.status == 412 ? ENGINE_BATCH_INTERRUPTED : ENGINE_UPLOAD_FAIL;
+        throw resp;
+      }
+      if (!batchOngoing) {
+        counts.sent += pendingSent;
+        pendingSent = 0;
+      }
+    });
+
+    let pendingWeakReupload = this.buildWeakReuploadMap(this._needWeakReupload);
+    for (let [id, encodedRecord] of pendingWeakReupload) {
+      try {
+        this._log.trace("Outgoing (weak)", encodedRecord);
+        encodedRecord.encrypt(this.service.collectionKeys.keyForCollection(this.name));
+      } catch (ex) {
+        if (Async.isShutdownException(ex)) {
+          throw ex;
+        }
+        this._log.warn(`Failed to encrypt record "${id}" during weak reupload`, ex);
+        ++counts.failed;
+        continue;
+      }
+      
+      
+      
+      
+      let { enqueued } = postQueue.enqueue(encodedRecord);
+      if (!enqueued) {
+        ++counts.failed;
+      } else {
+        ++pendingSent;
+      }
+      this._store._sleep(0);
+    }
+    postQueue.flush(true);
+    return counts;
   },
 
   _onRecordsWritten(succeeded, failed) {
@@ -1678,6 +1756,7 @@ SyncEngine.prototype = {
   },
 
   _syncCleanup() {
+    this._needWeakReupload.clear();
     if (!this._modified) {
       return;
     }
@@ -1814,6 +1893,27 @@ SyncEngine.prototype = {
       this._tracker.addChangedID(id, change);
     }
   },
+
+  
+
+
+
+
+
+  buildWeakReuploadMap(idSet) {
+    let result = new Map();
+    for (let id of idSet) {
+      try {
+        result.set(id, this._createRecord(id));
+      } catch (ex) {
+        if (Async.isShutdownException(ex)) {
+          throw ex;
+        }
+        this._log.warn("createRecord failed during weak reupload", ex);
+      }
+    }
+    return result;
+  }
 };
 
 

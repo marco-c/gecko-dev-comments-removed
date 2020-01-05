@@ -159,9 +159,12 @@ var Bookmarks = Object.freeze({
 
 
   insert(info) {
-    
-    
-    let time = (info && info.dateAdded) || new Date();
+    let now = new Date();
+    let addedTime = (info && info.dateAdded) || now;
+    let modTime = addedTime;
+    if (addedTime > now) {
+      modTime = now;
+    }
     let insertInfo = validateBookmarkObject(info,
       { type: { defaultValue: this.TYPE_BOOKMARK }
       , index: { defaultValue: this.DEFAULT_INDEX }
@@ -170,12 +173,9 @@ var Bookmarks = Object.freeze({
       , parentGuid: { required: true }
       , title: { validIf: b => [ this.TYPE_BOOKMARK
                                , this.TYPE_FOLDER ].includes(b.type) }
-      , dateAdded: { defaultValue: time
-                   , validIf: b => !b.lastModified ||
-                                    b.dateAdded <= b.lastModified }
-      , lastModified: { defaultValue: time,
-                        validIf: b => (!b.dateAdded && b.lastModified >= time) ||
-                                      (b.dateAdded && b.lastModified >= b.dateAdded) }
+      , dateAdded: { defaultValue: addedTime }
+      , lastModified: { defaultValue: modTime,
+                        validIf: b => b.lastModified >= now || (b.dateAdded && b.lastModified >= b.dateAdded) }
       , source: { defaultValue: this.SOURCES.DEFAULT }
       });
 
@@ -267,9 +267,6 @@ var Bookmarks = Object.freeze({
         throw new Error("No bookmarks found for the provided GUID");
       if (updateInfo.hasOwnProperty("type") && updateInfo.type != item.type)
         throw new Error("The bookmark type cannot be changed");
-      if (updateInfo.hasOwnProperty("dateAdded") &&
-          updateInfo.dateAdded.getTime() != item.dateAdded.getTime())
-        throw new Error("The bookmark dateAdded cannot be changed");
 
       
       removeSameValueProperties(updateInfo, item);
@@ -278,13 +275,15 @@ var Bookmarks = Object.freeze({
         
         return Object.assign({}, item);
       }
-
+      const now = new Date();
       updateInfo = validateBookmarkObject(updateInfo,
         { url: { validIf: () => item.type == this.TYPE_BOOKMARK }
         , title: { validIf: () => [ this.TYPE_BOOKMARK
                                   , this.TYPE_FOLDER ].includes(item.type) }
-        , lastModified: { defaultValue: new Date()
-                        , validIf: b => b.lastModified >= item.dateAdded }
+        , lastModified: { defaultValue: now
+                        , validIf: b => b.lastModified >= now ||
+                                        b.lastModified >= (b.dateAdded || item.dateAdded) }
+        , dateAdded: { defaultValue: item.dateAdded }
         });
 
       return PlacesUtils.withConnectionWrapper("Bookmarks.jsm: update",
@@ -842,6 +841,8 @@ function updateBookmark(info, item, newParent) {
     tuples.set("lastModified", { value: PlacesUtils.toPRTime(info.lastModified) });
     if (info.hasOwnProperty("title"))
       tuples.set("title", { value: info.title });
+    if (info.hasOwnProperty("dateAdded"))
+      tuples.set("dateAdded", { value: PlacesUtils.toPRTime(info.dateAdded) });
 
     yield db.executeTransaction(function* () {
       let isTagging = item._grandParentId == PlacesUtils.tagsFolderId;
@@ -899,12 +900,17 @@ function updateBookmark(info, item, newParent) {
       }
 
       if (syncChangeDelta) {
-        let isChangingIndex = info.hasOwnProperty("index") &&
-                              info.index != item.index;
         
         
         
-        let needsSyncChange = isChangingIndex ? tuples.size > 2 : tuples.size > 1;
+        let sizeThreshold = 1;
+        if (info.hasOwnProperty("index") && info.index != item.index) {
+          ++sizeThreshold;
+        }
+        if (tuples.has("dateAdded")) {
+          ++sizeThreshold;
+        }
+        let needsSyncChange = tuples.size > sizeThreshold;
         if (needsSyncChange) {
           tuples.set("syncChangeDelta", { value: syncChangeDelta
                                         , fragment: "syncChangeCounter = syncChangeCounter + :syncChangeDelta" });
