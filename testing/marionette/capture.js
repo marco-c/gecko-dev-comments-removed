@@ -30,12 +30,11 @@ this.capture = {};
 
 
 capture.element = function (node, highlights=[]) {
-  let doc = node.ownerDocument;
-  let win = doc.defaultView;
+  let win = node.ownerDocument.defaultView;
   let rect = node.getBoundingClientRect();
 
   return capture.canvas(
-      doc,
+      win,
       rect.left,
       rect.top,
       rect.width,
@@ -57,16 +56,15 @@ capture.element = function (node, highlights=[]) {
 
 
 
-capture.viewport = function (document, highlights=[]) {
-  let win = document.defaultView;
-  let docEl = document.documentElement;
+capture.viewport = function (win, highlights=[]) {
+  let rootNode = win.document.documentElement;
 
   return capture.canvas(
-      document,
+      win,
       win.pageXOffset,
       win.pageYOffset,
-      docEl.clientWidth,
-      docEl.clientHeight,
+      rootNode.clientWidth,
+      rootNode.clientHeight,
       highlights);
 };
 
@@ -92,10 +90,8 @@ capture.viewport = function (document, highlights=[]) {
 
 
 
-capture.canvas = function (document, left, top, width, height, highlights=[]) {
-  let win = document.defaultView;
-
-  let canvas = document.createElementNS(XHTML_NS, "canvas");
+capture.canvas = function (win, left, top, width, height, highlights=[]) {
+  let canvas = win.document.createElementNS(XHTML_NS, "canvas");
   canvas.width = width;
   canvas.height = height;
 
