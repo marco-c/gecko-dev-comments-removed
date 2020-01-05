@@ -179,7 +179,8 @@ pub enum ConstellationControlMsg {
     
     Navigate(PipelineId, SubpageId, LoadData),
     
-    MozBrowserEvent(PipelineId, SubpageId, MozBrowserEvent),
+    
+    MozBrowserEvent(PipelineId, Option<SubpageId>, MozBrowserEvent),
     
     UpdateSubpageId(PipelineId, SubpageId, SubpageId, PipelineId),
     

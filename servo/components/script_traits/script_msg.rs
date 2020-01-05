@@ -89,7 +89,8 @@ pub enum ScriptMsg {
     
     LoadUrl(PipelineId, LoadData),
     
-    MozBrowserEvent(PipelineId, SubpageId, MozBrowserEvent),
+    
+    MozBrowserEvent(PipelineId, Option<SubpageId>, MozBrowserEvent),
     
     Navigate(Option<(PipelineId, SubpageId)>, NavigationDirection),
     
