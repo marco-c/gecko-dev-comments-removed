@@ -19,6 +19,7 @@ use euclid::rect::{Rect, TypedRect};
 use euclid::size::Size2D;
 use euclid::scale_factor::ScaleFactor;
 use gfx::font_cache_task::FontCacheTask;
+use ipc_channel::ipc;
 use layout_traits::{LayoutControlChan, LayoutControlMsg, LayoutTaskFactory};
 use libc;
 use msg::compositor_msg::{Epoch, LayerId};
@@ -1128,7 +1129,7 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
                             
                             
                             
-                            let (sender, receiver) = channel();
+                            let (sender, receiver) = ipc::channel().unwrap();
                             let LayoutControlChan(ref layout_chan) = pipeline.layout_chan;
                             layout_chan.send(LayoutControlMsg::GetCurrentEpoch(sender)).unwrap();
                             let layout_task_epoch = receiver.recv().unwrap();

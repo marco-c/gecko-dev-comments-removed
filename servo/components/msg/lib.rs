@@ -2,13 +2,18 @@
 
 
 
+#![feature(custom_derive, plugin)]
+#![plugin(serde_macros)]
+
 extern crate azure;
 #[macro_use] extern crate bitflags;
 extern crate euclid;
 extern crate hyper;
+extern crate ipc_channel;
 extern crate layers;
 extern crate png;
 extern crate rustc_serialize;
+extern crate serde;
 extern crate util;
 extern crate url;
 extern crate style;
