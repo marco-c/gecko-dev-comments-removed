@@ -15,6 +15,8 @@ import java.util.List;
 import static org.mozilla.gecko.tests.helpers.AssertionHelper.fAssertTrue;
 
 public class TabsPanelComponent extends TabsPresenterComponent {
+    private static final int MAX_WAIT_MS = 4500;
+
     public TabsPanelComponent(final UITestContext testContext) {
         super(testContext);
     }
@@ -90,5 +92,64 @@ public class TabsPanelComponent extends TabsPresenterComponent {
     private void assertTabsPanelIsClosed() {
         final View tabsPanel = getTabsPanel();
         fAssertTrue("Tabs panel is closed", tabsPanel == null || tabsPanel.getVisibility() != View.VISIBLE);
+    }
+
+    
+
+
+
+
+    public void selectTabAt(final int index) {
+        mSolo.clickOnView(scrollAndGetTabViewAt(index));
+    }
+
+    
+
+
+
+
+    private View scrollAndGetTabViewAt(final int index) {
+        final View[] childView = { null };
+
+        final RecyclerView view = getTabsLayout();
+
+        mTestContext.runOnUiThreadSync(new Runnable() {
+            @Override
+            public void run() {
+                view.scrollToPosition(index);
+
+                
+                
+                
+                view.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        
+                        final RecyclerView.ViewHolder itemViewHolder =
+                                view.findViewHolderForLayoutPosition(index);
+                        childView[0] = itemViewHolder == null ? null : itemViewHolder.itemView;
+                    }
+                });
+            }
+        });
+
+        WaitHelper.waitFor("list item at index " + index + " exists", new Condition() {
+            @Override
+            public boolean isSatisfied() {
+                return childView[0] != null;
+            }
+        }, MAX_WAIT_MS);
+
+        return childView[0];
+    }
+
+    
+
+
+
+
+    private RecyclerView getTabsLayout() {
+        openPanel();
+        return (RecyclerView) mSolo.getView(R.id.normal_tabs);
     }
 }
