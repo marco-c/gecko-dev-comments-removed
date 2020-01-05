@@ -28,7 +28,23 @@ namespace image {
 void
 AnimationState::NotifyDecodeComplete()
 {
+  
+  
+  if (!mDiscarded) {
+    mIsCurrentlyDecoded = true;
+  }
   mHasBeenDecoded = true;
+}
+
+void
+AnimationState::SetDiscarded(bool aDiscarded)
+{
+  if (aDiscarded) {
+    MOZ_ASSERT(gfxPrefs::ImageMemAnimatedDiscardable());
+    mIsCurrentlyDecoded = false;
+    mCompositedFrameInvalid = true;
+  }
+  mDiscarded = aDiscarded;
 }
 
 void
@@ -266,11 +282,15 @@ RefreshResult
 FrameAnimator::RequestRefresh(AnimationState& aState, const TimeStamp& aTime)
 {
   
-  
-  TimeStamp currentFrameEndTime = GetCurrentImgFrameEndTime(aState);
+  RefreshResult ret;
+
+  if (aState.IsDiscarded()) {
+    return ret;
+  }
 
   
-  RefreshResult ret;
+  
+  TimeStamp currentFrameEndTime = GetCurrentImgFrameEndTime(aState);
 
   while (currentFrameEndTime <= aTime) {
     TimeStamp oldFrameEndTime = currentFrameEndTime;
@@ -290,12 +310,26 @@ FrameAnimator::RequestRefresh(AnimationState& aState, const TimeStamp& aTime)
     }
   }
 
+  
+  if (currentFrameEndTime > aTime) {
+    aState.mCompositedFrameInvalid = false;
+  }
+
+  MOZ_ASSERT(!aState.mIsCurrentlyDecoded || !aState.mCompositedFrameInvalid);
+
   return ret;
 }
 
 LookupResult
 FrameAnimator::GetCompositedFrame(AnimationState& aState)
 {
+  if (aState.mCompositedFrameInvalid) {
+    MOZ_ASSERT(gfxPrefs::ImageMemAnimatedDiscardable());
+    MOZ_ASSERT(aState.GetHasBeenDecoded());
+    MOZ_ASSERT(!aState.GetIsCurrentlyDecoded());
+    return LookupResult(MatchType::NOT_FOUND);
+  }
+
   
   if (mLastCompositedFrameIndex >= 0 &&
       (uint32_t(mLastCompositedFrameIndex) == aState.mCurrentAnimationFrameIndex)) {
