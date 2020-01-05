@@ -788,6 +788,18 @@ public:
   
 
 
+  static mozilla::PrincipalOriginAttributes
+  GetOriginAttributes(nsIDocument* aDoc);
+
+  
+
+
+  static mozilla::PrincipalOriginAttributes
+  GetOriginAttributes(nsILoadGroup* aLoadGroup);
+
+  
+
+
   static bool IsInPrivateBrowsing(nsIDocument* aDoc);
 
   

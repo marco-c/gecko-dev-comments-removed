@@ -160,6 +160,8 @@ ServiceWorkerInfo::ServiceWorkerInfo(nsIPrincipal* aPrincipal,
   , mSkipWaitingFlag(false)
 {
   MOZ_ASSERT(mPrincipal);
+  
+  mOriginAttributes = BasePrincipal::Cast(mPrincipal)->OriginAttributesRef();
   MOZ_ASSERT(!mScope.IsEmpty());
   MOZ_ASSERT(!mScriptSpec.IsEmpty());
   MOZ_ASSERT(!mCacheName.IsEmpty());
