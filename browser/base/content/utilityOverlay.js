@@ -348,7 +348,6 @@ function openLinkIn(url, where, params) {
   
   w.focus();
 
-  let browserUsedForLoad = null;
   switch (where) {
   case "current":
     let flags = Ci.nsIWebNavigation.LOAD_FLAGS_NONE;
@@ -384,13 +383,12 @@ function openLinkIn(url, where, params) {
       postData: aPostData,
       userContextId: aUserContextId
     });
-    browserUsedForLoad = aCurrentBrowser;
     break;
   case "tabshifted":
     loadInBackground = !loadInBackground;
     
   case "tab":
-    let tabUsedForLoad = w.gBrowser.loadOneTab(url, {
+    w.gBrowser.loadOneTab(url, {
       referrerURI: aReferrerURI,
       referrerPolicy: aReferrerPolicy,
       charset: aCharset,
@@ -404,15 +402,10 @@ function openLinkIn(url, where, params) {
       userContextId: aUserContextId,
       originPrincipal: aPrincipal,
     });
-    browserUsedForLoad = tabUsedForLoad.linkedBrowser;
     break;
   }
 
-  
-  if (browserUsedForLoad &&
-      browserUsedForLoad == browserUsedForLoad.ownerGlobal.gBrowser.selectedBrowser) {
-    browserUsedForLoad.focus();
-  }
+  aCurrentBrowser.focus();
 
   if (!loadInBackground && w.isBlankPageURL(url)) {
     w.focusAndSelectUrlBar();
