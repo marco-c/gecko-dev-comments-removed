@@ -130,7 +130,7 @@ protected:
   
   css::SheetParsingMode mParsingMode;
 
-  StyleBackendType      mType;
+  const StyleBackendType mType;
   bool                  mDisabled;
 };
 
