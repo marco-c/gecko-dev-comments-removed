@@ -639,10 +639,14 @@ function TypedArrayKeys() {
 }
 
 
-function TypedArrayLastIndexOf(searchElement, fromIndex = undefined) {
+function TypedArrayLastIndexOf(searchElement) {
     
     if (!IsObject(this) || !IsTypedArray(this)) {
-        return callFunction(CallTypedArrayMethodIfWrapped, this, searchElement, fromIndex,
+        if (arguments.length > 1) {
+            return callFunction(CallTypedArrayMethodIfWrapped, this, searchElement, arguments[1],
+                                "TypedArrayLastIndexOf");
+        }
+        return callFunction(CallTypedArrayMethodIfWrapped, this, searchElement,
                             "TypedArrayLastIndexOf");
     }
 
@@ -659,7 +663,7 @@ function TypedArrayLastIndexOf(searchElement, fromIndex = undefined) {
         return -1;
 
     
-    var n = fromIndex === undefined ? len - 1 : ToInteger(fromIndex) + 0;
+    var n = arguments.length > 1 ? ToInteger(arguments[1]) + 0 : len - 1;
 
     
     var k = n >= 0 ? std_Math_min(n, len - 1) : len + n;

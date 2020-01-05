@@ -101,6 +101,12 @@ for (var constructor of anyTypedArrayConstructors) {
             throw new Error("length accessor called");
         }
     }).lastIndexOf(1), 1);
+
+    
+    assertEq(new constructor([10, 20, 10]).lastIndexOf(10), 2);
+
+    
+    assertEq(new constructor([10, 20, 10]).lastIndexOf(10, undefined), 0);
 }
 
 for (let constructor of anyTypedArrayConstructors.filter(isFloatConstructor)) {
