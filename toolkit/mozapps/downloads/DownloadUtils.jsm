@@ -42,9 +42,12 @@ const Ci = Components.interfaces;
 const Cu = Components.utils;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+Cu.import("resource://gre/modules/Services.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "PluralForm",
                                   "resource://gre/modules/PluralForm.jsm");
+
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 this.__defineGetter__("gDecimalSymbol", function() {
     delete this.gDecimalSymbol;
@@ -342,47 +345,59 @@ this.DownloadUtils = {
       aNow = new Date();
     }
 
-    let dts = Cc["@mozilla.org/intl/scriptabledateformat;1"]
-              .getService(Ci.nsIScriptableDateFormat);
-
     
     let today = new Date(aNow.getFullYear(), aNow.getMonth(), aNow.getDate());
 
-    
     let dateTimeCompact;
-    if (aDate >= today) {
+    let dateTimeFull;
+
+    
+    
+    
+    
+    
+    if (typeof Intl === "undefined") {
       
-      dateTimeCompact = dts.FormatTime("",
-                                       dts.timeFormatNoSeconds,
-                                       aDate.getHours(),
-                                       aDate.getMinutes(),
-                                       0);
-    } else if (today - aDate < (24 * 60 * 60 * 1000)) {
-      
-      dateTimeCompact = gBundle.GetStringFromName(gStr.yesterday);
-    } else if (today - aDate < (6 * 24 * 60 * 60 * 1000)) {
-      
-      dateTimeCompact = typeof Intl === "undefined"
-                        ? aDate.toLocaleFormat("%A")
-                        : aDate.toLocaleDateString(undefined, { weekday: "long" });
+      if (aDate >= today) {
+        dateTimeCompact = aDate.toLocaleFormat("%X");
+      } else if (today - aDate < (MS_PER_DAY)) {
+        
+        dateTimeCompact = gBundle.GetStringFromName(gStr.yesterday);
+      } else if (today - aDate < (6 * MS_PER_DAY)) {
+        
+        dateTimeCompact = aDate.toLocaleFormat("%A");
+      } else {
+        
+        let month = aDate.toLocaleFormat("%B");
+        let date = aDate.getDate();
+        dateTimeCompact = gBundle.formatStringFromName(gStr.monthDate, [month, date], 2);
+      }
+
+      dateTimeFull = aDate.toLocaleFormat("%x %X");
     } else {
       
-      let month = typeof Intl === "undefined"
-                  ? aDate.toLocaleFormat("%B")
-                  : aDate.toLocaleDateString(undefined, { month: "long" });
-      let date = aDate.getDate();
-      dateTimeCompact = gBundle.formatStringFromName(gStr.monthDate, [month, date], 2);
-    }
+      if (aDate >= today) {
+        let dts = Services.intl.createDateTimeFormat(undefined, {
+          timeStyle: "short"
+        });
+        dateTimeCompact = dts.format(aDate);
+      } else if (today - aDate < (MS_PER_DAY)) {
+        
+        dateTimeCompact = gBundle.GetStringFromName(gStr.yesterday);
+      } else if (today - aDate < (6 * MS_PER_DAY)) {
+        
+        dateTimeCompact = aDate.toLocaleDateString(undefined, { weekday: "long" });
+      } else {
+        
+        let month = aDate.toLocaleDateString(undefined, { month: "long" });
+        let date = aDate.getDate();
+        dateTimeCompact = gBundle.formatStringFromName(gStr.monthDate, [month, date], 2);
+      }
 
-    let dateTimeFull = dts.FormatDateTime("",
-                                          dts.dateFormatLong,
-                                          dts.timeFormatNoSeconds,
-                                          aDate.getFullYear(),
-                                          aDate.getMonth() + 1,
-                                          aDate.getDate(),
-                                          aDate.getHours(),
-                                          aDate.getMinutes(),
-                                          0);
+      const dtOptions = { dateStyle: "long", timeStyle: "short" };
+      dateTimeFull =
+        Services.intl.createDateTimeFormat(undefined, dtOptions).format(aDate);
+    }
 
     return [dateTimeCompact, dateTimeFull];
   },
