@@ -321,10 +321,12 @@ pub unsafe extern fn throwing_constructor(cx: *mut JSContext, _argc: c_uint,
     return 0;
 }
 
+type ProtoOrIfaceArray = [*mut JSObject; PrototypeList::ID::Count as usize];
+
 
 
 pub fn initialize_global(global: *mut JSObject) {
-    let proto_array = box ()
+    let proto_array: Box<ProtoOrIfaceArray> = box ()
         ([0 as *mut JSObject; PrototypeList::ID::Count as usize]);
     unsafe {
         assert!(((*JS_GetClass(global)).flags & JSCLASS_DOM_GLOBAL) != 0);
@@ -558,6 +560,12 @@ pub fn create_dom_global(cx: *mut JSContext, class: *const JSClass)
         initialize_global(obj);
         obj
     }
+}
+
+
+pub unsafe fn finalize_global(obj: *mut JSObject) {
+    let _: Box<ProtoOrIfaceArray> =
+        Box::from_raw(get_proto_or_iface_array(obj) as *mut ProtoOrIfaceArray);
 }
 
 
