@@ -1136,13 +1136,26 @@ nsLookAndFeel::Init()
     
     
     
-    
     const gchar* dark_setting = "gtk-application-prefer-dark-theme";
-    gboolean dark;
-    g_object_get(settings, dark_setting, &dark, nullptr);
+    gboolean darkThemeDefault;
+    g_object_get(settings, dark_setting, &darkThemeDefault, nullptr);
 
-    if (dark && !PR_GetEnv("MOZ_ALLOW_GTK_DARK_THEME")) {
-        g_object_set(settings, dark_setting, FALSE, nullptr);
+    
+    
+    if (darkThemeDefault) {
+        bool allowDarkTheme;
+        if (XRE_IsContentProcess()) {
+            allowDarkTheme =
+                mozilla::Preferences::GetBool("widget.content.allow-gtk-dark-theme",
+                                              false);
+        } else {
+            allowDarkTheme = (PR_GetEnv("MOZ_ALLOW_GTK_DARK_THEME") != nullptr) ||
+                mozilla::Preferences::GetBool("widget.chrome.allow-gtk-dark-theme",
+                                              false);
+        }
+        if (!allowDarkTheme) {
+            g_object_set(settings, dark_setting, FALSE, nullptr);
+        }
     }
 
     
