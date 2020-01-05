@@ -749,6 +749,8 @@ nsSHEntry::RemoveChild(nsISHEntry* aChild)
   } else {
     int32_t index = mChildren.IndexOfObject(aChild);
     if (index >= 0) {
+      
+      
       mChildren.ReplaceObjectAt(nullptr, index);
       childRemoved = true;
     }

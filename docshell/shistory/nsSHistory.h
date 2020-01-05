@@ -69,14 +69,13 @@ private:
   
   
   void EvictOutOfRangeWindowContentViewers(int32_t aIndex);
+  void EvictContentViewerForTransaction(nsISHTransaction* aTrans);
   static void GloballyEvictContentViewers();
   static void GloballyEvictAllContentViewers();
 
   
   
   static uint32_t CalcMaxTotalViewers();
-
-  void RemoveDynEntries(int32_t aOldIndex, int32_t aNewIndex);
 
   nsresult LoadNextPossibleEntry(int32_t aNewIndex, long aLoadType,
                                  uint32_t aHistCmd);

@@ -1069,6 +1069,13 @@ private:
   void MaybeNotifyKeywordSearchLoading(const nsString& aProvider,
                                        const nsString& aKeyword);
 
+  
+  
+  
+  
+  void FirePageHideNotificationInternal(bool aIsUnload,
+                                        bool aSkipCheckingDynEntries);
+
 #ifdef DEBUG
   
   static unsigned long gNumberOfDocShells;

@@ -1677,6 +1677,14 @@ nsDocShell::PrepareForNewContentModel()
 NS_IMETHODIMP
 nsDocShell::FirePageHideNotification(bool aIsUnload)
 {
+  FirePageHideNotificationInternal(aIsUnload, false);
+  return NS_OK;
+}
+
+void
+nsDocShell::FirePageHideNotificationInternal(bool aIsUnload,
+                                             bool aSkipCheckingDynEntries)
+{
   if (mContentViewer && !mFiredUnloadEvent) {
     
     
@@ -1702,16 +1710,30 @@ nsDocShell::FirePageHideNotification(bool aIsUnload)
 
     n = kids.Length();
     for (uint32_t i = 0; i < n; ++i) {
-      if (kids[i]) {
-        kids[i]->FirePageHideNotification(aIsUnload);
+      RefPtr<nsDocShell> child = static_cast<nsDocShell*>(kids[i].get());
+      if (child) {
+        
+        child->FirePageHideNotificationInternal(aIsUnload, true);
       }
     }
+
+    
+    if (aIsUnload && !aSkipCheckingDynEntries) {
+      nsCOMPtr<nsISHistory> rootSH;
+      GetRootSessionHistory(getter_AddRefs(rootSH));
+      nsCOMPtr<nsISHistoryInternal> shPrivate = do_QueryInterface(rootSH);
+      nsCOMPtr<nsISHContainer> container(do_QueryInterface(mOSHE));
+      if (shPrivate && container) {
+        int32_t index = -1;
+        rootSH->GetIndex(&index);
+        shPrivate->RemoveDynEntries(index, container);
+      }
+    }
+
     
     
     DetachEditorFromWindow();
   }
-
-  return NS_OK;
 }
 
 bool
@@ -9906,7 +9928,7 @@ nsDocShell::InternalLoad(nsIURI* aURI,
                                    EmptyCString(),  
                                    extraStr,  
                                    &shouldLoad);
-  
+
     if (NS_FAILED(rv) || NS_CP_REJECTED(shouldLoad)) {
       if (NS_SUCCEEDED(rv) && shouldLoad == nsIContentPolicy::REJECT_TYPE) {
         return NS_ERROR_CONTENT_BLOCKED_SHOW_ALT;
@@ -11732,26 +11754,12 @@ nsDocShell::OnNewURI(nsIURI* aURI, nsIChannel* aChannel,
     } else if (mOSHE) {
       mOSHE->SetCacheKey(cacheKey);
     }
-
-    
-    ClearFrameHistory(mLSHE);
-    ClearFrameHistory(mOSHE);
   }
 
-  if (aLoadType == LOAD_RELOAD_NORMAL) {
-    nsCOMPtr<nsISHEntry> currentSH;
-    bool oshe = false;
-    GetCurrentSHEntry(getter_AddRefs(currentSH), &oshe);
-    bool dynamicallyAddedChild = false;
-    if (currentSH) {
-      currentSH->HasDynamicallyAddedChild(&dynamicallyAddedChild);
-    }
-    if (dynamicallyAddedChild) {
-      ClearFrameHistory(currentSH);
-    }
-  }
-
-  if (aLoadType == LOAD_REFRESH) {
+  
+  
+  
+  if (aLoadType == LOAD_REFRESH || (aLoadType & LOAD_CMD_RELOAD)) {
     ClearFrameHistory(mLSHE);
     ClearFrameHistory(mOSHE);
   }
