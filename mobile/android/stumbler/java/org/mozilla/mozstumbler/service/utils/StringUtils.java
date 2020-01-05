@@ -1,0 +1,15 @@
+
+
+
+
+
+package org.mozilla.mozstumbler.service.utils;
+
+import java.nio.charset.Charset;
+
+public class StringUtils {
+    
+
+
+    public static final Charset UTF_8 = Charset.forName("UTF-8");
+}
