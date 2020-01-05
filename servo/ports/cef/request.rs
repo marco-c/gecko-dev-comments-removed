@@ -2,20 +2,11 @@
 
 
 
+use interfaces::{cef_post_data_element_t, cef_post_data_t, cef_request_t};
 
-use types::{cef_post_data_element_t, cef_post_data_t, cef_request_t};
-
-#[no_mangle]
-pub extern "C" fn cef_request_create() -> *mut cef_request_t {
-    0 as *mut cef_request_t
+cef_stub_static_method_impls! {
+    fn cef_request_create() -> *mut cef_request_t;
+    fn cef_post_data_create() -> *mut cef_post_data_t;
+    fn cef_post_data_element_create() -> *mut cef_post_data_element_t;
 }
 
-#[no_mangle]
-pub extern "C" fn cef_post_data_create() -> *mut cef_post_data_t {
-    0 as *mut cef_post_data_t
-}
-
-#[no_mangle]
-pub extern "C" fn cef_post_data_element_create() -> *mut cef_post_data_element_t {
-    0 as *mut cef_post_data_element_t
-}
