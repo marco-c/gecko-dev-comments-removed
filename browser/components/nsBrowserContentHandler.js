@@ -2,8 +2,6 @@
 
 
 
-Components.utils.importGlobalProperties(["URLSearchParams"]);
-
 Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 Components.utils.import("resource://gre/modules/Services.jsm");
 Components.utils.import("resource://gre/modules/AppConstants.jsm");
@@ -744,60 +742,10 @@ nsDefaultCommandLineHandler.prototype = {
       }
     }
 
-    let redirectWinSearch = false;
-    if (AppConstants.isPlatformAndVersionAtLeast("win", "10")) {
-      redirectWinSearch = Services.prefs.getBoolPref("browser.search.redirectWindowsSearch");
-    }
-
     try {
       var ar;
       while ((ar = cmdLine.handleFlagWithParam("url", false))) {
         var uri = resolveURIInternal(cmdLine, ar);
-
-        
-        
-        
-        var uriScheme = "", uriHost = "", uriPath = "";
-        try {
-          uriScheme = uri.scheme;
-          uriHost = uri.host;
-          uriPath = uri.path;
-        } catch (e) {
-        }
-
-        
-        
-        
-        if (redirectWinSearch &&
-            (uriScheme == "http" || uriScheme == "https") &&
-            uriHost.endsWith(".bing.com") && uriPath.startsWith("/search")) {
-          try {
-            var url = uri.QueryInterface(Components.interfaces.nsIURL);
-            var params = new URLSearchParams(url.query);
-            
-            
-            
-            
-            
-            
-            
-            var allowedParams = ["WNSGPH", "WNSBOX", "WNSFC2", "WNSHCO", "WNSSCX", "WNSSSV"];
-            var formParam = params.get("form");
-            if (!formParam) {
-              formParam = params.get("FORM");
-            }
-            if (allowedParams.indexOf(formParam) != -1) {
-              var term = params.get("q");
-              var engine = Services.search.defaultEngine;
-              logSystemBasedSearch(engine);
-              var submission = engine.getSubmission(term, null, "system");
-              uri = submission.uri;
-            }
-          } catch (e) {
-            Components.utils.reportError("Couldn't redirect Windows search: " + e);
-          }
-        }
-
         urilist.push(uri);
       }
     }
