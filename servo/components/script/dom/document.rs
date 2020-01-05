@@ -19,7 +19,7 @@ use dom::bindings::codegen::InheritTypes::{HTMLAreaElementDerived, HTMLEmbedElem
 use dom::bindings::codegen::InheritTypes::{HTMLFormElementDerived, HTMLImageElementDerived};
 use dom::bindings::codegen::InheritTypes::{HTMLScriptElementDerived};
 use dom::bindings::error::{ErrorResult, Fallible};
-use dom::bindings::error::Error::{NotSupported, InvalidCharacter};
+use dom::bindings::error::Error::{NotSupported, InvalidCharacter, Security};
 use dom::bindings::error::Error::{HierarchyRequest, NamespaceError};
 use dom::bindings::global::GlobalRef;
 use dom::bindings::js::{MutNullableJS, JS, JSRef, LayoutJS, Temporary, TemporaryPushable};
@@ -54,6 +54,8 @@ use dom::range::Range;
 use dom::treewalker::TreeWalker;
 use dom::uievent::UIEvent;
 use dom::window::{Window, WindowHelpers};
+use net::resource_task::ControlMsg::{SetCookiesForUrl, GetCookiesForUrl};
+use net::cookie_storage::CookieSource::NonHTTP;
 use util::namespace;
 use util::str::{DOMString, split_html_space_chars};
 
@@ -68,6 +70,7 @@ use std::collections::hash_map::Entry::{Occupied, Vacant};
 use std::ascii::AsciiExt;
 use std::cell::{Cell, Ref};
 use std::default::Default;
+use std::sync::mpsc::channel;
 use time;
 
 #[derive(PartialEq)]
@@ -170,7 +173,7 @@ pub trait DocumentHelpers<'a> {
     fn window(self) -> Temporary<Window>;
     fn encoding_name(self) -> Ref<'a, DOMString>;
     fn is_html_document(self) -> bool;
-    fn url(self) -> &'a Url;
+    fn url(self) -> Url;
     fn quirks_mode(self) -> QuirksMode;
     fn set_quirks_mode(self, mode: QuirksMode);
     fn set_last_modified(self, value: DOMString);
@@ -206,8 +209,9 @@ impl<'a> DocumentHelpers<'a> for JSRef<'a, Document> {
         self.is_html_document
     }
 
-    fn url(self) -> &'a Url {
-        &self.extended_deref().url
+    
+    fn url(self) -> Url {
+        self.url.clone()
     }
 
     fn quirks_mode(self) -> QuirksMode {
@@ -961,7 +965,7 @@ impl<'a> DocumentMethods for JSRef<'a, Document> {
     }
 
     fn Applets(self) -> Temporary<HTMLCollection> {
-        
+        // FIXME: This should be return OBJECT elements containing applets.
         self.applets.or_init(|| {
             let window = self.window.root();
             let root = NodeCast::from_ref(self);
@@ -975,35 +979,66 @@ impl<'a> DocumentMethods for JSRef<'a, Document> {
         window.r().Location()
     }
 
-    
+    // http://dom.spec.whatwg.org/#dom-parentnode-children
     fn Children(self) -> Temporary<HTMLCollection> {
         let window = self.window.root();
         HTMLCollection::children(window.r(), NodeCast::from_ref(self))
     }
 
-    
+    // http://dom.spec.whatwg.org/#dom-parentnode-queryselector
     fn QuerySelector(self, selectors: DOMString) -> Fallible<Option<Temporary<Element>>> {
         let root: JSRef<Node> = NodeCast::from_ref(self);
         root.query_selector(selectors)
     }
 
-    
+    // http://dom.spec.whatwg.org/#dom-parentnode-queryselectorall
     fn QuerySelectorAll(self, selectors: DOMString) -> Fallible<Temporary<NodeList>> {
         let root: JSRef<Node> = NodeCast::from_ref(self);
         root.query_selector_all(selectors)
     }
 
-    
+    // https://html.spec.whatwg.org/multipage/dom.html#dom-document-readystate
     fn ReadyState(self) -> DocumentReadyState {
         self.ready_state.get()
     }
 
-    
+    // https://html.spec.whatwg.org/multipage/browsers.html#dom-document-defaultview
     fn DefaultView(self) -> Temporary<Window> {
         Temporary::new(self.window)
+    }
+
+    // https://html.spec.whatwg.org/multipage/dom.html#dom-document-cookie
+    fn GetCookie(self) -> Fallible<DOMString> {
+        //TODO: return empty string for cookie-averse Document
+        let url = self.url();
+        if !is_scheme_host_port_tuple(&url) {
+            return Err(Security);
+        }
+        let window = self.window.root();
+        let page = window.page();
+        let (tx, rx) = channel();
+        let _ = page.resource_task.send(GetCookiesForUrl(url, tx, NonHTTP));
+        let cookies = rx.recv().unwrap();
+        Ok(cookies.unwrap_or("".to_owned()))
+    }
+
+    
+    fn SetCookie(self, cookie: DOMString) -> ErrorResult {
+        
+        let url = self.url();
+        if !is_scheme_host_port_tuple(&url) {
+            return Err(Security);
+        }
+        let window = self.window.root();
+        let page = window.page();
+        let _ = page.resource_task.send(SetCookiesForUrl(url, cookie, NonHTTP));
+        Ok(())
     }
 
     global_event_handlers!();
     event_handler!(readystatechange, GetOnreadystatechange, SetOnreadystatechange);
 }
 
+fn is_scheme_host_port_tuple(url: &Url) -> bool {
+    url.host().is_some() && url.port_or_default().is_some()
+}
