@@ -133,7 +133,8 @@ nsWindowBase::SynthesizeNativeTouchPoint(uint32_t aPointerId,
 {
   AutoObserverNotifier notifier(aObserver, "touchpoint");
 
-  if (!InitTouchInjection()) {
+  if (gfxPrefs::APZTestFailsWithNativeInjection() || !InitTouchInjection()) {
+    
     
     
     MOZ_ASSERT(NS_IsMainThread());
