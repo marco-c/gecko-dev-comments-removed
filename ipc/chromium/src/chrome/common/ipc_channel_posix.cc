@@ -8,6 +8,7 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <limits.h>
 #if defined(OS_MACOSX)
 #include <sched.h>
 #endif
@@ -40,7 +41,13 @@
 #endif
 
 
+#if defined(IOV_MAX)
+static const size_t kMaxIOVecSize = IOV_MAX;
+#elif defined(ANDROID)
 static const size_t kMaxIOVecSize = 256;
+#else
+static const size_t kMaxIOVecSize = 16;
+#endif
 
 #ifdef MOZ_TASK_TRACER
 #include "GeckoTaskTracerImpl.h"
