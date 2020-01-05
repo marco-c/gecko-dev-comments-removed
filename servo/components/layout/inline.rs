@@ -805,16 +805,6 @@ impl InlineFragments {
     }
 
     
-    pub fn push(&mut self, fragment: &mut Fragment) {
-        self.fragments.push(fragment.clone());
-    }
-
-    
-    pub fn push_all(&mut self, mut other: InlineFragments) {
-        self.fragments.append(&mut other.fragments);
-    }
-
-    
     pub fn get(&self, index: usize) -> &Fragment {
         &self.fragments[index]
     }

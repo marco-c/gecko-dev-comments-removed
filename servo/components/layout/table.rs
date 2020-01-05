@@ -633,13 +633,6 @@ impl ColumnIntrinsicInlineSize {
     }
 
     
-    
-    
-    pub fn minimum(&self, containing_block_inline_size: Au) -> Au {
-        cmp::max(self.minimum_length, containing_block_inline_size.scale_by(self.percentage))
-    }
-
-    
     pub fn greatest_percentage(&self, other: &ColumnIntrinsicInlineSize) -> CSSFloat {
         if self.percentage > other.percentage {
             self.percentage

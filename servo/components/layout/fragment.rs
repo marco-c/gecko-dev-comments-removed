@@ -37,7 +37,7 @@ use std::sync::{Arc, Mutex};
 use string_cache::Atom;
 use style::computed_values::content::ContentItem;
 use style::computed_values::{border_collapse, clear, display, mix_blend_mode, overflow_wrap};
-use style::computed_values::{overflow_x, position, text_align, text_decoration, transform_style};
+use style::computed_values::{overflow_x, position, text_decoration, transform_style};
 use style::computed_values::{white_space, word_break, z_index};
 use style::properties::ComputedValues;
 use style::values::computed::{LengthOrPercentage, LengthOrPercentageOrAuto};
@@ -812,11 +812,6 @@ impl Fragment {
         }
     }
 
-    pub fn reset_inline_sizes(&mut self) {
-        self.border_padding = LogicalMargin::zero(self.style.writing_mode);
-        self.margin = LogicalMargin::zero(self.style.writing_mode);
-    }
-
     
     
     pub fn debug_id(&self) -> u16 {
@@ -1237,12 +1232,6 @@ impl Fragment {
     #[inline(always)]
     pub fn style(&self) -> &ComputedValues {
         &*self.style
-    }
-
-    
-    
-    pub fn text_align(&self) -> text_align::T {
-        self.style().get_inheritedtext().text_align
     }
 
     pub fn white_space(&self) -> white_space::T {
