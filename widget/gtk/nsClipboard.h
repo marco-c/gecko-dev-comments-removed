@@ -23,6 +23,8 @@ public:
     NS_DECL_NSICLIPBOARD
     NS_DECL_NSIOBSERVER
 
+    static already_AddRefed<nsIClipboard> GetInstance();
+
     
     
     nsresult  Init              (void);
