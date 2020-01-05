@@ -98,6 +98,15 @@ public:
     static bool IsInheritSecurityContextForDataURIEnabled();
 
     
+    void IncrementRequestNumber() { mTotalRequests++; }
+    uint32_t GetTotalRequestNumber() { return mTotalRequests; }
+    
+    void IncrementCacheWonRequestNumber() { mCacheWon++; }
+    uint32_t GetCacheWonRequestNumber() { return mCacheWon; }
+    void IncrementNetWonRequestNumber() { mNetWon++; }
+    uint32_t GetNetWonRequestNumber() { return mNetWon; }
+
+    
     nsresult RecheckCaptivePortal();
 private:
     
@@ -177,6 +186,10 @@ private:
     bool                                 mNetworkNotifyChanged;
 
     static bool                          sDataURIInheritSecurityContext;
+
+    uint32_t mTotalRequests;
+    uint32_t mCacheWon;
+    uint32_t mNetWon;
 
     
     
