@@ -185,6 +185,10 @@ nsHTMLContentSerializer::AppendElementStart(Element* aElement,
   bool forceFormat = false;
   nsresult rv = NS_OK;
   if (!CheckElementStart(content, forceFormat, aStr, rv)) {
+    
+    
+    
+    MaybeEnterInPreContent(content);
     return rv;
   }
 
@@ -351,6 +355,9 @@ nsHTMLContentSerializer::AppendElementEnd(Element* aElement,
         IsContainer(parserService->HTMLCaseSensitiveAtomTagToId(name),
                     isContainer);
       if (!isContainer) {
+        
+        MOZ_ASSERT(name != nsGkAtoms::body);
+        MaybeLeaveFromPreContent(content);
         return NS_OK;
       }
     }
@@ -382,6 +389,7 @@ nsHTMLContentSerializer::AppendElementEnd(Element* aElement,
   NS_ENSURE_TRUE(AppendToString(nsDependentAtomString(name), aStr), NS_ERROR_OUT_OF_MEMORY);
   NS_ENSURE_TRUE(AppendToString(kGreaterThan, aStr), NS_ERROR_OUT_OF_MEMORY);
 
+  
   MaybeLeaveFromPreContent(content);
 
   if ((mDoFormat || forceFormat)&& !mDoRaw  && !PreLevel()
