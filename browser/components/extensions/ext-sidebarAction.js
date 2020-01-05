@@ -27,17 +27,9 @@ const sidebarURL = "chrome://browser/content/webext-panels.xul";
 
 
 
-this.sidebarAction = class extends ExtensionAPI {
-  static for(extension) {
-    return sidebarActionMap.get(extension);
-  }
-
-  onManifestEntry(entryName) {
-    let {extension} = this;
-
-    extension.once("ready", this.onReady.bind(this));
-
-    let options = extension.manifest.sidebar_action;
+class SidebarAction {
+  constructor(options, extension) {
+    this.extension = extension;
 
     
     
@@ -60,40 +52,6 @@ this.sidebarAction = class extends ExtensionAPI {
       this.createMenuItem(window, this.defaults);
     };
     windowTracker.addOpenListener(this.windowOpenListener);
-
-    sidebarActionMap.set(extension, this);
-  }
-
-  onReady() {
-    this.build();
-  }
-
-  onShutdown(reason) {
-    sidebarActionMap.delete(this.this);
-
-    this.tabContext.shutdown();
-
-    
-    
-    if (reason === "APP_SHUTDOWN") {
-      return;
-    }
-
-    for (let window of windowTracker.browserWindows()) {
-      let {document, SidebarUI} = window;
-      if (SidebarUI.currentID === this.id) {
-        SidebarUI.hide();
-      }
-      let menu = document.getElementById(this.menuId);
-      if (menu) {
-        menu.remove();
-      }
-      let broadcaster = document.getElementById(this.id);
-      if (broadcaster) {
-        broadcaster.remove();
-      }
-    }
-    windowTracker.removeOpenListener(this.windowOpenListener);
   }
 
   build() {
@@ -280,6 +238,25 @@ this.sidebarAction = class extends ExtensionAPI {
     return this.tabContext.get(nativeTab)[prop];
   }
 
+  shutdown() {
+    this.tabContext.shutdown();
+    for (let window of windowTracker.browserWindows()) {
+      let {document, SidebarUI} = window;
+      if (SidebarUI.currentID === this.id) {
+        SidebarUI.hide();
+      }
+      let menu = document.getElementById(this.menuId);
+      if (menu) {
+        menu.remove();
+      }
+      let broadcaster = document.getElementById(this.id);
+      if (broadcaster) {
+        broadcaster.remove();
+      }
+    }
+    windowTracker.removeOpenListener(this.windowOpenListener);
+  }
+
   
 
 
@@ -292,10 +269,44 @@ this.sidebarAction = class extends ExtensionAPI {
       SidebarUI.toggle(this.id);
     }
   }
+}
+
+SidebarAction.for = (extension) => {
+  return sidebarActionMap.get(extension);
+};
+
+global.sidebarActionFor = SidebarAction.for;
+
+
+extensions.on("ready", (type, extension) => {
+  
+  if (sidebarActionMap.has(extension)) {
+    sidebarActionMap.get(extension).build();
+  }
+});
+
+
+this.sidebarAction = class extends ExtensionAPI {
+  onManifestEntry(entryName) {
+    let {extension} = this;
+    let {manifest} = extension;
+
+    this.sidebarAction = new SidebarAction(manifest.sidebar_action, extension);
+    sidebarActionMap.set(extension, this.sidebarAction);
+  }
+
+  onShutdown(reason) {
+    
+    
+    if (reason !== "APP_SHUTDOWN") {
+      this.sidebarAction.shutdown();
+    }
+    sidebarActionMap.delete(this.extension);
+  }
 
   getAPI(context) {
     let {extension} = context;
-    const sidebarAction = this;
+    const {sidebarAction} = this;
 
     function getTab(tabId) {
       if (tabId !== null) {
@@ -357,5 +368,3 @@ this.sidebarAction = class extends ExtensionAPI {
     };
   }
 };
-
-global.sidebarActionFor = this.sidebarAction.for;

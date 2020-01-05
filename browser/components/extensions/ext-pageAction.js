@@ -15,63 +15,44 @@ var {
 
 let pageActionMap = new WeakMap();
 
-this.pageAction = class extends ExtensionAPI {
-  static for(extension) {
-    return pageActionMap.get(extension);
+
+
+function PageAction(options, extension) {
+  this.extension = extension;
+  this.id = makeWidgetId(extension.id) + "-page-action";
+
+  this.tabManager = extension.tabManager;
+
+  this.defaults = {
+    show: false,
+    title: options.default_title || extension.name,
+    icon: IconDetails.normalize({path: options.default_icon}, extension),
+    popup: options.default_popup || "",
+  };
+
+  this.browserStyle = options.browser_style || false;
+  if (options.browser_style === null) {
+    this.extension.logger.warn("Please specify whether you want browser_style " +
+                               "or not in your page_action options.");
   }
 
-  onManifestEntry(entryName) {
-    let {extension} = this;
-    let options = extension.manifest.page_action;
+  this.tabContext = new TabContext(tab => Object.create(this.defaults),
+                                   extension);
 
-    this.id = makeWidgetId(extension.id) + "-page-action";
+  this.tabContext.on("location-change", this.handleLocationChange.bind(this)); 
 
-    this.tabManager = extension.tabManager;
+  
+  this.buttons = new WeakMap();
 
-    this.defaults = {
-      show: false,
-      title: options.default_title || extension.name,
-      icon: IconDetails.normalize({path: options.default_icon}, extension),
-      popup: options.default_popup || "",
-    };
+  EventEmitter.decorate(this);
+}
 
-    this.browserStyle = options.browser_style || false;
-    if (options.browser_style === null) {
-      this.extension.logger.warn("Please specify whether you want browser_style " +
-                                 "or not in your page_action options.");
-    }
-
-    this.tabContext = new TabContext(tab => Object.create(this.defaults),
-                                     extension);
-
-    this.tabContext.on("location-change", this.handleLocationChange.bind(this)); 
-
-    
-    this.buttons = new WeakMap();
-
-    EventEmitter.decorate(this);
-
-    pageActionMap.set(extension, this);
-  }
-
-  onShutdown(reason) {
-    pageActionMap.delete(this.extension);
-
-    this.tabContext.shutdown();
-
-    for (let window of windowTracker.browserWindows()) {
-      if (this.buttons.has(window)) {
-        this.buttons.get(window).remove();
-        window.removeEventListener("popupshowing", this);
-      }
-    }
-  }
-
+PageAction.prototype = {
   
   
   getProperty(tab, prop) {
     return this.tabContext.get(tab)[prop];
-  }
+  },
 
   
   
@@ -88,7 +69,7 @@ this.pageAction = class extends ExtensionAPI {
     if (tab.selected) {
       this.updateButton(tab.ownerGlobal);
     }
-  }
+  },
 
   
   
@@ -130,7 +111,7 @@ this.pageAction = class extends ExtensionAPI {
     }
 
     button.hidden = !tabData.show;
-  }
+  },
 
   
   
@@ -147,7 +128,7 @@ this.pageAction = class extends ExtensionAPI {
     document.getElementById("urlbar-icons").appendChild(button);
 
     return button;
-  }
+  },
 
   
   
@@ -158,7 +139,7 @@ this.pageAction = class extends ExtensionAPI {
     }
 
     return this.buttons.get(window);
-  }
+  },
 
   
 
@@ -173,7 +154,7 @@ this.pageAction = class extends ExtensionAPI {
     if (pageAction.getProperty(window.gBrowser.selectedTab, "show")) {
       pageAction.handleClick(window);
     }
-  }
+  },
 
   handleEvent(event) {
     const window = event.target.ownerGlobal;
@@ -198,7 +179,7 @@ this.pageAction = class extends ExtensionAPI {
         }
         break;
     }
-  }
+  },
 
   
   
@@ -221,20 +202,52 @@ this.pageAction = class extends ExtensionAPI {
     } else {
       this.emit("click", tab);
     }
-  }
+  },
 
   handleLocationChange(eventType, tab, fromBrowse) {
     if (fromBrowse) {
       this.tabContext.clear(tab);
     }
     this.updateButton(tab.ownerGlobal);
+  },
+
+  shutdown() {
+    this.tabContext.shutdown();
+
+    for (let window of windowTracker.browserWindows()) {
+      if (this.buttons.has(window)) {
+        this.buttons.get(window).remove();
+        window.removeEventListener("popupshowing", this);
+      }
+    }
+  },
+};
+
+PageAction.for = extension => {
+  return pageActionMap.get(extension);
+};
+
+global.pageActionFor = PageAction.for;
+
+this.pageAction = class extends ExtensionAPI {
+  onManifestEntry(entryName) {
+    let {extension} = this;
+    let {manifest} = extension;
+
+    this.pageAction = new PageAction(manifest.page_action, extension);
+    pageActionMap.set(extension, this.pageAction);
+  }
+
+  onShutdown(reason) {
+    pageActionMap.delete(this.extension);
+    this.pageAction.shutdown();
   }
 
   getAPI(context) {
     let {extension} = context;
 
     const {tabManager} = extension;
-    const pageAction = this;
+    const {pageAction} = this;
 
     return {
       pageAction: {
@@ -302,5 +315,3 @@ this.pageAction = class extends ExtensionAPI {
     };
   }
 };
-
-global.pageActionFor = this.pageAction.for;
