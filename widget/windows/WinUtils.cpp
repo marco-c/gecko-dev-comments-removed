@@ -57,6 +57,7 @@
 #include "TSFTextStore.h"
 #endif 
 
+#include <shlobj.h>
 #include <shlwapi.h>
 
 mozilla::LazyLogModule gWindowsLog("Widget");
