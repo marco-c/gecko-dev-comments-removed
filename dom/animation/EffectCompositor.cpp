@@ -316,8 +316,8 @@ EffectCompositor::PostRestyleForAnimation(dom::Element* aElement,
                "Restyle request during restyling should be requested only on "
                "the main-thread. e.g. after the parallel traversal");
     if (ServoStyleSet::IsInServoTraversal()) {
-      
-      MOZ_ASSERT(hint == eRestyle_CSSAnimations);
+      MOZ_ASSERT(hint == eRestyle_CSSAnimations ||
+                 hint == eRestyle_CSSTransitions);
 
       
       
@@ -982,8 +982,10 @@ EffectCompositor::PreTraverseInSubtree(Element* aRoot)
   MOZ_ASSERT(mPresContext->RestyleManager()->IsServo());
 
   bool foundElementsNeedingRestyle = false;
-  for (auto& elementsToRestyle : mElementsToRestyle) {
-    for (auto iter = elementsToRestyle.Iter(); !iter.Done(); iter.Next()) {
+  for (size_t i = 0; i < kCascadeLevelCount; ++i) {
+    CascadeLevel cascadeLevel = CascadeLevel(i);
+    for (auto iter = mElementsToRestyle[cascadeLevel].Iter();
+         !iter.Done(); iter.Next()) {
       bool postedRestyle = iter.Data();
       
       if (!postedRestyle) {
@@ -1003,7 +1005,10 @@ EffectCompositor::PreTraverseInSubtree(Element* aRoot)
       
       
       mPresContext->RestyleManager()->AsServo()->
-        PostRestyleEventForAnimations(target.mElement, eRestyle_CSSAnimations);
+        PostRestyleEventForAnimations(target.mElement,
+                                      cascadeLevel == CascadeLevel::Transitions
+                                        ? eRestyle_CSSTransitions
+                                        : eRestyle_CSSAnimations);
 
       foundElementsNeedingRestyle = true;
 
@@ -1048,14 +1053,21 @@ EffectCompositor::PreTraverse(dom::Element* aElement, nsIAtom* aPseudoTagOrNull)
 
   PseudoElementHashEntry::KeyType key = { aElement, pseudoType };
 
-  for (auto& elementsToRestyle : mElementsToRestyle) {
-    if (!elementsToRestyle.Get(key)) {
+
+  for (size_t i = 0; i < kCascadeLevelCount; ++i) {
+    CascadeLevel cascadeLevel = CascadeLevel(i);
+    auto& elementSet = mElementsToRestyle[cascadeLevel];
+
+    if (!elementSet.Get(key)) {
       
       continue;
     }
 
     mPresContext->RestyleManager()->AsServo()->
-      PostRestyleEventForAnimations(aElement, eRestyle_CSSAnimations);
+      PostRestyleEventForAnimations(aElement,
+                                    cascadeLevel == CascadeLevel::Transitions
+                                      ? eRestyle_CSSTransitions
+                                      : eRestyle_CSSAnimations);
 
     EffectSet* effects = EffectSet::GetEffectSet(aElement, pseudoType);
     if (effects) {
@@ -1066,7 +1078,7 @@ EffectCompositor::PreTraverse(dom::Element* aElement, nsIAtom* aPseudoTagOrNull)
       }
     }
 
-    elementsToRestyle.Remove(key);
+    elementSet.Remove(key);
     found = true;
   }
   return found;
