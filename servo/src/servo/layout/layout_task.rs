@@ -18,7 +18,7 @@ use resource::local_image_cache::LocalImageCache;
 use util::task::spawn_listener;
 use util::time::time;
 
-use core::pipes::{Chan, Port, SharedChan};
+use core::comm::{Chan, Port, SharedChan};
 use core::dvec::DVec;
 use core::mutable::Mut;
 use core::task::*;
@@ -79,9 +79,9 @@ impl Damage {
 pub struct BuildData {
     node: Node,
     url: Url,
-    dom_event_chan: pipes::SharedChan<Event>,
+    dom_event_chan: comm::SharedChan<Event>,
     window_size: Size2D<uint>,
-    content_join_chan: pipes::Chan<()>,
+    content_join_chan: comm::Chan<()>,
     damage: Damage,
 }
 
@@ -295,7 +295,7 @@ impl Layout {
     
     
     
-    fn make_on_image_available_cb(dom_event_chan: pipes::SharedChan<Event>) -> @fn() -> ~fn(ImageResponseMsg) {
+    fn make_on_image_available_cb(dom_event_chan: comm::SharedChan<Event>) -> @fn() -> ~fn(ImageResponseMsg) {
         
         
         
