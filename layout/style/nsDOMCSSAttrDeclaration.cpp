@@ -128,8 +128,13 @@ nsDOMCSSAttributeDeclaration::GetCSSDeclaration(Operation aOperation)
   }
 
   
-  RefPtr<css::Declaration> decl = new css::Declaration();
-  decl->InitializeEmpty();
+  RefPtr<DeclarationBlock> decl;
+  if (mElement->IsStyledByServo()) {
+    decl = new ServoDeclarationBlock();
+  } else {
+    decl = new css::Declaration();
+    decl->AsGecko()->InitializeEmpty();
+  }
 
   
   nsresult rv;
