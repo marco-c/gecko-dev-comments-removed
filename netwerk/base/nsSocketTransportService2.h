@@ -152,6 +152,8 @@ private:
     
     void Reset(bool aGuardLocals);
 
+    nsresult ShutdownThread();
+
     
     
     
