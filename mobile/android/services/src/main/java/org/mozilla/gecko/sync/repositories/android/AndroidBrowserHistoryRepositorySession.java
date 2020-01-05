@@ -168,7 +168,7 @@ public class AndroidBrowserHistoryRepositorySession extends AndroidBrowserReposi
       
       
       for (HistoryRecord failed : outgoing) {
-        delegate.onRecordStoreFailed(new RuntimeException("Failed to insert history item with guid " + failed.guid + "."), failed.guid);
+        storeDelegate.onRecordStoreFailed(new RuntimeException("Failed to insert history item with guid " + failed.guid + "."), failed.guid);
       }
       return;
     }
@@ -185,7 +185,7 @@ public class AndroidBrowserHistoryRepositorySession extends AndroidBrowserReposi
         throw e;
       }
       trackRecord(succeeded);
-      delegate.onRecordStoreSucceeded(succeeded.guid); 
+      storeDelegate.onRecordStoreSucceeded(succeeded.guid); 
     }
   }
 

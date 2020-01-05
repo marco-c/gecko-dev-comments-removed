@@ -31,8 +31,8 @@ public class Server11RepositorySession extends RepositorySession {
   }
 
   @Override
-  public void setStoreDelegate(RepositorySessionStoreDelegate delegate) {
-    this.delegate = delegate;
+  public void setStoreDelegate(RepositorySessionStoreDelegate storeDelegate) {
+    super.setStoreDelegate(storeDelegate);
 
     
     this.uploader = new BatchingUploader(this, storeWorkQueue, delegate);
@@ -73,7 +73,7 @@ public class Server11RepositorySession extends RepositorySession {
 
   @Override
   public void store(Record record) throws NoStoreDelegateException {
-    if (delegate == null) {
+    if (storeDelegate == null) {
       throw new NoStoreDelegateException();
     }
 
