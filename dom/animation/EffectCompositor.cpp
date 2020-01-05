@@ -963,26 +963,6 @@ EffectCompositor::SetPerformanceWarning(
 bool
 EffectCompositor::PreTraverse()
 {
-  return PreTraverseInSubtree(nullptr);
-}
-
-static bool
-IsFlattenedTreeDescendantOf(nsINode* aPossibleDescendant,
-                            nsINode* aPossibleAncestor)
-{
-  do {
-    if (aPossibleDescendant == aPossibleAncestor) {
-      return true;
-    }
-    aPossibleDescendant = aPossibleDescendant->GetFlattenedTreeParentNode();
-  } while (aPossibleDescendant);
-
-  return false;
-}
-
-bool
-EffectCompositor::PreTraverseInSubtree(Element* aRoot)
-{
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(mPresContext->RestyleManager()->IsServo());
 
@@ -996,12 +976,6 @@ EffectCompositor::PreTraverseInSubtree(Element* aRoot)
       }
 
       NonOwningAnimationTarget target = iter.Key();
-
-      
-      
-      if (aRoot && !IsFlattenedTreeDescendantOf(target.mElement, aRoot)) {
-        continue;
-      }
 
       
       
