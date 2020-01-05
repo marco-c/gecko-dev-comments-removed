@@ -6838,10 +6838,18 @@ bool nsDisplayMask::TryMerge(nsDisplayItem* aItem)
     return false;
   if (aItem->ScrollClip() != ScrollClip())
     return false;
+
+  
+  
+  const nsStyleSVGReset *style = mFrame->StyleSVGReset();
+  if (style->mMask.HasLayerWithImage())
+    return false;
+
   nsDisplayMask* other = static_cast<nsDisplayMask*>(aItem);
   MergeFromTrackingMergedFrames(other);
   mEffectsBounds.UnionRect(mEffectsBounds,
     other->mEffectsBounds + other->mFrame->GetOffsetTo(mFrame));
+
   return true;
 }
 
