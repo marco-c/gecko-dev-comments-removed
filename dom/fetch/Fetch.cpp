@@ -28,6 +28,7 @@
 #include "mozilla/dom/File.h"
 #include "mozilla/dom/FormData.h"
 #include "mozilla/dom/Headers.h"
+#include "mozilla/dom/MutableBlobStreamListener.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/PromiseWorkerProxy.h"
 #include "mozilla/dom/Request.h"
@@ -170,10 +171,7 @@ public:
 
     
     
-    fetch->Fetch(mResolver);
-
-    
-    return NS_OK;
+    return fetch->Fetch(mResolver);
   }
 };
 
@@ -711,6 +709,36 @@ public:
 
 
 
+
+template <class Derived>
+class ContinueConsumeBlobBodyRunnable final : public MainThreadWorkerRunnable
+{
+  
+  
+  FetchBody<Derived>* mFetchBody;
+  RefPtr<BlobImpl> mBlobImpl;
+
+public:
+  ContinueConsumeBlobBodyRunnable(FetchBody<Derived>* aFetchBody,
+                                  BlobImpl* aBlobImpl)
+    : MainThreadWorkerRunnable(aFetchBody->mWorkerPrivate)
+    , mFetchBody(aFetchBody)
+    , mBlobImpl(aBlobImpl)
+  {
+    MOZ_ASSERT(NS_IsMainThread());
+    MOZ_ASSERT(mBlobImpl);
+  }
+
+  bool
+  WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override
+  {
+    mFetchBody->ContinueConsumeBlobBody(mBlobImpl);
+    return true;
+  }
+};
+
+
+
 class MOZ_STACK_CLASS AutoFreeBuffer final {
   uint8_t* mBuffer;
 
@@ -789,6 +817,7 @@ public:
 
 template <class Derived>
 class ConsumeBodyDoneObserver : public nsIStreamLoaderObserver
+                              , public MutableBlobStorageCallback
 {
   FetchBody<Derived>* mFetchBody;
 
@@ -834,6 +863,31 @@ public:
 
     
     return NS_SUCCESS_ADOPTED_DATA;
+  }
+
+  virtual void BlobStoreCompleted(MutableBlobStorage* aBlobStorage,
+                                  Blob* aBlob,
+                                  nsresult aRv) override
+  {
+    
+    if (NS_FAILED(aRv)) {
+      OnStreamComplete(nullptr, nullptr, aRv, 0, nullptr);
+      return;
+    }
+
+    MOZ_ASSERT(aBlob);
+
+    if (mFetchBody->mWorkerPrivate) {
+      RefPtr<ContinueConsumeBlobBodyRunnable<Derived>> r =
+        new ContinueConsumeBlobBodyRunnable<Derived>(mFetchBody, aBlob->Impl());
+
+      if (!r->Dispatch()) {
+        NS_WARNING("Could not dispatch ConsumeBlobBodyRunnable");
+        return;
+      }
+    } else {
+      mFetchBody->ContinueConsumeBlobBody(aBlob->Impl());
+    }
   }
 
 private:
@@ -1074,13 +1128,35 @@ FetchBody<Derived>::BeginConsumeBodyMainThread()
   }
 
   RefPtr<ConsumeBodyDoneObserver<Derived>> p = new ConsumeBodyDoneObserver<Derived>(this);
-  nsCOMPtr<nsIStreamLoader> loader;
-  rv = NS_NewStreamLoader(getter_AddRefs(loader), p);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return;
+
+  nsCOMPtr<nsIStreamListener> listener;
+  if (mConsumeType == CONSUME_BLOB) {
+    MutableBlobStorage::MutableBlobStorageType type =
+      MutableBlobStorage::eOnlyInMemory;
+
+    const mozilla::UniquePtr<mozilla::ipc::PrincipalInfo>& principalInfo =
+      DerivedClass()->GetPrincipalInfo();
+    
+    
+    if (principalInfo &&
+        (principalInfo->type() == mozilla::ipc::PrincipalInfo::TSystemPrincipalInfo ||
+         (principalInfo->type() == mozilla::ipc::PrincipalInfo::TContentPrincipalInfo &&
+          principalInfo->get_ContentPrincipalInfo().attrs().mPrivateBrowsingId == 0))) {
+      type = MutableBlobStorage::eCouldBeInTemporaryFile;
+    }
+
+    listener = new MutableBlobStreamListener(type, nullptr, mMimeType, p);
+  } else {
+    nsCOMPtr<nsIStreamLoader> loader;
+    rv = NS_NewStreamLoader(getter_AddRefs(loader), p);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return;
+    }
+
+    listener = loader;
   }
 
-  rv = pump->AsyncRead(loader, nullptr);
+  rv = pump->AsyncRead(listener, nullptr);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return;
   }
@@ -1195,14 +1271,7 @@ FetchBody<Derived>::ContinueConsumeBody(nsresult aStatus, uint32_t aResultLength
       break;
     }
     case CONSUME_BLOB: {
-      RefPtr<dom::Blob> blob = BodyUtil::ConsumeBlob(
-        derivedClass->GetParentObject(), NS_ConvertUTF8toUTF16(mMimeType),
-        aResultLength, aResult, error);
-      if (!error.Failed()) {
-        localPromise->MaybeResolve(blob);
-        
-        autoFree.Reset();
-      }
+      MOZ_CRASH("This should not happen.");
       break;
     }
     case CONSUME_FORMDATA: {
@@ -1243,6 +1312,38 @@ FetchBody<Derived>::ContinueConsumeBody(nsresult aStatus, uint32_t aResultLength
   if (error.Failed()) {
     localPromise->MaybeReject(error);
   }
+}
+
+template <class Derived>
+void
+FetchBody<Derived>::ContinueConsumeBlobBody(BlobImpl* aBlobImpl)
+{
+  AssertIsOnTargetThread();
+  
+  
+  MOZ_ASSERT(mBodyUsed);
+  MOZ_ASSERT(!mReadDone);
+  MOZ_ASSERT(mConsumeType == CONSUME_BLOB);
+  MOZ_ASSERT_IF(mWorkerPrivate, mWorkerHolder);
+#ifdef DEBUG
+  mReadDone = true;
+#endif
+
+  MOZ_ASSERT(mConsumePromise);
+  RefPtr<Promise> localPromise = mConsumePromise.forget();
+
+  RefPtr<Derived> derivedClass = DerivedClass();
+  ReleaseObject();
+
+  
+  
+  mConsumeBodyPump = nullptr;
+
+  RefPtr<dom::Blob> blob =
+    dom::Blob::Create(derivedClass->GetParentObject(), aBlobImpl);
+  MOZ_ASSERT(blob);
+
+  localPromise->MaybeResolve(blob);
 }
 
 template <class Derived>
