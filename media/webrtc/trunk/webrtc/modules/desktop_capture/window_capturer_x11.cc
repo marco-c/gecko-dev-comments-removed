@@ -46,6 +46,7 @@ class WindowCapturerLinux : public WindowCapturer,
 
   
   void Start(Callback* callback) override;
+  void Stop() override;
   void Capture(const DesktopRegion& region) override;
 
   
@@ -233,6 +234,10 @@ void WindowCapturerLinux::Start(Callback* callback) {
   assert(callback);
 
   callback_ = callback;
+}
+
+void WindowCapturerLinux::Stop() {
+  callback_ = NULL;
 }
 
 void WindowCapturerLinux::Capture(const DesktopRegion& region) {
