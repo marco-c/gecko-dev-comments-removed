@@ -4,56 +4,19 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-#![feature(box_syntax, plugin, plugin_registrar, quote, rustc_private, slice_patterns)]
-
+#![cfg_attr(feature = "clippy", feature(plugin, plugin_registrar, rustc_private))]
 #![deny(unsafe_code)]
 
 #[cfg(feature = "clippy")]
 extern crate clippy_lints;
-#[macro_use]
-extern crate rustc;
+#[cfg(feature = "clippy")]
 extern crate rustc_plugin;
-extern crate syntax;
-
-use rustc_plugin::Registry;
-use syntax::ext::base::*;
-use syntax::feature_gate::AttributeType::Whitelisted;
-use syntax::symbol::Symbol;
-
-
-
-pub mod jstraceable;
-pub mod lints;
-
-mod utils;
-
-#[plugin_registrar]
-pub fn plugin_registrar(reg: &mut Registry) {
-    reg.register_syntax_extension(
-        Symbol::intern("dom_struct"),
-        MultiModifier(box jstraceable::expand_dom_struct));
-
-    reg.register_late_lint_pass(box lints::unrooted_must_root::UnrootedPass::new());
-    reg.register_early_lint_pass(box lints::ban::BanPass);
-    reg.register_attribute("allow_unrooted_interior".to_string(), Whitelisted);
-    reg.register_attribute("must_root".to_string(), Whitelisted);
-    register_clippy(reg);
-}
 
 #[cfg(feature = "clippy")]
-fn register_clippy(reg: &mut Registry) {
+use rustc_plugin::Registry;
+
+#[cfg(feature = "clippy")]
+#[plugin_registrar]
+pub fn plugin_registrar(reg: &mut Registry) {
     ::clippy_lints::register_plugins(reg);
-}
-#[cfg(not(feature = "clippy"))]
-fn register_clippy(_reg: &mut Registry) {
 }

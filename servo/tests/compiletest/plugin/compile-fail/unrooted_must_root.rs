@@ -2,9 +2,9 @@
 
 
 
-#![feature(plugin)]
-#![plugin(plugins)]
 #![allow(dead_code)]
+#![feature(plugin)]
+#![plugin(script_plugins)]
 
 #[must_root]
 struct Foo {

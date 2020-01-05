@@ -2,9 +2,6 @@
 
 
 
-#![feature(plugin)]
-#![plugin(plugins)]
-
 extern crate script;
 
 use script::test::TrustedPromise;

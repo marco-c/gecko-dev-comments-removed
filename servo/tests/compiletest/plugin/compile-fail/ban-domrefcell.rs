@@ -3,7 +3,7 @@
 
 
 #![feature(plugin)]
-#![plugin(plugins)]
+#![plugin(script_plugins)]
 
 extern crate script;
 
