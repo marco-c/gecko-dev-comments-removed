@@ -747,14 +747,15 @@
 
 
 
+#define TRACE_EVENT_NESTABLE_ASYNC_INSTANT0(category_group, name, id)        \
+  INTERNAL_TRACE_EVENT_ADD_WITH_ID(TRACE_EVENT_PHASE_NESTABLE_ASYNC_INSTANT, \
+                                   category_group, name, id,                 \
+                                   TRACE_EVENT_FLAG_NONE)
 #define TRACE_EVENT_NESTABLE_ASYNC_INSTANT1(category_group, name, id,        \
                                             arg1_name, arg1_val)             \
   INTERNAL_TRACE_EVENT_ADD_WITH_ID(TRACE_EVENT_PHASE_NESTABLE_ASYNC_INSTANT, \
                                    category_group, name, id,                 \
                                    TRACE_EVENT_FLAG_NONE, arg1_name, arg1_val)
-
-
-
 #define TRACE_EVENT_NESTABLE_ASYNC_INSTANT2(                              \
     category_group, name, id, arg1_name, arg1_val, arg2_name, arg2_val)   \
   INTERNAL_TRACE_EVENT_ADD_WITH_ID(                                       \

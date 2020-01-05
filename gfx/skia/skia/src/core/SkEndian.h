@@ -50,7 +50,7 @@ static inline void SkEndianSwap16s(uint16_t array[], int count) {
 
 
 
-static inline uint32_t SkEndianSwap32(uint32_t value) {
+static constexpr uint32_t SkEndianSwap32(uint32_t value) {
     return ((value & 0xFF) << 24) |
            ((value & 0xFF00) << 8) |
            ((value & 0xFF0000) >> 8) |

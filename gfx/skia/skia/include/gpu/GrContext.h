@@ -24,14 +24,13 @@
 struct GrBatchAtlasConfig;
 class GrBatchFontCache;
 struct GrContextOptions;
+class GrContextPriv;
 class GrContextThreadSafeProxy;
 class GrDrawingManager;
 class GrDrawContext;
-class GrDrawTarget;
 class GrFragmentProcessor;
 class GrGpu;
 class GrIndexBuffer;
-class GrLayerCache;
 class GrOvalRenderer;
 class GrPath;
 class GrPipelineBuilder;
@@ -43,7 +42,6 @@ class GrTextBlobCache;
 class GrTextContext;
 class GrTextureParams;
 class GrVertexBuffer;
-class GrStrokeInfo;
 class GrSwizzle;
 class SkTraceMemoryDump;
 
@@ -187,28 +185,14 @@ public:
 
 
 
-
-
-
-
-
-    GrDrawContext* drawContext(GrRenderTarget* rt, const SkSurfaceProps* surfaceProps = NULL);
-
-    
-    
-
-    
-
-
-    enum FlushBits {
-        
-
-
-
-
-
-        kDiscard_FlushBit                    = 0x2,
-    };
+    sk_sp<GrDrawContext> makeDrawContext(SkBackingFit fit, 
+                                         int width, int height,
+                                         GrPixelConfig config,
+                                         sk_sp<SkColorSpace> colorSpace,
+                                         int sampleCnt = 0,
+                                         GrSurfaceOrigin origin = kDefault_GrSurfaceOrigin,
+                                         const SkSurfaceProps* surfaceProps = nullptr,
+                                         SkBudgeted = SkBudgeted::kYes);
 
     
 
@@ -216,13 +200,24 @@ public:
 
 
 
-    void flush(int flagsBitfield = 0);
+    sk_sp<GrDrawContext> makeDrawContextWithFallback(
+                                                 SkBackingFit fit,
+                                                 int width, int height,
+                                                 GrPixelConfig config,
+                                                 sk_sp<SkColorSpace> colorSpace,
+                                                 int sampleCnt = 0,
+                                                 GrSurfaceOrigin origin = kDefault_GrSurfaceOrigin,
+                                                 const SkSurfaceProps* surfaceProps = nullptr,
+                                                 SkBudgeted budgeted = SkBudgeted::kYes);
 
-    void flushIfNecessary() {
-        if (fFlushToReduceCacheSize || this->caps()->immediateFlush()) {
-            this->flush();
-        }
-    }
+    
+    
+
+    
+
+
+
+    void flush();
 
    
 
@@ -289,7 +284,6 @@ public:
 
 
 
-
     bool copySurface(GrSurface* dst,
                      GrSurface* src,
                      const SkIRect& srcRect,
@@ -311,6 +305,12 @@ public:
 
 
 
+    void flushSurfaceIO(GrSurface* surface);
+
+    
+
+
+
 
 
 
@@ -327,7 +327,6 @@ public:
     GrGpu* getGpu() { return fGpu; }
     const GrGpu* getGpu() const { return fGpu; }
     GrBatchFontCache* getBatchFontCache() { return fBatchFontCache; }
-    GrLayerCache* getLayerCache() { return fLayerCache.get(); }
     GrTextBlobCache* getTextBlobCache() { return fTextBlobCache; }
     bool abandoned() const;
     GrResourceProvider* resourceProvider() { return fResourceProvider; }
@@ -335,7 +334,7 @@ public:
     GrResourceCache* getResourceCache() { return fResourceCache; }
 
     
-    void getTestTarget(GrTestTarget*, GrRenderTarget* rt);
+    void getTestTarget(GrTestTarget*, sk_sp<GrDrawContext>);
 
     
     void resetGpuStats() const ;
@@ -369,6 +368,10 @@ public:
     
     SkDEBUGCODE(GrSingleOwner* debugSingleOwner() const { return &fSingleOwner; } )
 
+    
+    GrContextPriv contextPriv();
+    const GrContextPriv contextPriv() const;
+
 private:
     GrGpu*                                  fGpu;
     const GrCaps*                           fCaps;
@@ -383,11 +386,8 @@ private:
     SkAutoTUnref<GrContextThreadSafeProxy>  fThreadSafeProxy;
 
     GrBatchFontCache*                       fBatchFontCache;
-    SkAutoTDelete<GrLayerCache>             fLayerCache;
     SkAutoTDelete<GrTextBlobCache>          fTextBlobCache;
 
-    
-    bool                                    fFlushToReduceCacheSize;
     bool                                    fDidTestPMConversions;
     int                                     fPMToUPMConversion;
     int                                     fUPMToPMConversion;
@@ -423,9 +423,7 @@ private:
     GrAuditTrail                            fAuditTrail;
 
     
-    friend class GrClipMaskManager; 
-    friend class GrDrawingManager;  
-    GrDrawingManager* drawingManager() { return fDrawingManager; }
+    friend class GrContextPriv;
 
     GrContext(); 
     bool init(GrBackend, GrBackendContext, const GrContextOptions& options);
@@ -438,9 +436,9 @@ private:
 
 
 
-    const GrFragmentProcessor* createPMToUPMEffect(GrTexture*, const GrSwizzle&,
+    sk_sp<GrFragmentProcessor> createPMToUPMEffect(GrTexture*, const GrSwizzle&,
                                                    const SkMatrix&) const;
-    const GrFragmentProcessor* createUPMToPMEffect(GrTexture*, const GrSwizzle&,
+    sk_sp<GrFragmentProcessor> createUPMToPMEffect(GrTexture*, const GrSwizzle&,
                                                    const SkMatrix&) const;
     
 
@@ -449,12 +447,6 @@ private:
     
 
     bool didFailPMUPMConversionTest() const;
-
-    
-
-
-
-    static void OverBudgetCB(void* data);
 
     
 

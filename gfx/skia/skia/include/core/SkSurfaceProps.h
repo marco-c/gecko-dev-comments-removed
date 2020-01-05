@@ -51,20 +51,7 @@ static inline bool SkPixelGeometryIsV(SkPixelGeometry geo) {
 class SK_API SkSurfaceProps {
 public:
     enum Flags {
-        kDisallowAntiAlias_Flag         = 1 << 0,
-        kDisallowDither_Flag            = 1 << 1,
-        kUseDeviceIndependentFonts_Flag = 1 << 2,
-
-        
-
-
-
-
-
-
-
-
-        kAllowSRGBInputs_Flag           = 1 << 3,
+        kUseDeviceIndependentFonts_Flag = 1 << 0,
     };
     
     static const Flags kUseDistanceFieldFonts_Flag = kUseDeviceIndependentFonts_Flag;
@@ -81,12 +68,9 @@ public:
     uint32_t flags() const { return fFlags; }
     SkPixelGeometry pixelGeometry() const { return fPixelGeometry; }
 
-    bool isDisallowAA() const { return SkToBool(fFlags & kDisallowAntiAlias_Flag); }
-    bool isDisallowDither() const { return SkToBool(fFlags & kDisallowDither_Flag); }
     bool isUseDeviceIndependentFonts() const {
         return SkToBool(fFlags & kUseDeviceIndependentFonts_Flag);
     }
-    bool allowSRGBInputs() const { return SkToBool(fFlags & kAllowSRGBInputs_Flag); }
 
 private:
     SkSurfaceProps();

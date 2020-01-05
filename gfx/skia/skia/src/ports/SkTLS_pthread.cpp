@@ -6,22 +6,17 @@
 
 
 #include "SkTLS.h"
+#include "SkOnce.h"
 
 #include <pthread.h>
 
 static pthread_key_t gSkTLSKey;
-static pthread_once_t gSkTLSKey_Once = PTHREAD_ONCE_INIT;
-
-static void sk_tls_make_key() {
-    (void)pthread_key_create(&gSkTLSKey, SkTLS::Destructor);
-}
 
 void* SkTLS::PlatformGetSpecific(bool forceCreateTheSlot) {
     
     
-    
-
-    (void)pthread_once(&gSkTLSKey_Once, sk_tls_make_key);
+    static SkOnce once;
+    once(pthread_key_create, &gSkTLSKey, SkTLS::Destructor);
     return pthread_getspecific(gSkTLSKey);
 }
 

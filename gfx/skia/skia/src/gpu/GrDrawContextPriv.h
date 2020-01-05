@@ -9,32 +9,59 @@
 #define GrDrawContextPriv_DEFINED
 
 #include "GrDrawContext.h"
+#include "GrDrawTarget.h"
+#include "GrPathRendering.h"
 
-class GrStencilSettings;
+class GrFixedClip;
+class GrPath;
+struct GrUserStencilSettings;
 
 
 
 
 class GrDrawContextPriv {
 public:
-    bool drawAndStencilRect(const SkIRect* scissorRect,
-                            const GrStencilSettings&,
+    gr_instanced::InstancedRendering* accessInstancedRendering() const {
+        return fDrawContext->getDrawTarget()->instancedRendering();
+    }
+
+    void clear(const GrFixedClip&, const GrColor, bool canIgnoreClip);
+
+    void clearStencilClip(const GrFixedClip&, bool insideStencilMask);
+
+    void stencilRect(const GrClip& clip,
+                     const GrUserStencilSettings* ss,
+                     bool useHWAA,
+                     const SkMatrix& viewMatrix,
+                     const SkRect& rect);
+
+    void stencilPath(const GrClip&,
+                     bool useHWAA,
+                     const SkMatrix& viewMatrix,
+                     const GrPath*);
+
+    bool drawAndStencilRect(const GrClip&,
+                            const GrUserStencilSettings*,
                             SkRegion::Op op,
                             bool invert,
                             bool doAA,
                             const SkMatrix& viewMatrix,
                             const SkRect&);
 
-    bool drawAndStencilPath(const SkIRect* scissorRect,
-                            const GrStencilSettings&,
+    bool drawAndStencilPath(const GrClip&,
+                            const GrUserStencilSettings*,
                             SkRegion::Op op,
                             bool invert,
                             bool doAA,
                             const SkMatrix& viewMatrix,
                             const SkPath&);
 
-    void testingOnly_drawBatch(const GrPipelineBuilder& pipelineBuilder,
-                               GrDrawBatch* batch);
+    SkBudgeted isBudgeted() const;
+
+    void testingOnly_drawBatch(const GrPaint&,
+                               GrDrawBatch* batch,
+                               const GrUserStencilSettings* = nullptr,
+                               bool snapToCenters = false);
 
 private:
     explicit GrDrawContextPriv(GrDrawContext* drawContext) : fDrawContext(drawContext) {}

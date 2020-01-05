@@ -44,7 +44,7 @@ public:
 
 
     SkBudgeted isBudgeted() const {
-        bool ret = GrGpuResource::kCached_LifeCycle == fResource->fLifeCycle;
+        bool ret = SkBudgeted::kYes == fResource->fBudgeted;
         SkASSERT(ret || !fResource->getUniqueKey().isValid());
         return SkBudgeted(ret);
     }
@@ -52,7 +52,7 @@ public:
     
 
 
-    bool isExternal() const { return fResource->isExternal(); }
+    bool refsWrappedObjects() const { return fResource->fRefsWrappedObjects; }
 
     
 

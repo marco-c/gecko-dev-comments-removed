@@ -8,12 +8,22 @@
 #ifndef SkLinearBitmapPipeline_DEFINED
 #define SkLinearBitmapPipeline_DEFINED
 
-
 #include "SkColor.h"
 #include "SkImageInfo.h"
 #include "SkMatrix.h"
-#include "SkNx.h"
 #include "SkShader.h"
+
+class SkEmbeddableLinearPipeline;
+
+enum SkGammaType {
+    kLinear_SkGammaType,
+    kSRGB_SkGammaType,
+};
+
+
+
+
+
 
 class SkLinearBitmapPipeline {
 public:
@@ -21,31 +31,85 @@ public:
         const SkMatrix& inverse,
         SkFilterQuality filterQuality,
         SkShader::TileMode xTile, SkShader::TileMode yTile,
-        float postAlpha,
+        SkColor paintColor,
         const SkPixmap& srcPixmap);
+
+    SkLinearBitmapPipeline(
+        const SkLinearBitmapPipeline& pipeline,
+        const SkPixmap& srcPixmap,
+        SkXfermode::Mode xferMode,
+        const SkImageInfo& dstInfo);
+
+    static bool ClonePipelineForBlitting(
+        SkEmbeddableLinearPipeline* pipelineStorage,
+        const SkLinearBitmapPipeline& pipeline,
+        SkMatrix::TypeMask matrixMask,
+        SkShader::TileMode xTileMode,
+        SkShader::TileMode yTileMode,
+        SkFilterQuality filterQuality,
+        const SkPixmap& srcPixmap,
+        float finalAlpha,
+        SkXfermode::Mode xferMode,
+        const SkImageInfo& dstInfo);
+
     ~SkLinearBitmapPipeline();
 
     void shadeSpan4f(int x, int y, SkPM4f* dst, int count);
+    void blitSpan(int32_t x, int32_t y, void* dst, int count);
 
-    template<typename Base, size_t kSize>
-    class PolymorphicUnion {
+    template<typename Base, size_t kSize, typename Next = void>
+    class Stage {
     public:
-        PolymorphicUnion() : fIsInitialized{false} {}
+        Stage() : fIsInitialized{false} {}
+        ~Stage();
 
-        ~PolymorphicUnion() {
+        template<typename Variant, typename... Args>
+        void initStage(Next* next, Args&& ... args);
+
+        template<typename Variant, typename... Args>
+        void initSink(Args&& ... args);
+
+        template <typename To, typename From>
+        To* getInterface();
+
+        
+        
+        
+        
+        Base* cloneStageTo(Next* next, Stage* cloneToStage) const;
+
+        Base* get() const { return reinterpret_cast<Base*>(&fSpace); }
+        Base* operator->() const { return this->get(); }
+        Base& operator*() const { return *(this->get()); }
+
+    private:
+        std::function<void (Next*, void*)> fStageCloner;
+        struct SK_STRUCT_ALIGN(16) Space {
+            char space[kSize];
+        };
+        bool fIsInitialized;
+        mutable Space fSpace;
+    };
+
+
+
+    template <typename Base, size_t kSize>
+    class PolyMemory {
+    public:
+        PolyMemory() : fIsInitialized{false} { }
+        ~PolyMemory() {
             if (fIsInitialized) {
                 this->get()->~Base();
             }
         }
-
         template<typename Variant, typename... Args>
-        void Initialize(Args&&... args) {
+        void init(Args&& ... args) {
             SkASSERTF(sizeof(Variant) <= sizeof(fSpace),
                       "Size Variant: %d, Space: %d", sizeof(Variant), sizeof(fSpace));
 
-            new(&fSpace) Variant(std::forward<Args>(args)...);
+            new (&fSpace) Variant(std::forward<Args>(args)...);
             fIsInitialized = true;
-        };
+        }
 
         Base* get() const { return reinterpret_cast<Base*>(&fSpace); }
         Base* operator->() const { return this->get(); }
@@ -55,26 +119,63 @@ public:
         struct SK_STRUCT_ALIGN(16) Space {
             char space[kSize];
         };
-        bool fIsInitialized;
         mutable Space fSpace;
+        bool          fIsInitialized;
+
     };
 
     class PointProcessorInterface;
     class SampleProcessorInterface;
-    class PixelPlacerInterface;
+    class BlendProcessorInterface;
+    class DestinationInterface;
+    class PixelAccessorInterface;
 
     
-    using MatrixStage = PolymorphicUnion<PointProcessorInterface, 160>;
-    using TileStage   = PolymorphicUnion<PointProcessorInterface, 160>;
-    using SampleStage = PolymorphicUnion<SampleProcessorInterface,100>;
-    using PixelStage  = PolymorphicUnion<PixelPlacerInterface,     80>;
+    using MatrixStage  = Stage<PointProcessorInterface,    160, PointProcessorInterface>;
+    using TileStage    = Stage<PointProcessorInterface,    160, SampleProcessorInterface>;
+    using SampleStage  = Stage<SampleProcessorInterface,   160, BlendProcessorInterface>;
+    using BlenderStage = Stage<BlendProcessorInterface,     40>;
+    using Accessor     = PolyMemory<PixelAccessorInterface, 64>;
 
 private:
     PointProcessorInterface* fFirstStage;
-    MatrixStage fMatrixStage;
-    TileStage   fTiler;
-    SampleStage fSampleStage;
-    PixelStage  fPixelStage;
+    MatrixStage              fMatrixStage;
+    TileStage                fTileStage;
+    SampleStage              fSampleStage;
+    BlenderStage             fBlenderStage;
+    DestinationInterface*    fLastStage;
+    Accessor                 fAccessor;
+};
+
+
+
+class SkEmbeddableLinearPipeline {
+public:
+    SkEmbeddableLinearPipeline() { }
+    ~SkEmbeddableLinearPipeline() {
+        if (get() != nullptr) {
+            get()->~SkLinearBitmapPipeline();
+        }
+    }
+
+    template <typename... Args>
+    void init(Args&&... args) {
+        
+        fPipeline = (SkLinearBitmapPipeline*)SkAlign16((intptr_t)fPipelineStorage);
+        new (fPipeline) SkLinearBitmapPipeline{std::forward<Args>(args)...};
+    }
+
+    SkLinearBitmapPipeline* get()        const { return fPipeline;    }
+    SkLinearBitmapPipeline& operator*()  const { return *this->get(); }
+    SkLinearBitmapPipeline* operator->() const { return  this->get(); }
+
+private:
+    enum {
+        kActualSize = sizeof(SkLinearBitmapPipeline),
+        kPaddedSize = SkAlignPtr(kActualSize + 12),
+    };
+    void* fPipelineStorage[kPaddedSize / sizeof(void*)];
+    SkLinearBitmapPipeline* fPipeline{nullptr};
 };
 
 #endif  

@@ -21,7 +21,7 @@ class GrVkGpu;
 
 class GrVkDescriptorPool : public GrVkResource {
 public:
-    explicit GrVkDescriptorPool(const GrVkGpu* gpu, VkDescriptorType type, uint32_t count);
+    GrVkDescriptorPool(const GrVkGpu* gpu, VkDescriptorType type, uint32_t count);
 
     VkDescriptorPool descPool() const { return fDescPool; }
 
@@ -30,6 +30,13 @@ public:
     
     
     bool isCompatible(VkDescriptorType type, uint32_t count) const;
+
+#ifdef SK_TRACE_VK_RESOURCES
+    void dumpInfo() const override {
+        SkDebugf("GrVkDescriptorPool: %d, type %d (%d refs)\n", fDescPool, fType, 
+                 this->getRefCnt());
+    }
+#endif
 
 private:
     void freeGPUData(const GrVkGpu* gpu) const override;

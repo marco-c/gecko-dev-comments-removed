@@ -11,68 +11,77 @@
 #include "SkTypes.h"
 
 struct GrContextOptions {
-    GrContextOptions()
-        : fDrawPathToCompressedTexture(false)
-        , fSuppressPrints(false)
-        , fMaxTextureSizeOverride(SK_MaxS32)
-        , fMaxTileSizeOverride(0)
-        , fSuppressDualSourceBlending(false)
-        , fBufferMapThreshold(-1)
-        , fUseDrawInsteadOfPartialRenderTargetWrite(false)
-        , fImmediateMode(false)
-        , fClipBatchToBounds(false)
-        , fDrawBatchBounds(false)
-        , fMaxBatchLookback(-1)
-        , fMaxBatchLookahead(-1)
-        , fUseShaderSwizzling(false) {}
+    GrContextOptions() {}
 
     
-    
-    
-    bool fDrawPathToCompressedTexture;
-
-    
-    bool fSuppressPrints;
+    bool fSuppressPrints = false;
 
     
 
 
 
-    int  fMaxTextureSizeOverride;
-    
-
-    int  fMaxTileSizeOverride;
-    bool fSuppressDualSourceBlending;
+    int  fMaxTextureSizeOverride = SK_MaxS32;
 
     
 
-
-    int  fBufferMapThreshold;
-
-    
-    bool fUseDrawInsteadOfPartialRenderTargetWrite;
-
-    
-
-    bool fImmediateMode;
-
-    
-
-    bool fClipBatchToBounds;
+    int  fMaxTileSizeOverride = 0;
+    bool fSuppressDualSourceBlending = false;
 
     
 
 
-    bool fDrawBatchBounds;
+    int  fBufferMapThreshold = -1;
+
+    
+    bool fUseDrawInsteadOfPartialRenderTargetWrite = false;
 
     
 
-    int fMaxBatchLookback;
-    int fMaxBatchLookahead;
+    bool fImmediateMode = false;
 
     
 
-    bool fUseShaderSwizzling;
+    bool fClipBatchToBounds = false;
+
+    
+
+
+    bool fDrawBatchBounds = false;
+
+    
+
+    int fMaxBatchLookback = -1;
+    int fMaxBatchLookahead = -1;
+
+    
+
+    bool fUseShaderSwizzling = false;
+
+    
+
+
+    bool fDoManualMipmapping = false;
+
+    
+
+    bool fEnableInstancedRendering = false;
+
+    
+
+    bool fDisableDistanceFieldPaths = false;
+
+    
+
+
+
+    bool fAllowPathMaskCaching = false;
+
+    
+
+
+
+
+    bool fForceSWPathMasks = false;
 };
 
 #endif

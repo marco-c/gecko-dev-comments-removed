@@ -9,12 +9,10 @@
 #define GrDrawTarget_DEFINED
 
 #include "GrClip.h"
-#include "GrClipMaskManager.h"
 #include "GrContext.h"
 #include "GrPathProcessor.h"
 #include "GrPrimitiveProcessor.h"
 #include "GrPathRendering.h"
-#include "GrPipelineBuilder.h"
 #include "GrXferProcessor.h"
 
 #include "batches/GrDrawBatch.h"
@@ -33,10 +31,12 @@
 
 class GrAuditTrail;
 class GrBatch;
+class GrClearBatch;
 class GrClip;
 class GrCaps;
 class GrPath;
 class GrDrawPathBatchBase;
+class GrPipelineBuilder;
 
 class GrDrawTarget final : public SkRefCnt {
 public:
@@ -58,6 +58,7 @@ public:
     ~GrDrawTarget() override;
 
     void makeClosed() {
+        fLastFullClearBatch = nullptr;
         
         
 #ifdef ENABLE_MDB
@@ -97,15 +98,18 @@ public:
     
 
 
+
     void prepareBatches(GrBatchFlushState* flushState);
-    void drawBatches(GrBatchFlushState* flushState);
+    bool drawBatches(GrBatchFlushState* flushState);
 
     
 
 
     const GrCaps* caps() const { return fGpu->caps(); }
 
-    void drawBatch(const GrPipelineBuilder&, GrDrawBatch*, const SkIRect* scissorRect = nullptr);
+    void drawBatch(const GrPipelineBuilder&, GrDrawContext*, const GrClip&, GrDrawBatch*);
+
+    void addBatch(sk_sp<GrBatch>);
 
     
 
@@ -113,27 +117,15 @@ public:
 
 
 
-    void stencilPath(const GrPipelineBuilder&, const SkMatrix& viewMatrix, const GrPath*,
-                     GrPathRendering::FillType);
+
+    void stencilPath(GrDrawContext*,
+                     const GrClip&,
+                     bool useHWAA,
+                     const SkMatrix& viewMatrix,
+                     const GrPath*);
 
     
-
-
-
-
-
-
-    void drawPathBatch(const GrPipelineBuilder& pipelineBuilder, GrDrawPathBatchBase* batch);
-
-    
-
-
-
-
-    void clear(const SkIRect* rect,
-               GrColor color,
-               bool canIgnoreRect,
-               GrRenderTarget* renderTarget);
+    void fullClear(GrRenderTarget*, GrColor color);
 
     
     void discard(GrRenderTarget*);
@@ -153,28 +145,14 @@ public:
                      const SkIRect& srcRect,
                      const SkIPoint& dstPoint);
 
-    
-
-    class CMMAccess {
-    public:
-        CMMAccess(GrDrawTarget* drawTarget) : fDrawTarget(drawTarget) {}
-    private:
-        void clearStencilClip(const SkIRect& rect, bool insideClip, GrRenderTarget* rt) const {
-            fDrawTarget->clearStencilClip(rect, insideClip, rt);
-        }
-
-        GrContext* context() const { return fDrawTarget->fContext; }
-        GrResourceProvider* resourceProvider() const { return fDrawTarget->fResourceProvider; }
-        GrDrawTarget* fDrawTarget;
-        friend class GrClipMaskManager;
-    };
-
-    const CMMAccess cmmAccess() { return CMMAccess(this); }
-
-    GrAuditTrail* getAuditTrail() const { return fAuditTrail; }
+    gr_instanced::InstancedRendering* instancedRendering() const {
+        SkASSERT(fInstancedRendering);
+        return fInstancedRendering;
+    }
 
 private:
     friend class GrDrawingManager; 
+    friend class GrDrawContextPriv; 
 
     enum Flags {
         kClosed_Flag    = 0x01,   
@@ -219,48 +197,51 @@ private:
         }
     };
 
-    void recordBatch(GrBatch*);
+    
+    
+    GrBatch* recordBatch(GrBatch*, const SkRect& clippedBounds);
     void forwardCombine();
-    bool installPipelineInDrawBatch(const GrPipelineBuilder* pipelineBuilder,
-                                    const GrScissorState* scissor,
-                                    GrDrawBatch* batch);
 
     
     
     
     bool setupDstReadIfNecessary(const GrPipelineBuilder&,
-        const GrPipelineOptimizations& optimizations,
-        GrXferProcessor::DstTexture*,
-        const SkRect& batchBounds);
-
-    
-    void getPathStencilSettingsForFilltype(GrPathRendering::FillType,
-                                           const GrStencilAttachment*,
-                                           GrStencilSettings*);
+                                 GrRenderTarget*,
+                                 const GrClip&,
+                                 const GrPipelineOptimizations& optimizations,
+                                 GrXferProcessor::DstTexture*,
+                                 const SkRect& batchBounds);
 
     void addDependency(GrDrawTarget* dependedOn);
 
     
-    void clearStencilClip(const SkIRect&, bool insideClip, GrRenderTarget*);
+    void clearStencilClip(const GrFixedClip&, bool insideStencilMask, GrRenderTarget*);
 
-    SkSTArray<256, SkAutoTUnref<GrBatch>, true> fBatches;
-    SkAutoTDelete<GrClipMaskManager>            fClipMaskManager;
+    struct RecordedBatch {
+        sk_sp<GrBatch> fBatch;
+        SkRect         fClippedBounds;
+    };
+    SkSTArray<256, RecordedBatch, true>             fRecordedBatches;
+    GrClearBatch*                                   fLastFullClearBatch;
     
-    GrContext*                                  fContext;
-    GrGpu*                                      fGpu;
-    GrResourceProvider*                         fResourceProvider;
-    GrAuditTrail*                               fAuditTrail;
+    GrContext*                                      fContext;
+    GrGpu*                                          fGpu;
+    GrResourceProvider*                             fResourceProvider;
+    GrAuditTrail*                                   fAuditTrail;
 
-    SkDEBUGCODE(int                             fDebugID;)
-    uint32_t                                    fFlags;
+    SkDEBUGCODE(int                                 fDebugID;)
+    uint32_t                                        fFlags;
 
     
-    SkTDArray<GrDrawTarget*>                    fDependencies;
-    GrRenderTarget*                             fRenderTarget;
+    SkTDArray<GrDrawTarget*>                        fDependencies;
+    GrRenderTarget*                                 fRenderTarget;
 
-    bool                                        fDrawBatchBounds;
-    int                                         fMaxBatchLookback;
-    int                                         fMaxBatchLookahead;
+    bool                                            fClipBatchToBounds;
+    bool                                            fDrawBatchBounds;
+    int                                             fMaxBatchLookback;
+    int                                             fMaxBatchLookahead;
+
+    SkAutoTDelete<gr_instanced::InstancedRendering> fInstancedRendering;
 
     typedef SkRefCnt INHERITED;
 };

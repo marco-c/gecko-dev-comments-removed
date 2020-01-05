@@ -10,7 +10,7 @@
 
 #include "SkTypes.h"
 
-class SkFontLCDConfig {
+class SK_API SkFontLCDConfig {
 public:
     
 

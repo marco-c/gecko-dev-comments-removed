@@ -32,18 +32,6 @@ private:
     
 
 
-
-    bool isBorrowed() const { return GrGpuResource::kBorrowed_LifeCycle == fResource->fLifeCycle; }
-
-    
-
-
-
-    bool isAdopted() const { return GrGpuResource::kAdopted_LifeCycle == fResource->fLifeCycle; }
-
-    
-
-
     void release() {
         fResource->release();
         if (fResource->isPurgeable()) {
@@ -69,6 +57,20 @@ private:
 
     uint32_t timestamp() const { return fResource->fTimestamp; }
     void setTimestamp(uint32_t ts) { fResource->fTimestamp = ts; }
+
+    
+    void setFlushCntWhenResourceBecamePurgeable(uint32_t cnt) {
+        SkASSERT(fResource->isPurgeable());
+        fResource->fExternalFlushCntWhenBecamePurgeable = cnt;
+    }
+    
+
+
+
+    uint32_t flushCntWhenResourceBecamePurgeable() {
+        SkASSERT(fResource->isPurgeable());
+        return fResource->fExternalFlushCntWhenBecamePurgeable;
+    }
 
     int* accessCacheIndex() const { return &fResource->fCacheArrayIndex; }
 

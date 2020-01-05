@@ -128,13 +128,12 @@ SkCodec* SkIcoCodec::NewFromStream(SkStream* stream) {
         bytesRead = offset;
 
         
-        SkAutoTUnref<SkData> data(
-                SkData::NewFromStream(inputStream.get(), size));
+        sk_sp<SkData> data(SkData::MakeFromStream(inputStream.get(), size));
         if (nullptr == data.get()) {
             SkCodecPrintf("Warning: could not create embedded stream.\n");
             break;
         }
-        SkAutoTDelete<SkMemoryStream> embeddedStream(new SkMemoryStream(data.get()));
+        SkAutoTDelete<SkMemoryStream> embeddedStream(new SkMemoryStream(data));
         bytesRead += size;
 
         
@@ -168,22 +167,25 @@ SkCodec* SkIcoCodec::NewFromStream(SkStream* stream) {
             maxIndex = i;
         }
     }
-    SkImageInfo info = codecs->operator[](maxIndex)->getInfo();
+    int width = codecs->operator[](maxIndex)->getInfo().width();
+    int height = codecs->operator[](maxIndex)->getInfo().height();
+    SkEncodedInfo info = codecs->operator[](maxIndex)->getEncodedInfo();
 
     
     
-    return new SkIcoCodec(info, codecs.release());
+    return new SkIcoCodec(width, height, info, codecs.release());
 }
 
 
 
 
 
-SkIcoCodec::SkIcoCodec(const SkImageInfo& info,
+SkIcoCodec::SkIcoCodec(int width, int height, const SkEncodedInfo& info,
                        SkTArray<SkAutoTDelete<SkCodec>, true>* codecs)
-    : INHERITED(info, nullptr)
+    : INHERITED(width, height, info, nullptr)
     , fEmbeddedCodecs(codecs)
     , fCurrScanlineCodec(nullptr)
+    , fCurrIncrementalCodec(nullptr)
 {}
 
 
@@ -287,6 +289,7 @@ SkCodec::Result SkIcoCodec::onStartScanlineDecode(const SkImageInfo& dstInfo,
         result = embeddedCodec->startScanlineDecode(dstInfo, &options, colorTable, colorCount);
         if (kSuccess == result) {
             fCurrScanlineCodec = embeddedCodec;
+            fCurrIncrementalCodec = nullptr;
             return result;
         }
 
@@ -307,13 +310,82 @@ bool SkIcoCodec::onSkipScanlines(int count) {
     return fCurrScanlineCodec->skipScanlines(count);
 }
 
+SkCodec::Result SkIcoCodec::onStartIncrementalDecode(const SkImageInfo& dstInfo,
+        void* pixels, size_t rowBytes, const SkCodec::Options& options,
+        SkPMColor* colorTable, int* colorCount) {
+    int index = 0;
+    while (true) {
+        index = this->chooseCodec(dstInfo.dimensions(), index);
+        if (index < 0) {
+            break;
+        }
+
+        SkCodec* embeddedCodec = fEmbeddedCodecs->operator[](index);
+        switch (embeddedCodec->startIncrementalDecode(dstInfo,
+                pixels, rowBytes, &options, colorTable, colorCount)) {
+            case kSuccess:
+                fCurrIncrementalCodec = embeddedCodec;
+                fCurrScanlineCodec = nullptr;
+                return kSuccess;
+            case kUnimplemented:
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                if (embeddedCodec->startScanlineDecode(dstInfo, nullptr,
+                        colorTable, colorCount) == kSuccess) {
+                    return kUnimplemented;
+                }
+                
+                break;
+            default:
+                break;
+        }
+
+        index++;
+    }
+
+    SkCodecPrintf("Error: No matching candidate image in ico.\n");
+    return kInvalidScale;
+}
+
+SkCodec::Result SkIcoCodec::onIncrementalDecode(int* rowsDecoded) {
+    SkASSERT(fCurrIncrementalCodec);
+    return fCurrIncrementalCodec->incrementalDecode(rowsDecoded);
+}
+
 SkCodec::SkScanlineOrder SkIcoCodec::onGetScanlineOrder() const {
     
     
-    return fCurrScanlineCodec ? fCurrScanlineCodec->getScanlineOrder() :
-            INHERITED::onGetScanlineOrder();
+    if (fCurrScanlineCodec) {
+        SkASSERT(!fCurrIncrementalCodec);
+        return fCurrScanlineCodec->getScanlineOrder();
+    }
+
+    if (fCurrIncrementalCodec) {
+        return fCurrIncrementalCodec->getScanlineOrder();
+    }
+
+    return INHERITED::onGetScanlineOrder();
 }
 
 SkSampler* SkIcoCodec::getSampler(bool createIfNecessary) {
-    return fCurrScanlineCodec ? fCurrScanlineCodec->getSampler(createIfNecessary) : nullptr;
+    if (fCurrScanlineCodec) {
+        SkASSERT(!fCurrIncrementalCodec);
+        return fCurrScanlineCodec->getSampler(createIfNecessary);
+    }
+
+    if (fCurrIncrementalCodec) {
+        return fCurrIncrementalCodec->getSampler(createIfNecessary);
+    }
+
+    return nullptr;
 }

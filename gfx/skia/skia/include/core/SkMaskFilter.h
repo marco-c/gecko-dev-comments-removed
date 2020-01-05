@@ -14,8 +14,10 @@
 #include "SkFlattenable.h"
 #include "SkMask.h"
 #include "SkPaint.h"
+#include "SkStrokeRec.h"
 
 class GrClip;
+class GrContext;
 class GrDrawContext;
 class GrPaint;
 class GrRenderTarget;
@@ -27,7 +29,6 @@ class SkMatrix;
 class SkPath;
 class SkRasterClip;
 class SkRRect;
-class SkStrokeRec;
 
 
 
@@ -122,13 +123,14 @@ public:
 
 
 
-    virtual bool directFilterRRectMaskGPU(GrTextureProvider* texProvider,
+    virtual bool directFilterRRectMaskGPU(GrContext*,
                                           GrDrawContext* drawContext,
                                           GrPaint* grp,
                                           const GrClip&,
                                           const SkMatrix& viewMatrix,
                                           const SkStrokeRec& strokeRec,
-                                          const SkRRect& rrect) const;
+                                          const SkRRect& rrect,
+                                          const SkRRect& devRRect) const;
 
     
 
@@ -137,12 +139,10 @@ public:
 
 
 
-
     virtual bool filterMaskGPU(GrTexture* src,
                                const SkMatrix& ctm,
-                               const SkRect& maskRect,
-                               GrTexture** result,
-                               bool canOverwriteSrc) const;
+                               const SkIRect& maskRect,
+                               GrTexture** result) const;
 #endif
 
     
@@ -228,14 +228,14 @@ private:
 
 
     bool filterPath(const SkPath& devPath, const SkMatrix& ctm, const SkRasterClip&, SkBlitter*,
-                    SkPaint::Style) const;
+                    SkStrokeRec::InitStyle) const;
 
     
 
 
 
     bool filterRRect(const SkRRect& devRRect, const SkMatrix& ctm, const SkRasterClip&,
-                     SkBlitter*, SkPaint::Style style) const;
+                     SkBlitter*) const;
 
     typedef SkFlattenable INHERITED;
 };

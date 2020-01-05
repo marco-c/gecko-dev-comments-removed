@@ -5,10 +5,10 @@
 
 
 
+#include "SkLeanWindows.h"
 #include "SkThreadID.h"
 
 #ifdef SK_BUILD_FOR_WIN
-    #include <windows.h>
     SkThreadID SkGetThreadID() { return GetCurrentThreadId(); }
 #else
     #include <pthread.h>

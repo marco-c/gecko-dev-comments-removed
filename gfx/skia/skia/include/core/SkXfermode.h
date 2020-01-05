@@ -5,18 +5,20 @@
 
 
 
-
-
 #ifndef SkXfermode_DEFINED
 #define SkXfermode_DEFINED
 
-#include "SkFlattenable.h"
+#include "SkBlendMode.h"
 #include "SkColor.h"
+#include "SkFlattenable.h"
 
 class GrFragmentProcessor;
 class GrTexture;
 class GrXPFactory;
+class SkRasterPipeline;
 class SkString;
+
+struct SkArithmeticParams;
 
 struct SkPM4f;
 typedef SkPM4f (*SkXfermodeProc4f)(const SkPM4f& src, const SkPM4f& dst);
@@ -113,6 +115,9 @@ public:
 
 
     static const char* ModeName(Mode);
+    static const char* ModeName(SkBlendMode mode) {
+        return ModeName(Mode(mode));
+    }
 
     
 
@@ -161,10 +166,37 @@ public:
     
 
 
+
+
+    static SkXfermode* Peek(SkBlendMode mode) {
+        sk_sp<SkXfermode> xfer = Make(mode);
+        if (!xfer) {
+            SkASSERT(SkBlendMode::kSrcOver == mode);
+            return nullptr;
+        }
+        SkASSERT(!xfer->unique());
+        return xfer.get();
+    }
+
+    static sk_sp<SkXfermode> Make(SkBlendMode bm) {
+        return Make((Mode)bm);
+    }
+
+    SkBlendMode blend() const {
+        Mode mode;
+        SkAssertResult(this->asMode(&mode));
+        return (SkBlendMode)mode;
+    }
+
+    
+
+
     static SkXfermodeProc GetProc(Mode mode);
     static SkXfermodeProc4f GetProc4f(Mode);
 
     virtual SkXfermodeProc4f getProc4f() const;
+
+    bool appendStages(SkRasterPipeline*) const;
 
     
 
@@ -214,6 +246,7 @@ public:
     static bool IsOpaque(const sk_sp<SkXfermode>& xfer, SrcColorOpacity opacityType) {
         return IsOpaque(xfer.get(), opacityType);
     }
+    static bool IsOpaque(SkBlendMode, SrcColorOpacity);
 
 #if SK_SUPPORT_GPU
     
@@ -222,14 +255,14 @@ public:
 
 
 
-    virtual const GrFragmentProcessor* getFragmentProcessorForImageFilter(
-                                                            const GrFragmentProcessor* dst) const;
+    virtual sk_sp<GrFragmentProcessor> makeFragmentProcessorForImageFilter(
+                                                            sk_sp<GrFragmentProcessor> dst) const;
 
     
 
 
 
-    virtual GrXPFactory* asXPFactory() const;
+    virtual sk_sp<GrXPFactory> asXPFactory() const;
 #endif
 
     SK_TO_STRING_PUREVIRT()
@@ -248,27 +281,28 @@ public:
         return GetD32Proc(xfer.get(), flags);
     }
 
-    enum D64Flags {
-        kSrcIsOpaque_D64Flag  = 1 << 0,
-        kSrcIsSingle_D64Flag  = 1 << 1,
-        kDstIsFloat16_D64Flag = 1 << 2, 
+    enum F16Flags {
+        kSrcIsOpaque_F16Flag  = 1 << 0,
+        kSrcIsSingle_F16Flag  = 1 << 1,
     };
-    typedef void (*D64Proc)(const SkXfermode*, uint64_t dst[], const SkPM4f src[], int count,
+    typedef void (*F16Proc)(const SkXfermode*, uint64_t dst[], const SkPM4f src[], int count,
                             const SkAlpha coverage[]);
-    static D64Proc GetD64Proc(SkXfermode*, uint32_t flags);
-    static D64Proc GetD64Proc(const sk_sp<SkXfermode>& xfer, uint32_t flags) {
-        return GetD64Proc(xfer.get(), flags);
+    static F16Proc GetF16Proc(SkXfermode*, uint32_t flags);
+    static F16Proc GetF16Proc(const sk_sp<SkXfermode>& xfer, uint32_t flags) {
+        return GetF16Proc(xfer.get(), flags);
     }
 
     enum LCDFlags {
         kSrcIsOpaque_LCDFlag    = 1 << 0,   
         kSrcIsSingle_LCDFlag    = 1 << 1,   
-        kDstIsLinearInt_LCDFlag = 1 << 2,   
+        kDstIsSRGB_LCDFlag      = 1 << 2,   
     };
     typedef void (*LCD32Proc)(uint32_t* dst, const SkPM4f* src, int count, const uint16_t lcd[]);
-    typedef void (*LCD64Proc)(uint64_t* dst, const SkPM4f* src, int count, const uint16_t lcd[]);
+    typedef void (*LCDF16Proc)(uint64_t* dst, const SkPM4f* src, int count, const uint16_t lcd[]);
     static LCD32Proc GetLCD32Proc(uint32_t flags);
-    static LCD64Proc GetLCD64Proc(uint32_t) { return nullptr; }
+    static LCDF16Proc GetLCDF16Proc(uint32_t) { return nullptr; }
+
+    virtual bool isArithmetic(SkArithmeticParams*) const { return false; }
 
 protected:
     SkXfermode() {}
@@ -283,7 +317,8 @@ protected:
     virtual SkPMColor xferColor(SkPMColor src, SkPMColor dst) const;
 
     virtual D32Proc onGetD32Proc(uint32_t flags) const;
-    virtual D64Proc onGetD64Proc(uint32_t flags) const;
+    virtual F16Proc onGetF16Proc(uint32_t flags) const;
+    virtual bool onAppendStages(SkRasterPipeline*) const;
 
 private:
     enum {

@@ -16,6 +16,7 @@
 #include "SkImageInfo.h"
 
 class GrCaps;
+class GrColorSpaceXform;
 class GrContext;
 class GrTexture;
 class GrTextureParams;
@@ -40,6 +41,9 @@ static inline GrColor SkColorToUnpremulGrColor(SkColor c) {
     unsigned a = SkColorGetA(c);
     return GrColorPackRGBA(r, g, b, a);
 }
+
+GrColor4f SkColorToPremulGrColor4f(SkColor c, bool gammaCorrect, GrColorSpaceXform* gamutXform);
+GrColor4f SkColorToUnpremulGrColor4f(SkColor c, bool gammaCorrect, GrColorSpaceXform* gamutXform);
 
 static inline GrColor SkColorToOpaqueGrColor(SkColor c) {
     unsigned r = SkColorGetR(c);
@@ -68,26 +72,23 @@ static inline GrColor SkPMColorToGrColor(SkPMColor c) {
 
 
 
-GrTexture* GrRefCachedBitmapTexture(GrContext*, const SkBitmap&, const GrTextureParams&);
+GrTexture* GrRefCachedBitmapTexture(GrContext*, const SkBitmap&, const GrTextureParams&,
+                                    SkSourceGammaTreatment);
+
+sk_sp<GrTexture> GrMakeCachedBitmapTexture(GrContext*, const SkBitmap&, const GrTextureParams&,
+                                           SkSourceGammaTreatment);
 
 
-GrPixelConfig SkImageInfo2GrPixelConfig(SkColorType, SkAlphaType, SkColorProfileType, const GrCaps&);
+GrPixelConfig SkImageInfo2GrPixelConfig(SkColorType, SkAlphaType, const SkColorSpace*,
+                                        const GrCaps&);
 
 static inline GrPixelConfig SkImageInfo2GrPixelConfig(const SkImageInfo& info, const GrCaps& caps) {
-    return SkImageInfo2GrPixelConfig(info.colorType(), info.alphaType(), info.profileType(), caps);
+    return SkImageInfo2GrPixelConfig(info.colorType(), info.alphaType(), info.colorSpace(), caps);
 }
 
 GrTextureParams::FilterMode GrSkFilterQualityToGrFilterMode(SkFilterQuality paintFilterQuality,
                                                             const SkMatrix& viewM,
                                                             const SkMatrix& localM,
                                                             bool* doBicubic);
-
-
-
-SkImageInfo GrMakeInfoFromTexture(GrTexture* tex, int w, int h, bool isOpaque);
-
-
-SK_API void GrWrapTextureInBitmap(GrTexture* src, int w, int h, bool isOpaque,
-                                  SkBitmap* dst);
 
 #endif

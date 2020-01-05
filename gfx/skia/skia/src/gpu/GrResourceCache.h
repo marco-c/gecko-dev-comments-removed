@@ -11,6 +11,7 @@
 #include "GrGpuResource.h"
 #include "GrGpuResourceCacheAccess.h"
 #include "GrGpuResourcePriv.h"
+#include "GrResourceCache.h"
 #include "GrResourceKey.h"
 #include "SkMessageBus.h"
 #include "SkRefCnt.h"
@@ -40,12 +41,6 @@ class SkTraceMemoryDump;
 
 
 
-
-
-
-
-
-
 class GrResourceCache {
 public:
     GrResourceCache(const GrCaps* caps);
@@ -57,9 +52,10 @@ public:
     static const size_t kDefaultMaxSize             = 96 * (1 << 20);
     
     
-    
-    
-    static const int    kDefaultMaxUnusedFlushes    = 64;
+    static const int    kDefaultMaxUnusedFlushes =
+            1  * 
+            60 * 
+            30;  
 
     
     class ResourceAccess;
@@ -165,21 +161,14 @@ public:
 
     
 
+    bool requestsFlush() const { return fRequestFlush; }
 
-
-    typedef void (*PFOverBudgetCB)(void* data);
-
-    
-
-
-
-
-    void setOverBudgetCallback(PFOverBudgetCB overBudgetCB, void* data) {
-        fOverBudgetCB = overBudgetCB;
-        fOverBudgetData = data;
-    }
-
-    void notifyFlushOccurred();
+    enum FlushType {
+        kExternal,
+        kImmediateMode,
+        kCacheRequested,
+    };
+    void notifyFlushOccurred(FlushType);
 
 #if GR_CACHE_STATS
     struct Stats {
@@ -188,9 +177,7 @@ public:
         int fNumNonPurgeable;
 
         int fScratch;
-        int fExternal;
-        int fBorrowed;
-        int fAdopted;
+        int fWrapped;
         size_t fUnbudgetedSize;
 
         Stats() { this->reset(); }
@@ -200,9 +187,7 @@ public:
             fNumPurgeable = 0;
             fNumNonPurgeable = 0;
             fScratch = 0;
-            fExternal = 0;
-            fBorrowed = 0;
-            fAdopted = 0;
+            fWrapped = 0;
             fUnbudgetedSize = 0;
         }
 
@@ -210,14 +195,8 @@ public:
             if (resource->cacheAccess().isScratch()) {
                 ++fScratch;
             }
-            if (resource->resourcePriv().isExternal()) {
-                ++fExternal;
-            }
-            if (resource->cacheAccess().isBorrowed()) {
-                ++fBorrowed;
-            }
-            if (resource->cacheAccess().isAdopted()) {
-                ++fAdopted;
+            if (resource->resourcePriv().refsWrappedObjects()) {
+                ++fWrapped;
             }
             if (SkBudgeted::kNo  == resource->resourcePriv().isBudgeted()) {
                 fUnbudgetedSize += resource->gpuMemorySize();
@@ -253,7 +232,6 @@ private:
     void refAndMakeResourceMRU(GrGpuResource*);
     
 
-    void resetFlushTimestamps();
     void processInvalidUniqueKeys(const SkTArray<GrUniqueKeyInvalidatedMessage>&);
     void addToNonpurgeableArray(GrGpuResource*);
     void removeFromNonpurgeableArray(GrGpuResource*);
@@ -336,13 +314,8 @@ private:
     int                                 fBudgetedCount;
     size_t                              fBudgetedBytes;
 
-    PFOverBudgetCB                      fOverBudgetCB;
-    void*                               fOverBudgetData;
-
-    
-    
-    uint32_t*                           fFlushTimestamps;
-    int                                 fLastFlushTimestampIndex;
+    bool                                fRequestFlush;
+    uint32_t                            fExternalFlushCnt;
 
     InvalidUniqueKeyInbox               fInvalidUniqueKeyInbox;
 

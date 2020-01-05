@@ -209,6 +209,10 @@ void GrTextureStripAtlas::lockTexture() {
         if (!fTexture) {
             return;
         }
+
+        
+        
+        fDesc.fContext->flushSurfaceIO(fTexture);
         fDesc.fContext->textureProvider()->assignUniqueKeyToTexture(key, fTexture);
         
         this->initLRU();

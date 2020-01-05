@@ -8,79 +8,76 @@
 #ifndef SkSemaphore_DEFINED
 #define SkSemaphore_DEFINED
 
+#include "../private/SkOnce.h"
 #include "SkTypes.h"
-#include "../private/SkAtomics.h"
-#include "../private/SkOncePtr.h"
+#include <atomic>
 
-struct SkBaseSemaphore {
-
-    
-    
-    void signal() {
-        
-        
-        
-        if (sk_atomic_fetch_add(&fCount, 1, sk_memory_order_release) < 0) {
-           this->osSignal(1);
-        }
-    }
+class SkBaseSemaphore {
+public:
+    constexpr SkBaseSemaphore(int count = 0)
+        : fCount(count), fOSSemaphore(nullptr) {}
 
     
     
-    void signal(int N);
+    void signal(int n = 1);
 
     
     
-    void wait() {
-        
-        
-        if (sk_atomic_fetch_sub(&fCount, 1, sk_memory_order_acquire) <= 0) {
-            this->osWait();
-        }
-    }
+    void wait();
 
+    
+    void cleanup();
+
+private:
+    
+    
+    
+    
+    
+    
+    
+    
+    
     struct OSSemaphore;
 
     void osSignal(int n);
     void osWait();
-    void deleteSemaphore();
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    int                        fCount;
-    SkBaseOncePtr<OSSemaphore> fOSSemaphore;
+    std::atomic<int> fCount;
+    SkOnce           fOSSemaphoreOnce;
+    OSSemaphore*     fOSSemaphore;
 };
 
-
-
-
-
-
-
-
-
-
-
-class SkSemaphore : SkNoncopyable {
+class SkSemaphore : public SkBaseSemaphore {
 public:
-    
-    
-    SkSemaphore();
-    ~SkSemaphore();
-
-    void wait();
-
-    void signal(int n = 1);
-
-private:
-    SkBaseSemaphore fBaseSemaphore;
+    using SkBaseSemaphore::SkBaseSemaphore;
+    ~SkSemaphore() { this->cleanup(); }
 };
+
+inline void SkBaseSemaphore::signal(int n) {
+    int prev = fCount.fetch_add(n, std::memory_order_release);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    int toSignal = SkTMin(-prev, n);
+    if (toSignal > 0) {
+        this->osSignal(toSignal);
+    }
+}
+
+inline void SkBaseSemaphore::wait() {
+    
+    
+    if (fCount.fetch_sub(1, std::memory_order_acquire) <= 0) {
+        this->osWait();
+    }
+}
 
 #endif

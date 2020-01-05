@@ -8,12 +8,12 @@
 #include "SkBigPicture.h"
 #include "SkData.h"
 #include "SkDrawable.h"
-#include "SkLayerInfo.h"
 #include "SkPictureRecorder.h"
 #include "SkPictureUtils.h"
 #include "SkRecord.h"
 #include "SkRecordDraw.h"
 #include "SkRecordOpts.h"
+#include "SkRecordedDrawable.h"
 #include "SkRecorder.h"
 #include "SkTypes.h"
 
@@ -50,21 +50,24 @@ SkCanvas* SkPictureRecorder::getRecordingCanvas() {
     return fActivelyRecording ? fRecorder.get() : nullptr;
 }
 
-sk_sp<SkPicture> SkPictureRecorder::finishRecordingAsPicture() {
+sk_sp<SkPicture> SkPictureRecorder::finishRecordingAsPicture(uint32_t finishFlags) {
     fActivelyRecording = false;
     fRecorder->restoreToCount(1);  
 
     if (fRecord->count() == 0) {
+        if (finishFlags & kReturnNullForEmpty_FinishFlag) {
+            return nullptr;
+        }
         return fMiniRecorder.detachAsPicture(fCullRect);
     }
 
     
     SkRecordOptimize(fRecord);
 
-    SkAutoTUnref<SkLayerInfo> saveLayerData;
-
-    if (fBBH && (fFlags & kComputeSaveLayerInfo_RecordFlag)) {
-        saveLayerData.reset(new SkLayerInfo);
+    if (fRecord->count() == 0) {
+        if (finishFlags & kReturnNullForEmpty_FinishFlag) {
+            return nullptr;
+        }
     }
 
     SkDrawableList* drawableList = fRecorder->getDrawableList();
@@ -73,11 +76,7 @@ sk_sp<SkPicture> SkPictureRecorder::finishRecordingAsPicture() {
 
     if (fBBH.get()) {
         SkAutoTMalloc<SkRect> bounds(fRecord->count());
-        if (saveLayerData) {
-            SkRecordComputeLayers(fCullRect, *fRecord, bounds, pictList, saveLayerData);
-        } else {
-            SkRecordFillBounds(fCullRect, *fRecord, bounds);
-        }
+        SkRecordFillBounds(fCullRect, *fRecord, bounds);
         fBBH->insert(bounds, fRecord->count());
 
         
@@ -93,12 +92,13 @@ sk_sp<SkPicture> SkPictureRecorder::finishRecordingAsPicture() {
         subPictureBytes += SkPictureUtils::ApproximateBytesUsed(pictList->begin()[i]);
     }
     return sk_make_sp<SkBigPicture>(fCullRect, fRecord.release(), pictList, fBBH.release(),
-                            saveLayerData.release(), subPictureBytes);
+                                    subPictureBytes);
 }
 
-sk_sp<SkPicture> SkPictureRecorder::finishRecordingAsPictureWithCull(const SkRect& cullRect) {
+sk_sp<SkPicture> SkPictureRecorder::finishRecordingAsPictureWithCull(const SkRect& cullRect,
+                                                                     uint32_t finishFlags) {
     fCullRect = cullRect;
-    return this->finishRecordingAsPicture();
+    return this->finishRecordingAsPicture(finishFlags);
 }
 
 
@@ -117,73 +117,18 @@ void SkPictureRecorder::partialReplay(SkCanvas* canvas) const {
     SkRecordDraw(*fRecord, canvas, nullptr, drawables, drawableCount, nullptr, nullptr);
 }
 
-
-
-class SkRecordedDrawable : public SkDrawable {
-    SkAutoTUnref<SkRecord>          fRecord;
-    SkAutoTUnref<SkBBoxHierarchy>   fBBH;
-    SkAutoTDelete<SkDrawableList>   fDrawableList;
-    const SkRect                    fBounds;
-    const bool                      fDoSaveLayerInfo;
-
-public:
-    SkRecordedDrawable(SkRecord* record, SkBBoxHierarchy* bbh, SkDrawableList* drawableList,
-                       const SkRect& bounds, bool doSaveLayerInfo)
-        : fRecord(SkRef(record))
-        , fBBH(SkSafeRef(bbh))
-        , fDrawableList(drawableList)   
-        , fBounds(bounds)
-        , fDoSaveLayerInfo(doSaveLayerInfo)
-    {}
-
-protected:
-    SkRect onGetBounds() override { return fBounds; }
-
-    void onDraw(SkCanvas* canvas) override {
-        SkDrawable* const* drawables = nullptr;
-        int drawableCount = 0;
-        if (fDrawableList) {
-            drawables = fDrawableList->begin();
-            drawableCount = fDrawableList->count();
-        }
-        SkRecordDraw(*fRecord, canvas, nullptr, drawables, drawableCount, fBBH, nullptr);
-    }
-
-    SkPicture* onNewPictureSnapshot() override {
-        SkBigPicture::SnapshotArray* pictList = nullptr;
-        if (fDrawableList) {
-            
-            
-            pictList = fDrawableList->newDrawableSnapshot();
-        }
-
-        SkAutoTUnref<SkLayerInfo> saveLayerData;
-        if (fBBH && fDoSaveLayerInfo) {
-            
-            SkAutoTMalloc<SkRect> scratchBounds(fRecord->count());
-            saveLayerData.reset(new SkLayerInfo);
-
-            SkRecordComputeLayers(fBounds, *fRecord, scratchBounds, pictList, saveLayerData);
-        }
-
-        size_t subPictureBytes = 0;
-        for (int i = 0; pictList && i < pictList->count(); i++) {
-            subPictureBytes += SkPictureUtils::ApproximateBytesUsed(pictList->begin()[i]);
-        }
-        
-        
-        return new SkBigPicture(fBounds, SkRef(fRecord.get()), pictList, SkSafeRef(fBBH.get()),
-                                saveLayerData.release(), subPictureBytes);
-    }
-};
-
-sk_sp<SkDrawable> SkPictureRecorder::finishRecordingAsDrawable() {
+sk_sp<SkDrawable> SkPictureRecorder::finishRecordingAsDrawable(uint32_t finishFlags) {
     fActivelyRecording = false;
     fRecorder->flushMiniRecorder();
     fRecorder->restoreToCount(1);  
 
-    
     SkRecordOptimize(fRecord);
+
+    if (fRecord->count() == 0) {
+        if (finishFlags & kReturnNullForEmpty_FinishFlag) {
+            return nullptr;
+        }
+    }
 
     if (fBBH.get()) {
         SkAutoTMalloc<SkRect> bounds(fRecord->count());
@@ -192,8 +137,7 @@ sk_sp<SkDrawable> SkPictureRecorder::finishRecordingAsDrawable() {
     }
 
     sk_sp<SkDrawable> drawable =
-           sk_make_sp<SkRecordedDrawable>(fRecord, fBBH, fRecorder->detachDrawableList(), fCullRect,
-                                   SkToBool(fFlags & kComputeSaveLayerInfo_RecordFlag));
+         sk_make_sp<SkRecordedDrawable>(fRecord, fBBH, fRecorder->detachDrawableList(), fCullRect);
 
     
     fRecord.reset(nullptr);

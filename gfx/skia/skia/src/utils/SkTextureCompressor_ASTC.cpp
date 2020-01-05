@@ -10,7 +10,7 @@
 
 #include "SkBlitter.h"
 #include "SkEndian.h"
-#include "SkMath.h"
+#include "SkMathPriv.h"
 
 
 

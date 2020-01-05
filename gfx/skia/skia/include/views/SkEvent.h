@@ -12,6 +12,8 @@
 #include "SkMetaData.h"
 #include "SkString.h"
 
+#include "../private/SkLeanWindows.h"
+
 
 
 

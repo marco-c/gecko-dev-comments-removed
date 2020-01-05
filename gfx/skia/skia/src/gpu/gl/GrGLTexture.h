@@ -16,7 +16,6 @@
 class GrGLGpu;
 
 class GrGLTexture : public GrTexture {
-
 public:
     struct TexParams {
         GrGLenum fMinFilter;
@@ -31,11 +30,11 @@ public:
 
     struct IDDesc {
         GrGLTextureInfo             fInfo;
-        GrGpuResource::LifeCycle    fLifeCycle;
+        GrBackendObjectOwnership    fOwnership;
     };
-
-    GrGLTexture(GrGLGpu*, const GrSurfaceDesc&, const IDDesc&);
-    GrGLTexture(GrGLGpu*, const GrSurfaceDesc&, const IDDesc&, bool wasMipMapDataProvided);
+    GrGLTexture(GrGLGpu*, SkBudgeted, const GrSurfaceDesc&, const IDDesc&);
+    GrGLTexture(GrGLGpu*, SkBudgeted, const GrSurfaceDesc&, const IDDesc&,
+                bool wasMipMapDataProvided);
 
     GrBackendObject getTextureHandle() const override;
 
@@ -57,12 +56,14 @@ public:
 
     GrGLenum target() const { return fInfo.fTarget; }
 
+    static GrGLTexture* CreateWrapped(GrGLGpu*, const GrSurfaceDesc&, const IDDesc&);
 protected:
     
+    GrGLTexture(GrGLGpu*, const GrSurfaceDesc&, const IDDesc&);
+
+    enum Wrapped { kWrapped };
     
-    
-    enum Derived { kDerived };
-    GrGLTexture(GrGLGpu*, const GrSurfaceDesc&, const IDDesc&, Derived);
+    GrGLTexture(GrGLGpu*, Wrapped, const GrSurfaceDesc&, const IDDesc&);
 
     void init(const GrSurfaceDesc&, const IDDesc&);
 
@@ -77,10 +78,7 @@ private:
     
     
     GrGLTextureInfo                 fInfo;
-
-    
-    
-    LifeCycle                       fTextureIDLifecycle;
+    GrBackendObjectOwnership        fTextureIDOwnership;
 
     typedef GrTexture INHERITED;
 };

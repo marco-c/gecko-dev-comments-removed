@@ -206,18 +206,16 @@ bool SkGifCodec::ReadHeader(SkStream* stream, SkCodec** codecOut, GifFileType** 
         
         
         
-        
-        
-        
-        SkAlphaType alphaType = (transIndex < 256) ? kPremul_SkAlphaType : kOpaque_SkAlphaType;
+        SkEncodedInfo::Alpha alpha = (transIndex < 256) ? SkEncodedInfo::kBinary_Alpha :
+                SkEncodedInfo::kOpaque_Alpha;
 
         
         
         
-        SkImageInfo imageInfo = SkImageInfo::Make(size.width(), size.height(), kIndex_8_SkColorType,
-                alphaType);
-        *codecOut = new SkGifCodec(imageInfo, streamDeleter.release(), gif.release(), transIndex,
-                frameRect, frameIsSubset);
+        
+        SkEncodedInfo info = SkEncodedInfo::Make(SkEncodedInfo::kPalette_Color, alpha, 8);
+        *codecOut = new SkGifCodec(size.width(), size.height(), info, streamDeleter.release(),
+                gif.release(), transIndex, frameRect, frameIsSubset);
     } else {
         SkASSERT(nullptr != gifOut);
         streamDeleter.release();
@@ -239,9 +237,9 @@ SkCodec* SkGifCodec::NewFromStream(SkStream* stream) {
     return nullptr;
 }
 
-SkGifCodec::SkGifCodec(const SkImageInfo& srcInfo, SkStream* stream, GifFileType* gif,
-        uint32_t transIndex, const SkIRect& frameRect, bool frameIsSubset)
-    : INHERITED(srcInfo, stream)
+SkGifCodec::SkGifCodec(int width, int height, const SkEncodedInfo& info, SkStream* stream,
+        GifFileType* gif, uint32_t transIndex, const SkIRect& frameRect, bool frameIsSubset)
+    : INHERITED(width, height, info, stream)
     , fGif(gif)
     , fSrcBuffer(new uint8_t[this->getInfo().width()])
     , fFrameRect(frameRect)
@@ -412,8 +410,9 @@ void SkGifCodec::initializeColorTable(const SkImageInfo& dstInfo, SkPMColor* inp
         
         SkASSERT(colorCount == (unsigned) (1 << (colorMap->BitsPerPixel)));
         SkASSERT(colorCount <= 256);
+        PackColorProc proc = choose_pack_color_proc(false, dstInfo.colorType());
         for (uint32_t i = 0; i < colorCount; i++) {
-            colorPtr[i] = SkPackARGB32(0xFF, colorMap->Colors[i].Red,
+            colorPtr[i] = proc(0xFF, colorMap->Colors[i].Red,
                     colorMap->Colors[i].Green, colorMap->Colors[i].Blue);
         }
     }
@@ -451,9 +450,8 @@ void SkGifCodec::initializeColorTable(const SkImageInfo& dstInfo, SkPMColor* inp
 SkCodec::Result SkGifCodec::prepareToDecode(const SkImageInfo& dstInfo, SkPMColor* inputColorPtr,
         int* inputColorCount, const Options& opts) {
     
-    if (!conversion_possible(dstInfo, this->getInfo())) {
-        return gif_error("Cannot convert input type to output type.\n",
-                kInvalidConversion);
+    if (!conversion_possible_ignore_color_space(dstInfo, this->getInfo())) {
+        return gif_error("Cannot convert input type to output type.\n", kInvalidConversion);
     }
 
     
@@ -466,7 +464,7 @@ SkCodec::Result SkGifCodec::prepareToDecode(const SkImageInfo& dstInfo, SkPMColo
 void SkGifCodec::initializeSwizzler(const SkImageInfo& dstInfo, const Options& opts) {
     const SkPMColor* colorPtr = get_color_ptr(fColorTable.get());
     const SkIRect* frameRect = fFrameIsSubset ? &fFrameRect : nullptr;
-    fSwizzler.reset(SkSwizzler::CreateSwizzler(SkSwizzler::kIndex, colorPtr, dstInfo, opts,
+    fSwizzler.reset(SkSwizzler::CreateSwizzler(this->getEncodedInfo(), colorPtr, dstInfo, opts,
             frameRect));
     SkASSERT(fSwizzler);
 }
@@ -496,7 +494,7 @@ SkCodec::Result SkGifCodec::onGetPixels(const SkImageInfo& dstInfo,
     
     if (fFrameIsSubset) {
         
-        SkSampler::Fill(dstInfo, dst, dstRowBytes, this->getFillValue(dstInfo.colorType()),
+        SkSampler::Fill(dstInfo, dst, dstRowBytes, this->getFillValue(dstInfo),
                 opts.fZeroInitialized);
     }
 
@@ -514,14 +512,15 @@ SkCodec::Result SkGifCodec::onGetPixels(const SkImageInfo& dstInfo,
 
 
 
-uint32_t SkGifCodec::onGetFillValue(SkColorType colorType) const {
+uint64_t SkGifCodec::onGetFillValue(const SkImageInfo& dstInfo) const {
     const SkPMColor* colorPtr = get_color_ptr(fColorTable.get());
-    return get_color_table_fill_value(colorType, colorPtr, fFillIndex);
+    return get_color_table_fill_value(dstInfo.colorType(), dstInfo.alphaType(), colorPtr,
+                                      fFillIndex, nullptr);
 }
 
 SkCodec::Result SkGifCodec::onStartScanlineDecode(const SkImageInfo& dstInfo,
         const SkCodec::Options& opts, SkPMColor inputColorPtr[], int* inputColorCount) {
-    return this->prepareToDecode(dstInfo, inputColorPtr, inputColorCount, this->options());
+    return this->prepareToDecode(dstInfo, inputColorPtr, inputColorCount, opts);
 }
 
 void SkGifCodec::handleScanlineFrame(int count, int* rowsBeforeFrame, int* rowsInFrame) {
@@ -557,7 +556,7 @@ int SkGifCodec::onGetScanlines(void* dst, int count, size_t rowBytes) {
     if (fFrameIsSubset) {
         
         SkImageInfo fillInfo = this->dstInfo().makeWH(this->dstInfo().width(), count);
-        uint32_t fillValue = this->onGetFillValue(this->dstInfo().colorType());
+        uint64_t fillValue = this->onGetFillValue(this->dstInfo());
         fSwizzler->fill(fillInfo, dst, rowBytes, fillValue, this->options().fZeroInitialized);
 
         

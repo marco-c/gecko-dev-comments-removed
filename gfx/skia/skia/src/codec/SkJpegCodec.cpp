@@ -19,6 +19,11 @@
 #include <stdio.h>
 #include "SkJpegUtility.h"
 
+
+#if defined(__GNUC__) && !defined(__clang__)
+    #pragma GCC diagnostic ignored "-Wclobbered"
+#endif
+
 extern "C" {
     #include "jerror.h"
     #include "jpeglib.h"
@@ -120,7 +125,7 @@ static bool is_icc_marker(jpeg_marker_struct* marker) {
 
 
 
-static sk_sp<SkColorSpace> get_icc_profile(jpeg_decompress_struct* dinfo) {
+static sk_sp<SkData> get_icc_profile(jpeg_decompress_struct* dinfo) {
     
     jpeg_marker_struct* markerSequence[256];
     memset(markerSequence, 0, sizeof(markerSequence));
@@ -165,8 +170,8 @@ static sk_sp<SkColorSpace> get_icc_profile(jpeg_decompress_struct* dinfo) {
     }
 
     
-    SkAutoMalloc iccData(totalBytes);
-    void* dst = iccData.get();
+    sk_sp<SkData> iccData = SkData::MakeUninitialized(totalBytes);
+    void* dst = iccData->writable_data();
     for (uint32_t i = 1; i <= numMarkers; i++) {
         jpeg_marker_struct* marker = markerSequence[i];
         if (!marker) {
@@ -180,7 +185,7 @@ static sk_sp<SkColorSpace> get_icc_profile(jpeg_decompress_struct* dinfo) {
         dst = SkTAddOffset<void>(dst, bytes);
     }
 
-    return SkColorSpace::NewICC(iccData.get(), totalBytes);
+    return iccData;
 }
 
 bool SkJpegCodec::ReadHeader(SkStream* stream, SkCodec** codecOut,
@@ -191,7 +196,7 @@ bool SkJpegCodec::ReadHeader(SkStream* stream, SkCodec** codecOut,
 
     
     if (setjmp(decoderMgr->getJmpBuf())) {
-        return decoderMgr->returnFalse("setjmp");
+        return decoderMgr->returnFalse("ReadHeader");
     }
 
     
@@ -207,22 +212,37 @@ bool SkJpegCodec::ReadHeader(SkStream* stream, SkCodec** codecOut,
 
     
     if (JPEG_HEADER_OK != jpeg_read_header(decoderMgr->dinfo(), true)) {
-        return decoderMgr->returnFalse("read_header");
+        return decoderMgr->returnFalse("ReadHeader");
     }
 
     if (codecOut) {
         
-        const SkColorType colorType = decoderMgr->getColorType();
+        SkEncodedInfo::Color color;
+        if (!decoderMgr->getEncodedColor(&color)) {
+            return false;
+        }
 
         
-        const SkImageInfo& imageInfo = SkImageInfo::Make(decoderMgr->dinfo()->image_width,
-                decoderMgr->dinfo()->image_height, colorType, kOpaque_SkAlphaType);
+        SkEncodedInfo info = SkEncodedInfo::Make(color, SkEncodedInfo::kOpaque_Alpha, 8);
 
         Origin orientation = get_exif_orientation(decoderMgr->dinfo());
-        sk_sp<SkColorSpace> colorSpace = get_icc_profile(decoderMgr->dinfo());
+        sk_sp<SkData> iccData = get_icc_profile(decoderMgr->dinfo());
+        sk_sp<SkColorSpace> colorSpace = nullptr;
+        if (iccData) {
+            colorSpace = SkColorSpace::NewICC(iccData->data(), iccData->size());
+            if (!colorSpace) {
+                SkCodecPrintf("Could not create SkColorSpace from ICC data.\n");
+            }
+        }
+        if (!colorSpace) {
+            
+            colorSpace = SkColorSpace::NewNamed(SkColorSpace::kSRGB_Named);
+        }
 
-        *codecOut = new SkJpegCodec(imageInfo, stream, decoderMgr.release(), colorSpace,
-                orientation);
+        const int width = decoderMgr->dinfo()->image_width;
+        const int height = decoderMgr->dinfo()->image_height;
+        *codecOut = new SkJpegCodec(width, height, info, stream, decoderMgr.release(),
+                std::move(colorSpace), orientation, std::move(iccData));
     } else {
         SkASSERT(nullptr != decoderMgrOut);
         *decoderMgrOut = decoderMgr.release();
@@ -242,24 +262,24 @@ SkCodec* SkJpegCodec::NewFromStream(SkStream* stream) {
     return nullptr;
 }
 
-SkJpegCodec::SkJpegCodec(const SkImageInfo& srcInfo, SkStream* stream,
-        JpegDecoderMgr* decoderMgr, sk_sp<SkColorSpace> colorSpace, Origin origin)
-    : INHERITED(srcInfo, stream, colorSpace, origin)
+SkJpegCodec::SkJpegCodec(int width, int height, const SkEncodedInfo& info, SkStream* stream,
+        JpegDecoderMgr* decoderMgr, sk_sp<SkColorSpace> colorSpace, Origin origin,
+        sk_sp<SkData> iccData)
+    : INHERITED(width, height, info, stream, std::move(colorSpace), origin)
     , fDecoderMgr(decoderMgr)
     , fReadyState(decoderMgr->dinfo()->global_state)
+    , fSwizzleSrcRow(nullptr)
+    , fColorXformSrcRow(nullptr)
     , fSwizzlerSubset(SkIRect::MakeEmpty())
+    , fICCData(std::move(iccData))
 {}
 
 
 
 
 static size_t get_row_bytes(const j_decompress_ptr dinfo) {
-#ifdef TURBO_HAS_565
     const size_t colorBytes = (dinfo->out_color_space == JCS_RGB565) ? 2 :
             dinfo->out_color_components;
-#else
-    const size_t colorBytes = dinfo->out_color_components;
-#endif
     return dinfo->output_width * colorBytes;
 
 }
@@ -318,10 +338,17 @@ SkISize SkJpegCodec::onGetScaledDimensions(float desiredScale) const {
 bool SkJpegCodec::onRewind() {
     JpegDecoderMgr* decoderMgr = nullptr;
     if (!ReadHeader(this->stream(), nullptr, &decoderMgr)) {
-        return fDecoderMgr->returnFalse("could not rewind");
+        return fDecoderMgr->returnFalse("onRewind");
     }
     SkASSERT(nullptr != decoderMgr);
     fDecoderMgr.reset(decoderMgr);
+
+    fSwizzler.reset(nullptr);
+    fSwizzleSrcRow = nullptr;
+    fColorXformSrcRow = nullptr;
+    fStorage.reset();
+    fColorXform.reset(nullptr);
+
     return true;
 }
 
@@ -330,58 +357,70 @@ bool SkJpegCodec::onRewind() {
 
 
 
-bool SkJpegCodec::setOutputColorSpace(const SkImageInfo& dst) {
-    if (kUnknown_SkAlphaType == dst.alphaType()) {
+bool SkJpegCodec::setOutputColorSpace(const SkImageInfo& dstInfo) {
+    if (kUnknown_SkAlphaType == dstInfo.alphaType()) {
         return false;
     }
 
-    if (kOpaque_SkAlphaType != dst.alphaType()) {
+    if (kOpaque_SkAlphaType != dstInfo.alphaType()) {
         SkCodecPrintf("Warning: an opaque image should be decoded as opaque "
                       "- it is being decoded as non-opaque, which will draw slower\n");
     }
 
     
-    J_COLOR_SPACE colorSpace = fDecoderMgr->dinfo()->jpeg_color_space;
-    bool isCMYK = JCS_CMYK == colorSpace || JCS_YCCK == colorSpace;
+    
+    J_COLOR_SPACE encodedColorType = fDecoderMgr->dinfo()->jpeg_color_space;
+    bool isCMYK = (JCS_CMYK == encodedColorType || JCS_YCCK == encodedColorType);
 
     
-    switch (dst.colorType()) {
-        case kN32_SkColorType:
+    switch (dstInfo.colorType()) {
+        case kRGBA_8888_SkColorType:
             if (isCMYK) {
                 fDecoderMgr->dinfo()->out_color_space = JCS_CMYK;
             } else {
-#ifdef LIBJPEG_TURBO_VERSION
-            
-            
-    #ifdef SK_PMCOLOR_IS_RGBA
-            fDecoderMgr->dinfo()->out_color_space = JCS_EXT_RGBA;
-    #else
-            fDecoderMgr->dinfo()->out_color_space = JCS_EXT_BGRA;
-    #endif
-#else
-            fDecoderMgr->dinfo()->out_color_space = JCS_RGB;
-#endif
+                fDecoderMgr->dinfo()->out_color_space = JCS_EXT_RGBA;
+            }
+            return true;
+        case kBGRA_8888_SkColorType:
+            if (isCMYK) {
+                fDecoderMgr->dinfo()->out_color_space = JCS_CMYK;
+            } else if (fColorXform) {
+                
+                
+                fDecoderMgr->dinfo()->out_color_space = JCS_EXT_RGBA;
+            } else {
+                fDecoderMgr->dinfo()->out_color_space = JCS_EXT_BGRA;
             }
             return true;
         case kRGB_565_SkColorType:
+            if (fColorXform) {
+                return false;
+            }
+
             if (isCMYK) {
                 fDecoderMgr->dinfo()->out_color_space = JCS_CMYK;
             } else {
-#ifdef TURBO_HAS_565
                 fDecoderMgr->dinfo()->dither_mode = JDITHER_NONE;
                 fDecoderMgr->dinfo()->out_color_space = JCS_RGB565;
-#else
-                fDecoderMgr->dinfo()->out_color_space = JCS_RGB;
-#endif
             }
             return true;
         case kGray_8_SkColorType:
-            if (isCMYK) {
+            if (fColorXform || JCS_GRAYSCALE != encodedColorType) {
                 return false;
+            }
+
+            fDecoderMgr->dinfo()->out_color_space = JCS_GRAYSCALE;
+            return true;
+        case kRGBA_F16_SkColorType:
+            SkASSERT(fColorXform);
+            if (!dstInfo.colorSpace()->gammaIsLinear()) {
+                return false;
+            }
+
+            if (isCMYK) {
+                fDecoderMgr->dinfo()->out_color_space = JCS_CMYK;
             } else {
-                
-                
-                fDecoderMgr->dinfo()->out_color_space = JCS_GRAYSCALE;
+                fDecoderMgr->dinfo()->out_color_space = JCS_EXT_RGBA;
             }
             return true;
         default:
@@ -395,7 +434,7 @@ bool SkJpegCodec::setOutputColorSpace(const SkImageInfo& dst) {
 
 bool SkJpegCodec::onDimensionsSupported(const SkISize& size) {
     if (setjmp(fDecoderMgr->getJmpBuf())) {
-        return fDecoderMgr->returnFalse("onDimensionsSupported/setjmp");
+        return fDecoderMgr->returnFalse("onDimensionsSupported");
     }
 
     const unsigned int dstWidth = size.width();
@@ -430,6 +469,66 @@ bool SkJpegCodec::onDimensionsSupported(const SkISize& size) {
     return true;
 }
 
+int SkJpegCodec::readRows(const SkImageInfo& dstInfo, void* dst, size_t rowBytes, int count) {
+    
+    if (setjmp(fDecoderMgr->getJmpBuf())) {
+        return 0;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    JSAMPLE* decodeDst = (JSAMPLE*) dst;
+    uint32_t* swizzleDst = (uint32_t*) dst;
+    size_t decodeDstRowBytes = rowBytes;
+    size_t swizzleDstRowBytes = rowBytes;
+    int dstWidth = dstInfo.width();
+    if (fSwizzleSrcRow && fColorXformSrcRow) {
+        decodeDst = (JSAMPLE*) fSwizzleSrcRow;
+        swizzleDst = fColorXformSrcRow;
+        decodeDstRowBytes = 0;
+        swizzleDstRowBytes = 0;
+        dstWidth = fSwizzler->swizzleWidth();
+    } else if (fColorXformSrcRow) {
+        decodeDst = (JSAMPLE*) fColorXformSrcRow;
+        swizzleDst = fColorXformSrcRow;
+        decodeDstRowBytes = 0;
+        swizzleDstRowBytes = 0;
+    } else if (fSwizzleSrcRow) {
+        decodeDst = (JSAMPLE*) fSwizzleSrcRow;
+        decodeDstRowBytes = 0;
+        dstWidth = fSwizzler->swizzleWidth();
+    }
+
+    for (int y = 0; y < count; y++) {
+        uint32_t lines = jpeg_read_scanlines(fDecoderMgr->dinfo(), &decodeDst, 1);
+        size_t srcRowBytes = get_row_bytes(fDecoderMgr->dinfo());
+        sk_msan_mark_initialized(decodeDst, decodeDst + srcRowBytes, "skbug.com/4550");
+        if (0 == lines) {
+            return y;
+        }
+
+        if (fSwizzler) {
+            fSwizzler->swizzle(swizzleDst, decodeDst);
+        }
+
+        if (fColorXform) {
+            fColorXform->apply(dst, swizzleDst, dstWidth, select_xform_format(dstInfo.colorType()),
+                               SkColorSpaceXform::kRGBA_8888_ColorFormat, kOpaque_SkAlphaType);
+            dst = SkTAddOffset<void>(dst, rowBytes);
+        }
+
+        decodeDst = SkTAddOffset<JSAMPLE>(decodeDst, decodeDstRowBytes);
+        swizzleDst = SkTAddOffset<uint32_t>(swizzleDst, swizzleDstRowBytes);
+    }
+
+    return count;
+}
+
 
 
 
@@ -450,12 +549,13 @@ SkCodec::Result SkJpegCodec::onGetPixels(const SkImageInfo& dstInfo,
         return fDecoderMgr->returnFailure("setjmp", kInvalidInput);
     }
 
-    
-    if (!this->setOutputColorSpace(dstInfo)) {
-        return fDecoderMgr->returnFailure("conversion_possible", kInvalidConversion);
-    }
+    this->initializeColorXform(dstInfo);
 
     
+    if (!this->setOutputColorSpace(dstInfo)) {
+        return fDecoderMgr->returnFailure("setOutputColorSpace", kInvalidConversion);
+    }
+
     if (!jpeg_start_decompress(dinfo)) {
         return fDecoderMgr->returnFailure("startDecompress", kInvalidInput);
     }
@@ -465,71 +565,56 @@ SkCodec::Result SkJpegCodec::onGetPixels(const SkImageInfo& dstInfo,
     SkASSERT(1 == dinfo->rec_outbuf_height);
 
     J_COLOR_SPACE colorSpace = dinfo->out_color_space;
-    if (JCS_CMYK == colorSpace || JCS_RGB == colorSpace) {
+    if (JCS_CMYK == colorSpace) {
         this->initializeSwizzler(dstInfo, options);
     }
 
-    
-    uint32_t dstHeight = dstInfo.height();
+    this->allocateStorage(dstInfo);
 
-    JSAMPLE* dstRow;
-    if (fSwizzler) {
-        
-        dstRow = fSrcRow;
-    } else {
-        
-        dstRow = (JSAMPLE*) dst;
-    }
-
-    for (uint32_t y = 0; y < dstHeight; y++) {
-        
-        uint32_t lines = jpeg_read_scanlines(dinfo, &dstRow, 1);
-        sk_msan_mark_initialized(dstRow, dstRow + dstRowBytes, "skbug.com/4550");
-
-        
-        if (lines != 1) {
-            *rowsDecoded = y;
-
-            return fDecoderMgr->returnFailure("Incomplete image data", kIncompleteInput);
-        }
-
-        if (fSwizzler) {
-            
-            fSwizzler->swizzle(dst, dstRow);
-            dst = SkTAddOffset<JSAMPLE>(dst, dstRowBytes);
-        } else {
-            dstRow = SkTAddOffset<JSAMPLE>(dstRow, dstRowBytes);
-        }
+    int rows = this->readRows(dstInfo, dst, dstRowBytes, dstInfo.height());
+    if (rows < dstInfo.height()) {
+        *rowsDecoded = rows;
+        return fDecoderMgr->returnFailure("Incomplete image data", kIncompleteInput);
     }
 
     return kSuccess;
 }
 
-void SkJpegCodec::initializeSwizzler(const SkImageInfo& dstInfo, const Options& options) {
-    SkSwizzler::SrcConfig srcConfig = SkSwizzler::kUnknown;
-    if (JCS_CMYK == fDecoderMgr->dinfo()->out_color_space) {
-        srcConfig = SkSwizzler::kCMYK;
-    } else {
-        
-        
-        switch (dstInfo.colorType()) {
-            case kGray_8_SkColorType:
-                srcConfig = SkSwizzler::kNoOp8;
-                break;
-            case kN32_SkColorType:
-                srcConfig = SkSwizzler::kNoOp32;
-                break;
-            case kRGB_565_SkColorType:
-                srcConfig = SkSwizzler::kNoOp16;
-                break;
-            default:
-                
-                SkASSERT(false);
-        }
+void SkJpegCodec::allocateStorage(const SkImageInfo& dstInfo) {
+    int dstWidth = dstInfo.width();
+
+    size_t swizzleBytes = 0;
+    if (fSwizzler) {
+        swizzleBytes = get_row_bytes(fDecoderMgr->dinfo());
+        dstWidth = fSwizzler->swizzleWidth();
+        SkASSERT(!fColorXform || SkIsAlign4(swizzleBytes));
     }
 
-    if (JCS_RGB == fDecoderMgr->dinfo()->out_color_space) {
-        srcConfig = SkSwizzler::kRGB;
+    size_t xformBytes = 0;
+    if (kRGBA_F16_SkColorType == dstInfo.colorType()) {
+        SkASSERT(fColorXform);
+        xformBytes = dstWidth * sizeof(uint32_t);
+    }
+
+    size_t totalBytes = swizzleBytes + xformBytes;
+    if (totalBytes > 0) {
+        fStorage.reset(totalBytes);
+        fSwizzleSrcRow = (swizzleBytes > 0) ? fStorage.get() : nullptr;
+        fColorXformSrcRow = (xformBytes > 0) ?
+                SkTAddOffset<uint32_t>(fStorage.get(), swizzleBytes) : nullptr;
+    }
+}
+
+void SkJpegCodec::initializeSwizzler(const SkImageInfo& dstInfo, const Options& options) {
+    
+    
+    SkEncodedInfo swizzlerInfo = this->getEncodedInfo();
+    bool preSwizzled = true;
+    if (JCS_CMYK == fDecoderMgr->dinfo()->out_color_space) {
+        preSwizzled = false;
+        swizzlerInfo = SkEncodedInfo::Make(SkEncodedInfo::kInvertedCMYK_Color,
+                                           swizzlerInfo.alpha(),
+                                           swizzlerInfo.bitsPerComponent());
     }
 
     Options swizzlerOptions = options;
@@ -541,19 +626,26 @@ void SkJpegCodec::initializeSwizzler(const SkImageInfo& dstInfo, const Options& 
                 fSwizzlerSubset.width() == options.fSubset->width());
         swizzlerOptions.fSubset = &fSwizzlerSubset;
     }
-    fSwizzler.reset(SkSwizzler::CreateSwizzler(srcConfig, nullptr, dstInfo, swizzlerOptions));
+    fSwizzler.reset(SkSwizzler::CreateSwizzler(swizzlerInfo, nullptr, dstInfo, swizzlerOptions,
+                                               nullptr, preSwizzled));
     SkASSERT(fSwizzler);
-    fStorage.reset(get_row_bytes(fDecoderMgr->dinfo()));
-    fSrcRow = fStorage.get();
+}
+
+void SkJpegCodec::initializeColorXform(const SkImageInfo& dstInfo) {
+    if (needs_color_xform(dstInfo, this->getInfo())) {
+        fColorXform = SkColorSpaceXform::New(this->getInfo().colorSpace(), dstInfo.colorSpace());
+        SkASSERT(fColorXform);
+    }
 }
 
 SkSampler* SkJpegCodec::getSampler(bool createIfNecessary) {
     if (!createIfNecessary || fSwizzler) {
-        SkASSERT(!fSwizzler || (fSrcRow && fStorage.get() == fSrcRow));
+        SkASSERT(!fSwizzler || (fSwizzleSrcRow && fStorage.get() == fSwizzleSrcRow));
         return fSwizzler;
     }
 
     this->initializeSwizzler(this->dstInfo(), this->options());
+    this->allocateStorage(this->dstInfo());
     return fSwizzler;
 }
 
@@ -565,27 +657,18 @@ SkCodec::Result SkJpegCodec::onStartScanlineDecode(const SkImageInfo& dstInfo,
         return kInvalidInput;
     }
 
+    this->initializeColorXform(dstInfo);
+
     
     if (!this->setOutputColorSpace(dstInfo)) {
-        return kInvalidConversion;
+        return fDecoderMgr->returnFailure("setOutputColorSpace", kInvalidConversion);
     }
 
-    
-    fSwizzler.reset(nullptr);
-    fSrcRow = nullptr;
-    fStorage.reset();
-
-    
     if (!jpeg_start_decompress(fDecoderMgr->dinfo())) {
         SkCodecPrintf("start decompress failed\n");
         return kInvalidInput;
     }
 
-    if (options.fSubset) {
-        fSwizzlerSubset = *options.fSubset;
-    }
-
-#ifdef TURBO_HAS_CROP
     if (options.fSubset) {
         uint32_t startX = options.fSubset->x();
         uint32_t width = options.fSubset->width();
@@ -627,76 +710,29 @@ SkCodec::Result SkJpegCodec::onStartScanlineDecode(const SkImageInfo& dstInfo,
     if (!fSwizzler && JCS_CMYK == fDecoderMgr->dinfo()->out_color_space) {
         this->initializeSwizzler(dstInfo, options);
     }
-#else
-    
-    
-    J_COLOR_SPACE colorSpace = fDecoderMgr->dinfo()->out_color_space;
-    if (options.fSubset || JCS_CMYK == colorSpace || JCS_RGB == colorSpace) {
-        this->initializeSwizzler(dstInfo, options);
-    }
-#endif
+
+    this->allocateStorage(dstInfo);
 
     return kSuccess;
 }
 
 int SkJpegCodec::onGetScanlines(void* dst, int count, size_t dstRowBytes) {
-    
-    if (setjmp(fDecoderMgr->getJmpBuf())) {
-        return fDecoderMgr->returnFailure("setjmp", kInvalidInput);
-    }
-    
-    JSAMPLE* dstRow;
-    size_t srcRowBytes = get_row_bytes(fDecoderMgr->dinfo());
-    if (fSwizzler) {
+    int rows = this->readRows(this->dstInfo(), dst, dstRowBytes, count);
+    if (rows < count) {
         
-        dstRow = fSrcRow;
-    } else {
-        
-        SkASSERT(count == 1 || dstRowBytes >= srcRowBytes);
-        dstRow = (JSAMPLE*) dst;
+        fDecoderMgr->dinfo()->output_scanline = this->dstInfo().height();
     }
 
-    for (int y = 0; y < count; y++) {
-        
-        uint32_t rowsDecoded = jpeg_read_scanlines(fDecoderMgr->dinfo(), &dstRow, 1);
-        sk_msan_mark_initialized(dstRow, dstRow + srcRowBytes, "skbug.com/4550");
-        if (rowsDecoded != 1) {
-            fDecoderMgr->dinfo()->output_scanline = this->dstInfo().height();
-            return y;
-        }
-
-        if (fSwizzler) {
-            
-            fSwizzler->swizzle(dst, dstRow);
-            dst = SkTAddOffset<JSAMPLE>(dst, dstRowBytes);
-        } else {
-            dstRow = SkTAddOffset<JSAMPLE>(dstRow, dstRowBytes);
-        }
-    }
-    return count;
+    return rows;
 }
 
 bool SkJpegCodec::onSkipScanlines(int count) {
     
     if (setjmp(fDecoderMgr->getJmpBuf())) {
-        return fDecoderMgr->returnFalse("setjmp");
+        return fDecoderMgr->returnFalse("onSkipScanlines");
     }
 
-#ifdef TURBO_HAS_SKIP
     return (uint32_t) count == jpeg_skip_scanlines(fDecoderMgr->dinfo(), count);
-#else
-    if (!fSrcRow) {
-        fStorage.reset(get_row_bytes(fDecoderMgr->dinfo()));
-        fSrcRow = fStorage.get();
-    }
-
-    for (int y = 0; y < count; y++) {
-        if (1 != jpeg_read_scanlines(fDecoderMgr->dinfo(), &fSrcRow, 1)) {
-            return false;
-        }
-    }
-    return true;
-#endif
 }
 
 static bool is_yuv_supported(jpeg_decompress_struct* dinfo) {

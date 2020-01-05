@@ -47,7 +47,9 @@ void GrGLSLVertexBuilder::transformToNormalizedDeviceSpace(const GrShaderVar& po
     }
     
     
-    this->codeAppend("gl_PointSize = 1.0;");
+    if (this->getProgramBuilder()->desc().header().fHasPointSize) {
+        this->codeAppend("gl_PointSize = 1.0;");
+    }
 }
 
 void GrGLSLVertexBuilder::onFinalize() {

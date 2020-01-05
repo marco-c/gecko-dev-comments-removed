@@ -5,10 +5,10 @@
 
 
 
-#include "SkChecksum.h"
 #include "SkMessageBus.h"
 #include "SkMipMap.h"
 #include "SkMutex.h"
+#include "SkOpts.h"
 #include "SkPixelRef.h"
 #include "SkResourceCache.h"
 #include "SkTraceMemoryDump.h"
@@ -47,8 +47,8 @@ void SkResourceCache::Key::init(void* nameSpace, uint64_t sharedID, size_t dataS
     fSharedID_hi = (uint32_t)(sharedID >> 32);
     fNamespace = nameSpace;
     
-    fHash = SkChecksum::Murmur3(this->as32() + kUnhashedLocal32s,
-                                (fCount32 - kUnhashedLocal32s) << 2);
+    fHash = SkOpts::hash(this->as32() + kUnhashedLocal32s,
+                         (fCount32 - kUnhashedLocal32s) << 2);
 }
 
 #include "SkTDynamicHash.h"
@@ -544,15 +544,6 @@ void SkResourceCache::checkMessages() {
 
 SK_DECLARE_STATIC_MUTEX(gMutex);
 static SkResourceCache* gResourceCache = nullptr;
-static void cleanup_gResourceCache() {
-    
-    
-    
-    
-#if SK_DEVELOPER
-    delete gResourceCache;
-#endif
-}
 
 
 static SkResourceCache* get_cache() {
@@ -564,7 +555,6 @@ static SkResourceCache* get_cache() {
 #else
         gResourceCache = new SkResourceCache(SK_DEFAULT_IMAGE_CACHE_LIMIT);
 #endif
-        atexit(cleanup_gResourceCache);
     }
     return gResourceCache;
 }

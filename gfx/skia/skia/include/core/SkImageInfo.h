@@ -8,6 +8,7 @@
 #ifndef SkImageInfo_DEFINED
 #define SkImageInfo_DEFINED
 
+#include "SkColorSpace.h"
 #include "SkMath.h"
 #include "SkRect.h"
 #include "SkSize.h"
@@ -105,6 +106,25 @@ static int SkColorTypeBytesPerPixel(SkColorType ct) {
     return gSize[ct];
 }
 
+static int SkColorTypeShiftPerPixel(SkColorType ct) {
+    static const uint8_t gShift[] = {
+        0,  
+        0,  
+        1,  
+        1,  
+        2,  
+        2,  
+        0,  
+        0,  
+        3,  
+    };
+    static_assert(SK_ARRAY_COUNT(gShift) == (size_t)(kLastEnum_SkColorType + 1),
+                  "size_mismatch_with_SkColorType_enum");
+    
+    SkASSERT((size_t)ct < SK_ARRAY_COUNT(gShift));
+    return gShift[ct];
+}
+
 static inline size_t SkColorTypeMinRowBytes(SkColorType ct, int width) {
     return width * SkColorTypeBytesPerPixel(ct);
 }
@@ -114,15 +134,10 @@ static inline bool SkColorTypeIsValid(unsigned value) {
 }
 
 static inline size_t SkColorTypeComputeOffset(SkColorType ct, int x, int y, size_t rowBytes) {
-    int shift = 0;
-    switch (SkColorTypeBytesPerPixel(ct)) {
-        case 8: shift = 3; break;
-        case 4: shift = 2; break;
-        case 2: shift = 1; break;
-        case 1: shift = 0; break;
-        default: return 0;
+    if (kUnknown_SkColorType == ct) {
+        return 0;
     }
-    return y * rowBytes + (x << shift);
+    return y * rowBytes + (x << SkColorTypeShiftPerPixel(ct));
 }
 
 
@@ -154,11 +169,9 @@ enum SkYUVColorSpace {
 
 
 
-enum SkColorProfileType {
-    kLinear_SkColorProfileType,
-    kSRGB_SkColorProfileType,
-
-    kLastEnum_SkColorProfileType = kSRGB_SkColorProfileType
+enum class SkSourceGammaTreatment {
+    kRespect,
+    kIgnore,
 };
 
 
@@ -168,61 +181,59 @@ enum SkColorProfileType {
 struct SK_API SkImageInfo {
 public:
     SkImageInfo()
-        : fWidth(0)
+        : fColorSpace(nullptr)
+        , fWidth(0)
         , fHeight(0)
         , fColorType(kUnknown_SkColorType)
         , fAlphaType(kUnknown_SkAlphaType)
-        , fProfileType(kLinear_SkColorProfileType)
     {}
 
     static SkImageInfo Make(int width, int height, SkColorType ct, SkAlphaType at,
-                            SkColorProfileType pt = kLinear_SkColorProfileType) {
-        return SkImageInfo(width, height, ct, at, pt);
+                            sk_sp<SkColorSpace> cs = nullptr) {
+        return SkImageInfo(width, height, ct, at, std::move(cs));
     }
 
     
 
 
     static SkImageInfo MakeN32(int width, int height, SkAlphaType at,
-                               SkColorProfileType pt = kLinear_SkColorProfileType) {
-        return SkImageInfo(width, height, kN32_SkColorType, at, pt);
+                               sk_sp<SkColorSpace> cs = nullptr) {
+        return Make(width, height, kN32_SkColorType, at, cs);
     }
 
     
 
 
-    static SkImageInfo MakeN32Premul(int width, int height,
-                                     SkColorProfileType pt = kLinear_SkColorProfileType) {
-        return SkImageInfo(width, height, kN32_SkColorType, kPremul_SkAlphaType, pt);
-    }
+    static SkImageInfo MakeS32(int width, int height, SkAlphaType at);
 
     
 
 
-    static SkImageInfo MakeN32Premul(const SkISize& size,
-                                     SkColorProfileType pt = kLinear_SkColorProfileType) {
-        return MakeN32Premul(size.width(), size.height(), pt);
+    static SkImageInfo MakeN32Premul(int width, int height, sk_sp<SkColorSpace> cs = nullptr) {
+        return Make(width, height, kN32_SkColorType, kPremul_SkAlphaType, cs);
+    }
+
+    static SkImageInfo MakeN32Premul(const SkISize& size) {
+        return MakeN32Premul(size.width(), size.height());
     }
 
     static SkImageInfo MakeA8(int width, int height) {
-        return SkImageInfo(width, height, kAlpha_8_SkColorType, kPremul_SkAlphaType,
-                           kLinear_SkColorProfileType);
+        return Make(width, height, kAlpha_8_SkColorType, kPremul_SkAlphaType, nullptr);
     }
 
     static SkImageInfo MakeUnknown(int width, int height) {
-        return SkImageInfo(width, height, kUnknown_SkColorType, kUnknown_SkAlphaType,
-                           kLinear_SkColorProfileType);
+        return Make(width, height, kUnknown_SkColorType, kUnknown_SkAlphaType, nullptr);
     }
 
     static SkImageInfo MakeUnknown() {
-        return SkImageInfo();
+        return MakeUnknown(0, 0);
     }
-
+    
     int width() const { return fWidth; }
     int height() const { return fHeight; }
     SkColorType colorType() const { return fColorType; }
     SkAlphaType alphaType() const { return fAlphaType; }
-    SkColorProfileType profileType() const { return fProfileType; }
+    SkColorSpace* colorSpace() const { return fColorSpace.get(); }
 
     bool isEmpty() const { return fWidth <= 0 || fHeight <= 0; }
 
@@ -230,31 +241,36 @@ public:
         return SkAlphaTypeIsOpaque(fAlphaType);
     }
 
-    bool isLinear() const { return kLinear_SkColorProfileType == fProfileType; }
-    bool isSRGB() const { return kSRGB_SkColorProfileType == fProfileType; }
-
     SkISize dimensions() const { return SkISize::Make(fWidth, fHeight); }
     SkIRect bounds() const { return SkIRect::MakeWH(fWidth, fHeight); }
+
+    bool gammaCloseToSRGB() const {
+        return fColorSpace && fColorSpace->gammaCloseToSRGB();
+    }
 
     
 
 
 
     SkImageInfo makeWH(int newWidth, int newHeight) const {
-        return SkImageInfo::Make(newWidth, newHeight, fColorType, fAlphaType, fProfileType);
+        return Make(newWidth, newHeight, fColorType, fAlphaType, fColorSpace);
     }
 
     SkImageInfo makeAlphaType(SkAlphaType newAlphaType) const {
-        return SkImageInfo::Make(fWidth, fHeight, fColorType, newAlphaType, fProfileType);
+        return Make(fWidth, fHeight, fColorType, newAlphaType, fColorSpace);
     }
     
     SkImageInfo makeColorType(SkColorType newColorType) const {
-        return SkImageInfo::Make(fWidth, fHeight, newColorType, fAlphaType, fProfileType);
+        return Make(fWidth, fHeight, newColorType, fAlphaType, fColorSpace);
     }
 
-    int bytesPerPixel() const {
-        return SkColorTypeBytesPerPixel(fColorType);
+    SkImageInfo makeColorSpace(sk_sp<SkColorSpace> cs) const {
+        return Make(fWidth, fHeight, fColorType, fAlphaType, std::move(cs));
     }
+
+    int bytesPerPixel() const { return SkColorTypeBytesPerPixel(fColorType); }
+
+    int shiftPerPixel() const { return SkColorTypeShiftPerPixel(fColorType); }
 
     uint64_t minRowBytes64() const {
         return sk_64_mul(fWidth, this->bytesPerPixel());
@@ -271,10 +287,12 @@ public:
     }
 
     bool operator==(const SkImageInfo& other) const {
-        return 0 == memcmp(this, &other, sizeof(other));
+        return fWidth == other.fWidth && fHeight == other.fHeight &&
+               fColorType == other.fColorType && fAlphaType == other.fAlphaType &&
+               SkColorSpace::Equals(fColorSpace.get(), other.fColorSpace.get());
     }
     bool operator!=(const SkImageInfo& other) const {
-        return 0 != memcmp(this, &other, sizeof(other));
+        return !(*this == other);
     }
 
     void unflatten(SkReadBuffer&);
@@ -300,32 +318,42 @@ public:
         return rowBytes >= rb;
     }
 
+    void reset() {
+        fColorSpace = nullptr;
+        fWidth = 0;
+        fHeight = 0;
+        fColorType = kUnknown_SkColorType;
+        fAlphaType = kUnknown_SkAlphaType;
+    }
+
     SkDEBUGCODE(void validate() const;)
 
 private:
+    sk_sp<SkColorSpace> fColorSpace;
     int                 fWidth;
     int                 fHeight;
     SkColorType         fColorType;
     SkAlphaType         fAlphaType;
-    SkColorProfileType  fProfileType;
 
-    SkImageInfo(int width, int height, SkColorType ct, SkAlphaType at, SkColorProfileType pt)
-        : fWidth(width)
+    SkImageInfo(int width, int height, SkColorType ct, SkAlphaType at, sk_sp<SkColorSpace> cs)
+        : fColorSpace(std::move(cs))
+        , fWidth(width)
         , fHeight(height)
         , fColorType(ct)
         , fAlphaType(at)
-        , fProfileType(pt)
     {}
 };
 
 
 
-static inline bool SkColorAndProfileAreGammaCorrect(SkColorType ct, SkColorProfileType pt) {
-    return kSRGB_SkColorProfileType == pt || kRGBA_F16_SkColorType == ct;
+static inline bool SkColorAndColorSpaceAreGammaCorrect(SkColorType ct, SkColorSpace* cs) {
+    
+    
+    return (cs != nullptr) || kRGBA_F16_SkColorType == ct;
 }
 
 static inline bool SkImageInfoIsGammaCorrect(const SkImageInfo& info) {
-    return SkColorAndProfileAreGammaCorrect(info.colorType(), info.profileType());
+    return SkColorAndColorSpaceAreGammaCorrect(info.colorType(), info.colorSpace());
 }
 
 #endif

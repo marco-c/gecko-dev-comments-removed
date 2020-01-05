@@ -307,7 +307,7 @@ SkSpriteBlitter* SkSpriteBlitter::ChooseD16(const SkPixmap& source, const SkPain
     if (paint.getMaskFilter() != nullptr) { 
         return nullptr;
     }
-    if (paint.getXfermode() != nullptr) { 
+    if (!paint.isSrcOver()) { 
         return nullptr;
     }
     if (paint.getColorFilter() != nullptr) { 

@@ -15,51 +15,8 @@
 #include "SkTDArray.h"
 #include "SkTypeface.h"
 
-class SkPaint;
 class SkPDFCanon;
-class SkPDFObjNumMap;
 class SkPDFFont;
-
-class SkPDFGlyphSet : SkNoncopyable {
-public:
-    SkPDFGlyphSet();
-
-    void set(const uint16_t* glyphIDs, int numGlyphs);
-    bool has(uint16_t glyphID) const;
-    void merge(const SkPDFGlyphSet& usage);
-    void exportTo(SkTDArray<uint32_t>* glyphIDs) const;
-
-private:
-    SkBitSet fBitSet;
-};
-
-class SkPDFGlyphSetMap : SkNoncopyable {
-public:
-    struct FontGlyphSetPair {
-        FontGlyphSetPair(SkPDFFont* font, SkPDFGlyphSet* glyphSet);
-
-        SkPDFFont* fFont;
-        SkPDFGlyphSet* fGlyphSet;
-    };
-
-    SkPDFGlyphSetMap();
-    ~SkPDFGlyphSetMap();
-
-    const FontGlyphSetPair* begin() const { return fMap.begin(); }
-    const FontGlyphSetPair* end() const { return fMap.end(); }
-
-    void merge(const SkPDFGlyphSetMap& usage);
-    void reset();
-
-    void noteGlyphUsage(SkPDFFont* font, const uint16_t* glyphIDs,
-                        int numGlyphs);
-
-private:
-    SkPDFGlyphSet* getGlyphSetForFont(SkPDFFont* font);
-
-    SkTDArray<FontGlyphSetPair> fMap;
-};
-
 
 
 
@@ -76,38 +33,44 @@ public:
     
 
 
-    SkTypeface* typeface();
+    SkTypeface* typeface() const { return fTypeface.get(); }
 
     
 
 
-    virtual SkAdvancedTypefaceMetrics::FontType getType();
+    SkAdvancedTypefaceMetrics::FontType getType() const { return fFontType; }
+
+    static SkAdvancedTypefaceMetrics::FontType FontType(const SkAdvancedTypefaceMetrics&);
+
+    static bool IsMultiByte(SkAdvancedTypefaceMetrics::FontType type) {
+        return type == SkAdvancedTypefaceMetrics::kType1CID_Font ||
+               type == SkAdvancedTypefaceMetrics::kTrueType_Font;
+    }
 
     
 
-    virtual bool multiByteGlyphs() const = 0;
+    bool multiByteGlyphs() const { return SkPDFFont::IsMultiByte(this->getType()); }
 
     
 
-    bool canEmbed() const;
+    bool hasGlyph(SkGlyphID gid) {
+        return (gid >= fFirstGlyphID && gid <= fLastGlyphID) || gid == 0;
+    }
 
     
+    SkGlyphID glyphToPDFFontEncoding(SkGlyphID gid) const {
+        if (this->multiByteGlyphs() || gid == 0) {
+            return gid;
+        }
+        SkASSERT(gid >= fFirstGlyphID && gid <= fLastGlyphID);
+        SkASSERT(fFirstGlyphID > 0);
+        return gid - fFirstGlyphID + 1;
+    }
 
-    bool canSubset() const;
-
-    
-
-    bool hasGlyph(uint16_t glyphID);
-
-    
-
-
-
-
-
-
-
-    int glyphsToPDFFontEncoding(uint16_t* glyphIDs, int numGlyphs);
+    void noteGlyphUsage(SkGlyphID glyph) {
+        SkASSERT(this->hasGlyph(glyph));
+        fGlyphUsage.set(glyph);
+    }
 
     
 
@@ -119,26 +82,20 @@ public:
 
     static SkPDFFont* GetFontResource(SkPDFCanon* canon,
                                       SkTypeface* typeface,
-                                      uint16_t glyphID);
+                                      SkGlyphID glyphID);
 
     
 
 
 
 
+    static const SkAdvancedTypefaceMetrics* GetMetrics(SkTypeface* typeface,
+                                                       SkPDFCanon* canon);
 
-    virtual SkPDFFont* getFontSubset(const SkPDFGlyphSet* usage);
+    
 
-    enum Match {
-        kExact_Match,
-        kRelated_Match,
-        kNot_Match,
-    };
-    static Match IsMatch(SkPDFFont* existingFont,
-                         uint32_t existingFontID,
-                         uint16_t existingGlyphID,
-                         uint32_t searchFontID,
-                         uint16_t searchGlyphID);
+
+    virtual void getFontSubset(SkPDFCanon*) = 0;
 
     
 
@@ -148,55 +105,30 @@ public:
 
 protected:
     
-    SkPDFFont(const SkAdvancedTypefaceMetrics* fontInfo,
-              SkTypeface* typeface,
-              SkPDFDict* relatedFontDescriptor);
+    struct Info {
+        sk_sp<SkTypeface> fTypeface;
+        SkGlyphID fFirstGlyphID;
+        SkGlyphID fLastGlyphID;
+        SkAdvancedTypefaceMetrics::FontType fFontType;
+    };
+    SkPDFFont(Info);
 
-    
-    const SkAdvancedTypefaceMetrics* fontInfo();
-    void setFontInfo(const SkAdvancedTypefaceMetrics* info);
-    uint16_t firstGlyphID() const;
-    uint16_t lastGlyphID() const;
-    void setLastGlyphID(uint16_t glyphID);
-
-    
-    SkPDFDict* getFontDescriptor();
-    void setFontDescriptor(SkPDFDict* descriptor);
-
-    
-    bool addCommonFontDescriptorEntries(int16_t defaultWidth);
-
-    
-
-
-    void adjustGlyphRangeForSingleByteEncoding(uint16_t glyphID);
-
-    
-    
-    void populateToUnicodeTable(const SkPDFGlyphSet* subset);
-
-    
-    static SkPDFFont* Create(SkPDFCanon* canon,
-                             const SkAdvancedTypefaceMetrics* fontInfo,
-                             SkTypeface* typeface,
-                             uint16_t glyphID,
-                             SkPDFDict* relatedFontDescriptor);
-
-    static bool Find(uint32_t fontID, uint16_t glyphID, int* index);
+    SkGlyphID firstGlyphID() const { return fFirstGlyphID; }
+    SkGlyphID lastGlyphID() const { return fLastGlyphID; }
+    const SkBitSet& glyphUsage() const { return fGlyphUsage; }
+    sk_sp<SkTypeface> refTypeface() const { return fTypeface; }
 
     void drop() override;
 
 private:
     sk_sp<SkTypeface> fTypeface;
+    SkBitSet fGlyphUsage;
 
     
     
-    uint16_t fFirstGlyphID;
-    uint16_t fLastGlyphID;
-    sk_sp<const SkAdvancedTypefaceMetrics> fFontInfo;
-    sk_sp<SkPDFDict> fDescriptor;
-
-    SkAdvancedTypefaceMetrics::FontType fFontType;
+    const SkGlyphID fFirstGlyphID;
+    const SkGlyphID fLastGlyphID;
+    const SkAdvancedTypefaceMetrics::FontType fFontType;
 
     typedef SkPDFDict INHERITED;
 };

@@ -11,19 +11,19 @@
 #include "../private/SkTArray.h"
 #include "../private/SkTemplates.h"
 #include "../private/SkMutex.h"
+#include "SkColorSpace.h"
 #include "SkFilterQuality.h"
 #include "SkFlattenable.h"
 #include "SkMatrix.h"
 #include "SkRect.h"
-#include "SkSurfaceProps.h"
 
+class GrContext;
 class GrFragmentProcessor;
-class GrTexture;
-class SkBaseDevice;
-class SkBitmap;
 class SkColorFilter;
 struct SkIPoint;
 class SkSpecialImage;
+class SkImageFilterCache;
+struct SkImageFilterCacheKey;
 
 
 
@@ -36,36 +36,40 @@ class SK_API SkImageFilter : public SkFlattenable {
 public:
     
     
-    class Cache : public SkRefCnt {
+    
+    
+    class OutputProperties {
     public:
-        struct Key;
-        virtual ~Cache() {}
-        static Cache* Create(size_t maxBytes);
-        static Cache* Get();
-        virtual bool get(const Key& key, SkBitmap* result, SkIPoint* offset) const = 0;
-        virtual SkSpecialImage* get(const Key& key, SkIPoint* offset) const = 0;
-        virtual void set(const Key& key, const SkBitmap& result, const SkIPoint& offset) = 0;
-        virtual void set(const Key& key, SkSpecialImage* image, const SkIPoint& offset) = 0;
-        virtual void purge() {}
-        virtual void purgeByKeys(const Key[], int) {}
+        explicit OutputProperties(SkColorSpace* colorSpace) : fColorSpace(colorSpace) {}
+
+        SkColorSpace* colorSpace() const { return fColorSpace; }
+
+    private:
+        
+        
+        SkColorSpace* fColorSpace;
     };
 
     class Context {
     public:
-        Context(const SkMatrix& ctm, const SkIRect& clipBounds, Cache* cache)
+        Context(const SkMatrix& ctm, const SkIRect& clipBounds, SkImageFilterCache* cache,
+                const OutputProperties& outputProperties)
             : fCTM(ctm)
             , fClipBounds(clipBounds)
             , fCache(cache)
+            , fOutputProperties(outputProperties)
         {}
 
         const SkMatrix& ctm() const { return fCTM; }
         const SkIRect& clipBounds() const { return fClipBounds; }
-        Cache* cache() const { return fCache; }
+        SkImageFilterCache* cache() const { return fCache; }
+        const OutputProperties& outputProperties() const { return fOutputProperties; }
 
     private:
-        SkMatrix        fCTM;
-        SkIRect         fClipBounds;
-        Cache*          fCache;
+        SkMatrix               fCTM;
+        SkIRect                fClipBounds;
+        SkImageFilterCache*    fCache;
+        OutputProperties       fOutputProperties;
     };
 
     class CropRect {
@@ -109,37 +113,8 @@ public:
         kNever_TileUsage,       
     };
 
-    class Proxy {
-    public:
-        virtual ~Proxy() {}
-
-        virtual SkBaseDevice* createDevice(int width, int height,
-                                           TileUsage usage = kNever_TileUsage) = 0;
-
-        
-        
-        virtual bool filterImage(const SkImageFilter*, const SkBitmap& src,
-                                 const SkImageFilter::Context&,
-                                 SkBitmap* result, SkIPoint* offset) = 0;
-    };
-
-    class DeviceProxy : public Proxy {
-    public:
-        DeviceProxy(SkBaseDevice* device) : fDevice(device) {}
-
-        SkBaseDevice* createDevice(int width, int height,
-                                   TileUsage usage = kNever_TileUsage) override;
-
-        
-        
-        bool filterImage(const SkImageFilter*, const SkBitmap& src, const SkImageFilter::Context&,
-                         SkBitmap* result, SkIPoint* offset) override;
-
-    private:
-        SkBaseDevice* fDevice;
-    };
-
     
+
 
 
 
@@ -174,27 +149,12 @@ public:
     SkIRect filterBounds(const SkIRect& src, const SkMatrix& ctm,
                          MapDirection = kReverse_MapDirection) const;
 
-    
-
-
-
-
-
-
-    virtual bool canFilterImageGPU() const;
-
-    
-
-
-
-
-
-
-
-
-
-    virtual bool filterImageGPUDeprecated(Proxy*, const SkBitmap& src, const Context&,
-                                          SkBitmap* result, SkIPoint* offset) const;
+#if SK_SUPPORT_GPU
+    static sk_sp<SkSpecialImage> DrawWithFP(GrContext* context,
+                                            sk_sp<GrFragmentProcessor> fp,
+                                            const SkIRect& bounds,
+                                            const OutputProperties& outputProperties);
+#endif
 
     
 
@@ -212,6 +172,10 @@ public:
         return this->isColorFilterNode(filterPtr);
     }
 
+    static sk_sp<SkImageFilter> MakeBlur(SkScalar sigmaX, SkScalar sigmaY,
+                                         sk_sp<SkImageFilter> input,
+                                         const CropRect* cropRect = nullptr);
+
     
 
 
@@ -223,20 +187,18 @@ public:
 
 
 
-    int countInputs() const { return fInputCount; }
+    int countInputs() const { return fInputs.count(); }
 
     
 
 
 
     SkImageFilter* getInput(int i) const {
-        SkASSERT(i < fInputCount);
-        return fInputs[i];
+        SkASSERT(i < fInputs.count());
+        return fInputs[i].get();
     }
 
     
-
-
 
 
 
@@ -270,9 +232,17 @@ public:
     
 
 
+
+
+    bool canHandleComplexCTM() const;
+
+    
+
+
     static sk_sp<SkImageFilter> MakeMatrixFilter(const SkMatrix& matrix,
-                                                 SkFilterQuality,
+                                                 SkFilterQuality quality,
                                                  sk_sp<SkImageFilter> input);
+
 #ifdef SK_SUPPORT_LEGACY_IMAGEFILTER_PTR
     static SkImageFilter* CreateMatrixFilter(const SkMatrix& matrix,
                                              SkFilterQuality filterQuality,
@@ -281,26 +251,9 @@ public:
     }
 #endif
 
-
-    sk_sp<SkSpecialImage> filterInput(int index,
-                                      SkSpecialImage* src,
-                                      const Context&, 
-                                      SkIPoint* offset) const;
-
-#if SK_SUPPORT_GPU
-    
-    
-    
-    
-    
-    
-    bool filterInputGPUDeprecated(int index, SkImageFilter::Proxy* proxy,
-                                  const SkBitmap& src, const Context&,
-                                  SkBitmap* result, SkIPoint* offset) const;
-#endif
-
     SK_TO_STRING_PUREVIRT()
     SK_DEFINE_FLATTENABLE_TYPE(SkImageFilter)
+    SK_DECLARE_FLATTENABLE_REGISTRAR_GROUP()
 
 protected:
     class Common {
@@ -321,12 +274,6 @@ protected:
 
         sk_sp<SkImageFilter>  getInput(int index) const { return fInputs[index]; }
 
-        
-        
-        
-        
-        void detachInputs(SkImageFilter** inputs);
-
     private:
         CropRect fCropRect;
         
@@ -334,8 +281,6 @@ protected:
 
         void allocInputs(int count);
     };
-
-    SkImageFilter(int inputCount, SkImageFilter** inputs, const CropRect* cropRect = nullptr);
 
     SkImageFilter(sk_sp<SkImageFilter>* inputs, int inputCount, const CropRect* cropRect);
 
@@ -368,11 +313,11 @@ protected:
 
 
 
-    virtual bool onFilterImageDeprecated(Proxy*, const SkBitmap& src, const Context&,
-                                         SkBitmap* result, SkIPoint* offset) const;
+
+
 
     virtual sk_sp<SkSpecialImage> onFilterImage(SkSpecialImage* src, const Context&,
-                                                SkIPoint* offset) const;
+                                                SkIPoint* offset) const = 0;
 
     
 
@@ -406,9 +351,10 @@ protected:
     
     
     
-    
-    bool filterInputDeprecated(int index, Proxy*, const SkBitmap& src, const Context&,
-                               SkBitmap* result, SkIPoint* offset) const;
+    sk_sp<SkSpecialImage> filterInput(int index,
+                                      SkSpecialImage* src,
+                                      const Context&, 
+                                      SkIPoint* offset) const;
 
     
 
@@ -420,6 +366,11 @@ protected:
 
     
 
+
+
+    virtual bool onCanHandleComplexCTM() const { return false; }
+
+    
 
 
 
@@ -438,29 +389,8 @@ protected:
 
 
 
-    bool applyCropRectDeprecated(const Context&, Proxy* proxy, const SkBitmap& src,
-                                 SkIPoint* srcOffset, SkIRect* bounds, SkBitmap* result) const;
-
     sk_sp<SkSpecialImage> applyCropRect(const Context&, SkSpecialImage* src, SkIPoint* srcOffset,
                                         SkIRect* bounds) const;
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    virtual bool asFragmentProcessor(GrFragmentProcessor**, GrTexture*, const SkMatrix&,
-                                     const SkIRect& bounds) const;
 
     
 
@@ -474,20 +404,19 @@ private:
     friend class SkGraphics;
     static void PurgeCache();
 
-    bool filterImageDeprecated(Proxy*, const SkBitmap& src, const Context&,
-                               SkBitmap* result, SkIPoint* offset) const;
+    void init(sk_sp<SkImageFilter>* inputs, int inputCount, const CropRect* cropRect);
 
     bool usesSrcInput() const { return fUsesSrcInput; }
     virtual bool affectsTransparentBlack() const { return false; }
 
-    typedef SkFlattenable INHERITED;
-    int fInputCount;
-    SkImageFilter** fInputs;
+    SkAutoSTArray<2, sk_sp<SkImageFilter>> fInputs;
+
     bool fUsesSrcInput;
     CropRect fCropRect;
     uint32_t fUniqueID; 
-    mutable SkTArray<Cache::Key> fCacheKeys;
+    mutable SkTArray<SkImageFilterCacheKey> fCacheKeys;
     mutable SkMutex fMutex;
+    typedef SkFlattenable INHERITED;
 };
 
 

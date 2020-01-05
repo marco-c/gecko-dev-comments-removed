@@ -8,106 +8,41 @@
 #include "GrSWMaskHelper.h"
 
 #include "GrCaps.h"
-#include "GrDrawTarget.h"
-#include "GrGpu.h"
+#include "GrContext.h"
+#include "batches/GrDrawBatch.h"
+#include "GrDrawContext.h"
 #include "GrPipelineBuilder.h"
+#include "GrShape.h"
 
-#include "SkData.h"
 #include "SkDistanceFieldGen.h"
-#include "SkStrokeRec.h"
 
 #include "batches/GrRectBatchFactory.h"
 
-namespace {
 
 
 
+static SkBlendMode op_to_mode(SkRegion::Op op) {
 
-SkXfermode::Mode op_to_mode(SkRegion::Op op) {
-
-    static const SkXfermode::Mode modeMap[] = {
-        SkXfermode::kDstOut_Mode,   
-        SkXfermode::kModulate_Mode, 
-        SkXfermode::kSrcOver_Mode,  
-        SkXfermode::kXor_Mode,      
-        SkXfermode::kClear_Mode,    
-        SkXfermode::kSrc_Mode,      
+    static const SkBlendMode modeMap[] = {
+        SkBlendMode::kDstOut,   
+        SkBlendMode::kModulate, 
+        SkBlendMode::kSrcOver,  
+        SkBlendMode::kXor,      
+        SkBlendMode::kClear,    
+        SkBlendMode::kSrc,      
     };
 
     return modeMap[op];
 }
 
-static inline GrPixelConfig fmt_to_config(SkTextureCompressor::Format fmt) {
-
-    GrPixelConfig config;
-    switch (fmt) {
-        case SkTextureCompressor::kLATC_Format:
-            config = kLATC_GrPixelConfig;
-            break;
-
-        case SkTextureCompressor::kR11_EAC_Format:
-            config = kR11_EAC_GrPixelConfig;
-            break;
-
-        case SkTextureCompressor::kASTC_12x12_Format:
-            config = kASTC_12x12_GrPixelConfig;
-            break;
-
-        case SkTextureCompressor::kETC1_Format:
-            config = kETC1_GrPixelConfig;
-            break;
-
-        default:
-            SkDEBUGFAIL("No GrPixelConfig for compression format!");
-            
-            config = kAlpha_8_GrPixelConfig;
-            break;
-    }
-
-    return config;
-}
-
-static bool choose_compressed_fmt(const GrCaps* caps,
-                                  SkTextureCompressor::Format *fmt) {
-    if (nullptr == fmt) {
-        return false;
-    }
-
-    
-    
-    if (!(caps->compressedTexSubImageSupport())) {
-        return false;
-    }
-
-    
-    
-    
-    if (caps->isConfigTexturable(kASTC_12x12_GrPixelConfig)) {
-        *fmt = SkTextureCompressor::kASTC_12x12_Format;
-        return true;
-    } else if (caps->isConfigTexturable(kLATC_GrPixelConfig)) {
-        *fmt = SkTextureCompressor::kLATC_Format;
-        return true;
-    } else if (caps->isConfigTexturable(kR11_EAC_GrPixelConfig)) {
-        *fmt = SkTextureCompressor::kR11_EAC_Format;
-        return true;
-    }
-
-    return false;
-}
-
-}
 
 
 
-
-void GrSWMaskHelper::draw(const SkRect& rect, SkRegion::Op op,
-                          bool antiAlias, uint8_t alpha) {
+void GrSWMaskHelper::drawRect(const SkRect& rect, SkRegion::Op op,
+                              bool antiAlias, uint8_t alpha) {
     SkPaint paint;
 
-    SkASSERT(kNone_CompressionMode == fCompressionMode);
-
-    paint.setXfermode(SkXfermode::Make(op_to_mode(op)));
+    paint.setBlendMode(op_to_mode(op));
     paint.setAntiAlias(antiAlias);
     paint.setColor(SkColorSetARGB(alpha, alpha, alpha, alpha));
 
@@ -117,46 +52,26 @@ void GrSWMaskHelper::draw(const SkRect& rect, SkRegion::Op op,
 
 
 
-void GrSWMaskHelper::draw(const SkPath& path, const SkStrokeRec& stroke, SkRegion::Op op,
-                          bool antiAlias, uint8_t alpha) {
-
+void GrSWMaskHelper::drawShape(const GrShape& shape, SkRegion::Op op, bool antiAlias,
+                               uint8_t alpha) {
     SkPaint paint;
-    if (stroke.isHairlineStyle()) {
-        paint.setStyle(SkPaint::kStroke_Style);
-    } else {
-        if (stroke.isFillStyle()) {
-            paint.setStyle(SkPaint::kFill_Style);
-        } else {
-            paint.setStyle(SkPaint::kStroke_Style);
-            paint.setStrokeJoin(stroke.getJoin());
-            paint.setStrokeCap(stroke.getCap());
-            paint.setStrokeWidth(stroke.getWidth());
-        }
-    }
+    paint.setPathEffect(sk_ref_sp(shape.style().pathEffect()));
+    shape.style().strokeRec().applyToPaint(&paint);
     paint.setAntiAlias(antiAlias);
 
-    SkTBlitterAllocator allocator;
-    SkBlitter* blitter = nullptr;
-    if (kBlitter_CompressionMode == fCompressionMode) {
-        SkASSERT(fCompressedBuffer.get());
-        blitter = SkTextureCompressor::CreateBlitterForFormat(
-            fPixels.width(), fPixels.height(), fCompressedBuffer.get(), &allocator,
-                                                              fCompressedFormat);
-    }
-
+    SkPath path;
+    shape.asPath(&path);
     if (SkRegion::kReplace_Op == op && 0xFF == alpha) {
         SkASSERT(0xFF == paint.getAlpha());
-        fDraw.drawPathCoverage(path, paint, blitter);
+        fDraw.drawPathCoverage(path, paint);
     } else {
-        paint.setXfermodeMode(op_to_mode(op));
+        paint.setBlendMode(op_to_mode(op));
         paint.setColor(SkColorSetARGB(alpha, alpha, alpha, alpha));
-        fDraw.drawPath(path, paint, blitter);
+        fDraw.drawPath(path, paint);
     }
 }
 
-bool GrSWMaskHelper::init(const SkIRect& resultBounds,
-                          const SkMatrix* matrix,
-                          bool allowCompression) {
+bool GrSWMaskHelper::init(const SkIRect& resultBounds, const SkMatrix* matrix) {
     if (matrix) {
         fMatrix = *matrix;
     } else {
@@ -164,58 +79,19 @@ bool GrSWMaskHelper::init(const SkIRect& resultBounds,
     }
 
     
-    fMatrix.postTranslate(-resultBounds.fLeft * SK_Scalar1,
-                          -resultBounds.fTop * SK_Scalar1);
-    SkIRect bounds = SkIRect::MakeWH(resultBounds.width(),
-                                     resultBounds.height());
+    fMatrix.postTranslate(-SkIntToScalar(resultBounds.fLeft), -SkIntToScalar(resultBounds.fTop));
+    SkIRect bounds = SkIRect::MakeWH(resultBounds.width(), resultBounds.height());
 
-    if (allowCompression &&
-        fContext->caps()->drawPathMasksToCompressedTexturesSupport() &&
-        choose_compressed_fmt(fContext->caps(), &fCompressedFormat)) {
-        fCompressionMode = kCompress_CompressionMode;
+    const SkImageInfo bmImageInfo = SkImageInfo::MakeA8(bounds.width(), bounds.height());
+    if (!fPixels.tryAlloc(bmImageInfo)) {
+        return false;
     }
-
-    
-    
-    int cmpWidth = bounds.fRight;
-    int cmpHeight = bounds.fBottom;
-    if (kCompress_CompressionMode == fCompressionMode) {
-        int dimX, dimY;
-        SkTextureCompressor::GetBlockDimensions(fCompressedFormat, &dimX, &dimY);
-        cmpWidth = dimX * ((cmpWidth + (dimX - 1)) / dimX);
-        cmpHeight = dimY * ((cmpHeight + (dimY - 1)) / dimY);
-
-        
-        if (SkTextureCompressor::ExistsBlitterForFormat(fCompressedFormat)) {
-            int cmpSz = SkTextureCompressor::GetCompressedDataSize(
-                fCompressedFormat, cmpWidth, cmpHeight);
-
-            SkASSERT(cmpSz > 0);
-            SkASSERT(nullptr == fCompressedBuffer.get());
-            fCompressedBuffer.reset(cmpSz);
-            fCompressionMode = kBlitter_CompressionMode;
-        }
-    }
+    fPixels.erase(0);
 
     sk_bzero(&fDraw, sizeof(fDraw));
-
-    
-    
-    
-    const SkImageInfo bmImageInfo = SkImageInfo::MakeA8(cmpWidth, cmpHeight);
-    if (kBlitter_CompressionMode != fCompressionMode) {
-        if (!fPixels.tryAlloc(bmImageInfo)) {
-            return false;
-        }
-        fPixels.erase(0);
-    } else {
-        
-        fPixels.reset(bmImageInfo);
-    }
     fDraw.fDst      = fPixels;
     fRasterClip.setRect(bounds);
     fDraw.fRC       = &fRasterClip;
-    fDraw.fClip     = &fRasterClip.bwRgn();
     fDraw.fMatrix   = &fMatrix;
     return true;
 }
@@ -223,73 +99,30 @@ bool GrSWMaskHelper::init(const SkIRect& resultBounds,
 
 
 
-GrTexture* GrSWMaskHelper::createTexture() {
+GrTexture* GrSWMaskHelper::createTexture(TextureType textureType) {
     GrSurfaceDesc desc;
     desc.fWidth = fPixels.width();
     desc.fHeight = fPixels.height();
     desc.fConfig = kAlpha_8_GrPixelConfig;
 
-    if (kNone_CompressionMode != fCompressionMode) {
-
-#ifdef SK_DEBUG
-        int dimX, dimY;
-        SkTextureCompressor::GetBlockDimensions(fCompressedFormat, &dimX, &dimY);
-        SkASSERT((desc.fWidth % dimX) == 0);
-        SkASSERT((desc.fHeight % dimY) == 0);
-#endif
-
-        desc.fConfig = fmt_to_config(fCompressedFormat);
-        SkASSERT(fContext->caps()->isConfigTexturable(desc.fConfig));
+    if (TextureType::kApproximateFit == textureType) {
+        return fTexProvider->createApproxTexture(desc);
+    } else {
+        return fTexProvider->createTexture(desc, SkBudgeted::kYes);
     }
-
-    return fContext->textureProvider()->createApproxTexture(desc);
-}
-
-void GrSWMaskHelper::sendTextureData(GrTexture *texture, const GrSurfaceDesc& desc,
-                                     const void *data, size_t rowbytes) {
-    
-    
-    SkASSERT(nullptr == texture->asRenderTarget());
-
-    texture->writePixels(0, 0, desc.fWidth, desc.fHeight, desc.fConfig, data, rowbytes);
-}
-
-void GrSWMaskHelper::compressTextureData(GrTexture *texture, const GrSurfaceDesc& desc) {
-
-    SkASSERT(GrPixelConfigIsCompressed(desc.fConfig));
-    SkASSERT(fmt_to_config(fCompressedFormat) == desc.fConfig);
-
-    SkAutoDataUnref cmpData(SkTextureCompressor::CompressBitmapToFormat(fPixels,
-                                                                        fCompressedFormat));
-    SkASSERT(cmpData);
-
-    this->sendTextureData(texture, desc, cmpData->data(), 0);
 }
 
 
 
 
 void GrSWMaskHelper::toTexture(GrTexture *texture) {
-    GrSurfaceDesc desc;
-    desc.fWidth = fPixels.width();
-    desc.fHeight = fPixels.height();
-    desc.fConfig = texture->config();
-
     
-    switch (fCompressionMode) {
-        case kNone_CompressionMode:
-            this->sendTextureData(texture, desc, fPixels.addr(), fPixels.rowBytes());
-            break;
+    
+    SkASSERT(!texture->asRenderTarget());
 
-        case kCompress_CompressionMode:
-            this->compressTextureData(texture, desc);
-            break;
+    texture->writePixels(0, 0, fPixels.width(), fPixels.height(), texture->config(),
+                         fPixels.addr(), fPixels.rowBytes());
 
-        case kBlitter_CompressionMode:
-            SkASSERT(fCompressedBuffer.get());
-            this->sendTextureData(texture, desc, fCompressedBuffer.get(), 0);
-            break;
-    }
 }
 
 
@@ -305,22 +138,21 @@ void GrSWMaskHelper::toSDF(unsigned char* sdf) {
 
 
 
-
-GrTexture* GrSWMaskHelper::DrawPathMaskToTexture(GrContext* context,
-                                                 const SkPath& path,
-                                                 const SkStrokeRec& stroke,
-                                                 const SkIRect& resultBounds,
-                                                 bool antiAlias,
-                                                 const SkMatrix* matrix) {
-    GrSWMaskHelper helper(context);
+GrTexture* GrSWMaskHelper::DrawShapeMaskToTexture(GrTextureProvider* texProvider,
+                                                  const GrShape& shape,
+                                                  const SkIRect& resultBounds,
+                                                  bool antiAlias,
+                                                  TextureType textureType,
+                                                  const SkMatrix* matrix) {
+    GrSWMaskHelper helper(texProvider);
 
     if (!helper.init(resultBounds, matrix)) {
         return nullptr;
     }
 
-    helper.draw(path, stroke, SkRegion::kReplace_Op, antiAlias, 0xFF);
+    helper.drawShape(shape, SkRegion::kReplace_Op, antiAlias, 0xFF);
 
-    GrTexture* texture(helper.createTexture());
+    GrTexture* texture(helper.createTexture(textureType));
     if (!texture) {
         return nullptr;
     }
@@ -330,37 +162,40 @@ GrTexture* GrSWMaskHelper::DrawPathMaskToTexture(GrContext* context,
     return texture;
 }
 
-void GrSWMaskHelper::DrawToTargetWithPathMask(GrTexture* texture,
-                                              GrDrawTarget* target,
-                                              GrPipelineBuilder* pipelineBuilder,
-                                              GrColor color,
-                                              const SkMatrix& viewMatrix,
-                                              const SkIRect& rect) {
+void GrSWMaskHelper::DrawToTargetWithShapeMask(GrTexture* texture,
+                                               GrDrawContext* drawContext,
+                                               const GrPaint& paint,
+                                               const GrUserStencilSettings& userStencilSettings,
+                                               const GrClip& clip,
+                                               const SkMatrix& viewMatrix,
+                                               const SkIPoint& textureOriginInDeviceSpace,
+                                               const SkIRect& deviceSpaceRectToDraw) {
     SkMatrix invert;
     if (!viewMatrix.invert(&invert)) {
         return;
     }
-    GrPipelineBuilder::AutoRestoreFragmentProcessorState arfps(*pipelineBuilder);
 
-    SkRect dstRect = SkRect::MakeLTRB(SK_Scalar1 * rect.fLeft,
-                                      SK_Scalar1 * rect.fTop,
-                                      SK_Scalar1 * rect.fRight,
-                                      SK_Scalar1 * rect.fBottom);
+    SkRect dstRect = SkRect::Make(deviceSpaceRectToDraw);
 
     
     
     
     SkMatrix maskMatrix;
     maskMatrix.setIDiv(texture->width(), texture->height());
-    maskMatrix.preTranslate(SkIntToScalar(-rect.fLeft), SkIntToScalar(-rect.fTop));
+    maskMatrix.preTranslate(SkIntToScalar(-textureOriginInDeviceSpace.fX),
+                            SkIntToScalar(-textureOriginInDeviceSpace.fY));
+    maskMatrix.preConcat(viewMatrix);
+    GrPipelineBuilder pipelineBuilder(paint, drawContext->mustUseHWAA(paint));
+    pipelineBuilder.setUserStencil(&userStencilSettings);
 
-    pipelineBuilder->addCoverageFragmentProcessor(
-                         GrSimpleTextureEffect::Create(texture,
-                                                       maskMatrix,
-                                                       GrTextureParams::kNone_FilterMode,
-                                                       kDevice_GrCoordSet))->unref();
+    pipelineBuilder.addCoverageFragmentProcessor(
+                         GrSimpleTextureEffect::Make(texture,
+                                                     nullptr,
+                                                     maskMatrix,
+                                                     GrTextureParams::kNone_FilterMode));
 
-    SkAutoTUnref<GrDrawBatch> batch(GrRectBatchFactory::CreateNonAAFill(color, SkMatrix::I(),
+    SkAutoTUnref<GrDrawBatch> batch(GrRectBatchFactory::CreateNonAAFill(paint.getColor(),
+                                                                        SkMatrix::I(),
                                                                         dstRect, nullptr, &invert));
-    target->drawBatch(*pipelineBuilder, batch);
+    drawContext->drawBatch(pipelineBuilder, clip, batch);
 }

@@ -63,7 +63,7 @@ public:
 
     typedef void (*FreeProc)(void* context);
 
-    static SkDataTable* NewEmpty();
+    static sk_sp<SkDataTable> MakeEmpty();
 
     
 
@@ -74,8 +74,8 @@ public:
 
 
 
-    static SkDataTable* NewCopyArrays(const void * const * ptrs,
-                                      const size_t sizes[], int count);
+    static sk_sp<SkDataTable> MakeCopyArrays(const void * const * ptrs,
+                                             const size_t sizes[], int count);
 
     
 
@@ -85,11 +85,10 @@ public:
 
 
 
-    static SkDataTable* NewCopyArray(const void* array, size_t elemSize,
-                                     int count);
+    static sk_sp<SkDataTable> MakeCopyArray(const void* array, size_t elemSize, int count);
 
-    static SkDataTable* NewArrayProc(const void* array, size_t elemSize,
-                                     int count, FreeProc proc, void* context);
+    static sk_sp<SkDataTable> MakeArrayProc(const void* array, size_t elemSize, int count,
+                                            FreeProc proc, void* context);
 
 private:
     struct Dir {
@@ -164,7 +163,7 @@ public:
 
 
 
-    SkDataTable* detachDataTable();
+    sk_sp<SkDataTable> detachDataTable();
 
 private:
     SkTDArray<SkDataTable::Dir> fDir;

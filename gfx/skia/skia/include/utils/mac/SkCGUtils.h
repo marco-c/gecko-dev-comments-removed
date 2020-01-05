@@ -23,7 +23,7 @@
 
 class SkBitmap;
 class SkData;
-class SkStream;
+class SkStreamRewindable;
 
 
 
@@ -68,17 +68,9 @@ void SkCGDrawBitmap(CGContextRef, const SkBitmap&, float x, float y);
 
 
 
-bool SkPDFDocumentToBitmap(SkStream* stream, SkBitmap* output);
+CGDataProviderRef SkCreateDataProviderFromStream(std::unique_ptr<SkStreamRewindable>);
 
-
-
-
-
-
-
-CGDataProviderRef SkCreateDataProviderFromStream(SkStream*);
-
-CGDataProviderRef SkCreateDataProviderFromData(SkData*);
+CGDataProviderRef SkCreateDataProviderFromData(sk_sp<SkData>);
 
 #endif  
 #endif  

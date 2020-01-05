@@ -5,6 +5,7 @@
 
 
 
+#include "../private/SkLeanWindows.h"
 #include "../private/SkSemaphore.h"
 
 #if defined(SK_BUILD_FOR_MAC) || defined(SK_BUILD_FOR_IOS)
@@ -57,43 +58,16 @@
 
 
 
-void SkBaseSemaphore::signal(int n) {
-    SkASSERT(n >= 0);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    int prev = sk_atomic_fetch_add(&fCount, n, sk_memory_order_release);
-    int toSignal = SkTMin(-prev, n);
-    if (toSignal > 0) {
-        this->osSignal(toSignal);
-    }
+void SkBaseSemaphore::osSignal(int n) {
+    fOSSemaphoreOnce([this] { fOSSemaphore = new OSSemaphore; });
+    fOSSemaphore->signal(n);
 }
 
-static SkBaseSemaphore::OSSemaphore* semaphore(SkBaseSemaphore* semaphore) {
-    return semaphore->fOSSemaphore.get([](){ return new SkBaseSemaphore::OSSemaphore(); });
+void SkBaseSemaphore::osWait() {
+    fOSSemaphoreOnce([this] { fOSSemaphore = new OSSemaphore; });
+    fOSSemaphore->wait();
 }
 
-void SkBaseSemaphore::osSignal(int n) { semaphore(this)->signal(n); }
-
-void SkBaseSemaphore::osWait() { semaphore(this)->wait(); }
-
-void SkBaseSemaphore::deleteSemaphore() {
-    delete (OSSemaphore*) fOSSemaphore;
+void SkBaseSemaphore::cleanup() {
+    delete fOSSemaphore;
 }
-
-
-
-SkSemaphore::SkSemaphore(){ fBaseSemaphore = {0, {0}}; }
-
-SkSemaphore::~SkSemaphore() { fBaseSemaphore.deleteSemaphore(); }
-
-void SkSemaphore::wait() { fBaseSemaphore.wait(); }
-
-void SkSemaphore::signal(int n) {fBaseSemaphore.signal(n); }

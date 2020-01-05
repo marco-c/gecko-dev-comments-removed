@@ -129,7 +129,7 @@ public:
 
 
 
-    static SkGlyphCache* VisitCache(SkTypeface*, const SkDescriptor* desc,
+    static SkGlyphCache* VisitCache(SkTypeface*, const SkScalerContextEffects&, const SkDescriptor*,
                                     bool (*proc)(const SkGlyphCache*, void*),
                                     void* context);
 
@@ -146,8 +146,9 @@ public:
 
 
 
-    static SkGlyphCache* DetachCache(SkTypeface* typeface, const SkDescriptor* desc) {
-        return VisitCache(typeface, desc, DetachProc, nullptr);
+    static SkGlyphCache* DetachCache(SkTypeface* typeface, const SkScalerContextEffects& effects,
+                                     const SkDescriptor* desc) {
+        return VisitCache(typeface, effects, desc, DetachProc, nullptr);
     }
 
     static void Dump();
@@ -227,7 +228,6 @@ private:
 
     
     
-    
     SkGlyph* allocateNewGlyph(PackedGlyphID packedGlyphID, MetricsType type);
 
     static bool DetachProc(const SkGlyphCache*, void*) { return true; }
@@ -236,8 +236,6 @@ private:
     CharGlyphRec* getCharGlyphRec(PackedUnicharID id);
 
     void invokeAndRemoveAuxProcs();
-
-    inline static SkGlyphCache* FindTail(SkGlyphCache* head);
 
     static void OffsetResults(const SkGlyph::Intercept* intercept, SkScalar scale,
                               SkScalar xPos, SkScalar* array, int* count);
@@ -276,22 +274,25 @@ class SkAutoGlyphCache : public std::unique_ptr<SkGlyphCache, SkGlyphCache::Atta
 public:
     
     SkGlyphCache* getCache() const { return this->get(); }
-
+    SkAutoGlyphCache() = default;
     SkAutoGlyphCache(SkGlyphCache* cache) : INHERITED(cache) {}
-    SkAutoGlyphCache(SkTypeface* typeface, const SkDescriptor* desc)
-        : INHERITED(SkGlyphCache::DetachCache(typeface, desc))
+    SkAutoGlyphCache(SkTypeface* typeface, const SkScalerContextEffects& effects,
+                     const SkDescriptor* desc)
+        : INHERITED(SkGlyphCache::DetachCache(typeface, effects, desc))
     {}
     
     SkAutoGlyphCache(const SkPaint& paint,
                      const SkSurfaceProps* surfaceProps,
                      const SkMatrix* matrix)
-        : INHERITED(paint.detachCache(surfaceProps, SkPaint::FakeGamma::On, matrix))
+        : INHERITED(paint.detachCache(surfaceProps,
+                                      SkPaint::kFakeGammaAndBoostContrast_ScalerContextFlags,
+                                      matrix))
     {}
     SkAutoGlyphCache(const SkPaint& paint,
                      const SkSurfaceProps* surfaceProps,
-                     SkPaint::FakeGamma fakeGamma,
+                     uint32_t scalerContextFlags,
                      const SkMatrix* matrix)
-        : INHERITED(paint.detachCache(surfaceProps, fakeGamma, matrix))
+        : INHERITED(paint.detachCache(surfaceProps, scalerContextFlags, matrix))
     {}
 private:
     using INHERITED = std::unique_ptr<SkGlyphCache, SkGlyphCache::AttachCacheFunctor>;
@@ -302,7 +303,7 @@ public:
     SkAutoGlyphCacheNoGamma(const SkPaint& paint,
                             const SkSurfaceProps* surfaceProps,
                             const SkMatrix* matrix)
-        : SkAutoGlyphCache(paint, surfaceProps, SkPaint::FakeGamma::Off, matrix)
+        : SkAutoGlyphCache(paint, surfaceProps, SkPaint::kNone_ScalerContextFlags, matrix)
     {}
 };
 #define SkAutoGlyphCache(...) SK_REQUIRE_LOCAL_VAR(SkAutoGlyphCache)

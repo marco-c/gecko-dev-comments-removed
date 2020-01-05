@@ -963,6 +963,19 @@
 #define GR_GL_TEXTURE_RECTANGLE                             0x84F5
 
 
+#define GR_GL_MAX_WINDOW_RECTANGLES                         0x8f14
+#define GR_GL_INCLUSIVE                                     0x8f10
+#define GR_GL_EXCLUSIVE                                     0x8f11
+
+
+#define GR_GL_SYNC_GPU_COMMANDS_COMPLETE                    0x9117
+#define GR_GL_ALREADY_SIGNALED                              0x911A
+#define GR_GL_TIMEOUT_EXPIRED                               0x911B
+#define GR_GL_CONDITION_SATISFIED                           0x911C
+#define GR_GL_WAIT_FAILED                                   0x911D
+#define GR_GL_SYNC_FLUSH_COMMANDS_BIT                       0x00000001
+
+
 #define GR_EGL_NO_DISPLAY                                   ((GrEGLDisplay)0)
 #define GR_EGL_EXTENSIONS                                   0x3055
 #define GR_EGL_GL_TEXTURE_2D                                0x30B1

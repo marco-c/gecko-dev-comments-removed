@@ -12,6 +12,12 @@
 #include "SkTLogic.h"
 #include "SkTypes.h"
 
+
+
+namespace SkOpts {
+    extern uint32_t (*hash_fn)(const void*, size_t, uint32_t);
+}
+
 class SkChecksum : SkNoncopyable {
 public:
     
@@ -41,17 +47,6 @@ public:
         hash ^= hash >> 16;
         return hash;
     }
-
-    
-
-
-
-
-
-
-
-
-    static uint32_t Murmur3(const void* data, size_t bytes, uint32_t seed=0);
 };
 
 
@@ -64,11 +59,11 @@ struct SkGoodHash {
 
     template <typename K>
     SK_WHEN(sizeof(K) != 4, uint32_t) operator()(const K& k) const {
-        return SkChecksum::Murmur3(&k, sizeof(K));
+        return SkOpts::hash_fn(&k, sizeof(K), 0);
     }
 
     uint32_t operator()(const SkString& k) const {
-        return SkChecksum::Murmur3(k.c_str(), k.size());
+        return SkOpts::hash_fn(k.c_str(), k.size(), 0);
     }
 };
 

@@ -12,20 +12,39 @@
 #include "SkPixmap.h"
 #include "SkScalar.h"
 #include "SkSize.h"
+#include "SkShader.h"
 
 class SkBitmap;
 class SkDiscardableMemory;
 
 typedef SkDiscardableMemory* (*SkDiscardableFactoryProc)(size_t bytes);
 
+
+
+
+
+
+
+
 class SkMipMap : public SkCachedData {
 public:
-    static SkMipMap* Build(const SkPixmap& src, SkDiscardableFactoryProc);
-    static SkMipMap* Build(const SkBitmap& src, SkDiscardableFactoryProc);
+    static SkMipMap* Build(const SkPixmap& src, SkSourceGammaTreatment, SkDiscardableFactoryProc);
+    static SkMipMap* Build(const SkBitmap& src, SkSourceGammaTreatment, SkDiscardableFactoryProc);
+
+    static SkSourceGammaTreatment DeduceTreatment(const SkShader::ContextRec& rec) {
+        return (SkShader::ContextRec::kPMColor_DstType == rec.fPreferredDstType) ?
+                SkSourceGammaTreatment::kIgnore : SkSourceGammaTreatment::kRespect;
+    }
 
     
     
+    
     static int ComputeLevelCount(int baseWidth, int baseHeight);
+
+    
+    
+    
+    static SkISize ComputeLevelSize(int baseWidth, int baseHeight, int level);
 
     struct Level {
         SkPixmap    fPixmap;
@@ -33,7 +52,13 @@ public:
     };
 
     bool extractLevel(const SkSize& scale, Level*) const;
+
+    
+    
     int countLevels() const;
+
+    
+    
     bool getLevel(int index, Level*) const;
 
 protected:
@@ -42,10 +67,10 @@ protected:
     }
 
 private:
-    Level*  fLevels;
-    int     fCount;
+    sk_sp<SkColorSpace> fCS;
+    Level*              fLevels;    
+    int                 fCount;
 
-    
     SkMipMap(void* malloc, size_t size) : INHERITED(malloc, size) {}
     SkMipMap(size_t size, SkDiscardableMemory* dm) : INHERITED(size, dm) {}
 

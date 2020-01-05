@@ -9,7 +9,7 @@
 #define SkWeakRefCnt_DEFINED
 
 #include "SkRefCnt.h"
-#include "../private/SkAtomics.h"
+#include <atomic>
 
 
 
@@ -62,22 +62,39 @@ public:
 
     virtual ~SkWeakRefCnt() {
 #ifdef SK_DEBUG
-        SkASSERT(fWeakCnt == 1);
-        fWeakCnt = 0;
+        SkASSERT(getWeakCnt() == 1);
+        fWeakCnt.store(0, std::memory_order_relaxed);
 #endif
     }
-
-    
-
-    int32_t getWeakCnt() const { return fWeakCnt; }
 
 #ifdef SK_DEBUG
+    
+    int32_t getWeakCnt() const {
+        return fWeakCnt.load(std::memory_order_relaxed);
+    }
+
     void validate() const {
         this->INHERITED::validate();
-        SkASSERT(fWeakCnt > 0);
+        SkASSERT(getWeakCnt() > 0);
     }
 #endif
 
+private:
+    
+
+
+    int32_t atomic_conditional_acquire_strong_ref() const {
+        int32_t prev = fRefCnt.load(std::memory_order_relaxed);
+        do {
+            if (0 == prev) {
+                break;
+            }
+        } while(!fRefCnt.compare_exchange_weak(prev, prev+1, std::memory_order_acquire,
+                                                             std::memory_order_relaxed));
+        return prev;
+    }
+
+public:
     
 
 
@@ -86,10 +103,9 @@ public:
 
 
     bool SK_WARN_UNUSED_RESULT try_ref() const {
-        if (sk_atomic_conditional_inc(&fRefCnt) != 0) {
+        if (atomic_conditional_acquire_strong_ref() != 0) {
             
             
-            sk_membar_acquire__after_atomic_conditional_inc();
             return true;
         }
         return false;
@@ -99,9 +115,10 @@ public:
 
 
     void weak_ref() const {
-        SkASSERT(fRefCnt > 0);
-        SkASSERT(fWeakCnt > 0);
-        sk_atomic_inc(&fWeakCnt);  
+        SkASSERT(getRefCnt() > 0);
+        SkASSERT(getWeakCnt() > 0);
+        
+        (void)fWeakCnt.fetch_add(+1, std::memory_order_relaxed);
     }
 
     
@@ -110,15 +127,14 @@ public:
 
 
     void weak_unref() const {
-        SkASSERT(fWeakCnt > 0);
+        SkASSERT(getWeakCnt() > 0);
         
-        if (sk_atomic_dec(&fWeakCnt) == 1) {
+        if (1 == fWeakCnt.fetch_add(-1, std::memory_order_acq_rel)) {
             
             
-            sk_membar_acquire__after_atomic_dec();
 #ifdef SK_DEBUG
             
-            fWeakCnt = 1;
+            fWeakCnt.store(1, std::memory_order_relaxed);
 #endif
             this->INHERITED::internal_dispose();
         }
@@ -128,7 +144,7 @@ public:
 
 
     bool weak_expired() const {
-        return fRefCnt == 0;
+        return fRefCnt.load(std::memory_order_relaxed) == 0;
     }
 
 protected:
@@ -151,7 +167,7 @@ private:
     }
 
     
-    mutable int32_t fWeakCnt;
+    mutable std::atomic<int32_t> fWeakCnt;
 
     typedef SkRefCnt INHERITED;
 };

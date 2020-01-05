@@ -4,11 +4,13 @@
 
 
 
-#include <windows.h>
-#include <tchar.h>
 
 #include "SkTypes.h"
+
+#include <tchar.h>
+
 #include "SkApplication.h"
+#include "SkGraphics.h"
 #include "SkOSWindow_Win.h"
 
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
@@ -78,6 +80,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCm
 }
 
 int main(int argc, char**argv) {
+    SkGraphics::Init();
     return main_common(GetModuleHandle(NULL), SW_SHOW, argc, argv);
 }
 

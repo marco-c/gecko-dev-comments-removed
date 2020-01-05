@@ -13,12 +13,29 @@
 
 class SkRRect;
 
+
+
+
+
+
+
+
+
+
 class SkRasterClip {
 public:
     SkRasterClip(bool forceConservativeRects = false);
     SkRasterClip(const SkIRect&, bool forceConservativeRects = false);
+    SkRasterClip(const SkRegion&);
     SkRasterClip(const SkRasterClip&);
     ~SkRasterClip();
+
+    
+    
+    bool operator==(const SkRasterClip&) const;
+    bool operator!=(const SkRasterClip& other) const {
+        return !(*this == other);
+    }
 
     bool isForceConservativeRects() const { return fForceConservativeRects; }
 
@@ -45,9 +62,9 @@ public:
 
     bool op(const SkIRect&, SkRegion::Op);
     bool op(const SkRegion&, SkRegion::Op);
-    bool op(const SkRect&, const SkIRect&, SkRegion::Op, bool doAA);
-    bool op(const SkRRect&, const SkIRect&, SkRegion::Op, bool doAA);
-    bool op(const SkPath&, const SkIRect&, SkRegion::Op, bool doAA);
+    bool op(const SkRect&, const SkMatrix& matrix, const SkIRect&, SkRegion::Op, bool doAA);
+    bool op(const SkRRect&, const SkMatrix& matrix, const SkIRect&, SkRegion::Op, bool doAA);
+    bool op(const SkPath&, const SkMatrix& matrix, const SkIRect&, SkRegion::Op, bool doAA);
 
     void translate(int dx, int dy, SkRasterClip* dst) const;
     void translate(int dx, int dy) {

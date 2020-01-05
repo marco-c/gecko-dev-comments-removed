@@ -4,6 +4,9 @@
 
 
 
+#ifndef SkIntersectionHelper_DEFINED
+#define SkIntersectionHelper_DEFINED
+
 #include "SkOpContour.h"
 #include "SkOpSegment.h"
 #include "SkPath.h"
@@ -106,3 +109,5 @@ public:
 private:
     SkOpSegment* fSegment;
 };
+
+#endif

@@ -33,8 +33,7 @@ public:
     
 
 
-    void getBoundsRect(SkRect* rect) const { rect->setWH(SkIntToScalar(this->width()),
-                                                         SkIntToScalar(this->height())); }
+    SkRect getBoundsRect() const { return SkRect::MakeIWH(this->width(), this->height()); }
 
     GrSurfaceOrigin origin() const {
         SkASSERT(kTopLeft_GrSurfaceOrigin == fDesc.fOrigin || kBottomLeft_GrSurfaceOrigin == fDesc.fOrigin);
@@ -114,13 +113,6 @@ public:
 
     void flushWrites();
 
-
-    
-
-
-
-    void prepareForExternalIO();
-
     
     inline GrSurfacePriv surfacePriv();
     inline const GrSurfacePriv surfacePriv() const;
@@ -133,11 +125,10 @@ public:
         fReleaseCtx = ctx;
     }
 
-    static size_t WorseCaseSize(const GrSurfaceDesc& desc);
+    static size_t WorstCaseSize(const GrSurfaceDesc& desc);
 
 protected:
     
-    SkImageInfo info(SkAlphaType) const;
     bool savePixels(const char* filename);
     bool hasPendingRead() const;
     bool hasPendingWrite() const;
@@ -146,8 +137,8 @@ protected:
     
     friend class GrSurfacePriv;
 
-    GrSurface(GrGpu* gpu, LifeCycle lifeCycle, const GrSurfaceDesc& desc)
-        : INHERITED(gpu, lifeCycle)
+    GrSurface(GrGpu* gpu, const GrSurfaceDesc& desc)
+        : INHERITED(gpu)
         , fDesc(desc)
         , fReleaseProc(NULL)
         , fReleaseCtx(NULL)

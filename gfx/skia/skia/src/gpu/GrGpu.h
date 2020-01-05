@@ -8,9 +8,8 @@
 #ifndef GrGpu_DEFINED
 #define GrGpu_DEFINED
 
-#include "GrPipelineBuilder.h"
+#include "GrGpuCommandBuffer.h"
 #include "GrProgramDesc.h"
-#include "GrStencil.h"
 #include "GrSwizzle.h"
 #include "GrAllocator.h"
 #include "GrTextureParamsAdjuster.h"
@@ -18,10 +17,12 @@
 #include "GrXferProcessor.h"
 #include "SkPath.h"
 #include "SkTArray.h"
+#include <map>
 
 class GrBatchTracker;
 class GrBuffer;
 class GrContext;
+struct GrContextOptions;
 class GrGLContext;
 class GrMesh;
 class GrNonInstancedVertices;
@@ -34,8 +35,11 @@ class GrPipeline;
 class GrPrimitiveProcessor;
 class GrRenderTarget;
 class GrStencilAttachment;
+class GrStencilSettings;
 class GrSurface;
 class GrTexture;
+
+namespace gr_instanced { class InstancedRendering; }
 
 class GrGpu : public SkRefCnt {
 public:
@@ -141,7 +145,14 @@ public:
 
 
 
-    GrBuffer* createBuffer(size_t size, GrBufferType intendedType, GrAccessPattern accessPattern);
+
+    GrBuffer* createBuffer(size_t size, GrBufferType intendedType, GrAccessPattern accessPattern,
+                           const void* data = nullptr);
+
+    
+
+
+    gr_instanced::InstancedRendering* createInstancedRendering();
 
     
 
@@ -157,7 +168,7 @@ public:
         GrSurfaceDesc   fTempSurfaceDesc;
         
 
-        bool            fUseExactScratch;
+        SkBackingFit    fTempSurfaceFit;
         
 
         GrSwizzle       fSwizzle;
@@ -294,21 +305,7 @@ public:
     bool transferPixels(GrSurface* surface,
                         int left, int top, int width, int height,
                         GrPixelConfig config, GrBuffer* transferBuffer,
-                        size_t offset, size_t rowBytes);
-
-    
-
-
-    void clear(const SkIRect& rect, GrColor color, GrRenderTarget* renderTarget);
-
-
-    void clearStencilClip(const SkIRect& rect, bool insideClip, GrRenderTarget* renderTarget);
-
-    
-
-
-
-    virtual void discard(GrRenderTarget* = nullptr) = 0;
+                        size_t offset, size_t rowBytes, GrFence* fence);
 
     
 
@@ -316,7 +313,7 @@ public:
 
 
 
-    virtual bool initCopySurfaceDstDesc(const GrSurface* src, GrSurfaceDesc* desc) const = 0;
+    virtual bool initDescForDstCopy(const GrRenderTarget* src, GrSurfaceDesc* desc) const = 0;
 
     
     
@@ -343,14 +340,19 @@ public:
                      const SkIPoint& dstPoint);
 
     struct MultisampleSpecs {
+        MultisampleSpecs(uint8_t uniqueID, int effectiveSampleCnt, const SkPoint* locations)
+            : fUniqueID(uniqueID),
+              fEffectiveSampleCnt(effectiveSampleCnt),
+              fSampleLocations(locations) {}
+
         
-        uint8_t                            fUniqueID;
+        uint8_t          fUniqueID;
         
         
-        int                                fEffectiveSampleCnt;
+        int              fEffectiveSampleCnt;
         
         
-        SkAutoTDeleteArray<const SkPoint>  fSampleLocations;
+        const SkPoint*   fSampleLocations;
     };
 
     
@@ -360,16 +362,18 @@ public:
 
     
     
-    
-    
-    bool draw(const GrPipeline&,
-              const GrPrimitiveProcessor&,
-              const GrMesh*,
-              int meshCount);
+    virtual GrGpuCommandBuffer* createCommandBuffer(
+            GrRenderTarget* target,
+            const GrGpuCommandBuffer::LoadAndStoreInfo& colorInfo,
+            const GrGpuCommandBuffer::LoadAndStoreInfo& stencilInfo) = 0;
 
     
     
     virtual void finishDrawTarget() {}
+
+    virtual GrFence SK_WARN_UNUSED_RESULT insertFence() const = 0;
+    virtual bool waitFence(GrFence, uint64_t timeout = 1000) const = 0;
+    virtual void deleteFence(GrFence) const = 0;
 
     
     
@@ -436,7 +440,8 @@ public:
 
 
     virtual GrBackendObject createTestingOnlyBackendTexture(void* pixels, int w, int h,
-                                                            GrPixelConfig config) = 0;
+                                                            GrPixelConfig config,
+                                                            bool isRenderTarget = false) = 0;
     
     virtual bool isTestingOnlyBackendTexture(GrBackendObject) const = 0;
     
@@ -482,18 +487,13 @@ public:
     
     virtual void resetShaderCacheForTesting() const {}
 
-protected:
-    
-    
-    static GrStencilFunc ConvertStencilFunc(bool stencilInClip,
-                                            GrStencilFunc func);
-    static void ConvertStencilFuncAndMask(GrStencilFunc func,
-                                          bool clipInStencil,
-                                          unsigned int clipBit,
-                                          unsigned int userBits,
-                                          unsigned int* ref,
-                                          unsigned int* mask);
+    void handleDirtyContext() {
+        if (fResetBits) {
+            this->resetContext();
+        }
+    }
 
+protected:
     static void ElevateDrawPreference(GrGpu::DrawPreference* preference,
                                       GrGpu::DrawPreference elevation) {
         GR_STATIC_ASSERT(GrGpu::kCallerPrefersDraw_DrawPreference > GrGpu::kNoDraw_DrawPreference);
@@ -504,16 +504,15 @@ protected:
         *preference = SkTMax(*preference, elevation);
     }
 
-    void handleDirtyContext() {
-        if (fResetBits) {
-            this->resetContext();
-        }
-    }
+    
+    void didWriteToSurface(GrSurface* surface, const SkIRect* bounds, uint32_t mipLevels = 1) const;
 
     Stats                                   fStats;
     SkAutoTDelete<GrPathRendering>          fPathRendering;
     
     SkAutoTUnref<const GrCaps>    fCaps;
+
+    typedef SkTArray<SkPoint, true> SamplePattern;
 
 private:
     
@@ -527,30 +526,20 @@ private:
     
     
     virtual GrTexture* onCreateTexture(const GrSurfaceDesc& desc,
-                                       GrGpuResource::LifeCycle lifeCycle,
+                                       SkBudgeted budgeted,
                                        const SkTArray<GrMipLevel>& texels) = 0;
     virtual GrTexture* onCreateCompressedTexture(const GrSurfaceDesc& desc,
-                                                 GrGpuResource::LifeCycle lifeCycle,
+                                                 SkBudgeted budgeted,
                                                  const SkTArray<GrMipLevel>& texels) = 0;
 
     virtual GrTexture* onWrapBackendTexture(const GrBackendTextureDesc&, GrWrapOwnership) = 0;
     virtual GrRenderTarget* onWrapBackendRenderTarget(const GrBackendRenderTargetDesc&,
                                                       GrWrapOwnership) = 0;
     virtual GrRenderTarget* onWrapBackendTextureAsRenderTarget(const GrBackendTextureDesc&) = 0;
-    virtual GrBuffer* onCreateBuffer(size_t size, GrBufferType intendedType, GrAccessPattern) = 0;
+    virtual GrBuffer* onCreateBuffer(size_t size, GrBufferType intendedType, GrAccessPattern,
+                                     const void* data) = 0;
 
-    
-    virtual void onClear(GrRenderTarget*, const SkIRect& rect, GrColor color) = 0;
-
-    
-    
-    virtual void onClearStencilClip(GrRenderTarget*, const SkIRect& rect, bool insideClip) = 0;
-
-    
-    virtual void onDraw(const GrPipeline&,
-                        const GrPrimitiveProcessor&,
-                        const GrMesh*,
-                        int meshCount) = 0;
+    virtual gr_instanced::InstancedRendering* onCreateInstancedRendering() = 0;
 
     virtual bool onMakeCopyForTextureParams(GrTexture* texture, const GrTextureParams&,
                                             GrTextureProducer::CopyParams*) const { return false; }
@@ -592,10 +581,8 @@ private:
                                const SkIPoint& dstPoint) = 0;
 
     
-    virtual void onGetMultisampleSpecs(GrRenderTarget*,
-                                       const GrStencilSettings&,
-                                       int* effectiveSampleCnt,
-                                       SkAutoTDeleteArray<SkPoint>* sampleLocations) = 0;
+    virtual void onGetMultisampleSpecs(GrRenderTarget*, const GrStencilSettings&,
+                                       int* effectiveSampleCnt, SamplePattern*) = 0;
 
     void resetContext() {
         this->onResetContext(fResetBits);
@@ -603,14 +590,21 @@ private:
         ++fResetTimestamp;
     }
 
-    ResetTimestamp                                                      fResetTimestamp;
-    uint32_t                                                            fResetBits;
-    SkTArray<const MultisampleSpecs*, true>                             fMultisampleSpecsMap;
-    GrTAllocator<MultisampleSpecs>                                      fMultisampleSpecsAllocator;
+    struct SamplePatternComparator {
+        bool operator()(const SamplePattern&, const SamplePattern&) const;
+    };
+
+    typedef std::map<SamplePattern, uint8_t, SamplePatternComparator> MultisampleSpecsIdMap;
+
+    ResetTimestamp                         fResetTimestamp;
+    uint32_t                               fResetBits;
+    MultisampleSpecsIdMap                  fMultisampleSpecsIdMap;
+    SkSTArray<1, MultisampleSpecs, true>   fMultisampleSpecs;
     
-    GrContext*                                                          fContext;
+    GrContext*                             fContext;
 
     friend class GrPathRendering;
+    friend class gr_instanced::InstancedRendering;
     typedef SkRefCnt INHERITED;
 };
 

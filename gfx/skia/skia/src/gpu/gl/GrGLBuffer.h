@@ -25,11 +25,18 @@ public:
     }
 
     GrGLuint bufferID() const { return fBufferID; }
-    size_t baseOffset() const { return reinterpret_cast<size_t>(fCPUData); }
+
+    
+
+
+
+    size_t glSizeInBytes() const { return fGLSizeInBytes; }
+
+    void setHasAttachedToTexture() { fHasAttachedToTexture = true; }
+    bool hasAttachedToTexture() const { return fHasAttachedToTexture; }
 
 protected:
-    GrGLBuffer(GrGLGpu*, size_t size, GrBufferType intendedType, GrAccessPattern, bool cpuBacked,
-               const void* data);
+    GrGLBuffer(GrGLGpu*, size_t size, GrBufferType intendedType, GrAccessPattern, const void* data);
 
     void onAbandon() override;
     void onRelease() override;
@@ -48,13 +55,11 @@ private:
     void validate() const;
 #endif
 
-    void*          fCPUData;
     GrBufferType   fIntendedType;
     GrGLuint       fBufferID;
-    size_t         fSizeInBytes;
     GrGLenum       fUsage;
-    size_t         fGLSizeInBytes;     
-                                       
+    size_t         fGLSizeInBytes;
+    bool           fHasAttachedToTexture;
 
     typedef GrBuffer INHERITED;
 };

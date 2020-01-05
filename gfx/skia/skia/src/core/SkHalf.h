@@ -16,9 +16,10 @@
 
 typedef uint16_t SkHalf;
 
-#define SK_HalfMin      0x0400   // 2^-24  (minimum positive normal value)
-#define SK_HalfMax      0x7bff   // 65504
-#define SK_HalfEpsilon  0x1400   // 2^-10
+static constexpr uint16_t SK_HalfMin     = 0x0400; 
+static constexpr uint16_t SK_HalfMax     = 0x7bff; 
+static constexpr uint16_t SK_HalfEpsilon = 0x1400; 
+static constexpr uint16_t SK_Half1       = 0x3C00; 
 
 
 float SkHalfToFloat(SkHalf h);
@@ -26,8 +27,9 @@ SkHalf SkFloatToHalf(float f);
 
 
 
-static inline     Sk4f SkHalfToFloat_01(uint64_t);
-static inline uint64_t SkFloatToHalf_01(const Sk4f&);
+
+static inline Sk4f SkHalfToFloat_finite_ftz(uint64_t);
+static inline Sk4h SkFloatToHalf_finite_ftz(const Sk4f&);
 
 
 
@@ -36,89 +38,51 @@ static inline uint64_t SkFloatToHalf_01(const Sk4f&);
 
 
 
-static inline Sk4f SkHalfToFloat_01(uint64_t hs) {
+static inline Sk4f SkHalfToFloat_finite_ftz(const Sk4h& hs) {
 #if !defined(SKNX_NO_SIMD) && defined(SK_CPU_ARM64)
     float32x4_t fs;
-    asm ("fmov  %d[fs], %[hs]        \n"   
-         "fcvtl %[fs].4s, %[fs].4h   \n"   
+    asm ("fcvtl %[fs].4s, %[hs].4h   \n"   
         : [fs] "=w" (fs)                   
-        : [hs] "r" (hs));                  
+        : [hs] "w" (hs.fVec));             
     return fs;
-
-#elif !defined(SKNX_NO_SIMD) && defined(SK_ARM_HAS_NEON)
-    
-    
-    
-    uint32x4_t h = vmovl_u16(vcreate_u16(hs)),
-               is_denorm = vcltq_u32(h, vdupq_n_u32(1<<10));
-    float32x4_t denorm = vcvtq_n_f32_u32(h, 24),
-                  norm = vreinterpretq_f32_u32(vaddq_u32(vshlq_n_u32(h, 13),
-                                                         vdupq_n_u32((127-15) << 23)));
-    return vbslq_f32(is_denorm, denorm, norm);
-
-#elif !defined(SKNX_NO_SIMD) && SK_CPU_SSE_LEVEL >= SK_CPU_SSE_LEVEL_SSE2
-    
-    
-    
-    
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    __m128i h = _mm_unpacklo_epi16(_mm_loadl_epi64((const __m128i*)&hs), _mm_setzero_si128());
-    const __m128i is_denorm = _mm_cmplt_epi32(h, _mm_set1_epi32(1<<10));
-
-    __m128i rebias = _mm_set1_epi32((127-15) << 23);
-    rebias = _mm_add_epi32(rebias, _mm_and_si128(is_denorm, _mm_set1_epi32(1<<23)));
-
-    __m128i f = _mm_add_epi32(_mm_slli_epi32(h, 13), rebias);
-    return _mm_sub_ps(_mm_castsi128_ps(f),
-                      _mm_castsi128_ps(_mm_and_si128(is_denorm, rebias)));
 #else
-    float fs[4];
-    for (int i = 0; i < 4; i++) {
-        fs[i] = SkHalfToFloat(hs >> (i*16));
-    }
-    return Sk4f::Load(fs);
+    Sk4i bits     = SkNx_cast<int>(hs),  
+         sign     = bits & 0x00008000,   
+         positive = bits ^ sign,         
+         is_norm  = 0x03ff < positive;   
+
+    
+    
+    Sk4i norm = (positive << 13) + ((127 - 15) << 23);
+
+    Sk4i merged = (sign << 16) | (norm & is_norm);
+    return Sk4f::Load(&merged);
 #endif
 }
 
-static inline uint64_t SkFloatToHalf_01(const Sk4f& fs) {
-    uint64_t r;
+static inline Sk4f SkHalfToFloat_finite_ftz(uint64_t hs) {
+    return SkHalfToFloat_finite_ftz(Sk4h::Load(&hs));
+}
+
+static inline Sk4h SkFloatToHalf_finite_ftz(const Sk4f& fs) {
 #if !defined(SKNX_NO_SIMD) && defined(SK_CPU_ARM64)
     float32x4_t vec = fs.fVec;
     asm ("fcvtn %[vec].4h, %[vec].4s  \n"   
-         "fmov  %[r], %d[vec]         \n"   
-        : [r] "=r" (r)                      
-        , [vec] "+w" (vec));                
-
-
-
-#elif !defined(SKNX_NO_SIMD) && SK_CPU_SSE_LEVEL >= SK_CPU_SSE_LEVEL_SSE2
-    
-    
-    const __m128 rebias = _mm_castsi128_ps(_mm_set1_epi32((127 - (127-15)) << 23));
-    __m128i h = _mm_srli_epi32(_mm_castps_si128(_mm_mul_ps(fs.fVec, rebias)), 13);
-    _mm_storel_epi64((__m128i*)&r, _mm_packs_epi32(h,h));
-
+        : [vec] "+w" (vec));                
+    return vreinterpret_u16_f32(vget_low_f32(vec));
 #else
-    SkHalf hs[4];
-    for (int i = 0; i < 4; i++) {
-        hs[i] = SkFloatToHalf(fs[i]);
-    }
-    r = (uint64_t)hs[3] << 48
-      | (uint64_t)hs[2] << 32
-      | (uint64_t)hs[1] << 16
-      | (uint64_t)hs[0] <<  0;
+    Sk4i bits         = Sk4i::Load(&fs),
+         sign         = bits & 0x80000000,      
+         positive     = bits ^ sign,            
+         will_be_norm = 0x387fdfff < positive;  
+
+    
+    
+    Sk4i norm = (positive - ((127 - 15) << 23)) >> 13;
+
+    Sk4i merged = (sign >> 16) | (will_be_norm & norm);
+    return SkNx_cast<uint16_t>(merged);
 #endif
-    return r;
 }
 
 #endif

@@ -9,30 +9,34 @@
 #define GrDrawContext_DEFINED
 
 #include "GrColor.h"
+#include "GrContext.h"
+#include "GrPaint.h"
 #include "GrRenderTarget.h"
 #include "SkRefCnt.h"
 #include "SkRegion.h"
 #include "SkSurfaceProps.h"
+#include "../private/GrInstancedPipelineInfo.h"
 #include "../private/GrSingleOwner.h"
 
-class GrAtlasTextContext;
 class GrAuditTrail;
 class GrClip;
-class GrContext;
 class GrDrawBatch;
 class GrDrawContextPriv;
 class GrDrawPathBatchBase;
 class GrDrawingManager;
 class GrDrawTarget;
+class GrFixedClip;
 class GrPaint;
 class GrPathProcessor;
 class GrPipelineBuilder;
 class GrRenderTarget;
-class GrStrokeInfo;
+class GrStyle;
 class GrSurface;
+struct GrUserStencilSettings;
 class SkDrawFilter;
 struct SkIPoint;
 struct SkIRect;
+class SkLatticeIter;
 class SkMatrix;
 class SkPaint;
 class SkPath;
@@ -94,15 +98,11 @@ public:
 
 
 
-
-
-
-
     void drawRect(const GrClip&,
                   const GrPaint& paint,
                   const SkMatrix& viewMatrix,
                   const SkRect&,
-                  const GrStrokeInfo* strokeInfo = nullptr);
+                  const GrStyle* style  = nullptr);
 
     
 
@@ -135,12 +135,11 @@ public:
 
 
 
-
     void drawRRect(const GrClip&,
                    const GrPaint&,
                    const SkMatrix& viewMatrix,
                    const SkRRect& rrect,
-                   const GrStrokeInfo&);
+                   const GrStyle& style);
 
     
 
@@ -166,12 +165,11 @@ public:
 
 
 
-
     void drawPath(const GrClip&,
                   const GrPaint&,
                   const SkMatrix& viewMatrix,
                   const SkPath&,
-                  const GrStrokeInfo&);
+                  const GrStyle& style);
 
     
 
@@ -219,9 +217,22 @@ public:
                    const SkRSXform xform[],
                    const SkRect texRect[],
                    const SkColor colors[]);
-    
+
     
 
+
+
+
+
+
+
+    void drawRegion(const GrClip&,
+                    const GrPaint& paint,
+                    const SkMatrix& viewMatrix,
+                    const SkRegion& region,
+                    const GrStyle& style);
+
+    
 
 
 
@@ -233,7 +244,59 @@ public:
                   const GrPaint& paint,
                   const SkMatrix& viewMatrix,
                   const SkRect& oval,
-                  const GrStrokeInfo& strokeInfo);
+                  const GrStyle& style);
+   
+
+
+
+
+
+
+
+
+
+
+
+
+
+    void drawArc(const GrClip&,
+                 const GrPaint& paint,
+                 const SkMatrix& viewMatrix,
+                 const SkRect& oval,
+                 SkScalar startAngle,
+                 SkScalar sweepAngle,
+                 bool useCenter,
+                 const GrStyle& style);
+
+    
+
+
+    void drawImageLattice(const GrClip&,
+                          const GrPaint& paint,
+                          const SkMatrix& viewMatrix,
+                          int imageWidth,
+                          int imageHeight,
+                          std::unique_ptr<SkLatticeIter> iter,
+                          const SkRect& dst);
+
+    
+
+
+
+    void prepareForExternalIO();
+
+    
+
+
+
+
+
+
+
+
+
+
+    bool readPixels(const SkImageInfo& dstInfo, void* dstBuffer, size_t dstRowBytes, int x, int y);
 
     
 
@@ -247,58 +310,79 @@ public:
 
 
 
+    bool writePixels(const SkImageInfo& srcInfo, const void* srcBuffer, size_t srcRowBytes,
+                     int x, int y);
 
+    bool isStencilBufferMultisampled() const {
+        return fRenderTarget->isStencilBufferMultisampled();
+    }
+    bool isUnifiedMultisampled() const { return fRenderTarget->isUnifiedMultisampled(); }
+    bool hasMixedSamples() const { return fRenderTarget->isMixedSampled(); }
 
-    void drawImageNine(const GrClip&,
-                       const GrPaint& paint,
-                       const SkMatrix& viewMatrix,
-                       int imageWidth,
-                       int imageHeight,
-                       const SkIRect& center,
-                       const SkRect& dst);
+    bool mustUseHWAA(const GrPaint& paint) const {
+        return paint.isAntiAlias() && fRenderTarget->isUnifiedMultisampled();
+    }
 
-    
-
-
-
-
-
-    void drawBatch(const GrClip&, const GrPaint&, GrDrawBatch*);
-
-    
-
-
-
-
-
-    void drawPathBatch(const GrPipelineBuilder&, GrDrawPathBatchBase*);
-
+    const GrCaps* caps() const { return fContext->caps(); }
+    const GrSurfaceDesc& desc() const { return fRenderTarget->desc(); }
     int width() const { return fRenderTarget->width(); }
     int height() const { return fRenderTarget->height(); }
+    GrPixelConfig config() const { return fRenderTarget->config(); }
     int numColorSamples() const { return fRenderTarget->numColorSamples(); }
-    bool allowSRGBInputs() const { return fSurfaceProps.allowSRGBInputs(); }
+    bool isGammaCorrect() const { return SkToBool(fColorSpace.get()); }
+    SkSourceGammaTreatment sourceGammaTreatment() const {
+        return this->isGammaCorrect() ? SkSourceGammaTreatment::kRespect
+                                      : SkSourceGammaTreatment::kIgnore;
+    }
+    const SkSurfaceProps& surfaceProps() const { return fSurfaceProps; }
+    SkColorSpace* getColorSpace() const { return fColorSpace.get(); }
+    GrColorSpaceXform* getColorXformFromSRGB() const { return fColorXformFromSRGB.get(); }
+    GrSurfaceOrigin origin() const { return fRenderTarget->origin(); }
 
-    GrRenderTarget* accessRenderTarget() { return fRenderTarget; }
+    bool wasAbandoned() const;
+
+    GrRenderTarget* accessRenderTarget() { return fRenderTarget.get(); }
+
+    sk_sp<GrTexture> asTexture() { return sk_ref_sp(fRenderTarget->asTexture()); }
 
     
     GrDrawContextPriv drawContextPriv();
     const GrDrawContextPriv drawContextPriv() const;
 
+    GrAuditTrail* auditTrail() { return fAuditTrail; }
+
 protected:
-    GrDrawContext(GrContext*, GrDrawingManager*, GrRenderTarget*,
+    GrDrawContext(GrContext*, GrDrawingManager*, sk_sp<GrRenderTarget>, sk_sp<SkColorSpace>,
                   const SkSurfaceProps* surfaceProps, GrAuditTrail*, GrSingleOwner*);
 
     GrDrawingManager* drawingManager() { return fDrawingManager; }
-    GrAuditTrail* auditTrail() { return fAuditTrail; }
-    const SkSurfaceProps& surfaceProps() const { return fSurfaceProps; }
-    
+
     SkDEBUGCODE(GrSingleOwner* singleOwner() { return fSingleOwner; })
     SkDEBUGCODE(void validate() const;)
 
 private:
     friend class GrAtlasTextBlob; 
+    friend class GrStencilAndCoverTextContext; 
+
     friend class GrDrawingManager; 
     friend class GrDrawContextPriv;
+    friend class GrTestTarget;  
+    friend class GrSWMaskHelper;                 
+
+    
+    friend class GrSoftwarePathRenderer;         
+    friend class GrAAConvexPathRenderer;         
+    friend class GrDashLinePathRenderer;         
+    friend class GrAAHairLinePathRenderer;       
+    friend class GrAALinearizingConvexPathRenderer;  
+    friend class GrAADistanceFieldPathRenderer;  
+    friend class GrDefaultPathRenderer;          
+    friend class GrPLSPathRenderer;              
+    friend class GrMSAAPathRenderer;             
+    friend class GrStencilAndCoverPathRenderer;  
+    friend class GrTessellatingPathRenderer;     
+
+    void internalClear(const GrFixedClip&, const GrColor, bool canIgnoreClip);
 
     bool drawFilledDRRect(const GrClip& clip,
                           const GrPaint& paint,
@@ -306,31 +390,44 @@ private:
                           const SkRRect& origOuter,
                           const SkRRect& origInner);
 
-    GrDrawBatch* getFillRectBatch(const GrPaint& paint,
-                                  const SkMatrix& viewMatrix,
-                                  const SkRect& rect);
+    bool drawFilledRect(const GrClip& clip,
+                        const GrPaint& paint,
+                        const SkMatrix& viewMatrix,
+                        const SkRect& rect,
+                        const GrUserStencilSettings* ss);
+
+    void drawNonAAFilledRect(const GrClip&,
+                             const GrPaint&,
+                             const SkMatrix& viewMatrix,
+                             const SkRect& rect,
+                             const SkRect* localRect,
+                             const SkMatrix* localMatrix,
+                             const GrUserStencilSettings* ss,
+                             bool useHWAA);
 
     void internalDrawPath(const GrClip& clip,
                           const GrPaint& paint,
                           const SkMatrix& viewMatrix,
                           const SkPath& path,
-                          const GrStrokeInfo& strokeInfo);
+                          const GrStyle& style);
 
     
     
-    void drawBatch(GrPipelineBuilder* pipelineBuilder, GrDrawBatch* batch);
+    void drawBatch(const GrPipelineBuilder& pipelineBuilder, const GrClip&, GrDrawBatch* batch);
 
     GrDrawTarget* getDrawTarget();
 
     GrDrawingManager*                 fDrawingManager;
-    GrRenderTarget*                   fRenderTarget;
+    sk_sp<GrRenderTarget>             fRenderTarget;
 
     
     
     GrDrawTarget*                     fDrawTarget;
-    SkAutoTDelete<GrAtlasTextContext> fAtlasTextContext;
     GrContext*                        fContext;
+    GrInstancedPipelineInfo           fInstancedPipelineInfo;
 
+    sk_sp<SkColorSpace>               fColorSpace;
+    sk_sp<GrColorSpaceXform>          fColorXformFromSRGB;
     SkSurfaceProps                    fSurfaceProps;
     GrAuditTrail*                     fAuditTrail;
 

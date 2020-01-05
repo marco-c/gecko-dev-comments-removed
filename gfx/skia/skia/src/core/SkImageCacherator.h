@@ -48,7 +48,8 @@ public:
 
 
 
-    GrTexture* lockAsTexture(GrContext*, const GrTextureParams&, const SkImage* client,
+    GrTexture* lockAsTexture(GrContext*, const GrTextureParams&,
+                             SkSourceGammaTreatment gammaTreatment, const SkImage* client,
                              SkImage::CachingHint = SkImage::kAllow_CachingHint);
 
     
@@ -75,7 +76,7 @@ private:
     
     
     GrTexture* lockTexture(GrContext*, const GrUniqueKey& key, const SkImage* client,
-                           SkImage::CachingHint, bool willBeMipped);
+                           SkImage::CachingHint, bool willBeMipped, SkSourceGammaTreatment);
 #endif
 
     class ScopedGenerator {

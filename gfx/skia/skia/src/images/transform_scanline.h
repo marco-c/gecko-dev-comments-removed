@@ -20,15 +20,16 @@
 
 
 
-typedef void (*transform_scanline_proc)(const char* SK_RESTRICT src,
-                                        int width, char* SK_RESTRICT dst);
+
+typedef void (*transform_scanline_proc)(char* SK_RESTRICT dst, const char* SK_RESTRICT src,
+                                        int width, int bpp);
 
 
 
 
-static void transform_scanline_memcpy(const char* SK_RESTRICT src, int width,
-                                      char* SK_RESTRICT dst) {
-    memcpy(dst, src, width);
+static void transform_scanline_memcpy(char* SK_RESTRICT dst, const char* SK_RESTRICT src,
+                                      int width, int bpp) {
+    memcpy(dst, src, width * bpp);
 }
 
 
@@ -36,9 +37,9 @@ static void transform_scanline_memcpy(const char* SK_RESTRICT src, int width,
 
 
 
-static void transform_scanline_565(const char* SK_RESTRICT src, int width,
-                                   char* SK_RESTRICT dst) {
-    const uint16_t* SK_RESTRICT srcP = (const uint16_t*)src;
+static void transform_scanline_565(char* SK_RESTRICT dst, const char* SK_RESTRICT src,
+                                   int width, int) {
+    const uint16_t* srcP = (const uint16_t*)src;
     for (int i = 0; i < width; i++) {
         unsigned c = *srcP++;
         *dst++ = SkPacked16ToR32(c);
@@ -51,14 +52,14 @@ static void transform_scanline_565(const char* SK_RESTRICT src, int width,
 
 
 
-static void transform_scanline_888(const char* SK_RESTRICT src, int width,
-                                   char* SK_RESTRICT dst) {
-    const SkPMColor* SK_RESTRICT srcP = (const SkPMColor*)src;
+static void transform_scanline_RGBX(char* SK_RESTRICT dst, const char* SK_RESTRICT src,
+                                    int width, int) {
+    const uint32_t* srcP = (const SkPMColor*)src;
     for (int i = 0; i < width; i++) {
-        SkPMColor c = *srcP++;
-        *dst++ = SkGetPackedR32(c);
-        *dst++ = SkGetPackedG32(c);
-        *dst++ = SkGetPackedB32(c);
+        uint32_t c = *srcP++;
+        *dst++ = (c >>  0) & 0xFF;
+        *dst++ = (c >>  8) & 0xFF;
+        *dst++ = (c >> 16) & 0xFF;
     }
 }
 
@@ -66,9 +67,24 @@ static void transform_scanline_888(const char* SK_RESTRICT src, int width,
 
 
 
-static void transform_scanline_444(const char* SK_RESTRICT src, int width,
-                                   char* SK_RESTRICT dst) {
-    const SkPMColor16* SK_RESTRICT srcP = (const SkPMColor16*)src;
+static void transform_scanline_BGRX(char* SK_RESTRICT dst, const char* SK_RESTRICT src,
+                                    int width, int) {
+    const uint32_t* srcP = (const SkPMColor*)src;
+    for (int i = 0; i < width; i++) {
+        uint32_t c = *srcP++;
+        *dst++ = (c >> 16) & 0xFF;
+        *dst++ = (c >>  8) & 0xFF;
+        *dst++ = (c >>  0) & 0xFF;
+    }
+}
+
+
+
+
+
+static void transform_scanline_444(char* SK_RESTRICT dst, const char* SK_RESTRICT src,
+                                   int width, int) {
+    const SkPMColor16* srcP = (const SkPMColor16*)src;
     for (int i = 0; i < width; i++) {
         SkPMColor16 c = *srcP++;
         *dst++ = SkPacked4444ToR32(c);
@@ -77,23 +93,26 @@ static void transform_scanline_444(const char* SK_RESTRICT src, int width,
     }
 }
 
-
-
-
-
-
-static void transform_scanline_8888(const char* SK_RESTRICT src, int width,
-                                    char* SK_RESTRICT dst) {
-    const SkPMColor* SK_RESTRICT srcP = (const SkPMColor*)src;
-    const SkUnPreMultiply::Scale* SK_RESTRICT table =
-                                              SkUnPreMultiply::GetScaleTable();
+template <bool kIsRGBA>
+static inline void transform_scanline_unpremultiply(char* SK_RESTRICT dst,
+                                                    const char* SK_RESTRICT src, int width, int) {
+    const uint32_t* srcP = (const SkPMColor*)src;
+    const SkUnPreMultiply::Scale* table = SkUnPreMultiply::GetScaleTable();
 
     for (int i = 0; i < width; i++) {
-        SkPMColor c = *srcP++;
-        unsigned a = SkGetPackedA32(c);
-        unsigned r = SkGetPackedR32(c);
-        unsigned g = SkGetPackedG32(c);
-        unsigned b = SkGetPackedB32(c);
+        uint32_t c = *srcP++;
+        unsigned r, g, b, a;
+        if (kIsRGBA) {
+            r = (c >>  0) & 0xFF;
+            g = (c >>  8) & 0xFF;
+            b = (c >> 16) & 0xFF;
+            a = (c >> 24) & 0xFF;
+        } else {
+            r = (c >> 16) & 0xFF;
+            g = (c >>  8) & 0xFF;
+            b = (c >>  0) & 0xFF;
+            a = (c >> 24) & 0xFF;
+        }
 
         if (0 != a && 255 != a) {
             SkUnPreMultiply::Scale scale = table[a];
@@ -111,12 +130,42 @@ static void transform_scanline_8888(const char* SK_RESTRICT src, int width,
 
 
 
+static void transform_scanline_rgbA(char* SK_RESTRICT dst, const char* SK_RESTRICT src,
+                                    int width, int bpp) {
+    transform_scanline_unpremultiply<true>(dst, src, width, bpp);
+}
 
-static void transform_scanline_4444(const char* SK_RESTRICT src, int width,
-                                    char* SK_RESTRICT dst) {
-    const SkPMColor16* SK_RESTRICT srcP = (const SkPMColor16*)src;
-    const SkUnPreMultiply::Scale* SK_RESTRICT table =
-                                              SkUnPreMultiply::GetScaleTable();
+
+
+
+static void transform_scanline_bgrA(char* SK_RESTRICT dst, const char* SK_RESTRICT src,
+                                    int width, int bpp) {
+    transform_scanline_unpremultiply<false>(dst, src, width, bpp);
+}
+
+
+
+
+static void transform_scanline_BGRA(char* SK_RESTRICT dst, const char* SK_RESTRICT src,
+                                    int width, int) {
+    const uint32_t* srcP = (const SkPMColor*)src;
+    for (int i = 0; i < width; i++) {
+        uint32_t c = *srcP++;
+        *dst++ = (c >> 16) & 0xFF;
+        *dst++ = (c >>  8) & 0xFF;
+        *dst++ = (c >>  0) & 0xFF;
+        *dst++ = (c >> 24) & 0xFF;
+    }
+}
+
+
+
+
+
+static void transform_scanline_4444(char* SK_RESTRICT dst, const char* SK_RESTRICT src,
+                                    int width, int) {
+    const SkPMColor16* srcP = (const SkPMColor16*)src;
+    const SkUnPreMultiply::Scale* table = SkUnPreMultiply::GetScaleTable();
 
     for (int i = 0; i < width; i++) {
         SkPMColor16 c = *srcP++;

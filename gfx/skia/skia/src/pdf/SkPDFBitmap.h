@@ -7,9 +7,11 @@
 #ifndef SkPDFBitmap_DEFINED
 #define SkPDFBitmap_DEFINED
 
-#include "SkPDFTypes.h"
+#include "SkRefCnt.h"
 
 class SkImage;
+class SkPixelSerializer;
+class SkPDFObject;
 
 
 

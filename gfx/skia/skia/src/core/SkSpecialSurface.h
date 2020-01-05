@@ -50,26 +50,21 @@ public:
 
     sk_sp<SkSpecialImage> makeImageSnapshot();
 
-    
-
-
-    static sk_sp<SkSpecialSurface> MakeFromTexture(SkImageFilter::Proxy* proxy,
-                                                   const SkIRect& subset, GrTexture*,
-                                                   const SkSurfaceProps* = nullptr);
-
+#if SK_SUPPORT_GPU
     
 
 
 
-    static sk_sp<SkSpecialSurface> MakeRenderTarget(SkImageFilter::Proxy* proxy,
-                                                    GrContext*, const GrSurfaceDesc&,
-                                                    const SkSurfaceProps* = nullptr);
+    static sk_sp<SkSpecialSurface> MakeRenderTarget(GrContext*,
+                                                    int width, int height,
+                                                    GrPixelConfig config,
+                                                    sk_sp<SkColorSpace> colorSpace);
+#endif
 
     
 
 
-    static sk_sp<SkSpecialSurface> MakeFromBitmap(SkImageFilter::Proxy* proxy,
-                                                  const SkIRect& subset, SkBitmap& bm,
+    static sk_sp<SkSpecialSurface> MakeFromBitmap(const SkIRect& subset, SkBitmap& bm,
                                                   const SkSurfaceProps* = nullptr);
 
     
@@ -79,26 +74,19 @@ public:
 
 
 
-    static sk_sp<SkSpecialSurface> MakeRaster(SkImageFilter::Proxy* proxy,
-                                              const SkImageInfo&,
+    static sk_sp<SkSpecialSurface> MakeRaster(const SkImageInfo&,
                                               const SkSurfaceProps* = nullptr);
 
 protected:
-    SkSpecialSurface(SkImageFilter::Proxy*, const SkIRect& subset, const SkSurfaceProps*);
+    SkSpecialSurface(const SkIRect& subset, const SkSurfaceProps*);
 
     
     friend class TestingSpecialSurfaceAccess;
     const SkIRect& subset() const { return fSubset; }
 
-    
-    SkImageFilter::Proxy* proxy() const { return fProxy; }
-
 private:
     const SkSurfaceProps fProps;
     const SkIRect        fSubset;
-
-    
-    SkImageFilter::Proxy* fProxy;
 
     typedef SkRefCnt INHERITED;
 };

@@ -1,0 +1,12 @@
+
+
+
+
+
+
+
+#define SkColorSpacePrintf(...)
+
+inline bool color_space_almost_equal(float a, float b) {
+    return SkTAbs(a - b) < 0.01f;
+}

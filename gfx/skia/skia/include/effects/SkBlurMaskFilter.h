@@ -37,8 +37,16 @@ public:
 
 
 
+
+
+
     static sk_sp<SkMaskFilter> Make(SkBlurStyle style, SkScalar sigma,
-                                    uint32_t flags = kNone_BlurFlag);
+                                    const SkRect& occluder, uint32_t flags = kNone_BlurFlag);
+
+    static sk_sp<SkMaskFilter> Make(SkBlurStyle style, SkScalar sigma,
+                                    uint32_t flags = kNone_BlurFlag) {
+        return Make(style, sigma, SkRect::MakeEmpty(), flags);
+    }
 
     
 
@@ -64,6 +72,28 @@ public:
                                       SkScalar ambient, SkScalar specular,
                                       SkScalar blurRadius);
 #endif
+
+    static const int kMaxDivisions = 6;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    static bool ComputeBlurredRRectParams(const SkRRect& srcRRect, const SkRRect& devRRect,
+                                          const SkRect& occluder,
+                                          SkScalar sigma, SkScalar xformedSigma,
+                                          SkRRect* rrectToDraw,
+                                          SkISize* widthHeight,
+                                          SkScalar rectXs[kMaxDivisions],
+                                          SkScalar rectYs[kMaxDivisions],
+                                          SkScalar texXs[kMaxDivisions],
+                                          SkScalar texYs[kMaxDivisions],
+                                          int* numXs, int* numYs, uint32_t* skipMask);
 
     SK_DECLARE_FLATTENABLE_REGISTRAR_GROUP()
 

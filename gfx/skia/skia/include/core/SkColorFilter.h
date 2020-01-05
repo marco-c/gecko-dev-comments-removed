@@ -10,11 +10,13 @@
 
 #include "SkColor.h"
 #include "SkFlattenable.h"
+#include "SkRefCnt.h"
 #include "SkXfermode.h"
 
 class GrContext;
 class GrFragmentProcessor;
 class SkBitmap;
+class SkRasterPipeline;
 
 
 
@@ -69,6 +71,8 @@ public:
 
     virtual void filterSpan4f(const SkPM4f src[], int count, SkPM4f result[]) const;
 
+    bool appendStages(SkRasterPipeline*) const;
+
     enum Flags {
         
 
@@ -111,6 +115,9 @@ public:
 
 
     static sk_sp<SkColorFilter> MakeModeFilter(SkColor c, SkXfermode::Mode mode);
+    static sk_sp<SkColorFilter> MakeModeFilter(SkColor c, SkBlendMode mode) {
+        return MakeModeFilter(c, (SkXfermode::Mode)mode);
+    }
 
     
 
@@ -142,6 +149,7 @@ public:
     }
 #endif
 
+#if SK_SUPPORT_GPU
     
 
 
@@ -151,9 +159,8 @@ public:
 
 
 
-    virtual const GrFragmentProcessor* asFragmentProcessor(GrContext*) const {
-        return nullptr;
-    }
+    virtual sk_sp<GrFragmentProcessor> asFragmentProcessor(GrContext*) const;
+#endif
 
     bool affectsTransparentBlack() const {
         return this->filterColor(0) != 0;
@@ -166,6 +173,8 @@ public:
 
 protected:
     SkColorFilter() {}
+
+    virtual bool onAppendStages(SkRasterPipeline*) const;
 
 private:
     

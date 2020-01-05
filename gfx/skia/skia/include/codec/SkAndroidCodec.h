@@ -38,9 +38,10 @@ public:
 
 
 
-
-
-    static SkAndroidCodec* NewFromData(SkData*, SkPngChunkReader* = NULL);
+    static SkAndroidCodec* NewFromData(sk_sp<SkData>, SkPngChunkReader* = NULL);
+    static SkAndroidCodec* NewFromData(SkData* data, SkPngChunkReader* reader) {
+        return NewFromData(sk_ref_sp(data), reader);
+    }
 
     virtual ~SkAndroidCodec() {}
 

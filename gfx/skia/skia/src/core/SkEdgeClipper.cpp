@@ -263,7 +263,23 @@ static void chop_cubic_in_Y(SkPoint pts[4], const SkRect& clip) {
     if (pts[0].fY < clip.fTop) {
         SkPoint tmp[7];
         chop_mono_cubic_at_y(pts, clip.fTop, tmp);
+
         
+
+
+
+
+
+
+
+
+
+        if (tmp[3].fY < clip.fTop && tmp[4].fY < clip.fTop && tmp[5].fY < clip.fTop) {
+            SkPoint tmp2[4];
+            memcpy(tmp2, &tmp[3].fX, 4 * sizeof(SkPoint));
+            chop_mono_cubic_at_y(tmp2, clip.fTop, tmp);
+        }
+
         
         
         tmp[3].fY = clip.fTop;

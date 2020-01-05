@@ -9,6 +9,7 @@
 #define SkCodecPriv_DEFINED
 
 #include "SkColorPriv.h"
+#include "SkColorSpaceXform.h"
 #include "SkColorTable.h"
 #include "SkImageInfo.h"
 #include "SkTypes.h"
@@ -20,11 +21,11 @@
 #endif
 
 
-inline float get_scale_from_sample_size(int sampleSize) {
+static inline float get_scale_from_sample_size(int sampleSize) {
     return 1.0f / ((float) sampleSize);
 }
 
-inline bool is_valid_subset(const SkIRect& subset, const SkISize& imageDims) {
+static inline bool is_valid_subset(const SkIRect& subset, const SkISize& imageDims) {
     return SkIRect::MakeSize(imageDims).contains(subset);
 }
 
@@ -33,7 +34,7 @@ inline bool is_valid_subset(const SkIRect& subset, const SkISize& imageDims) {
 
 
 
-inline int get_scaled_dimension(int srcDimension, int sampleSize) {
+static inline int get_scaled_dimension(int srcDimension, int sampleSize) {
     if (sampleSize > srcDimension) {
         return 1;
     }
@@ -46,7 +47,7 @@ inline int get_scaled_dimension(int srcDimension, int sampleSize) {
 
 
 
-inline int get_start_coord(int sampleFactor) { return sampleFactor / 2; };
+static inline int get_start_coord(int sampleFactor) { return sampleFactor / 2; };
 
 
 
@@ -56,7 +57,7 @@ inline int get_start_coord(int sampleFactor) { return sampleFactor / 2; };
 
 
 
-inline int get_dst_coord(int srcCoord, int sampleFactor) { return srcCoord / sampleFactor; };
+static inline int get_dst_coord(int srcCoord, int sampleFactor) { return srcCoord / sampleFactor; };
 
 
 
@@ -66,7 +67,7 @@ inline int get_dst_coord(int srcCoord, int sampleFactor) { return srcCoord / sam
 
 
 
-inline bool is_coord_necessary(int srcCoord, int sampleFactor, int scaledDim) {
+static inline bool is_coord_necessary(int srcCoord, int sampleFactor, int scaledDim) {
     
     int startCoord = get_start_coord(sampleFactor);
 
@@ -79,7 +80,7 @@ inline bool is_coord_necessary(int srcCoord, int sampleFactor, int scaledDim) {
     return ((srcCoord - startCoord) % sampleFactor) == 0;
 }
 
-inline bool valid_alpha(SkAlphaType dstAlpha, SkAlphaType srcAlpha) {
+static inline bool valid_alpha(SkAlphaType dstAlpha, SkAlphaType srcAlpha) {
     if (kUnknown_SkAlphaType == dstAlpha) {
         return false;
     }
@@ -115,12 +116,10 @@ inline bool valid_alpha(SkAlphaType dstAlpha, SkAlphaType srcAlpha) {
 
 
 
-inline bool conversion_possible(const SkImageInfo& dst, const SkImageInfo& src) {
-    
-    
-    
-    
 
+
+static inline bool conversion_possible_ignore_color_space(const SkImageInfo& dst,
+                                                          const SkImageInfo& src) {
     
     if (!valid_alpha(dst.alphaType(), src.alphaType())) {
         return false;
@@ -128,15 +127,11 @@ inline bool conversion_possible(const SkImageInfo& dst, const SkImageInfo& src) 
 
     
     switch (dst.colorType()) {
-        case kN32_SkColorType:
+        case kRGBA_8888_SkColorType:
+        case kBGRA_8888_SkColorType:
             return true;
         case kRGB_565_SkColorType:
-            return kOpaque_SkAlphaType == dst.alphaType();
-        case kGray_8_SkColorType:
-            if (kOpaque_SkAlphaType != dst.alphaType()) {
-                return false;
-            }
-            
+            return kOpaque_SkAlphaType == src.alphaType();
         default:
             return dst.colorType() == src.colorType();
     }
@@ -145,23 +140,46 @@ inline bool conversion_possible(const SkImageInfo& dst, const SkImageInfo& src) 
 
 
 
-inline const SkPMColor* get_color_ptr(SkColorTable* colorTable) {
+static inline const SkPMColor* get_color_ptr(SkColorTable* colorTable) {
      return nullptr != colorTable ? colorTable->readColors() : nullptr;
+}
+
+static inline SkColorSpaceXform::ColorFormat select_xform_format(SkColorType colorType) {
+    switch (colorType) {
+        case kRGBA_8888_SkColorType:
+            return SkColorSpaceXform::kRGBA_8888_ColorFormat;
+        case kBGRA_8888_SkColorType:
+            return SkColorSpaceXform::kBGRA_8888_ColorFormat;
+        case kRGBA_F16_SkColorType:
+            return SkColorSpaceXform::kRGBA_F16_ColorFormat;
+        default:
+            SkASSERT(false);
+            return SkColorSpaceXform::kRGBA_8888_ColorFormat;
+    }
 }
 
 
 
 
-inline uint32_t get_color_table_fill_value(SkColorType colorType, const SkPMColor* colorPtr,
-        uint8_t fillIndex) {
+static inline uint64_t get_color_table_fill_value(SkColorType dstColorType, SkAlphaType alphaType,
+        const SkPMColor* colorPtr, uint8_t fillIndex, SkColorSpaceXform* colorXform) {
     SkASSERT(nullptr != colorPtr);
-    switch (colorType) {
-        case kN32_SkColorType:
+    switch (dstColorType) {
+        case kRGBA_8888_SkColorType:
+        case kBGRA_8888_SkColorType:
             return colorPtr[fillIndex];
         case kRGB_565_SkColorType:
             return SkPixel32ToPixel16(colorPtr[fillIndex]);
         case kIndex_8_SkColorType:
             return fillIndex;
+        case kRGBA_F16_SkColorType: {
+            SkASSERT(colorXform);
+            uint64_t dstColor;
+            uint32_t srcColor = colorPtr[fillIndex];
+            colorXform->apply(&dstColor, &srcColor, 1, select_xform_format(dstColorType),
+                              SkColorSpaceXform::kRGBA_8888_ColorFormat, alphaType);
+            return dstColor;
+        }
         default:
             SkASSERT(false);
             return 0;
@@ -172,7 +190,7 @@ inline uint32_t get_color_table_fill_value(SkColorType colorType, const SkPMColo
 
 
 
-inline void copy_color_table(const SkImageInfo& dstInfo, SkColorTable* colorTable,
+static inline void copy_color_table(const SkImageInfo& dstInfo, SkColorTable* colorTable,
         SkPMColor* inputColorPtr, int* inputColorCount) {
     if (kIndex_8_SkColorType == dstInfo.colorType()) {
         SkASSERT(nullptr != inputColorPtr);
@@ -185,21 +203,21 @@ inline void copy_color_table(const SkImageInfo& dstInfo, SkColorTable* colorTabl
 
 
 
-inline size_t compute_row_bytes_ppb(int width, uint32_t pixelsPerByte) {
+static inline size_t compute_row_bytes_ppb(int width, uint32_t pixelsPerByte) {
     return (width + pixelsPerByte - 1) / pixelsPerByte;
 }
 
 
 
 
-inline size_t compute_row_bytes_bpp(int width, uint32_t bytesPerPixel) {
+static inline size_t compute_row_bytes_bpp(int width, uint32_t bytesPerPixel) {
     return width * bytesPerPixel;
 }
 
 
 
 
-inline size_t compute_row_bytes(int width, uint32_t bitsPerPixel) {
+static inline size_t compute_row_bytes(int width, uint32_t bitsPerPixel) {
     if (bitsPerPixel < 16) {
         SkASSERT(0 == 8 % bitsPerPixel);
         const uint32_t pixelsPerByte = 8 / bitsPerPixel;
@@ -215,7 +233,7 @@ inline size_t compute_row_bytes(int width, uint32_t bitsPerPixel) {
 
 
 
-inline uint8_t get_byte(uint8_t* buffer, uint32_t i) {
+static inline uint8_t get_byte(uint8_t* buffer, uint32_t i) {
     return buffer[i];
 }
 
@@ -223,7 +241,7 @@ inline uint8_t get_byte(uint8_t* buffer, uint32_t i) {
 
 
 
-inline uint16_t get_short(uint8_t* buffer, uint32_t i) {
+static inline uint16_t get_short(uint8_t* buffer, uint32_t i) {
     uint16_t result;
     memcpy(&result, &(buffer[i]), 2);
 #ifdef SK_CPU_BENDIAN
@@ -237,7 +255,7 @@ inline uint16_t get_short(uint8_t* buffer, uint32_t i) {
 
 
 
-inline uint32_t get_int(uint8_t* buffer, uint32_t i) {
+static inline uint32_t get_int(uint8_t* buffer, uint32_t i) {
     uint32_t result;
     memcpy(&result, &(buffer[i]), 4);
 #ifdef SK_CPU_BENDIAN
@@ -253,7 +271,7 @@ inline uint32_t get_int(uint8_t* buffer, uint32_t i) {
 
 
 
-inline bool is_valid_endian_marker(const uint8_t* data, bool* isLittleEndian) {
+static inline bool is_valid_endian_marker(const uint8_t* data, bool* isLittleEndian) {
     
     if (('I' != data[0] || 'I' != data[1]) && ('M' != data[0] || 'M' != data[1])) {
         return false;
@@ -263,12 +281,122 @@ inline bool is_valid_endian_marker(const uint8_t* data, bool* isLittleEndian) {
     return true;
 }
 
-inline uint16_t get_endian_short(const uint8_t* data, bool littleEndian) {
+static inline uint16_t get_endian_short(const uint8_t* data, bool littleEndian) {
     if (littleEndian) {
         return (data[1] << 8) | (data[0]);
     }
 
     return (data[0] << 8) | (data[1]);
+}
+
+static inline SkPMColor premultiply_argb_as_rgba(U8CPU a, U8CPU r, U8CPU g, U8CPU b) {
+    if (a != 255) {
+        r = SkMulDiv255Round(r, a);
+        g = SkMulDiv255Round(g, a);
+        b = SkMulDiv255Round(b, a);
+    }
+
+    return SkPackARGB_as_RGBA(a, r, g, b);
+}
+
+static inline SkPMColor premultiply_argb_as_bgra(U8CPU a, U8CPU r, U8CPU g, U8CPU b) {
+    if (a != 255) {
+        r = SkMulDiv255Round(r, a);
+        g = SkMulDiv255Round(g, a);
+        b = SkMulDiv255Round(b, a);
+    }
+
+    return SkPackARGB_as_BGRA(a, r, g, b);
+}
+
+static inline bool is_rgba(SkColorType colorType) {
+#ifdef SK_PMCOLOR_IS_RGBA
+    return (kBGRA_8888_SkColorType != colorType);
+#else
+    return (kRGBA_8888_SkColorType == colorType);
+#endif
+}
+
+
+typedef uint32_t (*PackColorProc)(U8CPU a, U8CPU r, U8CPU g, U8CPU b);
+
+static inline PackColorProc choose_pack_color_proc(bool isPremul, SkColorType colorType) {
+    bool isRGBA = is_rgba(colorType);
+    if (isPremul) {
+        if (isRGBA) {
+            return &premultiply_argb_as_rgba;
+        } else {
+            return &premultiply_argb_as_bgra;
+        }
+    } else {
+        if (isRGBA) {
+            return &SkPackARGB_as_RGBA;
+        } else {
+            return &SkPackARGB_as_BGRA;
+        }
+    }
+}
+
+static inline bool needs_premul(const SkImageInfo& dstInfo, const SkImageInfo& srcInfo) {
+    return kPremul_SkAlphaType == dstInfo.alphaType() &&
+           kUnpremul_SkAlphaType == srcInfo.alphaType();
+}
+
+static inline bool needs_color_xform(const SkImageInfo& dstInfo, const SkImageInfo& srcInfo) {
+    
+    bool needsPremul = needs_premul(dstInfo, srcInfo);
+
+    
+    bool isF16 = kRGBA_F16_SkColorType == dstInfo.colorType();
+
+    
+    bool srcDstNotEqual = !SkColorSpace::Equals(srcInfo.colorSpace(), dstInfo.colorSpace());
+
+    
+    bool isLegacy = nullptr == dstInfo.colorSpace();
+
+    return !isLegacy && (needsPremul || isF16 || srcDstNotEqual);
+}
+
+static inline SkAlphaType select_xform_alpha(SkAlphaType dstAlphaType, SkAlphaType srcAlphaType) {
+    return (kOpaque_SkAlphaType == srcAlphaType) ? kOpaque_SkAlphaType : dstAlphaType;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+static inline bool conversion_possible(const SkImageInfo& dst, const SkImageInfo& src) {
+    
+    if (!valid_alpha(dst.alphaType(), src.alphaType())) {
+        return false;
+    }
+
+    
+    switch (dst.colorType()) {
+        case kRGBA_8888_SkColorType:
+        case kBGRA_8888_SkColorType:
+            return true;
+        case kRGBA_F16_SkColorType:
+            return dst.colorSpace() && dst.colorSpace()->gammaIsLinear();
+        case kIndex_8_SkColorType:
+            return kIndex_8_SkColorType == src.colorType();
+        case kRGB_565_SkColorType:
+            return kOpaque_SkAlphaType == src.alphaType() && !needs_color_xform(dst, src);
+        case kGray_8_SkColorType:
+            return kGray_8_SkColorType == src.colorType() &&
+                   kOpaque_SkAlphaType == src.alphaType() && !needs_color_xform(dst, src);
+        default:
+            return false;
+    }
 }
 
 #endif 

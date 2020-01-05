@@ -43,66 +43,38 @@ void GrGLSLFragmentProcessor::internalEmitChild(int childIndex, const char* inpu
     const GrFragmentProcessor& childProc = args.fFp.childProcessor(childIndex);
 
     
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    int firstCoordAt = args.fFp.numTransformsExclChildren();
-    int firstSamplerAt = args.fFp.numTexturesExclChildren();
-    for (int i = 0; i < childIndex; ++i) {
-        firstCoordAt += args.fFp.childProcessor(i).numTransforms();
-        firstSamplerAt += args.fFp.childProcessor(i).numTextures();
-    }
-    GrGLSLTransformedCoordsArray childCoords;
-    TextureSamplerArray childSamplers;
-    if (childProc.numTransforms() > 0) {
-        childCoords.push_back_n(childProc.numTransforms(), &args.fCoords[firstCoordAt]);
-    }
-    if (childProc.numTextures() > 0) {
-        childSamplers.push_back_n(childProc.numTextures(), &args.fSamplers[firstSamplerAt]);
-    }
-
-    
     fragBuilder->codeAppend("{\n");
     fragBuilder->codeAppendf("// Child Index %d (mangle: %s): %s\n", childIndex,
                              fragBuilder->getMangleString().c_str(), childProc.name());
+    TransformedCoordVars coordVars = args.fTransformedCoords.childInputs(childIndex);
+    TextureSamplers textureSamplers = args.fTexSamplers.childInputs(childIndex);
+    BufferSamplers bufferSamplers = args.fBufferSamplers.childInputs(childIndex);
     EmitArgs childArgs(fragBuilder,
                        args.fUniformHandler,
                        args.fGLSLCaps,
                        childProc,
                        outputColor,
                        inputColor,
-                       childCoords,
-                       childSamplers);
+                       coordVars,
+                       textureSamplers,
+                       bufferSamplers,
+                       args.fGpImplementsDistanceVector);
     this->childProcessor(childIndex)->emitCode(childArgs);
     fragBuilder->codeAppend("}\n");
 
     fragBuilder->onAfterChildProcEmitCode();
+}
+
+
+
+GrGLSLFragmentProcessor* GrGLSLFragmentProcessor::Iter::next() {
+    if (fFPStack.empty()) {
+        return nullptr;
+    }
+    GrGLSLFragmentProcessor* back = fFPStack.back();
+    fFPStack.pop_back();
+    for (int i = back->numChildProcessors() - 1; i >= 0; --i) {
+        fFPStack.push_back(back->childProcessor(i));
+    }
+    return back;
 }

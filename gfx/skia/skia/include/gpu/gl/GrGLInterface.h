@@ -53,7 +53,7 @@ typedef intptr_t GrGLInterfaceCallbackData;
 
 
 
-const SK_API GrGLInterface* GrGLCreateNullInterface();
+const SK_API GrGLInterface* GrGLCreateNullInterface(bool enableNVPR = false);
 
 
 
@@ -155,6 +155,7 @@ public:
         GrGLFunction<GrGLDrawElementsProc> fDrawElements;
         GrGLFunction<GrGLDrawElementsIndirectProc> fDrawElementsIndirect;
         GrGLFunction<GrGLDrawElementsInstancedProc> fDrawElementsInstanced;
+        GrGLFunction<GrGLDrawRangeElementsProc> fDrawRangeElements;
         GrGLFunction<GrGLEnableProc> fEnable;
         GrGLFunction<GrGLEnableVertexAttribArrayProc> fEnableVertexAttribArray;
         GrGLFunction<GrGLEndQueryProc> fEndQuery;
@@ -206,6 +207,8 @@ public:
         GrGLFunction<GrGLMapBufferRangeProc> fMapBufferRange;
         GrGLFunction<GrGLMapBufferSubDataProc> fMapBufferSubData;
         GrGLFunction<GrGLMapTexSubImage2DProc> fMapTexSubImage2D;
+        GrGLFunction<GrGLMultiDrawArraysIndirectProc> fMultiDrawArraysIndirect;
+        GrGLFunction<GrGLMultiDrawElementsIndirectProc> fMultiDrawElementsIndirect;
         GrGLFunction<GrGLPixelStoreiProc> fPixelStorei;
         GrGLFunction<GrGLPopGroupMarkerProc> fPopGroupMarker;
         GrGLFunction<GrGLPushGroupMarkerProc> fPushGroupMarker;
@@ -251,6 +254,7 @@ public:
         GrGLFunction<GrGLStencilOpProc> fStencilOp;
         GrGLFunction<GrGLStencilOpSeparateProc> fStencilOpSeparate;
         GrGLFunction<GrGLTexBufferProc> fTexBuffer;
+        GrGLFunction<GrGLTexBufferRangeProc> fTexBufferRange;
         GrGLFunction<GrGLTexImage2DProc> fTexImage2D;
         GrGLFunction<GrGLTexParameteriProc> fTexParameteri;
         GrGLFunction<GrGLTexParameterivProc> fTexParameteriv;
@@ -321,10 +325,6 @@ public:
 
         
         GrGLFunction<GrGLCoverageModulationProc> fCoverageModulation;
-
-        
-        GrGLFunction<GrGLMultiDrawArraysIndirectProc> fMultiDrawArraysIndirect;
-        GrGLFunction<GrGLMultiDrawElementsIndirectProc> fMultiDrawElementsIndirect;
 
         
         
@@ -453,6 +453,11 @@ public:
         GrGLFunction<GrGLTextureBufferProc> fTextureBuffer;
 
         
+        GrGLFunction<GrGLFenceSyncProc> fFenceSync;
+        GrGLFunction<GrGLClientWaitSyncProc> fClientWaitSync;
+        GrGLFunction<GrGLDeleteSyncProc> fDeleteSync;
+
+        
         GrGLFunction<GrGLDebugMessageControlProc> fDebugMessageControl;
         GrGLFunction<GrGLDebugMessageInsertProc> fDebugMessageInsert;
         GrGLFunction<GrGLDebugMessageCallbackProc> fDebugMessageCallback;
@@ -460,6 +465,9 @@ public:
         GrGLFunction<GrGLPushDebugGroupProc> fPushDebugGroup;
         GrGLFunction<GrGLPopDebugGroupProc> fPopDebugGroup;
         GrGLFunction<GrGLObjectLabelProc> fObjectLabel;
+
+        
+        GrGLFunction<GrGLWindowRectanglesProc> fWindowRectangles;
 
         
         GrGLFunction<GrEGLCreateImageProc> fEGLCreateImage;
