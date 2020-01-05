@@ -135,6 +135,7 @@ class EventTarget;
 class FontFaceSet;
 class FrameRequestCallback;
 struct FullscreenRequest;
+class ImageTracker;
 class ImportManager;
 class HTMLBodyElement;
 struct LifecycleCallbackArgs;
@@ -2071,11 +2072,6 @@ public:
   virtual mozilla::PendingAnimationTracker*
   GetOrCreatePendingAnimationTracker() = 0;
 
-  
-  
-  
-  virtual void SetImagesNeedAnimating(bool aAnimating) = 0;
-
   enum SuppressionType {
     eAnimationsOnly = 0x1,
 
@@ -2354,29 +2350,7 @@ public:
   
   bool InUnlinkOrDeletion() { return mInUnlinkOrDeletion; }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  
-  virtual nsresult AddImage(imgIRequest* aImage) = 0;
-  
-  
-  enum { REQUEST_DISCARD = 0x1 };
-  virtual nsresult RemoveImage(imgIRequest* aImage, uint32_t aFlags = 0) = 0;
-
-  
-  
-  virtual nsresult SetImageLockingState(bool aLocked) = 0;
+  mozilla::dom::ImageTracker* ImageTracker();
 
   virtual nsresult AddPlugin(nsIObjectLoadingContent* aPlugin) = 0;
   virtual void RemovePlugin(nsIObjectLoadingContent* aPlugin) = 0;
@@ -2926,6 +2900,9 @@ protected:
   RefPtr<nsHTMLStyleSheet> mAttrStyleSheet;
   RefPtr<nsHTMLCSSStyleSheet> mStyleAttrStyleSheet;
   RefPtr<mozilla::SVGAttrAnimationRuleProcessor> mSVGAttrAnimationRuleProcessor;
+
+  
+  RefPtr<mozilla::dom::ImageTracker> mImageTracker;
 
   
   

@@ -33,6 +33,7 @@
 #include "CounterStyleManager.h"
 
 #include "mozilla/dom/AnimationEffectReadOnlyBinding.h" 
+#include "mozilla/dom/ImageTracker.h"
 #include "mozilla/Likely.h"
 #include "nsIURI.h"
 #include "nsIDocument.h"
@@ -2011,7 +2012,7 @@ nsStyleImage::TrackImage(nsPresContext* aContext)
   
   nsIDocument* doc = aContext->Document();
   if (doc) {
-    doc->AddImage(mImage);
+    doc->ImageTracker()->AddImage(mImage);
   }
 
   
@@ -2031,7 +2032,7 @@ nsStyleImage::UntrackImage(nsPresContext* aContext)
   
   nsIDocument* doc = aContext->Document();
   if (doc) {
-    doc->RemoveImage(mImage);
+    doc->ImageTracker()->RemoveImage(mImage);
   }
 
   
@@ -3438,7 +3439,7 @@ nsStyleContentData::TrackImage(nsPresContext* aContext)
   
   nsIDocument* doc = aContext->Document();
   if (doc) {
-    doc->AddImage(mContent.mImage);
+    doc->ImageTracker()->AddImage(mContent.mImage);
   }
 
   
@@ -3460,7 +3461,7 @@ nsStyleContentData::UntrackImage(nsPresContext* aContext)
   
   nsIDocument* doc = aContext->Document();
   if (doc) {
-    doc->RemoveImage(mContent.mImage);
+    doc->ImageTracker()->RemoveImage(mContent.mImage);
   }
 
   

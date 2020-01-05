@@ -212,6 +212,7 @@
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/HTMLBodyElement.h"
 #include "mozilla/dom/HTMLInputElement.h"
+#include "mozilla/dom/ImageTracker.h"
 #include "mozilla/dom/MediaQueryList.h"
 #include "mozilla/dom/NodeFilterBinding.h"
 #include "mozilla/OwningNonNull.h"
@@ -1331,7 +1332,6 @@ nsIDocument::nsIDocument()
 
 nsDocument::nsDocument(const char* aContentType)
   : nsIDocument()
-  , mAnimatingImages(true)
   , mViewportType(Unknown)
 {
   SetContentTypeInternal(nsDependentCString(aContentType));
@@ -1530,11 +1530,6 @@ nsDocument::~nsDocument()
   ClearAllBoxObjects();
 
   mPendingTitleChangeEvent.Revoke();
-
-  
-  
-  SetImageLockingState(false);
-  mImageTracker.Clear();
 
   mPlugins.Clear();
 }
@@ -3727,9 +3722,7 @@ nsDocument::DeleteShell()
   
   
   
-  for (auto iter = mImageTracker.Iter(); !iter.Done(); iter.Next()) {
-    iter.Key()->RequestDiscard();
-  }
+  ImageTracker()->RequestDiscardAll();
 
   
   
@@ -8721,7 +8714,7 @@ nsDocument::OnPageShow(bool aPersisted,
   }
 
   if (aPersisted) {
-    SetImagesNeedAnimating(true);
+    ImageTracker()->SetImagesNeedAnimating(true);
   }
 
   UpdateVisibilityState();
@@ -8816,7 +8809,7 @@ nsDocument::OnPageHide(bool aPersisted,
   
   nsDocShell* docShell = mDocumentContainer.get();
   if (aPersisted && !(docShell && docShell->InFrameSwap())) {
-    SetImagesNeedAnimating(false);
+    ImageTracker()->SetImagesNeedAnimating(false);
   }
 
   ExitPointerLock();
@@ -10040,81 +10033,13 @@ nsIDocument::WarnOnceAbout(DocumentWarnings aWarning,
                                   aParamsLength);
 }
 
-nsresult
-nsDocument::AddImage(imgIRequest* aImage)
+mozilla::dom::ImageTracker*
+nsIDocument::ImageTracker()
 {
-  NS_ENSURE_ARG_POINTER(aImage);
-
-  
-  uint32_t oldCount = 0;
-  mImageTracker.Get(aImage, &oldCount);
-
-  
-  mImageTracker.Put(aImage, oldCount + 1);
-
-  nsresult rv = NS_OK;
-
-  
-  
-  if (oldCount == 0 && mLockingImages) {
-    rv = aImage->LockImage();
+  if (!mImageTracker) {
+    mImageTracker = new mozilla::dom::ImageTracker;
   }
-
-  
-  
-  if (oldCount == 0 && mAnimatingImages) {
-    nsresult rv2 = aImage->IncrementAnimationConsumers();
-    rv = NS_SUCCEEDED(rv) ? rv2 : rv;
-  }
-
-  return rv;
-}
-
-nsresult
-nsDocument::RemoveImage(imgIRequest* aImage, uint32_t aFlags)
-{
-  NS_ENSURE_ARG_POINTER(aImage);
-
-  
-  uint32_t count = 0;
-  DebugOnly<bool> found = mImageTracker.Get(aImage, &count);
-  MOZ_ASSERT(found, "Removing image that wasn't in the tracker!");
-  MOZ_ASSERT(count > 0, "Entry in the cache tracker with count 0!");
-
-  
-  count--;
-
-  
-  
-  if (count != 0) {
-    mImageTracker.Put(aImage, count);
-    return NS_OK;
-  }
-
-  mImageTracker.Remove(aImage);
-
-  nsresult rv = NS_OK;
-
-  
-  
-  if (mLockingImages) {
-    rv = aImage->UnlockImage();
-  }
-
-  
-  if (mAnimatingImages) {
-    nsresult rv2 = aImage->DecrementAnimationConsumers();
-    rv = NS_SUCCEEDED(rv) ? rv2 : rv;
-  }
-
-  if (aFlags & REQUEST_DISCARD) {
-    
-    
-    
-    aImage->RequestDiscard();
-  }
-
-  return rv;
+  return mImageTracker;
 }
 
 nsresult
@@ -10181,55 +10106,6 @@ nsDocument::NotifyMediaFeatureValuesChanged()
       imageElement->MediaFeatureValuesChanged();
     }
   }
-}
-
-nsresult
-nsDocument::SetImageLockingState(bool aLocked)
-{
-  if (XRE_IsContentProcess() &&
-      !Preferences::GetBool("image.mem.allow_locking_in_content_processes", true)) {
-    return NS_OK;
-  }
-
-  
-  if (mLockingImages == aLocked)
-    return NS_OK;
-
-  
-  for (auto iter = mImageTracker.Iter(); !iter.Done(); iter.Next()) {
-    imgIRequest* image = iter.Key();
-    if (aLocked) {
-      image->LockImage();
-    } else {
-      image->UnlockImage();
-    }
-  }
-
-  
-  mLockingImages = aLocked;
-
-  return NS_OK;
-}
-
-void
-nsDocument::SetImagesNeedAnimating(bool aAnimating)
-{
-  
-  if (mAnimatingImages == aAnimating)
-    return;
-
-  
-  for (auto iter = mImageTracker.Iter(); !iter.Done(); iter.Next()) {
-    imgIRequest* image = iter.Key();
-    if (aAnimating) {
-      image->IncrementAnimationConsumers();
-    } else {
-      image->DecrementAnimationConsumers();
-    }
-  }
-
-  
-  mAnimatingImages = aAnimating;
 }
 
 already_AddRefed<Touch>
