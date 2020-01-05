@@ -118,7 +118,7 @@ EnterBaseline(JSContext* cx, EnterJitData& data)
     
     
     
-    mozilla::Maybe<JS::AutoAssertOnGC> nogc;
+    mozilla::Maybe<JS::AutoAssertNoGC> nogc;
     nogc.emplace(cx);
 #endif
 

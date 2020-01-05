@@ -499,15 +499,19 @@ class JS_PUBLIC_API(AutoRequireNoGC)
 
 
 
-class JS_PUBLIC_API(AutoAssertOnGC) : public AutoRequireNoGC
+
+
+
+
+class JS_PUBLIC_API(AutoAssertNoGC) : public AutoRequireNoGC
 {
     js::gc::GCRuntime* gc;
     size_t gcNumber;
 
   public:
-    AutoAssertOnGC();
-    explicit AutoAssertOnGC(JSContext* cx);
-    ~AutoAssertOnGC();
+    AutoAssertNoGC();
+    explicit AutoAssertNoGC(JSContext* cx);
+    ~AutoAssertNoGC();
 };
 
 
@@ -594,11 +598,11 @@ class JS_PUBLIC_API(AutoAssertGCCallback) : public AutoSuppressGCAnalysis
 
 
 #ifdef DEBUG
-class JS_PUBLIC_API(AutoCheckCannotGC) : public AutoAssertOnGC
+class JS_PUBLIC_API(AutoCheckCannotGC) : public AutoAssertNoGC
 {
   public:
-    AutoCheckCannotGC() : AutoAssertOnGC() {}
-    explicit AutoCheckCannotGC(JSContext* cx) : AutoAssertOnGC(cx) {}
+    AutoCheckCannotGC() : AutoAssertNoGC() {}
+    explicit AutoCheckCannotGC(JSContext* cx) : AutoAssertNoGC(cx) {}
 } JS_HAZ_GC_INVALIDATED;
 #else
 class JS_PUBLIC_API(AutoCheckCannotGC) : public AutoRequireNoGC
