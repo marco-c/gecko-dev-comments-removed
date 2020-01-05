@@ -189,24 +189,11 @@ public:
 
 
 
-
-
-
-
-
   template<typename T>
   bool Has(const nsIFrame* aFrame, Descriptor<T> aProperty)
   {
     bool foundResult = false;
-    mozilla::Unused << GetInternal(aFrame, aProperty, false, &foundResult);
-    return foundResult;
-  }
-
-  template<typename T>
-  bool HasSkippingBitCheck(const nsIFrame* aFrame, Descriptor<T> aProperty)
-  {
-    bool foundResult = false;
-    mozilla::Unused << GetInternal(aFrame, aProperty, true, &foundResult);
+    mozilla::Unused << GetInternal(aFrame, aProperty, &foundResult);
     return foundResult;
   }
 
@@ -225,7 +212,7 @@ public:
   PropertyType<T> Get(const nsIFrame* aFrame, Descriptor<T> aProperty,
                       bool* aFoundResult = nullptr)
   {
-    void* ptr = GetInternal(aFrame, aProperty, false, aFoundResult);
+    void* ptr = GetInternal(aFrame, aProperty, aFoundResult);
     return ReinterpretHelper<T>::FromPointer(ptr);
   }
   
@@ -275,7 +262,7 @@ protected:
                    void* aValue);
 
   void* GetInternal(const nsIFrame* aFrame, UntypedDescriptor aProperty,
-                    bool aSkipBitCheck, bool* aFoundResult);
+                    bool* aFoundResult);
 
   void* RemoveInternal(nsIFrame* aFrame, UntypedDescriptor aProperty,
                        bool* aFoundResult);
