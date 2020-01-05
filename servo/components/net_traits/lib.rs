@@ -356,15 +356,15 @@ pub enum CoreResourceMsg {
     
     WebsocketConnect(WebSocketCommunicate, WebSocketConnectData),
     
-    SetCookiesForUrl(ServoUrl, String, CookieSource),
-    
-    SetCookiesForUrlWithData(
+    SetCookieForUrl(
         ServoUrl,
         #[serde(deserialize_with = "::hyper_serde::deserialize",
                 serialize_with = "::hyper_serde::serialize")]
         Cookie,
         CookieSource
     ),
+    
+    SetCookiesForUrl(ServoUrl, Vec<Serde<Cookie>>, CookieSource),
     
     GetCookiesForUrl(ServoUrl, IpcSender<Option<String>>, CookieSource),
     
