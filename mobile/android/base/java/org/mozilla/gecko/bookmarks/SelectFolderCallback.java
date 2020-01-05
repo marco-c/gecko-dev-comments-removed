@@ -1,0 +1,10 @@
+
+
+
+
+
+package org.mozilla.gecko.bookmarks;
+
+interface SelectFolderCallback {
+    void onFolderChanged(long folderId, String title);
+}

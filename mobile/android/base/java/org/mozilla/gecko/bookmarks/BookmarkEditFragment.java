@@ -38,7 +38,7 @@ import java.lang.ref.WeakReference;
 
 
 
-public class BookmarkEditFragment extends DialogFragment {
+public class BookmarkEditFragment extends DialogFragment implements SelectFolderCallback {
 
     private static final String ARG_ID = "id";
     private static final String ARG_URL = "url";
@@ -161,6 +161,19 @@ public class BookmarkEditFragment extends DialogFragment {
             }
         });
 
+        folderText.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (bookmark == null) {
+                    return;
+                }
+
+                final SelectFolderFragment dialog = SelectFolderFragment.newInstance(bookmark.parentId, bookmark.id);
+                dialog.setTargetFragment(BookmarkEditFragment.this, 0);
+                dialog.show(getActivity().getSupportFragmentManager(), "select-bookmark-folder");
+            }
+        });
+
         return view;
     }
 
@@ -194,6 +207,18 @@ public class BookmarkEditFragment extends DialogFragment {
         }
 
         super.onSaveInstanceState(outState);
+    }
+
+    @Override
+    public void onFolderChanged(long parentId, String title) {
+        if (bookmark == null) {
+            
+            return;
+        }
+
+        bookmark.parentId = parentId;
+        bookmark.folder = title;
+        invalidateView(bookmark);
     }
 
     private void invalidateView(Bookmark bookmark) {

@@ -17,6 +17,7 @@ import org.mozilla.gecko.R;
 import org.mozilla.gecko.SnackbarBuilder;
 import org.mozilla.gecko.Telemetry;
 import org.mozilla.gecko.TelemetryContract;
+import org.mozilla.gecko.bookmarks.BookmarkUtils;
 import org.mozilla.gecko.db.BrowserDB;
 import org.mozilla.gecko.db.BrowserContract.SuggestedSites;
 import org.mozilla.gecko.distribution.PartnerBookmarksProviderProxy;
@@ -165,7 +166,8 @@ public abstract class HomeFragment extends Fragment {
         HomeContextMenuInfo info = (HomeContextMenuInfo) menuInfo;
 
         
-        if (info.isFolder) {
+        final boolean enableFullBookmarkManagement = BookmarkUtils.isEnabled(getContext());
+        if (info.isFolder && !enableFullBookmarkManagement) {
             return;
         }
 
@@ -199,6 +201,16 @@ public abstract class HomeFragment extends Fragment {
         }
         final boolean distSetAsHomepage = GeckoSharedPrefs.forProfile(view.getContext()).getBoolean(GeckoPreferences.PREFS_SET_AS_HOMEPAGE, false);
         menu.findItem(R.id.home_set_as_homepage).setVisible(distSetAsHomepage);
+
+        
+        if (info.isFolder) {
+            menu.findItem(R.id.home_open_new_tab).setVisible(false);
+            menu.findItem(R.id.home_open_private_tab).setVisible(false);
+            menu.findItem(R.id.home_copyurl).setVisible(false);
+            menu.findItem(R.id.home_share).setVisible(false);
+            menu.findItem(R.id.home_add_to_launcher).setVisible(false);
+            menu.findItem(R.id.home_set_as_homepage).setVisible(false);
+        }
     }
 
     @Override
