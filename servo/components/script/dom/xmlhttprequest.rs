@@ -1129,12 +1129,17 @@ trait Extractable {
     fn extract(&self) -> Vec<u8>;
 }
 impl Extractable for SendParam {
+    
     fn extract(&self) -> Vec<u8> {
-        
-        let encoding = UTF_8 as EncodingRef;
         match *self {
-            eString(ref s) => encoding.encode(s, EncoderTrap::Replace).unwrap(),
-            eURLSearchParams(ref usp) => usp.root().r().serialize(None) 
+            eString(ref s) => {
+                let encoding = UTF_8 as EncodingRef;
+                encoding.encode(s, EncoderTrap::Replace).unwrap()
+            },
+            eURLSearchParams(ref usp) => {
+                
+                usp.root().r().serialize(None).as_bytes().to_owned()
+            },
         }
     }
 }
