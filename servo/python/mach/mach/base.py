@@ -78,9 +78,6 @@ class MethodHandler(object):
         'description',
 
         
-        'allow_all_arguments',
-
-        
         
         'conditions',
 
@@ -91,20 +88,23 @@ class MethodHandler(object):
         
         
         'arguments',
+
+        
+        'argument_group_names',
     )
 
     def __init__(self, cls, method, name, category=None, description=None,
-        allow_all_arguments=False, conditions=None, parser=None, arguments=None,
-        pass_context=False):
+        conditions=None, parser=None, arguments=None,
+        argument_group_names=None, pass_context=False):
 
         self.cls = cls
         self.method = method
         self.name = name
         self.category = category
         self.description = description
-        self.allow_all_arguments = allow_all_arguments
         self.conditions = conditions or []
         self.parser = parser
         self.arguments = arguments or []
+        self.argument_group_names = argument_group_names or []
         self.pass_context = pass_context
 
