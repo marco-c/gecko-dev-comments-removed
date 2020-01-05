@@ -8,41 +8,42 @@ module.metadata = {
   "stability": "unstable"
 };
 
-var { Cc, Ci, CC } = require('chrome');
-var { PlainTextConsole } = require('../console/plain-text');
-var { stdout } = require('../system');
-var ScriptError = CC('@mozilla.org/scripterror;1', 'nsIScriptError');
-var consoleService = Cc['@mozilla.org/consoleservice;1'].getService(Ci.nsIConsoleService);
+defineLazyGetter(this, "console", () => new (require('../console/plain-text').PlainTextConsole)());
 
 exports = module.exports = {};
 
+defineLazyGetter(exports, "console", () => console);
 
 
 
 
-exports.dump = stdout.write;
-
-exports.console = new PlainTextConsole();
 
 
 
-Object.defineProperty(exports, 'define', {
-  
-  
-  
-  configurable: true,
-  get: function() {
-    let sandbox = this;
-    return function define(factory) {
-      factory = Array.slice(arguments).pop();
-      factory.call(sandbox, sandbox.require, sandbox.exports, sandbox.module);
-    }
-  },
-  set: function(value) {
-    Object.defineProperty(this, 'define', {
+defineLazyGetter(exports, 'define', function() {
+  return (...args) => {
+    let factory = args.pop();
+    factory.call(this, this.require, this.exports, this.module);
+  };
+});
+
+function defineLazyGetter(object, prop, getter) {
+  let redefine = (obj, value) => {
+    Object.defineProperty(obj, prop, {
       configurable: true,
-      enumerable: true,
+      writable: true,
       value,
     });
-  },
-});
+    return value;
+  };
+
+  Object.defineProperty(object, prop, {
+    configurable: true,
+    get() {
+      return redefine(this, getter.call(this));
+    },
+    set(value) {
+      redefine(this, value);
+    }
+  });
+}

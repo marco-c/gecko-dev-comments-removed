@@ -135,7 +135,8 @@ Bootstrap.prototype = {
       const prefsURI = `${baseURI}defaults/preferences/prefs.js`;
 
       
-      require("sdk/webextension").initFromBootstrapAddonParam(addon);
+      if (addon.webExtension)
+        require("sdk/webextension").initFromBootstrapAddonParam(addon);
 
       const { startup } = require("sdk/addon/runner");
       startup(reason, {loader, main, prefsURI});

@@ -3,8 +3,7 @@
 
 
 const { Class } = require("../core/heritage");
-const { extend } = require("../util/object");
-const { MatchPattern } = require("../util/match-pattern");
+lazyRequire(this, "../util/match-pattern", "MatchPattern");
 const readers = require("./readers");
 
 

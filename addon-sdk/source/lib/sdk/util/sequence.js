@@ -21,8 +21,8 @@ module.metadata = {
 
 
 const { complement, flip, identity } = require("../lang/functional");
-const { isArray, isArguments, isMap, isSet, isGenerator,
-        isString, isBoolean, isNumber } = require("../lang/type");
+lazyRequire(this, "../lang/type", "isArray", "isArguments", "isMap", "isSet",
+            "isGenerator", "isString", "isBoolean", "isNumber");
 
 const Sequence = function Sequence(iterator) {
   if (!isGenerator(iterator)) {

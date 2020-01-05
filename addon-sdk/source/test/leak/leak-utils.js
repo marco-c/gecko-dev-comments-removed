@@ -40,7 +40,8 @@ exports.asyncWindowLeakTest = function*(assert, asyncTestFunc) {
 
   
   
-  SelfSupportBackend.uninit();
+  if (SelfSupportBackend._log)
+    SelfSupportBackend.uninit();
 
   
   yield Startup.onceInitialized;
