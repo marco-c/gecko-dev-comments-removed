@@ -3,6 +3,8 @@
 
 
 
+"use strict";
+
 var gEMEHandler = {
   get uiEnabled() {
     let emeUIEnabled = Services.prefs.getBoolPref("browser.eme.ui.enabled");
@@ -209,9 +211,6 @@ let gDecoderDoctorHandler = {
     }
     if (type == "adobe-cdm-not-activated" &&
         AppConstants.platform == "win") {
-      if (AppConstants.isPlatformAndVersionAtMost("win", "5.9")) {
-        return gNavigatorBundle.getString("decoder.noCodecsXP.message");
-      }
       if (!AppConstants.isPlatformAndVersionAtLeast("win", "6.1")) {
         return gNavigatorBundle.getString("decoder.noCodecsVista.message");
       }
