@@ -549,7 +549,6 @@ private:
 
   
   void SetSeekTarget(const SeekTarget& aTarget);
-  media::TimeUnit DemuxStartTime();
   bool IsSeeking() const { return mPendingSeekTime.isSome(); }
   bool IsVideoSeeking() const
   {
