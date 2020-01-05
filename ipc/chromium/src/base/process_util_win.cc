@@ -239,7 +239,7 @@ LPPROC_THREAD_ATTRIBUTE_LIST CreateThreadAttributeList(HANDLE *handlesToInherit,
     return NULL;
 
   SIZE_T threadAttrSize;
-  LPPROC_THREAD_ATTRIBUTE_LIST lpAttributeList;
+  LPPROC_THREAD_ATTRIBUTE_LIST lpAttributeList = NULL;
 
   if (!(*InitializeProcThreadAttributeListPtr)(NULL, 1, 0, &threadAttrSize) &&
       GetLastError() != ERROR_INSUFFICIENT_BUFFER)
@@ -296,13 +296,16 @@ bool LaunchApp(const std::wstring& cmdline,
   startup_info.dwFlags = STARTF_USESHOWWINDOW;
   startup_info.wShowWindow = start_hidden ? SW_HIDE : SW_SHOW;
 
+  
+  
   LPPROC_THREAD_ATTRIBUTE_LIST lpAttributeList = NULL;
+  HANDLE handlesToInherit[2];
+  int handleCount = 0;
+
   
   if (mozilla::IsVistaOrLater()) {
     
     
-    HANDLE handlesToInherit[2];
-    int handleCount = 0;
     HANDLE stdOut = ::GetStdHandle(STD_OUTPUT_HANDLE);
     HANDLE stdErr = ::GetStdHandle(STD_ERROR_HANDLE);
 
