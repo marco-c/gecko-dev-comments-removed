@@ -201,6 +201,10 @@ public:
     return mOutputParams;
   }
 
+  template<typename T>
+  const nsTArray<InputNode>&
+  InputsForDestination(uint32_t aOutputIndex) const;
+
   void RemoveOutputParam(AudioParam* aParam);
 
   
@@ -231,8 +235,7 @@ private:
   
   
   template<typename DestinationType, typename Predicate>
-  bool DisconnectMatchingDestinationInputs(DestinationType& aDestination,
-                                           uint32_t aDestinationIndex,
+  bool DisconnectMatchingDestinationInputs(uint32_t aDestinationIndex,
                                            Predicate aPredicate);
 
   virtual void LastRelease() override
@@ -243,8 +246,9 @@ private:
   }
   
   void DisconnectFromGraph();
-  bool DisconnectFromOutputIfConnected(AudioNode& aDestination, uint32_t aOutputIndex, uint32_t aInputIndex);
-  bool DisconnectFromOutputIfConnected(AudioParam& aDestination, uint32_t aOutputIndex, uint32_t aInputIndex);
+
+  template<typename DestinationType>
+  bool DisconnectFromOutputIfConnected(uint32_t aOutputIndex, uint32_t aInputIndex);
 
 protected:
   
