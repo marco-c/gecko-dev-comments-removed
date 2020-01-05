@@ -31,6 +31,14 @@ impl ThreadLocalStyleContextCreationInfo {
     }
 }
 
+#[derive(PartialEq, Eq, Copy, Clone, Hash, Debug)]
+#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+pub enum QuirksMode {
+    Quirks,
+    LimitedQuirks,
+    NoQuirks,
+}
+
 pub struct SharedStyleContext {
     
     pub viewport_size: Size2D<Au>,
@@ -63,6 +71,9 @@ pub struct SharedStyleContext {
     
     
     pub timer: Timer,
+
+    
+    pub quirks_mode: QuirksMode,
 }
 
 pub struct ThreadLocalStyleContext {

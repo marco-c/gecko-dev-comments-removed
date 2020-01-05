@@ -110,7 +110,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::mpsc::{Receiver, Sender, channel};
 use std::thread;
 use style::animation::Animation;
-use style::context::{ReflowGoal, SharedStyleContext, ThreadLocalStyleContextCreationInfo};
+use style::context::{QuirksMode, ReflowGoal, SharedStyleContext, ThreadLocalStyleContextCreationInfo};
 use style::data::StoredRestyleHint;
 use style::dom::{ShowSubtree, ShowSubtreeDataAndPrimaryValues, TElement, TNode};
 use style::error_reporting::{ParseErrorReporter, StdoutErrorReporter};
@@ -233,6 +233,9 @@ pub struct LayoutThread {
     
     
     layout_threads: usize,
+
+    
+    quirks_mode: Option<QuirksMode>
 }
 
 impl LayoutThreadFactory for LayoutThread {
@@ -485,6 +488,7 @@ impl LayoutThread {
                     Timer::new()
                 },
             layout_threads: layout_threads,
+            quirks_mode: None,
         }
     }
 
@@ -522,6 +526,7 @@ impl LayoutThread {
                 error_reporter: self.error_reporter.clone(),
                 local_context_creation_data: Mutex::new(thread_local_style_context_creation_data),
                 timer: self.timer.clone(),
+                quirks_mode: self.quirks_mode.unwrap(),
             },
             image_cache_thread: Mutex::new(self.image_cache_thread.clone()),
             image_cache_sender: Mutex::new(self.image_cache_sender.clone()),
@@ -977,6 +982,7 @@ impl LayoutThread {
                              possibly_locked_rw_data: &mut RwData<'a, 'b>) {
         let document = unsafe { ServoLayoutNode::new(&data.document) };
         let document = document.as_document().unwrap();
+        self.quirks_mode = Some(document.quirks_mode());
 
         // FIXME(pcwalton): Combine `ReflowGoal` and `ReflowQueryType`. Then remove this assert.
         debug_assert!((data.reflow_info.goal == ReflowGoal::ForDisplay &&
