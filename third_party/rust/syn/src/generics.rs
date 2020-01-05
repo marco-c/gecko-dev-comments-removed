@@ -19,8 +19,13 @@ pub struct ImplGenerics<'a>(&'a Generics);
 #[derive(Debug)]
 pub struct TyGenerics<'a>(&'a Generics);
 
+#[cfg(feature = "printing")]
+
+#[derive(Debug)]
+pub struct Turbofish<'a>(&'a Generics);
+
+#[cfg(feature = "printing")]
 impl Generics {
-    #[cfg(feature = "printing")]
     
     
     
@@ -42,6 +47,14 @@ impl Generics {
     
     pub fn split_for_impl(&self) -> (ImplGenerics, TyGenerics, &WhereClause) {
         (ImplGenerics(self), TyGenerics(self), &self.where_clause)
+    }
+}
+
+#[cfg(feature = "printing")]
+impl<'a> TyGenerics<'a> {
+    
+    pub fn as_turbofish(&self) -> Turbofish {
+        Turbofish(self.0)
     }
 }
 
@@ -125,6 +138,8 @@ pub enum WherePredicate {
     BoundPredicate(WhereBoundPredicate),
     
     RegionPredicate(WhereRegionPredicate),
+    
+    EqPredicate(WhereEqPredicate),
 }
 
 
@@ -147,6 +162,15 @@ pub struct WhereBoundPredicate {
 pub struct WhereRegionPredicate {
     pub lifetime: Lifetime,
     pub bounds: Vec<Lifetime>,
+}
+
+
+
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+pub struct WhereEqPredicate {
+    pub lhs_ty: Ty,
+    pub rhs_ty: Ty,
 }
 
 #[cfg(feature = "parsing")]
@@ -349,6 +373,17 @@ mod printing {
         }
     }
 
+    impl<'a> ToTokens for Turbofish<'a> {
+        fn to_tokens(&self, tokens: &mut Tokens) {
+            let has_lifetimes = !self.0.lifetimes.is_empty();
+            let has_ty_params = !self.0.ty_params.is_empty();
+            if has_lifetimes || has_ty_params {
+                tokens.append("::");
+                TyGenerics(self.0).to_tokens(tokens);
+            }
+        }
+    }
+
     impl ToTokens for Lifetime {
         fn to_tokens(&self, tokens: &mut Tokens) {
             self.ident.to_tokens(tokens);
@@ -414,6 +449,9 @@ mod printing {
                 WherePredicate::RegionPredicate(ref predicate) => {
                     predicate.to_tokens(tokens);
                 }
+                WherePredicate::EqPredicate(ref predicate) => {
+                    predicate.to_tokens(tokens);
+                }
             }
         }
     }
@@ -441,6 +479,14 @@ mod printing {
                 tokens.append(":");
                 tokens.append_separated(&self.bounds, "+");
             }
+        }
+    }
+
+    impl ToTokens for WhereEqPredicate {
+        fn to_tokens(&self, tokens: &mut Tokens) {
+            self.lhs_ty.to_tokens(tokens);
+            tokens.append("=");
+            self.rhs_ty.to_tokens(tokens);
         }
     }
 }
