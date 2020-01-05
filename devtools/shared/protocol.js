@@ -11,6 +11,7 @@ var {EventTarget} = require("sdk/event/target");
 var events = require("sdk/event/core");
 var object = require("sdk/util/object");
 var {getStack, callFunctionWithAsyncStack} = require("devtools/shared/platform/stack");
+var {settleAll} = require("devtools/shared/DevToolsUtils");
 
 exports.emit = events.emit;
 
@@ -795,6 +796,20 @@ var Pool = Class({
   },
 
   
+  poolChildren: function* () {
+    if (!this.__poolMap) {
+      return;
+    }
+    for (let actor of this.__poolMap.values()) {
+      
+      if (actor === this) {
+        continue;
+      }
+      yield actor;
+    }
+  },
+
+  
 
 
 
@@ -1283,7 +1298,23 @@ var Front = Class({
         deferred.resolve(packet);
       }
     }, stack, "DevTools RDP");
-  }
+  },
+
+  hasRequests() {
+    return !!this._requests.length;
+  },
+
+  
+
+
+
+
+
+
+
+  waitForRequestsToSettle() {
+    return settleAll(this._requests.map(({ deferred }) => deferred.promise));
+  },
 });
 exports.Front = Front;
 

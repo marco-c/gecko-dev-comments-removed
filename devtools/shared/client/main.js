@@ -1161,6 +1161,68 @@ DebuggerClient.prototype = {
     activeRequestsToReject.forEach(request => reject("active", request));
   },
 
+  
+
+
+
+
+
+
+
+
+
+
+  waitForRequestsToSettle() {
+    let requests = [];
+
+    
+    
+    this._pendingRequests.forEach(requestsForActor => {
+      
+      requests = requests.concat(requestsForActor);
+    });
+    this._activeRequests.forEach(requestForActor => {
+      
+      requests = requests.concat(requestForActor);
+    });
+
+    
+    
+    let fronts = new Set();
+    let poolsToVisit = [...this._pools];
+
+    
+    
+    while (poolsToVisit.length) {
+      let pool = poolsToVisit.shift();
+      fronts.add(pool);
+      for (let child of pool.poolChildren()) {
+        poolsToVisit.push(child);
+      }
+    }
+
+    
+    for (let front of fronts) {
+      if (front.hasRequests()) {
+        requests.push(front.waitForRequestsToSettle());
+      }
+    }
+
+    
+    if (!requests.length) {
+      return Promise.resolve();
+    }
+
+    return DevToolsUtils.settleAll(requests).catch(() => {
+      
+      
+      
+    }).then(() => {
+      
+      return this.waitForRequestsToSettle();
+    });
+  },
+
   registerClient: function (client) {
     let actorID = client.actor;
     if (!actorID) {
