@@ -35,7 +35,6 @@ pub enum Msg {
     Exit(Sender<()>),
 
     
-    
     StorePrefetchedImageData(Url, Result<Vec<u8>, ()>),
 
     
