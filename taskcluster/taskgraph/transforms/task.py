@@ -218,6 +218,15 @@ task_description_schema = Schema({
         }],
 
         
+        Optional('mounts'): [{
+            
+            'cache-name': basestring,
+
+            
+            'path': basestring,
+        }],
+
+        
         Required('env', default={}): {basestring: taskref_or_string},
 
         
@@ -400,10 +409,19 @@ def build_generic_worker_payload(config, task, task_def):
             'expires': task_def['expires'],  
         })
 
+    mounts = []
+
+    for mount in worker.get('mounts', []):
+        mounts.append({
+            'cacheName': mount['cache-name'],
+            'directory': mount['path']
+        })
+
     task_def['payload'] = {
         'command': worker['command'],
         'artifacts': artifacts,
         'env': worker.get('env', {}),
+        'mounts': mounts,
         'maxRunTime': worker['max-run-time'],
         'osGroups': worker.get('os-groups', []),
     }
@@ -518,7 +536,7 @@ def build_task(config, tasks):
             ])
 
         if 'expires-after' not in task:
-            task['expires-after'] = '28 days' if config.params['project'] == 'try' else '1 year'
+            task['expires-after'] = '14 days' if config.params['project'] == 'try' else '1 year'
 
         if 'deadline-after' not in task:
             task['deadline-after'] = '1 day'
