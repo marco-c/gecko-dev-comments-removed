@@ -9,10 +9,11 @@
 #include <string>
 
 #include "m_cpp_utils.h"
+#include "mozilla/Move.h"
 #include "mozilla/RefPtr.h"
 #include "nsISupportsImpl.h"
-#include "sslt.h"
 #include "ScopedNSSTypes.h"
+#include "sslt.h"
 
 
 
@@ -22,10 +23,10 @@ namespace mozilla {
 class DtlsIdentity final {
  public:
   
-  DtlsIdentity(SECKEYPrivateKey *privkey,
-               CERTCertificate *cert,
+  DtlsIdentity(UniqueSECKEYPrivateKey privkey,
+               UniqueCERTCertificate cert,
                SSLKEAType authType)
-      : private_key_(privkey), cert_(cert), auth_type_(authType) {}
+      : private_key_(Move(privkey)), cert_(Move(cert)), auth_type_(authType) {}
 
   
   
@@ -34,7 +35,7 @@ class DtlsIdentity final {
   
   
   const UniqueCERTCertificate& cert() const { return cert_; }
-  SECKEYPrivateKey *privkey() const { return private_key_; }
+  const UniqueSECKEYPrivateKey& privkey() const { return private_key_; }
   
   
   
@@ -62,7 +63,7 @@ class DtlsIdentity final {
   ~DtlsIdentity() {}
   DISALLOW_COPY_ASSIGN(DtlsIdentity);
 
-  ScopedSECKEYPrivateKey private_key_;
+  UniqueSECKEYPrivateKey private_key_;
   UniqueCERTCertificate cert_;
   SSLKEAType auth_type_;
 };
