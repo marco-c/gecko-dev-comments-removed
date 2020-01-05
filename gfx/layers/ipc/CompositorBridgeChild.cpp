@@ -478,14 +478,12 @@ CompositorBridgeChild::RecvUpdatePluginConfigurations(const LayoutDeviceIntPoint
         
         
         
-        rv = widget->Resize(aContentOffset.x + bounds.x,
-                            aContentOffset.y + bounds.y,
-                            bounds.width, bounds.height, true);
-        NS_ASSERTION(NS_SUCCEEDED(rv), "widget call failure");
+        widget->Resize(aContentOffset.x + bounds.x,
+                       aContentOffset.y + bounds.y,
+                       bounds.width, bounds.height, true);
       }
 
-      rv = widget->Enable(isVisible);
-      NS_ASSERTION(NS_SUCCEEDED(rv), "widget call failure");
+      widget->Enable(isVisible);
 
       
       rv = widget->Show(isVisible);
