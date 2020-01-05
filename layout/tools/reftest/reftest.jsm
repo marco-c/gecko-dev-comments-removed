@@ -1134,16 +1134,6 @@ function ReadManifest(aURL, inherited_status, aFilter)
             secMan.checkLoadURIWithPrincipal(principal, refURI,
                                              CI.nsIScriptSecurityManager.DISALLOW_SCRIPT);
 
-            
-            
-            
-            
-            if (sandbox.webrender &&
-                (expected_status == EXPECTED_PASS ||
-                 expected_status == EXPECTED_FUZZY)) {
-                expected_status = EXPECTED_RANDOM;
-            }
-
             AddTestItem({ type: items[0],
                           expected: expected_status,
                           allowSilentFail: allow_silent_fail,
