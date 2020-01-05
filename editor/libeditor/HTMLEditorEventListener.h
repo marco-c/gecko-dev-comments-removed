@@ -25,17 +25,15 @@ public:
   {
   }
 
-#ifdef DEBUG
   
+
+
   virtual nsresult Connect(EditorBase* aEditorBase) override;
-#endif
 
 protected:
   virtual nsresult MouseDown(nsIDOMMouseEvent* aMouseEvent) override;
   virtual nsresult MouseUp(nsIDOMMouseEvent* aMouseEvent) override;
   virtual nsresult MouseClick(nsIDOMMouseEvent* aMouseEvent) override;
-
-  inline HTMLEditor* GetHTMLEditor();
 };
 
 } 
