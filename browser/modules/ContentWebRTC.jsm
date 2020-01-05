@@ -178,8 +178,11 @@ function prompt(aContentWindow, aWindowID, aCallID, aConstraints, aDevices, aSec
         
         
         if (video && (device.mediaSource == "camera") != sharingScreen) {
-          videoDevices.push({name: device.name, deviceIndex: devices.length,
-                             id: device.rawId, mediaSource: device.mediaSource});
+          let deviceObject = {name: device.name, deviceIndex: devices.length,
+                              id: device.rawId, mediaSource: device.mediaSource};
+          if (device.scary)
+            deviceObject.scary = true;
+          videoDevices.push(deviceObject);
           devices.push(device);
         }
         break;
