@@ -293,6 +293,7 @@ public:
   {
   public:
     virtual void Disconnect() = 0;
+    virtual void AssertIsDead() = 0;
 
   protected:
     Request() : mComplete(false), mDisconnected(false) {}
@@ -351,7 +352,9 @@ protected:
                   const char* aCallSite)
       : mResponseTarget(aResponseTarget)
       , mCallSite(aCallSite)
-    { }
+    {
+      MOZ_ASSERT(aResponseTarget);
+    }
 
 #ifdef PROMISE_DEBUG
     ~ThenValueBase()
@@ -361,7 +364,7 @@ protected:
     }
 #endif
 
-    void AssertIsDead()
+    void AssertIsDead() override
     {
       PROMISE_ASSERT(mMagic1 == sMagic && mMagic2 == sMagic);
       
@@ -694,6 +697,7 @@ public:
                     const char* aCallSite)
   {
     PROMISE_ASSERT(mMagic1 == sMagic && mMagic2 == sMagic && mMagic3 == sMagic && mMagic4 == mMutex.mLock);
+    MOZ_ASSERT(aResponseThread);
     MutexAutoLock lock(mMutex);
     MOZ_ASSERT(aResponseThread->IsDispatchReliable());
     MOZ_DIAGNOSTIC_ASSERT(!IsExclusive || !mHaveRequest);
@@ -728,7 +732,10 @@ private:
       : mResponseThread(aResponseThread)
       , mCallSite(aCallSite)
       , mThenValue(aThenValue)
-      , mReceiver(aReceiver) {}
+      , mReceiver(aReceiver)
+    {
+      MOZ_ASSERT(aResponseThread);
+    }
 
     ThenCommand(ThenCommand&& aOther) = default;
 
@@ -1242,6 +1249,8 @@ InvokeAsyncImpl(AbstractThread* aTarget, ThisType* aThisVal,
                 RefPtr<PromiseType>(ThisType::*aMethod)(ArgTypes...),
                 ActualArgTypes&&... aArgs)
 {
+  MOZ_ASSERT(aTarget);
+
   typedef RefPtr<PromiseType>(ThisType::*MethodType)(ArgTypes...);
   typedef detail::MethodCall<PromiseType, MethodType, ThisType, Storages...> MethodCallType;
   typedef detail::ProxyRunnable<PromiseType, MethodType, ThisType, Storages...> ProxyRunnableType;
@@ -1363,6 +1372,7 @@ InvokeAsync(AbstractThread* aTarget, const char* aCallerName,
                 && IsMozPromise<typename RemoveSmartPointer<
                                            decltype(aFunction())>::Type>::value,
                 "Function object must return RefPtr<MozPromise>");
+  MOZ_ASSERT(aTarget);
   typedef typename RemoveSmartPointer<decltype(aFunction())>::Type PromiseType;
   typedef detail::ProxyFunctionRunnable<Function, PromiseType> ProxyRunnableType;
 
