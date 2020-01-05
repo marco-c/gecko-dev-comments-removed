@@ -65,7 +65,6 @@
 #include "nsIDOMEventListener.h"        
 #include "nsIDOMEventTarget.h"          
 #include "nsIDOMHTMLElement.h"          
-#include "nsIDOMKeyEvent.h"             
 #include "nsIDOMMozNamedAttrMap.h"      
 #include "nsIDOMMouseEvent.h"           
 #include "nsIDOMNode.h"                 
@@ -4679,7 +4678,7 @@ EditorBase::RemoveAttributeOrEquivalent(nsIDOMElement* aElement,
 }
 
 nsresult
-EditorBase::HandleKeyPressEvent(nsIDOMKeyEvent* aKeyEvent)
+EditorBase::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent)
 {
   
   
@@ -4688,49 +4687,49 @@ EditorBase::HandleKeyPressEvent(nsIDOMKeyEvent* aKeyEvent)
   
   
 
-  WidgetKeyboardEvent* nativeKeyEvent =
-    aKeyEvent->AsEvent()->WidgetEventPtr()->AsKeyboardEvent();
-  NS_ENSURE_TRUE(nativeKeyEvent, NS_ERROR_UNEXPECTED);
-  NS_ASSERTION(nativeKeyEvent->mMessage == eKeyPress,
-               "HandleKeyPressEvent gets non-keypress event");
+  if (NS_WARN_IF(!aKeyboardEvent)) {
+    return NS_ERROR_UNEXPECTED;
+  }
+  MOZ_ASSERT(aKeyboardEvent->mMessage == eKeyPress,
+             "HandleKeyPressEvent gets non-keypress event");
 
   
   if (IsReadonly() || IsDisabled()) {
     
     
-    if (nativeKeyEvent->mKeyCode == NS_VK_BACK) {
-      aKeyEvent->AsEvent()->PreventDefault();
+    if (aKeyboardEvent->mKeyCode == NS_VK_BACK) {
+      aKeyboardEvent->PreventDefault();
     }
     return NS_OK;
   }
 
-  switch (nativeKeyEvent->mKeyCode) {
+  switch (aKeyboardEvent->mKeyCode) {
     case NS_VK_META:
     case NS_VK_WIN:
     case NS_VK_SHIFT:
     case NS_VK_CONTROL:
     case NS_VK_ALT:
-      aKeyEvent->AsEvent()->PreventDefault(); 
+      aKeyboardEvent->PreventDefault(); 
       return NS_OK;
     case NS_VK_BACK:
-      if (nativeKeyEvent->IsControl() || nativeKeyEvent->IsAlt() ||
-          nativeKeyEvent->IsMeta() || nativeKeyEvent->IsOS()) {
+      if (aKeyboardEvent->IsControl() || aKeyboardEvent->IsAlt() ||
+          aKeyboardEvent->IsMeta() || aKeyboardEvent->IsOS()) {
         return NS_OK;
       }
       DeleteSelection(nsIEditor::ePrevious, nsIEditor::eStrip);
-      aKeyEvent->AsEvent()->PreventDefault(); 
+      aKeyboardEvent->PreventDefault(); 
       return NS_OK;
     case NS_VK_DELETE:
       
       
       
-      if (nativeKeyEvent->IsShift() || nativeKeyEvent->IsControl() ||
-          nativeKeyEvent->IsAlt() || nativeKeyEvent->IsMeta() ||
-          nativeKeyEvent->IsOS()) {
+      if (aKeyboardEvent->IsShift() || aKeyboardEvent->IsControl() ||
+          aKeyboardEvent->IsAlt() || aKeyboardEvent->IsMeta() ||
+          aKeyboardEvent->IsOS()) {
         return NS_OK;
       }
       DeleteSelection(nsIEditor::eNext, nsIEditor::eStrip);
-      aKeyEvent->AsEvent()->PreventDefault(); 
+      aKeyboardEvent->PreventDefault(); 
       return NS_OK;
   }
   return NS_OK;
