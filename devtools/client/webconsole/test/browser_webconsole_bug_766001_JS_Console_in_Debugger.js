@@ -12,7 +12,8 @@ const TEST_URI = "http://example.com/browser/devtools/client/webconsole/test" +
                  "/test-bug-766001-js-console-links.html";
 
 
-Services.prefs.setBoolPref("devtools.debugger.new-debugger-frontend", false);
+
+Services.prefs.setBoolPref("devtools.debugger.new-debugger-frontend", true);
 registerCleanupFunction(function* () {
   Services.prefs.clearUserPref("devtools.debugger.new-debugger-frontend");
 });
@@ -79,10 +80,9 @@ function test() {
     yield hud.ui.once("source-in-debugger-opened");
 
     let toolbox = yield gDevTools.getToolbox(hud.target);
-    let {panelWin: { DebuggerView: view }} = toolbox.getPanel("jsdebugger");
-    is(view.Sources.selectedValue,
-       getSourceActor(view.Sources, url),
+    let dbg = toolbox.getPanel("jsdebugger");
+    is(dbg._selectors().getSelectedSource(dbg._getState()).get("url"),
+       url,
        "expected source url");
-    is(view.editor.getCursor().line, line - 1, "expected source line");
   }
 }
