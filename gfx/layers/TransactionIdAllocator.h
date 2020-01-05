@@ -56,15 +56,6 @@ public:
   
 
 
-
-
-
-
-  virtual void ClearPendingTransactions() = 0;
-
-  
-
-
   virtual mozilla::TimeStamp GetTransactionStart() = 0;
 };
 
