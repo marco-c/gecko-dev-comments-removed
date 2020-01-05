@@ -547,10 +547,18 @@ GetClass(uint32_t u)
      CLASS_CLOSE_LIKE_CHARACTER,
      CLASS_CLOSE,
      CLASS_CHARACTER,
+     CLASS_CHARACTER,
+     CLASS_BREAKABLE,
+     CLASS_CHARACTER,
      CLASS_CHARACTER
   };
 
-  return sUnicodeLineBreakToClass[mozilla::unicode::GetLineBreakClass(u)];
+  static_assert(U_LB_COUNT == mozilla::ArrayLength(sUnicodeLineBreakToClass),
+                "Gecko vs ICU LineBreak class mismatch");
+
+  auto cls = mozilla::unicode::GetLineBreakClass(u);
+  MOZ_ASSERT(cls < mozilla::ArrayLength(sUnicodeLineBreakToClass));
+  return sUnicodeLineBreakToClass[cls];
 }
 
 static bool
