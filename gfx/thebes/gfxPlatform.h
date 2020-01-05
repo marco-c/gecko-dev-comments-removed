@@ -178,7 +178,7 @@ public:
 
     static void InitNullMetadata();
 
-    static void InitMoz2D();
+    static void InitMoz2DLogging();
 
     
 
@@ -288,11 +288,6 @@ public:
     
     mozilla::gfx::BackendType GetDefaultContentBackend() {
       return mContentBackend;
-    }
-
-    
-    mozilla::gfx::BackendType GetSoftwareBackend() {
-        return mSoftwareBackend;
     }
 
     
@@ -822,8 +817,6 @@ private:
     mozilla::gfx::BackendType mFallbackCanvasBackend;
     
     mozilla::gfx::BackendType mContentBackend;
-    
-    mozilla::gfx::BackendType mSoftwareBackend;
     
     uint32_t mContentBackendBitmask;
 

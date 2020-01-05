@@ -217,12 +217,6 @@ Factory::HasSSE2()
 #endif
 }
 
-BackendType
-Factory::GetDefaultSoftwareBackend()
-{
-  return sConfig ? sConfig->mDefaultSoftwareBackend : BackendType::CAIRO;
-}
-
 
 
 inline int LoggerOptionsBasedOnSize(const IntSize& aSize)
