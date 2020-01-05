@@ -150,19 +150,19 @@ var WebrtcUI = {
     {
       label: Strings.browser.GetStringFromName("getUserMedia.shareRequest.label"),
       callback: function(checked , inputs) {
-        let allowedDevices = Cc["@mozilla.org/array;1"].createInstance(Ci.nsIMutableArray);
+        let allowedDevices = Cc["@mozilla.org/supports-array;1"].createInstance(Ci.nsISupportsArray);
 
         let audioId = 0;
         if (inputs && inputs.audioDevice != undefined)
           audioId = inputs.audioDevice;
         if (audioDevices[audioId])
-          allowedDevices.AppendElement(audioDevices[audioId],  false);
+          allowedDevices.AppendElement(audioDevices[audioId]);
 
         let videoId = 0;
         if (inputs && inputs.videoSource != undefined)
           videoId = inputs.videoSource;
         if (videoDevices[videoId]) {
-          allowedDevices.AppendElement(videoDevices[videoId],  false);
+          allowedDevices.AppendElement(videoDevices[videoId]);
           let perms = Services.perms;
           
           
