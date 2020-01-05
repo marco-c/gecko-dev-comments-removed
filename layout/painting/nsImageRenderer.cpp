@@ -148,7 +148,6 @@ nsImageRenderer::PrepareImage()
         bool isEntireImage;
         bool success =
           mImage->ComputeActualCropRect(actualCropRect, &isEntireImage);
-        NS_ASSERTION(success, "ComputeActualCropRect() should not fail here");
         if (!success || actualCropRect.IsEmpty()) {
           
           mPrepareResult = DrawResult::BAD_IMAGE;
