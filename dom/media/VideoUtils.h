@@ -362,7 +362,21 @@ CreateTrackInfoWithMIMETypeAndContentTypeExtraParameters(
   const nsACString& aCodecMIMEType,
   const MediaContentType& aContentType);
 
-template <typename String>
+enum class StringListRangeEmptyItems
+{
+  
+  
+  Skip,
+  
+  
+  ProcessEmptyItems,
+  
+  
+  ProcessAll
+};
+
+template <typename String,
+          StringListRangeEmptyItems empties = StringListRangeEmptyItems::Skip>
 class StringListRange
 {
   typedef typename String::char_type CharType;
@@ -399,12 +413,21 @@ public:
       
       for (Pointer p = start; ; ++p) {
         if (p >= mRangeEnd) {
-          mStart = mEnd = mComma = mRangeEnd;
+          if (p > mRangeEnd
+                  + (empties != StringListRangeEmptyItems::Skip ? 1 : 0)) {
+            p = mRangeEnd
+                + (empties != StringListRangeEmptyItems::Skip ? 1 : 0);
+          }
+          mStart = mEnd = mComma = p;
           return;
         }
         auto c = *p;
         if (c == CharType(',')) {
           
+          if (empties != StringListRangeEmptyItems::Skip) {
+            mStart = mEnd = mComma = p;
+            return;
+          }
         } else if (c != CharType(' ')) {
           mStart = p;
           break;
@@ -446,28 +469,35 @@ public:
   explicit StringListRange(const String& aList) : mList(aList) {}
   Iterator begin()
   {
-    return Iterator(mList.Data(), mList.Length());
+    return Iterator(mList.Data()
+                    + ((empties == StringListRangeEmptyItems::ProcessEmptyItems
+                        && mList.Length() == 0) ? 1 : 0),
+                    mList.Length());
   }
   Iterator end()
   {
-    return Iterator(mList.Data() + mList.Length(), 0);
+    return Iterator(mList.Data() + mList.Length()
+                    + (empties != StringListRangeEmptyItems::Skip ? 1 : 0),
+                    0);
   }
 private:
   const String& mList;
 };
 
-template <typename String>
-StringListRange<String>
+template <StringListRangeEmptyItems empties = StringListRangeEmptyItems::Skip,
+          typename String>
+StringListRange<String, empties>
 MakeStringListRange(const String& aList)
 {
-  return StringListRange<String>(aList);
+  return StringListRange<String, empties>(aList);
 }
 
-template <typename ListString, typename ItemString>
+template <StringListRangeEmptyItems empties = StringListRangeEmptyItems::Skip,
+          typename ListString, typename ItemString>
 static bool
 StringListContains(const ListString& aList, const ItemString& aItem)
 {
-  for (const auto& listItem : MakeStringListRange(aList)) {
+  for (const auto& listItem : MakeStringListRange<empties>(aList)) {
     if (listItem.Equals(aItem)) {
       return true;
     }
