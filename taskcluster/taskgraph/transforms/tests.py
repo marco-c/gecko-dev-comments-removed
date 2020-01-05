@@ -198,64 +198,65 @@ test_description_schema = Schema({
     
     Required('mozharness'): optionally_keyed_by(
         'test-platform', 'test-platform-phylum', {
-        
-        Required('script'): basestring,
-
-        
-        Required('config'): optionally_keyed_by(
-            'test-platform',
-            [basestring]),
-
-        
-        Optional('actions'): [basestring],
-
-        
-        
-        Required('extra-options', default=[]): optionally_keyed_by(
-            'test-platform',
-            [basestring]),
-
-        
-        
-        Optional('build-artifact-name'): basestring,
-
-        
-        Required('tooltool-downloads', default=False): bool,
-
-        
-        
-        Required('no-read-buildbot-config', default=False): bool,
-
-        
-        Optional('include-blob-upload-branch'): bool,
-
-        
-        
-        Optional('download-symbols'): Any(True, 'ondemand'),
-
-        
-        
-        
-        
-        Required('set-moz-node-path', default=False): bool,
-
-        
-        
-        Required('chunked', default=False): bool,
-
-        
-        Required('chunking-args', default='this-chunk'): Any(
             
-            'this-chunk',
-            
-            'test-suite-suffix',
-        ),
+            Required('script'): basestring,
 
-        
-        
-        
-        Optional('chunk-suffix'): basestring,
-    }),
+            
+            Required('config'): optionally_keyed_by(
+                'test-platform',
+                [basestring]),
+
+            
+            Optional('actions'): [basestring],
+
+            
+            
+            Required('extra-options', default=[]): optionally_keyed_by(
+                'test-platform',
+                [basestring]),
+
+            
+            
+            Optional('build-artifact-name'): basestring,
+
+            
+            Required('tooltool-downloads', default=False): bool,
+
+            
+            
+            Required('no-read-buildbot-config', default=False): bool,
+
+            
+            Optional('include-blob-upload-branch'): bool,
+
+            
+            
+            Optional('download-symbols'): Any(True, 'ondemand'),
+
+            
+            
+            
+            
+            Required('set-moz-node-path', default=False): bool,
+
+            
+            
+            Required('chunked', default=False): bool,
+
+            
+            Required('chunking-args', default='this-chunk'): Any(
+                
+                'this-chunk',
+                
+                'test-suite-suffix',
+            ),
+
+            
+            
+            
+            Optional('chunk-suffix'): basestring,
+        }
+    ),
 
     
     Optional('this-chunk'): int,
@@ -297,7 +298,9 @@ def validate(config, tests):
 def resolve_keyed_by_mozharness(config, tests):
     """Resolve a mozharness field if it is keyed by something"""
     for test in tests:
-        test['mozharness'] = get_keyed_by(item=test, field='mozharness', item_name=test['test-name'])
+        test['mozharness'] = get_keyed_by(
+            item=test, field='mozharness',
+            item_name=test['test-name'])
         yield test
 
 
@@ -366,7 +369,8 @@ def set_treeherder_machine_platform(config, tests):
         'android-api-15-gradle/opt': 'android-api-15-gradle/opt',
     }
     for test in tests:
-        test['treeherder-machine-platform'] = translation.get(test['build-platform'], test['test-platform'])
+        test['treeherder-machine-platform'] = translation.get(
+            test['build-platform'], test['test-platform'])
         yield test
 
 
@@ -535,7 +539,7 @@ def allow_software_gl_layers(config, tests):
     for test in tests:
         if test.get('allow-software-gl-layers'):
             assert test['instance-size'] != 'legacy',\
-                   'Software GL layers on a legacy instance is disallowed (bug 1296086).'
+                'Software GL layers on a legacy instance is disallowed (bug 1296086).'
 
             
             test['mozharness'].setdefault('extra-options', [])\
