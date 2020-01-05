@@ -119,11 +119,11 @@ function ArrayEnumerator(aItems) {
 ArrayEnumerator.prototype = {
   _index: 0,
 
-  hasMoreElements: function() {
+  hasMoreElements() {
     return this._index < this._contents.length;
   },
 
-  getNext: function() {
+  getNext() {
     return this._contents[this._index++];
   }
 };
@@ -172,7 +172,7 @@ HandlerInfoWrapper.prototype = {
   _categoryMgr: Cc["@mozilla.org/categorymanager;1"].
                 getService(Ci.nsICategoryManager),
 
-  element: function(aID) {
+  element(aID) {
     return document.getElementById(aID);
   },
 
@@ -214,7 +214,7 @@ HandlerInfoWrapper.prototype = {
     return this.wrappedHandlerInfo.possibleApplicationHandlers;
   },
 
-  addPossibleApplicationHandler: function(aNewHandler) {
+  addPossibleApplicationHandler(aNewHandler) {
     var possibleApps = this.possibleApplicationHandlers.enumerate();
     while (possibleApps.hasMoreElements()) {
       if (possibleApps.getNext().equals(aNewHandler))
@@ -223,7 +223,7 @@ HandlerInfoWrapper.prototype = {
     this.possibleApplicationHandlers.appendElement(aNewHandler, false);
   },
 
-  removePossibleApplicationHandler: function(aHandler) {
+  removePossibleApplicationHandler(aHandler) {
     var defaultApp = this.preferredApplicationHandler;
     if (defaultApp && aHandler.equals(defaultApp)) {
       
@@ -362,7 +362,7 @@ HandlerInfoWrapper.prototype = {
     return this._getDisabledPluginTypes().indexOf(this.type) != -1;
   },
 
-  _getDisabledPluginTypes: function() {
+  _getDisabledPluginTypes() {
     var types = "";
 
     if (this._prefSvc.prefHasUserValue(PREF_DISABLED_PLUGIN_TYPES))
@@ -376,7 +376,7 @@ HandlerInfoWrapper.prototype = {
     return [];
   },
 
-  disablePluginType: function() {
+  disablePluginType() {
     var disabledPluginTypes = this._getDisabledPluginTypes();
 
     if (disabledPluginTypes.indexOf(this.type) == -1)
@@ -391,7 +391,7 @@ HandlerInfoWrapper.prototype = {
                                           false);
   },
 
-  enablePluginType: function() {
+  enablePluginType() {
     var disabledPluginTypes = this._getDisabledPluginTypes();
 
     var type = this.type;
@@ -412,7 +412,7 @@ HandlerInfoWrapper.prototype = {
 
   
 
-  store: function() {
+  store() {
     this._handlerSvc.store(this.wrappedHandlerInfo);
   },
 
@@ -423,7 +423,7 @@ HandlerInfoWrapper.prototype = {
     return this._getIcon(16);
   },
 
-  _getIcon: function(aSize) {
+  _getIcon(aSize) {
     if (this.primaryExtension)
       return "moz-icon://goat." + this.primaryExtension + "?size=" + aSize;
 
@@ -529,7 +529,7 @@ FeedHandlerInfo.prototype = {
       _inner: [],
       _removed: [],
 
-      QueryInterface: function(aIID) {
+      QueryInterface(aIID) {
         if (aIID.equals(Ci.nsIMutableArray) ||
             aIID.equals(Ci.nsIArray) ||
             aIID.equals(Ci.nsISupports))
@@ -542,20 +542,20 @@ FeedHandlerInfo.prototype = {
         return this._inner.length;
       },
 
-      enumerate: function() {
+      enumerate() {
         return new ArrayEnumerator(this._inner);
       },
 
-      appendElement: function(aHandlerApp, aWeak) {
+      appendElement(aHandlerApp, aWeak) {
         this._inner.push(aHandlerApp);
       },
 
-      removeElementAt: function(aIndex) {
+      removeElementAt(aIndex) {
         this._removed.push(this._inner[aIndex]);
         this._inner.splice(aIndex, 1);
       },
 
-      queryElementAt: function(aIndex, aInterface) {
+      queryElementAt(aIndex, aInterface) {
         return this._inner[aIndex].QueryInterface(aInterface);
       }
     };
@@ -725,7 +725,7 @@ FeedHandlerInfo.prototype = {
   
   
   
-  store: function() {
+  store() {
     for (let app of this._possibleApplicationHandlers._removed) {
       if (app instanceof Ci.nsILocalHandlerApp) {
         let pref = this.element(PREF_FEED_SELECTED_APP);
@@ -800,7 +800,7 @@ InternalHandlerInfoWrapper.prototype = {
 
   
   
-  store: function() {
+  store() {
     HandlerInfoWrapper.prototype.store.call(this);
     Services.obs.notifyObservers(null, this._handlerChanged, null);
   },
@@ -873,7 +873,7 @@ var gApplicationsPane = {
 
   
 
-  init: function() {
+  init() {
     function setEventListener(aId, aEventType, aCallback)
     {
       document.getElementById(aId)
@@ -952,7 +952,7 @@ var gApplicationsPane = {
     setTimeout(_delayedPaneLoad, 0, this);
   },
 
-  destroy: function() {
+  destroy() {
     window.removeEventListener("unload", this, false);
     this._prefSvc.removeObserver(PREF_SHOW_PLUGINS_IN_LIST, this);
     this._prefSvc.removeObserver(PREF_HIDE_PLUGINS_WITHOUT_EXTENSIONS, this);
@@ -975,7 +975,7 @@ var gApplicationsPane = {
 
   
 
-  QueryInterface: function(aIID) {
+  QueryInterface(aIID) {
     if (aIID.equals(Ci.nsIObserver) ||
         aIID.equals(Ci.nsIDOMEventListener ||
         aIID.equals(Ci.nsISupports)))
@@ -987,7 +987,7 @@ var gApplicationsPane = {
 
   
 
-  observe: function(aSubject, aTopic, aData) {
+  observe(aSubject, aTopic, aData) {
     
     
     if (aTopic == "nsPref:changed" && !this._storingAction) {
@@ -1008,7 +1008,7 @@ var gApplicationsPane = {
 
   
 
-  handleEvent: function(aEvent) {
+  handleEvent(aEvent) {
     if (aEvent.type == "unload") {
       this.destroy();
     }
@@ -1017,14 +1017,14 @@ var gApplicationsPane = {
 
   
 
-  _loadData: function() {
+  _loadData() {
     this._loadFeedHandler();
     this._loadInternalHandlers();
     this._loadPluginHandlers();
     this._loadApplicationHandlers();
   },
 
-  _loadFeedHandler: function() {
+  _loadFeedHandler() {
     this._handledTypes[TYPE_MAYBE_FEED] = feedHandlerInfo;
     feedHandlerInfo.handledOnlyByPlugin = false;
 
@@ -1039,7 +1039,7 @@ var gApplicationsPane = {
 
 
 
-  _loadInternalHandlers: function() {
+  _loadInternalHandlers() {
     var internalHandlers = [pdfHandlerInfo];
     for (let internalHandler of internalHandlers) {
       if (internalHandler.enabled) {
@@ -1066,7 +1066,7 @@ var gApplicationsPane = {
 
 
 
-  _loadPluginHandlers: function() {
+  _loadPluginHandlers() {
     "use strict";
 
     let mimeTypes = navigator.mimeTypes;
@@ -1089,7 +1089,7 @@ var gApplicationsPane = {
   
 
 
-  _loadApplicationHandlers: function() {
+  _loadApplicationHandlers() {
     var wrappedHandlerInfos = this._handlerSvc.enumerate();
     while (wrappedHandlerInfos.hasMoreElements()) {
       let wrappedHandlerInfo =
@@ -1111,7 +1111,7 @@ var gApplicationsPane = {
 
   
 
-  _rebuildVisibleTypes: function() {
+  _rebuildVisibleTypes() {
     
     this._visibleTypes = [];
     this._visibleTypeDescriptionCount = {};
@@ -1150,7 +1150,7 @@ var gApplicationsPane = {
     }
   },
 
-  _rebuildView: function() {
+  _rebuildView() {
     
     while (this._list.childNodes.length > 1)
       this._list.removeChild(this._list.lastChild);
@@ -1181,7 +1181,7 @@ var gApplicationsPane = {
     this._selectLastSelectedType();
   },
 
-  _matchesFilter: function(aType) {
+  _matchesFilter(aType) {
     var filterValue = this._filter.value.toLowerCase();
     return this._describeType(aType).toLowerCase().indexOf(filterValue) != -1 ||
            this._describePreferredAction(aType).toLowerCase().indexOf(filterValue) != -1;
@@ -1197,7 +1197,7 @@ var gApplicationsPane = {
 
 
 
-  _describeType: function(aHandlerInfo) {
+  _describeType(aHandlerInfo) {
     if (this._visibleTypeDescriptionCount[aHandlerInfo.description] > 1)
       return this._prefsBundle.getFormattedString("typeDescriptionWithType",
                                                   [aHandlerInfo.description,
@@ -1218,7 +1218,7 @@ var gApplicationsPane = {
 
 
 
-  _describePreferredAction: function(aHandlerInfo) {
+  _describePreferredAction(aHandlerInfo) {
     
     
     
@@ -1280,7 +1280,7 @@ var gApplicationsPane = {
     }
   },
 
-  _selectLastSelectedType: function() {
+  _selectLastSelectedType() {
     
     
     
@@ -1306,7 +1306,7 @@ var gApplicationsPane = {
 
 
 
-  isValidHandlerApp: function(aHandlerApp) {
+  isValidHandlerApp(aHandlerApp) {
     if (!aHandlerApp)
       return false;
 
@@ -1322,7 +1322,7 @@ var gApplicationsPane = {
     return false;
   },
 
-  _isValidHandlerExecutable: function(aExecutable) {
+  _isValidHandlerExecutable(aExecutable) {
     let leafName;
     if (AppConstants.platform == "win") {
       leafName = `${AppConstants.MOZ_APP_NAME}.exe`;
@@ -1344,7 +1344,7 @@ var gApplicationsPane = {
 
 
 
-  rebuildActionsMenu: function() {
+  rebuildActionsMenu() {
     var typeItem = this._list.selectedItem;
     var handlerInfo = this._handledTypes[typeItem.type];
     var menu =
@@ -1539,7 +1539,7 @@ var gApplicationsPane = {
   
 
 
-  sort: function(event) {
+  sort(event) {
     var column = event.target;
 
     
@@ -1562,7 +1562,7 @@ var gApplicationsPane = {
   
 
 
-  _sortVisibleTypes: function() {
+  _sortVisibleTypes() {
     if (!this._sortColumn)
       return;
 
@@ -1594,11 +1594,11 @@ var gApplicationsPane = {
   
 
 
-  filter: function() {
+  filter() {
     this._rebuildView();
   },
 
-  focusFilterBox: function() {
+  focusFilterBox() {
     this._filter.focus();
     this._filter.select();
   },
@@ -1606,7 +1606,7 @@ var gApplicationsPane = {
 
   
 
-  onSelectAction: function(aActionItem) {
+  onSelectAction(aActionItem) {
     this._storingAction = true;
 
     try {
@@ -1617,7 +1617,7 @@ var gApplicationsPane = {
     }
   },
 
-  _storeAction: function(aActionItem) {
+  _storeAction(aActionItem) {
     var typeItem = this._list.selectedItem;
     var handlerInfo = this._handledTypes[typeItem.type];
 
@@ -1662,7 +1662,7 @@ var gApplicationsPane = {
     }
   },
 
-  manageApp: function(aEvent) {
+  manageApp(aEvent) {
     
     
     aEvent.stopPropagation();
@@ -1689,7 +1689,7 @@ var gApplicationsPane = {
 
   },
 
-  chooseApp: function(aEvent) {
+  chooseApp(aEvent) {
     
     
     aEvent.stopPropagation();
@@ -1777,13 +1777,13 @@ var gApplicationsPane = {
 
   
   
-  onSelectionChanged: function() {
+  onSelectionChanged() {
     if (this._list.selectedItem)
       this._list.setAttribute("lastSelectedType",
                               this._list.selectedItem.getAttribute("type"));
   },
 
-  _setIconClassForPreferredAction: function(aHandlerInfo, aElement) {
+  _setIconClassForPreferredAction(aHandlerInfo, aElement) {
     
     
     
@@ -1817,7 +1817,7 @@ var gApplicationsPane = {
     return false;
   },
 
-  _getIconURLForPreferredAction: function(aHandlerInfo) {
+  _getIconURLForPreferredAction(aHandlerInfo) {
     switch (aHandlerInfo.preferredAction) {
       case Ci.nsIHandlerInfo.useSystemDefault:
         return this._getIconURLForSystemDefault(aHandlerInfo);
@@ -1835,7 +1835,7 @@ var gApplicationsPane = {
     }
   },
 
-  _getIconURLForHandlerApp: function(aHandlerApp) {
+  _getIconURLForHandlerApp(aHandlerApp) {
     if (aHandlerApp instanceof Ci.nsILocalHandlerApp)
       return this._getIconURLForFile(aHandlerApp.executable);
 
@@ -1849,7 +1849,7 @@ var gApplicationsPane = {
     return "";
   },
 
-  _getIconURLForFile: function(aFile) {
+  _getIconURLForFile(aFile) {
     var fph = this._ioSvc.getProtocolHandler("file").
               QueryInterface(Ci.nsIFileProtocolHandler);
     var urlSpec = fph.getURLSpecFromFile(aFile);
@@ -1857,7 +1857,7 @@ var gApplicationsPane = {
     return "moz-icon://" + urlSpec + "?size=16";
   },
 
-  _getIconURLForWebApp: function(aWebAppURITemplate) {
+  _getIconURLForWebApp(aWebAppURITemplate) {
     var uri = this._ioSvc.newURI(aWebAppURITemplate, null, null);
 
     
@@ -1873,7 +1873,7 @@ var gApplicationsPane = {
     return "";
   },
 
-  _getIconURLForSystemDefault: function(aHandlerInfo) {
+  _getIconURLForSystemDefault(aHandlerInfo) {
     
     
     
