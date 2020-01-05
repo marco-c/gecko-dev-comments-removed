@@ -98,11 +98,16 @@ impl LayerId {
         let LayerId(layer_type, id, companion) = *self;
         LayerId(layer_type, id, companion + 1)
     }
+
+    pub fn original(&self) -> LayerId {
+        let LayerId(layer_type, id, _) = *self;
+        LayerId(layer_type, id, 0)
+    }
 }
 
 
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, HeapSizeOf)]
 pub struct LayerProperties {
     
     pub id: LayerId,
