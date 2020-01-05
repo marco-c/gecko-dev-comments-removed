@@ -223,7 +223,11 @@ pub fn create_element(name: QualName, prefix: Option<Atom>,
         atom!("td")         => make!(HTMLTableDataCellElement),
         atom!("template")   => make!(HTMLTemplateElement),
         atom!("textarea")   => make!(HTMLTextAreaElement),
+        
+        atom!("tfoot")      => make!(HTMLTableSectionElement),
         atom!("th")         => make!(HTMLTableHeaderCellElement),
+        
+        atom!("thead")      => make!(HTMLTableSectionElement),
         atom!("time")       => make!(HTMLTimeElement),
         atom!("title")      => make!(HTMLTitleElement),
         atom!("tr")         => make!(HTMLTableRowElement),
