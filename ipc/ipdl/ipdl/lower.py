@@ -1658,7 +1658,9 @@ def _generateMessageConstructor(clsname, msgid, nested, prio, prettyName, compre
                                   ExprVar(nestedEnum),
                                   ExprVar(prioEnum),
                                   compression,
-                                  ExprLiteral.String(prettyName) ])))
+                                  ExprLiteral.String(prettyName),
+                                  
+                                  ExprLiteral.TRUE ])))
 
     return func
 

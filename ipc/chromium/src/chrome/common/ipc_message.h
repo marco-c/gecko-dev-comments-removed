@@ -11,6 +11,7 @@
 
 #include "base/basictypes.h"
 #include "base/pickle.h"
+#include "mozilla/TimeStamp.h"
 
 #ifdef MOZ_TASK_TRACER
 #include "GeckoTaskTracer.h"
@@ -61,12 +62,16 @@ class Message : public Pickle {
 
   
   
+  
+  
+  
   Message(int32_t routing_id,
           msgid_t type,
           NestedLevel nestedLevel = NOT_NESTED,
           PriorityValue priority = NORMAL_PRIORITY,
           MessageCompression compression = COMPRESSION_NONE,
-          const char* const name="???");
+          const char* const name="???",
+          bool recordWriteLatency=false);
 
   Message(const char* data, int data_len);
 
@@ -196,6 +201,10 @@ class Message : public Pickle {
 
   void set_name(const char* const aName) {
     name_ = aName;
+  }
+
+  const mozilla::TimeStamp& create_time() const {
+    return create_time_;
   }
 
 #if defined(OS_POSIX)
@@ -395,6 +404,8 @@ class Message : public Pickle {
 #endif
 
   const char* name_;
+
+  mozilla::TimeStamp create_time_;
 
 };
 

@@ -132,6 +132,10 @@ static const uint32_t kMinTelemetryMessageSize = 8192;
 
 
 
+static const uint32_t kMinTelemetryIPCWriteLatencyMs = 1;
+
+
+
 static const uint32_t kMinTelemetrySyncIPCLatencyMs = 1;
 
 const int32_t MessageChannel::kNoTimeout = INT32_MIN;
@@ -779,6 +783,18 @@ MessageChannel::Send(Message* aMsg)
     if (aMsg->size() >= kMinTelemetryMessageSize) {
         Telemetry::Accumulate(Telemetry::IPC_MESSAGE_SIZE,
                               nsDependentCString(aMsg->name()), aMsg->size());
+    }
+
+    
+    
+    
+    if (aMsg->create_time()) {
+        uint32_t latencyMs = round((mozilla::TimeStamp::Now() - aMsg->create_time()).ToMilliseconds());
+        if (latencyMs >= kMinTelemetryIPCWriteLatencyMs) {
+            mozilla::Telemetry::Accumulate(mozilla::Telemetry::IPC_WRITE_LATENCY_MS,
+                                           nsDependentCString(aMsg->name()),
+                                           latencyMs);
+        }
     }
 
     MOZ_RELEASE_ASSERT(!aMsg->is_sync());
