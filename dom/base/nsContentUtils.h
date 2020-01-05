@@ -2792,6 +2792,23 @@ public:
   static bool
   IsWebComponentsEnabled() { return sIsWebComponentsEnabled; }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  static uint32_t
+  HtmlObjectContentTypeForMIMEType(const nsCString& aMIMEType,
+                                   nsIContent* aContent);
+
 private:
   static bool InitializeEventTable();
 
