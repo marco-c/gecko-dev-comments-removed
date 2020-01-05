@@ -51,10 +51,20 @@ public:
   bool DeallocShmem(mozilla::ipc::Shmem& aShmem) override;
 
   
-  static void Initialize();
+  static void InitForContent(Endpoint<PVideoDecoderManagerChild>&& aVideoManager);
   static void Shutdown();
 
+  
+  
+  
+  
+  void RunWhenRecreated(already_AddRefed<Runnable> aTask);
+
+  bool CanSend();
+
 protected:
+  void InitIPDL();
+
   void ActorDestroy(ActorDestroyReason aWhy) override;
   void DeallocPVideoDecoderManagerChild() override;
 
@@ -64,12 +74,17 @@ protected:
   bool DeallocPVideoDecoderChild(PVideoDecoderChild* actor) override;
 
 private:
+  
+  static void InitializeThread();
+
   VideoDecoderManagerChild()
     : mCanSend(false)
   {}
   ~VideoDecoderManagerChild() {}
 
-  void Open(Endpoint<PVideoDecoderManagerChild>&& aEndpoint);
+  static void Open(Endpoint<PVideoDecoderManagerChild>&& aEndpoint);
+
+  RefPtr<VideoDecoderManagerChild> mIPDLSelfRef;
 
   
   bool mCanSend;
