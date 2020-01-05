@@ -71,18 +71,16 @@ pub trait VirtualMethods {
     
     
     fn after_set_attr(&self, attr: JSRef<Attr>) {
-        match self.super_type() {
-            Some(ref s) => s.after_set_attr(attr),
-            _ => (),
+        if let Some(ref s) = self.super_type() {
+            s.after_set_attr(attr);
         }
     }
 
     
     
     fn before_remove_attr(&self, attr: JSRef<Attr>) {
-        match self.super_type() {
-            Some(ref s) => s.before_remove_attr(attr),
-            _ => (),
+        if let Some(ref s) = self.super_type() {
+            s.before_remove_attr(attr);
         }
     }
 
@@ -98,45 +96,38 @@ pub trait VirtualMethods {
     
     
     fn bind_to_tree(&self, tree_in_doc: bool) {
-        match self.super_type() {
-            Some(ref s) => s.bind_to_tree(tree_in_doc),
-            _ => (),
+        if let Some(ref s) = self.super_type() {
+            s.bind_to_tree(tree_in_doc);
         }
     }
 
     
     
     fn unbind_from_tree(&self, tree_in_doc: bool) {
-        match self.super_type() {
-            Some(ref s) => s.unbind_from_tree(tree_in_doc),
-            _ => (),
+        if let Some(ref s) = self.super_type() {
+            s.unbind_from_tree(tree_in_doc);
         }
     }
 
     
     fn child_inserted(&self, child: JSRef<Node>) {
-        match self.super_type() {
-            Some(ref s) => s.child_inserted(child),
-            _ => (),
+        if let Some(ref s) = self.super_type() {
+            s.child_inserted(child);
         }
     }
 
     
     fn handle_event(&self, event: JSRef<Event>) {
-        match self.super_type() {
-            Some(s) => {
-                s.handle_event(event);
-            }
-            _ => (),
+        if let Some(s) = self.super_type() {
+            s.handle_event(event);
         }
     }
 
     
     fn cloning_steps(&self, copy: JSRef<Node>, maybe_doc: Option<JSRef<Document>>,
                      clone_children: CloneChildrenFlag) {
-        match self.super_type() {
-            Some(ref s) => s.cloning_steps(copy, maybe_doc, clone_children),
-            _ => (),
+        if let Some(ref s) = self.super_type() {
+            s.cloning_steps(copy, maybe_doc, clone_children);
         }
     }
 }
