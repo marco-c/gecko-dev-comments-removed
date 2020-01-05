@@ -725,7 +725,7 @@ function DefaultTimeZone() {
         
         const msPerHour = 60 * 60 * 1000;
         var offset = intl_defaultTimeZoneOffset();
-        assert(offset === (offset | 0),
+        assert(offset === (offsetVal | 0),
                "milliseconds offset shouldn't be able to exceed int32_t range");
         var offsetHours = offset / msPerHour, offsetHoursFraction = offset % msPerHour;
         if (offsetHoursFraction === 0) {
