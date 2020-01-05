@@ -249,19 +249,17 @@ public:
         return mInner->GetAllCmds(source, commands);
     }
 
-    NS_IMETHOD IsCommandEnabled(nsISupportsArray* aSources,
+    NS_IMETHOD IsCommandEnabled(nsISupports* aSources,
                                 nsIRDFResource*   aCommand,
-                                nsISupportsArray* aArguments,
+                                nsISupports* aArguments,
                                 bool* aResult) override {
-        return mInner->IsCommandEnabled(aSources, aCommand, aArguments, aResult);
+        return NS_ERROR_NOT_IMPLEMENTED;
     }
 
-    NS_IMETHOD DoCommand(nsISupportsArray* aSources,
+    NS_IMETHOD DoCommand(nsISupports* aSources,
                          nsIRDFResource*   aCommand,
-                         nsISupportsArray* aArguments) override {
-        
-        
-        return mInner->DoCommand(aSources, aCommand, aArguments);
+                         nsISupports* aArguments) override {
+        return NS_ERROR_NOT_IMPLEMENTED;
     }
 
     NS_IMETHOD BeginUpdateBatch() override {

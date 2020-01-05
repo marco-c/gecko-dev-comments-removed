@@ -1584,21 +1584,20 @@ InMemoryDataSource::GetAllCmds(nsIRDFResource* source,
 }
 
 NS_IMETHODIMP
-InMemoryDataSource::IsCommandEnabled(nsISupportsArray* aSources,
+InMemoryDataSource::IsCommandEnabled(nsISupports* aSources,
                                      nsIRDFResource*   aCommand,
-                                     nsISupportsArray* aArguments,
+                                     nsISupports* aArguments,
                                      bool* aResult)
 {
-    *aResult = false;
-    return NS_OK;
+    return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 NS_IMETHODIMP
-InMemoryDataSource::DoCommand(nsISupportsArray* aSources,
+InMemoryDataSource::DoCommand(nsISupports* aSources,
                               nsIRDFResource*   aCommand,
-                              nsISupportsArray* aArguments)
+                              nsISupports* aArguments)
 {
-    return NS_OK;
+    return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 NS_IMETHODIMP

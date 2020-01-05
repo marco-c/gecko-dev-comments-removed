@@ -1099,9 +1099,9 @@ CompositeDataSourceImpl::GetAllCmds(nsIRDFResource* source,
 }
 
 NS_IMETHODIMP
-CompositeDataSourceImpl::IsCommandEnabled(nsISupportsArray* aSources,
+CompositeDataSourceImpl::IsCommandEnabled(nsISupports* aSources,
                                           nsIRDFResource*   aCommand,
-                                          nsISupportsArray* aArguments,
+                                          nsISupports* aArguments,
                                           bool* aResult)
 {
     nsresult rv;
@@ -1123,9 +1123,9 @@ CompositeDataSourceImpl::IsCommandEnabled(nsISupportsArray* aSources,
 }
 
 NS_IMETHODIMP
-CompositeDataSourceImpl::DoCommand(nsISupportsArray* aSources,
+CompositeDataSourceImpl::DoCommand(nsISupports* aSources,
                                    nsIRDFResource*   aCommand,
-                                   nsISupportsArray* aArguments)
+                                   nsISupports* aArguments)
 {
     for (int32_t i = mDataSources.Count() - 1; i >= 0; --i) {
         nsresult rv = mDataSources[i]->DoCommand(aSources, aCommand, aArguments);

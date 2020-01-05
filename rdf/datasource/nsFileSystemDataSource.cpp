@@ -13,7 +13,6 @@
 #include <stdio.h>
 #include "nsArrayEnumerator.h"
 #include "nsCOMArray.h"
-#include "nsISupportsArray.h"
 #include "nsIRDFDataSource.h"
 #include "nsIRDFObserver.h"
 #include "nsIServiceManager.h"
@@ -801,9 +800,9 @@ FileSystemDataSource::GetAllCmds(nsIRDFResource* source,
 
 
 NS_IMETHODIMP
-FileSystemDataSource::IsCommandEnabled(nsISupportsArray* aSources,
+FileSystemDataSource::IsCommandEnabled(nsISupports* aSources,
                                        nsIRDFResource*   aCommand,
-                                       nsISupportsArray* aArguments,
+                                       nsISupports* aArguments,
                                        bool* aResult)
 {
     return(NS_ERROR_NOT_IMPLEMENTED);
@@ -812,9 +811,9 @@ FileSystemDataSource::IsCommandEnabled(nsISupportsArray* aSources,
 
 
 NS_IMETHODIMP
-FileSystemDataSource::DoCommand(nsISupportsArray* aSources,
+FileSystemDataSource::DoCommand(nsISupports* aSources,
                                 nsIRDFResource*   aCommand,
-                                nsISupportsArray* aArguments)
+                                nsISupports* aArguments)
 {
     return(NS_ERROR_NOT_IMPLEMENTED);
 }

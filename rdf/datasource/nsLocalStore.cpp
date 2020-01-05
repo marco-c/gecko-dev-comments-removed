@@ -165,14 +165,14 @@ public:
     NS_IMETHOD GetAllCmds(nsIRDFResource* aSource,
                               nsISimpleEnumerator** aCommands) override;
 
-    NS_IMETHOD IsCommandEnabled(nsISupportsArray* aSources,
+    NS_IMETHOD IsCommandEnabled(nsISupports* aSources,
                                 nsIRDFResource*   aCommand,
-                                nsISupportsArray* aArguments,
+                                nsISupports* aArguments,
                                 bool* aResult) override;
 
-    NS_IMETHOD DoCommand(nsISupportsArray* aSources,
+    NS_IMETHOD DoCommand(nsISupports* aSources,
                          nsIRDFResource*   aCommand,
-                         nsISupportsArray* aArguments) override;
+                         nsISupports* aArguments) override;
 
     NS_IMETHOD BeginUpdateBatch() override {
         return mInner->BeginUpdateBatch();
@@ -441,22 +441,20 @@ LocalStoreImpl::GetAllCmds(nsIRDFResource* aSource,
 }
 
 NS_IMETHODIMP
-LocalStoreImpl::IsCommandEnabled(nsISupportsArray* aSources,
+LocalStoreImpl::IsCommandEnabled(nsISupports* aSources,
                                  nsIRDFResource*   aCommand,
-                                 nsISupportsArray* aArguments,
+                                 nsISupports* aArguments,
                                  bool* aResult)
 {
-    *aResult = true;
-    return NS_OK;
+    return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 NS_IMETHODIMP
-LocalStoreImpl::DoCommand(nsISupportsArray* aSources,
+LocalStoreImpl::DoCommand(nsISupports* aSources,
                           nsIRDFResource*   aCommand,
-                          nsISupportsArray* aArguments)
+                          nsISupports* aArguments)
 {
-    
-    return NS_OK;
+    return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 NS_IMETHODIMP
