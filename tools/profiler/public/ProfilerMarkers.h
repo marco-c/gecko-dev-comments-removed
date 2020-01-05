@@ -117,6 +117,22 @@ private:
   char* mFilename;
 };
 
+class DOMEventMarkerPayload : public ProfilerMarkerPayload
+{
+public:
+  DOMEventMarkerPayload(const nsAString& aType, uint16_t aPhase,
+                        const mozilla::TimeStamp& aStartTime,
+                        const mozilla::TimeStamp& aEndTime);
+  ~DOMEventMarkerPayload();
+
+  virtual void StreamPayload(SpliceableJSONWriter& aWriter,
+                             UniqueStacks& aUniqueStacks) override;
+
+private:
+  nsString mType;
+  uint16_t mPhase;
+};
+
 
 
 
