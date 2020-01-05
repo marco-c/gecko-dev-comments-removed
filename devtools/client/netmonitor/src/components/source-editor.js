@@ -1,0 +1,75 @@
+
+
+
+
+"use strict";
+
+const {
+  createClass,
+  DOM,
+  PropTypes,
+} = require("devtools/client/shared/vendor/react");
+const Editor = require("devtools/client/sourceeditor/editor");
+
+const { div } = DOM;
+const SYNTAX_HIGHLIGHT_MAX_SIZE = 51200;
+
+
+
+
+const SourceEditor = createClass({
+  displayName: "SourceEditor",
+
+  propTypes: {
+    
+    mode: PropTypes.string,
+    
+    text: PropTypes.string,
+  },
+
+  componentDidMount() {
+    const { mode, text } = this.props;
+
+    this.editor = new Editor({
+      lineNumbers: true,
+      lineWrapping: false,
+      mode: text.length < SYNTAX_HIGHLIGHT_MAX_SIZE ? mode : null,
+      readOnly: true,
+      theme: "mozilla",
+      value: text,
+    });
+
+    
+    this.editorTimeout = setTimeout(() => {
+      this.editor.appendToLocalElement(this.refs.editorElement);
+    });
+  },
+
+  componentDidUpdate(prevProps) {
+    const { mode, text } = this.props;
+
+    if (prevProps.mode !== mode && text.length < SYNTAX_HIGHLIGHT_MAX_SIZE) {
+      this.editor.setMode(mode);
+    }
+
+    if (prevProps.text !== text) {
+      this.editor.setText(text);
+    }
+  },
+
+  componentWillUnmount() {
+    clearTimeout(this.editorTimeout);
+    this.editor.destroy();
+  },
+
+  render() {
+    return (
+      div({
+        ref: "editorElement",
+        className: "source-editor-mount devtools-monospace",
+      })
+    );
+  }
+});
+
+module.exports = SourceEditor;
