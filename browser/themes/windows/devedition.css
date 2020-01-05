@@ -116,9 +116,7 @@
   }
 }
 
-@media (-moz-os-version: windows-xp),
-       (-moz-os-version: windows-vista),
-       (-moz-os-version: windows-win7),
+@media (-moz-os-version: windows-win7),
        (-moz-os-version: windows-win8) {
   :root {
     --space-above-tabbar: 15px;
@@ -263,8 +261,7 @@
   color: var(--chrome-color);
 }
 
-@media (-moz-os-version: windows-vista),
-       (-moz-os-version: windows-win7),
+@media (-moz-os-version: windows-win7),
        (-moz-os-version: windows-win8) {
   
   #main-window:not([customizing])[sizemode=normal] #navigator-toolbox::after,
