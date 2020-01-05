@@ -43,7 +43,11 @@ pub struct Opts {
 
     
     
-    pub profiler_period: Option<f64>,
+    pub time_profiler_period: Option<f64>,
+
+    
+    
+    pub memory_profiler_period: Option<f64>,
 
     
     
@@ -85,6 +89,7 @@ pub fn from_cmdline_args(args: &[String]) -> Option<Opts> {
         getopts::optopt("", "device-pixel-ratio", "Device pixels per px", ""),
         getopts::optopt("t", "threads", "Number of render threads", "1"),
         getopts::optflagopt("p", "profile", "Profiler flag and output interval", "10"),
+        getopts::optflagopt("m", "memory-profile", "Memory profiler flag and output interval", "10"),
         getopts::optflag("x", "exit", "Exit after load flag"),
         getopts::optopt("y", "layout-threads", "Number of threads to use for layout", "1"),
         getopts::optflag("z", "headless", "Headless mode"),
@@ -148,7 +153,10 @@ pub fn from_cmdline_args(args: &[String]) -> Option<Opts> {
     };
 
     
-    let profiler_period = opt_match.opt_default("p", "5").map(|period| {
+    let time_profiler_period = opt_match.opt_default("p", "5").map(|period| {
+        from_str(period.as_slice()).unwrap()
+    });
+    let memory_profiler_period = opt_match.opt_default("m", "5").map(|period| {
         from_str(period.as_slice()).unwrap()
     });
 
@@ -166,7 +174,8 @@ pub fn from_cmdline_args(args: &[String]) -> Option<Opts> {
         cpu_painting: cpu_painting,
         tile_size: tile_size,
         device_pixels_per_px: device_pixels_per_px,
-        profiler_period: profiler_period,
+        time_profiler_period: time_profiler_period,
+        memory_profiler_period: memory_profiler_period,
         layout_threads: layout_threads,
         exit_after_load: opt_match.opt_present("x"),
         output_file: opt_match.opt_str("o"),
