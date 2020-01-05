@@ -617,10 +617,11 @@ function makeKeyForURL(actionUrl) {
 
 
 
-function looksLikeUrl(str) {
+function looksLikeUrl(str, ignoreAlphanumericHosts = false) {
   
   return !REGEXP_SPACES.test(str) &&
-         ["/", "@", ":", "."].some(c => str.includes(c));
+         (["/", "@", ":", "["].some(c => str.includes(c)) ||
+          (ignoreAlphanumericHosts ? /(.*\..*){3,}/.test(str) : str.includes(".")));
 }
 
 
@@ -996,6 +997,18 @@ Search.prototype = {
       
       let matched = yield this._matchUnknownUrl();
       if (matched) {
+        
+        
+        
+        try {
+          new URL(this._originalSearchString);
+        } catch (ex) {
+          if (Prefs.keywordEnabled && !looksLikeUrl(this._originalSearchString, true)) {
+            this._addingHeuristicFirstMatch = false;
+            yield this._matchCurrentSearchEngine();
+            this._addingHeuristicFirstMatch = true;
+          }
+        }
         return true;
       }
     }
