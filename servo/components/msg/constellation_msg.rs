@@ -220,12 +220,6 @@ pub enum PixelFormat {
     RGBA8,      
 }
 
-#[derive(Clone, Deserialize, Eq, PartialEq, Serialize, HeapSizeOf)]
-pub struct ImageMetadata {
-    pub width: u32,
-    pub height: u32,
-}
-
 #[derive(Clone, Deserialize, Serialize, HeapSizeOf)]
 pub struct Image {
     pub width: u32,

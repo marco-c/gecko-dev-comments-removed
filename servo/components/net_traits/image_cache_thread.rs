@@ -2,8 +2,9 @@
 
 
 
+use image::base::ImageMetadata;
 use ipc_channel::ipc::{self, IpcSender};
-use msg::constellation_msg::{Image, ImageMetadata};
+use msg::constellation_msg::Image;
 use std::sync::Arc;
 use url::Url;
 
