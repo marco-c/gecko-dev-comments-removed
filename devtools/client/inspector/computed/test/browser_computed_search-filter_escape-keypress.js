@@ -6,6 +6,10 @@
 
 
 
+requestLongerTimeout(2);
+
+
+
 const TEST_URI = `
   <style type="text/css">
     .matches {
