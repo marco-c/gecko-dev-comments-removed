@@ -95,14 +95,6 @@ pub fn send_error(url: Url, err: NetworkError, start_chan: LoadConsumer) {
 }
 
 
-pub fn start_sending_sniffed(start_chan: LoadConsumer, metadata: Metadata,
-                             classifier: Arc<MimeClassifier>, partial_body: &[u8],
-                             context: LoadContext)
-                             -> ProgressSender {
-    start_sending_sniffed_opt(start_chan, metadata, classifier, partial_body, context).ok().unwrap()
-}
-
-
 pub fn start_sending_sniffed_opt(start_chan: LoadConsumer, mut metadata: Metadata,
                                  classifier: Arc<MimeClassifier>, partial_body: &[u8],
                                  context: LoadContext)
