@@ -403,6 +403,23 @@ private:
 
 
 
+
+
+
+
+
+
+
+
+
+
+  static bool ChildListMayRequireBidi(nsIFrame*    aFirstChild,
+                                      nsIContent** aCurrContent);
+
+  
+
+
+
   static void RepositionRubyContentFrame(
     nsIFrame* aFrame, mozilla::WritingMode aFrameWM,
     const mozilla::LogicalMargin& aBorderPadding);
