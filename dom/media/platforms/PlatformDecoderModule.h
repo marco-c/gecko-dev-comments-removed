@@ -150,6 +150,7 @@ protected:
   friend class H264Converter;
   friend class PDMFactory;
   friend class dom::RemoteDecoderModule;
+  friend class EMEDecoderModule;
 
   
   
