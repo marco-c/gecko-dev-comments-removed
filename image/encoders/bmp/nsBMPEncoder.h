@@ -104,7 +104,7 @@ protected:
 
   
   nsresult ParseOptions(const nsAString& aOptions, Version& aVersionOut,
-                        uint32_t& aBppOut);
+                        uint16_t& aBppOut);
   
   void ConvertHostARGBRow(const uint8_t* aSrc,
                           const mozilla::UniquePtr<uint8_t[]>& aDest,
@@ -113,11 +113,11 @@ protected:
   void NotifyListener();
 
   
-  void InitFileHeader(Version aVersion, uint32_t aBPP, uint32_t aWidth,
-                      uint32_t aHeight);
+  nsresult InitFileHeader(Version aVersion, uint16_t aBPP, uint32_t aWidth,
+                          uint32_t aHeight);
   
-  void InitInfoHeader(Version aVersion, uint32_t aBPP, uint32_t aWidth,
-                      uint32_t aHeight);
+  nsresult InitInfoHeader(Version aVersion, uint16_t aBPP, uint32_t aWidth,
+                          uint32_t aHeight);
 
   
   void EncodeFileHeader();
