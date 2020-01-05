@@ -21,7 +21,7 @@ add_task(function*() {
     Services.prefs.setBoolPref("browser.safebrowsing.phishing.enabled", val1);
     Services.prefs.setBoolPref("browser.safebrowsing.malware.enabled", val2);
 
-    yield openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
+    yield openPreferencesViaOpenPreferencesAPI("security", undefined, { leaveOpen: true });
 
     let doc = gBrowser.selectedBrowser.contentDocument;
     let checkbox = doc.getElementById("enableSafeBrowsing");
@@ -34,7 +34,6 @@ add_task(function*() {
     is(blockUncommon.hasAttribute("disabled"), !checked, "block uncommon checkbox is set correctly");
 
     
-    checkbox.scrollIntoView();
     EventUtils.synthesizeMouseAtCenter(checkbox, {}, gBrowser.selectedBrowser.contentWindow);
 
     
@@ -62,7 +61,7 @@ add_task(function*() {
   function* checkPrefSwitch(val) {
     Services.prefs.setBoolPref("browser.safebrowsing.downloads.enabled", val);
 
-    yield openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
+    yield openPreferencesViaOpenPreferencesAPI("security", undefined, { leaveOpen: true });
 
     let doc = gBrowser.selectedBrowser.contentDocument;
     let checkbox = doc.getElementById("blockDownloads");
@@ -73,7 +72,6 @@ add_task(function*() {
     is(blockUncommon.hasAttribute("disabled"), !val, "block uncommon checkbox is set correctly");
 
     
-    checkbox.scrollIntoView();
     EventUtils.synthesizeMouseAtCenter(checkbox, {}, gBrowser.selectedBrowser.contentWindow);
 
     
@@ -96,7 +94,7 @@ add_task(function*() {
     Services.prefs.setBoolPref("browser.safebrowsing.downloads.remote.block_potentially_unwanted", val1);
     Services.prefs.setBoolPref("browser.safebrowsing.downloads.remote.block_uncommon", val2);
 
-    yield openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
+    yield openPreferencesViaOpenPreferencesAPI("security", undefined, { leaveOpen: true });
 
     let doc = gBrowser.selectedBrowser.contentDocument;
     let checkbox = doc.getElementById("blockUncommonUnwanted");
@@ -104,7 +102,6 @@ add_task(function*() {
     is(checked, val1 && val2, "unwanted/uncommon preference is initialized correctly");
 
     
-    checkbox.scrollIntoView();
     EventUtils.synthesizeMouseAtCenter(checkbox, {}, gBrowser.selectedBrowser.contentWindow);
 
     

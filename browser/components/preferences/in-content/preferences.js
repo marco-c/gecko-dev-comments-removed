@@ -12,6 +12,9 @@
 
 
 
+
+
+
 "use strict";
 
 var Cc = Components.classes;
@@ -54,11 +57,14 @@ function init_all() {
 
   gSubDialog.init();
   register_module("paneGeneral", gMainPane);
+  register_module("paneSearch", gSearchPane);
   register_module("panePrivacy", gPrivacyPane);
   register_module("paneContainers", gContainersPane);
   register_module("paneAdvanced", gAdvancedPane);
   register_module("paneApplications", gApplicationsPane);
+  register_module("paneContent", gContentPane);
   register_module("paneSync", gSyncPane);
+  register_module("paneSecurity", gSecurityPane);
 
   let categories = document.getElementById("categories");
   categories.addEventListener("select", event => gotoPref(event.target.value));
@@ -117,13 +123,29 @@ function init_dynamic_padding() {
 
 function telemetryBucketForCategory(category) {
   switch (category) {
-    case "applications":
-    case "advanced":
-    case "containers":
     case "general":
+    case "search":
+    case "content":
+    case "applications":
     case "privacy":
+    case "security":
     case "sync":
       return category;
+    case "advanced":
+      let advancedPaneTabs = document.getElementById("advancedPrefs");
+      switch (advancedPaneTabs.selectedTab.id) {
+        case "generalTab":
+          return "advancedGeneral";
+        case "dataChoicesTab":
+          return "advancedDataChoices";
+        case "networkTab":
+          return "advancedNetwork";
+        case "updateTab":
+          return "advancedUpdates";
+        case "encryptionTab":
+          return "advancedCerts";
+      }
+      
     default:
       return "unknown";
   }
@@ -171,7 +193,7 @@ function gotoPref(aCategory) {
   mainContent.scrollTop = 0;
 
   Services.telemetry
-          .getHistogramById("FX_PREFERENCES_CATEGORY_OPENED_V2")
+          .getHistogramById("FX_PREFERENCES_CATEGORY_OPENED")
           .add(telemetryBucketForCategory(friendlyName));
 }
 

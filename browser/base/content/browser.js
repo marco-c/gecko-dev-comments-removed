@@ -13,9 +13,6 @@ Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/ContextualIdentityService.jsm");
 Cu.import("resource://gre/modules/NotificationDB.jsm");
 
-XPCOMUtils.defineLazyModuleGetter(this, "Preferences",
-                                  "resource://gre/modules/Preferences.jsm");
-
 
 
 
@@ -6272,13 +6269,7 @@ var OfflineApps = {
   },
 
   manage() {
-    
-    
-    if (Preferences.get("browser.preferences.useOldOrganization", false)) {
-      openAdvancedPreferences("networkTab");
-    } else {
-      openPreferences("panePrivacy");
-    }
+    openAdvancedPreferences("networkTab");
   },
 
   receiveMessage(msg) {
