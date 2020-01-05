@@ -43,6 +43,7 @@ pub struct Sink {
 }
 
 impl Sink {
+    #[allow(unrooted_must_root)] 
     pub fn get_or_create(&self, child: NodeOrText<JS<Node>>) -> Root<Node> {
         match child {
             NodeOrText::AppendNode(n) => n.root(),
