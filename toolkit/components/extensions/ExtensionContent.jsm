@@ -330,6 +330,7 @@ class ExtensionContext extends BaseContext {
       
       this.sandbox = Cu.Sandbox(contentWindow, {
         sandboxPrototype: contentWindow,
+        sameZoneAs: contentWindow,
         wantXrays: false,
         isWebExtensionContentScript: true,
       });
@@ -345,6 +346,7 @@ class ExtensionContext extends BaseContext {
       this.sandbox = Cu.Sandbox(principal, {
         metadata,
         sandboxPrototype: contentWindow,
+        sameZoneAs: contentWindow,
         wantXrays: true,
         isWebExtensionContentScript: true,
         wantExportHelpers: true,
