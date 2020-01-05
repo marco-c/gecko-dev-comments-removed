@@ -48,7 +48,7 @@ use js::glue::{RUST_JSID_IS_INT, RUST_JSID_TO_INT};
 use js::glue::{RUST_JSID_IS_STRING, RUST_JSID_TO_STRING, UnwrapObject};
 use js::jsapi::{HandleId, HandleObject, HandleValue, JSClass, JSContext};
 use js::jsapi::{JSObject, JSString, JS_GetArrayBufferViewType, JS_GetClass};
-use js::jsapi::{JS_GetLatin1StringCharsAndLength, JS_GetObjectAsArrayBufferView};
+use js::jsapi::{JS_GetLatin1StringCharsAndLength, JS_GetObjectAsArrayBuffer, JS_GetObjectAsArrayBufferView};
 use js::jsapi::{JS_GetReservedSlot, JS_GetTwoByteStringCharsAndLength, ToWindowProxyIfWindow};
 use js::jsapi::{JS_IsArrayObject, JS_NewStringCopyN, JS_StringHasLatin1Chars};
 use js::jsapi::{JS_WrapValue, MutableHandleValue, Type, IsObjectInContextCompartment};
@@ -534,7 +534,11 @@ unsafe impl ArrayBufferViewContents for f64 {
 
 
 
-pub unsafe fn array_buffer_view_data<'a, T: ArrayBufferViewContents>(abv: *mut JSObject) -> Option<&'a mut [T]> {
+pub unsafe fn array_buffer_view_data<'a, T>(abv: *mut JSObject) -> Option<&'a mut [T]>
+    where T: ArrayBufferViewContents
+{
+    assert!(!abv.is_null());
+
     let mut byte_length = 0;
     let mut ptr = ptr::null_mut();
     let mut is_shared = false;
@@ -547,16 +551,18 @@ pub unsafe fn array_buffer_view_data<'a, T: ArrayBufferViewContents>(abv: *mut J
 }
 
 
-pub fn array_buffer_view_to_vec<T: ArrayBufferViewContents>(abv: *mut JSObject) -> Option<Vec<T>> {
-    unsafe {
-        array_buffer_view_data(abv).map(|data| data.to_vec())
-    }
+
+pub unsafe fn array_buffer_view_to_vec<T>(abv: *mut JSObject) -> Option<Vec<T>>
+    where T: ArrayBufferViewContents
+{
+    array_buffer_view_data(abv).map(|data| data.to_vec())
 }
 
 
 
-pub unsafe fn array_buffer_view_data_checked<'a, T: ArrayBufferViewContents>(abv: *mut JSObject)
-                                                                             -> Option<&'a mut [T]> {
+pub unsafe fn array_buffer_view_data_checked<'a, T>(abv: *mut JSObject) -> Option<&'a mut [T]>
+    where T: ArrayBufferViewContents
+{
     array_buffer_view_data::<T>(abv).and_then(|data| {
         if T::is_type_compatible(JS_GetArrayBufferViewType(abv)) {
             Some(data)
@@ -568,10 +574,33 @@ pub unsafe fn array_buffer_view_data_checked<'a, T: ArrayBufferViewContents>(abv
 
 
 
-pub fn array_buffer_view_to_vec_checked<T: ArrayBufferViewContents>(abv: *mut JSObject) -> Option<Vec<T>> {
-    unsafe {
-        array_buffer_view_data_checked(abv).map(|data| data.to_vec())
+pub unsafe fn array_buffer_view_to_vec_checked<T>(abv: *mut JSObject) -> Option<Vec<T>>
+    where T: ArrayBufferViewContents
+{
+    array_buffer_view_data_checked(abv).map(|data| data.to_vec())
+}
+
+
+
+pub unsafe fn array_buffer_data<'a, T>(ab: *mut JSObject) -> Option<&'a mut [T]>
+    where T: ArrayBufferViewContents
+{
+    assert!(!ab.is_null());
+
+    let mut byte_length = 0;
+    let mut ptr = ptr::null_mut();
+    let ret = JS_GetObjectAsArrayBuffer(ab, &mut byte_length, &mut ptr);
+    if ret.is_null() {
+        return None;
     }
+    Some(slice::from_raw_parts_mut(ptr as *mut T, byte_length as usize / mem::size_of::<T>()))
+}
+
+
+pub unsafe fn array_buffer_to_vec<T>(ab: *mut JSObject) -> Option<Vec<T>>
+    where T: ArrayBufferViewContents
+{
+    array_buffer_data(ab).map(|data| data.to_vec())
 }
 
 
