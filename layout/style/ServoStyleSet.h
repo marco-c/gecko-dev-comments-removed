@@ -418,6 +418,23 @@ private:
   
   void PreTraverseSync();
 
+  
+
+
+
+  void RebuildStylist();
+
+  
+
+
+
+  void MaybeRebuildStylist()
+  {
+    if (mStylistMayNeedRebuild) {
+      RebuildStylist();
+    }
+  }
+
   already_AddRefed<ServoComputedValues> ResolveStyleLazily(dom::Element* aElement,
                                                            nsIAtom* aPseudoTag);
 
@@ -459,6 +476,7 @@ private:
   uint32_t mUniqueIDCounter;
   bool mAllowResolveStaleStyles;
   bool mAuthorStyleDisabled;
+  bool mStylistMayNeedRebuild;
 
   
   
