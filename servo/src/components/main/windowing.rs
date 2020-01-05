@@ -27,6 +27,8 @@ pub enum WindowEvent {
     
     IdleWindowEvent,
     
+    RefreshWindowEvent,
+    
     ResizeWindowEvent(uint, uint),
     
     LoadUrlWindowEvent(~str),
