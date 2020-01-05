@@ -1,0 +1,12 @@
+
+
+
+
+"use strict";
+
+
+
+
+exports.boxModel = require("devtools/client/inspector/layout/reducers/box-model");
+exports.grids = require("devtools/client/inspector/layout/reducers/grids");
+exports.highlighterSettings = require("devtools/client/inspector/layout/reducers/highlighter-settings");
