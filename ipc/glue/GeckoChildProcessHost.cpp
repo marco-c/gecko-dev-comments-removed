@@ -60,15 +60,11 @@
 using mozilla::MonitorAutoLock;
 using mozilla::ipc::GeckoChildProcessHost;
 
-#ifdef ANDROID
-
-
-
-static const int kMagicAndroidSystemPropFd = 5;
-#endif
-
 #ifdef MOZ_WIDGET_ANDROID
 #include "AndroidBridge.h"
+#include "GeneratedJNIWrappers.h"
+#include "mozilla/jni/Refs.h"
+#include "mozilla/jni/Utils.h"
 #endif
 
 static const bool kLowRightsSubprocesses =
@@ -191,17 +187,7 @@ GeckoChildProcessHost::GetPathToBinary(FilePath& exePath, GeckoProcessType proce
     exePath = exePath.DirName();
   }
 
-#ifdef MOZ_WIDGET_ANDROID
-  exePath = exePath.AppendASCII("lib");
-
-  
-  const char* processName = mozilla::AndroidBridge::Bridge()->GetAPIVersion() >= 21 ?
-    MOZ_CHILD_PROCESS_NAME_PIE : MOZ_CHILD_PROCESS_NAME;
-
-  exePath = exePath.AppendASCII(processName);
-#else
   exePath = exePath.AppendASCII(MOZ_CHILD_PROCESS_NAME);
-#endif
 
   return BinaryPathType::PluginContainer;
 }
@@ -767,9 +753,6 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
     nsCString path;
     NS_CopyUnicodeToNative(nsDependentString(gGREBinPath), path);
 # if defined(OS_LINUX) || defined(OS_BSD)
-#  if defined(MOZ_WIDGET_ANDROID)
-    path += "/lib";
-#  endif  
     const char *ld_library_path = PR_GetEnv("LD_LIBRARY_PATH");
     nsCString new_ld_lib_path(path.get());
 
@@ -812,28 +795,6 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
 
   FilePath exePath;
   BinaryPathType pathType = GetPathToBinary(exePath, mProcessType);
-
-#ifdef MOZ_WIDGET_ANDROID
-  
-  chmod(exePath.value().c_str(), 0700);
-#endif  
-
-#ifdef ANDROID
-  
-  
-  
-  const char *apws = getenv("ANDROID_PROPERTY_WORKSPACE");
-  if (apws) {
-    int fd = atoi(apws);
-    mFileMap.push_back(std::pair<int, int>(fd, kMagicAndroidSystemPropFd));
-
-    char buf[32];
-    char *szptr = strchr(apws, ',');
-
-    snprintf(buf, sizeof(buf), "%d%s", kMagicAndroidSystemPropFd, szptr);
-    newEnvVars["ANDROID_PROPERTY_WORKSPACE"] = buf;
-  }
-#endif  
 
 #ifdef MOZ_WIDGET_GONK
   if (const char *ldPreloadPath = getenv("LD_PRELOAD")) {
@@ -935,11 +896,15 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
 
   childArgv.push_back(childProcessType);
 
+#if defined(MOZ_WIDGET_ANDROID)
+  LaunchAndroidService(childProcessType, childArgv, mFileMap, &process);
+#else
   base::LaunchApp(childArgv, mFileMap,
 #if defined(OS_LINUX) || defined(OS_MACOSX) || defined(OS_BSD)
                   newEnvVars, privs,
 #endif
                   false, &process, arch);
+#endif 
 
   
   
@@ -1266,3 +1231,32 @@ GeckoChildProcessHost::GetQueuedMessages(std::queue<IPC::Message>& queue)
 }
 
 bool GeckoChildProcessHost::sRunSelfAsContentProc(false);
+
+#ifdef MOZ_WIDGET_ANDROID
+void
+GeckoChildProcessHost::LaunchAndroidService(const char* type,
+                                            const std::vector<std::string>& argv,
+                                            const base::file_handle_mapping_vector& fds_to_remap,
+                                            ProcessHandle* process_handle)
+{
+  MOZ_ASSERT((fds_to_remap.size() > 0) && (fds_to_remap.size() <= 2));
+  JNIEnv* env = mozilla::jni::GetEnvForThread();
+  MOZ_ASSERT(env);
+
+  int argvSize = argv.size();
+  jni::ObjectArray::LocalRef jargs = jni::ObjectArray::LocalRef::Adopt(env->NewObjectArray(argvSize, env->FindClass("java/lang/String"), nullptr));
+  for (int ix = 0; ix < argvSize; ix++) {
+    jargs->SetElement(ix, jni::StringParam(argv[ix].c_str(), env));
+  }
+  base::file_handle_mapping_vector::const_iterator it = fds_to_remap.begin();
+  int32_t ipcFd = it->first;
+  it++;
+  
+  int32_t crashFd = (it != fds_to_remap.end()) ? it->first : -1;
+  int32_t handle = java::GeckoAppShell::StartGeckoServiceChildProcess(type, jargs, crashFd, ipcFd);
+
+  if (process_handle) {
+    *process_handle = handle;
+  }
+}
+#endif
