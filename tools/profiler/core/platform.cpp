@@ -94,6 +94,13 @@ static int gEntrySize = 0;
 
 
 
+
+static double gInterval = 0;
+
+
+
+
+
 bool stack_key_initialized;
 
 
@@ -680,12 +687,8 @@ profiler_get_start_params(int* aEntrySize,
     return;
   }
 
-  if (NS_WARN_IF(!gSampler)) {
-    return;
-  }
-
   *aEntrySize = gEntrySize;
-  *aInterval = gSampler->interval();
+  *aInterval = gInterval;
 
   {
     StaticMutexAutoLock lock(gThreadNameFiltersMutex);
@@ -860,9 +863,8 @@ profiler_start(int aProfileEntries, double aInterval,
   }
 
   gEntrySize = aProfileEntries ? aProfileEntries : PROFILE_DEFAULT_ENTRY;
-  gSampler =
-    new Sampler(aInterval ? aInterval : PROFILE_DEFAULT_INTERVAL, gEntrySize,
-                aFeatures, aFeatureCount, aFilterCount);
+  gInterval = aInterval ? aInterval : PROFILE_DEFAULT_INTERVAL;
+  gSampler = new Sampler(gEntrySize, aFeatures, aFeatureCount, aFilterCount);
   gGatherer = new mozilla::ProfileGatherer(gSampler);
 
   gSampler->Start();
@@ -962,6 +964,7 @@ profiler_stop()
   delete gSampler;
   gSampler = nullptr;
   gEntrySize = 0;
+  gInterval = 0;
 
   
   gGatherer->Cancel();

@@ -286,6 +286,8 @@ Sampler::PlatformDataDestructor::operator()(PlatformData* aData)
 
 static void* SignalSender(void* arg) {
   
+
+  
   prctl(PR_SET_NAME, "SamplerThread", 0, 0, 0);
 
   int vm_tgid_ = getpid();
@@ -360,8 +362,11 @@ static void* SignalSender(void* arg) {
       }
     }
 
+    
+    
+    
     TimeStamp targetSleepEndTime =
-      sampleStart + TimeDuration::FromMicroseconds(gSampler->interval() * 1000);
+      sampleStart + TimeDuration::FromMicroseconds(gInterval * 1000);
     TimeStamp beforeSleep = TimeStamp::Now();
     TimeDuration targetSleepDuration = targetSleepEndTime - beforeSleep;
     double sleepTime = std::max(0.0, (targetSleepDuration - lastSleepOverhead).ToMicroseconds());

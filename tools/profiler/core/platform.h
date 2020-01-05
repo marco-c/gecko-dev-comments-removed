@@ -240,12 +240,10 @@ class Promise;
 class Sampler {
 public:
   
-  Sampler(double aInterval, int aEntrySize,
+  Sampler(int aEntrySize,
           const char** aFeatures, uint32_t aFeatureCount,
           uint32_t aFilterCount);
   ~Sampler();
-
-  double interval() const { return interval_; }
 
   
   
@@ -336,7 +334,6 @@ private:
 
   void SetActive(bool value) { NoBarrier_Store(&active_, value); }
 
-  const double interval_;
   Atomic32 paused_;
   Atomic32 active_;
 

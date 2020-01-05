@@ -140,10 +140,10 @@ class SamplerThread
     MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
     if (mInstance == NULL) {
-      mInstance = new SamplerThread(gSampler->interval());
+      mInstance = new SamplerThread(gInterval);
       mInstance->Start();
     } else {
-      MOZ_ASSERT(mInstance->mInterval == gSampler->interval());
+      MOZ_ASSERT(mInstance->mInterval == gInterval);
     }
   }
 
@@ -154,6 +154,8 @@ class SamplerThread
   }
 
   void Run() {
+    
+
     
     
     
