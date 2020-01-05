@@ -3623,9 +3623,6 @@ HTMLMediaElement::PlayInternal()
 
   
   
-  
-  
-  
   if (oldPaused) {
     DispatchAsyncEvent(NS_LITERAL_STRING("play"));
     switch (mReadyState) {
