@@ -68,15 +68,7 @@ WGLLibrary::CreateDummyWindow(HDC* aWindowDC)
         pfd.cGreenBits = 8;
         pfd.cBlueBits = 8;
         pfd.cAlphaBits = 8;
-#ifdef MOZ_ENABLE_WEBRENDER
-        
-        
-        
-        
-        pfd.cDepthBits = 24;
-#else
-        pfd.cDepthBits = 0;
-#endif
+        pfd.cDepthBits = gfxVars::UseWebRender() ? 24 : 0;
         pfd.iLayerType = PFD_MAIN_PLANE;
 
         mWindowPixelFormat = ChoosePixelFormat(dc, &pfd);
