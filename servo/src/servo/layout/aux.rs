@@ -10,7 +10,7 @@ pub trait LayoutAuxMethods {
     fn initialize_style_for_subtree(refs: &DVec<@LayoutData>);
 }
 
-impl Node : LayoutAuxMethods {
+impl LayoutAuxMethods for Node {
     
 
 
