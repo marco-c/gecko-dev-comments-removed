@@ -191,15 +191,14 @@ Object.defineProperty(GeckoDriver.prototype, "windowHandles", {
 
     while (winEn.hasMoreElements()) {
       let win = winEn.getNext();
-      let tabBrowser = browser.getTabBrowser(win);
-
-      if (tabBrowser) {
-        tabBrowser.tabs.forEach(tab => {
-          let winId = this.getIdForBrowser(browser.getBrowserForTab(tab));
+      if (win.gBrowser) {
+        let tabbrowser = win.gBrowser;
+        for (let i = 0; i < tabbrowser.browsers.length; ++i) {
+          let winId = this.getIdForBrowser(tabbrowser.getBrowserAtIndex(i));
           if (winId !== null) {
             hs.push(winId);
           }
-        });
+        }
       } else {
         
         let winId = win.QueryInterface(Ci.nsIInterfaceRequestor)
@@ -656,9 +655,7 @@ GeckoDriver.prototype.newSession = function*(cmd, resp) {
   yield registerBrowsers;
   yield browserListening;
 
-  if (this.curBrowser.tab) {
-    browser.getBrowserForTab(this.curBrowser.tab).focus();
-  }
+  this.curBrowser.browserForTab.focus();
 
   return {
     sessionId: this.sessionId,
@@ -975,7 +972,7 @@ GeckoDriver.prototype.get = function*(cmd, resp) {
   });
 
   yield get;
-  browser.getBrowserForTab(this.curBrowser.tab).focus();
+  this.curBrowser.browserForTab.focus();
 };
 
 
@@ -1202,6 +1199,7 @@ GeckoDriver.prototype.setWindowPosition = function (cmd, resp) {
 
 GeckoDriver.prototype.switchToWindow = function* (cmd, resp) {
   let switchTo = cmd.parameters.name;
+  let isMobile = this.appName == "Fennec";
   let found;
 
   let getOuterWindowId = function (win) {
@@ -1221,13 +1219,12 @@ GeckoDriver.prototype.switchToWindow = function* (cmd, resp) {
   while (winEn.hasMoreElements()) {
     let win = winEn.getNext();
     let outerId = getOuterWindowId(win);
-    let tabbrowser = browser.getTabBrowser(win);
 
-    if (tabbrowser) {
-      for (let i = 0; i < tabbrowser.tabs.length; ++i) {
-        let contentBrowser = browser.getBrowserForTab(tabbrowser.tabs[i]);
-        let contentWindowId = this.getIdForBrowser(contentBrowser);
-
+    if (win.gBrowser && !isMobile) {
+      let tabbrowser = win.gBrowser;
+      for (let i = 0; i < tabbrowser.browsers.length; ++i) {
+        let browser = tabbrowser.getBrowserAtIndex(i);
+        let contentWindowId = this.getIdForBrowser(browser);
         if (byNameOrId(win.name, contentWindowId, outerId)) {
           found = {
             win: win,
@@ -2117,9 +2114,8 @@ GeckoDriver.prototype.close = function (cmd, resp) {
     let win = winEn.getNext();
 
     
-    let tabbrowser = browser.getTabBrowser(win);
-    if (tabbrowser) {
-      nwins += tabbrowser.tabs.length;
+    if (win.gBrowser) {
+      nwins += win.gBrowser.browsers.length;
     } else {
       nwins++;
     }
