@@ -519,6 +519,34 @@ private:
 };
 }
 
+
+
+
+
+
+
+
+
+static bool
+MustReresolveStyle(const nsStyleContext* aContext)
+{
+  MOZ_ASSERT(aContext);
+
+  if (aContext->HasPseudoElementData()) {
+    if (!aContext->GetPseudo() ||
+        aContext->StyleSource().IsServoComputedValues()) {
+      
+      
+      return true;
+    }
+
+    return aContext->GetParent() &&
+           aContext->GetParent()->HasPseudoElementData();
+  }
+
+  return false;
+}
+
 already_AddRefed<nsStyleContext>
 nsComputedDOMStyle::DoGetStyleContextNoFlush(Element* aElement,
                                              nsIAtom* aPseudo,
@@ -543,16 +571,22 @@ nsComputedDOMStyle::DoGetStyleContextNoFlush(Element* aElement,
   
   
   
-  if (!aPseudo &&
-      inDocWithShell &&
+  if (inDocWithShell &&
       !aElement->IsHTMLElement(nsGkAtoms::area)) {
-    nsIFrame* frame = nsLayoutUtils::GetStyleFrame(aElement);
+    nsIFrame* frame = nullptr;
+    if (aPseudo == nsCSSPseudoElements::before) {
+      frame = nsLayoutUtils::GetBeforeFrame(aElement);
+    } else if (aPseudo == nsCSSPseudoElements::after) {
+      frame = nsLayoutUtils::GetAfterFrame(aElement);
+    } else if (!aPseudo) {
+      frame = nsLayoutUtils::GetStyleFrame(aElement);
+    }
     if (frame) {
       nsStyleContext* result = frame->StyleContext();
       
       
       
-      if (!result->HasPseudoElementData()) {
+      if (!MustReresolveStyle(result)) {
         
         
         if (aAnimationFlag == eWithoutAnimation) {
@@ -579,7 +613,7 @@ nsComputedDOMStyle::DoGetStyleContextNoFlush(Element* aElement,
   
   
 
-  nsPresContext *presContext = presShell->GetPresContext();
+  nsPresContext* presContext = presShell->GetPresContext();
   if (!presContext)
     return nullptr;
 
@@ -713,34 +747,6 @@ nsComputedDOMStyle::SetFrameStyleContext(nsStyleContext* aContext)
 {
   ClearStyleContext();
   mStyleContext = aContext;
-}
-
-
-
-
-
-
-
-
-
-static bool
-MustReresolveStyle(const nsStyleContext* aContext)
-{
-  MOZ_ASSERT(aContext);
-
-  if (aContext->HasPseudoElementData()) {
-    if (!aContext->GetPseudo() ||
-        aContext->StyleSource().IsServoComputedValues()) {
-      
-      
-      return true;
-    }
-
-    return aContext->GetParent() &&
-           aContext->GetParent()->HasPseudoElementData();
-  }
-
-  return false;
 }
 
 void
