@@ -4,7 +4,6 @@
 
 
 
-
 requestLongerTimeout(2);
 
 const XHTML_DTD = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">';
@@ -849,5 +848,37 @@ add_task(function* test_colors_applied_to_popup() {
   }
 
   yield hideSelectPopup(selectPopup, "escape");
+  yield BrowserTestUtils.removeTab(tab);
+});
+
+
+add_task(function* test_blur_hides_popup() {
+  const pageUrl = "data:text/html," + escape(PAGECONTENT_SMALL);
+  let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, pageUrl);
+
+  yield ContentTask.spawn(tab.linkedBrowser, null, function*() {
+    content.addEventListener("blur", function(event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }, true);
+
+    content.document.getElementById("one").focus();
+  });
+
+  let menulist = document.getElementById("ContentSelectDropdown");
+  let selectPopup = menulist.menupopup;
+
+  yield openSelectPopup(selectPopup);
+
+  let popupHiddenPromise = BrowserTestUtils.waitForEvent(selectPopup, "popuphidden");
+
+  yield ContentTask.spawn(tab.linkedBrowser, null, function*() {
+    content.document.getElementById("one").blur();
+  });
+
+  yield popupHiddenPromise;
+
+  ok(true, "Blur closed popup");
+
   yield BrowserTestUtils.removeTab(tab);
 });
