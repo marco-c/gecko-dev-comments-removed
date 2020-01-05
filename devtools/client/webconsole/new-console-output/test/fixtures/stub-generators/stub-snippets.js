@@ -92,8 +92,7 @@ console.log(
 
 const evaluationResultCommands = [
   "new Date(0)",
-  "asdf()",
-  "1 + @"
+  "asdf()"
 ];
 
 let evaluationResult = new Map(evaluationResultCommands.map(cmd => [cmd, cmd]));
