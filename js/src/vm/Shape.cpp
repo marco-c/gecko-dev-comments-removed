@@ -291,8 +291,9 @@ Shape::replaceLastProperty(JSContext* cx, StackBaseShape& base,
 
 
  Shape*
-NativeObject::getChildPropertyOnDictionary(JSContext* cx, HandleNativeObject obj,
-                                           HandleShape parent, MutableHandle<StackShape> child)
+NativeObject::getChildProperty(JSContext* cx,
+                               HandleNativeObject obj, HandleShape parent,
+                               MutableHandle<StackShape> child)
 {
     
 
@@ -325,11 +326,9 @@ NativeObject::getChildPropertyOnDictionary(JSContext* cx, HandleNativeObject obj
         }
     }
 
-    RootedShape shape(cx);
-
     if (obj->inDictionaryMode()) {
         MOZ_ASSERT(parent == obj->lastProperty());
-        shape = child.isAccessorShape() ? Allocate<AccessorShape>(cx) : Allocate<Shape>(cx);
+        Shape* shape = child.isAccessorShape() ? Allocate<AccessorShape>(cx) : Allocate<Shape>(cx);
         if (!shape)
             return nullptr;
         if (child.hasSlot() && child.slot() >= obj->lastProperty()->base()->slotSpan()) {
@@ -339,28 +338,16 @@ NativeObject::getChildPropertyOnDictionary(JSContext* cx, HandleNativeObject obj
             }
         }
         shape->initDictionaryShape(child, obj->numFixedSlots(), &obj->shape_);
+        return shape;
     }
 
-    return shape;
-}
-
- Shape*
-NativeObject::getChildProperty(JSContext* cx,
-                               HandleNativeObject obj, HandleShape parent,
-                               MutableHandle<StackShape> child)
-{
-    Shape* shape = getChildPropertyOnDictionary(cx, obj, parent, child);
-
-    if (!obj->inDictionaryMode()) {
-        shape = cx->zone()->propertyTree().getChild(cx, parent, child);
-        if (!shape)
-            return nullptr;
-        
-        
-        if (!obj->setLastProperty(cx, shape))
-            return nullptr;
-    }
-
+    Shape* shape = cx->zone()->propertyTree().getChild(cx, parent, child);
+    if (!shape)
+        return nullptr;
+    
+    
+    if (!obj->setLastProperty(cx, shape))
+        return nullptr;
     return shape;
 }
 
