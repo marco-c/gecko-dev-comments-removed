@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef NIL
+#  define NIL ((unsigned char *)0)      /* for no output option */
+#endif
+
+int puff(unsigned char *dest,           
+         unsigned long *destlen,        
+         const unsigned char *source,   
+         unsigned long *sourcelen);     
