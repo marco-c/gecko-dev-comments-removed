@@ -392,6 +392,7 @@ HTMLTrackElement::UnbindFromTree(bool aDeep, bool aNullParent)
     
     if (mTrack) {
       mMediaParent->RemoveTextTrack(mTrack);
+      mMediaParent->UpdateReadyState();
     }
     mMediaParent = nullptr;
   }
