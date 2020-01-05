@@ -35,6 +35,7 @@ extern crate serde_derive;
 extern crate servo_url;
 extern crate style_traits;
 extern crate time;
+extern crate webvr_traits;
 
 mod script_msg;
 pub mod webdriver_msg;
@@ -71,6 +72,7 @@ use std::fmt;
 use std::sync::mpsc::{Receiver, Sender};
 use style_traits::{PagePx, UnsafeNode, ViewportPx};
 use webdriver_msg::{LoadStatus, WebDriverScriptCommand};
+use webvr_traits::{WebVRDisplayEvent, WebVRMsg};
 
 pub use script_msg::{LayoutMsg, ScriptMsg, EventResult, LogEntry};
 pub use script_msg::{ServiceWorkerMsg, ScopeThings, SWManagerMsg, SWManagerSenders, DOMMessage};
@@ -263,6 +265,8 @@ pub enum ConstellationControlMsg {
     ReportCSSError(PipelineId, String, usize, usize, String),
     
     Reload(PipelineId),
+    
+    WebVREvent(PipelineId, WebVREventMsg)
 }
 
 impl fmt::Debug for ConstellationControlMsg {
@@ -295,6 +299,7 @@ impl fmt::Debug for ConstellationControlMsg {
             FramedContentChanged(..) => "FramedContentChanged",
             ReportCSSError(..) => "ReportCSSError",
             Reload(..) => "Reload",
+            WebVREvent(..) => "WebVREvent",
         };
         write!(formatter, "ConstellationMsg::{}", variant)
     }
@@ -478,6 +483,8 @@ pub struct InitialScriptState {
     pub pipeline_namespace_id: PipelineNamespaceId,
     
     pub content_process_shutdown_chan: IpcSender<()>,
+    
+    pub webvr_thread: Option<IpcSender<WebVRMsg>>
 }
 
 
@@ -716,6 +723,18 @@ pub enum ConstellationMsg {
     Reload,
     
     LogEntry(Option<FrameId>, Option<String>, LogEntry),
+    
+    SetWebVRThread(IpcSender<WebVRMsg>),
+    
+    WebVREvent(Vec<PipelineId>, WebVREventMsg),
+}
+
+
+
+#[derive(Deserialize, Serialize, Clone)]
+pub enum WebVREventMsg {
+    
+    DisplayEvent(WebVRDisplayEvent)
 }
 
 
