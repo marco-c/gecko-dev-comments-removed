@@ -15,6 +15,7 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/ArrayUtils.h"
+#include "mozilla/CheckedInt.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/MemoryChecking.h"
 #include "mozilla/Sprintf.h"
@@ -34,6 +35,7 @@ namespace lul {
 using std::string;
 using std::vector;
 using std::pair;
+using mozilla::CheckedInt;
 using mozilla::DebugOnly;
 
 
@@ -1014,13 +1016,30 @@ TaggedUWord DerefTUW(TaggedUWord aAddr, const StackImage* aStackImg)
   if (!aAddr.Valid()) {
     return TaggedUWord();
   }
+
+  
+  
+  
   if (aAddr.Value() < aStackImg->mStartAvma) {
     return TaggedUWord();
   }
-  if (aAddr.Value() + sizeof(uintptr_t) > aStackImg->mStartAvma
-                                          + aStackImg->mLen) {
+
+  
+  
+  
+  
+  typedef CheckedInt<uintptr_t> CheckedUWord;
+  CheckedUWord highest_requested_plus_one
+    = CheckedUWord(aAddr.Value()) + CheckedUWord(sizeof(uintptr_t));
+  CheckedUWord highest_available_plus_one
+    = CheckedUWord(aStackImg->mStartAvma) + CheckedUWord(aStackImg->mLen);
+  if (!highest_requested_plus_one.isValid()     
+      || !highest_available_plus_one.isValid()  
+      || (highest_requested_plus_one.value()
+          > highest_available_plus_one.value())) { 
     return TaggedUWord();
   }
+
   return TaggedUWord(*(uintptr_t*)(aStackImg->mContents + aAddr.Value()
                                    - aStackImg->mStartAvma));
 }
