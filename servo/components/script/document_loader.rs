@@ -127,16 +127,21 @@ impl DocumentLoader {
 
     
     
-    pub fn prepare_async_load(&mut self, load: LoadType) -> PendingAsyncLoad {
+    pub fn prepare_async_load(&mut self, load: LoadType, referrer: &Document) -> PendingAsyncLoad {
         let context = load.to_load_context();
         let url = load.url().clone();
         self.add_blocking_load(load);
-        PendingAsyncLoad::new(context, (*self.resource_thread).clone(), url, self.pipeline)
+        PendingAsyncLoad::new(context,
+                              (*self.resource_thread).clone(),
+                              url,
+                              self.pipeline,
+                              referrer.get_referrer_policy(),
+                              Some(referrer.url().clone()))
     }
 
     
-    pub fn load_async(&mut self, load: LoadType, listener: AsyncResponseTarget) {
-        let pending = self.prepare_async_load(load);
+    pub fn load_async(&mut self, load: LoadType, listener: AsyncResponseTarget, referrer: &Document) {
+        let pending = self.prepare_async_load(load, referrer);
         pending.load_async(listener)
     }
 
