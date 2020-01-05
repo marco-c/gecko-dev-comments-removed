@@ -305,7 +305,7 @@ struct GlyphStore {
 
 
 
-fn GlyphStore(text: ~str) {
+fn GlyphStore(_text: ~str) {
 
 }
 
