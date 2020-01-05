@@ -9,23 +9,8 @@ use collections::treemap::TreeMap;
 use std::comm::{Sender, channel, Receiver};
 use std::f64;
 use std::iter::AdditiveIterator;
+use std::io::timer::sleep;
 use task::{spawn_named};
-
-
-
-extern {
-    pub fn usleep(secs: u64) -> u32;
-}
-
-pub struct Timer;
-impl Timer {
-    pub fn sleep(ms: u64) {
-        
-        
-        
-       unsafe { usleep((ms * 1000)); }
-    }
-}
 
 
 #[deriving(Clone)]
@@ -133,7 +118,7 @@ impl Profiler {
                 let chan = chan.clone();
                 spawn_named("Profiler timer", proc() {
                     loop {
-                        Timer::sleep(period);
+                        sleep(period);
                         if !chan.try_send(PrintMsg) {
                             break;
                         }
