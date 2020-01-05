@@ -97,7 +97,6 @@
 #include "MediaTimer.h"
 #include "ImageContainer.h"
 #include "SeekJob.h"
-#include "SeekTask.h"
 
 namespace mozilla {
 
