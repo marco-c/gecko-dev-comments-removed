@@ -1234,13 +1234,11 @@ MappedAttrParser::ParseMappedAttrValue(nsIAtom* aMappedAttrName,
     } else {
       NS_ConvertUTF16toUTF8 value(aMappedAttrValue);
       
-      nsCString baseString;
       RefPtr<css::URLExtraData> data =
         new css::URLExtraData(mBaseURI, mDocURI, mElement->NodePrincipal());
-      mBaseURI->GetSpec(baseString);
       
       changed = Servo_DeclarationBlock_SetPropertyById(mDecl->AsServo()->Raw(), propertyID,
-                                                       &value, false, &baseString, data);
+                                                       &value, false, data);
     }
 
     if (changed) {

@@ -308,13 +308,11 @@ nsDOMCSSDeclaration::ParsePropertyValue(const nsCSSPropertyID aPropID,
                             decl->AsGecko(), &changed, aIsImportant);
   } else {
     NS_ConvertUTF16toUTF8 value(aPropValue);
+    
     RefPtr<css::URLExtraData> data =
       new css::URLExtraData(env.mBaseURI, env.mSheetURI, env.mPrincipal);
-    nsCString baseString;
-    
-    env.mBaseURI->GetSpec(baseString);
     changed = Servo_DeclarationBlock_SetPropertyById(
-      decl->AsServo()->Raw(), aPropID, &value, aIsImportant, &baseString, data);
+      decl->AsServo()->Raw(), aPropID, &value, aIsImportant, data);
   }
   if (!changed) {
     
@@ -362,10 +360,8 @@ nsDOMCSSDeclaration::ParseCustomPropertyValue(const nsAString& aPropertyName,
     NS_ConvertUTF16toUTF8 value(aPropValue);
     RefPtr<css::URLExtraData> data =
       new css::URLExtraData(env.mBaseURI, env.mSheetURI, env.mPrincipal);
-    nsCString baseString;
-    env.mBaseURI->GetSpec(baseString);
     changed = Servo_DeclarationBlock_SetProperty(
-      decl->AsServo()->Raw(), &property, &value, aIsImportant, &baseString, data);
+      decl->AsServo()->Raw(), &property, &value, aIsImportant, data);
   }
   if (!changed) {
     

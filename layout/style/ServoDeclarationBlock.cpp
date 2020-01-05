@@ -16,11 +16,9 @@ ServoDeclarationBlock::FromCssText(const nsAString& aCssText,
                                    css::URLExtraData* aExtraData)
 {
   NS_ConvertUTF16toUTF8 value(aCssText);
-  nsCString baseString;
   
-  aExtraData->BaseURI()->GetSpec(baseString);
   RefPtr<RawServoDeclarationBlock>
-    raw = Servo_ParseStyleAttribute(&value, &baseString, aExtraData).Consume();
+    raw = Servo_ParseStyleAttribute(&value, aExtraData).Consume();
   RefPtr<ServoDeclarationBlock> decl = new ServoDeclarationBlock(raw.forget());
   return decl.forget();
 }
