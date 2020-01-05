@@ -2233,13 +2233,6 @@ public:
 
 
 
-  static bool HasActiveAnimationOfProperty(const nsIFrame* aFrame,
-                                           nsCSSPropertyID aProperty);
-
-  
-
-
-
 
   static bool HasCurrentTransitions(const nsIFrame* aFrame);
 
