@@ -93,6 +93,8 @@
 
 
 
+
+
 #include "wasm/WasmBaselineCompile.h"
 
 #include "mozilla/MathAlgorithms.h"
@@ -135,6 +137,7 @@ struct BaseCompilePolicy : ExprIterPolicy
 {
     static const bool Output = true;
 
+    
     
     
     
@@ -305,6 +308,7 @@ class BaseCompiler
     
     
 
+    
     
     
 
@@ -1130,6 +1134,7 @@ class BaseCompiler
         }
     }
 
+    
     
     
     
@@ -2035,6 +2040,8 @@ class BaseCompiler
         
         
         
+        
+        
 
         if (varLow_ < varHigh_) {
             ScratchI32 scratch(*this);
@@ -2168,7 +2175,6 @@ class BaseCompiler
 
     
     
-    
 
     size_t stackArgAreaSize(const ValTypeVector& args) {
         ABIArgIter<const ValTypeVector> i(args);
@@ -2190,6 +2196,7 @@ class BaseCompiler
         return call.abi.next(MIRType::Pointer);
     }
 
+    
     
     
     
@@ -2963,6 +2970,7 @@ class BaseCompiler
         masm.cmpq(rhs.reg.reg, lhs.reg.reg);
         masm.emitSet(cond, dest.reg);
 #elif defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_ARM)
+        
         
         Label done, condTrue;
         masm.branch64(cond, lhs.reg, rhs.reg, &condTrue);
@@ -4053,6 +4061,7 @@ BaseCompiler::emitMinF32()
         
         
         
+        
         ScratchF32 zero(*this);
         masm.loadConstantFloat32(0.f, zero);
         masm.subFloat32(zero, r0.reg);
@@ -4069,6 +4078,7 @@ BaseCompiler::emitMaxF32()
     RegF32 r0, r1;
     pop2xF32(&r0, &r1);
     if (!isCompilingAsmJS()) {
+        
         
         
         ScratchF32 zero(*this);
@@ -4089,6 +4099,7 @@ BaseCompiler::emitMinF64()
     if (!isCompilingAsmJS()) {
         
         
+        
         ScratchF64 zero(*this);
         masm.loadConstantDouble(0, zero);
         masm.subDouble(zero, r0.reg);
@@ -4105,6 +4116,7 @@ BaseCompiler::emitMaxF64()
     RegF64 r0, r1;
     pop2xF64(&r0, &r1);
     if (!isCompilingAsmJS()) {
+        
         
         
         ScratchF64 zero(*this);
@@ -5166,6 +5178,9 @@ BaseCompiler::emitBrTable()
     masm.jump(controlItem(defaultDepth).label);
 
     
+    
+    
+    
 
     for (uint32_t i = 0; i < tableLength; i++) {
         PooledLabel* stubLabel = newLabel();
@@ -5337,7 +5352,6 @@ BaseCompiler::pushReturned(const FunctionCall& call, ExprType type)
         MOZ_CRASH("Function return type");
     }
 }
-
 
 
 
