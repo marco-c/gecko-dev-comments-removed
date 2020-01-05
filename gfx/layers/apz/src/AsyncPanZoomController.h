@@ -44,10 +44,9 @@ namespace layers {
 
 class AsyncDragMetrics;
 struct ScrollableLayerGuid;
-class CompositorBridgeParent;
 class CompositorController;
+class MetricsSharingController;
 class GestureEventListener;
-class PCompositorBridgeParent;
 struct AsyncTransform;
 class AsyncPanZoomAnimation;
 class AndroidFlingAnimation;
@@ -193,14 +192,11 @@ public:
 
   void SetCompositorController(CompositorController* aCompositorController);
 
-  void SetCompositorBridgeParent(CompositorBridgeParent* aCompositorBridgeParent);
-
   
 
 
 
-
-  void ShareFrameMetricsAcrossProcesses();
+  void SetMetricsSharingController(MetricsSharingController* aMetricsSharingController);
 
   
   
@@ -650,7 +646,7 @@ protected:
 
   uint64_t mLayersId;
   RefPtr<CompositorController> mCompositorController;
-  RefPtr<CompositorBridgeParent> mCompositorBridgeParent;
+  RefPtr<MetricsSharingController> mMetricsSharingController;
 
   
 
@@ -669,12 +665,6 @@ protected:
   
   already_AddRefed<GeckoContentController> GetGeckoContentController() const;
   already_AddRefed<GestureEventListener> GetGestureEventListener() const;
-
-  
-  bool mSharingFrameMetricsAcrossProcesses;
-  
-
-  PCompositorBridgeParent* GetSharedFrameMetricsCompositor();
 
   PlatformSpecificStateBase* GetPlatformSpecificState();
 

@@ -53,9 +53,9 @@
 #include "mozilla/layers/AsyncCompositionManager.h"  
 #include "mozilla/layers/AxisPhysicsModel.h" 
 #include "mozilla/layers/AxisPhysicsMSDModel.h" 
-#include "mozilla/layers/CompositorBridgeParent.h" 
 #include "mozilla/layers/CompositorController.h" 
 #include "mozilla/layers/LayerTransactionParent.h" 
+#include "mozilla/layers/MetricsSharingController.h" 
 #include "mozilla/layers/ScrollInputMethods.h" 
 #include "mozilla/mozalloc.h"           
 #include "mozilla/Unused.h"             
@@ -699,7 +699,6 @@ AsyncPanZoomController::AsyncPanZoomController(uint64_t aLayersId,
      mRefPtrMonitor("RefPtrMonitor"),
      
      mTreeManager(aTreeManager),
-     mSharingFrameMetricsAcrossProcesses(false),
      mFrameMetrics(mScrollMetadata.GetMetrics()),
      mMonitor("AsyncPanZoomController"),
      mLastContentPaintMetrics(mLastContentPaintMetadata.GetMetrics()),
@@ -729,21 +728,6 @@ AsyncPanZoomController::AsyncPanZoomController(uint64_t aLayersId,
 AsyncPanZoomController::~AsyncPanZoomController()
 {
   MOZ_ASSERT(IsDestroyed());
-}
-
-PCompositorBridgeParent*
-AsyncPanZoomController::GetSharedFrameMetricsCompositor()
-{
-  APZThreadUtils::AssertOnCompositorThread();
-
-  if (mSharingFrameMetricsAcrossProcesses) {
-    
-    if (const CompositorBridgeParent::LayerTreeState* state = CompositorBridgeParent::GetIndirectShadowTree(mLayersId)) {
-      return state->CrossProcessPCompositorBridge();
-    }
-    return nullptr;
-  }
-  return mCompositorBridgeParent.get();
 }
 
 PlatformSpecificStateBase*
@@ -789,10 +773,9 @@ AsyncPanZoomController::Destroy()
   mParent = nullptr;
   mTreeManager = nullptr;
 
-  PCompositorBridgeParent* compositor = GetSharedFrameMetricsCompositor();
   
-  if (compositor && mSharedFrameMetricsBuffer) {
-    Unused << compositor->SendReleaseSharedCompositorFrameMetrics(mFrameMetrics.GetScrollId(), mAPZCId);
+  if (mMetricsSharingController && mSharedFrameMetricsBuffer) {
+    Unused << mMetricsSharingController->StopSharingMetrics(mFrameMetrics.GetScrollId(), mAPZCId);
   }
 
   { 
@@ -2660,12 +2643,9 @@ void AsyncPanZoomController::SetCompositorController(CompositorController* aComp
   mCompositorController = aCompositorController;
 }
 
-void AsyncPanZoomController::SetCompositorBridgeParent(CompositorBridgeParent* aCompositorBridgeParent) {
-  mCompositorBridgeParent = aCompositorBridgeParent;
-}
-
-void AsyncPanZoomController::ShareFrameMetricsAcrossProcesses() {
-  mSharingFrameMetricsAcrossProcesses = true;
+void AsyncPanZoomController::SetMetricsSharingController(MetricsSharingController* aMetricsSharingController)
+{
+  mMetricsSharingController = aMetricsSharingController;
 }
 
 void AsyncPanZoomController::AdjustScrollForSurfaceShift(const ScreenPoint& aShift)
@@ -3881,14 +3861,14 @@ void AsyncPanZoomController::UpdateSharedCompositorFrameMetrics()
   }
 }
 
-void AsyncPanZoomController::ShareCompositorFrameMetrics() {
+void AsyncPanZoomController::ShareCompositorFrameMetrics()
+{
+  APZThreadUtils::AssertOnCompositorThread();
 
-  PCompositorBridgeParent* compositor = GetSharedFrameMetricsCompositor();
-
   
   
   
-  if (!mSharedFrameMetricsBuffer && compositor && gfxPrefs::ProgressivePaint()) {
+  if (!mSharedFrameMetricsBuffer && mMetricsSharingController && gfxPrefs::ProgressivePaint()) {
 
     
     mSharedFrameMetricsBuffer = new ipc::SharedMemoryBasic;
@@ -3905,7 +3885,7 @@ void AsyncPanZoomController::ShareCompositorFrameMetrics() {
       }
 
       
-      base::ProcessId otherPid = compositor->OtherPid();
+      base::ProcessId otherPid = mMetricsSharingController->RemotePid();
       ipc::SharedMemoryBasic::Handle mem = ipc::SharedMemoryBasic::NULLHandle();
 
       
@@ -3918,7 +3898,7 @@ void AsyncPanZoomController::ShareCompositorFrameMetrics() {
       
       
       
-      if (!compositor->SendSharedCompositorFrameMetrics(mem, handle, mLayersId, mAPZCId)) {
+      if (!mMetricsSharingController->StartSharingMetrics(mem, handle, mLayersId, mAPZCId)) {
         APZC_LOG("%p failed to share FrameMetrics with content process.", this);
       }
     }
