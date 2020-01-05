@@ -397,6 +397,7 @@ private:
   
   
   bool mVisible : 1;
+  bool mFreshProcess : 1;
 };
 
 #endif

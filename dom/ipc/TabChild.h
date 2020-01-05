@@ -41,7 +41,9 @@
 #include "nsISHistoryListener.h"
 #include "nsIPartialSHistoryListener.h"
 
+class nsICachedFileDescriptorListener;
 class nsIDOMWindowUtils;
+class nsIHttpChannel;
 
 namespace mozilla {
 namespace layout {
@@ -337,6 +339,11 @@ public:
 
   virtual bool RecvLoadURL(const nsCString& aURI,
                            const ShowInfo& aInfo) override;
+
+  virtual bool RecvCacheFileDescriptor(const nsString& aPath,
+                                       const FileDescriptor& aFileDescriptor)
+                                       override;
+
   virtual bool
   RecvShow(const ScreenIntSize& aSize,
            const ShowInfo& aInfo,
@@ -522,6 +529,15 @@ public:
   void MakeVisible();
   void MakeHidden();
 
+  
+  
+  bool GetCachedFileDescriptor(const nsAString& aPath,
+                               nsICachedFileDescriptorListener* aCallback);
+
+  void CancelCachedFileDescriptorCallback(
+                                  const nsAString& aPath,
+                                  nsICachedFileDescriptorListener* aCallback);
+
   nsIContentChild* Manager() const { return mManager; }
 
   static inline TabChild*
@@ -660,6 +676,13 @@ public:
   uintptr_t GetNativeWindowHandle() const { return mNativeWindowHandle; }
 #endif
 
+  bool TakeIsFreshProcess()
+  {
+    bool wasFreshProcess = mIsFreshProcess;
+    mIsFreshProcess = false;
+    return wasFreshProcess;
+  }
+
 protected:
   virtual ~TabChild();
 
@@ -696,6 +719,8 @@ protected:
                                                      const uint32_t& aTargetLocalIndex) override;
 
   virtual bool RecvNotifyPartialSessionHistoryDeactive() override;
+
+  virtual bool RecvSetFreshProcess() override;
 
 private:
   void HandleDoubleTap(const CSSPoint& aPoint, const Modifiers& aModifiers,
@@ -739,6 +764,8 @@ private:
     mUnscaledInnerSize = aSize;
   }
 
+  class CachedFileDescriptorInfo;
+  class CachedFileDescriptorCallbackRunnable;
   class DelayedDeleteRunnable;
 
   TextureFactoryIdentifier mTextureFactoryIdentifier;
@@ -752,6 +779,11 @@ private:
   int32_t mActiveSuppressDisplayport;
   uint64_t mLayersId;
   CSSRect mUnscaledOuterRect;
+  
+  bool mAppPackageFileDescriptorRecved;
+  
+  AutoTArray<nsAutoPtr<CachedFileDescriptorInfo>, 1>
+      mCachedFileDescriptorInfos;
   nscolor mLastBackgroundColor;
   bool mDidFakeShow;
   bool mNotified;
@@ -782,6 +814,7 @@ private:
   CSSSize mUnscaledInnerSize;
   bool mDidSetRealShowInfo;
   bool mDidLoadURLInit;
+  bool mIsFreshProcess;
 
   AutoTArray<bool, NUMBER_OF_AUDIO_CHANNELS> mAudioChannelsActive;
 
