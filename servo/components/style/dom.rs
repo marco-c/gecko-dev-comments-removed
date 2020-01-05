@@ -269,4 +269,9 @@ pub trait TElement : PartialEq + Debug + Sized + Copy + Clone + ElementExt + Pre
     fn mutate_data(&self) -> Option<AtomicRefMut<ElementData>> {
         self.get_data().map(|x| x.borrow_mut())
     }
+
+    
+    
+    
+    fn skip_root_and_item_based_display_fixup(&self) -> bool;
 }

@@ -371,6 +371,15 @@ impl<'le> TElement for GeckoElement<'le> {
     fn get_data(&self) -> Option<&AtomicRefCell<ElementData>> {
         unsafe { self.0.mServoData.get().as_ref() }
     }
+
+    fn skip_root_and_item_based_display_fixup(&self) -> bool {
+        
+        
+        
+        
+        
+        self.flags() & (NODE_IS_IN_NATIVE_ANONYMOUS_SUBTREE as u32) != 0
+    }
 }
 
 impl<'le> PartialEq for GeckoElement<'le> {
