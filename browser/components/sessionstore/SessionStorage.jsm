@@ -74,7 +74,14 @@ var SessionStorageInternal = {
 
       
       
-      let origin = principal.origin;
+      let origin;
+      try {
+        
+        
+        origin = principal.origin;
+      } catch (e) {
+        return;
+      }
       if (visitedOrigins.has(origin)) {
         
         return;
