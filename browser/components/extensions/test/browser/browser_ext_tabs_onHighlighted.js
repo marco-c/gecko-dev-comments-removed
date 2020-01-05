@@ -3,7 +3,7 @@
 "use strict";
 
 add_task(function* testTabEvents() {
-  async function background() {
+  function background() {
     
     let tabIds = [];
 
@@ -40,19 +40,21 @@ add_task(function* testTabEvents() {
 
 
 
-    async function expectEvents(tabId, expectedEvents) {
+
+    function expectEvents(tabId, expectedEvents) {
       browser.test.log(`Expecting events: ${expectedEvents.join(", ")}`);
 
-      await new Promise(resolve => setTimeout(resolve, 0));
-
-      browser.test.assertEq(expectedEvents.length, events[tabId].length,
-                            `Got expected number of events for ${tabId}`);
-
-      for (let [i, name] of expectedEvents.entries()) {
-        browser.test.assertEq(name, i in events[tabId] && events[tabId][i],
-                              `Got expected ${name} event`);
-      }
-      delete events[tabId];
+      return new Promise(resolve => {
+        setTimeout(resolve, 0);
+      }).then(() => {
+        browser.test.assertEq(expectedEvents.length, events[tabId].length,
+         `Got expected number of events for ${tabId}`);
+        for (let [i, name] of expectedEvents.entries()) {
+          browser.test.assertEq(name, i in events[tabId] && events[tabId][i],
+                                `Got expected ${name} event`);
+        }
+        delete events[tabId];
+      });
     }
 
     
@@ -60,16 +62,16 @@ add_task(function* testTabEvents() {
 
 
 
-    async function openTab(windowId) {
-      let tab = await browser.tabs.create({windowId});
 
-      tabIds.push(tab.id);
-      browser.test.log(`Opened tab ${tab.id}`);
-
-      await expectEvents(tab.id, [
-        "onActivated",
-        "onHighlighted",
-      ]);
+    function openTab(windowId) {
+      return browser.tabs.create({windowId}).then(tab => {
+        tabIds.push(tab.id);
+        browser.test.log(`Opened tab ${tab.id}`);
+        return expectEvents(tab.id, [
+          "onActivated",
+          "onHighlighted",
+        ]);
+      });
     }
 
     
@@ -77,39 +79,39 @@ add_task(function* testTabEvents() {
 
 
 
-    async function highlightTab(tabId) {
+
+    function highlightTab(tabId) {
       browser.test.log(`Highlighting tab ${tabId}`);
-      let tab = await browser.tabs.update(tabId, {active: true});
-
-      browser.test.assertEq(tab.id, tabId, `Tab ${tab.id} highlighted`);
-
-      await expectEvents(tab.id, [
-        "onActivated",
-        "onHighlighted",
-      ]);
+      return browser.tabs.update(tabId, {active: true}).then(tab => {
+        browser.test.assertEq(tab.id, tabId, `Tab ${tab.id} highlighted`);
+        return expectEvents(tab.id, [
+          "onActivated",
+          "onHighlighted",
+        ]);
+      });
     }
 
     
 
 
-    let tabs = await browser.tabs.query({active: true, currentWindow: true});
-
-    let activeWindow = tabs[0].windowId;
-    await Promise.all([
-      openTab(activeWindow),
-      openTab(activeWindow),
-      openTab(activeWindow),
-    ]);
-
-    await Promise.all([
-      highlightTab(tabIds[0]),
-      highlightTab(tabIds[1]),
-      highlightTab(tabIds[2]),
-    ]);
-
-    await Promise.all(tabIds.map(id => browser.tabs.remove(id)));
-
-    browser.test.notifyPass("tabs.highlight");
+    browser.tabs.query({active: true, currentWindow: true}, tabs => {
+      let activeWindow = tabs[0].windowId;
+      Promise.all([
+        openTab(activeWindow),
+        openTab(activeWindow),
+        openTab(activeWindow),
+      ]).then(() => {
+        return Promise.all([
+          highlightTab(tabIds[0]),
+          highlightTab(tabIds[1]),
+          highlightTab(tabIds[2]),
+        ]);
+      }).then(() => {
+        return Promise.all(tabIds.map(id => browser.tabs.remove(id)));
+      }).then(() => {
+        browser.test.notifyPass("tabs.highlight");
+      });
+    });
   }
 
   let extension = ExtensionTestUtils.loadExtension({

@@ -3,10 +3,6 @@
 module.exports = { 
   "extends": "../../.eslintrc.js",
 
-  "parserOptions": {
-    "ecmaVersion": 8,
-  },
-
   "globals": {
     "Cc": true,
     "Ci": true,
@@ -36,7 +32,7 @@ module.exports = {
   "rules": {
     
     "mozilla/balanced-listeners": 2,
-    "mozilla/no-aArgs": 2,
+    "mozilla/no-aArgs": 1,
     "mozilla/no-cpows-in-tests": 1,
     "mozilla/var-only-at-top-level": 1,
 
@@ -84,7 +80,7 @@ module.exports = {
     "comma-style": 2,
 
     
-    "computed-property-spacing": [2, "never"],
+    "computed-property-spacing": [1, "never"],
 
     
     "consistent-return": 0,

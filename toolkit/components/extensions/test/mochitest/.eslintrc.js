@@ -20,8 +20,4 @@ module.exports = {
     "webrequest_test": false,
     "XPCOMUtils": true,
   },
-
-  "rules": {
-    "no-shadow": 0,
-  },
 };

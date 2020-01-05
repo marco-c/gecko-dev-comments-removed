@@ -29,8 +29,4 @@ module.exports = {
     "openExtensionContextMenu": true,
     "CustomizableUI": true,
   },
-
-  "rules": {
-    "no-shadow": 0,
-  },
 };
