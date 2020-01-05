@@ -14,9 +14,16 @@
 
 
 
+
+
+
+
+
+
+
 use extra::url::Url;
-use script::dom::bindings::codegen::InheritTypes::{HTMLImageElementCast, HTMLIFrameElementCast};
-use script::dom::bindings::codegen::InheritTypes::{TextCast, ElementCast};
+use script::dom::bindings::codegen::InheritTypes::{ElementDerived, HTMLIFrameElementDerived};
+use script::dom::bindings::codegen::InheritTypes::{HTMLImageElementDerived, TextDerived};
 use script::dom::bindings::js::JS;
 use script::dom::element::{Element, HTMLAreaElementTypeId, HTMLAnchorElementTypeId};
 use script::dom::element::{HTMLLinkElementTypeId};
@@ -29,19 +36,18 @@ use servo_util::namespace;
 use servo_util::namespace::Namespace;
 use std::cast;
 use std::cell::{Ref, RefMut};
-use style::{PropertyDeclarationBlock, TElement, TNode,
-            AttrSelector, SpecificNamespace, AnyNamespace};
+use style::{PropertyDeclarationBlock, TElement, TNode, AttrSelector, SpecificNamespace};
+use style::{AnyNamespace};
 
 use layout::util::LayoutDataWrapper;
 
 
 pub trait TLayoutNode {
     
-    unsafe fn new_with_this_lifetime(&self, node: JS<Node>) -> Self;
+    unsafe fn new_with_this_lifetime(&self, node: &JS<Node>) -> Self;
 
     
     fn type_id(&self) -> NodeTypeId;
-
 
     
     
@@ -50,7 +56,7 @@ pub trait TLayoutNode {
     
     
     unsafe fn get<'a>(&'a self) -> &'a Node {
-        self.get_jsmanaged().get()
+        cast::transmute::<*mut Node,&'a Node>(self.get_jsmanaged().unsafe_get())
     }
 
     fn node_is_element(&self) -> bool {
@@ -72,8 +78,11 @@ pub trait TLayoutNode {
     
     fn image_url(&self) -> Option<Url> {
         unsafe {
-            let image_element: JS<HTMLImageElement> = HTMLImageElementCast::to(self.get_jsmanaged());
-            image_element.get().extra.image.as_ref().map(|url| (*url).clone())
+            if !self.get().is_htmlimageelement() {
+                fail!("not an image!")
+            }
+            let image_element: JS<HTMLImageElement> = self.get_jsmanaged().transmute_copy();
+            (*image_element.unsafe_get()).extra.image.as_ref().map(|url| (*url).clone())
         }
     }
 
@@ -81,8 +90,11 @@ pub trait TLayoutNode {
     
     fn iframe_pipeline_and_subpage_ids(&self) -> (PipelineId, SubpageId) {
         unsafe {
-            let iframe_element: JS<HTMLIFrameElement> = HTMLIFrameElementCast::to(self.get_jsmanaged());
-            let size = iframe_element.get().size.unwrap();
+            if !self.get().is_htmliframeelement() {
+                fail!("not an iframe element!")
+            }
+            let iframe_element: JS<HTMLIFrameElement> = self.get_jsmanaged().transmute_copy();
+            let size = (*iframe_element.unsafe_get()).size.unwrap();
             (size.pipeline_id, size.subpage_id)
         }
     }
@@ -92,23 +104,24 @@ pub trait TLayoutNode {
     
     fn text(&self) -> ~str {
         unsafe {
-            let text: JS<Text> = TextCast::to(self.get_jsmanaged());
-            text.get().characterdata.data.to_str()
+            if !self.get().is_text() {
+                fail!("not text!")
+            }
+            let text: JS<Text> = self.get_jsmanaged().transmute_copy();
+            (*text.unsafe_get()).characterdata.data.to_str()
         }
     }
 
     /// Returns the first child of this node.
     fn first_child(&self) -> Option<Self> {
         unsafe {
-            self.get_jsmanaged().first_child().map(|node| self.new_with_this_lifetime(node))
+            self.get().first_child_ref().map(|node| self.new_with_this_lifetime(node))
         }
     }
 
     /// Dumps this node tree, for debugging.
     fn dump(&self) {
-        unsafe {
-            self.get_jsmanaged().dump()
-        }
+        // TODO(pcwalton): Reimplement this in a way that's safe for layout to call.
     }
 }
 
@@ -124,9 +137,9 @@ pub struct LayoutNode<'a> {
 }
 
 impl<'ln> TLayoutNode for LayoutNode<'ln> {
-    unsafe fn new_with_this_lifetime(&self, node: JS<Node>) -> LayoutNode<'ln> {
+    unsafe fn new_with_this_lifetime(&self, node: &JS<Node>) -> LayoutNode<'ln> {
         LayoutNode {
-            node: node,
+            node: node.transmute_copy(),
             chain: self.chain,
         }
     }
@@ -168,30 +181,31 @@ impl<'ln> LayoutNode<'ln> {
 impl<'ln> TNode<LayoutElement<'ln>> for LayoutNode<'ln> {
     fn parent_node(&self) -> Option<LayoutNode<'ln>> {
         unsafe {
-            self.node.parent_node().map(|node| self.new_with_this_lifetime(node))
+            self.get().parent_node_ref().map(|node| self.new_with_this_lifetime(node))
         }
     }
 
     fn prev_sibling(&self) -> Option<LayoutNode<'ln>> {
         unsafe {
-            self.node.prev_sibling().map(|node| self.new_with_this_lifetime(node))
+            self.get().prev_sibling_ref().map(|node| self.new_with_this_lifetime(node))
         }
     }
 
     fn next_sibling(&self) -> Option<LayoutNode<'ln>> {
         unsafe {
-            self.node.next_sibling().map(|node| self.new_with_this_lifetime(node))
+            self.get().next_sibling_ref().map(|node| self.new_with_this_lifetime(node))
         }
     }
 
     /// If this is an element, accesses the element data. Fails if this is not an element node.
     #[inline]
     fn with_element<R>(&self, f: |&LayoutElement<'ln>| -> R) -> R {
-        let elem: JS<Element> = ElementCast::to(&self.node);
-        let element = elem.get();
-        // FIXME(pcwalton): Workaround until Rust gets multiple lifetime parameters on
-        // implementations.
         unsafe {
+            if !self.node.is_element() {
+                fail!("not an element!")
+            }
+            let elem: JS<Element> = self.node.transmute_copy();
+            let element = elem.get();
             f(&LayoutElement {
                 element: cast::transmute_region(element),
             })
@@ -328,21 +342,21 @@ impl<'le> TElement for LayoutElement<'le> {
     }
 }
 
-
-
+/// A thread-safe version of `LayoutNode`, used during flow construction. This type of layout
+/// node does not allow any parents or siblings of nodes to be accessed, to avoid races.
 pub struct ThreadSafeLayoutNode<'ln> {
-    
+    /// The wrapped node.
     priv node: JS<Node>,
 
-    
+    /// Being chained to a value prevents `ThreadSafeLayoutNode`s from escaping.
     priv chain: &'ln (),
 }
 
 impl<'ln> TLayoutNode for ThreadSafeLayoutNode<'ln> {
-    
-    unsafe fn new_with_this_lifetime(&self, node: JS<Node>) -> ThreadSafeLayoutNode<'ln> {
+    /// Creates a new layout node with the same lifetime as this layout node.
+    unsafe fn new_with_this_lifetime(&self, node: &JS<Node>) -> ThreadSafeLayoutNode<'ln> {
         ThreadSafeLayoutNode {
-            node: node,
+            node: node.transmute_copy(),
             chain: self.chain,
         }
     }
@@ -364,7 +378,7 @@ impl<'ln> Clone for ThreadSafeLayoutNode<'ln> {
 }
 
 impl<'ln> ThreadSafeLayoutNode<'ln> {
-    
+    /// Creates a new `ThreadSafeLayoutNode` from the given `LayoutNode`.
     pub fn new<'a>(node: &LayoutNode<'a>) -> ThreadSafeLayoutNode<'a> {
         ThreadSafeLayoutNode {
             node: node.node.clone(),
@@ -372,28 +386,31 @@ impl<'ln> ThreadSafeLayoutNode<'ln> {
         }
     }
 
-    
+    /// Returns the next sibling of this node. Unsafe and private because this can lead to races.
     unsafe fn next_sibling(&self) -> Option<ThreadSafeLayoutNode<'ln>> {
-        self.node.next_sibling().map(|node| self.new_with_this_lifetime(node))
+        self.node.get().next_sibling_ref().map(|node| self.new_with_this_lifetime(node))
     }
 
-    
+    /// Returns an iterator over this node's children.
     pub fn children(&self) -> ThreadSafeLayoutNodeChildrenIterator<'ln> {
         ThreadSafeLayoutNodeChildrenIterator {
             current_node: self.first_child(),
         }
     }
 
-    
+    /// If this is an element, accesses the element data. Fails if this is not an element node.
     #[inline]
     pub fn with_element<R>(&self, f: |&ThreadSafeLayoutElement| -> R) -> R {
         unsafe {
-            let elem: JS<Element> = ElementCast::to(&self.node);
-            let element = elem.get();
+            if !self.node.is_element() {
+                fail!("not an element!")
+            }
+            let elem: JS<Element> = self.node.transmute_copy();
+            let element = elem.unsafe_get();
             
             
             f(&ThreadSafeLayoutElement {
-                element: cast::transmute_region(element),
+                element: cast::transmute::<*mut Element,&mut Element>(element),
             })
         }
     }

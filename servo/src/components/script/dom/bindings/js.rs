@@ -89,11 +89,22 @@ impl<T> JS<T> {
             &mut (**borrowed.get())
         }
     }
+
+    
+    
+    
+    pub unsafe fn unsafe_get(&self) -> *mut T {
+        cast::transmute_copy(&self.ptr)
+    }
 }
 
 impl<From, To> JS<From> {
     
     pub unsafe fn transmute(self) -> JS<To> {
         cast::transmute(self)
+    }
+
+    pub unsafe fn transmute_copy(&self) -> JS<To> {
+        cast::transmute_copy(self)
     }
 }
