@@ -266,7 +266,7 @@ function updateCertStatus() {
     
     Components.classes["@mozilla.org/observer-service;1"]
               .getService(Components.interfaces.nsIObserverService)
-              .notifyObservers(null, "cert-exception-ui-ready", null);
+              .notifyObservers(null, "cert-exception-ui-ready");
   } else if (gChecking) {
     shortDesc = "addExceptionCheckingShort";
     longDesc  = "addExceptionCheckingLong2";

@@ -9,7 +9,7 @@ function triggerExpiration() {
   
   
   
-  Services.obs.notifyObservers(null, "formhistory-expire-now", null);
+  Services.obs.notifyObservers(null, "formhistory-expire-now");
 }
 
 var checkExists = function(num) { do_check_true(num > 0); next_test(); }

@@ -71,12 +71,12 @@ this.GlobalSimulatorScreen = {
       this.mozOrientation = orientation;
 
       
-      Services.obs.notifyObservers(null, 'simulator-orientation-change', null);
+      Services.obs.notifyObservers(null, 'simulator-orientation-change');
     }
 
     
     
-    Services.obs.notifyObservers({wrappedJSObject:this}, 'simulator-adjust-window-size', null);
+    Services.obs.notifyObservers({wrappedJSObject:this}, 'simulator-adjust-window-size');
   },
 
   flipScreen: function() {

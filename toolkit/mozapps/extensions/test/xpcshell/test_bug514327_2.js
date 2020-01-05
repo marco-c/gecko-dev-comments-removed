@@ -33,7 +33,7 @@ function run_test() {
     do_throw("Plugin tag not found");
 
   
-  Services.obs.notifyObservers(null, "addon-blocklist-closed", null);
+  Services.obs.notifyObservers(null, "addon-blocklist-closed");
   do_execute_soon(function() {
     
     do_check_true(blocklist.getPluginBlocklistState(plugin, "1", "1.9") == nsIBLS.STATE_OUTDATED);

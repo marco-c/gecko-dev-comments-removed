@@ -32,7 +32,7 @@ do_get_profile();
 
 
 var mockSendCustomEvent = function(aEventName, aMsg) {
-  Services.obs.notifyObservers({wrappedJSObject: aMsg}, aEventName, null);
+  Services.obs.notifyObservers({wrappedJSObject: aMsg}, aEventName);
 };
 
 function run_test() {

@@ -817,7 +817,7 @@ var gEditItemOverlay = {
 
       
       if (containerId == PlacesUtils.toolbarFolderId) {
-        Services.obs.notifyObservers(null, "autoshow-bookmarks-toolbar", null);
+        Services.obs.notifyObservers(null, "autoshow-bookmarks-toolbar");
       }
     }
 

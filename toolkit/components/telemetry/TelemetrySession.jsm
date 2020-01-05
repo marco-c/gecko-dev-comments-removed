@@ -1416,7 +1416,7 @@ var Impl = {
 
         
         
-        Services.obs.notifyObservers(null, "internal-telemetry-after-subsession-split", null);
+        Services.obs.notifyObservers(null, "internal-telemetry-after-subsession-split");
       }
     }
 
@@ -1721,7 +1721,7 @@ var Impl = {
             });
 
             
-            Services.obs.notifyObservers(null, "gather-memory-telemetry-finished", null);
+            Services.obs.notifyObservers(null, "gather-memory-telemetry-finished");
           }
           this._USSFromChildProcesses = undefined;
         }
@@ -1978,7 +1978,7 @@ var Impl = {
         
         
         
-        Services.obs.notifyObservers(null, "gather-telemetry", null);
+        Services.obs.notifyObservers(null, "gather-telemetry");
       }));
       break;
 

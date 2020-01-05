@@ -11,7 +11,7 @@ const UNFILTERED_URI_COUNT = "browser.engagement.unfiltered_uri_count";
 const TELEMETRY_SUBSESSION_TOPIC = "internal-telemetry-after-subsession-split";
 
 
-Services.obs.notifyObservers(null, TELEMETRY_SUBSESSION_TOPIC, "");
+Services.obs.notifyObservers(null, TELEMETRY_SUBSESSION_TOPIC);
 
 
 
@@ -165,7 +165,7 @@ add_task(function* test_subsessionSplit() {
   
   Services.telemetry.snapshotScalars(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
                                      true );
-  Services.obs.notifyObservers(null, TELEMETRY_SUBSESSION_TOPIC, "");
+  Services.obs.notifyObservers(null, TELEMETRY_SUBSESSION_TOPIC);
 
   
   

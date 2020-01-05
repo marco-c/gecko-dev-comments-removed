@@ -748,7 +748,7 @@ nsPlacesExpiration.prototype = {
       }
 
       
-      Services.obs.notifyObservers(null, TOPIC_EXPIRATION_FINISHED, null);
+      Services.obs.notifyObservers(null, TOPIC_EXPIRATION_FINISHED);
     }
   },
 

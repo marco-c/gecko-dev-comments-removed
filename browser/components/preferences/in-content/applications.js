@@ -801,7 +801,7 @@ InternalHandlerInfoWrapper.prototype = {
   
   store() {
     HandlerInfoWrapper.prototype.store.call(this);
-    Services.obs.notifyObservers(null, this._handlerChanged, null);
+    Services.obs.notifyObservers(null, this._handlerChanged);
   },
 
   get enabled() {
@@ -946,7 +946,7 @@ var gApplicationsPane = {
 
       
       Cc["@mozilla.org/observer-service;1"].getService(Ci.nsIObserverService).
-      notifyObservers(window, "app-handler-pane-loaded", null);
+      notifyObservers(window, "app-handler-pane-loaded");
     }
     setTimeout(_delayedPaneLoad, 0, this);
   },

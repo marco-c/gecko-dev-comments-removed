@@ -272,7 +272,7 @@ add_task(function* test_record_activity() {
   yield sleep(25);
 
   for (let i = 0; i < 3; i++) {
-    Services.obs.notifyObservers(null, "user-interaction-active", null);
+    Services.obs.notifyObservers(null, "user-interaction-active");
     yield sleep(25);
     do_check_true(recorder.fineTotalTime > total);
     total = recorder.fineTotalTime;
@@ -281,24 +281,24 @@ add_task(function* test_record_activity() {
   do_check_eq(recorder.activeTicks, 3);
 
   
-  Services.obs.notifyObservers(null, "user-interaction-inactive", null);
+  Services.obs.notifyObservers(null, "user-interaction-inactive");
   do_check_eq(recorder.activeTicks, 3);
   do_check_true(recorder.fineTotalTime > total);
   total = recorder.fineTotalTime;
   yield sleep(25);
 
   
-  Services.obs.notifyObservers(null, "user-interaction-active", null);
+  Services.obs.notifyObservers(null, "user-interaction-active");
   do_check_eq(recorder.activeTicks, 3);
   do_check_true(recorder.fineTotalTime > total);
   total = recorder.fineTotalTime;
   yield sleep(25);
 
   
-  Services.obs.notifyObservers(null, "user-interaction-active", null);
+  Services.obs.notifyObservers(null, "user-interaction-active");
   do_check_eq(recorder.activeTicks, 4);
 
-  Services.obs.notifyObservers(null, "user-interaction-active", null);
+  Services.obs.notifyObservers(null, "user-interaction-active");
   do_check_eq(recorder.activeTicks, 5);
 
   recorder.onShutdown();

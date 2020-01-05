@@ -63,7 +63,7 @@ function shutdownApplication(aFlags) {
   
   let cancelQuit = Components.classes["@mozilla.org/supports-PRBool;1"].
                    createInstance(Components.interfaces.nsISupportsPRBool);
-  Services.obs.notifyObservers(cancelQuit, "quit-application-requested", null);
+  Services.obs.notifyObservers(cancelQuit, "quit-application-requested");
 
   
   

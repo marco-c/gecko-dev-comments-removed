@@ -170,7 +170,7 @@ function reload(event) {
   dump("Reload DevTools.  (reload-toolbox:" + reloadToolbox + ")\n");
 
   
-  Services.obs.notifyObservers(null, "startupcache-invalidate", null);
+  Services.obs.notifyObservers(null, "startupcache-invalidate");
 
   
   
@@ -178,7 +178,7 @@ function reload(event) {
     
     let obs = Components.classes["@mozilla.org/observer-service;1"]
                         .getService(Components.interfaces.nsIObserverService);
-    obs.notifyObservers(null, "message-manager-flush-caches", null);
+    obs.notifyObservers(null, "message-manager-flush-caches");
 
     
 
