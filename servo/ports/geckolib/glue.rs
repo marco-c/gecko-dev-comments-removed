@@ -61,7 +61,7 @@ use style::gecko_bindings::structs::nsresult;
 use style::gecko_bindings::sugar::ownership::{FFIArcHelpers, HasArcFFI, HasBoxFFI};
 use style::gecko_bindings::sugar::ownership::{HasSimpleFFI, Strong};
 use style::gecko_bindings::sugar::refptr::{GeckoArcPrincipal, GeckoArcURI};
-use style::gecko_properties::style_structs;
+use style::gecko_properties::{self, style_structs};
 use style::keyframes::KeyframesStepValue;
 use style::parallel;
 use style::parser::{ParserContext, ParserContextExtraData};
@@ -105,10 +105,15 @@ pub extern "C" fn Servo_Initialize() -> () {
 
     
     restyle_hints::assert_restyle_hints_match();
+
+    
+    gecko_properties::initialize();
 }
 
 #[no_mangle]
 pub extern "C" fn Servo_Shutdown() -> () {
+    
+    gecko_properties::shutdown();
 }
 
 fn create_shared_context(per_doc_data: &PerDocumentStyleDataImpl) -> SharedStyleContext {
