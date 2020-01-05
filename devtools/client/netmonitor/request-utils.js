@@ -6,34 +6,7 @@
 
 "use strict";
 
-const { KeyCodes } = require("devtools/client/shared/keycodes");
 const { Task } = require("devtools/shared/task");
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function getKeyWithEvent(callback, onlySpaceOrReturn) {
-  return function (event) {
-    let key = event.target.getAttribute("data-key");
-    let filterKeyboardEvent = !onlySpaceOrReturn ||
-                              event.keyCode === KeyCodes.DOM_VK_SPACE ||
-                              event.keyCode === KeyCodes.DOM_VK_RETURN;
-
-    if (key && filterKeyboardEvent) {
-      callback(key);
-    }
-  };
-}
 
 
 
@@ -254,7 +227,6 @@ function parseQueryString(query) {
 }
 
 module.exports = {
-  getKeyWithEvent,
   getFormDataSections,
   fetchHeaders,
   formDataURI,

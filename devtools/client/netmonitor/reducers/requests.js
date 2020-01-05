@@ -8,13 +8,13 @@ const I = require("devtools/client/shared/vendor/immutable");
 const { getUrlDetails } = require("../request-utils");
 const {
   ADD_REQUEST,
-  UPDATE_REQUEST,
   CLEAR_REQUESTS,
-  SELECT_REQUEST,
-  PRESELECT_REQUEST,
   CLONE_SELECTED_REQUEST,
-  REMOVE_SELECTED_CUSTOM_REQUEST,
   OPEN_SIDEBAR,
+  REMOVE_SELECTED_CUSTOM_REQUEST,
+  SELECT_REQUEST,
+  SEND_CUSTOM_REQUEST,
+  UPDATE_REQUEST,
 } = require("../constants");
 
 const Request = I.Record({
@@ -43,6 +43,9 @@ const Request = I.Record({
   totalTime: undefined,
   eventTimings: undefined,
   headersSize: undefined,
+  
+  
+  customQueryValue: undefined,
   requestHeaders: undefined,
   requestHeadersFromUploadStream: undefined,
   requestCookies: undefined,
@@ -81,6 +84,7 @@ const UPDATE_PROPS = [
   "totalTime",
   "eventTimings",
   "headersSize",
+  "customQueryValue",
   "requestHeaders",
   "requestHeadersFromUploadStream",
   "requestCookies",
@@ -91,6 +95,29 @@ const UPDATE_PROPS = [
   "responseContentDataUri",
   "formDataSections",
 ];
+
+
+
+
+function closeCustomRequest(state) {
+  let { requests, selectedId } = state;
+
+  if (!selectedId) {
+    return state;
+  }
+
+  let removedRequest = requests.get(selectedId);
+
+  
+  if (!removedRequest || !removedRequest.isCustom) {
+    return state;
+  }
+
+  return state.withMutations(st => {
+    st.requests = st.requests.delete(selectedId);
+    st.selectedId = null;
+  });
+}
 
 function requestsReducer(state = new Requests(), action) {
   switch (action.type) {
@@ -119,7 +146,6 @@ function requestsReducer(state = new Requests(), action) {
         }
       });
     }
-
     case UPDATE_REQUEST: {
       let { requests, lastEndedMillis } = state;
 
@@ -166,9 +192,6 @@ function requestsReducer(state = new Requests(), action) {
     case SELECT_REQUEST: {
       return state.set("selectedId", action.id);
     }
-    case PRESELECT_REQUEST: {
-      return state.set("preselectedId", action.id);
-    }
     case CLONE_SELECTED_REQUEST: {
       let { requests, selectedId } = state;
 
@@ -197,22 +220,13 @@ function requestsReducer(state = new Requests(), action) {
       });
     }
     case REMOVE_SELECTED_CUSTOM_REQUEST: {
-      let { requests, selectedId } = state;
-
-      if (!selectedId) {
-        return state;
-      }
-
+      return closeCustomRequest(state);
+    }
+    case SEND_CUSTOM_REQUEST: {
       
-      let removedRequest = requests.get(selectedId);
-      if (!removedRequest || !removedRequest.isCustom) {
-        return state;
-      }
-
-      return state.withMutations(st => {
-        st.requests = requests.delete(selectedId);
-        st.selectedId = null;
-      });
+      
+      
+      return closeCustomRequest(state.set("preselectedId", action.id));
     }
     case OPEN_SIDEBAR: {
       if (!action.open) {

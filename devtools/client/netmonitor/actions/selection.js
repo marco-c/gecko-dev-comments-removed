@@ -5,19 +5,7 @@
 "use strict";
 
 const { getDisplayedRequests } = require("../selectors/index");
-const { SELECT_REQUEST, PRESELECT_REQUEST } = require("../constants");
-
-
-
-
-
-
-function preselectRequest(id) {
-  return {
-    type: PRESELECT_REQUEST,
-    id
-  };
-}
+const { SELECT_REQUEST } = require("../constants");
 
 
 
@@ -61,7 +49,6 @@ function selectDelta(delta) {
 }
 
 module.exports = {
-  preselectRequest,
   selectRequest,
   selectDelta,
 };

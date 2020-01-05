@@ -2,15 +2,19 @@
 
 
 
+
+
 "use strict";
 
 const {
   ADD_REQUEST,
-  UPDATE_REQUEST,
+  CLEAR_REQUESTS,
   CLONE_SELECTED_REQUEST,
   REMOVE_SELECTED_CUSTOM_REQUEST,
-  CLEAR_REQUESTS,
+  SEND_CUSTOM_REQUEST,
+  UPDATE_REQUEST,
 } = require("../constants");
+const { getSelectedRequest } = require("../selectors/index");
 
 function addRequest(id, data, batch) {
   return {
@@ -43,6 +47,43 @@ function cloneSelectedRequest() {
 
 
 
+function sendCustomRequest() {
+  if (!NetMonitorController.supportsCustomRequest) {
+    return cloneSelectedRequest();
+  }
+
+  return (dispatch, getState) => {
+    const selected = getSelectedRequest(getState());
+
+    if (!selected) {
+      return;
+    }
+
+    
+    let data = {
+      url: selected.url,
+      method: selected.method,
+      httpVersion: selected.httpVersion,
+    };
+    if (selected.requestHeaders) {
+      data.headers = selected.requestHeaders.headers;
+    }
+    if (selected.requestPostData) {
+      data.body = selected.requestPostData.postData.text;
+    }
+
+    NetMonitorController.webConsoleClient.sendHTTPRequest(data, (response) => {
+      return dispatch({
+        type: SEND_CUSTOM_REQUEST,
+        id: response.eventActor.actor,
+      });
+    });
+  };
+}
+
+
+
+
 
 function removeSelectedCustomRequest() {
   return {
@@ -58,8 +99,9 @@ function clearRequests() {
 
 module.exports = {
   addRequest,
-  updateRequest,
+  clearRequests,
   cloneSelectedRequest,
   removeSelectedCustomRequest,
-  clearRequests,
+  sendCustomRequest,
+  updateRequest,
 };

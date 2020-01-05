@@ -63,9 +63,6 @@ const EVENTS = {
   SIDEBAR_POPULATED: "NetMonitor:SidebarPopulated",
 
   
-  CUSTOMREQUESTVIEW_POPULATED: "NetMonitor:CustomRequestViewPopulated",
-
-  
   PLACEHOLDER_CHARTS_DISPLAYED: "NetMonitor:PlaceholderChartsDisplayed",
   PRIMED_CACHE_CHART_DISPLAYED: "NetMonitor:PrimedChartsDisplayed",
   EMPTY_CACHE_CHART_DISPLAYED: "NetMonitor:EmptyChartsDisplayed",

@@ -17,7 +17,8 @@ add_task(function* () {
   info("Starting test... ");
 
   let { panelWin } = monitor;
-  let { document, EVENTS, NetMonitorView } = panelWin;
+  let { document, gStore, NetMonitorView, windowRequire } = panelWin;
+  let Actions = windowRequire("devtools/client/netmonitor/actions/index");
   let { RequestsMenu } = NetMonitorView;
 
   RequestsMenu.lazyUpdate = false;
@@ -33,9 +34,7 @@ add_task(function* () {
   RequestsMenu.selectedItem = origItem;
 
   
-  let onPopulated = panelWin.once(EVENTS.CUSTOMREQUESTVIEW_POPULATED);
-  RequestsMenu.cloneSelectedRequest();
-  yield onPopulated;
+  gStore.dispatch(Actions.cloneSelectedRequest());
 
   testCustomForm(origItem);
 
@@ -50,7 +49,7 @@ add_task(function* () {
 
   
   wait = waitForNetworkEvents(monitor, 0, 1);
-  RequestsMenu.sendCustomRequest();
+  gStore.dispatch(Actions.sendCustomRequest());
   yield wait;
 
   let sentItem = RequestsMenu.selectedItem;
