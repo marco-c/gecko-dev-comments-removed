@@ -16,6 +16,7 @@ use std::sync::mpsc::{channel, Sender};
 use util::vec::byte_swap;
 use layers::platform::surface::NativeSurface;
 use offscreen_gl_context::{GLContext, GLContextAttributes, ColorAttachmentType};
+use ipc_channel::ipc::IpcSharedMemory;
 
 pub struct WebGLPaintTask {
     size: Size2D<i32>,
@@ -440,7 +441,9 @@ impl WebGLPaintTask {
         gl::viewport(x, y, width, height);
     }
 
-    fn send_pixel_contents(&mut self, chan: Sender<Vec<u8>>) {
+    fn send_pixel_contents(&mut self, chan: Sender<IpcSharedMemory>) {
+        
+        
         
         
         let width = self.size.width as usize;
@@ -461,7 +464,7 @@ impl WebGLPaintTask {
 
         
         byte_swap(&mut pixels);
-        chan.send(pixels).unwrap();
+        chan.send(IpcSharedMemory::from_bytes(&pixels[..])).unwrap();
     }
 
     fn send_native_surface(&self, _: Sender<NativeSurface>) {
