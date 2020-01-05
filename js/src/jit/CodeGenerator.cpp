@@ -9237,6 +9237,13 @@ CodeGenerator::visitIteratorStartO(LIteratorStartO* lir)
     masm.branchTestPtr(Assembler::NonZero, temp1, temp1, ool->entry());
 
     
+    masm.patchableCallPreBarrier(Address(niTemp, offsetof(NativeIterator, obj)), MIRType::Object);
+
+    
+    masm.storePtr(obj, Address(niTemp, offsetof(NativeIterator, obj)));
+    masm.or32(Imm32(JSITER_ACTIVE), Address(niTemp, offsetof(NativeIterator, flags)));
+
+    
     
     
     {
@@ -9251,10 +9258,6 @@ CodeGenerator::visitIteratorStartO(LIteratorStartO* lir)
         restoreVolatile(temps);
         masm.bind(&skipBarrier);
     }
-
-    
-    masm.storePtr(obj, Address(niTemp, offsetof(NativeIterator, obj)));
-    masm.or32(Imm32(JSITER_ACTIVE), Address(niTemp, offsetof(NativeIterator, flags)));
 
     
     masm.loadPtr(AbsoluteAddress(gen->compartment->addressOfEnumerators()), temp1);
