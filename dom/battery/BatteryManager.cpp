@@ -135,16 +135,11 @@ BatteryManager::UpdateFromBatteryInfo(const hal::BatteryInformation& aBatteryInf
 
   
   nsIDocument* doc = GetOwner() ? GetOwner()->GetDoc() : nullptr;
-  uint16_t status = nsIPrincipal::APP_STATUS_NOT_INSTALLED;
-  if (doc) {
-    status = doc->NodePrincipal()->GetAppStatus();
-  }
 
   mCharging = aBatteryInfo.charging();
   mRemainingTime = aBatteryInfo.remainingTime();
 
-  if (!nsContentUtils::IsChromeDoc(doc) &&
-      status != nsIPrincipal::APP_STATUS_CERTIFIED)
+  if (!nsContentUtils::IsChromeDoc(doc))
   {
     mLevel = lround(mLevel * 10.0) / 10.0;
     if (mLevel == 1.0) {
