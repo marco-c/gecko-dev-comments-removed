@@ -6671,6 +6671,13 @@ class DatabaseFile final
 {
   friend class Database;
 
+  
+  
+  
+  
+  
+  
+  
   RefPtr<BlobImpl> mBlobImpl;
   RefPtr<FileInfo> mFileInfo;
 
@@ -6683,16 +6690,6 @@ public:
     AssertIsOnBackgroundThread();
 
     return mFileInfo;
-  }
-
-  
-
-
-
-  bool
-  HasBlobImpl() const
-  {
-    return (bool)mBlobImpl;
   }
 
   
@@ -6734,10 +6731,17 @@ public:
   already_AddRefed<nsIInputStream>
   GetBlockingInputStream(ErrorResult &rv) const;
 
+  
+
+
+
+
+
+
   void
-  ClearInputStream()
+  WriteSucceededClearBlobImpl()
   {
-    AssertIsOnBackgroundThread();
+    MOZ_ASSERT(!IsOnBackgroundThread());
 
     mBlobImpl = nullptr;
   }
@@ -8320,8 +8324,6 @@ class ObjectStoreAddOrPutRequestOp final
 
   FallibleTArray<StoredFileInfo> mStoredFileInfos;
 
-  RefPtr<FileManager> mFileManager;
-
   Key mResponse;
   const nsCString mGroup;
   const nsCString mOrigin;
@@ -8361,11 +8363,9 @@ struct ObjectStoreAddOrPutRequestOp::StoredFileInfo final
   
   nsCOMPtr<nsIInputStream> mInputStream;
   StructuredCloneFile::FileType mType;
-  bool mCopiedSuccessfully;
 
   StoredFileInfo()
     : mType(StructuredCloneFile::eBlob)
-    , mCopiedSuccessfully(false)
   {
     AssertIsOnBackgroundThread();
 
@@ -26155,10 +26155,6 @@ ObjectStoreAddOrPutRequestOp::Init(TransactionBase* aTransaction)
       return false;
     }
 
-    RefPtr<FileManager> fileManager =
-      aTransaction->GetDatabase()->GetFileManager();
-    MOZ_ASSERT(fileManager);
-
     for (uint32_t index = 0; index < count; index++) {
       const FileAddInfo& fileAddInfo = fileAddInfos[index];
 
@@ -26184,10 +26180,6 @@ ObjectStoreAddOrPutRequestOp::Init(TransactionBase* aTransaction)
 
           storedFileInfo->mFileInfo = storedFileInfo->mFileActor->GetFileInfo();
           MOZ_ASSERT(storedFileInfo->mFileInfo);
-
-          if (storedFileInfo->mFileActor->HasBlobImpl() && !mFileManager) {
-            mFileManager = fileManager;
-          }
 
           storedFileInfo->mType = StructuredCloneFile::eBlob;
           break;
@@ -26222,10 +26214,6 @@ ObjectStoreAddOrPutRequestOp::Init(TransactionBase* aTransaction)
           storedFileInfo->mFileInfo = storedFileInfo->mFileActor->GetFileInfo();
           MOZ_ASSERT(storedFileInfo->mFileInfo);
 
-          if (storedFileInfo->mFileActor->HasBlobImpl() && !mFileManager) {
-            mFileManager = fileManager;
-          }
-
           storedFileInfo->mType = fileAddInfo.type();
           break;
         }
@@ -26240,12 +26228,11 @@ ObjectStoreAddOrPutRequestOp::Init(TransactionBase* aTransaction)
     StoredFileInfo* storedFileInfo = mStoredFileInfos.AppendElement(fallible);
     MOZ_ASSERT(storedFileInfo);
 
-    if (!mFileManager) {
-      mFileManager = aTransaction->GetDatabase()->GetFileManager();
-      MOZ_ASSERT(mFileManager);
-    }
+    RefPtr<FileManager> fileManager =
+      aTransaction->GetDatabase()->GetFileManager();
+    MOZ_ASSERT(fileManager);
 
-    storedFileInfo->mFileInfo = mFileManager->GetNewFileInfo();
+    storedFileInfo->mFileInfo = fileManager->GetNewFileInfo();
 
     storedFileInfo->mInputStream =
       new SCInputStream(mParams.cloneInfo().data().data);
@@ -26262,7 +26249,6 @@ ObjectStoreAddOrPutRequestOp::DoDatabaseWork(DatabaseConnection* aConnection)
   MOZ_ASSERT(aConnection);
   aConnection->AssertIsOnConnectionThread();
   MOZ_ASSERT(aConnection->GetStorageConnection());
-  MOZ_ASSERT_IF(mFileManager, !mStoredFileInfos.IsEmpty());
 
   PROFILER_LABEL("IndexedDB",
                  "ObjectStoreAddOrPutRequestOp::DoDatabaseWork",
@@ -26439,19 +26425,10 @@ ObjectStoreAddOrPutRequestOp::DoDatabaseWork(DatabaseConnection* aConnection)
     }
   }
 
-  Maybe<FileHelper> fileHelper;
-
-  if (mFileManager) {
-    fileHelper.emplace(mFileManager);
-
-    rv = fileHelper->Init();
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      IDB_REPORT_INTERNAL_ERR();
-      return NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR;
-    }
-  }
-
   if (!mStoredFileInfos.IsEmpty()) {
+    
+    
+    Maybe<FileHelper> fileHelper;
     nsAutoString fileIds;
 
     for (uint32_t count = mStoredFileInfos.Length(), index = 0;
@@ -26460,7 +26437,6 @@ ObjectStoreAddOrPutRequestOp::DoDatabaseWork(DatabaseConnection* aConnection)
       StoredFileInfo& storedFileInfo = mStoredFileInfos[index];
       MOZ_ASSERT(storedFileInfo.mFileInfo);
 
-      
       
       
       
@@ -26485,6 +26461,19 @@ ObjectStoreAddOrPutRequestOp::DoDatabaseWork(DatabaseConnection* aConnection)
       }
 
       if (inputStream) {
+        if (fileHelper.isNothing()) {
+          RefPtr<FileManager> fileManager =
+            Transaction()->GetDatabase()->GetFileManager();
+          MOZ_ASSERT(fileManager);
+
+          fileHelper.emplace(fileManager);
+          rv = fileHelper->Init();
+          if (NS_WARN_IF(NS_FAILED(rv))) {
+            IDB_REPORT_INTERNAL_ERR();
+            return NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR;
+          }
+        }
+
         RefPtr<FileInfo>& fileInfo = storedFileInfo.mFileInfo;
 
         nsCOMPtr<nsIFile> file = fileHelper->GetFile(fileInfo);
@@ -26521,7 +26510,9 @@ ObjectStoreAddOrPutRequestOp::DoDatabaseWork(DatabaseConnection* aConnection)
           return rv;
         }
 
-        storedFileInfo.mCopiedSuccessfully = true;
+        if (storedFileInfo.mFileActor) {
+          storedFileInfo.mFileActor->WriteSucceededClearBlobImpl();
+        }
       }
 
       if (index) {
@@ -26605,23 +26596,7 @@ ObjectStoreAddOrPutRequestOp::Cleanup()
 {
   AssertIsOnOwningThread();
 
-  if (!mStoredFileInfos.IsEmpty()) {
-    for (uint32_t count = mStoredFileInfos.Length(), index = 0;
-         index < count;
-         index++) {
-      StoredFileInfo& storedFileInfo = mStoredFileInfos[index];
-
-      MOZ_ASSERT_IF(storedFileInfo.mType == StructuredCloneFile::eMutableFile,
-                    !storedFileInfo.mCopiedSuccessfully);
-
-      RefPtr<DatabaseFile>& fileActor = storedFileInfo.mFileActor;
-      if (fileActor && storedFileInfo.mCopiedSuccessfully) {
-        fileActor->ClearInputStream();
-      }
-    }
-
-    mStoredFileInfos.Clear();
-  }
+  mStoredFileInfos.Clear();
 
   NormalTransactionOp::Cleanup();
 }
