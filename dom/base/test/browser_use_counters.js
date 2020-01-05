@@ -43,6 +43,17 @@ add_task(function* () {
   
   
   
+  
+  yield check_use_counter_iframe("file_use_counter_svg_getElementById.svg",
+                                 "SVGSVGELEMENT_GETELEMENTBYID", false);
+  yield check_use_counter_iframe("file_use_counter_svg_currentScale.svg",
+                                 "SVGSVGELEMENT_CURRENTSCALE_getter", false);
+  yield check_use_counter_iframe("file_use_counter_svg_currentScale.svg",
+                                 "SVGSVGELEMENT_CURRENTSCALE_setter", false);
+
+  
+  
+  
   yield check_use_counter_img("file_use_counter_svg_getElementById.svg",
                               "PROPERTY_FILL");
   yield check_use_counter_img("file_use_counter_svg_currentScale.svg",
@@ -64,19 +75,8 @@ add_task(function* () {
   
   
   
-  yield check_use_counter_iframe("file_use_counter_svg_background.html",
-                                 "PROPERTY_FILL");
   yield check_use_counter_iframe("file_use_counter_svg_list_style_image.html",
                                  "PROPERTY_FILL");
-
-  
-  
-  
-  
-  yield check_use_counter_iframe("file_use_counter_svg_background.html",
-                                 "PROPERTY_FILL", false);
-  yield check_use_counter_iframe("file_use_counter_svg_list_style_image.html",
-                                 "PROPERTY_FILL", false);
 });
 
 add_task(function* () {
