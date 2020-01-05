@@ -98,24 +98,20 @@ impl NativeGLContextMethods for OSMesaContext {
     }
 
     fn unbind(&self) -> Result<(), &'static str> {
-        
-        
-        
-        
-        
-        
         if self.is_current() {
             let ret = unsafe {
                 osmesa_sys::OSMesaMakeCurrent(ptr::null_mut(),
                                               ptr::null_mut(), 0, 0, 0)
             };
             if ret == gl::FALSE {
-                gl::flush();
+                return Err("OSMesaMakeCurrent");
             }
         }
 
         Ok(())
     }
+
+    fn is_osmesa(&self) -> bool { true }
 }
 
 impl Drop for OSMesaContext {
