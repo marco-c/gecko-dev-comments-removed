@@ -1150,17 +1150,19 @@ nsEventStatus AsyncPanZoomController::OnTouchMove(const MultiTouchInput& aEvent)
         return nsEventStatus_eIgnore;
       }
 
+      ParentLayerPoint touchPoint = GetFirstTouchPoint(aEvent);
+
       MOZ_ASSERT(GetCurrentTouchBlock());
       if (gfxPrefs::TouchActionEnabled() && GetCurrentTouchBlock()->TouchActionAllowsPanningXY()) {
         
         
         
         
-        StartPanning(aEvent);
+        StartPanning(touchPoint);
         return nsEventStatus_eConsumeNoDefault;
       }
 
-      return StartPanning(aEvent);
+      return StartPanning(touchPoint);
     }
 
     case PANNING:
@@ -1251,43 +1253,9 @@ nsEventStatus AsyncPanZoomController::OnTouchEnd(const MultiTouchInput& aEvent) 
   case PAN_MOMENTUM:
   {
     MOZ_ASSERT(GetCurrentTouchBlock());
-    GetCurrentTouchBlock()->GetOverscrollHandoffChain()->FlushRepaints();
     mX.EndTouch(aEvent.mTime);
     mY.EndTouch(aEvent.mTime);
-    ParentLayerPoint flingVelocity = GetVelocityVector();
-    
-    
-    
-    mX.SetVelocity(0);
-    mY.SetVelocity(0);
-    
-    
-    
-    
-    StateChangeNotificationBlocker blocker(this);
-    SetState(NOTHING);
-
-    APZC_LOG("%p starting a fling animation if %f >= %f\n", this,
-        flingVelocity.Length().value, gfxPrefs::APZFlingMinVelocityThreshold());
-
-    if (flingVelocity.Length() < gfxPrefs::APZFlingMinVelocityThreshold()) {
-      
-      
-      GetCurrentTouchBlock()->GetOverscrollHandoffChain()->SnapBackOverscrolledApzc(this);
-      return nsEventStatus_eConsumeNoDefault;
-    }
-
-    
-    
-    
-    if (APZCTreeManager* treeManagerLocal = GetApzcTreeManager()) {
-      FlingHandoffState handoffState{flingVelocity,
-                                     GetCurrentTouchBlock()->GetOverscrollHandoffChain(),
-                                     false ,
-                                     GetCurrentTouchBlock()->GetScrolledApzc()};
-      treeManagerLocal->DispatchFling(this, handoffState);
-    }
-    return nsEventStatus_eConsumeNoDefault;
+    return HandleEndOfPan();
   }
   case PINCHING:
     SetState(NOTHING);
@@ -1318,6 +1286,8 @@ nsEventStatus AsyncPanZoomController::OnScaleBegin(const PinchGestureInput& aEve
   APZC_LOG("%p got a scale-begin in state %d\n", this, mState);
 
   mPinchPaintTimerSet = false;
+  mX.StartTouch(aEvent.mLocalFocusPoint.x, aEvent.mTime);
+  mY.StartTouch(aEvent.mLocalFocusPoint.y, aEvent.mTime);
   
   
   if (HasReadyTouchBlock() && !GetCurrentTouchBlock()->TouchActionAllowsPinchZoom()) {
@@ -1342,6 +1312,8 @@ nsEventStatus AsyncPanZoomController::OnScaleBegin(const PinchGestureInput& aEve
 
 nsEventStatus AsyncPanZoomController::OnScale(const PinchGestureInput& aEvent) {
   APZC_LOG("%p got a scale in state %d\n", this, mState);
+  mX.UpdateWithTouchAtDevicePoint(aEvent.mLocalFocusPoint.x, 0, aEvent.mTime);
+  mY.UpdateWithTouchAtDevicePoint(aEvent.mLocalFocusPoint.y, 0, aEvent.mTime);
  
   if (HasReadyTouchBlock() && !GetCurrentTouchBlock()->TouchActionAllowsPinchZoom()) {
     return nsEventStatus_eIgnore;
@@ -1477,8 +1449,6 @@ nsEventStatus AsyncPanZoomController::OnScaleEnd(const PinchGestureInput& aEvent
     }
   }
 
-  SetState(NOTHING);
-
   {
     ReentrantMonitorAutoEnter lock(mMonitor);
     ScheduleComposite();
@@ -1488,32 +1458,86 @@ nsEventStatus AsyncPanZoomController::OnScaleEnd(const PinchGestureInput& aEvent
 
   
   if (aEvent.mLocalFocusPoint.x != -1 && aEvent.mLocalFocusPoint.y != -1) {
-    mPanDirRestricted = false;
-    mX.StartTouch(aEvent.mLocalFocusPoint.x, aEvent.mTime);
-    mY.StartTouch(aEvent.mLocalFocusPoint.y, aEvent.mTime);
-    SetState(TOUCHING);
+    if (mZoomConstraints.mAllowZoom) {
+      mPanDirRestricted = false;
+      SetState(TOUCHING);
+    } else {
+      StartPanning(aEvent.mLocalFocusPoint);
+    }
   } else {
     
-    ReentrantMonitorAutoEnter lock(mMonitor);
+    mX.EndTouch(aEvent.mTime);
+    mY.EndTouch(aEvent.mTime);
+    if (mZoomConstraints.mAllowZoom) {
+      ReentrantMonitorAutoEnter lock(mMonitor);
 
-    
-    
-    
-    
-    
-    
-    
-    
-    if (HasReadyTouchBlock()) {
-      GetCurrentTouchBlock()->GetOverscrollHandoffChain()->ClearOverscroll();
+      
+      
+      
+      
+      
+      
+      
+      
+      if (HasReadyTouchBlock()) {
+        GetCurrentTouchBlock()->GetOverscrollHandoffChain()->ClearOverscroll();
+      } else {
+        ClearOverscroll();
+      }
+      
+      
+      ScrollSnap();
     } else {
-      ClearOverscroll();
+      
+      if (mState == PINCHING) {
+        
+        if (HasReadyTouchBlock()) {
+          return HandleEndOfPan();
+        }
+      }
     }
+  }
+  return nsEventStatus_eConsumeNoDefault;
+}
+
+nsEventStatus AsyncPanZoomController::HandleEndOfPan()
+{
+  MOZ_ASSERT(GetCurrentTouchBlock());
+  GetCurrentTouchBlock()->GetOverscrollHandoffChain()->FlushRepaints();
+  ParentLayerPoint flingVelocity = GetVelocityVector();
+
+  
+  
+  
+  mX.SetVelocity(0);
+  mY.SetVelocity(0);
+  
+  
+  
+  
+  StateChangeNotificationBlocker blocker(this);
+  SetState(NOTHING);
+
+  APZC_LOG("%p starting a fling animation if %f >= %f\n", this,
+      flingVelocity.Length().value, gfxPrefs::APZFlingMinVelocityThreshold());
+
+  if (flingVelocity.Length() < gfxPrefs::APZFlingMinVelocityThreshold()) {
     
     
-    ScrollSnap();
+    GetCurrentTouchBlock()->GetOverscrollHandoffChain()->SnapBackOverscrolledApzc(this);
+    return nsEventStatus_eConsumeNoDefault;
   }
 
+  
+  
+  
+  if (APZCTreeManager* treeManagerLocal = GetApzcTreeManager()) {
+    FlingHandoffState handoffState{flingVelocity,
+                                  GetCurrentTouchBlock()->GetOverscrollHandoffChain(),
+                                  false ,
+                                  GetCurrentTouchBlock()->GetScrolledApzc()};
+    treeManagerLocal->DispatchFling(this, handoffState);
+  }
   return nsEventStatus_eConsumeNoDefault;
 }
 
@@ -2324,12 +2348,12 @@ void AsyncPanZoomController::HandlePanningUpdate(const ScreenPoint& aPanDistance
   }
 }
 
-nsEventStatus AsyncPanZoomController::StartPanning(const MultiTouchInput& aEvent) {
+nsEventStatus
+AsyncPanZoomController::StartPanning(const ParentLayerPoint& aStartPoint) {
   ReentrantMonitorAutoEnter lock(mMonitor);
 
-  ParentLayerPoint point = GetFirstTouchPoint(aEvent);
-  float dx = mX.PanDistance(point.x);
-  float dy = mY.PanDistance(point.y);
+  float dx = mX.PanDistance(aStartPoint.x);
+  float dy = mY.PanDistance(aStartPoint.y);
 
   double angle = atan2(dy, dx); 
   angle = fabs(angle); 
