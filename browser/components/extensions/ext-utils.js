@@ -924,9 +924,6 @@ extensions.on("shutdown", (type, extension) => {
 
 
 global.WindowManager = {
-  _windows: new WeakMap(),
-  _nextId: 0,
-
   
   WINDOW_ID_NONE: -1,
   WINDOW_ID_CURRENT: -2,
@@ -965,12 +962,11 @@ global.WindowManager = {
   },
 
   getId(window) {
-    if (this._windows.has(window)) {
-      return this._windows.get(window);
+    if (!window.QueryInterface) {
+      return null;
     }
-    let id = this._nextId++;
-    this._windows.set(window, id);
-    return id;
+    return window.QueryInterface(Ci.nsIInterfaceRequestor)
+                 .getInterface(Ci.nsIDOMWindowUtils).outerWindowID;
   },
 
   getWindow(id, context) {
