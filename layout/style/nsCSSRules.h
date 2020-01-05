@@ -19,6 +19,7 @@
 #include "mozilla/css/GroupRule.h"
 #include "mozilla/dom/CSSMediaRule.h"
 #include "mozilla/dom/CSSPageRule.h"
+#include "mozilla/dom/CSSSupportsRule.h"
 #include "nsAutoPtr.h"
 #include "nsCSSPropertyID.h"
 #include "nsCSSValue.h"
@@ -446,8 +447,7 @@ private:
 
 namespace mozilla {
 
-class CSSSupportsRule final : public css::ConditionRule,
-                              public nsIDOMCSSSupportsRule
+class CSSSupportsRule final : public dom::CSSSupportsRule
 {
 public:
   CSSSupportsRule(bool aConditionMet, const nsString& aCondition,
@@ -458,8 +458,6 @@ public:
 #ifdef DEBUG
   virtual void List(FILE* out = stdout, int32_t aIndent = 0) const override;
 #endif
-  virtual int32_t GetType() const override;
-  using Rule::GetType;
   virtual already_AddRefed<mozilla::css::Rule> Clone() const override;
   virtual bool UseForPresentation(nsPresContext* aPresContext,
                                   nsMediaQueryResultCacheKey& aKey) override;
@@ -467,25 +465,13 @@ public:
   NS_DECL_ISUPPORTS_INHERITED
 
   
-  NS_DECL_NSIDOMCSSGROUPINGRULE
-
-  
   NS_DECL_NSIDOMCSSCONDITIONRULE
 
   
-  NS_DECL_NSIDOMCSSSUPPORTSRULE
-
-  
-  uint16_t Type() const override;
   void GetCssTextImpl(nsAString& aCssText) const override;
-  
-  virtual void SetConditionText(const nsAString& aConditionText,
-                                ErrorResult& aRv) override;
+  using dom::CSSSupportsRule::SetConditionText;
 
   virtual size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const override;
-
-  virtual JSObject* WrapObject(JSContext* aCx,
-                               JS::Handle<JSObject*> aGivenProto) override;
 
 protected:
   virtual ~CSSSupportsRule();
