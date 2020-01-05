@@ -28,6 +28,7 @@ use stylist::Stylist;
 use thread_state;
 use time;
 use timer::Timer;
+use traversal::DomTraversal;
 
 
 pub struct ThreadLocalStyleContextCreationInfo {
@@ -118,6 +119,8 @@ pub struct TraversalStatistics {
     pub styles_shared: u32,
     
     pub traversal_time_ms: f64,
+    
+    pub is_parallel: Option<bool>,
 }
 
 
@@ -132,6 +135,7 @@ impl<'a> Add for &'a TraversalStatistics {
             elements_matched: self.elements_matched + other.elements_matched,
             styles_shared: self.styles_shared + other.styles_shared,
             traversal_time_ms: 0.0,
+            is_parallel: None,
         }
     }
 }
@@ -142,6 +146,11 @@ impl fmt::Display for TraversalStatistics {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         debug_assert!(self.traversal_time_ms != 0.0, "should have set traversal time");
         try!(writeln!(f, "[PERF] perf block start"));
+        try!(writeln!(f, "[PERF],traversal,{}", if self.is_parallel.unwrap() {
+            "parallel"
+        } else {
+            "sequential"
+        }));
         try!(writeln!(f, "[PERF],elements_traversed,{}", self.elements_traversed));
         try!(writeln!(f, "[PERF],elements_styled,{}", self.elements_styled));
         try!(writeln!(f, "[PERF],elements_matched,{}", self.elements_matched));
@@ -170,7 +179,11 @@ impl TraversalStatistics {
     }
 
     
-    pub fn compute_traversal_time(&mut self, start: f64) {
+    pub fn finish<E, D>(&mut self, traversal: &D, start: f64)
+        where E: TElement,
+              D: DomTraversal<E>,
+    {
+        self.is_parallel = Some(traversal.is_parallel());
         self.traversal_time_ms = (time::precise_time_s() - start) * 1000.0;
     }
 }

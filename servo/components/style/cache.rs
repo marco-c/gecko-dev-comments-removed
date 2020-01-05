@@ -6,7 +6,7 @@
 
 #![deny(missing_docs)]
 
-use std::slice::{Iter, IterMut};
+use std::{iter, slice};
 
 
 
@@ -15,6 +15,12 @@ pub struct LRUCache<K> {
     entries: Vec<K>,
     cache_size: usize,
 }
+
+
+pub type LRUCacheIterator<'a, K> = iter::Rev<slice::Iter<'a, K>>;
+
+
+pub type LRUCacheMutIterator<'a, K> = iter::Rev<slice::IterMut<'a, K>>;
 
 impl<K: PartialEq> LRUCache<K> {
     
@@ -36,13 +42,14 @@ impl<K: PartialEq> LRUCache<K> {
     }
 
     
-    pub fn iter(&self) -> Iter<K> {
-        self.entries.iter()
+    
+    pub fn iter(&self) -> LRUCacheIterator<K> {
+        self.entries.iter().rev()
     }
 
     
-    pub fn iter_mut(&mut self) -> IterMut<K> {
-        self.entries.iter_mut()
+    pub fn iter_mut(&mut self) -> LRUCacheMutIterator<K> {
+        self.entries.iter_mut().rev()
     }
 
     

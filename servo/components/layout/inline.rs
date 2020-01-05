@@ -266,7 +266,9 @@ impl LineBreaker {
     }
 
     
-    fn scan_for_lines(&mut self, flow: &mut InlineFlow, layout_context: &LayoutContext) {
+    fn scan_for_lines(&mut self,
+                      flow: &mut InlineFlow,
+                      layout_context: &LayoutContext) {
         self.reset_scanner();
 
         
@@ -274,6 +276,7 @@ impl LineBreaker {
         let mut old_fragments = mem::replace(&mut flow.fragments, InlineFragments::new());
         let old_fragment_iter = old_fragments.fragments.into_iter();
 
+        
         
         
         
@@ -289,6 +292,7 @@ impl LineBreaker {
         
         
         
+        
         let levels: Vec<u8> = self.new_fragments.iter().map(|fragment| match fragment.specific {
             SpecificFragmentInfo::ScannedText(ref info) => info.run.bidi_level,
             _ => para_level
@@ -300,6 +304,7 @@ impl LineBreaker {
         let has_rtl = levels.iter().cloned().any(unicode_bidi::is_rtl);
 
         if has_rtl {
+            
             
             for line in &mut lines {
                 let range = line.range.begin().to_usize()..line.range.end().to_usize();
@@ -323,7 +328,8 @@ impl LineBreaker {
                                mut old_fragment_iter: I,
                                flow: &'a InlineFlow,
                                layout_context: &LayoutContext)
-                               where I: Iterator<Item=Fragment> {
+        where I: Iterator<Item=Fragment>,
+    {
         loop {
             
             
@@ -355,8 +361,11 @@ impl LineBreaker {
     
     
     
-    fn next_fragment<I>(&mut self, old_fragment_iter: &mut I) -> Option<Fragment>
-                        where I: Iterator<Item=Fragment> {
+    fn next_fragment<I>(&mut self,
+                        old_fragment_iter: &mut I)
+                        -> Option<Fragment>
+        where I: Iterator<Item=Fragment>,
+    {
         self.work_list.pop_front().or_else(|| old_fragment_iter.next())
     }
 
@@ -364,8 +373,12 @@ impl LineBreaker {
     
     
     
-    fn next_unbroken_fragment<I>(&mut self, old_fragment_iter: &mut I) -> Option<Fragment>
-                                 where I: Iterator<Item=Fragment> {
+    
+    fn next_unbroken_fragment<I>(&mut self,
+                                 old_fragment_iter: &mut I)
+                                 -> Option<Fragment>
+        where I: Iterator<Item=Fragment>,
+    {
         let mut result = match self.next_fragment(old_fragment_iter) {
             None => return None,
             Some(fragment) => fragment,
@@ -537,6 +550,7 @@ impl LineBreaker {
         
         
         
+        
         let fragment_is_line_break_opportunity = if self.pending_line_is_empty() {
             fragment.strip_leading_whitespace_if_necessary();
             let (line_bounds, _) = self.initial_line_placement(flow, &fragment, self.cur_b);
@@ -547,13 +561,14 @@ impl LineBreaker {
             fragment.white_space().allow_wrap()
         };
 
-        debug!("LineBreaker: trying to append to line {} (fragment size: {:?}, green zone: {:?}): \
-               {:?}",
+        debug!("LineBreaker: trying to append to line {} \
+                (fragment size: {:?}, green zone: {:?}): {:?}",
                self.lines.len(),
                fragment.border_box.size,
                self.pending_line.green_zone,
                fragment);
 
+        
         
         
         
@@ -1263,7 +1278,8 @@ impl Flow for InlineFlow {
     fn bubble_inline_sizes(&mut self) {
         self.update_restyle_damage();
 
-        let _scope = layout_debug_scope!("inline::bubble_inline_sizes {:x}", self.base.debug_id());
+        let _scope = layout_debug_scope!("inline::bubble_inline_sizes {:x}",
+                                         self.base.debug_id());
 
         let writing_mode = self.base.writing_mode;
         for kid in self.base.child_iter_mut() {
@@ -1386,8 +1402,11 @@ impl Flow for InlineFlow {
 
     
     fn assign_block_size(&mut self, layout_context: &LayoutContext) {
-        let _scope = layout_debug_scope!("inline::assign_block_size {:x}", self.base.debug_id());
+        let _scope = layout_debug_scope!("inline::assign_block_size {:x}",
+                                         self.base.debug_id());
 
+        
+        
         
         
         
@@ -1427,6 +1446,7 @@ impl Flow for InlineFlow {
         let line_count = self.lines.len();
         for (line_index, line) in self.lines.iter_mut().enumerate() {
             
+            
             InlineFlow::set_inline_fragment_positions(&mut self.fragments,
                                                       line,
                                                       self.base.flags.text_align(),
@@ -1439,6 +1459,7 @@ impl Flow for InlineFlow {
                                                      &self.minimum_line_metrics,
                                                      layout_context);
 
+            
             
             
             indentation = Au(0)
@@ -1768,7 +1789,7 @@ impl InlineFragmentContext {
             return false
         }
         for (this_node, other_node) in self.nodes.iter().zip(&other.nodes) {
-            if !arc_ptr_eq(&this_node.style, &other_node.style) {
+            if this_node.address != other_node.address {
                 return false
             }
         }
