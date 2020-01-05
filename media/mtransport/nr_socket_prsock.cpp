@@ -1135,9 +1135,11 @@ NrUdpSocketIpc::~NrUdpSocketIpc()
   
   RUN_ON_THREAD(io_thread_,
                 mozilla::WrapRunnableNM(&NrUdpSocketIpc::release_child_i,
-                                        socket_child_.forget().take(),
-                                        sts_thread_),
+                                        socket_child_.forget().take()),
                 NS_DISPATCH_NORMAL);
+  
+  
+  sThread->ReleaseUse();
 #endif
 }
 
@@ -1621,21 +1623,12 @@ void NrUdpSocketIpc::close_i() {
 #if defined(MOZILLA_INTERNAL_API)
 
 
-void NrUdpSocketIpc::release_child_i(nsIUDPSocketChild* aChild,
-                                     nsCOMPtr<nsIEventTarget> sts_thread) {
+void NrUdpSocketIpc::release_child_i(nsIUDPSocketChild* aChild) {
   RefPtr<nsIUDPSocketChild> socket_child_ref =
     already_AddRefed<nsIUDPSocketChild>(aChild);
   if (socket_child_ref) {
     socket_child_ref->Close();
   }
-  
-  RUN_ON_THREAD(sts_thread,
-                mozilla::WrapRunnableNM(&NrUdpSocketIpc::release_use_s),
-                NS_DISPATCH_NORMAL);
-}
-
-void NrUdpSocketIpc::release_use_s() {
-  sThread->ReleaseUse();
 }
 #endif
 
