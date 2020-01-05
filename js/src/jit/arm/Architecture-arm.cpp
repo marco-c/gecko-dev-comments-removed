@@ -134,6 +134,13 @@ CanonicalizeARMHwCapFlags(uint32_t flags)
     return flags;
 }
 
+volatile bool forceDoubleCacheFlush = false;
+
+bool
+ForceDoubleCacheFlush() {
+    return forceDoubleCacheFlush;
+}
+
 
 
 volatile uint32_t armHwCapFlags = HWCAP_UNINITIALIZED;
@@ -203,7 +210,7 @@ InitARMFlags()
           | HWCAP_FIXUP_FAULT;
 #else
 
-#if defined(__linux__)
+#if defined(__linux__) || defined(ANDROID)
     
     bool readAuxv = false;
     int fd = open("/proc/self/auxv", O_RDONLY);
@@ -219,15 +226,16 @@ InitARMFlags()
         close(fd);
     }
 
-    if (!readAuxv) {
+    FILE* fp = fopen("/proc/cpuinfo", "r");
+    if (fp) {
+        char buf[1024];
+        memset(buf, 0, sizeof(buf));
+        size_t len = fread(buf, sizeof(char), sizeof(buf) - 1, fp);
+        fclose(fp);
+        buf[len] = '\0';
+
         
-        FILE* fp = fopen("/proc/cpuinfo", "r");
-        if (fp) {
-            char buf[1024];
-            memset(buf, 0, sizeof(buf));
-            size_t len = fread(buf, sizeof(char), sizeof(buf) - 1, fp);
-            fclose(fp);
-            buf[len] = '\0';
+        if (!readAuxv) {
             char* featureList = strstr(buf, "Features");
             if (featureList) {
                 if (char* featuresEnd = strstr(featureList, "\n"))
@@ -237,6 +245,13 @@ InitARMFlags()
             if (strstr(buf, "ARMv7"))
                 flags |= HWCAP_ARMv7;
         }
+
+        
+        
+        
+        char* exynos7420 = strstr(buf, "Exynos7420");
+        if (exynos7420)
+            forceDoubleCacheFlush = true;
     }
 #endif
 
