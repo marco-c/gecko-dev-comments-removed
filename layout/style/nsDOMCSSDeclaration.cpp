@@ -276,10 +276,10 @@ nsDOMCSSDeclaration::GetCSSParsingEnvironmentForRule(css::Rule* aRule,
   aCSSParseEnv.mCSSLoader = document ? document->CSSLoader() : nullptr;
 }
 
+template<typename GeckoFunc, typename ServoFunc>
 nsresult
-nsDOMCSSDeclaration::ParsePropertyValue(const nsCSSPropertyID aPropID,
-                                        const nsAString& aPropValue,
-                                        bool aIsImportant)
+nsDOMCSSDeclaration::ModifyDeclaration(GeckoFunc aGeckoFunc,
+                                       ServoFunc aServoFunc)
 {
   DeclarationBlock* olddecl = GetCSSDeclaration(eOperation_Modify);
   if (!olddecl) {
@@ -302,17 +302,12 @@ nsDOMCSSDeclaration::ParsePropertyValue(const nsCSSPropertyID aPropID,
 
   bool changed;
   if (decl->IsGecko()) {
-    nsCSSParser cssParser(env.mCSSLoader);
-    cssParser.ParseProperty(aPropID, aPropValue,
-                            env.mSheetURI, env.mBaseURI, env.mPrincipal,
-                            decl->AsGecko(), &changed, aIsImportant);
+    aGeckoFunc(decl->AsGecko(), env, &changed);
   } else {
-    NS_ConvertUTF16toUTF8 value(aPropValue);
     
     RefPtr<URLExtraData> data =
       new URLExtraData(env.mBaseURI, env.mSheetURI, env.mPrincipal);
-    changed = Servo_DeclarationBlock_SetPropertyById(
-      decl->AsServo()->Raw(), aPropID, &value, aIsImportant, data);
+    changed = aServoFunc(decl->AsServo(), data);
   }
   if (!changed) {
     
@@ -323,52 +318,44 @@ nsDOMCSSDeclaration::ParsePropertyValue(const nsCSSPropertyID aPropID,
 }
 
 nsresult
+nsDOMCSSDeclaration::ParsePropertyValue(const nsCSSPropertyID aPropID,
+                                        const nsAString& aPropValue,
+                                        bool aIsImportant)
+{
+  return ModifyDeclaration(
+    [&](Declaration* decl, CSSParsingEnvironment& env, bool* changed) {
+      nsCSSParser cssParser(env.mCSSLoader);
+      cssParser.ParseProperty(aPropID, aPropValue,
+                              env.mSheetURI, env.mBaseURI, env.mPrincipal,
+                              decl, changed, aIsImportant);
+    },
+    [&](ServoDeclarationBlock* decl, URLExtraData* data) {
+      NS_ConvertUTF16toUTF8 value(aPropValue);
+      return Servo_DeclarationBlock_SetPropertyById(
+        decl->Raw(), aPropID, &value, aIsImportant, data);
+    });
+}
+
+nsresult
 nsDOMCSSDeclaration::ParseCustomPropertyValue(const nsAString& aPropertyName,
                                               const nsAString& aPropValue,
                                               bool aIsImportant)
 {
   MOZ_ASSERT(nsCSSProps::IsCustomPropertyName(aPropertyName));
-
-  DeclarationBlock* olddecl = GetCSSDeclaration(eOperation_Modify);
-  if (!olddecl) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-
-  CSSParsingEnvironment env;
-  GetCSSParsingEnvironment(env);
-  if (!env.mPrincipal) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-
-  
-  
-  
-  
-  
-  mozAutoDocConditionalContentUpdateBatch autoUpdate(DocToUpdate(), true);
-  RefPtr<DeclarationBlock> decl = olddecl->EnsureMutable();
-
-  bool changed;
-  if (decl->IsGecko()) {
-    nsCSSParser cssParser(env.mCSSLoader);
-    auto propName = Substring(aPropertyName, CSS_CUSTOM_NAME_PREFIX_LENGTH);
-    cssParser.ParseVariable(propName, aPropValue, env.mSheetURI,
-                            env.mBaseURI, env.mPrincipal, decl->AsGecko(),
-                            &changed, aIsImportant);
-  } else {
-    NS_ConvertUTF16toUTF8 property(aPropertyName);
-    NS_ConvertUTF16toUTF8 value(aPropValue);
-    RefPtr<URLExtraData> data =
-      new URLExtraData(env.mBaseURI, env.mSheetURI, env.mPrincipal);
-    changed = Servo_DeclarationBlock_SetProperty(
-      decl->AsServo()->Raw(), &property, &value, aIsImportant, data);
-  }
-  if (!changed) {
-    
-    return NS_OK;
-  }
-
-  return SetCSSDeclaration(decl);
+  return ModifyDeclaration(
+    [&](Declaration* decl, CSSParsingEnvironment& env, bool* changed) {
+      nsCSSParser cssParser(env.mCSSLoader);
+      auto propName = Substring(aPropertyName, CSS_CUSTOM_NAME_PREFIX_LENGTH);
+      cssParser.ParseVariable(propName, aPropValue, env.mSheetURI,
+                              env.mBaseURI, env.mPrincipal, decl,
+                              changed, aIsImportant);
+    },
+    [&](ServoDeclarationBlock* decl, URLExtraData* data) {
+      NS_ConvertUTF16toUTF8 property(aPropertyName);
+      NS_ConvertUTF16toUTF8 value(aPropValue);
+      return Servo_DeclarationBlock_SetProperty(
+        decl->Raw(), &property, &value, aIsImportant, data);
+    });
 }
 
 nsresult
