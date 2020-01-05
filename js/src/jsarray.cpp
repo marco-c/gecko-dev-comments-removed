@@ -1371,6 +1371,9 @@ ArrayReverseDenseKernel(JSContext* cx, HandleObject obj, uint32_t length)
         return DenseElementResult::Success;
 
     if (Type == JSVAL_TYPE_MAGIC) {
+        if (obj->as<NativeObject>().denseElementsAreFrozen())
+            return DenseElementResult::Incomplete;
+
         
 
 
