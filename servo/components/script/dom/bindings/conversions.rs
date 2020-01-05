@@ -57,14 +57,12 @@ use std::slice;
 
 
 
-
-
 pub trait IDLInterface {
     
-    fn get_prototype_id(_: Option<Self>) -> PrototypeList::ID;
+    fn get_prototype_id() -> PrototypeList::ID;
     
     
-    fn get_prototype_depth(_: Option<Self>) -> uint;
+    fn get_prototype_depth() -> uint;
 }
 
 
@@ -489,8 +487,8 @@ pub fn unwrap_jsmanaged<T>(mut obj: *mut JSObject) -> Result<Unrooted<T>, ()>
             }
         }));
 
-        let proto_id = IDLInterface::get_prototype_id(None::<T>);
-        let proto_depth = IDLInterface::get_prototype_depth(None::<T>);
+        let proto_id = <T as IDLInterface>::get_prototype_id();
+        let proto_depth = <T as IDLInterface>::get_prototype_depth();
         if dom_class.interface_chain[proto_depth] == proto_id {
             debug!("good prototype");
             Ok(Unrooted::from_raw(unwrap(obj)))
