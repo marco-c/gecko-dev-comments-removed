@@ -784,6 +784,8 @@ struct nsStyleImageLayers {
   struct Layer;
   friend struct Layer;
   struct Layer {
+    typedef mozilla::StyleGeometryBox StyleGeometryBox;
+
     nsStyleImage  mImage;         
     RefPtr<mozilla::css::URLValueData> mSourceURI;  
                                   
@@ -795,9 +797,9 @@ struct nsStyleImageLayers {
                                   
     mozilla::Position mPosition;  
     Size          mSize;          
-    uint8_t       mClip;          
+    StyleGeometryBox  mClip;      
     MOZ_INIT_OUTSIDE_CTOR
-      uint8_t     mOrigin;        
+      StyleGeometryBox mOrigin;   
     uint8_t       mAttachment;    
                                   
                                   
