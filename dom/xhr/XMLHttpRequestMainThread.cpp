@@ -1972,6 +1972,13 @@ XMLHttpRequestMainThread::OnStartRequest(nsIRequest *request, nsISupports *ctxt)
     channel->SetContentType(NS_ConvertUTF16toUTF8(mOverrideMimeType));
   }
 
+  
+  nsAutoCString type;
+  channel->GetContentType(type);
+  if (type.Equals(UNKNOWN_CONTENT_TYPE)) {
+    channel->SetContentType(NS_LITERAL_CSTRING(APPLICATION_OCTET_STREAM));
+  }
+
   DetectCharset();
 
   
