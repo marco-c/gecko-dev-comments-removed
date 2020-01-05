@@ -297,6 +297,7 @@ TranslateShadowLayer(Layer* aLayer,
   }
 }
 
+#ifdef DEBUG
 static void
 AccumulateLayerTransforms(Layer* aLayer,
                           Layer* aAncestor,
@@ -309,6 +310,7 @@ AccumulateLayerTransforms(Layer* aLayer,
     aMatrix *= transform;
   }
 }
+#endif
 
 static LayerPoint
 GetLayerFixedMarginsOffset(Layer* aLayer,
@@ -435,6 +437,12 @@ AsyncCompositionManager::AlignFixedAndStickyLayers(Layer* aTransformedSubtreeRoo
                                                    const ScreenMargin& aFixedLayerMargins,
                                                    ClipPartsCache* aClipPartsCache)
 {
+  
+  
+  if (aCurrentTransformForRoot.IsSingular()) {
+    return;
+  }
+
   ForEachNode<ForwardIterator>(
       aTransformedSubtreeRoot,
       [&] (Layer* layer)
@@ -453,32 +461,34 @@ AsyncCompositionManager::AlignFixedAndStickyLayers(Layer* aTransformedSubtreeRoo
           return TraversalFlag::Continue;
         }
 
+
         
         
 
         
+        
+        
+#ifdef DEBUG
         Matrix4x4 ancestorTransform;
         if (layer != aTransformedSubtreeRoot) {
           AccumulateLayerTransforms(layer->GetParent(), aTransformedSubtreeRoot,
                                     ancestorTransform);
         }
-
-        
-        
-        Matrix4x4 oldCumulativeTransform = ancestorTransform * aPreviousTransformForRoot.ToUnknownMatrix();
-        Matrix4x4 newCumulativeTransform = ancestorTransform * aCurrentTransformForRoot.ToUnknownMatrix();
-        if (newCumulativeTransform.IsSingular()) {
-          return TraversalFlag::Skip;
-        }
+        MOZ_ASSERT(ancestorTransform.IsIdentity());
+#endif
 
         
         
         
+        
+        
+        Matrix4x4 oldTransform = aPreviousTransformForRoot.ToUnknownMatrix();
+        Matrix4x4 newTransform = aCurrentTransformForRoot.ToUnknownMatrix();
         Matrix4x4 localTransform;
         GetBaseTransform(layer, &localTransform);
         if (layer != aTransformedSubtreeRoot) {
-          oldCumulativeTransform = localTransform * oldCumulativeTransform;
-          newCumulativeTransform = localTransform * newCumulativeTransform;
+          oldTransform = localTransform * oldTransform;
+          newTransform = localTransform * newTransform;
         }
 
         
@@ -498,8 +508,8 @@ AsyncCompositionManager::AlignFixedAndStickyLayers(Layer* aTransformedSubtreeRoo
         
         
         LayerPoint transformedAnchor = ViewAs<LayerPixel>(
-            newCumulativeTransform.Inverse().TransformPoint(
-              (oldCumulativeTransform.TransformPoint(offsetAnchor.ToUnknownPoint()))));
+            newTransform.Inverse().TransformPoint(
+              (oldTransform.TransformPoint(offsetAnchor.ToUnknownPoint()))));
 
         
         
