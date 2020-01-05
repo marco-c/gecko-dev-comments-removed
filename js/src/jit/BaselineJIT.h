@@ -24,6 +24,7 @@ namespace jit {
 class StackValue;
 class BaselineICEntry;
 class ICStub;
+class ControlFlowGraph;
 
 class PCMappingSlotInfo
 {
@@ -238,6 +239,8 @@ struct BaselineScript
 
     
     IonBuilder *pendingBuilder_;
+
+    ControlFlowGraph* controlFlowGraph_;
 
   public:
     
@@ -511,6 +514,14 @@ struct BaselineScript
         setPendingIonBuilder(nullptr, script, nullptr);
         if (script->maybeIonScript() == ION_PENDING_SCRIPT)
             script->setIonScript(nullptr, nullptr);
+    }
+
+    const ControlFlowGraph* controlFlowGraph() const {
+        return controlFlowGraph_;
+    }
+
+    void setControlFlowGraph(ControlFlowGraph* controlFlowGraph) {
+        controlFlowGraph_ = controlFlowGraph;
     }
 
 };
