@@ -28,7 +28,7 @@ public class AndroidBrowserHistoryRepositorySession extends AndroidBrowserReposi
   
 
 
-  public static final int INSERT_RECORD_THRESHOLD = 50;
+  public static final int INSERT_RECORD_THRESHOLD = 5000;
   public static final int RECENT_VISITS_LIMIT = 20;
 
   public AndroidBrowserHistoryRepositorySession(Repository repository, Context context) {
@@ -162,11 +162,8 @@ public class AndroidBrowserHistoryRepositorySession extends AndroidBrowserReposi
     final ArrayList<HistoryRecord> outgoing = recordsBuffer;
     recordsBuffer = new ArrayList<HistoryRecord>();
     Logger.debug(LOG_TAG, "Flushing " + outgoing.size() + " records to database.");
-    
-    int inserted = ((AndroidBrowserHistoryDataAccessor) dbHelper).bulkInsert(outgoing);
-    if (inserted != outgoing.size()) {
-      
-      
+    boolean transactionSuccess = ((AndroidBrowserHistoryDataAccessor) dbHelper).bulkInsert(outgoing);
+    if (!transactionSuccess) {
       for (HistoryRecord failed : outgoing) {
         storeDelegate.onRecordStoreFailed(new RuntimeException("Failed to insert history item with guid " + failed.guid + "."), failed.guid);
       }

@@ -17,6 +17,7 @@ import org.mozilla.gecko.sync.repositories.domain.Record;
 import android.content.ContentValues;
 import android.content.Context;
 import android.net.Uri;
+import android.os.Bundle;
 
 public class AndroidBrowserHistoryDataAccessor extends
     AndroidBrowserRepositoryDataAccessor {
@@ -45,7 +46,7 @@ public class AndroidBrowserHistoryDataAccessor extends
       
       cv.put(BrowserContract.History.DATE_LAST_VISITED, mostRecent / 1000);
       cv.put(BrowserContract.History.REMOTE_DATE_LAST_VISITED, mostRecent / 1000);
-      cv.put(BrowserContract.History.VISITS, Long.toString(visits.size()));
+      cv.put(BrowserContract.History.VISITS, visits.size());
     }
     return cv;
   }
@@ -109,63 +110,38 @@ public class AndroidBrowserHistoryDataAccessor extends
 
 
 
-  public int bulkInsert(ArrayList<HistoryRecord> records) throws NullCursorException {
-    if (records.isEmpty()) {
-      Logger.debug(LOG_TAG, "No records to insert, returning.");
+  public boolean bulkInsert(ArrayList<HistoryRecord> records) throws NullCursorException {
+    final Bundle[] historyBundles = new Bundle[records.size()];
+    int i = 0;
+    for (HistoryRecord record : records) {
+      if (record.guid == null) {
+        throw new IllegalArgumentException("Record with null GUID passed into bulkInsert.");
+      }
+      final Bundle historyBundle = new Bundle();
+      historyBundle.putParcelable(BrowserContract.METHOD_PARAM_OBJECT, getContentValues(record));
+      historyBundle.putSerializable(
+              BrowserContract.History.VISITS,
+              VisitsHelper.getVisitsContentValues(record.guid, record.visits)
+      );
+      historyBundles[i] = historyBundle;
+      i++;
     }
 
-    int size = records.size();
-    ContentValues[] cvs = new ContentValues[size];
-    int index = 0;
-    for (Record record : records) {
-      if (record.guid == null) {
-        throw new IllegalArgumentException("Record with null GUID passed in to bulkInsert.");
-      }
-      cvs[index] = getContentValues(record);
-      index += 1;
-    }
+    final Bundle data = new Bundle();
+    data.putSerializable(BrowserContract.METHOD_PARAM_DATA, historyBundles);
 
     
-    int inserted = context.getContentResolver().bulkInsert(getUri(), cvs);
-    if (inserted == size) {
-      Logger.debug(LOG_TAG, "Inserted " + inserted + " records, as expected.");
-    } else {
-      Logger.debug(LOG_TAG, "Inserted " +
-                   inserted + " records but expected " +
-                   size     + " records; continuing to update visits.");
+    final Bundle result = context.getContentResolver().call(
+            getUri(),
+            BrowserContract.METHOD_INSERT_HISTORY_WITH_VISITS_FROM_SYNC,
+            getUri().toString(),
+            data
+    );
+    if (result == null) {
+      throw new IllegalStateException("Unexpected null result while bulk inserting history");
     }
-
-    final ContentValues remoteVisitAggregateValues = new ContentValues();
-    final Uri historyIncrementRemoteAggregateUri = getUri().buildUpon()
-            .appendQueryParameter(BrowserContract.PARAM_INCREMENT_REMOTE_AGGREGATES, "true")
-            .build();
-    for (Record record : records) {
-      HistoryRecord rec = (HistoryRecord) record;
-      if (rec.visits != null && rec.visits.size() != 0) {
-        int remoteVisitsInserted = context.getContentResolver().bulkInsert(
-                BrowserContract.Visits.CONTENT_URI,
-                VisitsHelper.getVisitsContentValues(rec.guid, rec.visits)
-        );
-
-        
-        
-        
-        
-        
-        if (remoteVisitsInserted > 0) {
-          
-          
-          remoteVisitAggregateValues.put(BrowserContract.History.REMOTE_VISITS, remoteVisitsInserted);
-          context.getContentResolver().update(
-                  historyIncrementRemoteAggregateUri,
-                  remoteVisitAggregateValues,
-                  BrowserContract.History.GUID + " = ?", new String[] {rec.guid}
-          );
-        }
-      }
-    }
-
-    return inserted;
+    final Exception thrownException = (Exception) result.getSerializable(BrowserContract.METHOD_RESULT);
+    return thrownException == null;
   }
 
   
