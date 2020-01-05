@@ -125,7 +125,7 @@ pub trait WindowMethods {
     
     fn load_start(&self, back: bool, forward: bool);
     
-    fn load_end(&self, back: bool, forward: bool);
+    fn load_end(&self, back: bool, forward: bool, root: bool);
     
     fn load_error(&self, code: NetError, url: String);
     

@@ -196,7 +196,7 @@ pub enum Msg {
     
     LoadStart(bool, bool),
     
-    LoadComplete(bool, bool),
+    LoadComplete(bool, bool, bool),
     
     DelayedCompositionTimeout(u64),
     
