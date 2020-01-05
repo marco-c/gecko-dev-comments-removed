@@ -9,6 +9,7 @@
 #include "ExtendedValidation.h"
 #include "NSSCertDBTrustDomain.h"
 #include "certdb.h"
+#include "mozilla/Assertions.h"
 #include "mozilla/Base64.h"
 #include "mozilla/Casting.h"
 #include "mozilla/NotNull.h"
@@ -366,34 +367,67 @@ nsNSSCertificate::GetDbKey(const UniqueCERTCertificate& cert, nsACString& aDbKey
 }
 
 NS_IMETHODIMP
-nsNSSCertificate::GetWindowTitle(nsAString& aWindowTitle)
+nsNSSCertificate::GetDisplayName(nsAString& aDisplayName)
 {
   nsNSSShutDownPreventionLock locker;
   if (isAlreadyShutDown()) {
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  aWindowTitle.Truncate();
+  aDisplayName.Truncate();
 
+  MOZ_ASSERT(mCert, "mCert should not be null in GetDisplayName");
   if (!mCert) {
-    NS_ERROR("Somehow got nullptr for mCert in nsNSSCertificate.");
     return NS_ERROR_FAILURE;
   }
 
   UniquePORTString commonName(CERT_GetCommonName(&mCert->subject));
+  UniquePORTString organizationalUnitName(CERT_GetOrgUnitName(&mCert->subject));
+  UniquePORTString organizationName(CERT_GetOrgName(&mCert->subject));
 
-  const char* titleOptions[] = {
-    mCert->nickname,
+  bool isBuiltInRoot;
+  nsresult rv = GetIsBuiltInRoot(&isBuiltInRoot);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsAutoCString builtInRootNickname;
+  if (isBuiltInRoot) {
+    nsAutoCString fullNickname(mCert->nickname);
+    int32_t index = fullNickname.Find(":");
+    if (index != kNotFound) {
+      
+      
+      
+      builtInRootNickname = Substring(fullNickname,
+                                      AssertedCast<uint32_t>(index + 1));
+    }
+  }
+  const char* nameOptions[] = {
+    builtInRootNickname.get(),
     commonName.get(),
+    organizationalUnitName.get(),
+    organizationName.get(),
     mCert->subjectName,
     mCert->emailAddr
   };
 
-  nsAutoCString titleOption;
-  for (size_t i = 0; i < ArrayLength(titleOptions); i++) {
-    titleOption = titleOptions[i];
-    if (titleOption.Length() > 0 && IsUTF8(titleOption)) {
-      CopyUTF8toUTF16(titleOption, aWindowTitle);
+  nsAutoCString nameOption;
+  for (auto nameOptionPtr : nameOptions) {
+    nameOption.Assign(nameOptionPtr);
+    if (nameOption.Length() > 0 && IsUTF8(nameOption)) {
+      CopyUTF8toUTF16(nameOption, aDisplayName);
       return NS_OK;
     }
   }
