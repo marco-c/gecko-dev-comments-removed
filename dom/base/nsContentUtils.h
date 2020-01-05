@@ -2027,7 +2027,18 @@ public:
 
 
 
+
+
+
   static nsIWidget* WidgetForDocument(const nsIDocument* aDoc);
+
+  
+
+
+
+
+
+  static nsIWidget* WidgetForContent(const nsIContent* aContent);
 
   
 
@@ -2039,8 +2050,21 @@ public:
 
 
 
+
+
+
   static already_AddRefed<mozilla::layers::LayerManager>
   LayerManagerForDocument(const nsIDocument *aDoc);
+
+  
+
+
+
+
+
+
+  static already_AddRefed<mozilla::layers::LayerManager>
+  LayerManagerForContent(const nsIContent *aContent);
 
   
 

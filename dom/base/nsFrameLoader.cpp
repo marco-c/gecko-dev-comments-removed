@@ -1249,9 +1249,12 @@ nsFrameLoader::ShowRemoteFrame(const ScreenIntSize& size,
       return false;
     }
 
-    RefPtr<layers::LayerManager> layerManager =
-      nsContentUtils::LayerManagerForDocument(mOwnerContent->GetComposedDoc());
-    if (!layerManager) {
+    RenderFrameParent* rfp = GetCurrentRenderFrame();
+    if (!rfp) {
+      return false;
+    }
+
+    if (!rfp->AttachLayerManager()) {
       
       return false;
     }
