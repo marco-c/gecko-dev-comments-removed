@@ -600,6 +600,10 @@ PuppetWidget::GetLayerManager(PLayerTransactionChild* aShadowManager,
 LayerManager*
 PuppetWidget::RecreateLayerManager(PLayerTransactionChild* aShadowManager)
 {
+  
+  
+  DestroyLayerManager();
+
   mLayerManager = new ClientLayerManager(this);
   if (ShadowLayerForwarder* lf = mLayerManager->AsShadowForwarder()) {
     lf->SetShadowManager(aShadowManager);
