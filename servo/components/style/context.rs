@@ -94,11 +94,7 @@ impl Default for StyleSystemOptions {
     #[cfg(feature = "gecko")]
     fn default() -> Self {
         StyleSystemOptions {
-            disable_style_sharing_cache:
-                
-                
-                
-                if cfg!(debug_assertions) { get_env("DISABLE_STYLE_SHARING_CACHE") } else { true },
+            disable_style_sharing_cache: get_env("DISABLE_STYLE_SHARING_CACHE"),
             dump_style_statistics: get_env("DUMP_STYLE_STATISTICS"),
         }
     }

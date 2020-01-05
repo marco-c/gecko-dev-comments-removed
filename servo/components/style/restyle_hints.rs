@@ -20,7 +20,10 @@ use selectors::matching::matches_selector;
 use selectors::parser::{AttrSelector, Combinator, Component, Selector};
 use selectors::parser::{SelectorInner, SelectorMethods};
 use selectors::visitor::SelectorVisitor;
+use smallvec::SmallVec;
+use std::borrow::Borrow;
 use std::clone::Clone;
+use stylist::SelectorMap;
 
 bitflags! {
     /// When the ElementState of an element (like IN_HOVER_STATE) changes,
@@ -429,7 +432,7 @@ fn combinator_to_restyle_hint(combinator: Option<Combinator>) -> RestyleHint {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 
 pub struct Sensitivities {
@@ -450,6 +453,10 @@ impl Sensitivities {
             attrs: false,
         }
     }
+
+    fn sensitive_to(&self, attrs: bool, states: ElementState) -> bool {
+        (attrs && self.attrs) || self.states.intersects(states)
+    }
 }
 
 
@@ -470,7 +477,7 @@ impl Sensitivities {
 
 
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct Dependency {
     #[cfg_attr(feature = "servo", ignore_heap_size_of = "Arc")]
@@ -481,6 +488,11 @@ pub struct Dependency {
     pub sensitivities: Sensitivities,
 }
 
+impl Borrow<SelectorInner<SelectorImpl>> for Dependency {
+    fn borrow(&self) -> &SelectorInner<SelectorImpl> {
+        &self.selector
+    }
+}
 
 
 
@@ -503,29 +515,14 @@ impl SelectorVisitor for SensitivitiesVisitor {
 
 
 
+
 #[derive(Debug)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-pub struct DependencySet {
-    
-    state_deps: Vec<Dependency>,
-    
-    attr_deps: Vec<Dependency>,
-    
-    common_deps: Vec<Dependency>,
-}
+pub struct DependencySet(pub SelectorMap<Dependency>);
 
 impl DependencySet {
     fn add_dependency(&mut self, dep: Dependency) {
-        let affected_by_attribute = dep.sensitivities.attrs;
-        let affects_states = !dep.sensitivities.states.is_empty();
-
-        if affected_by_attribute && affects_states {
-            self.common_deps.push(dep)
-        } else if affected_by_attribute {
-            self.attr_deps.push(dep)
-        } else {
-            self.state_deps.push(dep)
-        }
+        self.0.insert(dep);
     }
 
     
@@ -592,23 +589,17 @@ impl DependencySet {
 
     
     pub fn new() -> Self {
-        DependencySet {
-            state_deps: vec![],
-            attr_deps: vec![],
-            common_deps: vec![],
-        }
+        DependencySet(SelectorMap::new())
     }
 
     
     pub fn len(&self) -> usize {
-        self.common_deps.len() + self.attr_deps.len() + self.state_deps.len()
+        self.0.len()
     }
 
     
     pub fn clear(&mut self) {
-        self.common_deps.clear();
-        self.attr_deps.clear();
-        self.state_deps.clear();
+        self.0 = SelectorMap::new();
     }
 
     
@@ -631,64 +622,46 @@ impl DependencySet {
         let mut hint = RestyleHint::empty();
         let snapshot_el = ElementWrapper::new_with_snapshot(el.clone(), snapshot);
 
-        Self::compute_partial_hint(&self.common_deps, el, &snapshot_el,
-                                   &state_changes, attrs_changed, &mut hint);
+        
+        
+        
+        let mut additional_id = None;
+        let mut additional_classes = SmallVec::<[Atom; 8]>::new();
+        if snapshot.has_attrs() {
+            let id = snapshot.id_attr();
+            if id.is_some() && id != el.get_id() {
+                additional_id = id;
+            }
 
-        if !state_changes.is_empty() {
-            Self::compute_partial_hint(&self.state_deps, el, &snapshot_el,
-                                       &state_changes, attrs_changed, &mut hint);
+            snapshot.each_class(|c| if !el.has_class(c) { additional_classes.push(c.clone()) });
         }
 
-        if attrs_changed {
-            Self::compute_partial_hint(&self.attr_deps, el, &snapshot_el,
-                                       &state_changes, attrs_changed, &mut hint);
-        }
+        self.0.lookup_with_additional(*el, additional_id, &additional_classes, &mut |dep| {
+            if !dep.sensitivities.sensitive_to(attrs_changed, state_changes) || hint.contains(dep.hint) {
+                return true;
+            }
+
+            
+            
+            let matched_then =
+                matches_selector(&dep.selector, &snapshot_el, None,
+                                 &mut StyleRelations::empty(),
+                                 &mut |_, _| {});
+            let matches_now =
+                matches_selector(&dep.selector, el, None,
+                                 &mut StyleRelations::empty(),
+                                 &mut |_, _| {});
+            if matched_then != matches_now {
+                hint.insert(dep.hint);
+            }
+
+            !hint.is_all()
+        });
 
         debug!("Calculated restyle hint: {:?}. (Element={:?}, State={:?}, Snapshot={:?}, {} Deps)",
                hint, el, current_state, snapshot, self.len());
         trace!("Deps: {:?}", self);
 
         hint
-    }
-
-    fn compute_partial_hint<E>(deps: &[Dependency],
-                               element: &E,
-                               snapshot: &ElementWrapper<E>,
-                               state_changes: &ElementState,
-                               attrs_changed: bool,
-                               hint: &mut RestyleHint)
-        where E: TElement,
-    {
-        if hint.is_all() {
-            return;
-        }
-        for dep in deps {
-            debug_assert!((!state_changes.is_empty() && !dep.sensitivities.states.is_empty()) ||
-                          (attrs_changed && dep.sensitivities.attrs),
-                          "Testing a known ineffective dependency?");
-            if (attrs_changed || state_changes.intersects(dep.sensitivities.states)) && !hint.contains(dep.hint) {
-                
-                
-                let matched_then =
-                    matches_selector(&dep.selector, snapshot, None,
-                                     &mut StyleRelations::empty(),
-                                     &mut |_, _| {});
-                let matches_now =
-                    matches_selector(&dep.selector, element, None,
-                                     &mut StyleRelations::empty(),
-                                     &mut |_, _| {});
-                if matched_then != matches_now {
-                    hint.insert(dep.hint);
-                }
-                if hint.is_all() {
-                    break;
-                }
-            }
-        }
-    }
-
-    
-    pub fn get_state_deps(&self) -> &[Dependency] {
-        &self.state_deps
     }
 }

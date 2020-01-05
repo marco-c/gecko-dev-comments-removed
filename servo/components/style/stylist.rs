@@ -117,7 +117,7 @@ pub struct Stylist {
     
     
     #[cfg_attr(feature = "servo", ignore_heap_size_of = "Arc")]
-    selectors_for_cache_revalidation: Vec<SelectorInner<SelectorImpl>>,
+    selectors_for_cache_revalidation: SelectorMap<SelectorInner<SelectorImpl>>,
 
     
     num_selectors: usize,
@@ -177,7 +177,7 @@ impl Stylist {
             rules_source_order: 0,
             rule_tree: RuleTree::new(),
             dependencies: DependencySet::new(),
-            selectors_for_cache_revalidation: vec![],
+            selectors_for_cache_revalidation: SelectorMap::new(),
             num_selectors: 0,
             num_declarations: 0,
             num_rebuilds: 0,
@@ -260,7 +260,7 @@ impl Stylist {
         self.rules_source_order = 0;
         self.dependencies.clear();
         self.animations.clear();
-        self.selectors_for_cache_revalidation.clear();
+        self.selectors_for_cache_revalidation = SelectorMap::new();
         self.num_selectors = 0;
         self.num_declarations = 0;
 
@@ -376,7 +376,7 @@ impl Stylist {
     #[inline]
     fn note_for_revalidation(&mut self, selector: &Selector<SelectorImpl>) {
         if needs_revalidation(selector) {
-            self.selectors_for_cache_revalidation.push(selector.inner.clone());
+            self.selectors_for_cache_revalidation.insert(selector.inner.clone());
         }
     }
 
@@ -847,17 +847,20 @@ impl Stylist {
         use selectors::matching::StyleRelations;
         use selectors::matching::matches_selector;
 
-        let len = self.selectors_for_cache_revalidation.len();
-        let mut results = BitVec::from_elem(len, false);
-
-        for (i, ref selector) in self.selectors_for_cache_revalidation
-                                     .iter().enumerate() {
-            results.set(i, matches_selector(selector,
-                                            element,
-                                            Some(bloom),
-                                            &mut StyleRelations::empty(),
-                                            flags_setter));
-        }
+        
+        
+        
+        
+        
+        let mut results = BitVec::new();
+        self.selectors_for_cache_revalidation.lookup(*element, &mut |selector| {
+            results.push(matches_selector(selector,
+                                          element,
+                                          Some(bloom),
+                                          &mut StyleRelations::empty(),
+                                          flags_setter));
+            true
+        });
 
         results
     }
@@ -1005,11 +1008,11 @@ pub fn needs_revalidation(selector: &Selector<SelectorImpl>) -> bool {
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 struct PerPseudoElementSelectorMap {
     
-    user_agent: SelectorMap,
+    user_agent: SelectorMap<Rule>,
     
-    author: SelectorMap,
+    author: SelectorMap<Rule>,
     
-    user: SelectorMap,
+    user: SelectorMap<Rule>,
 }
 
 impl PerPseudoElementSelectorMap {
@@ -1023,7 +1026,7 @@ impl PerPseudoElementSelectorMap {
     }
 
     #[inline]
-    fn borrow_for_origin(&mut self, origin: &Origin) -> &mut SelectorMap {
+    fn borrow_for_origin(&mut self, origin: &Origin) -> &mut SelectorMap<Rule> {
         match *origin {
             Origin::UserAgent => &mut self.user_agent,
             Origin::Author => &mut self.author,
@@ -1053,18 +1056,20 @@ impl PerPseudoElementSelectorMap {
 
 
 
+
+#[derive(Debug)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-pub struct SelectorMap {
+pub struct SelectorMap<T: Clone + Borrow<SelectorInner<SelectorImpl>>> {
     
-    pub id_hash: FnvHashMap<Atom, Vec<Rule>>,
+    pub id_hash: FnvHashMap<Atom, Vec<T>>,
     
-    pub class_hash: FnvHashMap<Atom, Vec<Rule>>,
+    pub class_hash: FnvHashMap<Atom, Vec<T>>,
     
-    pub local_name_hash: FnvHashMap<LocalName, Vec<Rule>>,
+    pub local_name_hash: FnvHashMap<LocalName, Vec<T>>,
     
-    pub other_rules: Vec<Rule>,
+    pub other: Vec<T>,
     
-    pub empty: bool,
+    pub count: usize,
 }
 
 #[inline]
@@ -1072,18 +1077,30 @@ fn sort_by_key<T, F: Fn(&T) -> K, K: Ord>(v: &mut [T], f: F) {
     sort_by(v, |a, b| f(a).cmp(&f(b)))
 }
 
-impl SelectorMap {
+impl<T> SelectorMap<T> where T: Clone + Borrow<SelectorInner<SelectorImpl>> {
     
     pub fn new() -> Self {
         SelectorMap {
             id_hash: HashMap::default(),
             class_hash: HashMap::default(),
             local_name_hash: HashMap::default(),
-            other_rules: Vec::new(),
-            empty: true,
+            other: Vec::new(),
+            count: 0,
         }
     }
 
+    
+    pub fn is_empty(&self) -> bool {
+        self.count == 0
+    }
+
+    
+    pub fn len(&self) -> usize {
+        self.count
+    }
+}
+
+impl SelectorMap<Rule> {
     
     
     
@@ -1099,7 +1116,7 @@ impl SelectorMap {
               V: VecLike<ApplicableDeclarationBlock>,
               F: FnMut(&E, ElementSelectorFlags),
     {
-        if self.empty {
+        if self.is_empty() {
             return
         }
 
@@ -1138,7 +1155,7 @@ impl SelectorMap {
 
         SelectorMap::get_matching_rules(element,
                                         parent_bf,
-                                        &self.other_rules,
+                                        &self.other,
                                         matching_rules_list,
                                         relations,
                                         flags_setter,
@@ -1158,7 +1175,7 @@ impl SelectorMap {
                                -> Vec<ApplicableDeclarationBlock> {
         debug_assert!(!cascade_level.is_important());
         debug_assert!(important_cascade_level.is_important());
-        if self.empty {
+        if self.is_empty() {
             return vec![];
         }
 
@@ -1167,7 +1184,7 @@ impl SelectorMap {
         
         
         let mut important = vec![];
-        for rule in self.other_rules.iter() {
+        for rule in self.other.iter() {
             if rule.selector.complex.iter_raw().next().is_none() {
                 let style_rule = rule.style_rule.read_with(guard);
                 let block = style_rule.block.read_with(guard);
@@ -1245,23 +1262,24 @@ impl SelectorMap {
             }
         }
     }
+}
 
+impl<T> SelectorMap<T> where T: Clone + Borrow<SelectorInner<SelectorImpl>> {
     
-    
-    pub fn insert(&mut self, rule: Rule) {
-        self.empty = false;
+    pub fn insert(&mut self, entry: T) {
+        self.count += 1;
 
-        if let Some(id_name) = SelectorMap::get_id_name(&rule) {
-            find_push(&mut self.id_hash, id_name, rule);
+        if let Some(id_name) = get_id_name(entry.borrow()) {
+            find_push(&mut self.id_hash, id_name, entry);
             return;
         }
 
-        if let Some(class_name) = SelectorMap::get_class_name(&rule) {
-            find_push(&mut self.class_hash, class_name, rule);
+        if let Some(class_name) = get_class_name(entry.borrow()) {
+            find_push(&mut self.class_hash, class_name, entry);
             return;
         }
 
-        if let Some(LocalNameSelector { name, lower_name }) = SelectorMap::get_local_name(&rule) {
+        if let Some(LocalNameSelector { name, lower_name }) = get_local_name(entry.borrow()) {
             
             
             
@@ -1274,55 +1292,165 @@ impl SelectorMap {
             
             
             if name != lower_name {
-                find_push(&mut self.local_name_hash, lower_name, rule.clone());
+                find_push(&mut self.local_name_hash, lower_name, entry.clone());
             }
-            find_push(&mut self.local_name_hash, name, rule);
+            find_push(&mut self.local_name_hash, name, entry);
 
             return;
         }
 
-        self.other_rules.push(rule);
+        self.other.push(entry);
     }
 
     
-    pub fn get_id_name(rule: &Rule) -> Option<Atom> {
-        for ss in rule.selector.complex.iter() {
-            
-            
-            if let Component::ID(ref id) = *ss {
-                return Some(id.clone());
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn lookup<E, F>(&self, element: E, f: &mut F) -> bool
+        where E: TElement,
+              F: FnMut(&T) -> bool
+    {
+        
+        if let Some(id) = element.get_id() {
+            if let Some(v) = self.id_hash.get(&id) {
+                for entry in v.iter() {
+                    if !f(&entry) {
+                        return false;
+                    }
+                }
             }
         }
 
-        None
+        
+        let mut done = false;
+        element.each_class(|class| {
+            if !done {
+                if let Some(v) = self.class_hash.get(class) {
+                    for entry in v.iter() {
+                        if !f(&entry) {
+                            done = true;
+                            return;
+                        }
+                    }
+                }
+            }
+        });
+        if done {
+            return false;
+        }
+
+        
+        if let Some(v) = self.local_name_hash.get(element.get_local_name()) {
+            for entry in v.iter() {
+                if !f(&entry) {
+                    return false;
+                }
+            }
+        }
+
+        
+        for entry in self.other.iter() {
+            if !f(&entry) {
+                return false;
+            }
+        }
+
+        true
     }
 
     
-    pub fn get_class_name(rule: &Rule) -> Option<Atom> {
-        for ss in rule.selector.complex.iter() {
-            
-            
-            if let Component::Class(ref class) = *ss {
-                return Some(class.clone());
-            }
-        }
-
-        None
-    }
-
     
-    pub fn get_local_name(rule: &Rule) -> Option<LocalNameSelector<SelectorImpl>> {
-        for ss in rule.selector.complex.iter() {
-            if let Component::LocalName(ref n) = *ss {
-                return Some(LocalNameSelector {
-                    name: n.name.clone(),
-                    lower_name: n.lower_name.clone(),
-                })
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn lookup_with_additional<E, F>(&self,
+                                        element: E,
+                                        additional_id: Option<Atom>,
+                                        additional_classes: &[Atom],
+                                        f: &mut F)
+                                        -> bool
+        where E: TElement,
+              F: FnMut(&T) -> bool
+    {
+        
+        if !self.lookup(element, f) {
+            return false;
+        }
+
+        
+        if let Some(id) = additional_id {
+            if let Some(v) = self.id_hash.get(&id) {
+                for entry in v.iter() {
+                    if !f(&entry) {
+                        return false;
+                    }
+                }
             }
         }
 
-        None
+        
+        for class in additional_classes {
+            if let Some(v) = self.class_hash.get(class) {
+                for entry in v.iter() {
+                    if !f(&entry) {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        true
     }
+}
+
+
+pub fn get_id_name(selector: &SelectorInner<SelectorImpl>) -> Option<Atom> {
+    for ss in selector.complex.iter() {
+        
+        
+        if let Component::ID(ref id) = *ss {
+            return Some(id.clone());
+        }
+    }
+
+    None
+}
+
+
+pub fn get_class_name(selector: &SelectorInner<SelectorImpl>) -> Option<Atom> {
+    for ss in selector.complex.iter() {
+        
+        
+        if let Component::Class(ref class) = *ss {
+            return Some(class.clone());
+        }
+    }
+
+    None
+}
+
+
+pub fn get_local_name(selector: &SelectorInner<SelectorImpl>)
+                      -> Option<LocalNameSelector<SelectorImpl>> {
+    for ss in selector.complex.iter() {
+        if let Component::LocalName(ref n) = *ss {
+            return Some(LocalNameSelector {
+                name: n.name.clone(),
+                lower_name: n.lower_name.clone(),
+            })
+        }
+    }
+
+    None
 }
 
 
@@ -1345,6 +1473,12 @@ pub struct Rule {
     
     
     specificity_and_bits: u32,
+}
+
+impl Borrow<SelectorInner<SelectorImpl>> for Rule {
+    fn borrow(&self) -> &SelectorInner<SelectorImpl> {
+        &self.selector
+    }
 }
 
 
@@ -1441,7 +1575,8 @@ impl ApplicableDeclarationBlock {
 }
 
 #[inline]
-fn find_push<Str: Eq + Hash>(map: &mut FnvHashMap<Str, Vec<Rule>>, key: Str,
-                             value: Rule) {
+fn find_push<Str: Eq + Hash, V>(map: &mut FnvHashMap<Str, Vec<V>>,
+                                key: Str,
+                                value: V) {
     map.entry(key).or_insert_with(Vec::new).push(value)
 }
