@@ -138,9 +138,10 @@ static bool was_paused = false;
 
 
 static void paf_prepare(void) {
-  if (Sampler::GetActiveSampler()) {
-    was_paused = Sampler::GetActiveSampler()->IsPaused();
-    Sampler::GetActiveSampler()->SetPaused(true);
+  
+  if (gSampler) {
+    was_paused = gSampler->IsPaused();
+    gSampler->SetPaused(true);
   } else {
     was_paused = false;
   }
@@ -149,8 +150,10 @@ static void paf_prepare(void) {
 
 
 static void paf_parent(void) {
-  if (Sampler::GetActiveSampler())
-    Sampler::GetActiveSampler()->SetPaused(was_paused);
+  
+  if (gSampler) {
+    gSampler->SetPaused(was_paused);
+  }
 }
 
 
@@ -177,7 +180,8 @@ static mozilla::Atomic<ThreadProfile*> sCurrentThreadProfile;
 static sem_t sSignalHandlingDone;
 
 static void ProfilerSaveSignalHandler(int signal, siginfo_t* info, void* context) {
-  Sampler::GetActiveSampler()->RequestSave();
+  
+  gSampler->RequestSave();
 }
 
 static void SetSampleContext(TickSample* sample, void* context)
@@ -230,7 +234,8 @@ void ProfilerSignalHandler(int signal, siginfo_t* info, void* context) {
   
   int savedErrno = errno;
 
-  if (!Sampler::GetActiveSampler()) {
+  
+  if (!gSampler) {
     sem_post(&sSignalHandlingDone);
     errno = savedErrno;
     return;
@@ -241,7 +246,8 @@ void ProfilerSignalHandler(int signal, siginfo_t* info, void* context) {
   sample->context = context;
 
   
-  if (Sampler::GetActiveSampler()->IsProfiling()) {
+  
+  if (gSampler->IsProfiling()) {
     SetSampleContext(sample, context);
   }
   sample->threadProfile = sCurrentThreadProfile;
@@ -249,7 +255,8 @@ void ProfilerSignalHandler(int signal, siginfo_t* info, void* context) {
   sample->rssMemory = sample->threadProfile->mRssMemory;
   sample->ussMemory = sample->threadProfile->mUssMemory;
 
-  Sampler::GetActiveSampler()->Tick(sample);
+  
+  gSampler->Tick(sample);
 
   sCurrentThreadProfile = NULL;
   sem_post(&sSignalHandlingDone);
@@ -261,7 +268,8 @@ void ProfilerSignalHandler(int signal, siginfo_t* info, void* context) {
 static void ProfilerSignalThread(ThreadProfile *profile,
                                  bool isFirstProfiledThread)
 {
-  if (isFirstProfiledThread && Sampler::GetActiveSampler()->ProfileMemory()) {
+  
+  if (isFirstProfiledThread && gSampler->ProfileMemory()) {
     profile->mRssMemory = nsMemoryReporterManager::ResidentFast();
     profile->mUssMemory = nsMemoryReporterManager::ResidentUnique();
   } else {

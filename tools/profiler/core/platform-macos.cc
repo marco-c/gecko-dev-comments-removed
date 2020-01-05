@@ -258,7 +258,8 @@ class SamplerThread : public Thread {
     sample->ussMemory = 0;
     sample->rssMemory = 0;
 
-    if (isFirstProfiledThread && Sampler::GetActiveSampler()->ProfileMemory()) {
+    
+    if (isFirstProfiledThread && gSampler->ProfileMemory()) {
       sample->rssMemory = nsMemoryReporterManager::ResidentFast();
     }
 
