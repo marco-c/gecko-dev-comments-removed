@@ -22,8 +22,23 @@ public:
   }
 #endif
 
+#ifdef ANDROID
+  
+  
+  
+  virtual void BuildDisplayList(nsDisplayListBuilder* aBuilder,
+                                const nsRect& aDirtyRect,
+                                const nsDisplayListSet& aLists) override;
+#endif
+
 #ifdef ACCESSIBILITY
   virtual mozilla::a11y::AccType AccessibleType() override;
+#endif
+
+#ifdef ANDROID
+protected:
+  bool IsChecked();
+  bool IsIndeterminate();
 #endif
 };
 
