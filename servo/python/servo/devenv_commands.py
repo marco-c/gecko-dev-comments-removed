@@ -120,7 +120,8 @@ class MachCommands(CommandBase):
         
         tests_dirs = listdir('tests')
         
-        tests_dirs = filter(lambda dir: dir != 'wpt', tests_dirs)
+        excluded_tests_dirs = ['wpt', 'jquery']
+        tests_dirs = filter(lambda dir: dir not in excluded_tests_dirs, tests_dirs)
         
         root_dirs = ['components', 'ports', 'python', 'etc', 'resources']
         
@@ -128,4 +129,6 @@ class MachCommands(CommandBase):
         root_dirs_abs = [path.join(self.context.topdir, s) for s in root_dirs]
         
         grep_paths = root_dirs_abs + tests_dirs_abs
-        return subprocess.call(["git"] + ["grep"] + params + ['--'] + grep_paths, env=self.build_env())
+        return subprocess.call(
+            ["git"] + ["grep"] + params + ['--'] + grep_paths + [':(exclude)*.min.js'],
+            env=self.build_env())
