@@ -655,11 +655,6 @@ pref("accessibility.typeaheadfind.timeout", 5000);
 pref("accessibility.typeaheadfind.linksonly", false);
 pref("accessibility.typeaheadfind.flashBar", 1);
 
-#ifdef NIGHTLY_BUILD
-pref("findbar.highlightAll", true);
-pref("findbar.modalHighlight", true);
-#endif
-
 
 pref("accessibility.loadedInLastSession", false);
 
