@@ -5224,7 +5224,13 @@ nsFrame::ComputeSizeWithIntrinsicDimensions(nsRenderingContext*  aRenderingConte
             tentISize = NSCoordMulDiv(bSize, logicalRatio.ISize(aWM), logicalRatio.BSize(aWM));
           }
         }
+      }
 
+      
+      
+      
+      if (aIntrinsicRatio != nsSize(0, 0) &&
+          stretchI != eStretch && stretchB != eStretch) {
         nsSize autoSize = nsLayoutUtils::
           ComputeAutoSizeWithIntrinsicDimensions(minISize, minBSize,
                                                  maxISize, maxBSize,
@@ -5236,10 +5242,6 @@ nsFrame::ComputeSizeWithIntrinsicDimensions(nsRenderingContext*  aRenderingConte
         iSize = autoSize.width;
         bSize = autoSize.height;
       } else {
-        
-        
-        
-        
         
         iSize = NS_CSS_MINMAX(tentISize, minISize, maxISize);
         bSize = NS_CSS_MINMAX(tentBSize, minBSize, maxBSize);
