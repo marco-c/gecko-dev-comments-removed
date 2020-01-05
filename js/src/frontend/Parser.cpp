@@ -901,21 +901,6 @@ Parser<ParseHandler>::parse()
     return pn;
 }
 
-template <typename ParseHandler>
-bool
-Parser<ParseHandler>::reportBadReturn(Node pn, ParseReportKind kind,
-                                      unsigned errnum, unsigned anonerrnum)
-{
-    JSAutoByteString name;
-    if (JSAtom* atom = pc->functionBox()->function()->name()) {
-        if (!AtomToPrintableString(context, atom, &name))
-            return false;
-    } else {
-        errnum = anonerrnum;
-    }
-    return reportWithNode(kind, pc->sc()->strict(), pn, errnum, name.ptr());
-}
-
 
 
 
@@ -5962,10 +5947,9 @@ Parser<ParseHandler>::returnStatement(YieldHandling yieldHandling)
     if (!pn)
         return null();
 
+    
     if (pc->isLegacyGenerator() && exprNode) {
-        
-        reportBadReturn(pn, ParseError, JSMSG_BAD_GENERATOR_RETURN,
-                        JSMSG_BAD_ANON_GENERATOR_RETURN);
+        errorAt(begin, JSMSG_BAD_GENERATOR_RETURN);
         return null();
     }
 
@@ -6080,8 +6064,7 @@ Parser<ParseHandler>::yieldExpression(InHandling inHandling)
             )
         {
             
-            reportBadReturn(null(), ParseError, JSMSG_BAD_GENERATOR_RETURN,
-                            JSMSG_BAD_ANON_GENERATOR_RETURN);
+            errorAt(begin, JSMSG_BAD_FUNCTION_YIELD);
             return null();
         }
 
