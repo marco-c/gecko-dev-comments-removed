@@ -10,7 +10,7 @@
 
 
 use hyper::method::Method;
-use net_traits::request::Origin;
+use net_traits::request::{CredentialsMode, Origin, Request};
 use std::ascii::AsciiExt;
 use time;
 use time::{now, Timespec};
@@ -66,17 +66,10 @@ impl CORSCacheEntry {
     }
 }
 
-
-pub struct CacheRequestDetails {
-    pub origin: Origin,
-    pub destination: Url,
-    pub credentials: bool
-}
-
-fn match_headers(cors_cache: &CORSCacheEntry, cors_req: &CacheRequestDetails) -> bool {
-    cors_cache.origin == cors_req.origin &&
-        cors_cache.url == cors_req.destination &&
-        (cors_cache.credentials || !cors_req.credentials)
+fn match_headers(cors_cache: &CORSCacheEntry, cors_req: &Request) -> bool {
+    cors_cache.origin == *cors_req.origin.borrow() &&
+        cors_cache.url == cors_req.current_url() &&
+        (cors_cache.credentials || cors_req.credentials_mode != CredentialsMode::Include)
 }
 
 
@@ -89,13 +82,13 @@ impl CORSCache {
         CORSCache(vec![])
     }
 
-    fn find_entry_by_header<'a>(&'a mut self, request: &CacheRequestDetails,
+    fn find_entry_by_header<'a>(&'a mut self, request: &Request,
                                 header_name: &str) -> Option<&'a mut CORSCacheEntry> {
         self.cleanup();
         self.0.iter_mut().find(|e| match_headers(e, request) && e.header_or_method.match_header(header_name))
     }
 
-    fn find_entry_by_method<'a>(&'a mut self, request: &CacheRequestDetails,
+    fn find_entry_by_method<'a>(&'a mut self, request: &Request,
                                 method: Method) -> Option<&'a mut CORSCacheEntry> {
         
         self.cleanup();
@@ -103,10 +96,11 @@ impl CORSCache {
     }
 
     
-    pub fn clear (&mut self, request: CacheRequestDetails) {
+    pub fn clear (&mut self, request: &Request) {
         let CORSCache(buf) = self.clone();
         let new_buf: Vec<CORSCacheEntry> =
-            buf.into_iter().filter(|e| e.origin == request.origin && request.destination == e.url).collect();
+            buf.into_iter().filter(|e| e.origin == *request.origin.borrow() &&
+                                       request.current_url() == e.url).collect();
         *self = CORSCache(new_buf);
     }
 
@@ -122,7 +116,7 @@ impl CORSCache {
 
     
     
-    pub fn match_header(&mut self, request: CacheRequestDetails, header_name: &str) -> bool {
+    pub fn match_header(&mut self, request: &Request, header_name: &str) -> bool {
         self.find_entry_by_header(&request, header_name).is_some()
     }
 
@@ -130,13 +124,13 @@ impl CORSCache {
     
     
     
-    pub fn match_header_and_update(&mut self, request: CacheRequestDetails,
+    pub fn match_header_and_update(&mut self, request: &Request,
                                    header_name: &str, new_max_age: u32) -> bool {
         match self.find_entry_by_header(&request, header_name).map(|e| e.max_age = new_max_age) {
             Some(_) => true,
             None => {
-                self.insert(CORSCacheEntry::new(request.origin, request.destination, new_max_age,
-                                                request.credentials,
+                self.insert(CORSCacheEntry::new(request.origin.borrow().clone(), request.current_url(), new_max_age,
+                                                request.credentials_mode == CredentialsMode::Include,
                                                 HeaderOrMethod::HeaderData(header_name.to_owned())));
                 false
             }
@@ -145,7 +139,7 @@ impl CORSCache {
 
     
     
-    pub fn match_method(&mut self, request: CacheRequestDetails, method: Method) -> bool {
+    pub fn match_method(&mut self, request: &Request, method: Method) -> bool {
         self.find_entry_by_method(&request, method).is_some()
     }
 
@@ -153,12 +147,13 @@ impl CORSCache {
     
     
     
-    pub fn match_method_and_update(&mut self, request: CacheRequestDetails, method: Method, new_max_age: u32) -> bool {
+    pub fn match_method_and_update(&mut self, request: &Request, method: Method, new_max_age: u32) -> bool {
         match self.find_entry_by_method(&request, method.clone()).map(|e| e.max_age = new_max_age) {
             Some(_) => true,
             None => {
-                self.insert(CORSCacheEntry::new(request.origin, request.destination, new_max_age,
-                                                request.credentials, HeaderOrMethod::MethodData(method)));
+                self.insert(CORSCacheEntry::new(request.origin.borrow().clone(), request.current_url(), new_max_age,
+                                                request.credentials_mode == CredentialsMode::Include,
+                                                HeaderOrMethod::MethodData(method)));
                 false
             }
         }
