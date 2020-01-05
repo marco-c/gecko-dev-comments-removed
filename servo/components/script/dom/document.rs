@@ -38,6 +38,7 @@ use dom::domimplementation::DOMImplementation;
 use dom::element::{Element, ElementCreator};
 use dom::event::{Event, EventBubbles, EventCancelable};
 use dom::eventtarget::EventTarget;
+use dom::focusevent::FocusEvent;
 use dom::htmlanchorelement::HTMLAnchorElement;
 use dom::htmlappletelement::HTMLAppletElement;
 use dom::htmlareaelement::HTMLAreaElement;
@@ -609,17 +610,21 @@ impl Document {
     
     
     pub fn commit_focus_transaction(&self, focus_type: FocusType) {
-        
 
         if let Some(ref elem) = self.focused.get() {
+            let node = elem.upcast::<Node>();
             elem.set_focus_state(false);
+            
+            self.fire_focus_event(FocusEventType::Blur, node, None);
         }
 
         self.focused.set(self.possibly_focused.get().r());
 
         if let Some(ref elem) = self.focused.get() {
             elem.set_focus_state(true);
-
+            let node = elem.upcast::<Node>();
+            
+            self.fire_focus_event(FocusEventType::Focus, node, None);
             
             
             if focus_type == FocusType::Element {
@@ -1450,6 +1455,25 @@ impl Document {
 
     pub fn get_dom_complete(&self) -> u64 {
         self.dom_complete.get()
+    }
+
+    
+    fn fire_focus_event(&self, focus_event_type: FocusEventType, node: &Node, relatedTarget: Option<&EventTarget>) {
+        let (event_name, does_bubble) = match focus_event_type {
+            FocusEventType::Focus => (DOMString::from("focus"), EventBubbles::DoesNotBubble),
+            FocusEventType::Blur => (DOMString::from("blur"), EventBubbles::DoesNotBubble),
+        };
+        let event = FocusEvent::new(&self.window,
+                                    event_name,
+                                    does_bubble,
+                                    EventCancelable::NotCancelable,
+                                    Some(&self.window),
+                                    0i32,
+                                    relatedTarget);
+        let event = event.upcast::<Event>();
+        event.set_trusted(true);
+        let target = node.upcast();
+        event.fire(target);
     }
 }
 
@@ -2578,4 +2602,10 @@ impl Runnable for DocumentProgressHandler {
 pub enum FocusType {
     Element,    
     Parent,     
+}
+
+
+pub enum FocusEventType {
+    Focus,      
+    Blur,       
 }
