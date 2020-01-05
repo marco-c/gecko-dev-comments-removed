@@ -1,19 +1,5 @@
-
-
-use layout::box::{RenderBox, RenderBoxTree};
 use layout::flow::{FlowContext, FlowTree};
 
-
-trait RenderBoxTraversals {
-    fn traverse_preorder(preorder_cb: &fn(@RenderBox));
-}
-
-impl @RenderBox : RenderBoxTraversals {
-    fn traverse_preorder(preorder_cb: &fn(@RenderBox)) {
-        preorder_cb(self);
-        do RenderBoxTree.each_child(self) |child| { child.traverse_preorder(preorder_cb); true }
-    }
-}
 
 trait FlowContextTraversals {
     fn traverse_preorder(preorder_cb: &fn(@FlowContext));
