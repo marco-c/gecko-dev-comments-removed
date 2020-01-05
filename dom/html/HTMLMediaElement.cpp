@@ -6386,20 +6386,8 @@ HTMLMediaElement::IsCurrentlyPlaying() const
 {
   
   
-  if (mReadyState >= nsIDOMHTMLMediaElement::HAVE_CURRENT_DATA &&
-      !IsPlaybackEnded()) {
-
-    
-    
-    
-    
-    
-    if (mDecoder && mDecoder->IsSeeking() && !mPlayingBeforeSeek) {
-      return false;
-    }
-    return true;
-  }
-  return false;
+  return mReadyState >= nsIDOMHTMLMediaElement::HAVE_CURRENT_DATA &&
+         !IsPlaybackEnded();
 }
 
 void
