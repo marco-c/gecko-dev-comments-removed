@@ -245,10 +245,14 @@ task_description_schema = Schema({
             Extra: basestring,  
         },
     }, {
-        'implementation': 'macosx-engine',
+        'implementation': 'native-engine',
 
         
-        Optional('link'): basestring,
+        Optional('context'): basestring,
+
+        
+        
+        Optional('reboot'): bool,
 
         
         Required('command'): [taskref_or_string],
@@ -576,7 +580,7 @@ def build_balrog_payload(config, task, task_def):
     }
 
 
-@payload_builder('macosx-engine')
+@payload_builder('native-engine')
 def build_macosx_engine_payload(config, task, task_def):
     worker = task['worker']
     artifacts = map(lambda artifact: {
@@ -587,14 +591,15 @@ def build_macosx_engine_payload(config, task, task_def):
     }, worker['artifacts'])
 
     task_def['payload'] = {
-        'link': worker['link'],
+        'context': worker['context'],
         'command': worker['command'],
         'env': worker['env'],
+        'reboot': worker['reboot'],
         'artifacts': artifacts,
     }
 
     if task.get('needs-sccache'):
-        raise Exception('needs-sccache not supported in macosx-engine')
+        raise Exception('needs-sccache not supported in native-engine')
 
 
 @payload_builder('buildbot-bridge')
