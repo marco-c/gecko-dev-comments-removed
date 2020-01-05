@@ -37,6 +37,8 @@ use script_layout_interface::{OpaqueStyleAndLayoutData, PartialPersistentLayoutD
 use script_layout_interface::wrapper_traits::{LayoutNode, ThreadSafeLayoutElement, ThreadSafeLayoutNode};
 use script_layout_interface::wrapper_traits::GetLayoutData;
 use style::computed_values::content::{self, ContentItem};
+use style::dom::{NodeInfo, TNode};
+use style::selector_parser::RestyleDamage;
 
 pub type NonOpaqueStyleAndLayoutData = AtomicRefCell<PersistentLayoutData>;
 
@@ -120,6 +122,12 @@ pub trait ThreadSafeLayoutNodeHelpers {
     
     
     fn text_content(&self) -> TextContent;
+
+    
+    
+    
+    
+    fn restyle_damage(self) -> RestyleDamage;
 }
 
 impl<T: ThreadSafeLayoutNode> ThreadSafeLayoutNodeHelpers for T {
@@ -149,6 +157,37 @@ impl<T: ThreadSafeLayoutNode> ThreadSafeLayoutNodeHelpers for T {
 
         return TextContent::Text(self.node_text_content());
     }
+
+    fn restyle_damage(self) -> RestyleDamage {
+        
+        
+        
+        let mut node = unsafe { self.unsafe_get() };
+
+        
+        
+        if node.is_text_node() {
+            node = node.parent_node().unwrap();
+            debug_assert!(node.is_element());
+        }
+
+        let data = node.borrow_layout_data().unwrap();
+        if let Some(r) = data.base.style_data.get_restyle() {
+            
+            
+            r.damage
+        } else if !data.flags.contains(::data::HAS_BEEN_TRAVERSED) {
+            
+            
+            
+            RestyleDamage::rebuild_and_reflow()
+        } else {
+            
+            
+            RestyleDamage::empty()
+        }
+    }
+
 }
 
 pub enum TextContent {

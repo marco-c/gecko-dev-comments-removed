@@ -151,6 +151,7 @@ impl<ConcreteNode> Iterator for TreeIterator<ConcreteNode>
 
 
 pub trait ThreadSafeLayoutNode: Clone + Copy + Debug + GetLayoutData + NodeInfo + PartialEq + Sized {
+    type ConcreteNode: LayoutNode<ConcreteThreadSafeLayoutNode = Self>;
     type ConcreteThreadSafeLayoutElement:
         ThreadSafeLayoutElement<ConcreteThreadSafeLayoutNode = Self>
         + ::selectors::Element<Impl=SelectorImpl>;
@@ -237,13 +238,19 @@ pub trait ThreadSafeLayoutNode: Clone + Copy + Debug + GetLayoutData + NodeInfo 
 
     fn is_ignorable_whitespace(&self, context: &SharedStyleContext) -> bool;
 
-    fn restyle_damage(self) -> RestyleDamage;
-
     
     
     fn is_content(&self) -> bool {
         self.type_id().is_some()
     }
+
+    
+    
+    
+    
+    
+    
+    unsafe fn unsafe_get(self) -> Self::ConcreteNode;
 
     fn can_be_fragmented(&self) -> bool;
 

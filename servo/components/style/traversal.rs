@@ -7,14 +7,14 @@
 #![deny(missing_docs)]
 
 use atomic_refcell::{AtomicRefCell, AtomicRefMut};
-use context::{SharedStyleContext, StyleContext};
+use context::{SharedStyleContext, StyleContext, ThreadLocalStyleContext};
 use data::{ElementData, ElementStyles, StoredRestyleHint};
-use dom::{TElement, TNode};
+use dom::{NodeInfo, TElement, TNode};
 use matching::{MatchMethods, StyleSharingResult};
 use restyle_hints::{RESTYLE_DESCENDANTS, RESTYLE_SELF};
 use selector_parser::RestyleDamage;
-use selectors::Element;
 use servo_config::opts;
+use std::borrow::BorrowMut;
 use std::mem;
 use std::sync::atomic::{AtomicUsize, ATOMIC_USIZE_INIT, Ordering};
 use stylist::Stylist;
@@ -72,20 +72,23 @@ impl LogBehavior {
 
 
 
-pub trait DomTraversal<N: TNode> : Sync {
+pub trait DomTraversal<E: TElement> : Sync {
     
     
     
-    type ThreadLocalContext: Send;
+    type ThreadLocalContext: Send + BorrowMut<ThreadLocalStyleContext<E>>;
 
     
     fn process_preorder(&self, data: &mut PerLevelTraversalData,
-                        thread_local: &mut Self::ThreadLocalContext, node: N);
+                        thread_local: &mut Self::ThreadLocalContext,
+                        node: E::ConcreteNode);
 
     
     
     
-    fn process_postorder(&self, thread_local: &mut Self::ThreadLocalContext, node: N);
+    fn process_postorder(&self,
+                         thread_local: &mut Self::ThreadLocalContext,
+                         node: E::ConcreteNode);
 
     
     
@@ -99,8 +102,7 @@ pub trait DomTraversal<N: TNode> : Sync {
     
     
     
-    fn pre_traverse(root: N::ConcreteElement, stylist: &Stylist,
-                    unstyled_children_only: bool)
+    fn pre_traverse(root: E, stylist: &Stylist, unstyled_children_only: bool)
                     -> PreTraverseToken
     {
         if unstyled_children_only {
@@ -117,7 +119,7 @@ pub trait DomTraversal<N: TNode> : Sync {
         
         
         if let Some(mut data) = root.mutate_data() {
-            if let Some(r) = data.as_restyle_mut() {
+            if let Some(r) = data.get_restyle_mut() {
                 debug_assert!(root.next_sibling_element().is_none());
                 let _later_siblings = r.expand_snapshot(root, stylist);
             }
@@ -132,10 +134,13 @@ pub trait DomTraversal<N: TNode> : Sync {
     
     
     
-    fn text_node_needs_traversal(node: N) -> bool { debug_assert!(node.is_text_node()); false }
+    fn text_node_needs_traversal(node: E::ConcreteNode) -> bool {
+        debug_assert!(node.is_text_node());
+        false
+    }
 
     
-    fn node_needs_traversal(node: N) -> bool {
+    fn node_needs_traversal(node: E::ConcreteNode) -> bool {
         
         if cfg!(feature = "servo") && opts::get().nonincremental_layout {
             return true;
@@ -158,24 +163,30 @@ pub trait DomTraversal<N: TNode> : Sync {
                 };
 
                 
-                
-                let restyle = match *data {
-                    ElementData::Initial(ref i) => return i.is_none(),
-                    ElementData::Persistent(_) => return false,
-                    ElementData::Restyle(ref r) => r,
-                };
+                if !data.has_styles() {
+                    return true;
+                }
 
                 
-                
-                debug_assert!(restyle.snapshot.is_none(), "Snapshots should already be expanded");
-                if !restyle.hint.is_empty() || restyle.recascade {
-                    return true;
+                if let Some(r) = data.get_restyle() {
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    if !r.hint.is_empty() || r.recascade {
+                        return true;
+                    }
                 }
 
                 
                 
                 
-                if cfg!(feature = "servo") && restyle.damage != RestyleDamage::empty() {
+                if cfg!(feature = "servo") &&
+                   data.get_restyle().map_or(false, |r| r.damage != RestyleDamage::empty())
+                {
                     return true;
                 }
 
@@ -189,7 +200,10 @@ pub trait DomTraversal<N: TNode> : Sync {
     
     
     
-    fn should_traverse_children(parent: N::ConcreteElement, parent_data: &ElementData,
+    fn should_traverse_children(&self,
+                                thread_local: &mut ThreadLocalStyleContext<E>,
+                                parent: E,
+                                parent_data: &ElementData,
                                 log: LogBehavior) -> bool
     {
         
@@ -222,7 +236,7 @@ pub trait DomTraversal<N: TNode> : Sync {
         
         
         
-        if cfg!(feature = "gecko") && parent_data.is_styled_initial() &&
+        if cfg!(feature = "gecko") && thread_local.is_initial_style() &&
            parent_data.styles().primary.values.has_moz_binding() {
             if log.allow() { debug!("Parent {:?} has XBL binding, deferring traversal", parent); }
             return false;
@@ -234,10 +248,15 @@ pub trait DomTraversal<N: TNode> : Sync {
 
     
     
-    fn traverse_children<F: FnMut(N)>(parent: N::ConcreteElement, mut f: F)
+    fn traverse_children<F>(&self, thread_local: &mut Self::ThreadLocalContext, parent: E, mut f: F)
+        where F: FnMut(&mut Self::ThreadLocalContext, E::ConcreteNode)
     {
         
-        if !Self::should_traverse_children(parent, &parent.borrow_data().unwrap(), MayLog) {
+        let should_traverse =
+            self.should_traverse_children(thread_local.borrow_mut(), parent,
+                                          &parent.borrow_data().unwrap(), MayLog);
+        thread_local.borrow_mut().end_element(parent);
+        if !should_traverse {
             return;
         }
 
@@ -245,11 +264,11 @@ pub trait DomTraversal<N: TNode> : Sync {
             if Self::node_needs_traversal(kid) {
                 let el = kid.as_element();
                 if el.as_ref().and_then(|el| el.borrow_data())
-                              .map_or(false, |d| d.is_restyle())
+                              .map_or(false, |d| d.has_styles())
                 {
                     unsafe { parent.set_dirty_descendants(); }
                 }
-                f(kid);
+                f(thread_local, kid);
             }
         }
     }
@@ -260,13 +279,13 @@ pub trait DomTraversal<N: TNode> : Sync {
     
     
     
-    unsafe fn ensure_element_data(element: &N::ConcreteElement) -> &AtomicRefCell<ElementData>;
+    unsafe fn ensure_element_data(element: &E) -> &AtomicRefCell<ElementData>;
 
     
     
     
     
-    unsafe fn clear_element_data(element: &N::ConcreteElement);
+    unsafe fn clear_element_data(element: &E);
 
     
     fn shared_context(&self) -> &SharedStyleContext;
@@ -364,9 +383,10 @@ pub fn recalc_style_at<E, D>(traversal: &D,
                              element: E,
                              mut data: &mut AtomicRefMut<ElementData>)
     where E: TElement,
-          D: DomTraversal<E::ConcreteNode>
+          D: DomTraversal<E>
 {
-    debug_assert!(data.as_restyle().map_or(true, |r| r.snapshot.is_none()),
+    context.thread_local.begin_element(element, &data);
+    debug_assert!(data.get_restyle().map_or(true, |r| r.snapshot.is_none()),
                   "Snapshots should be expanded by the caller");
 
     let compute_self = !data.has_current_styles();
@@ -383,7 +403,7 @@ pub fn recalc_style_at<E, D>(traversal: &D,
     
     
     let empty_hint = StoredRestyleHint::empty();
-    let propagated_hint = match data.as_restyle_mut() {
+    let propagated_hint = match data.get_restyle_mut() {
         None => empty_hint,
         Some(r) => {
             r.recascade = false;
@@ -394,7 +414,7 @@ pub fn recalc_style_at<E, D>(traversal: &D,
     trace!("propagated_hint={:?}, inherited_style_changed={:?}", propagated_hint, inherited_style_changed);
 
     
-    if D::should_traverse_children(element, &data, DontLog) &&
+    if traversal.should_traverse_children(&mut context.thread_local, element, &data, DontLog) &&
        (element.has_dirty_descendants() || !propagated_hint.is_empty() || inherited_style_changed) {
         preprocess_children(traversal, element, propagated_hint, inherited_style_changed);
     }
@@ -411,7 +431,7 @@ fn compute_style<E, D>(_traversal: &D,
                        element: E,
                        mut data: &mut AtomicRefMut<ElementData>) -> bool
     where E: TElement,
-          D: DomTraversal<E::ConcreteNode>,
+          D: DomTraversal<E>,
 {
     let shared_context = context.shared;
     
@@ -498,7 +518,7 @@ fn preprocess_children<E, D>(traversal: &D,
                              mut propagated_hint: StoredRestyleHint,
                              parent_inherited_style_changed: bool)
     where E: TElement,
-          D: DomTraversal<E::ConcreteNode>
+          D: DomTraversal<E>
 {
     
     for child in element.as_node().children() {
@@ -509,14 +529,21 @@ fn preprocess_children<E, D>(traversal: &D,
         };
 
         let mut child_data = unsafe { D::ensure_element_data(&child).borrow_mut() };
-        if child_data.is_unstyled_initial() {
+
+        
+        if !child_data.has_styles() {
             continue;
         }
 
-        let mut restyle_data = match child_data.restyle() {
-            Some(d) => d,
-            None => continue,
-        };
+        
+        
+        
+        if propagated_hint.is_empty() && !parent_inherited_style_changed &&
+           !child_data.has_restyle()
+        {
+            continue;
+        }
+        let mut restyle_data = child_data.ensure_restyle();
 
         
         if !propagated_hint.is_empty() {

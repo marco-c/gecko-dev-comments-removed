@@ -15,7 +15,6 @@ use selector_parser::{PseudoElement, RestyleDamage, Snapshot};
 use std::collections::HashMap;
 use std::fmt;
 use std::hash::BuildHasherDefault;
-use std::mem;
 use std::ops::{Deref, DerefMut};
 use std::sync::Arc;
 use stylist::Stylist;
@@ -262,31 +261,37 @@ impl Deref for SnapshotOption {
 
 
 
-
-
-
-
 #[derive(Debug)]
-#[allow(missing_docs)]
 pub struct RestyleData {
-    pub styles: ElementStyles,
+    
+    
     pub hint: StoredRestyleHint,
+
+    
+    
     pub recascade: bool,
+
+    
+    
     pub damage: RestyleDamage,
+
+    
+    
     pub snapshot: SnapshotOption,
 }
 
-impl RestyleData {
-    fn new(styles: ElementStyles) -> Self {
+impl Default for RestyleData {
+    fn default() -> Self {
         RestyleData {
-            styles: styles,
             hint: StoredRestyleHint::default(),
             recascade: false,
             damage: RestyleDamage::empty(),
             snapshot: SnapshotOption::empty(),
         }
     }
+}
 
+impl RestyleData {
     
     
     pub fn expand_snapshot<E: TElement>(&mut self, element: E, stylist: &Stylist) -> bool {
@@ -313,36 +318,10 @@ impl RestyleData {
     }
 
     
-    pub fn has_current_styles(&self) -> bool {
-        !(self.hint.restyle_self || self.recascade || self.snapshot.is_some())
-    }
-
-    
-    pub fn styles(&self) -> &ElementStyles {
-        &self.styles
-    }
-
-    
-    pub fn styles_mut(&mut self) -> &mut ElementStyles {
-        &mut self.styles
-    }
-
-    fn finish_styling(&mut self, styles: ElementStyles, damage: RestyleDamage) {
-        debug_assert!(!self.has_current_styles());
-        debug_assert!(self.snapshot.is_none(), "Traversal should have expanded snapshots");
-        self.styles = styles;
-        self.damage |= damage;
-        
-        
-        
+    pub fn has_invalidations(&self) -> bool {
+        self.hint.restyle_self || self.recascade || self.snapshot.is_some()
     }
 }
-
-
-
-
-
-
 
 
 
@@ -350,225 +329,104 @@ impl RestyleData {
 
 
 #[derive(Debug)]
-pub enum ElementData {
+pub struct ElementData {
     
-    Initial(Option<ElementStyles>),
-    
-    
-    Restyle(RestyleData),
+    styles: Option<ElementStyles>,
+
     
     
-    Persistent(ElementStyles),
+    restyle: Option<Box<RestyleData>>,
 }
 
 impl ElementData {
     
     pub fn new(existing: Option<ElementStyles>) -> Self {
-        if let Some(s) = existing {
-            ElementData::Persistent(s)
-        } else {
-            ElementData::Initial(None)
+        ElementData {
+            styles: existing,
+            restyle: None,
         }
     }
 
     
-    pub fn is_initial(&self) -> bool {
-        match *self {
-            ElementData::Initial(_) => true,
-            _ => false,
-        }
-    }
-
-    
-    pub fn is_unstyled_initial(&self) -> bool {
-        match *self {
-            ElementData::Initial(None) => true,
-            _ => false,
-        }
-    }
-
-    
-    
-    pub fn is_styled_initial(&self) -> bool {
-        match *self {
-            ElementData::Initial(Some(_)) => true,
-            _ => false,
-        }
-    }
-
-    
-    
-    pub fn is_restyle(&self) -> bool {
-        match *self {
-            ElementData::Restyle(_) => true,
-            _ => false,
-        }
-    }
-
-    
-    pub fn as_restyle(&self) -> Option<&RestyleData> {
-        match *self {
-            ElementData::Restyle(ref x) => Some(x),
-            _ => None,
-        }
-    }
-
-    
-    pub fn as_restyle_mut(&mut self) -> Option<&mut RestyleData> {
-        match *self {
-            ElementData::Restyle(ref mut x) => Some(x),
-            _ => None,
-        }
-    }
-
-    
-    pub fn is_persistent(&self) -> bool {
-        match *self {
-            ElementData::Persistent(_) => true,
-            _ => false,
-        }
-    }
-
-    
-    pub fn restyle(&mut self) -> Option<&mut RestyleData> {
-        if self.is_unstyled_initial() {
-            return None;
-        }
-
-        
-        
-        
-        
-        let damage_override = if self.is_styled_initial() {
-            RestyleDamage::rebuild_and_reflow()
-        } else {
-            RestyleDamage::empty()
-        };
-
-        if !self.is_restyle() {
-            
-            let old = mem::replace(self, ElementData::new(None));
-            let styles = match old {
-                ElementData::Initial(Some(s)) => s,
-                ElementData::Persistent(s) => s,
-                _ => unreachable!()
-            };
-            *self = ElementData::Restyle(RestyleData::new(styles));
-        }
-
-        let restyle = self.as_restyle_mut().unwrap();
-        restyle.damage |= damage_override;
-        Some(restyle)
-    }
-
-    
-    pub fn persist(&mut self) {
-        if self.is_persistent() {
-            return;
-        }
-
-        
-        let old = mem::replace(self, ElementData::new(None));
-        let styles = match old {
-            ElementData::Initial(i) => i.unwrap(),
-            ElementData::Restyle(r) => r.styles,
-            ElementData::Persistent(_) => unreachable!(),
-        };
-        *self = ElementData::Persistent(styles);
-    }
-
-    
-    pub fn damage(&self) -> RestyleDamage {
-        use self::ElementData::*;
-        match *self {
-            Initial(ref s) => {
-                debug_assert!(s.is_some());
-                RestyleDamage::rebuild_and_reflow()
-            },
-            Restyle(ref r) => {
-                debug_assert!(r.has_current_styles());
-                r.damage
-            },
-            Persistent(_) => RestyleDamage::empty(),
-        }
-    }
-
-    
-    
-    #[cfg(feature = "gecko")]
-    pub fn damage_sloppy(&self) -> RestyleDamage {
-        use self::ElementData::*;
-        match *self {
-            Initial(ref s) => {
-                if s.is_none() {
-                    error!("Accessing damage on unstyled element");
-                }
-                RestyleDamage::rebuild_and_reflow()
-            },
-            Restyle(ref r) => {
-                if !r.has_current_styles() {
-                    error!("Accessing damage on dirty element");
-                }
-                r.damage
-            },
-            Persistent(_) => RestyleDamage::empty(),
-        }
+    pub fn has_styles(&self) -> bool {
+        self.styles.is_some()
     }
 
     
     
     pub fn has_current_styles(&self) -> bool {
-        use self::ElementData::*;
-        match *self {
-            Initial(ref x) => x.is_some(),
-            Restyle(ref x) => x.has_current_styles(),
-            Persistent(_) => true,
-        }
+        self.has_styles() &&
+        self.restyle.as_ref().map_or(true, |r| !r.has_invalidations())
     }
 
     
     pub fn get_styles(&self) -> Option<&ElementStyles> {
-        use self::ElementData::*;
-        match *self {
-            Initial(ref x) => x.as_ref(),
-            Restyle(ref x) => Some(x.styles()),
-            Persistent(ref x) => Some(x),
-        }
+        self.styles.as_ref()
     }
 
     
     pub fn styles(&self) -> &ElementStyles {
-        self.get_styles().expect("Calling styles() on unstyled ElementData")
+        self.styles.as_ref().expect("Calling styles() on unstyled ElementData")
     }
 
     
     pub fn get_styles_mut(&mut self) -> Option<&mut ElementStyles> {
-        use self::ElementData::*;
-        match *self {
-            Initial(ref mut x) => x.as_mut(),
-            Restyle(ref mut x) => Some(x.styles_mut()),
-            Persistent(ref mut x) => Some(x),
-        }
+        self.styles.as_mut()
     }
 
     
     
     pub fn styles_mut(&mut self) -> &mut ElementStyles {
-        self.get_styles_mut().expect("Calling styles_mut() on unstyled ElementData")
+        self.styles.as_mut().expect("Caling styles_mut() on unstyled ElementData")
+    }
+
+    
+    pub fn set_styles(&mut self, styles: ElementStyles) {
+        debug_assert!(self.get_restyle().map_or(true, |r| r.snapshot.is_none()),
+                      "Traversal should have expanded snapshots");
+        self.styles = Some(styles);
+    }
+
+    
+    pub fn has_restyle(&self) -> bool {
+        self.restyle.is_some()
+    }
+
+    
+    pub fn clear_restyle(&mut self) {
+        self.restyle = None;
     }
 
     
     
-    pub fn finish_styling(&mut self, styles: ElementStyles, damage: RestyleDamage) {
-        use self::ElementData::*;
-        match *self {
-            Initial(ref mut x) => {
-                debug_assert!(x.is_none());
-                debug_assert!(damage == RestyleDamage::rebuild_and_reflow());
-                *x = Some(styles);
-            },
-            Restyle(ref mut x) => x.finish_styling(styles, damage),
-            Persistent(_) => panic!("Calling finish_styling on Persistent ElementData"),
-        };
+    
+    pub fn ensure_restyle(&mut self) -> &mut RestyleData {
+        debug_assert!(self.styles.is_some(), "restyling unstyled element");
+        if self.restyle.is_none() {
+            self.restyle = Some(Box::new(RestyleData::default()));
+        }
+        self.restyle.as_mut().unwrap()
+    }
+
+    
+    pub fn get_restyle(&self) -> Option<&RestyleData> {
+        self.restyle.as_ref().map(|r| &**r)
+    }
+
+    
+    
+    pub fn restyle(&self) -> &RestyleData {
+        self.get_restyle().expect("Calling restyle without RestyleData")
+    }
+
+    
+    pub fn get_restyle_mut(&mut self) -> Option<&mut RestyleData> {
+        self.restyle.as_mut().map(|r| &mut **r)
+    }
+
+    
+    
+    pub fn restyle_mut(&mut self) -> &mut RestyleData {
+        self.get_restyle_mut().expect("Calling restyle_mut without RestyleData")
     }
 }

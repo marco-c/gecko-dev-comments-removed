@@ -8,7 +8,8 @@
 use animation::Animation;
 use app_units::Au;
 use bloom::StyleBloom;
-use dom::{OpaqueNode, TElement};
+use data::ElementData;
+use dom::{OpaqueNode, TNode, TElement};
 use error_reporting::ParseErrorReporter;
 use euclid::Size2D;
 use matching::StyleSharingCandidateCache;
@@ -92,6 +93,18 @@ pub struct SharedStyleContext {
 
 
 
+struct CurrentElementInfo {
+    
+    
+    
+    element: OpaqueNode,
+    
+    is_initial_style: bool,
+}
+
+
+
+
 
 
 pub struct ThreadLocalStyleContext<E: TElement> {
@@ -102,6 +115,8 @@ pub struct ThreadLocalStyleContext<E: TElement> {
     
     
     pub new_animations_sender: Sender<Animation>,
+    
+    current_element_info: Option<CurrentElementInfo>,
 }
 
 impl<E: TElement> ThreadLocalStyleContext<E> {
@@ -111,7 +126,40 @@ impl<E: TElement> ThreadLocalStyleContext<E> {
             style_sharing_candidate_cache: StyleSharingCandidateCache::new(),
             bloom_filter: StyleBloom::new(),
             new_animations_sender: shared.local_context_creation_data.lock().unwrap().new_animations_sender.clone(),
+            current_element_info: None,
         }
+    }
+
+    
+    pub fn begin_element(&mut self, element: E, data: &ElementData) {
+        debug_assert!(self.current_element_info.is_none());
+        self.current_element_info = Some(CurrentElementInfo {
+            element: element.as_node().opaque(),
+            is_initial_style: !data.has_styles(),
+        });
+    }
+
+    
+    pub fn end_element(&mut self, element: E) {
+        debug_assert!(self.current_element_info.is_some());
+        debug_assert!(self.current_element_info.as_ref().unwrap().element ==
+                      element.as_node().opaque());
+        self.current_element_info = None;
+    }
+
+    
+    
+    
+    
+    pub fn is_initial_style(&self) -> bool {
+        self.current_element_info.as_ref().unwrap().is_initial_style
+    }
+}
+
+#[cfg(debug_assertions)]
+impl<E: TElement> Drop for ThreadLocalStyleContext<E> {
+    fn drop(&mut self) {
+        debug_assert!(self.current_element_info.is_none());
     }
 }
 
