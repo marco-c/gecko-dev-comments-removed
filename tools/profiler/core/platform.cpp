@@ -2065,7 +2065,7 @@ profiler_init(void* aStackTop)
                            , "threads"
                            };
 
-  const char* threadFilters[] = { "GeckoMain", "Compositor" };
+  const char* filters[] = { "GeckoMain", "Compositor" };
 
   if (getenv("MOZ_PROFILER_HELP")) {
     PrintUsageThenExit(0); 
@@ -2131,14 +2131,14 @@ profiler_init(void* aStackTop)
 
     locked_profiler_start(lock, entries, interval,
                           features, MOZ_ARRAY_LENGTH(features),
-                          threadFilters, MOZ_ARRAY_LENGTH(threadFilters));
+                          filters, MOZ_ARRAY_LENGTH(filters));
   }
 
   
   
   NotifyProfilerStarted(PROFILER_DEFAULT_ENTRIES, PROFILER_DEFAULT_INTERVAL,
                         features, MOZ_ARRAY_LENGTH(features),
-                        threadFilters, MOZ_ARRAY_LENGTH(threadFilters));
+                        filters, MOZ_ARRAY_LENGTH(filters));
 }
 
 static void
