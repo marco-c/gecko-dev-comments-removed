@@ -2,6 +2,7 @@
 
 
 
+use cssparser::Color;
 use properties::DeclaredValue;
 use style_traits::ToCss;
 use values::specified::{BorderStyle, CSSColor};
@@ -84,7 +85,7 @@ fn serialize_directional_border<W, I,>(dest: &mut W,
     };
 
     match *color {
-        DeclaredValue::Value(ref color) => {
+        DeclaredValue::Value(ref color) if color.parsed != Color::CurrentColor => {
             try!(write!(dest, " "));
             color.to_css(dest)
         },
