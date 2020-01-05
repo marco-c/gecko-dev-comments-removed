@@ -37,13 +37,8 @@ use style::computed_values::{text_overflow, vertical_align, white_space};
 use style::context::{SharedStyleContext, StyleContext};
 use style::logical_geometry::{LogicalRect, LogicalSize, WritingMode};
 use style::properties::ServoComputedValues;
-use style::values::computed::LengthOrPercentage;
 use text;
 use unicode_bidi;
-
-
-static FONT_SUBSCRIPT_OFFSET_RATIO: f32 = 0.20;
-static FONT_SUPERSCRIPT_OFFSET_RATIO: f32 = 0.34;
 
 
 
@@ -159,30 +154,21 @@ pub struct Line {
     pub green_zone: LogicalSize<Au>,
 
     
-    pub minimum_block_size_above_baseline: Au,
+    pub minimum_metrics: LineMetrics,
 
     
-    pub minimum_depth_below_baseline: Au,
-
-    
-    pub inline_metrics: InlineMetrics,
+    pub metrics: LineMetrics,
 }
 
 impl Line {
-    fn new(writing_mode: WritingMode,
-           minimum_block_size_above_baseline: Au,
-           minimum_depth_below_baseline: Au)
-           -> Line {
+    fn new(writing_mode: WritingMode, minimum_metrics: &LineMetrics) -> Line {
         Line {
             range: Range::empty(),
             visual_runs: None,
             bounds: LogicalRect::zero(writing_mode),
             green_zone: LogicalSize::zero(writing_mode),
-            minimum_block_size_above_baseline: minimum_block_size_above_baseline,
-            minimum_depth_below_baseline: minimum_depth_below_baseline,
-            inline_metrics: InlineMetrics::new(minimum_block_size_above_baseline,
-                                               minimum_depth_below_baseline,
-                                               minimum_block_size_above_baseline),
+            minimum_metrics: *minimum_metrics,
+            metrics: *minimum_metrics,
         }
     }
 
@@ -190,29 +176,31 @@ impl Line {
     
     
     
-    fn new_inline_metrics(&self, new_fragment: &Fragment, layout_context: &LayoutContext)
-                          -> InlineMetrics {
+    fn new_metrics_for_fragment(&self, new_fragment: &Fragment, layout_context: &LayoutContext)
+                                -> LineMetrics {
         if !new_fragment.is_vertically_aligned_to_top_or_bottom() {
-            let fragment_inline_metrics = new_fragment.inline_metrics(layout_context);
-            self.inline_metrics.max(&fragment_inline_metrics)
+            let fragment_inline_metrics =
+                new_fragment.aligned_inline_metrics(layout_context, &self.minimum_metrics, None);
+            self.metrics.new_metrics_for_fragment(&fragment_inline_metrics)
         } else {
-            self.inline_metrics
+            self.metrics
         }
     }
 
     
     
     
-    fn new_block_size(&self,
-                      new_fragment: &Fragment,
-                      new_inline_metrics: &InlineMetrics,
-                      layout_context: &LayoutContext)
-                      -> Au {
+    fn new_block_size_for_fragment(&self,
+                                   new_fragment: &Fragment,
+                                   new_line_metrics: &LineMetrics,
+                                   layout_context: &LayoutContext)
+                                   -> Au {
         let new_block_size = if new_fragment.is_vertically_aligned_to_top_or_bottom() {
-            max(new_fragment.inline_metrics(layout_context).block_size(),
-                self.minimum_block_size_above_baseline + self.minimum_depth_below_baseline)
+            max(new_fragment.aligned_inline_metrics(layout_context, &self.minimum_metrics, None)
+                            .space_needed(),
+                self.minimum_metrics.space_needed())
         } else {
-            new_inline_metrics.block_size()
+            new_line_metrics.space_needed()
         };
         max(self.bounds.size.block, new_block_size)
     }
@@ -244,33 +232,23 @@ struct LineBreaker {
     
     first_line_indentation: Au,
     
-    
-    minimum_block_size_above_baseline: Au,
-    
-    
-    minimum_depth_below_baseline: Au,
+    minimum_metrics: LineMetrics,
 }
 
 impl LineBreaker {
     
-    fn new(float_context: Floats,
-           first_line_indentation: Au,
-           minimum_block_size_above_baseline: Au,
-           minimum_depth_below_baseline: Au)
+    fn new(float_context: Floats, first_line_indentation: Au, minimum_line_metrics: &LineMetrics)
            -> LineBreaker {
         LineBreaker {
             new_fragments: Vec::new(),
             work_list: VecDeque::new(),
-            pending_line: Line::new(float_context.writing_mode,
-                                    minimum_block_size_above_baseline,
-                                    minimum_depth_below_baseline),
+            pending_line: Line::new(float_context.writing_mode, minimum_line_metrics),
             floats: float_context,
             lines: Vec::new(),
             cur_b: Au(0),
             last_known_line_breaking_opportunity: None,
             first_line_indentation: first_line_indentation,
-            minimum_block_size_above_baseline: minimum_block_size_above_baseline,
-            minimum_depth_below_baseline: minimum_depth_below_baseline,
+            minimum_metrics: *minimum_line_metrics,
         }
     }
 
@@ -285,9 +263,8 @@ impl LineBreaker {
     
     fn reset_line(&mut self) -> Line {
         self.last_known_line_breaking_opportunity = None;
-        mem::replace(&mut self.pending_line, Line::new(self.floats.writing_mode,
-                                                       self.minimum_block_size_above_baseline,
-                                                       self.minimum_depth_below_baseline))
+        mem::replace(&mut self.pending_line,
+                     Line::new(self.floats.writing_mode, &self.minimum_metrics))
     }
 
     
@@ -574,10 +551,11 @@ impl LineBreaker {
         
         
         let green_zone = self.pending_line.green_zone;
-        let new_inline_metrics = self.pending_line.new_inline_metrics(&fragment, layout_context);
-        let new_block_size = self.pending_line.new_block_size(&fragment,
-                                                              &new_inline_metrics,
-                                                              layout_context);
+        let new_line_metrics = self.pending_line.new_metrics_for_fragment(&fragment,
+                                                                          layout_context);
+        let new_block_size = self.pending_line.new_block_size_for_fragment(&fragment,
+                                                                           &new_line_metrics,
+                                                                           layout_context);
         if new_block_size > green_zone.block {
             
             if !self.avoid_floats(flow, fragment, new_block_size) {
@@ -747,14 +725,13 @@ impl LineBreaker {
 
         if !fragment.is_inline_absolute() && !fragment.is_hypothetical() {
             self.pending_line.bounds.size.inline = self.pending_line.bounds.size.inline +
-                fragment.margin_box_inline_size() +
-                indentation;
-            self.pending_line.inline_metrics =
-                self.pending_line.new_inline_metrics(&fragment, layout_context);
+                fragment.margin_box_inline_size() + indentation;
+            self.pending_line.metrics = self.pending_line.new_metrics_for_fragment(&fragment,
+                                                                                   layout_context);
             self.pending_line.bounds.size.block =
-                self.pending_line.new_block_size(&fragment,
-                                                 &self.pending_line.inline_metrics,
-                                                 layout_context);
+                self.pending_line.new_block_size_for_fragment(&fragment,
+                                                              &self.pending_line.metrics,
+                                                              layout_context);
         }
 
         self.new_fragments.push(fragment);
@@ -865,12 +842,7 @@ pub struct InlineFlow {
     pub lines: Vec<Line>,
 
     
-    
-    pub minimum_block_size_above_baseline: Au,
-
-    
-    
-    pub minimum_depth_below_baseline: Au,
+    pub minimum_line_metrics: LineMetrics,
 
     
     
@@ -884,8 +856,7 @@ impl InlineFlow {
             base: BaseFlow::new(None, writing_mode, ForceNonfloatedFlag::ForceNonfloated),
             fragments: fragments,
             lines: Vec::new(),
-            minimum_block_size_above_baseline: Au(0),
-            minimum_depth_below_baseline: Au(0),
+            minimum_line_metrics: LineMetrics::new(Au(0), Au(0)),
             first_line_indentation: Au(0),
         };
 
@@ -1050,74 +1021,36 @@ impl InlineFlow {
     
     fn set_block_fragment_positions(fragments: &mut InlineFragments,
                                     line: &Line,
-                                    minimum_block_size_above_baseline: Au,
-                                    minimum_depth_below_baseline: Au,
+                                    minimum_line_metrics: &LineMetrics,
                                     layout_context: &LayoutContext) {
         for fragment_index in line.range.each_index() {
-            
-            
-            
-            
-            
             let fragment = fragments.get_mut(fragment_index.to_usize());
-            let fragment_inline_metrics = fragment.inline_metrics(layout_context);
-            let line_block_metrics = LineBlockMetrics::new(line, fragment, layout_context);
-            let mut block_start = line_block_metrics.start +
-                line_block_metrics.size_above_baseline -
-                fragment_inline_metrics.ascent;
+            let line_metrics = LineMetrics::for_line_and_fragment(line, fragment, layout_context);
+            let inline_metrics = fragment.aligned_inline_metrics(layout_context,
+                                                                 minimum_line_metrics,
+                                                                 Some(&line_metrics));
 
-            for style in fragment.inline_styles() {
-                match style.get_box().vertical_align {
-                    vertical_align::T::baseline => {}
-                    vertical_align::T::middle => {}
-                    vertical_align::T::sub => {
-                        let sub_offset =
-                            (minimum_block_size_above_baseline +
-                             minimum_depth_below_baseline).scale_by(FONT_SUBSCRIPT_OFFSET_RATIO);
-                        block_start = block_start + sub_offset
-                    }
-                    vertical_align::T::super_ => {
-                        let super_offset =
-                            (minimum_block_size_above_baseline +
-                             minimum_depth_below_baseline).scale_by(FONT_SUPERSCRIPT_OFFSET_RATIO);
-                        block_start = block_start - super_offset
-                    }
-                    vertical_align::T::text_top => {
-                        block_start = line_block_metrics.start +
-                            line_block_metrics.size_above_baseline -
-                            minimum_block_size_above_baseline
-                    }
-                    vertical_align::T::text_bottom => {
-                        block_start = line_block_metrics.start +
-                            line_block_metrics.size_above_baseline +
-                            minimum_depth_below_baseline -
-                            fragment.border_box.size.block
-                    }
-                    vertical_align::T::top => {
-                        block_start = line_block_metrics.start
-                    }
-                    vertical_align::T::bottom => {
-                        block_start = line_block_metrics.start + line_block_metrics.size -
-                            fragment.border_box.size.block
-                    }
-                    vertical_align::T::LengthOrPercentage(LengthOrPercentage::Length(length)) => {
-                        block_start = block_start - length
-                    }
-                    vertical_align::T::LengthOrPercentage(LengthOrPercentage::Percentage(
-                            percentage)) => {
-                        let line_height = fragment.calculate_line_height(layout_context);
-                        let length = line_height.scale_by(percentage);
-                        block_start = block_start - length
-                    }
-                    vertical_align::T::LengthOrPercentage(LengthOrPercentage::Calc(calc)) => {
-                        let line_height = fragment.calculate_line_height(layout_context);
-                        let percentage_length = line_height.scale_by(calc.percentage());
-                        block_start = block_start - percentage_length - calc.length()
-                    }
-                }
+            
+            fragment.border_box.start.b = line.bounds.start.b + line_metrics.space_above_baseline -
+                inline_metrics.ascent;
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            if !fragment.is_replaced_or_inline_block() {
+                fragment.border_box.start.b -= fragment.border_padding.block_start
             }
 
-            fragment.border_box.start.b = block_start;
             fragment.update_late_computed_block_position_if_necessary();
         }
     }
@@ -1125,15 +1058,25 @@ impl InlineFlow {
     
     
     
+    pub fn minimum_line_metrics(&self, font_context: &mut FontContext, style: &ServoComputedValues)
+                                -> LineMetrics {
+        InlineFlow::minimum_line_metrics_for_fragments(&self.fragments.fragments,
+                                                       font_context,
+                                                       style)
+    }
+
     
-    pub fn compute_minimum_ascent_and_descent(&self,
+    
+    
+    
+    pub fn minimum_line_metrics_for_fragments(fragments: &[Fragment],
                                               font_context: &mut FontContext,
                                               style: &ServoComputedValues)
-                                              -> (Au, Au) {
+                                              -> LineMetrics {
         
         
-        if self.fragments.fragments.iter().all(|fragment| fragment.is_hypothetical()) {
-            return (Au(0), Au(0))
+        if fragments.iter().all(Fragment::is_hypothetical) {
+            return LineMetrics::new(Au(0), Au(0))
         }
 
         let font_style = style.get_font_arc();
@@ -1141,86 +1084,73 @@ impl InlineFlow {
         let line_height = text::line_height_from_style(style, &font_metrics);
         let inline_metrics = InlineMetrics::from_font_metrics(&font_metrics, line_height);
 
-        let mut block_size_above_baseline = Au(0);
-        let mut depth_below_baseline = Au(i32::MIN);
+        let mut line_metrics = LineMetrics::new(Au(0), Au(i32::MIN));
         let mut largest_block_size_for_top_fragments = Au(0);
         let mut largest_block_size_for_bottom_fragments = Au(0);
 
         
         
-        update_inline_metrics(&inline_metrics,
-                              style.get_box().display,
-                              vertical_align::T::baseline,
-                              &mut block_size_above_baseline,
-                              &mut depth_below_baseline,
-                              &mut largest_block_size_for_top_fragments,
-                              &mut largest_block_size_for_bottom_fragments);
+        update_line_metrics_for_fragment(&mut line_metrics,
+                                         &inline_metrics,
+                                         style.get_box().display,
+                                         vertical_align::T::baseline,
+                                         &mut largest_block_size_for_top_fragments,
+                                         &mut largest_block_size_for_bottom_fragments);
 
         
         
-        for frag in &self.fragments.fragments {
-            if let Some(ref inline_context) = frag.inline_context {
-                for node in &inline_context.nodes {
-                    let font_style = node.style.get_font_arc();
-                    let font_metrics = text::font_metrics_for_style(font_context, font_style);
-                    let line_height = text::line_height_from_style(&*node.style, &font_metrics);
-                    let inline_metrics = InlineMetrics::from_font_metrics(&font_metrics,
-                                                                          line_height);
+        for inline_context in fragments.iter()
+                                       .filter_map(|fragment| fragment.inline_context.as_ref()) {
+            for node in &inline_context.nodes {
+                let font_style = node.style.get_font_arc();
+                let font_metrics = text::font_metrics_for_style(font_context, font_style);
+                let line_height = text::line_height_from_style(&*node.style, &font_metrics);
+                let inline_metrics = InlineMetrics::from_font_metrics(&font_metrics, line_height);
 
-                    update_inline_metrics(&inline_metrics,
-                                          node.style.get_box().display,
-                                          node.style.get_box().vertical_align,
-                                          &mut block_size_above_baseline,
-                                          &mut depth_below_baseline,
-                                          &mut largest_block_size_for_top_fragments,
-                                          &mut largest_block_size_for_bottom_fragments);
+                update_line_metrics_for_fragment(&mut line_metrics,
+                                                 &inline_metrics,
+                                                 node.style.get_box().display,
+                                                 node.style.get_box().vertical_align,
+                                                 &mut largest_block_size_for_top_fragments,
+                                                 &mut largest_block_size_for_bottom_fragments);
 
-                }
             }
         }
 
-        block_size_above_baseline =
-            max(block_size_above_baseline,
-                largest_block_size_for_bottom_fragments - max(depth_below_baseline, Au(0)));
-        depth_below_baseline =
-            max(depth_below_baseline,
-                largest_block_size_for_top_fragments - block_size_above_baseline);
+        line_metrics.space_above_baseline =
+            max(line_metrics.space_above_baseline,
+                largest_block_size_for_bottom_fragments - max(line_metrics.space_below_baseline,
+                                                              Au(0)));
+        line_metrics.space_below_baseline =
+            max(line_metrics.space_below_baseline,
+                largest_block_size_for_top_fragments - line_metrics.space_above_baseline);
 
-        return (block_size_above_baseline, depth_below_baseline);
+        return line_metrics;
 
-        fn update_inline_metrics(inline_metrics: &InlineMetrics,
-                                 display_value: display::T,
-                                 vertical_align_value: vertical_align::T,
-                                 block_size_above_baseline: &mut Au,
-                                 depth_below_baseline: &mut Au,
-                                 largest_block_size_for_top_fragments: &mut Au,
-                                 largest_block_size_for_bottom_fragments: &mut Au) {
+        fn update_line_metrics_for_fragment(line_metrics: &mut LineMetrics,
+                                            inline_metrics: &InlineMetrics,
+                                            display_value: display::T,
+                                            vertical_align_value: vertical_align::T,
+                                            largest_block_size_for_top_fragments: &mut Au,
+                                            largest_block_size_for_bottom_fragments: &mut Au) {
             match (display_value, vertical_align_value) {
                 (display::T::inline, vertical_align::T::top) |
                 (display::T::block, vertical_align::T::top) |
                 (display::T::inline_block, vertical_align::T::top) if
-                        inline_metrics.block_size_above_baseline >= Au(0) => {
-                    *largest_block_size_for_top_fragments =
-                        max(*largest_block_size_for_top_fragments,
-                            inline_metrics.block_size_above_baseline +
-                            inline_metrics.depth_below_baseline)
+                        inline_metrics.space_above_baseline >= Au(0) => {
+                    *largest_block_size_for_top_fragments = max(
+                        *largest_block_size_for_top_fragments,
+                        inline_metrics.space_above_baseline + inline_metrics.space_below_baseline)
                 }
                 (display::T::inline, vertical_align::T::bottom) |
                 (display::T::block, vertical_align::T::bottom) |
                 (display::T::inline_block, vertical_align::T::bottom) if
-                        inline_metrics.depth_below_baseline >= Au(0) => {
-                    *largest_block_size_for_bottom_fragments =
-                        max(*largest_block_size_for_bottom_fragments,
-                            inline_metrics.block_size_above_baseline +
-                            inline_metrics.depth_below_baseline)
+                        inline_metrics.space_below_baseline >= Au(0) => {
+                    *largest_block_size_for_bottom_fragments = max(
+                        *largest_block_size_for_bottom_fragments,
+                        inline_metrics.space_above_baseline + inline_metrics.space_below_baseline)
                 }
-                _ => {
-                    *block_size_above_baseline =
-                        max(*block_size_above_baseline,
-                            inline_metrics.block_size_above_baseline);
-                    *depth_below_baseline = max(*depth_below_baseline,
-                                                inline_metrics.depth_below_baseline);
-                }
+                _ => *line_metrics = line_metrics.new_metrics_for_fragment(inline_metrics),
             }
         }
     }
@@ -1284,7 +1214,7 @@ impl InlineFlow {
 
     pub fn baseline_offset_of_last_line(&self) -> Option<Au> {
         self.last_line_containing_real_fragments().map(|line| {
-            line.bounds.start.b + line.bounds.size.block - line.inline_metrics.depth_below_baseline
+            line.bounds.start.b + line.bounds.size.block - line.metrics.space_below_baseline
         })
     }
 
@@ -1476,8 +1406,7 @@ impl Flow for InlineFlow {
         
         let mut scanner = LineBreaker::new(self.base.floats.clone(),
                                            indentation,
-                                           self.minimum_block_size_above_baseline,
-                                           self.minimum_depth_below_baseline);
+                                           &self.minimum_line_metrics);
         scanner.scan_for_lines(self, layout_context);
 
         
@@ -1493,8 +1422,7 @@ impl Flow for InlineFlow {
             
             InlineFlow::set_block_fragment_positions(&mut self.fragments,
                                                      line,
-                                                     self.minimum_block_size_above_baseline,
-                                                     self.minimum_depth_below_baseline,
+                                                     &self.minimum_line_metrics,
                                                      layout_context);
 
             
@@ -1851,20 +1779,26 @@ fn inline_contexts_are_equal(inline_context_a: &Option<InlineFragmentContext>,
 
 
 
+
+
 #[derive(Clone, Copy, Debug, RustcEncodable)]
 pub struct InlineMetrics {
-    pub block_size_above_baseline: Au,
-    pub depth_below_baseline: Au,
+    
+    pub space_above_baseline: Au,
+    
+    pub space_below_baseline: Au,
+    
+    
+    
     pub ascent: Au,
 }
 
 impl InlineMetrics {
     
-    pub fn new(block_size_above_baseline: Au, depth_below_baseline: Au, ascent: Au)
-               -> InlineMetrics {
+    pub fn new(space_above_baseline: Au, space_below_baseline: Au, ascent: Au) -> InlineMetrics {
         InlineMetrics {
-            block_size_above_baseline: block_size_above_baseline,
-            depth_below_baseline: depth_below_baseline,
+            space_above_baseline: space_above_baseline,
+            space_below_baseline: space_below_baseline,
             ascent: ascent,
         }
     }
@@ -1873,29 +1807,22 @@ impl InlineMetrics {
     #[inline]
     pub fn from_font_metrics(font_metrics: &FontMetrics, line_height: Au) -> InlineMetrics {
         let leading = line_height - (font_metrics.ascent + font_metrics.descent);
+
         
         
         
         
         let half_leading = leading.scale_by(0.5);
         InlineMetrics {
-            block_size_above_baseline: font_metrics.ascent + half_leading,
-            depth_below_baseline: font_metrics.descent + leading - half_leading,
+            space_above_baseline: font_metrics.ascent + half_leading,
+            space_below_baseline: font_metrics.descent + leading - half_leading,
             ascent: font_metrics.ascent,
         }
     }
 
-    pub fn block_size(&self) -> Au {
-        self.block_size_above_baseline + self.depth_below_baseline
-    }
-
-    pub fn max(&self, other: &InlineMetrics) -> InlineMetrics {
-        InlineMetrics {
-            block_size_above_baseline: max(self.block_size_above_baseline,
-                                           other.block_size_above_baseline),
-            depth_below_baseline: max(self.depth_below_baseline, other.depth_below_baseline),
-            ascent: max(self.ascent, other.ascent),
-        }
+    
+    fn space_needed(&self) -> Au {
+        self.space_above_baseline + self.space_below_baseline
     }
 }
 
@@ -1905,31 +1832,55 @@ enum LineFlushMode {
     Flush,
 }
 
-struct LineBlockMetrics {
-    start: Au,
-    size: Au,
-    size_above_baseline: Au,
+#[derive(Copy, Clone, Debug, RustcEncodable)]
+pub struct LineMetrics {
+    pub space_above_baseline: Au,
+    pub space_below_baseline: Au,
 }
 
-impl LineBlockMetrics {
-    fn new(line: &Line, fragment: &Fragment, layout_context: &LayoutContext) -> LineBlockMetrics {
+impl LineMetrics {
+    pub fn new(space_above_baseline: Au, space_below_baseline: Au) -> LineMetrics {
+        LineMetrics {
+            space_above_baseline: space_above_baseline,
+            space_below_baseline: space_below_baseline,
+        }
+    }
+
+    
+    
+    fn new_metrics_for_fragment(&self, fragment_inline_metrics: &InlineMetrics) -> LineMetrics {
+        LineMetrics {
+            space_above_baseline: max(self.space_above_baseline,
+                                      fragment_inline_metrics.space_above_baseline),
+            space_below_baseline: max(self.space_below_baseline,
+                                      fragment_inline_metrics.space_below_baseline),
+        }
+    }
+
+    fn for_line_and_fragment(line: &Line, fragment: &Fragment, layout_context: &LayoutContext)
+                             -> LineMetrics {
         if !fragment.is_hypothetical() {
-            return LineBlockMetrics {
-                start: line.bounds.start.b,
-                size: line.bounds.size.block,
-                size_above_baseline: line.inline_metrics.block_size_above_baseline,
+            let space_above_baseline = line.metrics.space_above_baseline;
+            return LineMetrics {
+                space_above_baseline: space_above_baseline,
+                space_below_baseline: line.bounds.size.block - space_above_baseline,
             }
         }
 
-        let hypothetical_inline_metrics = line.new_inline_metrics(fragment, layout_context);
-        let hypothetical_block_size = line.new_block_size(fragment,
-                                                          &hypothetical_inline_metrics,
-                                                          layout_context);
-        LineBlockMetrics {
-            start: line.bounds.start.b,
-            size: hypothetical_block_size,
-            size_above_baseline: hypothetical_inline_metrics.block_size_above_baseline,
+        let hypothetical_line_metrics = line.new_metrics_for_fragment(fragment, layout_context);
+        let hypothetical_block_size = line.new_block_size_for_fragment(fragment,
+                                                                       &hypothetical_line_metrics,
+                                                                       layout_context);
+        let hypothetical_space_above_baseline = hypothetical_line_metrics.space_above_baseline;
+        LineMetrics {
+            space_above_baseline: hypothetical_space_above_baseline,
+            space_below_baseline: hypothetical_block_size - hypothetical_space_above_baseline,
         }
+    }
+
+    
+    pub fn space_needed(&self) -> Au {
+        self.space_above_baseline + self.space_below_baseline
     }
 }
 
