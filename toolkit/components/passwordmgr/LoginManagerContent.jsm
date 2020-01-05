@@ -938,7 +938,10 @@ var LoginManagerContent = {
 
     try {
       
-      if (foundLogins.length == 0) {
+      
+      if (foundLogins.length == 0 &&
+          (InsecurePasswordUtils.isFormSecure(form) ||
+          !LoginHelper.showInsecureFieldWarning)) {
         
         recordAutofillResult(AUTOFILL_RESULT.NO_SAVED_LOGINS);
         return;
@@ -984,6 +987,24 @@ var LoginManagerContent = {
       }
 
       
+      
+      
+      
+      
+      if (usernameField) {
+        this._formFillService.markAsLoginManagerField(usernameField);
+      }
+
+      
+      
+      
+      if (foundLogins.length == 0) {
+        
+        recordAutofillResult(AUTOFILL_RESULT.NO_SAVED_LOGINS);
+        return;
+      }
+
+      
       if (!userTriggered && !LoginHelper.insecureAutofill &&
           !InsecurePasswordUtils.isFormSecure(form)) {
         log("not filling form since it's insecure");
@@ -1024,13 +1045,6 @@ var LoginManagerContent = {
         log("form not filled, none of the logins fit in the field");
         recordAutofillResult(AUTOFILL_RESULT.NO_LOGINS_FIT);
         return;
-      }
-
-      
-      
-      
-      if (usernameField) {
-        this._formFillService.markAsLoginManagerField(usernameField);
       }
 
       
