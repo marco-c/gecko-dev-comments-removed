@@ -427,7 +427,8 @@ impl EventTarget {
             
             unsafe {
                 let _ac = JSAutoCompartment::new(cx, self.reflector().get_jsobject().get());
-                report_pending_exception(cx);
+                
+                report_pending_exception(cx, false);
             }
             
             return None;
