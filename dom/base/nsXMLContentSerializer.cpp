@@ -672,10 +672,6 @@ nsXMLContentSerializer::SerializeAttr(const nsAString& aPrefix,
           break;
         }
       }
-      
-      if (bIncludesDouble && bIncludesSingle) {
-        break;
-      }
     }
 
     
