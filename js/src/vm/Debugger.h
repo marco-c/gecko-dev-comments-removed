@@ -7,13 +7,13 @@
 #ifndef vm_Debugger_h
 #define vm_Debugger_h
 
-#include "mozilla/DoublyLinkedList.h"
 #include "mozilla/GuardObjects.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/Range.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/Vector.h"
 
+#include "jsclist.h"
 #include "jscntxt.h"
 #include "jscompartment.h"
 #include "jsweakmap.h"
@@ -258,7 +258,6 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
 {
     friend class Breakpoint;
     friend class DebuggerMemory;
-    friend class JSRuntime::GlobalObjectWatchersSiblingAccess<Debugger>;
     friend class SavedStacks;
     friend class ScriptedOnStepHandler;
     friend class ScriptedOnPopHandler;
@@ -386,27 +385,7 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
     
     bool collectCoverageInfo;
 
-    template<typename T>
-    struct DebuggerSiblingAccess {
-      static T* GetNext(T* elm) {
-        return elm->debuggerLink.mNext;
-      }
-      static void SetNext(T* elm, T* next) {
-        elm->debuggerLink.mNext = next;
-      }
-      static T* GetPrev(T* elm) {
-        return elm->debuggerLink.mPrev;
-      }
-      static void SetPrev(T* elm, T* prev) {
-        elm->debuggerLink.mPrev = prev;
-      }
-    };
-
-    
-    using BreakpointList =
-        mozilla::DoublyLinkedList<js::Breakpoint,
-                                  DebuggerSiblingAccess<js::Breakpoint>>;
-    BreakpointList breakpoints;
+    JSCList breakpoints;                
 
     
     
@@ -469,7 +448,8 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
 
 
 
-    mozilla::DoublyLinkedListElement<Debugger> onNewGlobalObjectWatchersLink;
+
+    JSCList onNewGlobalObjectWatchersLink;
 
     
 
@@ -808,6 +788,8 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
                                              MutableHandleDebuggerFrame result);
 
     inline Breakpoint* firstBreakpoint() const;
+
+    static inline Debugger* fromOnNewGlobalObjectWatchersLink(JSCList* link);
 
     static MOZ_MUST_USE bool replaceFrameGuts(JSContext* cx, AbstractFramePtr from,
                                               AbstractFramePtr to,
@@ -1580,27 +1562,7 @@ class BreakpointSite {
   private:
     Type type_;
 
-    template<typename T>
-    struct SiteSiblingAccess {
-      static T* GetNext(T* elm) {
-        return elm->siteLink.mNext;
-      }
-      static void SetNext(T* elm, T* next) {
-        elm->siteLink.mNext = next;
-      }
-      static T* GetPrev(T* elm) {
-        return elm->siteLink.mPrev;
-      }
-      static void SetPrev(T* elm, T* prev) {
-        elm->siteLink.mPrev = prev;
-      }
-    };
-
-    
-    using BreakpointList =
-        mozilla::DoublyLinkedList<js::Breakpoint,
-                                  SiteSiblingAccess<js::Breakpoint>>;
-    BreakpointList breakpoints;
+    JSCList breakpoints;  
     size_t enabledCount;  
 
   protected:
@@ -1644,7 +1606,6 @@ class BreakpointSite {
 class Breakpoint {
     friend struct ::JSCompartment;
     friend class Debugger;
-    friend class BreakpointSite;
 
   public:
     Debugger * const debugger;
@@ -1652,14 +1613,12 @@ class Breakpoint {
   private:
     
     js::PreBarrieredObject handler;
-
-    
-
-
-    mozilla::DoublyLinkedListElement<Breakpoint> debuggerLink;
-    mozilla::DoublyLinkedListElement<Breakpoint> siteLink;
+    JSCList debuggerLinks;
+    JSCList siteLinks;
 
   public:
+    static Breakpoint* fromDebuggerLinks(JSCList* links);
+    static Breakpoint* fromSiteLinks(JSCList* links);
     Breakpoint(Debugger* debugger, BreakpointSite* site, JSObject* handler);
     void destroy(FreeOp* fop);
     Breakpoint* nextInDebugger();
@@ -1737,9 +1696,15 @@ Breakpoint::asWasm()
 Breakpoint*
 Debugger::firstBreakpoint() const
 {
-    if (breakpoints.isEmpty())
+    if (JS_CLIST_IS_EMPTY(&breakpoints))
         return nullptr;
-    return &(*breakpoints.begin());
+    return Breakpoint::fromDebuggerLinks(JS_NEXT_LINK(&breakpoints));
+}
+
+ Debugger*
+Debugger::fromOnNewGlobalObjectWatchersLink(JSCList* link) {
+    char* p = reinterpret_cast<char*>(link);
+    return reinterpret_cast<Debugger*>(p - offsetof(Debugger, onNewGlobalObjectWatchersLink));
 }
 
 const js::GCPtrNativeObject&
@@ -1800,7 +1765,7 @@ Debugger::onNewGlobalObject(JSContext* cx, Handle<GlobalObject*> global)
 #ifdef DEBUG
     global->compartment()->firedOnNewGlobalObject = true;
 #endif
-    if (!cx->runtime()->onNewGlobalObjectWatchers().isEmpty())
+    if (!JS_CLIST_IS_EMPTY(&cx->runtime()->onNewGlobalObjectWatchers()))
         Debugger::slowPathOnNewGlobalObject(cx, global);
 }
 
