@@ -62,7 +62,7 @@ public:
 
   
   
-  void Register(MediaDecoder* aDecoder);
+  nsresult Register(MediaDecoder* aDecoder);
 
   
   
