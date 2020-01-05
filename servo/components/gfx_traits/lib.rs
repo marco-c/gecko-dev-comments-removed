@@ -105,6 +105,10 @@ impl LayerId {
         let LayerId(layer_type, id, _) = *self;
         LayerId(layer_type, id, 0)
     }
+
+    pub fn kind(&self) -> LayerType {
+        self.0
+    }
 }
 
 
