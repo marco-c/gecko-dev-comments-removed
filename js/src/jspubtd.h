@@ -64,7 +64,7 @@ enum JSVersion {
 
 
 enum JSType {
-    JSTYPE_VOID,                
+    JSTYPE_UNDEFINED,           
     JSTYPE_OBJECT,              
     JSTYPE_FUNCTION,            
     JSTYPE_STRING,              
