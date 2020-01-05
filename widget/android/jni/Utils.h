@@ -53,11 +53,6 @@ enum class DispatchTarget
     
     
     GECKO,
-    
-    
-    
-    
-    GECKO_PRIORITY,
 };
 
 
@@ -138,7 +133,7 @@ struct AbstractCall
     virtual void operator()() = 0;
 };
 
-void DispatchToGeckoPriorityQueue(UniquePtr<AbstractCall>&& aCall);
+void DispatchToGeckoThread(UniquePtr<AbstractCall>&& aCall);
 
 
 

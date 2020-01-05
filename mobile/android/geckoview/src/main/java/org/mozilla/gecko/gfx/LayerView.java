@@ -72,15 +72,15 @@ public class LayerView extends FrameLayout {
         public Compositor() {
         }
 
-        @WrapForJNI(calledFrom = "ui", dispatchTo = "gecko_priority")
+        @WrapForJNI(calledFrom = "ui", dispatchTo = "gecko")
         @Override protected native void disposeNative();
 
         
-        @WrapForJNI(calledFrom = "any", dispatchTo = "gecko_priority")
+        @WrapForJNI(calledFrom = "any", dispatchTo = "gecko")
          native void attachToJava(GeckoLayerClient layerClient,
                                                NativePanZoomController npzc);
 
-        @WrapForJNI(calledFrom = "any", dispatchTo = "gecko_priority")
+        @WrapForJNI(calledFrom = "any", dispatchTo = "gecko")
          native void onSizeChanged(int windowWidth, int windowHeight,
                                                 int screenWidth, int screenHeight);
 
