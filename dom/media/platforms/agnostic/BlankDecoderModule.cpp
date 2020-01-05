@@ -37,7 +37,12 @@ public:
     
     
     
-    auto frame = MakeUniqueFallible<uint8_t[]>(mFrameWidth * mFrameHeight);
+    const CheckedUint32 size = CheckedUint32(mFrameWidth) * mFrameHeight;
+    if (!size.isValid()) {
+      
+      return nullptr;
+    }
+    auto frame = MakeUniqueFallible<uint8_t[]>(size.value());
     if (!frame) {
       return nullptr;
     }
