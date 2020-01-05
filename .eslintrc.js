@@ -7,6 +7,9 @@ module.exports = {
   ],
   "rules": {
     "mozilla/import-globals": "warn",
+
+    
+    "no-unsafe-negation": "error",
   },
   "env": {
     "es6": true

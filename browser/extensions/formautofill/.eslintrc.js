@@ -151,9 +151,6 @@ module.exports = {
     "no-native-reassign": "error",
 
     
-    "no-negated-in-lhs": "error",
-
-    
     "no-nested-ternary": "error",
 
     
