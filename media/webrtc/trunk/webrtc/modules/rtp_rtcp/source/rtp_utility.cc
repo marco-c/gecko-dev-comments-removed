@@ -431,9 +431,19 @@ void RtpHeaderParser::ParseOneByteExtensionHeader(
           
 
           
-          char* ptrRID = new char[len+1];
-          memcpy(ptrRID, ptr, len);
-          ptrRID[len] = '\0';
+          
+          if ( &ptr[len + 1] > ptrRTPDataExtensionEnd ) {
+            LOG(LS_WARNING) << "Extension RtpStreamId data length " << (len + 1)
+              << " is longer than remaining input parse buffer "
+              << static_cast<size_t>(ptrRTPDataExtensionEnd - ptr);
+            return;
+          }
+
+          
+          
+          char* ptrRID = new char[len + 2];
+          memcpy(ptrRID, ptr, len + 1);
+          ptrRID[len + 1] = '\0';
           header->extension.rid = ptrRID;
           header->extension.hasRID = true;
           break;
