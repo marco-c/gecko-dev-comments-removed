@@ -969,14 +969,6 @@ protected:
 
 
 
-
-  void DealWithFailedElement(nsIContent* aSourceElement);
-
-  
-
-
-
-
   void LoadFromSourceChildren();
 
   
