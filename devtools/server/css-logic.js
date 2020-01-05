@@ -249,7 +249,7 @@ CssLogic.prototype = {
       cssSheet._passId = this._passId;
 
       
-      for (let aDomRule of domSheet.cssRules) {
+      for (let aDomRule of cssSheet.getCssRules()) {
         if (aDomRule.type == CSSRule.IMPORT_RULE &&
             aDomRule.styleSheet &&
             this.mediaMatches(aDomRule)) {
@@ -819,9 +819,29 @@ CssSheet.prototype = {
 
 
   get ruleCount() {
-    return this._ruleCount > -1 ?
-      this._ruleCount :
-      this.domSheet.cssRules.length;
+    try {
+      return this._ruleCount > -1 ?
+        this._ruleCount :
+        this.getCssRules().length;
+    } catch (e) {
+      return 0;
+    }
+  },
+
+  
+
+
+
+
+
+
+
+  getCssRules: function () {
+    try {
+      return this.domSheet.cssRules;
+    } catch (e) {
+      return [];
+    }
   },
 
   
