@@ -475,7 +475,7 @@ typedef void
 
 
 struct JSStringFinalizer {
-    void (*finalize)(const JSStringFinalizer* fin, char16_t* chars);
+    void (*finalize)(JS::Zone* zone, const JSStringFinalizer* fin, char16_t* chars);
 };
 
 

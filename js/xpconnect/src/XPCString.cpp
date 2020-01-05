@@ -41,6 +41,10 @@ XPCStringConvert::FreeZoneCache(JS::Zone* zone)
 void
 XPCStringConvert::ClearZoneCache(JS::Zone* zone)
 {
+    
+    
+    
+
     ZoneStringCache* cache = static_cast<ZoneStringCache*>(JS_GetZoneUserData(zone));
     if (cache) {
         cache->mBuffer = nullptr;
@@ -50,7 +54,7 @@ XPCStringConvert::ClearZoneCache(JS::Zone* zone)
 
 
 void
-XPCStringConvert::FinalizeLiteral(const JSStringFinalizer* fin, char16_t* chars)
+XPCStringConvert::FinalizeLiteral(JS::Zone* zone, const JSStringFinalizer* fin, char16_t* chars)
 {
 }
 
@@ -59,9 +63,18 @@ const JSStringFinalizer XPCStringConvert::sLiteralFinalizer =
 
 
 void
-XPCStringConvert::FinalizeDOMString(const JSStringFinalizer* fin, char16_t* chars)
+XPCStringConvert::FinalizeDOMString(JS::Zone* zone, const JSStringFinalizer* fin, char16_t* chars)
 {
     nsStringBuffer* buf = nsStringBuffer::FromData(chars);
+
+    
+    
+    ZoneStringCache* cache = static_cast<ZoneStringCache*>(JS_GetZoneUserData(zone));
+    if (cache && cache->mBuffer == buf) {
+        cache->mBuffer = nullptr;
+        cache->mString = nullptr;
+    }
+
     buf->Release();
 }
 
