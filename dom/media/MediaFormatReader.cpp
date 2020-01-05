@@ -2144,16 +2144,6 @@ MediaFormatReader::Update(TrackType aTrack)
     return;
   }
 
-  if (decoder.HasWaitingPromise() && decoder.HasCompletedDrain()) {
-    
-    
-    
-    
-    
-    
-    decoder.mDrainState = DrainState::None;
-  }
-
   if (UpdateReceivedNewData(aTrack)) {
     LOGV("Nothing more to do");
     return;
@@ -2240,7 +2230,8 @@ MediaFormatReader::Update(TrackType aTrack)
       LOG("Rejecting %s promise: DECODE_ERROR", TrackTypeToStr(aTrack));
       decoder.RejectPromise(decoder.mError.ref(), __func__);
       return;
-    } else if (decoder.HasCompletedDrain()) {
+    } else if (decoder.mDrainState == DrainState::DrainCompleted
+               || decoder.mDrainState == DrainState::DrainAborted) {
       if (decoder.mDemuxEOS) {
         LOG("Rejecting %s promise: EOS", TrackTypeToStr(aTrack));
         decoder.RejectPromise(NS_ERROR_DOM_MEDIA_END_OF_STREAM, __func__);
