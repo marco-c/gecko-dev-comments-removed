@@ -36,6 +36,8 @@ public:
     const mozilla::MediaRawData* aSample);
   static bool HasSPS(const mozilla::MediaRawData* aSample);
   static bool HasSPS(const mozilla::MediaByteBuffer* aExtraData);
+  static bool HasPPS(const mozilla::MediaRawData* aSample);
+  static bool HasPPS(const mozilla::MediaByteBuffer* aExtraData);
   
   static bool IsAVCC(const mozilla::MediaRawData* aSample);
   
