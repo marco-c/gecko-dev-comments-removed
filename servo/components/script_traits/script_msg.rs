@@ -81,4 +81,6 @@ pub enum ScriptMsg {
     SetDocumentState(PipelineId, DocumentState),
     
     SetFinalUrl(PipelineId, Url),
+    
+    Alert(PipelineId, String, IpcSender<bool>),
 }
