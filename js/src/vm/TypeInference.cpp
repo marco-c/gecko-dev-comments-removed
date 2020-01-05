@@ -3970,7 +3970,7 @@ TypeNewScript::maybeAnalyze(JSContext* cx, ObjectGroup* group, bool* regenerate,
 
     
     
-    group->setNewScript(nullptr);
+    group->detachNewScript();
     initialGroup->setNewScript(this);
 
     initializedShape_ = prefixShape;

@@ -3143,18 +3143,23 @@ SetPropIRGenerator::tryAttachAddSlotStub(HandleObjectGroup oldGroup, HandleShape
         }
     }
 
-    
-    
-    
-    if (oldGroup->newScript() && !oldGroup->newScript()->analyzed()) {
-        *isTemporarilyUnoptimizable_ = true;
-        return false;
-    }
-
     ObjOperandId objId = writer.guardIsObject(objValId);
     maybeEmitIdGuard(id);
 
     writer.guardGroup(objId, oldGroup);
+
+    
+    
+    
+    
+    
+    if (oldGroup->newScript() && !oldGroup->newScript()->analyzed()) {
+        writer.guardGroupHasUnanalyzedNewScript(oldGroup);
+        MOZ_ASSERT(IsPreliminaryObject(obj));
+        preliminaryObjectAction_ = PreliminaryObjectAction::NotePreliminary;
+    } else {
+        preliminaryObjectAction_ = PreliminaryObjectAction::Unlink;
+    }
 
     
     ObjOperandId holderId = objId;

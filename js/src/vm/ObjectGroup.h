@@ -139,6 +139,7 @@ class ObjectGroup : public gc::TenuredCell
     
     ObjectGroupFlags flags_;
 
+  public:
     
     enum AddendumKind {
         Addendum_None,
@@ -168,6 +169,7 @@ class ObjectGroup : public gc::TenuredCell
         Addendum_TypeDescr
     };
 
+  private:
     
     
     void* addendum_;
@@ -200,7 +202,11 @@ class ObjectGroup : public gc::TenuredCell
     inline TypeNewScript* newScript();
 
     void setNewScript(TypeNewScript* newScript) {
+        MOZ_ASSERT(newScript);
         setAddendum(Addendum_NewScript, newScript);
+    }
+    void detachNewScript() {
+        setAddendum(Addendum_None, nullptr);
     }
 
     inline PreliminaryObjectArrayWithTemplate* maybePreliminaryObjects();
