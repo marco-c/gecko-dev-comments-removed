@@ -551,6 +551,8 @@ js::ArraySetLength(JSContext* cx, Handle<ArrayObject*> arr, HandleId id,
     
     uint32_t newLen;
     if (attrs & JSPROP_IGNORE_VALUE) {
+        MOZ_ASSERT(value.isUndefined());
+
         
         
         
@@ -560,7 +562,6 @@ js::ArraySetLength(JSContext* cx, Handle<ArrayObject*> arr, HandleId id,
         
 
         
-        MOZ_ASSERT_IF(attrs & JSPROP_IGNORE_VALUE, value.isUndefined());
         if (!CanonicalizeArrayLengthValue(cx, value, &newLen))
             return false;
 

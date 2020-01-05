@@ -1377,13 +1377,16 @@ js::NativeDefineProperty(ExclusiveContext* cx, HandleNativeObject obj, HandleId 
     
     
     
-    
 
     
     if (obj->is<ArrayObject>()) {
         
         Rooted<ArrayObject*> arr(cx, &obj->as<ArrayObject>());
         if (id == NameToId(cx->names().length)) {
+            
+            if (desc_.isAccessorDescriptor())
+                return result.fail(JSMSG_CANT_REDEFINE_PROP);
+
             if (!cx->shouldBeJSContext())
                 return false;
             return ArraySetLength(cx->asJSContext(), arr, id, desc_.attributes(), desc_.value(),
