@@ -300,7 +300,7 @@ HttpChannelParent::DoAsyncOpen(  const URIParams&           aURI,
                                  const nsCString&           requestMethod,
                                  const OptionalIPCStream&   uploadStream,
                                  const bool&                uploadStreamHasHeaders,
-                                 const int16_t&             priority,
+                                 const uint16_t&            priority,
                                  const uint32_t&            classOfService,
                                  const uint8_t&             redirectionLimit,
                                  const bool&                allowPipelining,
@@ -592,16 +592,20 @@ HttpChannelParent::ConnectChannel(const uint32_t& registrarId, const bool& shoul
        "[this=%p, id=%lu]\n", this, registrarId));
   nsCOMPtr<nsIChannel> channel;
   rv = NS_LinkRedirectChannels(registrarId, this, getter_AddRefs(channel));
+  if (NS_FAILED(rv)) {
+    NS_ERROR("Could not find the http channel to connect its IPC parent");
+    
+    
+    
+    Delete();
+    return true;
+  }
+
   
   
   
   mChannel = static_cast<nsHttpChannel*>(channel.get());
   LOG(("  found channel %p, rv=%08x", mChannel.get(), rv));
-
-  if (NS_FAILED(rv)) {
-    NS_ERROR("Could not find the http channel to connect its IPC parent");
-    return false;
-  }
 
   nsCOMPtr<nsINetworkInterceptController> controller;
   NS_QueryNotificationCallbacks(channel, controller);
@@ -621,9 +625,9 @@ HttpChannelParent::ConnectChannel(const uint32_t& registrarId, const bool& shoul
 }
 
 mozilla::ipc::IPCResult
-HttpChannelParent::RecvSetPriority(const int16_t& priority)
+HttpChannelParent::RecvSetPriority(const uint16_t& priority)
 {
-  LOG(("HttpChannelParent::RecvSetPriority [this=%p, priority=%d]\n",
+  LOG(("HttpChannelParent::RecvSetPriority [this=%p, priority=%u]\n",
        this, priority));
 
   if (mChannel) {
