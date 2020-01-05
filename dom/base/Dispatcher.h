@@ -34,6 +34,8 @@ enum class TaskCategory {
 
   
   Other,
+
+  Count
 };
 
 
@@ -52,7 +54,7 @@ public:
   
   
   virtual already_AddRefed<nsIEventTarget>
-  CreateEventTarget(const char* aName, TaskCategory aCategory);
+  EventTargetFor(TaskCategory aCategory) const;
 };
 
 
@@ -66,7 +68,11 @@ public:
   
   
   virtual already_AddRefed<nsIEventTarget>
-  CreateEventTarget(const char* aName, TaskCategory aCategory);
+  EventTargetFor(TaskCategory aCategory) const = 0;
+
+protected:
+  virtual already_AddRefed<nsIEventTarget>
+  CreateEventTargetFor(TaskCategory aCategory);
 };
 
 } 
