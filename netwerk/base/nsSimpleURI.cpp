@@ -813,7 +813,7 @@ nsSimpleURI::SetQuery(const nsACString& aQuery)
     NS_ENSURE_STATE(mMutable);
 
     nsAutoCString query;
-    nsresult rv = NS_EscapeURL(aQuery, esc_Query, query, fallible);
+    nsresult rv = NS_EscapeURL(aQuery, esc_OnlyNonASCII, query, fallible);
     if (NS_FAILED(rv)) {
         return rv;
     }
