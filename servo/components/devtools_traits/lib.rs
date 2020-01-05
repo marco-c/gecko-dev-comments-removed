@@ -36,6 +36,7 @@ use std::net::TcpStream;
 use time::Duration;
 use time::Tm;
 use url::Url;
+use util::mem::HeapSizeOf;
 
 
 
@@ -43,6 +44,14 @@ use url::Url;
 pub struct DevtoolsPageInfo {
     pub title: String,
     pub url: Url
+}
+
+#[derive(Deserialize, HeapSizeOf, Serialize, Clone)]
+pub struct CSSError {
+    pub filename: String,
+    pub line: u32,
+    pub column: u32,
+    pub msg: String
 }
 
 
@@ -78,6 +87,9 @@ pub enum ScriptToDevtoolsControlMsg {
     
     
     FramerateTick(String, f64),
+
+    
+    ReportCSSError(PipelineId, CSSError),
 }
 
 
