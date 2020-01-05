@@ -37,11 +37,30 @@ public:
 
   virtual bool IsTooLong() const;
   virtual bool IsTooShort() const;
+  virtual bool IsValueMissing() const;
 
 protected:
   explicit InputType(mozilla::dom::HTMLInputElement* aInputElement)
     : mInputElement(aInputElement)
   {}
+
+  
+
+
+
+
+
+
+  virtual bool IsMutable() const;
+
+  
+
+
+
+
+
+
+  bool IsValueEmpty() const;
 
   mozilla::dom::HTMLInputElement* mInputElement;
 };
