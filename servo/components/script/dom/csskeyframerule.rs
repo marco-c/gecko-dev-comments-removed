@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::Bindings::CSSStyleRuleBinding;
+use dom::bindings::codegen::Bindings::CSSKeyframeRuleBinding;
 use dom::bindings::js::Root;
 use dom::bindings::reflector::reflect_dom_object;
 use dom::bindings::str::DOMString;
@@ -11,40 +11,40 @@ use dom::cssstylesheet::CSSStyleSheet;
 use dom::window::Window;
 use parking_lot::RwLock;
 use std::sync::Arc;
-use style::stylesheets::StyleRule;
+use style::keyframes::Keyframe;
 use style_traits::ToCss;
 
 #[dom_struct]
-pub struct CSSStyleRule {
+pub struct CSSKeyframeRule {
     cssrule: CSSRule,
     #[ignore_heap_size_of = "Arc"]
-    stylerule: Arc<RwLock<StyleRule>>,
+    keyframerule: Arc<RwLock<Keyframe>>,
 }
 
-impl CSSStyleRule {
-    fn new_inherited(parent: Option<&CSSStyleSheet>, stylerule: Arc<RwLock<StyleRule>>) -> CSSStyleRule {
-        CSSStyleRule {
+impl CSSKeyframeRule {
+    fn new_inherited(parent: Option<&CSSStyleSheet>, keyframerule: Arc<RwLock<Keyframe>>) -> CSSKeyframeRule {
+        CSSKeyframeRule {
             cssrule: CSSRule::new_inherited(parent),
-            stylerule: stylerule,
+            keyframerule: keyframerule,
         }
     }
 
     #[allow(unrooted_must_root)]
     pub fn new(window: &Window, parent: Option<&CSSStyleSheet>,
-               stylerule: Arc<RwLock<StyleRule>>) -> Root<CSSStyleRule> {
-        reflect_dom_object(box CSSStyleRule::new_inherited(parent, stylerule),
+               keyframerule: Arc<RwLock<Keyframe>>) -> Root<CSSKeyframeRule> {
+        reflect_dom_object(box CSSKeyframeRule::new_inherited(parent, keyframerule),
                            window,
-                           CSSStyleRuleBinding::Wrap)
+                           CSSKeyframeRuleBinding::Wrap)
     }
 }
 
-impl SpecificCSSRule for CSSStyleRule {
+impl SpecificCSSRule for CSSKeyframeRule {
     fn ty(&self) -> u16 {
         use dom::bindings::codegen::Bindings::CSSRuleBinding::CSSRuleConstants;
-        CSSRuleConstants::STYLE_RULE
+        CSSRuleConstants::KEYFRAME_RULE
     }
 
     fn get_css(&self) -> DOMString {
-        self.stylerule.read().to_css_string().into()
+        self.keyframerule.read().to_css_string().into()
     }
 }
