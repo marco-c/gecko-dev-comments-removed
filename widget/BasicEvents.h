@@ -129,6 +129,9 @@ public:
   
   
   bool mComposed : 1;
+  
+  
+  bool mComposedInNativeAnonymousContent : 1;
 
   
   inline bool InTargetPhase() const
@@ -343,6 +346,7 @@ protected:
     mFlags.mIsTrusted = aIsTrusted;
     SetDefaultCancelableAndBubbles();
     SetDefaultComposed();
+    SetDefaultComposedInNativeAnonymousContent();
   }
 
   WidgetEvent()
@@ -679,6 +683,20 @@ public:
   void SetComposed(bool aComposed)
   {
     mFlags.mComposed = aComposed;
+  }
+
+  void SetDefaultComposedInNativeAnonymousContent()
+  {
+    
+    
+    
+    
+    
+    
+    mFlags.mComposedInNativeAnonymousContent = mMessage != eLoad &&
+                                               mMessage != eLoadStart &&
+                                               mMessage != eLoadEnd &&
+                                               mMessage != eLoadError;
   }
 };
 
