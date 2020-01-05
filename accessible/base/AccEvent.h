@@ -206,21 +206,11 @@ private:
 
 
 
-class AccTreeMutationEvent : public AccEvent
-{
-public:
-  AccTreeMutationEvent(uint32_t aEventType, Accessible* aTarget) :
-    AccEvent(aEventType, aTarget, eAutoDetect, eCoalesceReorder) {}
-};
-
-
-
-
-class AccMutationEvent: public AccTreeMutationEvent
+class AccMutationEvent: public AccEvent
 {
 public:
   AccMutationEvent(uint32_t aEventType, Accessible* aTarget) :
-    AccTreeMutationEvent(aEventType, aTarget)
+    AccEvent(aEventType, aTarget, eAutoDetect, eCoalesceReorder)
   {
     
     
@@ -308,11 +298,12 @@ private:
 
 
 
-class AccReorderEvent : public AccTreeMutationEvent
+class AccReorderEvent : public AccEvent
 {
 public:
   explicit AccReorderEvent(Accessible* aTarget) :
-    AccTreeMutationEvent(::nsIAccessibleEvent::EVENT_REORDER, aTarget) { }
+    AccEvent(::nsIAccessibleEvent::EVENT_REORDER, aTarget,
+             eAutoDetect, eCoalesceReorder) { }
   virtual ~AccReorderEvent() { }
 
   
