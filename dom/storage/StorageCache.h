@@ -197,9 +197,6 @@ private:
   RefPtr<StorageUsage> mUsage;
 
   
-  nsCOMPtr<nsITimer> mKeepAliveTimer;
-
-  
   
   
   
