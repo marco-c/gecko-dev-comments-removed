@@ -632,29 +632,19 @@ Tester.prototype = {
         
         
 
-        let checkForLeakedGlobalWindows = aCallback => {
+        let shutdownCleanup = aCallback => {
           Cu.schedulePreciseShrinkingGC(() => {
-            let analyzer = new CCAnalyzer();
-            analyzer.run(() => {
-              let results = [];
-              for (let obj of analyzer.find("nsGlobalWindow ")) {
-                let m = obj.name.match(/^nsGlobalWindow #(\d+)/);
-                if (m && m[1] in this.openedWindows)
-                  results.push({ name: obj.name, url: m[1] });
-              }
-              aCallback(results);
-            });
+            
+            
+            let numCycles = 3;
+            for (i = 0; i < numCycles; i++) {
+              Cu.forceGC();
+              Cu.forceCC();
+            }
+            aCallback();
           });
         };
 
-        let reportLeaks = aResults => {
-          for (let result of aResults) {
-            let test = this.openedWindows[result.url];
-            let msg = "leaked until shutdown [" + result.name +
-                      " " + (this.openedURLs[result.url] || "NULL") + "]";
-            test.addResult(new testResult(false, msg, "", false));
-          }
-        };
 
         let {AsyncShutdown} =
           Cu.import("resource://gre/modules/AsyncShutdown.jsm", {});
@@ -674,17 +664,9 @@ Tester.prototype = {
 
           Services.ppmm.broadcastAsyncMessage("browser-test:collect-request");
 
-          checkForLeakedGlobalWindows(aResults => {
-            if (aResults.length == 0) {
-              this.finish();
-              return;
-            }
-            
-            
-            
+          shutdownCleanup(() => {
             setTimeout(() => {
-              checkForLeakedGlobalWindows(aResults => {
-                reportLeaks(aResults);
+              shutdownCleanup(() => {
                 this.finish();
               });
             }, 1000);
