@@ -132,6 +132,12 @@ impl<T> Deref<T> for Untraceable<T> {
     }
 }
 
+impl<T> DerefMut<T> for Untraceable<T> {
+    fn deref_mut<'a>(&'a mut self) -> &'a mut T {
+        &mut self.inner
+    }
+}
+
 
 
 
