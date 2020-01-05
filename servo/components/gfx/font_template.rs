@@ -6,7 +6,9 @@ use font::FontHandleMethods;
 use platform::font::FontHandle;
 use platform::font_context::FontContextHandle;
 use platform::font_template::FontTemplateData;
+use std::fmt::{Debug, Error, Formatter};
 use std::sync::{Arc, Weak};
+use std::u32;
 use string_cache::Atom;
 use style::computed_values::{font_stretch, font_weight};
 
@@ -31,13 +33,25 @@ impl FontTemplateDescriptor {
             italic: italic,
         }
     }
+
+    
+    
+    
+    
+    
+    #[inline]
+    fn distance_from(&self, other: &FontTemplateDescriptor) -> u32 {
+        if self.stretch != other.stretch || self.italic != other.italic {
+            
+            return 1000
+        }
+        ((self.weight as i16) - (other.weight as i16)).abs() as u32
+    }
 }
 
 impl PartialEq for FontTemplateDescriptor {
     fn eq(&self, other: &FontTemplateDescriptor) -> bool {
-        self.weight.is_bold() == other.weight.is_bold() &&
-            self.stretch == other.stretch &&
-            self.italic == other.italic
+        self.weight == other.weight && self.stretch == other.stretch && self.italic == other.italic
     }
 }
 
@@ -51,6 +65,12 @@ pub struct FontTemplate {
     
     strong_ref: Option<Arc<FontTemplateData>>,
     is_valid: bool,
+}
+
+impl Debug for FontTemplate {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+        self.identifier.fmt(f)
+    }
 }
 
 
@@ -88,50 +108,72 @@ impl FontTemplate {
 
     
     pub fn data_for_descriptor(&mut self,
-                          fctx: &FontContextHandle,
-                          requested_desc: &FontTemplateDescriptor)
-                          -> Option<Arc<FontTemplateData>> {
+                               fctx: &FontContextHandle,
+                               requested_desc: &FontTemplateDescriptor)
+                               -> Option<Arc<FontTemplateData>> {
         
         
         
         
         
         match self.descriptor {
-            Some(actual_desc) => {
-                if *requested_desc == actual_desc {
+            Some(actual_desc) if *requested_desc == actual_desc => Some(self.data()),
+            Some(_) => None,
+            None => {
+                if self.instantiate(fctx).is_err() {
+                    return None
+                }
+
+                if self.descriptor
+                       .as_ref()
+                       .expect("Instantiation succeeded but no descriptor?") == requested_desc {
                     Some(self.data())
                 } else {
                     None
                 }
-            },
-            None if self.is_valid => {
-                let data = self.data();
-                let handle: Result<FontHandle, ()> =
-                    FontHandleMethods::new_from_template(fctx, data.clone(), None);
-                match handle {
-                    Ok(handle) => {
-                        let actual_desc = FontTemplateDescriptor::new(handle.boldness(),
-                                                                      handle.stretchiness(),
-                                                                      handle.is_italic());
-                        let desc_match = actual_desc == *requested_desc;
+            }
+        }
+    }
 
-                        self.descriptor = Some(actual_desc);
-                        self.is_valid = true;
-                        if desc_match {
-                            Some(data)
-                        } else {
-                            None
-                        }
-                    }
-                    Err(()) => {
-                        self.is_valid = false;
-                        debug!("Unable to create a font from template {}", self.identifier);
-                        None
-                    }
+    
+    
+    pub fn data_for_approximate_descriptor(&mut self,
+                                           font_context: &FontContextHandle,
+                                           requested_descriptor: &FontTemplateDescriptor)
+                                           -> Option<(Arc<FontTemplateData>, u32)> {
+        match self.descriptor {
+            Some(actual_descriptor) => {
+                Some((self.data(), actual_descriptor.distance_from(requested_descriptor)))
+            }
+            None => {
+                if self.instantiate(font_context).is_ok() {
+                    let distance = self.descriptor
+                                       .as_ref()
+                                       .expect("Instantiation successful but no descriptor?")
+                                       .distance_from(requested_descriptor);
+                    Some((self.data(), distance))
+                } else {
+                    None
                 }
             }
-            None => None,
         }
+    }
+
+    fn instantiate(&mut self, font_context: &FontContextHandle) -> Result<(), ()> {
+        if !self.is_valid {
+            return Err(())
+        }
+
+        let data = self.data();
+        let handle: Result<FontHandle, ()> = FontHandleMethods::new_from_template(font_context,
+                                                                                  data,
+                                                                                  None);
+        self.is_valid = handle.is_ok();
+        let handle = try!(handle);
+        self.descriptor = Some(FontTemplateDescriptor::new(handle.boldness(),
+                                                           handle.stretchiness(),
+                                                           handle.is_italic()));
+        Ok(())
     }
 
     

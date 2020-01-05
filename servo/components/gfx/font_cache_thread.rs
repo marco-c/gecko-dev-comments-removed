@@ -18,6 +18,7 @@ use std::borrow::ToOwned;
 use std::collections::HashMap;
 use std::mem;
 use std::sync::{Arc, Mutex};
+use std::u32;
 use string_cache::Atom;
 use style::font_face::Source;
 use style::properties::longhands::font_family::computed_value::FontFamily;
@@ -51,14 +52,27 @@ impl FontTemplates {
         
         
         
-
-        
-        
         for template in &mut self.templates {
             let maybe_template = template.data_for_descriptor(fctx, desc);
             if maybe_template.is_some() {
                 return maybe_template;
             }
+        }
+
+        
+        
+        let (mut best_template_data, mut best_distance) = (None, u32::MAX);
+        for template in &mut self.templates {
+            if let Some((template_data, distance)) =
+                    template.data_for_approximate_descriptor(fctx, desc) {
+                if distance < best_distance {
+                    best_template_data = Some(template_data);
+                    best_distance = distance
+                }
+            }
+        }
+        if best_template_data.is_some() {
+            return best_template_data
         }
 
         
@@ -81,8 +95,7 @@ impl FontTemplates {
             }
         }
 
-        let template = FontTemplate::new(identifier,
-                                         maybe_data);
+        let template = FontTemplate::new(identifier, maybe_data);
         self.templates.push(template);
     }
 }
