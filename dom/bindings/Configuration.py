@@ -279,7 +279,18 @@ class Descriptor(DescriptorProvider):
         self.config = config
         self.interface = interface
 
-        self.wantsXrays = interface.isExposedInWindow()
+        self.wantsXrays = (not interface.isExternal() and
+                           interface.isExposedInWindow())
+
+        if self.wantsXrays:
+            
+            
+            
+            
+            
+            
+            
+            self.wantsXrayExpandoClass = (interface.totalMembersInSlots != 0)
 
         
         ifaceName = self.interface.identifier.name

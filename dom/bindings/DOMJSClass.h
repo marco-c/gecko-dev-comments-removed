@@ -293,6 +293,10 @@ struct NativePropertyHooks
   
   
   const NativePropertyHooks* mProtoHooks;
+
+  
+  
+  const JSClass* mXrayExpandoClass;
 };
 
 enum DOMObjectType : uint8_t {
