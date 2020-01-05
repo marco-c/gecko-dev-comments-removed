@@ -1,7 +1,6 @@
 
 
 
-Cu.import("resource://gre/modules/PlacesUtils.jsm");
 const {
   
   

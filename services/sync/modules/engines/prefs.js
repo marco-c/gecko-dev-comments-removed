@@ -259,6 +259,9 @@ PrefTracker.prototype = {
         this.stopTracking();
         break;
       case "nsPref:changed":
+        if (this.ignoreAll) {
+          break;
+        }
         
         
         if (data.indexOf(PREF_SYNC_PREFS_PREFIX) == 0 ||
