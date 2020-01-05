@@ -50,6 +50,7 @@ pub fn heap_size_of_local_context() -> usize {
     })
 }
 
+
 fn create_or_get_local_context(shared_layout_context: &SharedLayoutContext)
                                -> Rc<LocalLayoutContext> {
     LOCAL_CONTEXT_KEY.with(|r| {
