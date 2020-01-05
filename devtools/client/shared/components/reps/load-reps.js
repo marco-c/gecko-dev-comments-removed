@@ -2,7 +2,10 @@
 
 
 
-"use strict";
+
+
+
+
 
 
 define(function (require, exports, module) {
@@ -14,7 +17,7 @@ define(function (require, exports, module) {
 
   
   
-  let useRepsBundle = false;
+  let useRepsBundle = true;
   if (useRepsBundle) {
     const bundle = require("devtools/client/shared/components/reps/reps");
     REPS = bundle.REPS;
@@ -23,10 +26,13 @@ define(function (require, exports, module) {
     parseURLEncodedText = bundle.parseURLEncodedText;
     parseURLParams = bundle.parseURLParams;
   } else {
-    ({ createFactories, parseURLEncodedText, parseURLParams } =
-      require("devtools/client/shared/components/reps/rep-utils"));
-    REPS = require("devtools/client/shared/components/reps/rep").REPS;
-    MODE = require("devtools/client/shared/components/reps/constants").MODE;
+    
+    
+    
+    
+    
+    
+    
   }
 
   exports.REPS = REPS;

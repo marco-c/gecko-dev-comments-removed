@@ -14,30 +14,6 @@ return  (function(modules) {
 
  	
  	function __webpack_require__(moduleId) {
- 		
- 		const smpCache = this.smpCache = this.smpCache || {};
- 		const smpMap = this.smpMap = this.smpMap || new Map();
- 		function sanitizeString(text) {
- 		   return text.replace(/__webpack_require__\(\d+\)/g,"");
- 		}
- 		function getModuleBody(id) {
- 		  if (smpCache.hasOwnProperty(id)) {
- 		    return smpCache[id];
- 		  }
-
- 		  const body = sanitizeString(String(modules[id]));
- 		  smpCache[id] = body;
- 		  return body;
- 		}
- 		if (!installedModules[moduleId]) {
- 			const body = getModuleBody(moduleId);
- 			if (smpMap.has(body)) {
- 				installedModules[moduleId] = installedModules[smpMap.get(body)];
- 			}
- 			else {
- 				smpMap.set(body, moduleId)
- 			}
- 		}
 
  		
  		if(installedModules[moduleId])
@@ -79,11 +55,11 @@ return  (function(modules) {
  function(module, exports, __webpack_require__) {
 
 	const React = __webpack_require__(1);
-
+	
 	const { MODE } = __webpack_require__(2);
 	const { REPS } = __webpack_require__(3);
 	const { createFactories, parseURLEncodedText, parseURLParams } = __webpack_require__(4);
-
+	
 	module.exports = {
 	  REPS,
 	  MODE,
@@ -115,10 +91,10 @@ return  (function(modules) {
  function(module, exports, __webpack_require__) {
 
 	const React = __webpack_require__(1);
-
+	
 	const { isGrip } = __webpack_require__(4);
 	const { MODE } = __webpack_require__(2);
-
+	
 	
 	const Undefined = __webpack_require__(5);
 	const Null = __webpack_require__(6);
@@ -130,7 +106,7 @@ return  (function(modules) {
 	const SymbolRep = __webpack_require__(15);
 	const InfinityRep = __webpack_require__(16);
 	const NaNRep = __webpack_require__(17);
-
+	
 	
 	const Attribute = __webpack_require__(18);
 	const DateTime = __webpack_require__(19);
@@ -150,12 +126,12 @@ return  (function(modules) {
 	const GripArray = __webpack_require__(34);
 	const GripMap = __webpack_require__(35);
 	const Grip = __webpack_require__(14);
-
+	
 	
 	
 	
 	let reps = [RegExp, StyleSheet, Event, DateTime, CommentNode, ElementNode, TextNode, Attribute, LongStringRep, Func, PromiseRep, ArrayRep, Document, Window, ObjectWithText, ObjectWithURL, ErrorRep, GripArray, GripMap, Grip, Undefined, Null, StringRep, Number, SymbolRep, InfinityRep, NaNRep];
-
+	
 	
 
 
@@ -164,22 +140,22 @@ return  (function(modules) {
 
 	const Rep = React.createClass({
 	  displayName: "Rep",
-
+	
 	  propTypes: {
 	    object: React.PropTypes.any,
 	    defaultRep: React.PropTypes.object,
 	    
 	    mode: React.PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key]))
 	  },
-
+	
 	  render: function () {
 	    let rep = getRep(this.props.object, this.props.defaultRep);
 	    return rep(this.props);
 	  }
 	});
-
 	
-
+	
+	
 	
 
 
@@ -198,11 +174,11 @@ return  (function(modules) {
 	  } else if (object && type == "object" && object.type) {
 	    type = object.type;
 	  }
-
+	
 	  if (isGrip(object)) {
 	    type = object.class;
 	  }
-
+	
 	  for (let i = 0; i < reps.length; i++) {
 	    let rep = reps[i];
 	    try {
@@ -216,10 +192,10 @@ return  (function(modules) {
 	      console.error(err);
 	    }
 	  }
-
+	
 	  return React.createFactory(defaultRep.rep);
 	}
-
+	
 	module.exports = {
 	  Rep,
 	  REPS: {
@@ -240,6 +216,7 @@ return  (function(modules) {
 	    NaNRep,
 	    Null,
 	    Number,
+	    Obj,
 	    ObjectWithText,
 	    ObjectWithURL,
 	    PromiseRep,
@@ -258,8 +235,9 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
+	
 	const React = __webpack_require__(1);
-
+	
 	
 
 
@@ -272,50 +250,50 @@ return  (function(modules) {
 	  }
 	  return result;
 	}
-
+	
 	
 
 
 	function isGrip(object) {
 	  return object && object.actor;
 	}
-
+	
 	function escapeNewLines(value) {
 	  return value.replace(/\r/gm, "\\r").replace(/\n/gm, "\\n");
 	}
-
+	
 	function cropMultipleLines(text, limit) {
 	  return escapeNewLines(cropString(text, limit));
 	}
-
+	
 	function cropString(text, limit, alternativeText) {
 	  if (!alternativeText) {
 	    alternativeText = "\u2026";
 	  }
-
+	
 	  
 	  text = sanitizeString(text + "");
-
+	
 	  
 	  if (!limit || limit <= 0) {
 	    return text;
 	  }
-
+	
 	  
 	  
 	  if (limit <= alternativeText.length) {
 	    limit = alternativeText.length + 1;
 	  }
-
+	
 	  let halfLimit = (limit - alternativeText.length) / 2;
-
+	
 	  if (text.length > limit) {
 	    return text.substr(0, Math.ceil(halfLimit)) + alternativeText + text.substr(text.length - Math.floor(halfLimit));
 	  }
-
+	
 	  return text;
 	}
-
+	
 	function sanitizeString(text) {
 	  
 	  
@@ -324,20 +302,20 @@ return  (function(modules) {
 	  let re = new RegExp("[\x00-\x08\x0B\x0C\x0E-\x1F\x80-\x9F]", "g");
 	  return text.replace(re, "\ufffd");
 	}
-
+	
 	function parseURLParams(url) {
 	  url = new URL(url);
 	  return parseURLEncodedText(url.searchParams);
 	}
-
+	
 	function parseURLEncodedText(text) {
 	  let params = [];
-
+	
 	  
 	  if (text == "") {
 	    return params;
 	  }
-
+	
 	  let searchParams = new URLSearchParams(text);
 	  let entries = [...searchParams.entries()];
 	  return entries.map(entry => {
@@ -347,31 +325,31 @@ return  (function(modules) {
 	    };
 	  });
 	}
-
+	
 	function getFileName(url) {
 	  let split = splitURLBase(url);
 	  return split.name;
 	}
-
+	
 	function splitURLBase(url) {
 	  if (!isDataURL(url)) {
 	    return splitURLTrue(url);
 	  }
 	  return {};
 	}
-
+	
 	function getURLDisplayString(url) {
 	  return cropString(url);
 	}
-
+	
 	function isDataURL(url) {
 	  return url && url.substr(0, 5) == "data:";
 	}
-
+	
 	function splitURLTrue(url) {
 	  const reSplitFile = /(.*?):\/{2,3}([^\/]*)(.*?)([^\/]*?)($|\?.*)/;
 	  let m = reSplitFile.exec(url);
-
+	
 	  if (!m) {
 	    return {
 	      name: url,
@@ -385,7 +363,7 @@ return  (function(modules) {
 	      name: m[3] != "/" ? m[3] : m[2]
 	    };
 	  }
-
+	
 	  return {
 	    protocol: m[1],
 	    domain: m[2],
@@ -393,12 +371,32 @@ return  (function(modules) {
 	    name: m[4] + m[5]
 	  };
 	}
+	
+	
 
+
+
+	function wrapRender(renderMethod) {
+	  return function () {
+	    try {
+	      return renderMethod.call(this);
+	    } catch (e) {
+	      return React.DOM.span({
+	        className: "objectBox objectBox-failure",
+	        title: "This object could not be rendered, " + "please file a bug on bugzilla.mozilla.org"
+	      },
+	      
+	      "Invalid object");
+	    }
+	  };
+	}
+	
 	module.exports = {
 	  createFactories,
 	  isGrip,
 	  cropString,
 	  sanitizeString,
+	  wrapRender,
 	  cropMultipleLines,
 	  parseURLParams,
 	  parseURLEncodedText,
@@ -410,30 +408,35 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
+	
 	const React = __webpack_require__(1);
-
+	
+	const { wrapRender } = __webpack_require__(4);
+	
 	
 	const { span } = React.DOM;
-
+	
 	
 
 
 	const Undefined = React.createClass({
 	  displayName: "UndefinedRep",
-
-	  render: function () {
+	
+	  render: wrapRender(function () {
 	    return span({ className: "objectBox objectBox-undefined" }, "undefined");
-	  }
+	  })
 	});
-
+	
 	function supportsObject(object, type) {
 	  if (object && object.type && object.type == "undefined") {
 	    return true;
 	  }
-
+	
 	  return type == "undefined";
 	}
-
+	
+	
+	
 	module.exports = {
 	  rep: Undefined,
 	  supportsObject: supportsObject
@@ -443,30 +446,35 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
+	
 	const React = __webpack_require__(1);
-
+	
+	const { wrapRender } = __webpack_require__(4);
+	
 	
 	const { span } = React.DOM;
-
+	
 	
 
 
 	const Null = React.createClass({
 	  displayName: "NullRep",
-
-	  render: function () {
+	
+	  render: wrapRender(function () {
 	    return span({ className: "objectBox objectBox-null" }, "null");
-	  }
+	  })
 	});
-
+	
 	function supportsObject(object, type) {
 	  if (object && object.type && object.type == "null") {
 	    return true;
 	  }
-
+	
 	  return object == null;
 	}
-
+	
+	
+	
 	module.exports = {
 	  rep: Null,
 	  supportsObject: supportsObject
@@ -476,55 +484,65 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
+	
 	const React = __webpack_require__(1);
-	const { cropString } = __webpack_require__(4);
-
+	
+	const {
+	  cropString,
+	  wrapRender
+	} = __webpack_require__(4);
+	
 	
 	const { span } = React.DOM;
-
+	
 	
 
 
 	const StringRep = React.createClass({
 	  displayName: "StringRep",
-
+	
 	  propTypes: {
 	    useQuotes: React.PropTypes.bool,
-	    style: React.PropTypes.object
+	    style: React.PropTypes.object,
+	    object: React.PropTypes.string.isRequired,
+	    member: React.PropTypes.any,
+	    cropLimit: React.PropTypes.number
 	  },
-
+	
 	  getDefaultProps: function () {
 	    return {
 	      useQuotes: true
 	    };
 	  },
-
-	  render: function () {
+	
+	  render: wrapRender(function () {
 	    let text = this.props.object;
 	    let member = this.props.member;
 	    let style = this.props.style;
-
+	
 	    let config = { className: "objectBox objectBox-string" };
 	    if (style) {
 	      config.style = style;
 	    }
-
+	
 	    if (member && member.open) {
 	      return span(config, "\"" + text + "\"");
 	    }
-
+	
 	    let croppedString = this.props.cropLimit ? cropString(text, this.props.cropLimit) : cropString(text);
-
+	
 	    let formattedString = this.props.useQuotes ? "\"" + croppedString + "\"" : croppedString;
-
+	
 	    return span(config, formattedString);
-	  }
+	  })
 	});
-
+	
 	function supportsObject(object, type) {
 	  return type == "string";
 	}
-
+	
+	
+	
 	module.exports = {
 	  rep: StringRep,
 	  supportsObject: supportsObject
@@ -534,29 +552,37 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
+	
 	const React = __webpack_require__(1);
-	const { sanitizeString, isGrip } = __webpack_require__(4);
+	const {
+	  sanitizeString,
+	  isGrip,
+	  wrapRender
+	} = __webpack_require__(4);
 	
 	const { span } = React.DOM;
-
+	
 	
 
 
 	const LongStringRep = React.createClass({
 	  displayName: "LongStringRep",
-
+	
 	  propTypes: {
 	    useQuotes: React.PropTypes.bool,
-	    style: React.PropTypes.object
+	    style: React.PropTypes.object,
+	    cropLimit: React.PropTypes.number.isRequired,
+	    member: React.PropTypes.string,
+	    object: React.PropTypes.object.isRequired
 	  },
-
+	
 	  getDefaultProps: function () {
 	    return {
 	      useQuotes: true
 	    };
 	  },
-
-	  render: function () {
+	
+	  render: wrapRender(function () {
 	    let {
 	      cropLimit,
 	      member,
@@ -565,29 +591,30 @@ return  (function(modules) {
 	      useQuotes
 	    } = this.props;
 	    let { fullText, initial, length } = object;
-
+	
 	    let config = { className: "objectBox objectBox-string" };
 	    if (style) {
 	      config.style = style;
 	    }
-
+	
 	    let string = member && member.open ? fullText || initial : initial.substring(0, cropLimit);
-
+	
 	    if (string.length < length) {
 	      string += "\u2026";
 	    }
-	    let formattedString = useQuotes ? `"${ string }"` : string;
+	    let formattedString = useQuotes ? `"${string}"` : string;
 	    return span(config, sanitizeString(formattedString));
-	  }
+	  })
 	});
-
+	
 	function supportsObject(object, type) {
 	  if (!isGrip(object)) {
 	    return false;
 	  }
 	  return object.type === "longString";
 	}
-
+	
+	
 	module.exports = {
 	  rep: LongStringRep,
 	  supportsObject: supportsObject
@@ -597,34 +624,43 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
+	
 	const React = __webpack_require__(1);
-
+	
+	const { wrapRender } = __webpack_require__(4);
+	
 	
 	const { span } = React.DOM;
-
+	
 	
 
 
 	const Number = React.createClass({
 	  displayName: "Number",
-
+	
+	  propTypes: {
+	    object: React.PropTypes.oneOfType([React.PropTypes.object, React.PropTypes.number]).isRequired
+	  },
+	
 	  stringify: function (object) {
 	    let isNegativeZero = Object.is(object, -0) || object.type && object.type == "-0";
-
+	
 	    return isNegativeZero ? "-0" : String(object);
 	  },
-
-	  render: function () {
+	
+	  render: wrapRender(function () {
 	    let value = this.props.object;
-
+	
 	    return span({ className: "objectBox objectBox-number" }, this.stringify(value));
-	  }
+	  })
 	});
-
+	
 	function supportsObject(object, type) {
 	  return ["boolean", "number", "-0"].includes(type);
 	}
-
+	
+	
+	
 	module.exports = {
 	  rep: Number,
 	  supportsObject: supportsObject
@@ -634,40 +670,49 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-
+	
 	const React = __webpack_require__(1);
+	const {
+	  createFactories,
+	  wrapRender
+	} = __webpack_require__(4);
 	const Caption = React.createFactory(__webpack_require__(11));
 	const { MODE } = __webpack_require__(2);
-
+	
+	const ModePropType = React.PropTypes.oneOf(
+	
+	Object.keys(MODE).map(key => MODE[key]));
+	
 	
 	const DOM = React.DOM;
-
+	
 	
 
 
 
 	let ArrayRep = React.createClass({
 	  displayName: "ArrayRep",
-
+	
 	  propTypes: {
-	    
-	    mode: React.PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key]))
+	    mode: ModePropType,
+	    objectLink: React.PropTypes.func,
+	    object: React.PropTypes.array.isRequired
 	  },
-
+	
 	  getTitle: function (object, context) {
 	    return "[" + object.length + "]";
 	  },
-
+	
 	  arrayIterator: function (array, max) {
 	    let items = [];
 	    let delim;
-
+	
 	    for (let i = 0; i < array.length && i < max; i++) {
 	      try {
 	        let value = array[i];
-
+	
 	        delim = i == array.length - 1 ? "" : ", ";
-
+	
 	        items.push(ItemRep({
 	          object: value,
 	          
@@ -682,7 +727,7 @@ return  (function(modules) {
 	        }));
 	      }
 	    }
-
+	
 	    if (array.length > max) {
 	      let objectLink = this.props.objectLink || DOM.span;
 	      items.push(Caption({
@@ -691,10 +736,10 @@ return  (function(modules) {
 	        }, array.length - max + " more…")
 	      }));
 	    }
-
+	
 	    return items;
 	  },
-
+	
 	  
 
 
@@ -714,43 +759,43 @@ return  (function(modules) {
 	      }
 	      return x === y.toString();
 	    }
-
+	
 	    let props = Object.getOwnPropertyNames(array);
 	    for (let i = 0; i < props.length; i++) {
 	      let p = props[i];
-
+	
 	      
 	      if (isInteger(p)) {
 	        continue;
 	      }
-
+	
 	      
 	      if (p != "length") {
 	        return true;
 	      }
 	    }
-
+	
 	    return false;
 	  },
-
+	
 	  
-
+	
 	  onToggleProperties: function (event) {},
-
+	
 	  onClickBracket: function (event) {},
-
-	  render: function () {
+	
+	  render: wrapRender(function () {
 	    let {
 	      object,
 	      mode = MODE.SHORT
 	    } = this.props;
-
+	
 	    let items;
 	    let brackets;
 	    let needSpace = function (space) {
 	      return space ? { left: "[ ", right: " ]" } : { left: "[", right: "]" };
 	    };
-
+	
 	    if (mode === MODE.TINY) {
 	      let isEmpty = object.length === 0;
 	      items = [DOM.span({ className: "length" }, isEmpty ? "" : object.length)];
@@ -760,9 +805,9 @@ return  (function(modules) {
 	      items = this.arrayIterator(object, max);
 	      brackets = needSpace(items.length > 0);
 	    }
-
+	
 	    let objectLink = this.props.objectLink || DOM.span;
-
+	
 	    return DOM.span({
 	      className: "objectBox objectBox-array" }, objectLink({
 	      className: "arrayLeftBracket",
@@ -773,29 +818,36 @@ return  (function(modules) {
 	    }, brackets.right), DOM.span({
 	      className: "arrayProperties",
 	      role: "group" }));
-	  }
+	  })
 	});
-
+	
 	
 
 
 	let ItemRep = React.createFactory(React.createClass({
 	  displayName: "ItemRep",
-
-	  render: function () {
-	    const Rep = React.createFactory(__webpack_require__(3));
-
+	
+	  propTypes: {
+	    object: React.PropTypes.any.isRequired,
+	    delim: React.PropTypes.string.isRequired,
+	    mode: ModePropType
+	  },
+	
+	  render: wrapRender(function () {
+	    const { Rep } = createFactories(__webpack_require__(3));
+	
 	    let object = this.props.object;
 	    let delim = this.props.delim;
 	    let mode = this.props.mode;
 	    return DOM.span({}, Rep({ object: object, mode: mode }), delim);
-	  }
+	  })
 	}));
-
+	
 	function supportsObject(object, type) {
 	  return Array.isArray(object) || Object.prototype.toString.call(object) === "[object Arguments]";
 	}
-
+	
+	
 	module.exports = {
 	  rep: ArrayRep,
 	  supportsObject: supportsObject
@@ -805,28 +857,40 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
+	
 	const React = __webpack_require__(1);
 	const DOM = React.DOM;
-
+	
+	const { wrapRender } = __webpack_require__(4);
+	
 	
 
 
 
 	const Caption = React.createClass({
 	  displayName: "Caption",
-
-	  render: function () {
+	
+	  propTypes: {
+	    object: React.PropTypes.object
+	  },
+	
+	  render: wrapRender(function () {
 	    return DOM.span({ "className": "caption" }, this.props.object);
-	  }
+	  })
 	});
-
+	
+	
 	module.exports = Caption;
 
  },
 
  function(module, exports, __webpack_require__) {
 
+	
 	const React = __webpack_require__(1);
+	const {
+	  wrapRender
+	} = __webpack_require__(4);
 	const Caption = React.createFactory(__webpack_require__(11));
 	const PropRep = React.createFactory(__webpack_require__(13));
 	const { MODE } = __webpack_require__(2);
@@ -838,23 +902,25 @@ return  (function(modules) {
 
 	const Obj = React.createClass({
 	  displayName: "Obj",
-
+	
 	  propTypes: {
-	    object: React.PropTypes.object,
+	    object: React.PropTypes.object.isRequired,
 	    
-	    mode: React.PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key]))
+	    mode: React.PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key])),
+	    objectLink: React.PropTypes.func,
+	    title: React.PropTypes.string
 	  },
-
+	
 	  getTitle: function (object) {
-	    let className = object && object.class ? object.class : "Object";
+	    let title = this.props.title || object.class || "Object";
 	    if (this.props.objectLink) {
 	      return this.props.objectLink({
 	        object: object
-	      }, className);
+	      }, title);
 	    }
-	    return className;
+	    return title;
 	  },
-
+	
 	  safePropIterator: function (object, max) {
 	    max = typeof max === "undefined" ? 3 : max;
 	    try {
@@ -864,75 +930,75 @@ return  (function(modules) {
 	    }
 	    return [];
 	  },
-
+	
 	  propIterator: function (object, max) {
 	    let isInterestingProp = (t, value) => {
 	      
 	      return t == "boolean" || t == "number" || t == "string" && value;
 	    };
-
+	
 	    
 	    if (Object.prototype.toString.call(object) === "[object Generator]") {
 	      object = Object.getPrototypeOf(object);
 	    }
-
+	
 	    
 	    
-	    let props = this.getProps(object, max, isInterestingProp);
-
-	    if (props.length <= max) {
+	    let propsArray = this.getPropsArray(object, max, isInterestingProp);
+	
+	    if (propsArray.length <= max) {
 	      
 	      
 	      
-	      props = props.concat(this.getProps(object, max, (t, value) => {
+	      propsArray = propsArray.concat(this.getPropsArray(object, max, (t, value) => {
 	        return !isInterestingProp(t, value);
 	      }));
 	    }
-
-	    if (props.length > max) {
-	      props.pop();
+	
+	    if (propsArray.length > max) {
+	      propsArray.pop();
 	      let objectLink = this.props.objectLink || span;
-
-	      props.push(Caption({
+	
+	      propsArray.push(Caption({
 	        object: objectLink({
 	          object: object
 	        }, Object.keys(object).length - max + " more…")
 	      }));
-	    } else if (props.length > 0) {
+	    } else if (propsArray.length > 0) {
 	      
-	      props[props.length - 1] = React.cloneElement(props[props.length - 1], { delim: "" });
+	      propsArray[propsArray.length - 1] = React.cloneElement(propsArray[propsArray.length - 1], { delim: "" });
 	    }
-
-	    return props;
+	
+	    return propsArray;
 	  },
-
-	  getProps: function (object, max, filter) {
-	    let props = [];
-
+	
+	  getPropsArray: function (object, max, filter) {
+	    let propsArray = [];
+	
 	    max = max || 3;
 	    if (!object) {
-	      return props;
+	      return propsArray;
 	    }
-
+	
 	    
 	    let mode = MODE.TINY;
-
+	
 	    try {
 	      for (let name in object) {
-	        if (props.length > max) {
-	          return props;
+	        if (propsArray.length > max) {
+	          return propsArray;
 	        }
-
+	
 	        let value;
 	        try {
 	          value = object[name];
 	        } catch (exc) {
 	          continue;
 	        }
-
+	
 	        let t = typeof value;
 	        if (filter(t, value)) {
-	          props.push(PropRep({
+	          propsArray.push(PropRep({
 	            mode: mode,
 	            name: name,
 	            object: value,
@@ -944,32 +1010,33 @@ return  (function(modules) {
 	    } catch (err) {
 	      console.error(err);
 	    }
-
-	    return props;
+	
+	    return propsArray;
 	  },
-
-	  render: function () {
+	
+	  render: wrapRender(function () {
 	    let object = this.props.object;
-	    let props = this.safePropIterator(object);
+	    let propsArray = this.safePropIterator(object);
 	    let objectLink = this.props.objectLink || span;
-
-	    if (this.props.mode === MODE.TINY || !props.length) {
+	
+	    if (this.props.mode === MODE.TINY || !propsArray.length) {
 	      return span({ className: "objectBox objectBox-object" }, objectLink({ className: "objectTitle" }, this.getTitle(object)));
 	    }
-
+	
 	    return span({ className: "objectBox objectBox-object" }, this.getTitle(object), objectLink({
 	      className: "objectLeftBrace",
 	      object: object
-	    }, " { "), ...props, objectLink({
+	    }, " { "), ...propsArray, objectLink({
 	      className: "objectRightBrace",
 	      object: object
 	    }, " }"));
-	  }
+	  })
 	});
 	function supportsObject(object, type) {
 	  return true;
 	}
-
+	
+	
 	module.exports = {
 	  rep: Obj,
 	  supportsObject: supportsObject
@@ -979,19 +1046,24 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
+	
 	const React = __webpack_require__(1);
+	const {
+	  createFactories,
+	  wrapRender
+	} = __webpack_require__(4);
 	const { MODE } = __webpack_require__(2);
 	
 	const { span } = React.DOM;
-
+	
 	
 
 
 
 
-	let PropRep = React.createFactory(React.createClass({
+	let PropRep = React.createClass({
 	  displayName: "PropRep",
-
+	
 	  propTypes: {
 	    
 	    name: React.PropTypes.oneOfType([React.PropTypes.string, React.PropTypes.object]).isRequired,
@@ -1000,13 +1072,14 @@ return  (function(modules) {
 	    
 	    delim: React.PropTypes.string,
 	    
-	    mode: React.PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key]))
+	    mode: React.PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key])),
+	    objectLink: React.PropTypes.func
 	  },
-
-	  render: function () {
+	
+	  render: wrapRender(function () {
 	    const Grip = __webpack_require__(14);
-	    let Rep = React.createFactory(__webpack_require__(3));
-
+	    let { Rep } = createFactories(__webpack_require__(3));
+	
 	    let key;
 	    
 	    
@@ -1020,30 +1093,36 @@ return  (function(modules) {
 	        objectLink: this.props.objectLink
 	      });
 	    }
-
+	
 	    return span({}, key, span({
 	      "className": "objectEqual"
 	    }, this.props.equal), Rep(this.props), span({
 	      "className": "objectComma"
 	    }, this.props.delim));
-	  }
-	}));
-
+	  })
+	});
+	
+	
 	module.exports = PropRep;
 
  },
 
  function(module, exports, __webpack_require__) {
 
+	
 	const React = __webpack_require__(1);
 	
-	const { isGrip } = __webpack_require__(4);
+	const {
+	  createFactories,
+	  isGrip,
+	  wrapRender
+	} = __webpack_require__(4);
 	const Caption = React.createFactory(__webpack_require__(11));
 	const PropRep = React.createFactory(__webpack_require__(13));
 	const { MODE } = __webpack_require__(2);
 	
 	const { span } = React.DOM;
-
+	
 	
 
 
@@ -1051,15 +1130,16 @@ return  (function(modules) {
 
 	const GripRep = React.createClass({
 	  displayName: "Grip",
-
+	
 	  propTypes: {
 	    object: React.PropTypes.object.isRequired,
 	    
 	    mode: React.PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key])),
 	    isInterestingProp: React.PropTypes.func,
-	    title: React.PropTypes.string
+	    title: React.PropTypes.string,
+	    objectLink: React.PropTypes.func
 	  },
-
+	
 	  getTitle: function (object) {
 	    let title = this.props.title || object.class || "Object";
 	    if (this.props.objectLink) {
@@ -1069,7 +1149,7 @@ return  (function(modules) {
 	    }
 	    return title;
 	  },
-
+	
 	  safePropIterator: function (object, max) {
 	    max = typeof max === "undefined" ? 3 : max;
 	    try {
@@ -1079,31 +1159,31 @@ return  (function(modules) {
 	    }
 	    return [];
 	  },
-
+	
 	  propIterator: function (object, max) {
 	    if (object.preview && Object.keys(object.preview).includes("wrappedValue")) {
-	      const Rep = React.createFactory(__webpack_require__(3));
-
+	      const { Rep } = createFactories(__webpack_require__(3));
+	
 	      return [Rep({
 	        object: object.preview.wrappedValue,
 	        mode: this.props.mode || MODE.TINY,
 	        defaultRep: Grip
 	      })];
 	    }
-
+	
 	    
 	    let isInterestingProp = this.props.isInterestingProp || ((type, value) => {
 	      return type == "boolean" || type == "number" || type == "string" && value.length != 0;
 	    });
-
+	
 	    let properties = object.preview ? object.preview.ownProperties : {};
 	    let propertiesLength = object.preview && object.preview.ownPropertiesLength ? object.preview.ownPropertiesLength : object.ownPropertyLength;
-
+	
 	    if (object.preview && object.preview.safeGetterValues) {
 	      properties = Object.assign({}, properties, object.preview.safeGetterValues);
 	      propertiesLength += Object.keys(object.preview.safeGetterValues).length;
 	    }
-
+	
 	    let indexes = this.getPropIndexes(properties, max, isInterestingProp);
 	    if (indexes.length < max && indexes.length < propertiesLength) {
 	      
@@ -1111,23 +1191,23 @@ return  (function(modules) {
 	        return !isInterestingProp(t, value, name);
 	      }));
 	    }
-
+	
 	    const truncate = Object.keys(properties).length > max;
 	    let props = this.getProps(properties, indexes, truncate);
 	    if (truncate) {
 	      
 	      let objectLink = this.props.objectLink || span;
-
+	
 	      props.push(Caption({
 	        object: objectLink({
 	          object: object
-	        }, `${ object.ownPropertyLength - max } more…`)
+	        }, `${propertiesLength - max} more…`)
 	      }));
 	    }
-
+	
 	    return props;
 	  },
-
+	
 	  
 
 
@@ -1138,16 +1218,16 @@ return  (function(modules) {
 
 	  getProps: function (properties, indexes, truncate) {
 	    let props = [];
-
+	
 	    
 	    indexes.sort(function (a, b) {
 	      return a - b;
 	    });
-
+	
 	    indexes.forEach(i => {
 	      let name = Object.keys(properties)[i];
 	      let value = this.getPropValue(properties[name]);
-
+	
 	      props.push(PropRep(Object.assign({}, this.props, {
 	        mode: MODE.TINY,
 	        name: name,
@@ -1157,10 +1237,10 @@ return  (function(modules) {
 	        defaultRep: Grip
 	      })));
 	    });
-
+	
 	    return props;
 	  },
-
+	
 	  
 
 
@@ -1171,20 +1251,20 @@ return  (function(modules) {
 
 	  getPropIndexes: function (properties, max, filter) {
 	    let indexes = [];
-
+	
 	    try {
 	      let i = 0;
 	      for (let name in properties) {
 	        if (indexes.length >= max) {
 	          return indexes;
 	        }
-
+	
 	        
 	        
 	        let value = this.getPropValue(properties[name]);
 	        let type = value.class || typeof value;
 	        type = type.toLowerCase();
-
+	
 	        if (filter(type, value, name)) {
 	          indexes.push(i);
 	        }
@@ -1195,7 +1275,7 @@ return  (function(modules) {
 	    }
 	    return indexes;
 	  },
-
+	
 	  
 
 
@@ -1214,11 +1294,11 @@ return  (function(modules) {
 	    }
 	    return value;
 	  },
-
-	  render: function () {
+	
+	  render: wrapRender(function () {
 	    let object = this.props.object;
 	    let props = this.safePropIterator(object, this.props.mode === MODE.LONG ? 10 : 3);
-
+	
 	    let objectLink = this.props.objectLink || span;
 	    if (this.props.mode === MODE.TINY) {
 	      return span({ className: "objectBox objectBox-object" }, this.getTitle(object), objectLink({
@@ -1226,7 +1306,7 @@ return  (function(modules) {
 	        object: object
 	      }, ""));
 	    }
-
+	
 	    return span({ className: "objectBox objectBox-object" }, this.getTitle(object), objectLink({
 	      className: "objectLeftBrace",
 	      object: object
@@ -1234,9 +1314,9 @@ return  (function(modules) {
 	      className: "objectRightBrace",
 	      object: object
 	    }, " }"));
-	  }
+	  })
 	});
-
+	
 	
 	function supportsObject(object, type) {
 	  if (!isGrip(object)) {
@@ -1244,45 +1324,51 @@ return  (function(modules) {
 	  }
 	  return object.preview && object.preview.ownProperties;
 	}
-
+	
+	
 	let Grip = {
 	  rep: GripRep,
 	  supportsObject: supportsObject
 	};
-
+	
+	
 	module.exports = Grip;
 
  },
 
  function(module, exports, __webpack_require__) {
 
+	
 	const React = __webpack_require__(1);
-
+	
+	const { wrapRender } = __webpack_require__(4);
+	
 	
 	const { span } = React.DOM;
-
+	
 	
 
 
 	const SymbolRep = React.createClass({
 	  displayName: "SymbolRep",
-
+	
 	  propTypes: {
 	    object: React.PropTypes.object.isRequired
 	  },
-
-	  render: function () {
+	
+	  render: wrapRender(function () {
 	    let { object } = this.props;
 	    let { name } = object;
-
-	    return span({ className: "objectBox objectBox-symbol" }, `Symbol(${ name || "" })`);
-	  }
+	
+	    return span({ className: "objectBox objectBox-symbol" }, `Symbol(${name || ""})`);
+	  })
 	});
-
+	
 	function supportsObject(object, type) {
 	  return type == "symbol";
 	}
-
+	
+	
 	module.exports = {
 	  rep: SymbolRep,
 	  supportsObject: supportsObject
@@ -1292,26 +1378,34 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
+	
 	const React = __webpack_require__(1);
-
+	
+	const { wrapRender } = __webpack_require__(4);
+	
 	
 	const { span } = React.DOM;
-
+	
 	
 
 
 	const InfinityRep = React.createClass({
 	  displayName: "Infinity",
-
-	  render: function () {
+	
+	  propTypes: {
+	    object: React.PropTypes.object.isRequired
+	  },
+	
+	  render: wrapRender(function () {
 	    return span({ className: "objectBox objectBox-number" }, this.props.object.type);
-	  }
+	  })
 	});
-
+	
 	function supportsObject(object, type) {
 	  return type == "Infinity" || type == "-Infinity";
 	}
-
+	
+	
 	module.exports = {
 	  rep: InfinityRep,
 	  supportsObject: supportsObject
@@ -1321,26 +1415,30 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
+	
 	const React = __webpack_require__(1);
-
+	
+	const { wrapRender } = __webpack_require__(4);
+	
 	
 	const { span } = React.DOM;
-
+	
 	
 
 
 	const NaNRep = React.createClass({
 	  displayName: "NaN",
-
-	  render: function () {
+	
+	  render: wrapRender(function () {
 	    return span({ className: "objectBox objectBox-nan" }, "NaN");
-	  }
+	  })
 	});
-
+	
 	function supportsObject(object, type) {
 	  return type == "NaN";
 	}
-
+	
+	
 	module.exports = {
 	  rep: NaNRep,
 	  supportsObject: supportsObject
@@ -1350,48 +1448,55 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	const React = __webpack_require__(1);
-
 	
-	const { isGrip } = __webpack_require__(4);
-	const StringRep = React.createFactory(__webpack_require__(7).rep);
-
+	const React = __webpack_require__(1);
+	
+	
+	const {
+	  createFactories,
+	  isGrip,
+	  wrapRender
+	} = __webpack_require__(4);
+	const StringRep = __webpack_require__(7);
+	
 	
 	const { span } = React.DOM;
-
+	const { rep: StringRepFactory } = createFactories(StringRep);
+	
 	
 
 
 	let Attribute = React.createClass({
 	  displayName: "Attr",
-
+	
 	  propTypes: {
-	    object: React.PropTypes.object.isRequired
+	    object: React.PropTypes.object.isRequired,
+	    objectLink: React.PropTypes.func
 	  },
-
+	
 	  getTitle: function (grip) {
 	    return grip.preview.nodeName;
 	  },
-
-	  render: function () {
+	
+	  render: wrapRender(function () {
 	    let object = this.props.object;
 	    let value = object.preview.value;
 	    let objectLink = this.props.objectLink || span;
-
-	    return objectLink({ className: "objectLink-Attr", object }, span({}, span({ className: "attrTitle" }, this.getTitle(object)), span({ className: "attrEqual" }, "="), StringRep({ object: value })));
-	  }
-	});
-
 	
-
+	    return objectLink({ className: "objectLink-Attr", object }, span({}, span({ className: "attrTitle" }, this.getTitle(object)), span({ className: "attrEqual" }, "="), StringRepFactory({ object: value })));
+	  })
+	});
+	
+	
+	
 	function supportsObject(grip, type) {
 	  if (!isGrip(grip)) {
 	    return false;
 	  }
-
+	
 	  return type == "Attr" && grip.preview;
 	}
-
+	
 	module.exports = {
 	  rep: Attribute,
 	  supportsObject: supportsObject
@@ -1401,24 +1506,29 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	const React = __webpack_require__(1);
-
 	
-	const { isGrip } = __webpack_require__(4);
-
+	const React = __webpack_require__(1);
+	
+	
+	const {
+	  isGrip,
+	  wrapRender
+	} = __webpack_require__(4);
+	
 	
 	const { span } = React.DOM;
-
+	
 	
 
 
 	let DateTime = React.createClass({
 	  displayName: "Date",
-
+	
 	  propTypes: {
-	    object: React.PropTypes.object.isRequired
+	    object: React.PropTypes.object.isRequired,
+	    objectLink: React.PropTypes.func
 	  },
-
+	
 	  getTitle: function (grip) {
 	    if (this.props.objectLink) {
 	      return this.props.objectLink({
@@ -1427,8 +1537,8 @@ return  (function(modules) {
 	    }
 	    return "";
 	  },
-
-	  render: function () {
+	
+	  render: wrapRender(function () {
 	    let grip = this.props.object;
 	    let date;
 	    try {
@@ -1436,20 +1546,22 @@ return  (function(modules) {
 	    } catch (e) {
 	      date = span({ className: "objectBox" }, "Invalid Date");
 	    }
-	    return date;
-	  }
-	});
-
 	
-
+	    return date;
+	  })
+	});
+	
+	
+	
 	function supportsObject(grip, type) {
 	  if (!isGrip(grip)) {
 	    return false;
 	  }
-
+	
 	  return type == "Date" && grip.preview;
 	}
-
+	
+	
 	module.exports = {
 	  rep: DateTime,
 	  supportsObject: supportsObject
@@ -1459,29 +1571,35 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	const React = __webpack_require__(1);
-
 	
-	const { isGrip, getURLDisplayString } = __webpack_require__(4);
-
+	const React = __webpack_require__(1);
+	
+	
+	const {
+	  isGrip,
+	  getURLDisplayString,
+	  wrapRender
+	} = __webpack_require__(4);
+	
 	
 	const { span } = React.DOM;
-
+	
 	
 
 
 	let Document = React.createClass({
 	  displayName: "Document",
-
+	
 	  propTypes: {
-	    object: React.PropTypes.object.isRequired
+	    object: React.PropTypes.object.isRequired,
+	    objectLink: React.PropTypes.func
 	  },
-
+	
 	  getLocation: function (grip) {
 	    let location = grip.preview.location;
 	    return location ? getURLDisplayString(location) : "";
 	  },
-
+	
 	  getTitle: function (grip) {
 	    if (this.props.objectLink) {
 	      return span({ className: "objectBox" }, this.props.objectLink({
@@ -1490,28 +1608,29 @@ return  (function(modules) {
 	    }
 	    return "";
 	  },
-
+	
 	  getTooltip: function (doc) {
 	    return doc.location.href;
 	  },
-
-	  render: function () {
-	    let grip = this.props.object;
-
-	    return span({ className: "objectBox objectBox-object" }, this.getTitle(grip), span({ className: "objectPropValue" }, this.getLocation(grip)));
-	  }
-	});
-
 	
-
+	  render: wrapRender(function () {
+	    let grip = this.props.object;
+	
+	    return span({ className: "objectBox objectBox-object" }, this.getTitle(grip), span({ className: "objectPropValue" }, this.getLocation(grip)));
+	  })
+	});
+	
+	
+	
 	function supportsObject(object, type) {
 	  if (!isGrip(object)) {
 	    return false;
 	  }
-
+	
 	  return object.preview && type == "HTMLDocument";
 	}
-
+	
+	
 	module.exports = {
 	  rep: Document,
 	  supportsObject: supportsObject
@@ -1521,33 +1640,38 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	const React = __webpack_require__(1);
-
 	
-	const { isGrip } = __webpack_require__(4);
-	const rep = React.createFactory(__webpack_require__(14).rep);
-
+	const React = __webpack_require__(1);
+	
+	
+	const {
+	  createFactories,
+	  isGrip,
+	  wrapRender
+	} = __webpack_require__(4);
+	const { rep } = createFactories(__webpack_require__(14));
+	
 	
 
 
 	let Event = React.createClass({
 	  displayName: "event",
-
+	
 	  propTypes: {
 	    object: React.PropTypes.object.isRequired
 	  },
-
+	
 	  getTitle: function (props) {
 	    let preview = props.object.preview;
 	    let title = preview.type;
-
+	
 	    if (preview.eventKind == "key" && preview.modifiers && preview.modifiers.length) {
-	      title = `${ title } ${ preview.modifiers.join("-") }`;
+	      title = `${title} ${preview.modifiers.join("-")}`;
 	    }
 	    return title;
 	  },
-
-	  render: function () {
+	
+	  render: wrapRender(function () {
 	    
 	    
 	    
@@ -1556,7 +1680,7 @@ return  (function(modules) {
 	    }, this.props);
 	    props.object = Object.assign({}, this.props.object);
 	    props.object.preview = Object.assign({}, this.props.object.preview);
-
+	
 	    props.object.preview.ownProperties = {};
 	    if (props.object.preview.target) {
 	      Object.assign(props.object.preview.ownProperties, {
@@ -1564,10 +1688,10 @@ return  (function(modules) {
 	      });
 	    }
 	    Object.assign(props.object.preview.ownProperties, props.object.preview.properties);
-
+	
 	    delete props.object.preview.properties;
 	    props.object.ownPropertyLength = Object.keys(props.object.preview.ownProperties).length;
-
+	
 	    switch (props.object.class) {
 	      case "MouseEvent":
 	        props.isInterestingProp = (type, value, name) => {
@@ -1590,20 +1714,22 @@ return  (function(modules) {
 	          return Object.keys(props.object.preview.ownProperties).includes(name);
 	        };
 	    }
-
+	
 	    return rep(props);
-	  }
+	  })
 	});
-
+	
+	
 	
 	function supportsObject(grip, type) {
 	  if (!isGrip(grip)) {
 	    return false;
 	  }
-
+	
 	  return grip.preview && grip.preview.kind == "DOMEvent";
 	}
-
+	
+	
 	module.exports = {
 	  rep: Event,
 	  supportsObject: supportsObject
@@ -1613,59 +1739,76 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	const React = __webpack_require__(1);
-
 	
-	const { isGrip, cropString } = __webpack_require__(4);
-
+	const React = __webpack_require__(1);
+	
+	
+	const {
+	  isGrip,
+	  cropString,
+	  wrapRender
+	} = __webpack_require__(4);
+	
 	
 	const { span } = React.DOM;
-
+	
 	
 
 
 	let Func = React.createClass({
 	  displayName: "Func",
-
+	
 	  propTypes: {
-	    object: React.PropTypes.object.isRequired
+	    object: React.PropTypes.object.isRequired,
+	    objectLink: React.PropTypes.func
 	  },
-
+	
 	  getTitle: function (grip) {
+	    let title = "function ";
+	    if (grip.isGenerator) {
+	      title = "function* ";
+	    }
+	    if (grip.isAsync) {
+	      title = "async " + title;
+	    }
+	
 	    if (this.props.objectLink) {
 	      return this.props.objectLink({
 	        object: grip
-	      }, "function ");
+	      }, title);
 	    }
-	    return "";
+	
+	    return title;
 	  },
-
+	
 	  summarizeFunction: function (grip) {
-	    let name = grip.userDisplayName || grip.displayName || grip.name || "function";
+	    let name = grip.userDisplayName || grip.displayName || grip.name || "";
 	    return cropString(name + "()", 100);
 	  },
-
-	  render: function () {
+	
+	  render: wrapRender(function () {
 	    let grip = this.props.object;
-
+	
 	    return (
 	      
 	      
 	      span({ dir: "ltr", className: "objectBox objectBox-function" }, this.getTitle(grip), this.summarizeFunction(grip))
 	    );
-	  }
+	  })
 	});
-
 	
-
+	
+	
 	function supportsObject(grip, type) {
 	  if (!isGrip(grip)) {
 	    return type == "function";
 	  }
-
+	
 	  return type == "Function";
 	}
-
+	
+	
+	
 	module.exports = {
 	  rep: Func,
 	  supportsObject: supportsObject
@@ -1675,26 +1818,33 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
+	
 	const React = __webpack_require__(1);
 	
-	const { isGrip } = __webpack_require__(4);
+	const {
+	  createFactories,
+	  isGrip,
+	  wrapRender
+	} = __webpack_require__(4);
+	
 	const PropRep = React.createFactory(__webpack_require__(13));
 	const { MODE } = __webpack_require__(2);
 	
 	const { span } = React.DOM;
-
+	
 	
 
 
 	const PromiseRep = React.createClass({
 	  displayName: "Promise",
-
+	
 	  propTypes: {
 	    object: React.PropTypes.object.isRequired,
 	    
-	    mode: React.PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key]))
+	    mode: React.PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key])),
+	    objectLink: React.PropTypes.func
 	  },
-
+	
 	  getTitle: function (object) {
 	    const title = object.class;
 	    if (this.props.objectLink) {
@@ -1704,32 +1854,32 @@ return  (function(modules) {
 	    }
 	    return title;
 	  },
-
+	
 	  getProps: function (promiseState) {
 	    const keys = ["state"];
 	    if (Object.keys(promiseState).includes("value")) {
 	      keys.push("value");
 	    }
-
+	
 	    return keys.map((key, i) => {
 	      return PropRep(Object.assign({}, this.props, {
 	        mode: MODE.TINY,
-	        name: `<${ key }>`,
+	        name: `<${key}>`,
 	        object: promiseState[key],
 	        equal: ": ",
 	        delim: i < keys.length - 1 ? ", " : ""
 	      }));
 	    });
 	  },
-
-	  render: function () {
+	
+	  render: wrapRender(function () {
 	    const object = this.props.object;
 	    const { promiseState } = object;
 	    let objectLink = this.props.objectLink || span;
-
+	
 	    if (this.props.mode === MODE.TINY) {
-	      let Rep = React.createFactory(__webpack_require__(3));
-
+	      let { Rep } = createFactories(__webpack_require__(3));
+	
 	      return span({ className: "objectBox objectBox-object" }, this.getTitle(object), objectLink({
 	        className: "objectLeftBrace",
 	        object: object
@@ -1738,7 +1888,7 @@ return  (function(modules) {
 	        object: object
 	      }, " }"));
 	    }
-
+	
 	    const props = this.getProps(promiseState);
 	    return span({ className: "objectBox objectBox-object" }, this.getTitle(object), objectLink({
 	      className: "objectLeftBrace",
@@ -1747,9 +1897,9 @@ return  (function(modules) {
 	      className: "objectRightBrace",
 	      object: object
 	    }, " }"));
-	  }
+	  })
 	});
-
+	
 	
 	function supportsObject(object, type) {
 	  if (!isGrip(object)) {
@@ -1757,7 +1907,8 @@ return  (function(modules) {
 	  }
 	  return type === "Promise";
 	}
-
+	
+	
 	module.exports = {
 	  rep: PromiseRep,
 	  supportsObject: supportsObject
@@ -1767,49 +1918,55 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	const React = __webpack_require__(1);
-
 	
-	const { isGrip } = __webpack_require__(4);
-
+	const React = __webpack_require__(1);
+	
+	
+	const {
+	  isGrip,
+	  wrapRender
+	} = __webpack_require__(4);
+	
 	
 	const { span } = React.DOM;
-
+	
 	
 
 
 	let RegExp = React.createClass({
 	  displayName: "regexp",
-
+	
 	  propTypes: {
-	    object: React.PropTypes.object.isRequired
+	    object: React.PropTypes.object.isRequired,
+	    objectLink: React.PropTypes.func
 	  },
-
+	
 	  getSource: function (grip) {
 	    return grip.displayString;
 	  },
-
-	  render: function () {
+	
+	  render: wrapRender(function () {
 	    let grip = this.props.object;
 	    let objectLink = this.props.objectLink || span;
-
+	
 	    return span({ className: "objectBox objectBox-regexp" }, objectLink({
 	      object: grip,
 	      className: "regexpSource"
 	    }, this.getSource(grip)));
-	  }
+	  })
 	});
-
 	
-
+	
+	
 	function supportsObject(object, type) {
 	  if (!isGrip(object)) {
 	    return false;
 	  }
-
+	
 	  return type == "RegExp";
 	}
-
+	
+	
 	module.exports = {
 	  rep: RegExp,
 	  supportsObject: supportsObject
@@ -1819,24 +1976,30 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	const React = __webpack_require__(1);
-
 	
-	const { isGrip, getURLDisplayString } = __webpack_require__(4);
-
+	const React = __webpack_require__(1);
+	
+	
+	const {
+	  isGrip,
+	  getURLDisplayString,
+	  wrapRender
+	} = __webpack_require__(4);
+	
 	
 	const DOM = React.DOM;
-
+	
 	
 
 
 	let StyleSheet = React.createClass({
 	  displayName: "object",
-
+	
 	  propTypes: {
-	    object: React.PropTypes.object.isRequired
+	    object: React.PropTypes.object.isRequired,
+	    objectLink: React.PropTypes.func
 	  },
-
+	
 	  getTitle: function (grip) {
 	    let title = "StyleSheet ";
 	    if (this.props.objectLink) {
@@ -1846,30 +2009,32 @@ return  (function(modules) {
 	    }
 	    return title;
 	  },
-
+	
 	  getLocation: function (grip) {
 	    
 	    let url = grip.preview ? grip.preview.url : "";
 	    return url ? getURLDisplayString(url) : "";
 	  },
-
-	  render: function () {
-	    let grip = this.props.object;
-
-	    return DOM.span({ className: "objectBox objectBox-object" }, this.getTitle(grip), DOM.span({ className: "objectPropValue" }, this.getLocation(grip)));
-	  }
-	});
-
 	
-
+	  render: wrapRender(function () {
+	    let grip = this.props.object;
+	
+	    return DOM.span({ className: "objectBox objectBox-object" }, this.getTitle(grip), DOM.span({ className: "objectPropValue" }, this.getLocation(grip)));
+	  })
+	});
+	
+	
+	
 	function supportsObject(object, type) {
 	  if (!isGrip(object)) {
 	    return false;
 	  }
-
+	
 	  return type == "CSSStyleSheet";
 	}
-
+	
+	
+	
 	module.exports = {
 	  rep: StyleSheet,
 	  supportsObject: supportsObject
@@ -1879,43 +2044,49 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
+	
 	const React = __webpack_require__(1);
-	const { isGrip, cropString, cropMultipleLines } = __webpack_require__(4);
+	const {
+	  isGrip,
+	  cropString,
+	  cropMultipleLines,
+	  wrapRender
+	} = __webpack_require__(4);
 	const { MODE } = __webpack_require__(2);
 	const nodeConstants = __webpack_require__(27);
-
+	
 	
 	const { span } = React.DOM;
-
+	
 	
 
 
 	const CommentNode = React.createClass({
 	  displayName: "CommentNode",
-
+	
 	  propTypes: {
 	    object: React.PropTypes.object.isRequired,
 	    
 	    mode: React.PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key]))
 	  },
-
-	  render: function () {
+	
+	  render: wrapRender(function () {
 	    let {
 	      object,
 	      mode = MODE.SHORT
 	    } = this.props;
-
+	
 	    let { textContent } = object.preview;
 	    if (mode === MODE.TINY) {
 	      textContent = cropMultipleLines(textContent, 30);
 	    } else if (mode === MODE.SHORT) {
 	      textContent = cropString(textContent, 50);
 	    }
-
-	    return span({ className: "objectBox theme-comment" }, `<!-- ${ textContent } -->`);
-	  }
+	
+	    return span({ className: "objectBox theme-comment" }, `<!-- ${textContent} -->`);
+	  })
 	});
-
+	
 	
 	function supportsObject(object, type) {
 	  if (!isGrip(object)) {
@@ -1923,7 +2094,8 @@ return  (function(modules) {
 	  }
 	  return object.preview && object.preview.nodeType === nodeConstants.COMMENT_NODE;
 	}
-
+	
+	
 	module.exports = {
 	  rep: CommentNode,
 	  supportsObject: supportsObject
@@ -1946,7 +2118,7 @@ return  (function(modules) {
 	  DOCUMENT_TYPE_NODE: 10,
 	  DOCUMENT_FRAGMENT_NODE: 11,
 	  NOTATION_NODE: 12,
-
+	
 	  
 	  DOCUMENT_POSITION_DISCONNECTED: 0x01,
 	  DOCUMENT_POSITION_PRECEDING: 0x02,
@@ -1960,41 +2132,48 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	const React = __webpack_require__(1);
-
 	
-	const { isGrip } = __webpack_require__(4);
+	const React = __webpack_require__(1);
+	
+	
+	const {
+	  isGrip,
+	  wrapRender
+	} = __webpack_require__(4);
 	const { MODE } = __webpack_require__(2);
 	const nodeConstants = __webpack_require__(27);
-
+	
 	
 	const { span } = React.DOM;
-
+	
 	
 
 
 	const ElementNode = React.createClass({
 	  displayName: "ElementNode",
-
+	
 	  propTypes: {
 	    object: React.PropTypes.object.isRequired,
 	    
-	    mode: React.PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key]))
+	    mode: React.PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key])),
+	    onDOMNodeMouseOver: React.PropTypes.func,
+	    onDOMNodeMouseOut: React.PropTypes.func,
+	    objectLink: React.PropTypes.func
 	  },
-
+	
 	  getElements: function (grip, mode) {
 	    let { attributes, nodeName } = grip.preview;
 	    const nodeNameElement = span({
 	      className: "tag-name theme-fg-color3"
 	    }, nodeName);
-
+	
 	    if (mode === MODE.TINY) {
 	      let elements = [nodeNameElement];
 	      if (attributes.id) {
-	        elements.push(span({ className: "attr-name theme-fg-color2" }, `#${ attributes.id }`));
+	        elements.push(span({ className: "attr-name theme-fg-color2" }, `#${attributes.id}`));
 	      }
 	      if (attributes.class) {
-	        elements.push(span({ className: "attr-name theme-fg-color2" }, attributes.class.replace(/(^\s+)|(\s+$)/g, "").split(" ").map(cls => `.${ cls }`).join("")));
+	        elements.push(span({ className: "attr-name theme-fg-color2" }, attributes.class.replace(/(^\s+)|(\s+$)/g, "").split(" ").map(cls => `.${cls}`).join("")));
 	      }
 	      return elements;
 	    }
@@ -2005,21 +2184,21 @@ return  (function(modules) {
 	      if ([a1, a2].includes("class")) {
 	        return 2 * (a1 === "class" ? -1 : 1);
 	      }
-
+	
 	      
 	      
 	      return 0;
 	    }).reduce((arr, name, i, keys) => {
 	      let value = attributes[name];
-	      let attribute = span({}, span({ className: "attr-name theme-fg-color2" }, `${ name }`), `="`, span({ className: "attr-value theme-fg-color6" }, `${ value }`), `"`);
-
+	      let attribute = span({}, span({ className: "attr-name theme-fg-color2" }, `${name}`), `="`, span({ className: "attr-value theme-fg-color6" }, `${value}`), `"`);
+	
 	      return arr.concat([" ", attribute]);
 	    }, []);
-
+	
 	    return ["<", nodeNameElement, ...attributeElements, ">"];
 	  },
-
-	  render: function () {
+	
+	  render: wrapRender(function () {
 	    let {
 	      object,
 	      mode,
@@ -2028,24 +2207,24 @@ return  (function(modules) {
 	    } = this.props;
 	    let elements = this.getElements(object, mode);
 	    let objectLink = this.props.objectLink || span;
-
+	
 	    let baseConfig = { className: "objectBox objectBox-node" };
 	    if (onDOMNodeMouseOver) {
 	      Object.assign(baseConfig, {
 	        onMouseOver: _ => onDOMNodeMouseOver(object)
 	      });
 	    }
-
+	
 	    if (onDOMNodeMouseOut) {
 	      Object.assign(baseConfig, {
 	        onMouseOut: onDOMNodeMouseOut
 	      });
 	    }
-
+	
 	    return objectLink({ object }, span(baseConfig, ...elements));
-	  }
+	  })
 	});
-
+	
 	
 	function supportsObject(object, type) {
 	  if (!isGrip(object)) {
@@ -2053,7 +2232,8 @@ return  (function(modules) {
 	  }
 	  return object.preview && object.preview.nodeType === nodeConstants.ELEMENT_NODE;
 	}
-
+	
+	
 	module.exports = {
 	  rep: ElementNode,
 	  supportsObject: supportsObject
@@ -2063,31 +2243,39 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	const React = __webpack_require__(1);
-
 	
-	const { isGrip, cropString } = __webpack_require__(4);
+	const React = __webpack_require__(1);
+	
+	
+	const {
+	  isGrip,
+	  cropString,
+	  wrapRender
+	} = __webpack_require__(4);
 	const { MODE } = __webpack_require__(2);
-
+	
 	
 	const DOM = React.DOM;
-
+	
 	
 
 
 	let TextNode = React.createClass({
 	  displayName: "TextNode",
-
+	
 	  propTypes: {
 	    object: React.PropTypes.object.isRequired,
 	    
-	    mode: React.PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key]))
+	    mode: React.PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key])),
+	    objectLink: React.PropTypes.func,
+	    onDOMNodeMouseOver: React.PropTypes.func,
+	    onDOMNodeMouseOut: React.PropTypes.func
 	  },
-
+	
 	  getTextContent: function (grip) {
 	    return cropString(grip.preview.textContent);
 	  },
-
+	
 	  getTitle: function (grip) {
 	    const title = "#text";
 	    if (this.props.objectLink) {
@@ -2097,44 +2285,45 @@ return  (function(modules) {
 	    }
 	    return title;
 	  },
-
-	  render: function () {
+	
+	  render: wrapRender(function () {
 	    let {
 	      object: grip,
 	      mode = MODE.SHORT
 	    } = this.props;
-
+	
 	    let baseConfig = { className: "objectBox objectBox-textNode" };
 	    if (this.props.onDOMNodeMouseOver) {
 	      Object.assign(baseConfig, {
 	        onMouseOver: _ => this.props.onDOMNodeMouseOver(grip)
 	      });
 	    }
-
+	
 	    if (this.props.onDOMNodeMouseOut) {
 	      Object.assign(baseConfig, {
 	        onMouseOut: this.props.onDOMNodeMouseOut
 	      });
 	    }
-
+	
 	    if (mode === MODE.TINY) {
 	      return DOM.span(baseConfig, this.getTitle(grip));
 	    }
-
-	    return DOM.span(baseConfig, this.getTitle(grip), DOM.span({ className: "nodeValue" }, " ", `"${ this.getTextContent(grip) }"`));
-	  }
-	});
-
 	
-
+	    return DOM.span(baseConfig, this.getTitle(grip), DOM.span({ className: "nodeValue" }, " ", `"${this.getTextContent(grip)}"`));
+	  })
+	});
+	
+	
+	
 	function supportsObject(grip, type) {
 	  if (!isGrip(grip)) {
 	    return false;
 	  }
-
+	
 	  return grip.preview && grip.class == "Text";
 	}
-
+	
+	
 	module.exports = {
 	  rep: TextNode,
 	  supportsObject: supportsObject
@@ -2144,46 +2333,51 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
+	
 	const React = __webpack_require__(1);
 	
-	const { isGrip } = __webpack_require__(4);
+	const {
+	  isGrip,
+	  wrapRender
+	} = __webpack_require__(4);
 	const { MODE } = __webpack_require__(2);
 	
 	const { span } = React.DOM;
-
+	
 	
 
 
 	const ErrorRep = React.createClass({
 	  displayName: "Error",
-
+	
 	  propTypes: {
 	    object: React.PropTypes.object.isRequired,
 	    
-	    mode: React.PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key]))
+	    mode: React.PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key])),
+	    objectLink: React.PropTypes.func
 	  },
-
-	  render: function () {
+	
+	  render: wrapRender(function () {
 	    let object = this.props.object;
 	    let preview = object.preview;
 	    let name = preview && preview.name ? preview.name : "Error";
-
-	    let content = this.props.mode === MODE.TINY ? name : `${ name }: ${ preview.message }`;
-
+	
+	    let content = this.props.mode === MODE.TINY ? name : `${name}: ${preview.message}`;
+	
 	    if (preview.stack && this.props.mode !== MODE.TINY) {
 	      
 
 
 
 
-	      content = `${ content }\nStack trace:\n${ preview.stack }`;
+	      content = `${content}\nStack trace:\n${preview.stack}`;
 	    }
-
+	
 	    let objectLink = this.props.objectLink || span;
 	    return objectLink({ object, className: "objectBox-stackTrace" }, span({}, content));
-	  }
+	  })
 	});
-
+	
 	
 	function supportsObject(object, type) {
 	  if (!isGrip(object)) {
@@ -2191,7 +2385,8 @@ return  (function(modules) {
 	  }
 	  return object.preview && type === "Error";
 	}
-
+	
+	
 	module.exports = {
 	  rep: ErrorRep,
 	  supportsObject: supportsObject
@@ -2201,26 +2396,30 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	const React = __webpack_require__(1);
-	const { MODE } = __webpack_require__(2);
-
 	
-	const { isGrip, getURLDisplayString } = __webpack_require__(4);
-
+	const React = __webpack_require__(1);
+	
+	
+	const {
+	  isGrip,
+	  getURLDisplayString,
+	  wrapRender
+	} = __webpack_require__(4);
+	
 	
 	const DOM = React.DOM;
-
+	
 	
 
 
 	let Window = React.createClass({
 	  displayName: "Window",
-
+	
 	  propTypes: {
 	    object: React.PropTypes.object.isRequired,
-	    mode: React.PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key]))
+	    objectLink: React.PropTypes.func
 	  },
-
+	
 	  getTitle: function (grip) {
 	    if (this.props.objectLink) {
 	      return DOM.span({ className: "objectBox" }, this.props.objectLink({
@@ -2229,36 +2428,29 @@ return  (function(modules) {
 	    }
 	    return "";
 	  },
-
+	
 	  getLocation: function (grip) {
 	    return getURLDisplayString(grip.preview.url);
 	  },
-
-	  getDisplayValue: function (grip) {
-	    if (this.props.mode === MODE.TINY) {
-	      return grip.isGlobal ? "Global" : "Window";
-	    }
-
-	    return this.getLocation(grip);
-	  },
-
-	  render: function () {
-	    let grip = this.props.object;
-
-	    return DOM.span({ className: "objectBox objectBox-Window" }, this.getTitle(grip), DOM.span({ className: "objectPropValue" }, this.getDisplayValue(grip)));
-	  }
-	});
-
 	
-
+	  render: wrapRender(function () {
+	    let grip = this.props.object;
+	
+	    return DOM.span({ className: "objectBox objectBox-Window" }, this.getTitle(grip), DOM.span({ className: "objectPropValue" }, this.getLocation(grip)));
+	  })
+	});
+	
+	
+	
 	function supportsObject(object, type) {
 	  if (!isGrip(object)) {
 	    return false;
 	  }
-
+	
 	  return object.preview && type == "Window";
 	}
-
+	
+	
 	module.exports = {
 	  rep: Window,
 	  supportsObject: supportsObject
@@ -2268,24 +2460,29 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	const React = __webpack_require__(1);
-
 	
-	const { isGrip } = __webpack_require__(4);
-
+	const React = __webpack_require__(1);
+	
+	
+	const {
+	  isGrip,
+	  wrapRender
+	} = __webpack_require__(4);
+	
 	
 	const { span } = React.DOM;
-
+	
 	
 
 
 	let ObjectWithText = React.createClass({
 	  displayName: "ObjectWithText",
-
+	
 	  propTypes: {
-	    object: React.PropTypes.object.isRequired
+	    object: React.PropTypes.object.isRequired,
+	    objectLink: React.PropTypes.func
 	  },
-
+	
 	  getTitle: function (grip) {
 	    if (this.props.objectLink) {
 	      return span({ className: "objectBox" }, this.props.objectLink({
@@ -2294,31 +2491,32 @@ return  (function(modules) {
 	    }
 	    return "";
 	  },
-
+	
 	  getType: function (grip) {
 	    return grip.class;
 	  },
-
+	
 	  getDescription: function (grip) {
 	    return "\"" + grip.preview.text + "\"";
 	  },
-
-	  render: function () {
+	
+	  render: wrapRender(function () {
 	    let grip = this.props.object;
 	    return span({ className: "objectBox objectBox-" + this.getType(grip) }, this.getTitle(grip), span({ className: "objectPropValue" }, this.getDescription(grip)));
-	  }
+	  })
 	});
-
 	
-
+	
+	
 	function supportsObject(grip, type) {
 	  if (!isGrip(grip)) {
 	    return false;
 	  }
-
+	
 	  return grip.preview && grip.preview.kind == "ObjectWithText";
 	}
-
+	
+	
 	module.exports = {
 	  rep: ObjectWithText,
 	  supportsObject: supportsObject
@@ -2328,24 +2526,30 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	const React = __webpack_require__(1);
-
 	
-	const { isGrip, getURLDisplayString } = __webpack_require__(4);
-
+	const React = __webpack_require__(1);
+	
+	
+	const {
+	  isGrip,
+	  getURLDisplayString,
+	  wrapRender
+	} = __webpack_require__(4);
+	
 	
 	const { span } = React.DOM;
-
+	
 	
 
 
 	let ObjectWithURL = React.createClass({
 	  displayName: "ObjectWithURL",
-
+	
 	  propTypes: {
-	    object: React.PropTypes.object.isRequired
+	    object: React.PropTypes.object.isRequired,
+	    objectLink: React.PropTypes.func
 	  },
-
+	
 	  getTitle: function (grip) {
 	    if (this.props.objectLink) {
 	      return span({ className: "objectBox" }, this.props.objectLink({
@@ -2354,31 +2558,32 @@ return  (function(modules) {
 	    }
 	    return "";
 	  },
-
+	
 	  getType: function (grip) {
 	    return grip.class;
 	  },
-
+	
 	  getDescription: function (grip) {
 	    return getURLDisplayString(grip.preview.url);
 	  },
-
-	  render: function () {
+	
+	  render: wrapRender(function () {
 	    let grip = this.props.object;
 	    return span({ className: "objectBox objectBox-" + this.getType(grip) }, this.getTitle(grip), span({ className: "objectPropValue" }, this.getDescription(grip)));
-	  }
+	  })
 	});
-
 	
-
+	
+	
 	function supportsObject(grip, type) {
 	  if (!isGrip(grip)) {
 	    return false;
 	  }
-
+	
 	  return grip.preview && grip.preview.kind == "ObjectWithURL";
 	}
-
+	
+	
 	module.exports = {
 	  rep: ObjectWithURL,
 	  supportsObject: supportsObject
@@ -2388,36 +2593,42 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
+	
 	const React = __webpack_require__(1);
-	const { isGrip } = __webpack_require__(4);
+	const {
+	  createFactories,
+	  isGrip,
+	  wrapRender
+	} = __webpack_require__(4);
 	const Caption = React.createFactory(__webpack_require__(11));
 	const { MODE } = __webpack_require__(2);
-
+	
 	
 	const { span } = React.DOM;
-
+	
 	
 
 
 
 	let GripArray = React.createClass({
 	  displayName: "GripArray",
-
+	
 	  propTypes: {
 	    object: React.PropTypes.object.isRequired,
 	    
 	    mode: React.PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key])),
-	    provider: React.PropTypes.object
+	    provider: React.PropTypes.object,
+	    objectLink: React.PropTypes.func
 	  },
-
+	
 	  getLength: function (grip) {
 	    if (!grip.preview) {
 	      return 0;
 	    }
-
+	
 	    return grip.preview.length || grip.preview.childNodesLength || 0;
 	  },
-
+	
 	  getTitle: function (object, context) {
 	    let objectLink = this.props.objectLink || span;
 	    if (this.props.mode !== MODE.TINY) {
@@ -2427,41 +2638,41 @@ return  (function(modules) {
 	    }
 	    return "";
 	  },
-
+	
 	  getPreviewItems: function (grip) {
 	    if (!grip.preview) {
 	      return null;
 	    }
-
+	
 	    return grip.preview.items || grip.preview.childNodes || null;
 	  },
-
+	
 	  arrayIterator: function (grip, max) {
 	    let items = [];
 	    const gripLength = this.getLength(grip);
-
+	
 	    if (!gripLength) {
 	      return items;
 	    }
-
+	
 	    const previewItems = this.getPreviewItems(grip);
 	    if (!previewItems) {
 	      return items;
 	    }
-
+	
 	    let delim;
 	    
 	    
 	    let delimMax = gripLength > previewItems.length ? previewItems.length : previewItems.length - 1;
 	    let provider = this.props.provider;
-
+	
 	    for (let i = 0; i < previewItems.length && i < max; i++) {
 	      try {
 	        let itemGrip = previewItems[i];
 	        let value = provider ? provider.getValue(itemGrip) : itemGrip;
-
+	
 	        delim = i == delimMax ? "" : ", ";
-
+	
 	        items.push(GripArrayItem(Object.assign({}, this.props, {
 	          object: value,
 	          delim: delim
@@ -2482,22 +2693,22 @@ return  (function(modules) {
 	        }, leftItemNum + " more…")
 	      }));
 	    }
-
+	
 	    return items;
 	  },
-
-	  render: function () {
+	
+	  render: wrapRender(function () {
 	    let {
 	      object,
 	      mode = MODE.SHORT
 	    } = this.props;
-
+	
 	    let items;
 	    let brackets;
 	    let needSpace = function (space) {
 	      return space ? { left: "[ ", right: " ]" } : { left: "[", right: "]" };
 	    };
-
+	
 	    if (mode === MODE.TINY) {
 	      let objectLength = this.getLength(object);
 	      let isEmpty = objectLength === 0;
@@ -2508,10 +2719,10 @@ return  (function(modules) {
 	      items = this.arrayIterator(object, max);
 	      brackets = needSpace(items.length > 0);
 	    }
-
+	
 	    let objectLink = this.props.objectLink || span;
 	    let title = this.getTitle(object);
-
+	
 	    return span({
 	      className: "objectBox objectBox-array" }, title, objectLink({
 	      className: "arrayLeftBracket",
@@ -2522,37 +2733,38 @@ return  (function(modules) {
 	    }, brackets.right), span({
 	      className: "arrayProperties",
 	      role: "group" }));
-	  }
+	  })
 	});
-
+	
 	
 
 
 
 	let GripArrayItem = React.createFactory(React.createClass({
 	  displayName: "GripArrayItem",
-
+	
 	  propTypes: {
 	    delim: React.PropTypes.string
 	  },
-
+	
 	  render: function () {
-	    let Rep = React.createFactory(__webpack_require__(3));
-
+	    let { Rep } = createFactories(__webpack_require__(3));
+	
 	    return span({}, Rep(Object.assign({}, this.props, {
 	      mode: MODE.TINY
 	    })), this.props.delim);
 	  }
 	}));
-
+	
 	function supportsObject(grip, type) {
 	  if (!isGrip(grip)) {
 	    return false;
 	  }
-
+	
 	  return grip.preview && (grip.preview.kind == "ArrayLike" || type === "DocumentFragment");
 	}
-
+	
+	
 	module.exports = {
 	  rep: GripArray,
 	  supportsObject: supportsObject
@@ -2562,8 +2774,12 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
+	
 	const React = __webpack_require__(1);
-	const { isGrip } = __webpack_require__(4);
+	const {
+	  isGrip,
+	  wrapRender
+	} = __webpack_require__(4);
 	const Caption = React.createFactory(__webpack_require__(11));
 	const PropRep = React.createFactory(__webpack_require__(13));
 	const { MODE } = __webpack_require__(2);
@@ -2575,13 +2791,15 @@ return  (function(modules) {
 
 	const GripMap = React.createClass({
 	  displayName: "GripMap",
-
+	
 	  propTypes: {
 	    object: React.PropTypes.object,
 	    
-	    mode: React.PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key]))
+	    mode: React.PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key])),
+	    objectLink: React.PropTypes.func,
+	    isInterestingEntry: React.PropTypes.func
 	  },
-
+	
 	  getTitle: function (object) {
 	    let title = object && object.class ? object.class : "Map";
 	    if (this.props.objectLink) {
@@ -2591,7 +2809,7 @@ return  (function(modules) {
 	    }
 	    return title;
 	  },
-
+	
 	  safeEntriesIterator: function (object, max) {
 	    max = typeof max === "undefined" ? 3 : max;
 	    try {
@@ -2601,15 +2819,15 @@ return  (function(modules) {
 	    }
 	    return [];
 	  },
-
+	
 	  entriesIterator: function (object, max) {
 	    
 	    let isInterestingEntry = this.props.isInterestingEntry || ((type, value) => {
 	      return type == "boolean" || type == "number" || type == "string" && value.length != 0;
 	    });
-
+	
 	    let mapEntries = object.preview && object.preview.entries ? object.preview.entries : [];
-
+	
 	    let indexes = this.getEntriesIndexes(mapEntries, max, isInterestingEntry);
 	    if (indexes.length < max && indexes.length < mapEntries.length) {
 	      
@@ -2617,23 +2835,23 @@ return  (function(modules) {
 	        return !isInterestingEntry(t, value, name);
 	      }));
 	    }
-
+	
 	    let entries = this.getEntries(mapEntries, indexes);
 	    if (entries.length < mapEntries.length) {
 	      
 	      let objectLink = this.props.objectLink || span;
-
+	
 	      entries.push(Caption({
 	        key: "more",
 	        object: objectLink({
 	          object: object
-	        }, `${ mapEntries.length - max } more…`)
+	        }, `${mapEntries.length - max} more…`)
 	      }));
 	    }
-
+	
 	    return entries;
 	  },
-
+	
 	  
 
 
@@ -2646,11 +2864,11 @@ return  (function(modules) {
 	    indexes.sort(function (a, b) {
 	      return a - b;
 	    });
-
+	
 	    return indexes.map((index, i) => {
 	      let [key, entryValue] = entries[index];
 	      let value = entryValue.value !== undefined ? entryValue.value : entryValue;
-
+	
 	      return PropRep({
 	        
 	        name: key,
@@ -2664,7 +2882,7 @@ return  (function(modules) {
 	      });
 	    });
 	  },
-
+	
 	  
 
 
@@ -2680,20 +2898,20 @@ return  (function(modules) {
 	        
 	        
 	        let type = (value && value.class ? value.class : typeof value).toLowerCase();
-
+	
 	        if (filter(type, value, key)) {
 	          indexes.push(i);
 	        }
 	      }
-
+	
 	      return indexes;
 	    }, []);
 	  },
-
-	  render: function () {
+	
+	  render: wrapRender(function () {
 	    let object = this.props.object;
 	    let props = this.safeEntriesIterator(object, this.props.mode === MODE.LONG ? 10 : 3);
-
+	
 	    let objectLink = this.props.objectLink || span;
 	    if (this.props.mode === MODE.TINY) {
 	      return span({ className: "objectBox objectBox-object" }, this.getTitle(object), objectLink({
@@ -2701,7 +2919,7 @@ return  (function(modules) {
 	        object: object
 	      }, ""));
 	    }
-
+	
 	    return span({ className: "objectBox objectBox-object" }, this.getTitle(object), objectLink({
 	      className: "objectLeftBrace",
 	      object: object
@@ -2709,16 +2927,17 @@ return  (function(modules) {
 	      className: "objectRightBrace",
 	      object: object
 	    }, " }"));
-	  }
+	  })
 	});
-
+	
 	function supportsObject(grip, type) {
 	  if (!isGrip(grip)) {
 	    return false;
 	  }
 	  return grip.preview && grip.preview.kind == "MapLike";
 	}
-
+	
+	
 	module.exports = {
 	  rep: GripMap,
 	  supportsObject: supportsObject
