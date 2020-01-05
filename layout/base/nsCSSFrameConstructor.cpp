@@ -10870,22 +10870,16 @@ nsCSSFrameConstructor::AddFCItemsForAnonymousContent(
     while (inheritFrame->GetContent()->IsNativeAnonymous()) {
       inheritFrame = inheritFrame->GetParent();
     }
-    nsIFrame* styleParentFrame =
-      nsFrame::CorrectStyleParentFrame(inheritFrame, pseudo);
-    
-    
-    
-    MOZ_ASSERT_IF(!styleParentFrame,
-                  inheritFrame->GetType() == nsGkAtoms::canvasFrame);
-    
-    MOZ_ASSERT_IF(!styleParentFrame, !pseudo);
+    if (inheritFrame->GetType() == nsGkAtoms::canvasFrame) {
+      
+      
+    } else {
+      inheritFrame = nsFrame::CorrectStyleParentFrame(inheritFrame, pseudo);
+    }
+    Element* originating = pseudo ? inheritFrame->GetContent()->AsElement() : nullptr;
 
-    Element* originating =
-      pseudo ? styleParentFrame->GetContent()->AsElement() : nullptr;
-    nsStyleContext* parentStyle =
-      styleParentFrame ? styleParentFrame->StyleContext() : nullptr;
     styleContext =
-      ResolveStyleContext(parentStyle, content, &aState, originating);
+      ResolveStyleContext(inheritFrame->StyleContext(), content, &aState, originating);
 
     nsTArray<nsIAnonymousContentCreator::ContentInfo>* anonChildren = nullptr;
     if (!aAnonymousItems[i].mChildren.IsEmpty()) {
