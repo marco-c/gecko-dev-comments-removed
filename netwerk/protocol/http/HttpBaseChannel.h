@@ -356,7 +356,8 @@ public:
 
     
     
-    void EnsureUploadStreamIsCloneableComplete(nsresult aStatus);
+    
+    virtual void OnCopyComplete(nsresult aStatus);
 
     void SetIsTrackingResource()
     {
@@ -413,6 +414,10 @@ protected:
   
   
   bool ShouldIntercept(nsIURI* aURI = nullptr);
+
+  
+  
+  void EnsureUploadStreamIsCloneableComplete(nsresult aStatus);
 
 #ifdef DEBUG
   
@@ -653,8 +658,8 @@ public:
   
   
   
-  MOZ_MUST_USE nsresult AsyncCall(void (T::*funcPtr)(),
-                                  nsRunnableMethod<T> **retval = nullptr);
+  MOZ_MUST_USE virtual nsresult AsyncCall(void (T::*funcPtr)(),
+                                          nsRunnableMethod<T> **retval = nullptr);
 private:
   T *mThis;
 
