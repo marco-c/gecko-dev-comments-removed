@@ -28,14 +28,14 @@ GlobalStateInternal.prototype = {
   
 
 
-  getState: function() {
+  getState() {
     return this.state;
   },
 
   
 
 
-  clear: function() {
+  clear() {
     this.state = {};
   },
 
@@ -46,7 +46,7 @@ GlobalStateInternal.prototype = {
 
 
 
-  get: function(aKey) {
+  get(aKey) {
     return this.state[aKey] || "";
   },
 
@@ -56,7 +56,7 @@ GlobalStateInternal.prototype = {
 
 
 
-  set: function(aKey, aStringValue) {
+  set(aKey, aStringValue) {
     this.state[aKey] = aStringValue;
   },
 
@@ -66,7 +66,7 @@ GlobalStateInternal.prototype = {
 
 
 
-  delete: function(aKey) {
+  delete(aKey) {
     delete this.state[aKey];
   },
 
@@ -78,7 +78,7 @@ GlobalStateInternal.prototype = {
 
 
 
-  setFromState: function (aState) {
+  setFromState(aState) {
     this.state = (aState && aState.global) || {};
   }
 };

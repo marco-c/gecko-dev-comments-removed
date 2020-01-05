@@ -1,5 +1,5 @@
 
-add_task(function* duplicateTab () {
+add_task(function* duplicateTab() {
   const TEST_URL = "data:text/html,foo";
   let tab = gBrowser.addTab(TEST_URL);
   yield BrowserTestUtils.browserLoaded(tab.linkedBrowser);

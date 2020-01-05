@@ -26,7 +26,7 @@ this.PrivacyFilter = Object.freeze({
 
 
 
-  filterSessionStorageData: function (data) {
+  filterSessionStorageData(data) {
     let retval = {};
 
     for (let host of Object.keys(data)) {
@@ -46,7 +46,7 @@ this.PrivacyFilter = Object.freeze({
 
 
 
-  filterFormData: function (data) {
+  filterFormData(data) {
     
     
     
@@ -81,7 +81,7 @@ this.PrivacyFilter = Object.freeze({
 
 
 
-  filterPrivateWindowsAndTabs: function (browserState) {
+  filterPrivateWindowsAndTabs(browserState) {
     
     for (let i = browserState.windows.length - 1; i >= 0; i--) {
       let win = browserState.windows[i];
@@ -113,7 +113,7 @@ this.PrivacyFilter = Object.freeze({
 
 
 
-  filterPrivateTabs: function (winState) {
+  filterPrivateTabs(winState) {
     
     for (let i = winState.tabs.length - 1; i >= 0 ; i--) {
       let tab = winState.tabs[i];

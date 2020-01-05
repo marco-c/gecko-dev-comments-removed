@@ -12,13 +12,13 @@ function checkState(tab) {
 
   let popStateCount = 0;
 
-  tab.linkedBrowser.addEventListener('popstate', function(aEvent) {
+  tab.linkedBrowser.addEventListener("popstate", function(aEvent) {
     let contentWindow = tab.linkedBrowser.contentWindow;
     if (popStateCount == 0) {
       popStateCount++;
 
-      is(tab.linkedBrowser.contentWindow.testState, 'foo',
-         'testState after going back');
+      is(tab.linkedBrowser.contentWindow.testState, "foo",
+         "testState after going back");
 
       ok(aEvent.state, "Event should have a state property.");
       is(JSON.stringify(tab.linkedBrowser.contentWindow.history.state), JSON.stringify({obj1:1}),
@@ -33,8 +33,7 @@ function checkState(tab) {
       doc.body.appendChild(elem);
 
       tab.linkedBrowser.goForward();
-    }
-    else if (popStateCount == 1) {
+    } else if (popStateCount == 1) {
       popStateCount++;
       
       
@@ -64,7 +63,7 @@ function checkState(tab) {
 
   
   
-  tab.linkedBrowser.contentWindow.testState = 'foo';
+  tab.linkedBrowser.contentWindow.testState = "foo";
 
   
   tab.linkedBrowser.goBack();

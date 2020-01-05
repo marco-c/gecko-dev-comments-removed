@@ -80,7 +80,7 @@ FrameTreeInternal.prototype = {
 
 
 
-  addObserver: function (obs) {
+  addObserver(obs) {
     this._observers.add(obs);
   },
 
@@ -89,7 +89,7 @@ FrameTreeInternal.prototype = {
 
 
 
-  notifyObservers: function (method) {
+  notifyObservers(method) {
     for (let obs of this._observers) {
       if (obs.hasOwnProperty(method)) {
         obs[method]();
@@ -104,7 +104,7 @@ FrameTreeInternal.prototype = {
 
 
 
-  contains: function (frame) {
+  contains(frame) {
     return this._frames.has(frame);
   },
 
@@ -124,7 +124,7 @@ FrameTreeInternal.prototype = {
 
 
 
-  map: function (cb) {
+  map(cb) {
     let frames = this._frames;
 
     function walk(frame) {
@@ -169,7 +169,7 @@ FrameTreeInternal.prototype = {
 
 
 
-  forEach: function (cb) {
+  forEach(cb) {
     let frames = this._frames;
 
     function walk(frame) {
@@ -196,7 +196,7 @@ FrameTreeInternal.prototype = {
 
 
 
-  collect: function (frame, index = 0) {
+  collect(frame, index = 0) {
     
     this._frames.set(frame, index);
 
@@ -211,7 +211,7 @@ FrameTreeInternal.prototype = {
 
 
 
-  onStateChange: function (webProgress, request, stateFlags, status) {
+  onStateChange(webProgress, request, stateFlags, status) {
     
     
     
@@ -244,10 +244,10 @@ FrameTreeInternal.prototype = {
   },
 
   
-  onLocationChange: function () {},
-  onProgressChange: function () {},
-  onSecurityChange: function () {},
-  onStatusChange: function () {},
+  onLocationChange() {},
+  onProgressChange() {},
+  onSecurityChange() {},
+  onStatusChange() {},
 
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIWebProgressListener,
                                          Ci.nsISupportsWeakReference])

@@ -124,7 +124,7 @@ var Agent = {
 
 
 
-  write: function (state, options = {}) {
+  write(state, options = {}) {
     let exn;
     let telemetry = {};
 
@@ -227,7 +227,7 @@ var Agent = {
 
       try {
         iterator = new File.DirectoryIterator(this.Paths.backups);
-        iterator.forEach(function (file) {
+        iterator.forEach(function(file) {
           if (file.path.startsWith(upgradeBackupPrefix)) {
             backups.push(file.path);
           }
@@ -276,14 +276,14 @@ var Agent = {
       result: {
         upgradeBackup: upgradeBackupComplete
       },
-      telemetry: telemetry,
+      telemetry,
     };
   },
 
   
 
 
-  wipe: function () {
+  wipe() {
 
     
     let exn = null;
@@ -332,7 +332,7 @@ var Agent = {
 
 
 
-  _wipeFromDir: function(path, prefix) {
+  _wipeFromDir(path, prefix) {
     
     if (typeof prefix == "undefined" || prefix == "") {
       throw new TypeError();

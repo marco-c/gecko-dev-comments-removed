@@ -87,8 +87,7 @@ function test() {
       
       try {
         ss.deleteTabValue(tab, "baz");
-      }
-      catch (e) {
+      } catch (e) {
         ok(false, "no error calling deleteTabValue - " + e);
       }
 

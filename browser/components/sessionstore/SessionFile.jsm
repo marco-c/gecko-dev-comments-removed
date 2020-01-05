@@ -66,19 +66,19 @@ this.SessionFile = {
   
 
 
-  read: function () {
+  read() {
     return SessionFileInternal.read();
   },
   
 
 
-  write: function (aData) {
+  write(aData) {
     return SessionFileInternal.write(aData);
   },
   
 
 
-  wipe: function () {
+  wipe() {
     return SessionFileInternal.wipe();
   },
 
@@ -233,8 +233,8 @@ var SessionFileInternal = {
         }
         result = {
           origin: key,
-          source: source,
-          parsed: parsed
+          source,
+          parsed
         };
         Telemetry.getHistogramById("FX_SESSION_RESTORE_CORRUPT_FILE").
           add(false);
@@ -312,7 +312,7 @@ var SessionFileInternal = {
     return SessionWorker.post(...args)
   }),
 
-  write: function (aData) {
+  write(aData) {
     if (RunState.isClosed) {
       return Promise.reject(new Error("SessionFile is closed"));
     }
@@ -379,11 +379,11 @@ var SessionFileInternal = {
     });
   },
 
-  wipe: function () {
+  wipe() {
     return this._postToWorker("wipe");
   },
 
-  _recordTelemetry: function(telemetry) {
+  _recordTelemetry(telemetry) {
     for (let id of Object.keys(telemetry)) {
       let value = telemetry[id];
       let samples = [];

@@ -23,15 +23,15 @@ XPCOMUtils.defineLazyModuleGetter(this, "Utils",
 
 
 this.TabState = Object.freeze({
-  update: function (browser, data) {
+  update(browser, data) {
     TabStateInternal.update(browser, data);
   },
 
-  collect: function (tab) {
+  collect(tab) {
     return TabStateInternal.collect(tab);
   },
 
-  clone: function (tab) {
+  clone(tab) {
     return TabStateInternal.clone(tab);
   },
 
@@ -44,7 +44,7 @@ var TabStateInternal = {
   
 
 
-  update: function (browser, {data}) {
+  update(browser, {data}) {
     TabStateCache.update(browser, data);
   },
 
@@ -58,7 +58,7 @@ var TabStateInternal = {
 
 
 
-  collect: function (tab) {
+  collect(tab) {
     return this._collectBaseTabData(tab);
   },
 
@@ -73,7 +73,7 @@ var TabStateInternal = {
 
 
 
-  clone: function (tab) {
+  clone(tab) {
     return this._collectBaseTabData(tab, {includePrivateData: true});
   },
 
@@ -87,7 +87,7 @@ var TabStateInternal = {
 
 
 
-  _collectBaseTabData: function (tab, options) {
+  _collectBaseTabData(tab, options) {
     let tabData = { entries: [], lastAccessed: tab.lastAccessed };
     let browser = tab.linkedBrowser;
 
@@ -179,10 +179,7 @@ var TabStateInternal = {
       }
 
       if (key === "history") {
-        
-        
-        
-        tabData.entries = [...value.entries];
+        tabData.entries = value.entries;
 
         if (value.hasOwnProperty("userContextId")) {
           tabData.userContextId = value.userContextId;

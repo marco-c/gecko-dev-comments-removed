@@ -175,7 +175,7 @@ ContentRestoreInternal.prototype = {
 
 
 
-  restoreTabContent: function (loadArguments, isRemotenessUpdate, finishCallback) {
+  restoreTabContent(loadArguments, isRemotenessUpdate, finishCallback) {
     let tabData = this._tabData;
     this._tabData = null;
 
@@ -199,7 +199,7 @@ ContentRestoreInternal.prototype = {
         
         let referrer = loadArguments.referrer ?
                        Utils.makeURI(loadArguments.referrer) : null;
-        let referrerPolicy = ('referrerPolicy' in loadArguments
+        let referrerPolicy = ("referrerPolicy" in loadArguments
             ? loadArguments.referrerPolicy
             : Ci.nsIHttpChannel.REFERRER_POLICY_UNSET);
         let postData = loadArguments.postData ?
@@ -284,7 +284,7 @@ ContentRestoreInternal.prototype = {
 
 
 
-  restoreDocument: function () {
+  restoreDocument() {
     if (!this._restoringDocument) {
       return;
     }
@@ -308,7 +308,7 @@ ContentRestoreInternal.prototype = {
 
 
 
-  resetRestore: function () {
+  resetRestore() {
     this._tabData = null;
 
     if (this._historyListener) {
@@ -341,18 +341,18 @@ HistoryListener.prototype = {
     Ci.nsISupportsWeakReference
   ]),
 
-  uninstall: function () {
+  uninstall() {
     let shistory = this.webNavigation.sessionHistory;
     if (shistory) {
       shistory.removeSHistoryListener(this);
     }
   },
 
-  OnHistoryGoBack: function(backURI) { return true; },
-  OnHistoryGoForward: function(forwardURI) { return true; },
-  OnHistoryGotoIndex: function(index, gotoURI) { return true; },
-  OnHistoryPurge: function(numEntries) { return true; },
-  OnHistoryReplaceEntry: function(index) {},
+  OnHistoryGoBack(backURI) { return true; },
+  OnHistoryGoForward(forwardURI) { return true; },
+  OnHistoryGotoIndex(index, gotoURI) { return true; },
+  OnHistoryPurge(numEntries) { return true; },
+  OnHistoryReplaceEntry(index) {},
 
   
   
@@ -411,11 +411,11 @@ ProgressListener.prototype = {
     Ci.nsISupportsWeakReference
   ]),
 
-  uninstall: function() {
+  uninstall() {
     this.webProgress.removeProgressListener(this);
   },
 
-  onStateChange: function(webProgress, request, stateFlags, status) {
+  onStateChange(webProgress, request, stateFlags, status) {
     let {STATE_IS_WINDOW, STATE_STOP, STATE_START} = Ci.nsIWebProgressListener;
     if (!webProgress.isTopLevel || !(stateFlags & STATE_IS_WINDOW)) {
       return;
@@ -430,8 +430,8 @@ ProgressListener.prototype = {
     }
   },
 
-  onLocationChange: function() {},
-  onProgressChange: function() {},
-  onStatusChange: function() {},
-  onSecurityChange: function() {},
+  onLocationChange() {},
+  onProgressChange() {},
+  onStatusChange() {},
+  onSecurityChange() {},
 };

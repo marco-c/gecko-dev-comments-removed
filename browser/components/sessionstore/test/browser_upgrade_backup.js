@@ -37,7 +37,7 @@ var getUpgradeBackups = Task.async(function* () {
     iterator = new OS.File.DirectoryIterator(Paths.backups);
 
     
-    yield iterator.forEach(function (file) {
+    yield iterator.forEach(function(file) {
       
       if (file.path.startsWith(Paths.upgradeBackupPrefix)) {
         
@@ -119,7 +119,7 @@ add_task(function* test_upgrade_backup_removal() {
 
   
   
-  newBackups = newBackups.filter(function (backup) {
+  newBackups = newBackups.filter(function(backup) {
     return backups.indexOf(backup) < 0;
   });
 

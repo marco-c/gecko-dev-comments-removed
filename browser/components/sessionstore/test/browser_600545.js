@@ -17,7 +17,7 @@ function testBug600545() {
   Services.prefs.setBoolPref("browser.sessionstore.resume_from_crash", false);
   Services.prefs.setIntPref("browser.sessionstore.interval", 2000);
 
-  registerCleanupFunction(function () {
+  registerCleanupFunction(function() {
     Services.prefs.clearUserPref("browser.sessionstore.resume_from_crash");
     Services.prefs.clearUserPref("browser.sessionstore.interval");
   });
@@ -51,7 +51,7 @@ function testBug600545() {
   waitForBrowserState(state, function() {
     
     
-    waitForSaveState(function () {
+    waitForSaveState(function() {
       let expectedNumberOfTabs = getStateTabCount(state);
       let retrievedState = JSON.parse(ss.getBrowserState());
       let actualNumberOfTabs = getStateTabCount(retrievedState);

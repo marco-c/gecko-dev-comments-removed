@@ -15,12 +15,12 @@ XPCOMUtils.defineLazyModuleGetter(this, "Utils",
   "resource://gre/modules/sessionstore/Utils.jsm");
 
 
-XPCOMUtils.defineLazyGetter(this, "gEncoder", function () {
+XPCOMUtils.defineLazyGetter(this, "gEncoder", function() {
   return new TextEncoder();
 });
 
 
-XPCOMUtils.defineLazyGetter(this, "gDecoder", function () {
+XPCOMUtils.defineLazyGetter(this, "gDecoder", function() {
   return new TextDecoder();
 });
 
@@ -39,7 +39,7 @@ var SessionMigrationInternal = {
 
 
 
-  convertState: function(aStateObj) {
+  convertState(aStateObj) {
     let state = {
       selectedWindow: aStateObj.selectedWindow,
       _closedWindows: []
@@ -71,7 +71,7 @@ var SessionMigrationInternal = {
   
 
 
-  readState: function(aPath) {
+  readState(aPath) {
     return Task.spawn(function*() {
       let bytes = yield OS.File.read(aPath);
       let text = gDecoder.decode(bytes);
@@ -82,7 +82,7 @@ var SessionMigrationInternal = {
   
 
 
-  writeState: function(aPath, aState) {
+  writeState(aPath, aState) {
     let bytes = gEncoder.encode(JSON.stringify(aState));
     return OS.File.writeAtomic(aPath, bytes, {tmpPath: aPath + ".tmp"});
   }
@@ -92,7 +92,7 @@ var SessionMigration = {
   
 
 
-  migrate: function(aFromPath, aToPath) {
+  migrate(aFromPath, aToPath) {
     return Task.spawn(function*() {
       let inState = yield SessionMigrationInternal.readState(aFromPath);
       let outState = SessionMigrationInternal.convertState(inState);

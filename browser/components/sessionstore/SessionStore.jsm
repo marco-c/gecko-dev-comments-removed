@@ -326,7 +326,7 @@ this.SessionStore = {
     SessionStoreInternal.restoreLastSession();
   },
 
-  getCurrentState: function (aUpdateAll) {
+  getCurrentState(aUpdateAll) {
     return SessionStoreInternal.getCurrentState(aUpdateAll);
   },
 
@@ -383,7 +383,7 @@ this.SessionStore = {
 
 
 
-  keepOnlyWorthSavingTabs: function (aState) {
+  keepOnlyWorthSavingTabs(aState) {
     for (let i = aState.windows.length - 1; i >= 0; i--) {
       let win = aState.windows[i];
       for (let j = win.tabs.length - 1; j >= 0; j--) {
@@ -502,7 +502,7 @@ var SessionStoreInternal = {
   _closedObjectsChanged: false,
 
   
-  _deferredInitialized: (function () {
+  _deferredInitialized: (function() {
     let deferred = {};
 
     deferred.promise = new Promise((resolve, reject) => {
@@ -571,7 +571,7 @@ var SessionStoreInternal = {
   
 
 
-  init: function () {
+  init() {
     if (this._initialized) {
       throw new Error("SessionStore.init() must only be called once!");
     }
@@ -588,7 +588,7 @@ var SessionStoreInternal = {
   
 
 
-  initSession: function () {
+  initSession() {
     TelemetryStopwatch.start("FX_SESSION_RESTORE_STARTUP_INIT_SESSION_MS");
     let state;
     let ss = gSessionStartup;
@@ -614,8 +614,7 @@ var SessionStoreInternal = {
           if (remainingState.windows.length) {
             LastSession.setState(remainingState);
           }
-        }
-        else {
+        } else {
           
           
           LastSession.setState(state.lastSessionState);
@@ -655,8 +654,7 @@ var SessionStoreInternal = {
             delete aWindow.__lastSessionWindowID;
           });
         }
-      }
-      catch (ex) { debug("The session file is invalid: " + ex); }
+      } catch (ex) { debug("The session file is invalid: " + ex); }
     }
 
     
@@ -669,7 +667,7 @@ var SessionStoreInternal = {
     return state;
   },
 
-  _initPrefs : function() {
+  _initPrefs() {
     this._prefBranch = Services.prefs.getBranch("browser.");
 
     gDebuggingEnabled = this._prefBranch.getBoolPref("sessionstore.debug");
@@ -957,7 +955,7 @@ var SessionStoreInternal = {
 
 
 
-  recordTelemetry: function (telemetry) {
+  recordTelemetry(telemetry) {
     for (let histogramId in telemetry) {
       Telemetry.getHistogramById(histogramId).add(telemetry[histogramId]);
     }
@@ -1139,8 +1137,7 @@ var SessionStoreInternal = {
           let options = {firstWindow: true, overwriteTabs: overwrite};
           this.restoreWindows(aWindow, aInitialState, options);
         }
-      }
-      else {
+      } else {
         
         Services.obs.notifyObservers(null, NOTIFY_WINDOWS_RESTORED, "");
       }
@@ -1165,8 +1162,7 @@ var SessionStoreInternal = {
         this._deferredInitialState.windows.length : 0;
       this.restoreWindows(aWindow, this._deferredInitialState, {firstWindow: true});
       this._deferredInitialState = null;
-    }
-    else if (this._restoreLastWindow && aWindow.toolbar.visible &&
+    } else if (this._restoreLastWindow && aWindow.toolbar.visible &&
              this._closedWindows.length && !isPrivateWindow) {
 
       
@@ -1208,8 +1204,7 @@ var SessionStoreInternal = {
             delete normalTabsState.windows[0].__lastSessionWindowID;
             this._closedWindows[closedWindowIndex] = normalTabsState.windows[0];
           }
-        }
-        else {
+        } else {
           
           
           this._removeClosedWindow(closedWindowIndex);
@@ -1241,7 +1236,7 @@ var SessionStoreInternal = {
 
 
 
-  onBeforeBrowserWindowShown: function (aWindow) {
+  onBeforeBrowserWindowShown(aWindow) {
     
     this.onLoad(aWindow);
 
@@ -1547,7 +1542,7 @@ var SessionStoreInternal = {
   
 
 
-  onQuitApplicationGranted: function ssi_onQuitApplicationGranted(syncShutdown=false) {
+  onQuitApplicationGranted: function ssi_onQuitApplicationGranted(syncShutdown = false) {
     
     this._forEachBrowserWindow((win) => {
       this._collectWindowData(win);
@@ -1623,7 +1618,7 @@ var SessionStoreInternal = {
 
 
 
-  flushAllWindowsAsync: Task.async(function*(progress={}) {
+  flushAllWindowsAsync: Task.async(function*(progress = {}) {
     let windowPromises = new Map();
     
     
@@ -1782,8 +1777,7 @@ var SessionStoreInternal = {
       }
       if (openTabs.length == 0) {
         this._closedWindows.splice(ix, 1);
-      }
-      else if (openTabs.length != openTabCount) {
+      } else if (openTabs.length != openTabCount) {
         
         let selectedTab = openTabs[this._closedWindows[ix].selected - 1];
         
@@ -2078,7 +2072,7 @@ var SessionStoreInternal = {
 
 
 
-  onBrowserCrashed: function(aBrowser) {
+  onBrowserCrashed(aBrowser) {
     NS_ASSERT(aBrowser.isRemoteBrowser,
               "Only remote browsers should be able to crash");
 
@@ -2114,7 +2108,7 @@ var SessionStoreInternal = {
   
   
   
-  onIdleDaily: function() {
+  onIdleDaily() {
     
     this._cleanupOldData([this._closedWindows]);
 
@@ -2128,12 +2122,12 @@ var SessionStoreInternal = {
   },
 
   
-  _cleanupOldData: function(targets) {
+  _cleanupOldData(targets) {
     const TIME_TO_LIVE = this._prefBranch.getIntPref("sessionstore.cleanup.forget_closed_after");
     const now = Date.now();
 
     for (let array of targets) {
-      for (let i = array.length - 1; i >= 0; --i)  {
+      for (let i = array.length - 1; i >= 0; --i) {
         let data = array[i];
         
         
@@ -2166,8 +2160,7 @@ var SessionStoreInternal = {
 
     try {
       var state = JSON.parse(aState);
-    }
-    catch (ex) {  }
+    } catch (ex) {  }
     if (!state) {
       throw Components.Exception("Invalid state string: not JSON", Cr.NS_ERROR_INVALID_ARG);
     }
@@ -2662,8 +2655,7 @@ var SessionStoreInternal = {
         
         let options = {overwriteTabs: canOverwriteTabs, isFollowUp: true};
         this.restoreWindow(windowToUse, winState, options);
-      }
-      else {
+      } else {
         this._openWindowWithState({ windows: [winState] });
       }
     }
@@ -2901,8 +2893,7 @@ var SessionStoreInternal = {
 
     if (tabbrowser.tabs.length == removableTabs.length) {
       canOverwriteTabs = true;
-    }
-    else {
+    } else {
       
       for (let i = removableTabs.length - 1; i >= 0; i--) {
         tabbrowser.removeTab(removableTabs.pop(), { animate: false });
@@ -2947,7 +2938,7 @@ var SessionStoreInternal = {
 
 
 
-  getCurrentState: function (aUpdateAll) {
+  getCurrentState(aUpdateAll) {
     this._handleClosedWindows().then(() => {
       this._notifyOfClosedObjectsChange();
     });
@@ -2962,8 +2953,7 @@ var SessionStoreInternal = {
           return;
         if (aUpdateAll || DirtyWindows.has(aWindow) || aWindow == activeWindow) {
           this._collectWindowData(aWindow);
-        }
-        else { 
+        } else { 
           this._updateWindowFeatures(aWindow);
         }
       });
@@ -3041,7 +3031,7 @@ var SessionStoreInternal = {
       windows: total,
       selectedWindow: ix + 1,
       _closedWindows: lastClosedWindowsCopy,
-      session: session,
+      session,
       global: this._globalState.getState()
     };
 
@@ -3085,7 +3075,7 @@ var SessionStoreInternal = {
     let windows = [this._windows[aWindow.__SSi]];
     SessionCookies.update(windows);
 
-    return { windows: windows };
+    return { windows };
   },
 
   
@@ -3234,8 +3224,7 @@ var SessionStoreInternal = {
 
       if (winData.tabs[t].hidden) {
         tabbrowser.hideTab(tabs[t]);
-      }
-      else {
+      } else {
         tabbrowser.showTab(tabs[t]);
         numVisibleTabs++;
       }
@@ -3367,8 +3356,7 @@ var SessionStoreInternal = {
     let root;
     try {
       root = (typeof aState == "string") ? JSON.parse(aState) : aState;
-    }
-    catch (ex) { 
+    } catch (ex) { 
       debug(ex);
       this._sendRestoreCompletedNotifications();
       return;
@@ -3588,7 +3576,7 @@ var SessionStoreInternal = {
     });
 
     browser.messageManager.sendAsyncMessage("SessionStore:restoreHistory",
-                                            {tabData: tabData, epoch: epoch, loadArguments});
+                                            {tabData, epoch, loadArguments});
 
     
     if ("attributes" in tabData) {
@@ -3617,7 +3605,7 @@ var SessionStoreInternal = {
 
 
 
-  restoreTabContent: function (aTab, aLoadArguments = null, aReloadInFreshProcess = false) {
+  restoreTabContent(aTab, aLoadArguments = null, aReloadInFreshProcess = false) {
     if (aTab.hasAttribute("customizemode") && !aLoadArguments) {
       return;
     }
@@ -3650,7 +3638,7 @@ var SessionStoreInternal = {
     let isRemotenessUpdate =
       tabbrowser.updateBrowserRemotenessByURL(browser, uri, {
         freshProcess: aReloadInFreshProcess,
-        newFrameloader: newFrameloader,
+        newFrameloader,
       });
 
     if (isRemotenessUpdate) {
@@ -3662,8 +3650,8 @@ var SessionStoreInternal = {
       let epoch = this.startNextEpoch(browser);
 
       browser.messageManager.sendAsyncMessage("SessionStore:restoreHistory", {
-        tabData: tabData,
-        epoch: epoch,
+        tabData,
+        epoch,
         loadArguments: aLoadArguments,
         isRemotenessUpdate,
       });
@@ -3735,7 +3723,7 @@ var SessionStoreInternal = {
 
 
   restoreWindowFeatures: function ssi_restoreWindowFeatures(aWindow, aWinData) {
-    var hidden = (aWinData.hidden)?aWinData.hidden.split(","):[];
+    var hidden = (aWinData.hidden) ? aWinData.hidden.split(",") : [];
     WINDOW_HIDEABLE_FEATURES.forEach(function(aItem) {
       aWindow[aItem].visible = hidden.indexOf(aItem) == -1;
     });
@@ -3746,8 +3734,7 @@ var SessionStoreInternal = {
         aWindow.gURLBar.readOnly = true;
         aWindow.gURLBar.setAttribute("enablehistory", "false");
       }
-    }
-    else {
+    } else {
       delete this._windows[aWindow.__SSi].isPopup;
       if (aWindow.gURLBar) {
         aWindow.gURLBar.readOnly = false;
@@ -3844,10 +3831,8 @@ var SessionStoreInternal = {
         aWindow.resizeTo(aWidth, aHeight);
       }
     }
-    if (aSizeMode && win_("sizemode") != aSizeMode)
-    {
-      switch (aSizeMode)
-      {
+    if (aSizeMode && win_("sizemode") != aSizeMode) {
+      switch (aSizeMode) {
       case "maximized":
         aWindow.maximize();
         break;
@@ -3879,7 +3864,7 @@ var SessionStoreInternal = {
 
 
 
-  saveStateDelayed: function (aWindow = null) {
+  saveStateDelayed(aWindow = null) {
     if (aWindow) {
       DirtyWindows.add(aWindow);
     }
@@ -4171,7 +4156,7 @@ var SessionStoreInternal = {
 
 
 
-  _hasSingleTabWithURL: function(aWinData, aURL) {
+  _hasSingleTabWithURL(aWinData, aURL) {
     if (aWinData &&
         aWinData.length == 1 &&
         aWinData[0].tabs &&
@@ -4538,7 +4523,7 @@ var SessionStoreInternal = {
 
 
 
-  _resetLocalTabRestoringState: function (aTab) {
+  _resetLocalTabRestoringState(aTab) {
     NS_ASSERT(aTab.linkedBrowser.__SS_restoreState,
               "given tab is not restoring");
 
@@ -4564,7 +4549,7 @@ var SessionStoreInternal = {
     }
   },
 
-  _resetTabRestoringState: function (tab) {
+  _resetTabRestoringState(tab) {
     NS_ASSERT(tab.linkedBrowser.__SS_restoreState,
               "given tab is not restoring");
 
@@ -4608,7 +4593,7 @@ var SessionStoreInternal = {
 
 
 
-  isCurrentEpoch: function (browser, epoch) {
+  isCurrentEpoch(browser, epoch) {
     return this.getCurrentEpoch(browser) == epoch;
   },
 
@@ -4679,7 +4664,7 @@ var TabRestoreQueue = {
     get restoreOnDemand() {
       let updateValue = () => {
         let value = Services.prefs.getBoolPref(PREF);
-        let definition = {value: value, configurable: true};
+        let definition = {value, configurable: true};
         Object.defineProperty(this, "restoreOnDemand", definition);
         return value;
       }
@@ -4693,7 +4678,7 @@ var TabRestoreQueue = {
     get restorePinnedTabsOnDemand() {
       let updateValue = () => {
         let value = Services.prefs.getBoolPref(PREF);
-        let definition = {value: value, configurable: true};
+        let definition = {value, configurable: true};
         Object.defineProperty(this, "restorePinnedTabsOnDemand", definition);
         return value;
       }
@@ -4707,7 +4692,7 @@ var TabRestoreQueue = {
     get restoreHiddenTabs() {
       let updateValue = () => {
         let value = Services.prefs.getBoolPref(PREF);
-        let definition = {value: value, configurable: true};
+        let definition = {value, configurable: true};
         Object.defineProperty(this, "restoreHiddenTabs", definition);
         return value;
       }
@@ -4719,12 +4704,12 @@ var TabRestoreQueue = {
   },
 
   
-  reset: function () {
+  reset() {
     this.tabs = {priority: [], visible: [], hidden: []};
   },
 
   
-  add: function (tab) {
+  add(tab) {
     let {priority, hidden, visible} = this.tabs;
 
     if (tab.pinned) {
@@ -4737,7 +4722,7 @@ var TabRestoreQueue = {
   },
 
   
-  remove: function (tab) {
+  remove(tab) {
     let {priority, hidden, visible} = this.tabs;
 
     
@@ -4756,7 +4741,7 @@ var TabRestoreQueue = {
   },
 
   
-  shift: function () {
+  shift() {
     let set;
     let {priority, hidden, visible} = this.tabs;
 
@@ -4776,7 +4761,7 @@ var TabRestoreQueue = {
   },
 
   
-  hiddenToVisible: function (tab) {
+  hiddenToVisible(tab) {
     let {hidden, visible} = this.tabs;
     let index = hidden.indexOf(tab);
 
@@ -4787,7 +4772,7 @@ var TabRestoreQueue = {
   },
 
   
-  visibleToHidden: function (tab) {
+  visibleToHidden(tab) {
     let {visible, hidden} = this.tabs;
     let index = visible.indexOf(tab);
 
@@ -4805,7 +4790,7 @@ var TabRestoreQueue = {
 
 
 
-  willRestoreSoon: function (tab) {
+  willRestoreSoon(tab) {
     let { priority, hidden, visible } = this.tabs;
     let { restoreOnDemand, restorePinnedTabsOnDemand,
           restoreHiddenTabs } = this.prefs;
@@ -4833,19 +4818,19 @@ var TabRestoreQueue = {
 var DyingWindowCache = {
   _data: new WeakMap(),
 
-  has: function (window) {
+  has(window) {
     return this._data.has(window);
   },
 
-  get: function (window) {
+  get(window) {
     return this._data.get(window);
   },
 
-  set: function (window, data) {
+  set(window, data) {
     this._data.set(window, data);
   },
 
-  remove: function (window) {
+  remove(window) {
     this._data.delete(window);
   }
 };
@@ -4855,19 +4840,19 @@ var DyingWindowCache = {
 var DirtyWindows = {
   _data: new WeakMap(),
 
-  has: function (window) {
+  has(window) {
     return this._data.has(window);
   },
 
-  add: function (window) {
+  add(window) {
     return this._data.set(window, true);
   },
 
-  remove: function (window) {
+  remove(window) {
     this._data.delete(window);
   },
 
-  clear: function (window) {
+  clear(window) {
     this._data = new WeakMap();
   }
 };
@@ -4883,15 +4868,15 @@ var LastSession = {
     return !!this._state;
   },
 
-  getState: function () {
+  getState() {
     return this._state;
   },
 
-  setState: function (state) {
+  setState(state) {
     this._state = state;
   },
 
-  clear: function () {
+  clear() {
     if (this._state) {
       this._state = null;
       Services.obs.notifyObservers(null, NOTIFY_LAST_SESSION_CLEARED, null);

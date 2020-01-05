@@ -24,11 +24,11 @@ const MAX_EXPIRY = Math.pow(2, 62);
 
 
 this.SessionCookies = Object.freeze({
-  update: function (windows) {
+  update(windows) {
     SessionCookiesInternal.update(windows);
   },
 
-  getHostsForWindow: function (window, checkPrivacy = false) {
+  getHostsForWindow(window, checkPrivacy = false) {
     return SessionCookiesInternal.getHostsForWindow(window, checkPrivacy);
   },
 
@@ -55,7 +55,7 @@ var SessionCookiesInternal = {
 
 
 
-  update: function (windows) {
+  update(windows) {
     this._ensureInitialized();
 
     for (let window of windows) {
@@ -71,7 +71,7 @@ var SessionCookiesInternal = {
           
           
           
-          if (PrivacyLevel.canSave({isHttps: cookie.secure, isPinned: isPinned})) {
+          if (PrivacyLevel.canSave({isHttps: cookie.secure, isPinned})) {
             cookies.push(cookie);
           }
         }
@@ -99,7 +99,7 @@ var SessionCookiesInternal = {
 
 
 
-  getHostsForWindow: function (window, checkPrivacy = false) {
+  getHostsForWindow(window, checkPrivacy = false) {
     let hosts = {};
 
     for (let tab of window.tabs) {
@@ -135,7 +135,7 @@ var SessionCookiesInternal = {
 
 
 
-  observe: function (subject, topic, data) {
+  observe(subject, topic, data) {
     switch (data) {
       case "added":
       case "changed":
@@ -163,7 +163,7 @@ var SessionCookiesInternal = {
 
 
 
-  _ensureInitialized: function () {
+  _ensureInitialized() {
     if (!this._initialized) {
       this._reloadCookies();
       this._initialized = true;
@@ -185,7 +185,7 @@ var SessionCookiesInternal = {
 
 
 
-  _extractHostsFromEntry: function (entry, hosts, checkPrivacy, isPinned) {
+  _extractHostsFromEntry(entry, hosts, checkPrivacy, isPinned) {
     let host = entry._host;
     let scheme = entry._scheme;
 
@@ -199,8 +199,7 @@ var SessionCookiesInternal = {
         host = uri.host;
         scheme = uri.scheme;
         this._extractHostsFromHostScheme(host, scheme, hosts, checkPrivacy, isPinned);
-      }
-      catch (ex) { }
+      } catch (ex) { }
     }
 
     if (entry.children) {
@@ -226,13 +225,12 @@ var SessionCookiesInternal = {
 
 
 
-  _extractHostsFromHostScheme:
-    function (host, scheme, hosts, checkPrivacy, isPinned) {
+  _extractHostsFromHostScheme(host, scheme, hosts, checkPrivacy, isPinned) {
     
     
     if (/https?/.test(scheme) && !hosts[host] &&
         (!checkPrivacy ||
-         PrivacyLevel.canSave({isHttps: scheme == "https", isPinned: isPinned}))) {
+         PrivacyLevel.canSave({isHttps: scheme == "https", isPinned}))) {
       
       
       hosts[host] = isPinned;
@@ -244,7 +242,7 @@ var SessionCookiesInternal = {
   
 
 
-  _updateCookie: function (cookie) {
+  _updateCookie(cookie) {
     cookie.QueryInterface(Ci.nsICookie2);
 
     if (cookie.isSession) {
@@ -257,7 +255,7 @@ var SessionCookiesInternal = {
   
 
 
-  _removeCookie: function (cookie) {
+  _removeCookie(cookie) {
     cookie.QueryInterface(Ci.nsICookie2);
 
     if (cookie.isSession) {
@@ -268,7 +266,7 @@ var SessionCookiesInternal = {
   
 
 
-  _removeCookies: function (cookies) {
+  _removeCookies(cookies) {
     for (let i = 0; i < cookies.length; i++) {
       this._removeCookie(cookies.queryElementAt(i, Ci.nsICookie2));
     }
@@ -278,7 +276,7 @@ var SessionCookiesInternal = {
 
 
 
-  _reloadCookies: function () {
+  _reloadCookies() {
     let iter = Services.cookies.enumerator;
     while (iter.hasMoreElements()) {
       this._updateCookie(iter.getNext());
@@ -361,7 +359,7 @@ var CookieStore = {
 
 
 
-  getCookiesForHost: function (host) {
+  getCookiesForHost(host) {
     let cookies = [];
 
     let appendCookiesForHost = host => {
@@ -396,7 +394,7 @@ var CookieStore = {
 
 
 
-  set: function (cookie) {
+  set(cookie) {
     let jscookie = {host: cookie.host, value: cookie.value};
 
     
@@ -433,14 +431,14 @@ var CookieStore = {
 
 
 
-  delete: function (cookie) {
+  delete(cookie) {
     this._ensureMap(cookie).delete(cookie.name);
   },
 
   
 
 
-  clear: function () {
+  clear() {
     this._hosts.clear();
   },
 
@@ -453,7 +451,7 @@ var CookieStore = {
 
 
 
-  _ensureMap: function (cookie) {
+  _ensureMap(cookie) {
     if (!this._hosts.has(cookie.host)) {
       this._hosts.set(cookie.host, new Map());
     }

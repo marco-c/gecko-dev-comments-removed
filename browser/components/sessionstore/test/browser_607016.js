@@ -27,8 +27,7 @@ add_task(function* () {
       if (tabState.extData) {
         is(tabCurState.extData["uniq"], tabState.extData["uniq"],
            "sanity check that tab has correct extData");
-      }
-      else {
+      } else {
         
         
         
@@ -64,8 +63,7 @@ add_task(function* () {
     if ("extData" in tabState) {
       ok(!("uniq" in tabState.extData),
          "(deleting) uniq not in existing extData");
-    }
-    else {
+    } else {
       ok(true, "(deleting) no data is stored in extData");
     }
 

@@ -31,7 +31,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "PrivateBrowsingUtils",
   "resource://gre/modules/PrivateBrowsingUtils.jsm");
 
 
-XPCOMUtils.defineLazyGetter(this, "gInterval", function () {
+XPCOMUtils.defineLazyGetter(this, "gInterval", function() {
   const PREF = "browser.sessionstore.interval";
 
   
@@ -54,7 +54,7 @@ function notify(subject, topic) {
 
 
 function stopWatch(method) {
-  return function (...histograms) {
+  return function(...histograms) {
     for (let hist of histograms) {
       TelemetryStopwatch[method]("FX_SESSION_RESTORE_" + hist);
     }
@@ -72,7 +72,7 @@ this.SessionSaver = Object.freeze({
   
 
 
-  run: function () {
+  run() {
     return SessionSaverInternal.run();
   },
 
@@ -81,7 +81,7 @@ this.SessionSaver = Object.freeze({
 
 
 
-  runDelayed: function () {
+  runDelayed() {
     SessionSaverInternal.runDelayed();
   },
 
@@ -89,14 +89,14 @@ this.SessionSaver = Object.freeze({
 
 
 
-  updateLastSaveTime: function () {
+  updateLastSaveTime() {
     SessionSaverInternal.updateLastSaveTime();
   },
 
   
 
 
-  cancel: function () {
+  cancel() {
     SessionSaverInternal.cancel();
   }
 });
@@ -121,7 +121,7 @@ var SessionSaverInternal = {
   
 
 
-  run: function () {
+  run() {
     return this._saveState(true );
   },
 
@@ -134,7 +134,7 @@ var SessionSaverInternal = {
 
 
 
-  runDelayed: function (delay = 2000) {
+  runDelayed(delay = 2000) {
     
     if (this._timeoutID) {
       return;
@@ -151,14 +151,14 @@ var SessionSaverInternal = {
 
 
 
-  updateLastSaveTime: function () {
+  updateLastSaveTime() {
     this._lastSaveTime = Date.now();
   },
 
   
 
 
-  cancel: function () {
+  cancel() {
     clearTimeout(this._timeoutID);
     this._timeoutID = null;
   },
@@ -170,7 +170,7 @@ var SessionSaverInternal = {
 
 
 
-  _saveState: function (forceUpdateAllWindows = false) {
+  _saveState(forceUpdateAllWindows = false) {
     
     this.cancel();
 
@@ -241,7 +241,7 @@ var SessionSaverInternal = {
 
 
 
-  _saveStateAsync: function () {
+  _saveStateAsync() {
     
     this._timeoutID = null;
 
@@ -252,7 +252,7 @@ var SessionSaverInternal = {
   
 
 
-  _writeState: function (state) {
+  _writeState(state) {
     
     
     

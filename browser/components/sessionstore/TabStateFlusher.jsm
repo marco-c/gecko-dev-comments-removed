@@ -48,7 +48,7 @@ this.TabStateFlusher = Object.freeze({
 
 
 
-  resolve(browser, flushID, success=true, message="") {
+  resolve(browser, flushID, success = true, message = "") {
     TabStateFlusherInternal.resolve(browser, flushID, success, message);
   },
 
@@ -66,7 +66,7 @@ this.TabStateFlusher = Object.freeze({
 
 
 
-  resolveAll(browser, success=true, message="") {
+  resolveAll(browser, success = true, message = "") {
     TabStateFlusherInternal.resolveAll(browser, success, message);
   }
 });
@@ -124,7 +124,7 @@ var TabStateFlusherInternal = {
 
 
 
-  resolve(browser, flushID, success=true, message="") {
+  resolve(browser, flushID, success = true, message = "") {
     
     if (!this._requests.has(browser.permanentKey)) {
       return;
@@ -160,7 +160,7 @@ var TabStateFlusherInternal = {
 
 
 
-  resolveAll(browser, success=true, message="") {
+  resolveAll(browser, success = true, message = "") {
     
     if (!this._requests.has(browser.permanentKey)) {
       return;

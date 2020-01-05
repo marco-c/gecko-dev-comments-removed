@@ -46,7 +46,7 @@ add_task(function* test() {
 
 function injectInlineScript(browser, scriptText) {
   let scriptElt = browser.contentDocument.createElement("script");
-  scriptElt.type = 'text/javascript';
+  scriptElt.type = "text/javascript";
   scriptElt.text = scriptText;
   browser.contentDocument.body.appendChild(scriptElt);
 }

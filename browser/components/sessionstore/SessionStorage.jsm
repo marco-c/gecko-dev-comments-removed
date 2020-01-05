@@ -33,7 +33,7 @@ this.SessionStorage = Object.freeze({
 
 
 
-  collect: function (docShell, frameTree) {
+  collect(docShell, frameTree) {
     return SessionStorageInternal.collect(docShell, frameTree);
   },
 
@@ -46,7 +46,7 @@ this.SessionStorage = Object.freeze({
 
 
 
-  restore: function (aDocShell, aStorageData) {
+  restore(aDocShell, aStorageData) {
     SessionStorageInternal.restore(aDocShell, aStorageData);
   },
 });
@@ -62,7 +62,7 @@ var SessionStorageInternal = {
 
 
 
-  collect: function (docShell, frameTree) {
+  collect(docShell, frameTree) {
     let data = {};
     let visitedOrigins = new Set();
 
@@ -108,7 +108,7 @@ var SessionStorageInternal = {
 
 
 
-  restore: function (aDocShell, aStorageData) {
+  restore(aDocShell, aStorageData) {
     for (let origin of Object.keys(aStorageData)) {
       let data = aStorageData[origin];
 
@@ -149,7 +149,7 @@ var SessionStorageInternal = {
 
 
 
-  _readEntry: function (aPrincipal, aDocShell) {
+  _readEntry(aPrincipal, aDocShell) {
     let hostData = {};
     let storage;
 

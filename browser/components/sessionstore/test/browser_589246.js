@@ -58,7 +58,7 @@ tests.push({
   extra: false,
   close: false,
   checkWinLin: checkNoWindowsGenerator(1),
-  checkOSX: function(aPreviousState, aCurState) {
+  checkOSX(aPreviousState, aCurState) {
     is(aCurState, aPreviousState, "test #1: closed window state is unchanged");
   }
 });
@@ -118,8 +118,7 @@ function test() {
 function runNextTestOrFinish() {
   if (tests.length) {
     setupForTest(tests.shift())
-  }
-  else {
+  } else {
     
     ["browser.tabs.warnOnClose", "browser.startup.page"].forEach(function(p) {
       if (gPrefService.prefHasUserValue(p))
@@ -166,7 +165,7 @@ function onStateRestored(aSubject, aTopic, aData) {
       if (shouldPinTab)
         newWin.gBrowser.pinTab(newWin.gBrowser.selectedTab);
 
-      newWin.addEventListener("unload", function () {
+      newWin.addEventListener("unload", function() {
         onWindowUnloaded();
       }, {once: true});
       
@@ -179,15 +178,13 @@ function onStateRestored(aSubject, aTopic, aData) {
         newTab.linkedBrowser.addEventListener("load", function() {
           if (shouldCloseTab == "one") {
             newWin.gBrowser.removeTab(newTab2);
-          }
-          else if (shouldCloseTab == "both") {
+          } else if (shouldCloseTab == "both") {
             newWin.gBrowser.removeTab(newTab);
             newWin.gBrowser.removeTab(newTab2);
           }
           newWin.BrowserTryToCloseWindow();
         }, {capture: true, once: true});
-      }
-      else {
+      } else {
         newWin.BrowserTryToCloseWindow();
       }
     });
@@ -214,7 +211,7 @@ function onWindowUnloaded() {
   
   let newWin = openDialog(location, "_blank", "chrome,all,dialog=no", "about:mozilla");
   newWin.addEventListener("load", function(aEvent) {
-    newWin.gBrowser.selectedBrowser.addEventListener("load", function () {
+    newWin.gBrowser.selectedBrowser.addEventListener("load", function() {
       
       afterTestCallback(previousClosedWindowData, ss.getClosedWindowData());
       afterTestCleanup(newWin);

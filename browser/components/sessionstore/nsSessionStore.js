@@ -26,7 +26,7 @@ function SessionStoreService() {}
 
 
 
-Object.keys(SessionStore).forEach(function (aName) {
+Object.keys(SessionStore).forEach(function(aName) {
   let desc = Object.getOwnPropertyDescriptor(SessionStore, aName);
   Object.defineProperty(SessionStoreService.prototype, aName, desc);
 });

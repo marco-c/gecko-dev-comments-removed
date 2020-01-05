@@ -12,7 +12,7 @@ function test() {
   
   gPrefService.setIntPref("browser.sessionstore.max_serialize_back", -1);
   gPrefService.setIntPref("browser.sessionstore.max_serialize_forward", -1);
-  registerCleanupFunction(function () {
+  registerCleanupFunction(function() {
     gPrefService.clearUserPref("browser.sessionstore.max_serialize_back");
     gPrefService.clearUserPref("browser.sessionstore.max_serialize_forward");
   });
