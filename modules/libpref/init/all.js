@@ -601,6 +601,9 @@ pref("media.decoder.recycle.enabled", false);
 pref("media.cubeb.log_level", "");
 
 
+pref("media.playback.warnings-as-errors", false);
+
+
 pref("layers.amd-switchable-gfx.enabled", true);
 
 
@@ -5059,7 +5062,12 @@ pref("dom.vr.oculus.enabled", true);
 
 pref("dom.vr.osvr.enabled", false);
 
+#ifdef XP_WIN
+pref("dom.vr.openvr.enabled", true);
+#else
+
 pref("dom.vr.openvr.enabled", false);
+#endif
 
 
 
@@ -5069,8 +5077,6 @@ pref("dom.vr.poseprediction.enabled", true);
 
 
 pref("dom.vr.require-gesture", true);
-
-pref("gfx.vr.openvr-runtime", "");
 
 pref("gfx.vr.osvr.utilLibPath", "");
 pref("gfx.vr.osvr.commonLibPath", "");

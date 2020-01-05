@@ -135,7 +135,8 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(IMEContentObserver)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mEndOfAddedTextCache.mContainerNode)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mStartOfRemovingTextRangeCache.mContainerNode)
 
-  tmp->mUpdatePreference.mWantUpdates = nsIMEUpdatePreference::NOTIFY_NOTHING;
+  tmp->mIMENotificationRequests.mWantUpdates =
+    IMENotificationRequests::NOTIFY_NOTHING;
   tmp->mESM = nullptr;
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
@@ -432,7 +433,7 @@ IMEContentObserver::ObserveEditableNode()
     mEditor->AddEditorObserver(this);
   }
 
-  mUpdatePreference = mWidget->GetIMEUpdatePreference();
+  mIMENotificationRequests = mWidget->GetIMENotificationRequests();
   if (!WasInitializedWithPlugin()) {
     
     
@@ -443,12 +444,12 @@ IMEContentObserver::ObserveEditableNode()
     NS_ENSURE_SUCCESS_VOID(rv);
   }
 
-  if (mUpdatePreference.WantTextChange()) {
+  if (mIMENotificationRequests.WantTextChange()) {
     
     mRootContent->AddMutationObserver(this);
   }
 
-  if (mUpdatePreference.WantPositionChanged() && mDocShell) {
+  if (mIMENotificationRequests.WantPositionChanged() && mDocShell) {
     
     
     mDocShell->AddWeakScrollObserver(this);
@@ -514,11 +515,11 @@ IMEContentObserver::UnregisterObservers()
     mFocusedWidget = nullptr;
   }
 
-  if (mUpdatePreference.WantTextChange() && mRootContent) {
+  if (mIMENotificationRequests.WantTextChange() && mRootContent) {
     mRootContent->RemoveMutationObserver(this);
   }
 
-  if (mUpdatePreference.WantPositionChanged() && mDocShell) {
+  if (mIMENotificationRequests.WantPositionChanged() && mDocShell) {
     mDocShell->RemoveWeakScrollObserver(this);
     mDocShell->RemoveWeakReflowObserver(this);
   }
@@ -540,7 +541,8 @@ IMEContentObserver::Destroy()
   Clear();
 
   mWidget = nullptr;
-  mUpdatePreference.mWantUpdates = nsIMEUpdatePreference::NOTIFY_NOTHING;
+  mIMENotificationRequests.mWantUpdates =
+    IMENotificationRequests::NOTIFY_NOTHING;
 
   if (mESM) {
     mESM->OnStopObservingContent(this);
@@ -784,7 +786,7 @@ bool
 IMEContentObserver::OnMouseButtonEvent(nsPresContext* aPresContext,
                                        WidgetMouseEvent* aMouseEvent)
 {
-  if (!mUpdatePreference.WantMouseButtonEventOnChar()) {
+  if (!mIMENotificationRequests.WantMouseButtonEventOnChar()) {
     return false;
   }
   if (!aMouseEvent->IsTrusted() ||
