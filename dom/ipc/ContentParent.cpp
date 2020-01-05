@@ -36,6 +36,7 @@
 #include "mozIApplication.h"
 #if defined(XP_WIN) && defined(ACCESSIBILITY)
 #include "mozilla/a11y/AccessibleWrap.h"
+#include "mozilla/WindowsVersion.h"
 #endif
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/StyleSheetInlines.h"
@@ -1358,14 +1359,12 @@ ContentParent::Init()
   
   
   if (nsIPresShell::IsAccessibilityActive()) {
-#if !defined(XP_WIN)
-    Unused << SendActivateA11y();
-#else
-    
-    
-    if (Preferences::GetBool(kForceEnableE10sPref, false)) {
+#if defined(XP_WIN)
+    if (IsVistaOrLater()) {
       Unused << SendActivateA11y();
     }
+#else
+    Unused << SendActivateA11y();
 #endif
   }
 #endif
@@ -2789,14 +2788,12 @@ ContentParent::Observe(nsISupports* aSubject,
     if (*aData == '1') {
       
       
-#if !defined(XP_WIN)
-      Unused << SendActivateA11y();
-#else
-      
-      
-      if (Preferences::GetBool(kForceEnableE10sPref, false)) {
+#if defined(XP_WIN)
+      if (IsVistaOrLater()) {
         Unused << SendActivateA11y();
       }
+#else
+      Unused << SendActivateA11y();
 #endif
     } else {
       
