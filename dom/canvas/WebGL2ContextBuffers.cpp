@@ -131,13 +131,13 @@ WebGL2Context::GetBufferSubData(GLenum target, GLintptr srcByteOffset,
     gl->MakeCurrent();
     const ScopedLazyBind readBind(gl, target, buffer);
 
-    const auto mappedBytes = gl->fMapBufferRange(target, srcByteOffset, glByteLen,
-                                                 LOCAL_GL_MAP_READ_BIT);
-    
     if (byteLen) {
+        const auto mappedBytes = gl->fMapBufferRange(target, srcByteOffset, glByteLen,
+                                                     LOCAL_GL_MAP_READ_BIT);
+        
         memcpy(bytes, mappedBytes, byteLen);
+        gl->fUnmapBuffer(target);
     }
-    gl->fUnmapBuffer(target);
 }
 
 } 
