@@ -201,10 +201,6 @@ this.Doctor = {
     let requestor = this._getRepairRequestor(engine.name);
     let didStart = false;
     if (requestor) {
-      if (requestor.tryServerOnlyRepairs(validationResults)) {
-        return; 
-                
-      }
       didStart = requestor.startRepairs(validationResults, flowID);
     }
     log.info(`${didStart ? "did" : "didn't"} start a repair of ${engine.name} with flowID ${flowID}`);
