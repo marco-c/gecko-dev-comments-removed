@@ -37,16 +37,19 @@ fn main(args: [str]) {
     let content = content::content(layout);
 
     
-    let key_po = port();
-    send(osmain, platform::osmain::add_key_handler(chan(key_po)));
+    listen {|key_ch|
+        send(osmain, platform::osmain::add_key_handler(key_ch));
 
-    key_po.recv();
-    comm::send(content, content::exit);
-    comm::send(layout, layout::layout::exit);
+        key_ch.recv();
+    }
 
-    let draw_exit_confirm_po = comm::port();
-    comm::send(renderer, gfx::renderer::exit(comm::chan(draw_exit_confirm_po)));
+    
+    content.send(content::exit);
+    layout.send(layout::layout::exit);
 
-    comm::recv(draw_exit_confirm_po);
-    comm::send(osmain, platform::osmain::exit);
+    listen {|wait_ch|
+        renderer.send(gfx::renderer::exit(wait_ch));
+        wait_ch.recv();
+    }
+    osmain.send(platform::osmain::exit);
 }
