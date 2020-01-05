@@ -34,10 +34,14 @@ TracedTaskCommon::~TracedTaskCommon()
 void
 TracedTaskCommon::Init()
 {
+  
+  
+  uint64_t taskid = GenNewUniqueTaskId();
+
   TraceInfoHolder info = GetOrCreateTraceInfo();
   ENSURE_TRUE_VOID(info);
 
-  mTaskId = GenNewUniqueTaskId();
+  mTaskId = taskid;
   mSourceEventId = info->mCurTraceSourceId;
   mSourceEventType = info->mCurTraceSourceType;
   mParentTaskId = info->mCurTaskId;
