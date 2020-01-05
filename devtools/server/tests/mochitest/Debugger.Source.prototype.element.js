@@ -1,1 +1,6 @@
-function heinrichFun() { franz(); }
+
+"use strict";
+
+function heinrichFun() {
+  franz();
+}
