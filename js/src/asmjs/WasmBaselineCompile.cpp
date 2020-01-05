@@ -5305,16 +5305,14 @@ BaseCompiler::emitCallIndirect(bool oldStyle)
     
     
 
-    Stk callee;
-    if (!oldStyle)
-        callee = stk_.popCopy();
-
     uint32_t numArgs = sig.args().length();
-    size_t stackSpace;
-    if (oldStyle)
-        stackSpace = stackConsumed(numArgs+1);
-    else
-        stackSpace = stackConsumed(numArgs);
+    size_t stackSpace = stackConsumed(numArgs + 1);
+
+    
+    
+    
+
+    Stk callee = oldStyle ? peek(numArgs) : stk_.popCopy();
 
     FunctionCall baselineCall(lineOrBytecode);
     beginCall(baselineCall, EscapesSandbox(false), IsBuiltinCall(false));
@@ -5325,8 +5323,6 @@ BaseCompiler::emitCallIndirect(bool oldStyle)
     if (oldStyle) {
         if (!iter_.readOldCallIndirectCallee(&callee_))
             return false;
-
-        callee = peek(numArgs);
     }
 
     if (!iter_.readCallReturn(sig.ret()))
@@ -5339,10 +5335,11 @@ BaseCompiler::emitCallIndirect(bool oldStyle)
     
     
 
-    if (oldStyle)
-        popValueStackBy(numArgs+1);
-    else
-        popValueStackBy(numArgs);
+    popValueStackBy(oldStyle ? numArgs + 1 : numArgs);
+
+    
+    
+
     masm.freeStack(stackSpace);
 
     if (!IsVoid(sig.ret()))
