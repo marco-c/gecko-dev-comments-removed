@@ -649,7 +649,7 @@ ModuleGenerator::finishCodegen()
 }
 
 bool
-ModuleGenerator::finishLinkData(Bytes& code)
+ModuleGenerator::finishLinkData()
 {
     
     
@@ -1181,7 +1181,7 @@ ModuleGenerator::finish(const ShareableBytes& bytecode)
     }
 #endif
 
-    if (!finishLinkData(code))
+    if (!finishLinkData())
         return nullptr;
 
     return SharedModule(js_new<Module>(Move(assumptions_),
