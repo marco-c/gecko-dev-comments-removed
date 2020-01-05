@@ -276,12 +276,6 @@ private:
   nsresult
   RemoveAllModifiedSince(int64_t aModificationTime);
 
-  
-
-
-  nsresult
-  FetchPermissions();
-
   nsCOMPtr<mozIStorageConnection> mDBConn;
   nsCOMPtr<mozIStorageAsyncStatement> mStmtInsert;
   nsCOMPtr<mozIStorageAsyncStatement> mStmtDelete;
@@ -295,6 +289,9 @@ private:
 
   
   nsTArray<nsCString>          mTypeArray;
+
+  
+  nsTHashtable<nsCStringHashKey> mAvailablePermissionKeys;
 
   
   
