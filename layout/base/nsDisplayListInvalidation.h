@@ -40,13 +40,13 @@ class nsDisplayItemGeometry
 public:
   nsDisplayItemGeometry(nsDisplayItem* aItem, nsDisplayListBuilder* aBuilder);
   virtual ~nsDisplayItemGeometry();
-  
+
   
 
 
 
   const nsRect& ComputeInvalidationRegion() { return mBounds; }
-  
+
   
 
 
@@ -219,7 +219,7 @@ class nsDisplayBoxShadowInnerGeometry : public nsDisplayItemGeometry
 {
 public:
   nsDisplayBoxShadowInnerGeometry(nsDisplayItem* aItem, nsDisplayListBuilder* aBuilder);
-  
+
   virtual void MoveBy(const nsPoint& aOffset) override;
 
   nsRect mPaddingRect;
