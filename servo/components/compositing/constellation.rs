@@ -16,11 +16,12 @@ use compositor_task::Msg as CompositorMsg;
 use devtools_traits::{DevtoolsControlChan, DevtoolsControlMsg};
 use geom::point::Point2D;
 use geom::rect::{Rect, TypedRect};
+use geom::size::Size2D;
 use geom::scale_factor::ScaleFactor;
 use gfx::font_cache_task::FontCacheTask;
-use layout_traits::{LayoutControlMsg, LayoutTaskFactory};
+use layout_traits::{LayoutControlChan, LayoutControlMsg, LayoutTaskFactory};
 use libc;
-use msg::compositor_msg::LayerId;
+use msg::compositor_msg::{Epoch, LayerId};
 use msg::constellation_msg::AnimationState;
 use msg::constellation_msg::Msg as ConstellationMsg;
 use msg::constellation_msg::{FrameId, PipelineExitType, PipelineId};
@@ -34,7 +35,7 @@ use net_traits::storage_task::{StorageTask, StorageTaskMsg};
 use profile_traits::mem;
 use profile_traits::time;
 use script_traits::{CompositorEvent, ConstellationControlMsg};
-use script_traits::{ScriptControlChan, ScriptTaskFactory};
+use script_traits::{ScriptControlChan, ScriptState, ScriptTaskFactory};
 use std::borrow::ToOwned;
 use std::collections::HashMap;
 use std::io::{self, Write};
@@ -437,6 +438,10 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
             ConstellationMsg::ViewportConstrained(pipeline_id, constraints) => {
                 debug!("constellation got viewport-constrained event message");
                 self.handle_viewport_constrained_msg(pipeline_id, constraints);
+            }
+            ConstellationMsg::IsReadyToSaveImage(pipeline_states) => {
+                let is_ready = self.handle_is_ready_to_save_image(pipeline_states);
+                self.compositor_proxy.send(CompositorMsg::IsReadyToSaveImageReply(is_ready));
             }
         }
         true
@@ -936,6 +941,87 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
     
     fn handle_viewport_constrained_msg(&mut self, pipeline_id: PipelineId, constraints: ViewportConstraints) {
         self.compositor_proxy.send(CompositorMsg::ViewportConstrained(pipeline_id, constraints));
+    }
+
+    
+    
+    
+    
+    fn handle_is_ready_to_save_image(&mut self,
+                                     pipeline_states: HashMap<PipelineId, Epoch>) -> bool {
+        
+        
+        if self.root_frame_id.is_none() {
+            return false;
+        }
+
+        
+        
+        if self.pending_frames.len() > 0 {
+            return false;
+        }
+
+        
+        
+        
+        
+        
+        for frame in self.current_frame_tree_iter(self.root_frame_id) {
+            let pipeline = self.pipeline(frame.current);
+
+            
+            
+            let ScriptControlChan(ref script_chan) = pipeline.script_chan;
+            let (sender, receiver) = channel();
+            let msg = ConstellationControlMsg::GetCurrentState(sender, frame.current);
+            script_chan.send(msg).unwrap();
+            if receiver.recv().unwrap() == ScriptState::DocumentLoading {
+                return false;
+            }
+
+            
+            
+            
+            match pipeline.rect {
+                Some(rect) => {
+                    
+                    
+                    
+                    if rect.size == Size2D::zero() {
+                        continue;
+                    }
+
+                    
+                    let compositor_epoch = pipeline_states.get(&frame.current);
+                    match compositor_epoch {
+                        Some(compositor_epoch) => {
+                            
+                            
+                            
+                            
+                            let (sender, receiver) = channel();
+                            let LayoutControlChan(ref layout_chan) = pipeline.layout_chan;
+                            layout_chan.send(LayoutControlMsg::GetCurrentEpoch(sender)).unwrap();
+                            let layout_task_epoch = receiver.recv().unwrap();
+                            if layout_task_epoch != *compositor_epoch {
+                                return false;
+                            }
+                        }
+                        None => {
+                            
+                            
+                            return false;
+                        }
+                    }
+                }
+                None => {
+                    return false;
+                }
+            }
+        }
+
+        
+        true
     }
 
     

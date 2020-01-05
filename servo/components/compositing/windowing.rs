@@ -11,7 +11,6 @@ use geom::scale_factor::ScaleFactor;
 use geom::size::TypedSize2D;
 use layers::geometry::DevicePixel;
 use layers::platform::surface::NativeGraphicsMetadata;
-use msg::compositor_msg::{PaintState, ReadyState};
 use msg::constellation_msg::{Key, KeyState, KeyModifiers};
 use script_traits::MouseButton;
 use url::Url;
@@ -100,10 +99,6 @@ pub trait WindowMethods {
     
     fn present(&self);
 
-    
-    fn set_ready_state(&self, ready_state: ReadyState);
-    
-    fn set_paint_state(&self, paint_state: PaintState);
     
     fn set_page_title(&self, title: Option<String>);
     

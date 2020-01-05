@@ -92,16 +92,12 @@ impl CompositorEventListener for NullCompositor {
             
             
 
-            Msg::CreateOrUpdateBaseLayer(..) |
-            Msg::CreateOrUpdateDescendantLayer(..) |
+            Msg::InitializeLayersForPipeline(..) |
             Msg::SetLayerRect(..) |
             Msg::AssignPaintedBuffers(..) |
-            Msg::ChangeReadyState(..) |
-            Msg::ChangePaintState(..) |
             Msg::ChangeRunningAnimationsState(..) |
             Msg::ScrollFragmentPoint(..) |
             Msg::LoadComplete |
-            Msg::PaintMsgDiscarded(..) |
             Msg::ScrollTimeout(..) |
             Msg::RecompositeAfterScroll |
             Msg::ChangePageTitle(..) |
@@ -110,7 +106,8 @@ impl CompositorEventListener for NullCompositor {
             Msg::SetCursor(..) |
             Msg::ViewportConstrained(..) => {}
             Msg::CreatePng(..) |
-            Msg::PaintTaskExited(..) => {}
+            Msg::PaintTaskExited(..) |
+            Msg::IsReadyToSaveImageReply(..) => {}
         }
         true
     }

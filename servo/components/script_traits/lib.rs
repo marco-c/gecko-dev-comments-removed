@@ -61,6 +61,13 @@ pub trait StylesheetLoadResponder {
 }
 
 
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum ScriptState {
+    DocumentLoaded,
+    DocumentLoading,
+}
+
+
 pub enum ConstellationControlMsg {
     
     AttachLayout(NewLayoutInfo),
@@ -96,6 +103,8 @@ pub enum ConstellationControlMsg {
     TickAllAnimations(PipelineId),
     
     StylesheetLoadComplete(PipelineId, Url, Box<StylesheetLoadResponder+Send>),
+    
+    GetCurrentState(Sender<ScriptState>, PipelineId),
 }
 
 

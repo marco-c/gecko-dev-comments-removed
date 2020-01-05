@@ -12,6 +12,7 @@ use geom::point::Point2D;
 use geom::rect::Rect;
 use libc::uintptr_t;
 use msg::constellation_msg::{PipelineExitType, WindowSizeData};
+use msg::compositor_msg::Epoch;
 use net_traits::PendingAsyncLoad;
 use profile_traits::mem::{Reporter, ReportsChan};
 use script_traits::{ScriptControlChan, OpaqueScriptLayoutChannel, UntrustedNodeAddress};
@@ -63,6 +64,9 @@ pub enum Msg {
     
     
     ExitNow(PipelineExitType),
+
+    
+    GetCurrentEpoch(Sender<Epoch>)
 }
 
 

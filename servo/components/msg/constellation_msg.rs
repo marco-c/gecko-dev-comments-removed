@@ -5,6 +5,7 @@
 
 
 
+use compositor_msg::Epoch;
 use geom::rect::Rect;
 use geom::size::TypedSize2D;
 use geom::scale_factor::ScaleFactor;
@@ -14,6 +15,7 @@ use layers::geometry::DevicePixel;
 use png;
 use util::cursor::Cursor;
 use util::geometry::{PagePx, ViewportPx};
+use std::collections::HashMap;
 use std::sync::mpsc::{channel, Sender, Receiver};
 use style::viewport::ViewportConstraints;
 use webdriver_traits::WebDriverScriptCommand;
@@ -239,7 +241,9 @@ pub enum Msg {
     
     ViewportConstrained(PipelineId, ViewportConstraints),
     
-    CompositePng(Sender<Option<png::Image>>)
+    CompositePng(Sender<Option<png::Image>>),
+    
+    IsReadyToSaveImage(HashMap<PipelineId, Epoch>),
 }
 
 #[derive(Clone, Eq, PartialEq)]

@@ -14,26 +14,7 @@ use std::fmt;
 use constellation_msg::PipelineId;
 
 
-#[derive(PartialEq, Eq, Clone, Copy)]
-pub enum PaintState {
-    Idle,
-    Painting,
-}
-
-#[derive(Eq, Ord, PartialEq, PartialOrd, Clone, Debug, Copy)]
-pub enum ReadyState {
-    
-    Blank,
-    
-    Loading,
-    
-    PerformingLayout,
-    
-    FinishedLoading,
-}
-
-
-#[derive(PartialEq, Eq, Debug, Copy, Clone)]
+#[derive(PartialEq, Eq, Debug, Copy, Clone, PartialOrd, Ord)]
 pub struct Epoch(pub u32);
 
 impl Epoch {
@@ -82,11 +63,11 @@ pub enum ScrollPolicy {
 
 
 #[derive(Copy, Clone)]
-pub struct LayerMetadata {
+pub struct LayerProperties {
     
     pub id: LayerId,
     
-    pub position: Rect<i32>,
+    pub rect: Rect<f32>,
     
     pub background_color: Color,
     
@@ -102,7 +83,7 @@ pub trait PaintListener {
     
     fn initialize_layers_for_pipeline(&mut self,
                                       pipeline_id: PipelineId,
-                                      metadata: Vec<LayerMetadata>,
+                                      properties: Vec<LayerProperties>,
                                       epoch: Epoch);
 
     
@@ -112,14 +93,11 @@ pub trait PaintListener {
                               replies: Vec<(LayerId, Box<LayerBufferSet>)>,
                               frame_tree_id: FrameTreeId);
 
-    fn paint_msg_discarded(&mut self);
-    fn set_paint_state(&mut self, PipelineId, PaintState);
 }
 
 
 
 pub trait ScriptListener {
-    fn set_ready_state(&mut self, PipelineId, ReadyState);
     fn scroll_fragment_point(&mut self,
                              pipeline_id: PipelineId,
                              layer_id: LayerId,
