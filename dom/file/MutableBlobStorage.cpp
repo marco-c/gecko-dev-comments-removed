@@ -4,9 +4,11 @@
 
 
 
-#include "mozilla/dom/MutableBlobStorage.h"
+#include "MutableBlobStorage.h"
+#include "MemoryBlobImpl.h"
 #include "mozilla/CheckedInt.h"
-#include "mozilla/dom/File.h"
+#include "mozilla/Preferences.h"
+#include "File.h"
 #include "nsAnonymousTemporaryFile.h"
 #include "nsNetCID.h"
 #include "nsProxyRelease.h"
@@ -406,7 +408,7 @@ MutableBlobStorage::GetBlobWhenReady(nsISupports* aParent,
   RefPtr<BlobImpl> blobImpl;
 
   if (mData) {
-    blobImpl = new BlobImplMemory(mData, mDataLen,
+    blobImpl = new MemoryBlobImpl(mData, mDataLen,
                                   NS_ConvertUTF8toUTF16(aContentType));
 
     mData = nullptr; 
