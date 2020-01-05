@@ -92,7 +92,7 @@ namespace detail {
 
 
 
-static const uint32_t LOW_AUDIO_USECS = 300000;
+static constexpr auto LOW_AUDIO_USECS = TimeUnit::FromMicroseconds(300000);
 
 
 
@@ -2594,7 +2594,7 @@ MediaDecoderStateMachine::MediaDecoderStateMachine(MediaDecoder* aDecoder,
   mDecodedAudioEndTime(0),
   mDecodedVideoEndTime(0),
   mPlaybackRate(1.0),
-  mLowAudioThresholdUsecs(detail::LOW_AUDIO_USECS),
+  mLowAudioThresholdUsecs(detail::LOW_AUDIO_USECS.ToMicroseconds()),
   mAmpleAudioThresholdUsecs(detail::AMPLE_AUDIO_USECS),
   mAudioCaptured(false),
   mMinimizePreroll(aDecoder->GetMinimizePreroll()),
