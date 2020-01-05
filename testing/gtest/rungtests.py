@@ -20,7 +20,7 @@ log = mozlog.unstructured.getLogger('gtest')
 
 class GTests(object):
     
-    TEST_PROC_TIMEOUT = 1200
+    TEST_PROC_TIMEOUT = 1800
     
     TEST_PROC_NO_OUTPUT_TIMEOUT = 300
 
