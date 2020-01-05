@@ -478,6 +478,9 @@ public:
   explicit DrawableFrameRef(imgFrame* aFrame)
     : mFrame(aFrame)
   {
+    MOZ_ASSERT(aFrame);
+    MonitorAutoLock lock(aFrame->mMonitor);
+
     
     
     
