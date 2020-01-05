@@ -1888,6 +1888,14 @@ public:
     
   }
 
+  void HandleResumeVideoDecoding(const TimeUnit&) override
+  {
+    
+    
+    StateObject::HandleResumeVideoDecoding(
+      TimeUnit::FromMicroseconds(mMaster->mDecodedVideoEndTime));
+  }
+
   void HandlePlayStateChanged(MediaDecoder::PlayState aPlayState) override
   {
     if (aPlayState == MediaDecoder::PLAY_STATE_PLAYING) {
