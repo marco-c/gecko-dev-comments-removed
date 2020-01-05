@@ -7,7 +7,7 @@
 
 
 
-requestLongerTimeout(3);
+requestLongerTimeout(4);
 
 
 var TEST_PAGE = "data:text/html;charset=utf-8,<body><ul>";
