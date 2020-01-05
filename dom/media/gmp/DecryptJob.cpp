@@ -4,8 +4,23 @@
 
 
 #include "DecryptJob.h"
+#include "mozilla/Atomics.h"
 
 namespace mozilla {
+
+static Atomic<uint32_t> sDecryptJobInstanceCount(0u);
+
+DecryptJob::DecryptJob(MediaRawData* aSample)
+  : mId(++sDecryptJobInstanceCount )
+  , mSample(aSample)
+{
+}
+
+RefPtr<DecryptPromise>
+DecryptJob::Ensure()
+{
+  return mPromise.Ensure(__func__);
+}
 
 void
 DecryptJob::PostResult(DecryptStatus aResult)
