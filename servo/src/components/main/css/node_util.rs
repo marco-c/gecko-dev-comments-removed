@@ -2,10 +2,10 @@
 
 
 
-use layout::aux::LayoutAuxMethods;
 use layout::incremental::RestyleDamage;
 
-use std::cast::transmute;
+use std::cast;
+use std::cell::Cell;
 use newcss::complete::CompleteSelectResults;
 use script::dom::node::{AbstractNode, LayoutView};
 
@@ -27,28 +27,23 @@ impl<'self> NodeUtil<'self> for AbstractNode<LayoutView> {
 
 
     fn get_css_select_results(self) -> &'self CompleteSelectResults {
-        if !self.has_layout_data() {
-            fail!(~"style() called on a node without aux data!");
-        }
-
-        match self.layout_data().style {
-            None => fail!(~"style() called on node without a style!"),
-            Some(ref style) => unsafe { transmute(style) }
+        do self.read_layout_data |layout_data| {
+            match layout_data.style {
+                None => fail!(~"style() called on node without a style!"),
+                Some(ref style) => unsafe { cast::transmute_region(style) }
+            }
         }
     }
 
     
     fn have_css_select_results(self) -> bool {
-        self.has_layout_data() && self.layout_data().style.is_some()
+        self.read_layout_data(|data| data.style.is_some())
     }
 
     
     fn set_css_select_results(self, decl: CompleteSelectResults) {
-        if !self.has_layout_data() {
-            fail!(~"set_css_select_results() called on a node without aux data!");
-        }
-
-        self.layout_data().style = Some(decl);
+        let cell = Cell::new(decl);
+        self.write_layout_data(|data| data.style = Some(cell.take()));
     }
 
     
@@ -62,18 +57,15 @@ impl<'self> NodeUtil<'self> for AbstractNode<LayoutView> {
             RestyleDamage::none()
         };
 
-        if !self.has_layout_data() {
-            return default;
+        do self.read_layout_data |layout_data| {
+            layout_data.restyle_damage
+                .map(|&x| RestyleDamage::from_int(x))
+                .unwrap_or_default(default)
         }
-        self.layout_data().restyle_damage.unwrap_or_default(default)
     }
 
     
     fn set_restyle_damage(self, damage: RestyleDamage) {
-        if !self.has_layout_data() {
-            fail!(~"set_restyle_damage() called on a node without aux data!");
-        }
-
-        self.layout_data().restyle_damage = Some(damage);
+        self.write_layout_data(|data| data.restyle_damage = Some(damage.to_int()));
     }
 }

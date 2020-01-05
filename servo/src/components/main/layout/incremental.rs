@@ -54,6 +54,17 @@ impl RestyleDamage {
         RestyleDamage::all()
     }
 
+    
+    
+    
+    pub fn from_int(n: int) -> RestyleDamage {
+        RestyleDamage { bits: n }
+    }
+
+    pub fn to_int(self) -> int {
+        self.bits
+    }
+
     pub fn is_empty(self) -> bool {
         self.bits == 0
     }
