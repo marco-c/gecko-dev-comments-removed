@@ -218,6 +218,10 @@ pub struct Opts {
     pub full_backtraces: bool,
 
     
+    
+    pub signpost: bool,
+
+    
     pub is_printing_version: bool,
 }
 
@@ -322,6 +326,10 @@ pub struct DebugOptions {
     
     
     pub precache_shaders: bool,
+
+    
+    
+    pub signpost: bool,
 }
 
 
@@ -361,6 +369,7 @@ impl DebugOptions {
                 "msaa" => debug_options.use_msaa = true,
                 "full-backtraces" => debug_options.full_backtraces = true,
                 "precache-shaders" => debug_options.precache_shaders = true,
+                "signpost" => debug_options.signpost = true,
                 "" => {},
                 _ => return Err(option)
             };
@@ -411,6 +420,7 @@ pub fn print_debug_usage(app: &str) -> ! {
     print_option("full-backtraces", "Print full backtraces for all errors");
     print_option("wr-debug", "Display webrender tile borders. Must be used with -w option.");
     print_option("precache-shaders", "Compile all shaders during init. Must be used with -w option.");
+    print_option("signpost", "Emit native OS signposts for profile events (currently macOS only)");
 
     println!("");
 
@@ -549,6 +559,7 @@ pub fn default_opts() -> Opts {
         is_printing_version: false,
         webrender_debug: false,
         precache_shaders: false,
+        signpost: false,
     }
 }
 
@@ -860,6 +871,7 @@ pub fn from_cmdline_args(args: &[String]) -> ArgumentParsingResult {
         is_printing_version: is_printing_version,
         webrender_debug: debug_options.webrender_debug,
         precache_shaders: debug_options.precache_shaders,
+        signpost: debug_options.signpost,
     };
 
     set_defaults(opts);
