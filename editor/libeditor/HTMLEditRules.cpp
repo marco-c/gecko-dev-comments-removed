@@ -1239,6 +1239,17 @@ HTMLEditRules::WillInsertText(EditAction aAction,
     return NS_ERROR_NULL_POINTER;
   }
 
+  if (inString->IsEmpty() && aAction != EditAction::insertIMEText) {
+    
+    
+    
+    
+    
+    *aCancel = true;
+    *aHandled = false;
+    return NS_OK;
+  }
+
   
   *aCancel = false;
   *aHandled = true;
@@ -1552,7 +1563,7 @@ HTMLEditRules::WillInsertBreak(Selection& aSelection,
     ReturnInHeader(aSelection, *blockParent, node, offset);
     *aHandled = true;
     return NS_OK;
-  } else if (blockParent->IsHTMLElement(nsGkAtoms::p)) {
+  } else if (blockParent->IsAnyOfHTMLElements(nsGkAtoms::p, nsGkAtoms::div)) {
     
     nsresult rv =
       ReturnInParagraph(&aSelection, GetAsDOMNode(blockParent),
@@ -6340,6 +6351,9 @@ HTMLEditRules::ReturnInHeader(Selection& aSelection,
   }
   return NS_OK;
 }
+
+
+
 
 
 
