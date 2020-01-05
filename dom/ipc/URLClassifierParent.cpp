@@ -11,6 +11,9 @@
 using namespace mozilla;
 using namespace mozilla::dom;
 
+
+
+
 NS_IMPL_ISUPPORTS(URLClassifierParent, nsIURIClassifierCallback)
 
 mozilla::ipc::IPCResult
@@ -41,33 +44,41 @@ URLClassifierParent::StartClassify(nsIPrincipal* aPrincipal,
   return IPC_OK();
 }
 
-nsresult
-URLClassifierParent::OnClassifyComplete(nsresult aErrorCode,
-                                        const nsACString& aList,
-                                        const nsACString& aProvider,
-                                        const nsACString& aPrefix)
-{
-  if (mIPCOpen) {
-    ClassifierInfo info;
-    info.list() = aList;
-    info.prefix() = aPrefix;
-    info.provider() = aProvider;
-
-    Unused << Send__delete__(this, info, aErrorCode);
-  }
-  return NS_OK;
-}
-
-void
-URLClassifierParent::ClassificationFailed()
-{
-  if (mIPCOpen) {
-    Unused << Send__delete__(this, void_t(), NS_ERROR_FAILURE);
-  }
-}
-
 void
 URLClassifierParent::ActorDestroy(ActorDestroyReason aWhy)
+{
+  mIPCOpen = false;
+}
+
+
+
+
+NS_IMPL_ISUPPORTS(URLClassifierLocalParent, nsIURIClassifierCallback)
+
+mozilla::ipc::IPCResult
+URLClassifierLocalParent::StartClassify(nsIURI* aURI, const nsACString& aTables)
+{
+  nsresult rv = NS_OK;
+  
+  
+  nsCOMPtr<nsIURIClassifier> uriClassifier =
+    do_GetService(NS_URICLASSIFIERSERVICE_CONTRACTID, &rv);
+  if (NS_SUCCEEDED(rv)) {
+    MOZ_ASSERT(aURI);
+    rv = uriClassifier->AsyncClassifyLocalWithTables(aURI, aTables, this);
+  }
+  if (NS_FAILED(rv)) {
+    
+    
+    
+    
+    OnClassifyComplete(NS_OK, EmptyCString(), EmptyCString(), EmptyCString());
+  }
+  return IPC_OK();
+}
+
+void
+URLClassifierLocalParent::ActorDestroy(ActorDestroyReason aWhy)
 {
   mIPCOpen = false;
 }

@@ -3143,6 +3143,21 @@ ContentChild::DeallocPURLClassifierChild(PURLClassifierChild* aActor)
   return true;
 }
 
+PURLClassifierLocalChild*
+ContentChild::AllocPURLClassifierLocalChild(const URIParams& aUri,
+                                            const nsCString& aTables)
+{
+  return new URLClassifierLocalChild();
+}
+
+bool
+ContentChild::DeallocPURLClassifierLocalChild(PURLClassifierLocalChild* aActor)
+{
+  MOZ_ASSERT(aActor);
+  delete aActor;
+  return true;
+}
+
 
 
 already_AddRefed<nsIEventTarget>

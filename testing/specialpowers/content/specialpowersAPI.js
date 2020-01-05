@@ -2144,6 +2144,26 @@ SpecialPowersAPI.prototype = {
                                       tpEnabled, wrapCallback);
   },
 
+  
+  doUrlClassifyLocal(uri, tables, callback) {
+    let classifierService =
+      Cc["@mozilla.org/url-classifier/dbservice;1"].getService(Ci.nsIURIClassifier);
+
+    let wrapCallback = (...args) => {
+      Services.tm.mainThread.dispatch(() => {
+        if (typeof callback == 'function') {
+          callback.call(undefined, ...args);
+        } else {
+          callback.onClassifyComplete.call(undefined, ...args);
+        }
+      }, Ci.nsIThread.DISPATCH_NORMAL);
+    };
+
+    return classifierService.asyncClassifyLocalWithTables(unwrapIfWrapped(uri),
+                                                          tables,
+                                                          wrapCallback);
+  },
+
 };
 
 this.SpecialPowersAPI = SpecialPowersAPI;
