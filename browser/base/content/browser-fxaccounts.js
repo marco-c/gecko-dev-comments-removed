@@ -4,6 +4,8 @@
 
 var gFxAccounts = {
 
+  SYNC_MIGRATION_NOTIFICATION_TITLE: "fxa-migration",
+
   _initialized: false,
   _inCustomizationMode: false,
 
@@ -23,6 +25,7 @@ var gFxAccounts = {
       "weave:service:setup-complete",
       "weave:service:sync:error",
       "weave:ui:login:error",
+      "fxa-migration:state-changed",
       this.FxAccountsCommon.ONLOGIN_NOTIFICATION,
       this.FxAccountsCommon.ONLOGOUT_NOTIFICATION,
       this.FxAccountsCommon.ON_PROFILE_CHANGE_NOTIFICATION,
@@ -140,6 +143,9 @@ var gFxAccounts = {
 
   observe(subject, topic, data) {
     switch (topic) {
+      case "fxa-migration:state-changed":
+        this.onMigrationStateChanged(data, subject);
+        break;
       case this.FxAccountsCommon.ONPROFILE_IMAGE_CHANGE_NOTIFICATION:
         this.updateUI();
         break;
@@ -149,17 +155,77 @@ var gFxAccounts = {
     }
   },
 
+  onMigrationStateChanged() {
+    
+    
+    
+    let nb = window.document.getElementById("global-notificationbox");
+
+    let msg = this.strings.GetStringFromName("autoDisconnectDescription")
+    let signInLabel = this.strings.GetStringFromName("autoDisconnectSignIn.label");
+    let signInAccessKey = this.strings.GetStringFromName("autoDisconnectSignIn.accessKey");
+    let learnMoreLink = this.fxaMigrator.learnMoreLink;
+
+    let buttons = [
+      {
+        label: signInLabel,
+        accessKey: signInAccessKey,
+        callback: () => {
+          this.openPreferences();
+        }
+      }
+    ];
+
+    let fragment = document.createDocumentFragment();
+    let msgNode = document.createTextNode(msg);
+    fragment.appendChild(msgNode);
+    if (learnMoreLink) {
+      let link = document.createElement("label");
+      link.className = "text-link";
+      link.setAttribute("value", learnMoreLink.text);
+      link.href = learnMoreLink.href;
+      fragment.appendChild(link);
+    }
+
+    nb.appendNotification(fragment,
+                          this.SYNC_MIGRATION_NOTIFICATION_TITLE,
+                          undefined,
+                          nb.PRIORITY_WARNING_LOW,
+                          buttons);
+
+    
+    this.updateAppMenuItem();
+  },
+
   handleEvent(event) {
     this._inCustomizationMode = event.type == "customizationstarting";
-    this.updateUI();
+    this.updateAppMenuItem();
+  },
+
+  updateUI() {
+    
+    
+    
+    let nb = window.document.getElementById("global-notificationbox");
+    let n = nb.getNotificationWithValue(this.SYNC_MIGRATION_NOTIFICATION_TITLE);
+    if (n) {
+      nb.removeNotification(n, true);
+    }
+
+    this.updateAppMenuItem();
   },
 
   
-  updateUI() {
+  updateAppMenuItem() {
     let profileInfoEnabled = false;
     try {
       profileInfoEnabled = Services.prefs.getBoolPref("identity.fxaccounts.profile_image.enabled");
     } catch (e) { }
+
+    
+    if (!this.weave.fxAccountsEnabled) {
+      return Promise.resolve();
+    }
 
     this.panelUIFooter.hidden = false;
 
@@ -410,6 +476,9 @@ var gFxAccounts = {
 XPCOMUtils.defineLazyGetter(gFxAccounts, "FxAccountsCommon", function() {
   return Cu.import("resource://gre/modules/FxAccountsCommon.js", {});
 });
+
+XPCOMUtils.defineLazyModuleGetter(gFxAccounts, "fxaMigrator",
+  "resource://services-sync/FxaMigrator.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "EnsureFxAccountsWebChannel",
   "resource://gre/modules/FxAccountsWebChannel.jsm");

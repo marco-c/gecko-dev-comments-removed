@@ -7,6 +7,9 @@
 this.EXPORTED_SYMBOLS = [
   "btoa", 
   "encryptPayload",
+  "isConfiguredWithLegacyIdentity",
+  "ensureLegacyIdentityManager",
+  "setBasicCredentials",
   "makeIdentityConfig",
   "makeFxAccountsInternalMock",
   "configureFxAccountIdentity",
@@ -15,6 +18,7 @@ this.EXPORTED_SYMBOLS = [
   "waitForZeroTimer",
   "promiseZeroTimer",
   "promiseNamedTimer",
+  "add_identity_test",
   "MockFxaStorageManager",
   "AccountState", 
   "sumHistogram",
@@ -23,6 +27,7 @@ this.EXPORTED_SYMBOLS = [
 var {utils: Cu} = Components;
 
 Cu.import("resource://services-sync/status.js");
+Cu.import("resource://services-sync/identity.js");
 Cu.import("resource://services-common/utils.js");
 Cu.import("resource://services-crypto/utils.js");
 Cu.import("resource://services-sync/util.js");
@@ -106,6 +111,40 @@ this.promiseNamedTimer = function(wait, thisObj, name) {
 
 
 
+this.isConfiguredWithLegacyIdentity = function() {
+  let ns = {};
+  Cu.import("resource://services-sync/service.js", ns);
+
+  
+  
+  return Object.getPrototypeOf(ns.Service.identity) === IdentityManager.prototype;
+}
+
+
+
+
+this.ensureLegacyIdentityManager = function() {
+  let ns = {};
+  Cu.import("resource://services-sync/service.js", ns);
+
+  Status.__authManager = ns.Service.identity = new IdentityManager();
+  ns.Service._clusterManager = ns.Service.identity.createClusterManager(ns.Service);
+}
+
+this.setBasicCredentials =
+ function setBasicCredentials(username, password, syncKey) {
+  let ns = {};
+  Cu.import("resource://services-sync/service.js", ns);
+
+  let auth = ns.Service.identity;
+  auth.username = username;
+  auth.basicPassword = password;
+  auth.syncKey = syncKey;
+}
+
+
+
+
 
 this.makeIdentityConfig = function(overrides) {
   
@@ -131,6 +170,11 @@ this.makeIdentityConfig = function(overrides) {
         hashed_fxa_uid: "f".repeat(32), 
         
       }
+    },
+    sync: {
+      
+      password: "whatever",
+      syncKey: "abcdeabcdeabcdeabcdeabcdea",
     }
   };
 
@@ -138,6 +182,10 @@ this.makeIdentityConfig = function(overrides) {
   if (overrides) {
     if (overrides.username) {
       result.username = overrides.username;
+    }
+    if (overrides.sync) {
+      
+      result.sync = overrides.sync;
     }
     if (overrides.fxaccount) {
       
@@ -208,30 +256,48 @@ this.configureIdentity = async function(identityOverrides, server) {
   let ns = {};
   Cu.import("resource://services-sync/service.js", ns);
 
-  
-  if (server && !config.fxaccount.token.endpoint) {
-    let ep = server.baseURI;
-    if (!ep.endsWith("/")) {
-      ep += "/";
-    }
-    ep += "1.1/" + config.username + "/";
-    config.fxaccount.token.endpoint = ep;
+  if (server) {
+    ns.Service.serverURL = server.baseURI;
   }
 
-  configureFxAccountIdentity(ns.Service.identity, config);
-  await ns.Service.identity.initializeWithCurrentIdentity();
-  
-  
-  if (config.fxaccount.token.endpoint) {
-    ns.Service.clusterURL = config.fxaccount.token.endpoint;
+  ns.Service._clusterManager = ns.Service.identity.createClusterManager(ns.Service);
+
+  if (ns.Service.identity instanceof BrowserIDManager) {
+    
+
+    
+    if (server && !config.fxaccount.token.endpoint) {
+      let ep = server.baseURI;
+      if (!ep.endsWith("/")) {
+        ep += "/";
+      }
+      ep += "1.1/" + config.username + "/";
+      config.fxaccount.token.endpoint = ep;
+    }
+
+    configureFxAccountIdentity(ns.Service.identity, config);
+    await ns.Service.identity.initializeWithCurrentIdentity();
+    
+    
+    if (config.fxaccount.token.endpoint) {
+      ns.Service.clusterURL = config.fxaccount.token.endpoint;
+    }
+    return;
   }
+  
+  if (server) {
+    ns.Service.clusterURL = server.baseURI + "/";
+  }
+  ns.Service.identity.username = config.username;
+  ns.Service._updateCachedURLs();
+  setBasicCredentials(config.username, config.sync.password, config.sync.syncKey);
 }
 
-this.SyncTestingInfrastructure = async function(server, username) {
+this.SyncTestingInfrastructure = async function(server, username, password) {
   let ns = {};
   Cu.import("resource://services-sync/service.js", ns);
 
-  let config = makeIdentityConfig({ username });
+  let config = makeIdentityConfig({ username, password });
   await configureIdentity(config, server);
   return {
     logStats: initTestLogging(),
@@ -254,6 +320,41 @@ this.encryptPayload = function encryptPayload(cleartext) {
     IV: "irrelevant",
     hmac: fakeSHA256HMAC(cleartext, CryptoUtils.makeHMACKey("")),
   };
+}
+
+
+
+
+
+
+
+
+
+
+
+this.add_identity_test = function(test, testFunction) {
+  function note(what) {
+    let msg = "running test " + testFunction.name + " with " + what + " identity manager";
+    test.do_print(msg);
+  }
+  let ns = {};
+  Cu.import("resource://services-sync/service.js", ns);
+  
+  test.add_task(async function() {
+    note("sync");
+    let oldIdentity = Status._authManager;
+    ensureLegacyIdentityManager();
+    await testFunction();
+    Status.__authManager = ns.Service.identity = oldIdentity;
+  });
+  
+  test.add_task(async function() {
+    note("FxAccounts");
+    let oldIdentity = Status._authManager;
+    Status.__authManager = ns.Service.identity = new BrowserIDManager();
+    await testFunction();
+    Status.__authManager = ns.Service.identity = oldIdentity;
+  });
 }
 
 this.sumHistogram = function(name, options = {}) {

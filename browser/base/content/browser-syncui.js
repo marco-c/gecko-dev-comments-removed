@@ -97,22 +97,41 @@ var gSyncUI = {
   
   
   _needsSetup() {
-    return fxAccounts.getSignedInUser().then(user => {
-      
-      return !(user && user.verified);
-    });
+    
+    if (this.weaveService.fxAccountsEnabled) {
+      return fxAccounts.getSignedInUser().then(user => {
+        
+        return !(user && user.verified);
+      });
+    }
+    
+    let firstSync = "";
+    try {
+      firstSync = Services.prefs.getCharPref("services.sync.firstSync");
+    } catch (e) { }
+
+    return Promise.resolve(Weave.Status.checkSetup() == Weave.CLIENT_NOT_CONFIGURED ||
+                           firstSync == "notReady");
   },
 
   
   
   _needsVerification() {
-    return fxAccounts.getSignedInUser().then(user => {
-      
-      if (!user) {
-        return false;
-      }
-      return !user.verified;
-    });
+    
+    
+    if (this.weaveService.fxAccountsEnabled) {
+      return fxAccounts.getSignedInUser().then(user => {
+        
+        if (!user) {
+          return false;
+        }
+        return !user.verified;
+      });
+    }
+
+    
+    
+    return Promise.resolve(false);
   },
 
   
@@ -248,7 +267,7 @@ var gSyncUI = {
   handleToolbarButton() {
     this._needsSetup().then(needsSetup => {
       if (needsSetup || this.loginFailed()) {
-        this.openPrefs();
+        this.openSetup();
       } else {
         this.doSync();
       }
@@ -263,7 +282,41 @@ var gSyncUI = {
 
 
 
-  openPrefs(entryPoint = "syncbutton") {
+
+
+
+
+
+
+  openSetup: function SUI_openSetup(wizardType, entryPoint = "syncbutton") {
+    if (this.weaveService.fxAccountsEnabled) {
+      this.openPrefs(entryPoint);
+    } else {
+      let win = Services.wm.getMostRecentWindow("Weave:AccountSetup");
+      if (win)
+        win.focus();
+      else {
+        window.openDialog("chrome://browser/content/sync/setup.xul",
+                          "weaveSetup", "centerscreen,chrome,resizable=no",
+                          wizardType);
+      }
+    }
+  },
+
+  
+  openAddDevice() {
+    if (!Weave.Utils.ensureMPUnlocked())
+      return;
+
+    let win = Services.wm.getMostRecentWindow("Sync:AddDevice");
+    if (win)
+      win.focus();
+    else
+      window.openDialog("chrome://browser/content/sync/addDevice.xul",
+                        "syncAddDevice", "centerscreen,chrome,resizable=no");
+  },
+
+  openPrefs(entryPoint) {
     openPreferences("paneSync", { urlParams: { entrypoint: entryPoint } });
   },
 
@@ -321,10 +374,9 @@ var gSyncUI = {
       return;
 
     let email;
-    let user = yield fxAccounts.getSignedInUser();
-    if (user) {
-      email = user.email;
-    }
+    try {
+      email = Services.prefs.getCharPref("services.sync.username");
+    } catch (ex) {}
 
     let needsSetup = yield this._needsSetup();
     let needsVerification = yield this._needsVerification();

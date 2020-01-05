@@ -13,11 +13,13 @@ Cu.import("resource://services-common/async.js");
 Cu.import("resource://services-common/utils.js");
 Cu.import("resource://services-common/tokenserverclient.js");
 Cu.import("resource://services-crypto/utils.js");
+Cu.import("resource://services-sync/identity.js");
 Cu.import("resource://services-sync/util.js");
 Cu.import("resource://services-common/tokenserverclient.js");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://services-sync/constants.js");
 Cu.import("resource://gre/modules/Promise.jsm");
+Cu.import("resource://services-sync/stages/cluster.js");
 Cu.import("resource://gre/modules/FxAccounts.jsm");
 
 
@@ -45,6 +47,8 @@ const OBSERVER_TOPICS = [
   fxAccountsCommon.ONLOGOUT_NOTIFICATION,
   fxAccountsCommon.ON_ACCOUNT_STATE_CHANGE_NOTIFICATION,
 ];
+
+const PREF_SYNC_SHOW_CUSTOMIZATION = "services.sync-setup.ui.showCustomizationDialog";
 
 function deriveKeyBundle(kB) {
   let out = CryptoUtils.hkdf(kB, undefined,
@@ -85,6 +89,8 @@ this.BrowserIDManager = function BrowserIDManager() {
 };
 
 this.BrowserIDManager.prototype = {
+  __proto__: IdentityManager.prototype,
+
   _fxaService: null,
   _tokenServerClient: null,
   
@@ -99,6 +105,14 @@ this.BrowserIDManager.prototype = {
   
   
   _shouldHaveSyncKeyBundle: false,
+
+  get needsCustomization() {
+    try {
+      return Services.prefs.getBoolPref(PREF_SYNC_SHOW_CUSTOMIZATION);
+    } catch (e) {
+      return false;
+    }
+  },
 
   hashedUID() {
     if (!this._hashedUID) {
@@ -124,6 +138,19 @@ this.BrowserIDManager.prototype = {
     for (let topic of OBSERVER_TOPICS) {
       Services.obs.addObserver(this, topic, false);
     }
+    
+    
+    
+    
+    
+    
+    this._fxaService.getSignedInUser().then(accountData => {
+      if (accountData) {
+        this.account = accountData.email;
+      }
+    }).catch(err => {
+      
+    });
   },
 
   
@@ -163,6 +190,19 @@ this.BrowserIDManager.prototype = {
     this._signedInUser = null;
   },
 
+  offerSyncOptions() {
+    
+    
+    const url = "chrome://browser/content/sync/customize.xul";
+    const features = "centerscreen,chrome,modal,dialog,resizable=no";
+    let win = Services.wm.getMostRecentWindow("navigator:browser");
+
+    let data = {accepted: false};
+    win.openDialog(url, "_blank", features, data);
+
+    return data;
+  },
+
   initializeWithCurrentIdentity(isInitialSync = false) {
     
     
@@ -185,13 +225,14 @@ this.BrowserIDManager.prototype = {
     return this._fxaService.getSignedInUser().then(accountData => {
       if (!accountData) {
         this._log.info("initializeWithCurrentIdentity has no user logged in");
+        this.account = null;
         
         this._shouldHaveSyncKeyBundle = true;
         this.whenReadyToAuthenticate.reject("no user is logged in");
         return;
       }
 
-      this.username = accountData.email;
+      this.account = accountData.email;
       this._updateSignedInUser(accountData);
       
       
@@ -199,8 +240,20 @@ this.BrowserIDManager.prototype = {
       this._log.info("Waiting for user to be verified.");
       this._fxaService.whenVerified(accountData).then(accountData => {
         this._updateSignedInUser(accountData);
-
         this._log.info("Starting fetch for key bundle.");
+        if (this.needsCustomization) {
+          let data = this.offerSyncOptions();
+          if (data.accepted) {
+            Services.prefs.clearUserPref(PREF_SYNC_SHOW_CUSTOMIZATION);
+
+            
+            Weave.Service.engineManager.declineDisabled();
+          } else {
+            
+            return this._fxaService.signOut();
+          }
+        }
+      }).then(() => {
         return this._fetchTokenForUser();
       }).then(token => {
         this._token = token;
@@ -312,12 +365,9 @@ this.BrowserIDManager.prototype = {
     return this._fxaService.localtimeOffsetMsec;
   },
 
-  get syncKeyBundle() {
-    return this._syncKeyBundle;
-  },
-
-  get username() {
-    return Svc.Prefs.get("username", null);
+  usernameFromAccount(val) {
+    
+    return val;
   },
 
   
@@ -325,30 +375,55 @@ this.BrowserIDManager.prototype = {
 
 
 
-  set username(value) {
-    if (value) {
-      value = value.toLowerCase();
+  get basicPassword() {
+    this._log.error("basicPassword getter should be not used in BrowserIDManager");
+    return null;
+  },
 
-      if (value == this.username) {
-        return;
-      }
+  
 
-      Svc.Prefs.set("username", value);
-    } else {
-      Svc.Prefs.reset("username");
+
+
+
+  set basicPassword(value) {
+    throw new Error("basicPassword setter should be not used in BrowserIDManager");
+  },
+
+  
+
+
+
+
+
+
+
+
+  get syncKey() {
+    if (this.syncKeyBundle) {
+      
+      
+      
+      
+      
+      
+      return "99999999999999999999999999";
     }
+    return null;
+  },
 
-    
-    
-    this._log.info("Username changed. Removing stored credentials.");
-    this.resetCredentials();
+  set syncKey(value) {
+    throw "syncKey setter should be not used in BrowserIDManager";
+  },
+
+  get syncKeyBundle() {
+    return this._syncKeyBundle;
   },
 
   
 
 
   resetCredentials() {
-    this.resetSyncKeyBundle();
+    this.resetSyncKey();
     this._token = null;
     this._hashedUID = null;
     
@@ -359,8 +434,10 @@ this.BrowserIDManager.prototype = {
   
 
 
-  resetSyncKeyBundle() {
+  resetSyncKey() {
+    this._syncKey = null;
     this._syncKeyBundle = null;
+    this._syncKeyUpdated = true;
     this._shouldHaveSyncKeyBundle = false;
   },
 
@@ -384,18 +461,6 @@ this.BrowserIDManager.prototype = {
   
 
 
-  deleteSyncCredentials() {
-    for (let host of this._getSyncCredentialsHosts()) {
-      let logins = Services.logins.findLogins({}, host, "", "");
-      for (let login of logins) {
-        Services.logins.removeLogin(login);
-      }
-    }
-  },
-
-  
-
-
 
 
 
@@ -407,7 +472,6 @@ this.BrowserIDManager.prototype = {
                      " due to previous failure");
       return this._authFailureReason;
     }
-
     
     
     
@@ -737,39 +801,11 @@ this.BrowserIDManager.prototype = {
 
 
 function BrowserIDClusterManager(service) {
-  this._log = log;
-  this.service = service;
+  ClusterManager.call(this, service);
 }
 
 BrowserIDClusterManager.prototype = {
-  get identity() {
-    return this.service.identity;
-  },
-
-  
-
-
-  setCluster() {
-    
-    let cluster = this._findCluster();
-    this._log.debug("Cluster value = " + cluster);
-    if (cluster == null) {
-      return false;
-    }
-
-    
-    
-    cluster = cluster.toString();
-    
-    if (cluster == this.service.clusterURL) {
-      return false;
-    }
-
-    this._log.debug("Setting cluster to " + cluster);
-    this.service.clusterURL = cluster;
-
-    return true;
-  },
+  __proto__: ClusterManager.prototype,
 
   _findCluster() {
     let endPointFromIdentityToken = function() {

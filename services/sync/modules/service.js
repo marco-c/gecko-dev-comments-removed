@@ -21,10 +21,10 @@ const KEYS_WBO = "keys";
 Cu.import("resource://gre/modules/Preferences.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Log.jsm");
-Cu.import("resource://services-common/async.js");
 Cu.import("resource://services-sync/constants.js");
 Cu.import("resource://services-sync/engines.js");
 Cu.import("resource://services-sync/engines/clients.js");
+Cu.import("resource://services-sync/identity.js");
 Cu.import("resource://services-sync/policies.js");
 Cu.import("resource://services-sync/record.js");
 Cu.import("resource://services-sync/resource.js");
@@ -33,6 +33,7 @@ Cu.import("resource://services-sync/stages/enginesync.js");
 Cu.import("resource://services-sync/stages/declined.js");
 Cu.import("resource://services-sync/status.js");
 Cu.import("resource://services-sync/telemetry.js");
+Cu.import("resource://services-sync/userapi.js");
 Cu.import("resource://services-sync/util.js");
 
 const ENGINE_MODULES = {
@@ -68,6 +69,24 @@ Sync11Service.prototype = {
   
   _clusterURL: null,
 
+  get serverURL() {
+    return Svc.Prefs.get("serverURL");
+  },
+  set serverURL(value) {
+    if (!value.endsWith("/")) {
+      value += "/";
+    }
+
+    
+    if (value == this.serverURL)
+      return;
+
+    Svc.Prefs.set("serverURL", value);
+
+    
+    this._clusterURL = null;
+  },
+
   get clusterURL() {
     return this._clusterURL || "";
   },
@@ -77,6 +96,35 @@ Sync11Service.prototype = {
     }
     this._clusterURL = value;
     this._updateCachedURLs();
+  },
+
+  get miscAPI() {
+    
+    let misc = Svc.Prefs.get("miscURL");
+    if (misc.indexOf(":") == -1)
+      misc = this.serverURL + misc;
+    return misc + MISC_API_VERSION + "/";
+  },
+
+  
+
+
+
+
+
+
+  get userAPIURI() {
+    
+    let url = Svc.Prefs.get("userURL");
+    if (!url.includes(":")) {
+      url = this.serverURL + url;
+    }
+
+    return url + USER_API_VERSION + "/";
+  },
+
+  get pwResetURL() {
+    return this.serverURL + "weave-password-reset";
   },
 
   get syncID() {
@@ -124,7 +172,7 @@ Sync11Service.prototype = {
 
   _updateCachedURLs: function _updateCachedURLs() {
     
-    if (!this.clusterURL) {
+    if (!this.clusterURL || !this.identity.username) {
       
       
       
@@ -272,6 +320,14 @@ Sync11Service.prototype = {
 
   onStartup: function onStartup() {
     this._migratePrefs();
+
+    
+    
+    
+    
+    if (!Status || !Status._authManager) {
+      throw new Error("Status or Status._authManager not initialized.");
+    }
 
     this.status = Status;
     this.identity = Status._authManager;
@@ -511,9 +567,21 @@ Sync11Service.prototype = {
 
     this._log.debug("Fetching and verifying -- or generating -- symmetric keys.");
 
+    
+    
+    
+
+    if (!this.identity.syncKey) {
+      this.status.login = LOGIN_FAILED_NO_PASSPHRASE;
+      this.status.sync = CREDENTIALS_CHANGED;
+      return false;
+    }
+
     let syncKeyBundle = this.identity.syncKeyBundle;
     if (!syncKeyBundle) {
-      this.status.login = LOGIN_FAILED_NO_PASSPHRASE;
+      this._log.error("Sync Key Bundle not set. Invalid Sync Key?");
+
+      this.status.login = LOGIN_FAILED_INVALID_PASSPHRASE;
       this.status.sync = CREDENTIALS_CHANGED;
       return false;
     }
@@ -649,7 +717,7 @@ Sync11Service.prototype = {
           
           
           
-          if (!this.identity.syncKeyBundle) {
+          if (!this.identity.syncKey) {
             this._log.warn("No passphrase in verifyLogin.");
             this.status.login = LOGIN_FAILED_NO_PASSPHRASE;
             return false;
@@ -757,6 +825,49 @@ Sync11Service.prototype = {
     }
   },
 
+  changePassword: function changePassword(newPassword) {
+    let client = new UserAPI10Client(this.userAPIURI);
+    let cb = Async.makeSpinningCallback();
+    client.changePassword(this.identity.username,
+                          this.identity.basicPassword, newPassword, cb);
+
+    try {
+      cb.wait();
+    } catch (ex) {
+      this._log.debug("Password change failed", ex);
+      return false;
+    }
+
+    
+    this.identity.basicPassword = newPassword;
+    this.persistLogin();
+    return true;
+  },
+
+  changePassphrase: function changePassphrase(newphrase) {
+    return this._catch(function doChangePasphrase() {
+      
+      this.wipeServer();
+
+      this.logout();
+
+      
+      this.identity.syncKey = newphrase;
+      this.persistLogin();
+
+      
+      this.resetClient();
+      this.collectionKeys.clear();
+
+      
+      this.sync();
+
+      Svc.Obs.notify("weave:service:change-passphrase", true);
+
+      return true;
+    })();
+  },
+
   startOver: function startOver() {
     this._log.trace("Invoking Service.startOver.");
     Svc.Obs.notify("weave:engine:stop-tracking");
@@ -781,7 +892,7 @@ Sync11Service.prototype = {
     
     
     this._log.info("Service.startOver dropping sync key and logging out.");
-    this.identity.resetSyncKeyBundle();
+    this.identity.resetSyncKey();
     this.status.login = LOGIN_FAILED_NO_PASSPHRASE;
     this.logout();
     Svc.Obs.notify("weave:service:start-over");
@@ -801,8 +912,23 @@ Sync11Service.prototype = {
 
     this.identity.deleteSyncCredentials();
 
+    
+    
+    let keepIdentity = false;
+    try {
+      keepIdentity = Services.prefs.getBoolPref("services.sync-testing.startOverKeepIdentity");
+    } catch (_) {  }
+    if (keepIdentity) {
+      Svc.Obs.notify("weave:service:start-over:finish");
+      return;
+    }
+
     try {
       this.identity.finalize();
+      
+      
+      Svc.Obs.notify("weave:service:start-over:init-identity");
+      this.identity.username = "";
       this.status.__authManager = null;
       this.identity = Status._authManager;
       this._clusterManager = this.identity.createClusterManager(this);
@@ -815,12 +941,31 @@ Sync11Service.prototype = {
     }
   },
 
-  login: function login() {
+  persistLogin: function persistLogin() {
+    try {
+      this.identity.persistCredentials(true);
+    } catch (ex) {
+      this._log.info("Unable to persist credentials: " + ex);
+    }
+  },
+
+  login: function login(username, password, passphrase) {
     function onNotify() {
       this._loggedIn = false;
       if (Services.io.offline) {
         this.status.login = LOGIN_FAILED_NETWORK_ERROR;
         throw "Application is offline, login should not be called";
+      }
+
+      let initialStatus = this._checkSetup();
+      if (username) {
+        this.identity.username = username;
+      }
+      if (password) {
+        this.identity.basicPassword = password;
+      }
+      if (passphrase) {
+        this.identity.syncKey = passphrase;
       }
 
       if (this._checkSetup() == CLIENT_NOT_CONFIGURED) {
@@ -838,6 +983,12 @@ Sync11Service.prototype = {
       
       cb.wait();
 
+      
+      
+      if (initialStatus == CLIENT_NOT_CONFIGURED
+          && (username || password || passphrase)) {
+        Svc.Obs.notify("weave:service:setup-complete");
+      }
       this._updateCachedURLs();
 
       this._log.info("User logged in successfully - verifying login.");
@@ -864,6 +1015,45 @@ Sync11Service.prototype = {
     this._loggedIn = false;
 
     Svc.Obs.notify("weave:service:logout:finish");
+  },
+
+  checkAccount: function checkAccount(account) {
+    let client = new UserAPI10Client(this.userAPIURI);
+    let cb = Async.makeSpinningCallback();
+
+    let username = this.identity.usernameFromAccount(account);
+    client.usernameExists(username, cb);
+
+    try {
+      let exists = cb.wait();
+      return exists ? "notAvailable" : "available";
+    } catch (ex) {
+      
+      return this.errorHandler.errorStr(ex);
+    }
+  },
+
+  createAccount: function createAccount(email, password,
+                                        captchaChallenge, captchaResponse) {
+    let client = new UserAPI10Client(this.userAPIURI);
+
+    
+    
+    if (Svc.Prefs.isSet("admin-secret")) {
+      client.adminSecret = Svc.Prefs.get("admin-secret", "");
+    }
+
+    let cb = Async.makeSpinningCallback();
+
+    client.createAccount(email, password, captchaChallenge, captchaResponse,
+                         cb);
+
+    try {
+      cb.wait();
+      return null;
+    } catch (ex) {
+      return this.errorHandler.errorStr(ex.body);
+    }
   },
 
   
@@ -1011,6 +1201,11 @@ Sync11Service.prototype = {
       this.syncID = meta.payload.syncID;
       this._log.debug("Clear cached values and take syncId: " + this.syncID);
 
+      if (!this.upgradeSyncKey(meta.payload.syncID)) {
+        this._log.warn("Failed to upgrade sync key. Failing remote setup.");
+        return false;
+      }
+
       if (!this.verifyAndFetchSymmetricKeys(infoResponse)) {
         this._log.warn("Failed to fetch symmetric keys. Failing remote setup.");
         return false;
@@ -1025,6 +1220,11 @@ Sync11Service.prototype = {
 
       return true;
     }
+    if (!this.upgradeSyncKey(meta.payload.syncID)) {
+      this._log.warn("Failed to upgrade sync key. Failing remote setup.");
+      return false;
+    }
+
     if (!this.verifyAndFetchSymmetricKeys(infoResponse)) {
       this._log.warn("Failed to fetch symmetric keys. Failing remote setup.");
       return false;
@@ -1163,10 +1363,139 @@ Sync11Service.prototype = {
     this.recordManager.set(this.metaURL, meta);
   },
 
+  
+
+
+
+
+
+
+  getFxAMigrationSentinel() {
+    if (this._shouldLogin()) {
+      this._log.debug("In getFxAMigrationSentinel: should login.");
+      if (!this.login()) {
+        this._log.debug("Can't get migration sentinel: login returned false.");
+        return Promise.resolve(null);
+      }
+    }
+    if (!this.identity.syncKeyBundle) {
+      this._log.error("Can't get migration sentinel: no syncKeyBundle.");
+      return Promise.resolve(null);
+    }
+    try {
+      let collectionURL = this.storageURL + "meta/fxa_credentials";
+      let cryptoWrapper = this.recordManager.get(collectionURL);
+      if (!cryptoWrapper || !cryptoWrapper.payload) {
+        
+        
+        return Promise.resolve(null);
+      }
+      
+      
+      if (cryptoWrapper.payload.sentinel) {
+        return Promise.resolve(cryptoWrapper.payload.sentinel);
+      }
+      
+      
+      let payload = cryptoWrapper.decrypt(this.identity.syncKeyBundle);
+      
+      
+      cryptoWrapper.payload = payload;
+      return Promise.resolve(payload.sentinel);
+    } catch (ex) {
+      this._log.error("Failed to fetch the migration sentinel: ${}", ex);
+      return Promise.resolve(null);
+    }
+  },
+
+  
+
+
+
+
+
+
+
+  setFxAMigrationSentinel(sentinel) {
+    if (this._shouldLogin()) {
+      this._log.debug("In setFxAMigrationSentinel: should login.");
+      if (!this.login()) {
+        this._log.debug("Can't set migration sentinel: login returned false.");
+        return Promise.resolve(false);
+      }
+    }
+    if (!this.identity.syncKeyBundle) {
+      this._log.error("Can't set migration sentinel: no syncKeyBundle.");
+      return Promise.resolve(false);
+    }
+    try {
+      let collectionURL = this.storageURL + "meta/fxa_credentials";
+      let cryptoWrapper = new CryptoWrapper("meta", "fxa_credentials");
+      cryptoWrapper.cleartext.sentinel = sentinel;
+
+      cryptoWrapper.encrypt(this.identity.syncKeyBundle);
+
+      let res = this.resource(collectionURL);
+      let response = res.put(cryptoWrapper.toJSON());
+
+      if (!response.success) {
+        throw response;
+      }
+      this.recordManager.set(collectionURL, cryptoWrapper);
+    } catch (ex) {
+      this._log.error("Failed to set the migration sentinel: ${}", ex);
+      return Promise.resolve(false);
+    }
+    return Promise.resolve(true);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  upgradeSyncKey: function upgradeSyncKey(syncID) {
+    let p = this.identity.syncKey;
+
+    if (!p) {
+      return false;
+    }
+
+    
+    if (Utils.isPassphrase(p)) {
+      this._log.info("Sync key is up-to-date: no need to upgrade.");
+      return true;
+    }
+
+    
+    
+
+    let s = btoa(syncID);        
+    let k = Utils.derivePresentableKeyFromPassphrase(p, s, PBKDF2_KEY_BYTES);   
+
+    if (!k) {
+      this._log.error("No key resulted from derivePresentableKeyFromPassphrase. Failing upgrade.");
+      return false;
+    }
+
+    this._log.info("Upgrading sync key...");
+    this.identity.syncKey = k;
+    this._log.info("Saving upgraded sync key...");
+    this.persistLogin();
+    this._log.info("Done saving.");
+    return true;
+  },
+
   _freshStart: function _freshStart() {
-    this._log.info("Fresh start. Resetting client.");
+    this._log.info("Fresh start. Resetting client and considering key upgrade.");
     this.resetClient();
     this.collectionKeys.clear();
+    this.upgradeSyncKey(this.syncID);
 
     
     this.wipeServer();
@@ -1275,6 +1604,9 @@ Sync11Service.prototype = {
         engine.wipeClient();
       }
     }
+
+    
+    this.persistLogin();
   },
 
   

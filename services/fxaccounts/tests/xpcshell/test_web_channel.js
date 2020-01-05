@@ -288,6 +288,9 @@ add_task(function* test_helpers_login_without_customize_sync() {
           do_check_false("verifiedCanLinkAccount" in accountData);
 
           
+          do_check_false(helpers.getShowCustomizeSyncPref());
+
+          
           do_check_eq(helpers.getPreviousAccountNameHashPref(), helpers.sha256("testuser@testuser.com"));
 
           resolve();
@@ -295,6 +298,9 @@ add_task(function* test_helpers_login_without_customize_sync() {
       }
     }
   });
+
+  
+  helpers.setShowCustomizeSyncPref(false);
 
   
   helpers.setPreviousAccountNameHashPref("lastuser@testuser.com");
@@ -317,11 +323,17 @@ add_task(function* test_helpers_login_with_customize_sync() {
           
           do_check_false("customizeSync" in accountData);
 
+          
+          do_check_true(helpers.getShowCustomizeSyncPref());
+
           resolve();
         });
       }
     }
   });
+
+  
+  helpers.setShowCustomizeSyncPref(false);
 
   yield helpers.login({
     email: "testuser@testuser.com",
@@ -348,11 +360,17 @@ add_task(function* test_helpers_login_with_customize_sync_and_declined_engines()
           do_check_eq(Services.prefs.getBoolPref("services.sync.engine.prefs"), false);
           do_check_eq(Services.prefs.getBoolPref("services.sync.engine.tabs"), true);
 
+          
+          do_check_false(helpers.getShowCustomizeSyncPref());
+
           resolve();
         });
       }
     }
   });
+
+  
+  helpers.setShowCustomizeSyncPref(true);
 
   do_check_eq(Services.prefs.getBoolPref("services.sync.engine.addons"), true);
   do_check_eq(Services.prefs.getBoolPref("services.sync.engine.bookmarks"), true);

@@ -18,7 +18,7 @@ function test() {
 
 registerCleanupFunction(function*() {
   yield signOut();
-  gFxAccounts.updateUI();
+  gFxAccounts.updateAppMenuItem();
 });
 
 var tests = [
@@ -35,7 +35,7 @@ var tests = [
     yield setSignedInUser();
     let userData = yield fxAccounts.getSignedInUser();
     isnot(userData, null, "Logged in now");
-    gFxAccounts.updateUI(); 
+    gFxAccounts.updateAppMenuItem(); 
     yield showMenuPromise("appMenu");
     yield showHighlightPromise("accountStatus");
     let highlight = document.getElementById("UITourHighlightContainer");

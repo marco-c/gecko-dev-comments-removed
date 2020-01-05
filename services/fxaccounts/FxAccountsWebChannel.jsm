@@ -36,6 +36,7 @@ const COMMAND_SYNC_PREFERENCES     = "fxaccounts:sync_preferences";
 const COMMAND_CHANGE_PASSWORD      = "fxaccounts:change_password";
 
 const PREF_LAST_FXA_USER           = "identity.fxaccounts.lastSignedInUserHash";
+const PREF_SYNC_SHOW_CUSTOMIZATION = "services.sync-setup.ui.showCustomizationDialog";
 
 
 
@@ -255,11 +256,27 @@ this.FxAccountsWebChannelHelpers.prototype = {
 
 
 
-  login(accountData) {
 
-    
-    
-    delete accountData.customizeSync;
+
+
+  setShowCustomizeSyncPref(showCustomizeSyncPref) {
+    Services.prefs.setBoolPref(PREF_SYNC_SHOW_CUSTOMIZATION, showCustomizeSyncPref);
+  },
+
+  getShowCustomizeSyncPref() {
+    return Services.prefs.getBoolPref(PREF_SYNC_SHOW_CUSTOMIZATION);
+  },
+
+  
+
+
+
+
+  login(accountData) {
+    if (accountData.customizeSync) {
+      this.setShowCustomizeSyncPref(true);
+      delete accountData.customizeSync;
+    }
 
     if (accountData.declinedSyncEngines) {
       let declinedSyncEngines = accountData.declinedSyncEngines;
@@ -268,6 +285,9 @@ this.FxAccountsWebChannelHelpers.prototype = {
       declinedSyncEngines.forEach(engine => {
         Services.prefs.setBoolPref("services.sync.engine." + engine, false);
       });
+
+      
+      this.setShowCustomizeSyncPref(false);
       delete accountData.declinedSyncEngines;
     }
 
