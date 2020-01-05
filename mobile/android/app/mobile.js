@@ -110,6 +110,7 @@ pref("network.http.max-persistent-connections-per-proxy", 20);
 
 
 pref("network.http.spdy.push-allowance", 32768);
+pref("network.http.spdy.default-hpack-buffer", 4096); 
 
 
 pref("network.buffer.cache.count", 24);
