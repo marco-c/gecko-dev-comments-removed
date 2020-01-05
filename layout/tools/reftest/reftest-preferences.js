@@ -119,3 +119,7 @@ user_pref("testing.supports.moz-bool-pref", true);
 
 
 user_pref("places.history.enabled", false);
+
+
+
+user_pref("plugin.load_flash_only", false);

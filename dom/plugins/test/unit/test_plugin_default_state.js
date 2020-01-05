@@ -1,6 +1,7 @@
 Components.utils.import("resource://gre/modules/Services.jsm");
 
 function run_test() {
+  allow_all_plugins();
   let pluginDefaultState = Services.prefs.getIntPref("plugin.default.state");
   
   do_check_neq(pluginDefaultState, Ci.nsIPluginTag.STATE_DISABLED);
