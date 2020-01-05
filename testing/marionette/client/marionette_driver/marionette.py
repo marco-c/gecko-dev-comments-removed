@@ -544,9 +544,14 @@ class Marionette(object):
 
     CONTEXT_CHROME = "chrome"  
     CONTEXT_CONTENT = "content"  
-    DEFAULT_SOCKET_TIMEOUT = 60
     DEFAULT_STARTUP_TIMEOUT = 120
     DEFAULT_SHUTDOWN_TIMEOUT = 65  
+
+    
+    
+    
+    
+    DEFAULT_SOCKET_TIMEOUT = 360
 
     def __init__(self, host="localhost", port=2828, app=None, bin=None,
                  baseurl=None, socket_timeout=DEFAULT_SOCKET_TIMEOUT,
