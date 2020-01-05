@@ -28,6 +28,8 @@ ThreadInfo::ThreadInfo(const char* aName, int aThreadId, bool aIsMainThread,
   , mPlatformData(AllocPlatformData(aThreadId))
   , mStackTop(aStackTop)
   , mIsBeingProfiled(false)
+  , mContext(nullptr)
+  , mJSSampling(INACTIVE)
   , mLastSample()
 {
   MOZ_COUNT_CTOR(ThreadInfo);
@@ -73,13 +75,13 @@ ThreadInfo::StreamJSON(ProfileBuffer* aBuffer, SpliceableJSONWriter& aWriter,
 {
   
   if (!mUniqueStacks.isSome()) {
-    mUniqueStacks.emplace(mRacyInfo->mContext);
+    mUniqueStacks.emplace(mContext);
   }
 
   aWriter.Start(SpliceableJSONWriter::SingleLineStyle);
   {
     StreamSamplesAndMarkers(Name(), ThreadId(), aBuffer, aWriter, aStartTime,
-                            aSinceTime, mRacyInfo->mContext,
+                            aSinceTime, mContext,
                             mSavedStreamedSamples.get(),
                             mSavedStreamedMarkers.get(), *mUniqueStacks);
     mSavedStreamedSamples.reset();
@@ -206,7 +208,7 @@ ThreadInfo::FlushSamplesAndMarkers(ProfileBuffer* aBuffer,
 {
   
   
-  MOZ_ASSERT(mRacyInfo->mContext);
+  MOZ_ASSERT(mContext);
 
   
   
@@ -215,14 +217,14 @@ ThreadInfo::FlushSamplesAndMarkers(ProfileBuffer* aBuffer,
   
   
   
-  mUniqueStacks.emplace(mRacyInfo->mContext);
+  mUniqueStacks.emplace(mContext);
 
   {
     SpliceableChunkedJSONWriter b;
     b.StartBareList();
     {
       aBuffer->StreamSamplesToJSON(b, mThreadId,  0,
-                                   mRacyInfo->mContext, *mUniqueStacks);
+                                   mContext, *mUniqueStacks);
     }
     b.EndBareList();
     mSavedStreamedSamples = b.WriteFunc()->CopyData();

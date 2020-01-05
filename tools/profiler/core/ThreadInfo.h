@@ -26,8 +26,6 @@ class RacyThreadInfo final : public PseudoStack
 public:
   RacyThreadInfo()
     : PseudoStack()
-    , mContext(nullptr)
-    , mJSSampling(INACTIVE)
     , mSleep(AWAKE)
   {
     MOZ_COUNT_CTOR(RacyThreadInfo);
@@ -69,73 +67,6 @@ public:
     
     
     return mPendingMarkers.accessList();
-  }
-
-  
-  
-  void SetJSContext(JSContext* aContext)
-  {
-    
-
-    MOZ_ASSERT(aContext && !mContext);
-
-    mContext = aContext;
-
-    js::SetContextProfilingStack(aContext,
-                                 (js::ProfileEntry*) mStack,
-                                 &mStackPointer,
-                                 (uint32_t) mozilla::ArrayLength(mStack));
-    PollJSSampling();
-  }
-
-  
-  
-  
-  void StartJSSampling()
-  {
-    
-
-    MOZ_RELEASE_ASSERT(mJSSampling == INACTIVE ||
-                       mJSSampling == INACTIVE_REQUESTED);
-    mJSSampling = ACTIVE_REQUESTED;
-  }
-
-  
-  
-  void StopJSSampling()
-  {
-    
-
-    MOZ_RELEASE_ASSERT(mJSSampling == ACTIVE ||
-                       mJSSampling == ACTIVE_REQUESTED);
-    mJSSampling = INACTIVE_REQUESTED;
-  }
-
-  
-  void PollJSSampling()
-  {
-    
-
-    
-    if (mContext) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if (mJSSampling.compareExchange(ACTIVE_REQUESTED, ACTIVE)) {
-        js::EnableContextProfilingStack(mContext, true);
-        js::RegisterContextProfilingEventMarker(mContext,
-                                                &ProfilerJSEventMarker);
-
-      } else if (mJSSampling.compareExchange(INACTIVE_REQUESTED, INACTIVE)) {
-        js::EnableContextProfilingStack(mContext, false);
-      }
-    }
   }
 
   
@@ -184,58 +115,6 @@ public:
 private:
   
   ProfilerSignalSafeLinkedList<ProfilerMarker> mPendingMarkers;
-
-public:
-  
-  
-  JSContext* mContext;
-
-private:
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  static const int INACTIVE = 0;
-  static const int ACTIVE_REQUESTED = 1;
-  static const int ACTIVE = 2;
-  static const int INACTIVE_REQUESTED = 3;
-  mozilla::Atomic<int> mJSSampling;
 
   
   
@@ -340,6 +219,77 @@ public:
     return responsiveness;
   }
 
+  
+  
+  void SetJSContext(JSContext* aContext)
+  {
+    
+
+    MOZ_ASSERT(aContext && !mContext);
+
+    mContext = aContext;
+
+    js::SetContextProfilingStack(
+      aContext,
+      (js::ProfileEntry*) RacyInfo()->mStack,
+      RacyInfo()->AddressOfStackPointer(),
+      (uint32_t) mozilla::ArrayLength(RacyInfo()->mStack));
+
+    PollJSSampling();
+  }
+
+  
+  
+  
+  void StartJSSampling()
+  {
+    
+
+    MOZ_RELEASE_ASSERT(mJSSampling == INACTIVE ||
+                       mJSSampling == INACTIVE_REQUESTED);
+    mJSSampling = ACTIVE_REQUESTED;
+  }
+
+  
+  
+  void StopJSSampling()
+  {
+    
+
+    MOZ_RELEASE_ASSERT(mJSSampling == ACTIVE ||
+                       mJSSampling == ACTIVE_REQUESTED);
+    mJSSampling = INACTIVE_REQUESTED;
+  }
+
+  
+  void PollJSSampling()
+  {
+    
+
+    
+    if (mContext) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (mJSSampling == ACTIVE_REQUESTED) {
+        mJSSampling = ACTIVE;
+        js::EnableContextProfilingStack(mContext, true);
+        js::RegisterContextProfilingEventMarker(mContext,
+                                                &ProfilerJSEventMarker);
+
+      } else if (mJSSampling == INACTIVE_REQUESTED) {
+        mJSSampling = INACTIVE;
+        js::EnableContextProfilingStack(mContext, false);
+      }
+    }
+  }
+
 private:
   bool mIsBeingProfiled;
 
@@ -353,6 +303,59 @@ private:
 
   
   mozilla::Maybe<ThreadResponsiveness> mResponsiveness;
+
+public:
+  
+  
+  JSContext* mContext;
+
+private:
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  enum {
+    INACTIVE = 0,
+    ACTIVE_REQUESTED = 1,
+    ACTIVE = 2,
+    INACTIVE_REQUESTED = 3,
+  } mJSSampling;
 
   
   
