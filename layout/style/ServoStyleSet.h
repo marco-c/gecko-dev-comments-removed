@@ -349,6 +349,16 @@ public:
 
   bool MightHaveAttributeDependency(nsIAtom* aAttribute);
 
+  
+
+
+
+
+
+
+
+  bool HasStateDependency(EventStates aState);
+
 private:
   
   
