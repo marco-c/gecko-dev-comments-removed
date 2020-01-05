@@ -626,9 +626,6 @@ private:
   RefPtr<SeekTask> mSeekTask;
   MozPromiseRequestHolder<SeekTask::SeekTaskPromise> mSeekTaskRequest;
 
-  void OnSeekTaskResolved(SeekTaskResolveValue aValue);
-  void OnSeekTaskRejected(SeekTaskRejectValue aValue);
-
   
   
   void DiscardSeekTaskIfExist();
