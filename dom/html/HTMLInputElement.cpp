@@ -3592,7 +3592,7 @@ HTMLInputElement::Select()
 
   nsTextEditorState* tes = GetEditorState();
   if (tes) {
-    nsFrameSelection* fs = tes->GetConstFrameSelection();
+    RefPtr<nsFrameSelection> fs = tes->GetConstFrameSelection();
     if (fs && fs->MouseDownRecorded()) {
       
       
