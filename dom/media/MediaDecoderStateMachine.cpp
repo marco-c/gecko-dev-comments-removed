@@ -914,12 +914,10 @@ private:
     mSeekRequest.Begin(Reader()->Seek(mTask->mTarget, mMaster->Duration())
       ->Then(OwnerThread(), __func__,
              [this] (media::TimeUnit aUnit) {
-               mSeekRequest.Complete();
-               mTask->OnSeekResolved(aUnit);
+               OnSeekResolved(aUnit);
              },
              [this] (nsresult aResult) {
-               mSeekRequest.Complete();
-               mTask->OnSeekRejected(aResult);
+               OnSeekRejected(aResult);
              }));
 
     
@@ -936,6 +934,26 @@ private:
   int64_t CalculateNewCurrentTime() const override
   {
     return mSeekTask->CalculateNewCurrentTime();
+  }
+
+  void OnSeekResolved(media::TimeUnit) {
+    mSeekRequest.Complete();
+
+    
+    
+    if (!mTask->mDoneVideoSeeking) {
+      mTask->RequestVideoData();
+    }
+    if (!mTask->mDoneAudioSeeking) {
+      mTask->RequestAudioData();
+    }
+  }
+
+  void OnSeekRejected(nsresult aResult) {
+    mSeekRequest.Complete();
+
+    MOZ_ASSERT(NS_FAILED(aResult), "Cancels should also disconnect mSeekRequest");
+    mTask->RejectIfExist(aResult, __func__);
   }
 
   void OnSeekTaskResolved(const SeekTaskResolveValue& aValue)
