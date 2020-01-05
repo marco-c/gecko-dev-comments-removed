@@ -35,6 +35,24 @@
 
 
 
+extern void NS_SetThreadName(nsIThread* aThread, const nsACString& aName);
+
+
+
+
+
+template<size_t LEN>
+inline void
+NS_SetThreadName(nsIThread* aThread, const char (&aName)[LEN])
+{
+  static_assert(LEN <= 16,
+                "Thread name must be no more than 16 characters");
+  NS_SetThreadName(aThread, nsDependentCString(aName));
+}
+
+
+
+
 
 
 
@@ -53,12 +71,6 @@ NS_NewThread(nsIThread** aResult,
 
 
 
-extern nsresult
-NS_NewNamedThread(const nsACString& aName,
-                  nsIThread** aResult,
-                  nsIRunnable* aInitialEvent = nullptr,
-                  uint32_t aStackSize = nsIThreadManager::DEFAULT_STACK_SIZE);
-
 template<size_t LEN>
 inline nsresult
 NS_NewNamedThread(const char (&aName)[LEN],
@@ -66,10 +78,21 @@ NS_NewNamedThread(const char (&aName)[LEN],
                   nsIRunnable* aInitialEvent = nullptr,
                   uint32_t aStackSize = nsIThreadManager::DEFAULT_STACK_SIZE)
 {
-  static_assert(LEN <= 16,
-                "Thread name must be no more than 16 characters");
-  return NS_NewNamedThread(nsDependentCString(aName, LEN - 1),
-                           aResult, aInitialEvent, aStackSize);
+  
+  nsCOMPtr<nsIThread> thread;
+  nsresult rv = NS_NewThread(getter_AddRefs(thread), nullptr, aStackSize);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  NS_SetThreadName<LEN>(thread, aName);
+  if (aInitialEvent) {
+    rv = thread->Dispatch(aInitialEvent, NS_DISPATCH_NORMAL);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Initial event dispatch failed");
+  }
+
+  *aResult = nullptr;
+  thread.swap(*aResult);
+  return rv;
 }
 
 
@@ -1005,13 +1028,10 @@ public:
   
 
 
-  nsCString GetNextThreadName(const nsACString& aPoolName);
 
-  template<size_t LEN>
-  nsCString GetNextThreadName(const char (&aPoolName)[LEN])
-  {
-    return GetNextThreadName(nsDependentCString(aPoolName, LEN - 1));
-  }
+
+  void SetThreadPoolName(const nsACString& aPoolName,
+                         nsIThread* aThread = nullptr);
 
 private:
   mozilla::Atomic<uint32_t> mCounter;

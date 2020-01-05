@@ -1344,6 +1344,8 @@ ParentImpl::RequestMessageLoopRunnable::Run()
   AssertIsInMainProcess();
   MOZ_ASSERT(mTargetThread);
 
+  char stackBaseGuess;
+
   if (NS_IsMainThread()) {
     MOZ_ASSERT(mMessageLoop);
 
@@ -1372,6 +1374,8 @@ ParentImpl::RequestMessageLoopRunnable::Run()
 
     return NS_OK;
   }
+
+  profiler_register_thread("IPDL Background", &stackBaseGuess);
 
 #ifdef DEBUG
   {
@@ -1409,6 +1413,8 @@ ParentImpl::ShutdownBackgroundThreadRunnable::Run()
   
   
   sBackgroundPRThread.compareExchange(PR_GetCurrentThread(), nullptr);
+
+  profiler_unregister_thread();
 
   return NS_OK;
 }
