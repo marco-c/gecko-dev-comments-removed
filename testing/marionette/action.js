@@ -59,7 +59,7 @@ const NORMALIZED_KEY_LOOKUP = {
   "\uE003": "Backspace",
   "\uE004": "Tab",
   "\uE005": "Clear",
-  "\uE006": "Return",
+  "\uE006": "Enter",
   "\uE007": "Enter",
   "\uE008": "Shift",
   "\uE009": "Control",
@@ -880,7 +880,6 @@ action.Key = class {
     this.repeat = false;
     this.isComposing = false;
     
-    this.keyCode = 0;
   }
 
   update(inputState) {
@@ -1082,7 +1081,7 @@ function dispatchKeyDown(a, inputState, win) {
     
     action.inputsToCancel.push(Object.assign({}, a, {subtype: action.KeyUp}));
     keyEvent.update(inputState);
-    event.sendKeyDown(keyEvent.key, keyEvent, win);
+    event.sendKeyDown(a.value, keyEvent, win);
 
     resolve();
   });
@@ -1113,7 +1112,7 @@ function dispatchKeyUp(a, inputState, win) {
     }
     inputState.release(keyEvent.key);
     keyEvent.update(inputState);
-    event.sendKeyUp(keyEvent.key, keyEvent, win);
+    event.sendKeyUp(a.value, keyEvent, win);
 
     resolve();
   });
