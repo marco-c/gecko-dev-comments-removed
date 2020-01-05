@@ -384,8 +384,13 @@ struct SPSData
 
   uint8_t matrix_coefficients;
   bool chroma_loc_info_present_flag;
-  uint32_t chroma_sample_loc_type_top_field;
-  uint32_t chroma_sample_loc_type_bottom_field;
+  
+
+
+
+
+  uint8_t chroma_sample_loc_type_top_field;
+  uint8_t chroma_sample_loc_type_bottom_field;
   bool timing_info_present_flag;
   uint32_t num_units_in_tick;
   uint32_t time_scale;
@@ -651,7 +656,7 @@ private:
   
   static bool DecodePPS(const mozilla::MediaByteBuffer* aPPS,
                         const SPSDataSet& aSPSs, PPSData& aDest);
-  static void vui_parameters(BitReader& aBr, SPSData& aDest);
+  static bool vui_parameters(BitReader& aBr, SPSData& aDest);
   
   static void hrd_parameters(BitReader& aBr);
 };
