@@ -147,7 +147,7 @@ pub enum ConstellationControlMsg {
     
     FramedContentChanged(PipelineId, SubpageId),
     
-    ReportCSSError(PipelineId, String, u32, u32, String),
+    ReportCSSError(PipelineId, String, usize, usize, String),
 }
 
 
