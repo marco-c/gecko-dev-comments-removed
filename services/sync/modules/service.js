@@ -902,16 +902,9 @@ Sync11Service.prototype = {
 
       if (this.recordManager.response.status == 404) {
         this._log.debug("No meta/global record on the server. Creating one.");
-        newMeta = new WBORecord("meta", "global");
-        newMeta.payload.syncID = this.syncID;
-        newMeta.payload.storageVersion = STORAGE_VERSION;
-        newMeta.payload.declined = this.engineManager.getDeclined();
-
-        newMeta.isNew = true;
-
-        this.recordManager.set(this.metaURL, newMeta);
-        let uploadRes = newMeta.upload(this.resource(this.metaURL));
-        if (!uploadRes.success) {
+        try {
+          this._uploadNewMetaGlobal();
+        } catch (uploadRes) {
           this._log.warn("Unable to upload new meta/global. Failing remote setup.");
           this.errorHandler.checkServerError(uploadRes);
           return false;
@@ -1118,18 +1111,34 @@ Sync11Service.prototype = {
   
 
 
-  uploadMetaGlobal(meta) {
-    this._log.debug("Uploading meta/global: " + JSON.stringify(meta));
 
-    
-    
-    
-    
+  _uploadNewMetaGlobal() {
+    let meta = new WBORecord("meta", "global");
+    meta.payload.syncID = this.syncID;
+    meta.payload.storageVersion = STORAGE_VERSION;
+    meta.payload.declined = this.engineManager.getDeclined();
+    meta.modified = 0;
+    meta.isNew = true;
+
+    this.uploadMetaGlobal(meta);
+  },
+
+  
+
+
+
+
+  uploadMetaGlobal(meta) {
+    this._log.debug("Uploading meta/global", meta);
     let res = this.resource(this.metaURL);
+    res.setHeader("X-If-Unmodified-Since", meta.modified);
     let response = res.put(meta);
     if (!response.success) {
       throw response;
     }
+    
+    
+    meta.modified = response.obj;
     this.recordManager.set(this.metaURL, meta);
   },
 
@@ -1142,17 +1151,11 @@ Sync11Service.prototype = {
     this.wipeServer();
 
     
-    let meta = new WBORecord("meta", "global");
-    meta.payload.syncID = this.syncID;
-    meta.payload.storageVersion = STORAGE_VERSION;
-    meta.payload.declined = this.engineManager.getDeclined();
-    meta.isNew = true;
-
     
     
     
     
-    this.uploadMetaGlobal(meta);
+    this._uploadNewMetaGlobal();
 
     
     
