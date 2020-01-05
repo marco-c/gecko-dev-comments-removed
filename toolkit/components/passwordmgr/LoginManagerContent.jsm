@@ -5,7 +5,7 @@
 "use strict";
 
 this.EXPORTED_SYMBOLS = [ "LoginManagerContent",
-                          "FormLikeFactory",
+                          "LoginFormFactory",
                           "UserAutoCompleteResult" ];
 
 const { classes: Cc, interfaces: Ci, results: Cr, utils: Cu } = Components;
@@ -17,6 +17,8 @@ Cu.import("resource://gre/modules/PrivateBrowsingUtils.jsm");
 Cu.import("resource://gre/modules/Promise.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "DeferredTask", "resource://gre/modules/DeferredTask.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "FormLikeFactory",
+                                  "resource://gre/modules/FormLikeFactory.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "LoginRecipesContent",
                                   "resource://gre/modules/LoginRecipes.jsm");
 
@@ -49,7 +51,7 @@ var observer = {
     
 
     try {
-      let formLike = FormLikeFactory.createFromForm(formElement);
+      let formLike = LoginFormFactory.createFromForm(formElement);
       LoginManagerContent._onFormSubmit(formLike);
     } catch (e) {
       log("Caught error in onFormSubmit(", e.lineNumber, "):", e.message);
@@ -284,7 +286,7 @@ var LoginManagerContent = {
   _autoCompleteSearchAsync(aSearchString, aPreviousResult,
                                      aElement, aRect) {
     let doc = aElement.ownerDocument;
-    let form = FormLikeFactory.createFromField(aElement);
+    let form = LoginFormFactory.createFromField(aElement);
     let win = doc.defaultView;
 
     let formOrigin = LoginUtils._getPasswordOrigin(doc.documentURI);
@@ -338,7 +340,7 @@ var LoginManagerContent = {
     }
 
     let form = event.target;
-    let formLike = FormLikeFactory.createFromForm(form);
+    let formLike = LoginFormFactory.createFromForm(form);
     log("onDOMFormHasPassword:", form, formLike);
     this._fetchLoginsFromParentAndFillForm(formLike, window);
   },
@@ -358,7 +360,7 @@ var LoginManagerContent = {
     
     this.setupProgressListener(window);
 
-    let formLike = FormLikeFactory.createFromField(pwField);
+    let formLike = LoginFormFactory.createFromField(pwField);
     log("onDOMInputPasswordAdded:", pwField, formLike);
 
     let deferredTask = this._deferredPasswordAddedTasksByRootElement.get(formLike.rootElement);
@@ -508,7 +510,7 @@ var LoginManagerContent = {
       inputElement,
     };
 
-    let form = FormLikeFactory.createFromField(inputElement);
+    let form = LoginFormFactory.createFromField(inputElement);
     if (inputElement.type == "password") {
       clobberUsername = false;
     }
@@ -543,7 +545,7 @@ var LoginManagerContent = {
     if (!LoginHelper.isUsernameFieldType(acInputField))
       return;
 
-    var acForm = FormLikeFactory.createFromField(acInputField);
+    var acForm = LoginFormFactory.createFromField(acInputField);
     if (!acForm)
       return;
 
@@ -649,7 +651,7 @@ var LoginManagerContent = {
       );
       if (pwOverrideField) {
         
-        let formLike = FormLikeFactory.createFromField(pwOverrideField);
+        let formLike = LoginFormFactory.createFromField(pwOverrideField);
         pwFields = [{
           index   : [...formLike.elements].indexOf(pwOverrideField),
           element : pwOverrideField,
@@ -1134,7 +1136,7 @@ var LoginManagerContent = {
         !aField.ownerDocument) {
       return null;
     }
-    let form = FormLikeFactory.createFromField(aField);
+    let form = LoginFormFactory.createFromField(aField);
 
     let doc = aField.ownerDocument;
     let messageManager = messageManagerFromWindow(doc.defaultView);
@@ -1299,12 +1301,7 @@ UserAutoCompleteResult.prototype = {
 
 
 
-var FormLikeFactory = {
-  _propsFromForm: [
-    "autocomplete",
-    "ownerDocument",
-  ],
-
+var LoginFormFactory = {
   
 
 
@@ -1313,21 +1310,8 @@ var FormLikeFactory = {
 
 
   createFromForm(aForm) {
-    if (!(aForm instanceof Ci.nsIDOMHTMLFormElement)) {
-      throw new Error("createFromForm: aForm must be a nsIDOMHTMLFormElement");
-    }
-
-    let formLike = {
-      action: LoginUtils._getActionOrigin(aForm),
-      elements: [...aForm.elements],
-      rootElement: aForm,
-    };
-
-    for (let prop of this._propsFromForm) {
-      formLike[prop] = aForm[prop];
-    }
-
-    this._addToJSONProperty(formLike);
+    let formLike = FormLikeFactory.createFromForm(aForm);
+    formLike.action = LoginUtils._getActionOrigin(aForm);
 
     let state = LoginManagerContent.stateForDocument(formLike.ownerDocument);
     state.loginFormRootElements.add(formLike.rootElement);
@@ -1364,23 +1348,9 @@ var FormLikeFactory = {
       return this.createFromForm(aField.form);
     }
 
-    let doc = aField.ownerDocument;
-    log("Created non-form FormLike for rootElement:", doc.documentElement);
-    let elements = [];
-    for (let el of doc.documentElement.querySelectorAll("input")) {
-      if (!el.form) {
-        elements.push(el);
-      }
-    }
-    let formLike = {
-      action: LoginUtils._getPasswordOrigin(doc.baseURI),
-      autocomplete: "on",
-      
-      
-      elements,
-      ownerDocument: doc,
-      rootElement: doc.documentElement,
-    };
+    let formLike = FormLikeFactory.createFromField(aField);
+    formLike.action = LoginUtils._getPasswordOrigin(aField.ownerDocument.baseURI);
+    log("Created non-form FormLike for rootElement:", aField.ownerDocument.documentElement);
 
     let state = LoginManagerContent.stateForDocument(formLike.ownerDocument);
     state.loginFormRootElements.add(formLike.rootElement);
@@ -1389,59 +1359,6 @@ var FormLikeFactory = {
 
     LoginManagerContent._formLikeByRootElement.set(formLike.rootElement, formLike);
 
-    this._addToJSONProperty(formLike);
     return formLike;
-  },
-
-  
-
-
-
-  _addToJSONProperty(aFormLike) {
-    function prettyElementOutput(aElement) {
-      let idText = aElement.id ? "#" + aElement.id : "";
-      let classText = "";
-      for (let className of aElement.classList) {
-        classText += "." + className;
-      }
-      return `<${aElement.nodeName + idText + classText}>`;
-    }
-
-    Object.defineProperty(aFormLike, "toJSON", {
-      value: () => {
-        let cleansed = {};
-        for (let key of Object.keys(aFormLike)) {
-          let value = aFormLike[key];
-          let cleansedValue = value;
-
-          switch (key) {
-            case "elements": {
-              cleansedValue = [];
-              for (let element of value) {
-                cleansedValue.push(prettyElementOutput(element));
-              }
-              break;
-            }
-
-            case "ownerDocument": {
-              cleansedValue = {
-                location: {
-                  href: value.location.href,
-                },
-              };
-              break;
-            }
-
-            case "rootElement": {
-              cleansedValue = prettyElementOutput(value);
-              break;
-            }
-          }
-
-          cleansed[key] = cleansedValue;
-        }
-        return cleansed;
-      }
-    });
   },
 };
