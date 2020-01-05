@@ -298,6 +298,9 @@ private:
   bool IsPlaying() const;
 
   
+  void SetMediaNotSeekable();
+
+  
   
   void ResetDecode(TrackSet aTracks = TrackSet(TrackInfo::kAudioTrack,
                                                TrackInfo::kVideoTrack));
