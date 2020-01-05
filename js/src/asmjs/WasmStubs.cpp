@@ -808,40 +808,51 @@ wasm::GenerateJitExit(MacroAssembler& masm, const FuncImport& fi, Label* throwLa
 
 
 
-static Offsets
-GenerateStackOverflow(MacroAssembler& masm, Label* throwLabel)
+
+ProfilingOffsets
+wasm::GenerateTrapExit(MacroAssembler& masm, Trap trap, Label* throwLabel)
 {
     masm.haltingAlign(CodeAlignment);
 
-    Offsets offsets;
-    offsets.begin = masm.currentOffset();
+    masm.setFramePushed(0);
 
-    
-    
-    
-    
-    
-    
-    Register activation = ABINonArgReturnReg0;
-    masm.loadWasmActivationFromTls(activation);
-    masm.storePtr(masm.getStackPointer(), Address(activation, WasmActivation::offsetOfFP()));
+    MIRTypeVector args;
+    MOZ_ALWAYS_TRUE(args.append(MIRType::Int32));
 
-    
-    if (uint32_t d = StackDecrementForCall(ABIStackAlignment, sizeof(AsmJSFrame), ShadowStackSpace))
-        masm.subFromStackPtr(Imm32(d));
+    uint32_t framePushed = StackDecrementForCall(masm, ABIStackAlignment, args);
 
-    
+    ProfilingOffsets offsets;
+    GenerateExitPrologue(masm, framePushed, ExitReason::Trap, &offsets);
+
+    ABIArgMIRTypeIter i(args);
+    if (i->kind() == ABIArg::GPR)
+        masm.move32(Imm32(int32_t(trap)), i->gpr());
+    else
+        masm.store32(Imm32(int32_t(trap)), Address(masm.getStackPointer(), i->offsetFromArgBase()));
+    i++;
+    MOZ_ASSERT(i.done());
+
     masm.assertStackAlignment(ABIStackAlignment);
-    masm.call(SymbolicAddress::ReportOverRecursed);
+    masm.call(SymbolicAddress::ReportTrap);
+
     masm.jump(throwLabel);
+
+    GenerateExitEpilogue(masm, framePushed, ExitReason::Trap, &offsets);
 
     offsets.end = masm.currentOffset();
     return offsets;
 }
 
 
+
+
+
+
+
+
+
 static Offsets
-GenerateTrapStub(MacroAssembler& masm, Trap reason, Label* throwLabel)
+GenerateGenericMemoryAccessTrap(MacroAssembler& masm, SymbolicAddress reporter, Label* throwLabel)
 {
     masm.haltingAlign(CodeAlignment);
 
@@ -855,21 +866,7 @@ GenerateTrapStub(MacroAssembler& masm, Trap reason, Label* throwLabel)
     if (ShadowStackSpace)
         masm.subFromStackPtr(Imm32(ShadowStackSpace));
 
-    MIRTypeVector args;
-    JS_ALWAYS_TRUE(args.append(MIRType::Int32));
-
-    ABIArgMIRTypeIter i(args);
-    if (i->kind() == ABIArg::GPR) {
-        masm.move32(Imm32(int32_t(reason)), i->gpr());
-    } else {
-        masm.store32(Imm32(int32_t(reason)),
-                     Address(masm.getStackPointer(), i->offsetFromArgBase()));
-    }
-
-    i++;
-    MOZ_ASSERT(i.done());
-
-    masm.call(SymbolicAddress::HandleTrap);
+    masm.call(reporter);
     masm.jump(throwLabel);
 
     offsets.end = masm.currentOffset();
@@ -877,25 +874,15 @@ GenerateTrapStub(MacroAssembler& masm, Trap reason, Label* throwLabel)
 }
 
 Offsets
-wasm::GenerateJumpTarget(MacroAssembler& masm, JumpTarget target, Label* throwLabel)
+wasm::GenerateOutOfBoundsExit(MacroAssembler& masm, Label* throwLabel)
 {
-    switch (target) {
-      case JumpTarget::StackOverflow:
-        return GenerateStackOverflow(masm, throwLabel);
-      case JumpTarget::IndirectCallToNull:
-      case JumpTarget::IndirectCallBadSig:
-      case JumpTarget::OutOfBounds:
-      case JumpTarget::UnalignedAccess:
-      case JumpTarget::Unreachable:
-      case JumpTarget::IntegerOverflow:
-      case JumpTarget::InvalidConversionToInteger:
-      case JumpTarget::IntegerDivideByZero:
-      case JumpTarget::ImpreciseSimdConversion:
-        return GenerateTrapStub(masm, Trap(target), throwLabel);
-      case JumpTarget::Limit:
-        break;
-    }
-    MOZ_CRASH("bad JumpTarget");
+    return GenerateGenericMemoryAccessTrap(masm, SymbolicAddress::ReportOutOfBounds, throwLabel);
+}
+
+Offsets
+wasm::GenerateUnalignedExit(MacroAssembler& masm, Label* throwLabel)
+{
+    return GenerateGenericMemoryAccessTrap(masm, SymbolicAddress::ReportUnalignedAccess, throwLabel);
 }
 
 static const LiveRegisterSet AllRegsExceptSP(
@@ -911,7 +898,7 @@ static const LiveRegisterSet AllRegsExceptSP(
 
 
 Offsets
-wasm::GenerateInterruptStub(MacroAssembler& masm, Label* throwLabel)
+wasm::GenerateInterruptExit(MacroAssembler& masm, Label* throwLabel)
 {
     masm.haltingAlign(CodeAlignment);
 

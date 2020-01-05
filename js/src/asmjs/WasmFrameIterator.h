@@ -26,19 +26,18 @@ class JSAtom;
 namespace js {
 
 class WasmActivation;
-namespace jit { class MacroAssembler; class Label; }
+namespace jit { class MacroAssembler; }
 
 namespace wasm {
 
 class CallSite;
 class Code;
 class CodeRange;
-class Instance;
 class SigIdDesc;
 struct CallThunk;
 struct FuncOffsets;
-struct Metadata;
 struct ProfilingOffsets;
+struct TrapOffset;
 
 
 
@@ -81,7 +80,8 @@ enum class ExitReason : uint32_t
     None,          
     ImportJit,     
     ImportInterp,  
-    Native         
+    Native,        
+    Trap           
 };
 
 
@@ -121,7 +121,7 @@ GenerateExitEpilogue(jit::MacroAssembler& masm, unsigned framePushed, ExitReason
                      ProfilingOffsets* offsets);
 void
 GenerateFunctionPrologue(jit::MacroAssembler& masm, unsigned framePushed, const SigIdDesc& sigId,
-                         FuncOffsets* offsets);
+                         const TrapOffset& trapOffset, FuncOffsets* offsets);
 void
 GenerateFunctionEpilogue(jit::MacroAssembler& masm, unsigned framePushed, FuncOffsets* offsets);
 

@@ -367,7 +367,7 @@ ContextToPC(CONTEXT* context)
 #endif
 }
 
-#if defined(JS_CODEGEN_X64)
+#if defined(WASM_HUGE_MEMORY)
 MOZ_COLD static void
 SetFPRegToNaN(size_t size, void* fp_reg)
 {
@@ -601,25 +601,35 @@ ComputeAccessAddress(EMULATOR_CONTEXT* context, const Disassembler::ComplexAddre
     return reinterpret_cast<uint8_t*>(result);
 }
 
-MOZ_COLD static bool
-HugeMemoryAccess(EMULATOR_CONTEXT* context, uint8_t* pc, uint8_t* faultingAddress,
-                 const Instance& instance, uint8_t** ppc)
+MOZ_COLD static void
+HandleMemoryAccess(EMULATOR_CONTEXT* context, uint8_t* pc, uint8_t* faultingAddress,
+                   const Instance& instance, uint8_t** ppc)
 {
     MOZ_RELEASE_ASSERT(instance.codeSegment().containsFunctionPC(pc));
 
+    const MemoryAccess* memoryAccess = instance.code().lookupMemoryAccess(pc);
+    if (!memoryAccess) {
+        
+        
+        
+        
+        *ppc = instance.codeSegment().outOfBoundsCode();
+        return;
+    }
+
+    MOZ_RELEASE_ASSERT(memoryAccess->insnOffset() == (pc - instance.codeBase()));
+
     
     
     
     
 
-    const MemoryAccess* memoryAccess = instance.code().lookupMemoryAccess(pc);
-    if (!memoryAccess) {
-        *ppc = instance.codeSegment().outOfBoundsCode();
-        return true;
+    if (memoryAccess->hasTrapOutOfLineCode()) {
+        *ppc = memoryAccess->trapOutOfLineCode(instance.codeBase());
+        return;
     }
 
     MOZ_RELEASE_ASSERT(instance.isAsmJS());
-    MOZ_RELEASE_ASSERT(memoryAccess->insnOffset() == (pc - instance.codeBase()));
 
     
     
@@ -732,8 +742,27 @@ HugeMemoryAccess(EMULATOR_CONTEXT* context, uint8_t* pc, uint8_t* faultingAddres
     }
 
     *ppc = end;
-    return true;
 }
+
+#else 
+
+MOZ_COLD static void
+HandleMemoryAccess(EMULATOR_CONTEXT* context, uint8_t* pc, uint8_t* faultingAddress,
+                   const Instance& instance, uint8_t** ppc)
+{
+    MOZ_RELEASE_ASSERT(instance.codeSegment().containsFunctionPC(pc));
+
+    const MemoryAccess* memoryAccess = instance.code().lookupMemoryAccess(pc);
+    if (!memoryAccess) {
+        
+        *ppc = instance.codeSegment().outOfBoundsCode();
+        return;
+    }
+
+    MOZ_RELEASE_ASSERT(memoryAccess->hasTrapOutOfLineCode());
+    *ppc = memoryAccess->trapOutOfLineCode(instance.codeBase());
+}
+
 #endif 
 
 MOZ_COLD static bool
@@ -798,16 +827,12 @@ HandleFault(PEXCEPTION_POINTERS exception)
                instance->codeSegment().containsFunctionPC(activation->resumePC());
     }
 
-#ifdef WASM_HUGE_MEMORY
-    return HugeMemoryAccess(context, pc, faultingAddress, *instance, ppc);
-#else
-    *ppc = instance->codeSegment().outOfBoundsCode();
+    HandleMemoryAccess(context, pc, faultingAddress, *instance, ppc);
     return true;
-#endif
 }
 
 static LONG WINAPI
-AsmJSFaultHandler(LPEXCEPTION_POINTERS exception)
+WasmFaultHandler(LPEXCEPTION_POINTERS exception)
 {
     if (HandleFault(exception))
         return EXCEPTION_CONTINUE_EXECUTION;
@@ -925,12 +950,7 @@ HandleMachException(JSRuntime* rt, const ExceptionRequest& request)
     if (!IsHeapAccessAddress(*instance, faultingAddress))
         return false;
 
-#ifdef WASM_HUGE_MEMORY
-    if (!HugeMemoryAccess(&context, pc, faultingAddress, *instance, ppc))
-        return false;
-#else
-    *ppc = instance->codeSegment().outOfBoundsCode();
-#endif
+    HandleMemoryAccess(&context, pc, faultingAddress, *instance, ppc);
 
     
     kret = thread_set_state(rtThread, float_state, (thread_state_t)&context.float_, float_state_count);
@@ -1150,19 +1170,15 @@ HandleFault(int signum, siginfo_t* info, void* ctx)
             return false;
     }
 
-#ifdef WASM_HUGE_MEMORY
-    return HugeMemoryAccess(context, pc, faultingAddress, *instance, ppc);
-#elif defined(JS_CODEGEN_ARM)
-    MOZ_RELEASE_ASSERT(signal == Signal::BusError || signal == Signal::SegFault);
-    if (signal == Signal::BusError)
+#ifdef JS_CODEGEN_ARM
+    if (signal == Signal::BusError) {
         *ppc = instance->codeSegment().unalignedAccessCode();
-    else
-        *ppc = instance->codeSegment().outOfBoundsCode();
-    return true;
-#else
-    *ppc = instance->codeSegment().outOfBoundsCode();
-    return true;
+        return true;
+    }
 #endif
+
+    HandleMemoryAccess(context, pc, faultingAddress, *instance, ppc);
+    return true;
 }
 
 static struct sigaction sPrevSEGVHandler;
@@ -1170,12 +1186,12 @@ static struct sigaction sPrevSIGBUSHandler;
 
 template<Signal signal>
 static void
-AsmJSFaultHandler(int signum, siginfo_t* info, void* context)
+WasmFaultHandler(int signum, siginfo_t* info, void* context)
 {
     if (HandleFault<signal>(signum, info, context))
         return;
 
-    struct sigaction* previousSignal = signal == Signal::SegFault
+    struct sigaction* previousSignal = signum == SIGSEGV
                                        ? &sPrevSEGVHandler
                                        : &sPrevSIGBUSHandler;
 
@@ -1324,7 +1340,7 @@ ProcessHasSignalHandlers()
     
     
 # if defined(XP_WIN)
-    if (!AddVectoredExceptionHandler( true, AsmJSFaultHandler))
+    if (!AddVectoredExceptionHandler( true, WasmFaultHandler))
         return false;
 # elif defined(XP_DARWIN)
     
@@ -1337,7 +1353,7 @@ ProcessHasSignalHandlers()
     
     struct sigaction faultHandler;
     faultHandler.sa_flags = SA_SIGINFO | SA_NODEFER;
-    faultHandler.sa_sigaction = &AsmJSFaultHandler<Signal::SegFault>;
+    faultHandler.sa_sigaction = WasmFaultHandler<Signal::SegFault>;
     sigemptyset(&faultHandler.sa_mask);
     if (sigaction(SIGSEGV, &faultHandler, &sPrevSEGVHandler))
         MOZ_CRASH("unable to install segv handler");
@@ -1346,7 +1362,7 @@ ProcessHasSignalHandlers()
     
     struct sigaction busHandler;
     busHandler.sa_flags = SA_SIGINFO | SA_NODEFER;
-    busHandler.sa_sigaction = &AsmJSFaultHandler<Signal::BusError>;
+    busHandler.sa_sigaction = WasmFaultHandler<Signal::BusError>;
     sigemptyset(&busHandler.sa_mask);
     if (sigaction(SIGBUS, &busHandler, &sPrevSIGBUSHandler))
         MOZ_CRASH("unable to install sigbus handler");

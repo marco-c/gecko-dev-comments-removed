@@ -2803,12 +2803,16 @@ MacroAssembler::wasmCallIndirect(const wasm::CallSiteDesc& desc, const wasm::Cal
 
     
     loadWasmGlobalPtr(callee.tableLengthGlobalDataOffset(), scratch);
-    branch32(Assembler::Condition::AboveOrEqual, index, scratch, wasm::JumpTarget::OutOfBounds);
+
+    wasm::TrapOffset trapOffset(desc.lineOrBytecode());
+    wasm::TrapDesc oobTrap(trapOffset, wasm::Trap::OutOfBounds, framePushed());
+    branch32(Assembler::Condition::AboveOrEqual, index, scratch, oobTrap);
 
     
     loadWasmGlobalPtr(callee.tableBaseGlobalDataOffset(), scratch);
 
     
+    wasm::TrapDesc nullTrap(trapOffset, wasm::Trap::IndirectCallToNull, framePushed());
     if (callee.wasmTableIsExternal()) {
         static_assert(sizeof(wasm::ExternalTableElem) == 8 || sizeof(wasm::ExternalTableElem) == 16,
                       "elements of external tables are two words");
@@ -2820,17 +2824,87 @@ MacroAssembler::wasmCallIndirect(const wasm::CallSiteDesc& desc, const wasm::Cal
         }
 
         loadPtr(Address(scratch, offsetof(wasm::ExternalTableElem, tls)), WasmTlsReg);
-        branchTest32(Assembler::Zero, WasmTlsReg, WasmTlsReg, wasm::JumpTarget::IndirectCallToNull);
+        branchTest32(Assembler::Zero, WasmTlsReg, WasmTlsReg, nullTrap);
 
         loadWasmPinnedRegsFromTls();
 
         loadPtr(Address(scratch, offsetof(wasm::ExternalTableElem, code)), scratch);
     } else {
         loadPtr(BaseIndex(scratch, index, ScalePointer), scratch);
-        branchTest32(Assembler::Zero, scratch, scratch, wasm::JumpTarget::IndirectCallToNull);
+        branchTest32(Assembler::Zero, scratch, scratch, nullTrap);
     }
 
     call(desc, scratch);
+}
+
+void
+MacroAssembler::wasmEmitTrapOutOfLineCode()
+{
+    for (const wasm::TrapSite& site : trapSites()) {
+        
+        
+        
+        
+        switch (site.kind) {
+          case wasm::TrapSite::Jump: {
+            RepatchLabel jump;
+            jump.use(site.codeOffset);
+            bind(&jump);
+            break;
+          }
+          case wasm::TrapSite::MemoryAccess: {
+            append(wasm::MemoryAccess(site.codeOffset, size()));
+            break;
+          }
+        }
+
+        if (site.trap == wasm::Trap::IndirectCallBadSig) {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            append(wasm::TrapFarJump(site.trap, farJumpWithPatch()));
+        } else {
+            
+            
+            setFramePushed(site.framePushed);
+
+            
+            
+            size_t alreadyPushed = sizeof(AsmJSFrame) + framePushed();
+            size_t toPush = ABIArgGenerator().stackBytesConsumedSoFar();
+            if (size_t dec = StackDecrementForCall(ABIStackAlignment, alreadyPushed, toPush))
+                reserveStack(dec);
+
+            
+            
+            
+            
+            
+            
+            wasm::CallSiteDesc desc(site.bytecodeOffset, wasm::CallSiteDesc::TrapExit);
+            call(desc, site.trap);
+
+#ifdef DEBUG
+            
+            breakpoint();
+#endif
+        }
+    }
+
+    
+    
+    
+    breakpoint();
+
+    clearTrapSites();
 }
 
 

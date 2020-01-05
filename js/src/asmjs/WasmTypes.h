@@ -714,6 +714,52 @@ struct FuncOffsets : ProfilingOffsets
 
 
 
+enum class Trap
+{
+    
+    Unreachable,
+    
+    IntegerOverflow,
+    
+    InvalidConversionToInteger,
+    
+    IntegerDivideByZero,
+    
+    OutOfBounds,
+    
+    IndirectCallToNull,
+    
+    IndirectCallBadSig,
+
+    
+    
+    ImpreciseSimdConversion,
+
+    
+    
+    StackOverflow,
+
+    Limit
+};
+
+
+
+
+
+struct TrapOffset
+{
+    uint32_t bytecodeOffset;
+
+    TrapOffset() = default;
+    explicit TrapOffset(uint32_t bytecodeOffset) : bytecodeOffset(bytecodeOffset) {}
+};
+
+
+
+
+
+
+
 class CallSiteDesc
 {
     uint32_t lineOrBytecode_ : 30;
@@ -722,7 +768,8 @@ class CallSiteDesc
     enum Kind {
         FuncDef,   
         Dynamic,   
-        Symbolic   
+        Symbolic,  
+        TrapExit   
     };
     CallSiteDesc() {}
     explicit CallSiteDesc(Kind kind)
@@ -769,7 +816,7 @@ WASM_DECLARE_POD_VECTOR(CallSite, CallSiteVector)
 
 class CallSiteAndTarget : public CallSite
 {
-    uint32_t funcDefIndex_;
+    uint32_t index_;
 
   public:
     explicit CallSiteAndTarget(CallSite cs)
@@ -778,12 +825,19 @@ class CallSiteAndTarget : public CallSite
         MOZ_ASSERT(cs.kind() != FuncDef);
     }
     CallSiteAndTarget(CallSite cs, uint32_t funcDefIndex)
-      : CallSite(cs), funcDefIndex_(funcDefIndex)
+      : CallSite(cs), index_(funcDefIndex)
     {
         MOZ_ASSERT(cs.kind() == FuncDef);
     }
+    CallSiteAndTarget(CallSite cs, Trap trap)
+      : CallSite(cs),
+        index_(uint32_t(trap))
+    {
+        MOZ_ASSERT(cs.kind() == TrapExit);
+    }
 
-    uint32_t funcDefIndex() const { MOZ_ASSERT(kind() == FuncDef); return funcDefIndex_; }
+    uint32_t funcDefIndex() const { MOZ_ASSERT(kind() == FuncDef); return index_; }
+    Trap trap() const { MOZ_ASSERT(kind() == TrapExit); return Trap(index_); }
 };
 
 typedef Vector<CallSiteAndTarget, 0, SystemAllocPolicy> CallSiteAndTargetVector;
@@ -832,7 +886,9 @@ enum class SymbolicAddress
     InterruptUint32,
     ReportOverRecursed,
     HandleExecutionInterrupt,
-    HandleTrap,
+    ReportTrap,
+    ReportOutOfBounds,
+    ReportUnalignedAccess,
     CallImport_Void,
     CallImport_I32,
     CallImport_I64,
@@ -854,59 +910,6 @@ enum class SymbolicAddress
 
 void*
 AddressOf(SymbolicAddress imm, ExclusiveContext* cx);
-
-
-
-
-enum class Trap
-{
-    
-    Unreachable,
-    
-    IntegerOverflow,
-    
-    InvalidConversionToInteger,
-    
-    IntegerDivideByZero,
-    
-    OutOfBounds,
-    
-    UnalignedAccess,
-    
-    IndirectCallToNull,
-    
-    IndirectCallBadSig,
-
-    
-    
-    ImpreciseSimdConversion,
-
-    Limit
-};
-
-
-
-
-
-
-enum class JumpTarget
-{
-    
-    Unreachable = unsigned(Trap::Unreachable),
-    IntegerOverflow = unsigned(Trap::IntegerOverflow),
-    InvalidConversionToInteger = unsigned(Trap::InvalidConversionToInteger),
-    IntegerDivideByZero = unsigned(Trap::IntegerDivideByZero),
-    OutOfBounds = unsigned(Trap::OutOfBounds),
-    UnalignedAccess = unsigned(Trap::UnalignedAccess),
-    IndirectCallToNull = unsigned(Trap::IndirectCallToNull),
-    IndirectCallBadSig = unsigned(Trap::IndirectCallBadSig),
-    ImpreciseSimdConversion = unsigned(Trap::ImpreciseSimdConversion),
-    
-    StackOverflow,
-    Limit
-};
-
-typedef EnumeratedArray<JumpTarget, JumpTarget::Limit, Uint32Vector> JumpSiteArray;
 
 
 
@@ -1294,6 +1297,7 @@ class BoundsCheck
     uint32_t cmpOffset_;
 };
 
+WASM_DECLARE_POD_VECTOR(BoundsCheck, BoundsCheckVector)
 
 
 
@@ -1302,46 +1306,58 @@ class BoundsCheck
 
 
 
-#ifdef WASM_HUGE_MEMORY
+
 class MemoryAccess
 {
     uint32_t insnOffset_;
+    uint32_t trapOutOfLineOffset_;
 
   public:
     MemoryAccess() = default;
-    explicit MemoryAccess(uint32_t insnOffset)
-      : insnOffset_(insnOffset)
+    explicit MemoryAccess(uint32_t insnOffset, uint32_t trapOutOfLineOffset = UINT32_MAX)
+      : insnOffset_(insnOffset),
+        trapOutOfLineOffset_(trapOutOfLineOffset)
     {}
 
-    uint32_t insnOffset() const { return insnOffset_; }
+    uint32_t insnOffset() const {
+        return insnOffset_;
+    }
+    bool hasTrapOutOfLineCode() const {
+        return trapOutOfLineOffset_ != UINT32_MAX;
+    }
+    uint8_t* trapOutOfLineCode(uint8_t* code) const {
+        MOZ_ASSERT(hasTrapOutOfLineCode());
+        return code + trapOutOfLineOffset_;
+    }
 
-    void offsetBy(uint32_t offset) { insnOffset_ += offset; }
+    void offsetBy(uint32_t delta) {
+        insnOffset_ += delta;
+        if (hasTrapOutOfLineCode())
+            trapOutOfLineOffset_ += delta;
+    }
 };
-#elif defined(JS_CODEGEN_X86)
-class MemoryAccess
-{
-    uint32_t nextInsOffset_;
-
-  public:
-    MemoryAccess() = default;
-    explicit MemoryAccess(uint32_t nextInsOffset)
-      : nextInsOffset_(nextInsOffset)
-    { }
-
-    void* patchMemoryPtrImmAt(uint8_t* code) const { return code + nextInsOffset_; }
-    void offsetBy(uint32_t offset) { nextInsOffset_ += offset; }
-};
-#else
-class MemoryAccess {
-  public:
-    MemoryAccess() { MOZ_CRASH(); }
-    void offsetBy(uint32_t) { MOZ_CRASH(); }
-    uint32_t insnOffset() const { MOZ_CRASH(); }
-};
-#endif
 
 WASM_DECLARE_POD_VECTOR(MemoryAccess, MemoryAccessVector)
-WASM_DECLARE_POD_VECTOR(BoundsCheck, BoundsCheckVector)
+
+
+
+
+
+
+
+struct MemoryPatch
+{
+    uint32_t offset;
+
+    MemoryPatch() = default;
+    explicit MemoryPatch(uint32_t offset) : offset(offset) {}
+
+    void offsetBy(uint32_t delta) {
+        offset += delta;
+    }
+};
+
+WASM_DECLARE_POD_VECTOR(MemoryPatch, MemoryPatchVector)
 
 
 
