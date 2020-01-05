@@ -66,7 +66,7 @@ use url::Url;
 use util::ipc::OptionalOpaqueIpcSender;
 use webdriver_msg::{LoadStatus, WebDriverScriptCommand};
 
-pub use script_msg::{LayoutMsg, ScriptMsg, EventResult};
+pub use script_msg::{LayoutMsg, ScriptMsg, EventResult, LogEntry};
 
 
 
@@ -436,6 +436,7 @@ pub enum MozBrowserEvent {
     
     ContextMenu,
     
+    
     Error(MozBrowserErrorType, Option<String>, Option<String>),
     
     IconChange(String, String, String),
@@ -599,4 +600,6 @@ pub enum ConstellationMsg {
     WebDriverCommand(WebDriverCommandMsg),
     
     Reload,
+    
+    LogEntry(Option<PipelineId>, Option<String>, LogEntry),
 }

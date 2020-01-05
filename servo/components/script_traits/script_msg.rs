@@ -41,6 +41,19 @@ pub enum EventResult {
 }
 
 
+
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub enum LogEntry {
+    
+    Panic(String, String),
+    
+    Error(String),
+    
+    Warn(String)
+}
+
+
 #[derive(Deserialize, Serialize)]
 pub enum ScriptMsg {
     
@@ -114,6 +127,8 @@ pub enum ScriptMsg {
     TouchEventProcessed(EventResult),
     
     GetScrollOffset(PipelineId, LayerId, IpcSender<Point2D<f32>>),
+    
+    LogEntry(Option<PipelineId>, Option<String>, LogEntry),
     
     PipelineExited(PipelineId),
     
