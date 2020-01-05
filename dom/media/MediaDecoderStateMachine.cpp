@@ -1128,13 +1128,10 @@ MediaDecoderStateMachine::OnNotDecoded(MediaData::Type aType,
                "Readers that send WAITING_FOR_DATA need to implement WaitForData");
     mReader->WaitForData(aType);
 
-    
-    
-    
-    if (isAudio) {
-      StopPrerollingAudio();
-    } else {
-      StopPrerollingVideo();
+    if ((isAudio && mIsAudioPrerolling) || (!isAudio && mIsVideoPrerolling)) {
+      
+      
+      ScheduleStateMachine();
     }
     return;
   }
@@ -1158,11 +1155,16 @@ MediaDecoderStateMachine::OnNotDecoded(MediaData::Type aType,
   
   if (isAudio) {
     AudioQueue().Finish();
-    StopPrerollingAudio();
   } else {
     VideoQueue().Finish();
-    StopPrerollingVideo();
   }
+
+  if ((isAudio && mIsAudioPrerolling) || (!isAudio && mIsVideoPrerolling)) {
+    
+    
+    ScheduleStateMachine();
+  }
+
   switch (mState) {
     case DECODER_STATE_DECODING_FIRSTFRAME:
       MaybeFinishDecodeFirstFrame();
@@ -2120,12 +2122,10 @@ MediaDecoderStateMachine::OnSeekTaskResolved(SeekTaskResolveValue aValue)
 
   if (aValue.mIsAudioQueueFinished) {
     AudioQueue().Finish();
-    StopPrerollingAudio();
   }
 
   if (aValue.mIsVideoQueueFinished) {
     VideoQueue().Finish();
-    StopPrerollingVideo();
   }
 
   SeekCompleted();
@@ -2141,12 +2141,10 @@ MediaDecoderStateMachine::OnSeekTaskRejected(SeekTaskRejectValue aValue)
 
   if (aValue.mIsAudioQueueFinished) {
     AudioQueue().Finish();
-    StopPrerollingAudio();
   }
 
   if (aValue.mIsVideoQueueFinished) {
     VideoQueue().Finish();
-    StopPrerollingVideo();
   }
 
   DecodeError(aValue.mError);
