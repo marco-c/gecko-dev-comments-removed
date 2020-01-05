@@ -620,11 +620,8 @@ js::RemapWrapper(JSContext* cx, JSObject* wobjArg, JSObject* newTargetArg)
     
     
     MOZ_ASSERT(wobj->is<WrapperObject>());
-    if (!wcompartment->putWrapperMaybeUpdate(cx, CrossCompartmentKey(newTarget),
-                                             ObjectValue(*wobj)))
-    {
+    if (!wcompartment->putWrapper(cx, CrossCompartmentKey(newTarget), ObjectValue(*wobj)))
         MOZ_CRASH();
-    }
 }
 
 

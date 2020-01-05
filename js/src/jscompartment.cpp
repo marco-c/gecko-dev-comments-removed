@@ -251,23 +251,8 @@ JSCompartment::checkWrapperMapAfterMovingGC()
 #endif
 
 bool
-JSCompartment::putNewWrapper(JSContext* cx, const CrossCompartmentKey& wrapped,
-                             const js::Value& wrapper)
-{
-    MOZ_ASSERT(wrapped.is<JSString*>() == wrapper.isString());
-    MOZ_ASSERT_IF(!wrapped.is<JSString*>(), wrapper.isObject());
-
-    if (!crossCompartmentWrappers.putNew(wrapped, wrapper)) {
-        ReportOutOfMemory(cx);
-        return false;
-    }
-
-    return true;
-}
-
-bool
-JSCompartment::putWrapperMaybeUpdate(JSContext* cx, const CrossCompartmentKey& wrapped,
-                                     const js::Value& wrapper)
+JSCompartment::putWrapper(JSContext* cx, const CrossCompartmentKey& wrapped,
+                          const js::Value& wrapper)
 {
     MOZ_ASSERT(wrapped.is<JSString*>() == wrapper.isString());
     MOZ_ASSERT_IF(!wrapped.is<JSString*>(), wrapper.isObject());
@@ -358,7 +343,7 @@ JSCompartment::wrap(JSContext* cx, MutableHandleString strp)
     JSString* copy = CopyStringPure(cx, str);
     if (!copy)
         return false;
-    if (!putNewWrapper(cx, CrossCompartmentKey(key), StringValue(copy)))
+    if (!putWrapper(cx, CrossCompartmentKey(key), StringValue(copy)))
         return false;
 
     strp.set(copy);
@@ -448,7 +433,7 @@ JSCompartment::getOrCreateWrapper(JSContext* cx, HandleObject existing, MutableH
     
     MOZ_ASSERT(Wrapper::wrappedObject(wrapper) == &key.get().toObject());
 
-    if (!putNewWrapper(cx, CrossCompartmentKey(key), ObjectValue(*wrapper))) {
+    if (!putWrapper(cx, CrossCompartmentKey(key), ObjectValue(*wrapper))) {
         
         
         
