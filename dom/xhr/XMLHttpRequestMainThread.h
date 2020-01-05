@@ -164,7 +164,6 @@ class XMLHttpRequestMainThread final : public XMLHttpRequest,
                                        public nsSupportsWeakReference,
                                        public nsITimerCallback,
                                        public nsISizeOfEventTarget,
-                                       public nsINamed,
                                        public MutableBlobStorageCallback
 {
   friend class nsXHRParseEndListener;
@@ -230,9 +229,6 @@ public:
 
   
   NS_DECL_NSITIMERCALLBACK
-
-  
-  NS_DECL_NSINAMED
 
   
   virtual size_t
@@ -596,8 +592,6 @@ protected:
   void MaybeCreateBlobStorage();
 
   nsresult OnRedirectVerifyCallback(nsresult result);
-
-  void SetTimerEventTarget(nsITimer* aTimer);
 
   already_AddRefed<nsXMLHttpRequestXPCOMifier> EnsureXPCOMifier();
 
