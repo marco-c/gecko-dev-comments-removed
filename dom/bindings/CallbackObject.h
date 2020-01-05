@@ -215,7 +215,8 @@ protected:
   
   
   
-  void HoldJSObjectsIfMoreThanOneOwner();
+  
+  void FinishSlowJSInitIfMoreThanOneOwner(JSContext* aCx);
 
   
   
@@ -581,7 +582,7 @@ public:
     
     
     if (IsInitialized(this->get())) {
-      this->get()->HoldJSObjectsIfMoreThanOneOwner();
+      this->get()->FinishSlowJSInitIfMoreThanOneOwner(mCx);
     }
   }
 
