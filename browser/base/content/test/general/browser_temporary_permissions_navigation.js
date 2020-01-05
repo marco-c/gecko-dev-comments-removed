@@ -35,8 +35,35 @@ add_task(function* testTempPermissionOnReload() {
       scope: SitePermissions.SCOPE_TEMPORARY,
     });
 
+    reloaded = BrowserTestUtils.browserLoaded(browser, false, uri.spec);
+
     
     EventUtils.synthesizeMouseAtCenter(reloadButton, {});
+
+    yield reloaded;
+
+    Assert.deepEqual(SitePermissions.get(uri, id, browser), {
+      state: SitePermissions.UNKNOWN,
+      scope: SitePermissions.SCOPE_PERSISTENT,
+    });
+
+    
+    SitePermissions.set(uri, id, SitePermissions.BLOCK, SitePermissions.SCOPE_TEMPORARY, browser);
+
+    
+    let contextMenu = document.getElementById("tabContextMenu");
+    let popupShownPromise = BrowserTestUtils.waitForEvent(contextMenu, "popupshown");
+    EventUtils.synthesizeMouseAtCenter(gBrowser.selectedTab, {type: "contextmenu", button: 2});
+    yield popupShownPromise;
+
+    let reloadMenuItem = document.getElementById("context_reloadTab");
+
+    reloaded = BrowserTestUtils.browserLoaded(browser, false, uri.spec);
+
+    
+    EventUtils.synthesizeMouseAtCenter(reloadMenuItem, {});
+
+    yield reloaded;
 
     Assert.deepEqual(SitePermissions.get(uri, id, browser), {
       state: SitePermissions.UNKNOWN,
