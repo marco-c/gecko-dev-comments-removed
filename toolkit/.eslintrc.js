@@ -251,9 +251,13 @@ module.exports = {
     "ChromeUtils": false,
     "Components": false,
     "dump": true,
+    
+    
+    "InternalError": true,
     "KeyEvent": false,
     "openDialog": false,
     "MenuBoxObject": false,
+    "SimpleGestureEvent": false,
     "sizeToContent": false,
     "SharedArrayBuffer": false,
     

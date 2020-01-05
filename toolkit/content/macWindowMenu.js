@@ -22,7 +22,7 @@ function macWindowMenuDidShow() {
 
 function toOpenWindow( aWindow ) {
   
-  if (aWindow.windowState == STATE_MINIMIZED)
+  if (aWindow.windowState == window.STATE_MINIMIZED)
     aWindow.restore();
   aWindow.document.commandDispatcher.focusedWindow.focus();
 }
@@ -40,7 +40,7 @@ function ShowWindowFromResource( node ) {
 }
 
 function zoomWindow() {
-  if (window.windowState == STATE_NORMAL)
+  if (window.windowState == window.STATE_NORMAL)
     window.maximize();
   else
     window.restore();

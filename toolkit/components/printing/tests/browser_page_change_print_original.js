@@ -3,6 +3,9 @@
 
 
 
+
+
+
 add_task(function* pp_after_orientation_change() {
   const DATA_URI = `data:text/html,<script>window.onafterprint = function() { setTimeout("window.location = 'data:text/plain,REPLACED PAGE!'", 0); }</script><pre>INITIAL PAGE</pre>`;
   

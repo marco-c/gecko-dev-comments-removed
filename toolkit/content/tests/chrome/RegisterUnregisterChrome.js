@@ -18,7 +18,7 @@ var gPrefs     = Cc["@mozilla.org/preferences-service;1"].
 
 function copyToTemporaryFile(f) {
   let tmpd = gDirSvc.get("ProfD", Ci.nsIFile);
-  tmpf = tmpd.clone();
+  let tmpf = tmpd.clone();
   tmpf.append("temp.manifest");
   tmpf.createUnique(Ci.nsIFile.NORMAL_FILE_TYPE, 0o600);
   tmpf.remove(false);
@@ -68,7 +68,7 @@ function copyDirToTempProfile(path, subdirname) {
 
   
   var files = Array.from(dirIter("file://" + rootDir));
-  for (f in files) {
+  for (let f in files) {
     files[f].copyTo(tmpdir, "");
   }
   return tmpdir;

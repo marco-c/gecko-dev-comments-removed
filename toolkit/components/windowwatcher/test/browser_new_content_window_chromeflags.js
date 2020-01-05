@@ -238,6 +238,8 @@ add_task(function* test_new_remote_window_flags() {
     
     let b = win.gBrowser.selectedBrowser;
     let contentChromeFlags = yield ContentTask.spawn(b, null, function*() {
+      
+      
       docShell.QueryInterface(Ci.nsIInterfaceRequestor);
       try {
         
