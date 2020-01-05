@@ -93,7 +93,7 @@ protected:
   nsCOMPtr<nsIThread> mIOThread;
 
   public: 
-    nsDataObj(nsIURI *uri = nullptr);
+    explicit nsDataObj(nsIURI *uri = nullptr);
     virtual ~nsDataObj();
 
 	public: 

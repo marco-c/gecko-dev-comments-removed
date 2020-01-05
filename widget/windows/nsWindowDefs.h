@@ -117,7 +117,7 @@ struct MSGResult
   
   bool mConsumed;
 
-  MSGResult(LRESULT* aResult = nullptr) :
+  explicit MSGResult(LRESULT* aResult = nullptr) :
     mResult(aResult ? *aResult : mDefaultResult), mConsumed(false)
   {
   }

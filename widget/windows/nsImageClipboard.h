@@ -30,7 +30,7 @@
 class nsImageToClipboard
 {
 public:
-  nsImageToClipboard(imgIContainer* aInImage, bool aWantDIBV5 = true);
+  explicit nsImageToClipboard(imgIContainer* aInImage, bool aWantDIBV5 = true);
   ~nsImageToClipboard();
 
     

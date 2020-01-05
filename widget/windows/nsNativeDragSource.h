@@ -24,7 +24,7 @@ public:
 
   
   
-  nsNativeDragSource(nsIDOMDataTransfer* aDataTransfer);
+  explicit nsNativeDragSource(nsIDOMDataTransfer* aDataTransfer);
   ~nsNativeDragSource();
 
   
