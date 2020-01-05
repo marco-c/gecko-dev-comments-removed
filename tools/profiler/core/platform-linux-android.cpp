@@ -62,6 +62,7 @@
 
 #include "prenv.h"
 #include "mozilla/LinuxSignal.h"
+#include "mozilla/PodOperations.h"
 #include "mozilla/DebugOnly.h"
 
 
@@ -143,20 +144,9 @@ static void* setup_atfork() {
 
 static int gIntervalMicro;
 
-
-
-static ThreadInfo* gCurrentThreadInfo;
-static int64_t gRssMemory;
-static int64_t gUssMemory;
-
-
-static sem_t gSignalHandlingDone;
-
-static void SetSampleContext(TickSample* sample, void* context)
+static void SetSampleContext(TickSample* sample, mcontext_t& mcontext)
 {
   
-  ucontext_t* ucontext = reinterpret_cast<ucontext_t*>(context);
-  mcontext_t& mcontext = ucontext->uc_mcontext;
 #if defined(GP_ARCH_x86)
   sample->pc = reinterpret_cast<Address>(mcontext.gregs[REG_EIP]);
   sample->sp = reinterpret_cast<Address>(mcontext.gregs[REG_ESP]);
@@ -175,25 +165,118 @@ static void SetSampleContext(TickSample* sample, void* context)
 #endif
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct SigHandlerCoordinator
+{
+  SigHandlerCoordinator()
+  {
+    PodZero(&mUContext);
+    int r =  sem_init(&mMessage2, 0, 0);
+    r     |= sem_init(&mMessage3, 0, 0);
+    r     |= sem_init(&mMessage4, 0, 0);
+    MOZ_ASSERT(r == 0);
+  }
+
+  ~SigHandlerCoordinator()
+  {
+    int r =  sem_destroy(&mMessage2);
+    r     |= sem_destroy(&mMessage3);
+    r     |= sem_destroy(&mMessage4);
+    MOZ_ASSERT(r == 0);
+  }
+
+  sem_t mMessage2; 
+  sem_t mMessage3; 
+  sem_t mMessage4; 
+  ucontext_t mUContext; 
+};
+
+
+
+static SigHandlerCoordinator* gSigHandlerCoordinator = nullptr;
+
 static void
-SigprofHandler(int signal, siginfo_t* info, void* context)
+SigprofHandler(int aSignal, siginfo_t* aInfo, void* aContext)
 {
   
   int savedErrno = errno;
 
-  TickSample sample;
-  sample.context = context;
+  MOZ_ASSERT(aSignal == SIGPROF);
+  MOZ_ASSERT(gSigHandlerCoordinator);
 
   
-  SetSampleContext(&sample, context);
-  sample.threadInfo = gCurrentThreadInfo;
-  sample.timestamp = mozilla::TimeStamp::Now();
-  sample.rssMemory = gRssMemory;
-  sample.ussMemory = gUssMemory;
+  
+  
+  gSigHandlerCoordinator->mUContext = *static_cast<ucontext_t*>(aContext);
 
-  Tick(&sample);
+  
+  
+  
+  int r = sem_post(&gSigHandlerCoordinator->mMessage2);
+  MOZ_ASSERT(r == 0);
 
-  sem_post(&gSignalHandlingDone);
+  
+  
+
+  
+  while (true) {
+    r = sem_wait(&gSigHandlerCoordinator->mMessage3);
+    if (r == -1 && errno == EINTR) {
+      
+      continue; 
+    }
+    
+    MOZ_ASSERT(r == 0);
+   break;
+  }
+
+  
+  
+  
+  r = sem_post(&gSigHandlerCoordinator->mMessage4);
+  MOZ_ASSERT(r == 0);
+
   errno = savedErrno;
 }
 
@@ -290,42 +373,74 @@ SigprofSender(void* aArg)
 
         info->UpdateThreadResponsiveness();
 
-        
-        
-        gCurrentThreadInfo = info;
-
         int threadId = info->ThreadId();
         MOZ_ASSERT(threadId != my_tid);
 
-        
-        
-        
+        int64_t rssMemory = 0;
+        int64_t ussMemory = 0;
         if (isFirstProfiledThread && gProfileMemory) {
-          gRssMemory = nsMemoryReporterManager::ResidentFast();
-          gUssMemory = nsMemoryReporterManager::ResidentUnique();
-        } else {
-          gRssMemory = 0;
-          gUssMemory = 0;
+          rssMemory = nsMemoryReporterManager::ResidentFast();
+          ussMemory = nsMemoryReporterManager::ResidentUnique();
+        }
+
+        
+        SigHandlerCoordinator coord;   
+        gSigHandlerCoordinator = &coord;
+
+        
+        
+        int r = tgkill(vm_tgid_, threadId, SIGPROF);
+        MOZ_ASSERT(r == 0);
+
+        
+        
+        while (true) {
+          r = sem_wait(&gSigHandlerCoordinator->mMessage2);
+          if (r == -1 && errno == EINTR) {
+            
+            continue;
+          }
+          
+          MOZ_ASSERT(r == 0);
+          break;
         }
 
         
         
         
-        if (tgkill(vm_tgid_, threadId, SIGPROF) != 0) {
-          printf_stderr("profiler failed to signal tid=%d\n", threadId);
-#ifdef DEBUG
-          abort();
-#else
-          continue;
-#endif
+
+        TickSample sample;
+        sample.context = &gSigHandlerCoordinator->mUContext;
+
+        
+        SetSampleContext(&sample,
+                         gSigHandlerCoordinator->mUContext.uc_mcontext);
+        sample.threadInfo = info;
+        sample.timestamp = mozilla::TimeStamp::Now();
+        sample.rssMemory = rssMemory;
+        sample.ussMemory = ussMemory;
+
+        Tick(&sample);
+
+        
+        r = sem_post(&gSigHandlerCoordinator->mMessage3);
+        MOZ_ASSERT(r == 0);
+
+        
+        
+        while (true) {
+          r = sem_wait(&gSigHandlerCoordinator->mMessage4);
+          if (r == -1 && errno == EINTR) {
+            continue;
+          }
+          MOZ_ASSERT(r == 0);
+          break;
         }
 
         
-        sem_wait(&gSignalHandlingDone);
-
-        gCurrentThreadInfo = nullptr;
-        gRssMemory = 0;
-        gUssMemory = 0;
+        
+        
+        gSigHandlerCoordinator = nullptr;
 
         isFirstProfiledThread = false;
       }
@@ -372,12 +487,7 @@ PlatformStart(double aInterval)
   }
 
   
-  gCurrentThreadInfo = nullptr;
-  gRssMemory = 0;
-  gUssMemory = 0;
-  if (sem_init(&gSignalHandlingDone,  0,  0) != 0) {
-    MOZ_CRASH("Error initializing semaphore");
-  }
+  gSigHandlerCoordinator = nullptr;
 
   
   LOG("Request signal");
@@ -556,7 +666,8 @@ void TickSample::PopulateContext(void* aContext)
   ucontext_t* pContext = reinterpret_cast<ucontext_t*>(aContext);
   if (!getcontext(pContext)) {
     context = pContext;
-    SetSampleContext(this, aContext);
+    SetSampleContext(this,
+                     reinterpret_cast<ucontext_t*>(aContext)->uc_mcontext);
   }
 }
 
