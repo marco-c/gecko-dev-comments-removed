@@ -13,7 +13,7 @@
 
 
 
-package com.keepsafe.switchboard;
+package org.mozilla.gecko.switchboard;
 
 import java.util.UUID;
 

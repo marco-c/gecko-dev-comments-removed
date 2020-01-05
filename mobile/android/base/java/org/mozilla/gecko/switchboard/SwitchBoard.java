@@ -13,7 +13,7 @@
 
 
 
-package com.keepsafe.switchboard;
+package org.mozilla.gecko.switchboard;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -23,7 +23,6 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.MissingResourceException;
@@ -223,7 +222,7 @@ public class SwitchBoard {
                 if (!country.matches(matchKeys.getString(KEY_COUNTRY))) {
                     return false;
                 }
-            } catch (MissingResourceException|JSONException e) {
+            } catch (MissingResourceException | JSONException e) {
                 Log.e(TAG, "Exception matching country", e);
             }
         }
@@ -245,7 +244,7 @@ public class SwitchBoard {
                 if (!lang.matches(matchKeys.getString(KEY_LANG))) {
                     return false;
                 }
-            } catch (MissingResourceException|JSONException e) {
+            } catch (MissingResourceException | JSONException e) {
                 Log.e(TAG, "Exception matching lang", e);
             }
         }
@@ -266,7 +265,7 @@ public class SwitchBoard {
                 if (!version.matches(matchKeys.getString(KEY_VERSION))) {
                     return false;
                 }
-            } catch (NameNotFoundException|JSONException e) {
+            } catch (NameNotFoundException | JSONException e) {
                 Log.e(TAG, "Exception matching version", e);
             }
         }

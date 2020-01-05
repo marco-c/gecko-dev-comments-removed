@@ -13,7 +13,7 @@
 
 
 
-package com.keepsafe.switchboard;
+package org.mozilla.gecko.switchboard;
 
 import org.json.JSONObject;
 
@@ -64,7 +64,7 @@ public class Switch {
 
 
     public JSONObject getValues() {
-        if(hasValues())
+        if (hasValues())
             return SwitchBoard.getExperimentValuesFromJson(context, experimentName);
         else
             return null;
