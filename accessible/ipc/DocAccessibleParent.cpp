@@ -462,23 +462,24 @@ DocAccessibleParent::GetXPCAccessible(ProxyAccessible* aProxy)
 
 
 
-void
-DocAccessibleParent::SetCOMProxy(const RefPtr<IAccessible>& aCOMProxy)
+
+
+
+bool
+DocAccessibleParent::RecvCOMProxy(const IAccessibleHolder& aCOMProxy,
+                                  IAccessibleHolder* aParentCOMProxy)
 {
-  SetCOMInterface(aCOMProxy);
+  RefPtr<IAccessible> ptr(aCOMProxy.Get());
+  SetCOMInterface(ptr);
 
   Accessible* outerDoc = OuterDocOfRemoteBrowser();
-  MOZ_ASSERT(outerDoc);
-
   IAccessible* rawNative = nullptr;
   if (outerDoc) {
     outerDoc->GetNativeInterface((void**) &rawNative);
-    MOZ_ASSERT(rawNative);
   }
 
-  IAccessibleHolder::COMPtrType ptr(rawNative);
-  IAccessibleHolder holder(Move(ptr));
-  Unused << SendParentCOMProxy(holder);
+  aParentCOMProxy->Set(IAccessibleHolder::COMPtrType(rawNative));
+  return true;
 }
 #endif 
 
