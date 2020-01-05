@@ -161,11 +161,6 @@ var gFxAccounts = {
       profileInfoEnabled = Services.prefs.getBoolPref("identity.fxaccounts.profile_image.enabled");
     } catch (e) { }
 
-    
-    if (!this.weave.fxAccountsEnabled) {
-      return Promise.resolve();
-    }
-
     this.panelUIFooter.hidden = false;
 
     

@@ -97,17 +97,6 @@ WeaveService.prototype = {
 
 
 
-  
-  get fxAccountsEnabled() {
-    
-    return true;
-  },
-
-  
-
-
-
-
 
 
 

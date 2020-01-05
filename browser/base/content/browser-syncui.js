@@ -97,41 +97,22 @@ var gSyncUI = {
   
   
   _needsSetup() {
-    
-    if (this.weaveService.fxAccountsEnabled) {
-      return fxAccounts.getSignedInUser().then(user => {
-        
-        return !(user && user.verified);
-      });
-    }
-    
-    let firstSync = "";
-    try {
-      firstSync = Services.prefs.getCharPref("services.sync.firstSync");
-    } catch (e) { }
-
-    return Promise.resolve(Weave.Status.checkSetup() == Weave.CLIENT_NOT_CONFIGURED ||
-                           firstSync == "notReady");
+    return fxAccounts.getSignedInUser().then(user => {
+      
+      return !(user && user.verified);
+    });
   },
 
   
   
   _needsVerification() {
-    
-    
-    if (this.weaveService.fxAccountsEnabled) {
-      return fxAccounts.getSignedInUser().then(user => {
-        
-        if (!user) {
-          return false;
-        }
-        return !user.verified;
-      });
-    }
-
-    
-    
-    return Promise.resolve(false);
+    return fxAccounts.getSignedInUser().then(user => {
+      
+      if (!user) {
+        return false;
+      }
+      return !user.verified;
+    });
   },
 
   
