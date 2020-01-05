@@ -363,7 +363,7 @@ impl ViewportConstraints {
         let mut orientation = Orientation::Auto;
 
         
-        for declaration in rule.declarations.iter() {
+        for declaration in &rule.declarations {
             match declaration.descriptor {
                 ViewportDescriptor::MinWidth(value) => min_width = Some(value),
                 ViewportDescriptor::MaxWidth(value) => max_width = Some(value),

@@ -305,7 +305,7 @@ impl<QueueData: Sync, WorkData: Send> WorkQueue<QueueData, WorkData> {
     pub fn run(&mut self, data: &QueueData) {
         
         let mut work_count = AtomicUsize::new(self.work_count);
-        for worker in self.workers.iter_mut() {
+        for worker in &mut self.workers {
             worker.chan.send(WorkerMsg::Start(worker.deque.take().unwrap(),
                                               &mut work_count,
                                               data)).unwrap()
@@ -316,7 +316,7 @@ impl<QueueData: Sync, WorkData: Send> WorkQueue<QueueData, WorkData> {
         self.work_count = 0;
 
         
-        for worker in self.workers.iter() {
+        for worker in &self.workers {
             worker.chan.send(WorkerMsg::Stop).unwrap()
         }
 
@@ -333,7 +333,7 @@ impl<QueueData: Sync, WorkData: Send> WorkQueue<QueueData, WorkData> {
     
     pub fn heap_size_of_tls(&self, f: fn() -> usize) -> Vec<usize> {
         
-        for worker in self.workers.iter() {
+        for worker in &self.workers {
             worker.chan.send(WorkerMsg::HeapSizeOfTLS(f)).unwrap()
         }
 
@@ -351,7 +351,7 @@ impl<QueueData: Sync, WorkData: Send> WorkQueue<QueueData, WorkData> {
     }
 
     pub fn shutdown(&mut self) {
-        for worker in self.workers.iter() {
+        for worker in &self.workers {
             worker.chan.send(WorkerMsg::Exit).unwrap()
         }
     }

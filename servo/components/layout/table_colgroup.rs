@@ -1,8 +1,8 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-//! CSS table formatting contexts.
+
+
+
+
 
 #![deny(unsafe_code)]
 
@@ -20,20 +20,20 @@ use style::properties::ComputedValues;
 use std::sync::Arc;
 use util::logical_geometry::LogicalSize;
 
-/// A table formatting context.
+
 pub struct TableColGroupFlow {
-    /// Data common to all flows.
+    
     pub base: BaseFlow,
 
-    /// The associated fragment.
+    
     pub fragment: Option<Fragment>,
 
-    /// The table column fragments
+    
     pub cols: Vec<Fragment>,
 
-    /// The specified inline-sizes of table columns. (We use `LengthOrPercentageOrAuto` here in
-    /// lieu of `ColumnInlineSize` because column groups do not establish minimum or preferred
-    /// inline sizes.)
+    
+    
+    
     pub inline_sizes: Vec<LengthOrPercentageOrAuto>,
 }
 
@@ -64,8 +64,8 @@ impl Flow for TableColGroupFlow {
         let _scope = layout_debug_scope!("table_colgroup::bubble_inline_sizes {:x}",
                                             self.base.debug_id());
 
-        for fragment in self.cols.iter() {
-            // Retrieve the specified value from the appropriate CSS property.
+        for fragment in &self.cols {
+            
             let inline_size = fragment.style().content_inline_size();
             let span = match fragment.specific {
                 SpecificFragmentInfo::TableColumn(col_fragment) => max(col_fragment.span, 1),
@@ -77,12 +77,12 @@ impl Flow for TableColGroupFlow {
         }
     }
 
-    /// Table column inline-sizes are assigned in the table flow and propagated to table row flows
-    /// and/or rowgroup flows. Therefore, table colgroup flows do not need to assign inline-sizes.
+    
+    
     fn assign_inline_sizes(&mut self, _: &LayoutContext) {
     }
 
-    /// Table columns do not have block-size.
+    
     fn assign_block_size(&mut self, _: &LayoutContext) {
     }
 
@@ -90,7 +90,7 @@ impl Flow for TableColGroupFlow {
 
     fn update_late_computed_block_position_if_necessary(&mut self, _: Au) {}
 
-    // Table columns are invisible.
+    
     fn build_display_list(&mut self, _: &LayoutContext) {}
 
     fn repair_style(&mut self, _: &Arc<ComputedValues>) {}

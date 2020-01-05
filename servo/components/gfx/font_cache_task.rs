@@ -41,7 +41,7 @@ impl FontFamily {
 
         
         
-        for template in self.templates.iter_mut() {
+        for template in &mut self.templates {
             let maybe_template = template.get_if_matches(fctx, desc);
             if maybe_template.is_some() {
                 return maybe_template;
@@ -51,7 +51,7 @@ impl FontFamily {
         
         
         
-        for template in self.templates.iter_mut() {
+        for template in &mut self.templates {
             let maybe_template = template.get();
             if maybe_template.is_some() {
                 return maybe_template;
@@ -62,7 +62,7 @@ impl FontFamily {
     }
 
     fn add_template(&mut self, identifier: Atom, maybe_data: Option<Vec<u8>>) {
-        for template in self.templates.iter() {
+        for template in &self.templates {
             if *template.identifier() == identifier {
                 return;
             }
@@ -235,7 +235,7 @@ impl FontCache {
                                         -> Arc<FontTemplateData> {
         let last_resort = get_last_resort_font_families();
 
-        for family in last_resort.iter() {
+        for family in &last_resort {
             let family = LowercaseString::new(family);
             let maybe_font_in_family = self.find_font_in_local_family(&family, desc);
             if maybe_font_in_family.is_some() {

@@ -325,7 +325,7 @@ impl Flow for TableRowFlow {
         
         let mut computed_inline_size_for_cells = Vec::new();
         let mut column_computed_inline_size_iterator = self.column_computed_inline_sizes.iter();
-        for cell_intrinsic_inline_size in self.cell_intrinsic_inline_sizes.iter() {
+        for cell_intrinsic_inline_size in &self.cell_intrinsic_inline_sizes {
             
             let mut column_computed_inline_size =
                 match column_computed_inline_size_iterator.next() {
@@ -836,4 +836,3 @@ fn perform_inline_direction_border_collapse_for_row(
                                    CollapsedBorderProvenance::FromPreviousTableCell);
     preliminary_collapsed_borders.block_end.push_or_mutate(child_index, block_end_border);
 }
-

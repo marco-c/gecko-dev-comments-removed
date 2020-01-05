@@ -259,7 +259,7 @@ impl CORSRequest {
         
         
         let cache = &mut CORSCache(vec!());
-        for m in methods.iter() {
+        for m in methods {
             let cache_match = cache.match_method_and_update(self, m, max_age);
             if !cache_match {
                 cache.insert(CORSCacheEntry::new(self.origin.clone(), self.destination.clone(),
