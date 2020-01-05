@@ -596,6 +596,10 @@ nsIOService::GetProtocolFlags(const char* scheme, uint32_t *flags)
     
     
     rv = handler->GetProtocolFlags(flags);
+#if !IS_ORIGIN_IS_FULL_SPEC_DEFINED
+    MOZ_RELEASE_ASSERT(!(*flags & nsIProtocolHandler::ORIGIN_IS_FULL_SPEC),
+                       "ORIGIN_IS_FULL_SPEC is unsupported but used");
+#endif
     return rv;
 }
 
