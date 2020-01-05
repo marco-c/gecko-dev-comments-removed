@@ -45,9 +45,14 @@ public:
 
   gfx::IntSize GetSize() override { return mSize; }
 
-  
-  
-  virtual already_AddRefed<gfx::SourceSurface> GetAsSourceSurface() override { return nullptr; }
+  virtual already_AddRefed<gfx::SourceSurface> GetAsSourceSurface() override
+  {
+    if (!mTextureClient) {
+      return nullptr;
+    }
+    GPUVideoTextureData* data = mTextureClient->GetInternalData()->AsGPUVideoTextureData();
+    return data->GetAsSourceSurface();
+  }
 
   virtual TextureClient* GetTextureClient(KnowsCompositor* aForwarder) override
   {

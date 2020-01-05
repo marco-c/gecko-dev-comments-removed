@@ -10,6 +10,9 @@
 #include "mozilla/dom/PVideoDecoderManagerChild.h"
 
 namespace mozilla {
+namespace gfx {
+class SourceSurface;
+}
 namespace dom {
 
 class VideoDecoderManagerChild final : public PVideoDecoderManagerChild
@@ -27,6 +30,7 @@ public:
 
   
   
+  already_AddRefed<gfx::SourceSurface> Readback(const SurfaceDescriptorGPUVideo& aSD);
   void DeallocateSurfaceDescriptorGPUVideo(const SurfaceDescriptorGPUVideo& aSD);
 
   bool AllocShmem(size_t aSize,

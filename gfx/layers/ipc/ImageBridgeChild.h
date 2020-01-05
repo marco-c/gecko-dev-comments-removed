@@ -21,6 +21,7 @@
 #include "nsIObserver.h"
 #include "nsRegion.h"                   
 #include "mozilla/gfx/Rect.h"
+#include "mozilla/ReentrantMonitor.h"   
 
 class MessageLoop;
 
