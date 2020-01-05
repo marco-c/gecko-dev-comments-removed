@@ -1,6 +1,7 @@
 package org.mozilla.gecko.util;
 
 import org.mozilla.gecko.annotation.RobocopTarget;
+import org.mozilla.gecko.annotation.WrapForJNI;
 
 
 
@@ -10,6 +11,7 @@ import org.mozilla.gecko.annotation.RobocopTarget;
 
 
 @RobocopTarget
+@WrapForJNI(calledFrom = "gecko")
 public interface EventCallback {
     
 

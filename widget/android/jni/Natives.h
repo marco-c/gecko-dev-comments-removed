@@ -5,6 +5,7 @@
 
 #include "mozilla/IndexSequence.h"
 #include "mozilla/Move.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/Tuple.h"
 #include "mozilla/TypeTraits.h"
 #include "mozilla/UniquePtr.h"
@@ -71,7 +72,57 @@ namespace jni {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 namespace detail {
+
+enum NativePtrType
+{
+    OWNING,
+    WEAK,
+    REFPTR
+};
+
+template<class Impl>
+class NativePtrPicker
+{
+    template<class I> static typename EnableIf<
+            IsBaseOf<SupportsWeakPtr<I>, I>::value,
+            char(&)[NativePtrType::WEAK]>::Type Test(char);
+
+    template<class I, typename = decltype(&I::AddRef, &I::Release)>
+            static char (&Test(int))[NativePtrType::REFPTR];
+
+    template<class> static char (&Test(...))[NativePtrType::OWNING];
+
+public:
+    static const int value = sizeof(Test<Impl>('\0')) / sizeof(char);
+};
 
 inline uintptr_t CheckNativeHandle(JNIEnv* env, uintptr_t handle)
 {
@@ -85,9 +136,10 @@ inline uintptr_t CheckNativeHandle(JNIEnv* env, uintptr_t handle)
     return handle;
 }
 
-template<class Impl, bool UseWeakPtr = mozilla::IsBaseOf<
-                         SupportsWeakPtr<Impl>, Impl>::value >
-struct NativePtr
+template<class Impl, int Type = NativePtrPicker<Impl>::value> struct NativePtr;
+
+template<class Impl>
+struct NativePtr<Impl,  NativePtrType::OWNING>
 {
     static Impl* Get(JNIEnv* env, jobject instance)
     {
@@ -125,7 +177,7 @@ struct NativePtr
 };
 
 template<class Impl>
-struct NativePtr<Impl,  true>
+struct NativePtr<Impl,  NativePtrType::WEAK>
 {
     static Impl* Get(JNIEnv* env, jobject instance)
     {
@@ -138,7 +190,7 @@ struct NativePtr<Impl,  true>
         Impl* const impl = *ptr;
         if (!impl) {
             ThrowException(env, "java/lang/NullPointerException",
-                           "Native object already released");
+                           "Native weak object already released");
         }
         return impl;
     }
@@ -162,6 +214,51 @@ struct NativePtr<Impl,  true>
     static void Clear(const LocalRef& instance)
     {
         const auto ptr = reinterpret_cast<WeakPtr<Impl>*>(
+                GetNativeHandle(instance.Env(), instance.Get()));
+        MOZ_CATCH_JNI_EXCEPTION(instance.Env());
+
+        if (ptr) {
+            SetNativeHandle(instance.Env(), instance.Get(), 0);
+            MOZ_CATCH_JNI_EXCEPTION(instance.Env());
+            delete ptr;
+        }
+    }
+};
+
+template<class Impl>
+struct NativePtr<Impl,  NativePtrType::REFPTR>
+{
+    static Impl* Get(JNIEnv* env, jobject instance)
+    {
+        const auto ptr = reinterpret_cast<RefPtr<Impl>*>(
+                CheckNativeHandle(env, GetNativeHandle(env, instance)));
+        if (!ptr) {
+            return nullptr;
+        }
+
+        MOZ_ASSERT(*ptr);
+        return *ptr;
+    }
+
+    template<class LocalRef>
+    static Impl* Get(const LocalRef& instance)
+    {
+        return Get(instance.Env(), instance.Get());
+    }
+
+    template<class LocalRef>
+    static void Set(const LocalRef& instance, Impl* ptr)
+    {
+        Clear(instance);
+        SetNativeHandle(instance.Env(), instance.Get(),
+                        reinterpret_cast<uintptr_t>(new RefPtr<Impl>(ptr)));
+        MOZ_CATCH_JNI_EXCEPTION(instance.Env());
+    }
+
+    template<class LocalRef>
+    static void Clear(const LocalRef& instance)
+    {
+        const auto ptr = reinterpret_cast<RefPtr<Impl>*>(
                 GetNativeHandle(instance.Env(), instance.Get()));
         MOZ_CATCH_JNI_EXCEPTION(instance.Env());
 
@@ -563,7 +660,7 @@ public:
         }
 
         auto self = Owner::LocalRef::Adopt(env, instance);
-        (Impl::DisposeNative)(self);
+        DisposeNative(self);
         self.Forget();
     }
 
@@ -668,17 +765,24 @@ protected:
     static void AttachNative(const typename Cls::LocalRef& instance,
                              SupportsWeakPtr<Impl>* ptr)
     {
-        static_assert(mozilla::IsBaseOf<SupportsWeakPtr<Impl>, Impl>::value,
-                      "Attach with UniquePtr&& when not using WeakPtr");
+        static_assert(NativePtrPicker<Impl>::value == NativePtrType::WEAK,
+                      "Use another AttachNative for non-WeakPtr usage");
         return NativePtr<Impl>::Set(instance, static_cast<Impl*>(ptr));
     }
 
     static void AttachNative(const typename Cls::LocalRef& instance,
                              UniquePtr<Impl>&& ptr)
     {
-        static_assert(!mozilla::IsBaseOf<SupportsWeakPtr<Impl>, Impl>::value,
-                      "Attach with SupportsWeakPtr* when using WeakPtr");
+        static_assert(NativePtrPicker<Impl>::value == NativePtrType::OWNING,
+                      "Use another AttachNative for WeakPtr or RefPtr usage");
         return NativePtr<Impl>::Set(instance, mozilla::Move(ptr));
+    }
+
+    static void AttachNative(const typename Cls::LocalRef& instance, Impl* ptr)
+    {
+        static_assert(NativePtrPicker<Impl>::value == NativePtrType::REFPTR,
+                      "Use another AttachNative for non-RefPtr usage");
+        return NativePtr<Impl>::Set(instance, ptr);
     }
 
     

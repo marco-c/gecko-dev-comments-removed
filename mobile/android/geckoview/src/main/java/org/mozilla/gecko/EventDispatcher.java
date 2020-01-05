@@ -6,9 +6,12 @@ package org.mozilla.gecko;
 
 import org.mozilla.gecko.annotation.ReflectionTarget;
 import org.mozilla.gecko.annotation.RobocopTarget;
+import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.gecko.GeckoAppShell;
+import org.mozilla.gecko.mozglue.JNIObject;
 import org.mozilla.gecko.util.BundleEventListener;
 import org.mozilla.gecko.util.EventCallback;
+import org.mozilla.gecko.util.GeckoBundle;
 import org.mozilla.gecko.util.GeckoEventListener;
 import org.mozilla.gecko.util.NativeEventListener;
 import org.mozilla.gecko.util.NativeJSContainer;
@@ -27,10 +30,11 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 @RobocopTarget
-public final class EventDispatcher {
+public final class EventDispatcher extends JNIObject {
     private static final String LOGTAG = "GeckoEventDispatcher";
      static final String GUID = "__guid__";
     private static final String STATUS_ERROR = "error";
@@ -46,24 +50,53 @@ public final class EventDispatcher {
 
     private static final int DEFAULT_GECKO_NATIVE_EVENTS_COUNT = 0; 
     private static final int DEFAULT_GECKO_JSON_EVENTS_COUNT = 256; 
+    private static final int DEFAULT_GECKO_EVENTS_COUNT = 0; 
     private static final int DEFAULT_UI_EVENTS_COUNT = 0; 
     private static final int DEFAULT_BACKGROUND_EVENTS_COUNT = 0; 
 
+    
     private final Map<String, List<NativeEventListener>> mGeckoThreadNativeListeners =
         new HashMap<String, List<NativeEventListener>>(DEFAULT_GECKO_NATIVE_EVENTS_COUNT);
     private final Map<String, List<GeckoEventListener>> mGeckoThreadJSONListeners =
         new HashMap<String, List<GeckoEventListener>>(DEFAULT_GECKO_JSON_EVENTS_COUNT);
+
+    
+    private final Map<String, List<BundleEventListener>> mGeckoThreadListeners =
+        new HashMap<String, List<BundleEventListener>>(DEFAULT_GECKO_EVENTS_COUNT);
     private final Map<String, List<BundleEventListener>> mUiThreadListeners =
         new HashMap<String, List<BundleEventListener>>(DEFAULT_UI_EVENTS_COUNT);
     private final Map<String, List<BundleEventListener>> mBackgroundThreadListeners =
         new HashMap<String, List<BundleEventListener>>(DEFAULT_BACKGROUND_EVENTS_COUNT);
 
+    private boolean mAttachedToGecko;
+
     @ReflectionTarget
+    @WrapForJNI(calledFrom = "gecko")
     public static EventDispatcher getInstance() {
         return INSTANCE;
     }
 
-    public EventDispatcher() {
+     EventDispatcher() {
+    }
+
+    @WrapForJNI(dispatchTo = "gecko") @Override 
+    protected native void disposeNative();
+
+    @WrapForJNI private static final int DETACHED = 0;
+    @WrapForJNI private static final int ATTACHED = 1;
+    @WrapForJNI private static final int REATTACHING = 2;
+
+    @WrapForJNI(calledFrom = "gecko")
+    private synchronized void setAttachedToGecko(final int state) {
+        if (mAttachedToGecko && state == DETACHED) {
+            if (GeckoThread.isStateAtLeast(GeckoThread.State.JNI_READY)) {
+                disposeNative();
+            } else {
+                GeckoThread.queueNativeCallUntil(GeckoThread.State.JNI_READY,
+                        this, "disposeNative");
+            }
+        }
+        mAttachedToGecko = (state == ATTACHED);
     }
 
     private <T> void registerListener(final Class<?> listType,
@@ -101,6 +134,7 @@ public final class EventDispatcher {
         }
         for (final Map<String, ?> listenersMap : Arrays.asList(mGeckoThreadNativeListeners,
                                                                mGeckoThreadJSONListeners,
+                                                               mGeckoThreadListeners,
                                                                mUiThreadListeners,
                                                                mBackgroundThreadListeners)) {
             if (listenersMap == allowedMap) {
@@ -131,15 +165,24 @@ public final class EventDispatcher {
         }
     }
 
-    public void registerGeckoThreadListener(final NativeEventListener listener,
+    public void registerGeckoThreadListener(final BundleEventListener listener,
                                             final String... events) {
-        checkNotRegisteredElsewhere(mGeckoThreadNativeListeners, events);
+        checkNotRegisteredElsewhere(mGeckoThreadListeners, events);
 
         
         
         
         
         
+        registerListener(CopyOnWriteArrayList.class,
+                         mGeckoThreadListeners, listener, events);
+    }
+
+    @Deprecated 
+    public void registerGeckoThreadListener(final NativeEventListener listener,
+                                            final String... events) {
+        checkNotRegisteredElsewhere(mGeckoThreadNativeListeners, events);
+
         registerListener(CopyOnWriteArrayList.class,
                          mGeckoThreadNativeListeners, listener, events);
     }
@@ -170,6 +213,12 @@ public final class EventDispatcher {
                          mBackgroundThreadListeners, listener, events);
     }
 
+    public void unregisterGeckoThreadListener(final BundleEventListener listener,
+                                              final String... events) {
+        unregisterListener(mGeckoThreadListeners, listener, events);
+    }
+
+    @Deprecated 
     public void unregisterGeckoThreadListener(final NativeEventListener listener,
                                               final String... events) {
         unregisterListener(mGeckoThreadNativeListeners, listener, events);
@@ -266,14 +315,12 @@ public final class EventDispatcher {
         return true;
     }
 
-    
+    @WrapForJNI
+    private native boolean hasGeckoListener(final String event);
 
-
-
-
-    public void dispatch(final Bundle message) {
-        dispatch(message,  null);
-    }
+    @WrapForJNI(dispatchTo = "gecko")
+    private native void dispatchToGecko(final String event, final GeckoBundle data,
+                                        final EventCallback callback);
 
     
 
@@ -281,26 +328,7 @@ public final class EventDispatcher {
 
 
 
-    public void dispatch(final Bundle message, final EventCallback callback) {
-        if (message == null) {
-            throw new IllegalArgumentException("Null message");
-        }
-
-        final String type = message.getCharSequence("type").toString();
-        if (type == null) {
-            Log.e(LOGTAG, "Bundle message must have a type property");
-            return;
-        }
-        dispatchToThreads(type,  null, message,  callback);
-    }
-
-    
-
-
-
-
-
-    public void dispatch(final String type, final Bundle message) {
+    public void dispatch(final String type, final GeckoBundle message) {
         dispatch(type, message,  null);
     }
 
@@ -311,14 +339,57 @@ public final class EventDispatcher {
 
 
 
-    public void dispatch(final String type, final Bundle message, final EventCallback callback) {
+    public void dispatch(final String type, final GeckoBundle message,
+                         final EventCallback callback) {
+        synchronized (this) {
+            if (mAttachedToGecko && hasGeckoListener(type)) {
+                dispatchToGecko(type, message, JavaCallbackDelegate.wrap(callback));
+                return;
+            }
+        }
+
         dispatchToThreads(type,  null, message,  callback);
     }
 
+    @WrapForJNI(calledFrom = "gecko")
     private boolean dispatchToThreads(final String type,
                                       final NativeJSObject jsMessage,
-                                      final Bundle bundleMessage,
+                                      final GeckoBundle bundleMessage,
                                       final EventCallback callback) {
+        final List<BundleEventListener> geckoListeners;
+        synchronized (mGeckoThreadListeners) {
+            geckoListeners = mGeckoThreadListeners.get(type);
+        }
+        if (geckoListeners != null && !geckoListeners.isEmpty()) {
+            final boolean onGeckoThread = ThreadUtils.isOnGeckoThread();
+            final EventCallback wrappedCallback = JavaCallbackDelegate.wrap(callback);
+            final GeckoBundle messageAsBundle;
+            try {
+                messageAsBundle = jsMessage != null ?
+                        convertBundle(jsMessage.toBundle()) : bundleMessage;
+            } catch (final NativeJSObject.InvalidPropertyException e) {
+                Log.e(LOGTAG, "Exception occurred while handling " + type, e);
+                return true;
+            }
+
+            for (final BundleEventListener listener : geckoListeners) {
+                
+                
+                
+                if (onGeckoThread) {
+                    listener.handleMessage(type, messageAsBundle, wrappedCallback);
+                    continue;
+                }
+                ThreadUtils.sGeckoHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        listener.handleMessage(type, messageAsBundle, wrappedCallback);
+                    }
+                });
+            }
+            return true;
+        }
+
         if (dispatchToThread(type, jsMessage, bundleMessage, callback,
                              mUiThreadListeners, ThreadUtils.getUiHandler())) {
             return true;
@@ -353,9 +424,39 @@ public final class EventDispatcher {
         return false;
     }
 
+    
+    private GeckoBundle convertBundle(final Bundle bundle) {
+        if (bundle == null) {
+            return null;
+        }
+
+        final Set<String> keys = bundle.keySet();
+        final GeckoBundle out = new GeckoBundle(keys.size());
+
+        for (final String key : keys) {
+            final Object value = bundle.get(key);
+
+            if (value instanceof Bundle) {
+                out.putBundle(key, convertBundle((Bundle) value));
+
+            } else if (value instanceof Bundle[]) {
+                final Bundle[] inArray = (Bundle[]) value;
+                final GeckoBundle[] outArray = new GeckoBundle[inArray.length];
+                for (int i = 0; i < inArray.length; i++) {
+                    outArray[i] = convertBundle(inArray[i]);
+                }
+                out.putBundleArray(key, outArray);
+
+            } else {
+                out.put(key, value);
+            }
+        }
+        return out;
+    }
+
     private boolean dispatchToThread(final String type,
                                      final NativeJSObject jsMessage,
-                                     final Bundle bundleMessage,
+                                     final GeckoBundle bundleMessage,
                                      final EventCallback callback,
                                      final Map<String, List<BundleEventListener>> listenersMap,
                                      final Handler thread) {
@@ -376,20 +477,24 @@ public final class EventDispatcher {
                 return false;
             }
 
-            final Bundle messageAsBundle;
+            final GeckoBundle messageAsBundle;
             try {
-                messageAsBundle = jsMessage != null ? jsMessage.toBundle() : bundleMessage;
+                messageAsBundle = jsMessage != null ?
+                        convertBundle(jsMessage.toBundle()) : bundleMessage;
             } catch (final NativeJSObject.InvalidPropertyException e) {
                 Log.e(LOGTAG, "Exception occurred while handling " + type, e);
                 return true;
             }
 
             
+            final EventCallback wrappedCallback = JavaCallbackDelegate.wrap(callback);
+
+            
             for (final BundleEventListener listener : listeners) {
                 thread.post(new Runnable() {
                     @Override
                     public void run() {
-                        listener.handleMessage(type, messageAsBundle, callback);
+                        listener.handleMessage(type, messageAsBundle, wrappedCallback);
                     }
                 });
             }
@@ -451,6 +556,89 @@ public final class EventDispatcher {
             }
         } catch (final JSONException e) {
             Log.e(LOGTAG, "Unable to send response", e);
+        }
+    }
+
+    private static class NativeCallbackDelegate extends JNIObject implements EventCallback {
+        @WrapForJNI(calledFrom = "gecko")
+        private NativeCallbackDelegate() {
+        }
+
+        @Override 
+        protected void disposeNative() {
+            
+            throw new UnsupportedOperationException();
+        }
+
+        @WrapForJNI(dispatchTo = "proxy") @Override 
+        public native void sendSuccess(Object response);
+
+        @WrapForJNI(dispatchTo = "proxy") @Override 
+        public native void sendError(Object response);
+
+        @WrapForJNI(dispatchTo = "gecko") @Override 
+        protected native void finalize();
+    }
+
+    private static class JavaCallbackDelegate implements EventCallback {
+        private final Thread originalThread = Thread.currentThread();
+        private final EventCallback callback;
+
+        public static EventCallback wrap(final EventCallback callback) {
+            if (callback == null) {
+                return null;
+            }
+            if (callback instanceof NativeCallbackDelegate) {
+                
+                return callback;
+            }
+            return new JavaCallbackDelegate(callback);
+        }
+
+        JavaCallbackDelegate(final EventCallback callback) {
+            this.callback = callback;
+        }
+
+        private void makeCallback(final boolean callSuccess, final Object response) {
+            
+            
+            if (ThreadUtils.isOnThread(originalThread)) {
+                if (callSuccess) {
+                    callback.sendSuccess(response);
+                } else {
+                    callback.sendError(response);
+                }
+                return;
+            }
+
+            
+            
+            final Handler handler =
+                    originalThread == ThreadUtils.getUiThread() ? ThreadUtils.getUiHandler() :
+                    originalThread == ThreadUtils.sGeckoThread ? ThreadUtils.sGeckoHandler :
+                                                                 ThreadUtils.getBackgroundHandler();
+            final EventCallback callback = this.callback;
+
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    if (callSuccess) {
+                        callback.sendSuccess(response);
+                    } else {
+                        callback.sendError(response);
+                    }
+                }
+            });
+        }
+
+        @Override 
+        public void sendSuccess(Object response) {
+            makeCallback( true, response);
+        }
+
+        @Override 
+        public void sendError(Object response) {
+            makeCallback( false, response);
         }
     }
 
