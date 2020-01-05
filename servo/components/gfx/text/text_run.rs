@@ -305,6 +305,21 @@ impl<'a> TextRun {
     }
 
     
+    pub fn range_index_of_advance(&self, range: &Range<ByteIndex>, advance: Au) -> usize {
+        
+        
+        let mut remaining = advance;
+        self.natural_word_slices_in_range(range)
+            .map(|slice| {
+                let (slice_index, slice_advance) =
+                    slice.glyphs.range_index_of_advance(&slice.range, remaining, self.extra_word_spacing);
+                remaining -= slice_advance;
+                slice_index
+            })
+            .sum()
+    }
+
+    
     
     pub fn natural_word_slices_in_range(&'a self, range: &Range<ByteIndex>)
                                         -> NaturalWordSliceIterator<'a> {
