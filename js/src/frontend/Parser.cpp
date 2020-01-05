@@ -4056,22 +4056,23 @@ Parser<FullParseHandler>::checkDestructuringName(ParseNode* expr, Maybe<Declarat
     }
 
     
-    if (!reportIfNotValidSimpleAssignmentTarget(expr, KeyedDestructuringAssignment))
-        return false;
-
-    MOZ_ASSERT(!handler.isFunctionCall(expr),
-               "function calls shouldn't be considered valid targets in "
-               "destructuring patterns");
-
     if (handler.isNameAnyParentheses(expr)) {
-        
-        
-        return reportIfArgumentsEvalTarget(expr);
+        if (const char* chars = handler.nameIsArgumentsEvalAnyParentheses(expr, context)) {
+            if (!reportWithNode(ParseStrictError, pc->sc()->strict(), expr,
+                                JSMSG_BAD_STRICT_ASSIGN, chars))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
-    
-    MOZ_ASSERT(handler.isPropertyAccess(expr));
-    return true;
+    if (handler.isPropertyAccess(expr))
+        return true;
+
+    reportWithNode(ParseError, pc->sc()->strict(), expr, JSMSG_BAD_DESTRUCT_TARGET);
+    return false;
 }
 
 template <>
@@ -7775,65 +7776,6 @@ Parser<ParseHandler>::isValidSimpleAssignmentTarget(Node node,
             return true;
     }
 
-    return false;
-}
-
-template <typename ParseHandler>
-bool
-Parser<ParseHandler>::reportIfArgumentsEvalTarget(Node nameNode)
-{
-    const char* chars = handler.nameIsArgumentsEvalAnyParentheses(nameNode, context);
-    if (!chars)
-        return true;
-
-    bool strict = pc->sc()->strict();
-    if (!reportWithNode(ParseStrictError, strict, nameNode, JSMSG_BAD_STRICT_ASSIGN, chars))
-        return false;
-
-    MOZ_ASSERT(!strict,
-               "an error should have been reported if this was strict mode "
-               "code");
-    return true;
-}
-
-template <typename ParseHandler>
-bool
-Parser<ParseHandler>::reportIfNotValidSimpleAssignmentTarget(Node target, AssignmentFlavor flavor)
-{
-    FunctionCallBehavior behavior = flavor == KeyedDestructuringAssignment
-                                    ? ForbidAssignmentToFunctionCalls
-                                    : PermitAssignmentToFunctionCalls;
-    if (isValidSimpleAssignmentTarget(target, behavior))
-        return true;
-
-    if (handler.isNameAnyParentheses(target)) {
-        
-        
-        
-        if (!reportIfArgumentsEvalTarget(target))
-            return false;
-    }
-
-    unsigned errnum = 0;
-    const char* extra = nullptr;
-
-    switch (flavor) {
-      case IncrementAssignment:
-        errnum = JSMSG_BAD_OPERAND;
-        extra = "increment";
-        break;
-
-      case DecrementAssignment:
-        errnum = JSMSG_BAD_OPERAND;
-        extra = "decrement";
-        break;
-
-      case KeyedDestructuringAssignment:
-        errnum = JSMSG_BAD_DESTRUCT_TARGET;
-        break;
-    }
-
-    reportWithNode(ParseError, pc->sc()->strict(), target, errnum, extra);
     return false;
 }
 
