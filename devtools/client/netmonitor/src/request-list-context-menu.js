@@ -8,22 +8,20 @@ const Services = require("Services");
 const { Curl } = require("devtools/client/shared/curl");
 const { gDevTools } = require("devtools/client/framework/devtools");
 const { showMenu } = require("devtools/client/netmonitor/src/utils/menu");
-const FileSaver = require("devtools/client/shared/file-saver");
-const clipboardHelper = require("devtools/shared/platform/clipboard");
+const { saveAs } = require("devtools/client/shared/file-saver");
+const { copyString } = require("devtools/shared/platform/clipboard");
 const { HarExporter } = require("./har/har-exporter");
 const { NetMonitorController } = require("./netmonitor-controller");
-const { getLongString } = require("./utils/client");
-const { L10N } = require("./utils/l10n");
-const {
-  formDataURI,
-  getFormDataSections,
-  getUrlQuery,
-  parseQueryString,
-} = require("./utils/request-utils");
 const {
   getSelectedRequest,
   getSortedRequests,
 } = require("./selectors/index");
+const { getLongString } = require("./utils/client");
+const { L10N } = require("./utils/l10n");
+const {
+  getUrlQuery,
+  parseQueryString,
+} = require("./utils/request-utils");
 
 function RequestListContextMenu({
   cloneSelectedRequest,
@@ -214,7 +212,7 @@ RequestListContextMenu.prototype = {
 
 
   copyUrl() {
-    clipboardHelper.copyString(this.selectedRequest.url);
+    copyString(this.selectedRequest.url);
   },
 
   
@@ -222,27 +220,19 @@ RequestListContextMenu.prototype = {
 
 
   copyUrlParams() {
-    let { url } = this.selectedRequest;
-    let params = getUrlQuery(url).split("&");
-    let string = params.join(Services.appinfo.OS === "WINNT" ? "\r\n" : "\n");
-    clipboardHelper.copyString(string);
+    let params = getUrlQuery(this.selectedRequest.url).split("&");
+    copyString(params.join(Services.appinfo.OS === "WINNT" ? "\r\n" : "\n"));
   },
 
   
 
 
 
-  async copyPostData() {
-    let selected = this.selectedRequest;
+  copyPostData() {
+    let { formDataSections, requestPostData } = this.selectedRequest;
+    let params = [];
 
     
-    let formDataSections = await getFormDataSections(
-      selected.requestHeaders,
-      selected.requestHeadersFromUploadStream,
-      selected.requestPostData,
-      getLongString);
-
-    let params = [];
     formDataSections.forEach(section => {
       let paramsArray = parseQueryString(section);
       if (paramsArray) {
@@ -256,44 +246,28 @@ RequestListContextMenu.prototype = {
 
     
     if (!string) {
-      let postData = selected.requestPostData.postData.text;
-      string = await getLongString(postData);
+      string = requestPostData.postData.text;
       if (Services.appinfo.OS !== "WINNT") {
         string = string.replace(/\r/g, "");
       }
     }
-
-    clipboardHelper.copyString(string);
+    copyString(string);
   },
 
   
 
 
-  async copyAsCurl() {
+  copyAsCurl() {
     let selected = this.selectedRequest;
-
     
     let data = {
       url: selected.url,
       method: selected.method,
-      headers: [],
+      headers: selected.requestHeaders.headers,
       httpVersion: selected.httpVersion,
-      postDataText: null
+      postDataText: selected.requestPostData && selected.requestPostData.postData.text,
     };
-
-    
-    for (let { name, value } of selected.requestHeaders.headers) {
-      let text = await getLongString(value);
-      data.headers.push({ name: name, value: text });
-    }
-
-    
-    if (selected.requestPostData) {
-      let postData = selected.requestPostData.postData.text;
-      data.postDataText = await getLongString(postData);
-    }
-
-    clipboardHelper.copyString(Curl.generateCommand(data));
+    copyString(Curl.generateCommand(data));
   },
 
   
@@ -304,7 +278,7 @@ RequestListContextMenu.prototype = {
     if (Services.appinfo.OS !== "WINNT") {
       rawHeaders = rawHeaders.replace(/\r/g, "");
     }
-    clipboardHelper.copyString(rawHeaders);
+    copyString(rawHeaders);
   },
 
   
@@ -315,26 +289,21 @@ RequestListContextMenu.prototype = {
     if (Services.appinfo.OS !== "WINNT") {
       rawHeaders = rawHeaders.replace(/\r/g, "");
     }
-    clipboardHelper.copyString(rawHeaders);
+    copyString(rawHeaders);
   },
 
   
 
 
   copyImageAsDataUri() {
-    const { mimeType, text, encoding } = this.selectedRequest.responseContent.content;
-
-    getLongString(text).then(string => {
-      let data = formDataURI(mimeType, encoding, string);
-      clipboardHelper.copyString(data);
-    });
+    copyString(this.selectedRequest.responseContentDataUri);
   },
 
   
 
 
   saveImageAs() {
-    const { encoding, text } = this.selectedRequest.responseContent.content;
+    let { encoding, text } = this.selectedRequest.responseContent.content;
     let fileName = this.selectedRequest.urlDetails.baseNameWithQuery;
     let data;
     if (encoding === "base64") {
@@ -346,19 +315,14 @@ RequestListContextMenu.prototype = {
     } else {
       data = text;
     }
-    let blob = new Blob([data]);
-    FileSaver.saveAs(blob, fileName, document);
+    saveAs(new Blob([data]), fileName, document);
   },
 
   
 
 
   copyResponse() {
-    const { text } = this.selectedRequest.responseContent.content;
-
-    getLongString(text).then(string => {
-      clipboardHelper.copyString(string);
-    });
+    copyString(this.selectedRequest.responseContent.content.text);
   },
 
   
@@ -372,6 +336,10 @@ RequestListContextMenu.prototype = {
 
 
   saveAllAsHar() {
+    
+    
+    
+    
     return HarExporter.save(this.getDefaultHarOptions());
   },
 
