@@ -208,12 +208,17 @@ let testCasesForBothSuccessAndAbort = [
 
 
   function* test_detectedWithFocus(aSuccess) {
-    let win = RecentWindow.getMostRecentBrowserWindow();
+    let win1 = RecentWindow.getMostRecentBrowserWindow();
+    let win2 = yield BrowserTestUtils.openNewBrowserWindow();
     yield portalDetected();
-    ensureNoPortalTab(win);
-    ensurePortalNotification(win);
+    ensureNoPortalTab(win1);
+    ensureNoPortalTab(win2);
+    ensurePortalNotification(win1);
+    ensurePortalNotification(win2);
     yield freePortal(aSuccess);
-    ensureNoPortalNotification(win);
+    ensureNoPortalNotification(win1);
+    ensureNoPortalNotification(win2);
+    yield closeWindowAndWaitForXulWindowVisible(win2);
   },
 ];
 
