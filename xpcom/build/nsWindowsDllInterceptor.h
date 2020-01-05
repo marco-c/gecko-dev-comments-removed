@@ -700,7 +700,6 @@ protected:
       if (numPrefixBytes < 0 || (prefixGroups & (ePrefixGroup3 | ePrefixGroup4))) {
         
         
-        MOZ_ASSERT_UNREACHABLE("Unrecognized opcode sequence");
         return;
       }
       nOrigBytes += numPrefixBytes;
@@ -710,7 +709,6 @@ protected:
         ++nOrigBytes;
         int len = CountModRmSib(origBytes + nOrigBytes);
         if (len < 0) {
-          MOZ_ASSERT_UNREACHABLE("Unrecognized MOV opcode sequence");
           return;
         }
         nOrigBytes += len;
@@ -735,7 +733,6 @@ protected:
           nOrigBytes += 3;
         } else {
           
-          MOZ_ASSERT_UNREACHABLE("Unrecognized bit opcode sequence");
           return;
         }
       } else if (origBytes[nOrigBytes] == 0x68) {
@@ -763,7 +760,6 @@ protected:
         return;
       } else {
         
-        MOZ_ASSERT_UNREACHABLE("Unrecognized opcode sequence");
         return;
       }
     }
@@ -790,7 +786,6 @@ protected:
           nOrigBytes++;
           continue;
         }
-        MOZ_ASSERT_UNREACHABLE("Opcode sequence includes commands after JMP");
         return;
       }
       if (origBytes[nOrigBytes] == 0x0f) {
@@ -802,7 +797,6 @@ protected:
               (origBytes[nOrigBytes] & 0x7) == 0x04) {
             COPY_CODES(3);
           } else {
-            MOZ_ASSERT_UNREACHABLE("Unrecognized opcode sequence");
             return;
           }
         } else if (origBytes[nOrigBytes] == 0x05) {
@@ -817,7 +811,6 @@ protected:
           nTrampBytes = jump.GenerateJump(tramp);
           nOrigBytes += 5;
         } else {
-          MOZ_ASSERT_UNREACHABLE("Unrecognized opcode sequence");
           return;
         }
       } else if (origBytes[nOrigBytes] == 0x40 ||
@@ -831,7 +824,6 @@ protected:
           
           COPY_CODES(5);
         } else {
-          MOZ_ASSERT_UNREACHABLE("Unrecognized opcode sequence");
           return;
         }
       } else if (origBytes[nOrigBytes] == 0x45) {
@@ -842,7 +834,6 @@ protected:
           
           COPY_CODES(2);
         } else {
-          MOZ_ASSERT_UNREACHABLE("Unrecognized opcode sequence");
           return;
         }
       } else if ((origBytes[nOrigBytes] & 0xfb) == 0x48) {
@@ -874,7 +865,6 @@ protected:
           if ((origBytes[nOrigBytes + 1] & 0xc0) == 0xc0) {
             COPY_CODES(2);
           } else {
-            MOZ_ASSERT_UNREACHABLE("Unrecognized opcode sequence");
             return;
           }
         } else if ((origBytes[nOrigBytes] & 0xfd) == 0x89) {
@@ -882,7 +872,6 @@ protected:
           
           int len = CountModRmSib(origBytes + nOrigBytes);
           if (len < 0) {
-            MOZ_ASSERT_UNREACHABLE("Unrecognized opcode sequence");
             return;
           }
           COPY_CODES(len);
@@ -893,7 +882,6 @@ protected:
             
             COPY_CODES(8);
           } else {
-            MOZ_ASSERT_UNREACHABLE("Unrecognized opcode sequence");
             return;
           }
         } else if (origBytes[nOrigBytes] == 0xff) {
@@ -911,12 +899,10 @@ protected:
             foundJmp = true;
           } else {
             
-            MOZ_ASSERT_UNREACHABLE("Unrecognized opcode sequence");
             return;
           }
         } else {
           
-          MOZ_ASSERT_UNREACHABLE("Unrecognized opcode sequence");
           return;
         }
       } else if (origBytes[nOrigBytes] == 0x66) {
@@ -941,7 +927,6 @@ protected:
             }
           } else {
             
-            MOZ_ASSERT_UNREACHABLE("Unrecognized MOV opcode sequence");
             return;
           }
         }
@@ -960,12 +945,10 @@ protected:
           int len = CountModRmSib(origBytes + nOrigBytes);
           if (len < 0) {
             
-            MOZ_ASSERT_UNREACHABLE("Unrecognized opcode sequence");
             return;
           }
           COPY_CODES(len);
         } else {
-          MOZ_ASSERT_UNREACHABLE("Unrecognized opcode sequence");
           return;
         }
       } else if (origBytes[nOrigBytes] == 0x90) {
@@ -985,7 +968,6 @@ protected:
         int nModRmSibBytes = CountModRmSib(&origBytes[nOrigBytes + 1], &subOpcode);
         if (nModRmSibBytes < 0 || subOpcode != 0) {
           
-          MOZ_ASSERT_UNREACHABLE("Unrecognized opcode sequence");
           return;
         }
         COPY_CODES(2 + nModRmSibBytes);
@@ -1025,11 +1007,9 @@ protected:
           nTrampBytes = jump.GenerateJump(tramp);
           nOrigBytes += 5;
         } else {
-          MOZ_ASSERT_UNREACHABLE("Unrecognized opcode sequence");
           return;
         }
       } else {
-        MOZ_ASSERT_UNREACHABLE("Unrecognized opcode sequence");
         return;
       }
     }
@@ -1165,16 +1145,6 @@ public:
     }
   }
 
-  
-
-
-
-
-
-
-
-
-
   bool AddHook(const char* aName, intptr_t aHookDest, void** aOrigFunc)
   {
     
@@ -1190,16 +1160,6 @@ public:
 
     return AddDetour(aName, aHookDest, aOrigFunc);
   }
-
-  
-
-
-
-
-
-
-
-
 
   bool AddDetour(const char* aName, intptr_t aHookDest, void** aOrigFunc)
   {
