@@ -4880,6 +4880,39 @@ nsComputedDOMStyle::DoGetMaxWidth()
   return val.forget();
 }
 
+bool
+nsComputedDOMStyle::ShouldHonorMinSizeAutoInAxis(PhysicalAxis aAxis)
+{
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  
+
+  if (mOuterFrame) {
+    nsIFrame* containerFrame = mOuterFrame->GetParent();
+    if (containerFrame &&
+        StyleDisplay()->mOverflowX == NS_STYLE_OVERFLOW_VISIBLE) {
+      auto containerType = containerFrame->GetType();
+      if (containerType == nsGkAtoms::flexContainerFrame &&
+          (static_cast<nsFlexContainerFrame*>(containerFrame)->IsHorizontal() ==
+           (aAxis == eAxisHorizontal))) {
+        return true;
+      }
+      if (containerType == nsGkAtoms::gridContainerFrame) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 already_AddRefed<CSSValue>
 nsComputedDOMStyle::DoGetMinHeight()
 {
@@ -4905,20 +4938,9 @@ nsComputedDOMStyle::DoGetMinWidth()
 
   nsStyleCoord minWidth = StylePosition()->mMinWidth;
 
-  if (eStyleUnit_Auto == minWidth.GetUnit()) {
-    
-    
+  if (eStyleUnit_Auto == minWidth.GetUnit() &&
+      !ShouldHonorMinSizeAutoInAxis(eAxisHorizontal)) {
     minWidth.SetCoordValue(0);
-    if (mOuterFrame && mOuterFrame->IsFlexItem()) {
-      nsIFrame* flexContainer = mOuterFrame->GetParent();
-      MOZ_ASSERT(flexContainer &&
-                 flexContainer->GetType() == nsGkAtoms::flexContainerFrame,
-                 "IsFlexItem() lied...?");
-
-      if (static_cast<nsFlexContainerFrame*>(flexContainer)->IsHorizontal()) {
-        minWidth.SetIntValue(NS_STYLE_WIDTH_MIN_CONTENT, eStyleUnit_Enumerated);
-      }
-    }
   }
 
   SetValueToCoord(val, minWidth, true, nullptr, nsCSSProps::kWidthKTable);
