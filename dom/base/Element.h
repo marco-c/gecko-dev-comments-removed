@@ -247,24 +247,12 @@ public:
   
 
 
-
-  struct StyleStateLocks {
-    
-    EventStates mLocks;
-    
-    EventStates mValues;
-  };
+  EventStates LockedStyleStates() const;
 
   
 
 
-  StyleStateLocks LockedStyleStates() const;
-
-  
-
-
-
-  void LockStyleStates(EventStates aStates, bool aEnabled);
+  void LockStyleStates(EventStates aStates);
 
   
 
