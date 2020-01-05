@@ -136,11 +136,7 @@ pref("dom.fileHandle.enabled", true);
 pref("dom.manifest.onappinstalled", false);
 
 
-#ifdef NIGHTLY_BUILD
 pref("dom.select_events.enabled", true);
-#else
-pref("dom.select_events.enabled", false);
-#endif
 
 
 #ifdef NIGHTLY_BUILD
@@ -2416,6 +2412,13 @@ pref("bidi.texttype", 1);
 
 
 pref("bidi.numeral", 0);
+
+
+
+
+
+
+pref("bidi.support", 1);
 
 
 
@@ -5045,6 +5048,16 @@ pref("dom.mobileconnection.enabled", true);
 #else
 pref("dom.mobileconnection.enabled", false);
 #endif
+
+
+#ifdef MOZ_B2G_RIL
+pref("dom.voicemail.enabled", true);
+#else
+pref("dom.voicemail.enabled", false);
+#endif
+
+
+pref("dom.voicemail.defaultServiceId", 0);
 
 
 pref("dom.mapped_arraybuffer.enabled", true);
