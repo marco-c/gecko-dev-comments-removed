@@ -3,12 +3,12 @@
 
 
 use app_units::Au;
+use persistent_list::PersistentList;
 use std::cmp::{max, min};
 use std::fmt;
 use std::i32;
 use style::computed_values::float;
 use style::logical_geometry::{LogicalRect, LogicalSize, WritingMode};
-use util::persistent_list::PersistentList;
 
 
 #[derive(Clone, RustcEncodable, Debug, Copy)]
