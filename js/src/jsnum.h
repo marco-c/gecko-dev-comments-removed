@@ -270,12 +270,6 @@ ToInteger(JSContext* cx, HandleValue v, double* dp)
 
 
 
-MOZ_MUST_USE bool ToLengthClamped(JSContext* cx, HandleValue v, uint32_t* out, bool* overflow);
-
-
-
-
-
 
 
 
