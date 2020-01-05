@@ -584,11 +584,8 @@ DocAccessibleParent::MaybeInitWindowEmulation()
 
 
 void
-DocAccessibleParent::SetCOMProxy(const RefPtr<IAccessible>& aCOMProxy)
+DocAccessibleParent::SendParentCOMProxy()
 {
-  SetCOMInterface(aCOMProxy);
-  MaybeInitWindowEmulation();
-
   
   auto tab = static_cast<dom::TabParent*>(Manager());
   MOZ_ASSERT(tab);
@@ -607,7 +604,7 @@ DocAccessibleParent::SetCOMProxy(const RefPtr<IAccessible>& aCOMProxy)
 
   IAccessibleHolder::COMPtrType ptr(rawNative);
   IAccessibleHolder holder(Move(ptr));
-  Unused << SendParentCOMProxy(holder);
+  Unused << PDocAccessibleParent::SendParentCOMProxy(holder);
 }
 
 void
