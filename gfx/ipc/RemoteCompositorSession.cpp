@@ -5,7 +5,6 @@
 
 
 #include "RemoteCompositorSession.h"
-#include "mozilla/VsyncDispatcher.h"
 #include "mozilla/layers/APZChild.h"
 #include "mozilla/layers/APZCTreeManagerChild.h"
 #include "nsBaseWidget.h"
