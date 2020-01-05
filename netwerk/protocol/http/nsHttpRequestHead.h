@@ -15,9 +15,6 @@ class nsIHttpHeaderVisitor;
 
 namespace mozilla { namespace net {
 
-class nsHttpHandler;
-class HttpBaseChannel;
-
 
 
 
@@ -107,40 +104,6 @@ public:
     bool IsPut() { return EqualsMethod(kMethod_Put); }
     bool IsTrace() { return EqualsMethod(kMethod_Trace); }
     void ParseHeaderSet(const char *buffer);
-
-private:
-    friend class mozilla::net::nsHttpHandler;
-    friend class mozilla::net::HttpBaseChannel;
-    
-    
-    
-    
-    MOZ_MUST_USE nsresult SetHeaderNonThreadSafe(nsHttpAtom h,
-                                                 const nsACString &v,
-                                                 bool m,
-                                                 nsHttpHeaderArray::HeaderVariety variety);
-
-#ifdef DEBUG
-    
-    
-    class MOZ_RAII AutoEnableCallingSetHeaderNonThreadSafe final
-    {
-    public:
-      explicit AutoEnableCallingSetHeaderNonThreadSafe(nsHttpRequestHead* aSelf)
-        : mSelf(aSelf)
-      {
-        mSelf->mCanCallSetHeaderNonThreadSafe = true;
-      }
-      ~AutoEnableCallingSetHeaderNonThreadSafe()
-      {
-        mSelf->mCanCallSetHeaderNonThreadSafe = true;
-      }
-
-    private:
-      nsHttpRequestHead* mSelf;
-    };
-#endif
-
 private:
     
     nsHttpHeaderArray mHeaders;
@@ -162,12 +125,6 @@ private:
 
     
     bool mInVisitHeaders;
-
-#ifdef DEBUG
-    
-    
-    bool mCanCallSetHeaderNonThreadSafe;
-#endif
 };
 
 } 
