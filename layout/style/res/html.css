@@ -756,6 +756,13 @@ audio:not([controls]) {
   display: none;
 }
 
+audio[controls] {
+  
+
+
+  writing-mode: horizontal-tb !important;
+}
+
 *|*::-moz-html-canvas-content {
   display: block !important;
   
