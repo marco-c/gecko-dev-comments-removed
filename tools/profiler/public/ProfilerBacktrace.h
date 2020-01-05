@@ -24,7 +24,9 @@ public:
   
   
   
-  void StreamJSON(SpliceableJSONWriter& aWriter, UniqueStacks& aUniqueStacks);
+  void StreamJSON(SpliceableJSONWriter& aWriter,
+                  const mozilla::TimeStamp& aStartTime,
+                  UniqueStacks& aUniqueStacks);
 
 private:
   ProfilerBacktrace(const ProfilerBacktrace&);
