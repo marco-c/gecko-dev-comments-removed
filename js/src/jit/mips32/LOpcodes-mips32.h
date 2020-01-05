@@ -15,6 +15,7 @@
     _(UDivOrMod)                \
     _(DivOrModI64)              \
     _(UDivOrModI64)             \
-    _(WasmTruncateToInt64)
+    _(WasmTruncateToInt64)      \
+    _(Int64ToFloatingPoint)
 
 #endif 
