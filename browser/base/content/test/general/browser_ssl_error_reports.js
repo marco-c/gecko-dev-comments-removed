@@ -66,7 +66,7 @@ function* testSendReportAutomatically(testURL, suffix, errorURISuffix) {
   
   let promiseStatus = createReportResponseStatusPromise(URL_REPORTS + suffix);
   browser.loadURI(testURL);
-  yield promiseErrorPageLoaded(browser);
+  yield BrowserTestUtils.waitForErrorPage(browser);
 
   ok(!isErrorStatus(yield promiseStatus),
      "SSL error report submitted successfully");
@@ -90,7 +90,7 @@ function* testSetAutomatic(testURL, suffix, errorURISuffix) {
 
   
   browser.loadURI(testURL);
-  yield promiseErrorPageLoaded(browser);
+  yield BrowserTestUtils.waitForErrorPage(browser);
 
   
   yield checkErrorPage(browser, errorURISuffix);
@@ -131,7 +131,7 @@ function* testSendReportDisabled(testURL, errorURISuffix) {
 
   
   browser.loadURI(testURL);
-  yield promiseErrorPageLoaded(browser);
+  yield BrowserTestUtils.waitForErrorPage(browser);
 
   
   yield checkErrorPage(browser, errorURISuffix);
