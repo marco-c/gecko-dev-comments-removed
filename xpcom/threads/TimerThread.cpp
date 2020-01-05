@@ -459,7 +459,7 @@ TimerThread::Run()
           
 
           RefPtr<nsTimerImpl> timerRef(timer);
-          mTimers.RemoveElementAt(0);
+          RemoveFirstTimerInternal();
           timer = nullptr;
 
           MOZ_LOG(GetTimerLog(), LogLevel::Debug,
@@ -573,13 +573,12 @@ TimerThread::AddTimer(nsTimerImpl* aTimer)
   }
 
   
-  int32_t i = AddTimerInternal(aTimer);
-  if (i < 0) {
+  if(!AddTimerInternal(aTimer)) {
     return NS_ERROR_OUT_OF_MEMORY;
   }
 
   
-  if (mWaiting && i == 0) {
+  if (mWaiting && mTimers[0].mTimerImpl == aTimer) {
     mNotified = true;
     mMonitor.Notify();
   }
@@ -609,22 +608,23 @@ TimerThread::RemoveTimer(nsTimerImpl* aTimer)
 }
 
 
-int32_t
+bool
 TimerThread::AddTimerInternal(nsTimerImpl* aTimer)
 {
   mMonitor.AssertCurrentThreadOwns();
   if (mShutdown) {
-    return -1;
+    return false;
   }
 
   TimeStamp now = TimeStamp::Now();
 
-  Entry* insertSlot = mTimers.InsertElementSorted(
-    Entry(now, aTimer->mTimeout, aTimer));
-
-  if (!insertSlot) {
-    return -1;
+  Entry* entry = mTimers.AppendElement(Entry(now, aTimer->mTimeout, aTimer),
+                                       mozilla::fallible);
+  if (!entry) {
+    return false;
   }
+
+  std::push_heap(mTimers.begin(), mTimers.end());
 
 #ifdef MOZ_TASK_TRACER
   
@@ -632,7 +632,7 @@ TimerThread::AddTimerInternal(nsTimerImpl* aTimer)
   aTimer->GetTLSTraceInfo();
 #endif
 
-  return insertSlot - mTimers.Elements();
+  return true;
 }
 
 bool
@@ -653,16 +653,36 @@ TimerThread::RemoveLeadingCanceledTimersInternal()
 {
   mMonitor.AssertCurrentThreadOwns();
 
-  uint32_t firstActive = 0;
-  while (firstActive < mTimers.Length() && !mTimers[firstActive].mTimerImpl) {
-    firstActive += 1;
+  
+  
+  
+  
+  auto sortedEnd = mTimers.end();
+  while (sortedEnd != mTimers.begin() && !mTimers[0].mTimerImpl) {
+    std::pop_heap(mTimers.begin(), sortedEnd);
+    --sortedEnd;
   }
 
-  if (firstActive == 0) {
+  
+  if (sortedEnd == mTimers.end()) {
     return;
   }
 
-  mTimers.RemoveElementsAt(0, firstActive);
+  
+  
+  
+  
+  mTimers.RemoveElementsAt(sortedEnd - mTimers.begin(),
+                           mTimers.end() - sortedEnd);
+}
+
+void
+TimerThread::RemoveFirstTimerInternal()
+{
+  mMonitor.AssertCurrentThreadOwns();
+  MOZ_ASSERT(!mTimers.IsEmpty());
+  std::pop_heap(mTimers.begin(), mTimers.end());
+  mTimers.RemoveElementAt(mTimers.Length() - 1);
 }
 
 already_AddRefed<nsTimerImpl>

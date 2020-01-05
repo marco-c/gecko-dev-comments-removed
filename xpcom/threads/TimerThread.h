@@ -64,10 +64,10 @@ private:
 
   
   
-  
-  int32_t AddTimerInternal(nsTimerImpl* aTimer);
+  bool    AddTimerInternal(nsTimerImpl* aTimer);
   bool    RemoveTimerInternal(nsTimerImpl* aTimer);
   void    RemoveLeadingCanceledTimersInternal();
+  void    RemoveFirstTimerInternal();
 
   already_AddRefed<nsTimerImpl> PostTimerEvent(already_AddRefed<nsTimerImpl> aTimerRef);
 
@@ -81,7 +81,7 @@ private:
 
   struct Entry
   {
-    const TimeStamp mTimeout;
+    TimeStamp mTimeout;
     RefPtr<nsTimerImpl> mTimerImpl;
 
     Entry(const TimeStamp& aMinTimeout, const TimeStamp& aTimeout,
@@ -90,9 +90,14 @@ private:
       mTimerImpl(aTimerImpl)
     { }
 
+    Entry(Entry&& aRight) = default;
+    Entry& operator=(Entry&& aRight) = default;
+
     bool operator<(const Entry& aRight) const
     {
-      return mTimeout < aRight.mTimeout;
+      
+      
+      return mTimeout > aRight.mTimeout;
     }
 
     bool operator==(const Entry& aRight) const
