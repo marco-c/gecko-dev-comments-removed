@@ -31,6 +31,13 @@ public:
   PMPageFormat GetPMPageFormat();
   void SetPMPageFormat(PMPageFormat aPageFormat);
 
+  
+  
+  nsresult InitUnwriteableMargin();
+
+  void SetInchesScale(float aWidthScale, float aHeightScale);
+  void GetInchesScale(float *aWidthScale, float *aHeightScale);
+
 protected:
   virtual ~nsPrintSettingsX();
 
@@ -41,14 +48,15 @@ protected:
   nsresult _Assign(nsIPrintSettings *aPS) override;
 
   
-  
-  nsresult InitUnwriteableMargin();
-
-  
   OSStatus CreateDefaultPageFormat(PMPrintSession aSession, PMPageFormat& outFormat);
   OSStatus CreateDefaultPrintSettings(PMPrintSession aSession, PMPrintSettings& outSettings);
 
   NSPrintInfo* mPrintInfo;
+
+  
+  
+  float mWidthScale;
+  float mHeightScale;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsPrintSettingsX, NS_PRINTSETTINGSX_IID)

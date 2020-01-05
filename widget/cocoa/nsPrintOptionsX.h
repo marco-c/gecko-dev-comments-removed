@@ -22,6 +22,13 @@ public:
              nsPrintOptionsX();
   virtual    ~nsPrintOptionsX();
 
+  
+
+
+
+
+
+
   NS_IMETHODIMP SerializeToPrintData(nsIPrintSettings* aSettings,
                                      nsIWebBrowserPrint* aWBP,
                                      mozilla::embedding::PrintData* data);
