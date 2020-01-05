@@ -226,6 +226,19 @@ function openLinkIn(url, where, params) {
   var aForceAboutBlankViewerInCurrent =
       params.forceAboutBlankViewerInCurrent;
 
+  
+  var w = getTopWin();
+
+  if ((where == "tab" || where == "tabshifted") &&
+      w && !w.toolbar.visible) {
+    w = getTopWin(true);
+    aRelatedToCurrent = false;
+  }
+
+  
+  
+  var aCurrentBrowser = params.currentBrowser || (w && w.gBrowser.selectedBrowser);
+
   if (where == "save") {
     
 
@@ -242,13 +255,6 @@ function openLinkIn(url, where, params) {
       saveURL(url, null, null, true, true, aNoReferrer ? null : aReferrerURI, aInitiatingDoc);
     }
     return;
-  }
-
-  var w = getTopWin();
-  if ((where == "tab" || where == "tabshifted") &&
-      w && !w.toolbar.visible) {
-    w = getTopWin(true);
-    aRelatedToCurrent = false;
   }
 
   if (!w || where == "window") {
@@ -318,12 +324,17 @@ function openLinkIn(url, where, params) {
     } catch (e) {}
   }
 
-  if (where == "current" && w.gBrowser.selectedTab.pinned &&
+  
+  
+  
+  
+  let tab = aCurrentBrowser.ownerGlobal.gBrowser.getTabForBrowser(aCurrentBrowser);
+  if (where == "current" && tab.pinned &&
       !aAllowPinnedTabHostChange) {
     try {
       
       if (!uriObj || (!uriObj.schemeIs("javascript") &&
-                      w.gBrowser.currentURI.host != uriObj.host)) {
+                      aCurrentBrowser.currentURI.host != uriObj.host)) {
         where = "tab";
         loadInBackground = false;
       }
@@ -365,7 +376,7 @@ function openLinkIn(url, where, params) {
       w.gBrowser.selectedBrowser.createAboutBlankContentViewer(aPrincipal);
     }
 
-    w.gBrowser.loadURIWithFlags(url, {
+    aCurrentBrowser.loadURIWithFlags(url, {
       flags: flags,
       referrerURI: aNoReferrer ? null : aReferrerURI,
       referrerPolicy: aReferrerPolicy,
@@ -394,7 +405,7 @@ function openLinkIn(url, where, params) {
     break;
   }
 
-  w.gBrowser.selectedBrowser.focus();
+  aCurrentBrowser.focus();
 
   if (!loadInBackground && w.isBlankPageURL(url)) {
     w.focusAndSelectUrlBar();

@@ -274,6 +274,9 @@ this.BrowserTestUtils = {
 
 
 
+
+
+
   waitForNewTab(tabbrowser, url) {
     return new Promise((resolve, reject) => {
       tabbrowser.tabContainer.addEventListener("TabOpen", function onTabOpen(openEvent) {
