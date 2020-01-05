@@ -338,6 +338,12 @@ protected:
   
   void ReleaseListeners();
 
+  
+  
+  
+  
+  void NotifySetCookie(char const *aCookie);
+
   mozilla::dom::Performance* GetPerformance();
   nsIURI* GetReferringPage();
   nsPIDOMWindowInner* GetInnerDOMWindow();
