@@ -578,44 +578,27 @@ IsNativeFunction(const js::Value& v, JSNative native)
 
 
 
-
-
-
-
 static MOZ_ALWAYS_INLINE bool
-ClassMethodIsNative(JSContext* cx, NativeObject* obj, const Class* clasp, jsid methodid, JSNative native)
+HasNativeMethodPure(JSObject* obj, PropertyName* name, JSNative native, JSContext* cx)
 {
-    MOZ_ASSERT(obj->getClass() == clasp);
-
     Value v;
-    if (!HasDataProperty(cx, obj, methodid, &v)) {
-        JSObject* proto = obj->staticPrototype();
-        if (!proto || proto->getClass() != clasp || !HasDataProperty(cx, &proto->as<NativeObject>(), methodid, &v))
-            return false;
-    }
+    if (!GetPropertyPure(cx, obj, NameToId(name), &v))
+        return false;
 
     return IsNativeFunction(v, native);
 }
 
 
-
-
 static MOZ_ALWAYS_INLINE bool
-HasObjectValueOf(JSObject* obj, JSContext* cx)
+HasNoToPrimitiveMethodPure(JSObject* obj, JSContext* cx)
 {
-    if (obj->is<ProxyObject>() || !obj->isNative())
+    jsid id = SYMBOL_TO_JSID(cx->wellKnownSymbols().toPrimitive);
+    JSObject* pobj;
+    Shape* shape;
+    if (!LookupPropertyPure(cx, obj, id, &pobj, &shape))
         return false;
 
-    jsid valueOf = NameToId(cx->names().valueOf);
-
-    Value v;
-    while (!HasDataProperty(cx, &obj->as<NativeObject>(), valueOf, &v)) {
-        obj = obj->staticPrototype();
-        if (!obj || obj->is<ProxyObject>() || !obj->isNative())
-            return false;
-    }
-
-    return IsNativeFunction(v, obj_valueOf);
+    return !shape;
 }
 
 
