@@ -352,4 +352,8 @@ pref("devtools.jsonview.enabled", true);
 
 
 
+#ifdef NIGHTLY_BUILD
+pref("devtools.responsive.html.enabled", true);
+#else
 pref("devtools.responsive.html.enabled", false);
+#endif

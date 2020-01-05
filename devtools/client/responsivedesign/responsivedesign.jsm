@@ -134,7 +134,9 @@ EventEmitter.decorate(Manager);
 
 
 
-if (Services.prefs.getBoolPref("devtools.responsive.html.enabled")) {
+
+if (Services.prefs.getBoolPref("devtools.responsive.html.enabled") &&
+    Services.appinfo.browserTabsRemoteAutostart) {
   let { ResponsiveUIManager } =
     require("devtools/client/responsive.html/manager");
   this.ResponsiveUIManager = ResponsiveUIManager;
