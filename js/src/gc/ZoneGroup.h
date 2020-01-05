@@ -41,11 +41,15 @@ class ZoneGroup
     
     UnprotectedData<size_t> enterCount;
 
+    
+    
+    UnprotectedData<bool> useExclusiveLocking;
+
   public:
     CooperatingContext& ownerContext() { return ownerContext_.ref(); }
     void* addressOfOwnerContext() { return &ownerContext_.ref().cx; }
 
-    void enter();
+    void enter(JSContext* cx);
     void leave();
     bool ownedByCurrentThread();
 
@@ -71,6 +75,9 @@ class ZoneGroup
 
     inline bool isCollecting();
     inline bool isGCScheduled();
+
+    
+    void setUseExclusiveLocking() { useExclusiveLocking = true; }
 
 #ifdef DEBUG
   private:
