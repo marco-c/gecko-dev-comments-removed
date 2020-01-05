@@ -15,7 +15,6 @@
 #include "xptiprivate.h"
 #include "nsDependentString.h"
 #include "nsString.h"
-#include "nsISupportsArray.h"
 #include "nsArrayEnumerator.h"
 #include "nsDirectoryService.h"
 #include "nsIMemoryReporter.h"
