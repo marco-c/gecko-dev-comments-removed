@@ -133,7 +133,7 @@ public:
 
   virtual BigImageIterator* AsBigImageIterator() { return nullptr; }
 
-  virtual void SetTextureSourceProvider(TextureSourceProvider* aProvider) {}
+  virtual void SetCompositor(Compositor* aCompositor) {}
 
   virtual void Unbind() {}
 
@@ -456,9 +456,7 @@ public:
 
 
 
-
-
-  virtual void SetTextureSourceProvider(TextureSourceProvider* aProvider) {}
+  virtual void SetCompositor(Compositor* aCompositor) {}
 
   
 
@@ -582,6 +580,8 @@ public:
 
   TextureReadLock* GetReadLock() { return mReadLock; }
 
+  virtual Compositor* GetCompositor() = 0;
+
   virtual BufferTextureHost* AsBufferTextureHost() { return nullptr; }
 
 protected:
@@ -600,7 +600,6 @@ protected:
   void CallNotifyNotUsed();
 
   PTextureParent* mActor;
-  RefPtr<TextureSourceProvider> mProvider;
   RefPtr<TextureReadLock> mReadLock;
   TextureFlags mFlags;
   int mCompositableCount;
@@ -609,7 +608,6 @@ protected:
   friend class Compositor;
   friend class TextureParent;
   friend class TiledLayerBufferComposite;
-  friend class TextureSourceProvider;
 };
 
 
@@ -648,7 +646,9 @@ public:
 
   virtual void DeallocateDeviceData() override;
 
-  virtual void SetTextureSourceProvider(TextureSourceProvider* aProvider) override;
+  virtual void SetCompositor(Compositor* aCompositor) override;
+
+  virtual Compositor* GetCompositor() override { return mCompositor; }
 
   
 

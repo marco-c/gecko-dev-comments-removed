@@ -297,13 +297,14 @@ void
 TextureHost::UnbindTextureSource()
 {
   if (mReadLock) {
+    auto compositor = GetCompositor();
     
     
     
     
     
-    if (mProvider) {
-      mProvider->UnlockAfterComposition(this);
+    if (compositor) {
+      compositor->UnlockAfterComposition(this);
     } else {
       
       
@@ -333,18 +334,21 @@ TextureHost::NotifyNotUsed()
     return;
   }
 
+  auto compositor = GetCompositor();
   
   
   
   
   
-  if (!mProvider ||
-      HasIntermediateBuffer() ||
-      !mProvider->NotifyNotUsedAfterComposition(this))
-  {
+  if (!compositor ||
+      compositor->IsDestroyed() ||
+      compositor->AsBasicCompositor() ||
+      HasIntermediateBuffer()) {
     static_cast<TextureParent*>(mActor)->NotifyNotUsed(mFwdTransactionId);
     return;
   }
+
+  compositor->NotifyNotUsedAfterComposition(this);
 }
 
 void
@@ -411,6 +415,7 @@ TextureSource::Name() const
 BufferTextureHost::BufferTextureHost(const BufferDescriptor& aDesc,
                                      TextureFlags aFlags)
 : TextureHost(aFlags)
+, mCompositor(nullptr)
 , mUpdateSerial(1)
 , mLocked(false)
 , mNeedsFullUpdate(false)
@@ -464,10 +469,19 @@ BufferTextureHost::UpdatedInternal(const nsIntRegion* aRegion)
 }
 
 void
-BufferTextureHost::SetTextureSourceProvider(TextureSourceProvider* aProvider)
+BufferTextureHost::SetCompositor(Compositor* aCompositor)
 {
-  if (mProvider == aProvider) {
+  MOZ_ASSERT(aCompositor);
+  if (mCompositor == aCompositor) {
     return;
+  }
+  if (aCompositor && mCompositor &&
+      aCompositor->GetBackendType() == mCompositor->GetBackendType()) {
+    RefPtr<TextureSource> it = mFirstSource;
+    while (it) {
+      it->SetCompositor(aCompositor);
+      it = it->GetNextSibling();
+    }
   }
   if (mFirstSource && mFirstSource->IsOwnedBy(this)) {
     mFirstSource->SetOwner(nullptr);
@@ -476,7 +490,7 @@ BufferTextureHost::SetTextureSourceProvider(TextureSourceProvider* aProvider)
     mFirstSource = nullptr;
     mNeedsFullUpdate = true;
   }
-  mProvider = aProvider;
+  mCompositor = aCompositor;
 }
 
 void
@@ -568,12 +582,12 @@ BufferTextureHost::EnsureWrappingTextureSource()
     mFirstSource = nullptr;
   }
 
-  if (!mProvider) {
+  if (!mCompositor) {
     return false;
   }
 
   if (mFormat == gfx::SurfaceFormat::YUV) {
-    mFirstSource = mProvider->CreateDataTextureSourceAroundYCbCr(this);
+    mFirstSource = mCompositor->CreateDataTextureSourceAroundYCbCr(this);
   } else {
     RefPtr<gfx::DataSourceSurface> surf =
       gfx::Factory::CreateWrappingDataSourceSurface(GetBuffer(),
@@ -581,7 +595,7 @@ BufferTextureHost::EnsureWrappingTextureSource()
     if (!surf) {
       return false;
     }
-    mFirstSource = mProvider->CreateDataTextureSourceAround(surf);
+    mFirstSource = mCompositor->CreateDataTextureSourceAround(surf);
   }
 
   if (!mFirstSource) {
@@ -603,9 +617,9 @@ BufferTextureHost::EnsureWrappingTextureSource()
 static
 bool IsCompatibleTextureSource(TextureSource* aTexture,
                                const BufferDescriptor& aDescriptor,
-                               TextureSourceProvider* aProvider)
+                               Compositor* aCompositor)
 {
-  if (!aProvider) {
+  if (!aCompositor) {
     return false;
   }
 
@@ -613,7 +627,7 @@ bool IsCompatibleTextureSource(TextureSource* aTexture,
     case BufferDescriptor::TYCbCrDescriptor: {
       const YCbCrDescriptor& ycbcr = aDescriptor.get_YCbCrDescriptor();
 
-      if (!aProvider->SupportsEffect(EffectTypes::YCBCR)) {
+      if (!aCompositor->SupportsEffect(EffectTypes::YCBCR)) {
         return aTexture->GetFormat() == gfx::SurfaceFormat::B8G8R8X8
             && aTexture->GetSize() == ycbcr.ySize();
       }
@@ -687,7 +701,7 @@ BufferTextureHost::PrepareTextureSource(CompositableTextureSourceRef& aTexture)
 
   bool compatibleFormats = texture && IsCompatibleTextureSource(texture,
                                                                 mDescriptor,
-                                                                mProvider);
+                                                                mCompositor);
 
   bool shouldCreateTexture = !compatibleFormats
                            || texture->NumCompositableRefs() > 1
@@ -703,7 +717,7 @@ BufferTextureHost::PrepareTextureSource(CompositableTextureSourceRef& aTexture)
     
     RefPtr<TextureSource> it = mFirstSource;
     while (it) {
-      it->SetTextureSourceProvider(mProvider);
+      it->SetCompositor(mCompositor);
       it = it->GetNextSibling();
     }
   }
@@ -743,8 +757,8 @@ BufferTextureHost::GetFormat() const
   
   
   if (mFormat == gfx::SurfaceFormat::YUV &&
-      mProvider &&
-      !mProvider->SupportsEffect(EffectTypes::YCBCR)) {
+    mCompositor &&
+    !mCompositor->SupportsEffect(EffectTypes::YCBCR)) {
     return gfx::SurfaceFormat::R8G8B8X8;
   }
   return mFormat;
@@ -805,7 +819,7 @@ BufferTextureHost::Upload(nsIntRegion *aRegion)
     
     return false;
   }
-  if (!mProvider) {
+  if (!mCompositor) {
     
     
     return false;
@@ -820,14 +834,14 @@ BufferTextureHost::Upload(nsIntRegion *aRegion)
   } else if (mFormat == gfx::SurfaceFormat::YUV) {
     const YCbCrDescriptor& desc = mDescriptor.get_YCbCrDescriptor();
 
-    if (!mProvider->SupportsEffect(EffectTypes::YCBCR)) {
+    if (!mCompositor->SupportsEffect(EffectTypes::YCBCR)) {
       RefPtr<gfx::DataSourceSurface> surf =
         ImageDataSerializer::DataSourceSurfaceFromYCbCrDescriptor(buf, mDescriptor.get_YCbCrDescriptor());
       if (NS_WARN_IF(!surf)) {
         return false;
       }
       if (!mFirstSource) {
-        mFirstSource = mProvider->CreateDataTextureSource(mFlags|TextureFlags::RGB_FROM_YCBCR);
+        mFirstSource = mCompositor->CreateDataTextureSource(mFlags|TextureFlags::RGB_FROM_YCBCR);
         mFirstSource->SetOwner(this);
       }
       mFirstSource->Update(surf, aRegion);
@@ -839,9 +853,9 @@ BufferTextureHost::Upload(nsIntRegion *aRegion)
     RefPtr<DataTextureSource> srcV;
     if (!mFirstSource) {
       
-      srcY = mProvider->CreateDataTextureSource(mFlags|TextureFlags::DISALLOW_BIGIMAGE);
-      srcU = mProvider->CreateDataTextureSource(mFlags|TextureFlags::DISALLOW_BIGIMAGE);
-      srcV = mProvider->CreateDataTextureSource(mFlags|TextureFlags::DISALLOW_BIGIMAGE);
+      srcY = mCompositor->CreateDataTextureSource(mFlags|TextureFlags::DISALLOW_BIGIMAGE);
+      srcU = mCompositor->CreateDataTextureSource(mFlags|TextureFlags::DISALLOW_BIGIMAGE);
+      srcV = mCompositor->CreateDataTextureSource(mFlags|TextureFlags::DISALLOW_BIGIMAGE);
       mFirstSource = srcY;
       mFirstSource->SetOwner(this);
       srcY->SetNextSibling(srcU);
@@ -888,7 +902,7 @@ BufferTextureHost::Upload(nsIntRegion *aRegion)
     
     nsIntRegion* regionToUpdate = aRegion;
     if (!mFirstSource) {
-      mFirstSource = mProvider->CreateDataTextureSource(mFlags);
+      mFirstSource = mCompositor->CreateDataTextureSource(mFlags);
       mFirstSource->SetOwner(this);
       if (mFlags & TextureFlags::COMPONENT_ALPHA) {
         
