@@ -1,0 +1,103 @@
+
+
+
+
+
+
+"use strict";
+
+const { createClass, DOM, PropTypes } = require("devtools/client/shared/vendor/react");
+const SourceEditor = require("devtools/client/sourceeditor/editor");
+
+const { div } = DOM;
+const SYNTAX_HIGHLIGHT_MAX_SIZE = 102400;
+
+
+
+
+const Editor = createClass({
+  displayName: "Editor",
+
+  propTypes: {
+    
+    mode: PropTypes.string,
+    
+    open: PropTypes.bool,
+    
+    text: PropTypes.string,
+  },
+
+  getDefaultProps() {
+    return {
+      mode: null,
+      open: true,
+      text: "",
+    };
+  },
+
+  componentDidMount() {
+    const { mode, text } = this.props;
+
+    this.editor = new SourceEditor({
+      lineNumbers: true,
+      mode: text.length < SYNTAX_HIGHLIGHT_MAX_SIZE ? mode : null,
+      readOnly: true,
+      value: text,
+    });
+
+    this.deferEditor = this.editor.appendTo(this.refs.editorElement);
+  },
+
+  componentDidUpdate(prevProps) {
+    const { mode, open, text } = this.props;
+
+    if (!open) {
+      return;
+    }
+
+    if (prevProps.mode !== mode && text.length < SYNTAX_HIGHLIGHT_MAX_SIZE) {
+      this.deferEditor.then(() => {
+        this.editor.setMode(mode);
+      });
+    }
+
+    if (prevProps.text !== text) {
+      this.deferEditor.then(() => {
+        
+        
+        
+        if (this.refs.editorElement) {
+          this.editor.setText(text);
+        }
+      });
+    }
+  },
+
+  componentWillUnmount() {
+    this.deferEditor.then(() => {
+      this.editor.destroy();
+      this.editor = null;
+    });
+    this.deferEditor = null;
+  },
+
+  render() {
+    const { open } = this.props;
+
+    return (
+      div({ className: "editor-container devtools-monospace" },
+        div({
+          ref: "editorElement",
+          className: "editor-mount devtools-monospace",
+          
+          
+          style: { visibility: open ? "visible" : "hidden" },
+        }),
+      )
+    );
+  }
+});
+
+module.exports = Editor;
+
+
