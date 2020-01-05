@@ -9,6 +9,7 @@
 
 #include "nscore.h"
 #include "nsStringFwd.h"
+#include "mozilla/Attributes.h"
 
 class nsIDocument;
 class nsINode;
@@ -152,7 +153,7 @@ void DOMTree(const char* aTitle, const char* aMsgText, DocAccessible* aDoc);
 
 
 
-void MsgBegin(const char* aTitle, const char* aMsgText, ...);
+void MsgBegin(const char* aTitle, const char* aMsgText, ...) MOZ_FORMAT_PRINTF(2, 3);
 void MsgEnd();
 
 
@@ -165,7 +166,7 @@ void SubMsgEnd();
 
 
 
-void MsgEntry(const char* aEntryText, ...);
+void MsgEntry(const char* aEntryText, ...) MOZ_FORMAT_PRINTF(1, 2);
 
 
 
