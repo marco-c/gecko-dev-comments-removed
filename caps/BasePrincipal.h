@@ -267,8 +267,10 @@ public:
 
   
   bool FastEquals(nsIPrincipal* aOther);
-  
+  bool FastEqualsConsideringDomain(nsIPrincipal* aOther);
   bool FastSubsumes(nsIPrincipal* aOther);
+  bool FastSubsumesConsideringDomain(nsIPrincipal* aOther);
+  bool FastSubsumesConsideringDomainIgnoringFPD(nsIPrincipal* aOther);
 
 protected:
   virtual ~BasePrincipal();

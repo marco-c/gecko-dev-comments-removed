@@ -379,21 +379,27 @@ BasePrincipal::Equals(nsIPrincipal *aOther, bool *aResult)
   return NS_OK;
 }
 
+bool
+BasePrincipal::FastEqualsConsideringDomain(nsIPrincipal* aOther)
+{
+  
+  
+  auto other = Cast(aOther);
+  if (!mDomainSet && !other->mDomainSet) {
+    return FastEquals(aOther);
+  }
+
+  return Subsumes(aOther, ConsiderDocumentDomain) &&
+         other->Subsumes(this, ConsiderDocumentDomain);
+}
+
 NS_IMETHODIMP
 BasePrincipal::EqualsConsideringDomain(nsIPrincipal *aOther, bool *aResult)
 {
   NS_ENSURE_TRUE(aOther, NS_ERROR_INVALID_ARG);
 
-  
-  
-  auto other = Cast(aOther);
-  if (!mDomainSet && !other->mDomainSet) {
-    *aResult = FastEquals(aOther);
-    return NS_OK;
-  }
+  *aResult = FastEqualsConsideringDomain(aOther);
 
-  *aResult = Subsumes(aOther, ConsiderDocumentDomain) &&
-             other->Subsumes(this, ConsiderDocumentDomain);
   return NS_OK;
 }
 
@@ -429,21 +435,39 @@ BasePrincipal::Subsumes(nsIPrincipal *aOther, bool *aResult)
   return NS_OK;
 }
 
+bool
+BasePrincipal::FastSubsumesConsideringDomain(nsIPrincipal* aOther)
+{
+  
+  
+  
+  if (!mDomainSet && !Cast(aOther)->mDomainSet) {
+    return FastSubsumes(aOther);
+  }
+
+  return Subsumes(aOther, ConsiderDocumentDomain);
+}
+
 NS_IMETHODIMP
 BasePrincipal::SubsumesConsideringDomain(nsIPrincipal *aOther, bool *aResult)
 {
   NS_ENSURE_TRUE(aOther, NS_ERROR_INVALID_ARG);
 
-  
-  
-  
-  if (!mDomainSet && !Cast(aOther)->mDomainSet) {
-    *aResult = FastSubsumes(aOther);
-    return NS_OK;
+  *aResult = FastSubsumesConsideringDomain(aOther);
+
+  return NS_OK;
+}
+
+bool
+BasePrincipal::FastSubsumesConsideringDomainIgnoringFPD(nsIPrincipal* aOther)
+{
+  if (Kind() == eCodebasePrincipal &&
+      !dom::ChromeUtils::IsOriginAttributesEqualIgnoringFPD(
+            OriginAttributesRef(), aOther->OriginAttributesRef())) {
+    return false;
   }
 
-  *aResult = Subsumes(aOther, ConsiderDocumentDomain);
-  return NS_OK;
+ return SubsumesInternal(aOther, ConsiderDocumentDomain);
 }
 
 NS_IMETHODIMP
@@ -452,14 +476,7 @@ BasePrincipal::SubsumesConsideringDomainIgnoringFPD(nsIPrincipal *aOther,
 {
   NS_ENSURE_TRUE(aOther, NS_ERROR_INVALID_ARG);
 
-  if (Kind() == eCodebasePrincipal &&
-      !dom::ChromeUtils::IsOriginAttributesEqualIgnoringFPD(
-            OriginAttributesRef(), aOther->OriginAttributesRef())) {
-    *aResult = false;
-    return NS_OK;
-  }
-
-  *aResult = SubsumesInternal(aOther, ConsiderDocumentDomain);
+  *aResult = FastSubsumesConsideringDomainIgnoringFPD(aOther);
 
   return NS_OK;
 }
