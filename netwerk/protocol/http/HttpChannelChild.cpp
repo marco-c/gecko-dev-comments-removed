@@ -3102,6 +3102,11 @@ void
 HttpChannelChild::TrySendDeletingChannel()
 {
   if (NS_IsMainThread()) {
+    if (NS_WARN_IF(!mIPCOpen)) {
+      
+      return;
+    }
+
     Unused << PHttpChannelChild::SendDeletingChannel();
     return;
   }

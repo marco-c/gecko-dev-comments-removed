@@ -256,7 +256,7 @@ private:
   
   bool mSendResumeAt;
 
-  bool mIPCOpen;
+  Atomic<bool> mIPCOpen;
   bool mKeptAlive;            
   RefPtr<ChannelEventQueue> mEventQ;
 
