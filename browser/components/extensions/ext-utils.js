@@ -81,7 +81,8 @@ XPCOMUtils.defineLazyGetter(this, "standaloneStylesheets", () => {
 
 extensions.on("page-shutdown", (type, context) => {
   if (context.viewType == "popup" && context.active) {
-    context.contentWindow.close();
+    
+    context.xulBrowser.contentWindow.close();
   }
 });
 

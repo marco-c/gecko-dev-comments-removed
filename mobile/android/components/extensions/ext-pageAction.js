@@ -64,11 +64,20 @@ PageAction.prototype = {
 
     this.shouldShow = true;
 
+    
+    
+    
+    
+    
+    let {contentWindow} = context.xulBrowser;
+
+    
+    
     let {icon} = IconDetails.getPreferredIcon(this.icons, this.extension,
-                                              18 * context.contentWindow.devicePixelRatio);
+                                              18 * contentWindow.devicePixelRatio);
 
     let browserWindow = Services.wm.getMostRecentWindow("navigator:browser");
-    return IconDetails.convertImageURLToDataURL(icon, context, browserWindow).then(dataURI => {
+    return IconDetails.convertImageURLToDataURL(icon, contentWindow, browserWindow).then(dataURI => {
       if (this.shouldShow) {
         this.options.icon = dataURI;
         this.id = PageActions.add(this.options);

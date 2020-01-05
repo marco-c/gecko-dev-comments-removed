@@ -104,9 +104,6 @@ class WannabeChildAPIManager extends ChildAPIManager {
     });
 
     
-    proxyContext.setContentWindow(this.context.contentWindow);
-
-    
     this.context.callOnClose({close: proxyContext.unload.bind(proxyContext)});
   }
 
