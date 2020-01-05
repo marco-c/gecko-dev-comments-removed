@@ -42,7 +42,7 @@ impl ExtraDisplayListData for Nothing {
 
 
 pub struct DisplayListBuilder<'self> {
-    ctx:  &'self LayoutContext,
+    ctx: &'self LayoutContext,
 }
 
 
