@@ -689,6 +689,12 @@ private:
 
 
 #define FCDATA_IS_CONTENTS 0x100000
+  
+
+
+
+
+#define FCDATA_ALLOW_GRID_FLEX_COLUMNSET 0x200000
 
   
 
