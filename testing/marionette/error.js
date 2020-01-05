@@ -100,11 +100,20 @@ error.isWebDriverError = function (obj) {
 
 
 
+
+
+
+
+
+
+
+
+
 error.wrap = function (err) {
   if (error.isWebDriverError(err)) {
     return err;
   }
-  return new WebDriverError(err);
+  return new UnknownError(err);
 };
 
 

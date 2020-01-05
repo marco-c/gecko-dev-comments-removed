@@ -57,15 +57,15 @@ add_test(function test_wrap() {
   ok(error.wrap(new InvalidArgumentError()) instanceof InvalidArgumentError);
 
   
-  equal(error.wrap(new Error()).name, "WebDriverError");
-  ok(error.wrap(new Error()) instanceof WebDriverError);
-  equal(error.wrap(new EvalError()).name, "WebDriverError");
-  equal(error.wrap(new InternalError()).name, "WebDriverError");
-  equal(error.wrap(new RangeError()).name, "WebDriverError");
-  equal(error.wrap(new ReferenceError()).name, "WebDriverError");
-  equal(error.wrap(new SyntaxError()).name, "WebDriverError");
-  equal(error.wrap(new TypeError()).name, "WebDriverError");
-  equal(error.wrap(new URIError()).name, "WebDriverError");
+  equal(error.wrap(new Error()).name, "UnknownError");
+  ok(error.wrap(new Error()) instanceof UnknownError);
+  equal(error.wrap(new EvalError()).name, "UnknownError");
+  equal(error.wrap(new InternalError()).name, "UnknownError");
+  equal(error.wrap(new RangeError()).name, "UnknownError");
+  equal(error.wrap(new ReferenceError()).name, "UnknownError");
+  equal(error.wrap(new SyntaxError()).name, "UnknownError");
+  equal(error.wrap(new TypeError()).name, "UnknownError");
+  equal(error.wrap(new URIError()).name, "UnknownError");
 
   
   
