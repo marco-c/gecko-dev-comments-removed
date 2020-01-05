@@ -34,9 +34,6 @@
 
 #include "nsMemoryReporterManager.h"
 
-#include "mozilla/StackWalk_windows.h"
-
-
 class PlatformData {
  public:
   
@@ -236,29 +233,6 @@ class SamplerThread
     if (!GetThreadContext(profiled_thread, &context)) {
       ResumeThread(profiled_thread);
       return;
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    if (aThreadInfo->CanInvokeJS()) {
-      if (!TryAcquireStackWalkWorkaroundLock()) {
-        ResumeThread(profiled_thread);
-        return;
-      }
-
-      
-      
-      
-      
-      
-      
-      ReleaseStackWalkWorkaroundLock();
     }
 
 #if V8_HOST_ARCH_X64

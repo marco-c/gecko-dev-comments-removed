@@ -9,6 +9,7 @@
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/IntegerPrintfMacros.h"
+#include "mozilla/ScopeExit.h"
 #include "mozilla/StackWalk.h"
 
 #include <string.h>
@@ -335,6 +336,20 @@ WalkStackMain64(struct WalkStackData* aData)
   frame64.AddrStack.Mode   = AddrModeFlat;
   frame64.AddrFrame.Mode   = AddrModeFlat;
   frame64.AddrReturn.Mode  = AddrModeFlat;
+#endif
+
+#ifdef _WIN64
+  
+  
+  
+  
+  
+  if (!TryAcquireStackWalkWorkaroundLock()) {
+    return;
+  }
+  auto releaseLock = mozilla::MakeScopeExit([] {
+    ReleaseStackWalkWorkaroundLock();
+  });
 #endif
 
   

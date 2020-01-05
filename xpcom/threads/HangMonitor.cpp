@@ -16,9 +16,6 @@
 #include "mozilla/UniquePtr.h"
 #include "nsReadableUtils.h"
 #include "mozilla/StackWalk.h"
-#ifdef _WIN64
-#include "mozilla/StackWalk_windows.h"
-#endif
 #include "nsThreadUtils.h"
 #include "nsXULAppAPI.h"
 #include "GeckoProfiler.h"
@@ -151,13 +148,6 @@ GetChromeHangReport(Telemetry::ProcessedStack& aStack,
   std::vector<uintptr_t> rawStack;
   rawStack.reserve(MAX_CALL_STACK_PCS);
 
-  
-  
-  
-  
-#ifdef _WIN64
-  AcquireStackWalkWorkaroundLock();
-#endif
   DWORD ret = ::SuspendThread(winMainThreadHandle);
   bool suspended = false;
   if (ret != -1) {
@@ -170,10 +160,6 @@ GetChromeHangReport(Telemetry::ProcessedStack& aStack,
       suspended = true;
     }
   }
-
-#ifdef _WIN64
-  ReleaseStackWalkWorkaroundLock();
-#endif
 
   if (!suspended) {
     if (ret != -1) {
