@@ -411,7 +411,7 @@ public:
 
 
 
-  nsIFrame* RootReferenceFrame() 
+  nsIFrame* RootReferenceFrame()
   {
     return mReferenceFrame;
   }
@@ -551,8 +551,8 @@ public:
   bool HaveScrollableDisplayPort() const { return mHaveScrollableDisplayPort; }
   void SetHaveScrollableDisplayPort() { mHaveScrollableDisplayPort = true; }
 
-  bool SetIsCompositingCheap(bool aCompositingCheap) { 
-    bool temp = mIsCompositingCheap; 
+  bool SetIsCompositingCheap(bool aCompositingCheap) {
+    bool temp = mIsCompositingCheap;
     mIsCompositingCheap = aCompositingCheap;
     return temp;
   }
@@ -1557,8 +1557,8 @@ class nsDisplayItemLink {
   
 protected:
   nsDisplayItemLink() : mAbove(nullptr) {}
-  nsDisplayItem* mAbove;  
-  
+  nsDisplayItem* mAbove;
+
   friend class nsDisplayList;
 };
 
@@ -1729,7 +1729,7 @@ public:
 
 
 
-  virtual bool IsInvalid(nsRect& aRect) { 
+  virtual bool IsInvalid(nsRect& aRect) {
     bool result = mFrame ? mFrame->IsInvalid(aRect) : false;
     aRect += ToReferenceFrame();
     return result;
@@ -2118,7 +2118,7 @@ public:
   virtual bool CanUseAsyncAnimations(nsDisplayListBuilder* aBuilder) {
     return false;
   }
-  
+
   virtual bool SupportsOptimizingToImage() { return false; }
 
   const DisplayItemClip& GetClip()
@@ -2221,7 +2221,7 @@ public:
     mTop->mAbove = aItem;
     mTop = aItem;
   }
-  
+
   
 
 
@@ -2231,7 +2231,7 @@ public:
       AppendToTop(aItem);
     }
   }
-  
+
   
 
 
@@ -2241,7 +2241,7 @@ public:
       AppendToBottom(aItem);
     }
   }
-  
+
   
 
 
@@ -2255,7 +2255,7 @@ public:
       mTop = aItem;
     }
   }
-  
+
   
 
 
@@ -2267,7 +2267,7 @@ public:
       aList->mSentinel.mAbove = nullptr;
     }
   }
-  
+
   
 
 
@@ -2278,22 +2278,22 @@ public:
       if (mTop == &mSentinel) {
         mTop = aList->mTop;
       }
-           
+
       aList->mTop = &aList->mSentinel;
       aList->mSentinel.mAbove = nullptr;
     }
   }
-  
+
   
 
 
   nsDisplayItem* RemoveBottom();
-  
+
   
 
 
   void DeleteAll();
-  
+
   
 
 
@@ -2305,7 +2305,7 @@ public:
 
   nsDisplayItem* GetBottom() const { return mSentinel.mAbove; }
   bool IsEmpty() const { return mTop == &mSentinel; }
-  
+
   
 
 
@@ -2333,9 +2333,21 @@ public:
 
 
 
-  typedef bool (* SortLEQ)(nsDisplayItem* aItem1, nsDisplayItem* aItem2,
-                             void* aClosure);
-  void Sort(SortLEQ aCmp, void* aClosure);
+
+  template<typename Item, typename Comparator>
+  void Sort(const Comparator& aComparator) {
+    nsTArray<Item> items;
+
+    while (nsDisplayItem* item = RemoveBottom()) {
+      items.AppendElement(Item(item));
+    }
+
+    std::stable_sort(items.begin(), items.end(), aComparator);
+
+    for (Item& item : items) {
+      AppendToTop(item);
+    }
+  }
 
   
 
@@ -2467,7 +2479,7 @@ private:
   
   
   void* operator new(size_t sz) CPP_THROW_NEW;
-  
+
   nsDisplayItemLink  mSentinel;
   nsDisplayItemLink* mTop;
 
@@ -2519,7 +2531,7 @@ public:
 
 
   nsDisplayList* Content() const { return mContent; }
-  
+
   nsDisplayListSet(nsDisplayList* aBorderBackground,
                    nsDisplayList* aBlockBorderBackgrounds,
                    nsDisplayList* aFloats,
@@ -2537,7 +2549,7 @@ public:
   
 
 
-  
+
   nsDisplayListSet(const nsDisplayListSet& aLists,
                    nsDisplayList* aBorderBackground) :
      mBorderBackground(aBorderBackground),
@@ -2547,7 +2559,7 @@ public:
      mPositioned(aLists.PositionedDescendants()),
      mOutlines(aLists.Outlines()) {
   }
-  
+
   
 
 
@@ -2582,7 +2594,7 @@ struct nsDisplayListCollection : public nsDisplayListSet {
 
   
 
-                     
+
   void SortAllByContentOrder(nsIContent* aCommonAncestor) {
     for (int32_t i = 0; i < 6; ++i) {
       mLists[i].SortByContentOrder(aCommonAncestor);
@@ -2675,7 +2687,7 @@ public:
     MOZ_COUNT_DTOR(nsDisplayGeneric);
   }
 #endif
-  
+
   virtual void Paint(nsDisplayListBuilder* aBuilder,
                      nsRenderingContext* aCtx) override {
     MOZ_ASSERT(!!mPaint != !!mOldPaint);
@@ -3130,7 +3142,7 @@ public:
   virtual void ComputeInvalidationRegion(nsDisplayListBuilder* aBuilder,
                                          const nsDisplayItemGeometry* aGeometry,
                                          nsRegion* aInvalidRegion) override;
-  
+
   virtual bool CanOptimizeToImageLayer(LayerManager* aManager,
                                        nsDisplayListBuilder* aBuilder) override;
   virtual already_AddRefed<imgIContainer> GetImage() override;
@@ -3370,11 +3382,11 @@ public:
   virtual bool ComputeVisibility(nsDisplayListBuilder* aBuilder,
                                  nsRegion* aVisibleRegion) override;
   NS_DISPLAY_DECL_NAME("BoxShadowOuter", TYPE_BOX_SHADOW_OUTER)
-  
+
   virtual void ComputeInvalidationRegion(nsDisplayListBuilder* aBuilder,
                                          const nsDisplayItemGeometry* aGeometry,
                                          nsRegion* aInvalidRegion) override;
-  
+
   virtual void ApplyOpacity(nsDisplayListBuilder* aBuilder,
                             float aOpacity,
                             const DisplayItemClipChain* aClip) override
@@ -3432,7 +3444,7 @@ public:
   virtual bool ComputeVisibility(nsDisplayListBuilder* aBuilder,
                                  nsRegion* aVisibleRegion) override;
   NS_DISPLAY_DECL_NAME("BoxShadowInner", TYPE_BOX_SHADOW_INNER)
-  
+
   virtual nsDisplayItemGeometry* AllocateGeometry(nsDisplayListBuilder* aBuilder) override
   {
     return new nsDisplayBoxShadowInnerGeometry(this, aBuilder);
@@ -3712,7 +3724,7 @@ public:
   NS_DISPLAY_DECL_NAME("WrapList", TYPE_WRAP_LIST)
 
   virtual nsRect GetComponentAlphaBounds(nsDisplayListBuilder* aBuilder) override;
-                                    
+
   virtual nsDisplayList* GetSameCoordinateSystemChildren() override
   {
     NS_ASSERTION(mList.IsEmpty() || !ReferenceFrame() ||
@@ -3911,7 +3923,7 @@ public:
 #ifdef NS_BUILD_REFCNT_LOGGING
     virtual ~nsDisplayBlendContainer();
 #endif
-    
+
     virtual already_AddRefed<Layer> BuildLayer(nsDisplayListBuilder* aBuilder,
                                                LayerManager* aManager,
                                                const ContainerLayerParameters& aContainerParameters) override;
@@ -3978,7 +3990,7 @@ public:
 #ifdef NS_BUILD_REFCNT_LOGGING
   virtual ~nsDisplayOwnLayer();
 #endif
-  
+
   virtual already_AddRefed<Layer> BuildLayer(nsDisplayListBuilder* aBuilder,
                                              LayerManager* aManager,
                                              const ContainerLayerParameters& aContainerParameters) override;
@@ -4206,7 +4218,7 @@ public:
 #ifdef NS_BUILD_REFCNT_LOGGING
   virtual ~nsDisplayZoom();
 #endif
-  
+
   virtual nsRect GetBounds(nsDisplayListBuilder* aBuilder, bool* aSnap) override;
   virtual void HitTest(nsDisplayListBuilder* aBuilder, const nsRect& aRect,
                        HitTestState* aState, nsTArray<nsIFrame*> *aOutFrames) override;
@@ -4381,7 +4393,7 @@ public:
 
 
 
- 
+
 class nsDisplayTransform: public nsDisplayItem
 {
   typedef mozilla::gfx::Matrix4x4 Matrix4x4;
@@ -4482,9 +4494,9 @@ public:
   virtual bool ComputeVisibility(nsDisplayListBuilder *aBuilder,
                                  nsRegion *aVisibleRegion) override;
   virtual bool TryMerge(nsDisplayItem *aItem) override;
-  
+
   virtual uint32_t GetPerFrameKey() override { return (mIndex << nsDisplayItem::TYPE_BITS) | nsDisplayItem::GetPerFrameKey(); }
-  
+
   virtual void ComputeInvalidationRegion(nsDisplayListBuilder* aBuilder,
                                          const nsDisplayItemGeometry* aGeometry,
                                          nsRegion* aInvalidRegion) override
@@ -4499,7 +4511,7 @@ public:
     if (!mTransformGetter) {
       return mFrame;
     }
-    return nsDisplayItem::ReferenceFrameForChildren(); 
+    return nsDisplayItem::ReferenceFrameForChildren();
   }
 
   AnimatedGeometryRoot* AnimatedGeometryRootForScrollMetadata() const override {
@@ -4550,7 +4562,7 @@ public:
 
 
 
-  static nsRect TransformRect(const nsRect &aUntransformedBounds, 
+  static nsRect TransformRect(const nsRect &aUntransformedBounds,
                               const nsIFrame* aFrame,
                               const nsRect* aBoundsOverride = nullptr);
 
