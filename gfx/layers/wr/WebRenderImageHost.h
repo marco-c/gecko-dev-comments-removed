@@ -12,6 +12,8 @@
 namespace mozilla {
 namespace layers {
 
+class WebRenderCompositableHolder;
+
 
 
 
@@ -65,9 +67,18 @@ public:
 
   virtual WebRenderImageHost* AsWebRenderImageHost() override { return this; }
 
+  TextureHost* GetAsTextureHostForComposite();
+
+  void SetWrCompositableHolder(WebRenderCompositableHolder* aWrCompositableHolder)
+  {
+    mWrCompositableHolder = aWrCompositableHolder;
+  }
+
 protected:
   
   virtual TimeStamp GetCompositionTime() const override;
+
+  WebRenderCompositableHolder* MOZ_NON_OWNING_REF mWrCompositableHolder;
 };
 
 } 

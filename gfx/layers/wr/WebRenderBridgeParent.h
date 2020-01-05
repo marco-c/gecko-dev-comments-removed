@@ -37,6 +37,7 @@ class Compositor;
 class CompositorBridgeParentBase;
 class CompositorVsyncScheduler;
 class WebRenderCompositableHolder;
+class WebRenderImageHost;
 
 class WebRenderBridgeParent final : public PWebRenderBridgeParent
                                   , public CompositorVsyncSchedulerOwner
@@ -209,7 +210,7 @@ private:
   std::vector<wr::ImageKey> mKeysToDelete;
   
   nsDataHashtable<nsUint64HashKey, wr::ImageKey> mActiveKeys;
-  nsDataHashtable<nsUint64HashKey, RefPtr<CompositableHost>> mExternalImageIds;
+  nsDataHashtable<nsUint64HashKey, RefPtr<WebRenderImageHost>> mExternalImageIds;
   nsTArray<ImageCompositeNotificationInfo> mImageCompositeNotifications;
 
   

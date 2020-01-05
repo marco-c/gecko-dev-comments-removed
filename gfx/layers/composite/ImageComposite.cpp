@@ -5,14 +5,13 @@
 
 #include "ImageComposite.h"
 
-
-#define BIAS_TIME_MS 1.0
-
 namespace mozilla {
 
 using namespace gfx;
 
 namespace layers {
+
+ const float ImageComposite::BIAS_TIME_MS = 1.0f;
 
 ImageComposite::ImageComposite()
   : mLastFrameID(-1)
@@ -24,8 +23,8 @@ ImageComposite::~ImageComposite()
 {
 }
 
-static TimeStamp
-GetBiasedTime(const TimeStamp& aInput, ImageComposite::Bias aBias)
+ TimeStamp
+ImageComposite::GetBiasedTime(const TimeStamp& aInput, ImageComposite::Bias aBias)
 {
   switch (aBias) {
   case ImageComposite::BIAS_NEGATIVE:
@@ -120,5 +119,3 @@ ImageComposite::TimedImage* ImageComposite::ChooseImage()
 
 } 
 } 
-
-#undef BIAS_TIME_MS
