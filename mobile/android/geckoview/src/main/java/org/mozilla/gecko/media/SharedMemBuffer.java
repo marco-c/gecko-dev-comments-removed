@@ -1,10 +1,11 @@
 
 
 
-package org.mozilla.gecko.mozglue;
+package org.mozilla.gecko.media;
 
 import android.os.Parcel;
 
+import org.mozilla.gecko.mozglue.SharedMemory;
 import org.mozilla.gecko.media.Sample;
 
 import java.io.IOException;
