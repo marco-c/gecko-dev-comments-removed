@@ -2,13 +2,19 @@
 
 
 
-use std::rt::io::{io_error, EndOfFile};
+use std::rt::io::{io_error, IoError};
 
 
-pub fn ignoring_eof<U>(cb: &fn() -> U) -> U {
-    io_error::cond.trap(|e|
-        match e.kind {
-            EndOfFile => (),
-            _ => io_error::cond.raise(e)
-        }).inside(cb)
+
+
+
+
+
+pub fn result<T>(cb: &fn() -> T) -> Result<T, IoError> {
+    let mut err = None;
+    let ret = io_error::cond.trap(|e| err = Some(e)).inside(cb);
+    match err {
+        Some(e) => Err(e),
+        None => Ok(ret),
+    }
 }
