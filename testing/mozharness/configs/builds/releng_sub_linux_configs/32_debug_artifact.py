@@ -26,7 +26,6 @@ config = {
     'app_ini_path': '%(obj_dir)s/dist/bin/application.ini',
     
     'enable_signing': False,
-    'enable_ccache': True,
     'vcs_share_base': '/builds/hg-shared',
     'objdir': MOZ_OBJDIR,
     'tooltool_script': ["/builds/tooltool.py"],

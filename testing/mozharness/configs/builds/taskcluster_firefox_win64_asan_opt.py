@@ -32,7 +32,6 @@ config = {
     'app_ini_path': '%(obj_dir)s/dist/bin/application.ini',
     
     'enable_signing': True,
-    'enable_ccache': False,
     'vcs_share_base': os.path.join('y:', os.sep, 'hg-shared'),
     'objdir': 'obj-firefox',
     'tooltool_script': [
