@@ -1931,6 +1931,9 @@ public abstract class GeckoApp
         
         final UrlAnnotations urlAnnotations = BrowserDB.from(getApplicationContext()).getUrlAnnotations();
         urlAnnotations.insertHomeScreenShortcut(getContentResolver(), aURI, true);
+
+        
+        ActivityUtils.goToHomeScreen(this);
     }
 
     private Bitmap getLauncherIcon(Bitmap aSource, int size) {
