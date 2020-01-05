@@ -28,8 +28,7 @@ pub enum StorageTaskMsg {
     GetItem(IpcSender<Option<DOMString>>, Url, StorageType, DOMString),
 
     
-    
-    SetItem(IpcSender<(bool, Option<DOMString>)>, Url, StorageType, DOMString, DOMString),
+    SetItem(IpcSender<Result<(bool, Option<DOMString>), ()>>, Url, StorageType, DOMString, DOMString),
 
     
     RemoveItem(IpcSender<Option<DOMString>>, Url, StorageType, DOMString),
