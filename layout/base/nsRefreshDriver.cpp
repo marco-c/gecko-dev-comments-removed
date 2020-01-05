@@ -1437,17 +1437,11 @@ nsRefreshDriver::SetHighPrecisionTimersEnabled(bool aEnable)
 
       nsCOMPtr<nsITimer> timer = do_CreateInstance(NS_TIMER_CONTRACTID);
       if (timer) {
-        if (nsPresContext* pc = GetPresContext()) {
-          timer->SetTarget(
-              pc->Document()->EventTargetFor(TaskCategory::Other));
-        }
         timer.forget(&sDisableHighPrecisionTimersTimer);
-        sDisableHighPrecisionTimersTimer->
-          InitWithNamedFuncCallback(DisableHighPrecisionTimersCallback,
-                                    nullptr,
-                                    90 * 1000,
-                                    nsITimer::TYPE_ONE_SHOT,
-                                    "DisableHighPrecisionTimersCallback");
+        sDisableHighPrecisionTimersTimer->InitWithFuncCallback(DisableHighPrecisionTimersCallback,
+                                                               nullptr,
+                                                               90 * 1000,
+                                                               nsITimer::TYPE_ONE_SHOT);
       } else {
         
         
@@ -1897,7 +1891,7 @@ nsRefreshDriver::Tick(int64_t aNowEpoch, TimeStamp aNowTime)
           continue;
 
         if (!tracingLayoutFlush) {
-          tracingLayoutFlush.emplace("Paint", "Reflow");
+          tracingLayoutFlush.emplace("Paint", "Reflow", Move(mReflowCause));
           mReflowCause = nullptr;
         }
 
@@ -2117,17 +2111,8 @@ nsRefreshDriver::Thaw()
       
       
       
-      RefPtr<nsRunnableMethod<nsRefreshDriver>> event =
-        NewRunnableMethod(this, &nsRefreshDriver::DoRefresh);
-      nsPresContext* pc = GetPresContext();
-      if (pc) {
-        pc->Document()->Dispatch("nsRefreshDriver::DoRefresh",
-                                 TaskCategory::Other,
-                                 event.forget());
-        EnsureTimerStarted();
-      } else {
-        NS_ERROR("Thawing while document is being destroyed");
-      }
+      NS_DispatchToCurrentThread(NewRunnableMethod(this, &nsRefreshDriver::DoRefresh));
+      EnsureTimerStarted();
     }
   }
 }
