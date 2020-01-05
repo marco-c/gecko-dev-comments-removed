@@ -125,6 +125,10 @@ IsCertChainRootBuiltInRoot(const UniqueCERTCertList& chain, bool& result)
   return IsCertBuiltInRoot(root, result);
 }
 
+
+
+
+
 Result
 IsCertBuiltInRoot(CERTCertificate* cert, bool& result)
 {
@@ -152,10 +156,23 @@ IsCertBuiltInRoot(CERTCertificate* cert, bool& result)
       
       
       
-      if (PK11_IsPresent(slot) && PK11_HasRootCerts(slot) &&
-          PK11_FindCertInSlot(slot, cert, nullptr) != CK_INVALID_HANDLE) {
-        result = true;
-        return Success;
+      
+      
+      
+      
+      
+      
+      
+      
+      if (PK11_IsPresent(slot) && PK11_HasRootCerts(slot)) {
+        CK_OBJECT_HANDLE handle = PK11_FindCertInSlot(slot, cert, nullptr);
+        if (handle != CK_INVALID_HANDLE &&
+            PK11_HasAttributeSet(slot, handle, CKA_NSS_MOZILLA_CA_POLICY,
+                                 false)) {
+          
+          result = true;
+          break;
+        }
       }
     }
   }
