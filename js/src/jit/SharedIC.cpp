@@ -187,7 +187,6 @@ ICStub::NonCacheIRStubMakesGCCalls(Kind kind)
       case GetProp_CallNativeGlobal:
       case GetProp_CallDOMProxyNative:
       case GetProp_CallDOMProxyWithGenerationNative:
-      case GetProp_DOMProxyShadowed:
       case GetProp_Generic:
       case SetProp_CallScripted:
       case SetProp_CallNative:
@@ -478,12 +477,6 @@ ICStub::trace(JSTracer* trc)
         TraceEdge(trc, &propStub->holder(), "baseline-getproplistbasenative-stub-holder");
         TraceEdge(trc, &propStub->holderShape(), "baseline-getproplistbasenative-stub-holdershape");
         TraceEdge(trc, &propStub->getter(), "baseline-getproplistbasenative-stub-getter");
-        break;
-      }
-      case ICStub::GetProp_DOMProxyShadowed: {
-        ICGetProp_DOMProxyShadowed* propStub = toGetProp_DOMProxyShadowed();
-        TraceEdge(trc, &propStub->shape(), "baseline-getproplistbaseshadowed-stub-shape");
-        TraceEdge(trc, &propStub->name(), "baseline-getproplistbaseshadowed-stub-name");
         break;
       }
       case ICStub::GetProp_CallNativeGlobal: {
@@ -2464,21 +2457,8 @@ TryAttachNativeGetAccessorPropStub(JSContext* cx, SharedStubInfo* info,
                                                 isTemporarilyUnoptimizable,
                                                 isDOMProxy);
 
-    
-    if (isDOMProxy && DOMProxyIsShadowing(domProxyShadowsResult)) {
-        MOZ_ASSERT(obj == holder);
-
-        JitSpew(JitSpew_BaselineIC, "  Generating GetProp(DOMProxyProxy) stub");
-        Rooted<ProxyObject*> proxy(cx, &obj->as<ProxyObject>());
-        ICGetProp_DOMProxyShadowed::Compiler compiler(cx, info->engine(), monitorStub, proxy, name,
-                                                      info->pcOffset());
-        ICStub* newStub = compiler.getStub(compiler.getStubSpace(info->outerScript(cx)));
-        if (!newStub)
-            return false;
-        stub->addNewStub(newStub);
-        *attached = true;
-        return true;
-    }
+    if (isDOMProxy && DOMProxyIsShadowing(domProxyShadowsResult))
+        return true; 
 
     
     if (!cacheableCall || isScripted)
@@ -3256,76 +3236,6 @@ ICGetPropCallDOMProxyNativeCompiler::getStub(ICStubSpace* space)
         pcOffset_);
 }
 
-ICStub*
-ICGetProp_DOMProxyShadowed::Compiler::getStub(ICStubSpace* space)
-{
-    RootedShape shape(cx, proxy_->maybeShape());
-    return New<ICGetProp_DOMProxyShadowed>(cx, space, getStubCode(), firstMonitorStub_, shape,
-                                           proxy_->handler(), name_, pcOffset_);
-}
-
-static bool
-ProxyGet(JSContext* cx, HandleObject proxy, HandlePropertyName name, MutableHandleValue vp)
-{
-    RootedValue receiver(cx, ObjectValue(*proxy));
-    RootedId id(cx, NameToId(name));
-    return Proxy::get(cx, proxy, receiver, id, vp);
-}
-
-typedef bool (*ProxyGetFn)(JSContext* cx, HandleObject proxy, HandlePropertyName name,
-                           MutableHandleValue vp);
-static const VMFunction ProxyGetInfo = FunctionInfo<ProxyGetFn>(ProxyGet, "ProxyGet");
-
-bool
-ICGetProp_DOMProxyShadowed::Compiler::generateStubCode(MacroAssembler& masm)
-{
-    Label failure;
-
-    AllocatableGeneralRegisterSet regs(availableGeneralRegs(1));
-    
-    
-    
-    Register scratch = regs.takeAnyExcluding(ICTailCallReg);
-
-    
-    masm.branchTestObject(Assembler::NotEqual, R0, &failure);
-
-    
-    Register objReg = masm.extractObject(R0, ExtractTemp0);
-
-    
-    masm.loadPtr(Address(ICStubReg, ICGetProp_DOMProxyShadowed::offsetOfShape()), scratch);
-    masm.branchTestObjShape(Assembler::NotEqual, objReg, scratch, &failure);
-
-    
-    
-
-    
-
-    
-    enterStubFrame(masm, scratch);
-
-    
-    masm.loadPtr(Address(ICStubReg, ICGetProp_DOMProxyShadowed::offsetOfName()), scratch);
-    masm.Push(scratch);
-    masm.Push(objReg);
-
-    
-    regs.add(R0);
-
-    if (!callVM(ProxyGetInfo, masm))
-        return false;
-    leaveStubFrame(masm);
-
-    
-    EmitEnterTypeMonitorIC(masm);
-
-    
-    masm.bind(&failure);
-    EmitStubGuardFailure(masm);
-    return true;
-}
-
 bool
 ICGetProp_ArgumentsLength::Compiler::generateStubCode(MacroAssembler& masm)
 {
@@ -3573,28 +3483,6 @@ ICGetProp_CallDOMProxyWithGenerationNative::Clone(JSContext* cx,
                                                            other.expandoShape_, other.holder_,
                                                            other.holderShape_, other.getter_,
                                                            other.pcOffset_);
-}
-
-ICGetProp_DOMProxyShadowed::ICGetProp_DOMProxyShadowed(JitCode* stubCode,
-                                                       ICStub* firstMonitorStub,
-                                                       Shape* shape,
-                                                       const BaseProxyHandler* proxyHandler,
-                                                       PropertyName* name,
-                                                       uint32_t pcOffset)
-  : ICMonitoredStub(ICStub::GetProp_DOMProxyShadowed, stubCode, firstMonitorStub),
-    shape_(shape),
-    proxyHandler_(proxyHandler),
-    name_(name),
-    pcOffset_(pcOffset)
-{ }
-
- ICGetProp_DOMProxyShadowed*
-ICGetProp_DOMProxyShadowed::Clone(JSContext* cx, ICStubSpace* space, ICStub* firstMonitorStub,
-                                  ICGetProp_DOMProxyShadowed& other)
-{
-    return New<ICGetProp_DOMProxyShadowed>(cx, space, other.jitCode(), firstMonitorStub,
-                                           other.shape_, other.proxyHandler_, other.name_,
-                                           other.pcOffset_);
 }
 
 
