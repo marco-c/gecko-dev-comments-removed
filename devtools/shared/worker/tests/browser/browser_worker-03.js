@@ -1,12 +1,14 @@
 
 
 
+"use strict";
 
 
 
 
 
-const { DevToolsWorker, workerify } = require("devtools/shared/worker/worker");
+
+const { workerify } = require("devtools/shared/worker/worker");
 function square(x) {
   return x * x;
 }

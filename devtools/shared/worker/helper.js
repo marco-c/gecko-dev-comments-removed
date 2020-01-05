@@ -1,9 +1,12 @@
 
 
 
-(function (root, factory) {
-  "use strict";
 
+
+
+"use strict";
+
+(function (root, factory) {
   if (typeof define === "function" && define.amd) {
     define(factory);
   } else if (typeof exports === "object") {
@@ -12,8 +15,6 @@
     root.workerHelper = factory();
   }
 }(this, function () {
-  "use strict";
-
   
 
 
@@ -81,23 +82,20 @@
       }
 
       try {
-        let results;
         handleResponse(taskFn(data));
-      } catch (e) {
-        handleError(e);
+      } catch (ex) {
+        handleError(ex);
       }
 
       function handleResponse(response) {
         
         if (response && typeof response.then === "function") {
           response.then(val => self.postMessage({ id, response: val }), handleError);
-        }
-        
-        else if (response instanceof Error) {
+        } else if (response instanceof Error) {
+          
           handleError(response);
-        }
-        
-        else {
+        } else {
+          
           self.postMessage({ id, response });
         }
       }
@@ -106,21 +104,23 @@
         try {
           
           self.postMessage({ id, error });
-        } catch (_) {
+        } catch (x) {
           
           
           let errorString = `Error while performing task "${task}": `;
 
           try {
             errorString += error.toString();
-          } catch (_) {
+          } catch (ex) {
             errorString += "<could not stringify error>";
           }
 
           if ("stack" in error) {
             try {
               errorString += "\n" + error.stack;
-            } catch (_) { }
+            } catch (err) {
+              
+            }
           }
 
           self.postMessage({ id, error: errorString });
@@ -130,4 +130,4 @@
   }
 
   return { createTask: createTask };
-}.bind(this)));
+}));

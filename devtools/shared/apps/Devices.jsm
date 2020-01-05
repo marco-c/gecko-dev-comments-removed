@@ -6,6 +6,8 @@
 
 Components.utils.import("resource://devtools/shared/event-emitter.js");
 
+
+
 const EXPORTED_SYMBOLS = ["Devices"];
 
 var addonInstalled = false;

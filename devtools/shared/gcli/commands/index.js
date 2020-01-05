@@ -107,7 +107,7 @@ try {
 
 
 
-exports.addAllItemsByModule = function(system) {
+exports.addAllItemsByModule = function (system) {
   system.addItemsByModule(exports.baseModules, { delayedLoad: true });
   system.addItemsByModule(exports.devtoolsModules, { delayedLoad: true });
   system.addItemsByModule(exports.devtoolsToolModules, { delayedLoad: true });
@@ -133,7 +133,7 @@ var customProperties = [ "buttonId", "buttonClass", "tooltipText" ];
 
 
 
-exports.getSystem = function(target) {
+exports.getSystem = function (target) {
   const existingLinks = linksForTarget.get(target);
   if (existingLinks != null) {
     existingLinks.refs++;
@@ -164,7 +164,7 @@ exports.getSystem = function(target) {
 
 
 
-exports.releaseSystem = function(target) {
+exports.releaseSystem = function (target) {
   const links = linksForTarget.get(target);
   if (links == null) {
     throw new Error("releaseSystem called for unknown target");

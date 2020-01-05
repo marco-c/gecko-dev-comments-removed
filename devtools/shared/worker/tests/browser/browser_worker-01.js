@@ -1,6 +1,8 @@
 
 
 
+"use strict";
+
 
 
 
@@ -37,7 +39,7 @@ function* testWorker(context, workerFactory) {
   ok(results.plottedData.length,
     `worker should have returned an object with array properties in ${context}`);
 
-  let fn = workerify(function (x) { return x * x; });
+  let fn = workerify(x => x * x);
   is((yield fn(5)), 25, `workerify works in ${context}`);
   fn.destroy();
 

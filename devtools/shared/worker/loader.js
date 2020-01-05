@@ -20,6 +20,8 @@
 
 
 
+
+
 this.EXPORTED_SYMBOLS = ["WorkerDebuggerLoader", "worker"];
 
 
@@ -60,7 +62,7 @@ function normalizeId(id) {
   
   
   
-  let [_, root, path] = id.match(/^(\w+:\/\/\/?|\/)?(.*)/);
+  let [, root, path] = id.match(/^(\w+:\/\/\/?|\/)?(.*)/);
 
   let stack = [];
   path.split("/").forEach(function (component) {
@@ -75,12 +77,10 @@ function normalizeId(id) {
           } else {
             stack.push("..");
           }
+        } else if (stack[stack.length - 1] == "..") {
+          stack.push("..");
         } else {
-          if (stack[stack.length - 1] == "..") {
-            stack.push("..");
-          } else {
-            stack.pop();
-          }
+          stack.pop();
         }
         break;
       default:
@@ -336,7 +336,8 @@ var loader = {
     Object.defineProperty(object, name, {
       get: function () {
         delete object[name];
-        return object[name] = lambda.apply(object);
+        object[name] = lambda.apply(object);
+        return object[name];
       },
       configurable: true,
       enumerable: true
@@ -361,6 +362,7 @@ var loader = {
 
 
 
+
 var {
   Debugger,
   URL,
@@ -372,13 +374,12 @@ var {
   setImmediate,
   xpcInspector,
 } = (function () {
-  if (typeof Components === "object") { 
+  
+  if (typeof Components === "object") {
     let {
       Constructor: CC,
       classes: Cc,
-      manager: Cm,
       interfaces: Ci,
-      results: Cr,
       utils: Cu
     } = Components;
 
@@ -406,8 +407,8 @@ var {
 
     let rpc = undefined;
 
-    let subScriptLoader = Cc["@mozilla.org/moz/jssubscript-loader;1"].
-                 getService(Ci.mozIJSSubScriptLoader);
+    let subScriptLoader = Cc["@mozilla.org/moz/jssubscript-loader;1"]
+                 .getService(Ci.mozIJSSubScriptLoader);
 
     let loadSubScript = function (url, sandbox) {
       subScriptLoader.loadSubScript(url, sandbox, "UTF-8");
@@ -421,8 +422,8 @@ var {
       Timer.setTimeout(callback, 0);
     };
 
-    let xpcInspector = Cc["@mozilla.org/jsinspector;1"].
-                       getService(Ci.nsIJSInspector);
+    let xpcInspector = Cc["@mozilla.org/jsinspector;1"]
+                       .getService(Ci.nsIJSInspector);
 
     return {
       Debugger,
@@ -435,46 +436,47 @@ var {
       setImmediate,
       xpcInspector
     };
-  } else { 
-    let requestors = [];
-
-    let scope = this;
-
-    let xpcInspector = {
-      get eventLoopNestLevel() {
-        return requestors.length;
-      },
-
-      get lastNestRequestor() {
-        return requestors.length === 0 ? null : requestors[requestors.length - 1];
-      },
-
-      enterNestedEventLoop: function (requestor) {
-        requestors.push(requestor);
-        scope.enterEventLoop();
-        return requestors.length;
-      },
-
-      exitNestedEventLoop: function () {
-        requestors.pop();
-        scope.leaveEventLoop();
-        return requestors.length;
-      }
-    };
-
-    return {
-      Debugger: this.Debugger,
-      URL: this.URL,
-      createSandbox: this.createSandbox,
-      dump: this.dump,
-      rpc: this.rpc,
-      loadSubScript: this.loadSubScript,
-      reportError: this.reportError,
-      setImmediate: this.setImmediate,
-      xpcInspector: xpcInspector
-    };
   }
+  
+  let requestors = [];
+
+  let scope = this;
+
+  let xpcInspector = {
+    get eventLoopNestLevel() {
+      return requestors.length;
+    },
+
+    get lastNestRequestor() {
+      return requestors.length === 0 ? null : requestors[requestors.length - 1];
+    },
+
+    enterNestedEventLoop: function (requestor) {
+      requestors.push(requestor);
+      scope.enterEventLoop();
+      return requestors.length;
+    },
+
+    exitNestedEventLoop: function () {
+      requestors.pop();
+      scope.leaveEventLoop();
+      return requestors.length;
+    }
+  };
+
+  return {
+    Debugger: this.Debugger,
+    URL: this.URL,
+    createSandbox: this.createSandbox,
+    dump: this.dump,
+    rpc: this.rpc,
+    loadSubScript: this.loadSubScript,
+    reportError: this.reportError,
+    setImmediate: this.setImmediate,
+    xpcInspector: xpcInspector
+  };
 }).call(this);
+
 
 
 
