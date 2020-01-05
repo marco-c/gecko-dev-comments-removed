@@ -4,6 +4,8 @@
 
 #![allow(non_camel_case_types)]
 
+use url::{Url, UrlParser};
+
 pub use servo_util::geometry::Au;
 
 pub type CSSFloat = f64;
@@ -184,7 +186,7 @@ pub mod computed {
         pub border_bottom_present: bool,
         pub border_left_present: bool,
         pub is_root_element: bool,
-        
+        // TODO, as needed: root font size, viewport size, etc.
     }
 
     #[allow(non_snake_case_functions)]
@@ -193,7 +195,7 @@ pub mod computed {
         compute_Au_with_font_size(value, context.font_size)
     }
 
-    
+    /// A special version of `compute_Au` used for `font-size`.
     #[allow(non_snake_case_functions)]
     #[inline]
     pub fn compute_Au_with_font_size(value: specified::Length, reference_font_size: Au) -> Au {
@@ -201,7 +203,7 @@ pub mod computed {
             specified::Au_(value) => value,
             specified::Em(value) => reference_font_size.scale_by(value),
             specified::Ex(value) => {
-                let x_height = 0.5;  
+                let x_height = 0.5;  // TODO: find that from the font
                 reference_font_size.scale_by(value * x_height)
             },
         }
@@ -252,4 +254,9 @@ pub mod computed {
             specified::LPN_None => LPN_None,
         }
     }
+}
+
+pub fn parse_url(input: &str, base_url: &Url) -> Url {
+    UrlParser::new().base_url(base_url).parse(input)
+        .unwrap_or_else(|_| Url::parse("about:invalid").unwrap())
 }
