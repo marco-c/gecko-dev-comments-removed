@@ -70,6 +70,19 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
       gBrowser.hideTab(containerTab);
       let containerBrowser = containerTab.linkedBrowser;
       
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      containerBrowser.messageManager.sendAsyncMessage("SessionStore:flush", {
+        epoch: -1,
+      });
+      
       containerBrowser.loadURIWithFlags(containerURL, {
         flags: Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_HISTORY,
       });

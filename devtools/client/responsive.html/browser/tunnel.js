@@ -13,6 +13,8 @@ const { getStack } = require("devtools/shared/platform/stack");
 
 const FRAME_LOADER = Symbol("devtools/responsive/frame-loader");
 
+exports.OUTER_FRAME_LOADER_SYMBOL = FRAME_LOADER;
+
 function debug(msg) {
   
 }
