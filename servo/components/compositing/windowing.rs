@@ -61,7 +61,7 @@ pub trait ApplicationMethods {
 
 pub trait WindowMethods<A> {
     
-    fn new(app: &A, is_foreground: bool) -> Rc<Self>;
+    fn new(app: &A, is_foreground: bool, size: TypedSize2D<DevicePixel, uint>) -> Rc<Self>;
     
     fn framebuffer_size(&self) -> TypedSize2D<DevicePixel, uint>;
     
