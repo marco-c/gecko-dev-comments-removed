@@ -491,3 +491,23 @@ function waitForContentMessage(name) {
   });
   return def.promise;
 }
+
+
+
+
+
+
+
+function openContextMenuAndGetAllItems(netmonitor, options) {
+  let menu = netmonitor.RequestsMenu._openMenu(options);
+
+  
+  let allItems = [].concat.apply([], menu.items.map(function addItem(item) {
+    if (item.submenu) {
+      return addItem(item.submenu.items);
+    }
+    return item;
+  }));
+
+  return allItems;
+}
