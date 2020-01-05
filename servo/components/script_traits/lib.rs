@@ -74,6 +74,8 @@ pub enum ConstellationControlMsg {
     Navigate(PipelineId, SubpageId, LoadData),
     
     MozBrowserEvent(PipelineId, SubpageId, String, Option<String>),
+    
+    UpdateSubpageId(PipelineId, SubpageId, SubpageId),
 }
 
 unsafe impl Send for ConstellationControlMsg {
