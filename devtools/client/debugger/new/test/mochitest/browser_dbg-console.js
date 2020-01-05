@@ -37,6 +37,9 @@ add_task(function* () {
 
   
   clickElement(dbg, "codeMirror");
+  
+  pressKey(dbg, "Escape");
+  
   pressKey(dbg, "Escape");
   ok(!dbg.toolbox.splitConsole, "Split console is hidden.");
 });
