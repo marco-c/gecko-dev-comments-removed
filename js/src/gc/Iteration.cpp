@@ -4,6 +4,8 @@
 
 
 
+#include "mozilla/DebugOnly.h"
+
 #include "jscompartment.h"
 #include "jsgc.h"
 
@@ -123,7 +125,7 @@ js::IterateGrayObjects(Zone* zone, GCThingCallback cellCallback, void* data)
 void
 js::IterateGrayObjectsUnderCC(Zone* zone, GCThingCallback cellCallback, void* data)
 {
-    JSRuntime* rt = zone->runtimeFromMainThread();
+    mozilla::DebugOnly<JSRuntime*> rt = zone->runtimeFromMainThread();
     MOZ_ASSERT(rt->isCycleCollecting());
     MOZ_ASSERT(!rt->gc.isIncrementalGCInProgress());
     ::IterateGrayObjects(zone, cellCallback, data);
