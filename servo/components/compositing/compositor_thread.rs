@@ -13,7 +13,7 @@ use msg::constellation_msg::{Key, KeyModifiers, KeyState, PipelineId};
 use net_traits::image::base::Image;
 use profile_traits::mem;
 use profile_traits::time;
-use script_traits::{AnimationState, ConstellationMsg, EventResult};
+use script_traits::{AnimationState, ConstellationMsg, EventResult, LoadData};
 use servo_url::ServoUrl;
 use std::fmt::{Debug, Error, Formatter};
 use std::sync::mpsc::{Receiver, Sender};
@@ -76,15 +76,15 @@ pub enum Msg {
     
     ChangePageTitle(PipelineId, Option<String>),
     
-    ChangePageUrl(PipelineId, ServoUrl),
-    
     ChangeRunningAnimationsState(PipelineId, AnimationState),
     
     SetFrameTree(SendableFrameTree, IpcSender<()>),
     
-    LoadStart(bool, bool),
+    LoadStart,
     
-    LoadComplete(bool, bool, bool),
+    LoadComplete,
+    
+    HistoryChanged(Vec<LoadData>, usize),
     
     AllowNavigation(ServoUrl, IpcSender<bool>),
     
@@ -142,11 +142,11 @@ impl Debug for Msg {
             Msg::ScrollFragmentPoint(..) => write!(f, "ScrollFragmentPoint"),
             Msg::ChangeRunningAnimationsState(..) => write!(f, "ChangeRunningAnimationsState"),
             Msg::ChangePageTitle(..) => write!(f, "ChangePageTitle"),
-            Msg::ChangePageUrl(..) => write!(f, "ChangePageUrl"),
             Msg::SetFrameTree(..) => write!(f, "SetFrameTree"),
-            Msg::LoadComplete(..) => write!(f, "LoadComplete"),
+            Msg::LoadComplete => write!(f, "LoadComplete"),
             Msg::AllowNavigation(..) => write!(f, "AllowNavigation"),
-            Msg::LoadStart(..) => write!(f, "LoadStart"),
+            Msg::LoadStart => write!(f, "LoadStart"),
+            Msg::HistoryChanged(..) => write!(f, "HistoryChanged"),
             Msg::DelayedCompositionTimeout(..) => write!(f, "DelayedCompositionTimeout"),
             Msg::Recomposite(..) => write!(f, "Recomposite"),
             Msg::KeyEvent(..) => write!(f, "KeyEvent"),

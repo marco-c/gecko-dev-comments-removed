@@ -13,7 +13,7 @@ use euclid::size::TypedSize2D;
 use gleam::gl;
 use msg::constellation_msg::{Key, KeyModifiers, KeyState};
 use net_traits::net_error_list::NetError;
-use script_traits::{DevicePixel, MouseButton, TouchEventType, TouchId, TouchpadPressurePhase};
+use script_traits::{DevicePixel, LoadData, MouseButton, TouchEventType, TouchId, TouchpadPressurePhase};
 use servo_geometry::DeviceIndependentPixel;
 use servo_url::ServoUrl;
 use std::fmt::{Debug, Error, Formatter};
@@ -130,19 +130,19 @@ pub trait WindowMethods {
     
     fn set_page_title(&self, title: Option<String>);
     
-    fn set_page_url(&self, url: ServoUrl);
-    
     fn status(&self, Option<String>);
     
-    fn load_start(&self, back: bool, forward: bool);
+    fn load_start(&self);
     
-    fn load_end(&self, back: bool, forward: bool, root: bool);
+    fn load_end(&self);
     
     fn load_error(&self, code: NetError, url: String);
     
     fn allow_navigation(&self, url: ServoUrl) -> bool;
     
     fn head_parsed(&self);
+    
+    fn history_changed(&self, Vec<LoadData>, usize);
 
     
     fn hidpi_factor(&self) -> ScaleFactor<f32, DeviceIndependentPixel, DevicePixel>;
