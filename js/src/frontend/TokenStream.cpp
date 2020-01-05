@@ -28,10 +28,10 @@
 #include "vm/HelperThreads.h"
 #include "vm/Keywords.h"
 #include "vm/StringBuffer.h"
+#include "vm/Unicode.h"
 
 using namespace js;
 using namespace js::frontend;
-using namespace js::unicode;
 
 using mozilla::Maybe;
 using mozilla::PodAssign;
@@ -106,12 +106,12 @@ IsIdentifier(const CharT* chars, size_t length)
     if (length == 0)
         return false;
 
-    if (!IsIdentifierStart(*chars))
+    if (!unicode::IsIdentifierStart(char16_t(*chars)))
         return false;
 
     const CharT* end = chars + length;
     while (++chars != end) {
-        if (!IsIdentifierPart(*chars))
+        if (!unicode::IsIdentifierPart(char16_t(*chars)))
             return false;
     }
 
@@ -761,7 +761,7 @@ TokenStream::reportAsmJSError(uint32_t offset, unsigned errorNumber, ...)
 
 
 bool
-TokenStream::peekUnicodeEscape(int* result)
+TokenStream::peekUnicodeEscape(uint32_t* codePoint)
 {
     char16_t cp[5];
 
@@ -769,7 +769,7 @@ TokenStream::peekUnicodeEscape(int* result)
         JS7_ISHEX(cp[1]) && JS7_ISHEX(cp[2]) &&
         JS7_ISHEX(cp[3]) && JS7_ISHEX(cp[4]))
     {
-        *result = (((((JS7_UNHEX(cp[1]) << 4)
+        *codePoint = (((((JS7_UNHEX(cp[1]) << 4)
                 + JS7_UNHEX(cp[2])) << 4)
               + JS7_UNHEX(cp[3])) << 4)
             + JS7_UNHEX(cp[4]);
@@ -779,9 +779,9 @@ TokenStream::peekUnicodeEscape(int* result)
 }
 
 bool
-TokenStream::matchUnicodeEscapeIdStart(int32_t* cp)
+TokenStream::matchUnicodeEscapeIdStart(uint32_t* codePoint)
 {
-    if (peekUnicodeEscape(cp) && IsIdentifierStart(*cp)) {
+    if (peekUnicodeEscape(codePoint) && unicode::IsIdentifierStart(*codePoint)) {
         skipChars(5);
         return true;
     }
@@ -789,9 +789,9 @@ TokenStream::matchUnicodeEscapeIdStart(int32_t* cp)
 }
 
 bool
-TokenStream::matchUnicodeEscapeIdent(int32_t* cp)
+TokenStream::matchUnicodeEscapeIdent(uint32_t* codePoint)
 {
-    if (peekUnicodeEscape(cp) && IsIdentifierPart(*cp)) {
+    if (peekUnicodeEscape(codePoint) && unicode::IsIdentifierPart(*codePoint)) {
         skipChars(5);
         return true;
     }
@@ -846,7 +846,7 @@ TokenStream::getDirective(bool isMultiline, bool shouldWarnDeprecated,
         skipChars(directiveLength);
         tokenbuf.clear();
 
-        while ((c = peekChar()) && c != EOF && !IsSpaceOrBOM2(c)) {
+        while ((c = peekChar()) && c != EOF && !unicode::IsSpaceOrBOM2(c)) {
             getChar();
             
             
@@ -941,14 +941,15 @@ IsTokenSane(Token* tp)
 bool
 TokenStream::putIdentInTokenbuf(const char16_t* identStart)
 {
-    int32_t c, qc;
+    int32_t c;
+    uint32_t qc;
     const char16_t* tmp = userbuf.addressOfNextRawChar();
     userbuf.setAddressOfNextRawChar(identStart);
 
     tokenbuf.clear();
     for (;;) {
         c = getCharIgnoreEOL();
-        if (!IsIdentifierPart(c)) {
+        if (!unicode::IsIdentifierPart(char16_t(c))) {
             if (c != '\\' || !matchUnicodeEscapeIdent(&qc))
                 break;
             c = qc;
@@ -1064,7 +1065,8 @@ static_assert(LastCharKind < (1 << (sizeof(firstCharKinds[0]) * 8)),
 bool
 TokenStream::getTokenInternal(TokenKind* ttp, Modifier modifier)
 {
-    int c, qc;
+    int c;
+    uint32_t qc;
     Token* tp;
     FirstCharKind c1kind;
     const char16_t* numStart;
@@ -1095,7 +1097,7 @@ TokenStream::getTokenInternal(TokenKind* ttp, Modifier modifier)
     
     
     if (MOZ_UNLIKELY(c >= 128)) {
-        if (IsSpaceOrBOM2(c)) {
+        if (unicode::IsSpaceOrBOM2(c)) {
             if (c == LINE_SEPARATOR || c == PARA_SEPARATOR) {
                 updateLineInfoForEOL();
                 updateFlagsForEOL();
@@ -1112,7 +1114,7 @@ TokenStream::getTokenInternal(TokenKind* ttp, Modifier modifier)
         static_assert('_' < 128,
                       "IdentifierStart contains '_', but as !IsLetter('_'), "
                       "ensure that '_' is never handled here");
-        if (IsLetter(c)) {
+        if (unicode::IsLetter(c)) {
             identStart = userbuf.addressOfNextRawChar() - 1;
             hadUnicodeEscape = false;
             goto identifier;
@@ -1168,7 +1170,7 @@ TokenStream::getTokenInternal(TokenKind* ttp, Modifier modifier)
             c = getCharIgnoreEOL();
             if (c == EOF)
                 break;
-            if (!IsIdentifierPart(c)) {
+            if (!unicode::IsIdentifierPart(char16_t(c))) {
                 if (c != '\\' || !matchUnicodeEscapeIdent(&qc))
                     break;
                 hadUnicodeEscape = true;
@@ -1262,7 +1264,7 @@ TokenStream::getTokenInternal(TokenKind* ttp, Modifier modifier)
         }
         ungetCharIgnoreEOL(c);
 
-        if (c != EOF && IsIdentifierStart(c)) {
+        if (c != EOF && unicode::IsIdentifierStart(char16_t(c))) {
             reportError(JSMSG_IDSTART_AFTER_NUMBER);
             goto error;
         }
@@ -1369,7 +1371,7 @@ TokenStream::getTokenInternal(TokenKind* ttp, Modifier modifier)
         }
         ungetCharIgnoreEOL(c);
 
-        if (c != EOF && IsIdentifierStart(c)) {
+        if (c != EOF && unicode::IsIdentifierStart(char16_t(c))) {
             reportError(JSMSG_IDSTART_AFTER_NUMBER);
             goto error;
         }
@@ -1674,7 +1676,7 @@ TokenStream::getBracedUnicode(uint32_t* cp)
             return false;
 
         code = (code << 4) | JS7_UNHEX(c);
-        if (code > 0x10FFFF)
+        if (code > unicode::NonBMPMax)
             return false;
         first = false;
     }
@@ -1727,13 +1729,13 @@ TokenStream::getStringOrTemplateToken(int untilChar, Token** tp)
                         return false;
                     }
 
-                    MOZ_ASSERT(code <= 0x10FFFF);
-                    if (code < 0x10000) {
+                    MOZ_ASSERT(code <= unicode::NonBMPMax);
+                    if (code < unicode::NonBMPMin) {
                         c = code;
                     } else {
-                        if (!tokenbuf.append((code - 0x10000) / 1024 + 0xD800))
+                        if (!tokenbuf.append(unicode::LeadSurrogate(code)))
                             return false;
-                        c = ((code - 0x10000) % 1024) + 0xDC00;
+                        c = unicode::TrailSurrogate(code);
                     }
                     break;
                 }
