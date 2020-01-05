@@ -272,7 +272,7 @@ struct Zone : public JS::shadow::Zone,
 #ifdef DEBUG
     
     
-    unsigned lastZoneGroupIndex() { return gcLastZoneGroupIndex; }
+    unsigned lastSweepGroupIndex() { return gcLastSweepGroupIndex; }
 #endif
 
     using DebuggerVector = js::Vector<js::Debugger*, 0, js::SystemAllocPolicy>;
@@ -370,14 +370,14 @@ struct Zone : public JS::shadow::Zone,
     
     
     
-    js::ZoneGroupData<ZoneSet> gcZoneGroupEdges_;
+    js::ZoneGroupData<ZoneSet> gcSweepGroupEdges_;
 
     
     
     js::ZoneGroupData<bool> hasDeadProxies_;
 
   public:
-    ZoneSet& gcZoneGroupEdges() { return gcZoneGroupEdges_.ref(); }
+    ZoneSet& gcSweepGroupEdges() { return gcSweepGroupEdges_.ref(); }
 
     bool hasDeadProxies() { return hasDeadProxies_; }
     void setHasDeadProxies(bool b) { hasDeadProxies_ = b; }
@@ -485,7 +485,7 @@ struct Zone : public JS::shadow::Zone,
     }
 
 #ifdef DEBUG
-    js::ZoneGroupData<unsigned> gcLastZoneGroupIndex;
+    js::ZoneGroupData<unsigned> gcLastSweepGroupIndex;
 #endif
 
     static js::HashNumber UniqueIdToHash(uint64_t uid) {

@@ -446,14 +446,14 @@ class GCZonesIter
 typedef CompartmentsIterT<GCZonesIter> GCCompartmentsIter;
 
 
-class GCZoneGroupIter {
+class GCSweepGroupIter {
   private:
     JS::Zone* current;
 
   public:
-    explicit GCZoneGroupIter(JSRuntime* rt) {
+    explicit GCSweepGroupIter(JSRuntime* rt) {
         MOZ_ASSERT(CurrentThreadIsPerformingGC());
-        current = rt->gc.getCurrentZoneGroup();
+        current = rt->gc.getCurrentSweepGroup();
     }
 
     bool done() const { return !current; }
@@ -472,7 +472,7 @@ class GCZoneGroupIter {
     JS::Zone* operator->() const { return get(); }
 };
 
-typedef CompartmentsIterT<GCZoneGroupIter> GCCompartmentGroupIter;
+typedef CompartmentsIterT<GCSweepGroupIter> GCCompartmentGroupIter;
 
 inline void
 RelocationOverlay::forwardTo(Cell* cell)

@@ -102,7 +102,7 @@ BEGIN_TEST(testWeakMap_keyDelegates)
     while (JS::IsIncrementalGCInProgress(cx))
         cx->runtime()->gc.debugGCSlice(budget);
 #ifdef DEBUG
-    CHECK(map->zone()->lastZoneGroupIndex() < delegateRoot->zone()->lastZoneGroupIndex());
+    CHECK(map->zone()->lastSweepGroupIndex() < delegateRoot->zone()->lastSweepGroupIndex());
 #endif
 
     
@@ -124,7 +124,7 @@ BEGIN_TEST(testWeakMap_keyDelegates)
 
 
 #ifdef DEBUG
-    CHECK(map->zone()->lastZoneGroupIndex() == delegateRoot->zone()->lastZoneGroupIndex());
+    CHECK(map->zone()->lastSweepGroupIndex() == delegateRoot->zone()->lastSweepGroupIndex());
 #endif
 
     
