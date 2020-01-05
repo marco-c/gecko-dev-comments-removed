@@ -30,7 +30,7 @@ describe("PageError component:", () => {
     const wrapper = render(PageError({ message, serviceContainer }));
 
     expect(wrapper.find(".message-body").text())
-      .toBe("ReferenceError: asdf is not defined");
+      .toBe("ReferenceError: asdf is not defined[Learn More]");
 
     
     const frameLinks = wrapper.find(`.stack-trace`);
@@ -41,6 +41,28 @@ describe("PageError component:", () => {
     expect(locationLink.length).toBe(1);
     
     expect(locationLink.text()).toBe("test-tempfile.js:3:5");
+  });
+
+  it("displays a [Learn more] link", () => {
+    const store = setupStore([]);
+
+    const message = stubPreparedMessages.get("ReferenceError: asdf is not defined");
+
+    serviceContainer.openLink = sinon.spy();
+    const wrapper = mount(Provider({store},
+      PageError({message, serviceContainer})
+    ));
+
+    
+    const url =
+      "https://developer.mozilla.org/docs/Web/JavaScript/Reference/Errors/Not_defined";
+    const learnMore = wrapper.find(".learn-more-link");
+    expect(learnMore.length).toBe(1);
+    expect(learnMore.prop("title")).toBe(url);
+
+    learnMore.simulate("click");
+    let call = serviceContainer.openLink.getCall(0);
+    expect(call.args[0]).toEqual(message.exceptionDocURL);
   });
 
   it("has a stacktrace which can be openned", () => {
