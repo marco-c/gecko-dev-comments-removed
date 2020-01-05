@@ -54,6 +54,7 @@ use layout_interface::TrustedNodeAddress;
 use script_task::StackRoots;
 
 use std::cell::{Cell, RefCell};
+use std::default::Default;
 use std::kinds::marker::ContravariantLifetime;
 use std::mem;
 
@@ -192,6 +193,62 @@ impl<T: Reflectable> Reflectable for JS<T> {
     }
 }
 
+
+
+
+#[must_root]
+#[jstraceable]
+pub struct MutNullableJS<T: Reflectable> {
+    ptr: Cell<Option<JS<T>>>
+}
+
+impl<T: Assignable<U>, U: Reflectable> MutNullableJS<U> {
+    pub fn new(initial: Option<T>) -> MutNullableJS<U> {
+        MutNullableJS {
+            ptr: Cell::new(initial.map(|initial| {
+                unsafe { initial.get_js() }
+            }))
+        }
+    }
+}
+
+impl<T: Reflectable> Default for MutNullableJS<T> {
+    fn default() -> MutNullableJS<T> {
+        MutNullableJS {
+            ptr: Cell::new(None)
+        }
+    }
+}
+
+impl<T: Reflectable> MutNullableJS<T> {
+    
+    
+    
+    
+    pub fn assign<U: Assignable<T>>(&self, val: Option<U>) {
+        self.ptr.set(val.map(|val| {
+            unsafe { val.get_js() }
+        }));
+    }
+
+    
+    
+    pub fn clear(&self) {
+        self.assign(None::<JS<T>>);
+    }
+
+    
+    pub fn get(&self) -> Option<Temporary<T>> {
+        self.ptr.get().map(Temporary::new)
+    }
+
+    
+    
+    pub unsafe fn get_inner(&self) -> Option<JS<T>> {
+        self.ptr.get()
+    }
+}
+
 impl<T: Reflectable> JS<T> {
     
     
@@ -245,7 +302,7 @@ impl<'a, 'b, T: Reflectable> OptionalRootedReference<T> for Option<Option<Root<'
 
 
 
- trait Assignable<T> {
+pub trait Assignable<T> {
     unsafe fn get_js(&self) -> JS<T>;
 }
 

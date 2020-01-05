@@ -5,7 +5,7 @@
 use dom::attr::AttrHelpers;
 use dom::bindings::codegen::Bindings::DocumentBinding::DocumentMethods;
 use dom::bindings::codegen::InheritTypes::{NodeCast, ElementCast};
-use dom::bindings::js::{JS, JSRef, Temporary};
+use dom::bindings::js::{MutNullableJS, JS, JSRef, Temporary};
 use dom::bindings::js::OptionalRootable;
 use dom::bindings::trace::{Traceable, Untraceable};
 use dom::bindings::utils::GlobalStaticData;
@@ -30,12 +30,14 @@ use servo_net::resource_task::ResourceTask;
 use servo_util::str::DOMString;
 use std::cell::{Cell, RefCell, Ref, RefMut};
 use std::comm::{channel, Receiver, Empty, Disconnected};
+use std::default::Default;
 use std::mem::replace;
 use std::rc::Rc;
 use url::Url;
 
 
 #[jstraceable]
+#[allow(unrooted_must_root)] 
 pub struct Page {
     
     pub id: PipelineId,
@@ -78,7 +80,7 @@ pub struct Page {
     pub resize_event: Untraceable<Cell<Option<WindowSizeData>>>,
 
     
-    pub fragment_node: Cell<Option<JS<Element>>>,
+    pub fragment_node: MutNullableJS<Element>,
 
     
     pub resource_task: Untraceable<ResourceTask>,
@@ -152,7 +154,7 @@ impl Page {
             url: Untraceable::new(RefCell::new(None)),
             next_subpage_id: Traceable::new(Cell::new(SubpageId(0))),
             resize_event: Untraceable::new(Cell::new(None)),
-            fragment_node: Cell::new(None),
+            fragment_node: Default::default(),
             last_reflow_id: Traceable::new(Cell::new(0)),
             resource_task: Untraceable::new(resource_task),
             constellation_chan: Untraceable::new(constellation_chan),
