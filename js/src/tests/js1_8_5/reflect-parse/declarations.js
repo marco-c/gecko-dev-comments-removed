@@ -78,7 +78,7 @@ assertDecl("var {x} = foo;", varDecl([{ id: objPatt([assignProp("x")]),
 
 
 assertStmt("function g(x) { var x }",
-           funDecl(ident("g"), [ident("x")], blockStmt([varDecl[{ id: ident("x"), init: null }]])));
+           funDecl(ident("g"), [ident("x")], blockStmt([varDecl([{ id: ident("x"), init: null }])])));
 assertProg("f.p = 1; var f; f.p; function f(){}",
            [exprStmt(aExpr("=", dotExpr(ident("f"), ident("p")), lit(1))),
             varDecl([{ id: ident("f"), init: null }]),
