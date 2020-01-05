@@ -42,13 +42,13 @@ nsPrintObject::~nsPrintObject()
     if (baseWin) {
       baseWin->Destroy();
     }
-  }                            
+  }
   mDocShell = nullptr;
   mTreeOwner = nullptr; 
 }
 
 
-nsresult 
+nsresult
 nsPrintObject::Init(nsIDocShell* aDocShell, nsIDOMDocument* aDoc,
                     bool aPrintPreview)
 {
@@ -97,7 +97,7 @@ nsPrintObject::Init(nsIDocShell* aDocShell, nsIDOMDocument* aDoc,
 
 
 
-void 
+void
 nsPrintObject::DestroyPresentation()
 {
   if (mPresShell) {

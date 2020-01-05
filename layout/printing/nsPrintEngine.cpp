@@ -189,7 +189,7 @@ public:
       mPrintEngine->TurnScriptingOn(false);
     }
   }
-  
+
   void Unsuppress()
   {
     if (mPrintEngine && mSuppressed) {
@@ -260,7 +260,7 @@ void nsPrintEngine::DestroyPrintingData()
 
 
 
-nsresult nsPrintEngine::Initialize(nsIDocumentViewerPrint* aDocViewerPrint, 
+nsresult nsPrintEngine::Initialize(nsIDocumentViewerPrint* aDocViewerPrint,
                                    nsIDocShell*            aContainer,
                                    nsIDocument*            aDocument,
                                    float                   aScreenDPI,
@@ -324,7 +324,7 @@ nsPrintEngine::InstallPrintPreviewListener()
 }
 
 
-nsresult 
+nsresult
 nsPrintEngine::GetSeqFrameAndCountPagesInternal(nsPrintObject*  aPO,
                                                 nsIFrame*&    aSeqFrame,
                                                 int32_t&      aCount)
@@ -653,7 +653,7 @@ nsPrintEngine::DoCommonPrint(bool                    aIsPrintPreview,
       rv = mPrt->mPrintSettings->SetupSilentPrinting();
     }
     
-    if (rv == NS_ERROR_ABORT) 
+    if (rv == NS_ERROR_ABORT)
       return rv;
     NS_ENSURE_SUCCESS(rv, rv);
   }
@@ -784,8 +784,8 @@ nsPrintEngine::Print(nsIPrintSettings*       aPrintSettings,
 }
 
 NS_IMETHODIMP
-nsPrintEngine::PrintPreview(nsIPrintSettings* aPrintSettings, 
-                            mozIDOMWindowProxy* aChildDOMWin, 
+nsPrintEngine::PrintPreview(nsIPrintSettings* aPrintSettings,
+                            mozIDOMWindowProxy* aChildDOMWin,
                             nsIWebProgressListener* aWebProgressListener)
 {
   
@@ -822,7 +822,7 @@ nsPrintEngine::GetIsFramesetDocument(bool *aIsFramesetDocument)
 }
 
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 nsPrintEngine::GetIsIFrameSelected(bool *aIsIFrameSelected)
 {
   *aIsIFrameSelected = false;
@@ -842,7 +842,7 @@ nsPrintEngine::GetIsIFrameSelected(bool *aIsIFrameSelected)
 }
 
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 nsPrintEngine::GetIsRangeSelection(bool *aIsRangeSelection)
 {
   
@@ -852,7 +852,7 @@ nsPrintEngine::GetIsRangeSelection(bool *aIsRangeSelection)
 }
 
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 nsPrintEngine::GetIsFramesetFrameSelected(bool *aIsFramesetFrameSelected)
 {
   
@@ -1049,7 +1049,7 @@ nsPrintEngine::ShowPrintProgress(bool aIsForPrinting, bool& aDoNotify)
   if (showProgresssDialog) {
     nsCOMPtr<nsIPrintingPromptService> printPromptService(do_GetService(kPrintingPromptService));
     if (printPromptService) {
-      nsPIDOMWindowOuter* domWin = mDocument->GetWindow(); 
+      nsPIDOMWindowOuter* domWin = mDocument->GetWindow();
       if (!domWin) return;
 
       nsCOMPtr<nsIDocShell> docShell = domWin->GetDocShell();
@@ -1070,8 +1070,8 @@ nsPrintEngine::ShowPrintProgress(bool aIsForPrinting, bool& aDoNotify)
 
       nsCOMPtr<nsIWebBrowserPrint> wbp(do_QueryInterface(mDocViewerPrint));
       nsresult rv = printPromptService->ShowProgress(domWin, wbp, mPrt->mPrintSettings, this, aIsForPrinting,
-                                                     getter_AddRefs(printProgressListener), 
-                                                     getter_AddRefs(mPrt->mPrintProgressParams), 
+                                                     getter_AddRefs(printProgressListener),
+                                                     getter_AddRefs(mPrt->mPrintProgressParams),
                                                      &aDoNotify);
       if (NS_SUCCEEDED(rv)) {
         if (printProgressListener) {
@@ -1417,7 +1417,7 @@ nsPrintEngine::SetPrintPO(nsPrintObject* aPO, bool aPrint)
 
   for (uint32_t i=0;i<aPO->mKids.Length();i++) {
     SetPrintPO(aPO->mKids[i], aPrint);
-  } 
+  }
 }
 
 
@@ -1514,7 +1514,7 @@ nsresult nsPrintEngine::CleanupOnFailure(nsresult aResult, bool aIsPrinting)
     mPagePrintTimer->Stop();
     DisconnectPagePrintTimer();
   }
-  
+
   if (aIsPrinting) {
     SetIsPrinting(false);
   } else {
@@ -1614,13 +1614,13 @@ nsPrintEngine::ReconstructAndReflow(bool doSetPixelScale)
     bool documentIsTopLevel = true;
     if (i != 0) {
       nsSize adjSize;
-      bool doReturn; 
+      bool doReturn;
       nsresult rv = SetRootView(po, doReturn, documentIsTopLevel, adjSize);
 
       MOZ_ASSERT(!documentIsTopLevel, "How could this happen?");
-      
+
       if (NS_FAILED(rv) || doReturn) {
-        return rv; 
+        return rv;
       }
     }
 
@@ -1639,7 +1639,7 @@ nsPrintEngine::SetupToPrintContent()
   nsresult rv;
 
   bool didReconstruction = false;
-  
+
   
   
   if (mDidLoadDataForPrinting) {
@@ -1690,13 +1690,13 @@ nsPrintEngine::SetupToPrintContent()
       PR_PL(("**************************************************************************\n"));
     }
   }
-  
+
   
   
   if (didReconstruction) {
     FirePrintPreviewUpdateEvent();
   }
-  
+
   DUMP_DOC_LIST(("\nAfter Reflow------------------------------------------"));
   PR_PL(("\n"));
   PR_PL(("-------------------------------------------------------\n"));
@@ -1709,7 +1709,7 @@ nsPrintEngine::SetupToPrintContent()
 
   
   if (mPrt != nullptr) {
-    mPrt->OnStartPrinting();    
+    mPrt->OnStartPrinting();
   }
 
   nsAutoString fileNameStr;
@@ -1748,14 +1748,14 @@ nsPrintEngine::SetupToPrintContent()
   if (!mPrt->mDebugFilePtr && mIsDoingPrinting) {
     rv = mPrt->mPrintDC->BeginDocument(docTitleStr, fileNameStr, startPage,
                                        endPage);
-  } 
+  }
 
   if (mIsCreatingPrintPreview) {
     
     
     nsIPageSequenceFrame *seqFrame = mPrt->mPrintObject->mPresShell->GetPageSequenceFrame();
     if (seqFrame) {
-      seqFrame->StartPrint(mPrt->mPrintObject->mPresContext, 
+      seqFrame->StartPrint(mPrt->mPrintObject->mPresContext,
                            mPrt->mPrintSettings, docTitleStr, docURLStr);
     }
   }
@@ -1880,7 +1880,7 @@ nsPrintEngine::OnStateChange(nsIWebProgress* aWebProgress,
   } else if (aStateFlags & STATE_STOP) {
     mDidLoadDataForPrinting = true;
     --mLoadCounter;
-   
+
     
     
     if (mLoadCounter == 0) {
@@ -1952,7 +1952,7 @@ nsPrintEngine::UpdateZoomRatio(nsPrintObject* aPO, bool aSetPixelScale)
     double scaling;
     mPrt->mPrintSettings->GetScaling(&scaling);
     aPO->mZoomRatio = float(scaling);
-  } 
+  }
 }
 
 nsresult
@@ -1995,7 +1995,7 @@ nsPrintEngine::UpdateSelectionAndShrinkPrintObject(nsPrintObject* aPO,
     aPO->mPresShell->GetDocument()->GetContentType(contentType);
     if (contentType.EqualsLiteral("application/xhtml+xml") ||
         StringBeginsWith(contentType, NS_LITERAL_STRING("text/"))) {
-      int32_t limitPercent = 
+      int32_t limitPercent =
         Preferences::GetInt("print.shrink-to-fit.scale-limit-percent", 20);
       limitPercent = std::max(0, limitPercent);
       limitPercent = std::min(100, limitPercent);
@@ -2038,9 +2038,9 @@ nsPrintEngine::GetParentViewForRoot()
 
 nsresult
 nsPrintEngine::SetRootView(
-    nsPrintObject* aPO, 
-    bool& doReturn, 
-    bool& documentIsTopLevel, 
+    nsPrintObject* aPO,
+    bool& doReturn,
+    bool& documentIsTopLevel,
     nsSize& adjSize
 )
 {
@@ -2097,7 +2097,7 @@ nsPrintEngine::SetRootView(
     rootView = aPO->mViewManager->CreateView(tbounds, parentView);
     NS_ENSURE_TRUE(rootView, NS_ERROR_OUT_OF_MEMORY);
   }
-    
+
   if (mIsCreatingPrintPreview && documentIsTopLevel) {
     aPO->mPresContext->SetPaginatedScrolling(canCreateScrollbars);
   }
@@ -2117,7 +2117,7 @@ nsPrintEngine::ReflowPrintObject(nsPrintObject * aPO)
   if (!aPO->IsPrintable()) {
     return NS_OK;
   }
-  
+
   NS_ASSERTION(!aPO->mPresContext, "Recreating prescontext");
 
   
@@ -2158,18 +2158,18 @@ nsPrintEngine::ReflowPrintObject(nsPrintObject * aPO)
   }
 
   styleSet->EndUpdate();
-  
+
   
 
 
   bool doReturn = false;;
   bool documentIsTopLevel = false;
-  nsSize adjSize; 
+  nsSize adjSize;
 
   rv = SetRootView(aPO, doReturn, documentIsTopLevel, adjSize);
 
   if (NS_FAILED(rv) || doReturn) {
-    return rv; 
+    return rv;
   }
 
   PR_PL(("In DV::ReflowPrintObject PO: %p pS: %p (%9s) Setting w,h to %d,%d\n", aPO, aPO->mPresShell.get(),
@@ -2733,7 +2733,7 @@ nsPrintEngine::PrintPage(nsPrintObject*    aPO,
   
   if (mPrt->mPrintFrameType == nsIPrintSettings::kEachFrameSep)
     endPage = mPrt->mNumPrintablePages;
-  
+
   mPrt->DoOnProgressChange(++mPrt->mNumPagesPrinted, endPage, false, 0);
 
   
@@ -2934,7 +2934,7 @@ nsPrintEngine::GetPageRangeForSelection(nsIPageSequenceFrame* aPageSeqFrame,
 
 
 void nsPrintEngine::SetIsPrinting(bool aIsPrinting)
-{ 
+{
   mIsDoingPrinting = aIsPrinting;
   
   
@@ -2947,9 +2947,9 @@ void nsPrintEngine::SetIsPrinting(bool aIsPrinting)
 }
 
 
-void nsPrintEngine::SetIsPrintPreview(bool aIsPrintPreview) 
-{ 
-  mIsDoingPrintPreview = aIsPrintPreview; 
+void nsPrintEngine::SetIsPrintPreview(bool aIsPrintPreview)
+{
+  mIsDoingPrintPreview = aIsPrintPreview;
 
   if (mDocViewerPrint) {
     mDocViewerPrint->SetIsPrintPreview(aIsPrintPreview);
@@ -2987,7 +2987,7 @@ bool nsPrintEngine::HasFramesetChild(nsIContent* aContent)
 
   return false;
 }
- 
+
 
 
 
@@ -3523,7 +3523,7 @@ nsPrintEngine::StartPagePrintTimer(nsPrintObject* aPO)
 }
 
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 nsPrintEngine::Observe(nsISupports *aSubject, const char *aTopic, const char16_t *aData)
 {
   nsresult rv = NS_ERROR_FAILURE;
