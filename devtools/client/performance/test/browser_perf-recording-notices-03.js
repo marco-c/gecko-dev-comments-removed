@@ -15,6 +15,7 @@ const { initPerformanceInTab, initConsoleInNewTab, teardownToolboxAndRemoveTab }
 const { startRecording, stopRecording } = require("devtools/client/performance/test/helpers/actions");
 const { waitUntil } = require("devtools/client/performance/test/helpers/wait-utils");
 const { once } = require("devtools/client/performance/test/helpers/event-utils");
+const { setSelectedRecording } = require("devtools/client/performance/test/helpers/recording-utils");
 
 add_task(function* () {
   
@@ -36,7 +37,6 @@ add_task(function* () {
     $,
     PerformanceController,
     PerformanceView,
-    RecordingsView
   } = panel.panelWin;
 
   
@@ -88,7 +88,7 @@ add_task(function* () {
 
   
   let selected = once(PerformanceController, EVENTS.RECORDING_SELECTED);
-  RecordingsView.selectedIndex = 1;
+  setSelectedRecording(panel, 1);
   yield selected;
 
   yield waitUntil(function* () {
@@ -109,7 +109,7 @@ add_task(function* () {
   yield console.profileEnd("rust");
 
   selected = once(PerformanceController, EVENTS.RECORDING_SELECTED);
-  RecordingsView.selectedIndex = 0;
+  setSelectedRecording(panel, 0);
   yield selected;
 
   yield waitUntil(function* () {
