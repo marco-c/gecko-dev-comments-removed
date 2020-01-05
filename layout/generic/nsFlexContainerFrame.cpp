@@ -237,10 +237,23 @@ PhysicalCoordFromFlexRelativeCoord(nscoord aFlexRelativeCoord,
     (axisTracker_).IsRowOriented() ? (bsize_) : (isize_)
 
 
+enum AxisTrackerFlags {
+  eNoFlags = 0x0,
+
+  
+  
+  
+  
+  eAllowBottomToTopChildOrdering = 0x1
+};
+MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(AxisTrackerFlags)
+
+
 class MOZ_STACK_CLASS nsFlexContainerFrame::FlexboxAxisTracker {
 public:
   FlexboxAxisTracker(const nsFlexContainerFrame* aFlexContainer,
-                     const WritingMode& aWM);
+                     const WritingMode& aWM,
+                     AxisTrackerFlags aFlags = eNoFlags);
 
   
   
@@ -3240,7 +3253,8 @@ BlockDirToAxisOrientation(WritingMode::BlockDir aBlockDir)
 
 FlexboxAxisTracker::FlexboxAxisTracker(
   const nsFlexContainerFrame* aFlexContainer,
-  const WritingMode& aWM)
+  const WritingMode& aWM,
+  AxisTrackerFlags aFlags)
   : mWM(aWM),
     mAreAxesInternallyReversed(false)
 {
@@ -3256,7 +3270,10 @@ FlexboxAxisTracker::FlexboxAxisTracker(
   
   static bool sPreventBottomToTopChildOrdering = true;
 
-  if (sPreventBottomToTopChildOrdering) {
+  
+  
+  if (!(aFlags & AxisTrackerFlags::eAllowBottomToTopChildOrdering) &&
+      sPreventBottomToTopChildOrdering) {
     
     
     if (eAxis_BT == mMainAxis || eAxis_BT == mCrossAxis) {
