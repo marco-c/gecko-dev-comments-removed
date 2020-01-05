@@ -2,7 +2,7 @@
 
 
 
-@import url("splitters.css");
+@import url("resource://devtools/client/themes/splitters.css");
 
 :root {
   font: message-box;
@@ -554,7 +554,7 @@ checkbox:-moz-focusring {
 }
 
 .devtools-filterinput {
-  background-image: url(images/filter.svg#filterinput);
+  background-image: url(chrome://devtools/skin/images/filter.svg#filterinput);
 }
 
 .devtools-searchinput:-moz-locale-dir(rtl),

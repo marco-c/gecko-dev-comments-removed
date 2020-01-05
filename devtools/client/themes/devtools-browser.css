@@ -2,7 +2,7 @@
 
 
 
-@import url("splitters.css");
+@import url("resource://devtools/client/themes/splitters.css");
 
 
 .devtools-toolbox-bottom-iframe {
@@ -24,4 +24,3 @@
   background-color: transparent;
   border: none;
 }
-
