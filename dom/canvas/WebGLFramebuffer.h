@@ -102,6 +102,18 @@ public:
 
     void OnBackingStoreRespecified() const;
 
+    bool IsEquivalent(const WebGLFBAttachPoint& other) const {
+        MOZ_ASSERT(IsDefined() && other.IsDefined());
+
+#define _(X) X == other.X
+        return ( _(mRenderbufferPtr) &&
+                 _(mTexturePtr) &&
+                 _(mTexImageTarget.get()) &&
+                 _(mTexImageLevel) &&
+                 _(mTexImageLayer) );
+#undef _
+    }
+
     
 
     struct Ordered {
@@ -173,9 +185,9 @@ protected:
     struct ResolvedData {
         
         bool hasSampleBuffers;
-        std::vector<const WebGLFBAttachPoint*> colorDrawBuffers;
-        const WebGLFBAttachPoint* depthBuffer;
-        const WebGLFBAttachPoint* stencilBuffer;
+        std::vector<const WebGLFBAttachPoint*> colorDrawBuffers; 
+        const WebGLFBAttachPoint* depthBuffer; 
+        const WebGLFBAttachPoint* stencilBuffer; 
 
         
         std::vector<const WebGLFBAttachPoint*> texDrawBuffers; 
