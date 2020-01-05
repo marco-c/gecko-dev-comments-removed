@@ -5,13 +5,21 @@
 const PARENT_ORIGIN = "http://mochi.test:8888/";
 
 
+
+
+
+const POINTER_MOUSE_ID = 7;
+const POINTER_PEN_ID   = 8;
+const POINTER_TOUCH_ID = 9; 
+
+
 addListeners(document.getElementById("target0"));
 addListeners(document.getElementById("target1"));
 
 
 
 
-add_result_callback((aTestObj) => {
+function resultCallback(aTestObj) {
   var message = aTestObj["name"] + " (";
   message += "Get: " + JSON.stringify(aTestObj["status"]) + ", ";
   message += "Expect: " + JSON.stringify(aTestObj["PASS"]) + ")";
@@ -19,15 +27,24 @@ add_result_callback((aTestObj) => {
                              message: message,
                              result: aTestObj["status"] === aTestObj["PASS"]},
                             PARENT_ORIGIN);
-});
+}
 
+add_result_callback(resultCallback);
 add_completion_callback(() => {
   window.opener.postMessage({type: "FIN"}, PARENT_ORIGIN);
 });
 
 window.addEventListener("load", () => {
   
-  window.opener.postMessage({type: "START"}, PARENT_ORIGIN);
+  var startMessage = {
+    type: "START",
+    message: {
+      mouseId: POINTER_MOUSE_ID,
+      penId:   POINTER_PEN_ID,
+      touchId: POINTER_TOUCH_ID
+    }
+  }
+  window.opener.postMessage(startMessage, PARENT_ORIGIN);
 });
 
 function addListeners(elem) {
@@ -38,6 +55,26 @@ function addListeners(elem) {
   All_Events.forEach(function(name) {
     elem.addEventListener(name, function(event) {
       console.log('('+event.type+')-('+event.pointerType+')');
+
+      
+      if (!event.isTrusted) {
+        return;
+      }
+
+      
+      var pointerId = {
+        mouse: POINTER_MOUSE_ID,
+        pen:   POINTER_PEN_ID,
+        touch: POINTER_TOUCH_ID
+      }[event.pointerType];
+
+      
+      resultCallback({
+        name:   "Mismatched event.pointerId recieved.",
+        status: event.pointerId,
+        PASS:   pointerId
+      });
+
     }, false);
   });
 }
