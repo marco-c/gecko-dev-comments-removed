@@ -123,6 +123,79 @@ function createModule(id) {
   });
 }
 
+function defineLazyGetter(object, prop, getter) {
+  let redefine = (obj, value) => {
+    Object.defineProperty(obj, prop, {
+      configurable: true,
+      writable: true,
+      value,
+    });
+    return value;
+  };
+
+  Object.defineProperty(object, prop, {
+    configurable: true,
+    get() {
+      return redefine(this, getter.call(this));
+    },
+    set(value) {
+      redefine(this, value);
+    }
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function lazyRequire(obj, moduleId, ...args) {
+  let module;
+  let getModule = () => {
+    if (!module) {
+      module = this.require(moduleId);
+    }
+    return module;
+  };
+
+  for (let props of args) {
+    if (typeof props !== "object") {
+      props = {[props]: props};
+    }
+
+    for (let [fromName, toName] of Object.entries(props)) {
+      defineLazyGetter(obj, toName, () => getModule()[fromName]);
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function lazyRequireModule(obj, moduleId, prop = moduleId) {
+  defineLazyGetter(obj, prop, () => this.require(moduleId));
+}
+
 
 
 
@@ -491,6 +564,8 @@ this.worker = new WorkerDebuggerLoader({
     "rpc": rpc,
     "URL": URL,
     "setImmediate": setImmediate,
+    "lazyRequire": lazyRequire,
+    "lazyRequireModule": lazyRequireModule,
     "retrieveConsoleEvents": this.retrieveConsoleEvents,
     "setConsoleEventHandler": this.setConsoleEventHandler,
   },

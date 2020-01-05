@@ -41,7 +41,9 @@ XPCOMUtils.defineLazyServiceGetter(this, "zipCache",
                                    "@mozilla.org/libjar/zip-reader-cache;1",
                                    "nsIZipReaderCache");
 
-XPCOMUtils.defineLazyGetter(this, "XulApp", () => {
+const { defineLazyGetter } = XPCOMUtils;
+
+defineLazyGetter(this, "XulApp", () => {
   let xulappURI = module.uri.replace("toolkit/loader.js",
                                      "sdk/system/xul-app.jsm");
   return Cu.import(xulappURI, {});
@@ -476,6 +478,14 @@ const load = iced(function load(loader, module) {
       descriptors[name] = getOwnPropertyDescriptor(globals, name)
       descriptors[name].configurable = true;
     });
+    descriptors.lazyRequire = {
+      configurable: true,
+      value: lazyRequire.bind(sandbox),
+    };
+    descriptors.lazyRequireModule = {
+      configurable: true,
+      value: lazyRequireModule.bind(sandbox),
+    };
     Object.defineProperties(sandbox, descriptors);
   }
   else {
@@ -729,6 +739,56 @@ const resolveURI = iced(function resolveURI(id, mapping) {
   return null;
 });
 Loader.resolveURI = resolveURI;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function lazyRequire(obj, moduleId, ...args) {
+  let module;
+  let getModule = () => {
+    if (!module)
+      module = this.require(moduleId);
+    return module;
+  };
+
+  for (let props of args) {
+    if (typeof props !== "object")
+      props = {[props]: props};
+
+    for (let [fromName, toName] of Object.entries(props))
+      defineLazyGetter(obj, toName, () => getModule()[fromName]);
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function lazyRequireModule(obj, moduleId, prop = moduleId) {
+  defineLazyGetter(obj, prop, () => this.require(moduleId));
+}
+
 
 
 
