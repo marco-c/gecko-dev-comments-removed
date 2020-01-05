@@ -16,7 +16,7 @@ use serialize::json;
 
 
 
-pub trait Actor {
+pub trait Actor : Any {
     fn handle_message(&self,
                       registry: &ActorRegistry,
                       msg_type: &String,
@@ -45,12 +45,9 @@ impl<'a> AnyRefExt<'a> for &'a Actor + 'a {
     fn is<T: 'static>(self) -> bool {
         
         
-        unsafe {
-            let t = TypeId::of::<T>();
-            let this: &Actor = transmute(self);
-            let boxed: TypeId = this.get_type_id();
-            t == boxed
-        }
+        let t = TypeId::of::<T>();
+        let boxed: TypeId = (*self).get_type_id();
+        t == boxed
     }
 
     fn downcast_ref<T: 'static>(self) -> Option<&'a T> {
