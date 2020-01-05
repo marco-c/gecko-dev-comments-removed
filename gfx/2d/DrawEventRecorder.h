@@ -134,6 +134,14 @@ public:
 
   void WipeRecording();
 
+  
+
+
+  std::istream& GetInputStream() {
+    mMemoryStream.seekg(0);
+    return mMemoryStream;
+  }
+
 private:
   ~DrawEventRecorderMemory() {};
 
