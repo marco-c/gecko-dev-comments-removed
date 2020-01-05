@@ -70,7 +70,10 @@ public:
 
   
   virtual void EventListenerAdded(nsIAtom* aType) {}
+  virtual void EventListenerAdded(const nsAString& aType) {}
+
   virtual void EventListenerRemoved(nsIAtom* aType) {}
+  virtual void EventListenerRemoved(const nsAString& aType) {}
 
   
   
