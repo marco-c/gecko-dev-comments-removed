@@ -30,7 +30,7 @@ ToBooleanSlow(JS::HandleValue v);
 
 
 extern JS_PUBLIC_API(bool)
-ToNumberSlow(JSContext* cx, const JS::Value& v, double* dp);
+ToNumberSlow(JSContext* cx, JS::HandleValue v, double* dp);
 
 
 extern JS_PUBLIC_API(bool)
