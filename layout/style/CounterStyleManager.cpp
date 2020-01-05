@@ -2030,7 +2030,10 @@ CounterStyleManager::BuildCounterStyle(const nsSubstring& aName)
   
   
   
+  
   StyleSetHandle styleSet = mPresContext->StyleSet();
+  
+  
   NS_ASSERTION(styleSet->IsGecko(),
                "stylo: ServoStyleSets do not support custom counter "
                "styles yet");
@@ -2076,7 +2079,10 @@ CounterStyleManager::NotifyRuleChanged()
     bool toBeUpdated = false;
     bool toBeRemoved = false;
     
+    
     StyleSetHandle styleSet = mPresContext->StyleSet();
+    
+    
     NS_ASSERTION(styleSet->IsGecko(),
                  "stylo: ServoStyleSets do not support custom counter "
                  "styles yet");
