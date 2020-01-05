@@ -62,7 +62,7 @@ var SimpleServiceDiscovery = {
   _forceTrailingSlash(aURL) {
     
     try {
-      aURL = Services.io.newURI(aURL, null, null).spec;
+      aURL = Services.io.newURI(aURL).spec;
     } catch (e) {}
     return aURL;
   },

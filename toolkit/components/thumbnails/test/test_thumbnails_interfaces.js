@@ -18,14 +18,12 @@ function run_test() {
      "moz-page-thumb handler provides substituting interface");
 
   
-  let uri = Services.io.newURI("moz-page-thumb://thumbnail/?url=http%3A%2F%2Fwww.mozilla.org%2F",
-                               null, null);
+  let uri = Services.io.newURI("moz-page-thumb://thumbnail/?url=http%3A%2F%2Fwww.mozilla.org%2F");
   ok(uri instanceof Ci.nsIFileURL, "moz-page-thumb:// is a FileURL");
   ok(uri.file, "This moz-page-thumb:// object is backed by a file");
 
   
-  let bad = Services.io.newURI("moz-page-thumb://wronghost/?url=http%3A%2F%2Fwww.mozilla.org%2F",
-                               null, null);
+  let bad = Services.io.newURI("moz-page-thumb://wronghost/?url=http%3A%2F%2Fwww.mozilla.org%2F");
   Assert.throws(() => handler.resolveURI(bad), /NS_ERROR_NOT_AVAILABLE/i,
                 "moz-page-thumb object with wrong host must not resolve to a file path");
 }

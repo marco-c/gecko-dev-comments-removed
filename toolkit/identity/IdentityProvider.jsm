@@ -123,7 +123,7 @@ IdentityProviderService.prototype = {
 
   _provisionIdentity: function _provisionIdentity(aIdentity, aIDPParams, aProvId, aCallback) {
     let provPath = aIDPParams.idpParams.provisioning;
-    let url = Services.io.newURI("https://" + aIDPParams.domain, null, null).resolve(provPath);
+    let url = Services.io.newURI("https://" + aIDPParams.domain).resolve(provPath);
     log("_provisionIdentity: identity:", aIdentity, "url:", url);
 
     
@@ -315,7 +315,7 @@ IdentityProviderService.prototype = {
 
     
     let authPath = aIDPParams.idpParams.authentication;
-    let authURI = Services.io.newURI("https://" + aIDPParams.domain, null, null).resolve(authPath);
+    let authURI = Services.io.newURI("https://" + aIDPParams.domain).resolve(authPath);
 
     
     

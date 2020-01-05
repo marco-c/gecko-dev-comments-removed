@@ -53,7 +53,7 @@ SecurityReporter.prototype = {
     
     let endpoint =
       Services.prefs.getCharPref("security.ssl.errorReporting.url");
-    let reportURI = Services.io.newURI(endpoint, null, null);
+    let reportURI = Services.io.newURI(endpoint);
 
     if (reportURI.host == hostname) {
       return;

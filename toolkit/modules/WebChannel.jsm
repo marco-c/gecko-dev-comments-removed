@@ -177,7 +177,7 @@ this.WebChannel = function(id, originOrPermission) {
       
       
       
-      let uri = Services.io.newURI(requestPrincipal.originNoSuffix, null, null);
+      let uri = Services.io.newURI(requestPrincipal.originNoSuffix);
       if (uri.scheme != "https") {
         return false;
       }

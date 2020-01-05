@@ -2995,7 +2995,7 @@ var AddonManagerInternal = {
       
       
       function checkInstallUrl(url) {
-        let host = Services.io.newURI(options.url, null, null).host;
+        let host = Services.io.newURI(options.url).host;
         if (WEBAPI_INSTALL_HOSTS.includes(host)) {
           return;
         }

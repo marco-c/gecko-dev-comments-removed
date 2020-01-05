@@ -805,7 +805,7 @@ class BrowserExtensionContent extends EventEmitter {
     this.localeData = new LocaleData(data.localeData);
 
     this.manifest = data.manifest;
-    this.baseURI = Services.io.newURI(data.baseURL, null, null);
+    this.baseURI = Services.io.newURI(data.baseURL);
 
     
     this.views = new Set();
@@ -813,7 +813,7 @@ class BrowserExtensionContent extends EventEmitter {
     
     this.devtoolsViews = new Set();
 
-    let uri = Services.io.newURI(data.resourceURL, null, null);
+    let uri = Services.io.newURI(data.resourceURL);
 
     if (Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_CONTENT) {
       

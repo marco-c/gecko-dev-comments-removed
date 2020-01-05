@@ -60,7 +60,7 @@ var ImageCropper = {
 
     
     
-    let uri = Services.io.newURI(aImageURL, null, null);
+    let uri = Services.io.newURI(aImageURL);
     let file = uri.QueryInterface(Ci.nsIFileURL).file;
 
     

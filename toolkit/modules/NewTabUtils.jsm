@@ -24,7 +24,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "BinarySearch",
   "resource://gre/modules/BinarySearch.jsm");
 
 XPCOMUtils.defineLazyGetter(this, "gPrincipal", function() {
-  let uri = Services.io.newURI("about:newtab", null, null);
+  let uri = Services.io.newURI("about:newtab");
   return Services.scriptSecurityManager.createCodebasePrincipal(uri, {});
 });
 
@@ -1404,7 +1404,7 @@ this.NewTabUtils = {
     try {
       
       
-      host = Services.io.newURI(url, null, null).asciiHost;
+      host = Services.io.newURI(url).asciiHost;
     } catch (ex) {
       return null;
     }
