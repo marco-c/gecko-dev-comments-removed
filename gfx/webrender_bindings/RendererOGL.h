@@ -31,6 +31,8 @@ class CompositorWidget;
 
 namespace wr {
 
+class RenderTextureHost;
+
 
 
 
@@ -71,6 +73,8 @@ public:
   layers::CompositorBridgeParentBase* GetCompositorBridge() { return mBridge; }
 
   WrRenderedEpochs* FlushRenderedEpochs();
+
+  RenderTextureHost* GetRenderTexture(uint64_t aExternalImageId);
 
 protected:
 

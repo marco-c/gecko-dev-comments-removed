@@ -23,6 +23,9 @@ struct WrType {                                   \
   bool operator<(const WrType& rhs) const {       \
     return mHandle < rhs.mHandle;                 \
   }                                               \
+  bool operator<=(const WrType& rhs) const {      \
+    return mHandle <= rhs.mHandle;                \
+  }                                               \
 };                                                \
 // ---
 
@@ -115,14 +118,13 @@ enum class WrImageRendering: uint32_t
   Sentinel 
 };
 
+enum class WrExternalImageIdType: uint32_t
+{
+  NativeTexture, 
+  RawData,
 
-
-
-
-
-
-
-
+  Sentinel 
+};
 
 enum class WrMixBlendMode: uint32_t
 {
@@ -309,7 +311,7 @@ struct WrExternalImageId
 
 struct WrExternalImage
 {
-  
+  WrExternalImageIdType type;
 
   
   float u0, v0;
@@ -319,9 +321,8 @@ struct WrExternalImage
   uint32_t handle;
 
   
-  
-  
-  
+  uint8_t* buff;
+  size_t size;
 };
 
 typedef WrExternalImage (*LockExternalImageCallback)(void*, WrExternalImageId);
