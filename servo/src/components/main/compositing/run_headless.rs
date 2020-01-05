@@ -4,8 +4,6 @@
 
 use compositing::*;
 
-use std::unstable::intrinsics;
-
 
 
 
@@ -15,10 +13,8 @@ pub fn run_compositor(compositor: &CompositorTask) {
         match compositor.port.recv() {
             Exit => break,
 
-             GetGraphicsMetadata(chan) => {
-                unsafe {
-                    chan.send(intrinsics::uninit());
-                }
+            GetGraphicsMetadata(chan) => {
+                chan.send(None);
             }
 
             SetIds(_, response_chan, _) => {
