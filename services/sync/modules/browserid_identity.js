@@ -254,7 +254,7 @@ this.BrowserIDManager.prototype = {
   observe(subject, topic, data) {
     this._log.debug("observed " + topic);
     switch (topic) {
-    case fxAccountsCommon.ONLOGIN_NOTIFICATION: {
+    case fxAccountsCommon.ONLOGIN_NOTIFICATION:
       
       
       
@@ -264,23 +264,8 @@ this.BrowserIDManager.prototype = {
       
       
       
-      
-      
-      let firstLogin = !this.username;
-      this.initializeWithCurrentIdentity(firstLogin);
-
-      if (!firstLogin) {
-        
-        
-        
-        
-        
-        this.whenReadyToAuthenticate.promise.then(() => {
-          Services.obs.notifyObservers(null, "weave:service:setup-complete", null);
-          Weave.Utils.nextTick(Weave.Service.sync, Weave.Service);
-        });
-      }
-    } break;
+      this.initializeWithCurrentIdentity(true);
+      break;
 
     case fxAccountsCommon.ONLOGOUT_NOTIFICATION:
       Weave.Service.startOver();
