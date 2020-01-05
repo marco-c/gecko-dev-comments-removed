@@ -102,7 +102,7 @@ enum nsNavigationDirection {
 enum nsIgnoreKeys {
   eIgnoreKeys_False,
   eIgnoreKeys_True,
-  eIgnoreKeys_Handled,
+  eIgnoreKeys_Shortcuts,
 };
 
 #define NS_DIRECTION_IS_INLINE(dir) (dir == eNavigationDirection_Start ||     \
@@ -636,9 +636,8 @@ public:
 
 
 
-
   bool HandleShortcutNavigation(nsIDOMKeyEvent* aKeyEvent,
-                                  nsMenuPopupFrame* aFrame);
+                                nsMenuPopupFrame* aFrame);
 
   
 
