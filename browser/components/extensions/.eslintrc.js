@@ -13,6 +13,7 @@ module.exports = {
     "browserActionFor": true,
     "getCookieStoreIdForTab": true,
     "getDevToolsTargetForContext": true,
+    "getTargetTabIdForToolbox": true,
     "makeWidgetId": true,
     "pageActionFor": true,
     "sidebarActionFor": true,
