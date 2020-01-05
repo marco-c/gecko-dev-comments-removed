@@ -8,6 +8,7 @@
 const { l10n } = require("devtools/client/webconsole/new-console-output/utils/messages");
 const { getAllFilters } = require("devtools/client/webconsole/new-console-output/selectors/filters");
 const { getLogLimit } = require("devtools/client/webconsole/new-console-output/selectors/prefs");
+const { getGripPreviewItems } = require("devtools/client/shared/components/reps/reps");
 const {
   MESSAGE_TYPE,
   MESSAGE_SOURCE
@@ -109,8 +110,7 @@ function matchSearchFilters(message, filters) {
   return (
     text === ""
     
-    
-    || (message.parameters !== null && !Array.isArray(message.parameters))
+    || isTextInParameters(text, message.parameters)
     
     || isTextInFrame(text, message.frame)
     
@@ -146,16 +146,54 @@ function matchSearchFilters(message, filters) {
   );
 }
 
+
+
+
 function isTextInFrame(text, frame) {
   if (!frame) {
     return false;
   }
-  
-  return Object.keys(frame)
-    .map(key => frame[key])
+  return Object.values(frame)
     .join(":")
     .toLocaleLowerCase()
     .includes(text.toLocaleLowerCase());
+}
+
+
+
+
+function isTextInParameters(text, parameters) {
+  if (!parameters) {
+    return false;
+  }
+
+  text = text.toLocaleLowerCase();
+  return getAllProps(parameters).find(prop =>
+    (prop + "").toLocaleLowerCase().includes(text)
+  );
+}
+
+
+
+
+
+
+
+function getAllProps(grips) {
+  let result = grips.reduce((res, grip) => {
+    let previewItems = getGripPreviewItems(grip);
+    let allProps = previewItems.length > 0 ? getAllProps(previewItems) : [];
+    return [...res, grip, grip.class, ...allProps];
+  }, []);
+
+  
+  
+  result = result.filter(grip =>
+    typeof grip != "object" &&
+    typeof grip != "undefined"
+  );
+
+  return [...new Set(result)];
 }
 
 function prune(messages, logLimit) {
