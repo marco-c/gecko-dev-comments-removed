@@ -107,12 +107,17 @@ gfxScriptItemizer::fixup(Script newScriptCode)
     }
 }
 
+
+
+
 static inline bool
-SameScript(Script runScript, Script currCharScript)
+SameScript(Script runScript, Script currCharScript, uint32_t aCurrCh)
 {
     return runScript <= Script::INHERITED ||
            currCharScript <= Script::INHERITED ||
-           currCharScript == runScript;
+           currCharScript == runScript ||
+           IsClusterExtender(aCurrCh) ||
+           HasScript(aCurrCh, runScript);
 }
 
 gfxScriptItemizer::gfxScriptItemizer(const char16_t *src, uint32_t length)
@@ -194,7 +199,7 @@ gfxScriptItemizer::Next(uint32_t& aRunStart, uint32_t& aRunLimit,
             }
         }
 
-        if (SameScript(scriptCode, sc)) {
+        if (SameScript(scriptCode, sc, ch)) {
             if (scriptCode <= Script::INHERITED &&
                 sc > Script::INHERITED)
             {
