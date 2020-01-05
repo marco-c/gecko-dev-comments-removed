@@ -437,6 +437,8 @@ private:
 
   MediaConduitErrorCode DeliverPacket(const void *data, int len);
 
+  bool RequiresNewSendStream(const VideoCodecConfig& newConfig) const;
+
   mozilla::ReentrantMonitor mTransportMonitor;
   RefPtr<TransportInterface> mTransmitterTransport;
   RefPtr<TransportInterface> mReceiverTransport;

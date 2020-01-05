@@ -446,12 +446,12 @@ WebrtcVideoConduit::CreateRecvStream()
   return kMediaConduitNoError;
 }
 
-static bool CompatibleH264Config(const webrtc::VideoCodecH264 &aEncoderSpecificH264,
-                                 const VideoCodecConfig* aCodecConfig)
+static bool CompatibleH264Config(const webrtc::VideoCodecH264& aEncoderSpecificH264,
+                                 const VideoCodecConfig& aCodecConfig)
 {
-  if (aEncoderSpecificH264.profile_byte != aCodecConfig->mProfile ||
-      aEncoderSpecificH264.constraints != aCodecConfig->mConstraints ||
-      aEncoderSpecificH264.packetizationMode != aCodecConfig->mPacketizationMode) {
+  if (aEncoderSpecificH264.profile_byte != aCodecConfig.mProfile ||
+      aEncoderSpecificH264.constraints != aCodecConfig.mConstraints ||
+      aEncoderSpecificH264.packetizationMode != aCodecConfig.mPacketizationMode) {
     return false;
   }
   return true;
@@ -480,27 +480,6 @@ WebrtcVideoConduit::ConfigureSendMediaCodec(const VideoCodecConfig* codecConfig)
   if ((condError = ValidateCodecConfig(codecConfig, true)) != kMediaConduitNoError) {
     return condError;
   }
-
-  
-  
-  
-  if (!mSendStream ||
-      mSendStreamConfig.encoder_settings.payload_type != codecConfig->mType ||
-      mSendStreamConfig.encoder_settings.payload_name != codecConfig->mName ||
-      (codecConfig->mName == "H264" &&
-       !CompatibleH264Config(mEncoderSpecificH264, codecConfig))) {
-    condError = StopTransmitting();
-    if (condError != kMediaConduitNoError) {
-      return condError;
-    }
-    DeleteSendStream(); 
-  } 
-
-  mSendStreamConfig.encoder_settings.payload_name = codecConfig->mName;
-  mSendStreamConfig.encoder_settings.payload_type = codecConfig->mType;
-  mSendStreamConfig.rtp.rtcp_mode = webrtc::RtcpMode::kCompound;
-  mSendStreamConfig.rtp.max_packet_size = kVideoMtu;
-  mSendStreamConfig.overuse_callback = mLoadManager.get();
 
   size_t streamCount = std::min(codecConfig->mSimulcastEncodings.size(),
                                 (size_t)webrtc::kMaxSimulcastStreams);
@@ -643,6 +622,35 @@ WebrtcVideoConduit::ConfigureSendMediaCodec(const VideoCodecConfig* codecConfig)
   mEncoderConfig.SetMinTransmitBitrateBps(0);
 
   
+  
+  
+  if (mSendStream) {
+    if (!RequiresNewSendStream(*codecConfig)) {
+      if (!mSendStream->ReconfigureVideoEncoder(mEncoderConfig.GenerateConfig())) {
+        CSFLogError(logTag, "%s: ReconfigureVideoEncoder failed", __FUNCTION__);
+        
+        
+      } else {
+        return kMediaConduitNoError;
+      }
+    }
+
+    condError = StopTransmitting();
+    if (condError != kMediaConduitNoError) {
+      return condError;
+    }
+
+    
+    DeleteSendStream();
+  }
+
+  mSendStreamConfig.encoder_settings.payload_name = codecConfig->mName;
+  mSendStreamConfig.encoder_settings.payload_type = codecConfig->mType;
+  mSendStreamConfig.rtp.rtcp_mode = webrtc::RtcpMode::kCompound;
+  mSendStreamConfig.rtp.max_packet_size = kVideoMtu;
+  mSendStreamConfig.overuse_callback = mLoadManager.get();
+
+  
   if (codecConfig->RtcpFbFECIsSet() &&
       !(codecConfig->mName == "H264" && codecConfig->RtcpFbNackIsSet(""))) {
     mSendStreamConfig.rtp.fec.ulpfec_payload_type = kUlpFecPayloadType;
@@ -657,18 +665,6 @@ WebrtcVideoConduit::ConfigureSendMediaCodec(const VideoCodecConfig* codecConfig)
     MutexAutoLock lock(mCodecMutex);
     
     mCurSendCodecConfig = new VideoCodecConfig(*codecConfig);
-  }
-
-  
-  if (mSendStream &&
-      !mSendStream->ReconfigureVideoEncoder(mEncoderConfig.GenerateConfig())) {
-    CSFLogError(logTag, "%s: ReconfigureVideoEncoder failed", __FUNCTION__);
-    
-    condError = StopTransmitting();
-    if (condError != kMediaConduitNoError) {
-      return condError;
-    }
-    DeleteSendStream();
   }
 
   return condError;
@@ -2002,6 +1998,18 @@ WebrtcVideoConduit::CodecPluginID()
   }
 
   return 0;
+}
+
+bool
+WebrtcVideoConduit::RequiresNewSendStream(const VideoCodecConfig& newConfig) const
+{
+  return !mCurSendCodecConfig
+    || mCurSendCodecConfig->mName != newConfig.mName
+    || mCurSendCodecConfig->mType != newConfig.mType
+    || mCurSendCodecConfig->RtcpFbNackIsSet("") != newConfig.RtcpFbNackIsSet("")
+    || mCurSendCodecConfig->RtcpFbFECIsSet() != newConfig.RtcpFbFECIsSet()
+    || (newConfig.mName == "H264" &&
+        !CompatibleH264Config(mEncoderSpecificH264, newConfig));
 }
 
 void
