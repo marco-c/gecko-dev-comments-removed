@@ -20,9 +20,11 @@ class TabChildGlobal;
 class ProcessGlobal;
 } 
 namespace css {
+class StyleRule;
 class MediaRule;
 class DocumentRule;
 } 
+class ServoStyleRule;
 class CSSSupportsRule;
 } 
 class SandboxPrivate;
@@ -291,8 +293,10 @@ private:
   friend class SandboxPrivate;
   friend class nsInProcessTabChildGlobal;
   friend class nsWindowRoot;
+  friend class mozilla::css::StyleRule;
   friend class mozilla::css::MediaRule;
   friend class mozilla::css::DocumentRule;
+  friend class mozilla::ServoStyleRule;
   friend class mozilla::CSSSupportsRule;
   friend class nsCSSFontFaceRule;
   friend class nsCSSFontFeatureValuesRule;
