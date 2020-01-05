@@ -40,7 +40,8 @@ public:
 
   ~OverflowChangedTracker()
   {
-    NS_ASSERTION(mEntryList.empty(), "Need to flush before destroying!");
+    
+    NS_ASSERTION_STYLO_WARNING(mEntryList.empty(), "Need to flush before destroying!");
   }
 
   
