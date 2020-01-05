@@ -5518,8 +5518,6 @@ pref("security.mixed_content.use_hsts", false);
 pref("security.mixed_content.use_hsts", true);
 #endif
 
-pref ("security.mixed_content.hsts_priming_cache_timeout", 10080);
-
 
 #ifdef NIGHTLY_BUILD
 pref("dom.storageManager.enabled", true);

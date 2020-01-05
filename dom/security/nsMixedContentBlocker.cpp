@@ -59,8 +59,6 @@ bool nsMixedContentBlocker::sUseHSTS = false;
 
 bool nsMixedContentBlocker::sSendHSTSPriming = false;
 
-uint32_t nsMixedContentBlocker::sHSTSPrimingCacheTimeout = (60 * 24 * 7);
-
 
 
 
@@ -210,10 +208,6 @@ nsMixedContentBlocker::nsMixedContentBlocker()
   
   Preferences::AddBoolVarCache(&sSendHSTSPriming,
                                "security.mixed_content.send_hsts_priming");
-
-  
-  Preferences::AddUintVarCache(&sHSTSPrimingCacheTimeout,
-                               "security.mixed_content.hsts_priming_cache_seconds");
 }
 
 nsMixedContentBlocker::~nsMixedContentBlocker()

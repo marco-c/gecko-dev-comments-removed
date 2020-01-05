@@ -7979,11 +7979,9 @@ nsHttpChannel::OnHSTSPrimingFailed(nsresult aError, bool aCached)
     }
 
     
-    
     nsISiteSecurityService* sss = gHttpHandler->GetSSService();
     NS_ENSURE_TRUE(sss, NS_ERROR_OUT_OF_MEMORY);
-    nsresult rv = sss->CacheNegativeHSTSResult(mURI,
-            nsMixedContentBlocker::sHSTSPrimingCacheTimeout);
+    nsresult rv = sss->CacheNegativeHSTSResult(mURI, 24 * 60 * 60);
     if (NS_FAILED(rv)) {
         NS_ERROR("nsISiteSecurityService::CacheNegativeHSTSResult failed");
     }
