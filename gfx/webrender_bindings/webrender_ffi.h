@@ -452,7 +452,7 @@ struct WrVecU8 {
 
 
 
-#ifdef MOZ_ENABLE_WEBRENDER
+#ifdef MOZ_BUILD_WEBRENDER
 #  define WR_INLINE
 #  define WR_FUNC
 #  define WR_DESTRUCTOR_SAFE_FUNC

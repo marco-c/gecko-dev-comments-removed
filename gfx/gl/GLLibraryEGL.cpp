@@ -154,7 +154,7 @@ IsAccelAngleSupported(const nsCOMPtr<nsIGfxInfo>& gfxInfo,
     if (CompositorThreadHolder::IsInCompositorThread()) {
         
         
-#ifndef MOZ_ENABLE_WEBRENDER
+#ifndef MOZ_BUILD_WEBRENDER
         MOZ_ASSERT(false);
 #endif
         return true;
