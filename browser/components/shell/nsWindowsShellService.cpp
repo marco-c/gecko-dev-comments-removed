@@ -647,7 +647,7 @@ nsresult
 nsWindowsShellService::LaunchControlPanelDefaultPrograms()
 {
   
-  if (!IsVistaOrLater()) {
+  if (!IsWin7OrLater()) {
     return NS_ERROR_FAILURE;
   }
 
@@ -664,7 +664,8 @@ nsWindowsShellService::LaunchControlPanelDefaultPrograms()
     return NS_ERROR_FAILURE;
   }
 
-  WCHAR params[] = L"control.exe /name Microsoft.DefaultPrograms /page pageDefaultProgram";
+  WCHAR params[] = L"control.exe /name Microsoft.DefaultPrograms /page "
+    "pageDefaultProgram\\pageAdvancedSettings?pszAppName=" APP_REG_NAME;
   STARTUPINFOW si = {sizeof(si), 0};
   si.dwFlags = STARTF_USESHOWWINDOW;
   si.wShowWindow = SW_SHOWDEFAULT;
@@ -728,7 +729,9 @@ SettingsAppBelievesConnected()
 nsresult
 nsWindowsShellService::LaunchModernSettingsDialogDefaultApps()
 {
-  if (!IsWindowsLogonConnected() && SettingsAppBelievesConnected()) {
+  if (!IsWindowsBuildOrLater(14965) &&
+      !IsWindowsLogonConnected() && SettingsAppBelievesConnected()) {
+    
     
     return LaunchControlPanelDefaultPrograms();
   }
