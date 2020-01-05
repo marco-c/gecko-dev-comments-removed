@@ -369,8 +369,9 @@ public:
 
 
 
-  static nsINode* GetCommonAncestor(nsINode* aNode1,
-                                    nsINode* aNode2);
+
+  static nsINode* GetCommonAncestor(nsINode* aNode1, nsINode* aNode2);
+
 
   
 
