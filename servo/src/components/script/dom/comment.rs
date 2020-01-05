@@ -3,11 +3,12 @@
 
 
 use dom::bindings::codegen::CommentBinding;
-use dom::bindings::utils::{DOMString, Fallible};
+use dom::bindings::utils::Fallible;
 use dom::characterdata::CharacterData;
 use dom::document::AbstractDocument;
 use dom::node::{AbstractNode, CommentNodeTypeId, Node};
 use dom::window::Window;
+use servo_util::str::DOMString;
 
 
 pub struct Comment {

@@ -3,12 +3,13 @@
 
 
 use dom::bindings::codegen::HTMLOutputElementBinding;
-use dom::bindings::utils::{DOMString, ErrorResult};
+use dom::bindings::utils::ErrorResult;
 use dom::document::AbstractDocument;
 use dom::element::HTMLOutputElementTypeId;
 use dom::htmlelement::HTMLElement;
 use dom::node::{AbstractNode, Node};
 use dom::validitystate::ValidityState;
+use servo_util::str::DOMString;
 
 pub struct HTMLOutputElement {
     htmlelement: HTMLElement

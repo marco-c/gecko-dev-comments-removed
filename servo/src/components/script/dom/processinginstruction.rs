@@ -3,10 +3,10 @@
 
 
 use dom::bindings::codegen::ProcessingInstructionBinding;
-use dom::bindings::utils::DOMString;
 use dom::characterdata::CharacterData;
 use dom::document::AbstractDocument;
 use dom::node::{AbstractNode, Node, ProcessingInstructionNodeTypeId};
+use servo_util::str::DOMString;
 
 
 pub struct ProcessingInstruction {

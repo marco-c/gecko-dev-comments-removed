@@ -3,11 +3,12 @@
 
 
 use dom::bindings::codegen::HTMLVideoElementBinding;
-use dom::bindings::utils::{DOMString, ErrorResult};
+use dom::bindings::utils::ErrorResult;
 use dom::document::AbstractDocument;
 use dom::element::HTMLVideoElementTypeId;
 use dom::htmlmediaelement::HTMLMediaElement;
 use dom::node::{AbstractNode, Node};
+use servo_util::str::DOMString;
 
 pub struct HTMLVideoElement {
     htmlmediaelement: HTMLMediaElement

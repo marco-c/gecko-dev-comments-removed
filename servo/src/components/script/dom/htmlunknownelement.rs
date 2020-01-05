@@ -3,11 +3,11 @@
 
 
 use dom::bindings::codegen::HTMLUnknownElementBinding;
-use dom::bindings::utils::DOMString;
 use dom::document::AbstractDocument;
 use dom::element::HTMLUnknownElementTypeId;
 use dom::htmlelement::HTMLElement;
 use dom::node::{AbstractNode, Node};
+use servo_util::str::DOMString;
 
 pub struct HTMLUnknownElement {
     htmlelement: HTMLElement

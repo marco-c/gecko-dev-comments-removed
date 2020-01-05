@@ -2,10 +2,11 @@
 
 
 
-use dom::bindings::utils::{DOMString, Reflectable, Reflector, reflect_dom_object};
+use dom::bindings::utils::{Reflectable, Reflector, reflect_dom_object};
 use dom::bindings::utils::Fallible;
 use dom::bindings::codegen::BlobBinding;
 use dom::window::Window;
+use servo_util::str::DOMString;
 
 pub struct Blob {
     reflector_: Reflector,

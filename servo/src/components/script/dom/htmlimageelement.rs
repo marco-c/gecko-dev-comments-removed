@@ -3,7 +3,7 @@
 
 
 use dom::bindings::codegen::HTMLImageElementBinding;
-use dom::bindings::utils::{DOMString, ErrorResult};
+use dom::bindings::utils::ErrorResult;
 use dom::document::AbstractDocument;
 use dom::element::HTMLImageElementTypeId;
 use dom::htmlelement::HTMLElement;
@@ -15,6 +15,7 @@ use servo_net::image_cache_task;
 use servo_net::image_cache_task::ImageCacheTask;
 use servo_util::url::parse_url;
 use servo_util::namespace::Null;
+use servo_util::str::DOMString;
 
 pub struct HTMLImageElement {
     htmlelement: HTMLElement,

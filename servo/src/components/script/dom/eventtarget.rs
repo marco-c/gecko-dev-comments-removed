@@ -2,14 +2,15 @@
 
 
 
-use dom::bindings::utils::{Reflectable, Reflector, DOMString, Fallible};
-use dom::bindings::utils::{InvalidState};
+use dom::bindings::utils::{Reflectable, Reflector};
+use dom::bindings::utils::{Fallible, InvalidState};
 use dom::bindings::codegen::EventListenerBinding::EventListener;
 use dom::document::AbstractDocument;
 use dom::event::AbstractEvent;
 use dom::eventdispatcher::dispatch_event;
 use dom::node::AbstractNode;
 use dom::window::Window;
+use servo_util::str::DOMString;
 
 use std::cast;
 use std::hashmap::HashMap;

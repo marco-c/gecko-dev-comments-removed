@@ -3,11 +3,12 @@
 
 
 use dom::bindings::codegen::HTMLOListElementBinding;
-use dom::bindings::utils::{DOMString, ErrorResult};
+use dom::bindings::utils::ErrorResult;
 use dom::document::AbstractDocument;
 use dom::element::HTMLOListElementTypeId;
 use dom::htmlelement::HTMLElement;
 use dom::node::{AbstractNode, Node};
+use servo_util::str::DOMString;
 
 pub struct HTMLOListElement {
     htmlelement: HTMLElement,

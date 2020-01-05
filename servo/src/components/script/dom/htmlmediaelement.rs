@@ -2,10 +2,11 @@
 
 
 
-use dom::bindings::utils::{DOMString, ErrorResult};
+use dom::bindings::utils::ErrorResult;
 use dom::document::AbstractDocument;
 use dom::element::ElementTypeId;
 use dom::htmlelement::HTMLElement;
+use servo_util::str::DOMString;
 
 pub struct HTMLMediaElement {
     htmlelement: HTMLElement,

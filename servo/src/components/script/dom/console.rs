@@ -3,9 +3,9 @@
 
 
 use dom::bindings::utils::{Reflectable, Reflector, reflect_dom_object};
-use dom::bindings::utils::{DOMString};
 use dom::bindings::codegen::ConsoleBinding;
 use dom::window::Window;
+use servo_util::str::DOMString;
 
 pub struct Console {
     reflector_: Reflector

@@ -3,11 +3,11 @@
 
 
 use dom::bindings::codegen::HTMLTableDataCellElementBinding;
-use dom::bindings::utils::DOMString;
 use dom::document::AbstractDocument;
 use dom::element::HTMLTableDataCellElementTypeId;
 use dom::htmltablecellelement::HTMLTableCellElement;
 use dom::node::{AbstractNode, Node};
+use servo_util::str::DOMString;
 
 pub struct HTMLTableDataCellElement {
     htmltablecellelement: HTMLTableCellElement,

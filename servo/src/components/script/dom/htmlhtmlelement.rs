@@ -3,11 +3,12 @@
 
 
 use dom::bindings::codegen::HTMLHtmlElementBinding;
-use dom::bindings::utils::{DOMString, ErrorResult};
+use dom::bindings::utils::ErrorResult;
 use dom::document::AbstractDocument;
 use dom::element::HTMLHtmlElementTypeId;
 use dom::htmlelement::HTMLElement;
 use dom::node::{AbstractNode, Node};
+use servo_util::str::DOMString;
 
 pub struct HTMLHtmlElement {
     htmlelement: HTMLElement

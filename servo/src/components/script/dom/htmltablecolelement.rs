@@ -3,11 +3,12 @@
 
 
 use dom::bindings::codegen::HTMLTableColElementBinding;
-use dom::bindings::utils::{DOMString, ErrorResult};
+use dom::bindings::utils::ErrorResult;
 use dom::document::AbstractDocument;
 use dom::element::HTMLTableColElementTypeId;
 use dom::htmlelement::HTMLElement;
 use dom::node::{AbstractNode, Node};
+use servo_util::str::DOMString;
 
 pub struct HTMLTableColElement {
     htmlelement: HTMLElement,

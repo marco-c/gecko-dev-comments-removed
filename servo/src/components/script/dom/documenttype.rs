@@ -3,9 +3,9 @@
 
 
 use dom::bindings::codegen::DocumentTypeBinding;
-use dom::bindings::utils::DOMString;
 use dom::document::AbstractDocument;
 use dom::node::{AbstractNode, Node, DoctypeNodeTypeId};
+use servo_util::str::DOMString;
 
 
 pub struct DocumentType {
