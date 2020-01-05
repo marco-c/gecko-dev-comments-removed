@@ -59,10 +59,7 @@ int64_t
 NextFrameSeekTask::CalculateNewCurrentTime() const
 {
   AssertOwnerThread();
-
-  
-  
-  return mTarget.GetTime().ToMicroseconds();
+  return 0;
 }
 
 void

@@ -1402,7 +1402,9 @@ private:
 
   int64_t CalculateNewCurrentTime() const override
   {
-    return mSeekTask->CalculateNewCurrentTime();
+    
+    
+    return mTask->mTarget.GetTime().ToMicroseconds();
   }
 
   void OnSeekTaskResolved(const SeekTaskResolveValue& aValue)
