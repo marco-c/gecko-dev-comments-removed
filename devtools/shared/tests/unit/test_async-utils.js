@@ -2,6 +2,8 @@
 
 
 
+"use strict";
+
 
 
 const {Task} = require("devtools/shared/task");
@@ -60,12 +62,13 @@ function test_async_return(async) {
 function test_async_throw(async) {
   let obj = {
     method: async(function* () {
-      throw "boom";
+      throw new Error("boom");
     })
   };
 
   return obj.method().then(null, error => {
-    do_check_eq(error, "boom");
+    do_check_true(error instanceof Error);
+    do_check_eq(error.message, "boom");
   });
 }
 
@@ -116,7 +119,6 @@ function test_async_once() {
 function test_async_invoke() {
   return Task.spawn(function* () {
     function func(a, b, expectedThis, callback) {
-      "use strict";
       do_check_eq(a, "foo");
       do_check_eq(b, "bar");
       do_check_eq(this, expectedThis);
@@ -127,12 +129,10 @@ function test_async_invoke() {
     let callResult = yield promiseCall(func, "foo", "bar", undefined);
     do_check_eq(callResult, "foobar");
 
-
     
     let obj = { method: func };
     let invokeResult = yield promiseInvoke(obj, obj.method, "foo", "bar", obj);
     do_check_eq(invokeResult, "foobar");
-
 
     
     function multipleResults(callback) {
@@ -144,14 +144,14 @@ function test_async_invoke() {
     do_check_eq(results[0], "foo");
     do_check_eq(results[1], "bar");
 
-
     
     function thrower() {
-      throw "boom";
+      throw new Error("boom");
     }
 
     yield promiseCall(thrower).then(null, error => {
-      do_check_eq(error, "boom");
+      do_check_true(error instanceof Error);
+      do_check_eq(error.message, "boom");
     });
   });
 }

@@ -1,13 +1,12 @@
 
 
 
-"use strict";
-var Cc = Components.classes;
-var Ci = Components.interfaces;
-var Cu = Components.utils;
-var Cr = Components.results;
 
-const {require, DevToolsLoader, devtools} = Cu.import("resource://devtools/shared/Loader.jsm", {});
+
+"use strict";
+
+const { classes: Cc, interfaces: Ci, utils: Cu } = Components;
+const { require, DevToolsLoader } = Cu.import("resource://devtools/shared/Loader.jsm", {});
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 const flags = require("devtools/shared/flags");
 
@@ -23,25 +22,22 @@ do_register_cleanup(() => {
 
 var ALLOW_CONSOLE_ERRORS = false;
 
-var errorCount = 0;
 var listener = {
-  observe: function (aMessage) {
-    errorCount++;
+  observe: function (message) {
+    let string;
     try {
-      
-      
-      var scriptError = aMessage.QueryInterface(Ci.nsIScriptError);
-      dump(aMessage.sourceName + ":" + aMessage.lineNumber + ": " +
-           scriptErrorFlagsToKind(aMessage.flags) + ": " +
-           aMessage.errorMessage + "\n");
-      var string = aMessage.errorMessage;
-    } catch (x) {
+      message.QueryInterface(Ci.nsIScriptError);
+      dump(message.sourceName + ":" + message.lineNumber + ": " +
+           scriptErrorFlagsToKind(message.flags) + ": " +
+           message.errorMessage + "\n");
+      string = message.errorMessage;
+    } catch (ex) {
       
       
       try {
-        var string = "" + aMessage.message;
-      } catch (x) {
-        var string = "<error converting error message to string>";
+        string = "" + message.message;
+      } catch (e) {
+        string = "<error converting error message to string>";
       }
     }
 

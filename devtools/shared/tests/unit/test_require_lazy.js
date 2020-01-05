@@ -1,6 +1,9 @@
 
 
 
+"use strict";
+
+const { devtools } = Cu.import("resource://devtools/shared/Loader.jsm", {});
 
 
 function run_test() {
@@ -18,6 +21,7 @@ function run_test() {
   const o2 = {};
   let loader = new DevToolsLoader();
 
+  
   
   loader.require("devtools/shared/DevToolsUtils");
 
