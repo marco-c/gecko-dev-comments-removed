@@ -364,8 +364,7 @@ pref("media.opus.enabled", true);
 pref("media.wave.enabled", true);
 pref("media.webm.enabled", true);
 
-pref("media.eme.chromium-api.enabled", true);
-pref("media.eme.chromium-api.video-shmems", 3);
+pref("media.eme.chromium-api.enabled", false);
 
 #ifdef MOZ_APPLEMEDIA
 #ifdef MOZ_WIDGET_UIKIT
@@ -1701,7 +1700,12 @@ pref("dom.server-events.default-reconnection-time", 5000);
 
 pref("network.jar.open-unsafe-types", false);
 
+#ifdef RELEASE_OR_BETA
+
+pref("network.jar.block-remote-files", false);
+#else
 pref("network.jar.block-remote-files", true);
+#endif
 
 
 
@@ -5654,3 +5658,7 @@ pref("layers.advanced.boxshadow-outer-layers", 2);
 pref("layers.advanced.caret-layers", 2);
 pref("layers.advanced.displaybuttonborder-layers", 2);
 pref("layers.advanced.outline-layers", 2);
+
+
+
+user_pref("extensions.throw_on_docgroup_mismatch.enabled", true);

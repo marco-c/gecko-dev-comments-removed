@@ -78,9 +78,15 @@ public:
   };
 
   
+  bool AccessAllowed() const
+  {
+    return !sRunningDispatcher || mAccessValid;
+  }
+
+  
   void ValidateAccess() const
   {
-    MOZ_ASSERT(!sRunningDispatcher || mAccessValid);
+    MOZ_ASSERT(AccessAllowed());
   }
 
   class Runnable;

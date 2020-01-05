@@ -7,6 +7,7 @@
 #include "WaiveXrayWrapper.h"
 #include "FilteringWrapper.h"
 #include "AddonWrapper.h"
+#include "DocGroupValidationWrapper.h"
 #include "XrayWrapper.h"
 #include "AccessCheck.h"
 #include "XPCWrapper.h"
@@ -447,6 +448,66 @@ SelectAddonWrapper(JSContext* cx, HandleObject obj, const Wrapper* wrapper)
     return wrapper;
 }
 
+static bool
+NeedsDocGroupValidationWrapper(JSContext* cx, HandleObject obj,
+                               JSCompartment* origin, JSCompartment* target,
+                               CompartmentPrivate* targetCompartmentPrivate)
+{
+    
+    
+    
+    
+    
+    
+
+    if (!targetCompartmentPrivate->scope->HasDocGroupValidation())
+        return false;
+
+    if (!XRE_IsContentProcess())
+        return false;
+
+    if (!AccessCheck::isChrome(target))
+        return false;
+
+    if (AccessCheck::isChrome(origin) ||
+        IsSandbox(js::GetGlobalForObjectCrossCompartment(obj)))
+    {
+        return false;
+    }
+
+    return true;
+}
+
+static const Wrapper*
+SelectDocGroupValidationWrapper(JSContext* cx, HandleObject obj, const Wrapper* wrapper)
+{
+    
+    
+    if (wrapper == &CrossCompartmentWrapper::singleton)
+        return &DocGroupValidationWrapper<CrossCompartmentWrapper>::singleton;
+    else if (wrapper == &PermissiveXrayXPCWN::singleton)
+        return &DocGroupValidationWrapper<PermissiveXrayXPCWN>::singleton;
+    else if (wrapper == &PermissiveXrayDOM::singleton)
+        return &DocGroupValidationWrapper<PermissiveXrayDOM>::singleton;
+    else if (wrapper == &PermissiveXrayJS::singleton)
+        return &DocGroupValidationWrapper<PermissiveXrayJS>::singleton;
+    else if (wrapper == &AddonWrapper<CrossCompartmentWrapper>::singleton)
+        return &DocGroupValidationWrapper<AddonWrapper<CrossCompartmentWrapper>>::singleton;
+    else if (wrapper == &AddonWrapper<PermissiveXrayXPCWN>::singleton)
+        return &DocGroupValidationWrapper<AddonWrapper<PermissiveXrayXPCWN>>::singleton;
+    else if (wrapper == &AddonWrapper<PermissiveXrayDOM>::singleton)
+        return &DocGroupValidationWrapper<AddonWrapper<PermissiveXrayDOM>>::singleton;
+    else if (wrapper == &WaiveXrayWrapper::singleton)
+        return &DocGroupValidationWrapper<WaiveXrayWrapper>::singleton;
+
+    
+    
+    
+    MOZ_ASSERT(wrapper == &WaiveXrayWrapper::singleton ||
+               wrapper == &(PermissiveXrayOpaque::singleton));
+    return wrapper;
+}
+
 JSObject*
 WrapperFactory::Rewrap(JSContext* cx, HandleObject existing, HandleObject obj)
 {
@@ -556,6 +617,13 @@ WrapperFactory::Rewrap(JSContext* cx, HandleObject existing, HandleObject obj)
         
         if (targetCompartmentPrivate->scope->HasInterposition())
             wrapper = SelectAddonWrapper(cx, obj, wrapper);
+
+        
+        if (NeedsDocGroupValidationWrapper(cx, obj, origin, target,
+                                           targetCompartmentPrivate))
+        {
+            wrapper = SelectDocGroupValidationWrapper(cx, obj, wrapper);
+        }
     }
 
     if (!targetSubsumesOrigin) {

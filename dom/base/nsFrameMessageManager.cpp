@@ -1717,6 +1717,7 @@ nsMessageManagerScriptExecutor::InitChildGlobalInternal(
   
   
   xpc::SetLocationForGlobal(global, aID);
+  xpc::SetDocGroupValidation(global);
 
   DidCreateGlobal();
   return true;
