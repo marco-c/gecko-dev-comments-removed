@@ -80,14 +80,18 @@ MediaDecoderReader::MediaDecoderReader(AbstractMediaDecoder* aDecoder)
 {
   MOZ_COUNT_CTOR(MediaDecoderReader);
   MOZ_ASSERT(NS_IsMainThread());
+}
 
+nsresult
+MediaDecoderReader::Init()
+{
   if (mDecoder && mDecoder->DataArrivedEvent()) {
     mDataArrivedListener = mDecoder->DataArrivedEvent()->Connect(
       mTaskQueue, this, &MediaDecoderReader::NotifyDataArrived);
   }
-
   
   mTaskQueue->Dispatch(NewRunnableMethod(this, &MediaDecoderReader::InitializationTask));
+  return InitInternal();
 }
 
 void

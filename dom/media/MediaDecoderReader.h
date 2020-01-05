@@ -87,7 +87,7 @@ public:
 
   
   
-  virtual nsresult Init() { return NS_OK; }
+  nsresult Init();
 
   
   
@@ -325,6 +325,8 @@ protected:
   MediaEventProducer<void> mOnMediaNotSeekable;
 
 private:
+  virtual nsresult InitInternal() { return NS_OK; }
+
   
   
   
