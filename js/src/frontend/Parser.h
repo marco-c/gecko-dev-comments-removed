@@ -822,6 +822,16 @@ class ParserBase : public StrictModeGetter
                pc->isLegacyGenerator();
     }
 
+    bool asyncIterationSupported() {
+#ifdef RELEASE_OR_BETA
+        return false;
+#else
+        
+        
+        return !options().isProbablySystemOrAddonCode;
+#endif
+    }
+
     virtual bool strictMode() { return pc->sc()->strict(); }
     bool setLocalStrictMode(bool strict) {
         MOZ_ASSERT(tokenStream.debugHasNoLookahead());

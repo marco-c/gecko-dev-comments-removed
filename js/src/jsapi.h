@@ -3879,6 +3879,7 @@ class JS_FRIEND_API(TransitiveCompileOptions)
         forceAsync(false),
         sourceIsLazy(false),
         allowHTMLComments(true),
+        isProbablySystemOrAddonCode(false),
         introductionType(nullptr),
         introductionLineno(0),
         introductionOffset(0),
@@ -3915,6 +3916,7 @@ class JS_FRIEND_API(TransitiveCompileOptions)
     bool forceAsync;
     bool sourceIsLazy;
     bool allowHTMLComments;
+    bool isProbablySystemOrAddonCode;
 
     
     
