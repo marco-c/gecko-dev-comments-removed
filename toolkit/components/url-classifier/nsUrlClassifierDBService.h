@@ -218,11 +218,6 @@ private:
                     uint32_t aCount,
                     LookupResultArray& results);
 
-  nsresult CacheResultToTableUpdate(CacheResult* aCacheResult,
-                                    TableUpdate* aUpdate);
-
-  bool IsSameAsLastResults(CacheResultArray& aResult);
-
   
   nsCOMPtr<nsICryptoHash> mCryptoHash;
 
@@ -244,7 +239,7 @@ private:
   PrefixArray mMissCache;
 
   
-  nsAutoPtr<CacheResultArray> mLastResults;
+  CacheResultArray mLastResults;
 
   nsresult mUpdateStatus;
   nsTArray<nsCString> mUpdateTables;
