@@ -174,7 +174,7 @@ JitRuntime::generateEnterJIT(JSContext* cx, EnterJitType type)
     
     
     aasm->as_sub(r4, sp, O2RegImmShift(r1, LSL, 3));    
-    masm.ma_and(Imm32(~(JitStackAlignment - 1)), r4, r4);
+    aasm->as_bic(r4, r4, Imm8(JitStackAlignment - 1));
     
     static_assert(sizeof(JitFrameLayout) % JitStackAlignment == 0,
       "No need to consider the JitFrameLayout for aligning the stack");
@@ -317,7 +317,7 @@ JitRuntime::generateEnterJIT(JSContext* cx, EnterJitType type)
             AbsoluteAddress addressOfEnabled(cx->runtime()->spsProfiler.addressOfEnabled());
             masm.branch32(Assembler::Equal, addressOfEnabled, Imm32(0),
                           &skipProfilingInstrumentation);
-            masm.ma_add(framePtr, Imm32(sizeof(void*)), realFramePtr);
+            masm.as_add(realFramePtr, framePtr, Imm8(sizeof(void*)));
             masm.profilerEnterFrame(realFramePtr, scratch);
             masm.bind(&skipProfilingInstrumentation);
         }
@@ -400,7 +400,7 @@ JitRuntime::generateInvalidator(JSContext* cx)
     
     
     
-    masm.ma_and(Imm32(~7), sp, sp);
+    masm.as_bic(sp, sp, Imm8(7));
     masm.startDataTransferM(IsStore, sp, DB, WriteBack);
     
     
@@ -412,8 +412,9 @@ JitRuntime::generateInvalidator(JSContext* cx)
     
     
     if (FloatRegisters::ActualTotalPhys() != FloatRegisters::TotalPhys) {
+        ScratchRegisterScope scratch(masm);
         int missingRegs = FloatRegisters::TotalPhys - FloatRegisters::ActualTotalPhys();
-        masm.ma_sub(Imm32(missingRegs * sizeof(double)), sp);
+        masm.ma_sub(Imm32(missingRegs * sizeof(double)), sp, scratch);
     }
 
     masm.startFloatTransferM(IsStore, sp, DB, WriteBack);
@@ -434,12 +435,18 @@ JitRuntime::generateInvalidator(JSContext* cx)
     masm.passABIArg(r2);
     masm.callWithABI(JS_FUNC_TO_DATA_PTR(void*, InvalidationBailout));
 
-    masm.ma_ldr(Address(sp, 0), r2);
-    masm.ma_ldr(Address(sp, sizeOfBailoutInfo), r1);
+    masm.ma_ldr(DTRAddr(sp, DtrOffImm(0)), r2);
+    {
+        ScratchRegisterScope scratch(masm);
+        masm.ma_ldr(Address(sp, sizeOfBailoutInfo), r1, scratch);
+    }
     
     
     
-    masm.ma_add(sp, Imm32(sizeof(InvalidationBailoutStack) + sizeOfRetval + sizeOfBailoutInfo), sp);
+    {
+        ScratchRegisterScope scratch(masm);
+        masm.ma_add(sp, Imm32(sizeof(InvalidationBailoutStack) + sizeOfRetval + sizeOfBailoutInfo), sp, scratch);
+    }
     
     
     masm.ma_add(sp, r1, sp);
@@ -475,14 +482,20 @@ JitRuntime::generateArgumentsRectifier(JSContext* cx, void** returnAddrOut)
 
     
     masm.ma_ldr(DTRAddr(sp, DtrOffImm(RectifierFrameLayout::offsetOfCalleeToken())), r1);
-    masm.ma_and(Imm32(CalleeTokenMask), r1, r6);
+    {
+        ScratchRegisterScope scratch(masm);
+        masm.ma_and(Imm32(CalleeTokenMask), r1, r6, scratch);
+    }
     masm.ma_ldrh(EDtrAddr(r6, EDtrOffImm(JSFunction::offsetOfNargs())), r6);
 
     masm.ma_sub(r6, r8, r2);
 
     
-    masm.ma_alu(sp, lsl(r8, 3), r3, OpAdd); 
-    masm.ma_add(r3, Imm32(sizeof(RectifierFrameLayout)), r3);
+    {
+        ScratchRegisterScope scratch(masm);
+        masm.ma_alu(sp, lsl(r8, 3), r3, OpAdd); 
+        masm.ma_add(r3, Imm32(sizeof(RectifierFrameLayout)), r3, scratch);
+    }
 
     {
         Label notConstructing;
@@ -491,8 +504,8 @@ JitRuntime::generateArgumentsRectifier(JSContext* cx, void** returnAddrOut)
                           &notConstructing);
 
         
-        masm.ma_dataTransferN(IsLoad, 64, true, r3, Imm32(8), r4, Offset);
-        masm.ma_dataTransferN(IsStore, 64, true, sp, Imm32(-8), r4, PreIndex);
+        masm.as_extdtr(IsLoad, 64, true, Offset, r4, EDtrAddr(r3, EDtrOffImm(8)));
+        masm.as_extdtr(IsStore, 64, true, PreIndex, r4, EDtrAddr(sp, EDtrOffImm(-8)));
 
         
         
@@ -506,8 +519,8 @@ JitRuntime::generateArgumentsRectifier(JSContext* cx, void** returnAddrOut)
     {
         Label undefLoopTop;
         masm.bind(&undefLoopTop);
-        masm.ma_dataTransferN(IsStore, 64, true, sp, Imm32(-8), r4, PreIndex);
-        masm.ma_sub(r2, Imm32(1), r2, SetCC);
+        masm.as_extdtr(IsStore, 64, true, PreIndex, r4, EDtrAddr(sp, EDtrOffImm(-8)));
+        masm.as_sub(r2, r2, Imm8(1), SetCC);
 
         masm.ma_b(&undefLoopTop, Assembler::NonZero);
     }
@@ -516,15 +529,15 @@ JitRuntime::generateArgumentsRectifier(JSContext* cx, void** returnAddrOut)
     {
         Label copyLoopTop;
         masm.bind(&copyLoopTop);
-        masm.ma_dataTransferN(IsLoad, 64, true, r3, Imm32(-8), r4, PostIndex);
-        masm.ma_dataTransferN(IsStore, 64, true, sp, Imm32(-8), r4, PreIndex);
+        masm.as_extdtr(IsLoad, 64, true, PostIndex, r4, EDtrAddr(r3, EDtrOffImm(-8)));
+        masm.as_extdtr(IsStore, 64, true, PreIndex, r4, EDtrAddr(sp, EDtrOffImm(-8)));
 
-        masm.ma_sub(r8, Imm32(1), r8, SetCC);
+        masm.as_sub(r8, r8, Imm8(1), SetCC);
         masm.ma_b(&copyLoopTop, Assembler::NotSigned);
     }
 
     
-    masm.ma_add(r6, Imm32(1), r6);
+    masm.as_add(r6, r6, Imm8(1));
     masm.ma_lsl(Imm32(3), r6, r6);
 
     
@@ -551,7 +564,10 @@ JitRuntime::generateArgumentsRectifier(JSContext* cx, void** returnAddrOut)
     
 
     
-    masm.ma_dtr(IsLoad, sp, Imm32(12), r4, PostIndex);
+    {
+        ScratchRegisterScope scratch(masm);
+        masm.ma_dtr(IsLoad, sp, Imm32(12), r4, scratch, PostIndex);
+    }
 
     
     
@@ -600,12 +616,14 @@ PushBailoutFrame(MacroAssembler& masm, uint32_t frameClass, Register spArg)
         masm.transferReg(Register::FromCode(i));
     masm.finishDataTransfer();
 
+    ScratchRegisterScope scratch(masm);
+
     
     
     
     if (FloatRegisters::ActualTotalPhys() != FloatRegisters::TotalPhys) {
         int missingRegs = FloatRegisters::TotalPhys - FloatRegisters::ActualTotalPhys();
-        masm.ma_sub(Imm32(missingRegs * sizeof(double)), sp);
+        masm.ma_sub(Imm32(missingRegs * sizeof(double)), sp, scratch);
     }
     masm.startFloatTransferM(IsStore, sp, DB, WriteBack);
     for (uint32_t i = 0; i < FloatRegisters::ActualTotalPhys(); i++)
@@ -658,8 +676,12 @@ GenerateBailoutThunk(JSContext* cx, MacroAssembler& masm, uint32_t frameClass)
 
     
     masm.callWithABI(JS_FUNC_TO_DATA_PTR(void*, Bailout));
-    masm.ma_ldr(Address(sp, 0), r2);
-    masm.ma_add(sp, Imm32(sizeOfBailoutInfo), sp);
+    masm.ma_ldr(DTRAddr(sp, DtrOffImm(0)), r2);
+    {
+        ScratchRegisterScope scratch(masm);
+        masm.ma_add(sp, Imm32(sizeOfBailoutInfo), sp, scratch);
+    }
+
     
     uint32_t bailoutFrameSize = 0
         + sizeof(void*) 
@@ -675,9 +697,11 @@ GenerateBailoutThunk(JSContext* cx, MacroAssembler& masm, uint32_t frameClass)
         
         
         
-        masm.ma_add(sp, Imm32(bailoutFrameSize+12), sp);
+        ScratchRegisterScope scratch(masm);
+        masm.ma_add(sp, Imm32(bailoutFrameSize+12), sp, scratch);
         masm.as_add(sp, sp, O2Reg(r4));
     } else {
+        ScratchRegisterScope scratch(masm);
         uint32_t frameSize = FrameSizeClass::FromClass(frameClass).frameSize();
         masm.ma_add(Imm32(
                           
@@ -687,7 +711,7 @@ GenerateBailoutThunk(JSContext* cx, MacroAssembler& masm, uint32_t frameClass)
                           + sizeof(void*)
                           
                           + bailoutFrameSize)
-                    , sp);
+                    , sp, scratch);
     }
 
     
@@ -777,7 +801,8 @@ JitRuntime::generateVMWrapper(JSContext* cx, const VMFunction& f)
     if (f.explicitArgs) {
         argsBase = r5;
         regs.take(argsBase);
-        masm.ma_add(sp, Imm32(ExitFrameLayout::SizeWithFooter()), argsBase);
+        ScratchRegisterScope scratch(masm);
+        masm.ma_add(sp, Imm32(ExitFrameLayout::SizeWithFooter()), argsBase, scratch);
     }
 
     
@@ -1155,7 +1180,10 @@ JitRuntime::generateProfilerExitFrameTailStub(JSContext* cx)
     
     
     
-    masm.ma_and(Imm32((1 << FRAMETYPE_BITS) - 1), scratch1, scratch2);
+    {
+        ScratchRegisterScope asmScratch(masm);
+        masm.ma_and(Imm32((1 << FRAMETYPE_BITS) - 1), scratch1, scratch2, asmScratch);
+    }
     masm.rshiftPtr(Imm32(FRAMESIZE_SHIFT), scratch1);
 
     
@@ -1201,7 +1229,7 @@ JitRuntime::generateProfilerExitFrameTailStub(JSContext* cx)
         
         
         masm.ma_add(StackPointer, scratch1, scratch2);
-        masm.ma_add(scratch2, Imm32(JitFrameLayout::Size()), scratch2);
+        masm.as_add(scratch2, scratch2, Imm8(JitFrameLayout::Size()));
         masm.storePtr(scratch2, lastProfilingFrame);
         masm.ret();
     }
