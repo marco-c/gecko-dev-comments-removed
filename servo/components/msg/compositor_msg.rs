@@ -14,13 +14,13 @@ use std::fmt;
 use constellation_msg::PipelineId;
 
 
-#[deriving(PartialEq, Eq, Clone, Copy)]
+#[derive(PartialEq, Eq, Clone, Copy)]
 pub enum PaintState {
     Idle,
     Painting,
 }
 
-#[deriving(Eq, Ord, PartialEq, PartialOrd, Clone, Show, Copy)]
+#[derive(Eq, Ord, PartialEq, PartialOrd, Clone, Show, Copy)]
 pub enum ReadyState {
     
     Blank,
@@ -33,7 +33,7 @@ pub enum ReadyState {
 }
 
 
-#[deriving(PartialEq, Eq, Show, Copy)]
+#[derive(PartialEq, Eq, Show, Copy)]
 pub struct Epoch(pub uint);
 
 impl Epoch {
@@ -43,7 +43,7 @@ impl Epoch {
     }
 }
 
-#[deriving(Clone, PartialEq, Eq, Copy)]
+#[derive(Clone, PartialEq, Eq, Copy)]
 pub struct LayerId(pub uint, pub uint);
 
 impl Show for LayerId {
@@ -61,7 +61,7 @@ impl LayerId {
 }
 
 
-#[deriving(Clone, PartialEq, Eq, Copy)]
+#[derive(Clone, PartialEq, Eq, Copy)]
 pub enum ScrollPolicy {
     
     Scrollable,
@@ -71,7 +71,7 @@ pub enum ScrollPolicy {
 
 
 
-#[deriving(Copy)]
+#[derive(Copy)]
 pub struct LayerMetadata {
     
     pub id: LayerId,
@@ -85,7 +85,7 @@ pub struct LayerMetadata {
 
 
 
-pub trait PaintListener for Sized? {
+pub trait PaintListener {
     fn get_graphics_metadata(&mut self) -> Option<NativeGraphicsMetadata>;
 
     

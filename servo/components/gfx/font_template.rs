@@ -15,7 +15,7 @@ use font::FontHandleMethods;
 
 
 
-#[deriving(Clone, Copy)]
+#[derive(Clone, Copy)]
 pub struct FontTemplateDescriptor {
     pub weight: font_weight::T,
     pub italic: bool,

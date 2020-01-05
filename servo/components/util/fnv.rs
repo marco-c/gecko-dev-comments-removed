@@ -4,7 +4,8 @@
 
 
 
-pub use std::hash::{Hash, Hasher, Writer};
+use std::default::Default;
+use std::hash::{Hasher, Writer};
 
 
 
@@ -13,33 +14,26 @@ pub use std::hash::{Hash, Hasher, Writer};
 
 
 
-#[deriving(Clone)]
-pub struct FnvHasher;
+#[allow(missing_copy_implementations)]
+pub struct FnvHasher(u64);
 
-pub struct FnvState(u64);
-
-impl Hasher<FnvState> for FnvHasher {
-    fn hash<Sized? T: Hash<FnvState>>(&self, t: &T) -> u64 {
-        let mut state = FnvState(0xcbf29ce484222325);
-        t.hash(&mut state);
-        let FnvState(ret) = state;
-        return ret;
-    }
+impl Default for FnvHasher {
+    fn default() -> FnvHasher { FnvHasher(0xcbf29ce484222325) }
 }
 
-impl Writer for FnvState {
+impl Hasher for FnvHasher {
+    type Output = u64;
+    fn reset(&mut self) { *self = Default::default(); }
+    fn finish(&self) -> u64 { self.0 }
+}
+
+impl Writer for FnvHasher {
     fn write(&mut self, bytes: &[u8]) {
-        let FnvState(mut hash) = *self;
+        let FnvHasher(mut hash) = *self;
         for byte in bytes.iter() {
             hash = hash ^ (*byte as u64);
             hash = hash * 0x100000001b3;
         }
-        *self = FnvState(hash);
+        *self = FnvHasher(hash);
     }
-}
-
-#[inline(always)]
-pub fn hash<T: Hash<FnvState>>(t: &T) -> u64 {
-    let s = FnvHasher;
-    s.hash(t)
 }

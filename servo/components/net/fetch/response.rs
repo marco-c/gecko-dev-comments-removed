@@ -6,10 +6,10 @@ use url::Url;
 use hyper::status::StatusCode;
 use hyper::header::Headers;
 use std::ascii::AsciiExt;
-use std::comm::Receiver;
+use std::sync::mpsc::Receiver;
 
 
-#[deriving(Clone, PartialEq, Copy)]
+#[derive(Clone, PartialEq, Copy)]
 pub enum ResponseType {
     Basic,
     CORS,
@@ -19,7 +19,7 @@ pub enum ResponseType {
 }
 
 
-#[deriving(Clone, Copy)]
+#[derive(Clone, Copy)]
 pub enum TerminationReason {
     EndUserAbort,
     Fatal,
@@ -29,7 +29,7 @@ pub enum TerminationReason {
 
 
 #[unstable = "I haven't yet decided exactly how the interface for this will be"]
-#[deriving(Clone)]
+#[derive(Clone)]
 pub enum ResponseBody {
     Empty, 
     Receiving(Vec<u8>),
@@ -50,7 +50,7 @@ pub struct ResponseLoader {
 }
 
 
-#[deriving(Clone)]
+#[derive(Clone)]
 pub struct Response {
     pub response_type: ResponseType,
     pub termination_reason: Option<TerminationReason>,
@@ -110,7 +110,7 @@ impl Response {
             ResponseType::Default | ResponseType::Error => unreachable!(),
             ResponseType::Basic => {
                 let headers = old_headers.iter().filter(|header| {
-                    match header.name().to_ascii_lower().as_slice() {
+                    match header.name().to_ascii_lowercase().as_slice() {
                         "set-cookie" | "set-cookie2" => false,
                         _ => true
                     }
@@ -120,7 +120,7 @@ impl Response {
             },
             ResponseType::CORS => {
                 let headers = old_headers.iter().filter(|header| {
-                    match header.name().to_ascii_lower().as_slice() {
+                    match header.name().to_ascii_lowercase().as_slice() {
                         "cache-control" | "content-language" |
                         "content-type" | "expires" | "last-modified" | "Pragma" => false,
                         

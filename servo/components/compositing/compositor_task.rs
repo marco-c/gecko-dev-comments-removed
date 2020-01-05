@@ -26,7 +26,7 @@ use servo_util::cursor::Cursor;
 use servo_util::geometry::PagePx;
 use servo_util::memory::MemoryProfilerChan;
 use servo_util::time::TimeProfilerChan;
-use std::comm::{channel, Sender, Receiver};
+use std::sync::mpsc::{channel, Sender, Receiver};
 use std::fmt::{Error, Formatter, Show};
 use std::rc::Rc;
 
@@ -42,14 +42,14 @@ pub trait CompositorProxy : 'static + Send {
 
 
 
-pub trait CompositorReceiver for Sized? : 'static {
-    /// Receives the next message inbound for the compositor. This must not block.
+pub trait CompositorReceiver : 'static {
+    
     fn try_recv_compositor_msg(&mut self) -> Option<Msg>;
-    /// Synchronously waits for, and returns, the next message inbound for the compositor.
+    
     fn recv_compositor_msg(&mut self) -> Msg;
 }
 
-/// A convenience implementation of `CompositorReceiver` for a plain old Rust `Receiver`.
+
 impl CompositorReceiver for Receiver<Msg> {
     fn try_recv_compositor_msg(&mut self) -> Option<Msg> {
         match self.try_recv() {
@@ -58,11 +58,11 @@ impl CompositorReceiver for Receiver<Msg> {
         }
     }
     fn recv_compositor_msg(&mut self) -> Msg {
-        self.recv()
+        self.recv().unwrap()
     }
 }
 
-/// Implementation of the abstract `ScriptListener` interface.
+
 impl ScriptListener for Box<CompositorProxy+'static+Send> {
     fn set_ready_state(&mut self, pipeline_id: PipelineId, ready_state: ReadyState) {
         let msg = Msg::ChangeReadyState(pipeline_id, ready_state);
@@ -79,7 +79,7 @@ impl ScriptListener for Box<CompositorProxy+'static+Send> {
     fn close(&mut self) {
         let (chan, port) = channel();
         self.send(Msg::Exit(chan));
-        port.recv();
+        port.recv().unwrap();
     }
 
     fn dup(&mut self) -> Box<ScriptListener+'static> {
@@ -97,8 +97,8 @@ impl ScriptListener for Box<CompositorProxy+'static+Send> {
     }
 }
 
-/// Information about each layer that the compositor keeps.
-#[deriving(Copy)]
+
+#[derive(Copy)]
 pub struct LayerProperties {
     pub pipeline_id: PipelineId,
     pub epoch: Epoch,
@@ -124,12 +124,12 @@ impl LayerProperties {
     }
 }
 
-/// Implementation of the abstract `PaintListener` interface.
+
 impl PaintListener for Box<CompositorProxy+'static+Send> {
     fn get_graphics_metadata(&mut self) -> Option<NativeGraphicsMetadata> {
         let (chan, port) = channel();
         self.send(Msg::GetGraphicsMetadata(chan));
-        port.recv()
+        port.recv().unwrap()
     }
 
     fn assign_painted_buffers(&mut self,
@@ -143,9 +143,9 @@ impl PaintListener for Box<CompositorProxy+'static+Send> {
                                       pipeline_id: PipelineId,
                                       metadata: Vec<LayerMetadata>,
                                       epoch: Epoch) {
-        // FIXME(#2004, pcwalton): This assumes that the first layer determines the page size, and
-        // that all other layers are immediate children of it. This is sufficient to handle
-        // `position: fixed` but will not be sufficient to handle `overflow: scroll` or transforms.
+        
+        
+        
         let mut first = true;
         for metadata in metadata.iter() {
             let layer_properties = LayerProperties::new(pipeline_id, epoch, metadata);
@@ -167,61 +167,61 @@ impl PaintListener for Box<CompositorProxy+'static+Send> {
     }
 }
 
-/// Messages from the painting task and the constellation task to the compositor task.
+
 pub enum Msg {
-    /// Requests that the compositor shut down.
+    
     Exit(Sender<()>),
 
-    /// Informs the compositor that the constellation has completed shutdown.
-    /// Required because the constellation can have pending calls to make
-    /// (e.g. SetFrameTree) at the time that we send it an ExitMsg.
+    
+    
+    
     ShutdownComplete,
 
-    /// Requests the compositor's graphics metadata. Graphics metadata is what the painter needs
-    /// to create surfaces that the compositor can see. On Linux this is the X display; on Mac this
-    /// is the pixel format.
-    ///
-    /// The headless compositor returns `None`.
+    
+    
+    
+    
+    
     GetGraphicsMetadata(Sender<Option<NativeGraphicsMetadata>>),
 
-    /// Tells the compositor to create the root layer for a pipeline if necessary (i.e. if no layer
-    /// with that ID exists).
+    
+    
     CreateOrUpdateBaseLayer(LayerProperties),
-    /// Tells the compositor to create a descendant layer for a pipeline if necessary (i.e. if no
-    /// layer with that ID exists).
+    
+    
     CreateOrUpdateDescendantLayer(LayerProperties),
-    /// Alerts the compositor that the specified layer's origin has changed.
+    
     SetLayerOrigin(PipelineId, LayerId, Point2D<f32>),
-    /// Scroll a page in a window
+    
     ScrollFragmentPoint(PipelineId, LayerId, Point2D<f32>),
-    /// Requests that the compositor assign the painted buffers to the given layers.
+    
     AssignPaintedBuffers(PipelineId, Epoch, Vec<(LayerId, Box<LayerBufferSet>)>),
-    /// Alerts the compositor to the current status of page loading.
+    
     ChangeReadyState(PipelineId, ReadyState),
-    /// Alerts the compositor to the current status of painting.
+    
     ChangePaintState(PipelineId, PaintState),
-    /// Alerts the compositor that the current page has changed its title.
+    
     ChangePageTitle(PipelineId, Option<String>),
-    /// Alerts the compositor that the current page has changed its load data (including URL).
+    
     ChangePageLoadData(FrameId, LoadData),
-    /// Alerts the compositor that a `PaintMsg` has been discarded.
+    
     PaintMsgDiscarded,
-    /// Replaces the current frame tree, typically called during main frame navigation.
+    
     SetFrameTree(SendableFrameTree, Sender<()>, ConstellationChan),
-    /// Requests the compositor to create a root layer for a new frame.
+    
     CreateRootLayerForPipeline(CompositionPipeline, CompositionPipeline, Option<TypedRect<PagePx, f32>>, Sender<()>),
-    /// Requests the compositor to change a root layer's pipeline and remove all child layers.
+    
     ChangeLayerPipelineAndRemoveChildren(CompositionPipeline, CompositionPipeline, Sender<()>),
-    /// The load of a page has completed.
+    
     LoadComplete,
-    /// Indicates that the scrolling timeout with the given starting timestamp has happened and a
-    /// composite should happen. (See the `scrolling` module.)
+    
+    
     ScrollTimeout(u64),
-    /// Sends an unconsumed key event back to the compositor.
+    
     KeyEvent(Key, KeyModifiers),
-    /// Changes the cursor.
+    
     SetCursor(Cursor),
-    /// Informs the compositor that the paint task for the given pipeline has exited.
+    
     PaintTaskExited(PipelineId),
 }
 
@@ -256,9 +256,9 @@ impl Show for Msg {
 pub struct CompositorTask;
 
 impl CompositorTask {
-    /// Creates a graphics context. Platform-specific.
-    ///
-    /// FIXME(pcwalton): Probably could be less platform-specific, using the metadata abstraction.
+    
+    
+    
     #[cfg(target_os="linux")]
     pub fn create_graphics_context(native_metadata: &NativeGraphicsMetadata)
                                     -> NativeCompositingGraphicsContext {

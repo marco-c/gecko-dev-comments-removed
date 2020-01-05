@@ -2,7 +2,7 @@
 
 
 
-#[deriving(Clone)]
+#[derive(Clone)]
 pub struct FontContextHandle {
     ctx: ()
 }

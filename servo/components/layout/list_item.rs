@@ -24,7 +24,7 @@ use style::computed_values::list_style_type;
 use std::sync::Arc;
 
 
-#[deriving(Show)]
+#[derive(Show)]
 pub struct ListItemFlow {
     
     pub block_flow: BlockFlow,

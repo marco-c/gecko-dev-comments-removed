@@ -8,11 +8,13 @@ use geom::rect::Rect;
 use geom::size::Size2D;
 use geom::num::Zero;
 
-use serialize::{Encodable, Encoder};
 use std::default::Default;
 use std::i32;
-use std::num::{Float, NumCast};
+use std::num::{Float, NumCast, ToPrimitive};
 use std::fmt;
+use std::ops::{Add, Sub, Neg, Mul, Div, Rem};
+
+use rustc_serialize::{Encoder, Encodable};
 
 
 
@@ -29,7 +31,7 @@ use std::fmt;
 
 
 
-#[deriving(Show, Copy)]
+#[derive(Show, Copy)]
 pub enum ScreenPx {}
 
 
@@ -41,7 +43,7 @@ pub enum ScreenPx {}
 
 
 
-#[deriving(Encodable, Show, Copy)]
+#[derive(RustcEncodable, Show, Copy)]
 pub enum ViewportPx {}
 
 
@@ -50,7 +52,7 @@ pub enum ViewportPx {}
 
 
 
-#[deriving(Encodable, Show, Copy)]
+#[derive(RustcEncodable, Show, Copy)]
 pub enum PagePx {}
 
 
@@ -65,7 +67,7 @@ pub enum PagePx {}
 
 
 
-#[deriving(Clone, Copy, Hash, PartialEq, PartialOrd, Eq, Ord)]
+#[derive(Clone, Copy, Hash, PartialEq, PartialOrd, Eq, Ord)]
 pub struct Au(pub i32);
 
 impl Default for Au {
@@ -112,8 +114,8 @@ pub static MAX_RECT: Rect<Au> = Rect {
 pub const MIN_AU: Au = Au(i32::MIN);
 pub const MAX_AU: Au = Au(i32::MAX);
 
-impl<E, S: Encoder<E>> Encodable<S, E> for Au {
-    fn encode(&self, e: &mut S) -> Result<(), E> {
+impl Encodable for Au {
+    fn encode<S: Encoder>(&self, e: &mut S) -> Result<(), S::Error> {
         e.emit_f64(to_frac_px(*self))
     }
 }
@@ -123,53 +125,65 @@ impl fmt::Show for Au {
         write!(f, "{}px", to_frac_px(*self))
     }}
 
-impl Add<Au,Au> for Au {
+impl Add for Au {
+    type Output = Au;
+
     #[inline]
-    fn add(&self, other: &Au) -> Au {
-        let Au(s) = *self;
-        let Au(o) = *other;
+    fn add(self, other: Au) -> Au {
+        let Au(s) = self;
+        let Au(o) = other;
         Au(s + o)
     }
 }
 
-impl Sub<Au,Au> for Au {
+impl Sub for Au {
+    type Output = Au;
+
     #[inline]
-    fn sub(&self, other: &Au) -> Au {
-        let Au(s) = *self;
-        let Au(o) = *other;
+    fn sub(self, other: Au) -> Au {
+        let Au(s) = self;
+        let Au(o) = other;
         Au(s - o)
     }
 
 }
 
-impl Mul<i32, Au> for Au {
+impl Mul<i32> for Au {
+    type Output = Au;
+
     #[inline]
-    fn mul(&self, other: &i32) -> Au {
-        let Au(s) = *self;
-        Au(s * *other)
+    fn mul(self, other: i32) -> Au {
+        let Au(s) = self;
+        Au(s * other)
     }
 }
 
-impl Div<i32, Au> for Au {
+impl Div<i32> for Au {
+    type Output = Au;
+
     #[inline]
-    fn div(&self, other: &i32) -> Au {
-        let Au(s) = *self;
-        Au(s / *other)
+    fn div(self, other: i32) -> Au {
+        let Au(s) = self;
+        Au(s / other)
     }
 }
 
-impl Rem<i32, Au> for Au {
+impl Rem<i32> for Au {
+    type Output = Au;
+
     #[inline]
-    fn rem(&self, other: &i32) -> Au {
-        let Au(s) = *self;
-        Au(s % *other)
+    fn rem(self, other: i32) -> Au {
+        let Au(s) = self;
+        Au(s % other)
     }
 }
 
-impl Neg<Au> for Au {
+impl Neg for Au {
+    type Output = Au;
+
     #[inline]
-    fn neg(&self) -> Au {
-        let Au(s) = *self;
+    fn neg(self) -> Au {
+        let Au(s) = self;
         Au(-s)
     }
 }
@@ -323,7 +337,7 @@ pub fn to_pt(au: Au) -> f64 {
 
 
 
-pub fn rect_contains_point<T:PartialOrd + Add<T,T>>(rect: Rect<T>, point: Point2D<T>) -> bool {
+pub fn rect_contains_point<T:PartialOrd + Add<T, Output=T>>(rect: Rect<T>, point: Point2D<T>) -> bool {
     point.x >= rect.origin.x && point.x < rect.origin.x + rect.size.width &&
         point.y >= rect.origin.y && point.y < rect.origin.y + rect.size.height
 }

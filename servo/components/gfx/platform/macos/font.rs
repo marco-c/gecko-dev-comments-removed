@@ -47,7 +47,7 @@ impl FontTable {
 }
 
 impl FontTableMethods for FontTable {
-    fn with_buffer(&self, blk: |*const u8, uint|) {
+    fn with_buffer<F>(&self, blk: F) where F: FnOnce(*const u8, uint) {
         blk(self.data.bytes().as_ptr(), self.data.len() as uint);
     }
 }
@@ -96,9 +96,9 @@ impl FontHandleMethods for FontHandle {
     }
 
     fn boldness(&self) -> font_weight::T {
-        // -1.0 to 1.0
+        
         let normalized = self.ctfont.all_traits().normalized_weight();
-        // 0.0 to 9.0
+        
         let normalized = (normalized + 1.0) / 2.0 * 9.0;
         if normalized < 1.0 { return font_weight::T::Weight100; }
         if normalized < 2.0 { return font_weight::T::Weight200; }
@@ -112,8 +112,8 @@ impl FontHandleMethods for FontHandle {
     }
 
     fn glyph_index(&self, codepoint: char) -> Option<GlyphId> {
-        let characters: [UniChar,  ..1] = [codepoint as UniChar];
-        let mut glyphs: [CGGlyph, ..1] = [0 as CGGlyph];
+        let characters: [UniChar; 1] = [codepoint as UniChar];
+        let mut glyphs: [CGGlyph; 1] = [0 as CGGlyph];
         let count: CFIndex = 1;
 
         let result = self.ctfont.get_glyphs_for_characters(&characters[0],
@@ -121,17 +121,17 @@ impl FontHandleMethods for FontHandle {
                                                            count);
 
         if !result {
-            // No glyph for this character
+            
             return None;
         }
 
-        assert!(glyphs[0] != 0); // FIXME: error handling
+        assert!(glyphs[0] != 0); 
         return Some(glyphs[0] as GlyphId);
     }
 
     fn glyph_h_kerning(&self, _first_glyph: GlyphId, _second_glyph: GlyphId)
                         -> FractionalPixel {
-        // TODO: Implement on mac
+        
         0.0
     }
 
@@ -162,14 +162,14 @@ impl FontHandleMethods for FontHandle {
 
         let metrics =  FontMetrics {
             underline_size:   Au::from_pt(self.ctfont.underline_thickness() as f64),
-            // TODO(Issue #201): underline metrics are not reliable. Have to pull out of font table
-            // directly.
-            //
-            // see also: https://bugs.webkit.org/show_bug.cgi?id=16768
-            // see also: https://bugreports.qt-project.org/browse/QTBUG-13364
+            
+            
+            
+            
+            
             underline_offset: Au::from_pt(self.ctfont.underline_position() as f64),
-            strikeout_size:   geometry::from_pt(0.0), // FIXME(Issue #942)
-            strikeout_offset: geometry::from_pt(0.0), // FIXME(Issue #942)
+            strikeout_size:   geometry::from_pt(0.0), 
+            strikeout_offset: geometry::from_pt(0.0), 
             leading:          Au::from_pt(leading),
             x_height:         Au::from_pt(self.ctfont.x_height() as f64),
             em_size:          em_size,
@@ -179,7 +179,7 @@ impl FontHandleMethods for FontHandle {
             average_advance:  average_advance,
             line_gap:         Au::from_frac_px(line_gap),
         };
-        debug!("Font metrics (@{} pt): {}", self.ctfont.pt_size() as f64, metrics);
+        debug!("Font metrics (@{} pt): {:?}", self.ctfont.pt_size() as f64, metrics);
         return metrics;
     }
 

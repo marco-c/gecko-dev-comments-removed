@@ -2,6 +2,8 @@
 
 
 
+#![feature(int_uint)]
+
 #![deny(unused_imports)]
 #![deny(unused_variables)]
 #![allow(missing_copy_implementations)]
@@ -31,17 +33,17 @@ use servo_net::resource_task::ResourceTask;
 use servo_net::storage_task::StorageTask;
 use servo_util::smallvec::SmallVec1;
 use std::any::Any;
+use std::sync::mpsc::{Sender, Receiver};
 
 use geom::point::Point2D;
 use geom::rect::Rect;
 
-use serialize::{Encodable, Encoder};
-
 
 
 #[allow(raw_pointer_deriving)]
-#[deriving(Copy, Clone)]
+#[derive(Copy, Clone)]
 pub struct UntrustedNodeAddress(pub *const c_void);
+unsafe impl Send for UntrustedNodeAddress {}
 
 pub struct NewLayoutInfo {
     pub old_pipeline_id: PipelineId,
@@ -72,6 +74,9 @@ pub enum ConstellationControlMsg {
     GetTitle(PipelineId),
 }
 
+unsafe impl Send for ConstellationControlMsg {
+}
+
 
 pub enum CompositorEvent {
     ResizeEvent(WindowSizeData),
@@ -88,14 +93,8 @@ pub enum CompositorEvent {
 pub struct OpaqueScriptLayoutChannel(pub (Box<Any+Send>, Box<Any+Send>));
 
 
-#[deriving(Clone)]
+#[derive(Clone)]
 pub struct ScriptControlChan(pub Sender<ConstellationControlMsg>);
-
-impl<S: Encoder<E>, E> Encodable<S, E> for ScriptControlChan {
-    fn encode(&self, _s: &mut S) -> Result<(), E> {
-        Ok(())
-    }
-}
 
 pub trait ScriptTaskFactory {
     fn create<C>(_phantom: Option<&mut Self>,

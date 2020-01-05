@@ -2,13 +2,13 @@
 
 
 
-use std::sync::atomic::{AtomicUint, INIT_ATOMIC_UINT, Ordering};
+use std::sync::atomic::{AtomicUint, ATOMIC_UINT_INIT, Ordering};
 use std::rc::Rc;
 use std::cell::RefCell;
 
-static mut next_tid: AtomicUint = INIT_ATOMIC_UINT;
+static mut next_tid: AtomicUint = ATOMIC_UINT_INIT;
 
-thread_local!(static TASK_LOCAL_TID: Rc<RefCell<Option<uint>>> = Rc::new(RefCell::new(None)))
+thread_local!(static TASK_LOCAL_TID: Rc<RefCell<Option<uint>>> = Rc::new(RefCell::new(None)));
 
 
 pub fn tid() -> uint {

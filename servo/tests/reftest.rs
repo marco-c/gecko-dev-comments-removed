@@ -22,6 +22,7 @@ use std::io::process::ExitStatus;
 use std::io::fs::PathExtensions;
 use std::os;
 use std::path::Path;
+use std::thunk::Thunk;
 use test::{AutoColor, DynTestName, DynTestFn, TestDesc, TestOpts, TestDescAndFn, ShouldFail};
 use test::run_tests_console;
 use regex::Regex;
@@ -29,7 +30,6 @@ use url::Url;
 
 
 bitflags!(
-    #[deriving(Copy)]
     flags RenderMode: u32 {
         const CPU_RENDERING  = 0x00000001,
         const GPU_RENDERING  = 0x00000010,
@@ -37,7 +37,7 @@ bitflags!(
         const MACOS_TARGET   = 0x00001000,
         const ANDROID_TARGET = 0x00010000
     }
-)
+);
 
 
 fn main() {
@@ -75,7 +75,7 @@ fn main() {
         let maybe_extension = file.extension_str();
         match maybe_extension {
             Some(extension) => {
-                if extension.to_ascii_lower().as_slice() == "list" && file.is_file() {
+                if extension.to_ascii_lowercase().as_slice() == "list" && file.is_file() {
                     let tests = parse_lists(&file, servo_args, render_mode, all_tests.len());
                     println!("\t{} [{} tests]", file.display(), tests.len());
                     all_tests.extend(tests.into_iter());
@@ -131,7 +131,7 @@ fn run(test_opts: TestOpts, all_tests: Vec<TestDescAndFn>,
     run_tests_console(&test_opts, all_tests)
 }
 
-#[deriving(PartialEq)]
+#[derive(PartialEq)]
 enum ReftestKind {
     Same,
     Different,
@@ -140,7 +140,7 @@ enum ReftestKind {
 struct Reftest {
     name: String,
     kind: ReftestKind,
-    files: [Path, ..2],
+    files: [Path; 2],
     id: uint,
     servo_args: Vec<String>,
     render_mode: RenderMode,
@@ -163,7 +163,7 @@ fn parse_lists(file: &Path, servo_args: &[String], render_mode: RenderMode, id_o
                        .ok().expect("Could not read file");
 
     for line in contents.as_slice().lines() {
-        // ignore comments or empty lines
+        
         if line.starts_with("#") || line.is_empty() {
             continue;
         }
@@ -192,8 +192,8 @@ fn parse_lists(file: &Path, servo_args: &[String], render_mode: RenderMode, id_o
             part => panic!("reftest line: '{}' has invalid kind '{}'", line, part)
         };
 
-        // If we're running this directly, file.dir_path() might be relative.
-        // (see issue #3521)
+        
+        
         let base = match file.dir_path().is_relative() {
             true  => os::getcwd().unwrap().join(file.dir_path()),
             false => file.dir_path()
@@ -245,9 +245,9 @@ fn make_test(reftest: Reftest) -> TestDescAndFn {
             ignore: false,
             should_fail: ShouldFail::No,
         },
-        testfn: DynTestFn(proc() {
+        testfn: DynTestFn(Thunk::new(move || {
             check_reftest(reftest);
-        }),
+        })),
     }
 }
 
@@ -256,7 +256,7 @@ fn capture(reftest: &Reftest, side: uint) -> (u32, u32, Vec<u8>) {
     let mut command = Command::new(os::self_exe_path().unwrap().join("servo"));
     command
         .args(reftest.servo_args.as_slice())
-        // Allows pixel perfect rendering of Ahem font for reftests.
+        
         .arg("-Z")
         .arg("disable-text-aa")
         .args(["-f", "-o"].as_slice())
@@ -266,7 +266,7 @@ fn capture(reftest: &Reftest, side: uint) -> (u32, u32, Vec<u8>) {
             url.fragment = reftest.fragment_identifier.clone();
             url.to_string()
         });
-    // CPU rendering is the default
+    
     if reftest.render_mode.contains(CPU_RENDERING) {
         command.arg("-c");
     }
@@ -282,7 +282,8 @@ fn capture(reftest: &Reftest, side: uint) -> (u32, u32, Vec<u8>) {
     };
     assert_eq!(retval, ExitStatus(0));
 
-    let image = png::load_png(&from_str::<Path>(png_filename.as_slice()).unwrap()).unwrap();
+    let path = png_filename.parse::<Path>().unwrap();
+    let image = png::load_png(&path).unwrap();
     let rgba8_bytes = match image.pixels {
         png::PixelsByColorType::RGBA8(pixels) => pixels,
         _ => panic!(),
@@ -306,20 +307,20 @@ fn check_reftest(reftest: Reftest) {
 
     let pixels = left_bytes.iter().zip(right_bytes.iter()).map(|(&a, &b)| {
         if a as i8 - b as i8 == 0 {
-            // White for correct
+            
             0xFF
         } else {
-            // "1100" in the RGBA channel with an error for an incorrect value
-            // This results in some number of C0 and FFs, which is much more
-            // readable (and distinguishable) than the previous difference-wise
-            // scaling but does not require reconstructing the actual RGBA pixel.
+            
+            
+            
+            
             0xC0
         }
     }).collect::<Vec<u8>>();
 
     if pixels.iter().any(|&a| a < 255) {
         let output_str = format!("/tmp/servo-reftest-{:06}-diff.png", reftest.id);
-        let output = from_str::<Path>(output_str.as_slice()).unwrap();
+        let output = output_str.parse::<Path>().unwrap();
 
         let mut img = png::Image {
             width: left_width,

@@ -11,7 +11,7 @@ use fetch::cors_cache::CORSCache;
 use fetch::response::Response;
 
 
-#[deriving(Copy)]
+#[derive(Copy)]
 pub enum Context {
     Audio, Beacon, CSPreport, Download, Embed, Eventsource,
     Favicon, Fetch, Font, Form, Frame, Hyperlink, IFrame, Image,
@@ -21,7 +21,7 @@ pub enum Context {
 }
 
 
-#[deriving(Copy)]
+#[derive(Copy)]
 pub enum ContextFrameType {
     Auxiliary,
     TopLevel,
@@ -37,7 +37,7 @@ pub enum Referer {
 }
 
 
-#[deriving(Copy)]
+#[derive(Copy)]
 pub enum RequestMode {
     SameOrigin,
     NoCORS,
@@ -46,7 +46,7 @@ pub enum RequestMode {
 }
 
 
-#[deriving(Copy)]
+#[derive(Copy)]
 pub enum CredentialsMode {
     Omit,
     CredentialsSameOrigin,
@@ -54,7 +54,7 @@ pub enum CredentialsMode {
 }
 
 
-#[deriving(Copy)]
+#[derive(Copy)]
 pub enum ResponseTainting {
     Basic,
     CORSTainting,

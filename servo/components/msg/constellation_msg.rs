@@ -13,10 +13,10 @@ use hyper::method::Method;
 use layers::geometry::DevicePixel;
 use servo_util::cursor::Cursor;
 use servo_util::geometry::{PagePx, ViewportPx};
-use std::comm::{channel, Sender, Receiver};
+use std::sync::mpsc::{channel, Sender, Receiver};
 use url::Url;
 
-#[deriving(Clone)]
+#[derive(Clone)]
 pub struct ConstellationChan(pub Sender<Msg>);
 
 impl ConstellationChan {
@@ -26,20 +26,20 @@ impl ConstellationChan {
     }
 }
 
-#[deriving(PartialEq, Eq, Copy)]
+#[derive(PartialEq, Eq, Copy)]
 pub enum IFrameSandboxState {
     IFrameSandboxed,
     IFrameUnsandboxed
 }
 
 
-#[deriving(Clone, Copy)]
+#[derive(Clone, Copy)]
 pub struct Failure {
     pub pipeline_id: PipelineId,
     pub subpage_id: Option<SubpageId>,
 }
 
-#[deriving(Copy)]
+#[derive(Copy)]
 pub struct WindowSizeData {
     
     
@@ -52,7 +52,7 @@ pub struct WindowSizeData {
     pub device_pixel_ratio: ScaleFactor<ViewportPx, DevicePixel, f32>,
 }
 
-#[deriving(PartialEq, Eq, Copy, Clone)]
+#[derive(PartialEq, Eq, Copy, Clone)]
 pub enum KeyState {
     Pressed,
     Released,
@@ -60,7 +60,7 @@ pub enum KeyState {
 }
 
 
-#[deriving(Show, PartialEq, Eq, Copy, Clone)]
+#[derive(Show, PartialEq, Eq, Copy, Clone)]
 pub enum Key {
     Space,
     Apostrophe,
@@ -186,7 +186,6 @@ pub enum Key {
 }
 
 bitflags! {
-    #[deriving(Copy)]
     flags KeyModifiers: u8 {
         const SHIFT = 0x01,
         const CONTROL = 0x02,
@@ -218,7 +217,7 @@ pub enum Msg {
 
 
 
-#[deriving(Clone)]
+#[derive(Clone)]
 pub struct LoadData {
     pub url: Url,
     pub method: Method,
@@ -238,27 +237,27 @@ impl LoadData {
 }
 
 
-#[deriving(Clone, PartialEq, Eq, Copy, Hash, Show)]
+#[derive(Clone, PartialEq, Eq, Copy, Hash, Show)]
 pub enum NavigationType {
     Load,               
     Navigate,           
 }
 
-#[deriving(Clone, PartialEq, Eq, Copy, Hash, Show)]
+#[derive(Clone, PartialEq, Eq, Copy, Hash, Show)]
 pub enum NavigationDirection {
     Forward,
     Back,
 }
 
-#[deriving(Clone, PartialEq, Eq, Copy, Hash, Show)]
+#[derive(Clone, PartialEq, Eq, Copy, Hash, Show)]
 pub struct PipelineId(pub uint);
 
-#[deriving(Clone, PartialEq, Eq, Copy, Hash, Show)]
+#[derive(Clone, PartialEq, Eq, Copy, Hash, Show)]
 pub struct SubpageId(pub uint);
 
 
 
-#[deriving(Copy)]
+#[derive(Copy)]
 pub enum PipelineExitType {
     PipelineOnly,
     Complete,

@@ -9,8 +9,9 @@ use servo_util::geometry::Au;
 
 use std::cmp::{Ordering, PartialOrd};
 use std::iter::repeat;
-use std::num::NumCast;
+use std::num::{ToPrimitive, NumCast};
 use std::mem;
+use std::ops::{Add, Sub, Mul, Neg, Div, Rem, BitAnd, BitOr, BitXor, Shl, Shr, Not};
 use std::u16;
 use std::vec::Vec;
 use geom::point::Point2D;
@@ -23,7 +24,7 @@ use geom::point::Point2D;
 
 
 
-#[deriving(Clone, Show, Copy)]
+#[derive(Clone, Show, Copy)]
 struct GlyphEntry {
     value: u32,
 }
@@ -88,7 +89,7 @@ impl GlyphEntry {
 pub type GlyphId = u32;
 
 
-#[deriving(PartialEq, Copy)]
+#[derive(PartialEq, Copy)]
 pub enum BreakType {
     None,
     Normal,
@@ -252,7 +253,7 @@ impl GlyphEntry {
 
 
 
-#[deriving(Clone, Show, Copy)]
+#[derive(Clone, Show, Copy)]
 struct DetailedGlyph {
     id: GlyphId,
     
@@ -271,7 +272,7 @@ impl DetailedGlyph {
     }
 }
 
-#[deriving(PartialEq, Clone, Eq, Show, Copy)]
+#[derive(PartialEq, Clone, Eq, Show, Copy)]
 struct DetailedGlyphRecord {
     
     entry_offset: CharIndex,
@@ -320,7 +321,7 @@ impl<'a> DetailedGlyphStore {
             detail_offset: self.detail_buffer.len() as int,
         };
 
-        debug!("Adding entry[off={}] for detailed glyphs: {}", entry_offset, glyphs);
+        debug!("Adding entry[off={:?}] for detailed glyphs: {:?}", entry_offset, glyphs);
 
         
 
@@ -340,7 +341,7 @@ impl<'a> DetailedGlyphStore {
 
     fn get_detailed_glyphs_for_entry(&'a self, entry_offset: CharIndex, count: u16)
                                   -> &'a [DetailedGlyph] {
-        debug!("Requesting detailed glyphs[n={}] for entry[off={}]", count, entry_offset);
+        debug!("Requesting detailed glyphs[n={}] for entry[off={:?}]", count, entry_offset);
 
         
         
@@ -412,7 +413,7 @@ impl<'a> DetailedGlyphStore {
 
 
 
-#[deriving(Copy)]
+#[derive(Copy)]
 pub struct GlyphData {
     id: GlyphId,
     advance: Au,
@@ -445,7 +446,7 @@ impl GlyphData {
 
 
 
-#[deriving(Copy)]
+#[derive(Copy)]
 pub enum GlyphInfo<'a> {
     Simple(&'a GlyphStore, CharIndex),
     Detail(&'a GlyphStore, CharIndex, u16),
@@ -514,7 +515,7 @@ pub struct GlyphStore {
 }
 
 int_range_index! {
-    #[deriving(Encodable)]
+    #[derive(RustcEncodable)]
     #[doc = "An index that refers to a character in a text run. This could \
              point to the middle of a glyph."]
     struct CharIndex(int)
@@ -580,11 +581,11 @@ impl<'a> GlyphStore {
         let entry = match first_glyph_data.is_missing {
             true  => GlyphEntry::missing(glyph_count),
             false => {
-                let glyphs_vec = Vec::from_fn(glyph_count as uint, |i| {
+                let glyphs_vec: Vec<DetailedGlyph> = (0..glyph_count as uint).map(|&:i| {
                     DetailedGlyph::new(data_for_glyphs[i].id,
                                        data_for_glyphs[i].advance,
                                        data_for_glyphs[i].offset)
-                });
+                }).collect();
 
                 self.detail_store.add_detailed_glyphs_for_entry(i, glyphs_vec.as_slice());
                 GlyphEntry::complex(first_glyph_data.cluster_start,
@@ -593,17 +594,17 @@ impl<'a> GlyphStore {
             }
         }.adapt_character_flags_of_entry(self.entry_buffer[i.to_uint()]);
 
-        debug!("Adding multiple glyphs[idx={}, count={}]: {}", i, glyph_count, entry);
+        debug!("Adding multiple glyphs[idx={:?}, count={}]: {:?}", i, glyph_count, entry);
 
         self.entry_buffer[i.to_uint()] = entry;
     }
 
-    
+    // used when a character index has no associated glyph---for example, a ligature continuation.
     pub fn add_nonglyph_for_char_index(&mut self, i: CharIndex, cluster_start: bool, ligature_start: bool) {
         assert!(i < self.char_len());
 
         let entry = GlyphEntry::complex(cluster_start, ligature_start, 0);
-        debug!("adding spacer for chracter without associated glyph[idx={}]", i);
+        debug!("adding spacer for chracter without associated glyph[idx={:?}]", i);
 
         self.entry_buffer[i.to_uint()] = entry;
     }
@@ -725,7 +726,9 @@ impl<'a> GlyphIterator<'a> {
     }
 }
 
-impl<'a> Iterator<(CharIndex, GlyphInfo<'a>)> for GlyphIterator<'a> {
+impl<'a> Iterator for GlyphIterator<'a> {
+    type Item  = (CharIndex, GlyphInfo<'a>);
+
     
     
     
@@ -740,7 +743,7 @@ impl<'a> Iterator<(CharIndex, GlyphInfo<'a>)> for GlyphIterator<'a> {
             self.next_glyph_range()
         } else {
             
-            self.char_range.next().and_then(|i| {
+            self.char_range.next().and_then(|:i| {
                 self.char_index = i;
                 assert!(i < self.store.char_len());
                 let entry = self.store.entry_buffer[i.to_uint()];

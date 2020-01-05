@@ -89,11 +89,15 @@ pub fn create_element(name: QualName, prefix: Option<DOMString>,
     }
 
     macro_rules! make(
-        ($ctor:ident $(, $arg:expr)*) => ({
-            let obj = $ctor::new(name.local.as_slice().to_owned(), prefix, document $(, $arg)*);
+        ($ctor:ident) => ({
+            let obj = $ctor::new(name.local.as_slice().to_owned(), prefix, document);
+            ElementCast::from_temporary(obj)
+        });
+        ($ctor:ident, $($arg:expr),+) => ({
+            let obj = $ctor::new(name.local.as_slice().to_owned(), prefix, document, $($arg),+);
             ElementCast::from_temporary(obj)
         })
-    )
+    );
 
     
     

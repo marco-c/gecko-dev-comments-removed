@@ -32,7 +32,7 @@ use std::sync::Arc;
 
 
 
-#[deriving(Encodable)]
+#[derive(RustcEncodable)]
 pub struct TableFlow {
     pub block_flow: BlockFlow,
 
@@ -399,7 +399,7 @@ impl Flow for TableFlow {
 impl fmt::Show for TableFlow {
     
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "TableFlow: {}", self.block_flow)
+        write!(f, "TableFlow: {:?}", self.block_flow)
     }
 }
 
@@ -441,7 +441,7 @@ impl ISizeAndMarginsComputer for InternalTable {
 
 
 
-#[deriving(Clone, Encodable, Show, Copy)]
+#[derive(Clone, RustcEncodable, Show, Copy)]
 pub struct ColumnIntrinsicInlineSize {
     
     pub preferred: Au,
@@ -485,7 +485,7 @@ impl ColumnIntrinsicInlineSize {
 
 
 
-#[deriving(Encodable, Copy)]
+#[derive(RustcEncodable, Copy)]
 pub struct ColumnComputedInlineSize {
     
     pub size: Au,

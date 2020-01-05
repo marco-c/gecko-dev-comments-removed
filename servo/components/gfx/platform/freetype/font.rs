@@ -8,6 +8,7 @@ use font::{FontHandleMethods, FontMetrics, FontTableMethods};
 use font::{FontTableTag, FractionalPixel};
 use servo_util::geometry::Au;
 use servo_util::geometry;
+use servo_util::str::c_str_to_string;
 use platform::font_context::FontContextHandle;
 use text::glyph::GlyphId;
 use text::util::{float_to_fixed, fixed_to_float};
@@ -25,11 +26,10 @@ use freetype::freetype::{FT_SizeRec, FT_UInt, FT_Size_Metrics, struct_FT_Vector_
 use freetype::freetype::{ft_sfnt_os2};
 use freetype::tt_os2::TT_OS2;
 
+use libc::c_char;
 use std::mem;
 use std::num::Float;
 use std::ptr;
-use std::string::String;
-
 use std::sync::Arc;
 
 fn float_to_fixed_ft(f: f64) -> i32 {
@@ -43,14 +43,14 @@ fn fixed_to_float_ft(f: i32) -> f64 {
 pub struct FontTable;
 
 impl FontTableMethods for FontTable {
-    fn with_buffer(&self, _blk: |*const u8, uint|) {
+    fn with_buffer<F>(&self, _blk: F) where F: FnOnce(*const u8, uint) {
         panic!()
     }
 }
 
 pub struct FontHandle {
-    // The font binary. This must stay valid for the lifetime of the font,
-    // if the font is created using FT_Memory_Face.
+    
+    
     pub font_data: Arc<FontTemplateData>,
     pub face: FT_Face,
     pub handle: FontContextHandle
@@ -79,9 +79,9 @@ impl FontHandleMethods for FontHandle {
         let bytes = &template.bytes;
         let face_result = create_face_from_buffer(ft_ctx, bytes.as_ptr(), bytes.len(), pt_size);
 
-        // TODO: this could be more simply written as result::chain
-        // and moving buf into the struct ctor, but cant' move out of
-        // captured binding.
+        
+        
+        
         return match face_result {
             Ok(face) => {
               let handle = FontHandle {
@@ -121,10 +121,14 @@ impl FontHandleMethods for FontHandle {
         self.font_data.clone()
     }
     fn family_name(&self) -> String {
-        unsafe { String::from_raw_buf(&*(*self.face).family_name as *const i8 as *const u8) }
+        unsafe {
+            c_str_to_string((*self.face).family_name as *const c_char)
+        }
     }
     fn face_name(&self) -> String {
-        unsafe { String::from_raw_buf(&*FT_Get_Postscript_Name(self.face) as *const i8 as *const u8) }
+        unsafe {
+            c_str_to_string(FT_Get_Postscript_Name(self.face) as *const c_char)
+        }
     }
     fn is_italic(&self) -> bool {
         unsafe { (*self.face).style_flags & FT_STYLE_FLAG_ITALIC != 0 }
@@ -201,7 +205,7 @@ impl FontHandleMethods for FontHandle {
     }
 
     fn get_metrics(&self) -> FontMetrics {
-        /* TODO(Issue #76): complete me */
+        
         let face = self.get_face_rec();
 
         let underline_size = self.font_units_to_au(face.underline_thickness as f64);
@@ -211,12 +215,12 @@ impl FontHandleMethods for FontHandle {
         let descent = self.font_units_to_au(face.descender as f64);
         let max_advance = self.font_units_to_au(face.max_advance_width as f64);
 
-        // 'leading' is supposed to be the vertical distance between two baselines,
-        // reflected by the height attribute in freetype.  On OS X (w/ CTFont),
-        // leading represents the distance between the bottom of a line descent to
-        // the top of the next line's ascent or: (line_height - ascent - descent),
-        // see http://stackoverflow.com/a/5635981 for CTFont implementation.
-        // Convert using a formula similar to what CTFont returns for consistency.
+        
+        
+        
+        
+        
+        
         let height = self.font_units_to_au(face.height as f64);
         let leading = height - (ascent + descent);
 
@@ -247,13 +251,13 @@ impl FontHandleMethods for FontHandle {
             x_height:         x_height,
             em_size:          em_size,
             ascent:           ascent,
-            descent:          -descent, // linux font's seem to use the opposite sign from mac
+            descent:          -descent, 
             max_advance:      max_advance,
             average_advance:  average_advance,
             line_gap:         height,
         };
 
-        debug!("Font metrics (@{} pt): {}", geometry::to_pt(em_size), metrics);
+        debug!("Font metrics (@{} pt): {:?}", geometry::to_pt(em_size), metrics);
         return metrics;
     }
 

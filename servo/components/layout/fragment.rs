@@ -39,8 +39,10 @@ use servo_util::smallvec::SmallVec;
 use servo_util::str::is_whitespace;
 use std::cmp::{max, min};
 use std::fmt;
+use std::num::ToPrimitive;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
+use std::sync::mpsc::Sender;
 use string_cache::Atom;
 use style::{ComputedValues, TElement, TNode, cascade_anonymous};
 use style::computed_values::{LengthOrPercentage, LengthOrPercentageOrAuto};
@@ -75,7 +77,7 @@ use url::Url;
 
 
 
-#[deriving(Clone)]
+#[derive(Clone)]
 pub struct Fragment {
     
     pub node: OpaqueNode,
@@ -111,11 +113,14 @@ pub struct Fragment {
     pub restyle_damage: RestyleDamage,
 }
 
-impl<E, S: Encoder<E>> Encodable<S, E> for Fragment {
-    fn encode(&self, e: &mut S) -> Result<(), E> {
+unsafe impl Send for Fragment {}
+unsafe impl Sync for Fragment {}
+
+impl Encodable for Fragment {
+    fn encode<S: Encoder>(&self, e: &mut S) -> Result<(), S::Error> {
         e.emit_struct("fragment", 0, |e| {
-            try!(e.emit_struct_field("id", 0, |e| self.debug_id().encode(e)))
-            try!(e.emit_struct_field("border_box", 1, |e| self.border_box.encode(e)))
+            try!(e.emit_struct_field("id", 0, |e| self.debug_id().encode(e)));
+            try!(e.emit_struct_field("border_box", 1, |e| self.border_box.encode(e)));
             e.emit_struct_field("margin", 2, |e| self.margin.encode(e))
         })
     }
@@ -124,7 +129,7 @@ impl<E, S: Encoder<E>> Encodable<S, E> for Fragment {
 
 
 
-#[deriving(Clone)]
+#[derive(Clone)]
 pub enum SpecificFragmentInfo {
     Generic,
     Iframe(Box<IframeFragmentInfo>),
@@ -191,7 +196,7 @@ impl SpecificFragmentInfo {
 
 
 
-#[deriving(Clone)]
+#[derive(Clone)]
 pub struct InlineAbsoluteHypotheticalFragmentInfo {
     pub flow_ref: FlowRef,
 }
@@ -208,7 +213,7 @@ impl InlineAbsoluteHypotheticalFragmentInfo {
 
 
 
-#[deriving(Clone)]
+#[derive(Clone)]
 pub struct InlineBlockFragmentInfo {
     pub flow_ref: FlowRef,
 }
@@ -221,7 +226,7 @@ impl InlineBlockFragmentInfo {
     }
 }
 
-#[deriving(Clone)]
+#[derive(Clone)]
 pub struct CanvasFragmentInfo {
     pub replaced_image_fragment_info: ReplacedImageFragmentInfo,
     pub renderer: Option<Arc<Mutex<Sender<CanvasMsg>>>>,
@@ -250,7 +255,7 @@ impl CanvasFragmentInfo {
 
 
 
-#[deriving(Clone)]
+#[derive(Clone)]
 pub struct ImageFragmentInfo {
     
     pub replaced_image_fragment_info: ReplacedImageFragmentInfo,
@@ -309,7 +314,7 @@ impl ImageFragmentInfo {
     }
 }
 
-#[deriving(Clone)]
+#[derive(Clone)]
 pub struct ReplacedImageFragmentInfo {
     pub for_node: UntrustedNodeAddress,
     pub computed_inline_size: Option<Au>,
@@ -479,7 +484,7 @@ impl ReplacedImageFragmentInfo {
 
 
 
-#[deriving(Clone)]
+#[derive(Clone)]
 pub struct IframeFragmentInfo {
     
     pub pipeline_id: PipelineId,
@@ -502,7 +507,7 @@ impl IframeFragmentInfo {
 
 
 
-#[deriving(Clone)]
+#[derive(Clone)]
 pub struct ScannedTextFragmentInfo {
     
     pub run: Arc<Box<TextRun>>,
@@ -543,7 +548,7 @@ impl ScannedTextFragmentInfo {
 
 
 
-#[deriving(Show, Clone)]
+#[derive(Show, Clone)]
 pub struct SplitInfo {
     
     
@@ -572,7 +577,7 @@ pub struct SplitResult {
 
 
 
-#[deriving(Clone)]
+#[derive(Clone)]
 pub struct UnscannedTextFragmentInfo {
     
     
@@ -600,7 +605,7 @@ impl UnscannedTextFragmentInfo {
 }
 
 /// A fragment that represents a table column.
-#[deriving(Copy, Clone)]
+#[derive(Copy, Clone)]
 pub struct TableColumnFragmentInfo {
     /// the number of columns a <col> element should span
     pub span: int,
@@ -743,7 +748,7 @@ impl Fragment {
     /// if called on any other type of fragment.
     pub fn save_new_line_pos(&mut self) {
         match &mut self.specific {
-            &SpecificFragmentInfo::ScannedText(ref mut info) => {
+            &mut SpecificFragmentInfo::ScannedText(ref mut info) => {
                 if !info.new_line_pos.is_empty() {
                     info.original_new_line_pos = Some(info.new_line_pos.clone());
                 }
@@ -754,7 +759,7 @@ impl Fragment {
 
     pub fn restore_new_line_pos(&mut self) {
         match &mut self.specific {
-            &SpecificFragmentInfo::ScannedText(ref mut info) => {
+            &mut SpecificFragmentInfo::ScannedText(ref mut info) => {
                 match info.original_new_line_pos.take() {
                     None => {}
                     Some(new_line_pos) => info.new_line_pos = new_line_pos,
@@ -1278,7 +1283,7 @@ impl Fragment {
             }
             SpecificFragmentInfo::ScannedText(ref text_fragment_info) => {
                 let mut new_line_pos = text_fragment_info.new_line_pos.clone();
-                let cur_new_line_pos = new_line_pos.remove(0).unwrap();
+                let cur_new_line_pos = new_line_pos.remove(0);
 
                 let inline_start_range = Range::new(text_fragment_info.range.begin(),
                                                     cur_new_line_pos);
@@ -1355,7 +1360,7 @@ impl Fragment {
                                                               max_inline_size: Au,
                                                               flags: SplitOptions)
                                                               -> Option<SplitResult>
-                                                              where I: Iterator<TextRunSlice<'a>> {
+                                                              where I: Iterator<Item=TextRunSlice<'a>> {
         let text_fragment_info =
             if let SpecificFragmentInfo::ScannedText(ref text_fragment_info) = self.specific {
                 text_fragment_info
@@ -1368,15 +1373,15 @@ impl Fragment {
         let mut inline_start_range = Range::new(text_fragment_info.range.begin(), CharIndex(0));
         let mut inline_end_range = None;
 
-        debug!("calculate_split_position: splitting text fragment (strlen={}, range={}, \
-                max_inline_size={})",
+        debug!("calculate_split_position: splitting text fragment (strlen={}, range={:?}, \
+                max_inline_size={:?})",
                text_fragment_info.run.text.len(),
                text_fragment_info.range,
                max_inline_size);
 
         for slice in slice_iterator {
-            debug!("calculate_split_position: considering slice (offset={}, slice range={}, \
-                    remaining_inline_size={})",
+            debug!("calculate_split_position: considering slice (offset={:?}, slice range={:?}, \
+                    remaining_inline_size={:?})",
                    slice.offset,
                    slice.range,
                    remaining_inline_size);
@@ -1408,7 +1413,7 @@ impl Fragment {
                 let mut inline_end = slice.text_run_range();
                 inline_end.extend_to(text_fragment_info.range.end());
                 inline_end_range = Some(inline_end);
-                debug!("calculate_split_position: splitting remainder with inline-end range={}",
+                debug!("calculate_split_position: splitting remainder with inline-end range={:?}",
                        inline_end);
             }
 
@@ -1816,9 +1821,9 @@ impl Fragment {
 impl fmt::Show for Fragment {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         try!(write!(f, "({} {} ", self.debug_id(), self.specific.get_type()));
-        try!(write!(f, "bp {}", self.border_padding));
+        try!(write!(f, "bp {:?}", self.border_padding));
         try!(write!(f, " "));
-        try!(write!(f, "m {}", self.margin));
+        try!(write!(f, "m {:?}", self.margin));
         write!(f, ")")
     }
 }
@@ -1856,7 +1861,7 @@ pub trait FragmentBorderBoxIterator {
 
 
 
-#[deriving(Clone, PartialEq, Show)]
+#[derive(Clone, PartialEq, Show)]
 pub enum CoordinateSystem {
     
     Parent,

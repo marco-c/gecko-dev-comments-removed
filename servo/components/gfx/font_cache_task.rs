@@ -12,6 +12,7 @@ use collections::str::Str;
 use std::borrow::ToOwned;
 use std::collections::HashMap;
 use std::sync::Arc;
+use std::sync::mpsc::{Sender, Receiver, channel};
 use font_template::{FontTemplate, FontTemplateDescriptor};
 use platform::font_template::FontTemplateData;
 use servo_net::resource_task::{ResourceTask, load_whole_resource};
@@ -80,10 +81,14 @@ pub enum Command {
     Exit(Sender<()>),
 }
 
+unsafe impl Send for Command {}
+
 
 pub enum Reply {
     GetFontTemplateReply(Option<Arc<FontTemplateData>>),
 }
+
+unsafe impl Send for Reply {}
 
 
 
@@ -109,7 +114,7 @@ fn add_generic_font(generic_fonts: &mut HashMap<LowercaseString, LowercaseString
 impl FontCache {
     fn run(&mut self) {
         loop {
-            let msg = self.port.recv();
+            let msg = self.port.recv().unwrap();
 
             match msg {
                 Command::GetFontTemplate(family, descriptor, result) => {
@@ -138,13 +143,13 @@ impl FontCache {
                                     family.add_template(url.to_string().as_slice(), Some(bytes));
                                 },
                                 Err(_) => {
-                                    debug!("Failed to load web font: family={} url={}", family_name, url);
+                                    debug!("Failed to load web font: family={:?} url={}", family_name, url);
                                 }
                             }
                         }
                         Source::Local(ref local_family_name) => {
                             let family = &mut self.web_families[family_name];
-                            get_variations_for_family(local_family_name.as_slice(), |path| {
+                            get_variations_for_family(local_family_name.as_slice(), |&mut:path| {
                                 family.add_template(path.as_slice(), None);
                             });
                         }
@@ -179,20 +184,20 @@ impl FontCache {
 
     fn find_font_in_local_family<'a>(&'a mut self, family_name: &LowercaseString, desc: &FontTemplateDescriptor)
                                 -> Option<Arc<FontTemplateData>> {
-        
-        
+        // TODO(Issue #188): look up localized font family names if canonical name not found
+        // look up canonical name
         if self.local_families.contains_key(family_name) {
             debug!("FontList: Found font family with name={}", family_name.as_slice());
             let s = &mut self.local_families[*family_name];
 
             if s.templates.len() == 0 {
-                get_variations_for_family(family_name.as_slice(), |path| {
+                get_variations_for_family(family_name.as_slice(), |&mut:path| {
                     s.add_template(path.as_slice(), None);
                 });
             }
 
-            
-            
+            // TODO(Issue #192: handle generic font families, like 'serif' and 'sans-serif'.
+            // if such family exists, try to match style to a font
             let result = s.find_font_for_style(desc, &self.font_context);
             if result.is_some() {
                 return result;
@@ -242,9 +247,9 @@ impl FontCache {
     }
 }
 
-
-
-#[deriving(Clone)]
+/// The public interface to the font cache task, used exclusively by
+/// the per-thread/task FontContext structures.
+#[derive(Clone)]
 pub struct FontCacheTask {
     chan: Sender<Command>,
 }
@@ -253,7 +258,7 @@ impl FontCacheTask {
     pub fn new(resource_task: ResourceTask) -> FontCacheTask {
         let (chan, port) = channel();
 
-        spawn_named("FontCacheTask".to_owned(), proc() {
+        spawn_named("FontCacheTask".to_owned(), move || {
             // TODO: Allow users to specify these.
             let mut generic_fonts = HashMap::with_capacity(5);
             add_generic_font(&mut generic_fonts, "serif", "Times New Roman");
@@ -286,7 +291,7 @@ impl FontCacheTask {
         let (response_chan, response_port) = channel();
         self.chan.send(Command::GetFontTemplate(family, desc, response_chan));
 
-        let reply = response_port.recv();
+        let reply = response_port.recv().unwrap();
 
         match reply {
             Reply::GetFontTemplateReply(data) => {
@@ -301,7 +306,7 @@ impl FontCacheTask {
         let (response_chan, response_port) = channel();
         self.chan.send(Command::GetLastResortFontTemplate(desc, response_chan));
 
-        let reply = response_port.recv();
+        let reply = response_port.recv().unwrap();
 
         match reply {
             Reply::GetFontTemplateReply(data) => {

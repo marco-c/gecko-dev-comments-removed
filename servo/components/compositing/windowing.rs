@@ -18,21 +18,21 @@ use servo_util::geometry::ScreenPx;
 use std::fmt::{Error, Formatter, Show};
 use std::rc::Rc;
 
-#[deriving(Clone)]
+#[derive(Clone)]
 pub enum MouseWindowEvent {
     Click(uint, TypedPoint2D<DevicePixel, f32>),
     MouseDown(uint, TypedPoint2D<DevicePixel, f32>),
     MouseUp(uint, TypedPoint2D<DevicePixel, f32>),
 }
 
-#[deriving(Clone)]
+#[derive(Clone)]
 pub enum WindowNavigateMsg {
     Forward,
     Back,
 }
 
 
-#[deriving(Clone)]
+#[derive(Clone)]
 pub enum WindowEvent {
     
     
@@ -48,7 +48,7 @@ pub enum WindowEvent {
     
     InitializeCompositing,
     
-    Resize(TypedSize2D<DevicePixel, uint>),
+    Resize(TypedSize2D<DevicePixel, u32>),
     
     LoadUrl(String),
     
@@ -92,7 +92,7 @@ impl Show for WindowEvent {
 
 pub trait WindowMethods {
     
-    fn framebuffer_size(&self) -> TypedSize2D<DevicePixel, uint>;
+    fn framebuffer_size(&self) -> TypedSize2D<DevicePixel, u32>;
     
     fn size(&self) -> TypedSize2D<ScreenPx, f32>;
     

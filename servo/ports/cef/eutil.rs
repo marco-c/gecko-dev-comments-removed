@@ -19,35 +19,34 @@ pub trait Downcast<Class> {
     fn downcast(&self) -> &Class;
 }
 
-pub fn slice_to_str(s: *const u8, l: uint, f: |&str| -> c_int) -> c_int {
+pub fn slice_to_str<F>(s: *const u8, l: uint, f: F) -> c_int where F: FnOnce(&str) -> c_int {
     unsafe {
-        slice::raw::buf_as_slice(s, l, |result| {
-             str::from_utf8(result).map(|s| f(s)).unwrap_or(0)
-        })
+        let s = slice::from_raw_buf(&s, l);
+        str::from_utf8(s).map(f).unwrap_or(0)
     }
 }
 
-/// Creates a new raw CEF object of the given type and sets up its reference counting machinery.
-/// All fields are initialized to zero. It is the caller's responsibility to ensure that the given
-/// type is a CEF type with `cef_base_t` as its first member.
+
+
+
 pub unsafe fn create_cef_object<Base,Extra>(size: size_t) -> *mut Base {
     let object = libc::calloc(1, (mem::size_of::<Base>() + mem::size_of::<Extra>()) as u64) as
         *mut cef_base_t;
     (*object).size = size;
-    (*object).add_ref = Some(servo_add_ref);
-    (*object).release = Some(servo_release);
+    (*object).add_ref = Some(servo_add_ref as extern "C" fn(*mut cef_base_t) -> c_int);
+    (*object).release = Some(servo_release as extern "C" fn(*mut cef_base_t) -> c_int);
     *ref_count(object) = 1;
     object as *mut Base
 }
 
-/// Returns a pointer to the Servo-specific reference count for the given object. This only works
-/// on objects that Servo created!
+
+
 unsafe fn ref_count(object: *mut cef_base_t) -> *mut uint {
-    // The reference count should be the first field of the extra data.
+    
     (object as *mut u8).offset((*object).size as int) as *mut uint
 }
 
-/// Increments the reference count on a CEF object. This only works on objects that Servo created!
+
 extern "C" fn servo_add_ref(object: *mut cef_base_t) -> c_int {
     unsafe {
         let count = ref_count(object);
@@ -56,8 +55,8 @@ extern "C" fn servo_add_ref(object: *mut cef_base_t) -> c_int {
     }
 }
 
-/// Decrements the reference count on a CEF object. If zero, frees it. This only works on objects
-/// that Servo created!
+
+
 extern "C" fn servo_release(object: *mut cef_base_t) -> c_int {
     unsafe {
         let count = ref_count(object);

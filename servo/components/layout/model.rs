@@ -18,7 +18,7 @@ use std::cmp::{max, min};
 use std::fmt;
 
 
-#[deriving(Copy)]
+#[derive(Copy)]
 pub struct AdjoiningMargins {
     
     pub most_positive: Au,
@@ -61,7 +61,7 @@ impl AdjoiningMargins {
 }
 
 
-#[deriving(Copy)]
+#[derive(Copy)]
 pub enum CollapsibleMargins {
     
     None(Au, Au),
@@ -239,14 +239,14 @@ impl MarginCollapseInfo {
     }
 }
 
-#[deriving(Copy)]
+#[derive(Copy)]
 pub enum MarginCollapseState {
     AccumulatingCollapsibleTopMargin,
     AccumulatingMarginIn,
 }
 
 
-#[deriving(Encodable)]
+#[derive(RustcEncodable)]
 pub struct IntrinsicISizes {
     
     pub minimum_inline_size: Au,
@@ -256,7 +256,7 @@ pub struct IntrinsicISizes {
 
 impl fmt::Show for IntrinsicISizes {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "min={}, pref={}", self.minimum_inline_size, self.preferred_inline_size)
+        write!(f, "min={:?}, pref={:?}", self.minimum_inline_size, self.preferred_inline_size)
     }
 }
 
@@ -325,7 +325,7 @@ impl IntrinsicISizesContribution {
 }
 
 
-#[deriving(Copy, PartialEq, Show)]
+#[derive(Copy, PartialEq, Show)]
 pub enum MaybeAuto {
     Auto,
     Specified(Au),
@@ -358,7 +358,7 @@ impl MaybeAuto {
     }
 
     #[inline]
-    pub fn map(&self, mapper: |Au| -> Au) -> MaybeAuto {
+    pub fn map<F>(&self, mapper: F) -> MaybeAuto where F: FnOnce(Au) -> Au {
         match *self {
             MaybeAuto::Auto => MaybeAuto::Auto,
             MaybeAuto::Specified(value) => MaybeAuto::Specified(mapper(value)),

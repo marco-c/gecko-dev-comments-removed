@@ -45,17 +45,17 @@ pub trait IDLInterface {
 }
 
 
-pub trait ToJSValConvertible for Sized? {
-    /// Convert `self` to a `JSVal`. JSAPI failure causes a task failure.
+pub trait ToJSValConvertible {
+    
     fn to_jsval(&self, cx: *mut JSContext) -> JSVal;
 }
 
-/// A trait to convert `JSVal`s to Rust types.
+
 pub trait FromJSValConvertible<T> {
-    /// Convert `val` to type `Self`.
-    /// Optional configuration of type `T` can be passed as the `option`
-    /// argument.
-    /// If it returns `Err(())`, a JSAPI exception is pending.
+    
+    
+    
+    
     fn from_jsval(cx: *mut JSContext, val: JSVal, option: T) -> Result<Self, ()>;
 }
 
@@ -253,7 +253,7 @@ impl ToJSValConvertible for DOMString {
 }
 
 /// Behavior for stringification of `JSVal`s.
-#[deriving(PartialEq)]
+#[derive(PartialEq)]
 pub enum StringificationBehavior {
     /// Convert `null` to the string `"null"`.
     Default,
@@ -498,6 +498,7 @@ impl<T: ToJSValConvertible> ToJSValConvertible for Option<T> {
     }
 }
 
+#[old_impl_check]
 impl<X: default::Default, T: FromJSValConvertible<X>> FromJSValConvertible<()> for Option<T> {
     fn from_jsval(cx: *mut JSContext, value: JSVal, _: ()) -> Result<Option<T>, ()> {
         if value.is_null_or_undefined() {

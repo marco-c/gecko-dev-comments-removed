@@ -27,18 +27,19 @@ use geom::{Point2D, Rect};
 use servo_util::geometry::Au;
 use std::cmp::{max, min};
 use std::fmt;
+use std::ops::Add;
 use style::{ComputedValues, CSSFloat};
 use style::computed_values::{table_layout, LengthOrPercentageOrAuto};
 use std::sync::Arc;
 
-#[deriving(Copy, Encodable, Show)]
+#[derive(Copy, RustcEncodable, Show)]
 pub enum TableLayout {
     Fixed,
     Auto
 }
 
 
-#[deriving(Encodable)]
+#[derive(RustcEncodable)]
 pub struct TableWrapperFlow {
     pub block_flow: BlockFlow,
 
@@ -144,15 +145,15 @@ impl TableWrapperFlow {
         
         let mut total_guess = AutoLayoutCandidateGuess::new();
         let guesses: Vec<AutoLayoutCandidateGuess> =
-            self.column_intrinsic_inline_sizes.iter().map(|column_intrinsic_inline_size| {
+            self.column_intrinsic_inline_sizes.iter().map(|&mut:column_intrinsic_inline_size| {
                 let guess = AutoLayoutCandidateGuess::from_column_intrinsic_inline_size(
                     column_intrinsic_inline_size,
                     available_inline_size);
-                total_guess = total_guess + guess;
+                total_guess = &total_guess + &guess;
                 guess
             }).collect();
 
-        
+        // Assign inline sizes.
         let selection = SelectedAutoLayoutCandidateGuess::select(&total_guess,
                                                                  available_inline_size);
         let mut total_used_inline_size = Au(0);
@@ -163,9 +164,9 @@ impl TableWrapperFlow {
             total_used_inline_size = total_used_inline_size + intermediate_column_inline_size.size
         }
 
-        
-        
-        
+        // Distribute excess inline-size if necessary per INTRINSIC § 4.4.
+        //
+        // FIXME(pcwalton, spec): How do I deal with fractional excess?
         let excess_inline_size = available_inline_size - total_used_inline_size;
         if excess_inline_size > Au(0) &&
                 selection == SelectedAutoLayoutCandidateGuess::UsePreferredGuessAndDistributeExcessInlineSize {
@@ -196,7 +197,7 @@ impl TableWrapperFlow {
     fn compute_used_inline_size(&mut self,
                                 layout_context: &LayoutContext,
                                 parent_flow_inline_size: Au) {
-        
+        // Delegate to the appropriate inline size computer to find the constraint inputs.
         let input = if self.block_flow.base.flags.is_float() {
             FloatNonReplaced.compute_inline_size_constraint_inputs(&mut self.block_flow,
                                                                    parent_flow_inline_size,
@@ -207,7 +208,7 @@ impl TableWrapperFlow {
                                                                    layout_context)
         };
 
-        
+        // Delegate to the appropriate inline size computer to write the constraint solutions in.
         if self.block_flow.base.flags.is_float() {
             let solution = FloatNonReplaced.solve_inline_size_constraints(&mut self.block_flow,
                                                                           &input);
@@ -240,7 +241,7 @@ impl Flow for TableWrapperFlow {
     }
 
     fn bubble_inline_sizes(&mut self) {
-        
+        // Get the intrinsic column inline-sizes info from the table flow.
         for kid in self.block_flow.base.child_iter() {
             debug_assert!(kid.is_table_caption() || kid.is_table());
             if kid.is_table() {
@@ -268,13 +269,13 @@ impl Flow for TableWrapperFlow {
             }
         }).collect::<Vec<_>>();
 
-        
-        
+        // Table wrappers are essentially block formatting contexts and are therefore never
+        // impacted by floats.
         self.block_flow.base.flags.remove(IMPACTED_BY_LEFT_FLOATS);
         self.block_flow.base.flags.remove(IMPACTED_BY_RIGHT_FLOATS);
 
-        
-        
+        // Our inline-size was set to the inline-size of the containing block by the flow's parent.
+        // Now compute the real value.
         let containing_block_inline_size = self.block_flow.base.block_container_inline_size;
         if self.block_flow.base.flags.is_float() {
             self.block_flow.float.as_mut().unwrap().containing_inline_size =
@@ -294,7 +295,7 @@ impl Flow for TableWrapperFlow {
         let inline_start_content_edge = self.block_flow.fragment.border_box.start.i;
         let content_inline_size = self.block_flow.fragment.border_box.size.inline;
 
-        
+        // In case of fixed layout, column inline-sizes are calculated in table flow.
         let assigned_column_inline_sizes = match self.table_layout {
             TableLayout::Fixed => None,
             TableLayout::Auto => {
@@ -383,14 +384,14 @@ impl Flow for TableWrapperFlow {
 impl fmt::Show for TableWrapperFlow {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if self.block_flow.base.flags.is_float() {
-            write!(f, "TableWrapperFlow(Float): {}", self.block_flow.fragment)
+            write!(f, "TableWrapperFlow(Float): {:?}", self.block_flow.fragment)
         } else {
-            write!(f, "TableWrapperFlow: {}", self.block_flow.fragment)
+            write!(f, "TableWrapperFlow: {:?}", self.block_flow.fragment)
         }
     }
 }
 
-
+/// The layout "guesses" defined in INTRINSIC § 4.3.
 struct AutoLayoutCandidateGuess {
     
     
@@ -482,9 +483,10 @@ impl AutoLayoutCandidateGuess {
     }
 }
 
-impl Add<AutoLayoutCandidateGuess,AutoLayoutCandidateGuess> for AutoLayoutCandidateGuess {
+impl<'a> Add for &'a AutoLayoutCandidateGuess {
+    type Output = AutoLayoutCandidateGuess;
     #[inline]
-    fn add(&self, other: &AutoLayoutCandidateGuess) -> AutoLayoutCandidateGuess {
+    fn add(self, other: &AutoLayoutCandidateGuess) -> AutoLayoutCandidateGuess {
         AutoLayoutCandidateGuess {
             minimum_guess: self.minimum_guess + other.minimum_guess,
             minimum_percentage_guess:
@@ -497,7 +499,7 @@ impl Add<AutoLayoutCandidateGuess,AutoLayoutCandidateGuess> for AutoLayoutCandid
 
 
 
-#[deriving(Copy, PartialEq, Show)]
+#[derive(Copy, PartialEq, Show)]
 enum SelectedAutoLayoutCandidateGuess {
     UseMinimumGuess,
     InterpolateBetweenMinimumGuessAndMinimumPercentageGuess(CSSFloat),

@@ -21,7 +21,6 @@ use script_traits::{ScriptControlChan, ConstellationControlMsg};
 use servo_msg::compositor_msg::{Epoch, LayerId, ScrollPolicy};
 use servo_msg::constellation_msg::PipelineId;
 use std::num::Float;
-use std::num::FloatMath;
 use std::rc::Rc;
 
 pub struct CompositorData {
@@ -68,24 +67,25 @@ impl CompositorData {
     }
 }
 
-pub trait CompositorLayer<Window: WindowMethods> {
+pub trait CompositorLayer {
     fn update_layer_except_bounds(&self, layer_properties: LayerProperties);
 
     fn update_layer(&self, layer_properties: LayerProperties);
 
-    fn add_buffers(&self,
-                   compositor: &IOCompositor<Window>,
-                   new_buffers: Box<LayerBufferSet>,
-                   epoch: Epoch)
-                   -> bool;
+    fn add_buffers<Window>(&self,
+                           compositor: &IOCompositor<Window>,
+                           new_buffers: Box<LayerBufferSet>,
+                           epoch: Epoch)
+                           -> bool
+                           where Window: WindowMethods;
 
     
     
-    fn clear(&self, compositor: &IOCompositor<Window>);
+    fn clear<Window>(&self, compositor: &IOCompositor<Window>) where Window: WindowMethods;
 
     
     
-    fn clear_all_tiles(&self, compositor: &IOCompositor<Window>);
+    fn clear_all_tiles<Window>(&self, compositor: &IOCompositor<Window>) where Window: WindowMethods;
 
     
     
@@ -107,14 +107,16 @@ pub trait CompositorLayer<Window: WindowMethods> {
     
     
     
-    fn send_mouse_event(&self,
-                        compositor: &IOCompositor<Window>,
-                        event: MouseWindowEvent,
-                        cursor: TypedPoint2D<LayerPixel, f32>);
+    fn send_mouse_event<Window>(&self,
+                                compositor: &IOCompositor<Window>,
+                                event: MouseWindowEvent,
+                                cursor: TypedPoint2D<LayerPixel, f32>)
+                                where Window: WindowMethods;
 
-    fn send_mouse_move_event(&self,
-                             compositor: &IOCompositor<Window>,
-                             cursor: TypedPoint2D<LayerPixel, f32>);
+    fn send_mouse_move_event<Window>(&self,
+                                     compositor: &IOCompositor<Window>,
+                                     cursor: TypedPoint2D<LayerPixel, f32>)
+                                     where Window: WindowMethods;
 
     fn clamp_scroll_offset_and_scroll_layer(&self,
                                             new_offset: TypedPoint2D<LayerPixel, f32>)
@@ -131,7 +133,7 @@ pub trait CompositorLayer<Window: WindowMethods> {
     fn get_pipeline_id(&self) -> PipelineId;
 }
 
-#[deriving(Copy, PartialEq, Clone)]
+#[derive(Copy, PartialEq, Clone)]
 pub enum WantsScrollEventsFlag {
     WantsScrollEvents,
     DoesntWantScrollEvents,
@@ -167,14 +169,14 @@ fn calculate_content_size_for_layer(layer: &Layer<CompositorData>)
                                  }).size
 }
 
-#[deriving(PartialEq)]
+#[derive(PartialEq)]
 pub enum ScrollEventResult {
     ScrollEventUnhandled,
     ScrollPositionChanged,
     ScrollPositionUnchanged,
 }
 
-impl<Window: WindowMethods> CompositorLayer<Window> for Layer<CompositorData> {
+impl CompositorLayer for Layer<CompositorData> {
     fn update_layer_except_bounds(&self, layer_properties: LayerProperties) {
         self.extra_data.borrow_mut().epoch = layer_properties.epoch;
         self.extra_data.borrow_mut().scroll_policy = layer_properties.scroll_policy;
@@ -199,18 +201,19 @@ impl<Window: WindowMethods> CompositorLayer<Window> for Layer<CompositorData> {
     
     
     
-    fn add_buffers(&self,
-                   compositor: &IOCompositor<Window>,
-                   new_buffers: Box<LayerBufferSet>,
-                   epoch: Epoch)
-                   -> bool {
+    fn add_buffers<Window>(&self,
+                           compositor: &IOCompositor<Window>,
+                           new_buffers: Box<LayerBufferSet>,
+                           epoch: Epoch)
+                           -> bool
+                           where Window: WindowMethods {
         if self.extra_data.borrow().epoch != epoch {
-            debug!("add_buffers: compositor epoch mismatch: {} != {}, id: {}",
+            debug!("add_buffers: compositor epoch mismatch: {:?} != {:?}, id: {:?}",
                    self.extra_data.borrow().epoch,
                    epoch,
                    self.get_pipeline_id());
             let pipeline = compositor.get_pipeline(self.get_pipeline_id());
-            let _ = pipeline.paint_chan.send_opt(PaintMsg::UnusedBuffer(new_buffers.buffers));
+            let _ = pipeline.paint_chan.send(PaintMsg::UnusedBuffer(new_buffers.buffers));
             return false;
         }
 
@@ -221,13 +224,13 @@ impl<Window: WindowMethods> CompositorLayer<Window> for Layer<CompositorData> {
         let unused_buffers = self.collect_unused_buffers();
         if !unused_buffers.is_empty() { 
             let pipeline = compositor.get_pipeline(self.get_pipeline_id());
-            let _ = pipeline.paint_chan.send_opt(PaintMsg::UnusedBuffer(unused_buffers));
+            let _ = pipeline.paint_chan.send(PaintMsg::UnusedBuffer(unused_buffers));
         }
 
         return true;
     }
 
-    fn clear(&self, compositor: &IOCompositor<Window>) {
+    fn clear<Window>(&self, compositor: &IOCompositor<Window>) where Window: WindowMethods {
         let mut buffers = self.collect_buffers();
 
         if !buffers.is_empty() {
@@ -239,13 +242,15 @@ impl<Window: WindowMethods> CompositorLayer<Window> for Layer<CompositorData> {
             }
 
             let pipeline = compositor.get_pipeline(self.get_pipeline_id());
-            let _ = pipeline.paint_chan.send_opt(PaintMsg::UnusedBuffer(buffers));
+            let _ = pipeline.paint_chan.send(PaintMsg::UnusedBuffer(buffers));
         }
     }
 
     
     
-    fn clear_all_tiles(&self, compositor: &IOCompositor<Window>) {
+    fn clear_all_tiles<Window>(&self,
+                               compositor: &IOCompositor<Window>)
+                               where Window: WindowMethods {
         self.clear(compositor);
         for kid in self.children().iter() {
             kid.clear_all_tiles(compositor);
@@ -325,10 +330,11 @@ impl<Window: WindowMethods> CompositorLayer<Window> for Layer<CompositorData> {
         }
     }
 
-    fn send_mouse_event(&self,
-                        compositor: &IOCompositor<Window>,
-                        event: MouseWindowEvent,
-                        cursor: TypedPoint2D<LayerPixel, f32>) {
+    fn send_mouse_event<Window>(&self,
+                                compositor: &IOCompositor<Window>,
+                                event: MouseWindowEvent,
+                                cursor: TypedPoint2D<LayerPixel, f32>)
+                                where Window: WindowMethods {
         let event_point = cursor.to_untyped();
         let message = match event {
             MouseWindowEvent::Click(button, _) =>
@@ -341,16 +347,17 @@ impl<Window: WindowMethods> CompositorLayer<Window> for Layer<CompositorData> {
 
         let pipeline = compositor.get_pipeline(self.get_pipeline_id());
         let ScriptControlChan(ref chan) = pipeline.script_chan;
-        let _ = chan.send_opt(ConstellationControlMsg::SendEvent(pipeline.id.clone(), message));
+        let _ = chan.send(ConstellationControlMsg::SendEvent(pipeline.id.clone(), message));
     }
 
-    fn send_mouse_move_event(&self,
-                             compositor: &IOCompositor<Window>,
-                             cursor: TypedPoint2D<LayerPixel, f32>) {
+    fn send_mouse_move_event<Window>(&self,
+                                     compositor: &IOCompositor<Window>,
+                                     cursor: TypedPoint2D<LayerPixel, f32>)
+                                     where Window: WindowMethods {
         let message = MouseMoveEvent(cursor.to_untyped());
         let pipeline = compositor.get_pipeline(self.get_pipeline_id());
         let ScriptControlChan(ref chan) = pipeline.script_chan;
-        let _ = chan.send_opt(ConstellationControlMsg::SendEvent(pipeline.id.clone(), message));
+        let _ = chan.send(ConstellationControlMsg::SendEvent(pipeline.id.clone(), message));
     }
 
     fn scroll_layer_and_all_child_layers(&self, new_offset: TypedPoint2D<LayerPixel, f32>)

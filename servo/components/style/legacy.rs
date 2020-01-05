@@ -18,14 +18,14 @@ use servo_util::smallvec::VecLike;
 use servo_util::str::LengthOrPercentageOrAuto;
 
 
-#[deriving(Copy, PartialEq, Eq)]
+#[derive(Copy, PartialEq, Eq)]
 pub enum LengthAttribute {
     
     Width,
 }
 
 
-#[deriving(Copy, PartialEq, Eq)]
+#[derive(Copy, PartialEq, Eq)]
 pub enum IntegerAttribute {
     
     Size,
@@ -34,7 +34,7 @@ pub enum IntegerAttribute {
 }
 
 
-#[deriving(Copy, PartialEq, Eq)]
+#[derive(Copy, PartialEq, Eq)]
 pub enum UnsignedIntegerAttribute {
     
     Border,
@@ -43,7 +43,7 @@ pub enum UnsignedIntegerAttribute {
 }
 
 
-#[deriving(Copy, PartialEq, Eq)]
+#[derive(Copy, PartialEq, Eq)]
 pub enum SimpleColorAttribute {
     
     BgColor,

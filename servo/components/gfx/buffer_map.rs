@@ -3,12 +3,11 @@
 
 
 use std::collections::HashMap;
-use std::collections::hash_map::{Occupied, Vacant};
+use std::collections::hash_map::Entry::{Occupied, Vacant};
 use geom::size::Size2D;
 use layers::platform::surface::NativePaintingGraphicsContext;
 use layers::layers::LayerBuffer;
-use std::hash::Hash;
-use std::hash::sip::SipState;
+use std::hash::{Hash, Hasher, Writer};
 use std::mem;
 
 
@@ -27,11 +26,11 @@ pub struct BufferMap {
 }
 
 
-#[deriving(Eq, Copy)]
-struct BufferKey([uint, ..2]);
+#[derive(Eq, Copy)]
+struct BufferKey([uint; 2]);
 
-impl Hash for BufferKey {
-    fn hash(&self, state: &mut SipState) {
+impl<H: Hasher+Writer> Hash<H> for BufferKey {
+    fn hash(&self, state: &mut H) {
         let BufferKey(ref bytes) = *self;
         bytes.as_slice().hash(state);
     }
@@ -45,23 +44,23 @@ impl PartialEq for BufferKey {
     }
 }
 
-/// Create a key from a given size
+
 impl BufferKey {
     fn get(input: Size2D<uint>) -> BufferKey {
         BufferKey([input.width, input.height])
     }
 }
 
-/// A helper struct to keep track of buffers in the HashMap
+
 struct BufferValue {
-    /// An array of buffers, all the same size
+    
     buffers: Vec<Box<LayerBuffer>>,
-    /// The counter when this size was last requested
+    
     last_action: uint,
 }
 
 impl BufferMap {
-    // Creates a new BufferMap with a given buffer limit.
+    
     pub fn new(max_mem: uint) -> BufferMap {
         BufferMap {
             map: HashMap::new(),
@@ -91,7 +90,7 @@ impl BufferMap {
                 entry.into_mut().buffers.push(new_buffer);
             }
             Vacant(entry) => {
-                entry.set(BufferValue {
+                entry.insert(BufferValue {
                     buffers: vec!(new_buffer),
                     last_action: *counter,
                 });

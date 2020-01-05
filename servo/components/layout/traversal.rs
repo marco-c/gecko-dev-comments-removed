@@ -48,7 +48,7 @@ type Generation = uint;
 
 
 
-thread_local!(static STYLE_BLOOM: RefCell<Option<(Box<BloomFilter>, UnsafeLayoutNode, Generation)>> = RefCell::new(None))
+thread_local!(static STYLE_BLOOM: RefCell<Option<(Box<BloomFilter>, UnsafeLayoutNode, Generation)>> = RefCell::new(None));
 
 
 
@@ -74,7 +74,7 @@ fn take_task_local_bloom_filter(parent_node: Option<LayoutNode>, layout_context:
                 
                 if old_node == layout_node_to_unsafe_layout_node(&parent) &&
                     old_generation == layout_context.shared.generation {
-                    debug!("[{}] Parent matches (={}). Reusing bloom filter.", tid(), old_node.val0());
+                    debug!("[{}] Parent matches (={}). Reusing bloom filter.", tid(), old_node.0);
                     bloom_filter.clone()
                 } else {
                     
@@ -120,7 +120,7 @@ fn insert_ancestors_into_bloom_filter(bf: &mut Box<BloomFilter>,
 
 
 
-#[deriving(Copy)]
+#[derive(Copy)]
 pub struct RecalcStyleForNode<'a> {
     pub layout_context: &'a LayoutContext<'a>,
 }
@@ -200,7 +200,7 @@ impl<'a> PreorderDomTraversal for RecalcStyleForNode<'a> {
 
         
         
-        debug!("[{}] + {:X}", tid(), unsafe_layout_node.val0());
+        debug!("[{}] + {:X}", tid(), unsafe_layout_node.0);
         node.insert_into_bloom_filter(&mut *bf);
 
         
@@ -209,7 +209,7 @@ impl<'a> PreorderDomTraversal for RecalcStyleForNode<'a> {
 }
 
 
-#[deriving(Copy)]
+#[derive(Copy)]
 pub struct ConstructFlows<'a> {
     pub layout_context: &'a LayoutContext<'a>,
 }
@@ -258,7 +258,7 @@ impl<'a> PostorderDomTraversal for ConstructFlows<'a> {
 
         match node.layout_parent_node(self.layout_context.shared) {
             None => {
-                debug!("[{}] - {:X}, and deleting BF.", tid(), unsafe_layout_node.val0());
+                debug!("[{}] - {:X}, and deleting BF.", tid(), unsafe_layout_node.0);
                 
             }
             Some(parent) => {
@@ -308,7 +308,7 @@ impl<'a> PostorderFlowTraversal for BubbleISizes<'a> {
 }
 
 
-#[deriving(Copy)]
+#[derive(Copy)]
 pub struct AssignISizes<'a> {
     pub layout_context: &'a LayoutContext<'a>,
 }
@@ -329,7 +329,7 @@ impl<'a> PreorderFlowTraversal for AssignISizes<'a> {
 
 
 
-#[deriving(Copy)]
+#[derive(Copy)]
 pub struct AssignBSizesAndStoreOverflow<'a> {
     pub layout_context: &'a LayoutContext<'a>,
 }
@@ -354,7 +354,7 @@ impl<'a> PostorderFlowTraversal for AssignBSizesAndStoreOverflow<'a> {
     }
 }
 
-#[deriving(Copy)]
+#[derive(Copy)]
 pub struct ComputeAbsolutePositions<'a> {
     pub layout_context: &'a LayoutContext<'a>,
 }
@@ -366,7 +366,7 @@ impl<'a> PreorderFlowTraversal for ComputeAbsolutePositions<'a> {
     }
 }
 
-#[deriving(Copy)]
+#[derive(Copy)]
 pub struct BuildDisplayList<'a> {
     pub layout_context: &'a LayoutContext<'a>,
 }
