@@ -37,9 +37,11 @@ pub fn handle_evaluate_js(page: &Rc<Page>, pipeline: PipelineId, eval: String, r
     } else if rval.is_string() {
         
         devtools_traits::StringValue(FromJSValConvertible::from_jsval(cx, rval, conversions::Default).unwrap())
+    } else if rval.is_null() {
+        devtools_traits::NullValue
     } else {
         
-        assert!(rval.is_object_or_null());
+        assert!(rval.is_object());
         panic!("object values unimplemented")
     });
 }
