@@ -246,7 +246,7 @@ ServiceWorkerManager::~ServiceWorkerManager()
 }
 
 void
-ServiceWorkerManager::Init()
+ServiceWorkerManager::Init(ServiceWorkerRegistrar* aRegistrar)
 {
   nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
   if (obs) {
@@ -256,11 +256,10 @@ ServiceWorkerManager::Init()
   }
 
   if (XRE_IsParentProcess()) {
-    RefPtr<ServiceWorkerRegistrar> swr = ServiceWorkerRegistrar::Get();
-    MOZ_ASSERT(swr);
+    MOZ_DIAGNOSTIC_ASSERT(aRegistrar);
 
     nsTArray<ServiceWorkerRegistrationData> data;
-    swr->GetRegistrations(data);
+    aRegistrar->GetRegistrations(data);
     LoadRegistrations(data);
 
     if (obs) {
@@ -1358,12 +1357,23 @@ ServiceWorkerManager::GetInstance()
   
   static bool firstTime = true;
   if (firstTime) {
+    RefPtr<ServiceWorkerRegistrar> swr;
+
+    
+    
+    if (XRE_IsParentProcess()) {
+      swr = ServiceWorkerRegistrar::Get();
+      if (!swr) {
+        return nullptr;
+      }
+    }
+
     firstTime = false;
 
     AssertIsOnMainThread();
 
     gInstance = new ServiceWorkerManager();
-    gInstance->Init();
+    gInstance->Init(swr);
     ClearOnShutdown(&gInstance);
   }
   RefPtr<ServiceWorkerManager> copy = gInstance.get();

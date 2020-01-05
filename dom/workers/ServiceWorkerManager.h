@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef mozilla_dom_workers_serviceworkermanager_h
 #define mozilla_dom_workers_serviceworkermanager_h
@@ -41,6 +41,7 @@ class OriginAttributes;
 
 namespace dom {
 
+class ServiceWorkerRegistrar;
 class ServiceWorkerRegistrationListener;
 
 namespace workers {
@@ -75,11 +76,11 @@ public:
   { 0xa6, 0x5d, 0x77, 0x57, 0x45, 0x53, 0x59, 0x90 }     \
 }
 
-/*
- * The ServiceWorkerManager is a per-process global that deals with the
- * installation, querying and event dispatch of ServiceWorkers for all the
- * origins in the process.
- */
+
+
+
+
+
 class ServiceWorkerManager final
   : public nsIServiceWorkerManager
   , public nsIIPCBackgroundChildCreateCallback
@@ -107,20 +108,20 @@ public:
 
   nsRefPtrHashtable<nsISupportsHashKey, ServiceWorkerRegistrationInfo> mControlledDocuments;
 
-  // Track all documents that have attempted to register a service worker for a
-  // given scope.
+  
+  
   typedef nsTArray<nsCOMPtr<nsIWeakReference>> WeakDocumentList;
   nsClassHashtable<nsCStringHashKey, WeakDocumentList> mRegisteringDocuments;
 
-  // Track all intercepted navigation channels for a given scope.  Channels are
-  // placed in the appropriate list before dispatch the FetchEvent to the worker
-  // thread and removed once FetchEvent processing dispatches back to the main
-  // thread.
-  //
-  // Note: Its safe to use weak references here because a RAII-style callback
-  //       is registered with the channel before its added to this list.  We
-  //       are guaranteed the callback will fire before and remove the ref
-  //       from this list before the channel is destroyed.
+  
+  
+  
+  
+  
+  
+  
+  
+  
   typedef nsTArray<nsIInterceptedChannel*> InterceptionList;
   nsClassHashtable<nsCStringHashKey, InterceptionList> mNavigationInterceptions;
 
@@ -130,21 +131,21 @@ public:
   bool
   IsControlled(nsIDocument* aDocument, ErrorResult& aRv);
 
-  // Return true if the given content process could potentially be executing
-  // service worker code with the given principal.  At the current time, this
-  // just means that we have any registration for the origin, regardless of
-  // scope.  This is a very weak guarantee but is the best we can do when push
-  // notifications can currently spin up a service worker in content processes
-  // without our involvement in the parent process.
-  //
-  // In the future when there is only a single ServiceWorkerManager in the
-  // parent process that is entirely in control of spawning and running service
-  // worker code, we will be able to authoritatively indicate whether there is
-  // an activate service worker in the given content process.  At that time we
-  // will rename this method HasActiveServiceWorkerInstance and provide
-  // semantics that ensure this method returns true until the worker is known to
-  // have shut down in order to allow the caller to induce a crash for security
-  // reasons without having to worry about shutdown races with the worker.
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   bool
   MayHaveActiveServiceWorkerInstance(ContentParent* aContent,
                                      nsIPrincipal* aPrincipal);
@@ -200,14 +201,14 @@ public:
   void
   FinishFetch(ServiceWorkerRegistrationInfo* aRegistration);
 
-  /**
-   * Report an error for the given scope to any window we think might be
-   * interested, failing over to the Browser Console if we couldn't find any.
-   *
-   * Error messages should be localized, so you probably want to call
-   * LocalizeAndReportToAllClients instead, which in turn calls us after
-   * localizing the error.
-   */
+  
+
+
+
+
+
+
+
   void
   ReportToAllClients(const nsCString& aScope,
                      const nsString& aMessage,
@@ -217,23 +218,23 @@ public:
                      uint32_t aColumnNumber,
                      uint32_t aFlags);
 
-  /**
-   * Report a localized error for the given scope to any window we think might
-   * be interested.
-   *
-   * Note that this method takes an nsTArray<nsString> for the parameters, not
-   * bare chart16_t*[].  You can use a std::initializer_list constructor inline
-   * so that argument might look like: nsTArray<nsString> { some_nsString,
-   * PromiseFlatString(some_nsSubString_aka_nsAString),
-   * NS_ConvertUTF8toUTF16(some_nsCString_or_nsCSubString),
-   * NS_LITERAL_STRING("some literal") }.  If you have anything else, like a
-   * number, you can use an nsAutoString with AppendInt/friends.
-   *
-   * @param [aFlags]
-   *   The nsIScriptError flag, one of errorFlag (0x0), warningFlag (0x1),
-   *   infoFlag (0x8).  We default to error if omitted because usually we're
-   *   logging exceptional and/or obvious breakage.
-   */
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   static void
   LocalizeAndReportToAllClients(const nsCString& aScope,
                                 const char* aStringKey,
@@ -248,8 +249,8 @@ public:
   FlushReportsToAllClients(const nsACString& aScope,
                            nsIConsoleReportCollector* aReporter);
 
-  // Always consumes the error by reporting to consoles of all controlled
-  // documents.
+  
+  
   void
   HandleError(JSContext* aCx,
               nsIPrincipal* aPrincipal,
@@ -294,8 +295,8 @@ public:
   void
   LoadRegistrations(const nsTArray<ServiceWorkerRegistrationData>& aRegistrations);
 
-  // Used by remove() and removeAll() when clearing history.
-  // MUST ONLY BE CALLED FROM UnregisterIfMatchesHost!
+  
+  
   void
   ForceUnregister(RegistrationDataPerPrincipal* aRegistrationData,
                   ServiceWorkerRegistrationInfo* aRegistration);
@@ -328,7 +329,7 @@ private:
   ~ServiceWorkerManager();
 
   void
-  Init();
+  Init(ServiceWorkerRegistrar* aRegistrar);
 
   already_AddRefed<ServiceWorkerJobQueue>
   GetOrCreateJobQueue(const nsACString& aOriginSuffix,
@@ -395,9 +396,9 @@ private:
   GetServiceWorkerRegistrationInfo(const nsACString& aScopeKey,
                                    nsIURI* aURI);
 
-  // This method generates a key using appId and isInElementBrowser from the
-  // principal. We don't use the origin because it can change during the
-  // loading.
+  
+  
+  
   static nsresult
   PrincipalToScopeKey(nsIPrincipal* aPrincipal, nsACString& aKey);
 
@@ -459,7 +460,7 @@ private:
   void
   MaybeRemoveRegistration(ServiceWorkerRegistrationInfo* aRegistration);
 
-  // Removes all service worker registrations that matches the given pattern.
+  
   void
   RemoveAllRegistrations(OriginAttributesPattern* aPattern);
 
@@ -514,8 +515,8 @@ private:
                         const nsAString& aBehavior);
 };
 
-} // namespace workers
-} // namespace dom
-} // namespace mozilla
+} 
+} 
+} 
 
-#endif // mozilla_dom_workers_serviceworkermanager_h
+#endif 

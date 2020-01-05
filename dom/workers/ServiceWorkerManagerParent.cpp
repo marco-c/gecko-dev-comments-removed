@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "ServiceWorkerManagerParent.h"
 #include "ServiceWorkerManagerService.h"
@@ -44,7 +44,12 @@ public:
 
     RefPtr<dom::ServiceWorkerRegistrar> service =
       dom::ServiceWorkerRegistrar::Get();
-    MOZ_ASSERT(service);
+
+    
+    
+    if (!service) {
+      return NS_OK;
+    }
 
     service->RegisterServiceWorker(mData);
 
@@ -84,7 +89,12 @@ public:
 
     RefPtr<dom::ServiceWorkerRegistrar> service =
       dom::ServiceWorkerRegistrar::Get();
-    MOZ_ASSERT(service);
+
+    
+    
+    if (!service) {
+      return NS_OK;
+    }
 
     service->UnregisterServiceWorker(mPrincipalInfo,
                                      NS_ConvertUTF16toUTF8(mScope));
@@ -147,7 +157,7 @@ private:
   nsCOMPtr<nsIThread> mBackgroundThread;
 };
 
-} // namespace
+} 
 
 ServiceWorkerManagerParent::ServiceWorkerManagerParent()
   : mService(ServiceWorkerManagerService::GetOrCreate())
@@ -169,7 +179,7 @@ ServiceWorkerManagerParent::RecvRegister(
   AssertIsInMainProcess();
   AssertIsOnBackgroundThread();
 
-  // Basic validation.
+  
   if (aData.scope().IsEmpty() ||
       aData.principal().type() == PrincipalInfo::TNullPrincipalInfo ||
       aData.principal().type() == PrincipalInfo::TSystemPrincipalInfo) {
@@ -182,7 +192,7 @@ ServiceWorkerManagerParent::RecvRegister(
   RefPtr<ContentParent> parent =
     BackgroundParent::GetContentParent(Manager());
 
-  // If the ContentParent is null we are dealing with a same-process actor.
+  
   if (!parent) {
     callback->Run();
     return IPC_OK();
@@ -203,7 +213,7 @@ ServiceWorkerManagerParent::RecvUnregister(const PrincipalInfo& aPrincipalInfo,
   AssertIsInMainProcess();
   AssertIsOnBackgroundThread();
 
-  // Basic validation.
+  
   if (aScope.IsEmpty() ||
       aPrincipalInfo.type() == PrincipalInfo::TNullPrincipalInfo ||
       aPrincipalInfo.type() == PrincipalInfo::TSystemPrincipalInfo) {
@@ -216,7 +226,7 @@ ServiceWorkerManagerParent::RecvUnregister(const PrincipalInfo& aPrincipalInfo,
   RefPtr<ContentParent> parent =
     BackgroundParent::GetContentParent(Manager());
 
-  // If the ContentParent is null we are dealing with a same-process actor.
+  
   if (!parent) {
     callback->Run();
     return IPC_OK();
@@ -306,12 +316,12 @@ ServiceWorkerManagerParent::ActorDestroy(ActorDestroyReason aWhy)
   AssertIsOnBackgroundThread();
 
   if (mService) {
-    // This object is about to be released and with it, also mService will be
-    // released too.
+    
+    
     mService->UnregisterActor(this);
   }
 }
 
-} // namespace workers
-} // namespace dom
-} // namespace mozilla
+} 
+} 
+} 
