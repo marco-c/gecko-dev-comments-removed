@@ -111,6 +111,14 @@ public:
   MakeDrawTarget(const IntSize& aSize,
                  DrawEventRecorder* aRecorder = nullptr);
 
+  
+
+
+
+
+
+  virtual already_AddRefed<DrawTarget> GetReferenceDrawTarget();
+
 protected:
 
   
@@ -124,6 +132,7 @@ protected:
                             DrawTarget* aDrawTarget);
 
   cairo_surface_t* mCairoSurface;
+  RefPtr<DrawTarget> mRefDT; 
   IntSize mSize;
   bool mIsFinished;
 };
