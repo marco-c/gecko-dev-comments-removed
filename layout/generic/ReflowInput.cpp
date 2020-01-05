@@ -2389,8 +2389,12 @@ ReflowInput::InitConstraints(nsPresContext*     aPresContext,
       nsIAtom* alignCBType = alignCB ? alignCB->GetType() : nullptr;
       if (alignCBType == nsGkAtoms::tableWrapperFrame &&
           alignCB->GetParent()) {
-        alignCB = alignCB->GetParent();
-        alignCBType = alignCB->GetType();
+        auto parentCBType = alignCB->GetParent()->GetType();
+        
+        if (parentCBType == nsGkAtoms::gridContainerFrame) {
+          alignCB = alignCB->GetParent();
+          alignCBType = parentCBType;
+        }
       }
       if (alignCBType == nsGkAtoms::gridContainerFrame) {
         
