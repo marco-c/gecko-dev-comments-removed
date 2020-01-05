@@ -116,7 +116,7 @@ pub struct Request {
     pub origin: Option<Url>, 
     pub force_origin_header: bool,
     pub omit_origin_header: bool,
-    pub same_origin_data: bool,
+    pub same_origin_data: Cell<bool>,
     pub referer: Referer,
     pub authentication: bool,
     pub sync: bool,
@@ -145,7 +145,7 @@ impl Request {
             origin: None,
             force_origin_header: false,
             omit_origin_header: false,
-            same_origin_data: false,
+            same_origin_data: Cell::new(false),
             referer: Referer::Client,
             authentication: false,
             sync: false,
@@ -235,8 +235,8 @@ pub fn fetch(request: Rc<Request>, cors_flag: bool) -> Response {
 
 fn main_fetch(request: Rc<Request>, _cors_flag: bool) -> Response {
     
-    let _ = basic_fetch(request);
-    Response::network_error()
+    let response = basic_fetch(request);
+    response
 }
 
 
@@ -305,6 +305,7 @@ fn http_fetch(request: Rc<Request>,
     if !request.skip_service_worker.get() && !request.is_service_worker_global_scope {
 
         
+
         if let Some(ref res) = response {
 
             
@@ -361,7 +362,7 @@ fn http_fetch(request: Rc<Request>,
                     destination: url.clone(),
                     credentials: credentials
                 }, view.name()) && !is_simple_header(&view)
-                );
+            );
 
             if method_mismatch || header_mismatch {
                 let preflight_result = preflight_fetch(request.clone());
@@ -397,9 +398,10 @@ fn http_fetch(request: Rc<Request>,
     }
 
     
-    let actual_response = Rc::try_unwrap(actual_response.unwrap()).ok().unwrap();
-    let mut response = Rc::try_unwrap(response.unwrap()).ok().unwrap();
+    let mut response = response.unwrap();
+    let actual_response = actual_response.unwrap();
 
+    
     match actual_response.status.unwrap() {
 
         
@@ -413,11 +415,14 @@ fn http_fetch(request: Rc<Request>,
 
             
             if !actual_response.headers.has::<Location>() {
-                return actual_response;
+                drop(actual_response);
+                return Rc::try_unwrap(response).ok().unwrap();
             }
 
+            
             let location = match actual_response.headers.get::<Location>() {
                 Some(&Location(ref location)) => location.clone(),
+                
                 _ => return Response::network_error(),
             };
 
@@ -426,7 +431,6 @@ fn http_fetch(request: Rc<Request>,
 
             
             let location_url = match location_url {
-                Ok(ref url) if url.scheme == "data" => { return Response::network_error(); }
                 Ok(url) => url,
                 _ => { return Response::network_error(); }
             };
@@ -439,11 +443,14 @@ fn http_fetch(request: Rc<Request>,
             
             request.redirect_count.set(request.redirect_count.get() + 1);
 
+            
+            request.same_origin_data.set(false);
+
             match request.redirect_mode {
 
                 
                 RedirectMode::Manual => {
-                    response = actual_response.to_filtered(ResponseType::Opaque);
+                    response = Rc::new(Response::to_filtered(actual_response, ResponseType::Opaque));
                 }
 
                 
@@ -493,7 +500,8 @@ fn http_fetch(request: Rc<Request>,
             
             
             if cors_flag {
-                return response;
+                drop(actual_response);
+                return Rc::try_unwrap(response).ok().unwrap();
             }
 
             
@@ -526,7 +534,7 @@ fn http_fetch(request: Rc<Request>,
                               authentication_fetch_flag);
         }
 
-        _ => { }
+        _ => drop(actual_response)
     }
 
     
@@ -535,7 +543,7 @@ fn http_fetch(request: Rc<Request>,
     }
 
     
-    response
+    Rc::try_unwrap(response).ok().unwrap()
 }
 
 
@@ -744,10 +752,7 @@ fn http_network_fetch(request: Rc<Request>,
     let cancellation_listener = CancellationListener::new(None);
 
     let wrapped_response = obtain_response(&factory, &url, &request.method.borrow(),
-                                           
-                                           
-                                           
-                                           &mut *request.headers.borrow_mut(),
+                                           &request.headers.borrow(),
                                            &cancellation_listener, &None, &request.method.borrow(),
                                            &None, request.redirect_count.get(), &None, "");
 
