@@ -23,9 +23,6 @@
 
 
 
-
-#![feature(core_intrinsics)]
-
 #![cfg_attr(feature = "servo", feature(custom_attribute))]
 #![cfg_attr(feature = "servo", feature(custom_derive))]
 #![cfg_attr(feature = "servo", feature(plugin))]
