@@ -407,7 +407,7 @@ private:
     {
       const MediaContainerType mType(aType); 
       mp4_demuxer::ByteReader reader(aData);
-      mp4_demuxer::AtomType initAtom("ftyp");
+      mp4_demuxer::AtomType initAtom("moov");
       mp4_demuxer::AtomType mediaAtom("moof");
 
       
