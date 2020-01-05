@@ -4,15 +4,12 @@
 
 
 
-use core::nonzero::Zeroable;
 use num::Float;
 use std::ops::Deref;
 
 
 #[derive(JSTraceable, Clone, Copy, Eq, PartialEq)]
 pub struct Finite<T: Float>(T);
-
-unsafe impl<T: Float> Zeroable for Finite<T> {}
 
 impl<T: Float> Finite<T> {
     
