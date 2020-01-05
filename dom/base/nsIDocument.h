@@ -15,6 +15,7 @@
 #include "nsIDocumentObserver.h"         
 #include "nsILoadGroup.h"                
 #include "nsINode.h"                     
+#include "nsIParser.h"
 #include "nsIScriptGlobalObject.h"       
 #include "nsIServiceManager.h"
 #include "nsIUUIDGenerator.h"
@@ -358,6 +359,8 @@ public:
 
 
   virtual void ApplySettingsFromCSP(bool aSpeculative) = 0;
+
+  virtual already_AddRefed<nsIParser> CreatorParserOrNull() = 0;
 
   
 
@@ -2783,6 +2786,9 @@ public:
   void ObsoleteSheet(nsIURI *aSheetURI, mozilla::ErrorResult& rv);
 
   void ObsoleteSheet(const nsAString& aSheetURI, mozilla::ErrorResult& rv);
+
+  already_AddRefed<mozilla::dom::Promise> BlockParsing(mozilla::OwningNonNull<mozilla::dom::Promise> aPromise,
+                                                       mozilla::ErrorResult& aRv);
 
   already_AddRefed<nsIURI> GetMozDocumentURIIfNotForErrorPages();
 

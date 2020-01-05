@@ -537,6 +537,8 @@ public:
 
   virtual void ApplySettingsFromCSP(bool aSpeculative) override;
 
+  virtual already_AddRefed<nsIParser> CreatorParserOrNull() override;
+
   
 
 
