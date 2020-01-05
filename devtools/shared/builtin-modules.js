@@ -20,7 +20,7 @@ const jsmScope = Cu.import("resource://gre/modules/Services.jsm", {});
 const { Services } = jsmScope;
 
 const { PromiseDebugging, ChromeUtils, ThreadSafeChromeUtils, HeapSnapshot,
-        atob, btoa, Iterator } = jsmScope;
+        atob, btoa } = jsmScope;
 const { URL } = Cu.Sandbox(CC("@mozilla.org/systemprincipal;1", "nsIPrincipal")(),
                            {wantGlobalProperties: ["URL"]});
 
@@ -35,17 +35,16 @@ const { URL } = Cu.Sandbox(CC("@mozilla.org/systemprincipal;1", "nsIPrincipal")(
 
 
 
-function defineLazyGetter(aObject, aName, aLambda)
-{
-  Object.defineProperty(aObject, aName, {
+function defineLazyGetter(object, name, lambda) {
+  Object.defineProperty(object, name, {
     get: function () {
       
       
       
       
-      delete aObject[aName];
-      let value = aLambda.apply(aObject);
-      Object.defineProperty(aObject, aName, {
+      delete object[name];
+      let value = lambda.apply(object);
+      Object.defineProperty(object, name, {
         value,
         writable: true,
         configurable: true,
@@ -71,10 +70,9 @@ function defineLazyGetter(aObject, aName, aLambda)
 
 
 
-function defineLazyServiceGetter(aObject, aName, aContract, aInterfaceName)
-{
-  defineLazyGetter(aObject, aName, function XPCU_serviceLambda() {
-    return Cc[aContract].getService(Ci[aInterfaceName]);
+function defineLazyServiceGetter(object, name, contract, interfaceName) {
+  defineLazyGetter(object, name, function () {
+    return Cc[contract].getService(Ci[interfaceName]);
   });
 }
 
@@ -104,28 +102,27 @@ function defineLazyServiceGetter(aObject, aName, aContract, aInterfaceName)
 
 
 
-function defineLazyModuleGetter(aObject, aName, aResource, aSymbol,
-                                aPreLambda, aPostLambda, aProxy)
-{
-  let proxy = aProxy || {};
+function defineLazyModuleGetter(object, name, resource, symbol,
+                                preLambda, postLambda, proxy) {
+  proxy = proxy || {};
 
-  if (typeof (aPreLambda) === "function") {
-    aPreLambda.apply(proxy);
+  if (typeof (preLambda) === "function") {
+    preLambda.apply(proxy);
   }
 
-  defineLazyGetter(aObject, aName, function XPCU_moduleLambda() {
-    var temp = {};
+  defineLazyGetter(object, name, function () {
+    let temp = {};
     try {
-      Cu.import(aResource, temp);
+      Cu.import(resource, temp);
 
-      if (typeof (aPostLambda) === "function") {
-        aPostLambda.apply(proxy);
+      if (typeof (postLambda) === "function") {
+        postLambda.apply(proxy);
       }
     } catch (ex) {
-      Cu.reportError("Failed to load module " + aResource + ".");
+      Cu.reportError("Failed to load module " + resource + ".");
       throw ex;
     }
-    return temp[aSymbol || aName];
+    return temp[symbol || name];
   });
 }
 
@@ -224,7 +221,8 @@ exports.globals = {
     lazyImporter: defineLazyModuleGetter,
     lazyServiceGetter: defineLazyServiceGetter,
     lazyRequireGetter: lazyRequireGetter,
-    id: null 
+    
+    id: null
   },
 
   

@@ -4,6 +4,8 @@
 "use strict";
 
 
+
+
 define(function (require, exports, module) {
   module.exports = {
     ELEMENT_NODE: 1,

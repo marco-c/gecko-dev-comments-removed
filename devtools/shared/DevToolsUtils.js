@@ -2,11 +2,13 @@
 
 
 
+
+
 "use strict";
 
 
 
-var { Ci, Cu, Cc, components } = require("chrome");
+var { Ci, Cu, components } = require("chrome");
 var Services = require("Services");
 var promise = require("promise");
 var defer = require("devtools/shared/defer");
@@ -17,6 +19,10 @@ loader.lazyRequireGetter(this, "FileUtils",
                          "resource://gre/modules/FileUtils.jsm", true);
 
 
+
+var DevToolsUtils = exports;
+
+
 const ThreadSafeDevToolsUtils = require("./ThreadSafeDevToolsUtils.js");
 for (let key of Object.keys(ThreadSafeDevToolsUtils)) {
   exports[key] = ThreadSafeDevToolsUtils[key];
@@ -25,9 +31,9 @@ for (let key of Object.keys(ThreadSafeDevToolsUtils)) {
 
 
 
-exports.executeSoon = function executeSoon(aFn) {
+exports.executeSoon = function (fn) {
   if (isWorker) {
-    setImmediate(aFn);
+    setImmediate(fn);
   } else {
     let executor;
     
@@ -35,10 +41,10 @@ exports.executeSoon = function executeSoon(aFn) {
     if (AppConstants.DEBUG_JS_MODULES || flags.testing) {
       let stack = getStack();
       executor = () => {
-        callFunctionWithAsyncStack(aFn, stack, "DevToolsUtils.executeSoon");
+        callFunctionWithAsyncStack(fn, stack, "DevToolsUtils.executeSoon");
       };
     } else {
-      executor = aFn;
+      executor = fn;
     }
     Services.tm.mainThread.dispatch({
       run: exports.makeInfallible(executor)
@@ -52,7 +58,7 @@ exports.executeSoon = function executeSoon(aFn) {
 
 
 
-exports.waitForTick = function waitForTick() {
+exports.waitForTick = function () {
   let deferred = defer();
   exports.executeSoon(deferred.resolve);
   return deferred.promise;
@@ -66,9 +72,9 @@ exports.waitForTick = function waitForTick() {
 
 
 
-exports.waitForTime = function waitForTime(aDelay) {
+exports.waitForTime = function (delay) {
   let deferred = defer();
-  setTimeout(deferred.resolve, aDelay);
+  setTimeout(deferred.resolve, delay);
   return deferred.promise;
 };
 
@@ -87,11 +93,11 @@ exports.waitForTime = function waitForTime(aDelay) {
 
 
 
-exports.yieldingEach = function yieldingEach(aArray, aFn) {
+exports.yieldingEach = function (array, fn) {
   const deferred = defer();
 
   let i = 0;
-  let len = aArray.length;
+  let len = array.length;
   let outstanding = [deferred.promise];
 
   (function loop() {
@@ -108,7 +114,7 @@ exports.yieldingEach = function yieldingEach(aArray, aFn) {
       }
 
       try {
-        outstanding.push(aFn(aArray[i], i++));
+        outstanding.push(fn(array[i], i++));
       } catch (e) {
         deferred.reject(e);
         return;
@@ -134,14 +140,13 @@ exports.yieldingEach = function yieldingEach(aArray, aFn) {
 
 
 
-exports.defineLazyPrototypeGetter =
-function defineLazyPrototypeGetter(aObject, aKey, aCallback) {
-  Object.defineProperty(aObject, aKey, {
+exports.defineLazyPrototypeGetter = function (object, key, callback) {
+  Object.defineProperty(object, key, {
     configurable: true,
     get: function () {
-      const value = aCallback.call(this);
+      const value = callback.call(this);
 
-      Object.defineProperty(this, aKey, {
+      Object.defineProperty(this, key, {
         configurable: true,
         writable: true,
         value: value
@@ -162,11 +167,11 @@ function defineLazyPrototypeGetter(aObject, aKey, aCallback) {
 
 
 
-exports.getProperty = function getProperty(aObj, aKey) {
-  let root = aObj;
+exports.getProperty = function (object, key) {
+  let root = object;
   try {
     do {
-      const desc = aObj.getOwnPropertyDescriptor(aKey);
+      const desc = object.getOwnPropertyDescriptor(key);
       if (desc) {
         if ("value" in desc) {
           return desc.value;
@@ -174,8 +179,8 @@ exports.getProperty = function getProperty(aObj, aKey) {
         
         return exports.hasSafeGetter(desc) ? desc.get.call(root).return : undefined;
       }
-      aObj = aObj.proto;
-    } while (aObj);
+      object = object.proto;
+    } while (object);
   } catch (e) {
     
     exports.reportException("getProperty", e);
@@ -191,11 +196,11 @@ exports.getProperty = function getProperty(aObj, aKey) {
 
 
 
-exports.hasSafeGetter = function hasSafeGetter(aDesc) {
+exports.hasSafeGetter = function (desc) {
   
   
   try {
-    let fn = aDesc.get.unwrap();
+    let fn = desc.get.unwrap();
     return fn && fn.callable && fn.class == "Function" && fn.script === undefined;
   } catch (e) {
     
@@ -215,27 +220,29 @@ exports.hasSafeGetter = function hasSafeGetter(aDesc) {
 
 
 
-exports.isSafeJSObject = function isSafeJSObject(aObj) {
+exports.isSafeJSObject = function (obj) {
   
   
   if (isWorker) {
     return false;
   }
 
-  if (Cu.getGlobalForObject(aObj) ==
+  if (Cu.getGlobalForObject(obj) ==
       Cu.getGlobalForObject(exports.isSafeJSObject)) {
-    return true; 
+    
+    return true;
   }
 
-  let principal = Cu.getObjectPrincipal(aObj);
+  let principal = Cu.getObjectPrincipal(obj);
   if (Services.scriptSecurityManager.isSystemPrincipal(principal)) {
-    return true; 
+    
+    return true;
   }
 
-  return Cu.isXrayWrapper(aObj);
+  return Cu.isXrayWrapper(obj);
 };
 
-exports.dumpn = function dumpn(str) {
+exports.dumpn = function (str) {
   if (flags.wantLogging) {
     dump("DBG-SERVER: " + str + "\n");
   }
@@ -261,18 +268,19 @@ exports.dumpv = function (msg) {
 
 
 
-exports.defineLazyGetter = function defineLazyGetter(aObject, aName, aLambda) {
-  Object.defineProperty(aObject, aName, {
+exports.defineLazyGetter = function (object, name, lambda) {
+  Object.defineProperty(object, name, {
     get: function () {
-      delete aObject[aName];
-      return aObject[aName] = aLambda.apply(aObject);
+      delete object[name];
+      object[name] = lambda.apply(object);
+      return object[name];
     },
     configurable: true,
     enumerable: true
   });
 };
 
-exports.defineLazyGetter(this, "AppConstants", () => {
+DevToolsUtils.defineLazyGetter(this, "AppConstants", () => {
   if (isWorker) {
     return {};
   }
@@ -339,30 +347,27 @@ Object.defineProperty(exports, "assert", {
 
 
 
-exports.defineLazyModuleGetter = function defineLazyModuleGetter(aObject, aName,
-                                                                 aResource,
-                                                                 aSymbol)
-{
-  this.defineLazyGetter(aObject, aName, function XPCU_moduleLambda() {
-    var temp = {};
-    Cu.import(aResource, temp);
-    return temp[aSymbol || aName];
+exports.defineLazyModuleGetter = function (object, name, resource, symbol) {
+  this.defineLazyGetter(object, name, function () {
+    let temp = {};
+    Cu.import(resource, temp);
+    return temp[symbol || name];
   });
 };
 
-exports.defineLazyGetter(this, "NetUtil", () => {
+DevToolsUtils.defineLazyGetter(this, "NetUtil", () => {
   return Cu.import("resource://gre/modules/NetUtil.jsm", {}).NetUtil;
 });
 
-exports.defineLazyGetter(this, "OS", () => {
+DevToolsUtils.defineLazyGetter(this, "OS", () => {
   return Cu.import("resource://gre/modules/osfile.jsm", {}).OS;
 });
 
-exports.defineLazyGetter(this, "TextDecoder", () => {
+DevToolsUtils.defineLazyGetter(this, "TextDecoder", () => {
   return Cu.import("resource://gre/modules/osfile.jsm", {}).TextDecoder;
 });
 
-exports.defineLazyGetter(this, "NetworkHelper", () => {
+DevToolsUtils.defineLazyGetter(this, "NetworkHelper", () => {
   return require("devtools/shared/webconsole/network-helper");
 });
 
@@ -396,14 +401,14 @@ exports.defineLazyGetter(this, "NetworkHelper", () => {
 
 
 
-function mainThreadFetch(aURL, aOptions = { loadFromCache: true,
+function mainThreadFetch(urlIn, aOptions = { loadFromCache: true,
                                           policy: Ci.nsIContentPolicy.TYPE_OTHER,
                                           window: null,
                                           charset: null,
                                           principal: null,
                                           cacheKey: null }) {
   
-  let url = aURL.split(" -> ").pop();
+  let url = urlIn.split(" -> ").pop();
   let channel;
   try {
     channel = newChannelForURL(url, aOptions);
@@ -526,7 +531,7 @@ function mainThreadFetch(aURL, aOptions = { loadFromCache: true,
 
 
 function newChannelForURL(url, { policy, window, principal }) {
-  var securityFlags = Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL;
+  let securityFlags = Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL;
 
   let uri;
   try {
@@ -570,15 +575,15 @@ function newChannelForURL(url, { policy, window, principal }) {
 
 
 
-if (!this.isWorker) {
-  exports.fetch = mainThreadFetch;
-} else {
+if (this.isWorker) {
   
   
   
   exports.fetch = function (url, options) {
     return rpc("fetch", url, options);
   };
+} else {
+  exports.fetch = mainThreadFetch;
 }
 
 
@@ -667,6 +672,5 @@ function callPropertyOnObject(object, name) {
   }
   return result.return;
 }
-
 
 exports.callPropertyOnObject = callPropertyOnObject;

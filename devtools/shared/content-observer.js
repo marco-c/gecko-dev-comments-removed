@@ -3,7 +3,7 @@
 
 "use strict";
 
-const {Cc, Ci, Cu, Cr} = require("chrome");
+const {Ci} = require("chrome");
 const Services = require("Services");
 
 const events = require("sdk/event/core");

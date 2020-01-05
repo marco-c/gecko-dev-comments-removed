@@ -128,7 +128,9 @@ exports.safeErrorString = function (error) {
             errorString += "\nStack: " + stack;
           }
         }
-      } catch (ee) { }
+      } catch (ee) {
+        
+      }
 
       
       
@@ -138,7 +140,9 @@ exports.safeErrorString = function (error) {
 
       return errorString;
     }
-  } catch (ee) { }
+  } catch (ee) {
+    
+  }
 
   
   return Object.prototype.toString.call(error);
@@ -294,7 +298,7 @@ exports.settleAll = values => {
 
     if (!countdown) {
       resolve(resolutionValues);
-      return deferred.promise;
+      return;
     }
 
     function checkForCompletion() {
