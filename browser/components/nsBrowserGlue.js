@@ -757,11 +757,14 @@ BrowserGlue.prototype = {
     if (!win)
       return;
 
-    let message = win.gNavigatorBundle.getString("nonMpcDisabled.message");
+    
+    
+    
+    let message = "Due to performance testing, we have disabled some of your add-ons. They can be re-enabled in your browser settings.";
     let buttons = [
       {
-        label: win.gNavigatorBundle.getString("nonMpcDisabled.manage.label"),
-        accessKey: win.gNavigatorBundle.getString("nonMpcDisabled.manage.accessKey"),
+        label: "Manage Add-Ons",
+        accessKey: "M",
         callback() {
           win.BrowserOpenAddonsMgr("addons://list/extension");
         }
