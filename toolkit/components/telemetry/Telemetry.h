@@ -36,6 +36,8 @@ namespace Telemetry {
 
 struct Accumulation;
 struct KeyedAccumulation;
+struct ScalarAction;
+struct KeyedScalarAction;
 
 enum TimerResolution {
   Millisecond,
@@ -142,6 +144,20 @@ void AccumulateChild(GeckoProcessType aProcessType, const nsTArray<Accumulation>
 
 
 void AccumulateChildKeyed(GeckoProcessType aProcessType, const nsTArray<KeyedAccumulation>& aAccumulations);
+
+
+
+
+
+
+void UpdateChildScalars(GeckoProcessType aProcessType, const nsTArray<ScalarAction>& aScalarActions);
+
+
+
+
+
+
+void UpdateChildKeyedScalars(GeckoProcessType aProcessType, const nsTArray<KeyedScalarAction>& aScalarActions);
 
 
 
