@@ -118,8 +118,16 @@ void
 CacheFileChunkBuffer::SetDataSize(uint32_t aDataSize)
 {
   MOZ_RELEASE_ASSERT(
-    mDataSize <= mBufSize ||
-    (mBufSize == 0 && mChunk->mState == CacheFileChunk::READING));
+    
+    
+    aDataSize <= mBufSize ||
+    
+    
+    
+    
+    
+    (mDataSize == 0 && mBufSize == 0 && mChunk->mState == CacheFileChunk::READING));
+
   mDataSize = aDataSize;
 }
 
