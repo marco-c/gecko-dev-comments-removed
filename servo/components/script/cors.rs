@@ -445,13 +445,14 @@ fn is_simple_method(m: &Method) -> bool {
 
 
 pub fn allow_cross_origin_request(req: &CORSRequest, headers: &Headers) -> bool {
-    
-    match headers.get() {
+    match headers.get::<AccessControlAllowOrigin>() {
         Some(&AccessControlAllowOrigin::Any) => true, 
+        
         Some(&AccessControlAllowOrigin::Value(ref url)) =>
             url.scheme == req.origin.scheme &&
             url.host() == req.origin.host() &&
             url.port() == req.origin.port(),
+        Some(&AccessControlAllowOrigin::Null) |
         None => false
     }
 }
