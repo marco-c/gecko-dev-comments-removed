@@ -317,11 +317,13 @@ VideoTrackEncoder::AppendVideoSegment(const VideoSegment& aSegment)
       
       
       CheckedInt64 diff = FramesToUsecs(nullDuration, mTrackRate);
-      MOZ_ASSERT(diff.isValid());
-      if (diff.isValid()) {
-        mLastChunk.mTimeStamp -= TimeDuration::FromMicroseconds(diff.value());
-        mLastChunk.mDuration += nullDuration;
+      if (!diff.isValid()) {
+        NS_ERROR("null duration overflow");
+        return NS_ERROR_DOM_MEDIA_OVERFLOW_ERR;
       }
+
+      mLastChunk.mTimeStamp -= TimeDuration::FromMicroseconds(diff.value());
+      mLastChunk.mDuration += nullDuration;
     }
 
     MOZ_ASSERT(!mLastChunk.IsNull());
@@ -357,25 +359,41 @@ VideoTrackEncoder::AppendVideoSegment(const VideoSegment& aSegment)
       }
     }
 
-    TimeDuration diff = chunk.mTimeStamp - mLastChunk.mTimeStamp;
-    if (diff <= TimeDuration::FromSeconds(0)) {
-      
-      
-      
-      
-      
-      TRACK_LOG(LogLevel::Warning,
-                ("[VideoTrackEncoder]: Underrun detected. Diff=%.5fs",
-                 diff.ToSeconds()));
-      chunk.mTimeStamp = mLastChunk.mTimeStamp;
-    } else {
-      RefPtr<layers::Image> lastImage = mLastChunk.mFrame.GetImage();
-      TRACK_LOG(LogLevel::Verbose,
-                ("[VideoTrackEncoder]: Appending video frame %p, duration=%.5f",
-                 lastImage.get(), diff.ToSeconds()));
-      CheckedInt64 duration = UsecsToFrames(diff.ToMicroseconds(), mTrackRate);
-      MOZ_ASSERT(duration.isValid());
-      if (duration.isValid()) {
+    if (mStartOffset.IsNull()) {
+      mStartOffset = mLastChunk.mTimeStamp;
+    }
+
+    TimeDuration relativeTime = chunk.mTimeStamp - mStartOffset;
+    RefPtr<layers::Image> lastImage = mLastChunk.mFrame.GetImage();
+    TRACK_LOG(LogLevel::Verbose,
+              ("[VideoTrackEncoder]: Appending video frame %p, at pos %.5fs",
+               lastImage.get(), relativeTime.ToSeconds()));
+    CheckedInt64 totalDuration =
+      UsecsToFrames(relativeTime.ToMicroseconds(), mTrackRate);
+    if (!totalDuration.isValid()) {
+      NS_ERROR("Duration overflow");
+      return NS_ERROR_DOM_MEDIA_OVERFLOW_ERR;
+    }
+
+    CheckedInt64 duration = totalDuration - mEncodedTicks;
+    if (!duration.isValid()) {
+      NS_ERROR("Duration overflow");
+      return NS_ERROR_DOM_MEDIA_OVERFLOW_ERR;
+    }
+
+    if (duration.isValid()) {
+      if (duration.value() <= 0) {
+        
+        
+        
+        
+        
+        TRACK_LOG(LogLevel::Warning,
+                  ("[VideoTrackEncoder]: Underrun detected. Diff=%lld",
+                   duration.value()));
+        chunk.mTimeStamp = mLastChunk.mTimeStamp;
+      } else {
+        mEncodedTicks += duration.value();
         mRawSegment.AppendFrame(lastImage.forget(),
                                 duration.value(),
                                 mLastChunk.mFrame.GetIntrinsicSize(),

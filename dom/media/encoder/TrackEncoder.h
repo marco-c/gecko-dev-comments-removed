@@ -76,7 +76,7 @@ public:
   {
     ReentrantMonitorAutoEnter mon(mReentrantMonitor);
     mCanceled = true;
-    mReentrantMonitor.NotifyAll();
+    NotifyEndOfStream();
   }
 
   virtual void SetBitrate(const uint32_t aBitrate) {}
@@ -255,6 +255,7 @@ public:
     , mDisplayWidth(0)
     , mDisplayHeight(0)
     , mTrackRate(aTrackRate)
+    , mEncodedTicks(0)
     , mVideoBitrate(0)
   {
     mLastChunk.mDuration = 0;
@@ -348,6 +349,18 @@ protected:
 
 
   VideoSegment mRawSegment;
+
+  
+
+
+
+  StreamTime mEncodedTicks;
+
+  
+
+
+
+  TimeStamp mStartOffset;
 
   uint32_t mVideoBitrate;
 };
