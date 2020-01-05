@@ -374,6 +374,9 @@ impl EventTarget {
         };
 
         
+        if !document.is_scripting_enabled() {
+            return None;
+        }
 
         
         let body: Vec<u16> = handler.source.encode_utf16().collect();
