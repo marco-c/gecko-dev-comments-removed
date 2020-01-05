@@ -54,7 +54,7 @@ public class BrowserProviderHistoryVisitsTestBase {
     }
 
       Uri insertHistoryItem(String url, String guid, Long lastVisited, Integer visitCount) throws RemoteException {
-        return insertHistoryItem(url, guid, System.currentTimeMillis(), null, null);
+        return insertHistoryItem(url, guid, lastVisited, visitCount, null);
     }
 
       Uri insertHistoryItem(String url, String guid, Long lastVisited, Integer visitCount, String title) throws RemoteException {
