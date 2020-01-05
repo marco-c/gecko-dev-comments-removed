@@ -15,7 +15,9 @@ function checkElements(expectedPane) {
   for (let element of gElements) {
     
     
-    if (element.nodeName == "preferences" || element.id === "drmGroup") {
+    if (element.nodeName == "keyset" ||
+        element.nodeName == "preferences" ||
+        element.id === "drmGroup") {
       continue;
     }
     let attributeValue = element.getAttribute("data-category");
