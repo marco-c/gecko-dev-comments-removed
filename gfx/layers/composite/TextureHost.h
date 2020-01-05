@@ -421,6 +421,8 @@ public:
 
   virtual gfx::SurfaceFormat GetReadFormat() const { return GetFormat(); }
 
+  virtual YUVColorSpace GetYUVColorSpace() const { return YUVColorSpace::UNKNOWN; }
+
   
 
 
@@ -700,6 +702,8 @@ public:
 
 
   virtual gfx::SurfaceFormat GetFormat() const override;
+
+  virtual YUVColorSpace GetYUVColorSpace() const override;
 
   virtual gfx::IntSize GetSize() const override { return mSize; }
 

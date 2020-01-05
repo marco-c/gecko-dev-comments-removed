@@ -4,6 +4,7 @@
 
 
 
+#include "gfxUtils.h"
 #include "GLBlitHelper.h"
 #include "GLContext.h"
 #include "GLScreenBuffer.h"
@@ -59,6 +60,7 @@ GLBlitHelper::GLBlitHelper(GLContext* gl)
     , mSrcTexEGL(0)
     , mYTexScaleLoc(-1)
     , mCbCrTexScaleLoc(-1)
+    , mYuvColorMatrixLoc(-1)
     , mTexWidth(0)
     , mTexHeight(0)
     , mCurYScale(1.0f)
@@ -180,6 +182,16 @@ GLBlitHelper::InitTexQuadProgram(BlitType target)
 
 
 
+
+
+
+
+
+
+
+
+
+
     const char kTexYUVPlanarBlit_FragShaderSource[] = "\
         #version 100                                                        \n\
         #ifdef GL_ES                                                        \n\
@@ -191,17 +203,17 @@ GLBlitHelper::InitTexQuadProgram(BlitType target)
         uniform sampler2D uCrTexture;                                       \n\
         uniform vec2 uYTexScale;                                            \n\
         uniform vec2 uCbCrTexScale;                                         \n\
+        uniform mat3 uYuvColorMatrix;                                       \n\
         void main()                                                         \n\
         {                                                                   \n\
             float y = texture2D(uYTexture, vTexCoord * uYTexScale).r;       \n\
             float cb = texture2D(uCbTexture, vTexCoord * uCbCrTexScale).r;  \n\
             float cr = texture2D(uCrTexture, vTexCoord * uCbCrTexScale).r;  \n\
-            y = (y - 0.06275) * 1.16438;                                    \n\
+            y = y - 0.06275;                                                \n\
             cb = cb - 0.50196;                                              \n\
             cr = cr - 0.50196;                                              \n\
-            gl_FragColor.r = y + cr * 1.59603;                              \n\
-            gl_FragColor.g = y - 0.81297 * cr - 0.39176 * cb;               \n\
-            gl_FragColor.b = y + cb * 2.01723;                              \n\
+            vec3 yuv = vec3(y, cb, cr);                                     \n\
+            gl_FragColor.rgb = uYuvColorMatrix * yuv;                       \n\
             gl_FragColor.a = 1.0;                                           \n\
         }                                                                   \n\
     ";
@@ -409,13 +421,15 @@ GLBlitHelper::InitTexQuadProgram(BlitType target)
                 GLint texCb = mGL->fGetUniformLocation(program, "uCbTexture");
                 GLint texCr = mGL->fGetUniformLocation(program, "uCrTexture");
                 mYTexScaleLoc = mGL->fGetUniformLocation(program, "uYTexScale");
-                mCbCrTexScaleLoc= mGL->fGetUniformLocation(program, "uCbCrTexScale");
+                mCbCrTexScaleLoc = mGL->fGetUniformLocation(program, "uCbCrTexScale");
+                mYuvColorMatrixLoc = mGL->fGetUniformLocation(program, "uYuvColorMatrix");
 
                 DebugOnly<bool> hasUniformLocations = texY != -1 &&
                                                       texCb != -1 &&
                                                       texCr != -1 &&
                                                       mYTexScaleLoc != -1 &&
-                                                      mCbCrTexScaleLoc != -1;
+                                                      mCbCrTexScaleLoc != -1 &&
+                                                      mYuvColorMatrixLoc != -1;
                 MOZ_ASSERT(hasUniformLocations, "uniforms not found");
 
                 mGL->fUniform1i(texY, Channel_Y);
@@ -789,6 +803,9 @@ GLBlitHelper::BlitPlanarYCbCrImage(layers::PlanarYCbCrImage* yuvImage)
         mGL->fUniform2f(mYTexScaleLoc, (float)yuvData->mYSize.width/yuvData->mYStride, 1.0f);
         mGL->fUniform2f(mCbCrTexScaleLoc, (float)yuvData->mCbCrSize.width/yuvData->mCbCrStride, 1.0f);
     }
+
+    float* yuvToRgb = gfxUtils::Get3x3YuvColorMatrix(yuvData->mYUVColorSpace);
+    mGL->fUniformMatrix3fv(mYuvColorMatrixLoc, 1, 0, yuvToRgb);
 
     mGL->fDrawArrays(LOCAL_GL_TRIANGLE_STRIP, 0, 4);
     for (int i = 0; i < 3; i++) {
