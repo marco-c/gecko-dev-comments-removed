@@ -214,6 +214,9 @@ public:
   
   virtual void GetUUID(nsACString&) const = 0;
 
+  
+  virtual bool GetScary() const { return false; };
+
   class AllocationHandle
   {
   public:
