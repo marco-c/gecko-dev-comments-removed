@@ -24,7 +24,7 @@ use dom::uievent::UIEvent;
 use dom::eventtarget::{EventTarget, EventTargetHelpers};
 use dom::node;
 use dom::node::{ElementNodeTypeId, Node, NodeHelpers};
-use dom::window::{TimerId, Window, WindowHelpers};
+use dom::window::{Window, WindowHelpers};
 use dom::worker::{Worker, TrustedWorkerAddress};
 use dom::xmlhttprequest::{TrustedXHRAddress, XMLHttpRequest, XHRProgress};
 use html::hubbub_html_parser::{InputString, InputUrl, HtmlParserResult, HtmlDiscoveredScript};
@@ -32,6 +32,7 @@ use html::hubbub_html_parser;
 use layout_interface::{ScriptLayoutChan, LayoutChan, ReflowForDisplay};
 use layout_interface;
 use page::{Page, IterablePage, Frame};
+use timers::TimerId;
 
 use devtools_traits;
 use devtools_traits::{DevtoolsControlChan, DevtoolsControlPort, NewGlobal, NodeInfo, GetRootNode};
@@ -73,6 +74,11 @@ use std::u32;
 
 local_data_key!(pub StackRoots: *const RootCollection)
 
+pub enum TimerSource {
+    FromWindow(PipelineId),
+    FromWorker
+}
+
 
 
 pub enum ScriptMsg {
@@ -86,7 +92,9 @@ pub enum ScriptMsg {
     
     NavigateMsg(NavigationDirection),
     
-    FireTimerMsg(PipelineId, TimerId),
+    
+    
+    FireTimerMsg(TimerSource, TimerId),
     
     
     ExitWindowMsg(PipelineId),
@@ -497,7 +505,8 @@ impl ScriptTask {
                 FromScript(TriggerLoadMsg(id, load_data)) => self.trigger_load(id, load_data),
                 FromScript(TriggerFragmentMsg(id, url)) => self.trigger_fragment(id, url),
                 FromConstellation(SendEventMsg(id, event)) => self.handle_event(id, event),
-                FromScript(FireTimerMsg(id, timer_id)) => self.handle_fire_timer_msg(id, timer_id),
+                FromScript(FireTimerMsg(FromWindow(id), timer_id)) => self.handle_fire_timer_msg(id, timer_id),
+                FromScript(FireTimerMsg(FromWorker, _)) => fail!("Worker timeouts must not be sent to script task"),
                 FromScript(NavigateMsg(direction)) => self.handle_navigate_msg(direction),
                 FromConstellation(ReflowCompleteMsg(id, reflow_id)) => self.handle_reflow_complete_msg(id, reflow_id),
                 FromConstellation(ResizeInactiveMsg(id, new_size)) => self.handle_resize_inactive_msg(id, new_size),
