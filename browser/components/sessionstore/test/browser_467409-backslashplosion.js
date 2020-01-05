@@ -18,15 +18,14 @@
 
 
 
-const CRASH_STATE = {windows: [{tabs: [{entries: [{url: "about:mozilla",
-                                                   triggeringPrincipal_base64: triggeringPrincipal }]}]}]};
+const CRASH_STATE = {windows: [{tabs: [{entries: [{url: "about:mozilla" }]}]}]};
 const STATE = createEntries(CRASH_STATE);
 const STATE2 = createEntries({windows: [{tabs: [STATE]}]});
 const STATE3 = createEntries(JSON.stringify(CRASH_STATE));
 
 function createEntries(sessionData) {
   return {
-    entries: [{url: "about:sessionrestore", triggeringPrincipal_base64: triggeringPrincipal}],
+    entries: [{url: "about:sessionrestore"}],
     formdata: {id: {sessionData: sessionData}, url: "about:sessionrestore"}
   };
 }
