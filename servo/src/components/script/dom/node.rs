@@ -130,6 +130,15 @@ impl NodeFlags {
     }
 }
 
+#[unsafe_destructor]
+impl Drop for Node {
+    fn drop(&mut self) {
+        unsafe {
+            self.reap_layout_data();
+        }
+    }
+}
+
 
 
 
