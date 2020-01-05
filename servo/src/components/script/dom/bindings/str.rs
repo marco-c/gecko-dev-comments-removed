@@ -2,6 +2,7 @@
 
 
 
+#[deriving(Encodable,Clone)]
 pub struct ByteString(Vec<u8>);
 
 impl ByteString {
