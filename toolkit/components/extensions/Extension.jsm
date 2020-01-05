@@ -327,11 +327,6 @@ class ExtensionChildProxyContext extends ProxyContext {
     
     
     this.xulBrowser = xulBrowser;
-
-    
-    if (params.cloneScopeInProcess) {
-      this.sandbox = params.cloneScopeInProcess;
-    }
   }
 
   

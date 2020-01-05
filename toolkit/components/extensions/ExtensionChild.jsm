@@ -83,7 +83,6 @@ class WannabeChildAPIManager extends ChildAPIManager {
     delete data.principal;
     data = Cu.cloneInto(data, {});
     data.principal = principal;
-    data.cloneScopeInProcess = this.context.cloneScope;
     let name = "API:CreateProxyContext";
     
     let target = this.context.contentWindow
@@ -93,6 +92,17 @@ class WannabeChildAPIManager extends ChildAPIManager {
     ParentAPIManager.receiveMessage({name, data, target});
 
     let proxyContext = ParentAPIManager.proxyContexts.get(this.id);
+
+    
+    
+    
+    
+    
+    
+    Object.defineProperty(proxyContext, "cloneScope", {
+      get: () => this.cloneScope,
+    });
+
     
     proxyContext.setContentWindow(this.context.contentWindow);
 
