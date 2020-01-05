@@ -42,7 +42,7 @@
 #include "nsFrameManager.h"
 #include "nsLayoutUtils.h"
 #include "LayoutLogging.h"
-#include "mozilla/RestyleManager.h"
+#include "mozilla/GeckoRestyleManager.h"
 #include "mozilla/RestyleManagerHandle.h"
 #include "mozilla/RestyleManagerHandleInlines.h"
 
@@ -1647,7 +1647,7 @@ nsIFrame::DisableVisibilityTracking()
 }
 
 void
-nsIFrame::DecApproximateVisibleCount(const Maybe<OnNonvisible>& aNonvisibleAction
+nsIFrame::DecApproximateVisibleCount(Maybe<OnNonvisible> aNonvisibleAction
                                        )
 {
   MOZ_ASSERT(GetStateBits() & NS_FRAME_VISIBILITY_IS_TRACKED);
@@ -1695,7 +1695,7 @@ nsIFrame::IncApproximateVisibleCount()
 
 void
 nsIFrame::OnVisibilityChange(Visibility aNewVisibility,
-                             const Maybe<OnNonvisible>& aNonvisibleAction
+                             Maybe<OnNonvisible> aNonvisibleAction
                                )
 {
   

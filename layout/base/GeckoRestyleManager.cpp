@@ -8,7 +8,7 @@
 
 
 
-#include "mozilla/RestyleManager.h"
+#include "mozilla/GeckoRestyleManager.h"
 
 #include <algorithm> 
 #include "mozilla/EffectSet.h"
