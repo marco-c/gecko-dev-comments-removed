@@ -228,6 +228,13 @@ public:
 
   
   
+  
+  
+  virtual bool NewIsSuspended() const = 0;
+  virtual bool NewIsFrozen() const = 0;
+
+  
+  
   virtual nsresult FireDelayedDOMEvents() = 0;
 
   virtual bool IsFrozen() const = 0;
@@ -821,6 +828,30 @@ public:
 
 
   bool IsSecureContext() const;
+
+  
+  
+  
+  
+  
+  
+  
+  void NewSuspend();
+  void NewResume();
+
+  
+  
+  
+  
+  
+  
+  
+  void NewFreeze();
+  void NewThaw();
+
+  
+  
+  void NewSyncStateFromParentWindow();
 
 protected:
   void CreatePerformanceObjectIfNeeded();
