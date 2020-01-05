@@ -57,6 +57,9 @@ public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(Rule)
 
+  
+  NS_DECL_NSIDOMCSSRULE
+
 #ifdef DEBUG
   virtual void List(FILE* out = stdout, int32_t aIndent = 0) const = 0;
 #endif
@@ -116,15 +119,13 @@ public:
   virtual nsIDOMCSSRule* GetDOMRule() = 0;
 
   
-  NS_IMETHOD GetParentRule(nsIDOMCSSRule** aParentRule) override;
-  NS_IMETHOD GetParentStyleSheet(nsIDOMCSSStyleSheet** aSheet) override;
-  virtual Rule* GetCSSRule() override;
-  using nsIDOMCSSRule::GetType;
-
-  
   
   virtual size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf)
     const MOZ_MUST_OVERRIDE = 0;
+
+  
+  virtual uint16_t Type() const = 0;
+  virtual void GetCssTextImpl(nsAString& aCssText) const = 0;
 
 protected:
   

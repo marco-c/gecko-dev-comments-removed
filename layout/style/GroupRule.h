@@ -82,7 +82,7 @@ public:
 
 protected:
   
-  void AppendRulesToCssText(nsAString& aCssText);
+  void AppendRulesToCssText(nsAString& aCssText) const;
 
   
   
