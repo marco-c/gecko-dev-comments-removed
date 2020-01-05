@@ -98,69 +98,76 @@ nsHtml5StackNode::nsHtml5StackNode(int32_t flags, int32_t ns, nsIAtom* name, nsI
   MOZ_COUNT_CTOR(nsHtml5StackNode);
 }
 
-
-nsHtml5StackNode::nsHtml5StackNode(nsHtml5ElementName* elementName, nsIContentHandle* node)
-  : flags(elementName->getFlags()),
-    name(elementName->name),
-    popName(elementName->name),
-    ns(kNameSpaceID_XHTML),
-    node(node),
-    attributes(nullptr),
-    refcount(1)
+nsHtml5StackNode::nsHtml5StackNode(nsHtml5ElementName* elementName,
+                                   nsIContentHandle* node)
+  : flags(elementName->getFlags())
+  , name(elementName->getName())
+  , popName(elementName->getName())
+  , ns(kNameSpaceID_XHTML)
+  , node(node)
+  , attributes(nullptr)
+  , refcount(1)
 {
   MOZ_COUNT_CTOR(nsHtml5StackNode);
-  MOZ_ASSERT(!elementName->isCustom(), "Don't use this constructor for custom elements.");
+  MOZ_ASSERT(elementName->isInterned(),
+             "Don't use this constructor for custom elements.");
 }
 
-
-nsHtml5StackNode::nsHtml5StackNode(nsHtml5ElementName* elementName, nsIContentHandle* node, nsHtml5HtmlAttributes* attributes)
-  : flags(elementName->getFlags()),
-    name(elementName->name),
-    popName(elementName->name),
-    ns(kNameSpaceID_XHTML),
-    node(node),
-    attributes(attributes),
-    refcount(1)
+nsHtml5StackNode::nsHtml5StackNode(nsHtml5ElementName* elementName,
+                                   nsIContentHandle* node,
+                                   nsHtml5HtmlAttributes* attributes)
+  : flags(elementName->getFlags())
+  , name(elementName->getName())
+  , popName(elementName->getName())
+  , ns(kNameSpaceID_XHTML)
+  , node(node)
+  , attributes(attributes)
+  , refcount(1)
 {
   MOZ_COUNT_CTOR(nsHtml5StackNode);
-  MOZ_ASSERT(!elementName->isCustom(), "Don't use this constructor for custom elements.");
+  MOZ_ASSERT(elementName->isInterned(),
+             "Don't use this constructor for custom elements.");
 }
 
-
-nsHtml5StackNode::nsHtml5StackNode(nsHtml5ElementName* elementName, nsIContentHandle* node, nsIAtom* popName)
-  : flags(elementName->getFlags()),
-    name(elementName->name),
-    popName(popName),
-    ns(kNameSpaceID_XHTML),
-    node(node),
-    attributes(nullptr),
-    refcount(1)
-{
-  MOZ_COUNT_CTOR(nsHtml5StackNode);
-}
-
-
-nsHtml5StackNode::nsHtml5StackNode(nsHtml5ElementName* elementName, nsIAtom* popName, nsIContentHandle* node)
-  : flags(prepareSvgFlags(elementName->getFlags())),
-    name(elementName->name),
-    popName(popName),
-    ns(kNameSpaceID_SVG),
-    node(node),
-    attributes(nullptr),
-    refcount(1)
+nsHtml5StackNode::nsHtml5StackNode(nsHtml5ElementName* elementName,
+                                   nsIContentHandle* node,
+                                   nsIAtom* popName)
+  : flags(elementName->getFlags())
+  , name(elementName->getName())
+  , popName(popName)
+  , ns(kNameSpaceID_XHTML)
+  , node(node)
+  , attributes(nullptr)
+  , refcount(1)
 {
   MOZ_COUNT_CTOR(nsHtml5StackNode);
 }
 
+nsHtml5StackNode::nsHtml5StackNode(nsHtml5ElementName* elementName,
+                                   nsIAtom* popName,
+                                   nsIContentHandle* node)
+  : flags(prepareSvgFlags(elementName->getFlags()))
+  , name(elementName->getName())
+  , popName(popName)
+  , ns(kNameSpaceID_SVG)
+  , node(node)
+  , attributes(nullptr)
+  , refcount(1)
+{
+  MOZ_COUNT_CTOR(nsHtml5StackNode);
+}
 
-nsHtml5StackNode::nsHtml5StackNode(nsHtml5ElementName* elementName, nsIContentHandle* node, nsIAtom* popName, bool markAsIntegrationPoint)
-  : flags(prepareMathFlags(elementName->getFlags(), markAsIntegrationPoint)),
-    name(elementName->name),
-    popName(popName),
-    ns(kNameSpaceID_MathML),
-    node(node),
-    attributes(nullptr),
-    refcount(1)
+nsHtml5StackNode::nsHtml5StackNode(nsHtml5ElementName* elementName,
+                                   nsIContentHandle* node,
+                                   nsIAtom* popName,
+                                   bool markAsIntegrationPoint)
+  : flags(prepareMathFlags(elementName->getFlags(), markAsIntegrationPoint))
+  , name(elementName->getName())
+  , popName(popName)
+  , ns(kNameSpaceID_MathML)
+  , node(node)
+  , attributes(nullptr)
+  , refcount(1)
 {
   MOZ_COUNT_CTOR(nsHtml5StackNode);
 }

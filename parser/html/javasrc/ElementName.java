@@ -28,7 +28,6 @@ import nu.validator.htmlparser.annotation.Inline;
 import nu.validator.htmlparser.annotation.Local;
 import nu.validator.htmlparser.annotation.NoLength;
 import nu.validator.htmlparser.annotation.Unsigned;
-import nu.validator.htmlparser.annotation.Virtual;
 import nu.validator.htmlparser.common.Interner;
 
 public final class ElementName
@@ -45,7 +44,7 @@ public final class ElementName
 
 
 
-    public static final int CUSTOM = (1 << 30);
+    public static final int NOT_INTERNED = (1 << 30);
 
     
 
@@ -85,16 +84,22 @@ public final class ElementName
 
     public static final int OPTIONAL_END_TAG = (1 << 23);
 
-    public static final ElementName NULL_ELEMENT_NAME = new ElementName(null);
+    private @Local String name;
 
-    public final @Local String name;
-
-    public final @Local String camelCaseName;
+    private @Local String camelCaseName;
 
     
 
 
     public final int flags;
+
+    @Inline public @Local String getName() {
+        return name;
+    }
+
+    @Inline public @Local String getCamelCaseName() {
+        return camelCaseName;
+    }
 
     @Inline public int getFlags() {
         return flags;
@@ -104,21 +109,20 @@ public final class ElementName
         return flags & GROUP_MASK;
     }
 
-    public boolean isCustom() {
-        return (flags & CUSTOM) != 0;
+    public boolean isInterned() {
+        return (flags & NOT_INTERNED) == 0;
     }
 
     static ElementName elementNameByBuffer(@NoLength char[] buf, int offset, int length, Interner interner) {
         @Unsigned int hash = ElementName.bufToHash(buf, length);
         int index = Arrays.binarySearch(ElementName.ELEMENT_HASHES, hash);
         if (index < 0) {
-            return new ElementName(Portability.newLocalNameFromBuffer(buf, offset, length, interner));
+            return null;
         } else {
             ElementName elementName = ElementName.ELEMENT_NAMES[index];
             @Local String name = elementName.name;
             if (!Portability.localEqualsBuffer(name, buf, offset, length)) {
-                return new ElementName(Portability.newLocalNameFromBuffer(buf,
-                        offset, length, interner));
+                return null;
             }
             return elementName;
         }
@@ -168,23 +172,22 @@ public final class ElementName
         this.flags = flags;
     }
 
-    protected ElementName(@Local String name) {
+    public ElementName() {
+        this.name = null;
+        this.camelCaseName = null;
+        this.flags = TreeBuilder.OTHER | NOT_INTERNED;
+    }
+
+    public void destructor() {
+        
+    }
+
+    public void setNameForNonInterned(@Local String name) {
+        
+        
         this.name = name;
         this.camelCaseName = name;
-        this.flags = TreeBuilder.OTHER | CUSTOM;
-    }
-
-    @Virtual void release() {
-        
-        
-        
-    }
-
-    @SuppressWarnings("unused") @Virtual private void destructor() {
-    }
-
-    @Virtual public ElementName cloneElementName(Interner interner) {
-        return this;
+        assert this.flags == (TreeBuilder.OTHER | NOT_INTERNED);
     }
 
     

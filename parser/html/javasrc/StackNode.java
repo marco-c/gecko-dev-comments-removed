@@ -46,7 +46,7 @@ final class StackNode<T> {
     
 
     private final TaintableLocatorImpl locator;
-    
+
     public TaintableLocatorImpl getLocator() {
         return locator;
     }
@@ -78,11 +78,11 @@ final class StackNode<T> {
     }
 
     
-    
+
     public boolean isOptionalEndTag() {
         return (flags & ElementName.OPTIONAL_END_TAG) != 0;
     }
-    
+
     
 
     
@@ -127,13 +127,13 @@ final class StackNode<T> {
     
     ) {
         this.flags = elementName.getFlags();
-        this.name = elementName.name;
-        this.popName = elementName.name;
+        this.name = elementName.getName();
+        this.popName = elementName.getName();
         this.ns = "http://www.w3.org/1999/xhtml";
         this.node = node;
         this.attributes = null;
         this.refcount = 1;
-        assert !elementName.isCustom() : "Don't use this constructor for custom elements.";
+        assert elementName.isInterned() : "Don't use this constructor for custom elements.";
         
         this.locator = locator;
         
@@ -152,13 +152,13 @@ final class StackNode<T> {
     
     ) {
         this.flags = elementName.getFlags();
-        this.name = elementName.name;
-        this.popName = elementName.name;
+        this.name = elementName.getName();
+        this.popName = elementName.getName();
         this.ns = "http://www.w3.org/1999/xhtml";
         this.node = node;
         this.attributes = attributes;
         this.refcount = 1;
-        assert !elementName.isCustom() : "Don't use this constructor for custom elements.";
+        assert elementName.isInterned() : "Don't use this constructor for custom elements.";
         
         this.locator = locator;
         
@@ -177,7 +177,7 @@ final class StackNode<T> {
     
     ) {
         this.flags = elementName.getFlags();
-        this.name = elementName.name;
+        this.name = elementName.getName();
         this.popName = popName;
         this.ns = "http://www.w3.org/1999/xhtml";
         this.node = node;
@@ -204,7 +204,7 @@ final class StackNode<T> {
     
     ) {
         this.flags = prepareSvgFlags(elementName.getFlags());
-        this.name = elementName.name;
+        this.name = elementName.getName();
         this.popName = popName;
         this.ns = "http://www.w3.org/2000/svg";
         this.node = node;
@@ -231,7 +231,7 @@ final class StackNode<T> {
     ) {
         this.flags = prepareMathFlags(elementName.getFlags(),
                 markAsIntegrationPoint);
-        this.name = elementName.name;
+        this.name = elementName.getName();
         this.popName = popName;
         this.ns = "http://www.w3.org/1998/Math/MathML";
         this.node = node;
