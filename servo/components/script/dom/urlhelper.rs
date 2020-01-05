@@ -7,24 +7,11 @@ use dom::bindings::str::USVString;
 use url::{Url, SchemeData};
 
 use std::borrow::ToOwned;
+use std::fmt::Write;
 
 pub struct UrlHelper;
 
 impl UrlHelper {
-    
-    pub fn Href(url: &Url) -> USVString {
-        USVString(url.serialize())
-    }
-
-    
-    pub fn Search(url: &Url) -> USVString {
-        USVString(match url.query {
-            None => "".to_owned(),
-            Some(ref query) if query.is_empty() => "".to_owned(),
-            Some(ref query) => format!("?{}", query)
-        })
-    }
-
     
     pub fn Hash(url: &Url) -> USVString {
         USVString(match url.fragment {
@@ -35,12 +22,54 @@ impl UrlHelper {
     }
 
     
+    pub fn Host(url: &Url) -> USVString {
+        USVString(match url.scheme_data {
+            SchemeData::NonRelative(..) => "".to_owned(),
+            SchemeData::Relative(ref scheme_data) => {
+                let mut host = scheme_data.host.serialize();
+                if let Some(port) = scheme_data.port {
+                    write!(host, ":{}", port).unwrap();
+                }
+                host
+            },
+        })
+    }
+
+    
+    pub fn Hostname(url: &Url) -> USVString {
+        USVString(url.serialize_host().unwrap_or_else(|| "".to_owned()))
+    }
+
+    
+    pub fn Href(url: &Url) -> USVString {
+        USVString(url.serialize())
+    }
+
+    
+    pub fn Password(url: &Url) -> USVString {
+        USVString(url.password().unwrap_or("").to_owned())
+    }
+
+    
     pub fn Pathname(url: &Url) -> USVString {
         
         USVString(match url.scheme_data {
             SchemeData::NonRelative(ref scheme_data) => scheme_data.clone(),
             SchemeData::Relative(..) => url.serialize_path().unwrap()
         })
+    }
+
+    
+    pub fn Port(url: &Url) -> USVString {
+        USVString(match url.port() {
+            None => "".to_owned(),
+            Some(port) => port.to_string(),
+        })
+    }
+
+    
+    pub fn Protocol(url: &Url) -> USVString {
+        USVString(format!("{}:", url.scheme.clone()))
     }
 
     
@@ -55,5 +84,19 @@ impl UrlHelper {
             return false
         }
         return true
+    }
+
+    
+    pub fn Search(url: &Url) -> USVString {
+        USVString(match url.query {
+            None => "".to_owned(),
+            Some(ref query) if query.is_empty() => "".to_owned(),
+            Some(ref query) => format!("?{}", query)
+        })
+    }
+
+    
+    pub fn Username(url: &Url) -> USVString {
+        USVString(url.username().unwrap_or("").to_owned())
     }
 }

@@ -12,6 +12,7 @@ use dom::urlhelper::UrlHelper;
 use dom::workerglobalscope::WorkerGlobalScope;
 
 use url::Url;
+use util::str::DOMString;
 
 
 #[dom_struct]
@@ -36,16 +37,49 @@ impl WorkerLocation {
 }
 
 impl<'a> WorkerLocationMethods for &'a WorkerLocation {
+    
+    fn Hash(self) -> USVString {
+        UrlHelper::Hash(&self.url)
+    }
+
+    
+    fn Host(self) -> USVString {
+        UrlHelper::Host(&self.url)
+    }
+
+    
+    fn Hostname(self) -> USVString {
+        UrlHelper::Hostname(&self.url)
+    }
+
+    
     fn Href(self) -> USVString {
         UrlHelper::Href(&self.url)
     }
 
+    
+    fn Pathname(self) -> USVString {
+        UrlHelper::Pathname(&self.url)
+    }
+
+    
+    fn Port(self) -> USVString {
+        UrlHelper::Port(&self.url)
+    }
+
+    
+    fn Protocol(self) -> USVString {
+        UrlHelper::Protocol(&self.url)
+    }
+
+    
     fn Search(self) -> USVString {
         UrlHelper::Search(&self.url)
     }
 
-    fn Hash(self) -> USVString {
-        UrlHelper::Hash(&self.url)
+    
+    fn Stringifier(self) -> DOMString {
+        self.Href().0
     }
 }
 
