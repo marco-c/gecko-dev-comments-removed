@@ -749,6 +749,7 @@ public:
   void SetHasSeenGamepadInput(bool aHasSeen);
   bool HasSeenGamepadInput();
   void SyncGamepadState();
+  void StopGamepadHaptics();
 
   
   

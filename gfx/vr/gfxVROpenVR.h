@@ -94,12 +94,13 @@ private:
                            double aDuration,
                            uint64_t aVibrateIndex,
                            uint32_t aPromiseID);
+  void VibrateHapticComplete(uint32_t aPromiseID);
 
   
   uint32_t mTrackedIndex;
   float mTrigger;
   nsCOMPtr<nsIThread> mVibrateThread;
-  bool mIsVibrating;
+  Atomic<bool> mIsVibrateStopped;
 };
 
 } 
