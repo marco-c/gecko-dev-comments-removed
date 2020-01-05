@@ -2,37 +2,38 @@
 
 
 
-#ifndef mozilla_DurationMap_h
-#define mozilla_DurationMap_h
+#ifndef mozilla_SimpleMap_h
+#define mozilla_SimpleMap_h
 
 #include "mozilla/Pair.h"
 #include "nsTArray.h"
 
 namespace mozilla {
 
-class DurationMap
+template<typename T>
+class SimpleMap
 {
 public:
-  typedef Pair<int64_t, int64_t> DurationElement;
+  typedef Pair<int64_t, T> Element;
 
-  DurationMap() : mMutex("DurationMap") { }
+  SimpleMap() : mMutex("SimpleMap") { }
 
   
-  void Insert(int64_t aKey, int64_t aDuration)
+  void Insert(int64_t aKey, const T& aValue)
   {
     MutexAutoLock lock(mMutex);
-    mMap.AppendElement(MakePair(aKey, aDuration));
+    mMap.AppendElement(MakePair(aKey, aValue));
   }
   
   
   
-  bool Find(int64_t aKey, int64_t& aDuration)
+  bool Find(int64_t aKey, T& aValue)
   {
     MutexAutoLock lock(mMutex);
     for (uint32_t i = 0; i < mMap.Length(); i++) {
-      DurationElement& element = mMap[i];
+      Element& element = mMap[i];
       if (element.first() == aKey) {
-        aDuration = element.second();
+        aValue = element.second();
         mMap.RemoveElementAt(i);
         return true;
       }
@@ -48,7 +49,7 @@ public:
 
 private:
   Mutex mMutex; 
-  AutoTArray<DurationElement, 16> mMap;
+  AutoTArray<Element, 16> mMap;
 };
 
 } 
