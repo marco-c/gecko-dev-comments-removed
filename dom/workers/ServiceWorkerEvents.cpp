@@ -12,6 +12,7 @@
 #include "nsINetworkInterceptController.h"
 #include "nsIOutputStream.h"
 #include "nsIScriptError.h"
+#include "nsITimedChannel.h"
 #include "nsIUnicodeDecoder.h"
 #include "nsIUnicodeEncoder.h"
 #include "nsContentPolicyUtils.h"
@@ -108,6 +109,12 @@ NS_IMETHODIMP
 CancelChannelRunnable::Run()
 {
   MOZ_ASSERT(NS_IsMainThread());
+
+  
+  
+  mChannel->SetHandleFetchEventEnd(TimeStamp::Now());
+  mChannel->SaveTimeStampsToUnderlyingChannel();
+
   mChannel->Cancel(mStatus);
   mRegistration->MaybeScheduleUpdate();
   return NS_OK;
@@ -229,6 +236,9 @@ public:
       mChannel->Cancel(NS_ERROR_INTERCEPTION_FAILED);
       return NS_OK;
     }
+
+    mChannel->SetHandleFetchEventEnd(TimeStamp::Now());
+    mChannel->SaveTimeStampsToUnderlyingChannel();
 
     nsCOMPtr<nsIObserverService> obsService = services::GetObserverService();
     if (obsService) {
