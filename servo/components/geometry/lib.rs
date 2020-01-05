@@ -28,9 +28,9 @@ use std::i32;
 
 
 #[derive(Clone, Copy, Debug)]
-pub enum ScreenPx {}
+pub enum DeviceIndependentPixel {}
 
-known_heap_size!(0, ScreenPx);
+known_heap_size!(0, DeviceIndependentPixel);
 
 
 

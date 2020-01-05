@@ -12,7 +12,7 @@ use euclid::size::TypedSize2D;
 use msg::constellation_msg::{Key, KeyModifiers, KeyState};
 use net_traits::net_error_list::NetError;
 use script_traits::{DevicePixel, MouseButton, TouchEventType, TouchId, TouchpadPressurePhase};
-use servo_geometry::ScreenPx;
+use servo_geometry::DeviceIndependentPixel;
 use servo_url::ServoUrl;
 use std::fmt::{Debug, Error, Formatter};
 use style_traits::cursor::Cursor;
@@ -109,7 +109,7 @@ pub trait WindowMethods {
     
     fn framebuffer_size(&self) -> TypedSize2D<u32, DevicePixel>;
     
-    fn size(&self) -> TypedSize2D<f32, ScreenPx>;
+    fn size(&self) -> TypedSize2D<f32, DeviceIndependentPixel>;
     
     fn present(&self);
 
@@ -138,7 +138,7 @@ pub trait WindowMethods {
     fn head_parsed(&self);
 
     
-    fn scale_factor(&self) -> ScaleFactor<f32, ScreenPx, DevicePixel>;
+    fn hidpi_factor(&self) -> ScaleFactor<f32, DeviceIndependentPixel, DevicePixel>;
 
     
     

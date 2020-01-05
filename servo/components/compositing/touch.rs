@@ -100,7 +100,6 @@ impl TouchHandler {
         let action = match self.state {
             Touching => {
                 let delta = point - old_point;
-                
 
                 if delta.x.abs() > TOUCH_PAN_MIN_SCREEN_PX ||
                    delta.y.abs() > TOUCH_PAN_MIN_SCREEN_PX

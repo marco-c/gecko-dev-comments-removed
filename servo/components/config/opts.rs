@@ -10,7 +10,7 @@ use getopts::Options;
 use num_cpus;
 use prefs::{self, PrefValue, PREFS};
 use resource_files::set_resources_path;
-use servo_geometry::ScreenPx;
+use servo_geometry::DeviceIndependentPixel;
 use servo_url::ServoUrl;
 use std::borrow::Cow;
 use std::cmp;
@@ -143,7 +143,7 @@ pub struct Opts {
     pub webdriver_port: Option<u16>,
 
     
-    pub initial_window_size: TypedSize2D<u32, ScreenPx>,
+    pub initial_window_size: TypedSize2D<u32, DeviceIndependentPixel>,
 
     
     pub user_agent: Cow<'static, str>,
