@@ -10,7 +10,6 @@
 
 
 
-
 Cu.import("resource://services-common/async.js");
 Cu.import("resource://testing-common/services/common/utils.js");
 Cu.import("resource://testing-common/PlacesTestUtils.jsm");
@@ -485,6 +484,8 @@ Utils.getDefaultDeviceName = function() {
 };
 
 function registerRotaryEngine() {
+  let {RotaryEngine} =
+    Cu.import("resource://testing-common/services/sync/rotaryengine.js", {});
   Service.engineManager.clear();
 
   Service.engineManager.register(RotaryEngine);
