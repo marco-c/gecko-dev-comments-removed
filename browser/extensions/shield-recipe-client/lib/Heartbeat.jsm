@@ -10,6 +10,7 @@ Cu.import("resource://gre/modules/Preferences.jsm");
 Cu.import("resource://gre/modules/TelemetryController.jsm");
 Cu.import("resource://gre/modules/Timer.jsm"); 
 Cu.import("resource://shield-recipe-client/lib/CleanupManager.jsm");
+Cu.import("resource://shield-recipe-client/lib/EventEmitter.jsm");
 Cu.import("resource://shield-recipe-client/lib/LogManager.jsm");
 
 Cu.importGlobalProperties(["URL"]); 
@@ -53,10 +54,8 @@ const NOTIFICATION_TIME = 3000;
 
 
 
-
-
 this.Heartbeat = class {
-  constructor(chromeWindow, eventEmitter, sandboxManager, options) {
+  constructor(chromeWindow, sandboxManager, options) {
     if (typeof options.flowId !== "string") {
       throw new Error("flowId must be a string");
     }
@@ -92,7 +91,7 @@ this.Heartbeat = class {
     }
 
     this.chromeWindow = chromeWindow;
-    this.eventEmitter = eventEmitter;
+    this.eventEmitter = new EventEmitter(sandboxManager);
     this.sandboxManager = sandboxManager;
     this.options = options;
     this.surveyResults = {};
@@ -261,7 +260,7 @@ this.Heartbeat = class {
 
     data.timestamp = timestamp;
     data.flowId = this.options.flowId;
-    this.eventEmitter.emit(name, Cu.cloneInto(data, this.sandboxManager.sandbox));
+    this.eventEmitter.emit(name, data);
 
     if (sendPing) {
       
@@ -279,7 +278,7 @@ this.Heartbeat = class {
       });
 
       
-      this.eventEmitter.emit("TelemetrySent", Cu.cloneInto(payload, this.sandboxManager.sandbox));
+      this.eventEmitter.emit("TelemetrySent", payload);
 
       
       this.endTimerIfPresent("surveyEndTimer");

@@ -5,7 +5,6 @@ const {utils: Cu} = Components;
 Cu.import("resource://gre/modules/Services.jsm", this);
 Cu.import("resource://shield-recipe-client/lib/Heartbeat.jsm", this);
 Cu.import("resource://shield-recipe-client/lib/SandboxManager.jsm", this);
-Cu.import("resource://shield-recipe-client/lib/NormandyDriver.jsm", this);
 
 
 
@@ -73,9 +72,7 @@ function assertTelemetrySent(hb, eventNames) {
 
 
 const sandboxManager = new SandboxManager();
-const driver = new NormandyDriver(sandboxManager);
 sandboxManager.addHold("test running");
-const sandboxedDriver = Cu.cloneInto(driver, sandboxManager.sandbox, {cloneFunctions: true});
 
 
 
@@ -83,12 +80,11 @@ const sandboxedDriver = Cu.cloneInto(driver, sandboxManager.sandbox, {cloneFunct
 
 
 add_task(function* () {
-  const eventEmitter = new sandboxManager.sandbox.EventEmitter(sandboxedDriver).wrappedJSObject;
   const targetWindow = Services.wm.getMostRecentWindow("navigator:browser");
   const notificationBox = targetWindow.document.querySelector("#high-priority-global-notificationbox");
 
   const preCount = notificationBox.childElementCount;
-  const hb = new Heartbeat(targetWindow, eventEmitter, sandboxManager, {
+  const hb = new Heartbeat(targetWindow, sandboxManager, {
     testing: true,
     flowId: "test",
     message: "test",
@@ -126,10 +122,9 @@ add_task(function* () {
 
 
 add_task(function* () {
-  const eventEmitter = new sandboxManager.sandbox.EventEmitter(sandboxedDriver).wrappedJSObject;
   const targetWindow = Services.wm.getMostRecentWindow("navigator:browser");
   const notificationBox = targetWindow.document.querySelector("#high-priority-global-notificationbox");
-  const hb = new Heartbeat(targetWindow, eventEmitter, sandboxManager, {
+  const hb = new Heartbeat(targetWindow, sandboxManager, {
     testing: true,
     flowId: "test",
     message: "test",
@@ -162,10 +157,9 @@ add_task(function* () {
 
 
 add_task(function* () {
-  const eventEmitter = new sandboxManager.sandbox.EventEmitter(sandboxedDriver).wrappedJSObject;
   const targetWindow = yield BrowserTestUtils.openNewBrowserWindow();
 
-  const hb = new Heartbeat(targetWindow, eventEmitter, sandboxManager, {
+  const hb = new Heartbeat(targetWindow, sandboxManager, {
     testing: true,
     flowId: "test",
     message: "test",
