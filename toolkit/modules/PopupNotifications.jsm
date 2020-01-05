@@ -565,6 +565,8 @@ PopupNotifications.prototype = {
         this._onPopupHidden(aEvent);
         break;
       case "activate":
+        if (this.isPanelOpen)
+          break;
       case "TabSelect":
         let self = this;
         
@@ -1198,11 +1200,6 @@ PopupNotifications.prototype = {
     this.panel.removeAttribute("noautofocus");
 
     this._reshowNotifications(anchor);
-
-    
-    if (anchor == this._currentAnchorElement && this.panel.firstChild) {
-      this.panel.firstChild.button.focus();
-    }
   },
 
   _reshowNotifications: function PopupNotifications_reshowNotifications(anchor, browser) {
