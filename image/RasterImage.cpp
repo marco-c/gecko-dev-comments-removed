@@ -471,7 +471,9 @@ RasterImage::OnSurfaceDiscardedInternal(bool aAnimatedFramesDiscarded)
 
   if (aAnimatedFramesDiscarded && mAnimationState) {
     MOZ_ASSERT(gfxPrefs::ImageMemAnimatedDiscardable());
-    mAnimationState->UpdateState(mAnimationFinished, this, mSize);
+    gfx::IntRect rect =
+      mAnimationState->UpdateState(mAnimationFinished, this, mSize);
+    NotifyProgress(NoProgress, rect);
   }
 
   if (mProgressTracker) {
@@ -1084,7 +1086,9 @@ RasterImage::Discard()
   SurfaceCache::RemoveImage(ImageKey(this));
 
   if (mAnimationState) {
-    mAnimationState->UpdateState(mAnimationFinished, this, mSize);
+    gfx::IntRect rect =
+      mAnimationState->UpdateState(mAnimationFinished, this, mSize);
+    NotifyProgress(NoProgress, rect);
   }
 
   
@@ -1257,6 +1261,11 @@ RasterImage::Decode(const IntSize& aSize,
     task = DecoderFactory::CreateAnimationDecoder(mDecoderType, WrapNotNull(this),
                                                   mSourceBuffer, mSize,
                                                   decoderFlags, surfaceFlags);
+    
+    
+    
+    
+    
     mAnimationState->UpdateState(mAnimationFinished, this, mSize);
     
     
@@ -1721,7 +1730,10 @@ RasterImage::NotifyDecodeComplete(const DecoderFinalStatus& aStatus,
     
     
     mAnimationState->NotifyDecodeComplete();
-    mAnimationState->UpdateState(mAnimationFinished, this, mSize);
+    gfx::IntRect rect = mAnimationState->UpdateState(mAnimationFinished, this, mSize);
+    if (!rect.IsEmpty()) {
+      NotifyProgress(NoProgress, rect);
+    }
   }
 
   

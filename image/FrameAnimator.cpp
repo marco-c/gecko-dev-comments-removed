@@ -25,7 +25,7 @@ namespace image {
 
 
 
-void
+const gfx::IntRect
 AnimationState::UpdateState(bool aAnimationFinished,
                             RasterImage *aImage,
                             const gfx::IntSize& aSize)
@@ -36,12 +36,13 @@ AnimationState::UpdateState(bool aAnimationFinished,
                                           DefaultSurfaceFlags(),
                                           PlaybackType::eAnimated));
 
-  UpdateStateInternal(result, aAnimationFinished);
+  return UpdateStateInternal(result, aAnimationFinished, aSize);
 }
 
-void
+const gfx::IntRect
 AnimationState::UpdateStateInternal(LookupResult& aResult,
-                                    bool aAnimationFinished)
+                                    bool aAnimationFinished,
+                                    const gfx::IntSize& aSize)
 {
   
   if (aResult.Type() == MatchType::NOT_FOUND) {
@@ -73,6 +74,8 @@ AnimationState::UpdateStateInternal(LookupResult& aResult,
     }
   }
 
+  gfx::IntRect ret;
+
   
   if (mIsCurrentlyDecoded || aAnimationFinished) {
     
@@ -84,6 +87,10 @@ AnimationState::UpdateStateInternal(LookupResult& aResult,
     
     
     
+    if (mCompositedFrameInvalid) {
+      
+      ret.SizeTo(aSize);
+    }
     mCompositedFrameInvalid = false;
   } else if (aResult.Type() == MatchType::NOT_FOUND ||
              aResult.Type() == MatchType::PENDING) {
@@ -94,6 +101,8 @@ AnimationState::UpdateStateInternal(LookupResult& aResult,
   }
   
   
+
+  return ret;
 }
 
 void
@@ -372,8 +381,11 @@ FrameAnimator::RequestRefresh(AnimationState& aState,
                                           DefaultSurfaceFlags(),
                                           PlaybackType::eAnimated));
 
-  aState.UpdateStateInternal(result, aAnimationFinished);
+  ret.mDirtyRect = aState.UpdateStateInternal(result, aAnimationFinished, mSize);
   if (aState.IsDiscarded() || !result) {
+    if (!ret.mDirtyRect.IsEmpty()) {
+      ret.mFrameAdvanced = true;
+    }
     return ret;
   }
 
