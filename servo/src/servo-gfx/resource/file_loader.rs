@@ -8,7 +8,7 @@ const READ_SIZE: uint = 1024;
 
 pub fn factory() -> LoaderTask {
 	let f: LoaderTask = |url, progress_chan| {
-		assert url.scheme == ~"file";
+		fail_unless!(url.scheme == ~"file");
 		do spawn {
 			
 			match file_reader(&Path(url.path)) {

@@ -22,46 +22,46 @@ enum DOMException {
     INVALID_CHARACTER_ERR
 }
 
-enum Element = int;
+struct Element(int);
 
-/*extern fn getElementById(cx: *JSContext, argc: c_uint, vp: *jsval) -> JSBool {
-    //XXX check if actually document object
-    if argc != 1 {
-        //XXX throw proper DOM exception
-        str::as_c_str("Not enough arguments", |s| {
-            JS_ReportError(cx, s);
-        });
-        return 0;
-    }
-    let id;
-    unsafe {
-        id = JS_ARGV(cx, vp)[0];
-    }
-    alt jsval_to_str(cx, id) {
-      ok(s) {
-        unsafe {
-            let doc: *Document = cast::reinterpret_cast(JS_GetContextPrivate(cx));
-            let elem = (*doc).getElementById(s);
-        }
-        //XXX wrap result
-        return 1;
-      }
-      err(_) {
-        str::as_c_str("???", |s| {
-            JS_ReportError(cx, s);
-        });
-        return 0;
-      }
-    }
-}*/
 
-/*extern fn getDocumentURI(cx: *JSContext, _argc: c_uint, vp: *jsval) -> JSBool {
-    unsafe {
-        let uri = (*unwrap(JS_THIS_OBJECT(cx, vp))).payload.getDocumentURI();
-        JS_SET_RVAL(cx, vp, domstring_to_jsval(cx, uri));
-    }
-    return 1;
-}*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 extern fn getDocumentElement(cx: *JSContext, _argc: c_uint, vp: *mut JSVal) -> JSBool {
     unsafe {
@@ -108,7 +108,7 @@ pub fn init(compartment: @mut Compartment, doc: @Document) {
          setter: JSStrictPropertyOpWrapper {op: null(), info: null()}}];
     vec::push(&mut compartment.global_props, attrs);
     vec::as_imm_buf(*attrs, |specs, _len| {
-        assert JS_DefineProperties(compartment.cx.ptr, obj.ptr, specs) == 1;
+        fail_unless!(JS_DefineProperties(compartment.cx.ptr, obj.ptr, specs) == 1);
     });
 
     compartment.register_class(utils::instance_jsclass(~"DocumentInstance", finalize));
