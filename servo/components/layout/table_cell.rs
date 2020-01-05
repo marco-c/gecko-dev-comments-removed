@@ -42,6 +42,9 @@ pub struct TableCellFlow {
     pub column_span: u32,
 
     
+    pub row_span: u32,
+
+    
     
     pub visible: bool,
 }
@@ -52,6 +55,7 @@ impl TableCellFlow {
             block_flow: BlockFlow::from_fragment(fragment),
             collapsed_borders: CollapsedBordersForCell::new(),
             column_span: 1,
+            row_span: 1,
             visible: true,
         }
     }
@@ -62,6 +66,7 @@ impl TableCellFlow {
             block_flow: BlockFlow::from_fragment(fragment),
             collapsed_borders: CollapsedBordersForCell::new(),
             column_span: node.get_colspan(),
+            row_span: node.get_rowspan(),
             visible: visible,
         }
     }

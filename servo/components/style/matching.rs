@@ -263,8 +263,8 @@ pub fn common_style_affecting_attributes() -> [CommonStyleAffectingAttributeInfo
 
 
 
-pub fn rare_style_affecting_attributes() -> [LocalName; 3] {
-    [ local_name!("bgcolor"), local_name!("border"), local_name!("colspan") ]
+pub fn rare_style_affecting_attributes() -> [LocalName; 4] {
+    [local_name!("bgcolor"), local_name!("border"), local_name!("colspan"), local_name!("rowspan")]
 }
 
 fn have_same_class<E: TElement>(element: &E,

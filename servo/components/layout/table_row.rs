@@ -47,6 +47,12 @@ pub struct TableRowFlow {
 
     
     
+    
+    
+    pub incoming_rowspan: Vec<u32>,
+
+    
+    
     pub spacing: border_spacing::T,
 
     
@@ -78,6 +84,8 @@ pub struct CellIntrinsicInlineSize {
     pub column_size: ColumnIntrinsicInlineSize,
     
     pub column_span: u32,
+    
+    pub row_span: u32,
 }
 
 
@@ -88,6 +96,7 @@ impl TableRowFlow {
             block_flow: BlockFlow::from_fragment(fragment),
             cell_intrinsic_inline_sizes: Vec::new(),
             column_computed_inline_sizes: Vec::new(),
+            incoming_rowspan: Vec::new(),
             spacing: border_spacing::T {
                 horizontal: Au(0),
                 vertical: Au(0),
@@ -268,6 +277,7 @@ impl Flow for TableRowFlow {
                 
                 let child_specified_inline_size;
                 let child_column_span;
+                let child_row_span;
                 {
                     let child_table_cell = kid.as_mut_table_cell();
                     child_specified_inline_size = child_table_cell.block_flow
@@ -275,6 +285,7 @@ impl Flow for TableRowFlow {
                                                                   .style
                                                                   .content_inline_size();
                     child_column_span = child_table_cell.column_span;
+                    child_row_span = child_table_cell.row_span;
 
                     
                     if collapsing_borders {
@@ -319,6 +330,7 @@ impl Flow for TableRowFlow {
                 self.cell_intrinsic_inline_sizes.push(CellIntrinsicInlineSize {
                     column_size: child_column_inline_size,
                     column_span: child_column_span,
+                    row_span: child_row_span,
                 });
             }
         }
@@ -348,12 +360,23 @@ impl Flow for TableRowFlow {
                                                       containing_block_inline_size);
 
         
-        let mut computed_inline_size_for_cells = Vec::new();
-        let mut column_computed_inline_size_iterator = self.column_computed_inline_sizes.iter();
+        let num_columns = self.column_computed_inline_sizes.len();
+        let mut computed_inline_size_for_cells = Vec::with_capacity(num_columns);
+        let mut col = 0;
+
         for cell_intrinsic_inline_size in &self.cell_intrinsic_inline_sizes {
             
+            while col < self.incoming_rowspan.len() && self.incoming_rowspan[col] != 1 {
+                let size = match self.column_computed_inline_sizes.get(col) {
+                    Some(column_computed_inline_size) => *column_computed_inline_size,
+                    None => ColumnComputedInlineSize { size: Au(0) } 
+                };
+                computed_inline_size_for_cells.push(size);
+                col += 1;
+            }
+            
             let mut column_computed_inline_size =
-                match column_computed_inline_size_iterator.next() {
+                match self.column_computed_inline_sizes.get(col) {
                     Some(column_computed_inline_size) => *column_computed_inline_size,
                     None => {
                         
@@ -366,16 +389,18 @@ impl Flow for TableRowFlow {
                         }
                     }
                 };
+            col += 1;
 
             
             for _ in 1..cell_intrinsic_inline_size.column_span {
                 let extra_column_computed_inline_size =
-                    match column_computed_inline_size_iterator.next() {
+                    match self.column_computed_inline_sizes.get(col) {
                         Some(column_computed_inline_size) => column_computed_inline_size,
                         None => break,
                     };
                 column_computed_inline_size.size = column_computed_inline_size.size +
                     extra_column_computed_inline_size.size + self.spacing.horizontal;
+                col += 1;
             }
 
             computed_inline_size_for_cells.push(column_computed_inline_size)
@@ -397,6 +422,9 @@ impl Flow for TableRowFlow {
         let spacing = self.spacing;
         let row_writing_mode = self.block_flow.base.writing_mode;
         let table_writing_mode = self.table_writing_mode;
+        let incoming_rowspan = &self.incoming_rowspan;
+        let mut column_index = 0;
+
         self.block_flow.propagate_assigned_inline_size_to_children(shared_context,
                                                                    inline_start_content_edge,
                                                                    inline_end_content_edge,
@@ -410,6 +438,8 @@ impl Flow for TableRowFlow {
             set_inline_position_of_child_flow(
                 child_flow,
                 child_index,
+                &mut column_index,
+                incoming_rowspan,
                 row_writing_mode,
                 table_writing_mode,
                 &computed_inline_size_for_cells,
@@ -714,22 +744,23 @@ pub fn propagate_column_inline_sizes_to_child(
         child_flow: &mut Flow,
         table_writing_mode: WritingMode,
         column_computed_inline_sizes: &[ColumnComputedInlineSize],
-        border_spacing: &border_spacing::T) {
+        border_spacing: &border_spacing::T,
+        incoming_rowspan: &mut Vec<u32>) {
     
     
     
     
     match child_flow.class() {
-        FlowClass::Table => {
-            let child_table_flow = child_flow.as_mut_table();
-            child_table_flow.column_computed_inline_sizes = column_computed_inline_sizes.to_vec();
-        }
         FlowClass::TableRowGroup => {
             let child_table_rowgroup_flow = child_flow.as_mut_table_rowgroup();
-            child_table_rowgroup_flow.column_computed_inline_sizes =
-                column_computed_inline_sizes.to_vec();
             child_table_rowgroup_flow.spacing = *border_spacing;
-            child_table_rowgroup_flow.table_writing_mode = table_writing_mode;
+            for kid in child_table_rowgroup_flow.block_flow.base.child_iter_mut() {
+                propagate_column_inline_sizes_to_child(kid,
+                                                       table_writing_mode,
+                                                       column_computed_inline_sizes,
+                                                       border_spacing,
+                                                       incoming_rowspan);
+            }
         }
         FlowClass::TableRow => {
             let child_table_row_flow = child_flow.as_mut_table_row();
@@ -737,6 +768,32 @@ pub fn propagate_column_inline_sizes_to_child(
                 column_computed_inline_sizes.to_vec();
             child_table_row_flow.spacing = *border_spacing;
             child_table_row_flow.table_writing_mode = table_writing_mode;
+            child_table_row_flow.incoming_rowspan = incoming_rowspan.clone();
+
+            
+            let mut col = 0;
+            for cell in &child_table_row_flow.cell_intrinsic_inline_sizes {
+                
+                while col < incoming_rowspan.len() && incoming_rowspan[col] != 1 {
+                    if incoming_rowspan[col] > 1 {
+                        incoming_rowspan[col] -= 1;
+                    }
+                    col += 1;
+                }
+                for _ in 0..cell.column_span {
+                    if col < incoming_rowspan.len() && incoming_rowspan[col] > 1 {
+                        incoming_rowspan[col] -= 1;
+                    }
+                    
+                    if cell.row_span != 1 {
+                        if incoming_rowspan.len() < col + 1 {
+                            incoming_rowspan.resize(col + 1, 1);
+                        }
+                        incoming_rowspan[col] = max(cell.row_span, incoming_rowspan[col]);
+                    }
+                    col += 1;
+                }
+            }
         }
         c => warn!("unexpected flow in table {:?}", c)
     }
@@ -746,6 +803,8 @@ pub fn propagate_column_inline_sizes_to_child(
 fn set_inline_position_of_child_flow(
         child_flow: &mut Flow,
         child_index: usize,
+        column_index: &mut usize,
+        incoming_rowspan: &[u32],
         row_writing_mode: WritingMode,
         table_writing_mode: WritingMode,
         column_computed_inline_sizes: &[ColumnComputedInlineSize],
@@ -759,6 +818,21 @@ fn set_inline_position_of_child_flow(
     }
 
     let reverse_column_order = table_writing_mode.is_bidi_ltr() != row_writing_mode.is_bidi_ltr();
+
+    
+    while *column_index < incoming_rowspan.len() && incoming_rowspan[*column_index] != 1 {
+        let column_inline_size = column_computed_inline_sizes[*column_index].size;
+        let border_inline_size = match *border_collapse_info {
+            Some(_) => Au(0), 
+            None => border_spacing.horizontal,
+        };
+        if reverse_column_order {
+            *inline_end_margin_edge += column_inline_size + border_inline_size;
+        } else {
+            *inline_start_margin_edge += column_inline_size + border_inline_size;
+        }
+        *column_index += 1;
+    }
 
     
     let child_table_cell = child_flow.as_mut_table_cell();
@@ -797,24 +871,24 @@ fn set_inline_position_of_child_flow(
 
             
             if reverse_column_order {
-                *inline_end_margin_edge = *inline_end_margin_edge +
-                    child_table_cell.collapsed_borders.inline_start_width
+                *inline_end_margin_edge += child_table_cell.collapsed_borders.inline_start_width;
             } else {
-                *inline_start_margin_edge = *inline_start_margin_edge +
-                    child_table_cell.collapsed_borders.inline_start_width
+                *inline_start_margin_edge += child_table_cell.collapsed_borders.inline_start_width;
             }
         }
         None => {
             
             if reverse_column_order {
-                *inline_end_margin_edge = *inline_end_margin_edge + border_spacing.horizontal
+                *inline_end_margin_edge += border_spacing.horizontal;
             } else {
-                *inline_start_margin_edge = *inline_start_margin_edge + border_spacing.horizontal
+                *inline_start_margin_edge += border_spacing.horizontal;
             }
         }
     }
 
-    let column_inline_size = column_computed_inline_sizes[child_index].size;
+    let column_inline_size = column_computed_inline_sizes[*column_index].size;
+    *column_index += 1;
+
     let kid_base = &mut child_table_cell.block_flow.base;
     kid_base.block_container_inline_size = column_inline_size;
 
@@ -822,11 +896,11 @@ fn set_inline_position_of_child_flow(
         
         kid_base.position.start.i =
             parent_content_inline_size - *inline_end_margin_edge - column_inline_size;
-        *inline_end_margin_edge = *inline_end_margin_edge + column_inline_size;
+        *inline_end_margin_edge += column_inline_size;
     } else {
         
         kid_base.position.start.i = *inline_start_margin_edge;
-        *inline_start_margin_edge = *inline_start_margin_edge + column_inline_size;
+        *inline_start_margin_edge += column_inline_size;
     }
 }
 
