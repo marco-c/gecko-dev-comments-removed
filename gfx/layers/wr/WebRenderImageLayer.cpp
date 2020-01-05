@@ -6,7 +6,6 @@
 #include "WebRenderImageLayer.h"
 
 #include "WebRenderLayersLogging.h"
-#include "gfxPrefs.h"
 #include "mozilla/layers/ImageClient.h"
 #include "mozilla/layers/TextureClientRecycleAllocator.h"
 #include "mozilla/layers/TextureWrapperImage.h"
@@ -142,7 +141,7 @@ WebRenderImageLayer::RenderLayer()
   Rect overflow(0, 0, relBounds.width, relBounds.height);
   Matrix4x4 transform;
   Maybe<WrImageMask> mask = buildMaskLayer();
-  WrTextureFilter filter = (mSamplingFilter == gfx::SamplingFilter::POINT) ? WrTextureFilter::Point : WrTextureFilter::Linear;
+  wr::ImageRendering filter = wr::ToImageRendering(mSamplingFilter);
   WrMixBlendMode mixBlendMode = wr::ToWrMixBlendMode(GetMixBlendMode());
 
   if (gfxPrefs::LayersDump()) {

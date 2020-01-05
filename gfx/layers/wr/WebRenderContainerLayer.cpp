@@ -6,7 +6,6 @@
 #include "WebRenderContainerLayer.h"
 
 #include <inttypes.h>
-#include "gfxPrefs.h"
 #include "mozilla/layers/WebRenderBridgeChild.h"
 #include "mozilla/webrender/WebRenderTypes.h"
 #include "WebRenderLayersLogging.h"
@@ -71,7 +70,7 @@ WebRenderRefLayer::RenderLayer()
                   Stringify(transform).c_str());
   }
 
-  WrBridge()->AddWebRenderCommand(OpDPPushIframe(wr::ToWrRect(relBounds), wr::ToWrRect(relBounds), wr::PipelineId(mId)));
+  WrBridge()->AddWebRenderCommand(OpDPPushIframe(wr::ToWrRect(relBounds), wr::ToWrRect(relBounds), wr::AsPipelineId(mId)));
 }
 
 } 
