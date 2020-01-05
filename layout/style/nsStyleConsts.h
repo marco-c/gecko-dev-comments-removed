@@ -155,8 +155,8 @@ enum class StyleShapeOutsideShapeBox : uint8_t {
 
 
 enum class StyleShapeRadius : uint8_t {
+  ClosestSide,
   FarthestSide,
-  ClosestSide
 };
 
 
