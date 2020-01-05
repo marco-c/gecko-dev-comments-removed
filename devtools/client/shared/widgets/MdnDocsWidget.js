@@ -269,6 +269,9 @@ function MdnDocsWidget(tooltipContainer) {
   this.elements.linkToMdn.textContent = L10N.getStr("docsTooltip.visitMDN");
 
   
+  tooltipContainer.setAttribute("dir", "ltr");
+
+  
   let mainWindow = Services.wm.getMostRecentWindow(gDevTools.chromeWindowType);
   this.elements.linkToMdn.addEventListener("click", (e) => {
     e.stopPropagation();
