@@ -10,7 +10,7 @@
 #include "nsSVGElement.h"
 #include "nsCOMPtr.h"
 #include "nsSVGString.h"
-#include "nsScriptElement.h"
+#include "mozilla/dom/ScriptElement.h"
 
 class nsIDocument;
 
@@ -24,7 +24,7 @@ namespace dom {
 typedef nsSVGElement SVGScriptElementBase;
 
 class SVGScriptElement final : public SVGScriptElementBase,
-                               public nsScriptElement
+                               public ScriptElement
 {
 protected:
   friend nsresult (::NS_NewSVGScriptElement(nsIContent **aResult,
