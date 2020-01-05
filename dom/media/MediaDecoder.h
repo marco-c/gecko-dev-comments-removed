@@ -590,6 +590,9 @@ private:
   MediaEventSource<void>*
   DataArrivedEvent() override { return &mDataArrivedEvent; }
 
+  
+  void NotifyCompositor();
+
   MediaEventSource<RefPtr<layers::KnowsCompositor>>*
   CompositorUpdatedEvent() override { return &mCompositorUpdatedEvent; }
 
