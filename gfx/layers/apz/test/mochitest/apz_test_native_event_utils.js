@@ -157,11 +157,9 @@ function synthesizeNativeWheelAndWaitForWheelEvent(aElement, aX, aY, aDeltaX, aD
 
 function synthesizeNativeWheelAndWaitForScrollEvent(aElement, aX, aY, aDeltaX, aDeltaY, aCallback) {
   var targetWindow = aElement.ownerDocument.defaultView;
-  var useCapture = true;  
-  targetWindow.addEventListener("scroll", function scrollWaiter(e) {
-    targetWindow.removeEventListener("scroll", scrollWaiter, useCapture);
+  targetWindow.addEventListener("scroll", function() {
     setTimeout(aCallback, 0);
-  }, useCapture);
+  }, {capture: true, once: true}); 
   return synthesizeNativeWheel(aElement, aX, aY, aDeltaX, aDeltaY);
 }
 

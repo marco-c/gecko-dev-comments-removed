@@ -121,7 +121,10 @@ function nextTest() {
   }
 }
 
-function checkResult() {
+function checkResult(event) {
+  if (event.target.URL == "about:blank")
+    return;
+
   
   is(gIdentityHandler._uri.spec, gCurrentTest.location, "location matches for test " + gTestDesc);
   
