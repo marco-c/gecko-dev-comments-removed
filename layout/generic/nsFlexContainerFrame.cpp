@@ -1896,14 +1896,11 @@ FlexItem::FlexItem(ReflowInput& aFlexItemReflowInput,
   
   
   
-  
-  
-  
-  
-  
-  if (mAlignSelf == NS_STYLE_ALIGN_BASELINE &&
-      aAxisTracker.IsCrossAxisHorizontal()) {
-    mAlignSelf = NS_STYLE_ALIGN_FLEX_START;
+  if (aAxisTracker.IsRowOriented() ==
+      aAxisTracker.GetWritingMode().IsOrthogonalTo(mWM)) {
+    if (mAlignSelf == NS_STYLE_ALIGN_BASELINE) {
+      mAlignSelf = NS_STYLE_ALIGN_FLEX_START;
+    }
   }
 }
 
