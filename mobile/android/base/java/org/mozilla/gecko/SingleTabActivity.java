@@ -136,16 +136,6 @@ public abstract class SingleTabActivity extends GeckoApp {
         return false;
     }
 
-    @Override
-    protected void onDone() {
-        
-        
-        
-        
-        
-        moveTaskToBack(true);
-    }
-
     
 
 

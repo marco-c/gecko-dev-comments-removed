@@ -165,6 +165,13 @@ public class CustomTabsActivity extends SingleTabActivity implements Tabs.OnTabs
     }
 
     @Override
+    public void onDone() {
+        
+        
+        finish();
+    }
+
+    @Override
     public void finish() {
         super.finish();
 
