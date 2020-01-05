@@ -215,7 +215,8 @@ impl FontContext {
     
     pub fn get_render_font_from_template(&mut self,
                                          template: &Arc<FontTemplateData>,
-                                         pt_size: Au) -> Rc<RefCell<ScaledFont>> {
+                                         pt_size: Au)
+                                         -> Rc<RefCell<ScaledFont>> {
         for cached_font in self.render_font_cache.iter() {
             if cached_font.pt_size == pt_size &&
                cached_font.identifier == template.identifier {
