@@ -728,7 +728,8 @@ fn gather_abstract_nodes(cur: &JS<Node>, refs: &mut ~[JS<Node>], postorder: bool
 }
 
 /// Specifies whether children must be recursively cloned or not.
-enum CloneChildrenFlag {
+#[deriving(Eq)]
+pub enum CloneChildrenFlag {
     CloneChildren,
     DoNotCloneChildren
 }
@@ -980,21 +981,21 @@ impl Node {
         }
     }
 
-    // http://dom.spec.whatwg.org/#dom-node-textcontent
+    
     pub fn SetTextContent(&mut self, abstract_self: &mut JS<Node>, value: Option<DOMString>)
                           -> ErrorResult {
         let value = null_str_as_empty(&value);
         match self.type_id {
             DocumentFragmentNodeTypeId |
             ElementNodeTypeId(..) => {
-                // Step 1-2.
+                
                 let node = if value.len() == 0 {
                     None
                 } else {
                     let document = self.owner_doc();
                     Some(NodeCast::from(&document.get().CreateTextNode(document, value)))
                 };
-                // Step 3.
+                
                 Node::replace_all(node, abstract_self);
             }
             CommentNodeTypeId |
@@ -1005,7 +1006,7 @@ impl Node {
                 let mut characterdata: JS<CharacterData> = CharacterDataCast::to(abstract_self).unwrap();
                 characterdata.get_mut().data = value.clone();
 
-                // Notify the document that the content of this node is different
+                
                 let document = self.owner_doc();
                 document.get().content_changed();
             }
@@ -1015,29 +1016,29 @@ impl Node {
         Ok(())
     }
 
-    // http://dom.spec.whatwg.org/#concept-node-adopt
-    fn adopt(node: &mut JS<Node>, document: &JS<Document>) {
-        // Step 1.
+    
+    pub fn adopt(node: &mut JS<Node>, document: &JS<Document>) {
+        
         match node.parent_node() {
             Some(ref mut parent) => Node::remove(node, parent, Unsuppressed),
             None => (),
         }
 
-        // Step 2.
+        
         if document_from_node(node) != *document {
             for mut descendant in node.traverse_preorder() {
                 descendant.get_mut().set_owner_doc(document);
             }
         }
 
-        // Step 3.
-        // If node is an element, it is _affected by a base URL change_.
+        
+        
     }
 
-    // http://dom.spec.whatwg.org/#concept-node-pre-insert
+    
     fn pre_insert(node: &mut JS<Node>, parent: &mut JS<Node>, child: Option<JS<Node>>)
                   -> Fallible<JS<Node>> {
-        // Step 1.
+        
         match parent.type_id() {
             DocumentNodeTypeId |
             DocumentFragmentNodeTypeId |
@@ -1045,18 +1046,18 @@ impl Node {
             _ => return Err(HierarchyRequest)
         }
 
-        // Step 2.
+        
         if node.is_inclusive_ancestor_of(parent) {
             return Err(HierarchyRequest);
         }
 
-        // Step 3.
+        
         match child {
             Some(ref child) if !parent.is_parent_of(child) => return Err(NotFound),
             _ => ()
         }
 
-        // Step 4-5.
+        
         match node.type_id() {
             TextNodeTypeId => {
                 match node.parent_node() {
@@ -1077,22 +1078,22 @@ impl Node {
             DocumentNodeTypeId => return Err(HierarchyRequest)
         }
 
-        // Step 6.
+        
         match parent.type_id() {
             DocumentNodeTypeId => {
                 match node.type_id() {
-                    // Step 6.1
+                    
                     DocumentFragmentNodeTypeId => {
-                        // Step 6.1.1(b)
+                        
                         if node.children().any(|c| c.is_text()) {
                             return Err(HierarchyRequest);
                         }
                         match node.child_elements().len() {
                             0 => (),
-                            // Step 6.1.2
+                            
                             1 => {
-                                // FIXME: change to empty() when https://github.com/mozilla/rust/issues/11218
-                                // will be fixed
+                                
+                                
                                 if parent.child_elements().len() > 0 {
                                     return Err(HierarchyRequest);
                                 }
@@ -1104,14 +1105,14 @@ impl Node {
                                     _ => (),
                                 }
                             },
-                            // Step 6.1.1(a)
+                            
                             _ => return Err(HierarchyRequest),
                         }
                     },
-                    // Step 6.2
+                    
                     ElementNodeTypeId(_) => {
-                        // FIXME: change to empty() when https://github.com/mozilla/rust/issues/11218
-                        // will be fixed
+                        
+                        
                         if parent.child_elements().len() > 0 {
                             return Err(HierarchyRequest);
                         }
@@ -1123,7 +1124,7 @@ impl Node {
                             _ => (),
                         }
                     },
-                    // Step 6.3
+                    
                     DoctypeNodeTypeId => {
                         if parent.children().any(|c| c.is_doctype()) {
                             return Err(HierarchyRequest);
@@ -1137,8 +1138,8 @@ impl Node {
                                 }
                             },
                             None => {
-                                // FIXME: change to empty() when https://github.com/mozilla/rust/issues/11218
-                                // will be fixed
+                                
+                                
                                 if parent.child_elements().len() > 0 {
                                     return Err(HierarchyRequest);
                                 }
@@ -1154,37 +1155,37 @@ impl Node {
             _ => (),
         }
 
-        // Step 7-8.
+        
         let referenceChild = match child {
             Some(ref child) if child == node => node.next_sibling(),
             _ => child
         };
 
-        // Step 9.
+        
         Node::adopt(node, &document_from_node(parent));
 
-        // Step 10.
+        
         Node::insert(node, parent, referenceChild, Unsuppressed);
 
-        // Step 11.
+        
         return Ok(node.clone())
     }
 
-    // http://dom.spec.whatwg.org/#concept-node-insert
+    
     fn insert(node: &mut JS<Node>,
               parent: &mut JS<Node>,
               child: Option<JS<Node>>,
               suppress_observers: SuppressObserver) {
-        // XXX assert owner_doc
-        // Step 1-3: ranges.
-        // Step 4.
+        
+        
+        
         let mut nodes = match node.type_id() {
             DocumentFragmentNodeTypeId => node.children().collect(),
             _ => ~[node.clone()],
         };
 
-        // Step 5: DocumentFragment, mutation records.
-        // Step 6: DocumentFragment.
+        
+        
         match node.type_id() {
             DocumentFragmentNodeTypeId => {
                 for mut c in node.children() {
@@ -1194,14 +1195,14 @@ impl Node {
             _ => (),
         }
 
-        // Step 7: mutation records.
-        // Step 8.
+        
+        
         for node in nodes.mut_iter() {
             parent.add_child(node, child.clone());
             node.get_mut().flags.set_is_in_doc(parent.is_in_doc());
         }
 
-        // Step 9.
+        
         match suppress_observers {
             Unsuppressed => {
                 for node in nodes.iter() {
@@ -1212,18 +1213,18 @@ impl Node {
         }
     }
 
-    // http://dom.spec.whatwg.org/#concept-node-replace-all
+    
     pub fn replace_all(mut node: Option<JS<Node>>, parent: &mut JS<Node>) {
-        // Step 1.
+        
         match node {
             Some(ref mut node) => Node::adopt(node, &document_from_node(parent)),
             None => (),
         }
 
-        // Step 2.
+        
         let removedNodes: ~[JS<Node>] = parent.children().collect();
 
-        // Step 3.
+        
         let addedNodes = match node {
             None => ~[],
             Some(ref node) => match node.type_id() {
@@ -1232,20 +1233,20 @@ impl Node {
             },
         };
 
-        // Step 4.
+        
         for mut child in parent.children() {
             Node::remove(&mut child, parent, Suppressed);
         }
 
-        // Step 5.
+        
         match node {
             Some(ref mut node) => Node::insert(node, parent, None, Suppressed),
             None => (),
         }
 
-        // Step 6: mutation records.
+        
 
-        // Step 7.
+        
         for removedNode in removedNodes.iter() {
             removedNode.node_removed();
         }
@@ -1254,51 +1255,41 @@ impl Node {
         }
     }
 
-    // http://dom.spec.whatwg.org/#concept-node-pre-remove
+    
     fn pre_remove(child: &mut JS<Node>, parent: &mut JS<Node>) -> Fallible<JS<Node>> {
-        // Step 1.
+        
         match child.parent_node() {
             Some(ref node) if node != parent => return Err(NotFound),
             _ => ()
         }
 
-        // Step 2.
+        
         Node::remove(child, parent, Unsuppressed);
 
-        // Step 3.
+        
         Ok(child.clone())
     }
 
-    // http://dom.spec.whatwg.org/#concept-node-remove
+    
     fn remove(node: &mut JS<Node>, parent: &mut JS<Node>, suppress_observers: SuppressObserver) {
         assert!(node.parent_node().map_or(false, |ref node_parent| node_parent == parent));
 
-        // Step 1-5: ranges.
-        // Step 6-7: mutation observers.
-        // Step 8.
+        
+        
+        
         parent.remove_child(node);
         node.get_mut().flags.set_is_in_doc(false);
 
-        // Step 9.
+        
         match suppress_observers {
             Suppressed => (),
             Unsuppressed => node.node_removed(),
         }
     }
 
-    // http://dom.spec.whatwg.org/#concept-node-clone
-    fn clone(node: &JS<Node>, maybe_doc: Option<&JS<Document>>, clone_children: CloneChildrenFlag)
-             -> JS<Node> {
-        fn clone_recursively(node: &JS<Node>, copy: &mut JS<Node>, doc: &JS<Document>) {
-            for ref child in node.get().children() {
-                let mut cloned = Node::clone(child, Some(doc), DoNotCloneChildren);
-                match Node::pre_insert(&mut cloned, copy, None) {
-                    Ok(ref mut appended) => clone_recursively(child, appended, doc),
-                    Err(..) => fail!("an error occurred while appending children")
-                }
-            }
-        }
-
+    
+    pub fn clone(node: &JS<Node>, maybe_doc: Option<&JS<Document>>,
+                 clone_children: CloneChildrenFlag) -> JS<Node> {
         
         let mut document = match maybe_doc {
             Some(doc) => doc.clone(),
@@ -1395,9 +1386,11 @@ impl Node {
         
 
         
-        match clone_children {
-            CloneChildren => clone_recursively(node, &mut copy, &document),
-            DoNotCloneChildren => ()
+        if clone_children == CloneChildren {
+            for ref child in node.get().children() {
+                let mut child_copy = Node::clone(child, Some(&document), clone_children);
+                let _inserted_node = Node::pre_insert(&mut child_copy, &mut copy, None);
+            }
         }
 
         
