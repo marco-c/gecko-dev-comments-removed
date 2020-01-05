@@ -183,22 +183,4 @@ protected:
     bool mSurfaceValid;
 };
 
-
-
-
-class gfxUnknownSurface : public gfxASurface {
-public:
-    gfxUnknownSurface(cairo_surface_t *surf, const mozilla::gfx::IntSize& aSize)
-        : mSize(aSize)
-    {
-        Init(surf, true);
-    }
-
-    virtual ~gfxUnknownSurface() { }
-    virtual const mozilla::gfx::IntSize GetSize() const override { return mSize; }
-
-private:
-    mozilla::gfx::IntSize mSize;
-};
-
 #endif 
