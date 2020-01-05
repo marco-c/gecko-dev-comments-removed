@@ -212,7 +212,6 @@ function treatAsSafeArgument(entry, varName, csuName)
         ["Gecko_DestroyShapeSource", "aShape", null],
         ["Gecko_StyleShapeSource_SetURLValue", "aShape", null],
         ["Gecko_nsFont_InitSystem", "aDest", null],
-        ["Gecko_StyleTransition_SetUnsupportedProperty", "aTransition", null],
     ];
     for (var [entryMatch, varMatch, csuMatch] of whitelist) {
         assert(entryMatch || varMatch || csuMatch);
@@ -1075,31 +1074,44 @@ function isSafeVariable(entry, variable)
             return true;
         }
 
-        
-        
-        if ((isDirectCall(edge, /operator\[\]/) ||
-             isDirectCall(edge, /nsStyleContent::ContentAt/)) &&
-            isEdgeSafeArgument(entry, edge.PEdgeCallInstance.Exp))
-        {
-            return true;
-        }
-
-        
-        if (isDirectCall(edge, /operator /)) {
-            var otherEdge = expressionValueEdge(edge.PEdgeCallInstance.Exp);
-            if (otherEdge &&
-                isDirectCall(otherEdge, /getter_AddRefs/) &&
-                isEdgeSafeArgument(entry, otherEdge.PEdgeCallArguments.Exp[0]))
+        if ("PEdgeCallInstance" in edge) {
+            
+            
+            if ((isDirectCall(edge, /operator\[\]/) ||
+                 isDirectCall(edge, /nsStyleContent::ContentAt/)) &&
+                isEdgeSafeArgument(entry, edge.PEdgeCallInstance.Exp))
             {
                 return true;
             }
-        }
 
-        
-        if (isDirectCall(edge, /AsAString/) &&
-            isEdgeSafeArgument(entry, edge.PEdgeCallInstance.Exp))
-        {
-            return true;
+            
+            if (isDirectCall(edge, /operator /)) {
+                var otherEdge = expressionValueEdge(edge.PEdgeCallInstance.Exp);
+                if (otherEdge &&
+                    isDirectCall(otherEdge, /getter_AddRefs/) &&
+                    isEdgeSafeArgument(entry, otherEdge.PEdgeCallArguments.Exp[0]))
+                {
+                    return true;
+                }
+            }
+
+            
+            
+            
+            
+            if (isDirectCall(edge, /operator new/) &&
+                edge.PEdgeCallInstance.Exp.length == 2 &&
+                isEdgeSafeArgument(entry, edge.PEdgeCallInstance.Exp[1]))
+            {
+                return true;
+            }
+
+            
+            if (isDirectCall(edge, /AsAString/) &&
+                isEdgeSafeArgument(entry, edge.PEdgeCallInstance.Exp))
+            {
+                return true;
+            }
         }
 
         
