@@ -986,25 +986,6 @@ JS_NewContext(uint32_t maxbytes,
 extern JS_PUBLIC_API(void)
 JS_DestroyContext(JSContext* cx);
 
-typedef double (*JS_CurrentEmbedderTimeFunction)();
-
-
-
-
-
-
-
-
-JS_PUBLIC_API(void)
-JS_SetCurrentEmbedderTimeFunction(JS_CurrentEmbedderTimeFunction timeFn);
-
-
-
-
-
-JS_PUBLIC_API(double)
-JS_GetCurrentEmbedderTime();
-
 JS_PUBLIC_API(void*)
 JS_GetContextPrivate(JSContext* cx);
 
