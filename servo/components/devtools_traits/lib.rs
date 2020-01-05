@@ -148,9 +148,12 @@ impl Decodable for Modification {
 
 #[derive(Clone)]
 pub enum ConsoleMessage {
-    
-    LogMessage(String, String, u32, u32),
-    
+    LogMessage {
+        message: String,
+        filename: String,
+        lineNumber: u32,
+        columnNumber: u32,
+    },
 }
 
 #[derive(Clone)]
