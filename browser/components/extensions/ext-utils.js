@@ -28,8 +28,8 @@ const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 
 var {
   DefaultWeakMap,
-  EventManager,
   promiseEvent,
+  SingletonEventManager,
 } = ExtensionUtils;
 
 
@@ -1283,14 +1283,14 @@ AllWindowEvents.openListener = AllWindowEvents.openListener.bind(AllWindowEvents
 
 
 
-global.WindowEventManager = function(context, name, event, listener) {
-  EventManager.call(this, context, name, fire => {
-    let listener2 = (...args) => listener(fire, ...args);
-    AllWindowEvents.addListener(event, listener2);
-    return () => {
-      AllWindowEvents.removeListener(event, listener2);
-    };
-  });
+global.WindowEventManager = class extends SingletonEventManager {
+  constructor(context, name, event, listener) {
+    super(context, name, fire => {
+      let listener2 = (...args) => listener(fire, ...args);
+      AllWindowEvents.addListener(event, listener2);
+      return () => {
+        AllWindowEvents.removeListener(event, listener2);
+      };
+    });
+  }
 };
-
-WindowEventManager.prototype = Object.create(EventManager.prototype);
