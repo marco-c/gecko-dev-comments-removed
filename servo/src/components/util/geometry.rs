@@ -39,7 +39,25 @@ pub enum ScreenPx {}
 
 
 
+
+
+
+pub enum ViewportPx {}
+
+
+
+
+
+
+
 pub enum PagePx {}
+
+
+
+
+
+
+
 
 
 

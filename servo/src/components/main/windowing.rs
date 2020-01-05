@@ -44,6 +44,8 @@ pub enum WindowEvent {
     
     ZoomWindowEvent(f32),
     
+    PinchZoomWindowEvent(f32),
+    
     NavigationWindowEvent(WindowNavigateMsg),
     
     FinishedWindowEvent,

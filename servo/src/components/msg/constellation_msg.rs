@@ -7,7 +7,8 @@
 
 use geom::rect::Rect;
 use geom::size::TypedSize2D;
-use servo_util::geometry::PagePx;
+use geom::scale_factor::ScaleFactor;
+use servo_util::geometry::{DevicePixel, PagePx, ViewportPx};
 use std::comm::{channel, Sender, Receiver};
 use url::Url;
 
@@ -34,6 +35,18 @@ pub struct Failure {
     pub subpage_id: Option<SubpageId>,
 }
 
+pub struct WindowSizeData {
+    
+    
+    pub initial_viewport: TypedSize2D<ViewportPx, f32>,
+
+    
+    pub visible_viewport: TypedSize2D<PagePx, f32>,
+
+    
+    pub device_pixel_ratio: ScaleFactor<ViewportPx, DevicePixel, f32>,
+}
+
 
 pub enum Msg {
     ExitMsg,
@@ -45,7 +58,7 @@ pub enum Msg {
     LoadIframeUrlMsg(Url, PipelineId, SubpageId, IFrameSandboxState),
     NavigateMsg(NavigationDirection),
     RendererReadyMsg(PipelineId),
-    ResizedWindowMsg(TypedSize2D<PagePx, f32>),
+    ResizedWindowMsg(WindowSizeData),
 }
 
 
