@@ -20,7 +20,6 @@
 #include "nscore.h"
 #include "nsCOMPtr.h"
 #include "nsAutoPtr.h"
-#include "nsIDOMCSSStyleSheet.h"
 #include "nsICSSLoaderObserver.h"
 #include "nsTArrayForwardDeclare.h"
 #include "nsString.h"
@@ -101,10 +100,9 @@ struct CSSStyleSheetInner : public StyleSheetInfo
   { 0x98, 0x99, 0x0c, 0x86, 0xec, 0x12, 0x2f, 0x54 } }
 
 
-class CSSStyleSheet final : public nsIDOMCSSStyleSheet,
-                            public nsICSSLoaderObserver,
-                            public nsWrapperCache,
-                            public StyleSheet
+class CSSStyleSheet final : public StyleSheet
+                          , public nsICSSLoaderObserver
+                          , public nsWrapperCache
 {
 public:
   typedef net::ReferrerPolicy ReferrerPolicy;
@@ -120,8 +118,6 @@ public:
 
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_CSS_STYLE_SHEET_IMPL_CID)
 
-  void GetTitle(nsString& aTitle) const;
-  void GetType(nsString& aType) const;
   bool HasRules() const;
 
   
@@ -206,7 +202,8 @@ public:
   void SetInRuleProcessorCache() { mInRuleProcessorCache = true; }
 
   
-  NS_DECL_NSIDOMSTYLESHEET
+  NS_IMETHOD GetParentStyleSheet(nsIDOMStyleSheet** aParentStyleSheet) final;
+  NS_IMETHOD GetMedia(nsIDOMMediaList** aMedia) final;
 
   
   NS_DECL_NSIDOMCSSSTYLESHEET
@@ -224,22 +221,8 @@ public:
   }
 
   
-  
-  
-  void GetType(nsString& aType) {
-    const_cast<const CSSStyleSheet*>(this)->GetType(aType);
-  }
-  
-  using StyleSheet::GetOwnerNode;
   CSSStyleSheet* GetParentStyleSheet() const { return mParent; }
-  
-  
-  void GetTitle(nsString& aTitle) {
-    const_cast<const CSSStyleSheet*>(this)->GetTitle(aTitle);
-  }
   nsMediaList* Media();
-  bool Disabled() const { return mDisabled; }
-  
 
   
   
@@ -309,7 +292,6 @@ protected:
   void TraverseInner(nsCycleCollectionTraversalCallback &);
 
 protected:
-  nsString              mTitle;
   RefPtr<nsMediaList> mMedia;
   RefPtr<CSSStyleSheet> mNext;
   CSSStyleSheet*        mParent;    

@@ -14,6 +14,8 @@
 #include "mozilla/CORSMode.h"
 #include "mozilla/ServoUtils.h"
 
+#include "nsIDOMCSSStyleSheet.h"
+
 class nsIDocument;
 class nsINode;
 
@@ -30,7 +32,7 @@ class SRIMetadata;
 
 
 
-class StyleSheet
+class StyleSheet : public nsIDOMCSSStyleSheet
 {
 protected:
   StyleSheet(StyleBackendType aType, css::SheetParsingMode aParsingMode);
@@ -115,6 +117,22 @@ public:
   inline void List(FILE* aOut = stdout, int32_t aIndex = 0) const;
 #endif
 
+  
+  
+  
+  
+  
+  bool Disabled() const { return mDisabled; }
+  
+
+  
+  NS_IMETHOD GetType(nsAString& aType) final;
+  NS_IMETHOD GetDisabled(bool* aDisabled) final;
+  NS_IMETHOD SetDisabled(bool aDisabled) final;
+  NS_IMETHOD GetOwnerNode(nsIDOMNode** aOwnerNode) final;
+  NS_IMETHOD GetHref(nsAString& aHref) final;
+  NS_IMETHOD GetTitle(nsAString& aTitle) final;
+
 private:
   
   
@@ -122,6 +140,7 @@ private:
   inline const StyleSheetInfo& SheetInfo() const;
 
 protected:
+  nsString              mTitle;
   nsIDocument*          mDocument; 
   nsINode*              mOwningNode; 
 
