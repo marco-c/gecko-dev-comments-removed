@@ -633,7 +633,13 @@ let SourceActor = ActorClassWithSpec(sourceSpec, {
 
 
 
-  setBreakpoint: function (line, column, condition) {
+
+
+
+
+
+
+  setBreakpoint: function (line, column, condition, noSliding) {
     if (this.threadActor.state !== "paused") {
       throw {
         error: "wrongState",
@@ -644,7 +650,8 @@ let SourceActor = ActorClassWithSpec(sourceSpec, {
     let location = new OriginalLocation(this, line, column);
     return this._getOrCreateBreakpointActor(
       location,
-      condition
+      condition,
+      noSliding
     ).then((actor) => {
       let response = {
         actor: actor.actorID,
@@ -675,7 +682,9 @@ let SourceActor = ActorClassWithSpec(sourceSpec, {
 
 
 
-  _getOrCreateBreakpointActor: function (originalLocation, condition) {
+
+
+  _getOrCreateBreakpointActor: function (originalLocation, condition, noSliding) {
     let actor = this.breakpointActorMap.getActor(originalLocation);
     if (!actor) {
       actor = new BreakpointActor(this.threadActor, originalLocation);
@@ -685,7 +694,7 @@ let SourceActor = ActorClassWithSpec(sourceSpec, {
 
     actor.condition = condition;
 
-    return this._setBreakpoint(actor);
+    return this._setBreakpoint(actor, noSliding);
   },
 
   
@@ -708,15 +717,16 @@ let SourceActor = ActorClassWithSpec(sourceSpec, {
 
 
 
-  _setBreakpoint: function (actor) {
+
+
+  _setBreakpoint: function (actor, noSliding) {
     const { originalLocation } = actor;
     const { originalLine, originalSourceActor } = originalLocation;
 
     if (!this.isSourceMapped) {
-      if (!this._setBreakpointAtGeneratedLocation(
-        actor,
-        GeneratedLocation.fromOriginalLocation(originalLocation)
-      )) {
+      const generatedLocation = GeneratedLocation.fromOriginalLocation(originalLocation);
+      if (!this._setBreakpointAtGeneratedLocation(actor, generatedLocation) &&
+          !noSliding) {
         const query = { line: originalLine };
         
         

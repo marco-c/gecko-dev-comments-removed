@@ -2893,7 +2893,7 @@ SourceClient.prototype = {
 
 
 
-  setBreakpoint: function ({ line, column, condition }, aOnResponse = noop) {
+  setBreakpoint: function ({ line, column, condition, noSliding }, aOnResponse = noop) {
     
     let doSetBreakpoint = aCallback => {
       let root = this._client.mainRoot;
@@ -2906,7 +2906,8 @@ SourceClient.prototype = {
         to: this.actor,
         type: "setBreakpoint",
         location: location,
-        condition: condition
+        condition: condition,
+        noSliding: noSliding
       };
 
       

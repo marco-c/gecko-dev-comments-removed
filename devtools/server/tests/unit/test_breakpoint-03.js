@@ -36,40 +36,52 @@ function run_test_with_server(aServer, aCallback)
   });
 }
 
-function test_skip_breakpoint()
-{
-  gThreadClient.addOneTimeListener("paused", function (aEvent, aPacket) {
+var test_no_skip_breakpoint = Task.async(function*(source, location) {
+  let [aResponse, bpClient] = yield source.setBreakpoint(
+    Object.assign({}, location, { noSliding: true })
+  );
+
+  do_check_true(!aResponse.actualLocation);
+  do_check_eq(bpClient.location.line, gDebuggee.line0 + 3);
+  yield bpClient.remove();
+});
+
+var test_skip_breakpoint = function() {
+  gThreadClient.addOneTimeListener("paused", Task.async(function *(aEvent, aPacket) {
     let location = { line: gDebuggee.line0 + 3 };
     let source = gThreadClient.source(aPacket.frame.where.source);
 
-    source.setBreakpoint(location, function (aResponse, bpClient) {
+    
+    
+    yield test_no_skip_breakpoint(source, location);
+
+    
+    const [aResponse, bpClient] = yield source.setBreakpoint(location);
+    do_check_true(!!aResponse.actualLocation);
+    do_check_eq(aResponse.actualLocation.source.actor, source.actor);
+    do_check_eq(aResponse.actualLocation.line, location.line + 1);
+
+    gThreadClient.addOneTimeListener("paused", function (aEvent, aPacket) {
       
-      do_check_true(!!aResponse.actualLocation);
-      do_check_eq(aResponse.actualLocation.source.actor, source.actor);
-      do_check_eq(aResponse.actualLocation.line, location.line + 1);
+      do_check_eq(aPacket.type, "paused");
+      do_check_eq(aPacket.frame.where.source.actor, source.actor);
+      do_check_eq(aPacket.frame.where.line, location.line + 1);
+      do_check_eq(aPacket.why.type, "breakpoint");
+      do_check_eq(aPacket.why.actors[0], bpClient.actor);
+      
+      do_check_eq(gDebuggee.a, 1);
+      do_check_eq(gDebuggee.b, undefined);
 
-      gThreadClient.addOneTimeListener("paused", function (aEvent, aPacket) {
-        
-        do_check_eq(aPacket.type, "paused");
-        do_check_eq(aPacket.frame.where.source.actor, source.actor);
-        do_check_eq(aPacket.frame.where.line, location.line + 1);
-        do_check_eq(aPacket.why.type, "breakpoint");
-        do_check_eq(aPacket.why.actors[0], bpClient.actor);
-        
-        do_check_eq(gDebuggee.a, 1);
-        do_check_eq(gDebuggee.b, undefined);
-
-        
-        bpClient.remove(function (aResponse) {
-          gThreadClient.resume(function () {
-            gClient.close().then(gCallback);
-          });
+      
+      bpClient.remove(function (aResponse) {
+        gThreadClient.resume(function () {
+          gClient.close().then(gCallback);
         });
       });
-
-      gThreadClient.resume();
     });
-  });
+
+    gThreadClient.resume();
+  }));
 
   
   
