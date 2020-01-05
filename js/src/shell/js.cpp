@@ -327,8 +327,6 @@ struct ShellContext
     uint32_t geckoProfilingStackSize;
 
     OffThreadState offThreadState;
-
-    UniqueChars moduleLoadPath;
 };
 
 struct MOZ_STACK_CLASS EnvironmentPreparer : public js::ScriptEnvironmentPreparer {
@@ -366,6 +364,7 @@ static bool reportWarnings = true;
 static bool compileOnly = false;
 static bool fuzzingSafe = false;
 static bool disableOOMFunctions = false;
+static const char* moduleLoadPath = ".";
 
 #ifdef DEBUG
 static bool dumpEntrainedVariables = false;
@@ -2533,10 +2532,10 @@ UpdateSwitchTableBounds(JSContext* cx, HandleScript script, unsigned offset,
 static MOZ_MUST_USE bool
 SrcNotes(JSContext* cx, HandleScript script, Sprinter* sp)
 {
-    if (sp->put("\nSource notes:\n") < 0 ||
+    if (!sp->put("\nSource notes:\n") ||
         !sp->jsprintf("%4s %4s %5s %6s %-8s %s\n",
                       "ofs", "line", "pc", "delta", "desc", "args") ||
-        sp->put("---- ---- ----- ------ -------- ------\n") < 0)
+        !sp->put("---- ---- ----- ------ -------- ------\n"))
     {
         return false;
     }
@@ -2644,7 +2643,7 @@ SrcNotes(JSContext* cx, HandleScript script, Sprinter* sp)
           default:
             MOZ_ASSERT_UNREACHABLE("unrecognized srcnote");
         }
-        if (sp->put("\n") < 0)
+        if (!sp->put("\n"))
             return false;
     }
 
@@ -2702,7 +2701,7 @@ TryNotes(JSContext* cx, HandleScript script, Sprinter* sp)
     if (!script->hasTrynotes())
         return true;
 
-    if (sp->put("\nException table:\nkind             stack    start      end\n") < 0)
+    if (!sp->put("\nException table:\nkind             stack    start      end\n"))
         return false;
 
     JSTryNote* tn = script->trynotes()->vector;
@@ -2725,7 +2724,7 @@ ScopeNotes(JSContext* cx, HandleScript script, Sprinter* sp)
     if (!script->hasScopeNotes())
         return true;
 
-    if (sp->put("\nScope notes:\n   index   parent    start      end\n") < 0)
+    if (!sp->put("\nScope notes:\n   index   parent    start      end\n"))
         return false;
 
     ScopeNoteArray* notes = script->scopeNotes();
@@ -2756,41 +2755,41 @@ DisassembleScript(JSContext* cx, HandleScript script, HandleFunction fun,
                   bool lines, bool recursive, bool sourceNotes, Sprinter* sp)
 {
     if (fun) {
-        if (sp->put("flags:") < 0)
+        if (!sp->put("flags:"))
             return false;
         if (fun->isLambda()) {
-            if (sp->put(" LAMBDA") < 0)
+            if (!sp->put(" LAMBDA"))
                 return false;
         }
         if (fun->needsCallObject()) {
-            if (sp->put(" NEEDS_CALLOBJECT") < 0)
+            if (!sp->put(" NEEDS_CALLOBJECT"))
                 return false;
         }
         if (fun->needsExtraBodyVarEnvironment()) {
-            if (sp->put(" NEEDS_EXTRABODYVARENV") < 0)
+            if (!sp->put(" NEEDS_EXTRABODYVARENV"))
                 return false;
         }
         if (fun->needsNamedLambdaEnvironment()) {
-            if (sp->put(" NEEDS_NAMEDLAMBDAENV") < 0)
+            if (!sp->put(" NEEDS_NAMEDLAMBDAENV"))
                 return false;
         }
         if (fun->isConstructor()) {
-            if (sp->put(" CONSTRUCTOR") < 0)
+            if (!sp->put(" CONSTRUCTOR"))
                 return false;
         }
         if (script->isExprBody()) {
-            if (sp->put(" EXPRESSION_CLOSURE") < 0)
+            if (!sp->put(" EXPRESSION_CLOSURE"))
                 return false;
         }
         if (fun->isSelfHostedBuiltin()) {
-            if (sp->put(" SELF_HOSTED") < 0)
+            if (!sp->put(" SELF_HOSTED"))
                 return false;
         }
         if (fun->isArrow()) {
-            if (sp->put(" ARROW") < 0)
+            if (!sp->put(" ARROW"))
                 return false;
         }
-        if (sp->put("\n") < 0)
+        if (!sp->put("\n"))
             return false;
     }
 
@@ -2810,7 +2809,7 @@ DisassembleScript(JSContext* cx, HandleScript script, HandleFunction fun,
         for (unsigned i = 0; i != objects->length; ++i) {
             JSObject* obj = objects->vector[i];
             if (obj->is<JSFunction>()) {
-                if (sp->put("\n") < 0)
+                if (!sp->put("\n"))
                     return false;
 
                 RootedFunction fun(cx, &obj->as<JSFunction>());
@@ -2821,7 +2820,7 @@ DisassembleScript(JSContext* cx, HandleScript script, HandleFunction fun,
                             return false;
                     }
                 } else {
-                    if (sp->put("[native code]\n") < 0)
+                    if (!sp->put("[native code]\n"))
                         return false;
                 }
             }
@@ -3385,7 +3384,6 @@ struct CooperationState
       , idle(false)
       , numThreads(0)
       , yieldCount(0)
-      , singleThreaded(false)
     {}
 
     Mutex lock;
@@ -3393,7 +3391,6 @@ struct CooperationState
     bool idle;
     size_t numThreads;
     uint64_t yieldCount;
-    bool singleThreaded;
 };
 static CooperationState* cooperationState = nullptr;
 
@@ -3439,18 +3436,13 @@ CooperativeYieldThread(JSContext* cx, unsigned argc, Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
 
-    if (!cx->runtime()->gc.canChangeActiveContext(cx)) {
-        JS_ReportErrorASCII(cx, "Cooperating multithreading context switches are not currently allowed");
+    if (!cooperationState) {
+        JS_ReportErrorASCII(cx, "No cooperative threads have been created");
         return false;
     }
 
     if (GetShellContext(cx)->isWorker) {
         JS_ReportErrorASCII(cx, "Worker threads cannot yield");
-        return false;
-    }
-
-    if (cooperationState->singleThreaded) {
-        JS_ReportErrorASCII(cx, "Yielding is not allowed while single threaded");
         return false;
     }
 
@@ -3460,35 +3452,6 @@ CooperativeYieldThread(JSContext* cx, unsigned argc, Value* vp)
 
     args.rval().setUndefined();
     return true;
-}
-
-static void
-CooperativeBeginSingleThreadedExecution(JSContext* cx)
-{
-    MOZ_ASSERT(!cooperationState->singleThreaded);
-
-    
-    while (true) {
-        bool done = true;
-        for (ZoneGroupsIter group(cx->runtime()); !group.done(); group.next()) {
-            if (!group->ownedByCurrentThread() && group->ownerContext().context())
-                done = false;
-        }
-        if (done)
-            break;
-        CooperativeBeginWait(cx);
-        CooperativeYield();
-        CooperativeEndWait(cx);
-    }
-
-    cooperationState->singleThreaded = true;
-}
-
-static void
-CooperativeEndSingleThreadedExecution(JSContext* cx)
-{
-    if (cooperationState)
-        cooperationState->singleThreaded = false;
 }
 
 struct WorkerInput
@@ -3658,11 +3621,6 @@ EvalInThread(JSContext* cx, unsigned argc, Value* vp, bool cooperative)
         return false;
     }
 
-    if (cooperative && cooperationState->singleThreaded) {
-        JS_ReportErrorASCII(cx, "Creating cooperative threads is not allowed while single threaded");
-        return false;
-    }
-
     if (!args[0].toString()->ensureLinear(cx))
         return false;
 
@@ -3694,6 +3652,8 @@ EvalInThread(JSContext* cx, unsigned argc, Value* vp, bool cooperative)
     }
 
     if (cooperative) {
+        if (!cooperationState)
+            cooperationState = js_new<CooperationState>();
         cooperationState->numThreads++;
         CooperativeBeginWait(cx);
     }
@@ -3940,7 +3900,7 @@ KillWorkerThreads(JSContext* cx)
     workerThreadsLock = nullptr;
 
     
-    while (cooperationState->numThreads) {
+    while (cooperationState && cooperationState->numThreads) {
         CooperativeBeginWait(cx);
         CooperativeYield();
         CooperativeEndWait(cx);
@@ -4324,10 +4284,7 @@ static bool
 GetModuleLoadPath(JSContext* cx, unsigned argc, Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
-
-    ShellContext* sc = GetShellContext(cx);
-    MOZ_ASSERT(sc->moduleLoadPath);
-    args.rval().setString(JS_NewStringCopyZ(cx, sc->moduleLoadPath.get()));
+    args.rval().setString(JS_NewStringCopyZ(cx, moduleLoadPath));
     return true;
 }
 
@@ -5545,7 +5502,7 @@ class SprintOptimizationTypeInfoOp : public JS::ForEachTrackedOptimizationTypeIn
         do {
             if (!startedTypes_) {
                 startedTypes_ = true;
-                if (sp->put("{\"typeset\": [") < 0)
+                if (!sp->put("{\"typeset\": ["))
                     break;
             }
 
@@ -5567,7 +5524,7 @@ class SprintOptimizationTypeInfoOp : public JS::ForEachTrackedOptimizationTypeIn
                 if (!sp->jsprintf(",\"line\":%u", *lineno))
                     break;
             }
-            if (sp->put("},") < 0)
+            if (!sp->put("},"))
                 break;
 
             return;
@@ -5585,12 +5542,12 @@ class SprintOptimizationTypeInfoOp : public JS::ForEachTrackedOptimizationTypeIn
                 
                 if ((*sp)[sp->getOffset() - 1] == ',')
                     (*sp)[sp->getOffset() - 1] = ' ';
-                if (sp->put("],") < 0)
+                if (!sp->put("],"))
                     break;
 
                 startedTypes_ = false;
             } else {
-                if (sp->put("{") < 0)
+                if (!sp->put("{"))
                     break;
             }
 
@@ -5684,7 +5641,7 @@ ReflectTrackedOptimizations(JSContext* cx, unsigned argc, Value* vp)
     const jit::IonTrackedOptimizationsRegionTable* regions =
         entry.ionEntry().trackedOptimizationsRegionTable();
 
-    if (sp.put("{\"regions\": [") < 0)
+    if (!sp.put("{\"regions\": ["))
         return false;
 
     for (uint32_t i = 0; i < regions->numEntries(); i++) {
@@ -5714,10 +5671,10 @@ ReflectTrackedOptimizations(JSContext* cx, unsigned argc, Value* vp)
         }
     }
 
-    if (sp.put("],") < 0)
+    if (!sp.put("],"))
         return false;
 
-    if (sp.put("\"opts\": [") < 0)
+    if (!sp.put("\"opts\": ["))
         return false;
 
     for (uint8_t i = 0; i < entry.ionEntry().numOptimizationAttempts(); i++) {
@@ -5734,7 +5691,7 @@ ReflectTrackedOptimizations(JSContext* cx, unsigned argc, Value* vp)
         if (sp[sp.getOffset() - 1] == ',')
             sp[sp.getOffset() - 1] = ' ';
 
-        if (sp.put("],\"attempts\":[") < 0)
+        if (!sp.put("],\"attempts\":["))
             return false;
 
         SprintOptimizationAttemptsOp aop(&sp);
@@ -5746,11 +5703,11 @@ ReflectTrackedOptimizations(JSContext* cx, unsigned argc, Value* vp)
         if (sp[sp.getOffset() - 1] == ',')
             sp[sp.getOffset() - 1] = ' ';
 
-        if (sp.put("]}") < 0)
+        if (!sp.put("]}"))
             return false;
     }
 
-    if (sp.put("]}") < 0)
+    if (!sp.put("]}"))
         return false;
 
     if (sp.hadOutOfMemory())
@@ -7620,22 +7577,8 @@ ProcessArgs(JSContext* cx, OptionParser* op)
         return Process(cx, nullptr, true); 
     }
 
-    if (const char* path = op->getStringOption("module-load-path")) {
-        RootedString jspath(cx, JS_NewStringCopyZ(cx, path));
-        if (!jspath)
-            return false;
-
-        JSString* absolutePath = js::shell::ResolvePath(cx, jspath, RootRelative);
-        if (!absolutePath)
-            return false;
-
-        sc->moduleLoadPath = UniqueChars(JS_EncodeString(cx, absolutePath));
-    } else {
-        sc->moduleLoadPath = js::shell::GetCWD();
-    }
-
-    if (!sc->moduleLoadPath)
-        return false;
+    if (const char* path = op->getStringOption("module-load-path"))
+        moduleLoadPath = path;
 
     if (!modulePaths.empty() && !InitModuleLoader(cx))
         return false;
@@ -8425,11 +8368,6 @@ main(int argc, char** argv, char** envp)
 #endif
 
     js::SetPreserveWrapperCallback(cx, DummyPreserveWrapperCallback);
-
-    cooperationState = js_new<CooperationState>();
-    JS::SetSingleThreadedExecutionCallbacks(cx,
-                                            CooperativeBeginSingleThreadedExecution,
-                                            CooperativeEndSingleThreadedExecution);
 
     result = Shell(cx, &op, envp);
 

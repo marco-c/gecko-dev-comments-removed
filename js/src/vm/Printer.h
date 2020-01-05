@@ -37,15 +37,15 @@ class GenericPrinter
   public:
     
     
-    virtual int put(const char* s, size_t len) = 0;
+    virtual bool put(const char* s, size_t len) = 0;
 
-    inline int put(const char* s) {
+    inline bool put(const char* s) {
         return put(s, strlen(s));
     }
 
     
-    virtual int printf(const char* fmt, ...) MOZ_FORMAT_PRINTF(2, 3);
-    virtual int vprintf(const char* fmt, va_list ap);
+    virtual bool printf(const char* fmt, ...) MOZ_FORMAT_PRINTF(2, 3);
+    virtual bool vprintf(const char* fmt, va_list ap);
 
     
     
@@ -110,7 +110,7 @@ class Sprinter final : public GenericPrinter
 
     
     
-    virtual int put(const char* s, size_t len) override;
+    virtual bool put(const char* s, size_t len) override;
     using GenericPrinter::put; 
 
     
@@ -119,9 +119,9 @@ class Sprinter final : public GenericPrinter
     MOZ_MUST_USE bool jsprintf(const char* fmt, ...) MOZ_FORMAT_PRINTF(2, 3);
 
     
-    virtual int vprintf(const char* fmt, va_list ap) override;
+    virtual bool vprintf(const char* fmt, va_list ap) override;
 
-    int putString(JSString* str);
+    bool putString(JSString* str);
 
     ptrdiff_t getOffset() const;
 
@@ -154,12 +154,12 @@ class Fprinter final : public GenericPrinter
 
     
     
-    virtual int put(const char* s, size_t len) override;
+    virtual bool put(const char* s, size_t len) override;
     using GenericPrinter::put; 
 
     
-    virtual int printf(const char* fmt, ...) override MOZ_FORMAT_PRINTF(2, 3);
-    virtual int vprintf(const char* fmt, va_list ap) override;
+    virtual bool printf(const char* fmt, ...) override MOZ_FORMAT_PRINTF(2, 3);
+    virtual bool vprintf(const char* fmt, va_list ap) override;
 };
 
 
@@ -200,12 +200,12 @@ class LSprinter final : public GenericPrinter
 
     
     
-    virtual int put(const char* s, size_t len) override;
+    virtual bool put(const char* s, size_t len) override;
     using GenericPrinter::put; 
 
     
-    virtual int printf(const char* fmt, ...) override MOZ_FORMAT_PRINTF(2, 3);
-    virtual int vprintf(const char* fmt, va_list ap) override;
+    virtual bool printf(const char* fmt, ...) override MOZ_FORMAT_PRINTF(2, 3);
+    virtual bool vprintf(const char* fmt, va_list ap) override;
 
     
     
