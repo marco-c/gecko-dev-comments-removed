@@ -205,8 +205,6 @@ public:
                      
                      eSpecialType_Silverlight,
                      
-                     eSpecialType_PDF,
-                     
                      eSpecialType_RealPlayer,
                      
                      eSpecialType_Unity };

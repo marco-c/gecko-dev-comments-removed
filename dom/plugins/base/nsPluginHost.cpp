@@ -206,7 +206,8 @@ nsInvalidPluginTag::nsInvalidPluginTag(const char* aFullPath, int64_t aLastModif
   mSeen(false)
 {}
 
-nsInvalidPluginTag::~nsInvalidPluginTag() = default;
+nsInvalidPluginTag::~nsInvalidPluginTag()
+{}
 
 
 static bool
@@ -1676,7 +1677,7 @@ public:
   nsPluginHost* host;
   NS_DECLARE_STATIC_IID_ACCESSOR(ClearDataFromSitesClosure_CID)
   private:
-  virtual ~ClearDataFromSitesClosure() = default;
+  virtual ~ClearDataFromSitesClosure() {}
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(ClearDataFromSitesClosure, ClearDataFromSitesClosure_CID)
@@ -1782,7 +1783,8 @@ public:
   nsresult retVal;
   NS_DECLARE_STATIC_IID_ACCESSOR(GetSitesClosure_CID)
   private:
-  virtual ~GetSitesClosure() = default;
+  virtual ~GetSitesClosure() {
+  }
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(GetSitesClosure, GetSitesClosure_CID)
@@ -1852,10 +1854,6 @@ nsPluginHost::GetSpecialType(const nsACString & aMIMEType)
   if (aMIMEType.LowerCaseEqualsASCII("audio/x-pn-realaudio-plugin")) {
     NS_WARNING("You are loading RealPlayer");
     return eSpecialType_RealPlayer;
-  }
-
-  if (aMIMEType.LowerCaseEqualsASCII("application/pdf")) {
-    return eSpecialType_PDF;
   }
 
   if (aMIMEType.LowerCaseEqualsASCII("application/vnd.unity")) {
@@ -2557,8 +2555,7 @@ nsresult nsPluginHost::FindPlugins(bool aCreatePluginList, bool * aPluginsChange
   
 
   
-  const char* const prefs[] = {NS_WIN_ACROBAT_SCAN_KEY,
-                               NS_WIN_QUICKTIME_SCAN_KEY,
+  const char* const prefs[] = {NS_WIN_QUICKTIME_SCAN_KEY,
                                NS_WIN_WMP_SCAN_KEY};
 
   uint32_t size = sizeof(prefs) / sizeof(prefs[0]);
@@ -3797,7 +3794,7 @@ nsPluginHost::CreateTempFileToPost(const char *aPostDataURL, nsIFile **aTmpFile)
     char buf[1024];
     uint32_t br, bw;
     bool firstRead = true;
-    while (true) {
+    while (1) {
       
       rv = inStream->Read(buf, 1024, &br);
       if (NS_FAILED(rv) || (int32_t)br <= 0)
@@ -4111,7 +4108,7 @@ public:
     PR_APPEND_LINK(this, &sRunnableListHead);
   }
 
-  ~nsPluginDestroyRunnable() override
+  virtual ~nsPluginDestroyRunnable()
   {
     PR_REMOVE_LINK(this);
   }
