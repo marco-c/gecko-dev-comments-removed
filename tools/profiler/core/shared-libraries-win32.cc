@@ -126,6 +126,10 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf()
     if (!EnumProcessModules(hProcess, hMods.get(), modulesNum * sizeof(HMODULE), &modulesSize)) {
       return sharedLibraryInfo;
     }
+    
+    if (modulesSize / sizeof(HMODULE) < modulesNum) {
+      modulesNum = modulesSize / sizeof(HMODULE);
+    }
   }
 
   for (unsigned int i = 0; i < modulesNum; i++) {
