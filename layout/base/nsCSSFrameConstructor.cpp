@@ -10626,6 +10626,14 @@ FrameWantsToBeInAnonymousItem(const nsIFrame* aContainerFrame,
     return true;
   }
 
+  
+  
+  if (containerType == nsGkAtoms::flexContainerFrame &&
+      aContainerFrame->HasAnyStateBits(NS_STATE_FLEX_IS_LEGACY_WEBKIT_BOX) &&
+      aFrame->GetType() == nsGkAtoms::placeholderFrame) {
+    return true;
+  }
+
   return false;
 }
 #endif
@@ -12772,10 +12780,20 @@ nsCSSFrameConstructor::FrameConstructionItem::
     return true;
   }
 
-  if (aIsWebkitBox &&
-      mStyleContext->StyleDisplay()->IsInlineOutsideStyle()) {
-    
-    return true;
+  if (aIsWebkitBox) {
+    if (mStyleContext->StyleDisplay()->IsInlineOutsideStyle()) {
+      
+      return true;
+    }
+    if (!(mFCData->mBits & FCDATA_DISALLOW_OUT_OF_FLOW) &&
+        aState.GetGeometricParent(mStyleContext->StyleDisplay(), nullptr)) {
+      
+      
+      
+      
+      
+      return true;
+    }
   }
 
   return false;
