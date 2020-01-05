@@ -328,7 +328,7 @@
   display: inline-block;
 }
 
-.ruleview-expander.theme-twisty:dir(rtl) {
+.ruleview-rule .ruleview-expander.theme-twisty:dir(rtl) {
   
   transform: none;
 }
