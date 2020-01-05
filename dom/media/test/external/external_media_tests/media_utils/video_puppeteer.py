@@ -406,8 +406,9 @@ class VideoPuppeteer(object):
         
         for field in self._last_seen_video_state._fields:
             
-            field_ascii = (str(getattr(self._last_seen_video_state, field))
-                           .encode('ascii','replace'))
+            field_ascii = (
+                unicode(getattr(self._last_seen_video_state, field))
+                .encode('ascii','replace'))
             messages += [('\t{}: {}'.format(field, field_ascii))]
         messages += '}'
         return '\n'.join(messages)
