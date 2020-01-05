@@ -60,3 +60,11 @@ details[open]::-servo-details-content {
   display: block;
 }
 
+
+
+
+
+
+svg > * {
+  display: none;
+}
