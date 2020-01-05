@@ -62,6 +62,99 @@ function IsTypedArrayEnsuringArrayBuffer(arg) {
 }
 
 
+
+function ValidateTypedArray(obj, error) {
+    if (IsObject(obj)) {
+        
+        if (IsTypedArray(obj)) {
+            
+            GetAttachedArrayBuffer(obj);
+            return true;
+        }
+
+        
+        if (IsPossiblyWrappedTypedArray(obj)) {
+            if (PossiblyWrappedTypedArrayHasDetachedBuffer(obj))
+                ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
+            return false;
+        }
+    }
+
+    
+    ThrowTypeError(error);
+}
+
+
+
+function TypedArrayCreateWithLength(constructor, length) {
+    
+    var newTypedArray = new constructor(length);
+
+    
+    var isTypedArray = ValidateTypedArray(newTypedArray, JSMSG_NON_TYPED_ARRAY_RETURNED);
+
+    
+    var len;
+    if (isTypedArray) {
+        len = TypedArrayLength(newTypedArray);
+    } else {
+        len = callFunction(CallTypedArrayMethodIfWrapped, newTypedArray, newTypedArray,
+                           "TypedArrayLength");
+    }
+
+    if (len < length)
+        ThrowTypeError(JSMSG_SHORT_TYPED_ARRAY_RETURNED, length, len);
+
+    
+    return newTypedArray;
+}
+
+
+
+function TypedArrayCreateWithBuffer(constructor, buffer, byteOffset, length) {
+    
+    var newTypedArray = new constructor(buffer, byteOffset, length);
+
+    
+    ValidateTypedArray(newTypedArray, JSMSG_NON_TYPED_ARRAY_RETURNED);
+
+    
+
+    
+    return newTypedArray;
+}
+
+
+
+function TypedArraySpeciesCreateWithLength(exemplar, length) {
+    
+
+    
+    var defaultConstructor = _ConstructorForTypedArray(exemplar);
+
+    
+    var C = SpeciesConstructor(exemplar, defaultConstructor);
+
+    
+    return TypedArrayCreateWithLength(C, length);
+}
+
+
+
+function TypedArraySpeciesCreateWithBuffer(exemplar, buffer, byteOffset, length) {
+    
+
+    
+    var defaultConstructor = _ConstructorForTypedArray(exemplar);
+
+    
+    var C = SpeciesConstructor(exemplar, defaultConstructor);
+
+    
+    return TypedArrayCreateWithBuffer(C, buffer, byteOffset, length);
+}
+
+
 function TypedArrayCopyWithin(target, start, end = undefined) {
     
     if (!IsObject(this) || !IsTypedArray(this)) {
@@ -245,6 +338,7 @@ function TypedArrayFill(value, start = 0, end = undefined) {
 }
 
 
+
 function TypedArrayFilter(callbackfn) {
     
     var O = this;
@@ -274,12 +368,6 @@ function TypedArrayFilter(callbackfn) {
     var T = arguments.length > 1 ? arguments[1] : void 0;
 
     
-    var defaultConstructor = _ConstructorForTypedArray(O);
-
-    
-    var C = SpeciesConstructor(O, defaultConstructor);
-
-    
     var kept = new List();
 
     
@@ -289,8 +377,10 @@ function TypedArrayFilter(callbackfn) {
     for (var k = 0; k < len; k++) {
         
         var kValue = O[k];
+
         
         var selected = ToBoolean(callContentFunction(callbackfn, T, kValue, k, O));
+
         
         if (selected) {
             
@@ -299,7 +389,7 @@ function TypedArrayFilter(callbackfn) {
     }
 
     
-    var A = new C(captured);
+    var A = TypedArraySpeciesCreateWithLength(O, captured);
 
     
     for (var n = 0; n < captured; n++) {
@@ -586,6 +676,7 @@ function TypedArrayLastIndexOf(searchElement, fromIndex = undefined) {
 }
 
 
+
 function TypedArrayMap(callbackfn) {
     
     var O = this;
@@ -615,18 +706,13 @@ function TypedArrayMap(callbackfn) {
     var T = arguments.length > 1 ? arguments[1] : void 0;
 
     
-    var defaultConstructor = _ConstructorForTypedArray(O);
-
-    
-    var C = SpeciesConstructor(O, defaultConstructor);
-
-    
-    var A = new C(len);
+    var A = TypedArraySpeciesCreateWithLength(O, len);
 
     
     for (var k = 0; k < len; k++) {
         
         var mappedValue = callContentFunction(callbackfn, T, O[k], k, O);
+
         
         A[k] = mappedValue;
     }
@@ -887,8 +973,8 @@ function TypedArraySet(overloaded, offset = 0) {
 }
 
 
-function TypedArraySlice(start, end) {
 
+function TypedArraySlice(start, end) {
     
     var O = this;
 
@@ -922,13 +1008,7 @@ function TypedArraySlice(start, end) {
     var count = std_Math_max(final - k, 0);
 
     
-    var defaultConstructor = _ConstructorForTypedArray(O);
-
-    
-    var C = SpeciesConstructor(O, defaultConstructor);
-
-    
-    var A = new C(count);
+    var A = TypedArraySpeciesCreateWithLength(O, count);
 
     
     var n = 0;
@@ -936,12 +1016,10 @@ function TypedArraySlice(start, end) {
     
     while (k < final) {
         
-        A[n] = O[k];
-        
-        k++;
-        
-        n++;
+        A[n++] = O[k++];
     }
+
+    
 
     
     return A;
@@ -1168,6 +1246,7 @@ function TypedArrayToLocaleString(locales = undefined, options = undefined) {
 }
 
 
+
 function TypedArraySubarray(begin, end) {
     
     var obj = this;
@@ -1206,11 +1285,7 @@ function TypedArraySubarray(begin, end) {
     var beginByteOffset = srcByteOffset + (beginIndex << elementShift);
 
     
-    var defaultConstructor = _ConstructorForTypedArray(obj);
-    var constructor = SpeciesConstructor(obj, defaultConstructor);
-
-    
-    return new constructor(buffer, beginByteOffset, newLength);
+    return TypedArraySpeciesCreateWithBuffer(obj, buffer, beginByteOffset, newLength);
 }
 
 
@@ -1279,57 +1354,42 @@ function TypedArrayIncludes(searchElement, fromIndex = 0) {
 }
 
 
+
 function TypedArrayStaticFrom(source, mapfn = undefined, thisArg = undefined) {
     
     var C = this;
 
     
     if (!IsConstructor(C))
-        ThrowTypeError(JSMSG_NOT_CONSTRUCTOR, DecompileArg(1, C));
+        ThrowTypeError(JSMSG_NOT_CONSTRUCTOR, typeof C);
 
     
-    var f = mapfn;
+    var mapping;
+    if (mapfn !== undefined) {
+        
+        if (!IsCallable(mapfn))
+            ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(1, mapfn));
+
+        
+        mapping = true;
+    } else {
+        
+        mapping = false;
+    }
 
     
-    if (f !== undefined && !IsCallable(f))
-        ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(1, f));
-
-    
-    return TypedArrayFrom(C, undefined, source, f, thisArg);
-}
-
-
-function TypedArrayFrom(constructor, target, items, mapfn, thisArg) {
-    
-    var C = constructor;
-
-    
-    assert(C === undefined || target === undefined,
-           "Neither of 'constructor' and 'target' is undefined");
-
-    
-    assert(IsConstructor(C) || C === undefined,
-           "'constructor' is neither an constructor nor undefined");
-
-    
-    assert(target === undefined || IsTypedArray(target),
-           "'target' is neither a typed array nor undefined");
-
-    
-    assert(IsCallable(mapfn) || mapfn === undefined,
-           "'target' is neither a function nor undefined");
-
-    
-    var mapping = mapfn !== undefined;
     var T = thisArg;
 
     
-    var usingIterator = GetMethod(items, std_iterator);
+    var usingIterator = GetMethod(source, std_iterator);
 
     
     if (usingIterator !== undefined) {
         
-        var iterator = GetIterator(items, usingIterator);
+        
+
+        
+        var iterator = GetIterator(source, usingIterator);
 
         
         var values = new List();
@@ -1352,9 +1412,7 @@ function TypedArrayFrom(constructor, target, items, mapfn, thisArg) {
         var len = i;
 
         
-        
-        
-        var targetObj = new C(len);
+        var targetObj = TypedArrayCreateWithLength(C, len);
 
         
         for (var k = 0; k < len; k++) {
@@ -1381,14 +1439,13 @@ function TypedArrayFrom(constructor, target, items, mapfn, thisArg) {
     
 
     
-    var arrayLike = ToObject(items);
+    var arrayLike = ToObject(source);
 
     
     var len = ToLength(arrayLike.length);
 
     
-    
-    var targetObj = new C(len);
+    var targetObj = TypedArrayCreateWithLength(C, len);
 
     
     for (var k = 0; k < len; k++) {
@@ -1407,6 +1464,7 @@ function TypedArrayFrom(constructor, target, items, mapfn, thisArg) {
 }
 
 
+
 function TypedArrayStaticOf() {
     
     var len = arguments.length;
@@ -1421,7 +1479,8 @@ function TypedArrayStaticOf() {
     if (!IsConstructor(C))
         ThrowTypeError(JSMSG_NOT_CONSTRUCTOR, typeof C);
 
-    var newObj = new C(len);
+    
+    var newObj = TypedArrayCreateWithLength(C, len);
 
     
     for (var k = 0; k < len; k++)

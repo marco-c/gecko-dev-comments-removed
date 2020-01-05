@@ -21,9 +21,11 @@ for (var constructor of anyTypedArrayConstructors) {
     
     
     log = [];
-    function C() {}
+    function C(...rest) {
+        return new constructor(...rest);
+    }
     C.from = constructor.from;
-    var c = new C;
+    var c = new C(2);
     c[0] = 1;
     c[1] = 2;
     assertDeepEq(C.from(["zero", "one"], f), c);

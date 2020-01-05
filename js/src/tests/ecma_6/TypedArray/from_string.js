@@ -1,23 +1,24 @@
 
-var from = Int8Array.from.bind(Array);
+var from = Int8Array.from.bind(Uint32Array);
+var toCodePoint = s => s.codePointAt(0);
 
 
-assertDeepEq(from("test string"),
-             ['t', 'e', 's', 't', ' ', 's', 't', 'r', 'i', 'n', 'g']);
+assertEqArray(from("test string", toCodePoint),
+             ['t', 'e', 's', 't', ' ', 's', 't', 'r', 'i', 'n', 'g'].map(toCodePoint));
 
 
 var gclef = "\uD834\uDD1E"; 
-assertDeepEq(from(gclef), [gclef]);
-assertDeepEq(from(gclef + " G"), [gclef, " ", "G"]);
+assertEqArray(from(gclef, toCodePoint), [gclef].map(toCodePoint));
+assertEqArray(from(gclef + " G", toCodePoint), [gclef, " ", "G"].map(toCodePoint));
 
 
 String.prototype[Symbol.iterator] = function* () { yield 1; yield 2; };
-assertDeepEq(from("anything"), [1, 2]);
+assertEqArray(from("anything"), [1, 2]);
 
 
 delete String.prototype[Symbol.iterator];
-assertDeepEq(from("works"), ['w', 'o', 'r', 'k', 's']);
-assertDeepEq(from(gclef), ['\uD834', '\uDD1E']);
+assertEqArray(from("works", toCodePoint), ['w', 'o', 'r', 'k', 's'].map(toCodePoint));
+assertEqArray(from(gclef, toCodePoint), ['\uD834', '\uDD1E'].map(toCodePoint));
 
 if (typeof reportCompare === "function")
     reportCompare(true, true);
