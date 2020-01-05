@@ -141,7 +141,8 @@ fn run_clang(path: &Path, arguments: &[&str]) -> (String, String) {
 
 
 fn run_llvm_config(arguments: &[&str]) -> Result<String, String> {
-    run(&env::var("LLVM_CONFIG_PATH").unwrap_or("llvm-config".into()), arguments).map(|(o, _)| o)
+    let config = env::var("LLVM_CONFIG_PATH").unwrap_or_else(|_| "llvm-config".to_string());
+    run(&config, arguments).map(|(o, _)| o)
 }
 
 

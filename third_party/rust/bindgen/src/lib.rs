@@ -176,6 +176,13 @@ impl Builder {
     }
 
     
+    pub fn emit_ir_graphviz<T: Into<String>>(mut self, path: T) -> Builder {
+        let path = path.into();
+        self.options.emit_ir_graphviz = Some(path);
+        self
+    }
+
+    
     
     
     
@@ -317,6 +324,12 @@ impl Builder {
     
     pub fn derive_debug(mut self, doit: bool) -> Self {
         self.options.derive_debug = doit;
+        self
+    }
+
+    
+    pub fn derive_default(mut self, doit: bool) -> Self {
+        self.options.derive_default = doit;
         self
     }
 
@@ -486,6 +499,9 @@ pub struct BindgenOptions {
     pub emit_ir: bool,
 
     
+    pub emit_ir_graphviz: Option<String>,
+
+    
     
     pub enable_cxx_namespaces: bool,
 
@@ -495,6 +511,10 @@ pub struct BindgenOptions {
     
     
     pub derive_debug: bool,
+
+    
+    
+    pub derive_default: bool,
 
     
     
@@ -554,6 +574,11 @@ pub struct BindgenOptions {
     pub objc_extern_crate: bool,
 }
 
+
+
+
+impl ::std::panic::UnwindSafe for BindgenOptions {}
+
 impl BindgenOptions {
     fn build(&mut self) {
         self.whitelisted_vars.build();
@@ -580,7 +605,9 @@ impl Default for BindgenOptions {
             links: vec![],
             emit_ast: false,
             emit_ir: false,
+            emit_ir_graphviz: None,
             derive_debug: true,
+            derive_default: false,
             enable_cxx_namespaces: false,
             disable_name_namespacing: false,
             unstable_rust: true,

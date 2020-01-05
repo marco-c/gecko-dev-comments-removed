@@ -8,12 +8,23 @@ extern crate unreachable;
 
 use std::cmp::Ordering;
 use std::error::Error;
-use std::ops::{Add, AddAssign, Deref, DerefMut, Div, DivAssign, Mul, MulAssign, Neg, Rem, RemAssign, Sub, SubAssign};
+use std::ops::{Add, AddAssign, Deref, DerefMut, Div, DivAssign, Mul, MulAssign, Neg, Rem,
+               RemAssign, Sub, SubAssign};
 use std::hash::{Hash, Hasher};
 use std::fmt;
 use std::io;
+use std::mem;
 use unreachable::unreachable;
 use num_traits::Float;
+
+
+const SIGN_MASK: u64 = 0x8000000000000000u64;
+const EXP_MASK: u64 = 0x7ff0000000000000u64;
+const MAN_MASK: u64 = 0x000fffffffffffffu64;
+
+
+const CANONICAL_NAN_BITS: u64 = 0x7ff8000000000000u64;
+const CANONICAL_ZERO_BITS: u64 = 0x0u64;
 
 
 
@@ -66,11 +77,7 @@ impl<T: Float + PartialOrd> Ord for OrderedFloat<T> {
 impl<T: Float + PartialEq> PartialEq for OrderedFloat<T> {
     fn eq(&self, other: &OrderedFloat<T>) -> bool {
         if self.as_ref().is_nan() {
-            if other.as_ref().is_nan() {
-                true
-            } else {
-                false
-            }
+            if other.as_ref().is_nan() { true } else { false }
         } else if other.as_ref().is_nan() {
             false
         } else {
@@ -128,7 +135,7 @@ impl<T: Float> DerefMut for OrderedFloat<T> {
     }
 }
 
-impl<T: Float + PartialEq> Eq for OrderedFloat<T> { }
+impl<T: Float + PartialEq> Eq for OrderedFloat<T> {}
 
 
 
@@ -238,19 +245,21 @@ impl<T: Float> Add<T> for NotNaN<T> {
 
     fn add(self, other: T) -> Self {
         assert!(!other.is_nan());
-        NotNaN(self.0 + other)
+        NotNaN::new(self.0 + other).expect("Addition resulted in NaN")
     }
 }
 
 impl AddAssign for NotNaN<f64> {
     fn add_assign(&mut self, other: Self) {
         self.0 += other.0;
+        assert!(!self.0.is_nan(), "Addition resulted in NaN")
     }
 }
 
 impl AddAssign for NotNaN<f32> {
     fn add_assign(&mut self, other: Self) {
         self.0 += other.0;
+        assert!(!self.0.is_nan(), "Addition resulted in NaN")
     }
 }
 
@@ -261,6 +270,7 @@ impl AddAssign<f64> for NotNaN<f64> {
     fn add_assign(&mut self, other: f64) {
         assert!(!other.is_nan());
         self.0 += other;
+        assert!(!self.0.is_nan(), "Addition resulted in NaN")
     }
 }
 
@@ -271,6 +281,7 @@ impl AddAssign<f32> for NotNaN<f32> {
     fn add_assign(&mut self, other: f32) {
         assert!(!other.is_nan());
         self.0 += other;
+        assert!(!self.0.is_nan(), "Addition resulted in NaN")
     }
 }
 
@@ -278,7 +289,7 @@ impl<T: Float> Sub for NotNaN<T> {
     type Output = Self;
 
     fn sub(self, other: Self) -> Self {
-        NotNaN(self.0 - other.0)
+        NotNaN::new(self.0 - other.0).expect("Subtraction resulted in NaN")
     }
 }
 
@@ -290,19 +301,21 @@ impl<T: Float> Sub<T> for NotNaN<T> {
 
     fn sub(self, other: T) -> Self {
         assert!(!other.is_nan());
-        NotNaN(self.0 - other)
+        NotNaN::new(self.0 - other).expect("Subtraction resulted in NaN")
     }
 }
 
 impl SubAssign for NotNaN<f64> {
     fn sub_assign(&mut self, other: Self) {
         self.0 -= other.0;
+        assert!(!self.0.is_nan(), "Subtraction resulted in NaN")
     }
 }
 
 impl SubAssign for NotNaN<f32> {
     fn sub_assign(&mut self, other: Self) {
         self.0 -= other.0;
+        assert!(!self.0.is_nan(), "Subtraction resulted in NaN")
     }
 }
 
@@ -313,6 +326,7 @@ impl SubAssign<f64> for NotNaN<f64> {
     fn sub_assign(&mut self, other: f64) {
         assert!(!other.is_nan());
         self.0 -= other;
+        assert!(!self.0.is_nan(), "Subtraction resulted in NaN")
     }
 }
 
@@ -323,6 +337,7 @@ impl SubAssign<f32> for NotNaN<f32> {
     fn sub_assign(&mut self, other: f32) {
         assert!(!other.is_nan());
         self.0 -= other;
+        assert!(!self.0.is_nan(), "Subtraction resulted in NaN")
     }
 }
 
@@ -330,7 +345,7 @@ impl<T: Float> Mul for NotNaN<T> {
     type Output = Self;
 
     fn mul(self, other: Self) -> Self {
-        NotNaN(self.0 * other.0)
+        NotNaN::new(self.0 * other.0).expect("Multiplication resulted in NaN")
     }
 }
 
@@ -342,19 +357,21 @@ impl<T: Float> Mul<T> for NotNaN<T> {
 
     fn mul(self, other: T) -> Self {
         assert!(!other.is_nan());
-        NotNaN(self.0 * other)
+        NotNaN::new(self.0 * other).expect("Multiplication resulted in NaN")
     }
 }
 
 impl MulAssign for NotNaN<f64> {
     fn mul_assign(&mut self, other: Self) {
         self.0 *= other.0;
+        assert!(!self.0.is_nan(), "Multiplication resulted in NaN")
     }
 }
 
 impl MulAssign for NotNaN<f32> {
     fn mul_assign(&mut self, other: Self) {
         self.0 *= other.0;
+        assert!(!self.0.is_nan(), "Multiplication resulted in NaN")
     }
 }
 
@@ -375,6 +392,7 @@ impl MulAssign<f32> for NotNaN<f32> {
     fn mul_assign(&mut self, other: f32) {
         assert!(!other.is_nan());
         self.0 *= other;
+        assert!(!self.0.is_nan(), "Multiplication resulted in NaN")
     }
 }
 
@@ -382,7 +400,7 @@ impl<T: Float> Div for NotNaN<T> {
     type Output = Self;
 
     fn div(self, other: Self) -> Self {
-        NotNaN(self.0 / other.0)
+        NotNaN::new(self.0 / other.0).expect("Division resulted in NaN")
     }
 }
 
@@ -394,19 +412,21 @@ impl<T: Float> Div<T> for NotNaN<T> {
 
     fn div(self, other: T) -> Self {
         assert!(!other.is_nan());
-        NotNaN(self.0 / other)
+        NotNaN::new(self.0 / other).expect("Division resulted in NaN")
     }
 }
 
 impl DivAssign for NotNaN<f64> {
     fn div_assign(&mut self, other: Self) {
         self.0 /= other.0;
+        assert!(!self.0.is_nan(), "Division resulted in NaN")
     }
 }
 
 impl DivAssign for NotNaN<f32> {
     fn div_assign(&mut self, other: Self) {
         self.0 /= other.0;
+        assert!(!self.0.is_nan(), "Division resulted in NaN")
     }
 }
 
@@ -417,6 +437,7 @@ impl DivAssign<f64> for NotNaN<f64> {
     fn div_assign(&mut self, other: f64) {
         assert!(!other.is_nan());
         self.0 /= other;
+        assert!(!self.0.is_nan(), "Division resulted in NaN")
     }
 }
 
@@ -427,6 +448,7 @@ impl DivAssign<f32> for NotNaN<f32> {
     fn div_assign(&mut self, other: f32) {
         assert!(!other.is_nan());
         self.0 /= other;
+        assert!(!self.0.is_nan(), "Division resulted in NaN")
     }
 }
 
@@ -434,7 +456,7 @@ impl<T: Float> Rem for NotNaN<T> {
     type Output = Self;
 
     fn rem(self, other: Self) -> Self {
-        NotNaN(self.0 % other.0)
+        NotNaN::new(self.0 % other.0).expect("Rem resulted in NaN")
     }
 }
 
@@ -446,19 +468,21 @@ impl<T: Float> Rem<T> for NotNaN<T> {
 
     fn rem(self, other: T) -> Self {
         assert!(!other.is_nan());
-        NotNaN(self.0 % other)
+        NotNaN::new(self.0 % other).expect("Rem resulted in NaN")
     }
 }
 
 impl RemAssign for NotNaN<f64> {
     fn rem_assign(&mut self, other: Self) {
         self.0 %= other.0;
+        assert!(!self.0.is_nan(), "Rem resulted in NaN")
     }
 }
 
 impl RemAssign for NotNaN<f32> {
     fn rem_assign(&mut self, other: Self) {
         self.0 %= other.0;
+        assert!(!self.0.is_nan(), "Rem resulted in NaN")
     }
 }
 
@@ -469,6 +493,7 @@ impl RemAssign<f64> for NotNaN<f64> {
     fn rem_assign(&mut self, other: f64) {
         assert!(!other.is_nan());
         self.0 %= other;
+        assert!(!self.0.is_nan(), "Rem resulted in NaN")
     }
 }
 
@@ -479,6 +504,7 @@ impl RemAssign<f32> for NotNaN<f32> {
     fn rem_assign(&mut self, other: f32) {
         assert!(!other.is_nan());
         self.0 %= other;
+        assert!(!self.0.is_nan(), "Rem resulted in NaN")
     }
 }
 
@@ -486,7 +512,7 @@ impl<T: Float> Neg for NotNaN<T> {
     type Output = Self;
 
     fn neg(self) -> Self {
-        NotNaN(-self.0)
+        NotNaN::new(-self.0).expect("Negation resulted in NaN")
     }
 }
 
@@ -496,7 +522,7 @@ pub struct FloatIsNaN;
 
 impl Error for FloatIsNaN {
     fn description(&self) -> &str {
-        return "NotNaN constructed with NaN"
+        return "NotNaN constructed with NaN";
     }
 }
 
@@ -514,14 +540,23 @@ impl Into<io::Error> for FloatIsNaN {
 
 #[inline]
 fn hash_float<F: Float, H: Hasher>(f: &F, state: &mut H) {
+    raw_double_bits(f).hash(state);
+}
+
+#[inline]
+fn raw_double_bits<F: Float>(f: &F) -> u64 {
+    if f.is_nan() {
+        return CANONICAL_NAN_BITS;
+    }
+
     let (man, exp, sign) = f.integer_decode();
     if man == 0 {
-        
-        
-        0
-    } else {
-        (man ^ ((exp as u64) << 48) ^ sign as u64)
-    }.hash(state)
+        return CANONICAL_ZERO_BITS;
+    }
+
+    let exp_u64 = unsafe { mem::transmute::<i16, u16>(exp) } as u64;
+    let sign_u64 = if sign > 0 { 1u64 } else { 0u64 };
+    (man & MAN_MASK) | ((exp_u64 << 52) & EXP_MASK) | ((sign_u64 << 63) & SIGN_MASK)
 }
 
 #[cfg(feature = "rustc-serialize")]
@@ -585,7 +620,10 @@ mod impl_serde {
 
     impl<T: Float + Deserialize> Deserialize for NotNaN<T> {
         fn deserialize<D: Deserializer>(d: &mut D) -> Result<Self, D::Error> {
-            T::deserialize(d).and_then(|v| NotNaN::new(v).map_err(|_| <D::Error as Error>::invalid_value("value cannot be NaN")))
+            T::deserialize(d).and_then(|v| {
+                NotNaN::new(v)
+                    .map_err(|_| <D::Error as Error>::invalid_value("value cannot be NaN"))
+            })
         }
     }
 }

@@ -64,10 +64,12 @@
 
 
 
+
+
 #![recursion_limit="200"]  
 
-extern crate encoding;
 #[macro_use] extern crate matches;
+#[cfg(test)] extern crate encoding_rs;
 #[cfg(test)] extern crate tempdir;
 #[cfg(test)] extern crate rustc_serialize;
 #[cfg(feature = "serde")] extern crate serde;
@@ -78,11 +80,12 @@ pub use rules_and_declarations::{parse_important};
 pub use rules_and_declarations::{DeclarationParser, DeclarationListParser, parse_one_declaration};
 pub use rules_and_declarations::{RuleListParser, parse_one_rule};
 pub use rules_and_declarations::{AtRuleType, QualifiedRuleParser, AtRuleParser};
-pub use from_bytes::decode_stylesheet_bytes;
+pub use from_bytes::{stylesheet_encoding, EncodingSupport};
 pub use color::{RGBA, Color, parse_color_keyword};
 pub use nth::parse_nth;
 pub use serializer::{ToCss, CssStringWriter, serialize_identifier, serialize_string, TokenSerializationType};
 pub use parser::{Parser, Delimiter, Delimiters, SourcePosition};
+pub use unicode_range::UnicodeRange;
 
 
 
@@ -161,6 +164,7 @@ mod from_bytes;
 mod color;
 mod nth;
 mod serializer;
+mod unicode_range;
 
 #[cfg(test)]
 mod tests;

@@ -2,7 +2,7 @@
 
 
 
-#[macro_use] extern crate quote;
+extern crate quote;
 extern crate syn;
 
 use std::env;

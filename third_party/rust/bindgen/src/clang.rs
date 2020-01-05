@@ -69,7 +69,11 @@ impl Cursor {
 
     
     pub fn mangling(&self) -> String {
-        unsafe { cxstring_into_string(clang_Cursor_getMangling(self.x)) }
+        if clang_Cursor_getMangling::is_loaded() {
+            unsafe { cxstring_into_string(clang_Cursor_getMangling(self.x)) }
+        } else {
+            self.spelling()
+        }
     }
 
     
@@ -132,11 +136,11 @@ impl Cursor {
         
         
         
-        self.cur_type().num_template_args()
+        self.cur_type()
+            .num_template_args()
             .or_else(|| {
-                let n: c_int = unsafe {
-                    clang_Cursor_getNumTemplateArguments(self.x)
-                };
+                let n: c_int =
+                    unsafe { clang_Cursor_getNumTemplateArguments(self.x) };
 
                 if n >= 0 {
                     Some(n as u32)
@@ -213,11 +217,6 @@ impl Cursor {
     }
 
     
-    pub fn is_anonymous(&self) -> bool {
-        unsafe { clang_Cursor_isAnonymous(self.x) != 0 }
-    }
-
-    
     pub fn is_template_specialization(&self) -> bool {
         self.specialized().is_some()
     }
@@ -226,6 +225,7 @@ impl Cursor {
     
     pub fn is_fully_specialized_template(&self) -> bool {
         self.is_template_specialization() &&
+        self.kind() != CXCursor_ClassTemplatePartialSpecialization &&
         self.num_template_args().unwrap_or(0) > 0
     }
 
@@ -362,6 +362,41 @@ impl Cursor {
     }
 
     
+    pub fn collect_children(&self) -> Vec<Cursor> {
+        let mut children = vec![];
+        self.visit(|c| {
+            children.push(c);
+            CXChildVisit_Continue
+        });
+        children
+    }
+
+    
+    pub fn has_children(&self) -> bool {
+        let mut has_children = false;
+        self.visit(|_| {
+            has_children = true;
+            CXChildVisit_Break
+        });
+        has_children
+    }
+
+    
+    pub fn has_at_least_num_children(&self, n: usize) -> bool {
+        assert!(n > 0);
+        let mut num_left = n;
+        self.visit(|_| {
+            num_left -= 1;
+            if num_left == 0 {
+                CXChildVisit_Break
+            } else {
+                CXChildVisit_Continue
+            }
+        });
+        num_left == 0
+    }
+
+    
     
     
     pub fn contains_cursor(&self, kind: CXCursorKind) -> bool {
@@ -448,7 +483,11 @@ impl Cursor {
 
     
     pub fn visibility(&self) -> CXVisibilityKind {
-        unsafe { clang_getCursorVisibility(self.x) }
+        if clang_getCursorVisibility::is_loaded() {
+            unsafe { clang_getCursorVisibility(self.x) }
+        } else {
+            CXVisibility_Default
+        }
     }
 
     
@@ -496,7 +535,23 @@ impl Cursor {
     
     
     pub fn is_mutable_field(&self) -> bool {
+        clang_CXXField_isMutable::is_loaded() &&
         unsafe { clang_CXXField_isMutable(self.x) != 0 }
+    }
+
+    
+    pub fn offset_of_field(&self) -> Result<usize, LayoutError> {
+        if !clang_Cursor_getOffsetOfField::is_loaded() {
+            return Err(LayoutError::from(-1));
+        }
+
+        let offset = unsafe { clang_Cursor_getOffsetOfField(self.x) };
+
+        if offset < 0 {
+            Err(LayoutError::from(offset as i32))
+        } else {
+            Ok(offset as usize)
+        }
     }
 
     
@@ -522,6 +577,14 @@ impl Cursor {
     
     pub fn evaluate(&self) -> Option<EvalResult> {
         EvalResult::new(*self)
+    }
+
+    
+    pub fn ret_type(&self) -> Option<Type> {
+        let rt = Type {
+            x: unsafe { clang_getCursorResultType(self.x) },
+        };
+        if rt.is_valid() { Some(rt) } else { None }
     }
 }
 
@@ -554,7 +617,7 @@ impl Hash for Cursor {
 }
 
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub struct Type {
     x: CXType,
 }
@@ -599,10 +662,6 @@ pub enum LayoutError {
 impl ::std::convert::From<i32> for LayoutError {
     fn from(val: i32) -> Self {
         use self::LayoutError::*;
-        let val = match CXTypeLayoutError::from_raw(val) {
-            Some(val) => val,
-            None => return Unknown,
-        };
 
         match val {
             CXTypeLayoutError_Invalid => Invalid,
@@ -627,6 +686,31 @@ impl Type {
             Cursor {
                 x: clang_getTypeDeclaration(self.x),
             }
+        }
+    }
+
+    
+    pub fn canonical_declaration(&self,
+                                 location: Option<&Cursor>)
+                                 -> Option<CanonicalTypeDeclaration> {
+        let mut declaration = self.declaration();
+        if !declaration.is_valid() {
+            if let Some(location) = location {
+                let mut location = *location;
+                if let Some(referenced) = location.referenced() {
+                    location = referenced;
+                }
+                if location.is_template_like() {
+                    declaration = location;
+                }
+            }
+        }
+
+        let canonical = declaration.canonical();
+        if canonical.is_valid() && canonical.kind() != CXCursor_NoDeclFound {
+            Some(CanonicalTypeDeclaration(*self, canonical))
+        } else {
+            None
         }
     }
 
@@ -704,10 +788,12 @@ impl Type {
     
     
     pub fn template_args(&self) -> Option<TypeTemplateArgIterator> {
-        self.num_template_args().map(|n| TypeTemplateArgIterator {
-            x: self.x,
-            length: n,
-            index: 0,
+        self.num_template_args().map(|n| {
+            TypeTemplateArgIterator {
+                x: self.x,
+                length: n,
+                index: 0,
+            }
         })
     }
 
@@ -809,14 +895,33 @@ impl Type {
         
         
         
-        self.template_args().map_or(false, |args| {
-            args.len() > 0
-        }) && match self.declaration().kind() {
+        self.template_args().map_or(false, |args| args.len() > 0) &&
+        match self.declaration().kind() {
             CXCursor_ClassTemplatePartialSpecialization |
             CXCursor_TypeAliasTemplateDecl |
             CXCursor_TemplateTemplateParameter => false,
             _ => true,
         }
+    }
+}
+
+
+
+
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct CanonicalTypeDeclaration(Type, Cursor);
+
+impl CanonicalTypeDeclaration {
+    
+    pub fn ty(&self) -> &Type {
+        &self.0
+    }
+
+    
+    pub fn cursor(&self) -> &Cursor {
+        &self.1
     }
 }
 
@@ -1320,8 +1425,6 @@ pub fn ast_dump(c: &Cursor, depth: isize) -> CXChildVisitResult {
                              prefix,
                              c.is_declaration()));
         print_indent(depth,
-                     format!(" {}is-anonymous? {}", prefix, c.is_anonymous()));
-        print_indent(depth,
                      format!(" {}is-inlined-function? {}",
                              prefix,
                              c.is_inlined_function()));
@@ -1363,6 +1466,12 @@ pub fn ast_dump(c: &Cursor, depth: isize) -> CXChildVisitResult {
                                  prefix,
                                  type_to_str(ty.kind())));
         }
+        if let Some(ty) = c.ret_type() {
+            print_indent(depth,
+                         format!(" {}ret-type = {}",
+                                 prefix,
+                                 type_to_str(ty.kind())));
+        }
 
         if let Some(refd) = c.referenced() {
             if refd != *c {
@@ -1370,7 +1479,6 @@ pub fn ast_dump(c: &Cursor, depth: isize) -> CXChildVisitResult {
                 print_cursor(depth,
                              String::from(prefix) + "referenced.",
                              &refd);
-                print_cursor(depth, String::from(prefix) + "referenced.", &refd);
             }
         }
 
@@ -1380,7 +1488,6 @@ pub fn ast_dump(c: &Cursor, depth: isize) -> CXChildVisitResult {
             print_cursor(depth,
                          String::from(prefix) + "canonical.",
                          &canonical);
-            print_cursor(depth, String::from(prefix) + "canonical.", &canonical);
         }
 
         if let Some(specialized) = c.specialized() {
@@ -1389,7 +1496,6 @@ pub fn ast_dump(c: &Cursor, depth: isize) -> CXChildVisitResult {
                 print_cursor(depth,
                              String::from(prefix) + "specialized.",
                              &specialized);
-                print_cursor(depth, String::from(prefix) + "specialized.", &specialized);
             }
         }
     }

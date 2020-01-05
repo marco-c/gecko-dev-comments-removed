@@ -33,6 +33,16 @@ impl ItemKind {
     }
 
     
+    pub fn kind_name(&self) -> &'static str {
+        match *self {
+            ItemKind::Module(..) => "Module",
+            ItemKind::Type(..) => "Type",
+            ItemKind::Function(..) => "Function",
+            ItemKind::Var(..) => "Var"
+        }        
+    }
+
+    
     pub fn is_module(&self) -> bool {
         self.as_module().is_some()
     }

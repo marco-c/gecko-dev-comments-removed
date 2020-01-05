@@ -3,10 +3,11 @@
 pub use ir::enum_ty::{EnumVariantCustomBehavior, EnumVariantValue};
 pub use ir::int::IntKind;
 use std::fmt;
+use std::panic::UnwindSafe;
 
 
 
-pub trait TypeChooser: fmt::Debug {
+pub trait TypeChooser: fmt::Debug + UnwindSafe {
     
     
     fn int_macro(&self, _name: &str, _value: i64) -> Option<IntKind> {

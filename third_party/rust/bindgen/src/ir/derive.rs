@@ -65,3 +65,24 @@ pub trait CanDeriveCopy<'a> {
                                 extra: Self::Extra)
                                 -> bool;
 }
+
+
+
+
+
+
+
+
+pub trait CanDeriveDefault {
+    
+    
+    
+    type Extra;
+
+    
+    
+    fn can_derive_default(&self,
+                          ctx: &BindgenContext,
+                          extra: Self::Extra)
+                          -> bool;
+}
