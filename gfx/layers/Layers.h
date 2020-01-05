@@ -906,22 +906,6 @@ public:
 
 
 
-  virtual void SetLayerBounds(const gfx::IntRect& aLayerBounds)
-  {
-    if (mSimpleAttrs.SetLayerBounds(aLayerBounds)) {
-      MOZ_LAYERS_LOG_IF_SHADOWABLE(this, ("Layer::Mutated(%p) LayerBounds", this));
-      MutatedSimple();
-    }
-  }
-
-  
-
-
-
-
-
-
-
 
 
 
@@ -1340,7 +1324,6 @@ public:
   const Maybe<LayerClip>& GetScrolledClip() const { return mSimpleAttrs.ScrolledClip(); }
   Maybe<ParentLayerIntRect> GetScrolledClipRect() const;
   uint32_t GetContentFlags() { return mSimpleAttrs.ContentFlags(); }
-  const gfx::IntRect& GetLayerBounds() const { return mSimpleAttrs.LayerBounds(); }
   const LayerIntRegion& GetVisibleRegion() const { return mVisibleRegion; }
   const ScrollMetadata& GetScrollMetadata(uint32_t aIndex) const;
   const FrameMetrics& GetFrameMetrics(uint32_t aIndex) const;

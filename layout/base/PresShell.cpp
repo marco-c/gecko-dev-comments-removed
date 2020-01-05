@@ -5313,20 +5313,29 @@ PresShell::AddCanvasBackgroundColorItem(nsDisplayListBuilder& aBuilder,
   
   
   
+  bool addedScrollingBackgroundColor = false;
   if (!aFrame->GetParent()) {
     nsIScrollableFrame* sf =
       aFrame->PresContext()->PresShell()->GetRootScrollFrameAsScrollable();
     if (sf) {
       nsCanvasFrame* canvasFrame = do_QueryFrame(sf->GetScrolledFrame());
       if (canvasFrame && canvasFrame->IsVisibleForPainting(&aBuilder)) {
-        if (AddCanvasBackgroundColor(aList, canvasFrame, bgcolor, mHasCSSBackgroundColor))
-          return;
+        addedScrollingBackgroundColor =
+          AddCanvasBackgroundColor(aList, canvasFrame, bgcolor, mHasCSSBackgroundColor);
       }
     }
   }
 
-  aList.AppendNewToBottom(
-    new (&aBuilder) nsDisplaySolidColor(&aBuilder, aFrame, aBounds, bgcolor));
+  if (!addedScrollingBackgroundColor ||
+      (nsLayoutUtils::UsesAsyncScrolling(aFrame) && NS_GET_A(bgcolor) == 255)) {
+    
+    
+    
+    
+    
+    aList.AppendNewToBottom(
+      new (&aBuilder) nsDisplaySolidColor(&aBuilder, aFrame, aBounds, bgcolor));
+  }
 }
 
 static bool IsTransparentContainerElement(nsPresContext* aPresContext)
