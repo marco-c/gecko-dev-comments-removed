@@ -946,6 +946,8 @@ ArrayBufferObject::wasmGrowToSizeInPlace(uint32_t newSize,
     
 
     
+    
+    
     if (newSize > INT32_MAX)
         return false;
 
@@ -975,6 +977,7 @@ ArrayBufferObject::wasmMovingGrowToSize(uint32_t newSize,
     
     
 
+    
     
     if (newSize > INT32_MAX)
         return false;
