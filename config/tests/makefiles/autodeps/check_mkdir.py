@@ -1,9 +1,9 @@
-#!/usr/bin/env python
-#
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this file,
-# You can obtain one at http://mozilla.org/MPL/2.0/.
-#
+
+
+
+
+
+
 
 import os
 import sys
@@ -36,7 +36,7 @@ def myopts(vals):
 
     if not hasattr(myopts, 'vals'):
         if 'argparse' in sys.modules:
-            tmp = { } # key existance enables unittest module debug
+            tmp = { } 
         else:
             tmp = { 'debug': False, 'verbose': False }
 
@@ -47,7 +47,7 @@ def myopts(vals):
         myopts.vals = tmp
 
     return myopts.vals
-    
+
 
 def path2posix(src):
     """
@@ -63,8 +63,8 @@ def path2posix(src):
     move to {build,config,tools,toolkit}/python for use in a library
     """
 
-    ## (drive, tail) = os.path.splitdrive(src)
-    ## Support path testing on all platforms
+    
+    
     drive = ''
     winpath = src.find(':')
     if -1 != winpath and 10 > winpath:
@@ -72,13 +72,13 @@ def path2posix(src):
 
     if drive:
         todo = [ '', drive.rstrip(':').lstrip('/').lstrip('\\') ]
-        todo.extend( tail.lstrip('/').lstrip('\\').split('\\') ) # c:\a => [a]
-    else: # os.name == 'posix'
+        todo.extend( tail.lstrip('/').lstrip('\\').split('\\') ) 
+    else: 
         todo = src.split('\\')
 
     dst = '/'.join(todo)
     return dst
-    
+
 
 def checkMkdir(work, debug=False):
     """
@@ -98,7 +98,7 @@ def checkMkdir(work, debug=False):
 
     logging.debug("Testing: checkMkdir")
 
-    # On Windows, don't convert paths to POSIX
+    
     skipposix = sys.platform == "win32"
     if skipposix:
         path = os.path.abspath(__file__)
@@ -109,27 +109,27 @@ def checkMkdir(work, debug=False):
         dirname_fun = posixpath.dirname
 
     src = dirname_fun(path)
-    # root is 5 directories up from path
+    
     root = reduce(lambda x, _: dirname_fun(x), xrange(5), path)
 
     rootP = path2posix(root)
     srcP  = path2posix(src)
     workP = path2posix(work)
 
-    # C:\foo -vs- /c/foo
-    # [0] command paths use /c/foo
-    # [1] os.path.exists() on mingw() requires C:\
+    
+    
+    
     paths = [
-        "mkdir_bycall", # function generated
-        "mkdir_bydep",  # explicit dependency
-        "mkdir_bygen",  # by GENERATED_DIRS macro
+        "mkdir_bycall", 
+        "mkdir_bydep",  
+        "mkdir_bygen",  
     ]
 
-    ## Use make from the parent "make check" call when available
+    
     cmd = { 'make': 'make' }
     shell0 = os.environ.get('MAKE')
     if shell0:
-        shell = os.path.splitext(shell0)[0] # strip: .exe, .py
+        shell = os.path.splitext(shell0)[0] 
         if -1 != shell.find('make'):
             print "MAKE COMMAND FOUND: %s" % (shell0)
             cmd['make'] = shell0 if skipposix else path2posix(shell0)
@@ -142,12 +142,12 @@ def checkMkdir(work, debug=False):
     args.append('deps_mkdir_bycall=%s' % paths[0])
     args.append('deps_mkdir_bydep=%s'  % paths[1])
     args.append('deps_mkdir_bygen=%s'  % paths[2])
-    args.append('checkup') # target
+    args.append('checkup') 
 
-    # Call will fail on mingw with output redirected ?!?
+    
     if debug:
         pass
-    if False: # if not debug:
+    if False: 
         args.append('>/dev/null')
 
     cmd = '%s' % (' '.join(args))
@@ -166,7 +166,7 @@ def checkMkdir(work, debug=False):
 def parseargs():
     """
     Support additional command line arguments for testing
-    
+
     Returns:
     hash - arguments of interested parsed from the command line
     """
@@ -179,14 +179,14 @@ def parseargs():
                             action="store_true",
                             default=False,
                             help='Enable debug mode')
-        # Cannot overload verbose, Verbose: False enables debugging
+        
         parser.add_argument('--verbose',
                             action="store_true",
                             default=False,
                             help='Enable verbose mode')
         parser.add_argument('unittest_args',
                             nargs='*'
-                            # help='Slurp/pass remaining args to unittest'
+                            
                             )
         opts = parser.parse_args()
 
@@ -202,7 +202,7 @@ class TestMakeLogic(unittest.TestCase):
     """
 
     def setUp(self):
-        opts = myopts(None) # NameSpace object not hash
+        opts = myopts(None) 
         self.debug   = opts['debug']
         self.verbose = opts['verbose']
 
@@ -243,7 +243,7 @@ class TestMakeLogic(unittest.TestCase):
 
         failed = True
 
-        # Exception handling is used to cleanup scratch space on error
+        
         try:
             work = tempfile.mkdtemp()
             checkMkdir(work, self.debug)
