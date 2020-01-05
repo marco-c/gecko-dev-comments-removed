@@ -43,7 +43,8 @@ pub enum Msg {
     
     
     
-    AdvanceClockMs(i32),
+    
+    AdvanceClockMs(i32, bool),
 
     
     ReflowWithNewlyLoadedWebFont,
