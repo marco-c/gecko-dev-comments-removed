@@ -1327,7 +1327,6 @@ nsIDocument::nsIDocument()
     mFontFaceSetDirty(true),
     mGetUserFontSetCalled(false),
     mPostedFlushUserFontSet(false),
-    mEverInForeground(false),
     mCompatMode(eCompatibility_FullStandards),
     mReadyState(ReadyState::READYSTATE_UNINITIALIZED),
     mStyleBackendType(StyleBackendType::None),
@@ -1426,8 +1425,6 @@ nsDocument::nsDocument(const char* aContentType)
 
   
   mPreloadPictureFoundSource.SetIsVoid(true);
-
-  mEverInForeground = false;
 }
 
 void
@@ -12212,19 +12209,10 @@ nsDocument::PostVisibilityUpdateEvent()
 void
 nsDocument::MaybeActiveMediaComponents()
 {
-  if (mEverInForeground) {
-    return;
-  }
-
   if (!mWindow) {
     return;
   }
 
-  if (mMediaContent.IsEmpty()) {
-    return;
-  }
-
-  mEverInForeground = true;
   GetWindow()->MaybeActiveMediaComponents();
 }
 

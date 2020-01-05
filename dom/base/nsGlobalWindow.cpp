@@ -989,7 +989,8 @@ nsPIDOMWindow<T>::nsPIDOMWindow(nsPIDOMWindowOuter *aOuterWindow)
   
   mWindowID(NextWindowID()), mHasNotifiedGlobalCreated(false),
   mMarkedCCGeneration(0), mServiceWorkersTestingEnabled(false),
-  mLargeAllocStatus(LargeAllocStatus::NONE)
+  mLargeAllocStatus(LargeAllocStatus::NONE),
+  mShouldResumeOnFirstActiveMediaComponent(false)
 {
   if (aOuterWindow) {
     mTimeoutManager =
@@ -4348,9 +4349,8 @@ nsPIDOMWindowInner::IsRunningTimeout()
 void
 nsPIDOMWindowOuter::NotifyCreatedNewMediaComponent()
 {
-  if (mMediaSuspend != nsISuspendedTypes::SUSPENDED_BLOCK) {
-    return;
-  }
+  
+  mShouldResumeOnFirstActiveMediaComponent = true;
 
   
   
@@ -4367,20 +4367,25 @@ nsPIDOMWindowOuter::MaybeActiveMediaComponents()
     return mOuterWindow->MaybeActiveMediaComponents();
   }
 
+  
+  
+  if (!mShouldResumeOnFirstActiveMediaComponent ||
+      mMediaSuspend != nsISuspendedTypes::SUSPENDED_BLOCK) {
+    return;
+  }
+
   nsCOMPtr<nsPIDOMWindowInner> inner = GetCurrentInnerWindow();
   if (!inner) {
     return;
   }
 
+  
   nsCOMPtr<nsIDocument> doc = inner->GetExtantDoc();
-  if (!doc) {
+  if (!doc || doc->Hidden()) {
     return;
   }
 
-  if (!doc->Hidden() &&
-      mMediaSuspend == nsISuspendedTypes::SUSPENDED_BLOCK) {
-    SetMediaSuspend(nsISuspendedTypes::NONE_SUSPENDED);
-  }
+  SetMediaSuspend(nsISuspendedTypes::NONE_SUSPENDED);
 }
 
 SuspendTypes
