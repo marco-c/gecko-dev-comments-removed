@@ -36,6 +36,8 @@ void NS_DebugBreak(uint32_t aSeverity,
 }
 } 
 
+class PRLogModuleInfo;
+
 namespace mozilla {
 
 enum class LogLevel {
