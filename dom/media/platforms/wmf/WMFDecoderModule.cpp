@@ -61,7 +61,10 @@ WMFDecoderModule::GetNumDecoderThreads()
   
   
   const int WMF_DECODER_DEFAULT = -1;
-  int32_t prefThreadCount = MediaPrefs::PDMWMFThreadCount();
+  int32_t prefThreadCount = WMF_DECODER_DEFAULT;
+  if (XRE_GetProcessType() != GeckoProcessType_GPU) {
+    prefThreadCount = MediaPrefs::PDMWMFThreadCount();
+  }
   if (prefThreadCount != WMF_DECODER_DEFAULT) {
     return std::max(prefThreadCount, 1);
   } else if (numCores > 4) {
