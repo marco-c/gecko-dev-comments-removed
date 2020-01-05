@@ -780,22 +780,18 @@ HttpObserverManager = {
           responseHeaders.applyChanges(result.responseHeaders);
         }
       }
+
+      if (kind === "opening") {
+        yield this.runChannelListener(channel, loadContext, "modify");
+      } else if (kind === "modify") {
+        yield this.runChannelListener(channel, loadContext, "afterModify");
+      }
     } catch (e) {
       Cu.reportError(e);
     }
 
-    if (kind === "opening") {
-      return this.runChannelListener(channel, loadContext, "modify");
-    } else if (kind === "modify") {
-      return this.runChannelListener(channel, loadContext, "afterModify");
-    }
-
     
-    
-    
-    
-    
-    if (shouldResume || kind === "afterModify") {
+    if (shouldResume) {
       this.maybeResume(channel);
     }
   }),
