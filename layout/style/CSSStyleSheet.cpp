@@ -208,11 +208,9 @@ CSSStyleSheet::RebuildChildList(css::Rule* aRule, void* aBuilder)
 size_t
 CSSStyleSheet::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
 {
-  size_t n = 0;
+  size_t n = StyleSheet::SizeOfIncludingThis(aMallocSizeOf);
   const CSSStyleSheet* s = this;
   while (s) {
-    n += aMallocSizeOf(s);
-
     
     
     
@@ -224,8 +222,6 @@ CSSStyleSheet::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
       n += s->mInner->SizeOfIncludingThis(aMallocSizeOf);
     }
 
-    
-    
     
     
     

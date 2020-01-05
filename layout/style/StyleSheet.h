@@ -151,7 +151,7 @@ public:
   
   inline void GetIntegrity(dom::SRIMetadata& aResult) const;
 
-  inline size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
+  virtual size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
 #ifdef DEBUG
   virtual void List(FILE* aOut = stdout, int32_t aIndex = 0) const;
 #endif

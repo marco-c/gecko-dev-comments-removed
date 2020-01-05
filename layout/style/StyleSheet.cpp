@@ -432,6 +432,24 @@ StyleSheet::AppendStyleSheet(StyleSheet* aSheet)
   DidDirty();
 }
 
+size_t
+StyleSheet::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
+{
+  size_t n = 0;
+  const StyleSheet* s = this;
+  while (s) {
+    n += aMallocSizeOf(s);
+
+    
+    
+    
+    
+
+    s = s->mNext;
+  }
+  return n;
+}
+
 #ifdef DEBUG
 void
 StyleSheet::List(FILE* out, int32_t aIndent) const
