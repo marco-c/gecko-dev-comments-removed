@@ -552,6 +552,10 @@ class BaseMarionetteTestRunner(object):
         self.e10s = e10s
 
         def gather_debug(test, status):
+            
+            if status == "SKIP":
+                return
+
             rv = {}
             marionette = test._marionette_weakref()
 
