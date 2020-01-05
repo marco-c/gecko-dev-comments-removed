@@ -1399,7 +1399,7 @@ public:
 
 
 
-  virtual void NodeInfoChanged() override;
+  virtual void NodeInfoChanged(nsIDocument* aOldDoc) override;
 
 protected:
   

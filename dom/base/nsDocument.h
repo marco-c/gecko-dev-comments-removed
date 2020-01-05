@@ -798,6 +798,9 @@ public:
 
   virtual void NotifyLayerManagerRecreated() override;
 
+  virtual void ScheduleSVGForPresAttrEvaluation(nsSVGElement* aSVG) override;
+  virtual void UnscheduleSVGForPresAttrEvaluation(nsSVGElement* aSVG) override;
+  virtual void ResolveScheduledSVGPresAttrs() override;
 
 private:
   void AddOnDemandBuiltInUASheet(mozilla::StyleSheet* aSheet);
@@ -1641,6 +1644,11 @@ private:
   
   
   bool mMaybeServiceWorkerControlled;
+
+  
+  
+  
+  nsTHashtable<nsPtrHashKey<nsSVGElement>> mLazySVGPresElements;
 
 #ifdef DEBUG
 public:

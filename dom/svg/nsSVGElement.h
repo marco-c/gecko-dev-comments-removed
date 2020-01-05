@@ -114,6 +114,12 @@ public:
 
   virtual bool IsNodeOfType(uint32_t aFlags) const override;
 
+  
+
+
+
+  virtual void NodeInfoChanged(nsIDocument* aOldDoc) override;
+
   NS_IMETHOD WalkContentStyleRules(nsRuleWalker* aRuleWalker) override;
   void WalkAnimatedContentStyleRules(nsRuleWalker* aRuleWalker);
 

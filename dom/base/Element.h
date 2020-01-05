@@ -1126,7 +1126,13 @@ public:
 
   virtual BorrowedAttrInfo GetAttrInfo(int32_t aNamespaceID, nsIAtom* aName) const;
 
-  virtual void NodeInfoChanged()
+  
+
+
+
+
+
+  virtual void NodeInfoChanged(nsIDocument* aOldDoc)
   {
   }
 

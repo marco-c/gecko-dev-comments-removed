@@ -710,7 +710,7 @@ HTMLImageElement::IntrinsicState() const
 }
 
 void
-HTMLImageElement::NodeInfoChanged()
+HTMLImageElement::NodeInfoChanged(nsIDocument* aOldDoc)
 {
   
   mLastSelectedSource = nullptr;

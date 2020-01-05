@@ -93,6 +93,7 @@ class nsPresContext;
 class nsRange;
 class nsScriptLoader;
 class nsSMILAnimationController;
+class nsSVGElement;
 class nsTextNode;
 class nsWindowSizes;
 class nsDOMCaretPosition;
@@ -1008,6 +1009,20 @@ public:
   }
 
   virtual void NotifyLayerManagerRecreated() = 0;
+
+  
+
+
+
+
+
+
+  virtual void ScheduleSVGForPresAttrEvaluation(nsSVGElement* aSVG) = 0;
+  
+  virtual void UnscheduleSVGForPresAttrEvaluation(nsSVGElement* aSVG) = 0;
+
+  
+  virtual void ResolveScheduledSVGPresAttrs() = 0;
 
 protected:
   virtual Element *GetRootElementInternal() const = 0;
