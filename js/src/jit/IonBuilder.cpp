@@ -1143,7 +1143,9 @@ IonBuilder::initEnvironmentChain(MDefinition* callee)
         
         
         
-        if (fun->needsSomeEnvironmentObject() && !info().isAnalysis()) {
+        if (fun->needsSomeEnvironmentObject() &&
+            info().analysisMode() != Analysis_ArgumentsUsage)
+        {
             if (fun->needsNamedLambdaEnvironment())
                 env = createNamedLambdaObject(callee, env);
 
