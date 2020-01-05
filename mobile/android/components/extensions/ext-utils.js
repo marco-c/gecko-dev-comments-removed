@@ -28,16 +28,45 @@ const BrowserStatusFilter = Components.Constructor(
 let tabTracker;
 let windowTracker;
 
+
+
+
+
+
+
+
+
+
+
+
+
 class BrowserProgressListener {
   constructor(browser, listener, flags) {
     this.listener = listener;
     this.browser = browser;
     this.filter = new BrowserStatusFilter(this, flags);
+    this.browser.addProgressListener(this.filter, flags);
   }
 
+  
+
+
   destroy() {
+    this.browser.removeProgressListener(this.filter);
     this.filter.removeProgressListener(this);
   }
+
+  
+
+
+
+
+
+
+
+
+
+
 
   delegate(method, ...args) {
     if (this.listener[method]) {
@@ -57,6 +86,16 @@ class BrowserProgressListener {
   onSecurityChange(webProgress, request, state) {}
 }
 
+
+
+
+
+
+
+
+
+
+
 class ProgressListenerWrapper {
   constructor(window, listener) {
     this.window = window;
@@ -73,6 +112,9 @@ class ProgressListenerWrapper {
     this.window.BrowserApp.deck.addEventListener("TabOpen", this);
   }
 
+  
+
+
   destroy() {
     this.window.BrowserApp.deck.removeEventListener("TabOpen", this);
 
@@ -81,23 +123,42 @@ class ProgressListenerWrapper {
     }
   }
 
+  
+
+
+
+
+
+
   addBrowserProgressListener(browser) {
     this.removeProgressListener(browser);
 
     let listener = new BrowserProgressListener(browser, this.listener, this.flags);
     this.listeners.set(browser, listener);
-
-    browser.addProgressListener(listener.filter, this.flags);
   }
+
+  
+
+
+
+
+
 
   removeProgressListener(browser) {
     let listener = this.listeners.get(browser);
     if (listener) {
-      browser.removeProgressListener(listener.filter);
       listener.destroy();
       this.listeners.delete(browser);
     }
   }
+
+  
+
+
+
+
+
+
 
   handleEvent(event) {
     if (event.type === "TabOpen") {
@@ -106,7 +167,6 @@ class ProgressListenerWrapper {
   }
 
 }
-
 
 class WindowTracker extends WindowTrackerBase {
   constructor(...args) {
@@ -132,6 +192,24 @@ class WindowTracker extends WindowTrackerBase {
     }
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 global.GlobalEventManager = class extends SingletonEventManager {
   constructor(context, name, event, listener) {
     super(context, name, fire => {
@@ -148,6 +226,21 @@ global.GlobalEventManager = class extends SingletonEventManager {
     });
   }
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 global.WindowEventManager = class extends SingletonEventManager {
   constructor(context, name, event, listener) {
@@ -191,6 +284,14 @@ class TabTracker extends TabTrackerBase {
     throw new ExtensionError(`Invalid tab ID: ${id}`);
   }
 
+  
+
+
+
+
+
+
+
   handleEvent(event) {
     const {BrowserApp} = event.target.ownerGlobal;
     let nativeTab = BrowserApp.getTabForBrowser(event.target);
@@ -206,9 +307,26 @@ class TabTracker extends TabTrackerBase {
     }
   }
 
+  
+
+
+
+
+
+
   emitCreated(nativeTab) {
     this.emit("tab-created", {nativeTab});
   }
+
+  
+
+
+
+
+
+
+
+
 
   emitRemoved(nativeTab, isWindowClosing) {
     let windowId = windowTracker.getId(nativeTab.browser.ownerGlobal);

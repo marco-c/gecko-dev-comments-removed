@@ -106,6 +106,21 @@ class WindowTracker extends WindowTrackerBase {
   }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 global.WindowEventManager = class extends SingletonEventManager {
   constructor(context, name, event, listener) {
     super(context, name, fire => {
