@@ -224,6 +224,12 @@ public:
   
   bool mDoneReadingHeaders;
 
+  virtual const TrackInfo* GetInfo() const
+  {
+    MOZ_RELEASE_ASSERT(false, "Can't be called directly");
+    return nullptr;
+  }
+
   
   static bool IsValidVorbisTagName(nsCString& aName);
 
@@ -618,7 +624,7 @@ public:
   
   MetadataTags* GetTags() override;
 
-  const AudioInfo& Info();
+  const TrackInfo* GetInfo() const override;
 
 private:
   bool ReconstructFlacGranulepos(void);
