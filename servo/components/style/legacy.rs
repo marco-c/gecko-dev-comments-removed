@@ -12,8 +12,8 @@ use selectors::matching::DeclarationBlock;
 use node::TElementAttributes;
 use properties::PropertyDeclaration;
 use selector_matching::Stylist;
+use smallvec::VecLike;
 
-use util::smallvec::VecLike;
 
 
 #[derive(Copy, Clone, PartialEq, Eq)]
