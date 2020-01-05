@@ -427,6 +427,16 @@ InspectorPanel.prototype = {
 
 
 
+
+  useLandscapeMode: function () {
+    let { clientWidth } = this.panelDoc.getElementById("inspector-splitter-box");
+    return clientWidth > PORTRAIT_MODE_WIDTH;
+  },
+
+  
+
+
+
   setupSplitter: function () {
     let SplitBox = this.React.createFactory(this.browserRequire(
       "devtools/client/shared/components/splitter/split-box"));
@@ -445,7 +455,8 @@ InspectorPanel.prototype = {
       }),
       endPanel: this.InspectorTabPanel({
         id: "inspector-sidebar-container"
-      })
+      }),
+      vert: this.useLandscapeMode(),
     });
 
     this._splitter = this.ReactDOM.render(splitter,
@@ -473,9 +484,8 @@ InspectorPanel.prototype = {
 
 
   onPanelWindowResize: function () {
-    let box = this.panelDoc.getElementById("inspector-splitter-box");
     this._splitter.setState({
-      vert: (box.clientWidth > PORTRAIT_MODE_WIDTH)
+      vert: this.useLandscapeMode(),
     });
   },
 
