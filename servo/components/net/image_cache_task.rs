@@ -329,7 +329,6 @@ pub fn new_image_cache_task(resource_task: ResourceTask) -> ImageCacheTask {
 
         
         let mut placeholder_url = resources_dir_path();
-        
         placeholder_url.push("rippy.jpg");
         let url = Url::from_file_path(&*placeholder_url).unwrap();
         let placeholder_image = match load_whole_resource(&resource_task, url) {
