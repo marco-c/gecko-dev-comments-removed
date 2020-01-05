@@ -587,10 +587,8 @@ GetMinAndMaxScaleForAnimationProperty(const nsIFrame* aFrame,
 
       
       
-      if (effect->NeedsBaseStyle(prop.mProperty)) {
-        StyleAnimationValue baseStyle =
-          EffectCompositor::GetBaseStyle(prop.mProperty, aFrame);
-        MOZ_ASSERT(!baseStyle.IsNull(), "The base value should be set");
+      StyleAnimationValue baseStyle = effect->BaseStyle(prop.mProperty);
+      if (!baseStyle.IsNull()) {
         
         
         UpdateMinMaxScale(aFrame, { baseStyle, nullptr }, aMinScale, aMaxScale);

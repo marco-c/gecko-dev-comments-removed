@@ -469,24 +469,6 @@ SetAnimatable(nsCSSPropertyID aProperty,
 }
 
 static void
-SetBaseAnimationStyle(nsCSSPropertyID aProperty,
-                      nsIFrame* aFrame,
-                      TransformReferenceBox& aRefBox,
-                      layers::Animatable& aBaseStyle)
-{
-  MOZ_ASSERT(aFrame);
-
-  StyleAnimationValue baseValue =
-    EffectCompositor::GetBaseStyle(aProperty, aFrame);
-  MOZ_ASSERT(!baseValue.IsNull(),
-             "The base value should be already there");
-
-  
-  
-  SetAnimatable(aProperty, { baseValue, nullptr }, aFrame, aRefBox, aBaseStyle);
-}
-
-static void
 AddAnimationForProperty(nsIFrame* aFrame, const AnimationProperty& aProperty,
                         dom::Animation* aAnimation, Layer* aLayer,
                         AnimationData& aData, bool aPending)
@@ -561,11 +543,16 @@ AddAnimationForProperty(nsIFrame* aFrame, const AnimationProperty& aProperty,
 
   
   
-  if (aAnimation->GetEffect()->AsKeyframeEffect()->
-        NeedsBaseStyle(aProperty.mProperty)) {
-    SetBaseAnimationStyle(aProperty.mProperty,
-                          aFrame, refBox,
-                          animation->baseStyle());
+
+  StyleAnimationValue baseStyle =
+    aAnimation->GetEffect()->AsKeyframeEffect()->BaseStyle(aProperty.mProperty);
+  if (!baseStyle.IsNull()) {
+    
+    
+    SetAnimatable(aProperty.mProperty,
+                  { baseStyle, nullptr },
+                  aFrame, refBox,
+                  animation->baseStyle());
   } else {
     animation->baseStyle() = null_t();
   }
