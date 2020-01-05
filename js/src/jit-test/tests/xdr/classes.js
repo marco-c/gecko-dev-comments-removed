@@ -1,5 +1,9 @@
 load(libdir + 'bytecode-cache.js');
 
+
+
+gczeal(0);
+
 var test = "new class extends class { } { constructor() { super(); } }()";
 evalWithCache(test, { assertEqBytecode : true });
 
