@@ -198,7 +198,7 @@ struct nsGridContainerFrame::TrackSize
     eMaxContentMinSizing =        0x4,
     eMinOrMaxContentMinSizing = eMinContentMinSizing | eMaxContentMinSizing,
     eIntrinsicMinSizing = eMinOrMaxContentMinSizing | eAutoMinSizing,
-    eIndefinitePercentMinSizing = 0x8,
+    
     eAutoMaxSizing =             0x10,
     eMinContentMaxSizing =       0x20,
     eMaxContentMaxSizing =       0x40,
@@ -269,7 +269,6 @@ nsGridContainerFrame::TrackSize::Initialize(nscoord aPercentageBasis,
     
     
     minSizeUnit = eStyleUnit_Auto;
-    mState |= eIndefinitePercentMinSizing;
   }
   if (::IsPercentOfIndefiniteSize(aMaxCoord, aPercentageBasis)) {
     maxSizeUnit = eStyleUnit_Auto;
