@@ -2,7 +2,6 @@
 
 
 
-use core::default::Default;
 use cssparser::Parser;
 use dom::bindings::codegen::Bindings::MediaListBinding;
 use dom::bindings::codegen::Bindings::MediaListBinding::MediaListMethods;
