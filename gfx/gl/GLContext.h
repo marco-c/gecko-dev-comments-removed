@@ -45,8 +45,6 @@
 #include "gfx2DGlue.h"
 #include "GeckoProfiler.h"
 
-class nsIWidget;
-
 namespace android {
     class GraphicBuffer;
 } 
@@ -71,6 +69,10 @@ namespace mozilla {
 
     namespace layers {
         class ColorTextureLayerProgram;
+    } 
+
+    namespace widget {
+        class CompositorWidget;
     } 
 } 
 
@@ -3376,7 +3378,7 @@ public:
             LOCAL_GL_TEXTURE_EXTERNAL : LOCAL_GL_TEXTURE_2D;
     }
 
-    virtual bool RenewSurface(nsIWidget* aWidget) { return false; }
+    virtual bool RenewSurface(widget::CompositorWidget* aWidget) { return false; }
 
     
     static bool ListHasExtension(const GLubyte* extensions,

@@ -374,14 +374,15 @@ GLContextEGL::IsCurrent() {
 }
 
 bool
-GLContextEGL::RenewSurface(nsIWidget* aWidget) {
+GLContextEGL::RenewSurface(CompositorWidget* aWidget) {
     if (!mOwnsContext) {
         return false;
     }
     
     
     ReleaseSurface();
-    mSurface = mozilla::gl::CreateSurfaceForWindow(aWidget, mConfig);
+    MOZ_ASSERT(aWidget);
+    mSurface = mozilla::gl::CreateSurfaceForWindow(aWidget->RealWidget(), mConfig);
     if (!mSurface) {
         return false;
     }

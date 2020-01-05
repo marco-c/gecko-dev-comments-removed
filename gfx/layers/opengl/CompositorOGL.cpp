@@ -1720,7 +1720,7 @@ CompositorOGL::Resume()
     return false;
 
   
-  return gl()->RenewSurface(GetWidget()->RealWidget());
+  return gl()->RenewSurface(GetWidget());
 #endif
   return true;
 }
