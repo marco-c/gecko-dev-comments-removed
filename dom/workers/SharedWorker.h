@@ -95,8 +95,7 @@ private:
   
   void
   PostMessage(JSContext* aCx, JS::Handle<JS::Value> aMessage,
-              const Sequence<JS::Value>& aTransferable,
-              ErrorResult& aRv);
+              const Sequence<JSObject*>& aTransferable, ErrorResult& aRv);
 };
 
 END_WORKERS_NAMESPACE

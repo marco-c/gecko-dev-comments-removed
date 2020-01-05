@@ -393,48 +393,34 @@ MessagePort::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto)
 
 void
 MessagePort::PostMessage(JSContext* aCx, JS::Handle<JS::Value> aMessage,
-                         const Sequence<JS::Value>& aTransferable,
+                         const Sequence<JSObject*>& aTransferable,
                          ErrorResult& aRv)
 {
   
   
 
-  JS::Rooted<JS::Value> transferable(aCx, JS::UndefinedValue());
-
-  if (!aTransferable.IsEmpty()) {
-    
-    
-    for (const JS::Value& value : aTransferable) {
-      if (!value.isObject()) {
-        continue;
-      }
-
-      MessagePort* port = nullptr;
-      nsresult rv = UNWRAP_OBJECT(MessagePort, &value.toObject(), port);
-      if (NS_FAILED(rv)) {
-        continue;
-      }
-
-      if (port == this) {
-        aRv.Throw(NS_ERROR_DOM_DATA_CLONE_ERR);
-        return;
-      }
+  
+  
+  for (uint32_t i = 0; i < aTransferable.Length(); ++i) {
+    JSObject* object = aTransferable[i];
+    if (!object) {
+      continue;
     }
 
-    
-    
-    JS::HandleValueArray elements =
-      JS::HandleValueArray::fromMarkedLocation(aTransferable.Length(),
-                                               aTransferable.Elements());
-
-    JSObject* array =
-      JS_NewArrayObject(aCx, elements);
-    if (!array) {
-      aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
+    MessagePort* port = nullptr;
+    nsresult rv = UNWRAP_OBJECT(MessagePort, object, port);
+    if (NS_SUCCEEDED(rv) && port == this) {
+      aRv.Throw(NS_ERROR_DOM_DATA_CLONE_ERR);
       return;
     }
+  }
 
-    transferable.setObject(*array);
+  JS::Rooted<JS::Value> transferable(aCx, JS::UndefinedValue());
+
+  aRv = nsContentUtils::CreateJSValueFromSequenceOfObject(aCx, aTransferable,
+                                                          &transferable);
+  if (NS_WARN_IF(aRv.Failed())) {
+    return;
   }
 
   RefPtr<SharedMessagePortMessage> data = new SharedMessagePortMessage();
