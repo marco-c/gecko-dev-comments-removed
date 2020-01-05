@@ -47,9 +47,8 @@ WebRenderLayer::RelativeToVisible(const LayerRect& aRect)
 }
 
 LayerRect
-WebRenderLayer::ParentStackingContextBounds()
+WebRenderLayer::ParentBounds()
 {
-  
   
   
   if (Layer* parent = GetLayer()->GetParent()) {
@@ -61,7 +60,7 @@ WebRenderLayer::ParentStackingContextBounds()
 LayerRect
 WebRenderLayer::RelativeToParent(const LayerRect& aRect)
 {
-  return aRect - ParentStackingContextBounds().TopLeft();
+  return aRect - ParentBounds().TopLeft();
 }
 
 LayerRect
@@ -74,7 +73,7 @@ WebRenderLayer::RelativeToParent(const LayoutDeviceRect& aRect)
 LayerPoint
 WebRenderLayer::GetOffsetToParent()
 {
-  return ParentStackingContextBounds().TopLeft();
+  return ParentBounds().TopLeft();
 }
 
 LayerRect
@@ -88,7 +87,7 @@ WebRenderLayer::TransformedVisibleBoundsRelativeToParent()
 {
   IntRect bounds = GetLayer()->GetVisibleRegion().GetBounds().ToUnknownRect();
   Rect transformed = GetLayer()->GetTransform().TransformBounds(IntRectToRect(bounds));
-  return transformed - ParentStackingContextBounds().ToUnknownRect().TopLeft();
+  return transformed - ParentBounds().ToUnknownRect().TopLeft();
 }
 
 Maybe<WrImageMask>
