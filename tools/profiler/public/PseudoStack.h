@@ -223,9 +223,7 @@ struct PseudoStack
 public:
   PseudoStack()
     : mStackPointer(0)
-    , mSleepId(0)
-    , mSleepIdObserved(0)
-    , mSleeping(false)
+    , mSleep(AWAKE)
     , mContext(nullptr)
     , mStartJSSampling(false)
     , mPrivacyMode(false)
@@ -250,7 +248,8 @@ public:
     
     
     
-    mSleepId++;
+    
+    (void)mSleep.compareExchange(SLEEPING_OBSERVED, SLEEPING_NOT_OBSERVED);
   }
 
   void addMarker(const char* aMarkerStr, ProfilerMarkerPayload* aPayload,
@@ -381,35 +380,37 @@ public:
     return n;
   }
 
-  enum SleepState { NOT_SLEEPING, SLEEPING_FIRST, SLEEPING_AGAIN };
-
   
-  
-  
-  SleepState observeSleeping()
+  bool CanDuplicateLastSampleDueToSleep()
   {
-    if (mSleeping != 0) {
-      if (mSleepIdObserved == mSleepId) {
-        return SLEEPING_AGAIN;
-      } else {
-        mSleepIdObserved = mSleepId;
-        return SLEEPING_FIRST;
-      }
-    } else {
-      return NOT_SLEEPING;
+    if (mSleep == AWAKE) {
+      return false;
     }
+
+    if (mSleep.compareExchange(SLEEPING_NOT_OBSERVED, SLEEPING_OBSERVED)) {
+      return false;
+    }
+
+    return true;
   }
 
   
   
-  void setSleeping(int sleeping)
+  void setSleeping()
   {
-    MOZ_ASSERT(mSleeping != sleeping);
-    mSleepId++;
-    mSleeping = sleeping;
+    MOZ_ASSERT(mSleep == AWAKE);
+    mSleep = SLEEPING_NOT_OBSERVED;
   }
 
-  bool isSleeping() { return !!mSleeping; }
+  
+  
+  void setAwake()
+  {
+    MOZ_ASSERT(mSleep != AWAKE);
+    mSleep = AWAKE;
+  }
+
+  bool isSleeping() { return mSleep != AWAKE; }
 
 private:
   
@@ -431,15 +432,43 @@ private:
   mozilla::sig_safe_t mStackPointer;
 
   
-  int mSleepId;
-
   
   
-  mozilla::Atomic<int> mSleepIdObserved;
-
   
   
-  mozilla::Atomic<int> mSleeping;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static const int AWAKE = 0;
+  static const int SLEEPING_NOT_OBSERVED = 1;
+  static const int SLEEPING_OBSERVED = 2;
+  mozilla::Atomic<int> mSleep;
 
 public:
   
