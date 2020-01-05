@@ -14,7 +14,7 @@
 
 #include "mozilla/TimeStamp.h"
 #include "mozilla/Vector.h"
-
+#include "mozilla/WeakPtr.h"
 #include "mozFlushType.h"
 #include "nsTObserverArray.h"
 #include "nsTArray.h"
@@ -273,7 +273,7 @@ public:
   
 
 
-  nsPresContext* PresContext() const { return mPresContext; }
+  nsPresContext* GetPresContext() const { return mPresContext; }
 
   
 
@@ -381,8 +381,8 @@ private:
   ProfilerBacktrace* mReflowCause;
   ProfilerBacktrace* mStyleCause;
 
-  nsPresContext *mPresContext; 
-                               
+  
+  mozilla::WeakPtr<nsPresContext> mPresContext;
 
   RefPtr<nsRefreshDriver> mRootRefresh;
 
