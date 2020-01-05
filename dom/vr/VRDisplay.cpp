@@ -77,10 +77,10 @@ VRDisplayCapabilities::MaxLayers() const
 }
 
  bool
-VRDisplay::RefreshVRDisplays(dom::Navigator* aNavigator)
+VRDisplay::RefreshVRDisplays(uint64_t aWindowId)
 {
   gfx::VRManagerChild* vm = gfx::VRManagerChild::Get();
-  return vm && vm->RefreshVRDisplaysWithCallback(aNavigator);
+  return vm && vm->RefreshVRDisplaysWithCallback(aWindowId);
 }
 
  void

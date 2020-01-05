@@ -1649,7 +1649,7 @@ Navigator::GetVRDisplays(ErrorResult& aRv)
 
   
   
-  if (!VRDisplay::RefreshVRDisplays(this)) {
+  if (!VRDisplay::RefreshVRDisplays(win->WindowID())) {
     p->MaybeReject(NS_ERROR_FAILURE);
     return p.forget();
   }
