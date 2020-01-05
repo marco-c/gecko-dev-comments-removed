@@ -6855,6 +6855,10 @@ var gIdentityHandler = {
     delete this._permissionReloadHint;
     return this._permissionReloadHint = document.getElementById("identity-popup-permission-reload-hint");
   },
+  get _popupExpander() {
+    delete this._popupExpander;
+    return this._popupExpander = document.getElementById("identity-popup-security-expander");
+  },
   get _permissionAnchors() {
     delete this._permissionAnchors;
     let permissionAnchors = {};
@@ -6876,10 +6880,18 @@ var gIdentityHandler = {
 
   toggleSubView(name, anchor) {
     let view = this._identityPopupMultiView;
+    let id = `identity-popup-${name}View`;
+    let subView = document.getElementById(id);
+
+    
+    
+    subView.addEventListener("ViewShowing", this);
+    subView.addEventListener("ViewHiding", this);
+
     if (view.showingSubView) {
       view.showMainView();
     } else {
-      view.showSubView(`identity-popup-${name}View`, anchor);
+      view.showSubView(id, anchor);
     }
 
     
@@ -7189,6 +7201,9 @@ var gIdentityHandler = {
         .setAttribute("href", baseURL + "insecure-password");
 
     
+    this._popupExpander.tooltipText = gNavigatorBundle.getString("identity.showDetails.tooltip");
+
+    
     let connection = "not-secure";
     if (this._isSecureInternalUI) {
       connection = "chrome";
@@ -7397,6 +7412,16 @@ var gIdentityHandler = {
   },
 
   handleEvent(event) {
+    
+    if (event.type == "ViewShowing") {
+      this._popupExpander.tooltipText = gNavigatorBundle.getString("identity.hideDetails.tooltip");
+      return;
+    }
+    if (event.type == "ViewHiding") {
+      this._popupExpander.tooltipText = gNavigatorBundle.getString("identity.showDetails.tooltip");
+      return;
+    }
+
     let elem = document.activeElement;
     let position = elem.compareDocumentPosition(this._identityPopup);
 
