@@ -7,16 +7,6 @@
 
 
 
-
-
-
-
-#define ALIGN_SHIFT 3
-#define PL_ARENA_CONST_ALIGN_MASK ((uintptr_t(1) << ALIGN_SHIFT) - 1)
-#include "plarena.h"
-
-
-
 #include "nsPresArena.h"
 
 #include "mozilla/Poison.h"
@@ -29,12 +19,8 @@
 
 using namespace mozilla;
 
-
-static const size_t ARENA_PAGE_SIZE = 8192;
-
 nsPresArena::nsPresArena()
 {
-  PL_INIT_ARENA_POOL(&mPool, "PresArena", ARENA_PAGE_SIZE);
 }
 
 nsPresArena::~nsPresArena()
@@ -52,8 +38,6 @@ nsPresArena::~nsPresArena()
     }
   }
 #endif
-
-  PL_FinishArenaPool(&mPool);
 }
 
  void
@@ -114,7 +98,7 @@ nsPresArena::Allocate(uint32_t aCode, size_t aSize)
   MOZ_ASSERT(aSize > 0, "PresArena cannot allocate zero bytes");
 
   
-  aSize = PL_ARENA_ALIGN(&mPool, aSize);
+  aSize = mPool.AlignedSize(aSize);
 
   
   
@@ -162,11 +146,7 @@ nsPresArena::Allocate(uint32_t aCode, size_t aSize)
 
   
   list->mEntriesEverAllocated++;
-  PL_ARENA_ALLOCATE(result, &mPool, aSize);
-  if (!result) {
-    NS_ABORT_OOM(aSize);
-  }
-  return result;
+  return mPool.Allocate(aSize);
 }
 
 void
@@ -198,7 +178,7 @@ nsPresArena::AddSizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf,
   
   
 
-  size_t mallocSize = PL_SizeOfArenaPoolExcludingPool(&mPool, aMallocSizeOf);
+  size_t mallocSize = mPool.SizeOfExcludingThis(aMallocSizeOf);
   mallocSize += mFreeLists.SizeOfExcludingThis(aMallocSizeOf);
 
   size_t totalSizeInFreeLists = 0;
