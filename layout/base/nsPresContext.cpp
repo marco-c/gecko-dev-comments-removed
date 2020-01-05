@@ -923,7 +923,7 @@ nsPresContext::Init(nsDeviceContext* aDeviceContext)
   mEventManager->SetPresContext(this);
 
 #ifdef RESTYLE_LOGGING
-  mRestyleLoggingEnabled = RestyleManager::RestyleLoggingInitiallyEnabled();
+  mRestyleLoggingEnabled = GeckoRestyleManager::RestyleLoggingInitiallyEnabled();
 #endif
 
 #ifdef DEBUG
@@ -944,10 +944,7 @@ nsPresContext::AttachShell(nsIPresShell* aShell, StyleBackendType aBackendType)
   if (aBackendType == StyleBackendType::Servo) {
     mRestyleManager = new ServoRestyleManager(this);
   } else {
-    
-    
-    
-    mRestyleManager = new mozilla::RestyleManager(this);
+    mRestyleManager = new GeckoRestyleManager(this);
   }
 
   

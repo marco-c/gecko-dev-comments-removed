@@ -24,8 +24,8 @@
 
 namespace mozilla {
 
-class RestyleManager;
 class ElementRestyler;
+class GeckoRestyleManager;
 
 class RestyleTracker {
 public:
@@ -52,7 +52,7 @@ public:
                     "Shouldn't have both root flags");
   }
 
-  void Init(RestyleManager* aRestyleManager) {
+  void Init(GeckoRestyleManager* aRestyleManager) {
     mRestyleManager = aRestyleManager;
   }
 
@@ -72,7 +72,7 @@ public:
   bool AddPendingRestyle(Element* aElement, nsRestyleHint aRestyleHint,
                          nsChangeHint aMinChangeHint,
                          const RestyleHintData* aRestyleHintData = nullptr,
-                         const mozilla::Maybe<Element*>& aRestyleRoot =
+                         mozilla::Maybe<Element*> aRestyleRoot =
                            mozilla::Nothing());
 
   Element* FindClosestRestyleRoot(Element* aElement);
@@ -203,7 +203,7 @@ private:
   
   
   Element::FlagsType mRestyleBits;
-  RestyleManager* mRestyleManager; 
+  GeckoRestyleManager* mRestyleManager; 
   
   
   
@@ -312,7 +312,7 @@ RestyleTracker::AddPendingRestyle(Element* aElement,
                                   nsRestyleHint aRestyleHint,
                                   nsChangeHint aMinChangeHint,
                                   const RestyleHintData* aRestyleHintData,
-                                  const mozilla::Maybe<Element*>& aRestyleRoot)
+                                  mozilla::Maybe<Element*> aRestyleRoot)
 {
   bool hadRestyleLaterSiblings =
     AddPendingRestyleToTable(aElement, aRestyleHint, aMinChangeHint,

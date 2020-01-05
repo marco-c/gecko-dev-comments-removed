@@ -34,11 +34,11 @@ namespace mozilla {
 
 
 
-class ServoRestyleManager : public RestyleManagerBase
+class ServoRestyleManager : public RestyleManager
 {
   friend class ServoStyleSet;
 public:
-  typedef RestyleManagerBase base_type;
+  typedef RestyleManager base_type;
 
   NS_INLINE_DECL_REFCOUNTING(ServoRestyleManager)
 

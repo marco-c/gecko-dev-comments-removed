@@ -15,9 +15,9 @@
 #include "nsChangeHint.h"
 
 namespace mozilla {
+class GeckoRestyleManager;
 class RestyleManager;
 class ServoRestyleManager;
-class RestyleManagerBase;
 namespace dom {
 class Element;
 } 
@@ -67,10 +67,10 @@ public:
                          StyleBackendType::Servo;
     }
 
-    RestyleManager* AsGecko()
+    GeckoRestyleManager* AsGecko()
     {
       MOZ_ASSERT(IsGecko());
-      return reinterpret_cast<RestyleManager*>(mValue);
+      return reinterpret_cast<GeckoRestyleManager*>(mValue);
     }
 
     ServoRestyleManager* AsServo()
@@ -79,10 +79,10 @@ public:
       return reinterpret_cast<ServoRestyleManager*>(mValue & ~SERVO_BIT);
     }
 
-    RestyleManager* GetAsGecko() { return IsGecko() ? AsGecko() : nullptr; }
+    GeckoRestyleManager* GetAsGecko() { return IsGecko() ? AsGecko() : nullptr; }
     ServoRestyleManager* GetAsServo() { return IsServo() ? AsServo() : nullptr; }
 
-    const RestyleManager* AsGecko() const
+    const GeckoRestyleManager* AsGecko() const
     {
       return const_cast<Ptr*>(this)->AsGecko();
     }
@@ -93,15 +93,15 @@ public:
       return const_cast<Ptr*>(this)->AsServo();
     }
 
-    const RestyleManager* GetAsGecko() const { return IsGecko() ? AsGecko() : nullptr; }
+    const GeckoRestyleManager* GetAsGecko() const { return IsGecko() ? AsGecko() : nullptr; }
     const ServoRestyleManager* GetAsServo() const { return IsServo() ? AsServo() : nullptr; }
 
-    const mozilla::RestyleManagerBase* AsBase() const {
-      return reinterpret_cast<const RestyleManagerBase*>(mValue & ~SERVO_BIT);
+    const RestyleManager* AsBase() const {
+      return reinterpret_cast<const RestyleManager*>(mValue & ~SERVO_BIT);
     }
 
-    mozilla::RestyleManagerBase* AsBase() {
-      return reinterpret_cast<RestyleManagerBase*>(mValue & ~SERVO_BIT);
+    RestyleManager* AsBase() {
+      return reinterpret_cast<RestyleManager*>(mValue & ~SERVO_BIT);
     }
 
     
@@ -170,7 +170,7 @@ public:
   {
     mPtr.mValue = aOth.mPtr.mValue;
   }
-  MOZ_IMPLICIT RestyleManagerHandle(RestyleManager* aManager)
+  MOZ_IMPLICIT RestyleManagerHandle(GeckoRestyleManager* aManager)
   {
     *this = aManager;
   }
@@ -185,7 +185,7 @@ public:
     return *this;
   }
 
-  RestyleManagerHandle& operator=(RestyleManager* aManager)
+  RestyleManagerHandle& operator=(GeckoRestyleManager* aManager)
   {
     MOZ_ASSERT(!(reinterpret_cast<uintptr_t>(aManager) & SERVO_BIT),
                "least significant bit shouldn't be set; we use it for state");

@@ -687,7 +687,7 @@ nsFrame::DestroyFrom(nsIFrame* aDestructRoot)
       
       
       
-      RestyleManager::ReframingStyleContexts* rsc =
+      GeckoRestyleManager::ReframingStyleContexts* rsc =
         presContext->RestyleManager()->AsGecko()->GetReframingStyleContexts();
       if (rsc) {
         rsc->Put(mContent, mStyleContext);
@@ -699,7 +699,7 @@ nsFrame::DestroyFrom(nsIFrame* aDestructRoot)
       EffectSet::GetEffectSet(this)) {
     
     
-    RestyleManagerBase::AnimationsWithDestroyedFrame* adf =
+    RestyleManager::AnimationsWithDestroyedFrame* adf =
       presContext->RestyleManager()->AsBase()
                  ->GetAnimationsWithDestroyedFrame();
     

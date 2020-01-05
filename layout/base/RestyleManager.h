@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_RestyleManagerBase_h
-#define mozilla_RestyleManagerBase_h
+#ifndef mozilla_RestyleManager_h
+#define mozilla_RestyleManager_h
 
 #include "mozilla/OverflowChangedTracker.h"
 #include "nsChangeHint.h"
@@ -18,7 +18,7 @@ class nsStyleChangeList;
 namespace mozilla {
 
 class EventStates;
-class RestyleManager;
+class GeckoRestyleManager;
 class ServoRestyleManager;
 
 namespace dom {
@@ -29,10 +29,10 @@ class Element;
 
 
 
-class RestyleManagerBase
+class RestyleManager
 {
 protected:
-  explicit RestyleManagerBase(nsPresContext* aPresContext);
+  explicit RestyleManager(nsPresContext* aPresContext);
 
 public:
   typedef mozilla::dom::Element Element;
@@ -92,7 +92,7 @@ public:
     
     
     
-    explicit AnimationsWithDestroyedFrame(RestyleManagerBase* aRestyleManager);
+    explicit AnimationsWithDestroyedFrame(RestyleManager* aRestyleManager);
 
     
     
@@ -119,7 +119,7 @@ public:
     void StopAnimationsWithoutFrame(nsTArray<RefPtr<nsIContent>>& aArray,
                                     CSSPseudoElementType aPseudoType);
 
-    RestyleManagerBase* mRestyleManager;
+    RestyleManager* mRestyleManager;
     AutoRestore<AnimationsWithDestroyedFrame*> mRestorePointer;
 
     
@@ -142,7 +142,7 @@ public:
   }
 
 protected:
-  ~RestyleManagerBase() {
+  ~RestyleManager() {
     MOZ_ASSERT(!mAnimationsWithDestroyedFrame,
                "leaving dangling pointers from AnimationsWithDestroyedFrame");
   }
