@@ -414,6 +414,20 @@ function isWebExtension(type) {
   return type == "webextension" || type == "webextension-theme";
 }
 
+var gThemeAliases = null;
+
+
+
+
+
+
+
+function isTheme(type) {
+  if (!gThemeAliases)
+    gThemeAliases = getAllAliasesForTypes(["theme"]);
+  return gThemeAliases.includes(type);
+}
+
 
 
 
@@ -1048,7 +1062,8 @@ var loadManifestFromWebManifest = Task.async(function*(aUri) {
   }];
 
   addon.targetPlatforms = [];
-  addon.userDisabled = false;
+  
+  addon.userDisabled = theme;
   addon.softDisabled = addon.blocklistState == Blocklist.STATE_SOFTBLOCKED;
 
   return addon;
@@ -1310,7 +1325,7 @@ let loadManifestFromRDF = Task.async(function*(aUri, aStream) {
   
   
   
-  if (addon.type == "theme") {
+  if (isTheme(addon.type)) {
     addon.userDisabled = !!LightweightThemeManager.currentTheme ||
                          addon.internalName != XPIProvider.selectedSkin;
   } else if (addon.type == "experiment") {
@@ -4110,6 +4125,10 @@ this.XPIProvider = {
                                              false);
     AddonManagerPrivate.callAddonListeners("onInstalled", addon.wrapper);
 
+    
+    if (isTheme(addon.type))
+      AddonManagerPrivate.notifyAddonChanged(addon.id, addon.type, false);
+
     return addon.wrapper;
   }),
 
@@ -4273,7 +4292,7 @@ this.XPIProvider = {
 
   addonChanged(aId, aType, aPendingRestart) {
     
-    if (aType != "theme")
+    if (!isTheme(aType))
       return;
 
     if (!aId) {
@@ -4286,14 +4305,19 @@ this.XPIProvider = {
     
     let previousTheme = null;
     let newSkin = this.defaultSkin;
-    let addons = XPIDatabase.getAddonsByType("theme");
+    let addons = XPIDatabase.getAddonsByType("theme", "webextension-theme");
     for (let theme of addons) {
       if (!theme.visible)
         return;
-      if (theme.id == aId)
+      let isChangedAddon = (theme.id == aId);
+      if (isWebExtension(theme.type)) {
+        if (!isChangedAddon)
+          this.updateAddonDisabledState(theme, true, undefined, aPendingRestart);
+      } else if (isChangedAddon) {
         newSkin = theme.internalName;
-      else if (theme.userDisabled == false && !theme.pendingUninstall)
+      } else if (theme.userDisabled == false && !theme.pendingUninstall) {
         previousTheme = theme;
+      }
     }
 
     if (aPendingRestart) {
@@ -4319,7 +4343,7 @@ this.XPIProvider = {
     
     
     if (previousTheme)
-      this.updateAddonDisabledState(previousTheme, true);
+      this.updateAddonDisabledState(previousTheme, true, undefined, aPendingRestart);
   },
 
   
@@ -4529,7 +4553,13 @@ this.XPIProvider = {
     if (aAddon.active)
       return false;
 
-    if (aAddon.type == "theme") {
+    if (isTheme(aAddon.type)) {
+      if (isWebExtension(aAddon.type)) {
+        
+        
+        let theme = XPIDatabase.getVisibleAddonForInternalName(this.currentSkin);
+        return !theme || this.disableRequiresRestart(theme);
+      }
       
       
       if (Preferences.get(PREF_EM_DSS_ENABLED))
@@ -4964,7 +4994,10 @@ this.XPIProvider = {
 
 
 
-  updateAddonDisabledState(aAddon, aUserDisabled, aSoftDisabled) {
+
+
+
+  updateAddonDisabledState(aAddon, aUserDisabled, aSoftDisabled, aPendingRestart = false) {
     if (!(aAddon.inDatabase))
       throw new Error("Can only update addon states for installed addons.");
     if (aUserDisabled !== undefined && aSoftDisabled !== undefined) {
@@ -5026,7 +5059,7 @@ this.XPIProvider = {
       AddonManagerPrivate.callAddonListeners("onOperationCancelled", wrapper);
     } else {
       if (isDisabled) {
-        var needsRestart = this.disableRequiresRestart(aAddon);
+        var needsRestart = aPendingRestart || this.disableRequiresRestart(aAddon);
         AddonManagerPrivate.callAddonListeners("onDisabling", wrapper,
                                                needsRestart);
       } else {
@@ -5083,7 +5116,7 @@ this.XPIProvider = {
     }
 
     
-    if (aAddon.type == "theme" && !isDisabled)
+    if (isTheme(aAddon.type) && !isDisabled)
       AddonManagerPrivate.notifyAddonChanged(aAddon.id, aAddon.type, needsRestart);
 
     return isDisabled;
@@ -5231,7 +5264,7 @@ this.XPIProvider = {
     }
 
     
-    if (aAddon.type == "theme" && aAddon.active)
+    if (isTheme(aAddon.type) && aAddon.active)
       AddonManagerPrivate.notifyAddonChanged(null, aAddon.type, requiresRestart);
   },
 
@@ -5270,7 +5303,7 @@ this.XPIProvider = {
     }
 
     
-    if (aAddon.type == "theme" && aAddon.active)
+    if (isTheme(aAddon.type) && aAddon.active)
       AddonManagerPrivate.notifyAddonChanged(aAddon.id, aAddon.type, false);
   }
 };
@@ -5836,6 +5869,10 @@ class AddonInstall {
         }
         XPIProvider.setTelemetry(this.addon.id, "unpacked", installedUnpacked);
         recordAddonTelemetry(this.addon);
+
+        
+        if (isTheme(this.addon.type) && this.addon.active)
+          AddonManagerPrivate.notifyAddonChanged(this.addon.id, this.addon.type, requiresRestart);
       }
     }).bind(this)).then(null, (e) => {
       logger.warn(`Failed to install ${this.file.path} from ${this.sourceURI.spec} to ${stagedAddon.path}`, e);
@@ -7351,7 +7388,7 @@ AddonWrapper.prototype = {
         return repositoryScreenshots;
     }
 
-    if (addon.type == "theme" && this.hasResource("preview.png")) {
+    if (isTheme(addon.type) && this.hasResource("preview.png")) {
       let url = this.getResourceURI("preview.png").spec;
       return [new AddonManagerPrivate.AddonScreenshot(url)];
     }
@@ -7491,11 +7528,13 @@ AddonWrapper.prototype = {
     }
 
     if (addon.inDatabase) {
-      if (addon.type == "theme" && val) {
+      let theme = isTheme(addon.type)
+      if (theme && val) {
         if (addon.internalName == XPIProvider.defaultSkin)
           throw new Error("Cannot disable the default theme");
         XPIProvider.enableDefaultTheme();
-      } else {
+      }
+      if (!(theme && val) || isWebExtension(addon.type)) {
         
         
         if (this.hidden) {
@@ -7520,10 +7559,12 @@ AddonWrapper.prototype = {
 
     if (addon.inDatabase) {
       
-      if (addon.type == "theme" && val && !addon.userDisabled) {
+      if (isTheme(addon.type) && val && !addon.userDisabled) {
         if (addon.internalName == XPIProvider.defaultSkin)
           throw new Error("Cannot disable the default theme");
         XPIProvider.enableDefaultTheme();
+        if (isWebExtension(addon.type))
+          XPIProvider.updateAddonDisabledState(addon, undefined, val);
       } else {
         XPIProvider.updateAddonDisabledState(addon, undefined, val);
       }
