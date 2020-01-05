@@ -1594,8 +1594,10 @@ struct nsStyleGridLine
   nsString mLineName;  
 
   
-  static const int32_t kMinLine;
-  static const int32_t kMaxLine;
+  
+  
+  static const int32_t kMinLine = -10000;
+  static const int32_t kMaxLine = 10000;
 
   nsStyleGridLine()
     : mHasSpan(false)
@@ -3467,7 +3469,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleColumn
 
 
 
-  static const uint32_t kMaxColumnCount;
+  static const uint32_t kMaxColumnCount = 1000;
 
   uint32_t     mColumnCount; 
   nsStyleCoord mColumnWidth; 

@@ -45,10 +45,8 @@ static_assert((((1 << nsStyleStructID_Length) - 1) &
                ~(NS_STYLE_INHERIT_MASK)) == 0,
               "Not enough bits in NS_STYLE_INHERIT_MASK");
 
-
-
-const int32_t nsStyleGridLine::kMinLine = -10000;
-const int32_t nsStyleGridLine::kMaxLine = 10000;
+ const int32_t nsStyleGridLine::kMinLine;
+ const int32_t nsStyleGridLine::kMaxLine;
 
 static bool
 EqualURIs(nsIURI *aURI1, nsIURI *aURI2)
@@ -822,7 +820,7 @@ nsStyleXUL::CalcDifference(const nsStyleXUL& aNewData) const
 
 
 
- const uint32_t nsStyleColumn::kMaxColumnCount = 1000;
+ const uint32_t nsStyleColumn::kMaxColumnCount;
 
 nsStyleColumn::nsStyleColumn(StyleStructContext aContext)
   : mColumnCount(NS_STYLE_COLUMN_COUNT_AUTO)
