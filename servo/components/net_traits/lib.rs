@@ -39,12 +39,12 @@ use hyper::header::{ContentType, Headers, ReferrerPolicy as ReferrerPolicyHeader
 use hyper::http::RawStatus;
 use hyper::mime::{Attr, Mime};
 use hyper_serde::Serde;
+use ipc_channel::SerializeError;
 use ipc_channel::ipc::{self, IpcReceiver, IpcSender};
 use ipc_channel::router::ROUTER;
 use request::{Request, RequestInit};
 use response::{HttpsState, Response};
 use servo_url::ServoUrl;
-use std::io::Error as IOError;
 use storage_thread::StorageThreadMsg;
 use websocket::header;
 
@@ -266,7 +266,7 @@ impl<T: FetchResponseListener> Action<T> for FetchResponseMsg {
 
 pub type CoreResourceThread = IpcSender<CoreResourceMsg>;
 
-pub type IpcSendResult = Result<(), IOError>;
+pub type IpcSendResult = Result<(), SerializeError>;
 
 
 

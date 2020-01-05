@@ -6,9 +6,9 @@
 
 
 
+use ipc_channel::SerializeError;
 use ipc_channel::ipc::IpcSender;
 use script_traits::ConstellationControlMsg;
-use std::io::Error as IOError;
 use std::marker::PhantomData;
 use std::rc::Rc;
 
@@ -34,7 +34,7 @@ impl EventLoop {
     }
 
     
-    pub fn send(&self, msg: ConstellationControlMsg) -> Result<(), IOError> {
+    pub fn send(&self, msg: ConstellationControlMsg) -> Result<(), SerializeError> {
         self.script_chan.send(msg)
     }
 
