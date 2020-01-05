@@ -28,11 +28,18 @@ const { classes: Cc, Constructor: CC, interfaces: Ci, utils: Cu,
 const systemPrincipal = CC('@mozilla.org/systemprincipal;1', 'nsIPrincipal')();
 const { loadSubScript } = Cc['@mozilla.org/moz/jssubscript-loader;1'].
                      getService(Ci.mozIJSSubScriptLoader);
-const { notifyObservers } = Cc['@mozilla.org/observer-service;1'].
+const { addObserver, notifyObservers } = Cc['@mozilla.org/observer-service;1'].
                         getService(Ci.nsIObserverService);
 const { XPCOMUtils } = Cu.import("resource://gre/modules/XPCOMUtils.jsm", {});
 const { NetUtil } = Cu.import("resource://gre/modules/NetUtil.jsm", {});
 const { join: pathJoin, normalize, dirname } = Cu.import("resource://gre/modules/osfile/ospath_unix.jsm");
+
+XPCOMUtils.defineLazyServiceGetter(this, "resProto",
+                                   "@mozilla.org/network/protocol;1?name=resource",
+                                   "nsIResProtocolHandler");
+XPCOMUtils.defineLazyServiceGetter(this, "zipCache",
+                                   "@mozilla.org/libjar/zip-reader-cache;1",
+                                   "nsIZipReaderCache");
 
 XPCOMUtils.defineLazyGetter(this, "XulApp", () => {
   let xulappURI = module.uri.replace("toolkit/loader.js",
@@ -202,14 +209,140 @@ function serializeStack(frames) {
 }
 Loader.serializeStack = serializeStack;
 
+class DefaultMap extends Map {
+  constructor(createItem, items = undefined) {
+    super(items);
+
+    this.createItem = createItem;
+  }
+
+  get(key) {
+    if (!this.has(key)) {
+      this.set(key, this.createItem(key));
+    }
+
+    return super.get(key);
+  }
+}
+
+const urlCache = {
+  
+
+
+
+
+
+
+
+
+
+
+  getZipFileContents(uri, baseURL) {
+    
+    
+    let basePath = addTrailingSlash(uri.JAREntry).slice(1);
+    let file = uri.JARFile.QueryInterface(Ci.nsIFileURL).file;
+
+    let enumerator = zipCache.getZip(file).findEntries("(*.js|*.json|*/)");
+
+    let results = new Set();
+    for (let entry of XPCOMUtils.IterStringEnumerator(enumerator)) {
+      if (entry.startsWith(basePath)) {
+        let path = entry.slice(basePath.length);
+
+        results.add(baseURL + path);
+      }
+    }
+
+    return results;
+  },
+
+  zipContentsCache: new DefaultMap(baseURL => {
+    let uri = NetUtil.newURI(baseURL);
+
+    if (baseURL.startsWith("resource:")) {
+      uri = NetUtil.newURI(resProto.resolveURI(uri));
+    }
+
+    if (uri instanceof Ci.nsIJARURI) {
+      return urlCache.getZipFileContents(uri, baseURL);
+    }
+
+    return null;
+  }),
+
+  filesCache: new DefaultMap(url => {
+    try {
+      let uri = NetUtil.newURI(url).QueryInterface(Ci.nsIFileURL);
+
+      return uri.file.exists();
+    } catch (e) {
+      return false;
+    }
+  }),
+
+  QueryInterface: XPCOMUtils.generateQI([Ci.nsISupportsWeakReference]),
+
+  observe() {
+    
+    
+    this.zipContentsCache.clear();
+    this.filesCache.clear();
+  },
+
+  
+
+
+
+
+
+
+
+  getBaseURL(url) {
+    
+    
+    
+    if (url.startsWith("resource://")) {
+      return /^resource:\/\/[^\/]+\//.exec(url)[0];
+    }
+
+    let uri = NetUtil.newURI(url);
+    if (uri instanceof Ci.nsIJARURI) {
+      return `jar:${uri.JARFile.spec}!/`;
+    }
+
+    return null;
+  },
+
+  
+
+
+
+
+
+
+  exists(url) {
+    if (!/\.(?:js|json)$/.test(url)) {
+      url = addTrailingSlash(url);
+    }
+
+    let baseURL = this.getBaseURL(url);
+    let scripts = baseURL && this.zipContentsCache.get(baseURL);
+    if (scripts) {
+      return scripts.has(url);
+    }
+
+    return this.filesCache.get(url);
+  },
+}
+addObserver(urlCache, "startupcache-invalidate", true);
+
 function readURI(uri) {
   let nsURI = NetUtil.newURI(uri);
   if (nsURI.scheme == "resource") {
     
     
-    let proto = Cc["@mozilla.org/network/protocol;1?name=resource"].
-                getService(Ci.nsIResProtocolHandler);
-    uri = proto.resolveURI(nsURI);
+    uri = resProto.resolveURI(nsURI);
   }
 
   let stream = NetUtil.newChannel({
@@ -227,17 +360,15 @@ function readURI(uri) {
 }
 
 
-function join(...paths) {
-  let joined = pathJoin(...paths);
-  let resolved = normalize(joined);
+function join(base, ...paths) {
+  
+  
+  let match = /^((?:resource|file|chrome)\:\/\/[^\/]*|jar:[^!]+!)(.*)/.exec(base);
+  if (match) {
+    return match[1] + normalize(pathJoin(match[2], ...paths));
+  }
 
-  
-  
-  
-  let re = /^(resource|file|chrome)(\:\/{1,3})([^\/])/;
-  let matches = joined.match(re);
-
-  return resolved.replace(re, (...args) => args[1] + matches[2] + args[3]);
+  return normalize(pathJoin(base, ...paths));
 }
 Loader.join = join;
 
@@ -460,20 +591,13 @@ Loader.resolve = resolve;
 
 
 function resolveAsFile(path) {
-  let found;
+  
+  path = normalizeExt(path);
+  if (urlCache.exists(path)) {
+    return path;
+  }
 
-  
-  
-  
-  
-  try {
-    
-    path = normalizeExt(path);
-    readURI(path);
-    found = path;
-  } catch (e) {}
-
-  return found;
+  return null;
 }
 
 
@@ -482,51 +606,50 @@ function resolveAsDirectory(path) {
   try {
     
     
-    let main = getManifestMain(JSON.parse(readURI(path + '/package.json')));
-    if (main != null) {
-      let tmpPath = join(path, main);
-      let found = resolveAsFile(tmpPath);
-      if (found)
+    let manifestPath = addTrailingSlash(path) + 'package.json';
+
+    let main = (urlCache.exists(manifestPath) &&
+                getManifestMain(JSON.parse(readURI(manifestPath))));
+    if (main) {
+      let found = resolveAsFile(join(path, main));
+      if (found) {
         return found
+      }
     }
   } catch (e) {}
 
-  try {
-    let tmpPath = path + '/index.js';
-    readURI(tmpPath);
-    return tmpPath;
-  } catch (e) {}
-
-  return null;
+  return resolveAsFile(addTrailingSlash(path) + 'index.js');
 }
 
 function resolveRelative(rootURI, modulesDir, id) {
   let fullId = join(rootURI, modulesDir, id);
-  let resolvedPath;
 
-  if ((resolvedPath = resolveAsFile(fullId)))
+  let resolvedPath = (resolveAsFile(fullId) ||
+                      resolveAsDirectory(fullId));
+  if (resolvedPath) {
     return stripBase(rootURI, resolvedPath);
-
-  if ((resolvedPath = resolveAsDirectory(fullId)))
-    return stripBase(rootURI, resolvedPath);
+  }
 
   return null;
 }
 
 
 
-function* getNodeModulePaths(start) {
-  
+function* getNodeModulePaths(rootURI, start) {
   let moduleDir = 'node_modules';
 
   let parts = start.split('/');
   while (parts.length) {
     let leaf = parts.pop();
-    if (leaf !== moduleDir)
-      yield join(...parts, leaf, moduleDir);
+    let path = join(...parts, leaf, moduleDir);
+    if (leaf !== moduleDir && urlCache.exists(join(rootURI, path))) {
+      yield path;
+    }
   }
 
-  yield moduleDir;
+  if (urlCache.exists(join(rootURI, moduleDir))) {
+    yield moduleDir;
+  }
 }
 
 
@@ -539,26 +662,30 @@ const nodeResolve = iced(function nodeResolve(id, requirer, { rootURI }) {
   id = Loader.resolve(id, requirer);
 
   
-  if (isAbsoluteURI(id))
+  if (isAbsoluteURI(id)) {
     return null;
+  }
 
   
   
   let resolvedPath;
 
-  if ((resolvedPath = resolveRelative(rootURI, "", id)))
+  if ((resolvedPath = resolveRelative(rootURI, "", id))) {
     return resolvedPath;
+  }
 
   
   
-  if (isAbsoluteURI(requirer))
+  if (isAbsoluteURI(requirer)) {
     return null;
+  }
 
   
   
-  for (let modulesDir of getNodeModulePaths(dirname(requirer))) {
-    if ((resolvedPath = resolveRelative(rootURI, modulesDir, id)))
+  for (let modulesDir of getNodeModulePaths(rootURI, dirname(requirer))) {
+    if ((resolvedPath = resolveRelative(rootURI, modulesDir, id))) {
       return resolvedPath;
+    }
   }
 
   
@@ -567,24 +694,7 @@ const nodeResolve = iced(function nodeResolve(id, requirer, { rootURI }) {
   return null;
 });
 
-
-Loader.nodeResolverCache = new Map();
-
-const nodeResolveWithCache = iced(function cacheNodeResolutions(id, requirer, { rootURI }) {
-  
-  let cacheKey = `${rootURI || ""}:${requirer}:${id}`;
-
-  
-  if (Loader.nodeResolverCache.has(cacheKey)) {
-    return Loader.nodeResolverCache.get(cacheKey);
-  }
-
-  
-  let result = nodeResolve(id, requirer, { rootURI });
-  Loader.nodeResolverCache.set(cacheKey, result);
-  return result;
-});
-Loader.nodeResolve = nodeResolveWithCache;
+Loader.nodeResolve = nodeResolve;
 
 function addTrailingSlash(path) {
   return path.replace(/\/*$/, "/");
@@ -827,9 +937,6 @@ Loader.Module = Module;
 
 
 const unload = iced(function unload(loader, reason) {
-  
-  Loader.nodeResolverCache.clear();
-
   
   
   
