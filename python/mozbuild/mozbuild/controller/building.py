@@ -172,6 +172,10 @@ class BuildMonitor(MozbuildObject):
             except ValueError:
                 os.remove(warnings_path)
 
+        
+        
+        self.instance_warnings = WarningsDatabase()
+
         def on_warning(warning):
             filename = warning['filename']
 
@@ -180,6 +184,8 @@ class BuildMonitor(MozbuildObject):
                                 filename)
 
             self.warnings_database.insert(warning)
+            
+            self.instance_warnings.insert(warning.copy())
 
         self._warnings_collector = WarningsCollector(on_warning,
                                                      objdir=self.topobjdir)

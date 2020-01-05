@@ -58,6 +58,12 @@ class CompilerWarning(dict):
         self['message'] = None
         self['flag'] = None
 
+    def copy(self):
+        """Returns a copy of this compiler warning."""
+        w = CompilerWarning()
+        w.update(self)
+        return w
+
     
     
     
