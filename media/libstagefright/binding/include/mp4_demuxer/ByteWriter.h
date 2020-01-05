@@ -70,6 +70,7 @@ public:
 private:
   mozilla::Vector<uint8_t>& mPtr;
 };
-}
+
+} 
 
 #endif
