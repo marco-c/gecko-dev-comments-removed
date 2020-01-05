@@ -9,7 +9,6 @@ module.exports = {
 
 
     "consistent-return": "warn",
-    "no-cond-assign": "warn",
     "no-ex-assign": "warn",
     "no-func-assign": "warn",
     "no-native-reassign": "warn",
