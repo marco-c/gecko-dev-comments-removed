@@ -57,6 +57,7 @@ use selectors::parser::Selector;
 use selectors::parser::parse_author_origin_selector_list_from_str;
 use std::borrow::ToOwned;
 use std::cell::{Cell, Ref, RefCell, RefMut};
+use std::cmp::max;
 use std::default::Default;
 use std::iter::{self, FilterMap, Peekable};
 use std::mem;
@@ -104,6 +105,9 @@ pub struct Node {
 
     
     flags: Cell<NodeFlags>,
+
+    
+    inclusive_descendants_version: Cell<u64>,
 
     
     
@@ -489,6 +493,19 @@ impl Node {
     }
 
     pub fn dirty_impl(&self, damage: NodeDamage, force_ancestors: bool) {
+
+        
+        
+        
+        
+        
+        let doc: Root<Node> = Root::upcast(self.owner_doc());
+        let version = max(self.get_inclusive_descendants_version(), doc.get_inclusive_descendants_version()) + 1;
+        for ancestor in self.inclusive_ancestors() {
+            ancestor.inclusive_descendants_version.set(version);
+        }
+        doc.inclusive_descendants_version.set(version);
+
         
         match damage {
             NodeDamage::NodeStyleDamaged => {}
@@ -518,6 +535,11 @@ impl Node {
             if !force_ancestors && ancestor.get_has_dirty_descendants() { break }
             ancestor.set_has_dirty_descendants(true);
         }
+    }
+
+    
+    pub fn get_inclusive_descendants_version(&self) -> u64 {
+        self.inclusive_descendants_version.get()
     }
 
     
@@ -1284,6 +1306,7 @@ impl Node {
             child_list: Default::default(),
             children_count: Cell::new(0u32),
             flags: Cell::new(flags),
+            inclusive_descendants_version: Cell::new(0),
 
             layout_data: LayoutDataRef::new(),
 
