@@ -125,6 +125,13 @@ define(function (require, exports, module) {
       };
     },
 
+    componentWillReceiveProps: function (nextProps) {
+      let { expandedNodes } = nextProps;
+      this.setState(Object.assign({}, this.state, {
+        expandedNodes,
+      }));
+    },
+
     
 
     toggle: function (nodePath) {
