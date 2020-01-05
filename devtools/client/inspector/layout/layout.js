@@ -106,8 +106,6 @@ LayoutView.prototype = {
       showBoxModelProperties: true,
 
       onHideBoxModelHighlighter,
-      onShowBoxModelEditor,
-      onShowBoxModelHighlighter,
 
       
 
@@ -130,6 +128,23 @@ LayoutView.prototype = {
             this.highlighters.showGridHighlighter(node, highlighterSettings);
           }
         }
+      },
+
+      onShowBoxModelEditor,
+      onShowBoxModelHighlighter,
+
+     
+
+
+
+
+
+
+
+
+      onShowBoxModelHighlighterForNode: (nodeFront, options) => {
+        let toolbox = this.inspector.toolbox;
+        toolbox.highlighterUtils.highlightNodeFront(nodeFront, options);
       },
 
       
