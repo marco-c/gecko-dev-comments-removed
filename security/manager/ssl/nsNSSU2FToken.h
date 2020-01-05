@@ -29,6 +29,10 @@ public:
   virtual void virtualDestroyNSSReference() override;
   void destructorSafeDestroyNSSReference();
 
+  
+  
+  nsresult Init();
+
 private:
   bool mInitialized;
   mozilla::UniquePK11SymKey mWrappingKey;

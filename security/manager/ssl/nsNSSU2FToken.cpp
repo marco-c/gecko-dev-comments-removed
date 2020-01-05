@@ -351,7 +351,7 @@ GetAttestationCertificate(const UniquePK11SlotInfo& aSlot,
 
 
 
-NS_IMETHODIMP
+nsresult
 nsNSSU2FToken::Init()
 {
   MOZ_ASSERT(NS_IsMainThread());
