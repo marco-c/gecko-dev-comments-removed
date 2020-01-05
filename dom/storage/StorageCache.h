@@ -110,6 +110,9 @@ public:
   void CloneFrom(const StorageCache* aThat);
 
   
+  int64_t GetOriginQuotaUsage(const Storage* aStorage) const;
+
+  
   void Preload();
 
   

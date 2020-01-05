@@ -540,6 +540,12 @@ StorageCache::CloneFrom(const StorageCache* aThat)
   }
 }
 
+int64_t
+StorageCache::GetOriginQuotaUsage(const Storage* aStorage) const
+{
+  return mData[GetDataSetIndex(aStorage)].mOriginQuotaUsage;
+}
+
 
 extern bool
 PrincipalsEqual(nsIPrincipal* aObjectPrincipal,

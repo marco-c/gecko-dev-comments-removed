@@ -2690,12 +2690,10 @@ nsDOMWindowUtils::ComputeAnimationDistance(nsIDOMElement* aElement,
     return NS_ERROR_ILLEGAL_VALUE;
   }
 
-  RefPtr<nsStyleContext> styleContext;
-  nsIDocument* doc = element->GetComposedDoc();
-  if (doc && doc->GetShell()) {
-    styleContext =
-      nsComputedDOMStyle::GetStyleContext(element, nullptr, doc->GetShell());
-  }
+  nsIPresShell* shell = element->GetComposedDoc()->GetShell();
+  RefPtr<nsStyleContext> styleContext = shell
+    ? nsComputedDOMStyle::GetStyleContext(element, nullptr, shell)
+    : nullptr;
   *aResult = v1.ComputeDistance(property, v2, styleContext);
   return NS_OK;
 }
@@ -4248,6 +4246,19 @@ nsDOMWindowUtils::RemoveManuallyManagedState(nsIDOMElement* aElement,
   }
 
   element->RemoveManuallyManagedStates(state);
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsDOMWindowUtils::GetStorageUsage(nsIDOMStorage* aStorage, int64_t* aRetval)
+{
+  RefPtr<Storage> storage = static_cast<Storage*>(aStorage);
+  if (!storage) {
+    return NS_ERROR_UNEXPECTED;
+  }
+
+  *aRetval = storage->GetOriginQuotaUsage();
+
   return NS_OK;
 }
 
