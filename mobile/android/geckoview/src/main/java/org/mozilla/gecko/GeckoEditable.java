@@ -488,7 +488,7 @@ final class GeckoEditable extends IGeckoEditableParent.Stub
             
             
             if (!icMaybeSendComposition(
-                    action.mSequence,  true,  false)) {
+                    action.mSequence, SEND_COMPOSITION_USE_ENTIRE_TEXT)) {
                 
                 sendCharKeyEvents(action);
             }
@@ -638,16 +638,12 @@ final class GeckoEditable extends IGeckoEditableParent.Stub
     }
 
     
-
-
-    private void icMaybeSendComposition() throws RemoteException {
-        if (!mNeedUpdateComposition) {
-            return;
-        }
-
-        icMaybeSendComposition(mText.getShadowText(),
-                                false,  true);
-    }
+    
+    
+    private static final int SEND_COMPOSITION_USE_ENTIRE_TEXT = 1;
+    
+    
+    private static final int SEND_COMPOSITION_NOTIFY_GECKO = 2;
 
     
 
@@ -656,12 +652,11 @@ final class GeckoEditable extends IGeckoEditableParent.Stub
 
 
 
-
-
-
     private boolean icMaybeSendComposition(final CharSequence sequence,
-                                           final boolean useEntireText,
-                                           final boolean notifyGecko) throws RemoteException {
+                                           final int flags) throws RemoteException {
+        final boolean useEntireText = (flags & SEND_COMPOSITION_USE_ENTIRE_TEXT) != 0;
+        final boolean notifyGecko = (flags & SEND_COMPOSITION_NOTIFY_GECKO) != 0;
+
         mNeedUpdateComposition = false;
 
         int selStart = Selection.getSelectionStart(sequence);
@@ -841,7 +836,9 @@ final class GeckoEditable extends IGeckoEditableParent.Stub
             }
 
             
-            icMaybeSendComposition();
+            if (mNeedUpdateComposition) {
+                icMaybeSendComposition(mText.getShadowText(), SEND_COMPOSITION_NOTIFY_GECKO);
+            }
             onKeyEvent(mFocusedChild, event, action, metaState,
                         false);
             icOfferAction(new Action(Action.TYPE_EVENT));
