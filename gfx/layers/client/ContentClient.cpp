@@ -331,7 +331,9 @@ ContentClientRemoteBuffer::CreateBackBuffer(const IntRect& aBufferRect)
       AbortTextureClientCreation();
       return;
     }
-    mTextureClientOnWhite->EnableBlockingReadLock();
+    
+    
+    
   }
 }
 
