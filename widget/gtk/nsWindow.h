@@ -192,6 +192,19 @@ public:
     void               OnContainerFocusOutEvent(GdkEventFocus *aEvent);
     gboolean           OnKeyPressEvent(GdkEventKey *aEvent);
     gboolean           OnKeyReleaseEvent(GdkEventKey *aEvent);
+
+    
+
+
+
+
+
+
+
+
+
+    bool               MaybeDispatchContextMenuEvent(const GdkEventKey* aEvent);
+
     void               OnScrollEvent(GdkEventScroll *aEvent);
     void               OnVisibilityNotifyEvent(GdkEventVisibility *aEvent);
     void               OnWindowStateEvent(GtkWidget *aWidget,
