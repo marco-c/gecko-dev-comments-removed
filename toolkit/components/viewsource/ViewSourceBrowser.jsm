@@ -190,7 +190,7 @@ ViewSourceBrowser.prototype = {
 
       
       
-      this.updateBrowserRemoteness(browser.isRemoteBrowser);
+      this.updateBrowserRemoteness(browser.isRemoteBrowser, browser.remoteType);
     } else if (outerWindowID) {
       throw new Error("Must supply the browser if passing the outerWindowID");
     }
@@ -222,8 +222,11 @@ ViewSourceBrowser.prototype = {
 
 
 
-  updateBrowserRemoteness(shouldBeRemote) {
-    if (this.browser.isRemoteBrowser != shouldBeRemote) {
+
+
+  updateBrowserRemoteness(shouldBeRemote, remoteType) {
+    if (this.browser.isRemoteBrowser != shouldBeRemote ||
+        this.browser.remoteType != remoteType) {
       
       
       
