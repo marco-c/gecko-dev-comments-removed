@@ -391,9 +391,6 @@ pref("dom.meta-viewport.enabled", true);
 #endif
 
 
-pref("dom.sms.enabled", true);
-
-
 pref("network.gonk.ms-release-mms-connection", 30000);
 
 

@@ -1609,10 +1609,6 @@ public abstract class GeckoApp
         
         mAppStateListeners = new LinkedList<GeckoAppShell.AppStateListener>();
 
-        if (SmsManager.isEnabled()) {
-            SmsManager.getInstance().start();
-        }
-
         mPromptService = new PromptService(this);
 
         

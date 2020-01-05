@@ -4736,22 +4736,6 @@ pref("dom.vibrator.max_vibrate_list_len", 128);
 pref("dom.battery.enabled", true);
 
 
-pref("dom.sms.enabled", false);
-
-
-pref("dom.sms.strict7BitEncoding", false);
-pref("dom.sms.requestStatusReport", true);
-
-
-pref("dom.sms.defaultServiceId", 0);
-
-
-
-
-
-pref("dom.sms.maxReadAheadEntries", 0);
-
-
 
 pref("dom.push.enabled", false);
 
