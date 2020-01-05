@@ -296,15 +296,18 @@ nsTableColGroupFrame::RemoveFrame(ChildListID     aListID,
 #ifdef DEBUG
         nsIFrame* providerFrame;
         nsStyleContext* psc = colFrame->GetParentStyleContext(&providerFrame);
-        if (colFrame->StyleContext()->GetParent() == psc) {
-          NS_ASSERTION(col->StyleContext() == colFrame->StyleContext() &&
-                       col->GetContent() == colFrame->GetContent(),
-                       "How did that happen??");
+        if (psc->StyleSource().IsGeckoRuleNodeOrNull()) {
+          
+          if (colFrame->StyleContext()->GetParent() == psc) {
+            NS_ASSERTION(col->StyleContext() == colFrame->StyleContext() &&
+                         col->GetContent() == colFrame->GetContent(),
+                         "How did that happen??");
+          }
+          
+          
+          
+          
         }
-        
-        
-        
-        
 #endif
         nextCol = col->GetNextCol();
         RemoveFrame(kPrincipalList, col);
