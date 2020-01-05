@@ -287,6 +287,27 @@
 
 
 
+#if defined(__GNUC__) || defined(__clang__)
+#  define MOZ_MAYBE_UNUSED __attribute__ ((__unused__))
+#elif defined(_MSC_VER)
+#  define MOZ_MAYBE_UNUSED __pragma(warning(suppress:4505))
+#else
+#  define MOZ_MAYBE_UNUSED
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
