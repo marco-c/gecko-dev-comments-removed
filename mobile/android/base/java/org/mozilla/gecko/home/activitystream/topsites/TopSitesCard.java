@@ -5,6 +5,7 @@
 package org.mozilla.gecko.home.activitystream.topsites;
 
 import android.graphics.Color;
+import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.support.v4.widget.TextViewCompat;
 import android.support.v7.widget.RecyclerView;
@@ -87,13 +88,6 @@ import java.util.concurrent.Future;
         this.topSite = topSite;
         this.absolutePosition = absolutePosition;
 
-        ActivityStream.extractLabel(itemView.getContext(), topSite.getUrl(), true, new ActivityStream.LabelCallback() {
-            @Override
-            public void onLabelExtracted(String label) {
-                title.setText(label);
-            }
-        });
-
         if (ongoingIconLoad != null) {
             ongoingIconLoad.cancel(true);
         }
@@ -112,6 +106,16 @@ import java.util.concurrent.Future;
         }
         TextViewCompat.setCompoundDrawablesRelativeWithIntrinsicBounds(title, pinDrawable, null, null, null);
 
+        
+        
+        ActivityStream.extractLabel(itemView.getContext(), topSite.getUrl(), true, new ActivityStream.LabelCallback() {
+            @Override
+            public void onLabelExtracted(String label) {
+                
+                
+                ViewUtil.setCenteredText(title, label, title.getPaddingTop());
+            }
+        });
     }
 
     @Override
