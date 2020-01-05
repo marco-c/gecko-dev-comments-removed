@@ -235,6 +235,11 @@ impl NonTSPseudoClass {
             ServoNonZeroBorder => ElementState::empty(),
         }
     }
+
+    
+    pub fn needs_cache_revalidation(&self) -> bool {
+        self.state_flag().is_empty()
+    }
 }
 
 

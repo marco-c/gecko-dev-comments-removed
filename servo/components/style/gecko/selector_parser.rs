@@ -343,6 +343,12 @@ impl NonTSPseudoClass {
     }
 
     
+    pub fn needs_cache_revalidation(&self) -> bool {
+        self.state_flag().is_empty() &&
+        !matches!(*self, NonTSPseudoClass::MozAny(_))
+    }
+
+    
     pub fn to_gecko_pseudoclasstype(&self) -> Option<CSSPseudoClassType> {
         macro_rules! gecko_type {
             (_) => (None);

@@ -42,7 +42,11 @@ macro_rules! with_all_bounds {
 
         /// This trait allows to define the parser implementation in regards
         /// of pseudo-classes/elements
-        pub trait SelectorImpl: Sized {
+        ///
+        /// NB: We need Clone so that we can derive(Clone) on struct with that
+        /// are parameterized on SelectorImpl. See
+        /// https://github.com/rust-lang/rust/issues/26925
+        pub trait SelectorImpl: Clone + Sized {
             type AttrValue: $($InSelector)*;
             type Identifier: $($InSelector)* + PrecomputedHash;
             type ClassName: $($InSelector)* + PrecomputedHash;
@@ -162,6 +166,27 @@ impl<Impl: SelectorImpl> SelectorInner<Impl> {
         SelectorInner {
             complex: c,
             ancestor_hashes: hashes,
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn slice_to_first_ancestor_combinator(&self) -> Self {
+        let maybe_pos = self.complex.iter_raw()
+                            .position(|s| s.as_combinator()
+                                           .map_or(false, |c| c.is_ancestor()));
+        match maybe_pos {
+            None => self.clone(),
+            Some(index) => SelectorInner {
+                complex: self.complex.slice_to(index),
+                ancestor_hashes: self.ancestor_hashes.clone(),
+            },
         }
     }
 
@@ -316,25 +341,23 @@ impl<Impl: SelectorImpl> ComplexSelector<Impl> {
     }
 
     
+    
+    pub fn slice_to(&self, index: usize) -> Self {
+        
+        
+        ComplexSelector(self.0.clone().slice_from(self.0.len() - index))
+    }
+
+    
     pub fn from_vec(vec: Vec<Component<Impl>>) -> Self {
         ComplexSelector(ArcSlice::new(vec.into_boxed_slice()))
     }
 }
 
+#[derive(Clone)]
 pub struct SelectorIter<'a, Impl: 'a + SelectorImpl> {
     iter: Rev<slice::Iter<'a, Component<Impl>>>,
     next_combinator: Option<Combinator>,
-}
-
-
-
-impl<'a, Impl: 'a + SelectorImpl> Clone for SelectorIter<'a, Impl> {
-    fn clone(&self) -> Self {
-        SelectorIter {
-            iter: self.iter.clone(),
-            next_combinator: self.next_combinator.clone(),
-        }
-    }
 }
 
 impl<'a, Impl: 'a + SelectorImpl> SelectorIter<'a, Impl> {
@@ -504,6 +527,14 @@ impl<Impl: SelectorImpl> Component<Impl> {
     
     pub fn is_combinator(&self) -> bool {
         matches!(*self, Component::Combinator(_))
+    }
+
+    
+    pub fn as_combinator(&self) -> Option<Combinator> {
+        match *self {
+            Component::Combinator(c) => Some(c),
+            _ => None,
+        }
     }
 }
 

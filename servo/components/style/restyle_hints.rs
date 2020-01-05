@@ -417,32 +417,6 @@ fn is_attr_selector(sel: &Component<SelectorImpl>) -> bool {
     }
 }
 
-
-
-
-
-
-
-fn needs_cache_revalidation(sel: &Component<SelectorImpl>) -> bool {
-    match *sel {
-        Component::Empty |
-        Component::FirstChild |
-        Component::LastChild |
-        Component::OnlyChild |
-        Component::NthChild(..) |
-        Component::NthLastChild(..) |
-        Component::NthOfType(..) |
-        Component::NthLastOfType(..) |
-        Component::FirstOfType |
-        Component::LastOfType |
-        Component::OnlyOfType => true,
-        
-        
-        Component::NonTSPseudoClass(ref p) => p.state_flag().is_empty(),
-        _ => false,
-    }
-}
-
 fn combinator_to_restyle_hint(combinator: Option<Combinator>) -> RestyleHint {
     match combinator {
         None => RESTYLE_SELF,
@@ -509,7 +483,6 @@ struct Dependency {
 struct SensitivitiesVisitor {
     sensitivities: Sensitivities,
     hint: RestyleHint,
-    needs_revalidation: bool,
 }
 
 impl SelectorVisitor for SensitivitiesVisitor {
@@ -519,7 +492,6 @@ impl SelectorVisitor for SensitivitiesVisitor {
                               _: SelectorIter<SelectorImpl>,
                               combinator: Option<Combinator>) -> bool {
         self.hint |= combinator_to_restyle_hint(combinator);
-        self.needs_revalidation |= self.hint.contains(RESTYLE_LATER_SIBLINGS);
 
         true
     }
@@ -529,11 +501,6 @@ impl SelectorVisitor for SensitivitiesVisitor {
 
         if !self.sensitivities.attrs {
             self.sensitivities.attrs = is_attr_selector(s);
-            self.needs_revalidation = true;
-        }
-
-        if !self.needs_revalidation {
-            self.needs_revalidation = needs_cache_revalidation(s);
         }
 
         true
@@ -571,21 +538,17 @@ impl DependencySet {
     }
 
     
-    
-    
-    pub fn note_selector(&mut self, selector: &Selector<SelectorImpl>) -> bool {
+    pub fn note_selector(&mut self, selector: &Selector<SelectorImpl>) {
         let mut is_pseudo_element = selector.pseudo_element.is_some();
 
         let mut next = Some(selector.inner.complex.clone());
         let mut combinator = None;
-        let mut needs_revalidation = false;
 
         while let Some(current) = next.take() {
             
             let mut visitor = SensitivitiesVisitor {
                 sensitivities: Sensitivities::new(),
                 hint: combinator_to_restyle_hint(combinator),
-                needs_revalidation: false,
             };
 
             if is_pseudo_element {
@@ -618,7 +581,6 @@ impl DependencySet {
             }
 
             
-            needs_revalidation |= visitor.needs_revalidation;
             if !visitor.sensitivities.is_empty() {
                 self.add_dependency(Dependency {
                     sensitivities: visitor.sensitivities,
@@ -628,8 +590,6 @@ impl DependencySet {
             }
 
         }
-
-        needs_revalidation
     }
 
     
