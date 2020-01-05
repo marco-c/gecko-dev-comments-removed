@@ -1,8 +1,8 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-//! CSS table formatting contexts.
+
+
+
+
 
 #![deny(unsafe_code)]
 
@@ -28,20 +28,20 @@ use style::properties::ComputedValues;
 use util::geometry::Au;
 use util::logical_geometry::{LogicalMargin, LogicalRect, LogicalSize, WritingMode};
 
-/// A table formatting context.
+
 #[derive(RustcEncodable)]
 pub struct TableCellFlow {
-    /// Data common to all block flows.
+    
     pub block_flow: BlockFlow,
 
-    /// Border collapse information for the cell.
+    
     pub collapsed_borders: CollapsedBordersForCell,
 
-    /// The column span of this cell.
+    
     pub column_span: u32,
 
-    /// Whether this cell is visible. If false, the value of `empty-cells` means that we must not
-    /// display this cell.
+    
+    
     pub visible: bool,
 }
 
@@ -67,10 +67,10 @@ impl TableCellFlow {
         &mut self.block_flow.fragment
     }
 
-    /// Assign block-size for table-cell flow.
-    ///
-    /// inline(always) because this is only ever called by in-order or non-in-order top-level
-    /// methods.
+    
+    
+    
+    
     #[inline(always)]
     fn assign_block_size_table_cell_base<'a>(&mut self, layout_context: &'a LayoutContext<'a>) {
         self.block_flow.assign_block_size_block_base(
@@ -84,24 +84,24 @@ impl Flow for TableCellFlow {
         FlowClass::TableCell
     }
 
-    fn as_table_cell<'a>(&'a mut self) -> &'a mut TableCellFlow {
+    fn as_mut_table_cell<'a>(&'a mut self) -> &'a mut TableCellFlow {
         self
     }
 
-    fn as_immutable_table_cell<'a>(&'a self) -> &'a TableCellFlow {
+    fn as_table_cell<'a>(&'a self) -> &'a TableCellFlow {
         self
     }
 
-    fn as_block<'a>(&'a mut self) -> &'a mut BlockFlow {
+    fn as_mut_block<'a>(&'a mut self) -> &'a mut BlockFlow {
         &mut self.block_flow
     }
 
-    fn as_immutable_block(&self) -> &BlockFlow {
+    fn as_block(&self) -> &BlockFlow {
         &self.block_flow
     }
 
-    /// Minimum/preferred inline-sizes set by this function are used in automatic table layout
-    /// calculation.
+    
+    
     fn bubble_inline_sizes(&mut self) {
         let _scope = layout_debug_scope!("table_cell::bubble_inline_sizes {:x}",
                                          self.block_flow.base.debug_id());
@@ -123,15 +123,15 @@ impl Flow for TableCellFlow {
         }
     }
 
-    /// Recursively (top-down) determines the actual inline-size of child contexts and fragments.
-    /// When called on this context, the context has had its inline-size set by the parent table
-    /// row.
+    
+    
+    
     fn assign_inline_sizes(&mut self, layout_context: &LayoutContext) {
         let _scope = layout_debug_scope!("table_cell::assign_inline_sizes {:x}",
                                             self.block_flow.base.debug_id());
         debug!("assign_inline_sizes({}): assigning inline_size for flow", "table_cell");
 
-        // The position was set to the column inline-size by the parent flow, table row flow.
+        
         let containing_block_inline_size = self.block_flow.base.block_container_inline_size;
 
         let inline_size_computer = InternalTable {
@@ -322,7 +322,7 @@ impl CollapsedBordersForCell {
         let block_end_offset = self.block_end_width / 2 + self.block_end_border.width /
             block_end_divisor;
 
-        // FIXME(pcwalton): Get the real container size.
+        
         let mut logical_bounds =
             LogicalRect::from_physical(writing_mode, *border_bounds, Size2D::new(Au(0), Au(0)));
         logical_bounds.start.i = logical_bounds.start.i - inline_start_offset;
@@ -354,4 +354,3 @@ impl CollapsedBordersForCell {
         *border_styles = logical_border_styles.to_physical(writing_mode);
     }
 }
-

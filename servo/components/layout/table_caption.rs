@@ -1,8 +1,8 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-//! CSS table formatting contexts.
+
+
+
+
 
 #![deny(unsafe_code)]
 
@@ -18,7 +18,7 @@ use std::fmt;
 use style::properties::ComputedValues;
 use std::sync::Arc;
 
-/// A table formatting context.
+
 pub struct TableCaptionFlow {
     pub block_flow: BlockFlow,
 }
@@ -36,15 +36,15 @@ impl Flow for TableCaptionFlow {
         FlowClass::TableCaption
     }
 
-    fn as_table_caption<'a>(&'a mut self) -> &'a mut TableCaptionFlow {
+    fn as_mut_table_caption<'a>(&'a mut self) -> &'a mut TableCaptionFlow {
         self
     }
 
-    fn as_block<'a>(&'a mut self) -> &'a mut BlockFlow {
+    fn as_mut_block<'a>(&'a mut self) -> &'a mut BlockFlow {
         &mut self.block_flow
     }
 
-    fn as_immutable_block(&self) -> &BlockFlow {
+    fn as_block(&self) -> &BlockFlow {
         &self.block_flow
     }
 
@@ -108,4 +108,3 @@ impl fmt::Debug for TableCaptionFlow {
         write!(f, "TableCaptionFlow: {:?}", self.block_flow)
     }
 }
-
