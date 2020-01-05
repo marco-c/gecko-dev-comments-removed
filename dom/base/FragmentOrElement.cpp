@@ -390,6 +390,9 @@ nsIContent::GetBaseURI(bool aTryUseXHRDocBaseURI) const
 
   if (!baseAttrs.IsEmpty()) {
     doc->WarnOnceAbout(nsIDocument::eXMLBaseAttribute);
+    if (IsHTMLElement() || IsSVGElement() || IsXULElement()) {
+      doc->WarnOnceAbout(nsIDocument::eXMLBaseAttributeWithStyledElement);
+    }
     
     for (uint32_t i = baseAttrs.Length() - 1; i != uint32_t(-1); --i) {
       nsCOMPtr<nsIURI> newBase;
