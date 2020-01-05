@@ -171,7 +171,7 @@ class Mutex {
   
   
   
-  inline Mutex(LinkerInitialized);
+  explicit inline Mutex(LinkerInitialized);
 
   
   inline ~Mutex();
@@ -202,7 +202,7 @@ class Mutex {
   inline void SetIsSafe() { is_safe_ = true; }
 
   
-  Mutex(Mutex* ) {}
+  explicit Mutex(Mutex* ) {}
   
   Mutex(const Mutex&);
   void operator=(const Mutex&);
