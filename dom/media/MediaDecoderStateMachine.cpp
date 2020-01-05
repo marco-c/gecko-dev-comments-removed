@@ -854,7 +854,7 @@ private:
   bool DonePrerollingAudio()
   {
     return !mMaster->IsAudioDecoding()
-           || mMaster->GetDecodedAudioDuration()
+           || mMaster->GetDecodedAudioDuration().ToMicroseconds()
               >= AudioPrerollThreshold().ToMicroseconds() * mMaster->mPlaybackRate;
   }
 
@@ -2320,7 +2320,7 @@ DecodingState::NeedToSkipToNextKeyframe()
   bool isLowOnDecodedAudio =
     !Reader()->IsAsync()
     && mMaster->IsAudioDecoding()
-    && (mMaster->GetDecodedAudioDuration()
+    && (mMaster->GetDecodedAudioDuration().ToMicroseconds()
         < mMaster->mLowAudioThreshold.ToMicroseconds() * mMaster->mPlaybackRate);
   bool isLowOnDecodedVideo =
     (mMaster->GetClock().ToMicroseconds() - mMaster->mDecodedVideoEndTime)
@@ -2757,7 +2757,7 @@ MediaDecoderStateMachine::CreateMediaSink(bool aAudioCaptured)
   return mediaSink.forget();
 }
 
-int64_t
+TimeUnit
 MediaDecoderStateMachine::GetDecodedAudioDuration()
 {
   MOZ_ASSERT(OnTaskQueue());
@@ -2765,11 +2765,12 @@ MediaDecoderStateMachine::GetDecodedAudioDuration()
     
     
     
-    return std::max<int64_t>(
+    auto t = std::max<int64_t>(
       mDecodedAudioEndTime - GetClock().ToMicroseconds(), 0);
+    return TimeUnit::FromMicroseconds(t);
   }
   
-  return AudioQueue().Duration();
+  return TimeUnit::FromMicroseconds(AudioQueue().Duration());
 }
 
 bool
@@ -2778,7 +2779,7 @@ MediaDecoderStateMachine::HaveEnoughDecodedAudio()
   MOZ_ASSERT(OnTaskQueue());
   auto ampleAudioUSecs = mAmpleAudioThreshold.ToMicroseconds() * mPlaybackRate;
   return AudioQueue().GetSize() > 0
-         && GetDecodedAudioDuration() >= ampleAudioUSecs;
+         && GetDecodedAudioDuration().ToMicroseconds() >= ampleAudioUSecs;
 }
 
 bool MediaDecoderStateMachine::HaveEnoughDecodedVideo()
@@ -3307,7 +3308,7 @@ MediaDecoderStateMachine::HasLowDecodedAudio()
 {
   MOZ_ASSERT(OnTaskQueue());
   return IsAudioDecoding()
-         && GetDecodedAudioDuration()
+         && GetDecodedAudioDuration().ToMicroseconds()
             < EXHAUSTED_DATA_MARGIN_USECS * mPlaybackRate;
 }
 

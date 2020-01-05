@@ -459,7 +459,7 @@ protected:
   
   
   
-  int64_t GetDecodedAudioDuration();
+  media::TimeUnit GetDecodedAudioDuration();
 
   void FinishDecodeFirstFrame();
 
