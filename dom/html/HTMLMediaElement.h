@@ -102,6 +102,8 @@ public:
 
   explicit HTMLMediaElement(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo);
 
+  void ReportCanPlayTelemetry();
+
   
 
 
