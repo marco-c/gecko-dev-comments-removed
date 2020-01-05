@@ -469,7 +469,7 @@ private:
 
     
     
-    int mPendingConfigures;
+    unsigned int mPendingConfigures;
 
 #ifdef ACCESSIBILITY
     RefPtr<mozilla::a11y::Accessible> mRootAccessible;
