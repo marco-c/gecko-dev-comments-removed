@@ -72,6 +72,7 @@ function AutoRefreshHighlighter(highlighterEnv) {
   this.currentQuads = {};
 
   this._winDimensions = getWindowDimensions(this.win);
+  this._scroll = { x: this.win.pageXOffset, y: this.win.pageYOffset };
 
   this.update = this.update.bind(this);
 }
@@ -197,6 +198,21 @@ AutoRefreshHighlighter.prototype = {
 
 
 
+  _hasWindowScrolled: function () {
+    let { pageXOffset, pageYOffset } = this.win;
+    let hasChanged = this._scroll.x !== pageXOffset ||
+                     this._scroll.y !== pageYOffset;
+
+    this._scroll = { x: pageXOffset, y: pageYOffset };
+
+    return hasChanged;
+  },
+
+  
+
+
+
+
   _haveWindowDimensionsChanged: function () {
     let { width, height } = getWindowDimensions(this.win);
     let haveChanged = (this._winDimensions.width !== width ||
@@ -212,6 +228,12 @@ AutoRefreshHighlighter.prototype = {
   update: function () {
     if (!this._isNodeValid(this.currentNode) ||
        (!this._hasMoved() && !this._haveWindowDimensionsChanged())) {
+      
+      
+      if (this._hasWindowScrolled()) {
+        this._scrollUpdate();
+      }
+
       return;
     }
 
@@ -232,6 +254,13 @@ AutoRefreshHighlighter.prototype = {
     
     
     throw new Error("Custom highlighter class had to implement _update method");
+  },
+
+  _scrollUpdate: function () {
+    
+    
+    
+    
   },
 
   _hide: function () {
