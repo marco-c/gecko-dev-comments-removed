@@ -3274,22 +3274,21 @@ Debugger::findZoneEdges(Zone* zone, js::gc::ZoneComponentFinder& finder)
 
 
 
-
-    if (zone->isAtomsZone())
-        return;
-    for (Debugger* dbg : zone->group()->debuggerList()) {
-        Zone* w = dbg->object->zone();
-        if (w == zone || !w->isGCMarking())
-            continue;
-        if (dbg->debuggeeZones.has(zone) ||
-            dbg->scripts.hasKeyInZone(zone) ||
-            dbg->sources.hasKeyInZone(zone) ||
-            dbg->objects.hasKeyInZone(zone) ||
-            dbg->environments.hasKeyInZone(zone) ||
-            dbg->wasmInstanceScripts.hasKeyInZone(zone) ||
-            dbg->wasmInstanceSources.hasKeyInZone(zone))
-        {
-            finder.addEdgeTo(w);
+    for (ZoneGroupsIter group(zone->runtimeFromActiveCooperatingThread()); !group.done(); group.next()) {
+        for (Debugger* dbg : group->debuggerList()) {
+            Zone* w = dbg->object->zone();
+            if (w == zone || !w->isGCMarking())
+                continue;
+            if (dbg->debuggeeZones.has(zone) ||
+                dbg->scripts.hasKeyInZone(zone) ||
+                dbg->sources.hasKeyInZone(zone) ||
+                dbg->objects.hasKeyInZone(zone) ||
+                dbg->environments.hasKeyInZone(zone) ||
+                dbg->wasmInstanceScripts.hasKeyInZone(zone) ||
+                dbg->wasmInstanceSources.hasKeyInZone(zone))
+            {
+                finder.addEdgeTo(w);
+            }
         }
     }
 }
