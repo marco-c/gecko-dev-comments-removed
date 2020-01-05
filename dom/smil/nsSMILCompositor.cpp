@@ -6,6 +6,7 @@
 
 #include "nsSMILCompositor.h"
 
+#include "nsComputedDOMStyle.h"
 #include "nsCSSProps.h"
 #include "nsHashKeys.h"
 #include "nsSMILCSSProperty.h"
@@ -56,7 +57,16 @@ nsSMILCompositor::ComposeAttribute(bool& aMightHavePendingStyleUpdates)
 
   
   
-  UniquePtr<nsISMILAttr> smilAttr = CreateSMILAttr();
+  RefPtr<nsStyleContext> baseStyleContext;
+  if (MightNeedBaseStyle()) {
+    baseStyleContext =
+      nsComputedDOMStyle::GetUnanimatedStyleContextNoFlush(mKey.mElement,
+                                                           nullptr, nullptr);
+  }
+
+  
+  
+  UniquePtr<nsISMILAttr> smilAttr = CreateSMILAttr(baseStyleContext);
   if (!smilAttr) {
     
     return;
@@ -115,7 +125,7 @@ nsSMILCompositor::ClearAnimationEffects()
   if (!mKey.mElement || !mKey.mAttributeName)
     return;
 
-  UniquePtr<nsISMILAttr> smilAttr = CreateSMILAttr();
+  UniquePtr<nsISMILAttr> smilAttr = CreateSMILAttr(nullptr);
   if (!smilAttr) {
     
     return;
@@ -126,12 +136,13 @@ nsSMILCompositor::ClearAnimationEffects()
 
 
 UniquePtr<nsISMILAttr>
-nsSMILCompositor::CreateSMILAttr()
+nsSMILCompositor::CreateSMILAttr(nsStyleContext* aBaseStyleContext)
 {
   nsCSSPropertyID propID = GetCSSPropertyToAnimate();
 
   if (propID != eCSSProperty_UNKNOWN) {
-    return MakeUnique<nsSMILCSSProperty>(propID, mKey.mElement.get());
+    return MakeUnique<nsSMILCSSProperty>(propID, mKey.mElement.get(),
+                                         aBaseStyleContext);
   }
 
   return mKey.mElement->GetAnimatedAttr(mKey.mAttributeNamespaceID,
