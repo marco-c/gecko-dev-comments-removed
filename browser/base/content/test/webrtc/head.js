@@ -241,6 +241,18 @@ function expectNoObserverCalled(aIgnoreDeviceEvents = false) {
   });
 }
 
+function ignoreObserversCalled() {
+  return new Promise(resolve => {
+    let mm = _mm();
+    mm.addMessageListener("Test:ExpectNoObserverCalled:Reply",
+                          function listener() {
+      mm.removeMessageListener("Test:ExpectNoObserverCalled:Reply", listener);
+      resolve();
+    });
+    mm.sendAsyncMessage("Test:ExpectNoObserverCalled");
+  });
+}
+
 function promiseMessageReceived() {
   return new Promise((resolve, reject) => {
     let mm = _mm();
@@ -439,7 +451,9 @@ function checkDeviceSelectors(aAudio, aVideo, aScreen) {
     ok(screenSelector.hidden, "screen selector hidden");
 }
 
-function* checkSharingUI(aExpected, aWin = window) {
+
+
+function* checkSharingUI(aExpected, aWin = window, aExpectedGlobal = null) {
   let doc = aWin.document;
   
   let identityBox = doc.getElementById("identity-box");
@@ -483,7 +497,7 @@ function* checkSharingUI(aExpected, aWin = window) {
   aWin.gIdentityHandler._identityPopup.hidden = true;
 
   
-  yield* assertWebRTCIndicatorStatus(aExpected);
+  yield* assertWebRTCIndicatorStatus(aExpectedGlobal || aExpected);
 }
 
 function* checkNotSharing() {
