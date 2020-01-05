@@ -5,10 +5,9 @@
 use euclid::Point3D;
 use geometry::ray_intersects_rect;
 use spring::{DAMPING, STIFFNESS, Spring};
-use webrender_traits::{LayerPoint, LayerRect, LayerSize, LayerToScrollTransform};
+use webrender_traits::{LayerPixel, LayerPoint, LayerRect, LayerSize, LayerToScrollTransform};
 use webrender_traits::{LayerToWorldTransform, PipelineId, ScrollEventPhase, ScrollLayerId};
-use webrender_traits::{ScrollLayerRect, ScrollLocation, ScrollToWorldTransform, WorldPoint};
-use webrender_traits::{WorldPoint4D};
+use webrender_traits::{ScrollLayerRect, ScrollLocation, WorldPoint, WorldPoint4D};
 
 #[cfg(target_os = "macos")]
 const CAN_OVERSCROLL: bool = true;
@@ -16,6 +15,15 @@ const CAN_OVERSCROLL: bool = true;
 #[cfg(not(target_os = "macos"))]
 const CAN_OVERSCROLL: bool = false;
 
+#[derive(Clone)]
+pub enum NodeType {
+    
+    
+    ReferenceFrame(LayerToScrollTransform),
+
+    
+    ClipRect,
+}
 
 
 #[derive(Clone)]
@@ -30,8 +38,15 @@ pub struct ClipScrollNode {
     pub local_viewport_rect: LayerRect,
 
     
+    
+    pub local_clip_rect: LayerRect,
+
+    
+    
     pub combined_local_viewport_rect: LayerRect,
 
+    
+    
     
     pub world_viewport_transform: LayerToWorldTransform,
 
@@ -39,31 +54,52 @@ pub struct ClipScrollNode {
     pub world_content_transform: LayerToWorldTransform,
 
     
-    pub local_transform: LayerToScrollTransform,
-
-    
     pub pipeline_id: PipelineId,
 
     
     pub children: Vec<ScrollLayerId>,
+
+    
+    pub node_type: NodeType,
 }
 
 impl ClipScrollNode {
     pub fn new(local_viewport_rect: &LayerRect,
+               local_clip_rect: &LayerRect,
                content_size: LayerSize,
-               local_transform: &LayerToScrollTransform,
                pipeline_id: PipelineId)
                -> ClipScrollNode {
         ClipScrollNode {
             scrolling: ScrollingState::new(),
             content_size: content_size,
             local_viewport_rect: *local_viewport_rect,
-            combined_local_viewport_rect: *local_viewport_rect,
+            local_clip_rect: *local_clip_rect,
+            combined_local_viewport_rect: *local_clip_rect,
             world_viewport_transform: LayerToWorldTransform::identity(),
             world_content_transform: LayerToWorldTransform::identity(),
-            local_transform: *local_transform,
             children: Vec::new(),
             pipeline_id: pipeline_id,
+            node_type: NodeType::ClipRect,
+        }
+    }
+
+    pub fn new_reference_frame(local_viewport_rect: &LayerRect,
+                               local_clip_rect: &LayerRect,
+                               content_size: LayerSize,
+                               local_transform: &LayerToScrollTransform,
+                               pipeline_id: PipelineId)
+                               -> ClipScrollNode {
+        ClipScrollNode {
+            scrolling: ScrollingState::new(),
+            content_size: content_size,
+            local_viewport_rect: *local_viewport_rect,
+            local_clip_rect: *local_clip_rect,
+            combined_local_viewport_rect: *local_clip_rect,
+            world_viewport_transform: LayerToWorldTransform::identity(),
+            world_content_transform: LayerToWorldTransform::identity(),
+            children: Vec::new(),
+            pipeline_id: pipeline_id,
+            node_type: NodeType::ReferenceFrame(*local_transform),
         }
     }
 
@@ -117,9 +153,16 @@ impl ClipScrollNode {
     }
 
     pub fn update_transform(&mut self,
-                            parent_world_transform: &ScrollToWorldTransform,
-                            parent_viewport_rect: &ScrollLayerRect) {
-        let inv_transform = match self.local_transform.inverse() {
+                            parent_reference_frame_transform: &LayerToWorldTransform,
+                            parent_combined_viewport_rect: &ScrollLayerRect,
+                            parent_accumulated_scroll_offset: LayerPoint) {
+
+        let local_transform = match self.node_type {
+            NodeType::ReferenceFrame(transform) => transform,
+            NodeType::ClipRect => LayerToScrollTransform::identity(),
+        };
+
+        let inv_transform = match local_transform.inverse() {
             Some(transform) => transform,
             None => {
                 
@@ -129,18 +172,40 @@ impl ClipScrollNode {
             }
         };
 
-        let parent_viewport_rect_in_local_space = inv_transform.transform_rect(parent_viewport_rect)
-                                                               .translate(&-self.scrolling.offset);
-        let local_viewport_rect = self.local_viewport_rect.translate(&-self.scrolling.offset);
-        let viewport_rect = parent_viewport_rect_in_local_space.intersection(&local_viewport_rect)
-                                                               .unwrap_or(LayerRect::zero());
+        
+        
+        
+        let parent_combined_viewport_in_local_space =
+            inv_transform.pre_translated(-parent_accumulated_scroll_offset.x,
+                                         -parent_accumulated_scroll_offset.y,
+                                         0.0)
+                         .transform_rect(parent_combined_viewport_rect);
 
-        self.combined_local_viewport_rect = viewport_rect;
-        self.world_viewport_transform = parent_world_transform.pre_mul(&self.local_transform);
-        self.world_content_transform = self.world_viewport_transform
-                                                     .pre_translated(self.scrolling.offset.x,
-                                                                     self.scrolling.offset.y,
-                                                                     0.0);
+        
+        
+        
+        self.combined_local_viewport_rect =
+            parent_combined_viewport_in_local_space.intersection(&self.local_clip_rect)
+                                                    .unwrap_or(LayerRect::zero());
+
+        
+        
+        
+        
+        
+        self.world_viewport_transform =
+            parent_reference_frame_transform
+                .pre_translated(parent_accumulated_scroll_offset.x,
+                                parent_accumulated_scroll_offset.y,
+                                0.0)
+                .pre_mul(&local_transform.with_destination::<LayerPixel>());
+
+        
+        
+        self.world_content_transform =
+            self.world_viewport_transform.pre_translated(self.scrolling.offset.x,
+                                                         self.scrolling.offset.y,
+                                                         0.0);
     }
 
     pub fn scrollable_height(&self) -> f32 {

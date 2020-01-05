@@ -11,7 +11,6 @@
 #include "base/task.h"                  
 #include "base/thread.h"                
 #include "mozilla/ipc/Transport.h"      
-#include "mozilla/layers/AnimationHelper.h" 
 #include "mozilla/layers/APZCTreeManager.h"  
 #include "mozilla/layers/APZCTreeManagerParent.h"  
 #include "mozilla/layers/APZThreadUtils.h"  
@@ -199,6 +198,7 @@ CrossProcessCompositorBridgeParent::DeallocPAPZParent(PAPZParent* aActor)
 
 PWebRenderBridgeParent*
 CrossProcessCompositorBridgeParent::AllocPWebRenderBridgeParent(const wr::PipelineId& aPipelineId,
+                                                                const LayoutDeviceIntSize& aSize,
                                                                 TextureFactoryIdentifier* aTextureFactoryIdentifier,
                                                                 uint32_t *aIdNamespace)
 {
@@ -406,22 +406,6 @@ CrossProcessCompositorBridgeParent::ApplyAsyncProperties(
 
   MOZ_ASSERT(state->mParent);
   state->mParent->ApplyAsyncProperties(aLayerTree);
-}
-
-CompositorAnimationStorage*
-CrossProcessCompositorBridgeParent::GetAnimationStorage(
-    const uint64_t& aId)
-{
-  MOZ_ASSERT(aId != 0);
-  const CompositorBridgeParent::LayerTreeState* state =
-    CompositorBridgeParent::GetIndirectShadowTree(aId);
-  if (!state) {
-    return nullptr;
-  }
-
-  MOZ_ASSERT(state->mParent);
-  
-  return state->mParent->GetAnimationStorage(0);
 }
 
 void

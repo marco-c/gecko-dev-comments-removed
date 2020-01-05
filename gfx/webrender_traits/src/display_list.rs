@@ -284,8 +284,8 @@ impl DisplayListBuilder {
                                  bounds: LayoutRect,
                                  clip: ClipRegion,
                                  z_index: i32,
-                                 transform: PropertyBinding<LayoutTransform>,
-                                 perspective: LayoutTransform,
+                                 transform: Option<PropertyBinding<LayoutTransform>>,
+                                 perspective: Option<LayoutTransform>,
                                  mix_blend_mode: MixBlendMode,
                                  filters: Vec<FilterOp>) {
         let stacking_context = StackingContext {
@@ -353,6 +353,40 @@ impl DisplayListBuilder {
             clip: clip,
         };
         self.list.push(item);
+    }
+
+    
+    
+    
+    pub fn push_built_display_list(&mut self, dl: BuiltDisplayList, aux: AuxiliaryLists) {
+        use SpecificDisplayItem::*;
+        
+        
+        
+        for i in dl.all_display_items() {
+            let mut i = *i;
+            match i.item {
+                Text(ref mut item) => {
+                    item.glyphs = self.auxiliary_lists_builder.add_glyph_instances(aux.glyph_instances(&item.glyphs));
+                }
+                Gradient(ref mut item) => {
+                    item.stops = self.auxiliary_lists_builder.add_gradient_stops(aux.gradient_stops(&item.stops));
+                }
+                RadialGradient(ref mut item) => {
+                    item.stops = self.auxiliary_lists_builder.add_gradient_stops(aux.gradient_stops(&item.stops));
+                }
+                PushStackingContext(ref mut item) => {
+                    item.stacking_context.filters = self.auxiliary_lists_builder.add_filters(aux.filters(&item.stacking_context.filters));
+                }
+                Iframe(_) | PushScrollLayer(_) => {
+                    
+                    panic!();
+                }
+                _ => {}
+            }
+            i.clip.complex = self.auxiliary_lists_builder.add_complex_clip_regions(aux.complex_clip_regions(&i.clip.complex));
+            self.list.push(i);
+        }
     }
 
     pub fn new_clip_region(&mut self,

@@ -64,7 +64,6 @@ class APZCTreeManager;
 class APZCTreeManagerParent;
 class AsyncCompositionManager;
 class Compositor;
-class CompositorAnimationStorage;
 class CompositorBridgeParent;
 class CompositorVsyncScheduler;
 class HostLayerManager;
@@ -106,7 +105,6 @@ public:
                                  const TimeStamp& aTime) { return true; }
   virtual void LeaveTestMode(LayerTransactionParent* aLayerTree) { }
   virtual void ApplyAsyncProperties(LayerTransactionParent* aLayerTree) = 0;
-  virtual CompositorAnimationStorage* GetAnimationStorage(const uint64_t& aId) { return nullptr; }
   virtual void FlushApzRepaints(const LayerTransactionParent* aLayerTree) = 0;
   virtual void GetAPZTestData(const LayerTransactionParent* aLayerTree,
                               APZTestData* aOutData) { }
@@ -229,7 +227,6 @@ public:
   virtual void LeaveTestMode(LayerTransactionParent* aLayerTree) override;
   virtual void ApplyAsyncProperties(LayerTransactionParent* aLayerTree)
                override;
-  virtual CompositorAnimationStorage* GetAnimationStorage(const uint64_t& aId) override;
   virtual void FlushApzRepaints(const LayerTransactionParent* aLayerTree) override;
   virtual void GetAPZTestData(const LayerTransactionParent* aLayerTree,
                               APZTestData* aOutData) override;
@@ -455,6 +452,7 @@ public:
   }
 
   PWebRenderBridgeParent* AllocPWebRenderBridgeParent(const wr::PipelineId& aPipelineId,
+                                                      const LayoutDeviceIntSize& aSize,
                                                       TextureFactoryIdentifier* aTextureFactoryIdentifier,
                                                       uint32_t* aIdNamespace) override;
   bool DeallocPWebRenderBridgeParent(PWebRenderBridgeParent* aActor) override;
@@ -600,7 +598,6 @@ protected:
   
   
   RefPtr<CompositorBridgeParent> mSelfRef;
-  RefPtr<CompositorAnimationStorage> mAnimationStorage;
 
   TimeDuration mPaintTime;
 
