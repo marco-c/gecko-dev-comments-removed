@@ -474,6 +474,8 @@ TimeoutManager::RunTimeout(Timeout* aTimeout)
           last_expired_tracking_timeout = timeout;
         }
 
+        numTimersToRun += 1;
+
         
         
         if (timeout == aTimeout) {
@@ -495,8 +497,6 @@ TimeoutManager::RunTimeout(Timeout* aTimeout)
             !mWindow.IsChromeWindow()) {
           break;
         }
-
-        numTimersToRun += 1;
       }
 
       expiredIter.UpdateIterator();
