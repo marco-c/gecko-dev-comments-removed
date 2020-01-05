@@ -883,7 +883,6 @@ struct JSCompartment
         
         
         DeprecatedBlockScopeFunRedecl = 10,
-        DeprecatedStringGenerics = 11,
         DeprecatedLanguageExtensionCount
     };
 
