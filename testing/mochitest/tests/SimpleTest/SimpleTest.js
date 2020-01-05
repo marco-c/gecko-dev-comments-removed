@@ -259,8 +259,6 @@ SimpleTest.setExpected = function () {
       SimpleTest.expected = parent.TestRunner.expected.filter(([pat]) => pat != "ASSERTION");
       SimpleTest.num_failed = new Array(SimpleTest.expected.length);
       SimpleTest.num_failed.fill(0);
-      
-      SimpleTest.requestCompleteLog();
     }
   }
 }
@@ -400,6 +398,11 @@ SimpleTest.requestCompleteLog = function() {
         SimpleTest._forceLogMessageOutput = false;
     });
 };
+
+
+if (usesFailurePatterns()) {
+  SimpleTest.requestCompleteLog();
+}
 
 SimpleTest._logResult = function (test, passInfo, failInfo, stack) {
     var url = SimpleTest._getCurrentTestURL();
