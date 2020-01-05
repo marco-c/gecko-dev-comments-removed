@@ -80,8 +80,11 @@ GridLines::SetLineInfo(const ComputedGridTrackInfo* aTrackInfo,
   
   
   if (trackCount > 0) {
-    double endOfLastTrack = 0.0;
-    double startOfNextTrack;
+    nscoord lastTrackEdge = 0;
+    nscoord startOfNextTrack;
+    uint32_t repeatIndex = 0;
+    uint32_t numRepeatTracks = aTrackInfo->mRemovedRepeatTracks.Length();
+    uint32_t numAddedLines = 0;
 
     for (uint32_t i = aTrackInfo->mStartFragmentTrack;
          i < aTrackInfo->mEndFragmentTrack + 1;
@@ -90,10 +93,7 @@ GridLines::SetLineInfo(const ComputedGridTrackInfo* aTrackInfo,
 
       startOfNextTrack = (i < aTrackInfo->mEndFragmentTrack) ?
                          aTrackInfo->mPositions[i] :
-                         endOfLastTrack;
-
-      GridLine* line = new GridLine(this);
-      mLines.AppendElement(line);
+                         lastTrackEdge;
 
       nsTArray<nsString> lineNames;
       if (aLineInfo) {
@@ -128,12 +128,24 @@ GridLines::SetLineInfo(const ComputedGridTrackInfo* aTrackInfo,
         }
       }
 
+      if (i >= aTrackInfo->mRepeatFirstTrack &&
+          repeatIndex < numRepeatTracks) {
+        numAddedLines += AppendRemovedAutoFits(aTrackInfo,
+                                               aLineInfo,
+                                               lastTrackEdge,
+                                               repeatIndex,
+                                               numRepeatTracks,
+                                               lineNames);
+      }
+
+      RefPtr<GridLine> line = new GridLine(this);
+      mLines.AppendElement(line);
       line->SetLineValues(
         lineNames,
-        nsPresContext::AppUnitsToDoubleCSSPixels(endOfLastTrack),
+        nsPresContext::AppUnitsToDoubleCSSPixels(lastTrackEdge),
         nsPresContext::AppUnitsToDoubleCSSPixels(startOfNextTrack -
-                                                 endOfLastTrack),
-        line1Index,
+                                                 lastTrackEdge),
+        line1Index + numAddedLines,
         (
           
           
@@ -148,10 +160,91 @@ GridLines::SetLineInfo(const ComputedGridTrackInfo* aTrackInfo,
       );
 
       if (i < aTrackInfo->mEndFragmentTrack) {
-        endOfLastTrack = aTrackInfo->mPositions[i] + aTrackInfo->mSizes[i];
+        lastTrackEdge = aTrackInfo->mPositions[i] + aTrackInfo->mSizes[i];
       }
     }
   }
+}
+
+uint32_t
+GridLines::AppendRemovedAutoFits(const ComputedGridTrackInfo* aTrackInfo,
+                                 const ComputedGridLineInfo* aLineInfo,
+                                 nscoord aLastTrackEdge,
+                                 uint32_t& aRepeatIndex,
+                                 uint32_t aNumRepeatTracks,
+                                 nsTArray<nsString>& aLineNames)
+{
+  
+  bool alreadyHasBeforeLineNames = true;
+  for (const auto& beforeName : aLineInfo->mNamesBefore) {
+    if (!aLineNames.Contains(beforeName)) {
+      alreadyHasBeforeLineNames = false;
+      break;
+    }
+  }
+
+  bool extractedExplicitLineNames = false;
+  nsTArray<nsString> explicitLineNames;
+  uint32_t linesAdded = 0;
+  while (aRepeatIndex < aNumRepeatTracks &&
+         aTrackInfo->mRemovedRepeatTracks[aRepeatIndex]) {
+    
+    
+    
+    
+    if (aRepeatIndex > 0 &&
+        linesAdded == 0) {
+      
+      
+      for (const auto& name : aLineNames) {
+        if (!aLineInfo->mNamesBefore.Contains(name) &&
+            !aLineInfo->mNamesAfter.Contains(name)) {
+          explicitLineNames.AppendElement(name);
+        }
+      }
+      for (const auto& extractedName : explicitLineNames) {
+        aLineNames.RemoveElement(extractedName);
+      }
+      extractedExplicitLineNames = true;
+    }
+
+    
+    
+    if (linesAdded > 0 || !alreadyHasBeforeLineNames) {
+      aLineNames.AppendElements(aLineInfo->mNamesBefore);
+    }
+
+    RefPtr<GridLine> line = new GridLine(this);
+    mLines.AppendElement(line);
+    line->SetLineValues(
+      aLineNames,
+      nsPresContext::AppUnitsToDoubleCSSPixels(aLastTrackEdge),
+      nsPresContext::AppUnitsToDoubleCSSPixels(0),
+      aTrackInfo->mRepeatFirstTrack + aRepeatIndex + 1,
+      GridDeclaration::Explicit
+    );
+
+    
+    
+    
+    aLineNames = aLineInfo->mNamesAfter;
+    aRepeatIndex++;
+
+    linesAdded++;
+  }
+  aRepeatIndex++;
+
+  if (extractedExplicitLineNames) {
+    
+    aLineNames.AppendElements(explicitLineNames);
+  }
+
+  if (alreadyHasBeforeLineNames && linesAdded > 0) {
+    
+    
+    aLineNames.AppendElements(aLineInfo->mNamesBefore);
+  }
+  return linesAdded;
 }
 
 } 
