@@ -2,6 +2,7 @@
 
 
 
+use ipc_channel::ipc::IpcSender;
 use std::str::FromStr;
 use url::Url;
 use uuid::Uuid;
@@ -13,6 +14,16 @@ pub enum BlobURLStoreError {
     InvalidKey,
     
     InvalidOrigin,
+}
+
+#[derive(Serialize, Deserialize)]
+pub enum BlobURLStoreMsg {
+    
+    
+    
+    AddEntry(BlobURLStoreEntry, String, IpcSender<Result<String, BlobURLStoreError>>),
+    
+    DeleteEntry(String),
 }
 
 

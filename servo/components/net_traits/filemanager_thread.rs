@@ -2,6 +2,7 @@
 
 
 
+use blob_url_store::BlobURLStoreMsg;
 use ipc_channel::ipc::IpcSender;
 use std::path::PathBuf;
 use super::{LoadConsumer, LoadData};
@@ -34,6 +35,9 @@ pub enum FileManagerThreadMsg {
 
     
     DeleteFileID(SelectedFileId),
+
+    
+    BlobURLStoreMsg(BlobURLStoreMsg),
 
     
     LoadBlob(LoadData, LoadConsumer),

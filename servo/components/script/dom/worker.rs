@@ -147,7 +147,10 @@ impl WorkerMethods for Worker {
     fn PostMessage(&self, cx: *mut JSContext, message: HandleValue) -> ErrorResult {
         let data = try!(StructuredCloneData::write(cx, message));
         let address = Trusted::new(self);
-        self.sender.send((address, WorkerScriptMsg::DOMMessage(data))).unwrap();
+
+        
+        
+        let _ = self.sender.send((address, WorkerScriptMsg::DOMMessage(data)));
         Ok(())
     }
 
