@@ -167,6 +167,18 @@ public:
     
     
     
+    
+    
+    
+    if (mTimeline) {
+      mTimeline->NotifyAnimationUpdated(*this);
+    }
+
+    
+    
+    
+    
+    
     mOwningElement = OwningElementRef();
   }
 
@@ -214,6 +226,10 @@ public:
       const TimeDuration& aStartTime,
       double aPlaybackRate);
 
+  void MaybeQueueCancelEvent(StickyTimeDuration aActiveTime) override {
+    QueueEvents(aActiveTime);
+  }
+
 protected:
   virtual ~CSSTransition()
   {
@@ -225,7 +241,7 @@ protected:
   void UpdateTiming(SeekFlag aSeekFlag,
                     SyncNotifyFlag aSyncNotifyFlag) override;
 
-  void QueueEvents();
+  void QueueEvents(StickyTimeDuration activeTime = StickyTimeDuration());
 
   
   

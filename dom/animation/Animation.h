@@ -323,6 +323,16 @@ public:
   void NotifyEffectTimingUpdated();
   void NotifyGeometricAnimationsStartingThisFrame();
 
+  
+
+
+
+
+
+
+
+  virtual void MaybeQueueCancelEvent(StickyTimeDuration aActiveTime) {};
+
 protected:
   void SilentlySetCurrentTime(const TimeDuration& aNewCurrentTime);
   void SilentlySetPlaybackRate(double aPlaybackRate);

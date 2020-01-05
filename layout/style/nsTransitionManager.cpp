@@ -180,7 +180,7 @@ CSSTransition::UpdateTiming(SeekFlag aSeekFlag, SyncNotifyFlag aSyncNotifyFlag)
 }
 
 void
-CSSTransition::QueueEvents()
+CSSTransition::QueueEvents(StickyTimeDuration aActiveTime)
 {
   if (!mEffect ||
       !mOwningElement.IsSet()) {
@@ -230,12 +230,9 @@ CSSTransition::QueueEvents()
   
   if (mPreviousTransitionPhase != TransitionPhase::Idle &&
       currentPhase == TransitionPhase::Idle) {
-    
-    
-    StickyTimeDuration activeTime(0);
-    TimeStamp activeTimeStamp = ElapsedTimeToTimeStamp(activeTime);
+    TimeStamp activeTimeStamp = ElapsedTimeToTimeStamp(aActiveTime);
     events.AppendElement(TransitionEventParams{ eTransitionCancel,
-                                                activeTime,
+                                                aActiveTime,
                                                 activeTimeStamp });
   }
 
