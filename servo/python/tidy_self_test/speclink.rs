@@ -1,0 +1,9 @@
+
+
+
+
+impl SpecLinkMethods for SpecLink {
+    fn Test(&self) -> f32 {
+        0
+    }
+}
