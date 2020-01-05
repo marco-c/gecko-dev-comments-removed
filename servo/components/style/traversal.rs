@@ -325,15 +325,22 @@ pub fn resolve_style<E, F, G, H>(context: &StyleContext<E>, element: E,
     callback(element.borrow_data().unwrap().styles());
 
     
-    if let Some(root) = display_none_root {
+    
+    
+    
+    let in_doc = element.as_node().is_in_doc();
+    if !in_doc || display_none_root.is_some() {
         let mut curr = element;
         loop {
             unsafe { curr.unset_dirty_descendants(); }
-            if curr == root {
+            if in_doc && curr == display_none_root.unwrap() {
                 break;
             }
             clear_data(curr);
-            curr = curr.parent_element().unwrap();
+            curr = match curr.parent_element() {
+                Some(parent) => parent,
+                None => break,
+            };
         }
     }
 }
