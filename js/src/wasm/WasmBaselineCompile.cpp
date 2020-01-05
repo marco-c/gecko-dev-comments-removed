@@ -83,18 +83,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 #include "wasm/WasmBaselineCompile.h"
 
 #include "mozilla/MathAlgorithms.h"
@@ -157,6 +145,7 @@ typedef bool ZeroOnOverflow;
 typedef bool IsKnownNotZero;
 typedef bool HandleNaNSpecially;
 typedef bool PopStack;
+typedef bool InvertBranch;
 typedef unsigned ByteSize;
 typedef unsigned BitSize;
 
@@ -490,6 +479,12 @@ class BaseCompiler
         virtual void generate(MacroAssembler& masm) = 0;
     };
 
+    enum class LatentOp {
+        None,
+        Compare,
+        Eqz
+    };
+
     const ModuleEnvironment&    env_;
     BaseOpIter                  iter_;
     const FuncBytes&            func_;
@@ -511,6 +506,11 @@ class BaseCompiler
     Label                       outOfLinePrologue_;
     Label                       bodyLabel_;
     TrapOffset                  prologueTrapOffset_;
+
+    LatentOp                    latentOp_;       
+    ValType                     latentType_;     
+    Assembler::Condition        latentIntCmp_;   
+    Assembler::DoubleCondition  latentDoubleCmp_;
 
     FuncCompileResults&         compileResults_;
     MacroAssembler&             masm;            
@@ -1825,6 +1825,20 @@ class BaseCompiler
             freeI64(joinRegI64);
     }
 
+    RegI32 popI32NotJoinReg(ExprType type) {
+        maybeReserveJoinRegI(type);
+        RegI32 r = popI32();
+        maybeUnreserveJoinRegI(type);
+        return r;
+    }
+
+    RegI64 popI64NotJoinReg(ExprType type) {
+        maybeReserveJoinRegI(type);
+        RegI64 r = popI64();
+        maybeUnreserveJoinRegI(type);
+        return r;
+    }
+
     
     
 
@@ -1912,6 +1926,11 @@ class BaseCompiler
         uint32_t frameHere = masm.framePushed();
         if (frameHere > framePushed)
             masm.addPtr(ImmWord(frameHere - framePushed), StackPointer);
+    }
+
+    bool willPopStackBeforeBranch(uint32_t framePushed) {
+        uint32_t frameHere = masm.framePushed();
+        return frameHere > framePushed;
     }
 
     
@@ -3624,12 +3643,145 @@ class BaseCompiler
     TrapOffset trapOffset() const {
         return iter_.trapOffset();
     }
+
     Maybe<TrapOffset> trapIfNotAsmJS() const {
         return isCompilingAsmJS() ? Nothing() : Some(trapOffset());
     }
+
     TrapDesc trap(Trap t) const {
         return TrapDesc(trapOffset(), t, masm.framePushed());
     }
+
+    
+    
+    
+    
+    
+    
+
+    struct BranchState {
+        static const int32_t NoPop = ~0;
+
+        union {
+            struct {
+                RegI32 lhs;
+                RegI32 rhs;
+                int32_t imm;
+                bool rhsImm;
+            } i32;
+            struct {
+                RegI64 lhs;
+                RegI64 rhs;
+                int64_t imm;
+                bool rhsImm;
+            } i64;
+            struct {
+                RegF32 lhs;
+                RegF32 rhs;
+            } f32;
+            struct {
+                RegF64 lhs;
+                RegF64 rhs;
+            } f64;
+        };
+
+        Label* const label;        
+        const int32_t framePushed; 
+        const bool invertBranch;   
+        const ExprType resultType; 
+
+        explicit BranchState(Label* label, int32_t framePushed = NoPop,
+                             uint32_t invertBranch = false, ExprType resultType = ExprType::Void)
+          : label(label),
+            framePushed(framePushed),
+            invertBranch(invertBranch),
+            resultType(resultType)
+        {}
+    };
+
+    void setLatentCompare(Assembler::Condition compareOp, ValType operandType) {
+        latentOp_ = LatentOp::Compare;
+        latentType_ = operandType;
+        latentIntCmp_ = compareOp;
+    }
+
+    void setLatentCompare(Assembler::DoubleCondition compareOp, ValType operandType) {
+        latentOp_ = LatentOp::Compare;
+        latentType_ = operandType;
+        latentDoubleCmp_ = compareOp;
+    }
+
+    void setLatentEqz(ValType operandType) {
+        latentOp_ = LatentOp::Eqz;
+        latentType_ = operandType;
+    }
+
+    void resetLatentOp() {
+        latentOp_ = LatentOp::None;
+    }
+
+    void branchTo(Assembler::DoubleCondition c, RegF64 lhs, RegF64 rhs, Label* l) {
+        masm.branchDouble(c, lhs, rhs, l);
+    }
+
+    void branchTo(Assembler::DoubleCondition c, RegF32 lhs, RegF32 rhs, Label* l) {
+        masm.branchFloat(c, lhs, rhs, l);
+    }
+
+    void branchTo(Assembler::Condition c, RegI32 lhs, RegI32 rhs, Label* l) {
+        masm.branch32(c, lhs, rhs, l);
+    }
+
+    void branchTo(Assembler::Condition c, RegI32 lhs, Imm32 rhs, Label* l) {
+        masm.branch32(c, lhs, rhs, l);
+    }
+
+    void branchTo(Assembler::Condition c, RegI64 lhs, RegI64 rhs, Label* l) {
+        masm.branch64(c, lhs, rhs, l);
+    }
+
+    void branchTo(Assembler::Condition c, RegI64 lhs, Imm64 rhs, Label* l) {
+        masm.branch64(c, lhs, rhs, l);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    template<typename Cond, typename Lhs, typename Rhs>
+    void jumpConditionalWithJoinReg(BranchState* b, Cond cond, Lhs lhs, Rhs rhs)
+    {
+        AnyReg r = popJoinRegUnlessVoid(b->resultType);
+
+        if (b->framePushed != BranchState::NoPop && willPopStackBeforeBranch(b->framePushed)) {
+            Label notTaken;
+            branchTo(b->invertBranch ? cond : Assembler::InvertCondition(cond), lhs, rhs, &notTaken);
+            popStackBeforeBranch(b->framePushed);
+            masm.jump(b->label);
+            masm.bind(&notTaken);
+        } else {
+            branchTo(b->invertBranch ? Assembler::InvertCondition(cond) : cond, lhs, rhs, b->label);
+        }
+
+        pushJoinRegUnlessVoid(r);
+    }
+
+    
+    
+    
+    
+    
+
+    template<typename Cond> bool sniffConditionalControlCmp(Cond compareOp, ValType operandType);
+    bool sniffConditionalControlEqz(ValType operandType);
+    void emitBranchSetup(BranchState* b);
+    void emitBranchPerform(BranchState* b);
 
     
 
@@ -4418,7 +4570,9 @@ BaseCompiler::emitRotlI64()
 void
 BaseCompiler::emitEqzI32()
 {
-    
+    if (sniffConditionalControlEqz(ValType::I32))
+        return;
+
     RegI32 r0 = popI32();
     masm.cmp32Set(Assembler::Equal, r0, Imm32(0), r0);
     pushI32(r0);
@@ -4427,7 +4581,9 @@ BaseCompiler::emitEqzI32()
 void
 BaseCompiler::emitEqzI64()
 {
-    
+    if (sniffConditionalControlEqz(ValType::I64))
+        return;
+
     
     RegI64 r0 = popI64();
     RegI64 r1 = needI64();
@@ -4829,6 +4985,155 @@ BaseCompiler::emitReinterpretI64AsF64()
     pushF64(d0);
 }
 
+template<typename Cond>
+bool
+BaseCompiler::sniffConditionalControlCmp(Cond compareOp, ValType operandType)
+{
+    MOZ_ASSERT(latentOp_ == LatentOp::None, "Latent comparison state not properly reset");
+
+    switch (iter_.peekOp()) {
+      case uint16_t(Op::BrIf):
+      case uint16_t(Op::Select):
+      case uint16_t(Op::If):
+        setLatentCompare(compareOp, operandType);
+        return true;
+      default:
+        return false;
+    }
+}
+
+bool
+BaseCompiler::sniffConditionalControlEqz(ValType operandType)
+{
+    MOZ_ASSERT(latentOp_ == LatentOp::None, "Latent comparison state not properly reset");
+
+    switch (iter_.peekOp()) {
+      case uint16_t(Op::BrIf):
+      case uint16_t(Op::Select):
+      case uint16_t(Op::If):
+        setLatentEqz(operandType);
+        return true;
+      default:
+        return false;
+    }
+}
+
+void
+BaseCompiler::emitBranchSetup(BranchState* b)
+{
+    
+    switch (latentOp_) {
+      case LatentOp::None: {
+        latentIntCmp_ = Assembler::NotEqual;
+        latentType_ = ValType::I32;
+        b->i32.lhs = popI32NotJoinReg(b->resultType);
+        b->i32.rhsImm = true;
+        b->i32.imm = 0;
+        break;
+      }
+      case LatentOp::Compare: {
+        switch (latentType_) {
+          case ValType::I32: {
+            if (popConstI32(b->i32.imm)) {
+                b->i32.lhs = popI32NotJoinReg(b->resultType);
+                b->i32.rhsImm = true;
+            } else {
+                maybeReserveJoinRegI(b->resultType);
+                pop2xI32(&b->i32.lhs, &b->i32.rhs);
+                maybeUnreserveJoinRegI(b->resultType);
+                b->i32.rhsImm = false;
+            }
+            break;
+          }
+          case ValType::I64: {
+            maybeReserveJoinRegI(b->resultType);
+            pop2xI64(&b->i64.lhs, &b->i64.rhs);
+            maybeUnreserveJoinRegI(b->resultType);
+            b->i64.rhsImm = false;
+            break;
+          }
+          case ValType::F32: {
+            pop2xF32(&b->f32.lhs, &b->f32.rhs);
+            break;
+          }
+          case ValType::F64: {
+            pop2xF64(&b->f64.lhs, &b->f64.rhs);
+            break;
+          }
+          default: {
+            MOZ_CRASH("Unexpected type for LatentOp::Compare");
+          }
+        }
+        break;
+      }
+      case LatentOp::Eqz: {
+        switch (latentType_) {
+          case ValType::I32: {
+            latentIntCmp_ = Assembler::Equal;
+            b->i32.lhs = popI32NotJoinReg(b->resultType);
+            b->i32.rhsImm = true;
+            b->i32.imm = 0;
+            break;
+          }
+          case ValType::I64: {
+            latentIntCmp_ = Assembler::Equal;
+            b->i64.lhs = popI64NotJoinReg(b->resultType);
+            b->i64.rhsImm = true;
+            b->i64.imm = 0;
+            break;
+          }
+          default: {
+            MOZ_CRASH("Unexpected type for LatentOp::Eqz");
+          }
+        }
+        break;
+      }
+    }
+}
+
+void
+BaseCompiler::emitBranchPerform(BranchState* b)
+{
+    switch (latentType_) {
+      case ValType::I32: {
+        if (b->i32.rhsImm) {
+            jumpConditionalWithJoinReg(b, latentIntCmp_, b->i32.lhs, Imm32(b->i32.imm));
+        } else {
+            jumpConditionalWithJoinReg(b, latentIntCmp_, b->i32.lhs, b->i32.rhs);
+            freeI32(b->i32.rhs);
+        }
+        freeI32(b->i32.lhs);
+        break;
+      }
+      case ValType::I64: {
+        if (b->i64.rhsImm) {
+            jumpConditionalWithJoinReg(b, latentIntCmp_, b->i64.lhs, Imm64(b->i64.imm));
+        } else {
+            jumpConditionalWithJoinReg(b, latentIntCmp_, b->i64.lhs, b->i64.rhs);
+            freeI64(b->i64.rhs);
+        }
+        freeI64(b->i64.lhs);
+        break;
+      }
+      case ValType::F32: {
+        jumpConditionalWithJoinReg(b, latentDoubleCmp_, b->f32.lhs, b->f32.rhs);
+        freeF32(b->f32.lhs);
+        freeF32(b->f32.rhs);
+        break;
+      }
+      case ValType::F64: {
+        jumpConditionalWithJoinReg(b, latentDoubleCmp_, b->f64.lhs, b->f64.rhs);
+        freeF64(b->f64.lhs);
+        freeF64(b->f64.rhs);
+        break;
+      }
+      default: {
+        MOZ_CRASH("Unexpected type for LatentOp::Compare");
+      }
+    }
+    resetLatentOp();
+}
+
 
 
 
@@ -4961,19 +5266,19 @@ BaseCompiler::emitIf()
     if (!elseLabel)
         return false;
 
-    RegI32 rc;
+    BranchState b(elseLabel.get(), BranchState::NoPop, InvertBranch(true));
     if (!deadCode_) {
-        rc = popI32();
-        sync();                    
+        emitBranchSetup(&b);
+        sync();
+    } else {
+        resetLatentOp();
     }
 
     if (!pushControl(&endLabel, &elseLabel))
         return false;
 
-    if (!deadCode_) {
-        masm.branch32(Assembler::Equal, rc, Imm32(0), controlItem(0).otherLabel);
-        freeI32(rc);
-    }
+    if (!deadCode_)
+        emitBranchPerform(&b);
 
     return true;
 }
@@ -5136,38 +5441,16 @@ BaseCompiler::emitBrIf()
     if (!iter_.readBrIf(&relativeDepth, &type, &unused_value, &unused_condition))
         return false;
 
-    if (deadCode_)
+    if (deadCode_) {
+        resetLatentOp();
         return true;
+    }
 
     Control& target = controlItem(relativeDepth);
 
-    
-    
-    
-
-    
-    maybeReserveJoinRegI(type);
-
-    
-    RegI32 rc = popI32();
-
-    maybeUnreserveJoinRegI(type);
-
-    
-    
-    AnyReg r = popJoinRegUnlessVoid(type);
-
-    Label notTaken;
-    masm.branch32(Assembler::Equal, rc, Imm32(0), &notTaken);
-    popStackBeforeBranch(target.framePushed);
-    masm.jump(target.label);
-    masm.bind(&notTaken);
-
-    
-    freeI32(rc);
-
-    
-    pushJoinRegUnlessVoid(r);
+    BranchState b(target.label, target.framePushed, InvertBranch(false), type);
+    emitBranchSetup(&b);
+    emitBranchPerform(&b);
 
     return true;
 }
@@ -6132,18 +6415,22 @@ BaseCompiler::emitSelect()
     if (!iter_.readSelect(&type, &unused_trueValue, &unused_falseValue, &unused_condition))
         return false;
 
-    if (deadCode_)
+    if (deadCode_) {
+        resetLatentOp();
         return true;
+    }
 
     
 
-    RegI32 rc = popI32();
+    Label done;
+    BranchState b(&done);
+    emitBranchSetup(&b);
+
     switch (type) {
       case ValType::I32: {
-        Label done;
         RegI32 r0, r1;
         pop2xI32(&r0, &r1);
-        masm.branch32(Assembler::NotEqual, rc, Imm32(0), &done);
+        emitBranchPerform(&b);
         moveI32(r1, r0);
         masm.bind(&done);
         freeI32(r1);
@@ -6151,10 +6438,9 @@ BaseCompiler::emitSelect()
         break;
       }
       case ValType::I64: {
-        Label done;
         RegI64 r0, r1;
         pop2xI64(&r0, &r1);
-        masm.branch32(Assembler::NotEqual, rc, Imm32(0), &done);
+        emitBranchPerform(&b);
         moveI64(r1, r0);
         masm.bind(&done);
         freeI64(r1);
@@ -6162,10 +6448,9 @@ BaseCompiler::emitSelect()
         break;
       }
       case ValType::F32: {
-        Label done;
         RegF32 r0, r1;
         pop2xF32(&r0, &r1);
-        masm.branch32(Assembler::NotEqual, rc, Imm32(0), &done);
+        emitBranchPerform(&b);
         moveF32(r1, r0);
         masm.bind(&done);
         freeF32(r1);
@@ -6173,10 +6458,9 @@ BaseCompiler::emitSelect()
         break;
       }
       case ValType::F64: {
-        Label done;
         RegF64 r0, r1;
         pop2xF64(&r0, &r1);
-        masm.branch32(Assembler::NotEqual, rc, Imm32(0), &done);
+        emitBranchPerform(&b);
         moveF64(r1, r0);
         masm.bind(&done);
         freeF64(r1);
@@ -6187,7 +6471,6 @@ BaseCompiler::emitSelect()
         MOZ_CRASH("select type");
       }
     }
-    freeI32(rc);
 
     return true;
 }
@@ -6195,27 +6478,33 @@ BaseCompiler::emitSelect()
 void
 BaseCompiler::emitCompareI32(Assembler::Condition compareOp, ValType compareType)
 {
-    
-    
-    
-    
-    
-    
-    
-    
-
     MOZ_ASSERT(compareType == ValType::I32);
-    RegI32 r0, r1;
-    pop2xI32(&r0, &r1);
-    masm.cmp32Set(compareOp, r0, r1, r0);
-    freeI32(r1);
-    pushI32(r0);
+
+    if (sniffConditionalControlCmp(compareOp, compareType))
+        return;
+
+    int32_t c;
+    if (popConstI32(c)) {
+        RegI32 r0 = popI32();
+        masm.cmp32Set(compareOp, r0, Imm32(c), r0);
+        pushI32(r0);
+    } else {
+        RegI32 r0, r1;
+        pop2xI32(&r0, &r1);
+        masm.cmp32Set(compareOp, r0, r1, r0);
+        freeI32(r1);
+        pushI32(r0);
+    }
 }
 
 void
 BaseCompiler::emitCompareI64(Assembler::Condition compareOp, ValType compareType)
 {
     MOZ_ASSERT(compareType == ValType::I64);
+
+    if (sniffConditionalControlCmp(compareOp, compareType))
+        return;
+
     RegI64 r0, r1;
     pop2xI64(&r0, &r1);
     RegI32 i0(fromI64(r0));
@@ -6229,6 +6518,10 @@ void
 BaseCompiler::emitCompareF32(Assembler::DoubleCondition compareOp, ValType compareType)
 {
     MOZ_ASSERT(compareType == ValType::F32);
+
+    if (sniffConditionalControlCmp(compareOp, compareType))
+        return;
+
     Label across;
     RegF32 r0, r1;
     pop2xF32(&r0, &r1);
@@ -6246,6 +6539,10 @@ void
 BaseCompiler::emitCompareF64(Assembler::DoubleCondition compareOp, ValType compareType)
 {
     MOZ_ASSERT(compareType == ValType::F64);
+
+    if (sniffConditionalControlCmp(compareOp, compareType))
+        return;
+
     Label across;
     RegF64 r0, r1;
     pop2xF64(&r0, &r1);
@@ -7094,6 +7391,10 @@ BaseCompiler::BaseCompiler(const ModuleEnvironment& env,
       maxFramePushed_(0),
       deadCode_(false),
       prologueTrapOffset_(trapOffset()),
+      latentOp_(LatentOp::None),
+      latentType_(ValType::I32),
+      latentIntCmp_(Assembler::Equal),
+      latentDoubleCmp_(Assembler::DoubleEqual),
       compileResults_(compileResults),
       masm(compileResults_.masm()),
       availGPR_(GeneralRegisterSet::All()),
