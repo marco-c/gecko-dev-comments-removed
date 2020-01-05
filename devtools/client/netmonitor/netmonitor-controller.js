@@ -299,7 +299,7 @@ var NetMonitorController = {
       request = NetMonitorView.RequestsMenu.getItemForPredicate(predicate);
       if (!request) {
         
-        gStore.dispatch(Actions.toggleFilter("all"));
+        gStore.dispatch(Actions.toggleFilterType("all"));
         request = NetMonitorView.RequestsMenu.getItemForPredicate(predicate);
       }
 

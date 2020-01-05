@@ -6,6 +6,7 @@ const ReactDOM = require("devtools/client/shared/vendor/react-dom");
 const Provider = createFactory(require("devtools/client/shared/vendor/react-redux").Provider);
 const FilterButtons = createFactory(require("./components/filter-buttons"));
 const ToggleButton = createFactory(require("./components/toggle-button"));
+const SearchBox = createFactory(require("./components/search-box"));
 const { L10N } = require("./l10n");
 
 
@@ -28,6 +29,7 @@ ToolbarView.prototype = {
     this._clearContainerNode = $("#react-clear-button-hook");
     this._filterContainerNode = $("#react-filter-buttons-hook");
     this._toggleContainerNode = $("#react-details-pane-toggle-hook");
+    this._searchContainerNode = $("#react-search-box-hook");
 
     
     ReactDOM.render(button({
@@ -45,6 +47,13 @@ ToolbarView.prototype = {
       FilterButtons()
     ), this._filterContainerNode);
 
+    
+    ReactDOM.render(Provider(
+      { store },
+      SearchBox()
+    ), this._searchContainerNode);
+
+    
     ReactDOM.render(Provider(
       { store },
       ToggleButton()
@@ -60,7 +69,9 @@ ToolbarView.prototype = {
     ReactDOM.unmountComponentAtNode(this._clearContainerNode);
     ReactDOM.unmountComponentAtNode(this._filterContainerNode);
     ReactDOM.unmountComponentAtNode(this._toggleContainerNode);
+    ReactDOM.unmountComponentAtNode(this._searchContainerNode);
   }
+
 };
 
 exports.ToolbarView = ToolbarView;
