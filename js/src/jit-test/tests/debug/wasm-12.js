@@ -6,7 +6,7 @@ if (!wasmIsSupported())
 var g = newGlobal();
 g.eval(`
 function initWasm(s) { return new WebAssembly.Instance(new WebAssembly.Module(wasmTextToBinary(s))); }
-o = initWasm('(module (func) (export "" 0))');
+o1 = initWasm('(module (func) (export "" 0))');
 o2 = initWasm('(module (func) (func) (export "" 1))');
 `);
 
