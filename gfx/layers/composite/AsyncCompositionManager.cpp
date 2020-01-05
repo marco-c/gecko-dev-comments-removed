@@ -199,6 +199,7 @@ AsyncCompositionManager::ComputeRotation()
   }
 }
 
+#ifdef DEBUG
 static void
 GetBaseTransform(Layer* aLayer, Matrix4x4* aTransform)
 {
@@ -208,6 +209,7 @@ GetBaseTransform(Layer* aLayer, Matrix4x4* aTransform)
         ? aLayer->GetLocalTransform()
         : aLayer->GetTransform());
 }
+#endif
 
 static void
 TransformClipRect(Layer* aLayer,
@@ -481,15 +483,11 @@ AsyncCompositionManager::AlignFixedAndStickyLayers(Layer* aTransformedSubtreeRoo
         
         
         
-        
-        Matrix4x4 oldTransform = aPreviousTransformForRoot.ToUnknownMatrix();
-        Matrix4x4 newTransform = aCurrentTransformForRoot.ToUnknownMatrix();
+#ifdef DEBUG
         Matrix4x4 localTransform;
         GetBaseTransform(layer, &localTransform);
-        if (layer != aTransformedSubtreeRoot) {
-          oldTransform = localTransform * oldTransform;
-          newTransform = localTransform * newTransform;
-        }
+        MOZ_ASSERT(localTransform.IsIdentity());
+#endif
 
         
         
@@ -507,19 +505,13 @@ AsyncCompositionManager::AlignFixedAndStickyLayers(Layer* aTransformedSubtreeRoo
         
         
         
-        LayerPoint transformedAnchor = ViewAs<LayerPixel>(
-            newTransform.Inverse().TransformPoint(
-              (oldTransform.TransformPoint(offsetAnchor.ToUnknownPoint()))));
+        LayerPoint transformedAnchor = aCurrentTransformForRoot.Inverse()
+            .TransformPoint(aPreviousTransformForRoot.TransformPoint(
+                offsetAnchor));
 
         
         
-        
-        
-        
-        
-        auto localTransformTyped = ViewAs<LayerToParentLayerMatrix4x4>(localTransform);
-        ParentLayerPoint translation = TransformBy(localTransformTyped, transformedAnchor)
-                                     - TransformBy(localTransformTyped, anchor);
+        LayerPoint translation = transformedAnchor - anchor;
 
         
         
@@ -535,9 +527,7 @@ AsyncCompositionManager::AlignFixedAndStickyLayers(Layer* aTransformedSubtreeRoo
           const LayerRect& stickyOuter = layer->GetStickyScrollRangeOuter();
           const LayerRect& stickyInner = layer->GetStickyScrollRangeInner();
 
-          
-          
-          ParentLayerPoint originalTranslation = translation;
+          LayerPoint originalTranslation = translation;
           translation.y = IntervalOverlap(translation.y, stickyOuter.y, stickyOuter.YMost()) -
                           IntervalOverlap(translation.y, stickyInner.y, stickyInner.YMost());
           translation.x = IntervalOverlap(translation.x, stickyOuter.x, stickyOuter.XMost()) -
@@ -552,7 +542,8 @@ AsyncCompositionManager::AlignFixedAndStickyLayers(Layer* aTransformedSubtreeRoo
         
         
         
-        TranslateShadowLayer(layer, translation, true, aClipPartsCache);
+        TranslateShadowLayer(layer, ViewAs<ParentLayerPixel>(translation,
+            PixelCastJustification::NoTransformOnLayer), true, aClipPartsCache);
 
         
         

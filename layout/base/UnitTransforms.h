@@ -52,7 +52,10 @@ enum class PixelCastJustification : uint8_t {
   
   
   
-  MultipleAsyncTransforms
+  MultipleAsyncTransforms,
+  
+  
+  NoTransformOnLayer
 };
 
 template <class TargetUnits, class SourceUnits>
