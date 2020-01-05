@@ -3940,15 +3940,6 @@ GCRuntime::beginMarkPhase(JS::gcreason::Reason reason, AutoLockForExclusiveAcces
         }
     }
 
-    
-
-
-
-    {
-        AutoLockHelperThreadState helperLock;
-        HelperThreadState().startHandlingCompressionTasks(helperLock);
-    }
-
     startNumber = number;
 
     
@@ -4989,7 +4980,6 @@ MAKE_GC_SWEEP_TASK(SweepInitialShapesTask);
 MAKE_GC_SWEEP_TASK(SweepObjectGroupsTask);
 MAKE_GC_SWEEP_TASK(SweepRegExpsTask);
 MAKE_GC_SWEEP_TASK(SweepMiscTask);
-MAKE_GC_SWEEP_TASK(SweepCompressionTasksTask);
 #undef MAKE_GC_SWEEP_TASK
 
  void
@@ -5040,35 +5030,6 @@ SweepMiscTask::run()
         c->sweepSavedStacks();
         c->sweepSelfHostingScriptSource();
         c->sweepNativeIterators();
-    }
-}
-
- void
-SweepCompressionTasksTask::run()
-{
-    AutoLockHelperThreadState lock;
-
-    
-    GlobalHelperThreadState::SourceCompressionTaskVector& finished =
-        HelperThreadState().compressionFinishedList(lock);
-    for (size_t i = 0; i < finished.length(); i++) {
-        SourceCompressionTask* task = finished[i];
-        if (task->runtimeMatches(runtime())) {
-            HelperThreadState().remove(finished, &i);
-            task->complete();
-            js_delete(task);
-        }
-    }
-
-    
-    GlobalHelperThreadState::SourceCompressionTaskVector& pending =
-        HelperThreadState().compressionPendingList(lock);
-    for (size_t i = 0; i < pending.length(); i++) {
-        SourceCompressionTask* task = pending[i];
-        if (task->shouldCancel()) {
-            HelperThreadState().remove(pending, &i);
-            js_delete(task);
-        }
     }
 }
 
@@ -5150,7 +5111,6 @@ GCRuntime::beginSweepingSweepGroup(AutoLockForExclusiveAccess& lock)
     SweepObjectGroupsTask sweepObjectGroupsTask(rt);
     SweepRegExpsTask sweepRegExpsTask(rt);
     SweepMiscTask sweepMiscTask(rt);
-    SweepCompressionTasksTask sweepCompressionTasksTask(rt);
     WeakCacheTaskVector sweepCacheTasks = PrepareWeakCacheTasks(rt);
 
     for (GCSweepGroupIter zone(rt); !zone.done(); zone.next()) {
@@ -5199,7 +5159,6 @@ GCRuntime::beginSweepingSweepGroup(AutoLockForExclusiveAccess& lock)
             startTask(sweepObjectGroupsTask, gcstats::PHASE_SWEEP_TYPE_OBJECT, helperLock);
             startTask(sweepRegExpsTask, gcstats::PHASE_SWEEP_REGEXP, helperLock);
             startTask(sweepMiscTask, gcstats::PHASE_SWEEP_MISC, helperLock);
-            startTask(sweepCompressionTasksTask, gcstats::PHASE_SWEEP_MISC, helperLock);
             for (auto& task : sweepCacheTasks)
                 startTask(task, gcstats::PHASE_SWEEP_MISC, helperLock);
         }
@@ -5281,7 +5240,6 @@ GCRuntime::beginSweepingSweepGroup(AutoLockForExclusiveAccess& lock)
         joinTask(sweepObjectGroupsTask, gcstats::PHASE_SWEEP_TYPE_OBJECT, helperLock);
         joinTask(sweepRegExpsTask, gcstats::PHASE_SWEEP_REGEXP, helperLock);
         joinTask(sweepMiscTask, gcstats::PHASE_SWEEP_MISC, helperLock);
-        joinTask(sweepCompressionTasksTask, gcstats::PHASE_SWEEP_MISC, helperLock);
         for (auto& task : sweepCacheTasks)
             joinTask(task, gcstats::PHASE_SWEEP_MISC, helperLock);
     }

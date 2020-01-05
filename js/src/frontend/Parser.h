@@ -770,6 +770,9 @@ class ParserBase : public StrictModeGetter
     
     UsedNameTracker& usedNames;
 
+    
+    SourceCompressionTask* sct;
+
     ScriptSource*       ss;
 
     
@@ -1083,6 +1086,8 @@ class Parser final : public ParserBase, private JS::AutoGCRooter
 
   private:
     Parser* thisForCtor() { return this; }
+
+    JSAtom* stopStringCompression();
 
     Node stringLiteral();
     Node noSubstitutionTaggedTemplate();

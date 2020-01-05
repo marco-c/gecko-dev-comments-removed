@@ -106,13 +106,7 @@ class GlobalHelperThreadState
     ParseTaskVector parseWaitingOnGC_;
 
     
-    SourceCompressionTaskVector compressionPendingList_;
-
-    
     SourceCompressionTaskVector compressionWorklist_;
-
-    
-    SourceCompressionTaskVector compressionFinishedList_;
 
     
     GCHelperStateVector gcHelperWorklist_;
@@ -196,16 +190,8 @@ class GlobalHelperThreadState
         return parseWaitingOnGC_;
     }
 
-    SourceCompressionTaskVector& compressionPendingList(const AutoLockHelperThreadState&) {
-        return compressionPendingList_;
-    }
-
     SourceCompressionTaskVector& compressionWorklist(const AutoLockHelperThreadState&) {
         return compressionWorklist_;
-    }
-
-    SourceCompressionTaskVector& compressionFinishedList(const AutoLockHelperThreadState&) {
-        return compressionFinishedList_;
     }
 
     GCHelperStateVector& gcHelperWorklist(const AutoLockHelperThreadState&) {
@@ -223,10 +209,6 @@ class GlobalHelperThreadState
     bool canStartCompressionTask(const AutoLockHelperThreadState& lock);
     bool canStartGCHelperTask(const AutoLockHelperThreadState& lock);
     bool canStartGCParallelTask(const AutoLockHelperThreadState& lock);
-
-    
-    void startHandlingCompressionTasks(const AutoLockHelperThreadState&);
-    void scheduleCompressionTasks(const AutoLockHelperThreadState&);
 
     
     
@@ -283,6 +265,8 @@ class GlobalHelperThreadState
     JSScript* finishScriptParseTask(JSContext* cx, void* token);
     JSScript* finishScriptDecodeTask(JSContext* cx, void* token);
     JSObject* finishModuleParseTask(JSContext* cx, void* token);
+    bool compressionInProgress(SourceCompressionTask* task, const AutoLockHelperThreadState& lock);
+    SourceCompressionTask* compressionTaskForSource(ScriptSource* ss, const AutoLockHelperThreadState& lock);
 
     bool hasActiveThreads(const AutoLockHelperThreadState&);
     void waitForAllThreads();
@@ -549,12 +533,7 @@ struct AutoEnqueuePendingParseTasksAfterGC {
 
 
 bool
-EnqueueOffThreadCompression(JSContext* cx, SourceCompressionTask* task);
-
-
-
-void
-CancelOffThreadCompressions(JSRuntime* runtime);
+StartOffThreadCompression(JSContext* cx, SourceCompressionTask* task);
 
 class MOZ_RAII AutoLockHelperThreadState : public LockGuard<Mutex>
 {
@@ -624,10 +603,6 @@ struct ParseTask
 
     
     
-    SourceCompressionTask* sourceCompressionTask;
-
-    
-    
     Vector<frontend::CompileError*, 0, SystemAllocPolicy> errors;
     bool overRecursed;
     bool outOfMemory;
@@ -685,73 +660,52 @@ OffThreadParsingMustWaitForGC(JSRuntime* rt);
 
 
 
-
-
-
-
-
-
-
-
-class SourceCompressionTask
+struct SourceCompressionTask
 {
-    friend struct HelperThread;
     friend class ScriptSource;
+    friend struct HelperThread;
+
+    
+    HelperThread* helperThread;
+
+  private:
+    
+    JSContext* cx;
+
+    ScriptSource* ss;
 
     
     
-    JSRuntime* runtime_;
+    mozilla::Atomic<bool, mozilla::Relaxed> abort_;
 
     
-    static const uint64_t MajorGCNumberWaitingForFixup = UINT64_MAX;
-    uint64_t majorGCNumber_;
+    enum ResultType {
+        OOM,
+        Aborted,
+        Success
+    } result;
 
-    
-    ScriptSourceHolder sourceHolder_;
-
-    
-    
-    
-    
-    mozilla::Maybe<SharedImmutableString> resultString_;
+    mozilla::Maybe<SharedImmutableString> resultString;
 
   public:
-    
-    
-    
-    SourceCompressionTask(JSRuntime* rt, ScriptSource* source)
-      : runtime_(rt),
-        majorGCNumber_(CurrentThreadCanAccessRuntime(rt)
-                       ? rt->gc.majorGCCount()
-                       : MajorGCNumberWaitingForFixup),
-        sourceHolder_(source)
-    { }
+    explicit SourceCompressionTask(JSContext* cx)
+      : helperThread(nullptr)
+      , cx(cx)
+      , ss(nullptr)
+      , abort_(false)
+      , result(OOM)
+    {}
 
-    bool runtimeMatches(JSRuntime* runtime) const {
-        return runtime == runtime_;
+    ~SourceCompressionTask()
+    {
+        complete();
     }
 
-    void fixupMajorGCNumber(JSRuntime* runtime) {
-        MOZ_ASSERT(majorGCNumber_ == MajorGCNumberWaitingForFixup);
-        majorGCNumber_ = runtime->gc.majorGCCount();
-    }
-
-    bool shouldStart() const {
-        
-        
-        if (majorGCNumber_ == MajorGCNumberWaitingForFixup)
-            return false;
-        return runtime_->gc.majorGCCount() > majorGCNumber_ + 1;
-    }
-
-    bool shouldCancel() const {
-        
-        
-        return sourceHolder_.get()->refs == 1;
-    }
-
-    void work();
-    void complete();
+    ResultType work();
+    bool complete();
+    void abort() { abort_ = true; }
+    bool active() const { return !!ss; }
+    ScriptSource* source() { return ss; }
 };
 
 } 
