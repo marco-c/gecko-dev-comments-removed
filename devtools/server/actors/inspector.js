@@ -53,6 +53,7 @@
 const {Cc, Ci, Cu} = require("chrome");
 const Services = require("Services");
 const protocol = require("devtools/shared/protocol");
+const {LayoutActor} = require("devtools/server/actors/layout");
 const {LongStringActor} = require("devtools/server/actors/string");
 const promise = require("promise");
 const {Task} = require("devtools/shared/task");
@@ -915,6 +916,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
       this.onMutations = null;
 
+      this.layoutActor = null;
       this.tabActor = null;
 
       events.emit(this, "destroyed");
@@ -1752,14 +1754,6 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       return;
     }
 
-    
-    
-    for (let locked of this._activePseudoClassLocks) {
-      if (DOMUtils.hasPseudoClassLock(locked.rawNode, pseudo)) {
-        this._removePseudoClassLock(locked, pseudo);
-      }
-    }
-
     this._addPseudoClassLock(node, pseudo);
 
     if (!options.parents) {
@@ -1843,15 +1837,6 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     }
 
     this._removePseudoClassLock(node, pseudo);
-
-    
-    
-    for (let locked of this._activePseudoClassLocks) {
-      if (node.rawNode.contains(locked.rawNode) &&
-          DOMUtils.hasPseudoClassLock(locked.rawNode, pseudo)) {
-        this._removePseudoClassLock(locked, pseudo);
-      }
-    }
 
     if (!options.parents) {
       return;
@@ -2596,6 +2581,20 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     }
 
     return this.attachElement(obj);
+  },
+
+  
+
+
+
+
+
+  getLayoutInspector: function () {
+    if (!this.layoutActor) {
+      this.layoutActor = new LayoutActor(this.conn, this.tabActor, this);
+    }
+
+    return this.layoutActor;
   },
 });
 
