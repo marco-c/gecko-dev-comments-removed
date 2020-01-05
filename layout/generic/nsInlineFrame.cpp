@@ -809,9 +809,10 @@ nsInlineFrame::ReflowInlineFrame(nsPresContext* aPresContext,
       
       
       
-      aStatus = NS_FRAME_NOT_COMPLETE |
-        NS_INLINE_BREAK | NS_INLINE_BREAK_AFTER |
-        (aStatus & NS_INLINE_BREAK_TYPE_MASK);
+      StyleClear oldBreakType = aStatus.BreakType();
+      aStatus.Reset();
+      aStatus.SetIncomplete();
+      aStatus.SetInlineLineBreakAfter(oldBreakType);
       PushFrames(aPresContext, aFrame, irs.mPrevFrame, irs);
     }
     else {
