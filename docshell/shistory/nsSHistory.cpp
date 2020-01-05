@@ -226,6 +226,9 @@ nsSHistory::nsSHistory()
   : mIndex(-1)
   , mLength(0)
   , mRequestedIndex(-1)
+  , mIsPartial(false)
+  , mGlobalIndexOffset(0)
+  , mEntriesInFollowingPartialHistories(0)
   , mRootDocShell(nullptr)
 {
   
@@ -419,6 +422,11 @@ nsSHistory::AddEntry(nsISHEntry* aSHEntry, bool aPersist)
   
   
   mLength = (++mIndex + 1);
+  NOTIFY_LISTENERS(OnLengthChange, (mLength));
+
+  
+  
+  mEntriesInFollowingPartialHistories = 0;
 
   
   if (!mListRoot) {
@@ -434,12 +442,72 @@ nsSHistory::AddEntry(nsISHEntry* aSHEntry, bool aPersist)
   return NS_OK;
 }
 
+NS_IMETHODIMP
+nsSHistory::GetIsPartial(bool* aResult)
+{
+  NS_ENSURE_ARG_POINTER(aResult);
+  *aResult = mIsPartial;
+  return NS_OK;
+}
+
 
 NS_IMETHODIMP
 nsSHistory::GetCount(int32_t* aResult)
 {
   NS_ENSURE_ARG_POINTER(aResult);
   *aResult = mLength;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsSHistory::GetGlobalCount(int32_t* aResult)
+{
+  NS_ENSURE_ARG_POINTER(aResult);
+  *aResult = mGlobalIndexOffset + mLength + mEntriesInFollowingPartialHistories;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsSHistory::GetGlobalIndexOffset(int32_t* aResult)
+{
+  NS_ENSURE_ARG_POINTER(aResult);
+  *aResult = mGlobalIndexOffset;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsSHistory::OnPartialSessionHistoryActive(int32_t aGlobalLength, int32_t aTargetIndex)
+{
+  NS_ENSURE_TRUE(mIsPartial, NS_ERROR_UNEXPECTED);
+
+  int32_t extraLength = aGlobalLength - mLength - mGlobalIndexOffset;
+  NS_ENSURE_TRUE(extraLength >= 0, NS_ERROR_UNEXPECTED);
+
+  if (extraLength != mEntriesInFollowingPartialHistories) {
+    mEntriesInFollowingPartialHistories = extraLength;
+  }
+
+  if (mIndex == aTargetIndex) {
+    
+    
+
+    
+    NS_DispatchToCurrentThread(NewRunnableMethod(static_cast<nsDocShell*>(mRootDocShell),
+                                                 &nsDocShell::FireDummyOnLocationChange));
+    return NS_OK;
+  }
+
+  return LoadEntry(aTargetIndex, nsIDocShellLoadInfo::loadHistory,
+                   HIST_CMD_GOTOINDEX);
+}
+
+NS_IMETHODIMP
+nsSHistory::OnPartialSessionHistoryDeactive()
+{
+  NS_ENSURE_TRUE(mIsPartial, NS_ERROR_UNEXPECTED);
+
+  
+  
   return NS_OK;
 }
 
@@ -701,6 +769,10 @@ nsSHistory::PurgeHistory(int32_t aEntries)
   }
   mLength -= cnt;
   mIndex -= cnt;
+  NOTIFY_LISTENERS(OnLengthChange, (mLength));
+
+  
+  mEntriesInFollowingPartialHistories = 0;
 
   
   
@@ -739,6 +811,13 @@ nsSHistory::RemoveSHistoryListener(nsISHistoryListener* aListener)
   
   nsWeakPtr listener = do_GetWeakReference(aListener);
   mListeners.RemoveElement(listener);
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsSHistory::SetPartialSHistoryListener(nsIPartialSHistoryListener* aListener)
+{
+  mPartialHistoryListener = do_GetWeakReference(aListener);
   return NS_OK;
 }
 
@@ -808,14 +887,20 @@ NS_IMETHODIMP
 nsSHistory::GetCanGoBack(bool* aCanGoBack)
 {
   NS_ENSURE_ARG_POINTER(aCanGoBack);
-  *aCanGoBack = false;
+
+  if (mGlobalIndexOffset) {
+    *aCanGoBack = true;
+    return NS_OK;
+  }
 
   int32_t index = -1;
   NS_ENSURE_SUCCESS(GetIndex(&index), NS_ERROR_FAILURE);
   if (index > 0) {
     *aCanGoBack = true;
+    return NS_OK;
   }
 
+  *aCanGoBack = false;
   return NS_OK;
 }
 
@@ -823,18 +908,22 @@ NS_IMETHODIMP
 nsSHistory::GetCanGoForward(bool* aCanGoForward)
 {
   NS_ENSURE_ARG_POINTER(aCanGoForward);
-  *aCanGoForward = false;
+
+  if (mEntriesInFollowingPartialHistories) {
+    *aCanGoForward = true;
+    return NS_OK;
+  }
 
   int32_t index = -1;
   int32_t count = -1;
-
   NS_ENSURE_SUCCESS(GetIndex(&index), NS_ERROR_FAILURE);
   NS_ENSURE_SUCCESS(GetCount(&count), NS_ERROR_FAILURE);
-
   if (index >= 0 && index < (count - 1)) {
     *aCanGoForward = true;
+    return NS_OK;
   }
 
+  *aCanGoForward = false;
   return NS_OK;
 }
 
@@ -1358,6 +1447,8 @@ nsSHistory::RemoveDuplicate(int32_t aIndex, bool aKeepNext)
       mRequestedIndex = mRequestedIndex - 1;
     }
     --mLength;
+    mEntriesInFollowingPartialHistories = 0;
+    NOTIFY_LISTENERS(OnLengthChange, (mLength));
     return true;
   }
   return false;
@@ -1513,9 +1604,11 @@ nsSHistory::LoadURI(const char16_t* aURI,
 }
 
 NS_IMETHODIMP
-nsSHistory::GotoIndex(int32_t aIndex)
+nsSHistory::GotoIndex(int32_t aGlobalIndex)
 {
-  return LoadEntry(aIndex, nsIDocShellLoadInfo::loadHistory,
+  
+  
+  return LoadEntry(aGlobalIndex - mGlobalIndexOffset, nsIDocShellLoadInfo::loadHistory,
                    HIST_CMD_GOTOINDEX);
 }
 
@@ -1538,6 +1631,26 @@ nsSHistory::LoadEntry(int32_t aIndex, long aLoadType, uint32_t aHistCmd)
 {
   if (!mRootDocShell) {
     return NS_ERROR_FAILURE;
+  }
+
+  if (aIndex < 0 || aIndex >= mLength) {
+    if (aIndex + mGlobalIndexOffset < 0) {
+      
+      return NS_ERROR_FAILURE;
+    }
+
+    if (aIndex - mLength >= mEntriesInFollowingPartialHistories) {
+      
+      return NS_ERROR_FAILURE;
+    }
+
+    
+    nsCOMPtr<nsIPartialSHistoryListener> listener =
+      do_QueryReferent(mPartialHistoryListener);
+    if (!listener) {
+      return NS_ERROR_FAILURE;
+    }
+    return listener->OnRequestCrossBrowserNavigation(aIndex + mGlobalIndexOffset);
   }
 
   
@@ -1753,6 +1866,26 @@ nsSHistory::GetSHistoryEnumerator(nsISimpleEnumerator** aEnumerator)
   RefPtr<nsSHEnumerator> iterator = new nsSHEnumerator(this);
   iterator.forget(aEnumerator);
   return NS_OK;
+}
+
+NS_IMETHODIMP
+nsSHistory::OnAttachGroupedSessionHistory(int32_t aOffset)
+{
+  NS_ENSURE_TRUE(!mIsPartial, NS_ERROR_UNEXPECTED);
+  NS_ENSURE_TRUE(aOffset >= 0, NS_ERROR_ILLEGAL_VALUE);
+
+  mIsPartial = true;
+  mGlobalIndexOffset = aOffset;
+
+  
+  mEntriesInFollowingPartialHistories = 0;
+
+  
+  
+  NS_DispatchToCurrentThread(NewRunnableMethod(static_cast<nsDocShell*>(mRootDocShell),
+                                               &nsDocShell::FireDummyOnLocationChange));
+  return NS_OK;
+
 }
 
 nsSHEnumerator::nsSHEnumerator(nsSHistory* aSHistory) : mIndex(-1)

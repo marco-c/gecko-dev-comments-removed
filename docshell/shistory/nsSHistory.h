@@ -14,6 +14,7 @@
 #include "nsISimpleEnumerator.h"
 #include "nsTObserverArray.h"
 #include "nsWeakPtr.h"
+#include "nsIPartialSHistoryListener.h"
 
 #include "prclist.h"
 
@@ -46,7 +47,7 @@ public:
   
   static uint32_t GetMaxTotalViewers() { return sHistoryMaxTotalViewers; }
 
-protected:
+private:
   virtual ~nsSHistory();
   friend class nsSHEnumerator;
   friend class nsSHistoryObserver;
@@ -80,7 +81,6 @@ protected:
   nsresult LoadNextPossibleEntry(int32_t aNewIndex, long aLoadType,
                                  uint32_t aHistCmd);
 
-protected:
   
   
   
@@ -90,8 +90,22 @@ protected:
   int32_t mIndex;
   int32_t mLength;
   int32_t mRequestedIndex;
+
+  
+  bool mIsPartial;
+
+  
+  int32_t mGlobalIndexOffset;
+
+  
+  int32_t mEntriesInFollowingPartialHistories;
+
   
   nsAutoTObserverArray<nsWeakPtr, 2> mListeners;
+
+  
+  nsWeakPtr mPartialHistoryListener;
+
   
   nsIDocShell* mRootDocShell;
 
