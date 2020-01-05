@@ -2,6 +2,7 @@
 
 
 
+mod background;
 mod scaffolding;
 mod serialization;
 mod viewport;
