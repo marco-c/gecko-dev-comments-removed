@@ -1340,7 +1340,18 @@ ProcessHasSignalHandlers()
     
     
 # if defined(XP_WIN)
-    if (!AddVectoredExceptionHandler( true, WasmFaultHandler))
+#  if defined(MOZ_ASAN)
+    
+    
+    
+    const bool firstHandler = false;
+#  else
+    
+    
+    
+    const bool firstHandler = true;
+#  endif
+    if (!AddVectoredExceptionHandler(firstHandler, WasmFaultHandler))
         return false;
 # elif defined(XP_DARWIN)
     

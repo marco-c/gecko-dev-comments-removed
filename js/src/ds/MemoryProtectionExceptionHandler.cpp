@@ -95,8 +95,17 @@ static ProtectedRegionTree sProtectedRegions;
 bool
 MemoryProtectionExceptionHandler::isDisabled()
 {
+#if defined(XP_WIN) && defined(MOZ_ASAN)
     
+    
+    
+    
+    
+    
+    return true;
+#else
     return false;
+#endif
 }
 
 void
