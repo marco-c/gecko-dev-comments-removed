@@ -7,20 +7,17 @@
 #![allow(unsafe_code)]
 
 use {Atom, Namespace, LocalName};
-use atomic_refcell::{AtomicRef, AtomicRefCell};
+use atomic_refcell::{AtomicRef, AtomicRefCell, AtomicRefMut};
 use data::{ElementStyles, ElementData};
 use element_state::ElementState;
 use parking_lot::RwLock;
 use properties::{ComputedValues, PropertyDeclarationBlock};
-use properties::longhands::display::computed_value as display;
-use restyle_hints::{RESTYLE_DESCENDANTS, RESTYLE_LATER_SIBLINGS, RESTYLE_SELF, RestyleHint};
 use selector_parser::{ElementExt, PseudoElement, RestyleDamage};
 use sink::Push;
 use std::fmt::Debug;
-use std::ops::BitOr;
+use std::ops::{BitOr, BitOrAssign};
 use std::sync::Arc;
 use stylist::ApplicableDeclarationBlock;
-use traversal::DomTraversalContext;
 use util::opts;
 
 pub use style_traits::UnsafeNode;
@@ -46,7 +43,7 @@ impl OpaqueNode {
     }
 }
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum StylingMode {
     
     Initial,
@@ -59,7 +56,7 @@ pub enum StylingMode {
     Stop,
 }
 
-pub trait TRestyleDamage : Debug + PartialEq + BitOr<Output=Self> + Copy {
+pub trait TRestyleDamage : BitOr<Output=Self> + BitOrAssign + Copy + Debug + PartialEq {
     
     
     
@@ -76,6 +73,10 @@ pub trait TRestyleDamage : Debug + PartialEq + BitOr<Output=Self> + Copy {
     fn empty() -> Self;
 
     fn rebuild_and_reflow() -> Self;
+
+    fn is_empty(&self) -> bool {
+        *self == Self::empty()
+    }
 }
 
 
@@ -121,9 +122,13 @@ pub trait TNode : Sized + Copy + Clone + NodeInfo {
     
     fn opaque(&self) -> OpaqueNode;
 
-    
-    
-    fn layout_parent_element(self, reflow_root: OpaqueNode) -> Option<Self::ConcreteElement>;
+    fn layout_parent_element(self, reflow_root: OpaqueNode) -> Option<Self::ConcreteElement> {
+        if self.opaque() == reflow_root {
+            None
+        } else {
+            self.parent_node().and_then(|n| n.as_element())
+        }
+    }
 
     fn debug_id(self) -> usize;
 
@@ -138,14 +143,6 @@ pub trait TNode : Sized + Copy + Clone + NodeInfo {
     unsafe fn set_can_be_fragmented(&self, value: bool);
 
     fn parent_node(&self) -> Option<Self>;
-
-    fn first_child(&self) -> Option<Self>;
-
-    fn last_child(&self) -> Option<Self>;
-
-    fn prev_sibling(&self) -> Option<Self>;
-
-    fn next_sibling(&self) -> Option<Self>;
 }
 
 pub trait PresentationalHintsSynthetizer {
@@ -158,15 +155,22 @@ pub trait TElement : PartialEq + Debug + Sized + Copy + Clone + ElementExt + Pre
 
     fn as_node(&self) -> Self::ConcreteNode;
 
+    
+    
+    fn layout_parent_element(self, reflow_root: OpaqueNode) -> Option<Self> {
+        if self.as_node().opaque() == reflow_root {
+            None
+        } else {
+            self.parent_element()
+        }
+    }
+
     fn style_attribute(&self) -> Option<&Arc<RwLock<PropertyDeclarationBlock>>>;
 
     fn get_state(&self) -> ElementState;
 
     fn has_attr(&self, namespace: &Namespace, attr: &LocalName) -> bool;
     fn attr_equals(&self, namespace: &Namespace, attr: &LocalName, value: &Atom) -> bool;
-
-    
-    fn set_restyle_damage(self, damage: RestyleDamage);
 
     
     
@@ -180,11 +184,18 @@ pub trait TElement : PartialEq + Debug + Sized + Copy + Clone + ElementExt + Pre
     
     
     
-    fn deprecated_dirty_bit_is_set(&self) -> bool;
-
+    
     fn has_dirty_descendants(&self) -> bool;
 
+    
+    
+    
     unsafe fn set_dirty_descendants(&self);
+
+    
+    
+    
+    unsafe fn unset_dirty_descendants(&self);
 
     
     
@@ -197,9 +208,7 @@ pub trait TElement : PartialEq + Debug + Sized + Copy + Clone + ElementExt + Pre
     
     
     fn is_display_none(&self) -> bool {
-        self.borrow_data().unwrap()
-            .current_styles().primary
-            .get_box().clone_display() == display::T::none
+        self.borrow_data().unwrap().current_styles().is_display_none()
     }
 
     
@@ -231,78 +240,37 @@ pub trait TElement : PartialEq + Debug + Sized + Copy + Clone + ElementExt + Pre
             Stop
         };
 
-        let mut mode = match self.borrow_data() {
+        match self.borrow_data() {
             
             None if !self.frame_has_style() => Initial,
             
             None => mode_for_descendants,
             
-            Some(d) => {
-                if d.has_current_styles() {
-                    
-                    debug_assert!(!self.frame_has_style());
-                    debug_assert!(d.restyle_data.is_none());
-                    mode_for_descendants
-                } else {
-                    
-                    if d.previous_styles().is_some() {
-                        Restyle
-                    } else {
-                        Initial
-                    }
-                }
+            Some(d) => match *d {
+                ElementData::Restyle(_) => Restyle,
+                ElementData::Persistent(_) => mode_for_descendants,
+                ElementData::Initial(None) => Initial,
+                
+                
+                
+                
+                
+                
+                ElementData::Initial(Some(_)) => mode_for_descendants,
             },
-        };
-
-        
-        if mode != Initial && self.deprecated_dirty_bit_is_set() {
-            mode = Restyle;
         }
-        mode
-
     }
-
-    
-    fn borrow_data(&self) -> Option<AtomicRef<ElementData>>;
 
     
     fn get_data(&self) -> Option<&AtomicRefCell<ElementData>>;
 
     
-    fn note_restyle_hint<C: DomTraversalContext<Self::ConcreteNode>>(&self, hint: RestyleHint) {
-        
-        if hint.is_empty() {
-            return;
-        }
+    fn borrow_data(&self) -> Option<AtomicRef<ElementData>> {
+        self.get_data().map(|x| x.borrow())
+    }
 
-        
-        
-        let mut curr = *self;
-        while let Some(parent) = curr.parent_element() {
-            if parent.has_dirty_descendants() { break }
-            unsafe { parent.set_dirty_descendants(); }
-            curr = parent;
-        }
-
-        
-        if hint.contains(RESTYLE_SELF) {
-            unsafe { let _ = C::prepare_for_styling(self); }
-        
-        } else if hint.contains(RESTYLE_DESCENDANTS) {
-            unsafe { self.set_dirty_descendants(); }
-            let mut current = self.first_child_element();
-            while let Some(el) = current {
-                unsafe { let _ = C::prepare_for_styling(&el); }
-                current = el.next_sibling_element();
-            }
-        }
-
-        if hint.contains(RESTYLE_LATER_SIBLINGS) {
-            let mut next = ::selectors::Element::next_sibling_element(self);
-            while let Some(sib) = next {
-                unsafe { let _ = C::prepare_for_styling(&sib); }
-                next = ::selectors::Element::next_sibling_element(&sib);
-            }
-        }
+    
+    fn mutate_data(&self) -> Option<AtomicRefMut<ElementData>> {
+        self.get_data().map(|x| x.borrow_mut())
     }
 }

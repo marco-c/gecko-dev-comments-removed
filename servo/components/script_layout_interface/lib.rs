@@ -51,8 +51,6 @@ use libc::c_void;
 use std::sync::atomic::AtomicIsize;
 use style::atomic_refcell::AtomicRefCell;
 use style::data::ElementData;
-use style::dom::TRestyleDamage;
-use style::selector_parser::RestyleDamage;
 
 pub struct PartialPersistentLayoutData {
     
@@ -62,20 +60,13 @@ pub struct PartialPersistentLayoutData {
     pub style_data: ElementData,
 
     
-    pub restyle_damage: RestyleDamage,
-
-    
     pub parallel: DomParallelInfo,
 }
 
 impl PartialPersistentLayoutData {
     pub fn new() -> Self {
         PartialPersistentLayoutData {
-            style_data: ElementData::new(),
-            
-            
-            
-            restyle_damage: RestyleDamage::rebuild_and_reflow(),
+            style_data: ElementData::new(None),
             parallel: DomParallelInfo::new(),
         }
     }
@@ -142,7 +133,7 @@ pub struct SVGSVGData {
 }
 
 
-#[derive(Clone, PartialEq, Eq, Copy)]
+#[derive(Clone, Debug, PartialEq, Eq, Copy)]
 pub struct TrustedNodeAddress(pub *const c_void);
 
 #[allow(unsafe_code)]

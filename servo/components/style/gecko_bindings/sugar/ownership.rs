@@ -208,6 +208,7 @@ unsafe impl<T: HasArcFFI> FFIArcHelpers for Arc<T> {
 }
 
 #[repr(C)]
+#[derive(Debug)]
 
 
 
