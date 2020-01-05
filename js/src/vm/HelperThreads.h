@@ -72,7 +72,7 @@ class GlobalHelperThreadState
 
     typedef Vector<jit::IonBuilder*, 0, SystemAllocPolicy> IonBuilderVector;
     typedef Vector<ParseTask*, 0, SystemAllocPolicy> ParseTaskVector;
-    typedef Vector<UniquePtr<SourceCompressionTask>, 0, SystemAllocPolicy> SourceCompressionTaskVector;
+    typedef Vector<SourceCompressionTask*, 0, SystemAllocPolicy> SourceCompressionTaskVector;
     typedef Vector<GCHelperState*, 0, SystemAllocPolicy> GCHelperStateVector;
     typedef Vector<GCParallelTask*, 0, SystemAllocPolicy> GCParallelTaskVector;
     typedef Vector<PromiseTask*, 0, SystemAllocPolicy> PromiseTaskVector;
@@ -165,10 +165,7 @@ class GlobalHelperThreadState
     template <typename T>
     void remove(T& vector, size_t* index)
     {
-        
-        if (*index != vector.length() - 1)
-            vector[*index] = mozilla::Move(vector.back());
-        (*index)--;
+        vector[(*index)--] = vector.back();
         vector.popBack();
     }
 
@@ -553,7 +550,7 @@ struct AutoEnqueuePendingParseTasksAfterGC {
 
 
 bool
-EnqueueOffThreadCompression(JSContext* cx, UniquePtr<SourceCompressionTask> task);
+EnqueueOffThreadCompression(JSContext* cx, SourceCompressionTask* task);
 
 
 
@@ -625,6 +622,10 @@ struct ParseTask
 
     
     ScriptSourceObject* sourceObject;
+
+    
+    
+    SourceCompressionTask* sourceCompressionTask;
 
     
     
@@ -703,6 +704,7 @@ class SourceCompressionTask
     JSRuntime* runtime_;
 
     
+    static const uint64_t MajorGCNumberWaitingForFixup = UINT64_MAX;
     uint64_t majorGCNumber_;
 
     
@@ -716,18 +718,30 @@ class SourceCompressionTask
 
   public:
     
+    
+    
     SourceCompressionTask(JSRuntime* rt, ScriptSource* source)
       : runtime_(rt),
-        majorGCNumber_(rt->gc.majorGCCount()),
+        majorGCNumber_(CurrentThreadCanAccessRuntime(rt)
+                       ? rt->gc.majorGCCount()
+                       : MajorGCNumberWaitingForFixup),
         sourceHolder_(source)
     { }
 
     bool runtimeMatches(JSRuntime* runtime) const {
         return runtime == runtime_;
     }
+
+    void fixupMajorGCNumber(JSRuntime* runtime) {
+        MOZ_ASSERT(majorGCNumber_ == MajorGCNumberWaitingForFixup);
+        majorGCNumber_ = runtime->gc.majorGCCount();
+    }
+
     bool shouldStart() const {
         
         
+        if (majorGCNumber_ == MajorGCNumberWaitingForFixup)
+            return false;
         return runtime_->gc.majorGCCount() > majorGCNumber_ + 1;
     }
 

@@ -1821,48 +1821,6 @@ ScriptSource::setSource(SharedImmutableTwoByteString&& string)
     data = SourceType(Uncompressed(mozilla::Move(string)));
 }
 
-bool
-ScriptSource::tryCompressOffThread(JSContext* cx)
-{
-    if (!data.is<Uncompressed>())
-        return true;
-
-    
-    
-    
-    
-    
-    
-    
-
-    bool canCompressOffThread =
-        HelperThreadState().cpuCount > 1 &&
-        HelperThreadState().threadCount >= 2 &&
-        CanUseExtraThreads();
-    const size_t TINY_SCRIPT = 256;
-    if (TINY_SCRIPT > length() || !canCompressOffThread)
-        return true;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (!CurrentThreadCanAccessRuntime(cx->runtime()))
-        return true;
-
-    
-    
-    auto task = MakeUnique<SourceCompressionTask>(cx->runtime(), this);
-    if (!task)
-        return false;
-    return EnqueueOffThreadCompression(cx, Move(task));
-}
-
 MOZ_MUST_USE bool
 ScriptSource::setCompressedSource(JSContext* cx,
                                   mozilla::UniquePtr<char[], JS::FreePolicy>&& raw,
