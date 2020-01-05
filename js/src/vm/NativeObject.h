@@ -757,7 +757,7 @@ class NativeObject : public ShapedObject
                    unsigned attrs, JSGetterOp getter, JSSetterOp setter);
 
     
-    bool removeProperty(ExclusiveContext* cx, jsid id);
+    static bool removeProperty(ExclusiveContext* cx, HandleNativeObject obj, jsid id);
 
     
     static void clear(ExclusiveContext* cx, HandleNativeObject obj);

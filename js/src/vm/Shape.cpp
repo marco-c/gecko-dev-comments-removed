@@ -968,16 +968,15 @@ NativeObject::changeProperty(ExclusiveContext* cx, HandleNativeObject obj, Handl
     return newShape;
 }
 
-bool
-NativeObject::removeProperty(ExclusiveContext* cx, jsid id_)
+ bool
+NativeObject::removeProperty(ExclusiveContext* cx, HandleNativeObject obj, jsid id_)
 {
     RootedId id(cx, id_);
-    RootedNativeObject self(cx, this);
 
     AutoKeepShapeTables keep(cx);
     ShapeTable::Entry* entry;
     RootedShape shape(cx);
-    if (!Shape::search(cx, lastProperty(), id, keep, shape.address(), &entry))
+    if (!Shape::search(cx, obj->lastProperty(), id, keep, shape.address(), &entry))
         return false;
 
     if (!shape)
@@ -987,10 +986,10 @@ NativeObject::removeProperty(ExclusiveContext* cx, jsid id_)
 
 
 
-    if (!self->inDictionaryMode() && (shape != self->lastProperty() || !self->canRemoveLastProperty())) {
-        if (!self->toDictionaryMode(cx))
+    if (!obj->inDictionaryMode() && (shape != obj->lastProperty() || !obj->canRemoveLastProperty())) {
+        if (!obj->toDictionaryMode(cx))
             return false;
-        ShapeTable* table = self->lastProperty()->maybeTable(keep);
+        ShapeTable* table = obj->lastProperty()->maybeTable(keep);
         MOZ_ASSERT(table);
         entry = &table->search<MaybeAdding::NotAdding>(shape->propid(), keep);
         shape = entry->shape();
@@ -1004,21 +1003,21 @@ NativeObject::removeProperty(ExclusiveContext* cx, jsid id_)
 
 
     RootedShape spare(cx);
-    if (self->inDictionaryMode()) {
+    if (obj->inDictionaryMode()) {
         
         spare = Allocate<AccessorShape>(cx);
         if (!spare)
             return false;
         new (spare) Shape(shape->base()->unowned(), 0);
-        if (shape == self->lastProperty()) {
+        if (shape == obj->lastProperty()) {
             
 
 
 
 
 
-            RootedShape previous(cx, self->lastProperty()->parent);
-            StackBaseShape base(self->lastProperty()->base());
+            RootedShape previous(cx, obj->lastProperty()->parent);
+            StackBaseShape base(obj->lastProperty()->base());
             BaseShape* nbase = BaseShape::getUnowned(cx, base);
             if (!nbase)
                 return false;
@@ -1028,7 +1027,7 @@ NativeObject::removeProperty(ExclusiveContext* cx, jsid id_)
 
     
     if (shape->hasSlot()) {
-        self->freeSlot(cx, shape->slot());
+        obj->freeSlot(cx, shape->slot());
         if (cx->isJSContext())
             ++cx->asJSContext()->runtime()->propertyRemovals;
     }
@@ -1038,8 +1037,8 @@ NativeObject::removeProperty(ExclusiveContext* cx, jsid id_)
 
 
 
-    if (self->inDictionaryMode()) {
-        ShapeTable* table = self->lastProperty()->maybeTable(keep);
+    if (obj->inDictionaryMode()) {
+        ShapeTable* table = obj->lastProperty()->maybeTable(keep);
         MOZ_ASSERT(table);
 
         if (entry->hadCollision()) {
@@ -1056,23 +1055,23 @@ NativeObject::removeProperty(ExclusiveContext* cx, jsid id_)
 
 
 
-            Shape* aprop = self->lastProperty();
+            Shape* aprop = obj->lastProperty();
             for (int n = 50; --n >= 0 && aprop->parent; aprop = aprop->parent)
-                MOZ_ASSERT_IF(aprop != shape, self->contains(cx, aprop));
+                MOZ_ASSERT_IF(aprop != shape, obj->contains(cx, aprop));
 #endif
         }
 
         {
             
-            Shape* oldLastProp = self->lastProperty();
-            shape->removeFromDictionary(self);
+            Shape* oldLastProp = obj->lastProperty();
+            shape->removeFromDictionary(obj);
 
             
-            oldLastProp->handoffTableTo(self->lastProperty());
+            oldLastProp->handoffTableTo(obj->lastProperty());
         }
 
         
-        JS_ALWAYS_TRUE(self->generateOwnShape(cx, spare));
+        JS_ALWAYS_TRUE(obj->generateOwnShape(cx, spare));
 
         
         uint32_t size = table->capacity();
@@ -1085,11 +1084,11 @@ NativeObject::removeProperty(ExclusiveContext* cx, jsid id_)
 
 
 
-        MOZ_ASSERT(shape == self->lastProperty());
-        self->removeLastProperty(cx);
+        MOZ_ASSERT(shape == obj->lastProperty());
+        obj->removeLastProperty(cx);
     }
 
-    self->checkShapeConsistency();
+    obj->checkShapeConsistency();
     return true;
 }
 
@@ -1133,7 +1132,7 @@ NativeObject::rollbackProperties(ExclusiveContext* cx, HandleNativeObject obj, u
             if (slot < slotSpan)
                 break;
         }
-        if (!obj->removeProperty(cx, obj->lastProperty()->propid()))
+        if (!NativeObject::removeProperty(cx, obj, obj->lastProperty()->propid()))
             return false;
     }
 
