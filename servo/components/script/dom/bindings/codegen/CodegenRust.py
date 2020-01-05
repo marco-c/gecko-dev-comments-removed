@@ -2089,7 +2089,9 @@ class CGAbstractMethod(CGThing):
 
     def define(self):
         body = self.definition_body()
-        if self.unsafe:
+
+        
+        if self.unsafe and not self.extern:
             body = CGWrapper(CGIndenter(body), pre="unsafe {\n", post="\n}")
 
         return CGWrapper(CGIndenter(body),
