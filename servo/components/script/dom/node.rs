@@ -1935,10 +1935,6 @@ impl NodeMethods for Node {
             NodeTypeId::CharacterData(..) => {
                 let characterdata = self.downcast::<CharacterData>().unwrap();
                 characterdata.SetData(value);
-
-                
-                let document = self.owner_doc();
-                document.content_changed(self, NodeDamage::OtherNodeDamage);
             }
             NodeTypeId::DocumentType |
             NodeTypeId::Document => {}
