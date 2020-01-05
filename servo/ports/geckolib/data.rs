@@ -83,7 +83,7 @@ impl PerDocumentStyleData {
         
         if self.stylesheets_changed {
             let _ = Arc::get_mut(&mut self.stylist).unwrap()
-                                                   .update(&self.stylesheets, true);
+                                                   .update(&self.stylesheets, None, true);
             self.stylesheets_changed = false;
         }
     }

@@ -54,6 +54,13 @@ pub struct Stylesheet {
 }
 
 
+
+pub struct UserAgentStylesheets {
+    pub user_or_user_agent_stylesheets: Vec<Stylesheet>,
+    pub quirks_mode_stylesheet: Stylesheet,
+}
+
+
 #[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub enum CSSRule {

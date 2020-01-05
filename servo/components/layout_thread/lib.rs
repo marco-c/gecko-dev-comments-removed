@@ -25,6 +25,9 @@ extern crate ipc_channel;
 #[macro_use]
 extern crate layout;
 extern crate layout_traits;
+#[allow(unused_extern_crates)]
+#[macro_use]
+extern crate lazy_static;
 #[macro_use]
 extern crate log;
 extern crate msg;
@@ -95,6 +98,7 @@ use std::borrow::ToOwned;
 use std::collections::HashMap;
 use std::hash::BuildHasherDefault;
 use std::ops::{Deref, DerefMut};
+use std::process;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::mpsc::{channel, Sender, Receiver};
 use std::sync::{Arc, Mutex, MutexGuard, RwLock};
@@ -102,14 +106,14 @@ use style::animation::Animation;
 use style::computed_values::{filter, mix_blend_mode};
 use style::context::{ReflowGoal, LocalStyleContextCreationInfo, SharedStyleContext};
 use style::dom::{TDocument, TElement, TNode};
-use style::error_reporting::ParseErrorReporter;
+use style::error_reporting::{ParseErrorReporter, StdoutErrorReporter};
 use style::logical_geometry::LogicalPoint;
 use style::media_queries::{Device, MediaType};
 use style::parallel::WorkQueueData;
+use style::parser::ParserContextExtraData;
 use style::refcell::RefCell;
 use style::selector_matching::Stylist;
-use style::servo_selector_impl::USER_OR_USER_AGENT_STYLESHEETS;
-use style::stylesheets::{Stylesheet, CSSRuleIteratorExt};
+use style::stylesheets::{Stylesheet, UserAgentStylesheets, CSSRuleIteratorExt, Origin};
 use style::thread_state;
 use style::timer::Timer;
 use style::workqueue::WorkQueue;
@@ -118,6 +122,7 @@ use util::geometry::max_rect;
 use util::ipc::OptionalIpcSender;
 use util::opts;
 use util::prefs::PREFS;
+use util::resource_files::read_resource_file;
 use util::thread;
 
 
@@ -417,7 +422,7 @@ impl LayoutThread {
 
         let stylist = Arc::new(Stylist::new(device));
         let outstanding_web_fonts_counter = Arc::new(AtomicUsize::new(0));
-        for stylesheet in &*USER_OR_USER_AGENT_STYLESHEETS {
+        for stylesheet in &*UA_STYLESHEETS.user_or_user_agent_stylesheets {
             add_font_face_rules(stylesheet,
                                 &stylist.device,
                                 &font_cache_thread,
@@ -1132,6 +1137,7 @@ impl LayoutThread {
 
         // If the entire flow tree is invalid, then it will be reflowed anyhow.
         needs_dirtying |= Arc::get_mut(&mut rw_data.stylist).unwrap().update(&data.document_stylesheets,
+                                                                             Some(&*UA_STYLESHEETS),
                                                                              data.stylesheets_changed);
         let needs_reflow = viewport_size_changed && !needs_dirtying;
         unsafe {
@@ -1552,9 +1558,9 @@ impl LayoutThread {
 // element (http://dev.w3.org/csswg/css-backgrounds/#special-backgrounds) if
 // it is non-transparent. The phrase in the spec "If the canvas background
 // is not opaque, what shows through is UA-dependent." is handled by rust-layers
-
-
-
+// clearing the frame buffer to white. This ensures that setting a background
+// color on an iframe element, while the iframe content itself has a default
+// transparent background color is handled correctly.
 fn get_root_flow_background_color(flow: &mut Flow) -> AzColor {
     if !flow.is_block_like() {
         return color::transparent()
@@ -1574,4 +1580,50 @@ fn get_root_flow_background_color(flow: &mut Flow) -> AzColor {
                   .style
                   .resolve_color(kid_block_flow.fragment.style.get_background().background_color)
                   .to_gfx_color()
+}
+
+fn get_ua_stylesheets() -> Result<UserAgentStylesheets, &'static str> {
+    fn parse_ua_stylesheet(filename: &'static str) -> Result<Stylesheet, &'static str> {
+        let res = try!(read_resource_file(filename).map_err(|_| filename));
+        Ok(Stylesheet::from_bytes(
+            &res,
+            Url::parse(&format!("chrome://resources/{:?}", filename)).unwrap(),
+            None,
+            None,
+            Origin::UserAgent,
+            Box::new(StdoutErrorReporter),
+            ParserContextExtraData::default()))
+    }
+
+    let mut user_or_user_agent_stylesheets = vec!();
+    // FIXME: presentational-hints.css should be at author origin with zero specificity.
+    //        (Does it make a difference?)
+    for &filename in &["user-agent.css", "servo.css", "presentational-hints.css"] {
+        user_or_user_agent_stylesheets.push(try!(parse_ua_stylesheet(filename)));
+    }
+    for &(ref contents, ref url) in &opts::get().user_stylesheets {
+        user_or_user_agent_stylesheets.push(Stylesheet::from_bytes(
+            &contents, url.clone(), None, None, Origin::User, Box::new(StdoutErrorReporter),
+            ParserContextExtraData::default()));
+    }
+
+    let quirks_mode_stylesheet = try!(parse_ua_stylesheet("quirks-mode.css"));
+
+    Ok(UserAgentStylesheets {
+        user_or_user_agent_stylesheets: user_or_user_agent_stylesheets,
+        quirks_mode_stylesheet: quirks_mode_stylesheet,
+    })
+}
+
+
+lazy_static! {
+    static ref UA_STYLESHEETS: UserAgentStylesheets = {
+        match get_ua_stylesheets() {
+            Ok(stylesheets) => stylesheets,
+            Err(filename) => {
+                error!("Failed to load UA stylesheet {}!", filename);
+                process::exit(1);
+            }
+        }
+    };
 }
