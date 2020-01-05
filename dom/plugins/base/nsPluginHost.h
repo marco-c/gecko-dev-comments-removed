@@ -205,8 +205,6 @@ public:
                      
                      eSpecialType_Silverlight,
                      
-                     eSpecialType_RealPlayer,
-                     
                      eSpecialType_Unity };
   static SpecialType GetSpecialType(const nsACString & aMIMEType);
 
