@@ -11,8 +11,8 @@ use js::glue::UncheckedUnwrapObject;
 use js::jsapi::{Class, ClassExtension, ClassSpec, GetGlobalForObjectCrossCompartment};
 use js::jsapi::{HandleObject, HandleValue, JSClass, JSContext, JSFunctionSpec};
 use js::jsapi::{JSPropertySpec, JSString, JS_DefineProperty1, JS_DefineProperty2};
-use js::jsapi::{JS_DefineProperty4, JS_GetFunctionObject, JS_GetPrototype, JS_InternString};
-use js::jsapi::{JS_LinkConstructorAndPrototype, JS_NewFunction, JS_NewObject};
+use js::jsapi::{JS_DefineProperty4, JS_GetClass, JS_GetFunctionObject, JS_GetPrototype};
+use js::jsapi::{JS_InternString, JS_LinkConstructorAndPrototype, JS_NewFunction, JS_NewObject};
 use js::jsapi::{JS_NewObjectWithUniqueType, JS_DefineProperty, MutableHandleObject};
 use js::jsapi::{MutableHandleValue, ObjectOps, RootedObject, RootedString, RootedValue, Value};
 use js::jsval::{BooleanValue, DoubleValue, Int32Value, JSVal, NullValue, UInt32Value};
@@ -84,14 +84,6 @@ pub type ConstructorClassHook =
     unsafe extern "C" fn(cx: *mut JSContext, argc: u32, vp: *mut Value) -> bool;
 
 
-pub type HasInstanceClassHook =
-    unsafe extern "C" fn(cx: *mut JSContext,
-                         obj: HandleObject,
-                         vp: MutableHandleValue,
-                         bp: *mut bool)
-                         -> bool;
-
-
 pub type FunToStringHook =
     unsafe extern "C" fn(cx: *mut JSContext,
                          obj: HandleObject,
@@ -103,15 +95,21 @@ pub type FunToStringHook =
 pub struct NonCallbackInterfaceObjectClass {
     
     pub class: Class,
+    
+    pub proto_id: PrototypeList::ID,
+    
+    pub proto_depth: u16,
 }
+
 unsafe impl Sync for NonCallbackInterfaceObjectClass {}
 
 impl NonCallbackInterfaceObjectClass {
     
     pub const fn new(
             constructor: ConstructorClassHook,
-            has_instance: HasInstanceClassHook,
-            fun_to_string: FunToStringHook)
+            fun_to_string: FunToStringHook,
+            proto_id: PrototypeList::ID,
+            proto_depth: u16)
             -> NonCallbackInterfaceObjectClass {
         NonCallbackInterfaceObjectClass {
             class: Class {
@@ -126,8 +124,8 @@ impl NonCallbackInterfaceObjectClass {
                 convert: None,
                 finalize: None,
                 call: Some(constructor),
-                hasInstance: Some(has_instance),
                 construct: Some(constructor),
+                hasInstance: Some(has_instance_hook),
                 trace: None,
                 spec: ClassSpec {
                     createConstructor: None,
@@ -162,6 +160,8 @@ impl NonCallbackInterfaceObjectClass {
                     funToString: Some(fun_to_string),
                 }
             },
+            proto_id: proto_id,
+            proto_depth: proto_depth,
         }
     }
 
@@ -258,13 +258,25 @@ pub unsafe fn create_named_constructors(
 }
 
 
+unsafe extern "C" fn has_instance_hook(cx: *mut JSContext,
+        obj: HandleObject,
+        value: MutableHandleValue,
+        rval: *mut bool) -> bool {
+    match has_instance(cx, obj, value.handle()) {
+        Ok(result) => {
+            *rval = result;
+            true
+        }
+        Err(()) => false,
+    }
+}
 
-pub unsafe fn has_instance(
+
+
+unsafe fn has_instance(
         cx: *mut JSContext,
         interface_object: HandleObject,
-        value: HandleValue,
-        id: PrototypeList::ID,
-        index: usize)
+        value: HandleValue)
         -> Result<bool, ()> {
     if !value.is_object() {
         
@@ -272,8 +284,11 @@ pub unsafe fn has_instance(
     }
     let mut value = RootedObject::new(cx, value.to_object());
 
+    let js_class = JS_GetClass(interface_object.get());
+    let object_class = &*(js_class as *const NonCallbackInterfaceObjectClass);
+
     if let Ok(dom_class) = get_dom_class(UncheckedUnwrapObject(value.ptr,  0)) {
-        if dom_class.interface_chain[index] == id {
+        if dom_class.interface_chain[object_class.proto_depth as usize] == object_class.proto_id {
             
             return Ok(true);
         }
@@ -283,7 +298,7 @@ pub unsafe fn has_instance(
     let global = GetGlobalForObjectCrossCompartment(interface_object.get());
     assert!(!global.is_null());
     let proto_or_iface_array = get_proto_or_iface_array(global);
-    let prototype = RootedObject::new(cx, (*proto_or_iface_array)[id as usize]);
+    let prototype = RootedObject::new(cx, (*proto_or_iface_array)[object_class.proto_id as usize]);
     assert!(!prototype.ptr.is_null());
     
 
