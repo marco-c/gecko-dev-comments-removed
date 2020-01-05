@@ -22,7 +22,7 @@ public:
   nsDragService();
 
   
-  virtual nsresult InvokeDragSessionImpl(nsISupportsArray* anArrayTransferables,
+  virtual nsresult InvokeDragSessionImpl(nsIArray* anArrayTransferables,
                                          nsIScriptableRegion* aRegion,
                                          uint32_t aActionType);
   
@@ -47,7 +47,7 @@ private:
   NSString* GetTitleForURL(NSPasteboardItem* item);
   NSString* GetFilePath(NSPasteboardItem* item);
 
-  nsCOMPtr<nsISupportsArray> mDataItems; 
+  nsCOMPtr<nsIArray> mDataItems; 
   NSView* mNativeDragView;
   NSEvent* mNativeDragEvent;
 };

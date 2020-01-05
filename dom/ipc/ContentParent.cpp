@@ -36,7 +36,6 @@
 #include "mozIApplication.h"
 #if defined(XP_WIN) && defined(ACCESSIBILITY)
 #include "mozilla/a11y/AccessibleWrap.h"
-#include "mozilla/WindowsVersion.h"
 #endif
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/StyleSheetInlines.h"
@@ -1359,12 +1358,14 @@ ContentParent::Init()
   
   
   if (nsIPresShell::IsAccessibilityActive()) {
-#if defined(XP_WIN)
-    if (IsVistaOrLater()) {
+#if !defined(XP_WIN)
+    Unused << SendActivateA11y();
+#else
+    
+    
+    if (Preferences::GetBool(kForceEnableE10sPref, false)) {
       Unused << SendActivateA11y();
     }
-#else
-    Unused << SendActivateA11y();
 #endif
   }
 #endif
@@ -2788,12 +2789,14 @@ ContentParent::Observe(nsISupports* aSubject,
     if (*aData == '1') {
       
       
-#if defined(XP_WIN)
-      if (IsVistaOrLater()) {
+#if !defined(XP_WIN)
+      Unused << SendActivateA11y();
+#else
+      
+      
+      if (Preferences::GetBool(kForceEnableE10sPref, false)) {
         Unused << SendActivateA11y();
       }
-#else
-      Unused << SendActivateA11y();
 #endif
     } else {
       
@@ -4689,7 +4692,7 @@ ContentParent::MaybeInvokeDragSession(TabParent* aParent)
       transfer->FillAllExternalData();
       nsCOMPtr<nsILoadContext> lc = aParent ?
                                      aParent->GetLoadContext() : nullptr;
-      nsCOMPtr<nsISupportsArray> transferables =
+      nsCOMPtr<nsIArray> transferables =
         transfer->GetTransferables(lc);
       nsContentUtils::TransferablesToIPCTransferables(transferables,
                                                       dataTransfers,

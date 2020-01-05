@@ -75,7 +75,7 @@ protected:
 
 
 
-  virtual nsresult InvokeDragSessionImpl(nsISupportsArray* aTransferableArray,
+  virtual nsresult InvokeDragSessionImpl(nsIArray* aTransferableArray,
                                          nsIScriptableRegion* aDragRgn,
                                          uint32_t aActionType) = 0;
 
