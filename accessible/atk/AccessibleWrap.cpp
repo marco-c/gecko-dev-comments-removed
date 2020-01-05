@@ -66,8 +66,7 @@ enum MaiInterfaceType {
     MAI_INTERFACE_TABLE,
     MAI_INTERFACE_TEXT,
     MAI_INTERFACE_DOCUMENT, 
-    MAI_INTERFACE_IMAGE, 
-    MAI_INTERFACE_TABLE_CELL
+    MAI_INTERFACE_IMAGE 
 };
 
 static GType GetAtkTypeForMai(MaiInterfaceType type)
@@ -95,17 +94,12 @@ static GType GetAtkTypeForMai(MaiInterfaceType type)
       return ATK_TYPE_DOCUMENT;
     case MAI_INTERFACE_IMAGE:
       return ATK_TYPE_IMAGE;
-    case MAI_INTERFACE_TABLE_CELL:
-      MOZ_ASSERT(false);
   }
   return G_TYPE_INVALID;
 }
 
 #define NON_USER_EVENT ":system"
     
-
-
-
 static const GInterfaceInfo atk_if_infos[] = {
     {(GInterfaceInitFunc)componentInterfaceInitCB,
      (GInterfaceFinalizeFunc) nullptr, nullptr}, 
@@ -429,15 +423,6 @@ GetMaiAtkType(uint16_t interfacesBits)
                                     GetAtkTypeForMai((MaiInterfaceType)index),
                                     &atk_if_infos[index]);
       }
-    }
-
-    
-    
-    if (IsAtkVersionAtLeast(2, 12) && (interfacesBits & (1 << MAI_INTERFACE_TABLE_CELL))) {
-      const GInterfaceInfo cellInfo = {
-        (GInterfaceInitFunc)tableCellInterfaceInitCB,
-        (GInterfaceFinalizeFunc)nullptr, nullptr};
-      g_type_add_interface_static(type, ATK_TYPE_TABLE_CELL, &cellInfo);
     }
 
     return type;
