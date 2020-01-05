@@ -1,0 +1,16 @@
+
+
+
+
+#![feature(plugin)]
+#![plugin(plugins)]
+
+
+fn main() {
+    let x = "foo".to_string();
+    
+
+    let x = &x[..];
+    x.to_string();
+    
+}
