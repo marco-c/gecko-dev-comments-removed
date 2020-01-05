@@ -54,7 +54,7 @@ class SETA(object):
             logger.debug("Retrieving low-value jobs list from SETA")
             response = retry(requests.get, attempts=2, sleeptime=10,
                              args=(url, ),
-                             kwargs={'timeout': 5, 'headers': ''})
+                             kwargs={'timeout': 60, 'headers': ''})
             task_list = json.loads(response.content).get('jobtypes', '')
 
             if type(task_list) == dict and len(task_list) > 0:
@@ -70,12 +70,12 @@ class SETA(object):
 
         
         except exceptions.Timeout:
-            logger.warning("SETA server is timeout, we will treat all test tasks as high value.")
+            logger.warning("SETA timeout, we will treat all test tasks as high value.")
 
         
         
         except exceptions.ConnectionError:
-            logger.warning("SETA server is timeout, we will treat all test tasks as high value.")
+            logger.warning("SETA connection error, we will treat all test tasks as high value.")
 
         
         
@@ -120,7 +120,7 @@ class SETA(object):
         try:
             response = retry(requests.get, attempts=2, sleeptime=10,
                              args=(url, ),
-                             kwargs={'timeout': 5, 'headers': {'User-Agent': 'TaskCluster'}})
+                             kwargs={'timeout': 60, 'headers': {'User-Agent': 'TaskCluster'}})
             prev_push_date = json.loads(response.content).get(str(prev_push_id), {}).get('date', 0)
 
             
