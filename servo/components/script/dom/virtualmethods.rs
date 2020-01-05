@@ -66,7 +66,7 @@ use string_cache::Atom;
 pub trait VirtualMethods {
     
     
-    fn super_type<'a>(&'a self) -> Option<&'a VirtualMethods>;
+    fn super_type<'b>(&'b self) -> Option<&'b VirtualMethods>;
 
     
     
