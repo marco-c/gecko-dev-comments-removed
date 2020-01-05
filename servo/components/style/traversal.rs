@@ -179,7 +179,7 @@ pub trait DomTraversalContext<N: TNode> {
     
     
     fn should_process(&self, node: N) -> bool {
-        node.is_dirty() || node.has_dirty_descendants()
+        opts::get().nonincremental_layout || node.is_dirty() || node.has_dirty_descendants()
     }
 
     
