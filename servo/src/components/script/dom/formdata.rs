@@ -2,7 +2,8 @@
 
 
 
-use dom::bindings::utils::{Fallible, Reflectable, Reflector, reflect_dom_object};
+use dom::bindings::utils::{Reflectable, Reflector, reflect_dom_object};
+use dom::bindings::error::{Fallible};
 use dom::bindings::codegen::FormDataBinding;
 use dom::bindings::js::JS;
 use dom::blob::Blob;
