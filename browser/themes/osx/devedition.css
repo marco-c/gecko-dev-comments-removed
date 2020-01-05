@@ -23,6 +23,11 @@
 }
 
 
+#TabsToolbar {
+  -moz-appearance: none !important;
+}
+
+
 #main-window[tabsintitlebar] #titlebar-content {
   background: var(--chrome-background-color);
 }
@@ -88,17 +93,17 @@
 }
 
 
-#TabsToolbar {
-  -moz-appearance: none !important;
-}
-
-
 
 #identity-box {
   margin-top: -1px !important;
   margin-bottom: -1px !important;
   padding-top: 3px !important;
   padding-bottom: 3px !important;
+}
+
+#PanelUI-button {
+  margin-top: 0;
+  margin-bottom: 0;
 }
 
 :root[devtoolstheme="dark"] .findbar-closebutton:not(:hover),
