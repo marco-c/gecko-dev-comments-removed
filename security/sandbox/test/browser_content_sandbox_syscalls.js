@@ -104,7 +104,7 @@ function areContentSyscallsSandboxed(level) {
       syscallsSandboxMinLevel = 1;
       break;
     case "Linux":
-      syscallsSandboxMinLevel = 2;
+      syscallsSandboxMinLevel = 1;
       break;
     default:
       Assert.ok(false, "Unknown OS");
@@ -140,22 +140,8 @@ add_task(function*() {
     prefExists = false;
   }
 
-  
-  if (isLinux() && !isNightly()) {
-    todo(prefExists, "pref security.sandbox.content.level exists");
-    if (!prefExists) {
-      return;
-    }
-  }
-
   ok(prefExists, "pref security.sandbox.content.level exists");
   if (!prefExists) {
-    return;
-  }
-
-  
-  if (isLinux() && !isNightly()) {
-    todo(level > 0, "content sandbox enabled for !nightly.");
     return;
   }
 
@@ -167,12 +153,6 @@ add_task(function*() {
   }
 
   let areSyscallsSandboxed = areContentSyscallsSandboxed(level);
-
-  
-  if (isLinux() && !isNightly()) {
-    todo(areSyscallsSandboxed, "content syscall sandbox enabled for !nightly.");
-    return;
-  }
 
   
   ok(areSyscallsSandboxed, "content syscall sandboxing is enabled.");
