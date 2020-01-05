@@ -963,6 +963,7 @@ PrepareForNewPart(nsIRequest* aRequest, nsIInputStream* aInStr, uint32_t aCount,
     if (result.mIsFirstPart) {
       
       MOZ_ASSERT(aProgressTracker, "Shouldn't have given away tracker yet");
+      aProgressTracker->SetIsMultipart();
       result.mImage =
         ImageFactory::CreateMultipartImage(partImage, aProgressTracker);
     } else {

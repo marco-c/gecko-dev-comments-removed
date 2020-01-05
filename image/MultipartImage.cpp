@@ -175,7 +175,9 @@ FilterProgress(Progress aProgress)
 {
   
   
-  return aProgress & ~(FLAG_ONLOAD_BLOCKED | FLAG_ONLOAD_UNBLOCKED);
+  
+  
+  return aProgress & ~(FLAG_ONLOAD_BLOCKED | FLAG_ONLOAD_UNBLOCKED | FLAG_HAS_ERROR);
 }
 
 void

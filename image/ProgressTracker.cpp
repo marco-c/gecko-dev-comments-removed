@@ -23,8 +23,13 @@ namespace mozilla {
 namespace image {
 
 static void
-CheckProgressConsistency(Progress aOldProgress, Progress aNewProgress)
+CheckProgressConsistency(Progress aOldProgress, Progress aNewProgress, bool aIsMultipart)
 {
+  
+
+  
+  
+  
   
 
   if (aNewProgress & FLAG_SIZE_AVAILABLE) {
@@ -32,20 +37,20 @@ CheckProgressConsistency(Progress aOldProgress, Progress aNewProgress)
   }
   if (aNewProgress & FLAG_DECODE_COMPLETE) {
     MOZ_ASSERT(aNewProgress & FLAG_SIZE_AVAILABLE);
-    MOZ_ASSERT(aNewProgress & (FLAG_FRAME_COMPLETE | FLAG_HAS_ERROR));
+    MOZ_ASSERT(aIsMultipart || aNewProgress & (FLAG_FRAME_COMPLETE | FLAG_HAS_ERROR));
   }
   if (aNewProgress & FLAG_FRAME_COMPLETE) {
     MOZ_ASSERT(aNewProgress & FLAG_SIZE_AVAILABLE);
   }
   if (aNewProgress & FLAG_LOAD_COMPLETE) {
-    MOZ_ASSERT(aNewProgress & (FLAG_SIZE_AVAILABLE | FLAG_HAS_ERROR));
+    MOZ_ASSERT(aIsMultipart || aNewProgress & (FLAG_SIZE_AVAILABLE | FLAG_HAS_ERROR));
   }
   if (aNewProgress & FLAG_ONLOAD_BLOCKED) {
     
   }
   if (aNewProgress & FLAG_ONLOAD_UNBLOCKED) {
     MOZ_ASSERT(aNewProgress & FLAG_ONLOAD_BLOCKED);
-    MOZ_ASSERT(aNewProgress & (FLAG_SIZE_AVAILABLE | FLAG_HAS_ERROR));
+    MOZ_ASSERT(aIsMultipart || aNewProgress & (FLAG_SIZE_AVAILABLE | FLAG_HAS_ERROR));
   }
   if (aNewProgress & FLAG_IS_ANIMATED) {
     
@@ -375,7 +380,7 @@ ProgressTracker::SyncNotifyProgress(Progress aProgress,
     progress &= ~FLAG_ONLOAD_UNBLOCKED;
   }
 
-  CheckProgressConsistency(mProgress, mProgress | progress);
+  CheckProgressConsistency(mProgress, mProgress | progress, mIsMultipart);
 
   
   

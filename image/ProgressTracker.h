@@ -118,6 +118,7 @@ public:
     , mImage(nullptr)
     , mObservers(new ObserverTable)
     , mProgress(NoProgress)
+    , mIsMultipart(false)
   { }
 
   bool HasImage() const { MutexAutoLock lock(mImageMutex); return mImage; }
@@ -195,6 +196,9 @@ public:
   
   void ResetImage();
 
+  
+  void SetIsMultipart() { mIsMultipart = true; }
+
 private:
   friend class AsyncNotifyRunnable;
   friend class AsyncNotifyCurrentStateRunnable;
@@ -226,6 +230,9 @@ private:
   CopyOnWrite<ObserverTable> mObservers;
 
   Progress mProgress;
+
+  
+  bool mIsMultipart;
 };
 
 } 
