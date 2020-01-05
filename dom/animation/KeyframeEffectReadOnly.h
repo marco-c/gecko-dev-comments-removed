@@ -455,6 +455,11 @@ protected:
   
   nsDataHashtable<nsUint32HashKey, StyleAnimationValue> mBaseStyleValues;
 
+  
+  
+  
+  bool mRecordedContentTooLarge = false;
+
 private:
   nsChangeHint mCumulativeChangeHint;
 

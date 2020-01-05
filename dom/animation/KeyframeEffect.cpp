@@ -129,6 +129,11 @@ KeyframeEffect::SetTarget(const Nullable<ElementOrCSSPseudoElement>& aTarget)
     
     KeyframeUtils::ApplyDistributeSpacing(mKeyframes);
   }
+
+  
+  
+  
+  mRecordedContentTooLarge = false;
 }
 
 void
