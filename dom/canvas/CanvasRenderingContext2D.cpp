@@ -5610,69 +5610,72 @@ CanvasRenderingContext2D::GetImageDataArray(JSContext* aCx,
   IntRect dstWriteRect = srcReadRect;
   dstWriteRect.MoveBy(-aX, -aY);
 
-  JS::AutoCheckCannotGC nogc;
-  bool isShared;
-  uint8_t* data = JS_GetUint8ClampedArrayData(darray, &isShared, nogc);
-  MOZ_ASSERT(!isShared);        
+  {
+    JS::AutoCheckCannotGC nogc;
+    bool isShared;
+    uint8_t* data = JS_GetUint8ClampedArrayData(darray, &isShared, nogc);
+    MOZ_ASSERT(!isShared);        
 
-  uint8_t* src;
-  uint32_t srcStride;
-  if (readback) {
-    srcStride = rawData.mStride;
-    src = rawData.mData + srcReadRect.y * srcStride + srcReadRect.x * 4;
-  } else {
-    src = data;
-    srcStride = aWidth * 4;
-  }
+    uint8_t* src;
+    uint32_t srcStride;
+    if (readback) {
+      srcStride = rawData.mStride;
+      src = rawData.mData + srcReadRect.y * srcStride + srcReadRect.x * 4;
+    } else {
+      src = data;
+      srcStride = aWidth * 4;
+    }
 
-  uint8_t* dst = data + dstWriteRect.y * (aWidth * 4) + dstWriteRect.x * 4;
+    uint8_t* dst = data + dstWriteRect.y * (aWidth * 4) + dstWriteRect.x * 4;
 
-  if (mOpaque) {
-    for (int32_t j = 0; j < dstWriteRect.height; ++j) {
-      for (int32_t i = 0; i < dstWriteRect.width; ++i) {
-        
+    if (mOpaque) {
+      for (int32_t j = 0; j < dstWriteRect.height; ++j) {
+        for (int32_t i = 0; i < dstWriteRect.width; ++i) {
+          
 #if MOZ_LITTLE_ENDIAN
-        uint8_t b = *src++;
-        uint8_t g = *src++;
-        uint8_t r = *src++;
-        src++;
+          uint8_t b = *src++;
+          uint8_t g = *src++;
+          uint8_t r = *src++;
+          src++;
 #else
-        src++;
-        uint8_t r = *src++;
-        uint8_t g = *src++;
-        uint8_t b = *src++;
+          src++;
+          uint8_t r = *src++;
+          uint8_t g = *src++;
+          uint8_t b = *src++;
 #endif
-        *dst++ = r;
-        *dst++ = g;
-        *dst++ = b;
-        *dst++ = 255;
+          *dst++ = r;
+          *dst++ = g;
+          *dst++ = b;
+          *dst++ = 255;
+        }
+        src += srcStride - (dstWriteRect.width * 4);
+        dst += (aWidth * 4) - (dstWriteRect.width * 4);
       }
-      src += srcStride - (dstWriteRect.width * 4);
-      dst += (aWidth * 4) - (dstWriteRect.width * 4);
-    }
-  } else
-  for (int32_t j = 0; j < dstWriteRect.height; ++j) {
-    for (int32_t i = 0; i < dstWriteRect.width; ++i) {
-      
+    } else {
+      for (int32_t j = 0; j < dstWriteRect.height; ++j) {
+        for (int32_t i = 0; i < dstWriteRect.width; ++i) {
+          
 #if MOZ_LITTLE_ENDIAN
-      uint8_t b = *src++;
-      uint8_t g = *src++;
-      uint8_t r = *src++;
-      uint8_t a = *src++;
+          uint8_t b = *src++;
+          uint8_t g = *src++;
+          uint8_t r = *src++;
+          uint8_t a = *src++;
 #else
-      uint8_t a = *src++;
-      uint8_t r = *src++;
-      uint8_t g = *src++;
-      uint8_t b = *src++;
+          uint8_t a = *src++;
+          uint8_t r = *src++;
+          uint8_t g = *src++;
+          uint8_t b = *src++;
 #endif
-      
-      *dst++ = gfxUtils::sUnpremultiplyTable[a * 256 + r];
-      *dst++ = gfxUtils::sUnpremultiplyTable[a * 256 + g];
-      *dst++ = gfxUtils::sUnpremultiplyTable[a * 256 + b];
-      *dst++ = a;
+          
+          *dst++ = gfxUtils::sUnpremultiplyTable[a * 256 + r];
+          *dst++ = gfxUtils::sUnpremultiplyTable[a * 256 + g];
+          *dst++ = gfxUtils::sUnpremultiplyTable[a * 256 + b];
+          *dst++ = a;
+        }
+        src += srcStride - (dstWriteRect.width * 4);
+        dst += (aWidth * 4) - (dstWriteRect.width * 4);
+      }
     }
-    src += srcStride - (dstWriteRect.width * 4);
-    dst += (aWidth * 4) - (dstWriteRect.width * 4);
   }
 
   if (readback) {
