@@ -73,30 +73,12 @@
 
 using namespace mozilla;
 
-
-
-static struct sigaction gOldSigprofHandler;
-
-
-
-static pthread_t gSigprofSenderThread;
-
 #if defined(USE_LUL_STACKWALK)
 
 
 
 
 lul::LUL* gLUL = nullptr;
-
-
-static void gLUL_initialization_routine(void)
-{
-  MOZ_ASSERT(!gLUL);
-  MOZ_ASSERT(gettid() == getpid()); 
-  gLUL = new lul::LUL(logging_sink_for_LUL);
-  
-  read_procmaps(gLUL);
-}
 #endif
 
  Thread::tid_t
@@ -118,31 +100,47 @@ Thread::GetCurrentId()
 
 
 
+
 static bool gWasPaused = false;
 
 
-
-static void paf_prepare(void) {
+static void
+paf_prepare()
+{
   
+
   gWasPaused = gIsPaused;
   gIsPaused = true;
 }
 
 
-
-static void paf_parent(void) {
+static void
+paf_parent()
+{
   
+
   gIsPaused = gWasPaused;
+  gWasPaused = false;
 }
 
 
-static void* setup_atfork() {
-  pthread_atfork(paf_prepare, paf_parent, NULL);
-  return NULL;
+static void
+paf_child()
+{
+  
+
+  gWasPaused = false;
 }
+
+
+static void*
+setup_atfork()
+{
+  pthread_atfork(paf_prepare, paf_parent, paf_child);
+  return nullptr;
+}
+
 #endif 
-
-static int gIntervalMicro;
 
 static void SetSampleContext(TickSample* sample, mcontext_t& mcontext)
 {
@@ -163,121 +161,6 @@ static void SetSampleContext(TickSample* sample, mcontext_t& mcontext)
 #else
 # error "bad platform"
 #endif
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-struct SigHandlerCoordinator
-{
-  SigHandlerCoordinator()
-  {
-    PodZero(&mUContext);
-    int r =  sem_init(&mMessage2, 0, 0);
-    r     |= sem_init(&mMessage3, 0, 0);
-    r     |= sem_init(&mMessage4, 0, 0);
-    MOZ_ASSERT(r == 0);
-  }
-
-  ~SigHandlerCoordinator()
-  {
-    int r =  sem_destroy(&mMessage2);
-    r     |= sem_destroy(&mMessage3);
-    r     |= sem_destroy(&mMessage4);
-    MOZ_ASSERT(r == 0);
-  }
-
-  sem_t mMessage2; 
-  sem_t mMessage3; 
-  sem_t mMessage4; 
-  ucontext_t mUContext; 
-};
-
-
-
-static SigHandlerCoordinator* gSigHandlerCoordinator = nullptr;
-
-static void
-SigprofHandler(int aSignal, siginfo_t* aInfo, void* aContext)
-{
-  
-  int savedErrno = errno;
-
-  MOZ_ASSERT(aSignal == SIGPROF);
-  MOZ_ASSERT(gSigHandlerCoordinator);
-
-  
-  
-  
-  gSigHandlerCoordinator->mUContext = *static_cast<ucontext_t*>(aContext);
-
-  
-  
-  
-  int r = sem_post(&gSigHandlerCoordinator->mMessage2);
-  MOZ_ASSERT(r == 0);
-
-  
-  
-
-  
-  while (true) {
-    r = sem_wait(&gSigHandlerCoordinator->mMessage3);
-    if (r == -1 && errno == EINTR) {
-      
-      continue; 
-    }
-    
-    MOZ_ASSERT(r == 0);
-   break;
-  }
-
-  
-  
-  
-  r = sem_post(&gSigHandlerCoordinator->mMessage4);
-  MOZ_ASSERT(r == 0);
-
-  errno = savedErrno;
 }
 
 #if defined(GP_OS_android)
@@ -338,203 +221,356 @@ SleepMicro(int aMicroseconds)
   MOZ_ASSERT(!rv, "nanosleep call failed");
 }
 
-static void*
-SigprofSender(void* aArg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class SamplerThread
 {
+private:
   
-
   
-  prctl(PR_SET_NAME, "SamplerThread", 0, 0, 0);
-
-  int vm_tgid_ = getpid();
-  DebugOnly<int> my_tid = gettid();
-
-  TimeDuration lastSleepOverhead = 0;
-  TimeStamp sampleStart = TimeStamp::Now();
-  while (gIsActive) {
-    gBuffer->deleteExpiredStoredMarkers();
-
-    if (!gIsPaused) {
-      StaticMutexAutoLock lock(gRegisteredThreadsMutex);
-
-      bool isFirstProfiledThread = true;
-      for (uint32_t i = 0; i < gRegisteredThreads->size(); i++) {
-        ThreadInfo* info = (*gRegisteredThreads)[i];
-
-        
-        if (!info->HasProfile() || info->IsPendingDelete()) {
-          continue;
-        }
-
-        if (info->Stack()->CanDuplicateLastSampleDueToSleep() &&
-            gBuffer->DuplicateLastSample(info->ThreadId(), gStartTime)) {
-          continue;
-        }
-
-        info->UpdateThreadResponsiveness();
-
-        int threadId = info->ThreadId();
-        MOZ_ASSERT(threadId != my_tid);
-
-        int64_t rssMemory = 0;
-        int64_t ussMemory = 0;
-        if (isFirstProfiledThread && gProfileMemory) {
-          rssMemory = nsMemoryReporterManager::ResidentFast();
-          ussMemory = nsMemoryReporterManager::ResidentUnique();
-        }
-
-        
-        SigHandlerCoordinator coord;   
-        gSigHandlerCoordinator = &coord;
-
-        
-        
-        int r = tgkill(vm_tgid_, threadId, SIGPROF);
-        MOZ_ASSERT(r == 0);
-
-        
-        
-        while (true) {
-          r = sem_wait(&gSigHandlerCoordinator->mMessage2);
-          if (r == -1 && errno == EINTR) {
-            
-            continue;
-          }
-          
-          MOZ_ASSERT(r == 0);
-          break;
-        }
-
-        
-        
-        
-
-        TickSample sample;
-        sample.context = &gSigHandlerCoordinator->mUContext;
-
-        
-        SetSampleContext(&sample,
-                         gSigHandlerCoordinator->mUContext.uc_mcontext);
-        sample.threadInfo = info;
-        sample.timestamp = mozilla::TimeStamp::Now();
-        sample.rssMemory = rssMemory;
-        sample.ussMemory = ussMemory;
-
-        Tick(gBuffer, &sample);
-
-        
-        r = sem_post(&gSigHandlerCoordinator->mMessage3);
-        MOZ_ASSERT(r == 0);
-
-        
-        
-        while (true) {
-          r = sem_wait(&gSigHandlerCoordinator->mMessage4);
-          if (r == -1 && errno == EINTR) {
-            continue;
-          }
-          MOZ_ASSERT(r == 0);
-          break;
-        }
-
-        
-        
-        
-        gSigHandlerCoordinator = nullptr;
-
-        isFirstProfiledThread = false;
-      }
-#if defined(USE_LUL_STACKWALK)
-      
-      
-      
-      
-      
-      gLUL->MaybeShowStats();
-#endif
+  
+  
+  
+  
+  
+  struct SigHandlerCoordinator
+  {
+    SigHandlerCoordinator()
+    {
+      PodZero(&mUContext);
+      int r = sem_init(&mMessage2,  0, 0);
+      r    |= sem_init(&mMessage3,  0, 0);
+      r    |= sem_init(&mMessage4,  0, 0);
+      MOZ_ASSERT(r == 0);
     }
 
-    TimeStamp targetSleepEndTime =
-      sampleStart + TimeDuration::FromMicroseconds(gIntervalMicro);
-    TimeStamp beforeSleep = TimeStamp::Now();
-    TimeDuration targetSleepDuration = targetSleepEndTime - beforeSleep;
-    double sleepTime = std::max(0.0, (targetSleepDuration - lastSleepOverhead).ToMicroseconds());
-    SleepMicro(sleepTime);
-    sampleStart = TimeStamp::Now();
-    lastSleepOverhead = sampleStart - (beforeSleep + TimeDuration::FromMicroseconds(sleepTime));
-  }
-  return 0;
-}
+    ~SigHandlerCoordinator()
+    {
+      int r = sem_destroy(&mMessage2);
+      r    |= sem_destroy(&mMessage3);
+      r    |= sem_destroy(&mMessage4);
+      MOZ_ASSERT(r == 0);
+    }
 
-static void
-PlatformStart(double aInterval)
-{
-  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+    sem_t mMessage2; 
+    sem_t mMessage3; 
+    sem_t mMessage4; 
+    ucontext_t mUContext; 
+  };
+
+  static void* ThreadEntry(void* aArg)
+  {
+    auto thread = static_cast<SamplerThread*>(aArg);
+    prctl(PR_SET_NAME, "SamplerThread", 0, 0, 0);
+    thread->Run();
+    return nullptr;
+  }
+
+public:
+  explicit SamplerThread(double aInterval)
+    : mIntervalMicro(std::max(1, int(floor(aInterval * 1000 + 0.5))))
+  {
+    MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
 #if defined(USE_EHABI_STACKWALK)
-  mozilla::EHABIStackWalkInit();
+    mozilla::EHABIStackWalkInit();
 #elif defined(USE_LUL_STACKWALK)
-  
-  
-  if (!gLUL) {
-     gLUL_initialization_routine();
-  }
+    bool createdLUL = false;
+    if (!gLUL) {
+      gLUL = new lul::LUL(logging_sink_for_LUL);
+      
+      read_procmaps(gLUL);
+      createdLUL = true;
+    }
 #endif
 
-  gIntervalMicro = floor(aInterval * 1000 + 0.5);
-  if (gIntervalMicro <= 0) {
-    gIntervalMicro = 1;
-  }
-
-  
-  gSigHandlerCoordinator = nullptr;
-
-  
-  LOG("Request signal");
-  struct sigaction sa;
-  sa.sa_sigaction = MOZ_SIGNAL_TRAMPOLINE(SigprofHandler);
-  sigemptyset(&sa.sa_mask);
-  sa.sa_flags = SA_RESTART | SA_SIGINFO;
-  if (sigaction(SIGPROF, &sa, &gOldSigprofHandler) != 0) {
-    MOZ_CRASH("Error installing signal");
-  }
-  LOG("Signal installed");
+    
+    LOG("Request signal");
+    struct sigaction sa;
+    sa.sa_sigaction = MOZ_SIGNAL_TRAMPOLINE(SigprofHandler);
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_RESTART | SA_SIGINFO;
+    if (sigaction(SIGPROF, &sa, &mOldSigprofHandler) != 0) {
+      MOZ_CRASH("Error installing SIGPROF handler in the profiler");
+    }
+    LOG("Signal installed");
 
 #if defined(USE_LUL_STACKWALK)
-  
-  
-  
-  gLUL->EnableUnwinding();
+    if (createdLUL) {
+      
+      
+      
+      gLUL->EnableUnwinding();
 
-  
-  if (PR_GetEnv("MOZ_PROFILER_LUL_TEST")) {
-     int nTests = 0, nTestsPassed = 0;
-     RunLulUnitTests(&nTests, &nTestsPassed, gLUL);
-  }
+      
+      if (PR_GetEnv("MOZ_PROFILER_LUL_TEST")) {
+         int nTests = 0, nTestsPassed = 0;
+         RunLulUnitTests(&nTests, &nTestsPassed, gLUL);
+      }
+    }
 #endif
 
-  
-  
-  if (pthread_create(&gSigprofSenderThread, NULL, SigprofSender, NULL) != 0) {
-    MOZ_CRASH("pthread_create failed");
+    
+    
+    
+    if (pthread_create(&mThread, nullptr, ThreadEntry, this) != 0) {
+      MOZ_CRASH("pthread_create failed");
+    }
+    LOG("Sampler thread started");
   }
-  LOG("Profiler thread started");
-}
 
-static void
-PlatformStop()
-{
-  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  void Join() {
+    MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
-  gIntervalMicro = 0;
+    
+    
+    pthread_join(mThread, nullptr);
+
+    
+    sigaction(SIGPROF, &mOldSigprofHandler, 0);
+  }
+
+  static void StartSampler(double aInterval) {
+    MOZ_RELEASE_ASSERT(NS_IsMainThread());
+    MOZ_RELEASE_ASSERT(!sInstance);
+
+    sInstance = new SamplerThread(aInterval);
+  }
+
+  static void StopSampler() {
+    MOZ_RELEASE_ASSERT(NS_IsMainThread());
+
+    sInstance->Join();
+    delete sInstance;
+    sInstance = nullptr;
+  }
+
+  static void SigprofHandler(int aSignal, siginfo_t* aInfo, void* aContext) {
+    
+    int savedErrno = errno;
+
+    MOZ_ASSERT(aSignal == SIGPROF);
+    MOZ_ASSERT(sSigHandlerCoordinator);
+
+    
+    
+    
+    sSigHandlerCoordinator->mUContext = *static_cast<ucontext_t*>(aContext);
+
+    
+    
+    
+    int r = sem_post(&sSigHandlerCoordinator->mMessage2);
+    MOZ_ASSERT(r == 0);
+
+    
+    
+
+    
+    while (true) {
+      r = sem_wait(&sSigHandlerCoordinator->mMessage3);
+      if (r == -1 && errno == EINTR) {
+        
+        continue;
+      }
+      
+      MOZ_ASSERT(r == 0);
+      break;
+    }
+
+    
+    
+    
+    r = sem_post(&sSigHandlerCoordinator->mMessage4);
+    MOZ_ASSERT(r == 0);
+
+    errno = savedErrno;
+  }
+
+  void Run() {
+    
+
+    int vm_tgid_ = getpid();
+    DebugOnly<int> my_tid = gettid();
+
+    TimeDuration lastSleepOverhead = 0;
+    TimeStamp sampleStart = TimeStamp::Now();
+
+    while (gIsActive) {
+      gBuffer->deleteExpiredStoredMarkers();
+
+      if (!gIsPaused) {
+        StaticMutexAutoLock lock(gRegisteredThreadsMutex);
+
+        bool isFirstProfiledThread = true;
+
+        for (uint32_t i = 0; i < gRegisteredThreads->size(); i++) {
+          ThreadInfo* info = (*gRegisteredThreads)[i];
+
+          
+          if (!info->HasProfile() || info->IsPendingDelete()) {
+            continue;
+          }
+
+          if (info->Stack()->CanDuplicateLastSampleDueToSleep() &&
+              gBuffer->DuplicateLastSample(info->ThreadId(), gStartTime)) {
+            continue;
+          }
+
+          info->UpdateThreadResponsiveness();
+
+          int threadId = info->ThreadId();
+          MOZ_ASSERT(threadId != my_tid);
+
+          int64_t rssMemory = 0;
+          int64_t ussMemory = 0;
+          if (isFirstProfiledThread && gProfileMemory) {
+            rssMemory = nsMemoryReporterManager::ResidentFast();
+            ussMemory = nsMemoryReporterManager::ResidentUnique();
+          }
+
+          
+          SigHandlerCoordinator coord;   
+          sSigHandlerCoordinator = &coord;
+
+          
+          
+          int r = tgkill(vm_tgid_, threadId, SIGPROF);
+          MOZ_ASSERT(r == 0);
+
+          
+          
+          while (true) {
+            r = sem_wait(&sSigHandlerCoordinator->mMessage2);
+            if (r == -1 && errno == EINTR) {
+              
+              continue;
+            }
+            
+            MOZ_ASSERT(r == 0);
+            break;
+          }
+
+          
+          
+          
+
+          TickSample sample;
+          sample.context = &sSigHandlerCoordinator->mUContext;
+
+          
+          SetSampleContext(&sample,
+                           sSigHandlerCoordinator->mUContext.uc_mcontext);
+          sample.threadInfo = info;
+          sample.timestamp = mozilla::TimeStamp::Now();
+          sample.rssMemory = rssMemory;
+          sample.ussMemory = ussMemory;
+
+          Tick(gBuffer, &sample);
+
+          
+          r = sem_post(&sSigHandlerCoordinator->mMessage3);
+          MOZ_ASSERT(r == 0);
+
+          
+          
+          while (true) {
+            r = sem_wait(&sSigHandlerCoordinator->mMessage4);
+            if (r == -1 && errno == EINTR) {
+              continue;
+            }
+            MOZ_ASSERT(r == 0);
+            break;
+          }
+
+          
+          
+          
+          sSigHandlerCoordinator = nullptr;
+
+          isFirstProfiledThread = false;
+        }
+#if defined(USE_LUL_STACKWALK)
+        
+        
+        
+        
+        
+        gLUL->MaybeShowStats();
+#endif
+      }
+
+      TimeStamp targetSleepEndTime =
+        sampleStart + TimeDuration::FromMicroseconds(mIntervalMicro);
+      TimeStamp beforeSleep = TimeStamp::Now();
+      TimeDuration targetSleepDuration = targetSleepEndTime - beforeSleep;
+      double sleepTime = std::max(0.0, (targetSleepDuration - lastSleepOverhead).ToMicroseconds());
+      SleepMicro(sleepTime);
+      sampleStart = TimeStamp::Now();
+      lastSleepOverhead = sampleStart - (beforeSleep + TimeDuration::FromMicroseconds(sleepTime));
+    }
+  }
+
+private:
+  
+  pthread_t mThread;
+
+  
+  const int mIntervalMicro;
+
+  
+  struct sigaction mOldSigprofHandler;
+
+  static SamplerThread* sInstance;
 
   
   
-  pthread_join(gSigprofSenderThread, NULL);
-
   
-  sigaction(SIGPROF, &gOldSigprofHandler, 0);
-}
+  static SigHandlerCoordinator* sSigHandlerCoordinator;
+
+  SamplerThread(const SamplerThread&) = delete;
+  void operator=(const SamplerThread&) = delete;
+};
+
+SamplerThread* SamplerThread::sInstance = nullptr;
+SamplerThread::SigHandlerCoordinator* SamplerThread::sSigHandlerCoordinator =
+  nullptr;
 
 #if defined(GP_OS_android)
 static struct sigaction gOldSigstartHandler;
@@ -555,7 +591,7 @@ static uint32_t readCSVArray(char* csvList, const char** buffer) {
   }
 
   char* item = strtok_r(csvList, ",", &savePtr);
-  for (count = 0; item; item = strtok_r(NULL, ",", &savePtr)) {
+  for (count = 0; item; item = strtok_r(nullptr, ",", &savePtr)) {
     int length = strlen(item) + 1;  
     char* newBuf = (char*) malloc(sizeof(char) * length);
     buffer[count] = newBuf;
@@ -580,9 +616,9 @@ ReadProfilerVars(const char* fileName,
   char* savePtr;
 
   if (file) {
-    while (fgets(line, bufferSize, file) != NULL) {
+    while (fgets(line, bufferSize, file) != nullptr) {
       feature = strtok_r(line, "=", &savePtr);
-      value = strtok_r(NULL, "", &savePtr);
+      value = strtok_r(nullptr, "", &savePtr);
 
       if (strncmp(feature, "MOZ_PROFILER_INTERVAL", bufferSize) == 0) {
         set_profiler_interval(value);
@@ -645,7 +681,7 @@ PlatformInit()
   sigemptyset(&sa.sa_mask);
   sa.sa_flags = SA_RESTART | SA_SIGINFO;
   if (sigaction(SIGSTART, &sa, &gOldSigstartHandler) != 0) {
-    LOG("Error installing signal");
+    MOZ_CRASH("Error installing SIGSTART handler in the profiler");
   }
 }
 
@@ -659,6 +695,22 @@ PlatformInit()
 }
 
 #endif
+
+static void
+PlatformStart(double aInterval)
+{
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+
+  SamplerThread::StartSampler(aInterval);
+}
+
+static void
+PlatformStop()
+{
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+
+  SamplerThread::StopSampler();
+}
 
 void TickSample::PopulateContext(void* aContext)
 {

@@ -39,11 +39,6 @@ using mozilla::TimeDuration;
 
 
 
-#ifdef DEBUG
-
-static const pthread_t kNoThread = (pthread_t) 0;
-#endif
-
 class PlatformData {
  public:
   PlatformData() : profiled_thread_(mach_thread_self())
@@ -81,15 +76,7 @@ PlatformDataDestructor::operator()(PlatformData* aData)
 
 class SamplerThread
 {
-public:
-  explicit SamplerThread(double aInterval)
-    : mIntervalMicro(floor(aInterval * 1000 + 0.5))
-  {
-    if (mIntervalMicro <= 0) {
-      mIntervalMicro = 1;
-    }
-  }
-
+private:
   static void SetThreadName() {
     
     
@@ -103,43 +90,39 @@ public:
   }
 
   static void* ThreadEntry(void* aArg) {
-    SamplerThread* thread = reinterpret_cast<SamplerThread*>(aArg);
-
-    thread->mThread = pthread_self();
+    auto thread = static_cast<SamplerThread*>(aArg);
     SetThreadName();
-    MOZ_ASSERT(thread->mThread != kNoThread);
     thread->Run();
-    return NULL;
+    return nullptr;
   }
 
-  void Start() {
-    pthread_attr_t* attr_ptr = NULL;
+public:
+  explicit SamplerThread(double aInterval)
+    : mIntervalMicro(std::max(1, int(floor(aInterval * 1000 + 0.5))))
+  {
+    pthread_attr_t* attr_ptr = nullptr;
     if (pthread_create(&mThread, attr_ptr, ThreadEntry, this) != 0) {
       MOZ_CRASH("pthread_create failed");
     }
-    MOZ_ASSERT(mThread != kNoThread);
   }
 
   void Join() {
-    pthread_join(mThread, NULL);
+    pthread_join(mThread, nullptr);
   }
 
   static void StartSampler(double aInterval) {
     MOZ_RELEASE_ASSERT(NS_IsMainThread());
-    MOZ_RELEASE_ASSERT(!mInstance);
+    MOZ_RELEASE_ASSERT(!sInstance);
 
-    if (mInstance == NULL) {
-      mInstance = new SamplerThread(aInterval);
-      mInstance->Start();
-    }
+    sInstance = new SamplerThread(aInterval);
   }
 
   static void StopSampler() {
     MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
-    mInstance->Join();
-    delete mInstance;
-    mInstance = NULL;
+    sInstance->Join();
+    delete sInstance;
+    sInstance = nullptr;
   }
 
   void Run() {
@@ -248,15 +231,16 @@ public:
 private:
   pthread_t mThread;
 
-  int mIntervalMicro;
+  
+  const int mIntervalMicro;
 
-  static SamplerThread* mInstance;
+  static SamplerThread* sInstance;
 
   SamplerThread(const SamplerThread&) = delete;
   void operator=(const SamplerThread&) = delete;
 };
 
-SamplerThread* SamplerThread::mInstance = NULL;
+SamplerThread* SamplerThread::sInstance = nullptr;
 
 static void
 PlatformInit()
