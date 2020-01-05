@@ -359,19 +359,6 @@ impl fmt::Display for PipelineId {
 #[derive(Clone, PartialEq, Eq, Copy, Hash, Debug, Deserialize, Serialize, HeapSizeOf)]
 pub struct SubpageId(pub u32);
 
-pub trait ConvertPipelineIdFromWebRender {
-    fn from_webrender(&self) -> PipelineId;
-}
-
-impl ConvertPipelineIdFromWebRender for webrender_traits::PipelineId {
-    fn from_webrender(&self) -> PipelineId {
-        PipelineId {
-            namespace_id: PipelineNamespaceId(self.0),
-            index: PipelineIndex(self.1),
-        }
-    }
-}
-
 
 
 #[derive(HeapSizeOf, Clone, Deserialize, Serialize)]
