@@ -673,24 +673,9 @@ SampleAnimations(Layer* aLayer, TimeStamp aPoint)
                      "Failed to resolve start time of pending animations");
           TimeDuration elapsedDuration =
             (aPoint - animation.startTime()).MultDouble(animation.playbackRate());
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          if (elapsedDuration.ToSeconds() < 0) {
-            continue;
-          }
-
           TimingParams timing;
           timing.mDuration.emplace(animation.duration());
-          
-          
-          timing.mDelay = TimeDuration(0);
+          timing.mDelay = animation.delay();
           timing.mIterations = animation.iterations();
           timing.mIterationStart = animation.iterationStart();
           timing.mDirection =
@@ -709,8 +694,9 @@ SampleAnimations(Layer* aLayer, TimeStamp aPoint)
               Nullable<TimeDuration>(elapsedDuration), timing,
               animation.playbackRate());
 
-          MOZ_ASSERT(!computedTiming.mProgress.IsNull(),
-                     "iteration progress should not be null");
+          if (computedTiming.mProgress.IsNull()) {
+            continue;
+          }
 
           uint32_t segmentIndex = 0;
           size_t segmentSize = animation.segments().Length();

@@ -244,6 +244,13 @@ public:
 
 
 
+  TimeDuration StartTimeFromReadyTime(const TimeDuration& aReadyTime) const;
+
+  
+
+
+
+
 
 
   TimeStamp AnimationTimeToTimeStamp(const StickyTimeDuration& aTime) const;

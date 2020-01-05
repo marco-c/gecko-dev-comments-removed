@@ -664,10 +664,20 @@ Animation::GetCurrentOrPendingStartTime() const
   }
 
   
-  
-  
-  result.SetValue(mPendingReadyTime.Value() - mHoldTime.Value());
+  result = StartTimeFromReadyTime(mPendingReadyTime.Value());
+
   return result;
+}
+
+TimeDuration
+Animation::StartTimeFromReadyTime(const TimeDuration& aReadyTime) const
+{
+  MOZ_ASSERT(!mHoldTime.IsNull(), "Hold time should be set in order to"
+                                  " convert a ready time to a start time");
+  if (mPlaybackRate == 0) {
+    return aReadyTime;
+  }
+  return aReadyTime - mHoldTime.Value().MultDouble(1 / mPlaybackRate);
 }
 
 TimeStamp
@@ -1066,12 +1076,9 @@ Animation::ResumeAt(const TimeDuration& aReadyTime)
   
   
   if (mStartTime.IsNull()) {
+    mStartTime = StartTimeFromReadyTime(aReadyTime);
     if (mPlaybackRate != 0) {
-      mStartTime.SetValue(aReadyTime -
-                          (mHoldTime.Value().MultDouble(1 / mPlaybackRate)));
       mHoldTime.SetNull();
-    } else {
-      mStartTime.SetValue(aReadyTime);
     }
   }
   mPendingState = PendingState::NotPending;
