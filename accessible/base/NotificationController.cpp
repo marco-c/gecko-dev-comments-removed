@@ -755,8 +755,11 @@ NotificationController::WillRefresh(mozilla::TimeStamp aTime)
       childDoc->Shutdown();
     }
   }
-
   mHangingChildDocuments.Clear();
+  MOZ_ASSERT(mDocument, "Illicit document shutdown");
+  if (!mDocument) {
+    return;
+  }
 
   
   
