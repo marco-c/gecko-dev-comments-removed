@@ -83,6 +83,22 @@ lazy_static! {
     };
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[derive(HeapSizeOf)]
 pub struct Stylist<Impl: SelectorImplExt> {
     
@@ -100,7 +116,11 @@ pub struct Stylist<Impl: SelectorImplExt> {
     
     
     element_map: PerPseudoElementSelectorMap<Impl>,
-    pseudos_map: HashMap<Impl::PseudoElement, PerPseudoElementSelectorMap<Impl>, BuildHasherDefault<::fnv::FnvHasher>>,
+    
+    
+    pseudos_map: HashMap<Impl::PseudoElement,
+                         PerPseudoElementSelectorMap<Impl>,
+                         BuildHasherDefault<::fnv::FnvHasher>>,
     rules_source_order: usize,
 
     
@@ -137,6 +157,7 @@ impl<Impl: SelectorImplExt> Stylist<Impl> {
         if !(self.is_device_dirty || stylesheets_changed) {
             return false;
         }
+
         self.element_map = PerPseudoElementSelectorMap::new();
         self.pseudos_map = HashMap::with_hasher(Default::default());
         self.rules_source_order = 0;
@@ -171,7 +192,7 @@ impl<Impl: SelectorImplExt> Stylist<Impl> {
         
         macro_rules! append(
             ($style_rule: ident, $priority: ident) => {
-                if $style_rule.declarations.$priority.len() > 0 {
+                if !$style_rule.declarations.$priority.is_empty() {
                     for selector in &$style_rule.selectors {
                         let map = if let Some(ref pseudo) = selector.pseudo_element {
                             self.pseudos_map.entry(pseudo.clone())
@@ -243,6 +264,7 @@ impl<Impl: SelectorImplExt> Stylist<Impl> {
         self.quirks_mode = enabled;
     }
 
+    
     
     
     
@@ -333,14 +355,20 @@ impl<Impl: SelectorImplExt> Stylist<Impl> {
         shareable
     }
 
+    #[inline]
     pub fn is_device_dirty(&self) -> bool {
         self.is_device_dirty
     }
 }
 
+
 #[derive(HeapSizeOf)]
 struct PerOriginSelectorMap<Impl: SelectorImpl> {
+    
+    
     normal: SelectorMap<Vec<PropertyDeclaration>, Impl>,
+    
+    
     important: SelectorMap<Vec<PropertyDeclaration>, Impl>,
 }
 
@@ -354,10 +382,15 @@ impl<Impl: SelectorImpl> PerOriginSelectorMap<Impl> {
     }
 }
 
+
+
 #[derive(HeapSizeOf)]
 struct PerPseudoElementSelectorMap<Impl: SelectorImpl> {
+    
     user_agent: PerOriginSelectorMap<Impl>,
+    
     author: PerOriginSelectorMap<Impl>,
+    
     user: PerOriginSelectorMap<Impl>,
 }
 
