@@ -9,6 +9,59 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 use backtrace::Backtrace;
 use bluetooth_traits::BluetoothRequest;
 use canvas::canvas_paint_thread::CanvasPaintThread;
@@ -70,16 +123,12 @@ use style_traits::viewport::ViewportConstraints;
 use timer_scheduler::TimerScheduler;
 use webrender_traits;
 
-#[derive(Debug, PartialEq)]
-enum ReadyToSave {
-    NoRootFrame,
-    PendingFrames,
-    WebFontNotLoaded,
-    DocumentLoading,
-    EpochMismatch,
-    PipelineUnknown,
-    Ready,
-}
+
+
+
+
+
+
 
 
 
@@ -89,56 +138,103 @@ enum ReadyToSave {
 
 pub struct Constellation<Message, LTF, STF> {
     
+    
     script_sender: IpcSender<FromScriptMsg>,
 
     
-    layout_sender: IpcSender<FromLayoutMsg>,
-
     
     script_receiver: Receiver<FromScriptMsg>,
 
     
-    compositor_receiver: Receiver<FromCompositorMsg>,
+    
+    layout_sender: IpcSender<FromLayoutMsg>,
 
     
+    
     layout_receiver: Receiver<FromLayoutMsg>,
+
+    
+    compositor_receiver: Receiver<FromCompositorMsg>,
 
     
     
     compositor_proxy: Box<CompositorProxy>,
 
     
+    
+    
+    
     public_resource_threads: ResourceThreads,
 
+    
+    
+    
     
     private_resource_threads: ResourceThreads,
 
     
+    
     image_cache_thread: ImageCacheThread,
 
+    
+    
+    font_cache_thread: FontCacheThread,
+
+    
     
     debugger_chan: Option<debugger::Sender>,
 
     
+    
     devtools_chan: Option<Sender<DevtoolsControlMsg>>,
 
+    
     
     bluetooth_thread: IpcSender<BluetoothRequest>,
 
     
+    
     swmanager_chan: Option<IpcSender<ServiceWorkerMsg>>,
 
     
+    
+    
     swmanager_sender: IpcSender<SWManagerMsg>,
 
+    
+    
     
     swmanager_receiver: Receiver<SWManagerMsg>,
 
     
     
+    time_profiler_chan: time::ProfilerChan,
+
+    
+    
+    mem_profiler_chan: mem::ProfilerChan,
+
+    
+    
+    scheduler_chan: IpcSender<TimerEventRequest>,
+
+    
+    
+    webrender_api_sender: webrender_traits::RenderApiSender,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     event_loops: HashMap<FrameId, HashMap<String, Weak<EventLoop>>>,
 
+    
     
     pipelines: HashMap<PipelineId, Pipeline>,
 
@@ -146,40 +242,30 @@ pub struct Constellation<Message, LTF, STF> {
     frames: HashMap<FrameId, Frame>,
 
     
-    font_cache_thread: FontCacheThread,
+    
+    
+    
+    
+    pending_frames: Vec<FrameChange>,
 
     
     root_frame_id: FrameId,
 
     
-    next_pipeline_namespace_id: PipelineNamespaceId,
-
-    
     focus_pipeline_id: Option<PipelineId>,
 
     
-    pending_frames: Vec<FrameChange>,
+    
+    next_pipeline_namespace_id: PipelineNamespaceId,
 
     
-    time_profiler_chan: time::ProfilerChan,
-
-    
-    mem_profiler_chan: mem::ProfilerChan,
-
-    phantom: PhantomData<(Message, LTF, STF)>,
-
     window_size: WindowSizeData,
 
     
     webdriver: WebDriverData,
 
-    scheduler_chan: IpcSender<TimerEventRequest>,
-
     
     document_states: HashMap<PipelineId, DocumentState>,
-
-    
-    webrender_api_sender: webrender_traits::RenderApiSender,
 
     
     shutting_down: bool,
@@ -191,44 +277,119 @@ pub struct Constellation<Message, LTF, STF> {
     
     
     random_pipeline_closure: Option<(StdRng, f32)>,
+
+    
+    phantom: PhantomData<(Message, LTF, STF)>,
 }
 
 
 pub struct InitialConstellationState {
     
     pub compositor_proxy: Box<CompositorProxy + Send>,
+
     
     pub debugger_chan: Option<debugger::Sender>,
+
     
     pub devtools_chan: Option<Sender<DevtoolsControlMsg>>,
+
     
     pub bluetooth_thread: IpcSender<BluetoothRequest>,
+
     
     pub image_cache_thread: ImageCacheThread,
+
     
     pub font_cache_thread: FontCacheThread,
+
     
     pub public_resource_threads: ResourceThreads,
+
     
     pub private_resource_threads: ResourceThreads,
+
     
     pub time_profiler_chan: time::ProfilerChan,
+
     
     pub mem_profiler_chan: mem::ProfilerChan,
-    
-    pub supports_clipboard: bool,
+
     
     pub webrender_api_sender: webrender_traits::RenderApiSender,
+
+    
+    
+    pub supports_clipboard: bool,
 }
+
+
+
+
+
+
+
+
+
+#[derive(Debug, Clone)]
+struct Frame {
+    
+    id: FrameId,
+
+    
+    prev: Vec<FrameState>,
+
+    
+    current: FrameState,
+
+    
+    next: Vec<FrameState>,
+}
+
+impl Frame {
+    
+    
+    fn new(id: FrameId, pipeline_id: PipelineId) -> Frame {
+        Frame {
+            id: id,
+            prev: vec!(),
+            current: FrameState::new(pipeline_id, id),
+            next: vec!(),
+        }
+    }
+
+    
+    fn load(&mut self, pipeline_id: PipelineId) {
+        self.prev.push(self.current.clone());
+        self.current = FrameState::new(pipeline_id, self.id);
+    }
+
+    
+    fn remove_forward_entries(&mut self) -> Vec<FrameState> {
+        replace(&mut self.next, vec!())
+    }
+
+    
+    fn replace_current(&mut self, pipeline_id: PipelineId) -> FrameState {
+        replace(&mut self.current, FrameState::new(pipeline_id, self.id))
+    }
+}
+
+
+
+
 
 #[derive(Debug, Clone)]
 struct FrameState {
+    
     instant: Instant,
+    
     pipeline_id: PipelineId,
+    
     frame_id: FrameId,
 }
 
 impl FrameState {
+    
     fn new(pipeline_id: PipelineId, frame_id: FrameId) -> FrameState {
         FrameState {
             instant: Instant::now(),
@@ -239,53 +400,41 @@ impl FrameState {
 }
 
 
-struct Frame {
-    id: FrameId,
-    prev: Vec<FrameState>,
-    current: FrameState,
-    next: Vec<FrameState>,
-}
-
-impl Frame {
-    fn new(id: FrameId, pipeline_id: PipelineId) -> Frame {
-        Frame {
-            id: id,
-            prev: vec!(),
-            current: FrameState::new(pipeline_id, id),
-            next: vec!(),
-        }
-    }
-
-    fn load(&mut self, pipeline_id: PipelineId) {
-        self.prev.push(self.current.clone());
-        self.current = FrameState::new(pipeline_id, self.id);
-    }
-
-    fn remove_forward_entries(&mut self) -> Vec<FrameState> {
-        replace(&mut self.next, vec!())
-    }
-
-    fn replace_current(&mut self, pipeline_id: PipelineId) -> FrameState {
-        replace(&mut self.current, FrameState::new(pipeline_id, self.id))
-    }
-}
-
-
 
 struct FrameChange {
+    
     frame_id: FrameId,
+
+    
+    
     old_pipeline_id: Option<PipelineId>,
+
+    
     new_pipeline_id: PipelineId,
+
+    
+    
     document_ready: bool,
+
+    
+    
     replace: bool,
 }
 
 
 
 
+
 struct FrameTreeIterator<'a> {
+    
     stack: Vec<FrameId>,
+
+    
     frames: &'a HashMap<FrameId, Frame>,
+
+    
+    
+    
     pipelines: &'a HashMap<PipelineId, Pipeline>,
 }
 
@@ -317,9 +466,19 @@ impl<'a> Iterator for FrameTreeIterator<'a> {
     }
 }
 
+
+
+
 struct FullFrameTreeIterator<'a> {
+    
     stack: Vec<FrameId>,
+
+    
     frames: &'a HashMap<FrameId, Frame>,
+
+    
+    
+    
     pipelines: &'a HashMap<PipelineId, Pipeline>,
 }
 
@@ -348,6 +507,7 @@ impl<'a> Iterator for FullFrameTreeIterator<'a> {
     }
 }
 
+
 struct WebDriverData {
     load_channel: Option<(PipelineId, IpcSender<webdriver_msg::LoadStatus>)>,
     resize_channel: Option<IpcSender<WindowSizeData>>,
@@ -362,11 +522,32 @@ impl WebDriverData {
     }
 }
 
+
+
+#[derive(Debug, PartialEq)]
+enum ReadyToSave {
+    NoRootFrame,
+    PendingFrames,
+    WebFontNotLoaded,
+    DocumentLoading,
+    EpochMismatch,
+    PipelineUnknown,
+    Ready,
+}
+
+
+
+
+
 #[derive(Clone, Copy)]
 enum ExitPipelineMode {
     Normal,
     Force,
 }
+
+
+
+
 
 
 #[derive(Clone)]
@@ -444,6 +625,10 @@ impl Log for FromCompositorLogger {
     }
 }
 
+
+
+
+
 fn log_entry(record: &LogRecord) -> Option<LogEntry> {
     match record.level() {
         LogLevel::Error if thread::panicking() => Some(LogEntry::Panic(
@@ -460,6 +645,7 @@ fn log_entry(record: &LogRecord) -> Option<LogEntry> {
     }
 }
 
+
 const WARNINGS_BUFFER_SIZE: usize = 32;
 
 
@@ -474,6 +660,7 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
     where LTF: LayoutThreadFactory<Message=Message>,
           STF: ScriptThreadFactory<Message=Message>
 {
+    
     pub fn start(state: InitialConstellationState) -> (Sender<FromCompositorMsg>, IpcSender<SWManagerMsg>) {
         let (compositor_sender, compositor_receiver) = channel();
 
@@ -549,6 +736,7 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
         (compositor_sender, swmanager_sender)
     }
 
+    
     fn run(&mut self) {
         while !self.shutting_down || !self.pipelines.is_empty() {
             
@@ -559,6 +747,7 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
         self.handle_shutdown();
     }
 
+    
     fn next_pipeline_namespace_id(&mut self) -> PipelineNamespaceId {
         let namespace_id = self.next_pipeline_namespace_id;
         let PipelineNamespaceId(ref mut i) = self.next_pipeline_namespace_id;
@@ -668,6 +857,7 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
 
     
     
+    
     fn current_frame_tree_iter(&self, frame_id_root: FrameId) -> FrameTreeIterator {
         FrameTreeIterator {
             stack: vec!(frame_id_root),
@@ -676,6 +866,9 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
         }
     }
 
+    
+    
+    
     fn full_frame_tree_iter(&self, frame_id_root: FrameId) -> FullFrameTreeIterator {
         FullFrameTreeIterator {
             stack: vec!(frame_id_root),
@@ -684,6 +877,8 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
         }
     }
 
+    
+    
     fn joint_session_future(&self, frame_id_root: FrameId) -> Vec<(Instant, FrameId, PipelineId)> {
         let mut future = vec!();
         for frame in self.full_frame_tree_iter(frame_id_root) {
@@ -695,11 +890,14 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
         future
     }
 
+    
     fn joint_session_future_is_empty(&self, frame_id_root: FrameId) -> bool {
         self.full_frame_tree_iter(frame_id_root)
             .all(|frame| frame.next.is_empty())
     }
 
+    
+    
     fn joint_session_past(&self, frame_id_root: FrameId) -> Vec<(Instant, FrameId, PipelineId)> {
         let mut past = vec!();
         for frame in self.full_frame_tree_iter(frame_id_root) {
@@ -714,6 +912,7 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
         past
     }
 
+    
     fn joint_session_past_is_empty(&self, frame_id_root: FrameId) -> bool {
         self.full_frame_tree_iter(frame_id_root)
             .all(|frame| frame.prev.is_empty())
