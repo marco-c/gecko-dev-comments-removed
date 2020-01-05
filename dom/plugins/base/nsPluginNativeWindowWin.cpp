@@ -129,9 +129,7 @@ public:
   nsPluginHost::SpecialType mPluginType;
 };
 
-static bool sInMessageDispatch = false;
 static bool sInPreviousMessageDispatch = false;
-static UINT sLastMsg = 0;
 
 static bool ProcessFlashMessageDelayed(nsPluginNativeWindowWin * aWin, nsNPAPIPluginInstance * aInst,
                                          HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -200,16 +198,6 @@ static LRESULT CALLBACK PluginWndProcInternal(HWND hWnd, UINT msg, WPARAM wParam
   
   RefPtr<nsNPAPIPluginInstance> inst;
   win->GetPluginInstance(inst);
-
-  
-  
-  
-  if (win->mPluginType == nsPluginHost::eSpecialType_RealPlayer) {
-    if (sInMessageDispatch && msg == sLastMsg)
-      return true;
-    
-    sLastMsg = msg;
-  }
 
   bool enablePopups = false;
 
@@ -282,10 +270,6 @@ static LRESULT CALLBACK PluginWndProcInternal(HWND hWnd, UINT msg, WPARAM wParam
     case WM_KILLFOCUS: {
       
       
-      if (win->mPluginType == nsPluginHost::eSpecialType_RealPlayer && msg == sLastMsg)
-        return TRUE;
-      
-      
       
       WNDPROC prevWndProc = win->GetPrevWindowProc();
       if (prevWndProc && !sInPreviousMessageDispatch) {
@@ -313,7 +297,6 @@ static LRESULT CALLBACK PluginWndProcInternal(HWND hWnd, UINT msg, WPARAM wParam
     }
   }
 
-  sInMessageDispatch = true;
   LRESULT res;
   WNDPROC proc = (WNDPROC)win->GetWindowProc();
   if (PluginWndProc == proc) {
@@ -323,7 +306,6 @@ static LRESULT CALLBACK PluginWndProcInternal(HWND hWnd, UINT msg, WPARAM wParam
   } else {
     res = CallWindowProc(proc, hWnd, msg, wParam, lParam);
   }
-  sInMessageDispatch = false;
 
   if (inst) {
     
