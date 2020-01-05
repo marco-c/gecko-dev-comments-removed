@@ -25,7 +25,7 @@ def do_process_check(func):
             
             
             m = _find_marionette_in_args(*args, **kwargs)
-            m.handle_socket_failure()
+            m._handle_socket_failure()
 
     return _
 
