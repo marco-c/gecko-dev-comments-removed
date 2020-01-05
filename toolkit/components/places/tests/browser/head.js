@@ -23,6 +23,8 @@ const TRANSITION_DOWNLOAD = PlacesUtils.history.TRANSITION_DOWNLOAD;
 
 
 
+
+
 function fieldForUrl(aURI, aFieldName, aCallback) {
   let url = aURI instanceof Ci.nsIURI ? aURI.spec : aURI;
   let stmt = PlacesUtils.history.QueryInterface(Ci.nsPIPlacesDatabase)
@@ -46,6 +48,25 @@ function fieldForUrl(aURI, aFieldName, aCallback) {
     }
   });
   stmt.finalize();
+}
+
+
+
+
+
+
+
+
+
+
+
+function promiseFieldForUrl(aURI, aFieldName) {
+  return new Promise(resolve => {
+    function callback(result) {
+      resolve(result);
+    }
+    fieldForUrl(aURI, aFieldName, callback);
+  });
 }
 
 
