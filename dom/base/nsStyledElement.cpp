@@ -68,8 +68,6 @@ nsStyledElement::SetInlineStyleDeclaration(DeclarationBlock* aDeclaration,
   
   if (hasListeners) {
     
-    
-    
     nsAutoString oldValueStr;
     modification = GetAttr(kNameSpaceID_None, nsGkAtoms::style,
                            oldValueStr);

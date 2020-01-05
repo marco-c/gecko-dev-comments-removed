@@ -12,7 +12,9 @@
 #include "mozilla/DeclarationBlock.h"
 #include "mozilla/DeclarationBlockInlines.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/InternalMutationEvent.h"
 #include "mozilla/ServoDeclarationBlock.h"
+#include "nsContentUtils.h"
 #include "nsIDocument.h"
 #include "nsIDOMMutationEvent.h"
 #include "nsIURI.h"
@@ -119,6 +121,15 @@ nsDOMCSSAttributeDeclaration::GetCSSDeclaration(Operation aOperation)
   }
 
   if (declaration) {
+    if (aOperation != eOperation_Read &&
+        nsContentUtils::HasMutationListeners(
+          mElement, NS_EVENT_BITS_MUTATION_ATTRMODIFIED, mElement)) {
+      
+      
+      
+      
+      declaration->SetImmutable();
+    }
     return declaration;
   }
 

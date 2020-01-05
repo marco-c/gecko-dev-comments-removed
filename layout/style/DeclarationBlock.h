@@ -63,7 +63,7 @@ public:
 
 
 
-  void SetImmutable() const { mImmutable = true; }
+  void SetImmutable() { mImmutable = true; }
 
   
 
@@ -135,8 +135,7 @@ private:
   } mContainer;
 
   
-  
-  mutable bool mImmutable;
+  bool mImmutable;
 
   const StyleBackendType mType;
 };

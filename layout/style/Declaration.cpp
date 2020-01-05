@@ -1702,10 +1702,6 @@ Declaration::AppendVariableAndValueToString(const nsAString& aName,
 void
 Declaration::ToString(nsAString& aString) const
 {
-  
-  
-  SetImmutable();
-
   nsCSSCompressedDataBlock *systemFontData =
     GetPropertyIsImportantByID(eCSSProperty__x_system_font) ? mImportantData
                                                             : mData;
