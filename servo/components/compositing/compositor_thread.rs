@@ -151,7 +151,7 @@ pub enum Msg {
     
     Recomposite(CompositingReason),
     
-    KeyEvent(Key, KeyState, KeyModifiers),
+    KeyEvent(Option<char>, Key, KeyState, KeyModifiers),
     
     TouchEventProcessed(EventResult),
     

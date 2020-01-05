@@ -103,7 +103,7 @@ pub enum ScriptMsg {
     
     SetTitle(PipelineId, Option<String>),
     
-    SendKeyEvent(Key, KeyState, KeyModifiers),
+    SendKeyEvent(Option<char>, Key, KeyState, KeyModifiers),
     
     GetClientWindow(IpcSender<(Size2D<u32>, Point2D<i32>)>),
     

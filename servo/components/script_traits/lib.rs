@@ -282,7 +282,7 @@ pub enum CompositorEvent {
     
     TouchpadPressureEvent(Point2D<f32>, f32, TouchpadPressurePhase),
     
-    KeyEvent(Key, KeyState, KeyModifiers),
+    KeyEvent(Option<char>, Key, KeyState, KeyModifiers),
 }
 
 
@@ -586,7 +586,7 @@ pub enum ConstellationMsg {
     
     IsReadyToSaveImage(HashMap<PipelineId, Epoch>),
     
-    KeyEvent(Key, KeyState, KeyModifiers),
+    KeyEvent(Option<char>, Key, KeyState, KeyModifiers),
     
     LoadUrl(PipelineId, LoadData),
     

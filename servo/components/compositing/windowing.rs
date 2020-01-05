@@ -76,7 +76,7 @@ pub enum WindowEvent {
     
     Quit,
     
-    KeyEvent(Key, KeyState, KeyModifiers),
+    KeyEvent(Option<char>, Key, KeyState, KeyModifiers),
     
     Reload,
 }
@@ -159,7 +159,7 @@ pub trait WindowMethods {
     fn set_cursor(&self, cursor: Cursor);
 
     
-    fn handle_key(&self, key: Key, mods: KeyModifiers);
+    fn handle_key(&self, ch: Option<char>, key: Key, mods: KeyModifiers);
 
     
     fn supports_clipboard(&self) -> bool;
