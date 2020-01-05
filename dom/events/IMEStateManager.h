@@ -13,7 +13,6 @@
 #include "nsIWidget.h"
 
 class nsIContent;
-class nsIDOMMouseEvent;
 class nsIEditor;
 class nsINode;
 class nsPresContext;
@@ -151,7 +150,7 @@ public:
   
   static void OnClickInEditor(nsPresContext* aPresContext,
                               nsIContent* aContent,
-                              nsIDOMMouseEvent* aMouseEvent);
+                              const WidgetMouseEvent* aMouseEvent);
 
   
   
