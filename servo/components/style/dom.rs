@@ -335,6 +335,13 @@ pub trait TElement : PartialEq + Debug + Sized + Copy + Clone + ElementExt + Pre
 
     
     fn has_selector_flags(&self, flags: ElementSelectorFlags) -> bool;
+
+    
+    
+    fn update_animations(&self, _pseudo: Option<&PseudoElement>);
+
+    
+    fn has_css_animations(&self, _pseudo: Option<&PseudoElement>) -> bool;
 }
 
 
