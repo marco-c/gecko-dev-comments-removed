@@ -225,7 +225,6 @@ class BasePopup {
     this.browser.setAttribute("disableglobalhistory", "true");
     this.browser.setAttribute("transparent", "true");
     this.browser.setAttribute("class", "webextension-popup-browser");
-    this.browser.setAttribute("webextension-view-type", "popup");
     this.browser.setAttribute("tooltip", "aHTMLTooltip");
 
     
@@ -241,6 +240,14 @@ class BasePopup {
     viewNode.appendChild(this.browser);
 
     extensions.emit("extension-browser-inserted", this.browser);
+    let windowId = WindowManager.getId(this.browser.ownerGlobal);
+    this.browser.messageManager.sendAsyncMessage("Extension:InitExtensionView", {
+      viewType: "popup",
+      windowId,
+    });
+    
+    
+    
 
     let initBrowser = browser => {
       let mm = browser.messageManager;
@@ -663,6 +670,28 @@ ExtensionTabManager.prototype = {
 
 
 
+let onGetTabAndWindowId = {
+  receiveMessage({name, target, sync}) {
+    let {gBrowser} = target.ownerGlobal;
+    let tab = gBrowser && gBrowser.getTabForBrowser(target);
+    if (tab) {
+      let reply = {
+        tabId: TabManager.getId(tab),
+        windowId: WindowManager.getId(tab.ownerGlobal),
+      };
+      if (sync) {
+        return reply;
+      }
+      target.messageManager.sendAsyncMessage("Extension:SetTabAndWindowId", reply);
+    }
+  },
+};
+
+Services.mm.addMessageListener("Extension:GetTabAndWindowId", onGetTabAndWindowId);
+
+
+
+
 global.TabManager = {
   _tabs: new WeakMap(),
   _nextId: 1,
@@ -689,7 +718,12 @@ global.TabManager = {
       if (adoptedTab) {
         
         
-        this._tabs.set(event.target, this.getId(adoptedTab));
+        let tab = event.target;
+        this._tabs.set(tab, this.getId(adoptedTab));
+
+        tab.linkedBrowser.messageManager.sendAsyncMessage("Extension:SetTabAndWindowId", {
+          windowId: WindowManager.getId(tab.ownerGlobal),
+        });
       }
     } else if (event.type == "TabClose") {
       let {adoptedBy} = event.detail;
@@ -699,6 +733,10 @@ global.TabManager = {
         
         
         this._tabs.set(adoptedBy, this.getId(event.target));
+
+        adoptedBy.linkedBrowser.messageManager.sendAsyncMessage("Extension:SetTabAndWindowId", {
+          windowId: WindowManager.getId(adoptedBy),
+        });
       }
     }
   },

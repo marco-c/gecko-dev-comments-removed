@@ -53,44 +53,16 @@ function getSender(extension, target, sender) {
 
 global.tabGetSender = getSender;
 
-function getDocShellOwner(docShell) {
-  let browser = docShell.chromeEventHandler;
 
-  let xulWindow = browser.ownerGlobal;
-
-  let {gBrowser} = xulWindow;
-  if (gBrowser) {
-    let tab = gBrowser.getTabForBrowser(browser);
-
-    return {xulWindow, tab};
-  }
-
-  return {};
-}
-
-
-
-
-
-
-extensions.on("page-load", (type, context, params, sender) => {
-  if (params.viewType == "tab" || params.viewType == "popup") {
-    let {xulWindow, tab} = getDocShellOwner(params.docShell);
-
-    
-    context.windowId = WindowManager.getId(xulWindow);
-    if (tab) {
-      sender.tabId = TabManager.getId(tab);
-      context.tabId = TabManager.getId(tab);
-    }
-  }
-});
 
 extensions.on("page-shutdown", (type, context) => {
   if (context.viewType == "tab") {
-    let {xulWindow, tab} = getDocShellOwner(context.docShell);
-    if (tab) {
-      xulWindow.gBrowser.removeTab(tab);
+    let {gBrowser} = context.xulBrowser.ownerGlobal;
+    if (gBrowser) {
+      let tab = gBrowser.getTabForBrowser(context.xulBrowser);
+      if (tab) {
+        gBrowser.removeTab(tab);
+      }
     }
   }
 });
@@ -107,8 +79,8 @@ extensions.on("fill-browser-data", (type, browser, data, result) => {
 
 
 global.currentWindow = function(context) {
-  let {xulWindow} = getDocShellOwner(context.docShell);
-  if (xulWindow) {
+  let {xulWindow} = context;
+  if (xulWindow && context.viewType != "background") {
     return xulWindow;
   }
   return WindowManager.topWindow;
