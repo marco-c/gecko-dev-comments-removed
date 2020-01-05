@@ -64,8 +64,15 @@ public:
 
 
 
+
+
+
+
+
+
   static FilterDescription GetFilterDescription(nsIContent* aFilteredElement,
                                                 const nsTArray<nsStyleFilter>& aFilterChain,
+                                                bool aFilterInputIsTainted,
                                                 const UserSpaceMetrics& aMetrics,
                                                 const gfxRect& aBBox,
                                                 nsTArray<RefPtr<SourceSurface>>& aOutAdditionalImages);
@@ -133,10 +140,14 @@ public:
 
 
 
+
+
+
   nsFilterInstance(nsIFrame *aTargetFrame,
                    nsIContent* aTargetContent,
                    const UserSpaceMetrics& aMetrics,
                    const nsTArray<nsStyleFilter>& aFilterChain,
+                   bool aFilterInputIsTainted,
                    nsSVGFilterPaintCallback *aPaintCallback,
                    const gfxMatrix& aPaintTransform,
                    const nsRegion *aPostFilterDirtyRegion = nullptr,
@@ -238,16 +249,20 @@ private:
 
 
 
+
   nsresult BuildPrimitives(const nsTArray<nsStyleFilter>& aFilterChain,
-                           nsIFrame* aTargetFrame);
+                           nsIFrame* aTargetFrame,
+                           bool aFilterInputIsTainted);
 
   
 
 
 
 
+
   nsresult BuildPrimitivesForFilter(const nsStyleFilter& aFilter,
-                                    nsIFrame* aTargetFrame);
+                                    nsIFrame* aTargetFrame,
+                                    bool aInputIsTainted);
 
   
 

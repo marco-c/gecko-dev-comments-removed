@@ -51,14 +51,24 @@ public:
 
 
 
-  nsresult BuildPrimitives(nsTArray<FilterPrimitiveDescription>& aPrimitiveDescrs);
+
+
+
+
+
+
+
+  nsresult BuildPrimitives(nsTArray<FilterPrimitiveDescription>& aPrimitiveDescrs,
+                           bool aInputIsTainted);
 
 private:
   
 
 
+
   FilterPrimitiveDescription CreatePrimitiveDescription(PrimitiveType aType,
-                                                        const nsTArray<FilterPrimitiveDescription>& aPrimitiveDescrs);
+                                                        const nsTArray<FilterPrimitiveDescription>& aPrimitiveDescrs,
+                                                        bool aInputIsTainted);
 
   
 

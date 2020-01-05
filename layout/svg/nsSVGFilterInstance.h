@@ -99,8 +99,16 @@ public:
 
 
 
+
+
+
+
+
+
+
   nsresult BuildPrimitives(nsTArray<FilterPrimitiveDescription>& aPrimitiveDescrs,
-                           nsTArray<RefPtr<SourceSurface>>& aInputImages);
+                           nsTArray<RefPtr<SourceSurface>>& aInputImages,
+                           bool aInputIsTainted);
 
   
 

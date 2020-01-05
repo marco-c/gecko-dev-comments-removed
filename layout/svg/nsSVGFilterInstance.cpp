@@ -366,23 +366,10 @@ nsSVGFilterInstance::GetSourceIndices(nsSVGFE* aPrimitiveElement,
   return NS_OK;
 }
 
-static bool
-IsFilterInputTainted(nsIContent* aElement)
-{
-  
-  
-  if (HTMLCanvasElement* canvas =
-        HTMLCanvasElement::FromContentOrNull(aElement)) {
-    return canvas->IsWriteOnly();
-  }
-
-  
-  return true;
-}
-
 nsresult
 nsSVGFilterInstance::BuildPrimitives(nsTArray<FilterPrimitiveDescription>& aPrimitiveDescrs,
-                                     nsTArray<RefPtr<SourceSurface>>& aInputImages)
+                                     nsTArray<RefPtr<SourceSurface>>& aInputImages,
+                                     bool aInputIsTainted)
 {
   mSourceGraphicIndex = GetLastResultIndex(aPrimitiveDescrs);
 
@@ -410,8 +397,6 @@ nsSVGFilterInstance::BuildPrimitives(nsTArray<FilterPrimitiveDescription>& aPrim
   
   nsCOMPtr<nsIPrincipal> principal = mTargetContent->NodePrincipal();
 
-  bool filterInputIsTainted = IsFilterInputTainted(mTargetContent);
-
   for (uint32_t primitiveElementIndex = 0;
        primitiveElementIndex < primitives.Length();
        ++primitiveElementIndex) {
@@ -427,7 +412,7 @@ nsSVGFilterInstance::BuildPrimitives(nsTArray<FilterPrimitiveDescription>& aPrim
       ComputeFilterPrimitiveSubregion(filter, aPrimitiveDescrs, sourceIndices);
 
     nsTArray<bool> sourcesAreTainted;
-    GetInputsAreTainted(aPrimitiveDescrs, sourceIndices, filterInputIsTainted, sourcesAreTainted);
+    GetInputsAreTainted(aPrimitiveDescrs, sourceIndices, aInputIsTainted, sourcesAreTainted);
 
     FilterPrimitiveDescription descr =
       filter->GetPrimitiveDescription(this, primitiveSubregion, sourcesAreTainted, aInputImages);
