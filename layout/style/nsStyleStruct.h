@@ -729,14 +729,6 @@ struct nsStyleImageLayers {
     typedef mozilla::StyleGeometryBox StyleGeometryBox;
 
     nsStyleImage  mImage;         
-    RefPtr<mozilla::css::URLValueData> mSourceURI;  
-                                  
-                                  
-                                  
-                                  
-                                  
-                                  
-                                  
     mozilla::Position mPosition;  
     Size          mSize;          
     StyleGeometryBox  mClip;      

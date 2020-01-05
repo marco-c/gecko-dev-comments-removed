@@ -2303,6 +2303,9 @@ nsComputedDOMStyle::SetValueToStyleImage(const nsStyleImage& aStyleImage,
     case eStyleImageType_Null:
       aValue->SetIdent(eCSSKeyword_none);
       break;
+    case eStyleImageType_URL:
+      SetValueToURLValue(aStyleImage.GetURLValue(), aValue);
+      break;
     default:
       NS_NOTREACHED("unexpected image type");
       break;
@@ -2317,26 +2320,7 @@ nsComputedDOMStyle::DoGetImageLayerImage(const nsStyleImageLayers& aLayers)
   for (uint32_t i = 0, i_end = aLayers.mImageCount; i < i_end; ++i) {
     RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
 
-    const nsStyleImage& image = aLayers.mLayers[i].mImage;
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (aLayers.mLayers[i].mSourceURI &&
-        aLayers.mLayers[i].mSourceURI->IsLocalRef()) {
-      
-      
-      SetValueToURLValue(aLayers.mLayers[i].mSourceURI, val);
-    } else {
-      SetValueToStyleImage(image, val);
-    }
-
+    SetValueToStyleImage(aLayers.mLayers[i].mImage, val);
     valueList->AppendCSSValue(val.forget());
   }
 
@@ -6357,13 +6341,14 @@ nsComputedDOMStyle::DoGetMask()
       !firstLayer.mRepeat.IsInitialValue() ||
       !firstLayer.mSize.IsInitialValue() ||
       !(firstLayer.mImage.GetType() == eStyleImageType_Null ||
-        firstLayer.mImage.GetType() == eStyleImageType_Image)) {
+        firstLayer.mImage.GetType() == eStyleImageType_Image ||
+        firstLayer.mImage.GetType() == eStyleImageType_URL)) {
     return nullptr;
   }
 
   RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
 
-  SetValueToURLValue(firstLayer.mSourceURI, val);
+  SetValueToURLValue(firstLayer.mImage.GetURLValue(), val);
 
   return val.forget();
 }
