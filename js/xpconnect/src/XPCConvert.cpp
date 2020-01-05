@@ -524,7 +524,13 @@ XPCConvert::JSData2Native(void* d, HandleValue s,
             
             
             const char16_t* chars = JS_GetTwoByteExternalStringChars(str);
-            nsStringBuffer::FromData((void*)chars)->ToString(length, *ws);
+            if (chars[length] == '\0') {
+                
+                nsStringBuffer::FromData((void*)chars)->ToString(length, *ws);
+            } else {
+                
+                ws->Assign(chars, length);
+            }
         } else if (XPCStringConvert::IsLiteral(str)) {
             
             
