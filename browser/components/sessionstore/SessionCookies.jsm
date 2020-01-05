@@ -62,16 +62,11 @@ var SessionCookiesInternal = {
       let cookies = [];
 
       
-      let hosts = this.getHostsForWindow(window, true);
-
-      for (let host of Object.keys(hosts)) {
-        let isPinned = hosts[host];
-
+      for (let host of this.getHostsForWindow(window, true)) {
         for (let cookie of CookieStore.getCookiesForHost(host)) {
           
           
-          
-          if (PrivacyLevel.canSave({isHttps: cookie.secure, isPinned})) {
+          if (PrivacyLevel.canSave(cookie.secure)) {
             cookies.push(cookie);
           }
         }
@@ -96,15 +91,12 @@ var SessionCookiesInternal = {
 
 
 
-
-
-
   getHostsForWindow(window, checkPrivacy = false) {
-    let hosts = {};
+    let hosts = new Set();
 
     for (let tab of window.tabs) {
       for (let entry of tab.entries) {
-        this._extractHostsFromEntry(entry, hosts, checkPrivacy, tab.pinned);
+        this._extractHostsFromEntry(entry, hosts, checkPrivacy);
       }
     }
 
@@ -182,60 +174,24 @@ var SessionCookiesInternal = {
 
 
 
+  _extractHostsFromEntry(entry, hosts, checkPrivacy) {
+    try {
+      
+      let {host, scheme} = Utils.makeURI(entry.url);
 
-
-
-  _extractHostsFromEntry(entry, hosts, checkPrivacy, isPinned) {
-    let host = entry._host;
-    let scheme = entry._scheme;
-
-    
-    
-    
-    
-    if (!host && !scheme) {
-      try {
-        let uri = Utils.makeURI(entry.url);
-        host = uri.host;
-        scheme = uri.scheme;
-        this._extractHostsFromHostScheme(host, scheme, hosts, checkPrivacy, isPinned);
-      } catch (ex) { }
-    }
+      if (scheme == "file") {
+        hosts.add(host);
+      } else if (/https?/.test(scheme)) {
+        if (!checkPrivacy || PrivacyLevel.canSave(scheme == "https")) {
+          hosts.add(host);
+        }
+      }
+    } catch (ex) { }
 
     if (entry.children) {
       for (let child of entry.children) {
-        this._extractHostsFromEntry(child, hosts, checkPrivacy, isPinned);
+        this._extractHostsFromEntry(child, hosts, checkPrivacy);
       }
-    }
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  _extractHostsFromHostScheme(host, scheme, hosts, checkPrivacy, isPinned) {
-    
-    
-    if (/https?/.test(scheme) && !hosts[host] &&
-        (!checkPrivacy ||
-         PrivacyLevel.canSave({isHttps: scheme == "https", isPinned}))) {
-      
-      
-      hosts[host] = isPinned;
-    } else if (scheme == "file") {
-      hosts[host] = true;
     }
   },
 

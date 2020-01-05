@@ -35,7 +35,7 @@ var PrivacyLevel = Object.freeze({
 
 
   check(url) {
-    return PrivacyLevel.canSave({ isHttps: url.startsWith("https:") });
+    return PrivacyLevel.canSave(url.startsWith("https:"));
   },
 
   
@@ -44,9 +44,7 @@ var PrivacyLevel = Object.freeze({
 
 
 
-
-
-  canSave({isHttps}) {
+  canSave(isHttps) {
     let level = Services.prefs.getIntPref(PREF);
 
     
