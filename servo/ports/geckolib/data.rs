@@ -77,6 +77,17 @@ impl PerDocumentStyleData {
     pub fn borrow_mut_from_raw<'a>(data: *mut RawServoStyleSet) -> &'a mut Self {
         unsafe { &mut *(data as *mut PerDocumentStyleData) }
     }
+
+    pub fn flush_stylesheets(&mut self) {
+        
+        
+        
+        if self.stylesheets_changed {
+            let _ = Arc::get_mut(&mut self.stylist).unwrap()
+                                                   .update(&self.stylesheets, true);
+            self.stylesheets_changed = false;
+        }
+    }
 }
 
 impl Drop for PerDocumentStyleData {

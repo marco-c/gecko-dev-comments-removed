@@ -347,6 +347,7 @@ pub const NS_STYLE_BORDER_STYLE_AUTO: ::std::os::raw::c_uint = 10;
 pub const NS_STYLE_BORDER_IMAGE_REPEAT_STRETCH: ::std::os::raw::c_uint = 0;
 pub const NS_STYLE_BORDER_IMAGE_REPEAT_REPEAT: ::std::os::raw::c_uint = 1;
 pub const NS_STYLE_BORDER_IMAGE_REPEAT_ROUND: ::std::os::raw::c_uint = 2;
+pub const NS_STYLE_BORDER_IMAGE_REPEAT_SPACE: ::std::os::raw::c_uint = 3;
 pub const NS_STYLE_BORDER_IMAGE_SLICE_NOFILL: ::std::os::raw::c_uint = 0;
 pub const NS_STYLE_BORDER_IMAGE_SLICE_FILL: ::std::os::raw::c_uint = 1;
 pub const NS_STYLE_CLEAR_NONE: ::std::os::raw::c_uint = 0;
@@ -1891,6 +1892,34 @@ fn bindgen_test_layout_NS_ConvertUTF8toUTF16() {
     assert_eq!(::std::mem::align_of::<NS_ConvertUTF8toUTF16>() , 8usize);
 }
 pub type nsVoidableString = nsAutoString;
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct RefPtrTraits<U> {
+    pub _phantom0: ::std::marker::PhantomData<U>,
+}
+#[repr(C)]
+#[derive(Debug)]
+pub struct RefPtr<T> {
+    pub mRawPtr: *mut T,
+}
+#[repr(C)]
+#[derive(Debug)]
+pub struct RefPtr_Proxy<T, R, Args> {
+    pub mRawPtr: *mut T,
+    pub _phantom0: ::std::marker::PhantomData<R>,
+    pub _phantom1: ::std::marker::PhantomData<Args>,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct RefPtr_ConstRemovingRefPtrTraits<T, U> {
+    pub _phantom0: ::std::marker::PhantomData<T>,
+    pub _phantom1: ::std::marker::PhantomData<U>,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct RefPtrGetterAddRefs<T> {
+    pub mTargetSmartPtr: *mut RefPtr<T>,
+}
 
 
 
@@ -2046,34 +2075,6 @@ impl ::std::clone::Clone for QITableEntry {
 fn bindgen_test_layout_QITableEntry() {
     assert_eq!(::std::mem::size_of::<QITableEntry>() , 16usize);
     assert_eq!(::std::mem::align_of::<QITableEntry>() , 8usize);
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct RefPtrTraits<U> {
-    pub _phantom0: ::std::marker::PhantomData<U>,
-}
-#[repr(C)]
-#[derive(Debug)]
-pub struct RefPtr<T> {
-    pub mRawPtr: *mut T,
-}
-#[repr(C)]
-#[derive(Debug)]
-pub struct RefPtr_Proxy<T, R, Args> {
-    pub mRawPtr: *mut T,
-    pub _phantom0: ::std::marker::PhantomData<R>,
-    pub _phantom1: ::std::marker::PhantomData<Args>,
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct RefPtr_ConstRemovingRefPtrTraits<T, U> {
-    pub _phantom0: ::std::marker::PhantomData<T>,
-    pub _phantom1: ::std::marker::PhantomData<U>,
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct RefPtrGetterAddRefs<T> {
-    pub mTargetSmartPtr: *mut RefPtr<T>,
 }
 pub enum TileClient { }
 #[repr(C)]
@@ -2796,6 +2797,11 @@ pub enum nsNodeSupportsWeakRefTearoff { }
 pub enum nsNodeWeakReference { }
 pub enum nsDOMMutationObserver { }
 pub enum ServoNodeData { }
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct DefaultDelete<> {
+    pub _phantom0: ::std::marker::PhantomData<ServoNodeData>,
+}
 pub enum EventListenerManager { }
 pub enum BoxQuadOptions { }
 pub enum ConvertCoordinateOptions { }
@@ -2840,12 +2846,12 @@ pub enum nsINode_h_unnamed_8 {
     NODE_SHARED_RESTYLE_BIT_2 = 16777216,
     NODE_TYPE_SPECIFIC_BITS_OFFSET = 23,
 }
-
-
-
-
-
-
+/**
+ * Class used to detect unexpected mutations. To use the class create an
+ * nsMutationGuard on the stack before unexpected mutations could occur.
+ * You can then at any time call Mutated to check if any unexpected mutations
+ * have occurred.
+ */
 #[repr(C)]
 #[derive(Debug, Copy)]
 pub struct nsMutationGuard {
@@ -3136,15 +3142,15 @@ fn bindgen_test_layout_nsIntPoint() {
     assert_eq!(::std::mem::size_of::<nsIntPoint>() , 8usize);
     assert_eq!(::std::mem::align_of::<nsIntPoint>() , 4usize);
 }
-
-
-
-
-
-
-
-
-
+/**
+ * These *_Simple types are used to map Gecko types to layout-equivalent but
+ * simpler Rust types, to aid Rust binding generation.
+ *
+ * If something in this types or the assertions below needs to change, ask
+ * bholley, heycam or emilio before!
+ *
+ * <div rustbindgen="true" replaces="nsPoint">
+ */
 #[repr(C)]
 #[derive(Debug, Copy)]
 pub struct nsPoint {
@@ -3159,9 +3165,9 @@ fn bindgen_test_layout_nsPoint() {
     assert_eq!(::std::mem::size_of::<nsPoint>() , 8usize);
     assert_eq!(::std::mem::align_of::<nsPoint>() , 4usize);
 }
-
-
-
+/**
+ * <div rustbindgen="true" replaces="nsMargin">
+ */
 #[repr(C)]
 #[derive(Debug, Copy)]
 pub struct nsMargin {
@@ -3196,9 +3202,9 @@ fn bindgen_test_layout_nsIntRect() {
     assert_eq!(::std::mem::size_of::<nsIntRect>() , 16usize);
     assert_eq!(::std::mem::align_of::<nsIntRect>() , 4usize);
 }
-
-
-
+/**
+ * <div rustbindgen="true" replaces="nsRect">
+ */
 #[repr(C)]
 #[derive(Debug, Copy)]
 pub struct nsRect {
@@ -3257,17 +3263,17 @@ pub enum nsStyledElementNotElementCSSInlineStyle { }
 pub enum MiscContainer { }
 pub enum ServoDeclarationBlock { }
 pub enum Declaration { }
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * A class used to construct a nsString from a nsStringBuffer (we might
+ * want to move this to nsString at some point).
+ *
+ * WARNING: Note that nsCheapString doesn't take an explicit length -- it
+ * assumes the string is maximally large, given the nsStringBuffer's storage
+ * size.  This means the given string buffer *must* be sized exactly correctly
+ * for the string it contains (including one byte for a null terminator).  If
+ * it has any unused storage space, then that will result in bogus characters
+ * at the end of our nsCheapString.
+ */
 #[repr(C)]
 #[derive(Debug)]
 pub struct nsCheapString {
@@ -3316,22 +3322,22 @@ pub enum nsAttrValue_ValueType {
     eSVGTransformList = 33,
     eSVGViewBox = 34,
 }
-
-
-
-
-
-
-
-
-
-
+/**
+   * Structure for a mapping from int (enum) values to strings.  When you use
+   * it you generally create an array of them.
+   * Instantiate like this:
+   * EnumTable myTable[] = {
+   *   { "string1", 1 },
+   *   { "string2", 2 },
+   *   { 0 }
+   * }
+   */
 #[repr(C)]
 #[derive(Debug, Copy)]
 pub struct nsAttrValue_EnumTable {
-    
+    /** The string the value maps to */
     pub tag: *const ::std::os::raw::c_char,
-    
+    /** The enum value that maps to this string */
     pub value: i16,
 }
 impl ::std::clone::Clone for nsAttrValue_EnumTable {
@@ -3393,24 +3399,24 @@ pub enum nsChangeHint {
     nsChangeHint_UpdateBackgroundPosition = 67108864,
 }
 pub type nsChangeHint_size_t = ::std::os::raw::c_int;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * |nsRestyleHint| is a bitfield for the result of
+ * |HasStateDependentStyle| and |HasAttributeDependentStyle|.  When no
+ * restyling is necessary, use |nsRestyleHint(0)|.
+ *
+ * Without eRestyle_Force or eRestyle_ForceDescendants, the restyling process
+ * can stop processing at a frame when it detects no style changes and it is
+ * known that the styles of the subtree beneath it will not change, leaving
+ * the old style context on the frame.  eRestyle_Force can be used to skip this
+ * optimization on a frame, and to force its new style context to be used.
+ *
+ * Similarly, eRestyle_ForceDescendants will cause the frame and all of its
+ * descendants to be traversed and for the new style contexts that are created
+ * to be set on the frames.
+ *
+ * NOTE: When adding new restyle hints, please also add them to
+ * RestyleManager::RestyleHintToString.
+ */
 #[repr(u32)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum nsRestyleHint {
@@ -3428,10 +3434,10 @@ pub enum nsRestyleHint {
     eRestyle_AllHintsWithAnimations = 368,
 }
 pub type nsRestyleHint_size_t = ::std::os::raw::c_int;
-
-
-
-
+/**
+ * Additional data used in conjunction with an nsRestyleHint to control the
+ * restyle process.
+ */
 #[repr(C)]
 #[derive(Debug)]
 pub struct RestyleHintData {
@@ -3442,11 +3448,11 @@ fn bindgen_test_layout_RestyleHintData() {
     assert_eq!(::std::mem::size_of::<RestyleHintData>() , 8usize);
     assert_eq!(::std::mem::align_of::<RestyleHintData>() , 8usize);
 }
-
-
-
-
-
+/**
+ * A structure representing a single attribute name and value.
+ *
+ * This is pretty similar to the private nsAttrAndChildArray::InternalAttr.
+ */
 #[repr(C)]
 #[derive(Debug)]
 pub struct ServoAttrSnapshot {
@@ -3458,10 +3464,10 @@ fn bindgen_test_layout_ServoAttrSnapshot() {
     assert_eq!(::std::mem::size_of::<ServoAttrSnapshot>() , 16usize);
     assert_eq!(::std::mem::align_of::<ServoAttrSnapshot>() , 8usize);
 }
-
-
-
-
+/**
+ * A bitflags enum class used to determine what data does a ServoElementSnapshot
+ * contains.
+ */
 #[repr(i8)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum ServoElementSnapshotFlags {
@@ -3470,13 +3476,13 @@ pub enum ServoElementSnapshotFlags {
     HTMLElementInHTMLDocument = 4,
     All = 7,
 }
-
-
-
-
-
-
-
+/**
+ * This class holds all non-tree-structural state of an element that might be
+ * used for selector matching eventually.
+ *
+ * This means the attributes, and the element state, such as :hover, :active,
+ * etc...
+ */
 #[repr(C)]
 #[derive(Debug)]
 pub struct ServoElementSnapshot {
@@ -3658,9 +3664,9 @@ pub enum CSSVariableResolver { }
 #[repr(C)]
 pub struct CSSVariableValues {
     pub mVariableIDs: [u64; 5usize],
-    
-
-
+    /**
+   * Array of variables, indexed by variable ID.
+   */
     pub mVariables: nsTArray<CSSVariableValues_Variable>,
 }
 #[repr(C)]
@@ -3697,26 +3703,26 @@ pub enum SheetType {
     Count = 10,
     Unknown = -1,
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * StaticAutoPtr and StaticRefPtr are like nsAutoPtr and nsRefPtr, except they
+ * are suitable for use as global variables.
+ *
+ * In particular, a global instance of Static{Auto,Ref}Ptr doesn't cause the
+ * compiler to emit  a static initializer (in release builds, anyway).
+ *
+ * In order to accomplish this, Static{Auto,Ref}Ptr must have a trivial
+ * constructor and destructor.  As a consequence, it cannot initialize its raw
+ * pointer to 0 on construction, and it cannot delete/release its raw pointer
+ * upon destruction.
+ *
+ * Since the compiler guarantees that all global variables are initialized to
+ * 0, these trivial constructors are safe.  Since we rely on this, the clang
+ * plugin, run as part of our "static analysis" builds, makes it a compile-time
+ * error to use Static{Auto,Ref}Ptr as anything except a global variable.
+ *
+ * Static{Auto,Ref}Ptr have a limited interface as compared to ns{Auto,Ref}Ptr;
+ * this is intentional, since their range of acceptable uses is smaller.
+ */
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct StaticAutoPtr<T> {
@@ -3734,11 +3740,11 @@ pub const eFamily_generic_last: FontFamilyType =
     FontFamilyType::eFamily_fantasy;
 pub const eFamily_generic_count: FontFamilyType =
     FontFamilyType::eFamily_monospace;
-
-
-
-
-
+/**
+ * type of font family name, either a name (e.g. Helvetica) or a
+ * generic (e.g. serif, sans-serif), with the ability to distinguish
+ * between unquoted and quoted names for serializaiton
+ */
 #[repr(i32)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum FontFamilyType {
@@ -3756,10 +3762,10 @@ pub enum FontFamilyType {
 #[repr(u32)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum QuotedName { eQuotedName = 0, eUnquotedName = 1, }
-
-
-
-
+/**
+ * font family name, a string for the name if not a generic and
+ * a font type indicated named family or which generic family
+ */
 #[repr(C)]
 #[derive(Debug)]
 pub struct FontFamilyName {
@@ -3771,11 +3777,11 @@ fn bindgen_test_layout_FontFamilyName() {
     assert_eq!(::std::mem::size_of::<FontFamilyName>() , 24usize);
     assert_eq!(::std::mem::align_of::<FontFamilyName>() , 8usize);
 }
-
-
-
-
-
+/**
+ * font family list, array of font families and a default font type.
+ * font family names are either named strings or generics. the default
+ * font type is used to preserve the variable font fallback behavior
+ */
 #[repr(C)]
 #[derive(Debug)]
 pub struct FontFamilyList {
@@ -4056,305 +4062,306 @@ pub enum nsCSSProperty {
     eCSSProperty_grid_template_rows = 141,
     eCSSProperty_height = 142,
     eCSSProperty_hyphens = 143,
-    eCSSProperty_image_orientation = 144,
-    eCSSProperty_image_region = 145,
-    eCSSProperty_image_rendering = 146,
-    eCSSProperty_ime_mode = 147,
-    eCSSProperty_inline_size = 148,
-    eCSSProperty_isolation = 149,
-    eCSSProperty_justify_content = 150,
-    eCSSProperty_justify_items = 151,
-    eCSSProperty_justify_self = 152,
-    eCSSProperty__x_lang = 153,
-    eCSSProperty_left = 154,
-    eCSSProperty_letter_spacing = 155,
-    eCSSProperty_lighting_color = 156,
-    eCSSProperty_line_height = 157,
-    eCSSProperty_list_style_image = 158,
-    eCSSProperty_list_style_position = 159,
-    eCSSProperty_list_style_type = 160,
-    eCSSProperty_margin_block_end = 161,
-    eCSSProperty_margin_block_start = 162,
-    eCSSProperty_margin_bottom = 163,
-    eCSSProperty_margin_inline_end = 164,
-    eCSSProperty_margin_inline_start = 165,
-    eCSSProperty_margin_left = 166,
-    eCSSProperty_margin_right = 167,
-    eCSSProperty_margin_top = 168,
-    eCSSProperty_marker_end = 169,
-    eCSSProperty_marker_mid = 170,
-    eCSSProperty_marker_offset = 171,
-    eCSSProperty_marker_start = 172,
-    eCSSProperty_mask = 173,
-    eCSSProperty_mask_type = 174,
-    eCSSProperty_math_display = 175,
-    eCSSProperty_math_variant = 176,
-    eCSSProperty_max_block_size = 177,
-    eCSSProperty_max_height = 178,
-    eCSSProperty_max_inline_size = 179,
-    eCSSProperty_max_width = 180,
-    eCSSProperty_min_block_size = 181,
-    eCSSProperty__moz_min_font_size_ratio = 182,
-    eCSSProperty_min_height = 183,
-    eCSSProperty_min_inline_size = 184,
-    eCSSProperty_min_width = 185,
-    eCSSProperty_mix_blend_mode = 186,
-    eCSSProperty_object_fit = 187,
-    eCSSProperty_object_position = 188,
-    eCSSProperty_offset_block_end = 189,
-    eCSSProperty_offset_block_start = 190,
-    eCSSProperty_offset_inline_end = 191,
-    eCSSProperty_offset_inline_start = 192,
-    eCSSProperty_opacity = 193,
-    eCSSProperty_order = 194,
-    eCSSProperty_orient = 195,
-    eCSSProperty_osx_font_smoothing = 196,
-    eCSSProperty_outline_color = 197,
-    eCSSProperty_outline_offset = 198,
-    eCSSProperty__moz_outline_radius_bottomLeft = 199,
-    eCSSProperty__moz_outline_radius_bottomRight = 200,
-    eCSSProperty__moz_outline_radius_topLeft = 201,
-    eCSSProperty__moz_outline_radius_topRight = 202,
-    eCSSProperty_outline_style = 203,
-    eCSSProperty_outline_width = 204,
-    eCSSProperty_overflow_clip_box = 205,
-    eCSSProperty_overflow_x = 206,
-    eCSSProperty_overflow_y = 207,
-    eCSSProperty_padding_block_end = 208,
-    eCSSProperty_padding_block_start = 209,
-    eCSSProperty_padding_bottom = 210,
-    eCSSProperty_padding_inline_end = 211,
-    eCSSProperty_padding_inline_start = 212,
-    eCSSProperty_padding_left = 213,
-    eCSSProperty_padding_right = 214,
-    eCSSProperty_padding_top = 215,
-    eCSSProperty_page_break_after = 216,
-    eCSSProperty_page_break_before = 217,
-    eCSSProperty_page_break_inside = 218,
-    eCSSProperty_paint_order = 219,
-    eCSSProperty_perspective = 220,
-    eCSSProperty_perspective_origin = 221,
-    eCSSProperty_pointer_events = 222,
-    eCSSProperty_position = 223,
-    eCSSProperty_quotes = 224,
-    eCSSProperty_resize = 225,
-    eCSSProperty_right = 226,
-    eCSSProperty_ruby_align = 227,
-    eCSSProperty_ruby_position = 228,
-    eCSSProperty_script_level = 229,
-    eCSSProperty_script_min_size = 230,
-    eCSSProperty_script_size_multiplier = 231,
-    eCSSProperty_scroll_behavior = 232,
-    eCSSProperty_scroll_snap_coordinate = 233,
-    eCSSProperty_scroll_snap_destination = 234,
-    eCSSProperty_scroll_snap_points_x = 235,
-    eCSSProperty_scroll_snap_points_y = 236,
-    eCSSProperty_scroll_snap_type_x = 237,
-    eCSSProperty_scroll_snap_type_y = 238,
-    eCSSProperty_shape_rendering = 239,
-    eCSSProperty__x_span = 240,
-    eCSSProperty_stack_sizing = 241,
-    eCSSProperty_stop_color = 242,
-    eCSSProperty_stop_opacity = 243,
-    eCSSProperty_stroke = 244,
-    eCSSProperty_stroke_dasharray = 245,
-    eCSSProperty_stroke_dashoffset = 246,
-    eCSSProperty_stroke_linecap = 247,
-    eCSSProperty_stroke_linejoin = 248,
-    eCSSProperty_stroke_miterlimit = 249,
-    eCSSProperty_stroke_opacity = 250,
-    eCSSProperty_stroke_width = 251,
-    eCSSProperty__x_system_font = 252,
-    eCSSProperty__moz_tab_size = 253,
-    eCSSProperty_table_layout = 254,
-    eCSSProperty_text_align = 255,
-    eCSSProperty_text_align_last = 256,
-    eCSSProperty_text_anchor = 257,
-    eCSSProperty_text_combine_upright = 258,
-    eCSSProperty_text_decoration_color = 259,
-    eCSSProperty_text_decoration_line = 260,
-    eCSSProperty_text_decoration_style = 261,
-    eCSSProperty_text_emphasis_color = 262,
-    eCSSProperty_text_emphasis_position = 263,
-    eCSSProperty_text_emphasis_style = 264,
-    eCSSProperty__webkit_text_fill_color = 265,
-    eCSSProperty_text_indent = 266,
-    eCSSProperty_text_orientation = 267,
-    eCSSProperty_text_overflow = 268,
-    eCSSProperty_text_rendering = 269,
-    eCSSProperty_text_shadow = 270,
-    eCSSProperty_text_size_adjust = 271,
-    eCSSProperty__webkit_text_stroke_color = 272,
-    eCSSProperty__webkit_text_stroke_width = 273,
-    eCSSProperty_text_transform = 274,
-    eCSSProperty__x_text_zoom = 275,
-    eCSSProperty_top = 276,
-    eCSSProperty__moz_top_layer = 277,
-    eCSSProperty_touch_action = 278,
-    eCSSProperty_transform = 279,
-    eCSSProperty_transform_box = 280,
-    eCSSProperty_transform_origin = 281,
-    eCSSProperty_transform_style = 282,
-    eCSSProperty_transition_delay = 283,
-    eCSSProperty_transition_duration = 284,
-    eCSSProperty_transition_property = 285,
-    eCSSProperty_transition_timing_function = 286,
-    eCSSProperty_unicode_bidi = 287,
-    eCSSProperty_user_focus = 288,
-    eCSSProperty_user_input = 289,
-    eCSSProperty_user_modify = 290,
-    eCSSProperty_user_select = 291,
-    eCSSProperty_vector_effect = 292,
-    eCSSProperty_vertical_align = 293,
-    eCSSProperty_visibility = 294,
-    eCSSProperty_white_space = 295,
-    eCSSProperty_width = 296,
-    eCSSProperty_will_change = 297,
-    eCSSProperty__moz_window_dragging = 298,
-    eCSSProperty__moz_window_shadow = 299,
-    eCSSProperty_word_break = 300,
-    eCSSProperty_word_spacing = 301,
-    eCSSProperty_overflow_wrap = 302,
-    eCSSProperty_writing_mode = 303,
-    eCSSProperty_z_index = 304,
-    eCSSProperty_COUNT_no_shorthands = 305,
-    eCSSProperty_animation = 306,
-    eCSSProperty_background = 307,
-    eCSSProperty_background_position = 308,
-    eCSSProperty_border = 309,
-    eCSSProperty_border_block_end = 310,
-    eCSSProperty_border_block_start = 311,
-    eCSSProperty_border_bottom = 312,
-    eCSSProperty_border_color = 313,
-    eCSSProperty_border_image = 314,
-    eCSSProperty_border_inline_end = 315,
-    eCSSProperty_border_inline_start = 316,
-    eCSSProperty_border_left = 317,
-    eCSSProperty_border_radius = 318,
-    eCSSProperty_border_right = 319,
-    eCSSProperty_border_style = 320,
-    eCSSProperty_border_top = 321,
-    eCSSProperty_border_width = 322,
-    eCSSProperty__moz_column_rule = 323,
-    eCSSProperty__moz_columns = 324,
-    eCSSProperty_flex = 325,
-    eCSSProperty_flex_flow = 326,
-    eCSSProperty_font = 327,
-    eCSSProperty_font_variant = 328,
-    eCSSProperty_grid = 329,
-    eCSSProperty_grid_area = 330,
-    eCSSProperty_grid_column = 331,
-    eCSSProperty_grid_gap = 332,
-    eCSSProperty_grid_row = 333,
-    eCSSProperty_grid_template = 334,
-    eCSSProperty_list_style = 335,
-    eCSSProperty_margin = 336,
-    eCSSProperty_marker = 337,
-    eCSSProperty_outline = 338,
-    eCSSProperty__moz_outline_radius = 339,
-    eCSSProperty_overflow = 340,
-    eCSSProperty_padding = 341,
-    eCSSProperty_scroll_snap_type = 342,
-    eCSSProperty_text_decoration = 343,
-    eCSSProperty_text_emphasis = 344,
-    eCSSProperty__webkit_text_stroke = 345,
-    eCSSProperty__moz_transform = 346,
-    eCSSProperty_transition = 347,
-    eCSSProperty_COUNT = 348,
-    eCSSPropertyAlias_MozTransformOrigin = 349,
-    eCSSPropertyAlias_MozPerspectiveOrigin = 350,
-    eCSSPropertyAlias_MozPerspective = 351,
-    eCSSPropertyAlias_MozTransformStyle = 352,
-    eCSSPropertyAlias_MozBackfaceVisibility = 353,
-    eCSSPropertyAlias_MozBorderImage = 354,
-    eCSSPropertyAlias_MozTransition = 355,
-    eCSSPropertyAlias_MozTransitionDelay = 356,
-    eCSSPropertyAlias_MozTransitionDuration = 357,
-    eCSSPropertyAlias_MozTransitionProperty = 358,
-    eCSSPropertyAlias_MozTransitionTimingFunction = 359,
-    eCSSPropertyAlias_MozAnimation = 360,
-    eCSSPropertyAlias_MozAnimationDelay = 361,
-    eCSSPropertyAlias_MozAnimationDirection = 362,
-    eCSSPropertyAlias_MozAnimationDuration = 363,
-    eCSSPropertyAlias_MozAnimationFillMode = 364,
-    eCSSPropertyAlias_MozAnimationIterationCount = 365,
-    eCSSPropertyAlias_MozAnimationName = 366,
-    eCSSPropertyAlias_MozAnimationPlayState = 367,
-    eCSSPropertyAlias_MozAnimationTimingFunction = 368,
-    eCSSPropertyAlias_MozBoxSizing = 369,
-    eCSSPropertyAlias_MozFontFeatureSettings = 370,
-    eCSSPropertyAlias_MozFontLanguageOverride = 371,
-    eCSSPropertyAlias_MozPaddingEnd = 372,
-    eCSSPropertyAlias_MozPaddingStart = 373,
-    eCSSPropertyAlias_MozMarginEnd = 374,
-    eCSSPropertyAlias_MozMarginStart = 375,
-    eCSSPropertyAlias_MozBorderEnd = 376,
-    eCSSPropertyAlias_MozBorderEndColor = 377,
-    eCSSPropertyAlias_MozBorderEndStyle = 378,
-    eCSSPropertyAlias_MozBorderEndWidth = 379,
-    eCSSPropertyAlias_MozBorderStart = 380,
-    eCSSPropertyAlias_MozBorderStartColor = 381,
-    eCSSPropertyAlias_MozBorderStartStyle = 382,
-    eCSSPropertyAlias_MozBorderStartWidth = 383,
-    eCSSPropertyAlias_MozHyphens = 384,
-    eCSSPropertyAlias_MozTextAlignLast = 385,
-    eCSSPropertyAlias_WebkitAnimation = 386,
-    eCSSPropertyAlias_WebkitAnimationDelay = 387,
-    eCSSPropertyAlias_WebkitAnimationDirection = 388,
-    eCSSPropertyAlias_WebkitAnimationDuration = 389,
-    eCSSPropertyAlias_WebkitAnimationFillMode = 390,
-    eCSSPropertyAlias_WebkitAnimationIterationCount = 391,
-    eCSSPropertyAlias_WebkitAnimationName = 392,
-    eCSSPropertyAlias_WebkitAnimationPlayState = 393,
-    eCSSPropertyAlias_WebkitAnimationTimingFunction = 394,
-    eCSSPropertyAlias_WebkitFilter = 395,
-    eCSSPropertyAlias_WebkitTextSizeAdjust = 396,
-    eCSSPropertyAlias_WebkitTransform = 397,
-    eCSSPropertyAlias_WebkitTransformOrigin = 398,
-    eCSSPropertyAlias_WebkitTransformStyle = 399,
-    eCSSPropertyAlias_WebkitBackfaceVisibility = 400,
-    eCSSPropertyAlias_WebkitPerspective = 401,
-    eCSSPropertyAlias_WebkitPerspectiveOrigin = 402,
-    eCSSPropertyAlias_WebkitTransition = 403,
-    eCSSPropertyAlias_WebkitTransitionDelay = 404,
-    eCSSPropertyAlias_WebkitTransitionDuration = 405,
-    eCSSPropertyAlias_WebkitTransitionProperty = 406,
-    eCSSPropertyAlias_WebkitTransitionTimingFunction = 407,
-    eCSSPropertyAlias_WebkitBorderRadius = 408,
-    eCSSPropertyAlias_WebkitBorderTopLeftRadius = 409,
-    eCSSPropertyAlias_WebkitBorderTopRightRadius = 410,
-    eCSSPropertyAlias_WebkitBorderBottomLeftRadius = 411,
-    eCSSPropertyAlias_WebkitBorderBottomRightRadius = 412,
-    eCSSPropertyAlias_WebkitBackgroundClip = 413,
-    eCSSPropertyAlias_WebkitBackgroundOrigin = 414,
-    eCSSPropertyAlias_WebkitBackgroundSize = 415,
-    eCSSPropertyAlias_WebkitBorderImage = 416,
-    eCSSPropertyAlias_WebkitBoxShadow = 417,
-    eCSSPropertyAlias_WebkitBoxSizing = 418,
-    eCSSPropertyAlias_WebkitBoxFlex = 419,
-    eCSSPropertyAlias_WebkitBoxOrdinalGroup = 420,
-    eCSSPropertyAlias_WebkitBoxOrient = 421,
-    eCSSPropertyAlias_WebkitBoxDirection = 422,
-    eCSSPropertyAlias_WebkitBoxAlign = 423,
-    eCSSPropertyAlias_WebkitBoxPack = 424,
-    eCSSPropertyAlias_WebkitFlexDirection = 425,
-    eCSSPropertyAlias_WebkitFlexWrap = 426,
-    eCSSPropertyAlias_WebkitFlexFlow = 427,
-    eCSSPropertyAlias_WebkitOrder = 428,
-    eCSSPropertyAlias_WebkitFlex = 429,
-    eCSSPropertyAlias_WebkitFlexGrow = 430,
-    eCSSPropertyAlias_WebkitFlexShrink = 431,
-    eCSSPropertyAlias_WebkitFlexBasis = 432,
-    eCSSPropertyAlias_WebkitJustifyContent = 433,
-    eCSSPropertyAlias_WebkitAlignItems = 434,
-    eCSSPropertyAlias_WebkitAlignSelf = 435,
-    eCSSPropertyAlias_WebkitAlignContent = 436,
-    eCSSPropertyAlias_WebkitUserSelect = 437,
-    eCSSProperty_COUNT_with_aliases = 438,
-    eCSSPropertyExtra_all_properties = 439,
-    eCSSPropertyExtra_x_none_value = 440,
-    eCSSPropertyExtra_x_auto_value = 441,
-    eCSSPropertyExtra_variable = 442,
+    eCSSProperty_initial_letter = 144,
+    eCSSProperty_image_orientation = 145,
+    eCSSProperty_image_region = 146,
+    eCSSProperty_image_rendering = 147,
+    eCSSProperty_ime_mode = 148,
+    eCSSProperty_inline_size = 149,
+    eCSSProperty_isolation = 150,
+    eCSSProperty_justify_content = 151,
+    eCSSProperty_justify_items = 152,
+    eCSSProperty_justify_self = 153,
+    eCSSProperty__x_lang = 154,
+    eCSSProperty_left = 155,
+    eCSSProperty_letter_spacing = 156,
+    eCSSProperty_lighting_color = 157,
+    eCSSProperty_line_height = 158,
+    eCSSProperty_list_style_image = 159,
+    eCSSProperty_list_style_position = 160,
+    eCSSProperty_list_style_type = 161,
+    eCSSProperty_margin_block_end = 162,
+    eCSSProperty_margin_block_start = 163,
+    eCSSProperty_margin_bottom = 164,
+    eCSSProperty_margin_inline_end = 165,
+    eCSSProperty_margin_inline_start = 166,
+    eCSSProperty_margin_left = 167,
+    eCSSProperty_margin_right = 168,
+    eCSSProperty_margin_top = 169,
+    eCSSProperty_marker_end = 170,
+    eCSSProperty_marker_mid = 171,
+    eCSSProperty_marker_offset = 172,
+    eCSSProperty_marker_start = 173,
+    eCSSProperty_mask = 174,
+    eCSSProperty_mask_type = 175,
+    eCSSProperty_math_display = 176,
+    eCSSProperty_math_variant = 177,
+    eCSSProperty_max_block_size = 178,
+    eCSSProperty_max_height = 179,
+    eCSSProperty_max_inline_size = 180,
+    eCSSProperty_max_width = 181,
+    eCSSProperty_min_block_size = 182,
+    eCSSProperty__moz_min_font_size_ratio = 183,
+    eCSSProperty_min_height = 184,
+    eCSSProperty_min_inline_size = 185,
+    eCSSProperty_min_width = 186,
+    eCSSProperty_mix_blend_mode = 187,
+    eCSSProperty_object_fit = 188,
+    eCSSProperty_object_position = 189,
+    eCSSProperty_offset_block_end = 190,
+    eCSSProperty_offset_block_start = 191,
+    eCSSProperty_offset_inline_end = 192,
+    eCSSProperty_offset_inline_start = 193,
+    eCSSProperty_opacity = 194,
+    eCSSProperty_order = 195,
+    eCSSProperty_orient = 196,
+    eCSSProperty_osx_font_smoothing = 197,
+    eCSSProperty_outline_color = 198,
+    eCSSProperty_outline_offset = 199,
+    eCSSProperty__moz_outline_radius_bottomLeft = 200,
+    eCSSProperty__moz_outline_radius_bottomRight = 201,
+    eCSSProperty__moz_outline_radius_topLeft = 202,
+    eCSSProperty__moz_outline_radius_topRight = 203,
+    eCSSProperty_outline_style = 204,
+    eCSSProperty_outline_width = 205,
+    eCSSProperty_overflow_clip_box = 206,
+    eCSSProperty_overflow_x = 207,
+    eCSSProperty_overflow_y = 208,
+    eCSSProperty_padding_block_end = 209,
+    eCSSProperty_padding_block_start = 210,
+    eCSSProperty_padding_bottom = 211,
+    eCSSProperty_padding_inline_end = 212,
+    eCSSProperty_padding_inline_start = 213,
+    eCSSProperty_padding_left = 214,
+    eCSSProperty_padding_right = 215,
+    eCSSProperty_padding_top = 216,
+    eCSSProperty_page_break_after = 217,
+    eCSSProperty_page_break_before = 218,
+    eCSSProperty_page_break_inside = 219,
+    eCSSProperty_paint_order = 220,
+    eCSSProperty_perspective = 221,
+    eCSSProperty_perspective_origin = 222,
+    eCSSProperty_pointer_events = 223,
+    eCSSProperty_position = 224,
+    eCSSProperty_quotes = 225,
+    eCSSProperty_resize = 226,
+    eCSSProperty_right = 227,
+    eCSSProperty_ruby_align = 228,
+    eCSSProperty_ruby_position = 229,
+    eCSSProperty_script_level = 230,
+    eCSSProperty_script_min_size = 231,
+    eCSSProperty_script_size_multiplier = 232,
+    eCSSProperty_scroll_behavior = 233,
+    eCSSProperty_scroll_snap_coordinate = 234,
+    eCSSProperty_scroll_snap_destination = 235,
+    eCSSProperty_scroll_snap_points_x = 236,
+    eCSSProperty_scroll_snap_points_y = 237,
+    eCSSProperty_scroll_snap_type_x = 238,
+    eCSSProperty_scroll_snap_type_y = 239,
+    eCSSProperty_shape_rendering = 240,
+    eCSSProperty__x_span = 241,
+    eCSSProperty_stack_sizing = 242,
+    eCSSProperty_stop_color = 243,
+    eCSSProperty_stop_opacity = 244,
+    eCSSProperty_stroke = 245,
+    eCSSProperty_stroke_dasharray = 246,
+    eCSSProperty_stroke_dashoffset = 247,
+    eCSSProperty_stroke_linecap = 248,
+    eCSSProperty_stroke_linejoin = 249,
+    eCSSProperty_stroke_miterlimit = 250,
+    eCSSProperty_stroke_opacity = 251,
+    eCSSProperty_stroke_width = 252,
+    eCSSProperty__x_system_font = 253,
+    eCSSProperty__moz_tab_size = 254,
+    eCSSProperty_table_layout = 255,
+    eCSSProperty_text_align = 256,
+    eCSSProperty_text_align_last = 257,
+    eCSSProperty_text_anchor = 258,
+    eCSSProperty_text_combine_upright = 259,
+    eCSSProperty_text_decoration_color = 260,
+    eCSSProperty_text_decoration_line = 261,
+    eCSSProperty_text_decoration_style = 262,
+    eCSSProperty_text_emphasis_color = 263,
+    eCSSProperty_text_emphasis_position = 264,
+    eCSSProperty_text_emphasis_style = 265,
+    eCSSProperty__webkit_text_fill_color = 266,
+    eCSSProperty_text_indent = 267,
+    eCSSProperty_text_orientation = 268,
+    eCSSProperty_text_overflow = 269,
+    eCSSProperty_text_rendering = 270,
+    eCSSProperty_text_shadow = 271,
+    eCSSProperty_text_size_adjust = 272,
+    eCSSProperty__webkit_text_stroke_color = 273,
+    eCSSProperty__webkit_text_stroke_width = 274,
+    eCSSProperty_text_transform = 275,
+    eCSSProperty__x_text_zoom = 276,
+    eCSSProperty_top = 277,
+    eCSSProperty__moz_top_layer = 278,
+    eCSSProperty_touch_action = 279,
+    eCSSProperty_transform = 280,
+    eCSSProperty_transform_box = 281,
+    eCSSProperty_transform_origin = 282,
+    eCSSProperty_transform_style = 283,
+    eCSSProperty_transition_delay = 284,
+    eCSSProperty_transition_duration = 285,
+    eCSSProperty_transition_property = 286,
+    eCSSProperty_transition_timing_function = 287,
+    eCSSProperty_unicode_bidi = 288,
+    eCSSProperty_user_focus = 289,
+    eCSSProperty_user_input = 290,
+    eCSSProperty_user_modify = 291,
+    eCSSProperty_user_select = 292,
+    eCSSProperty_vector_effect = 293,
+    eCSSProperty_vertical_align = 294,
+    eCSSProperty_visibility = 295,
+    eCSSProperty_white_space = 296,
+    eCSSProperty_width = 297,
+    eCSSProperty_will_change = 298,
+    eCSSProperty__moz_window_dragging = 299,
+    eCSSProperty__moz_window_shadow = 300,
+    eCSSProperty_word_break = 301,
+    eCSSProperty_word_spacing = 302,
+    eCSSProperty_overflow_wrap = 303,
+    eCSSProperty_writing_mode = 304,
+    eCSSProperty_z_index = 305,
+    eCSSProperty_COUNT_no_shorthands = 306,
+    eCSSProperty_animation = 307,
+    eCSSProperty_background = 308,
+    eCSSProperty_background_position = 309,
+    eCSSProperty_border = 310,
+    eCSSProperty_border_block_end = 311,
+    eCSSProperty_border_block_start = 312,
+    eCSSProperty_border_bottom = 313,
+    eCSSProperty_border_color = 314,
+    eCSSProperty_border_image = 315,
+    eCSSProperty_border_inline_end = 316,
+    eCSSProperty_border_inline_start = 317,
+    eCSSProperty_border_left = 318,
+    eCSSProperty_border_radius = 319,
+    eCSSProperty_border_right = 320,
+    eCSSProperty_border_style = 321,
+    eCSSProperty_border_top = 322,
+    eCSSProperty_border_width = 323,
+    eCSSProperty__moz_column_rule = 324,
+    eCSSProperty__moz_columns = 325,
+    eCSSProperty_flex = 326,
+    eCSSProperty_flex_flow = 327,
+    eCSSProperty_font = 328,
+    eCSSProperty_font_variant = 329,
+    eCSSProperty_grid = 330,
+    eCSSProperty_grid_area = 331,
+    eCSSProperty_grid_column = 332,
+    eCSSProperty_grid_gap = 333,
+    eCSSProperty_grid_row = 334,
+    eCSSProperty_grid_template = 335,
+    eCSSProperty_list_style = 336,
+    eCSSProperty_margin = 337,
+    eCSSProperty_marker = 338,
+    eCSSProperty_outline = 339,
+    eCSSProperty__moz_outline_radius = 340,
+    eCSSProperty_overflow = 341,
+    eCSSProperty_padding = 342,
+    eCSSProperty_scroll_snap_type = 343,
+    eCSSProperty_text_decoration = 344,
+    eCSSProperty_text_emphasis = 345,
+    eCSSProperty__webkit_text_stroke = 346,
+    eCSSProperty__moz_transform = 347,
+    eCSSProperty_transition = 348,
+    eCSSProperty_COUNT = 349,
+    eCSSPropertyAlias_MozTransformOrigin = 350,
+    eCSSPropertyAlias_MozPerspectiveOrigin = 351,
+    eCSSPropertyAlias_MozPerspective = 352,
+    eCSSPropertyAlias_MozTransformStyle = 353,
+    eCSSPropertyAlias_MozBackfaceVisibility = 354,
+    eCSSPropertyAlias_MozBorderImage = 355,
+    eCSSPropertyAlias_MozTransition = 356,
+    eCSSPropertyAlias_MozTransitionDelay = 357,
+    eCSSPropertyAlias_MozTransitionDuration = 358,
+    eCSSPropertyAlias_MozTransitionProperty = 359,
+    eCSSPropertyAlias_MozTransitionTimingFunction = 360,
+    eCSSPropertyAlias_MozAnimation = 361,
+    eCSSPropertyAlias_MozAnimationDelay = 362,
+    eCSSPropertyAlias_MozAnimationDirection = 363,
+    eCSSPropertyAlias_MozAnimationDuration = 364,
+    eCSSPropertyAlias_MozAnimationFillMode = 365,
+    eCSSPropertyAlias_MozAnimationIterationCount = 366,
+    eCSSPropertyAlias_MozAnimationName = 367,
+    eCSSPropertyAlias_MozAnimationPlayState = 368,
+    eCSSPropertyAlias_MozAnimationTimingFunction = 369,
+    eCSSPropertyAlias_MozBoxSizing = 370,
+    eCSSPropertyAlias_MozFontFeatureSettings = 371,
+    eCSSPropertyAlias_MozFontLanguageOverride = 372,
+    eCSSPropertyAlias_MozPaddingEnd = 373,
+    eCSSPropertyAlias_MozPaddingStart = 374,
+    eCSSPropertyAlias_MozMarginEnd = 375,
+    eCSSPropertyAlias_MozMarginStart = 376,
+    eCSSPropertyAlias_MozBorderEnd = 377,
+    eCSSPropertyAlias_MozBorderEndColor = 378,
+    eCSSPropertyAlias_MozBorderEndStyle = 379,
+    eCSSPropertyAlias_MozBorderEndWidth = 380,
+    eCSSPropertyAlias_MozBorderStart = 381,
+    eCSSPropertyAlias_MozBorderStartColor = 382,
+    eCSSPropertyAlias_MozBorderStartStyle = 383,
+    eCSSPropertyAlias_MozBorderStartWidth = 384,
+    eCSSPropertyAlias_MozHyphens = 385,
+    eCSSPropertyAlias_MozTextAlignLast = 386,
+    eCSSPropertyAlias_WebkitAnimation = 387,
+    eCSSPropertyAlias_WebkitAnimationDelay = 388,
+    eCSSPropertyAlias_WebkitAnimationDirection = 389,
+    eCSSPropertyAlias_WebkitAnimationDuration = 390,
+    eCSSPropertyAlias_WebkitAnimationFillMode = 391,
+    eCSSPropertyAlias_WebkitAnimationIterationCount = 392,
+    eCSSPropertyAlias_WebkitAnimationName = 393,
+    eCSSPropertyAlias_WebkitAnimationPlayState = 394,
+    eCSSPropertyAlias_WebkitAnimationTimingFunction = 395,
+    eCSSPropertyAlias_WebkitFilter = 396,
+    eCSSPropertyAlias_WebkitTextSizeAdjust = 397,
+    eCSSPropertyAlias_WebkitTransform = 398,
+    eCSSPropertyAlias_WebkitTransformOrigin = 399,
+    eCSSPropertyAlias_WebkitTransformStyle = 400,
+    eCSSPropertyAlias_WebkitBackfaceVisibility = 401,
+    eCSSPropertyAlias_WebkitPerspective = 402,
+    eCSSPropertyAlias_WebkitPerspectiveOrigin = 403,
+    eCSSPropertyAlias_WebkitTransition = 404,
+    eCSSPropertyAlias_WebkitTransitionDelay = 405,
+    eCSSPropertyAlias_WebkitTransitionDuration = 406,
+    eCSSPropertyAlias_WebkitTransitionProperty = 407,
+    eCSSPropertyAlias_WebkitTransitionTimingFunction = 408,
+    eCSSPropertyAlias_WebkitBorderRadius = 409,
+    eCSSPropertyAlias_WebkitBorderTopLeftRadius = 410,
+    eCSSPropertyAlias_WebkitBorderTopRightRadius = 411,
+    eCSSPropertyAlias_WebkitBorderBottomLeftRadius = 412,
+    eCSSPropertyAlias_WebkitBorderBottomRightRadius = 413,
+    eCSSPropertyAlias_WebkitBackgroundClip = 414,
+    eCSSPropertyAlias_WebkitBackgroundOrigin = 415,
+    eCSSPropertyAlias_WebkitBackgroundSize = 416,
+    eCSSPropertyAlias_WebkitBorderImage = 417,
+    eCSSPropertyAlias_WebkitBoxShadow = 418,
+    eCSSPropertyAlias_WebkitBoxSizing = 419,
+    eCSSPropertyAlias_WebkitBoxFlex = 420,
+    eCSSPropertyAlias_WebkitBoxOrdinalGroup = 421,
+    eCSSPropertyAlias_WebkitBoxOrient = 422,
+    eCSSPropertyAlias_WebkitBoxDirection = 423,
+    eCSSPropertyAlias_WebkitBoxAlign = 424,
+    eCSSPropertyAlias_WebkitBoxPack = 425,
+    eCSSPropertyAlias_WebkitFlexDirection = 426,
+    eCSSPropertyAlias_WebkitFlexWrap = 427,
+    eCSSPropertyAlias_WebkitFlexFlow = 428,
+    eCSSPropertyAlias_WebkitOrder = 429,
+    eCSSPropertyAlias_WebkitFlex = 430,
+    eCSSPropertyAlias_WebkitFlexGrow = 431,
+    eCSSPropertyAlias_WebkitFlexShrink = 432,
+    eCSSPropertyAlias_WebkitFlexBasis = 433,
+    eCSSPropertyAlias_WebkitJustifyContent = 434,
+    eCSSPropertyAlias_WebkitAlignItems = 435,
+    eCSSPropertyAlias_WebkitAlignSelf = 436,
+    eCSSPropertyAlias_WebkitAlignContent = 437,
+    eCSSPropertyAlias_WebkitUserSelect = 438,
+    eCSSProperty_COUNT_with_aliases = 439,
+    eCSSPropertyExtra_all_properties = 440,
+    eCSSPropertyExtra_x_none_value = 441,
+    eCSSPropertyExtra_x_auto_value = 442,
+    eCSSPropertyExtra_variable = 443,
 }
 #[repr(i32)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
@@ -4402,44 +4409,44 @@ pub enum nsCSSPropertyLogicalGroup {
     eCSSPropertyLogicalGroup_Size = 8,
     eCSSPropertyLogicalGroup_COUNT = 9,
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Class to safely handle main-thread-only pointers off the main thread.
+ *
+ * Classes like XPCWrappedJS are main-thread-only, which means that it is
+ * forbidden to call methods on instances of these classes off the main thread.
+ * For various reasons (see bug 771074), this restriction recently began to
+ * apply to AddRef/Release as well.
+ *
+ * This presents a problem for consumers that wish to hold a callback alive
+ * on non-main-thread code. A common example of this is the proxy callback
+ * pattern, where non-main-thread code holds a strong-reference to the callback
+ * object, and dispatches new Runnables (also with a strong reference) to the
+ * main thread in order to execute the callback. This involves several AddRef
+ * and Release calls on the other thread, which is (now) verboten.
+ *
+ * The basic idea of this class is to introduce a layer of indirection.
+ * nsMainThreadPtrHolder is a threadsafe reference-counted class that internally
+ * maintains one strong reference to the main-thread-only object. It must be
+ * instantiated on the main thread (so that the AddRef of the underlying object
+ * happens on the main thread), but consumers may subsequently pass references
+ * to the holder anywhere they please. These references are meant to be opaque
+ * when accessed off-main-thread (assertions enforce this).
+ *
+ * The semantics of RefPtr<nsMainThreadPtrHolder<T> > would be cumbersome, so
+ * we also introduce nsMainThreadPtrHandle<T>, which is conceptually identical
+ * to the above (though it includes various convenience methods). The basic
+ * pattern is as follows.
+ *
+ * // On the main thread:
+ * nsCOMPtr<nsIFooCallback> callback = ...;
+ * nsMainThreadPtrHandle<nsIFooCallback> callbackHandle =
+ *   new nsMainThreadPtrHolder<nsIFooCallback>(callback);
+ * // Pass callbackHandle to structs/classes that might be accessed on other
+ * // threads.
+ *
+ * All structs and classes that might be accessed on other threads should store
+ * an nsMainThreadPtrHandle<T> rather than an nsCOMPtr<T>.
+ */
 #[repr(C)]
 #[derive(Debug)]
 pub struct nsMainThreadPtrHolder<T> {
@@ -4938,32 +4945,32 @@ fn bindgen_test_layout_CounterStyleManager() {
     assert_eq!(::std::mem::size_of::<CounterStyleManager>() , 64usize);
     assert_eq!(::std::mem::align_of::<CounterStyleManager>() , 8usize);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * A class for holding strong references to nsPresArena-allocated
+ * objects.
+ *
+ * Since the arena's lifetime is not related to the refcounts
+ * of the objects allocated within it, it is possible to have a strong
+ * reference to an arena-allocated object that lives until the
+ * destruction of the arena.  An ArenaRefPtr acts like a weak reference
+ * in that it will clear its referent if the arena is about to go away.
+ *
+ * T must be a class that has these two methods:
+ *
+ *   static mozilla::ArenaObjectID ArenaObjectID();
+ *   U* Arena();
+ *
+ * where U is a class that has these two methods:
+ *
+ *   void RegisterArenaRefPtr(ArenaRefPtr<T>*);
+ *   void DeregisterArenaRefPtr(ArenaRefPtr<T>*);
+ *
+ * Currently, both nsPresArena and nsIPresShell can be used as U.
+ *
+ * The ArenaObjectID method must return the mozilla::ArenaObjectID that
+ * uniquely identifies T, and the Arena method must return the nsPresArena
+ * (or a proxy for it) in which the object was allocated.
+ */
 #[repr(C)]
 #[derive(Debug)]
 pub struct ArenaRefPtr<T> {
@@ -5114,14 +5121,14 @@ fn bindgen_test_layout_nsStyleCoord_h_unnamed_18() {
     assert_eq!(::std::mem::align_of::<nsStyleCoord_h_unnamed_18>() , 8usize);
 }
 pub type nsStyleUnion = nsStyleCoord_h_unnamed_18;
-
-
-
-
-
-
-
-
+/**
+ * Class that hold a single size specification used by the style
+ * system.  The size specification consists of two parts -- a number
+ * and a unit.  The number is an integer, a floating point value, an
+ * nscoord, or undefined, and the unit is an nsStyleUnit.  Checking
+ * the unit is a must before asking for the value in any particular
+ * form.
+ */
 #[repr(C)]
 #[derive(Debug)]
 pub struct nsStyleCoord {
@@ -5162,11 +5169,11 @@ fn bindgen_test_layout_nsStyleCoord() {
     assert_eq!(::std::mem::size_of::<nsStyleCoord>() , 16usize);
     assert_eq!(::std::mem::align_of::<nsStyleCoord>() , 8usize);
 }
-
-
-
-
-
+/**
+ * Class that represents a set of top/right/bottom/left nsStyleCoords.
+ * This is commonly used to hold the widths of the borders, margins,
+ * or paddings of a box.
+ */
 #[repr(C)]
 #[derive(Debug)]
 pub struct nsStyleSides {
@@ -5178,11 +5185,11 @@ fn bindgen_test_layout_nsStyleSides() {
     assert_eq!(::std::mem::size_of::<nsStyleSides>() , 40usize);
     assert_eq!(::std::mem::align_of::<nsStyleSides>() , 8usize);
 }
-
-
-
-
-
+/**
+ * Class that represents a set of top-left/top-right/bottom-left/bottom-right
+ * nsStyleCoord pairs.  This is used to hold the dimensions of the
+ * corners of a box (for, e.g., border-radius and outline-radius).
+ */
 #[repr(C)]
 #[derive(Debug)]
 pub struct nsStyleCorners {
@@ -5291,16 +5298,16 @@ pub enum nsStyleImageType {
     eStyleImageType_Gradient = 2,
     eStyleImageType_Element = 3,
 }
-
-
-
-
-
-
-
-
-
-
+/**
+ * Represents a paintable image of one of the following types.
+ * (1) A real image loaded from an external source.
+ * (2) A CSS linear or radial gradient.
+ * (3) An element within a document, or an <img>, <video>, or <canvas> element
+ *     not in a document.
+ * (*) Optionally a crop rect can be set to paint a partial (rectangular)
+ * region of an image. (Currently, this feature is only supported with an
+ * image of type (1)).
+ */
 #[repr(C)]
 pub struct nsStyleImage {
     pub mSubImages: u64,
@@ -5342,10 +5349,10 @@ fn bindgen_test_layout_nsStyleColor() {
     assert_eq!(::std::mem::size_of::<nsStyleColor>() , 4usize);
     assert_eq!(::std::mem::align_of::<nsStyleColor>() , 4usize);
 }
-
-
-
-
+/**
+ * An array of objects, similar to AutoTArray<T,1> but which is memmovable. It
+ * always has length >= 1.
+ */
 #[repr(C)]
 #[derive(Debug)]
 pub struct nsStyleAutoArray<T> {
@@ -5603,11 +5610,11 @@ fn bindgen_test_layout_nsStyleOutline() {
     assert_eq!(::std::mem::size_of::<nsStyleOutline>() , 112usize);
     assert_eq!(::std::mem::align_of::<nsStyleOutline>() , 8usize);
 }
-
-
-
-
-
+/**
+ * An object that allows sharing of arrays that store 'quotes' property
+ * values.  This is particularly important for inheritance, where we want
+ * to share the same 'quotes' value with a parent style context.
+ */
 #[repr(C)]
 #[derive(Debug)]
 pub struct nsStyleQuoteValues {
@@ -5749,12 +5756,14 @@ pub struct nsStyleTextReset {
     pub mTextOverflow: nsStyleTextOverflow,
     pub mTextDecorationLine: u8,
     pub mUnicodeBidi: u8,
+    pub mInitialLetterSink: nscoord,
+    pub mInitialLetterSize: f32,
     pub mTextDecorationStyle: u8,
     pub mTextDecorationColor: nscolor,
 }
 #[test]
 fn bindgen_test_layout_nsStyleTextReset() {
-    assert_eq!(::std::mem::size_of::<nsStyleTextReset>() , 64usize);
+    assert_eq!(::std::mem::size_of::<nsStyleTextReset>() , 80usize);
     assert_eq!(::std::mem::align_of::<nsStyleTextReset>() , 8usize);
 }
 #[repr(C)]
@@ -5857,14 +5866,6 @@ pub enum nsTimingFunction_Type {
 }
 #[repr(i32)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
-pub enum nsTimingFunction_StepSyntax {
-    Keyword = 0,
-    FunctionalWithoutKeyword = 1,
-    FunctionalWithStartKeyword = 2,
-    FunctionalWithEndKeyword = 3,
-}
-#[repr(i32)]
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum nsTimingFunction_Keyword { Implicit = 0, Explicit = 1, }
 #[repr(C)]
 #[derive(Debug, Copy)]
@@ -5906,7 +5907,6 @@ fn bindgen_test_layout_nsTimingFunction_nsStyleStruct_h_unnamed_23_nsStyleStruct
 #[repr(C)]
 #[derive(Debug, Copy)]
 pub struct nsTimingFunction_nsStyleStruct_h_unnamed_23_nsStyleStruct_h_unnamed_25 {
-    pub mStepSyntax: nsTimingFunction_StepSyntax,
     pub mSteps: u32,
 }
 impl ::std::clone::Clone for
@@ -5916,7 +5916,7 @@ impl ::std::clone::Clone for
 #[test]
 fn bindgen_test_layout_nsTimingFunction_nsStyleStruct_h_unnamed_23_nsStyleStruct_h_unnamed_25() {
     assert_eq!(::std::mem::size_of::<nsTimingFunction_nsStyleStruct_h_unnamed_23_nsStyleStruct_h_unnamed_25>()
-               , 8usize);
+               , 4usize);
     assert_eq!(::std::mem::align_of::<nsTimingFunction_nsStyleStruct_h_unnamed_23_nsStyleStruct_h_unnamed_25>()
                , 4usize);
 }
