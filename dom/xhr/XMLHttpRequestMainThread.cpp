@@ -3537,6 +3537,11 @@ XMLHttpRequestMainThread::Notify(nsITimer* aTimer)
 void
 XMLHttpRequestMainThread::HandleProgressTimerCallback()
 {
+  
+  if (!mLoadTotal && mLoadTransferred) {
+    return;
+  }
+
   mProgressTimerIsActive = false;
 
   if (!mProgressSinceLastProgressEvent || mErrorLoad) {
