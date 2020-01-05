@@ -635,14 +635,12 @@ class ParseNode
         MOZ_ASSERT(pn_arity == PN_CODE && getKind() == PNK_FUNCTION);
         MOZ_ASSERT(isOp(JSOP_LAMBDA) ||        
                    isOp(JSOP_LAMBDA_ARROW) ||  
-                   isOp(JSOP_FUNWITHPROTO) ||  
                    isOp(JSOP_DEFFUN) ||        
                    isOp(JSOP_NOP) ||           
                    isOp(JSOP_GETLOCAL) ||      
                    isOp(JSOP_GETARG) ||        
                    isOp(JSOP_INITLEXICAL));    
-        return !isOp(JSOP_LAMBDA) && !isOp(JSOP_LAMBDA_ARROW) &&
-               !isOp(JSOP_FUNWITHPROTO) && !isOp(JSOP_DEFFUN);
+        return !isOp(JSOP_LAMBDA) && !isOp(JSOP_LAMBDA_ARROW) && !isOp(JSOP_DEFFUN);
     }
 
     

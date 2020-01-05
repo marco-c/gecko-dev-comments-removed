@@ -43,12 +43,10 @@ class CGConstList {
 
 struct CGObjectList {
     uint32_t            length;     
-    ObjectBox*          firstbox;  
     ObjectBox*          lastbox;   
 
-    CGObjectList() : length(0), firstbox(nullptr), lastbox(nullptr) {}
+    CGObjectList() : length(0), lastbox(nullptr) {}
 
-    bool isAdded(ObjectBox* objbox);
     unsigned add(ObjectBox* objbox);
     unsigned indexOf(JSObject* obj);
     void finish(ObjectArray* array);
