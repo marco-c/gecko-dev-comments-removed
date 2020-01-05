@@ -44,6 +44,7 @@ use table_colgroup::TableColGroupFlow;
 use table_row::TableRowFlow;
 use table_rowgroup::TableRowGroupFlow;
 use table_wrapper::TableWrapperFlow;
+use multicol::MulticolFlow;
 use wrapper::ThreadSafeLayoutNode;
 
 use geom::{Point2D, Rect, Size2D};
@@ -156,6 +157,11 @@ pub trait Flow: fmt::Debug + Sync {
     
     fn as_table_cell<'a>(&'a mut self) -> &'a mut TableCellFlow {
         panic!("called as_table_cell() on a non-tablecell flow")
+    }
+
+    
+    fn as_multicol<'a>(&'a mut self) -> &'a mut MulticolFlow {
+        panic!("called as_multicol() on a non-multicol flow")
     }
 
     
@@ -451,6 +457,7 @@ pub enum FlowClass {
     TableRow,
     TableCaption,
     TableCell,
+    Multicol,
 }
 
 
