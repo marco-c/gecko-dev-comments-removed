@@ -4,8 +4,8 @@
 
 
 
+#include "AudioSink.h"
 #include "AudioSinkWrapper.h"
-#include "DecodedAudioDataSink.h"
 
 namespace mozilla {
 namespace media {
