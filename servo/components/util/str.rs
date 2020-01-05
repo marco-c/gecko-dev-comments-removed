@@ -9,7 +9,7 @@ use num_lib::ToPrimitive;
 use std::ascii::AsciiExt;
 use std::borrow::ToOwned;
 use std::ffi::CStr;
-use std::iter::Filter;
+use std::iter::{Filter, Peekable};
 use std::ops::Deref;
 use std::str::{FromStr, Split, from_utf8};
 
@@ -48,16 +48,36 @@ pub fn split_html_space_chars<'a>(s: &'a str) ->
 }
 
 
+fn is_ascii_digit(c: &char) -> bool {
+    match *c {
+        '0'...'9' => true,
+        _ => false,
+    }
+}
+
+
+fn read_numbers<I: Iterator<Item=char>>(mut iter: Peekable<I>) -> Option<i64> {
+    match iter.peek() {
+        Some(c) if is_ascii_digit(c) => (),
+        _ => return None,
+    }
+
+    iter.take_while(is_ascii_digit).map(|d| {
+        d as i64 - '0' as i64
+    }).fold(Some(0i64), |accumulator, d| {
+        accumulator.and_then(|accumulator| {
+            accumulator.checked_mul(10)
+        }).and_then(|accumulator| {
+            accumulator.checked_add(d)
+        })
+    })
+}
+
+
+
 
 
 fn do_parse_integer<T: Iterator<Item=char>>(input: T) -> Option<i64> {
-    fn is_ascii_digit(c: &char) -> bool {
-        match *c {
-            '0'...'9' => true,
-            _ => false,
-        }
-    }
-
     let mut input = input.skip_while(|c| {
         HTML_SPACE_CHARACTERS.iter().any(|s| s == c)
     }).peekable();
@@ -75,20 +95,7 @@ fn do_parse_integer<T: Iterator<Item=char>>(input: T) -> Option<i64> {
         Some(_) => 1,
     };
 
-    match input.peek() {
-        Some(c) if is_ascii_digit(c) => (),
-        _ => return None,
-    }
-
-    let value = input.take_while(is_ascii_digit).map(|d| {
-        d as i64 - '0' as i64
-    }).fold(Some(0i64), |accumulator, d| {
-        accumulator.and_then(|accumulator| {
-            accumulator.checked_mul(10)
-        }).and_then(|accumulator| {
-            accumulator.checked_add(d)
-        })
-    });
+    let value = read_numbers(input);
 
     return value.and_then(|value| value.checked_mul(sign));
 }
@@ -164,6 +171,61 @@ pub fn parse_length(mut value: &str) -> LengthOrPercentageOrAuto {
         Ok(number) => LengthOrPercentageOrAuto::Length(Au::from_px(number)),
         Err(_) => LengthOrPercentageOrAuto::Auto,
     }
+}
+
+
+pub fn parse_legacy_font_size(mut input: &str) -> Option<&'static str> {
+    
+
+    
+    input = input.trim_matches(WHITESPACE);
+
+    enum ParseMode {
+        RelativePlus,
+        RelativeMinus,
+        Absolute,
+    }
+    let mut input_chars = input.chars().peekable();
+    let parse_mode = match input_chars.peek() {
+        
+        None => return None,
+
+        
+        Some(&'+') => {
+            let _ = input_chars.next();  
+            ParseMode::RelativePlus
+        }
+        Some(&'-') => {
+            let _ = input_chars.next();  
+            ParseMode::RelativeMinus
+        }
+        Some(_) => ParseMode::Absolute,
+    };
+
+    
+    let mut value = match read_numbers(input_chars) {
+        Some(v) => v,
+        None => return None,
+    };
+
+    
+    match parse_mode {
+        ParseMode::RelativePlus => value = 3 + value,
+        ParseMode::RelativeMinus => value = 3 - value,
+        ParseMode::Absolute => (),
+    }
+
+    
+    Some(match value {
+        n if n >= 7 => "xxx-large",
+        6 => "xx-large",
+        5 => "x-large",
+        4 => "large",
+        3 => "medium",
+        2 => "small",
+        n if n <= 1 => "x-small",
+        _ => unreachable!(),
+    })
 }
 
 

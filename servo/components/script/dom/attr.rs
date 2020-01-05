@@ -18,6 +18,7 @@ use std::cell::Ref;
 use std::mem;
 use std::ops::Deref;
 use string_cache::{Atom, Namespace};
+use style::values::specified::Length;
 use util::str::{DOMString, parse_unsigned_integer, split_html_space_chars, str_join};
 
 #[derive(JSTraceable, PartialEq, Clone, HeapSizeOf)]
@@ -26,6 +27,7 @@ pub enum AttrValue {
     TokenList(DOMString, Vec<Atom>),
     UInt(DOMString, u32),
     Atom(Atom),
+    Length(DOMString, Option<Length>),
 }
 
 impl AttrValue {
@@ -72,6 +74,11 @@ impl AttrValue {
         AttrValue::Atom(value)
     }
 
+    
+    
+    
+    
+    
     pub fn as_tokens(&self) -> &[Atom] {
         match *self {
             AttrValue::TokenList(_, ref tokens) => tokens,
@@ -79,6 +86,11 @@ impl AttrValue {
         }
     }
 
+    
+    
+    
+    
+    
     pub fn as_atom(&self) -> &Atom {
         match *self {
             AttrValue::Atom(ref value) => value,
@@ -86,6 +98,22 @@ impl AttrValue {
         }
     }
 
+    
+    
+    
+    
+    
+    pub fn as_length(&self) -> Option<&Length> {
+        match *self {
+            AttrValue::Length(_, ref length) => length.as_ref(),
+            _ => panic!("Length not found"),
+        }
+    }
+
+    
+    
+    
+    
     
     
     
@@ -105,7 +133,8 @@ impl Deref for AttrValue {
         match *self {
             AttrValue::String(ref value) |
                 AttrValue::TokenList(ref value, _) |
-                AttrValue::UInt(ref value, _) => &value,
+                AttrValue::UInt(ref value, _) |
+                AttrValue::Length(ref value, _) => &value,
             AttrValue::Atom(ref value) => &value,
         }
     }
