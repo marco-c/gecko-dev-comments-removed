@@ -85,37 +85,30 @@ public:
   {
     return Type() == ResponseType::Error;
   }
-
   
   
-  void
-  GetURL(nsCString& aURL) const
+  const nsCString&
+  GetURL() const
   {
     
     if (mURLList.IsEmpty()) {
-      aURL.Truncate();
-      return;
+      return EmptyCString();
     }
-
-    aURL.Assign(mURLList.LastElement());
+    return mURLList.LastElement();
   }
-
   void
   GetURLList(nsTArray<nsCString>& aURLList) const
   {
     aURLList.Assign(mURLList);
   }
-
-  void
-  GetUnfilteredURL(nsCString& aURL) const
+  const nsCString&
+  GetUnfilteredURL() const
   {
     if (mWrappedResponse) {
-      return mWrappedResponse->GetURL(aURL);
+      return mWrappedResponse->GetURL();
     }
-
-    return GetURL(aURL);
+    return GetURL();
   }
-
   void
   GetUnfilteredURLList(nsTArray<nsCString>& aURLList) const
   {
