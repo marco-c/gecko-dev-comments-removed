@@ -31,6 +31,9 @@ enum class TaskCategory {
   RefreshDriver,
 
   
+  GarbageCollection,
+
+  
   Other,
 
   Count
