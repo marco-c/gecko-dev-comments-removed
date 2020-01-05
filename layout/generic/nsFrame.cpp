@@ -196,13 +196,13 @@ nsReflowStatus::UpdateTruncated(const ReflowInput& aReflowInput,
   if (aReflowInput.GetWritingMode().IsOrthogonalTo(containerWM)) {
     
     
-    mStatus &= ~NS_FRAME_TRUNCATED;
+    mTruncated = false;
   } else if (aReflowInput.AvailableBSize() != NS_UNCONSTRAINEDSIZE &&
              aReflowInput.AvailableBSize() < aMetrics.BSize(containerWM) &&
              !aReflowInput.mFlags.mIsTopOfPage) {
-    mStatus |= NS_FRAME_TRUNCATED;
+    mTruncated = true;
   } else {
-    mStatus &= ~NS_FRAME_TRUNCATED;
+    mTruncated = false;
   }
 }
 
