@@ -126,7 +126,7 @@ var Manager = {
 
       this.fire("onCreatedNavigationTarget", createdTabBrowser, {}, {
         sourceTabBrowser,
-        sourceWindowId: sourceFrameOuterWindowID,
+        sourceFrameId: sourceFrameOuterWindowID,
         url,
       });
     }
@@ -306,7 +306,7 @@ var Manager = {
   },
 
   onCreatedNavigationTarget(browser, data) {
-    const {isSourceTab, createdWindowId, sourceWindowId, url} = data;
+    const {isSourceTab, createdWindowId, sourceFrameId, url} = data;
 
     
     
@@ -332,7 +332,7 @@ var Manager = {
     }
 
     this.fire("onCreatedNavigationTarget", createdTabBrowser, {}, {
-      sourceTabBrowser, sourceWindowId, url,
+      sourceTabBrowser, sourceFrameId, url,
     });
   },
 
@@ -391,11 +391,11 @@ var Manager = {
 
     let details = {
       browser,
-      windowId: data.windowId,
+      frameId: data.frameId,
     };
 
-    if (data.parentWindowId) {
-      details.parentWindowId = data.parentWindowId;
+    if (data.parentFrameId !== undefined) {
+      details.parentFrameId = data.parentFrameId;
     }
 
     for (let prop in extra) {

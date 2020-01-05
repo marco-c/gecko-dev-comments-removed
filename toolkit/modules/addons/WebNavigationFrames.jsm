@@ -10,27 +10,6 @@ var Ci = Components.interfaces;
 
 
 
-function getWindowId(window) {
-  return window.QueryInterface(Ci.nsIInterfaceRequestor)
-               .getInterface(Ci.nsIDOMWindowUtils)
-               .outerWindowID;
-}
-
-function getParentWindowId(window) {
-  return getWindowId(window.parent);
-}
-
-function getDocShellWindowId(docShell) {
-  if (!docShell) {
-    return undefined;
-  }
-
-  return docShell.QueryInterface(Ci.nsIInterfaceRequestor)
-                 .getInterface(Ci.nsIDOMWindow)
-                 .getInterface(Ci.nsIDOMWindowUtils)
-                 .outerWindowID;
-}
-
 
 
 
@@ -60,22 +39,6 @@ function docShellToWindow(docShell) {
 
 
 
-function convertDocShellToFrameDetail(docShell) {
-  let window = docShellToWindow(docShell);
-
-  return {
-    windowId: getWindowId(window),
-    parentWindowId: getParentWindowId(window),
-    url: window.location.href,
-  };
-}
-
-
-
-
-
-
-
 function* iterateDocShellTree(docShell) {
   let docShellsEnum = docShell.getDocShellEnumerator(
     Ci.nsIDocShellTreeItem.typeContent,
@@ -98,15 +61,51 @@ function* iterateDocShellTree(docShell) {
 
 
 function getFrameId(window) {
-  let docShell = window.QueryInterface(Ci.nsIInterfaceRequestor)
-                       .getInterface(Ci.nsIDocShell);
-
-  if (!docShell.sameTypeParent) {
+  if (window.parent === window) {
     return 0;
   }
 
   let utils = window.getInterface(Ci.nsIDOMWindowUtils);
   return utils.outerWindowID;
+}
+
+
+
+
+
+
+
+function getParentFrameId(window) {
+  if (window.parent === window) {
+    return -1;
+  }
+
+  return getFrameId(window.parent);
+}
+
+function getDocShellFrameId(docShell) {
+  if (!docShell) {
+    return undefined;
+  }
+
+  return getFrameId(docShell.QueryInterface(Ci.nsIInterfaceRequestor)
+                            .getInterface(Ci.nsIDOMWindow));
+}
+
+
+
+
+
+
+
+function convertDocShellToFrameDetail(docShell) {
+  let window = docShellToWindow(docShell);
+
+  return {
+    frameId: getFrameId(window),
+    parentFrameId: getParentFrameId(window),
+    url: window.location.href,
+  };
 }
 
 
@@ -129,14 +128,8 @@ function findDocShell(frameId, rootDocShell) {
   return null;
 }
 
-function isDescendantDocShell(targetDocShell, rootDocShell) {
-  return (rootDocShell === targetDocShell.sameTypeRootTreeItem
-                                         .QueryInterface(Ci.nsIDocShell));
-}
-
 var WebNavigationFrames = {
   iterateDocShellTree,
-  isDescendantDocShell,
 
   findDocShell,
 
@@ -149,12 +142,11 @@ var WebNavigationFrames = {
   },
 
   getFrameId,
+  getParentFrameId,
 
   getAllFrames(docShell) {
     return Array.from(iterateDocShellTree(docShell), convertDocShellToFrameDetail);
   },
 
-  getWindowId,
-  getParentWindowId,
-  getDocShellWindowId,
+  getDocShellFrameId,
 };

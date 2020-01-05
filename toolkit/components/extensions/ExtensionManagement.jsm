@@ -34,71 +34,6 @@ var ExtensionManagement;
 
 
 
-
-
-
-
-
-var Frames = {
-  
-  topWindowIds: new Set(),
-
-  init() {
-    if (Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_CONTENT) {
-      return;
-    }
-
-    Services.mm.addMessageListener("Extension:TopWindowID", this);
-    Services.mm.addMessageListener("Extension:RemoveTopWindowID", this, true);
-  },
-
-  isTopWindowId(windowId) {
-    return this.topWindowIds.has(windowId);
-  },
-
-  
-  
-  getId(windowId) {
-    if (this.isTopWindowId(windowId)) {
-      return 0;
-    }
-    if (windowId == 0) {
-      return -1;
-    }
-    return windowId;
-  },
-
-  
-  
-  
-  
-  
-  getParentId(parentWindowId, windowId) {
-    if (parentWindowId == windowId) {
-      
-      return -1;
-    }
-
-    
-    return this.getId(parentWindowId);
-  },
-
-  receiveMessage({name, data}) {
-    switch (name) {
-      case "Extension:TopWindowID":
-        
-        
-        this.topWindowIds.add(data.windowId);
-        break;
-
-      case "Extension:RemoveTopWindowID":
-        this.topWindowIds.delete(data.windowId);
-        break;
-    }
-  },
-};
-Frames.init();
-
 var APIs = {
   apis: new Map(),
 
@@ -339,9 +274,6 @@ ExtensionManagement = {
 
   registerAPI: APIs.register.bind(APIs),
   unregisterAPI: APIs.unregister.bind(APIs),
-
-  getFrameId: Frames.getId.bind(Frames),
-  getParentFrameId: Frames.getParentId.bind(Frames),
 
   getURLForExtension,
 

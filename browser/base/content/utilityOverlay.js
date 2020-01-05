@@ -326,7 +326,7 @@ function openLinkIn(url, where, params) {
 
     const sourceWindow = (w || window);
     let win;
-    if (params.frameOuterWindowID && sourceWindow) {
+    if (params.frameOuterWindowID != undefined && sourceWindow) {
       
       
       
@@ -450,7 +450,7 @@ function openLinkIn(url, where, params) {
     });
     targetBrowser = tabUsedForLoad.linkedBrowser;
 
-    if (params.frameOuterWindowID && w) {
+    if (params.frameOuterWindowID != undefined && w) {
       
       
       
