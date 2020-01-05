@@ -902,9 +902,14 @@ function maybeProcessMissingFunction(entry, addCallee)
     }
 
     
-    if (name.includes("C1E")) {
-        var callee = name.replace("C1E", "C4E");
-        addCallee(new CallSite(name, entry.safeArguments, entry.stack[0].location));
+    
+    
+    
+    
+    
+    if (entry.mangledName().includes("C1E") || entry.mangledName().includes("C1I")) {
+        var callee = name.replace("C1E", "C4E").replace("C1I", "C4I");
+        addCallee(new CallSite(name, entry.safeArguments, entry.stack[0].location, entry.parameterNames));
         return true;
     }
 
