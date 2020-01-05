@@ -6133,9 +6133,16 @@ nsGridContainerFrame::RemoveFrame(ChildListID aListID, nsIFrame* aOldFrame)
   
   
   
-  mDidPushItemsBitMayLie = mDidPushItemsBitMayLie ||
-                           (aListID == kPrincipalList &&
-                            !aOldFrame->GetPrevInFlow());
+  if (aListID == kPrincipalList && !aOldFrame->GetPrevInFlow()) {
+    
+    
+    nsGridContainerFrame* frameThatMayLie = this;
+    do {
+      frameThatMayLie->mDidPushItemsBitMayLie = true;
+      frameThatMayLie = static_cast<nsGridContainerFrame*>(
+        frameThatMayLie->GetPrevInFlow());
+    } while (frameThatMayLie);
+  }
 #endif
 
   nsContainerFrame::RemoveFrame(aListID, aOldFrame);
