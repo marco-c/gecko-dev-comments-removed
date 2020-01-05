@@ -45,10 +45,10 @@ private:
 
 
 
-  bool EnsureDecoder(nsIIncrementalStreamLoader* aLoader,
+  bool EnsureDecoder(nsIIncrementalStreamLoader *aLoader,
                      const uint8_t* aData, uint32_t aDataLength,
                      bool aEndOfStream);
-  bool EnsureDecoder(nsIIncrementalStreamLoader* aLoader,
+  bool EnsureDecoder(nsIIncrementalStreamLoader *aLoader,
                      const uint8_t* aData, uint32_t aDataLength,
                      bool aEndOfStream, nsCString& oCharset);
 
@@ -59,22 +59,22 @@ private:
   nsresult MaybeDecodeSRI();
 
   
-  nsresult EnsureKnownDataType(nsIIncrementalStreamLoader* aLoader);
+  nsresult EnsureKnownDataType(nsIIncrementalStreamLoader *aLoader);
 
   
-  RefPtr<ScriptLoader> mScriptLoader;
+  RefPtr<ScriptLoader>        mScriptLoader;
 
   
-  RefPtr<ScriptLoadRequest> mRequest;
+  RefPtr<ScriptLoadRequest>   mRequest;
 
   
   nsAutoPtr<SRICheckDataVerifier> mSRIDataVerifier;
 
   
-  nsresult mSRIStatus;
+  nsresult                      mSRIStatus;
 
   
-  nsCOMPtr<nsIUnicodeDecoder> mDecoder;
+  nsCOMPtr<nsIUnicodeDecoder>   mDecoder;
 };
 
 } 
