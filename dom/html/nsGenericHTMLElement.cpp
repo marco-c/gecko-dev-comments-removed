@@ -1522,36 +1522,13 @@ nsGenericHTMLElement::MapBackgroundInto(const nsMappedAttributes* aAttributes,
   if (!aData->ShouldComputeStyleStruct(NS_STYLE_INHERIT_BIT(Background)))
     return;
 
-  if (aData->IsServo()) {
-    
-    NS_WARNING("stylo: cannot handle background presentation attribute");
-    return;
-  }
-
-  nsPresContext* presContext = aData->PresContext();
-
   if (!aData->PropertyIsSet(eCSSProperty_background_image) &&
-      presContext->UseDocumentColors()) {
+      aData->PresContext()->UseDocumentColors()) {
     
     nsAttrValue* value =
       const_cast<nsAttrValue*>(aAttributes->GetAttr(nsGkAtoms::background));
     if (value) {
-      nsRuleData* aRuleData = aData->AsGecko();
-      
-      
-      
-      if (aRuleData) {
-        nsCSSValue* backImage = aRuleData->ValueForBackgroundImage();
-        
-        
-        if (value->Type() == nsAttrValue::eURL) {
-          value->LoadImage(presContext->Document());
-        }
-        if (value->Type() == nsAttrValue::eImage) {
-          nsCSSValueList* list = backImage->SetListValue();
-          list->mValue.SetImageValue(value->GetImageValue());
-        }
-      }
+      aData->SetBackgroundImage(*value);
     }
   }
 }

@@ -61,6 +61,21 @@ nsRuleData::SetTextDecorationColorOverride()
   decoration->SetIntValue(newValue, eCSSUnit_Enumerated);
 }
 
+void
+nsRuleData::SetBackgroundImage(nsAttrValue& aValue)
+{
+  nsCSSValue* backImage = ValueForBackgroundImage();
+  
+  
+  if (aValue.Type() == nsAttrValue::eURL) {
+    aValue.LoadImage(mPresContext->Document());
+  }
+  if (aValue.Type() == nsAttrValue::eImage) {
+    nsCSSValueList* list = backImage->SetListValue();
+    list->mValue.SetImageValue(aValue.GetImageValue());
+  }
+}
+
 #ifdef DEBUG
 nsRuleData::~nsRuleData()
 {

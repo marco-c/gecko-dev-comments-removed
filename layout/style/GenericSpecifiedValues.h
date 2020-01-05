@@ -103,6 +103,7 @@ public:
     inline void SetFontFamily(const nsString& aValue);
     
     inline void SetTextDecorationColorOverride();
+    inline void SetBackgroundImage(nsAttrValue& value);
 
     const mozilla::StyleBackendType mType;
     nsPresContext* const mPresContext;
