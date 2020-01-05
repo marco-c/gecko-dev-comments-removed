@@ -3028,6 +3028,10 @@ protected:
   
   ReadyState mReadyState;
 
+  
+  
+  mozilla::StyleBackendType mStyleBackendType;
+
 #ifdef MOZILLA_INTERNAL_API
   
   mozilla::dom::VisibilityState mVisibilityState;
@@ -3035,10 +3039,6 @@ protected:
 #else
   uint32_t mDummy;
 #endif
-
-  
-  
-  mozilla::StyleBackendType mStyleBackendType;
 
   
   bool mBidiEnabled : 1;
