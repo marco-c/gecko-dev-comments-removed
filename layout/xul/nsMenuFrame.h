@@ -18,6 +18,7 @@
 #include "nsGkAtoms.h"
 #include "nsMenuParent.h"
 #include "nsXULPopupManager.h"
+#include "nsIReflowCallback.h"
 #include "nsITimer.h"
 #include "mozilla/Attributes.h"
 
@@ -72,6 +73,7 @@ private:
 };
 
 class nsMenuFrame final : public nsBoxFrame
+                        , public nsIReflowCallback
 {
 public:
   explicit nsMenuFrame(nsStyleContext* aContext);
@@ -211,6 +213,10 @@ public:
 
   static bool IsSizedToPopup(nsIContent* aContent, bool aRequireAlways);
 
+  
+  virtual bool ReflowFinished() override;
+  virtual void ReflowCallbackCanceled() override;
+
 protected:
   friend class nsMenuTimerMediator;
   friend class nsASyncMenuInitialization;
@@ -270,6 +276,7 @@ protected:
   bool mIsMenu; 
   bool mChecked;              
   bool mIgnoreAccelTextChange; 
+  bool mReflowCallbackPosted;
   nsMenuType mType;
 
   
