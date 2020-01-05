@@ -347,12 +347,6 @@ public:
       const nsAString& aURL,
       already_AddRefed<mozilla::URLExtraData> aExtraData);
 
-  
-  
-  nsStyleImageRequest(
-      Mode aModeFlags,
-      mozilla::css::ImageValue* aImageValue);
-
   bool Resolve(nsPresContext* aPresContext);
   bool IsResolved() const { return mResolved; }
 

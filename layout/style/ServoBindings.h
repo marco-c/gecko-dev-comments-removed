@@ -276,11 +276,6 @@ void Gecko_CopyListStyleTypeFrom(nsStyleList* dst, const nsStyleList* src);
 void Gecko_SetNullImageValue(nsStyleImage* image);
 void Gecko_SetGradientImageValue(nsStyleImage* image, nsStyleGradient* gradient);
 NS_DECL_THREADSAFE_FFI_REFCOUNTING(mozilla::css::ImageValue, ImageValue);
-mozilla::css::ImageValue* Gecko_ImageValue_Create(ServoBundledURI aURI);
-void Gecko_SetLayerImageImageValue(nsStyleImage* image,
-                                   mozilla::css::ImageValue* aImageValue);
-
-
 void Gecko_SetUrlImageValue(nsStyleImage* image,
                             ServoBundledURI uri);
 void Gecko_SetImageElement(nsStyleImage* image, nsIAtom* atom);
@@ -295,25 +290,16 @@ nsStyleGradient* Gecko_CreateGradient(uint8_t shape,
 
 
 void Gecko_SetListStyleImageNone(nsStyleList* style_struct);
-void Gecko_SetListStyleImageImageValue(nsStyleList* style_struct,
-                                  mozilla::css::ImageValue* aImageValue);
-
 void Gecko_SetListStyleImage(nsStyleList* style_struct,
                              ServoBundledURI uri);
 void Gecko_CopyListStyleImageFrom(nsStyleList* dest, const nsStyleList* src);
 
 
 void Gecko_SetCursorArrayLength(nsStyleUserInterface* ui, size_t len);
-void Gecko_SetCursorImageValue(nsCursorImage* aCursor,
-                               mozilla::css::ImageValue* aImageValue);
-
 void Gecko_SetCursorImage(nsCursorImage* cursor,
                           ServoBundledURI uri);
 void Gecko_CopyCursorArrayFrom(nsStyleUserInterface* dest,
                                const nsStyleUserInterface* src);
-
-void Gecko_SetContentDataImageValue(nsStyleContentData* aList,
-                                    mozilla::css::ImageValue* aImageValue);
 
 void Gecko_SetContentDataImage(nsStyleContentData* content_data, ServoBundledURI uri);
 void Gecko_SetContentDataArray(nsStyleContentData* content_data, nsStyleContentType type, uint32_t len);
