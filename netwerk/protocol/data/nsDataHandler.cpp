@@ -161,42 +161,49 @@ nsDataHandler::ParseURI(nsCString& spec,
     isBase64 = false;
 
     
-    char *buffer = (char *) PL_strcasestr(spec.BeginWriting(), "data:");
-    if (!buffer) {
+    const char* roBuffer = (const char*) PL_strcasestr(spec.get(), "data:");
+    if (!roBuffer) {
         
         return NS_ERROR_MALFORMED_URI;
     }
-    buffer += 5;
+    roBuffer += sizeof("data:") - 1;
 
     
-    char *comma = strchr(buffer, ',');
-    char *hash = strchr(buffer, '#');
-    if (!comma || (hash && hash < comma))
+    const char* roComma = strchr(roBuffer, ',');
+    const char* roHash = strchr(roBuffer, '#');
+    if (!roComma || (roHash && roHash < roComma)) {
         return NS_ERROR_MALFORMED_URI;
-
-    *comma = '\0';
-
-    
-    char *base64 = PL_strcasestr(buffer, BASE64_EXTENSION);
-    if (base64) {
-        char *beyond = base64 + strlen(BASE64_EXTENSION);
-        
-        
-        
-        
-        if (*beyond == '\0' || *beyond == ';') {
-            isBase64 = true;
-            *base64 = '\0';
-        }
     }
 
-    if (comma == buffer) {
+    if (roComma == roBuffer) {
         
         contentType.AssignLiteral("text/plain");
         if (contentCharset) {
             contentCharset->AssignLiteral("US-ASCII");
         }
     } else {
+        
+        
+        
+        char* buffer = PL_strndup(roBuffer, roComma - roBuffer);
+
+        
+        char* base64 = PL_strcasestr(buffer, BASE64_EXTENSION);
+        if (base64) {
+            char *beyond = base64 + sizeof(BASE64_EXTENSION) - 1;
+            
+            
+            
+            
+            
+            
+            
+            if (*beyond == '\0' || *beyond == ';') {
+                isBase64 = true;
+                *base64 = '\0';
+            }
+        }
+
         
         char *semiColon = (char *) strchr(buffer, ';');
         if (semiColon)
@@ -206,34 +213,28 @@ nsDataHandler::ParseURI(nsCString& spec,
             
             contentType.AssignLiteral("text/plain");
         } else {
-            contentType = buffer;
+            contentType.Assign(buffer);
             ToLowerCase(contentType);
             contentType.StripWhitespace();
         }
 
-        if (semiColon) {
-            if (contentCharset) {
-                char *charset = PL_strcasestr(semiColon + 1, "charset=");
-                if (charset) {
-                    contentCharset->Assign(charset + sizeof("charset=") - 1);
-                    contentCharset->StripWhitespace();
-                }
+        if (semiColon && contentCharset) {
+            char *charset = PL_strcasestr(semiColon + 1, "charset=");
+            if (charset) {
+                contentCharset->Assign(charset + sizeof("charset=") - 1);
+                contentCharset->StripWhitespace();
             }
-
-            *semiColon = ';';
         }
-    }
 
-    *comma = ',';
-    if (isBase64)
-        *base64 = ';';
+        free(buffer);
+    }
 
     if (dataBuffer) {
         
-        char *data = comma + 1;
-        bool ok = !hash
-                ? dataBuffer->Assign(data, mozilla::fallible)
-                : dataBuffer->Assign(data, hash - data, mozilla::fallible);
+        const char* roData = roComma + 1;
+        bool ok = !roHash
+                ? dataBuffer->Assign(roData, mozilla::fallible)
+                : dataBuffer->Assign(roData, roHash - roData, mozilla::fallible);
         if (!ok) {
             return NS_ERROR_OUT_OF_MEMORY;
         }
