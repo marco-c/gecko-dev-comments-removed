@@ -180,7 +180,8 @@ public:
   
   
   
-  typedef nsTArray<nsWeakPtr> ElementQueue;
+  
+  typedef AutoTArray<nsWeakPtr, 1> ElementQueue;
 
   
 
@@ -202,13 +203,19 @@ public:
 private:
   ~CustomElementReactionsStack() {};
 
-  typedef nsTArray<nsAutoPtr<CustomElementReaction>> ReactionQueue;
+  
+  
+  
+  
+  
+  typedef AutoTArray<nsAutoPtr<CustomElementReaction>, 3> ReactionQueue;
   typedef nsClassHashtable<nsISupportsHashKey, ReactionQueue>
     ElementReactionQueueMap;
 
   ElementReactionQueueMap mElementReactionQueueMap;
 
-  nsTArray<ElementQueue> mReactionsStack;
+  
+  AutoTArray<ElementQueue, 8> mReactionsStack;
   ElementQueue mBackupQueue;
   
   bool mIsBackupQueueProcessing;
