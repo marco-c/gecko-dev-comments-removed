@@ -561,7 +561,7 @@ SessionStore.prototype = {
 
     
     aWindow.__SSID = "window" + Date.now();
-    this._windows[aWindow.__SSID] = { tabs: [], selected: 0, closedTabs: [] };
+    this._windows[aWindow.__SSID] = { tabs: [], selectedTabId: INVALID_TAB_ID, closedTabs: [] };
 
     
     if (this._loadState == STATE_STOPPED) {
@@ -679,8 +679,20 @@ SessionStore.prototype = {
   },
 
   onTabClose: function ss_onTabClose(aWindow, aBrowser, aTabIndex) {
-    let data = aBrowser.__SS_data || {};
-    if (this._maxTabsUndo == 0 || this._sessionDataIsEmpty(data)) {
+    let data = aBrowser.__SS_data;
+    let tab = aWindow.BrowserApp.getTabForId(data.tabId);
+
+    let windowData = this._windows[aWindow.__SSID];
+    if (windowData.selectedTabId == tab.id) {
+      
+      
+      
+      
+      
+      windowData.selectedTabId = INVALID_TAB_ID;
+    }
+
+    if (this._maxTabsUndo == 0 || this._sessionDataIsEmpty(data) || tab.type != "BROWSING") {
       this._lastClosedTabIndex = INVALID_TAB_INDEX;
       return;
     }
@@ -702,7 +714,7 @@ SessionStore.prototype = {
         this._sendClosedTabsToJava(aWindow);
       }
 
-      log("onTabClose() ran for tab " + aWindow.BrowserApp.getTabForBrowser(aBrowser).id);
+      log("onTabClose() ran for tab " + tab.id);
       let evt = new Event("SSTabCloseProcessed", {"bubbles":true, "cancelable":false});
       aBrowser.dispatchEvent(evt);
     }
@@ -795,11 +807,12 @@ SessionStore.prototype = {
       return;
     }
 
-    let index = aWindow.BrowserApp.selectedTabIndex;
-    this._windows[aWindow.__SSID].selected = parseInt(index) + 1; 
-
     let tab = aWindow.BrowserApp.getTabForBrowser(aBrowser);
     let tabId = tab.id;
+
+    if (tab.type == "BROWSING") {
+      this._windows[aWindow.__SSID].selectedTabId = tabId;
+    }
 
     
     if (tabId != this._keepAsZombieTabId) {
@@ -1048,6 +1061,9 @@ SessionStore.prototype = {
       for (let prop in win) {
         normalWin[prop] = data[prop];
       }
+      
+      
+      delete normalWin.selectedTabId;
       normalWin.tabs = [];
 
       
@@ -1061,10 +1077,14 @@ SessionStore.prototype = {
       
       for (let i = 0; i < win.tabs.length; ++i) {
         let tab = win.tabs[i];
+        if (tab.type != "BROWSING") {
+          continue;
+        }
+
         let savedWin = tab.isPrivate ? privateData.windows[winIndex] : normalData.windows[winIndex];
         savedWin.tabs.push(tab);
-        if (win.selected == i + 1) {
-          savedWin.selected = savedWin.tabs.length;
+        if (win.selectedTabId === tab.tabId) {
+          savedWin.selected = savedWin.tabs.length; 
         }
       }
     }
@@ -1133,8 +1153,11 @@ SessionStore.prototype = {
     let winData = this._windows[aWindow.__SSID];
     winData.tabs = [];
 
-    let index = aWindow.BrowserApp.selectedTabIndex;
-    winData.selected = parseInt(index) + 1; 
+    let selectedTab = aWindow.BrowserApp.selectedTab;
+
+    if (selectedTab != null && selectedTab.type == "BROWSING") {
+      winData.selectedTabId = selectedTab.id;
+    }
 
     let tabs = aWindow.BrowserApp.tabs;
     for (let i = 0; i < tabs.length; i++) {
@@ -1429,11 +1452,22 @@ SessionStore.prototype = {
 
         delete tab.browser.__SS_restore;
         tab.browser.removeAttribute("pending");
+
+        this._windows[window.__SSID].selectedTabId = tab.id;
       } else {
         
         tab.browser.__SS_restore = true;
         tab.browser.setAttribute("pending", "true");
       }
+    }
+
+    if (state.windows[0].hasOwnProperty("selectedTabId") &&
+      this._windows[window.__SSID].selectedTabId == INVALID_TAB_ID) {
+      
+      
+      
+      
+      this._windows[window.__SSID].selectedTabId = state.windows[0].selectedTabId;
     }
 
     

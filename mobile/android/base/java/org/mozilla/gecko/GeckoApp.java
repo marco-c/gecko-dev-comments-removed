@@ -1860,6 +1860,11 @@ public abstract class GeckoApp
                 parser.updateParentId(closedTabs);
                 windowObject.putOpt("closedTabs", closedTabs);
 
+                if (isExternalURL) {
+                    
+                    
+                    windowObject.put("selectedTabId", parser.getStoredSelectedTabId());
+                }
                 sessionString = new JSONObject().put(
                         "windows", new JSONArray().put(windowObject)).toString();
             } catch (final JSONException e) {
