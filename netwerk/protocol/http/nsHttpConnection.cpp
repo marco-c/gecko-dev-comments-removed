@@ -262,7 +262,7 @@ nsHttpConnection::StartSpdy(uint8_t spdyVersion)
     rv = DisableTCPKeepalives();
     if (NS_FAILED(rv)) {
         LOG(("nsHttpConnection::StartSpdy [%p] DisableTCPKeepalives failed "
-             "rv[0x%" PRIx32 "]", this, static_cast<uint32_t>(rv)));
+             "rv[0x%x]", this, rv));
     }
 
     mSupportsPipelining = false; 
@@ -432,7 +432,7 @@ nsHttpConnection::EnsureNPNComplete(nsresult &aOut0RTTWriteHandshakeValue,
                 StartSpdy(info->Version[infoIndex]);
             }
         } else {
-          LOG(("nsHttpConnection::EnsureNPNComplete [this=%p] - %" PRId64 " bytes "
+          LOG(("nsHttpConnection::EnsureNPNComplete [this=%p] - %d bytes "
                "has been sent during 0RTT.", this, mContentBytesWritten0RTT));
           mContentBytesWritten = mContentBytesWritten0RTT;
         }
@@ -499,8 +499,8 @@ nsHttpConnection::Activate(nsAHttpTransaction *trans, uint32_t caps, int32_t pri
         }
         if (NS_FAILED(mSocketOutCondition) &&
             mSocketOutCondition != NS_BASE_STREAM_WOULD_BLOCK) {
-            LOG(("nsHttpConnection::Activate [this=%p] Bad Socket %" PRIx32 "\n",
-                 this, static_cast<uint32_t>(mSocketOutCondition)));
+            LOG(("nsHttpConnection::Activate [this=%p] Bad Socket %x\n",
+                 this, mSocketOutCondition));
             mSocketOut->AsyncWait(nullptr, 0, 0, nullptr);
             mTransaction = trans;
             CloseTransaction(mTransaction, mSocketOutCondition);
@@ -546,8 +546,8 @@ nsHttpConnection::Activate(nsAHttpTransaction *trans, uint32_t caps, int32_t pri
     rv = StartShortLivedTCPKeepalives();
     if (NS_FAILED(rv)) {
         LOG(("nsHttpConnection::Activate [%p] "
-             "StartShortLivedTCPKeepalives failed rv[0x%" PRIx32 "]",
-             this, static_cast<uint32_t>(rv)));
+             "StartShortLivedTCPKeepalives failed rv[0x%x]",
+             this, rv));
     }
 
     if (mTLSFilter) {
@@ -634,8 +634,7 @@ nsHttpConnection::SetupNPNList(nsISSLSocketControl *ssl, uint32_t caps)
     }
 
     nsresult rv = ssl->SetNPNList(protocolArray);
-    LOG(("nsHttpConnection::SetupNPNList %p %" PRIx32 "\n",
-         this, static_cast<uint32_t>(rv)));
+    LOG(("nsHttpConnection::SetupNPNList %p %x\n",this, rv));
     return rv;
 }
 
@@ -675,8 +674,7 @@ nsHttpConnection::AddTransaction(nsAHttpTransaction *httpTransaction,
 void
 nsHttpConnection::Close(nsresult reason, bool aIsShutdown)
 {
-    LOG(("nsHttpConnection::Close [this=%p reason=%" PRIx32 "]\n",
-         this, static_cast<uint32_t>(reason)));
+    LOG(("nsHttpConnection::Close [this=%p reason=%x]\n", this, reason));
 
     MOZ_ASSERT(PR_GetCurrentThread() == gSocketThread);
 
@@ -825,7 +823,7 @@ nsHttpConnection::CanReuse()
     if (canReuse && mSocketIn && !mUsingSpdyVersion && mHttp1xTransactionCount &&
         NS_SUCCEEDED(mSocketIn->Available(&dataSize)) && dataSize) {
         LOG(("nsHttpConnection::CanReuse %p %s"
-             "Socket not reusable because read data pending (%" PRIu64 ") on it.\n",
+             "Socket not reusable because read data pending (%llu) on it.\n",
              this, mConnInfo->Origin(), dataSize));
         canReuse = false;
     }
@@ -1136,7 +1134,7 @@ nsHttpConnection::OnHeadersAvailable(nsAHttpTransaction *trans,
                 }
 
                 rv = InitSSLParams(false, true);
-                LOG(("InitSSLParams [rv=%" PRIx32 "]\n", static_cast<uint32_t>(rv)));
+                LOG(("InitSSLParams [rv=%x]\n", rv));
             }
             mCompletedProxyConnect = true;
             mProxyConnectInProgress = false;
@@ -1231,8 +1229,7 @@ nsHttpConnection::TakeTransport(nsISocketTransport  **aTransport,
              "StartLongLivedTCPKeepalives", this));
         if (NS_FAILED(rv)) {
             LOG(("nsHttpConnection::TakeTransport [%p] "
-                 "StartLongLivedTCPKeepalives failed rv[0x%" PRIx32 "]",
-                 this, static_cast<uint32_t>(rv)));
+                 "StartLongLivedTCPKeepalives failed rv[0x%x]", this, rv));
         }
     }
 
@@ -1381,8 +1378,8 @@ nsHttpConnection::UpdateTCPKeepalive(nsITimer *aTimer, void *aClosure)
     nsresult rv = self->StartLongLivedTCPKeepalives();
     if (NS_FAILED(rv)) {
         LOG(("nsHttpConnection::UpdateTCPKeepalive [%p] "
-             "StartLongLivedTCPKeepalives failed rv[0x%" PRIx32 "]",
-             self, static_cast<uint32_t>(rv)));
+             "StartLongLivedTCPKeepalives failed rv[0x%x]",
+             self, rv));
     }
 }
 
@@ -1597,10 +1594,11 @@ nsHttpConnection::Version()
 
 
 void
-nsHttpConnection::CloseTransaction(nsAHttpTransaction *trans, nsresult reason)
+nsHttpConnection::CloseTransaction(nsAHttpTransaction *trans, nsresult reason,
+                                   bool aIsShutdown)
 {
-    LOG(("nsHttpConnection::CloseTransaction[this=%p trans=%p reason=%" PRIx32 "]\n",
-         this, trans, static_cast<uint32_t>(reason)));
+    LOG(("nsHttpConnection::CloseTransaction[this=%p trans=%p reason=%x]\n",
+        this, trans, reason));
 
     MOZ_ASSERT((trans == mTransaction) ||
                (mTLSFilter && mTLSFilter->Transaction() == trans));
@@ -1633,7 +1631,7 @@ nsHttpConnection::CloseTransaction(nsAHttpTransaction *trans, nsresult reason)
     }
 
     if (NS_FAILED(reason) && (reason != NS_BINDING_RETARGETED)) {
-        Close(reason);
+        Close(reason, aIsShutdown);
     }
 
     
@@ -1742,9 +1740,8 @@ nsHttpConnection::OnSocketWritable()
         }
 
         LOG(("nsHttpConnection::OnSocketWritable %p "
-             "ReadSegments returned [rv=%" PRIx32 " read=%u sock-cond=%" PRIx32 "]\n",
-             this, static_cast<uint32_t>(rv), transactionBytes,
-             static_cast<uint32_t>(mSocketOutCondition)));
+             "ReadSegments returned [rv=%x read=%u sock-cond=%x]\n",
+             this, rv, transactionBytes, mSocketOutCondition));
 
         
         if (rv == NS_BASE_STREAM_CLOSED && !mTransaction->IsDone()) {
@@ -1914,9 +1911,8 @@ nsHttpConnection::OnSocketReadable()
         mSocketInCondition = NS_OK;
         rv = mTransaction->
             WriteSegmentsAgain(this, nsIOService::gDefaultSegmentSize, &n, &again);
-        LOG(("nsHttpConnection::OnSocketReadable %p trans->ws rv=%" PRIx32
-             " n=%d socketin=%" PRIx32 "\n",
-             this, static_cast<uint32_t>(rv), n, static_cast<uint32_t>(mSocketInCondition)));
+        LOG(("nsHttpConnection::OnSocketReadable %p trans->ws rv=%x n=%d socketin=%x\n",
+             this, rv, n, mSocketInCondition));
         if (NS_FAILED(rv)) {
             
             
