@@ -1471,12 +1471,11 @@ Inspector.prototype = {
 
     
     let onMutations = this.once("markupmutation");
-    let {nodes} = yield this.walker.insertAdjacentHTML(this.selection.nodeFront,
-                                                       "beforeEnd", html);
+    yield this.walker.insertAdjacentHTML(this.selection.nodeFront, "beforeEnd", html);
     yield onMutations;
 
     
-    this.selection.setNodeFront(nodes[0], "node-inserted");
+    this.markup.expandNode(this.selection.nodeFront);
   }),
 
   
