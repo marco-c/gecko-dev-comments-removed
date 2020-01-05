@@ -54,8 +54,12 @@ JSString::sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf)
     }
 
     
-    if (isExternal())
+    
+    if (isExternal()) {
+        if (auto* cb = runtimeFromMainThread()->externalStringSizeofCallback)
+            return cb(this, mallocSizeOf);
         return 0;
+    }
 
     
     if (isInline())
