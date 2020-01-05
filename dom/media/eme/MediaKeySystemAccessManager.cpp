@@ -94,9 +94,7 @@ MediaKeySystemAccessManager::Request(DetailedPromise* aPromise,
   DecoderDoctorDiagnostics diagnostics;
 
   
-  if (!IsWidevineKeySystem(aKeySystem) &&
-      !IsClearkeyKeySystem(aKeySystem) &&
-      !IsPrimetimeKeySystem(aKeySystem)) {
+  if (!IsWidevineKeySystem(aKeySystem) && !IsClearkeyKeySystem(aKeySystem)) {
     
     
     aPromise->MaybeReject(NS_ERROR_DOM_NOT_SUPPORTED_ERR,
@@ -132,7 +130,7 @@ MediaKeySystemAccessManager::Request(DetailedPromise* aPromise,
   LogToBrowserConsole(NS_ConvertUTF8toUTF16(msg));
 
   if (status == MediaKeySystemStatus::Cdm_not_installed &&
-      (IsPrimetimeKeySystem(aKeySystem) || IsWidevineKeySystem(aKeySystem))) {
+      IsWidevineKeySystem(aKeySystem)) {
     
     
     

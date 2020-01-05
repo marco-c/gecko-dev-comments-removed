@@ -6066,16 +6066,6 @@ void HTMLMediaElement::SuspendOrResumeElement(bool aPauseElement, bool aSuspendE
       if (mMediaKeys) {
         nsAutoString keySystem;
         mMediaKeys->GetKeySystem(keySystem);
-        
-        
-        
-        if (IsPrimetimeKeySystem(keySystem)) {
-          mMediaKeys->Shutdown();
-          mMediaKeys = nullptr;
-          if (mDecoder) {
-            ShutdownDecoder();
-          }
-        }
       }
       if (mDecoder) {
         mDecoder->Pause();
