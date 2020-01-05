@@ -1486,6 +1486,7 @@ pref("network.http.accept.default", "text/html,application/xhtml+xml,application
 pref("network.http.sendRefererHeader",      2);
 
 
+
 pref("network.http.referer.userControlPolicy", 3);
 
 pref("network.http.referer.spoofSource", false);
