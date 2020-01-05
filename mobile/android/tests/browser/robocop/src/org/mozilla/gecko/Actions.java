@@ -3,6 +3,9 @@
 
 
 package org.mozilla.gecko;
+
+import org.mozilla.gecko.util.GeckoBundle;
+
 import android.database.Cursor;
 
 public interface Actions {
@@ -27,10 +30,19 @@ public interface Actions {
         public String blockForEventData();
 
         
+        public GeckoBundle blockForBundle();
+
+        
 
 
 
         public String blockForEventDataWithTimeout(long millis);
+
+        
+
+
+
+        public GeckoBundle blockForBundleWithTimeout(long millis);
 
         
         public boolean eventReceived();
@@ -44,12 +56,35 @@ public interface Actions {
         public void blockUntilClear(long millis);
     }
 
+    public enum EventType {
+        JSON,
+        GECKO,
+        UI,
+        BACKGROUND
+    }
+
     
 
 
 
 
     void sendGeckoEvent(String geckoEvent, String data);
+
+    
+
+
+
+
+
+    void sendGlobalEvent(String event, GeckoBundle data);
+
+    
+
+
+
+
+
+    void sendWindowEvent(String event, GeckoBundle data);
 
     public interface PrefWaiter {
         boolean isFinished();
@@ -93,6 +128,26 @@ public interface Actions {
 
 
     RepeatedEventExpecter expectGeckoEvent(String geckoEvent);
+
+    
+
+
+
+
+
+
+
+    RepeatedEventExpecter expectGlobalEvent(EventType type, String event);
+
+    
+
+
+
+
+
+
+
+    RepeatedEventExpecter expectWindowEvent(EventType type, String event);
 
     
 
