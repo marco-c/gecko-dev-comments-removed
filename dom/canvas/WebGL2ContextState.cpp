@@ -118,7 +118,7 @@ WebGL2Context::GetParameter(JSContext* cx, GLenum pname, ErrorResult& rv)
       
       
       if (!gl->IsSupported(gl::GLFeature::ES3_compatibility))
-        return JS::NumberValue(0);
+        return JS::NumberValue(UINT32_MAX);
 
       
       MOZ_FALLTHROUGH;
