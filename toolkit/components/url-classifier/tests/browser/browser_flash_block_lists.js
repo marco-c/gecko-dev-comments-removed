@@ -2,7 +2,7 @@
 
 
 "use strict";
-requestLongerTimeout(2);
+requestLongerTimeout(3);
 
 var {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 
