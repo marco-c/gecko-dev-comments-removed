@@ -101,9 +101,13 @@ bool stack_key_initialized;
 
 mozilla::TimeStamp sStartTime;
 
-int         sFrameNumber = 0;
-int         sLastFrameNumber = 0;
-int         sInitCount = 0; 
+
+
+static int gFrameNumber = 0;
+static int gLastFrameNumber = 0;
+
+int sInitCount = 0; 
+
 static bool sIsProfiling = false; 
 static bool sIsGPUProfiling = false; 
 static bool sIsLayersDump = false; 
@@ -1077,7 +1081,7 @@ profiler_set_frame_number(int frameNumber)
 {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
-  sFrameNumber = frameNumber;
+  gFrameNumber = frameNumber;
 }
 
 void
