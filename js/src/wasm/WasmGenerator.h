@@ -231,6 +231,7 @@ class MOZ_STACK_CLASS ModuleGenerator
                            Metadata* maybeAsmJSMetadata = nullptr);
 
     const ModuleEnvironment& env() const { return *env_; }
+    ModuleEnvironment& mutableEnv();
 
     bool isAsmJS() const { return metadata_->kind == ModuleKind::AsmJS; }
     jit::MacroAssembler& masm() { return masm_; }
@@ -270,10 +271,7 @@ class MOZ_STACK_CLASS ModuleGenerator
     MOZ_MUST_USE bool addExport(CacheableChars&& fieldChars, uint32_t funcIndex);
 
     
-    
-    
-    SharedModule finish(const ShareableBytes& bytecode, DataSegmentVector&& dataSegments,
-                        NameInBytecodeVector&& funcNames);
+    SharedModule finish(const ShareableBytes& bytecode);
 };
 
 

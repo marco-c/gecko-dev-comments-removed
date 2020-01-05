@@ -29,6 +29,82 @@ namespace wasm {
 
 
 
+
+
+
+
+struct ModuleEnvironment
+{
+    ModuleKind                kind;
+    MemoryUsage               memoryUsage;
+    mozilla::Atomic<uint32_t> minMemoryLength;
+    Maybe<uint32_t>           maxMemoryLength;
+
+    SigWithIdVector           sigs;
+    SigWithIdPtrVector        funcSigs;
+    Uint32Vector              funcImportGlobalDataOffsets;
+    GlobalDescVector          globals;
+    TableDescVector           tables;
+    Uint32Vector              asmJSSigToTableIndex;
+    ImportVector              imports;
+    ExportVector              exports;
+    Maybe<uint32_t>           startFuncIndex;
+    ElemSegmentVector         elemSegments;
+    DataSegmentVector         dataSegments;
+    NameInBytecodeVector      funcNames;
+    CustomSectionVector       customSections;
+
+    explicit ModuleEnvironment(ModuleKind kind = ModuleKind::Wasm)
+      : kind(kind),
+        memoryUsage(MemoryUsage::None),
+        minMemoryLength(0)
+    {}
+
+    size_t numTables() const {
+        return tables.length();
+    }
+    size_t numSigs() const {
+        return sigs.length();
+    }
+    size_t numFuncs() const {
+        
+        
+        
+        
+        
+        MOZ_ASSERT(!isAsmJS());
+        return funcSigs.length();
+    }
+    size_t numFuncDefs() const {
+        
+        
+        MOZ_ASSERT(!isAsmJS());
+        return funcSigs.length() - funcImportGlobalDataOffsets.length();
+    }
+    size_t numFuncImports() const {
+        MOZ_ASSERT(!isAsmJS());
+        return funcImportGlobalDataOffsets.length();
+    }
+    bool usesMemory() const {
+        return UsesMemory(memoryUsage);
+    }
+    bool isAsmJS() const {
+        return kind == ModuleKind::AsmJS;
+    }
+    bool funcIsImport(uint32_t funcIndex) const {
+        return funcIndex < funcImportGlobalDataOffsets.length();
+    }
+    uint32_t funcIndexToSigIndex(uint32_t funcIndex) const {
+        return funcSigs[funcIndex] - sigs.begin();
+    }
+};
+
+typedef UniquePtr<ModuleEnvironment> UniqueModuleEnvironment;
+
+
+
+
+
 class Encoder
 {
     Bytes& bytes_;
@@ -209,8 +285,6 @@ class Encoder
     
 
     MOZ_MUST_USE bool startSection(SectionId id, size_t* offset) {
-        MOZ_ASSERT(id != SectionId::UserDefined); 
-
         return writeVarU32(uint32_t(id)) &&
                writePatchableVarU32(offset);
     }
@@ -443,103 +517,34 @@ class Decoder
     static const uint32_t NotStarted = UINT32_MAX;
 
     MOZ_MUST_USE bool startSection(SectionId id,
-                                   uint32_t* startOffset,
-                                   uint32_t* size,
-                                   const char* sectionName)
-    {
-        const uint8_t* const before = cur_;
-        const uint8_t* beforeId = before;
-        uint32_t idValue;
-        if (!readVarU32(&idValue))
-            goto backup;
-        while (idValue != uint32_t(id)) {
-            if (idValue != uint32_t(SectionId::UserDefined))
-                goto backup;
-            
-            cur_ = beforeId;
-            if (!skipUserDefinedSection())
-                return false;
-            beforeId = cur_;
-            if (!readVarU32(&idValue))
-                goto backup;
-        }
-        if (!readVarU32(size))
-            goto fail;
-        if (bytesRemain() < *size)
-            goto fail;
-        *startOffset = cur_ - beg_;
-        return true;
-      backup:
-        cur_ = before;
-        *startOffset = NotStarted;
-        return true;
-      fail:
-        return fail("failed to start %s section", sectionName);
-    }
-    MOZ_MUST_USE bool finishSection(uint32_t startOffset, uint32_t size,
-                                    const char* sectionName)
-    {
-        if (size != (cur_ - beg_) - startOffset)
-            return fail("byte size mismatch in %s section", sectionName);
-        return true;
-    }
+                                   ModuleEnvironment* env,
+                                   uint32_t* sectionStart,
+                                   uint32_t* sectionSize,
+                                   const char* sectionName);
+    MOZ_MUST_USE bool finishSection(uint32_t sectionStart,
+                                    uint32_t sectionSize,
+                                    const char* sectionName);
 
     
     
 
-    MOZ_MUST_USE bool startUserDefinedSection(const char* expectedId,
-                                              size_t expectedIdSize,
-                                              uint32_t* sectionStart,
-                                              uint32_t* sectionSize)
+    MOZ_MUST_USE bool startCustomSection(const char* expected,
+                                         size_t expectedLength,
+                                         ModuleEnvironment* env,
+                                         uint32_t* sectionStart,
+                                         uint32_t* sectionSize);
+    template <size_t NameSizeWith0>
+    MOZ_MUST_USE bool startCustomSection(const char (&name)[NameSizeWith0],
+                                         ModuleEnvironment* env,
+                                         uint32_t* sectionStart,
+                                         uint32_t* sectionSize)
     {
-        const uint8_t* const before = cur_;
-        while (true) {
-            if (!startSection(SectionId::UserDefined, sectionStart, sectionSize, "user-defined"))
-                return false;
-            if (*sectionStart == NotStarted) {
-                cur_ = before;
-                return true;
-            }
-            uint32_t idSize;
-            if (!readVarU32(&idSize))
-                goto fail;
-            if (idSize > bytesRemain() || currentOffset() + idSize > *sectionStart + *sectionSize)
-                goto fail;
-            if (expectedId && (expectedIdSize != idSize || !!memcmp(cur_, expectedId, idSize))) {
-                finishUserDefinedSection(*sectionStart, *sectionSize);
-                continue;
-            }
-            cur_ += idSize;
-            return true;
-        }
-        MOZ_CRASH("unreachable");
-      fail:
-        return fail("failed to start user-defined section");
+        MOZ_ASSERT(name[NameSizeWith0 - 1] == '\0');
+        return startCustomSection(name, NameSizeWith0 - 1, env, sectionStart, sectionSize);
     }
-    template <size_t IdSizeWith0>
-    MOZ_MUST_USE bool startUserDefinedSection(const char (&id)[IdSizeWith0],
-                                              uint32_t* sectionStart,
-                                              uint32_t* sectionSize)
-    {
-        MOZ_ASSERT(id[IdSizeWith0 - 1] == '\0');
-        return startUserDefinedSection(id, IdSizeWith0 - 1, sectionStart, sectionSize);
-    }
-    void finishUserDefinedSection(uint32_t sectionStart, uint32_t sectionSize) {
-        MOZ_ASSERT(cur_ >= beg_);
-        MOZ_ASSERT(cur_ <= end_);
-        cur_ = (beg_ + sectionStart) + sectionSize;
-        MOZ_ASSERT(cur_ <= end_);
-        clearError();
-    }
-    MOZ_MUST_USE bool skipUserDefinedSection() {
-        uint32_t sectionStart, sectionSize;
-        if (!startUserDefinedSection(nullptr, 0, &sectionStart, &sectionSize))
-            return false;
-        if (sectionStart == NotStarted)
-            return fail("expected user-defined section");
-        finishUserDefinedSection(sectionStart, sectionSize);
-        return true;
-    }
+    void finishCustomSection(uint32_t sectionStart, uint32_t sectionSize);
+    MOZ_MUST_USE bool skipCustomSection(ModuleEnvironment* env);
+
 
     
     
@@ -626,9 +631,6 @@ class Decoder
 
 
 
-
-
-
 MOZ_MUST_USE bool
 EncodeLocalEntries(Encoder& d, const ValTypeVector& locals);
 
@@ -641,86 +643,19 @@ DecodeLocalEntries(Decoder& d, ModuleKind kind, ValTypeVector* locals);
 
 
 
-
-
-struct ModuleEnvironment
-{
-    ModuleKind                kind;
-    MemoryUsage               memoryUsage;
-    mozilla::Atomic<uint32_t> minMemoryLength;
-    Maybe<uint32_t>           maxMemoryLength;
-
-    SigWithIdVector           sigs;
-    SigWithIdPtrVector        funcSigs;
-    Uint32Vector              funcImportGlobalDataOffsets;
-    GlobalDescVector          globals;
-    TableDescVector           tables;
-    Uint32Vector              asmJSSigToTableIndex;
-    ImportVector              imports;
-    ExportVector              exports;
-    Maybe<uint32_t>           startFuncIndex;
-    ElemSegmentVector         elemSegments;
-
-    explicit ModuleEnvironment(ModuleKind kind = ModuleKind::Wasm)
-      : kind(kind),
-        memoryUsage(MemoryUsage::None),
-        minMemoryLength(0)
-    {}
-
-    size_t numTables() const {
-        return tables.length();
-    }
-    size_t numSigs() const {
-        return sigs.length();
-    }
-    size_t numFuncs() const {
-        
-        
-        
-        
-        
-        MOZ_ASSERT(!isAsmJS());
-        return funcSigs.length();
-    }
-    size_t numFuncDefs() const {
-        
-        
-        MOZ_ASSERT(!isAsmJS());
-        return funcSigs.length() - funcImportGlobalDataOffsets.length();
-    }
-    size_t numFuncImports() const {
-        MOZ_ASSERT(!isAsmJS());
-        return funcImportGlobalDataOffsets.length();
-    }
-    bool usesMemory() const {
-        return UsesMemory(memoryUsage);
-    }
-    bool isAsmJS() const {
-        return kind == ModuleKind::AsmJS;
-    }
-    bool funcIsImport(uint32_t funcIndex) const {
-        return funcIndex < funcImportGlobalDataOffsets.length();
-    }
-    uint32_t funcIndexToSigIndex(uint32_t funcIndex) const {
-        return funcSigs[funcIndex] - sigs.begin();
-    }
-};
-
-typedef UniquePtr<ModuleEnvironment> UniqueModuleEnvironment;
-
-
-
 MOZ_MUST_USE bool
 DecodeModuleEnvironment(Decoder& d, ModuleEnvironment* env);
 
 MOZ_MUST_USE bool
-DecodeDataSection(Decoder& d, const ModuleEnvironment& env, DataSegmentVector* segments);
-
-MOZ_MUST_USE bool
-DecodeUnknownSections(Decoder& d);
-
-MOZ_MUST_USE bool
 ValidateFunctionBody(const ModuleEnvironment& env, uint32_t funcIndex, Decoder& d);
+
+MOZ_MUST_USE bool
+DecodeModuleTail(Decoder& d, ModuleEnvironment* env);
+
+
+
+
+
 
 MOZ_MUST_USE bool
 Validate(const ShareableBytes& bytecode, UniqueChars* error);

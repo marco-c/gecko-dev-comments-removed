@@ -397,11 +397,31 @@ struct NameInBytecode
     uint32_t length;
 
     NameInBytecode() = default;
-    NameInBytecode(uint32_t offset, uint32_t length) : offset(offset), length(length) {}
+    NameInBytecode(uint32_t offset, uint32_t length)
+      : offset(offset), length(length)
+    {}
 };
 
 typedef Vector<NameInBytecode, 0, SystemAllocPolicy> NameInBytecodeVector;
 typedef Vector<char16_t, 64> TwoByteName;
+
+
+
+
+
+struct CustomSection
+{
+    NameInBytecode name;
+    uint32_t offset;
+    uint32_t length;
+
+    CustomSection() = default;
+    CustomSection(NameInBytecode name, uint32_t offset, uint32_t length)
+      : name(name), offset(offset), length(length)
+    {}
+};
+
+typedef Vector<CustomSection, 0, SystemAllocPolicy> CustomSectionVector;
 
 
 
@@ -445,6 +465,7 @@ struct Metadata : ShareableBase<Metadata>, MetadataCacheablePod
     CallSiteVector        callSites;
     CallThunkVector       callThunks;
     NameInBytecodeVector  funcNames;
+    CustomSectionVector   customSections;
     CacheableChars        filename;
 
     bool usesMemory() const { return UsesMemory(memoryUsage); }
