@@ -8,8 +8,12 @@
 
 const {Task} = require("devtools/shared/task");
 const EventEmitter = require("devtools/shared/event-emitter");
-const {createNode, TimeScale} = require("devtools/client/animationinspector/utils");
+const {createNode} = require("devtools/client/animationinspector/utils");
 const {Keyframes} = require("devtools/client/animationinspector/components/keyframes");
+
+const { LocalizationHelper } = require("devtools/shared/l10n");
+const L10N =
+  new LocalizationHelper("devtools/client/locales/animationinspector.properties");
 
 
 
@@ -182,13 +186,60 @@ AnimationDetails.prototype = {
     
     const animationTypes = yield this.getAnimationTypes(Object.keys(this.tracks));
 
+    
+    this.renderAnimatedPropertiesHeader();
+    
+    this.renderAnimatedPropertiesBody(animationTypes);
+
+    
+    
+    this.emit("animation-detail-rendering-completed");
+  }),
+
+  onFrameSelected: function (e, args) {
+    
+    this.emit(e, args);
+  },
+
+  renderAnimatedPropertiesHeader: function () {
+    
+    const headerEl = createNode({
+      parent: this.containerEl,
+      attributes: { "class": "animated-properties-header property" }
+    });
+
+    
+    const headerLabelContainerEl = createNode({
+      parent: headerEl,
+      attributes: { "class": "track-container" }
+    });
+
+    
+    for (let label of [L10N.getFormatStr("detail.propertiesHeader.percentage", 0),
+                       L10N.getFormatStr("detail.propertiesHeader.percentage", 50),
+                       L10N.getFormatStr("detail.propertiesHeader.percentage", 100)]) {
+      createNode({
+        parent: headerLabelContainerEl,
+        nodeType: "label",
+        attributes: { "class": "header-item" },
+        textContent: label
+      });
+    }
+  },
+
+  renderAnimatedPropertiesBody: function (animationTypes) {
+    
+    const bodyEl = createNode({
+      parent: this.containerEl,
+      attributes: { "class": "animated-properties-body" }
+    });
     for (let propertyName in this.tracks) {
       let line = createNode({
-        parent: this.containerEl,
+        parent: bodyEl,
         attributes: {"class": "property"}
       });
       let {warning, className} =
-        this.getPerfDataForProperty(animation, propertyName);
+        this.getPerfDataForProperty(this.animation, propertyName);
       createNode({
         
         
@@ -218,21 +269,12 @@ AnimationDetails.prototype = {
       keyframesComponent.render({
         keyframes: this.tracks[propertyName],
         propertyName: propertyName,
-        animation: animation,
+        animation: this.animation,
         animationType: animationTypes[propertyName]
       });
       keyframesComponent.on("frame-selected", this.onFrameSelected);
       this.keyframeComponents.push(keyframesComponent);
     }
-
-    
-    
-    this.emit("animation-detail-rendering-completed");
-  }),
-
-  onFrameSelected: function (e, args) {
-    
-    this.emit(e, args);
   }
 };
 
