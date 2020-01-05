@@ -19,71 +19,15 @@ use net_traits::blob_url_store::BlobURLStoreEntry;
 use net_traits::filemanager_thread::{FileManagerThreadMsg, SelectedFileId, RelativePos};
 use std::ascii::AsciiExt;
 use std::cell::Cell;
-use std::ops::Range;
-use std::sync::Arc;
-
-#[derive(Clone, JSTraceable)]
-pub struct DataSlice {
-    bytes: Arc<Vec<u8>>,
-    bytes_start: usize,
-    bytes_end: usize
-}
-
-impl DataSlice {
-    
-    pub fn new(bytes: Arc<Vec<u8>>, start: Option<i64>, end: Option<i64>) -> DataSlice {
-        let range = RelativePos::from_opts(start, end).to_abs_range(bytes.len());
-
-        DataSlice {
-            bytes: bytes,
-            bytes_start: range.start,
-            bytes_end: range.end,
-        }
-    }
-
-    
-    pub fn from_bytes(bytes: Vec<u8>) -> DataSlice {
-        DataSlice::new(Arc::new(bytes), None, None)
-    }
-
-    
-    pub fn empty() -> DataSlice {
-        DataSlice {
-            bytes: Arc::new(Vec::new()),
-            bytes_start: 0,
-            bytes_end: 0,
-        }
-    }
-
-    
-    pub fn get_bytes(&self) -> &[u8] {
-        &self.bytes[self.bytes_start..self.bytes_end]
-    }
-
-    
-    pub fn size(&self) -> u64 {
-        (self.bytes_end as u64) - (self.bytes_start as u64)
-    }
-
-    
-    pub fn slice(&self, pos: &RelativePos) -> DataSlice {
-        let old_size = self.size();
-        let range = pos.to_abs_range(old_size as usize);
-        DataSlice {
-            bytes: self.bytes.clone(),
-            bytes_start: self.bytes_start + range.start,
-            bytes_end: self.bytes_start + range.end,
-        }
-    }
-}
+use std::ops::Index;
 
 #[must_root]
 #[derive(JSTraceable)]
 pub enum BlobImpl {
     
-    File(SelectedFileId, DOMRefCell<Option<DataSlice>>),
+    File(SelectedFileId, DOMRefCell<Option<Vec<u8>>>),
     
-    Memory(DataSlice),
+    Memory(Vec<u8>),
     
     
     
@@ -92,18 +36,14 @@ pub enum BlobImpl {
 
 impl BlobImpl {
     
-    pub fn new_from_slice(slice: DataSlice) -> BlobImpl {
-        BlobImpl::Memory(slice)
+    #[allow(unrooted_must_root)]
+    pub fn new_from_bytes(bytes: Vec<u8>) -> BlobImpl {
+        BlobImpl::Memory(bytes)
     }
 
     
     pub fn new_from_file(file_id: SelectedFileId) -> BlobImpl {
         BlobImpl::File(file_id, DOMRefCell::new(None))
-    }
-
-    
-    pub fn new_from_empty_slice() -> BlobImpl {
-        BlobImpl::new_from_slice(DataSlice::empty())
     }
 }
 
@@ -178,12 +118,11 @@ impl Blob {
             }
         };
 
-        let slice = DataSlice::from_bytes(bytes);
-        Ok(Blob::new(global, BlobImpl::new_from_slice(slice), blobPropertyBag.get_typestring()))
+        Ok(Blob::new(global, BlobImpl::new_from_bytes(bytes), blobPropertyBag.get_typestring()))
     }
 
     
-    pub fn get_slice(&self) -> Result<DataSlice, ()> {
+    pub fn get_bytes(&self) -> Result<Vec<u8>, ()> {
         match *self.blob_impl.borrow() {
             BlobImpl::File(ref id, ref cached) => {
                 let buffer = match *cached.borrow() {
@@ -204,15 +143,12 @@ impl Blob {
             }
             BlobImpl::Memory(ref s) => Ok(s.clone()),
             BlobImpl::Sliced(ref parent, ref rel_pos) => {
-                let dataslice = parent.get_slice_or_empty();
-                Ok(dataslice.slice(rel_pos))
+                parent.get_bytes().map(|v| {
+                    let range = rel_pos.to_abs_range(v.len());
+                    v.index(range).to_vec()
+                })
             }
         }
-    }
-
-    
-    pub fn get_slice_or_empty(&self) -> DataSlice {
-        self.get_slice().unwrap_or(DataSlice::empty())
     }
 
     pub fn get_id(&self) -> SelectedFileId {
@@ -228,8 +164,8 @@ impl Blob {
                     }
                     BlobImpl::File(ref parent_id, _) =>
                         self.create_sliced_id(parent_id, rel_pos),
-                    BlobImpl::Memory(ref parent_slice) => {
-                        let parent_id = parent.promote_to_file(parent_slice);
+                    BlobImpl::Memory(ref bytes) => {
+                        let parent_id = parent.promote_to_file(bytes);
                         *self.blob_impl.borrow_mut() = BlobImpl::Sliced(parent.clone(), rel_pos.clone());
                         self.create_sliced_id(&parent_id, rel_pos)
                     }
@@ -240,15 +176,10 @@ impl Blob {
 
     
     
-    fn promote_to_file(&self, self_slice: &DataSlice) -> SelectedFileId {
+    fn promote_to_file(&self, bytes: &[u8]) -> SelectedFileId {
         let global = self.global();
         let origin = global.r().get_url().origin().unicode_serialization();
         let filemanager = global.r().resource_threads().sender();
-        let bytes = self_slice.get_bytes();
-        let rel_pos = RelativePos::from_abs_range(Range {
-                            start: self_slice.bytes_start,
-                            end: self_slice.bytes_end,
-                        }, self_slice.bytes.len());
 
         let entry = BlobURLStoreEntry {
             type_string: self.typeString.clone(),
@@ -257,7 +188,7 @@ impl Blob {
         };
 
         let (tx, rx) = ipc::channel().unwrap();
-        let _ = filemanager.send(FileManagerThreadMsg::TransferMemory(entry, rel_pos, tx, origin.clone()));
+        let _ = filemanager.send(FileManagerThreadMsg::TransferMemory(entry, tx, origin.clone()));
 
         match rx.recv().unwrap() {
             Ok(new_id) => SelectedFileId(new_id.0),
@@ -285,7 +216,7 @@ impl Blob {
     }
 }
 
-fn read_file(global: GlobalRef, id: SelectedFileId) -> Result<DataSlice, ()> {
+fn read_file(global: GlobalRef, id: SelectedFileId) -> Result<Vec<u8>, ()> {
     let file_manager = global.filemanager_thread();
     let (chan, recv) = ipc::channel().map_err(|_|())?;
     let origin = global.get_url().origin().unicode_serialization();
@@ -300,8 +231,7 @@ fn read_file(global: GlobalRef, id: SelectedFileId) -> Result<DataSlice, ()> {
         }
     };
 
-    let bytes = result.map_err(|_|())?;
-    Ok(DataSlice::from_bytes(bytes))
+    result.map_err(|_|())
 }
 
 
@@ -316,7 +246,8 @@ pub fn blob_parts_to_bytes(blobparts: Vec<BlobOrString>) -> Result<Vec<u8>, ()> 
                 ret.append(&mut bytes);
             },
             &BlobOrString::Blob(ref b) => {
-                ret.append(&mut b.get_slice_or_empty().bytes.to_vec());
+                let mut bytes = b.get_bytes().unwrap_or(vec![]);
+                ret.append(&mut bytes);
             },
         }
     }
@@ -327,7 +258,11 @@ pub fn blob_parts_to_bytes(blobparts: Vec<BlobOrString>) -> Result<Vec<u8>, ()> 
 impl BlobMethods for Blob {
     
     fn Size(&self) -> u64 {
-        self.get_slice_or_empty().size()
+        
+        match self.get_bytes() {
+            Ok(s) => s.len() as u64,
+            _ => 0,
+        }
     }
 
     

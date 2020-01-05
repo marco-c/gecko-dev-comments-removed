@@ -130,7 +130,7 @@ pub enum FileManagerThreadMsg {
     LoadBlob(LoadData, LoadConsumer),
 
     
-    TransferMemory(BlobURLStoreEntry, RelativePos, IpcSender<Result<SelectedFileId, BlobURLStoreError>>, FileOrigin),
+    TransferMemory(BlobURLStoreEntry, IpcSender<Result<SelectedFileId, BlobURLStoreError>>, FileOrigin),
 
     
     AddSlicedEntry(SelectedFileId, RelativePos, IpcSender<Result<SelectedFileId, BlobURLStoreError>>, FileOrigin),
