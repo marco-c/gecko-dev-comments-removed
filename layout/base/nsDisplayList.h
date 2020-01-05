@@ -536,7 +536,7 @@ public:
   
 
 
-  void LeavePresShell(nsIFrame* aReferenceFrame);
+  void LeavePresShell(nsIFrame* aReferenceFrame, nsDisplayList* aPaintedContents);
 
   
 
