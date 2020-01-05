@@ -175,21 +175,6 @@ public:
     virtual bool SetPotentialLineBreaks(Range aRange,
                                         const uint8_t* aBreakBefore);
 
-    enum class HyphenType : uint8_t {
-      None,
-      Explicit,
-      Soft,
-      AutoWithManualInSameWord,
-      AutoWithoutManualInSameWord
-    };
-
-    struct HyphenationState {
-      uint32_t mostRecentBoundary = 0;
-      bool     hasManualHyphen = false;
-      bool     hasExplicitHyphen = false;
-      bool     hasAutoHyphen = false;
-    };
-
     
 
 
@@ -204,8 +189,7 @@ public:
     public:
         
         
-        virtual void GetHyphenationBreaks(Range aRange,
-                                          HyphenType *aBreakBefore) = 0;
+        virtual void GetHyphenationBreaks(Range aRange, bool *aBreakBefore) = 0;
 
         
         
@@ -352,10 +336,6 @@ public:
       
       eSuppressAllBreaks
     };
-
-    void ClassifyAutoHyphenations(uint32_t aStart, Range aRange,
-                                  nsTArray<HyphenType>& aHyphenBuffer,
-                                  HyphenationState* aWordState);
 
     
 

@@ -1,26 +1,26 @@
-/* -*- Mode: C++; tab-width: 20; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "nsFontMetrics.h"
-#include <math.h>                       // for floor, ceil
-#include <algorithm>                    // for max
-#include "gfxFontConstants.h"           // for NS_FONT_SYNTHESIS_*
-#include "gfxPlatform.h"                // for gfxPlatform
-#include "gfxPoint.h"                   // for gfxPoint
-#include "gfxRect.h"                    // for gfxRect
-#include "gfxTypes.h"                   // for gfxFloat
-#include "nsBoundingMetrics.h"          // for nsBoundingMetrics
-#include "nsDebug.h"                    // for NS_ERROR
-#include "nsDeviceContext.h"            // for nsDeviceContext
-#include "nsIAtom.h"                    // for nsIAtom
-#include "nsMathUtils.h"                // for NS_round
-#include "nsRenderingContext.h"         // for nsRenderingContext
-#include "nsString.h"                   // for nsString
-#include "nsStyleConsts.h"              // for StyleHyphens::None
-#include "mozilla/Assertions.h"         // for MOZ_ASSERT
-#include "mozilla/UniquePtr.h"          // for UniquePtr
+#include <math.h>                       
+#include <algorithm>                    
+#include "gfxFontConstants.h"           
+#include "gfxPlatform.h"                
+#include "gfxPoint.h"                   
+#include "gfxRect.h"                    
+#include "gfxTypes.h"                   
+#include "nsBoundingMetrics.h"          
+#include "nsDebug.h"                    
+#include "nsDeviceContext.h"            
+#include "nsIAtom.h"                    
+#include "nsMathUtils.h"                
+#include "nsRenderingContext.h"         
+#include "nsString.h"                   
+#include "nsStyleConsts.h"              
+#include "mozilla/Assertions.h"         
+#include "mozilla/UniquePtr.h"          
 
 class gfxUserFontSet;
 using namespace mozilla;
@@ -84,7 +84,7 @@ private:
 class StubPropertyProvider : public gfxTextRun::PropertyProvider {
 public:
     virtual void GetHyphenationBreaks(gfxTextRun::Range aRange,
-                                      gfxTextRun::HyphenType* aBreakBefore) {
+                                      bool* aBreakBefore) {
         NS_ERROR("This shouldn't be called because we never call BreakAndMeasureText");
     }
     virtual mozilla::StyleHyphens GetHyphensOption() {
@@ -108,7 +108,7 @@ public:
     }
 };
 
-} // namespace
+} 
 
 nsFontMetrics::nsFontMetrics(const nsFont& aFont, const Params& aParams,
                              nsDeviceContext *aContext)
@@ -157,7 +157,7 @@ nsFontMetrics::Destroy()
     mDeviceContext = nullptr;
 }
 
-// XXXTODO get rid of this macro
+
 #define ROUND_TO_TWIPS(x) (nscoord)floor(((x) * mP2A) + 0.5)
 #define CEIL_TO_TWIPS(x) (nscoord)ceil((x) * mP2A)
 
@@ -207,10 +207,10 @@ nsFontMetrics::GetUnderline(nscoord& aOffset, nscoord& aSize)
     aSize = ROUND_TO_TWIPS(GetMetrics().underlineSize);
 }
 
-// GetMaxAscent/GetMaxDescent/GetMaxHeight must contain the
-// text-decoration lines drawable area. See bug 421353.
-// BE CAREFUL for rounding each values. The logic MUST be same as
-// nsCSSRendering::GetTextDecorationRectInternal's.
+
+
+
+
 
 static gfxFloat ComputeMaxDescent(const gfxFont::Metrics& aMetrics,
                                   gfxFontGroup* aFontGroup)
@@ -284,16 +284,16 @@ nsFontMetrics::MaxAdvance()
 nscoord
 nsFontMetrics::AveCharWidth()
 {
-    // Use CEIL instead of ROUND for consistency with GetMaxAdvance
+    
     return CEIL_TO_TWIPS(GetMetrics().aveCharWidth);
 }
 
 nscoord
 nsFontMetrics::SpaceWidth()
 {
-    // For vertical text with mixed or sideways orientation, we want the
-    // width of a horizontal space (even if we're using vertical line-spacing
-    // metrics, as with "writing-mode:vertical-*;text-orientation:mixed").
+    
+    
+    
     return CEIL_TO_TWIPS(
         GetMetrics(mVertical &&
                    mTextOrientation == NS_STYLE_TEXT_ORIENTATION_UPRIGHT
@@ -348,7 +348,7 @@ nsFontMetrics::GetWidth(const char16_t* aString, uint32_t aLength,
     return 0;
 }
 
-// Draw a string using this font handle on the surface passed in.
+
 void
 nsFontMetrics::DrawString(const char *aString, uint32_t aLength,
                           nscoord aX, nscoord aY,
