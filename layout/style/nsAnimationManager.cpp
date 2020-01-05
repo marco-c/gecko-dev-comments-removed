@@ -359,7 +359,7 @@ static void
 UpdateOldAnimationPropertiesWithNew(
     CSSAnimation& aOld,
     TimingParams& aNewTiming,
-    nsTArray<Keyframe>& aNewKeyframes,
+    nsTArray<Keyframe>&& aNewKeyframes,
     bool aNewIsStylePaused,
     nsStyleContext* aStyleContext)
 {
@@ -665,7 +665,7 @@ CSSAnimationBuilder::Build(nsPresContext* aPresContext,
     
     UpdateOldAnimationPropertiesWithNew(*oldAnim,
                                         timing,
-                                        keyframes,
+                                        Move(keyframes),
                                         isStylePaused,
                                         mStyleContext);
     return oldAnim.forget();
