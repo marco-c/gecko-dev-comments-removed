@@ -2420,7 +2420,7 @@ ${helpers.single_keyword("-moz-math-variant",
 
         #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
         #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-        
+        /// void enum for system font, can never exist
         pub enum SystemFont {}
         impl SystemFont {
             pub fn parse(_: &mut Parser) -> Result<Self, ()> {
@@ -2429,3 +2429,12 @@ ${helpers.single_keyword("-moz-math-variant",
         }
     }
 % endif
+
+${helpers.single_keyword("-moz-osx-font-smoothing",
+                         "auto grayscale",
+                         gecko_constant_prefix="NS_FONT_SMOOTHING",
+                         gecko_ffi_name="mFont.smoothing",
+                         products="gecko",
+                         spec="Nonstandard (https://developer.mozilla.org/en-US/docs/Web/CSS/font-smooth)",
+                         animation_value_type="none",
+                         need_clone=True)}
