@@ -1,4 +1,0 @@
-
-onfetch = function(event) {
-  
-}
