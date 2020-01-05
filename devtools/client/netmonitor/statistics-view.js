@@ -171,7 +171,7 @@ StatisticsView.prototype = {
 
     chart.on("click", (_, item) => {
       
-      this.store.dispatch(Actions.enableFilterTypeOnly(item.label));
+      this.store.dispatch(Actions.enableRequestFilterTypeOnly(item.label));
       this.store.dispatch(Actions.openStatistics(false));
     });
 

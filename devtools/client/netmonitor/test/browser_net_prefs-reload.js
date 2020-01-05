@@ -34,7 +34,7 @@ add_task(function* () {
       
       
       modifyFrontend: ($, value) => value.forEach(e =>
-        getStore().dispatch(Actions.toggleFilterType(e)))
+        getStore().dispatch(Actions.toggleRequestFilterType(e)))
     },
     networkDetailsWidth: {
       newValue: ~~(Math.random() * 200 + 100),
