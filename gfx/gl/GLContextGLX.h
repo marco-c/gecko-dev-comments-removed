@@ -60,6 +60,8 @@ public:
 
     virtual bool SwapBuffers() override;
 
+    virtual void GetWSIInfo(nsCString* const out) const override;
+
     
     
     bool OverrideDrawable(GLXDrawable drawable);

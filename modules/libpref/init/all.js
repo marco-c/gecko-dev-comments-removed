@@ -1264,6 +1264,9 @@ pref("javascript.options.asyncstack",       false);
 #endif
 pref("javascript.options.throw_on_asmjs_validation_failure", false);
 pref("javascript.options.ion.offthread_compilation", true);
+#ifdef DEBUG
+pref("javascript.options.jit.full_debug_checks", true);
+#endif
 
 
 
@@ -2059,12 +2062,16 @@ pref("intl.ime.hack.on_ime_unaware_apps.fire_key_events_for_composition", false)
 
 pref("intl.ime.remove_placeholder_character_at_commit", false);
 
+#ifdef ENABLE_INTL_API
+pref("intl.uidirection", -1); 
+#else
 
 pref("intl.uidirection.ar", "rtl");
 pref("intl.uidirection.he", "rtl");
 pref("intl.uidirection.fa", "rtl");
 pref("intl.uidirection.ug", "rtl");
 pref("intl.uidirection.ur", "rtl");
+#endif
 
 
 pref("intl.hyphenation-alias.en", "en-us");
@@ -5127,7 +5134,7 @@ pref("urlclassifier.downloadAllowTable", "goog-downloadwhite-digest256");
 pref("urlclassifier.downloadAllowTable", "");
 #endif
 
-pref("urlclassifier.disallow_completions", "test-malware-simple,test-phish-simple,test-unwanted-simple,test-track-simple,test-trackwhite-simple,test-block-simple,goog-downloadwhite-digest256,base-track-digest256,mozstd-trackwhite-digest256,content-track-digest256,mozplugin-block-digest256,mozplugin2-block-digest256");
+pref("urlclassifier.disallow_completions", "test-malware-simple,test-phish-simple,test-unwanted-simple,test-track-simple,test-trackwhite-simple,test-block-simple,test-flashallow-simple,testexcept-flashallow-simple,test-flash-simple,testexcept-flash-simple,test-flashsubdoc-simple,testexcept-flashsubdoc-simple,goog-downloadwhite-digest256,base-track-digest256,mozstd-trackwhite-digest256,content-track-digest256,mozplugin-block-digest256,mozplugin2-block-digest256");
 
 
 
@@ -5201,6 +5208,15 @@ pref("browser.safebrowsing.provider.mozilla.lists.base.name", "mozstdName");
 pref("browser.safebrowsing.provider.mozilla.lists.base.description", "mozstdDesc");
 pref("browser.safebrowsing.provider.mozilla.lists.content.name", "mozfullName");
 pref("browser.safebrowsing.provider.mozilla.lists.content.description", "mozfullDesc");
+
+pref("urlclassifier.flashAllowTable", "test-flashallow-simple");
+pref("urlclassifier.flashAllowExceptTable", "testexcept-flashallow-simple");
+pref("urlclassifier.flashTable", "test-flash-simple");
+pref("urlclassifier.flashExceptTable", "testexcept-flash-simple");
+pref("urlclassifier.flashSubDocTable", "test-flashsubdoc-simple");
+pref("urlclassifier.flashSubDocExceptTable", "testexcept-flashsubdoc-simple");
+
+pref("plugins.flashBlock.enabled", false);
 
 
 pref("browser.safebrowsing.allowOverride", true);
@@ -5551,14 +5567,15 @@ pref("layout.css.servo.enabled", true);
 
 
 
-pref("security.mixed_content.send_hsts_priming", true);
 #ifdef RELEASE_OR_BETA
 
 
+pref("security.mixed_content.send_hsts_priming", false);
 pref("security.mixed_content.use_hsts", false);
 #else
 
 
+pref("security.mixed_content.send_hsts_priming", true);
 pref("security.mixed_content.use_hsts", true);
 #endif
 

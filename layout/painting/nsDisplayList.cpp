@@ -517,7 +517,7 @@ AddAnimationForProperty(nsIFrame* aFrame, const AnimationProperty& aProperty,
   const ComputedTiming computedTiming =
     aAnimation->GetEffect()->GetComputedTiming();
   Nullable<TimeDuration> startTime = aAnimation->GetCurrentOrPendingStartTime();
-  animation->startTime() = startTime.IsNull()
+  animation->startTime() = startTime.IsNull() || !aAnimation->GetTimeline()
                            ? TimeStamp()
                            : aAnimation->GetTimeline()->
                               ToTimeStamp(startTime.Value());
@@ -627,7 +627,7 @@ AddAnimationsForProperty(nsIFrame* aFrame, nsCSSPropertyID aProperty,
     
     
     if (anim->PlayState() == AnimationPlayState::Pending &&
-        (!anim->GetTimeline() ||
+        (anim->GetTimeline() &&
          !anim->GetTimeline()->TracksWallclockTime())) {
       continue;
     }
