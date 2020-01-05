@@ -127,10 +127,6 @@ this.GeckoDriver = function(appName, server) {
 
   
   
-  this.secureTLS = true;
-
-  
-  
   this.context = Context.CONTENT;
 
   this.importedScripts = new evaluate.ScriptStorageService(
@@ -150,7 +146,6 @@ this.GeckoDriver = function(appName, server) {
     "browserVersion": Services.appinfo.version,
     "platformName": Services.sysinfo.getProperty("name").toLowerCase(),
     "platformVersion": Services.sysinfo.getProperty("version"),
-    "acceptInsecureCerts": !this.secureTLS,
 
     
     "raisesAccessibilityExceptions": false,
@@ -654,14 +649,6 @@ GeckoDriver.prototype.setSessionCapabilities = function(newCaps) {
   let caps = copy(this.sessionCapabilities);
   caps = copy(newCaps, caps);
   logger.config("Changing capabilities: " + JSON.stringify(caps));
-
-  
-  this.secureTLS = !caps.acceptInsecureCerts;
-  if (!this.secureTLS) {
-    logger.warn("Invalid or self-signed TLS certificates " +
-        "will be discarded for this session");
-  }
-
   this.sessionCapabilities = caps;
 };
 
