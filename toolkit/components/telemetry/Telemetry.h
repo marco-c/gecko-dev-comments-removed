@@ -381,6 +381,14 @@ void ScalarSet(mozilla::Telemetry::ScalarID aId, uint32_t aValue);
 
 
 
+void ScalarSet(mozilla::Telemetry::ScalarID aId, bool aValue);
+
+
+
+
+
+
+
 
 void ScalarSet(mozilla::Telemetry::ScalarID aId, const nsAString& aValue);
 
