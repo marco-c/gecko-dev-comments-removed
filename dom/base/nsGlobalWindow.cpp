@@ -2552,11 +2552,10 @@ nsGlobalWindow::SetInitialPrincipalToSubject()
 #ifdef DEBUG
     
     
-    nsCOMPtr<nsIURI> uri;
-    mDoc->NodePrincipal()->GetURI(getter_AddRefs(uri));
-    NS_ASSERTION(uri && NS_IsAboutBlank(uri) &&
-                 NS_IsAboutBlank(mDoc->GetDocumentURI()),
-                 "Unexpected original document");
+    
+    bool isNullPrincipal;
+    MOZ_ASSERT(NS_SUCCEEDED(mDoc->NodePrincipal()->GetIsNullPrincipal(&isNullPrincipal)) &&
+               isNullPrincipal);
 #endif
   }
 
