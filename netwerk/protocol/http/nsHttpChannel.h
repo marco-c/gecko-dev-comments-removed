@@ -308,7 +308,8 @@ private:
     
     
     nsresult BeginConnect();
-
+    void     HandleBeginConnectContinue();
+    MOZ_MUST_USE nsresult BeginConnectContinue();
     MOZ_MUST_USE nsresult ContinueBeginConnectWithResult();
     void     ContinueBeginConnect();
     MOZ_MUST_USE nsresult Connect();
