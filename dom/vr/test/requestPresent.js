@@ -2,6 +2,11 @@
 
 
 
+function attachVRDisplay(test) {
+  assert_equals(typeof (navigator.getVRDisplays), "function", "'navigator.getVRDisplays()' must be defined.");
+  return VRSimulationDriver.AttachWebVRDisplay();
+}
+
 function setupVRDisplay(test) {
   assert_equals(typeof (navigator.getVRDisplays), "function", "'navigator.getVRDisplays()' must be defined.");
   return VRSimulationDriver.AttachWebVRDisplay().then(() => {
