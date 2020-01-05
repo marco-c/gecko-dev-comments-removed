@@ -53,7 +53,8 @@ extern LogModule* GetGMPLog();
 namespace gmp {
 
 GMPChild::GMPChild()
-  : mGMPMessageLoop(MessageLoop::current())
+  : mAsyncShutdown(nullptr)
+  , mGMPMessageLoop(MessageLoop::current())
   , mGMPLoader(nullptr)
 {
   LOGD("GMPChild ctor");
@@ -231,6 +232,7 @@ GMPChild::SetMacSandboxInfo(MacSandboxPluginType aPluginType)
 
   MacSandboxInfo info;
   info.type = MacSandboxType_Plugin;
+  info.shouldLog = Preferences::GetBool("security.sandbox.logging.enabled", true);
   info.pluginInfo.type = aPluginType;
   info.pluginInfo.pluginPath.assign(pluginDirectoryPath.get());
   info.pluginInfo.pluginBinaryPath.assign(pluginFilePath.get());
@@ -398,6 +400,14 @@ GMPChild::AnswerStartPlugin(const nsString& aAdapter)
     return IPC_FAIL_NO_REASON(this);
   }
 
+  void* sh = nullptr;
+  GMPAsyncShutdownHost* host = static_cast<GMPAsyncShutdownHost*>(this);
+  GMPErr err = GetAPI(GMP_API_ASYNC_SHUTDOWN, host, &sh);
+  if (err == GMPNoErr && sh) {
+    mAsyncShutdown = reinterpret_cast<GMPAsyncShutdown*>(sh);
+    SendAsyncShutdownRequired();
+  }
+
   return IPC_OK();
 }
 
@@ -525,12 +535,35 @@ GMPChild::RecvCrashPluginNow()
 }
 
 mozilla::ipc::IPCResult
+GMPChild::RecvBeginAsyncShutdown()
+{
+  LOGD("%s AsyncShutdown=%d", __FUNCTION__, mAsyncShutdown!=nullptr);
+
+  MOZ_ASSERT(mGMPMessageLoop == MessageLoop::current());
+  if (mAsyncShutdown) {
+    mAsyncShutdown->BeginShutdown();
+  } else {
+    ShutdownComplete();
+  }
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult
 GMPChild::RecvCloseActive()
 {
   for (uint32_t i = mGMPContentChildren.Length(); i > 0; i--) {
     mGMPContentChildren[i - 1]->CloseActive();
   }
   return IPC_OK();
+}
+
+void
+GMPChild::ShutdownComplete()
+{
+  LOGD("%s", __FUNCTION__);
+  MOZ_ASSERT(mGMPMessageLoop == MessageLoop::current());
+  mAsyncShutdown = nullptr;
+  SendAsyncShutdownComplete();
 }
 
 static void
