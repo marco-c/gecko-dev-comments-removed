@@ -278,7 +278,10 @@ public:
 
 
 
-  static CodeNameIndex ComputeGeckoCodeNameIndex(UInt32 aNativeKeyCode);
+
+
+  static CodeNameIndex ComputeGeckoCodeNameIndex(UInt32 aNativeKeyCode,
+                                                 UInt32 aKbType);
 
 protected:
   
