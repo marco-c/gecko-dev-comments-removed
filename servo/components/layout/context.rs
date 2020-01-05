@@ -17,7 +17,7 @@ use gfx_traits::LayerId;
 use ipc_channel::ipc::{self, IpcSender};
 use net_traits::image::base::Image;
 use net_traits::image_cache_thread::{ImageCacheChan, ImageCacheThread, ImageResponse, ImageState};
-use net_traits::image_cache_thread::{UsePlaceholder};
+use net_traits::image_cache_thread::{ImageOrMetadataAvailable, UsePlaceholder};
 use std::cell::{RefCell, RefMut};
 use std::collections::HashMap;
 use std::collections::hash_state::DefaultState;
@@ -155,7 +155,7 @@ impl<'a> LayoutContext<'a> {
                         match sync_rx.recv().unwrap().image_response {
                             ImageResponse::Loaded(image) |
                             ImageResponse::PlaceholderLoaded(image) => Some(image),
-                            ImageResponse::None => None,
+                            ImageResponse::None | ImageResponse::MetadataLoaded(_) => None,
                         }
                     }
                     
@@ -172,4 +172,51 @@ impl<'a> LayoutContext<'a> {
             }
         }
     }
+
+    pub fn get_or_request_image_or_meta(&self, url: Url, use_placeholder: UsePlaceholder)
+                                -> Option<ImageOrMetadataAvailable> {
+        
+        let result = self.shared.image_cache_thread.find_image_or_metadata(url.clone(),
+                                                                         use_placeholder);
+
+        match result {
+            Ok(image_or_metadata) => Some(image_or_metadata),
+            Err(state) => {
+                
+                
+                let is_sync = opts::get().output_file.is_some() ||
+                              opts::get().exit_after_load;
+
+                match (state, is_sync) {
+                    
+                    (ImageState::LoadError, _) => None,
+                    
+                    (_, true) => {
+                        let (sync_tx, sync_rx) = ipc::channel().unwrap();
+                        self.shared.image_cache_thread.request_image(url,
+                                                                   ImageCacheChan(sync_tx),
+                                                                   None);
+                        match sync_rx.recv().unwrap().image_response {
+                            ImageResponse::Loaded(image) |
+                            ImageResponse::PlaceholderLoaded(image) =>
+                                Some(ImageOrMetadataAvailable::ImageAvailable(image)),
+                            ImageResponse::None | ImageResponse::MetadataLoaded(_) =>
+                                None,
+                        }
+                    }
+                    
+                    (ImageState::NotRequested, false) => {
+                        let sender = self.shared.image_cache_sender.lock().unwrap().clone();
+                        self.shared.image_cache_thread.request_image_and_metadata(url, sender, None);
+                        None
+                    }
+                    
+                    
+                    
+                    (ImageState::Pending, false) => None,
+                }
+            }
+        }
+    }
+
 }

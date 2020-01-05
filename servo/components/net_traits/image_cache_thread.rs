@@ -3,7 +3,7 @@
 
 
 use ipc_channel::ipc::{self, IpcSender};
-use msg::constellation_msg::Image;
+use msg::constellation_msg::{Image, ImageMetadata};
 use std::sync::Arc;
 use url::Url;
 use util::mem::HeapSizeOf;
@@ -12,7 +12,7 @@ use util::mem::HeapSizeOf;
 
 
 
-#[derive(Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize)]
 pub struct ImageResponder {
     sender: IpcSender<ImageResponse>,
 }
@@ -43,9 +43,18 @@ pub enum ImageResponse {
     
     Loaded(Arc<Image>),
     
+    MetadataLoaded(ImageMetadata),
+    
     PlaceholderLoaded(Arc<Image>),
     
     None
+}
+
+
+#[derive(Clone, Deserialize, Serialize, HeapSizeOf)]
+pub enum ImageOrMetadataAvailable {
+    ImageAvailable(Arc<Image>),
+    MetadataAvailable(ImageMetadata),
 }
 
 
@@ -72,7 +81,17 @@ pub enum ImageCacheCommand {
     
     
     
+    RequestImageAndMetadata(Url, ImageCacheChan, Option<ImageResponder>),
+
+    
+    
+    
+    
     GetImageIfAvailable(Url, UsePlaceholder, IpcSender<Result<Arc<Image>, ImageState>>),
+
+    
+    
+    GetImageOrMetadataIfAvailable(Url, UsePlaceholder, IpcSender<Result<ImageOrMetadataAvailable, ImageState>>),
 
     
     Exit(IpcSender<()>),
@@ -111,10 +130,30 @@ impl ImageCacheThread {
     }
 
     
+    
+    pub fn request_image_and_metadata(&self,
+                                      url: Url,
+                                      result_chan: ImageCacheChan,
+                                      responder: Option<ImageResponder>) {
+        let msg = ImageCacheCommand::RequestImageAndMetadata(url, result_chan, responder);
+        self.chan.send(msg).unwrap();
+    }
+
+    
     pub fn find_image(&self, url: Url, use_placeholder: UsePlaceholder)
                                   -> Result<Arc<Image>, ImageState> {
         let (sender, receiver) = ipc::channel().unwrap();
         let msg = ImageCacheCommand::GetImageIfAvailable(url, use_placeholder, sender);
+        self.chan.send(msg).unwrap();
+        receiver.recv().unwrap()
+    }
+
+    
+    
+    pub fn find_image_or_metadata(&self, url: Url, use_placeholder: UsePlaceholder)
+                                  -> Result<ImageOrMetadataAvailable, ImageState> {
+        let (sender, receiver) = ipc::channel().unwrap();
+        let msg = ImageCacheCommand::GetImageOrMetadataIfAvailable(url, use_placeholder, sender);
         self.chan.send(msg).unwrap();
         receiver.recv().unwrap()
     }
