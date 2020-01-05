@@ -418,6 +418,10 @@ extensions.registerSchemaAPI("tabs", "addon_parent", context => {
             window.gBrowser.pinTab(tab);
           }
 
+          if (active && !url) {
+            window.focusAndSelectUrlBar();
+          }
+
           if (createProperties.url && createProperties.url !== window.BROWSER_NEW_TAB_URL) {
             
             
