@@ -146,7 +146,7 @@ struct nsGridContainerFrame::TrackSize
     eMaxContentMinSizing =     0x4,
     eMinOrMaxContentMinSizing = eMinContentMinSizing | eMaxContentMinSizing,
     eIntrinsicMinSizing = eMinOrMaxContentMinSizing | eAutoMinSizing,
-    eFlexMinSizing =           0x8, 
+    
     eAutoMaxSizing =          0x10,
     eMinContentMaxSizing =    0x20,
     eMaxContentMaxSizing =    0x40,
@@ -1139,9 +1139,7 @@ struct nsGridContainerFrame::Tracks
 
 
 
-
   bool HasIntrinsicButNoFlexSizingInRange(const LineRange&      aRange,
-                                          SizingConstraint      aConstraint,
                                           TrackSize::StateBits* aState) const;
 
   
@@ -1367,11 +1365,9 @@ struct nsGridContainerFrame::Tracks
     MOZ_ASSERT(aAvailableSpace > 0 && aGrowableTracks.Length() > 0);
     uint32_t numGrowable = aGrowableTracks.Length();
     if (aSelector) {
-      DebugOnly<TrackSize::StateBits> withoutFlexMin =
-        TrackSize::StateBits(aSelector & ~TrackSize::eFlexMinSizing);
-      MOZ_ASSERT(withoutFlexMin == TrackSize::eIntrinsicMinSizing ||
-                 withoutFlexMin == TrackSize::eMinOrMaxContentMinSizing ||
-                 withoutFlexMin == TrackSize::eMaxContentMinSizing);
+      MOZ_ASSERT(aSelector == (aSelector & TrackSize::eIntrinsicMinSizing) &&
+                 (aSelector & TrackSize::eMaxContentMinSizing),
+                 "Should only get here for track sizing steps 2.1 to 2.3");
       
       numGrowable = MarkExcludedTracks(aPlan, numGrowable, aGrowableTracks,
                                        TrackSize::eMaxContentMinSizing,
@@ -3767,17 +3763,13 @@ nsGridContainerFrame::Tracks::CalculateSizes(
 bool
 nsGridContainerFrame::Tracks::HasIntrinsicButNoFlexSizingInRange(
   const LineRange&      aRange,
-  SizingConstraint      aConstraint,
   TrackSize::StateBits* aState) const
 {
   MOZ_ASSERT(!aRange.IsAuto(), "must have a definite range");
   const uint32_t start = aRange.mStart;
   const uint32_t end = aRange.mEnd;
   const TrackSize::StateBits selector =
-    TrackSize::eIntrinsicMinSizing |
-    TrackSize::eIntrinsicMaxSizing |
-    (aConstraint == SizingConstraint::eMinContent ? TrackSize::eFlexMinSizing :
-                                                    TrackSize::StateBits(0));
+    TrackSize::eIntrinsicMinSizing | TrackSize::eIntrinsicMaxSizing;
   bool foundIntrinsic = false;
   for (uint32_t i = start; i < end; ++i) {
     TrackSize::StateBits state = mSizes[i].mState;
@@ -3817,9 +3809,7 @@ nsGridContainerFrame::Tracks::ResolveIntrinsicSizeStep1(
       s = MinSize(aGridItem, aState, rc, wm, mAxis, &cache);
     }
     sz.mBase = std::max(sz.mBase, s);
-  } else if ((sz.mState & TrackSize::eMinContentMinSizing) ||
-             (aConstraint == SizingConstraint::eMinContent &&
-              (sz.mState & TrackSize::eFlexMinSizing))) {
+  } else if (sz.mState & TrackSize::eMinContentMinSizing) {
     auto s = MinContentContribution(aGridItem, aState, rc, wm, mAxis, &cache);
     sz.mBase = std::max(sz.mBase, s);
   } else if (sz.mState & TrackSize::eMaxContentMinSizing) {
@@ -4153,9 +4143,6 @@ nsGridContainerFrame::Tracks::ResolveIntrinsicSize(
   nsRenderingContext* rc = &aState.mRenderingContext;
   WritingMode wm = aState.mWM;
   uint32_t maxSpan = 0; 
-  TrackSize::StateBits flexMin =
-    aConstraint == SizingConstraint::eMinContent ? TrackSize::eFlexMinSizing :
-                                                   TrackSize::StateBits(0);
   iter.Reset();
   for (; !iter.AtEnd(); iter.Next()) {
     auto& gridItem = aGridItems[iter.GridItemIndex()];
@@ -4170,7 +4157,7 @@ nsGridContainerFrame::Tracks::ResolveIntrinsicSize(
       }
     } else {
       TrackSize::StateBits state = TrackSize::StateBits(0);
-      if (HasIntrinsicButNoFlexSizingInRange(lineRange, aConstraint, &state)) {
+      if (HasIntrinsicButNoFlexSizingInRange(lineRange, &state)) {
         
         maxSpan = std::max(maxSpan, span);
         if (span >= stateBitsPerSpan.Length()) {
@@ -4183,12 +4170,12 @@ nsGridContainerFrame::Tracks::ResolveIntrinsicSize(
         stateBitsPerSpan[span] |= state;
         CachedIntrinsicSizes cache;
         nscoord minSize = 0;
-        if (state & (flexMin | TrackSize::eIntrinsicMinSizing)) { 
+        if (state & TrackSize::eIntrinsicMinSizing) { 
           minSize = MinSize(gridItem, aState, rc, wm, mAxis, &cache);
         }
         nscoord minContent = 0;
-        if (state & (flexMin | TrackSize::eMinOrMaxContentMinSizing | 
-                     TrackSize::eIntrinsicMaxSizing)) {               
+        if (state & (TrackSize::eMinOrMaxContentMinSizing | 
+                     TrackSize::eIntrinsicMaxSizing)) {     
           minContent = MinContentContribution(gridItem, aState,
                                               rc, wm, mAxis, &cache);
         }
@@ -4229,7 +4216,7 @@ nsGridContainerFrame::Tracks::ResolveIntrinsicSize(
       }
 
       bool updatedBase = false; 
-      TrackSize::StateBits selector(flexMin | TrackSize::eIntrinsicMinSizing);
+      TrackSize::StateBits selector(TrackSize::eIntrinsicMinSizing);
       if (stateBitsPerSpan[span] & selector) {
         
         for (i = spanGroupStartIndex; i < spanGroupEndIndex; ++i) {
@@ -4251,7 +4238,7 @@ nsGridContainerFrame::Tracks::ResolveIntrinsicSize(
         }
       }
 
-      selector = flexMin | TrackSize::eMinOrMaxContentMinSizing;
+      selector = TrackSize::eMinOrMaxContentMinSizing;
       if (stateBitsPerSpan[span] & selector) {
         
         for (i = spanGroupStartIndex; i < spanGroupEndIndex; ++i) {
@@ -6335,8 +6322,6 @@ nsGridContainerFrame::TrackSize::Dump() const
     printf("min-content ");
   } else if (mState & eMaxContentMinSizing) {
     printf("max-content ");
-  } else if (mState & eFlexMinSizing) {
-    printf("flex ");
   }
 
   printf(" max:");
