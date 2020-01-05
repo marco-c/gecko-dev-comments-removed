@@ -326,8 +326,8 @@ private:
 
   
   
-  void Reset(TrackSet aTracks = TrackSet(TrackInfo::kAudioTrack,
-                                         TrackInfo::kVideoTrack));
+  void ResetDecode(TrackSet aTracks = TrackSet(TrackInfo::kAudioTrack,
+                                               TrackInfo::kVideoTrack));
 
 protected:
   virtual ~MediaDecoderStateMachine();
