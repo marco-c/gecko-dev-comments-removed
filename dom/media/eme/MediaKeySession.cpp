@@ -350,23 +350,36 @@ MediaKeySession::Load(const nsAString& aSessionId, ErrorResult& aRv)
     return nullptr;
   }
 
-  if (aSessionId.IsEmpty()) {
-    promise->MaybeReject(NS_ERROR_DOM_INVALID_ACCESS_ERR,
-                         NS_LITERAL_CSTRING("Trying to load a session with empty session ID"));
-    
-    EME_LOG("MediaKeySession[%p,''] Load() failed, no sessionId", this);
+  
+  if (IsClosed()) {
+    promise->MaybeReject(NS_ERROR_DOM_INVALID_STATE_ERR,
+                         NS_LITERAL_CSTRING("Session is closed in MediaKeySession.load()"));
+    EME_LOG("MediaKeySession[%p,'%s'] Load() failed, closed",
+      this, NS_ConvertUTF16toUTF8(aSessionId).get());
     return promise.forget();
   }
 
+  
+  
   if (!mUninitialized) {
-    promise->MaybeReject(NS_ERROR_DOM_INVALID_ACCESS_ERR,
+    promise->MaybeReject(NS_ERROR_DOM_INVALID_STATE_ERR,
                          NS_LITERAL_CSTRING("Session is already initialized in MediaKeySession.load()"));
     EME_LOG("MediaKeySession[%p,'%s'] Load() failed, uninitialized",
       this, NS_ConvertUTF16toUTF8(aSessionId).get());
     return promise.forget();
   }
 
+  
   mUninitialized = false;
+
+  
+  if (aSessionId.IsEmpty()) {
+    promise->MaybeReject(NS_ERROR_DOM_TYPE_ERR,
+                         NS_LITERAL_CSTRING("Trying to load a session with empty session ID"));
+    
+    EME_LOG("MediaKeySession[%p,''] Load() failed, no sessionId", this);
+    return promise.forget();
+  }
 
   
   
