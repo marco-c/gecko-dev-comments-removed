@@ -278,8 +278,7 @@ js::gc::GCRuntime::traceRuntimeForMinorGC(JSTracer* trc, AutoLockForExclusiveAcc
     
     gcstats::AutoPhase ap(stats(), gcstats::PHASE_MARK_ROOTS);
 
-    
-    jit::JitRuntime::TraceJitcodeGlobalTable(trc);
+    jit::JitRuntime::TraceJitcodeGlobalTableForMinorGC(trc);
 
     traceRuntimeCommon(trc, TraceRuntime, lock);
 }

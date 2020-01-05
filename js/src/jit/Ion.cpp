@@ -614,13 +614,13 @@ JitRuntime::Trace(JSTracer* trc, AutoLockForExclusiveAccess& lock)
 }
 
  void
-JitRuntime::TraceJitcodeGlobalTable(JSTracer* trc)
+JitRuntime::TraceJitcodeGlobalTableForMinorGC(JSTracer* trc)
 {
     if (trc->runtime()->geckoProfiler().enabled() &&
         trc->runtime()->hasJitRuntime() &&
         trc->runtime()->jitRuntime()->hasJitcodeGlobalTable())
     {
-        trc->runtime()->jitRuntime()->getJitcodeGlobalTable()->trace(trc);
+        trc->runtime()->jitRuntime()->getJitcodeGlobalTable()->traceForMinorGC(trc);
     }
 }
 
@@ -3325,11 +3325,12 @@ jit::Invalidate(JSContext* cx, JSScript* script, bool resetUses, bool cancelOffT
             filename = "<unknown>";
 
         
-        UniqueChars buf = JS_smprintf("Invalidate %s:%" PRIuSIZE, filename, script->lineno());
+        char* buf = JS_smprintf("Invalidate %s:%" PRIuSIZE, filename, script->lineno());
 
         
         if (buf) {
-            cx->runtime()->geckoProfiler().markEvent(buf.get());
+            cx->runtime()->geckoProfiler().markEvent(buf);
+            JS_smprintf_free(buf);
         }
     }
 

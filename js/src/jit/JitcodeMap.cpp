@@ -528,6 +528,12 @@ JitcodeGlobalTable::addEntry(const JitcodeGlobalEntry& entry, JSRuntime* rt)
     }
     skiplistSize_++;
     
+
+    
+    
+    if (entry.canHoldNurseryPointers())
+        addToNurseryList(&newEntry->ionEntry());
+
     return true;
 }
 
@@ -536,6 +542,9 @@ JitcodeGlobalTable::removeEntry(JitcodeGlobalEntry& entry, JitcodeGlobalEntry** 
                                 JSRuntime* rt)
 {
     MOZ_ASSERT(!TlsContext.get()->isProfilerSamplingEnabled());
+
+    if (entry.canHoldNurseryPointers())
+        removeFromNurseryList(&entry.ionEntry());
 
     
     for (int level = entry.tower_->height() - 1; level >= 0; level--) {
@@ -715,8 +724,12 @@ void
 JitcodeGlobalTable::setAllEntriesAsExpired(JSRuntime* rt)
 {
     AutoSuppressProfilerSampling suppressSampling(TlsContext.get());
-    for (Range r(*this); !r.empty(); r.popFront())
-        r.front()->setAsExpired();
+    for (Range r(*this); !r.empty(); r.popFront()) {
+        auto entry = r.front();
+        if (entry->canHoldNurseryPointers())
+            removeFromNurseryList(&entry->ionEntry());
+        entry->setAsExpired();
+    }
 }
 
 struct Unconditionally
@@ -726,16 +739,21 @@ struct Unconditionally
 };
 
 void
-JitcodeGlobalTable::trace(JSTracer* trc)
+JitcodeGlobalTable::traceForMinorGC(JSTracer* trc)
 {
-    
     
 
     MOZ_ASSERT(trc->runtime()->geckoProfiler().enabled());
+    MOZ_ASSERT(JS::CurrentThreadIsHeapMinorCollecting());
 
     AutoSuppressProfilerSampling suppressSampling(TlsContext.get());
-    for (Range r(*this); !r.empty(); r.popFront())
-        r.front()->trace<Unconditionally>(trc);
+    JitcodeGlobalEntry::IonEntry* entry = nurseryEntries_;
+    while (entry) {
+        entry->trace<Unconditionally>(trc);
+        JitcodeGlobalEntry::IonEntry* prev = entry;
+        entry = entry->nextNursery_;
+        removeFromNurseryList(prev);
+    }
 }
 
 struct IfUnmarked
@@ -797,6 +815,8 @@ JitcodeGlobalTable::markIteratively(GCMarker* marker)
         
         
         if (!entry->isSampled(gen, lapCount)) {
+            if (entry->canHoldNurseryPointers())
+                removeFromNurseryList(&entry->ionEntry());
             entry->setAsExpired();
             if (!entry->baseEntry().isJitcodeMarkedFromAnyThread(marker->runtime()))
                 continue;
