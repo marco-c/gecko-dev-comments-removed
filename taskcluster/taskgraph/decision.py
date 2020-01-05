@@ -9,6 +9,8 @@ from __future__ import absolute_import, print_function, unicode_literals
 import os
 import json
 import logging
+
+import time
 import yaml
 
 from .generator import TaskGraphGenerator
@@ -124,6 +126,12 @@ def get_decision_parameters(options):
     
     if '@' not in parameters['owner']:
         parameters['owner'] += '@noreply.mozilla.org'
+
+    
+    parameters['build_date'] = parameters['pushdate'] or int(time.time())
+    
+    parameters['moz_build_date'] = time.strftime("%Y%m%d%H%M%S",
+                                                 time.gmtime(parameters['build_date']))
 
     project = parameters['project']
     try:
