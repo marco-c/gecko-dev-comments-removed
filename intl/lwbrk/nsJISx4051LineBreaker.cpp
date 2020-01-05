@@ -12,6 +12,8 @@
 #include "nsTArray.h"
 #include "nsUnicodeProperties.h"
 
+using namespace mozilla::unicode;
+
 
 
 
@@ -629,15 +631,36 @@ public:
 
 
 
-#define CONSERVATIVE_BREAK_RANGE 6
+
+
+
+#define CONSERVATIVE_RANGE_LETTER 2
+#define CONSERVATIVE_RANGE_OTHER  6
 
   bool UseConservativeBreaking(uint32_t aOffset = 0) {
     if (mHasCJKChar)
       return false;
     uint32_t index = mIndex + aOffset;
-    bool result = (index < CONSERVATIVE_BREAK_RANGE ||
-                     mLength - index < CONSERVATIVE_BREAK_RANGE ||
-                     index - mLastBreakIndex < CONSERVATIVE_BREAK_RANGE);
+
+    
+    
+    uint32_t conservativeRangeStart, conservativeRangeEnd;
+    if (index < mLength &&
+        GetGenCategory(GetCharAt(index)) == nsIUGenCategory::kLetter) {
+      
+      
+      
+      
+      
+      conservativeRangeEnd = CONSERVATIVE_RANGE_LETTER;
+      conservativeRangeStart = CONSERVATIVE_RANGE_LETTER + 1;
+    } else {
+      conservativeRangeEnd = conservativeRangeStart = CONSERVATIVE_RANGE_OTHER;
+    }
+
+    bool result = (index < conservativeRangeStart ||
+                     mLength - index < conservativeRangeEnd ||
+                     index - mLastBreakIndex < conservativeRangeStart);
     if (result || !mHasNonbreakableSpace)
       return result;
 
@@ -645,12 +668,12 @@ public:
     
 
     
-    for (uint32_t i = index; index - CONSERVATIVE_BREAK_RANGE < i; --i) {
+    for (uint32_t i = index; index - conservativeRangeStart < i; --i) {
       if (IS_NONBREAKABLE_SPACE(GetCharAt(i - 1)))
         return true;
     }
     
-    for (uint32_t i = index + 1; i < index + CONSERVATIVE_BREAK_RANGE; ++i) {
+    for (uint32_t i = index + 1; i < index + conservativeRangeEnd; ++i) {
       if (IS_NONBREAKABLE_SPACE(GetCharAt(i)))
         return true;
     }
