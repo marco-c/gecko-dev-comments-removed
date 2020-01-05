@@ -398,9 +398,11 @@ function findChildShell(aDocument, aDocShell, aSoughtURI) {
 var gPopupBlockerObserver = {
   _reportButton: null,
 
-  onReportButtonClick: function (aEvent)
+  onReportButtonMousedown: function (aEvent)
   {
-    if (aEvent.button != 0 || aEvent.target != this._reportButton)
+    
+    
+    if (aEvent.button != 0 || aEvent.target != this._reportButton || this.isPopupHidingTick)
       return;
 
     document.getElementById("blockedPopupOptions")
@@ -597,6 +599,9 @@ var gPopupBlockerObserver = {
   onPopupHiding: function (aEvent) {
     if (aEvent.target.anchorNode.id == "page-report-button")
       aEvent.target.anchorNode.removeAttribute("open");
+
+    this.isPopupHidingTick = true;
+    setTimeout(() => this.isPopupHidingTick = false, 0);
 
     let item = aEvent.target.lastChild;
     while (item && item.getAttribute("observes") != "blockedPopupsSeparator") {
