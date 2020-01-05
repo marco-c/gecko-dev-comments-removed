@@ -951,7 +951,8 @@ class Parser final : private JS::AutoGCRooter, public StrictModeGetter
 
 
 
-    JSFunction* newFunction(HandleAtom atom, FunctionSyntaxKind kind, GeneratorKind generatorKind,
+    JSFunction* newFunction(HandleAtom atom, FunctionSyntaxKind kind,
+                            GeneratorKind generatorKind, FunctionAsyncKind asyncKind,
                             HandleObject proto);
 
     void trace(JSTracer* trc);
@@ -1010,12 +1011,14 @@ class Parser final : private JS::AutoGCRooter, public StrictModeGetter
     
     
     Node standaloneFunctionBody(HandleFunction fun, HandleScope enclosingScope,
-                                Handle<PropertyNameVector> formals, GeneratorKind generatorKind,
+                                Handle<PropertyNameVector> formals,
+                                GeneratorKind generatorKind, FunctionAsyncKind asyncKind,
                                 Directives inheritedDirectives, Directives* newDirectives);
 
     
     
-    Node standaloneLazyFunction(HandleFunction fun, bool strict, GeneratorKind generatorKind);
+    Node standaloneLazyFunction(HandleFunction fun, bool strict,
+                                GeneratorKind generatorKind, FunctionAsyncKind asyncKind);
 
     
     
@@ -1212,7 +1215,8 @@ class Parser final : private JS::AutoGCRooter, public StrictModeGetter
                            Node funcpn);
 
     Node functionDefinition(InHandling inHandling, YieldHandling yieldHandling, HandleAtom name,
-                            FunctionSyntaxKind kind, GeneratorKind generatorKind,
+                            FunctionSyntaxKind kind,
+                            GeneratorKind generatorKind, FunctionAsyncKind asyncKind,
                             InvokedPrediction invoked = PredictUninvoked);
 
     
@@ -1303,11 +1307,13 @@ class Parser final : private JS::AutoGCRooter, public StrictModeGetter
     bool skipLazyInnerFunction(Node pn, FunctionSyntaxKind kind, bool tryAnnexB);
     bool innerFunction(Node pn, ParseContext* outerpc, HandleFunction fun,
                        InHandling inHandling, YieldHandling yieldHandling,
-                       FunctionSyntaxKind kind, GeneratorKind generatorKind, bool tryAnnexB,
+                       FunctionSyntaxKind kind,
+                       GeneratorKind generatorKind, FunctionAsyncKind asyncKind, bool tryAnnexB,
                        Directives inheritedDirectives, Directives* newDirectives);
     bool trySyntaxParseInnerFunction(Node pn, HandleFunction fun, InHandling inHandling,
                                      YieldHandling yieldHandling, FunctionSyntaxKind kind,
-                                     GeneratorKind generatorKind, bool tryAnnexB,
+                                     GeneratorKind generatorKind, FunctionAsyncKind asyncKind,
+                                     bool tryAnnexB,
                                      Directives inheritedDirectives, Directives* newDirectives);
     bool finishFunctionScopes();
     bool finishFunction();
