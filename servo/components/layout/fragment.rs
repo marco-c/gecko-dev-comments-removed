@@ -594,9 +594,8 @@ impl Fragment {
 
     
     
-    
     #[inline]
-    fn border_width(&self) -> LogicalMargin<Au> {
+    pub fn border_width(&self) -> LogicalMargin<Au> {
         let style_border_width = match self.specific {
             ScannedTextFragment(_) => LogicalMargin::zero(self.style.writing_mode),
             _ => self.style().logical_border_width(),
