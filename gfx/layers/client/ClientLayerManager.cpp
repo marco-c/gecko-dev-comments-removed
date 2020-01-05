@@ -279,12 +279,6 @@ ClientLayerManager::EndTransactionInternal(DrawPaintedLayerCallback aCallback,
     js::ProfileEntry::Category::GRAPHICS);
 
   if (!mForwarder || !mForwarder->IPCOpen()) {
-    gfxCriticalError() << "LayerManager::EndTransaction while IPC is dead.";
-    
-    
-    
-    
-    
     return false;
   }
 
