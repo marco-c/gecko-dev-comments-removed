@@ -61,16 +61,13 @@ CrossProcessProfilerController::CrossProcessProfilerController(
   ProfilerControllingProcess* aProcess)
   : mProcess(aProcess)
   , mObserver(new ProfilerObserver(*this))
-  , mIsProfilerActive(false)
 {
-  nsCOMPtr<nsIProfiler> profiler(do_GetService("@mozilla.org/tools/profiler;1"));
-  bool profilerActive = false;
-  DebugOnly<nsresult> rv = profiler->IsActive(&profilerActive);
-  MOZ_ASSERT(NS_SUCCEEDED(rv));
-
-  if (profilerActive) {
+  if (profiler_is_active()) {
+    
+    
     nsCOMPtr<nsIProfilerStartParams> currentProfilerParams;
-    rv = profiler->GetStartParams(getter_AddRefs(currentProfilerParams));
+    nsCOMPtr<nsIProfiler> profiler(do_GetService("@mozilla.org/tools/profiler;1"));
+    DebugOnly<nsresult> rv = profiler->GetStartParams(getter_AddRefs(currentProfilerParams));
     MOZ_ASSERT(NS_SUCCEEDED(rv));
 
     StartProfiler(currentProfilerParams);
@@ -87,7 +84,7 @@ CrossProcessProfilerController::CrossProcessProfilerController(
 
 CrossProcessProfilerController::~CrossProcessProfilerController()
 {
-  if (mIsProfilerActive && !mProfile.IsEmpty()) {
+  if (!mProfile.IsEmpty()) {
     profiler_OOP_exit_profile(mProfile);
   }
 
@@ -116,8 +113,6 @@ CrossProcessProfilerController::StartProfiler(nsIProfilerStartParams* aParams)
   ipcParams.threadFilters() = aParams->GetThreadFilterNames();
 
   mProcess->SendStartProfiler(ipcParams);
-
-  mIsProfilerActive = true;
 }
 
 void
@@ -129,10 +124,8 @@ CrossProcessProfilerController::Observe(nsISupports* aSubject,
     
     
     
-    if (mIsProfilerActive) {
-      profiler_will_gather_OOP_profile();
-      mProcess->SendGatherProfile();
-    }
+    profiler_will_gather_OOP_profile();
+    mProcess->SendGatherProfile();
   }
   else if (!strcmp(aTopic, "profiler-subprocess")) {
     
@@ -155,7 +148,6 @@ CrossProcessProfilerController::Observe(nsISupports* aSubject,
     StartProfiler(params);
   }
   else if (!strcmp(aTopic, "profiler-stopped")) {
-    mIsProfilerActive = false;
     mProcess->SendStopProfiler();
   }
   else if (!strcmp(aTopic, "profiler-paused")) {
@@ -171,9 +163,6 @@ CrossProcessProfilerController::Observe(nsISupports* aSubject,
 void
 CrossProcessProfilerController::RecvProfile(const nsCString& aProfile)
 {
-  if (NS_WARN_IF(!mIsProfilerActive)) {
-    return;
-  }
   
   mProfile = aProfile;
   
