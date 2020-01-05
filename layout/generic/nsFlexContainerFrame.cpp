@@ -2781,7 +2781,11 @@ CrossAxisPositionTracker::
   
   mAlignContent &= ~NS_STYLE_ALIGN_FLAG_BITS;
 
-  if (!aFirstLine->getNext()) {
+  const bool isSingleLine =
+    NS_STYLE_FLEX_WRAP_NOWRAP == aReflowInput.mStylePosition->mFlexWrap;
+  if (isSingleLine) {
+    MOZ_ASSERT(!aFirstLine->getNext(),
+               "If we're styled as single-line, we should only have 1 line");
     
     
     
