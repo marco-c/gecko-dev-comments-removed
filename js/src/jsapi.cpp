@@ -1884,7 +1884,7 @@ JS_GlobalObjectTraceHook(JSTracer* trc, JSObject* global)
 
     
     
-    global->compartment()->trace(trc);
+    global->compartment()->traceGlobal(trc);
 
     if (JSTraceOp trace = global->compartment()->creationOptions().getTrace())
         trace(trc, global);

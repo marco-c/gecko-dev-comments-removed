@@ -706,8 +706,12 @@ JSCompartment::traceIncomingCrossCompartmentEdgesForZoneGC(JSTracer* trc)
 }
 
 void
-JSCompartment::trace(JSTracer* trc)
+JSCompartment::traceGlobal(JSTracer* trc)
 {
+    
+    
+    
+
     savedStacks_.trace(trc);
 
     
@@ -827,6 +831,12 @@ void
 JSCompartment::sweepSavedStacks()
 {
     savedStacks_.sweep();
+}
+
+void
+JSCompartment::sweepTemplateLiteralMap()
+{
+    templateLiteralMap_.sweep();
 }
 
 void

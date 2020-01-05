@@ -681,7 +681,7 @@ struct JSCompartment
 
 
 
-    void trace(JSTracer* trc);
+    void traceGlobal(JSTracer* trc);
     
 
 
@@ -707,6 +707,7 @@ struct JSCompartment
 
     void sweepCrossCompartmentWrappers();
     void sweepSavedStacks();
+    void sweepTemplateLiteralMap();
     void sweepGlobalObject(js::FreeOp* fop);
     void sweepSelfHostingScriptSource();
     void sweepJitCompartment(js::FreeOp* fop);
