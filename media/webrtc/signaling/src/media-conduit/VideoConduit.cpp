@@ -271,9 +271,11 @@ bool WebrtcVideoConduit::SetLocalSSRCs(const std::vector<unsigned int> & aSSRCs)
     return false;
   }
 
+  MutexAutoLock lock(mCodecMutex);
+  
+  
+  DeleteSendStream();
   if (wasTransmitting) {
-    MutexAutoLock lock(mCodecMutex);
-    DeleteSendStream();
     if (StartTransmitting() != kMediaConduitNoError) {
       return false;
     }
