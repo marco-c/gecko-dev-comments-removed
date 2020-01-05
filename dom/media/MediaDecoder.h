@@ -252,8 +252,6 @@ protected:
 
 public:
   
-  void SetMediaSeekable(bool aMediaSeekable);
-  
   void SetMediaSeekableOnlyInBufferedRanges(bool aMediaSeekableOnlyInBufferedRanges);
 
   
@@ -572,7 +570,7 @@ private:
 
   void OnMediaNotSeekable()
   {
-    SetMediaSeekable(false);
+    mMediaSeekable = false;
   }
 
   void FinishShutdown();
