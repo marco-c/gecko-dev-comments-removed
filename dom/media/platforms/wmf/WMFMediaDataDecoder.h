@@ -135,6 +135,9 @@ private:
 
   MozPromiseHolder<DecodePromise> mDecodePromise;
   MozPromiseHolder<DecodePromise> mDrainPromise;
+  
+  
+  bool mDrained = true;
 
   
   bool mHasSuccessfulOutput = false;
