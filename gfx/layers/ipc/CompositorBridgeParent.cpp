@@ -289,7 +289,6 @@ CompositorLoop()
 
 CompositorBridgeParent::CompositorBridgeParent(CSSToLayoutDeviceScale aScale,
                                                const TimeDuration& aVsyncRate,
-                                               const CompositorOptions& aOptions,
                                                bool aUseExternalSurfaceSize,
                                                const gfx::IntSize& aSurfaceSize)
   : mWidget(nullptr)
@@ -300,7 +299,6 @@ CompositorBridgeParent::CompositorBridgeParent(CSSToLayoutDeviceScale aScale,
   , mPaused(false)
   , mUseExternalSurfaceSize(aUseExternalSurfaceSize)
   , mEGLSurfaceSize(aSurfaceSize)
-  , mOptions(aOptions)
   , mPauseCompositionMonitor("PauseCompositionMonitor")
   , mResumeCompositionMonitor("ResumeCompositionMonitor")
   , mResetCompositorMonitor("ResetCompositorMonitor")
@@ -322,11 +320,12 @@ CompositorBridgeParent::CompositorBridgeParent(CSSToLayoutDeviceScale aScale,
 
 void
 CompositorBridgeParent::InitSameProcess(widget::CompositorWidget* aWidget,
-                                        const uint64_t& aLayerTreeId)
+                                        const uint64_t& aLayerTreeId,
+                                        bool aUseAPZ)
 {
   mWidget = aWidget;
   mRootLayerTreeID = aLayerTreeId;
-  if (mOptions.UseAPZ()) {
+  if (aUseAPZ) {
     mApzcTreeManager = new APZCTreeManager();
   }
 
@@ -1048,9 +1047,6 @@ PAPZCTreeManagerParent*
 CompositorBridgeParent::AllocPAPZCTreeManagerParent(const uint64_t& aLayersId)
 {
   
-  MOZ_ASSERT(mOptions.UseAPZ());
-
-  
   MOZ_ASSERT(aLayersId == 0);
 
   
@@ -1102,12 +1098,11 @@ CompositorBridgeParent::DeallocPAPZParent(PAPZParent* aActor)
 }
 
 mozilla::ipc::IPCResult
-CompositorBridgeParent::RecvGetCompositorOptions(const uint64_t& aLayersId,
-                                                 CompositorOptions* aOptions)
+CompositorBridgeParent::RecvAsyncPanZoomEnabled(const uint64_t& aLayersId, bool* aHasAPZ)
 {
   
   MOZ_ASSERT(aLayersId == 0);
-  *aOptions = mOptions;
+  *aHasAPZ = AsyncPanZoomEnabled();
   return IPC_OK();
 }
 
@@ -1526,10 +1521,7 @@ CompositorBridgeParent::RecvAdoptChild(const uint64_t& child)
     MonitorAutoLock lock(*sIndirectLayerTreesLock);
     NotifyChildCreated(child);
     if (sIndirectLayerTrees[child].mLayerTree) {
-      sIndirectLayerTrees[child].mLayerTree->mLayerManager = mLayerManager;
-    }
-    if (sIndirectLayerTrees[child].mRoot) {
-      sIndirectLayerTrees[child].mRoot->AsHostLayer()->SetLayerManager(static_cast<HostLayerManager*>(mLayerManager.get()));
+      sIndirectLayerTrees[child].mLayerTree->SetLayerManager(mLayerManager);
     }
     parent = sIndirectLayerTrees[child].mApzcTreeManagerParent;
   }
@@ -1656,7 +1648,7 @@ CompositorBridgeParent::AllocPCompositorWidgetParent(const CompositorWidgetInitD
   }
 
   widget::CompositorWidgetParent* widget =
-    new widget::CompositorWidgetParent(aInitData, mOptions);
+    new widget::CompositorWidgetParent(aInitData);
   widget->AddRef();
 
   
