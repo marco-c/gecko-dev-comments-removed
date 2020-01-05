@@ -51,8 +51,8 @@ use ipc_channel::ipc::{IpcReceiver, IpcSender};
 use layers::geometry::DevicePixel;
 use libc::c_void;
 use msg::constellation_msg::{FrameId, FrameType, Image, Key, KeyModifiers, KeyState, LoadData};
-use msg::constellation_msg::{NavigationDirection, PipelineId, ReferrerPolicy};
-use msg::constellation_msg::{PipelineNamespaceId, SubpageId, WindowSizeType};
+use msg::constellation_msg::{PipelineId, PipelineNamespaceId, ReferrerPolicy};
+use msg::constellation_msg::{SubpageId, TraversalDirection, WindowSizeType};
 use net_traits::bluetooth_thread::BluetoothMethodMsg;
 use net_traits::image_cache_thread::ImageCacheThread;
 use net_traits::response::HttpsState;
@@ -622,7 +622,7 @@ pub enum ConstellationMsg {
     
     LoadUrl(PipelineId, LoadData),
     
-    Navigate(Option<(PipelineId, SubpageId)>, NavigationDirection),
+    TraverseHistory(Option<PipelineId>, TraversalDirection),
     
     WindowSize(WindowSizeData, WindowSizeType),
     
