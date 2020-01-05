@@ -74,6 +74,14 @@ public:
 
 
 
+
+
+    already_AddRefed<gfxContext> CreateReferenceRenderingContext();
+
+    
+
+
+
     static int32_t AppUnitsPerCSSPixel() { return mozilla::AppUnitsPerCSSPixel(); }
 
     
@@ -261,6 +269,13 @@ public:
 private:
     
     ~nsDeviceContext();
+
+    
+
+
+
+    already_AddRefed<gfxContext>
+    CreateRenderingContextCommon(bool aWantReferenceContext);
 
     void SetDPI(double* aScale = nullptr);
     void ComputeClientRectUsingScreen(nsRect *outRect);
