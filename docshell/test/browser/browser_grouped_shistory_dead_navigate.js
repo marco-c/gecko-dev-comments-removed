@@ -1,6 +1,7 @@
 add_task(function* () {
   yield SpecialPowers.pushPrefEnv({
-    set: [["browser.groupedhistory.enabled", true]]
+    set: [["browser.groupedhistory.enabled", true],
+          ["dom.ipc.processCount", 1]]
   });
 
   
