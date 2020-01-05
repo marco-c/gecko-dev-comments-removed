@@ -23,11 +23,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "PageThumbs",
 XPCOMUtils.defineLazyModuleGetter(this, "BinarySearch",
   "resource://gre/modules/BinarySearch.jsm");
 
-XPCOMUtils.defineLazyGetter(this, "gPrincipal", function() {
-  let uri = Services.io.newURI("about:newtab");
-  return Services.scriptSecurityManager.createCodebasePrincipal(uri, {});
-});
-
 XPCOMUtils.defineLazyGetter(this, "gCryptoHash", function() {
   return Cc["@mozilla.org/security/hash;1"].createInstance(Ci.nsICryptoHash);
 });
@@ -1351,8 +1346,12 @@ var LinkChecker = {
 
   _doCheckLoadURI: function Links_doCheckLoadURI(aURI) {
     try {
+      
+      
+      
+      let systemPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
       Services.scriptSecurityManager.
-        checkLoadURIStrWithPrincipal(gPrincipal, aURI, this.flags);
+        checkLoadURIStrWithPrincipal(systemPrincipal, aURI, this.flags);
       return true;
     } catch (e) {
       

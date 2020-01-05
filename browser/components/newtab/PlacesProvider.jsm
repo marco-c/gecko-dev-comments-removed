@@ -22,51 +22,13 @@ XPCOMUtils.defineLazyGetter(this, "EventEmitter", function() {
   return EventEmitter;
 });
 
-XPCOMUtils.defineLazyGetter(this, "gPrincipal", function() {
-  let uri = Services.io.newURI("about:newtab");
-  return Services.scriptSecurityManager.getNoAppCodebasePrincipal(uri);
-});
-
 XPCOMUtils.defineLazyModuleGetter(this, "Task",
                                   "resource://gre/modules/Task.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "NewTabUtils",
+                                  "resource://gre/modules/NewTabUtils.jsm");
 
 
 const HISTORY_RESULTS_LIMIT = 100;
-
-
-
-
-
-
-let LinkChecker = {
-  _cache: new Map(),
-
-  get flags() {
-    return Ci.nsIScriptSecurityManager.DISALLOW_INHERIT_PRINCIPAL |
-           Ci.nsIScriptSecurityManager.DONT_REPORT_ERRORS;
-  },
-
-  checkLoadURI: function LinkChecker_checkLoadURI(aURI) {
-    if (!this._cache.has(aURI)) {
-      this._cache.set(aURI, this._doCheckLoadURI(aURI));
-    }
-
-    return this._cache.get(aURI);
-  },
-
-  _doCheckLoadURI: function LinkChecker_doCheckLoadURI(aURI) {
-    let result = false;
-    try {
-      Services.scriptSecurityManager.
-        checkLoadURIStrWithPrincipal(gPrincipal, aURI, this.flags);
-      result = true;
-    } catch (e) {
-      
-      Cu.reportError(e);
-    }
-    return result;
-  }
-};
 
 
 
@@ -105,7 +67,8 @@ Links.prototype = {
                            aNewFrecency, aGUID, aHidden, aLastVisitDate) { 
       
       
-      if (!aHidden && aLastVisitDate) {
+      if (!aHidden && aLastVisitDate &&
+          NewTabUtils.linkChecker.checkLoadURI(aURI.spec)) {
         gLinks.emit("linkChanged", {
           url: aURI.spec,
           frecency: aNewFrecency,
@@ -122,10 +85,12 @@ Links.prototype = {
     },
 
     onTitleChanged: function historyObserver_onTitleChanged(aURI, aNewTitle) {
-      gLinks.emit("linkChanged", {
-        url: aURI.spec,
-        title: aNewTitle
-      });
+      if (NewTabUtils.linkChecker.checkLoadURI(aURI.spec)) {
+        gLinks.emit("linkChanged", {
+          url: aURI.spec,
+          title: aNewTitle
+        });
+      }
     },
 
     QueryInterface: XPCOMUtils.generateQI([Ci.nsINavHistoryObserver,
@@ -184,7 +149,7 @@ Links.prototype = {
                   params: {limit: this.maxNumLinks}
                 });
 
-    return links.filter(link => LinkChecker.checkLoadURI(link.url));
+    return links.filter(link => NewTabUtils.linkChecker.checkLoadURI(link.url));
   }),
 
   
@@ -247,6 +212,10 @@ Links.prototype = {
 const gLinks = new Links(); 
 
 let PlacesProvider = {
-  LinkChecker,
   links: gLinks,
 };
+
+
+XPCOMUtils.defineLazyGetter(PlacesProvider, "LinkChecker",
+  () => NewTabUtils.linkChecker);
+
