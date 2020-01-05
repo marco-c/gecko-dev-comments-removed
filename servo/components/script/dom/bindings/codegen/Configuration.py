@@ -173,6 +173,7 @@ class Descriptor(DescriptorProvider):
 
         
         ifaceName = self.interface.identifier.name
+        typeName = desc.get('nativeType', ifaceName)
 
         
         
@@ -184,12 +185,13 @@ class Descriptor(DescriptorProvider):
             self.nativeType = ty
         else:
             self.needsRooting = True
-            self.returnType = "Root<%s>" % ifaceName
-            self.argumentType = "&%s" % ifaceName
-            self.nativeType = "*const %s" % ifaceName
+            self.returnType = "Root<%s>" % typeName
+            self.argumentType = "&%s" % typeName
+            self.nativeType = "*const %s" % typeName
 
-        self.concreteType = ifaceName
+        self.concreteType = typeName
         self.register = desc.get('register', True)
+        self.path = desc.get('path', 'dom::types::%s' % typeName)
         self.outerObjectHook = desc.get('outerObjectHook', 'None')
         self.proxy = False
         self.weakReferenceable = desc.get('weakReferenceable', False)
