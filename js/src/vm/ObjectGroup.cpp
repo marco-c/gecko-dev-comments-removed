@@ -313,13 +313,6 @@ JSObject::makeLazyGroup(JSContext* cx, HandleObject obj)
     MOZ_ASSERT(cx->compartment() == obj->compartment());
 
     
-    if (obj->is<JSFunction>() && obj->as<JSFunction>().isInterpretedLazy()) {
-        RootedFunction fun(cx, &obj->as<JSFunction>());
-        if (!JSFunction::getOrCreateScript(cx, fun))
-            return nullptr;
-    }
-
-    
     
     ObjectGroupFlags initialFlags = OBJECT_FLAG_SINGLETON | OBJECT_FLAG_NON_PACKED;
 
