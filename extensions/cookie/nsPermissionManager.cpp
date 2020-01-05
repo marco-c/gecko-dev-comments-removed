@@ -654,13 +654,11 @@ nsPermissionManager::PermissionKey::CreateFromPrincipal(nsIPrincipal* aPrincipal
     nsAutoCString permissionKey;
     GetKeyForPrincipal(aPrincipal, permissionKey);
 
-    
-    
-    
-    
-    NS_ASSERTION(gPermissionManager->mAvailablePermissionKeys.Contains(permissionKey),
-                 nsPrintfCString("This content process hasn't received the "
+    if (!gPermissionManager->mAvailablePermissionKeys.Contains(permissionKey)) {
+      NS_WARNING(nsPrintfCString("This content process hasn't received the "
                                  "permissions for %s yet", permissionKey.get()).get());
+      MOZ_CRASH("The content process hasn't recieved permissions for an origin yet.");
+    }
   }
 #endif
 

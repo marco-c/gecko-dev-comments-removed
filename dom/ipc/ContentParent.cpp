@@ -5111,13 +5111,18 @@ void
 ContentParent::EnsurePermissionsByKey(const nsCString& aKey)
 {
 #ifdef MOZ_PERMISSIONS
+  
+  
+  
+  
+  
+  nsCOMPtr<nsIPermissionManager> permManager =
+    services::GetPermissionManager();
+
   if (mActivePermissionKeys.Contains(aKey)) {
     return;
   }
   mActivePermissionKeys.PutEntry(aKey);
-
-  nsCOMPtr<nsIPermissionManager> permManager =
-    services::GetPermissionManager();
 
   nsTArray<IPC::Permission> perms;
   nsresult rv = permManager->GetPermissionsWithKey(aKey, perms);
