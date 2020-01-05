@@ -177,6 +177,13 @@ function defineCohort() {
 
   
   
+  
+  if (cohortPrefix) {
+    cohortPrefix = "webextensions-";
+  }
+
+  
+  
   let BUCKETS = {
     1: .25,
     2: .5,
@@ -187,7 +194,7 @@ function defineCohort() {
   let multiUserSample = getUserSample(true);
   for (let sampleName of Object.getOwnPropertyNames(BUCKETS)) {
     if (multiUserSample < BUCKETS[sampleName]) {
-      setCohort(`multiBucket${sampleName}`);
+      setCohort(`${cohortPrefix}multiBucket${sampleName}`);
       Preferences.set(PREF_E10S_PROCESSCOUNT + ".web", sampleName);
       break;
     }
