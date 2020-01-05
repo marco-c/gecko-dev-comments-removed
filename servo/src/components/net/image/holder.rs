@@ -8,8 +8,8 @@ use local_image_cache::LocalImageCache;
 
 use std::util::replace;
 use geom::size::Size2D;
-use extra::net::url::Url;
-use extra::arc::ARC;
+use extra::url::Url;
+use extra::arc::Arc;
 
 
 
@@ -19,7 +19,7 @@ use extra::arc::ARC;
 
 pub struct ImageHolder {
     url: Url,
-    image: Option<ARC<~Image>>,
+    image: Option<Arc<~Image>>,
     cached_size: Size2D<int>,
     local_image_cache: @mut LocalImageCache,
 }
@@ -65,7 +65,7 @@ impl ImageHolder {
         }
     }
 
-    pub fn get_image(&mut self) -> Option<ARC<~Image>> {
+    pub fn get_image(&mut self) -> Option<Arc<~Image>> {
         debug!("get_image() %?", self.url);
 
         // If this is the first time we've called this function, load

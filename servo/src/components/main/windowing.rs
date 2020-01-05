@@ -51,21 +51,21 @@ pub trait ApplicationMethods {
 
 pub trait WindowMethods<A> {
     
-    pub fn new(app: &A) -> @mut Self;
+    fn new(app: &A) -> @mut Self;
     
-    pub fn size(&self) -> Size2D<f32>;
+    fn size(&self) -> Size2D<f32>;
     
-    pub fn present(&mut self);
+    fn present(&mut self);
  
     
-    pub fn recv(@mut self) -> WindowEvent;
+    fn recv(@mut self) -> WindowEvent;
 
     
-    pub fn set_ready_state(@mut self, ready_state: ReadyState);
+    fn set_ready_state(@mut self, ready_state: ReadyState);
     
-    pub fn set_render_state(@mut self, render_state: RenderState);
+    fn set_render_state(@mut self, render_state: RenderState);
 
     
-    pub fn hidpi_factor(@mut self) -> f32;
+    fn hidpi_factor(@mut self) -> f32;
 }
 

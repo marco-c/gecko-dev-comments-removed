@@ -6,7 +6,7 @@
 
 
 use std::comm::{Chan, SharedChan};
-use extra::net::url::Url;
+use extra::url::Url;
 use extra::future::Future;
 use geom::size::Size2D;
 

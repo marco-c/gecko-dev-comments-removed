@@ -14,7 +14,7 @@ use geom::size::Size2D;
 use geom::point::Point2D;
 use gfx::geometry::Au;
 use newcss::stylesheet::Stylesheet;
-use extra::net::url::Url;
+use extra::url::Url;
 
 
 
@@ -62,7 +62,7 @@ impl DocumentDamageLevel {
     
     
     
-    fn add(&mut self, new_damage: DocumentDamageLevel) {
+    pub fn add(&mut self, new_damage: DocumentDamageLevel) {
         match (*self, new_damage) {
             (ReflowDocumentDamage, new_damage) => *self = new_damage,
             (MatchSelectorsDocumentDamage, _) => *self = MatchSelectorsDocumentDamage,
