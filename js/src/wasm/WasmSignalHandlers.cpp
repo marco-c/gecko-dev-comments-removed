@@ -858,12 +858,12 @@ HandleFault(PEXCEPTION_POINTERS exception)
         return false;
     AutoSetHandlingSegFault handling(cx);
 
-    WasmActivation* activation = cx->wasmActivationStack();
-    if (!activation)
-        return false;
-
     const Code* code = activation->compartment()->wasm.lookupCode(pc);
     if (!code)
+        return false;
+
+    WasmActivation* activation = MaybeActiveActivation(cx);
+    if (!activation)
         return false;
 
     if (!code->segment().containsFunctionPC(pc)) {
@@ -1012,7 +1012,7 @@ HandleMachException(JSContext* cx, const ExceptionRequest& request)
     if (request.body.exception != EXC_BAD_ACCESS || request.body.codeCnt != 2)
         return false;
 
-    WasmActivation* activation = cx->wasmActivationStack();
+    WasmActivation* activation = MaybeActiveActivation(cx);
     if (!activation)
         return false;
 
@@ -1224,7 +1224,7 @@ HandleFault(int signum, siginfo_t* info, void* ctx)
         return false;
     AutoSetHandlingSegFault handling(cx);
 
-    WasmActivation* activation = cx->wasmActivationStack();
+    WasmActivation* activation = MaybeActiveActivation(cx);
     if (!activation)
         return false;
 
@@ -1332,38 +1332,54 @@ RedirectJitCodeToInterruptCheck(JSContext* cx, CONTEXT* context)
     if (cx != cx->runtime()->activeContext())
         return false;
 
+    
+    
+    AutoNoteSingleThreadedRegion anstr;
+
     RedirectIonBackedgesToInterruptCheck(cx);
 
-    if (WasmActivation* activation = cx->wasmActivationStack()) {
 #ifdef JS_SIMULATOR
-        (void)ContextToPC(context);  
-
-        void* pc = cx->simulator()->get_pc_as<void*>();
-
-        const Code* code = activation->compartment()->wasm.lookupCode(pc);
-        if (code && code->segment().containsFunctionPC(pc))
-            cx->simulator()->trigger_wasm_interrupt();
+    uint8_t* pc = cx->simulator()->get_pc_as<uint8_t*>();
 #else
-        uint8_t** ppc = ContextToPC(context);
-        uint8_t* pc = *ppc;
-        uint8_t* fp = ContextToFP(context);
-
-        
-        
-        
-        
-        
-        
-        const Code* code = activation->compartment()->wasm.lookupCode(pc);
-        if (code && code->segment().containsFunctionPC(pc) && fp && !activation->interrupted()) {
-            activation->startInterrupt(pc, fp);
-            *ppc = code->segment().interruptCode();
-            return true;
-        }
+    uint8_t* pc = *ContextToPC(context);
 #endif
-    }
 
-    return false;
+    
+    
+    
+    if (!cx->compartment())
+        return false;
+    const Code* code = cx->compartment()->wasm.lookupCode(pc);
+    if (!code || !code->segment().containsFunctionPC(pc))
+        return false;
+
+    
+    
+    
+    WasmActivation* activation = MaybeActiveActivation(cx);
+    MOZ_ASSERT(activation);
+
+#ifdef JS_SIMULATOR
+    
+    
+    cx->simulator()->trigger_wasm_interrupt();
+#else
+    
+    uint8_t* fp = ContextToFP(context);
+    if (!fp)
+        return false;
+
+    
+    
+    
+    if (activation->interrupted())
+        return false;
+
+    activation->startInterrupt(pc, fp);
+    *ContextToPC(context) = code->segment().interruptCode();
+#endif
+
+    return true;
 }
 
 #if !defined(XP_WIN)
@@ -1576,25 +1592,4 @@ js::InterruptRunningJitCode(JSContext* cx)
     pthread_t thread = (pthread_t)cx->threadNative();
     pthread_kill(thread, sInterruptSignal);
 #endif
-}
-
-MOZ_COLD bool
-js::wasm::IsPCInWasmCode(void* pc)
-{
-    JSContext* cx = TlsContext.get();
-    if (!cx)
-        return false;
-
-    MOZ_RELEASE_ASSERT(!cx->handlingSegFault);
-
-    WasmActivation* activation = cx->wasmActivationStack();
-    if (!activation)
-        return false;
-
-    if (activation->compartment()->wasm.lookupCode(pc))
-        return true;
-
-    const CodeRange* codeRange;
-    uint8_t* codeBase;
-    return LookupBuiltinThunk(pc, &codeRange, &codeBase);
 }
