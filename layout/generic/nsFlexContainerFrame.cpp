@@ -4512,6 +4512,10 @@ nsFlexContainerFrame::ReflowPlaceholders(nsPresContext* aPresContext,
                       childDesiredSize, &childReflowInput,
                       outerWM, aContentBoxOrigin, aContainerSize, 0);
 
+    
+    
+    
+    placeholder->AddStateBits(PLACEHOLDER_STATICPOS_NEEDS_CSSALIGN);
   }
 }
 

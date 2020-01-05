@@ -218,6 +218,24 @@ public:
     uint32_t mShrinkWrap:1; 
     uint32_t mUseAutoBSize:1; 
     uint32_t mStaticPosIsCBOrigin:1; 
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    uint32_t mIOffsetsNeedCSSAlign:1;
+    uint32_t mBOffsetsNeedCSSAlign:1;
   };
 
 #ifdef DEBUG
