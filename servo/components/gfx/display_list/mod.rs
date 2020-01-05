@@ -42,7 +42,7 @@ use std::slice::Items;
 use style::ComputedValues;
 use style::computed_values::border_style;
 use style::computed_values::cursor;
-use sync::Arc;
+use std::sync::Arc;
 
 
 
@@ -61,7 +61,7 @@ pub static BOX_SHADOW_INFLATION_FACTOR: i32 = 3;
 
 
 
-#[deriving(Clone, PartialEq)]
+#[deriving(Clone, PartialEq, Copy)]
 pub struct OpaqueNode(pub uintptr_t);
 
 impl OpaqueNode {
@@ -628,7 +628,7 @@ impl ClippingRegion {
 
 
 
-#[deriving(Clone)]
+#[deriving(Clone, Copy)]
 pub struct DisplayItemMetadata {
     
     pub node: OpaqueNode,
@@ -739,7 +739,7 @@ pub struct BorderDisplayItem {
 
 
 
-#[deriving(Clone, Default, PartialEq, Show)]
+#[deriving(Clone, Default, PartialEq, Show, Copy)]
 pub struct BorderRadii<T> {
     pub top_left: T,
     pub top_right: T,

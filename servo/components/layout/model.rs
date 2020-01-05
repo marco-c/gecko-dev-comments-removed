@@ -18,6 +18,7 @@ use std::cmp::{max, min};
 use std::fmt;
 
 
+#[deriving(Copy)]
 pub struct AdjoiningMargins {
     
     pub most_positive: Au,
@@ -60,6 +61,7 @@ impl AdjoiningMargins {
 }
 
 
+#[deriving(Copy)]
 pub enum CollapsibleMargins {
     
     None(Au, Au),
@@ -237,6 +239,7 @@ impl MarginCollapseInfo {
     }
 }
 
+#[deriving(Copy)]
 pub enum MarginCollapseState {
     AccumulatingCollapsibleTopMargin,
     AccumulatingMarginIn,
@@ -322,7 +325,7 @@ impl IntrinsicISizesContribution {
 }
 
 
-#[deriving(PartialEq, Show)]
+#[deriving(Copy, PartialEq, Show)]
 pub enum MaybeAuto {
     Auto,
     Specified(Au),

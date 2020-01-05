@@ -503,7 +503,7 @@ impl Shaper {
         
         
         
-        if character == ' ' || character == '\u00a0' {
+        if character == ' ' || character == '\u{a0}' {
             advance = advance + options.word_spacing
         }
 

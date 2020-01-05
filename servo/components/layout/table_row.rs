@@ -24,7 +24,7 @@ use std::cmp::max;
 use std::fmt;
 use style::ComputedValues;
 use style::computed_values::LengthOrPercentageOrAuto;
-use sync::Arc;
+use std::sync::Arc;
 
 
 #[deriving(Encodable)]
@@ -39,7 +39,7 @@ pub struct TableRowFlow {
 }
 
 
-#[deriving(Encodable)]
+#[deriving(Encodable, Copy)]
 pub struct CellIntrinsicInlineSize {
     
     pub column_size: ColumnIntrinsicInlineSize,

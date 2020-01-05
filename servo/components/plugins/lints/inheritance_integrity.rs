@@ -5,7 +5,6 @@
 use syntax::{ast, ast_util};
 use rustc::lint::{Context, LintPass, LintArray, Level};
 use rustc::middle::{ty, def};
-use rustc::middle::typeck::astconv::AstConv;
 
 use utils::match_lang_ty;
 
@@ -42,7 +41,7 @@ impl LintPass for InheritancePass {
                                     .map(|(_, f)| f.span);
             
             let dom_spans: Vec<_> = def.fields.iter().enumerate().filter_map(|(ctr, f)| {
-                if let ast::TyPath(_, _, ty_id) = f.node.ty.node {
+                if let ast::TyPath(_, ty_id) = f.node.ty.node {
                     if let Some(def::DefTy(def_id, _)) = cx.tcx.def_map.borrow().get(&ty_id).cloned() {
                         if ty::has_attr(cx.tcx, def_id, "_dom_struct_marker") {
                             

@@ -9,7 +9,7 @@ use std::ascii::AsciiExt;
 use std::comm::Receiver;
 
 
-#[deriving(Clone, PartialEq)]
+#[deriving(Clone, PartialEq, Copy)]
 pub enum ResponseType {
     Basic,
     CORS,
@@ -19,7 +19,7 @@ pub enum ResponseType {
 }
 
 
-#[deriving(Clone)]
+#[deriving(Clone, Copy)]
 pub enum TerminationReason {
     EndUserAbort,
     Fatal,

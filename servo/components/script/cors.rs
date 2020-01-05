@@ -40,7 +40,7 @@ pub struct CORSRequest {
 
 
 
-#[deriving(PartialEq, Clone)]
+#[deriving(PartialEq, Copy, Clone)]
 pub enum RequestMode {
     CORS, 
     ForcedPreflight 

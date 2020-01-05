@@ -5,7 +5,7 @@
 
 
 use std::mem;
-use sync::Arc;
+use std::sync::Arc;
 
 pub struct PersistentList<T> {
     head: PersistentListLink<T>,

@@ -27,7 +27,7 @@ pub struct BufferMap {
 }
 
 
-#[deriving(Eq)]
+#[deriving(Eq, Copy)]
 struct BufferKey([uint, ..2]);
 
 impl Hash for BufferKey {

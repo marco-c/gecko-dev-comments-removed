@@ -22,7 +22,7 @@ use geom::point::Point2D;
 
 
 
-#[deriving(Clone, Show)]
+#[deriving(Clone, Show, Copy)]
 struct GlyphEntry {
     value: u32,
 }
@@ -87,7 +87,7 @@ impl GlyphEntry {
 pub type GlyphId = u32;
 
 
-#[deriving(PartialEq)]
+#[deriving(PartialEq, Copy)]
 pub enum BreakType {
     None,
     Normal,
@@ -251,7 +251,7 @@ impl GlyphEntry {
 
 
 
-#[deriving(Clone, Show)]
+#[deriving(Clone, Show, Copy)]
 struct DetailedGlyph {
     id: GlyphId,
     
@@ -270,7 +270,7 @@ impl DetailedGlyph {
     }
 }
 
-#[deriving(PartialEq, Clone, Eq, Show)]
+#[deriving(PartialEq, Clone, Eq, Show, Copy)]
 struct DetailedGlyphRecord {
     
     entry_offset: CharIndex,
@@ -411,6 +411,7 @@ impl<'a> DetailedGlyphStore {
 
 
 
+#[deriving(Copy)]
 pub struct GlyphData {
     id: GlyphId,
     advance: Au,
@@ -443,6 +444,7 @@ impl GlyphData {
 
 
 
+#[deriving(Copy)]
 pub enum GlyphInfo<'a> {
     Simple(&'a GlyphStore, CharIndex),
     Detail(&'a GlyphStore, CharIndex, u16),

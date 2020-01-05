@@ -7,14 +7,14 @@ use platform::font_context::FontContextHandle;
 use platform::font::FontHandle;
 use platform::font_template::FontTemplateData;
 
-use sync::{Arc, Weak};
+use std::sync::{Arc, Weak};
 use font::FontHandleMethods;
 
 
 
 
 
-#[deriving(Clone)]
+#[deriving(Clone, Copy)]
 pub struct FontTemplateDescriptor {
     pub weight: font_weight::T,
     pub italic: bool,

@@ -27,7 +27,7 @@ use std::cmp::max;
 use std::fmt;
 use style::{ComputedValues, CSSFloat};
 use style::computed_values::{LengthOrPercentageOrAuto, table_layout};
-use sync::Arc;
+use std::sync::Arc;
 
 
 
@@ -54,7 +54,7 @@ impl TableFlow {
                                   -> TableFlow {
         let mut block_flow = BlockFlow::from_node_and_fragment(node, fragment);
         let table_layout = if block_flow.fragment().style().get_table().table_layout ==
-                              table_layout::fixed {
+                              table_layout::T::fixed {
             TableLayout::Fixed
         } else {
             TableLayout::Auto
@@ -72,7 +72,7 @@ impl TableFlow {
                      -> TableFlow {
         let mut block_flow = BlockFlow::from_node(constructor, node);
         let table_layout = if block_flow.fragment().style().get_table().table_layout ==
-                              table_layout::fixed {
+                              table_layout::T::fixed {
             TableLayout::Fixed
         } else {
             TableLayout::Auto
@@ -91,7 +91,7 @@ impl TableFlow {
                            -> TableFlow {
         let mut block_flow = BlockFlow::float_from_node(constructor, node, float_kind);
         let table_layout = if block_flow.fragment().style().get_table().table_layout ==
-                              table_layout::fixed {
+                              table_layout::T::fixed {
             TableLayout::Fixed
         } else {
             TableLayout::Auto
@@ -441,7 +441,7 @@ impl ISizeAndMarginsComputer for InternalTable {
 
 
 
-#[deriving(Clone, Encodable, Show)]
+#[deriving(Clone, Encodable, Show, Copy)]
 pub struct ColumnIntrinsicInlineSize {
     
     pub preferred: Au,
@@ -485,7 +485,7 @@ impl ColumnIntrinsicInlineSize {
 
 
 
-#[deriving(Encodable)]
+#[deriving(Encodable, Copy)]
 pub struct ColumnComputedInlineSize {
     
     pub size: Au,

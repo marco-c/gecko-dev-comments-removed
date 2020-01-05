@@ -21,6 +21,9 @@ use servo_util::opts;
 use servo_util::tid::tid;
 use style::TNode;
 
+use std::cell::RefCell;
+use std::mem;
+
 
 
 type Generation = uint;
@@ -45,7 +48,7 @@ type Generation = uint;
 
 
 
-local_data_key!(style_bloom: (Box<BloomFilter>, UnsafeLayoutNode, Generation))
+thread_local!(static STYLE_BLOOM: RefCell<Option<(Box<BloomFilter>, UnsafeLayoutNode, Generation)>> = RefCell::new(None))
 
 
 
@@ -53,43 +56,48 @@ local_data_key!(style_bloom: (Box<BloomFilter>, UnsafeLayoutNode, Generation))
 
 fn take_task_local_bloom_filter(parent_node: Option<LayoutNode>, layout_context: &LayoutContext)
                                 -> Box<BloomFilter> {
-    match (parent_node, style_bloom.replace(None)) {
-        
-        (None,     _  ) => {
-            debug!("[{}] No parent, but new bloom filter!", tid());
-            box BloomFilter::new()
-        }
-        
-        (Some(parent), None) => {
-            let mut bloom_filter = box BloomFilter::new();
-            insert_ancestors_into_bloom_filter(&mut bloom_filter, parent, layout_context);
-            bloom_filter
-        }
-        
-        (Some(parent), Some((mut bloom_filter, old_node, old_generation))) => {
+    STYLE_BLOOM.with(|style_bloom| {
+        match (parent_node, style_bloom.borrow_mut().take()) {
             
-            if old_node == layout_node_to_unsafe_layout_node(&parent) &&
-                old_generation == layout_context.shared.generation {
-                debug!("[{}] Parent matches (={}). Reusing bloom filter.", tid(), old_node.val0());
-                bloom_filter
-            } else {
-                
-                
-                *bloom_filter = BloomFilter::new();
+            (None,     _  ) => {
+                debug!("[{}] No parent, but new bloom filter!", tid());
+                box BloomFilter::new()
+            }
+            
+            (Some(parent), None) => {
+                let mut bloom_filter = box BloomFilter::new();
                 insert_ancestors_into_bloom_filter(&mut bloom_filter, parent, layout_context);
                 bloom_filter
             }
-        },
-    }
+            
+            (Some(parent), Some((mut bloom_filter, old_node, old_generation))) => {
+                
+                if old_node == layout_node_to_unsafe_layout_node(&parent) &&
+                    old_generation == layout_context.shared.generation {
+                    debug!("[{}] Parent matches (={}). Reusing bloom filter.", tid(), old_node.val0());
+                    bloom_filter.clone()
+                } else {
+                    
+                    
+                    *bloom_filter = BloomFilter::new();
+                    insert_ancestors_into_bloom_filter(&mut bloom_filter, parent, layout_context);
+                    bloom_filter
+                }
+            },
+        }
+    })
 }
 
 fn put_task_local_bloom_filter(bf: Box<BloomFilter>,
                                unsafe_node: &UnsafeLayoutNode,
                                layout_context: &LayoutContext) {
-    match style_bloom.replace(Some((bf, *unsafe_node, layout_context.shared.generation))) {
-        None => {},
-        Some(_) => panic!("Putting into a never-taken task-local bloom filter"),
-    }
+    let bf: *mut BloomFilter = unsafe { mem::transmute(bf) };
+    STYLE_BLOOM.with(|style_bloom| {
+        assert!(style_bloom.borrow().is_none(),
+                "Putting into a never-taken task-local bloom filter");
+        let bf: Box<BloomFilter> = unsafe { mem::transmute(bf) };
+        *style_bloom.borrow_mut() = Some((bf, *unsafe_node, layout_context.shared.generation));
+    })
 }
 
 
@@ -112,6 +120,7 @@ fn insert_ancestors_into_bloom_filter(bf: &mut Box<BloomFilter>,
 
 
 
+#[deriving(Copy)]
 pub struct RecalcStyleForNode<'a> {
     pub layout_context: &'a LayoutContext<'a>,
 }
@@ -200,6 +209,7 @@ impl<'a> PreorderDomTraversal for RecalcStyleForNode<'a> {
 }
 
 
+#[deriving(Copy)]
 pub struct ConstructFlows<'a> {
     pub layout_context: &'a LayoutContext<'a>,
 }
@@ -238,9 +248,10 @@ impl<'a> PostorderDomTraversal for ConstructFlows<'a> {
         let unsafe_layout_node = layout_node_to_unsafe_layout_node(&node);
 
         let (mut bf, old_node, old_generation) =
-            style_bloom
-            .replace(None)
-            .expect("The bloom filter should have been set by style recalc.");
+            STYLE_BLOOM.with(|style_bloom| {
+                mem::replace(&mut *style_bloom.borrow_mut(), None)
+                .expect("The bloom filter should have been set by style recalc.")
+            });
 
         assert_eq!(old_node, unsafe_layout_node);
         assert_eq!(old_generation, self.layout_context.shared.generation);
@@ -297,6 +308,7 @@ impl<'a> PostorderFlowTraversal for BubbleISizes<'a> {
 }
 
 
+#[deriving(Copy)]
 pub struct AssignISizes<'a> {
     pub layout_context: &'a LayoutContext<'a>,
 }
@@ -317,6 +329,7 @@ impl<'a> PreorderFlowTraversal for AssignISizes<'a> {
 
 
 
+#[deriving(Copy)]
 pub struct AssignBSizesAndStoreOverflow<'a> {
     pub layout_context: &'a LayoutContext<'a>,
 }
@@ -341,6 +354,7 @@ impl<'a> PostorderFlowTraversal for AssignBSizesAndStoreOverflow<'a> {
     }
 }
 
+#[deriving(Copy)]
 pub struct ComputeAbsolutePositions<'a> {
     pub layout_context: &'a LayoutContext<'a>,
 }
@@ -352,6 +366,7 @@ impl<'a> PreorderFlowTraversal for ComputeAbsolutePositions<'a> {
     }
 }
 
+#[deriving(Copy)]
 pub struct BuildDisplayList<'a> {
     pub layout_context: &'a LayoutContext<'a>,
 }

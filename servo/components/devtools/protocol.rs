@@ -5,12 +5,13 @@
 
 
 use serialize::{json, Encodable};
+use serialize::json::Json;
 use std::io::{IoError, OtherIoError, EndOfFile, TcpStream, IoResult};
 use std::num;
 
 pub trait JsonPacketStream {
     fn write_json_packet<'a, T: Encodable<json::Encoder<'a>,IoError>>(&mut self, obj: &T);
-    fn read_json_packet(&mut self) -> IoResult<json::Json>;
+    fn read_json_packet(&mut self) -> IoResult<Json>;
 }
 
 impl JsonPacketStream for TcpStream {
@@ -22,7 +23,7 @@ impl JsonPacketStream for TcpStream {
         self.write_str(s.as_slice()).unwrap();
     }
 
-    fn read_json_packet<'a>(&mut self) -> IoResult<json::Json> {
+    fn read_json_packet<'a>(&mut self) -> IoResult<Json> {
         
         
         let mut buffer = vec!();

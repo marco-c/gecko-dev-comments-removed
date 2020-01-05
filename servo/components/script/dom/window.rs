@@ -114,7 +114,7 @@ pub fn base64_btoa(btoa: DOMString) -> Fallible<DOMString> {
     
     
     
-    if input.chars().any(|c: char| c > '\u00FF') {
+    if input.chars().any(|c: char| c > '\u{FF}') {
         Err(InvalidCharacter)
     } else {
         

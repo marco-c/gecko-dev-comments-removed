@@ -7,7 +7,6 @@ pub struct FontContextHandle {
     ctx: ()
 }
 
-#[deriving(Clone)]
 impl FontContextHandle {
     
     pub fn new() -> FontContextHandle {

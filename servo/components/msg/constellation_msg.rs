@@ -26,19 +26,20 @@ impl ConstellationChan {
     }
 }
 
-#[deriving(PartialEq)]
+#[deriving(PartialEq, Eq, Copy)]
 pub enum IFrameSandboxState {
     IFrameSandboxed,
     IFrameUnsandboxed
 }
 
 
-#[deriving(Clone)]
+#[deriving(Clone, Copy)]
 pub struct Failure {
     pub pipeline_id: PipelineId,
     pub subpage_id: Option<SubpageId>,
 }
 
+#[deriving(Copy)]
 pub struct WindowSizeData {
     
     
@@ -51,7 +52,7 @@ pub struct WindowSizeData {
     pub device_pixel_ratio: ScaleFactor<ViewportPx, DevicePixel, f32>,
 }
 
-#[deriving(PartialEq)]
+#[deriving(PartialEq, Eq, Copy, Clone)]
 pub enum KeyState {
     Pressed,
     Released,
@@ -59,7 +60,7 @@ pub enum KeyState {
 }
 
 
-#[deriving(Show)]
+#[deriving(Show, PartialEq, Eq, Copy, Clone)]
 pub enum Key {
     Space,
     Apostrophe,
@@ -185,6 +186,7 @@ pub enum Key {
 }
 
 bitflags! {
+    #[deriving(Copy)]
     flags KeyModifiers: u8 {
         const SHIFT = 0x01,
         const CONTROL = 0x02,
@@ -236,26 +238,27 @@ impl LoadData {
 }
 
 
-#[deriving(Clone, PartialEq, Hash, Show)]
+#[deriving(Clone, PartialEq, Eq, Copy, Hash, Show)]
 pub enum NavigationType {
     Load,               
     Navigate,           
 }
 
-#[deriving(Clone, PartialEq, Hash, Show)]
+#[deriving(Clone, PartialEq, Eq, Copy, Hash, Show)]
 pub enum NavigationDirection {
     Forward,
     Back,
 }
 
-#[deriving(Clone, PartialEq, Eq, Hash, Show)]
+#[deriving(Clone, PartialEq, Eq, Copy, Hash, Show)]
 pub struct PipelineId(pub uint);
 
-#[deriving(Clone, PartialEq, Eq, Hash, Show)]
+#[deriving(Clone, PartialEq, Eq, Copy, Hash, Show)]
 pub struct SubpageId(pub uint);
 
 
 
+#[deriving(Copy)]
 pub enum PipelineExitType {
     PipelineOnly,
     Complete,

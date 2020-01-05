@@ -14,6 +14,7 @@ use std::default::Default;
 use std::num::SignedInt;
 
 #[jstraceable]
+#[deriving(Copy)]
 struct TextPoint {
     
     line: uint,

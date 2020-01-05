@@ -21,7 +21,6 @@ use hyper::mime::{Mime, Attr};
 use url::Url;
 
 use std::comm::{channel, Receiver, Sender};
-use std::str::Slice;
 
 pub enum ControlMsg {
     
@@ -86,7 +85,8 @@ impl Metadata {
             content_type: None,
             charset:      None,
             headers: None,
-            status: Some(RawStatus(200, Slice("OK"))) 
+            
+            status: Some(RawStatus(200, "OK".into_string()))
         }
     }
 

@@ -14,13 +14,13 @@ use std::fmt;
 use constellation_msg::PipelineId;
 
 
-#[deriving(PartialEq, Clone)]
+#[deriving(PartialEq, Eq, Clone, Copy)]
 pub enum PaintState {
     Idle,
     Painting,
 }
 
-#[deriving(Eq, Ord, PartialEq, PartialOrd, Clone, Show)]
+#[deriving(Eq, Ord, PartialEq, PartialOrd, Clone, Show, Copy)]
 pub enum ReadyState {
     
     Blank,
@@ -33,7 +33,7 @@ pub enum ReadyState {
 }
 
 
-#[deriving(PartialEq, Show)]
+#[deriving(PartialEq, Eq, Show, Copy)]
 pub struct Epoch(pub uint);
 
 impl Epoch {
@@ -43,7 +43,7 @@ impl Epoch {
     }
 }
 
-#[deriving(Clone, PartialEq)]
+#[deriving(Clone, PartialEq, Eq, Copy)]
 pub struct LayerId(pub uint, pub uint);
 
 impl Show for LayerId {
@@ -61,7 +61,7 @@ impl LayerId {
 }
 
 
-#[deriving(Clone, PartialEq)]
+#[deriving(Clone, PartialEq, Eq, Copy)]
 pub enum ScrollPolicy {
     
     Scrollable,
@@ -71,6 +71,7 @@ pub enum ScrollPolicy {
 
 
 
+#[deriving(Copy)]
 pub struct LayerMetadata {
     
     pub id: LayerId,

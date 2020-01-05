@@ -26,6 +26,7 @@ use url::Url;
 use std::ptr;
 
 
+#[deriving(Copy)]
 pub enum GlobalRef<'a> {
     Window(JSRef<'a, window::Window>),
     Worker(JSRef<'a, WorkerGlobalScope>),

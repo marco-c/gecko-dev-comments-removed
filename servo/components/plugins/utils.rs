@@ -4,7 +4,6 @@
 
 use rustc::lint::Context;
 use rustc::middle::{ty, def};
-use rustc::middle::typeck::astconv::AstConv;
 
 use syntax::ptr::P;
 use syntax::{ast, ast_map};
@@ -17,7 +16,7 @@ use syntax::attr::mark_used;
 
 pub fn match_ty_unwrap<'a>(ty: &'a Ty, segments: &[&str]) -> Option<&'a [P<Ty>]> {
     match ty.node {
-        TyPath(Path {segments: ref seg, ..}, _, _) => {
+        TyPath(Path {segments: ref seg, ..}, _) => {
             
             
             
@@ -40,7 +39,7 @@ pub fn match_ty_unwrap<'a>(ty: &'a Ty, segments: &[&str]) -> Option<&'a [P<Ty>]>
 
 pub fn match_lang_ty(cx: &Context, ty: &Ty, value: &str) -> bool {
     let mut found = false;
-    if let TyPath(_, _, ty_id) = ty.node {
+    if let TyPath(_, ty_id) = ty.node {
         if let Some(def::DefTy(def_id, _)) = cx.tcx.def_map.borrow().get(&ty_id).cloned() {
             
             ty::each_attr(cx.tcx, def_id, |attr| {

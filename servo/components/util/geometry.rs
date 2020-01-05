@@ -29,7 +29,7 @@ use std::fmt;
 
 
 
-#[deriving(Show)]
+#[deriving(Show, Copy)]
 pub enum ScreenPx {}
 
 
@@ -41,7 +41,7 @@ pub enum ScreenPx {}
 
 
 
-#[deriving(Encodable, Show)]
+#[deriving(Encodable, Show, Copy)]
 pub enum ViewportPx {}
 
 
@@ -50,7 +50,7 @@ pub enum ViewportPx {}
 
 
 
-#[deriving(Encodable, Show)]
+#[deriving(Encodable, Show, Copy)]
 pub enum PagePx {}
 
 
@@ -65,7 +65,7 @@ pub enum PagePx {}
 
 
 
-#[deriving(Clone, Hash, PartialEq, PartialOrd, Eq, Ord, Zero)]
+#[deriving(Clone, Copy, Hash, PartialEq, PartialOrd, Eq, Ord)]
 pub struct Au(pub i32);
 
 impl Default for Au {

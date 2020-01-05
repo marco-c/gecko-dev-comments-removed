@@ -16,6 +16,7 @@ use js::jsval::{JSVal, UndefinedValue};
 use std::ptr;
 
 
+#[deriving(Copy)]
 pub enum ExceptionHandling {
     
     ReportExceptions,
@@ -28,7 +29,7 @@ pub enum ExceptionHandling {
 }
 
 
-#[deriving(Clone,PartialEq)]
+#[deriving(Copy, Clone,PartialEq)]
 #[jstraceable]
 pub struct CallbackFunction {
     object: CallbackObject
@@ -46,7 +47,7 @@ impl CallbackFunction {
 }
 
 
-#[deriving(Clone,PartialEq)]
+#[deriving(Copy, Clone,PartialEq)]
 #[jstraceable]
 pub struct CallbackInterface {
     object: CallbackObject
@@ -55,7 +56,7 @@ pub struct CallbackInterface {
 
 
 #[allow(raw_pointer_deriving)]
-#[deriving(Clone,PartialEq)]
+#[deriving(Copy, Clone,PartialEq)]
 #[jstraceable]
 struct CallbackObject {
     
