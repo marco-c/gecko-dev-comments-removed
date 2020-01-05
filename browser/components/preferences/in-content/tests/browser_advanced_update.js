@@ -110,13 +110,18 @@ add_task(function*() {
 });
 
 add_task(function*() {
-  mockUpdateManager.register();
-
   yield openPreferencesViaOpenPreferencesAPI("advanced", { leaveOpen: true });
   let doc = gBrowser.selectedBrowser.contentDocument;
 
   let showBtn = doc.getElementById("showUpdateHistory");
   let dialogOverlay = doc.getElementById("dialogOverlay");
+
+  
+  
+  
+  
+  
+  mockUpdateManager.register();
 
   
   is(dialogOverlay.style.visibility, "", "The dialog should be invisible");
