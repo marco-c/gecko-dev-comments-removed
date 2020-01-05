@@ -23,6 +23,9 @@ XPCOMUtils.defineLazyModuleGetter(this, "Utils", "resource://gre/modules/session
 XPCOMUtils.defineLazyServiceGetter(this, "serializationHelper",
                                    "@mozilla.org/network/serialization-helper;1",
                                    "nsISerializationHelper");
+XPCOMUtils.defineLazyServiceGetter(this, "uuidGenerator",
+                                   "@mozilla.org/uuid-generator;1",
+                                   "nsIUUIDGenerator");
 
 function dump(a) {
   Services.console.logStringMessage(a);
@@ -94,6 +97,9 @@ SessionStore.prototype = {
   
   
   _keepAsZombieTabId: -1,
+
+  
+  _docshellUUIDMap: new Map(),
 
   init: function ss_init() {
     loggingEnabled = Services.prefs.getBoolPref("browser.sessionstore.debug_logging");
@@ -1163,7 +1169,7 @@ SessionStore.prototype = {
     }
 
     entry.ID = aEntry.ID;
-    entry.docshellID = aEntry.docshellID;
+    entry.docshellUUID = aEntry.docshellID.number;
 
     if (aEntry.referrerURI) {
       entry.referrer = aEntry.referrerURI.spec;
@@ -1298,8 +1304,21 @@ SessionStore.prototype = {
       shEntry.ID = id;
     }
 
+    
+    
     if (aEntry.docshellID) {
-      shEntry.docshellID = aEntry.docshellID;
+      if (!this._docshellUUIDMap.has(aEntry.docshellID)) {
+        
+        
+        this._docshellUUIDMap.set(aEntry.docshellID,
+                                  uuidGenerator.generateUUID().number);
+      }
+      aEntry.docshellUUID = this._docshellUUIDMap.get(aEntry.docshellID);
+      delete aEntry.docshellID;
+    }
+
+    if (aEntry.docshellUUID) {
+      shEntry.docshellID = Components.ID(aEntry.docshellUUID);
     }
 
     if (aEntry.structuredCloneState && aEntry.structuredCloneVersion) {

@@ -15,6 +15,8 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "Utils",
   "resource://gre/modules/sessionstore/Utils.jsm");
+XPCOMUtils.defineLazyServiceGetter(this, "uuidGenerator",
+  "@mozilla.org/uuid-generator;1", "nsIUUIDGenerator");
 
 function debug(msg) {
   Services.console.logStringMessage("SessionHistory: " + msg);
@@ -41,6 +43,11 @@ this.SessionHistory = Object.freeze({
 
 
 var SessionHistoryInternal = {
+  
+
+
+  _docshellUUIDMap: new Map(),
+
   
 
 
@@ -132,7 +139,7 @@ var SessionHistoryInternal = {
       entry.cacheKey = cacheKey.data;
     }
     entry.ID = shEntry.ID;
-    entry.docshellID = shEntry.docshellID;
+    entry.docshellUUID = shEntry.docshellID.toString();
 
     
     
@@ -328,8 +335,22 @@ var SessionHistoryInternal = {
       shEntry.ID = id;
     }
 
-    if (entry.docshellID)
-      shEntry.docshellID = entry.docshellID;
+    
+    
+    if (entry.docshellID) {
+      if (!this._docshellUUIDMap.has(entry.docshellID)) {
+        
+        
+        this._docshellUUIDMap.set(entry.docshellID,
+                                  uuidGenerator.generateUUID().toString());
+      }
+      entry.docshellUUID = this._docshellUUIDMap.get(entry.docshellID);
+      delete entry.docshellID;
+    }
+
+    if (entry.docshellUUID) {
+      shEntry.docshellID = Components.ID(entry.docshellUUID);
+    }
 
     if (entry.structuredCloneState && entry.structuredCloneVersion) {
       shEntry.stateData =
