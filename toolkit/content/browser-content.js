@@ -1643,7 +1643,8 @@ let DateTimePickerListener = {
 
 
   getBoundingContentRect: function(aElement) {
-    return BrowserUtils.getElementBoundingScreenRect(aElement);
+    return BrowserUtils.getElementBoundingRect(aElement);
+    
   },
 
   
