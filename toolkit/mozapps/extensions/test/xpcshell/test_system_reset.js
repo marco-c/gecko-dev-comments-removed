@@ -360,6 +360,10 @@ add_task(function* test_bad_app_cert() {
   startupManager();
 
   
+  let addonSet = Services.prefs.getCharPref(PREF_SYSTEM_ADDON_SET);
+  do_check_eq(addonSet, `{"schema":1,"addons":{}}`);
+
+  
   let addon = yield promiseAddonByID("system1@tests.mozilla.org");
   do_check_neq(addon, null);
   do_check_eq(addon.signedState, AddonManager.SIGNEDSTATE_NOT_REQUIRED);
@@ -413,3 +417,4 @@ add_task(function* test_updated() {
 
   yield promiseShutdownManager();
 });
+

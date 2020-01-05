@@ -8660,15 +8660,21 @@ Object.assign(SystemAddonInstallLocation.prototype, {
 
 
   resetAddonSet() {
+    logger.info("Removing all system add-on upgrades.");
 
+    
+    
+    
+    this._saveAddonSet({ schema: 1, addons: {} });
+
+    
+    
+    
+    
+    
+    
+    
     if (this._addonSet) {
-      logger.info("Removing all system add-on upgrades.");
-
-      
-      
-      
-      this._saveAddonSet({ schema: 1, addons: {} });
-
       for (let id of Object.keys(this._addonSet.addons)) {
         AddonManager.getAddonByID(id, addon => {
           if (addon) {
