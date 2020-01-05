@@ -325,7 +325,8 @@ struct nsThreadShutdownContext
 
   
   NotNull<RefPtr<nsThread>> mTerminatingThread;
-  NotNull<nsThread*> mJoiningThread;
+  NotNull<nsThread*> MOZ_UNSAFE_REF("Thread manager is holding reference to joining thread")
+    mJoiningThread;
   bool mAwaitingShutdownAck;
 };
 
