@@ -39,10 +39,9 @@ use servo_util::range::Range;
 use servo_util::smallvec::{SmallVec, SmallVec8};
 use std::fmt;
 use std::slice::Items;
-use style::ComputedValues;
-use style::computed_values::border_style;
-use style::computed_values::cursor;
 use std::sync::Arc;
+use style::ComputedValues;
+use style::computed_values::{border_style, cursor, pointer_events};
 
 
 
@@ -363,6 +362,10 @@ impl StackingContext {
                     
                     continue
                 }
+                if item.base().metadata.pointing.is_none() {
+                    
+                    continue
+                }
                 match *item {
                     DisplayItem::BorderClass(ref border) => {
                         
@@ -633,7 +636,8 @@ pub struct DisplayItemMetadata {
     
     pub node: OpaqueNode,
     
-    pub cursor: Cursor,
+    
+    pub pointing: Option<Cursor>,
 }
 
 impl DisplayItemMetadata {
@@ -646,9 +650,10 @@ impl DisplayItemMetadata {
                -> DisplayItemMetadata {
         DisplayItemMetadata {
             node: node,
-            cursor: match style.get_pointing().cursor {
-                cursor::T::AutoCursor => default_cursor,
-                cursor::T::SpecifiedCursor(cursor) => cursor,
+            pointing: match (style.get_pointing().pointer_events, style.get_pointing().cursor) {
+                (pointer_events::T::none, _) => None,
+                (pointer_events::T::auto, cursor::T::AutoCursor) => Some(default_cursor),
+                (pointer_events::T::auto, cursor::T::SpecifiedCursor(cursor)) => Some(cursor),
             },
         }
     }
