@@ -4,6 +4,7 @@
 
 
 
+#include "nsASCIIMask.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/double-conversion.h"
 #include "mozilla/MemoryReporting.h"
@@ -881,7 +882,8 @@ nsTStringRepr_CharT::FindChar(char_type aChar, index_type aOffset) const
 void
 nsTSubstring_CharT::StripChar(char_type aChar, int32_t aOffset)
 {
-  if (mLength == 0 || aOffset >= int32_t(mLength)) {
+  
+  if (aOffset >= int32_t(mLength)) {
     return;
   }
 
@@ -908,6 +910,7 @@ nsTSubstring_CharT::StripChar(char_type aChar, int32_t aOffset)
 void
 nsTSubstring_CharT::StripChars(const char_type* aChars, uint32_t aOffset)
 {
+  
   if (aOffset >= uint32_t(mLength)) {
     return;
   }
@@ -935,6 +938,45 @@ nsTSubstring_CharT::StripChars(const char_type* aChars, uint32_t aOffset)
   }
   *to = char_type(0); 
   mLength = to - mData;
+}
+
+void
+nsTSubstring_CharT::StripTaggedASCII(const ASCIIMaskArray& aToStrip,
+                                     uint32_t aOffset)
+{
+  
+  if (aOffset >= uint32_t(mLength)) {
+    return;
+  }
+
+  if (!EnsureMutable()) {
+    AllocFailed(mLength);
+  }
+
+  char_type* to   = mData + aOffset;
+  char_type* from = mData + aOffset;
+  char_type* end  = mData + mLength;
+
+  while (from < end) {
+    uint32_t theChar = (uint32_t)*from++;
+    
+    
+    if (!mozilla::ASCIIMask::IsMasked(aToStrip, theChar)) {
+      
+      *to++ = (char_type)theChar;
+    }
+  }
+  *to = char_type(0); 
+  mLength = to - mData;
+}
+
+void
+nsTSubstring_CharT::StripCRLF(uint32_t aOffset)
+{
+  
+  
+  
+  StripTaggedASCII(mozilla::ASCIIMask::MaskCRLF(), aOffset);
 }
 
 struct MOZ_STACK_CLASS PrintfAppend_CharT : public mozilla::PrintfTarget

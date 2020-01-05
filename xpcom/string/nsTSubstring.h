@@ -1018,6 +1018,31 @@ public:
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  void StripTaggedASCII(const std::array<bool, 128>& aToStrip, uint32_t aOffset = 0);
+
+  
+
+
+  void StripCRLF(uint32_t aOffset = 0);
+
+  
+
+
+
   void ForgetSharedBuffer()
   {
     if (mFlags & nsSubstring::F_SHARED) {

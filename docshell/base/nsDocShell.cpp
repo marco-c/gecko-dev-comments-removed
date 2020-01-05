@@ -4780,7 +4780,7 @@ nsDocShell::LoadURIWithOptions(const char16_t* aURI,
   
   uriString.Trim(" ");
   
-  uriString.StripChars("\r\n");
+  uriString.StripCRLF();
   NS_ENSURE_TRUE(!uriString.IsEmpty(), NS_ERROR_FAILURE);
 
   rv = NS_NewURI(getter_AddRefs(uri), uriString);
