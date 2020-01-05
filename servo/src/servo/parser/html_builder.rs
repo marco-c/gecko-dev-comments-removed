@@ -1,4 +1,4 @@
-
+#[doc="Constructs a DOM tree from an incoming token stream."]
 
 import dom::rcu::writer_methods;
 import dom::base::{methods, rd_tree_ops, wr_tree_ops};
@@ -7,23 +7,52 @@ import parser = parser::html;
 import html::token;
 import gfx::geom;
 
+fn link_up_attribute(scope: dom::node_scope, node: dom::node, key: str,
+                     value: str) {
+    
+    
+    
+    
+    scope.rd(node) {
+        |node_contents|
+        alt node_contents.kind {
+            dom::nk_img(dims) if key == "width" {
+                alt int::from_str(value) {
+                    none { /* drop on the floor */ }
+                    some(s) { dims.width = geom::px_to_au(s); }
+                }
+            }
+            dom::nk_img(dims) if key == "height" {
+                alt int::from_str(value) {
+                    none { /* drop on the floor */ }
+                    some(s) { dims.height = geom::px_to_au(s); }
+                }
+            }
+            dom::nk_div | dom::nk_img(*) { /* drop on the floor */ }
+            dom::nk_text(*) {
+                fail "attempt to link up an attribute to a text node"
+            }
+        }
+    }
+}
+
 fn build_dom(scope: dom::node_scope,
              stream: port<token>) -> dom::node {
-    
+    // The current reference node.
     let mut cur = scope.new_node(dom::nk_div);
     loop {
         let token = stream.recv();
         #debug["token=%?", token];
         alt token {
             parser::to_eof { break; }
-            parser::to_start_tag("div") {
+            parser::to_start_opening_tag("div") {
                 #debug["DIV"];
                 let new_node = scope.new_node(
                     dom::nk_div);
                 scope.add_child(cur, new_node);
                 cur = new_node;
             }
-            parser::to_start_tag("img") {
+            parser::to_start_opening_tag("img") {
                 #debug["IMG"];
                 let new_node = scope.new_node(
                     dom::nk_img({mut width: geom::px_to_au(100),
@@ -31,8 +60,15 @@ fn build_dom(scope: dom::node_scope,
                 scope.add_child(cur, new_node);
                 cur = new_node;
             }
-            parser::to_start_tag(t) {
-              fail ("Unrecognized tag: " + t);
+            parser::to_start_opening_tag(t) {
+                fail ("Unrecognized tag: " + t);
+            }
+            parser::to_attr(key, value) {
+                #debug["attr: %? = %?", key, value];
+                link_up_attribute(scope, cur, key, value);
+            }
+            parser::to_end_opening_tag {
+                #debug("end opening tag");
             }
             parser::to_end_tag(_) {
                 
@@ -54,3 +90,4 @@ fn build_dom(scope: dom::node_scope,
     }
     ret cur;
 }
+
