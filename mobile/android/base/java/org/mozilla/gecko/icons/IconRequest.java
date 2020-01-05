@@ -164,7 +164,12 @@ public class IconRequest {
 
 
      void moveToNextIcon() {
-        icons.remove(getBestIcon());
+        if (!icons.remove(getBestIcon())) {
+            
+            
+            
+            throw new IllegalStateException("Moving to next icon failed. Could not remove first icon from set.");
+        }
     }
 
     
