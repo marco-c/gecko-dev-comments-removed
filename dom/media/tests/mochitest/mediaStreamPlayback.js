@@ -254,6 +254,23 @@ function createHTML(options) {
   return scriptsReady.then(() => realCreateHTML(options));
 }
 
+var pushPrefs = (...p) => new Promise(r => SpecialPowers.pushPrefEnv({set: p}, r));
+
+
+
+
+
+
+
+
+
+var noGum = () => pushPrefs(["media.navigator.permission.disabled", false],
+                            ["media.navigator.permission.fake", true])
+  .then(() => navigator.mediaDevices.enumerateDevices())
+  .then(([device]) => device &&
+      is(device.label, "", "Test must leave no active gUM streams behind."));
+
 var runTest = testFunction => scriptsReady
   .then(() => runTestWhenReady(testFunction))
+  .then(() => noGum())
   .then(() => finish());
