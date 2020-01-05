@@ -102,8 +102,8 @@ SendStreamParent::~SendStreamParent()
 {
 }
 
-PSendStreamParent*
-AllocPSendStreamParent()
+PChildToParentStreamParent*
+AllocPChildToParentStreamParent()
 {
   
   
@@ -127,7 +127,7 @@ AllocPSendStreamParent()
 }
 
 void
-DeallocPSendStreamParent(PSendStreamParent* aActor)
+DeallocPChildToParentStreamParent(PChildToParentStreamParent* aActor)
 {
   delete aActor;
 }

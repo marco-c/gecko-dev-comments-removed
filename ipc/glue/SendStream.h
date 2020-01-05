@@ -8,8 +8,8 @@
 #define mozilla_ipc_SendStream_h
 
 #include "mozilla/AlreadyAddRefed.h"
-#include "mozilla/ipc/PSendStreamChild.h"
-#include "mozilla/ipc/PSendStreamParent.h"
+#include "mozilla/ipc/PChildToParentStreamChild.h"
+#include "mozilla/ipc/PChildToParentStreamParent.h"
 
 class nsIInputStream;
 class nsIAsyncInputStream;
@@ -49,7 +49,7 @@ class PBackgroundChild;
 
 
 
-class SendStreamChild : public PSendStreamChild
+class SendStreamChild : public PChildToParentStreamChild
 {
 public:
   
@@ -84,7 +84,7 @@ protected:
 
 
 
-class SendStreamParent : public PSendStreamParent
+class SendStreamParent : public PChildToParentStreamParent
 {
 public:
   virtual already_AddRefed<nsIInputStream>

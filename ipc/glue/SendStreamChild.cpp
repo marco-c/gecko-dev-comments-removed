@@ -374,7 +374,7 @@ SendStreamChild::Create(nsIAsyncInputStream* aInputStream,
   }
 
   SendStreamChild* actor = new SendStreamChildImpl(aInputStream);
-  aManager->SendPSendStreamConstructor(actor);
+  aManager->SendPChildToParentStreamConstructor(actor);
 
   return actor;
 }
@@ -411,7 +411,7 @@ SendStreamChild::Create(nsIAsyncInputStream* aInputStream,
     return nullptr;
   }
 
-  aManager->SendPSendStreamConstructor(actor);
+  aManager->SendPChildToParentStreamConstructor(actor);
   return actor;
 }
 
@@ -420,7 +420,7 @@ SendStreamChild::~SendStreamChild()
 }
 
 void
-DeallocPSendStreamChild(PSendStreamChild* aActor)
+DeallocPChildToParentStreamChild(PChildToParentStreamChild* aActor)
 {
   delete aActor;
 }
