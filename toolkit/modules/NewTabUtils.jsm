@@ -909,7 +909,7 @@ var Links = {
     }
 
     let numProvidersRemaining = this._providers.size;
-    for (let [provider, links] of this._providers) {
+    for (let [provider ] of this._providers) {
       this._populateProviderCache(provider, () => {
         if (--numProvidersRemaining == 0)
           executeCallbacks();
@@ -1022,7 +1022,7 @@ var Links = {
 
 
   _adjustSiteMapAndNotify: function(aLink, increment = true) {
-    for (let [provider, cache] of this._providers) {
+    for (let [, cache] of this._providers) {
       
       if (cache.linkMap.get(aLink.url)) {
         if (increment) {

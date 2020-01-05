@@ -178,7 +178,6 @@ IdentityProviderService.prototype = {
     provFlow.caller = aCaller;
 
     let identity = provFlow.identity;
-    let frame = provFlow.provisioningFrame;
 
     
     let duration = this.certDuration;

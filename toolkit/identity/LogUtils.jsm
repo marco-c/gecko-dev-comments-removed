@@ -87,8 +87,6 @@ IdentityLogger.prototype = {
 
 
   reportError: function reportError(aPrefix, ...aArgs) {
-    let prefix = aPrefix + ' ERROR';
-
     
     let output = this._generateLogMessage(aPrefix, aArgs);
     Cu.reportError(output);

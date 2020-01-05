@@ -169,7 +169,7 @@ var SimpleServiceDiscovery = {
     
     let timeout = SSDP_DISCOVER_DELAY;
     for (let attempts = 0; attempts < SSDP_DISCOVER_ATTEMPTS; attempts++) {
-      for (let [key, device] of this._devices) {
+      for (let [, device] of this._devices) {
         let target = device.target;
         setTimeout(function() {
           let msgData = data.replace("%SEARCH_TARGET%", target);
@@ -224,7 +224,7 @@ var SimpleServiceDiscovery = {
       this._searchSocket.close();
 
       
-      for (let [key, service] of this._services) {
+      for (let [, service] of this._services) {
         if (service.lastPing != this._searchTimestamp) {
           this.removeService(service.uuid);
         }
@@ -305,7 +305,7 @@ var SimpleServiceDiscovery = {
   
   get services() {
     let array = [];
-    for (let [key, service] of this._services) {
+    for (let [, service] of this._services) {
       let target = this._devices.get(service.deviceID);
       service.extensions = target.extensions;
       service.types = target.types;
@@ -317,7 +317,7 @@ var SimpleServiceDiscovery = {
   
   _filterService: function _filterService(aService) {
     
-    for (let [key, device] of this._devices) {
+    for (let [, device] of this._devices) {
       
       if (device.target != aService.target) {
         continue;

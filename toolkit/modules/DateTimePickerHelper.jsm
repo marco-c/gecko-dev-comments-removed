@@ -110,7 +110,6 @@ this.DateTimePickerHelper = {
   
   showPicker: function(aBrowser, aData) {
     let rect = aData.rect;
-    let dir = aData.dir;
     let type = aData.type;
     let detail = aData.detail;
 

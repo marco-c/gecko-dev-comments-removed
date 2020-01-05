@@ -21,7 +21,6 @@ PageMenu.prototype = {
 
   
   getContextMenu: function(aTarget) {
-    let pageMenu = null;
     let target = aTarget;
     while (target) {
       let contextMenu = target.contextMenu;

@@ -151,11 +151,11 @@ module.exports = {
     "no-unreachable": "error",
 
     
-    
-    
-    
-    
-    
+    "no-unused-vars": ["error", {
+      "vars": "local",
+      "varsIgnorePattern": "^Cc|Ci|Cu|Cr|EXPORTED_SYMBOLS",
+      "args": "none",
+    }],
 
     
     

@@ -453,7 +453,7 @@ this.FinderIterator = {
 
     this._notifyListeners("start", this.params);
 
-    let { linksOnly, window, word } = this._currentParams;
+    let { linksOnly, window } = this._currentParams;
     
     
     let frames = [window].concat(this._collectFrames(window, finder));

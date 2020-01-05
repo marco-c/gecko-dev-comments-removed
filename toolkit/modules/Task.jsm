@@ -423,7 +423,6 @@ TaskImpl.prototype = {
         
 
         let bottomStack = this._stack;
-        let topStack = stack;
 
         stack = Task.Debugging.generateReadableStack(stack);
 

@@ -180,8 +180,6 @@ function test_logout() {
 function test_error() {
   do_test_pending();
 
-  let received = [];
-
   
   
   

@@ -440,7 +440,7 @@ function getCanApplyUpdates() {
           try {
             
             
-            let dir = Services.dirsvc.get(KEY_UPDROOT, Ci.nsIFile);
+            Services.dirsvc.get(KEY_UPDROOT, Ci.nsIFile);
             
             userCanElevate = Services.appinfo.QueryInterface(Ci.nsIWinAppHelper).
                              userCanElevate;

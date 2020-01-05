@@ -100,7 +100,7 @@ add_task(function* test_crash_in_previous_frameloader() {
 
     gBrowser.updateBrowserRemoteness(browser, false);
     info("Waiting for content process to go away.");
-    let [subject, data] = yield contentProcessGone;
+    let [subject ] = yield contentProcessGone;
 
     
     
