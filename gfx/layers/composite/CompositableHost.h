@@ -95,7 +95,8 @@ public:
   virtual void SetCompositor(Compositor* aCompositor);
 
   
-  virtual void Composite(LayerComposite* aLayer,
+  virtual void Composite(Compositor* aCompositor,
+                         LayerComposite* aLayer,
                          EffectChain& aEffectChain,
                          float aOpacity,
                          const gfx::Matrix4x4& aTransform,
