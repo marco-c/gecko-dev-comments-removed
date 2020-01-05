@@ -345,7 +345,10 @@ class InjectionContext extends Context {
 
 
 
-  shouldInject(namespace, name, restrictions) {
+
+
+
+  shouldInject(namespace, name, allowedContexts) {
     throw new Error("Not implemented");
   }
 
@@ -474,7 +477,7 @@ class Entry {
 
 
 
-    this.restrictions = schema.restrictions || [];
+    this.allowedContexts = schema.allowedContexts || [];
   }
 
   
@@ -554,7 +557,7 @@ class Type extends Entry {
 
 
   static get EXTRA_PROPERTIES() {
-    return ["description", "deprecated", "preprocess", "restrictions"];
+    return ["description", "deprecated", "preprocess", "allowedContexts"];
   }
 
   
@@ -1425,8 +1428,8 @@ class SubModuleProperty extends Entry {
     for (let fun of functions) {
       let subpath = path.concat(name);
       let namespace = subpath.join(".");
-      let restrictions = fun.restrictions.length ? fun.restrictions : ns.defaultRestrictions;
-      if (context.shouldInject(namespace, fun.name, restrictions)) {
+      let allowedContexts = fun.allowedContexts.length ? fun.allowedContexts : ns.defaultContexts;
+      if (context.shouldInject(namespace, fun.name, allowedContexts)) {
         let apiImpl = context.getImplementation(namespace, fun.name);
         fun.inject(apiImpl, subpath, fun.name, obj, context);
       }
@@ -1656,8 +1659,8 @@ this.Schemas = {
     if (!ns) {
       ns = new Map();
       ns.permissions = null;
-      ns.restrictions = [];
-      ns.defeaultRestrictions = [];
+      ns.allowedContexts = [];
+      ns.defaultContexts = [];
       this.namespaces.set(namespaceName, ns);
     }
     ns.set(symbol, value);
@@ -1851,8 +1854,8 @@ this.Schemas = {
 
       let ns = this.namespaces.get(name);
       ns.permissions = namespace.permissions || null;
-      ns.restrictions = namespace.restrictions || [];
-      ns.defaultRestrictions = namespace.defaultRestrictions || [];
+      ns.allowedContexts = namespace.allowedContexts || [];
+      ns.defaultContexts = namespace.defaultContexts || [];
     }
   },
 
@@ -1920,14 +1923,14 @@ this.Schemas = {
         continue;
       }
 
-      if (!wrapperFuncs.shouldInject(namespace, null, ns.restrictions)) {
+      if (!wrapperFuncs.shouldInject(namespace, null, ns.allowedContexts)) {
         continue;
       }
 
       let obj = Cu.createObjectIn(dest, {defineAs: namespace});
       for (let [name, entry] of ns) {
-        let restrictions = entry.restrictions.length ? entry.restrictions : ns.defaultRestrictions;
-        if (context.shouldInject(namespace, name, restrictions)) {
+        let allowedContexts = entry.allowedContexts.length ? entry.allowedContexts : ns.defaultContexts;
+        if (context.shouldInject(namespace, name, allowedContexts)) {
           let apiImpl = context.getImplementation(namespace, name);
           entry.inject(apiImpl, [namespace], name, obj, context);
         }
