@@ -1161,7 +1161,7 @@ nsOuterWindowProxy::finalize(JSFreeOp *fop, JSObject *proxy) const
 {
   nsGlobalWindow* outerWindow = GetOuterWindow(proxy);
   if (outerWindow) {
-    outerWindow->ClearWrapper(proxy);
+    outerWindow->ClearWrapper();
 
     
     
@@ -1728,7 +1728,7 @@ nsGlobalWindow::~nsGlobalWindow()
   MOZ_LOG(gDOMLeakPRLog, LogLevel::Debug, ("DOMWINDOW %p destroyed", this));
 
   if (IsOuterWindow()) {
-    JSObject *proxy = GetWrapperMaybeDead();
+    JSObject *proxy = GetWrapperPreserveColor();
     if (proxy) {
       js::SetProxyExtra(proxy, 0, js::PrivateValue(nullptr));
     }
@@ -3947,7 +3947,7 @@ void
 nsGlobalWindow::PoisonOuterWindowProxy(JSObject *aObject)
 {
   MOZ_ASSERT(IsOuterWindow());
-  if (aObject == GetWrapperMaybeDead()) {
+  if (aObject == GetWrapperPreserveColor()) {
     PoisonWrapper();
   }
 }
@@ -4328,12 +4328,6 @@ nsPIDOMWindowInner::IsPlayingAudio()
     return false;
   }
   return acs->IsWindowActive(outer);
-}
-
-bool
-nsPIDOMWindowInner::IsDocumentLoaded() const
-{
-  return mIsDocumentLoaded;
 }
 
 mozilla::dom::TimeoutManager&
@@ -5755,11 +5749,6 @@ nsGlobalWindow::GetOuterSize(CallerType aCallerType, ErrorResult& aError)
   if (!treeOwnerAsWin) {
     aError.Throw(NS_ERROR_FAILURE);
     return nsIntSize(0, 0);
-  }
-
-  nsGlobalWindow* rootWindow = nsGlobalWindow::Cast(GetPrivateRoot());
-  if (rootWindow) {
-    rootWindow->FlushPendingNotifications(FlushType::Layout);
   }
 
   nsIntSize sizeDevPixels;
