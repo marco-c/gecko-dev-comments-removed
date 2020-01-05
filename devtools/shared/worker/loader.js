@@ -17,6 +17,9 @@
 
 
 
+
+
+
 this.EXPORTED_SYMBOLS = ["WorkerDebuggerLoader", "worker"];
 
 
@@ -367,7 +370,7 @@ var {
   loadSubScript,
   reportError,
   setImmediate,
-  xpcInspector
+  xpcInspector,
 } = (function () {
   if (typeof Components === "object") { 
     let {
@@ -484,8 +487,10 @@ this.worker = new WorkerDebuggerLoader({
     "loader": loader,
     "reportError": reportError,
     "rpc": rpc,
-    "setImmediate": setImmediate,
     "URL": URL,
+    "setImmediate": setImmediate,
+    "retrieveConsoleEvents": this.retrieveConsoleEvents,
+    "setConsoleEventHandler": this.setConsoleEventHandler,
   },
   loadSubScript: loadSubScript,
   modules: {
