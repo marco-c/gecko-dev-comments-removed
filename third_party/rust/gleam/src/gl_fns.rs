@@ -1157,6 +1157,28 @@ impl Gl for GlFns {
         }
     }
 
+    fn get_shader_precision_format(&self, _shader_type: GLuint, precision_type: GLuint) -> (GLint, GLint, GLint) {
+        
+        
+        match precision_type {
+            ffi::LOW_FLOAT | ffi::MEDIUM_FLOAT | ffi::HIGH_FLOAT => {
+                
+                
+                
+                (127, 127, 23)
+            },
+            ffi::LOW_INT | ffi::MEDIUM_INT | ffi::HIGH_INT => {
+                
+                
+                
+                (24, 24, 0)
+            },
+            _ => {
+                (0, 0, 0)
+            }
+        }
+    }
+
     fn compile_shader(&self, shader: GLuint) {
         unsafe {
             self.ffi_gl_.CompileShader(shader);
