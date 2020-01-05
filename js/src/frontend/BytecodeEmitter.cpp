@@ -8670,6 +8670,12 @@ BytecodeEmitter::emitYieldStar(ParseNode* iter)
         return false;
     if (!emitAtomOp(cx->names().value, JSOP_GETPROP))     
         return false;
+
+    if (isAsyncGenerator) {
+        if (!emitAwait())                                 
+            return false;
+    }
+
     if (!emitPrepareIteratorResult())                     
         return false;
     if (!emit1(JSOP_SWAP))                                
@@ -8759,6 +8765,11 @@ BytecodeEmitter::emitYieldStar(ParseNode* iter)
         return false;
     if (!emitAtomOp(cx->names().value, JSOP_GETPROP))            
         return false;
+
+    if (isAsyncGenerator) {
+        if (!emitAwait())                                        
+            return false;
+    }
 
     MOZ_ASSERT(this->stackDepth == startDepth - 1);
 
