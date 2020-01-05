@@ -133,8 +133,6 @@ public:
 
 
 
-
-
   void SetCurrentScaleTranslate(float s, float x, float y);
 
   

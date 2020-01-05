@@ -835,6 +835,19 @@ NON_IDL_EVENT(SVGScroll,
               EventNameType_None,
               eBasicEventClass)
 
+NON_IDL_EVENT(SVGZoom,
+              eSVGZoom,
+              EventNameType_None,
+              eSVGZoomEventClass)
+
+
+#ifndef MESSAGE_TO_EVENT
+
+NON_IDL_EVENT(zoom,
+              eSVGZoom,
+              EventNameType_SVGSVG,
+              eBasicEventClass)
+#endif
 
 #ifndef MESSAGE_TO_EVENT
 NON_IDL_EVENT(begin,

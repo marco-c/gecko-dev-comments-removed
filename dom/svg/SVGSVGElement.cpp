@@ -499,9 +499,6 @@ SVGSVGElement::SetCurrentScaleTranslate(float s, float x, float y)
   
   
   
-  
-  
-  
   mPreviousScale = mCurrentScale;
   mPreviousTranslate = mCurrentTranslate;
   
@@ -514,7 +511,10 @@ SVGSVGElement::SetCurrentScaleTranslate(float s, float x, float y)
     nsCOMPtr<nsIPresShell> presShell = doc->GetShell();
     if (presShell && IsRoot()) {
       nsEventStatus status = nsEventStatus_eIgnore;
-      if (mPreviousScale == mCurrentScale) {
+      if (mPreviousScale != mCurrentScale) {
+        InternalSVGZoomEvent svgZoomEvent(true, eSVGZoom);
+        presShell->HandleDOMEventWithTarget(this, &svgZoomEvent, &status);
+      } else {
         WidgetEvent svgScrollEvent(true, eSVGScroll);
         presShell->HandleDOMEventWithTarget(this, &svgScrollEvent, &status);
       }
