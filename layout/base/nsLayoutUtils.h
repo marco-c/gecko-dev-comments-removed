@@ -803,7 +803,11 @@ public:
     
 
 
-    IGNORE_CROSS_DOC = 0x04
+    IGNORE_CROSS_DOC = 0x04,
+    
+
+
+    ONLY_VISIBLE = 0x08
   };
 
   
