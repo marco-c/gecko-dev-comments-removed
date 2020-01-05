@@ -28,13 +28,6 @@ public:
   NS_IMETHOD GetAvailRectDisplayPix(int32_t *outLeft,  int32_t *outTop,
                                     int32_t *outWidth, int32_t *outHeight) override;
 
-  
-
-
-
-  NS_IMETHOD LockMinimumBrightness(uint32_t aBrightness) override;
-  NS_IMETHOD UnlockMinimumBrightness(uint32_t aBrightness) override;
-
   NS_IMETHOD GetRotation(uint32_t* aRotation) override {
     *aRotation = nsIScreen::ROTATION_0_DEG;
     return NS_OK;
@@ -47,35 +40,6 @@ public:
 
 protected:
   virtual ~nsBaseScreen();
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  virtual void ApplyMinimumBrightness(uint32_t aBrightness) { }
-
-private:
-  
-
-
-
-  void CheckMinimumBrightness();
-
-  uint32_t mBrightnessLocks[nsIScreen::BRIGHTNESS_LEVELS];
 };
 
 #endif 
