@@ -564,7 +564,7 @@ public:
     nsIControllers* GetControllers(mozilla::ErrorResult& rv);
     already_AddRefed<mozilla::dom::BoxObject> GetBoxObject(mozilla::ErrorResult& rv);
     void Click(mozilla::ErrorResult& rv);
-    
+    void DoCommand();
     already_AddRefed<nsINodeList>
       GetElementsByAttribute(const nsAString& aAttribute,
                              const nsAString& aValue);
