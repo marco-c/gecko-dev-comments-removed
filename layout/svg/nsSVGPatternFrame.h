@@ -135,8 +135,8 @@ private:
   
   
   
-  mozilla::SVGGeometryFrame        *mSource;
-  nsAutoPtr<gfxMatrix>              mCTM;
+  mozilla::SVGGeometryFrame* mSource;
+  nsAutoPtr<gfxMatrix> mCTM;
 
 protected:
   
