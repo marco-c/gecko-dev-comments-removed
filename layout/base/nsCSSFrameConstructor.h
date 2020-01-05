@@ -956,14 +956,14 @@ private:
       
       
       inline bool SkipItemsThatNeedAnonFlexOrGridItem(
-        const nsFrameConstructorState& aState, nsIAtom* aContainerType,
+        const nsFrameConstructorState& aState,
         bool aIsWebkitBox);
 
       
       
       
       inline bool SkipItemsThatDontNeedAnonFlexOrGridItem(
-        const nsFrameConstructorState& aState, nsIAtom* aContainerType,
+        const nsFrameConstructorState& aState,
         bool aIsWebkitBox);
 
       
@@ -1099,7 +1099,6 @@ private:
     
     
     bool NeedsAnonFlexOrGridItem(const nsFrameConstructorState& aState,
-                                 nsIAtom* aContainerType,
                                  bool aIsWebkitBox);
 
     
