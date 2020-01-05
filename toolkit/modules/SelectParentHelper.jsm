@@ -25,6 +25,7 @@ var currentBrowser = null;
 var currentMenulist = null;
 var currentZoom = 1;
 var closedWithEnter = false;
+var selectRect;
 
 this.SelectParentHelper = {
   draggedOverPopup: false,
@@ -42,6 +43,7 @@ this.SelectParentHelper = {
     menulist.hidden = false;
     currentBrowser = browser;
     closedWithEnter = false;
+    selectRect = rect;
     this._registerListeners(browser, menulist.menupopup);
 
     let win = browser.ownerDocument.defaultView;
@@ -97,7 +99,15 @@ this.SelectParentHelper = {
       case "mouseup":
         this.clearScrollTimer();
         currentMenulist.menupopup.removeEventListener("mousemove", this);
-        currentBrowser.messageManager.sendAsyncMessage("Forms:MouseUp", {});
+
+        function inRect(rect, x, y) {
+          return x >= rect.left && x <= rect.left + rect.width && y >= rect.top && y <= rect.top + rect.height;
+        }
+
+        let x = event.screenX, y = event.screenY;
+        let onAnchor = !inRect(currentMenulist.menupopup.getOuterScreenRect(), x, y) &&
+                        inRect(selectRect, x, y) && currentMenulist.menupopup.state == "open";
+        currentBrowser.messageManager.sendAsyncMessage("Forms:MouseUp", { onAnchor });
         break;
 
       case "mouseover":
@@ -110,7 +120,6 @@ this.SelectParentHelper = {
 
       case "mousemove":
         let menupopup = currentMenulist.menupopup;
-        let popupRect = menupopup.getOuterScreenRect();
 
         this.clearScrollTimer();
 
@@ -118,7 +127,18 @@ this.SelectParentHelper = {
         
         
         
+        if (!(event.buttons & 1)) {
+          currentMenulist.menupopup.removeEventListener("mousemove", this);
+          menupopup.releaseCapture();
+          return;
+        }
+
         
+        
+        
+        
+        
+        let popupRect = menupopup.getOuterScreenRect();
         if (event.screenX >= popupRect.left && event.screenX <= popupRect.right) {
           if (!this.draggedOverPopup) {
             if (event.screenY > popupRect.top && event.screenY < popupRect.bottom) {
