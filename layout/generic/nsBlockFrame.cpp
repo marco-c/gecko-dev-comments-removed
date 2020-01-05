@@ -1163,6 +1163,20 @@ nsBlockFrame::Reflow(nsPresContext*           aPresContext,
     return;
   }
 
+#ifdef DEBUG
+  
+  
+  
+  
+  
+  nsLayoutUtils::AssertNoDuplicateContinuations(this, mFloats);
+#endif
+
+  
+  
+  
+  DrainOverflowLines();
+
   bool blockStartMarginRoot, blockEndMarginRoot;
   IsMarginRoot(&blockStartMarginRoot, &blockEndMarginRoot);
 
@@ -1178,20 +1192,6 @@ nsBlockFrame::Reflow(nsPresContext*           aPresContext,
   if (RenumberList()) {
     AddStateBits(NS_FRAME_HAS_DIRTY_CHILDREN);
   }
-
-#ifdef DEBUG
-  
-  
-  
-  
-  
-  nsLayoutUtils::AssertNoDuplicateContinuations(this, mFloats);
-#endif
-
-  
-  
-  
-  DrainOverflowLines();
 
   
   nsOverflowAreas ocBounds;
