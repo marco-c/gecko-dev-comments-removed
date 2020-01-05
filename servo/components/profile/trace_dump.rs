@@ -5,7 +5,7 @@
 
 
 use profile_traits::time::{ProfilerCategory, TimerMetadata};
-use serde_json::{self};
+use serde_json;
 use std::fs;
 use std::io::Write;
 

@@ -3,7 +3,7 @@
 
 
 
-use canvas_traits::{CanvasMsg};
+use canvas_traits::CanvasMsg;
 use dom::bindings::codegen::Bindings::WebGLFramebufferBinding;
 use dom::bindings::global::GlobalRef;
 use dom::bindings::js::Root;

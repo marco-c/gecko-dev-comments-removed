@@ -3,9 +3,9 @@
 
 
 use net_traits::IncludeSubdomains;
-use rustc_serialize::json::{decode};
+use rustc_serialize::json::decode;
 use std::net::{Ipv4Addr, Ipv6Addr};
-use std::str::{from_utf8};
+use std::str::from_utf8;
 use time;
 use url::Url;
 use util::resource_files::read_resource_file;

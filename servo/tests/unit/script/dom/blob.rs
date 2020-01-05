@@ -2,7 +2,7 @@
 
 
 
-use script::dom::blob::{DataSlice};
+use script::dom::blob::DataSlice;
 use std::sync::Arc;
 
 #[test]
