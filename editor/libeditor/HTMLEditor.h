@@ -940,6 +940,10 @@ protected:
                                     int32_t& aMarginLeft,
                                     int32_t& aMarginTop);
 
+  bool IsInObservedSubtree(nsIDocument* aDocument,
+                           nsIContent* aContainer,
+                           nsIContent* aChild);
+
   
   bool mIsObjectResizingEnabled;
   bool mIsResizing;
