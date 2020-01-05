@@ -26,6 +26,7 @@ pub enum CanvasMsg {
     BeginPath,
     ClosePath,
     Fill,
+    Stroke,
     DrawImage(Vec<u8>, Rect<i32>, Rect<i32>, bool),
     DrawImageSelf(Size2D<i32>, Rect<i32>, Rect<i32>, bool),
     MoveTo(Point2D<f32>),
@@ -211,6 +212,7 @@ impl<'a> CanvasPaintTask<'a> {
                     CanvasMsg::BeginPath => painter.begin_path(),
                     CanvasMsg::ClosePath => painter.close_path(),
                     CanvasMsg::Fill => painter.fill(),
+                    CanvasMsg::Stroke => painter.stroke(),
                     CanvasMsg::DrawImage(imagedata, dest_rect, source_rect, smoothing_enabled) => {
                         painter.draw_image(imagedata, dest_rect, source_rect, smoothing_enabled)
                     }
@@ -277,6 +279,19 @@ impl<'a> CanvasPaintTask<'a> {
         match self.fill_style {
             Pattern::Color(ref color) => {
                 self.drawtarget.fill(&self.path_builder.finish(), color, &draw_options);
+            }
+            _ => {
+                
+            }
+        };
+    }
+
+    fn stroke(&self) {
+        let draw_options = DrawOptions::new(1.0, 0);
+        match self.stroke_style {
+            Pattern::Color(ref color) => {
+                self.drawtarget.stroke(&self.path_builder.finish(),
+                                       color, &self.stroke_opts, &draw_options);
             }
             _ => {
                 
