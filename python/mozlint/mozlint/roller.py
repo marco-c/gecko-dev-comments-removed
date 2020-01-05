@@ -143,7 +143,7 @@ class LintRoller(object):
 
         
         
-        signal.signal(signal.SIGINT, signal.SIG_IGN)
+        orig_sigint = signal.signal(signal.SIGINT, signal.SIG_IGN)
         self.failed = []
         for worker in workers:
             
@@ -152,4 +152,7 @@ class LintRoller(object):
                 self.failed.extend(failed)
             for k, v in results.iteritems():
                 all_results[k].extend(v)
+
+        signal.signal(signal.SIGINT, orig_sigint)
+        m.shutdown()
         return all_results
