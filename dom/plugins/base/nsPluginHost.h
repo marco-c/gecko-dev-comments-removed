@@ -367,10 +367,6 @@ private:
 
   void UpdateInMemoryPluginInfo(nsPluginTag* aPluginTag);
 
-  
-  
-  bool ShouldAddPlugin(nsPluginTag* aPluginTag);
-
   RefPtr<nsPluginTag> mPlugins;
   RefPtr<nsPluginTag> mCachedPlugins;
   RefPtr<nsInvalidPluginTag> mInvalidPlugins;
