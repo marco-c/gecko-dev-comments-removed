@@ -134,10 +134,18 @@ private:
                  nsCSSAnonBoxes::mozAnonymousBlock,
                  "How did we getting here, then?");
     }
+
+    bool hasEffect = nsSVGIntegrationUtils::UsingEffectsForFrame(aFrame);
+    nsOverflowAreas* preTransformOverflows =
+      aFrame->Properties().Get(aFrame->PreTransformOverflowAreasProperty());
+    
+    
+    
+    
+    
+    MOZ_ASSERT(!hasEffect || !preTransformOverflows,
+               "GetVisualOverflowRect() won't return the pre-effects rect!");
 #endif
-    NS_ASSERTION(!aFrame->Properties().Get(
-                   aFrame->PreTransformOverflowAreasProperty()),
-                 "GetVisualOverflowRect() won't return the pre-effects rect!");
     return aFrame->GetVisualOverflowRect();
   }
 
