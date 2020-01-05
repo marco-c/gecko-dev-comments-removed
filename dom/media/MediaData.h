@@ -495,29 +495,6 @@ public:
 
   
   
-  
-  
-  
-  
-  
-  static already_AddRefed<VideoData> ShallowCopyUpdateDuration(const VideoData* aOther,
-                                                               int64_t aDuration);
-
-  
-  
-  
-  static already_AddRefed<VideoData> ShallowCopyUpdateTimestamp(const VideoData* aOther,
-                                                                int64_t aTimestamp);
-
-  
-  
-  
-  static already_AddRefed<VideoData>
-  ShallowCopyUpdateTimestampAndDuration(const VideoData* aOther, int64_t aTimestamp,
-                                        int64_t aDuration);
-
-  
-  
   static bool SetVideoDataToImage(PlanarYCbCrImage* aVideoImage,
                                   const VideoInfo& aInfo,
                                   const YCbCrBuffer &aBuffer,
@@ -547,6 +524,9 @@ public:
   void SetListener(UniquePtr<Listener> aListener);
   void MarkSentToCompositor();
   bool IsSentToCompositor() { return mSentToCompositor; }
+
+  void UpdateDuration(int64_t aDuration);
+  void UpdateTimestamp(int64_t aTimestamp);
 
 protected:
   ~VideoData();

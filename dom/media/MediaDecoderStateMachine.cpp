@@ -1243,9 +1243,7 @@ private:
       if (target >= video->mTime && video->GetEndTime() >= target) {
         
         
-        
-        RefPtr<VideoData> temp = VideoData::ShallowCopyUpdateTimestamp(video.get(), target);
-        video = temp;
+        video->UpdateTimestamp(target);
       }
       mFirstVideoFrameAfterSeek = nullptr;
 
