@@ -1887,24 +1887,13 @@ impl NodeMethods for Node {
 
     
     fn GetNodeValue(&self) -> Option<DOMString> {
-        match self.type_id() {
-            NodeTypeId::CharacterData(..) => {
-                let chardata = self.downcast::<CharacterData>().unwrap();
-                Some(chardata.Data())
-            }
-            _ => {
-                None
-            }
-        }
+        self.downcast::<CharacterData>().map(CharacterData::Data)
     }
 
     
     fn SetNodeValue(&self, val: Option<DOMString>) {
-        match self.type_id() {
-            NodeTypeId::CharacterData(..) => {
-                self.SetTextContent(val)
-            }
-            _ => {}
+        if let Some(character_data) = self.downcast::<CharacterData>() {
+            character_data.SetData(val.unwrap_or(DOMString::new()));
         }
     }
 
