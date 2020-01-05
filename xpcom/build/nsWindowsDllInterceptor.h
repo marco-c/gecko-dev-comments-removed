@@ -8,7 +8,11 @@
 #define NS_WINDOWS_DLL_INTERCEPTOR_H_
 
 #include "mozilla/Assertions.h"
+#include "mozilla/ArrayUtils.h"
+#include "mozilla/UniquePtr.h"
+#include "nsWindowsHelpers.h"
 
+#include <wchar.h>
 #include <windows.h>
 #include <winternl.h>
 
@@ -117,6 +121,7 @@ public:
     , mPatchedFnsLen(0)
   {}
 
+#if defined(_M_IX86)
   ~WindowsDllNopSpacePatcher()
   {
     
@@ -143,6 +148,13 @@ public:
 
   void Init(const char* aModuleName)
   {
+    if (!IsCompatible()) {
+#if defined(MOZILLA_INTERNAL_API)
+      NS_WARNING("NOP space patching is unavailable for compatibility reasons");
+#endif
+      return;
+    }
+
     mModule = LoadLibraryExA(aModuleName, nullptr, 0);
     if (!mModule) {
       
@@ -150,10 +162,90 @@ public:
     }
   }
 
-#if defined(_M_IX86)
+  
+
+
+
+
+
+
+
+
+  static bool IsCompatible()
+  {
+    
+    const wchar_t* kIncompatibleDLLs[] = {
+      L"detoured.dll",
+      L"_etoured.dll",
+      L"nvd3d9wrap.dll",
+      L"nvdxgiwrap.dll"
+    };
+    
+    for (unsigned int i = 0; i < mozilla::ArrayLength(kIncompatibleDLLs); ++i) {
+      if (GetModuleHandleW(kIncompatibleDLLs[i])) {
+        return false;
+      }
+    }
+    if (GetModuleHandleW(L"user32.dll")) {
+      
+      
+      return true;
+    }
+    
+    
+    HKEY hkey = NULL;
+    if (!RegOpenKeyExW(HKEY_LOCAL_MACHINE,
+          L"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Windows",
+          0, KEY_QUERY_VALUE, &hkey)) {
+      nsAutoRegKey key(hkey);
+      DWORD numBytes = 0;
+      const wchar_t kAppInitDLLs[] = L"AppInit_DLLs";
+      
+      LONG status = RegQueryValueExW(hkey, kAppInitDLLs, nullptr,
+                                     nullptr, nullptr, &numBytes);
+      mozilla::UniquePtr<wchar_t[]> data;
+      if (!status) {
+        
+        data = mozilla::MakeUnique<wchar_t[]>(numBytes / sizeof(wchar_t));
+        status = RegQueryValueExW(hkey, kAppInitDLLs, nullptr,
+                                  nullptr, (LPBYTE)data.get(), &numBytes);
+      }
+      if (!status) {
+        
+        
+        const wchar_t kDelimiters[] = L", ";
+        wchar_t* tokenContext = nullptr;
+        wchar_t* token = wcstok_s(data.get(), kDelimiters, &tokenContext);
+        while (token) {
+          wchar_t fname[_MAX_FNAME] = {0};
+          if (!_wsplitpath_s(token, nullptr, 0, nullptr, 0,
+                             fname, mozilla::ArrayLength(fname),
+                             nullptr, 0)) {
+            
+            
+            const wchar_t kNvInitName[] = L"nvinit";
+            if (!_wcsnicmp(fname, kNvInitName,
+                           mozilla::ArrayLength(kNvInitName))) {
+              return false;
+            }
+          }
+          token = wcstok_s(nullptr, kDelimiters, &tokenContext);
+        }
+      }
+    }
+    return true;
+  }
+
   bool AddHook(const char* aName, intptr_t aHookDest, void** aOrigFunc)
   {
     if (!mModule) {
+      return false;
+    }
+
+    if (!IsCompatible()) {
+#if defined(MOZILLA_INTERNAL_API)
+      NS_WARNING("NOP space patching is unavailable for compatibility reasons");
+#endif
       return false;
     }
 
@@ -246,6 +338,11 @@ private:
     return aOriginalFunction;
   }
 #else
+  void Init(const char* aModuleName)
+  {
+    
+  }
+
   bool AddHook(const char* aName, intptr_t aHookDest, void** aOrigFunc)
   {
     
