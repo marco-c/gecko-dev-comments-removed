@@ -970,7 +970,20 @@ bool PDBSourceLineWriter::GetSymbolFunctionName(IDiaSymbol *function,
                                    UNDNAME_NO_ECSU;
 
   
-  if (function->get_undecoratedNameEx(undecorate_options, name) != S_OK) {
+  
+  
+  HRESULT res;
+  __try {
+    res = function->get_undecoratedNameEx(undecorate_options, name);
+  }
+  __except (GetExceptionCode() == EXCEPTION_INT_DIVIDE_BY_ZERO ?
+            EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH)
+  {
+    fprintf(stderr, "div-by-zero error in get_undecoratedNameEx\n");
+    
+    res = E_FAIL;
+  }
+  if (res != S_OK) {
     if (function->get_name(name) != S_OK) {
       fprintf(stderr, "failed to get function name\n");
       return false;
