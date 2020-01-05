@@ -3,7 +3,12 @@
 
 
 
-onmessage = function () {
+
+
+
+"use strict";
+
+var onmessage = function () {
   fooBarWorker();
 };
 
