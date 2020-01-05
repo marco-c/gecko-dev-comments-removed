@@ -12,7 +12,12 @@ const REDIRECT_SOURCE_VISIT_BONUS =
 const PERM_REDIRECT_VISIT_BONUS =
   Services.prefs.getIntPref("places.frecency.permRedirectVisitBonus");
 
+
+
+Services.prefs.setCharPref("places.frecency.decayRate", "1.0");
+
 registerCleanupFunction(function*() {
+  Services.prefs.clearUserPref("places.frecency.decayRate");
   yield PlacesTestUtils.clearHistory();
 });
 
