@@ -995,7 +995,7 @@ MediaDataHelper::CreateYUV420VideoData(BufferData* aBufferData)
                                  mImageContainer,
                                  0, 
                                  0, 
-                                 1, 
+                                 media::TimeUnit::FromMicroseconds(1), 
                                  b,
                                  0, 
                                  -1,
