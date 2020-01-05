@@ -51,6 +51,8 @@ public class TabStripView extends RecyclerView {
 
         animatorListener = new TabAnimatorListener();
 
+        setChildrenDrawingOrderEnabled(true);
+
         adapter = new TabStripAdapter(context);
         setAdapter(adapter);
 
@@ -60,7 +62,7 @@ public class TabStripView extends RecyclerView {
 
         setItemAnimator(new TabStripItemAnimator(ANIM_TIME_MS));
 
-        
+        addItemDecoration(new TabStripDividerItem(context));
     }
 
      void refreshTabs() {
@@ -124,8 +126,12 @@ public class TabStripView extends RecyclerView {
         adapter.notifyTabChanged(tab);
     }
 
+    public int getPositionForSelectedTab() {
+        return adapter.getPositionForTab(Tabs.getInstance().getSelectedTab());
+    }
+
     private void updateSelectedPosition() {
-        final int selected = adapter.getPositionForTab(Tabs.getInstance().getSelectedTab());
+        final int selected = getPositionForSelectedTab();
         if (selected != -1) {
             scrollToPosition(selected);
         }
@@ -148,6 +154,45 @@ public class TabStripView extends RecyclerView {
         
         child.setTranslationX(0);
         child.setTranslationY(0);
+    }
+
+    
+
+
+
+    private int getRelativeSelectedPosition(int visibleTabsCount) {
+        final int selectedPosition = getPositionForSelectedTab();
+        final LinearLayoutManager layoutManager = (LinearLayoutManager) getLayoutManager();
+        final int firstVisiblePosition = layoutManager.findFirstVisibleItemPosition();
+        final int relativeSelectedPosition = selectedPosition - firstVisiblePosition;
+        if (relativeSelectedPosition < 0 || relativeSelectedPosition > visibleTabsCount - 1) {
+            return -1;
+        }
+
+        return relativeSelectedPosition;
+    }
+
+    @Override
+    protected int getChildDrawingOrder(int childCount, int i) {
+        final int relativeSelectedPosition = getRelativeSelectedPosition(childCount);
+        if (relativeSelectedPosition == -1) {
+            
+            return i;
+        }
+
+        
+        
+        
+        if (i == childCount - 1) {
+            
+            return relativeSelectedPosition;
+        } else if (i >= relativeSelectedPosition) {
+            
+            return i + 1;
+        } else {
+            
+            return i;
+        }
     }
 
     @Override
