@@ -106,10 +106,9 @@ var TestUtils = {
     Output.print("Waiting for event: '" + aEventName + "' on " + aTarget + ".");
 
     return new Promise(resolve => aTarget.addEventListener(aEventName,
-      function onEvent(...aArgs) {
-        aTarget.removeEventListener(aEventName, onEvent, aUseCapture);
+      function(...aArgs) {
         resolve(...aArgs);
-      }, aUseCapture));
+      }, {capture: aUseCapture, once: true}));
   },
 
   

@@ -46,6 +46,16 @@ exports.runTest = function(ruleTester) {
       "elt.addEventListener('click', function listener() {" +
       "  elt.removeEventListener('click', listener);" +
       "}, false, true);",
+
+      
+      "elt.addEventListener('click', function listener() {" +
+      "  elt.removeEventListener(eventName, listener);" +
+      "});",
+
+      
+      "elt.addEventListener(event1, function listener() {" +
+      "  elt.removeEventListener(event2, listener);" +
+      "});",
     ],
     invalid: [
       invalidCode("elt.addEventListener('click', function listener() {" +
@@ -63,6 +73,9 @@ exports.runTest = function(ruleTester) {
                   "});"),
       invalidCode("elt.addEventListener('click', function() {" +
                   "  elt.removeEventListener('click', arguments.callee);" +
+                  "});"),
+      invalidCode("elt.addEventListener(eventName, function listener() {" +
+                  "  elt.removeEventListener(eventName, listener);" +
                   "});"),
     ]
   });

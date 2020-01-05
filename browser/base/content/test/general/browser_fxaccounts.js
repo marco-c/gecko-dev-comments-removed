@@ -16,9 +16,9 @@ const TEST_ROOT = "http://example.com/browser/browser/base/content/test/general/
 
   
   let stubs = {
-    updateUI() {
-      return unstubs["updateUI"].call(gFxAccounts).then(() => {
-        Services.obs.notifyObservers(null, "test:browser_fxaccounts:updateUI", null);
+    updateAppMenuItem() {
+      return unstubs["updateAppMenuItem"].call(gFxAccounts).then(() => {
+        Services.obs.notifyObservers(null, "test:browser_fxaccounts:updateAppMenuItem", null);
       });
     },
     
@@ -72,7 +72,7 @@ var panelUIFooter = document.getElementById("PanelUI-footer-fxa");
 add_task(function* test_nouser() {
   let user = yield fxAccounts.getSignedInUser();
   Assert.strictEqual(user, null, "start with no user signed in");
-  let promiseUpdateDone = promiseObserver("test:browser_fxaccounts:updateUI");
+  let promiseUpdateDone = promiseObserver("test:browser_fxaccounts:updateAppMenuItem");
   Services.obs.notifyObservers(null, this.FxAccountsCommon.ONLOGOUT_NOTIFICATION, null);
   yield promiseUpdateDone;
 
@@ -115,7 +115,7 @@ add_task(function* test_verifiedUserEmptyProfile() {
   
   
   
-  let promiseUpdateDone = promiseObserver("test:browser_fxaccounts:updateUI", 2);
+  let promiseUpdateDone = promiseObserver("test:browser_fxaccounts:updateAppMenuItem", 2);
   configureProfileURL({}); 
   yield setSignedInUser(true); 
   yield promiseUpdateDone;
@@ -134,7 +134,7 @@ add_task(function* test_verifiedUserEmptyProfile() {
 });
 
 add_task(function* test_verifiedUserDisplayName() {
-  let promiseUpdateDone = promiseObserver("test:browser_fxaccounts:updateUI", 2);
+  let promiseUpdateDone = promiseObserver("test:browser_fxaccounts:updateAppMenuItem", 2);
   configureProfileURL({ displayName: "Test User Display Name" });
   yield setSignedInUser(true); 
   yield promiseUpdateDone;
@@ -149,7 +149,7 @@ add_task(function* test_verifiedUserDisplayName() {
 
 add_task(function* test_verifiedUserProfileFailure() {
   
-  let promiseUpdateDone = promiseObserver("test:browser_fxaccounts:updateUI", 1);
+  let promiseUpdateDone = promiseObserver("test:browser_fxaccounts:updateAppMenuItem", 1);
   configureProfileURL(null, 500);
   yield setSignedInUser(true); 
   yield promiseUpdateDone;
@@ -190,16 +190,6 @@ function promiseObserver(topic, count = 1) {
       }
     }
     Services.obs.addObserver(obs, topic, false);
-  });
-}
-
-
-function promiseWaitForEvent(node, type, capturing) {
-  return new Promise((resolve) => {
-    node.addEventListener(type, function listener(event) {
-      node.removeEventListener(type, listener, capturing);
-      resolve(event);
-    }, capturing);
   });
 }
 
@@ -250,7 +240,7 @@ var signOut = Task.async(function* () {
   
   
   
-  let promiseUpdateDone = promiseObserver("test:browser_fxaccounts:updateUI");
+  let promiseUpdateDone = promiseObserver("test:browser_fxaccounts:updateAppMenuItem");
   
   yield fxAccounts.signOut(true);
   yield promiseUpdateDone;
