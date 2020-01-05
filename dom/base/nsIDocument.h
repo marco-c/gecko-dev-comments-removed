@@ -1236,9 +1236,11 @@ public:
 
 
 
+
+
   template<typename T>
-  size_t FindDocStyleSheetInsertionPoint(const nsTArray<RefPtr<T>>& aDocSheets,
-                                         T* aSheet);
+  size_t FindDocStyleSheetInsertionPoint(const nsTArray<T>& aDocSheets,
+                                         mozilla::StyleSheet* aSheet);
 
   
 
