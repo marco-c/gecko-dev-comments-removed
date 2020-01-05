@@ -389,11 +389,7 @@ nsSVGImageFrame::PaintSVG(gfxContext& aContext,
       dirtyRect.MoveBy(-rootRect.TopLeft());
     }
 
-    
-    
-    
-    
-    uint32_t drawFlags = imgIContainer::FLAG_SYNC_DECODE;
+    uint32_t drawFlags = imgIContainer::FLAG_SYNC_DECODE_IF_FAST;
 
     if (mImageContainer->GetType() == imgIContainer::TYPE_VECTOR) {
       
