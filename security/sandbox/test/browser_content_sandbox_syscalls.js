@@ -1,5 +1,7 @@
 
 
+ 
+"use strict";
 
 var prefs = Cc["@mozilla.org/preferences-service;1"]
             .getService(Ci.nsIPrefBranch);
@@ -60,12 +62,11 @@ function openWriteCreateFlags() {
     let O_WRONLY = 0x001;
     let O_CREAT  = 0x200;
     return (O_WRONLY | O_CREAT);
-  } else {
+  }
     
     let O_WRONLY = 0x01;
     let O_CREAT  = 0x40;
     return (O_WRONLY | O_CREAT);
-  }
 }
 
 
@@ -79,6 +80,7 @@ function getOSLib() {
       return "libc.so.6";
     default:
       Assert.ok(false, "Unknown OS");
+      return 0;
   }
 }
 
@@ -119,7 +121,7 @@ function areContentSyscallsSandboxed(level) {
 
 
 
-add_task(function*() {
+add_task(function* () {
   
   if (!gMultiProcessBrowser) {
     ok(false, "e10s is enabled");
@@ -175,8 +177,7 @@ add_task(function*() {
   }
 
   
-  if (isLinux() || isMac())
-  {
+  if (isLinux() || isMac()) {
     
     let path = fileInHomeDir().path;
     let flags = openWriteCreateFlags();
@@ -185,8 +186,7 @@ add_task(function*() {
   }
 
   
-  if (isLinux() || isMac())
-  {
+  if (isLinux() || isMac()) {
     
     
     let path = fileInTempDir().path;
@@ -196,8 +196,7 @@ add_task(function*() {
   }
 
   
-  if (isLinux() || isMac())
-  {
+  if (isLinux() || isMac()) {
     let rv = yield ContentTask.spawn(browser, {lib}, callFork);
     ok(rv == -1, "calling fork is not permitted");
   }

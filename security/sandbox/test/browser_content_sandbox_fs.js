@@ -1,5 +1,7 @@
 
 
+ 
+ "use strict";
 
 var prefs = Cc["@mozilla.org/preferences-service;1"]
             .getService(Ci.nsIPrefBranch);
@@ -51,9 +53,9 @@ function readDir(path) {
     numEntries++;
   }).then(function () {
     iterator.close();
-    return {ok: true, numEntries: numEntries};
+    return {ok: true, numEntries};
   }).catch(function () {
-    return {ok: false, numEntries: numEntries};
+    return {ok: false, numEntries};
   });
   return promise;
 }
@@ -108,6 +110,7 @@ function minProfileReadSandboxLevel(level) {
       return 3;
     default:
       Assert.ok(false, "Unknown OS");
+      return 0;
   }
 }
 
@@ -123,6 +126,7 @@ function minHomeReadSandboxLevel(level) {
       return 3;
     default:
       Assert.ok(false, "Unknown OS");
+      return 0;
   }
 }
 
@@ -141,7 +145,7 @@ function minHomeReadSandboxLevel(level) {
 
 
 
-add_task(function*() {
+add_task(function* () {
   
   if (!gMultiProcessBrowser) {
     ok(false, "e10s is enabled");
@@ -298,7 +302,7 @@ function* testFileAccess() {
     
     
     let homeTempDir = GetHomeDir();
-    homeTempDir.appendRelativePath('Library/Caches/TemporaryItems');
+    homeTempDir.appendRelativePath("Library/Caches/TemporaryItems");
     if (homeTempDir.exists()) {
       let shouldBeReadable, minLevel;
       if (level >= minHomeReadSandboxLevel()) {
@@ -313,7 +317,7 @@ function* testFileAccess() {
         ok:       shouldBeReadable,
         browser:  webBrowser,
         file:     homeTempDir,
-        minLevel: minLevel,
+        minLevel,
       });
     }
   }
@@ -330,7 +334,7 @@ function* testFileAccess() {
     
     
     varDir.normalize();
-    Assert.ok(varDir.path === '/private/var', '/var resolves to /private/var');
+    Assert.ok(varDir.path === "/private/var", "/var resolves to /private/var");
 
     tests.push({
       desc:     "/var",
@@ -354,11 +358,11 @@ function* testFileAccess() {
     
     
     
-    let macTempDir = GetDirFromEnvVariable('TMPDIR');
+    let macTempDir = GetDirFromEnvVariable("TMPDIR");
 
     macTempDir.normalize();
-    Assert.ok(macTempDir.path.startsWith('/private/var'),
-      '$TMPDIR is in /private/var');
+    Assert.ok(macTempDir.path.startsWith("/private/var"),
+      "$TMPDIR is in /private/var");
 
     tests.push({
       desc:     `$TMPDIR (${macTempDir.path})`,
@@ -418,11 +422,11 @@ function* testFileAccess() {
   }
 
   
-  tests = tests.filter((test) => { return (test.minLevel <= level); });
+  tests = tests.filter((test) => (test.minLevel <= level));
 
   for (let test of tests) {
-    let testFunc = test.file.isDirectory? readDir : readFile;
-    let okString = test.ok? "allowed" : "blocked";
+    let testFunc = test.file.isDirectory ? readDir : readFile;
+    let okString = test.ok ? "allowed" : "blocked";
     let processType = test.browser === webBrowser ? "web" : "file";
 
     let result = yield ContentTask.spawn(test.browser, test.file.path,
