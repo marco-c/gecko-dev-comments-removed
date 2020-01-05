@@ -165,6 +165,15 @@ function waitForFrame() {
 
 
 
+function waitForIdleCallback() {
+  return new Promise(function(resolve, reject) {
+    window.requestIdleCallback(resolve);
+  });
+}
+
+
+
+
 
 
 
