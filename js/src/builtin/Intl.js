@@ -394,15 +394,18 @@ function CanonicalizeLanguageTag(locale) {
         if (subtag.length === 1 && (i > 0 || subtag === "x"))
             break;
 
-        if (subtag.length === 4) {
-            
-            
-            subtag = callFunction(std_String_toUpperCase, subtag[0]) +
-                     callFunction(String_substring, subtag, 1);
-        } else if (i !== 0 && subtag.length === 2) {
-            
-            
-            subtag = callFunction(std_String_toUpperCase, subtag);
+        if (i !== 0) {
+            if (subtag.length === 4) {
+                
+                
+                
+                subtag = callFunction(std_String_toUpperCase, subtag[0]) +
+                         callFunction(String_substring, subtag, 1);
+            } else if (subtag.length === 2) {
+                
+                
+                subtag = callFunction(std_String_toUpperCase, subtag);
+            }
         }
         if (callFunction(std_Object_hasOwnProperty, langSubtagMappings, subtag)) {
             
