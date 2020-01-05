@@ -2042,7 +2042,7 @@ StateObject::HandleResumeVideoDecoding(const TimeUnit& aTarget)
   
   RefPtr<AbstractThread> mainThread = mMaster->mAbstractMainThread;
 
-  SetSeekingState(Move(seekJob), EventVisibility::Observable)->Then(
+  SetSeekingState(Move(seekJob), EventVisibility::Suppressed)->Then(
     mainThread, __func__,
     [start, info, hw](){ ReportRecoveryTelemetry(start, info, hw); },
     [](){});
