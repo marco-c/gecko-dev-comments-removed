@@ -158,7 +158,10 @@ BoxModel.prototype = {
       let layout = yield this.inspector.pageStyle.getLayout(node, {
         autoMargins: true,
       });
-      let styleEntries = yield this.inspector.pageStyle.getApplied(node, {});
+      let styleEntries = yield this.inspector.pageStyle.getApplied(node, {
+        
+        skipPseudo: true
+      });
       this.elementRules = styleEntries.map(e => e.rule);
 
       

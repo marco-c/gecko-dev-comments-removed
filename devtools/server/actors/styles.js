@@ -438,6 +438,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
 
 
 
+
   getApplied: Task.async(function* (node, options) {
     if (!node) {
       return {entries: [], rules: [], sheets: []};
@@ -537,7 +538,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
         });
 
     
-    if (showElementStyles) {
+    if (showElementStyles && !options.skipPseudo) {
       for (let readPseudo of PSEUDO_ELEMENTS) {
         this._getElementRules(bindingElement, readPseudo, inherited, options)
             .forEach(oneRule => {
@@ -625,6 +626,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
   },
 
   
+
 
 
 
