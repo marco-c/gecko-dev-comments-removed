@@ -1227,7 +1227,10 @@ PopupNotifications.prototype = {
     
     this.panel.removeAttribute("noautofocus");
 
-    this._reshowNotifications(anchor);
+    
+    if (this.panel.state == "closed" || anchor != this._currentAnchorElement) {
+      this._reshowNotifications(anchor);
+    }
 
     
     if (anchor == this._currentAnchorElement && this.panel.firstChild) {
