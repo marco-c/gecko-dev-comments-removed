@@ -545,6 +545,12 @@ js::NukeCrossCompartmentWrappers(JSContext* cx,
 
             
             
+            if (MOZ_UNLIKELY(wrapped->is<ScriptSourceObject>())) {
+                continue;
+            }
+
+            
+            
             if (nukeReferencesToWindow == DontNukeWindowReferences &&
                 MOZ_LIKELY(!nukeAll) && IsWindowProxy(wrapped))
             {
