@@ -48,9 +48,19 @@ WebRenderDisplayItemLayer::RenderLayer(wr::DisplayListBuilder& aBuilder)
     mParentCommands.Clear();
     mItem->CreateWebRenderCommands(builder, mParentCommands, this);
     mBuiltDisplayList = builder.Finalize();
+  } else {
+    
+    
+    WebRenderLayerManager* manager = static_cast<WebRenderLayerManager*>(Manager());
+    MOZ_ASSERT(manager);
+
+    
+    
+    if (manager->IsMutatedLayer(this) || manager->IsMutatedLayer(GetParent())) {
+      manager->SetTransactionIncomplete();
+      return;
+    }
   }
-  
-  
 
   aBuilder.PushBuiltDisplayList(Move(mBuiltDisplayList));
   WrBridge()->AddWebRenderParentCommands(mParentCommands);

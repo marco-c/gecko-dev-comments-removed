@@ -162,7 +162,12 @@ public:
 
   WebRenderBridgeChild* WrBridge() const { return mWrChild; }
 
+  virtual void Mutated(Layer* aLayer) override;
+  virtual void MutatedSimple(Layer* aLayer) override;
+
   void Hold(Layer* aLayer);
+  void SetTransactionIncomplete() { mTransactionIncomplete = true; }
+  bool IsMutatedLayer(Layer* aLayer);
 
 private:
   
@@ -172,6 +177,11 @@ private:
   void MakeSnapshotIfRequired(LayoutDeviceIntSize aSize);
 
   void ClearLayer(Layer* aLayer);
+
+  bool EndTransactionInternal(DrawPaintedLayerCallback aCallback,
+                              void* aCallbackData,
+                              EndTransactionFlags aFlags);
+
 
 private:
   nsIWidget* MOZ_NON_OWNING_REF mWidget;
@@ -191,6 +201,14 @@ private:
   nsTArray<DidCompositeObserver*> mDidCompositeObservers;
 
   LayerRefArray mKeepAlive;
+
+  
+  
+  
+  void AddMutatedLayer(Layer* aLayer);
+  void ClearMutatedLayers();
+  LayerRefArray mMutatedLayers;
+  bool mTransactionIncomplete;
 
   bool mNeedsComposite;
 
