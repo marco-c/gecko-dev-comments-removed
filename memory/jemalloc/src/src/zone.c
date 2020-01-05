@@ -13,8 +13,9 @@ JEMALLOC_ATTR(weak_import);
 
 
 
-static malloc_zone_t zone;
-static struct malloc_introspection_t zone_introspect;
+static malloc_zone_t *default_zone, *purgeable_zone;
+static malloc_zone_t jemalloc_zone;
+static struct malloc_introspection_t jemalloc_zone_introspect;
 
 
 
@@ -56,7 +57,7 @@ zone_size(malloc_zone_t *zone, void *ptr)
 
 
 
-	return (ivsalloc(ptr, config_prof));
+	return (ivsalloc(tsdn_fetch(), ptr, config_prof));
 }
 
 static void *
@@ -87,7 +88,7 @@ static void
 zone_free(malloc_zone_t *zone, void *ptr)
 {
 
-	if (ivsalloc(ptr, config_prof) != 0) {
+	if (ivsalloc(tsdn_fetch(), ptr, config_prof) != 0) {
 		je_free(ptr);
 		return;
 	}
@@ -99,7 +100,7 @@ static void *
 zone_realloc(malloc_zone_t *zone, void *ptr, size_t size)
 {
 
-	if (ivsalloc(ptr, config_prof) != 0)
+	if (ivsalloc(tsdn_fetch(), ptr, config_prof) != 0)
 		return (je_realloc(ptr, size));
 
 	return (realloc(ptr, size));
@@ -123,7 +124,7 @@ zone_free_definite_size(malloc_zone_t *zone, void *ptr, size_t size)
 {
 	size_t alloc_size;
 
-	alloc_size = ivsalloc(ptr, config_prof);
+	alloc_size = ivsalloc(tsdn_fetch(), ptr, config_prof);
 	if (alloc_size != 0) {
 		assert(alloc_size == size);
 		je_free(ptr);
@@ -164,69 +165,71 @@ static void
 zone_force_unlock(malloc_zone_t *zone)
 {
 
+	
+
+
+
+
+
+
 	if (isthreaded)
-		jemalloc_postfork_parent();
+		jemalloc_postfork_child();
 }
 
-JEMALLOC_ATTR(constructor)
-void
-register_zone(void)
+static void
+zone_init(void)
 {
 
-	
-
-
-
-	malloc_zone_t *default_zone = malloc_default_zone();
-	malloc_zone_t *purgeable_zone = NULL;
-	if (!default_zone->zone_name ||
-	    strcmp(default_zone->zone_name, "DefaultMallocZone") != 0) {
-		return;
-	}
-
-	zone.size = (void *)zone_size;
-	zone.malloc = (void *)zone_malloc;
-	zone.calloc = (void *)zone_calloc;
-	zone.valloc = (void *)zone_valloc;
-	zone.free = (void *)zone_free;
-	zone.realloc = (void *)zone_realloc;
-	zone.destroy = (void *)zone_destroy;
-	zone.zone_name = "jemalloc_zone";
-	zone.batch_malloc = NULL;
-	zone.batch_free = NULL;
-	zone.introspect = &zone_introspect;
-	zone.version = JEMALLOC_ZONE_VERSION;
+	jemalloc_zone.size = (void *)zone_size;
+	jemalloc_zone.malloc = (void *)zone_malloc;
+	jemalloc_zone.calloc = (void *)zone_calloc;
+	jemalloc_zone.valloc = (void *)zone_valloc;
+	jemalloc_zone.free = (void *)zone_free;
+	jemalloc_zone.realloc = (void *)zone_realloc;
+	jemalloc_zone.destroy = (void *)zone_destroy;
+	jemalloc_zone.zone_name = "jemalloc_zone";
+	jemalloc_zone.batch_malloc = NULL;
+	jemalloc_zone.batch_free = NULL;
+	jemalloc_zone.introspect = &jemalloc_zone_introspect;
+	jemalloc_zone.version = JEMALLOC_ZONE_VERSION;
 #if (JEMALLOC_ZONE_VERSION >= 5)
-	zone.memalign = zone_memalign;
+	jemalloc_zone.memalign = zone_memalign;
 #endif
 #if (JEMALLOC_ZONE_VERSION >= 6)
-	zone.free_definite_size = zone_free_definite_size;
+	jemalloc_zone.free_definite_size = zone_free_definite_size;
 #endif
 #if (JEMALLOC_ZONE_VERSION >= 8)
-	zone.pressure_relief = NULL;
+	jemalloc_zone.pressure_relief = NULL;
 #endif
 
-	zone_introspect.enumerator = NULL;
-	zone_introspect.good_size = (void *)zone_good_size;
-	zone_introspect.check = NULL;
-	zone_introspect.print = NULL;
-	zone_introspect.log = NULL;
-	zone_introspect.force_lock = (void *)zone_force_lock;
-	zone_introspect.force_unlock = (void *)zone_force_unlock;
-	zone_introspect.statistics = NULL;
+	jemalloc_zone_introspect.enumerator = NULL;
+	jemalloc_zone_introspect.good_size = (void *)zone_good_size;
+	jemalloc_zone_introspect.check = NULL;
+	jemalloc_zone_introspect.print = NULL;
+	jemalloc_zone_introspect.log = NULL;
+	jemalloc_zone_introspect.force_lock = (void *)zone_force_lock;
+	jemalloc_zone_introspect.force_unlock = (void *)zone_force_unlock;
+	jemalloc_zone_introspect.statistics = NULL;
 #if (JEMALLOC_ZONE_VERSION >= 6)
-	zone_introspect.zone_locked = NULL;
+	jemalloc_zone_introspect.zone_locked = NULL;
 #endif
 #if (JEMALLOC_ZONE_VERSION >= 7)
-	zone_introspect.enable_discharge_checking = NULL;
-	zone_introspect.disable_discharge_checking = NULL;
-	zone_introspect.discharge = NULL;
-#ifdef __BLOCKS__
-	zone_introspect.enumerate_discharged_pointers = NULL;
-#else
-	zone_introspect.enumerate_unavailable_without_blocks = NULL;
+	jemalloc_zone_introspect.enable_discharge_checking = NULL;
+	jemalloc_zone_introspect.disable_discharge_checking = NULL;
+	jemalloc_zone_introspect.discharge = NULL;
+#  ifdef __BLOCKS__
+	jemalloc_zone_introspect.enumerate_discharged_pointers = NULL;
+#  else
+	jemalloc_zone_introspect.enumerate_unavailable_without_blocks = NULL;
+#  endif
 #endif
-#endif
+}
+
+static malloc_zone_t *
+zone_default_get(void)
+{
+	malloc_zone_t **zones = NULL;
+	unsigned int num_zones = 0;
 
 	
 
@@ -237,16 +240,28 @@ register_zone(void)
 
 
 
+	if (KERN_SUCCESS != malloc_get_all_zones(0, NULL,
+	    (vm_address_t**)&zones, &num_zones)) {
+		
 
 
-	if (malloc_default_purgeable_zone != NULL)
-		purgeable_zone = malloc_default_purgeable_zone();
 
-	
-	malloc_zone_register(&zone);
+		num_zones = 0;
+	}
+
+	if (num_zones)
+		return (zones[0]);
+
+	return (malloc_default_zone());
+}
+
+
+static void
+zone_promote(void)
+{
+	malloc_zone_t *zone;
 
 	do {
-		default_zone = malloc_default_zone();
 		
 
 
@@ -257,6 +272,7 @@ register_zone(void)
 
 		malloc_zone_unregister(default_zone);
 		malloc_zone_register(default_zone);
+
 		
 
 
@@ -268,9 +284,47 @@ register_zone(void)
 
 
 
-		if (purgeable_zone) {
+		if (purgeable_zone != NULL) {
 			malloc_zone_unregister(purgeable_zone);
 			malloc_zone_register(purgeable_zone);
 		}
-	} while (malloc_default_zone() != &zone);
+
+		zone = zone_default_get();
+	} while (zone != &jemalloc_zone);
+}
+
+JEMALLOC_ATTR(constructor)
+void
+zone_register(void)
+{
+
+	
+
+
+
+	default_zone = zone_default_get();
+	if (!default_zone->zone_name || strcmp(default_zone->zone_name,
+	    "DefaultMallocZone") != 0)
+		return;
+
+	
+
+
+
+
+
+
+
+
+
+
+	purgeable_zone = (malloc_default_purgeable_zone == NULL) ? NULL :
+	    malloc_default_purgeable_zone();
+
+	
+	zone_init();
+	malloc_zone_register(&jemalloc_zone);
+
+	
+	zone_promote();
 }

@@ -107,6 +107,14 @@ struct arena_stats_s {
 
 
 
+
+	size_t		retained;
+
+	
+
+
+
+
 	uint64_t	npurge;
 	uint64_t	nmadvise;
 	uint64_t	purged;

@@ -1,5 +1,9 @@
 #include "test/jemalloc_test.h"
 
+#ifdef JEMALLOC_FILL
+const char *malloc_conf = "junk:false";
+#endif
+
 
 
 
