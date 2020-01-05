@@ -220,11 +220,11 @@ private:
   {
     
     
-    SECKEYPrivateKey* key = mKeyPair->mPrivateKey.get()->GetPrivateKey();
+    UniqueSECKEYPrivateKey key = mKeyPair->mPrivateKey.get()->GetPrivateKey();
     CERTCertificate* cert = CERT_DupCertificate(mCertificate.get());
     RefPtr<RTCCertificate> result =
         new RTCCertificate(mResultPromise->GetParentObject(),
-                           key, cert, mAuthType, mExpires);
+                           key.release(), cert, mAuthType, mExpires);
     mResultPromise->MaybeResolve(result);
   }
 };
@@ -416,7 +416,7 @@ RTCCertificate::ReadPrivateKey(JSStructuredCloneReader* aReader,
   if (!jwk.Init(json)) {
     return false;
   }
-  mPrivateKey.reset(CryptoKey::PrivateKeyFromJwk(jwk, aLockProof));
+  mPrivateKey = CryptoKey::PrivateKeyFromJwk(jwk, aLockProof);
   return !!mPrivateKey;
 }
 

@@ -132,12 +132,9 @@ public:
   nsresult SetPublicKey(SECKEYPublicKey* aPublicKey);
 
   
-  
-  
-  
   const CryptoBuffer& GetSymKey() const;
-  SECKEYPrivateKey* GetPrivateKey() const;
-  SECKEYPublicKey* GetPublicKey() const;
+  UniqueSECKEYPrivateKey GetPrivateKey() const;
+  UniqueSECKEYPublicKey GetPublicKey() const;
 
   
   virtual void virtualDestroyNSSReference() override;
@@ -148,41 +145,47 @@ public:
   
   
   
-  static SECKEYPrivateKey* PrivateKeyFromPkcs8(CryptoBuffer& aKeyData,
-                                               const nsNSSShutDownPreventionLock& );
+  static UniqueSECKEYPrivateKey PrivateKeyFromPkcs8(
+    CryptoBuffer& aKeyData,
+    const nsNSSShutDownPreventionLock& );
   static nsresult PrivateKeyToPkcs8(SECKEYPrivateKey* aPrivKey,
                                     CryptoBuffer& aRetVal,
                                     const nsNSSShutDownPreventionLock& );
 
-  static SECKEYPublicKey* PublicKeyFromSpki(CryptoBuffer& aKeyData,
-                                            const nsNSSShutDownPreventionLock& );
+  static UniqueSECKEYPublicKey PublicKeyFromSpki(
+    CryptoBuffer& aKeyData,
+    const nsNSSShutDownPreventionLock& );
   static nsresult PublicKeyToSpki(SECKEYPublicKey* aPubKey,
                                   CryptoBuffer& aRetVal,
                                   const nsNSSShutDownPreventionLock& );
 
-  static SECKEYPrivateKey* PrivateKeyFromJwk(const JsonWebKey& aJwk,
-                                             const nsNSSShutDownPreventionLock& );
+  static UniqueSECKEYPrivateKey PrivateKeyFromJwk(
+    const JsonWebKey& aJwk,
+    const nsNSSShutDownPreventionLock& );
   static nsresult PrivateKeyToJwk(SECKEYPrivateKey* aPrivKey,
                                   JsonWebKey& aRetVal,
                                   const nsNSSShutDownPreventionLock& );
 
-  static SECKEYPublicKey* PublicKeyFromJwk(const JsonWebKey& aKeyData,
-                                           const nsNSSShutDownPreventionLock& );
+  static UniqueSECKEYPublicKey PublicKeyFromJwk(
+    const JsonWebKey& aKeyData,
+    const nsNSSShutDownPreventionLock& );
   static nsresult PublicKeyToJwk(SECKEYPublicKey* aPubKey,
                                  JsonWebKey& aRetVal,
                                  const nsNSSShutDownPreventionLock& );
 
-  static SECKEYPublicKey* PublicDhKeyFromRaw(CryptoBuffer& aKeyData,
-                                             const CryptoBuffer& aPrime,
-                                             const CryptoBuffer& aGenerator,
-                                             const nsNSSShutDownPreventionLock& );
+  static UniqueSECKEYPublicKey PublicDhKeyFromRaw(
+    CryptoBuffer& aKeyData,
+    const CryptoBuffer& aPrime,
+    const CryptoBuffer& aGenerator,
+    const nsNSSShutDownPreventionLock& );
   static nsresult PublicDhKeyToRaw(SECKEYPublicKey* aPubKey,
                                    CryptoBuffer& aRetVal,
                                    const nsNSSShutDownPreventionLock& );
 
-  static SECKEYPublicKey* PublicECKeyFromRaw(CryptoBuffer& aKeyData,
-                                             const nsString& aNamedCurve,
-                                             const nsNSSShutDownPreventionLock& );
+  static UniqueSECKEYPublicKey PublicECKeyFromRaw(
+    CryptoBuffer& aKeyData,
+    const nsString& aNamedCurve,
+    const nsNSSShutDownPreventionLock& );
   static nsresult PublicECKeyToRaw(SECKEYPublicKey* aPubKey,
                                    CryptoBuffer& aRetVal,
                                    const nsNSSShutDownPreventionLock& );
