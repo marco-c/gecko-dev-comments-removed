@@ -28,6 +28,14 @@ struct unused_t;
 
 
 
+
+
+
+
+
+
+
+
 template<class T>
 struct MOZ_MUST_USE_TYPE MOZ_NON_AUTOABLE already_AddRefed
 {
