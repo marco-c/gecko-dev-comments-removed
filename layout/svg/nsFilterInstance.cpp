@@ -249,7 +249,7 @@ nsFilterInstance::ComputeTargetBBoxInFilterSpace()
   
   
   MOZ_ASSERT(mTargetFrame->IsFrameOfType(nsIFrame::eSVG));
-  nsIFrame* svgFrame = nsSVGUtils::GetNearestSVGParent(mTargetFrame);
+  nsIFrame* svgFrame = nsSVGUtils::GetNearestSVGViewport(mTargetFrame);
   if (svgFrame) {
     nscoord A2D = svgFrame->PresContext()->AppUnitsPerCSSPixel();
     nsIntRect bounds =

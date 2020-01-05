@@ -198,7 +198,7 @@ public:
 
 
 
-  static nsIFrame* GetNearestSVGParent(nsIFrame *aFrame);
+  static nsIFrame* GetNearestSVGViewport(nsIFrame *aFrame);
 
   
 
