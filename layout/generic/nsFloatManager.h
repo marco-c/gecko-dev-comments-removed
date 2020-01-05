@@ -67,6 +67,12 @@ struct nsFlowAreaRect {
 
 
 
+
+
+
+
+
+
 class nsFloatManager {
 public:
   explicit nsFloatManager(nsIPresShell* aPresShell, mozilla::WritingMode aWM);
