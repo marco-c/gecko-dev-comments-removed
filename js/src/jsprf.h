@@ -27,6 +27,7 @@
 
 
 
+#include "mozilla/AllocPolicy.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/IntegerPrintfMacros.h"
@@ -34,39 +35,11 @@
 #include "mozilla/Types.h"
 
 #include <stdarg.h>
+#include <string.h>
 
 #include "jstypes.h"
 
 namespace mozilla {
-
-
-
-
-
-
-extern MFBT_API char* Smprintf(const char* fmt, ...)
-    MOZ_FORMAT_PRINTF(1, 2);
-
-
-
-
-extern MFBT_API void SmprintfFree(char* mem);
-
-
-
-
-
-
-
-
-extern MFBT_API char* SmprintfAppend(char* last, const char* fmt, ...)
-    MOZ_FORMAT_PRINTF(2, 3);
-
-
-
-
-extern MFBT_API char* Vsmprintf(const char* fmt, va_list ap);
-extern MFBT_API char* VsmprintfAppend(char* last, const char* fmt, va_list ap);
 
 
 
@@ -109,6 +82,136 @@ private:
     bool cvt_f(double d, const char* fmt0, const char* fmt1);
     bool cvt_s(const char* s, int width, int prec, int flags);
 };
+
+
+template<typename AllocPolicy>
+class MOZ_STACK_CLASS SprintfState final : public mozilla::PrintfTarget, private AllocPolicy
+{
+ public:
+    explicit SprintfState(char* base)
+        : mMaxlen(base ? strlen(base) : 0)
+        , mBase(base)
+        , mCur(base ? base + mMaxlen : 0)
+    {
+    }
+
+    ~SprintfState() {
+        this->free_(mBase);
+    }
+
+    char* release() {
+        char* result = mBase;
+        mBase = nullptr;
+        return result;
+    }
+
+ protected:
+
+    bool append(const char* sp, size_t len) override {
+        ptrdiff_t off;
+        char* newbase;
+        size_t newlen;
+
+        off = mCur - mBase;
+        if (off + len >= mMaxlen) {
+            
+            newlen = mMaxlen + ((len > 32) ? len : 32);
+            newbase = static_cast<char*>(this->maybe_pod_realloc(mBase, mMaxlen, newlen));
+            if (!newbase) {
+                
+                return false;
+            }
+            mBase = newbase;
+            mMaxlen = newlen;
+            mCur = mBase + off;
+        }
+
+        
+        memcpy(mCur, sp, len);
+        mCur += len;
+        MOZ_ASSERT(size_t(mCur - mBase) <= mMaxlen);
+        return true;
+    }
+
+ private:
+
+    size_t mMaxlen;
+    char* mBase;
+    char* mCur;
+};
+
+
+
+
+
+
+template<typename AllocPolicy = mozilla::MallocAllocPolicy>
+MOZ_FORMAT_PRINTF(1, 2)
+char* Smprintf(const char* fmt, ...)
+{
+    SprintfState<AllocPolicy> ss(nullptr);
+    va_list ap;
+    va_start(ap, fmt);
+    bool r = ss.vprint(fmt, ap);
+    va_end(ap);
+    if (!r) {
+        return nullptr;
+    }
+    return ss.release();
+}
+
+
+
+
+
+
+
+
+template<typename AllocPolicy = mozilla::MallocAllocPolicy>
+MOZ_FORMAT_PRINTF(2, 3)
+char* SmprintfAppend(char* last, const char* fmt, ...)
+{
+    SprintfState<AllocPolicy> ss(last);
+    va_list ap;
+    va_start(ap, fmt);
+    bool r = ss.vprint(fmt, ap);
+    va_end(ap);
+    if (!r) {
+        return nullptr;
+    }
+    return ss.release();
+}
+
+
+
+
+template<typename AllocPolicy = mozilla::MallocAllocPolicy>
+char* Vsmprintf(const char* fmt, va_list ap)
+{
+    SprintfState<AllocPolicy> ss(nullptr);
+    if (!ss.vprint(fmt, ap))
+        return nullptr;
+    return ss.release();
+}
+
+template<typename AllocPolicy = mozilla::MallocAllocPolicy>
+char* VsmprintfAppend(char* last, const char* fmt, va_list ap)
+{
+    SprintfState<AllocPolicy> ss(last);
+    if (!ss.vprint(fmt, ap))
+        return nullptr;
+    return ss.release();
+}
+
+
+
+
+template<typename AllocPolicy = mozilla::MallocAllocPolicy>
+void SmprintfFree(char* mem)
+{
+    AllocPolicy allocator;
+    allocator.free_(mem);
+}
 
 } 
 
