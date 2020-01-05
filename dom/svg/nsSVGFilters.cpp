@@ -517,6 +517,12 @@ nsSVGFELightingElement::AddLightingAttributes(FilterPrimitiveDescription aDescri
   Size kernelUnitLength =
     GetKernelUnitLength(aInstance, &mNumberPairAttributes[KERNEL_UNIT_LENGTH]);
 
+  if (kernelUnitLength.width <= 0 || kernelUnitLength.height <= 0) {
+    
+    
+    return FilterPrimitiveDescription(PrimitiveType::Empty);
+  }
+
   FilterPrimitiveDescription& descr = aDescription;
   descr.Attributes().Set(eLightingLight, ComputeLightAttributes(aInstance));
   descr.Attributes().Set(eLightingSurfaceScale, surfaceScale);
