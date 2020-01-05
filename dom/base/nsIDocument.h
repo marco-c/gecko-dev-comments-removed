@@ -2656,8 +2656,6 @@ public:
   }
   Element* GetActiveElement();
   bool HasFocus(mozilla::ErrorResult& rv) const;
-  mozilla::TimeStamp LastFocusTime() const;
-  void SetLastFocusTime(const mozilla::TimeStamp& aFocusTime);
   
   bool MozSyntheticDocument() const
   {
@@ -3026,10 +3024,6 @@ protected:
 
   
   RefPtr<mozilla::dom::FontFaceSet> mFontFaceSet;
-
-  
-  
-  mozilla::TimeStamp mLastFocusTime;
 
   
   bool mBidiEnabled : 1;
