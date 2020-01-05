@@ -730,6 +730,11 @@ const DownloadsView = {
   
 
 
+  subViewOpen: false,
+
+  
+
+
   loading: false,
 
   
@@ -1032,14 +1037,14 @@ const DownloadsView = {
 
 
   onDownloadMouseOver(aEvent) {
-    if (!this.contextMenuOpen &&
+    if (!(this.contextMenuOpen || this.subViewOpen) &&
         aEvent.target.parentNode == this.richListBox) {
       this.richListBox.selectedItem = aEvent.target;
     }
   },
 
   onDownloadMouseOut(aEvent) {
-    if (!this.contextMenuOpen &&
+    if (!(this.contextMenuOpen || this.subViewOpen) &&
         aEvent.target.parentNode == this.richListBox) {
       
       
@@ -1671,6 +1676,8 @@ const DownloadsBlockedSubview = {
 
     this.element = element;
     element.setAttribute("showingsubview", "true");
+    DownloadsView.subViewOpen = true;
+    DownloadsViewController.updateCommands();
 
     let e = this.elements;
     let s = DownloadsCommon.strings;
@@ -1697,6 +1704,7 @@ const DownloadsBlockedSubview = {
       case "ViewHiding":
         this.subview.removeEventListener(event.type, this);
         this.element.removeAttribute("showingsubview");
+        DownloadsView.subViewOpen = false;
         delete this.element;
         break;
       default:
