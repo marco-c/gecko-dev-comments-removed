@@ -139,7 +139,7 @@ public:
   
 
 
-  NS_IMETHOD_(nsIContent*) GetRootEditorNode() = 0;
+  NS_IMETHOD_(mozilla::dom::Element*) GetRootEditorNode() = 0;
 
   
 
