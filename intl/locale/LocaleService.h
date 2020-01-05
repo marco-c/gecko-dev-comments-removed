@@ -120,6 +120,26 @@ public:
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+  bool GetAvailableLocales(nsTArray<nsCString>& aRetVal);
+
+  
+
+
+
+
+
   void Refresh();
 
   
