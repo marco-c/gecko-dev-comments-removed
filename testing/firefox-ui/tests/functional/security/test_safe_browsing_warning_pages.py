@@ -91,13 +91,11 @@ class TestSafeBrowsingWarningPages(PuppeteerMixin, MarionetteTestCase):
 
         
         
+        expected_url = self.browser.get_final_url(url)
         Wait(self.marionette, timeout=self.marionette.timeout.page_load).until(
-            lambda mn: mn.execute_script('return document.readyState == "DOMContentLoaded" ||'
-                                         '       document.readyState == "complete";')
+            lambda mn: expected_url == mn.get_url(),
+            message="The expected URL '{}' has not been loaded".format(expected_url)
         )
-
-        
-        self.assertEquals(self.marionette.get_url(), self.browser.get_final_url(url))
 
     def check_ignore_warning_button(self, unsafe_page):
         button = self.marionette.find_element(By.ID, 'ignoreWarningButton')
