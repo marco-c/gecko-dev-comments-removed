@@ -65,11 +65,12 @@ const MIN_INDENTATION_LENGTH: usize = 4;
 
 
 
-#[derive(Clone, PartialEq, Copy, Debug, HeapSizeOf, Deserialize, Serialize)]
+#[derive(Clone, PartialEq, Copy, Debug, HeapSizeOf, Hash, Eq, Deserialize, Serialize)]
 pub struct OpaqueNode(pub uintptr_t);
 
 impl OpaqueNode {
     
+    #[inline]
     pub fn id(&self) -> uintptr_t {
         let OpaqueNode(pointer) = *self;
         pointer
