@@ -1,8 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
+// `data` comes from components/style/properties.mako.rs; see build.rs for more details.
 
 <%!
     from data import to_rust_ident, to_camel_case
@@ -596,10 +596,10 @@ class Side(object):
         self.index = index
 
 class Corner(object):
-    def __init__(self, name, index):
-        self.x_name = "NS_CORNER_" + name + "_X"
-        self.y_name = "NS_CORNER_" + name + "_Y"
-        self.ident = name.lower()
+    def __init__(self, vert, horiz, index):
+        self.x_name = "HalfCorner::eCorner" + vert + horiz + "X"
+        self.y_name = "HalfCorner::eCorner" + vert + horiz + "Y"
+        self.ident = (vert + "_" + horiz).lower()
         self.x_index = 2 * index
         self.y_index = 2 * index + 1
 
@@ -610,7 +610,8 @@ class GridLine(object):
         self.gecko = "m" + to_camel_case(self.ident)
 
 SIDES = [Side("Top", 0), Side("Right", 1), Side("Bottom", 2), Side("Left", 3)]
-CORNERS = [Corner("TOP_LEFT", 0), Corner("TOP_RIGHT", 1), Corner("BOTTOM_RIGHT", 2), Corner("BOTTOM_LEFT", 3)]
+CORNERS = [Corner("Top", "Left", 0), Corner("Top", "Right", 1),
+           Corner("Bottom", "Right", 2), Corner("Bottom", "Left", 3)]
 GRID_LINES = map(GridLine, ["row-start", "row-end", "column-start", "column-end"])
 %>
 
