@@ -13,14 +13,13 @@ use euclid::scale_factor::ScaleFactor;
 use euclid::size::TypedSize2D;
 #[cfg(target_os = "windows")]
 use gdi32;
+use gfx_traits::DevicePixel;
 use gleam::gl;
 use glutin;
 use glutin::{Api, ElementState, Event, GlRequest, MouseButton, MouseScrollDelta, VirtualKeyCode};
 use glutin::{ScanCode, TouchPhase};
 #[cfg(target_os = "macos")]
 use glutin::os::macos::{ActivationPolicy, WindowBuilderExt};
-use layers::geometry::DevicePixel;
-use layers::platform::surface::NativeDisplay;
 use msg::constellation_msg::{self, Key};
 use msg::constellation_msg::{ALT, CONTROL, KeyState, NONE, SHIFT, SUPER};
 use net_traits::net_error_list::NetError;
@@ -42,8 +41,6 @@ use url::Url;
 use user32;
 use util::geometry::ScreenPx;
 use util::opts;
-#[cfg(not(target_os = "android"))]
-use util::opts::RenderApi;
 use util::prefs::PREFS;
 use util::resource_files;
 #[cfg(target_os = "windows")]
@@ -318,17 +315,7 @@ impl Window {
 
     #[cfg(not(any(target_arch = "arm", target_arch = "aarch64")))]
     fn gl_version() -> GlRequest {
-        if opts::get().use_webrender {
-            return GlRequest::Specific(Api::OpenGl, (3, 2));
-        }
-        match opts::get().render_api {
-            RenderApi::GL => {
-                GlRequest::Specific(Api::OpenGl, (2, 1))
-            }
-            RenderApi::ES2 => {
-                GlRequest::Specific(Api::OpenGlEs, (2, 0))
-            }
-        }
+        return GlRequest::Specific(Api::OpenGl, (3, 2));
     }
 
     #[cfg(any(target_arch = "arm", target_arch = "aarch64"))]
@@ -558,72 +545,28 @@ impl Window {
 
     #[cfg(any(target_os = "linux", target_os = "android"))]
     fn handle_next_event(&self) -> bool {
-        use std::thread;
-        use std::time::Duration;
-
-        
-        
-        
-        if opts::get().use_webrender {
-            match self.kind {
-                WindowKind::Window(ref window) => {
-                    let event = match window.wait_events().next() {
-                        None => {
-                            warn!("Window event stream closed.");
-                            return false;
-                        },
-                        Some(event) => event,
-                    };
-                    let mut close = self.handle_window_event(event);
-                    if !close {
-                        while let Some(event) = window.poll_events().next() {
-                            if self.handle_window_event(event) {
-                                close = true;
-                                break
-                            }
+        match self.kind {
+            WindowKind::Window(ref window) => {
+                let event = match window.wait_events().next() {
+                    None => {
+                        warn!("Window event stream closed.");
+                        return false;
+                    },
+                    Some(event) => event,
+                };
+                let mut close = self.handle_window_event(event);
+                if !close {
+                    while let Some(event) = window.poll_events().next() {
+                        if self.handle_window_event(event) {
+                            close = true;
+                            break
                         }
                     }
-                    close
                 }
-                WindowKind::Headless(..) => {
-                    false
-                }
+                close
             }
-        } else {
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            match self.kind {
-                WindowKind::Window(ref window) => {
-                    let first_event = window.poll_events().next();
-
-                    match first_event {
-                        Some(event) => {
-                            self.handle_window_event(event)
-                        }
-                        None => {
-                            thread::sleep(Duration::from_millis(16));
-                            false
-                        }
-                    }
-                }
-                WindowKind::Headless(..) => {
-                    false
-                }
+            WindowKind::Headless(..) => {
+                false
             }
         }
     }
@@ -1029,33 +972,6 @@ impl WindowMethods for Window {
 
     fn prepare_for_composite(&self, _width: usize, _height: usize) -> bool {
         true
-    }
-
-    #[cfg(target_os = "linux")]
-    fn native_display(&self) -> NativeDisplay {
-        use x11::xlib;
-        unsafe {
-            match opts::get().render_api {
-                RenderApi::GL => {
-                    match self.kind {
-                        WindowKind::Window(ref window) => {
-                            NativeDisplay::new(window.platform_display() as *mut xlib::Display)
-                        }
-                        WindowKind::Headless(..) => {
-                            unreachable!()
-                        }
-                    }
-                },
-                RenderApi::ES2 => {
-                    NativeDisplay::new_egl_display()
-                }
-            }
-        }
-    }
-
-    #[cfg(not(target_os = "linux"))]
-    fn native_display(&self) -> NativeDisplay {
-        NativeDisplay::new()
     }
 
     /// Helper function to handle keyboard events.

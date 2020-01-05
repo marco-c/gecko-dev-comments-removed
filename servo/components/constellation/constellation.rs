@@ -173,7 +173,7 @@ pub struct Constellation<Message, LTF, STF> {
     document_states: HashMap<PipelineId, DocumentState>,
 
     
-    webrender_api_sender: Option<webrender_traits::RenderApiSender>,
+    webrender_api_sender: webrender_traits::RenderApiSender,
 
     
     shutting_down: bool,
@@ -210,7 +210,7 @@ pub struct InitialConstellationState {
     
     pub supports_clipboard: bool,
     
-    pub webrender_api_sender: Option<webrender_traits::RenderApiSender>,
+    pub webrender_api_sender: webrender_traits::RenderApiSender,
 }
 
 #[derive(Debug, Clone)]
@@ -971,9 +971,6 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
                 self.compositor_proxy.send(ToCompositorMsg::TouchEventProcessed(result))
             }
 
-            FromScriptMsg::GetScrollOffset(pid, lid, send) => {
-                self.compositor_proxy.send(ToCompositorMsg::GetScrollOffset(pid, lid, send));
-            }
             FromScriptMsg::RegisterServiceWorker(scope_things, scope) => {
                 debug!("constellation got store registration scope message");
                 self.handle_register_serviceworker(scope_things, scope);
@@ -1852,8 +1849,7 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
         }
 
         
-        self.revoke_paint_permission(prev_pipeline_id);
-        self.send_frame_tree_and_grant_paint_permission();
+        self.send_frame_tree();
 
         
         
@@ -1910,12 +1906,6 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
             }
         }
 
-        if let Some(old_pipeline_id) = frame_change.old_pipeline_id {
-            
-            
-            self.revoke_paint_permission(old_pipeline_id);
-        };
-
         if self.frames.contains_key(&frame_change.frame_id) {
             
             if let Some(ref mut pipeline) = self.pipelines.get_mut(&frame_change.new_pipeline_id) {
@@ -1959,7 +1949,7 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
         }
 
         
-        self.send_frame_tree_and_grant_paint_permission();
+        self.send_frame_tree();
     }
 
     fn handle_activate_document_msg(&mut self, pipeline_id: PipelineId) {
@@ -2340,19 +2330,7 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
     }
 
     
-    fn revoke_paint_permission(&self, pipeline_id: PipelineId) {
-        if let Some(pipeline) = self.pipelines.get(&pipeline_id) {
-            for frame in self.current_frame_tree_iter(pipeline.frame_id) {
-                if let Some(pipeline) = self.pipelines.get(&frame.current.pipeline_id) {
-                    pipeline.revoke_paint_permission();
-                }
-            }
-        }
-    }
-
-    
-    
-    fn send_frame_tree_and_grant_paint_permission(&mut self) {
+    fn send_frame_tree(&mut self) {
         
         
         
@@ -2364,10 +2342,6 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
                 warn!("Compositor has discarded SetFrameTree");
                 return; 
             }
-        }
-
-        for frame in self.current_frame_tree_iter(self.root_frame_id) {
-            self.pipelines.get(&frame.current.pipeline_id).map(|pipeline| pipeline.grant_paint_permission());
         }
     }
 

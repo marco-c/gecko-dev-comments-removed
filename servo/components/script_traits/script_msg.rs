@@ -129,8 +129,6 @@ pub enum ScriptMsg {
     
     TouchEventProcessed(EventResult),
     
-    GetScrollOffset(PipelineId, LayerId, IpcSender<Point2D<f32>>),
-    
     LogEntry(Option<PipelineId>, Option<String>, LogEntry),
     
     PipelineExited(PipelineId),

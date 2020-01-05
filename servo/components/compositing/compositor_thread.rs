@@ -8,16 +8,14 @@ use SendableFrameTree;
 use compositor::CompositingReason;
 use euclid::point::Point2D;
 use euclid::size::Size2D;
-use gfx_traits::{Epoch, FrameTreeId, LayerId, LayerProperties, PaintListener};
+use gfx_traits::LayerId;
 use ipc_channel::ipc::IpcSender;
-use layers::layers::{BufferRequest, LayerBufferSet};
-use layers::platform::surface::{NativeDisplay, NativeSurface};
 use msg::constellation_msg::{Image, Key, KeyModifiers, KeyState, PipelineId};
 use profile_traits::mem;
 use profile_traits::time;
 use script_traits::{AnimationState, ConstellationMsg, EventResult};
 use std::fmt::{Debug, Error, Formatter};
-use std::sync::mpsc::{Receiver, Sender, channel};
+use std::sync::mpsc::{Receiver, Sender};
 use style_traits::cursor::Cursor;
 use style_traits::viewport::ViewportConstraints;
 use url::Url;
@@ -64,55 +62,6 @@ impl RenderListener for Box<CompositorProxy + 'static> {
 }
 
 
-impl PaintListener for Box<CompositorProxy + 'static + Send> {
-    fn native_display(&mut self) -> Option<NativeDisplay> {
-        let (chan, port) = channel();
-        self.send(Msg::GetNativeDisplay(chan));
-        
-        
-        
-        
-        
-        
-        port.recv().unwrap_or(None)
-    }
-
-    fn assign_painted_buffers(&mut self,
-                              pipeline_id: PipelineId,
-                              epoch: Epoch,
-                              replies: Vec<(LayerId, Box<LayerBufferSet>)>,
-                              frame_tree_id: FrameTreeId) {
-        self.send(Msg::AssignPaintedBuffers(pipeline_id, epoch, replies, frame_tree_id));
-    }
-
-    fn ignore_buffer_requests(&mut self, buffer_requests: Vec<BufferRequest>) {
-        let mut native_surfaces = Vec::new();
-        for request in buffer_requests.into_iter() {
-            if let Some(native_surface) = request.native_surface {
-                native_surfaces.push(native_surface);
-            }
-        }
-        if !native_surfaces.is_empty() {
-            self.send(Msg::ReturnUnusedNativeSurfaces(native_surfaces));
-        }
-    }
-
-    fn initialize_layers_for_pipeline(&mut self,
-                                      pipeline_id: PipelineId,
-                                      properties: Vec<LayerProperties>,
-                                      epoch: Epoch) {
-        
-        
-        
-        self.send(Msg::InitializeLayersForPipeline(pipeline_id, epoch, properties));
-    }
-
-    fn notify_paint_thread_exiting(&mut self, pipeline_id: PipelineId) {
-        self.send(Msg::PaintThreadExited(pipeline_id))
-    }
-}
-
-
 pub enum Msg {
     
     Exit,
@@ -123,17 +72,7 @@ pub enum Msg {
     ShutdownComplete,
 
     
-    
-    
-    GetNativeDisplay(Sender<Option<NativeDisplay>>),
-
-    
-    
-    InitializeLayersForPipeline(PipelineId, Epoch, Vec<LayerProperties>),
-    
     ScrollFragmentPoint(PipelineId, LayerId, Point2D<f32>, bool),
-    
-    AssignPaintedBuffers(PipelineId, Epoch, Vec<(LayerId, Box<LayerBufferSet>)>, FrameTreeId),
     
     ChangePageTitle(PipelineId, Option<String>),
     
@@ -159,8 +98,6 @@ pub enum Msg {
     
     CreatePng(IpcSender<Option<Image>>),
     
-    PaintThreadExited(PipelineId),
-    
     ViewportConstrained(PipelineId, ViewportConstraints),
     
     IsReadyToSaveImageReply(bool),
@@ -168,9 +105,6 @@ pub enum Msg {
     NewFavicon(Url),
     
     HeadParsed,
-    
-    
-    ReturnUnusedNativeSurfaces(Vec<NativeSurface>),
     
     CollectMemoryReports(mem::ReportsChan),
     
@@ -181,8 +115,6 @@ pub enum Msg {
     MoveTo(Point2D<i32>),
     
     ResizeTo(Size2D<u32>),
-    
-    GetScrollOffset(PipelineId, LayerId, IpcSender<Point2D<f32>>),
     
     PipelineVisibilityChanged(PipelineId, bool),
     
@@ -201,10 +133,7 @@ impl Debug for Msg {
         match *self {
             Msg::Exit => write!(f, "Exit"),
             Msg::ShutdownComplete => write!(f, "ShutdownComplete"),
-            Msg::GetNativeDisplay(..) => write!(f, "GetNativeDisplay"),
-            Msg::InitializeLayersForPipeline(..) => write!(f, "InitializeLayersForPipeline"),
             Msg::ScrollFragmentPoint(..) => write!(f, "ScrollFragmentPoint"),
-            Msg::AssignPaintedBuffers(..) => write!(f, "AssignPaintedBuffers"),
             Msg::ChangeRunningAnimationsState(..) => write!(f, "ChangeRunningAnimationsState"),
             Msg::ChangePageTitle(..) => write!(f, "ChangePageTitle"),
             Msg::ChangePageUrl(..) => write!(f, "ChangePageUrl"),
@@ -217,12 +146,10 @@ impl Debug for Msg {
             Msg::TouchEventProcessed(..) => write!(f, "TouchEventProcessed"),
             Msg::SetCursor(..) => write!(f, "SetCursor"),
             Msg::CreatePng(..) => write!(f, "CreatePng"),
-            Msg::PaintThreadExited(..) => write!(f, "PaintThreadExited"),
             Msg::ViewportConstrained(..) => write!(f, "ViewportConstrained"),
             Msg::IsReadyToSaveImageReply(..) => write!(f, "IsReadyToSaveImageReply"),
             Msg::NewFavicon(..) => write!(f, "NewFavicon"),
             Msg::HeadParsed => write!(f, "HeadParsed"),
-            Msg::ReturnUnusedNativeSurfaces(..) => write!(f, "ReturnUnusedNativeSurfaces"),
             Msg::CollectMemoryReports(..) => write!(f, "CollectMemoryReports"),
             Msg::Status(..) => write!(f, "Status"),
             Msg::GetClientWindow(..) => write!(f, "GetClientWindow"),
@@ -230,7 +157,6 @@ impl Debug for Msg {
             Msg::ResizeTo(..) => write!(f, "ResizeTo"),
             Msg::PipelineVisibilityChanged(..) => write!(f, "PipelineVisibilityChanged"),
             Msg::PipelineExited(..) => write!(f, "PipelineExited"),
-            Msg::GetScrollOffset(..) => write!(f, "GetScrollOffset"),
             Msg::NewScrollFrameReady(..) => write!(f, "NewScrollFrameReady"),
         }
     }
@@ -249,6 +175,6 @@ pub struct InitialCompositorState {
     
     pub mem_profiler_chan: mem::ProfilerChan,
     
-    pub webrender: Option<webrender::Renderer>,
-    pub webrender_api_sender: Option<webrender_traits::RenderApiSender>,
+    pub webrender: webrender::Renderer,
+    pub webrender_api_sender: webrender_traits::RenderApiSender,
 }
