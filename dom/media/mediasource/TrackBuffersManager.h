@@ -98,7 +98,7 @@ public:
   
   
   
-  RefPtr<AppendPromise> AppendData(MediaByteBuffer* aData,
+  RefPtr<AppendPromise> AppendData(already_AddRefed<MediaByteBuffer> aData,
                                    const SourceBufferAttributes& aAttributes);
 
   
@@ -174,7 +174,7 @@ private:
   friend class MediaSourceDemuxer;
   ~TrackBuffersManager();
   
-  RefPtr<AppendPromise> DoAppendData(MediaByteBuffer* aData,
+  RefPtr<AppendPromise> DoAppendData(already_AddRefed<MediaByteBuffer> aData,
                                      const SourceBufferAttributes& aAttributes);
   void ScheduleSegmentParserLoop();
   void SegmentParserLoop();
