@@ -44,6 +44,7 @@ pub enum BlobImpl {
     
     
     
+    
     Sliced(JS<Blob>, RelativePos),
 }
 
@@ -71,6 +72,7 @@ pub struct Blob {
     reflector_: Reflector,
     #[ignore_heap_size_of = "No clear owner"]
     blob_impl: DOMRefCell<BlobImpl>,
+    
     typeString: String,
     isClosed_: Cell<bool>,
 }

@@ -84,6 +84,8 @@ struct FileStoreEntry {
     file_impl: FileImpl,
     
     
+    
+    
     refs: AtomicUsize,
     
     
@@ -157,8 +159,6 @@ impl<UI: 'static + UIProvider> FileManager<UI> {
             FileManagerThreadMsg::DecRef(id, origin, sender) => {
                 if let Ok(id) = Uuid::parse_str(&id.0) {
                     spawn_named("dec ref".to_owned(), move || {
-                        
-                        
                         let _ = sender.send(store.dec_ref(&id, &origin));
                     })
                 } else {
@@ -168,7 +168,6 @@ impl<UI: 'static + UIProvider> FileManager<UI> {
             FileManagerThreadMsg::RevokeBlobURL(id, origin, sender) => {
                 if let Ok(id) = Uuid::parse_str(&id.0) {
                     spawn_named("revoke blob url".to_owned(), move || {
-                        
                         let _ = sender.send(store.set_blob_url_validity(false, &id, &origin));
                     })
                 } else {
@@ -487,8 +486,6 @@ impl <UI: 'static + UIProvider> FileManagerStore<UI> {
             self.remove(id);
 
             if let Some(parent_id) = opt_parent_id {
-                
-                
                 return self.dec_ref(&parent_id, origin_in);
             }
         }
@@ -505,7 +502,6 @@ impl <UI: 'static + UIProvider> FileManagerStore<UI> {
                     origin: origin.clone(),
                     file_impl: FileImpl::Memory(blob_buf),
                     refs: AtomicUsize::new(1),
-                    
                     is_valid_url: AtomicBool::new(set_valid),
                 });
 
