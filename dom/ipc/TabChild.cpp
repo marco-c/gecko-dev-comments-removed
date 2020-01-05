@@ -3067,16 +3067,11 @@ TabChild::ReinitRendering()
   
   
   
-  SendEnsureLayersConnected();
-
-  RefPtr<CompositorBridgeChild> cb = CompositorBridgeChild::Get();
-
-  
-  
   CompositorOptions options;
-  Unused << cb->SendGetCompositorOptions(mLayersId, &options);
+  SendEnsureLayersConnected(&options);
   mCompositorOptions = Some(options);
 
+  RefPtr<CompositorBridgeChild> cb = CompositorBridgeChild::Get();
   if (gfxVars::UseWebRender()) {
     RefPtr<LayerManager> lm = mPuppetWidget->RecreateLayerManager(nullptr);
     MOZ_ASSERT(lm->AsWebRenderLayerManager());
