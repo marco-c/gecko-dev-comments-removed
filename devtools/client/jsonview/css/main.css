@@ -17,10 +17,17 @@
 
 
 
+.tab-panel-inner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
 .panelContent {
   direction: ltr;
   overflow-y: auto;
   width: 100%;
+  flex: 1;
 }
 
 
@@ -41,20 +48,9 @@
 
 
 
-.theme-firebug .panelContent {
-  height: calc(100% - 30px);
-}
-
 
 
 .theme-firebug .tabs .tabs-navigation {
   font-size: 14px;
 }
 
-
-
-
-.theme-dark .panelContent,
-.theme-light .panelContent {
-  height: calc(100% - 27px);
-}

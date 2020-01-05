@@ -8,10 +8,11 @@
 .tabs {
   height: 100%;
   background: var(--theme-body-background);
+  display: flex;
+  flex-direction: column;
 }
 
 .tabs .tabs-menu {
-  display: table;
   list-style: none;
   padding: 0;
   margin: 0;
@@ -42,13 +43,14 @@
 }
 
 
-
 .tabs .panels {
-  height: calc(100% - 24px);
+  flex: 1;
+  overflow: hidden;
 }
 
 .tabs .tab-panel {
   height: 100%;
+  overflow: auto;
 }
 
 .tabs .tabs-navigation,
