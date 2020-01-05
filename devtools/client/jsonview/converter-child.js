@@ -97,8 +97,27 @@ Converter.prototype = {
       request.QueryInterface(Ci.nsIChannel).contentCharset || "UTF-8";
 
     
+    
+    
+    let originalType;
+    if (request instanceof Ci.nsIHttpChannel) {
+      try {
+        originalType = request.getResponseHeader("Content-Type");
+      } catch (err) {
+        
+      }
+    } else {
+      let match = this.uri.match(/^data:(.*?)[,;]/);
+      if (match) {
+        originalType = match[1];
+      }
+    }
+    const JSON_TYPES = ["application/json", "application/manifest+json"];
+    if (!JSON_TYPES.includes(originalType)) {
+      originalType = JSON_TYPES[0];
+    }
     request.QueryInterface(Ci.nsIWritablePropertyBag);
-    request.setProperty("contentType", "application/json");
+    request.setProperty("contentType", originalType);
 
     this.channel = request;
     this.channel.contentType = "text/html";
