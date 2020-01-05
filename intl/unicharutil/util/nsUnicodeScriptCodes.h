@@ -65,6 +65,9 @@
 
 
 
+
+
+
 #ifndef NS_UNICODE_SCRIPT_CODES
 #define NS_UNICODE_SCRIPT_CODES
 
@@ -85,24 +88,32 @@ struct nsCharProps1 {
 struct nsCharProps2 {
   
   
+  
   unsigned char mVertOrient:2;
-  unsigned char mXidmod:4;
+  unsigned char mIdType:2;
 };
 
 #endif
 
 #if !ENABLE_INTL_API
 
+
+
 struct nsCharProps2 {
   unsigned char mScriptCode:8;
+  
   unsigned char mPairedBracketType:2;
   unsigned char mEastAsianWidthFWH:1;
   unsigned char mCategory:5;
+  
+  unsigned char mIdType:2;
+  unsigned char mDefaultIgnorable:1;
   unsigned char mBidiCategory:5;
-  unsigned char mXidmod:4;
-  signed char   mNumericValue:5;
+  
   unsigned char mVertOrient:2;
-  unsigned char mLineBreak; 
+  unsigned char mLineBreak:6;
+  
+  signed char   mNumericValue; 
 };
 
 #endif
@@ -279,8 +290,16 @@ enum class Script {
   MULTANI = 164,
   PAU_CIN_HAU = 165,
   SIDDHAM = 166,
+  ADLAM = 167,
+  BHAIKSUKI = 168,
+  MARCHEN = 169,
+  NEWA = 170,
+  OSAGE = 171,
+  HAN_WITH_BOPOMOFO = 172,
+  JAMO = 173,
+  SYMBOLS_EMOJI = 174,
 
-  NUM_SCRIPT_CODES = 167,
+  NUM_SCRIPT_CODES = 175,
 
   INVALID = -1
 };

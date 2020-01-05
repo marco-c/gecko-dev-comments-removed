@@ -814,12 +814,11 @@ bool nsIDNService::isLabelSafe(const nsAString &label)
     }
 
     
-    XidmodType xm = GetIdentifierModification(ch);
-    if (xm != XIDMOD_RECOMMENDED &&
-        xm != XIDMOD_INCLUSION &&
-        xm != XIDMOD_ASPIRATIONAL) {
+    IdentifierType idType = GetIdentifierType(ch);
+    if (idType == IDTYPE_RESTRICTED) {
       return false;
     }
+    MOZ_ASSERT(idType == IDTYPE_ALLOWED || idType == IDTYPE_ASPIRATIONAL);
 
     
     Script script = GetScriptCode(ch);
