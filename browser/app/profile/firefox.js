@@ -377,6 +377,12 @@ pref("browser.search.context.loadInBackground", false);
 
 pref("browser.search.hiddenOneOffs", "");
 
+#ifdef XP_WIN
+pref("browser.search.redirectWindowsSearch", true);
+#else
+pref("browser.search.redirectWindowsSearch", false);
+#endif
+
 pref("browser.search.reset.enabled", true);
 
 pref("browser.usedOnWindows10", false);
@@ -1443,6 +1449,12 @@ pref("dom.ipc.cpow.timeout", 500);
 
 
 pref("dom.ipc.cpows.forbid-unsafe-from-browser", true);
+
+
+pref("dom.ipc.cpows.forbid-cpows-in-compat-addons", true);
+
+
+pref("dom.ipc.cpows.allow-cpows-in-compat-addons", "{b9db16a4-6edc-47ec-a1f4-b86292ed211d},privateTab@infocatcher,mousegesturessuite@lemon_juice.addons.mozilla.org,firegestures@xuldev.org,treestyletab@piro.sakura.ne.jp,{DDC359D1-844A-42a7-9AA1-88A850A938A8},ich@maltegoetz.de,{AE93811A-5C9A-4d34-8462-F7B864FC4696}");
 
 
 
