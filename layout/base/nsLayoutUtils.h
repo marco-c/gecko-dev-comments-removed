@@ -2881,6 +2881,19 @@ public:
 
 
 
+
+
+
+  static nsRect ComputePartialPrerenderArea(const nsRect& aDirtyRect,
+                                            const nsRect& aOverflow,
+                                            const nsSize& aPrerenderSize);
+
+  
+
+
+
+
+
   static bool SupportsServoStyleBackend(nsIDocument* aDocument);
 
   
