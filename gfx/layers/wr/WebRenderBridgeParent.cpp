@@ -236,26 +236,10 @@ WebRenderBridgeParent::RecvDPSyncEnd(InfallibleTArray<WebRenderCommand>&& aComma
                                      const uint64_t& aFwdTransactionId,
                                      const uint64_t& aTransactionId)
 {
-  UpdateFwdTransactionId(aFwdTransactionId);
+  
+  
 
-  if (mDestroyed) {
-    for (const auto& op : aToDestroy) {
-      DestroyActor(op);
-    }
-    return IPC_OK();
-  }
-  
-  
-  AutoWebRenderBridgeParentAsyncMessageSender autoAsyncMessageSender(this, &aToDestroy);
-
-  ProcessWebrenderCommands(aCommands);
-
-  
-  
-  
-  MOZ_ASSERT(aTransactionId == 1 || aTransactionId > mPendingTransactionId);
-  mPendingTransactionId = aTransactionId;
-  return IPC_OK();
+  return RecvDPEnd(Move(aCommands), Move(aToDestroy), aFwdTransactionId, aTransactionId);
 }
 
 void
