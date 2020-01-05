@@ -51,9 +51,9 @@ add_task(function* () {
   
   testEditorContent(editor, REQUESTS[0]);
 
-  wait = panelWin.once(panelWin.EVENTS.RESPONSE_BODY_DISPLAYED);
   RequestsMenu.selectedIndex = 1;
-  yield wait;
+  yield panelWin.once(panelWin.EVENTS.TAB_UPDATED);
+  yield panelWin.once(panelWin.EVENTS.RESPONSE_BODY_DISPLAYED);
 
   
   testEditorContent(editor, REQUESTS[1]);
