@@ -224,20 +224,34 @@ ToolSidebar.prototype = {
 
     let previousTool = this._currentTool;
     if (previousTool) {
-      if (this._telemetry) {
-        this._telemetry.toolClosed(previousTool);
-      }
       this.emit(previousTool + "-unselected");
     }
 
     this._currentTool = id;
 
-    if (this._telemetry) {
-      this._telemetry.toolOpened(this._currentTool);
-    }
-
+    this.updateTelemetryOnChange(id, previousTool);
     this.emit(this._currentTool + "-selected");
     this.emit("select", this._currentTool);
+  },
+
+  
+
+
+
+
+
+
+
+  updateTelemetryOnChange: function (currentToolId, previousToolId) {
+    if (currentToolId === previousToolId || !this._telemetry) {
+      
+      return;
+    }
+
+    if (previousToolId) {
+      this._telemetry.toolClosed(previousToolId);
+    }
+    this._telemetry.toolOpened(currentToolId);
   },
 
   
@@ -250,13 +264,8 @@ ToolSidebar.prototype = {
     this._tabbox.removeAttribute("hidden");
 
     
-    
     if (id) {
-      this._currentTool = id;
-
-      if (this._telemetry) {
-        this._telemetry.toolOpened(this._currentTool);
-      }
+      this.select(id);
     }
 
     this.emit("show");
