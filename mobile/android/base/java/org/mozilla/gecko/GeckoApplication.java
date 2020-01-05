@@ -30,6 +30,7 @@ import org.mozilla.gecko.util.BundleEventListener;
 import org.mozilla.gecko.util.EventCallback;
 import org.mozilla.gecko.util.GeckoBundle;
 import org.mozilla.gecko.util.HardwareUtils;
+import org.mozilla.gecko.util.PRNGFixes;
 import org.mozilla.gecko.util.ThreadUtils;
 
 import java.io.File;
@@ -145,6 +146,19 @@ public class GeckoApplication extends Application
     @Override
     public void onCreate() {
         Log.i(LOG_TAG, "zerdatime " + SystemClock.uptimeMillis() + " - Fennec application start");
+
+        
+        
+        
+        
+        
+        try {
+            PRNGFixes.apply();
+        } catch (Exception e) {
+            
+            Log.e(LOG_TAG, "Got exception applying PRNGFixes! Cryptographic data produced on this device may be weak. Ignoring.", e);
+        }
+
         mIsInitialResume = true;
 
         mRefWatcher = LeakCanary.install(this);

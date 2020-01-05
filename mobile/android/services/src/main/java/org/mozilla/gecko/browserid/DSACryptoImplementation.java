@@ -134,13 +134,6 @@ public class DSACryptoImplementation {
         throw new IllegalArgumentException("bytes must not be null");
       }
 
-      try {
-        PRNGFixes.apply();
-      } catch (Exception e) {
-        
-        Logger.error(LOG_TAG, "Got exception applying PRNGFixes!  Cryptographic data produced on this device may be weak.  Ignoring.", e);
-      }
-
       final Signature signer = Signature.getInstance(SIGNATURE_ALGORITHM);
       signer.initSign(privateKey);
       signer.update(bytes);
