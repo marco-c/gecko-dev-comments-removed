@@ -1301,7 +1301,7 @@ function insertBookmarkTree(items, source, parent, urls, lastAddedForParent) {
     });
 
     
-    updateFrecency(db, urls).catch(Cu.reportError);
+    updateFrecency(db, urls, true).catch(Cu.reportError);
 
     return items;
   }));
@@ -1783,23 +1783,28 @@ function validateBookmarkObject(input, behavior) {
 
 
 
-var updateFrecency = Task.async(function* (db, urls) {
-  
-  let urlQuery = 'hash("' + urls.map(url => url.href).join('"), hash("') + '")';
-  
-  yield db.execute(
-    `UPDATE moz_places
-     SET frecency = NOTIFY_FRECENCY(
-       CALCULATE_FRECENCY(id), url, guid, hidden, last_visit_date
-     ) WHERE url_hash IN ( ${urlQuery} )
-    `);
 
+
+
+var updateFrecency = Task.async(function* (db, urls, collapseNotifications = false) {
+  let urlQuery = 'hash("' + urls.map(url => url.href).join('"), hash("') + '")';
+
+  let frecencyClause = "CALCULATE_FRECENCY(id)";
+  if (!collapseNotifications) {
+    frecencyClause = "NOTIFY_FRECENCY(" + frecencyClause +
+                     ", url, guid, hidden, last_visit_date)";
+  }
+  
   yield db.execute(
     `UPDATE moz_places
-     SET hidden = 0
+     SET hidden = (url_hash BETWEEN hash("place", "prefix_lo") AND hash("place", "prefix_hi")),
+         frecency = ${frecencyClause}
      WHERE url_hash IN ( ${urlQuery} )
-       AND frecency <> 0
     `);
+  if (collapseNotifications) {
+    let observers = PlacesUtils.history.getObservers();
+    notify(observers, "onManyFrecenciesChanged");
+  }
 });
 
 
@@ -1945,7 +1950,7 @@ Task.async(function* (db, folderGuids, options) {
   
 
   let urls = itemsRemoved.filter(item => "url" in item).map(item => item.url);
-  updateFrecency(db, urls).then(null, Cu.reportError);
+  updateFrecency(db, urls, true).then(null, Cu.reportError);
 
   
   
