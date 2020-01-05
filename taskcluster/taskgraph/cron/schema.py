@@ -39,7 +39,9 @@ cron_yml_schema = Schema({
 
         
         
-        'projects': [basestring],
+        
+        
+        'run-on-projects': [basestring],
 
         
         
