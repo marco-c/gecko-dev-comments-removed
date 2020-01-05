@@ -712,22 +712,13 @@ LoadInfo::GetScriptableOriginAttributes(JSContext* aCx,
 }
 
 NS_IMETHODIMP
-LoadInfo::ResetPrincipalsToNullPrincipal()
+LoadInfo::ResetPrincipalToInheritToNullPrincipal()
 {
   
   
   nsCOMPtr<nsIPrincipal> newNullPrincipal =
     NullPrincipal::Create(mOriginAttributes);
 
-  MOZ_ASSERT(mInternalContentPolicyType != nsIContentPolicy::TYPE_DOCUMENT ||
-             !mLoadingPrincipal,
-             "LoadingPrincipal should be null for toplevel loads");
-
-  
-  if (mInternalContentPolicyType != nsIContentPolicy::TYPE_DOCUMENT) {
-    mLoadingPrincipal = newNullPrincipal;
-  }
-  mTriggeringPrincipal = newNullPrincipal;
   mPrincipalToInherit = newNullPrincipal;
 
   

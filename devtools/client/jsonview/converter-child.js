@@ -106,7 +106,7 @@ Converter.prototype = {
     
     
     
-    this.channel.loadInfo.resetPrincipalsToNullPrincipal();
+    this.channel.loadInfo.resetPrincipalToInheritToNullPrincipal();
 
     this.listener.onStartRequest(this.channel, context);
   },
