@@ -128,6 +128,18 @@ FindAnimationsForCompositor(const nsIFrame* aFrame,
   
   
   
+  
+  if (aProperty == eCSSProperty_transform) {
+    PendingAnimationTracker* tracker =
+      aFrame->PresContext()->Document()->GetPendingAnimationTracker();
+    if (tracker) {
+      tracker->MarkAnimationsThatMightNeedSynchronization();
+    }
+  }
+
+  
+  
+  
   if (effects->PropertiesWithImportantRules().HasProperty(aProperty) &&
       effects->PropertiesForAnimationsLevel().HasProperty(aProperty)) {
     return false;
