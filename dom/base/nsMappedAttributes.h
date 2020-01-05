@@ -100,7 +100,11 @@ public:
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
+  static void Shutdown();
 private:
+
+  void LastRelease();
+
   nsMappedAttributes(const nsMappedAttributes& aCopy);
   ~nsMappedAttributes();
 
@@ -134,6 +138,12 @@ private:
   nsMapRuleToAttributesFunc mRuleMapper;
   RefPtr<RawServoDeclarationBlock> mServoStyle;
   void* mAttrs[1];
+
+  static bool sShuttingDown;
+
+  
+  
+  static nsTArray<void*>* sCachedMappedAttributeAllocations;
 };
 
 #endif 

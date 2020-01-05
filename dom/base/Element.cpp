@@ -1676,17 +1676,6 @@ Element::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
     static_cast<nsStyledElement*>(this)->ReparseStyleAttribute(false, false);
   }
 
-  if (aDocument) {
-    
-    
-    
-    
-    nsHTMLStyleSheet* sheet = aDocument->GetAttributeStyleSheet();
-    if (sheet) {
-      mAttrsAndChildren.SetMappedAttrStyleSheet(sheet);
-    }
-  }
-
   
   ShadowRoot* shadowRoot = GetShadowRoot();
   if (shadowRoot) {
@@ -2464,7 +2453,7 @@ Element::SetAttrAndNotify(int32_t aNamespaceID,
     
     
     if (!IsAttributeMapped(aName) ||
-        !SetMappedAttribute(aComposedDocument, aName, aParsedValue, &rv)) {
+        !SetMappedAttribute(aName, aParsedValue, &rv)) {
       rv = mAttrsAndChildren.SetAndSwapAttr(aName, aParsedValue);
     }
   }
@@ -2583,8 +2572,7 @@ Element::ParseAttribute(int32_t aNamespaceID,
 }
 
 bool
-Element::SetMappedAttribute(nsIDocument* aDocument,
-                            nsIAtom* aName,
+Element::SetMappedAttribute(nsIAtom* aName,
                             nsAttrValue& aValue,
                             nsresult* aRetval)
 {

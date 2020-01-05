@@ -1395,11 +1395,9 @@ protected:
 
 
 
-
-  virtual bool SetMappedAttribute(nsIDocument* aDocument,
-                                    nsIAtom* aName,
-                                    nsAttrValue& aValue,
-                                    nsresult* aRetval);
+  virtual bool SetMappedAttribute(nsIAtom* aName,
+                                  nsAttrValue& aValue,
+                                  nsresult* aRetval);
 
   
 
