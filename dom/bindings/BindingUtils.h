@@ -2068,18 +2068,12 @@ public:
 };
 
 template<typename T>
-static void
-TraceMozMapValue(T* aValue, void* aClosure)
-{
-  JSTracer* trc = static_cast<JSTracer*>(aClosure);
-  
-  SequenceTracer<T>::TraceSequence(trc, aValue, aValue + 1);
-}
-
-template<typename T>
 void TraceMozMap(JSTracer* trc, MozMap<T>& map)
 {
-  map.EnumerateValues(TraceMozMapValue<T>, trc);
+  for (auto& entry : map.Entries()) {
+    
+    SequenceTracer<T>::TraceSequence(trc, &entry.mValue, &entry.mValue + 1);
+  }
 }
 
 
@@ -2091,7 +2085,7 @@ class SequenceTracer<MozMap<T>, false, false, false>
 public:
   static void TraceSequence(JSTracer* trc, MozMap<T>* seqp, MozMap<T>* end) {
     for (; seqp != end; ++seqp) {
-      seqp->EnumerateValues(TraceMozMapValue<T>, trc);
+      TraceMozMap(trc, *seqp);
     }
   }
 };
