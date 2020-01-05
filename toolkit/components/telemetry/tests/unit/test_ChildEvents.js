@@ -75,7 +75,6 @@ add_task(function*() {
 
   
   
-  const timestampBeforeChildEvents = Telemetry.msSinceProcessStart();
   run_test_in_child("test_ChildEvents.js");
   yield do_await_remote_message(MESSAGE_CHILD_TEST_DONE);
 
@@ -83,7 +82,6 @@ add_task(function*() {
   
   
   yield waitForContentEvents();
-  const timestampAfterChildEvents = Telemetry.msSinceProcessStart();
 
   
   RECORDED_PARENT_EVENTS.forEach(e => Telemetry.recordEvent(...e));
@@ -100,29 +98,17 @@ add_task(function*() {
   Assert.ok("content" in payload.processes, "Should have child process section");
   Assert.ok("events" in payload.processes.content, "Child process section should have events.");
 
-  
   let contentEvents = payload.processes.content.events.map(e => e.slice(1));
   Assert.equal(contentEvents.length, RECORDED_CONTENT_EVENTS.length, "Should match expected event count.");
   for (let i = 0; i < RECORDED_CONTENT_EVENTS.length; ++i) {
     Assert.deepEqual(contentEvents[i], RECORDED_CONTENT_EVENTS[i], "Should have recorded expected event.");
   }
 
-  
   let parentEvents = payload.processes.parent.events.map(e => e.slice(1));
   Assert.equal(parentEvents.length, RECORDED_PARENT_EVENTS.length, "Should match expected event count.");
   for (let i = 0; i < RECORDED_PARENT_EVENTS.length; ++i) {
     Assert.deepEqual(parentEvents[i], RECORDED_PARENT_EVENTS[i], "Should have recorded expected event.");
   }
-
-  
-  let contentTimestamps = payload.processes.content.events.map(e => e[0]);
-  let parentTimestamps = payload.processes.parent.events.map(e => e[0]);
-
-  Assert.ok(contentTimestamps.every(ts => (ts > Math.floor(timestampBeforeChildEvents)) &&
-                                          (ts < timestampAfterChildEvents)),
-            "All content event timestamps should be in the expected time range.");
-  Assert.ok(parentTimestamps.every(ts => (ts >= Math.floor(timestampAfterChildEvents))),
-            "All parent event timestamps should be in the expected time range.");
 
   
   let snapshot =
