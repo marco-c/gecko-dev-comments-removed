@@ -182,8 +182,6 @@
 
 #include "nsIBidiKeyboard.h"
 
-#include "nsLayoutStylesheetCache.h"
-
 #ifdef MOZ_WEBRTC
 #include "signaling/src/peerconnection/WebrtcGlobalParent.h"
 #endif
@@ -2548,8 +2546,7 @@ ContentParent::RecvGetXPCOMProcessAttributes(bool* aIsOffline,
                                              ClipboardCapabilities* clipboardCaps,
                                              DomainPolicyClone* domainPolicy,
                                              StructuredCloneData* aInitialData,
-                                             InfallibleTArray<FontFamilyListEntry>* fontFamilies,
-                                             OptionalURIParams* aUserContentCSSURL)
+                                             InfallibleTArray<FontFamilyListEntry>* fontFamilies)
 {
   nsCOMPtr<nsIIOService> io(do_GetIOService());
   MOZ_ASSERT(io, "No IO service?");
@@ -2614,15 +2611,6 @@ ContentParent::RecvGetXPCOMProcessAttributes(bool* aIsOffline,
 
   
   gfxPlatform::GetPlatform()->GetSystemFontFamilyList(fontFamilies);
-
-  
-  
-  StyleSheet* ucs = nsLayoutStylesheetCache::For(StyleBackendType::Gecko)->UserContentSheet();
-  if (ucs) {
-    SerializeURI(ucs->GetSheetURI(), *aUserContentCSSURL);
-  } else {
-    SerializeURI(nullptr, *aUserContentCSSURL);
-  }
 
   return IPC_OK();
 }
@@ -3156,7 +3144,7 @@ ContentParent::RecvPSpeechSynthesisConstructor(PSpeechSynthesisParent* aActor)
 #ifdef MOZ_WEBSPEECH
   return IPC_OK();
 #else
-  return false;
+  return IPC_FAIL_NO_REASON(this);
 #endif
 }
 
