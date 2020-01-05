@@ -7,6 +7,7 @@
 #include "nsXPCOM.h"
 #include "nsXULAppAPI.h"
 #include "nsAutoPtr.h"
+#include "mozilla/Bootstrap.h"
 
 #ifdef XP_WIN
 #include <windows.h>
@@ -71,7 +72,7 @@ MakeSandboxStarter()
 }
 
 int
-content_process_main(int argc, char* argv[])
+content_process_main(mozilla::Bootstrap* bootstrap, int argc, char* argv[])
 {
     
     
@@ -93,13 +94,13 @@ content_process_main(int argc, char* argv[])
     }
 #endif
 
-    XRE_SetProcessType(argv[--argc]);
+    bootstrap->XRE_SetProcessType(argv[--argc]);
 
 #ifdef XP_WIN
     
     
     
-    if (XRE_GetProcessType() != GeckoProcessType_Plugin) {
+    if (bootstrap->XRE_GetProcessType() != GeckoProcessType_Plugin) {
         mozilla::SanitizeEnvironmentVariables();
         SetDllDirectoryW(L"");
     }
@@ -107,10 +108,10 @@ content_process_main(int argc, char* argv[])
 #if !defined(XP_LINUX) && defined(MOZ_PLUGIN_CONTAINER)
     
     
-    if (XRE_GetProcessType() == GeckoProcessType_GMPlugin) {
+    if (bootstrap->XRE_GetProcessType() == GeckoProcessType_GMPlugin) {
         childData.gmpLoader = mozilla::gmp::CreateGMPLoader(MakeSandboxStarter());
     }
 #endif
-    nsresult rv = XRE_InitChildProcess(argc, argv, &childData);
+    nsresult rv = bootstrap->XRE_InitChildProcess(argc, argv, &childData);
     return NS_FAILED(rv);
 }

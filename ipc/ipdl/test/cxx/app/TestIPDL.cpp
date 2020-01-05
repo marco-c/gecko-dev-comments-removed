@@ -2,12 +2,15 @@
 
 
 
-#include "nsXULAppAPI.h"
+#define MOZ_IPDL_TESTS
+#include "mozilla/Bootstrap.h"
 
 #if defined(XP_WIN)
 #include <windows.h>
 #include "nsWindowsWMain.cpp"
 #endif
+
+using namespace mozilla;
 
 int
 main(int argc, char** argv)
@@ -16,5 +19,10 @@ main(int argc, char** argv)
     if (argc < 2)
         return 1;
 
-    return XRE_RunIPDLTest(argc, argv);
+    Bootstrap::UniquePtr bootstrap;
+    XRE_GetBootstrap(bootstrap);
+    if (!bootstrap) {
+        return 2;
+    }
+    return bootstrap->XRE_RunIPDLTest(argc, argv);
 }
