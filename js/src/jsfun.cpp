@@ -1597,7 +1597,10 @@ JSFunction::maybeRelazify(JSRuntime* rt)
 
     
     
-    if (comp->isDebuggee() || comp->isSelfHosting)
+    MOZ_ASSERT(!comp->isSelfHosting);
+
+    
+    if (comp->isDebuggee())
         return;
 
     
