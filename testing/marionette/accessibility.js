@@ -9,6 +9,8 @@ const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Log.jsm");
 
+const logger = Log.repository.getLogger("Marionette");
+
 Cu.import("chrome://marionette/content/error.js");
 
 XPCOMUtils.defineLazyModuleGetter(
@@ -16,12 +18,19 @@ XPCOMUtils.defineLazyModuleGetter(
 XPCOMUtils.defineLazyModuleGetter(
     this, "clearInterval", "resource://gre/modules/Timer.jsm");
 
-XPCOMUtils.defineLazyGetter(this, "service",
-    () => Cc["@mozilla.org/accessibilityService;1"].getService(Ci.nsIAccessibilityService));
+XPCOMUtils.defineLazyGetter(this, "service", () => {
+  let service;
+  try {
+    service = Cc["@mozilla.org/accessibilityService;1"].getService(
+      Ci.nsIAccessibilityService);
+  } catch (e) {
+    logger.warn("Accessibility module is not present");
+  } finally {
+    return service;
+  }
+});
 
 this.EXPORTED_SYMBOLS = ["accessibility"];
-
-const logger = Log.repository.getLogger("Marionette");
 
 
 
@@ -36,7 +45,11 @@ const GET_ACCESSIBLE_ATTEMPTS = 100;
 
 const GET_ACCESSIBLE_ATTEMPT_INTERVAL = 10;
 
-this.accessibility = {};
+this.accessibility = {
+  get service() {
+    return service;
+  }
+};
 
 
 
@@ -127,26 +140,28 @@ accessibility.Checks = class {
 
 
   getAccessible(element, mustHaveAccessible = false) {
+    if (!this.strict) {
+      return Promise.resolve();
+    }
+
     return new Promise((resolve, reject) => {
-      let acc = service.getAccessibleFor(element);
-
-      
-      
-      if (acc || !mustHaveAccessible) {
-        resolve(acc);
-
-      
-      
-      } else if (mustHaveAccessible && !this.strict) {
+      if (!accessibility.service) {
         reject();
+        return;
+      }
 
-      
-      
-      
+      let acc = accessibility.service.getAccessibleFor(element);
+      if (acc || !mustHaveAccessible) {
+        
+        
+        resolve(acc);
       } else {
+        
+        
+        
         let attempts = GET_ACCESSIBLE_ATTEMPTS;
         let intervalId = setInterval(() => {
-          let acc = service.getAccessibleFor(element);
+          let acc = accessibility.service.getAccessibleFor(element);
           if (acc || --attempts <= 0) {
             clearInterval(intervalId);
             if (acc) {
@@ -174,7 +189,7 @@ accessibility.Checks = class {
 
   isActionableRole(accessible) {
     return accessibility.ActionableRoles.has(
-        service.getStringRole(accessible.role));
+        accessibility.service.getStringRole(accessible.role));
   }
 
   
@@ -412,17 +427,15 @@ accessibility.Checks = class {
 
 
   error(message, element) {
-    if (!message) {
+    if (!message || !this.strict) {
       return;
     }
     if (element) {
       let {id, tagName, className} = element;
       message += `: id: ${id}, tagName: ${tagName}, className: ${className}`;
     }
-    if (this.strict) {
-      throw new ElementNotAccessibleError(message);
-    }
-    logger.debug(message);
+
+    throw new ElementNotAccessibleError(message);
   }
 
 };
