@@ -63,7 +63,7 @@ ContentDispatchChooser.prototype =
         uri: aURI.spec,
       };
 
-      Messaging.sendRequestForResult(msg).then(() => {
+      EventDispatcher.instance.sendRequestForResult(msg).then(() => {
         
       }, (uri) => {
         
