@@ -7,11 +7,14 @@
 
 "use strict";
 
-const {XPCOMUtils} = require("resource://gre/modules/XPCOMUtils.jsm");
-const {PluralForm} = require("devtools/shared/plural-form");
-const {Filters} = require("./filter-predicates");
-const {L10N} = require("./l10n");
-const {EVENTS} = require("./events");
+const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
+const { PluralForm } = require("devtools/shared/plural-form");
+const { Filters } = require("./filter-predicates");
+const { L10N } = require("./l10n");
+const { EVENTS } = require("./events");
+const { DOM } = require("devtools/client/shared/vendor/react");
+const { button } = DOM;
+const ReactDOM = require("devtools/client/shared/vendor/react-dom");
 const Actions = require("./actions/index");
 
 XPCOMUtils.defineLazyModuleGetter(this, "Chart",
@@ -26,15 +29,34 @@ const NETWORK_ANALYSIS_PIE_CHART_DIAMETER = 200;
 
 
 
-function PerformanceStatisticsView() {
+function StatisticsView() {
 }
 
-PerformanceStatisticsView.prototype = {
+StatisticsView.prototype = {
   
 
 
   initialize: function (store) {
     this.store = store;
+    this._backButton = $("#react-statistics-back-hook");
+
+    let backStr = L10N.getStr("netmonitor.backButton");
+    ReactDOM.render(button({
+      id: "network-statistics-back-button",
+      className: "devtools-toolbarbutton",
+      "data-text-only": "true",
+      title: backStr,
+      onClick: () => {
+        this.store.dispatch(Actions.openStatistics(false));
+      },
+    }, backStr), this._backButton);
+  },
+
+  
+
+
+  destroy: function () {
+    ReactDOM.unmountComponentAtNode(this._backButton);
   },
 
   
@@ -150,7 +172,7 @@ PerformanceStatisticsView.prototype = {
     chart.on("click", (_, item) => {
       
       this.store.dispatch(Actions.enableFilterTypeOnly(item.label));
-      NetMonitorView.showNetworkInspectorView();
+      this.store.dispatch(Actions.openStatistics(false));
     });
 
     container.appendChild(chart.node);
@@ -264,4 +286,4 @@ function responseIsFresh({ responseHeaders, status }) {
   return false;
 }
 
-exports.PerformanceStatisticsView = PerformanceStatisticsView;
+exports.StatisticsView = StatisticsView;
