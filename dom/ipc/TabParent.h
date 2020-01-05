@@ -780,6 +780,10 @@ private:
   
   bool mPreserveLayers;
 
+  
+  
+  bool mHasPresented;
+
 public:
   static TabParent* GetTabParentFromLayersId(uint64_t aLayersId);
 };
