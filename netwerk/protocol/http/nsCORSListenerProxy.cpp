@@ -602,6 +602,7 @@ nsCORSListenerProxy::CheckRequestApproved(nsIRequest* aRequest)
   }
 
   if (mWithCredentials || !allowedOriginHeader.EqualsLiteral("*")) {
+    MOZ_ASSERT(!nsContentUtils::IsExpandedPrincipal(mOriginHeaderPrincipal));
     nsAutoCString origin;
     nsContentUtils::GetASCIIOrigin(mOriginHeaderPrincipal, origin);
 
@@ -949,6 +950,12 @@ nsCORSListenerProxy::UpdateChannel(nsIChannel* aChannel,
   nsCString userpass;
   uri->GetUserPass(userpass);
   NS_ENSURE_TRUE(userpass.IsEmpty(), NS_ERROR_DOM_BAD_URI);
+
+  
+  
+  if (nsContentUtils::IsExpandedPrincipal(mOriginHeaderPrincipal)) {
+    return NS_ERROR_DOM_BAD_URI;
+  }
 
   
   nsAutoCString origin;
