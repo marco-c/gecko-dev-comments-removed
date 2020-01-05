@@ -80,11 +80,10 @@ FormAutofillParent.prototype = {
     
     Services.prefs.addObserver(ENABLED_PREF, this, false);
     Services.obs.addObserver(this, "formautofill-storage-changed", false);
-    this._enabled = this._getStatus();
+
     
     
-    this._onStatusChanged();
-    Services.ppmm.addMessageListener("FormAutofill:getEnabledStatus", this);
+    this._setStatus(this._getStatus());
   },
 
   observe(subject, topic, data) {
@@ -104,8 +103,7 @@ FormAutofillParent.prototype = {
         
         let currentStatus = this._getStatus();
         if (currentStatus !== this._enabled) {
-          this._enabled = currentStatus;
-          this._onStatusChanged();
+          this._setStatus(currentStatus);
         }
         break;
       }
@@ -118,8 +116,7 @@ FormAutofillParent.prototype = {
 
         let currentStatus = this._getStatus();
         if (currentStatus !== this._enabled) {
-          this._enabled = currentStatus;
-          this._onStatusChanged();
+          this._setStatus(currentStatus);
         }
         break;
       }
@@ -143,6 +140,9 @@ FormAutofillParent.prototype = {
     }
 
     Services.ppmm.broadcastAsyncMessage("FormAutofill:enabledStatus", this._enabled);
+    
+    
+    Services.ppmm.initialProcessData.autofillEnabled = this._enabled;
   },
 
   
@@ -164,16 +164,22 @@ FormAutofillParent.prototype = {
 
 
 
+  _setStatus(newStatus) {
+    this._enabled = newStatus;
+    this._onStatusChanged();
+  },
+
+  
+
+
+
+
 
 
   receiveMessage({name, data, target}) {
     switch (name) {
       case "FormAutofill:GetProfiles":
         this._getProfiles(data, target);
-        break;
-      case "FormAutofill:getEnabledStatus":
-        Services.ppmm.broadcastAsyncMessage("FormAutofill:enabledStatus",
-                                            this._enabled);
         break;
     }
   },

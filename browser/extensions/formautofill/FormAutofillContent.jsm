@@ -271,9 +271,10 @@ var FormAutofillContent = {
         ProfileAutocomplete.ensureUnregistered();
       }
     });
-    Services.cpmm.sendAsyncMessage("FormAutofill:getEnabledStatus");
-    
-    
+
+    if (Services.cpmm.initialProcessData.autofillEnabled) {
+      ProfileAutocomplete.ensureRegistered();
+    }
   },
 
   
