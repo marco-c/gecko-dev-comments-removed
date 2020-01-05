@@ -9,20 +9,20 @@
 
 #include "nsImageLoadingContent.h"
 #include "nsSVGLength2.h"
-#include "nsSVGPathGeometryElement.h"
 #include "nsSVGString.h"
+#include "SVGGeometryElement.h"
 #include "SVGAnimatedPreserveAspectRatio.h"
 
 nsresult NS_NewSVGImageElement(nsIContent **aResult,
                                already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
-
-typedef nsSVGPathGeometryElement SVGImageElementBase;
 
 class nsSVGImageFrame;
 
 namespace mozilla {
 namespace dom {
 class DOMSVGAnimatedPreserveAspectRatio;
+
+typedef SVGGeometryElement SVGImageElementBase;
 
 class SVGImageElement : public SVGImageElementBase,
                         public nsImageLoadingContent

@@ -8,21 +8,22 @@
 #define NS_SVGPOLYELEMENT_H_
 
 #include "mozilla/Attributes.h"
-#include "nsSVGPathGeometryElement.h"
 #include "SVGAnimatedPointList.h"
-
-typedef nsSVGPathGeometryElement nsSVGPolyElementBase;
+#include "SVGGeometryElement.h"
 
 namespace mozilla {
 class DOMSVGPointList;
-} 
 
-class nsSVGPolyElement : public nsSVGPolyElementBase
+namespace dom {
+
+typedef SVGGeometryElement SVGPolyElementBase;
+
+class SVGPolyElement : public SVGPolyElementBase
 {
 protected:
-  explicit nsSVGPolyElement(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo);
+  explicit SVGPolyElement(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo);
 
-  virtual ~nsSVGPolyElement();
+  virtual ~SVGPolyElement();
 
 public:
   
@@ -57,5 +58,8 @@ public:
 protected:
   SVGAnimatedPointList mPoints;
 };
+
+} 
+} 
 
 #endif 
