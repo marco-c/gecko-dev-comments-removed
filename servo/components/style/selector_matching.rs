@@ -193,16 +193,19 @@ impl Stylist {
 
         let mut shareable = true;
 
-        
-        self.synthesize_presentational_hints_for_legacy_attributes(element,
-                                                                   applicable_declarations,
-                                                                   &mut shareable);
 
         
         map.user_agent.normal.get_all_matching_rules(element,
                                                      parent_bf,
                                                      applicable_declarations,
                                                      &mut shareable);
+
+        
+        self.synthesize_presentational_hints_for_legacy_attributes(element,
+                                                                   applicable_declarations,
+                                                                   &mut shareable);
+
+        
         map.user.normal.get_all_matching_rules(element,
                                                parent_bf,
                                                applicable_declarations,
@@ -277,3 +280,4 @@ impl PerPseudoElementSelectorMap {
         }
     }
 }
+

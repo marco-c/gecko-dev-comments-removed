@@ -28,6 +28,7 @@ extern crate cssparser;
 extern crate matches;
 
 extern crate encoding;
+extern crate "rustc-serialize" as rustc_serialize;
 extern crate string_cache;
 extern crate selectors;
 
@@ -44,7 +45,7 @@ pub mod parser;
 pub mod selector_matching;
 #[macro_use] pub mod values;
 
-
+// Generated from the properties.mako.rs template by build.rs
 mod_path! properties (concat!(env!("OUT_DIR"), "/properties.rs"));
 
 pub mod node;
