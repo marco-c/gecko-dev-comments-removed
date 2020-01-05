@@ -1109,14 +1109,17 @@ PopupNotifications.prototype = {
 
   _reshowNotifications: function PopupNotifications_reshowNotifications(anchor, browser) {
     
-    let notifications = this._getNotificationsForBrowser(browser || this.tabbrowser.selectedBrowser);
+    browser = browser || this.tabbrowser.selectedBrowser;
+    let notifications = this._getNotificationsForBrowser(browser);
     notifications.forEach(function (n) {
       if (n.anchorElement == anchor)
         n.dismissed = false;
     });
 
-    
-    this._update(notifications, anchor);
+    if (this._isActiveBrowser(browser)) {
+      
+      this._update(notifications, anchor);
+    }
   },
 
   _swapBrowserNotifications: function PopupNotifications_swapBrowserNoficications(ourBrowser, otherBrowser) {
