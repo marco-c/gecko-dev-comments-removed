@@ -177,47 +177,47 @@ public:
 
   struct ReflowInputFlags {
     ReflowInputFlags() { memset(this, 0, sizeof(*this)); }
-    uint16_t mSpecialBSizeReflow:1;  
+    uint32_t mSpecialBSizeReflow:1;  
                                      
-    uint16_t mNextInFlowUntouched:1; 
+    uint32_t mNextInFlowUntouched:1; 
                                      
-    uint16_t mIsTopOfPage:1;         
+    uint32_t mIsTopOfPage:1;         
                                      
                                      
                                      
-    uint16_t mAssumingHScrollbar:1;  
+    uint32_t mAssumingHScrollbar:1;  
                                      
-    uint16_t mAssumingVScrollbar:1;  
-                                     
-
-    uint16_t mIsIResize:1;           
+    uint32_t mAssumingVScrollbar:1;  
                                      
 
-    uint16_t mIsBResize:1;           
+    uint32_t mIsIResize:1;           
+                                     
+
+    uint32_t mIsBResize:1;           
                                      
                                      
                                      
                                      
-    uint16_t mTableIsSplittable:1;   
+    uint32_t mTableIsSplittable:1;   
                                      
-    uint16_t mHeightDependsOnAncestorCell:1;   
+    uint32_t mHeightDependsOnAncestorCell:1;   
                                                
-    uint16_t mIsColumnBalancing:1;   
-    uint16_t mIsFlexContainerMeasuringHeight:1; 
+    uint32_t mIsColumnBalancing:1;   
+    uint32_t mIsFlexContainerMeasuringHeight:1; 
                                                 
                                                 
-    uint16_t mDummyParentReflowInput:1; 
+    uint32_t mDummyParentReflowInput:1; 
                                         
                                         
-    uint16_t mMustReflowPlaceholders:1; 
+    uint32_t mMustReflowPlaceholders:1; 
                                         
                                         
                                         
                                         
                                         
-    uint16_t mShrinkWrap:1; 
-    uint16_t mUseAutoBSize:1; 
-    uint16_t mStaticPosIsCBOrigin:1; 
+    uint32_t mShrinkWrap:1; 
+    uint32_t mUseAutoBSize:1; 
+    uint32_t mStaticPosIsCBOrigin:1; 
   };
 
 #ifdef DEBUG
@@ -601,10 +601,11 @@ public:
   
   nsIFrame** mDiscoveredClearance;
 
+  ReflowInputFlags mFlags;
+
   
   
   int16_t mReflowDepth;
-  ReflowInputFlags mFlags;
 
   
   
