@@ -778,52 +778,64 @@ DrainJobQueue(JSContext* cx)
     if (sc->quitting || sc->drainingJobQueue)
         return true;
 
-    
-    
     while (true) {
-        AutoLockHelperThreadState lock;
-        if (!sc->asyncTasks.lock()->outstanding)
-            break;
-        HelperThreadState().wait(lock, GlobalHelperThreadState::CONSUMER);
-    }
-
-    
-    
-    
-    
-    Vector<JS::AsyncTask*> finished(cx);
-    {
-        ExclusiveData<ShellAsyncTasks>::Guard asyncTasks = sc->asyncTasks.lock();
-        finished = Move(asyncTasks->finished);
-        asyncTasks->finished.clear();
-    }
-
-    for (JS::AsyncTask* task : finished)
-        task->finish(cx);
-
-    
-    
-    
-    
-    sc->drainingJobQueue = true;
-
-    RootedObject job(cx);
-    JS::HandleValueArray args(JS::HandleValueArray::empty());
-    RootedValue rval(cx);
-    
-    
-    
-    for (size_t i = 0; i < sc->jobQueue.length(); i++) {
-        job = sc->jobQueue[i];
-        AutoCompartment ac(cx, job);
-        {
-            AutoReportException are(cx);
-            JS::Call(cx, UndefinedHandleValue, job, args, &rval);
+        
+        
+        while (true) {
+            AutoLockHelperThreadState lock;
+            if (!sc->asyncTasks.lock()->outstanding)
+                break;
+            HelperThreadState().wait(lock, GlobalHelperThreadState::CONSUMER);
         }
-        sc->jobQueue[i].set(nullptr);
+
+        
+        
+        
+        
+        Vector<JS::AsyncTask*> finished(cx);
+        {
+            ExclusiveData<ShellAsyncTasks>::Guard asyncTasks = sc->asyncTasks.lock();
+            finished = Move(asyncTasks->finished);
+            asyncTasks->finished.clear();
+        }
+
+        for (JS::AsyncTask* task : finished)
+            task->finish(cx);
+
+        
+        
+        
+        
+        sc->drainingJobQueue = true;
+
+        RootedObject job(cx);
+        JS::HandleValueArray args(JS::HandleValueArray::empty());
+        RootedValue rval(cx);
+
+        
+        
+        
+        for (size_t i = 0; i < sc->jobQueue.length(); i++) {
+            job = sc->jobQueue[i];
+            AutoCompartment ac(cx, job);
+            {
+                AutoReportException are(cx);
+                JS::Call(cx, UndefinedHandleValue, job, args, &rval);
+            }
+            sc->jobQueue[i].set(nullptr);
+        }
+        sc->jobQueue.clear();
+        sc->drainingJobQueue = false;
+
+        
+        
+        {
+            ExclusiveData<ShellAsyncTasks>::Guard asyncTasks = sc->asyncTasks.lock();
+            if (asyncTasks->outstanding == 0 && asyncTasks->finished.length() == 0)
+                break;
+        }
     }
-    sc->jobQueue.clear();
-    sc->drainingJobQueue = false;
+
     return true;
 }
 
