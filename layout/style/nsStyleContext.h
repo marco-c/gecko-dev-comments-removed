@@ -404,9 +404,6 @@ public:
 
 
 
-
-
-
   nscolor GetVisitedDependentColor(nsCSSPropertyID aProperty);
 
   
