@@ -308,6 +308,13 @@ HSTSPrimingListener::StartHSTSPriming(nsIChannel* aRequestChannel,
 
   
   
+  nsCOMPtr<nsIClassOfService> classOfService(do_QueryInterface(primingChannel));
+  if (classOfService) {
+    classOfService->AddClassFlags(nsIClassOfService::UrgentStart);
+  }
+
+  
+  
   rv = httpChannel->SetRequestMethod(NS_LITERAL_CSTRING("HEAD"));
   NS_ENSURE_SUCCESS(rv, rv);
 
