@@ -3609,7 +3609,9 @@ ScrollFrameHelper::DecideScrollableLayer(nsDisplayListBuilder* aBuilder,
 
         
         
-        if (wasUsingDisplayPort) {
+        
+        
+        if (nsLayoutUtils::HasDisplayPort(content)) {
           const nsPresContext* rootPresContext =
             pc->GetToplevelContentDocumentPresContext();
           if (!rootPresContext) {
