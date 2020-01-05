@@ -72,11 +72,14 @@ SwatchColorPickerTooltip.prototype = Heritage.extend(SwatchBasedEditorTooltip.pr
       node.id = "colorwidget";
       container.appendChild(node);
       widget = new ColorWidget(node, color);
+      this.tooltip.setContent(container, { width: 218, height: 320 });
     } else {
       node.id = "spectrum";
       container.appendChild(node);
       widget = new Spectrum(node, color);
+      this.tooltip.setContent(container, { width: 218, height: 224 });
     }
+    widget.inspector = this.inspector;
 
     let eyedropper = doc.createElementNS(XHTML_NS, "button");
     eyedropper.id = "eyedropper-button";
@@ -86,8 +89,6 @@ SwatchColorPickerTooltip.prototype = Heritage.extend(SwatchBasedEditorTooltip.pr
 
     eyedropper.style.pointerEvents = "auto";
     container.appendChild(eyedropper);
-
-    this.tooltip.setContent(container, { width: 218, height: 224 });
 
     
     
@@ -104,6 +105,20 @@ SwatchColorPickerTooltip.prototype = Heritage.extend(SwatchBasedEditorTooltip.pr
 
   show: Task.async(function* () {
     
+    let name = this.activeSwatch.dataset.propertyName;
+
+    if (this.isContrastCompatible === undefined) {
+      let target = this.inspector.target;
+      this.isContrastCompatible = yield target.actorHasMethod(
+        "domnode",
+        "getClosestBackgroundColor"
+      );
+    }
+
+    
+    this.spectrum.contrastEnabled = (name === "color") && this.isContrastCompatible;
+
+    
     yield SwatchBasedEditorTooltip.prototype.show.call(this);
 
     
@@ -112,6 +127,7 @@ SwatchColorPickerTooltip.prototype = Heritage.extend(SwatchBasedEditorTooltip.pr
       this._originalColor = this.currentSwatchColor.textContent;
       let color = this.activeSwatch.style.backgroundColor;
       this.spectrum.off("changed", this._onSpectrumColorChange);
+
       this.spectrum.rgb = this._colorToRgba(color);
       this.spectrum.on("changed", this._onSpectrumColorChange);
       this.spectrum.updateUI();
@@ -164,7 +180,6 @@ SwatchColorPickerTooltip.prototype = Heritage.extend(SwatchBasedEditorTooltip.pr
     inspector.once("color-picked", color => {
       toolbox.win.focus();
       this._selectColor(color);
-      this._onEyeDropperDone();
     });
 
     inspector.once("color-pick-canceled", () => {
