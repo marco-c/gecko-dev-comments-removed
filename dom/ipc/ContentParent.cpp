@@ -650,6 +650,32 @@ ContentParent::IsMaxProcessCountReached(const nsAString& aContentProcessType)
   return GetPoolSize(aContentProcessType) >= GetMaxProcessCount(aContentProcessType);
 }
 
+ void
+ContentParent::ReleaseCachedProcesses()
+{
+  
+  nsTArray<ContentParent*>& contentParents = GetOrCreatePool(NS_LITERAL_STRING(DEFAULT_REMOTE_TYPE));
+  ContentProcessManager* cpm = ContentProcessManager::GetSingleton();
+  nsTArray<ContentParent*> toRelease;
+
+  
+  for (auto* cp : contentParents) {
+    nsTArray<TabId> tabIds = cpm->GetTabParentsByProcessId(cp->mChildID);
+    if (!tabIds.Length()) {
+      toRelease.AppendElement(cp);
+    }
+  }
+
+  for (auto* cp : toRelease) {
+    
+    cp->ShutDownProcess(SEND_SHUTDOWN_MESSAGE);
+    
+    cp->MarkAsDead();
+    
+    cp->ShutDownMessageManager();
+  }
+}
+
  already_AddRefed<ContentParent>
 ContentParent::RandomSelect(const nsTArray<ContentParent*>& aContentParents,
                             ContentParent* aOpener, int32_t aMaxContentParents)
@@ -2119,27 +2145,20 @@ ContentParent::InitInternal(ProcessPriority aInitialPriority,
   if (sheetService) {
     
     
-    
-    
-    
-    
 
-    for (StyleSheet* sheet :
-           *sheetService->AgentStyleSheets(StyleBackendType::Gecko)) {
+    for (StyleSheet* sheet : *sheetService->AgentStyleSheets()) {
       URIParams uri;
       SerializeURI(sheet->GetSheetURI(), uri);
       Unused << SendLoadAndRegisterSheet(uri, nsIStyleSheetService::AGENT_SHEET);
     }
 
-    for (StyleSheet* sheet :
-           *sheetService->UserStyleSheets(StyleBackendType::Gecko)) {
+    for (StyleSheet* sheet : *sheetService->UserStyleSheets()) {
       URIParams uri;
       SerializeURI(sheet->GetSheetURI(), uri);
       Unused << SendLoadAndRegisterSheet(uri, nsIStyleSheetService::USER_SHEET);
     }
 
-    for (StyleSheet* sheet :
-           *sheetService->AuthorStyleSheets(StyleBackendType::Gecko)) {
+    for (StyleSheet* sheet : *sheetService->AuthorStyleSheets()) {
       URIParams uri;
       SerializeURI(sheet->GetSheetURI(), uri);
       Unused << SendLoadAndRegisterSheet(uri, nsIStyleSheetService::AUTHOR_SHEET);

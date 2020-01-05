@@ -153,6 +153,8 @@ public:
 
   static bool IsMaxProcessCountReached(const nsAString& aContentProcessType);
 
+  static void ReleaseCachedProcesses();
+
   
 
 
