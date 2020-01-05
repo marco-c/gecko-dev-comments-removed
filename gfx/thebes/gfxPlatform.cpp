@@ -2223,11 +2223,6 @@ gfxPlatform::InitGPUProcessPrefs()
     return;
   }
 
-  
-  if (gfxPrefs::WebRenderEnabled()) {
-    return;
-  }
-
   FeatureState& gpuProc = gfxConfig::GetFeature(Feature::GPU_PROCESS);
 
   gpuProc.SetDefaultFromPref(
