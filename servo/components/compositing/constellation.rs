@@ -758,6 +758,20 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
         })).unwrap();
     }
 
+    fn handle_subframe_loaded(&mut self, pipeline_id: PipelineId) {
+        let subframe_pipeline = self.pipeline(pipeline_id);
+        let subframe_parent = match subframe_pipeline.parent_info {
+            Some(ref parent) => parent,
+            None => return,
+        };
+        let parent_pipeline = self.pipeline(subframe_parent.0);
+        let msg = ConstellationControlMsg::DispatchFrameLoadEvent {
+            target: pipeline_id,
+            parent: subframe_parent.0
+        };
+        parent_pipeline.script_chan.send(msg).unwrap();
+    }
+
     
     
     
@@ -908,6 +922,8 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
         if webdriver_reset {
             self.webdriver.load_channel = None;
         }
+
+        self.handle_subframe_loaded(pipeline_id);
     }
 
     fn handle_navigate_msg(&mut self,

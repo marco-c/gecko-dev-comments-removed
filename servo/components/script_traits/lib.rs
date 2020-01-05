@@ -137,6 +137,13 @@ pub enum ConstellationControlMsg {
     WebFontLoaded(PipelineId),
     
     GetCurrentState(IpcSender<ScriptState>, PipelineId),
+    
+    DispatchFrameLoadEvent {
+        
+        target: PipelineId,
+        
+        parent: PipelineId
+    },
 }
 
 

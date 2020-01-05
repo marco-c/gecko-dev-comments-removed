@@ -277,6 +277,8 @@ pub enum ScriptMsg {
                          GLContextAttributes,
                          IpcSender<Result<(IpcSender<CanvasMsg>, usize), String>>),
     
+    
+    
     DOMLoad(PipelineId),
     Failure(Failure),
     
