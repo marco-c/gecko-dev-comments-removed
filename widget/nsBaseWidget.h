@@ -192,6 +192,14 @@ public:
                                           LayersBackend aBackendHint = mozilla::layers::LayersBackend::LAYERS_NONE,
                                           LayerManagerPersistence aPersistence = LAYER_MANAGER_CURRENT) override;
 
+  
+  
+  
+  
+  
+  
+  void NotifyRemoteCompositorSessionLost(mozilla::layers::CompositorSession* aSession);
+
   mozilla::CompositorVsyncDispatcher* GetCompositorVsyncDispatcher();
   void            CreateCompositorVsyncDispatcher();
   virtual void            CreateCompositor();

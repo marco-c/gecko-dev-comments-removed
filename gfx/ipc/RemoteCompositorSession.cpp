@@ -5,9 +5,9 @@
 
 
 #include "RemoteCompositorSession.h"
-
 #include "mozilla/layers/APZChild.h"
 #include "mozilla/layers/APZCTreeManagerChild.h"
+#include "nsBaseWidget.h"
 
 namespace mozilla {
 namespace layers {
@@ -15,13 +15,32 @@ namespace layers {
 using namespace gfx;
 using namespace widget;
 
-RemoteCompositorSession::RemoteCompositorSession(CompositorBridgeChild* aChild,
+RemoteCompositorSession::RemoteCompositorSession(nsBaseWidget* aWidget,
+                                                 CompositorBridgeChild* aChild,
                                                  CompositorWidgetDelegate* aWidgetDelegate,
                                                  APZCTreeManagerChild* aAPZ,
                                                  const uint64_t& aRootLayerTreeId)
- : CompositorSession(aWidgetDelegate, aChild, aRootLayerTreeId)
- , mAPZ(aAPZ)
+ : CompositorSession(aWidgetDelegate, aChild, aRootLayerTreeId),
+   mWidget(aWidget),
+   mAPZ(aAPZ)
 {
+  GPUProcessManager::Get()->RegisterSession(this);
+}
+
+RemoteCompositorSession::~RemoteCompositorSession()
+{
+  
+  MOZ_ASSERT(!mCompositorBridgeChild);
+}
+
+void
+RemoteCompositorSession::NotifySessionLost()
+{
+  
+  
+  
+  MOZ_ASSERT(mWidget);
+  mWidget->NotifyRemoteCompositorSessionLost(this);
 }
 
 CompositorBridgeParent*
@@ -48,6 +67,8 @@ RemoteCompositorSession::Shutdown()
   mCompositorBridgeChild->Destroy();
   mCompositorBridgeChild = nullptr;
   mCompositorWidgetDelegate = nullptr;
+  mWidget = nullptr;
+  GPUProcessManager::Get()->UnregisterSession(this);
 }
 
 } 

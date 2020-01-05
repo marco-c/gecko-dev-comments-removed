@@ -243,6 +243,18 @@ GPUProcessManager::OnProcessUnexpectedShutdown(GPUProcessHost* aHost)
   MOZ_ASSERT(mProcess && mProcess == aHost);
 
   DestroyProcess();
+
+  
+  
+  nsTArray<RefPtr<RemoteCompositorSession>> sessions;
+  for (auto& session : mRemoteSessions) {
+    sessions.AppendElement(session);
+  }
+
+  
+  for (const auto& session : sessions) {
+    session->NotifySessionLost();
+  }
 }
 
 void
@@ -264,7 +276,7 @@ GPUProcessManager::NotifyRemoteActorDestroyed(const uint64_t& aProcessToken)
   
   
   
-  DestroyProcess();
+  OnProcessUnexpectedShutdown(mProcess);
 }
 
 void
@@ -405,7 +417,7 @@ GPUProcessManager::CreateRemoteSession(nsBaseWidget* aWidget,
   }
 
   RefPtr<RemoteCompositorSession> session =
-    new RemoteCompositorSession(child, widget, apz, aRootLayerTreeId);
+    new RemoteCompositorSession(aWidget, child, widget, apz, aRootLayerTreeId);
   return session.forget();
 #else
   gfxCriticalNote << "Platform does not support out-of-process compositing";
@@ -587,6 +599,18 @@ void
 GPUProcessManager::ShutdownVsyncIOThread()
 {
   mVsyncIOThread = nullptr;
+}
+
+void
+GPUProcessManager::RegisterSession(RemoteCompositorSession* aSession)
+{
+  mRemoteSessions.AppendElement(aSession);
+}
+
+void
+GPUProcessManager::UnregisterSession(RemoteCompositorSession* aSession)
+{
+  mRemoteSessions.RemoveElement(aSession);
 }
 
 } 

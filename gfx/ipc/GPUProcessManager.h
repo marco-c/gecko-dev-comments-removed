@@ -29,6 +29,7 @@ class ClientLayerManager;
 class CompositorUpdateObserver;
 class PCompositorBridgeChild;
 class PImageBridgeChild;
+class RemoteCompositorSession;
 } 
 namespace widget {
 class CompositorWidget;
@@ -43,21 +44,24 @@ class GeckoChildProcessHost;
 namespace gfx {
 
 class GPUChild;
+class PVRManagerChild;
 class VsyncBridgeChild;
 class VsyncIOThreadHolder;
-class PVRManagerChild;
 
 
 
 
 class GPUProcessManager final : public GPUProcessHost::Listener
 {
+  friend class layers::RemoteCompositorSession;
+
   typedef layers::ClientLayerManager ClientLayerManager;
   typedef layers::CompositorSession CompositorSession;
   typedef layers::IAPZCTreeManager IAPZCTreeManager;
   typedef layers::CompositorUpdateObserver CompositorUpdateObserver;
   typedef layers::PCompositorBridgeChild PCompositorBridgeChild;
   typedef layers::PImageBridgeChild PImageBridgeChild;
+  typedef layers::RemoteCompositorSession RemoteCompositorSession;
 
 public:
   static void Initialize();
@@ -133,6 +137,11 @@ private:
   bool CreateContentVRManager(base::ProcessId aOtherProcess,
                               ipc::Endpoint<PVRManagerChild>* aOutEndpoint);
 
+  
+  
+  void RegisterSession(RemoteCompositorSession* aSession);
+  void UnregisterSession(RemoteCompositorSession* aSession);
+
 private:
   GPUProcessManager();
 
@@ -178,6 +187,8 @@ private:
   ipc::TaskFactory<GPUProcessManager> mTaskFactory;
   RefPtr<VsyncIOThreadHolder> mVsyncIOThread;
   uint64_t mNextLayerTreeId;
+
+  nsTArray<RefPtr<RemoteCompositorSession>> mRemoteSessions;
 
   
   GPUProcessHost* mProcess;
