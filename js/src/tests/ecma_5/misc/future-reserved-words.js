@@ -74,6 +74,36 @@ function testWord(word, expectNormal, expectStrict)
   
 
   actual = "";
+  status = summary + ": " + word + ": destructuring shorthand";
+  try
+  {
+    eval("({ " + word + " } = 'foo');");
+    actual = "no error";
+  }
+  catch(e)
+  {
+    actual = e.name;
+    status +=  ", " + e.name + ": " + e.message + " ";
+  }
+  assertEq(actual, expectNormal, status);
+
+  actual = "";
+  status = summary + ": " + word + ": strict destructuring shorthand";
+  try
+  {
+    eval("'use strict'; ({ " + word + " } = 'foo');");
+    actual = "no error";
+  }
+  catch(e)
+  {
+    actual = e.name;
+    status +=  ", " + e.name + ": " + e.message + " ";
+  }
+  assertEq(actual, expectStrict, status);
+
+  
+
+  actual = "";
   status = summary + ": " + word + ": normal var";
   try
   {
