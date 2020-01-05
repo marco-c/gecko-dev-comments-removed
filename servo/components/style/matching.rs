@@ -775,16 +775,17 @@ pub trait MatchMethods : TElement {
                 
                 
                 
-                
-                
-                
-                
-                
-                
-                
-                
-                debug_assert!(pseudo.is_none() ||
-                              new_style.get_box().clone_display() != display::T::none);
+                if let Some(old_style) = old_style {
+                    
+                    
+                    
+                    
+                    
+                    if new_style.get_box().clone_display() == display::T::none &&
+                        old_style.get_box().clone_display() == display::T::none {
+                        return RestyleDamage::empty();
+                    }
+                }
                 RestyleDamage::rebuild_and_reflow()
             }
         }
@@ -881,31 +882,6 @@ pub trait MatchMethods : TElement {
             possibly_expired_animations: &mut Vec<PropertyAnimation>)
             -> RestyleDamage
     {
-        
-        
-        
-        
-        let this_display = new_primary.get_box().clone_display();
-        if this_display == display::T::none {
-            let old_display = old_primary.map(|old| {
-                old.get_box().clone_display()
-            });
-
-            
-            
-            let damage = match old_display {
-                Some(display) if display == this_display => {
-                    RestyleDamage::empty()
-                }
-                _ => RestyleDamage::rebuild_and_reflow()
-            };
-
-            debug!("Short-circuiting traversal: {:?} {:?} {:?}",
-                   this_display, old_display, damage);
-
-            return damage
-        }
-
         
         let mut damage =
             self.compute_restyle_damage(old_primary, new_primary, None);
