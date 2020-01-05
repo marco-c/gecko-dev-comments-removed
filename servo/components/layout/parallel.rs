@@ -189,8 +189,6 @@ pub struct FlowParallelInfo {
     
     pub children_count: AtomicInt,
     
-    pub children_and_absolute_descendant_count: AtomicInt,
-    
     pub parent: UnsafeFlow,
 }
 
@@ -198,7 +196,6 @@ impl FlowParallelInfo {
     pub fn new() -> FlowParallelInfo {
         FlowParallelInfo {
             children_count: AtomicInt::new(0),
-            children_and_absolute_descendant_count: AtomicInt::new(0),
             parent: null_unsafe_flow(),
         }
     }
@@ -383,38 +380,11 @@ fn compute_absolute_position(unsafe_flow: UnsafeFlow,
         flow.get_mut().compute_absolute_position();
 
         
-        
-        
-        let mut absolutely_positioned_child_count = 0u;
         for kid in flow::child_iter(flow.get_mut()) {
-            if kid.is_absolutely_positioned() {
-                absolutely_positioned_child_count += 1;
-            }
-        }
-
-        drop(flow::mut_base(flow.get_mut()).parallel
-                                           .children_and_absolute_descendant_count
-                                           .fetch_sub(absolutely_positioned_child_count as int,
-                                                      SeqCst));
-
-        
-        for kid in flow::child_iter(flow.get_mut()) {
-            if !kid.is_absolutely_positioned() {
-                had_descendants = true;
-                proxy.push(WorkUnit {
-                    fun: compute_absolute_position,
-                    data: borrowed_flow_to_unsafe_flow(kid),
-                });
-            }
-        }
-
-        
-        for absolute_descendant_link in flow::mut_base(flow.get_mut()).abs_descendants.iter() {
             had_descendants = true;
-            let descendant = absolute_descendant_link;
             proxy.push(WorkUnit {
                 fun: compute_absolute_position,
-                data: borrowed_flow_to_unsafe_flow(descendant),
+                data: borrowed_flow_to_unsafe_flow(kid),
             });
         }
 
@@ -442,25 +412,11 @@ fn build_display_list(mut unsafe_flow: UnsafeFlow,
                 let base = flow::mut_base(flow.get_mut());
 
                 
-                
-                let children_and_absolute_descendant_count = base.children.len() +
-                    base.abs_descendants.len();
-                base.parallel
-                    .children_and_absolute_descendant_count
-                    .store(children_and_absolute_descendant_count as int, Relaxed);
+                base.parallel.children_count.store(base.children.len() as int, Relaxed);
             }
 
             
-            let unsafe_parent = if flow.get().is_absolutely_positioned() {
-                match *flow::mut_base(flow.get_mut()).absolute_cb.get() {
-                    None => fail!("no absolute containing block for absolutely positioned?!"),
-                    Some(ref mut absolute_cb) => {
-                        mut_borrowed_flow_to_unsafe_flow(absolute_cb.get_mut())
-                    }
-                }
-            } else {
-                flow::mut_base(flow.get_mut()).parallel.parent
-            };
+            let unsafe_parent = flow::mut_base(flow.get_mut()).parallel.parent;
             if unsafe_parent == null_unsafe_flow() {
                 
                 break
@@ -472,7 +428,7 @@ fn build_display_list(mut unsafe_flow: UnsafeFlow,
             let parent: &mut FlowRef = mem::transmute(&unsafe_parent);
             let parent_base = flow::mut_base(parent.get_mut());
             if parent_base.parallel
-                          .children_and_absolute_descendant_count
+                          .children_count
                           .fetch_sub(1, SeqCst) == 1 {
                 
                 unsafe_flow = unsafe_parent

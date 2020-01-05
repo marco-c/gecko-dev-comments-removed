@@ -1204,7 +1204,6 @@ impl FlowConstructionUtils for FlowRef {
 
         base.children.push_back(new_child);
         let _ = base.parallel.children_count.fetch_add(1, Relaxed);
-        let _ = base.parallel.children_and_absolute_descendant_count.fetch_add(1, Relaxed);
     }
 
     
