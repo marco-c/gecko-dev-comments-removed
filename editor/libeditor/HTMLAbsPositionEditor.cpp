@@ -235,19 +235,18 @@ already_AddRefed<Element>
 HTMLEditor::CreateGrabber(nsINode* aParentNode)
 {
   
-  nsCOMPtr<nsIDOMElement> retDOM;
-  CreateAnonymousElement(NS_LITERAL_STRING("span"), GetAsDOMNode(aParentNode),
-                         NS_LITERAL_STRING("mozGrabber"), false,
-                         getter_AddRefs(retDOM));
-
-  NS_ENSURE_TRUE(retDOM, nullptr);
+  RefPtr<Element> ret =
+    CreateAnonymousElement(nsGkAtoms::span, GetAsDOMNode(aParentNode),
+                           NS_LITERAL_STRING("mozGrabber"), false);
+  if (NS_WARN_IF(!ret)) {
+    return nullptr;
+  }
 
   
-  nsCOMPtr<nsIDOMEventTarget> evtTarget(do_QueryInterface(retDOM));
+  nsCOMPtr<nsIDOMEventTarget> evtTarget = do_QueryInterface(ret);
   evtTarget->AddEventListener(NS_LITERAL_STRING("mousedown"),
                               mEventListener, false);
 
-  nsCOMPtr<Element> ret = do_QueryInterface(retDOM);
   return ret.forget();
 }
 
