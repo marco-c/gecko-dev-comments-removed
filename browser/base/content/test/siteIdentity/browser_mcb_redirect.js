@@ -288,14 +288,10 @@ function test() {
   Services.prefs.setBoolPref(PREF_ACTIVE, true);
   Services.prefs.setBoolPref(PREF_DISPLAY, true);
 
-  
-  
-  SpecialPowers.pushPrefEnv({"set": [["dom.ipc.processCount", 1]]}, () => {
-    var newTab = gBrowser.addTab();
-    gBrowser.selectedTab = newTab;
-    gTestBrowser = gBrowser.selectedBrowser;
-    newTab.linkedBrowser.stop();
+  var newTab = gBrowser.addTab();
+  gBrowser.selectedTab = newTab;
+  gTestBrowser = gBrowser.selectedBrowser;
+  newTab.linkedBrowser.stop();
 
-    executeSoon(test1);
-  });
+  executeSoon(test1);
 }
