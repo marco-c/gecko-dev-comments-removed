@@ -45,6 +45,7 @@ class Promise;
 class HTMLMediaElement;
 }
 
+class AbstractThread;
 class VideoFrameContainer;
 class MediaDecoderStateMachine;
 
@@ -67,6 +68,7 @@ public:
     static const uint32_t sDelay = 500;
 
   public:
+    explicit ResourceCallback(AbstractThread* aMainThread);
     
     void Connect(MediaDecoder* aDecoder);
     
@@ -91,6 +93,7 @@ public:
     MediaDecoder* mDecoder = nullptr;
     nsCOMPtr<nsITimer> mTimer;
     bool mTimerArmed = false;
+    const RefPtr<AbstractThread> mAbstractMainThread;
   };
 
   typedef MozPromise<bool , bool ,  true> SeekPromise;
@@ -422,6 +425,11 @@ private:
 
   MediaDecoderOwner* GetOwner() const override;
 
+  AbstractThread* AbstractMainThread() const final override
+  {
+    return mAbstractMainThread;
+  }
+
   typedef MozPromise<RefPtr<CDMProxy>, bool ,  true> CDMProxyPromise;
 
   
@@ -633,6 +641,9 @@ protected:
   
   
   MediaDecoderOwner* mOwner;
+
+  
+  const RefPtr<AbstractThread> mAbstractMainThread;
 
   
   const RefPtr<FrameStatistics> mFrameStats;
