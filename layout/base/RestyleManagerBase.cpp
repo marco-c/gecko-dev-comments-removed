@@ -153,7 +153,8 @@ RestyleManagerBase::ChangeHintToString(nsChangeHint aHint)
     "BorderStyleNoneChange", "UpdateTextPath", "SchedulePaint",
     "NeutralChange", "InvalidateRenderingObservers",
     "ReflowChangesSizeOrPosition", "UpdateComputedBSize",
-    "UpdateUsesOpacity", "UpdateBackgroundPosition"
+    "UpdateUsesOpacity", "UpdateBackgroundPosition",
+    "AddOrRemoveTransform"
   };
   static_assert(nsChangeHint_AllHints == (1 << ArrayLength(names)) - 1,
                 "Name list doesn't match change hints.");
@@ -1126,18 +1127,13 @@ RestyleManagerBase::ProcessRestyledFrames(nsStyleChangeList& aChangeList)
           
           
           
+          
           if (cont->IsAbsPosContainingBlock()) {
-            if (cont->StyleDisplay()->HasTransform(cont)) {
-              cont->AddStateBits(NS_FRAME_MAY_BE_TRANSFORMED);
-            }
             if (!cont->IsAbsoluteContainer() &&
                 (cont->GetStateBits() & NS_FRAME_CAN_HAVE_ABSPOS_CHILDREN)) {
               cont->MarkAsAbsoluteContainingBlock();
             }
           } else {
-            
-            
-            
             if (cont->IsAbsoluteContainer()) {
               cont->MarkAsNotAbsoluteContainingBlock();
             }
@@ -1145,6 +1141,20 @@ RestyleManagerBase::ProcessRestyledFrames(nsStyleChangeList& aChangeList)
         }
       }
     }
+
+    if ((hint & nsChangeHint_AddOrRemoveTransform) && frame &&
+        !(hint & nsChangeHint_ReconstructFrame)) {
+      for (nsIFrame* cont = frame; cont;
+           cont = nsLayoutUtils::GetNextContinuationOrIBSplitSibling(cont)) {
+        if (cont->StyleDisplay()->HasTransform(cont)) {
+          cont->AddStateBits(NS_FRAME_MAY_BE_TRANSFORMED);
+        }
+        
+        
+        
+      }
+    }
+
     if (hint & nsChangeHint_ReconstructFrame) {
       
       
