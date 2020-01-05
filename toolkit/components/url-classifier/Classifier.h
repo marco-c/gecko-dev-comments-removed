@@ -109,6 +109,10 @@ public:
                                            const nsACString& aProvider,
                                            nsIFile** aPrivateStoreDirectory);
 
+  
+  
+  nsresult SwapInNewTablesAndCleanup();
+
 private:
   void DropStores();
   void DeleteTables(nsIFile* aDirectory, const nsTArray<nsCString>& aTables);
@@ -118,9 +122,15 @@ private:
   nsresult SetupPathNames();
   nsresult RecoverBackups();
   nsresult CleanToDelete();
-  nsresult BackupTables();
-  nsresult RemoveBackupTables();
+  nsresult CopyInUseDirForUpdate();
+  void     CopyInUseLookupCacheForUpdate();
   nsresult RegenActiveTables();
+
+
+
+  
+  
+  void RemoveUpdateIntermediaries();
 
 #ifdef MOZ_SAFEBROWSING_DUMP_FAILED_UPDATES
   already_AddRefed<nsIFile> GetFailedUpdateDirectroy();
@@ -137,7 +147,17 @@ private:
 
   nsresult UpdateCache(TableUpdate* aUpdates);
 
-  LookupCache *GetLookupCache(const nsACString& aTable);
+  LookupCache *GetLookupCache(const nsACString& aTable,
+                              bool aForUpdate = false);
+
+  LookupCache *GetLookupCacheForUpdate(const nsACString& aTable) {
+    return GetLookupCache(aTable, true);
+  }
+
+  LookupCache *GetLookupCacheFrom(const nsACString& aTable,
+                                  nsTArray<LookupCache*>& aLookupCaches,
+                                  nsIFile* aRootStoreDirectory);
+
 
   bool CheckValidUpdate(nsTArray<TableUpdate*>* aUpdates,
                         const nsACString& aTable);
@@ -152,9 +172,10 @@ private:
   nsCOMPtr<nsIFile> mRootStoreDirectory;
   
   nsCOMPtr<nsIFile> mBackupDirectory;
+  nsCOMPtr<nsIFile> mUpdatingDirectory; 
   nsCOMPtr<nsIFile> mToDeleteDirectory;
   nsCOMPtr<nsICryptoHash> mCryptoHash;
-  nsTArray<LookupCache*> mLookupCaches;
+  nsTArray<LookupCache*> mLookupCaches; 
   nsTArray<nsCString> mActiveTablesCache;
   uint32_t mHashKey;
   
@@ -167,6 +188,9 @@ private:
   
   
   bool mIsTableRequestResultOutdated;
+
+  
+  nsTArray<LookupCache*> mNewLookupCaches;
 };
 
 } 

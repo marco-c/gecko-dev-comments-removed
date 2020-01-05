@@ -34,6 +34,7 @@ extern mozilla::LazyLogModule gUrlClassifierDbServiceLog;
 #define STORE_DIRECTORY      NS_LITERAL_CSTRING("safebrowsing")
 #define TO_DELETE_DIR_SUFFIX NS_LITERAL_CSTRING("-to_delete")
 #define BACKUP_DIR_SUFFIX    NS_LITERAL_CSTRING("-backup")
+#define UPDATING_DIR_SUFFIX  NS_LITERAL_CSTRING("-updating")
 
 #define METADATA_SUFFIX      NS_LITERAL_CSTRING(".metadata")
 
@@ -181,6 +182,13 @@ Classifier::SetupPathNames()
   NS_ENSURE_SUCCESS(rv, rv);
 
   
+  rv = mCacheDirectory->Clone(getter_AddRefs(mUpdatingDirectory));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  rv = mUpdatingDirectory->AppendNative(STORE_DIRECTORY + UPDATING_DIR_SUFFIX);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
   
   rv = mCacheDirectory->Clone(getter_AddRefs(mToDeleteDirectory));
   NS_ENSURE_SUCCESS(rv, rv);
@@ -225,8 +233,18 @@ Classifier::Open(nsIFile& aCacheDirectory)
   NS_ENSURE_SUCCESS(rv, rv);
 
   
+  
   rv = CleanToDelete();
   NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  
+  rv = mUpdatingDirectory->Remove(true);
+  if (NS_SUCCEEDED(rv)) {
+    
+    
+    LOG(("We may have hit a crash in the previous update."));
+  }
 
   
   
@@ -260,6 +278,7 @@ Classifier::Reset()
 
   mRootStoreDirectory->Remove(true);
   mBackupDirectory->Remove(true);
+  mUpdatingDirectory->Remove(true);
   mToDeleteDirectory->Remove(true);
 
   CreateStoreDirectory();
@@ -347,11 +366,6 @@ Classifier::AbortUpdateAndReset(const nsCString& aTable)
 
   
   ResetTables(Clear_All, nsTArray<nsCString> { aTable });
-
-  
-  
-  Unused << RemoveBackupTables();
-  Unused << CleanToDelete();
 }
 
 void
@@ -527,9 +541,144 @@ Classifier::Check(const nsACString& aSpec,
   return NS_OK;
 }
 
+static nsresult
+SwapDirectoryContent(nsIFile* aDir1,
+                     nsIFile* aDir2,
+                     nsIFile* aParentDir,
+                     nsIFile* aTempDir)
+{
+  
+  
+  
+  
+  
+  
+
+  nsAutoCString tempDirName;
+  aTempDir->GetNativeLeafName(tempDirName);
+
+  nsresult rv;
+
+  nsAutoCString dirName1, dirName2;
+  aDir1->GetNativeLeafName(dirName1);
+  aDir2->GetNativeLeafName(dirName2);
+
+  LOG(("Swapping directories %s and %s...", dirName1.get(),
+                                            dirName2.get()));
+
+  
+  rv = aDir1->RenameToNative(nullptr, tempDirName);
+  if (NS_FAILED(rv)) {
+    LOG(("Unable to rename %s to %s", dirName1.get(),
+                                      tempDirName.get()));
+    return rv; 
+  }
+
+  
+  
+  
+  nsCOMPtr<nsIFile> tempDirectory;
+  rv = aParentDir->Clone(getter_AddRefs(tempDirectory));
+  rv = tempDirectory->AppendNative(tempDirName);
+
+  
+  rv = aDir2->RenameToNative(nullptr, dirName1);
+  if (NS_FAILED(rv)) {
+    LOG(("Failed to rename %s to %s. Rename temp directory back to %s",
+         dirName2.get(), dirName1.get(), dirName1.get()));
+    nsresult rbrv = tempDirectory->RenameToNative(nullptr, dirName1);
+    NS_ENSURE_SUCCESS(rbrv, rbrv);
+    return rv;
+  }
+
+  
+  rv = tempDirectory->RenameToNative(nullptr, dirName2);
+  if (NS_FAILED(rv)) {
+    LOG(("Failed to rename temp directory to %s. ", dirName2.get()));
+    
+    
+    
+    
+    
+    nsresult rbrv; 
+    rbrv = aDir1->RenameToNative(nullptr, dirName2);
+    NS_ENSURE_SUCCESS(rbrv, rbrv);
+    rbrv = tempDirectory->RenameToNative(nullptr, dirName1);
+    NS_ENSURE_SUCCESS(rbrv, rbrv);
+    return rv;
+  }
+
+  return rv;
+}
+
+void
+Classifier::RemoveUpdateIntermediaries()
+{
+  
+  for (auto c: mNewLookupCaches) {
+    delete c;
+  }
+  mNewLookupCaches.Clear();
+
+  
+  if (NS_FAILED(mUpdatingDirectory->Remove(true))) {
+    
+    
+    
+    
+    LOG(("Failed to remove updating directory."));
+  }
+}
+
+nsresult
+Classifier::SwapInNewTablesAndCleanup()
+{
+  nsresult rv;
+
+  
+  
+  
+  
+  rv = SwapDirectoryContent(mUpdatingDirectory,  
+                            mRootStoreDirectory, 
+                            mCacheDirectory,     
+                            mBackupDirectory);   
+  if (NS_FAILED(rv)) {
+    LOG(("Failed to swap in on-disk tables."));
+    RemoveUpdateIntermediaries();
+    return rv;
+  }
+
+  
+  mLookupCaches.SwapElements(mNewLookupCaches);
+  for (auto c: mLookupCaches) {
+    c->UpdateRootDirHandle(mRootStoreDirectory);
+  }
+
+  
+  rv = RegenActiveTables();
+  if (NS_FAILED(rv)) {
+    LOG(("Failed to re-generate active tables!"));
+  }
+
+  
+  RemoveUpdateIntermediaries();
+
+  
+  mIsTableRequestResultOutdated = true;
+
+  LOG(("Done swap in updated tables."));
+
+  return rv;
+}
+
 nsresult
 Classifier::ApplyUpdates(nsTArray<TableUpdate*>* aUpdates)
 {
+  
+  
+  
+
   if (!aUpdates || aUpdates->Length() == 0) {
     return NS_OK;
   }
@@ -554,10 +703,18 @@ Classifier::ApplyUpdates(nsTArray<TableUpdate*>* aUpdates)
   {
     ScopedUpdatesClearer scopedUpdatesClearer(aUpdates);
 
-    LOG(("Backup before update."));
-
-    rv = BackupTables();
-    NS_ENSURE_SUCCESS(rv, rv);
+    {
+      
+      
+      
+      
+      rv = CopyInUseDirForUpdate(); 
+      if (NS_FAILED(rv)) {
+        LOG(("Failed to copy in-use directory for update."));
+        return rv;
+      }
+      CopyInUseLookupCacheForUpdate(); 
+    }
 
     LOG(("Applying %" PRIuSIZE " table updates.", aUpdates->Length()));
 
@@ -567,23 +724,22 @@ Classifier::ApplyUpdates(nsTArray<TableUpdate*>* aUpdates)
         
         nsCString updateTable(aUpdates->ElementAt(i)->TableName());
 
+        
         if (TableUpdate::Cast<TableUpdateV2>((*aUpdates)[i])) {
           rv = UpdateHashStore(aUpdates, updateTable);
         } else {
           rv = UpdateTableV4(aUpdates, updateTable);
         }
 
-        
-        
-        mIsTableRequestResultOutdated = true;
-
         if (NS_FAILED(rv)) {
           if (rv != NS_ERROR_OUT_OF_MEMORY) {
 #ifdef MOZ_SAFEBROWSING_DUMP_FAILED_UPDATES
             DumpFailedUpdate();
 #endif
+            
             AbortUpdateAndReset(updateTable);
           }
+          RemoveUpdateIntermediaries();
           return rv;
         }
       }
@@ -591,21 +747,10 @@ Classifier::ApplyUpdates(nsTArray<TableUpdate*>* aUpdates)
 
   } 
 
-  rv = RegenActiveTables();
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  LOG(("Cleaning up backups."));
-
-  
-  
-  rv = RemoveBackupTables();
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  rv = CleanToDelete();
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  LOG(("Done applying updates."));
+  rv = SwapInNewTablesAndCleanup();
+  if (NS_FAILED(rv)) {
+    LOG(("Failed to swap in new tables."));
+  }
 
   if (LOG_ENABLED()) {
     PRIntervalTime clockEnd = PR_IntervalNow();
@@ -613,7 +758,7 @@ Classifier::ApplyUpdates(nsTArray<TableUpdate*>* aUpdates)
          PR_IntervalToMilliseconds(clockEnd - clockStart)));
   }
 
-  return NS_OK;
+  return rv;
 }
 
 nsresult
@@ -816,10 +961,10 @@ Classifier::DumpFailedUpdate()
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  nsCOMPtr<nsIFile> backupDirectory;
-  if (NS_FAILED(mBackupDirectory->Clone(getter_AddRefs(backupDirectory))) ||
-      NS_FAILED(backupDirectory->MoveToNative(nullptr, failedUpdatekDirName))) {
-    LOG(("Failed to move backup to the \"failed update\" directory %s",
+  nsCOMPtr<nsIFile> inUseDirectory;
+  if (NS_FAILED(mRootStoreDirectory->Clone(getter_AddRefs(inUseDirectory))) ||
+      NS_FAILED(inUseDirectory->CopyToNative(nullptr, failedUpdatekDirName))) {
+    LOG(("Failed to move in-use to the \"failed update\" directory %s",
          failedUpdatekDirName.get()));
     return NS_ERROR_FAILURE;
   }
@@ -830,26 +975,20 @@ Classifier::DumpFailedUpdate()
 #endif 
 
 nsresult
-Classifier::BackupTables()
+Classifier::CopyInUseDirForUpdate()
 {
-  
-  
-  
+  LOG(("Copy in-use directory content for update."));
+
   
   
 
-  nsCString backupDirName;
-  nsresult rv = mBackupDirectory->GetNativeLeafName(backupDirName);
+  nsCString updatingDirName;
+  nsresult rv = mUpdatingDirectory->GetNativeLeafName(updatingDirName);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  nsCString storeDirName;
-  rv = mRootStoreDirectory->GetNativeLeafName(storeDirName);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  rv = mRootStoreDirectory->MoveToNative(nullptr, backupDirName);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  rv = mRootStoreDirectory->CopyToNative(nullptr, storeDirName);
+  
+  mUpdatingDirectory->Remove(true);
+  rv = mRootStoreDirectory->CopyToNative(nullptr, updatingDirName);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
@@ -859,21 +998,19 @@ Classifier::BackupTables()
   return NS_OK;
 }
 
-nsresult
-Classifier::RemoveBackupTables()
+void
+Classifier::CopyInUseLookupCacheForUpdate()
 {
-  nsCString toDeleteName;
-  nsresult rv = mToDeleteDirectory->GetNativeLeafName(toDeleteName);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  rv = mBackupDirectory->MoveToNative(nullptr, toDeleteName);
-  NS_ENSURE_SUCCESS(rv, rv);
+  MOZ_ASSERT(mNewLookupCaches.IsEmpty(), "Update intermediaries is forgotten to "
+                                         "be removed in the previous update.");
 
   
-  rv = SetupPathNames();
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  return NS_OK;
+  
+  
+  
+  for (auto c: mLookupCaches) {
+    Unused << GetLookupCacheForUpdate(c->TableName());
+  }
 }
 
 nsresult
@@ -962,7 +1099,7 @@ Classifier::UpdateHashStore(nsTArray<TableUpdate*>* aUpdates,
 
   LOG(("Classifier::UpdateHashStore(%s)", PromiseFlatCString(aTable).get()));
 
-  HashStore store(aTable, GetProvider(aTable), mRootStoreDirectory);
+  HashStore store(aTable, GetProvider(aTable), mUpdatingDirectory);
 
   if (!CheckValidUpdate(aUpdates, store.TableName())) {
     return NS_OK;
@@ -975,7 +1112,7 @@ Classifier::UpdateHashStore(nsTArray<TableUpdate*>* aUpdates,
 
   
   LookupCacheV2* lookupCache =
-    LookupCache::Cast<LookupCacheV2>(GetLookupCache(store.TableName()));
+    LookupCache::Cast<LookupCacheV2>(GetLookupCacheForUpdate(store.TableName()));
   if (!lookupCache) {
     return NS_ERROR_FAILURE;
   }
@@ -1069,7 +1206,7 @@ Classifier::UpdateTableV4(nsTArray<TableUpdate*>* aUpdates,
   }
 
   LookupCacheV4* lookupCache =
-    LookupCache::Cast<LookupCacheV4>(GetLookupCache(aTable));
+    LookupCache::Cast<LookupCacheV4>(GetLookupCacheForUpdate(aTable));
   if (!lookupCache) {
     return NS_ERROR_FAILURE;
   }
@@ -1175,11 +1312,22 @@ Classifier::UpdateCache(TableUpdate* aUpdate)
 }
 
 LookupCache *
-Classifier::GetLookupCache(const nsACString& aTable)
+Classifier::GetLookupCache(const nsACString& aTable, bool aForUpdate)
 {
-  for (uint32_t i = 0; i < mLookupCaches.Length(); i++) {
-    if (mLookupCaches[i]->TableName().Equals(aTable)) {
-      return mLookupCaches[i];
+  if (aForUpdate) {
+    return GetLookupCacheFrom(aTable, mNewLookupCaches, mUpdatingDirectory);
+  }
+  return GetLookupCacheFrom(aTable, mLookupCaches, mRootStoreDirectory);
+}
+
+LookupCache *
+Classifier::GetLookupCacheFrom(const nsACString& aTable,
+                               nsTArray<LookupCache*>& aLookupCaches,
+                               nsIFile* aRootStoreDirectory)
+{
+  for (uint32_t i = 0; i < aLookupCaches.Length(); i++) {
+    if (aLookupCaches[i]->TableName().Equals(aTable)) {
+      return aLookupCaches[i];
     }
   }
 
@@ -1189,9 +1337,9 @@ Classifier::GetLookupCache(const nsACString& aTable)
   UniquePtr<LookupCache> cache;
   nsCString provider = GetProvider(aTable);
   if (StringEndsWith(aTable, NS_LITERAL_CSTRING("-proto"))) {
-    cache = MakeUnique<LookupCacheV4>(aTable, provider, mRootStoreDirectory);
+    cache = MakeUnique<LookupCacheV4>(aTable, provider, aRootStoreDirectory);
   } else {
-    cache = MakeUnique<LookupCacheV2>(aTable, provider, mRootStoreDirectory);
+    cache = MakeUnique<LookupCacheV2>(aTable, provider, aRootStoreDirectory);
   }
 
   nsresult rv = cache->Init();
@@ -1205,7 +1353,7 @@ Classifier::GetLookupCache(const nsACString& aTable)
     }
     return nullptr;
   }
-  mLookupCaches.AppendElement(cache.get());
+  aLookupCaches.AppendElement(cache.get());
   return cache.release();
 }
 
