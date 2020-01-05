@@ -16,6 +16,8 @@ namespace sandboxing {
 static const std::wstring ZONE_IDENTIFIER_STR(L":ZONE.IDENTIFIER");
 static const std::wstring ZONE_ID_DATA_STR(L":ZONE.IDENTIFIER:$DATA");
 
+static const std::wstring FLASH_TEMP_FILENAME(L"FLASHTMP0.TMP");
+
 bool
 StringEndsWith(const std::wstring& str, const std::wstring& strEnding)
 {
@@ -27,8 +29,40 @@ StringEndsWith(const std::wstring& str, const std::wstring& strEnding)
 
 
 
+
+bool
+IsFlashTempFile(std::wstring aFilename, std::wstring* aFolder=nullptr)
+{
+  
+  
+  int slashIdx = aFilename.find_last_of(L'\\');
+  if (slashIdx != std::wstring::npos) {
+    if (aFolder) {
+      *aFolder = aFilename.substr(0, slashIdx + 1);
+    }
+    aFilename = aFilename.substr(slashIdx + 1);
+  } else {
+    *aFolder = L"\\";
+  }
+
+  if (aFilename.compare(0, 8, L"FLASHTMP") != 0) {
+    return false;
+  }
+
+  int idx = 8;
+  int len = aFilename.length();
+  while (idx < len && isdigit(aFilename[idx])) {
+    ++idx;
+  }
+
+  return (len-idx == 4) && aFilename.compare(idx, 4, L".TMP") == 0;
+}
+
+
+
+
 std::wstring
-GetPlainFileName(const wchar_t* aNTFileName)
+GetPlainFileName(const wchar_t* aNTFileName, std::wstring* aFolder=nullptr)
 {
   while (*aNTFileName == L'\\' || *aNTFileName == L'.' ||
          *aNTFileName == L'?' || *aNTFileName == L':' ) {
@@ -41,6 +75,11 @@ GetPlainFileName(const wchar_t* aNTFileName)
   } else if (StringEndsWith(nameCopy, ZONE_IDENTIFIER_STR)) {
     nameCopy = nameCopy.substr(0, nameCopy.size() - ZONE_IDENTIFIER_STR.size());
   }
+
+  if (IsFlashTempFile(nameCopy, aFolder) && aFolder) {
+    return *aFolder + FLASH_TEMP_FILENAME;
+  }
+
   return nameCopy;
 }
 
@@ -62,8 +101,13 @@ PermissionsService::GrantFileAccess(uint32_t aProcessId,
                                     bool aPermitWrite)
 {
   FilePermissionMap& permissions = mProcessFilePermissions[aProcessId];
-  std::wstring filename = GetPlainFileName(aFilename);
+  std::wstring containingFolder;
+  std::wstring filename = GetPlainFileName(aFilename, &containingFolder);
   permissions[filename] |= aPermitWrite;
+  if (aPermitWrite) {
+    
+    permissions[containingFolder + FLASH_TEMP_FILENAME] = true;
+  }
 }
 
 void
@@ -110,6 +154,7 @@ PermissionsService::UserGrantedFileAccess(uint32_t aProcessId,
   }
 
   std::wstring filename = GetPlainFileName(aFilename);
+
   auto itPermission = permissions->second.find(filename);
   if (itPermission == permissions->second.end()) {
     ReportBlockedFile(needsWrite);
