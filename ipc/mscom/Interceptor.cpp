@@ -46,7 +46,6 @@ Interceptor::Interceptor(STAUniquePtr<IUnknown> aTarget, IInterceptorSink* aSink
   , mTarget(Move(aTarget))
   , mEventSink(aSink)
   , mMutex("mozilla::mscom::Interceptor::mMutex")
-  , mStdMarshal(nullptr)
 {
   MOZ_ASSERT(aSink);
   MOZ_ASSERT(!IsProxy(mTarget.get()));
@@ -66,77 +65,6 @@ Interceptor::~Interceptor()
     entry.mInterceptor = nullptr;
     entry.mTargetInterface->Release();
   }
-}
-
-HRESULT
-Interceptor::GetClassForHandler(DWORD aDestContext, void* aDestContextPtr,
-                                CLSID* aHandlerClsid)
-{
-  if (aDestContextPtr || !aHandlerClsid ||
-      aDestContext == MSHCTX_DIFFERENTMACHINE) {
-    return E_INVALIDARG;
-  }
-  MOZ_ASSERT(mEventSink);
-  return mEventSink->GetHandler(aHandlerClsid);
-}
-
-HRESULT
-Interceptor::GetUnmarshalClass(REFIID riid, void* pv, DWORD dwDestContext,
-                               void* pvDestContext, DWORD mshlflags,
-                               CLSID* pCid)
-{
-  return mStdMarshal->GetUnmarshalClass(riid, pv, dwDestContext, pvDestContext,
-                                        mshlflags, pCid);
-}
-
-HRESULT
-Interceptor::GetMarshalSizeMax(REFIID riid, void* pv, DWORD dwDestContext,
-                               void* pvDestContext, DWORD mshlflags,
-                               DWORD* pSize)
-{
-  HRESULT hr = mStdMarshal->GetMarshalSizeMax(riid, pv, dwDestContext,
-                                              pvDestContext, mshlflags, pSize);
-  if (FAILED(hr)) {
-    return hr;
-  }
-
-  DWORD payloadSize = 0;
-  hr = mEventSink->GetHandlerPayloadSize(riid, mTarget.get(), &payloadSize);
-  *pSize += payloadSize;
-  return hr;
-}
-
-HRESULT
-Interceptor::MarshalInterface(IStream* pStm, REFIID riid, void* pv,
-                              DWORD dwDestContext, void* pvDestContext,
-                              DWORD mshlflags)
-{
-  HRESULT hr = mStdMarshal->MarshalInterface(pStm, riid, pv, dwDestContext,
-                                             pvDestContext, mshlflags);
-  if (FAILED(hr)) {
-    return hr;
-  }
-
-  return mEventSink->WriteHandlerPayload(pStm, riid, mTarget.get());
-}
-
-HRESULT
-Interceptor::UnmarshalInterface(IStream* pStm, REFIID riid,
-                                void** ppv)
-{
-  return mStdMarshal->UnmarshalInterface(pStm, riid, ppv);
-}
-
-HRESULT
-Interceptor::ReleaseMarshalData(IStream* pStm)
-{
-  return mStdMarshal->ReleaseMarshalData(pStm);
-}
-
-HRESULT
-Interceptor::DisconnectObject(DWORD dwReserved)
-{
-  return mStdMarshal->DisconnectObject(dwReserved);
 }
 
 Interceptor::MapEntry*
@@ -220,22 +148,19 @@ Interceptor::GetInterceptorForIID(REFIID aIid, void** aOutInterceptor)
 
   if (aIid == IID_IUnknown) {
     
-    RefPtr<IInterceptor> intcpt(this);
-    intcpt.forget(aOutInterceptor);
+    *aOutInterceptor = static_cast<IInterceptor*>(this);
+    AddRef();
     return S_OK;
   }
-
-  REFIID interceptorIid = mEventSink->MarshalAs(aIid);
 
   RefPtr<IUnknown> unkInterceptor;
   IUnknown* interfaceForQILog = nullptr;
 
   
-  
 
   { 
     MutexAutoLock lock(mMutex);
-    MapEntry* entry = Lookup(interceptorIid);
+    MapEntry* entry = Lookup(aIid);
     if (entry) {
       unkInterceptor = entry->mInterceptor;
       interfaceForQILog = entry->mTargetInterface;
@@ -250,7 +175,7 @@ Interceptor::GetInterceptorForIID(REFIID aIid, void** aOutInterceptor)
     
     InterceptorLog::QI(S_OK, mTarget.get(), aIid, interfaceForQILog);
 
-    return unkInterceptor->QueryInterface(interceptorIid, aOutInterceptor);
+    return unkInterceptor->QueryInterface(aIid, aOutInterceptor);
   }
 
   
@@ -263,7 +188,7 @@ Interceptor::GetInterceptorForIID(REFIID aIid, void** aOutInterceptor)
 
   STAUniquePtr<IUnknown> targetInterface;
   IUnknown* rawTargetInterface = nullptr;
-  hr = QueryInterfaceTarget(interceptorIid, (void**)&rawTargetInterface);
+  hr = QueryInterfaceTarget(aIid, (void**)&rawTargetInterface);
   targetInterface.reset(rawTargetInterface);
   InterceptorLog::QI(hr, mTarget.get(), aIid, targetInterface.get());
   MOZ_ASSERT(SUCCEEDED(hr) || hr == E_NOINTERFACE);
@@ -281,8 +206,7 @@ Interceptor::GetInterceptorForIID(REFIID aIid, void** aOutInterceptor)
   RefPtr<IUnknown> kungFuDeathGrip(static_cast<IUnknown*>(
         static_cast<WeakReferenceSupport*>(this)));
 
-  hr = CreateInterceptor(interceptorIid, kungFuDeathGrip,
-                         getter_AddRefs(unkInterceptor));
+  hr = CreateInterceptor(aIid, kungFuDeathGrip, getter_AddRefs(unkInterceptor));
   if (FAILED(hr)) {
     return hr;
   }
@@ -307,7 +231,7 @@ Interceptor::GetInterceptorForIID(REFIID aIid, void** aOutInterceptor)
     MutexAutoLock lock(mMutex);
     
     
-    MapEntry* entry = Lookup(interceptorIid);
+    MapEntry* entry = Lookup(aIid);
     if (entry && entry->mInterceptor) {
       unkInterceptor = entry->mInterceptor;
     } else {
@@ -315,13 +239,13 @@ Interceptor::GetInterceptorForIID(REFIID aIid, void** aOutInterceptor)
       
       
       IUnknown* rawTargetInterface = targetInterface.release();
-      mInterceptorMap.AppendElement(MapEntry(interceptorIid,
+      mInterceptorMap.AppendElement(MapEntry(aIid,
                                              unkInterceptor,
                                              rawTargetInterface));
     }
   }
 
-  return unkInterceptor->QueryInterface(interceptorIid, aOutInterceptor);
+  return unkInterceptor->QueryInterface(aIid, aOutInterceptor);
 }
 
 HRESULT
@@ -351,63 +275,9 @@ Interceptor::QueryInterface(REFIID riid, void** ppv)
 HRESULT
 Interceptor::ThreadSafeQueryInterface(REFIID aIid, IUnknown** aOutInterface)
 {
-  if (aIid == IID_INoMarshal) {
-    
-    
-    return E_NOINTERFACE;
-  }
-
-  if (aIid == IID_IStdMarshalInfo) {
-    
-    
-    
-    CLSID dummy;
-    if (FAILED(mEventSink->GetHandler(&dummy))) {
-      return E_NOINTERFACE;
-    }
-
-    RefPtr<IStdMarshalInfo> std(this);
-    std.forget(aOutInterface);
-    return S_OK;
-  }
-
-  if (aIid == IID_IMarshal) {
-    
-    
-    
-    CLSID dummy;
-    if (FAILED(mEventSink->GetHandler(&dummy))) {
-      return E_NOINTERFACE;
-    }
-
-    if (!mStdMarshalUnk) {
-      HRESULT hr = ::CoGetStdMarshalEx(static_cast<IWeakReferenceSource*>(this),
-                                       SMEXF_SERVER,
-                                       getter_AddRefs(mStdMarshalUnk));
-      if (FAILED(hr)) {
-        return hr;
-      }
-    }
-
-    if (!mStdMarshal) {
-      HRESULT hr = mStdMarshalUnk->QueryInterface(IID_IMarshal,
-                                                  (void**)&mStdMarshal);
-      if (FAILED(hr)) {
-        return hr;
-      }
-
-      
-      mStdMarshal->Release();
-    }
-
-    RefPtr<IMarshal> marshal(this);
-    marshal.forget(aOutInterface);
-    return S_OK;
-  }
-
   if (aIid == IID_IInterceptor) {
-    RefPtr<IInterceptor> intcpt(this);
-    intcpt.forget(aOutInterface);
+    *aOutInterface = static_cast<IInterceptor*>(this);
+    (*aOutInterface)->AddRef();
     return S_OK;
   }
 
