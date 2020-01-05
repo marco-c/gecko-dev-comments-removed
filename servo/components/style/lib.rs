@@ -2,7 +2,7 @@
 
 
 
-#![feature(globs, macro_rules, if_let)]
+#![feature(globs, macro_rules)]
 
 #![deny(unused_imports)]
 #![deny(unused_variables)]

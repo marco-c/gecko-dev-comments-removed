@@ -2,7 +2,7 @@
 
 
 
-#![feature(globs, macro_rules, phase, unsafe_destructor, default_type_params, if_let)]
+#![feature(globs, macro_rules, phase, unsafe_destructor, default_type_params)]
 
 #![deny(unused_imports)]
 #![deny(unused_variables)]
