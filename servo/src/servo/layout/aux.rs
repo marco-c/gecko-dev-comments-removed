@@ -4,9 +4,9 @@
 
 
 
-
-
 use dom::node::{AbstractNode, LayoutData};
+
+use servo_util::tree::TreeUtils;
 
 pub trait LayoutAuxMethods {
     fn initialize_layout_data(self) -> Option<@mut LayoutData>;
@@ -36,5 +36,5 @@ impl LayoutAuxMethods for AbstractNode {
             }
         };
     }
-
 }
+

@@ -71,14 +71,14 @@ use std::arc;
 
 pub struct RenderBoxData {
     
-    node : AbstractNode,
+    node: AbstractNode,
     
 
-    ctx  : @mut FlowContext,
-    /* position of this box relative to owning flow */
-    position : Rect<Au>,
-    font_size : Length,
-    /* TODO (Issue #87): debug only */
+    ctx: FlowContext,
+    
+    position: Rect<Au>,
+    font_size: Length,
+    
     id: int
 }
 
@@ -103,7 +103,7 @@ pub enum SplitBoxResult {
     SplitDidNotFit(Option<@mut RenderBox>, Option<@mut RenderBox>)
 }
 
-pub fn RenderBoxData(node: AbstractNode, ctx: @mut FlowContext, id: int) -> RenderBoxData {
+pub fn RenderBoxData(node: AbstractNode, ctx: FlowContext, id: int) -> RenderBoxData {
     RenderBoxData {
         node : node,
         ctx  : ctx,
