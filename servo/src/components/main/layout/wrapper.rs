@@ -21,6 +21,18 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 use extra::url::Url;
 use script::dom::bindings::codegen::InheritTypes::{ElementDerived, HTMLIFrameElementDerived};
 use script::dom::bindings::codegen::InheritTypes::{HTMLImageElementDerived, TextDerived};
@@ -222,10 +234,12 @@ impl<'ln> TNode<LayoutElement<'ln>> for LayoutNode<'ln> {
 
     fn match_attr(&self, attr: &AttrSelector, test: |&str| -> bool) -> bool {
         self.with_element(|element| {
-            let name = if element.element.html_element_in_html_document() {
-                attr.lower_name.as_slice()
-            } else {
-                attr.name.as_slice()
+            let name = unsafe {
+                if element.element.html_element_in_html_document_for_layout() {
+                    attr.lower_name.as_slice()
+                } else {
+                    attr.name.as_slice()
+                }
             };
             match attr.namespace {
                 SpecificNamespace(ref ns) => {
@@ -338,7 +352,9 @@ impl<'le> TElement for LayoutElement<'le> {
     }
 
     fn get_hover_state(&self) -> bool {
-        self.element.node.get_hover_state()
+        unsafe {
+            self.element.node.get_hover_state_for_layout()
+        }
     }
 }
 
