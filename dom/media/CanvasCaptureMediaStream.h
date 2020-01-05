@@ -112,7 +112,13 @@ public:
   
   HTMLCanvasElement* Canvas() const { return mCanvas; }
   void RequestFrame();
+
   dom::FrameCaptureListener* FrameCaptureListener();
+
+  
+
+
+  void StopCapture();
 
   
 
