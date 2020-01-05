@@ -814,10 +814,11 @@ MediaEngineWebRTCMicrophoneSource::Shutdown()
 
   while (mRegisteredHandles.Length()) {
     MOZ_ASSERT(mState == kAllocated || mState == kStopped);
-    Deallocate(nullptr); 
+    
+    Deallocate(mRegisteredHandles[0].get());
   }
+  MOZ_ASSERT(mState == kReleased);
 
-  FreeChannel();
   mAudioInput = nullptr;
 }
 
