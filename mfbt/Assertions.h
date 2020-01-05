@@ -47,7 +47,7 @@ AnnotateMozCrashReason(const char* reason)
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
-#ifdef WIN32
+#ifdef _MSC_VER
    
 
 
@@ -208,26 +208,17 @@ MOZ_ReportCrash(const char* aStr, const char* aFilename, int aLine)
 
 
 
+static MOZ_COLD MOZ_NORETURN MOZ_NEVER_INLINE void MOZ_NoReturn(int aLine)
+{
+  *((volatile int*) NULL) = aLine;
+  TerminateProcess(GetCurrentProcess(), 3);
+}
 
-__declspec(noreturn) __inline void MOZ_NoReturn() {}
-
-#  ifdef __cplusplus
-#    define MOZ_REALLY_CRASH() \
-       do { \
-         ::__debugbreak(); \
-         *((volatile int*) NULL) = __LINE__; \
-         ::TerminateProcess(::GetCurrentProcess(), 3); \
-         ::MOZ_NoReturn(); \
-       } while (0)
-#  else
-#    define MOZ_REALLY_CRASH() \
-       do { \
-         __debugbreak(); \
-         *((volatile int*) NULL) = __LINE__; \
-         TerminateProcess(GetCurrentProcess(), 3); \
-         MOZ_NoReturn(); \
-       } while (0)
-#  endif
+#  define MOZ_REALLY_CRASH() \
+     do { \
+       __debugbreak(); \
+       MOZ_NoReturn(__LINE__); \
+     } while (0)
 #else
 #  ifdef __cplusplus
 #    define MOZ_REALLY_CRASH() \
