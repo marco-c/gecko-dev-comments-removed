@@ -109,63 +109,6 @@ WebGLContext::ValidateIndexedBufferSlot(const char* funcName, GLenum target, GLu
 
 
 
-static bool
-ValidateCanBindToTarget(WebGLContext* webgl, const char* funcName, GLenum target,
-                        WebGLBuffer* buffer)
-{
-    if (!buffer)
-        return true;
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    const auto& content = buffer->Content();
-    if (content == WebGLBuffer::Kind::Undefined)
-        return true;
-
-    switch (target) {
-    case LOCAL_GL_COPY_READ_BUFFER:
-    case LOCAL_GL_COPY_WRITE_BUFFER:
-        return true;
-
-    case LOCAL_GL_ELEMENT_ARRAY_BUFFER:
-        if (content == WebGLBuffer::Kind::ElementArray)
-            return true;
-        break;
-
-    case LOCAL_GL_ARRAY_BUFFER:
-    case LOCAL_GL_PIXEL_PACK_BUFFER:
-    case LOCAL_GL_PIXEL_UNPACK_BUFFER:
-    case LOCAL_GL_TRANSFORM_FEEDBACK_BUFFER:
-    case LOCAL_GL_UNIFORM_BUFFER:
-        if (content == WebGLBuffer::Kind::OtherData)
-            return true;
-        break;
-
-    default:
-        MOZ_CRASH();
-    }
-
-    webgl->ErrorInvalidOperation("%s: buffer already contains %s data.", funcName,
-                                 content == WebGLBuffer::Kind::OtherData ? "other"
-                                                                         : "element");
-    return false;
-}
-
 void
 WebGLContext::BindBuffer(GLenum target, WebGLBuffer* buffer)
 {
@@ -184,7 +127,7 @@ WebGLContext::BindBuffer(GLenum target, WebGLBuffer* buffer)
     if (!slot)
         return;
 
-    if (!ValidateCanBindToTarget(this, funcName, target, buffer))
+    if (buffer && !buffer->ValidateCanBindToTarget(funcName, target))
         return;
 
     gl->MakeCurrent();
@@ -221,9 +164,6 @@ WebGLContext::ValidateIndexedBufferBinding(const char* funcName, GLenum target,
         return false;
     }
 
-    if (!ValidateCanBindToTarget(this, funcName, target, (*out_genericBinding)->get()))
-        return false;
-
     return true;
 }
 
@@ -248,6 +188,9 @@ WebGLContext::BindBufferBase(GLenum target, GLuint index, WebGLBuffer* buffer)
     {
         return;
     }
+
+    if (buffer && !buffer->ValidateCanBindToTarget(funcName, target))
+        return;
 
     
 
@@ -294,6 +237,11 @@ WebGLContext::BindBufferRange(GLenum target, GLuint index, WebGLBuffer* buffer,
     {
         return;
     }
+
+    if (buffer && !buffer->ValidateCanBindToTarget(funcName, target))
+        return;
+
+    
 
     gl->MakeCurrent();
 
