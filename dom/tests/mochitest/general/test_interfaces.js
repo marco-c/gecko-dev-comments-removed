@@ -596,9 +596,9 @@ var interfaceNamesInGlobalScope =
 
     "InstallTrigger",
 
-    {name: "IntersectionObserver", disabled: true},
+    "IntersectionObserver",
 
-    {name: "IntersectionObserverEntry", disabled: true},
+    "IntersectionObserverEntry",
 
     "KeyEvent",
 
