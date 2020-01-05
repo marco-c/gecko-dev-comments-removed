@@ -173,22 +173,68 @@ public:
 
 
 
+
+
+
   void ForEach(nsDequeFunctor& aFunctor) const;
 
+  
+  
+  
+  
+  
   class ConstIterator
   {
   public:
-    ConstIterator(const nsDeque& aDeque, size_t aIndex) : mDeque(aDeque), mIndex(aIndex) { }
-    ConstIterator& operator++() { ++mIndex; return *this; }
-    bool operator==(const ConstIterator& aOther) const { return mIndex == aOther.mIndex; }
-    bool operator!=(const ConstIterator& aOther) const { return mIndex != aOther.mIndex; }
-    void* operator*() const { return mDeque.ObjectAt(mIndex); }
+    
+    
+    static const size_t EndIteratorIndex = size_t(-1);
+
+    ConstIterator(const nsDeque& aDeque, size_t aIndex)
+      : mDeque(aDeque)
+      , mIndex(aIndex)
+    {
+    }
+    ConstIterator& operator++()
+    {
+      
+      MOZ_ASSERT(mIndex != EndIteratorIndex);
+      ++mIndex;
+      return *this;
+    }
+    bool operator==(const ConstIterator& aOther) const
+    {
+      return EffectiveIndex() == aOther.EffectiveIndex();
+    }
+    bool operator!=(const ConstIterator& aOther) const
+    {
+      return EffectiveIndex() != aOther.EffectiveIndex();
+    }
+    void* operator*() const
+    {
+      
+      MOZ_RELEASE_ASSERT(mIndex < mDeque.GetSize());
+      return mDeque.ObjectAt(mIndex);
+    }
   private:
+    
+    
+    size_t EffectiveIndex() const
+    {
+      return (mIndex < mDeque.GetSize()) ? mIndex : mDeque.GetSize();
+    }
+
     const nsDeque& mDeque;
-    size_t mIndex;
+    size_t mIndex; 
   };
-  ConstIterator begin() const { return ConstIterator(*this, 0); }
-  ConstIterator end() const { return ConstIterator(*this, mSize); }
+  ConstIterator begin() const
+  {
+    return ConstIterator(*this, 0);
+  }
+  ConstIterator end() const
+  {
+    return ConstIterator(*this, ConstIterator::EndIteratorIndex);
+  }
 
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
