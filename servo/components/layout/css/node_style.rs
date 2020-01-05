@@ -19,8 +19,6 @@ pub trait StyledNode {
     
     fn style<'a>(&'a self) -> Ref<'a, Arc<ComputedValues>>;
     
-    fn has_style(&self) -> bool;
-    
     fn unstyle(self);
 }
 
@@ -40,11 +38,6 @@ impl<'ln> StyledNode for ThreadSafeLayoutNode<'ln> {
             let layout_data = layout_data_ref.as_ref().expect("no layout data");
             self.get_style(layout_data)
         })
-    }
-
-    fn has_style(&self) -> bool {
-        let layout_data_ref = self.borrow_layout_data();
-        layout_data_ref.as_ref().unwrap().shared_data.style.is_some()
     }
 
     fn unstyle(self) {
