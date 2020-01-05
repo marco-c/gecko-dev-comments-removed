@@ -289,6 +289,7 @@ nsHttpChannel::nsHttpChannel()
     , mIsCorsPreflightDone(0)
     , mStronglyFramed(false)
     , mUsedNetwork(0)
+    , mAuthConnectionRestartable(0)
     , mPushedStream(nullptr)
     , mLocalBlocklist(false)
     , mWarningReporter(nullptr)
@@ -5667,6 +5668,14 @@ NS_IMETHODIMP nsHttpChannel::ForceNoSpdy()
     return NS_OK;
 }
 
+NS_IMETHODIMP nsHttpChannel::ConnectionRestartable(bool aRestartable)
+{
+    LOG(("nsHttpChannel::ConnectionRestartable this=%p, restartable=%d",
+         this, aRestartable));
+    mAuthConnectionRestartable = aRestartable;
+    return NS_OK;
+}
+
 
 
 
@@ -7836,7 +7845,16 @@ nsHttpChannel::DoAuthRetry(nsAHttpConnection *conn)
     }
 
     
-    mCaps |=  NS_HTTP_STICKY_CONNECTION;
+    mCaps |= NS_HTTP_STICKY_CONNECTION;
+    
+    if (mAuthConnectionRestartable) {
+        LOG(("  connection made restartable"));
+        mCaps |= NS_HTTP_CONNECTION_RESTARTABLE;
+        mAuthConnectionRestartable = false;
+    } else {
+        LOG(("  connection made non-restartable"));
+        mCaps &= ~NS_HTTP_CONNECTION_RESTARTABLE;
+    }
 
     
     rv = SetupTransaction();

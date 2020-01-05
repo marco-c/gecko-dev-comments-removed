@@ -118,6 +118,7 @@ public:
     NS_IMETHOD OnAuthCancelled(bool userCancel) override;
     NS_IMETHOD CloseStickyConnection() override;
     NS_IMETHOD ForceNoSpdy() override;
+    NS_IMETHOD ConnectionRestartable(bool) override;
     
     
     
@@ -627,6 +628,9 @@ private:
 
     
     uint32_t                          mUsedNetwork : 1;
+
+    
+    uint32_t                          mAuthConnectionRestartable : 1;
 
     nsTArray<nsContinueRedirectionFunc> mRedirectFuncStack;
 

@@ -781,6 +781,11 @@ nsHttpChannelAuthProvider::GetCredentialsForChallenge(const char *challenge,
         sessionStateGrip = entry->mMetaData;
 
     
+    
+    
+    bool authAtProgress = !!*continuationState;
+
+    
     bool identityInvalid;
     nsISupports *sessionState = sessionStateGrip;
     rv = auth->ChallengeReceived(mAuthChannel,
@@ -803,19 +808,18 @@ nsHttpChannelAuthProvider::GetCredentialsForChallenge(const char *challenge,
         rv = mAuthChannel->CloseStickyConnection();
         MOZ_ASSERT(NS_SUCCEEDED(rv));
         if (!proxyAuth) {
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          mProxyIdent.Clear();
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            mProxyIdent.Clear();
         }
-        mConnectionBased = false;
     }
 
     mConnectionBased = !!(authFlags & nsIHttpAuthenticator::CONNECTION_BASED);
@@ -823,6 +827,12 @@ nsHttpChannelAuthProvider::GetCredentialsForChallenge(const char *challenge,
         rv = mAuthChannel->ForceNoSpdy();
         MOZ_ASSERT(NS_SUCCEEDED(rv));
     }
+
+    
+    
+    
+    
+    mAuthChannel->ConnectionRestartable(mConnectionBased && !authAtProgress);
 
     if (identityInvalid) {
         if (entry) {

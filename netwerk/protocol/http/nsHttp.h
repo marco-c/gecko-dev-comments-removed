@@ -98,6 +98,10 @@ typedef uint8_t nsHttpVersion;
 
 
 
+#define NS_HTTP_CONNECTION_RESTARTABLE  (1<<13)
+
+
+
 
 
 #define NS_HTTP_DEFAULT_PORT  80
