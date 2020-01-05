@@ -169,7 +169,7 @@ module.exports = {
     "no-trailing-spaces": "error",
 
     
-    
+    "no-undef": "error",
 
     
     "no-unexpected-multiline": "error",

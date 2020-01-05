@@ -1,4 +1,6 @@
 
+
+
 if (shouldDelay) {
   let shouldCrashNow = false;
   let thr = Components.classes["@mozilla.org/thread-manager;1"]
