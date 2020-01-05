@@ -77,13 +77,6 @@ registerCleanupFunction(function() {
     }
   });
 
-  
-  let timer = NewTabUtils.allPages._scheduleUpdateTimeout;
-  if (timer) {
-    clearTimeout(timer);
-    delete NewTabUtils.allPages._scheduleUpdateTimeout;
-  }
-
   Services.prefs.clearUserPref(PREF_NEWTAB_ENABLED);
   Services.prefs.setCharPref(PREF_NEWTAB_DIRECTORYSOURCE, gOrigDirectorySource);
 
