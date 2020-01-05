@@ -2,7 +2,7 @@
 
 
 
-use hyper::mime::Mime;
+use hyper::mime::{Mime, TopLevel, SubLevel, Attr, Value};
 use mime_classifier::MIMEClassifier;
 use net_traits::ProgressMsg::{Done, Payload};
 use net_traits::{LoadConsumer, LoadData, Metadata};
@@ -48,15 +48,23 @@ pub fn load(load_data: LoadData, start_chan: LoadConsumer) {
     
     
     let mut is_base64 = false;
-    let mut ct_str = parts[0];
+    let mut ct_str = parts[0].to_owned();
     if ct_str.ends_with(";base64") {
         is_base64 = true;
-        ct_str = &ct_str[..ct_str.as_bytes().len() - 7];
+        let end_index = ct_str.len() - 7;
+        ct_str.truncate(end_index);
+    }
+    if ct_str.starts_with(";charset=") {
+        ct_str = format!("text/plain{}", ct_str);
     }
 
     
     
-    let content_type: Option<Mime> = ct_str.parse().ok();
+    let mut content_type: Option<Mime> = ct_str.parse().ok();
+    if content_type == None {
+        content_type = Some(Mime(TopLevel::Text, SubLevel::Plain,
+                                 vec!((Attr::Charset, Value::Ext("US-ASCII".to_owned())))));
+    }
     metadata.set_content_type(content_type.as_ref());
 
     let progress_chan = start_sending(start_chan, metadata);
