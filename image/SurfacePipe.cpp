@@ -147,6 +147,8 @@ SurfaceSink::GetRowPointer() const
 nsresult
 PalettedSurfaceSink::Configure(const PalettedSurfaceConfig& aConfig)
 {
+  MOZ_ASSERT(aConfig.mFormat == SurfaceFormat::B8G8R8A8);
+
   
   IntSize surfaceSize = aConfig.mFrameRect.Size();
 

@@ -181,8 +181,6 @@ nsGIFDecoder2::BeginImageFrame(const IntRect& aFrameRect,
   MOZ_ASSERT(HasSize());
 
   bool hasTransparency = CheckForTransparency(aFrameRect);
-  gfx::SurfaceFormat format = hasTransparency ? SurfaceFormat::B8G8R8A8
-                                              : SurfaceFormat::B8G8R8X8;
 
   
   MOZ_ASSERT_IF(Size() != OutputSize(), !GetImageMetadata().HasAnimation());
@@ -193,6 +191,9 @@ nsGIFDecoder2::BeginImageFrame(const IntRect& aFrameRect,
 
   Maybe<SurfacePipe> pipe;
   if (mGIFStruct.images_decoded == 0) {
+    gfx::SurfaceFormat format = hasTransparency ? SurfaceFormat::B8G8R8A8
+                                                : SurfaceFormat::B8G8R8X8;
+
     
     pipeFlags |= SurfacePipeFlags::PROGRESSIVE_DISPLAY;
 
@@ -204,10 +205,17 @@ nsGIFDecoder2::BeginImageFrame(const IntRect& aFrameRect,
   } else {
     
     
+    
+    
+    
+    
+    
+    
     MOZ_ASSERT(Size() == OutputSize());
     pipe =
       SurfacePipeFactory::CreatePalettedSurfacePipe(this, mGIFStruct.images_decoded,
-                                                    Size(), aFrameRect, format,
+                                                    Size(), aFrameRect,
+                                                    SurfaceFormat::B8G8R8A8,
                                                     aDepth, pipeFlags);
   }
 
