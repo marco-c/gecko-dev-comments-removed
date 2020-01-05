@@ -143,90 +143,26 @@ public:
 
 
 
-class nsIdentifierMapEntry : public PLDHashEntryHdr
+class nsIdentifierMapEntry : public nsStringHashKey
 {
 public:
-  struct AtomOrString
-  {
-    MOZ_IMPLICIT AtomOrString(nsIAtom* aAtom) : mAtom(aAtom) {}
-    MOZ_IMPLICIT AtomOrString(const nsAString& aString) : mString(aString) {}
-    AtomOrString(const AtomOrString& aOther)
-      : mAtom(aOther.mAtom)
-      , mString(aOther.mString)
-    {
-    }
-
-    AtomOrString(AtomOrString&& aOther)
-      : mAtom(aOther.mAtom.forget())
-      , mString(aOther.mString)
-    {
-    }
-
-    nsCOMPtr<nsIAtom> mAtom;
-    const nsString mString;
-  };
-
-  typedef const AtomOrString& KeyType;
-  typedef const AtomOrString* KeyTypePointer;
-
   typedef mozilla::dom::Element Element;
   typedef mozilla::net::ReferrerPolicy ReferrerPolicy;
 
-  explicit nsIdentifierMapEntry(const AtomOrString& aKey)
-    : mKey(aKey)
+  explicit nsIdentifierMapEntry(const nsAString& aKey) :
+    nsStringHashKey(&aKey), mNameContentList(nullptr)
   {
   }
-  explicit nsIdentifierMapEntry(const AtomOrString* aKey)
-    : mKey(aKey ? *aKey : nullptr)
+  explicit nsIdentifierMapEntry(const nsAString* aKey) :
+    nsStringHashKey(aKey), mNameContentList(nullptr)
   {
   }
-  nsIdentifierMapEntry(nsIdentifierMapEntry&& aOther) :
-    mKey(mozilla::Move(aOther.GetKey())),
-    mIdContentList(mozilla::Move(aOther.mIdContentList)),
-    mNameContentList(aOther.mNameContentList.forget()),
-    mChangeCallbacks(aOther.mChangeCallbacks.forget()),
-    mImageElement(aOther.mImageElement.forget())
+  nsIdentifierMapEntry(const nsIdentifierMapEntry& aOther) :
+    nsStringHashKey(&aOther.GetKey())
   {
+    NS_ERROR("Should never be called");
   }
   ~nsIdentifierMapEntry();
-
-  KeyType GetKey() const { return mKey; }
-
-  nsString GetKeyAsString() const
-  {
-    if (mKey.mAtom) {
-      return nsAtomString(mKey.mAtom);
-    }
-
-    return mKey.mString;
-  }
-
-  bool KeyEquals(const KeyTypePointer aOtherKey) const
-  {
-    if (mKey.mAtom) {
-      if (aOtherKey->mAtom) {
-        return mKey.mAtom == aOtherKey->mAtom;
-      }
-
-      return mKey.mAtom->Equals(aOtherKey->mString);
-    }
-
-    if (aOtherKey->mAtom) {
-      return aOtherKey->mAtom->Equals(mKey.mString);
-    }
-
-    return mKey.mString.Equals(aOtherKey->mString);
-  }
-
-  static KeyTypePointer KeyToPointer(KeyType aKey) { return &aKey; }
-
-  static PLDHashNumber HashKey(const KeyTypePointer aKey)
-  {
-    return aKey->mAtom ?
-      aKey->mAtom->hash() : mozilla::HashString(aKey->mString);
-  }
-
-  enum { ALLOW_MEMMOVE = false };
 
   void AddNameElement(nsINode* aDocument, Element* aElement);
   void RemoveNameElement(Element* aElement);
@@ -318,16 +254,12 @@ public:
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
 private:
-  nsIdentifierMapEntry(const nsIdentifierMapEntry& aOther) = delete;
-  nsIdentifierMapEntry& operator=(const nsIdentifierMapEntry& aOther) = delete;
-
   void FireChangeCallbacks(Element* aOldElement, Element* aNewElement,
                            bool aImageOnly = false);
 
-  AtomOrString mKey;
   
   
-  AutoTArray<Element*, 1> mIdContentList;
+  nsTArray<Element*> mIdContentList;
   RefPtr<nsBaseContentList> mNameContentList;
   nsAutoPtr<nsTHashtable<ChangeCallbackEntry> > mChangeCallbacks;
   RefPtr<Element> mImageElement;
@@ -581,6 +513,8 @@ public:
   virtual void Reset(nsIChannel *aChannel, nsILoadGroup *aLoadGroup) override;
   virtual void ResetToURI(nsIURI *aURI, nsILoadGroup *aLoadGroup,
                           nsIPrincipal* aPrincipal) override;
+
+  already_AddRefed<nsIPrincipal> MaybeDowngradePrincipal(nsIPrincipal* aPrincipal);
 
   
   

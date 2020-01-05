@@ -403,7 +403,15 @@ XULDocument::StartDocumentLoad(const char* aCommand, nsIChannel* aChannel,
     nsresult rv =
         NS_GetFinalChannelURI(aChannel, getter_AddRefs(mDocumentURI));
     NS_ENSURE_SUCCESS(rv, rv);
+
+    mOriginalURI = mDocumentURI;
+
     
+    nsCOMPtr<nsIPrincipal> principal;
+    nsContentUtils::GetSecurityManager()->
+        GetChannelResultPrincipal(mChannel, getter_AddRefs(principal));
+    principal = MaybeDowngradePrincipal(principal);
+
     ResetStylesheetsToURI(mDocumentURI);
 
     RetrieveRelevantHeaders(aChannel);
@@ -460,8 +468,8 @@ XULDocument::StartDocumentLoad(const char* aCommand, nsIChannel* aChannel,
         
 
         nsCOMPtr<nsIParser> parser;
-        rv = PrepareToLoad(aContainer, aCommand, aChannel, aLoadGroup,
-                           getter_AddRefs(parser));
+        rv = PrepareToLoadPrototype(mDocumentURI, aCommand, principal,
+                                    getter_AddRefs(parser));
         if (NS_FAILED(rv)) return rv;
 
         
@@ -1970,21 +1978,6 @@ XULDocument::MatchAttribute(Element* aElement,
 
     return false;
 }
-
-nsresult
-XULDocument::PrepareToLoad(nsISupports* aContainer,
-                           const char* aCommand,
-                           nsIChannel* aChannel,
-                           nsILoadGroup* aLoadGroup,
-                           nsIParser** aResult)
-{
-    
-    nsCOMPtr<nsIPrincipal> principal;
-    nsContentUtils::GetSecurityManager()->
-        GetChannelResultPrincipal(aChannel, getter_AddRefs(principal));
-    return PrepareToLoadPrototype(mDocumentURI, aCommand, principal, aResult);
-}
-
 
 nsresult
 XULDocument::PrepareToLoadPrototype(nsIURI* aURI, const char* aCommand,
@@ -4438,6 +4431,7 @@ XULDocument::ParserObserver::OnStartRequest(nsIRequest *request,
             nsCOMPtr<nsIPrincipal> principal;
             secMan->GetChannelResultPrincipal(channel, getter_AddRefs(principal));
 
+            principal = mDocument->MaybeDowngradePrincipal(principal);
             
             mPrototype->SetDocumentPrincipal(principal);
         }
