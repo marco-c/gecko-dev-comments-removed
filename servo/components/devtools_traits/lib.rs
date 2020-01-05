@@ -39,9 +39,6 @@ use time::Duration;
 use std::net::TcpStream;
 use std::sync::mpsc::{Receiver, Sender};
 
-pub type DevtoolsControlChan = Sender<DevtoolsControlMsg>;
-pub type DevtoolsControlPort = Receiver<DevtoolScriptControlMsg>;
-
 
 
 #[derive(Deserialize, Serialize)]

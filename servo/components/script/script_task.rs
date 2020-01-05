@@ -53,7 +53,7 @@ use timers::TimerId;
 use devtools;
 use webdriver_handlers;
 
-use devtools_traits::{DevtoolsControlPort, DevtoolsPageInfo, DevtoolScriptControlMsg};
+use devtools_traits::{DevtoolsPageInfo, DevtoolScriptControlMsg};
 use devtools_traits::{ScriptToDevtoolsControlMsg, TimelineMarker, TimelineMarkerType};
 use devtools_traits::{TracingMetadata};
 use script_traits::CompositorEvent::{MouseDownEvent, MouseUpEvent};
@@ -336,7 +336,7 @@ pub struct ScriptTask {
     devtools_chan: Option<IpcSender<ScriptToDevtoolsControlMsg>>,
     
     
-    devtools_port: DevtoolsControlPort,
+    devtools_port: Receiver<DevtoolScriptControlMsg>,
     devtools_sender: IpcSender<DevtoolScriptControlMsg>,
     
     
