@@ -922,10 +922,37 @@ ComputeTransformDistance(nsCSSValue::Array* aArray1,
       }
       break;
     }
-    case eCSSKeyword_perspective:
+    case eCSSKeyword_perspective: {
+      MOZ_ASSERT(a1->Count() == 2, "unexpected count");
+      MOZ_ASSERT(a2->Count() == 2, "unexpected count");
+
       
-      distance = 0.0;
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+
+      auto clampPerspectiveDepth = [](float aDepth) {
+        
+        return std::max(aDepth, std::numeric_limits<float>::epsilon());
+      };
+      Matrix4x4 m1;
+      m1.Perspective(clampPerspectiveDepth(a1->Item(1).GetFloatValue()));
+      Matrix4x4 m2;
+      m2.Perspective(clampPerspectiveDepth(a2->Item(1).GetFloatValue()));
+
+      distance = ComputeTransform3DMatrixDistance(m1, m2);
       break;
+    }
     case eCSSKeyword_matrix: {
       MOZ_ASSERT(a1->Count() == 7, "unexpected count");
       MOZ_ASSERT(a2->Count() == 7, "unexpected count");
