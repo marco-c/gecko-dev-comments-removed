@@ -433,6 +433,7 @@ IsFixedOrSticky(Layer* aLayer)
 
 void
 AsyncCompositionManager::AlignFixedAndStickyLayers(Layer* aTransformedSubtreeRoot,
+                                                   Layer* aStartTraversalAt,
                                                    FrameMetrics::ViewID aTransformScrollId,
                                                    const LayerToParentLayerMatrix4x4& aPreviousTransformForRoot,
                                                    const LayerToParentLayerMatrix4x4& aCurrentTransformForRoot,
@@ -445,114 +446,110 @@ AsyncCompositionManager::AlignFixedAndStickyLayers(Layer* aTransformedSubtreeRoo
     return;
   }
 
-  ForEachNode<ForwardIterator>(
-      aTransformedSubtreeRoot,
-      [&] (Layer* layer)
-      {
-        bool needsAsyncTransformUnapplied = false;
-        if (Maybe<FrameMetrics::ViewID> fixedTo = IsFixedOrSticky(layer)) {
-          needsAsyncTransformUnapplied = AsyncTransformShouldBeUnapplied(layer,
-              *fixedTo, aTransformedSubtreeRoot, aTransformScrollId);
-        }
+  Layer* layer = aStartTraversalAt;
+  bool needsAsyncTransformUnapplied = false;
+  if (Maybe<FrameMetrics::ViewID> fixedTo = IsFixedOrSticky(layer)) {
+    needsAsyncTransformUnapplied = AsyncTransformShouldBeUnapplied(layer,
+        *fixedTo, aTransformedSubtreeRoot, aTransformScrollId);
+  }
 
-        
-        
-        
-        
-        if (!needsAsyncTransformUnapplied) {
-          return TraversalFlag::Continue;
-        }
+  
+  
+  
+  
+  if (!needsAsyncTransformUnapplied) {
+    for (Layer* child = layer->GetFirstChild(); child; child = child->GetNextSibling()) {
+      AlignFixedAndStickyLayers(aTransformedSubtreeRoot, child,
+          aTransformScrollId, aPreviousTransformForRoot,
+          aCurrentTransformForRoot, aFixedLayerMargins, aClipPartsCache);
+    }
+    return;
+  }
 
+  
+  
 
-        
-        
-
-        
-        
-        
+  
+  
+  
 #ifdef DEBUG
-        Matrix4x4 ancestorTransform;
-        if (layer != aTransformedSubtreeRoot) {
-          AccumulateLayerTransforms(layer->GetParent(), aTransformedSubtreeRoot,
-                                    ancestorTransform);
-        }
-        MOZ_ASSERT(ancestorTransform.IsIdentity());
+  Matrix4x4 ancestorTransform;
+  if (layer != aTransformedSubtreeRoot) {
+    AccumulateLayerTransforms(layer->GetParent(), aTransformedSubtreeRoot,
+                              ancestorTransform);
+  }
+  MOZ_ASSERT(ancestorTransform.IsIdentity());
 #endif
 
-        
-        
-        
-        
+  
+  
+  
+  
 #ifdef DEBUG
-        Matrix4x4 localTransform;
-        GetBaseTransform(layer, &localTransform);
-        MOZ_ASSERT(localTransform.IsIdentity());
+  Matrix4x4 localTransform;
+  GetBaseTransform(layer, &localTransform);
+  MOZ_ASSERT(localTransform.IsIdentity());
 #endif
 
-        
-        
+  
+  
 
-        
-        
-        LayerPoint anchor = layer->GetFixedPositionAnchor();
+  
+  
+  LayerPoint anchor = layer->GetFixedPositionAnchor();
 
-        
-        
-        LayerPoint offsetAnchor = anchor + GetLayerFixedMarginsOffset(layer, aFixedLayerMargins);
+  
+  
+  LayerPoint offsetAnchor = anchor + GetLayerFixedMarginsOffset(layer, aFixedLayerMargins);
 
-        
-        
-        
-        
-        
-        LayerPoint transformedAnchor = aCurrentTransformForRoot.Inverse()
-            .TransformPoint(aPreviousTransformForRoot.TransformPoint(
-                offsetAnchor));
+  
+  
+  
+  
+  
+  LayerPoint transformedAnchor = aCurrentTransformForRoot.Inverse()
+      .TransformPoint(aPreviousTransformForRoot.TransformPoint(
+          offsetAnchor));
 
-        
-        
-        LayerPoint translation = transformedAnchor - anchor;
+  
+  
+  LayerPoint translation = transformedAnchor - anchor;
 
-        
-        
-        
-        bool translationConsumed = true;
+  
+  
+  
+  bool translationConsumed = true;
 
-        if (layer->GetIsStickyPosition()) {
-          
-          
-          
-          
-          
-          const LayerRect& stickyOuter = layer->GetStickyScrollRangeOuter();
-          const LayerRect& stickyInner = layer->GetStickyScrollRangeInner();
+  if (layer->GetIsStickyPosition()) {
+    
+    
+    
+    
+    
+    const LayerRect& stickyOuter = layer->GetStickyScrollRangeOuter();
+    const LayerRect& stickyInner = layer->GetStickyScrollRangeInner();
 
-          LayerPoint originalTranslation = translation;
-          translation.y = IntervalOverlap(translation.y, stickyOuter.y, stickyOuter.YMost()) -
-                          IntervalOverlap(translation.y, stickyInner.y, stickyInner.YMost());
-          translation.x = IntervalOverlap(translation.x, stickyOuter.x, stickyOuter.XMost()) -
-                          IntervalOverlap(translation.x, stickyInner.x, stickyInner.XMost());
-          if (translation != originalTranslation) {
-            translationConsumed = false;
-          }
-        }
+    LayerPoint originalTranslation = translation;
+    translation.y = IntervalOverlap(translation.y, stickyOuter.y, stickyOuter.YMost()) -
+                    IntervalOverlap(translation.y, stickyInner.y, stickyInner.YMost());
+    translation.x = IntervalOverlap(translation.x, stickyOuter.x, stickyOuter.XMost()) -
+                    IntervalOverlap(translation.x, stickyInner.x, stickyInner.XMost());
+    if (translation != originalTranslation) {
+      translationConsumed = false;
+    }
+  }
 
-        
-        
-        
-        
-        
-        TranslateShadowLayer(layer, ViewAs<ParentLayerPixel>(translation,
-            PixelCastJustification::NoTransformOnLayer), true, aClipPartsCache);
+  
+  
+  
+  
+  
+  TranslateShadowLayer(layer, ViewAs<ParentLayerPixel>(translation,
+      PixelCastJustification::NoTransformOnLayer), true, aClipPartsCache);
 
-        
-        
-        
-        
-        
-        
-        return translationConsumed ? TraversalFlag::Skip : TraversalFlag::Continue;
-      });
+  
+  
+  return;
 }
 
 static void
@@ -1046,7 +1043,7 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
             * CompleteAsyncTransform(
                 AdjustForClip(asyncTransformWithoutOverscroll, layer));
 
-          AlignFixedAndStickyLayers(layer, metrics.GetScrollId(), oldTransform,
+          AlignFixedAndStickyLayers(layer, layer, metrics.GetScrollId(), oldTransform,
                                     transformWithoutOverscrollOrOmta, fixedLayerMargins,
                                     &clipPartsCache);
 
@@ -1490,7 +1487,7 @@ AsyncCompositionManager::TransformScrollableLayer(Layer* aLayer)
 
   
   
-  AlignFixedAndStickyLayers(aLayer, metrics.GetScrollId(), oldTransform,
+  AlignFixedAndStickyLayers(aLayer, aLayer, metrics.GetScrollId(), oldTransform,
                             aLayer->GetLocalTransformTyped(),
                             fixedLayerMargins, nullptr);
 
