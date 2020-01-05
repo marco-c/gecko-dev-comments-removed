@@ -187,17 +187,20 @@ GMPCapabilitiesToString()
 void
 GeckoMediaPluginServiceChild::UpdateGMPCapabilities(nsTArray<GMPCapabilityData>&& aCapabilities)
 {
-  StaticMutexAutoLock lock(sGMPCapabilitiesMutex);
-  if (!sGMPCapabilities) {
-    sGMPCapabilities = new nsTArray<GMPCapabilityAndVersion>();
-    ClearOnShutdown(&sGMPCapabilities);
-  }
-  sGMPCapabilities->Clear();
-  for (const GMPCapabilityData& plugin : aCapabilities) {
-    sGMPCapabilities->AppendElement(GMPCapabilityAndVersion(plugin));
-  }
+  {
+    
+    StaticMutexAutoLock lock(sGMPCapabilitiesMutex);
+    if (!sGMPCapabilities) {
+      sGMPCapabilities = new nsTArray<GMPCapabilityAndVersion>();
+      ClearOnShutdown(&sGMPCapabilities);
+    }
+    sGMPCapabilities->Clear();
+    for (const GMPCapabilityData& plugin : aCapabilities) {
+      sGMPCapabilities->AppendElement(GMPCapabilityAndVersion(plugin));
+    }
 
-  LOGD(("UpdateGMPCapabilities {%s}", GMPCapabilitiesToString().get()));
+    LOGD(("UpdateGMPCapabilities {%s}", GMPCapabilitiesToString().get()));
+  }
 
   
   

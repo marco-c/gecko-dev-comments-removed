@@ -269,9 +269,8 @@ MediaKeySystemAccessManager::Observe(nsISupports* aSubject,
     
     
     nsTArray<PendingRequest> requests;
-    for (size_t i = mRequests.Length(); i > 0; i--) {
-      const size_t index = i - i;
-      PendingRequest& request = mRequests[index];
+    for (size_t i = mRequests.Length(); i-- > 0; ) {
+      PendingRequest& request = mRequests[i];
       nsAutoCString message;
       MediaKeySystemStatus status =
         MediaKeySystemAccess::GetKeySystemStatus(request.mKeySystem, message);
@@ -281,7 +280,7 @@ MediaKeySystemAccessManager::Observe(nsISupports* aSubject,
       }
       
       requests.AppendElement(Move(request));
-      mRequests.RemoveElementAt(index);
+      mRequests.RemoveElementAt(i);
     }
     
     for (PendingRequest& request : requests) {
