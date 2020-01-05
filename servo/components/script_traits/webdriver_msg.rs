@@ -53,7 +53,10 @@ pub enum WebDriverJSValue {
 #[derive(Deserialize, Serialize)]
 pub enum WebDriverJSError {
     Timeout,
-    UnknownType
+    UnknownType,
+    
+    
+    BrowsingContextNotFound
 }
 
 pub type WebDriverJSResult = Result<WebDriverJSValue, WebDriverJSError>;

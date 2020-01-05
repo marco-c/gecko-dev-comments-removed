@@ -194,13 +194,13 @@ pub enum DevtoolScriptControlMsg {
     
     EvaluateJS(PipelineId, String, IpcSender<EvaluateJSReply>),
     
-    GetRootNode(PipelineId, IpcSender<NodeInfo>),
+    GetRootNode(PipelineId, IpcSender<Option<NodeInfo>>),
     
-    GetDocumentElement(PipelineId, IpcSender<NodeInfo>),
+    GetDocumentElement(PipelineId, IpcSender<Option<NodeInfo>>),
     
-    GetChildren(PipelineId, String, IpcSender<Vec<NodeInfo>>),
+    GetChildren(PipelineId, String, IpcSender<Option<Vec<NodeInfo>>>),
     
-    GetLayout(PipelineId, String, IpcSender<ComputedNodeLayout>),
+    GetLayout(PipelineId, String, IpcSender<Option<ComputedNodeLayout>>),
     
     GetCachedMessages(PipelineId, CachedConsoleMessageTypes, IpcSender<Vec<CachedConsoleMessage>>),
     
