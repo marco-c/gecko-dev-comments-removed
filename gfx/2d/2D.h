@@ -19,6 +19,7 @@
 
 
 #include "mozilla/GenericRefCounted.h"
+#include "mozilla/MemoryReporting.h"
 
 
 

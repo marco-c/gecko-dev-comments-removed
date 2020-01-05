@@ -6,6 +6,8 @@
 
 
 
+#include "nsCSSParser.h"
+
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Maybe.h"
@@ -16,7 +18,6 @@
 #include <algorithm> 
 #include <limits> 
 
-#include "nsCSSParser.h"
 #include "nsAlgorithm.h"
 #include "nsCSSProps.h"
 #include "nsCSSKeywords.h"
@@ -1677,7 +1678,6 @@ void
 CSSParserImpl::ReleaseScanner()
 {
   mScanner = nullptr;
-  mIsSVGMode = false;
   mReporter = nullptr;
   mBaseURI = nullptr;
   mSheetURI = nullptr;
