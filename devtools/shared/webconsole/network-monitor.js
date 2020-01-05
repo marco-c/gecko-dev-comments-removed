@@ -1510,7 +1510,10 @@ NetworkMonitor.prototype = {
 
 
 
-function NetworkMonitorChild(outerWindowID, messageManager, conn, owner) {
+
+
+function NetworkMonitorChild(appId, outerWindowID, messageManager, conn, owner) {
+  this.appId = appId;
   this.outerWindowID = outerWindowID;
   this.conn = conn;
   this.owner = owner;
@@ -1523,6 +1526,7 @@ function NetworkMonitorChild(outerWindowID, messageManager, conn, owner) {
 exports.NetworkMonitorChild = NetworkMonitorChild;
 
 NetworkMonitorChild.prototype = {
+  appId: null,
   owner: null,
   _netEvents: null,
   _saveRequestAndResponseBodies: true,
@@ -1570,6 +1574,7 @@ NetworkMonitorChild.prototype = {
     mm.addMessageListener("debug:netmonitor:updateEvent",
                           this._onUpdateEvent);
     mm.sendAsyncMessage("debug:netmonitor", {
+      appId: this.appId,
       outerWindowID: this.outerWindowID,
       action: "start",
     });

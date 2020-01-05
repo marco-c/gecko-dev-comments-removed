@@ -100,10 +100,10 @@ nsInProcessTabChildGlobal::nsInProcessTabChildGlobal(nsIDocShell* aShell,
   
   nsCOMPtr<nsIMozBrowserFrame> browserFrame = do_QueryInterface(mOwner);
   if (browserFrame) {
-    mIsBrowserFrame = browserFrame->GetReallyIsBrowser();
+    mIsBrowserOrAppFrame = browserFrame->GetReallyIsBrowserOrApp();
   }
   else {
-    mIsBrowserFrame = false;
+    mIsBrowserOrAppFrame = false;
   }
 }
 
@@ -274,7 +274,7 @@ nsInProcessTabChildGlobal::PreHandleEvent(EventChainPreVisitor& aVisitor)
     return NS_OK;
   }
 
-  if (mIsBrowserFrame &&
+  if (mIsBrowserOrAppFrame &&
       (!mOwner || !nsContentUtils::IsInChromeDocshell(mOwner->OwnerDoc()))) {
     if (mOwner) {
       if (nsPIDOMWindowInner* innerWindow = mOwner->OwnerDoc()->GetInnerWindow()) {

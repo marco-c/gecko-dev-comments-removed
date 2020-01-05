@@ -862,9 +862,9 @@ ParticularProcessPriorityManager::OnRemoteBrowserFrameShown(nsISupports* aSubjec
   }
 
   
-  bool isMozBrowser;
-  fl->GetOwnerIsMozBrowserFrame(&isMozBrowser);
-  if (isMozBrowser) {
+  bool isMozBrowserOrApp;
+  fl->GetOwnerIsMozBrowserOrAppFrame(&isMozBrowserOrApp);
+  if (isMozBrowserOrApp) {
     ResetPriority();
   }
 

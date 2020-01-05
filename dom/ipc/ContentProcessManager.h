@@ -143,6 +143,15 @@ public:
   GetTopLevelTabParentByProcessAndTabId(const ContentParentId& aChildCpId,
                                         const TabId& aChildTabId);
 
+  
+
+
+
+
+  uint32_t
+  GetAppIdByProcessAndTabId(const ContentParentId& aChildCpId,
+                            const TabId& aChildTabId);
+
 private:
   static StaticAutoPtr<ContentProcessManager> sSingleton;
   TabId mUniqueId;

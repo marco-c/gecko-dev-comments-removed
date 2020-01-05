@@ -570,9 +570,11 @@ WebConsoleActor.prototype =
 
     let startedListeners = [];
     let window = !this.parentActor.isRootActor ? this.window : null;
+    let appId = null;
     let messageManager = null;
 
     if (this._parentIsContentActor) {
+      appId = this.parentActor.docShell.appId;
       messageManager = this.parentActor.messageManager;
     }
 
@@ -603,16 +605,16 @@ WebConsoleActor.prototype =
             
             
             
-            this.stackTraceCollector = new StackTraceCollector({ window });
+            this.stackTraceCollector = new StackTraceCollector({ window, appId });
             this.stackTraceCollector.init();
 
             let processBoundary = Services.appinfo.processType !=
                                   Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT;
-            if (messageManager && processBoundary) {
+            if ((appId || messageManager) && processBoundary) {
               
               
               this.networkMonitor =
-                new NetworkMonitorChild(this.parentActor.outerWindowID,
+                new NetworkMonitorChild(appId, this.parentActor.outerWindowID,
                                         messageManager, this.conn, this);
               this.networkMonitor.init();
               

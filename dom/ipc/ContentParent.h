@@ -32,6 +32,7 @@
 
 #define CHILD_PROCESS_SHUTDOWN_MESSAGE NS_LITERAL_STRING("child-process-shutdown")
 
+class mozIApplication;
 class nsConsoleService;
 class nsICycleCollectorLogSink;
 class nsIDumpGCAndCCLogsCallback;
@@ -148,10 +149,10 @@ public:
 
 
   static TabParent*
-  CreateBrowser(const TabContext& aContext,
-                Element* aFrameElement,
-                ContentParent* aOpenerContentParent,
-                bool aFreshProcess = false);
+  CreateBrowserOrApp(const TabContext& aContext,
+                     Element* aFrameElement,
+                     ContentParent* aOpenerContentParent,
+                     bool aFreshProcess = false);
 
   static void GetAll(nsTArray<ContentParent*>& aArray);
 
@@ -239,6 +240,7 @@ public:
                                       const hal::ProcessPriority& aPriority,
                                       const TabId& aOpenerTabId,
                                       ContentParentId* aCpId,
+                                      bool* aIsForApp,
                                       bool* aIsForBrowser,
                                       TabId* aTabId) override;
 
@@ -327,6 +329,8 @@ public:
 
   bool IsAlive() const;
 
+  virtual bool IsForApp() const override;
+
   virtual bool IsForBrowser() const override
   {
     return mIsForBrowser;
@@ -358,6 +362,8 @@ public:
   void KillHard(const char* aWhy);
 
   ContentParentId ChildID() const override { return mChildID; }
+
+  const nsString& AppManifestURL() const { return mAppManifestURL; }
 
   bool IsPreallocated() const;
 
@@ -555,13 +561,23 @@ protected:
   void OnCompositorUnexpectedShutdown() override;
 
 private:
-  static nsTArray<ContentParent*>* sBrowserContentParents;
+  static nsDataHashtable<nsStringHashKey, ContentParent*> *sAppContentParents;
+  static nsTArray<ContentParent*>* sNonAppContentParents;
   static nsTArray<ContentParent*>* sLargeAllocationContentParents;
   static nsTArray<ContentParent*>* sPrivateContent;
   static StaticAutoPtr<LinkedList<ContentParent> > sContentParents;
 
   static void JoinProcessesIOThread(const nsTArray<ContentParent*>* aProcesses,
                                     Monitor* aMonitor, bool* aDone);
+
+  
+  
+  
+  static already_AddRefed<ContentParent>
+  GetNewOrPreallocatedAppProcess(mozIApplication* aApp,
+                                 hal::ProcessPriority aInitialPriority,
+                                 ContentParent* aOpener,
+                                  bool* aTookPreAllocated = nullptr);
 
   static hal::ProcessPriority GetInitialProcessPriority(Element* aFrameElement);
 
@@ -578,6 +594,7 @@ private:
       const IPCTabContext& context,
       const uint32_t& chromeFlags,
       const ContentParentId& aCpId,
+      const bool& aIsForApp,
       const bool& aIsForBrowser) override;
   using PContentParent::SendPTestShellConstructor;
 
@@ -585,7 +602,8 @@ private:
 
   
   
-  ContentParent(ContentParent* aOpener,
+  ContentParent(mozIApplication* aApp,
+                ContentParent* aOpener,
                 bool aIsForBrowser,
                 bool aIsForPreallocated);
 
@@ -615,6 +633,11 @@ private:
   
   
   bool SetPriorityAndCheckIsAlive(hal::ProcessPriority aPriority);
+
+  
+  
+  void TransformPreallocatedIntoApp(ContentParent* aOpener,
+                                    const nsAString& aAppManifestURL);
 
   
   
@@ -678,6 +701,7 @@ private:
                                  ProcessId aOtherProcess) override;
 
   virtual bool RecvGetProcessAttributes(ContentParentId* aCpId,
+                                        bool* aIsForApp,
                                         bool* aIsForBrowser) override;
 
   virtual bool
@@ -702,6 +726,7 @@ private:
                                               const IPCTabContext& aContext,
                                               const uint32_t& aChromeFlags,
                                               const ContentParentId& aCpId,
+                                              const bool& aIsForApp,
                                               const bool& aIsForBrowser) override;
 
   virtual bool DeallocPBrowserParent(PBrowserParent* frame) override;
@@ -1079,7 +1104,16 @@ private:
   ContentParentId mChildID;
   int32_t mGeolocationWatchID;
 
+  nsString mAppManifestURL;
+
   nsCString mKillHardAnnotation;
+
+  
+
+
+
+
+  nsString mAppName;
 
   
   
@@ -1102,7 +1136,6 @@ private:
 
   bool mSendPermissionUpdates;
   bool mIsForBrowser;
-  bool mIsPreallocated;
 
   
   

@@ -8,6 +8,27 @@
 SimpleTest.waitForExplicitFinish();
 browserElementTestHelpers.setEnabledPref(true);
 
+
+
+
+
+
+var currentAppId = SpecialPowers.wrap(document).nodePrincipal.appId;
+var inApp =
+  currentAppId !== SpecialPowers.Ci.nsIScriptSecurityManager.NO_APP_ID;
+
+var currentAppManifestURL;
+
+if (inApp) {
+  let appsService = SpecialPowers.Cc["@mozilla.org/AppsService;1"]
+                      .getService(SpecialPowers.Ci.nsIAppsService);
+
+  currentAppManifestURL = appsService.getManifestURLByLocalId(currentAppId);
+};
+
+info('appId=' + currentAppId);
+info('manifestURL=' + currentAppManifestURL);
+
 function setup() {
   let appInfo = SpecialPowers.Cc['@mozilla.org/xre/app-info;1']
                 .getService(SpecialPowers.Ci.nsIXULAppInfo);
@@ -52,6 +73,9 @@ function createFrames() {
    for (let i = 0; i < 2; i++) {
      let frame = gInputMethodFrames[i] = document.createElement('iframe');
      frame.setAttribute('mozbrowser', 'true');
+     if (currentAppManifestURL) {
+       frame.setAttribute('mozapp', currentAppManifestURL);
+     }
      frame.addEventListener('mozbrowserloadend', countLoadend);
      frame.src = 'file_empty.html#' + i;
      document.body.appendChild(frame);
@@ -65,10 +89,18 @@ function setPermissions() {
     context: {
       url: SimpleTest.getTestFileURL('/file_empty.html'),
       originAttributes: {
+        appId: currentAppId,
         inIsolatedMozBrowser: true
       }
     }
   }];
+
+  if (inApp) {
+    
+    
+    permissions.push({
+      type: 'input', allow: true, context: document });
+  }
 
   SpecialPowers.pushPermissions(permissions,
     SimpleTest.waitForFocus.bind(SimpleTest, startTest));
