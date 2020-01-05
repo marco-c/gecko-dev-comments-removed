@@ -709,6 +709,26 @@ typedef Vector<GlobalDesc, 0, SystemAllocPolicy> GlobalDescVector;
 
 
 
+struct ElemSegment
+{
+    uint32_t tableIndex;
+    InitExpr offset;
+    Uint32Vector elemFuncIndices;
+    Uint32Vector elemCodeRangeIndices;
+
+    ElemSegment() = default;
+    ElemSegment(uint32_t tableIndex, InitExpr offset, Uint32Vector&& elemFuncIndices)
+      : tableIndex(tableIndex), offset(offset), elemFuncIndices(Move(elemFuncIndices))
+    {}
+
+    WASM_DECLARE_SERIALIZABLE(ElemSegment)
+};
+
+typedef Vector<ElemSegment, 0, SystemAllocPolicy> ElemSegmentVector;
+
+
+
+
 struct DataSegment
 {
     InitExpr offset;
