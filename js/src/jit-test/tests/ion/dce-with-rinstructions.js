@@ -3,6 +3,7 @@ setJitCompilerOption("ion.warmup.trigger", 20);
 var i;
 
 var config = getBuildConfiguration();
+var max = 200;
 
 
 
@@ -1291,23 +1292,12 @@ function rhypot_object_4args(i) {
 var uceFault_random = eval(uneval(uceFault).replace('uceFault', 'uceFault_random'));
 function rrandom(i) {
     
+    if(config.debug) setRNGState(2, 1+i);
 
-    if(config.debug) {
-        setRNGState(2, 0);
-        var x = Math.random();
-        if (uceFault_random(i) || uceFault_random(i)) {
-            setRNGState(2, 0);
-            assertEq(x, Math.random());
-        }
-        assertRecoveredOnBailout(x, true);
-    } else {
-        var x = Math.random();
-        if (uceFault_random(i) || uceFault_random(i)) {
-            Math.random();
-        }
-        assertRecoveredOnBailout(x, true);
-    }
-
+    var x = Math.random();
+    if (uceFault_random(i) || uceFault_random(i))
+        assertEq(x, config.debug ? setRNGState(2, 1+i) || Math.random() : x);
+    assertRecoveredOnBailout(x, true);
     return i;
 }
 
@@ -1353,7 +1343,8 @@ function rlog_object(i) {
     return i;
 }
 
-for (i = 0; i < 100; i++) {
+for (j = 100 - max; j < 100; j++) {
+    let i = j < 2 ? (Math.abs(j) % 50) + 2 : j;
     rbitnot_number(i);
     rbitnot_object(i);
     rbitand_number(i);

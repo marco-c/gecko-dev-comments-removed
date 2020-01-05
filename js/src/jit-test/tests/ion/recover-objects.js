@@ -4,11 +4,17 @@
 
 
 
+var max = 200;
 
 
 
-if (getJitCompilerOptions()["ion.warmup.trigger"] <= 90)
-    setJitCompilerOption("ion.warmup.trigger", 90);
+
+if (getJitCompilerOptions()["ion.warmup.trigger"] <= max - 10)
+    setJitCompilerOption("ion.warmup.trigger", max - 10);
+
+
+
+setJitCompilerOption("ion.warmup.trigger", getJitCompilerOptions()["ion.warmup.trigger"]);
 
 
 
@@ -18,7 +24,7 @@ if (getJitCompilerOptions()["ion.forceinlineCaches"])
 
 function resumeHere() {}
 var uceFault = function (i) {
-    if (i > 98)
+    if (i > max - 2)
         uceFault = function (i) { return true; };
     return false;
 };
@@ -84,7 +90,7 @@ function notSoEmpty2(i) {
 
 
 var argFault_observeArg = function (i) {
-    if (i > 98)
+    if (i > max - 2)
         return inline_observeArg.arguments[0];
     return { test : i };
 };
@@ -135,9 +141,9 @@ function withinIf(i) {
 
 function unknownLoad(i) {
     var obj = { foo: i };
-    assertEq(obj.bar, undefined);
     
-    assertRecoveredOnBailout(obj, false);
+    assertEq(obj.bar, undefined);
+    assertRecoveredOnBailout(obj, true);
 }
 
 
@@ -154,7 +160,7 @@ function dynamicSlots(i) {
     
     resumeHere(); bailout();
     assertEq(obj.p0 + obj.p10 + obj.p20 + obj.p30 + obj.p40, 5 * i + 100);
-    assertRecoveredOnBailout(obj, true);
+    assertRecoveredOnBailout(obj, false);
 }
 
 
@@ -172,7 +178,7 @@ function createThisWithTemplate(i)
     assertRecoveredOnBailout(p, true);
 }
 
-for (var i = 0; i < 100; i++) {
+for (var i = 0; i < max; i++) {
     notSoEmpty1(i);
     notSoEmpty2(i);
     observeArg(i);
