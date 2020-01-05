@@ -21,6 +21,7 @@ this.EXPORTED_SYMBOLS = [
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
+Cu.import("resource://gre/modules/Task.jsm");
 
 
 
@@ -105,7 +106,7 @@ this.DateTimePickerHelper = {
   },
 
   
-  showPicker(aBrowser, aData) {
+  showPicker: Task.async(function* (aBrowser, aData) {
     let rect = aData.rect;
     let type = aData.type;
     let detail = aData.detail;
@@ -134,13 +135,24 @@ this.DateTimePickerHelper = {
       debug("aBrowser.dateTimePicker not found, exiting now.");
       return;
     }
+    
+    
+    
+    if (!this.picker.loadPicker) {
+      let bindingPromise = new Promise(resolve => {
+        this.picker.addEventListener("DateTimePickerBindingReady",
+                                     resolve, {once: true});
+      });
+      this.picker.setAttribute("active", true);
+      yield bindingPromise;
+    }
     this.picker.loadPicker(type, detail);
     
     
     this.picker.openPopup(this._anchor, "after_start", 0, 0);
 
     this.addPickerListeners();
-  },
+  }),
 
   
   close() {
