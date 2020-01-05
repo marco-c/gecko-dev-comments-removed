@@ -3682,29 +3682,67 @@ HTMLMediaElement::NotifyXPCOMShutdown()
   ShutdownDecoder();
 }
 
-void
+already_AddRefed<Promise>
 HTMLMediaElement::Play(ErrorResult& aRv)
 {
   if (mAudioChannelWrapper && mAudioChannelWrapper->IsPlaybackBlocked()) {
-    
     MaybeDoLoad();
-    return;
+
+    
+    
+    
+    RefPtr<Promise> promise = CreateDOMPromise(aRv);
+
+    if (NS_WARN_IF(aRv.Failed())) {
+      return nullptr;
+    }
+
+    mPendingPlayPromises.AppendElement(promise);
+    return promise.forget();
   }
 
-  PlayInternal(aRv);
+  RefPtr<Promise> promise = PlayInternal(aRv);
 
   UpdateCustomPolicyAfterPlayed();
+
+  return promise.forget();
 }
 
-void
+already_AddRefed<Promise>
 HTMLMediaElement::PlayInternal(ErrorResult& aRv)
 {
   MOZ_ASSERT(!aRv.Failed());
 
+  
+  
+  
+
+  
+  
+  
   if (!IsAllowedToPlay()) {
     
-    return NS_OK;
+    aRv.Throw(NS_ERROR_DOM_MEDIA_NOT_ALLOWED_ERR);
+    return nullptr;
   }
+
+  
+  
+  
+  
+  if (GetError() && GetError()->Code() == MEDIA_ERR_SRC_NOT_SUPPORTED) {
+    aRv.Throw(NS_ERROR_DOM_MEDIA_NOT_SUPPORTED_ERR);
+    return nullptr;
+  }
+
+  
+  
+  
+  RefPtr<Promise> promise = CreateDOMPromise(aRv);
+  if (NS_WARN_IF(aRv.Failed())) {
+    return nullptr;
+  }
+  mPendingPlayPromises.AppendElement(promise);
 
   
   mHasUserInteraction = true;
@@ -3712,10 +3750,17 @@ HTMLMediaElement::PlayInternal(ErrorResult& aRv)
   StopSuspendingAfterFirstFrame();
   SetPlayedOrSeeked(true);
 
+  
+  
+  
   MaybeDoLoad();
   if (mSuspendedForPreloadNone) {
     ResumeLoad(PRELOAD_ENOUGH);
   }
+
+  
+  
+  
 
   
   
@@ -3726,8 +3771,14 @@ HTMLMediaElement::PlayInternal(ErrorResult& aRv)
     if (!mPausedForInactiveDocumentOrChannel) {
       nsresult rv = mDecoder->Play();
       if (NS_FAILED(rv)) {
+        
+        
+        
+        
+        
+        
         aRv.Throw(rv);
-        return;
+        return nullptr;
       }
     }
   }
@@ -3736,7 +3787,7 @@ HTMLMediaElement::PlayInternal(ErrorResult& aRv)
     mCurrentPlayRangeStart = CurrentTime();
   }
 
-  bool oldPaused = mPaused;
+  const bool oldPaused = mPaused;
   mPaused = false;
   mAutoplaying = false;
 
@@ -3748,8 +3799,27 @@ HTMLMediaElement::PlayInternal(ErrorResult& aRv)
 
   
   
+
+  
+  
   if (oldPaused) {
+    
+    
+    
+    
+
+    
+    
+
+    
     DispatchAsyncEvent(NS_LITERAL_STRING("play"));
+
+    
+    
+    
+    
+    
+    
     switch (mReadyState) {
     case nsIDOMHTMLMediaElement::HAVE_NOTHING:
       DispatchAsyncEvent(NS_LITERAL_STRING("waiting"));
@@ -3762,12 +3832,20 @@ HTMLMediaElement::PlayInternal(ErrorResult& aRv)
     case nsIDOMHTMLMediaElement::HAVE_FUTURE_DATA:
     case nsIDOMHTMLMediaElement::HAVE_ENOUGH_DATA:
       FireTimeUpdate(false);
-      DispatchAsyncEvent(NS_LITERAL_STRING("playing"));
+      NotifyAboutPlaying();
       break;
     }
+  } else if (mReadyState >= nsIDOMHTMLMediaElement::HAVE_FUTURE_DATA) {
+    
+    
+    
+    AsyncResolvePendingPlayPromises();
   }
 
-  return;
+  
+
+  
+  return promise.forget();
 }
 
 void
@@ -3781,13 +3859,12 @@ HTMLMediaElement::MaybeDoLoad()
 NS_IMETHODIMP HTMLMediaElement::Play()
 {
   if (mAudioChannelWrapper && mAudioChannelWrapper->IsPlaybackBlocked()) {
-    
     MaybeDoLoad();
     return NS_OK;
   }
 
   ErrorResult rv;
-  PlayInternal(rv);
+  RefPtr<Promise> toBeIgnored = PlayInternal(rv);
   if (rv.Failed()) {
     return rv.StealNSResult();
   }

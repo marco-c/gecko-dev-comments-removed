@@ -539,7 +539,7 @@ public:
     SetHTMLBoolAttr(nsGkAtoms::loop, aValue, aRv);
   }
 
-  void Play(ErrorResult& aRv);
+  already_AddRefed<Promise> Play(ErrorResult& aRv);
 
   void Pause(ErrorResult& aRv);
 
@@ -810,8 +810,7 @@ protected:
     nsTArray<Pair<nsString, RefPtr<MediaInputPort>>> mTrackPorts;
   };
 
-  
-  void PlayInternal(ErrorResult& aRv);
+  already_AddRefed<Promise> PlayInternal(ErrorResult& aRv);
 
   
 
