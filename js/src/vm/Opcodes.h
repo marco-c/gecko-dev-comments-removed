@@ -1314,11 +1314,9 @@
 
 
 
-
  \
     macro(JSOP_DEFCONST,  128,"defconst",   NULL,         5,  0,  0,  JOF_ATOM) \
     
-
 
 
 
@@ -1676,7 +1674,6 @@
     macro(JSOP_INITGLEXICAL,  161,"initglexical", NULL,   5,  1,  1,  JOF_ATOM|JOF_NAME|JOF_PROPINIT|JOF_GNAME) \
     \
     
-
 
 
 
