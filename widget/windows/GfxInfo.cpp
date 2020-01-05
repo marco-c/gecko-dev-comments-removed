@@ -450,10 +450,13 @@ GfxInfo::Init()
   adapterDeviceID[0] = ParseIDFromDeviceID(mDeviceID[0], "&DEV_", 4);
   adapterSubsysID[0] = ParseIDFromDeviceID(mDeviceID[0],  "&SUBSYS_", 8);
 
-  mAdapterVendorID[0].AppendPrintf("0x%04x", adapterVendorID[0]);
-  mAdapterDeviceID[0].AppendPrintf("0x%04x", adapterDeviceID[0]);
-  mAdapterSubsysID[0].AppendPrintf("%08x", adapterSubsysID[0]);
+  
+  
+  
+  bool foundValidDevice = (adapterVendorID[0] != 0 ||
+                           adapterDeviceID[0] != 0);
 
+  
   
 
   
@@ -503,8 +506,11 @@ GfxInfo::Init()
             deviceID2 = value;
             adapterVendorID[1] = ParseIDFromDeviceID(deviceID2, "VEN_", 4);
             adapterDeviceID[1] = ParseIDFromDeviceID(deviceID2, "&DEV_", 4);
-            if (adapterVendorID[0] == adapterVendorID[1] &&
-                adapterDeviceID[0] == adapterDeviceID[1]) {
+            
+            
+            if ((adapterVendorID[0] == adapterVendorID[1] &&
+                 adapterDeviceID[0] == adapterDeviceID[1]) ||
+                (adapterVendorID[1] == 0 && adapterDeviceID[1] == 0)) {
               RegCloseKey(key);
               continue;
             }
@@ -542,6 +548,21 @@ GfxInfo::Init()
             }
             RegCloseKey(key);
             if (result == ERROR_SUCCESS) {
+              
+              
+              if (!foundValidDevice) {
+                foundValidDevice = true;
+                adapterVendorID[0] = adapterVendorID[1];
+                adapterDeviceID[0] = adapterDeviceID[1];
+                mDeviceString[0] = value;
+                mDeviceID[0] = deviceID2;
+                mDeviceKey[0] = driverKey2;
+                mDriverVersion[0] = driverVersion2;
+                mDriverDate[0] = driverDate2;
+                adapterSubsysID[0] = ParseIDFromDeviceID(mDeviceID[0], "&SUBSYS_", 8);
+                continue;
+              }
+
               mHasDualGPU = true;
               mDeviceString[1] = value;
               mDeviceID[1] = deviceID2;
@@ -561,6 +582,10 @@ GfxInfo::Init()
       SetupDiDestroyDeviceInfoList(devinfo);
     }
   }
+
+  mAdapterVendorID[0].AppendPrintf("0x%04x", adapterVendorID[0]);
+  mAdapterDeviceID[0].AppendPrintf("0x%04x", adapterDeviceID[0]);
+  mAdapterSubsysID[0].AppendPrintf("%08x", adapterSubsysID[0]);
 
   
   
