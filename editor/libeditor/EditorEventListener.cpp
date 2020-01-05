@@ -669,6 +669,13 @@ EditorEventListener::MouseClick(nsIDOMMouseEvent* aMouseEvent)
 
   
   
+  
+  if (!mEditorBase) {
+    return NS_OK;
+  }
+
+  
+  
   mEditorBase->ForceCompositionEnd();
 
   int16_t button = -1;
