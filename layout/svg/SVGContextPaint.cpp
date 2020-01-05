@@ -7,6 +7,7 @@
 #include "gfxContext.h"
 #include "gfxUtils.h"
 #include "mozilla/gfx/2D.h"
+#include "mozilla/Preferences.h"
 #include "nsIDocument.h"
 #include "nsSVGPaintServerFrame.h"
 #include "nsSVGEffects.h"
@@ -16,6 +17,52 @@ using namespace mozilla::gfx;
 using namespace mozilla::image;
 
 namespace mozilla {
+
+ bool
+SVGContextPaint::IsAllowedForImageFromURI(nsIURI* aURI)
+{
+  static bool sEnabledForContent = false;
+  static bool sEnabledForContentCached = false;
+
+  if (!sEnabledForContentCached) {
+    Preferences::AddBoolVarCache(&sEnabledForContent,
+                                 "svg.context-properties.content.enabled", false);
+    sEnabledForContentCached = true;
+  }
+
+  if (sEnabledForContent) {
+    return true;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsAutoCString scheme;
+  if (NS_SUCCEEDED(aURI->GetScheme(scheme)) &&
+      (scheme.EqualsLiteral("chrome") || scheme.EqualsLiteral("resource"))) {
+    return true;
+  }
+  return false;
+}
 
 
 

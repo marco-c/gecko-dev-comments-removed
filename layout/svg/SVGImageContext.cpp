@@ -22,25 +22,10 @@ SVGImageContext::MaybeStoreContextPaint(Maybe<SVGImageContext>& aContext,
                                         nsIFrame* aFromFrame,
                                         imgIContainer* aImgContainer)
 {
-  static bool sEnabledForContent = false;
-  static bool sEnabledForContentCached = false;
-
-  if (!sEnabledForContentCached) {
-    Preferences::AddBoolVarCache(&sEnabledForContent,
-                                 "svg.context-properties.content.enabled", false);
-    sEnabledForContentCached = true;
-  }
-
   const nsStyleSVG* style = aFromFrame->StyleSVG();
 
   if (!style->ExposesContextProperties()) {
     
-    
-    return;
-  }
-
-  if (!sEnabledForContent &&
-      !nsContentUtils::IsChromeDoc(aFromFrame->PresContext()->Document())) {
     
     return;
   }

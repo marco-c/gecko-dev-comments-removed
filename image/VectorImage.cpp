@@ -812,18 +812,40 @@ VectorImage::Draw(gfxContext* aContext,
              "Viewport size is required when using "
              "FLAG_FORCE_PRESERVEASPECTRATIO_NONE");
 
+  bool overridePAR = (aFlags & FLAG_FORCE_PRESERVEASPECTRATIO_NONE) && aSVGContext;
+
+  bool haveContextPaint = aSVGContext && aSVGContext->GetContextPaint();
+  bool blockContextPaint = false;
+  if (haveContextPaint) {
+    nsCOMPtr<nsIURI> imageURI = mURI->ToIURI();
+    blockContextPaint = !SVGContextPaint::IsAllowedForImageFromURI(imageURI);
+  }
+
   Maybe<SVGImageContext> newSVGContext;
-  if ((aFlags & FLAG_FORCE_PRESERVEASPECTRATIO_NONE) && aSVGContext) {
+  if (overridePAR || blockContextPaint) {
     
     
-    MOZ_ASSERT(!aSVGContext->GetPreserveAspectRatio(),
-               "FLAG_FORCE_PRESERVEASPECTRATIO_NONE is not expected if a "
-               "preserveAspectRatio override is supplied");
-    Maybe<SVGPreserveAspectRatio> aspectRatio =
-      Some(SVGPreserveAspectRatio(SVG_PRESERVEASPECTRATIO_NONE,
-                                  SVG_MEETORSLICE_UNKNOWN));
+    
+
     newSVGContext = aSVGContext; 
-    newSVGContext->SetPreserveAspectRatio(aspectRatio);
+
+    if (overridePAR) {
+      
+      
+      MOZ_ASSERT(!aSVGContext->GetPreserveAspectRatio(),
+                 "FLAG_FORCE_PRESERVEASPECTRATIO_NONE is not expected if a "
+                 "preserveAspectRatio override is supplied");
+      Maybe<SVGPreserveAspectRatio> aspectRatio =
+        Some(SVGPreserveAspectRatio(SVG_PRESERVEASPECTRATIO_NONE,
+                                    SVG_MEETORSLICE_UNKNOWN));
+      newSVGContext->SetPreserveAspectRatio(aspectRatio);
+    }
+
+    if (blockContextPaint) {
+      
+      
+      newSVGContext->ClearContextPaint();
+    }
   }
 
   float animTime = (aWhichFrame == FRAME_FIRST)
@@ -861,8 +883,7 @@ VectorImage::Draw(gfxContext* aContext,
 
   
   Maybe<AutoSetRestoreSVGContextPaint> autoContextPaint;
-  if (aSVGContext &&
-      aSVGContext->GetContextPaint()) {
+  if (haveContextPaint && !blockContextPaint) {
     autoContextPaint.emplace(aSVGContext->GetContextPaint(),
                              mSVGDocumentWrapper->GetDocument());
   }
