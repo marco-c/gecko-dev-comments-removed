@@ -14,8 +14,7 @@
 #include "mozilla/HangMonitor.h"
 #include "mozilla/RefPtr.h"
 #include "private/prpriv.h" 
-
-#include <winternl.h> 
+#include "WinUtils.h"
 
 namespace {
 
@@ -42,15 +41,12 @@ private:
   nsCOMPtr<nsIRunnable> mRunnable;
 };
 
-typedef NTSTATUS (NTAPI* NtTestAlertPtr)(VOID);
-
 } 
 
 namespace mozilla {
 namespace mscom {
 
 HANDLE MainThreadInvoker::sMainThread = nullptr;
-StaticRefPtr<nsIRunnable> MainThreadInvoker::sAlertRunnable;
 
  bool
 MainThreadInvoker::InitStatics()
@@ -67,25 +63,11 @@ MainThreadInvoker::InitStatics()
   }
   PRUint32 tid = ::PR_GetThreadID(mainPrThread);
   sMainThread = ::OpenThread(SYNCHRONIZE | THREAD_SET_CONTEXT, FALSE, tid);
-  if (!sMainThread) {
-    return false;
-  }
-  NtTestAlertPtr NtTestAlert =
-    reinterpret_cast<NtTestAlertPtr>(
-        ::GetProcAddress(::GetModuleHandleW(L"ntdll.dll"), "NtTestAlert"));
-  sAlertRunnable = ::NS_NewRunnableFunction([NtTestAlert]() -> void {
-    
-    
-    NtTestAlert();
-  }).take();
-  if (sAlertRunnable) {
-    ClearOnShutdown(&sAlertRunnable);
-  }
-  return !!sAlertRunnable;
+  return !!sMainThread;
 }
 
 MainThreadInvoker::MainThreadInvoker()
-  : mDoneEvent(::CreateEvent(nullptr, FALSE, FALSE, nullptr))
+  : mDoneEvent(::CreateEventW(nullptr, FALSE, FALSE, nullptr))
 {
   static const bool gotStatics = InitStatics();
   MOZ_ASSERT(gotStatics);
@@ -133,7 +115,7 @@ MainThreadInvoker::Invoke(already_AddRefed<nsIRunnable>&& aRunnable,
   
   
   
-  Unused << NS_WARN_IF(NS_FAILED(NS_DispatchToMainThread(sAlertRunnable)));
+  widget::WinUtils::SetAPCPending();
   return WaitForCompletion(aTimeout);
 }
 
