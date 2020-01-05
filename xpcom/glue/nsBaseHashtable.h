@@ -120,6 +120,22 @@ public:
 
 
 
+  DataType& GetOrInsert(const KeyType& aKey)
+  {
+    EntryType* ent = this->GetEntry(aKey);
+    if (ent) {
+      return ent->mData;
+    }
+
+    ent = this->PutEntry(aKey);
+    return ent->mData;
+  }
+
+  
+
+
+
+
 
   void Put(KeyType aKey, const UserDataType& aData)
   {
