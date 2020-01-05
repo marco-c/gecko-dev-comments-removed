@@ -465,6 +465,10 @@ private:
 
 public:
   virtual nscoord GetLogicalBaseline(mozilla::WritingMode aWritingMode) const override;
+  bool GetNaturalBaselineBOffset(mozilla::WritingMode aWM,
+                                 BaselineSharingGroup aBaselineGroup,
+                                 nscoord*             aBaseline) const override;
+
   
 
 
