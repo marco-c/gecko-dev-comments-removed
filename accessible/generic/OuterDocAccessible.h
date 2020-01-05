@@ -10,7 +10,7 @@
 
 namespace mozilla {
 namespace a11y {
-class ProxyAccessible;
+class DocAccessibleParent;
 
 
 
@@ -28,7 +28,7 @@ public:
 
   NS_DECL_ISUPPORTS_INHERITED
 
-  ProxyAccessible* RemoteChildDoc() const;
+  DocAccessibleParent* RemoteChildDoc() const;
 
   
   virtual void Shutdown() override;
