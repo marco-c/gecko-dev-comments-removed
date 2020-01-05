@@ -2,7 +2,7 @@
 
 
 
-from WebIDL import IDLInterface
+from WebIDL import IDLExternalInterface, IDLInterface, WebIDLError
 
 
 class Configuration:
@@ -23,6 +23,11 @@ class Configuration:
         self.interfaces = {}
         self.maxProtoChainLength = 0
         for thing in parseData:
+            
+            if isinstance(thing, IDLExternalInterface):
+                raise WebIDLError("Servo does not support external interfaces.",
+                                  [thing.location])
+
             
             
             
@@ -343,6 +348,10 @@ class Descriptor(DescriptorProvider):
         return (self.interface.getExtendedAttribute("Global") or
                 self.interface.getExtendedAttribute("PrimaryGlobal"))
 
+
+
+def getModuleFromObject(object):
+    return object.location.filename().split('/')[-1].split('.webidl')[0] + 'Binding'
 
 
 def getTypesFromDescriptor(descriptor):
