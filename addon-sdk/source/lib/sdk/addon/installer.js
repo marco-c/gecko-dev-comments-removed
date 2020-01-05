@@ -64,7 +64,7 @@ exports.install = function install(xpiPath) {
 
   
   AddonManager.getInstallForFile(file, function(install) {
-    if (install.error == 0) {
+    if (install.error != null) {
       install.addListener(listener);
       install.install();
     } else {
