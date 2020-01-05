@@ -5,7 +5,9 @@
 
 const {DOM, createClass, createFactory, PropTypes} = require("devtools/client/shared/vendor/react");
 const {div, button} = DOM;
+
 const ToolboxTab = createFactory(require("devtools/client/framework/components/toolbox-tab"));
+const ToolboxTabs = createFactory(require("devtools/client/framework/components/toolbox-tabs"));
 
 
 
@@ -39,6 +41,8 @@ module.exports = createClass({
     canRender: PropTypes.bool,
     
     L10N: PropTypes.object,
+    
+    toolbox: PropTypes.object,
   },
 
   
@@ -52,7 +56,7 @@ module.exports = createClass({
         div(
           containerProps,
           renderToolboxButtonsStart(this.props),
-          renderTabs(this.props),
+          ToolboxTabs(this.props),
           renderToolboxButtonsEnd(this.props),
           renderOptions(this.props),
           renderSeparator(),
@@ -62,34 +66,6 @@ module.exports = createClass({
       : div(containerProps);
   }
 });
-
-
-
-
-
-
-
-
-
-
-
-
-function renderTabs({panelDefinitions, currentToolId, highlightedTool, selectTool,
-                     focusedButton, focusButton}) {
-  
-  return div({className: "toolbox-tabs-wrapper"},
-    div({className: "toolbox-tabs"},
-      ...panelDefinitions.map(panelDefinition => ToolboxTab({
-        panelDefinition,
-        currentToolId,
-        highlightedTool,
-        selectTool,
-        focusedButton,
-        focusButton,
-      }))
-    )
-  );
-}
 
 
 
