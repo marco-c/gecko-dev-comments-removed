@@ -164,6 +164,10 @@ pub enum ConstellationControlMsg {
     
     Thaw(PipelineId),
     
+    ChangeFrameVisibilityStatus(PipelineId, bool),
+    
+    NotifyVisibilityChange(PipelineId, PipelineId, bool),
+    
     Navigate(PipelineId, SubpageId, LoadData),
     
     MozBrowserEvent(PipelineId, SubpageId, MozBrowserEvent),
@@ -451,6 +455,8 @@ pub enum MozBrowserEvent {
     UsernameAndPasswordRequired,
     
     OpenSearch,
+    
+    VisibilityChange(bool),
 }
 
 impl MozBrowserEvent {
@@ -472,7 +478,8 @@ impl MozBrowserEvent {
             MozBrowserEvent::ShowModalPrompt(_, _, _, _) => "mozbrowsershowmodalprompt",
             MozBrowserEvent::TitleChange(_) => "mozbrowsertitlechange",
             MozBrowserEvent::UsernameAndPasswordRequired => "mozbrowserusernameandpasswordrequired",
-            MozBrowserEvent::OpenSearch => "mozbrowseropensearch"
+            MozBrowserEvent::OpenSearch => "mozbrowseropensearch",
+            MozBrowserEvent::VisibilityChange(_) => "mozbrowservisibilitychange",
         }
     }
 }

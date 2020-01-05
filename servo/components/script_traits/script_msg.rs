@@ -82,6 +82,10 @@ pub enum ScriptMsg {
     
     RemoveIFrame(PipelineId, Option<IpcSender<()>>),
     
+    SetVisible(PipelineId, bool),
+    
+    VisibilityChangeComplete(PipelineId, bool),
+    
     ScriptLoadedURLInIFrame(IFrameLoadInfo),
     
     SetClipboardContents(String),

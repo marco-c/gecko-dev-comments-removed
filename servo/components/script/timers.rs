@@ -22,6 +22,7 @@ use std::cmp::{self, Ord, Ordering};
 use std::collections::HashMap;
 use std::default::Default;
 use std::rc::Rc;
+use util::prefs::get_pref;
 
 #[derive(JSTraceable, PartialEq, Eq, Copy, Clone, HeapSizeOf, Hash, PartialOrd, Ord, Debug)]
 pub struct OneshotTimerHandle(i32);
@@ -212,6 +213,15 @@ impl OneshotTimers {
         }
     }
 
+    pub fn slow_down(&self) {
+        let duration = get_pref("js.timers.minimum_duration").as_u64().unwrap_or(1000);
+        self.js_timers.set_min_duration(MsDuration::new(duration));
+    }
+
+    pub fn speed_up(&self) {
+        self.js_timers.remove_min_duration();
+    }
+
     pub fn suspend(&self) {
         assert!(self.suspended_since.get().is_none());
 
@@ -290,6 +300,8 @@ pub struct JsTimers {
     active_timers: DOMRefCell<HashMap<JsTimerHandle, JsTimerEntry>>,
     
     nesting_level: Cell<u32>,
+    
+    min_duration: Cell<Option<MsDuration>>,
 }
 
 #[derive(JSTraceable, HeapSizeOf)]
@@ -344,6 +356,7 @@ impl JsTimers {
             next_timer_handle: Cell::new(JsTimerHandle(1)),
             active_timers: DOMRefCell::new(HashMap::new()),
             nesting_level: Cell::new(0),
+            min_duration: Cell::new(None),
         }
     }
 
@@ -407,6 +420,24 @@ impl JsTimers {
         }
     }
 
+    pub fn set_min_duration(&self, duration: MsDuration) {
+        self.min_duration.set(Some(duration));
+    }
+
+    pub fn remove_min_duration(&self) {
+        self.min_duration.set(None);
+    }
+
+    
+    fn user_agent_pad(&self, current_duration: MsDuration) -> MsDuration {
+        match self.min_duration.get() {
+            Some(min_duration) => {
+                cmp::max(min_duration, current_duration)
+            },
+            None => current_duration
+        }
+    }
+
     
     fn initialize_and_schedule(&self, global: GlobalRef, mut task: JsTimerTask) {
         let handle = task.handle;
@@ -416,8 +447,7 @@ impl JsTimers {
         let nesting_level = self.nesting_level.get();
 
         
-        let duration = clamp_duration(nesting_level, task.duration);
-
+        let duration = self.user_agent_pad(clamp_duration(nesting_level, task.duration));
         
         task.nesting_level = nesting_level + 1;
 

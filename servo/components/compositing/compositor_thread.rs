@@ -184,6 +184,8 @@ pub enum Msg {
     
     GetScrollOffset(PipelineId, LayerId, IpcSender<Point2D<f32>>),
     
+    PipelineVisibilityChanged(PipelineId, bool),
+    
     
     
     
@@ -223,6 +225,7 @@ impl Debug for Msg {
             Msg::GetClientWindow(..) => write!(f, "GetClientWindow"),
             Msg::MoveTo(..) => write!(f, "MoveTo"),
             Msg::ResizeTo(..) => write!(f, "ResizeTo"),
+            Msg::PipelineVisibilityChanged(..) => write!(f, "PipelineVisibilityChanged"),
             Msg::PipelineExited(..) => write!(f, "PipelineExited"),
             Msg::GetScrollOffset(..) => write!(f, "GetScrollOffset"),
         }
