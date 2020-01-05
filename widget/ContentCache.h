@@ -416,6 +416,9 @@ private:
   uint32_t mPendingEventsNeedingAck;
   
   
+  uint32_t mCompositionStartInChild;
+  
+  
   uint8_t mPendingCompositionCount;
   
   

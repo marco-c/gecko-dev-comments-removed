@@ -510,6 +510,7 @@ ContentCacheInParent::ContentCacheInParent()
   : ContentCache()
   , mCommitStringByRequest(nullptr)
   , mPendingEventsNeedingAck(0)
+  , mCompositionStartInChild(UINT32_MAX)
   , mPendingCompositionCount(0)
   , mWidgetHasComposition(false)
 {
@@ -539,6 +540,7 @@ ContentCacheInParent::AssignContent(const ContentCache& aOther,
   
   
   
+  mCompositionStartInChild = aOther.mCompositionStart;
   if (mWidgetHasComposition) {
     if (aOther.mCompositionStart != UINT32_MAX) {
       mCompositionStart = aOther.mCompositionStart;
@@ -1091,6 +1093,12 @@ ContentCacheInParent::OnCompositionEvent(const WidgetCompositionEvent& aEvent)
     if (aEvent.mWidget && aEvent.mWidget->PluginHasFocus()) {
       
       mCompositionStart = 0;
+    } else if (mCompositionStartInChild != UINT32_MAX) {
+      
+      
+      
+      
+      mCompositionStart = mCompositionStartInChild;
     } else {
       mCompositionStart = mSelection.StartOffset();
     }
