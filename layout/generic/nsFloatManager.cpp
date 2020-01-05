@@ -644,9 +644,9 @@ nsFloatManager::FloatInfo::FloatInfo(nsIFrame* aFrame,
                                            aContainerSize);
         break;
       case StyleBasicShapeType::Inset:
-        
-        
-        return;
+        mShapeInfo =
+          ShapeInfo::CreateInset(basicShape, shapeBoxRect, aWM, aContainerSize);
+        break;
     }
   } else {
     MOZ_ASSERT_UNREACHABLE("Unknown StyleShapeSourceType!");
@@ -811,6 +811,38 @@ nsFloatManager::ShapeInfo::CreateShapeBox(
   }
 
   return MakeUnique<RoundedBoxShapeInfo>(logicalShapeBoxRect,
+                                         ConvertToFloatLogical(physicalRadii,
+                                                               aWM));
+}
+
+ UniquePtr<nsFloatManager::ShapeInfo>
+nsFloatManager::ShapeInfo::CreateInset(
+  StyleBasicShape* const aBasicShape,
+  const LogicalRect& aShapeBoxRect,
+  WritingMode aWM,
+  const nsSize& aContainerSize)
+{
+  
+  
+  
+  nsRect physicalShapeBoxRect =
+    aShapeBoxRect.GetPhysicalRect(aWM, aContainerSize);
+  nsRect insetRect =
+    ShapeUtils::ComputeInsetRect(aBasicShape, physicalShapeBoxRect);
+
+  nsRect logicalInsetRect =
+    ConvertToFloatLogical(LogicalRect(aWM, insetRect, aContainerSize),
+                          aWM, aContainerSize);
+  nscoord physicalRadii[8];
+  bool hasRadii =
+    ShapeUtils::ComputeInsetRadii(aBasicShape, insetRect, physicalShapeBoxRect,
+                                  physicalRadii);
+  if (!hasRadii) {
+    return MakeUnique<RoundedBoxShapeInfo>(logicalInsetRect,
+                                           UniquePtr<nscoord[]>());
+  }
+
+  return MakeUnique<RoundedBoxShapeInfo>(logicalInsetRect,
                                          ConvertToFloatLogical(physicalRadii,
                                                                aWM));
 }
