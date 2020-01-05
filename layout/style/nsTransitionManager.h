@@ -426,14 +426,14 @@ protected:
                     nsStyleContext* aNewStyleContext);
 
   void
-  ConsiderStartingTransition(nsCSSPropertyID aProperty,
-                             const mozilla::StyleTransition& aTransition,
-                             mozilla::dom::Element* aElement,
-                             CSSTransitionCollection*& aElementTransitions,
-                             nsStyleContext* aOldStyleContext,
-                             nsStyleContext* aNewStyleContext,
-                             bool* aStartedAny,
-                             nsCSSPropertyIDSet* aWhichStarted);
+  ConsiderInitiatingTransition(nsCSSPropertyID aProperty,
+                               const mozilla::StyleTransition& aTransition,
+                               mozilla::dom::Element* aElement,
+                               CSSTransitionCollection*& aElementTransitions,
+                               nsStyleContext* aOldStyleContext,
+                               nsStyleContext* aNewStyleContext,
+                               bool* aStartedAny,
+                               nsCSSPropertyIDSet* aWhichStarted);
 
   nsTArray<mozilla::Keyframe> GetTransitionKeyframes(
     nsStyleContext* aStyleContext,

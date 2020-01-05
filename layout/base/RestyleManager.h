@@ -217,9 +217,9 @@ public:
 
 
   static bool
-  TryStartingTransition(nsPresContext* aPresContext, nsIContent* aContent,
-                        nsStyleContext* aOldStyleContext,
-                        RefPtr<nsStyleContext>* aNewStyleContext );
+  TryInitiatingTransition(nsPresContext* aPresContext, nsIContent* aContent,
+                          nsStyleContext* aOldStyleContext,
+                          RefPtr<nsStyleContext>* aNewStyleContext );
 
   
   

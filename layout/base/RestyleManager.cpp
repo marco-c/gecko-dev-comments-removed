@@ -990,11 +990,11 @@ RestyleManager::PostRebuildAllStyleDataEvent(nsChangeHint aExtraHint,
 
 
  bool
-RestyleManager::TryStartingTransition(nsPresContext* aPresContext,
-                                      nsIContent* aContent,
-                                      nsStyleContext* aOldStyleContext,
-                                      RefPtr<nsStyleContext>*
-                                        aNewStyleContext )
+RestyleManager::TryInitiatingTransition(nsPresContext* aPresContext,
+                                        nsIContent* aContent,
+                                        nsStyleContext* aOldStyleContext,
+                                        RefPtr<nsStyleContext>*
+                                          aNewStyleContext )
 {
   if (!aContent || !aContent->IsElement()) {
     return false;
@@ -1260,8 +1260,8 @@ RestyleManager::ReparentStyleContext(nsIFrame* aFrame)
       
 #if 0
       if (!copyFromContinuation) {
-        TryStartingTransition(mPresContext, aFrame->GetContent(),
-                              oldContext, &newContext);
+        TryInitiatingTransition(mPresContext, aFrame->GetContent(),
+                                oldContext, &newContext);
       }
 #endif
 
@@ -2964,10 +2964,12 @@ ElementRestyler::RestyleSelf(nsIFrame* aSelf,
       }
     } else {
       bool changedStyle =
-        RestyleManager::TryStartingTransition(mPresContext, aSelf->GetContent(),
-                                              oldContext, &newContext);
+        RestyleManager::TryInitiatingTransition(mPresContext,
+                                                aSelf->GetContent(),
+                                                oldContext, &newContext);
       if (changedStyle) {
-        LOG_RESTYLE_CONTINUE("TryStartingTransition changed the new style context");
+        LOG_RESTYLE_CONTINUE("TryInitiatingTransition changed the new style "
+                             "context");
         result = RestyleResult::eContinue;
         canStopWithStyleChange = false;
       }
