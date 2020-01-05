@@ -240,10 +240,8 @@ ServiceWorkerRegistrationInfo::Activate()
 
   
 
-  RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
-  swm->CheckPendingReadyPromises();
-
   
+  RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
   nsCOMPtr<nsIRunnable> controllerChangeRunnable =
     NewRunnableMethod<RefPtr<ServiceWorkerRegistrationInfo>>(
       swm, &ServiceWorkerManager::FireControllerChange, this);
@@ -319,6 +317,10 @@ ServiceWorkerRegistrationInfo::AsyncUpdateRegistrationStateProperties(WhichServi
   } else {
     MOZ_ASSERT(aTransition == TransitionToNextState);
     swm->TransitionServiceWorkerRegistrationWorker(this, aWorker);
+
+    if (aWorker == WhichServiceWorker::WAITING_WORKER) {
+      swm->CheckPendingReadyPromises();
+    }
   }
 }
 
