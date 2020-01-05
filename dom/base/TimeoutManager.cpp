@@ -1018,6 +1018,11 @@ TimeoutManager::ClearAllTimeouts()
   MOZ_LOG(gLog, LogLevel::Debug,
           ("ClearAllTimeouts(TimeoutManager=%p)\n", this));
 
+  if (mThrottleTrackingTimeoutsTimer) {
+    mThrottleTrackingTimeoutsTimer->Cancel();
+    mThrottleTrackingTimeoutsTimer = nullptr;
+  }
+
   ForEachUnorderedTimeout([&](Timeout* aTimeout) {
     
 
@@ -1123,6 +1128,11 @@ TimeoutManager::Suspend()
   MOZ_LOG(gLog, LogLevel::Debug,
           ("Suspend(TimeoutManager=%p)\n", this));
 
+  if (mThrottleTrackingTimeoutsTimer) {
+    mThrottleTrackingTimeoutsTimer->Cancel();
+    mThrottleTrackingTimeoutsTimer = nullptr;
+  }
+
   ForEachUnorderedTimeout([](Timeout* aTimeout) {
     
     
@@ -1145,6 +1155,13 @@ TimeoutManager::Resume()
 {
   MOZ_LOG(gLog, LogLevel::Debug,
           ("Resume(TimeoutManager=%p)\n", this));
+
+  
+  
+  
+  if (mWindow.AsInner()->IsDocumentLoaded() && !mThrottleTrackingTimeouts) {
+    MaybeStartThrottleTrackingTimout();
+  }
 
   TimeStamp now = TimeStamp::Now();
   DebugOnly<bool> _seenDummyTimeout = false;
@@ -1311,6 +1328,12 @@ TimeoutManager::StartThrottlingTrackingTimeouts()
 
 void
 TimeoutManager::OnDocumentLoaded()
+{
+  MaybeStartThrottleTrackingTimout();
+}
+
+void
+TimeoutManager::MaybeStartThrottleTrackingTimout()
 {
   if (gTrackingTimeoutThrottlingDelay <= 0) {
     return;
