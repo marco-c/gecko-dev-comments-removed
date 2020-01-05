@@ -907,11 +907,13 @@ class Parser final : private JS::AutoGCRooter, public StrictModeGetter
     bool reportHelper(ParseReportKind kind, bool strict, uint32_t offset,
                       unsigned errorNumber, va_list args);
   public:
-    bool qeport(ParseReportKind kind, unsigned errorNumber, ...);
     bool reportWithNode(ParseReportKind kind, bool strict, Node pn, unsigned errorNumber, ...);
     bool reportNoOffset(ParseReportKind kind, bool strict, unsigned errorNumber, ...);
     bool reportWithOffset(ParseReportKind kind, bool strict, uint32_t offset, unsigned errorNumber,
                           ...);
+
+    
+    void error(unsigned errorNumber, ...);
 
     
 
