@@ -175,6 +175,17 @@ template <> bool ThingIsPermanentAtomOrWellKnownSymbol<JS::Symbol>(JS::Symbol* s
     return sym->isWellKnownSymbol();
 }
 
+template <typename T>
+static inline bool
+IsOwnedByOtherRuntime(JSTracer* trc, T thing)
+{
+    bool other = thing->runtimeFromAnyThread() != trc->runtime();
+    MOZ_ASSERT_IF(other,
+                  ThingIsPermanentAtomOrWellKnownSymbol(thing) ||
+                  thing->zoneFromAnyThread()->isSelfHostingZone());
+    return other;
+}
+
 template<typename T>
 void
 js::CheckTracedThing(JSTracer* trc, T* thing)
@@ -199,7 +210,7 @@ js::CheckTracedThing(JSTracer* trc, T* thing)
 
 
 
-    if (ThingIsPermanentAtomOrWellKnownSymbol(thing))
+    if (IsOwnedByOtherRuntime(trc, thing))
         return;
 
     Zone* zone = thing->zoneFromAnyThread();
@@ -740,16 +751,24 @@ GCMarker::markImplicitEdges(T* thing)
 
 template <typename T>
 static inline bool
-MustSkipMarking(T thing)
+MustSkipMarking(GCMarker* gcmarker, T thing)
 {
+    
+    if (IsOwnedByOtherRuntime(gcmarker, thing))
+        return true;
+
     
     return !thing->zone()->isGCMarking();
 }
 
 template <>
 bool
-MustSkipMarking<JSObject*>(JSObject* obj)
+MustSkipMarking<JSObject*>(GCMarker* gcmarker, JSObject* obj)
 {
+    
+    if (IsOwnedByOtherRuntime(gcmarker, obj))
+        return true;
+
     
     
     
@@ -763,34 +782,12 @@ MustSkipMarking<JSObject*>(JSObject* obj)
     return !TenuredCell::fromPointer(obj)->zone()->isGCMarking();
 }
 
-template <>
-bool
-MustSkipMarking<JSString*>(JSString* str)
-{
-    
-    
-    
-    
-    return str->isPermanentAtom() ||
-           !str->zone()->isGCMarking();
-}
-
-template <>
-bool
-MustSkipMarking<JS::Symbol*>(JS::Symbol* sym)
-{
-    
-    
-    return sym->isWellKnownSymbol() ||
-           !sym->zone()->isGCMarking();
-}
-
 template <typename T>
 void
 DoMarking(GCMarker* gcmarker, T* thing)
 {
     
-    if (MustSkipMarking(thing))
+    if (MustSkipMarking(gcmarker, thing))
         return;
 
     CheckTracedThing(gcmarker, thing);
@@ -817,7 +814,7 @@ void
 NoteWeakEdge(GCMarker* gcmarker, T** thingp)
 {
     
-    if (MustSkipMarking(*thingp))
+    if (MustSkipMarking(gcmarker, *thingp))
         return;
 
     CheckTracedThing(gcmarker, *thingp);
