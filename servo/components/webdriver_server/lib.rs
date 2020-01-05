@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 #![crate_name = "webdriver_server"]
 #![crate_type = "rlib"]
@@ -38,7 +38,8 @@ use std::borrow::ToOwned;
 use std::collections::BTreeMap;
 use std::net::SocketAddr;
 use std::sync::mpsc::Sender;
-use std::thread::{self, sleep_ms};
+use std::thread;
+use std::time::Duration;
 use url::Url;
 use util::prefs::{get_pref, reset_all_prefs, reset_pref, set_pref, PrefValue};
 use util::task::spawn_named;
@@ -228,7 +229,7 @@ impl Handler {
                 return Ok(x)
             };
 
-            sleep_ms(interval);
+            thread::sleep(Duration::from_millis(interval));
         };
 
         Err(WebDriverError::new(ErrorStatus::Timeout,
@@ -319,11 +320,11 @@ impl Handler {
         let timeout = self.load_timeout;
         let timeout_chan = sender;
         thread::spawn(move || {
-            sleep_ms(timeout);
+            thread::sleep(Duration::from_millis(timeout as u64));
             let _ = timeout_chan.send(LoadStatus::LoadTimeout);
         });
 
-        //Wait to get a load event
+        
         match receiver.recv().unwrap() {
             LoadStatus::LoadComplete => Ok(WebDriverResponse::Void),
             LoadStatus::LoadTimeout => Err(WebDriverError::new(ErrorStatus::Timeout,
@@ -429,15 +430,15 @@ impl Handler {
     }
 
     fn handle_window_handle(&self) -> WebDriverResult<WebDriverResponse> {
-        // For now we assume there's only one window so just use the session
-        // id as the window id
+        
+        
         let handle = self.session.as_ref().unwrap().id.to_string();
         Ok(WebDriverResponse::Generic(ValueResponse::new(handle.to_json())))
     }
 
     fn handle_window_handles(&self) -> WebDriverResult<WebDriverResponse> {
-        // For now we assume there's only one window so just use the session
-        // id as the window id
+        
+        
         let handles = vec![self.session.as_ref().unwrap().id.to_string().to_json()];
         Ok(WebDriverResponse::Generic(ValueResponse::new(handles.to_json())))
     }
@@ -605,7 +606,7 @@ impl Handler {
     }
 
     fn handle_set_timeouts(&mut self, parameters: &TimeoutsParameters) -> WebDriverResult<WebDriverResponse> {
-        //TODO: this conversion is crazy, spec should limit these to u32 and check upstream
+        
         let value = parameters.ms as u32;
         match &parameters.type_[..] {
             "implicit" => self.implicit_wait_timeout = value,
@@ -622,9 +623,9 @@ impl Handler {
         let func_body = &parameters.script;
         let args_string = "";
 
-        // This is pretty ugly; we really want something that acts like
-        // new Function() and then takes the resulting function and executes
-        // it with a vec of arguments.
+        
+        
+        
         let script = format!("(function() {{ {} }})({})", func_body, args_string);
 
         let (sender, receiver) = ipc::channel().unwrap();
@@ -674,7 +675,7 @@ impl Handler {
         let cmd_msg = WebDriverCommandMsg::ScriptCommand(pipeline_id, cmd);
         self.constellation_chan.send(ConstellationMsg::WebDriverCommand(cmd_msg)).unwrap();
 
-        // TODO: distinguish the not found and not focusable cases
+        
         try!(receiver.recv().unwrap().or_else(|_| Err(WebDriverError::new(
             ErrorStatus::StaleElementReference, "Element not found or not focusable"))));
 
@@ -704,7 +705,7 @@ impl Handler {
                 break;
             };
 
-            sleep_ms(interval)
+            thread::sleep(Duration::from_millis(interval))
         }
 
         let img = match img {
@@ -713,7 +714,7 @@ impl Handler {
                                                    "Taking screenshot timed out")),
         };
 
-        // The compositor always sends RGB pixels.
+        
         assert!(img.format == PixelFormat::RGB8, "Unexpected screenshot pixel format");
         let rgb = RgbImage::from_raw(img.width, img.height, img.bytes.to_vec()).unwrap();
 
@@ -768,8 +769,8 @@ impl WebDriverHandler<ServoExtensionRoute> for Handler {
                       _session: &Option<Session>,
                       msg: &WebDriverMessage<ServoExtensionRoute>) -> WebDriverResult<WebDriverResponse> {
 
-        // Unless we are trying to create a new session, we need to ensure that a
-        // session has previously been created
+        
+        
         match msg.command {
             WebDriverCommand::NewSession => {},
             _ => {
