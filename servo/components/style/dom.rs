@@ -11,10 +11,10 @@ use {Atom, Namespace, LocalName};
 use atomic_refcell::{AtomicRef, AtomicRefCell, AtomicRefMut};
 use data::ElementData;
 use element_state::ElementState;
-use parking_lot::RwLock;
 use properties::{ComputedValues, PropertyDeclarationBlock};
 use selector_parser::{ElementExt, PreExistingComputedValues, PseudoElement};
 use selectors::matching::ElementSelectorFlags;
+use shared_lock::Locked;
 use sink::Push;
 use std::fmt;
 use std::fmt::Debug;
@@ -230,8 +230,8 @@ pub trait PresentationalHintsSynthetizer {
 
 
 
-pub struct AnimationRules(pub Option<Arc<RwLock<PropertyDeclarationBlock>>>,
-                          pub Option<Arc<RwLock<PropertyDeclarationBlock>>>);
+pub struct AnimationRules(pub Option<Arc<Locked<PropertyDeclarationBlock>>>,
+                          pub Option<Arc<Locked<PropertyDeclarationBlock>>>);
 
 
 pub trait TElement : PartialEq + Debug + Sized + Copy + Clone + ElementExt + PresentationalHintsSynthetizer {
@@ -252,7 +252,7 @@ pub trait TElement : PartialEq + Debug + Sized + Copy + Clone + ElementExt + Pre
     }
 
     
-    fn style_attribute(&self) -> Option<&Arc<RwLock<PropertyDeclarationBlock>>>;
+    fn style_attribute(&self) -> Option<&Arc<Locked<PropertyDeclarationBlock>>>;
 
     
     fn get_animation_rules(&self, _pseudo: Option<&PseudoElement>) -> AnimationRules {
@@ -261,13 +261,13 @@ pub trait TElement : PartialEq + Debug + Sized + Copy + Clone + ElementExt + Pre
 
     
     fn get_animation_rule(&self, _pseudo: Option<&PseudoElement>)
-                          -> Option<Arc<RwLock<PropertyDeclarationBlock>>> {
+                          -> Option<Arc<Locked<PropertyDeclarationBlock>>> {
         None
     }
 
     
     fn get_transition_rule(&self, _pseudo: Option<&PseudoElement>)
-                           -> Option<Arc<RwLock<PropertyDeclarationBlock>>> {
+                           -> Option<Arc<Locked<PropertyDeclarationBlock>>> {
         None
     }
 

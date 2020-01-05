@@ -97,7 +97,7 @@ static KATAKANA_IROHA: [char; 47] = [
 
 pub struct ResolveGeneratedContent<'a> {
     
-    layout_context: &'a LayoutContext,
+    layout_context: &'a LayoutContext<'a>,
     
     list_item: Counter,
     

@@ -17,6 +17,7 @@ use parking_lot::RwLock;
 use selector_parser::PseudoElement;
 use selectors::matching::ElementSelectorFlags;
 use servo_config::opts;
+use shared_lock::StylesheetGuards;
 use std::collections::HashMap;
 use std::env;
 use std::fmt;
@@ -61,9 +62,12 @@ pub enum QuirksMode {
 
 
 
-pub struct SharedStyleContext {
+pub struct SharedStyleContext<'a> {
     
     pub stylist: Arc<Stylist>,
+
+    
+    pub guards: StylesheetGuards<'a>,
 
     
     pub running_animations: Arc<RwLock<HashMap<OpaqueNode, Vec<Animation>>>>,
@@ -85,7 +89,7 @@ pub struct SharedStyleContext {
     pub quirks_mode: QuirksMode,
 }
 
-impl SharedStyleContext {
+impl<'a> SharedStyleContext<'a> {
     
     pub fn viewport_size(&self) -> Size2D<Au> {
         self.stylist.device.au_viewport_size()
@@ -306,7 +310,7 @@ impl<E: TElement> Drop for ThreadLocalStyleContext<E> {
 
 pub struct StyleContext<'a, E: TElement + 'a> {
     
-    pub shared: &'a SharedStyleContext,
+    pub shared: &'a SharedStyleContext<'a>,
     
     pub thread_local: &'a mut ThreadLocalStyleContext<E>,
 }

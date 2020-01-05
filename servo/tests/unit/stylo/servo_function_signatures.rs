@@ -10,6 +10,9 @@ use style::gecko_properties::*;
 
 include!(concat!(env!("OUT_DIR"), "/check_bindings.rs"));
 
+#[path = "../../../ports/geckolib/stylesheet_loader.rs"]
+mod stylesheet_loader;
+
 #[allow(non_snake_case, unused_unsafe, private_no_mangle_fns)]
 mod glue {
     
