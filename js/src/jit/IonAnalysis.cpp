@@ -3038,12 +3038,6 @@ jit::AssertExtendedGraphCoherency(MIRGraph& graph, bool underValueNumberer, bool
         for (MPhiIterator iter(block->phisBegin()), end(block->phisEnd()); iter != end; ++iter) {
             MPhi* phi = *iter;
             for (size_t i = 0, e = phi->numOperands(); i < e; ++i) {
-                
-                
-                
-                if (phi->getOperand(i)->type() == MIRType::MagicOptimizedArguments)
-                    continue;
-
                 MOZ_ASSERT(phi->getOperand(i)->block()->dominates(block->getPredecessor(i)),
                            "Phi input is not dominated by its operand");
             }
