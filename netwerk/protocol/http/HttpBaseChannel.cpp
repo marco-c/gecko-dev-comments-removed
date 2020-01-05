@@ -1640,36 +1640,6 @@ HttpBaseChannel::SetReferrerWithPolicy(nsIURI *referrer,
     }
   }
 
-  
-  
-  nsCOMPtr<nsIURI> triggeringURI;
-  bool isCrossOrigin = true;
-  if (mLoadInfo) {
-    nsCOMPtr<nsIPrincipal> triggeringPrincipal = mLoadInfo->TriggeringPrincipal();
-    if (triggeringPrincipal) {
-      triggeringPrincipal->GetURI(getter_AddRefs(triggeringURI));
-    }
-  }
-  if (triggeringURI) {
-    if (LOG_ENABLED()) {
-      nsAutoCString triggeringURISpec;
-      rv = triggeringURI->GetAsciiSpec(triggeringURISpec);
-      if (!NS_FAILED(rv)) {
-        LOG(("triggeringURI=%s\n", triggeringURISpec.get()));
-      }
-    }
-    nsIScriptSecurityManager* ssm = nsContentUtils::GetSecurityManager();
-    rv = ssm->CheckSameOriginURI(triggeringURI, mURI, false);
-    isCrossOrigin = NS_FAILED(rv);
-  } else {
-    LOG(("no triggering principal available via loadInfo, assuming load is cross-origin"));
-  }
-
-  
-  if (isCrossOrigin && mReferrerPolicy == REFERRER_POLICY_SAME_ORIGIN) {
-    return NS_OK;
-  }
-
   nsCOMPtr<nsIURI> clone;
   
   
@@ -1734,13 +1704,62 @@ HttpBaseChannel::SetReferrerWithPolicy(nsIURI *referrer,
   rv = clone->SetUserPass(EmptyCString());
   if (NS_FAILED(rv)) return rv;
 
+  
+  
+  
+  
+  Maybe<bool> isCrossOrigin;
+  if ((mReferrerPolicy == REFERRER_POLICY_SAME_ORIGIN ||
+       mReferrerPolicy == REFERRER_POLICY_ORIGIN_WHEN_XORIGIN ||
+       mReferrerPolicy == REFERRER_POLICY_STRICT_ORIGIN_WHEN_XORIGIN ||
+       
+       
+       
+       (gHttpHandler->ReferrerXOriginTrimmingPolicy() != 0 &&
+        mReferrerPolicy != REFERRER_POLICY_ORIGIN &&
+        mReferrerPolicy != REFERRER_POLICY_STRICT_ORIGIN)) &&
+      
+      
+      
+      gHttpHandler->ReferrerTrimmingPolicy() != 2) {
+    
+    
+    nsCOMPtr<nsIURI> triggeringURI;
+    if (mLoadInfo) {
+      nsCOMPtr<nsIPrincipal> triggeringPrincipal = mLoadInfo->TriggeringPrincipal();
+      if (triggeringPrincipal) {
+        triggeringPrincipal->GetURI(getter_AddRefs(triggeringURI));
+      }
+    }
+    if (triggeringURI) {
+      if (LOG_ENABLED()) {
+        nsAutoCString triggeringURISpec;
+        rv = triggeringURI->GetAsciiSpec(triggeringURISpec);
+        if (!NS_FAILED(rv)) {
+          LOG(("triggeringURI=%s\n", triggeringURISpec.get()));
+        }
+      }
+      nsIScriptSecurityManager* ssm = nsContentUtils::GetSecurityManager();
+      rv = ssm->CheckSameOriginURI(triggeringURI, mURI, false);
+      isCrossOrigin.emplace(NS_FAILED(rv));
+    } else {
+      LOG(("no triggering principal available via loadInfo, assuming load is cross-origin"));
+      isCrossOrigin.emplace(true);
+    }
+  }
+
+  
+  if (mReferrerPolicy == REFERRER_POLICY_SAME_ORIGIN && *isCrossOrigin) {
+    return NS_OK;
+  }
+
   nsAutoCString spec;
 
   
   
-  if (isCrossOrigin) {
-    int userReferrerXOriginTrimmingPolicy =
-      gHttpHandler->ReferrerXOriginTrimmingPolicy();
+  int userReferrerXOriginTrimmingPolicy =
+    gHttpHandler->ReferrerXOriginTrimmingPolicy();
+  if (userReferrerXOriginTrimmingPolicy != 0 && *isCrossOrigin) {
     userReferrerTrimmingPolicy =
       std::max(userReferrerTrimmingPolicy, userReferrerXOriginTrimmingPolicy);
   }
@@ -1755,8 +1774,9 @@ HttpBaseChannel::SetReferrerWithPolicy(nsIURI *referrer,
   
   if (mReferrerPolicy == REFERRER_POLICY_ORIGIN ||
       mReferrerPolicy == REFERRER_POLICY_STRICT_ORIGIN ||
-      (isCrossOrigin && (mReferrerPolicy == REFERRER_POLICY_ORIGIN_WHEN_XORIGIN ||
-                         mReferrerPolicy == REFERRER_POLICY_STRICT_ORIGIN_WHEN_XORIGIN))) {
+      ((mReferrerPolicy == REFERRER_POLICY_ORIGIN_WHEN_XORIGIN ||
+        mReferrerPolicy == REFERRER_POLICY_STRICT_ORIGIN_WHEN_XORIGIN) &&
+        *isCrossOrigin)) {
     
     
     
