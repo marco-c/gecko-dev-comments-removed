@@ -74,6 +74,7 @@
 #include "nsEscape.h"
 #include "nsHashKeys.h"
 #include "nsNetUtil.h"
+#include "nsIAsyncInputStream.h"
 #include "nsISimpleEnumerator.h"
 #include "nsIEventTarget.h"
 #include "nsIFile.h"
@@ -6808,39 +6809,8 @@ public:
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   already_AddRefed<nsIInputStream>
-  GetBlockingInputStream(ErrorResult &rv) const;
+  GetInputStream(ErrorResult &rv) const;
 
   
 
@@ -6886,7 +6856,7 @@ private:
 };
 
 already_AddRefed<nsIInputStream>
-DatabaseFile::GetBlockingInputStream(ErrorResult &rv) const
+DatabaseFile::GetInputStream(ErrorResult &rv) const
 {
   
   
@@ -6900,60 +6870,6 @@ DatabaseFile::GetBlockingInputStream(ErrorResult &rv) const
   mBlobImpl->GetInternalStream(getter_AddRefs(inputStream), rv);
   if (rv.Failed()) {
     return nullptr;
-  }
-
-  
-  bool pipeNeeded;
-  rv = inputStream->IsNonBlocking(&pipeNeeded);
-  if (rv.Failed()) {
-    return nullptr;
-  }
-
-  
-  if (pipeNeeded) {
-    uint64_t available;
-    rv = inputStream->Available(&available);
-    if (rv.Failed()) {
-      return nullptr;
-    }
-
-    uint64_t blobSize = mBlobImpl->GetSize(rv);
-    if (rv.Failed()) {
-      return nullptr;
-    }
-
-    if (available == blobSize) {
-      pipeNeeded = false;
-    }
-  }
-
-  if (pipeNeeded) {
-    nsCOMPtr<nsIEventTarget> target =
-      do_GetService(NS_STREAMTRANSPORTSERVICE_CONTRACTID);
-    if (!target) {
-      rv.Throw(NS_ERROR_UNEXPECTED);
-      return nullptr;
-    }
-
-    nsCOMPtr<nsIInputStream> pipeInputStream;
-    nsCOMPtr<nsIOutputStream> pipeOutputStream;
-
-    rv = NS_NewPipe(
-      getter_AddRefs(pipeInputStream),
-      getter_AddRefs(pipeOutputStream),
-      0, 0, 
-      false, 
-      true); 
-    if (rv.Failed()) {
-      return nullptr;
-    }
-
-    rv = NS_AsyncCopy(inputStream, pipeOutputStream, target);
-    if (rv.Failed()) {
-      return nullptr;
-    }
-
-    inputStream = pipeInputStream;
   }
 
   return inputStream.forget();
@@ -9863,6 +9779,9 @@ class MOZ_STACK_CLASS FileHelper final
   nsCOMPtr<nsIFile> mFileDirectory;
   nsCOMPtr<nsIFile> mJournalDirectory;
 
+  class ReadCallback;
+  RefPtr<ReadCallback> mReadCallback;
+
 public:
   explicit FileHelper(FileManager* aFileManager)
     : mFileManager(aFileManager)
@@ -9904,6 +9823,12 @@ private:
            nsIOutputStream* aOutputStream,
            char* aBuffer,
            uint32_t aBufferSize);
+
+  nsresult
+  SyncRead(nsIInputStream* aInputStream,
+           char* aBuffer,
+           uint32_t aBufferSize,
+           uint32_t* aRead);
 };
 
 
@@ -26711,7 +26636,7 @@ ObjectStoreAddOrPutRequestOp::DoDatabaseWork(DatabaseConnection* aConnection)
       if (!inputStream && storedFileInfo.mFileActor) {
         ErrorResult streamRv;
         inputStream =
-          storedFileInfo.mFileActor->GetBlockingInputStream(streamRv);
+          storedFileInfo.mFileActor->GetInputStream(streamRv);
         if (NS_WARN_IF(streamRv.Failed())) {
           return streamRv.StealNSResult();
         }
@@ -29819,6 +29744,103 @@ FileHelper::GetNewFileInfo()
   return mFileManager->GetNewFileInfo();
 }
 
+class FileHelper::ReadCallback final : public nsIInputStreamCallback
+{
+public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+
+  ReadCallback()
+    : mMutex("ReadCallback::mMutex")
+    , mCondVar(mMutex, "ReadCallback::mCondVar")
+    , mInputAvailable(false)
+  {}
+
+  NS_IMETHOD
+  OnInputStreamReady(nsIAsyncInputStream* aStream) override
+  {
+    mozilla::MutexAutoLock autolock(mMutex);
+
+    mInputAvailable = true;
+    mCondVar.Notify();
+
+    return NS_OK;
+  }
+
+  nsresult
+  AsyncWait(nsIAsyncInputStream* aStream, uint32_t aBufferSize,
+            nsIEventTarget* aTarget)
+  {
+    MOZ_ASSERT(aStream);
+    mozilla::MutexAutoLock autolock(mMutex);
+
+    nsresult rv = aStream->AsyncWait(this, 0, aBufferSize, aTarget);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
+    mInputAvailable = false;
+    while (!mInputAvailable) {
+      mCondVar.Wait();
+    }
+
+    return NS_OK;
+  }
+
+private:
+  ~ReadCallback() = default;
+
+  mozilla::Mutex mMutex;
+  mozilla::CondVar mCondVar;
+  bool mInputAvailable;
+};
+
+NS_IMPL_ADDREF(FileHelper::ReadCallback);
+NS_IMPL_RELEASE(FileHelper::ReadCallback);
+
+NS_INTERFACE_MAP_BEGIN(FileHelper::ReadCallback)
+  NS_INTERFACE_MAP_ENTRY(nsIInputStreamCallback)
+  NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIInputStreamCallback)
+NS_INTERFACE_MAP_END
+
+nsresult
+FileHelper::SyncRead(nsIInputStream* aInputStream,
+                     char* aBuffer,
+                     uint32_t aBufferSize,
+                     uint32_t* aRead)
+{
+  MOZ_ASSERT(!IsOnBackgroundThread());
+  MOZ_ASSERT(aInputStream);
+
+  
+  nsresult rv = aInputStream->Read(aBuffer, aBufferSize, aRead);
+  if (NS_SUCCEEDED(rv) || rv != NS_BASE_STREAM_WOULD_BLOCK) {
+    return rv;
+  }
+
+  
+  nsCOMPtr<nsIAsyncInputStream> asyncStream = do_QueryInterface(aInputStream);
+  if (!asyncStream) {
+    return rv;
+  }
+
+  if (!mReadCallback) {
+    mReadCallback = new ReadCallback();
+  }
+
+  
+  
+  nsCOMPtr<nsIEventTarget> target =
+    do_GetService(NS_STREAMTRANSPORTSERVICE_CONTRACTID);
+  MOZ_ASSERT(target);
+
+  rv = mReadCallback->AsyncWait(asyncStream, aBufferSize, target);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  return SyncRead(aInputStream, aBuffer, aBufferSize, aRead);
+}
+
 nsresult
 FileHelper::SyncCopy(nsIInputStream* aInputStream,
                      nsIOutputStream* aOutputStream,
@@ -29837,7 +29859,7 @@ FileHelper::SyncCopy(nsIInputStream* aInputStream,
 
   do {
     uint32_t numRead;
-    rv = aInputStream->Read(aBuffer, aBufferSize, &numRead);
+    rv = SyncRead(aInputStream, aBuffer, aBufferSize, &numRead);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       break;
     }
