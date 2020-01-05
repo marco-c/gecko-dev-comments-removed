@@ -1589,10 +1589,16 @@ protected:
   
   bool mIsEncrypted;
 
+  enum WaitingForKeyState {
+    NOT_WAITING_FOR_KEY = 0,
+    WAITING_FOR_KEY = 1,
+    WAITING_FOR_KEY_DISPATCHED = 2
+  };
+
   
   
   
-  bool mWaitingForKey;
+  WaitingForKeyState mWaitingForKey;
 
   
   MediaEventListener mWaitingForKeyListener;
