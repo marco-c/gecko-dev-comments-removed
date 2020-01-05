@@ -296,7 +296,7 @@ window:not([chromehidden~="toolbar"]) #urlbar-wrapper {
 
 .tab-icon-sound[soundplaying],
 .tab-icon-sound[muted] {
-  filter: url(chrome://browser/skin/filters.svg#fill) !important; 
+  filter: url(chrome://global/skin/filters.svg#fill) !important; 
 }
 
 
