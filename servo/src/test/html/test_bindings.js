@@ -124,6 +124,8 @@ window.alert(document.title);
 document.title = "foo";
 window.alert(document.title);
 
+window.alert(document.links[0]);
+
 
 
 
