@@ -286,6 +286,7 @@ nsHttpChannel::nsHttpChannel()
     , mPushedStream(nullptr)
     , mLocalBlocklist(false)
     , mWarningReporter(nullptr)
+    , mDelayedInstallCacheListenerForTraceableChannel(false)
     , mIsReadingFromCache(false)
     , mOnCacheAvailableCalled(false)
     , mRacingNetAndCache(false)
@@ -389,17 +390,12 @@ nsHttpChannel::Connect()
         nsContentUtils::GetSecurityManager()->
           GetChannelResultPrincipal(this, getter_AddRefs(resultPrincipal));
     }
-    OriginAttributes originAttributes;
-    if (!NS_GetOriginAttributes(this, originAttributes)) {
-        return NS_ERROR_FAILURE;
-    }
     bool shouldUpgrade = false;
     rv = NS_ShouldSecureUpgrade(mURI,
                                 mLoadInfo,
                                 resultPrincipal,
                                 mPrivateBrowsing,
                                 mAllowSTS,
-                                originAttributes,
                                 shouldUpgrade);
     NS_ENSURE_SUCCESS(rv, rv);
     if (shouldUpgrade) {
@@ -1263,6 +1259,28 @@ EnsureMIMEOfScript(nsIURI* aURI, nsHttpResponseHead* aResponseHead, nsILoadInfo*
     return NS_OK;
 }
 
+void
+nsHttpChannel::ApplyContentConversions()
+{
+    nsCOMPtr<nsIStreamListener> listener;
+    nsISupports *ctxt = mListenerContext;
+    nsresult rv = DoApplyContentConversions(mListener, getter_AddRefs(listener), ctxt);
+    if (NS_FAILED(rv)) {
+        AsyncAbort(rv);
+    }
+    if (listener) {
+        mListener = listener;
+        mCompressListener = listener;
+    }
+
+    if (mDelayedInstallCacheListenerForTraceableChannel &&
+        mCacheEntry && !mCacheEntryIsReadOnly) {
+        nsresult rv = InstallCacheListener();
+        if (NS_FAILED(rv)) {
+            AsyncAbort(rv);
+        }
+    }
+}
 
 nsresult
 nsHttpChannel::CallOnStartRequest()
@@ -1638,12 +1656,9 @@ nsHttpChannel::ProcessSingleSecurityHeader(uint32_t aType,
         NS_ENSURE_TRUE(sss, NS_ERROR_OUT_OF_MEMORY);
         
         
-        OriginAttributes originAttributes;
-        NS_GetOriginAttributes(this, originAttributes);
         uint32_t failureResult;
         rv = sss->ProcessHeader(aType, mURI, securityHeader, aSSLStatus,
-                                aFlags, originAttributes, nullptr, nullptr,
-                                &failureResult);
+                                aFlags, nullptr, nullptr, &failureResult);
         if (NS_FAILED(rv)) {
             nsAutoString consoleErrorCategory;
             nsAutoString consoleErrorTag;
@@ -2473,6 +2488,10 @@ nsHttpChannel::ContinueProcessNormal(nsresult rv)
 
     
     if (mCacheEntry && !mCacheEntryIsReadOnly) {
+        if (mHasListenerForTraceableChannel) {
+            mDelayedInstallCacheListenerForTraceableChannel = true;
+            return NS_OK;
+        }
         rv = InstallCacheListener();
         if (NS_FAILED(rv)) return rv;
     }
@@ -8284,10 +8303,8 @@ nsHttpChannel::OnHSTSPrimingFailed(nsresult aError, bool aCached)
     
     nsISiteSecurityService* sss = gHttpHandler->GetSSService();
     NS_ENSURE_TRUE(sss, NS_ERROR_OUT_OF_MEMORY);
-    OriginAttributes originAttributes;
-    NS_GetOriginAttributes(this, originAttributes);
     nsresult rv = sss->CacheNegativeHSTSResult(mURI,
-            nsMixedContentBlocker::sHSTSPrimingCacheTimeout, originAttributes);
+            nsMixedContentBlocker::sHSTSPrimingCacheTimeout);
     if (NS_FAILED(rv)) {
         NS_ERROR("nsISiteSecurityService::CacheNegativeHSTSResult failed");
     }

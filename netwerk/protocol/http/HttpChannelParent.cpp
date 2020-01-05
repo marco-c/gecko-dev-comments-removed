@@ -66,6 +66,7 @@ HttpChannelParent::HttpChannelParent(const PBrowserOrId& iframeEmbedding,
   , mSuspendedForDiversion(false)
   , mSuspendAfterSynthesizeResponse(false)
   , mWillSynthesizeResponse(false)
+  , mWaitingForApplyConversionResponse(false)
   , mNestedFrameId(0)
 {
   LOG(("Creating HttpChannelParent [this=%p]\n", this));
@@ -827,6 +828,22 @@ HttpChannelParent::RecvMarkOfflineCacheEntryAsForeign()
   return IPC_OK();
 }
 
+mozilla::ipc::IPCResult
+HttpChannelParent::RecvApplyConversion(const bool& aApply)
+{
+  LOG(("HttpChannelParent::RecvApplyConversion [this=%p, aApply=%d, "
+       "mWaitingForApplyConversionResponse=%d]",
+       this, aApply, mWaitingForApplyConversionResponse));
+  MOZ_ASSERT(mChannel->HasListenerForTraceableChannel());
+  if (mWaitingForApplyConversionResponse) {
+    mWaitingForApplyConversionResponse = false;
+    mChannel->SetApplyConversion(aApply);
+    mChannel->ApplyContentConversions();
+    mChannel->Resume();
+  }
+  return IPC_OK();
+}
+
 class DivertDataAvailableEvent : public ChannelEvent
 {
 public:
@@ -1142,10 +1159,6 @@ HttpChannelParent::OnStartRequest(nsIRequest *aRequest, nsISupports *aContext)
     }
   }
 
-  nsCOMPtr<nsIEncodedChannel> encodedChannel = do_QueryInterface(aRequest);
-  if (encodedChannel)
-    encodedChannel->SetApplyConversion(false);
-
   
   
   nsCOMPtr<nsISupports> cacheEntry;
@@ -1179,6 +1192,23 @@ HttpChannelParent::OnStartRequest(nsIRequest *aRequest, nsISupports *aContext)
   nsAutoCString altDataType;
   chan->GetAlternativeDataType(altDataType);
 
+  nsCOMPtr<nsIEncodedChannel> encodedChannel = do_QueryInterface(aRequest);
+  if (encodedChannel) {
+    encodedChannel->SetApplyConversion(false);
+    if (mChannel->HasListenerForTraceableChannel()) {
+      LOG(("HttpChannelParent::OnStartRequest - suspend channel until we know "
+           "whether we need to apply conversions [this=%p]\n", this));
+      
+      
+      
+      
+      
+      
+      mWaitingForApplyConversionResponse = NS_SUCCEEDED(mChannel->Suspend()) ?
+                                           true : false;
+    }
+  }
+
   
   requestHead->Enter();
   nsresult rv = NS_OK;
@@ -1193,8 +1223,13 @@ HttpChannelParent::OnStartRequest(nsIRequest *aRequest, nsISupports *aContext)
                           chan->GetSelfAddr(), chan->GetPeerAddr(),
                           redirectCount,
                           cacheKeyValue,
-                          altDataType))
+                          altDataType,
+                          mWaitingForApplyConversionResponse))
   {
+    if (mWaitingForApplyConversionResponse) {
+      mChannel->Resume();
+      mWaitingForApplyConversionResponse = false;
+    }
     rv = NS_ERROR_UNEXPECTED;
   }
   requestHead->Exit();
@@ -1634,14 +1669,25 @@ HttpChannelParent::StartDiversion()
   mDivertedOnStartRequest = true;
 
   
-  
-  
-  
-  nsCOMPtr<nsIStreamListener> converterListener;
-  mChannel->DoApplyContentConversions(mDivertListener,
-                                      getter_AddRefs(converterListener));
-  if (converterListener) {
-    mDivertListener = converterListener.forget();
+  if (mWaitingForApplyConversionResponse) {
+    
+    
+    
+    
+    if (NS_SUCCEEDED(mStatus)) {
+      mChannel->ApplyContentConversions();
+    }
+    mWaitingForApplyConversionResponse = false;
+    mChannel->Resume();
+  } else {
+    
+    
+    nsCOMPtr<nsIStreamListener> converterListener;
+    mChannel->DoApplyContentConversions(mDivertListener,
+                                        getter_AddRefs(converterListener));
+    if (converterListener) {
+      mDivertListener = converterListener.forget();
+    }
   }
 
   
@@ -1711,6 +1757,11 @@ HttpChannelParent::NotifyDiversionFailed(nsresult aErrorCode,
   MOZ_RELEASE_ASSERT(mChannel);
 
   mChannel->Cancel(aErrorCode);
+
+  if (mWaitingForApplyConversionResponse) {
+    mWaitingForApplyConversionResponse = false;
+    mChannel->Resume();
+  }
 
   mChannel->ForcePending(false);
 
