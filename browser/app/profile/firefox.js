@@ -1207,6 +1207,11 @@ pref("toolkit.startup.max_resumed_crashes", 3);
 
 
 
+pref("pdfium.enabled", false);
+
+
+
+
 pref("pdfjs.disabled", false);
 
 
