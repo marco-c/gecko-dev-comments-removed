@@ -317,18 +317,23 @@ nsSMILTimeContainer::NotifyTimeChange()
   
   
   
-  AutoRestore<bool> saveHolding(mHoldingEntries);
-  mHoldingEntries = true;
-  const MilestoneEntry* p = mMilestoneEntries.Elements();
-#if DEBUG
-  uint32_t queueLength = mMilestoneEntries.Length();
-#endif
-  while (p < mMilestoneEntries.Elements() + mMilestoneEntries.Length()) {
-    mozilla::dom::SVGAnimationElement* elem = p->mTimebase.get();
+
+  
+  
+  
+  nsTArray<RefPtr<mozilla::dom::SVGAnimationElement>> elems;
+
+  {
+    AutoRestore<bool> saveHolding(mHoldingEntries);
+    mHoldingEntries = true;
+    for (const MilestoneEntry* p = mMilestoneEntries.Elements();
+        p < mMilestoneEntries.Elements() + mMilestoneEntries.Length();
+        ++p) {
+      elems.AppendElement(p->mTimebase.get());
+    }
+  }
+
+  for (auto& elem : elems) {
     elem->TimedElement().HandleContainerTimeChange();
-    MOZ_ASSERT(queueLength == mMilestoneEntries.Length(),
-               "Call to HandleContainerTimeChange resulted in a change to the "
-               "queue of milestones");
-    ++p;
   }
 }
