@@ -2651,6 +2651,13 @@ SourceMediaStream::DestroyImpl()
 {
   CloseAudioInput();
 
+  GraphImpl()->AssertOnGraphThreadOrNotRunning();
+  for (int32_t i = mConsumers.Length() - 1; i >= 0; --i) {
+    
+    
+    mConsumers[i]->Disconnect();
+  }
+
   
   
   MutexAutoLock lock(mMutex);
