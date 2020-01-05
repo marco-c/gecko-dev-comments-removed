@@ -91,6 +91,9 @@ const NOTIFICATION_CHUNK_SIZE = 300;
 const ONRESULT_CHUNK_SIZE = 300;
 
 
+const TIMERS_RESOLUTION_SKEW_MS = 16;
+
+
 
 
 
@@ -500,7 +503,7 @@ function validatePageInfo(pageInfo) {
 
     if (inVisit.date) {
       ensureDate(inVisit.date);
-      if (inVisit.date > Date.now()) {
+      if (inVisit.date > (Date.now() + TIMERS_RESOLUTION_SKEW_MS)) {
         throw new TypeError(`date: ${inVisit.date} cannot be a future date`);
       }
       visit.date = inVisit.date;
