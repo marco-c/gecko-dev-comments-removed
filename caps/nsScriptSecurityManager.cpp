@@ -1500,6 +1500,8 @@ nsScriptSecurityManager::InitPrefs()
     
     Preferences::AddStrongObservers(this, kObservedPrefs);
 
+    OriginAttributes::InitPrefs();
+
     return NS_OK;
 }
 

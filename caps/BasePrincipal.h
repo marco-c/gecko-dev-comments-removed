@@ -101,16 +101,30 @@ public:
   void SyncAttributesWithPrivateBrowsing(bool aInPrivateBrowsing);
 
   
-  static bool IsFirstPartyEnabled();
+  static inline bool IsFirstPartyEnabled()
+  {
+    return sFirstPartyIsolation;
+  }
 
   
   
   
-  static bool IsRestrictOpenerAccessForFPI();
+  static inline bool IsRestrictOpenerAccessForFPI()
+  {
+    
+    
+    return !sFirstPartyIsolation || sRestrictedOpenerAccess;
+  }
 
   
   
   static bool IsPrivateBrowsing(const nsACString& aOrigin);
+
+  static void InitPrefs();
+
+private:
+  static bool sFirstPartyIsolation;
+  static bool sRestrictedOpenerAccess;
 };
 
 class OriginAttributesPattern : public dom::OriginAttributesPatternDictionary
