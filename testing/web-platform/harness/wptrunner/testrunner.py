@@ -499,10 +499,9 @@ class TestRunnerManager(threading.Thread):
                     return None, None
             try:
                 
-                test = test_queue.get(block=True, timeout=2)
+                test = test_queue.get(block=True, timeout=1)
             except Empty:
-                if test_queue.empty():
-                    test_queue = None
+                pass
         return test, test_queue
 
     def run_test(self):
