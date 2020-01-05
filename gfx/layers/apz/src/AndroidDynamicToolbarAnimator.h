@@ -13,6 +13,7 @@
 #include "mozilla/ipc/Shmem.h"
 #include "mozilla/layers/Effects.h"
 #include "mozilla/layers/TextureHost.h"
+#include "mozilla/LinkedList.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/TimeStamp.h"
 #include "nsISupports.h"
@@ -151,6 +152,7 @@ protected:
   ScreenIntCoord GetFixedLayerMarginsBottom();
   void NotifyControllerSnapshotFailed();
   void CheckForResetOnNextMove(ScreenIntCoord aCurrentTouch);
+  void QueueMessage(int32_t aMessage);
 
   
   uint64_t mRootLayerTreeId;
@@ -195,6 +197,17 @@ protected:
   
   FrameMetricsState mControllerFrameMetrics;
 
+  class QueuedMessage : public LinkedListElement<QueuedMessage> {
+  public:
+    explicit QueuedMessage(int32_t aMessage) :
+      mMessage(aMessage) {}
+    int32_t mMessage;
+  private:
+    QueuedMessage() = delete;
+    QueuedMessage(const QueuedMessage&) = delete;
+    QueuedMessage& operator=(const QueuedMessage&) = delete;
+  };
+
   
   bool    mCompositorShutdown;
   bool    mCompositorAnimationDeferred;           
@@ -211,6 +224,7 @@ protected:
   RefPtr<DataTextureSource> mCompositorToolbarTexture; 
   RefPtr<EffectRGB> mCompositorToolbarEffect;          
   TimeStamp mCompositorAnimationStartTimeStamp;        
+  AutoCleanLinkedList<QueuedMessage> mCompositorQueuedMessages; 
 };
 
 } 
