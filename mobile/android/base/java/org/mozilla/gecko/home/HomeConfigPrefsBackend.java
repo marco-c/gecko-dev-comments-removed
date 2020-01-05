@@ -27,6 +27,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.support.annotation.CheckResult;
 import android.support.v4.content.LocalBroadcastManager;
 import android.text.TextUtils;
 import android.util.Log;
@@ -337,47 +338,13 @@ public class HomeConfigPrefsBackend implements HomeConfigBackend {
         return false;
     }
 
-    
+    @CheckResult
+    static synchronized JSONArray migratePrefsFromVersionToVersion(final Context context, final int currentVersion, final int newVersion,
+                                                              final JSONArray jsonPanelsIn, final SharedPreferences.Editor prefsEditor) throws JSONException {
 
+        JSONArray jsonPanels = jsonPanelsIn;
 
-
-
-
-
-
-    private static synchronized JSONArray maybePerformMigration(Context context, String jsonString) throws JSONException {
-        
-        if (sMigrationDone) {
-            final JSONObject json = new JSONObject(jsonString);
-            return json.getJSONArray(JSON_KEY_PANELS);
-        }
-
-        
-        sMigrationDone = true;
-
-        JSONArray jsonPanels;
-        final int version;
-
-        final SharedPreferences prefs = GeckoSharedPrefs.forProfile(context);
-        if (prefs.contains(PREFS_CONFIG_KEY_OLD)) {
-            
-            jsonPanels = new JSONArray(jsonString);
-            version = 0;
-        } else {
-            final JSONObject json = new JSONObject(jsonString);
-            jsonPanels = json.getJSONArray(JSON_KEY_PANELS);
-            version = json.getInt(JSON_KEY_VERSION);
-        }
-
-        if (version == VERSION) {
-            return jsonPanels;
-        }
-
-        Log.d(LOGTAG, "Performing migration");
-
-        final SharedPreferences.Editor prefsEditor = prefs.edit();
-
-        for (int v = version + 1; v <= VERSION; v++) {
+        for (int v = currentVersion + 1; v <= newVersion; v++) {
             Log.d(LOGTAG, "Migrating to version = " + v);
 
             switch (v) {
@@ -438,6 +405,51 @@ public class HomeConfigPrefsBackend implements HomeConfigBackend {
                     break;
             }
         }
+
+        return jsonPanels;
+    }
+
+    
+
+
+
+
+
+
+
+    private static synchronized JSONArray maybePerformMigration(Context context, String jsonString) throws JSONException {
+        
+        if (sMigrationDone) {
+            final JSONObject json = new JSONObject(jsonString);
+            return json.getJSONArray(JSON_KEY_PANELS);
+        }
+
+        
+        sMigrationDone = true;
+
+        JSONArray jsonPanels;
+        final int version;
+
+        final SharedPreferences prefs = GeckoSharedPrefs.forProfile(context);
+        if (prefs.contains(PREFS_CONFIG_KEY_OLD)) {
+            
+            jsonPanels = new JSONArray(jsonString);
+            version = 0;
+        } else {
+            final JSONObject json = new JSONObject(jsonString);
+            jsonPanels = json.getJSONArray(JSON_KEY_PANELS);
+            version = json.getInt(JSON_KEY_VERSION);
+        }
+
+        if (version == VERSION) {
+            return jsonPanels;
+        }
+
+        Log.d(LOGTAG, "Performing migration");
+
+        final SharedPreferences.Editor prefsEditor = prefs.edit();
+
+        jsonPanels = migratePrefsFromVersionToVersion(context, version, VERSION, jsonPanels, prefsEditor);
 
         
         final JSONObject newJson = new JSONObject();
