@@ -1,5 +1,6 @@
 function _fail(s) {
-  window.alert("TEST-UNEXPECTED-FAIL | " + s);
+  
+  window.alert("TEST-UNEXPECTED" + "-FAIL | " + s);
 }
 
 function _pass(s) {
