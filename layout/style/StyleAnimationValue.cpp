@@ -784,14 +784,16 @@ StyleAnimationValue::Add(nsCSSPropertyID aProperty,
     case eUnit_Shadow: {
       
       
-      if (aA.GetCSSValueListValue()->mValue.GetUnit() == eCSSUnit_None) {
+      if (!aA.GetCSSValueListValue() ||
+          aA.GetCSSValueListValue()->mValue.GetUnit() == eCSSUnit_None) {
         break;
       }
       UniquePtr<nsCSSValueList> resultList(aA.GetCSSValueListValue()->Clone());
 
       
       
-      if (result.GetCSSValueListValue()->mValue.GetUnit() != eCSSUnit_None) {
+      if (result.GetCSSValueListValue() &&
+          result.GetCSSValueListValue()->mValue.GetUnit() != eCSSUnit_None) {
         nsCSSValueList* listA = resultList.get();
         while (listA->mNext) {
           listA = listA->mNext;
