@@ -220,8 +220,7 @@ impl CompiledEventListener {
     }
 }
 
-#[derive(JSTraceable, Clone, PartialEq, HeapSizeOf)]
-#[privatize]
+#[derive(Clone, DenyPublicFields, HeapSizeOf, JSTraceable, PartialEq)]
 
 struct EventListenerEntry {
     phase: ListenerPhase,

@@ -2,14 +2,15 @@
 
 
 
-#![feature(plugin, custom_attribute)]
-#![plugin(plugins)]
 #![allow(dead_code)]
 
-#[privatize]
+#[macro_use]
+extern crate deny_public_fields;
+
+#[derive(DenyPublicFields)]
+
 struct Foo {
     pub v1: i32,
-    
     v2: i32
 }
 
