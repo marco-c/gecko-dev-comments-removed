@@ -175,7 +175,7 @@ public:
   void Stop() override
   {
     
-    NS_ERROR("Can't stop a remote source!");
+    
   }
 
   void SetPrincipal(nsIPrincipal* aPrincipal)
@@ -228,12 +228,6 @@ class RemoteSourceStreamInfo : public SourceStreamInfo {
   void StartReceiving();
 
  private:
-#if !defined(MOZILLA_EXTERNAL_LINKAGE)
-  
-  
-  std::vector<RefPtr<RemoteTrackSource>> mTrackSources;
-#endif
-
   
   
   bool mReceiving;
