@@ -24,7 +24,7 @@ Cu.import("resource://testing-common/httpd.js");
 
 const TITLE_SEARCH_ENGINE_SEPARATOR = " \u00B7\u2013\u00B7 ";
 
-async function cleanup() {
+function* cleanup() {
   Services.prefs.clearUserPref("browser.urlbar.autocomplete.enabled");
   Services.prefs.clearUserPref("browser.urlbar.autoFill");
   Services.prefs.clearUserPref("browser.urlbar.autoFill.typed");
@@ -40,11 +40,10 @@ async function cleanup() {
     Services.prefs.clearUserPref("browser.urlbar.suggest." + type);
   }
   Services.prefs.clearUserPref("browser.search.suggest.enabled");
-  await PlacesUtils.bookmarks.eraseEverything();
-  await PlacesTestUtils.clearHistory();
+  yield PlacesUtils.bookmarks.eraseEverything();
+  yield PlacesTestUtils.clearHistory();
 }
 do_register_cleanup(cleanup);
-
 
 
 
@@ -107,7 +106,20 @@ AutoCompleteInput.prototype = {
 
 
 
-async function _check_autocomplete_matches(match, result) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+function* _check_autocomplete_matches(match, result) {
   let { uri, title, tags, style } = match;
   if (tags)
     title += " \u2013 " + tags.sort().join(", ");
@@ -130,18 +142,30 @@ async function _check_autocomplete_matches(match, result) {
   }
 
   if (match.icon) {
-    await compareFavicons(result.image, match.icon, "Match should have the expected icon");
+    yield compareFavicons(result.image, match.icon, "Match should have the expected icon");
   }
 
   return true;
 }
 
-async function check_autocomplete(test) {
+
+
+
+
+
+
+
+
+
+
+
+
+function* check_autocomplete(test) {
   
   
   
   
-  await PlacesTestUtils.promiseAsyncUpdates();
+  yield PlacesTestUtils.promiseAsyncUpdates();
 
   
   let input = new AutoCompleteInput(["unifiedcomplete"]);
@@ -179,7 +203,7 @@ async function check_autocomplete(test) {
 
   do_print("Searching for: '" + test.search + "'");
   controller.startSearch(test.search);
-  await searchCompletePromise;
+  yield searchCompletePromise;
 
   Assert.equal(numSearchesStarted, expectedSearches, "All searches started");
 
@@ -204,7 +228,7 @@ async function check_autocomplete(test) {
           image: controller.getImageAt(0),
         }
         do_print(`First match is "${result.value}", "${result.comment}"`);
-        Assert.ok(await _check_autocomplete_matches(matches[0], result), "first item is correct");
+        Assert.ok(yield _check_autocomplete_matches(matches[0], result), "first item is correct");
         do_print("Checking rest of the matches");
       }
 
@@ -223,7 +247,7 @@ async function check_autocomplete(test) {
           
           if (matches[j] == undefined)
             continue;
-          if (await _check_autocomplete_matches(matches[j], result)) {
+          if (yield _check_autocomplete_matches(matches[j], result)) {
             do_print("Got a match at index " + j + "!");
             
             matches[j] = undefined;
@@ -260,20 +284,20 @@ async function check_autocomplete(test) {
   }
 }
 
-var addBookmark = async function(aBookmarkObj) {
+var addBookmark = Task.async(function* (aBookmarkObj) {
   Assert.ok(!!aBookmarkObj.uri, "Bookmark object contains an uri");
   let parentId = aBookmarkObj.parentId ? aBookmarkObj.parentId
                                        : PlacesUtils.unfiledBookmarksFolderId;
 
-  let bm = await PlacesUtils.bookmarks.insert({
-    parentGuid: (await PlacesUtils.promiseItemGuid(parentId)),
+  let bm = yield PlacesUtils.bookmarks.insert({
+    parentGuid: (yield PlacesUtils.promiseItemGuid(parentId)),
     title: aBookmarkObj.title || "A bookmark",
     url: aBookmarkObj.uri
   });
-  await PlacesUtils.promiseItemId(bm.guid);
+  yield PlacesUtils.promiseItemId(bm.guid);
 
   if (aBookmarkObj.keyword) {
-    await PlacesUtils.keywords.insert({ keyword: aBookmarkObj.keyword,
+    yield PlacesUtils.keywords.insert({ keyword: aBookmarkObj.keyword,
                                         url: aBookmarkObj.uri.spec,
                                         postData: aBookmarkObj.postData
                                       });
@@ -282,7 +306,7 @@ var addBookmark = async function(aBookmarkObj) {
   if (aBookmarkObj.tags) {
     PlacesUtils.tagging.tagURI(aBookmarkObj.uri, aBookmarkObj.tags);
   }
-};
+});
 
 function addOpenPages(aUri, aCount = 1, aUserContextId = 0) {
   let ac = Cc["@mozilla.org/autocomplete/search;1?name=unifiedcomplete"]
@@ -436,14 +460,14 @@ function makeTestServer(port = -1) {
   return httpServer;
 }
 
-async function addTestEngine(basename, httpServer = undefined) {
+function* addTestEngine(basename, httpServer = undefined) {
   httpServer = httpServer || makeTestServer();
   httpServer.registerDirectory("/", do_get_cwd());
   let dataUrl =
     "http://localhost:" + httpServer.identity.primaryPort + "/data/";
 
   do_print("Adding engine: " + basename);
-  return await new Promise(resolve => {
+  return yield new Promise(resolve => {
     Services.obs.addObserver(function obs(subject, topic, data) {
       let engine = subject.QueryInterface(Ci.nsISearchEngine);
       do_print("Observed " + data + " for " + engine.name);
@@ -463,7 +487,7 @@ async function addTestEngine(basename, httpServer = undefined) {
 
 
 
-add_task(async function ensure_search_engine() {
+add_task(function* ensure_search_engine() {
   
   Services.prefs.setBoolPref("keyword.enabled", true);
 
@@ -474,7 +498,7 @@ add_task(async function ensure_search_engine() {
   let geoPref = "browser.search.geoip.url";
   Services.prefs.setCharPref(geoPref, "");
   do_register_cleanup(() => Services.prefs.clearUserPref(geoPref));
-  await new Promise(resolve => {
+  yield new Promise(resolve => {
     Services.search.init(resolve);
   });
 
