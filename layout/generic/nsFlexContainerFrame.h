@@ -56,7 +56,7 @@ public:
   class FlexLine;
   class FlexboxAxisTracker;
   struct StrutInfo;
-  struct CachedMeasuringReflowResult;
+  class CachedMeasuringReflowResult;
 
   
   void Init(nsIContent*       aContent,

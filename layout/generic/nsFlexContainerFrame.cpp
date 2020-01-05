@@ -1784,19 +1784,38 @@ nsFlexContainerFrame::
 
 
 
-struct nsFlexContainerFrame::CachedMeasuringReflowResult
+
+
+
+
+
+class nsFlexContainerFrame::CachedMeasuringReflowResult
 {
-  LogicalSize mAvailableSize;
+  
+  const LogicalSize mAvailableSize;
+  const nscoord mComputedHeight;
+
+  
   const nscoord mHeight;
   const nscoord mAscent;
 
-  CachedMeasuringReflowResult(const LogicalSize& aAvailableSize,
-                              nscoord aHeight,
-                              nscoord aAscent)
-    : mAvailableSize(aAvailableSize)
-    , mHeight(aHeight)
-    , mAscent(aAscent)
+public:
+  CachedMeasuringReflowResult(const ReflowInput& aReflowInput,
+                              const ReflowOutput& aDesiredSize)
+    : mAvailableSize(aReflowInput.AvailableSize())
+    , mComputedHeight(aReflowInput.ComputedHeight())
+    , mHeight(aDesiredSize.Height())
+    , mAscent(aDesiredSize.BlockStartAscent())
   {}
+
+  bool IsValidFor(const ReflowInput& aReflowInput) const {
+    return mAvailableSize == aReflowInput.AvailableSize() &&
+      mComputedHeight == aReflowInput.ComputedHeight();
+  }
+
+  nscoord Height() const { return mHeight; }
+
+  nscoord Ascent() const { return mAscent; }
 };
 
 NS_DECLARE_FRAME_PROPERTY_DELETABLE(CachedFlexMeasuringReflow,
@@ -1808,10 +1827,9 @@ nsFlexContainerFrame::MeasureAscentAndHeightForFlexItem(
   nsPresContext* aPresContext,
   ReflowInput& aChildReflowInput)
 {
-  const auto availableSize = aChildReflowInput.AvailableSize();
   const FrameProperties props = aItem.Frame()->Properties();
   if (const auto* cachedResult = props.Get(CachedFlexMeasuringReflow())) {
-    if (cachedResult->mAvailableSize == availableSize) {
+    if (cachedResult->IsValidFor(aChildReflowInput)) {
       return *cachedResult;
     }
   }
@@ -1838,9 +1856,7 @@ nsFlexContainerFrame::MeasureAscentAndHeightForFlexItem(
                     childDesiredSize, &aChildReflowInput, 0, 0, flags);
 
   auto result =
-    new CachedMeasuringReflowResult(availableSize,
-                                    childDesiredSize.Height(),
-                                    childDesiredSize.BlockStartAscent());
+    new CachedMeasuringReflowResult(aChildReflowInput, childDesiredSize);
 
   props.Set(CachedFlexMeasuringReflow(), result);
   return *result;
@@ -1885,11 +1901,11 @@ nsFlexContainerFrame::
     MeasureAscentAndHeightForFlexItem(aFlexItem, aPresContext,
                                       childRIForMeasuringHeight);
 
-  aFlexItem.SetAscent(reflowResult.mAscent);
+  aFlexItem.SetAscent(reflowResult.Ascent());
 
   
   
-  nscoord childDesiredHeight = reflowResult.mHeight -
+  nscoord childDesiredHeight = reflowResult.Height() -
     childRIForMeasuringHeight.ComputedPhysicalBorderPadding().TopBottom();
 
   return std::max(0, childDesiredHeight);
@@ -4060,7 +4076,7 @@ nsFlexContainerFrame::SizeItemInCrossAxis(
   
   
   nscoord crossAxisBorderPadding = aItem.GetBorderPadding().TopBottom();
-  if (reflowResult.mHeight < crossAxisBorderPadding) {
+  if (reflowResult.Height() < crossAxisBorderPadding) {
     
     
     
@@ -4073,10 +4089,10 @@ nsFlexContainerFrame::SizeItemInCrossAxis(
     aItem.SetCrossSize(0);
   } else {
     
-    aItem.SetCrossSize(reflowResult.mHeight - crossAxisBorderPadding);
+    aItem.SetCrossSize(reflowResult.Height() - crossAxisBorderPadding);
   }
 
-  aItem.SetAscent(reflowResult.mAscent);
+  aItem.SetAscent(reflowResult.Ascent());
 }
 
 void
