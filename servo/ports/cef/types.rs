@@ -12,34 +12,36 @@ pub enum cef_text_input_context_t {}
 pub enum cef_event_handle_t {}
 
 
-pub enum cef_binary_value_val {}
-pub type cef_binary_value = *mut cef_binary_value_val;
-pub enum cef_dictionary_value_val {}
-pub type cef_dictionary_value = *mut cef_dictionary_value_val;
-pub enum cef_client_t {}
+pub enum cef_binary_value_t {}
+pub enum cef_dictionary_value_t {}
 pub enum cef_request_t {}
 pub enum cef_response_t {}
 pub enum cef_urlrequest_client_t {}
-pub enum cef_frame_val {}
-pub type cef_frame = *mut cef_frame_val;
-pub enum cef_domnode_val {}
-pub type cef_domnode = *mut cef_domnode_val;
-pub enum cef_load_handler_val {}
-pub type cef_load_handler = *mut cef_load_handler_val;
-pub enum cef_request_val {}
-pub type cef_request = *mut cef_request_val;
-pub enum cef_navigation_type_val {}
-pub type cef_navigation_type = *mut cef_navigation_type_val;
+pub enum cef_frame_t {}
+pub enum cef_domnode_t {}
+pub enum cef_load_handler_t {}
 pub enum cef_request_context_t {}
-pub enum cef_window_info_t {}
 pub enum cef_browser_settings_t {}
-pub enum cef_v8context_val {}
-pub type cef_v8context = *mut cef_v8context_val;
-pub enum cef_v8exception_val {}
-pub type cef_v8exception = *mut cef_v8exception_val;
-pub enum cef_v8stack_trace_val {}
-pub type cef_v8stack_trace = *mut cef_v8stack_trace_val;
+pub enum cef_v8context_t {}
+pub enum cef_v8exception_t {}
+pub enum cef_v8stack_trace_t {}
+pub enum cef_popup_features_t {}
+pub enum cef_context_menu_handler_t {}
+pub enum cef_dialog_handler_t {}
+pub enum cef_download_handler_t {}
+pub enum cef_drag_handler_t {}
+pub enum cef_focus_handler_t {}
+pub enum cef_geolocation_handler_t {}
+pub enum cef_jsdialog_handler_t {}
+pub enum cef_keyboard_handler_t {}
+pub enum cef_render_handler_t {}
+pub enum cef_request_handler_t {}
+#[cfg(target_os="linux")]
+pub type cef_window_handle_t = c_uint;
+#[cfg(target_os="macos")]
 pub enum cef_window_handle_t {} 
+
+
 
 pub type cef_string_t = cef_string_utf8; 
 pub type cef_string_userfree_t = cef_string_t; 
@@ -534,7 +536,7 @@ pub struct cef_process_message {
   
   
   
-  pub get_argument_list: Option<extern "C" fn(process_message: *mut cef_process_message) -> *mut cef_list_value>,
+  pub get_argument_list: Option<extern "C" fn(process_message: *mut cef_process_message) -> *mut cef_list_value_t>,
 }
 
 
@@ -984,7 +986,7 @@ pub struct cef_resource_bundle_handler {
   
   
   
-  pub get_localized_string: Option<extern "C" fn(bundle_handler: *mut cef_resource_bundle_handler,
+  pub get_localized_string: Option<extern "C" fn(bundle_handler: *mut cef_resource_bundle_handler_t,
                                   message_id: c_int, string: *mut cef_string_t) -> c_int>,
 
   
@@ -995,7 +997,7 @@ pub struct cef_resource_bundle_handler {
   
   
   
-  pub get_data_resource: Option<extern "C" fn(bundle_handler: *mut cef_resource_bundle_handler,
+  pub get_data_resource: Option<extern "C" fn(bundle_handler: *mut cef_resource_bundle_handler_t,
                                resource_id: c_int, data: *mut *mut c_void, data_size: *mut size_t) -> c_int>,
 }
 
@@ -1015,125 +1017,115 @@ pub struct cef_list_value {
   
   
   
-  pub is_valid: Option<extern "C" fn(list_value: *mut cef_list_value) -> c_int>,
+  pub is_valid: Option<extern "C" fn(list_value: *mut cef_list_value_t) -> c_int>,
 
   
   
   
-  pub is_owned: Option<extern "C" fn(list_value: *mut cef_list_value) -> c_int>,
-
-  
-  
-  
-  
-  pub is_read_only: Option<extern "C" fn(list_value: *mut cef_list_value) -> c_int>,
-
-  
-  
-  
-  pub copy: Option<extern "C" fn(list_value: *mut cef_list_value) -> *mut cef_list_value>,
+  pub is_owned: Option<extern "C" fn(list_value: *mut cef_list_value_t) -> c_int>,
 
   
   
   
   
-  pub set_size: Option<extern "C" fn(list_value: *mut cef_list_value, size: size_t) -> c_int>,
+  pub is_read_only: Option<extern "C" fn(list_value: *mut cef_list_value_t) -> c_int>,
 
   
   
   
-  pub get_size: Option<extern "C" fn(list_value: *mut cef_list_value) -> size_t>,
-
-  
-  
-  
-  pub clear: Option<extern "C" fn(list_value: *mut cef_list_value) -> c_int>,
-
-  
-  
-  
-  pub remove: Option<extern "C" fn(list_value: *mut cef_list_value) -> c_int>,
-
-  
-  
-  
-  pub get_type: Option<extern "C" fn(list_value: *mut cef_list_value, index: c_int) -> cef_value_type_t>,
-
-  
-  
-  
-  pub get_bool: Option<extern "C" fn(list_value: *mut cef_list_value, index: c_int) -> c_int>,
-
-  
-  
-  
-  pub get_int: Option<extern "C" fn(list_value: *mut cef_list_value, index: c_int) -> c_int>,
-
-  
-  
-  
-  pub get_double: Option<extern "C" fn(list_value: *mut cef_list_value, index: c_int) -> c_double>,
+  pub copy: Option<extern "C" fn(list_value: *mut cef_list_value_t) -> *mut cef_list_value_t>,
 
   
   
   
   
-  pub get_string: Option<extern "C" fn(list_value: *mut cef_list_value, index: c_int) -> *mut cef_string_userfree_t>,
+  pub set_size: Option<extern "C" fn(list_value: *mut cef_list_value_t, size: size_t) -> c_int>,
 
   
   
   
-  pub get_binary: Option<extern "C" fn(list_value: *mut cef_list_value, index: c_int) -> *mut cef_binary_value>,
+  pub get_size: Option<extern "C" fn(list_value: *mut cef_list_value_t) -> size_t>,
 
   
   
   
-  pub get_dictionary: Option<extern "C" fn(list_value: *mut cef_list_value, index: c_int) -> *mut cef_dictionary_value>,
+  pub clear: Option<extern "C" fn(list_value: *mut cef_list_value_t) -> c_int>,
 
   
   
   
-  pub get_list: Option<extern "C" fn(list_value: *mut cef_list_value, index: c_int) -> *mut cef_list_value>,
+  pub remove: Option<extern "C" fn(list_value: *mut cef_list_value_t) -> c_int>,
 
   
   
   
-  
-  pub set_null: Option<extern "C" fn(list_value: *mut cef_list_value, index: c_int) -> c_int>,
+  pub get_type: Option<extern "C" fn(list_value: *mut cef_list_value_t, index: c_int) -> cef_value_type_t>,
 
   
   
   
-  
-  pub set_bool: Option<extern "C" fn(list_value: *mut cef_list_value, index: c_int, value: c_int) -> c_int>,
+  pub get_bool: Option<extern "C" fn(list_value: *mut cef_list_value_t, index: c_int) -> c_int>,
 
   
   
   
-  
-  pub set_int: Option<extern "C" fn(list_value: *mut cef_list_value, index: c_int, value: c_int) -> c_int>,
+  pub get_int: Option<extern "C" fn(list_value: *mut cef_list_value_t, index: c_int) -> c_int>,
 
   
   
   
-  
-  pub set_double: Option<extern "C" fn(list_value: *mut cef_list_value, index: c_int, value: c_double) -> c_int>,
-
-  
-  
-  
-  
-  pub set_string: Option<extern "C" fn(list_value: *mut cef_list_value, index: c_int, value: *const cef_string_t) -> c_int>,
+  pub get_double: Option<extern "C" fn(list_value: *mut cef_list_value_t, index: c_int) -> c_double>,
 
   
   
   
   
+  pub get_string: Option<extern "C" fn(list_value: *mut cef_list_value_t, index: c_int) -> *mut cef_string_userfree_t>,
+
+  
+  
+  
+  pub get_binary: Option<extern "C" fn(list_value: *mut cef_list_value_t, index: c_int) -> *mut cef_binary_value_t>,
+
+  
+  
+  
+  pub get_dictionary: Option<extern "C" fn(list_value: *mut cef_list_value_t, index: c_int) -> *mut cef_dictionary_value_t>,
+
+  
+  
+  
+  pub get_list: Option<extern "C" fn(list_value: *mut cef_list_value_t, index: c_int) -> *mut cef_list_value_t>,
+
   
   
   
   
-  pub set_binary: Option<extern "C" fn(list_value: *mut cef_list_value, index: c_int, value: *mut cef_binary_value) -> c_int>,
+  pub set_null: Option<extern "C" fn(list_value: *mut cef_list_value_t, index: c_int) -> c_int>,
+
+  
+  
+  
+  
+  pub set_bool: Option<extern "C" fn(list_value: *mut cef_list_value_t, index: c_int, value: c_int) -> c_int>,
+
+  
+  
+  
+  
+  pub set_int: Option<extern "C" fn(list_value: *mut cef_list_value_t, index: c_int, value: c_int) -> c_int>,
+
+  
+  
+  
+  
+  pub set_double: Option<extern "C" fn(list_value: *mut cef_list_value_t, index: c_int, value: c_double) -> c_int>,
+
+  
+  
+  
+  
+  pub set_string: Option<extern "C" fn(list_value: *mut cef_list_value_t, index: c_int, value: *const cef_string_t) -> c_int>,
 
   
   
@@ -1143,7 +1135,7 @@ pub struct cef_list_value {
   
   
   
-  pub set_dictionary: Option<extern "C" fn(list_value: *mut cef_list_value, index: c_int, value: *mut cef_dictionary_value) -> c_int>,
+  pub set_binary: Option<extern "C" fn(list_value: *mut cef_list_value_t, index: c_int, value: *mut cef_binary_value_t) -> c_int>,
 
   
   
@@ -1153,7 +1145,17 @@ pub struct cef_list_value {
   
   
   
-  pub set_list: Option<extern "C" fn(list_value: *mut cef_list_value, index: c_int, value: *mut cef_list_value) -> c_int>,
+  pub set_dictionary: Option<extern "C" fn(list_value: *mut cef_list_value_t, index: c_int, value: *mut cef_dictionary_value_t) -> c_int>,
+
+  
+  
+  
+  
+  
+  
+  
+  
+  pub set_list: Option<extern "C" fn(list_value: *mut cef_list_value_t, index: c_int, value: *mut cef_list_value_t) -> c_int>,
 }
 
 
@@ -1190,7 +1192,7 @@ pub struct cef_browser_process_handler {
   
   
   
-  pub on_render_process_thread_created: Option<extern "C" fn(browser_handler: *mut cef_browser_process_handler, extra_info: *mut cef_list_value)>,
+  pub on_render_process_thread_created: Option<extern "C" fn(browser_handler: *mut cef_browser_process_handler, extra_info: *mut cef_list_value_t)>,
 }
 
 
@@ -1212,7 +1214,7 @@ pub struct cef_run_file_dialog_callback {
   
   
   pub cont: Option<extern "C" fn(run_file_dialog_callback: *mut cef_run_file_dialog_callback,
-                  browser_host: *mut cef_browser_host,
+                                            browser_host: *mut cef_browser_host,
                   file_paths: *mut cef_string_list_t)>,
 }
 
@@ -1232,7 +1234,7 @@ pub struct cef_browser_host {
   
   
   
-  pub get_browser: Option<extern "C" fn(browser_host: *mut cef_browser_host) -> *mut cef_browser>,
+  pub get_browser: Option<extern "C" fn(browser_host: *mut cef_browser_host) -> *mut cef_browser_t>,
 
   
   
@@ -1480,111 +1482,111 @@ pub struct cef_browser {
   
   
   
-  pub get_host: Option<extern "C" fn(browser: *mut cef_browser) -> *mut cef_browser_host>,
+  pub get_host: Option<extern "C" fn(browser: *mut cef_browser_t) -> *mut cef_browser_host>,
 
   
   
   
-  pub can_go_back: Option<extern "C" fn(browser: *mut cef_browser) -> c_int>,
+  pub can_go_back: Option<extern "C" fn(browser: *mut cef_browser_t) -> c_int>,
 
   
   
   
-  pub go_back: Option<extern "C" fn(browser: *mut cef_browser)>,
+  pub go_back: Option<extern "C" fn(browser: *mut cef_browser_t)>,
 
   
   
   
-  pub can_go_forward: Option<extern "C" fn(browser: *mut cef_browser) -> c_int>,
+  pub can_go_forward: Option<extern "C" fn(browser: *mut cef_browser_t) -> c_int>,
 
   
   
   
-  pub go_forward: Option<extern "C" fn(browser: *mut cef_browser)>,
+  pub go_forward: Option<extern "C" fn(browser: *mut cef_browser_t)>,
 
   
   
   
-  pub is_loading: Option<extern "C" fn(browser: *mut cef_browser) -> c_int>,
+  pub is_loading: Option<extern "C" fn(browser: *mut cef_browser_t) -> c_int>,
 
   
   
   
-  pub reload: Option<extern "C" fn(browser: *mut cef_browser)>,
+  pub reload: Option<extern "C" fn(browser: *mut cef_browser_t)>,
 
   
   
   
-  pub reload_ignore_cache: Option<extern "C" fn(browser: *mut cef_browser)>,
+  pub reload_ignore_cache: Option<extern "C" fn(browser: *mut cef_browser_t)>,
 
   
   
   
-  pub stop_load: Option<extern "C" fn(browser: *mut cef_browser)>,
+  pub stop_load: Option<extern "C" fn(browser: *mut cef_browser_t)>,
 
   
   
   
-  pub get_identifier: Option<extern "C" fn(browser: *mut cef_browser) -> c_int>,
+  pub get_identifier: Option<extern "C" fn(browser: *mut cef_browser_t) -> c_int>,
 
   
   
   
   
-  pub is_same: Option<extern "C" fn(browser: *mut cef_browser, that: *mut cef_browser) -> c_int>,
+  pub is_same: Option<extern "C" fn(browser: *mut cef_browser_t, that: *mut cef_browser_t) -> c_int>,
 
   
   
   
-  pub is_popup: Option<extern "C" fn(browser: *mut cef_browser) -> c_int>,
+  pub is_popup: Option<extern "C" fn(browser: *mut cef_browser_t) -> c_int>,
 
   
   
   
-  pub has_document: Option<extern "C" fn(browser: *mut cef_browser) -> c_int>,
+  pub has_document: Option<extern "C" fn(browser: *mut cef_browser_t) -> c_int>,
 
   
   
   
-  pub get_main_frame: Option<extern "C" fn(browser: *mut cef_browser) -> *mut cef_frame>,
+  pub get_main_frame: Option<extern "C" fn(browser: *mut cef_browser_t) -> *mut cef_frame_t>,
 
   
   
   
-  pub get_focused_frame: Option<extern "C" fn(browser: *mut cef_browser) -> *mut cef_frame>,
+  pub get_focused_frame: Option<extern "C" fn(browser: *mut cef_browser_t) -> *mut cef_frame_t>,
 
   
   
   
-  pub get_frame_byident: Option<extern "C" fn(browser: *mut cef_browser, identifier: c_longlong) -> *mut cef_frame>,
+  pub get_frame_byident: Option<extern "C" fn(browser: *mut cef_browser_t, identifier: c_longlong) -> *mut cef_frame_t>,
 
   
   
   
-  pub get_frame: Option<extern "C" fn(browser: *mut cef_browser, name: *const cef_string_t) -> *mut cef_frame>,
+  pub get_frame: Option<extern "C" fn(browser: *mut cef_browser_t, name: *const cef_string_t) -> *mut cef_frame_t>,
 
   
   
   
-  pub get_frame_count: Option<extern "C" fn(browser: *mut cef_browser) -> size_t>,
+  pub get_frame_count: Option<extern "C" fn(browser: *mut cef_browser_t) -> size_t>,
 
   
   
   
-  pub get_frame_identifiers: Option<extern "C" fn(browser: *mut cef_browser,
+  pub get_frame_identifiers: Option<extern "C" fn(browser: *mut cef_browser_t,
                              identifiersCount: *mut size_t,
                              identifiers: *mut c_longlong)>,
 
   
   
   
-  pub get_frame_names: Option<extern "C" fn(browser: *mut cef_browser, names: *mut cef_string_list_t)>,
+  pub get_frame_names: Option<extern "C" fn(browser: *mut cef_browser_t, names: *mut cef_string_list_t)>,
 
   
   
   
   
-  pub send_process_message: Option<extern "C" fn(browser: *mut cef_browser, target_process: cef_process_id_t,
+  pub send_process_message: Option<extern "C" fn(browser: *mut cef_browser_t, target_process: cef_process_id_t,
                              message: *mut cef_process_message) -> c_int>,
 }
 
@@ -1606,40 +1608,40 @@ pub struct cef_render_process_handler {
   
   
   
-  pub on_render_thread_created: Option<extern "C" fn(render_handler: *mut cef_render_process_handler, extra_info: *mut cef_list_value)>,
+  pub on_render_thread_created: Option<extern "C" fn(render_handler: *mut cef_render_process_handler_t, extra_info: *mut cef_list_value_t)>,
 
   
   
   
-  pub on_web_kit_initialized: Option<extern "C" fn(render_handler: *mut cef_render_process_handler)>,
-
-  
-  
-  
-  
-  
-  pub on_browser_created: Option<extern "C" fn(render_handler: *mut cef_render_process_handler, browser: *mut cef_browser)>,
-
-  
-  
-  
-  pub on_browser_destroyed: Option<extern "C" fn(render_handler: *mut cef_render_process_handler, browser: *mut cef_browser)>,
-
-  
-  
-  
-  pub get_load_handler: Option<extern "C" fn(render_handler: *mut cef_render_process_handler) -> *mut cef_load_handler>,
+  pub on_web_kit_initialized: Option<extern "C" fn(render_handler: *mut cef_render_process_handler_t)>,
 
   
   
   
   
   
-  pub on_before_navigation: Option<extern "C" fn(render_handler: *mut cef_render_process_handler,
-                              browser: *mut cef_browser,
-                              frame: *mut cef_frame,
-                              request: *mut cef_request,
-                              navigation_type: *mut cef_navigation_type,
+  pub on_browser_created: Option<extern "C" fn(render_handler: *mut cef_render_process_handler_t, browser: *mut cef_browser_t)>,
+
+  
+  
+  
+  pub on_browser_destroyed: Option<extern "C" fn(render_handler: *mut cef_render_process_handler_t, browser: *mut cef_browser_t)>,
+
+  
+  
+  
+  pub get_load_handler: Option<extern "C" fn(render_handler: *mut cef_render_process_handler_t) -> *mut cef_load_handler_t>,
+
+  
+  
+  
+  
+  
+  pub on_before_navigation: Option<extern "C" fn(render_handler: *mut cef_render_process_handler_t,
+                                                        browser: *mut cef_browser_t,
+                              frame: *mut cef_frame_t,
+                              request: *mut cef_request_t,
+                              navigation_type: *mut cef_navigation_type_t,
                               is_redirect: c_int) -> c_int>,
 
   
@@ -1650,52 +1652,52 @@ pub struct cef_render_process_handler {
   
   
   
-  pub on_context_created: Option<extern "C" fn(render_handler: *mut cef_render_process_handler,
-                                browser: *mut cef_browser,
-                                frame: *mut cef_frame,
-                                context: *mut cef_v8context)>,
+  pub on_context_created: Option<extern "C" fn(render_handler: *mut cef_render_process_handler_t,
+                                                          browser: *mut cef_browser_t,
+                                frame: *mut cef_frame_t,
+                                context: *mut cef_v8context_t)>,
 
   
   
   
   
-  pub on_context_released: Option<extern "C" fn(render_handler: *mut cef_render_process_handler,
-                                 browser: *mut cef_browser,
-                                 frame: *mut cef_frame,
-                                 context: *mut cef_v8context)>,
-
-  
-  
-  
-  
-  
-  pub on_uncaught_exception: Option<extern "C" fn(render_handler: *mut cef_render_process_handler,
-                                 browser: *mut cef_browser,
-                                 frame: *mut cef_frame,
-                                 context: *mut cef_v8context,
-                                 exception: *mut cef_v8exception,
-                                 stackTrace: *mut cef_v8stack_trace)>,
+  pub on_context_released: Option<extern "C" fn(render_handler: *mut cef_render_process_handler_t,
+                                                           browser: *mut cef_browser_t,
+                                 frame: *mut cef_frame_t,
+                                 context: *mut cef_v8context_t)>,
 
   
   
   
   
   
-  
-  
-  
-  pub on_focused_node_changed: Option<extern "C" fn(render_handler: *mut cef_render_process_handler,
-                                 browser: *mut cef_browser,
-                                 frame: *mut cef_frame,
-                                 node: *mut cef_domnode)>,
+  pub on_uncaught_exception: Option<extern "C" fn(render_handler: *mut cef_render_process_handler_t,
+                                                           browser: *mut cef_browser_t,
+                                 frame: *mut cef_frame_t,
+                                 context: *mut cef_v8context_t,
+                                 exception: *mut cef_v8exception_t,
+                                 stackTrace: *mut cef_v8stack_trace_t)>,
 
   
   
   
   
   
-  pub on_process_message_received: Option<extern "C" fn(render_handler: *mut cef_render_process_handler,
-                                 browser: *mut cef_browser,
+  
+  
+  
+  pub on_focused_node_changed: Option<extern "C" fn(render_handler: *mut cef_render_process_handler_t,
+                                                           browser: *mut cef_browser_t,
+                                 frame: *mut cef_frame_t,
+                                 node: *mut cef_domnode_t)>,
+
+  
+  
+  
+  
+  
+  pub on_process_message_received: Option<extern "C" fn(render_handler: *mut cef_render_process_handler_t,
+                                                           browser: *mut cef_browser_t,
                                  source_process: cef_process_id_t,
                                  message: *mut cef_process_message) ->c_int>,
 }
@@ -1738,7 +1740,7 @@ pub struct cef_app {
   
   
   
-  pub get_resource_bundle_handler: Option<extern "C" fn(app: *mut cef_app_t) -> *mut cef_resource_bundle_handler>,
+  pub get_resource_bundle_handler: Option<extern "C" fn(app: *mut cef_app_t) -> *mut cef_resource_bundle_handler_t>,
 
   
   
@@ -1750,7 +1752,7 @@ pub struct cef_app {
   
   
   
-  pub get_render_process_handler: Option<extern "C" fn(app: *mut cef_app_t) -> *mut cef_render_process_handler>,
+  pub get_render_process_handler: Option<extern "C" fn(app: *mut cef_app_t) -> *mut cef_render_process_handler_t>,
 }
 
 
@@ -1877,34 +1879,330 @@ pub struct cef_post_data {
   
   
   
-  pub is_read_only: Option<extern "C" fn(post_data: *mut cef_post_data) -> c_int>,
+  pub is_read_only: Option<extern "C" fn(post_data: *mut cef_post_data_t) -> c_int>,
 
   
   
   
-  pub get_element_count: Option<extern "C" fn(post_data: *mut cef_post_data) -> size_t>,
+  pub get_element_count: Option<extern "C" fn(post_data: *mut cef_post_data_t) -> size_t>,
 
   
   
   
-  pub get_elements: Option<extern "C" fn(post_data: *mut cef_post_data,
+  pub get_elements: Option<extern "C" fn(post_data: *mut cef_post_data_t,
                           elements_count: *mut size_t, elements: *mut *mut cef_post_data_element)>,
 
   
   
   
   
-  pub remove_element: Option<extern "C" fn(post_data: *mut cef_post_data,
+  pub remove_element: Option<extern "C" fn(post_data: *mut cef_post_data_t,
                             element: *mut cef_post_data_element) -> c_int>,
 
   
   
   
-  pub add_element: Option<extern "C" fn(post_data: *mut cef_post_data,
+  pub add_element: Option<extern "C" fn(post_data: *mut cef_post_data_t,
                             element: *mut cef_post_data_element) -> c_int>,
 
   
   
   
-  pub remove_elements: Option<extern "C" fn(post_data: *mut cef_post_data)>,
+  pub remove_elements: Option<extern "C" fn(post_data: *mut cef_post_data_t)>,
+}
+
+
+
+
+
+
+
+pub type cef_display_handler_t = cef_display_handler;
+pub struct cef_display_handler {
+  
+  
+  
+  pub base: cef_base_t,
+
+  
+  
+  
+  pub on_address_change: Option<extern "C" fn(h: *mut cef_display_handler_t, browser: *mut cef_browser_t,
+                                              frame: *mut cef_frame_t, url: *const cef_string_t)>,
+
+  
+  
+  
+  pub on_title_change: Option<extern "C" fn(h: *mut cef_display_handler_t,
+                                browser: *mut cef_browser_t, title: *const cef_string_t)>,
+
+  
+  
+  
+  
+  
+  
+  
+  
+  pub on_tooltip: Option<extern "C" fn(h: *mut cef_display_handler_t,
+                                browser: *mut cef_browser_t, text: *mut cef_string_t) -> c_int>,
+
+  
+  
+  
+  
+  pub on_status_message: Option<extern "C" fn(h: *mut cef_display_handler_t,
+                                browser: *mut cef_browser_t, value: *const cef_string_t)>,
+
+  
+  
+  
+  
+  pub on_console_message: Option<extern "C" fn(h: *mut cef_display_handler_t,
+                                browser: *mut cef_browser_t, message: *const cef_string_t,
+      source: *const cef_string_t, line: c_int) -> c_int>
+}
+
+
+
+
+
+
+pub type cef_life_span_handler_t = cef_life_span_handler;
+pub struct cef_life_span_handler {
+  
+  
+  
+  pub base: cef_base_t,
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  pub on_before_popup: Option<extern "C" fn(h: *mut cef_life_span_handler_t,
+                                browser: *mut cef_browser_t,  frame: *mut cef_frame_t,
+      target_url: *const cef_string_t, target_frame_name: *const cef_string_t,
+      popupFeatures: *const cef_popup_features_t,
+      windowInfo: *mut cef_window_info_t, client: *mut *mut cef_client_t,
+      settings: *mut cef_browser_settings_t, no_javascript_access: *mut c_int) -> c_int>,
+
+  
+  
+  
+  pub on_after_created: Option<extern "C" fn(h: *mut cef_life_span_handler_t, browser: *mut cef_browser_t)>,
+
+  
+  
+  
+  
+  
+  pub run_modal: Option<extern "C" fn(h: *mut cef_life_span_handler_t, browser: *mut cef_browser_t) -> c_int>,
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  pub do_close: Option<extern "C" fn(h: *mut cef_life_span_handler_t, browser: *mut cef_browser_t) -> c_int>,
+
+  
+  
+  
+  
+  
+  
+  
+  
+  pub on_before_close: Option<extern "C" fn(h: *mut cef_life_span_handler_t, browser: *mut cef_browser_t)>,
+}
+
+
+
+
+pub type cef_client_t = cef_client;
+pub struct cef_client {
+  
+  
+  
+  pub base: cef_base_t,
+
+  
+  
+  
+  
+  pub get_context_menu_handler: Option<extern "C" fn(client: *mut cef_client_t) -> *mut cef_context_menu_handler_t>,
+
+  
+  
+  
+  
+  pub get_dialog_handler: Option<extern "C" fn(client: *mut cef_client_t) -> *mut cef_dialog_handler_t>,
+
+  
+  
+  
+  pub get_display_handler: Option<extern "C" fn(client: *mut cef_client_t) -> *mut cef_display_handler_t>,
+
+  
+  
+  
+  
+  pub get_download_handler: Option<extern "C" fn(client: *mut cef_client_t) -> *mut cef_download_handler_t>,
+
+  
+  
+  
+  pub get_drag_handler: Option<extern "C" fn(client: *mut cef_client_t) -> *mut cef_drag_handler_t>,
+
+  
+  
+  
+  pub get_focus_handler: Option<extern "C" fn(client: *mut cef_client_t) -> *mut cef_focus_handler_t>,
+
+  
+  
+  
+  
+  pub get_geolocation_handler: Option<extern "C" fn(client: *mut cef_client_t) -> *mut cef_geolocation_handler_t>,
+
+  
+  
+  
+  
+  pub get_jsdialog_handler: Option<extern "C" fn(client: *mut cef_client_t) -> *mut cef_jsdialog_handler_t>,
+
+  
+  
+  
+  pub get_keyboard_handler: Option<extern "C" fn(client: *mut cef_client_t) -> *mut cef_keyboard_handler_t>,
+
+  
+  
+  
+  pub get_life_span_handler: Option<extern "C" fn(client: *mut cef_client_t) -> *mut cef_life_span_handler_t>,
+
+  
+  
+  
+  pub get_load_handler: Option<extern "C" fn(client: *mut cef_client_t) -> *mut cef_load_handler_t>,
+
+  
+  
+  
+  pub get_render_handler: Option<extern "C" fn(client: *mut cef_client_t) -> *mut cef_render_handler_t>,
+
+  
+  
+  
+  pub get_request_handler: Option<extern "C" fn(client: *mut cef_client_t) -> *mut cef_request_handler_t>,
+
+  
+  
+  
+  
+  
+  pub on_process_message_received: Option<extern "C" fn(client: *mut cef_client_t,
+                                browser: *mut cef_browser_t, source_process: cef_process_id_t,
+                                message: *mut cef_process_message_t) -> c_int>,
+}
+
+
+
+
+pub type cef_window_info_t = cef_window_info;
+pub struct cef_window_info {
+  pub x: c_uint,
+  pub y: c_uint,
+  pub width: c_uint,
+  pub height: c_uint,
+
+  
+  
+  
+  pub parent_window: cef_window_handle_t,
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  pub windowless_rendering_enabled: c_int,
+
+  
+  
+  
+  
+  
+  
+  pub transparent_painting_enabled: c_int,
+
+  
+  
+  
+  pub window: cef_window_handle_t
 }
