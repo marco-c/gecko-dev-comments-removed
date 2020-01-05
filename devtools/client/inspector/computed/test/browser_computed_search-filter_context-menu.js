@@ -49,11 +49,7 @@ add_task(function* () {
   
   is(cmdCut.getAttribute("disabled"), "", "cmdCut is enabled");
   is(cmdCopy.getAttribute("disabled"), "", "cmdCopy is enabled");
-
-  if (isWindows()) {
-    
-    is(cmdPaste.getAttribute("disabled"), "true", "cmdPaste is disabled");
-  }
+  is(cmdPaste.getAttribute("disabled"), "", "cmdPaste is enabled");
 
   info("Closing context menu");
   let onContextMenuHidden = once(searchContextMenu, "popuphidden");
