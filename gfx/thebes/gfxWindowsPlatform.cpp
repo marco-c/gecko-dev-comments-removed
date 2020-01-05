@@ -1217,6 +1217,14 @@ gfxWindowsPlatform::SetupClearTypeParams()
             }
         }
 
+        if (GetDefaultContentBackend() == BackendType::SKIA) {
+          
+          if (contrast < 0.0 || contrast > 1.0) {
+            NS_WARNING("Custom dwrite contrast not supported in Skia. Defaulting to 1.0.");
+            contrast = 1.0;
+          }
+        }
+
         
         
         if (gamma < 1.0 || gamma > 2.2) {
