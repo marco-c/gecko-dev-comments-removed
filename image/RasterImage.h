@@ -323,7 +323,6 @@ private:
     return (mLockCount == 0 || (mAnimationState && mAnimationConsumers == 0));
   }
 
-
   
   
   
@@ -423,11 +422,12 @@ private:
   NotNull<RefPtr<SourceBuffer>>  mSourceBuffer;
 
   
-  bool                       mHasSize:1;       
-  bool                       mTransient:1;     
-  bool                       mSyncLoad:1;      
-  bool                       mDiscardable:1;   
-  bool                       mHasSourceData:1; 
+  bool                       mHasSize:1;        
+  bool                       mTransient:1;      
+  bool                       mSyncLoad:1;       
+  bool                       mDiscardable:1;    
+  bool                       mSomeSourceData:1; 
+  bool                       mAllSourceData:1;  
   bool                       mHasBeenDecoded:1; 
 
   
