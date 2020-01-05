@@ -690,6 +690,7 @@ SetupContextMatrix(nsIFrame* aFrame, const PaintFramesParams& aParams,
   
   
   
+  
 
   gfxPoint toUserSpaceGfx = nsSVGUtils::FrameSpaceInCSSPxToUserSpaceOffset(aFrame);
   nsPoint toUserSpace =
@@ -946,7 +947,7 @@ nsSVGIntegrationUtils::PaintMaskAndClipPath(const PaintFramesParams& aParams)
   RefPtr<gfxContext> oldCtx = basic->GetTarget();
   basic->SetTarget(target);
   aParams.layerManager->EndTransaction(FrameLayerBuilder::DrawPaintedLayer,
-                                        aParams.builder);
+                                       aParams.builder);
   basic->SetTarget(oldCtx);
 
   if (shouldApplyClipPath || shouldApplyBasicShape) {

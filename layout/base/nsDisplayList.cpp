@@ -6832,18 +6832,22 @@ bool nsDisplayMask::TryMerge(nsDisplayItem* aItem)
   
   
   
-  if (aItem->Frame()->GetContent() != mFrame->GetContent())
+  if (aItem->Frame()->GetContent() != mFrame->GetContent()) {
     return false;
-  if (aItem->GetClip() != GetClip())
+  }
+  if (aItem->GetClip() != GetClip()) {
     return false;
-  if (aItem->ScrollClip() != ScrollClip())
+  }
+  if (aItem->ScrollClip() != ScrollClip()) {
     return false;
+  }
 
   
   
   const nsStyleSVGReset *style = mFrame->StyleSVGReset();
-  if (style->mMask.HasLayerWithImage())
+  if (style->mMask.HasLayerWithImage()) {
     return false;
+  }
 
   nsDisplayMask* other = static_cast<nsDisplayMask*>(aItem);
   MergeFromTrackingMergedFrames(other);
@@ -6894,7 +6898,7 @@ nsDisplayMask::GetLayerState(nsDisplayListBuilder* aBuilder,
 }
 
 bool nsDisplayMask::ComputeVisibility(nsDisplayListBuilder* aBuilder,
-                                              nsRegion* aVisibleRegion) 
+                                      nsRegion* aVisibleRegion)
 {
   
   
