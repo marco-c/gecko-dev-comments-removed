@@ -132,7 +132,7 @@ public:
   }
 
   void Tick() override;
-  void QueueEvents();
+  void QueueEvents(StickyTimeDuration aActiveTime = StickyTimeDuration());
 
   bool IsStylePaused() const { return mIsStylePaused; }
 
@@ -160,6 +160,10 @@ public:
   
   
   bool IsTiedToMarkup() const { return mOwningElement.IsSet(); }
+
+  void MaybeQueueCancelEvent(StickyTimeDuration aActiveTime) override {
+    QueueEvents(aActiveTime);
+  }
 
 protected:
   virtual ~CSSAnimation()

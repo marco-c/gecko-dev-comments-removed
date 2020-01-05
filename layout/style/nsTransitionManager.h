@@ -233,9 +233,6 @@ protected:
 
 
   enum class TransitionPhase;
-  
-  
-  TransitionPhase GetTransitionPhaseWithoutEffect() const;
 
   
   
