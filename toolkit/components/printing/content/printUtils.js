@@ -237,10 +237,7 @@ var PrintUtils = {
 
       
       
-      if (this._webProgressPP && this._webProgressPP.value) {
-        this._webProgressPP.value.onStateChange(null, null,
-          Components.interfaces.nsIWebProgressListener.STATE_STOP, 0);
-      }
+      this.ensureProgressDialogClosed();
     }
 
     this._webProgressPP = {};
@@ -706,6 +703,8 @@ var PrintUtils = {
 
     this.setSimplifiedMode(false);
 
+    this.ensureProgressDialogClosed();
+
     this._listener.onExit();
   },
 
@@ -746,7 +745,18 @@ var PrintUtils = {
       aEvent.preventDefault();
       aEvent.stopPropagation();
     }
-  }
+  },
+
+  
+
+
+
+  ensureProgressDialogClosed() {
+    if (this._webProgressPP && this._webProgressPP.value) {
+      this._webProgressPP.value.onStateChange(null, null,
+        Components.interfaces.nsIWebProgressListener.STATE_STOP, 0);
+    }
+  },
 }
 
 PrintUtils.init();
