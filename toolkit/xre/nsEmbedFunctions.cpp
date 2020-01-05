@@ -338,6 +338,30 @@ AddContentSandboxLevelAnnotation()
 #endif 
 #endif 
 
+namespace {
+
+int GetDebugChildPauseTime() {
+  auto pauseStr = PR_GetEnv("MOZ_DEBUG_CHILD_PAUSE");
+  if (pauseStr && *pauseStr) {
+    int pause = atoi(pauseStr);
+    if (pause != 1) { 
+#if defined(OS_WIN)
+      pause *= 1000; 
+#endif
+      return pause;
+    }
+  }
+#ifdef OS_POSIX
+  return 30; 
+#elif defined(OS_WIN)
+  return 10000; 
+#else
+  return 0;
+#endif
+}
+
+} 
+
 nsresult
 XRE_InitChildProcess(int aArgc,
                      char* aArgv[],
@@ -543,7 +567,7 @@ XRE_InitChildProcess(int aArgc,
 #endif
     printf_stderr("\n\nCHILDCHILDCHILDCHILD\n  debug me @ %d\n\n",
                   base::GetCurrentProcId());
-    sleep(30);
+    sleep(GetDebugChildPauseTime());
   }
 #elif defined(OS_WIN)
   if (PR_GetEnv("MOZ_DEBUG_CHILD_PROCESS")) {
@@ -553,7 +577,7 @@ XRE_InitChildProcess(int aArgc,
   } else if (PR_GetEnv("MOZ_DEBUG_CHILD_PAUSE")) {
     printf_stderr("\n\nCHILDCHILDCHILDCHILD\n  debug me @ %d\n\n",
                   base::GetCurrentProcId());
-    ::Sleep(10000);
+    ::Sleep(GetDebugChildPauseTime());
   }
 #endif
 
