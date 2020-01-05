@@ -1670,7 +1670,6 @@ public class GeckoAppShell
         public GeckoProfile getProfile();
         public Activity getActivity();
         public String getDefaultUAString();
-        public void doRestart();
 
         
 
