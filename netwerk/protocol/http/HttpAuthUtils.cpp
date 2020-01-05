@@ -71,14 +71,18 @@ MatchesBaseURI(const nsCSubstring &matchScheme,
 
         
         if (!hostName.IsEmpty()) {
-          if (hostName.First() == '.') {
-            if (!StringEndsWith(matchHost, hostName, nsCaseInsensitiveUTF8StringComparator())) {
-              return false;
-            }
-          } else { 
-            if (!matchHost.Equals(hostName, nsCaseInsensitiveUTF8StringComparator())) {
-              return false;
-            }
+          
+
+
+
+
+          if (!StringEndsWith(matchHost, hostName, nsCaseInsensitiveUTF8StringComparator())) {
+            return false;
+          }
+          if (matchHost.Length() > hostName.Length() &&
+              matchHost[matchHost.Length() - hostName.Length() - 1] != '.' &&
+              hostName[0] != '.') {
+            return false;
           }
         }
       }
