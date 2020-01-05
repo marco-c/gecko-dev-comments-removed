@@ -1854,8 +1854,10 @@ function resolveNumberFormatInternals(lazyNumberFormatData) {
 
 
 
-
 function getNumberFormatInternals(obj, methodName) {
+    assert(IsObject(obj), "getNumberFormatInternals called with non-object");
+    assert(IsNumberFormat(obj), "getNumberFormatInternals called with non-NumberFormat");
+
     var internals = getIntlObjectInternals(obj, "NumberFormat", methodName);
     assert(internals.type === "NumberFormat", "bad type escaped getIntlObjectInternals");
 
@@ -1869,6 +1871,25 @@ function getNumberFormatInternals(obj, methodName) {
     setInternalProperties(internals, internalProps);
     return internalProps;
 }
+
+
+
+
+
+function UnwrapNumberFormat(nf, methodName) {
+    
+    if ((!IsObject(nf) || !IsNumberFormat(nf)) && nf instanceof GetNumberFormatConstructor()) {
+        nf = nf[intlFallbackSymbol()];
+    }
+
+    
+    if (!IsObject(nf) || !IsNumberFormat(nf))
+        ThrowTypeError(JSMSG_INTL_OBJECT_NOT_INITED, "NumberFormat", methodName, "NumberFormat");
+
+    
+    return nf;
+}
+
 
 
 
@@ -1920,12 +1941,13 @@ function SetNumberFormatDigitOptions(lazyData, options, mnfdDefault, mxfdDefault
 
 
 
-function InitializeNumberFormat(numberFormat, locales, options) {
-    assert(IsObject(numberFormat), "InitializeNumberFormat");
+function InitializeNumberFormat(numberFormat, thisValue, locales, options) {
+    assert(IsObject(numberFormat), "InitializeNumberFormat called with non-object");
+    assert(IsNumberFormat(numberFormat), "InitializeNumberFormat called with non-NumberFormat");
 
     
-    if (isInitializedIntlObject(numberFormat))
-        ThrowTypeError(JSMSG_INTL_OBJECT_REINITED);
+    
+    assert(!isInitializedIntlObject(numberFormat), "numberFormat mustn't be initialized");
 
     
     var internals = initializeIntlObject(numberFormat);
@@ -2031,6 +2053,18 @@ function InitializeNumberFormat(numberFormat, locales, options) {
     
     
     setLazyData(internals, "NumberFormat", lazyNumberFormatData);
+
+    if (numberFormat !== thisValue && thisValue instanceof GetNumberFormatConstructor()) {
+        if (!IsObject(thisValue))
+            ThrowTypeError(JSMSG_NOT_NONNULL_OBJECT, typeof thisValue);
+
+        _DefineDataProperty(thisValue, intlFallbackSymbol(), numberFormat,
+                            ATTR_NONENUMERABLE | ATTR_NONCONFIGURABLE | ATTR_NONWRITABLE);
+
+        return thisValue;
+    }
+
+    return numberFormat;
 }
 
 
@@ -2128,7 +2162,9 @@ function numberFormatFormatToBind(value) {
 
 function Intl_NumberFormat_format_get() {
     
-    var internals = getNumberFormatInternals(this, "format");
+    var nf = UnwrapNumberFormat(this, "format");
+
+    var internals = getNumberFormatInternals(nf, "format");
 
     
     if (internals.boundFormat === undefined) {
@@ -2136,9 +2172,10 @@ function Intl_NumberFormat_format_get() {
         var F = numberFormatFormatToBind;
 
         
-        var bf = callFunction(FunctionBind, F, this);
+        var bf = callFunction(FunctionBind, F, nf);
         internals.boundFormat = bf;
     }
+
     
     return internals.boundFormat;
 }
@@ -2147,7 +2184,7 @@ _SetCanonicalName(Intl_NumberFormat_format_get, "get format");
 
 function Intl_NumberFormat_formatToParts(value) {
     
-    var nf = this;
+    var nf = UnwrapNumberFormat(this, "formatToParts");
 
     
     getNumberFormatInternals(nf, "formatToParts");
@@ -2167,7 +2204,9 @@ function Intl_NumberFormat_formatToParts(value) {
 
 function Intl_NumberFormat_resolvedOptions() {
     
-    var internals = getNumberFormatInternals(this, "resolvedOptions");
+    var nf = UnwrapNumberFormat(this, "resolvedOptions");
+
+    var internals = getNumberFormatInternals(nf, "resolvedOptions");
 
     var result = {
         locale: internals.locale,
