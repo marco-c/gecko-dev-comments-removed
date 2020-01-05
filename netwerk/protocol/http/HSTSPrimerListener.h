@@ -49,7 +49,13 @@ enum HSTSPrimingResult {
   
   eHSTS_PRIMING_FAILED_BLOCK      = 7,
   
-  eHSTS_PRIMING_FAILED_ACCEPT     = 8
+  eHSTS_PRIMING_FAILED_ACCEPT     = 8,
+  
+  
+  eHSTS_PRIMING_TIMEOUT_BLOCK     = 9,
+  
+  
+  eHSTS_PRIMING_TIMEOUT_ACCEPT    = 10
 };
 
 
@@ -57,18 +63,17 @@ enum HSTSPrimingResult {
 
 
 class HSTSPrimingListener final : public nsIStreamListener,
-                                  public nsIInterfaceRequestor
+                                  public nsIInterfaceRequestor,
+                                  public nsITimerCallback
 {
 public:
-  explicit HSTSPrimingListener(nsIHstsPrimingCallback* aCallback)
-   : mCallback(aCallback)
-  {
-  }
+  explicit HSTSPrimingListener(nsIHstsPrimingCallback* aCallback);
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSISTREAMLISTENER
   NS_DECL_NSIREQUESTOBSERVER
   NS_DECL_NSIINTERFACEREQUESTOR
+  NS_DECL_NSITIMERCALLBACK
 
 private:
   ~HSTSPrimingListener() {}
@@ -97,9 +102,29 @@ private:
   nsresult CheckHSTSPrimingRequestStatus(nsIRequest* aRequest);
 
   
+  void ReportTiming(nsresult aResult);
+
+  
 
 
   nsCOMPtr<nsIHstsPrimingCallback> mCallback;
+
+  
+
+
+  nsCOMPtr<nsIChannel> mPrimingChannel;
+
+  
+
+
+
+  nsCOMPtr<nsITimer> mHSTSPrimingTimer;
+
+  
+
+
+
+  static uint32_t sHSTSPrimingTimeout;
 };
 
 

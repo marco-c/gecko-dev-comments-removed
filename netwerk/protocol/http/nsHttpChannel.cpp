@@ -8094,19 +8094,24 @@ nsHttpChannel::OnHSTSPrimingFailed(nsresult aError, bool aCached)
 
     LOG(("HSTS Priming Failed [this=%p], %s the load", this,
                 (wouldBlock) ? "blocking" : "allowing"));
-    if (aCached) {
+    if (aError == NS_ERROR_HSTS_PRIMING_TIMEOUT) {
+        
+        Telemetry::Accumulate(Telemetry::MIXED_CONTENT_HSTS_PRIMING_RESULT,
+                (wouldBlock) ?  HSTSPrimingResult::eHSTS_PRIMING_TIMEOUT_BLOCK :
+                HSTSPrimingResult::eHSTS_PRIMING_TIMEOUT_ACCEPT);
+    } else if (aCached) {
         
         
         
         Telemetry::Accumulate(Telemetry::MIXED_CONTENT_HSTS_PRIMING_RESULT,
                 (wouldBlock) ?  HSTSPrimingResult::eHSTS_PRIMING_CACHED_BLOCK :
-                                HSTSPrimingResult::eHSTS_PRIMING_CACHED_NO_UPGRADE);
+                HSTSPrimingResult::eHSTS_PRIMING_CACHED_NO_UPGRADE);
     } else {
         
         
         Telemetry::Accumulate(Telemetry::MIXED_CONTENT_HSTS_PRIMING_RESULT,
                 (wouldBlock) ?  HSTSPrimingResult::eHSTS_PRIMING_FAILED_BLOCK :
-                                HSTSPrimingResult::eHSTS_PRIMING_FAILED_ACCEPT);
+                HSTSPrimingResult::eHSTS_PRIMING_FAILED_ACCEPT);
     }
 
     

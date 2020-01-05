@@ -47,6 +47,7 @@ var test_settings = {
     use_hsts: true,
     send_hsts_priming: true,
     type: 'script',
+    timeout: 0,
     result: {
       'no-ssl': 'insecure',
       'reject-upgrade': 'insecure',
@@ -60,6 +61,7 @@ var test_settings = {
     use_hsts: true,
     send_hsts_priming: true,
     type: 'script',
+    timeout: 0,
     result: {
       'no-ssl': 'blocked',
       'reject-upgrade': 'blocked',
@@ -74,6 +76,7 @@ var test_settings = {
     use_hsts: false,
     send_hsts_priming: true,
     type: 'script',
+    timeout: 0,
     result: {
       'no-ssl': 'blocked',
       'reject-upgrade': 'blocked',
@@ -87,6 +90,7 @@ var test_settings = {
     use_hsts: true,
     send_hsts_priming: true,
     type: 'img',
+    timeout: 0,
     result: {
       'no-ssl': 'insecure',
       'reject-upgrade': 'insecure',
@@ -100,6 +104,7 @@ var test_settings = {
     use_hsts: true,
     send_hsts_priming: true,
     type: 'img',
+    timeout: 0,
     result: {
       'no-ssl': 'blocked',
       'reject-upgrade': 'blocked',
@@ -109,10 +114,11 @@ var test_settings = {
   
   block_active_css: {
     block_active: true,
-    block_display: false,
+    block_display: true,
     use_hsts: true,
     send_hsts_priming: true,
     type: 'css',
+    timeout: 0,
     result: {
       'no-ssl': 'blocked',
       'reject-upgrade': 'blocked',
@@ -128,17 +134,67 @@ var test_settings = {
     send_hsts_priming: true,
     type: 'script',
     redir: 'same',
+    timeout: 0,
     result: {
       'no-ssl': 'blocked',
       'reject-upgrade': 'blocked',
       'prime-hsts': 'secure',
     },
   },
+  
+  
+  timeout: {
+    block_active: true,
+    block_display: true,
+    use_hsts: true,
+    send_hsts_priming: true,
+    type: 'script',
+    timeout: 100000,
+    result: {
+      'no-ssl': 'blocked',
+      'reject-upgrade': 'blocked',
+      'prime-hsts': 'blocked',
+    },
+  },
 }
 
 var which_test = "";
 
-const Observer = {
+
+
+
+var StreamListener = function(subject) {
+  let channel = subject.QueryInterface(Ci.nsIHttpChannel);
+  let traceable = subject.QueryInterface(Ci.nsITraceableChannel);
+
+  this.uri = channel.URI.asciiSpec;
+  this.listener = traceable.setNewListener(this);
+  return this;
+};
+
+
+
+StreamListener.prototype.onDataAvailable = function(request, context, input, offset, count) {
+  let listener = this.listener;
+  listener.onDataAvailable(request, context, input, offset, count);
+};
+
+
+
+StreamListener.prototype.onStartRequest = function(request, context) {
+  let listener = this.listener;
+  listener.onStartRequest(request, context);
+};
+
+
+
+StreamListener.prototype.onStopRequest = function(request, context, status) {
+  let listener = this.listener;
+  listener.onStopRequest(request, context, status);
+};
+
+var Observer = {
+  listeners: {},
   observe: function (subject, topic, data) {
     switch (topic) {
       case 'console-api-log-event':
@@ -191,16 +247,26 @@ const Observer = {
   },
   http_on_modify_request: function (subject, topic, data) {
     let channel = subject.QueryInterface(Ci.nsIHttpChannel);
-    if (channel.requestMethod != 'HEAD') {
-      return;
-    }
+    let uri = channel.URI.asciiSpec;
 
     let curTest = this.get_current_test(channel.URI.asciiSpec);
 
     if (!curTest) {
       return;
     }
+    
+    if (!(uri in this.listeners)) {
+      
+      this.listeners[uri] = new StreamListener(subject);
+    }
 
+    if (channel.requestMethod != 'HEAD') {
+      return;
+    }
+    if (typeof ok === 'undefined') {
+      
+      return;
+    }
     ok(!(curTest.id in test_settings[which_test].priming), "Already saw a priming request for " + curTest.id);
     test_settings[which_test].priming[curTest.id] = true;
   },
@@ -209,6 +275,7 @@ const Observer = {
   http_on_examine_response: function (subject, topic, data) {
     let channel = subject.QueryInterface(Ci.nsIHttpChannel);
     let curTest = this.get_current_test(channel.URI.asciiSpec);
+    let uri = channel.URI.asciiSpec;
 
     if (!curTest) {
       return;
@@ -227,6 +294,9 @@ const Observer = {
     is(result, test_settings[which_test].result[curTest.id],
         "HSTS priming result " + which_test + ":" + curTest.id);
     test_settings[which_test].finished[curTest.id] = result;
+    if (this.listeners[uri]) {
+      this.listeners[uri] = undefined;
+    }
   },
 };
 
@@ -272,7 +342,8 @@ function SetupPrefTestEnvironment(which, additional_prefs) {
                ["security.mixed_content.use_hsts",
                 settings.use_hsts],
                ["security.mixed_content.send_hsts_priming",
-                settings.send_hsts_priming]];
+                settings.send_hsts_priming],
+  ];
 
   if (additional_prefs) {
     for (let idx in additional_prefs) {
@@ -280,23 +351,24 @@ function SetupPrefTestEnvironment(which, additional_prefs) {
     }
   }
 
-  console.log("prefs=%s", prefs);
-
   SpecialPowers.pushPrefEnv({'set': prefs});
 }
 
 
-function build_test_uri(base_uri, host, test_id, type) {
+function build_test_uri(base_uri, host, test_id, type, timeout) {
   return base_uri +
           "?host=" + escape(host) +
           "&id=" + escape(test_id) +
-          "&type=" + escape(type);
+          "&type=" + escape(type) +
+          "&timeout=" + escape(timeout)
+    ;
 }
 
 
 function execute_test(test, mimetype) {
   var src = build_test_uri(TOP_URI, test_servers[test].host,
-      test, test_settings[which_test].type);
+      test, test_settings[which_test].type,
+      test_settings[which_test].timeout);
 
   let tab = openTab(src);
   test_servers[test]['tab'] = tab;
