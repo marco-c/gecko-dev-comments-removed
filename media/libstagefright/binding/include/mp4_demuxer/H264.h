@@ -7,8 +7,7 @@
 
 #include "mp4_demuxer/DecoderData.h"
 
-namespace mp4_demuxer
-{
+namespace mp4_demuxer {
 
 class BitReader;
 
@@ -94,6 +93,18 @@ struct SPSData
 
 
   bool separate_colour_plane_flag;
+
+
+
+
+
+
+
+
+
+
+
+  bool seq_scaling_matrix_present_flag;
 
   
 
@@ -208,7 +219,7 @@ struct SPSData
 
 
   bool frame_cropping_flag;
-  uint32_t frame_crop_left_offset;;
+  uint32_t frame_crop_left_offset;
   uint32_t frame_crop_right_offset;
   uint32_t frame_crop_top_offset;
   uint32_t frame_crop_bottom_offset;
@@ -325,30 +336,223 @@ struct SPSData
   uint32_t time_scale;
   bool fixed_frame_rate_flag;
 
+  bool scaling_matrix_present;
+  uint8_t scaling_matrix4x4[6][16];
+  uint8_t scaling_matrix8x8[6][64];
+
   SPSData();
+};
+
+struct PPSData
+{
+  
+
+
+
+
+  
+
+
+  uint8_t pic_parameter_set_id;
+
+  
+
+  uint8_t seq_parameter_set_id;
+
+  
+
+
+
+
+
+
+
+
+  bool entropy_coding_mode_flag;
+
+  
+
+
+
+
+
+
+
+  bool bottom_field_pic_order_in_frame_present_flag;
+
+  
+
+
+
+  uint8_t num_slice_groups_minus1;
+
+  
+
+
+  uint8_t slice_group_map_type;
+
+  
+
+
+
+  uint32_t run_length_minus1[8];
+
+  
+
+
+
+
+
+
+
+
+
+  uint32_t top_left[8];
+  uint32_t bottom_right[8];
+
+  
+
+  bool slice_group_change_direction_flag;
+
+  
+
+
+
+
+
+
+  uint32_t slice_group_change_rate_minus1;
+
+  
+
+
+  uint32_t pic_size_in_map_units_minus1;
+
+  
+
+
+
+
+  uint8_t num_ref_idx_l0_default_active_minus1;
+
+  
+
+
+
+
+  uint8_t num_ref_idx_l1_default_active_minus1;
+
+  
+
+
+
+  bool weighted_pred_flag;
+
+  
+
+
+
+
+
+  uint8_t weighted_bipred_idc;
+
+  
+
+
+
+
+
+  int8_t pic_init_qp_minus26;
+
+  
+
+
+
+
+  int8_t pic_init_qs_minus26;
+
+  
+
+
+
+  int8_t chroma_qp_index_offset;
+
+  
+
+
+
+
+
+  bool deblocking_filter_control_present_flag;
+
+  
+
+
+
+
+
+
+
+  bool constrained_intra_pred_flag;
+
+  
+
+
+
+
+
+
+
+
+
+  bool redundant_pic_cnt_present_flag;
+
+  
+
+
+
+
+  bool transform_8x8_mode_flag;
+
+  
+
+
+
+
+
+
+  int8_t second_chroma_qp_index_offset;
+
+  uint8_t scaling_matrix4x4[6][16];
+  uint8_t scaling_matrix8x8[6][64];
+
+  PPSData();
 };
 
 class H264
 {
 public:
-  static bool DecodeSPSFromExtraData(const mozilla::MediaByteBuffer* aExtraData, SPSData& aDest);
+  static bool DecodeSPSFromExtraData(const mozilla::MediaByteBuffer* aExtraData,
+                                     SPSData& aDest);
 
   
 
 
 
-  static already_AddRefed<mozilla::MediaByteBuffer> DecodeNALUnit(const mozilla::MediaByteBuffer* aNAL);
-
-  
-  static bool DecodeSPS(const mozilla::MediaByteBuffer* aSPS, SPSData& aDest);
+  static already_AddRefed<mozilla::MediaByteBuffer> DecodeNALUnit(
+    const mozilla::MediaByteBuffer* aNAL);
 
   
   
   static bool EnsureSPSIsSane(SPSData& aSPS);
 
+  static bool DecodePPSFromExtraData(const mozilla::MediaByteBuffer* aExtraData,
+                                     const SPSData& aSPS, PPSData& aDest);
+
   
   
-  static uint32_t ComputeMaxRefFrames(const mozilla::MediaByteBuffer* aExtraData);
+  static uint32_t ComputeMaxRefFrames(
+    const mozilla::MediaByteBuffer* aExtraData);
 
   enum class FrameType
   {
@@ -361,7 +565,20 @@ public:
   
   static FrameType GetFrameType(const mozilla::MediaRawData* aSample);
 
+  
+  
+  
+  
+  
+  static const uint8_t ZZ_SCAN[16];
+  static const uint8_t ZZ_SCAN8[64];
+
 private:
+  
+  static bool DecodeSPS(const mozilla::MediaByteBuffer* aSPS, SPSData& aDest);
+  
+  static bool DecodePPS(const mozilla::MediaByteBuffer* aPPS, const SPSData& aSPS,
+                        PPSData& aDest);
   static void vui_parameters(BitReader& aBr, SPSData& aDest);
   
   static void hrd_parameters(BitReader& aBr);
