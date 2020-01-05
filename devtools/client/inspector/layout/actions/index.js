@@ -9,6 +9,9 @@ const { createEnum } = require("devtools/client/shared/enum");
 createEnum([
 
   
+  "UPDATE_GRID_HIGHLIGHTED",
+
+  
   "UPDATE_GRIDS",
 
 ], module.exports);

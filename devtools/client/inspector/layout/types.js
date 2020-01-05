@@ -15,9 +15,12 @@ exports.grid = {
   id: PropTypes.number,
 
   
-  nodeFront: PropTypes.object,
+  gridFragments: PropTypes.object,
 
   
-  gridFragments: PropTypes.object
+  highlighted: PropTypes.bool,
+
+  
+  nodeFront: PropTypes.object,
 
 };

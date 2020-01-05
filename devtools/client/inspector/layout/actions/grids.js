@@ -4,9 +4,28 @@
 
 "use strict";
 
-const { UPDATE_GRIDS } = require("./index");
+const {
+  UPDATE_GRID_HIGHLIGHTED,
+  UPDATE_GRIDS,
+} = require("./index");
 
 module.exports = {
+
+  
+
+
+
+
+
+
+
+  updateGridHighlighted(nodeFront, highlighted) {
+    return {
+      type: UPDATE_GRID_HIGHLIGHTED,
+      nodeFront,
+      highlighted,
+    };
+  },
 
   
 
