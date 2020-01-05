@@ -411,22 +411,6 @@ private:
   nsPoint mOffset;
 };
 
-
-
-
-static bool
-HasNonSVGMask(const nsTArray<nsSVGMaskFrame *>& aMaskFrames)
-{
-  for (size_t i = 0; i < aMaskFrames.Length() ; i++) {
-    nsSVGMaskFrame *maskFrame = aMaskFrames[i];
-    if (!maskFrame) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
 typedef nsSVGIntegrationUtils::PaintFramesParams PaintFramesParams;
 
 static DrawResult
@@ -492,7 +476,14 @@ GenerateMaskSurface(const PaintFramesParams& aParams,
   
   
   
-  aOpacityApplied = !HasNonSVGMask(aMaskFrames);
+  aOpacityApplied = true;
+  for (size_t i = 0; i < aMaskFrames.Length() ; i++) {
+    nsSVGMaskFrame *maskFrame = aMaskFrames[i];
+    if (!maskFrame) {
+      aOpacityApplied = false;
+      break;
+    }
+  }
 
   
   
@@ -765,11 +756,12 @@ nsSVGIntegrationUtils::PaintMaskAndClipPath(const PaintFramesParams& aParams)
       
       
       SetupContextMatrix(frame, aParams, offsetToBoundingBox,
-                         offsetToUserSpace, false);
+                         offsetToUserSpace, true);
       result = GenerateMaskSurface(aParams, opacity,
                                   firstFrame->StyleContext(),
                                   maskFrames, offsetToUserSpace,
                                   maskTransform, maskSurface, opacityApplied);
+      context.PopClip();
       if (!maskSurface) {
         
         return result;
