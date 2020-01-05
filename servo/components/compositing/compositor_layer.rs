@@ -14,7 +14,7 @@ use geom::matrix::identity;
 use geom::point::{Point2D, TypedPoint2D};
 use geom::size::{Size2D, TypedSize2D};
 use geom::rect::Rect;
-use gfx::render_task::UnusedBufferMsg;
+use gfx::paint_task::UnusedBufferMsg;
 use layers::color::Color;
 use layers::geometry::LayerPixel;
 use layers::layers::{Layer, LayerBufferSet};
@@ -194,7 +194,7 @@ impl CompositorLayer for Layer<CompositorData> {
                    epoch,
                    self.extra_data.borrow().pipeline.id);
             let msg = UnusedBufferMsg(new_buffers.buffers);
-            let _ = self.extra_data.borrow().pipeline.render_chan.send_opt(msg);
+            let _ = self.extra_data.borrow().pipeline.paint_chan.send_opt(msg);
             return false;
         }
 
@@ -206,7 +206,7 @@ impl CompositorLayer for Layer<CompositorData> {
             let unused_buffers = self.collect_unused_buffers();
             if !unused_buffers.is_empty() { 
                 let msg = UnusedBufferMsg(unused_buffers);
-                let _ = self.extra_data.borrow().pipeline.render_chan.send_opt(msg);
+                let _ = self.extra_data.borrow().pipeline.paint_chan.send_opt(msg);
             }
         }
 
@@ -224,7 +224,7 @@ impl CompositorLayer for Layer<CompositorData> {
                 buffer.mark_wont_leak()
             }
 
-            let _ = self.extra_data.borrow().pipeline.render_chan.send_opt(UnusedBufferMsg(buffers));
+            let _ = self.extra_data.borrow().pipeline.paint_chan.send_opt(UnusedBufferMsg(buffers));
         }
     }
 

@@ -12,7 +12,7 @@ use geom::size::TypedSize2D;
 use layers::geometry::DevicePixel;
 use layers::platform::surface::NativeGraphicsMetadata;
 use servo_msg::constellation_msg::{Key, KeyState, KeyModifiers};
-use servo_msg::compositor_msg::{ReadyState, RenderState};
+use servo_msg::compositor_msg::{ReadyState, PaintState};
 use servo_util::geometry::ScreenPx;
 use std::fmt::{FormatError, Formatter, Show};
 use std::rc::Rc;
@@ -91,7 +91,7 @@ pub trait WindowMethods {
     
     fn set_ready_state(&self, ready_state: ReadyState);
     
-    fn set_render_state(&self, render_state: RenderState);
+    fn set_paint_state(&self, paint_state: PaintState);
 
     
     fn hidpi_factor(&self) -> ScaleFactor<ScreenPx, DevicePixel, f32>;

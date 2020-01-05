@@ -14,9 +14,9 @@ use constellation_msg::PipelineId;
 
 
 #[deriving(PartialEq, Clone)]
-pub enum RenderState {
-    IdleRenderState,
-    RenderingRenderState,
+pub enum PaintState {
+    IdlePaintState,
+    PaintingPaintState,
 }
 
 #[deriving(Eq, Ord, PartialEq, PartialOrd, Clone)]
@@ -83,7 +83,7 @@ pub struct LayerMetadata {
 
 
 
-pub trait RenderListener for Sized? {
+pub trait PaintListener for Sized? {
     fn get_graphics_metadata(&mut self) -> Option<NativeGraphicsMetadata>;
 
     
@@ -99,8 +99,8 @@ pub trait RenderListener for Sized? {
              epoch: Epoch,
              replies: Vec<(LayerId, Box<LayerBufferSet>)>);
 
-    fn render_msg_discarded(&mut self);
-    fn set_render_state(&mut self, PipelineId, RenderState);
+    fn paint_msg_discarded(&mut self);
+    fn set_paint_state(&mut self, PipelineId, PaintState);
 }
 
 

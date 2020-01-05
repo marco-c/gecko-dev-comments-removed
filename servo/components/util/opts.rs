@@ -34,7 +34,7 @@ pub struct Opts {
     
     
     
-    pub n_render_threads: uint,
+    pub n_paint_threads: uint,
 
     
     
@@ -156,7 +156,7 @@ static FORCE_CPU_PAINTING: bool = false;
 pub fn default_opts() -> Opts {
     Opts {
         urls: vec!(),
-        n_render_threads: 1,
+        n_paint_threads: 1,
         gpu_painting: false,
         tile_size: 512,
         device_pixels_per_px: None,
@@ -194,7 +194,7 @@ pub fn from_cmdline_args(args: &[String]) -> bool {
         getopts::optopt("s", "size", "Size of tiles", "512"),
         getopts::optopt("", "device-pixel-ratio", "Device pixels per px", ""),
         getopts::optflag("e", "experimental", "Enable experimental web features"),
-        getopts::optopt("t", "threads", "Number of render threads", "1"),
+        getopts::optopt("t", "threads", "Number of paint threads", "1"),
         getopts::optflagopt("p", "profile", "Profiler flag and output interval", "10"),
         getopts::optflagopt("m", "memory-profile", "Memory profiler flag and output interval", "10"),
         getopts::optflag("x", "exit", "Exit after load flag"),
@@ -253,8 +253,8 @@ pub fn from_cmdline_args(args: &[String]) -> bool {
         ScaleFactor(from_str(dppx_str.as_slice()).unwrap())
     );
 
-    let mut n_render_threads: uint = match opt_match.opt_str("t") {
-        Some(n_render_threads_str) => from_str(n_render_threads_str.as_slice()).unwrap(),
+    let mut n_paint_threads: uint = match opt_match.opt_str("t") {
+        Some(n_paint_threads_str) => from_str(n_paint_threads_str.as_slice()).unwrap(),
         None => 1,      
     };
 
@@ -278,7 +278,7 @@ pub fn from_cmdline_args(args: &[String]) -> bool {
     let mut bubble_inline_sizes_separately = debug_options.contains(&"bubble-widths");
     let trace_layout = debug_options.contains(&"trace-layout");
     if trace_layout {
-        n_render_threads = 1;
+        n_paint_threads = 1;
         layout_threads = 1;
         bubble_inline_sizes_separately = true;
     }
@@ -308,7 +308,7 @@ pub fn from_cmdline_args(args: &[String]) -> bool {
 
     let opts = Opts {
         urls: urls,
-        n_render_threads: n_render_threads,
+        n_paint_threads: n_paint_threads,
         gpu_painting: gpu_painting,
         tile_size: tile_size,
         device_pixels_per_px: device_pixels_per_px,

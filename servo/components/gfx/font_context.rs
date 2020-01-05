@@ -52,7 +52,7 @@ struct FallbackFontCacheEntry {
 
 
 
-struct RenderFontCacheEntry {
+struct PaintFontCacheEntry {
     pt_size: Au,
     identifier: String,
     font: Rc<RefCell<ScaledFont>>,
@@ -72,7 +72,7 @@ pub struct FontContext {
 
     
     
-    render_font_cache: Vec<RenderFontCacheEntry>,
+    paint_font_cache: Vec<PaintFontCacheEntry>,
 
     last_style: Option<Arc<SpecifiedFontStyle>>,
     last_fontgroup: Option<Rc<FontGroup>>,
@@ -86,7 +86,7 @@ impl FontContext {
             font_cache_task: font_cache_task,
             layout_font_cache: vec!(),
             fallback_font_cache: vec!(),
-            render_font_cache: vec!(),
+            paint_font_cache: vec!(),
             last_style: None,
             last_fontgroup: None,
         }
@@ -229,24 +229,24 @@ impl FontContext {
 
     
     
-    pub fn get_render_font_from_template(&mut self,
+    pub fn get_paint_font_from_template(&mut self,
                                          template: &Arc<FontTemplateData>,
                                          pt_size: Au)
                                          -> Rc<RefCell<ScaledFont>> {
-        for cached_font in self.render_font_cache.iter() {
+        for cached_font in self.paint_font_cache.iter() {
             if cached_font.pt_size == pt_size &&
                cached_font.identifier == template.identifier {
                 return cached_font.font.clone();
             }
         }
 
-        let render_font = Rc::new(RefCell::new(create_scaled_font(template, pt_size)));
-        self.render_font_cache.push(RenderFontCacheEntry{
-            font: render_font.clone(),
+        let paint_font = Rc::new(RefCell::new(create_scaled_font(template, pt_size)));
+        self.paint_font_cache.push(PaintFontCacheEntry{
+            font: paint_font.clone(),
             pt_size: pt_size,
             identifier: template.identifier.clone(),
         });
-        render_font
+        paint_font
     }
 
     
