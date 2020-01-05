@@ -44,9 +44,6 @@ this.l10n = {};
 
 l10n.localizeEntity = function (urls, id) {
   
-  urls.push("resource:///res/dtd/xhtml11.dtd");
-
-  
   let locations = [];
   urls.forEach((url, index) => {
     locations.push(`<!ENTITY % dtd_${index} SYSTEM "${url}">%dtd_${index};`);
