@@ -252,6 +252,8 @@ var whitelist = new Set([
   
   {file: "resource://gre/modules/Sntp.jsm"},
   
+  {file: "resource://gre/modules/UserAgentOverrides.jsm"},
+  
   {file: "resource://gre/modules/accessibility/AccessFu.jsm"},
   
   {file: "resource://gre/modules/addons/AddonLogging.jsm"},
