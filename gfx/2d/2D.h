@@ -63,6 +63,7 @@ namespace mozilla {
 
 namespace gfx {
 
+class ScaledFont;
 class SourceSurface;
 class DataSourceSurface;
 class DrawTarget;
@@ -711,6 +712,25 @@ public:
 
   static uint32_t DeletionCounter() { return sDeletionCounter; }
 
+  typedef void (*FontFileDataOutput)(const uint8_t *aData, uint32_t aLength, uint32_t aIndex,
+                                     void *aBaton);
+  typedef void (*FontInstanceDataOutput)(const uint8_t* aData, uint32_t aLength, void* aBaton);
+  typedef void (*FontDescriptorOutput)(const uint8_t* aData, uint32_t aLength, void* aBaton);
+
+  virtual bool GetFontFileData(FontFileDataOutput, void *) { return false; }
+
+  virtual bool GetFontInstanceData(FontInstanceDataOutput, void *) { return false; }
+
+  virtual bool GetFontDescriptor(FontDescriptorOutput, void *) { return false; }
+
+  virtual already_AddRefed<ScaledFont>
+    CreateScaledFont(Float aGlyphSize,
+                     const uint8_t* aInstanceData,
+                     uint32_t aInstanceDataLength)
+  {
+    return nullptr;
+  }
+
 protected:
   UnscaledFont() {}
 
@@ -727,17 +747,6 @@ class ScaledFont : public external::AtomicRefCounted<ScaledFont>
 public:
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(ScaledFont)
   virtual ~ScaledFont() {}
-
-  typedef struct {
-    uint32_t mTag;
-    Float    mValue;
-  } VariationSetting;
-
-  typedef void (*FontFileDataOutput)(const uint8_t *aData, uint32_t aLength, uint32_t aIndex, Float aGlyphSize,
-                                     uint32_t aVariationCount, const VariationSetting* aVariations,
-                                     void *aBaton);
-  typedef void (*FontInstanceDataOutput)(const uint8_t* aData, uint32_t aLength, void* aBaton);
-  typedef void (*FontDescriptorOutput)(const uint8_t* aData, uint32_t aLength, Float aFontSize, void* aBaton);
 
   virtual FontType GetType() const = 0;
   virtual Float GetSize() const = 0;
@@ -761,11 +770,14 @@ public:
 
   virtual void GetGlyphDesignMetrics(const uint16_t* aGlyphIndices, uint32_t aNumGlyphs, GlyphMetrics* aGlyphMetrics) = 0;
 
-  virtual bool GetFontFileData(FontFileDataOutput, void *) { return false; }
+  struct VariationSetting {
+    uint32_t mTag;
+    float    mValue;
+  };
+
+  typedef void (*FontInstanceDataOutput)(const uint8_t* aData, uint32_t aLength, void* aBaton);
 
   virtual bool GetFontInstanceData(FontInstanceDataOutput, void *) { return false; }
-
-  virtual bool GetFontDescriptor(FontDescriptorOutput, void *) { return false; }
 
   virtual bool CanSerialize() { return false; }
 
@@ -804,13 +816,12 @@ public:
 
 
 
+  virtual already_AddRefed<UnscaledFont>
+    CreateUnscaledFont(uint32_t aIndex,
+                       const uint8_t* aInstanceData,
+                       uint32_t aInstanceDataLength) = 0;
 
-
-  virtual already_AddRefed<ScaledFont>
-    CreateScaledFont(uint32_t aIndex, Float aGlyphSize,
-                     const uint8_t* aInstanceData, uint32_t aInstanceDataLength) = 0;
-
-  virtual ~NativeFontResource() {};
+  virtual ~NativeFontResource() {}
 };
 
 
@@ -1472,20 +1483,15 @@ public:
 
 
 
-
-
   static already_AddRefed<NativeFontResource>
-    CreateNativeFontResource(uint8_t *aData, uint32_t aSize,
-                             uint32_t aVariationCount,
-                             const ScaledFont::VariationSetting* aVariations,
-                             FontType aType);
+    CreateNativeFontResource(uint8_t *aData, uint32_t aSize, FontType aType);
 
   
 
 
 
-  static already_AddRefed<ScaledFont>
-    CreateScaledFontFromFontDescriptor(FontType aType, const uint8_t* aData, uint32_t aDataLength, Float aSize);
+  static already_AddRefed<UnscaledFont>
+    CreateUnscaledFontFromFontDescriptor(FontType aType, const uint8_t* aData, uint32_t aDataLength);
 
   
 

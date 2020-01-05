@@ -131,6 +131,7 @@ enum class LogReason : int {
   ProcessingError,
   InvalidDrawTarget,
   NativeFontResourceNotFound,
+  UnscaledFontNotFound,
   
   MustBeLessThanThis = 101,
 };

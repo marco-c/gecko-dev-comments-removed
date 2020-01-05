@@ -28,25 +28,22 @@ public:
 
 
 
-
   static already_AddRefed<NativeFontResourceGDI>
-    Create(uint8_t *aFontData, uint32_t aDataLength, bool aNeedsCairo);
+    Create(uint8_t *aFontData, uint32_t aDataLength);
 
   ~NativeFontResourceGDI();
 
-  already_AddRefed<ScaledFont>
-    CreateScaledFont(uint32_t aIndex, Float aGlyphSize,
-                     const uint8_t* aInstanceData, uint32_t aInstanceDataLength) final;
+  already_AddRefed<UnscaledFont>
+    CreateUnscaledFont(uint32_t aIndex,
+                       const uint8_t* aInstanceData,
+                       uint32_t aInstanceDataLength) final;
 
 private:
-  NativeFontResourceGDI(HANDLE aFontResourceHandle,
-                        bool aNeedsCairo)
+  explicit NativeFontResourceGDI(HANDLE aFontResourceHandle)
     : mFontResourceHandle(aFontResourceHandle)
-    , mNeedsCairo(aNeedsCairo)
   {}
 
   HANDLE mFontResourceHandle;
-  bool mNeedsCairo;
 };
 
 } 
