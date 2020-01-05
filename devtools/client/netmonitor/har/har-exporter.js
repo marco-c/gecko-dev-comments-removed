@@ -2,21 +2,12 @@
 
 
 
-
-
 "use strict";
 
-const { Cc, Ci } = require("chrome");
 const Services = require("Services");
-const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
-const { resolve } = require("promise");
+const clipboardHelper = require("devtools/shared/platform/clipboard");
 const { HarUtils } = require("./har-utils.js");
 const { HarBuilder } = require("./har-builder.js");
-
-XPCOMUtils.defineLazyGetter(this, "clipboardHelper", function () {
-  return Cc["@mozilla.org/widget/clipboardhelper;1"]
-    .getService(Ci.nsIClipboardHelper);
-});
 
 var uid = 1;
 
@@ -83,7 +74,7 @@ const HarExporter = {
       options.jsonp, options.compress);
 
     if (!file) {
-      return resolve();
+      return Promise.resolve();
     }
 
     trace.log("HarExporter.save; " + options.defaultFileName, options);
@@ -132,12 +123,12 @@ const HarExporter = {
       
       
       if (!har.log.entries.length && !options.forceExport) {
-        return resolve();
+        return Promise.resolve();
       }
 
       let jsonString = this.stringify(har);
       if (!jsonString) {
-        return resolve();
+        return Promise.resolve();
       }
 
       

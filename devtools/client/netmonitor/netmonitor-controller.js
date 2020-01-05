@@ -4,7 +4,6 @@
 
 "use strict";
 
-const promise = require("promise");
 const Services = require("Services");
 const EventEmitter = require("devtools/shared/event-emitter");
 const { TimelineFront } = require("devtools/shared/fronts/timeline");
@@ -34,14 +33,15 @@ var NetMonitorController = {
 
 
 
-  async startupNetMonitor() {
+  startupNetMonitor() {
     if (this._startup) {
-      return this._startup.promise;
+      return this._startup;
     }
-    this._startup = promise.defer();
-    await this.connect();
-    this._startup.resolve();
-    return undefined;
+    this._startup = new Promise(async (resolve) => {
+      await this.connect();
+      resolve();
+    });
+    return this._startup;
   },
 
   
@@ -50,17 +50,19 @@ var NetMonitorController = {
 
 
 
-  async shutdownNetMonitor() {
+  shutdownNetMonitor() {
     if (this._shutdown) {
-      return this._shutdown.promise;
+      return this._shutdown;
     }
-    this._shutdown = promise.defer();
-    gStore.dispatch(Actions.batchReset());
-    this.TargetEventsHandler.disconnect();
-    this.NetworkEventsHandler.disconnect();
-    await this.disconnect();
-    this._shutdown.resolve();
-    return undefined;
+    this._shutdown = new Promise(async (resolve) => {
+      gStore.dispatch(Actions.batchReset());
+      this.TargetEventsHandler.disconnect();
+      this.NetworkEventsHandler.disconnect();
+      await this.disconnect();
+      resolve();
+    });
+
+    return this._shutdown;
   },
 
   
@@ -72,71 +74,71 @@ var NetMonitorController = {
 
 
 
-  async connect() {
+  connect() {
     if (this._connection) {
-      return this._connection.promise;
+      return this._connection;
     }
-    this._connection = promise.defer();
+    this._connection = new Promise(async (resolve) => {
+      
+      
+      if (this._target.isTabActor) {
+        this.tabClient = this._target.activeTab;
+      }
 
-    
-    
-    if (this._target.isTabActor) {
-      this.tabClient = this._target.activeTab;
+      let connectTimeline = () => {
+        
+        
+        if (this._target.getTrait("documentLoadingMarkers")) {
+          this.timelineFront = new TimelineFront(this._target.client,
+            this._target.form);
+          return this.timelineFront.start({ withDocLoadingEvents: true });
+        }
+        return undefined;
+      };
+
+      this.webConsoleClient = this._target.activeConsole;
+      await connectTimeline();
+
+      this.TargetEventsHandler.connect();
+      this.NetworkEventsHandler.connect();
+
+      window.emit(EVENTS.CONNECTED);
+
+      resolve();
+      this._connected = true;
+    });
+    return this._connection;
+  },
+
+  
+
+
+  disconnect() {
+    if (this._disconnection) {
+      return this._disconnection;
     }
+    this._disconnection = new Promise(async (resolve) => {
+      
+      if (!this.isConnected()) {
+        await this._connection;
+      }
 
-    let connectTimeline = () => {
+      
+      
+      this.tabClient = null;
+      this.webConsoleClient = null;
+
       
       
       if (this._target.getTrait("documentLoadingMarkers")) {
-        this.timelineFront = new TimelineFront(this._target.client,
-          this._target.form);
-        return this.timelineFront.start({ withDocLoadingEvents: true });
+        await this.timelineFront.destroy();
+        this.timelineFront = null;
       }
-      return undefined;
-    };
 
-    this.webConsoleClient = this._target.activeConsole;
-    await connectTimeline();
-
-    this.TargetEventsHandler.connect();
-    this.NetworkEventsHandler.connect();
-
-    window.emit(EVENTS.CONNECTED);
-
-    this._connection.resolve();
-    this._connected = true;
-    return undefined;
-  },
-
-  
-
-
-  async disconnect() {
-    if (this._disconnection) {
-      return this._disconnection.promise;
-    }
-    this._disconnection = promise.defer();
-
-    
-    if (!this.isConnected()) {
-      await this._connection.promise;
-    }
-
-    
-    
-    this.tabClient = null;
-    this.webConsoleClient = null;
-
-    
-    
-    if (this._target.getTrait("documentLoadingMarkers")) {
-      await this.timelineFront.destroy();
-      this.timelineFront = null;
-    }
-
-    this._disconnection.resolve();
-    this._connected = false;
-    return undefined;
+      resolve();
+      this._connected = false;
+    });
+    return this._disconnection;
   },
 
   
@@ -173,20 +175,20 @@ var NetMonitorController = {
 
     
     let waitForNavigation = () => {
-      let deferred = promise.defer();
-      this._target.once("will-navigate", () => {
-        this._target.once("navigate", () => {
-          deferred.resolve();
+      return new Promise((resolve) => {
+        this._target.once("will-navigate", () => {
+          this._target.once("navigate", () => {
+            resolve();
+          });
         });
       });
-      return deferred.promise;
     };
 
     
     let reconfigureTab = options => {
-      let deferred = promise.defer();
-      this._target.activeTab.reconfigure(options, deferred.resolve);
-      return deferred.promise;
+      return new Promise((resolve) => {
+        this._target.activeTab.reconfigure(options, resolve);
+      });
     };
 
     
@@ -233,7 +235,7 @@ var NetMonitorController = {
       }).then(standBy);
     }
     this._currentActivity = ACTIVITY_TYPE.NONE;
-    return promise.reject(new Error("Invalid activity type"));
+    return Promise.reject(new Error("Invalid activity type"));
   },
 
   
@@ -247,30 +249,30 @@ var NetMonitorController = {
   inspectRequest: function (requestId) {
     
     
-    let deferred = promise.defer();
-    let request = null;
-    let inspector = function () {
-      request = getDisplayedRequestById(gStore.getState(), requestId);
-      if (!request) {
-        
-        gStore.dispatch(Actions.toggleRequestFilterType("all"));
+    return new Promise((resolve) => {
+      let request = null;
+      let inspector = function () {
         request = getDisplayedRequestById(gStore.getState(), requestId);
-      }
+        if (!request) {
+          
+          gStore.dispatch(Actions.toggleRequestFilterType("all"));
+          request = getDisplayedRequestById(gStore.getState(), requestId);
+        }
 
-      
-      
-      if (request) {
-        window.off(EVENTS.REQUEST_ADDED, inspector);
-        gStore.dispatch(Actions.selectRequest(request.id));
-        deferred.resolve();
-      }
-    };
+        
+        
+        if (request) {
+          window.off(EVENTS.REQUEST_ADDED, inspector);
+          gStore.dispatch(Actions.selectRequest(request.id));
+          resolve();
+        }
+      };
 
-    inspector();
-    if (!request) {
-      window.on(EVENTS.REQUEST_ADDED, inspector);
-    }
-    return deferred.promise;
+      inspector();
+      if (!request) {
+        window.on(EVENTS.REQUEST_ADDED, inspector);
+      }
+    });
   },
 
   
