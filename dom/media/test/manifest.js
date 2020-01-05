@@ -1612,6 +1612,10 @@ const DEBUG_TEST_LOOP_FOREVER = false;
 function MediaTestManager() {
 
   
+  
+  SimpleTest.requestLongerTimeout(1000);
+
+  
   function elapsedTime(begin) {
     var end = new Date();
     return (end.getTime() - begin.getTime()) / 1000;
@@ -1634,6 +1638,7 @@ function MediaTestManager() {
     this.isShutdown = false;
     this.numTestsRunning = 0;
     this.handlers = {};
+    this.timers = {};
 
     
     SimpleTest.waitForExplicitFinish();
@@ -1660,6 +1665,14 @@ function MediaTestManager() {
     this.tokens.push(token);
     this.numTestsRunning++;
     this.handlers[token] = handler;
+
+    var onTimeout = function() {
+      ok(false, `${token} timed out!`);
+      this.finished(token);
+    }.bind(this);
+    
+    this.timers[token] = setTimeout(onTimeout, 180000);
+
     is(this.numTestsRunning, this.tokens.length,
        "[started " + token + " t=" + elapsedTime(this.startTime) + "] Length of array should match number of running tests");
   }
@@ -1673,6 +1686,12 @@ function MediaTestManager() {
     if (i != -1) {
       
       this.tokens.splice(i, 1);
+    }
+
+    if (this.timers[token]) {
+      
+      clearTimeout(this.timers[token]);
+      this.timers[token] = null;
     }
 
     info("[finished " + token + "] remaining= " + this.tokens);
