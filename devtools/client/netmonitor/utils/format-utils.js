@@ -14,31 +14,30 @@ const MAX_BYTES_SIZE = 1000;
 const MAX_KB_SIZE = 1000 * BYTES_IN_KB;
 const MAX_MB_SIZE = 1000 * BYTES_IN_MB;
 
-const CONTENT_SIZE_DECIMALS = 2;
 
 
 
 
 
 
-
-function getFormattedSize(bytes) {
+function getFormattedSize(bytes, decimals = 2) {
   if (bytes < MAX_BYTES_SIZE) {
     return L10N.getFormatStr("networkMenu.sizeB", bytes);
   } else if (bytes < MAX_KB_SIZE) {
     let kb = bytes / BYTES_IN_KB;
-    let size = L10N.numberWithDecimals(kb, CONTENT_SIZE_DECIMALS);
+    let size = L10N.numberWithDecimals(kb, decimals);
     return L10N.getFormatStr("networkMenu.sizeKB", size);
   } else if (bytes < MAX_MB_SIZE) {
     let mb = bytes / BYTES_IN_MB;
-    let size = L10N.numberWithDecimals(mb, CONTENT_SIZE_DECIMALS);
+    let size = L10N.numberWithDecimals(mb, decimals);
     return L10N.getFormatStr("networkMenu.sizeMB", size);
   }
   let gb = bytes / BYTES_IN_GB;
-  let size = L10N.numberWithDecimals(gb, CONTENT_SIZE_DECIMALS);
+  let size = L10N.numberWithDecimals(gb, decimals);
   return L10N.getFormatStr("networkMenu.sizeGB", size);
 }
 
 module.exports = {
-  getFormattedSize
+  getFormattedSize,
 };
+

@@ -84,6 +84,21 @@ const getFormDataSections = Task.async(function* (headers, uploadHeaders, postDa
 
 
 
+const fetchHeaders = Task.async(function* (headers, getString) {
+  for (let { value } of headers.headers) {
+    headers.headers.value = yield getString(value);
+  }
+
+  return headers;
+});
+
+
+
+
+
+
+
+
 
 
 function formDataURI(mimeType, encoding, text) {
@@ -241,6 +256,7 @@ function parseQueryString(query) {
 module.exports = {
   getKeyWithEvent,
   getFormDataSections,
+  fetchHeaders,
   formDataURI,
   writeHeaderText,
   decodeUnicodeUrl,

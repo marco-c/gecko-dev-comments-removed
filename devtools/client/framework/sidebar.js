@@ -431,7 +431,8 @@ ToolSidebar.prototype = {
 
 
   getTab: function (id) {
-    return this._tabs.get(id);
+    
+    return this._tabs && this._tabs.get(id);
   },
 
   
