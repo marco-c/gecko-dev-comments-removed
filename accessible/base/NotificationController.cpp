@@ -329,20 +329,27 @@ NotificationController::CoalesceMutationEvents()
           
           
           if (reorder && reorder->EventGeneration() < event->EventGeneration()) {
-            
-            
-            if (reorder->PrevEvent()) {
-              reorder->PrevEvent()->SetNextEvent(reorder->NextEvent());
-            } else {
-              mFirstMutationEvent = reorder->NextEvent();
-            }
-
-            reorder->NextEvent()->SetPrevEvent(reorder->PrevEvent());
-            event->PrevEvent()->SetNextEvent(reorder);
-            reorder->SetPrevEvent(event->PrevEvent());
-            event->SetPrevEvent(reorder);
-            reorder->SetNextEvent(event);
             reorder->SetEventGeneration(event->EventGeneration());
+
+            
+            
+            
+            
+            if (event != reorder->NextEvent()) {
+              
+              
+              if (reorder->PrevEvent()) {
+                reorder->PrevEvent()->SetNextEvent(reorder->NextEvent());
+              } else {
+                mFirstMutationEvent = reorder->NextEvent();
+              }
+
+              reorder->NextEvent()->SetPrevEvent(reorder->PrevEvent());
+              event->PrevEvent()->SetNextEvent(reorder);
+              reorder->SetPrevEvent(event->PrevEvent());
+              event->SetPrevEvent(reorder);
+              reorder->SetNextEvent(event);
+            }
           }
           DropMutationEvent(event);
           break;
