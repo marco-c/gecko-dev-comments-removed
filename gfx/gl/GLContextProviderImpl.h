@@ -65,8 +65,9 @@ public:
 
 
 
+
     static already_AddRefed<GLContext>
-    CreateForWindow(nsIWidget* aWidget, bool aForceAccelerated);
+    CreateForWindow(nsIWidget* aWidget, bool aWebRender, bool aForceAccelerated);
 
     
 

@@ -409,7 +409,7 @@ gfxPlatformGtk::GetDPIScale()
     
     
     int32_t dpi = GetDPI();
-    if (dpi < 132) {
+    if (dpi < 144) {
         return 1.0;
     } else if (dpi < 168) {
         return 1.5;
@@ -735,8 +735,10 @@ public:
         ScopedXFree<GLXFBConfig> cfgs;
         GLXFBConfig config;
         int visid;
+        bool forWebRender = false;
         if (!gl::GLContextGLX::FindFBConfigForWindow(mXDisplay, screen, root,
-                                                     &cfgs, &config, &visid)) {
+                                                     &cfgs, &config, &visid,
+                                                     forWebRender)) {
           lock.NotifyAll();
           return;
         }
