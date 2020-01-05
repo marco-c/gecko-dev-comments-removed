@@ -55,7 +55,7 @@ private:
   void CreatePDMs();
   void CreateNullPDM();
   
-  bool StartupPDM(PlatformDecoderModule* aPDM);
+  bool StartupPDM(PlatformDecoderModule* aPDM, bool aInsertAtBeginning = false);
   
   already_AddRefed<PlatformDecoderModule>
   GetDecoder(const TrackInfo& aTrackInfo,
