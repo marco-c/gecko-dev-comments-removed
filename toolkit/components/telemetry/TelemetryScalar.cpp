@@ -86,6 +86,7 @@ enum class ScalarResult : uint8_t {
   NotInitialized,
   CannotUnpackVariant,
   CannotRecordInProcess,
+  CannotRecordDataset,
   KeyedTypeMismatch,
   UnknownScalar,
   OperationNotSupported,
@@ -906,6 +907,35 @@ internal_CanRecordForScalarID(mozilla::Telemetry::ScalarID aId)
 
 
 
+ScalarResult
+internal_CanRecordScalar(mozilla::Telemetry::ScalarID aId, bool aKeyed)
+{
+  
+  if (internal_IsKeyedScalar(aId) != aKeyed) {
+    return ScalarResult::KeyedTypeMismatch;
+  }
+
+  
+  
+  if (!internal_CanRecordForScalarID(aId)) {
+    return ScalarResult::CannotRecordDataset;
+  }
+
+  
+  if (!internal_CanRecordProcess(aId)) {
+    return ScalarResult::CannotRecordInProcess;
+  }
+
+  return ScalarResult::Ok;
+}
+
+
+
+
+
+
+
+
 
 
 
@@ -993,35 +1023,6 @@ internal_GetScalarByEnum(mozilla::Telemetry::ScalarID aId, GeckoProcessType aPro
 
 
 
-ScalarBase*
-internal_GetRecordableScalar(mozilla::Telemetry::ScalarID aId)
-{
-  
-  ScalarBase* scalar = nullptr;
-  nsresult rv = internal_GetScalarByEnum(aId, GeckoProcessType_Default, &scalar);
-  if (NS_FAILED(rv)) {
-    return nullptr;
-  }
-
-  if (internal_IsKeyedScalar(aId)) {
-    return nullptr;
-  }
-
-  
-  if (!internal_CanRecordForScalarID(aId) || !internal_CanRecordProcess(aId)) {
-    return nullptr;
-  }
-
-  return scalar;
-}
-
-
-
-
-
-
-
-
 
 ScalarResult
 internal_UpdateScalar(const nsACString& aName, ScalarActionType aType,
@@ -1034,19 +1035,12 @@ internal_UpdateScalar(const nsACString& aName, ScalarActionType aType,
            ScalarResult::NotInitialized : ScalarResult::UnknownScalar;
   }
 
-  
-  if (internal_IsKeyedScalar(id)) {
-    return ScalarResult::KeyedTypeMismatch;
-  }
-
-  
-  if (!internal_CanRecordForScalarID(id)) {
-    return ScalarResult::Ok;
-  }
-
-  
-  if (!internal_CanRecordProcess(id)) {
-    return ScalarResult::CannotRecordInProcess;
+  ScalarResult sr = internal_CanRecordScalar(id, false);
+  if (sr != ScalarResult::Ok) {
+    if (sr == ScalarResult::CannotRecordDataset) {
+      return ScalarResult::Ok;
+    }
+    return sr;
   }
 
   
@@ -1162,35 +1156,6 @@ internal_GetKeyedScalarByEnum(mozilla::Telemetry::ScalarID aId, GeckoProcessType
 
 
 
-KeyedScalar*
-internal_GetRecordableKeyedScalar(mozilla::Telemetry::ScalarID aId)
-{
-  
-  KeyedScalar* scalar = nullptr;
-  nsresult rv = internal_GetKeyedScalarByEnum(aId, GeckoProcessType_Default, &scalar);
-  if (NS_FAILED(rv)) {
-    return nullptr;
-  }
-
-  if (!internal_IsKeyedScalar(aId)) {
-    return nullptr;
-  }
-
-  
-  if (!internal_CanRecordForScalarID(aId) || !internal_CanRecordProcess(aId)) {
-    return nullptr;
-  }
-
-  return scalar;
-}
-
-
-
-
-
-
-
-
 
 
 ScalarResult
@@ -1204,19 +1169,12 @@ internal_UpdateKeyedScalar(const nsACString& aName, const nsAString& aKey,
            ScalarResult::NotInitialized : ScalarResult::UnknownScalar;
   }
 
-  
-  if (!internal_IsKeyedScalar(id)) {
-    return ScalarResult::KeyedTypeMismatch;
-  }
-
-  
-  if (!internal_CanRecordForScalarID(id)) {
-    return ScalarResult::Ok;
-  }
-
-  
-  if (!internal_CanRecordProcess(id)) {
-    return ScalarResult::CannotRecordInProcess;
+  ScalarResult sr = internal_CanRecordScalar(id, true);
+  if (sr != ScalarResult::Ok) {
+    if (sr == ScalarResult::CannotRecordDataset) {
+      return ScalarResult::Ok;
+    }
+    return sr;
   }
 
   
@@ -1397,6 +1355,11 @@ TelemetryScalar::Add(mozilla::Telemetry::ScalarID aId, uint32_t aValue)
 {
   StaticMutexAutoLock locker(gTelemetryScalarsMutex);
 
+  if (internal_CanRecordScalar(aId, false) != ScalarResult::Ok) {
+    
+    return;
+  }
+
   
   if (!XRE_IsParentProcess()) {
     nsCOMPtr<nsIVariant> scalarValue;
@@ -1410,8 +1373,9 @@ TelemetryScalar::Add(mozilla::Telemetry::ScalarID aId, uint32_t aValue)
     return;
   }
 
-  ScalarBase* scalar = internal_GetRecordableScalar(aId);
-  if (!scalar) {
+  ScalarBase* scalar = nullptr;
+  nsresult rv = internal_GetScalarByEnum(aId, GeckoProcessType_Default, &scalar);
+  if (NS_FAILED(rv)) {
     return;
   }
 
@@ -1431,6 +1395,11 @@ TelemetryScalar::Add(mozilla::Telemetry::ScalarID aId, const nsAString& aKey,
 {
   StaticMutexAutoLock locker(gTelemetryScalarsMutex);
 
+  if (internal_CanRecordScalar(aId, true) != ScalarResult::Ok) {
+    
+    return;
+  }
+
   
   if (!XRE_IsParentProcess()) {
     nsCOMPtr<nsIVariant> scalarValue;
@@ -1444,8 +1413,9 @@ TelemetryScalar::Add(mozilla::Telemetry::ScalarID aId, const nsAString& aKey,
     return;
   }
 
-  KeyedScalar* scalar = internal_GetRecordableKeyedScalar(aId);
-  if (!scalar) {
+  KeyedScalar* scalar = nullptr;
+  nsresult rv = internal_GetKeyedScalarByEnum(aId, GeckoProcessType_Default, &scalar);
+  if (NS_FAILED(rv)) {
     return;
   }
 
@@ -1535,6 +1505,11 @@ TelemetryScalar::Set(mozilla::Telemetry::ScalarID aId, uint32_t aValue)
 {
   StaticMutexAutoLock locker(gTelemetryScalarsMutex);
 
+  if (internal_CanRecordScalar(aId, false) != ScalarResult::Ok) {
+    
+    return;
+  }
+
   
   if (!XRE_IsParentProcess()) {
     nsCOMPtr<nsIVariant> scalarValue;
@@ -1548,8 +1523,9 @@ TelemetryScalar::Set(mozilla::Telemetry::ScalarID aId, uint32_t aValue)
     return;
   }
 
-  ScalarBase* scalar = internal_GetRecordableScalar(aId);
-  if (!scalar) {
+  ScalarBase* scalar = nullptr;
+  nsresult rv = internal_GetScalarByEnum(aId, GeckoProcessType_Default, &scalar);
+  if (NS_FAILED(rv)) {
     return;
   }
 
@@ -1567,6 +1543,11 @@ TelemetryScalar::Set(mozilla::Telemetry::ScalarID aId, const nsAString& aValue)
 {
   StaticMutexAutoLock locker(gTelemetryScalarsMutex);
 
+  if (internal_CanRecordScalar(aId, false) != ScalarResult::Ok) {
+    
+    return;
+  }
+
   
   if (!XRE_IsParentProcess()) {
     nsCOMPtr<nsIVariant> scalarValue;
@@ -1580,8 +1561,9 @@ TelemetryScalar::Set(mozilla::Telemetry::ScalarID aId, const nsAString& aValue)
     return;
   }
 
-  ScalarBase* scalar = internal_GetRecordableScalar(aId);
-  if (!scalar) {
+  ScalarBase* scalar = nullptr;
+  nsresult rv = internal_GetScalarByEnum(aId, GeckoProcessType_Default, &scalar);
+  if (NS_FAILED(rv)) {
     return;
   }
 
@@ -1599,6 +1581,11 @@ TelemetryScalar::Set(mozilla::Telemetry::ScalarID aId, bool aValue)
 {
   StaticMutexAutoLock locker(gTelemetryScalarsMutex);
 
+  if (internal_CanRecordScalar(aId, false) != ScalarResult::Ok) {
+    
+    return;
+  }
+
   
   if (!XRE_IsParentProcess()) {
     nsCOMPtr<nsIVariant> scalarValue;
@@ -1612,8 +1599,9 @@ TelemetryScalar::Set(mozilla::Telemetry::ScalarID aId, bool aValue)
     return;
   }
 
-  ScalarBase* scalar = internal_GetRecordableScalar(aId);
-  if (!scalar) {
+  ScalarBase* scalar = nullptr;
+  nsresult rv = internal_GetScalarByEnum(aId, GeckoProcessType_Default, &scalar);
+  if (NS_FAILED(rv)) {
     return;
   }
 
@@ -1633,6 +1621,11 @@ TelemetryScalar::Set(mozilla::Telemetry::ScalarID aId, const nsAString& aKey,
 {
   StaticMutexAutoLock locker(gTelemetryScalarsMutex);
 
+  if (internal_CanRecordScalar(aId, true) != ScalarResult::Ok) {
+    
+    return;
+  }
+
   
   if (!XRE_IsParentProcess()) {
     nsCOMPtr<nsIVariant> scalarValue;
@@ -1646,8 +1639,9 @@ TelemetryScalar::Set(mozilla::Telemetry::ScalarID aId, const nsAString& aKey,
     return;
   }
 
-  KeyedScalar* scalar = internal_GetRecordableKeyedScalar(aId);
-  if (!scalar) {
+  KeyedScalar* scalar = nullptr;
+  nsresult rv = internal_GetKeyedScalarByEnum(aId, GeckoProcessType_Default, &scalar);
+  if (NS_FAILED(rv)) {
     return;
   }
 
@@ -1667,6 +1661,11 @@ TelemetryScalar::Set(mozilla::Telemetry::ScalarID aId, const nsAString& aKey,
 {
   StaticMutexAutoLock locker(gTelemetryScalarsMutex);
 
+  if (internal_CanRecordScalar(aId, true) != ScalarResult::Ok) {
+    
+    return;
+  }
+
   
   if (!XRE_IsParentProcess()) {
     nsCOMPtr<nsIVariant> scalarValue;
@@ -1680,8 +1679,9 @@ TelemetryScalar::Set(mozilla::Telemetry::ScalarID aId, const nsAString& aKey,
     return;
   }
 
-  KeyedScalar* scalar = internal_GetRecordableKeyedScalar(aId);
-  if (!scalar) {
+  KeyedScalar* scalar = nullptr;
+  nsresult rv = internal_GetKeyedScalarByEnum(aId, GeckoProcessType_Default, &scalar);
+  if (NS_FAILED(rv)) {
     return;
   }
 
@@ -1771,6 +1771,11 @@ TelemetryScalar::SetMaximum(mozilla::Telemetry::ScalarID aId, uint32_t aValue)
 {
   StaticMutexAutoLock locker(gTelemetryScalarsMutex);
 
+  if (internal_CanRecordScalar(aId, false) != ScalarResult::Ok) {
+    
+    return;
+  }
+
   
   if (!XRE_IsParentProcess()) {
     nsCOMPtr<nsIVariant> scalarValue;
@@ -1784,8 +1789,9 @@ TelemetryScalar::SetMaximum(mozilla::Telemetry::ScalarID aId, uint32_t aValue)
     return;
   }
 
-  ScalarBase* scalar = internal_GetRecordableScalar(aId);
-  if (!scalar) {
+  ScalarBase* scalar = nullptr;
+  nsresult rv = internal_GetScalarByEnum(aId, GeckoProcessType_Default, &scalar);
+  if (NS_FAILED(rv)) {
     return;
   }
 
@@ -1805,6 +1811,11 @@ TelemetryScalar::SetMaximum(mozilla::Telemetry::ScalarID aId, const nsAString& a
 {
   StaticMutexAutoLock locker(gTelemetryScalarsMutex);
 
+  if (internal_CanRecordScalar(aId, true) != ScalarResult::Ok) {
+    
+    return;
+  }
+
   
   if (!XRE_IsParentProcess()) {
     nsCOMPtr<nsIVariant> scalarValue;
@@ -1818,8 +1829,9 @@ TelemetryScalar::SetMaximum(mozilla::Telemetry::ScalarID aId, const nsAString& a
     return;
   }
 
-  KeyedScalar* scalar = internal_GetRecordableKeyedScalar(aId);
-  if (!scalar) {
+  KeyedScalar* scalar = nullptr;
+  nsresult rv = internal_GetKeyedScalarByEnum(aId, GeckoProcessType_Default, &scalar);
+  if (NS_FAILED(rv)) {
     return;
   }
 
