@@ -152,7 +152,10 @@ public:
                        ImageBitmap* aImageBitmap);
 
   
-  static bool ExtensionsEnabled(JSContext* aCx, JSObject* aObj);
+  
+  
+  
+  static bool ExtensionsEnabled(JSContext* aCx, JSObject* aObj = nullptr);
 
   friend CreateImageBitmapFromBlob;
   friend CreateImageBitmapFromBlobTask;
