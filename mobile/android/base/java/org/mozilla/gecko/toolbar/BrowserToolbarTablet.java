@@ -167,12 +167,6 @@ class BrowserToolbarTablet extends BrowserToolbarTabletBase {
     }
 
     @Override
-    public void setToolBarButtonsAlpha(float alpha) {
-        
-    }
-
-
-    @Override
     public void startEditing(final String url, final PropertyAnimator animator) {
         
         backButtonWasEnabledOnStartEditing = backButton.isEnabled();
