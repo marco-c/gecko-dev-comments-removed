@@ -5853,8 +5853,7 @@ nsTableFrame::CalcBCBorders()
         }
         else {
           tlCorner.Update(eLogicalSideIEnd, currentBorder);
-          tableCellMap->SetBCBorderCorner(eLogicalCornerBStartIStart,
-                                          *iter.mCellMap, 0, 0, colIdx,
+          tableCellMap->SetBCBorderCorner(eBStartIStart, *iter.mCellMap, 0, 0, colIdx,
                                           LogicalSide(tlCorner.ownerSide),
                                           tlCorner.subWidth,
                                           tlCorner.bevel);
@@ -5904,7 +5903,7 @@ nsTableFrame::CalcBCBorders()
         currentBorder = info.GetIStartEdgeBorder();
         BCCornerInfo& tlCorner = (0 == rowB) ? bStartCorners[0] : bEndCorners[0];
         tlCorner.Update(eLogicalSideBEnd, currentBorder);
-        tableCellMap->SetBCBorderCorner(eLogicalCornerBStartIStart, *iter.mCellMap,
+        tableCellMap->SetBCBorderCorner(eBStartIStart, *iter.mCellMap,
                                         iter.mRowGroupStart, rowB, 0,
                                         LogicalSide(tlCorner.ownerSide),
                                         tlCorner.subWidth,
@@ -5943,7 +5942,7 @@ nsTableFrame::CalcBCBorders()
                                  bStartCorners[info.GetCellEndColIndex() + 1] :
                                  bEndCorners[info.GetCellEndColIndex() + 1];
         trCorner.Update(eLogicalSideBEnd, currentBorder);   
-        tableCellMap->SetBCBorderCorner(eLogicalCornerBStartIEnd, *iter.mCellMap,
+        tableCellMap->SetBCBorderCorner(eBStartIEnd, *iter.mCellMap,
                                         iter.mRowGroupStart, rowB,
                                         info.GetCellEndColIndex(),
                                         LogicalSide(trCorner.ownerSide),
@@ -5951,7 +5950,7 @@ nsTableFrame::CalcBCBorders()
                                         trCorner.bevel);
         BCCornerInfo& brCorner = bEndCorners[info.GetCellEndColIndex() + 1];
         brCorner.Set(eLogicalSideBStart, currentBorder); 
-        tableCellMap->SetBCBorderCorner(eLogicalCornerBEndIEnd, *iter.mCellMap,
+        tableCellMap->SetBCBorderCorner(eBEndIEnd, *iter.mCellMap,
                                         iter.mRowGroupStart, rowB,
                                         info.GetCellEndColIndex(),
                                         LogicalSide(brCorner.ownerSide),
@@ -6020,7 +6019,7 @@ nsTableFrame::CalcBCBorders()
         if (info.GetCellEndColIndex() < damageArea.EndCol() &&
             rowB >= damageArea.StartRow()) {
           if (0 != rowB) {
-            tableCellMap->SetBCBorderCorner(eLogicalCornerBStartIEnd, *iter.mCellMap,
+            tableCellMap->SetBCBorderCorner(eBStartIEnd, *iter.mCellMap,
                                             iter.mRowGroupStart, rowB,
                                             info.GetCellEndColIndex(),
                                             LogicalSide(trCorner->ownerSide),
@@ -6029,7 +6028,7 @@ nsTableFrame::CalcBCBorders()
           }
           
           for (int32_t rX = rowB + 1; rX < rowB + segLength; rX++) {
-            tableCellMap->SetBCBorderCorner(eLogicalCornerBEndIEnd, *iter.mCellMap,
+            tableCellMap->SetBCBorderCorner(eBEndIEnd, *iter.mCellMap,
                                             iter.mRowGroupStart, rX,
                                             info.GetCellEndColIndex(),
                                             LogicalSide(trCorner->ownerSide),
@@ -6066,7 +6065,7 @@ nsTableFrame::CalcBCBorders()
         
         BCCornerInfo& blCorner = bEndCorners[colIdx]; 
         blCorner.Update(eLogicalSideIEnd, currentBorder);
-        tableCellMap->SetBCBorderCorner(eLogicalCornerBEndIStart, *iter.mCellMap,
+        tableCellMap->SetBCBorderCorner(eBEndIStart, *iter.mCellMap,
                                         iter.mRowGroupStart,
                                         info.GetCellEndRowIndex(),
                                         colIdx,
@@ -6075,7 +6074,7 @@ nsTableFrame::CalcBCBorders()
         BCCornerInfo& brCorner = bEndCorners[colIdx + 1]; 
         brCorner.Update(eLogicalSideIStart, currentBorder);
         if (info.mNumTableCols == colIdx + 1) { 
-          tableCellMap->SetBCBorderCorner(eLogicalCornerBEndIEnd, *iter.mCellMap,
+          tableCellMap->SetBCBorderCorner(eBEndIEnd, *iter.mCellMap,
                                           iter.mRowGroupStart,
                                           info.GetCellEndRowIndex(), colIdx,
                                           LogicalSide(brCorner.ownerSide),
@@ -6147,7 +6146,7 @@ nsTableFrame::CalcBCBorders()
         if (info.GetCellEndRowIndex() < damageArea.EndRow() &&
             colIdx >= damageArea.StartCol()) {
           if (hitsSpanBelow) {
-            tableCellMap->SetBCBorderCorner(eLogicalCornerBEndIStart, *iter.mCellMap,
+            tableCellMap->SetBCBorderCorner(eBEndIStart, *iter.mCellMap,
                                             iter.mRowGroupStart,
                                             info.GetCellEndRowIndex(), colIdx,
                                             LogicalSide(blCorner.ownerSide),
@@ -6157,7 +6156,7 @@ nsTableFrame::CalcBCBorders()
           for (int32_t c = colIdx + 1; c < colIdx + segLength; c++) {
             BCCornerInfo& corner = bEndCorners[c];
             corner.Set(eLogicalSideIEnd, currentBorder);
-            tableCellMap->SetBCBorderCorner(eLogicalCornerBEndIStart, *iter.mCellMap,
+            tableCellMap->SetBCBorderCorner(eBEndIStart, *iter.mCellMap,
                                             iter.mRowGroupStart,
                                             info.GetCellEndRowIndex(), c,
                                             LogicalSide(corner.ownerSide),
@@ -7451,7 +7450,7 @@ BCPaintBorderIterator::ResetVerInfo()
   if (mBlockDirInfo) {
     memset(mBlockDirInfo, 0, mDamageArea.ColCount() * sizeof(BCBlockDirSeg));
     
-    for (auto xIndex : MakeRange(mDamageArea.ColCount())) {
+    for (auto xIndex : IntegerRange(mDamageArea.ColCount())) {
       mBlockDirInfo[xIndex].mColWidth = -1;
     }
   }

@@ -10805,7 +10805,7 @@ nsDocument::RestorePreviousFullScreenState()
   UnlockPointer();
   
   
-  for (auto i : MakeRange(exitDocs.Length() - 1)) {
+  for (auto i : IntegerRange(exitDocs.Length() - 1)) {
     exitDocs[i]->CleanupFullscreenState();
   }
   
