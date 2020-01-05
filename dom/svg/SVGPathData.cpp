@@ -207,7 +207,7 @@ SVGPathData::GetPathSegAtLength(float aDistance) const
 
   MOZ_ASSERT(i == mData.Length(), "Very, very bad - mData corrupt");
 
-  return std::max(0U, segIndex - 1); 
+  return std::max(1U, segIndex) - 1; 
 }
 
 
