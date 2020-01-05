@@ -5,15 +5,26 @@
 use dom::bindings::js::{JS, Root};
 use dom::bindings::trace::JSTraceable;
 use dom::globalscope::GlobalScope;
+use js::jsapi::GetScriptedCallerGlobal;
+use js::jsapi::HideScriptedCaller;
 use js::jsapi::JSTracer;
+use js::jsapi::UnhideScriptedCaller;
+use js::rust::Runtime;
 use std::cell::RefCell;
 
 thread_local!(static STACK: RefCell<Vec<StackEntry>> = RefCell::new(Vec::new()));
+
+#[derive(PartialEq, Eq, Debug, JSTraceable)]
+enum StackEntryKind {
+    Incumbent,
+    Entry,
+}
 
 #[allow(unrooted_must_root)]
 #[derive(JSTraceable)]
 struct StackEntry {
     global: JS<GlobalScope>,
+    kind: StackEntryKind,
 }
 
 
@@ -25,7 +36,7 @@ pub unsafe fn trace(tracer: *mut JSTracer) {
 
 
 pub struct AutoEntryScript {
-    global: *const GlobalScope,
+    global: usize,
 }
 
 impl AutoEntryScript {
@@ -36,9 +47,10 @@ impl AutoEntryScript {
             let mut stack = stack.borrow_mut();
             stack.push(StackEntry {
                 global: JS::from_ref(global),
+                kind: StackEntryKind::Entry,
             });
             AutoEntryScript {
-                global: global as *const _,
+                global: global as *const _ as usize,
             }
         })
     }
@@ -50,10 +62,11 @@ impl Drop for AutoEntryScript {
         STACK.with(|stack| {
             let mut stack = stack.borrow_mut();
             let entry = stack.pop().unwrap();
-            assert_eq!(&*entry.global as *const GlobalScope,
+            assert_eq!(&*entry.global as *const GlobalScope as usize,
                        self.global,
                        "Dropped AutoEntryScript out of order.");
-            trace!("Clean up after running script with {:p}", self.global);
+            assert_eq!(entry.kind, StackEntryKind::Entry);
+            trace!("Clean up after running script with {:p}", &*entry.global);
         })
     }
 }
@@ -64,7 +77,88 @@ impl Drop for AutoEntryScript {
 pub fn entry_global() -> Root<GlobalScope> {
     STACK.with(|stack| {
         stack.borrow()
-             .last()
+             .iter()
+             .rev()
+             .find(|entry| entry.kind == StackEntryKind::Entry)
              .map(|entry| Root::from_ref(&*entry.global))
     }).unwrap()
+}
+
+
+pub struct AutoIncumbentScript {
+    global: usize,
+}
+
+impl AutoIncumbentScript {
+    
+    pub fn new(global: &GlobalScope) -> Self {
+        
+        unsafe {
+            let cx = Runtime::get();
+            assert!(!cx.is_null());
+            HideScriptedCaller(cx);
+        }
+        STACK.with(|stack| {
+            trace!("Prepare to run a callback with {:p}", global);
+            
+            let mut stack = stack.borrow_mut();
+            stack.push(StackEntry {
+                global: JS::from_ref(global),
+                kind: StackEntryKind::Incumbent,
+            });
+            AutoIncumbentScript {
+                global: global as *const _ as usize,
+            }
+        })
+    }
+}
+
+impl Drop for AutoIncumbentScript {
+    
+    fn drop(&mut self) {
+        STACK.with(|stack| {
+            
+            let mut stack = stack.borrow_mut();
+            let entry = stack.pop().unwrap();
+            
+            assert_eq!(&*entry.global as *const GlobalScope as usize,
+                       self.global,
+                       "Dropped AutoIncumbentScript out of order.");
+            assert_eq!(entry.kind, StackEntryKind::Incumbent);
+            trace!("Clean up after running a callback with {:p}", &*entry.global);
+        });
+        unsafe {
+            
+            let cx = Runtime::get();
+            assert!(!cx.is_null());
+            UnhideScriptedCaller(cx);
+        }
+    }
+}
+
+
+
+
+pub fn incumbent_global() -> Option<Root<GlobalScope>> {
+    
+
+    
+    
+    
+    
+    unsafe {
+        let cx = Runtime::get();
+        assert!(!cx.is_null());
+        let global = GetScriptedCallerGlobal(cx);
+        if !global.is_null() {
+            return Some(GlobalScope::from_object(global));
+        }
+    }
+
+    
+    STACK.with(|stack| {
+        stack.borrow()
+             .last()
+             .map(|entry| Root::from_ref(&*entry.global))
+    })
 }

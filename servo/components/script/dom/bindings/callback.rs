@@ -5,9 +5,9 @@
 
 
 use dom::bindings::error::{Error, Fallible, report_pending_exception};
-use dom::bindings::js::{Root, MutHeapJSVal};
+use dom::bindings::js::{JS, Root, MutHeapJSVal};
 use dom::bindings::reflector::DomObject;
-use dom::bindings::settings_stack::AutoEntryScript;
+use dom::bindings::settings_stack::{AutoEntryScript, AutoIncumbentScript};
 use dom::globalscope::GlobalScope;
 use js::jsapi::{Heap, MutableHandleObject};
 use js::jsapi::{IsCallable, JSContext, JSObject, JS_WrapObject, AddRawValueRoot};
@@ -18,6 +18,7 @@ use js::jsval::{JSVal, UndefinedValue, ObjectValue};
 use std::default::Default;
 use std::ffi::CString;
 use std::mem::drop;
+use std::ops::Deref;
 use std::ptr;
 use std::rc::Rc;
 
@@ -32,13 +33,25 @@ pub enum ExceptionHandling {
 
 
 
-
 #[derive(JSTraceable)]
 #[must_root]
 pub struct CallbackObject {
     
     callback: Heap<*mut JSObject>,
     permanent_js_root: MutHeapJSVal,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    incumbent: Option<JS<GlobalScope>>
 }
 
 impl Default for CallbackObject {
@@ -54,6 +67,7 @@ impl CallbackObject {
         CallbackObject {
             callback: Heap::default(),
             permanent_js_root: MutHeapJSVal::new(),
+            incumbent: GlobalScope::incumbent().map(|i| JS::from_ref(&*i)),
         }
     }
 
@@ -98,6 +112,13 @@ pub trait CallbackContainer {
     
     fn callback(&self) -> *mut JSObject {
         self.callback_holder().get()
+    }
+    
+    
+    
+    
+    fn incumbent(&self) -> Option<&GlobalScope> {
+        self.callback_holder().incumbent.as_ref().map(JS::deref)
     }
 }
 
@@ -210,6 +231,9 @@ pub struct CallSetup {
     
     
     entry_script: Option<AutoEntryScript>,
+    
+    
+    incumbent_script: Option<AutoIncumbentScript>,
 }
 
 impl CallSetup {
@@ -222,12 +246,14 @@ impl CallSetup {
         let cx = global.get_cx();
 
         let aes = AutoEntryScript::new(&global);
+        let ais = callback.incumbent().map(AutoIncumbentScript::new);
         CallSetup {
             exception_global: global,
             cx: cx,
             old_compartment: unsafe { JS_EnterCompartment(cx, callback.callback()) },
             handling: handling,
             entry_script: Some(aes),
+            incumbent_script: ais,
         }
     }
 
@@ -246,6 +272,7 @@ impl Drop for CallSetup {
                                                  self.exception_global.reflector().get_jsobject().get());
                 report_pending_exception(self.cx, true);
             }
+            drop(self.incumbent_script.take());
             drop(self.entry_script.take().unwrap());
         }
     }
