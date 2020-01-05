@@ -916,20 +916,6 @@ class Value
         return toTag() == JSVAL_TAG_PRIVATE_GCTHING;
     }
 
-    
-
-
-
-
-
-    void setUnmarkedPtr(void* ptr) {
-        data.asPtr = ptr;
-    }
-
-    void* toUnmarkedPtr() const {
-        return data.asPtr;
-    }
-
     const size_t* payloadWord() const {
 #if defined(JS_NUNBOX32)
         return &data.s.payload.word;
