@@ -135,27 +135,21 @@ Thread::GetCurrentId()
 
 
 
-static bool was_paused = false;
+static bool gWasPaused = false;
 
 
 
 static void paf_prepare(void) {
   
-  if (gSampler) {
-    was_paused = gSampler->IsPaused();
-    gSampler->SetPaused(true);
-  } else {
-    was_paused = false;
-  }
+  gWasPaused = gIsPaused;
+  gIsPaused = true;
 }
 
 
 
 static void paf_parent(void) {
   
-  if (gSampler) {
-    gSampler->SetPaused(was_paused);
-  }
+  gIsPaused = gWasPaused;
 }
 
 
@@ -298,10 +292,10 @@ static void* SignalSender(void* arg) {
   TimeDuration lastSleepOverhead = 0;
   TimeStamp sampleStart = TimeStamp::Now();
   
-  while (gSampler->IsActive()) {
+  while (gIsActive) {
     gSampler->DeleteExpiredMarkers();
 
-    if (!gSampler->IsPaused()) {
+    if (!gIsPaused) {
       StaticMutexAutoLock lock(sRegisteredThreadsMutex);
 
       bool isFirstProfiledThread = true;
@@ -428,7 +422,8 @@ void Sampler::Start() {
   
   
   
-  SetActive(true);
+  MOZ_ASSERT(!gIsActive);
+  gIsActive = true;
   if (pthread_create(&gSignalSenderThread, NULL, SignalSender, NULL) == 0) {
     gHasSignalSenderLaunched = true;
   }
@@ -439,7 +434,8 @@ void Sampler::Start() {
 void Sampler::Stop() {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
-  SetActive(false);
+  MOZ_ASSERT(gIsActive);
+  gIsActive = false;
 
   
   

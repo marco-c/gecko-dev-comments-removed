@@ -106,8 +106,6 @@ bool profiler_verbose();
 #define ENABLE_LEAF_DATA
 #endif
 
-typedef int32_t Atomic32;
-
 extern mozilla::TimeStamp sStartTime;
 
 typedef uint8_t* Address;
@@ -261,13 +259,6 @@ public:
   void Stop();
 
   
-  bool IsActive() const { return active_; }
-
-  
-  bool IsPaused() const { return paused_; }
-  void SetPaused(bool value) { NoBarrier_Store(&paused_, value); }
-
-  
   
   
   struct PlatformDataDestructor {
@@ -331,11 +322,6 @@ private:
 
   
   void InplaceTick(TickSample* sample);
-
-  void SetActive(bool value) { NoBarrier_Store(&active_, value); }
-
-  Atomic32 paused_;
-  Atomic32 active_;
 
   RefPtr<ProfileBuffer> mBuffer;
   bool mAddLeafAddresses;

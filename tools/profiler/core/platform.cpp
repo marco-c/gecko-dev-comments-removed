@@ -12,6 +12,7 @@
 #include "platform.h"
 #include "PlatformMacros.h"
 #include "mozilla/ArrayUtils.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Vector.h"
 #include "GeckoProfiler.h"
@@ -96,6 +97,12 @@ static int gEntrySize = 0;
 
 
 static double gInterval = 0;
+
+
+
+
+static Atomic<bool> gIsActive(false);
+static Atomic<bool> gIsPaused(false);
 
 
 
@@ -867,7 +874,10 @@ profiler_start(int aProfileEntries, double aInterval,
   gSampler = new Sampler(gEntrySize, aFeatures, aFeatureCount, aFilterCount);
   gGatherer = new mozilla::ProfileGatherer(gSampler);
 
+  MOZ_ASSERT(!gIsActive && !gIsPaused);
   gSampler->Start();
+  MOZ_ASSERT(gIsActive && !gIsPaused);  
+
   if (gSampler->ProfileJS() || gSampler->InPrivacyMode()) {
     mozilla::StaticMutexAutoLock lock(sRegisteredThreadsMutex);
 
@@ -961,6 +971,7 @@ profiler_stop()
   gFeatures.clear();
 
   gSampler->Stop();
+  MOZ_ASSERT(!gIsActive && !gIsPaused);   
   delete gSampler;
   gSampler = nullptr;
   gEntrySize = 0;
@@ -1004,7 +1015,7 @@ profiler_is_paused()
     return false;
   }
 
-  return gSampler->IsPaused();
+  return gIsPaused;
 }
 
 void
@@ -1016,7 +1027,7 @@ profiler_pause()
     return;
   }
 
-  gSampler->SetPaused(true);
+  gIsPaused = true;
   if (Sampler::CanNotifyObservers()) {
     nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
     if (os) {
@@ -1034,7 +1045,7 @@ profiler_resume()
     return;
   }
 
-  gSampler->SetPaused(false);
+  gIsPaused = false;
   if (Sampler::CanNotifyObservers()) {
     nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
     if (os) {
