@@ -47,13 +47,19 @@ private:
   
   
   
-  bool GetEncodedPartitions(EncodedFrameContainer& aData);
+  nsresult GetEncodedPartitions(EncodedFrameContainer& aData);
 
   
   nsresult PrepareRawFrame(VideoChunk &aChunk);
 
   
   StreamTime mEncodedTimestamp;
+
+  
+  CheckedInt64 mExtractedDuration;
+
+  
+  CheckedInt64 mExtractedDurationUs;
 
   
   RefPtr<layers::Image> mMuteFrame;
