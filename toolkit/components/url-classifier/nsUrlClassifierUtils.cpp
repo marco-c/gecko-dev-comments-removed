@@ -92,7 +92,8 @@ GetPlatformType()
 #elif defined(XP_WIN)
   return WINDOWS_PLATFORM;
 #else
-  return PLATFORM_TYPE_UNSPECIFIED;
+  
+  return LINUX_PLATFORM;
 #endif
 }
 
