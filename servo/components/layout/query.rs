@@ -12,9 +12,9 @@ use euclid::size::Size2D;
 use flow;
 use flow_ref::FlowRef;
 use fragment::{Fragment, FragmentBorderBoxIterator, SpecificFragmentInfo};
-use gfx::display_list::OpaqueNode;
+use gfx::display_list::{DisplayItemMetadata, DisplayList, OpaqueNode, ScrollOffsetMap};
 use gfx_traits::LayerId;
-use layout_thread::LayoutThreadData;
+use ipc_channel::ipc::IpcSender;
 use opaque_node::OpaqueNodeMethods;
 use script_layout_interface::rpc::{ContentBoxResponse, ContentBoxesResponse};
 use script_layout_interface::rpc::{HitTestResponse, LayoutRPC};
@@ -35,9 +35,56 @@ use style::properties::ComputedValues;
 use style::properties::longhands::{display, position};
 use style::properties::style_structs;
 use style::selector_impl::PseudoElement;
+use style::servo::Stylist;
 use style::values::AuExtensionMethods;
 use style_traits::cursor::Cursor;
 use wrapper::ThreadSafeLayoutNodeHelpers;
+
+
+
+
+pub struct LayoutThreadData {
+    
+    pub constellation_chan: IpcSender<ConstellationMsg>,
+
+    
+    pub display_list: Option<Arc<DisplayList>>,
+
+    
+    pub stylist: Arc<Stylist>,
+
+    
+    pub content_box_response: Rect<Au>,
+
+    
+    pub content_boxes_response: Vec<Rect<Au>>,
+
+    
+    pub client_rect_response: Rect<i32>,
+
+    pub layer_id_response: Option<LayerId>,
+
+    
+    pub hit_test_response: (Option<DisplayItemMetadata>, bool),
+
+    
+    pub overflow_response: NodeOverflowResponse,
+
+    
+    pub scroll_area_response: Rect<i32>,
+
+    
+    pub resolved_style_response: Option<String>,
+
+    
+    pub offset_parent_response: OffsetParentResponse,
+
+    
+    pub margin_style_response: MarginStyleResponse,
+
+    
+    pub stacking_context_scroll_offsets: ScrollOffsetMap,
+}
 
 pub struct LayoutRPCImpl(pub Arc<Mutex<LayoutThreadData>>);
 
