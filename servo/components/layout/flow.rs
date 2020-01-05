@@ -54,7 +54,6 @@ use servo_msg::compositor_msg::LayerId;
 use servo_util::geometry::Au;
 use servo_util::logical_geometry::WritingMode;
 use servo_util::logical_geometry::{LogicalRect, LogicalSize};
-use servo_util::opts;
 use std::mem;
 use std::num::Zero;
 use std::fmt;
@@ -208,6 +207,9 @@ pub trait Flow: fmt::Show + ToString + Sync {
     fn compute_absolute_position(&mut self) {
         
     }
+
+    
+    fn build_display_list(&mut self, layout_context: &LayoutContext);
 
     
     fn float_clearance(&self) -> clear::T {
@@ -406,9 +408,6 @@ pub trait ImmutableFlowUtils {
 
     
     fn dump_with_level(self, level: uint);
-
-    
-    fn validate_display_list_geometry(self);
 }
 
 pub trait MutableFlowUtils {
@@ -424,9 +423,6 @@ pub trait MutableFlowUtils {
 
     
     fn store_overflow(self, _: &LayoutContext);
-
-    
-    fn build_display_list(self, layout_context: &LayoutContext);
 
     
     
@@ -858,6 +854,28 @@ impl BaseFlow {
         let p = self as *const _;
         p as uint
     }
+
+    pub fn validate_display_list_geometry(&self) {
+        let position_with_overflow = self.position.union(&self.overflow);
+        let bounds = Rect(self.abs_position,
+                          Size2D(position_with_overflow.size.inline,
+                                 position_with_overflow.size.block));
+
+        for item in self.display_list.iter() {
+            let paint_bounds = match item.base().bounds.intersection(&item.base().clip_rect) {
+                None => continue,
+                Some(rect) => rect,
+            };
+
+            if paint_bounds.is_empty() {
+                continue;
+            }
+
+            if bounds.union(&paint_bounds) != bounds {
+                error!("DisplayList item {} outside of Flow overflow ({})", item, paint_bounds);
+            }
+        }
+    }
 }
 
 impl<'a> ImmutableFlowUtils for &'a Flow + 'a {
@@ -1028,28 +1046,6 @@ impl<'a> ImmutableFlowUtils for &'a Flow + 'a {
             kid.dump_with_level(level + 1)
         }
     }
-
-    fn validate_display_list_geometry(self) {
-        let position_with_overflow = base(self).position.union(&base(self).overflow);
-        let bounds = Rect(base(self).abs_position,
-                          Size2D(position_with_overflow.size.inline,
-                                 position_with_overflow.size.block));
-
-        for item in base(self).display_list.iter() {
-            let paint_bounds = match item.base().bounds.intersection(&item.base().clip_rect) {
-                None => continue,
-                Some(rect) => rect,
-            };
-
-            if paint_bounds.is_empty() {
-                continue;
-            }
-
-            if bounds.union(&paint_bounds) != bounds {
-                error!("DisplayList item {} outside of Flow overflow ({})", item, paint_bounds);
-            }
-        }
-    }
 }
 
 impl<'a> MutableFlowUtils for &'a mut Flow + 'a {
@@ -1108,44 +1104,6 @@ impl<'a> MutableFlowUtils for &'a mut Flow + 'a {
             }
         }
         mut_base(self).overflow = overflow;
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn build_display_list(self, layout_context: &LayoutContext) {
-        debug!("Flow: building display list");
-        match self.class() {
-            BlockFlowClass => self.as_block().build_display_list_block(layout_context),
-            InlineFlowClass => self.as_inline().build_display_list_inline(layout_context),
-            TableWrapperFlowClass => {
-                self.as_table_wrapper().build_display_list_table_wrapper(layout_context)
-            }
-            TableFlowClass => self.as_table().build_display_list_table(layout_context),
-            TableRowGroupFlowClass => {
-                self.as_table_rowgroup().build_display_list_table_rowgroup(layout_context)
-            }
-            TableRowFlowClass => self.as_table_row().build_display_list_table_row(layout_context),
-            TableCaptionFlowClass => {
-                self.as_table_caption().build_display_list_table_caption(layout_context)
-            }
-            TableCellFlowClass => {
-                self.as_table_cell().build_display_list_table_cell(layout_context)
-            }
-            TableColGroupFlowClass => {
-                
-            }
-        }
-
-        if opts::get().validate_display_list_geometry {
-            self.validate_display_list_geometry();
-        }
     }
 
     
