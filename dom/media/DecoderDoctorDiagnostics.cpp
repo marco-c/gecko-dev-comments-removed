@@ -247,6 +247,7 @@ DecoderDoctorDocumentWatcher::EnsureTimerIsStarted()
   }
 }
 
+
 static const NotificationAndReportStringId sMediaWidevineNoWMF=
   { dom::DecoderDoctorNotificationType::Platform_decoder_not_found,
     "MediaWidevineNoWMF" };
