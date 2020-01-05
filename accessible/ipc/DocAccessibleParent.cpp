@@ -152,7 +152,7 @@ DocAccessibleParent::RecvHideEvent(const uint64_t& aRootID,
   if (mShutdown)
     return IPC_OK();
 
-  MOZ_DIAGNOSTIC_ASSERT(CheckDocTree());
+  MOZ_ASSERT(CheckDocTree());
 
   
   
