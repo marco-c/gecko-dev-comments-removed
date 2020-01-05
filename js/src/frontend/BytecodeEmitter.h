@@ -540,8 +540,6 @@ struct MOZ_STACK_CLASS BytecodeEmitter
     MOZ_NEVER_INLINE MOZ_MUST_USE bool emitFunction(ParseNode* pn, bool needsProto = false);
     MOZ_NEVER_INLINE MOZ_MUST_USE bool emitObject(ParseNode* pn);
 
-    MOZ_MUST_USE bool replaceNewInitWithNewObject(JSObject* obj, ptrdiff_t offset);
-
     MOZ_MUST_USE bool emitHoistedFunctionsInList(ParseNode* pn);
 
     MOZ_MUST_USE bool emitPropertyList(ParseNode* pn, MutableHandlePlainObject objp,
@@ -680,10 +678,6 @@ struct MOZ_STACK_CLASS BytecodeEmitter
 
     
     
-    MOZ_MUST_USE bool emitDestructuringObjRestExclusionSet(ParseNode* pattern);
-
-    
-    
     
     MOZ_MUST_USE bool emitDestructuringOps(ParseNode* pattern, DestructuringFlavor flav);
     MOZ_MUST_USE bool emitDestructuringOpsArray(ParseNode* pattern, DestructuringFlavor flav);
@@ -698,15 +692,6 @@ struct MOZ_STACK_CLASS BytecodeEmitter
     
     
     MOZ_MUST_USE bool emitRequireObjectCoercible();
-
-    enum class CopyOption {
-        Filtered, Unfiltered
-    };
-
-    
-    
-    
-    MOZ_MUST_USE bool emitCopyDataProperties(CopyOption option);
 
     
     
