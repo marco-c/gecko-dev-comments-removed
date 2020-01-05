@@ -90,7 +90,7 @@ pub struct _cef_read_handler_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   
@@ -318,7 +318,7 @@ pub struct _cef_stream_reader_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   
@@ -583,7 +583,7 @@ pub struct _cef_write_handler_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   
@@ -812,7 +812,7 @@ pub struct _cef_stream_writer_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   

@@ -160,7 +160,7 @@ pub struct _cef_download_item_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   

@@ -167,7 +167,7 @@ pub struct _cef_request_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   
@@ -581,7 +581,7 @@ pub struct _cef_post_data_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   
@@ -853,7 +853,7 @@ pub struct _cef_post_data_element_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   

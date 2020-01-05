@@ -131,7 +131,7 @@ pub struct _cef_v8context_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   
@@ -447,7 +447,7 @@ pub struct _cef_v8handler_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   
@@ -619,7 +619,7 @@ pub struct _cef_v8accessor_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   
@@ -844,7 +844,7 @@ pub struct _cef_v8exception_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   
@@ -1416,7 +1416,7 @@ pub struct _cef_v8value_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   
@@ -2423,7 +2423,7 @@ pub struct _cef_v8stack_trace_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   
@@ -2660,7 +2660,7 @@ pub struct _cef_v8stack_frame_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   

@@ -69,7 +69,7 @@ pub struct _cef_end_tracing_callback_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   

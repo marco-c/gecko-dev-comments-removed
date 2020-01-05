@@ -68,7 +68,7 @@ pub struct _cef_task_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   
@@ -244,7 +244,7 @@ pub struct _cef_task_runner_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   

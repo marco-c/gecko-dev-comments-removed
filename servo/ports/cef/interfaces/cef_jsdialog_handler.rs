@@ -66,7 +66,7 @@ pub struct _cef_jsdialog_callback_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   
@@ -255,7 +255,7 @@ pub struct _cef_jsdialog_handler_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   

@@ -186,7 +186,7 @@ pub struct _cef_browser_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   
@@ -623,7 +623,7 @@ pub struct _cef_run_file_dialog_callback_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   
@@ -1118,7 +1118,7 @@ pub struct _cef_browser_host_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   

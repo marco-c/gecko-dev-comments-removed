@@ -101,7 +101,7 @@ pub struct _cef_urlrequest_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   
@@ -387,7 +387,7 @@ pub struct _cef_urlrequest_client_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   

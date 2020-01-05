@@ -65,7 +65,7 @@ pub struct _cef_geolocation_callback_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   
@@ -224,7 +224,7 @@ pub struct _cef_geolocation_handler_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   

@@ -206,7 +206,7 @@ pub struct _cef_print_settings_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   

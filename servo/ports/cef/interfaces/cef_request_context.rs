@@ -89,7 +89,7 @@ pub struct _cef_request_context_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   

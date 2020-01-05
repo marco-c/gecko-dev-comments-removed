@@ -72,7 +72,7 @@ pub struct _cef_file_dialog_callback_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   
@@ -238,7 +238,7 @@ pub struct _cef_dialog_handler_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   

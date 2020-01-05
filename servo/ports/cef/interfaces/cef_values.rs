@@ -91,7 +91,7 @@ pub struct _cef_binary_value_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   
@@ -476,7 +476,7 @@ pub struct _cef_dictionary_value_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   
@@ -1179,7 +1179,7 @@ pub struct _cef_list_value_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   

@@ -103,7 +103,7 @@ pub struct _cef_display_handler_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   

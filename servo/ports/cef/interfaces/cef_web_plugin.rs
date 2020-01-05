@@ -86,7 +86,7 @@ pub struct _cef_web_plugin_info_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   
@@ -273,7 +273,7 @@ pub struct _cef_web_plugin_info_visitor_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   
@@ -421,7 +421,7 @@ pub struct _cef_web_plugin_unstable_callback_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   

@@ -70,7 +70,7 @@ pub struct _cef_quota_callback_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   
@@ -225,7 +225,7 @@ pub struct _cef_allow_certificate_error_callback_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   
@@ -485,7 +485,7 @@ pub struct _cef_request_handler_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   

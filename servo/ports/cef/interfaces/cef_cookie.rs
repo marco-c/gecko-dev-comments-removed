@@ -132,7 +132,7 @@ pub struct _cef_cookie_manager_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   
@@ -433,7 +433,7 @@ pub struct _cef_cookie_visitor_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   

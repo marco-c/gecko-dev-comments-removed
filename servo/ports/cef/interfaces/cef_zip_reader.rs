@@ -140,7 +140,7 @@ pub struct _cef_zip_reader_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   

@@ -99,7 +99,7 @@ pub struct _cef_context_menu_handler_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   
@@ -426,7 +426,7 @@ pub struct _cef_context_menu_params_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   

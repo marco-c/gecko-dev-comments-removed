@@ -71,7 +71,7 @@ pub struct _cef_auth_callback_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   

@@ -19,7 +19,7 @@ pub trait Downcast<Class> {
     fn downcast(&self) -> &Class;
 }
 
-pub fn slice_to_str<F>(s: *const u8, l: uint, f: F) -> c_int where F: FnOnce(&str) -> c_int {
+pub fn slice_to_str<F>(s: *const u8, l: usize, f: F) -> c_int where F: FnOnce(&str) -> c_int {
     unsafe {
         let s = slice::from_raw_parts(s, l);
         str::from_utf8(s).map(f).unwrap_or(0)
@@ -41,9 +41,9 @@ pub unsafe fn create_cef_object<Base,Extra>(size: size_t) -> *mut Base {
 
 
 
-unsafe fn ref_count(object: *mut cef_base_t) -> *mut uint {
+unsafe fn ref_count(object: *mut cef_base_t) -> *mut usize {
     
-    (object as *mut u8).offset((*object).size as int) as *mut uint
+    (object as *mut u8).offset((*object).size as isize) as *mut usize
 }
 
 

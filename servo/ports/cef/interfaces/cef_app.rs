@@ -106,7 +106,7 @@ pub struct _cef_app_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   

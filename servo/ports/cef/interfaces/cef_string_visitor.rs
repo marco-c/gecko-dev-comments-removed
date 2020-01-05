@@ -64,7 +64,7 @@ pub struct _cef_string_visitor_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   

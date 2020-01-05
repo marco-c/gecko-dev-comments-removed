@@ -69,7 +69,7 @@ pub struct _cef_domvisitor_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   
@@ -308,7 +308,7 @@ pub struct _cef_domdocument_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   
@@ -820,7 +820,7 @@ pub struct _cef_domnode_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   

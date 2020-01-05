@@ -277,7 +277,7 @@ pub struct _cef_xml_reader_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   

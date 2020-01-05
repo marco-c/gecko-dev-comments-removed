@@ -108,7 +108,7 @@ pub struct _cef_scheme_registrar_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   
@@ -303,7 +303,7 @@ pub struct _cef_scheme_handler_factory_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   

@@ -2,7 +2,7 @@
 
 
 
-#![feature(int_uint)]
+#![feature(alloc)]
 #![feature(box_syntax)]
 #![feature(plugin)]
 #![feature(link_args)]

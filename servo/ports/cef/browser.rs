@@ -86,7 +86,7 @@ pub struct ServoCefBrowser {
     
     pub callback_executed: Cell<bool>,
 
-    id: int,
+    id: isize,
     servo_browser: RefCell<ServoBrowser>,
     message_queue: RefCell<Vec<WindowEvent>>,
 }

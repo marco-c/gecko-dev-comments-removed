@@ -91,7 +91,7 @@ pub struct _cef_process_message_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   

@@ -81,7 +81,7 @@ pub struct _cef_keyboard_handler_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   

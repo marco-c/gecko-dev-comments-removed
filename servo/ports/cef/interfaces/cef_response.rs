@@ -122,7 +122,7 @@ pub struct _cef_response_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   

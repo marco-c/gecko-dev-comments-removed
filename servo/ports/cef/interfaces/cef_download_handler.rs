@@ -68,7 +68,7 @@ pub struct _cef_before_download_callback_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   
@@ -209,7 +209,7 @@ pub struct _cef_download_item_callback_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   
@@ -367,7 +367,7 @@ pub struct _cef_download_handler_t {
   
   
   
-  pub ref_count: uint,
+  pub ref_count: usize,
 
   
   
