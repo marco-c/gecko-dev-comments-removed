@@ -1727,7 +1727,8 @@ ActivationIterator::ActivationIterator(JSContext* cx, const CooperatingContext& 
     
     
     
-    MOZ_ASSERT(cx->runtime()->activeContextChangeProhibited());
+    MOZ_ASSERT(cx->runtime()->activeContextChangeProhibited() ||
+               !cx->runtime()->gc.canChangeActiveContext(cx));
 
     
     

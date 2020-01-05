@@ -5626,8 +5626,7 @@ AutoTraceSession::AutoTraceSession(JSRuntime* rt, JS::HeapState heapState)
   : lock(rt),
     runtime(rt),
     prevState(TlsContext.get()->heapState),
-    pseudoFrame(rt, HeapStateToLabel(heapState), ProfileEntry::Category::GC),
-    prohibitActiveContextChange(rt)
+    pseudoFrame(rt, HeapStateToLabel(heapState), ProfileEntry::Category::GC)
 {
     MOZ_ASSERT(prevState == JS::HeapState::Idle);
     MOZ_ASSERT(heapState != JS::HeapState::Idle);
@@ -5645,6 +5644,21 @@ JS_PUBLIC_API(JS::HeapState)
 JS::CurrentThreadHeapState()
 {
     return TlsContext.get()->heapState;
+}
+
+bool
+GCRuntime::canChangeActiveContext(JSContext* cx)
+{
+    
+    
+    
+    return cx->heapState == JS::HeapState::Idle
+        && !cx->suppressGC
+        && cx->allowGCBarriers
+        && !cx->inUnsafeRegion
+        && !cx->generationalDisabled
+        && !cx->compactingDisabledCount
+        && !cx->keepAtoms;
 }
 
 GCRuntime::IncrementalResult
