@@ -20,7 +20,7 @@ function run_test() {
 
 
 
-add_task(function() {
+add_task(function*() {
   
   
   do_get_profile();

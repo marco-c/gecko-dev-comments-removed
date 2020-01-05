@@ -10,14 +10,14 @@ add_task(function init() {
 
 
 
-add_task(function system_shutdown() {
+add_task(function* system_shutdown() {
 
   
   
   
   
   function testLeaksOf(resource, topic) {
-    return Task.spawn(function() {
+    return Task.spawn(function*() {
       let deferred = Promise.defer();
 
       
@@ -69,7 +69,7 @@ add_task(function system_shutdown() {
       Services.prefs.clearUserPref("toolkit.osfile.test.shutdown.observer");
       Services.prefs.clearUserPref("toolkit.async_shutdown.testing");
 
-      throw new Task.Result(resolved);
+      return resolved;
     });
   }
 

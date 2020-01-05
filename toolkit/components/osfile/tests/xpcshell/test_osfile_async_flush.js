@@ -12,7 +12,7 @@ function run_test() {
 
 
 
-add_task(function test_flush() {
+add_task(function* test_flush() {
   let path = OS.Path.join(OS.Constants.Path.tmpDir,
                           "test_osfile_async_flush.tmp");
   let file = yield OS.File.open(path, {trunc: true, write: true});
