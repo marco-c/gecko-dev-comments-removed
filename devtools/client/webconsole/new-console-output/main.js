@@ -6,18 +6,19 @@
 
 "use strict";
 
-var { utils: Cu } = Components;
+const Cu = Components.utils;
 
 const { BrowserLoader } = Cu.import("resource://devtools/client/shared/browser-loader.js", {});
 
-
-
-
-const NewConsoleOutputWrapper = BrowserLoader({
-  baseURI: "resource://devtools/client/webconsole/new-console-output/",
+this.NewConsoleOutput = function (parentNode, jsterm, toolbox, owner, serviceContainer) {
+  
+  
+  
+  let NewConsoleOutputWrapper = BrowserLoader({
+    baseURI: "resource://devtools/client/webconsole/new-console-output/",
+    commonLibRequire: toolbox.browserRequire,
   window}).require("./new-console-output-wrapper");
 
-this.NewConsoleOutput = function (parentNode, jsterm, toolbox, owner, serviceContainer) {
   return new NewConsoleOutputWrapper(
     parentNode, jsterm, toolbox, owner, serviceContainer);
 };
