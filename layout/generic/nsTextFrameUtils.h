@@ -121,6 +121,16 @@ public:
                               gfxSkipChars* aSkipChars,
                               uint32_t* aAnalysisFlags);
 
+  
+
+
+
+
+
+
+  template<class CharT>
+  static bool IsSkippableCharacterForTransformText(CharT aChar);
+
   static void
   AppendLineBreakOffset(nsTArray<uint32_t>* aArray, uint32_t aOffset)
   {
