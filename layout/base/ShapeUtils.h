@@ -62,6 +62,17 @@ struct ShapeUtils final
   static nsRect ComputeInsetRect(
     mozilla::StyleBasicShape* const aBasicShape,
     const nsRect& aRefBox);
+
+  
+  
+  
+  
+  
+  static bool ComputeInsetRadii(
+    mozilla::StyleBasicShape* const aBasicShape,
+    const nsRect& aInsetRect,
+    const nsRect& aRefBox,
+    nscoord aRadii[8]);
 };
 
 } 
