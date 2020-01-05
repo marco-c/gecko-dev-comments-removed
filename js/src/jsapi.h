@@ -17,6 +17,7 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/Variant.h"
 
+#include <iterator>
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -36,6 +37,7 @@
 #include "js/RefCounted.h"
 #include "js/RootingAPI.h"
 #include "js/TracingAPI.h"
+#include "js/UniquePtr.h"
 #include "js/Utility.h"
 #include "js/Value.h"
 #include "js/Vector.h"
@@ -5389,65 +5391,43 @@ JS_ReportOutOfMemory(JSContext* cx);
 extern JS_PUBLIC_API(void)
 JS_ReportAllocationOverflow(JSContext* cx);
 
-class JSErrorReport
+
+
+
+
+class JSErrorBase
 {
     
     
     JS::ConstUTF8CharsZ message_;
 
-    
-    
-    const char16_t* linebuf_;
-
-    
-    size_t linebufLength_;
-
-    
-    size_t tokenOffset_;
-
   public:
-    JSErrorReport()
-      : linebuf_(nullptr), linebufLength_(0), tokenOffset_(0),
-        filename(nullptr), lineno(0), column(0),
-        flags(0), errorNumber(0),
-        exnType(0), isMuted(false),
-        ownsLinebuf_(false), ownsMessage_(false)
+    JSErrorBase()
+      : filename(nullptr), lineno(0), column(0),
+        errorNumber(0),
+        ownsMessage_(false)
     {}
 
-    ~JSErrorReport() {
-        freeLinebuf();
+    ~JSErrorBase() {
         freeMessage();
     }
 
-    const char*     filename;      
-    unsigned        lineno;         
-    unsigned        column;         
-    unsigned        flags;          
-    unsigned        errorNumber;    
-    int16_t         exnType;        
-    bool            isMuted : 1;    
+    
+    const char* filename;
+
+    
+    unsigned lineno;
+
+    
+    unsigned column;
+
+    
+    unsigned errorNumber;
 
   private:
-    bool ownsLinebuf_ : 1;
     bool ownsMessage_ : 1;
 
   public:
-    const char16_t* linebuf() const {
-        return linebuf_;
-    }
-    size_t linebufLength() const {
-        return linebufLength_;
-    }
-    size_t tokenOffset() const {
-        return tokenOffset_;
-    }
-    void initOwnedLinebuf(const char16_t* linebufArg, size_t linebufLengthArg, size_t tokenOffsetArg) {
-        initBorrowedLinebuf(linebufArg, linebufLengthArg, tokenOffsetArg);
-        ownsLinebuf_ = true;
-    }
-    void initBorrowedLinebuf(const char16_t* linebufArg, size_t linebufLengthArg, size_t tokenOffsetArg);
-    void freeLinebuf();
-
     const JS::ConstUTF8CharsZ message() const {
         return message_;
     }
@@ -5463,7 +5443,133 @@ class JSErrorReport
 
     JSString* newMessageString(JSContext* cx);
 
+  private:
     void freeMessage();
+};
+
+
+
+
+class JSErrorNotes
+{
+  public:
+    class Note : public JSErrorBase
+    {};
+
+  private:
+    
+    js::Vector<js::UniquePtr<Note>, 1, js::SystemAllocPolicy> notes_;
+
+  public:
+    JSErrorNotes();
+    ~JSErrorNotes();
+
+    
+    bool addNoteASCII(JSContext* cx,
+                      const char* filename, unsigned lineno, unsigned column,
+                      JSErrorCallback errorCallback, void* userRef,
+                      const unsigned errorNumber, ...);
+    bool addNoteLatin1(JSContext* cx,
+                       const char* filename, unsigned lineno, unsigned column,
+                       JSErrorCallback errorCallback, void* userRef,
+                       const unsigned errorNumber, ...);
+    bool addNoteUTF8(JSContext* cx,
+                     const char* filename, unsigned lineno, unsigned column,
+                     JSErrorCallback errorCallback, void* userRef,
+                     const unsigned errorNumber, ...);
+
+    size_t length();
+
+    
+    js::UniquePtr<JSErrorNotes> copy(JSContext* cx);
+
+    class iterator : public std::iterator<std::input_iterator_tag, js::UniquePtr<Note>>
+    {
+        js::UniquePtr<Note>* note_;
+      public:
+        explicit iterator(js::UniquePtr<Note>* note = nullptr) : note_(note)
+        {}
+
+        bool operator==(iterator other) const {
+            return note_ == other.note_;
+        }
+        bool operator!=(iterator other) const {
+            return !(*this == other);
+        }
+        iterator& operator++() {
+            note_++;
+            return *this;
+        }
+        reference operator*() {
+            return *note_;
+        }
+    };
+    iterator begin();
+    iterator end();
+};
+
+
+
+
+class JSErrorReport : public JSErrorBase
+{
+    
+    
+    const char16_t* linebuf_;
+
+    
+    size_t linebufLength_;
+
+    
+    size_t tokenOffset_;
+
+  public:
+    JSErrorReport()
+      : linebuf_(nullptr), linebufLength_(0), tokenOffset_(0),
+        notes(nullptr),
+        flags(0), exnType(0), isMuted(false),
+        ownsLinebuf_(false)
+    {}
+
+    ~JSErrorReport() {
+        freeLinebuf();
+    }
+
+    
+    js::UniquePtr<JSErrorNotes> notes;
+
+    
+    unsigned flags;
+
+    
+    int16_t exnType;
+
+    
+    bool isMuted : 1;
+
+  private:
+    bool ownsLinebuf_ : 1;
+
+  public:
+    const char16_t* linebuf() const {
+        return linebuf_;
+    }
+    size_t linebufLength() const {
+        return linebufLength_;
+    }
+    size_t tokenOffset() const {
+        return tokenOffset_;
+    }
+    void initOwnedLinebuf(const char16_t* linebufArg, size_t linebufLengthArg,
+                          size_t tokenOffsetArg) {
+        initBorrowedLinebuf(linebufArg, linebufLengthArg, tokenOffsetArg);
+        ownsLinebuf_ = true;
+    }
+    void initBorrowedLinebuf(const char16_t* linebufArg, size_t linebufLengthArg,
+                             size_t tokenOffsetArg);
+
+  private:
+    void freeLinebuf();
 };
 
 

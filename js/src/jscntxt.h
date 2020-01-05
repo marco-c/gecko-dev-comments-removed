@@ -993,6 +993,13 @@ ExpandErrorArgumentsVA(JSContext* cx, JSErrorCallback callback,
                        ErrorArgumentsType argumentsType,
                        JSErrorReport* reportp, va_list ap);
 
+extern bool
+ExpandErrorArgumentsVA(JSContext* cx, JSErrorCallback callback,
+                       void* userRef, const unsigned errorNumber,
+                       const char16_t** messageArgs,
+                       ErrorArgumentsType argumentsType,
+                       JSErrorNotes::Note* notep, va_list ap);
+
 
 extern void
 ReportUsageErrorASCII(JSContext* cx, HandleObject callee, const char* msg);

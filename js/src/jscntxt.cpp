@@ -622,6 +622,17 @@ class MOZ_RAII AutoMessageArgs
     }
 };
 
+static void
+SetExnType(JSErrorReport* reportp, int16_t exnType)
+{
+    reportp->exnType = exnType;
+}
+
+static void
+SetExnType(JSErrorNotes::Note* notep, int16_t exnType)
+{
+    
+}
 
 
 
@@ -633,12 +644,14 @@ class MOZ_RAII AutoMessageArgs
 
 
 
+
+template <typename T>
 bool
-js::ExpandErrorArgumentsVA(JSContext* cx, JSErrorCallback callback,
+ExpandErrorArgumentsHelper(JSContext* cx, JSErrorCallback callback,
                            void* userRef, const unsigned errorNumber,
                            const char16_t** messageArgs,
                            ErrorArgumentsType argumentsType,
-                           JSErrorReport* reportp, va_list ap)
+                           T* reportp, va_list ap)
 {
     const JSErrorFormatString* efs;
 
@@ -651,7 +664,7 @@ js::ExpandErrorArgumentsVA(JSContext* cx, JSErrorCallback callback,
     }
 
     if (efs) {
-        reportp->exnType = efs->exnType;
+        SetExnType(reportp, efs->exnType);
 
         MOZ_ASSERT_IF(argumentsType == ArgumentsAreASCII, JS::StringIsASCII(efs->format));
 
@@ -732,6 +745,28 @@ js::ExpandErrorArgumentsVA(JSContext* cx, JSErrorCallback callback,
         reportp->initOwnedMessage(message);
     }
     return true;
+}
+
+bool
+js::ExpandErrorArgumentsVA(JSContext* cx, JSErrorCallback callback,
+                           void* userRef, const unsigned errorNumber,
+                           const char16_t** messageArgs,
+                           ErrorArgumentsType argumentsType,
+                           JSErrorReport* reportp, va_list ap)
+{
+    return ExpandErrorArgumentsHelper(cx, callback, userRef, errorNumber,
+                                      messageArgs, argumentsType, reportp, ap);
+}
+
+bool
+js::ExpandErrorArgumentsVA(JSContext* cx, JSErrorCallback callback,
+                           void* userRef, const unsigned errorNumber,
+                           const char16_t** messageArgs,
+                           ErrorArgumentsType argumentsType,
+                           JSErrorNotes::Note* notep, va_list ap)
+{
+    return ExpandErrorArgumentsHelper(cx, callback, userRef, errorNumber,
+                                      messageArgs, argumentsType, notep, ap);
 }
 
 bool
