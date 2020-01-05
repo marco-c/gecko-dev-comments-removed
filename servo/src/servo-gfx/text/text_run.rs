@@ -5,8 +5,9 @@
 use font_context::FontContext;
 use geometry::Au;
 use text::glyph::{BreakTypeNormal, GlyphStore};
-use servo_gfx_font::{Font, FontDescriptor, RunMetrics};
+use font::{Font, FontDescriptor, RunMetrics};
 use servo_util::range::Range;
+
 
 pub struct TextRun {
     text: ~str,
@@ -14,8 +15,7 @@ pub struct TextRun {
     glyphs: GlyphStore,
 }
 
-// This is a hack until TextRuns are normally sendable, or
-// we instead use ARC<TextRun> everywhere.
+/// This is a hack until TextRuns are normally sendable, or we instead use ARC<TextRun> everywhere.
 pub struct SendableTextRun {
     text: ~str,
     font: FontDescriptor,
