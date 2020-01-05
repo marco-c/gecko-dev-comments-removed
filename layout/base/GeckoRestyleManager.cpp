@@ -707,7 +707,7 @@ ElementForStyleContext(nsIContent* aParentContent,
   }
 
   if (aPseudoType == CSSPseudoElementType::firstLetter) {
-    NS_ASSERTION(aFrame->GetType() == nsGkAtoms::letterFrame,
+    NS_ASSERTION(aFrame->IsLetterFrame(),
                  "firstLetter pseudoTag without a nsFirstLetterFrame");
     nsBlockFrame* block = nsBlockFrame::GetNearestAncestorBlock(aFrame);
     return block->GetContent()->AsElement();
@@ -719,7 +719,7 @@ ElementForStyleContext(nsIContent* aParentContent,
                "Color swatch frame should have a parent & grandparent");
 
     nsIFrame* grandparentFrame = aFrame->GetParent()->GetParent();
-    MOZ_ASSERT(grandparentFrame->GetType() == nsGkAtoms::colorControlFrame,
+    MOZ_ASSERT(grandparentFrame->IsColorControlFrame(),
                "Color swatch's grandparent should be nsColorControlFrame");
 
     return grandparentFrame->GetContent()->AsElement();
@@ -733,7 +733,7 @@ ElementForStyleContext(nsIContent* aParentContent,
     
     nsIFrame* f = aFrame->GetParent();
     MOZ_ASSERT(f);
-    while (f->GetType() != nsGkAtoms::numberControlFrame) {
+    while (!f->IsNumberControlFrame()) {
       f = f->GetParent();
       MOZ_ASSERT(f);
     }
@@ -861,8 +861,8 @@ GetPrevContinuationWithSameStyle(nsIFrame* aFrame)
 nsresult
 GeckoRestyleManager::ReparentStyleContext(nsIFrame* aFrame)
 {
-  nsIAtom* frameType = aFrame->GetType();
-  if (frameType == nsGkAtoms::placeholderFrame) {
+  FrameType frameType = aFrame->Type();
+  if (frameType == FrameType::Placeholder) {
     
     nsIFrame* outOfFlow =
       nsPlaceholderFrame::GetRealFrameForPlaceholder(aFrame);
@@ -870,7 +870,7 @@ GeckoRestyleManager::ReparentStyleContext(nsIFrame* aFrame)
     do {
       ReparentStyleContext(outOfFlow);
     } while ((outOfFlow = outOfFlow->GetNextContinuation()));
-  } else if (frameType == nsGkAtoms::backdropFrame) {
+  } else if (frameType == FrameType::Backdrop) {
     
     
     return NS_OK;
@@ -992,7 +992,7 @@ GeckoRestyleManager::ReparentStyleContext(nsIFrame* aFrame)
           if (!(child->GetStateBits() & NS_FRAME_OUT_OF_FLOW) &&
               child != providerChild) {
 #ifdef DEBUG
-            if (nsGkAtoms::placeholderFrame == child->GetType()) {
+            if (child->IsPlaceholderFrame()) {
               nsIFrame* outOfFlowFrame =
                 nsPlaceholderFrame::GetRealFrameForPlaceholder(child);
               NS_ASSERTION(outOfFlowFrame, "no out-of-flow frame");
@@ -1440,7 +1440,7 @@ ElementRestyler::ConditionallyRestyleContentChildren(nsIFrame* aFrame,
         if (!(child->GetStateBits() & NS_FRAME_OUT_OF_FLOW) &&
             !GetPrevContinuationWithSameStyle(child)) {
           
-          if (child->GetType() == nsGkAtoms::placeholderFrame) { 
+          if (child->IsPlaceholderFrame()) { 
             
             nsIFrame* outOfFlowFrame =
               nsPlaceholderFrame::GetRealFrameForPlaceholder(child);
@@ -1653,16 +1653,15 @@ ElementRestyler::MoveStyleContextsForContentChildren(
       }
       
       
-      if (nsGkAtoms::placeholderFrame == child->GetType()) {
+      if (child->IsPlaceholderFrame()) {
         return false;
       }
       nsStyleContext* sc = child->StyleContext();
       if (sc->GetParent() != aOldContext) {
         return false;
       }
-      nsIAtom* type = child->GetType();
-      if (type == nsGkAtoms::letterFrame ||
-          type == nsGkAtoms::lineFrame) {
+      FrameType type = child->Type();
+      if (type == FrameType::Letter || type == FrameType::Line) {
         return false;
       }
       if (sc->HasChildThatUsesGrandancestorStyle()) {
@@ -2069,16 +2068,16 @@ ElementRestyler::ComputeRestyleResultFromFrame(nsIFrame* aSelf,
   
   
   
-  nsIAtom* type = aSelf->GetType();
+  FrameType type = aSelf->Type();
 
-  if (type == nsGkAtoms::letterFrame) {
+  if (type == FrameType::Letter) {
     LOG_RESTYLE_CONTINUE("frame is a letter frame");
     aRestyleResult = RestyleResult::eContinue;
     aCanStopWithStyleChange = false;
     return;
   }
 
-  if (type == nsGkAtoms::lineFrame) {
+  if (type == FrameType::Line) {
     LOG_RESTYLE_CONTINUE("frame is a line frame");
     aRestyleResult = RestyleResult::eContinue;
     aCanStopWithStyleChange = false;
@@ -2500,7 +2499,7 @@ ElementRestyler::RestyleSelf(nsIFrame* aSelf,
     LOG_RESTYLE("using previous continuation's context");
     newContext = prevContinuationContext;
   } else if (pseudoTag == nsCSSAnonBoxes::mozText) {
-    MOZ_ASSERT(aSelf->GetType() == nsGkAtoms::textFrame);
+    MOZ_ASSERT(aSelf->IsTextFrame());
     newContext =
       styleSet->ResolveStyleForText(aSelf->GetContent(), parentContext);
   } else if (pseudoTag == nsCSSAnonBoxes::firstLetterContinuation) {
@@ -3421,7 +3420,7 @@ ElementRestyler::RestyleContentChildren(nsIFrame* aParent,
         }
 
         
-        if (nsGkAtoms::placeholderFrame == child->GetType()) { 
+        if (child->IsPlaceholderFrame()) { 
           
           nsIFrame* outOfFlowFrame =
             nsPlaceholderFrame::GetRealFrameForPlaceholder(child);

@@ -505,10 +505,10 @@ static bool
 IsBidiSplittable(nsIFrame* aFrame)
 {
   
-  nsIAtom* frameType = aFrame->GetType();
+  FrameType frameType = aFrame->Type();
   return (aFrame->IsFrameOfType(nsIFrame::eBidiInlineContainer) &&
-          frameType != nsGkAtoms::lineFrame) ||
-         frameType == nsGkAtoms::textFrame;
+          frameType != FrameType::Line) ||
+         frameType == FrameType::Text;
 }
 
 
@@ -642,8 +642,7 @@ CreateContinuation(nsIFrame*  aFrame,
   
   
   
-  if (parent->GetType() == nsGkAtoms::letterFrame &&
-      parent->IsFloating()) {
+  if (parent->IsLetterFrame() && parent->IsFloating()) {
     nsFirstLetterFrame* letterFrame = do_QueryFrame(parent);
     rv = letterFrame->CreateContinuationForFloatingParent(presContext, aFrame,
                                                           aNewFrame, aIsFluid);
@@ -861,8 +860,7 @@ nsBidiPresUtils::ResolveParagraph(BidiParagraphData* aBpd)
         break;
       }
       frame = aBpd->FrameAt(frameIndex);
-      if (frame == NS_BIDI_CONTROL_FRAME ||
-          nsGkAtoms::textFrame != frame->GetType()) {
+      if (frame == NS_BIDI_CONTROL_FRAME || !frame->IsTextFrame()) {
         
 
 
@@ -1069,10 +1067,10 @@ nsBidiPresUtils::TraverseFrames(nsBlockInFlowLineIterator* aLineIter,
     
     
     nsIFrame* frame = childFrame;
-    if (nsGkAtoms::placeholderFrame == childFrame->GetType()) {
+    if (childFrame->IsPlaceholderFrame()) {
       nsIFrame* realFrame =
         nsPlaceholderFrame::GetRealFrameForPlaceholder(childFrame);
-      if (realFrame->GetType() == nsGkAtoms::letterFrame) {
+      if (realFrame->IsLetterFrame()) {
         frame = realFrame;
       }
     }
@@ -1127,8 +1125,8 @@ nsBidiPresUtils::TraverseFrames(nsBlockInFlowLineIterator* aLineIter,
       aBpd->AppendFrame(frame, aLineIter, content);
 
       
-      nsIAtom* frameType = frame->GetType();
-      if (nsGkAtoms::textFrame == frameType) {
+      FrameType frameType = frame->Type();
+      if (FrameType::Text == frameType) {
         if (content != aBpd->mPrevContent) {
           aBpd->mPrevContent = content;
           if (!frame->StyleText()->NewlineIsSignificant(
@@ -1243,7 +1241,7 @@ nsBidiPresUtils::TraverseFrames(nsBlockInFlowLineIterator* aLineIter,
             } while (next);
           }
         }
-      } else if (nsGkAtoms::brFrame == frameType) {
+      } else if (FrameType::Br == frameType) {
         
         aBpd->AppendUnichar(kLineSeparator);
         ResolveParagraphWithinBlock(aBpd);
@@ -1301,10 +1299,10 @@ nsBidiPresUtils::ChildListMayRequireBidi(nsIFrame*    aFirstChild,
 
     
     
-    if (childFrame->GetType() == nsGkAtoms::placeholderFrame) {
+    if (childFrame->IsPlaceholderFrame()) {
       nsIFrame* realFrame =
         nsPlaceholderFrame::GetRealFrameForPlaceholder(childFrame);
-      if (realFrame->GetType() == nsGkAtoms::letterFrame) {
+      if (realFrame->IsLetterFrame()) {
         frame = realFrame;
       }
     }
@@ -1316,7 +1314,7 @@ nsBidiPresUtils::ChildListMayRequireBidi(nsIFrame*    aFirstChild,
     }
 
     if (IsBidiLeaf(frame)) {
-      if (frame->GetType() == nsGkAtoms::textFrame) {
+      if (frame->IsTextFrame()) {
         
         
         nsIContent* content = frame->GetContent();
@@ -1355,7 +1353,7 @@ nsBidiPresUtils::ReorderFrames(nsIFrame* aFirstFrameOnLine,
   nsSize containerSize(aContainerSize);
 
   
-  if (aFirstFrameOnLine->GetType() == nsGkAtoms::lineFrame) {
+  if (aFirstFrameOnLine->IsLineFrame()) {
     
     
     containerSize = aFirstFrameOnLine->GetSize();
@@ -1380,8 +1378,7 @@ nsBidiPresUtils::GetFirstLeaf(nsIFrame* aFrame)
   while (!IsBidiLeaf(firstLeaf)) {
     nsIFrame* firstChild = firstLeaf->PrincipalChildList().FirstChild();
     nsIFrame* realFrame = nsPlaceholderFrame::GetRealFrameFor(firstChild);
-    firstLeaf = (realFrame->GetType() == nsGkAtoms::letterFrame) ?
-                 realFrame : firstChild;
+    firstLeaf = (realFrame->IsLetterFrame()) ? realFrame : firstChild;
   }
   return firstLeaf;
 }
@@ -1567,14 +1564,14 @@ nsBidiPresUtils::RepositionRubyFrame(
   const WritingMode aContainerWM,
   const LogicalMargin& aBorderPadding)
 {
-  nsIAtom* frameType = aFrame->GetType();
+  FrameType frameType = aFrame->Type();
   MOZ_ASSERT(RubyUtils::IsRubyBox(frameType));
 
   nscoord icoord = 0;
   WritingMode frameWM = aFrame->GetWritingMode();
   bool isLTR = frameWM.IsBidiLTR();
   nsSize frameSize = aFrame->GetSize();
-  if (frameType == nsGkAtoms::rubyFrame) {
+  if (frameType == FrameType::Ruby) {
     icoord += aBorderPadding.IStart(frameWM);
     
     for (RubySegmentEnumerator e(static_cast<nsRubyFrame*>(aFrame));
@@ -1593,7 +1590,7 @@ nsBidiPresUtils::RepositionRubyFrame(
       icoord += segmentISize;
     }
     icoord += aBorderPadding.IEnd(frameWM);
-  } else if (frameType == nsGkAtoms::rubyBaseContainerFrame) {
+  } else if (frameType == FrameType::RubyBaseContainer) {
     
     auto rbc = static_cast<nsRubyBaseContainerFrame*>(aFrame);
     AutoRubyTextContainerArray textContainers(rbc);
@@ -1613,8 +1610,7 @@ nsBidiPresUtils::RepositionRubyFrame(
       icoord += columnISize;
     }
   } else {
-    if (frameType == nsGkAtoms::rubyBaseFrame ||
-        frameType == nsGkAtoms::rubyTextFrame) {
+    if (frameType == FrameType::RubyBase || frameType == FrameType::RubyText) {
       RepositionRubyContentFrame(aFrame, frameWM, aBorderPadding);
     }
     
@@ -1707,7 +1703,7 @@ nsBidiPresUtils::RepositionFrame(nsIFrame* aFrame,
     }
     icoord += reverseDir ?
       borderPadding.IStart(frameWM) : borderPadding.IEnd(frameWM);
-  } else if (RubyUtils::IsRubyBox(aFrame->GetType())) {
+  } else if (RubyUtils::IsRubyBox(aFrame->Type())) {
     icoord += RepositionRubyFrame(aFrame, aContinuationStates,
                                   aContainerWM, borderPadding);
   } else {
@@ -1744,7 +1740,7 @@ nsBidiPresUtils::InitContinuationStates(nsIFrame*              aFrame,
   state->mFirstVisualFrame = nullptr;
   state->mFrameCount = 0;
 
-  if (!IsBidiLeaf(aFrame) || RubyUtils::IsRubyBox(aFrame->GetType())) {
+  if (!IsBidiLeaf(aFrame) || RubyUtils::IsRubyBox(aFrame->Type())) {
     
     for (nsIFrame* frame : aFrame->PrincipalChildList()) {
       InitContinuationStates(frame,

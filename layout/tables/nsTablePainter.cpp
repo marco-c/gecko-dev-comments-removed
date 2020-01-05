@@ -422,7 +422,7 @@ TableBackgroundPainter::PaintRowGroup(nsTableRowGroupFrame* aFrame,
 
   
   
-  while (cursor && cursor->GetType() != nsGkAtoms::tableRowFrame) {
+  while (cursor && !cursor->IsTableRowFrame()) {
     cursor = cursor->GetNextSibling();
   }
 

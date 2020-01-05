@@ -194,7 +194,7 @@ class SVGTextFrame final : public nsSVGDisplayContainerFrame
 
 protected:
   explicit SVGTextFrame(nsStyleContext* aContext)
-    : nsSVGDisplayContainerFrame(aContext)
+    : nsSVGDisplayContainerFrame(aContext, mozilla::FrameType::SVGText)
     , mTrailingUndisplayedCharacters(0)
     , mFontSizeScaleFactor(1.0f)
     , mLastContextScale(1.0f)
@@ -227,13 +227,6 @@ public:
   virtual void BuildDisplayList(nsDisplayListBuilder*   aBuilder,
                                 const nsRect&           aDirtyRect,
                                 const nsDisplayListSet& aLists) override;
-
-  
-
-
-
-
-  virtual nsIAtom* GetType() const override;
 
 #ifdef DEBUG_FRAME_DUMP
   virtual nsresult GetFrameName(nsAString& aResult) const override

@@ -2579,8 +2579,8 @@ nsDocumentViewer::FindContainerView()
   
   
   
-  if (subdocFrame->GetType() != nsGkAtoms::subDocumentFrame) {
-    NS_WARNING_ASSERTION(!subdocFrame->GetType(),
+  if (!subdocFrame->IsSubDocumentFrame()) {
+    NS_WARNING_ASSERTION(subdocFrame->Type() == FrameType::None,
                          "Subdocument container has non-subdocument frame");
     return nullptr;
   }

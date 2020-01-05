@@ -44,7 +44,7 @@ public:
   nsTableFrame* GetTableFrame() const
   {
     nsIFrame* parent = GetParent();
-    MOZ_ASSERT(parent && parent->GetType() == nsGkAtoms::tableFrame);
+    MOZ_ASSERT(parent && parent->IsTableFrame());
     MOZ_ASSERT(!parent->GetPrevInFlow(),
                "Col group should always be in a first-in-flow table frame");
     return static_cast<nsTableFrame*>(parent);
@@ -111,17 +111,10 @@ public:
 
 
 
-  virtual void Reflow(nsPresContext*           aPresContext,
-                      ReflowOutput&     aDesiredSize,
+  virtual void Reflow(nsPresContext* aPresContext,
+                      ReflowOutput& aDesiredSize,
                       const ReflowInput& aReflowInput,
-                      nsReflowStatus&          aStatus) override;
-
-  
-
-
-
-
-  virtual nsIAtom* GetType() const override;
+                      nsReflowStatus& aStatus) override;
 
   
 
@@ -230,14 +223,16 @@ protected:
   BCPixelSize mBEndContBorderWidth;
 };
 
-inline nsTableColGroupFrame::nsTableColGroupFrame(nsStyleContext *aContext)
-: nsContainerFrame(aContext), mColCount(0), mStartColIndex(0)
-{ 
+inline nsTableColGroupFrame::nsTableColGroupFrame(nsStyleContext* aContext)
+  : nsContainerFrame(aContext, mozilla::FrameType::TableColGroup)
+  , mColCount(0)
+  , mStartColIndex(0)
+{
   SetColType(eColGroupContent);
 }
-  
+
 inline int32_t nsTableColGroupFrame::GetStartColumnIndex()
-{  
+{
   return mStartColIndex;
 }
 
@@ -247,12 +242,12 @@ inline void nsTableColGroupFrame::SetStartColumnIndex (int32_t aIndex)
 }
 
 inline int32_t nsTableColGroupFrame::GetColCount() const
-{  
+{
   return mColCount;
 }
 
 inline nsFrameList& nsTableColGroupFrame::GetWritableChildList()
-{  
+{
   return mFrames;
 }
 

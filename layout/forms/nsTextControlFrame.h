@@ -167,7 +167,6 @@ public:
 
 
 
-  virtual nsIAtom* GetType() const override;
 
   
   virtual nsresult AttributeChanged(int32_t         aNameSpaceID,

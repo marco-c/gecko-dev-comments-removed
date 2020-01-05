@@ -56,7 +56,7 @@ static nsIFrame*
 CheckForTrailingTextFrameRecursive(nsIFrame* aFrame, nsIFrame* aStopAtFrame)
 {
   if (aFrame == aStopAtFrame ||
-      ((aFrame->GetType() == nsGkAtoms::textFrame &&
+      ((aFrame->IsTextFrame() &&
        (static_cast<nsTextFrame*>(aFrame))->IsAtEndOfLine())))
     return aFrame;
   if (!aFrame->IsFrameOfType(nsIFrame::eLineParticipant))
@@ -104,7 +104,7 @@ AdjustCaretFrameForLineEnd(nsIFrame** aFrame, int32_t* aOffset)
     if (r)
     {
       *aFrame = r;
-      NS_ASSERTION(r->GetType() == nsGkAtoms::textFrame, "Expected text frame");
+      NS_ASSERTION(r->IsTextFrame(), "Expected text frame");
       *aOffset = (static_cast<nsTextFrame*>(r))->GetContentEnd();
       return;
     }
@@ -374,8 +374,8 @@ nsCaret::GetGeometryForFrame(nsIFrame* aFrame,
 
   
   
-  nsIFrame *scrollFrame =
-    nsLayoutUtils::GetClosestFrameOfType(aFrame, nsGkAtoms::scrollFrame);
+  nsIFrame* scrollFrame =
+    nsLayoutUtils::GetClosestFrameOfType(aFrame, FrameType::Scroll);
   if (scrollFrame) {
     
     nsIScrollableFrame *sf = do_QueryFrame(scrollFrame);
@@ -550,10 +550,9 @@ nsCaret::GetPaintGeometry(nsRect* aRect)
 
   
   int32_t startOffset, endOffset;
-  if (frame->GetType() == nsGkAtoms::textFrame &&
+  if (frame->IsTextFrame() &&
       (NS_FAILED(frame->GetOffsets(startOffset, endOffset)) ||
-      startOffset > frameOffset ||
-      endOffset < frameOffset)) {
+       startOffset > frameOffset || endOffset < frameOffset)) {
     return nullptr;
   }
 

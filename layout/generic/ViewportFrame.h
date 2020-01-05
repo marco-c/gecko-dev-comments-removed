@@ -30,9 +30,9 @@ public:
   NS_DECL_FRAMEARENA_HELPERS
 
   explicit ViewportFrame(nsStyleContext* aContext)
-    : nsContainerFrame(aContext)
-    , mView(nullptr)
+    : ViewportFrame(aContext, mozilla::FrameType::Viewport)
   {}
+
   virtual ~ViewportFrame() { } 
 
   virtual void Init(nsIContent*       aContent,
@@ -58,17 +58,10 @@ public:
 
   virtual nscoord GetMinISize(nsRenderingContext *aRenderingContext) override;
   virtual nscoord GetPrefISize(nsRenderingContext *aRenderingContext) override;
-  virtual void Reflow(nsPresContext*           aPresContext,
-                      ReflowOutput&     aDesiredSize,
+  virtual void Reflow(nsPresContext* aPresContext,
+                      ReflowOutput& aDesiredSize,
                       const ReflowInput& aReflowInput,
-                      nsReflowStatus&          aStatus) override;
-
-  
-
-
-
-
-  virtual nsIAtom* GetType() const override;
+                      nsReflowStatus& aStatus) override;
 
   virtual bool ComputeCustomOverflow(nsOverflowAreas& aOverflowAreas) override;
 
@@ -85,6 +78,11 @@ public:
 #endif
 
 protected:
+  ViewportFrame(nsStyleContext* aContext, mozilla::FrameType aType)
+    : nsContainerFrame(aContext, aType)
+    , mView(nullptr)
+  {}
+
   
 
 

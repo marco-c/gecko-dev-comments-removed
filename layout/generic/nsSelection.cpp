@@ -1170,7 +1170,7 @@ nsFrameSelection::MoveCaret(nsDirection       aDirection,
     
     
     
-    bool isBRFrame = frame->GetType() == nsGkAtoms::brFrame;
+    bool isBRFrame = frame->IsBrFrame();
     sel->Collapse(sel->GetFocusNode(), sel->FocusOffset());
     
     if (!isBRFrame) {
@@ -1408,11 +1408,11 @@ nsFrameSelection::GetPrevNextBidiLevels(nsIContent*        aNode,
   
   
   if (!aJumpLines) {
-    if (currentFrame->GetType() == nsGkAtoms::brFrame) {
+    if (currentFrame->IsBrFrame()) {
       currentFrame = nullptr;
       currentLevel = currentBidi.baseLevel;
     }
-    if (newFrame && newFrame->GetType() == nsGkAtoms::brFrame) {
+    if (newFrame && newFrame->IsBrFrame()) {
       newFrame = nullptr;
       newLevel = currentBidi.baseLevel;
     }
@@ -2295,7 +2295,7 @@ nsFrameSelection::PhysicalMove(int16_t aDirection, int16_t aAmount,
         
         
         
-        MOZ_ASSERT(frame->GetType() == nsGkAtoms::textFrame);
+        MOZ_ASSERT(frame->IsTextFrame());
         wm = frame->GetParent()->GetWritingMode();
         MOZ_ASSERT(wm.IsVertical(), "Text combined "
                    "can only appear in vertical text");
@@ -4474,7 +4474,7 @@ Selection::SelectAllFramesForContent(nsIContentIterator* aInnerIter,
   {
     
     frame = aContent->GetPrimaryFrame();
-    if (frame && frame->GetType() == nsGkAtoms::textFrame) {
+    if (frame && frame->IsTextFrame()) {
       nsTextFrame* textFrame = static_cast<nsTextFrame*>(frame);
       textFrame->SetSelectedRange(0, aContent->GetText()->GetLength(),
                                   aSelected, mSelectionType);
@@ -4486,7 +4486,7 @@ Selection::SelectAllFramesForContent(nsIContentIterator* aInnerIter,
 
       frame = innercontent->GetPrimaryFrame();
       if (frame) {
-        if (frame->GetType() == nsGkAtoms::textFrame) {
+        if (frame->IsTextFrame()) {
           nsTextFrame* textFrame = static_cast<nsTextFrame*>(frame);
           textFrame->SetSelectedRange(0, innercontent->GetText()->GetLength(),
                                       aSelected, mSelectionType);
@@ -4543,7 +4543,7 @@ Selection::selectFrames(nsPresContext* aPresContext, nsRange* aRange,
   if (content->IsNodeOfType(nsINode::eTEXT)) {
     nsIFrame* frame = content->GetPrimaryFrame();
     
-    if (frame && frame->GetType() == nsGkAtoms::textFrame) {
+    if (frame && frame->IsTextFrame()) {
       nsTextFrame* textFrame = static_cast<nsTextFrame*>(frame);
       uint32_t startOffset = aRange->StartOffset();
       uint32_t endOffset;
@@ -4574,7 +4574,7 @@ Selection::selectFrames(nsPresContext* aPresContext, nsRange* aRange,
     if (content->IsNodeOfType(nsINode::eTEXT)) {
       nsIFrame* frame = content->GetPrimaryFrame();
       
-      if (frame && frame->GetType() == nsGkAtoms::textFrame) {
+      if (frame && frame->IsTextFrame()) {
         nsTextFrame* textFrame = static_cast<nsTextFrame*>(frame);
         textFrame->SetSelectedRange(0, aRange->EndOffset(), aSelect,
                                     mSelectionType);

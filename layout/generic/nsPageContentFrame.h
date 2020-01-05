@@ -12,8 +12,8 @@ class nsPageFrame;
 class nsSharedPageData;
 
 
-class nsPageContentFrame : public mozilla::ViewportFrame {
-
+class nsPageContentFrame final : public mozilla::ViewportFrame
+{
 public:
   NS_DECL_FRAMEARENA_HELPERS
 
@@ -37,20 +37,15 @@ public:
 
   virtual bool HasTransformGetter() const override { return true; }
 
-  
-
-
-
-
-  virtual nsIAtom* GetType() const override;
-
 #ifdef DEBUG_FRAME_DUMP
   
   virtual nsresult  GetFrameName(nsAString& aResult) const override;
 #endif
 
 protected:
-  explicit nsPageContentFrame(nsStyleContext* aContext) : ViewportFrame(aContext) {}
+  explicit nsPageContentFrame(nsStyleContext* aContext)
+    : ViewportFrame(aContext, mozilla::FrameType::PageContent)
+  {}
 
   nsSharedPageData*         mPD;
 };

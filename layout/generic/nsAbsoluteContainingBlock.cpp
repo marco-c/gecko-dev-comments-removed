@@ -425,15 +425,15 @@ OffsetToAlignedStaticPos(const ReflowInput& aKidReflowInput,
                         ? GetOrthogonalAxis(aAbsPosCBAxis)
                         : aAbsPosCBAxis);
 
-  nsIAtom* parentType = aPlaceholderContainer->GetType();
+  FrameType parentType = aPlaceholderContainer->Type();
   LogicalSize alignAreaSize(pcWM);
-  if (parentType == nsGkAtoms::flexContainerFrame) {
+  if (parentType == FrameType::FlexContainer) {
     
     alignAreaSize = aPlaceholderContainer->GetLogicalSize(pcWM);
     LogicalMargin pcBorderPadding =
       aPlaceholderContainer->GetLogicalUsedBorderAndPadding(pcWM);
     alignAreaSize -= pcBorderPadding.Size(pcWM);
-  } else if (parentType == nsGkAtoms::gridContainerFrame) {
+  } else if (parentType == FrameType::GridContainer) {
     
     
     
@@ -686,7 +686,7 @@ nsAbsoluteContainingBlock::ReflowAbsoluteFrame(nsIFrame*                aDelegat
   bool constrainBSize = (aReflowInput.AvailableBSize() != NS_UNCONSTRAINEDSIZE)
     && (aFlags & AbsPosReflowFlags::eConstrainHeight)
        
-    && (aDelegatingFrame->GetType() != nsGkAtoms::inlineFrame)
+    && !aDelegatingFrame->IsInlineFrame()
        
     && (aKidFrame->GetLogicalRect(aContainingBlock.Size()).BStart(wm) <=
         aReflowInput.AvailableBSize());

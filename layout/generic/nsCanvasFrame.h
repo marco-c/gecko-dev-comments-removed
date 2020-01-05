@@ -34,9 +34,10 @@ class nsCanvasFrame final : public nsContainerFrame,
 {
 public:
   explicit nsCanvasFrame(nsStyleContext* aContext)
-  : nsContainerFrame(aContext),
-    mDoPaintFocus(false),
-    mAddedScrollPositionListener(false) {}
+    : nsContainerFrame(aContext, mozilla::FrameType::Canvas)
+    , mDoPaintFocus(false)
+    , mAddedScrollPositionListener(false)
+  {}
 
   NS_DECL_QUERYFRAME_TARGET(nsCanvasFrame)
   NS_DECL_QUERYFRAME
@@ -104,13 +105,6 @@ public:
   
   virtual void ScrollPositionWillChange(nscoord aX, nscoord aY) override;
   virtual void ScrollPositionDidChange(nscoord aX, nscoord aY) override {}
-
-  
-
-
-
-
-  virtual nsIAtom* GetType() const override;
 
 #ifdef DEBUG_FRAME_DUMP
   virtual nsresult GetFrameName(nsAString& aResult) const override;

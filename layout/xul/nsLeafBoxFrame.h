@@ -22,7 +22,6 @@ public:
   virtual nscoord GetXULFlex() override;
   virtual nscoord GetXULBoxAscent(nsBoxLayoutState& aState) override;
 
-  virtual nsIAtom* GetType() const override;
   virtual bool IsFrameOfType(uint32_t aFlags) const override
   {
     
@@ -83,7 +82,11 @@ protected:
 
   virtual nscoord GetIntrinsicISize() override;
 
- explicit nsLeafBoxFrame(nsStyleContext* aContext);
+  explicit nsLeafBoxFrame(nsStyleContext* aContext)
+    : nsLeafBoxFrame(aContext, mozilla::FrameType::LeafBox)
+  {}
+
+  nsLeafBoxFrame(nsStyleContext* aContext, mozilla::FrameType aType);
 
 private:
 

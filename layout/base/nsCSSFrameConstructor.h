@@ -611,11 +611,11 @@ private:
 
   
   static ParentType GetParentType(nsIFrame* aParentFrame) {
-    return GetParentType(aParentFrame->GetType());
+    return GetParentType(aParentFrame->Type());
   }
 
   
-  static ParentType GetParentType(nsIAtom* aFrameType);
+  static ParentType GetParentType(mozilla::FrameType aFrameType);
 
   static bool IsRubyParentType(ParentType aParentType) {
     return (aParentType == eTypeRuby ||

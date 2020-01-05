@@ -39,12 +39,6 @@ NS_NewRubyBaseFrame(nsIPresShell* aPresShell,
 
 
 
-nsIAtom*
-nsRubyBaseFrame::GetType() const
-{
-  return nsGkAtoms::rubyBaseFrame;
-}
-
 #ifdef DEBUG_FRAME_DUMP
 nsresult
 nsRubyBaseFrame::GetFrameName(nsAString& aResult) const

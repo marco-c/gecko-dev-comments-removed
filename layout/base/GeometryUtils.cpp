@@ -185,8 +185,7 @@ public:
   virtual void AddBox(nsIFrame* aFrame) override
   {
     nsIFrame* f = aFrame;
-    if (mBoxType == CSSBoxType::Margin &&
-        f->GetType() == nsGkAtoms::tableFrame) {
+    if (mBoxType == CSSBoxType::Margin && f->IsTableFrame()) {
       
       
       f = f->GetParent();

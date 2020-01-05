@@ -70,8 +70,6 @@ public:
                                 const nsRect&           aDirtyRect,
                                 const nsDisplayListSet& aLists) override;
 
-  virtual nsIAtom* GetType() const override;
-
   
 
 

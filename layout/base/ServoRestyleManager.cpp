@@ -151,7 +151,7 @@ ServoRestyleManager::ProcessPostTraversal(Element* aElement,
     changeHint |= nsChangeHint_ReconstructFrame;
     
     
-    MOZ_ASSERT_IF(styleFrame, styleFrame->GetType() == nsGkAtoms::imageFrame);
+    MOZ_ASSERT_IF(styleFrame, styleFrame->IsImageFrame());
     styleFrame = nullptr;
   }
 

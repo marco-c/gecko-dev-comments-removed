@@ -1770,8 +1770,9 @@ PresShell::Initialize(nscoord aWidth, nscoord aHeight)
       f->RemoveStateBits(NS_FRAME_NO_COMPONENT_ALPHA);
     }
     nsCOMPtr<nsIPresShell> shell;
-    if (f->GetType() == nsGkAtoms::subDocumentFrame &&
-        (shell = static_cast<nsSubDocumentFrame*>(f)->GetSubdocumentPresShellForPainting(0)) &&
+    if (f->IsSubDocumentFrame() &&
+        (shell = static_cast<nsSubDocumentFrame*>(f)
+                   ->GetSubdocumentPresShellForPainting(0)) &&
         shell->GetPresContext()->IsRootContentDocument()) {
       
       
@@ -2473,10 +2474,10 @@ nsIPresShell::GetRootScrollFrame() const
 {
   nsIFrame* rootFrame = mFrameConstructor->GetRootFrame();
   
-  if (!rootFrame || nsGkAtoms::viewportFrame != rootFrame->GetType())
+  if (!rootFrame || !rootFrame->IsViewportFrame())
     return nullptr;
   nsIFrame* theFrame = rootFrame->PrincipalChildList().FirstChild();
-  if (!theFrame || nsGkAtoms::scrollFrame != theFrame->GetType())
+  if (!theFrame || !theFrame->IsScrollFrame())
     return nullptr;
   return theFrame;
 }
@@ -2757,7 +2758,7 @@ PresShell::FrameNeedsReflow(nsIFrame *aFrame, IntrinsicDirty aIntrinsicDirty,
         nsIFrame *f = stack.ElementAt(stack.Length() - 1);
         stack.RemoveElementAt(stack.Length() - 1);
 
-        if (f->GetType() == nsGkAtoms::placeholderFrame) {
+        if (f->IsPlaceholderFrame()) {
           nsIFrame *oof = nsPlaceholderFrame::GetRealFrameForPlaceholder(f);
           if (!nsLayoutUtils::IsProperAncestorFrame(subtreeRoot, oof)) {
             
@@ -3266,9 +3267,7 @@ AccumulateFrameBounds(nsIFrame* aContainerFrame,
       f = prevFrame->GetParent();
     }
 
-    if (f != aFrame &&
-        f &&
-        f->GetType() == nsGkAtoms::blockFrame) {
+    if (f != aFrame && f && f->IsBlockFrame()) {
       
       if (f != aPrevBlock) {
         aLines = f->GetLineIterator();
@@ -3534,7 +3533,7 @@ PresShell::DoScrollContentIntoView()
   
   
   nsIFrame* container =
-    nsLayoutUtils::GetClosestFrameOfType(frame->GetParent(), nsGkAtoms::scrollFrame);
+    nsLayoutUtils::GetClosestFrameOfType(frame->GetParent(), FrameType::Scroll);
   if (!container) {
     
     return;
@@ -4820,7 +4819,7 @@ PresShell::ClipListToRange(nsDisplayListBuilder *aBuilder,
     if (content) {
       bool atStart = (content == aRange->GetStartParent());
       bool atEnd = (content == aRange->GetEndParent());
-      if ((atStart || atEnd) && frame->GetType() == nsGkAtoms::textFrame) {
+      if ((atStart || atEnd) && frame->IsTextFrame()) {
         int32_t frameStartOffset, frameEndOffset;
         frame->GetOffsets(frameStartOffset, frameEndOffset);
 
@@ -9566,7 +9565,7 @@ static bool
 ReframeImageBoxes(nsIFrame *aFrame, void *aClosure)
 {
   nsStyleChangeList *list = static_cast<nsStyleChangeList*>(aClosure);
-  if (aFrame->GetType() == nsGkAtoms::imageBoxFrame) {
+  if (aFrame->IsImageBoxFrame()) {
     list->AppendChange(aFrame, aFrame->GetContent(),
                        nsChangeHint_ReconstructFrame);
     return false; 

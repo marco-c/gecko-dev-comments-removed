@@ -169,7 +169,7 @@ FindCellProperty(const nsIFrame* aCellFrame,
   while (currentFrame) {
     ConstFrameProperties props = currentFrame->Properties();
     propertyData = props.Get(aFrameProperty);
-    bool frameIsTable = (currentFrame->GetType() == nsGkAtoms::tableFrame);
+    bool frameIsTable = (currentFrame->IsTableFrame());
 
     if (propertyData || frameIsTable)
       currentFrame = nullptr; 
@@ -585,12 +585,12 @@ MapAllAttributesIntoCSS(nsMathMLmtableFrame* aTableFrame)
 
   
   nsIFrame* rgFrame = aTableFrame->PrincipalChildList().FirstChild();
-  if (!rgFrame || rgFrame->GetType() != nsGkAtoms::tableRowGroupFrame)
+  if (!rgFrame || !rgFrame->IsTableRowGroupFrame())
     return;
 
   for (nsIFrame* rowFrame : rgFrame->PrincipalChildList()) {
     DEBUG_VERIFY_THAT_FRAME_IS(rowFrame, TableRow);
-    if (rowFrame->GetType() == nsGkAtoms::tableRowFrame) {
+    if (rowFrame->IsTableRowFrame()) {
       
       ParseFrameAttribute(rowFrame, nsGkAtoms::rowalign_, false);
       
@@ -598,7 +598,7 @@ MapAllAttributesIntoCSS(nsMathMLmtableFrame* aTableFrame)
 
       for (nsIFrame* cellFrame : rowFrame->PrincipalChildList()) {
         DEBUG_VERIFY_THAT_FRAME_IS(cellFrame, TableCell);
-        if (IS_TABLE_CELL(cellFrame->GetType())) {
+        if (IS_TABLE_CELL(cellFrame->Type())) {
           
           ParseFrameAttribute(cellFrame, nsGkAtoms::rowalign_, false);
           
@@ -728,10 +728,10 @@ nsMathMLmtableWrapperFrame::AttributeChanged(int32_t  aNameSpaceID,
 
   
   nsIFrame* tableFrame = mFrames.FirstChild();
-  NS_ASSERTION(tableFrame && tableFrame->GetType() == nsGkAtoms::tableFrame,
+  NS_ASSERTION(tableFrame && tableFrame->IsTableFrame(),
                "should always have an inner table frame");
   nsIFrame* rgFrame = tableFrame->PrincipalChildList().FirstChild();
-  if (!rgFrame || rgFrame->GetType() != nsGkAtoms::tableRowGroupFrame)
+  if (!rgFrame || !rgFrame->IsTableRowGroupFrame())
     return NS_OK;
 
   
@@ -801,15 +801,15 @@ nsMathMLmtableWrapperFrame::GetRowFrameAt(int32_t aRowIndex)
   
   if (0 <= aRowIndex && aRowIndex <= rowCount) {
     nsIFrame* tableFrame = mFrames.FirstChild();
-    NS_ASSERTION(tableFrame && tableFrame->GetType() == nsGkAtoms::tableFrame,
+    NS_ASSERTION(tableFrame && tableFrame->IsTableFrame(),
                  "should always have an inner table frame");
     nsIFrame* rgFrame = tableFrame->PrincipalChildList().FirstChild();
-    if (!rgFrame || rgFrame->GetType() != nsGkAtoms::tableRowGroupFrame)
+    if (!rgFrame || !rgFrame->IsTableRowGroupFrame())
       return nullptr;
     for (nsIFrame* rowFrame : rgFrame->PrincipalChildList()) {
       if (aRowIndex == 0) {
         DEBUG_VERIFY_THAT_FRAME_IS(rowFrame, TableRow);
-        if (rowFrame->GetType() != nsGkAtoms::tableRowFrame)
+        if (!rowFrame->IsTableRowFrame())
           return nullptr;
 
         return rowFrame;

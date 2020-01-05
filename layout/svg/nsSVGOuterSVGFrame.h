@@ -75,13 +75,6 @@ public:
 
   virtual nsSplittableType GetSplittableType() const override;
 
-  
-
-
-
-
-  virtual nsIAtom* GetType() const override;
-
 #ifdef DEBUG_FRAME_DUMP
   virtual nsresult GetFrameName(nsAString& aResult) const override
   {
@@ -96,8 +89,7 @@ public:
   virtual nsContainerFrame* GetContentInsertionFrame() override {
     
     MOZ_ASSERT(PrincipalChildList().FirstChild() &&
-               PrincipalChildList().FirstChild()->GetType() ==
-                 nsGkAtoms::svgOuterSVGAnonChildFrame,
+               PrincipalChildList().FirstChild()->IsSVGOuterSVGAnonChildFrame(),
                "Where is our anonymous child?");
     return PrincipalChildList().FirstChild()->GetContentInsertionFrame();
   }
@@ -232,14 +224,15 @@ protected:
 
 
 
-class nsSVGOuterSVGAnonChildFrame : public nsSVGDisplayContainerFrame
+class nsSVGOuterSVGAnonChildFrame final : public nsSVGDisplayContainerFrame
 {
   friend nsContainerFrame*
   NS_NewSVGOuterSVGAnonChildFrame(nsIPresShell* aPresShell,
                                   nsStyleContext* aContext);
 
   explicit nsSVGOuterSVGAnonChildFrame(nsStyleContext* aContext)
-    : nsSVGDisplayContainerFrame(aContext)
+    : nsSVGDisplayContainerFrame(aContext,
+                                 mozilla::FrameType::SVGOuterSVGAnonChild)
   {}
 
 public:
@@ -256,13 +249,6 @@ public:
     return MakeFrameName(NS_LITERAL_STRING("SVGOuterSVGAnonChild"), aResult);
   }
 #endif
-
-  
-
-
-
-
-  virtual nsIAtom* GetType() const override;
 
   bool IsSVGTransformed(Matrix *aOwnTransform,
                         Matrix *aFromParentTransform) const override;

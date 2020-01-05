@@ -108,7 +108,7 @@ public:
   virtual void BuildDisplayListForChildren(nsDisplayListBuilder*   aBuilder,
                                            const nsRect&           aDirtyRect,
                                            const nsDisplayListSet& aLists) override;
-                                         
+
   
   virtual nsresult HandleEvent(nsPresContext* aPresContext,
                                mozilla::WidgetGUIEvent* aEvent,
@@ -123,8 +123,6 @@ public:
                             nsFrameList&    aFrameList) override;
   virtual void RemoveFrame(ChildListID     aListID,
                            nsIFrame*       aOldFrame) override;
-
-  virtual nsIAtom* GetType() const override { return nsGkAtoms::menuFrame; }
 
   NS_IMETHOD SelectMenu(bool aActivateFlag);
 

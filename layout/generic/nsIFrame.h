@@ -165,6 +165,16 @@ typedef uint32_t nsSplittableType;
 
 
 
+namespace mozilla {
+
+enum class FrameType : uint8_t {
+#define FRAME_TYPE(ty_) ty_,
+#include "mozilla/FrameTypeList.h"
+#undef FRAME_TYPE
+};
+
+} 
+
 enum nsSelectionAmount {
   eSelectCharacter = 0, 
                         
@@ -592,13 +602,14 @@ public:
 
   NS_DECL_QUERYFRAME_TARGET(nsIFrame)
 
-  nsIFrame()
+  explicit nsIFrame(mozilla::FrameType aType)
     : mRect()
     , mContent(nullptr)
     , mStyleContext(nullptr)
     , mParent(nullptr)
     , mNextSibling(nullptr)
     , mPrevSibling(nullptr)
+    , mType(aType)
   {
     mozilla::PodZero(&mOverflow);
   }
@@ -2627,7 +2638,12 @@ public:
 
 
 
-  virtual nsIAtom* GetType() const = 0;
+  mozilla::FrameType Type() const { return mType; }
+
+#define FRAME_TYPE(name_)                                                      \
+  bool Is##name_##Frame() const { return mType == mozilla::FrameType::name_; }
+#include "mozilla/FrameTypeList.h"
+#undef FRAME_TYPE
 
   
 
@@ -3787,6 +3803,9 @@ protected:
 
   
   mozilla::WritingMode mWritingMode;
+
+  
+  mozilla::FrameType mType;
 
   
   

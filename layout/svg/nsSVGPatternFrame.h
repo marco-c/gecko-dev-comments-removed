@@ -27,7 +27,7 @@ class nsSVGAnimatedTransformList;
 
 
 
-class nsSVGPatternFrame : public nsSVGPaintServerFrame
+class nsSVGPatternFrame final : public nsSVGPaintServerFrame
 {
   typedef mozilla::gfx::SourceSurface SourceSurface;
 
@@ -65,13 +65,6 @@ public:
                     nsContainerFrame* aParent,
                     nsIFrame*         aPrevInFlow) override;
 #endif
-
-  
-
-
-
-
-  virtual nsIAtom* GetType() const override;
 
 #ifdef DEBUG_FRAME_DUMP
   virtual nsresult GetFrameName(nsAString& aResult) const override

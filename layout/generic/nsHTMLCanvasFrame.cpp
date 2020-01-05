@@ -389,15 +389,9 @@ nsHTMLCanvasFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
                           nsISelectionDisplay::DISPLAY_IMAGES);
 }
 
-nsIAtom*
-nsHTMLCanvasFrame::GetType() const
-{
-  return nsGkAtoms::HTMLCanvasFrame;
-}
 
 
-
-nscoord 
+nscoord
 nsHTMLCanvasFrame::GetContinuationOffset(nscoord* aWidth) const
 {
   nscoord offset = 0;

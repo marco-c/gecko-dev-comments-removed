@@ -18,18 +18,12 @@ using namespace mozilla;
 
 
 nsFormControlFrame::nsFormControlFrame(nsStyleContext* aContext)
-  : nsAtomicContainerFrame(aContext)
+  : nsAtomicContainerFrame(aContext, FrameType::FormControl)
 {
 }
 
 nsFormControlFrame::~nsFormControlFrame()
 {
-}
-
-nsIAtom*
-nsFormControlFrame::GetType() const
-{
-  return nsGkAtoms::formControlFrame;
 }
 
 void

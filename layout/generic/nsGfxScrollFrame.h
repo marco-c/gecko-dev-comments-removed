@@ -972,13 +972,6 @@ public:
   }
 
   
-
-
-
-
-  virtual nsIAtom* GetType() const override;
-
-  
   virtual void ScrollByPage(nsScrollbarFrame* aScrollbar, int32_t aDirection,
                             nsIScrollbarMediator::ScrollSnapMode aSnap
                               = nsIScrollbarMediator::DISABLE_SNAP) override {
@@ -1066,7 +1059,13 @@ public:
 #endif
 
 protected:
-  nsHTMLScrollFrame(nsStyleContext* aContext, bool aIsRoot);
+  nsHTMLScrollFrame(nsStyleContext* aContext, bool aIsRoot)
+    : nsHTMLScrollFrame(aContext, mozilla::FrameType::Scroll, aIsRoot)
+  {}
+
+  nsHTMLScrollFrame(nsStyleContext* aContext,
+                    mozilla::FrameType aType,
+                    bool aIsRoot);
   void SetSuppressScrollbarUpdate(bool aSuppress) {
     mHelper.mSupppressScrollbarUpdate = aSuppress;
   }
@@ -1392,13 +1391,6 @@ public:
     return NS_OK;
   }
 
-  
-
-
-
-
-  virtual nsIAtom* GetType() const override;
-  
   virtual bool IsFrameOfType(uint32_t aFlags) const override
   {
     

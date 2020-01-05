@@ -20,7 +20,7 @@
 #include "mozilla/Attributes.h"
 #include "nsBoxFrame.h"
 
-class nsProgressMeterFrame : public nsBoxFrame
+class nsProgressMeterFrame final : public nsBoxFrame
 {
 public:
   NS_DECL_FRAMEARENA_HELPERS

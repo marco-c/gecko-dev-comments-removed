@@ -281,7 +281,7 @@ nsNativeTheme::IsWidgetStyled(nsPresContext* aPresContext, nsIFrame* aFrame,
   
   if (aWidgetType == NS_THEME_RESIZER) {
     nsIFrame* parentFrame = aFrame->GetParent();
-    if (parentFrame && parentFrame->GetType() == nsGkAtoms::scrollFrame) {
+    if (parentFrame && parentFrame->IsScrollFrame()) {
       
       
       parentFrame = parentFrame->GetParent();
@@ -712,11 +712,11 @@ bool
 nsNativeTheme::IsRangeHorizontal(nsIFrame* aFrame)
 {
   nsIFrame* rangeFrame = aFrame;
-  if (rangeFrame->GetType() != nsGkAtoms::rangeFrame) {
+  if (!rangeFrame->IsRangeFrame()) {
     
     rangeFrame = aFrame->GetParent();
   }
-  if (rangeFrame->GetType() == nsGkAtoms::rangeFrame) {
+  if (rangeFrame->IsRangeFrame()) {
     return static_cast<nsRangeFrame*>(rangeFrame)->IsHorizontal();
   }
   

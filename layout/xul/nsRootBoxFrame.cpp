@@ -78,13 +78,6 @@ public:
                                 const nsRect&           aDirtyRect,
                                 const nsDisplayListSet& aLists) override;
 
-  
-
-
-
-
-  virtual nsIAtom* GetType() const override;
-
   virtual bool IsFrameOfType(uint32_t aFlags) const override
   {
     
@@ -114,7 +107,7 @@ NS_NewRootBoxFrame(nsIPresShell* aPresShell, nsStyleContext* aContext)
 NS_IMPL_FRAMEARENA_HELPERS(nsRootBoxFrame)
 
 nsRootBoxFrame::nsRootBoxFrame(nsStyleContext* aContext)
-  : nsBoxFrame(aContext, true)
+  : nsBoxFrame(aContext, FrameType::Root, true)
   , mPopupSetFrame(nullptr)
   , mDefaultTooltip(nullptr)
 {
@@ -210,14 +203,6 @@ nsRootBoxFrame::HandleEvent(nsPresContext* aPresContext,
   }
 
   return NS_OK;
-}
-
-
-
-nsIAtom*
-nsRootBoxFrame::GetType() const
-{
-  return nsGkAtoms::rootFrame;
 }
 
 nsPopupSetFrame*

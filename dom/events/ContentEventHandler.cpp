@@ -956,7 +956,7 @@ ContentEventHandler::ExpandToClusterBoundary(nsIContent* aContent,
       *aXPOffset == static_cast<uint32_t>(endOffset)) {
     return NS_OK;
   }
-  if (frame->GetType() != nsGkAtoms::textFrame) {
+  if (!frame->IsTextFrame()) {
     return NS_ERROR_FAILURE;
   }
   nsTextFrame* textFrame = static_cast<nsTextFrame*>(frame);
@@ -1617,7 +1617,7 @@ ContentEventHandler::GetLastFrameInRangeForTextRect(nsRange* aRange)
   
   
   
-  if (lastFrame->GetType() != nsGkAtoms::textFrame) {
+  if (!lastFrame->IsTextFrame()) {
     return FrameAndNodeOffset(lastFrame, nodePosition.mOffset);
   }
 
@@ -1655,7 +1655,7 @@ ContentEventHandler::GetLineBreakerRectBefore(nsIFrame* aFrame)
   
   
   
-  if (aFrame->GetType() != nsGkAtoms::brFrame && aFrame->GetParent()) {
+  if (!aFrame->IsBrFrame() && aFrame->GetParent()) {
     frameForFontMetrics = aFrame->GetParent();
   }
 
@@ -1700,7 +1700,7 @@ ContentEventHandler::GetLineBreakerRectBefore(nsIFrame* aFrame)
   
   
   
-  if (aFrame->GetType() != nsGkAtoms::brFrame) {
+  if (!aFrame->IsBrFrame()) {
     if (kWritingMode.IsVertical()) {
       if (kWritingMode.IsLineInverted()) {
         
@@ -1873,7 +1873,7 @@ ContentEventHandler::OnQueryTextRectArray(WidgetQueryContentEvent* aEvent)
 
     
     
-    if (firstFrame->GetType() == nsGkAtoms::textFrame) {
+    if (firstFrame->IsTextFrame()) {
       rv = firstFrame->GetCharacterRectsInRange(firstFrame.mOffsetInNode,
                                                 kEndOffset - offset, charRects);
       if (NS_WARN_IF(NS_FAILED(rv)) || NS_WARN_IF(charRects.IsEmpty())) {
@@ -1939,8 +1939,7 @@ ContentEventHandler::OnQueryTextRectArray(WidgetQueryContentEvent* aEvent)
       
       
       
-      if (firstFrame->GetType() != nsGkAtoms::brFrame &&
-          aEvent->mInput.mOffset != offset) {
+      if (!firstFrame->IsBrFrame() && aEvent->mInput.mOffset != offset) {
         baseFrame = lastFrame;
         brRect = lastCharRect;
         if (!wasLineBreaker) {
@@ -1958,7 +1957,7 @@ ContentEventHandler::OnQueryTextRectArray(WidgetQueryContentEvent* aEvent)
       
       
       
-      else if (firstFrame->GetType() != nsGkAtoms::brFrame && lastTextContent) {
+      else if (!firstFrame->IsBrFrame() && lastTextContent) {
         FrameRelativeRect brRectRelativeToLastTextFrame =
           GuessLineBreakerRectAfter(lastTextContent);
         if (NS_WARN_IF(!brRectRelativeToLastTextFrame.IsValid())) {
@@ -2181,11 +2180,11 @@ ContentEventHandler::OnQueryTextRect(WidgetQueryContentEvent* aEvent)
       FrameRelativeRect relativeRect;
       
       
-      if (lastFrame->GetType() == nsGkAtoms::brFrame) {
+      if (lastFrame->IsBrFrame()) {
         relativeRect = GetLineBreakerRectBefore(lastFrame);
       }
       
-      else if (lastFrame->GetType() == nsGkAtoms::textFrame) {
+      else if (lastFrame->IsTextFrame()) {
         relativeRect = GuessLineBreakerRectAfter(lastFrame->GetContent());
       }
       
@@ -2234,7 +2233,7 @@ ContentEventHandler::OnQueryTextRect(WidgetQueryContentEvent* aEvent)
   
   
   
-  if (firstFrame->GetType() == nsGkAtoms::textFrame) {
+  if (firstFrame->IsTextFrame()) {
     rect.SetRect(nsPoint(0, 0), firstFrame->GetRect().Size());
     rv = ConvertToRootRelativeOffset(firstFrame, rect);
     if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -2276,7 +2275,7 @@ ContentEventHandler::OnQueryTextRect(WidgetQueryContentEvent* aEvent)
   
   
   
-  else if (firstFrame->GetType() != nsGkAtoms::brFrame && lastTextContent) {
+  else if (!firstFrame->IsBrFrame() && lastTextContent) {
     FrameRelativeRect brRectAfterLastChar =
       GuessLineBreakerRectAfter(lastTextContent);
     if (NS_WARN_IF(!brRectAfterLastChar.IsValid())) {
@@ -2342,8 +2341,7 @@ ContentEventHandler::OnQueryTextRect(WidgetQueryContentEvent* aEvent)
         
         
         
-        if (primaryFrame->GetType() == nsGkAtoms::textFrame ||
-            primaryFrame->GetType() == nsGkAtoms::brFrame) {
+        if (primaryFrame->IsTextFrame() || primaryFrame->IsBrFrame()) {
           frame = primaryFrame;
         }
       } while (!frame && !iter->IsDone());
@@ -2351,10 +2349,10 @@ ContentEventHandler::OnQueryTextRect(WidgetQueryContentEvent* aEvent)
         break;
       }
     }
-    if (frame->GetType() == nsGkAtoms::textFrame) {
+    if (frame->IsTextFrame()) {
       frameRect.SetRect(nsPoint(0, 0), frame->GetRect().Size());
     } else {
-      MOZ_ASSERT(frame->GetType() == nsGkAtoms::brFrame);
+      MOZ_ASSERT(frame->IsBrFrame());
       FrameRelativeRect relativeRect = GetLineBreakerRectBefore(frame);
       if (NS_WARN_IF(!relativeRect.IsValid())) {
         return NS_ERROR_FAILURE;
@@ -2386,7 +2384,7 @@ ContentEventHandler::OnQueryTextRect(WidgetQueryContentEvent* aEvent)
   }
 
   
-  if (lastFrame->GetType() == nsGkAtoms::textFrame) {
+  if (lastFrame->IsTextFrame()) {
     lastFrame->GetPointFromOffset(lastFrame.mOffsetInNode, &ptOffset);
     if (lastFrame->GetWritingMode().IsVertical()) {
       frameRect.height -= lastFrame->GetRect().height - ptOffset.y;
@@ -2594,7 +2592,7 @@ ContentEventHandler::OnQueryCharacterAtPoint(WidgetQueryContentEvent* aEvent)
     return rv;
   }
 
-  if (targetFrame->GetType() != nsGkAtoms::textFrame) {
+  if (!targetFrame->IsTextFrame()) {
     
     aEvent->mSucceeded = true;
     return NS_OK;

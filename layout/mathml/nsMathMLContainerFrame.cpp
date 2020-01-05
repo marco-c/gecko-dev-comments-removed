@@ -120,8 +120,7 @@ IsForeignChild(const nsIFrame* aFrame)
 {
   
   
-  return !(aFrame->IsFrameOfType(nsIFrame::eMathML)) ||
-    aFrame->GetType() == nsGkAtoms::blockFrame;
+  return !(aFrame->IsFrameOfType(nsIFrame::eMathML)) || aFrame->IsBlockFrame();
 }
 
 NS_DECLARE_FRAME_PROPERTY_DELETABLE(HTMLReflowOutputProperty,

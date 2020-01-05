@@ -174,12 +174,12 @@ class TextOverflow {
 
 
 
-  void AnalyzeMarkerEdges(nsIFrame*       aFrame,
-                          const nsIAtom*  aFrameType,
+  void AnalyzeMarkerEdges(nsIFrame* aFrame,
+                          mozilla::FrameType aFrameType,
                           const LogicalRect& aInsideMarkersArea,
                           FrameHashtable* aFramesToHide,
                           AlignmentEdges* aAlignmentEdges,
-                          bool*           aFoundVisibleTextOrAtomic,
+                          bool* aFoundVisibleTextOrAtomic,
                           InnerClipEdges* aClippedMarkerEdges);
 
   

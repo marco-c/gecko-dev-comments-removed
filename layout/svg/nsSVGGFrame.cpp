@@ -41,12 +41,6 @@ nsSVGGFrame::Init(nsIContent*       aContent,
 }
 #endif 
 
-nsIAtom *
-nsSVGGFrame::GetType() const
-{
-  return nsGkAtoms::svgGFrame;
-}
-
 
 
 

@@ -771,8 +771,7 @@ BlockReflowInput::FlowAndPlaceFloat(nsIFrame* aFloat)
   
   
   bool earlyFloatReflow =
-    aFloat->GetType() == nsGkAtoms::letterFrame ||
-    floatMarginISize == NS_UNCONSTRAINEDSIZE;
+    aFloat->IsLetterFrame() || floatMarginISize == NS_UNCONSTRAINEDSIZE;
   if (earlyFloatReflow) {
     mBlock->ReflowFloat(*this, adjustedAvailableSpace, aFloat, floatMargin,
                         floatOffsets, false, reflowStatus);
@@ -836,10 +835,10 @@ BlockReflowInput::FlowAndPlaceFloat(nsIFrame* aFloat)
         prevFrame = fc->mFloat;
         fc = fc->Next();
       }
-      
+
       if(prevFrame) {
         
-        if (nsGkAtoms::tableWrapperFrame == prevFrame->GetType()) {
+        if (prevFrame->IsTableWrapperFrame()) {
           
           
           nsIContent* content = prevFrame->GetContent();

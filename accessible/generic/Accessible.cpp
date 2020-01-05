@@ -385,7 +385,7 @@ Accessible::VisibilityState()
   
   
   
-  if (frame->GetType() == nsGkAtoms::textFrame &&
+  if (frame->IsTextFrame() &&
       !(frame->GetStateBits() & NS_FRAME_OUT_OF_FLOW) &&
       frame->GetRect().IsEmpty()) {
     nsIFrame::RenderedText text = frame->GetRenderedText(0,
@@ -636,7 +636,8 @@ Accessible::RelativeBounds(nsIFrame** aBoundingFrame) const
       
       nsIFrame* canvasFrame = frame->GetParent();
       if (canvasFrame) {
-        canvasFrame = nsLayoutUtils::GetClosestFrameOfType(canvasFrame, nsGkAtoms::HTMLCanvasFrame);
+        canvasFrame = nsLayoutUtils::GetClosestFrameOfType(
+          canvasFrame, FrameType::HTMLCanvas);
       }
 
       
@@ -1888,7 +1889,7 @@ Accessible::AppendTextTo(nsAString& aText, uint32_t aStartOffset,
   NS_ASSERTION(mParent,
                "Called on accessible unbound from tree. Result can be wrong.");
 
-  if (frame->GetType() == nsGkAtoms::brFrame) {
+  if (frame->IsBrFrame()) {
     aText += kForcedNewLineChar;
   } else if (mParent && nsAccUtils::MustPrune(mParent)) {
     

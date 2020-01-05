@@ -174,12 +174,6 @@ nsPlaceholderFrame::DestroyFrom(nsIFrame* aDestructRoot)
   nsFrame::DestroyFrom(aDestructRoot);
 }
 
-nsIAtom*
-nsPlaceholderFrame::GetType() const
-{
-  return nsGkAtoms::placeholderFrame;
-}
-
  bool
 nsPlaceholderFrame::CanContinueTextRun() const
 {
@@ -213,8 +207,8 @@ nsPlaceholderFrame::GetParentStyleContextForOutOfFlow(nsIFrame** aProviderFrame)
   
   
   if ((GetStateBits() & PLACEHOLDER_FOR_TOPLAYER) &&
-      parentFrame->GetType() == nsGkAtoms::tableWrapperFrame) {
-    MOZ_ASSERT(mOutOfFlowFrame->GetType() == nsGkAtoms::backdropFrame,
+      parentFrame->IsTableWrapperFrame()) {
+    MOZ_ASSERT(mOutOfFlowFrame->IsBackdropFrame(),
                "Only placeholder of backdrop frame can be put inside "
                "a table wrapper frame");
     *aProviderFrame = parentFrame;

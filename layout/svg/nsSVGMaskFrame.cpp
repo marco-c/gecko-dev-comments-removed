@@ -386,12 +386,6 @@ nsSVGMaskFrame::Init(nsIContent*       aContent,
 }
 #endif 
 
-nsIAtom *
-nsSVGMaskFrame::GetType() const
-{
-  return nsGkAtoms::svgMaskFrame;
-}
-
 gfxMatrix
 nsSVGMaskFrame::GetCanvasTM()
 {

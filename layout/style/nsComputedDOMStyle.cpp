@@ -809,8 +809,8 @@ nsComputedDOMStyle::UpdateCurrentStyleSources(bool aNeedsLayoutFlush)
 
     mInnerFrame = mOuterFrame;
     if (mOuterFrame) {
-      nsIAtom* type = mOuterFrame->GetType();
-      if (type == nsGkAtoms::tableWrapperFrame) {
+      FrameType type = mOuterFrame->Type();
+      if (type == FrameType::TableWrapper) {
         
         
         mInnerFrame = mOuterFrame->PrincipalChildList().FirstChild();
@@ -4983,7 +4983,7 @@ nsComputedDOMStyle::DoGetHeight()
     if (displayData->mDisplay == mozilla::StyleDisplay::Inline &&
         !(mInnerFrame->IsFrameOfType(nsIFrame::eReplaced)) &&
         
-        mInnerFrame->GetType() != nsGkAtoms::svgOuterSVGFrame) {
+        !mInnerFrame->IsSVGOuterSVGFrame()) {
 
       calcHeight = false;
     }
@@ -5027,7 +5027,7 @@ nsComputedDOMStyle::DoGetWidth()
     if (displayData->mDisplay == mozilla::StyleDisplay::Inline &&
         !(mInnerFrame->IsFrameOfType(nsIFrame::eReplaced)) &&
         
-        mInnerFrame->GetType() != nsGkAtoms::svgOuterSVGFrame) {
+        !mInnerFrame->IsSVGOuterSVGFrame()) {
 
       calcWidth = false;
     }
@@ -5094,13 +5094,12 @@ nsComputedDOMStyle::ShouldHonorMinSizeAutoInAxis(PhysicalAxis aAxis)
     nsIFrame* containerFrame = mOuterFrame->GetParent();
     if (containerFrame &&
         StyleDisplay()->mOverflowX == NS_STYLE_OVERFLOW_VISIBLE) {
-      auto containerType = containerFrame->GetType();
-      if (containerType == nsGkAtoms::flexContainerFrame &&
+      if (containerFrame->IsFlexContainerFrame() &&
           (static_cast<nsFlexContainerFrame*>(containerFrame)->IsHorizontal() ==
            (aAxis == eAxisHorizontal))) {
         return true;
       }
-      if (containerType == nsGkAtoms::gridContainerFrame) {
+      if (containerFrame->IsGridContainerFrame()) {
         return true;
       }
     }
@@ -5235,7 +5234,7 @@ nsComputedDOMStyle::GetAbsoluteOffset(mozilla::Side aSide)
   nsRect rect = mOuterFrame->GetRect();
   nsRect containerRect = container->GetRect();
 
-  if (container->GetType() == nsGkAtoms::viewportFrame) {
+  if (container->IsViewportFrame()) {
     
     
     

@@ -66,6 +66,7 @@ struct nsOverflowAreas;
 namespace mozilla {
 enum class CSSPseudoElementType : uint8_t;
 class EventListenerManager;
+enum class FrameType : uint8_t;
 struct IntrinsicSize;
 struct ContainerLayerParameters;
 class WritingMode;
@@ -318,7 +319,7 @@ public:
 
 
   static nsIFrame* GetClosestFrameOfType(nsIFrame* aFrame,
-                                         nsIAtom* aFrameType,
+                                         mozilla::FrameType aFrameType,
                                          nsIFrame* aStopAt = nullptr);
 
   
@@ -329,10 +330,7 @@ public:
 
 
 
-  static nsIFrame* GetPageFrame(nsIFrame* aFrame)
-  {
-    return GetClosestFrameOfType(aFrame, nsGkAtoms::pageFrame);
-  }
+  static nsIFrame* GetPageFrame(nsIFrame* aFrame);
 
   
 
