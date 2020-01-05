@@ -48,6 +48,7 @@ class MediaResource;
 class MediaDecoder;
 class VideoFrameContainer;
 namespace dom {
+class AudioChannelAgent;
 class MediaKeys;
 class TextTrack;
 class TimeRanges;
@@ -1222,8 +1223,7 @@ protected:
   void NotifyAudioChannelAgent(bool aPlaying);
 
   
-  
-  bool MaybeCreateAudioChannelAgent();
+  void CreateAudioChannelAgent();
 
   
   bool ShouldElementBePaused();
@@ -1618,7 +1618,7 @@ protected:
   bool mDisableVideo;
 
   
-  nsCOMPtr<nsIAudioChannelAgent> mAudioChannelAgent;
+  RefPtr<AudioChannelAgent> mAudioChannelAgent;
 
   RefPtr<TextTrackManager> mTextTrackManager;
 
