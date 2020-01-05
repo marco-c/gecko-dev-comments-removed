@@ -117,7 +117,7 @@ impl TextInput {
             self.edit_point.index - 1
         };
         let suffix_start = if forward {
-            let is_eol = self.edit_point.index == self.current_line_length() - 1;
+            let is_eol = self.edit_point.index == self.current_line_length();
             if self.multiline {
                 
                 if is_eol {
