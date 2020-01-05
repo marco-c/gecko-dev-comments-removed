@@ -2074,7 +2074,7 @@ GetFinishedBuilder(JSContext* cx, GlobalHelperThreadState::IonBuilderVector& fin
 {
     for (size_t i = 0; i < finished.length(); i++) {
         IonBuilder* testBuilder = finished[i];
-        if (testBuilder->compartment == CompileCompartment::get(cx->compartment())) {
+        if (testBuilder->script()->runtimeFromAnyThread() == cx->runtime()) {
             HelperThreadState().remove(finished, &i);
             return testBuilder;
         }
