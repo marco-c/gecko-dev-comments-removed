@@ -15,7 +15,6 @@ Cu.import("chrome://marionette/content/error.js");
 this.EXPORTED_SYMBOLS = ["assert"];
 
 const isFennec = () => AppConstants.platform == "android";
-const isB2G = () => AppConstants.MOZ_B2G;
 const isFirefox = () => Services.appinfo.name == "Firefox";
 
 
@@ -78,20 +77,6 @@ assert.fennec = function (msg = "") {
 
 
 
-assert.b2g = function (msg = "") {
-  msg = msg || "Only supported in B2G";
-  assert.that(isB2G, msg, UnsupportedOperationError)();
-};
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -100,21 +85,6 @@ assert.b2g = function (msg = "") {
 assert.content = function (context, msg = "") {
   msg = msg || "Only supported in content context";
   assert.that(c => c.toString() == "content", msg, UnsupportedOperationError)(context);
-};
-
-
-
-
-
-
-
-
-
-
-
-assert.mobile = function (msg = "") {
-  msg = msg || "Only supported in Fennec or B2G";
-  assert.that(() => isFennec() || isB2G(), msg, UnsupportedOperationError)();
 };
 
 
