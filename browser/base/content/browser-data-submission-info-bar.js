@@ -5,6 +5,8 @@
 const LOGGER_NAME = "Toolkit.Telemetry";
 const LOGGER_PREFIX = "DataNotificationInfoBar::";
 
+XPCOMUtils.defineLazyModuleGetter(this, "Preferences",
+                                  "resource://gre/modules/Preferences.jsm");
 
 
 
@@ -64,7 +66,13 @@ var gDataNotificationInfoBar = {
       popup: null,
       callback: () => {
         this._actionTaken = true;
-        window.openAdvancedPreferences("dataChoicesTab");
+        
+        
+        if (Preferences.get("browser.preferences.useOldOrganization", false)) {
+          window.openAdvancedPreferences("dataChoicesTab");
+        } else {
+          window.openPreferences("paneAdvanced");
+        }
       },
     }];
 

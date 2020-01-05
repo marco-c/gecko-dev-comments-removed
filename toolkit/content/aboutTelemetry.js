@@ -20,6 +20,8 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "AppConstants",
                                   "resource://gre/modules/AppConstants.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "Preferences",
+                                  "resource://gre/modules/Preferences.jsm");
 
 const Telemetry = Services.telemetry;
 const bundle = Services.strings.createBundle(
@@ -240,7 +242,13 @@ var Settings = {
         } else {
           
           let mainWindow = getMainWindowWithPreferencesPane();
-          mainWindow.openAdvancedPreferences("dataChoicesTab");
+          
+          
+          if (Preferences.get("browser.preferences.useOldOrganization", false)) {
+            mainWindow.openAdvancedPreferences("dataChoicesTab");
+          } else {
+            mainWindow.openPreferences("paneAdvanced");
+          }
         }
       });
     }

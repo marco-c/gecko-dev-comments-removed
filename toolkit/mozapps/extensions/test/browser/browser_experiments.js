@@ -197,7 +197,9 @@ add_task(function* testOpenPreferences() {
     info("Advanced preference pane opened.");
     executeSoon(function() {
       
-      let el = prefWin.document.getElementById("dataChoicesPanel");
+      
+      
+      let el = prefWin.document.getElementById("header-advanced");
       is_element_visible(el);
 
       prefWin.close();

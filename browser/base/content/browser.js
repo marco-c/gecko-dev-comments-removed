@@ -13,6 +13,9 @@ Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/ContextualIdentityService.jsm");
 Cu.import("resource://gre/modules/NotificationDB.jsm");
 
+XPCOMUtils.defineLazyModuleGetter(this, "Preferences",
+                                  "resource://gre/modules/Preferences.jsm");
+
 
 
 
@@ -502,7 +505,14 @@ const gStoragePressureObserver = {
         label: prefStrBundle.getString(prefButtonLabelStringID),
         accessKey: prefStrBundle.getString(prefButtonAccesskeyStringID),
         callback(notificationBar, button) {
-          gBrowser.ownerGlobal.openPreferences("advanced", { advancedTab: "networkTab" });
+          
+          
+          let win = gBrowser.ownerGlobal;
+          if (Preferences.get("browser.preferences.useOldOrganization", false)) {
+            win.openAdvancedPreferences("networkTab");
+          } else {
+            win.openPreferences("panePrivacy");
+          }
         }
       });
     }
@@ -6275,7 +6285,13 @@ var OfflineApps = {
   },
 
   manage() {
-    openAdvancedPreferences("networkTab");
+    
+    
+    if (Preferences.get("browser.preferences.useOldOrganization", false)) {
+      openAdvancedPreferences("networkTab");
+    } else {
+      openPreferences("panePrivacy");
+    }
   },
 
   receiveMessage(msg) {
