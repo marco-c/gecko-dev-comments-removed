@@ -2,7 +2,8 @@
 
 
 
-__all__ = [ 'gencxx', 'genipdl', 'parse', 'typecheck', 'writeifmodified', 'checkSyncMessage' ]
+__all__ = [ 'gencxx', 'genipdl', 'parse', 'typecheck', 'writeifmodified',
+            'checkSyncMessage', 'checkFixedSyncMessages' ]
 
 import os, sys
 from cStringIO import StringIO
@@ -11,7 +12,7 @@ from ipdl.cgen import IPDLCodeGen
 from ipdl.lower import LowerToCxx, msgenums
 from ipdl.parser import Parser, ParseError
 from ipdl.type import TypeCheck
-from ipdl.checker import checkSyncMessage
+from ipdl.checker import checkSyncMessage, checkFixedSyncMessages
 
 from ipdl.cxx.cgen import CxxCodeGen
 
