@@ -2231,6 +2231,14 @@ impl NodeMethods for Node {
     }
 
     
+    fn IsSameNode(&self, otherNode: Option<&Node>) -> bool {
+        match otherNode {
+            Some(node) => self == node,
+            None => false,
+        }
+    }
+
+    
     fn CompareDocumentPosition(&self, other: &Node) -> u16 {
         if self == other {
             
