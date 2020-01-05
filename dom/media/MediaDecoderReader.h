@@ -116,10 +116,6 @@ public:
   
   
   
-  
-  
-  
-  
   virtual nsresult ResetDecode(TrackSet aTracks = TrackSet(TrackInfo::kAudioTrack,
                                                            TrackInfo::kVideoTrack));
 
@@ -127,12 +123,8 @@ public:
   
   
   
-  
-  
   virtual RefPtr<MediaDataPromise> RequestAudioData();
 
-  
-  
   
   
   
@@ -194,6 +186,8 @@ public:
   virtual size_t SizeOfVideoQueueInFrames();
   virtual size_t SizeOfAudioQueueInFrames();
 
+  
+  
   virtual void NotifyDataArrived()
   {
     MOZ_ASSERT(OnTaskQueue());
@@ -345,15 +339,6 @@ private:
     return false;
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
   
   
   
