@@ -3171,7 +3171,7 @@ Channel::GetRTPStatistics(
       
       maxJitterMs = stats.max_jitter / (playoutFrequency / 1000);
       averageJitterMs = stats.rtcp.jitter / (playoutFrequency / 1000);
-      cumulativeLost = stats.cumulative_lost;
+      cumulativeLost = stats.rtcp.cumulative_lost;
     }
 
     discardedPackets = _numberOfDiscardedPackets;
