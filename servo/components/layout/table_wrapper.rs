@@ -19,6 +19,7 @@ use construct::FlowConstructor;
 use context::LayoutContext;
 use floats::FloatKind;
 use flow::{TableWrapperFlowClass, FlowClass, Flow, ImmutableFlowUtils};
+use flow::{IMPACTED_BY_LEFT_FLOATS, IMPACTED_BY_RIGHT_FLOATS};
 use fragment::{Fragment, FragmentBoundsIterator};
 use table::ColumnInlineSize;
 use wrapper::ThreadSafeLayoutNode;
@@ -260,8 +261,8 @@ impl Flow for TableWrapperFlow {
 
         
         
-        self.block_flow.base.flags.set_impacted_by_left_floats(false);
-        self.block_flow.base.flags.set_impacted_by_right_floats(false);
+        self.block_flow.base.flags.remove(IMPACTED_BY_LEFT_FLOATS);
+        self.block_flow.base.flags.remove(IMPACTED_BY_RIGHT_FLOATS);
 
         
         
