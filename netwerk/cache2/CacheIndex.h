@@ -728,10 +728,11 @@ public:
   
   
   
+  
   static nsresult HasEntry(const nsACString &aKey, EntryStatus *_retval,
-                           bool *_pinned = nullptr);
+                           const std::function<void(const CacheIndexEntry*)> &aCB = nullptr);
   static nsresult HasEntry(const SHA1Sum::Hash &hash, EntryStatus *_retval,
-                           bool *_pinned = nullptr);
+                           const std::function<void(const CacheIndexEntry*)> &aCB = nullptr);
 
   
   

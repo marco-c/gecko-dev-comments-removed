@@ -1646,6 +1646,9 @@ pref("network.http.rcwn.cache_queue_normal_threshold", 50);
 pref("network.http.rcwn.cache_queue_priority_threshold", 10);
 
 
+pref("network.http.rcwn.small_resource_size_kb", 256);
+
+
 
 pref("network.http.focused_window_transaction_ratio", "0.9");
 

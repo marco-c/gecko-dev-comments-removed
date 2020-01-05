@@ -111,6 +111,12 @@ public:
   
   static void GetCacheEntryInfo(CacheEntry* aEntry, EntryInfoCallback *aVisitor);
 
+  nsresult GetCacheIndexEntryAttrs(CacheStorage const* aStorage,
+                                   const nsACString &aURI,
+                                   const nsACString &aIdExtension,
+                                   bool *aHasAltData,
+                                   uint32_t *aFileSizeKb);
+
   static uint32_t CacheQueueSize(bool highPriority);
 
   

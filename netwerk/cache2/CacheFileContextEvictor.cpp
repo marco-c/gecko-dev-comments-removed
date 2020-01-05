@@ -613,8 +613,11 @@ CacheFileContextEvictor::EvictEntries()
     }
 
     CacheIndex::EntryStatus status;
-    bool pinned;
-    rv = CacheIndex::HasEntry(hash, &status, &pinned);
+    bool pinned = false;
+    auto callback = [&pinned](const CacheIndexEntry * aEntry) {
+      pinned = aEntry->IsPinned();
+    };
+    rv = CacheIndex::HasEntry(hash, &status, callback);
     
     
     MOZ_ASSERT(NS_SUCCEEDED(rv));
