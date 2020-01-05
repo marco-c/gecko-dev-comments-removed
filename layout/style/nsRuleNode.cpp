@@ -3995,6 +3995,41 @@ nsRuleNode::SetFont(nsPresContext* aPresContext, nsStyleContext* aContext,
   }
 
   
+  const nsCSSValue* variationSettingsValue =
+    aRuleData->ValueForFontVariationSettings();
+
+  switch (variationSettingsValue->GetUnit()) {
+    case eCSSUnit_Null:
+      break;
+
+    case eCSSUnit_Normal:
+    case eCSSUnit_Initial:
+      aFont->mFont.fontVariationSettings.Clear();
+      break;
+
+    case eCSSUnit_Inherit:
+    case eCSSUnit_Unset:
+      aConditions.SetUncacheable();
+      aFont->mFont.fontVariationSettings =
+        aParentFont->mFont.fontVariationSettings;
+      break;
+
+    case eCSSUnit_System_Font:
+      aFont->mFont.fontVariationSettings = systemFont.fontVariationSettings;
+      break;
+
+    case eCSSUnit_PairList:
+    case eCSSUnit_PairListDep:
+      ComputeFontVariations(variationSettingsValue->GetPairListValue(),
+                            aFont->mFont.fontVariationSettings);
+      break;
+
+    default:
+      MOZ_ASSERT(false, "unexpected value unit");
+      break;
+  }
+
+  
   const nsCSSValue* languageOverrideValue =
     aRuleData->ValueForFontLanguageOverride();
   if (eCSSUnit_Inherit == languageOverrideValue->GetUnit() ||
@@ -4126,6 +4161,18 @@ nsRuleNode::SetFont(nsPresContext* aPresContext, nsStyleContext* aContext,
               SETFCT_NONE | SETFCT_UNSET_INHERIT);
 }
 
+static inline void
+AssertValidFontTag(const nsString& aString)
+{
+  
+  MOZ_ASSERT(aString.Length() == 4 &&              
+             NS_IsAscii(aString.BeginReading()) && 
+             isprint(aString[0]) &&                
+             isprint(aString[1]) &&
+             isprint(aString[2]) &&
+             isprint(aString[3]));
+}
+
  void
 nsRuleNode::ComputeFontFeatures(const nsCSSValuePairList *aFeaturesList,
                                 nsTArray<gfxFontFeature>& aFeatureSettings)
@@ -4153,6 +4200,37 @@ nsRuleNode::ComputeFontFeatures(const nsCSSValuePairList *aFeaturesList,
     feat.mValue = p->mYValue.GetIntValue();
 
     aFeatureSettings.AppendElement(feat);
+  }
+}
+
+ void
+nsRuleNode::ComputeFontVariations(const nsCSSValuePairList* aVariationsList,
+                                  nsTArray<gfxFontVariation>& aVariationSettings)
+{
+  aVariationSettings.Clear();
+  for (const nsCSSValuePairList* p = aVariationsList; p; p = p->mNext) {
+    gfxFontVariation var;
+
+    MOZ_ASSERT(aVariationsList->mXValue.GetUnit() == eCSSUnit_String,
+               "unexpected value unit");
+
+    
+    nsAutoString tag;
+    p->mXValue.GetStringValue(tag);
+    AssertValidFontTag(tag);
+    if (tag.Length() != 4) {
+      continue;
+    }
+    
+    
+    var.mTag = (tag[0] << 24) | (tag[1] << 16) | (tag[2] << 8)  | tag[3];
+
+    
+    NS_ASSERTION(p->mYValue.GetUnit() == eCSSUnit_Number,
+                 "should have found a number unit");
+    var.mValue = p->mYValue.GetFloatValue();
+
+    aVariationSettings.AppendElement(var);
   }
 }
 

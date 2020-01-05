@@ -2548,6 +2548,9 @@ pref("layout.css.image-orientation.enabled", true);
 pref("layout.css.font-display.enabled", false);
 
 
+pref("layout.css.font-variations.enabled", false);
+
+
 pref("layout.css.prefixes.border-image", true);
 pref("layout.css.prefixes.transforms", true);
 pref("layout.css.prefixes.transitions", true);
