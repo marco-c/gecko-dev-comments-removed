@@ -7257,25 +7257,31 @@ PresShell::HandleEvent(nsIFrame* aFrame,
     nsPresContext* rootPresContext = framePresContext->GetRootPresContext();
     NS_ASSERTION(rootPresContext == mPresContext->GetRootPresContext(),
                  "How did we end up outside the connected prescontext/viewmanager hierarchy?");
+    nsIFrame* popupFrame =
+      nsLayoutUtils::GetPopupFrameForEventCoordinates(rootPresContext, aEvent);
     
     
+    if (popupFrame && capturingContent &&
+        EventStateManager::IsRemoteTarget(capturingContent)) {
+      capturingContent = nullptr;
+    }
     
-    if (framePresContext == rootPresContext &&
-        frame == mFrameConstructor->GetRootFrame()) {
-      nsIFrame* popupFrame =
-        nsLayoutUtils::GetPopupFrameForEventCoordinates(rootPresContext, aEvent);
+    
+    if (popupFrame &&
+        !nsContentUtils::ContentIsCrossDocDescendantOf(
+           framePresContext->GetPresShell()->GetDocument(),
+           popupFrame->GetContent())) {
+
       
       
-      if (popupFrame && capturingContent &&
-          EventStateManager::IsRemoteTarget(capturingContent)) {
-        capturingContent = nullptr;
-      }
       
       
-      if (popupFrame &&
-          !nsContentUtils::ContentIsCrossDocDescendantOf(
-             framePresContext->GetPresShell()->GetDocument(),
-             popupFrame->GetContent())) {
+      if (framePresContext == rootPresContext &&
+          frame == mFrameConstructor->GetRootFrame()) {
+        frame = popupFrame;
+      } else if (capturingContent &&
+                 nsContentUtils::ContentIsDescendantOf(
+                   capturingContent, popupFrame->GetContent())) {
         frame = popupFrame;
       }
     }
