@@ -970,8 +970,14 @@ nsRange::DoSetRange(nsINode* aStartN, int32_t aStartOffset,
   if (mSelection) {
     
     
+    
+    
+    AutoCalledByJSRestore calledByJSRestorer(*this);
+    mCalledByJS = false;
+    
+    
     RefPtr<Selection> selection = mSelection;
-    selection->NotifySelectionListeners(mCalledByJS);
+    selection->NotifySelectionListeners(calledByJSRestorer.SavedValue());
   }
 }
 
@@ -1192,7 +1198,8 @@ nsRange::IsValidBoundary(nsINode* aNode)
 void
 nsRange::SetStartJS(nsINode& aNode, uint32_t aOffset, ErrorResult& aErr)
 {
-  AutoCalledByJSSetter markAsCalledByJS(*this);
+  AutoCalledByJSRestore calledByJSRestorer(*this);
+  mCalledByJS = true;
   SetStart(aNode, aOffset, aErr);
 }
 
@@ -1252,7 +1259,8 @@ nsRange::SetStart(nsINode* aParent, int32_t aOffset)
 void
 nsRange::SetStartBeforeJS(nsINode& aNode, ErrorResult& aErr)
 {
-  AutoCalledByJSSetter markAsCalledByJS(*this);
+  AutoCalledByJSRestore calledByJSRestorer(*this);
+  mCalledByJS = true;
   SetStartBefore(aNode, aErr);
 }
 
@@ -1285,7 +1293,8 @@ nsRange::SetStartBefore(nsIDOMNode* aSibling)
 void
 nsRange::SetStartAfterJS(nsINode& aNode, ErrorResult& aErr)
 {
-  AutoCalledByJSSetter markAsCalledByJS(*this);
+  AutoCalledByJSRestore calledByJSRestorer(*this);
+  mCalledByJS = true;
   SetStartAfter(aNode, aErr);
 }
 
@@ -1318,7 +1327,8 @@ nsRange::SetStartAfter(nsIDOMNode* aSibling)
 void
 nsRange::SetEndJS(nsINode& aNode, uint32_t aOffset, ErrorResult& aErr)
 {
-  AutoCalledByJSSetter markAsCalledByJS(*this);
+  AutoCalledByJSRestore calledByJSRestorer(*this);
+  mCalledByJS = true;
   SetEnd(aNode, aOffset, aErr);
 }
 
@@ -1377,7 +1387,8 @@ nsRange::SetEnd(nsINode* aParent, int32_t aOffset)
 void
 nsRange::SetEndBeforeJS(nsINode& aNode, ErrorResult& aErr)
 {
-  AutoCalledByJSSetter markAsCalledByJS(*this);
+  AutoCalledByJSRestore calledByJSRestorer(*this);
+  mCalledByJS = true;
   SetEndBefore(aNode, aErr);
 }
 
@@ -1410,7 +1421,8 @@ nsRange::SetEndBefore(nsIDOMNode* aSibling)
 void
 nsRange::SetEndAfterJS(nsINode& aNode, ErrorResult& aErr)
 {
-  AutoCalledByJSSetter markAsCalledByJS(*this);
+  AutoCalledByJSRestore calledByJSRestorer(*this);
+  mCalledByJS = true;
   SetEndAfter(aNode, aErr);
 }
 
@@ -1458,7 +1470,8 @@ nsRange::Collapse(bool aToStart)
 void
 nsRange::CollapseJS(bool aToStart)
 {
-  AutoCalledByJSSetter markAsCalledByJS(*this);
+  AutoCalledByJSRestore calledByJSRestorer(*this);
+  mCalledByJS = true;
   Unused << Collapse(aToStart);
 }
 
@@ -1476,7 +1489,8 @@ nsRange::SelectNode(nsIDOMNode* aN)
 void
 nsRange::SelectNodeJS(nsINode& aNode, ErrorResult& aErr)
 {
-  AutoCalledByJSSetter markAsCalledByJS(*this);
+  AutoCalledByJSRestore calledByJSRestorer(*this);
+  mCalledByJS = true;
   SelectNode(aNode, aErr);
 }
 
@@ -1520,7 +1534,8 @@ nsRange::SelectNodeContents(nsIDOMNode* aN)
 void
 nsRange::SelectNodeContentsJS(nsINode& aNode, ErrorResult& aErr)
 {
-  AutoCalledByJSSetter markAsCalledByJS(*this);
+  AutoCalledByJSRestore calledByJSRestorer(*this);
+  mCalledByJS = true;
   SelectNodeContents(aNode, aErr);
 }
 
