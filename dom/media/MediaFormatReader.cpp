@@ -78,7 +78,7 @@ public:
 private:
   class AutoDeallocToken;
   using PromisePrivate = Promise::Private;
-  explicit DecoderAllocPolicy(TrackType aTrack);
+  DecoderAllocPolicy();
   ~DecoderAllocPolicy();
   
   void Dealloc();
@@ -92,8 +92,6 @@ private:
   
   int mDecoderLimit;
   
-  const TrackType mTrack;
-  
   std::queue<RefPtr<PromisePrivate>> mPromises;
 };
 
@@ -102,21 +100,20 @@ StaticMutex DecoderAllocPolicy::sMutex;
 class DecoderAllocPolicy::AutoDeallocToken : public Token
 {
 public:
-  explicit AutoDeallocToken(TrackType aTrack) : mTrack(aTrack) { }
+  explicit AutoDeallocToken(DecoderAllocPolicy& aPolicy) : mPolicy(aPolicy) { }
 
 private:
   ~AutoDeallocToken()
   {
-    DecoderAllocPolicy::Instance(mTrack).Dealloc();
+    mPolicy.Dealloc();
   }
 
-  const TrackType mTrack;
+  DecoderAllocPolicy& mPolicy; 
 };
 
-DecoderAllocPolicy::DecoderAllocPolicy(TrackType aTrack)
+DecoderAllocPolicy::DecoderAllocPolicy()
   : mMonitor("DecoderAllocPolicy::mMonitor")
   , mDecoderLimit(MediaPrefs::MediaDecoderLimit())
-  , mTrack(aTrack)
 {
   
   
@@ -139,10 +136,10 @@ DecoderAllocPolicy::Instance(TrackType aTrack)
 {
   StaticMutexAutoLock lock(sMutex);
   if (aTrack == TrackType::kAudioTrack) {
-    static auto sAudioPolicy = new DecoderAllocPolicy(TrackType::kAudioTrack);
+    static auto sAudioPolicy = new DecoderAllocPolicy();
     return *sAudioPolicy;
   } else {
-    static auto sVideoPolicy = new DecoderAllocPolicy(TrackType::kVideoTrack);
+    static auto sVideoPolicy = new DecoderAllocPolicy();
     return *sVideoPolicy;
   }
 }
@@ -179,7 +176,7 @@ DecoderAllocPolicy::ResolvePromise(ReentrantMonitorAutoEnter& aProofOfLock)
     --mDecoderLimit;
     RefPtr<PromisePrivate> p = mPromises.front().forget();
     mPromises.pop();
-    p->Resolve(new AutoDeallocToken(mTrack), __func__);
+    p->Resolve(new AutoDeallocToken(*this), __func__);
   }
 }
 
