@@ -541,22 +541,25 @@ var LoginManagerContent = {
     }
 
     let clobberUsername = true;
-    let options = {
-      inputElement,
-    };
-
     let form = LoginFormFactory.createFromField(inputElement);
     if (inputElement.type == "password") {
       clobberUsername = false;
     }
-    this._fillForm(form, true, clobberUsername, true, true, loginsFound, recipes, options);
+
+    this._fillForm(form, loginsFound, recipes, {
+      inputElement,
+      autofillForm: true,
+      clobberUsername,
+      clobberPassword: true,
+      userTriggered: true,
+    });
   },
 
   loginsFound({ form, loginsFound, recipes }) {
     let doc = form.ownerDocument;
     let autofillForm = gAutofillForms && !PrivateBrowsingUtils.isContentWindowPrivate(doc.defaultView);
 
-    this._fillForm(form, autofillForm, false, false, false, loginsFound, recipes);
+    this._fillForm(form, loginsFound, recipes, {autofillForm});
   },
 
   
@@ -648,7 +651,11 @@ var LoginManagerContent = {
     if (usernameField == acInputField && passwordField) {
       this._getLoginDataFromParent(acForm, { showMasterPassword: false })
           .then(({ form, loginsFound, recipes }) => {
-            this._fillForm(form, true, false, true, true, loginsFound, recipes);
+            this._fillForm(form, loginsFound, recipes, {
+              autofillForm: true,
+              clobberPassword: true,
+              userTriggered: true,
+            });
           })
           .then(null, Cu.reportError);
     } else {
@@ -998,8 +1005,18 @@ var LoginManagerContent = {
 
 
 
-  _fillForm(form, autofillForm, clobberUsername, clobberPassword,
-            userTriggered, foundLogins, recipes, {inputElement} = {}) {
+
+
+
+
+
+  _fillForm(form, foundLogins, recipes, {
+    inputElement = null,
+    autofillForm = false,
+    clobberUsername = false,
+    clobberPassword = false,
+    userTriggered = false,
+  } = {}) {
     if (form instanceof Ci.nsIDOMHTMLFormElement) {
       throw new Error("_fillForm should only be called with FormLike objects");
     }
