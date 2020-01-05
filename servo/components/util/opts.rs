@@ -109,6 +109,10 @@ pub struct Opts {
     pub devtools_port: Option<u16>,
 
     
+    
+    pub webdriver_port: Option<u16>,
+
+    
     pub initial_window_size: TypedSize2D<ScreenPx, u32>,
 
     
@@ -199,6 +203,7 @@ pub fn default_opts() -> Opts {
         enable_text_antialiasing: false,
         trace_layout: false,
         devtools_port: None,
+        webdriver_port: None,
         initial_window_size: TypedSize2D(800, 600),
         user_agent: None,
         dump_flow_tree: false,
@@ -232,6 +237,7 @@ pub fn from_cmdline_args(args: &[String]) -> bool {
         getopts::optflag("z", "headless", "Headless mode"),
         getopts::optflag("f", "hard-fail", "Exit on task failure instead of displaying about:failure"),
         getopts::optflagopt("", "devtools", "Start remote devtools server on port", "6000"),
+        getopts::optflagopt("", "webdriver", "Start remote WebDriver server on port", "7000"),
         getopts::optopt("", "resolution", "Set window resolution.", "800x600"),
         getopts::optopt("u", "user-agent", "Set custom user agent string", "NCSA Mosaic/1.0 (X11;SunOS 4.1.4 sun4m)"),
         getopts::optopt("Z", "debug", "A comma-separated string of debug options. Pass help to show available options.", ""),
@@ -318,6 +324,10 @@ pub fn from_cmdline_args(args: &[String]) -> bool {
         port.parse().unwrap()
     });
 
+    let webdriver_port = opt_match.opt_default("webdriver", "7000").map(|port| {
+        port.parse().unwrap()
+    });
+
     let initial_window_size = match opt_match.opt_str("resolution") {
         Some(res_string) => {
             let res: Vec<u32> = res_string.split('x').map(|r| r.parse().unwrap()).collect();
@@ -348,6 +358,7 @@ pub fn from_cmdline_args(args: &[String]) -> bool {
         profile_tasks: debug_options.contains(&"profile-tasks"),
         trace_layout: trace_layout,
         devtools_port: devtools_port,
+        webdriver_port: webdriver_port,
         initial_window_size: initial_window_size,
         user_agent: opt_match.opt_str("u"),
         show_debug_borders: debug_options.contains(&"show-compositor-borders"),
