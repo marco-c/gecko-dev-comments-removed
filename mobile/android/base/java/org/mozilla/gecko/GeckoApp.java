@@ -556,7 +556,9 @@ public abstract class GeckoApp
             }
 
             GeckoAppShell.notifyObservers("Browser:Quit", res.toString());
-            doShutdown();
+            
+            
+            
             return true;
         }
 
@@ -634,9 +636,16 @@ public abstract class GeckoApp
 
             ((GeckoApplication) getApplicationContext()).onDelayedStartup();
 
-        } else if (event.equals("Gecko:Exited")) {
+        } else if ("Gecko:Exited".equals(event)) {
             
             doShutdown();
+
+        } else if ("Sanitize:Finished".equals(event)) {
+            if (message.getBoolean("shutdown", false)) {
+                
+                
+                doShutdown();
+            }
 
         } else if ("Accessibility:Ready".equals(event)) {
             GeckoAccessibility.updateAccessibilitySettings(this);
@@ -1188,6 +1197,10 @@ public abstract class GeckoApp
             "Accessibility:Ready",
             "Gecko:Exited",
             "Gecko:Ready",
+            null);
+
+        EventDispatcher.getInstance().registerUiThreadListener(this,
+            "Sanitize:Finished",
             null);
 
         GeckoThread.launch();
@@ -2247,6 +2260,10 @@ public abstract class GeckoApp
             "Accessibility:Ready",
             "Gecko:Exited",
             "Gecko:Ready",
+            null);
+
+        EventDispatcher.getInstance().unregisterUiThreadListener(this,
+            "Sanitize:Finished",
             null);
 
         getAppEventDispatcher().unregisterGeckoThreadListener(this,
