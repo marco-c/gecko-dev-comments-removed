@@ -45,6 +45,9 @@ BEGIN_TEST(testGCGrayMarking)
 {
     AutoNoAnalysisForTest disableAnalysis;
     AutoDisableCompactingGC disableCompactingGC(cx);
+#ifdef JS_GC_ZEAL
+    AutoLeaveZeal nozeal(cx);
+#endif 
 
     CHECK(InitGlobals());
     JSAutoCompartment ac(cx, global1);
