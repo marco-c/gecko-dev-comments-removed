@@ -121,6 +121,15 @@ this.BrowserIDManager.prototype = {
     return this._hashedUID;
   },
 
+  
+  hashedDeviceID(deviceID) {
+    let uid = this.hashedUID();
+    
+    
+    
+    return Utils.sha256(deviceID + uid);
+  },
+
   deviceID() {
     return this._signedInUser && this._signedInUser.deviceId;
   },

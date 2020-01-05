@@ -268,17 +268,14 @@ class TelemetryRecord {
     
     
     
+    
+    
+    
     let includeDeviceInfo = false;
     try {
       this.uid = Weave.Service.identity.hashedUID();
-      let deviceID = Weave.Service.identity.deviceID();
-      if (deviceID) {
-        
-        
-        
-        this.deviceID = Utils.sha256(deviceID + this.uid);
-        includeDeviceInfo = true;
-      }
+      this.deviceID = Weave.Service.identity.hashedDeviceID(Weave.Service.clientsEngine.localID);
+      includeDeviceInfo = true;
     } catch (e) {
       this.uid = "0".repeat(32);
       this.deviceID = undefined;
@@ -290,7 +287,7 @@ class TelemetryRecord {
         return {
           os: device.os,
           version: device.version,
-          id: Utils.sha256(device.id + this.uid)
+          id: Weave.Service.identity.hashedDeviceID(device.id),
         };
       });
     }

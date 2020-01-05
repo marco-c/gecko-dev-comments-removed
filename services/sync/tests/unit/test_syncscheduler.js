@@ -173,7 +173,9 @@ add_identity_test(this, async function test_updateClientMode() {
   do_check_false(scheduler.idle);
 
   
-  clientsEngine._store.create({id: "foo", cleartext: "bar"});
+  clientsEngine._store.create(
+    { id: "foo", cleartext: { os: "mobile", version: "0.01", type: "desktop" } }
+  );
   scheduler.updateClientMode();
 
   do_check_eq(scheduler.syncThreshold, MULTI_DEVICE_THRESHOLD);
@@ -438,7 +440,9 @@ add_identity_test(this, async function test_client_sync_finish_updateClientMode(
   do_check_false(scheduler.idle);
 
   
-  clientsEngine._store.create({id: "foo", cleartext: "bar"});
+  clientsEngine._store.create(
+    { id: "foo", cleartext: { os: "mobile", version: "0.01", type: "desktop" } }
+  );
   do_check_false(scheduler.numClients > 1);
   scheduler.updateClientMode();
   Service.sync();
@@ -450,6 +454,9 @@ add_identity_test(this, async function test_client_sync_finish_updateClientMode(
 
   
   clientsEngine.resetClient();
+  
+  await setUp(server);
+
   Service.sync();
 
   
@@ -601,7 +608,9 @@ add_identity_test(this, async function test_idle_adjustSyncInterval() {
 
   
   scheduler.idle = false;
-  clientsEngine._store.create({id: "foo", cleartext: "bar"});
+  clientsEngine._store.create(
+    { id: "foo", cleartext: { os: "mobile", version: "0.01", type: "desktop" } }
+  );
   scheduler.updateClientMode();
   scheduler.observe(null, "idle", Svc.Prefs.get("scheduler.idleTime"));
   do_check_eq(scheduler.idle, true);
@@ -741,7 +750,9 @@ add_identity_test(this, async function test_sync_failed_partial_400s() {
   engine.exception = {status: 400};
 
   
-  clientsEngine._store.create({id: "foo", cleartext: "bar"});
+  clientsEngine._store.create(
+    { id: "foo", cleartext: { os: "mobile", version: "0.01", type: "desktop" } }
+  );
 
   do_check_eq(Status.sync, SYNC_SUCCEEDED);
 
@@ -783,7 +794,9 @@ add_identity_test(this, async function test_sync_X_Weave_Backoff() {
 
   
   
-  clientsEngine._store.create({id: "foo", cleartext: "bar"});
+  clientsEngine._store.create(
+    { id: "foo", cleartext: { os: "mobile", version: "0.01", type: "desktop" } }
+  );
   let rec = clientsEngine._store.createRecord("foo", "clients");
   rec.encrypt(Service.collectionKeys.keyForCollection("clients"));
   rec.upload(Service.resource(clientsEngine.engineURL + rec.id));
@@ -840,7 +853,9 @@ add_identity_test(this, async function test_sync_503_Retry_After() {
 
   
   
-  clientsEngine._store.create({id: "foo", cleartext: "bar"});
+  clientsEngine._store.create(
+    { id: "foo", cleartext: { os: "mobile", version: "0.01", type: "desktop" } }
+  );
   let rec = clientsEngine._store.createRecord("foo", "clients");
   rec.encrypt(Service.collectionKeys.keyForCollection("clients"));
   rec.upload(Service.resource(clientsEngine.engineURL + rec.id));
