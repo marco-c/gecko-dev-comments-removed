@@ -7,9 +7,11 @@
 use profile_traits::time::{ProfilerCategory, TimerMetadata};
 use serde_json;
 use std::fs;
-use std::io::Write;
+use std::io::{self, Write};
+use std::path;
 
 
+#[derive(Debug)]
 pub struct TraceDump {
     file: fs::File,
 }
@@ -35,9 +37,12 @@ struct TraceEntry {
 impl TraceDump {
     
     
-    pub fn new(mut file: fs::File) -> TraceDump {
-        write_prologue(&mut file);
-        TraceDump { file: file }
+    pub fn new<P>(trace_file_path: P) -> io::Result<TraceDump>
+        where P: AsRef<path::Path>
+    {
+        let mut file = fs::File::create(trace_file_path)?;
+        write_prologue(&mut file)?;
+        Ok(TraceDump { file: file })
     }
 
     
@@ -62,18 +67,18 @@ impl Drop for TraceDump {
     
     
     fn drop(&mut self) {
-        write_epilogue(&mut self.file);
+        write_epilogue(&mut self.file).unwrap();
     }
 }
 
-fn write_prologue(file: &mut fs::File) {
-    writeln!(file, "{}", include_str!("./trace-dump-prologue-1.html")).unwrap();
-    writeln!(file, "{}", include_str!("./trace-dump.css")).unwrap();
-    writeln!(file, "{}", include_str!("./trace-dump-prologue-2.html")).unwrap();
+fn write_prologue(file: &mut fs::File) -> io::Result<()> {
+    writeln!(file, "{}", include_str!("./trace-dump-prologue-1.html"))?;
+    writeln!(file, "{}", include_str!("./trace-dump.css"))?;
+    writeln!(file, "{}", include_str!("./trace-dump-prologue-2.html"))
 }
 
-fn write_epilogue(file: &mut fs::File) {
-    writeln!(file, "{}", include_str!("./trace-dump-epilogue-1.html")).unwrap();
-    writeln!(file, "{}", include_str!("./trace-dump.js")).unwrap();
-    writeln!(file, "{}", include_str!("./trace-dump-epilogue-2.html")).unwrap();
+fn write_epilogue(file: &mut fs::File) -> io::Result<()> {
+    writeln!(file, "{}", include_str!("./trace-dump-epilogue-1.html"))?;
+    writeln!(file, "{}", include_str!("./trace-dump.js"))?;
+    writeln!(file, "{}", include_str!("./trace-dump-epilogue-2.html"))
 }

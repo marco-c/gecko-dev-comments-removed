@@ -245,11 +245,6 @@
   };
 
   
-  const traceCategory = exports.traceCategory = trace => {
-    return Object.keys(trace.category)[0];
-  };
-
-  
 
   if (!window) {
     return;
@@ -528,7 +523,7 @@
     inner.style.width = state.nsToSelectionPx(trace.endTime - trace.startTime) + "px";
     inner.style.marginLeft = state.nsToSelectionPx(trace.startTime - state.startSelection) + "px";
 
-    let category = traceCategory(trace);
+    let category = trace.category;
     inner.textContent = category;
     inner.style.backgroundColor = state.getColorForCategory(category);
 
