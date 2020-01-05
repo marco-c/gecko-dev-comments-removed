@@ -14,7 +14,10 @@
 #include "mozilla/Variant.h"
 #include "mozilla/XorShift128PlusRNG.h"
 
+#include <stddef.h>
+
 #include "builtin/RegExp.h"
+#include "frontend/LanguageExtensions.h"
 #include "gc/Barrier.h"
 #include "gc/NurseryAwareHashMap.h"
 #include "gc/Zone.h"
@@ -957,33 +960,18 @@ struct JSCompartment
         return jitCompartment_;
     }
 
-    enum DeprecatedLanguageExtension {
-        DeprecatedForEach = 0,              
-        
-        DeprecatedLegacyGenerator = 2,      
-        DeprecatedExpressionClosure = 3,    
-        
-        
-        
-        
-        
-        
-        DeprecatedBlockScopeFunRedecl = 10,
-        DeprecatedLanguageExtensionCount
-    };
-
     js::ArgumentsObject* getOrCreateArgumentsTemplateObject(JSContext* cx, bool mapped);
 
     js::ArgumentsObject* maybeArgumentsTemplateObject(bool mapped) const;
 
   private:
     
-    bool sawDeprecatedLanguageExtension[DeprecatedLanguageExtensionCount];
+    bool sawDeprecatedLanguageExtension[size_t(js::DeprecatedLanguageExtension::Count)];
 
     void reportTelemetry();
 
   public:
-    void addTelemetry(const char* filename, DeprecatedLanguageExtension e);
+    void addTelemetry(const char* filename, js::DeprecatedLanguageExtension e);
 
   public:
     
