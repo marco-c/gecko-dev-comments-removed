@@ -76,25 +76,25 @@ pub struct Node {
     pub type_id: NodeTypeId,
 
     
-    pub parent_node: Cell<Option<JS<Node>>>,
+    parent_node: Cell<Option<JS<Node>>>,
 
     
-    pub first_child: Cell<Option<JS<Node>>>,
+    first_child: Cell<Option<JS<Node>>>,
 
     
-    pub last_child: Cell<Option<JS<Node>>>,
+    last_child: Cell<Option<JS<Node>>>,
 
     
-    pub next_sibling: Cell<Option<JS<Node>>>,
+    next_sibling: Cell<Option<JS<Node>>>,
 
     
-    pub prev_sibling: Cell<Option<JS<Node>>>,
+    prev_sibling: Cell<Option<JS<Node>>>,
 
     
     owner_doc: Cell<Option<JS<Document>>>,
 
     
-    pub child_list: Cell<Option<JS<NodeList>>>,
+    child_list: Cell<Option<JS<NodeList>>>,
 
     
     flags: Traceable<RefCell<NodeFlags>>,
