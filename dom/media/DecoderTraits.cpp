@@ -306,34 +306,6 @@ IsFlacSupportedType(const nsACString& aType,
 }
 
 
-bool DecoderTraits::ShouldHandleMediaType(const char* aMIMEType,
-                                          DecoderDoctorDiagnostics* aDiagnostics)
-{
-  if (IsWaveType(nsDependentCString(aMIMEType))) {
-    
-    
-    
-    
-    
-    return false;
-  }
-
-  
-  
-  
-  if (nsDependentCString(aMIMEType).EqualsASCII("video/quicktime")) {
-    RefPtr<nsPluginHost> pluginHost = nsPluginHost::GetInst();
-    if (pluginHost &&
-        pluginHost->HavePluginForType(nsDependentCString(aMIMEType))) {
-      return false;
-    }
-  }
-
-  return CanHandleMediaType(aMIMEType, false, EmptyString(), aDiagnostics)
-         != CANPLAY_NO;
-}
-
-
 CanPlayStatus
 DecoderTraits::CanHandleCodecsType(const char* aMIMEType,
                                    const nsAString& aRequestedCodecs,
@@ -506,6 +478,34 @@ DecoderTraits::CanHandleContentType(const MediaContentType& aContentType,
                             aContentType.HaveCodecs(),
                             aContentType.GetCodecs(),
                             aDiagnostics);
+}
+
+
+bool DecoderTraits::ShouldHandleMediaType(const char* aMIMEType,
+                                          DecoderDoctorDiagnostics* aDiagnostics)
+{
+  if (IsWaveType(nsDependentCString(aMIMEType))) {
+    
+    
+    
+    
+    
+    return false;
+  }
+
+  
+  
+  
+  if (nsDependentCString(aMIMEType).EqualsASCII("video/quicktime")) {
+    RefPtr<nsPluginHost> pluginHost = nsPluginHost::GetInst();
+    if (pluginHost &&
+        pluginHost->HavePluginForType(nsDependentCString(aMIMEType))) {
+      return false;
+    }
+  }
+
+  return CanHandleMediaType(aMIMEType, false, EmptyString(), aDiagnostics)
+         != CANPLAY_NO;
 }
 
 
