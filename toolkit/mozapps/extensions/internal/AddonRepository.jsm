@@ -121,27 +121,37 @@ function convertHTMLToPlainText(html) {
   return html;
 }
 
-function getAddonsToCache(aIds) {
+async function getAddonsToCache(aIds) {
   let types = Preferences.get(PREF_GETADDONS_CACHE_TYPES) || DEFAULT_CACHE_TYPES;
 
   types = types.split(",");
 
-  return AddonManager.getAddonsByIDs(aIds).then(addons => {
-    let enabledIds = [];
-    for (let [i, addon] of addons.entries()) {
-      var preference = PREF_GETADDONS_CACHE_ID_ENABLED.replace("%ID%", aIds[i]);
-      
-      if (!Preferences.get(preference, true))
-        continue;
+  let addons = await AddonManager.getAddonsByIDs(aIds)
+  let enabledIds = [];
 
-      
-      
-      if (!addon || types.includes(addon.type))
-        enabledIds.push(aIds[i]);
+  for (let [i, addon] of addons.entries()) {
+    var preference = PREF_GETADDONS_CACHE_ID_ENABLED.replace("%ID%", aIds[i]);
+    
+    if (!Preferences.get(preference, true))
+      continue;
+
+    
+    
+
+    
+    if (addon && !types.includes(addon.type)) {
+      continue;
     }
 
-    return enabledIds;
-  });
+    
+    if (addon && addon.isSystem) {
+      continue;
+    }
+
+    enabledIds.push(aIds[i]);
+  }
+
+  return enabledIds;
 }
 
 function AddonSearchResult(aId) {
