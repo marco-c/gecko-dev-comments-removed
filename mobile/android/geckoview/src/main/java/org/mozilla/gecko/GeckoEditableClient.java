@@ -5,6 +5,8 @@
 
 package org.mozilla.gecko;
 
+import org.mozilla.gecko.annotation.WrapForJNI;
+
 import android.os.Handler;
 import android.text.Editable;
 import android.view.KeyEvent;
@@ -23,10 +25,13 @@ interface GeckoEditableClient {
     
 
     
+    @WrapForJNI
     public static final int ONE_SHOT = 1;
     
+    @WrapForJNI
     public static final int START_MONITOR = 2;
     
+    @WrapForJNI
     public static final int END_MONITOR = 3;
 
     void requestCursorUpdates(int requestMode);

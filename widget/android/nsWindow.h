@@ -186,6 +186,7 @@ private:
     
     
     NativePtr<mozilla::widget::GeckoEditableSupport> mEditableSupport;
+    mozilla::java::GeckoEditable::GlobalRef mEditable;
 
     class GeckoViewSupport;
     

@@ -426,6 +426,13 @@ class ProxyNativeCall : public AbstractCall
         mozilla::Unused << dummy;
     }
 
+    static Impl* GetNativeObject(Class::Param thisArg) { return nullptr; }
+
+    static Impl* GetNativeObject(typename Owner::Param thisArg)
+    {
+        return NativePtr<Impl>::Get(GetEnvForThread(), thisArg.Get());
+    }
+
 public:
     
     typedef Impl TargetClass;
@@ -447,6 +454,10 @@ public:
 
     
     typename ThisArgClass::Param GetThisArg() const { return mThisArg; }
+
+    
+    
+    Impl* GetNativeObject() const { return GetNativeObject(mThisArg); }
 
     
     

@@ -26,11 +26,6 @@
 #define ALOGIME(args...) do { } while (0)
 #endif
 
-
-static const int IME_MONITOR_CURSOR_ONE_SHOT = 1;
-static const int IME_MONITOR_CURSOR_START_MONITOR = 2;
-static const int IME_MONITOR_CURSOR_END_MONITOR = 3;
-
 template<> const char
 nsWindow::NativePtr<mozilla::widget::GeckoEditableSupport>::sName[] =
         "GeckoEditableSupport";
@@ -416,6 +411,9 @@ GeckoEditableSupport::OnKeyEvent(int32_t aAction, int32_t aKeyCode,
 
     if (!aIsSynthesizedImeKey && mWindow) {
         mWindow->UserActivity();
+    } else if (aIsSynthesizedImeKey && mIMEMaskEventsCount > 0) {
+        
+        return;
     }
 
     EventMessage msg;
@@ -963,12 +961,13 @@ GeckoEditableSupport::OnImeUpdateComposition(int32_t aStart, int32_t aEnd)
 void
 GeckoEditableSupport::OnImeRequestCursorUpdates(int aRequestMode)
 {
-    if (aRequestMode == IME_MONITOR_CURSOR_ONE_SHOT) {
+    if (aRequestMode == java::GeckoEditableClient::ONE_SHOT) {
         UpdateCompositionRects();
         return;
     }
 
-    mIMEMonitorCursor = (aRequestMode == IME_MONITOR_CURSOR_START_MONITOR);
+    mIMEMonitorCursor =
+            (aRequestMode == java::GeckoEditableClient::START_MONITOR);
 }
 
 void
@@ -1026,13 +1025,13 @@ GeckoEditableSupport::NotifyIME(TextEventDispatcher* aTextEventDispatcher,
                 }
 
                 mDispatcher = dispatcher;
+                mIMEKeyEvents.Clear();
                 FlushIMEText();
 
                 
                 
                 mIMEMonitorCursor = false;
 
-                MOZ_ASSERT(mEditable);
                 mEditable->NotifyIME(
                         GeckoEditableListener::NOTIFY_IME_OF_FOCUS);
             });

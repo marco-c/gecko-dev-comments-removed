@@ -1186,10 +1186,10 @@ EGLSurface nsWindow::PMPMSupport::sSurface;
 nsWindow::GeckoViewSupport::~GeckoViewSupport()
 {
     
-    
-    
-    MOZ_ASSERT(window.mEditableSupport);
+    MOZ_ASSERT(window.mEditableSupport && window.mEditable);
     window.mEditableSupport.Detach();
+    window.mEditable->OnViewChange(nullptr);
+    window.mEditable = nullptr;
 
     if (window.mNPZCSupport) {
         window.mNPZCSupport.Detach();
@@ -1256,7 +1256,10 @@ nsWindow::GeckoViewSupport::Open(const jni::Class::LocalRef& aCls,
 
     
     auto editable = GeckoEditable::New(aView);
-    window->mEditableSupport.Attach(editable, window, editable);
+    auto editableChild = GeckoEditableChild::New(editable);
+    editable->SetDefaultEditableChild(editableChild);
+    window->mEditable = editable;
+    window->mEditableSupport.Attach(editableChild, window, editableChild);
 
     
     auto compositor = LayerView::Compositor::LocalRef(
@@ -1301,8 +1304,8 @@ nsWindow::GeckoViewSupport::Reattach(const GeckoView::Window::LocalRef& inst,
                                      jni::Object::Param aDispatcher)
 {
     
-    MOZ_ASSERT(window.mEditableSupport);
-    window.mEditableSupport->OnViewChange(aView);
+    MOZ_ASSERT(window.mEditable);
+    window.mEditable->OnViewChange(aView);
 
     
     

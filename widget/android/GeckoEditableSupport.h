@@ -25,7 +25,7 @@ namespace widget {
 
 class GeckoEditableSupport final
     : public TextEventDispatcherListener
-    , public java::GeckoEditable::Natives<GeckoEditableSupport>
+    , public java::GeckoEditableChild::Natives<GeckoEditableSupport>
 {
     
 
@@ -38,7 +38,8 @@ class GeckoEditableSupport final
 
 
 
-    using EditableBase = java::GeckoEditable::Natives<GeckoEditableSupport>;
+    using EditableBase =
+            java::GeckoEditableChild::Natives<GeckoEditableSupport>;
 
     
     
@@ -90,7 +91,7 @@ class GeckoEditableSupport final
 
     nsWindow::WindowPtr<GeckoEditableSupport> mWindow; 
     RefPtr<TextEventDispatcher> mDispatcher;
-    java::GeckoEditable::GlobalRef mEditable;
+    java::GeckoEditableChild::GlobalRef mEditable;
     InputContext mInputContext;
     AutoTArray<UniquePtr<mozilla::WidgetEvent>, 4> mIMEKeyEvents;
     AutoTArray<IMETextChange, 4> mIMETextChanges;
@@ -125,11 +126,28 @@ public:
     {
         struct IMEEvent : nsAppShell::LambdaEvent<Functor>
         {
-            using nsAppShell::LambdaEvent<Functor>::LambdaEvent;
+            using Base = nsAppShell::LambdaEvent<Functor>;
+            using Base::LambdaEvent;
 
             nsAppShell::Event::Type ActivityType() const override
             {
-                return nsAppShell::Event::Type::kUIActivity;
+                using GES = GeckoEditableSupport;
+                if (Base::lambda.IsTarget(&GES::OnKeyEvent) ||
+                        Base::lambda.IsTarget(&GES::OnImeReplaceText) ||
+                        Base::lambda.IsTarget(&GES::OnImeUpdateComposition)) {
+                    return nsAppShell::Event::Type::kUIActivity;
+                }
+                return nsAppShell::Event::Type::kGeneralActivity;
+            }
+
+            void Run() override
+            {
+                if (!Base::lambda.GetNativeObject()) {
+                    
+                    jni::GetGeckoThreadEnv()->ExceptionClear();
+                    return;
+                }
+                Base::Run();
             }
         };
         nsAppShell::PostEvent(mozilla::MakeUnique<IMEEvent>(
@@ -138,9 +156,9 @@ public:
 
     GeckoEditableSupport(nsWindow::NativePtr<GeckoEditableSupport>* aPtr,
                          nsWindow* aWindow,
-                         java::GeckoEditable::Param aEditable)
+                         java::GeckoEditableChild::Param aEditableChild)
         : mWindow(aPtr, aWindow)
-        , mEditable(aEditable)
+        , mEditable(aEditableChild)
         , mIMERanges(new TextRangeArray())
         , mIMEMaskEventsCount(1) 
         , mIMEUpdatingContext(false)
@@ -173,14 +191,12 @@ public:
 
     
     using EditableBase::AttachNative;
-    using EditableBase::DisposeNative;
 
     void OnDetach() {
-        mEditable->OnViewChange(nullptr);
-    }
-
-    void OnViewChange(java::GeckoView::Param aView) {
-        mEditable->OnViewChange(aView);
+        RefPtr<GeckoEditableSupport> self(this);
+        nsAppShell::PostEvent([self] {
+            DisposeNative(self->mEditable);
+        });
     }
 
     
