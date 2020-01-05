@@ -9,7 +9,6 @@
 use css::matching::{ApplicableDeclarations, CannotShare, MatchMethods, StyleWasShared};
 use construct::FlowConstructor;
 use context::{LayoutContext, SharedLayoutContext};
-use extra::LayoutAuxMethods;
 use flow::{Flow, MutableFlowUtils, PreorderFlowTraversal, PostorderFlowTraversal};
 use flow;
 use flow_ref::FlowRef;
@@ -106,7 +105,6 @@ impl FlowParallelInfo {
 
 
 trait ParallelPostorderFlowTraversal : PostorderFlowTraversal {
-    
     
     
     

@@ -36,13 +36,13 @@ use incremental::RestyleDamage;
 use inline::InlineFlow;
 use model::{CollapsibleMargins, IntrinsicISizes, MarginCollapseInfo};
 use parallel::FlowParallelInfo;
-use table_wrapper::TableWrapperFlow;
 use table::TableFlow;
-use table_colgroup::TableColGroupFlow;
-use table_rowgroup::TableRowGroupFlow;
-use table_row::TableRowFlow;
 use table_caption::TableCaptionFlow;
 use table_cell::TableCellFlow;
+use table_colgroup::TableColGroupFlow;
+use table_row::TableRowFlow;
+use table_rowgroup::TableRowGroupFlow;
+use table_wrapper::TableWrapperFlow;
 use wrapper::ThreadSafeLayoutNode;
 
 use collections::dlist::DList;
@@ -404,7 +404,7 @@ pub trait MutableOwnedFlowUtils {
     
     
     
-    fn set_abs_descendants(&mut self, abs_descendants: AbsDescendants);
+    fn set_absolute_descendants(&mut self, abs_descendants: AbsDescendants);
 }
 
 #[deriving(Encodable, PartialEq, Show)]
@@ -656,7 +656,15 @@ pub struct BaseFlow {
 
     
     pub children: FlowList,
+
+    
+    
+    
     pub next_sibling: Link,
+
+    
+    
+    
     pub prev_sibling: Link,
 
     
@@ -1086,7 +1094,7 @@ impl MutableOwnedFlowUtils for FlowRef {
     
     
     
-    fn set_abs_descendants(&mut self, abs_descendants: AbsDescendants) {
+    fn set_absolute_descendants(&mut self, abs_descendants: AbsDescendants) {
         let this = self.clone();
 
         let block = self.get_mut().as_block();
