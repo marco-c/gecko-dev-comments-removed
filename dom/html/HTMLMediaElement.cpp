@@ -931,11 +931,6 @@ private:
     }
 
     
-    if (mOwner->mPlayingBeforeSeek) {
-      return true;
-    }
-
-    
     if (mOwner->mSrcAttrStream) {
       return true;
     }
