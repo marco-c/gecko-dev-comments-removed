@@ -1292,11 +1292,6 @@ pref("geo.provider.use_gpsd", true);
 
 
 
-
-pref("geo.security.allowinsecure", true);
-
-
-
 pref("network.disable.ipc.security", true);
 
 
