@@ -1745,409 +1745,409 @@ static bool SelectorMatches(Element* aElement,
        pseudoClass; pseudoClass = pseudoClass->mNext) {
     auto idx = static_cast<CSSPseudoClassTypeBase>(pseudoClass->mType);
     EventStates statesToCheck = sPseudoClassStates[idx];
-    if (statesToCheck.IsEmpty()) {
-      
-      
-      switch (pseudoClass->mType) {
-      case CSSPseudoClassType::empty:
-        if (!checkGenericEmptyMatches(aElement, aTreeMatchContext, true)) {
-          return false;
-        }
-        break;
-
-      case CSSPseudoClassType::mozOnlyWhitespace:
-        if (!checkGenericEmptyMatches(aElement, aTreeMatchContext, false)) {
-          return false;
-        }
-        break;
-
-      case CSSPseudoClassType::mozEmptyExceptChildrenWithLocalname:
-        {
-          NS_ASSERTION(pseudoClass->u.mString, "Must have string!");
-          nsIContent *child = nullptr;
-          int32_t index = -1;
-
-          if (aTreeMatchContext.mForStyling)
-            
-            
-            
-            
-            
-            aElement->SetFlags(NODE_HAS_SLOW_SELECTOR);
-          do {
-            child = aElement->GetChildAt(++index);
-          } while (child &&
-                   (!IsSignificantChild(child, true, false) ||
-                    (child->GetNameSpaceID() == aElement->GetNameSpaceID() &&
-                     child->NodeInfo()->NameAtom()->Equals(nsDependentString(pseudoClass->u.mString)))));
-          if (child != nullptr) {
-            return false;
-          }
-        }
-        break;
-
-      case CSSPseudoClassType::lang:
-        {
-          NS_ASSERTION(nullptr != pseudoClass->u.mString, "null lang parameter");
-          if (!pseudoClass->u.mString || !*pseudoClass->u.mString) {
-            return false;
-          }
-
-          
-          
-          
-          
-          nsAutoString language;
-          if (aElement->GetLang(language)) {
-            if (!nsStyleUtil::DashMatchCompare(language,
-                                               nsDependentString(pseudoClass->u.mString),
-                                               nsASCIICaseInsensitiveStringComparator())) {
-              return false;
-            }
-            
-            break;
-          }
-
-          nsIDocument* doc = aTreeMatchContext.mDocument;
-          if (doc) {
-            
-            
-            
-            
-            doc->GetContentLanguage(language);
-
-            nsDependentString langString(pseudoClass->u.mString);
-            language.StripWhitespace();
-            int32_t begin = 0;
-            int32_t len = language.Length();
-            while (begin < len) {
-              int32_t end = language.FindChar(char16_t(','), begin);
-              if (end == kNotFound) {
-                end = len;
-              }
-              if (nsStyleUtil::DashMatchCompare(Substring(language, begin,
-                                                          end-begin),
-                                                langString,
-                                                nsASCIICaseInsensitiveStringComparator())) {
-                break;
-              }
-              begin = end + 1;
-            }
-            if (begin < len) {
-              
-              break;
-            }
-          }
-        }
-        return false;
-
-      case CSSPseudoClassType::mozBoundElement:
-        if (aTreeMatchContext.mScopedRoot != aElement) {
-          return false;
-        }
-        break;
-
-      case CSSPseudoClassType::root:
-        if (aElement != aElement->OwnerDoc()->GetRootElement()) {
-          return false;
-        }
-        break;
-
-      case CSSPseudoClassType::any:
-        {
-          nsCSSSelectorList *l;
-          for (l = pseudoClass->u.mSelectors; l; l = l->mNext) {
-            nsCSSSelector *s = l->mSelectors;
-            MOZ_ASSERT(!s->mNext && !s->IsPseudoElement(),
-                       "parser failed");
-            if (SelectorMatches(
-                  aElement, s, aNodeMatchContext, aTreeMatchContext,
-                  SelectorMatchesFlags::IS_PSEUDO_CLASS_ARGUMENT)) {
-              break;
-            }
-          }
-          if (!l) {
-            return false;
-          }
-        }
-        break;
-
-      case CSSPseudoClassType::firstChild:
-        if (!edgeChildMatches(aElement, aTreeMatchContext, true, false)) {
-          return false;
-        }
-        break;
-
-      case CSSPseudoClassType::firstNode:
-        {
-          nsIContent *firstNode = nullptr;
-          nsIContent *parent = aElement->GetParent();
-          if (parent) {
-            if (aTreeMatchContext.mForStyling)
-              parent->SetFlags(NODE_HAS_EDGE_CHILD_SELECTOR);
-
-            int32_t index = -1;
-            do {
-              firstNode = parent->GetChildAt(++index);
-              
-            } while (firstNode &&
-                     !IsSignificantChild(firstNode, true, false));
-          }
-          if (aElement != firstNode) {
-            return false;
-          }
-        }
-        break;
-
-      case CSSPseudoClassType::lastChild:
-        if (!edgeChildMatches(aElement, aTreeMatchContext, false, true)) {
-          return false;
-        }
-        break;
-
-      case CSSPseudoClassType::lastNode:
-        {
-          nsIContent *lastNode = nullptr;
-          nsIContent *parent = aElement->GetParent();
-          if (parent) {
-            if (aTreeMatchContext.mForStyling)
-              parent->SetFlags(NODE_HAS_EDGE_CHILD_SELECTOR);
-
-            uint32_t index = parent->GetChildCount();
-            do {
-              lastNode = parent->GetChildAt(--index);
-              
-            } while (lastNode &&
-                     !IsSignificantChild(lastNode, true, false));
-          }
-          if (aElement != lastNode) {
-            return false;
-          }
-        }
-        break;
-
-      case CSSPseudoClassType::onlyChild:
-        if (!edgeChildMatches(aElement, aTreeMatchContext, true, true)) {
-          return false;
-        }
-        break;
-
-      case CSSPseudoClassType::firstOfType:
-        if (!edgeOfTypeMatches(aElement, aTreeMatchContext, true, false)) {
-          return false;
-        }
-        break;
-
-      case CSSPseudoClassType::lastOfType:
-        if (!edgeOfTypeMatches(aElement, aTreeMatchContext, false, true)) {
-          return false;
-        }
-        break;
-
-      case CSSPseudoClassType::onlyOfType:
-        if (!edgeOfTypeMatches(aElement, aTreeMatchContext, true, true)) {
-          return false;
-        }
-        break;
-
-      case CSSPseudoClassType::nthChild:
-        if (!nthChildGenericMatches(aElement, aTreeMatchContext, pseudoClass,
-                                    false, false)) {
-          return false;
-        }
-        break;
-
-      case CSSPseudoClassType::nthLastChild:
-        if (!nthChildGenericMatches(aElement, aTreeMatchContext, pseudoClass,
-                                    false, true)) {
-          return false;
-        }
-      break;
-
-      case CSSPseudoClassType::nthOfType:
-        if (!nthChildGenericMatches(aElement, aTreeMatchContext, pseudoClass,
-                                    true, false)) {
-          return false;
-        }
-        break;
-
-      case CSSPseudoClassType::nthLastOfType:
-        if (!nthChildGenericMatches(aElement, aTreeMatchContext, pseudoClass,
-                                    true, true)) {
-          return false;
-        }
-        break;
-
-      case CSSPseudoClassType::mozIsHTML:
-        if (!aTreeMatchContext.mIsHTMLDocument || !aElement->IsHTMLElement()) {
-          return false;
-        }
-        break;
-
-      case CSSPseudoClassType::mozNativeAnonymous:
-        if (!aElement->IsInNativeAnonymousSubtree()) {
-          return false;
-        }
-        break;
-
-      case CSSPseudoClassType::mozSystemMetric:
-        {
-          nsCOMPtr<nsIAtom> metric = NS_Atomize(pseudoClass->u.mString);
-          if (!nsCSSRuleProcessor::HasSystemMetric(metric)) {
-            return false;
-          }
-        }
-        break;
-
-      case CSSPseudoClassType::mozLocaleDir:
-        {
-          bool docIsRTL =
-            aTreeMatchContext.mDocument->GetDocumentState().
-              HasState(NS_DOCUMENT_STATE_RTL_LOCALE);
-
-          nsDependentString dirString(pseudoClass->u.mString);
-
-          if (dirString.EqualsLiteral("rtl")) {
-            if (!docIsRTL) {
-              return false;
-            }
-          } else if (dirString.EqualsLiteral("ltr")) {
-            if (docIsRTL) {
-              return false;
-            }
-          } else {
-            
-            return false;
-          }
-        }
-        break;
-
-      case CSSPseudoClassType::mozLWTheme:
-        {
-          if (aTreeMatchContext.mDocument->GetDocumentLWTheme() <=
-                nsIDocument::Doc_Theme_None) {
-            return false;
-          }
-        }
-        break;
-
-      case CSSPseudoClassType::mozLWThemeBrightText:
-        {
-          if (aTreeMatchContext.mDocument->GetDocumentLWTheme() !=
-                nsIDocument::Doc_Theme_Bright) {
-            return false;
-          }
-        }
-        break;
-
-      case CSSPseudoClassType::mozLWThemeDarkText:
-        {
-          if (aTreeMatchContext.mDocument->GetDocumentLWTheme() !=
-                nsIDocument::Doc_Theme_Dark) {
-            return false;
-          }
-        }
-        break;
-
-      case CSSPseudoClassType::mozWindowInactive:
-        if (!aTreeMatchContext.mDocument->GetDocumentState().
-               HasState(NS_DOCUMENT_STATE_WINDOW_INACTIVE)) {
-          return false;
-        }
-        break;
-
-      case CSSPseudoClassType::mozTableBorderNonzero:
-        {
-          if (!aElement->IsHTMLElement(nsGkAtoms::table)) {
-            return false;
-          }
-          const nsAttrValue *val = aElement->GetParsedAttr(nsGkAtoms::border);
-          if (!val ||
-              (val->Type() == nsAttrValue::eInteger &&
-               val->GetIntegerValue() == 0)) {
-            return false;
-          }
-        }
-        break;
-
-      case CSSPseudoClassType::mozBrowserFrame:
-        {
-          nsCOMPtr<nsIMozBrowserFrame>
-            browserFrame = do_QueryInterface(aElement);
-          if (!browserFrame ||
-              !browserFrame->GetReallyIsBrowser()) {
-            return false;
-          }
-        }
-        break;
-
-      case CSSPseudoClassType::dir:
-        {
-          if (aDependence) {
-            EventStates states = sPseudoClassStateDependences[
-              static_cast<CSSPseudoClassTypeBase>(pseudoClass->mType)];
-            if (aNodeMatchContext.mStateMask.HasAtLeastOneOfStates(states)) {
-              *aDependence = true;
-              return false;
-            }
-          }
-
-          
-          
-          
-          
-          
-          
-          EventStates state = aElement->StyleState();
-          nsDependentString dirString(pseudoClass->u.mString);
-
-          if (dirString.EqualsLiteral("rtl")) {
-            if (!state.HasState(NS_EVENT_STATE_RTL)) {
-              return false;
-            }
-          } else if (dirString.EqualsLiteral("ltr")) {
-            if (!state.HasState(NS_EVENT_STATE_LTR)) {
-              return false;
-            }
-          } else {
-            
-            return false;
-          }
-        }
-        break;
-
-      case CSSPseudoClassType::scope:
-        if (aTreeMatchContext.mForScopedStyle) {
-          if (aTreeMatchContext.mCurrentStyleScope) {
-            
-            
-            
-            
-            
-            
-            
-            return false;
-          }
-        } else if (aTreeMatchContext.HasSpecifiedScope()) {
-          if (!aTreeMatchContext.IsScopeElement(aElement)) {
-            return false;
-          }
-        } else {
-          if (aElement != aElement->OwnerDoc()->GetRootElement()) {
-            return false;
-          }
-        }
-        break;
-
-      default:
-        MOZ_ASSERT(false, "How did that happen?");
-      }
-    } else {
+    if (!statesToCheck.IsEmpty()) {
       if (!StateSelectorMatches(aElement, aSelector, aNodeMatchContext,
                                 aTreeMatchContext, aSelectorFlags, aDependence,
                                 statesToCheck)) {
         return false;
       }
+      continue;
+    }
+    
+    
+    switch (pseudoClass->mType) {
+    case CSSPseudoClassType::empty:
+      if (!checkGenericEmptyMatches(aElement, aTreeMatchContext, true)) {
+        return false;
+      }
+      break;
+
+    case CSSPseudoClassType::mozOnlyWhitespace:
+      if (!checkGenericEmptyMatches(aElement, aTreeMatchContext, false)) {
+        return false;
+      }
+      break;
+
+    case CSSPseudoClassType::mozEmptyExceptChildrenWithLocalname:
+      {
+        NS_ASSERTION(pseudoClass->u.mString, "Must have string!");
+        nsIContent *child = nullptr;
+        int32_t index = -1;
+
+        if (aTreeMatchContext.mForStyling)
+          
+          
+          
+          
+          
+          aElement->SetFlags(NODE_HAS_SLOW_SELECTOR);
+        do {
+          child = aElement->GetChildAt(++index);
+        } while (child &&
+                  (!IsSignificantChild(child, true, false) ||
+                  (child->GetNameSpaceID() == aElement->GetNameSpaceID() &&
+                    child->NodeInfo()->NameAtom()->Equals(nsDependentString(pseudoClass->u.mString)))));
+        if (child != nullptr) {
+          return false;
+        }
+      }
+      break;
+
+    case CSSPseudoClassType::lang:
+      {
+        NS_ASSERTION(nullptr != pseudoClass->u.mString, "null lang parameter");
+        if (!pseudoClass->u.mString || !*pseudoClass->u.mString) {
+          return false;
+        }
+
+        
+        
+        
+        
+        nsAutoString language;
+        if (aElement->GetLang(language)) {
+          if (!nsStyleUtil::DashMatchCompare(language,
+                                              nsDependentString(pseudoClass->u.mString),
+                                              nsASCIICaseInsensitiveStringComparator())) {
+            return false;
+          }
+          
+          break;
+        }
+
+        nsIDocument* doc = aTreeMatchContext.mDocument;
+        if (doc) {
+          
+          
+          
+          
+          doc->GetContentLanguage(language);
+
+          nsDependentString langString(pseudoClass->u.mString);
+          language.StripWhitespace();
+          int32_t begin = 0;
+          int32_t len = language.Length();
+          while (begin < len) {
+            int32_t end = language.FindChar(char16_t(','), begin);
+            if (end == kNotFound) {
+              end = len;
+            }
+            if (nsStyleUtil::DashMatchCompare(Substring(language, begin,
+                                                        end-begin),
+                                              langString,
+                                              nsASCIICaseInsensitiveStringComparator())) {
+              break;
+            }
+            begin = end + 1;
+          }
+          if (begin < len) {
+            
+            break;
+          }
+        }
+      }
+      return false;
+
+    case CSSPseudoClassType::mozBoundElement:
+      if (aTreeMatchContext.mScopedRoot != aElement) {
+        return false;
+      }
+      break;
+
+    case CSSPseudoClassType::root:
+      if (aElement != aElement->OwnerDoc()->GetRootElement()) {
+        return false;
+      }
+      break;
+
+    case CSSPseudoClassType::any:
+      {
+        nsCSSSelectorList *l;
+        for (l = pseudoClass->u.mSelectors; l; l = l->mNext) {
+          nsCSSSelector *s = l->mSelectors;
+          MOZ_ASSERT(!s->mNext && !s->IsPseudoElement(),
+                      "parser failed");
+          if (SelectorMatches(
+                aElement, s, aNodeMatchContext, aTreeMatchContext,
+                SelectorMatchesFlags::IS_PSEUDO_CLASS_ARGUMENT)) {
+            break;
+          }
+        }
+        if (!l) {
+          return false;
+        }
+      }
+      break;
+
+    case CSSPseudoClassType::firstChild:
+      if (!edgeChildMatches(aElement, aTreeMatchContext, true, false)) {
+        return false;
+      }
+      break;
+
+    case CSSPseudoClassType::firstNode:
+      {
+        nsIContent *firstNode = nullptr;
+        nsIContent *parent = aElement->GetParent();
+        if (parent) {
+          if (aTreeMatchContext.mForStyling)
+            parent->SetFlags(NODE_HAS_EDGE_CHILD_SELECTOR);
+
+          int32_t index = -1;
+          do {
+            firstNode = parent->GetChildAt(++index);
+            
+          } while (firstNode &&
+                    !IsSignificantChild(firstNode, true, false));
+        }
+        if (aElement != firstNode) {
+          return false;
+        }
+      }
+      break;
+
+    case CSSPseudoClassType::lastChild:
+      if (!edgeChildMatches(aElement, aTreeMatchContext, false, true)) {
+        return false;
+      }
+      break;
+
+    case CSSPseudoClassType::lastNode:
+      {
+        nsIContent *lastNode = nullptr;
+        nsIContent *parent = aElement->GetParent();
+        if (parent) {
+          if (aTreeMatchContext.mForStyling)
+            parent->SetFlags(NODE_HAS_EDGE_CHILD_SELECTOR);
+
+          uint32_t index = parent->GetChildCount();
+          do {
+            lastNode = parent->GetChildAt(--index);
+            
+          } while (lastNode &&
+                    !IsSignificantChild(lastNode, true, false));
+        }
+        if (aElement != lastNode) {
+          return false;
+        }
+      }
+      break;
+
+    case CSSPseudoClassType::onlyChild:
+      if (!edgeChildMatches(aElement, aTreeMatchContext, true, true)) {
+        return false;
+      }
+      break;
+
+    case CSSPseudoClassType::firstOfType:
+      if (!edgeOfTypeMatches(aElement, aTreeMatchContext, true, false)) {
+        return false;
+      }
+      break;
+
+    case CSSPseudoClassType::lastOfType:
+      if (!edgeOfTypeMatches(aElement, aTreeMatchContext, false, true)) {
+        return false;
+      }
+      break;
+
+    case CSSPseudoClassType::onlyOfType:
+      if (!edgeOfTypeMatches(aElement, aTreeMatchContext, true, true)) {
+        return false;
+      }
+      break;
+
+    case CSSPseudoClassType::nthChild:
+      if (!nthChildGenericMatches(aElement, aTreeMatchContext, pseudoClass,
+                                  false, false)) {
+        return false;
+      }
+      break;
+
+    case CSSPseudoClassType::nthLastChild:
+      if (!nthChildGenericMatches(aElement, aTreeMatchContext, pseudoClass,
+                                  false, true)) {
+        return false;
+      }
+    break;
+
+    case CSSPseudoClassType::nthOfType:
+      if (!nthChildGenericMatches(aElement, aTreeMatchContext, pseudoClass,
+                                  true, false)) {
+        return false;
+      }
+      break;
+
+    case CSSPseudoClassType::nthLastOfType:
+      if (!nthChildGenericMatches(aElement, aTreeMatchContext, pseudoClass,
+                                  true, true)) {
+        return false;
+      }
+      break;
+
+    case CSSPseudoClassType::mozIsHTML:
+      if (!aTreeMatchContext.mIsHTMLDocument || !aElement->IsHTMLElement()) {
+        return false;
+      }
+      break;
+
+    case CSSPseudoClassType::mozNativeAnonymous:
+      if (!aElement->IsInNativeAnonymousSubtree()) {
+        return false;
+      }
+      break;
+
+    case CSSPseudoClassType::mozSystemMetric:
+      {
+        nsCOMPtr<nsIAtom> metric = NS_Atomize(pseudoClass->u.mString);
+        if (!nsCSSRuleProcessor::HasSystemMetric(metric)) {
+          return false;
+        }
+      }
+      break;
+
+    case CSSPseudoClassType::mozLocaleDir:
+      {
+        bool docIsRTL =
+          aTreeMatchContext.mDocument->GetDocumentState().
+            HasState(NS_DOCUMENT_STATE_RTL_LOCALE);
+
+        nsDependentString dirString(pseudoClass->u.mString);
+
+        if (dirString.EqualsLiteral("rtl")) {
+          if (!docIsRTL) {
+            return false;
+          }
+        } else if (dirString.EqualsLiteral("ltr")) {
+          if (docIsRTL) {
+            return false;
+          }
+        } else {
+          
+          return false;
+        }
+      }
+      break;
+
+    case CSSPseudoClassType::mozLWTheme:
+      {
+        if (aTreeMatchContext.mDocument->GetDocumentLWTheme() <=
+              nsIDocument::Doc_Theme_None) {
+          return false;
+        }
+      }
+      break;
+
+    case CSSPseudoClassType::mozLWThemeBrightText:
+      {
+        if (aTreeMatchContext.mDocument->GetDocumentLWTheme() !=
+              nsIDocument::Doc_Theme_Bright) {
+          return false;
+        }
+      }
+      break;
+
+    case CSSPseudoClassType::mozLWThemeDarkText:
+      {
+        if (aTreeMatchContext.mDocument->GetDocumentLWTheme() !=
+              nsIDocument::Doc_Theme_Dark) {
+          return false;
+        }
+      }
+      break;
+
+    case CSSPseudoClassType::mozWindowInactive:
+      if (!aTreeMatchContext.mDocument->GetDocumentState().
+              HasState(NS_DOCUMENT_STATE_WINDOW_INACTIVE)) {
+        return false;
+      }
+      break;
+
+    case CSSPseudoClassType::mozTableBorderNonzero:
+      {
+        if (!aElement->IsHTMLElement(nsGkAtoms::table)) {
+          return false;
+        }
+        const nsAttrValue *val = aElement->GetParsedAttr(nsGkAtoms::border);
+        if (!val ||
+            (val->Type() == nsAttrValue::eInteger &&
+             val->GetIntegerValue() == 0)) {
+          return false;
+        }
+      }
+      break;
+
+    case CSSPseudoClassType::mozBrowserFrame:
+      {
+        nsCOMPtr<nsIMozBrowserFrame>
+          browserFrame = do_QueryInterface(aElement);
+        if (!browserFrame ||
+            !browserFrame->GetReallyIsBrowser()) {
+          return false;
+        }
+      }
+      break;
+
+    case CSSPseudoClassType::dir:
+      {
+        if (aDependence) {
+          EventStates states = sPseudoClassStateDependences[
+            static_cast<CSSPseudoClassTypeBase>(pseudoClass->mType)];
+          if (aNodeMatchContext.mStateMask.HasAtLeastOneOfStates(states)) {
+            *aDependence = true;
+            return false;
+          }
+        }
+
+        
+        
+        
+        
+        
+        
+        EventStates state = aElement->StyleState();
+        nsDependentString dirString(pseudoClass->u.mString);
+
+        if (dirString.EqualsLiteral("rtl")) {
+          if (!state.HasState(NS_EVENT_STATE_RTL)) {
+            return false;
+          }
+        } else if (dirString.EqualsLiteral("ltr")) {
+          if (!state.HasState(NS_EVENT_STATE_LTR)) {
+            return false;
+          }
+        } else {
+          
+          return false;
+        }
+      }
+      break;
+
+    case CSSPseudoClassType::scope:
+      if (aTreeMatchContext.mForScopedStyle) {
+        if (aTreeMatchContext.mCurrentStyleScope) {
+          
+          
+          
+          
+          
+          
+          
+          return false;
+        }
+      } else if (aTreeMatchContext.HasSpecifiedScope()) {
+        if (!aTreeMatchContext.IsScopeElement(aElement)) {
+          return false;
+        }
+      } else {
+        if (aElement != aElement->OwnerDoc()->GetRootElement()) {
+          return false;
+        }
+      }
+      break;
+
+    default:
+      MOZ_ASSERT(false, "How did that happen?");
     }
   }
 
