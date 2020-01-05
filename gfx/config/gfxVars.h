@@ -25,7 +25,6 @@ class gfxVarReceiver;
       \
   _(BrowserTabsRemoteAutostart, bool,             false)                \
   _(ContentBackend,             BackendType,      BackendType::NONE)    \
-  _(SoftwareBackend,            BackendType,      BackendType::NONE)    \
   _(TileSize,                   IntSize,          IntSize(-1, -1))      \
   _(UseXRender,                 bool,             false)                \
   _(OffscreenFormat,            gfxImageFormat,   mozilla::gfx::SurfaceFormat::X8R8G8B8_UINT32) \
@@ -35,6 +34,9 @@ class gfxVarReceiver;
   _(PDMWMFDisableD3D9Dlls,      nsCString,        nsCString())          \
   _(DXInterop2Blocked,          bool,             false)                \
   _(UseWebRender,               bool,             false)                \
+  _(UseWebRenderANGLE,          bool,             false)                \
+  _(ScreenDepth,                int32_t,          0)                    \
+  _(GREDirectory,               nsCString,        nsCString())          \
 
   
 
