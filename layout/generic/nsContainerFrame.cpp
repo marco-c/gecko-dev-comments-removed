@@ -1030,7 +1030,7 @@ nsContainerFrame::ReflowChild(nsIFrame*                aKidFrame,
   
   
   if (!NS_INLINE_IS_BREAK_BEFORE(aStatus) &&
-      NS_FRAME_IS_FULLY_COMPLETE(aStatus) &&
+      aStatus.IsFullyComplete() &&
       !(aFlags & NS_FRAME_NO_DELETE_NEXT_IN_FLOW_CHILD)) {
     nsIFrame* kidNextInFlow = aKidFrame->GetNextInFlow();
     if (kidNextInFlow) {
@@ -1073,7 +1073,7 @@ nsContainerFrame::ReflowChild(nsIFrame*                aKidFrame,
 
   
   
-  if (NS_FRAME_IS_FULLY_COMPLETE(aStatus) &&
+  if (aStatus.IsFullyComplete() &&
       !(aFlags & NS_FRAME_NO_DELETE_NEXT_IN_FLOW_CHILD)) {
     nsIFrame* kidNextInFlow = aKidFrame->GetNextInFlow();
     if (kidNextInFlow) {
@@ -1280,7 +1280,7 @@ nsContainerFrame::ReflowOverflowContainerChildren(nsPresContext*           aPres
                         wm, pos, containerSize, aFlags);
 
       
-      if (!NS_FRAME_IS_FULLY_COMPLETE(frameStatus)) {
+      if (!frameStatus.IsFullyComplete()) {
         if (frame->GetStateBits() & NS_FRAME_OUT_OF_FLOW) {
           
           

@@ -336,7 +336,7 @@ nsBlockReflowContext::ReflowBlock(const LogicalRect&  aSpace,
     
     
     
-    if (NS_FRAME_IS_FULLY_COMPLETE(aFrameReflowStatus)) {
+    if (aFrameReflowStatus.IsFullyComplete()) {
       nsIFrame* kidNextInFlow = mFrame->GetNextInFlow();
       if (nullptr != kidNextInFlow) {
         
