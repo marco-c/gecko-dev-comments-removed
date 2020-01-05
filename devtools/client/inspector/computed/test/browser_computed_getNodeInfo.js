@@ -15,12 +15,13 @@
 
 
 
+
 const {
   VIEW_NODE_SELECTOR_TYPE,
   VIEW_NODE_PROPERTY_TYPE,
   VIEW_NODE_VALUE_TYPE,
   VIEW_NODE_IMAGE_URL_TYPE
-} = require("devtools/client/inspector/shared/style-inspector-overlays");
+} = require("devtools/client/inspector/shared/node-types");
 
 const TEST_URI = `
   <style type="text/css">
