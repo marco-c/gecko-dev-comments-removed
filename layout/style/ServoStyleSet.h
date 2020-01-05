@@ -241,6 +241,16 @@ public:
 
 
 
+
+
+
+  void StyleSubtreeForReconstruct(dom::Element* aRoot);
+
+  
+
+
+
+
   void NoteStyleSheetsChanged();
 
 #ifdef DEBUG
@@ -315,7 +325,10 @@ private:
   
 
 
-  void PreTraverse();
+
+
+
+  void PreTraverse(dom::Element* aRoot = nullptr);
   
   void PreTraverseSync();
 

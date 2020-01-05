@@ -214,13 +214,17 @@ ServoStyleSet::PreTraverseSync()
 }
 
 void
-ServoStyleSet::PreTraverse()
+ServoStyleSet::PreTraverse(Element* aRoot)
 {
   PreTraverseSync();
 
   
   
-  mPresContext->EffectCompositor()->PreTraverse();
+  if (aRoot) {
+    mPresContext->EffectCompositor()->PreTraverseInSubtree(aRoot);
+  } else {
+    mPresContext->EffectCompositor()->PreTraverse();
+  }
 }
 
 bool
@@ -238,15 +242,22 @@ ServoStyleSet::PrepareAndTraverseSubtree(RawGeckoElementBorrowed aRoot,
   sInServoTraversal = true;
 
   bool isInitial = !aRoot->HasServoData();
+  bool forReconstruct =
+    aRestyleBehavior == TraversalRestyleBehavior::ForReconstruct;
   bool postTraversalRequired =
     Servo_TraverseSubtree(aRoot, mRawSet.get(), aRootBehavior, aRestyleBehavior);
-  MOZ_ASSERT_IF(isInitial, !postTraversalRequired);
+  MOZ_ASSERT_IF(isInitial || forReconstruct, !postTraversalRequired);
+
+  auto root = const_cast<Element*>(aRoot);
 
   
   
-  if (mPresContext->EffectCompositor()->PreTraverse()) {
+  EffectCompositor* compositor = mPresContext->EffectCompositor();
+  if (forReconstruct ? compositor->PreTraverseInSubtree(root)
+                     : compositor->PreTraverse()) {
     if (Servo_TraverseSubtree(aRoot, mRawSet.get(),
                               aRootBehavior, aRestyleBehavior)) {
+      MOZ_ASSERT(!forReconstruct);
       if (isInitial) {
         
         
@@ -258,7 +269,7 @@ ServoStyleSet::PrepareAndTraverseSubtree(RawGeckoElementBorrowed aRoot,
         
         
         MOZ_ASSERT(!postTraversalRequired);
-        ServoRestyleManager::ClearRestyleStateFromSubtree(const_cast<Element*>(aRoot));
+        ServoRestyleManager::ClearRestyleStateFromSubtree(root);
       } else {
         postTraversalRequired = true;
       }
@@ -744,6 +755,18 @@ ServoStyleSet::StyleNewChildren(Element* aParent)
                             TraversalRestyleBehavior::Normal);
   
   
+}
+
+void
+ServoStyleSet::StyleSubtreeForReconstruct(Element* aRoot)
+{
+  PreTraverse(aRoot);
+
+  DebugOnly<bool> postTraversalRequired =
+    PrepareAndTraverseSubtree(aRoot,
+                              TraversalRootBehavior::Normal,
+                              TraversalRestyleBehavior::ForReconstruct);
+  MOZ_ASSERT(!postTraversalRequired);
 }
 
 void
