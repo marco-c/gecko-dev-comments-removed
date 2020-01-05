@@ -40,7 +40,7 @@ use gfx_traits::LayerId;
 use ipc_channel::ipc::{IpcReceiver, IpcSender};
 use libc::c_void;
 use msg::constellation_msg::{ConstellationChan, Failure, PipelineId, WindowSizeData};
-use msg::constellation_msg::{Key, KeyModifiers, KeyState, LoadData, MouseButton};
+use msg::constellation_msg::{Key, KeyModifiers, KeyState, LoadData};
 use msg::constellation_msg::{PipelineNamespaceId, SubpageId};
 use msg::webdriver_msg::WebDriverScriptCommand;
 use net_traits::ResourceThread;
@@ -188,6 +188,17 @@ pub enum TouchEventType {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Deserialize, Serialize)]
 pub struct TouchId(pub i32);
+
+
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+pub enum MouseButton {
+    
+    Left,
+    
+    Middle,
+    
+    Right,
+}
 
 
 #[derive(Deserialize, HeapSizeOf, Serialize)]

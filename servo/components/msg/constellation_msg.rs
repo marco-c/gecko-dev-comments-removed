@@ -200,17 +200,6 @@ bitflags! {
     }
 }
 
-
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
-pub enum MouseButton {
-    
-    Left,
-    
-    Middle,
-    
-    Right,
-}
-
 #[derive(Deserialize, Serialize)]
 pub enum WebDriverCommandMsg {
     LoadUrl(PipelineId, LoadData, IpcSender<LoadStatus>),

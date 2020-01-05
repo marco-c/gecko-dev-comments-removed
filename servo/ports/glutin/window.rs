@@ -253,7 +253,7 @@ impl Window {
 
     
     fn handle_mouse(&self, button: glutin::MouseButton, action: glutin::ElementState, x: i32, y: i32) {
-        use msg::constellation_msg::MouseButton;
+        use script_traits::MouseButton;
 
         
         let max_pixel_dist = 10f64;
