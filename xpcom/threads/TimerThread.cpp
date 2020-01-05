@@ -685,12 +685,6 @@ TimerThread::PostTimerEvent(already_AddRefed<nsTimerImpl> aTimerRef)
     event->mInitTime = TimeStamp::Now();
   }
 
-  
-  
-  if (timer->IsRepeatingPrecisely()) {
-    timer->SetDelayInternal(timer->mDelay);
-  }
-
 #ifdef MOZ_TASK_TRACER
   
   
