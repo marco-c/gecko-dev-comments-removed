@@ -8,6 +8,21 @@ const SUGGEST_URLBAR_PREF = "browser.urlbar.suggest.searches";
 const SUGGESTION_ENGINE_NAME = "browser_UsageTelemetry usageTelemetrySearchSuggestions.xml";
 const ONEOFF_URLBAR_PREF = "browser.urlbar.oneOffSearches";
 
+XPCOMUtils.defineLazyModuleGetter(this, "URLBAR_SELECTED_RESULT_TYPES",
+                                  "resource:///modules/BrowserUsageTelemetry.jsm");
+
+function checkHistogramResults(resultIndexes, expected, histogram) {
+  for (let i = 0; i < resultIndexes.counts.length; i++) {
+    if (i == expected) {
+      Assert.equal(resultIndexes.counts[i], 1,
+        `expected counts should match for ${histogram} index ${i}`);
+    } else {
+      Assert.equal(resultIndexes.counts[i], 0,
+        `unexpected counts should be zero for ${histogram} index ${i}`);
+    }
+  }
+}
+
 let searchInAwesomebar = Task.async(function* (inputText, win = window) {
   yield new Promise(r => waitForFocus(r, win));
   
@@ -63,11 +78,17 @@ add_task(function* setup() {
   yield SpecialPowers.pushPrefEnv({"set": [["toolkit.telemetry.enabled", true]]});
 
   
+  let oldCanRecord = Services.telemetry.canRecordExtended;
+  Services.telemetry.canRecordExtended = true;
+
+  
   registerCleanupFunction(function* () {
+    Services.telemetry.canRecordExtended = oldCanRecord;
     Services.search.currentEngine = originalEngine;
     Services.search.removeEngine(engine);
     Services.prefs.clearUserPref(SUGGEST_URLBAR_PREF, true);
     Services.prefs.clearUserPref(ONEOFF_URLBAR_PREF);
+    yield PlacesTestUtils.clearHistory();
   });
 });
 
@@ -75,6 +96,11 @@ add_task(function* test_simpleQuery() {
   
   Services.telemetry.clearScalars();
   Services.telemetry.clearEvents();
+  let resultIndexHist = Services.telemetry.getHistogramById("FX_URLBAR_SELECTED_RESULT_INDEX");
+  let resultTypeHist = Services.telemetry.getHistogramById("FX_URLBAR_SELECTED_RESULT_TYPE");
+  resultIndexHist.clear();
+  resultTypeHist.clear();
+
   let search_hist = getSearchCountsHistogram();
 
   let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank");
@@ -100,6 +126,15 @@ add_task(function* test_simpleQuery() {
   events = events.filter(e => e[1] == "navigation" && e[2] == "search");
   checkEvents(events, [["navigation", "search", "urlbar", "enter", {engine: "other-MozSearch"}]]);
 
+  
+  let resultIndexes = resultIndexHist.snapshot();
+  checkHistogramResults(resultIndexes, 0, "FX_URLBAR_SELECTED_RESULT_INDEX");
+
+  let resultTypes = resultTypeHist.snapshot();
+  checkHistogramResults(resultTypes,
+    URLBAR_SELECTED_RESULT_TYPES.searchengine,
+    "FX_URLBAR_SELECTED_RESULT_TYPE");
+
   yield BrowserTestUtils.removeTab(tab);
 });
 
@@ -107,6 +142,11 @@ add_task(function* test_searchAlias() {
   
   Services.telemetry.clearScalars();
   Services.telemetry.clearEvents();
+  let resultIndexHist = Services.telemetry.getHistogramById("FX_URLBAR_SELECTED_RESULT_INDEX");
+  let resultTypeHist = Services.telemetry.getHistogramById("FX_URLBAR_SELECTED_RESULT_TYPE");
+  resultIndexHist.clear();
+  resultTypeHist.clear();
+
   let search_hist = getSearchCountsHistogram();
 
   let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank");
@@ -132,6 +172,15 @@ add_task(function* test_searchAlias() {
   events = events.filter(e => e[1] == "navigation" && e[2] == "search");
   checkEvents(events, [["navigation", "search", "urlbar", "alias", {engine: "other-MozSearch"}]]);
 
+  
+  let resultIndexes = resultIndexHist.snapshot();
+  checkHistogramResults(resultIndexes, 0, "FX_URLBAR_SELECTED_RESULT_INDEX");
+
+  let resultTypes = resultTypeHist.snapshot();
+  checkHistogramResults(resultTypes,
+    URLBAR_SELECTED_RESULT_TYPES.searchengine,
+    "FX_URLBAR_SELECTED_RESULT_TYPE");
+
   yield BrowserTestUtils.removeTab(tab);
 });
 
@@ -139,6 +188,11 @@ add_task(function* test_oneOff() {
   
   Services.telemetry.clearScalars();
   Services.telemetry.clearEvents();
+  let resultIndexHist = Services.telemetry.getHistogramById("FX_URLBAR_SELECTED_RESULT_INDEX");
+  let resultTypeHist = Services.telemetry.getHistogramById("FX_URLBAR_SELECTED_RESULT_TYPE");
+  resultIndexHist.clear();
+  resultTypeHist.clear();
+
   let search_hist = getSearchCountsHistogram();
 
   let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank");
@@ -167,6 +221,15 @@ add_task(function* test_oneOff() {
   events = events.filter(e => e[1] == "navigation" && e[2] == "search");
   checkEvents(events, [["navigation", "search", "urlbar", "oneoff", {engine: "other-MozSearch"}]]);
 
+  
+  let resultIndexes = resultIndexHist.snapshot();
+  checkHistogramResults(resultIndexes, 0, "FX_URLBAR_SELECTED_RESULT_INDEX");
+
+  let resultTypes = resultTypeHist.snapshot();
+  checkHistogramResults(resultTypes,
+    URLBAR_SELECTED_RESULT_TYPES.searchengine,
+    "FX_URLBAR_SELECTED_RESULT_TYPE");
+
   yield BrowserTestUtils.removeTab(tab);
 });
 
@@ -174,6 +237,11 @@ add_task(function* test_suggestion() {
   
   Services.telemetry.clearScalars();
   Services.telemetry.clearEvents();
+  let resultIndexHist = Services.telemetry.getHistogramById("FX_URLBAR_SELECTED_RESULT_INDEX");
+  let resultTypeHist = Services.telemetry.getHistogramById("FX_URLBAR_SELECTED_RESULT_TYPE");
+  resultIndexHist.clear();
+  resultTypeHist.clear();
+
   let search_hist = getSearchCountsHistogram();
 
   
@@ -213,6 +281,15 @@ add_task(function* test_suggestion() {
   let events = Services.telemetry.snapshotBuiltinEvents(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, false);
   events = events.filter(e => e[1] == "navigation" && e[2] == "search");
   checkEvents(events, [["navigation", "search", "urlbar", "suggestion", {engine: searchEngineId}]]);
+
+  
+  let resultIndexes = resultIndexHist.snapshot();
+  checkHistogramResults(resultIndexes, 3, "FX_URLBAR_SELECTED_RESULT_INDEX");
+
+  let resultTypes = resultTypeHist.snapshot();
+  checkHistogramResults(resultTypes,
+    URLBAR_SELECTED_RESULT_TYPES.searchsuggestion,
+    "FX_URLBAR_SELECTED_RESULT_TYPE");
 
   Services.search.currentEngine = previousEngine;
   Services.search.removeEngine(suggestionEngine);
