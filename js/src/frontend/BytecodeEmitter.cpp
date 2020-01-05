@@ -2365,6 +2365,9 @@ NonLocalExitControl::prepareForNonLocalJump(BytecodeEmitter::NestableControl* ta
           }
 
           case StatementKind::ForOfLoop:
+            if (!flushPops(bce_))
+                return false;
+
             
             
             if (emitIteratorClose) {
@@ -2384,6 +2387,9 @@ NonLocalExitControl::prepareForNonLocalJump(BytecodeEmitter::NestableControl* ta
             break;
 
           case StatementKind::ForInLoop:
+            if (!flushPops(bce_))
+                return false;
+
             
             if (!bce_->emit1(JSOP_POP))                   
                 return false;
