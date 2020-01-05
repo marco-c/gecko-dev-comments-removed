@@ -18,13 +18,6 @@ class MediaContentType
 {
 public:
   
-  explicit MediaContentType(const nsAString& aType);
-  
-  explicit MediaContentType(const nsACString& aType);
-
-  bool IsValid() const { return !GetMIMEType().IsEmpty(); }
-
-  
   const nsACString& GetMIMEType() const { return mMIMEType; }
 
   
@@ -39,7 +32,8 @@ public:
   Maybe<int32_t> GetBitrate() const { return GetMaybeNumber(mBitrate); }
 
 private:
-  void Populate(const nsAString& aType);
+  friend Maybe<MediaContentType> MakeMediaContentType(const nsAString& aType);
+  bool Populate(const nsAString& aType);
 
   Maybe<int32_t> GetMaybeNumber(int32_t aNumber) const
   {
@@ -54,6 +48,10 @@ private:
   int32_t mFramerate; 
   int32_t mBitrate; 
 };
+
+Maybe<MediaContentType> MakeMediaContentType(const nsAString& aType);
+Maybe<MediaContentType> MakeMediaContentType(const nsACString& aType);
+Maybe<MediaContentType> MakeMediaContentType(const char* aType);
 
 } 
 
