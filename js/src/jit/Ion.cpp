@@ -504,6 +504,30 @@ jit::FinishOffThreadBuilder(JSRuntime* runtime, IonBuilder* builder,
     js_delete(builder->alloc().lifoAlloc());
 }
 
+static void
+MarkJitProfilerEvent(JSRuntime* rt, JSScript* script, const char* event)
+{
+    if (rt->geckoProfiler().enabled()) {
+        
+        
+        
+
+        
+        const char* filename = script->filename();
+        if (filename == nullptr)
+            filename = "<unknown>";
+
+        
+        char* buf = JS_smprintf("%s %s:%" PRIuSIZE, event, filename, script->lineno());
+
+        
+        if (buf)  {
+            rt->geckoProfiler().markEvent(buf);
+            JS_smprintf_free(buf);
+        }
+    }
+}
+
 static bool
 LinkCodeGen(JSContext* cx, IonBuilder* builder, CodeGenerator *codegen)
 {
@@ -515,6 +539,8 @@ LinkCodeGen(JSContext* cx, IonBuilder* builder, CodeGenerator *codegen)
 
     if (!codegen->link(cx, builder->constraints()))
         return false;
+
+    MarkJitProfilerEvent(cx->runtime(), script, "Ion compilation finished");
 
     return true;
 }
@@ -3241,6 +3267,8 @@ jit::Invalidate(TypeZone& types, FreeOp* fop,
         JitSpew(JitSpew_IonInvalidate, " Invalidate %s:%" PRIuSIZE ", IonScript %p",
                 co->script()->filename(), co->script()->lineno(), co->ion());
 
+        MarkJitProfilerEvent(fop->runtime(), co->script(), "Invalidate");
+
         
         
         
@@ -3321,26 +3349,6 @@ jit::Invalidate(JSContext* cx, JSScript* script, bool resetUses, bool cancelOffT
 {
     MOZ_ASSERT(script->hasIonScript());
 
-    if (cx->runtime()->geckoProfiler().enabled()) {
-        
-        
-        
-
-        
-        const char* filename = script->filename();
-        if (filename == nullptr)
-            filename = "<unknown>";
-
-        
-        char* buf = JS_smprintf("Invalidate %s:%" PRIuSIZE, filename, script->lineno());
-
-        
-        if (buf) {
-            cx->runtime()->geckoProfiler().markEvent(buf);
-            JS_smprintf_free(buf);
-        }
-    }
-
     
     RecompileInfoVector scripts;
     MOZ_ASSERT(script->hasIonScript());
@@ -3364,6 +3372,9 @@ FinishInvalidationOf(FreeOp* fop, JSScript* script, IonScript* ionScript)
     
     if (!ionScript->invalidated())
         jit::IonScript::Destroy(fop, ionScript);
+
+    
+    MarkJitProfilerEvent(fop->runtime(), script, "Invalidate (GC)");
 }
 
 void
@@ -3389,6 +3400,8 @@ jit::ForbidCompilation(JSContext* cx, JSScript* script)
         Invalidate(cx, script, false);
 
     script->setIonScript(cx->runtime(), ION_DISABLED_SCRIPT);
+
+    MarkJitProfilerEvent(cx->runtime(), script, "Ion compilation disabled");
 }
 
 AutoFlushICache*
