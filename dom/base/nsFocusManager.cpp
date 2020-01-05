@@ -2205,9 +2205,17 @@ nsFocusManager::RaiseWindow(nsPIDOMWindowOuter* aWindow)
   if (sTestMode) {
     
     
-    if (mActiveWindow)
-      WindowLowered(mActiveWindow);
-    WindowRaised(aWindow);
+    
+    nsCOMPtr<nsPIDOMWindowOuter> active(mActiveWindow);
+    nsCOMPtr<nsPIDOMWindowOuter> window(aWindow);
+    RefPtr<nsFocusManager> self(this);
+    NS_DispatchToCurrentThread(
+      NS_NewRunnableFunction([self, active, window] () -> void {
+        if (active) {
+          self->WindowLowered(active);
+        }
+        self->WindowRaised(window);
+      }));
     return;
   }
 
