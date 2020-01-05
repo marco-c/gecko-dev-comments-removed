@@ -2,6 +2,7 @@
 
 
 
+use dom::attr::{AttrValue, StringAttrValue};
 use dom::bindings::codegen::InheritTypes::ElementCast;
 use dom::bindings::codegen::InheritTypes::HTMLAnchorElementCast;
 use dom::bindings::codegen::InheritTypes::HTMLBodyElementCast;
@@ -47,6 +48,15 @@ pub trait VirtualMethods {
         match self.super_type() {
             Some(ref s) => s.before_remove_attr(name, value),
             _ => (),
+        }
+    }
+
+    
+    
+    fn parse_plain_attribute(&self, name: &str, value: DOMString) -> AttrValue {
+        match self.super_type() {
+            Some(ref s) => s.parse_plain_attribute(name, value),
+            _ => StringAttrValue(value),
         }
     }
 
