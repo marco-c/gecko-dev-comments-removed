@@ -56,7 +56,8 @@ fn rewrap_box(-b : *shared_box<RenderBox>) -> @RenderBox unsafe {
 
 
 
-fn traverse_helper<T : Copy Send>(-root : @RenderBox, returned : T, -top_down : fn~(+T, @RenderBox) -> T,
+fn traverse_helper<T : Copy Send>(-root : @RenderBox, returned : T,
+                                  -top_down : fn~(+val: T, @RenderBox) -> T,
                       -bottom_up : fn~(@RenderBox)) {
     let returned = top_down(returned, root);
 
@@ -110,7 +111,7 @@ fn nop(_box : @RenderBox) {
 
 
 
-fn unit_wrapper(-fun : fn~(@RenderBox)) -> fn~(+(), @RenderBox) {
+fn unit_wrapper(-fun : fn~(@RenderBox)) -> fn~(+val: (), @RenderBox) {
     fn~(+_u : (), box : @RenderBox) { fun(box); }
 }
 
@@ -146,7 +147,7 @@ fn bottom_up_traversal(+root : @RenderBox, -bottom_up : fn~(@RenderBox)) {
 
 
 fn extended_full_traversal<T : Copy Send>(+root : @RenderBox, first_val : T, 
-                                          -top_down : fn~(+T, @RenderBox) -> T,
+                                          -top_down : fn~(+val: T, @RenderBox) -> T,
                                           -bottom_up : fn~(@RenderBox)) {
     traverse_helper(root, first_val, top_down, bottom_up);
 }
@@ -157,6 +158,6 @@ fn extended_full_traversal<T : Copy Send>(+root : @RenderBox, first_val : T,
 
 
 fn extended_top_down_traversal<T : Copy Send>(+root : @RenderBox, first_val : T,
-                                              -top_down : fn~(+T, @RenderBox) -> T) {
+                                              -top_down : fn~(+val: T, @RenderBox) -> T) {
     traverse_helper(root, first_val, top_down, nop);
 }

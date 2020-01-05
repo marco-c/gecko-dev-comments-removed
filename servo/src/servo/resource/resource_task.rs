@@ -4,24 +4,20 @@
 
 
 
-export ControlMsg, Load, Exit;
-export ProgressMsg, Payload, Done;
-export ResourceTask, ResourceManager, LoaderTaskFactory;
-
 use comm::{Chan, Port};
 use task::{spawn, spawn_listener};
 use std::net::url;
 use std::net::url::{Url, to_str};
 
-enum ControlMsg {
-    /// Request the data associated with a particular URL
+pub enum ControlMsg {
+    
     Load(Url, Chan<ProgressMsg>),
     Exit
 }
 
-/// Messages sent in response to a `Load` message
-enum ProgressMsg {
-    /// Binary data - there may be multiple of these
+
+pub enum ProgressMsg {
+    
     Payload(~[u8]),
     /// Indicates loading is complete, either successfully or not
     Done(Result<(), ()>)
@@ -69,15 +65,15 @@ fn create_resource_task_with_loaders(+loaders: ~[(~str, LoaderTaskFactory)]) -> 
     }
 }
 
-struct ResourceManager {
+pub struct ResourceManager {
     from_client: Port<ControlMsg>,
     /// Per-scheme resource loaders
     loaders: ~[(~str, LoaderTaskFactory)],
 }
 
 
-fn ResourceManager(from_client: Port<ControlMsg>, 
-                   loaders: ~[(~str, LoaderTaskFactory)]) -> ResourceManager {
+pub fn ResourceManager(from_client: Port<ControlMsg>, 
+                       loaders: ~[(~str, LoaderTaskFactory)]) -> ResourceManager {
     ResourceManager {
         from_client : from_client,
         loaders : loaders,
