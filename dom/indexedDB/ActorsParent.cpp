@@ -9341,6 +9341,9 @@ public:
   GetType() override;
 
   nsresult
+  UpgradeStorageFrom1_0To2_0(nsIFile* aDirectory) override;
+
+  nsresult
   InitOrigin(PersistenceType aPersistenceType,
              const nsACString& aGroup,
              const nsACString& aOrigin,
@@ -9388,6 +9391,13 @@ private:
   GetDirectory(PersistenceType aPersistenceType,
                const nsACString& aOrigin,
                nsIFile** aDirectory);
+
+  nsresult
+  GetDatabaseFilenames(nsIFile* aDirectory,
+                       UsageInfo* aUsageInfo,
+                       bool aForUpgrade,
+                       nsTArray<nsString>& aSubdirsToProcess,
+                       nsTHashtable<nsStringHashKey>& aDatabaseFilename);
 
   nsresult
   GetUsageForDirectoryInternal(nsIFile* aDirectory,
@@ -17813,29 +17823,18 @@ QuotaClient::GetType()
 }
 
 nsresult
-QuotaClient::InitOrigin(PersistenceType aPersistenceType,
-                        const nsACString& aGroup,
-                        const nsACString& aOrigin,
-                        UsageInfo* aUsageInfo)
+QuotaClient::UpgradeStorageFrom1_0To2_0(nsIFile* aDirectory)
 {
   AssertIsOnIOThread();
-
-  nsCOMPtr<nsIFile> directory;
-  nsresult rv =
-    GetDirectory(aPersistenceType, aOrigin, getter_AddRefs(directory));
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  
-  
-  
+  MOZ_ASSERT(aDirectory);
 
   AutoTArray<nsString, 20> subdirsToProcess;
   nsTHashtable<nsStringHashKey> databaseFilenames(20);
-
-  nsCOMPtr<nsISimpleEnumerator> entries;
-  rv = directory->GetDirectoryEntries(getter_AddRefs(entries));
+  nsresult rv = GetDatabaseFilenames(aDirectory,
+                                     nullptr,
+                                      true,
+                                     subdirsToProcess,
+                                     databaseFilenames);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -17844,89 +17843,6 @@ QuotaClient::InitOrigin(PersistenceType aPersistenceType,
     kFileManagerDirectoryNameSuffix,
     LiteralStringLength(kFileManagerDirectoryNameSuffix));
 
-  const NS_ConvertASCIItoUTF16 sqliteSuffix(kSQLiteSuffix,
-                                            LiteralStringLength(kSQLiteSuffix));
-  const NS_ConvertASCIItoUTF16 journalSuffix(
-    kSQLiteJournalSuffix,
-    LiteralStringLength(kSQLiteJournalSuffix));
-  const NS_ConvertASCIItoUTF16 shmSuffix(kSQLiteSHMSuffix,
-                                         LiteralStringLength(kSQLiteSHMSuffix));
-  const NS_ConvertASCIItoUTF16 walSuffix(kSQLiteWALSuffix,
-                                         LiteralStringLength(kSQLiteWALSuffix));
-
-  bool hasMore;
-  while (NS_SUCCEEDED((rv = entries->HasMoreElements(&hasMore))) &&
-         hasMore &&
-         (!aUsageInfo || !aUsageInfo->Canceled())) {
-    nsCOMPtr<nsISupports> entry;
-    rv = entries->GetNext(getter_AddRefs(entry));
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-
-    nsCOMPtr<nsIFile> file = do_QueryInterface(entry);
-    MOZ_ASSERT(file);
-
-    nsString leafName;
-    rv = file->GetLeafName(leafName);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-
-    bool isDirectory;
-    rv = file->IsDirectory(&isDirectory);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-
-    if (isDirectory) {
-      subdirsToProcess.AppendElement(leafName);
-      continue;
-    }
-
-    
-    
-    
-    if (leafName.EqualsLiteral(DSSTORE_FILE_NAME)) {
-      continue;
-    }
-
-    
-    
-    
-    if (StringEndsWith(leafName, journalSuffix) ||
-        StringEndsWith(leafName, shmSuffix)) {
-      continue;
-    }
-
-    
-    
-    if (StringEndsWith(leafName, walSuffix)) {
-      continue;
-    }
-
-    nsDependentSubstring leafNameBase;
-    if (!GetBaseFilename(leafName, sqliteSuffix, leafNameBase)) {
-      nsString path;
-      MOZ_ALWAYS_SUCCEEDS(file->GetPath(path));
-      MOZ_ASSERT(!path.IsEmpty());
-
-      nsPrintfCString warning(R"(Refusing to open databases for "%s" because )"
-                              R"(an unexpected file exists in the storage )"
-                              R"(area: "%s")",
-                              PromiseFlatCString(aOrigin).get(),
-                              NS_ConvertUTF16toUTF8(path).get());
-      NS_WARNING(warning.get());
-      return NS_ERROR_UNEXPECTED;
-    }
-
-    databaseFilenames.PutEntry(leafNameBase);
-  }
-
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
   for (uint32_t count = subdirsToProcess.Length(), i = 0; i < count; i++) {
     const nsString& subdirName = subdirsToProcess[i];
 
@@ -17934,9 +17850,7 @@ QuotaClient::InitOrigin(PersistenceType aPersistenceType,
     
     nsDependentSubstring subdirNameBase;
     if (GetBaseFilename(subdirName, filesSuffix, subdirNameBase)) {
-      if (NS_WARN_IF(!databaseFilenames.GetEntry(subdirNameBase))) {
-        return NS_ERROR_UNEXPECTED;
-      }
+      Unused << NS_WARN_IF(!databaseFilenames.GetEntry(subdirNameBase));
 
       continue;
     }
@@ -17953,7 +17867,7 @@ QuotaClient::InitOrigin(PersistenceType aPersistenceType,
       
       nsString subdirNameWithDot = subdirName + NS_LITERAL_STRING(".");
       if (NS_WARN_IF(!databaseFilenames.GetEntry(subdirNameWithDot))) {
-        return NS_ERROR_UNEXPECTED;
+        continue;
       }
       subdirNameWithSuffix = subdirNameWithDot + filesSuffix;
     }
@@ -17962,7 +17876,7 @@ QuotaClient::InitOrigin(PersistenceType aPersistenceType,
     
     
     nsCOMPtr<nsIFile> subdir;
-    rv = directory->Clone(getter_AddRefs(subdir));
+    rv = aDirectory->Clone(getter_AddRefs(subdir));
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -17983,7 +17897,7 @@ QuotaClient::InitOrigin(PersistenceType aPersistenceType,
       return NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR;
     }
 
-    rv = directory->Clone(getter_AddRefs(subdir));
+    rv = aDirectory->Clone(getter_AddRefs(subdir));
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -18002,6 +17916,63 @@ QuotaClient::InitOrigin(PersistenceType aPersistenceType,
       return rv;
     }
   }
+
+  return NS_OK;
+}
+
+nsresult
+QuotaClient::InitOrigin(PersistenceType aPersistenceType,
+                        const nsACString& aGroup,
+                        const nsACString& aOrigin,
+                        UsageInfo* aUsageInfo)
+{
+  AssertIsOnIOThread();
+
+  nsCOMPtr<nsIFile> directory;
+  nsresult rv =
+    GetDirectory(aPersistenceType, aOrigin, getter_AddRefs(directory));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  
+  
+  
+
+  AutoTArray<nsString, 20> subdirsToProcess;
+  nsTHashtable<nsStringHashKey> databaseFilenames(20);
+  rv = GetDatabaseFilenames(directory,
+                            aUsageInfo,
+                             false,
+                            subdirsToProcess,
+                            databaseFilenames);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  const NS_ConvertASCIItoUTF16 filesSuffix(
+    kFileManagerDirectoryNameSuffix,
+    LiteralStringLength(kFileManagerDirectoryNameSuffix));
+
+  for (uint32_t count = subdirsToProcess.Length(), i = 0; i < count; i++) {
+    const nsString& subdirName = subdirsToProcess[i];
+
+    
+    nsDependentSubstring subdirNameBase;
+    if (NS_WARN_IF(!GetBaseFilename(subdirName, filesSuffix, subdirNameBase))) {
+      return NS_ERROR_UNEXPECTED;
+    }
+
+    
+    if (NS_WARN_IF(!databaseFilenames.GetEntry(subdirNameBase))) {
+      return NS_ERROR_UNEXPECTED;
+    }
+  }
+
+  const NS_ConvertASCIItoUTF16 sqliteSuffix(kSQLiteSuffix,
+                                            LiteralStringLength(kSQLiteSuffix));
+  const NS_ConvertASCIItoUTF16 walSuffix(kSQLiteWALSuffix,
+                                         LiteralStringLength(kSQLiteWALSuffix));
 
   for (auto iter = databaseFilenames.ConstIter(); !iter.Done(); iter.Next()) {
     auto& databaseFilename = iter.Get()->GetKey();
@@ -18283,6 +18254,109 @@ QuotaClient::GetDirectory(PersistenceType aPersistenceType,
   }
 
   directory.forget(aDirectory);
+  return NS_OK;
+}
+
+nsresult
+QuotaClient::GetDatabaseFilenames(
+                              nsIFile* aDirectory,
+                              UsageInfo* aUsageInfo,
+                              bool aForUpgrade,
+                              nsTArray<nsString>& aSubdirsToProcess,
+                              nsTHashtable<nsStringHashKey>& aDatabaseFilenames)
+{
+  AssertIsOnIOThread();
+
+  nsCOMPtr<nsISimpleEnumerator> entries;
+  nsresult rv = aDirectory->GetDirectoryEntries(getter_AddRefs(entries));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  const NS_ConvertASCIItoUTF16 sqliteSuffix(kSQLiteSuffix,
+                                            LiteralStringLength(kSQLiteSuffix));
+  const NS_ConvertASCIItoUTF16 journalSuffix(
+    kSQLiteJournalSuffix,
+    LiteralStringLength(kSQLiteJournalSuffix));
+  const NS_ConvertASCIItoUTF16 shmSuffix(kSQLiteSHMSuffix,
+                                         LiteralStringLength(kSQLiteSHMSuffix));
+  const NS_ConvertASCIItoUTF16 walSuffix(kSQLiteWALSuffix,
+                                         LiteralStringLength(kSQLiteWALSuffix));
+
+  bool hasMore;
+  while (NS_SUCCEEDED((rv = entries->HasMoreElements(&hasMore))) &&
+         hasMore &&
+         (!aUsageInfo || !aUsageInfo->Canceled())) {
+    nsCOMPtr<nsISupports> entry;
+    rv = entries->GetNext(getter_AddRefs(entry));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
+    nsCOMPtr<nsIFile> file = do_QueryInterface(entry);
+    MOZ_ASSERT(file);
+
+    nsString leafName;
+    rv = file->GetLeafName(leafName);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
+    bool isDirectory;
+    rv = file->IsDirectory(&isDirectory);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
+    if (isDirectory) {
+      aSubdirsToProcess.AppendElement(leafName);
+      continue;
+    }
+
+    
+    
+    
+    if (leafName.EqualsLiteral(DSSTORE_FILE_NAME)) {
+      continue;
+    }
+
+    
+    
+    
+    if (StringEndsWith(leafName, journalSuffix) ||
+        StringEndsWith(leafName, shmSuffix)) {
+      continue;
+    }
+
+    
+    
+    if (StringEndsWith(leafName, walSuffix)) {
+      continue;
+    }
+
+    nsDependentSubstring leafNameBase;
+    if (!GetBaseFilename(leafName, sqliteSuffix, leafNameBase)) {
+      nsString path;
+      MOZ_ALWAYS_SUCCEEDS(file->GetPath(path));
+      MOZ_ASSERT(!path.IsEmpty());
+
+      nsPrintfCString warning(R"(An unexpected file exists in the storage )"
+                              R"(area: "%s")",
+                              NS_ConvertUTF16toUTF8(path).get());
+      NS_WARNING(warning.get());
+      if (!aForUpgrade) {
+        return NS_ERROR_UNEXPECTED;
+      }
+      continue;
+    }
+
+    aDatabaseFilenames.PutEntry(leafNameBase);
+  }
+
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
   return NS_OK;
 }
 

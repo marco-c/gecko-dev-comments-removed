@@ -1655,7 +1655,7 @@ public:
 
 private:
   nsresult
-  MaybeRemoveCorruptData(const OriginProps& aOriginProps);
+  MaybeUpgradeClients(const OriginProps& aOriginProps);
 
   nsresult
   MaybeRemoveAppsData(const OriginProps& aOriginProps,
@@ -4302,6 +4302,23 @@ QuotaManager::UpgradeStorageFrom1_0To2_0(mozIStorageConnection* aConnection)
   AssertIsOnIOThread();
   MOZ_ASSERT(aConnection);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   
@@ -8099,11 +8116,7 @@ UpgradeStorageFrom1_0To2_0Helper::DoUpgrade()
       return rv;
     }
 
-    
-    
-    
-    
-    rv = MaybeRemoveCorruptData(originProps);
+    rv = MaybeUpgradeClients(originProps);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -8163,11 +8176,14 @@ UpgradeStorageFrom1_0To2_0Helper::DoUpgrade()
 }
 
 nsresult
-UpgradeStorageFrom1_0To2_0Helper::MaybeRemoveCorruptData(
+UpgradeStorageFrom1_0To2_0Helper::MaybeUpgradeClients(
                                                 const OriginProps& aOriginProps)
 {
   AssertIsOnIOThread();
   MOZ_ASSERT(aOriginProps.mDirectory);
+
+  QuotaManager* quotaManager = QuotaManager::Get();
+  MOZ_ASSERT(quotaManager);
 
   nsCOMPtr<nsISimpleEnumerator> entries;
   nsresult rv =
@@ -8210,6 +8226,10 @@ UpgradeStorageFrom1_0To2_0Helper::MaybeRemoveCorruptData(
       continue;
     }
 
+    
+    
+    
+    
     if (leafName.EqualsLiteral("morgue")) {
       QM_WARNING("Deleting accidental morgue directory!");
 
@@ -8226,6 +8246,14 @@ UpgradeStorageFrom1_0To2_0Helper::MaybeRemoveCorruptData(
     if (NS_FAILED(rv)) {
       UNKNOWN_FILE_WARNING(leafName);
       continue;
+    }
+
+    Client* client = quotaManager->GetClient(clientType);
+    MOZ_ASSERT(client);
+
+    rv = client->UpgradeStorageFrom1_0To2_0(file);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
     }
   }
   if (NS_WARN_IF(NS_FAILED(rv))) {
