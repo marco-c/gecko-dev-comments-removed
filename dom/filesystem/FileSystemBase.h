@@ -20,10 +20,6 @@ class FileSystemBase
 public:
   NS_INLINE_DECL_REFCOUNTING(FileSystemBase)
 
-  
-  static already_AddRefed<FileSystemBase>
-  DeserializeDOMPath(const nsAString& aString);
-
   FileSystemBase();
 
   virtual void
@@ -56,9 +52,9 @@ public:
 
 
   const nsAString&
-  LocalOrDeviceStorageRootPath() const
+  LocalRootPath() const
   {
-    return mLocalOrDeviceStorageRootPath;
+    return mLocalRootPath;
   }
 
   bool
@@ -75,46 +71,6 @@ public:
 
   bool
   GetRealPath(BlobImpl* aFile, nsIFile** aPath) const;
-
-  
-
-
-  const nsCString&
-  GetPermission() const
-  {
-    return mPermission;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  enum ePermissionCheckType {
-    
-    
-    ePermissionCheckByTestingPref,
-
-    
-    ePermissionCheckNotRequired,
-
-    
-    ePermissionCheckRequired,
-
-    
-    eNotSet
-  };
-
-  ePermissionCheckType
-  PermissionCheckType() const
-  {
-    MOZ_ASSERT(mPermissionCheckType != eNotSet);
-    return mPermissionCheckType;
-  }
 
   
   
@@ -147,17 +103,9 @@ protected:
   
   
   
-  
-  
-  
-  nsString mLocalOrDeviceStorageRootPath;
+  nsString mLocalRootPath;
 
   bool mShutdown;
-
-  
-  nsCString mPermission;
-
-  ePermissionCheckType mPermissionCheckType;
 
 #ifdef DEBUG
   PRThread* mOwningThread;

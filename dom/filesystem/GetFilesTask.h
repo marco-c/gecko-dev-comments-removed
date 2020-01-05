@@ -34,9 +34,6 @@ public:
   already_AddRefed<Promise>
   GetPromise();
 
-  virtual void
-  GetPermissionAccessType(nsCString& aAccess) const override;
-
 private:
   
   GetFilesTaskChild(FileSystemBase* aFileSystem,
@@ -73,9 +70,6 @@ public:
          const FileSystemGetFilesParams& aParam,
          FileSystemRequestParent* aParent,
          ErrorResult& aRv);
-
-  virtual void
-  GetPermissionAccessType(nsCString& aAccess) const override;
 
 private:
   GetFilesTaskParent(FileSystemBase* aFileSystem,

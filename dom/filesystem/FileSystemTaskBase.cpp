@@ -13,7 +13,9 @@
 #include "mozilla/dom/FileSystemUtils.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/ipc/BlobParent.h"
+#include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/ipc/BackgroundParent.h"
+#include "mozilla/ipc/PBackgroundChild.h"
 #include "mozilla/Unused.h"
 #include "nsProxyRelease.h"
 
@@ -103,6 +105,8 @@ private:
 
 } 
 
+NS_IMPL_ISUPPORTS(FileSystemTaskChildBase, nsIIPCBackgroundChildCreateCallback)
+
 
 
 
@@ -132,6 +136,27 @@ FileSystemTaskChildBase::Start()
 {
   mFileSystem->AssertIsOnOwningThread();
 
+  mozilla::ipc::PBackgroundChild* actor =
+    mozilla::ipc::BackgroundChild::GetForCurrentThread();
+  if (actor) {
+    ActorCreated(actor);
+  } else {
+    if (NS_WARN_IF(
+        !mozilla::ipc::BackgroundChild::GetOrCreateForCurrentThread(this))) {
+      MOZ_CRASH();
+    }
+  }
+}
+
+void
+FileSystemTaskChildBase::ActorFailed()
+{
+  MOZ_CRASH("Failed to create a PBackgroundChild actor!");
+}
+
+void
+FileSystemTaskChildBase::ActorCreated(mozilla::ipc::PBackgroundChild* aActor)
+{
   if (HasError()) {
     
     RefPtr<ErrorRunnable> runnable = new ErrorRunnable(this);
@@ -159,10 +184,7 @@ FileSystemTaskChildBase::Start()
   
   NS_ADDREF_THIS();
 
-  
-  
-  
-  PBackgroundChild* actor =
+  mozilla::ipc::PBackgroundChild* actor =
     mozilla::ipc::BackgroundChild::GetForCurrentThread();
   MOZ_ASSERT(actor);
 

@@ -10,6 +10,7 @@
 #include "mozilla/ErrorResult.h"
 #include "mozilla/dom/FileSystemRequestParent.h"
 #include "mozilla/dom/PFileSystemRequestChild.h"
+#include "nsIIPCBackgroundChildCreateCallback.h"
 #include "nsThreadUtils.h"
 
 namespace mozilla {
@@ -19,26 +20,6 @@ class BlobImpl;
 class FileSystemBase;
 class FileSystemParams;
 class PBlobParent;
-
-#define DIRECTORY_READ_PERMISSION "read"
-#define DIRECTORY_WRITE_PERMISSION "write"
-#define DIRECTORY_CREATE_PERMISSION "create"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -119,9 +100,11 @@ class PBlobParent;
 
 
 class FileSystemTaskChildBase : public PFileSystemRequestChild
+                              , public nsIIPCBackgroundChildCreateCallback
 {
 public:
-  NS_INLINE_DECL_REFCOUNTING(FileSystemTaskChildBase)
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIIPCBACKGROUNDCHILDCREATECALLBACK
 
   
 
@@ -139,12 +122,6 @@ public:
 
   FileSystemBase*
   GetFileSystem() const;
-
-  
-
-
-  virtual void
-  GetPermissionAccessType(nsCString& aAccess) const = 0;
 
   
 
@@ -258,12 +235,6 @@ public:
   
   virtual nsresult
   MainThreadWork();
-
-  
-
-
-  virtual void
-  GetPermissionAccessType(nsCString& aAccess) const = 0;
 
   bool
   HasError() const { return NS_FAILED(mErrorValue); }
