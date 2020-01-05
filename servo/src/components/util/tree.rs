@@ -42,6 +42,23 @@ impl<Node, Ref: TreeNodeRef<Node>> Iterator<Ref> for ChildIterator<Ref> {
     }
 }
 
+pub struct AncestorIterator<Ref> {
+    priv current: Option<Ref>,
+}
+
+impl<Node, Ref: TreeNodeRef<Node>> Iterator<Ref> for AncestorIterator<Ref> {
+    fn next(&mut self) -> Option<Ref> {
+        if self.current.is_none() {
+            return None;
+        }
+
+        
+        let x = self.current.get_ref().clone();
+        self.current = x.with_base(|n| TreeNodeRef::<Node>::parent_node(n));
+        Some(x.clone())
+    }
+}
+
 
 
 pub struct TreeIterator<Ref> {
@@ -193,6 +210,13 @@ pub trait TreeNodeRef<Node>: Clone {
     fn children(&self) -> ChildIterator<Self> {
         ChildIterator {
             current: self.with_base(|n| get!(n, first_child)),
+        }
+    }
+
+    
+    fn ancestors(&self) -> AncestorIterator<Self> {
+        AncestorIterator {
+            current: self.with_base(|n| get!(n, parent_node)),
         }
     }
 
