@@ -25,10 +25,10 @@ use std::io::{Write, stdout};
 use std::marker::PhantomData;
 use std::os;
 use std::ptr;
+use style::thread_state;
 use time::{Tm, now};
 use util::opts;
 use util::prefs::PREFS;
-use util::thread_state;
 
 
 pub enum CommonScriptMsg {
