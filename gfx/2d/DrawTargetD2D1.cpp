@@ -176,6 +176,10 @@ DrawTargetD2D1::DrawSurface(SourceSurface *aSurface,
   } else {
     
     MOZ_ASSERT(aSurface->GetFormat() != SurfaceFormat::B8G8R8X8);
+
+    
+    MOZ_ASSERT(aSurface->GetFormat() != SurfaceFormat::A8);
+
     mDC->CreateImageBrush(image,
                           D2D1::ImageBrushProperties(samplingBounds,
                                                      D2D1_EXTEND_MODE_CLAMP,
