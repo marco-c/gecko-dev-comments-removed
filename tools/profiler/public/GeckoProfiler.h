@@ -263,7 +263,7 @@ PROFILER_FUNC_VOID(profiler_save_profile_to_file(const char* aFilename))
 
 
 
-PROFILER_FUNC(const char** profiler_get_features(), nullptr)
+PROFILER_FUNC(const char** profiler_get_available_features(), nullptr)
 
 
 
