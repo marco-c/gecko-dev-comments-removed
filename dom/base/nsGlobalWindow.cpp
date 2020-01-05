@@ -10446,8 +10446,10 @@ void
 nsGlobalWindow::DisableVRUpdates()
 {
   MOZ_ASSERT(IsInnerWindow());
-
-  mVREventObserver = nullptr;
+  if (mVREventObserver) {
+    mVREventObserver->DisconnectFromOwner();
+    mVREventObserver = nullptr;
+  }
 }
 
 void
@@ -13492,6 +13494,8 @@ void
 nsGlobalWindow::DispatchVRDisplayActivate(uint32_t aDisplayID,
                                           mozilla::dom::VRDisplayEventReason aReason)
 {
+  
+  
   for (auto display : mVRDisplays) {
     if (display->DisplayId() == aDisplayID
         && !display->IsAnyPresenting()) {
@@ -13499,7 +13503,7 @@ nsGlobalWindow::DispatchVRDisplayActivate(uint32_t aDisplayID,
       
 
       VRDisplayEventInit init;
-      init.mBubbles = true;
+      init.mBubbles = false;
       init.mCancelable = false;
       init.mDisplay = display;
       init.mReason.Construct(aReason);
@@ -13514,7 +13518,9 @@ nsGlobalWindow::DispatchVRDisplayActivate(uint32_t aDisplayID,
       event->SetTrusted(true);
       bool defaultActionEnabled;
       Unused << DispatchEvent(event, &defaultActionEnabled);
-      break;
+      
+      
+      return;
     }
   }
 }
@@ -13523,13 +13529,15 @@ void
 nsGlobalWindow::DispatchVRDisplayDeactivate(uint32_t aDisplayID,
                                             mozilla::dom::VRDisplayEventReason aReason)
 {
+  
+  
   for (auto display : mVRDisplays) {
     if (display->DisplayId() == aDisplayID && display->IsPresenting()) {
       
       
 
       VRDisplayEventInit init;
-      init.mBubbles = true;
+      init.mBubbles = false;
       init.mCancelable = false;
       init.mDisplay = display;
       init.mReason.Construct(aReason);
@@ -13538,9 +13546,96 @@ nsGlobalWindow::DispatchVRDisplayDeactivate(uint32_t aDisplayID,
         VRDisplayEvent::Constructor(this,
                                     NS_LITERAL_STRING("vrdisplaydeactivate"),
                                     init);
+      event->SetTrusted(true);
       bool defaultActionEnabled;
       Unused << DispatchEvent(event, &defaultActionEnabled);
-      break;
+      
+      
+      return;
+    }
+  }
+}
+
+void
+nsGlobalWindow::DispatchVRDisplayConnect(uint32_t aDisplayID)
+{
+  
+  
+  for (auto display : mVRDisplays) {
+    if (display->DisplayId() == aDisplayID) {
+      
+      VRDisplayEventInit init;
+      init.mBubbles = false;
+      init.mCancelable = false;
+      init.mDisplay = display;
+      
+
+      RefPtr<VRDisplayEvent> event =
+        VRDisplayEvent::Constructor(this,
+                                    NS_LITERAL_STRING("vrdisplayconnect"),
+                                    init);
+      event->SetTrusted(true);
+      bool defaultActionEnabled;
+      Unused << DispatchEvent(event, &defaultActionEnabled);
+      
+      
+      return;
+    }
+  }
+}
+
+void
+nsGlobalWindow::DispatchVRDisplayDisconnect(uint32_t aDisplayID)
+{
+  
+  
+  for (auto display : mVRDisplays) {
+    if (display->DisplayId() == aDisplayID) {
+      
+      VRDisplayEventInit init;
+      init.mBubbles = false;
+      init.mCancelable = false;
+      init.mDisplay = display;
+      
+
+      RefPtr<VRDisplayEvent> event =
+        VRDisplayEvent::Constructor(this,
+                                    NS_LITERAL_STRING("vrdisplaydisconnect"),
+                                    init);
+      event->SetTrusted(true);
+      bool defaultActionEnabled;
+      Unused << DispatchEvent(event, &defaultActionEnabled);
+      
+      
+      return;
+    }
+  }
+}
+
+void
+nsGlobalWindow::DispatchVRDisplayPresentChange(uint32_t aDisplayID)
+{
+  
+  
+  for (auto display : mVRDisplays) {
+    if (display->DisplayId() == aDisplayID) {
+      
+      VRDisplayEventInit init;
+      init.mBubbles = false;
+      init.mCancelable = false;
+      init.mDisplay = display;
+      
+
+      RefPtr<VRDisplayEvent> event =
+        VRDisplayEvent::Constructor(this,
+                                    NS_LITERAL_STRING("vrdisplaypresentchange"),
+                                    init);
+      event->SetTrusted(true);
+      bool defaultActionEnabled;
+      Unused << DispatchEvent(event, &defaultActionEnabled);
+      
+      
+      return;
     }
   }
 }
