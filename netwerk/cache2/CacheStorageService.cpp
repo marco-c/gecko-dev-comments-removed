@@ -2251,5 +2251,32 @@ CacheStorageService::ResumeCacheIOThread()
   return NS_OK;
 }
 
+NS_IMETHODIMP
+CacheStorageService::Flush(nsIObserver* aObserver)
+{
+  RefPtr<CacheIOThread> thread = CacheFileIOManager::IOThread();
+  if (!thread) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  nsCOMPtr<nsIObserverService> observerService =
+    mozilla::services::GetObserverService();
+  if (!observerService) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  
+  
+  observerService->AddObserver(aObserver, "cacheservice:purge-memory-pools", false);
+
+  
+  
+  
+  RefPtr<CacheStorageService::PurgeFromMemoryRunnable> r =
+    new CacheStorageService::PurgeFromMemoryRunnable(this, CacheEntry::PURGE_WHOLE);
+
+  return thread->Dispatch(r, CacheIOThread::CLOSE);
+}
+
 } 
 } 
