@@ -626,7 +626,7 @@ nsDisplayOuterSVG::Paint(nsDisplayListBuilder* aBuilder,
   aContext->ThebesContext()->Save();
   
   
-  gfxMatrix tm = nsSVGIntegrationUtils::GetCSSPxToDevPxMatrix(mFrame) *
+  gfxMatrix tm = nsSVGUtils::GetCSSPxToDevPxMatrix(mFrame) *
                    gfxMatrix::Translation(devPixelOffset);
   DrawResult result =
     nsSVGUtils::PaintFrameWithEffects(mFrame, *aContext->ThebesContext(), tm,

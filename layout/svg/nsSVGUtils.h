@@ -597,6 +597,15 @@ public:
 
   static float
   ComputeOpacity(nsIFrame* aFrame, bool aHandleOpacity);
+
+  
+
+
+
+
+
+  static gfxMatrix
+  GetCSSPxToDevPxMatrix(nsIFrame* aNonSVGFrame);
 };
 
 #endif
