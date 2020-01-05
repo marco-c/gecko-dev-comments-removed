@@ -531,7 +531,8 @@ Str(JSContext* cx, const Value& v, StringifyContext* scx)
     
     MOZ_ASSERT(!IsFilteredValue(v));
 
-    JS_CHECK_RECURSION(cx, return false);
+    if (!CheckRecursionLimit(cx))
+        return false;
 
     
 
@@ -759,7 +760,8 @@ js::Stringify(JSContext* cx, MutableHandleValue vp, JSObject* replacer_, const V
 static bool
 Walk(JSContext* cx, HandleObject holder, HandleId name, HandleValue reviver, MutableHandleValue vp)
 {
-    JS_CHECK_RECURSION(cx, return false);
+    if (!CheckRecursionLimit(cx))
+        return false;
 
     
     RootedValue val(cx);

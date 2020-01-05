@@ -2020,7 +2020,8 @@ static inline bool
 GeneralizedGetProperty(JSContext* cx, HandleObject obj, HandleId id, HandleValue receiver,
                        IsNameLookup nameLookup, MutableHandleValue vp)
 {
-    JS_CHECK_RECURSION(cx, return false);
+    if (!CheckRecursionLimit(cx))
+        return false;
     if (nameLookup) {
         
         
@@ -2045,7 +2046,8 @@ static inline bool
 GeneralizedGetProperty(JSContext* cx, JSObject* obj, jsid id, const Value& receiver,
                        IsNameLookup nameLookup, FakeMutableHandle<Value> vp)
 {
-    JS_CHECK_RECURSION_DONT_REPORT(cx, return false);
+    if (!CheckRecursionLimitDontReport(cx))
+        return false;
     if (nameLookup)
         return false;
     return GetPropertyNoGC(cx, obj, receiver, id, vp.address());

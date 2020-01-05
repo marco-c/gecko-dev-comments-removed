@@ -401,7 +401,8 @@ JSCompartment::getNonWrapperObjectForCurrentCompartment(JSContext* cx, MutableHa
     
     
     auto preWrap = cx->runtime()->wrapObjectCallbacks->preWrap;
-    JS_CHECK_SYSTEM_RECURSION(cx, return false);
+    if (!CheckSystemRecursionLimit(cx))
+        return false;
     if (preWrap) {
         preWrap(cx, cx->global(), obj, objectPassedToWrap, obj);
         if (!obj)

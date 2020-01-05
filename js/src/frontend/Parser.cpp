@@ -3934,7 +3934,8 @@ template <typename ParseHandler>
 typename ParseHandler::Node
 Parser<ParseHandler>::statementList(YieldHandling yieldHandling)
 {
-    JS_CHECK_RECURSION(context, return null());
+    if (!CheckRecursionLimit(context))
+        return null();
 
     Node pn = handler.newStatementList(pos());
     if (!pn)
@@ -7163,7 +7164,8 @@ Parser<ParseHandler>::statement(YieldHandling yieldHandling)
 {
     MOZ_ASSERT(checkOptionsCalled);
 
-    JS_CHECK_RECURSION(context, return null());
+    if (!CheckRecursionLimit(context))
+        return null();
 
     TokenKind tt;
     if (!tokenStream.getToken(&tt, TokenStream::Operand))
@@ -7362,7 +7364,8 @@ Parser<ParseHandler>::statementListItem(YieldHandling yieldHandling,
 {
     MOZ_ASSERT(checkOptionsCalled);
 
-    JS_CHECK_RECURSION(context, return null());
+    if (!CheckRecursionLimit(context))
+        return null();
 
     TokenKind tt;
     if (!tokenStream.getToken(&tt, TokenStream::Operand))
@@ -7837,7 +7840,8 @@ Parser<ParseHandler>::assignExpr(InHandling inHandling, YieldHandling yieldHandl
                                  PossibleError* possibleError ,
                                  InvokedPrediction invoked )
 {
-    JS_CHECK_RECURSION(context, return null());
+    if (!CheckRecursionLimit(context))
+        return null();
 
     
     
@@ -8167,7 +8171,8 @@ Parser<ParseHandler>::unaryExpr(YieldHandling yieldHandling, TripledotHandling t
                                 PossibleError* possibleError ,
                                 InvokedPrediction invoked )
 {
-    JS_CHECK_RECURSION(context, return null());
+    if (!CheckRecursionLimit(context))
+        return null();
 
     TokenKind tt;
     if (!tokenStream.getToken(&tt, TokenStream::Operand))
@@ -8480,7 +8485,8 @@ template <typename ParseHandler>
 typename ParseHandler::Node
 Parser<ParseHandler>::comprehensionTail(GeneratorKind comprehensionKind)
 {
-    JS_CHECK_RECURSION(context, return null());
+    if (!CheckRecursionLimit(context))
+        return null();
 
     bool matched;
     if (!tokenStream.matchToken(&matched, TOK_FOR, TokenStream::Operand))
@@ -8676,7 +8682,8 @@ Parser<ParseHandler>::memberExpr(YieldHandling yieldHandling, TripledotHandling 
 
     Node lhs;
 
-    JS_CHECK_RECURSION(context, return null());
+    if (!CheckRecursionLimit(context))
+        return null();
 
     
     if (tt == TOK_NEW) {
@@ -9675,7 +9682,8 @@ Parser<ParseHandler>::primaryExpr(YieldHandling yieldHandling, TripledotHandling
                                   InvokedPrediction invoked )
 {
     MOZ_ASSERT(tokenStream.isCurrentTokenType(tt));
-    JS_CHECK_RECURSION(context, return null());
+    if (!CheckRecursionLimit(context))
+        return null();
 
     switch (tt) {
       case TOK_FUNCTION:

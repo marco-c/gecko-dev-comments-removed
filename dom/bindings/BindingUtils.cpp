@@ -2119,7 +2119,9 @@ ReparentWrapper(JSContext* aCx, JS::Handle<JSObject*> aObjArg)
   
   
   
-  JS_CHECK_RECURSION_CONSERVATIVE(aCx, return NS_ERROR_FAILURE);
+  if (!js::CheckRecursionLimitConservative(aCx)) {
+    return NS_ERROR_FAILURE;
+  }
 
   JS::Rooted<JSObject*> aObj(aCx, aObjArg);
   const DOMJSClass* domClass = GetDOMClass(aObj);

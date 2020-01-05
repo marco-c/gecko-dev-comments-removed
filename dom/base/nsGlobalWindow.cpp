@@ -2834,9 +2834,7 @@ nsGlobalWindow::SetNewDocument(nsIDocument* aDocument,
   
   
   
-  bool overrecursed = false;
-  JS_CHECK_RECURSION_CONSERVATIVE_DONT_REPORT(cx, overrecursed = true);
-  if (overrecursed) {
+  if (!js::CheckRecursionLimitConservativeDontReport(cx)) {
     NS_WARNING("Overrecursion in SetNewDocument");
     return NS_ERROR_FAILURE;
   }
