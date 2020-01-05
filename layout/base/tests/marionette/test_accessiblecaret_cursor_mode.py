@@ -168,7 +168,7 @@ class AccessibleCaretCursorModeTestCase(MarionetteTestCase):
         el = self.marionette.find_element(By.ID, self._input_id)
         sel = SelectionManager(el)
         content_to_add = '!'
-        target_content = sel.content + string.ascii_letters + content_to_add
+        non_target_content = content_to_add + sel.content + string.ascii_letters
 
         el.tap()
         sel.move_cursor_to_end()
@@ -187,7 +187,7 @@ class AccessibleCaretCursorModeTestCase(MarionetteTestCase):
         
         el.send_keys(content_to_add)
 
-        self.assertEqual(target_content, sel.content)
+        self.assertNotEqual(non_target_content, sel.content)
 
     @parameterized(_input_id, el_id=_input_id)
     @parameterized(_input_padding_id, el_id=_input_padding_id)
