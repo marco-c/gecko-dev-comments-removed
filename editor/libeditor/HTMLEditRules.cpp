@@ -7435,9 +7435,9 @@ HTMLEditRules::AdjustSelection(Selection* aSelection,
   }
 
   
-  nsCOMPtr<nsIDOMCharacterData> textNode = do_QueryInterface(selNode);
-  if (textNode)
+  if (EditorBase::IsTextNode(selNode)) {
     return NS_OK; 
+  }
 
   
   
