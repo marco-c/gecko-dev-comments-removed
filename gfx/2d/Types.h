@@ -489,6 +489,15 @@ constexpr bool SideIsVertical(Side aSide)
   return aSide % 2;
 }
 
+
+
+
+
+constexpr Corner SideToFullCorner(Side aSide, bool aIsSecond)
+{
+  return Corner((aSide + aIsSecond) % 4);
+}
+
 } 
 
 #endif 
