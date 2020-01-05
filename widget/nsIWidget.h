@@ -843,8 +843,7 @@ class nsIWidget : public nsISupports
 
 
 
-
-    NS_IMETHOD Enable(bool aState) = 0;
+    virtual void Enable(bool aState) = 0;
 
     
 

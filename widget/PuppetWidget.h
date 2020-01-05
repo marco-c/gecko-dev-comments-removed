@@ -110,8 +110,8 @@ public:
 
   
   
-  NS_IMETHOD Enable(bool aState) override
-  { mEnabled = aState;  return NS_OK; }
+  virtual void Enable(bool aState) override
+  { mEnabled = aState; }
   virtual bool IsEnabled() const override
   { return mEnabled; }
 
