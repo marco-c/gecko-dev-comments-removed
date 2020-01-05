@@ -77,7 +77,7 @@ function fileContents(file)
 
 
 
-function LineIterator(data)
+function* LineIterator(data)
 {
   var start = 0, index = 0;
   do
@@ -107,7 +107,7 @@ function LineIterator(data)
 function expectLines(iter, expectedLines)
 {
   var index = 0;
-  for (var line in iter)
+  for (var line of iter)
   {
     if (expectedLines.length == index)
       throw "Error: got more than " + expectedLines.length + " expected lines!";
@@ -155,9 +155,9 @@ function writeDetails(request, response)
 
 function skipHeaders(iter)
 {
-  var line = iter.next();
+  var line = iter.next().value;
   while (line !== "")
-    line = iter.next();
+    line = iter.next().value;
 }
 
 

@@ -262,7 +262,7 @@ add_task(function test_setup()
   })
 });
 
-add_task(function test_normal()
+add_task(function* test_normal()
 {
   
   let destFile = getTempFile(TEST_FILE_NAME_1);
@@ -296,7 +296,7 @@ add_task(function test_normal()
   destFile.remove(false);
 });
 
-add_task(function test_combinations()
+add_task(function* test_combinations()
 {
   let initialFile = getTempFile(TEST_FILE_NAME_1);
   let renamedFile = getTempFile(TEST_FILE_NAME_2);
@@ -403,7 +403,7 @@ add_task(function test_combinations()
   }
 });
 
-add_task(function test_setTarget_after_close_stream()
+add_task(function* test_setTarget_after_close_stream()
 {
   
   
@@ -437,7 +437,7 @@ add_task(function test_setTarget_after_close_stream()
   destFile.remove(false);
 });
 
-add_task(function test_setTarget_fast()
+add_task(function* test_setTarget_fast()
 {
   
   let destFile1 = getTempFile(TEST_FILE_NAME_1);
@@ -460,7 +460,7 @@ add_task(function test_setTarget_fast()
   destFile2.remove(false);
 });
 
-add_task(function test_setTarget_multiple()
+add_task(function* test_setTarget_multiple()
 {
   
   let destFile = getTempFile(TEST_FILE_NAME_1);
@@ -485,7 +485,7 @@ add_task(function test_setTarget_multiple()
   destFile.remove(false);
 });
 
-add_task(function test_enableAppend()
+add_task(function* test_enableAppend()
 {
   
   let destFile = getTempFile(TEST_FILE_NAME_1);
@@ -513,7 +513,7 @@ add_task(function test_enableAppend()
   destFile.remove(false);
 });
 
-add_task(function test_enableAppend_setTarget_fast()
+add_task(function* test_enableAppend_setTarget_fast()
 {
   
   let destFile1 = getTempFile(TEST_FILE_NAME_1);
@@ -550,7 +550,7 @@ add_task(function test_enableAppend_setTarget_fast()
   destFile1.remove(false);
 });
 
-add_task(function test_enableAppend_hash()
+add_task(function* test_enableAppend_hash()
 {
   
   
@@ -582,7 +582,7 @@ add_task(function test_enableAppend_hash()
   destFile.remove(false);
 });
 
-add_task(function test_finish_only()
+add_task(function* test_finish_only()
 {
   
   let destFile = getTempFile(TEST_FILE_NAME_1);
@@ -595,7 +595,7 @@ add_task(function test_finish_only()
   yield completionPromise;
 });
 
-add_task(function test_empty()
+add_task(function* test_empty()
 {
   
   let destFile = getTempFile(TEST_FILE_NAME_1);
@@ -617,7 +617,7 @@ add_task(function test_empty()
   destFile.remove(false);
 });
 
-add_task(function test_empty_hash()
+add_task(function* test_empty_hash()
 {
   
   let destFile = getTempFile(TEST_FILE_NAME_1);
@@ -646,7 +646,7 @@ add_task(function test_empty_hash()
   destFile.remove(false);
 });
 
-add_task(function test_invalid_hash()
+add_task(function* test_invalid_hash()
 {
   let saver = new BackgroundFileSaverStreamListener();
   let completionPromise = promiseSaverComplete(saver);
@@ -676,7 +676,7 @@ add_task(function test_invalid_hash()
   } catch (ex if ex.result == Cr.NS_ERROR_FAILURE) { }
 });
 
-add_task(function test_signature()
+add_task(function* test_signature()
 {
   
   let destFile = getTempFile(TEST_FILE_NAME_1);
@@ -704,7 +704,7 @@ add_task(function test_signature()
   destFile.remove(false);
 });
 
-add_task(function test_signature_not_enabled()
+add_task(function* test_signature_not_enabled()
 {
   
   let destFile = getTempFile(TEST_FILE_NAME_1);
