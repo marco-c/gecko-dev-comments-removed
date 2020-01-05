@@ -15,7 +15,9 @@ XPCOMUtils.defineLazyModuleGetter(this, "setTimeout",
 let {Subprocess, SubprocessImpl} = Cu.import("resource://gre/modules/Subprocess.jsm", {});
 
 
-let tmpDir = FileUtils.getDir("TmpD", ["NativeMessaging"]);
+
+
+let tmpDir = FileUtils.getDir("TmpD", ["Native Messaging"]);
 tmpDir.createUnique(Ci.nsIFile.DIRECTORY_TYPE, FileUtils.PERMS_DIRECTORY);
 
 do_register_cleanup(() => {
@@ -90,10 +92,12 @@ function* setupHosts(scripts) {
       });
 
       for (let script of scripts) {
-        let batPath = getPath(`${script.name}.bat`);
+        
+        
+        let batPath = getPath(`batch ${script.name}.bat`);
         let scriptPath = getPath(`${script.name}.py`);
 
-        let batBody = `@ECHO OFF\n${pythonPath} -u ${scriptPath} %*\n`;
+        let batBody = `@ECHO OFF\n${pythonPath} -u "${scriptPath}" %*\n`;
         yield OS.File.writeAtomic(batPath, batBody);
 
         
