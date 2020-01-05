@@ -163,14 +163,14 @@ class PlatformData {
   pthread_t profiled_pthread_;
 };
 
- PlatformData*
-Sampler::AllocPlatformData(int aThreadId)
+ auto
+Sampler::AllocPlatformData(int aThreadId) -> UniquePlatformData
 {
-  return new PlatformData;
+  return UniquePlatformData(new PlatformData);
 }
 
- void
-Sampler::FreePlatformData(PlatformData* aData)
+void
+Sampler::PlatformDataDestructor::operator()(PlatformData* aData)
 {
   delete aData;
 }

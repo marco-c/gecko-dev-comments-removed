@@ -366,8 +366,14 @@ class Sampler {
 
   
   
-  static PlatformData* AllocPlatformData(int aThreadId);
-  static void FreePlatformData(PlatformData*);
+  
+  struct PlatformDataDestructor {
+    void operator()(PlatformData*);
+  };
+
+  typedef mozilla::UniquePtr<PlatformData, PlatformDataDestructor>
+    UniquePlatformData;
+  static UniquePlatformData AllocPlatformData(int aThreadId);
 
   
   
