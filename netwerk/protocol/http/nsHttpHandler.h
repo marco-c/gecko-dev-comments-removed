@@ -164,6 +164,23 @@ public:
       return mTCPKeepaliveLongLivedIdleTimeS;
     }
 
+    bool UseFastOpen() { return mUseFastOpen && mFastOpenSupported; }
+    
+    
+    
+    
+    
+    
+    
+    void SetFastOpenNotSupported() { mFastOpenSupported = false; }
+
+    void IncrementFastOpenConsecutiveFailureCounter();
+
+    void ResetFastOpenConsecutiveFailureCounter()
+    {
+        mFastOpenConsecutiveFailureCounter = 0;
+    }
+
     
     
     FrameCheckLevel GetEnforceH1Framing() { return mEnforceH1Framing; }
@@ -387,6 +404,7 @@ private:
 
     void     NotifyObservers(nsIHttpChannel *chan, const char *event);
 
+    void SetFastOpenOSSupport();
 private:
 
     
@@ -581,6 +599,11 @@ private:
 
     
     float mFocusedWindowTransactionRatio;
+
+    Atomic<bool, Relaxed> mUseFastOpen;
+    Atomic<bool, Relaxed> mFastOpenSupported;
+    uint32_t mFastOpenConsecutiveFailureLimit;
+    uint32_t mFastOpenConsecutiveFailureCounter;
 
 private:
     

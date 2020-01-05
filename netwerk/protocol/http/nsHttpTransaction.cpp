@@ -2142,10 +2142,22 @@ nsHttpTransaction::GetNetworkAddresses(NetAddr &self, NetAddr &peer)
 }
 
 bool
+nsHttpTransaction::CanDo0RTT()
+{
+    if (mRequestHead->IsSafeMethod() &&
+        (!mConnection ||
+         !mConnection->IsProxyConnectInProgress())) {
+        return true;
+    }
+    return false;
+}
+
+bool
 nsHttpTransaction::Do0RTT()
 {
    if (mRequestHead->IsSafeMethod() &&
-       !mConnection->IsProxyConnectInProgress()) {
+       (!mConnection ||
+       !mConnection->IsProxyConnectInProgress())) {
      m0RTTInProgress = true;
    }
    return m0RTTInProgress;
@@ -2175,6 +2187,34 @@ nsHttpTransaction::Finish0RTT(bool aRestart, bool aAlpnChanged )
         
         mConnected = true;
         mConnection->GetSecurityInfo(getter_AddRefs(mSecurityInfo));
+    }
+    return NS_OK;
+}
+
+nsresult
+nsHttpTransaction::RestartOnFastOpenError()
+{
+    
+    
+    
+    MOZ_ASSERT(!mReceivedData);
+    MOZ_ASSERT(OnSocketThread(), "not on socket thread");
+
+    LOG(("nsHttpTransaction::RestartOnFastOpenError - restarting transaction "
+         "%p\n", this));
+
+    
+    nsCOMPtr<nsISeekableStream> seekable = do_QueryInterface(mRequestStream);
+    if (seekable)
+        seekable->Seek(nsISeekableStream::NS_SEEK_SET, 0);
+        
+    mSecurityInfo = nullptr;
+
+    if (!mConnInfo->GetRoutedHost().IsEmpty()) {
+        MutexAutoLock lock(*nsHttp::GetLock());
+        RefPtr<nsHttpConnectionInfo> ci;
+        mConnInfo->CloneAsDirectRoute(getter_AddRefs(ci));
+        mConnInfo = ci;
     }
     return NS_OK;
 }

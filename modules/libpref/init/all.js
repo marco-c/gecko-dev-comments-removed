@@ -296,11 +296,11 @@ pref("media.dormant-on-pause-timeout-ms", 5000);
 pref("media.cache_size", 512000);
 
 
-pref("media.cache_resume_threshold", 30);
+pref("media.cache_resume_threshold", 999999);
 
 
 
-pref("media.cache_readahead_limit", 60);
+pref("media.cache_readahead_limit", 999999);
 
 
 pref("media.volume_scale", "1.0");
@@ -4623,6 +4623,9 @@ pref("network.tcp.keepalive.retry_interval", 1);
 #if defined(XP_UNIX) && !defined(XP_MACOSX)
 pref("network.tcp.keepalive.probe_count", 4);
 #endif
+
+pref("network.tcp.tcp_fastopen_enable", true);
+pref("network.tcp.tcp_fastopen_consecutive_failure_limit", 5);
 
 
 pref("layers.acceleration.disabled", false);

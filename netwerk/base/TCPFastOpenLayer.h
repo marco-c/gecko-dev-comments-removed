@@ -1,0 +1,24 @@
+
+
+
+
+
+
+#ifndef TCPFastOpenLayer_h__
+#define TCPFastOpenLayer_h__
+
+#include "prerror.h"
+
+namespace mozilla {
+namespace net {
+
+nsresult AttachTCPFastOpenIOLayer(PRFileDesc *fd);
+
+
+void TCPFastOpenConnectResult(PRFileDesc *fd, PRErrorCode *err,
+                              bool *fastOpenNotSupported);
+
+}
+}
+
+#endif 

@@ -177,6 +177,9 @@ public:
     
     void Refused0RTT();
 
+    MOZ_MUST_USE bool CanDo0RTT() override;
+    MOZ_MUST_USE nsresult RestartOnFastOpenError() override;
+
     uint64_t TopLevelOuterContentWindowId() override
     {
         return mTopLevelOuterContentWindowId;
