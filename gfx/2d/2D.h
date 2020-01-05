@@ -495,6 +495,24 @@ public:
 
   virtual already_AddRefed<DataSourceSurface> GetDataSurface() override;
 
+  
+
+
+  virtual void AddSizeOfExcludingThis(MallocSizeOf aMallocSizeOf,
+                                      size_t& aHeapSizeOut,
+                                      size_t& aNonHeapSizeOut) const
+  {
+  }
+
+  
+
+
+
+  virtual bool OnHeap() const
+  {
+    return true;
+  }
+
 protected:
   bool mIsMapped;
 };
