@@ -400,8 +400,9 @@ HTMLCanvasElement::WrapNode(JSContext* aCx, JS::Handle<JSObject*> aGivenProto)
 already_AddRefed<nsICanvasRenderingContextInternal>
 HTMLCanvasElement::CreateContext(CanvasContextType aContextType)
 {
+  
   RefPtr<nsICanvasRenderingContextInternal> ret =
-    CanvasRenderingContextHelper::CreateContext(aContextType);
+    CreateContextHelper(aContextType, GetCompositorBackendType());
 
   
   if (aContextType == CanvasContextType::WebGL1 ||
