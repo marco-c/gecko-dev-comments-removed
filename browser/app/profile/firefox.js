@@ -210,8 +210,14 @@ pref("general.autoScroll", true);
 pref("browser.shell.checkDefaultBrowser", true);
 pref("browser.shell.shortcutFavicons",true);
 pref("browser.shell.mostRecentDateSetAsDefault", "");
+#ifdef RELEASE_OR_BETA
+pref("browser.shell.skipDefaultBrowserCheckOnFirstRun", false);
+#else
+pref("browser.shell.skipDefaultBrowserCheckOnFirstRun", true);
+#endif
 pref("browser.shell.skipDefaultBrowserCheck", true);
 pref("browser.shell.defaultBrowserCheckCount", 0);
+pref("browser.defaultbrowser.notificationbar", false);
 
 
 
@@ -647,6 +653,12 @@ pref("plugin.defaultXpi.state", 2);
 
 pref("plugin.state.flash", 2);
 pref("plugin.state.java", 1);
+
+#ifdef XP_MACOSX
+pref("browser.preferences.animateFadeIn", true);
+#else
+pref("browser.preferences.animateFadeIn", false);
+#endif
 
 #ifdef XP_WIN
 pref("browser.preferences.instantApply", false);
@@ -1439,8 +1451,6 @@ pref("extensions.interposition.prefetching", true);
 #ifdef RELEASE_OR_BETA
 pref("extensions.e10sBlocksEnabling", true);
 #endif
-
-pref("browser.defaultbrowser.notificationbar", false);
 
 
 
