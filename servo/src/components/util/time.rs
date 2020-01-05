@@ -200,12 +200,9 @@ pub fn time<T>(msg: &str, callback: &fn() -> T) -> T{
     return val;
 }
 
-#[cfg(test)]
-mod test {
-    
-    #[test]
-    fn check_order() {
-        let buckets = ProfilerCategory::empty_buckets();
-        assert!(buckets.len() == NumBuckets as uint);
-    }
+
+#[test]
+fn check_order() {
+    let buckets = ProfilerCategory::empty_buckets();
+    assert!(buckets.len() == NumBuckets as uint);
 }
