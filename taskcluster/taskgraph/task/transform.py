@@ -96,7 +96,7 @@ class TransformTask(base.Task):
 
         
         
-        if is_low_value_task(self.label, params.get('project')):
+        if is_low_value_task(self.label, params.get('project'), params.get('pushlog_id')):
             
             return True, None
         else:
