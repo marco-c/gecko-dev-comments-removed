@@ -41,7 +41,7 @@ function expectEvent(detail) {
 }
 
 
-function ack(originalEventDetail, ackData=null, ackIndex=0) {
+function ack(originalEventDetail, ackData = null, ackIndex = 0) {
   dispatchEvent(new CustomEvent("TestEventAck", {
     detail: {
       messageID: originalEventDetail.messageID,

@@ -12,7 +12,7 @@ const { classes: Cc, interfaces: Ci, utils: Cu } = Components;
 
 Cu.import("resource://gre/modules/Timer.jsm");
 
-this.Panel = function (panelElt, iframeURL) {
+this.Panel = function(panelElt, iframeURL) {
   this.p = panelElt;
   this.iframeURL = iframeURL;
   this._initPanel();
@@ -163,7 +163,7 @@ this.Panel.prototype = {
     return this._emit(event.type, detail);
   },
 
-  _emit(eventName, detailObj=null) {
+  _emit(eventName, detailObj = null) {
     this._emitQueue.push({
       name: eventName,
       detail: detailObj,
@@ -205,7 +205,7 @@ this.Panel.prototype = {
     
     
     
-    let recurseTimer = setTimeout(() => {
+    setTimeout(() => {
       this._processEmitQueue();
     }, 100);
 

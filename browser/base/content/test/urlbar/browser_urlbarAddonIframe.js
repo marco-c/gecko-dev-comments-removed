@@ -179,7 +179,7 @@ let gNextMessageID = 1;
 
 
 
-function promiseMessage(type, data, numExpectedAcks=1) {
+function promiseMessage(type, data, numExpectedAcks = 1) {
   let testMsgName = "TestMessage";
   let ackMsgName = "TestMessageAck";
   let msgID = gNextMessageID++;
