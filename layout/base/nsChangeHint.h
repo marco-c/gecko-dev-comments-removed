@@ -16,7 +16,7 @@ struct nsCSSSelector;
 
 
 
-enum nsChangeHint {
+enum nsChangeHint : uint32_t {
   nsChangeHint_Empty = 0,
 
   
@@ -472,7 +472,7 @@ NS_RemoveSubsumedHints(nsChangeHint aOurChange, nsChangeHint aHintsHandled)
 
 
 
-enum nsRestyleHint {
+enum nsRestyleHint : uint32_t {
   
   
   
