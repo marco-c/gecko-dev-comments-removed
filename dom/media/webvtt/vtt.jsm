@@ -303,7 +303,7 @@ Cu.import('resource://gre/modules/Services.jsm');
   };
 
   
-  function parseContent(window, input) {
+  function parseContent(window, input, bReturnFrag) {
     function nextToken() {
       
       if (!input) {
@@ -353,8 +353,13 @@ Cu.import('resource://gre/modules/Services.jsm');
       return element;
     }
 
-    var rootDiv = window.document.createElement("div"),
-        current = rootDiv,
+    var root;
+    if (bReturnFrag) {
+      root = window.document.createDocumentFragment();
+    } else {
+      root = window.document.createElement("div");
+    }
+    var current = root,
         t,
         tagStack = [];
 
@@ -409,7 +414,7 @@ Cu.import('resource://gre/modules/Services.jsm');
       current.appendChild(window.document.createTextNode(unescape(t)));
     }
 
-    return rootDiv;
+    return root;
   }
 
   function StyleBox() {
@@ -448,7 +453,7 @@ Cu.import('resource://gre/modules/Services.jsm');
 
     
     
-    this.cueDiv = parseContent(window, cue.text);
+    this.cueDiv = parseContent(window, cue.text, false);
     var styles = {
       color: color,
       backgroundColor: backgroundColor,
@@ -837,10 +842,10 @@ Cu.import('resource://gre/modules/Services.jsm');
   };
 
   WebVTT.convertCueToDOMTree = function(window, cuetext) {
-    if (!window || !cuetext) {
+    if (!window) {
       return null;
     }
-    return parseContent(window, cuetext);
+    return parseContent(window, cuetext, true);
   };
 
   var FONT_SIZE_PERCENT = 0.05;
