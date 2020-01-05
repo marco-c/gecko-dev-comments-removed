@@ -311,7 +311,7 @@ AnimationTimeBlock.prototype = {
     }
 
     
-    if (state.direction) {
+    if (state.direction && state.direction !== "normal") {
       text += L10N.getStr("player.animationDirectionLabel") + " ";
       text += state.direction;
       text += "\n";
