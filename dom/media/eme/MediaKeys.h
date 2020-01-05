@@ -83,8 +83,7 @@ public:
   already_AddRefed<MediaKeySession> GetPendingSession(uint32_t aToken);
 
   
-  void OnCDMCreated(PromiseId aId,
-                    const nsACString& aNodeId, const uint32_t aPluginId);
+  void OnCDMCreated(PromiseId aId, const uint32_t aPluginId);
 
   
   
@@ -120,8 +119,6 @@ public:
   
   void ResolvePromise(PromiseId aId);
 
-  const nsCString& GetNodeId() const;
-
   void Shutdown();
 
   
@@ -148,7 +145,6 @@ private:
 
   nsCOMPtr<nsPIDOMWindowInner> mParent;
   const nsString mKeySystem;
-  nsCString mNodeId;
   KeySessionHashMap mKeySessions;
   PromiseHashMap mPromises;
   PendingKeySessionsHashMap mPendingSessions;
