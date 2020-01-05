@@ -703,9 +703,6 @@ private:
   Mirror<media::TimeIntervals> mBuffered;
 
   
-  Mirror<media::NullableTimeUnit> mEstimatedDuration;
-
-  
   Mirror<Maybe<double>> mExplicitDuration;
 
   

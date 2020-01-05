@@ -766,13 +766,6 @@ protected:
 
   
   
-  
-  
-  
-  Canonical<media::NullableTimeUnit> mEstimatedDuration;
-
-  
-  
   Canonical<Maybe<double>> mExplicitDuration;
 
   
@@ -815,10 +808,6 @@ public:
   AbstractCanonical<bool>* CanonicalPreservesPitch()
   {
     return &mPreservesPitch;
-  }
-  AbstractCanonical<media::NullableTimeUnit>* CanonicalEstimatedDuration()
-  {
-    return &mEstimatedDuration;
   }
   AbstractCanonical<Maybe<double>>* CanonicalExplicitDuration()
   {
