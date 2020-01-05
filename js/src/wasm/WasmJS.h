@@ -26,6 +26,7 @@
 namespace js {
 
 class TypedArrayObject;
+class WasmFunctionScope;
 
 namespace wasm {
 
@@ -148,6 +149,7 @@ class WasmInstanceObject : public NativeObject
 {
     static const unsigned INSTANCE_SLOT = 0;
     static const unsigned EXPORTS_SLOT = 1;
+    static const unsigned SCOPES_SLOT = 2;
     static const ClassOps classOps_;
     bool isNewborn() const;
     static void finalize(FreeOp* fop, JSObject* obj);
@@ -163,8 +165,18 @@ class WasmInstanceObject : public NativeObject
                                 SystemAllocPolicy>;
     ExportMap& exports() const;
 
+    
+    
+    
+    using ScopeMap = GCHashMap<uint32_t,
+                               ReadBarriered<WasmFunctionScope*>,
+                               DefaultHasher<uint32_t>,
+                               SystemAllocPolicy>;
+    using WeakScopeMap = JS::WeakCache<ScopeMap>;
+    WeakScopeMap& scopes() const;
+
   public:
-    static const unsigned RESERVED_SLOTS = 2;
+    static const unsigned RESERVED_SLOTS = 3;
     static const Class class_;
     static const JSPropertySpec properties[];
     static const JSFunctionSpec methods[];
@@ -186,6 +198,10 @@ class WasmInstanceObject : public NativeObject
                                     MutableHandleFunction fun);
 
     const wasm::CodeRange& getExportedFunctionCodeRange(HandleFunction fun);
+
+    static WasmFunctionScope* getFunctionScope(JSContext* cx,
+                                               HandleWasmInstanceObject instanceObj,
+                                               uint32_t funcIndex);
 };
 
 
