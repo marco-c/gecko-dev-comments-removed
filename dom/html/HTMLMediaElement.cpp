@@ -4314,8 +4314,6 @@ nsresult HTMLMediaElement::BindToTree(nsIDocument* aDocument, nsIContent* aParen
   }
 
   if (mDecoder) {
-    
-    
     mDecoder->NotifyOwnerActivityChanged(!IsHidden());
   }
 
