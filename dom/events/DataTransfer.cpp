@@ -946,7 +946,14 @@ DataTransfer::GetTransferable(uint32_t aIndex, nsILoadContext* aLoadContext)
 
   bool added = false;
   bool handlingCustomFormats = true;
-  uint32_t totalCustomLength = 0;
+
+  
+  
+  
+  
+  
+  const uint32_t baseLength = sizeof(uint32_t) + 1;
+  uint32_t totalCustomLength = baseLength;
 
   const char* knownFormats[] = {
     kTextMime, kHTMLMime, kNativeHTMLMime, kRTFMime,
@@ -1009,7 +1016,8 @@ DataTransfer::GetTransferable(uint32_t aIndex, nsILoadContext* aLoadContext)
 
         
         
-        if (isCustomFormat) {
+        
+        if (isCustomFormat && totalCustomLength > 0) {
           
           
           
@@ -1029,58 +1037,91 @@ DataTransfer::GetTransferable(uint32_t aIndex, nsILoadContext* aLoadContext)
               stream->SetOutputStream(outputStream);
             }
 
-            int32_t formatLength = type.Length() * sizeof(nsString::char_type);
-
-            stream->Write32(eCustomClipboardTypeId_String);
-            stream->Write32(formatLength);
-            stream->WriteBytes((const char *)type.get(),
-                               formatLength);
-            stream->Write32(lengthInBytes);
-            stream->WriteBytes((const char *)data.get(), lengthInBytes);
+            CheckedInt<uint32_t> formatLength =
+              CheckedInt<uint32_t>(type.Length()) * sizeof(nsString::char_type);
 
             
             
             
-            totalCustomLength +=
-              formatLength + lengthInBytes + (sizeof(uint32_t) * 3);
+            
+            CheckedInt<uint32_t> newSize = formatLength + totalCustomLength +
+                                           lengthInBytes + (sizeof(uint32_t) * 3);
+            if (newSize.isValid()) {
+              
+              
+              nsresult rv = stream->Write32(eCustomClipboardTypeId_String);
+              if (NS_WARN_IF(NS_FAILED(rv))) {
+                totalCustomLength = 0;
+                continue;
+              }
+              rv = stream->Write32(formatLength.value());
+              if (NS_WARN_IF(NS_FAILED(rv))) {
+                totalCustomLength = 0;
+                continue;
+              }
+              rv = stream->WriteBytes((const char *)type.get(), formatLength.value());
+              if (NS_WARN_IF(NS_FAILED(rv))) {
+                totalCustomLength = 0;
+                continue;
+              }
+              rv = stream->Write32(lengthInBytes);
+              if (NS_WARN_IF(NS_FAILED(rv))) {
+                totalCustomLength = 0;
+                continue;
+              }
+              rv = stream->WriteBytes((const char *)data.get(), lengthInBytes);
+              if (NS_WARN_IF(NS_FAILED(rv))) {
+                totalCustomLength = 0;
+                continue;
+              }
+
+              totalCustomLength = newSize.value();
+            }
           }
         }
       } else if (isCustomFormat && stream) {
         
         
         
-
         
-        totalCustomLength += sizeof(uint32_t);
-        stream->Write32(eCustomClipboardTypeId_None);
+        if (totalCustomLength > baseLength) {
+          
+          nsresult rv = stream->Write32(eCustomClipboardTypeId_None);
+          if (NS_SUCCEEDED(rv)) {
+            nsCOMPtr<nsIInputStream> inputStream;
+            storageStream->NewInputStream(0, getter_AddRefs(inputStream));
 
-        nsCOMPtr<nsIInputStream> inputStream;
-        storageStream->NewInputStream(0, getter_AddRefs(inputStream));
+            RefPtr<nsStringBuffer> stringBuffer =
+              nsStringBuffer::Alloc(totalCustomLength);
 
-        RefPtr<nsStringBuffer> stringBuffer =
-          nsStringBuffer::Alloc(totalCustomLength + 1);
+            
+            totalCustomLength--;
 
-        
-        
-        uint32_t amountRead;
-        inputStream->Read(static_cast<char*>(stringBuffer->Data()),
-                          totalCustomLength, &amountRead);
-        static_cast<char*>(stringBuffer->Data())[amountRead] = 0;
+            
+            
+            uint32_t amountRead;
+            rv = inputStream->Read(static_cast<char*>(stringBuffer->Data()),
+                              totalCustomLength, &amountRead);
+            if (NS_SUCCEEDED(rv)) {
+              static_cast<char*>(stringBuffer->Data())[amountRead] = 0;
 
-        nsCString str;
-        stringBuffer->ToString(totalCustomLength, str);
-        nsCOMPtr<nsISupportsCString>
-          strSupports(do_CreateInstance(NS_SUPPORTS_CSTRING_CONTRACTID));
-        strSupports->SetData(str);
+              nsCString str;
+              stringBuffer->ToString(totalCustomLength, str);
+              nsCOMPtr<nsISupportsCString>
+                strSupports(do_CreateInstance(NS_SUPPORTS_CSTRING_CONTRACTID));
+              strSupports->SetData(str);
 
-        nsresult rv = transferable->SetTransferData(kCustomTypesMime,
-                                                    strSupports,
-                                                    totalCustomLength);
-        if (NS_FAILED(rv)) {
-          return nullptr;
+              nsresult rv = transferable->SetTransferData(kCustomTypesMime,
+                                                          strSupports,
+                                                          totalCustomLength);
+              if (NS_FAILED(rv)) {
+                return nullptr;
+              }
+
+              added = true;
+            }
+          }
         }
-
-        added = true;
 
         
         stream = nullptr;
