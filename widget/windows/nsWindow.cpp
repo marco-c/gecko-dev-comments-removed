@@ -4002,8 +4002,8 @@ nsWindow::CurrentMessageWidgetEventTime() const
 
 
 
-NS_IMETHODIMP nsWindow::DispatchEvent(WidgetGUIEvent* event,
-                                      nsEventStatus& aStatus)
+nsresult
+nsWindow::DispatchEvent(WidgetGUIEvent* event, nsEventStatus& aStatus)
 {
 #ifdef WIDGET_DEBUG_OUTPUT
   debug_DumpEvent(stdout,

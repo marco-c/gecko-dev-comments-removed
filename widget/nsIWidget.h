@@ -1341,9 +1341,8 @@ class nsIWidget : public nsISupports
     
 
 
-
-    NS_IMETHOD DispatchEvent(mozilla::WidgetGUIEvent* event,
-                             nsEventStatus & aStatus) = 0;
+    virtual nsresult DispatchEvent(mozilla::WidgetGUIEvent* event,
+                                   nsEventStatus & aStatus) = 0;
 
     
 
