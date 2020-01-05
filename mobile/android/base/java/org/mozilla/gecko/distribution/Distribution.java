@@ -12,6 +12,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
 import java.net.ProtocolException;
 import java.net.SocketException;
@@ -89,6 +90,9 @@ public class Distribution {
     private static final String HISTOGRAM_CODE_CATEGORY = "FENNEC_DISTRIBUTION_CODE_CATEGORY";
 
     
+    private static final String SYSPROP_DISTRIBUTIONDIR = "ro.org.mozilla.distributiondir";
+    
+
 
 
     private static final int CODE_CATEGORY_STATUS_OUT_OF_RANGE = 0;
@@ -942,8 +946,50 @@ public class Distribution {
 
 
 
+
+
+
+    private static String getDistributionDirectoryFromSystemProperty() {
+        try {
+            @SuppressWarnings("rawtypes")
+            Class clazz = Class.forName("android.os.SystemProperties");
+            @SuppressWarnings("unchecked")
+            Method method = clazz.getDeclaredMethod("get", String.class);
+            String distDirName = (String)method.invoke(null, SYSPROP_DISTRIBUTIONDIR);
+            if (!distDirName.isEmpty()) {
+                Log.d(LOGTAG, "System property " + SYSPROP_DISTRIBUTIONDIR + " found with value " + distDirName);
+                
+                if (distDirName.charAt(distDirName.length() - 1) != '/') {
+                    distDirName += '/';
+                }
+                File distDir = new File(distDirName);
+                if (distDir.exists() && distDir.isDirectory()) {
+                    Log.d(LOGTAG, "Custom distribution directory found at " + distDirName);
+                    return distDirName;
+                }
+            }
+        } catch (Exception e) {
+            Log.e(LOGTAG, "Error getting system property " + SYSPROP_DISTRIBUTIONDIR, e);
+        }
+        Log.d(LOGTAG, "Custom distribution directory not found.");
+        return null;
+    }
+    
+
+
+
+
+
+
+
     private static String[] getSystemDistributionDirectories(Context context) {
-        final String baseDirectory = "/system/" + context.getPackageName() + "/distribution";
+        final String systemPropertyBaseDirectory = getDistributionDirectoryFromSystemProperty();
+        final String baseDirectory;
+        if (systemPropertyBaseDirectory != null) {
+            baseDirectory = systemPropertyBaseDirectory + context.getPackageName() + "/distribution";
+        } else {
+            baseDirectory = "/system/" + context.getPackageName() + "/distribution";
+        }
         return getDistributionDirectoriesFromBaseDirectory(context, baseDirectory);
     }
 
