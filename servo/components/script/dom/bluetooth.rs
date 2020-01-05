@@ -6,7 +6,6 @@ use core::clone::Clone;
 use dom::bindings::codegen::Bindings::BluetoothBinding;
 use dom::bindings::codegen::Bindings::BluetoothBinding::RequestDeviceOptions;
 use dom::bindings::codegen::Bindings::BluetoothBinding::{BluetoothScanFilter, BluetoothMethods};
-use dom::bindings::codegen::Bindings::BluetoothDeviceBinding::VendorIDSource;
 use dom::bindings::error::Error::Type;
 use dom::bindings::error::Fallible;
 use dom::bindings::global::GlobalRef;
@@ -78,7 +77,7 @@ fn canonicalize_filter(filter: &BluetoothScanFilter, global: GlobalRef) -> Falli
 
     let mut name = String::new();
     if let Some(ref filter_name) = filter.name {
-        //NOTE: DOMString::len() gives back the size in bytes
+        
         if filter_name.len() > MAX_DEVICE_NAME_LENGTH {
             return Err(Type(NAME_TOO_LONG_ERROR.to_owned()));
         }
@@ -130,7 +129,7 @@ fn convert_request_device_options(options: &RequestDeviceOptions,
 
 impl BluetoothMethods for Bluetooth {
 
-    // https://webbluetoothcg.github.io/web-bluetooth/#dom-bluetooth-requestdevice
+    
     fn RequestDevice(&self, option: &RequestDeviceOptions) -> Fallible<Root<BluetoothDevice>> {
         let (sender, receiver) = ipc::channel().unwrap();
         let option = try!(convert_request_device_options(option, self.global().r()));
@@ -142,20 +141,10 @@ impl BluetoothMethods for Bluetooth {
                                                             device.appearance,
                                                             device.tx_power,
                                                             device.rssi);
-                let vendor_id_source = device.vendor_id_source.map(|vid| match vid.as_str() {
-                    "bluetooth" => VendorIDSource::Bluetooth,
-                    "usb" => VendorIDSource::Usb,
-                    _ => VendorIDSource::Unknown,
-                });
                 Ok(BluetoothDevice::new(self.global().r(),
                                         DOMString::from(device.id),
                                         device.name.map(DOMString::from),
-                                        &ad_data,
-                                        device.device_class,
-                                        vendor_id_source,
-                                        device.vendor_id,
-                                        device.product_id,
-                                        device.product_version))
+                                        &ad_data))
             },
             Err(error) => {
                 Err(Type(error))

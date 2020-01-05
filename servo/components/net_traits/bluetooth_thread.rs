@@ -9,11 +9,6 @@ pub struct BluetoothDeviceMsg {
     
     pub id: String,
     pub name: Option<String>,
-    pub device_class: Option<u32>,
-    pub vendor_id_source: Option<String>,
-    pub vendor_id: Option<u32>,
-    pub product_id: Option<u32>,
-    pub product_version: Option<u32>,
     
     pub appearance: Option<u16>,
     pub tx_power: Option<i8>,
