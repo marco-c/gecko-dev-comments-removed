@@ -41,10 +41,13 @@ CSSAlignUtils::AlignJustifySelf(uint8_t aAlignment, bool aOverflowSafe,
       aAlignment = MOZ_LIKELY(aSameSide) ? NS_STYLE_ALIGN_END
                                          : NS_STYLE_ALIGN_START;
       break;
-    case NS_STYLE_ALIGN_FLEX_START: 
+    
+    
+    
+    case NS_STYLE_ALIGN_FLEX_START:
       aAlignment = NS_STYLE_ALIGN_START;
       break;
-    case NS_STYLE_ALIGN_FLEX_END: 
+    case NS_STYLE_ALIGN_FLEX_END:
       aAlignment = NS_STYLE_ALIGN_END;
       break;
   }
