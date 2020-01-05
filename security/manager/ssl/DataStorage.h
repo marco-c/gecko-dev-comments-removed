@@ -22,6 +22,7 @@
 namespace mozilla {
 
 namespace dom {
+class DataStorageEntry;
 class DataStorageItem;
 }
 
@@ -101,7 +102,12 @@ public:
 
   
   
-  nsresult Init(bool& aDataWillPersist);
+  
+  
+  
+  nsresult Init(bool& aDataWillPersist,
+                const InfallibleTArray<mozilla::dom::DataStorageItem>*
+                  aItems = nullptr);
   
   
   
@@ -118,7 +124,13 @@ public:
   nsresult Clear();
 
   
+  static void GetAllFileNames(nsTArray<nsString>& aItems);
+
+  
   void GetAll(InfallibleTArray<DataStorageItem>* aItems);
+
+  
+  static void SetCachedStorageEntries(const InfallibleTArray<mozilla::dom::DataStorageEntry>& aEntries);
 
 private:
   explicit DataStorage(const nsString& aFilename);
