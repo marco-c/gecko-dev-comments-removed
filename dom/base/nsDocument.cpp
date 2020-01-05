@@ -1884,7 +1884,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(nsDocument)
 
   
   uint32_t childCount = tmp->mChildren.ChildCount();
-  if (childcount) {
+  if (childCount) {
     while (childCount-- > 0) {
       
       
