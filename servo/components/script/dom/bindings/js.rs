@@ -53,7 +53,8 @@ use js::jsapi::JSObject;
 use layout_interface::TrustedNodeAddress;
 use script_task::StackRoots;
 
-use std::cell::{Cell, RefCell};
+use servo_util::smallvec::{SmallVec, SmallVec16};
+use std::cell::{Cell, UnsafeCell};
 use std::default::Default;
 use std::kinds::marker::ContravariantLifetime;
 use std::mem;
@@ -419,14 +420,14 @@ impl<T: Assignable<U>, U: Reflectable> TemporaryPushable<T> for Vec<JS<U>> {
 
 
 pub struct RootCollection {
-    roots: RefCell<Vec<*mut JSObject>>,
+    roots: UnsafeCell<SmallVec16<*mut JSObject>>,
 }
 
 impl RootCollection {
     
     pub fn new() -> RootCollection {
         RootCollection {
-            roots: RefCell::new(vec!()),
+            roots: UnsafeCell::new(SmallVec16::new()),
         }
     }
 
@@ -438,17 +439,23 @@ impl RootCollection {
 
     
     fn root<'a, 'b, T: Reflectable>(&self, untracked: &Root<'a, 'b, T>) {
-        let mut roots = self.roots.borrow_mut();
-        roots.push(untracked.js_ptr);
-        debug!("  rooting {:?}", untracked.js_ptr);
+        unsafe {
+            let roots = self.roots.get();
+            (*roots).push(untracked.js_ptr);
+            debug!("  rooting {:?}", untracked.js_ptr);
+        }
     }
 
     
     fn unroot<'a, 'b, T: Reflectable>(&self, rooted: &Root<'a, 'b, T>) {
-        let mut roots = self.roots.borrow_mut();
-        debug!("unrooting {:?} (expecting {:?}", roots.last().unwrap(), rooted.js_ptr);
-        assert!(*roots.last().unwrap() == rooted.js_ptr);
-        roots.pop().unwrap();
+        unsafe {
+            let roots = self.roots.get();
+            debug!("unrooting {:?} (expecting {:?}",
+                   (*roots).as_slice().last().unwrap(),
+                   rooted.js_ptr);
+            assert!(*(*roots).as_slice().last().unwrap() == rooted.js_ptr);
+            (*roots).pop().unwrap();
+        }
     }
 }
 
