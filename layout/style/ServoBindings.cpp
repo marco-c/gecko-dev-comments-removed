@@ -1809,6 +1809,12 @@ void
 Gecko_CSSFontFaceRule_GetCssText(const nsCSSFontFaceRule* aRule,
                                  nsAString* aResult)
 {
+  
+  
+  
+  
+  MOZ_ASSERT(NS_IsMainThread());
+
   aRule->GetCssText(*aResult);
 }
 
