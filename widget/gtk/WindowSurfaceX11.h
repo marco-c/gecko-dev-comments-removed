@@ -21,16 +21,6 @@ class WindowSurfaceX11 : public WindowSurface {
 public:
   WindowSurfaceX11(Display* aDisplay, Window aWindow, Visual* aVisual,
                    unsigned int aDepth);
-  ~WindowSurfaceX11();
-
-  void Commit(const LayoutDeviceIntRegion& aInvalidRegion) final;
-
-  virtual already_AddRefed<gfx::DrawTarget> Lock(const LayoutDeviceIntRegion& aRegion) override = 0;
-
-  
-  
-  virtual void CommitToDrawable(Drawable aDest, GC aGC,
-                                const LayoutDeviceIntRegion& aInvalidRegion) = 0;
 
 protected:
   static gfx::SurfaceFormat GetVisualFormat(const Visual* aVisual, unsigned int aDepth);
@@ -40,8 +30,6 @@ protected:
   Visual* const mVisual;
   const unsigned int mDepth;
   const gfx::SurfaceFormat mFormat;
-
-  GC mGC;
 };
 
 }  
