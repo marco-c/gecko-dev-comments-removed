@@ -1998,8 +1998,8 @@ nsCSSKeyframesRule::GetCssTextImpl(nsAString& aCssText) const
   aCssText.Append(mName);
   aCssText.AppendLiteral(" {\n");
   nsAutoString tmp;
-  for (uint32_t i = 0, i_end = mRules.Count(); i != i_end; ++i) {
-    static_cast<nsCSSKeyframeRule*>(mRules[i])->GetCssText(tmp);
+  for (const Rule* rule : GeckoRules()) {
+    static_cast<const nsCSSKeyframeRule*>(rule)->GetCssText(tmp);
     aCssText.Append(tmp);
     aCssText.Append('\n');
   }
@@ -2079,13 +2079,14 @@ nsCSSKeyframesRule::FindRuleIndexForKey(const nsAString& aKey)
   InfallibleTArray<float> keys;
   
   if (parser.ParseKeyframeSelectorString(aKey, nullptr, 0, keys)) {
+    IncrementalClearCOMRuleArray& rules = GeckoRules();
     
     
     
     
     
-    for (uint32_t i = mRules.Count(); i-- != 0; ) {
-      if (static_cast<nsCSSKeyframeRule*>(mRules[i])->GetKeys() == keys) {
+    for (uint32_t i = rules.Count(); i-- != 0; ) {
+      if (static_cast<nsCSSKeyframeRule*>(rules[i])->GetKeys() == keys) {
         return i;
       }
     }
@@ -2130,7 +2131,7 @@ nsCSSKeyframesRule::FindRule(const nsAString& aKey)
   if (index == RULE_NOT_FOUND) {
     return nullptr;
   }
-  return static_cast<nsCSSKeyframeRule*>(mRules[index]);
+  return static_cast<nsCSSKeyframeRule*>(GeckoRules()[index]);
 }
 
 
