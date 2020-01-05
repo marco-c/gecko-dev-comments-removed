@@ -14,6 +14,8 @@ else:
         # TODO: The library name can be changed when bug 845217 is fixed.
         SHARED_LIBRARY_NAME = 'nss3'
 
+        SDK_LIBRARY = True
+
         USE_LIBS += [
             'nspr4',
             'nss3_static',
@@ -79,7 +81,7 @@ else:
     # in the environment, which isn't true here. I don't know that
     # setting that would be harmful, but we already have this information
     # anyway.
-    if CONFIG['CLANG_CXX'] or CONFIG['CLANG_CL']:
+    if CONFIG['CLANG_CXX']:
         gyp_vars['cc_is_clang'] = 1
 
     GYP_DIRS += ['nss']

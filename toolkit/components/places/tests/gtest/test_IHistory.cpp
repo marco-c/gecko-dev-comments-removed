@@ -51,7 +51,7 @@ new_test_uri()
 
 class VisitURIObserver final : public nsIObserver
 {
-  ~VisitURIObserver() = default;
+  ~VisitURIObserver() {}
 
 public:
   NS_DECL_ISUPPORTS
@@ -128,8 +128,7 @@ test_wait_checkpoint()
   nsCOMPtr<mozIStorageAsyncStatement> stmt;
   db->CreateAsyncStatement(NS_LITERAL_CSTRING("SELECT 1"),
                            getter_AddRefs(stmt));
-  RefPtr<PlacesAsyncStatementSpinner> spinner =
-    new PlacesAsyncStatementSpinner();
+  RefPtr<AsyncStatementSpinner> spinner = new AsyncStatementSpinner();
   nsCOMPtr<mozIStoragePendingStatement> pending;
   (void)stmt->ExecuteAsync(spinner, getter_AddRefs(pending));
   spinner->SpinUntilCompleted();
@@ -310,7 +309,7 @@ namespace test_observer_topic_dispatched_helpers {
   #define URI_VISITED_RESOLUTION_TOPIC "visited-status-resolution"
   class statusObserver final : public nsIObserver
   {
-    ~statusObserver() = default;
+    ~statusObserver() {}
 
   public:
     NS_DECL_ISUPPORTS

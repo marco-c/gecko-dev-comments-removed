@@ -5233,10 +5233,6 @@ pref("camera.control.low_memory_thresholdMB", 404);
 #endif
 
 
-pref("dom.system_update.enabled", false);
-pref("dom.system_update.debug", false);
-
-
 pref("dom.udpsocket.enabled", false);
 
 

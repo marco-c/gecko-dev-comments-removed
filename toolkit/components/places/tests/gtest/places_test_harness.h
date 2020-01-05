@@ -115,52 +115,52 @@ NS_IMPL_ISUPPORTS(
 
 
 
-class PlacesAsyncStatementSpinner final : public mozIStorageStatementCallback
+class AsyncStatementSpinner final : public mozIStorageStatementCallback
 {
 public:
   NS_DECL_ISUPPORTS
   NS_DECL_MOZISTORAGESTATEMENTCALLBACK
 
-  PlacesAsyncStatementSpinner();
+  AsyncStatementSpinner();
   void SpinUntilCompleted();
   uint16_t completionReason;
 
 protected:
-  ~PlacesAsyncStatementSpinner() {}
+  ~AsyncStatementSpinner() {}
 
   volatile bool mCompleted;
 };
 
-NS_IMPL_ISUPPORTS(PlacesAsyncStatementSpinner,
+NS_IMPL_ISUPPORTS(AsyncStatementSpinner,
                   mozIStorageStatementCallback)
 
-PlacesAsyncStatementSpinner::PlacesAsyncStatementSpinner()
+AsyncStatementSpinner::AsyncStatementSpinner()
 : completionReason(0)
 , mCompleted(false)
 {
 }
 
 NS_IMETHODIMP
-PlacesAsyncStatementSpinner::HandleResult(mozIStorageResultSet *aResultSet)
+AsyncStatementSpinner::HandleResult(mozIStorageResultSet *aResultSet)
 {
   return NS_OK;
 }
 
 NS_IMETHODIMP
-PlacesAsyncStatementSpinner::HandleError(mozIStorageError *aError)
+AsyncStatementSpinner::HandleError(mozIStorageError *aError)
 {
   return NS_OK;
 }
 
 NS_IMETHODIMP
-PlacesAsyncStatementSpinner::HandleCompletion(uint16_t aReason)
+AsyncStatementSpinner::HandleCompletion(uint16_t aReason)
 {
   completionReason = aReason;
   mCompleted = true;
   return NS_OK;
 }
 
-void PlacesAsyncStatementSpinner::SpinUntilCompleted()
+void AsyncStatementSpinner::SpinUntilCompleted()
 {
   nsCOMPtr<nsIThread> thread(::do_GetCurrentThread());
   nsresult rv = NS_OK;
@@ -312,8 +312,7 @@ do_wait_async_updates() {
 
   db->CreateAsyncStatement(NS_LITERAL_CSTRING("COMMIT"),
                            getter_AddRefs(stmt));
-  RefPtr<PlacesAsyncStatementSpinner> spinner =
-    new PlacesAsyncStatementSpinner();
+  RefPtr<AsyncStatementSpinner> spinner = new AsyncStatementSpinner();
   (void)stmt->ExecuteAsync(spinner, getter_AddRefs(pending));
 
   spinner->SpinUntilCompleted();
