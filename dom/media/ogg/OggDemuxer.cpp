@@ -9,6 +9,7 @@
 #include "AbstractMediaDecoder.h"
 #include "OggDemuxer.h"
 #include "OggCodecState.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/PodOperations.h"
 #include "mozilla/SharedThreadPool.h"
 #include "mozilla/Telemetry.h"
@@ -49,6 +50,8 @@ static const uint32_t OGG_SEEK_FUZZ_USECS = 500000;
 
 
 static const int64_t OGG_SEEK_OPUS_PREROLL = 80 * USECS_PER_MS;
+
+static Atomic<uint32_t> sStreamSourceID(0u);
 
 class OggHeaders
 {
@@ -885,6 +888,9 @@ OggDemuxer::ReadOggChain(const media::TimeUnit& aLastEndTime)
                       Move(tags),
                       nsAutoPtr<MediaInfo>(new MediaInfo(mInfo))));
     }
+    
+    
+    mSharedAudioTrackInfo = new SharedTrackInfo(mInfo.mAudio, ++sStreamSourceID);
     return true;
   }
 
@@ -1488,6 +1494,9 @@ OggTrackDemuxer::NextSample()
   if (mQueuedSample) {
     RefPtr<MediaRawData> nextSample = mQueuedSample;
     mQueuedSample = nullptr;
+    if (mType == TrackInfo::kAudioTrack) {
+      nextSample->mTrackInfo = mParent->mSharedAudioTrackInfo;
+    }
     return nextSample;
   }
   ogg_packet* packet = mParent->GetNextPacket(mType);
@@ -1497,8 +1506,12 @@ OggTrackDemuxer::NextSample()
   
   bool eos = packet->e_o_s;
   OggCodecState* state = mParent->GetTrackCodecState(mType);
-  RefPtr<MediaRawData> data = state->PacketOutAsMediaRawData();;
+  RefPtr<MediaRawData> data = state->PacketOutAsMediaRawData();
+  if (mType == TrackInfo::kAudioTrack) {
+    data->mTrackInfo = mParent->mSharedAudioTrackInfo;
+  }
   if (eos) {
+    
     
     
     mParent->ReadOggChain(TimeUnit::FromMicroseconds(data->GetEndTime()));
