@@ -1330,6 +1330,10 @@ ContentParent::Init()
   }
 #endif
 
+  
+  
+  EnsurePermissionsByKey(EmptyCString());
+
   RefPtr<GeckoMediaPluginServiceParent> gmps(GeckoMediaPluginServiceParent::GetSingleton());
   gmps->UpdateContentProcessGMPCapabilities();
 
@@ -5050,6 +5054,62 @@ ContentParent::ForceTabPaint(TabParent* aTabParent, uint64_t aLayerObserverEpoch
     return;
   }
   ProcessHangMonitor::ForcePaint(mHangMonitorActor, aTabParent, aLayerObserverEpoch);
+}
+
+nsresult
+ContentParent::TransmitPermissionsFor(nsIChannel* aChannel)
+{
+  MOZ_ASSERT(aChannel);
+#ifdef MOZ_PERMISSIONS
+  
+  
+  nsLoadFlags loadFlags;
+  nsresult rv = aChannel->GetLoadFlags(&loadFlags);
+  NS_ENSURE_SUCCESS(rv, rv);
+  if (!(loadFlags & nsIChannel::LOAD_DOCUMENT_URI)) {
+    return NS_OK;
+  }
+
+  
+  
+  nsIScriptSecurityManager* ssm = nsContentUtils::GetSecurityManager();
+  if (NS_WARN_IF(!ssm)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  nsCOMPtr<nsIPrincipal> principal;
+  rv = ssm->GetChannelResultPrincipal(aChannel, getter_AddRefs(principal));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  nsAutoCString key;
+  nsPermissionManager::GetKeyForPrincipal(principal, key);
+  EnsurePermissionsByKey(key);
+#endif
+
+  return NS_OK;
+}
+
+void
+ContentParent::EnsurePermissionsByKey(const nsCString& aKey)
+{
+#ifdef MOZ_PERMISSIONS
+  if (mActivePermissionKeys.Contains(aKey)) {
+    return;
+  }
+  mActivePermissionKeys.PutEntry(aKey);
+
+  nsCOMPtr<nsIPermissionManager> permManager =
+    services::GetPermissionManager();
+
+  nsTArray<IPC::Permission> perms;
+  nsresult rv = permManager->GetPermissionsWithKey(aKey, perms);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return;
+  }
+
+  Unused << SendSetPermissionsWithKey(aKey, perms);
+#endif
 }
 
 mozilla::ipc::IPCResult
