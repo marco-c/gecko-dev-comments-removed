@@ -334,7 +334,7 @@ CallbackObject::CallSetup::~CallSetup()
 
         
         
-        mErrorResult.Throw(NS_ERROR_UNEXPECTED);
+        mErrorResult.ThrowWithCustomCleanup(NS_ERROR_UNEXPECTED);
       }
     }
   }
