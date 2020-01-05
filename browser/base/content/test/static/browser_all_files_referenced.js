@@ -286,6 +286,9 @@ const ignorableWhitelist = new Set([
   "resource://gre/gmp-clearkey/0.1/manifest.json",
 
   
+  "resource://app/defaults/pinning/pins.json",
+
+  
   "resource://app/defaults/profile/prefs.js",
 
   
