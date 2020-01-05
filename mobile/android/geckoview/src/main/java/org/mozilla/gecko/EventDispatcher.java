@@ -9,6 +9,7 @@ import org.mozilla.gecko.annotation.RobocopTarget;
 import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.gecko.GeckoAppShell;
 import org.mozilla.gecko.mozglue.JNIObject;
+import org.mozilla.gecko.NativeQueue.StateHolder;
 import org.mozilla.gecko.util.BundleEventListener;
 import org.mozilla.gecko.util.EventCallback;
 import org.mozilla.gecko.util.GeckoBundle;
@@ -57,6 +58,7 @@ public final class EventDispatcher extends JNIObject {
         new HashMap<String, List<BundleEventListener>>(DEFAULT_BACKGROUND_EVENTS_COUNT);
 
     private boolean mAttachedToGecko;
+    private final StateHolder mStateHolder;
 
     @ReflectionTarget
     @WrapForJNI(calledFrom = "gecko")
@@ -65,6 +67,15 @@ public final class EventDispatcher extends JNIObject {
     }
 
      EventDispatcher() {
+        mStateHolder = GeckoThread.getStateHolder();
+    }
+
+     EventDispatcher(final NativeQueue.StateHolder stateHolder) {
+        mStateHolder = stateHolder;
+    }
+
+    private boolean isReadyForDispatchingToGecko() {
+        return mStateHolder.isReady();
     }
 
     @WrapForJNI(dispatchTo = "gecko") @Override 
@@ -228,7 +239,7 @@ public final class EventDispatcher extends JNIObject {
     public void dispatch(final String type, final GeckoBundle message,
                          final EventCallback callback) {
         synchronized (this) {
-            if (mAttachedToGecko && hasGeckoListener(type)) {
+            if (isReadyForDispatchingToGecko() && hasGeckoListener(type)) {
                 dispatchToGecko(type, message, JavaCallbackDelegate.wrap(callback));
                 return;
             }
@@ -279,15 +290,18 @@ public final class EventDispatcher extends JNIObject {
             return true;
         }
 
-        if (!GeckoThread.isRunning()) {
+        if (!isReadyForDispatchingToGecko()) {
             
             
             
             
             
-            GeckoThread.queueNativeCall(this, "dispatchToGecko",
-                                        String.class, type, GeckoBundle.class, message,
-                                        EventCallback.class, JavaCallbackDelegate.wrap(callback));
+            
+            NativeQueue.queueUntil(mStateHolder,
+                mStateHolder.getReadyState(), this, "dispatchToGecko",
+                String.class, type,
+                GeckoBundle.class, message,
+                EventCallback.class, JavaCallbackDelegate.wrap(callback));
             return true;
         }
 
