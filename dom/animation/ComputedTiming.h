@@ -30,7 +30,7 @@ struct ComputedTiming
   
   StickyTimeDuration  mActiveDuration;
   
-  StickyTimeDuration mActiveTime;
+  StickyTimeDuration  mActiveTime;
   
   
   
@@ -73,7 +73,6 @@ struct ComputedTiming
 
   ComputedTimingFunction::BeforeFlag mBeforeFlag =
     ComputedTimingFunction::BeforeFlag::Unset;
-
 };
 
 } 
