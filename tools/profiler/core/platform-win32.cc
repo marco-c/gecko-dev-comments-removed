@@ -32,7 +32,6 @@
 #include "platform.h"
 #include "ProfileEntry.h"
 #include "ThreadInfo.h"
-#include "ThreadProfile.h"
 #include "ThreadResponsiveness.h"
 
 
@@ -175,20 +174,19 @@ class SamplerThread
           ThreadInfo* info = threads[i];
 
           
-          if (!info->Profile() || info->IsPendingDelete())
-            continue;
-
-          PseudoStack::SleepState sleeping = info->Stack()->observeSleeping();
-          if (sleeping == PseudoStack::SLEEPING_AGAIN) {
-            info->Profile()->DuplicateLastSample();
+          if (!info->hasProfile() || info->IsPendingDelete()) {
             continue;
           }
 
-          info->Profile()->GetThreadResponsiveness()->Update();
+          PseudoStack::SleepState sleeping = info->Stack()->observeSleeping();
+          if (sleeping == PseudoStack::SLEEPING_AGAIN) {
+            info->DuplicateLastSample();
+            continue;
+          }
 
-          ThreadProfile* thread_profile = info->Profile();
+          info->GetThreadResponsiveness()->Update();
 
-          SampleContext(mSampler, thread_profile, isFirstProfiledThread);
+          SampleContext(mSampler, info, isFirstProfiledThread);
           isFirstProfiledThread = false;
         }
       }
@@ -200,11 +198,10 @@ class SamplerThread
         ::timeEndPeriod(mInterval);
   }
 
-  void SampleContext(Sampler* sampler, ThreadProfile* thread_profile,
+  void SampleContext(Sampler* sampler, ThreadInfo* aThreadInfo,
                      bool isFirstProfiledThread)
   {
-    uintptr_t thread = Sampler::GetThreadHandle(
-                               thread_profile->GetPlatformData());
+    uintptr_t thread = Sampler::GetThreadHandle(aThreadInfo->GetPlatformData());
     HANDLE profiled_thread = reinterpret_cast<HANDLE>(thread);
     if (profiled_thread == NULL)
       return;
@@ -218,7 +215,7 @@ class SamplerThread
 
     
     sample->timestamp = mozilla::TimeStamp::Now();
-    sample->threadProfile = thread_profile;
+    sample->threadInfo = aThreadInfo;
 
     
     if (isFirstProfiledThread && gSampler->ProfileMemory()) {
@@ -258,7 +255,7 @@ class SamplerThread
     
     
     
-    if (thread_profile->CanInvokeJS()) {
+    if (aThreadInfo->CanInvokeJS()) {
       if (!TryAcquireStackWalkWorkaroundLock()) {
         ResumeThread(profiled_thread);
         return;

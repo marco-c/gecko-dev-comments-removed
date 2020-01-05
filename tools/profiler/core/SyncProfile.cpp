@@ -6,20 +6,18 @@
 
 #include "SyncProfile.h"
 
-SyncProfile::SyncProfile(ThreadInfo* aInfo, int aEntrySize)
-  : ThreadProfile(aInfo, new ProfileBuffer(aEntrySize))
+SyncProfile::SyncProfile(int aThreadId, PseudoStack* aStack)
+  : ThreadInfo("SyncProfile", aThreadId,  false, aStack,
+                nullptr)
   , mOwnerState(REFERENCED)
 {
   MOZ_COUNT_CTOR(SyncProfile);
+  SetProfile(new ProfileBuffer(GET_BACKTRACE_DEFAULT_ENTRY));
 }
 
 SyncProfile::~SyncProfile()
 {
   MOZ_COUNT_DTOR(SyncProfile);
-
-  
-  ThreadInfo* info = GetThreadInfo();
-  delete info;
 }
 
 bool
@@ -42,7 +40,7 @@ SyncProfile::EndUnwind()
   }
   
   OwnerState ownerState = mOwnerState;
-  ThreadProfile::EndUnwind();
+  ThreadInfo::EndUnwind();
   if (ownerState == ORPHANED) {
     delete this;
   }
@@ -53,5 +51,5 @@ SyncProfile::EndUnwind()
 void
 SyncProfile::StreamJSON(SpliceableJSONWriter& aWriter, UniqueStacks& aUniqueStacks)
 {
-  ThreadProfile::StreamSamplesAndMarkers(aWriter,  0, aUniqueStacks);
+  ThreadInfo::StreamSamplesAndMarkers(aWriter,  0, aUniqueStacks);
 }

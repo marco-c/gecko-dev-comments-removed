@@ -6,7 +6,7 @@
 #include "gtest/gtest.h"
 
 #include "ProfileEntry.h"
-#include "ThreadProfile.h"
+#include "ThreadInfo.h"
 
 
 TEST(ThreadProfile, Initialization) {
@@ -14,7 +14,7 @@ TEST(ThreadProfile, Initialization) {
   Thread::tid_t tid = 1000;
   ThreadInfo info("testThread", tid, true, stack, nullptr);
   RefPtr<ProfileBuffer> pb = new ProfileBuffer(10);
-  ThreadProfile tp(&info, pb);
+  info.SetProfile(pb);
 }
 
 

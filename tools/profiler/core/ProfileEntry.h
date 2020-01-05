@@ -25,8 +25,6 @@
 #include "mozilla/HashFunctions.h"
 #include "mozilla/UniquePtr.h"
 
-class ThreadProfile;
-
 
 #ifndef __arm__
 #pragma pack(push, 1)

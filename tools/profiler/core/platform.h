@@ -192,6 +192,8 @@ bool is_native_unwinding_avail();
 
 
 
+class ThreadInfo;
+
 
 class TickSample {
  public:
@@ -204,7 +206,7 @@ class TickSample {
 #endif
       , context(NULL)
       , isSamplingCurrentThread(false)
-      , threadProfile(nullptr)
+      , threadInfo(nullptr)
       , rssMemory(0)
       , ussMemory(0)
   {}
@@ -220,7 +222,7 @@ class TickSample {
   void*   context;   
                      
   bool    isSamplingCurrentThread;
-  ThreadProfile* threadProfile;
+  ThreadInfo* threadInfo;
   mozilla::TimeStamp timestamp;
   int64_t rssMemory;
   int64_t ussMemory;
@@ -233,8 +235,6 @@ class ProfileBuffer;
 struct PseudoStack;
 class SpliceableJSONWriter;
 class SyncProfile;
-class ThreadInfo;
-class ThreadProfile;
 
 namespace mozilla {
 class ProfileGatherer;
@@ -367,7 +367,7 @@ public:
 
 private:
   
-  void doNativeBacktrace(ThreadProfile &aProfile, TickSample* aSample);
+  void doNativeBacktrace(ThreadInfo& aInfo, TickSample* aSample);
 
   void StreamJSON(SpliceableJSONWriter& aWriter, double aSinceTime);
 

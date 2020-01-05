@@ -73,7 +73,7 @@
 #include "mozilla/DebugOnly.h"
 #include "ProfileEntry.h"
 #include "nsThreadUtils.h"
-#include "ThreadProfile.h"
+#include "ThreadInfo.h"
 #include "ThreadResponsiveness.h"
 
 #if defined(__ARM_EABI__) && defined(ANDROID)
@@ -176,7 +176,7 @@ struct SamplerRegistry {
 
 Sampler *SamplerRegistry::sampler = NULL;
 
-static mozilla::Atomic<ThreadProfile*> sCurrentThreadProfile;
+static mozilla::Atomic<ThreadInfo*> sCurrentThreadInfo;
 static sem_t sSignalHandlingDone;
 
 static void ProfilerSaveSignalHandler(int signal, siginfo_t* info, void* context) {
@@ -247,31 +247,31 @@ void ProfilerSignalHandler(int signal, siginfo_t* info, void* context) {
 
   
   SetSampleContext(sample, context);
-  sample->threadProfile = sCurrentThreadProfile;
+  sample->threadInfo = sCurrentThreadInfo;
   sample->timestamp = mozilla::TimeStamp::Now();
-  sample->rssMemory = sample->threadProfile->mRssMemory;
-  sample->ussMemory = sample->threadProfile->mUssMemory;
+  sample->rssMemory = sample->threadInfo->mRssMemory;
+  sample->ussMemory = sample->threadInfo->mUssMemory;
 
   
   gSampler->Tick(sample);
 
-  sCurrentThreadProfile = NULL;
+  sCurrentThreadInfo = NULL;
   sem_post(&sSignalHandlingDone);
   errno = savedErrno;
 }
 
 } 
 
-static void ProfilerSignalThread(ThreadProfile *profile,
-                                 bool isFirstProfiledThread)
+static void
+ProfilerSignalThread(ThreadInfo* aInfo, bool aIsFirstProfiledThread)
 {
   
-  if (isFirstProfiledThread && gSampler->ProfileMemory()) {
-    profile->mRssMemory = nsMemoryReporterManager::ResidentFast();
-    profile->mUssMemory = nsMemoryReporterManager::ResidentUnique();
+  if (aIsFirstProfiledThread && gSampler->ProfileMemory()) {
+    aInfo->mRssMemory = nsMemoryReporterManager::ResidentFast();
+    aInfo->mUssMemory = nsMemoryReporterManager::ResidentUnique();
   } else {
-    profile->mRssMemory = 0;
-    profile->mUssMemory = 0;
+    aInfo->mRssMemory = 0;
+    aInfo->mUssMemory = 0;
   }
 }
 
@@ -330,20 +330,21 @@ static void* SignalSender(void* arg) {
         ThreadInfo* info = threads[i];
 
         
-        if (!info->Profile() || info->IsPendingDelete())
-          continue;
-
-        PseudoStack::SleepState sleeping = info->Stack()->observeSleeping();
-        if (sleeping == PseudoStack::SLEEPING_AGAIN) {
-          info->Profile()->DuplicateLastSample();
+        if (!info->hasProfile() || info->IsPendingDelete()) {
           continue;
         }
 
-        info->Profile()->GetThreadResponsiveness()->Update();
+        PseudoStack::SleepState sleeping = info->Stack()->observeSleeping();
+        if (sleeping == PseudoStack::SLEEPING_AGAIN) {
+          info->DuplicateLastSample();
+          continue;
+        }
+
+        info->GetThreadResponsiveness()->Update();
 
         
         
-        sCurrentThreadProfile = info->Profile();
+        sCurrentThreadInfo = info;
 
         int threadId = info->ThreadId();
         MOZ_ASSERT(threadId != my_tid);
@@ -351,7 +352,7 @@ static void* SignalSender(void* arg) {
         
         
         
-        ProfilerSignalThread(sCurrentThreadProfile, isFirstProfiledThread);
+        ProfilerSignalThread(sCurrentThreadInfo, isFirstProfiledThread);
 
         
         
@@ -409,7 +410,7 @@ void Sampler::Start() {
   SamplerRegistry::AddActiveSampler(this);
 
   
-  sCurrentThreadProfile = NULL;
+  sCurrentThreadInfo = nullptr;
   if (sem_init(&sSignalHandlingDone,  0,  0) != 0) {
     LOG("Error initializing semaphore");
     return;

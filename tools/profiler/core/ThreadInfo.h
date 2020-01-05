@@ -9,6 +9,7 @@
 
 #include "mozilla/UniquePtrExtensions.h"
 
+#include "ProfileBuffer.h"
 #include "platform.h"
 
 class ThreadInfo {
@@ -23,11 +24,7 @@ class ThreadInfo {
   bool IsMainThread() const { return mIsMainThread; }
   PseudoStack* Stack() const { return mPseudoStack; }
 
-  void SetProfile(mozilla::UniquePtr<ThreadProfile> aProfile)
-  {
-    mProfile = mozilla::Move(aProfile);
-  }
-  ThreadProfile* Profile() const { return mProfile.get(); }
+  void SetProfile(ProfileBuffer* aBuffer) { mBuffer = aBuffer; }
 
   PlatformData* GetPlatformData() const { return mPlatformData.get(); }
   void* StackTop() const { return mStackTop; }
@@ -48,10 +45,72 @@ class ThreadInfo {
   const bool mIsMainThread;
   PseudoStack* mPseudoStack;
   Sampler::UniquePlatformData mPlatformData;
-  mozilla::UniquePtr<ThreadProfile> mProfile;
   void* mStackTop;
   nsCOMPtr<nsIThread> mThread;
   bool mPendingDelete;
+
+  
+  
+  
+  
+
+public:
+  bool hasProfile() { return !!mBuffer; }
+
+  void addTag(const ProfileEntry& aTag);
+
+  
+  
+  
+  void addStoredMarker(ProfilerMarker* aStoredMarker);
+  mozilla::Mutex& GetMutex();
+  void StreamJSON(SpliceableJSONWriter& aWriter, double aSinceTime = 0);
+
+  
+  
+  void FlushSamplesAndMarkers();
+
+  void BeginUnwind();
+  virtual void EndUnwind();
+
+  void DuplicateLastSample();
+
+  ThreadResponsiveness* GetThreadResponsiveness() { return &mRespInfo; }
+
+  uint32_t bufferGeneration() const { return mBuffer->mGeneration; }
+
+protected:
+  void StreamSamplesAndMarkers(SpliceableJSONWriter& aWriter, double aSinceTime,
+                               UniqueStacks& aUniqueStacks);
+
+private:
+  FRIEND_TEST(ThreadProfile, InsertOneTag);
+  FRIEND_TEST(ThreadProfile, InsertOneTagWithTinyBuffer);
+  FRIEND_TEST(ThreadProfile, InsertTagsNoWrap);
+  FRIEND_TEST(ThreadProfile, InsertTagsWrap);
+  FRIEND_TEST(ThreadProfile, MemoryMeasure);
+
+  RefPtr<ProfileBuffer> mBuffer;
+
+  
+  
+  
+  
+  mozilla::UniquePtr<char[]> mSavedStreamedSamples;
+  mozilla::UniquePtr<char[]> mSavedStreamedMarkers;
+  mozilla::Maybe<UniqueStacks> mUniqueStacks;
+
+  mozilla::UniquePtr<mozilla::Mutex> mMutex;
+  ThreadResponsiveness mRespInfo;
+
+#ifdef XP_LINUX
+  
+  
+  
+public:
+  int64_t mRssMemory;
+  int64_t mUssMemory;
+#endif
 };
 
 
