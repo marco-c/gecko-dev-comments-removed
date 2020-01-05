@@ -61,9 +61,9 @@ pub enum SimpleSelector {
 
     
     AttrExists(AttrSelector),  
-    AttrEqual(AttrSelector, String),  
+    AttrEqual(AttrSelector, String, CaseSensitivity),  
     AttrIncludes(AttrSelector, String),  
-    AttrDashMatch(AttrSelector, String, String),  
+    AttrDashMatch(AttrSelector, String, String), 
     AttrPrefixMatch(AttrSelector, String),  
     AttrSubstringMatch(AttrSelector, String),  
     AttrSuffixMatch(AttrSelector, String),  
@@ -89,6 +89,14 @@ pub enum SimpleSelector {
     OnlyOfType
     
 }
+
+
+#[deriving(Eq, PartialEq, Clone, Hash)]
+pub enum CaseSensitivity {
+    CaseSensitive,  
+    CaseInsensitive,
+}
+
 
 #[deriving(Eq, PartialEq, Clone, Hash)]
 pub struct LocalName {
@@ -446,29 +454,46 @@ fn parse_attribute_selector(content: Vec<ComponentValue>, namespaces: &Namespace
     };
     skip_whitespace(iter);
     // TODO: deal with empty value or value containing whitespace (see spec)
-    macro_rules! get_value( () => {{
-        skip_whitespace(iter);
-        match iter.next() {
-            Some(Ident(value)) | Some(QuotedString(value)) => value,
-            _ => return Err(())
-        }
-    }};)
     let result = match iter.next() {
         None => AttrExists(attr),  // [foo]
-        Some(Delim('=')) => AttrEqual(attr, (get_value!())),  // [foo=bar]
-        Some(IncludeMatch) => AttrIncludes(attr, (get_value!())),  // [foo~=bar]
+        Some(Delim('=')) => AttrEqual(
+            attr, try!(parse_attribute_value(iter)),
+            try!(parse_attribute_flags(iter))),  // [foo=bar]
+        Some(IncludeMatch) => AttrIncludes(attr, try!(parse_attribute_value(iter))),  // [foo~=bar]
         Some(DashMatch) => {
-            let value = get_value!();
+            let value = try!(parse_attribute_value(iter));
             let dashing_value = format!("{}-", value);
             AttrDashMatch(attr, value, dashing_value)  // [foo|=bar]
         },
-        Some(PrefixMatch) => AttrPrefixMatch(attr, (get_value!())),  // [foo^=bar]
-        Some(SubstringMatch) => AttrSubstringMatch(attr, (get_value!())),  // [foo*=bar]
-        Some(SuffixMatch) => AttrSuffixMatch(attr, (get_value!())),  // [foo$=bar]
+        Some(PrefixMatch) => AttrPrefixMatch(attr, try!(parse_attribute_value(iter))),  // [foo^=bar]
+        // [foo*=bar]
+        Some(SubstringMatch) => AttrSubstringMatch(attr, try!(parse_attribute_value(iter))),
+        Some(SuffixMatch) => AttrSuffixMatch(attr, try!(parse_attribute_value(iter))),  // [foo$=bar]
         _ => return Err(())
     };
     skip_whitespace(iter);
     if iter.next().is_none() { Ok(result) } else { Err(()) }
+}
+
+
+fn parse_attribute_value<I: Iterator<ComponentValue>>(iter: &mut Iter<I>) -> Result<String, ()> {
+    skip_whitespace(iter);
+    match iter.next() {
+        Some(Ident(value)) | Some(QuotedString(value)) => Ok(value),
+        _ => Err(())
+    }
+}
+
+
+fn parse_attribute_flags<I: Iterator<ComponentValue>>(iter: &mut Iter<I>)
+                         -> Result<CaseSensitivity, ()> {
+    skip_whitespace(iter);
+    match iter.next() {
+        None => Ok(CaseSensitive),
+        Some(Ident(ref value)) if value.as_slice().eq_ignore_ascii_case("i")
+        => Ok(CaseInsensitive),
+        _ => Err(())
+    }
 }
 
 
