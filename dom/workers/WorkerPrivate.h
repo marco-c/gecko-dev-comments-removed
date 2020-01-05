@@ -202,6 +202,15 @@ private:
   bool mParentWindowPaused;
   bool mIsChromeWorker;
   bool mMainThreadObjectsForgotten;
+  
+  
+  
+  
+  
+  
+  
+  
+  bool mIsSecureContext;
   WorkerType mWorkerType;
   TimeStamp mCreationTimeStamp;
   DOMHighResTimeStamp mCreationTimeHighRes;
@@ -822,6 +831,16 @@ public:
 
   IMPL_EVENT_HANDLER(message)
   IMPL_EVENT_HANDLER(error)
+
+  
+  
+  
+  
+  
+  bool IsSecureContext() const
+  {
+    return mIsSecureContext;
+  }
 
 #ifdef DEBUG
   void
