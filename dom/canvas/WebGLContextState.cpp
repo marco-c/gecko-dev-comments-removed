@@ -393,48 +393,24 @@ WebGLContext::GetParameter(JSContext* cx, GLenum pname, ErrorResult& rv)
         case LOCAL_GL_GENERATE_MIPMAP_HINT:
             return JS::NumberValue(mGenerateMipmapHint);
 
+        case LOCAL_GL_IMPLEMENTATION_COLOR_READ_FORMAT:
         case LOCAL_GL_IMPLEMENTATION_COLOR_READ_TYPE: {
             const webgl::FormatUsageInfo* usage;
             uint32_t width, height;
             if (!ValidateCurFBForRead(funcName, &usage, &width, &height))
                 return JS::NullValue();
 
-            GLint i = 0;
-            if (gl->IsGLES()) {
-                
-                
-                
-                gl->fGetIntegerv(pname, &i);
+            const auto implPI = ValidImplementationColorReadPI(usage);
+
+            GLenum ret;
+            if (pname == LOCAL_GL_IMPLEMENTATION_COLOR_READ_FORMAT) {
+                ret = implPI.format;
             } else {
-                i = LOCAL_GL_UNSIGNED_BYTE;
+                ret = implPI.type;
             }
-            return JS::NumberValue(uint32_t(i));
+            return JS::NumberValue(uint32_t(ret));
         }
-        case LOCAL_GL_IMPLEMENTATION_COLOR_READ_FORMAT: {
-            const webgl::FormatUsageInfo* usage;
-            uint32_t width, height;
-            if (!ValidateCurFBForRead(funcName, &usage, &width, &height))
-                return JS::NullValue();
 
-            GLint i = 0;
-            if (gl->IsGLES()) {
-                
-                
-                
-                gl->fGetIntegerv(pname, &i);
-            } else {
-                i = LOCAL_GL_RGBA;
-            }
-
-            
-            
-            
-            
-            if (i == LOCAL_GL_SRGB_ALPHA)
-                i = LOCAL_GL_RGBA;
-
-            return JS::NumberValue(uint32_t(i));
-        }
         
         case LOCAL_GL_STENCIL_REF:
         case LOCAL_GL_STENCIL_BACK_REF: {
