@@ -125,52 +125,64 @@ public class GeckoThread extends Thread {
         }
     };
 
-    private static GeckoThread sGeckoThread;
+    private static final GeckoThread INSTANCE = new GeckoThread();
 
     @WrapForJNI
     private static final ClassLoader clsLoader = GeckoThread.class.getClassLoader();
     @WrapForJNI
     private static MessageQueue msgQueue;
 
+    private boolean mInitialized;
+    private String[] mArgs;
+
+    
     private GeckoProfile mProfile;
+    private String mExtraArgs;
+    private boolean mDebugging;
 
-    private final String mArgs;
-    private final String mAction;
-    private final boolean mDebugging;
-
-    private String[] mChildProcessArgs;
+    
     private int mCrashFileDescriptor;
     private int mIPCFileDescriptor;
 
-    GeckoThread(GeckoProfile profile, String args, String action, boolean debugging) {
-        mProfile = profile;
-        mArgs = args;
-        mAction = action;
-        mDebugging = debugging;
-        mChildProcessArgs = null;
-        mCrashFileDescriptor = -1;
-        mIPCFileDescriptor = -1;
-
+    GeckoThread() {
         setName("Gecko");
     }
 
-    public static boolean init(GeckoProfile profile, String args, String action, boolean debugging) {
-        ThreadUtils.assertOnUiThread();
-        if (isState(State.INITIAL) && sGeckoThread == null) {
-            sGeckoThread = new GeckoThread(profile, args, action, debugging);
-            return true;
-        }
-        return false;
+    private boolean isChildProcess() {
+        return mIPCFileDescriptor != -1;
     }
 
-    public static boolean initChildProcess(GeckoProfile profile, String[] args, int crashFd, int ipcFd, boolean debugging) {
-        if (init(profile, null, null, debugging)) {
-            sGeckoThread.mChildProcessArgs = args;
-            sGeckoThread.mCrashFileDescriptor = crashFd;
-            sGeckoThread.mIPCFileDescriptor = ipcFd;
-            return true;
+    private synchronized boolean init(final GeckoProfile profile, final String[] args,
+                                      final String extraArgs, final boolean debugging,
+                                      final int crashFd, final int ipcFd) {
+        ThreadUtils.assertOnUiThread();
+
+        if (mInitialized) {
+            return false;
         }
-        return false;
+
+        mProfile = profile;
+        mArgs = args;
+        mExtraArgs = extraArgs;
+        mDebugging = debugging;
+        mCrashFileDescriptor = crashFd;
+        mIPCFileDescriptor = ipcFd;
+
+        mInitialized = true;
+        notifyAll();
+        return true;
+    }
+
+    public static boolean initMainProcess(final GeckoProfile profile, final String extraArgs,
+                                          final boolean debugging) {
+        return INSTANCE.init(profile,  null, extraArgs, debugging,
+                                  -1,  -1);
+    }
+
+    public static boolean initChildProcess(final String[] args, final int crashFd,
+                                           final int ipcFd) {
+        return INSTANCE.init( null, args,  null,
+                                  false, crashFd, ipcFd);
     }
 
     private static boolean canUseProfile(final Context context, final GeckoProfile profile,
@@ -203,7 +215,8 @@ public class GeckoThread extends Thread {
                              profileName, profileDir);
     }
 
-    public static boolean initWithProfile(final String profileName, final File profileDir) {
+    public static boolean initMainProcessWithProfile(final String profileName,
+                                                     final File profileDir) {
         if (profileName == null) {
             throw new IllegalArgumentException("Null profile name");
         }
@@ -222,14 +235,15 @@ public class GeckoThread extends Thread {
         }
 
         
-        return init(GeckoProfile.get(context, profileName, profileDir),
-                     null,  null,  false);
+        return initMainProcess(GeckoProfile.get(context, profileName, profileDir),
+                                null,  false);
     }
 
     public static boolean launch() {
         ThreadUtils.assertOnUiThread();
+
         if (checkAndSetState(State.INITIAL, State.LAUNCHED)) {
-            sGeckoThread.start();
+            INSTANCE.start();
             return true;
         }
         return false;
@@ -397,7 +411,7 @@ public class GeckoThread extends Thread {
         GeckoLoader.loadGeckoLibs(context, resourcePath);
     }
 
-    private static String initGeckoEnvironment() {
+    private static void initGeckoEnvironment() {
         final Context context = GeckoAppShell.getApplicationContext();
         GeckoLoader.loadMozGlue(context);
         setState(State.MOZGLUE_READY);
@@ -437,48 +451,41 @@ public class GeckoThread extends Thread {
         }
 
         setState(State.LIBS_READY);
-        return resourcePath;
     }
 
-    private void addCustomProfileArg(String args, ArrayList<String> list) {
-        
-        final GeckoProfile profile = getProfile();
-        profile.getDir(); 
-
-        boolean needsProfile = true;
-
-        if (args != null) {
-            StringTokenizer st = new StringTokenizer(args);
-            while (st.hasMoreTokens()) {
-                String token = st.nextToken();
-                if ("-P".equals(token) || "-profile".equals(token)) {
-                    needsProfile = false;
-                }
-                list.add(token);
-            }
-        }
-
-        
-        if (args == null || needsProfile) {
-            if (profile.isCustomProfile()) {
-                list.add("-profile");
-                list.add(profile.getDir().getAbsolutePath());
-            } else {
-                list.add("-P");
-                list.add(profile.getName());
-            }
-        }
-    }
-
-    private String[] getGeckoArgs(final String apkPath) {
-        
+    private String[] getMainProcessArgs() {
         final Context context = GeckoAppShell.getApplicationContext();
         final ArrayList<String> args = new ArrayList<String>();
+
+        
         args.add(context.getPackageName());
         args.add("-greomni");
-        args.add(apkPath);
+        args.add(context.getPackageResourcePath());
 
-        addCustomProfileArg(mArgs, args);
+        final GeckoProfile profile = getProfile();
+        if (profile.isCustomProfile()) {
+            args.add("-profile");
+            args.add(profile.getDir().getAbsolutePath());
+        } else {
+            profile.getDir(); 
+            args.add("-P");
+            args.add(profile.getName());
+        }
+
+        if (mExtraArgs != null) {
+            final StringTokenizer st = new StringTokenizer(mExtraArgs);
+            while (st.hasMoreTokens()) {
+                final String token = st.nextToken();
+                if ("-P".equals(token) || "-profile".equals(token)) {
+                    
+                    if (st.hasMoreTokens()) {
+                        st.nextToken();
+                    }
+                    continue;
+                }
+                args.add(token);
+            }
+        }
 
         
         
@@ -495,20 +502,20 @@ public class GeckoThread extends Thread {
     }
 
     public static GeckoProfile getActiveProfile() {
-        if (sGeckoThread == null) {
-            return null;
-        }
-        final GeckoProfile profile = sGeckoThread.mProfile;
-        if (profile != null) {
-            return profile;
-        }
-        return sGeckoThread.getProfile();
+        return INSTANCE.getProfile();
     }
 
     public synchronized GeckoProfile getProfile() {
+        if (!mInitialized) {
+            return null;
+        }
+        if (isChildProcess()) {
+            throw new UnsupportedOperationException(
+                    "Cannot access profile from child process");
+        }
         if (mProfile == null) {
             final Context context = GeckoAppShell.getApplicationContext();
-            mProfile = GeckoProfile.initFromArgs(context, mArgs);
+            mProfile = GeckoProfile.initFromArgs(context, mExtraArgs);
         }
         return mProfile;
     }
@@ -536,20 +543,7 @@ public class GeckoThread extends Thread {
         };
         Looper.myQueue().addIdleHandler(idleHandler);
 
-        if (mDebugging) {
-            try {
-                Thread.sleep(5 * 1000 );
-            } catch (final InterruptedException e) {
-            }
-        }
-
-        final String[] args;
-        if (mChildProcessArgs != null) {
-            initGeckoEnvironment();
-            args = mChildProcessArgs;
-        } else {
-            args = getGeckoArgs(initGeckoEnvironment());
-        }
+        initGeckoEnvironment();
 
         
         
@@ -559,11 +553,30 @@ public class GeckoThread extends Thread {
             }
         });
 
+        
+        synchronized (this) {
+            while (!mInitialized) {
+                try {
+                    wait();
+                } catch (final InterruptedException e) {
+                }
+            }
+        }
+
+        final String[] args = isChildProcess() ? mArgs : getMainProcessArgs();
+
+        if (mDebugging) {
+            try {
+                Thread.sleep(5 * 1000 );
+            } catch (final InterruptedException e) {
+            }
+        }
+
         Log.w(LOGTAG, "zerdatime " + SystemClock.uptimeMillis() + " - runGecko");
 
         final GeckoAppShell.GeckoInterface gi = GeckoAppShell.getGeckoInterface();
         if (gi == null || !gi.isOfficial()) {
-            Log.i(LOGTAG, "RunGecko - args = " + args);
+            Log.i(LOGTAG, "RunGecko - args = " + TextUtils.join(" ", args));
         }
 
         
