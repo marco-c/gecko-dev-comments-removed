@@ -87,10 +87,6 @@ public:
        )
       );
   }
-  static bool
-  IsSpaceCombiningSequenceTail(const uint8_t* aChars, int32_t aLength) {
-    return false;
-  }
 
   enum CompressionMode {
     COMPRESS_NONE,
@@ -113,13 +109,19 @@ public:
 
 
 
-  template<class CharT>
-  static CharT* TransformText(const CharT* aText, uint32_t aLength,
-                              CharT* aOutput,
-                              CompressionMode aCompression,
-                              uint8_t* aIncomingFlags,
-                              gfxSkipChars* aSkipChars,
-                              uint32_t* aAnalysisFlags);
+  static char16_t* TransformText(const char16_t* aText, uint32_t aLength,
+                                 char16_t* aOutput,
+                                 CompressionMode aCompression,
+                                 uint8_t* aIncomingFlags,
+                                 gfxSkipChars* aSkipChars,
+                                 uint32_t* aAnalysisFlags);
+
+  static uint8_t* TransformText(const uint8_t* aText, uint32_t aLength,
+                                uint8_t* aOutput,
+                                CompressionMode aCompression,
+                                uint8_t* aIncomingFlags,
+                                gfxSkipChars* aSkipChars,
+                                uint32_t* aAnalysisFlags);
 
   static void
   AppendLineBreakOffset(nsTArray<uint32_t>* aArray, uint32_t aOffset)
