@@ -208,6 +208,13 @@ class nsCSSScanner {
   void SetErrorReporter(mozilla::css::ErrorReporter* aReporter) {
     mReporter = aReporter;
   }
+  
+  void SetSVGMode(bool aSVGMode) {
+    mSVGMode = aSVGMode;
+  }
+  bool IsSVGMode() const {
+    return mSVGMode;
+  }
 
   
   void ClearSeenBadToken() { mSeenBadToken = false; }
@@ -358,6 +365,8 @@ protected:
 
   mozilla::css::ErrorReporter *mReporter;
 
+  
+  bool mSVGMode;
   bool mRecording;
   bool mSeenBadToken;
   bool mSeenVariableReference;
