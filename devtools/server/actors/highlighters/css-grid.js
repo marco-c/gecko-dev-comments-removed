@@ -21,9 +21,11 @@ const {
 const { stringifyGridFragments } = require("devtools/server/actors/utils/css-grid-utils");
 
 const CSS_GRID_ENABLED_PREF = "layout.css.grid.enabled";
+
 const DEFAULT_GRID_COLOR = "#4B0082";
-const ROWS = "rows";
+
 const COLUMNS = "cols";
+const ROWS = "rows";
 
 const GRID_LINES_PROPERTIES = {
   "edge": {
@@ -54,6 +56,21 @@ const gCachedGridPattern = new WeakMap();
 const ROW_KEY = {};
 
 const COLUMN_KEY = {};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -183,28 +200,38 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
       prefix: this.ID_CLASS_PREFIX
     });
 
+    createSVGNode(this.win, {
+      nodeType: "path",
+      parent: regions,
+      attributes: {
+        "class": "cells",
+        "id": "cells"
+      },
+      prefix: this.ID_CLASS_PREFIX
+    });
+
     
-    let infobarContainer = createNode(this.win, {
+    let areaInfobarContainer = createNode(this.win, {
       parent: container,
       attributes: {
-        "class": "infobar-container",
-        "id": "infobar-container",
+        "class": "area-infobar-container",
+        "id": "area-infobar-container",
         "position": "top",
         "hidden": "true"
       },
       prefix: this.ID_CLASS_PREFIX
     });
 
-    let infobar = createNode(this.win, {
-      parent: infobarContainer,
+    let areaInfobar = createNode(this.win, {
+      parent: areaInfobarContainer,
       attributes: {
         "class": "infobar"
       },
       prefix: this.ID_CLASS_PREFIX
     });
 
-    let textbox = createNode(this.win, {
-      parent: infobar,
+    let areaTextbox = createNode(this.win, {
+      parent: areaInfobar,
       attributes: {
         "class": "infobar-text"
       },
@@ -212,19 +239,65 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     });
     createNode(this.win, {
       nodeType: "span",
-      parent: textbox,
+      parent: areaTextbox,
       attributes: {
-        "class": "infobar-areaname",
-        "id": "infobar-areaname"
+        "class": "area-infobar-name",
+        "id": "area-infobar-name"
       },
       prefix: this.ID_CLASS_PREFIX
     });
     createNode(this.win, {
       nodeType: "span",
-      parent: textbox,
+      parent: areaTextbox,
       attributes: {
-        "class": "infobar-dimensions",
-        "id": "infobar-dimensions"
+        "class": "area-infobar-dimensions",
+        "id": "area-infobar-dimensions"
+      },
+      prefix: this.ID_CLASS_PREFIX
+    });
+
+    
+    let cellInfobarContainer = createNode(this.win, {
+      parent: container,
+      attributes: {
+        "class": "cell-infobar-container",
+        "id": "cell-infobar-container",
+        "position": "top",
+        "hidden": "true"
+      },
+      prefix: this.ID_CLASS_PREFIX
+    });
+
+    let cellInfobar = createNode(this.win, {
+      parent: cellInfobarContainer,
+      attributes: {
+        "class": "infobar"
+      },
+      prefix: this.ID_CLASS_PREFIX
+    });
+
+    let cellTextbox = createNode(this.win, {
+      parent: cellInfobar,
+      attributes: {
+        "class": "infobar-text"
+      },
+      prefix: this.ID_CLASS_PREFIX
+    });
+    createNode(this.win, {
+      nodeType: "span",
+      parent: cellTextbox,
+      attributes: {
+        "class": "cell-infobar-position",
+        "id": "cell-infobar-position"
+      },
+      prefix: this.ID_CLASS_PREFIX
+    });
+    createNode(this.win, {
+      nodeType: "span",
+      parent: cellTextbox,
+      attributes: {
+        "class": "cell-infobar-dimensions",
+        "id": "cell-infobar-dimensions"
       },
       prefix: this.ID_CLASS_PREFIX
     });
@@ -347,7 +420,6 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
   showGridArea(areaName) {
     this.renderGridArea(areaName);
-    this._showGridArea();
   },
 
   
@@ -355,15 +427,36 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
   showAllGridAreas() {
     this.renderGridArea();
-    this._showGridArea();
   },
 
   
 
 
   clearGridAreas() {
-    let box = this.getElement("areas");
-    box.setAttribute("d", "");
+    let areas = this.getElement("areas");
+    areas.setAttribute("d", "");
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  showGridCell({ gridFragmentIndex, rowNumber, columnNumber }) {
+    this.renderGridCell(gridFragmentIndex, rowNumber, columnNumber);
+  },
+
+  
+
+
+  clearGridCell() {
+    let cells = this.getElement("cells");
+    cells.setAttribute("d", "");
   },
 
   
@@ -425,7 +518,13 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
       this.showGridArea(this.options.showGridArea);
     }
 
+    
+    if (this.options.showGridCell) {
+      this.showGridCell(this.options.showGridCell);
+    }
+
     this._showGrid();
+    this._showGridElements();
 
     root.setAttribute("style",
       `position:absolute; width:${width}px;height:${height}px; overflow:hidden`);
@@ -448,17 +547,33 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
 
 
-  _updateInfobar(area, x1, x2, y1, y2) {
+  _updateGridAreaInfobar(area, x1, x2, y1, y2) {
     let width = x2 - x1;
     let height = y2 - y1;
     let dim = parseFloat(width.toPrecision(6)) +
               " \u00D7 " +
               parseFloat(height.toPrecision(6));
 
-    this.getElement("infobar-areaname").setTextContent(area.name);
-    this.getElement("infobar-dimensions").setTextContent(dim);
+    this.getElement("area-infobar-name").setTextContent(area.name);
+    this.getElement("area-infobar-dimensions").setTextContent(dim);
 
-    this._moveInfobar(x1, x2, y1, y2);
+    let container = this.getElement("area-infobar-container");
+    this._moveInfobar(container, x1, x2, y1, y2);
+  },
+
+  _updateGridCellInfobar(rowNumber, columnNumber, x1, x2, y1, y2) {
+    let width = x2 - x1;
+    let height = y2 - y1;
+    let dim = parseFloat(width.toPrecision(6)) +
+              " \u00D7 " +
+              parseFloat(height.toPrecision(6));
+    let position = `${rowNumber}\/${columnNumber}`;
+
+    this.getElement("cell-infobar-position").setTextContent(position);
+    this.getElement("cell-infobar-dimensions").setTextContent(dim);
+
+    let container = this.getElement("cell-infobar-container");
+    this._moveInfobar(container, x1, x2, y1, y2);
   },
 
   
@@ -473,7 +588,7 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
 
 
-  _moveInfobar(x1, x2, y1, y2) {
+  _moveInfobar(container, x1, x2, y1, y2) {
     let bounds = {
       bottom: y2,
       height: y2 - y1,
@@ -484,7 +599,6 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
       x: x1,
       y: y1,
     };
-    let container = this.getElement("infobar-container");
 
     moveInfobar(container, bounds, this.win);
   },
@@ -742,14 +856,57 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
         
         if (areaName) {
-          this._updateInfobar(area, x1, x2, y1, y2);
-          this._showInfoBar();
+          this._updateGridAreaInfobar(area, x1, x2, y1, y2);
+          this._showGridAreaInfoBar();
         }
       }
     }
 
-    let box = this.getElement("areas");
-    box.setAttribute("d", paths.join(" "));
+    let areas = this.getElement("areas");
+    areas.setAttribute("d", paths.join(" "));
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  renderGridCell(gridFragmentIndex, rowNumber, columnNumber) {
+    let fragment = this.gridData[gridFragmentIndex];
+    if (!fragment) {
+      return;
+    }
+
+    let row = fragment.rows.tracks[rowNumber - 1];
+    let column = fragment.cols.tracks[columnNumber - 1];
+
+    if (!row || !column) {
+      return;
+    }
+
+    let currentZoom = getCurrentZoom(this.win);
+    let {bounds} = this.currentQuads.content[gridFragmentIndex];
+
+    let x1 = column.start + (bounds.left / currentZoom);
+    let x2 = column.start + column.breadth + (bounds.left / currentZoom);
+    let y1 = row.start + (bounds.top / currentZoom);
+    let y2 = row.start + row.breadth + (bounds.top / currentZoom);
+
+    let path = "M" + x1 + "," + y1 + " " +
+               "L" + x2 + "," + y1 + " " +
+               "L" + x2 + "," + y2 + " " +
+               "L" + x1 + "," + y2;
+    let cells = this.getElement("cells");
+    cells.setAttribute("d", path);
+
+    this._updateGridCellInfobar(rowNumber, columnNumber, x1, x2, y1, y2);
+    this._showGridCellInfoBar();
   },
 
   
@@ -758,8 +915,9 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
   _hide() {
     setIgnoreLayoutChanges(true);
     this._hideGrid();
-    this._hideGridArea();
-    this._hideInfoBar();
+    this._hideGridElements();
+    this._hideGridAreaInfoBar();
+    this._hideGridCellInfoBar();
     setIgnoreLayoutChanges(false, this.highlighterEnv.window.document.documentElement);
   },
 
@@ -771,20 +929,28 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     this.getElement("canvas").removeAttribute("hidden");
   },
 
-  _hideGridArea() {
+  _hideGridElements() {
     this.getElement("elements").setAttribute("hidden", "true");
   },
 
-  _showGridArea() {
+  _showGridElements() {
     this.getElement("elements").removeAttribute("hidden");
   },
 
-  _hideInfoBar() {
-    this.getElement("infobar-container").setAttribute("hidden", "true");
+  _hideGridAreaInfoBar() {
+    this.getElement("area-infobar-container").setAttribute("hidden", "true");
   },
 
-  _showInfoBar() {
-    this.getElement("infobar-container").removeAttribute("hidden");
+  _showGridAreaInfoBar() {
+    this.getElement("area-infobar-container").removeAttribute("hidden");
+  },
+
+  _hideGridCellInfoBar() {
+    this.getElement("cell-infobar-container").setAttribute("hidden", "true");
+  },
+
+  _showGridCellInfoBar() {
+    this.getElement("cell-infobar-container").removeAttribute("hidden");
   },
 
 });
