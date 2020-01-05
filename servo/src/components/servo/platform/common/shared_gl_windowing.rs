@@ -11,7 +11,7 @@
 
 
 
-use windowing::{CompositeCallback, ResizeCallback};
+use windowing::{CompositeCallback, LoadUrlCallback, ResizeCallback};
 
 use geom::size::Size2D;
 use sharegl::base::ShareContext;
@@ -52,6 +52,9 @@ impl WindowingMethods<Application> for Window {
 
     
     pub fn set_resize_callback(&mut self, _: ResizeCallback) {}
+
+    
+    pub fn set_load_url_callback(&mut self, _: LoadUrlCallback) {}
 
     
     pub fn check_loop(@mut self) {}

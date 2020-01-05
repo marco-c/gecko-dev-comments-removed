@@ -13,6 +13,9 @@ pub type CompositeCallback = @fn();
 pub type ResizeCallback = @fn(uint, uint);
 
 
+pub type LoadUrlCallback = @fn(&str);
+
+
 pub trait ApplicationMethods {
     fn new() -> Self;
 }
@@ -24,10 +27,14 @@ pub trait WindowMethods<A> {
     pub fn size(&self) -> Size2D<f32>;
     
     pub fn present(&mut self);
+
     
     pub fn set_composite_callback(&mut self, new_composite_callback: CompositeCallback);
     
     pub fn set_resize_callback(&mut self, new_resize_callback: ResizeCallback);
+    
+    pub fn set_load_url_callback(&mut self, new_load_url_callback: LoadUrlCallback);
+
     
     pub fn check_loop(@mut self);
 }
