@@ -101,6 +101,19 @@ function testVideoResumesWhenShown(video) {
 
 
 
+function testVideoOnlySeekCompletedWhenShown(video) {
+  var p  = once(video, 'mozvideoonlyseekcompleted').then(() => {
+    ok(true, `${video.token} resumes`);
+  });
+  Log(video.token, "Set visible");
+  video.setVisible(true);
+  return p;
+}
+
+
+
+
+
 function checkVideoDoesntSuspend(video) {
   let p = Promise.race([
     waitUntilEnded(video).then(() => { ok(true, `${video.token} ended before decode was suspended`)}),
