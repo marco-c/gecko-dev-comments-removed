@@ -1010,6 +1010,11 @@ private:
       return AudioChannelService::AudibleState::eMaybeAudible;
     }
 
+    
+    if (mSuspended != nsISuspendedTypes::NONE_SUSPENDED) {
+      return AudioChannelService::AudibleState::eNotAudible;
+    }
+
     return AudioChannelService::AudibleState::eAudible;
   }
 
