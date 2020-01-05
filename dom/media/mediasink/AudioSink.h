@@ -32,7 +32,7 @@ class AudioSink : private AudioStream::DataSource {
 public:
   AudioSink(AbstractThread* aThread,
             MediaQueue<AudioData>& aAudioQueue,
-            int64_t aStartTime,
+            TimeUnit aStartTime,
             const AudioInfo& aInfo,
             dom::AudioChannel aChannel);
 
@@ -46,8 +46,8 @@ public:
 
 
 
-  int64_t GetPosition();
-  int64_t GetEndTime() const;
+  TimeUnit GetPosition();
+  TimeUnit GetEndTime() const;
 
   
   
@@ -83,12 +83,12 @@ private:
   
   
   
-  const int64_t mStartTime;
+  const TimeUnit mStartTime;
 
   
   
   
-  int64_t mLastGoodPosition;
+  TimeUnit mLastGoodPosition;
 
   const AudioInfo mInfo;
 
@@ -149,7 +149,7 @@ private:
   
   int64_t mFramesParsed;
   Maybe<RefPtr<AudioData>> mLastProcessedPacket;
-  int64_t mLastEndTime;
+  TimeUnit mLastEndTime;
   
   uint32_t mOutputRate;
   uint32_t mOutputChannels;
