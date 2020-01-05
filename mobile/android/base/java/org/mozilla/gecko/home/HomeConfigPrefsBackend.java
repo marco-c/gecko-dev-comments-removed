@@ -253,6 +253,7 @@ public class HomeConfigPrefsBackend implements HomeConfigBackend {
                                          PanelType panelToRemove, PanelType replacementPanel, boolean alwaysUnhide) throws JSONException {
         boolean wasDefault = false;
         int replacementPanelIndex = -1;
+        boolean replacementWasDefault = false;
 
         
         
@@ -268,6 +269,9 @@ public class HomeConfigPrefsBackend implements HomeConfigBackend {
             } else {
                 if (panelConfig.getType() == replacementPanel) {
                     replacementPanelIndex = newJSONPanels.length();
+                    if (panelConfig.isDefault()) {
+                        replacementWasDefault = true;
+                    }
                 }
 
                 newJSONPanels.put(panelJSON);
@@ -280,9 +284,22 @@ public class HomeConfigPrefsBackend implements HomeConfigBackend {
         if (wasDefault || alwaysUnhide) {
             final JSONObject replacementPanelConfig;
             if (wasDefault) {
+                
                 replacementPanelConfig = createBuiltinPanelConfig(context, replacementPanel, EnumSet.of(PanelConfig.Flags.DEFAULT_PANEL)).toJSON();
             } else {
-                replacementPanelConfig = createBuiltinPanelConfig(context, replacementPanel).toJSON();
+                final EnumSet<HomeConfig.PanelConfig.Flags> flags;
+                if (replacementWasDefault) {
+                    
+                    
+                    
+                    
+                    flags = EnumSet.of(PanelConfig.Flags.DEFAULT_PANEL);
+                } else {
+                    flags = EnumSet.noneOf(PanelConfig.Flags.class);
+                }
+
+                
+                replacementPanelConfig = createBuiltinPanelConfig(context, replacementPanel, flags).toJSON();
             }
 
             if (replacementPanelIndex != -1) {
