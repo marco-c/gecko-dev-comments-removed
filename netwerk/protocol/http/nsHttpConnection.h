@@ -225,6 +225,8 @@ public:
     bool TestJoinConnection(const nsACString &hostname, int32_t port);
     bool JoinConnection(const nsACString &hostname, int32_t port);
 
+    void ThrottleResponse(bool aThrottle);
+
 private:
     
     enum TCPKeepaliveConfig {
@@ -383,6 +385,13 @@ private:
     bool                           mEarlyDataNegotiated; 
     nsCString                      mEarlyNegotiatedALPN;
     bool                           mDid0RTTSpdy;
+
+    
+    
+    bool                           mResponseThrottled;
+    
+    
+    bool                           mResumeRecvOnUnthrottle;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsHttpConnection, NS_HTTPCONNECTION_IID)

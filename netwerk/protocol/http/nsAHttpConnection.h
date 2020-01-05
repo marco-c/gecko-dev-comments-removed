@@ -146,6 +146,14 @@ public:
 
     
     virtual uint32_t Version() = 0;
+
+    
+    
+    
+    
+    
+    
+    virtual void ThrottleResponse(bool aThrottle) = 0;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsAHttpConnection, NS_AHTTPCONNECTION_IID)
@@ -247,6 +255,9 @@ NS_DEFINE_STATIC_IID_ACCESSOR(nsAHttpConnection, NS_AHTTPCONNECTION_IID)
         if (fwdObject)                                      \
             (fwdObject)->SetSecurityCallbacks(aCallbacks);  \
     }
+
+    
+    
 
 } 
 } 

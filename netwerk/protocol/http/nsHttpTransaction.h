@@ -308,6 +308,9 @@ private:
     Atomic<bool, ReleaseAcquire>    mResponseIsComplete;
 
     
+    bool                            mThrottleResponse;
+
+    
     
     bool                            mClosed;
     bool                            mConnected;
@@ -368,6 +371,10 @@ public:
     
     
     void CancelPacing(nsresult reason);
+
+    
+    
+    void ThrottleResponse(bool aThrottle);
 
 private:
     bool mSubmittedRatePacing;

@@ -22,10 +22,16 @@ namespace net{
 
 static const char kEnabledPref[] = "network.throttle.enable";
 static const bool kDefaultEnabled = true;
+
+
+
+
+
+
 static const char kSuspendPeriodPref[] = "network.throttle.suspend-for";
-static const uint32_t kDefaultSuspendPeriod = 2000;
+static const uint32_t kDefaultSuspendPeriod = 3000;
 static const char kResumePeriodPref[] = "network.throttle.resume-for";
-static const uint32_t kDefaultResumePeriod = 2000;
+static const uint32_t kDefaultResumePeriod = 200;
 
 NS_IMPL_ISUPPORTS(ThrottlingService, nsIThrottlingService, nsIObserver, nsITimerCallback)
 
@@ -137,8 +143,7 @@ ThrottlingService::AddChannel(nsIHttpChannel *channel)
 
   if (mChannelHash.Get(key, nullptr)) {
     
-    MOZ_ASSERT(false, "Trying to throttle an already-throttled channel");
-    return NS_ERROR_ILLEGAL_VALUE;
+    return NS_OK;
   }
 
   if (!mIteratingHash) {

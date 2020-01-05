@@ -2028,8 +2028,8 @@ pref("network.auth.private-browsing-sso", false);
 
 
 
-pref("network.throttle.suspend-for", 2000);
-pref("network.throttle.resume-for", 2000);
+pref("network.throttle.suspend-for", 3000);
+pref("network.throttle.resume-for", 200);
 pref("network.throttle.enable", true);
 
 pref("permissions.default.image",           1); 

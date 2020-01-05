@@ -4233,5 +4233,11 @@ Http2Session::JoinConnection(const nsACString &hostname, int32_t port)
   return false;
 }
 
+void
+Http2Session::ThrottleResponse(bool aThrottle)
+{
+  
+}
+
 } 
 } 

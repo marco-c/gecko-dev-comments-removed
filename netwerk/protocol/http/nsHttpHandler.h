@@ -204,6 +204,12 @@ public:
         return mConnMgr->RescheduleTransaction(trans, priority);
     }
 
+    void ThrottleTransaction(nsHttpTransaction *trans,
+                                              bool throttle)
+    {
+        mConnMgr->ThrottleTransaction(trans, throttle);
+    }
+
     
     
     MOZ_MUST_USE nsresult CancelTransaction(nsHttpTransaction *trans,

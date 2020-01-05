@@ -95,6 +95,14 @@ public:
                                                 int32_t priority);
 
     
+    
+    
+    
+    
+    
+    void ThrottleTransaction(nsHttpTransaction *, bool throttle);
+
+    
     MOZ_MUST_USE nsresult CancelTransaction(nsHttpTransaction *,
                                             nsresult reason);
     MOZ_MUST_USE nsresult CancelTransactions(nsHttpConnectionInfo *,
@@ -544,6 +552,7 @@ private:
     void OnMsgShutdownConfirm      (int32_t, ARefBase *);
     void OnMsgNewTransaction       (int32_t, ARefBase *);
     void OnMsgReschedTransaction   (int32_t, ARefBase *);
+    void OnMsgThrottleTransaction  (int32_t, ARefBase *);
     void OnMsgCancelTransaction    (int32_t, ARefBase *);
     void OnMsgCancelTransactions   (int32_t, ARefBase *);
     void OnMsgProcessPendingQ      (int32_t, ARefBase *);
