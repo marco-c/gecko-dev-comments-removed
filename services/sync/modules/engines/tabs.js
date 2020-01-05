@@ -10,6 +10,7 @@ const TABS_TTL = 1814400;
 const TAB_ENTRIES_LIMIT = 5;      
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://services-sync/engines.js");
 Cu.import("resource://services-sync/record.js");
 Cu.import("resource://services-sync/util.js");
