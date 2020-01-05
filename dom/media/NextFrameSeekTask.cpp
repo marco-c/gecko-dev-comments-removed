@@ -92,23 +92,6 @@ NextFrameSeekTask::HandleNotWaited(const WaitForDataRejectValue& aRejection)
 {
 }
 
-
-
-
-
-
-template <typename Function> static void
-DiscardFrames(MediaQueue<MediaData>& aQueue, const Function& aCompare)
-{
-  while(aQueue.GetSize() > 0) {
-    if (aCompare(aQueue.PeekFront()->mTime)) {
-      RefPtr<MediaData> releaseMe = aQueue.PopFront();
-      continue;
-    }
-    break;
-  }
-}
-
 RefPtr<NextFrameSeekTask::SeekTaskPromise>
 NextFrameSeekTask::Seek(const media::TimeUnit&)
 {
@@ -160,22 +143,6 @@ NextFrameSeekTask::IsVideoSeekComplete() const
   
   
   return !IsVideoRequestPending() && !NeedMoreVideo();
-}
-
-void
-NextFrameSeekTask::MaybeFinishSeek()
-{
-  AssertOwnerThread();
-  if (IsAudioSeekComplete() && IsVideoSeekComplete()) {
-    UpdateSeekTargetTime();
-
-    auto time = mTarget.GetTime().ToMicroseconds();
-    DiscardFrames(mAudioQueue, [time] (int64_t aSampleTime) {
-      return aSampleTime < time;
-    });
-
-    Resolve(__func__); 
-  }
 }
 
 void

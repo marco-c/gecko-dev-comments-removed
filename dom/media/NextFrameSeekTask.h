@@ -64,8 +64,6 @@ public:
 
   bool IsVideoSeekComplete() const;
 
-  void MaybeFinishSeek();
-
   
   
   void UpdateSeekTargetTime();
