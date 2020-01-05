@@ -1221,10 +1221,6 @@ pref("privacy.popups.disable_from_plugins", 2);
 
 pref("privacy.donottrackheader.enabled",    false);
 
-
-
-pref("privacy.permissionPrompts.showCloseButton", false);
-
 pref("privacy.trackingprotection.enabled",  false);
 
 pref("privacy.trackingprotection.pbmode.enabled",  true);
@@ -2884,7 +2880,11 @@ pref("dom.ipc.plugins.asyncdrawing.enabled", false);
 pref("dom.ipc.plugins.asyncdrawing.enabled", true);
 #endif
 
+#ifdef NIGHTLY_BUILD
+pref("dom.ipc.processCount", 2);
+#else
 pref("dom.ipc.processCount", 1);
+#endif
 
 
 pref("svg.disabled", false);
