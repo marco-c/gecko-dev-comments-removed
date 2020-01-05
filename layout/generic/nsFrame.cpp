@@ -1021,8 +1021,7 @@ void
 nsIFrame::SyncFrameViewProperties(nsPresContext*  aPresContext,
                                  nsIFrame*        aFrame,
                                  nsStyleContext*  aStyleContext,
-                                 nsView*          aView,
-                                 uint32_t         aFlags)
+                                 nsView*          aView)
 {
   NS_ASSERTION(!aStyleContext || aFrame->StyleContext() == aStyleContext,
                "Wrong style context for frame?");
@@ -1038,8 +1037,7 @@ nsIFrame::SyncFrameViewProperties(nsPresContext*  aPresContext,
   }
 
   
-  if (0 == (aFlags & NS_FRAME_NO_VISIBILITY) &&
-      !aFrame->SupportsVisibilityHidden()) {
+  if (!aFrame->SupportsVisibilityHidden()) {
     
     vm->SetViewVisibility(aView,
         aStyleContext->StyleVisibility()->IsVisible()
