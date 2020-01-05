@@ -11,7 +11,6 @@
 #include "mozilla/dom/ChildIterator.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/ElementInlines.h"
-#include "nsAnimationManager.h"
 #include "nsCSSAnonBoxes.h"
 #include "nsCSSPseudoElements.h"
 #include "nsHTMLStyleSheet.h"
@@ -164,33 +163,8 @@ ServoStyleSet::GetContext(already_AddRefed<ServoComputedValues> aComputedValues,
   
   bool skipFixup = false;
 
-  RefPtr<nsStyleContext> result =
-    NS_NewStyleContext(aParentContext, mPresContext, aPseudoTag,
-                       aPseudoType, Move(aComputedValues), skipFixup);
-
-  
-  
-  if (mPresContext->IsDynamic() &&
-      aElementForAnimation &&
-      aElementForAnimation->IsInComposedDoc()) {
-    
-    
-    
-    
-    
-    const ServoComputedValues* currentStyle =
-      result->StyleSource().AsServoComputedValues();
-    const ServoComputedValues* parentStyle =
-      result->GetParent()
-        ? result->GetParent()->StyleSource().AsServoComputedValues()
-        : nullptr;
-    mPresContext->AnimationManager()->UpdateAnimations(aElementForAnimation,
-                                                       aPseudoTag,
-                                                       currentStyle,
-                                                       parentStyle);
-  }
-
-  return result.forget();
+  return NS_NewStyleContext(aParentContext, mPresContext, aPseudoTag,
+                            aPseudoType, Move(aComputedValues), skipFixup);
 }
 
 void
