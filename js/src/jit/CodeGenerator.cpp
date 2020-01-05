@@ -7676,6 +7676,35 @@ CodeGenerator::visitFromCharCode(LFromCharCode* lir)
     masm.bind(ool->rejoin());
 }
 
+typedef JSString* (*StringFromCodePointFn)(JSContext*, int32_t);
+static const VMFunction StringFromCodePointInfo =
+    FunctionInfo<StringFromCodePointFn>(jit::StringFromCodePoint, "StringFromCodePoint");
+
+void
+CodeGenerator::visitFromCodePoint(LFromCodePoint* lir)
+{
+    Register codePoint = ToRegister(lir->codePoint());
+    Register output = ToRegister(lir->output());
+    LSnapshot* snapshot = lir->snapshot();
+
+    OutOfLineCode* ool = oolCallVM(StringFromCodePointInfo, lir, ArgList(codePoint),
+                                   StoreRegisterTo(output));
+
+    
+    
+    
+    bailoutCmp32(Assembler::Above, codePoint, Imm32(unicode::NonBMPMax), snapshot);
+
+    
+    masm.branch32(Assembler::AboveOrEqual, codePoint, Imm32(StaticStrings::UNIT_STATIC_LIMIT),
+                  ool->entry());
+
+    masm.movePtr(ImmPtr(&GetJitContext()->runtime->staticStrings().unitStaticTable), output);
+    masm.loadPtr(BaseIndex(output, codePoint, ScalePointer), output);
+
+    masm.bind(ool->rejoin());
+}
+
 void
 CodeGenerator::visitSinCos(LSinCos *lir)
 {

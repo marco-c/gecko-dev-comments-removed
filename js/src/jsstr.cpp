@@ -2799,8 +2799,8 @@ ToCodePoint(JSContext* cx, HandleValue code, uint32_t* codePoint)
     return true;
 }
 
-static bool
-str_fromCodePoint_one_arg(JSContext* cx, HandleValue code, MutableHandleValue rval)
+bool
+js::str_fromCodePoint_one_arg(JSContext* cx, HandleValue code, MutableHandleValue rval)
 {
     
 
@@ -2855,8 +2855,8 @@ str_fromCodePoint_few_args(JSContext* cx, const CallArgs& args)
 
 
 
-static bool
-str_fromCodePoint(JSContext* cx, unsigned argc, Value* vp)
+bool
+js::str_fromCodePoint(JSContext* cx, unsigned argc, Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
 
@@ -2909,8 +2909,8 @@ str_fromCodePoint(JSContext* cx, unsigned argc, Value* vp)
 
 static const JSFunctionSpec string_static_methods[] = {
     JS_INLINABLE_FN("fromCharCode", js::str_fromCharCode, 1, 0, StringFromCharCode),
+    JS_INLINABLE_FN("fromCodePoint", js::str_fromCodePoint, 1, 0, StringFromCodePoint),
 
-    JS_FN("fromCodePoint",               str_fromCodePoint,             1,0),
     JS_SELF_HOSTED_FN("raw",             "String_static_raw",           2,JSFUN_HAS_REST),
     JS_SELF_HOSTED_FN("substring",       "String_static_substring",     3,0),
     JS_SELF_HOSTED_FN("substr",          "String_static_substr",        3,0),

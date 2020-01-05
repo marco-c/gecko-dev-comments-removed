@@ -4038,6 +4038,21 @@ class LFromCharCode : public LInstructionHelper<1, 1, 0>
 };
 
 
+class LFromCodePoint : public LInstructionHelper<1, 1, 0>
+{
+  public:
+    LIR_HEADER(FromCodePoint)
+
+    explicit LFromCodePoint(const LAllocation& codePoint) {
+        setOperand(0, codePoint);
+    }
+
+    const LAllocation* codePoint() {
+        return this->getOperand(0);
+    }
+};
+
+
 class LSinCos : public LCallInstructionHelper<2, 1, 2>
 {
   public:
