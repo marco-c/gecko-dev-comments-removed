@@ -162,7 +162,7 @@ class LCovRuntime
 
     
     
-    size_t pid_;
+    uint32_t pid_;
 
     
     
