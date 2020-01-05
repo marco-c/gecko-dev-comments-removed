@@ -2049,6 +2049,14 @@ nsCSSRendering::GetImageLayerClip(const nsStyleImageLayers::Layer& aLayer,
     layerClip = StyleGeometryBox::Padding;
   }
 
+  
+  
+  
+  
+  
+  MOZ_ASSERT(layerClip != StyleGeometryBox::Margin,
+             "StyleGeometryBox::Margin rendering is not supported yet.\n");
+
   if (layerClip != StyleGeometryBox::Border &&
       layerClip != StyleGeometryBox::Text) {
     nsMargin border = aForFrame->GetUsedBorder();
@@ -3535,6 +3543,15 @@ nsCSSRendering::ComputeImageLayerPositioningArea(nsPresContext* aPresContext,
   } else {
     positionArea = nsRect(nsPoint(0,0), aBorderArea.Size());
   }
+
+  
+  
+  
+  
+  
+  MOZ_ASSERT(aLayer.mOrigin != StyleGeometryBox::Margin,
+             "StyleGeometryBox::Margin rendering is not supported yet.\n");
+
   
   
   
