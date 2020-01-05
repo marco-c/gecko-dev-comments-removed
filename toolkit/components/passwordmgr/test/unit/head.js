@@ -13,6 +13,7 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/LoginRecipes.jsm");
 Cu.import("resource://gre/modules/LoginHelper.jsm");
+Cu.import("resource://testing-common/MockDocument.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "DownloadPaths",
                                   "resource://gre/modules/DownloadPaths.jsm");
@@ -95,44 +96,6 @@ const RecipeHelpers = {
   initNewParent() {
     return (new LoginRecipesParent({ defaults: null })).initializationPromise;
   },
-};
-
-const MockDocument = {
-  
-
-
-  createTestDocument(aDocumentURL, aContent = "<form>", aType = "text/html") {
-    let parser = Cc["@mozilla.org/xmlextras/domparser;1"].
-                 createInstance(Ci.nsIDOMParser);
-    parser.init();
-    let parsedDoc = parser.parseFromString(aContent, aType);
-
-    for (let element of parsedDoc.forms) {
-      this.mockOwnerDocumentProperty(element, parsedDoc, aDocumentURL);
-    }
-    return parsedDoc;
-  },
-
-  mockOwnerDocumentProperty(aElement, aDoc, aURL) {
-    
-    
-    let document = new Proxy(aDoc, {
-      get(target, property, receiver) {
-        
-        
-        if (property == "location") {
-          return new URL(aURL);
-        }
-        return target[property];
-      },
-    });
-
-    
-    Object.defineProperty(aElement, "ownerDocument", {
-      value: document,
-    });
-  },
-
 };
 
 
