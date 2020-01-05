@@ -414,7 +414,7 @@ public:
 
 
   nsresult OnStreamComplete(nsIIncrementalStreamLoader* aLoader,
-                            nsISupports* aContext,
+                            nsScriptLoadRequest* aRequest,
                             nsresult aChannelStatus,
                             nsresult aSRIStatus,
                             mozilla::dom::SRICheckDataVerifier* aSRIDataVerifier);
