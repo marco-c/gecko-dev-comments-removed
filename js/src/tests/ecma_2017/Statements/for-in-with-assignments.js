@@ -5,11 +5,10 @@
 
 var gTestfile = "for-in-with-assignments.js";
 var BUGNUMBER = 1164741;
-var summary =
-  "Parse |for (var ... = ... in ...)| but execute it as if the assignment " +
-  "weren't there";
+var summary = "Parse |for (var ... = ... in ...)|."
 
 print(BUGNUMBER + ": " + summary);
+
 
 
 
@@ -39,9 +38,9 @@ testQ();
 function f3(i,o){for(var x=i in o)parseInt(o[x]); return x}
 function f4(i,o){with(this)for(var x=i in o)parseInt(o[x]); return x}
 
-assertEq(f3(42, []), undefined);
+assertEq(f3(42, []), 42);
 assertEq(f3(42, ['first']), "0");
-assertEq(f4(42, []), undefined);
+assertEq(f4(42, []), 42);
 assertEq(f4(42, ['first']), "0");
 
 
@@ -72,6 +71,7 @@ function* g1() {
   for (var x = yield in {}) ;
 }
 var it = g1();
+assertEq(it.next().done, false);
 assertEq(it.next().done, true);
 
 

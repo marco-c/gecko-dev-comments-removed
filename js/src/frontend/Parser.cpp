@@ -4187,10 +4187,11 @@ Parser<ParseHandler>::initializerInNameDeclaration(Node decl, Node binding,
                 }
 
                 *forInOrOfExpression = expressionAfterForInOrOf(PNK_FORIN, yieldHandling);
-                return *forInOrOfExpression != null();
+                if (!*forInOrOfExpression)
+                    return false;
+            } else {
+                *forHeadKind = PNK_FORHEAD;
             }
-
-            *forHeadKind = PNK_FORHEAD;
         } else {
             MOZ_ASSERT(*forHeadKind == PNK_FORHEAD);
 
@@ -4208,10 +4209,13 @@ Parser<ParseHandler>::initializerInNameDeclaration(Node decl, Node binding,
                 return false;
         }
 
-        
-        
-        
-        tokenStream.addModifierException(TokenStream::OperandIsNone);
+        if (*forHeadKind == PNK_FORHEAD) {
+            
+            
+            
+            
+            tokenStream.addModifierException(TokenStream::OperandIsNone);
+        }
     }
 
     return handler.finishInitializerAssignment(binding, initializer);

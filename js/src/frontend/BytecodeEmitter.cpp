@@ -6174,6 +6174,33 @@ BytecodeEmitter::emitForIn(ParseNode* forInLoop, EmitterScope* headLexicalEmitte
     MOZ_ASSERT(forInHead->isArity(PN_TERNARY));
 
     
+    
+    ParseNode* forInTarget = forInHead->pn_kid1;
+    if (parser->handler.isDeclarationList(forInTarget)) {
+        ParseNode* decl = parser->handler.singleBindingFromDeclaration(forInTarget);
+        if (decl->isKind(PNK_NAME)) {
+            if (ParseNode* initializer = decl->expr()) {
+                MOZ_ASSERT(forInTarget->isKind(PNK_VAR),
+                           "for-in initializers are only permitted for |var| declarations");
+
+                if (!updateSourceCoordNotes(decl->pn_pos.begin))
+                    return false;
+
+                auto emitRhs = [initializer](BytecodeEmitter* bce, const NameLocation&, bool) {
+                    return bce->emitTree(initializer);
+                };
+
+                if (!emitInitializeName(decl, emitRhs))
+                    return false;
+
+                
+                if (!emit1(JSOP_POP))
+                    return false;
+            }
+        }
+    }
+
+    
     ParseNode* expr = forInHead->pn_kid3;
     if (!emitTree(expr))                                  
         return false;
@@ -6215,7 +6242,6 @@ BytecodeEmitter::emitForIn(ParseNode* forInLoop, EmitterScope* headLexicalEmitte
         
         
         
-        DebugOnly<ParseNode*> forInTarget = forInHead->pn_kid1;
         MOZ_ASSERT(forInTarget->isKind(PNK_LET) || forInTarget->isKind(PNK_CONST));
         MOZ_ASSERT(headLexicalEmitterScope == innermostEmitterScope);
         MOZ_ASSERT(headLexicalEmitterScope->scope(this)->kind() == ScopeKind::Lexical);
