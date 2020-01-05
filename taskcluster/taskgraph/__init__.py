@@ -1,0 +1,7 @@
+
+
+
+
+import os
+
+GECKO = os.path.realpath(os.path.join(__file__, '..', '..', '..'))
