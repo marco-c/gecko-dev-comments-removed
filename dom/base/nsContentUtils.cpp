@@ -10226,7 +10226,7 @@ nsContentUtils::HtmlObjectContentTypeForMIMEType(const nsCString& aMIMEType,
 }
 
  already_AddRefed<nsIEventTarget>
-  nsContentUtils::GetEventTargetByLoadInfo(nsILoadInfo* aLoadInfo, TaskCategory aCategory)
+nsContentUtils::GetEventTargetByLoadInfo(nsILoadInfo* aLoadInfo, TaskCategory aCategory)
 {
   if (NS_WARN_IF(!aLoadInfo)) {
     return nullptr;
@@ -10258,4 +10258,20 @@ nsContentUtils::HtmlObjectContentTypeForMIMEType(const nsCString& aMIMEType,
   }
 
   return target.forget();
+}
+
+ bool
+nsContentUtils::IsLocalRefURL(const nsString& aString)
+{
+  
+  const char16_t* current = aString.get();
+  for (; *current != '\0'; current++) {
+    if (*current > 0x20) {
+      
+      
+      return *current == '#';
+    }
+  }
+
+  return false;
 }

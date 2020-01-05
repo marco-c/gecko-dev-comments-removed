@@ -2863,6 +2863,13 @@ public:
   static already_AddRefed<nsIEventTarget>
   GetEventTargetByLoadInfo(nsILoadInfo* aLoadInfo, mozilla::TaskCategory aCategory);
 
+  
+
+
+
+  static bool
+  IsLocalRefURL(const nsString& aString);
+
   static bool
   IsCustomElementsEnabled() { return sIsCustomElementsEnabled; }
 
