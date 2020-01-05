@@ -376,6 +376,8 @@ DynamicAtom::GCAtomTableLocked(const MutexAutoLock& aProofOfLock,
                                GCKind aKind)
 {
   uint32_t removedCount = 0; 
+  nsAutoCString nonZeroRefcountAtoms;
+  uint32_t nonZeroRefcountAtomsCount = 0;
   for (auto i = gAtomTable->Iter(); !i.Done(); i.Next()) {
     auto entry = static_cast<AtomTableEntry*>(i.Get());
     if (entry->mAtom->IsStaticAtom()) {
@@ -393,9 +395,20 @@ DynamicAtom::GCAtomTableLocked(const MutexAutoLock& aProofOfLock,
       
       nsAutoCString name;
       atom->ToUTF8String(name);
-      nsPrintfCString msg("dynamic atom with non-zero refcount %s!", name.get());
-      NS_ASSERTION(false, msg.get());
+      if (nonZeroRefcountAtomsCount == 0) {
+        nonZeroRefcountAtoms = name;
+      } else if (nonZeroRefcountAtomsCount < 20) {
+        nonZeroRefcountAtoms += NS_LITERAL_CSTRING(",") + name;
+      } else if (nonZeroRefcountAtomsCount == 20) {
+        nonZeroRefcountAtoms += NS_LITERAL_CSTRING(",...");
+      }
+      nonZeroRefcountAtomsCount++;
     }
+  }
+  if (nonZeroRefcountAtomsCount) {
+    nsPrintfCString msg("%d dynamic atom(s) with non-zero refcount: %s",
+                        nonZeroRefcountAtomsCount, nonZeroRefcountAtoms.get());
+    NS_ASSERTION(nonZeroRefcountAtomsCount == 0, msg.get());
   }
 
   
