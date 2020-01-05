@@ -4275,7 +4275,7 @@ WorkerPrivate::Constructor(const GlobalObject& aGlobal,
 
 
 bool
-WorkerPrivate::WorkerAvailable(JSContext* , JSObject* )
+WorkerPrivate::WorkerAvailable(JSContext* aCx, JSObject* )
 {
   
   if (!NS_IsMainThread()) {
@@ -4283,7 +4283,7 @@ WorkerPrivate::WorkerAvailable(JSContext* , JSObject* )
   }
 
   
-  if (nsContentUtils::IsCallerChrome()) {
+  if (nsContentUtils::IsSystemCaller(aCx)) {
     return true;
   }
 
@@ -4312,7 +4312,7 @@ ChromeWorkerPrivate::WorkerAvailable(JSContext* aCx, JSObject* )
   
   
   if (NS_IsMainThread()) {
-    return nsContentUtils::IsCallerChrome();
+    return nsContentUtils::IsSystemCaller(aCx);
   }
 
   return GetWorkerPrivateFromContext(aCx)->IsChromeWorker();
@@ -4493,7 +4493,7 @@ WorkerPrivate::GetLoadInfo(JSContext* aCx, nsPIDOMWindowInner* aWindow,
     nsIScriptSecurityManager* ssm = nsContentUtils::GetSecurityManager();
     MOZ_ASSERT(ssm);
 
-    bool isChrome = nsContentUtils::IsCallerChrome();
+    bool isChrome = nsContentUtils::IsSystemCaller(aCx);
 
     
     
