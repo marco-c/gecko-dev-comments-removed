@@ -1259,6 +1259,8 @@ protected:
   
   void NotifyAboutPlaying();
 
+  already_AddRefed<Promise> CreateDOMPromise(ErrorResult& aRv) const;
+
   
   
   RefPtr<MediaDecoder> mDecoder;
