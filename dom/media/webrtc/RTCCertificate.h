@@ -60,7 +60,7 @@ public:
 
   
   RefPtr<DtlsIdentity> CreateDtlsIdentity() const;
-  CERTCertificate* Certificate() const { return mCertificate; }
+  const UniqueCERTCertificate& Certificate() const { return mCertificate; }
 
   
   virtual void virtualDestroyNSSReference() override;
@@ -85,8 +85,8 @@ private:
                        const nsNSSShutDownPreventionLock& aLockProof) const;
 
   RefPtr<nsIGlobalObject> mGlobal;
-  ScopedSECKEYPrivateKey mPrivateKey;
-  ScopedCERTCertificate mCertificate;
+  UniqueSECKEYPrivateKey mPrivateKey;
+  UniqueCERTCertificate mCertificate;
   SSLKEAType mAuthType;
   PRTime mExpires;
 };

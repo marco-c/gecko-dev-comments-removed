@@ -33,7 +33,7 @@ class DtlsIdentity final {
 
   
   
-  CERTCertificate *cert() const { return cert_; }
+  const UniqueCERTCertificate& cert() const { return cert_; }
   SECKEYPrivateKey *privkey() const { return private_key_; }
   
   
@@ -45,7 +45,7 @@ class DtlsIdentity final {
                               uint8_t *digest,
                               size_t size,
                               size_t *digest_length) const;
-  static nsresult ComputeFingerprint(const CERTCertificate *cert,
+  static nsresult ComputeFingerprint(const UniqueCERTCertificate& cert,
                                      const std::string algorithm,
                                      uint8_t *digest,
                                      size_t size,
@@ -59,12 +59,11 @@ class DtlsIdentity final {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(DtlsIdentity)
 
  private:
-  ~DtlsIdentity();
+  ~DtlsIdentity() {}
   DISALLOW_COPY_ASSIGN(DtlsIdentity);
 
   ScopedSECKEYPrivateKey private_key_;
-  CERTCertificate *cert_;  
-                           
+  UniqueCERTCertificate cert_;
   SSLKEAType auth_type_;
 };
 }  

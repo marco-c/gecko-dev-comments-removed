@@ -91,10 +91,6 @@ class TransportLayerDtls final : public TransportLayer {
                                 unsigned char *out,
                                 unsigned int outlen);
 
-  const CERTCertificate *GetPeerCert() const {
-    return peer_cert_;
-  }
-
   
   virtual nsresult InitInternal();
   virtual void WasInserted();
@@ -106,7 +102,7 @@ class TransportLayerDtls final : public TransportLayer {
                       size_t len);
 
   
-  PRFileDesc* internal_fd() { CheckThread(); return ssl_fd_.rwget(); }
+  PRFileDesc* internal_fd() { CheckThread(); return ssl_fd_.get(); }
 
   TRANSPORT_LAYER_ID("dtls")
 
@@ -138,8 +134,8 @@ class TransportLayerDtls final : public TransportLayer {
 
 
   bool Setup();
-  bool SetupCipherSuites(PRFileDesc* ssl_fd) const;
-  bool SetupAlpn(PRFileDesc* ssl_fd) const;
+  bool SetupCipherSuites(UniquePRFileDesc& ssl_fd) const;
+  bool SetupAlpn(UniquePRFileDesc& ssl_fd) const;
   void Handshake();
 
   bool CheckAlpn();
@@ -159,7 +155,7 @@ class TransportLayerDtls final : public TransportLayer {
   static void TimerCallback(nsITimer *timer, void *arg);
 
   SECStatus CheckDigest(const RefPtr<VerificationDigest>& digest,
-                        CERTCertificate *cert);
+                        UniqueCERTCertificate& cert) const;
 
   RefPtr<DtlsIdentity> identity_;
   
@@ -178,9 +174,8 @@ class TransportLayerDtls final : public TransportLayer {
   
   
   UniquePtr<TransportLayerNSPRAdapter> nspr_io_adapter_;
-  ScopedPRFileDesc ssl_fd_;
+  UniquePRFileDesc ssl_fd_;
 
-  ScopedCERTCertificate peer_cert_;
   nsCOMPtr<nsITimer> timer_;
   bool auth_hook_called_;
   bool cert_ok_;
