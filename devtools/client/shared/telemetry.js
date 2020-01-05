@@ -38,6 +38,16 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
 "use strict";
 
 const TOOLS_OPENED_PREF = "devtools.telemetry.tools.opened.version";
@@ -134,6 +144,10 @@ Telemetry.prototype = {
     storage: {
       histogram: "DEVTOOLS_STORAGE_OPENED_COUNT",
       timerHistogram: "DEVTOOLS_STORAGE_TIME_ACTIVE_SECONDS"
+    },
+    dom: {
+      histogram: "DEVTOOLS_DOM_OPENED_COUNT",
+      timerHistogram: "DEVTOOLS_DOM_TIME_ACTIVE_SECONDS"
     },
     paintflashing: {
       histogram: "DEVTOOLS_PAINTFLASHING_OPENED_COUNT",
@@ -344,3 +358,4 @@ Telemetry.prototype = {
     }
   }
 };
+
