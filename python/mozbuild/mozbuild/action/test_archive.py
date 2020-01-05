@@ -450,16 +450,6 @@ ARCHIVE_FILES = {
 }
 
 
-if buildconfig.defines['MOZ_ASAN'] and buildconfig.substs['CLANG_CL']:
-    asan_dll = {
-        'source': buildconfig.topobjdir,
-        'base': 'dist/bin',
-        'pattern': os.path.basename(buildconfig.substs['MOZ_CLANG_RT_ASAN_LIB_PATH']),
-        'dest': 'bin'
-    }
-    ARCHIVE_FILES['common'].append(asan_dll)
-
-
 
 
 
