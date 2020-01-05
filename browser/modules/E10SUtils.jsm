@@ -30,7 +30,6 @@ function getAboutModule(aURL) {
 
 const NOT_REMOTE = null;
 const WEB_REMOTE_TYPE = "web";
-
 const DEFAULT_REMOTE_TYPE = WEB_REMOTE_TYPE;
 
 this.E10SUtils = {
@@ -122,18 +121,13 @@ this.E10SUtils = {
     return WEB_REMOTE_TYPE;
   },
 
-  shouldLoadURIInThisProcess: function(aURI) {
-    let remoteType = Services.appinfo.remoteType;
-    return remoteType == this.getRemoteTypeForURI(aURI.spec, true, remoteType);
-  },
-
   shouldLoadURI: function(aDocShell, aURI, aReferrer) {
     
     if (aDocShell.QueryInterface(Ci.nsIDocShellTreeItem).sameTypeParent)
       return true;
 
     
-    return this.shouldLoadURIInThisProcess(aURI);
+    return this.canLoadURIInProcess(aURI.spec, Services.appinfo.processType);
   },
 
   redirectLoad: function(aDocShell, aURI, aReferrer, aFreshProcess) {
