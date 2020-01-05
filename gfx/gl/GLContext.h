@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
-/* vim: set ts=8 sts=4 et sw=4 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef GLCONTEXT_H_
 #define GLCONTEXT_H_
@@ -23,8 +23,8 @@
 #undef GetClassName
 #endif
 
-// Define MOZ_GL_DEBUG unconditionally to enable GL debugging in opt
-// builds.
+
+
 #ifdef DEBUG
 #define MOZ_GL_DEBUG 1
 #endif
@@ -39,7 +39,7 @@
 #include "GLContextTypes.h"
 #include "SurfaceTypes.h"
 #include "GLContextSymbols.h"
-#include "base/platform_thread.h"       // for PlatformThreadId
+#include "base/platform_thread.h"       
 #include "mozilla/GenericRefCounted.h"
 #include "mozilla/WeakPtr.h"
 #include "gfx2DGlue.h"
@@ -47,13 +47,13 @@
 
 namespace android {
     class GraphicBuffer;
-} // namespace android
+} 
 
 namespace mozilla {
     namespace gfx {
         class DataSourceSurface;
         class SourceSurface;
-    } // namespace gfx
+    } 
 
     namespace gl {
         class GLBlitHelper;
@@ -64,16 +64,16 @@ namespace mozilla {
         class GLScreenBuffer;
         class SharedSurface;
         struct SurfaceCaps;
-    } // namespace gl
+    } 
 
     namespace layers {
         class ColorTextureLayerProgram;
-    } // namespace layers
+    } 
 
     namespace widget {
         class CompositorWidget;
-    } // namespace widget
-} // namespace mozilla
+    } 
+} 
 
 namespace mozilla {
 namespace gl {
@@ -197,41 +197,41 @@ class GLContext
 public:
     MOZ_DECLARE_WEAKREFERENCE_TYPENAME(GLContext)
 
-// -----------------------------------------------------------------------------
-// basic getters
+
+
 public:
 
-    /**
-     * Returns true if the context is using ANGLE. This should only be overridden
-     * for an ANGLE implementation.
-     */
+    
+
+
+
     virtual bool IsANGLE() const {
         return false;
     }
 
-    /**
-    * Returns true if the context is using WARP. This should only be overridden
-    * for an ANGLE implementation.
-    */
+    
+
+
+
     virtual bool IsWARP() const {
         return false;
     }
 
     virtual void GetWSIInfo(nsCString* const out) const = 0;
 
-    /**
-     * Return true if we are running on a OpenGL core profile context
-     */
+    
+
+
     inline bool IsCoreProfile() const {
         MOZ_ASSERT(mProfile != ContextProfile::Unknown, "unknown context profile");
 
         return mProfile == ContextProfile::OpenGLCore;
     }
 
-    /**
-     * Return true if we are running on a OpenGL compatibility profile context
-     * (legacy profile 2.1 on Max OS X)
-     */
+    
+
+
+
     inline bool IsCompatibilityProfile() const {
         MOZ_ASSERT(mProfile != ContextProfile::Unknown, "unknown context profile");
 
@@ -257,11 +257,11 @@ public:
         return profile == mProfile;
     }
 
-    /**
-     * Return the version of the context.
-     * Example :
-     *   If this a OpenGL 2.1, that will return 210
-     */
+    
+
+
+
+
     inline uint32_t Version() const {
         return mVersion;
     }
@@ -286,9 +286,9 @@ public:
         return (!IsGLES() || Version() >= 300);
     }
 
-    /**
-     * If this context is double-buffered, returns TRUE.
-     */
+    
+
+
     virtual bool IsDoubleBuffered() const {
         return false;
     }
@@ -297,9 +297,9 @@ public:
 
     virtual bool IsCurrent() = 0;
 
-    /**
-     * Get the default framebuffer for this context.
-     */
+    
+
+
     virtual GLuint GetDefaultFramebuffer() {
         return 0;
     }
@@ -308,10 +308,10 @@ protected:
     bool mIsOffscreen;
     bool mContextLost;
 
-    /**
-     * mVersion store the OpenGL's version, multiplied by 100. For example, if
-     * the context is an OpenGL 2.1 context, mVersion value will be 210.
-     */
+    
+
+
+
     uint32_t mVersion;
     ContextProfile mProfile;
 
@@ -320,23 +320,23 @@ protected:
     GLVendor mVendor;
     GLRenderer mRenderer;
 
-// -----------------------------------------------------------------------------
-// Extensions management
-/**
- * This mechanism is designed to know if an extension is supported. In the long
- * term, we would like to only use the extension group queries XXX_* to have
- * full compatibility with context version and profiles (especialy the core that
- * officialy don't bring any extensions).
- */
+
+
+
+
+
+
+
+
 public:
 
-    /**
-     * Known GL extensions that can be queried by
-     * IsExtensionSupported.  The results of this are cached, and as
-     * such it's safe to use this even in performance critical code.
-     * If you add to this array, remember to add to the string names
-     * in GLContext.cpp.
-     */
+    
+
+
+
+
+
+
     enum GLExtensions {
         Extension_None = 0,
         AMD_compressed_ATC_texture,
@@ -478,13 +478,13 @@ protected:
 
     std::bitset<Extensions_Max> mAvailableExtensions;
 
-// -----------------------------------------------------------------------------
-// Feature queries
-/*
- * This mecahnism introduces a new way to check if a OpenGL feature is
- * supported, regardless of whether it is supported by an extension or natively
- * by the context version/profile
- */
+
+
+
+
+
+
+
 public:
     bool IsSupported(GLFeature feature) const {
         return mAvailableFeatures[size_t(feature)];
@@ -495,24 +495,24 @@ public:
 private:
     std::bitset<size_t(GLFeature::EnumMax)> mAvailableFeatures;
 
-    /**
-     * Init features regarding OpenGL extension and context version and profile
-     */
+    
+
+
     void InitFeatures();
 
-    /**
-     * Mark the feature and associated extensions as unsupported
-     */
+    
+
+
     void MarkUnsupported(GLFeature feature);
 
-    /**
-     * Is this feature supported using the core (unsuffixed) symbols?
-     */
+    
+
+
     bool IsFeatureProvidedByCoreSymbols(GLFeature feature);
 
 public:
-// -----------------------------------------------------------------------------
-// Error handling
+
+
     static const char* GLErrorToString(GLenum aError) {
         switch (aError) {
             case LOCAL_GL_INVALID_ENUM:
@@ -560,8 +560,8 @@ public:
         return err;
     }
 
-    // We smash all errors together, so you never have to loop on this. We
-    // guarantee that immediately after this call, there are no errors left.
+    
+    
     GLenum fGetError() {
         FlushErrors();
 
@@ -570,8 +570,8 @@ public:
         return err;
     }
 
-    ////////////////////////////////////
-    // Use this safer option.
+    
+    
     class LocalErrorScope;
 
 private:
@@ -645,8 +645,8 @@ private:
                        const GLchar* message);
 
 
-// -----------------------------------------------------------------------------
-// MOZ_GL_DEBUG implementation
+
+
 private:
 
 #undef BEFORE_GL_CALL
@@ -686,9 +686,9 @@ private:
 
     void AfterGLCall(const char* funcName) {
         if (mDebugFlags) {
-            // calling fFinish() immediately after every GL call makes sure that if this GL command crashes,
-            // the stack trace will actually point to it. Otherwise, OpenGL being an asynchronous API, stack traces
-            // tend to be meaningless
+            
+            
+            
             mSymbols.fFinish();
             GLenum err = FlushErrors();
 
@@ -723,7 +723,7 @@ private:
     static void AssertNotPassingStackBufferToTheGL(const void* ptr);
 
 #ifdef MOZ_WIDGET_ANDROID
-// Record the name of the GL call for better hang stacks on Android.
+
 #define BEFORE_GL_CALL                              \
             PROFILER_LABEL_FUNC(                    \
               js::ProfileEntry::Category::GRAPHICS);\
@@ -747,10 +747,10 @@ private:
 
 #define ASSERT_NOT_PASSING_STACK_BUFFER_TO_GL(ptr) AssertNotPassingStackBufferToTheGL(ptr)
 
-#else // ifdef MOZ_GL_DEBUG
+#else 
 
 #ifdef MOZ_WIDGET_ANDROID
-// Record the name of the GL call for better hang stacks on Android.
+
 #define BEFORE_GL_CALL PROFILER_LABEL_FUNC(js::ProfileEntry::Category::GRAPHICS)
 #else
 #define BEFORE_GL_CALL do { } while (0)
@@ -759,7 +759,7 @@ private:
 #define TRACKING_CONTEXT(a) do {} while (0)
 #define ASSERT_NOT_PASSING_STACK_BUFFER_TO_GL(ptr) do {} while (0)
 
-#endif // ifdef MOZ_GL_DEBUG
+#endif 
 
 #define ASSERT_SYMBOL_PRESENT(func) \
             do {\
@@ -770,25 +770,25 @@ private:
                 }\
             } while (0)
 
-    // Do whatever setup is necessary to draw to our offscreen FBO, if it's
-    // bound.
+    
+    
     void BeforeGLDrawCall() { }
 
-    // Do whatever tear-down is necessary after drawing to our offscreen FBO,
-    // if it's bound.
+    
+    
     void AfterGLDrawCall();
 
-    // Do whatever setup is necessary to read from our offscreen FBO, if it's
-    // bound.
+    
+    
     void BeforeGLReadCall();
 
-    // Do whatever tear-down is necessary after reading from our offscreen FBO,
-    // if it's bound.
+    
+    
     void AfterGLReadCall() { }
 
 
-// -----------------------------------------------------------------------------
-// GL official entry points
+
+
 public:
 
     void fActiveTexture(GLenum texture) {
@@ -891,7 +891,7 @@ public:
     void fBufferData(GLenum target, GLsizeiptr size, const GLvoid* data, GLenum usage) {
         raw_fBufferData(target, size, data, usage);
 
-        // bug 744888
+        
         if (WorkAroundDriverBugs() &&
             !data &&
             Vendor() == GLVendor::NVIDIA)
@@ -1459,6 +1459,12 @@ public:
         AFTER_GL_CALL;
     }
 
+    void fPolygonMode(GLenum face, GLenum mode) {
+        BEFORE_GL_CALL;
+        mSymbols.fPolygonMode(face, mode);
+        AFTER_GL_CALL;
+    }
+
     void fPolygonOffset(GLfloat factor, GLfloat bias) {
         BEFORE_GL_CALL;
         mSymbols.fPolygonOffset(factor, bias);
@@ -1876,7 +1882,7 @@ public:
         if (IsGLES()) {
             raw_fGetShaderPrecisionFormat(shadertype, precisiontype, range, precision);
         } else {
-            // Fall back to automatic values because almost all desktop hardware supports the OpenGL standard precisions.
+            
             GetShaderPrecisionFormatNonES2(shadertype, precisiontype, range, precision);
         }
     }
@@ -2189,8 +2195,8 @@ public:
     }
 
 
-// -----------------------------------------------------------------------------
-// Extension ARB_sync (GL)
+
+
 public:
     GLsync fFenceSync(GLenum condition, GLbitfield flags) {
         BEFORE_GL_CALL;
@@ -2245,8 +2251,8 @@ public:
     }
 
 
-// -----------------------------------------------------------------------------
-// Extension OES_EGL_image (GLES)
+
+
 public:
     void fEGLImageTargetTexture2D(GLenum target, GLeglImage image) {
         BEFORE_GL_CALL;
@@ -2265,8 +2271,8 @@ public:
     }
 
 
-// -----------------------------------------------------------------------------
-// Package XXX_bind_buffer_offset
+
+
 public:
     void fBindBufferOffset(GLenum target, GLuint index, GLuint buffer, GLintptr offset)
     {
@@ -2277,8 +2283,8 @@ public:
     }
 
 
-// -----------------------------------------------------------------------------
-// Package XXX_draw_buffers
+
+
 public:
     void fDrawBuffers(GLsizei n, const GLenum* bufs) {
         BEFORE_GL_CALL;
@@ -2288,8 +2294,8 @@ public:
     }
 
 
-// -----------------------------------------------------------------------------
-// Package XXX_draw_instanced
+
+
 public:
     void fDrawArraysInstanced(GLenum mode, GLint first, GLsizei count, GLsizei primcount)
     {
@@ -2322,8 +2328,8 @@ private:
         AFTER_GL_CALL;
     }
 
-// -----------------------------------------------------------------------------
-// Feature draw_range_elements
+
+
 public:
     void fDrawRangeElements(GLenum mode, GLuint start, GLuint end,
                             GLsizei count, GLenum type, const GLvoid* indices)
@@ -2343,10 +2349,10 @@ private:
         AFTER_GL_CALL;
     }
 
-// -----------------------------------------------------------------------------
-// Package XXX_framebuffer_blit
+
+
 public:
-    // Draw/Read
+    
     void fBlitFramebuffer(GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1, GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1, GLbitfield mask, GLenum filter) {
         BeforeGLDrawCall();
         BeforeGLReadCall();
@@ -2365,8 +2371,8 @@ private:
     }
 
 
-// -----------------------------------------------------------------------------
-// Package XXX_framebuffer_multisample
+
+
 public:
     void fRenderbufferStorageMultisample(GLenum target, GLsizei samples, GLenum internalFormat, GLsizei width, GLsizei height) {
         BEFORE_GL_CALL;
@@ -2375,8 +2381,8 @@ public:
         AFTER_GL_CALL;
     }
 
-// -----------------------------------------------------------------------------
-//  GL 3.0, GL ES 3.0 & EXT_gpu_shader4
+
+
 public:
     void fGetVertexAttribIiv(GLuint index, GLenum pname, GLint* params)
     {
@@ -2500,8 +2506,8 @@ public:
     }
 
 
-// -----------------------------------------------------------------------------
-// Package XXX_instanced_arrays
+
+
 public:
     void fVertexAttribDivisor(GLuint index, GLuint divisor)
     {
@@ -2511,8 +2517,8 @@ public:
         AFTER_GL_CALL;
     }
 
-// -----------------------------------------------------------------------------
-// Feature internalformat_query
+
+
 public:
     void fGetInternalformativ(GLenum target, GLenum internalformat, GLenum pname, GLsizei bufSize, GLint* params) {
         BEFORE_GL_CALL;
@@ -2522,14 +2528,14 @@ public:
     }
 
 
-// -----------------------------------------------------------------------------
-// Package XXX_query_counter
-/**
- * XXX_query_counter:
- *  - depends on XXX_query_objects
- *  - provide all followed entry points
- *  - provide GL_TIMESTAMP
- */
+
+
+
+
+
+
+
+
 public:
     void fQueryCounter(GLuint id, GLenum target) {
         BEFORE_GL_CALL;
@@ -2539,20 +2545,20 @@ public:
     }
 
 
-// -----------------------------------------------------------------------------
-// Package XXX_query_objects
-/**
- * XXX_query_objects:
- *  - provide all followed entry points
- *
- * XXX_occlusion_query2:
- *  - depends on XXX_query_objects
- *  - provide ANY_SAMPLES_PASSED
- *
- * XXX_occlusion_query_boolean:
- *  - depends on XXX_occlusion_query2
- *  - provide ANY_SAMPLES_PASSED_CONSERVATIVE
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 public:
     void fDeleteQueries(GLsizei n, const GLuint* names) {
         BEFORE_GL_CALL;
@@ -2592,13 +2598,13 @@ public:
         return retval;
     }
 
-// -----------------------------------------------------------------------------
-// Package XXX_get_query_object_i64v
-/**
- * XXX_get_query_object_i64v:
- *  - depends on XXX_query_objects
- *  - provide the followed entry point
- */
+
+
+
+
+
+
+
 public:
     void fGetQueryObjecti64v(GLuint id, GLenum pname, GLint64* params) {
         BEFORE_GL_CALL;
@@ -2615,17 +2621,17 @@ public:
     }
 
 
-// -----------------------------------------------------------------------------
-// Package XXX_get_query_object_iv
-/**
- * XXX_get_query_object_iv:
- *  - depends on XXX_query_objects
- *  - provide the followed entry point
- *
- * XXX_occlusion_query:
- *  - depends on XXX_get_query_object_iv
- *  - provide LOCAL_GL_SAMPLES_PASSED
- */
+
+
+
+
+
+
+
+
+
+
+
 public:
     void fGetQueryObjectiv(GLuint id, GLenum pname, GLint* params) {
         BEFORE_GL_CALL;
@@ -2635,8 +2641,8 @@ public:
     }
 
 
-// -----------------------------------------------------------------------------
-// GL 4.0, GL ES 3.0, ARB_transform_feedback2, NV_transform_feedback2
+
+
 public:
     void fBindBufferBase(GLenum target, GLuint index, GLuint buffer)
     {
@@ -2750,8 +2756,8 @@ public:
         AFTER_GL_CALL;
     }
 
-// -----------------------------------------------------------------------------
-// Package XXX_vertex_array_object
+
+
 public:
     void fBindVertexArray(GLuint array)
     {
@@ -2786,8 +2792,8 @@ public:
         return ret;
     }
 
-// -----------------------------------------------------------------------------
-// Extension NV_fence
+
+
 public:
     void fGenFences(GLsizei n, GLuint* fences)
     {
@@ -2847,8 +2853,8 @@ public:
         AFTER_GL_CALL;
     }
 
-// -----------------------------------------------------------------------------
-// Extension NV_texture_barrier
+
+
 public:
     void fTextureBarrier()
     {
@@ -2858,7 +2864,7 @@ public:
         AFTER_GL_CALL;
     }
 
-// Core GL & Extension ARB_copy_buffer
+
 public:
     void fCopyBufferSubData(GLenum readtarget, GLenum writetarget,
                             GLintptr readoffset, GLintptr writeoffset,
@@ -2871,8 +2877,8 @@ public:
     }
 
 
-// -----------------------------------------------------------------------------
-// Core GL & Extension ARB_map_buffer_range
+
+
 public:
     void* fMapBufferRange(GLenum target, GLintptr offset, GLsizeiptr length,
                           GLbitfield access)
@@ -2892,8 +2898,8 @@ public:
     }
 
 
-// -----------------------------------------------------------------------------
-// Core GL & Extension ARB_sampler_objects
+
+
 public:
     void fGenSamplers(GLsizei count, GLuint* samplers)
     {
@@ -2977,8 +2983,8 @@ public:
     }
 
 
-// -----------------------------------------------------------------------------
-// Core GL & Extension ARB_uniform_buffer_object
+
+
 public:
     void fGetUniformIndices(GLuint program, GLsizei uniformCount,
                             const GLchar* const* uniformNames, GLuint* uniformIndices)
@@ -3031,8 +3037,8 @@ public:
         AFTER_GL_CALL;
     }
 
-// -----------------------------------------------------------------------------
-// Core GL 4.2, GL ES 3.0 & Extension ARB_texture_storage/EXT_texture_storage
+
+
     void fTexStorage2D(GLenum target, GLsizei levels, GLenum internalformat, GLsizei width, GLsizei height)
     {
         BEFORE_GL_CALL;
@@ -3049,8 +3055,8 @@ public:
         AFTER_GL_CALL;
     }
 
-// -----------------------------------------------------------------------------
-// 3D Textures
+
+
     void fTexImage3D(GLenum target, GLint level,
                      GLint internalFormat,
                      GLsizei width, GLsizei height, GLsizei depth,
@@ -3117,8 +3123,8 @@ public:
         AFTER_GL_CALL;
     }
 
-// -----------------------------------------------------------------------------
-// GL3+, ES3+
+
+
 
     const GLubyte* fGetStringi(GLenum name, GLuint index) {
         BEFORE_GL_CALL;
@@ -3128,8 +3134,8 @@ public:
         return ret;
     }
 
-// -----------------------------------------------------------------------------
-// APPLE_framebuffer_multisample
+
+
 
     void fResolveMultisampleFramebufferAPPLE() {
         BEFORE_GL_CALL;
@@ -3138,8 +3144,8 @@ public:
         AFTER_GL_CALL;
     }
 
-// -----------------------------------------------------------------------------
-// prim_restart
+
+
 
     void fPrimitiveRestartIndex(GLuint index) {
         BEFORE_GL_CALL;
@@ -3148,25 +3154,25 @@ public:
         AFTER_GL_CALL;
     }
 
-// -----------------------------------------------------------------------------
-// Constructor
+
+
 protected:
     explicit GLContext(CreateContextFlags flags, const SurfaceCaps& caps,
                        GLContext* sharedContext = nullptr,
                        bool isOffscreen = false);
 
 
-// -----------------------------------------------------------------------------
-// Destructor
+
+
 public:
     virtual ~GLContext();
 
-    // Mark this context as destroyed.  This will nullptr out all
-    // the GL function pointers!
+    
+    
     void MarkDestroyed();
 
-// -----------------------------------------------------------------------------
-// Everything that isn't standard GL APIs
+
+
 protected:
     typedef gfx::SurfaceFormat SurfaceFormat;
 
@@ -3186,13 +3192,13 @@ public:
 #ifdef MOZ_GL_DEBUG
     PR_SetThreadPrivate(sCurrentGLContextTLS, this);
 
-    // XXX this assertion is disabled because it's triggering on Mac;
-    // we need to figure out why and reenable it.
+    
+    
 #if 0
-        // IsOwningThreadCurrent is a bit of a misnomer;
-        // the "owning thread" is the creation thread,
-        // and the only thread that can own this.  We don't
-        // support contexts used on multiple threads.
+        
+        
+        
+        
         NS_ASSERTION(IsOwningThreadCurrent(),
                      "MakeCurrent() called on different thread than this context was created on!");
 #endif
@@ -3207,57 +3213,57 @@ public:
     virtual void ReleaseSurface() {}
 
     bool IsDestroyed() {
-        // MarkDestroyed will mark all these as null.
+        
         return mSymbols.fUseProgram == nullptr;
     }
 
     GLContext* GetSharedContext() { return mSharedContext; }
 
-    /**
-     * Returns true if the thread on which this context was created is the currently
-     * executing thread.
-     */
+    
+
+
+
     bool IsOwningThreadCurrent();
 
     static void PlatformStartup();
 
 public:
-    /**
-     * If this context wraps a double-buffered target, swap the back
-     * and front buffers.  It should be assumed that after a swap, the
-     * contents of the new back buffer are undefined.
-     */
+    
+
+
+
+
     virtual bool SwapBuffers() { return false; }
 
-    /**
-     * Defines a two-dimensional texture image for context target surface
-     */
+    
+
+
     virtual bool BindTexImage() { return false; }
-    /*
-     * Releases a color buffer that is being used as a texture
-     */
+    
+
+
     virtual bool ReleaseTexImage() { return false; }
 
-    // Before reads from offscreen texture
+    
     void GuaranteeResolve();
 
-    /*
-     * Resize the current offscreen buffer.  Returns true on success.
-     * If it returns false, the context should be treated as unusable
-     * and should be recreated.  After the resize, the viewport is not
-     * changed; glViewport should be called as appropriate.
-     *
-     * Only valid if IsOffscreen() returns true.
-     */
+    
+
+
+
+
+
+
+
     bool ResizeOffscreen(const gfx::IntSize& size) {
         return ResizeScreenBuffer(size);
     }
 
-    /*
-     * Return size of this offscreen context.
-     *
-     * Only valid if IsOffscreen() returns true.
-     */
+    
+
+
+
+
     const gfx::IntSize& OffscreenSize() const;
 
     void BindFB(GLuint fb) {
@@ -3285,7 +3291,7 @@ private:
             case LOCAL_GL_LOW_FLOAT:
             case LOCAL_GL_MEDIUM_FLOAT:
             case LOCAL_GL_HIGH_FLOAT:
-                // Assume IEEE 754 precision
+                
                 range[0] = 127;
                 range[1] = 127;
                 *precision = 23;
@@ -3293,8 +3299,8 @@ private:
             case LOCAL_GL_LOW_INT:
             case LOCAL_GL_MEDIUM_INT:
             case LOCAL_GL_HIGH_INT:
-                // Some (most) hardware only supports single-precision floating-point numbers,
-                // which can accurately represent integers up to +/-16777216
+                
+                
                 range[0] = 24;
                 range[1] = 24;
                 *precision = 0;
@@ -3316,7 +3322,7 @@ public:
 
     virtual bool RenewSurface(widget::CompositorWidget* aWidget) { return false; }
 
-    // Shared code for GL extensions and GLX extensions.
+    
     static bool ListHasExtension(const GLubyte* extensions,
                                  const char* extension);
 
@@ -3336,17 +3342,17 @@ public:
 protected:
     RefPtr<GLContext> mSharedContext;
 
-    // The thread id which this context was created.
+    
     PlatformThreadId mOwningThreadId;
 
     GLContextSymbols mSymbols;
 
 #ifdef MOZ_GL_DEBUG
-    // Non-zero debug flags will check that we don't send call
-    // to a GLContext that isn't current on the current
-    // thread.
-    // Store the current context when binding to thread local
-    // storage to support debug flags on an arbitrary thread.
+    
+    
+    
+    
+    
     static unsigned sCurrentGLContextTLS;
 #endif
 
@@ -3358,7 +3364,7 @@ public:
     GLBlitTextureImageHelper* BlitTextureImageHelper();
     GLReadTexImageHelper* ReadTexImageHelper();
 
-    // Assumes shares are created by all sharing with the same global context.
+    
     bool SharesWith(const GLContext* other) const {
         MOZ_ASSERT(!this->mSharedContext || !this->mSharedContext->mSharedContext);
         MOZ_ASSERT(!other->mSharedContext || !other->mSharedContext->mSharedContext);
@@ -3377,7 +3383,7 @@ public:
     bool InitOffscreen(const gfx::IntSize& size, const SurfaceCaps& caps);
 
 protected:
-    // Note that it does -not- clear the resized buffers.
+    
     bool CreateScreenBuffer(const gfx::IntSize& size, const SurfaceCaps& caps) {
         if (!IsOffscreenSizeAllowed(size))
             return false;
@@ -3399,17 +3405,17 @@ public:
         return mCaps;
     }
 
-    // Only varies based on bpp16 and alpha.
+    
     GLFormats ChooseGLFormats(const SurfaceCaps& caps) const;
 
     bool IsFramebufferComplete(GLuint fb, GLenum* status = nullptr);
 
-    // Does not check completeness.
+    
     void AttachBuffersToFB(GLuint colorTex, GLuint colorRB,
                            GLuint depthRB, GLuint stencilRB,
                            GLuint fb, GLenum target = LOCAL_GL_TEXTURE_2D);
 
-    // Passing null is fine if the value you'd get is 0.
+    
     bool AssembleOffscreenFBs(const GLuint colorMSRB,
                               const GLuint depthRB,
                               const GLuint stencilRB,
@@ -3446,10 +3452,10 @@ public:
         return mScreen.get();
     }
 
-    /* Clear to transparent black, with 0 depth and stencil,
-     * while preserving current ClearColor etc. values.
-     * Useful for resizing offscreen buffers.
-     */
+    
+
+
+
     void ClearSafely();
 
     bool WorkAroundDriverBugs() const { return mWorkAroundDriverBugs; }
@@ -3489,12 +3495,12 @@ protected:
 
     bool IsTextureSizeSafeToPassToDriver(GLenum target, GLsizei width, GLsizei height) const {
         if (mNeedsTextureSizeChecks) {
-            // some drivers incorrectly handle some large texture sizes that are below the
-            // max texture size that they report. So we check ourselves against our own values
-            // (mMax[CubeMap]TextureSize).
-            // see bug 737182 for Mac Intel 2D textures
-            // see bug 684882 for Mac Intel cube map textures
-            // see bug 814716 for Mesa Nouveau
+            
+            
+            
+            
+            
+            
             GLsizei maxSize = target == LOCAL_GL_TEXTURE_CUBE_MAP ||
                                 (target >= LOCAL_GL_TEXTURE_CUBE_MAP_POSITIVE_X &&
                                 target <= LOCAL_GL_TEXTURE_CUBE_MAP_NEGATIVE_Z)
@@ -3562,7 +3568,7 @@ public:
         GLuint name;
         bool originDeleted;
 
-        // for sorting
+        
         bool operator<(const NamedResource& aOther) const {
             if (intptr_t(origin) < intptr_t(aOther.origin))
                 return true;
@@ -3596,7 +3602,7 @@ public:
     static bool ShouldDumpExts();
     void Readback(SharedSurface* src, gfx::DataSourceSurface* dest);
 
-    ////
+    
 
     void TexParams_SetClampNoMips(GLenum target = LOCAL_GL_TEXTURE_2D) {
         fTexParameteri(target, LOCAL_GL_TEXTURE_WRAP_S, LOCAL_GL_CLAMP_TO_EDGE);
@@ -3640,35 +3646,35 @@ MarkBitfieldByStrings(const std::vector<nsCString>& strList,
     }
 }
 
-/**
- * Helper function that creates a 2D texture aSize.width x aSize.height with
- * storage type specified by aFormats. Returns GL texture object id.
- *
- * See mozilla::gl::CreateTexture.
- */
+
+
+
+
+
+
 GLuint CreateTextureForOffscreen(GLContext* aGL, const GLFormats& aFormats,
                                  const gfx::IntSize& aSize);
 
-/**
- * Helper function that creates a 2D texture aSize.width x aSize.height with
- * storage type aInternalFormat. Returns GL texture object id.
- *
- * Initialize textyre parameters to:
- *    GL_TEXTURE_MIN_FILTER = GL_LINEAR
- *    GL_TEXTURE_MAG_FILTER = GL_LINEAR
- *    GL_TEXTURE_WRAP_S = GL_CLAMP_TO_EDGE
- *    GL_TEXTURE_WRAP_T = GL_CLAMP_TO_EDGE
- */
+
+
+
+
+
+
+
+
+
+
 GLuint CreateTexture(GLContext* aGL, GLenum aInternalFormat, GLenum aFormat,
                      GLenum aType, const gfx::IntSize& aSize, bool linear = true);
 
-/**
- * Helper function that calculates the number of bytes required per
- * texel for a texture from its format and type.
- */
+
+
+
+
 uint32_t GetBytesPerTexel(GLenum format, GLenum type);
 
-} /* namespace gl */
-} /* namespace mozilla */
+} 
+} 
 
-#endif /* GLCONTEXT_H_ */
+#endif 
