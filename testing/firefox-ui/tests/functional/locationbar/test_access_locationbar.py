@@ -13,7 +13,7 @@ class TestAccessLocationBar(FirefoxTestCase):
         FirefoxTestCase.setUp(self)
 
         
-        self.places.remove_all_history()
+        self.puppeteer.places.remove_all_history()
 
         self.test_urls = [
             'layout/mozilla_projects.html',
@@ -34,7 +34,7 @@ class TestAccessLocationBar(FirefoxTestCase):
             with self.marionette.using_context('content'):
                 for url in self.test_urls:
                     self.marionette.navigate(url)
-        self.places.wait_for_visited(self.test_urls, load_urls)
+        self.puppeteer.places.wait_for_visited(self.test_urls, load_urls)
         with self.marionette.using_context('content'):
             self.marionette.navigate('about:blank')
 
@@ -44,17 +44,17 @@ class TestAccessLocationBar(FirefoxTestCase):
         
         
         self.locationbar.clear()
-        self.urlbar.send_keys(self.keys.ARROW_DOWN)
+        self.urlbar.send_keys(self.puppeteer.keys.ARROW_DOWN)
         Wait(self.marionette).until(lambda _: self.autocomplete_results.is_open)
         Wait(self.marionette).until(lambda _: len(self.autocomplete_results.visible_results) > 1)
 
         
         
-        self.urlbar.send_keys(self.keys.ARROW_DOWN)
+        self.urlbar.send_keys(self.puppeteer.keys.ARROW_DOWN)
         Wait(self.marionette).until(lambda _: self.autocomplete_results.selected_index == '0')
         self.assertIn('mission', self.locationbar.value)
 
         
         
-        self.urlbar.send_keys(self.keys.ENTER)
+        self.urlbar.send_keys(self.puppeteer.keys.ENTER)
         self.assertEqual(self.locationbar.value, self.test_urls[-1])

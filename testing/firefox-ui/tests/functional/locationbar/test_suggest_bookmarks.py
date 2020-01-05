@@ -22,12 +22,12 @@ class TestStarInAutocomplete(FirefoxTestCase):
         self.test_urls = [self.marionette.absolute_url('layout/mozilla_grants.html')]
 
         
-        self.prefs.set_pref(self.PREF_SUGGEST_SEARCHES, False)
+        self.puppeteer.prefs.set_pref(self.PREF_SUGGEST_SEARCHES, False)
 
         with self.marionette.using_context('content'):
             self.marionette.navigate('about:blank')
 
-        self.places.remove_all_history()
+        self.puppeteer.places.remove_all_history()
 
     def tearDown(self):
         
@@ -38,7 +38,7 @@ class TestStarInAutocomplete(FirefoxTestCase):
                 """, script_args=[self.bookmark_panel])
 
             self.browser.navbar.locationbar.autocomplete_results.close()
-            self.places.restore_default_bookmarks()
+            self.puppeteer.places.restore_default_bookmarks()
             self.marionette.clear_pref(self.PREF_SUGGEST_SEARCHES)
         finally:
             FirefoxTestCase.tearDown(self)
@@ -53,7 +53,7 @@ class TestStarInAutocomplete(FirefoxTestCase):
 
         
         
-        self.places.wait_for_visited(self.test_urls, visit_urls)
+        self.puppeteer.places.wait_for_visited(self.test_urls, visit_urls)
 
         
         self.browser.menubar.select_by_id('bookmarksMenu',
@@ -71,7 +71,7 @@ class TestStarInAutocomplete(FirefoxTestCase):
         with self.marionette.using_context('content'):
             self.marionette.navigate('about:blank')
 
-        self.places.remove_all_history()
+        self.puppeteer.places.remove_all_history()
 
         
         locationbar = self.browser.navbar.locationbar

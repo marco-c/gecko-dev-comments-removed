@@ -64,7 +64,7 @@ class TestRestoreWindowsAfterRestart(FirefoxTestCase):
 
         self.restart()
 
-        windows = self.windows.all
+        windows = self.puppeteer.windows.all
 
         
         

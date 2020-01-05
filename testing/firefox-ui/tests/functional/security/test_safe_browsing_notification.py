@@ -37,8 +37,8 @@ class TestSafeBrowsingNotificationBar(FirefoxTestCase):
             }
         ]
 
-        self.prefs.set_pref('browser.safebrowsing.phishing.enabled', True)
-        self.prefs.set_pref('browser.safebrowsing.malware.enabled', True)
+        self.puppeteer.prefs.set_pref('browser.safebrowsing.phishing.enabled', True)
+        self.puppeteer.prefs.set_pref('browser.safebrowsing.malware.enabled', True)
 
         
         
@@ -51,7 +51,7 @@ class TestSafeBrowsingNotificationBar(FirefoxTestCase):
 
     def tearDown(self):
         try:
-            self.utils.permissions.remove('https://www.itisatrap.org', 'safe-browsing')
+            self.puppeteer.utils.permissions.remove('https://www.itisatrap.org', 'safe-browsing')
             self.browser.tabbar.close_all_tabs([self.browser.tabbar.tabs[0]])
             self.marionette.clear_pref('browser.safebrowsing.phishing.enabled')
             self.marionette.clear_pref('browser.safebrowsing.malware.enabled')
@@ -101,7 +101,7 @@ class TestSafeBrowsingNotificationBar(FirefoxTestCase):
         self.assertEquals(self.marionette.get_url(), self.browser.get_final_url(unsafe_page))
 
         
-        self.utils.permissions.remove('https://www.itisatrap.org', 'safe-browsing')
+        self.puppeteer.utils.permissions.remove('https://www.itisatrap.org', 'safe-browsing')
 
     
     def check_not_badware_button(self, button_property, report_page):

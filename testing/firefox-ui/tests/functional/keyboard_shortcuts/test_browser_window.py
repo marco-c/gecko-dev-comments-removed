@@ -37,7 +37,7 @@ class TestBrowserWindowShortcuts(FirefoxTestCase):
         self.assertNotEqual(current_name, "input")
 
         
-        if self.platform == 'linux':
+        if self.puppeteer.platform == 'linux':
             key = 'searchFocusUnix.commandkey'
         else:
             key = 'searchFocus.commandkey'

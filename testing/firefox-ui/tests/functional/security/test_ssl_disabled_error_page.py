@@ -17,13 +17,13 @@ class TestSSLDisabledErrorPage(FirefoxTestCase):
 
         self.url = 'https://tlsv1-0.mozqa.com'
 
-        self.utils.sanitize({"sessions": True})
+        self.puppeteer.utils.sanitize({"sessions": True})
 
         
         
         
-        self.prefs.set_pref('security.tls.version.min', 3)
-        self.prefs.set_pref('security.tls.version.max', 3)
+        self.puppeteer.prefs.set_pref('security.tls.version.min', 3)
+        self.puppeteer.prefs.set_pref('security.tls.version.max', 3)
 
     def tearDown(self):
         try:
