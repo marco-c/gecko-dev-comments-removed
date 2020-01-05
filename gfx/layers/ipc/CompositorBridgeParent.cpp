@@ -34,6 +34,7 @@
 #include "mozilla/gfx/gfxVars.h"        
 #include "VRManager.h"                  
 #include "mozilla/ipc/Transport.h"      
+#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/layers/APZCTreeManager.h"  
 #include "mozilla/layers/APZCTreeManagerParent.h"  
 #include "mozilla/layers/APZThreadUtils.h"  
@@ -1007,17 +1008,18 @@ CompositorBridgeParent::CompositeToTarget(DrawTarget* aTarget, const gfx::IntRec
     DidComposite(start, end);
   }
 
-  
-  
-  
-  
-  
-  
-  
-  if (!mLayerManager->GetCompositeUntilTime().IsNull() ||
-      mLayerManager->DebugOverlayWantsNextFrame())
-  {
+  if (mCompositor) {
+    
+    
+    
+    
+    
+    if (!mCompositor->GetCompositeUntilTime().IsNull() ||
+        mLayerManager->DebugOverlayWantsNextFrame()) {
       ScheduleComposition();
+    }
+  } else {
+    
   }
 
 #ifdef COMPOSITOR_PERFORMANCE_WARNING
@@ -1034,15 +1036,17 @@ CompositorBridgeParent::CompositeToTarget(DrawTarget* aTarget, const gfx::IntRec
 #endif
 
   
-  if (gfxPrefs::LayersCompositionFrameRate() == 0 ||
-      mLayerManager->AlwaysScheduleComposite())
-  {
+  if (gfxPrefs::LayersCompositionFrameRate() == 0
+    || mLayerManager->GetCompositor()->GetDiagnosticTypes() & DiagnosticTypes::FLASH_BORDERS) {
     
     ScheduleComposition();
   }
 
-  
-  mLayerManager->SetCompositionTime(TimeStamp());
+  if (mCompositor) {
+    mCompositor->SetCompositionTime(TimeStamp());
+  } else {
+    
+  }
 
   mozilla::Telemetry::AccumulateTimeDelta(mozilla::Telemetry::COMPOSITE_TIME, start);
 }

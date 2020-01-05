@@ -61,7 +61,6 @@
 #include "mozilla/OperatorNewExtensions.h"
 #include "mozilla/PendingAnimationTracker.h"
 #include "mozilla/Preferences.h"
-#include "mozilla/StyleAnimationValueInlines.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
@@ -74,7 +73,7 @@
 #include "LayersLogging.h"
 #include "FrameLayerBuilder.h"
 #include "mozilla/EventStateManager.h"
-#include "mozilla/GeckoRestyleManager.h"
+#include "mozilla/RestyleManager.h"
 #include "nsCaret.h"
 #include "nsISelection.h"
 #include "nsDOMTokenList.h"
@@ -82,6 +81,8 @@
 #include "nsCSSProps.h"
 #include "nsPluginFrame.h"
 #include "nsSVGMaskFrame.h"
+#include "mozilla/layers/WebrenderLayerManager.h"
+#include "mozilla/layers/WebrenderMessages.h"
 
 
 
@@ -765,7 +766,7 @@ nsDisplayListBuilder::AddAnimationsAndTransitionsToLayer(Layer* aLayer,
   
   
   uint64_t animationGeneration =
-    GeckoRestyleManager::GetAnimationGenerationForFrame(aFrame);
+    RestyleManager::GetAnimationGenerationForFrame(aFrame);
   aLayer->SetAnimationGeneration(animationGeneration);
 
   EffectCompositor::ClearIsRunningOnCompositor(aFrame, aProperty);
@@ -2257,7 +2258,7 @@ already_AddRefed<LayerManager> nsDisplayList::PaintRoot(nsDisplayListBuilder* aB
         if (shouldInvalidate) {
           view->GetViewManager()->InvalidateViewNoSuppression(view, rect);
         }
-        presContext->NotifyInvalidation(layerManager->GetLastTransactionId(), bounds);
+        presContext->NotifyInvalidation(bounds, 0);
       }
     } else if (shouldInvalidate) {
       view->GetViewManager()->InvalidateView(view);
@@ -2727,6 +2728,27 @@ nsDisplayItem::GetClippedBounds(nsDisplayListBuilder* aBuilder)
   bool snap;
   nsRect r = GetBounds(aBuilder, &snap);
   return GetClip().ApplyNonRoundedIntersection(r);
+}
+
+already_AddRefed<Layer>
+nsDisplayItem::BuildDisplayItemLayer(nsDisplayListBuilder* aBuilder,
+                                     LayerManager* aManager,
+                                     const ContainerLayerParameters& aContainerParameters)
+{
+  RefPtr<DisplayItemLayer> layer = static_cast<DisplayItemLayer*>
+    (aManager->GetLayerBuilder()->GetLeafLayerFor(aBuilder, this));
+  if (!layer) {
+    layer = aManager->CreateDisplayItemLayer();
+
+    if (!layer) {
+      return nullptr;
+    }
+  }
+
+  layer->SetDisplayItem(this, aBuilder);
+  layer->SetBaseTransform(gfx::Matrix4x4::Translation(aContainerParameters.mOffset.x,
+                                                      aContainerParameters.mOffset.y, 0));
+  return layer.forget();
 }
 
 nsRect
@@ -4320,6 +4342,69 @@ nsDisplayCaret::Paint(nsDisplayListBuilder* aBuilder,
   
   
   mCaret->PaintCaret(*aCtx->GetDrawTarget(), mFrame, ToReferenceFrame());
+}
+
+void
+nsDisplayCaret::CreateWebRenderCommands(nsTArray<WebRenderCommand>& aCommands,
+                                        WebRenderLayer* aLayer) {
+  using namespace mozilla::layers;
+  int32_t contentOffset;
+  nsIFrame* frame = mCaret->GetFrame(&contentOffset);
+  if (!frame) {
+    return;
+  }
+  NS_ASSERTION(frame == mFrame, "We're referring different frame");
+
+  int32_t appUnitsPerDevPixel = frame->PresContext()->AppUnitsPerDevPixel();
+
+  nsRect caretRect;
+  nsRect hookRect;
+  mCaret->ComputeCaretRects(frame, contentOffset, &caretRect, &hookRect);
+
+  gfx::Color color = ToDeviceColor(frame->GetCaretColorAt(contentOffset));
+  Rect devCaretRect =
+    NSRectToRect(caretRect + ToReferenceFrame(), appUnitsPerDevPixel);
+  Rect devHookRect =
+    NSRectToRect(hookRect + ToReferenceFrame(), appUnitsPerDevPixel);
+
+  Rect caretTransformedRect = aLayer->RelativeToParent(devCaretRect);
+  Rect hookTransformedRect = aLayer->RelativeToParent(devHookRect);
+
+  IntRect caret = RoundedToInt(caretTransformedRect);
+  IntRect hook = RoundedToInt(hookTransformedRect);
+
+  
+  aCommands.AppendElement(OpDPPushRect(
+                          wr::ToWrRect(caret),
+                          wr::ToWrRect(caret),
+                          wr::ToWrColor(color)));
+
+  if (!devHookRect.IsEmpty()) {
+    aCommands.AppendElement(OpDPPushRect(
+                            wr::ToWrRect(hook),
+                            wr::ToWrRect(hook),
+                            wr::ToWrColor(color)));
+  }
+}
+
+LayerState
+nsDisplayCaret::GetLayerState(nsDisplayListBuilder* aBuilder,
+                              LayerManager* aManager,
+                              const ContainerLayerParameters& aParameters)
+{
+  if (gfxPrefs::LayersAllowCaretLayers()) {
+    return LAYER_ACTIVE;
+  }
+
+  return LAYER_INACTIVE;
+}
+
+already_AddRefed<Layer>
+nsDisplayCaret::BuildLayer(nsDisplayListBuilder* aBuilder,
+                           LayerManager* aManager,
+                           const ContainerLayerParameters& aContainerParameters)
+{
+  return BuildDisplayItemLayer(aBuilder, aManager, aContainerParameters);
 }
 
 nsDisplayBorder::nsDisplayBorder(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame)
@@ -6182,7 +6267,7 @@ nsDisplayTransform::GetDeltaToTransformOrigin(const nsIFrame* aFrame,
   }
 
   
-  float transformOrigin[2];
+  float coords[2];
   TransformReferenceBox::DimensionGetter dimensionGetter[] =
     { &TransformReferenceBox::Width, &TransformReferenceBox::Height };
   TransformReferenceBox::DimensionGetter offsetGetter[] =
@@ -6192,35 +6277,33 @@ nsDisplayTransform::GetDeltaToTransformOrigin(const nsIFrame* aFrame,
     
 
 
-    const nsStyleCoord& originValue  = display->mTransformOrigin[index];
-    if (originValue.GetUnit() == eStyleUnit_Calc) {
-      const nsStyleCoord::Calc *calc = originValue.GetCalcValue();
-      transformOrigin[index] =
+    const nsStyleCoord &coord = display->mTransformOrigin[index];
+    if (coord.GetUnit() == eStyleUnit_Calc) {
+      const nsStyleCoord::Calc *calc = coord.GetCalcValue();
+      coords[index] =
         NSAppUnitsToFloatPixels((refBox.*dimensionGetter[index])(), aAppUnitsPerPixel) *
           calc->mPercent +
         NSAppUnitsToFloatPixels(calc->mLength, aAppUnitsPerPixel);
-    } else if (originValue.GetUnit() == eStyleUnit_Percent) {
-      transformOrigin[index] =
+    } else if (coord.GetUnit() == eStyleUnit_Percent) {
+      coords[index] =
         NSAppUnitsToFloatPixels((refBox.*dimensionGetter[index])(), aAppUnitsPerPixel) *
-        originValue.GetPercentValue();
+        coord.GetPercentValue();
     } else {
-      MOZ_ASSERT(originValue.GetUnit() == eStyleUnit_Coord,
-                 "unexpected unit");
-      transformOrigin[index] =
-        NSAppUnitsToFloatPixels(originValue.GetCoordValue(),
-                                aAppUnitsPerPixel);
+      MOZ_ASSERT(coord.GetUnit() == eStyleUnit_Coord, "unexpected unit");
+      coords[index] =
+        NSAppUnitsToFloatPixels(coord.GetCoordValue(), aAppUnitsPerPixel);
     }
 
     if (aFrame->GetStateBits() & NS_FRAME_SVG_LAYOUT) {
       
       
       
-      transformOrigin[index] +=
+      coords[index] +=
         NSAppUnitsToFloatPixels((refBox.*offsetGetter[index])(), aAppUnitsPerPixel);
     }
   }
 
-  return Point3D(transformOrigin[0], transformOrigin[1],
+  return Point3D(coords[0], coords[1],
                  NSAppUnitsToFloatPixels(display->mTransformOrigin[2].GetCoordValue(),
                                          aAppUnitsPerPixel));
 }
@@ -6388,11 +6471,11 @@ nsDisplayTransform::GetResultingTransformMatrixInternal(const FrameTransformProp
   Matrix4x4 result;
   
   
-  
-  Matrix svgTransform, parentsChildrenOnlyTransform;
+  Matrix svgTransform, transformFromSVGParent;
   bool hasSVGTransforms =
-    frame && frame->IsSVGTransformed(&svgTransform,
-                                     &parentsChildrenOnlyTransform);
+    frame && frame->IsSVGTransformed(&svgTransform, &transformFromSVGParent);
+  bool hasTransformFromSVGParent =
+    hasSVGTransforms && !transformFromSVGParent.IsIdentity();
   
   if (aProperties.mTransformList) {
     result = nsStyleTransformMatrix::ReadTransforms(aProperties.mTransformList->mHead,
@@ -6409,36 +6492,47 @@ nsDisplayTransform::GetResultingTransformMatrixInternal(const FrameTransformProp
     result = Matrix4x4::From2D(svgTransform);
   }
 
-  
-  result.ChangeBasis(aProperties.mToTransformOrigin);
-
-  
-  
-  bool parentHasChildrenOnlyTransform =
-    hasSVGTransforms && !parentsChildrenOnlyTransform.IsIdentity();
-
-  if (parentHasChildrenOnlyTransform) {
-    float pixelsPerCSSPx =
-      frame->PresContext()->AppUnitsPerCSSPixel() / aAppUnitsPerPixel;
-    parentsChildrenOnlyTransform._31 *= pixelsPerCSSPx;
-    parentsChildrenOnlyTransform._32 *= pixelsPerCSSPx;
-
-    Point3D frameOffset(
-      NSAppUnitsToFloatPixels(-frame->GetPosition().x, aAppUnitsPerPixel),
-      NSAppUnitsToFloatPixels(-frame->GetPosition().y, aAppUnitsPerPixel),
-      0);
-    Matrix4x4 parentsChildrenOnlyTransform3D =
-      Matrix4x4::From2D(parentsChildrenOnlyTransform).ChangeBasis(frameOffset);
-
-    result *= parentsChildrenOnlyTransform3D;
-  }
 
   Matrix4x4 perspectiveMatrix;
   bool hasPerspective = aFlags & INCLUDE_PERSPECTIVE;
   if (hasPerspective) {
-    if (ComputePerspectiveMatrix(frame, aAppUnitsPerPixel, perspectiveMatrix)) {
-      result *= perspectiveMatrix;
-    }
+    hasPerspective = ComputePerspectiveMatrix(frame, aAppUnitsPerPixel,
+                                              perspectiveMatrix);
+  }
+
+  if (!hasSVGTransforms || !hasTransformFromSVGParent) {
+    
+    
+    
+    result.ChangeBasis(aProperties.mToTransformOrigin);
+  } else {
+    Point3D refBoxOffset(NSAppUnitsToFloatPixels(refBox.X(), aAppUnitsPerPixel),
+                         NSAppUnitsToFloatPixels(refBox.Y(), aAppUnitsPerPixel),
+                         0);
+    
+    
+    
+    
+    
+    
+    result.ChangeBasis(aProperties.mToTransformOrigin - refBoxOffset);
+
+    
+    
+    float pixelsPerCSSPx =
+      frame->PresContext()->AppUnitsPerCSSPixel() / aAppUnitsPerPixel;
+    transformFromSVGParent._31 *= pixelsPerCSSPx;
+    transformFromSVGParent._32 *= pixelsPerCSSPx;
+    result = result * Matrix4x4::From2D(transformFromSVGParent);
+
+    
+    
+    
+    result.ChangeBasis(refBoxOffset);
+  }
+
+  if (hasPerspective) {
+    result = result * perspectiveMatrix;
   }
 
   if ((aFlags & INCLUDE_PRESERVE3D_ANCESTORS) &&

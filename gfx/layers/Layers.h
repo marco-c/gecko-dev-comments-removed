@@ -53,6 +53,8 @@
 #include "ImageContainer.h"
 
 class gfxContext;
+class nsDisplayListBuilder;
+class nsDisplayItem;
 
 extern uint8_t gLayerManagerLayerBuilder;
 
@@ -78,12 +80,12 @@ class AsyncCanvasRenderer;
 class AsyncPanZoomController;
 class BasicLayerManager;
 class ClientLayerManager;
-class HostLayerManager;
 class Layer;
 class LayerMetricsWrapper;
 class PaintedLayer;
 class ContainerLayer;
 class ImageLayer;
+class DisplayItemLayer;
 class ColorLayer;
 class CompositorBridgeChild;
 class TextLayer;
@@ -214,8 +216,6 @@ public:
   { return nullptr; }
 
   virtual BasicLayerManager* AsBasicLayerManager()
-  { return nullptr; }
-  virtual HostLayerManager* AsHostLayerManager()
   { return nullptr; }
 
   virtual WebRenderLayerManager* AsWebRenderLayerManager()
@@ -442,8 +442,11 @@ public:
 
 
   virtual already_AddRefed<RefLayer> CreateRefLayer() { return nullptr; }
+  
 
 
+
+  virtual already_AddRefed<DisplayItemLayer> CreateDisplayItemLayer() { return nullptr; }
   
 
 
@@ -704,8 +707,6 @@ public:
 
   virtual void SetTransactionIdAllocator(TransactionIdAllocator* aAllocator) {}
 
-  virtual uint64_t GetLastTransactionId() { return 0; }
-
   virtual CompositorBridgeChild* GetCompositorBridgeChild() { return nullptr; }
 
 protected:
@@ -785,6 +786,7 @@ public:
     TYPE_CANVAS,
     TYPE_COLOR,
     TYPE_CONTAINER,
+    TYPE_DISPLAYITEM,
     TYPE_IMAGE,
     TYPE_TEXT,
     TYPE_BORDER,
@@ -1575,6 +1577,12 @@ public:
   virtual ShadowableLayer* AsShadowableLayer() { return nullptr; }
 
   
+
+
+
+  virtual DisplayItemLayer* AsDisplayItemLayer() { return nullptr; }
+
+  
   
   
   const Maybe<ParentLayerIntRect>& GetLocalClipRect();
@@ -1796,6 +1804,8 @@ public:
   void SetDebugColorIndex(uint32_t aIndex) { mDebugColorIndex = aIndex; }
   uint32_t GetDebugColorIndex() { return mDebugColorIndex; }
 #endif
+
+  virtual LayerRenderState GetRenderState() { return LayerRenderState(); }
 
   void Mutated() {
     mManager->Mutated(this);
@@ -2306,6 +2316,61 @@ protected:
   
   bool mChildrenChanged;
   EventRegionsOverride mEventRegionsOverride;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class DisplayItemLayer : public Layer {
+  public:
+    virtual DisplayItemLayer* AsDisplayItemLayer() override { return this; }
+    void EndTransaction();
+
+    MOZ_LAYER_DECL_NAME("DisplayItemLayer", TYPE_DISPLAYITEM)
+
+    void SetDisplayItem(nsDisplayItem* aItem, nsDisplayListBuilder* aBuilder) {
+      mItem = aItem;
+      mBuilder = aBuilder;
+    }
+
+    nsDisplayItem* GetDisplayItem() { return mItem; }
+    nsDisplayListBuilder* GetDisplayListBuilder() { return mBuilder; }
+
+    virtual void ComputeEffectiveTransforms(const gfx::Matrix4x4& aTransformToSurface) override
+    {
+      gfx::Matrix4x4 idealTransform = GetLocalTransform() * aTransformToSurface;
+      mEffectiveTransform = SnapTransformTranslation(idealTransform, nullptr);
+      ComputeEffectiveTransformForMaskLayers(aTransformToSurface);
+    }
+
+  protected:
+    DisplayItemLayer(LayerManager* aManager, void* aImplData)
+      : Layer(aManager, aImplData)
+      , mItem(nullptr)
+  {}
+
+  virtual void PrintInfo(std::stringstream& aStream, const char* aPrefix) override;
+
+  virtual void DumpPacket(layerscope::LayersPacket* aPacket, const void* aParent) override;
+
+  
+  nsDisplayItem* mItem;
+  nsDisplayListBuilder* mBuilder;
 };
 
 
