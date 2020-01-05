@@ -7129,7 +7129,7 @@ IonBuilder::loadStaticSlot(JSObject* staticObject, BarrierKind barrier, Temporar
 bool
 jit::NeedsPostBarrier(MDefinition* value)
 {
-    if (!GetJitContext()->runtime->gcNursery().exists())
+    if (!GetJitContext()->compartment->zone()->nurseryExists())
         return false;
     return value->mightBeType(MIRType::Object);
 }
@@ -13080,7 +13080,7 @@ IonBuilder::checkNurseryObject(JSObject* obj)
     
     
     if (obj && IsInsideNursery(obj)) {
-        compartment->runtime()->setMinorGCShouldCancelIonCompilations();
+        compartment->zone()->setMinorGCShouldCancelIonCompilations();
         IonBuilder* builder = this;
         while (builder) {
             builder->setNotSafeForMinorGC();

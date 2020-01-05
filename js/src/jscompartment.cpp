@@ -651,10 +651,7 @@ JSCompartment::traceRoots(JSTracer* trc, js::gc::GCRuntime::TraceOrMarkRuntime t
     if (!JS::CurrentThreadIsHeapMinorCollecting()) {
         
         
-
-        if (jitCompartment_)
-            jitCompartment_->trace(trc, this);
-
+        
         
         
         if (enterCompartmentDepth && global_.unbarrieredGet())

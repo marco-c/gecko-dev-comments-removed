@@ -785,14 +785,14 @@ MacroAssembler::nurseryAllocate(Register result, Register temp, gc::AllocKind al
 
     
     
-    const Nursery& nursery = GetJitContext()->runtime->gcNursery();
+    CompileZone* zone = GetJitContext()->compartment->zone();
     int thingSize = int(gc::Arena::thingSize(allocKind));
     int totalSize = thingSize + nDynamicSlots * sizeof(HeapSlot);
     MOZ_ASSERT(totalSize % gc::CellSize == 0);
-    loadPtr(AbsoluteAddress(nursery.addressOfPosition()), result);
+    loadPtr(AbsoluteAddress(zone->addressOfNurseryPosition()), result);
     computeEffectiveAddress(Address(result, totalSize), temp);
-    branchPtr(Assembler::Below, AbsoluteAddress(nursery.addressOfCurrentEnd()), temp, fail);
-    storePtr(temp, AbsoluteAddress(nursery.addressOfPosition()));
+    branchPtr(Assembler::Below, AbsoluteAddress(zone->addressOfNurseryCurrentEnd()), temp, fail);
+    storePtr(temp, AbsoluteAddress(zone->addressOfNurseryPosition()));
 
     if (nDynamicSlots) {
         computeEffectiveAddress(Address(result, thingSize), temp);
@@ -1403,6 +1403,24 @@ MacroAssembler::loadStringChar(Register str, Register index, Register output)
     bind(&done);
 }
 
+void
+MacroAssembler::loadJSContext(Register dest)
+{
+    CompileCompartment* compartment = GetJitContext()->compartment;
+    if (compartment->zone()->isAtomsZone()) {
+        
+        
+        
+        
+        
+        loadPtr(AbsoluteAddress(GetJitContext()->runtime->addressOfActiveJSContext()), dest);
+    } else {
+        
+        
+        loadPtr(AbsoluteAddress(GetJitContext()->compartment->zone()->addressOfJSContext()), dest);
+    }
+}
+
 static void
 BailoutReportOverRecursed(JSContext* cx)
 {
@@ -1412,7 +1430,7 @@ BailoutReportOverRecursed(JSContext* cx)
 void
 MacroAssembler::generateBailoutTail(Register scratch, Register bailoutInfo)
 {
-    enterExitFrame();
+    enterExitFrame(scratch);
 
     Label baseline;
 
@@ -1473,7 +1491,7 @@ MacroAssembler::generateBailoutTail(Register scratch, Register bailoutInfo)
         push(temp);
         push(Address(bailoutInfo, offsetof(BaselineBailoutInfo, resumeAddr)));
         
-        enterFakeExitFrame(ExitFrameLayoutBareToken);
+        enterFakeExitFrame(scratch, ExitFrameLayoutBareToken);
 
         
         Label noMonitor;
@@ -2238,11 +2256,9 @@ MacroAssembler::AutoProfilerCallInstrumentation::AutoProfilerCallInstrumentation
     masm.push(reg);
     masm.push(reg2);
 
-    JitContext* icx = GetJitContext();
-    AbsoluteAddress profilingActivation(icx->runtime->addressOfProfilingActivation());
-
     CodeOffset label = masm.movWithPatch(ImmWord(uintptr_t(-1)), reg);
-    masm.loadPtr(profilingActivation, reg2);
+    masm.loadJSContext(reg2);
+    masm.loadPtr(Address(reg2, offsetof(JSContext, profilingActivation_)), reg2);
     masm.storePtr(reg, Address(reg2, JitActivation::offsetOfLastProfilingCallSite()));
 
     masm.appendProfilerCallSite(label);
@@ -2683,10 +2699,10 @@ MacroAssembler::callWithABINoProfiler(wasm::SymbolicAddress imm, MoveOp::Type re
 
 
 void
-MacroAssembler::linkExitFrame()
+MacroAssembler::linkExitFrame(Register temp)
 {
-    AbsoluteAddress jitTop(GetJitContext()->runtime->addressOfJitTop());
-    storeStackPtr(jitTop);
+    loadJSContext(temp);
+    storeStackPtr(Address(temp, offsetof(JSContext, jitTop)));
 }
 
 void

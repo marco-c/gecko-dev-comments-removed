@@ -686,14 +686,14 @@ class MacroAssembler : public MacroAssemblerSpecific
     inline bool hasSelfReference() const;
 
     
-    inline void enterExitFrame(const VMFunction* f = nullptr);
+    inline void enterExitFrame(Register temp, const VMFunction* f = nullptr);
 
     
     
-    inline void enterFakeExitFrame(enum ExitFrameTokenValues token);
+    inline void enterFakeExitFrame(Register temp, enum ExitFrameTokenValues token);
 
     
-    inline void enterFakeExitFrameForNative(bool isConstructing);
+    inline void enterFakeExitFrameForNative(Register temp, bool isConstructing);
 
     
     inline void leaveExitFrame(size_t extraFrame = 0);
@@ -701,7 +701,7 @@ class MacroAssembler : public MacroAssemblerSpecific
   private:
     
     
-    void linkExitFrame();
+    void linkExitFrame(Register temp);
 
     
     void linkSelfReference(JitCode* code);
@@ -1494,11 +1494,10 @@ class MacroAssembler : public MacroAssemblerSpecific
     void loadStringChars(Register str, Register dest);
     void loadStringChar(Register str, Register index, Register output);
 
-    void loadJSContext(Register dest) {
-        movePtr(ImmPtr(GetJitContext()->runtime->getJSContext()), dest);
-    }
+    void loadJSContext(Register dest);
     void loadJitActivation(Register dest) {
-        loadPtr(AbsoluteAddress(GetJitContext()->runtime->addressOfActivation()), dest);
+        loadJSContext(dest);
+        loadPtr(Address(dest, offsetof(JSContext, activation_)), dest);
     }
     void loadWasmActivationFromTls(Register dest) {
         loadPtr(Address(WasmTlsReg, offsetof(wasm::TlsData, cx)), dest);

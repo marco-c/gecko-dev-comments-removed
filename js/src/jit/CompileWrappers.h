@@ -27,37 +27,9 @@ class CompileRuntime
   public:
     static CompileRuntime* get(JSRuntime* rt);
 
-    bool onMainThread();
-
-    
-    const void* addressOfJitTop();
-
-    
-    const void* addressOfJitActivation();
-
-    
-    const void* addressOfProfilingActivation();
-
-    
-    const void* addressOfJitStackLimit();
-
-#ifdef DEBUG
-    
-    const void* addressOfIonBailAfter();
-#endif
-
-    
-    const void* addressOfActivation();
-
 #ifdef JS_GC_ZEAL
     const void* addressOfGCZealModeBits();
 #endif
-
-    const void* addressOfInterruptUint32();
-
-    
-    
-    const void* getJSContext();
 
     const JitRuntime* jitRuntime();
 
@@ -66,7 +38,6 @@ class CompileRuntime
 
     bool jitSupportsFloatingPoint();
     bool hadOutOfMemory();
-    bool profilingScripts();
 
     const JSAtomState& names();
     const PropertyName* emptyString();
@@ -74,6 +45,7 @@ class CompileRuntime
     const Value& NaNValue();
     const Value& positiveInfinityValue();
     const WellKnownSymbols& wellKnownSymbols();
+    const void* addressOfActiveJSContext();
 
 #ifdef DEBUG
     bool isInsideNursery(gc::Cell* cell);
@@ -81,9 +53,6 @@ class CompileRuntime
 
     
     const DOMCallbacks* DOMcallbacks();
-
-    const Nursery& gcNursery();
-    void setMinorGCShouldCancelIonCompilations();
 
     bool runtimeMatches(JSRuntime* rt);
 };
@@ -95,9 +64,23 @@ class CompileZone
   public:
     static CompileZone* get(Zone* zone);
 
-    const void* addressOfNeedsIncrementalBarrier();
+    CompileRuntime* runtime();
+    bool isAtomsZone();
 
+#ifdef DEBUG
+    const void* addressOfIonBailAfter();
+#endif
+
+    const void* addressOfJSContext();
+    const void* addressOfNeedsIncrementalBarrier();
     const void* addressOfFreeList(gc::AllocKind allocKind);
+    const void* addressOfNurseryPosition();
+    const void* addressOfNurseryCurrentEnd();
+
+    bool nurseryExists();
+    void setMinorGCShouldCancelIonCompilations();
+
+    bool profilingScripts();
 };
 
 class JitCompartment;

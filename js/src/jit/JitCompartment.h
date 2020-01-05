@@ -574,7 +574,6 @@ class JitCompartment
     
     MOZ_MUST_USE bool ensureIonStubsExist(JSContext* cx);
 
-    void trace(JSTracer* trc, JSCompartment* compartment);
     void sweep(FreeOp* fop, JSCompartment* compartment);
 
     JitCode* stringConcatStubNoBarrier() const {

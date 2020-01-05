@@ -254,7 +254,7 @@ JitRuntime::generateEnterJIT(JSContext* cx, EnterJitType type)
         masm.storePtr(zero, Address(StackPointer, 0)); 
 
         
-        masm.enterFakeExitFrame(ExitFrameLayoutBareToken);
+        masm.enterFakeExitFrame(scratch, ExitFrameLayoutBareToken);
 
         masm.reserveStack(2 * sizeof(uintptr_t));
         masm.storePtr(framePtr, Address(StackPointer, sizeof(uintptr_t))); 
@@ -736,7 +736,7 @@ JitRuntime::generateVMWrapper(JSContext* cx, const VMFunction& f)
         masm.pushReturnAddress();
 
     
-    masm.enterExitFrame(&f);
+    masm.enterExitFrame(cxreg, &f);
     masm.loadJSContext(cxreg);
 
     
@@ -1134,8 +1134,8 @@ JitRuntime::generateProfilerExitFrameTailStub(JSContext* cx)
     
     
     Register actReg = scratch4;
-    AbsoluteAddress activationAddr(GetJitContext()->runtime->addressOfProfilingActivation());
-    masm.loadPtr(activationAddr, actReg);
+    masm.loadJSContext(actReg);
+    masm.loadPtr(Address(actReg, offsetof(JSContext, profilingActivation_)), actReg);
 
     Address lastProfilingFrame(actReg, JitActivation::offsetOfLastProfilingFrame());
     Address lastProfilingCallSite(actReg, JitActivation::offsetOfLastProfilingCallSite());

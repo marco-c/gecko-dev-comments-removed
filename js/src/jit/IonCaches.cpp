@@ -903,7 +903,7 @@ EmitGetterCall(JSContext* cx, MacroAssembler& masm,
 
         if (!masm.icBuildOOLFakeExitFrame(returnAddr, aic))
             return false;
-        masm.enterFakeExitFrame(IonOOLNativeExitFrameLayoutToken);
+        masm.enterFakeExitFrame(scratchReg, IonOOLNativeExitFrameLayoutToken);
 
         
         masm.setupUnalignedABICall(scratchReg);
@@ -961,7 +961,7 @@ EmitGetterCall(JSContext* cx, MacroAssembler& masm,
 
         if (!masm.icBuildOOLFakeExitFrame(returnAddr, aic))
             return false;
-        masm.enterFakeExitFrame(IonOOLPropertyOpExitFrameLayoutToken);
+        masm.enterFakeExitFrame(scratchReg, IonOOLPropertyOpExitFrameLayoutToken);
 
         
         masm.setupUnalignedABICall(scratchReg);
@@ -1497,7 +1497,7 @@ EmitCallProxySet(JSContext* cx, MacroAssembler& masm, IonCache::StubAttacher& at
 
     if (!masm.icBuildOOLFakeExitFrame(returnAddr, aic))
         return false;
-    masm.enterFakeExitFrame(IonOOLProxyExitFrameLayoutToken);
+    masm.enterFakeExitFrame(scratch, IonOOLProxyExitFrameLayoutToken);
 
     
     masm.setupUnalignedABICall(scratch);
@@ -1671,7 +1671,7 @@ GenerateCallSetter(JSContext* cx, IonScript* ion, MacroAssembler& masm,
 
         if (!masm.icBuildOOLFakeExitFrame(returnAddr, aic))
             return false;
-        masm.enterFakeExitFrame(IonOOLNativeExitFrameLayoutToken);
+        masm.enterFakeExitFrame(tempReg, IonOOLNativeExitFrameLayoutToken);
 
         
         masm.setupUnalignedABICall(tempReg);
@@ -1735,7 +1735,7 @@ GenerateCallSetter(JSContext* cx, IonScript* ion, MacroAssembler& masm,
 
         if (!masm.icBuildOOLFakeExitFrame(returnAddr, aic))
             return false;
-        masm.enterFakeExitFrame(IonOOLSetterOpExitFrameLayoutToken);
+        masm.enterFakeExitFrame(tempReg, IonOOLSetterOpExitFrameLayoutToken);
 
         
         masm.setupUnalignedABICall(tempReg);
