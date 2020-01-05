@@ -60,6 +60,27 @@ macro_rules! no_viewport_percentage {
     };
 }
 
+
+
+
+
+
+
+
+macro_rules! add_impls_for_keyword_enum {
+    ($name:ident) => {
+        impl Parse for $name {
+            #[inline]
+            fn parse(_context: &ParserContext, input: &mut ::cssparser::Parser) -> Result<Self, ()> {
+                $name::parse(input)
+            }
+        }
+
+        impl ComputedValueAsSpecified for $name {}
+        no_viewport_percentage!($name);
+    };
+}
+
 pub mod computed;
 pub mod specified;
 
