@@ -69,6 +69,7 @@ public class SuggestedSiteLoader implements IconLoader {
             
             
             Log.e(LOGTAG, "Unable to find tile data definitions for site:" + siteURL);
+            return null;
         }
 
         final int backgroundColor = Color.parseColor(backgroundColorString);
