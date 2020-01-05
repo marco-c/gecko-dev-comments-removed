@@ -6,6 +6,7 @@
 
 use dom::attr::{Attr, AttrHelpers};
 use dom::bindings::cell::DOMRefCell;
+use dom::bindings::codegen::Bindings::AttrBinding::AttrMethods;
 use dom::bindings::codegen::Bindings::CharacterDataBinding::CharacterDataMethods;
 use dom::bindings::codegen::Bindings::DocumentBinding::DocumentMethods;
 use dom::bindings::codegen::Bindings::ElementBinding::ElementMethods;
@@ -2278,9 +2279,27 @@ impl<'a> NodeMethods for JSRef<'a, Node> {
     }
 
     
-    fn LookupPrefix(self, _prefix: Option<DOMString>) -> Option<DOMString> {
+    fn LookupPrefix(self, namespace: Option<DOMString>) -> Option<DOMString> {
         
-        None
+        if null_str_as_empty(&namespace).is_empty() {
+            return None;
+        }
+
+        
+        match self.type_id() {
+            NodeTypeId::Element(..) => ElementCast::to_ref(self).unwrap().lookup_prefix(namespace),
+            NodeTypeId::Document => {
+                DocumentCast::to_ref(self).unwrap().GetDocumentElement().and_then(|element| {
+                    element.root().r().lookup_prefix(namespace)
+                })
+            },
+            NodeTypeId::DocumentType | NodeTypeId::DocumentFragment => None,
+            _ => {
+                self.GetParentElement().and_then(|element| {
+                    element.root().r().lookup_prefix(namespace)
+                })
+            }
+        }
     }
 
     
@@ -2517,4 +2536,3 @@ pub enum NodeDamage {
     
     OtherNodeDamage,
 }
-
