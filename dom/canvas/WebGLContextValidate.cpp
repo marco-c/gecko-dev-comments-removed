@@ -701,6 +701,7 @@ WebGLContext::InitAndValidateGL(FailureReason* const out_failReason)
     mPixelStore_FlipY = false;
     mPixelStore_PremultiplyAlpha = false;
     mPixelStore_ColorspaceConversion = BROWSER_DEFAULT_WEBGL;
+    mPixelStore_RequireFastPath = false;
 
     
     mPixelStore_UnpackImageHeight = 0;
