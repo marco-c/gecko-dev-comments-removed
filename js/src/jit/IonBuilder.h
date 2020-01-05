@@ -1068,9 +1068,10 @@ class IonBuilder
     
     bool nonStringIteration_;
 
+#ifdef DEBUG
     
-    
-    MInstruction* lazyArguments_;
+    bool hasLazyArguments_;
+#endif
 
     
     const CallInfo* inlineCallInfo_;
