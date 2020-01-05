@@ -191,28 +191,14 @@ class LUDivOrModI64 : public LCallInstructionHelper<INT64_PIECES, INT64_PIECES*2
 
 
 
-
-
-
-
-
-
-
-
-
-
-class LSoftDivI : public LBinaryMath<3>
+class LSoftDivI : public LBinaryCallInstructionHelper<1, 0>
 {
   public:
     LIR_HEADER(SoftDivI);
 
-    LSoftDivI(const LAllocation& lhs, const LAllocation& rhs,
-              const LDefinition& temp1, const LDefinition& temp2, const LDefinition& temp3) {
+    LSoftDivI(const LAllocation& lhs, const LAllocation& rhs) {
         setOperand(0, lhs);
         setOperand(1, rhs);
-        setTemp(0, temp1);
-        setTemp(1, temp2);
-        setTemp(2, temp3);
     }
 
     MDiv* mir() const {
@@ -268,25 +254,21 @@ class LModI : public LBinaryMath<1>
     }
 };
 
-class LSoftModI : public LBinaryMath<4>
+class LSoftModI : public LBinaryCallInstructionHelper<1, 1>
 {
   public:
     LIR_HEADER(SoftModI);
 
     LSoftModI(const LAllocation& lhs, const LAllocation& rhs,
-              const LDefinition& temp1, const LDefinition& temp2, const LDefinition& temp3,
-              const LDefinition& callTemp)
+              const LDefinition& temp)
     {
         setOperand(0, lhs);
         setOperand(1, rhs);
-        setTemp(0, temp1);
-        setTemp(1, temp2);
-        setTemp(2, temp3);
-        setTemp(3, callTemp);
+        setTemp(0, temp);
     }
 
     const LDefinition* callTemp() {
-        return getTemp(3);
+        return getTemp(0);
     }
 
     MMod* mir() const {
@@ -465,18 +447,14 @@ class LUMod : public LBinaryMath<0>
     }
 };
 
-class LSoftUDivOrMod : public LBinaryMath<3>
+class LSoftUDivOrMod : public LBinaryCallInstructionHelper<1, 0>
 {
   public:
     LIR_HEADER(SoftUDivOrMod);
 
-    LSoftUDivOrMod(const LAllocation& lhs, const LAllocation& rhs, const LDefinition& temp1,
-                   const LDefinition& temp2, const LDefinition& temp3) {
+    LSoftUDivOrMod(const LAllocation& lhs, const LAllocation& rhs) {
         setOperand(0, lhs);
         setOperand(1, rhs);
-        setTemp(0, temp1);
-        setTemp(1, temp2);
-        setTemp(2, temp3);
     }
 
     MInstruction* mir() {
@@ -581,8 +559,7 @@ class LWasmTruncateToInt64 : public LCallInstructionHelper<INT64_PIECES, 1, 0>
   public:
     LIR_HEADER(WasmTruncateToInt64);
 
-    LWasmTruncateToInt64(const LAllocation& in)
-    {
+    LWasmTruncateToInt64(const LAllocation& in) {
         setOperand(0, in);
     }
 
