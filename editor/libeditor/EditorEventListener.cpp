@@ -493,11 +493,11 @@ EditorEventListener::HandleEvent(nsIDOMEvent* aEvent)
 }
 
 #ifdef HANDLE_NATIVE_TEXT_DIRECTION_SWITCH
-namespace {
 
 
-bool IsCtrlShiftPressed(nsIDOMKeyEvent* aEvent, bool& isRTL)
+bool IsCtrlShiftPressed(const WidgetKeyboardEvent* aKeyboardEvent, bool& isRTL)
 {
+  MOZ_ASSERT(aKeyboardEvent);
   
   
   
@@ -506,16 +506,12 @@ bool IsCtrlShiftPressed(nsIDOMKeyEvent* aEvent, bool& isRTL)
   
   
   
-  WidgetKeyboardEvent* keyboardEvent =
-    aEvent->AsEvent()->WidgetEventPtr()->AsKeyboardEvent();
-  MOZ_ASSERT(keyboardEvent,
-             "DOM key event's internal event must be WidgetKeyboardEvent");
 
-  if (!keyboardEvent->IsControl()) {
+  if (!aKeyboardEvent->IsControl()) {
     return false;
   }
 
-  switch (keyboardEvent->mLocation) {
+  switch (aKeyboardEvent->mLocation) {
     case eKeyLocationRight:
       isRTL = true;
       break;
@@ -528,13 +524,11 @@ bool IsCtrlShiftPressed(nsIDOMKeyEvent* aEvent, bool& isRTL)
 
   
   
-  if (keyboardEvent->IsAlt() || keyboardEvent->IsOS()) {
+  if (aKeyboardEvent->IsAlt() || aKeyboardEvent->IsOS()) {
     return false;
   }
 
   return true;
-}
-
 }
 
 
@@ -580,7 +574,9 @@ EditorEventListener::KeyDown(nsIDOMKeyEvent* aKeyEvent)
   aKeyEvent->GetKeyCode(&keyCode);
   if (keyCode == nsIDOMKeyEvent::DOM_VK_SHIFT) {
     bool switchToRTL;
-    if (IsCtrlShiftPressed(aKeyEvent, switchToRTL)) {
+    WidgetKeyboardEvent* keydownEvent =
+      aKeyEvent->AsEvent()->WidgetEventPtr()->AsKeyboardEvent();
+    if (IsCtrlShiftPressed(keydownEvent, switchToRTL)) {
       mShouldSwitchTextDirection = true;
       mSwitchToRTL = switchToRTL;
     }
@@ -590,7 +586,8 @@ EditorEventListener::KeyDown(nsIDOMKeyEvent* aKeyEvent)
   }
   return NS_OK;
 }
-#endif
+
+#endif 
 
 nsresult
 EditorEventListener::KeyPress(WidgetKeyboardEvent* aKeyboardEvent)
