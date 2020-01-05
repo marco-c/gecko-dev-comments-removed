@@ -16,38 +16,6 @@
 #include <thread>
 
 
-enum ThreadSafety
-{
-  
-
-  Unsafe,
-  
-
-  Safe
-};
-
-
-template<ThreadSafety>
-struct ThreadSafePolicy;
-
-typedef int RingBufferIndex;
-
-
-template<>
-struct ThreadSafePolicy<Safe>
-{
-  typedef std::atomic<RingBufferIndex> IndexType;
-};
-
-
-
-
-
-template<>
-struct ThreadSafePolicy<Unsafe>
-{
-  typedef RingBufferIndex IndexType;
-};
 
 
 
@@ -80,10 +48,7 @@ struct ThreadSafePolicy<Unsafe>
 
 
 
-
-
-template <typename T,
-          ThreadSafety Safety = ThreadSafety::Safe>
+template <typename T>
 class ring_buffer_base
 {
 public:
@@ -95,12 +60,12 @@ public:
 
 
 
-  ring_buffer_base(RingBufferIndex capacity)
+  ring_buffer_base(int capacity)
     
     : capacity_(capacity + 1)
   {
     assert(storage_capacity() <
-           std::numeric_limits<RingBufferIndex>::max() / 2 &&
+           std::numeric_limits<int>::max() / 2 &&
            "buffer too large for the type of index used.");
     assert(capacity_ > 0);
 
@@ -119,7 +84,7 @@ public:
 
 
 
-  RingBufferIndex enqueue_default(RingBufferIndex count)
+  int enqueue_default(int count)
   {
     return enqueue(nullptr, count);
   }
@@ -132,7 +97,7 @@ public:
 
 
 
-  RingBufferIndex enqueue(T& element)
+  int enqueue(T& element)
   {
     return enqueue(&element, 1);
   }
@@ -147,27 +112,27 @@ public:
 
 
 
-  RingBufferIndex enqueue(T * elements, RingBufferIndex count)
+  int enqueue(T * elements, int count)
   {
 #ifndef NDEBUG
     assert_correct_thread(producer_id);
 #endif
 
-    RingBufferIndex rd_idx = read_index_;
-    RingBufferIndex wr_idx = write_index_;
+    int rd_idx = read_index_.load(std::memory_order::memory_order_relaxed);
+    int wr_idx = write_index_.load(std::memory_order::memory_order_relaxed);
 
     if (full_internal(rd_idx, wr_idx)) {
       return 0;
     }
 
-    RingBufferIndex to_write =
+    int to_write =
       std::min(available_write_internal(rd_idx, wr_idx), count);
 
     
-    RingBufferIndex first_part = std::min(storage_capacity() - wr_idx,
+    int first_part = std::min(storage_capacity() - wr_idx,
                                           to_write);
     
-    RingBufferIndex second_part = to_write - first_part;
+    int second_part = to_write - first_part;
 
     if (elements) {
       Copy(data_.get() + wr_idx, elements, first_part);
@@ -177,7 +142,7 @@ public:
       ConstructDefault(data_.get(), second_part);
     }
 
-    write_index_ = increment_index(wr_idx, to_write);
+    write_index_.store(increment_index(wr_idx, to_write), std::memory_order::memory_order_release);
 
     return to_write;
   }
@@ -192,31 +157,31 @@ public:
 
 
 
-  RingBufferIndex dequeue(T * elements, RingBufferIndex count)
+  int dequeue(T * elements, int count)
   {
 #ifndef NDEBUG
     assert_correct_thread(consumer_id);
 #endif
 
-    RingBufferIndex  wr_idx = write_index_;
-    RingBufferIndex  rd_idx = read_index_;
+    int wr_idx = write_index_.load(std::memory_order::memory_order_acquire);
+    int rd_idx = read_index_.load(std::memory_order::memory_order_relaxed);
 
     if (empty_internal(rd_idx, wr_idx)) {
       return 0;
     }
 
-    RingBufferIndex to_read =
+    int to_read =
       std::min(available_read_internal(rd_idx, wr_idx), count);
 
-    RingBufferIndex first_part = std::min(storage_capacity() - rd_idx, to_read);
-    RingBufferIndex second_part = to_read - first_part;
+    int first_part = std::min(storage_capacity() - rd_idx, to_read);
+    int second_part = to_read - first_part;
 
     if (elements) {
       Copy(elements, data_.get() + rd_idx, first_part);
       Copy(elements + first_part, data_.get(), second_part);
     }
 
-    read_index_ = increment_index(rd_idx, to_read);
+    read_index_.store(increment_index(rd_idx, to_read), std::memory_order::memory_order_relaxed);
 
     return to_read;
   }
@@ -227,12 +192,13 @@ public:
 
 
 
-  RingBufferIndex available_read() const
+  int available_read() const
   {
 #ifndef NDEBUG
     assert_correct_thread(consumer_id);
 #endif
-    return available_read_internal(read_index_, write_index_);
+    return available_read_internal(read_index_.load(std::memory_order::memory_order_relaxed),
+                                   write_index_.load(std::memory_order::memory_order_relaxed));
   }
   
 
@@ -241,12 +207,13 @@ public:
 
 
 
-  RingBufferIndex available_write() const
+  int available_write() const
   {
 #ifndef NDEBUG
     assert_correct_thread(producer_id);
 #endif
-    return available_write_internal(read_index_, write_index_);
+    return available_write_internal(read_index_.load(std::memory_order::memory_order_relaxed),
+                                    write_index_.load(std::memory_order::memory_order_relaxed));
   }
   
 
@@ -255,7 +222,7 @@ public:
 
 
 
-  RingBufferIndex capacity() const
+  int capacity() const
   {
     return storage_capacity() - 1;
   }
@@ -266,8 +233,8 @@ private:
 
 
 
-  bool empty_internal(RingBufferIndex read_index,
-                      RingBufferIndex write_index) const
+  bool empty_internal(int read_index,
+                      int write_index) const
   {
     return write_index == read_index;
   }
@@ -280,8 +247,8 @@ private:
 
 
 
-  bool full_internal(RingBufferIndex read_index,
-                     RingBufferIndex write_index) const
+  bool full_internal(int read_index,
+                     int write_index) const
   {
     return (write_index + 1) % storage_capacity() == read_index;
   }
@@ -300,9 +267,9 @@ private:
 
 
 
-  RingBufferIndex
-  available_read_internal(RingBufferIndex read_index,
-                          RingBufferIndex write_index) const
+  int
+  available_read_internal(int read_index,
+                          int write_index) const
   {
     if (write_index >= read_index) {
       return write_index - read_index;
@@ -315,9 +282,9 @@ private:
 
 
 
-  RingBufferIndex
-  available_write_internal(RingBufferIndex read_index,
-                           RingBufferIndex write_index) const
+  int
+  available_write_internal(int read_index,
+                           int write_index) const
   {
     
 
@@ -334,8 +301,8 @@ private:
 
 
 
-  RingBufferIndex
-  increment_index(RingBufferIndex index, RingBufferIndex increment) const
+  int
+  increment_index(int index, int increment) const
   {
     assert(increment >= 0);
     return (index + increment) % storage_capacity();
@@ -357,10 +324,10 @@ private:
   }
 #endif
   
-  typename ThreadSafePolicy<Safety>::IndexType read_index_;
+  std::atomic<int> read_index_;
   
 
-  typename ThreadSafePolicy<Safety>::IndexType write_index_;
+  std::atomic<int> write_index_;
   
   const int capacity_;
   
@@ -376,8 +343,7 @@ private:
 
 
 
-template <typename T,
-          ThreadSafety Safety = ThreadSafety::Safe>
+template <typename T>
 class audio_ring_buffer_base
 {
 public:
@@ -497,7 +463,7 @@ private:
   
   int channel_count;
   
-  ring_buffer_base<T, Safety> ring_buffer;
+  ring_buffer_base<T> ring_buffer;
 };
 
 
@@ -506,27 +472,13 @@ private:
 
 
 template<typename T>
-using lock_free_queue = ring_buffer_base<T, Safe>;
+using lock_free_queue = ring_buffer_base<T>;
 
 
 
 
 
 template<typename T>
-using queue = ring_buffer_base<T, Unsafe>;
-
-
-
-
-
-template<typename T>
-using lock_free_audio_ring_buffer = audio_ring_buffer_base<T, Safe>;
-
-
-
-
-
-template<typename T>
-using audio_ring_buffer = audio_ring_buffer_base<T, Unsafe>;
+using lock_free_audio_ring_buffer = audio_ring_buffer_base<T>;
 
 #endif 
