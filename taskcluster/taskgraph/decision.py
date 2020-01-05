@@ -46,6 +46,11 @@ PER_PROJECT_PARAMETERS = {
         'optimize_target_tasks': True,
     },
 
+    'cedar': {
+        'target_tasks_method': 'cedar_tasks',
+        'optimize_target_tasks': True,
+    },
+
     
     'default': {
         'target_tasks_method': 'default',
