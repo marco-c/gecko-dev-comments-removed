@@ -25,7 +25,7 @@ var MemoryObserver = {
       let selected = BrowserApp.selectedTab;
       for (let i = 0; i < tabs.length; i++) {
         if (tabs[i] != selected && !tabs[i].playingAudio) {
-          this.zombify(tabs[i]);
+          tabs[i].zombify();
         }
       }
     }
@@ -40,39 +40,6 @@ var MemoryObserver = {
     if (!Services.prefs.getBoolPref("browser.sessionhistory.bfcacheIgnoreMemoryPressure")) {
       defaults.setIntPref("browser.sessionhistory.max_total_viewers", 0);
     }
-  },
-
-  zombify: function(tab) {
-    let browser = tab.browser;
-    let data = browser.__SS_data;
-    let extra = browser.__SS_extdata;
-
-    
-    
-    let evt = document.createEvent("UIEvents");
-    evt.initUIEvent("TabPreZombify", true, false, window, null);
-    browser.dispatchEvent(evt);
-
-    
-    
-    let currentURL = browser.__SS_restore ? data.entries[0].url : browser.currentURI.spec;
-    let sibling = browser.nextSibling;
-    let isPrivate = PrivateBrowsingUtils.isBrowserPrivate(browser);
-
-    tab.destroy();
-    tab.create(currentURL, { sibling: sibling, zombifying: true, delayLoad: true, isPrivate: isPrivate });
-
-    
-    browser = tab.browser;
-    browser.__SS_data = data;
-    browser.__SS_extdata = extra;
-    browser.__SS_restore = true;
-    browser.setAttribute("pending", "true");
-
-    
-    evt = document.createEvent("UIEvents");
-    evt.initUIEvent("TabPostZombify", true, false, window, null);
-    browser.dispatchEvent(evt);
   },
 
   gc: function() {
