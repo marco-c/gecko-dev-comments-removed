@@ -63,15 +63,7 @@ this.PlacesTestUtils = Object.freeze({
       }
       let visitDate = place.visitDate;
       if (visitDate) {
-        if (visitDate.constructor.name != "Date") {
-          
-          
-          
-          
-          
-          if (visitDate <= Date.now()) {
-            throw new Error("AddVisits expects a Date object or _micro_seconds!");
-          }
+        if (!(visitDate instanceof Date)) {
           visitDate = PlacesUtils.toDate(visitDate);
         }
       } else {

@@ -92,7 +92,6 @@ struct IconData
   }
 
   nsCString spec;
-  nsCString host;
   PRTime expiration;
   enum AsyncFaviconFetchMode fetchMode;
   uint16_t status; 
@@ -116,8 +115,8 @@ struct PageData
   int64_t id; 
   int64_t placeId; 
   nsCString spec;
-  nsCString host;
   nsCString bookmarkedSpec;
+  nsString revHost;
   bool canAddToHistory; 
   nsCString guid;
 };

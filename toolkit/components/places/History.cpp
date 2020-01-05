@@ -2977,19 +2977,6 @@ History::UpdatePlaces(JS::Handle<JS::Value> aPlaceInfos,
       
       rv = GetIntFromJSObject(aCtx, visit, "visitDate", &data.visitTime);
       NS_ENSURE_SUCCESS(rv, rv);
-      
-      
-      
-      
-      
-      if (data.visitTime < (PR_Now() / 1000)) {
-#ifdef DEBUG
-        nsCOMPtr<nsIXPConnect> xpc = do_GetService(nsIXPConnect::GetCID());
-        Unused << xpc->DebugDumpJSStack(false, false, false);
-        MOZ_CRASH("invalid time format passed to updatePlaces");
-#endif
-        return NS_ERROR_INVALID_ARG;
-      }
       uint32_t transitionType = 0;
       rv = GetIntFromJSObject(aCtx, visit, "transitionType", &transitionType);
       NS_ENSURE_SUCCESS(rv, rv);
