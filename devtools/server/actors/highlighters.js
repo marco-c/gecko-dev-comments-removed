@@ -489,6 +489,7 @@ exports.CustomHighlighterActor = protocol.ActorClassWithSpec(customHighlighterSp
 
 
 
+
   show: function (node, options) {
     if (!node || !this._highlighter) {
       return false;
@@ -700,6 +701,10 @@ exports.CssTransformHighlighter = CssTransformHighlighter;
 const { SelectorHighlighter } = require("./highlighters/selector");
 register(SelectorHighlighter);
 exports.SelectorHighlighter = SelectorHighlighter;
+
+const { RectHighlighter } = require("./highlighters/rect");
+register(RectHighlighter);
+exports.RectHighlighter = RectHighlighter;
 
 const { GeometryEditorHighlighter } = require("./highlighters/geometry-editor");
 register(GeometryEditorHighlighter);
