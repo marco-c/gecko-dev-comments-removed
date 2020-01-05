@@ -111,6 +111,24 @@ IsStyleCachePreservingAction(EditAction action)
          action == EditAction::insertQuotation;
 }
 
+static nsIAtom&
+ParagraphSeparatorElement(ParagraphSeparator separator)
+{
+  switch (separator) {
+    default:
+      MOZ_FALLTHROUGH_ASSERT("Unexpected paragraph separator!");
+
+    case ParagraphSeparator::div:
+      return *nsGkAtoms::div;
+
+    case ParagraphSeparator::p:
+      return *nsGkAtoms::p;
+
+    case ParagraphSeparator::br:
+      return *nsGkAtoms::br;
+  }
+}
+
 class TableCellAndListItemFunctor final : public BoolDomIterFunctor
 {
 public:
@@ -1534,11 +1552,48 @@ HTMLEditRules::WillInsertBreak(Selection& aSelection,
   
   
   nsCOMPtr<Element> host = htmlEditor->GetActiveEditingHost();
-  if (host && !EditorUtils::IsDescendantOf(blockParent, host)) {
+  if (NS_WARN_IF(!host)) {
+    return NS_ERROR_FAILURE;
+  }
+  ParagraphSeparator separator = mHTMLEditor->GetDefaultParagraphSeparator();
+  if (!IsBlockNode(*host) ||
+      
+      
+      (!mHTMLEditor->CanContainTag(*host, *nsGkAtoms::p) &&
+       
+       
+       !host->IsAnyOfHTMLElements(nsGkAtoms::ol, nsGkAtoms::ul, nsGkAtoms::dl,
+                                  nsGkAtoms::table, nsGkAtoms::thead,
+                                  nsGkAtoms::tbody, nsGkAtoms::tfoot,
+                                  nsGkAtoms::tr)) ||
+      (host == blockParent && separator == ParagraphSeparator::br)) {
     nsresult rv = StandardBreakImpl(node, offset, aSelection);
     NS_ENSURE_SUCCESS(rv, rv);
     *aHandled = true;
     return NS_OK;
+  }
+  if (host == blockParent && separator != ParagraphSeparator::br) {
+    
+    MOZ_ASSERT(separator == ParagraphSeparator::div ||
+               separator == ParagraphSeparator::p);
+    nsresult rv = MakeBasicBlock(aSelection,
+                                 ParagraphSeparatorElement(separator));
+    
+    
+    Unused << NS_WARN_IF(NS_FAILED(rv));
+    blockParent = mHTMLEditor->GetBlock(node);
+    if (NS_WARN_IF(!blockParent)) {
+      return NS_ERROR_UNEXPECTED;
+    }
+    if (NS_WARN_IF(blockParent == host)) {
+      
+      rv = StandardBreakImpl(node, offset, aSelection);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
+      *aHandled = true;
+      return NS_OK;
+    }
   }
 
   
@@ -3483,21 +3538,28 @@ HTMLEditRules::WillMakeBasicBlock(Selection& aSelection,
 {
   MOZ_ASSERT(aCancel && aHandled);
 
-  NS_ENSURE_STATE(mHTMLEditor);
-  RefPtr<HTMLEditor> htmlEditor(mHTMLEditor);
-
   OwningNonNull<nsIAtom> blockType = NS_Atomize(aBlockType);
 
   WillInsert(aSelection, aCancel);
   
   *aCancel = false;
-  *aHandled = false;
+  *aHandled = true;
+
+  nsresult rv = MakeBasicBlock(aSelection, blockType);
+  Unused << NS_WARN_IF(NS_FAILED(rv));
+  return rv;
+}
+
+nsresult
+HTMLEditRules::MakeBasicBlock(Selection& aSelection, nsIAtom& blockType)
+{
+  NS_ENSURE_STATE(mHTMLEditor);
+  RefPtr<HTMLEditor> htmlEditor(mHTMLEditor);
 
   nsresult rv = NormalizeSelection(&aSelection);
   NS_ENSURE_SUCCESS(rv, rv);
   AutoSelectionRestorer selectionRestorer(&aSelection, htmlEditor);
   AutoTransactionsConserveSelection dontSpazMySelection(htmlEditor);
-  *aHandled = true;
 
   
   nsTArray<OwningNonNull<nsINode>> arrayOfNodes;
@@ -3514,8 +3576,8 @@ HTMLEditRules::WillMakeBasicBlock(Selection& aSelection,
       *aSelection.GetRangeAt(0)->GetStartParent();
     int32_t offset = aSelection.GetRangeAt(0)->StartOffset();
 
-    if (blockType == nsGkAtoms::normal ||
-        blockType == nsGkAtoms::_empty) {
+    if (&blockType == nsGkAtoms::normal ||
+        &blockType == nsGkAtoms::_empty) {
       
       NS_ENSURE_TRUE(htmlEditor->GetBlock(parent), NS_ERROR_NULL_POINTER);
       OwningNonNull<Element> curBlock = *htmlEditor->GetBlock(parent);
@@ -3538,7 +3600,6 @@ HTMLEditRules::WillMakeBasicBlock(Selection& aSelection,
         brNode = htmlEditor->CreateBR(curBlock->GetParentNode(), offset);
         NS_ENSURE_STATE(brNode);
         
-        *aHandled = true;
         rv = aSelection.Collapse(curBlock->GetParentNode(), offset);
         
         selectionRestorer.Abort();
@@ -3559,7 +3620,7 @@ HTMLEditRules::WillMakeBasicBlock(Selection& aSelection,
       rv = SplitAsNeeded(blockType, parent, offset);
       NS_ENSURE_SUCCESS(rv, rv);
       nsCOMPtr<Element> block =
-        htmlEditor->CreateNode(blockType, parent, offset);
+        htmlEditor->CreateNode(&blockType, parent, offset);
       NS_ENSURE_STATE(block);
       
       mNewBlock = block;
@@ -3571,7 +3632,6 @@ HTMLEditRules::WillMakeBasicBlock(Selection& aSelection,
         arrayOfNodes.RemoveElementAt(0);
       }
       
-      *aHandled = true;
       rv = aSelection.Collapse(block, 0);
       
       selectionRestorer.Abort();
@@ -3582,11 +3642,11 @@ HTMLEditRules::WillMakeBasicBlock(Selection& aSelection,
   
   
   
-  if (blockType == nsGkAtoms::blockquote) {
+  if (&blockType == nsGkAtoms::blockquote) {
     rv = MakeBlockquote(arrayOfNodes);
     NS_ENSURE_SUCCESS(rv, rv);
-  } else if (blockType == nsGkAtoms::normal ||
-             blockType == nsGkAtoms::_empty) {
+  } else if (&blockType == nsGkAtoms::normal ||
+             &blockType == nsGkAtoms::_empty) {
     rv = RemoveBlockStyle(arrayOfNodes);
     NS_ENSURE_SUCCESS(rv, rv);
   } else {
@@ -6953,6 +7013,11 @@ HTMLEditRules::ApplyBlockStyle(nsTArray<OwningNonNull<nsINode>>& aNodeArray,
         
         mNewBlock = curBlock;
         
+      }
+
+      if (NS_WARN_IF(!curNode->GetParentNode())) {
+        
+        return NS_ERROR_UNEXPECTED;
       }
 
       
