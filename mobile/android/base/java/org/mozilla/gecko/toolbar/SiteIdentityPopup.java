@@ -458,7 +458,7 @@ public class SiteIdentityPopup extends AnchoredPopup implements BundleEventListe
     
 
 
-    void setSiteIdentity(SiteIdentity siteIdentity) {
+    public void setSiteIdentity(SiteIdentity siteIdentity) {
         mSiteIdentity = siteIdentity;
     }
 
