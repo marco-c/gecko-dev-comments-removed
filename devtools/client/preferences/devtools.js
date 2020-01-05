@@ -301,7 +301,7 @@ pref("devtools.webconsole.new-frontend-enabled", false);
 #endif
 
 
-pref("devtools.sourcemap.locations.enabled", false);
+pref("devtools.source-map.locations.enabled", false);
 
 
 pref("devtools.hud.loglimit", 1000);
