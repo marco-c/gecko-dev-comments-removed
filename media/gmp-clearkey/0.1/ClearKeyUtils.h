@@ -41,10 +41,6 @@ typedef std::vector<uint8_t> KeyId;
 typedef std::vector<uint8_t> Key;
 
 
-
-static const uint32_t kMaxSessionResponseLength = 65536;
-
-
 static const uint32_t kMaxWebmInitDataSize = 65536;
 static const uint32_t kMaxKeyIdsLength = 512;
 
