@@ -1,0 +1,7 @@
+
+
+
+assertThrowsInstanceOf(() => clone(async function f() {}), TypeError);
+
+if (typeof reportCompare === "function")
+    reportCompare(true, true);
