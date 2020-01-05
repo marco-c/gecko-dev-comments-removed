@@ -773,7 +773,9 @@ nsStyleUtil::CSPAllowsInlineStyle(nsIContent* aContent,
 
   bool allowInlineStyle = true;
   rv = csp->GetAllowsInline(nsIContentPolicy::TYPE_STYLESHEET,
-                            nonce, aStyleText, aLineNumber,
+                            nonce,
+                            false, 
+                            aStyleText, aLineNumber,
                             &allowInlineStyle);
   NS_ENSURE_SUCCESS(rv, false);
 

@@ -43,6 +43,7 @@
 #include "mozilla/net/ReferrerPolicy.h"
 #include "nsINetworkInterceptController.h"
 #include "nsSandboxFlags.h"
+#include "nsIScriptElement.h"
 
 using namespace mozilla;
 
@@ -153,11 +154,17 @@ nsCSPContext::ShouldLoad(nsContentPolicyType aContentType,
   }
 
   nsAutoString nonce;
+  bool parserCreated = false;
   if (!isPreload) {
     nsCOMPtr<nsIDOMHTMLElement> htmlElement = do_QueryInterface(aRequestContext);
     if (htmlElement) {
       rv = htmlElement->GetAttribute(NS_LITERAL_STRING("nonce"), nonce);
       NS_ENSURE_SUCCESS(rv, rv);
+    }
+
+    nsCOMPtr<nsIScriptElement> script = do_QueryInterface(aRequestContext);
+    if (script && script->GetParserCreated() != mozilla::dom::NOT_FROM_PARSER) {
+      parserCreated = true;
     }
   }
 
@@ -173,7 +180,8 @@ nsCSPContext::ShouldLoad(nsContentPolicyType aContentType,
                                    isPreload,
                                    false,     
                                    true,      
-                                   true);     
+                                   true,     
+                                   parserCreated);
 
   *outDecision = permitted ? nsIContentPolicy::ACCEPT
                            : nsIContentPolicy::REJECT_SERVER;
@@ -201,7 +209,8 @@ nsCSPContext::permitsInternal(CSPDirective aDir,
                               bool aIsPreload,
                               bool aSpecific,
                               bool aSendViolationReports,
-                              bool aSendContentLocationInViolationReports)
+                              bool aSendContentLocationInViolationReports,
+                              bool aParserCreated)
 {
   bool permits = true;
 
@@ -220,6 +229,7 @@ nsCSPContext::permitsInternal(CSPDirective aDir,
                                aNonce,
                                aWasRedirected,
                                aSpecific,
+                               aParserCreated,
                                violatedDirective)) {
       
       
@@ -404,7 +414,9 @@ nsCSPContext::GetAllowsEval(bool* outShouldReportViolation,
 
   for (uint32_t i = 0; i < mPolicies.Length(); i++) {
     if (!mPolicies[i]->allows(nsIContentPolicy::TYPE_SCRIPT,
-                              CSP_UNSAFE_EVAL, EmptyString())) {
+                              CSP_UNSAFE_EVAL,
+                              EmptyString(),
+                              false)) {
       
       
       *outShouldReportViolation = true;
@@ -471,6 +483,7 @@ nsCSPContext::reportInlineViolation(nsContentPolicyType aContentType,
 NS_IMETHODIMP
 nsCSPContext::GetAllowsInline(nsContentPolicyType aContentType,
                               const nsAString& aNonce,
+                              bool aParserCreated,
                               const nsAString& aContent,
                               uint32_t aLineNumber,
                               bool* outAllowsInline)
@@ -489,9 +502,9 @@ nsCSPContext::GetAllowsInline(nsContentPolicyType aContentType,
   
   for (uint32_t i = 0; i < mPolicies.Length(); i++) {
     bool allowed =
-      mPolicies[i]->allows(aContentType, CSP_UNSAFE_INLINE, EmptyString()) ||
-      mPolicies[i]->allows(aContentType, CSP_NONCE, aNonce) ||
-      mPolicies[i]->allows(aContentType, CSP_HASH, aContent);
+      mPolicies[i]->allows(aContentType, CSP_UNSAFE_INLINE, EmptyString(), aParserCreated) ||
+      mPolicies[i]->allows(aContentType, CSP_NONCE, aNonce, aParserCreated) ||
+      mPolicies[i]->allows(aContentType, CSP_HASH, aContent, aParserCreated);
 
     if (!allowed) {
       
@@ -536,12 +549,16 @@ nsCSPContext::GetAllowsInline(nsContentPolicyType aContentType,
 
 
 
+
+
+
+
 #define CASE_CHECK_AND_REPORT(violationType, contentPolicyType, nonceOrHash,   \
                               keyword, observerTopic)                          \
   case nsIContentSecurityPolicy::VIOLATION_TYPE_ ## violationType :            \
     PR_BEGIN_MACRO                                                             \
     if (!mPolicies[p]->allows(nsIContentPolicy::TYPE_ ## contentPolicyType,    \
-                              keyword, nonceOrHash))                           \
+                              keyword, nonceOrHash, false))                    \
     {                                                                          \
       nsAutoString violatedDirective;                                          \
       mPolicies[p]->getDirectiveStringForContentType(                          \
@@ -1268,7 +1285,8 @@ nsCSPContext::PermitsAncestry(nsIDocShell* aDocShell, bool* outPermitsAncestry)
                                    false,   
                                    true,    
                                    true,    
-                                   okToSendAncestor);
+                                   okToSendAncestor,
+                                   false);  
     if (!permits) {
       *outPermitsAncestry = false;
     }
@@ -1295,7 +1313,8 @@ nsCSPContext::Permits(nsIURI* aURI,
                                 false,    
                                 aSpecific,
                                 true,     
-                                true);    
+                                true,     
+                                false);   
 
   if (CSPCONTEXTLOGENABLED()) {
       CSPCONTEXTLOG(("nsCSPContext::Permits, aUri: %s, aDir: %d, isAllowed: %s",

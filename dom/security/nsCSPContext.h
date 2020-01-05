@@ -94,7 +94,8 @@ class nsCSPContext : public nsIContentSecurityPolicy
                          bool aIsPreload,
                          bool aSpecific,
                          bool aSendViolationReports,
-                         bool aSendContentLocationInViolationReports);
+                         bool aSendContentLocationInViolationReports,
+                         bool aParserCreated);
 
     
     void reportInlineViolation(nsContentPolicyType aContentType,

@@ -113,6 +113,7 @@ function run_test() {
         let inlineOK = true;
         inlineOK = csp.getAllowsInline(Ci.nsIContentPolicy.TYPE_SCRIPT,
                                        "", 
+                                       false, 
                                        "", 
                                        0); 
 
@@ -159,6 +160,7 @@ function run_test() {
         let inlineOK = true;
         inlineOK = csp.getAllowsInline(Ci.nsIContentPolicy.TYPE_SCRIPT,
                                        "", 
+                                       false, 
                                        "", 
                                        0); 
 
