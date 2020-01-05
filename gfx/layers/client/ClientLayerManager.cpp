@@ -304,12 +304,17 @@ ClientLayerManager::EndTransactionInternal(DrawPaintedLayerCallback aCallback,
 
   GetRoot()->ComputeEffectiveTransforms(Matrix4x4());
 
-  if (gfxPrefs::AlwaysPaint() && XRE_IsContentProcess()) {
-    TimeStamp start = TimeStamp::Now();
-    root->RenderLayer();
-    mLastPaintTime = TimeStamp::Now() - start;
+  
+  if (!gfxPlatform::GetPlatform()->DidRenderingDeviceReset()) {
+    if (gfxPrefs::AlwaysPaint() && XRE_IsContentProcess()) {
+      TimeStamp start = TimeStamp::Now();
+      root->RenderLayer();
+      mLastPaintTime = TimeStamp::Now() - start;
+    } else {
+      root->RenderLayer();
+    }
   } else {
-    root->RenderLayer();
+    gfxCriticalNote << "LayerManager::EndTransaction skip RenderLayer().";
   }
 
   if (!mRepeatTransaction && !GetRoot()->GetInvalidRegion().IsEmpty()) {
@@ -626,8 +631,12 @@ ClientLayerManager::ForwardTransaction(bool aScheduleComposite)
 {
   TimeStamp start = TimeStamp::Now();
 
-  if (mForwarder->GetSyncObject()) {
-    mForwarder->GetSyncObject()->FinalizeFrame();
+  
+  
+  if (!gfxPlatform::GetPlatform()->DidRenderingDeviceReset()) {
+    if (mForwarder->GetSyncObject()) {
+      mForwarder->GetSyncObject()->FinalizeFrame();
+    }
   }
 
   mPhase = PHASE_FORWARD;
