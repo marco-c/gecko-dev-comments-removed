@@ -382,7 +382,7 @@ BookmarksEngine.prototype = {
         key = "s" + item.pos;
         break;
       default:
-        return;
+        return undefined;
     }
 
     
@@ -540,7 +540,7 @@ BookmarksEngine.prototype = {
     
     if (item.hasDupe) {
       this._log.trace(item.id + " already a dupe: not finding one.");
-      return;
+      return null;
     }
     let mapped = this._mapDupe(item);
     this._log.debug(item.id + " mapped to " + mapped);

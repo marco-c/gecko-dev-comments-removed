@@ -992,14 +992,16 @@ PostQueue.prototype = {
       this.log.trace("Server error response during a batch", response);
       
       
-      return this.postCallback(response, !finalBatchPost);
+      this.postCallback(response, !finalBatchPost);
+      return;
     }
 
     if (finalBatchPost) {
       this.log.trace("Committed batch", this.batchID);
       this.batchID = undefined; 
       this.lastModified = response.headers["x-last-modified"];
-      return this.postCallback(response, false);
+      this.postCallback(response, false);
+      return;
     }
 
     if (response.status != 202) {
@@ -1008,7 +1010,8 @@ PostQueue.prototype = {
       }
       this.batchID = null; 
       this.lastModified = response.headers["x-last-modified"];
-      return this.postCallback(response, false);
+      this.postCallback(response, false);
+      return;
     }
 
     

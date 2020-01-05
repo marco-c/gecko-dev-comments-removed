@@ -527,7 +527,7 @@ this.BrowserIDManager.prototype = {
       
       
       if (userData.kA && userData.kB) {
-        return;
+        return null;
       }
       log.info("Fetching new keys");
       return this._fxaService.getKeys().then(

@@ -161,7 +161,7 @@ this.CommonUtils = {
     
     if (name in thisObj && thisObj[name] instanceof Ci.nsITimer) {
       thisObj[name].delay = wait;
-      return;
+      return thisObj[name];
     }
 
     

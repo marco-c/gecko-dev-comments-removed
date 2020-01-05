@@ -300,6 +300,7 @@ this.FxAccountsWebChannelHelpers.prototype = {
         
         return fxAccounts.signOut(true);
       }
+      return null;
     });
   },
 

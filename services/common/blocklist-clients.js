@@ -64,7 +64,12 @@ function mergeChanges(collection, localRecords, changes) {
     
     .filter((record) => record.deleted != true)
     
-    .sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+    .sort((a, b) => {
+      if (a.id < b.id) {
+        return -1;
+      }
+      return a.id > b.id ? 1 : 0;
+    });
 }
 
 

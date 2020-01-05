@@ -240,7 +240,8 @@ this.HawkClient.prototype = {
       if (error) {
         
         
-        return deferred.reject(self._constructError(restResponse, error));
+        deferred.reject(self._constructError(restResponse, error));
+        return;
       }
 
       self._updateClockOffset(restResponse.headers["date"]);
@@ -249,8 +250,8 @@ this.HawkClient.prototype = {
         
         
         log.debug("Received 401 for " + path + ": retrying");
-        return deferred.resolve(
-            self.request(path, method, credentials, payloadObj, extraHeaders, false));
+        deferred.resolve(self.request(path, method, credentials, payloadObj, extraHeaders, false));
+        return;
       }
 
       
@@ -268,9 +269,11 @@ this.HawkClient.prototype = {
       let okResponse = (200 <= status && status < 300);
       if (!okResponse || jsonResponse.error) {
         if (jsonResponse.error) {
-          return deferred.reject(jsonResponse);
+          deferred.reject(jsonResponse);
+        } else {
+          deferred.reject(self._constructError(restResponse, "Request failed"));
         }
-        return deferred.reject(self._constructError(restResponse, "Request failed"));
+        return;
       }
       
       

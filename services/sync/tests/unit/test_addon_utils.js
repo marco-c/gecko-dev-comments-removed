@@ -37,6 +37,7 @@ function createAndStartHTTPServer(port = HTTP_PORT) {
     _("Error: " + Log.exceptionStr(ex));
     do_throw(ex);
   }
+  return null; 
 }
 
 function run_test() {
