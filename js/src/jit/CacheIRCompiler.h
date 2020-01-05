@@ -212,6 +212,9 @@ class MOZ_RAII CacheRegisterAllocator
     
     Register defineRegister(MacroAssembler& masm, TypedOperandId typedId);
     ValueOperand defineValueRegister(MacroAssembler& masm, ValOperandId val);
+
+    
+    JSValueType knownType(ValOperandId val) const;
 };
 
 
