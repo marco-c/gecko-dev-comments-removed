@@ -5,7 +5,6 @@
 use dom::bindings::codegen::Bindings::DocumentBinding::DocumentMethods;
 use dom::bindings::codegen::InheritTypes::NodeCast;
 use dom::bindings::js::{JS, JSRef, Temporary, OptionalRootable};
-use dom::bindings::trace::{Traceable, Untraceable};
 use dom::bindings::utils::GlobalStaticData;
 use dom::document::{Document, DocumentHelpers};
 use dom::element::Element;
@@ -42,50 +41,50 @@ pub struct Page {
     pub subpage_id: Option<SubpageId>,
 
     
-    pub last_reflow_id: Traceable<Cell<uint>>,
+    pub last_reflow_id: Cell<uint>,
 
     
-    pub frame: Traceable<RefCell<Option<Frame>>>,
+    pub frame: RefCell<Option<Frame>>,
 
     
-    pub layout_chan: Untraceable<LayoutChan>,
+    pub layout_chan: LayoutChan,
 
     
-    layout_rpc: Untraceable<Box<LayoutRPC+'static>>,
+    layout_rpc: Box<LayoutRPC+'static>,
 
     
-    pub layout_join_port: Untraceable<RefCell<Option<Receiver<()>>>>,
+    pub layout_join_port: RefCell<Option<Receiver<()>>>,
 
     
-    damage: Traceable<RefCell<Option<DocumentDamage>>>,
+    damage: RefCell<Option<DocumentDamage>>,
 
     
-    pub window_size: Traceable<Cell<WindowSizeData>>,
+    pub window_size: Cell<WindowSizeData>,
 
-    js_info: Traceable<RefCell<Option<JSPageInfo>>>,
-
-    
-    
-    
-    
-    url: Untraceable<RefCell<Option<(Url, bool)>>>,
-
-    next_subpage_id: Traceable<Cell<SubpageId>>,
+    js_info: RefCell<Option<JSPageInfo>>,
 
     
-    pub resize_event: Untraceable<Cell<Option<WindowSizeData>>>,
+    
+    
+    
+    url: RefCell<Option<(Url, bool)>>,
+
+    next_subpage_id: Cell<SubpageId>,
+
+    
+    pub resize_event: Cell<Option<WindowSizeData>>,
 
     
     pub fragment_name: RefCell<Option<String>>,
 
     
-    pub resource_task: Untraceable<ResourceTask>,
+    pub resource_task: ResourceTask,
 
     
-    pub constellation_chan: Untraceable<ConstellationChan>,
+    pub constellation_chan: ConstellationChan,
 
     
-    pub children: Traceable<RefCell<Vec<Rc<Page>>>>,
+    pub children: RefCell<Vec<Rc<Page>>>,
 
     
     pub pending_reflows: Cell<int>,
@@ -111,7 +110,7 @@ impl IterablePage for Rc<Page> {
     }
     fn find(&self, id: PipelineId) -> Option<Rc<Page>> {
         if self.id == id { return Some(self.clone()); }
-        for page in self.children.deref().borrow().iter() {
+        for page in self.children.borrow().iter() {
             let found = page.find(id);
             if found.is_some() { return found; }
         }
@@ -129,7 +128,7 @@ impl Page {
            js_context: Rc<Cx>) -> Page {
         let js_info = JSPageInfo {
             dom_static: GlobalStaticData(),
-            js_context: Untraceable::new(js_context),
+            js_context: js_context,
         };
         let layout_rpc: Box<LayoutRPC> = {
             let (rpc_send, rpc_recv) = channel();
@@ -140,21 +139,21 @@ impl Page {
         Page {
             id: id,
             subpage_id: subpage_id,
-            frame: Traceable::new(RefCell::new(None)),
-            layout_chan: Untraceable::new(layout_chan),
-            layout_rpc: Untraceable::new(layout_rpc),
-            layout_join_port: Untraceable::new(RefCell::new(None)),
-            damage: Traceable::new(RefCell::new(None)),
-            window_size: Traceable::new(Cell::new(window_size)),
-            js_info: Traceable::new(RefCell::new(Some(js_info))),
-            url: Untraceable::new(RefCell::new(None)),
-            next_subpage_id: Traceable::new(Cell::new(SubpageId(0))),
-            resize_event: Untraceable::new(Cell::new(None)),
+            frame: RefCell::new(None),
+            layout_chan: layout_chan,
+            layout_rpc: layout_rpc,
+            layout_join_port: RefCell::new(None),
+            damage: RefCell::new(None),
+            window_size: Cell::new(window_size),
+            js_info: RefCell::new(Some(js_info)),
+            url: RefCell::new(None),
+            next_subpage_id: Cell::new(SubpageId(0)),
+            resize_event: Cell::new(None),
             fragment_name: RefCell::new(None),
-            last_reflow_id: Traceable::new(Cell::new(0)),
-            resource_task: Untraceable::new(resource_task),
-            constellation_chan: Untraceable::new(constellation_chan),
-            children: Traceable::new(RefCell::new(vec!())),
+            last_reflow_id: Cell::new(0),
+            resource_task: resource_task,
+            constellation_chan: constellation_chan,
+            children: RefCell::new(vec!()),
             pending_reflows: Cell::new(0),
             avoided_reflows: Cell::new(0),
         }
@@ -165,7 +164,7 @@ impl Page {
         if damaged {
             let frame = self.frame();
             let window = frame.as_ref().unwrap().window.root();
-            self.reflow(goal, window.control_chan.clone(), &**window.compositor);
+            self.reflow(goal, window.control_chan.clone(), &*window.compositor);
         } else {
             self.avoided_reflows.set(self.avoided_reflows.get() + 1);
         }
@@ -177,7 +176,7 @@ impl Page {
         
         self.flush_layout(ReflowForDisplay);
         self.join_layout(); 
-        let layout_rpc: &LayoutRPC = &**self.layout_rpc;
+        let layout_rpc: &LayoutRPC = &*self.layout_rpc;
         layout_rpc
     }
 
@@ -185,7 +184,6 @@ impl Page {
     pub fn remove(&self, id: PipelineId) -> Option<Rc<Page>> {
         let remove_idx = {
             self.children
-                .deref()
                 .borrow_mut()
                 .iter_mut()
                 .enumerate()
@@ -197,9 +195,9 @@ impl Page {
                 .map(|(idx, _)| idx)
         };
         match remove_idx {
-            Some(idx) => return Some(self.children.deref().borrow_mut().remove(idx).unwrap()),
+            Some(idx) => return Some(self.children.borrow_mut().remove(idx).unwrap()),
             None => {
-                for page_tree in self.children.deref().borrow_mut().iter_mut() {
+                for page_tree in self.children.borrow_mut().iter_mut() {
                     match page_tree.remove(id) {
                         found @ Some(_) => return found,
                         None => (), 
@@ -215,7 +213,7 @@ impl Iterator<Rc<Page>> for PageIterator {
     fn next(&mut self) -> Option<Rc<Page>> {
         if !self.stack.is_empty() {
             let next = self.stack.pop().unwrap();
-            for child in next.children.deref().borrow().iter() {
+            for child in next.children.borrow().iter() {
                 self.stack.push(child.clone());
             }
             Some(next.clone())
@@ -227,33 +225,33 @@ impl Iterator<Rc<Page>> for PageIterator {
 
 impl Page {
     pub fn mut_js_info<'a>(&'a self) -> RefMut<'a, Option<JSPageInfo>> {
-        self.js_info.deref().borrow_mut()
+        self.js_info.borrow_mut()
     }
 
     pub fn js_info<'a>(&'a self) -> Ref<'a, Option<JSPageInfo>> {
-        self.js_info.deref().borrow()
+        self.js_info.borrow()
     }
 
     pub fn url<'a>(&'a self) -> Ref<'a, Option<(Url, bool)>> {
-        self.url.deref().borrow()
+        self.url.borrow()
     }
 
     pub fn mut_url<'a>(&'a self) -> RefMut<'a, Option<(Url, bool)>> {
-        self.url.deref().borrow_mut()
+        self.url.borrow_mut()
     }
 
     pub fn frame<'a>(&'a self) -> Ref<'a, Option<Frame>> {
-        self.frame.deref().borrow()
+        self.frame.borrow()
     }
 
     pub fn mut_frame<'a>(&'a self) -> RefMut<'a, Option<Frame>> {
-        self.frame.deref().borrow_mut()
+        self.frame.borrow_mut()
     }
 
     pub fn get_next_subpage_id(&self) -> SubpageId {
-        let subpage_id = self.next_subpage_id.deref().get();
+        let subpage_id = self.next_subpage_id.get();
         let SubpageId(id_num) = subpage_id;
-        self.next_subpage_id.deref().set(SubpageId(id_num + 1));
+        self.next_subpage_id.set(SubpageId(id_num + 1));
         subpage_id
     }
 
@@ -267,7 +265,7 @@ impl Page {
             None => {},
             Some(root) => {
                 let root: JSRef<Node> = NodeCast::from_ref(*root);
-                let mut damage = *self.damage.deref().borrow_mut();
+                let mut damage = *self.damage.borrow_mut();
                 match damage {
                     None => {}
                     Some(ref mut damage) => {
@@ -278,7 +276,7 @@ impl Page {
                     }
                 }
 
-                *self.damage.deref().borrow_mut() = Some(DocumentDamage {
+                *self.damage.borrow_mut() = Some(DocumentDamage {
                     root: root.to_trusted_node_address(),
                     level: level,
                 })
@@ -297,7 +295,7 @@ impl Page {
     
     
     pub fn join_layout(&self) {
-        let mut layout_join_port = self.layout_join_port.deref().borrow_mut();
+        let mut layout_join_port = self.layout_join_port.borrow_mut();
         if layout_join_port.is_some() {
             let join_port = replace(&mut *layout_join_port, None);
             match join_port {
@@ -355,15 +353,15 @@ impl Page {
 
                 
                 let (join_chan, join_port) = channel();
-                let mut layout_join_port = self.layout_join_port.deref().borrow_mut();
+                let mut layout_join_port = self.layout_join_port.borrow_mut();
                 *layout_join_port = Some(join_port);
 
-                let last_reflow_id = self.last_reflow_id.deref();
+                let last_reflow_id = &self.last_reflow_id;
                 last_reflow_id.set(last_reflow_id.get() + 1);
 
                 let root: JSRef<Node> = NodeCast::from_ref(*root);
-                let mut damage = self.damage.deref().borrow_mut();
-                let window_size = self.window_size.deref().get();
+                let mut damage = self.damage.borrow_mut();
+                let window_size = self.window_size.get();
 
                 
                 let reflow = box Reflow {
@@ -378,7 +376,7 @@ impl Page {
                     id: last_reflow_id.get(),
                 };
 
-                let LayoutChan(ref chan) = *self.layout_chan;
+                let LayoutChan(ref chan) = self.layout_chan;
                 chan.send(ReflowMsg(reflow));
 
                 debug!("script: layout forked")
@@ -450,5 +448,5 @@ pub struct JSPageInfo {
     
     pub dom_static: GlobalStaticData,
     
-    pub js_context: Untraceable<Rc<Cx>>,
+    pub js_context: Rc<Cx>,
 }

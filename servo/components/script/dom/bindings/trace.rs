@@ -41,7 +41,18 @@ use script_traits::ScriptControlChan;
 use std::collections::hashmap::HashMap;
 use collections::hash::Hash;
 use style::PropertyDeclarationBlock;
+use std::comm::{Receiver, Sender};
+use hubbub::hubbub::QuirksMode;
 use string_cache::{Atom, Namespace};
+use js::rust::Cx;
+use http::headers::response::HeaderCollection as ResponseHeaderCollection;
+use http::headers::request::HeaderCollection as RequestHeaderCollection;
+use http::method::Method;
+use std::io::timer::Timer;
+use servo_msg::compositor_msg::ScriptListener;
+use servo_msg::constellation_msg::ConstellationChan;
+use layout_interface::{LayoutRPC, LayoutChan};
+use dom::bindings::utils::WindowProxyHandler;
 
 impl<T: Reflectable> JSTraceable for JS<T> {
     fn trace(&self, trc: *mut JSTracer) {
@@ -90,65 +101,6 @@ pub fn trace_object(tracer: *mut JSTracer, description: &str, obj: *mut JSObject
     }
 }
 
-
-
-
-
-
-
-
-
-pub struct Untraceable<T> {
-    inner: T,
-}
-
-impl<T> Untraceable<T> {
-    pub fn new(val: T) -> Untraceable<T> {
-        Untraceable {
-            inner: val
-        }
-    }
-}
-
-impl<T> Deref<T> for Untraceable<T> {
-    fn deref<'a>(&'a self) -> &'a T {
-        &self.inner
-    }
-}
-
-impl<T> DerefMut<T> for Untraceable<T> {
-    fn deref_mut<'a>(&'a mut self) -> &'a mut T {
-        &mut self.inner
-    }
-}
-
-
-
-
-
-
-
-
-
-#[deriving(PartialEq, Clone)]
-pub struct Traceable<T> {
-    inner: T
-}
-
-impl<T> Traceable<T> {
-    pub fn new(val: T) -> Traceable<T> {
-        Traceable {
-            inner: val
-        }
-    }
-}
-
-impl<T> Deref<T> for Traceable<T> {
-    fn deref<'a>(&'a self) -> &'a T {
-        &self.inner
-    }
-}
-
 impl<T: JSTraceable> JSTraceable for RefCell<T> {
     fn trace(&self, trc: *mut JSTracer) {
         self.borrow().trace(trc)
@@ -157,7 +109,7 @@ impl<T: JSTraceable> JSTraceable for RefCell<T> {
 
 impl<T: JSTraceable> JSTraceable for Rc<T> {
     fn trace(&self, trc: *mut JSTracer) {
-        self.deref().trace(trc)
+        (**self).trace(trc)
     }
 }
 
@@ -167,28 +119,21 @@ impl<T: JSTraceable> JSTraceable for Box<T> {
     }
 }
 
-impl<T: JSTraceable+Copy> JSTraceable for Traceable<Cell<T>> {
-    fn trace(&self, trc: *mut JSTracer) {
-        self.deref().get().trace(trc)
-    }
-}
-
-
 impl<T: JSTraceable+Copy> JSTraceable for Cell<T> {
     fn trace(&self, trc: *mut JSTracer) {
         self.get().trace(trc)
     }
 }
 
-impl JSTraceable for Traceable<*mut JSObject> {
+impl JSTraceable for *mut JSObject {
     fn trace(&self, trc: *mut JSTracer) {
-        trace_object(trc, "object", **self);
+        trace_object(trc, "object", *self);
     }
 }
 
-impl JSTraceable for Traceable<JSVal> {
+impl JSTraceable for JSVal {
     fn trace(&self, trc: *mut JSTracer) {
-        trace_jsval(trc, "val", **self);
+        trace_jsval(trc, "val", *self);
     }
 }
 
@@ -220,16 +165,33 @@ impl<K: Eq+Hash+JSTraceable, V: JSTraceable> JSTraceable for HashMap<K, V> {
     }
 }
 
+impl<A: JSTraceable, B: JSTraceable> JSTraceable for (A, B) {
+    #[inline]
+    fn trace(&self, trc: *mut JSTracer) {
+        let (ref a, ref b) = *self;
+        a.trace(trc);
+        b.trace(trc);
+    }
+}
+
+
 untraceable!(bool, f32, f64, String, Url)
 untraceable!(uint, u8, u16, u32, u64)
 untraceable!(int, i8, i16, i32, i64)
-untraceable!(Untraceable<T>)
+untraceable!(Sender<T>)
+untraceable!(Receiver<T>)
 untraceable!(ImageCacheTask, ScriptControlChan)
-untraceable!(Atom, Namespace)
+untraceable!(Atom, Namespace, Timer)
 untraceable!(PropertyDeclarationBlock)
 
 
 untraceable!(SubpageId, WindowSizeData, PipelineId)
+untraceable!(QuirksMode)
+untraceable!(Cx)
+untraceable!(ResponseHeaderCollection, RequestHeaderCollection, Method)
+untraceable!(ConstellationChan)
+untraceable!(LayoutChan)
+untraceable!(WindowProxyHandler)
 
 impl<'a> JSTraceable for &'a str {
     #[inline]
@@ -238,3 +200,23 @@ impl<'a> JSTraceable for &'a str {
     }
 }
 
+impl<A,B> JSTraceable for fn(A) -> B {
+    #[inline]
+    fn trace(&self, _: *mut JSTracer) {
+        
+    }
+}
+
+impl JSTraceable for Box<ScriptListener+'static> {
+    #[inline]
+    fn trace(&self, _: *mut JSTracer) {
+        
+    }
+}
+
+impl JSTraceable for Box<LayoutRPC+'static> {
+    #[inline]
+    fn trace(&self, _: *mut JSTracer) {
+        
+    }
+}
