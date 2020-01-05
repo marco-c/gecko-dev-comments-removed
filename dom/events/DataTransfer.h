@@ -289,6 +289,11 @@ public:
                                   nsIVariant* aData,
                                   nsIPrincipal* aPrincipal);
 
+  
+  
+  
+  void TypesListMayHaveChanged();
+
 protected:
 
   

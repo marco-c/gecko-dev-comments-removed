@@ -692,6 +692,13 @@ DataTransfer::PrincipalMaySetData(const nsAString& aType,
   return true;
 }
 
+void
+DataTransfer::TypesListMayHaveChanged()
+{
+  
+  
+}
+
 nsresult
 DataTransfer::SetDataAtInternal(const nsAString& aFormat, nsIVariant* aData,
                                 uint32_t aIndex,

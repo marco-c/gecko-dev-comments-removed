@@ -370,6 +370,10 @@ DataTransferItemList::SetDataWithPrincipal(const nsAString& aType,
 
         DataTransferItem::eKind oldKind = item->Kind();
         item->SetData(aData);
+        if (oldKind != item->Kind()) {
+          
+          mDataTransfer->TypesListMayHaveChanged();
+        }
 
         if (aIndex != 0) {
           
@@ -434,8 +438,14 @@ DataTransferItemList::AppendNewItem(uint32_t aIndex,
   
   
   
-  if (!aHidden && (item->Kind() == DataTransferItem::KIND_FILE || aIndex == 0)) {
-    mItems.AppendElement(item);
+  
+  
+  
+  if (item->Kind() == DataTransferItem::KIND_FILE || aIndex == 0) {
+    if (!aHidden) {
+      mItems.AppendElement(item);
+    }
+    mDataTransfer->TypesListMayHaveChanged();
   }
 
   return item;
@@ -475,6 +485,7 @@ DataTransferItemList::ClearAllItems()
   mItems.Clear();
   mIndexedItems.Clear();
   mIndexedItems.SetLength(1);
+  mDataTransfer->TypesListMayHaveChanged();
 
   
   RegenerateFiles();
@@ -516,6 +527,8 @@ DataTransferItemList::ClearDataHelper(DataTransferItem* aItem,
   } else {
     items.RemoveElement(aItem);
   }
+
+  mDataTransfer->TypesListMayHaveChanged();
 
   
   if (items.Length() == 0 && aItem->Index() != 0) {
