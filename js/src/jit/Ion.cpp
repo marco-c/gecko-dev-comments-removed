@@ -2361,6 +2361,13 @@ CheckScript(JSContext* cx, JSScript* script, bool osr)
         return false;
     }
 
+    if (script->nTypeSets() >= UINT16_MAX) {
+        
+        
+        TrackAndSpewIonAbort(cx, script, "too many typesets");
+        return false;
+    }
+
     return true;
 }
 
