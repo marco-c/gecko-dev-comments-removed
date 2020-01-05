@@ -234,7 +234,7 @@ public:
   NS_IMETHOD SetPrivateBrowsing(bool) override;
   NS_IMETHOD GetUseRemoteTabs(bool*) override;
   NS_IMETHOD SetRemoteTabs(bool) override;
-  NS_IMETHOD GetOriginAttributes(JS::MutableHandle<JS::Value>) override;
+  NS_IMETHOD GetScriptableOriginAttributes(JS::MutableHandle<JS::Value>) override;
 
   
   
@@ -805,6 +805,8 @@ protected:
   bool HasUnloadedParent();
 
   void UpdateGlobalHistoryTitle(nsIURI* aURI);
+
+  NS_IMETHOD_(void) GetOriginAttributes(mozilla::OriginAttributes& aAttrs) override;
 
   
   nsIntRect mBounds;

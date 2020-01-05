@@ -1742,11 +1742,11 @@ TabParent::RecvHideTooltip()
 mozilla::ipc::IPCResult
 TabParent::RecvNotifyIMEFocus(const ContentCache& aContentCache,
                               const IMENotification& aIMENotification,
-                              IMENotificationRequests* aRequests)
+                              nsIMEUpdatePreference* aPreference)
 {
   nsCOMPtr<nsIWidget> widget = GetWidget();
   if (!widget) {
-    *aRequests = IMENotificationRequests();
+    *aPreference = nsIMEUpdatePreference();
     return IPC_OK();
   }
 
@@ -1754,7 +1754,7 @@ TabParent::RecvNotifyIMEFocus(const ContentCache& aContentCache,
   IMEStateManager::NotifyIME(aIMENotification, widget, true);
 
   if (aIMENotification.mMessage == NOTIFY_IME_OF_FOCUS) {
-    *aRequests = widget->GetIMENotificationRequests();
+    *aPreference = widget->GetIMEUpdatePreference();
   }
   return IPC_OK();
 }
@@ -1769,8 +1769,8 @@ TabParent::RecvNotifyIMETextChange(const ContentCache& aContentCache,
   }
 
 #ifdef DEBUG
-  IMENotificationRequests requests = widget->GetIMENotificationRequests();
-  NS_ASSERTION(requests.WantTextChange(),
+  nsIMEUpdatePreference updatePreference = widget->GetIMEUpdatePreference();
+  NS_ASSERTION(updatePreference.WantTextChange(),
     "Don't call Send/RecvNotifyIMETextChange without NOTIFY_TEXT_CHANGE");
 #endif
 
@@ -3019,7 +3019,8 @@ public:
   NS_IMETHOD SetUsePrivateBrowsing(bool) NO_IMPL
   NS_IMETHOD SetPrivateBrowsing(bool) NO_IMPL
   NS_IMETHOD GetIsInIsolatedMozBrowserElement(bool*) NO_IMPL
-  NS_IMETHOD GetOriginAttributes(JS::MutableHandleValue) NO_IMPL
+  NS_IMETHOD GetScriptableOriginAttributes(JS::MutableHandleValue) NO_IMPL
+  NS_IMETHOD_(void) GetOriginAttributes(mozilla::OriginAttributes& aAttrs) override {}
   NS_IMETHOD GetUseRemoteTabs(bool*) NO_IMPL
   NS_IMETHOD SetRemoteTabs(bool) NO_IMPL
   NS_IMETHOD GetUseTrackingProtection(bool*) NO_IMPL
