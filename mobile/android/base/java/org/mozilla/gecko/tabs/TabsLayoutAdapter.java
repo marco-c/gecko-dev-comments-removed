@@ -5,96 +5,123 @@
 
 package org.mozilla.gecko.tabs;
 
-import org.mozilla.gecko.R;
 import org.mozilla.gecko.Tab;
 
 import android.content.Context;
+import android.support.annotation.NonNull;
+import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.BaseAdapter;
+import android.widget.Button;
 
 import java.util.ArrayList;
 
+public class TabsLayoutAdapter
+        extends RecyclerView.Adapter<TabsLayoutAdapter.TabsListViewHolder> {
 
-public class TabsLayoutAdapter extends BaseAdapter {
-    public static final String LOGTAG = "Gecko" + TabsLayoutAdapter.class.getSimpleName();
+    private static final String LOGTAG = "Gecko" + TabsLayoutAdapter.class.getSimpleName();
 
-    private final Context mContext;
-    private final int mTabLayoutId;
-    private ArrayList<Tab> mTabs;
-    private final LayoutInflater mInflater;
+    private final int tabLayoutId;
+    private @NonNull ArrayList<Tab> tabs;
+    private final LayoutInflater inflater;
+    private final boolean isPrivate;
+    
+    private final Button.OnClickListener closeOnClickListener;
 
-    public TabsLayoutAdapter (Context context, int tabLayoutId) {
-        mContext = context;
-        mInflater = LayoutInflater.from(mContext);
-        mTabLayoutId = tabLayoutId;
-    }
-
-    final void setTabs (ArrayList<Tab> tabs) {
-        mTabs = tabs;
-        notifyDataSetChanged(); 
-    }
-
-    final boolean removeTab (Tab tab) {
-        boolean tabRemoved = mTabs.remove(tab);
-        if (tabRemoved) {
-            notifyDataSetChanged(); 
+    
+    
+    public static class TabsListViewHolder extends RecyclerView.ViewHolder {
+        public TabsListViewHolder(View itemView) {
+            super(itemView);
         }
-        return tabRemoved;
     }
 
-    final void clear() {
-        mTabs = null;
-
-        notifyDataSetChanged(); 
+    public TabsLayoutAdapter(Context context, int tabLayoutId, boolean isPrivate,
+                             Button.OnClickListener closeOnClickListener) {
+        inflater = LayoutInflater.from(context);
+        this.tabLayoutId = tabLayoutId;
+        this.isPrivate = isPrivate;
+        this.closeOnClickListener = closeOnClickListener;
+        tabs = new ArrayList<>(0);
     }
 
-    @Override
-    public int getCount() {
-        return (mTabs == null ? 0 : mTabs.size());
+     final void setTabs(@NonNull ArrayList<Tab> tabs) {
+        this.tabs = tabs;
+        notifyDataSetChanged();
     }
 
-    @Override
-    public Tab getItem(int position) {
-        return mTabs.get(position);
+     final void clear() {
+        tabs = new ArrayList<>(0);
+        notifyDataSetChanged();
     }
 
-    @Override
-    public long getItemId(int position) {
-        return position;
-    }
-
-    final int getPositionForTab(Tab tab) {
-        if (mTabs == null || tab == null)
-            return -1;
-
-        return mTabs.indexOf(tab);
-    }
-
-    @Override
-    public boolean isEnabled(int position) {
+     final boolean removeTab(Tab tab) {
+        final int position = getPositionForTab(tab);
+        if (position == -1) {
+            return false;
+        }
+        tabs.remove(position);
+        notifyItemRemoved(position);
         return true;
     }
 
-    @Override
-    final public TabsLayoutItemView getView(int position, View convertView, ViewGroup parent) {
-        final TabsLayoutItemView view;
-        if (convertView == null) {
-            view = newView(position, parent);
-        } else {
-            view = (TabsLayoutItemView) convertView;
+     final int getPositionForTab(Tab tab) {
+        if (tab == null) {
+            return -1;
         }
-        final Tab tab = mTabs.get(position);
-        bindView(view, tab);
-        return view;
+
+        return tabs.indexOf(tab);
     }
 
-    TabsLayoutItemView newView(int position, ViewGroup parent) {
-        return (TabsLayoutItemView) mInflater.inflate(mTabLayoutId, parent, false);
+     void notifyTabChanged(Tab tab) {
+        final int position = getPositionForTab(tab);
+        if (position != -1) {
+            notifyItemChanged(position);
+        }
     }
 
-    void bindView(TabsLayoutItemView view, Tab tab) {
-        view.assignValues(tab);
+     void notifyTabInserted(Tab tab, int index) {
+        if (index >= 0 && index <= tabs.size()) {
+            tabs.add(index, tab);
+            notifyItemInserted(index);
+        } else {
+            
+            tabs.add(tab);
+            notifyItemInserted(tabs.size() - 1);
+            
+            if (index != -1) {
+                Log.e(LOGTAG, "Tab was inserted at an invalid position: " + Integer.toString(index));
+            }
+        }
+    }
+
+    @Override
+    public int getItemCount() {
+        return tabs.size();
+    }
+
+    private Tab getItem(int position) {
+        return tabs.get(position);
+    }
+
+    @Override
+    public void onBindViewHolder(TabsListViewHolder viewHolder, int position) {
+        final Tab tab = getItem(position);
+        final TabsLayoutItemView itemView = (TabsLayoutItemView) viewHolder.itemView;
+        itemView.assignValues(tab);
+        
+        
+        
+    }
+
+    @Override
+    public TabsListViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        final TabsLayoutItemView viewItem = (TabsLayoutItemView) inflater.inflate(tabLayoutId, parent, false);
+        viewItem.setPrivateMode(isPrivate);
+        viewItem.setCloseOnClickListener(closeOnClickListener);
+
+        return new TabsListViewHolder(viewItem);
     }
 }

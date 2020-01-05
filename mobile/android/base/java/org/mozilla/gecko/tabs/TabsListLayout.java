@@ -106,13 +106,4 @@ public class TabsListLayout extends TabsLayout {
     protected boolean addAtIndexRequiresScroll(int index) {
         return index == 0 || index == getAdapter().getItemCount() - 1;
     }
-
-    @Override
-    public void onChildAttachedToWindow(View child) {
-        
-        
-        child.setTranslationX(0);
-        child.setTranslationY(0);
-        child.setAlpha(1);
-    }
 }

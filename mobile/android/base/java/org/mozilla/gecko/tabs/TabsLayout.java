@@ -30,7 +30,7 @@ public abstract class TabsLayout extends RecyclerView
 
     private final boolean isPrivate;
     private TabsPanel tabsPanel;
-    private final TabsLayoutRecyclerAdapter tabsAdapter;
+    private final TabsLayoutAdapter tabsAdapter;
 
     public TabsLayout(Context context, AttributeSet attrs, int itemViewLayoutResId) {
         super(context, attrs);
@@ -39,7 +39,7 @@ public abstract class TabsLayout extends RecyclerView
         isPrivate = (a.getInt(R.styleable.TabsLayout_tabs, 0x0) == 1);
         a.recycle();
 
-        tabsAdapter = new TabsLayoutRecyclerAdapter(context, itemViewLayoutResId, isPrivate,
+        tabsAdapter = new TabsLayoutAdapter(context, itemViewLayoutResId, isPrivate,
                 
                 new Button.OnClickListener() {
                     @Override
@@ -125,8 +125,14 @@ public abstract class TabsLayout extends RecyclerView
     }
 
     
-    
+
+
+
     abstract protected boolean addAtIndexRequiresScroll(int index);
+
+    protected int getSelectedAdapterPosition() {
+        return tabsAdapter.getPositionForTab(Tabs.getInstance().getSelectedTab());
+    }
 
     @Override
     public void onItemClicked(RecyclerView recyclerView, int position, View v) {
@@ -145,7 +151,7 @@ public abstract class TabsLayout extends RecyclerView
 
     
     private void updateSelectedPosition() {
-        final int selected = tabsAdapter.getPositionForTab(Tabs.getInstance().getSelectedTab());
+        final int selected = getSelectedAdapterPosition();
         if (selected != NO_POSITION) {
             scrollToPosition(selected);
         }
@@ -197,6 +203,15 @@ public abstract class TabsLayout extends RecyclerView
     @Override
     public void onItemDismiss(View view) {
         closeTab(view);
+    }
+
+    @Override
+    public void onChildAttachedToWindow(View child) {
+        
+        
+        child.setTranslationX(0);
+        child.setTranslationY(0);
+        child.setAlpha(1);
     }
 
     private Tab getTabForView(View view) {

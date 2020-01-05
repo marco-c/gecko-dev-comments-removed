@@ -613,53 +613,14 @@ abstract class BaseTest extends BaseRobocopTest {
     }
 
     
-    
-    private static class TabsView {
-        private AdapterView<ListAdapter> gridView;
-        private RecyclerView listView;
-
-        public TabsView(View view) {
-            if (view instanceof RecyclerView) {
-                listView = (RecyclerView) view;
-            } else {
-                gridView = (AdapterView<ListAdapter>) view;
-            }
-        }
-
-        public void bringPositionIntoView(int index) {
-            if (gridView != null) {
-                gridView.setSelection(index);
-            } else {
-                listView.scrollToPosition(index);
-            }
-        }
-
-        public View getViewAtIndex(int index) {
-            if (gridView != null) {
-                return gridView.getChildAt(index - gridView.getFirstVisiblePosition());
-            } else {
-                final RecyclerView.ViewHolder itemViewHolder = listView.findViewHolderForLayoutPosition(index);
-                return itemViewHolder == null ? null : itemViewHolder.itemView;
-            }
-        }
-
-        public void post(Runnable runnable) {
-            if (gridView != null) {
-                gridView.post(runnable);
-            } else {
-                listView.post(runnable);
-            }
-        }
-    }
-    
 
 
 
 
-    private final TabsView getTabsLayout() {
+    private final RecyclerView getTabsLayout() {
         Element tabs = mDriver.findElement(getActivity(), R.id.tabs);
         tabs.click();
-        return new TabsView(getActivity().findViewById(R.id.normal_tabs));
+        return (RecyclerView) getActivity().findViewById(R.id.normal_tabs);
     }
 
     
@@ -670,12 +631,12 @@ abstract class BaseTest extends BaseRobocopTest {
     private View getTabViewAt(final int index) {
         final View[] childView = { null };
 
-        final TabsView view = getTabsLayout();
+        final RecyclerView view = getTabsLayout();
 
         runOnUiThreadSync(new Runnable() {
             @Override
             public void run() {
-                view.bringPositionIntoView(index);
+                view.scrollToPosition(index);
 
                 
                 
@@ -684,7 +645,9 @@ abstract class BaseTest extends BaseRobocopTest {
                     @Override
                     public void run() {
                         
-                        childView[0] = view.getViewAtIndex(index);
+                        final RecyclerView.ViewHolder itemViewHolder =
+                                view.findViewHolderForLayoutPosition(index);
+                        childView[0] = itemViewHolder == null ? null : itemViewHolder.itemView;
                     }
                 });
             }
