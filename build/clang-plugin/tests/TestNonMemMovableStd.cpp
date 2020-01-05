@@ -6,10 +6,10 @@ class MOZ_NEEDS_MEMMOVABLE_TYPE Mover { T mForceInst; };
 namespace std {
 
 
-template<class C> class basic_string { }; 
+template<class C> class basic_string { };
 typedef basic_string<char> string;
 template<class T, class U> class pair { T mT; U mU; }; 
-class arbitrary_name { }; 
+class arbitrary_name { };
 }
 
 class HasString { std::string m; }; 
