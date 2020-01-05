@@ -12,6 +12,8 @@
 #include <limits.h>
 #include <stdint.h>
 
+#include "jit/shared/Architecture-shared.h"
+
 #include "js/Utility.h"
 
 
@@ -285,6 +287,37 @@ class FloatRegisters
     static const uint32_t TotalPhys = 32;
     static uint32_t ActualTotalPhys();
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     typedef uint64_t SetType;
     static const SetType AllSingleMask = (1ull << TotalSingle) - 1;
     static const SetType AllDoubleMask = ((1ull << TotalDouble) - 1) << TotalSingle;
@@ -357,12 +390,9 @@ class VFPRegister
 
   protected:
     RegType kind : 2;
-    
-    
-    
-    
-    
   public:
+    
+    
     uint32_t code_ : 5;
   protected:
     bool _isInvalid : 1;
@@ -370,7 +400,7 @@ class VFPRegister
 
   public:
     constexpr VFPRegister(uint32_t r, RegType k)
-      : kind(k), code_ (Code(r)), _isInvalid(false), _isMissing(false)
+      : kind(k), code_(Code(r)), _isInvalid(false), _isMissing(false)
     { }
     constexpr VFPRegister()
       : kind(Double), code_(Code(0)), _isInvalid(true), _isMissing(false)
@@ -553,6 +583,19 @@ class VFPRegister
         return (SetType(0b11) << (code_ * 2)) | (SetType(1) << (32 + code_));
     }
 
+    static constexpr enum RegTypeName DefaultType = RegTypeName::Float64;
+
+    template <enum RegTypeName = DefaultType>
+    static SetType LiveAsIndexableSet(SetType s) {
+        return SetType(0);
+    }
+
+    template <enum RegTypeName Name = DefaultType>
+    static SetType AllocatableAsIndexableSet(SetType s) {
+        static_assert(Name != RegTypeName::Any, "Allocatable set are not iterable");
+        return SetType(0);
+    }
+
     static uint32_t SetSize(SetType x) {
         static_assert(sizeof(SetType) == 8, "SetType must be 64 bits");
         return mozilla::CountPopulation32(x);
@@ -571,6 +614,79 @@ class VFPRegister
     }
 
 };
+
+template <> inline VFPRegister::SetType
+VFPRegister::LiveAsIndexableSet<RegTypeName::Float32>(SetType set)
+{
+    return set & FloatRegisters::AllSingleMask;
+}
+
+template <> inline VFPRegister::SetType
+VFPRegister::LiveAsIndexableSet<RegTypeName::Float64>(SetType set)
+{
+    return set & FloatRegisters::AllDoubleMask;
+}
+
+template <> inline VFPRegister::SetType
+VFPRegister::LiveAsIndexableSet<RegTypeName::Any>(SetType set)
+{
+    return set;
+}
+
+template <> inline VFPRegister::SetType
+VFPRegister::AllocatableAsIndexableSet<RegTypeName::Float32>(SetType set)
+{
+    
+    
+    
+    return set & FloatRegisters::AllSingleMask;
+}
+
+template <> inline VFPRegister::SetType
+VFPRegister::AllocatableAsIndexableSet<RegTypeName::Float64>(SetType set)
+{
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    SetType s2d = AllocatableAsIndexableSet<RegTypeName::Float32>(set);
+    static_assert(FloatRegisters::TotalSingle == 32, "Wrong mask");
+    s2d = (0xaaaaaaaa & s2d) >> 1; 
+    
+    
+    s2d = ((s2d >> 1) | s2d) & 0x33333333; 
+    s2d = ((s2d >> 2) | s2d) & 0x0f0f0f0f; 
+    s2d = ((s2d >> 4) | s2d) & 0x00ff00ff;
+    s2d = ((s2d >> 8) | s2d) & 0x0000ffff;
+    
+    s2d = s2d << FloatRegisters::TotalSingle;
+
+    
+    static_assert(FloatRegisters::TotalDouble == 16,
+        "d16-d31 do not have a single register mapping");
+
+    
+    
+    return set & s2d;
+}
 
 
 typedef VFPRegister FloatRegister;
