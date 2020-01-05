@@ -11,6 +11,19 @@
 
 #![allow(non_snake_case, dead_code)]
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 extern crate servo;
 extern crate time;
 extern crate util;
@@ -42,6 +55,7 @@ struct BrowserWrapper {
 }
 
 fn main() {
+    
     if opts::from_cmdline_args(env::args().collect::<Vec<_>>().as_slice()) {
         resource_task::global_init();
 
@@ -51,6 +65,8 @@ fn main() {
             Some(window::Window::new())
         };
 
+        
+        
         let mut browser = BrowserWrapper {
             browser: Browser::new(window.clone()),
         };
@@ -62,6 +78,8 @@ fn main() {
 
         browser.browser.handle_event(WindowEvent::InitializeCompositing);
 
+        
+        
         loop {
             let should_continue = match window {
                 None => browser.browser.handle_event(WindowEvent::Idle),

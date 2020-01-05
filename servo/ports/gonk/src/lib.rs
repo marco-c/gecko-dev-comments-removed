@@ -66,16 +66,37 @@ pub struct Browser {
     compositor: Box<CompositorEventListener + 'static>,
 }
 
+
+
+
+
+
+
+
+
+
+
+
 impl Browser {
     #[cfg(not(test))]
     pub fn new<Window>(window: Option<Rc<Window>>) -> Browser
         where Window: WindowMethods + 'static {
         ::util::opts::set_experimental_enabled(opts::get().enable_experimental);
+        
         let opts = opts::get();
+
+        
+        
         RegisterBindings::RegisterProxyHandlers();
 
+        
+        
         let shared_task_pool = TaskPool::new(8);
 
+        
+        
+        
+        
         let (compositor_proxy, compositor_receiver) =
             WindowMethods::create_compositor_channel(&window);
         let time_profiler_chan = time::Profiler::create(opts.time_profiler_period);
@@ -100,6 +121,10 @@ impl Browser {
 
         let font_cache_task = FontCacheTask::new(resource_task.clone());
         let storage_task = StorageTaskFactory::new();
+
+        
+        
+        
         let constellation_chan = Constellation::<layout::layout_task::LayoutTask,
                                                  script::script_task::ScriptTask>::start(
                                                       compositor_proxy.clone_compositor_proxy(),
@@ -123,6 +148,8 @@ impl Browser {
         let ConstellationChan(ref chan) = constellation_chan;
         chan.send(ConstellationMsg::InitLoadUrl(url)).unwrap();
 
+        
+        
         let compositor = CompositorTask::create(window,
                                                 compositor_proxy,
                                                 compositor_receiver,
