@@ -421,6 +421,13 @@ function* generatePageErrorStubs() {
       });
     });
 
+    
+    
+    
+    if (!Services.appinfo.browserTabsRemoteAutostart) {
+      expectUncaughtException();
+    }
+
     yield ContentTask.spawn(
       gBrowser.selectedBrowser,
       [key, code],
