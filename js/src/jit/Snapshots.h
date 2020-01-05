@@ -514,21 +514,6 @@ class MOZ_NON_PARAM RInstructionStorage
     
     static constexpr size_t Alignment = alignof(void*);
 
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     alignas(Alignment) unsigned char mem[Size];
 
   public:
@@ -540,8 +525,8 @@ class MOZ_NON_PARAM RInstructionStorage
     
     
     
-    RInstructionStorage(const RInstructionStorage& other) = default;
-    RInstructionStorage& operator=(const RInstructionStorage& other) = default;
+    RInstructionStorage(const RInstructionStorage&) = delete;
+    RInstructionStorage& operator=(const RInstructionStorage& other) = delete;
 };
 
 class RInstruction;
@@ -570,6 +555,8 @@ class RecoverReader
 
   public:
     RecoverReader(SnapshotReader& snapshot, const uint8_t* recovers, uint32_t size);
+    explicit RecoverReader(const RecoverReader& rr);
+    RecoverReader& operator=(const RecoverReader& rr);
 
     uint32_t numInstructions() const {
         return numInstructions_;

@@ -136,6 +136,10 @@ class MOZ_NON_PARAM RInstruction
 
     
     
+    virtual void cloneInto(RInstructionStorage* raw) const = 0;
+
+    
+    
     virtual uint32_t numOperands() const = 0;
 
     
@@ -153,10 +157,14 @@ class MOZ_NON_PARAM RInstruction
   private:                                                              \
     friend class RInstruction;                                          \
     explicit R##op(CompactBufferReader& reader);                        \
+    explicit R##op(const R##op& src) = default;                         \
                                                                         \
   public:                                                               \
     Opcode opcode() const {                                             \
         return RInstruction::Recover_##op;                              \
+    }                                                                   \
+    virtual void cloneInto(RInstructionStorage* raw) const {            \
+        new (raw->addr()) R##op(*this);                                 \
     }
 
 #define RINSTRUCTION_HEADER_NUM_OP_MAIN(op, numOp)                      \
