@@ -5,7 +5,7 @@
 
 
 use dom::bindings::error::{Error, Fallible, report_pending_exception};
-use dom::bindings::js::{JS, Root, MutHeapJSVal};
+use dom::bindings::js::{JS, Root};
 use dom::bindings::reflector::DomObject;
 use dom::bindings::settings_stack::{AutoEntryScript, AutoIncumbentScript};
 use dom::globalscope::GlobalScope;
@@ -39,7 +39,7 @@ pub enum ExceptionHandling {
 pub struct CallbackObject {
     
     callback: Heap<*mut JSObject>,
-    permanent_js_root: MutHeapJSVal,
+    permanent_js_root: Heap<JSVal>,
 
     
     
@@ -67,7 +67,7 @@ impl CallbackObject {
     fn new() -> CallbackObject {
         CallbackObject {
             callback: Heap::default(),
-            permanent_js_root: MutHeapJSVal::new(),
+            permanent_js_root: Heap::default(),
             incumbent: GlobalScope::incumbent().map(|i| JS::from_ref(&*i)),
         }
     }
