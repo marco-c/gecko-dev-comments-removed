@@ -7131,6 +7131,14 @@ HTMLMediaElement::MarkAsContentSource(CallerAPI aAPI)
   } else {
     
     Telemetry::Accumulate(Telemetry::VIDEO_AS_CONTENT_SOURCE, 1);
+
+    if (IsInUncomposedDoc()) {
+      
+      Telemetry::Accumulate(Telemetry::VIDEO_AS_CONTENT_SOURCE_IN_TREE_OR_NOT, 0);
+    } else {
+      
+      Telemetry::Accumulate(Telemetry::VIDEO_AS_CONTENT_SOURCE_IN_TREE_OR_NOT, 1);
+    }
   }
 
   switch (aAPI) {
@@ -7141,6 +7149,14 @@ HTMLMediaElement::MarkAsContentSource(CallerAPI aAPI)
       } else {
         
         Telemetry::Accumulate(Telemetry::VIDEO_AS_CONTENT_SOURCE, 3);
+
+        if (IsInUncomposedDoc()) {
+          
+          Telemetry::Accumulate(Telemetry::VIDEO_AS_CONTENT_SOURCE_IN_TREE_OR_NOT, 2);
+        } else {
+          
+          Telemetry::Accumulate(Telemetry::VIDEO_AS_CONTENT_SOURCE_IN_TREE_OR_NOT, 3);
+        }
       }
       break;
     }
@@ -7151,6 +7167,14 @@ HTMLMediaElement::MarkAsContentSource(CallerAPI aAPI)
       } else {
         
         Telemetry::Accumulate(Telemetry::VIDEO_AS_CONTENT_SOURCE, 5);
+
+        if (IsInUncomposedDoc()) {
+          
+          Telemetry::Accumulate(Telemetry::VIDEO_AS_CONTENT_SOURCE_IN_TREE_OR_NOT, 4);
+        } else {
+          
+          Telemetry::Accumulate(Telemetry::VIDEO_AS_CONTENT_SOURCE_IN_TREE_OR_NOT, 5);
+        }
       }
       break;
     }
@@ -7161,6 +7185,14 @@ HTMLMediaElement::MarkAsContentSource(CallerAPI aAPI)
       } else {
         
         Telemetry::Accumulate(Telemetry::VIDEO_AS_CONTENT_SOURCE, 7);
+
+        if (IsInUncomposedDoc()) {
+          
+          Telemetry::Accumulate(Telemetry::VIDEO_AS_CONTENT_SOURCE_IN_TREE_OR_NOT, 6);
+        } else {
+          
+          Telemetry::Accumulate(Telemetry::VIDEO_AS_CONTENT_SOURCE_IN_TREE_OR_NOT, 7);
+        }
       }
       break;
     }
@@ -7171,6 +7203,14 @@ HTMLMediaElement::MarkAsContentSource(CallerAPI aAPI)
       } else {
         
         Telemetry::Accumulate(Telemetry::VIDEO_AS_CONTENT_SOURCE, 9);
+
+        if (IsInUncomposedDoc()) {
+          
+          Telemetry::Accumulate(Telemetry::VIDEO_AS_CONTENT_SOURCE_IN_TREE_OR_NOT, 8);
+        } else {
+          
+          Telemetry::Accumulate(Telemetry::VIDEO_AS_CONTENT_SOURCE_IN_TREE_OR_NOT, 9);
+        }
       }
       break;
     }
@@ -7179,6 +7219,12 @@ HTMLMediaElement::MarkAsContentSource(CallerAPI aAPI)
   LOG(LogLevel::Debug,
       ("%p Log VIDEO_AS_CONTENT_SOURCE: visibility = %u, API: '%d' and 'All'",
        this, isVisible, aAPI));
+
+  if (!isVisible) {
+    LOG(LogLevel::Debug,
+        ("%p Log VIDEO_AS_CONTENT_SOURCE_IN_TREE_OR_NOT: inTree = %u, API: '%d' and 'All'",
+         this, IsInUncomposedDoc(), aAPI));
+  }
 }
 
 void
