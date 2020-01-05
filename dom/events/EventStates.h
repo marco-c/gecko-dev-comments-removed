@@ -318,7 +318,19 @@ private:
 
 
 
+
+
+
+#define MANUALLY_MANAGED_STATES (             \
+  mozilla::EventStates() /* none so far */    \
+)
+
+
+
+
+
 #define EXTERNALLY_MANAGED_STATES (           \
+  MANUALLY_MANAGED_STATES |                   \
   NS_EVENT_STATE_ACTIVE |                     \
   NS_EVENT_STATE_DRAGOVER |                   \
   NS_EVENT_STATE_FOCUS |                      \
