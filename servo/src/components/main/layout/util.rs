@@ -4,6 +4,7 @@
 
 use layout::box_::Box;
 use layout::construct::{ConstructionResult, NoConstructionResult};
+use layout::parallel::DomParallelInfo;
 use layout::wrapper::LayoutNode;
 
 use extra::arc::Arc;
@@ -149,6 +150,9 @@ pub struct PrivateLayoutData {
     
     
     flow_construction_result: ConstructionResult,
+
+    
+    parallel: DomParallelInfo,
 }
 
 impl PrivateLayoutData {
@@ -163,6 +167,7 @@ impl PrivateLayoutData {
             after_style: None,
             restyle_damage: None,
             flow_construction_result: NoConstructionResult,
+            parallel: DomParallelInfo::new(),
         }
     }
 }

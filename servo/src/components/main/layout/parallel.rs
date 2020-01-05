@@ -8,11 +8,11 @@
 
 use css::matching::MatchMethods;
 use layout::context::LayoutContext;
-use layout::flow::{Flow, LeafSet, PostorderFlowTraversal};
+use layout::flow::{Flow, FlowLeafSet, PostorderFlowTraversal};
 use layout::flow;
 use layout::layout_task::{AssignHeightsAndStoreOverflowTraversal, BubbleWidthsTraversal};
-use layout::util::OpaqueNode;
-use layout::wrapper::LayoutNode;
+use layout::util::{LayoutDataAccess, OpaqueNode};
+use layout::wrapper::{layout_node_to_unsafe_layout_node, LayoutNode, UnsafeLayoutNode};
 
 use extra::arc::MutexArc;
 use servo_util::time::{ProfilerChan, profile};
@@ -46,19 +46,25 @@ pub fn mut_owned_flow_to_unsafe_flow(flow: *mut ~Flow) -> UnsafeFlow {
     }
 }
 
-pub type UnsafeLayoutNode = (uint, uint);
+/// Information that we need stored in each DOM node.
+pub struct DomParallelInfo {
+    /// The number of children that still need work done.
+    children_count: AtomicInt,
+}
 
-fn layout_node_to_unsafe_layout_node(node: &LayoutNode) -> UnsafeLayoutNode {
-    unsafe {
-        cast::transmute_copy(node)
+impl DomParallelInfo {
+    pub fn new() -> DomParallelInfo {
+        DomParallelInfo {
+            children_count: AtomicInt::new(0),
+        }
     }
 }
 
-
+/// Information that we need stored in each flow.
 pub struct FlowParallelInfo {
-    
+    /// The number of children that still need work done.
     children_count: AtomicInt,
-    
+    /// The address of the parent flow.
     parent: UnsafeFlow,
 }
 
@@ -71,40 +77,40 @@ impl FlowParallelInfo {
     }
 }
 
-
+/// A parallel bottom-up flow traversal.
 trait ParallelPostorderFlowTraversal : PostorderFlowTraversal {
     fn run_parallel(&mut self, mut unsafe_flow: UnsafeFlow) {
         loop {
             unsafe {
-                
+                // Get a real flow.
                 let flow: &mut ~Flow = cast::transmute(&unsafe_flow);
 
-                
+                // Perform the appropriate traversal.
                 if self.should_process(*flow) {
                     self.process(*flow);
                 }
 
                 let base = flow::mut_base(*flow);
 
-                
+                // Reset the count of children for the next layout traversal.
                 base.parallel.children_count.store(base.children.len() as int, Relaxed);
 
-                
+                // Possibly enqueue the parent.
                 let unsafe_parent = base.parallel.parent;
                 if unsafe_parent == null_unsafe_flow() {
-                    
+                    // We're done!
                     break
                 }
 
-                
-                
+                // No, we're not at the root yet. Then are we the last sibling of our parent? If
+                // so, we can continue on with our parent; otherwise, we've gotta wait.
                 let parent: &mut ~Flow = cast::transmute(&unsafe_parent);
                 let parent_base = flow::mut_base(*parent);
                 if parent_base.parallel.children_count.fetch_sub(1, SeqCst) == 1 {
-                    
+                    // We were the last child of our parent. Reflow our parent.
                     unsafe_flow = unsafe_parent
                 } else {
-                    
+                    // Stop.
                     break
                 }
             }
@@ -121,28 +127,47 @@ fn match_and_cascade_node(unsafe_layout_node: UnsafeLayoutNode,
     unsafe {
         let layout_context: &mut LayoutContext = cast::transmute(*proxy.user_data());
 
-        
+        // Get a real layout node.
         let node: LayoutNode = cast::transmute(unsafe_layout_node);
 
-        
-        let stylist: &Stylist = cast::transmute(layout_context.stylist);
-        node.match_node(stylist);
+        if node.is_element() {
+            // Perform the CSS selector matching.
+            let stylist: &Stylist = cast::transmute(layout_context.stylist);
+            node.match_node(stylist);
 
-        
-        let parent_opt = if OpaqueNode::from_layout_node(&node) == layout_context.reflow_root {
-            None
-        } else {
-            node.parent_node()
-        };
-        node.cascade_node(parent_opt);
+            // Perform the CSS cascade.
+            let parent_opt = if OpaqueNode::from_layout_node(&node) == layout_context.reflow_root {
+                None
+            } else {
+                node.parent_node()
+            };
+            node.cascade_node(parent_opt);
+        }
 
-        
+        // Enqueue kids.
+        let mut child_count = 0;
         for kid in node.children() {
-            if kid.is_element() {
-                proxy.push(WorkUnit {
-                    fun: match_and_cascade_node,
-                    data: layout_node_to_unsafe_layout_node(&kid),
-                });
+            child_count += 1;
+
+            proxy.push(WorkUnit {
+                fun: match_and_cascade_node,
+                data: layout_node_to_unsafe_layout_node(&kid),
+            });
+        }
+
+        // Prepare for flow construction by adding this node to the leaf set or counting its
+        // children.
+        if child_count == 0 {
+            // We don't need set the `child_count` field here since that's only used by kids during
+            // bottom-up traversals, and since this node is a leaf it has no kids.
+            layout_context.dom_leaf_set.access(|dom_leaf_set| dom_leaf_set.insert(&node));
+        } else {
+            let mut layout_data_ref = node.mutate_layout_data();
+            match *layout_data_ref.get() {
+                Some(ref mut layout_data) => {
+                    layout_data.data.parallel.children_count.store(child_count as int, Relaxed)
+                }
+                None => fail!("no layout data"),
             }
         }
     }
@@ -188,7 +213,7 @@ pub fn match_and_cascade_subtree(root_node: &LayoutNode,
 }
 
 pub fn traverse_flow_tree(kind: TraversalKind,
-                          leaf_set: &MutexArc<LeafSet>,
+                          leaf_set: &MutexArc<FlowLeafSet>,
                           profiler_chan: ProfilerChan,
                           layout_context: &mut LayoutContext,
                           queue: &mut WorkQueue<*mut LayoutContext,UnsafeFlow>) {

@@ -25,6 +25,7 @@ use servo_msg::constellation_msg::{PipelineId, SubpageId};
 use servo_util::namespace;
 use servo_util::namespace::Namespace;
 use std::cast;
+use std::hashmap::{HashMap, HashMapIterator};
 use style::{PropertyDeclarationBlock, TElement, TNode, AttrSelector};
 
 
@@ -425,6 +426,43 @@ impl<'le> TElement for LayoutElement<'le> {
             }
             _ => None,
         }
+    }
+}
+
+pub type UnsafeLayoutNode = (uint, uint);
+
+pub fn layout_node_to_unsafe_layout_node(node: &LayoutNode) -> UnsafeLayoutNode {
+    unsafe {
+        cast::transmute_copy(node)
+    }
+}
+
+
+pub struct DomLeafSet {
+    priv set: HashMap<UnsafeLayoutNode,()>,
+}
+
+impl DomLeafSet {
+    
+    pub fn new() -> DomLeafSet {
+        DomLeafSet {
+            set: HashMap::new(),
+        }
+    }
+
+    
+    pub fn insert(&mut self, node: &LayoutNode) {
+        self.set.insert(layout_node_to_unsafe_layout_node(node), ());
+    }
+
+    
+    pub fn clear(&mut self) {
+        self.set.clear()
+    }
+
+    
+    pub fn iter<'a>(&'a self) -> HashMapIterator<'a,UnsafeLayoutNode,()> {
+        self.set.iter()
     }
 }
 
