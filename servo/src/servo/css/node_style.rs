@@ -1,152 +1,15 @@
-
-
-
-
-
-
-
 use dom::node::Node;
-use newcss::color::{Color, rgba};
-use newcss::units::{Length, Px};
-use newcss::values::{CSSValue, Specified, Inherit};
-use newcss::values::{CSSMargin, CSSMarginLength};
-use newcss::values::{CSSBorderWidth, CSSBorderWidthLength};
-use newcss::values::{CSSDisplay, CSSDisplayBlock};
-use newcss::values::{CSSPosition, CSSPositionRelative};
-use newcss::values::{CSSFloat, CSSFloatNone};
-use newcss::values::{CSSWidth, CSSWidthLength};
-use newcss::values::{CSSHeight, CSSHeightLength};
-use newcss::computed::ComputedStyle;
+use newcss::complete::CompleteStyle;
 
 
 trait StyledNode {
-    fn style(&self) -> NodeStyle/&self;
+    fn style(&self) -> CompleteStyle/&self;
 }
 
 impl Node: StyledNode {
-    fn style(&self) -> NodeStyle/&self {
+    fn style(&self) -> CompleteStyle/&self {
         assert self.is_element(); 
-        NodeStyle::new(self)
-    }
-}
-
-
-pub struct NodeStyle {
-    priv node: &Node
-}
-
-impl NodeStyle {
-
-    static fn new(node: &r/Node) -> NodeStyle/&r {
-        NodeStyle {
-            node: node
-        }
-    }
-
-    
-
-    fn margin_top(&self) -> CSSMargin {
-        resolve(self, CSSMarginLength(Px(0.0)), |cs| cs.margin_top() )
-    }
-
-    fn margin_right(&self) -> CSSMargin {
-        resolve(self, CSSMarginLength(Px(0.0)), |cs| cs.margin_right() )
-    }
-
-    fn margin_bottom(&self) -> CSSMargin {
-        resolve(self, CSSMarginLength(Px(0.0)), |cs| cs.margin_bottom() )
-    }
-
-    fn margin_left(&self) -> CSSMargin {
-        resolve(self, CSSMarginLength(Px(0.0)), |cs| cs.margin_left() )
-    }
-
-    fn border_top_width(&self) -> CSSBorderWidth {
-        resolve(self, CSSBorderWidthLength(Px(0.0)), |cs| cs.border_top_width() )
-    }
-
-    fn border_right_width(&self) -> CSSBorderWidth {
-        resolve(self, CSSBorderWidthLength(Px(0.0)), |cs| cs.border_right_width() )
-    }
-
-    fn border_bottom_width(&self) -> CSSBorderWidth {
-        resolve(self, CSSBorderWidthLength(Px(0.0)), |cs| cs.border_bottom_width() )
-    }
-
-    fn border_left_width(&self) -> CSSBorderWidth {
-        resolve(self, CSSBorderWidthLength(Px(0.0)), |cs| cs.border_left_width() )
-    }
-
-    fn border_top_color(&self) -> Color {
-        resolve(self, rgba(255, 255, 255, 0.0), |cs| cs.border_top_color() )
-    }
-
-    fn border_right_color(&self) -> Color {
-        resolve(self, rgba(255, 255, 255, 0.0), |cs| cs.border_right_color() )
-    }
-
-    fn border_bottom_color(&self) -> Color {
-        resolve(self, rgba(255, 255, 255, 0.0), |cs| cs.border_bottom_color() )
-    }
-
-    fn border_left_color(&self) -> Color {
-        resolve(self, rgba(255, 255, 255, 0.0), |cs| cs.border_left_color() )
-    }
-
-    
-
-    fn display(&self) -> CSSDisplay {
-        
-        resolve(self, CSSDisplayBlock, |cs| cs.display(false) )
-    }
-
-    fn position(&self) -> CSSPosition {
-        resolve(self, CSSPositionRelative, |cs| cs.position() )
-    }
-
-    fn float(&self) -> CSSFloat {
-        resolve(self, CSSFloatNone, |cs| cs.float() )
-    }
-
-    
-
-    fn width(&self) -> CSSWidth {
-        resolve(self, CSSWidthLength(Px(0.0)), |cs| cs.width() )
-    }
-
-    fn height(&self) -> CSSHeight {
-        resolve(self, CSSHeightLength(Px(0.0)), |cs| cs.height() )
-    }
-
-    
-
-    
-
-    
-
-    
-
-    fn background_color(&self) -> Color {
-        resolve(self, rgba(0, 0, 0, 0.0), |cs| cs.background_color() )
-    }
-
-    
-
-    
-
-    
-
-    
-
-}
-
-fn resolve<T>(node_style: &NodeStyle, default: T, get: &fn(cs: ComputedStyle) -> CSSValue<T>) -> T {
-    let node = node_style.node;
-    let select_res = node.get_css_select_results();
-    let computed = select_res.computed_style();
-    let value = get(computed);
-    match move value {
-        Inherit =>  move default,
-        Specified(move value) => move value,
+        let results = self.get_css_select_results();
+        results.computed_style()
     }
 }

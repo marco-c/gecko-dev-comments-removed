@@ -1,5 +1,5 @@
 
-use newcss::select::SelectResults;
+use newcss::complete::CompleteSelectResults;
 use dom::bindings;
 use dom::document::Document;
 use dom::element::{Attr, ElementData};
@@ -118,7 +118,7 @@ fn define_bindings(compartment: &bare_compartment, doc: @Document,
 
 
 enum LayoutData = {
-    mut style: Option<SelectResults>,
+    mut style: Option<CompleteSelectResults>,
     mut flow:  Option<@FlowContext>
 };
 
