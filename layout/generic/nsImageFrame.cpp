@@ -1792,6 +1792,10 @@ nsImageFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
         if (!(status & imgIRequest::STATUS_DECODE_COMPLETE)) {
           MaybeDecodeForPredictedSize();
         }
+        
+        if (!(status & imgIRequest::STATUS_LOAD_COMPLETE)){
+          currentRequest->BoostPriority(imgIRequest::CATEGORY_DISPLAY);
+        }
       }
     } else {
       aLists.Content()->AppendNewToTop(new (aBuilder)
