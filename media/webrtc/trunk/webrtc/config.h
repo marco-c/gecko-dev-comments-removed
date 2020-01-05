@@ -15,7 +15,6 @@
 
 #include <string>
 #include <vector>
-#include <algorithm>
 
 #include "webrtc/common_types.h"
 #include "webrtc/typedefs.h"
@@ -53,7 +52,6 @@ struct RtpExtension {
   static const char* kTOffset;
   static const char* kAbsSendTime;
   static const char* kVideoRotation;
-  static const char* kRtpStreamId;
   std::string name;
   int id;
 };
@@ -73,18 +71,6 @@ struct VideoStream {
 
   int max_qp;
 
-  char rid[kRIDSize+1];
-
-  const std::string Rid() const {
-    return std::string(rid);
-  }
-
-  void SetRid(const std::string& aRid) {
-    static_assert(sizeof(rid) > kRIDSize,
-      "mRid must be large enought to hold a RID + null termination");
-    strncpy(&rid[0], aRid.c_str(), std::min((size_t)kRIDSize, aRid.length()));
-    rid[kRIDSize] = 0;
-  }
   
   
   
