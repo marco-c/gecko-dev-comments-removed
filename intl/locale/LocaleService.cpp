@@ -43,7 +43,8 @@ mozilla::StaticRefPtr<LocaleService> LocaleService::sInstance;
 
 
 
-static void SanitizeForBCP47(nsACString& aLocale)
+static void
+SanitizeForBCP47(nsACString& aLocale)
 {
 #ifdef ENABLE_INTL_API
   
@@ -396,6 +397,36 @@ LocaleService::NegotiateLanguages(const nsTArray<nsCString>& aRequested,
   return true;
 }
 
+bool
+LocaleService::IsAppLocaleRTL()
+{
+  nsAutoCString locale;
+  GetAppLocaleAsBCP47(locale);
+
+#ifdef ENABLE_INTL_API
+  int pref = Preferences::GetInt("intl.uidirection", -1);
+  if (pref >= 0) {
+    return (pref > 0);
+  }
+  return uloc_isRightToLeft(locale.get());
+#else
+  
+  
+  
+  nsAutoCString prefString = NS_LITERAL_CSTRING("intl.uidirection.") + locale;
+  nsAutoCString dir;
+  Preferences::GetCString(prefString.get(), &dir);
+  if (dir.IsEmpty()) {
+    int32_t hyphen = prefString.FindChar('-');
+    if (hyphen >= 1) {
+      prefString.Truncate(hyphen);
+      Preferences::GetCString(prefString.get(), &dir);
+    }
+  }
+  return dir.EqualsLiteral("rtl");
+#endif
+}
+
 NS_IMETHODIMP
 LocaleService::Observe(nsISupports *aSubject, const char *aTopic,
                       const char16_t *aData)
@@ -722,6 +753,12 @@ LocaleService::GetAvailableLocales(uint32_t* aCount, char*** aOutArray)
 
   *aCount = availableLocales.Length();
   *aOutArray = CreateOutArray(availableLocales);
+  return NS_OK;
+}
 
+NS_IMETHODIMP
+LocaleService::GetIsAppLocaleRTL(bool* aRetVal)
+{
+  (*aRetVal) = IsAppLocaleRTL();
   return NS_OK;
 }
