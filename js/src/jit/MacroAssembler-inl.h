@@ -765,6 +765,16 @@ MacroAssembler::assertStackAlignment(uint32_t alignment, int32_t offset )
 }
 
 void
+MacroAssembler::storeCallBoolResult(Register reg)
+{
+    if (reg != ReturnReg)
+        mov(ReturnReg, reg);
+    
+    
+    and32(Imm32(0xFF), reg);
+}
+
+void
 MacroAssembler::storeCallResultValue(AnyRegister dest)
 {
     unboxValue(JSReturnOperand, dest);
