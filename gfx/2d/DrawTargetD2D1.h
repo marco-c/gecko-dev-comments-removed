@@ -141,8 +141,10 @@ public:
   
   
   
+  
   already_AddRefed<ID2D1Image> GetImageForSurface(SourceSurface *aSurface, Matrix &aSourceTransform,
-                                              ExtendMode aExtendMode, const IntRect* aSourceRect = nullptr);
+                                              ExtendMode aExtendMode, const IntRect* aSourceRect = nullptr,
+                                              bool aUserSpace = true);
 
   already_AddRefed<ID2D1Image> GetImageForSurface(SourceSurface *aSurface, ExtendMode aExtendMode) {
     Matrix mat;
