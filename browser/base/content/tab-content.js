@@ -718,8 +718,8 @@ var WebBrowserChrome = {
   },
 
   
-  reloadInFreshProcess(aDocShell, aURI, aReferrer, aTriggeringPrincipal) {
-    E10SUtils.redirectLoad(aDocShell, aURI, aReferrer, aTriggeringPrincipal, true);
+  reloadInFreshProcess(aDocShell, aURI, aReferrer, aTriggeringPrincipal, aLoadFlags) {
+    E10SUtils.redirectLoad(aDocShell, aURI, aReferrer, aTriggeringPrincipal, true, aLoadFlags);
     return true;
   },
 
