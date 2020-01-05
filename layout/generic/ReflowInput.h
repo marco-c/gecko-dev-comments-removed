@@ -681,10 +681,10 @@ public:
 
 
   ReflowInput(nsPresContext*              aPresContext,
-                    nsIFrame*                   aFrame,
-                    nsRenderingContext*         aRenderingContext,
-                    const mozilla::LogicalSize& aAvailableSpace,
-                    uint32_t                    aFlags = 0);
+              nsIFrame*                   aFrame,
+              nsRenderingContext*         aRenderingContext,
+              const mozilla::LogicalSize& aAvailableSpace,
+              uint32_t                    aFlags = 0);
 
   
 
@@ -703,11 +703,11 @@ public:
 
 
   ReflowInput(nsPresContext*              aPresContext,
-                    const ReflowInput&    aParentReflowInput,
-                    nsIFrame*                   aFrame,
-                    const mozilla::LogicalSize& aAvailableSpace,
-                    const mozilla::LogicalSize* aContainingBlockSize = nullptr,
-                    uint32_t                    aFlags = 0);
+              const ReflowInput&    aParentReflowInput,
+              nsIFrame*                   aFrame,
+              const mozilla::LogicalSize& aAvailableSpace,
+              const mozilla::LogicalSize* aContainingBlockSize = nullptr,
+              uint32_t                    aFlags = 0);
 
   
   enum {
