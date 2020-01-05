@@ -185,12 +185,14 @@ Http2PushedStream::ReadSegments(nsAHttpSegmentReader *reader,
   nsresult rv = NS_OK;
   *count = 0;
 
+  mozilla::OriginAttributes originAttributes;
   switch (mUpstreamState) {
   case GENERATING_HEADERS:
     
     
     
-    CreatePushHashKey(mHeaderScheme, mHeaderHost,
+    mSocketTransport->GetOriginAttributes(&originAttributes);
+    CreatePushHashKey(mHeaderScheme, mHeaderHost, originAttributes,
                       mSession->Serial(), mHeaderPath,
                       mOrigin, mHashKey);
 
