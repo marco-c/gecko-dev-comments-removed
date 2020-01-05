@@ -1202,6 +1202,31 @@ this.BrowserTestUtils = {
 
   waitForNotificationBar(tabbrowser, browser, notificationValue) {
     let notificationBox = tabbrowser.getNotificationBox(browser);
+    return this.waitForNotificationInNotificationBox(notificationBox,
+                                                     notificationValue);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  waitForGlobalNotificationBar(win, notificationValue) {
+    let notificationBox =
+      win.document.getElementById("high-priority-global-notificationbox");
+    return this.waitForNotificationInNotificationBox(notificationBox,
+                                                     notificationValue);
+  },
+
+  waitForNotificationInNotificationBox(notificationBox, notificationValue) {
     return new Promise((resolve) => {
       let check = (event) => {
         return event.target.value == notificationValue;
