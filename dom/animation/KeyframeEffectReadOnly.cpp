@@ -296,7 +296,10 @@ KeyframeEffectReadOnly::UpdateProperties(nsStyleContext* aStyleContext)
       runningOnCompositorProperties.HasProperty(property.mProperty);
   }
 
-  CalculateCumulativeChangeHint(aStyleContext);
+  
+  if (aStyleContext->PresContext()->StyleSet()->IsGecko()) {
+    CalculateCumulativeChangeHint(aStyleContext);
+  }
 
   MarkCascadeNeedsUpdate();
 
@@ -1272,6 +1275,13 @@ bool
 KeyframeEffectReadOnly::CanIgnoreIfNotVisible() const
 {
   if (!AnimationUtils::IsOffscreenThrottlingEnabled()) {
+    return false;
+  }
+
+  
+  
+  nsPresContext* presContext = GetPresContext();
+  if (!presContext || presContext->StyleSet()->IsServo()) {
     return false;
   }
 
