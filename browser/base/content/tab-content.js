@@ -711,8 +711,8 @@ var WebBrowserChrome = {
   },
 
   
-  shouldLoadURI(aDocShell, aURI, aReferrer, aTriggeringPrincipal) {
-    if (!E10SUtils.shouldLoadURI(aDocShell, aURI, aReferrer)) {
+  shouldLoadURI(aDocShell, aURI, aReferrer, aHasPostData, aTriggeringPrincipal) {
+    if (!E10SUtils.shouldLoadURI(aDocShell, aURI, aReferrer, aHasPostData)) {
       E10SUtils.redirectLoad(aDocShell, aURI, aReferrer, aTriggeringPrincipal, false);
       return false;
     }
