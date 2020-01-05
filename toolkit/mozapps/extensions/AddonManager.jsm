@@ -2250,7 +2250,7 @@ var AddonManagerInternal = {
       throw Components.Exception("aInstanceID must be a symbol",
                                  Cr.NS_ERROR_INVALID_ARG);
 
-    return this.getAddonByInstanceID(aInstanceID).then(addon => {
+    this.getAddonByInstanceID(aInstanceID).then(addon => {
       if (!addon) {
         throw Error("No addon for instanceID:", aInstanceID.toString());
       }
@@ -3086,17 +3086,6 @@ this.AddonManagerPrivate = {
                                .addonIsActive(addonId);
   },
 
-  
-
-
-
-
-
-  getNewSideloads() {
-    return AddonManagerInternal._getProviderByName("XPIProvider")
-                               .getNewSideloads();
-  },
-
   get browserUpdated() {
     return gBrowserUpdated;
   },
@@ -3665,7 +3654,7 @@ this.AddonManager = {
   },
 
   removeUpgradeListener(aInstanceID) {
-    return AddonManagerInternal.removeUpgradeListener(aInstanceID);
+    AddonManagerInternal.removeUpgradeListener(aInstanceID);
   },
 
   addAddonListener(aListener) {

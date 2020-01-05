@@ -70,8 +70,6 @@ pref("extensions.screenshots.system-disabled", true);
 
 pref("extensions.autoDisableScopes", 15);
 
-pref("extensions.startupScanScopes", 0);
-
 
 
 pref("extensions.geckoProfiler.symbols.url", "http://symbols.mozilla.org/");

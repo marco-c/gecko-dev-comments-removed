@@ -64,9 +64,7 @@ this.runtime = class extends ExtensionAPI {
             fire.sync(details);
           });
           return () => {
-            AddonManager.removeUpgradeListener(instanceID).catch(e => {
-              
-            });
+            AddonManager.removeUpgradeListener(instanceID);
           };
         }).api(),
 

@@ -30,9 +30,6 @@ const {OS} = Cu.import("resource://gre/modules/osfile.jsm", {});
 XPCOMUtils.defineLazyModuleGetter(this, "Extension",
                                   "resource://gre/modules/Extension.jsm");
 
-XPCOMUtils.defineLazyServiceGetter(this, "aomStartup",
-                                   "@mozilla.org/addons/addon-manager-startup;1",
-                                   "amIAddonManagerStartup");
 XPCOMUtils.defineLazyServiceGetter(this, "rdfService",
                                    "@mozilla.org/rdf/rdf-service;1", "nsIRDFService");
 XPCOMUtils.defineLazyServiceGetter(this, "uuidGen",
@@ -45,8 +42,6 @@ XPCOMUtils.defineLazyGetter(this, "AppInfo", () => {
   return AppInfo;
 });
 
-const PREF_DISABLE_SECURITY = ("security.turn_off_all_security_so_that_" +
-                               "viruses_can_take_over_this_computer");
 
 const ArrayBufferInputStream = Components.Constructor(
   "@mozilla.org/io/arraybuffer-input-stream;1",
@@ -134,46 +129,46 @@ function escaped(strings, ...values) {
 
 
 class AddonsList {
-  constructor(file) {
+  constructor(extensionsINI) {
     this.multiprocessIncompatibleIDs = new Set();
-    this.extensions = [];
-    this.themes = [];
 
-    if (!file.exists()) {
+    if (!extensionsINI.exists()) {
+      this.extensions = [];
+      this.themes = [];
       return;
     }
 
-    let data = aomStartup.readStartupData();
+    let factory = Cc["@mozilla.org/xpcom/ini-parser-factory;1"]
+                  .getService(Ci.nsIINIParserFactory);
 
-    for (let loc of Object.values(data)) {
-      let dir = loc.path && new nsFile(loc.path);
+    let parser = factory.createINIParser(extensionsINI);
 
-      for (let [id, addon] of Object.entries(loc.addons)) {
-        if (addon.enabled && !addon.bootstrapped) {
-          let file;
-          if (dir) {
-            file = dir.clone();
-            try {
-              file.appendRelativePath(addon.path);
-            } catch (e) {
-              file = new nsFile(addon.path);
-            }
-          } else {
-            file = new nsFile(addon.path);
-          }
+    function readDirectories(section) {
+      var dirs = [];
+      var keys = parser.getKeys(section);
+      for (let key of XPCOMUtils.IterStringEnumerator(keys)) {
+        let descriptor = parser.getString(section, key);
 
-          addon.type = addon.type || "extension";
-
-          if (addon.type == "theme") {
-            this.themes.push(file);
-          } else {
-            this.extensions.push(file);
-            if (addon.enableShims) {
-              this.multiprocessIncompatibleIDs.add(id);
-            }
-          }
+        let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
+        try {
+          file.persistentDescriptor = descriptor;
+        } catch (e) {
+          
+          
+          continue;
         }
+        dirs.push(file);
       }
+      return dirs;
+    }
+
+    this.extensions = readDirectories("ExtensionDirs");
+    this.themes = readDirectories("ThemeDirs");
+
+    var keys = parser.getKeys("MultiprocessIncompatibleExtensions");
+    for (let key of XPCOMUtils.IterStringEnumerator(keys)) {
+      let id = parser.getString("MultiprocessIncompatibleExtensions", key);
+      this.multiprocessIncompatibleIDs.add(id);
     }
   }
 
@@ -186,7 +181,7 @@ class AddonsList {
 
     return this[type].some(file => {
       if (!file.exists())
-        throw new Error(`Non-existent path found in addonStartup.json: ${file.path}`);
+        throw new Error(`Non-existent path found in extensions.ini: ${file.path}`);
 
       if (file.isDirectory())
         return file.equals(path);
@@ -213,7 +208,7 @@ var AddonTestUtils = {
   addonIntegrationService: null,
   addonsList: null,
   appInfo: null,
-  addonStartup: null,
+  extensionsINI: null,
   testUnpacked: false,
   useRealCertChecks: false,
 
@@ -223,11 +218,8 @@ var AddonTestUtils = {
     
     this.profileDir = testScope.do_get_profile();
 
-    this.profileExtensions = this.profileDir.clone();
-    this.profileExtensions.append("extensions");
-
-    this.addonStartup = this.profileDir.clone();
-    this.addonStartup.append("addonStartup.json.lz4");
+    this.extensionsINI = this.profileDir.clone();
+    this.extensionsINI.append("extensions.ini");
 
     
     this.tempDir = this.profileDir.clone();
@@ -250,9 +242,6 @@ var AddonTestUtils = {
 
     
     Services.prefs.setIntPref("extensions.autoDisableScopes", 0);
-
-    
-    Services.prefs.setIntPref("extensions.startupScanScopes", 15);
 
     
     Services.prefs.setBoolPref("extensions.getAddons.cache.enabled", false);
@@ -295,7 +284,10 @@ var AddonTestUtils = {
     }
 
     testScope.do_register_cleanup(() => {
-      this.cleanupTempXPIs();
+      for (let file of this.tempXPIs) {
+        if (file.exists())
+          file.remove(false);
+      }
 
       
       var dirEntries = this.tempDir.directoryEntries
@@ -345,37 +337,6 @@ var AddonTestUtils = {
 
       return this.promiseShutdownManager();
     });
-  },
-
-  initMochitest(testScope) {
-    this.profileDir = FileUtils.getDir("ProfD", []);
-
-    this.profileExtensions = FileUtils.getDir("ProfD", ["extensions"]);
-
-    this.tempDir = FileUtils.getDir("TmpD", []);
-    this.tempDir.append("addons-mochitest");
-    this.tempDir.createUnique(Ci.nsIFile.DIRECTORY_TYPE, FileUtils.PERMS_DIRECTORY);
-
-    testScope.registerCleanupFunction(() => {
-      this.cleanupTempXPIs();
-      try {
-        this.tempDir.remove(true);
-      } catch (e) {
-        Cu.reportError(e);
-      }
-    });
-  },
-
-  cleanupTempXPIs() {
-    for (let file of this.tempXPIs.splice(0)) {
-      if (file.exists()) {
-        try {
-          file.remove(false);
-        } catch (e) {
-          Cu.reportError(e);
-        }
-      }
-    }
   },
 
   
@@ -446,10 +407,6 @@ var AddonTestUtils = {
     } finally {
       zip.close();
     }
-  },
-
-  getIDFromExtension(file) {
-    return this.getIDFromManifest(this.getManifestURI(file));
   },
 
   getIDFromManifest: Task.async(function*(manifestURI) {
@@ -561,12 +518,14 @@ var AddonTestUtils = {
 
 
 
-  async promiseStartupManager(appChanged = true) {
+
+
+  promiseStartupManager(appChanged = true) {
     if (this.addonIntegrationService)
       throw new Error("Attempting to startup manager that was already started.");
 
-    if (appChanged && this.addonStartup.exists())
-      this.addonStartup.remove(true);
+    if (appChanged && this.extensionsINI.exists())
+      this.extensionsINI.remove(true);
 
     this.addonIntegrationService = Cc["@mozilla.org/addons/integration;1"]
           .getService(Ci.nsIObserver);
@@ -576,7 +535,9 @@ var AddonTestUtils = {
     this.emit("addon-manager-started");
 
     
-    await this.loadAddonsList(true);
+    this.loadAddonsList();
+
+    return Promise.resolve();
   },
 
   promiseShutdownManager() {
@@ -606,12 +567,6 @@ var AddonTestUtils = {
         AddonManagerPrivate.unregisterProvider(XPIscope.XPIProvider);
         Cu.unload("resource://gre/modules/addons/XPIProvider.jsm");
 
-        
-        
-        Services.prefs.setBoolPref(PREF_DISABLE_SECURITY, true);
-
-        aomStartup.reset();
-
         if (shutdownError)
           throw shutdownError;
 
@@ -629,14 +584,8 @@ var AddonTestUtils = {
       });
   },
 
-  async loadAddonsList(flush = false) {
-    if (flush) {
-      let XPIScope = Cu.import("resource://gre/modules/addons/XPIProvider.jsm", {});
-      XPIScope.XPIStates.save();
-      await XPIScope.XPIStates._jsonFile._save();
-    }
-
-    this.addonsList = new AddonsList(this.addonStartup);
+  loadAddonsList() {
+    this.addonsList = new AddonsList(this.extensionsINI);
   },
 
   
@@ -911,11 +860,7 @@ var AddonTestUtils = {
 
 
 
-  async manuallyInstall(xpiFile, installLocation = this.profileExtensions, id = null, unpacked = this.testUnpacked) {
-    if (id == null) {
-      id = await this.getIDFromExtension(xpiFile);
-    }
-
+  manuallyInstall(xpiFile, installLocation, id, unpacked = this.testUnpacked) {
     if (unpacked) {
       let dir = installLocation.clone();
       dir.append(id);

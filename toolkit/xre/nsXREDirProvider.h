@@ -126,6 +126,9 @@ protected:
   nsresult LoadContentProcessTempDir();
 #endif
 
+  
+  void LoadExtensionBundleDirectories();
+
 #ifdef MOZ_B2G
   
   void LoadAppBundleDirs();
@@ -148,6 +151,8 @@ protected:
   nsCOMPtr<nsIFile>      mContentProcessSandboxTempDir;
 #endif
   nsCOMArray<nsIFile>    mAppBundleDirectories;
+  nsCOMArray<nsIFile>    mExtensionDirectories;
+  nsCOMArray<nsIFile>    mThemeDirectories;
 };
 
 #endif
