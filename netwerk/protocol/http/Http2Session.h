@@ -428,9 +428,6 @@ private:
   bool                 mCleanShutdown;
 
   
-  bool                 mReceivedSettings;
-
-  
   
   bool                 mTLSProfileConfirmed;
 
@@ -521,12 +518,9 @@ private:
   
   nsTArray<uint32_t> m0RTTStreams;
 
-  bool RealJoinConnection(const nsACString &hostname, int32_t port, bool jk);
   bool TestOriginFrame(const nsACString &name, int32_t port);
   bool mOriginFrameActivated;
   nsDataHashtable<nsCStringHashKey, bool> mOriginFrame;
-
-  nsDataHashtable<nsCStringHashKey, bool> mJoinConnectionCache;
 
 private:
 
