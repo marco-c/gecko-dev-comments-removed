@@ -1046,7 +1046,7 @@ impl<'a> NodeHelpers for &'a Node {
 
 
 #[allow(unsafe_code)]
-pub fn from_untrusted_node_address(runtime: *mut JSRuntime, candidate: UntrustedNodeAddress)
+pub fn from_untrusted_node_address(_runtime: *mut JSRuntime, candidate: UntrustedNodeAddress)
     -> Root<Node> {
     unsafe {
         
