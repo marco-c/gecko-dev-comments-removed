@@ -13,6 +13,8 @@ const Cc = Components.classes;
 const Cu = Components.utils;
 const Cr = Components.results;
 
+Cu.importGlobalProperties(["TextEncoder"]);
+
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 Cu.import("resource://gre/modules/ExtensionUtils.jsm");
@@ -20,6 +22,9 @@ Cu.import("resource://gre/modules/ExtensionUtils.jsm");
 const {
   DefaultMap,
 } = ExtensionUtils;
+
+XPCOMUtils.defineLazyServiceGetter(this, "mimeHeader", "@mozilla.org/network/mime-hdrparam;1",
+                                   "nsIMIMEHeaderParam");
 
 const BinaryInputStream = Components.Constructor(
   "@mozilla.org/binaryinputstream;1", "nsIBinaryInputStream",
@@ -29,6 +34,88 @@ const ConverterInputStream = Components.Constructor(
   "init");
 
 var WebRequestUpload;
+
+
+
+
+
+class Headers extends Map {
+  constructor(headerText) {
+    super();
+
+    if (headerText) {
+      this.parseHeaders(headerText);
+    }
+  }
+
+  parseHeaders(headerText) {
+    let lines = headerText.split("\r\n");
+
+    let lastHeader;
+    for (let line of lines) {
+      
+      if (line === "") {
+        return;
+      }
+
+      
+      
+      if (/^\s/.test(line)) {
+        if (lastHeader) {
+          let val = this.get(lastHeader);
+          this.set(lastHeader, `${val}\r\n${line}`);
+        }
+        continue;
+      }
+
+      let match = /^(.*?)\s*:\s+(.*)/.exec(line);
+      if (match) {
+        lastHeader = match[1].toLowerCase();
+        this.set(lastHeader, match[2]);
+      }
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  getParam(name, paramName) {
+    return Headers.getParam(this.get(name), paramName);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  static getParam(header, paramName) {
+    if (header) {
+      
+      
+      let bytes = new TextEncoder().encode(header);
+      let binHeader = String.fromCharCode(...bytes);
+
+      return mimeHeader.getParameterHTTP(binHeader, paramName, null,
+                                         false, {});
+    }
+
+    return null;
+  }
+}
 
 
 
@@ -223,40 +310,40 @@ function parseFormData(stream, channel, lenient = false) {
   function parseMultiPart(stream, boundary) {
     let formData = new DefaultMap(() => []);
 
-    let unslash = str => str.replace(/\\"/g, '"');
-
     for (let part of getParts(stream, boundary, "\r\n")) {
+      if (part === "") {
+        
+        continue;
+      }
       if (part === "--\r\n") {
+        
         break;
       }
 
-      let match = part.match(/^\r\nContent-Disposition: form-data; name="(.*)"\r\n(?:Content-Type: (\S+))?.*\r\n/i);
-      if (!match) {
-        continue;
+      let end = part.indexOf("\r\n\r\n");
+
+      
+      
+      if (!part.startsWith("\r\n") || end <= 0) {
+        throw new Error("Invalid MIME stream");
       }
 
-      let [header, name, contentType] = match;
-      let value = "";
-      if (contentType) {
-        let fileName;
-        
-        
-        
-        
-        
-        match = name.match(/^(.*[^\\])"; filename="(.*)/);
-        if (match) {
-          [, name, fileName] = match;
-        }
+      let content = part.slice(end + 4);
+      let headerText = part.slice(2, end);
+      let headers = new Headers(headerText);
 
-        if (fileName) {
-          value = unslash(fileName);
-        }
-      } else {
-        value = part.slice(header.length);
+      let name = headers.getParam("content-disposition", "name");
+      if (!name || headers.getParam("content-disposition", "") !== "form-data") {
+        throw new Error("Invalid MIME stream: No valid Content-Disposition header");
       }
 
-      formData.get(unslash(name)).push(value);
+      if (headers.has("content-type")) {
+        
+        
+        let filename = headers.getParam("content-disposition", "filename");
+        content = filename || "";
+      }
+      formData.get(name).push(content);
     }
 
     return formData;
@@ -304,20 +391,16 @@ function parseFormData(stream, channel, lenient = false) {
     try {
       contentType = channel.getRequestHeader("Content-Type");
     } catch (e) {
-      let match = /^Content-Type:\s+(.+)/i.exec(headers);
-      contentType = match && match[1];
+      contentType = new Headers(headers).get("content-type");
     }
 
-    let match = /^(?:multipart\/form-data;\s*boundary=(\S*)|(application\/x-www-form-urlencoded))/i.exec(contentType);
-    if (match) {
-      let boundary = match[1];
-      if (boundary) {
+    switch (Headers.getParam(contentType, "")) {
+      case "multipart/form-data":
+        let boundary = Headers.getParam(contentType, "boundary");
         return parseMultiPart(stream, `\r\n--${boundary}`);
-      }
 
-      if (match[2]) {
+      case "application/x-www-form-urlencoded":
         return parseUrlEncoded(stream);
-      }
     }
   } finally {
     for (let stream of touchedStreams) {
