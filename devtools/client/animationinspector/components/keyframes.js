@@ -7,7 +7,14 @@
 "use strict";
 
 const EventEmitter = require("devtools/shared/event-emitter");
-const {createNode} = require("devtools/client/animationinspector/utils");
+const {createNode, createSVGNode} =
+  require("devtools/client/animationinspector/utils");
+const {ProgressGraphHelper, appendPathElement, DEFAULT_MIN_PROGRESS_THRESHOLD} =
+         require("devtools/client/animationinspector/graph-helper.js");
+
+
+let LINEAR_GRADIENT_ID_COUNTER = 0;
+
 
 
 
@@ -37,7 +44,7 @@ Keyframes.prototype = {
     this.containerEl = this.keyframesEl = this.animation = null;
   },
 
-  render: function ({keyframes, propertyName, animation}) {
+  render: function ({keyframes, propertyName, animation, animationType}) {
     this.keyframes = keyframes;
     this.propertyName = propertyName;
     this.animation = animation;
@@ -47,6 +54,43 @@ Keyframes.prototype = {
       ? 0
       : 1 - animation.state.iterationStart % 1;
 
+    
+    const graphEl = createSVGNode({
+      parent: this.keyframesEl,
+      nodeType: "svg",
+      attributes: {
+        "preserveAspectRatio": "none"
+      }
+    });
+
+    
+    
+    const totalDuration = animation.state.duration;
+
+    
+    const strokeHeightForViewBox = 0.5 / this.containerEl.clientHeight;
+    
+    const minSegmentDuration =
+      totalDuration / this.containerEl.clientWidth;
+
+    
+    graphEl.setAttribute("viewBox",
+                         `0 -${ 1 + strokeHeightForViewBox }
+                          ${ totalDuration }
+                          ${ 1 + strokeHeightForViewBox * 2 }`);
+
+    
+    const graphHelper =
+      new ProgressGraphHelper(this.containerEl.ownerDocument.defaultView,
+                              propertyName, animationType, keyframes, totalDuration);
+
+    renderPropertyGraph(graphEl, totalDuration, minSegmentDuration,
+                        DEFAULT_MIN_PROGRESS_THRESHOLD, graphHelper);
+
+    
+    graphHelper.destroy();
+
+    
     this.keyframesEl.classList.add(animation.state.type);
     for (let frame of this.keyframes) {
       let offset = frame.offset + iterationStartOffset;
@@ -79,3 +123,52 @@ Keyframes.prototype = {
     });
   }
 };
+
+
+
+
+
+
+
+
+
+function renderPropertyGraph(parentEl, duration, minSegmentDuration,
+                             minProgressThreshold, graphHelper) {
+  const segments = graphHelper.createPathSegments(0, duration, minSegmentDuration,
+                                                  minProgressThreshold);
+
+  const graphType = graphHelper.getGraphType();
+  if (graphType !== "color") {
+    appendPathElement(parentEl, segments, graphType);
+    return;
+  }
+
+  
+  segments.forEach(segment => {
+    segment.y = 1;
+  });
+  const path = appendPathElement(parentEl, segments, graphType);
+  const defEl = createSVGNode({
+    parent: parentEl,
+    nodeType: "def"
+  });
+  const id = `color-property-${ LINEAR_GRADIENT_ID_COUNTER++ }`;
+  const linearGradientEl = createSVGNode({
+    parent: defEl,
+    nodeType: "linearGradient",
+    attributes: {
+      "id": id
+    }
+  });
+  segments.forEach(segment => {
+    createSVGNode({
+      parent: linearGradientEl,
+      nodeType: "stop",
+      attributes: {
+        "stop-color": segment.style,
+        "offset": segment.x / duration
+      }
+    });
+  });
+  path.style.fill = `url(#${ id })`;
+}

@@ -873,8 +873,7 @@ function parseTimingFunction(value) {
   return result;
 }
 
-
-exports._parseTimingFunction = parseTimingFunction;
+exports.parseTimingFunction = parseTimingFunction;
 
 
 

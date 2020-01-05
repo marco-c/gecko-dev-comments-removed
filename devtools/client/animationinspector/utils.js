@@ -21,6 +21,9 @@ const OPTIMAL_TIME_INTERVAL_MULTIPLES = [1, 2.5, 5];
 const MILLIS_TIME_FORMAT_MAX_DURATION = 4000;
 
 
+const SVG_NS = "http://www.w3.org/2000/svg";
+
+
 
 
 
@@ -56,6 +59,22 @@ function createNode(options) {
 }
 
 exports.createNode = createNode;
+
+
+
+
+
+
+
+
+
+
+
+function createSVGNode(options) {
+  options.namespace = SVG_NS;
+  return createNode(options);
+}
+exports.createSVGNode = createSVGNode;
 
 
 
@@ -273,3 +292,19 @@ var TimeScale = {
 };
 
 exports.TimeScale = TimeScale;
+
+
+
+
+
+
+function getJsPropertyName(cssPropertyName) {
+  if (cssPropertyName == "float") {
+    return "cssFloat";
+  }
+  
+  return cssPropertyName.replace(/-([a-z])/gi, (str, group) => {
+    return group.toUpperCase();
+  });
+}
+exports.getJsPropertyName = getJsPropertyName;

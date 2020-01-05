@@ -33,7 +33,8 @@ exports.AnimationDetails = AnimationDetails;
 AnimationDetails.prototype = {
   
   
-  NON_PROPERTIES: ["easing", "composite", "computedOffset", "offset"],
+  NON_PROPERTIES: ["easing", "composite", "computedOffset",
+                   "offset", "simulateComputeValuesFailure"],
 
   init: function (containerEl) {
     this.containerEl = containerEl;
@@ -108,8 +109,9 @@ AnimationDetails.prototype = {
           tracks[name] = [];
         }
 
-        for (let {value, offset} of values) {
-          tracks[name].push({value, offset});
+        for (let {value, offset, easing, distance} of values) {
+          distance = distance ? distance : 0;
+          tracks[name].push({value, offset, easing, distance});
         }
       }
     } else {
@@ -120,19 +122,44 @@ AnimationDetails.prototype = {
             continue;
           }
 
-          if (!tracks[name]) {
-            tracks[name] = [];
+          
+          
+          const propertyCSSName = getCssPropertyName(name);
+          if (!tracks[propertyCSSName]) {
+            tracks[propertyCSSName] = [];
           }
 
-          tracks[name].push({
+          tracks[propertyCSSName].push({
             value: frame[name],
-            offset: frame.computedOffset
+            offset: frame.computedOffset,
+            easing: frame.easing,
+            distance: 0
           });
         }
       }
     }
 
     return tracks;
+  }),
+
+  
+
+
+
+
+
+
+
+  getAnimationTypes: Task.async(function* (propertyNames) {
+    if (this.serverTraits.hasGetAnimationTypes) {
+      return yield this.animation.getAnimationTypes(propertyNames);
+    }
+    
+    const animationTypes = {};
+    propertyNames.forEach(propertyName => {
+      animationTypes[propertyName] = "none";
+    });
+    return Promise.resolve(animationTypes);
   }),
 
   render: Task.async(function* (animation) {
@@ -153,7 +180,7 @@ AnimationDetails.prototype = {
     this.tracks = yield this.getTracks(animation, this.serverTraits);
 
     
-    this.emit("keyframes-retrieved");
+    const animationTypes = yield this.getAnimationTypes(Object.keys(this.tracks));
 
     for (let propertyName in this.tracks) {
       let line = createNode({
@@ -196,12 +223,16 @@ AnimationDetails.prototype = {
       keyframesComponent.render({
         keyframes: this.tracks[propertyName],
         propertyName: propertyName,
-        animation: animation
+        animation: animation,
+        animationType: animationTypes[propertyName]
       });
       keyframesComponent.on("frame-selected", this.onFrameSelected);
-
       this.keyframeComponents.push(keyframesComponent);
     }
+
+    
+    
+    this.emit("animation-detail-rendering-completed");
   }),
 
   onFrameSelected: function (e, args) {

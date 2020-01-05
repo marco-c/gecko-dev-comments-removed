@@ -385,7 +385,7 @@ function* clickOnAnimation(panel, index, shouldClose) {
   
   let onReady = shouldClose
                 ? Promise.resolve()
-                : timeline.details[index].once("keyframes-retrieved");
+                : timeline.details[index].once("animation-detail-rendering-completed");
 
   info("Click on animation " + index + " in the timeline");
   let timeBlock = timeline.rootWrapperEl.querySelectorAll(".time-block")[index];
