@@ -3219,35 +3219,8 @@ ServiceWorkerManager::CreateNewRegistration(const nsCString& aScope,
   MOZ_ASSERT(!tmp);
 #endif
 
-  
-  
-  
-  
-  
-  
-  
-  
-  PrincipalInfo principalInfo;
-  rv = PrincipalToPrincipalInfo(aPrincipal, &principalInfo);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return nullptr;
-  }
-
-  nsCOMPtr<nsIPrincipal> cleanPrincipal =
-    PrincipalInfoToPrincipal(principalInfo, &rv);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return nullptr;
-  }
-
-  
-#if defined(DEBUG) || !defined(RELEASE_OR_BETA)
-  nsCOMPtr<nsIContentSecurityPolicy> csp;
-  MOZ_ALWAYS_SUCCEEDS(cleanPrincipal->GetCsp(getter_AddRefs(csp)));
-  MOZ_DIAGNOSTIC_ASSERT(!csp);
-#endif
-
   RefPtr<ServiceWorkerRegistrationInfo> registration =
-    new ServiceWorkerRegistrationInfo(aScope, cleanPrincipal, aLoadFlags);
+    new ServiceWorkerRegistrationInfo(aScope, aPrincipal, aLoadFlags);
   
   
   AddScopeAndRegistration(aScope, registration);
