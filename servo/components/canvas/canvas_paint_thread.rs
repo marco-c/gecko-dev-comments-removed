@@ -122,8 +122,6 @@ impl<'a> CanvasPaintThread<'a> {
     pub fn start(size: Size2D<i32>,
                  webrender_api_sender: Option<webrender_traits::RenderApiSender>)
                  -> IpcSender<CanvasMsg> {
-        
-        
         let (sender, receiver) = ipc::channel::<CanvasMsg>().unwrap();
         spawn_named("CanvasThread".to_owned(), move || {
             let mut painter = CanvasPaintThread::new(size, webrender_api_sender);

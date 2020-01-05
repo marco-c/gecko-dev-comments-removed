@@ -91,38 +91,38 @@ enum ReadyToSave {
 
 pub struct Constellation<LTF, STF> {
     
-    pub script_sender: ConstellationChan<FromScriptMsg>,
+    script_sender: ConstellationChan<FromScriptMsg>,
 
     
-    pub compositor_sender: Sender<FromCompositorMsg>,
+    compositor_sender: Sender<FromCompositorMsg>,
 
     
-    pub layout_sender: ConstellationChan<FromLayoutMsg>,
+    layout_sender: ConstellationChan<FromLayoutMsg>,
 
     
-    pub panic_sender: ConstellationChan<PanicMsg>,
+    panic_sender: ConstellationChan<PanicMsg>,
 
     
-    pub script_receiver: Receiver<FromScriptMsg>,
+    script_receiver: Receiver<FromScriptMsg>,
 
     
-    pub compositor_receiver: Receiver<FromCompositorMsg>,
+    compositor_receiver: Receiver<FromCompositorMsg>,
 
     
-    pub layout_receiver: Receiver<FromLayoutMsg>,
+    layout_receiver: Receiver<FromLayoutMsg>,
 
     
-    pub panic_receiver: Receiver<PanicMsg>,
+    panic_receiver: Receiver<PanicMsg>,
 
     
     
-    pub compositor_proxy: Box<CompositorProxy>,
+    compositor_proxy: Box<CompositorProxy>,
 
     
-    pub resource_thread: ResourceThread,
+    resource_thread: ResourceThread,
 
     
-    pub image_cache_thread: ImageCacheThread,
+    image_cache_thread: ImageCacheThread,
 
     
     devtools_chan: Option<Sender<DevtoolsControlMsg>>,
@@ -164,10 +164,10 @@ pub struct Constellation<LTF, STF> {
     pending_frames: Vec<FrameChange>,
 
     
-    pub time_profiler_chan: time::ProfilerChan,
+    time_profiler_chan: time::ProfilerChan,
 
     
-    pub mem_profiler_chan: mem::ProfilerChan,
+    mem_profiler_chan: mem::ProfilerChan,
 
     phantom: PhantomData<(LTF, STF)>,
 
