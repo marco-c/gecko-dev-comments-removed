@@ -1526,6 +1526,11 @@ SSLServerCertVerificationJob::Dispatch(
     return SECFailure;
   }
 
+  if (!gCertVerificationThreadPool) {
+    PR_SetError(PR_INVALID_STATE_ERROR, 0);
+    return SECFailure;
+  }
+
   
   
   
@@ -1544,12 +1549,7 @@ SSLServerCertVerificationJob::Dispatch(
                                      stapledOCSPResponse, sctsFromTLSExtension,
                                      providerFlags, time, prtime));
 
-  nsresult nrv;
-  if (!gCertVerificationThreadPool) {
-    nrv = NS_ERROR_NOT_INITIALIZED;
-  } else {
-    nrv = gCertVerificationThreadPool->Dispatch(job, NS_DISPATCH_NORMAL);
-  }
+  nsresult nrv = gCertVerificationThreadPool->Dispatch(job, NS_DISPATCH_NORMAL);
   if (NS_FAILED(nrv)) {
     
     
@@ -1557,15 +1557,14 @@ SSLServerCertVerificationJob::Dispatch(
     
     
     
-    
     PRErrorCode error = nrv == NS_ERROR_OUT_OF_MEMORY
-                      ? SEC_ERROR_NO_MEMORY
+                      ? PR_OUT_OF_MEMORY_ERROR
                       : PR_INVALID_STATE_ERROR;
-    PORT_SetError(error);
+    PR_SetError(error, 0);
     return SECFailure;
   }
 
-  PORT_SetError(PR_WOULD_BLOCK_ERROR);
+  PR_SetError(PR_WOULD_BLOCK_ERROR, 0);
   return SECWouldBlock;
 }
 
