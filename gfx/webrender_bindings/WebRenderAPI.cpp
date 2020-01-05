@@ -189,6 +189,10 @@ WebRenderAPI::Readback(gfx::IntSize size,
 
     layers::SynchronousTask task("Readback");
     auto event = MakeUnique<Readback>(&task, size, buffer, buffer_size);
+    
+    
+    
+    
     RunOnRenderThread(Move(event));
 
     task.Wait();
