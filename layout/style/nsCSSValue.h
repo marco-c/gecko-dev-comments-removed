@@ -93,6 +93,37 @@ class CSSStyleSheet;
 namespace mozilla {
 namespace css {
 
+struct URLExtraData
+{
+  URLExtraData(already_AddRefed<nsIURI> aBaseURI,
+               already_AddRefed<nsIURI> aReferrer,
+               already_AddRefed<nsIPrincipal> aPrincipal)
+    : mBaseURI(Move(aBaseURI))
+    , mReferrer(Move(aReferrer))
+    , mPrincipal(Move(aPrincipal))
+  {
+    MOZ_ASSERT(mBaseURI);
+  }
+
+  URLExtraData(nsIURI* aBaseURI, nsIURI* aReferrer, nsIPrincipal* aPrincipal)
+    : URLExtraData(do_AddRef(aBaseURI),
+                   do_AddRef(aReferrer),
+                   do_AddRef(aPrincipal)) {}
+
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(URLExtraData)
+
+  nsIURI* BaseURI() const { return mBaseURI; }
+  nsIURI* GetReferrer() const { return mReferrer; }
+  nsIPrincipal* GetPrincipal() const { return mPrincipal; }
+
+private:
+  ~URLExtraData();
+
+  RefPtr<nsIURI> mBaseURI;
+  RefPtr<nsIURI> mReferrer;
+  RefPtr<nsIPrincipal> mPrincipal;
+};
+
 struct URLValueData
 {
 protected:
@@ -105,15 +136,11 @@ protected:
   
   
   URLValueData(nsStringBuffer* aString,
-               already_AddRefed<PtrHolder<nsIURI>> aBaseURI,
-               already_AddRefed<PtrHolder<nsIURI>> aReferrer,
-               already_AddRefed<PtrHolder<nsIPrincipal>> aOriginPricinpal);
+               already_AddRefed<URLExtraData> aExtraData);
   
   URLValueData(already_AddRefed<PtrHolder<nsIURI>> aURI,
                nsStringBuffer* aString,
-               already_AddRefed<PtrHolder<nsIURI>> aBaseURI,
-               already_AddRefed<PtrHolder<nsIURI>> aReferrer,
-               already_AddRefed<PtrHolder<nsIPrincipal>> aOriginPrincipal);
+               already_AddRefed<URLExtraData> aExtraData);
 
 public:
   
@@ -159,10 +186,8 @@ private:
   
   mutable PtrHandle<nsIURI> mURI;
 public:
-  PtrHandle<nsIURI> mBaseURI;
   RefPtr<nsStringBuffer> mString;
-  PtrHandle<nsIURI> mReferrer;
-  PtrHandle<nsIPrincipal> mOriginPrincipal;
+  RefPtr<URLExtraData> mExtraData;
 private:
   mutable bool mURIResolved;
   
@@ -188,11 +213,8 @@ struct URLValue final : public URLValueData
 
   
   URLValue(nsStringBuffer* aString,
-           already_AddRefed<PtrHolder<nsIURI>> aBaseURI,
-           already_AddRefed<PtrHolder<nsIURI>> aReferrer,
-           already_AddRefed<PtrHolder<nsIPrincipal>> aOriginPrincipal)
-    : URLValueData(aString, Move(aBaseURI), Move(aReferrer),
-                   Move(aOriginPrincipal)) {}
+           already_AddRefed<URLExtraData> aExtraData)
+    : URLValueData(aString, Move(aExtraData)) {}
 
   URLValue(const URLValue&) = delete;
   URLValue& operator=(const URLValue&) = delete;
@@ -208,16 +230,14 @@ struct ImageValue final : public URLValueData
   
   
   
-  ImageValue(nsIURI* aURI, nsStringBuffer* aString, nsIURI* aBaseURI,
-             nsIURI* aReferrer, nsIPrincipal* aOriginPrincipal,
+  ImageValue(nsIURI* aURI, nsStringBuffer* aString,
+             already_AddRefed<URLExtraData> aExtraData,
              nsIDocument* aDocument);
 
   
   
   ImageValue(nsStringBuffer* aString,
-             already_AddRefed<PtrHolder<nsIURI>> aBaseURI,
-             already_AddRefed<PtrHolder<nsIURI>> aReferrer,
-             already_AddRefed<PtrHolder<nsIPrincipal>> aOriginPrincipal);
+             already_AddRefed<URLExtraData> aExtraData);
 
   ImageValue(const ImageValue&) = delete;
   ImageValue& operator=(const ImageValue&) = delete;
