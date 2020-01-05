@@ -14,11 +14,10 @@ if (typeof define === "undefined") {
 
 
 const {
-  createFactory,
   PropTypes
 } = require("devtools/client/shared/vendor/react");
 
-const VariablesViewLink = createFactory(require("devtools/client/webconsole/new-console-output/components/variables-view-link"));
+const VariablesViewLink = require("devtools/client/webconsole/new-console-output/components/variables-view-link");
 
 const { REPS, MODE } = require("devtools/client/shared/components/reps/reps");
 const Rep = REPS.Rep;
@@ -94,23 +93,23 @@ function GripMessageBody(props) {
   );
 }
 
+
+const allowedStylesRegex = new RegExp(
+  "^(?:-moz-)?(?:background|border|box|clear|color|cursor|display|float|font|line|" +
+  "margin|padding|text|transition|outline|white-space|word|writing|" +
+  "(?:min-|max-)?width|(?:min-|max-)?height)"
+);
+
+
+const forbiddenValuesRegexs = [
+  
+  /\b(?:url|(?:-moz-)?element)[\s('"]+/gi,
+
+  
+  /['"(]*(?:chrome|resource|about|app|data|https?|ftp|file):+\/*/gi,
+];
+
 function cleanupStyle(userProvidedStyle, createElement) {
-  
-  const allowedStylesRegex = new RegExp(
-    "^(?:-moz-)?(?:background|border|box|clear|color|cursor|display|float|font|line|" +
-    "margin|padding|text|transition|outline|white-space|word|writing|" +
-    "(?:min-|max-)?width|(?:min-|max-)?height)"
-  );
-
-  
-  const forbiddenValuesRegexs = [
-    
-    /\b(?:url|(?:-moz-)?element)[\s('"]+/gi,
-
-    
-    /['"(]*(?:chrome|resource|about|app|data|https?|ftp|file):+\/*/gi,
-  ];
-
   
   let dummy = createElement("div");
   dummy.style = userProvidedStyle;
