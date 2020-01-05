@@ -23,6 +23,9 @@ class nsIURI;
 class nsIPresShell;
 class nsIChannel;
 class nsTableColFrame;
+namespace mozilla {
+class ViewportFrame;
+} 
 
 
 
@@ -81,8 +84,7 @@ NS_NewSubDocumentFrame(nsIPresShell* aPresShell, nsStyleContext* aContext);
 nsIFrame*
 NS_NewHTMLFramesetFrame(nsIPresShell* aPresShell, nsStyleContext* aContext);
 
-class ViewportFrame;
-ViewportFrame*
+mozilla::ViewportFrame*
 NS_NewViewportFrame(nsIPresShell* aPresShell, nsStyleContext* aContext);
 class nsCanvasFrame;
 nsCanvasFrame*

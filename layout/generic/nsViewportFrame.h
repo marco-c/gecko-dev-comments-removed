@@ -16,6 +16,8 @@
 
 class nsPresContext;
 
+namespace mozilla {
+
 
 
 
@@ -104,5 +106,6 @@ protected:
   nsPoint AdjustReflowInputForScrollbars(ReflowInput* aReflowInput) const;
 };
 
+} 
 
 #endif 

@@ -11,7 +11,7 @@ class nsPageFrame;
 class nsSharedPageData;
 
 
-class nsPageContentFrame : public ViewportFrame {
+class nsPageContentFrame : public mozilla::ViewportFrame {
 
 public:
   NS_DECL_FRAMEARENA_HELPERS
