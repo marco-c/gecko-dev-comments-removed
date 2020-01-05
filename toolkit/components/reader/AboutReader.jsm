@@ -739,6 +739,21 @@ AboutReader.prototype = {
     }
   },
 
+  _fixLocalLinks() {
+    
+    
+    
+    
+    
+    
+    
+    let localLinks = this._contentElement.querySelectorAll("a[href^='#']");
+    for (let localLink of localLinks) {
+      
+      localLink.href = this._doc.documentURI + localLink.getAttribute("href");
+    }
+  },
+
   _formatReadTime(slowEstimate, fastEstimate) {
     let displayStringKey = "aboutReader.estimatedReadTimeRange1";
 
@@ -804,6 +819,7 @@ AboutReader.prototype = {
       false, articleUri, this._contentElement);
     this._contentElement.innerHTML = "";
     this._contentElement.appendChild(contentFragment);
+    this._fixLocalLinks();
     this._maybeSetTextDirection(article);
     this._foundLanguage(article.language);
 
