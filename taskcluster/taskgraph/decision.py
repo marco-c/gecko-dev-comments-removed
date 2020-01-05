@@ -164,6 +164,7 @@ def get_decision_parameters(options):
     
     
     parameters['filters'] = [
+        'check_servo',
         'target_tasks_method',
     ]
 
