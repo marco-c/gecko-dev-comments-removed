@@ -73,7 +73,6 @@ static constexpr Register IntArgReg0 = r0;
 static constexpr Register IntArgReg1 = r1;
 static constexpr Register IntArgReg2 = r2;
 static constexpr Register IntArgReg3 = r3;
-static constexpr Register GlobalReg = r10;
 static constexpr Register HeapReg = r11;
 static constexpr Register CallTempNonArgRegs[] = { r5, r6, r7, r8 };
 static const uint32_t NumCallTempNonArgRegs =
@@ -159,11 +158,6 @@ struct ScratchDoubleScope : public AutoFloatRegisterScope
       : AutoFloatRegisterScope(masm, ScratchDoubleReg)
     { }
 };
-
-
-
-
-static const int32_t WasmGlobalRegBias = 1024;
 
 
 static constexpr Register WasmIonExitRegCallee = r4;

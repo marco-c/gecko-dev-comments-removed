@@ -442,12 +442,6 @@ enum class Telemetry
 
 
 
-static const unsigned NaN64GlobalDataOffset  = 0;
-static const unsigned NaN32GlobalDataOffset  = NaN64GlobalDataOffset + sizeof(double);
-static const unsigned InitialGlobalDataBytes = NaN32GlobalDataOffset + sizeof(float);
-
-
-
 static const unsigned MaxTypes               =  1000000;
 static const unsigned MaxFuncs               =  1000000;
 static const unsigned MaxImports             =   100000;

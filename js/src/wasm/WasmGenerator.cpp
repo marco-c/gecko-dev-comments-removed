@@ -210,7 +210,7 @@ ModuleGenerator::init(UniqueModuleEnvironment env, const CompileArgs& args,
 {
     env_ = Move(env);
 
-    linkData_.globalDataLength = AlignBytes(InitialGlobalDataBytes, sizeof(void*));
+    linkData_.globalDataLength = 0;
 
     if (!funcToCodeRange_.appendN(BAD_CODE_RANGE, env_->funcSigs.length()))
         return false;
@@ -676,30 +676,6 @@ ModuleGenerator::finishLinkData(Bytes& code)
         if (!linkData_.internalLinks.append(inLink))
             return false;
     }
-
-#if defined(JS_CODEGEN_X86)
-    
-    
-    
-    for (GlobalAccess a : masm_.globalAccesses()) {
-        LinkData::InternalLink inLink(LinkData::InternalLink::RawPointer);
-        inLink.patchAtOffset = masm_.labelToPatchOffset(a.patchAt);
-        inLink.targetOffset = code.length() + a.globalDataOffset;
-        if (!linkData_.internalLinks.append(inLink))
-            return false;
-    }
-#elif defined(JS_CODEGEN_X64)
-    
-    
-    for (GlobalAccess a : masm_.globalAccesses()) {
-        void* from = code.begin() + a.patchAt.offset();
-        void* to = code.end() + a.globalDataOffset;
-        X86Encoding::SetRel32(from, to);
-    }
-#else
-    
-    MOZ_ASSERT(masm_.globalAccesses().length() == 0);
-#endif
 
     return true;
 }

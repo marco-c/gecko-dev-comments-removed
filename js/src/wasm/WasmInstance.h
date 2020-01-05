@@ -30,6 +30,35 @@ namespace wasm {
 
 
 
+class GlobalSegment
+{
+    uint32_t globalDataLength_;
+    TlsData* tlsData_;
+
+    GlobalSegment(const GlobalSegment&) = delete;
+    GlobalSegment(GlobalSegment&&) = delete;
+    void operator=(const GlobalSegment&) = delete;
+    void operator=(GlobalSegment&&) = delete;
+
+  public:
+    static UniquePtr<GlobalSegment> create(uint32_t globalDataLength);
+
+    GlobalSegment() { PodZero(this); }
+    ~GlobalSegment();
+
+    TlsData* tlsData() const { return tlsData_; }
+    uint8_t* globalData() const { return (uint8_t*)&tlsData_->globalArea; }
+    uint32_t globalDataLength() const { return globalDataLength_; }
+
+    size_t sizeOfMisc(MallocSizeOf mallocSizeOf) const;
+};
+
+typedef UniquePtr<GlobalSegment> UniqueGlobalSegment;
+
+
+
+
+
 
 
 
@@ -38,9 +67,9 @@ class Instance
     JSCompartment* const            compartment_;
     ReadBarrieredWasmInstanceObject object_;
     const UniqueCode                code_;
+    const UniqueGlobalSegment       globals_;
     GCPtrWasmMemoryObject           memory_;
     SharedTableVector               tables_;
-    TlsData                         tlsData_;
     bool                            enterFrameTrapsEnabled_;
 
     
@@ -67,6 +96,7 @@ class Instance
     Instance(JSContext* cx,
              HandleWasmInstanceObject object,
              UniqueCode code,
+             UniqueGlobalSegment globals,
              HandleWasmMemoryObject memory,
              SharedTableVector&& tables,
              Handle<FunctionVector> funcImports,
@@ -75,11 +105,12 @@ class Instance
     bool init(JSContext* cx);
     void trace(JSTracer* trc);
 
-    JSContext* cx() const { return tlsData_.cx; }
+    JSContext* cx() const { return tlsData()->cx; }
     JSCompartment* compartment() const { return compartment_; }
     Code& code() { return *code_; }
     const Code& code() const { return *code_; }
     const CodeSegment& codeSegment() const { return code_->segment(); }
+    const GlobalSegment& globalSegment() const { return *globals_; }
     uint8_t* codeBase() const { return code_->segment().base(); }
     const Metadata& metadata() const { return code_->metadata(); }
     bool isAsmJS() const { return metadata().isAsmJS(); }
@@ -88,7 +119,7 @@ class Instance
     size_t memoryLength() const;
     size_t memoryMappedSize() const;
     bool memoryAccessInGuardRegion(uint8_t* addr, unsigned numBytes) const;
-    TlsData& tlsData() { return tlsData_; }
+    TlsData* tlsData() const { return globals_->tlsData(); }
 
     
     

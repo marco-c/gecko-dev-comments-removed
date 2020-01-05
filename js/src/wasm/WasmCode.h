@@ -39,9 +39,6 @@ class FrameIterator;
 
 
 
-
-
-
 class CodeSegment;
 typedef UniquePtr<CodeSegment> UniqueCodeSegment;
 
@@ -50,12 +47,9 @@ class CodeSegment
     
     
     
-    
-    
     uint8_t* bytes_;
-    uint32_t functionCodeLength_;
-    uint32_t codeLength_;
-    uint32_t globalDataLength_;
+    uint32_t functionLength_;
+    uint32_t length_;
 
     
     
@@ -83,10 +77,7 @@ class CodeSegment
     ~CodeSegment();
 
     uint8_t* base() const { return bytes_; }
-    uint8_t* globalData() const { return bytes_ + codeLength_; }
-    uint32_t codeLength() const { return codeLength_; }
-    uint32_t globalDataLength() const { return globalDataLength_; }
-    uint32_t totalLength() const { return codeLength_ + globalDataLength_; }
+    uint32_t length() const { return length_; }
 
     uint8_t* interruptCode() const { return interruptCode_; }
     uint8_t* outOfBoundsCode() const { return outOfBoundsCode_; }
@@ -99,10 +90,10 @@ class CodeSegment
     
 
     bool containsFunctionPC(const void* pc) const {
-        return pc >= base() && pc < (base() + functionCodeLength_);
+        return pc >= base() && pc < (base() + functionLength_);
     }
     bool containsCodePC(const void* pc) const {
-        return pc >= base() && pc < (base() + codeLength_);
+        return pc >= base() && pc < (base() + length_);
     }
 
     
