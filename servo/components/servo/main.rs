@@ -174,6 +174,8 @@ mod android {
     pub fn setup_logging() {
         use self::libc::consts::os::posix88::{STDERR_FILENO, STDOUT_FILENO};
         
+
+        
         redirect_output(STDERR_FILENO);
         redirect_output(STDOUT_FILENO);
     }
