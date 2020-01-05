@@ -305,28 +305,17 @@ const kActionNever = 3;
 
 function activateSecondaryAction(aAction) {
   let notification = PopupNotifications.panel.firstChild;
-
-  if (aAction == kActionAlways) {
-    notification.secondaryButton.click();
-    return;
+  switch (aAction) {
+    case kActionNever:
+      notification.checkbox.setAttribute("checked", true); 
+    case kActionDeny:
+      notification.secondaryButton.click();
+      break;
+    case kActionAlways:
+      notification.checkbox.setAttribute("checked", true);
+      notification.button.click();
+      break;
   }
-
-  notification.secondaryButton.nextSibling.nextSibling.focus();
-  let popup = notification.menupopup;
-  popup.addEventListener("popupshown", function() {
-    popup.removeEventListener("popupshown", arguments.callee, false);
-
-    
-    while (--aAction)
-      EventUtils.synthesizeKey("VK_DOWN", {});
-
-    
-    EventUtils.synthesizeKey("VK_RETURN", {});
-  }, false);
-
-  
-  EventUtils.synthesizeKey("VK_DOWN",
-                           { altKey: !navigator.platform.includes("Mac") });
 }
 
 function getMediaCaptureState() {

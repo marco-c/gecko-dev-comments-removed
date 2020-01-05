@@ -382,7 +382,7 @@ add_task(function* test_checkUPSaveText() {
     ok(notif, "got notification popup");
     
     let notificationText = notif.message;
-    let expectedText = "Would you like " + BRAND_SHORT_NAME + " to remember this login?";
+    let expectedText = "Would you like " + BRAND_SHORT_NAME + " to save this login for example.com?";
     is(expectedText, notificationText, "Checking text: " + notificationText);
     notif.remove();
   });
@@ -400,7 +400,7 @@ add_task(function* test_checkPSaveText() {
     ok(notif, "got notification popup");
     
     let notificationText = notif.message;
-    let expectedText = "Would you like " + BRAND_SHORT_NAME + " to remember this password?";
+    let expectedText = "Would you like " + BRAND_SHORT_NAME + " to save this password for example.com?";
     is(expectedText, notificationText, "Checking text: " + notificationText);
     notif.remove();
   });
