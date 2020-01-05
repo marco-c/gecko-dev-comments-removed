@@ -34,6 +34,8 @@ pub enum DOMManipulationTask {
     
     FireToggleEvent(Box<Runnable + Send>),
     
+    MediaTask(Box<Runnable + Send>),
+    
     PlannedNavigation(Box<Runnable + Send>),
     
     SendStorageNotification(Box<MainThreadRunnable + Send>)
@@ -54,6 +56,7 @@ impl DOMManipulationTask {
                 target.fire_simple_event(&*name);
             }
             FireToggleEvent(runnable) => runnable.handler(),
+            MediaTask(runnable) => runnable.handler(),
             PlannedNavigation(runnable) => runnable.handler(),
             SendStorageNotification(runnable) => runnable.handler(script_thread)
         }
