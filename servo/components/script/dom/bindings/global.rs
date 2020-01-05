@@ -7,6 +7,8 @@
 
 
 
+#[deny(missing_docs)]
+
 use dom::bindings::conversions::FromJSValConvertible;
 use dom::bindings::js::{JS, JSRef, Root};
 use dom::bindings::utils::{Reflectable, Reflector};
@@ -28,13 +30,17 @@ use std::ptr;
 
 #[deriving(Copy)]
 pub enum GlobalRef<'a> {
+    
     Window(JSRef<'a, window::Window>),
+    
     Worker(JSRef<'a, WorkerGlobalScope>),
 }
 
 
 pub enum GlobalRoot {
+    
     Window(Root<window::Window>),
+    
     Worker(Root<WorkerGlobalScope>),
 }
 
@@ -43,7 +49,9 @@ pub enum GlobalRoot {
 #[jstraceable]
 #[must_root]
 pub enum GlobalField {
+    
     Window(JS<window::Window>),
+    
     Worker(JS<WorkerGlobalScope>),
 }
 
@@ -66,6 +74,7 @@ impl<'a> GlobalRef<'a> {
         }
     }
 
+    
     pub fn resource_task(&self) -> ResourceTask {
         match *self {
             GlobalRef::Window(ref window) => window.page().resource_task.clone(),
@@ -73,6 +82,7 @@ impl<'a> GlobalRef<'a> {
         }
     }
 
+    
     pub fn get_url(&self) -> Url {
         match *self {
             GlobalRef::Window(ref window) => window.get_url(),
