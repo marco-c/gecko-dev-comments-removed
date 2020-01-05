@@ -81,6 +81,7 @@ ClientEngine.prototype = {
   _storeObj: ClientStore,
   _recordObj: ClientsRec,
   _trackerObj: ClientsTracker,
+  allowSkippedRecord: false,
 
   
   get enabled() {

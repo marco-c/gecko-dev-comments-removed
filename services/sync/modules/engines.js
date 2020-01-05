@@ -653,7 +653,7 @@ Engine.prototype = {
   
   
   
-  allowSkippedRecord: false,
+  allowSkippedRecord: true,
 
   get prefName() {
     return this.name;

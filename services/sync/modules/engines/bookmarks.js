@@ -275,6 +275,7 @@ BookmarksEngine.prototype = {
   _defaultSort: "index",
 
   syncPriority: 4,
+  allowSkippedRecord: false,
 
   
   

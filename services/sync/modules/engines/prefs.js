@@ -42,6 +42,7 @@ PrefsEngine.prototype = {
   version: 2,
 
   syncPriority: 1,
+  allowSkippedRecord: false,
 
   getChangedIDs: function () {
     
