@@ -1841,9 +1841,6 @@ Gecko_GetFontMetrics(RawGeckoPresContextBorrowed aPresContext,
                      nscoord aFontSize,
                      bool aUseUserFontSet)
 {
-  
-  
-  MOZ_ASSERT(NS_IsMainThread());
   MutexAutoLock lock(*sServoFontMetricsLock);
   GeckoFontMetrics ret;
 
