@@ -331,11 +331,14 @@ AddContentSandboxLevelAnnotation()
 #if defined (XP_LINUX) && defined(MOZ_GMP_SANDBOX)
 namespace {
 class LinuxSandboxStarter : public mozilla::gmp::SandboxStarter {
+private:
   LinuxSandboxStarter() { }
+  friend mozilla::detail::UniqueSelector<LinuxSandboxStarter>::SingleObject mozilla::MakeUnique<LinuxSandboxStarter>();
+
 public:
-  static SandboxStarter* Make() {
+  static UniquePtr<SandboxStarter> Make() {
     if (mozilla::SandboxInfo::Get().CanSandboxMedia()) {
-      return new LinuxSandboxStarter();
+      return MakeUnique<LinuxSandboxStarter>();
     } else {
       
       
@@ -379,11 +382,11 @@ XRE_InitChildProcess(int aArgc,
   
   
   
-  mozilla::gmp::SandboxStarter* starter = nullptr;
+  UniquePtr<mozilla::gmp::SandboxStarter> starter;
 #ifdef MOZ_GMP_SANDBOX
   starter = LinuxSandboxStarter::Make();
 #endif
-  UniquePtr<GMPLoader> loader = CreateGMPLoader(starter);
+  UniquePtr<GMPLoader> loader = CreateGMPLoader(Move(starter));
   GMPProcessChild::SetGMPLoader(loader.get());
 #else
   
