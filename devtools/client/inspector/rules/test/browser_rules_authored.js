@@ -26,7 +26,7 @@ add_task(function* () {
                                      "  color: orang;" +
                                      
                                      "  background-color: blue;" +
-                                     "  background-color: #f0c;" +
+                                     "  background-color: #f06;" +
                                      "} ");
 
   let elementStyle = view._elementStyle;
