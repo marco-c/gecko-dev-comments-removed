@@ -1445,6 +1445,12 @@ HttpBaseChannel::SetReferrerWithPolicy(nsIURI *referrer,
     LOG(("no triggering principal available via loadInfo, assuming load is cross-origin"));
   }
 
+  
+  if (isCrossOrigin && referrerPolicy == REFERRER_POLICY_SAME_ORIGIN) {
+    mReferrerPolicy = REFERRER_POLICY_SAME_ORIGIN;
+    return NS_OK;
+  }
+
   nsCOMPtr<nsIURI> clone;
   
   
@@ -1509,8 +1515,13 @@ HttpBaseChannel::SetReferrerWithPolicy(nsIURI *referrer,
   
   
   
+  
+  
+  
   if (referrerPolicy == REFERRER_POLICY_ORIGIN ||
-      (isCrossOrigin && referrerPolicy == REFERRER_POLICY_ORIGIN_WHEN_XORIGIN)) {
+      referrerPolicy == REFERRER_POLICY_STRICT_ORIGIN ||
+      (isCrossOrigin && (referrerPolicy == REFERRER_POLICY_ORIGIN_WHEN_XORIGIN ||
+                         referrerPolicy == REFERRER_POLICY_STRICT_ORIGIN_WHEN_XORIGIN))) {
     userReferrerTrimmingPolicy = 2;
   }
 
