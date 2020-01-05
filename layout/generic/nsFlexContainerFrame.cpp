@@ -2617,19 +2617,19 @@ MainAxisPositionTracker::
   }
 
   
-  if (mJustifyContent == NS_STYLE_ALIGN_LEFT ||
-      mJustifyContent == NS_STYLE_ALIGN_RIGHT) {
+  if (mJustifyContent == NS_STYLE_JUSTIFY_LEFT ||
+      mJustifyContent == NS_STYLE_JUSTIFY_RIGHT) {
     if (aAxisTracker.IsColumnOriented()) {
       
       
-      mJustifyContent = NS_STYLE_ALIGN_START;
+      mJustifyContent = NS_STYLE_JUSTIFY_START;
     } else {
       
       
       const bool isLTR = aAxisTracker.GetWritingMode().IsBidiLTR();
-      const bool isAlignLeft = (mJustifyContent == NS_STYLE_ALIGN_LEFT);
-      mJustifyContent = (isAlignLeft == isLTR) ? NS_STYLE_ALIGN_START
-                                               : NS_STYLE_ALIGN_END;
+      const bool isJustifyLeft = (mJustifyContent == NS_STYLE_JUSTIFY_LEFT);
+      mJustifyContent = (isJustifyLeft == isLTR) ? NS_STYLE_JUSTIFY_START
+                                                 : NS_STYLE_JUSTIFY_END;
     }
   }
 
