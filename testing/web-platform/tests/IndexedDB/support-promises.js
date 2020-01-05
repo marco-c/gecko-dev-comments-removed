@@ -1,13 +1,13 @@
 
 const databaseName = (testCase) => {
-    return 'db' + self.location.pathname + '-' + testCase.name;
+  return 'db' + self.location.pathname + '-' + testCase.name;
 };
 
 
 
 const requestWatcher = (testCase, request) => {
-    return new EventWatcher(testCase, request,
-        ['error', 'success', 'upgradeneeded']);
+  return new EventWatcher(testCase, request,
+      ['error', 'success', 'upgradeneeded']);
 };
 
 
@@ -21,43 +21,59 @@ const requestWatcher = (testCase, request) => {
 
 
 const migrateDatabase = (testCase, newVersion, migrationCallback) => {
-    
-    
-    
-    return new Promise((resolve, reject) => {
-        const request = indexedDB.open(databaseName(testCase), newVersion);
-        request.onupgradeneeded = testCase.step_func(event => {
-            const database = event.target.result;
-            const transaction = event.target.transaction;
-            let abortCalled = false;
+  return migrateNamedDatabase(
+      testCase, databaseName(testCase), newVersion, migrationCallback);
+};
 
-            
-            
-            
-            const transactionAbort = transaction.abort.bind(transaction);
-            transaction.abort = () => {
-                request.onerror = event => {
-                    event.preventDefault();
-                    resolve(event);
-                };
-                request.onsuccess = () => reject(new Error(
-                    'indexedDB.open should not succeed after the ' +
-                    'versionchange transaction is aborted'));
-                transactionAbort();
-                abortCalled = true;
-            }
 
-            migrationCallback(database, transaction);
-            if (!abortCalled) {
-                request.onsuccess = null;
-                resolve(requestWatcher(testCase, request).wait_for('success'));
-            }
-        });
-        request.onerror = event => reject(event.target.error);
+
+
+
+
+
+
+
+
+
+const migrateNamedDatabase =
+    (testCase, databaseName, newVersion, migrationCallback) => {
+  
+  
+  
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(databaseName, newVersion);
+    request.onupgradeneeded = testCase.step_func(event => {
+      const database = event.target.result;
+      const transaction = event.target.transaction;
+      let abortCalled = false;
+
+      
+      
+      
+      const transactionAbort = transaction.abort.bind(transaction);
+      transaction.abort = () => {
+        request.onerror = event => {
+          event.preventDefault();
+          resolve(event);
+        };
         request.onsuccess = () => reject(new Error(
-            'indexedDB.open should not succeed without creating a ' +
-            'versionchange transaction'));
-    }).then(event => event.target.result || event.target.error);
+            'indexedDB.open should not succeed after the versionchange ' +
+            'transaction is aborted'));
+        transactionAbort();
+        abortCalled = true;
+      }
+
+      migrationCallback(database, transaction);
+      if (!abortCalled) {
+        request.onsuccess = null;
+        resolve(requestWatcher(testCase, request).wait_for('success'));
+      }
+    });
+    request.onerror = event => reject(event.target.error);
+    request.onsuccess = () => reject(new Error(
+        'indexedDB.open should not succeed without creating a ' +
+        'versionchange transaction'));
+  }).then(event => event.target.result || event.target.error);
 };
 
 
@@ -68,11 +84,22 @@ const migrateDatabase = (testCase, newVersion, migrationCallback) => {
 
 
 const createDatabase = (testCase, setupCallback) => {
-    const request = indexedDB.deleteDatabase(databaseName(testCase));
-    const eventWatcher = requestWatcher(testCase, request);
+  return createNamedDatabase(testCase, databaseName(testCase), setupCallback);
+};
 
-    return eventWatcher.wait_for('success').then(event =>
-        migrateDatabase(testCase, 1, setupCallback));
+
+
+
+
+
+
+
+const createNamedDatabase = (testCase, databaseName, setupCallback) => {
+  const request = indexedDB.deleteDatabase(databaseName);
+  const eventWatcher = requestWatcher(testCase, request);
+
+  return eventWatcher.wait_for('success').then(event =>
+      migrateNamedDatabase(testCase, databaseName, 1, setupCallback));
 };
 
 
@@ -82,30 +109,39 @@ const createDatabase = (testCase, setupCallback) => {
 
 
 const openDatabase = (testCase, version) => {
-    const request = indexedDB.open(databaseName(testCase), version);
-    const eventWatcher = requestWatcher(testCase, request);
-    return eventWatcher.wait_for('success').then(
-        event => event.target.result);
+  return openNamedDatabase(testCase, databaseName(testCase), version);
+}
+
+
+
+
+
+
+
+const openNamedDatabase = (testCase, databaseName, version) => {
+  const request = indexedDB.open(databaseName, version);
+  const eventWatcher = requestWatcher(testCase, request);
+  return eventWatcher.wait_for('success').then(event => event.target.result);
 }
 
 
 
 const BOOKS_RECORD_DATA = [
-    { title: 'Quarry Memories', author: 'Fred', isbn: 123456 },
-    { title: 'Water Buffaloes', author: 'Fred', isbn: 234567 },
-    { title: 'Bedrock Nights', author: 'Barney', isbn: 345678 },
+  { title: 'Quarry Memories', author: 'Fred', isbn: 123456 },
+  { title: 'Water Buffaloes', author: 'Fred', isbn: 234567 },
+  { title: 'Bedrock Nights', author: 'Barney', isbn: 345678 },
 ];
 
 
 
 const createBooksStore = (testCase, database) => {
-    const store = database.createObjectStore('books',
-        { keyPath: 'isbn', autoIncrement: true });
-    store.createIndex('by_author', 'author');
-    store.createIndex('by_title', 'title', { unique: true });
-    for (let record of BOOKS_RECORD_DATA)
-        store.put(record);
-    return store;
+  const store = database.createObjectStore('books',
+      { keyPath: 'isbn', autoIncrement: true });
+  store.createIndex('by_author', 'author');
+  store.createIndex('by_title', 'title', { unique: true });
+  for (let record of BOOKS_RECORD_DATA)
+      store.put(record);
+  return store;
 };
 
 
@@ -124,14 +160,14 @@ const createNotBooksStore = (testCase, database) => {
 
 
 const checkStoreIndexes = (testCase, store, errorMessage) => {
-    assert_array_equals(
-        store.indexNames, ['by_author', 'by_title'], errorMessage);
-    const authorIndex = store.index('by_author');
-    const titleIndex = store.index('by_title');
-    return Promise.all([
-        checkAuthorIndexContents(testCase, authorIndex, errorMessage),
-        checkTitleIndexContents(testCase, titleIndex, errorMessage),
-    ]);
+  assert_array_equals(
+      store.indexNames, ['by_author', 'by_title'], errorMessage);
+  const authorIndex = store.index('by_author');
+  const titleIndex = store.index('by_title');
+  return Promise.all([
+      checkAuthorIndexContents(testCase, authorIndex, errorMessage),
+      checkTitleIndexContents(testCase, titleIndex, errorMessage),
+  ]);
 };
 
 
@@ -141,13 +177,13 @@ const checkStoreIndexes = (testCase, store, errorMessage) => {
 
 
 const checkStoreGenerator = (testCase, store, expectedKey, errorMessage) => {
-    const request = store.put(
-        { title: 'Bedrock Nights ' + expectedKey, author: 'Barney' });
-    const eventWatcher = requestWatcher(testCase, request);
-    return eventWatcher.wait_for('success').then(() => {
-        const result = request.result;
-        assert_equals(result, expectedKey, errorMessage);
-    });
+  const request = store.put(
+      { title: 'Bedrock Nights ' + expectedKey, author: 'Barney' });
+  const eventWatcher = requestWatcher(testCase, request);
+  return eventWatcher.wait_for('success').then(() => {
+    const result = request.result;
+    assert_equals(result, expectedKey, errorMessage);
+  });
 };
 
 
@@ -157,14 +193,14 @@ const checkStoreGenerator = (testCase, store, expectedKey, errorMessage) => {
 
 
 const checkStoreContents = (testCase, store, errorMessage) => {
-    const request = store.get(123456);
-    const eventWatcher = requestWatcher(testCase, request);
-    return eventWatcher.wait_for('success').then(() => {
-        const result = request.result;
-        assert_equals(result.isbn, BOOKS_RECORD_DATA[0].isbn, errorMessage);
-        assert_equals(result.author, BOOKS_RECORD_DATA[0].author, errorMessage);
-        assert_equals(result.title, BOOKS_RECORD_DATA[0].title, errorMessage);
-    });
+  const request = store.get(123456);
+  const eventWatcher = requestWatcher(testCase, request);
+  return eventWatcher.wait_for('success').then(() => {
+    const result = request.result;
+    assert_equals(result.isbn, BOOKS_RECORD_DATA[0].isbn, errorMessage);
+    assert_equals(result.author, BOOKS_RECORD_DATA[0].author, errorMessage);
+    assert_equals(result.title, BOOKS_RECORD_DATA[0].title, errorMessage);
+  });
 };
 
 
@@ -174,13 +210,13 @@ const checkStoreContents = (testCase, store, errorMessage) => {
 
 
 const checkAuthorIndexContents = (testCase, index, errorMessage) => {
-    const request = index.get(BOOKS_RECORD_DATA[2].author);
-    const eventWatcher = requestWatcher(testCase, request);
-    return eventWatcher.wait_for('success').then(() => {
-        const result = request.result;
-        assert_equals(result.isbn, BOOKS_RECORD_DATA[2].isbn, errorMessage);
-        assert_equals(result.title, BOOKS_RECORD_DATA[2].title, errorMessage);
-    });
+  const request = index.get(BOOKS_RECORD_DATA[2].author);
+  const eventWatcher = requestWatcher(testCase, request);
+  return eventWatcher.wait_for('success').then(() => {
+    const result = request.result;
+    assert_equals(result.isbn, BOOKS_RECORD_DATA[2].isbn, errorMessage);
+    assert_equals(result.title, BOOKS_RECORD_DATA[2].title, errorMessage);
+  });
 };
 
 
@@ -190,11 +226,11 @@ const checkAuthorIndexContents = (testCase, index, errorMessage) => {
 
 
 const checkTitleIndexContents = (testCase, index, errorMessage) => {
-    const request = index.get(BOOKS_RECORD_DATA[2].title);
-    const eventWatcher = requestWatcher(testCase, request);
-    return eventWatcher.wait_for('success').then(() => {
-        const result = request.result;
-        assert_equals(result.isbn, BOOKS_RECORD_DATA[2].isbn, errorMessage);
-        assert_equals(result.author, BOOKS_RECORD_DATA[2].author, errorMessage);
-    });
+  const request = index.get(BOOKS_RECORD_DATA[2].title);
+  const eventWatcher = requestWatcher(testCase, request);
+  return eventWatcher.wait_for('success').then(() => {
+    const result = request.result;
+    assert_equals(result.isbn, BOOKS_RECORD_DATA[2].isbn, errorMessage);
+    assert_equals(result.author, BOOKS_RECORD_DATA[2].author, errorMessage);
+  });
 };

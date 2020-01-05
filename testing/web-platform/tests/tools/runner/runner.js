@@ -50,34 +50,17 @@ Manifest.prototype = {
     by_type:function(type) {
         var ret = [] ;
         if (this.data.items.hasOwnProperty(type)) {
-            ret = this.data.items[type].slice(0) ;
-        }
-        
-        
-        
-        
-        
-        if (this.data.hasOwnProperty("local_changes")) {
-            var local = this.data.local_changes ;
-            
-            if (local.items.hasOwnProperty(type)) {
-                Object.keys(local.items[type]).forEach(function(ref) {
-                    ret.push(local.items[type][ref][0]) ;
-                }.bind(this));
-            }
-            
-            
-            
-            if (ret.length && local.deleted.length) {
-                
-                var dels = {} ;
-                local.deleted.forEach(function(x) { dels[x] = true; } );
-                for (var j = ret.length-1; j >= 0; j--) {
-                    if ( dels[ret[j].path] || (type === "reftest" && local.deleted_reftests[ret[j].path]) ){
-                        
-                        ret.splice(j, 1) ;
-                    }
+            for (var propertyName in this.data.items[type]) {
+                var arr = this.data.items[type][propertyName][0];
+                var item = arr[arr.length - 1];
+                item.path = propertyName;
+                if ('string' === typeof arr[0]) {
+                    item.url = arr[0];
                 }
+                if (Array.isArray(arr[1])) {
+                    item.references = arr[1];
+                }
+                ret.push(item);
             }
         }
         return ret ;
