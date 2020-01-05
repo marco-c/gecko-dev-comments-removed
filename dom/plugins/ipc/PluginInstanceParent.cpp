@@ -80,12 +80,12 @@ StreamNotifyParent::ActorDestroy(ActorDestroyReason aWhy)
   
 }
 
-mozilla::ipc::IPCResult
+bool
 StreamNotifyParent::RecvRedirectNotifyResponse(const bool& allow)
 {
   PluginInstanceParent* instance = static_cast<PluginInstanceParent*>(Manager());
   instance->mNPNIface->urlredirectresponse(instance->mNPP, this, static_cast<NPBool>(allow));
-  return IPC_OK();
+  return true;
 }
 
 #if defined(XP_WIN)
@@ -260,7 +260,7 @@ PluginInstanceParent::DeallocPPluginStreamParent(PPluginStreamParent* stream)
     return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 PluginInstanceParent::AnswerNPN_GetValue_NPNVnetscapeWindow(NativeWindowHandle* value,
                                                             NPError* result)
 {
@@ -279,7 +279,7 @@ PluginInstanceParent::AnswerNPN_GetValue_NPNVnetscapeWindow(NativeWindowHandle* 
 
     *result = mNPNIface->getvalue(mNPP, NPNVnetscapeWindow, &id);
     *value = id;
-    return IPC_OK();
+    return true;
 }
 
 bool
@@ -310,47 +310,41 @@ PluginInstanceParent::InternalGetValueForNPObject(
     return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 PluginInstanceParent::AnswerNPN_GetValue_NPNVWindowNPObject(
                                          PPluginScriptableObjectParent** aValue,
                                          NPError* aResult)
 {
-    if (!InternalGetValueForNPObject(NPNVWindowNPObject, aValue, aResult)) {
-      return IPC_FAIL_NO_REASON(this);
-    }
-    return IPC_OK();
+    return InternalGetValueForNPObject(NPNVWindowNPObject, aValue, aResult);
 }
 
-mozilla::ipc::IPCResult
+bool
 PluginInstanceParent::AnswerNPN_GetValue_NPNVPluginElementNPObject(
                                          PPluginScriptableObjectParent** aValue,
                                          NPError* aResult)
 {
-    if (!InternalGetValueForNPObject(NPNVPluginElementNPObject, aValue,
-                                     aResult)) {
-      return IPC_FAIL_NO_REASON(this);
-    }
-    return IPC_OK();
+    return InternalGetValueForNPObject(NPNVPluginElementNPObject, aValue,
+                                       aResult);
 }
 
-mozilla::ipc::IPCResult
+bool
 PluginInstanceParent::AnswerNPN_GetValue_NPNVprivateModeBool(bool* value,
                                                              NPError* result)
 {
     NPBool v;
     *result = mNPNIface->getvalue(mNPP, NPNVprivateModeBool, &v);
     *value = v;
-    return IPC_OK();
+    return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 PluginInstanceParent::AnswerNPN_GetValue_DrawingModelSupport(const NPNVariable& model, bool* value)
 {
     *value = false;
-    return IPC_OK();
+    return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 PluginInstanceParent::AnswerNPN_GetValue_NPNVdocumentOrigin(nsCString* value,
                                                             NPError* result)
 {
@@ -359,7 +353,7 @@ PluginInstanceParent::AnswerNPN_GetValue_NPNVdocumentOrigin(nsCString* value,
     if (*result == NPERR_NO_ERROR && v) {
         value->Adopt(static_cast<char*>(v));
     }
-    return IPC_OK();
+    return true;
 }
 
 static inline bool
@@ -384,54 +378,54 @@ AllowDirectDXGISurfaceDrawing()
 #endif
 }
 
-mozilla::ipc::IPCResult
+bool
 PluginInstanceParent::AnswerNPN_GetValue_SupportsAsyncBitmapSurface(bool* value)
 {
     *value = AllowDirectBitmapSurfaceDrawing();
-    return IPC_OK();
+    return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 PluginInstanceParent::AnswerNPN_GetValue_SupportsAsyncDXGISurface(bool* value)
 {
     *value = AllowDirectDXGISurfaceDrawing();
-    return IPC_OK();
+    return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 PluginInstanceParent::AnswerNPN_GetValue_PreferredDXGIAdapter(DxgiAdapterDesc* aOutDesc)
 {
     PodZero(aOutDesc);
 #ifdef XP_WIN
     if (!AllowDirectDXGISurfaceDrawing()) {
-        return IPC_FAIL_NO_REASON(this);
+        return false;
     }
 
     RefPtr<ID3D11Device> device = DeviceManagerDx::Get()->GetContentDevice();
     if (!device) {
-        return IPC_FAIL_NO_REASON(this);
+        return false;
     }
 
     RefPtr<IDXGIDevice> dxgi;
     if (FAILED(device->QueryInterface(__uuidof(IDXGIDevice), getter_AddRefs(dxgi))) || !dxgi) {
-        return IPC_FAIL_NO_REASON(this);
+        return false;
     }
     RefPtr<IDXGIAdapter> adapter;
     if (FAILED(dxgi->GetAdapter(getter_AddRefs(adapter))) || !adapter) {
-        return IPC_FAIL_NO_REASON(this);
+        return false;
     }
 
     DXGI_ADAPTER_DESC desc;
     if (FAILED(adapter->GetDesc(&desc))) {
-        return IPC_FAIL_NO_REASON(this);
+         return false;
     }
 
     *aOutDesc = DxgiAdapterDesc::From(desc);
 #endif
-    return IPC_OK();
+    return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 PluginInstanceParent::AnswerNPN_SetValue_NPPVpluginWindow(
     const bool& windowed, NPError* result)
 {
@@ -440,28 +434,28 @@ PluginInstanceParent::AnswerNPN_SetValue_NPPVpluginWindow(
     
     *result = mNPNIface->setvalue(mNPP, NPPVpluginWindowBool,
                                   (void*)(intptr_t)windowed);
-    return IPC_OK();
+    return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 PluginInstanceParent::AnswerNPN_SetValue_NPPVpluginTransparent(
     const bool& transparent, NPError* result)
 {
     *result = mNPNIface->setvalue(mNPP, NPPVpluginTransparentBool,
                                   (void*)(intptr_t)transparent);
-    return IPC_OK();
+    return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 PluginInstanceParent::AnswerNPN_SetValue_NPPVpluginUsesDOMForCursor(
     const bool& useDOMForCursor, NPError* result)
 {
     *result = mNPNIface->setvalue(mNPP, NPPVpluginUsesDOMForCursorBool,
                                   (void*)(intptr_t)useDOMForCursor);
-    return IPC_OK();
+    return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 PluginInstanceParent::AnswerNPN_SetValue_NPPVpluginDrawingModel(
     const int& drawingModel, NPError* result)
 {
@@ -497,7 +491,7 @@ PluginInstanceParent::AnswerNPN_SetValue_NPPVpluginDrawingModel(
 
     if (!allowed) {
         *result = NPERR_GENERIC_ERROR;
-        return IPC_OK();
+        return true;
     }
 
     mDrawingModel = drawingModel;
@@ -517,33 +511,33 @@ PluginInstanceParent::AnswerNPN_SetValue_NPPVpluginDrawingModel(
     *result = mNPNIface->setvalue(mNPP, NPPVpluginDrawingModel,
                                   (void*)(intptr_t)requestModel);
 
-    return IPC_OK();
+    return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 PluginInstanceParent::AnswerNPN_SetValue_NPPVpluginEventModel(
     const int& eventModel, NPError* result)
 {
 #ifdef XP_MACOSX
     *result = mNPNIface->setvalue(mNPP, NPPVpluginEventModel,
                                   (void*)(intptr_t)eventModel);
-    return IPC_OK();
+    return true;
 #else
     *result = NPERR_GENERIC_ERROR;
-    return IPC_OK();
+    return true;
 #endif
 }
 
-mozilla::ipc::IPCResult
+bool
 PluginInstanceParent::AnswerNPN_SetValue_NPPVpluginIsPlayingAudio(
     const bool& isAudioPlaying, NPError* result)
 {
     *result = mNPNIface->setvalue(mNPP, NPPVpluginIsPlayingAudio,
                                   (void*)(intptr_t)isAudioPlaying);
-    return IPC_OK();
+    return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 PluginInstanceParent::AnswerNPN_GetURL(const nsCString& url,
                                        const nsCString& target,
                                        NPError* result)
@@ -551,10 +545,10 @@ PluginInstanceParent::AnswerNPN_GetURL(const nsCString& url,
     *result = mNPNIface->geturl(mNPP,
                                 NullableStringGet(url),
                                 NullableStringGet(target));
-    return IPC_OK();
+    return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 PluginInstanceParent::AnswerNPN_PostURL(const nsCString& url,
                                         const nsCString& target,
                                         const nsCString& buffer,
@@ -563,7 +557,7 @@ PluginInstanceParent::AnswerNPN_PostURL(const nsCString& url,
 {
     *result = mNPNIface->posturl(mNPP, url.get(), NullableStringGet(target),
                                  buffer.Length(), buffer.get(), file);
-    return IPC_OK();
+    return true;
 }
 
 PStreamNotifyParent*
@@ -577,7 +571,7 @@ PluginInstanceParent::AllocPStreamNotifyParent(const nsCString& url,
     return new StreamNotifyParent();
 }
 
-mozilla::ipc::IPCResult
+bool
 PluginInstanceParent::AnswerPStreamNotifyConstructor(PStreamNotifyParent* actor,
                                                      const nsCString& url,
                                                      const nsCString& target,
@@ -612,16 +606,12 @@ PluginInstanceParent::AnswerPStreamNotifyConstructor(PStreamNotifyParent* actor,
     }
     else {
         static_cast<StreamNotifyParent*>(actor)->ClearDestructionFlag();
-        if (*result != NPERR_NO_ERROR) {
-            if (!PStreamNotifyParent::Send__delete__(actor,
-                                                     NPERR_GENERIC_ERROR)) {
-              return IPC_FAIL_NO_REASON(this);
-            }
-            return IPC_OK();
-        }
+        if (*result != NPERR_NO_ERROR)
+            return PStreamNotifyParent::Send__delete__(actor,
+                                                       NPERR_GENERIC_ERROR);
     }
 
-    return IPC_OK();
+    return true;
 }
 
 bool
@@ -631,11 +621,11 @@ PluginInstanceParent::DeallocPStreamNotifyParent(PStreamNotifyParent* notifyData
     return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 PluginInstanceParent::RecvNPN_InvalidateRect(const NPRect& rect)
 {
     mNPNIface->invalidaterect(mNPP, const_cast<NPRect*>(&rect));
-    return IPC_OK();
+    return true;
 }
 
 static inline NPRect
@@ -649,21 +639,21 @@ IntRectToNPRect(const gfx::IntRect& rect)
     return r;
 }
 
-mozilla::ipc::IPCResult
+bool
 PluginInstanceParent::RecvRevokeCurrentDirectSurface()
 {
     ImageContainer *container = GetImageContainer();
     if (!container) {
-        return IPC_OK();
+        return true;
     }
 
     container->ClearAllImages();
 
     PLUGIN_LOG_DEBUG(("   (RecvRevokeCurrentDirectSurface)"));
-    return IPC_OK();
+    return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 PluginInstanceParent::RecvInitDXGISurface(const gfx::SurfaceFormat& format,
                                            const gfx::IntSize& size,
                                            WindowsHandle* outHandle,
@@ -675,26 +665,26 @@ PluginInstanceParent::RecvInitDXGISurface(const gfx::SurfaceFormat& format,
 #if defined(XP_WIN)
     if (format != SurfaceFormat::B8G8R8A8 && format != SurfaceFormat::B8G8R8X8) {
         *outError = NPERR_INVALID_PARAM;
-        return IPC_OK();
+        return true;
     }
     if (size.width <= 0 || size.height <= 0) {
         *outError = NPERR_INVALID_PARAM;
-        return IPC_OK();
+        return true;
     }
 
     ImageContainer *container = GetImageContainer();
     if (!container) {
-        return IPC_OK();
+        return true;
     }
 
     RefPtr<ImageBridgeChild> forwarder = ImageBridgeChild::GetSingleton();
     if (!forwarder) {
-        return IPC_OK();
+        return true;
     }
 
     RefPtr<ID3D11Device> d3d11 = DeviceManagerDx::Get()->GetContentDevice();
     if (!d3d11) {
-        return IPC_OK();
+        return true;
     }
 
     
@@ -705,15 +695,15 @@ PluginInstanceParent::RecvInitDXGISurface(const gfx::SurfaceFormat& format,
         desc.MiscFlags = D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX;
         desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
         if (FAILED(d3d11->CreateTexture2D(&desc, nullptr, getter_AddRefs(back))) || !back) {
-            return IPC_OK();
+            return true;
         }
 
         RefPtr<IDXGIResource> resource;
         if (FAILED(back->QueryInterface(IID_IDXGIResource, getter_AddRefs(resource))) || !resource) {
-            return IPC_OK();
+            return true;
         }
         if (FAILED(resource->GetSharedHandle(&sharedHandle) || !sharedHandle)) {
-            return IPC_OK();
+            return true;
         }
     }
 
@@ -723,19 +713,19 @@ PluginInstanceParent::RecvInitDXGISurface(const gfx::SurfaceFormat& format,
     *outHandle = reinterpret_cast<uintptr_t>(sharedHandle);
     *outError = NPERR_NO_ERROR;
 #endif
-    return IPC_OK();
+    return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 PluginInstanceParent::RecvFinalizeDXGISurface(const WindowsHandle& handle)
 {
 #if defined(XP_WIN)
     mD3D11Surfaces.Remove(reinterpret_cast<void*>(handle));
 #endif
-    return IPC_OK();
+    return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 PluginInstanceParent::RecvShowDirectBitmap(Shmem&& buffer,
                                            const SurfaceFormat& format,
                                            const uint32_t& stride,
@@ -745,33 +735,33 @@ PluginInstanceParent::RecvShowDirectBitmap(Shmem&& buffer,
     
     if (format != SurfaceFormat::B8G8R8A8 && format != SurfaceFormat::B8G8R8X8) {
         MOZ_ASSERT_UNREACHABLE("bad format type");
-        return IPC_FAIL_NO_REASON(this);
+        return false;
     }
     if (size.width <= 0 || size.height <= 0) {
         MOZ_ASSERT_UNREACHABLE("bad image size");
-        return IPC_FAIL_NO_REASON(this);
+        return false;
     }
     if (mDrawingModel != NPDrawingModelAsyncBitmapSurface) {
         MOZ_ASSERT_UNREACHABLE("plugin did not set a bitmap drawing model");
-        return IPC_FAIL_NO_REASON(this);
+        return false;
     }
 
     
     CheckedInt<uint32_t> nbytes = CheckedInt<uint32_t>(uint32_t(size.height)) * stride;
     if (!nbytes.isValid() || nbytes.value() != buffer.Size<uint8_t>()) {
         MOZ_ASSERT_UNREACHABLE("bad shmem size");
-        return IPC_FAIL_NO_REASON(this);
+        return false;
     }
 
     ImageContainer* container = GetImageContainer();
     if (!container) {
-        return IPC_FAIL_NO_REASON(this);
+        return false;
     }
 
     RefPtr<gfx::DataSourceSurface> source =
         gfx::Factory::CreateWrappingDataSourceSurface(buffer.get<uint8_t>(), stride, size, format);
     if (!source) {
-        return IPC_FAIL_NO_REASON(this);
+        return false;
     }
 
     
@@ -782,14 +772,14 @@ PluginInstanceParent::RecvShowDirectBitmap(Shmem&& buffer,
         TextureAllocationFlags(ALLOC_FOR_OUT_OF_BAND_CONTENT | ALLOC_UPDATE_FROM_SURFACE));
     if (!texture) {
         NS_WARNING("Could not allocate a TextureClient for plugin!");
-        return IPC_FAIL_NO_REASON(this);
+        return false;
     }
 
     
     {
         TextureClientAutoLock autoLock(texture, OpenMode::OPEN_WRITE_ONLY);
         if (!autoLock.Succeeded()) {
-            return IPC_FAIL_NO_REASON(this);
+            return false;
         }
         texture->UpdateFromSurface(source);
     }
@@ -801,7 +791,7 @@ PluginInstanceParent::RecvShowDirectBitmap(Shmem&& buffer,
 
     PLUGIN_LOG_DEBUG(("   (RecvShowDirectBitmap received shmem=%p stride=%d size=%s dirty=%s)",
         buffer.get<unsigned char>(), stride, Stringify(size).c_str(), Stringify(dirty).c_str()));
-    return IPC_OK();
+    return true;
 }
 
 void
@@ -823,22 +813,22 @@ PluginInstanceParent::SetCurrentImage(Image* aImage)
     RecordDrawingModel();
 }
 
-mozilla::ipc::IPCResult
+bool
 PluginInstanceParent::RecvShowDirectDXGISurface(const WindowsHandle& handle,
                                                  const gfx::IntRect& dirty)
 {
 #if defined(XP_WIN)
     RefPtr<D3D11SurfaceHolder> surface;
     if (!mD3D11Surfaces.Get(reinterpret_cast<void*>(handle), getter_AddRefs(surface))) {
-        return IPC_FAIL_NO_REASON(this);
+        return false;
     }
     if (!surface->IsValid()) {
-        return IPC_FAIL_NO_REASON(this);
+        return false;
     }
 
     ImageContainer* container = GetImageContainer();
     if (!container) {
-        return IPC_FAIL_NO_REASON(this);
+        return false;
     }
 
     RefPtr<TextureClientRecycleAllocator> allocator = mParent->EnsureTextureAllocator();
@@ -849,7 +839,7 @@ PluginInstanceParent::RecvShowDirectDXGISurface(const WindowsHandle& handle,
         ALLOC_FOR_OUT_OF_BAND_CONTENT);
     if (!texture) {
         NS_WARNING("Could not allocate a TextureClient for plugin!");
-        return IPC_FAIL_NO_REASON(this);
+        return false;
     }
 
     surface->CopyToTextureClient(texture);
@@ -863,13 +853,13 @@ PluginInstanceParent::RecvShowDirectDXGISurface(const WindowsHandle& handle,
 
     PLUGIN_LOG_DEBUG(("   (RecvShowDirect3D10Surface received handle=%p rect=%s)",
         reinterpret_cast<void*>(handle), Stringify(dirty).c_str()));
-    return IPC_OK();
+    return true;
 #else
-    return IPC_FAIL_NO_REASON(this);
+    return false;
 #endif
 }
 
-mozilla::ipc::IPCResult
+bool
 PluginInstanceParent::RecvShow(const NPRect& updatedRect,
                                const SurfaceDescriptor& newSurface,
                                SurfaceDescriptor* prevSurface)
@@ -887,7 +877,7 @@ PluginInstanceParent::RecvShow(const NPRect& updatedRect,
     if (newSurface.type() == SurfaceDescriptor::TShmem) {
         if (!newSurface.get_Shmem().IsReadable()) {
             NS_WARNING("back surface not readable");
-            return IPC_FAIL_NO_REASON(this);
+            return false;
         }
         surface = gfxSharedImageSurface::Open(newSurface.get_Shmem());
     }
@@ -901,7 +891,7 @@ PluginInstanceParent::RecvShow(const NPRect& updatedRect,
 
         if (!newIOSurface) {
             NS_WARNING("Got bad IOSurfaceDescriptor in RecvShow");
-            return IPC_FAIL_NO_REASON(this);
+            return false;
         }
 
         if (mFrontIOSurface)
@@ -917,7 +907,7 @@ PluginInstanceParent::RecvShow(const NPRect& updatedRect,
         PLUGIN_LOG_DEBUG(("   (RecvShow invalidated for surface %p)",
                           mFrontSurface.get()));
 
-        return IPC_OK();
+        return true;
     }
 #endif
 #ifdef MOZ_X11
@@ -987,7 +977,7 @@ PluginInstanceParent::RecvShow(const NPRect& updatedRect,
                       mFrontSurface.get()));
 
     RecordDrawingModel();
-    return IPC_OK();
+    return true;
 }
 
 nsresult
@@ -1346,12 +1336,6 @@ PluginInstanceParent::NPP_SetWindow(const NPWindow* aWindow)
         MaybeCreateChildPopupSurrogate();
     } else {
         SubclassPluginWindow(reinterpret_cast<HWND>(aWindow->window));
-
-        
-        if ((mParent->GetQuirks() & QUIRK_QUICKTIME_AVOID_SETWINDOW) &&
-            aWindow->width == 0 && aWindow->height == 0) {
-            return NPERR_NO_ERROR;
-        }
 
         window.window = reinterpret_cast<uint64_t>(aWindow->window);
         window.x = aWindow->x;
@@ -1893,7 +1877,7 @@ PluginInstanceParent::DeallocPPluginScriptableObjectParent(
     return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 PluginInstanceParent::RecvPPluginScriptableObjectConstructor(
                                           PPluginScriptableObjectParent* aActor)
 {
@@ -1907,7 +1891,7 @@ PluginInstanceParent::RecvPPluginScriptableObjectConstructor(
     actor->InitializeProxy();
     NS_ASSERTION(actor->GetObject(false), "Actor should have an object!");
 
-    return IPC_OK();
+    return true;
 }
 
 void
@@ -1992,21 +1976,21 @@ PluginInstanceParent::DeallocPPluginSurfaceParent(PPluginSurfaceParent* s)
 #endif
 }
 
-mozilla::ipc::IPCResult
+bool
 PluginInstanceParent::AnswerNPN_PushPopupsEnabledState(const bool& aState)
 {
     mNPNIface->pushpopupsenabledstate(mNPP, aState ? 1 : 0);
-    return IPC_OK();
+    return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 PluginInstanceParent::AnswerNPN_PopPopupsEnabledState()
 {
     mNPNIface->poppopupsenabledstate(mNPP);
-    return IPC_OK();
+    return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 PluginInstanceParent::AnswerNPN_GetValueForURL(const NPNURLVariable& variable,
                                                const nsCString& url,
                                                nsCString* value,
@@ -2020,10 +2004,10 @@ PluginInstanceParent::AnswerNPN_GetValueForURL(const NPNURLVariable& variable,
     if (NPERR_NO_ERROR == *result)
         value->Adopt(v, len);
 
-    return IPC_OK();
+    return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 PluginInstanceParent::AnswerNPN_SetValueForURL(const NPNURLVariable& variable,
                                                const nsCString& url,
                                                const nsCString& value,
@@ -2032,10 +2016,10 @@ PluginInstanceParent::AnswerNPN_SetValueForURL(const NPNURLVariable& variable,
     *result = mNPNIface->setvalueforurl(mNPP, (NPNURLVariable) variable,
                                         url.get(), value.get(),
                                         value.Length());
-    return IPC_OK();
+    return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 PluginInstanceParent::AnswerNPN_GetAuthenticationInfo(const nsCString& protocol,
                                                       const nsCString& host,
                                                       const int32_t& port,
@@ -2058,10 +2042,10 @@ PluginInstanceParent::AnswerNPN_GetAuthenticationInfo(const nsCString& protocol,
         username->Adopt(u, ulen);
         password->Adopt(p, plen);
     }
-    return IPC_OK();
+    return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 PluginInstanceParent::AnswerNPN_ConvertPoint(const double& sourceX,
                                              const bool&   ignoreDestX,
                                              const double& sourceY,
@@ -2077,30 +2061,30 @@ PluginInstanceParent::AnswerNPN_ConvertPoint(const double& sourceX,
                                       ignoreDestY ? nullptr : destY,
                                       destSpace);
 
-    return IPC_OK();
+    return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 PluginInstanceParent::RecvRedrawPlugin()
 {
     nsNPAPIPluginInstance *inst = static_cast<nsNPAPIPluginInstance*>(mNPP->ndata);
     if (!inst) {
-        return IPC_FAIL_NO_REASON(this);
+        return false;
     }
 
     inst->RedrawPlugin();
-    return IPC_OK();
+    return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 PluginInstanceParent::RecvNegotiatedCarbon()
 {
     nsNPAPIPluginInstance *inst = static_cast<nsNPAPIPluginInstance*>(mNPP->ndata);
     if (!inst) {
-        return IPC_FAIL_NO_REASON(this);
+        return false;
     }
     inst->CarbonNPAPIFailure();
-    return IPC_OK();
+    return true;
 }
 
 nsPluginInstanceOwner*
@@ -2113,7 +2097,7 @@ PluginInstanceParent::GetOwner()
     return inst->GetOwner();
 }
 
-mozilla::ipc::IPCResult
+bool
 PluginInstanceParent::RecvAsyncNPP_NewResult(const NPError& aResult)
 {
     
@@ -2132,12 +2116,12 @@ PluginInstanceParent::RecvAsyncNPP_NewResult(const NPError& aResult)
     if (!owner) {
         
         
-        return IPC_OK();
+        return true;
     }
 
     if (aResult != NPERR_NO_ERROR) {
         mSurrogate->NotifyAsyncInitFailed();
-        return IPC_OK();
+        return true;
     }
 
     
@@ -2146,10 +2130,10 @@ PluginInstanceParent::RecvAsyncNPP_NewResult(const NPError& aResult)
     MOZ_ASSERT(mSurrogate);
     mSurrogate->OnInstanceCreated(this);
 
-    return IPC_OK();
+    return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 PluginInstanceParent::RecvSetNetscapeWindowAsParent(const NativeWindowHandle& childWindow)
 {
 #if defined(XP_WIN)
@@ -2158,10 +2142,10 @@ PluginInstanceParent::RecvSetNetscapeWindowAsParent(const NativeWindowHandle& ch
         NS_WARNING("Failed to set Netscape window as parent.");
     }
 
-    return IPC_OK();
+    return true;
 #else
     NS_NOTREACHED("PluginInstanceParent::RecvSetNetscapeWindowAsParent not implemented!");
-    return IPC_FAIL_NO_REASON(this);
+    return false;
 #endif
 }
 
@@ -2368,7 +2352,7 @@ PluginInstanceParent::MaybeCreateChildPopupSurrogate()
 
 #endif 
 
-mozilla::ipc::IPCResult
+bool
 PluginInstanceParent::AnswerPluginFocusChange(const bool& gotFocus)
 {
     PLUGIN_LOG_DEBUG(("%s", FULLFUNCTION));
@@ -2389,10 +2373,10 @@ PluginInstanceParent::AnswerPluginFocusChange(const bool& gotFocus)
         }
       }
     }
-    return IPC_OK();
+    return true;
 #else
     NS_NOTREACHED("PluginInstanceParent::AnswerPluginFocusChange not implemented!");
-    return IPC_FAIL_NO_REASON(this);
+    return false;
 #endif
 }
 
@@ -2421,7 +2405,7 @@ PluginInstanceParent::Cast(NPP aInstance, PluginAsyncSurrogate** aSurrogate)
     return instancePtr;
 }
 
-mozilla::ipc::IPCResult
+bool
 PluginInstanceParent::RecvGetCompositionString(const uint32_t& aIndex,
                                                nsTArray<uint8_t>* aDist,
                                                int32_t* aLength)
@@ -2430,17 +2414,17 @@ PluginInstanceParent::RecvGetCompositionString(const uint32_t& aIndex,
     nsPluginInstanceOwner* owner = GetOwner();
     if (!owner) {
         *aLength = IMM_ERROR_GENERAL;
-        return IPC_OK();
+        return true;
     }
 
     if (!owner->GetCompositionString(aIndex, aDist, aLength)) {
         *aLength = IMM_ERROR_NODATA;
     }
 #endif
-    return IPC_OK();
+    return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 PluginInstanceParent::RecvSetCandidateWindow(
     const mozilla::widget::CandidateWindowPosition& aPosition)
 {
@@ -2450,10 +2434,10 @@ PluginInstanceParent::RecvSetCandidateWindow(
         owner->SetCandidateWindow(aPosition);
     }
 #endif
-    return IPC_OK();
+    return true;
 }
 
-mozilla::ipc::IPCResult
+bool
 PluginInstanceParent::RecvRequestCommitOrCancel(const bool& aCommitted)
 {
 #if defined(OS_WIN)
@@ -2462,7 +2446,7 @@ PluginInstanceParent::RecvRequestCommitOrCancel(const bool& aCommitted)
         owner->RequestCommitOrCancel(aCommitted);
     }
 #endif
-    return IPC_OK();
+    return true;
 }
 
 nsresult
@@ -2477,7 +2461,7 @@ PluginInstanceParent::HandledWindowedPluginKeyEvent(
     return NS_OK;
 }
 
-mozilla::ipc::IPCResult
+bool
 PluginInstanceParent::RecvOnWindowedPluginKeyEvent(
                         const NativeEventData& aKeyEventData)
 {
@@ -2486,10 +2470,10 @@ PluginInstanceParent::RecvOnWindowedPluginKeyEvent(
         
         
         HandledWindowedPluginKeyEvent(aKeyEventData, false);
-        return IPC_OK();
+        return true;
     }
     owner->OnWindowedPluginKeyEvent(aKeyEventData);
-    return IPC_OK();
+    return true;
 }
 
 void

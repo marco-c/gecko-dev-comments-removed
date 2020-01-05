@@ -3436,9 +3436,6 @@ pref("print.print_extra_margin", 90);
 pref("print.extend_native_print_dialog", true);
 
 
-pref("plugin.scan.Quicktime", "5.0");
-
-
 pref("plugin.scan.WindowsMediaPlayer", "7.0");
 
 

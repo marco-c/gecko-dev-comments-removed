@@ -41,20 +41,9 @@ int GetQuirksFromMimeTypeAndFilename(const nsCString& aMimeType,
 #endif
     }
 
-#ifdef OS_WIN
-    
-    NS_NAMED_LITERAL_CSTRING(quicktime, "npqtplugin");
-    if (FindInReadable(quicktime, aPluginFilename)) {
-        quirks |= QUIRK_QUICKTIME_AVOID_SETWINDOW;
-    }
-#endif
-
 #ifdef XP_MACOSX
     
-    NS_NAMED_LITERAL_CSTRING(quicktime, "QuickTime Plugin.plugin");
     if (specialType == nsPluginHost::eSpecialType_Flash) {
-        quirks |= QUIRK_ALLOW_OFFLINE_RENDERER;
-    } else if (FindInReadable(quicktime, aPluginFilename)) {
         quirks |= QUIRK_ALLOW_OFFLINE_RENDERER;
     }
 #endif
