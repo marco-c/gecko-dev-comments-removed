@@ -2004,11 +2004,15 @@ class ForOfLoopControl : public LoopControl
 
     bool allowSelfHosted_;
 
+    IteratorKind iterKind_;
+
   public:
-    ForOfLoopControl(BytecodeEmitter* bce, int32_t iterDepth, bool allowSelfHosted)
+    ForOfLoopControl(BytecodeEmitter* bce, int32_t iterDepth, bool allowSelfHosted,
+                     IteratorKind iterKind)
       : LoopControl(bce, StatementKind::ForOfLoop),
         iterDepth_(iterDepth),
-        allowSelfHosted_(allowSelfHosted)
+        allowSelfHosted_(allowSelfHosted),
+        iterKind_(iterKind)
     {
     }
 
@@ -2064,7 +2068,7 @@ class ForOfLoopControl : public LoopControl
     bool emitIteratorClose(BytecodeEmitter* bce,
                            CompletionKind completionKind = CompletionKind::Normal) {
         ptrdiff_t start = bce->offset();
-        if (!bce->emitIteratorClose(IteratorKind::Sync, completionKind, allowSelfHosted_))
+        if (!bce->emitIteratorClose(iterKind_, completionKind, allowSelfHosted_))
             return false;
         ptrdiff_t end = bce->offset();
         return bce->tryNoteList.append(JSTRY_FOR_OF_ITERCLOSE, 0, start, end);
@@ -5222,7 +5226,8 @@ BytecodeEmitter::emitSetOrInitializeDestructuring(ParseNode* target, Destructuri
 }
 
 bool
-BytecodeEmitter::emitIteratorNext(ParseNode* pn, bool allowSelfHosted )
+BytecodeEmitter::emitIteratorNext(ParseNode* pn, IteratorKind iterKind ,
+                                  bool allowSelfHosted )
 {
     MOZ_ASSERT(allowSelfHosted || emitterMode != BytecodeEmitter::SelfHosting,
                ".next() iteration is prohibited in self-hosted code because it "
@@ -5236,6 +5241,12 @@ BytecodeEmitter::emitIteratorNext(ParseNode* pn, bool allowSelfHosted )
         return false;
     if (!emitCall(JSOP_CALL, 0, pn))                      
         return false;
+
+    if (iterKind == IteratorKind::Async) {
+        if (!emitAwait())                                 
+            return false;
+    }
+
     if (!emitCheckIsObj(CheckIsObjectKind::IteratorNext)) 
         return false;
     checkTypeSet(JSOP_CALL);
@@ -6874,7 +6885,7 @@ BytecodeEmitter::emitSpread(bool allowSelfHosted)
 
         if (!emitDupAt(2))                                
             return false;
-        if (!emitIteratorNext(nullptr, allowSelfHosted))  
+        if (!emitIteratorNext(nullptr, IteratorKind::Sync, allowSelfHosted))  
             return false;
         if (!emit1(JSOP_DUP))                             
             return false;
@@ -6974,6 +6985,13 @@ BytecodeEmitter::emitForOf(ParseNode* forOfLoop, EmitterScope* headLexicalEmitte
     MOZ_ASSERT(forOfHead->isKind(PNK_FOROF));
     MOZ_ASSERT(forOfHead->isArity(PN_TERNARY));
 
+    unsigned iflags = forOfLoop->pn_iflags;
+    IteratorKind iterKind = (iflags & JSITER_FORAWAITOF)
+                            ? IteratorKind::Async
+                            : IteratorKind::Sync;
+    MOZ_ASSERT_IF(iterKind == IteratorKind::Async, sc->asFunctionBox());
+    MOZ_ASSERT_IF(iterKind == IteratorKind::Async, sc->asFunctionBox()->isAsync());
+
     ParseNode* forHeadExpr = forOfHead->pn_kid3;
 
     
@@ -6989,8 +7007,13 @@ BytecodeEmitter::emitForOf(ParseNode* forOfLoop, EmitterScope* headLexicalEmitte
     
     if (!emitTree(forHeadExpr))                           
         return false;
-    if (!emitIterator())                                  
-        return false;
+    if (iterKind == IteratorKind::Async) {
+        if (!emitAsyncIterator())                         
+            return false;
+    } else {
+        if (!emitIterator())                              
+            return false;
+    }
 
     int32_t iterDepth = stackDepth;
 
@@ -7001,7 +7024,7 @@ BytecodeEmitter::emitForOf(ParseNode* forOfLoop, EmitterScope* headLexicalEmitte
     if (!emit1(JSOP_UNDEFINED))                           
         return false;
 
-    ForOfLoopControl loopInfo(this, iterDepth, allowSelfHostedIter);
+    ForOfLoopControl loopInfo(this, iterDepth, allowSelfHostedIter, iterKind);
 
     
     unsigned noteIndex;
@@ -7097,7 +7120,7 @@ BytecodeEmitter::emitForOf(ParseNode* forOfLoop, EmitterScope* headLexicalEmitte
         if (!emitDupAt(1))                                
             return false;
 
-        if (!emitIteratorNext(forOfHead, allowSelfHostedIter)) 
+        if (!emitIteratorNext(forOfHead, iterKind, allowSelfHostedIter)) 
             return false;
 
         if (!emit1(JSOP_SWAP))                            
