@@ -31,7 +31,7 @@ class RendererEvent
 {
 public:
   virtual ~RendererEvent() {}
-  virtual void Run(RenderThread& aRenderThread, gfx::WindowId aWindow);
+  virtual void Run(RenderThread& aRenderThread, gfx::WindowId aWindow) = 0;
 };
 
 

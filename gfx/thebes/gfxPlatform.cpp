@@ -7,6 +7,7 @@
 #include "mozilla/layers/CompositorThread.h"
 #include "mozilla/layers/ImageBridgeChild.h"
 #include "mozilla/layers/ISurfaceAllocator.h"     
+#include "mozilla/layers/RenderThread.h"
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/gfx/GPUProcessManager.h"
 #include "mozilla/gfx/GraphicsMessages.h"
@@ -939,6 +940,9 @@ gfxPlatform::InitLayersIPC()
 
     if (XRE_IsParentProcess())
     {
+        if (gfxPrefs::WebRenderEnabled()) {
+            RenderThread::Start();
+        }
         layers::CompositorThreadHolder::Start();
     }
 }
@@ -965,6 +969,9 @@ gfxPlatform::ShutdownLayersIPC()
 
         
         layers::CompositorThreadHolder::Shutdown();
+        if (gfxPrefs::WebRenderEnabled()) {
+            RenderThread::ShutDown();
+        }
     } else {
       
       

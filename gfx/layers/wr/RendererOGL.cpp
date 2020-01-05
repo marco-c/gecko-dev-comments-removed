@@ -15,7 +15,7 @@ namespace mozilla {
 namespace layers {
 
 
-RendererOGL*
+UniquePtr<RendererOGL>
 RendererOGL::Create(already_AddRefed<RenderThread> aThread,
                     already_AddRefed<widget::CompositorWidget> aWidget,
                     WrRenderer* aWrRenderer,
@@ -43,12 +43,14 @@ RendererOGL::Create(already_AddRefed<RenderThread> aThread,
     return nullptr;
   }
 
-  return new RendererOGL(thread.forget(),
-                         gl.forget(),
-                         widget.forget(),
-                         aWindowId,
-                         aWrRenderer,
-                         aBridge);
+  wr_gl_init(&*gl);
+
+  return UniquePtr<RendererOGL>(new RendererOGL(thread.forget(),
+                                                gl.forget(),
+                                                widget.forget(),
+                                                aWindowId,
+                                                aWrRenderer,
+                                                aBridge));
 }
 
 RendererOGL::RendererOGL(already_AddRefed<RenderThread> aThread,
@@ -64,11 +66,24 @@ RendererOGL::RendererOGL(already_AddRefed<RenderThread> aThread,
 , mBridge(aBridge)
 , mWindowId(aWindowId)
 {
+  MOZ_ASSERT(mThread);
+  MOZ_ASSERT(mGL);
+  MOZ_ASSERT(mWidget);
+  MOZ_ASSERT(mWrRenderer);
+  MOZ_ASSERT(mBridge);
+  MOZ_COUNT_CTOR(RendererOGL);
 }
 
 RendererOGL::~RendererOGL()
 {
-
+  MOZ_COUNT_DTOR(RendererOGL);
+#ifdef MOZ_ENABLE_WEBRENDER
+  
+  
+  
+  
+  wr_renderer_delete(mWrRenderer);
+#endif
 }
 
 void
