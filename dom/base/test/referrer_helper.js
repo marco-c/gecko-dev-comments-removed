@@ -66,7 +66,7 @@ function resetState() {
 
 
 
-var tests = (function() {
+var tests = (function*() {
 
   
   yield SpecialPowers.pushPrefEnv({"set": [['network.http.enablePerElementReferrer', true]]}, advance);
@@ -98,5 +98,5 @@ var tests = (function() {
   };
 
   
-  yield SimpleTest.finish();
+  SimpleTest.finish();
 })();

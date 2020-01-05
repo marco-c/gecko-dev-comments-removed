@@ -89,7 +89,7 @@
     }, 0);
   }
 
-  function runTest()
+  function* runTest()
   {
     test('input');
     yield undefined;
@@ -98,7 +98,6 @@
     testCorrectUpdateOnScroll();
     yield undefined;
     SimpleTest.finish();
-    yield undefined;
   }
 
   gTestRunner = runTest();

@@ -26,7 +26,7 @@
     test.next();
   });
 
-  function runTest() {
+  function* runTest() {
     MockColorPicker.init(window);
     var element = null;
 
@@ -68,7 +68,6 @@
 
     MockColorPicker.cleanup();
     SimpleTest.finish();
-    yield undefined;
   }
 
   </script>

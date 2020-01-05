@@ -72,7 +72,7 @@ function pushPrefs(...aPrefs) {
 
 
 
-function doTest(aExpectedStrings, reload, aUrl, aNewTabPref) {
+function* doTest(aExpectedStrings, reload, aUrl, aNewTabPref) {
   
   if (aNewTabPref) {
     aboutNewTabService.newTabURL = aNewTabPref;
@@ -186,7 +186,7 @@ function doTest(aExpectedStrings, reload, aUrl, aNewTabPref) {
   );
 }
 
-function runTests() {
+function* runTests() {
   
   for (let i = 0; i < TESTS.length; i++) {
     let testCase = TESTS[i];
@@ -203,6 +203,6 @@ function runTests() {
       url = testCase.url;
     }
 
-    yield doTest(aExpectedStrings, reload, url, aNewTabPref);
+    yield* doTest(aExpectedStrings, reload, url, aNewTabPref);
   }
 }
