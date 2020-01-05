@@ -85,6 +85,14 @@ impl WritingMode {
             (true, false) => PhysicalSide::Left,
         }
     }
+
+    #[inline]
+    
+    
+    
+    pub fn to_bidi_level(&self) -> u8 {
+        !self.is_bidi_ltr() as u8
+    }
 }
 
 impl fmt::Display for WritingMode {

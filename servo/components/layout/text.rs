@@ -10,7 +10,7 @@ use fragment::{Fragment, SpecificFragmentInfo, ScannedTextFragmentInfo, Unscanne
 use inline::InlineFragments;
 
 use gfx::font::{DISABLE_KERNING_SHAPING_FLAG, FontMetrics, IGNORE_LIGATURES_SHAPING_FLAG};
-use gfx::font::{RunMetrics, ShapingFlags, ShapingOptions};
+use gfx::font::{RTL_FLAG, RunMetrics, ShapingFlags, ShapingOptions};
 use gfx::font_context::FontContext;
 use gfx::text::glyph::CharIndex;
 use gfx::text::text_run::TextRun;
@@ -23,10 +23,38 @@ use style::computed_values::{line_height, text_orientation, text_rendering, text
 use style::computed_values::{white_space};
 use style::properties::ComputedValues;
 use style::properties::style_structs::Font as FontStyle;
+use unicode_bidi::{is_rtl, process_text};
 use util::geometry::Au;
 use util::linked_list::split_off_head;
 use util::logical_geometry::{LogicalSize, WritingMode};
 use util::range::{Range, RangeIndex};
+
+
+fn text(fragments: &LinkedList<Fragment>) -> String {
+    
+    
+    
+
+    let mut text = String::new();
+
+    for fragment in fragments {
+        match fragment.specific {
+            SpecificFragmentInfo::UnscannedText(ref info) => {
+                match fragment.white_space() {
+                    white_space::T::normal | white_space::T::nowrap => {
+                        text.push_str(&info.text.replace("\n", " "));
+                    }
+                    white_space::T::pre => {
+                        text.push_str(&info.text);
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+    text
+}
+
 
 
 pub struct TextRunScanner {
@@ -45,11 +73,26 @@ impl TextRunScanner {
                          mut fragments: LinkedList<Fragment>)
                          -> InlineFragments {
         debug!("TextRunScanner: scanning {} fragments for text runs...", fragments.len());
+        debug_assert!(!fragments.is_empty());
+
+        
+        let text = text(&fragments);
+        let para_level = fragments.front().unwrap().style.writing_mode.to_bidi_level();
+        let bidi_info = process_text(&text, Some(para_level));
+
+        
+        let bidi_levels = if bidi_info.levels.iter().cloned().any(is_rtl) {
+            Some(&bidi_info.levels[..])
+        } else {
+            None
+        };
 
         
         
         let mut new_fragments = Vec::with_capacity(fragments.len());
         let mut last_whitespace = true;
+        let mut paragraph_bytes_processed = 0;
+
         while !fragments.is_empty() {
             
             split_first_fragment_at_newline_if_necessary(&mut fragments);
@@ -66,6 +109,8 @@ impl TextRunScanner {
             
             last_whitespace = self.flush_clump_to_list(font_context,
                                                        &mut new_fragments,
+                                                       &mut paragraph_bytes_processed,
+                                                       bidi_levels,
                                                        last_whitespace);
         }
 
@@ -84,6 +129,8 @@ impl TextRunScanner {
     fn flush_clump_to_list(&mut self,
                            font_context: &mut FontContext,
                            out_fragments: &mut Vec<Fragment>,
+                           paragraph_bytes_processed: &mut usize,
+                           bidi_levels: Option<&[u8]>,
                            mut last_whitespace: bool)
                            -> bool {
         debug!("TextRunScanner: flushing {} fragments in range", self.clump.len());
@@ -137,47 +184,51 @@ impl TextRunScanner {
                 };
 
                 let (mut start_position, mut end_position) = (0, 0);
+
                 for character in text.chars() {
                     
                     
-                    for font_index in 0..fontgroup.fonts.len() {
-                        if font_index < fontgroup.fonts.len() - 1 &&
-                                fontgroup.fonts
-                                         .get(font_index)
-                                         .unwrap()
-                                         .borrow()
-                                         .glyph_index(character)
-                                         .is_none() {
-                            continue
+                    let mut font_index = 0;
+                    while font_index < fontgroup.fonts.len() - 1 {
+                        if fontgroup.fonts.get(font_index).unwrap().borrow()
+                                          .glyph_index(character)
+                                          .is_some() {
+                            break
                         }
-
-                        
-                        
-                        if run_info.font_index != font_index {
-                            if run_info.text.len() > 0 {
-                                mapping.flush(&mut mappings,
-                                              &mut run_info,
-                                              &**text,
-                                              compression,
-                                              text_transform,
-                                              &mut last_whitespace,
-                                              &mut start_position,
-                                              end_position);
-                                run_info_list.push(run_info);
-                                run_info = RunInfo::new();
-                                mapping = RunMapping::new(&run_info_list[..],
-                                                          &run_info,
-                                                          fragment_index);
-                            }
-
-                            run_info.font_index = font_index
-                        }
-
-
-                        
-                        end_position += character.len_utf8();
-                        break
+                        font_index += 1;
                     }
+
+                    let bidi_level = match bidi_levels {
+                        Some(levels) => levels[*paragraph_bytes_processed],
+                        None => 0
+                    };
+
+                    
+                    if run_info.font_index != font_index || run_info.bidi_level != bidi_level {
+                        if end_position > start_position {
+                            mapping.flush(&mut mappings,
+                                          &mut run_info,
+                                          &**text,
+                                          compression,
+                                          text_transform,
+                                          &mut last_whitespace,
+                                          &mut start_position,
+                                          end_position);
+                        }
+                        if run_info.text.len() > 0 {
+                            run_info_list.push(run_info);
+                            run_info = RunInfo::new();
+                            mapping = RunMapping::new(&run_info_list[..],
+                                                      &run_info,
+                                                      fragment_index);
+                        }
+                        run_info.font_index = font_index;
+                        run_info.bidi_level = bidi_level;
+                    }
+
+                    
+                    end_position += character.len_utf8();
+                    *paragraph_bytes_processed += character.len_utf8();
                 }
 
                 
@@ -220,8 +271,12 @@ impl TextRunScanner {
 
             
             run_info_list.into_iter().map(|run_info| {
+                let mut options = options;
+                if is_rtl(run_info.bidi_level) {
+                    options.flags.insert(RTL_FLAG);
+                }
                 let mut font = fontgroup.fonts.get(run_info.font_index).unwrap().borrow_mut();
-                Arc::new(box TextRun::new(&mut *font, run_info.text, &options))
+                Arc::new(box TextRun::new(&mut *font, run_info.text, &options, run_info.bidi_level))
             }).collect::<Vec<_>>()
         };
 
@@ -364,6 +419,8 @@ struct RunInfo {
     font_index: usize,
     /// A cached copy of the number of Unicode characters in the text run.
     character_length: usize,
+    /// The bidirection embedding level of this text run.
+    bidi_level: u8,
 }
 
 impl RunInfo {
@@ -372,6 +429,7 @@ impl RunInfo {
             text: String::new(),
             font_index: 0,
             character_length: 0,
+            bidi_level: 0,
         }
     }
 }

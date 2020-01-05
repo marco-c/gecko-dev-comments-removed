@@ -28,10 +28,11 @@ use std::collections::VecDeque;
 use std::fmt;
 use std::mem;
 use std::sync::Arc;
-use std::u16;
+use std::isize;
 use style::computed_values::{display, overflow_x, position, text_align, text_justify};
 use style::computed_values::{text_overflow, vertical_align, white_space};
 use style::properties::ComputedValues;
+use unicode_bidi;
 use util::geometry::{Au, MAX_AU, ZERO_RECT};
 use util::logical_geometry::{LogicalRect, LogicalSize, WritingMode};
 use util::range::{Range, RangeIndex};
@@ -66,7 +67,7 @@ static FONT_SUPERSCRIPT_OFFSET_RATIO: f32 = 0.34;
 
 
 
-#[derive(RustcEncodable, Debug, Copy, Clone)]
+#[derive(RustcEncodable, Debug, Clone)]
 pub struct Line {
     
     
@@ -94,6 +95,11 @@ pub struct Line {
     
     
     pub range: Range<FragmentIndex>,
+
+    
+    
+    
+    pub visual_runs: Option<Vec<(Range<FragmentIndex>, u8)>>,
 
     
     
@@ -153,6 +159,23 @@ pub struct Line {
     pub inline_metrics: InlineMetrics,
 }
 
+impl Line {
+    fn new(writing_mode: WritingMode,
+           minimum_block_size_above_baseline: Au,
+           minimum_depth_below_baseline: Au)
+           -> Line {
+        Line {
+            range: Range::empty(),
+            visual_runs: None,
+            bounds: LogicalRect::zero(writing_mode),
+            green_zone: LogicalSize::zero(writing_mode),
+            inline_metrics: InlineMetrics::new(minimum_block_size_above_baseline,
+                                               minimum_depth_below_baseline,
+                                               minimum_block_size_above_baseline),
+        }
+    }
+}
+
 int_range_index! {
     #[derive(RustcEncodable)]
     #[doc = "The index of a fragment in a flattened vector of DOM elements."]
@@ -202,14 +225,9 @@ impl LineBreaker {
         LineBreaker {
             new_fragments: Vec::new(),
             work_list: VecDeque::new(),
-            pending_line: Line {
-                range: Range::empty(),
-                bounds: LogicalRect::zero(float_context.writing_mode),
-                green_zone: LogicalSize::zero(float_context.writing_mode),
-                inline_metrics: InlineMetrics::new(minimum_block_size_above_baseline,
-                                                   minimum_depth_below_baseline,
-                                                   minimum_block_size_above_baseline),
-            },
+            pending_line: Line::new(float_context.writing_mode,
+                                    minimum_block_size_above_baseline,
+                                    minimum_depth_below_baseline),
             floats: float_context,
             lines: Vec::new(),
             cur_b: Au(0),
@@ -228,18 +246,10 @@ impl LineBreaker {
     }
 
     
-    fn reset_line(&mut self) {
-        self.pending_line.range.reset(FragmentIndex(0), FragmentIndex(0));
-        self.pending_line.bounds = LogicalRect::new(self.floats.writing_mode,
-                                                    Au(0),
-                                                    self.cur_b,
-                                                    Au(0),
-                                                    Au(0));
-        self.pending_line.green_zone = LogicalSize::zero(self.floats.writing_mode);
-        self.pending_line.inline_metrics =
-            InlineMetrics::new(self.minimum_block_size_above_baseline,
-                               self.minimum_depth_below_baseline,
-                               self.minimum_block_size_above_baseline)
+    fn reset_line(&mut self) -> Line {
+        mem::replace(&mut self.pending_line, Line::new(self.floats.writing_mode,
+                                                       self.minimum_block_size_above_baseline,
+                                                       self.minimum_depth_below_baseline))
     }
 
     
@@ -261,9 +271,39 @@ impl LineBreaker {
         self.reflow_fragments(old_fragment_iter, flow, layout_context);
 
         
+
+        let para_level = flow.base.writing_mode.to_bidi_level();
+
+        
+        
+        
+        let levels: Vec<u8> = self.new_fragments.iter().map(|fragment| match fragment.specific {
+            SpecificFragmentInfo::ScannedText(ref info) => info.run.bidi_level,
+            _ => para_level
+        }).collect();
+
+        let mut lines = mem::replace(&mut self.lines, Vec::new());
+
+        
+        let has_rtl = levels.iter().cloned().any(unicode_bidi::is_rtl);
+
+        if has_rtl {
+            
+            for line in &mut lines {
+                let range = line.range.begin().to_usize()..line.range.end().to_usize();
+                let runs = unicode_bidi::visual_runs(range, &levels);
+                line.visual_runs = Some(runs.iter().map(|run| {
+                    let start = FragmentIndex(run.start as isize);
+                    let len = FragmentIndex(run.len() as isize);
+                    (Range::new(start, len), levels[run.start])
+                }).collect());
+            }
+        }
+
+        
         old_fragments.fragments = mem::replace(&mut self.new_fragments, vec![]);
         flow.fragments = old_fragments;
-        flow.lines = mem::replace(&mut self.lines, Vec::new());
+        flow.lines = lines;
     }
 
     
@@ -350,7 +390,7 @@ impl LineBreaker {
     fn flush_current_line(&mut self) {
         debug!("LineBreaker: flushing line {}: {:?}", self.lines.len(), self.pending_line);
         self.strip_trailing_whitespace_from_pending_line_if_necessary();
-        self.lines.push(self.pending_line);
+        self.lines.push(self.pending_line.clone());
         self.cur_b = self.pending_line.bounds.start.b + self.pending_line.bounds.size.block;
         self.reset_line();
     }
@@ -612,7 +652,7 @@ impl LineBreaker {
                              line_flush_mode: LineFlushMode) {
         let indentation = self.indentation_for_pending_fragment();
         if self.pending_line_is_empty() {
-            assert!(self.new_fragments.len() <= (u16::MAX as usize));
+            debug_assert!(self.new_fragments.len() <= (isize::MAX as usize));
             self.pending_line.range.reset(FragmentIndex(self.new_fragments.len() as isize),
                                           FragmentIndex(0));
         }
@@ -922,18 +962,47 @@ impl InlineFlow {
             text_align::T::left | text_align::T::right => unreachable!()
         }
 
-        for fragment_index in line.range.each_index() {
-            let fragment = fragments.get_mut(fragment_index.to_usize());
-            inline_start_position_for_fragment = inline_start_position_for_fragment +
-                fragment.margin.inline_start;
-            fragment.border_box = LogicalRect::new(fragment.style.writing_mode,
-                                                   inline_start_position_for_fragment,
-                                                   fragment.border_box.start.b,
-                                                   fragment.border_box.size.inline,
-                                                   fragment.border_box.size.block);
-            fragment.update_late_computed_inline_position_if_necessary();
-            inline_start_position_for_fragment = inline_start_position_for_fragment +
-                fragment.border_box.size.inline + fragment.margin.inline_end;
+        
+        let run_count = match line.visual_runs {
+            Some(ref runs) => runs.len(),
+            None => 1
+        };
+        for run_idx in 0..run_count {
+            let (range, level) = match line.visual_runs {
+                Some(ref runs) if is_ltr => runs[run_idx],
+                Some(ref runs) => runs[run_count - run_idx - 1], 
+                None => (line.range, 0)
+            };
+            
+            
+            let reverse = unicode_bidi::is_ltr(level) != is_ltr;
+            let fragment_indices = if reverse {
+                (range.end().get() - 1..range.begin().get() - 1).step_by(-1)
+            } else {
+                (range.begin().get()..range.end().get()).step_by(1)
+            };
+
+            for fragment_index in fragment_indices {
+                let fragment = fragments.get_mut(fragment_index as usize);
+                inline_start_position_for_fragment = inline_start_position_for_fragment +
+                    fragment.margin.inline_start;
+
+                let border_start = if fragment.style.writing_mode.is_bidi_ltr() == is_ltr {
+                    inline_start_position_for_fragment
+                } else {
+                    line.green_zone.inline - inline_start_position_for_fragment
+                                           - fragment.margin.inline_end
+                                           - fragment.border_box.size.inline
+                };
+                fragment.border_box = LogicalRect::new(fragment.style.writing_mode,
+                                                       border_start,
+                                                       fragment.border_box.start.b,
+                                                       fragment.border_box.size.inline,
+                                                       fragment.border_box.size.block);
+                fragment.update_late_computed_inline_position_if_necessary();
+                inline_start_position_for_fragment = inline_start_position_for_fragment +
+                    fragment.border_box.size.inline + fragment.margin.inline_end;
+            }
         }
     }
 
@@ -1302,6 +1371,7 @@ impl Flow for InlineFlow {
                                            self.minimum_block_size_above_baseline,
                                            self.minimum_depth_below_baseline);
         scanner.scan_for_lines(self, layout_context);
+
 
         
         let mut line_distance_from_flow_block_start = Au(0);
