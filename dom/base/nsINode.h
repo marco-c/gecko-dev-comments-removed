@@ -1826,7 +1826,7 @@ public:
     aNodeName.SetStringBuffer(nsStringBuffer::FromString(nodeName),
                               nodeName.Length());
   }
-  void GetBaseURI(nsAString& aBaseURI) const;
+  MOZ_MUST_USE nsresult GetBaseURI(nsAString& aBaseURI) const;
   
   
   
@@ -2289,8 +2289,7 @@ ToCanonicalSupports(nsINode* aPointer)
   } \
   NS_IMETHOD GetDOMBaseURI(nsAString& aBaseURI) __VA_ARGS__ override \
   { \
-    nsINode::GetBaseURI(aBaseURI); \
-    return NS_OK; \
+    return nsINode::GetBaseURI(aBaseURI); \
   } \
   NS_IMETHOD CompareDocumentPosition(nsIDOMNode* aOther, uint16_t* aResult) __VA_ARGS__ override \
   { \
