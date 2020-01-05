@@ -254,10 +254,8 @@ Zone::discardJitCode(FreeOp* fop, bool discardBaselineCode)
 
 
 
-        if (discardBaselineCode) {
+        if (discardBaselineCode)
             jitZone()->optimizedStubSpace()->freeAllAfterMinorGC(fop->runtime());
-            jitZone()->purgeIonCacheIRStubInfo();
-        }
 
         
 

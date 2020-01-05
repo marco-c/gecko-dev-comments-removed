@@ -191,8 +191,6 @@ namespace jit {
 
 enum ExitFrameTokenValues;
 
-class AutoSaveLiveRegisters;
-
 
 
 
@@ -2117,8 +2115,6 @@ class MacroAssembler : public MacroAssemblerSpecific
     AfterICSaveLive icSaveLive(LiveRegisterSet& liveRegs);
     MOZ_MUST_USE bool icBuildOOLFakeExitFrame(void* fakeReturnAddr, AfterICSaveLive& aic);
     void icRestoreLive(LiveRegisterSet& liveRegs, AfterICSaveLive& aic);
-
-    MOZ_MUST_USE bool icBuildOOLFakeExitFrame(void* fakeReturnAddr, AutoSaveLiveRegisters& save);
 
     
     
