@@ -50,36 +50,6 @@ function dateToDays(date) {
 
 
 
-function parseAndRemoveField(obj, field, parseAsJson = true) {
-  let value = null;
-
-  if (field in obj) {
-    if (!parseAsJson) {
-      value = obj[field];
-    } else {
-      try {
-        value = JSON.parse(obj[field]);
-      } catch (e) {
-        Cu.reportError(e);
-      }
-    }
-
-    delete obj[field];
-  }
-
-  return value;
-}
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -145,9 +115,6 @@ this.CrashManager = function(options) {
   this._crashPromises = new Map();
 
   
-  this._pingPromise = null;
-
-  
   this._store = null;
 
   
@@ -206,41 +173,6 @@ this.CrashManager.prototype = Object.freeze({
   EVENT_FILE_ERROR_MALFORMED: "malformed",
   
   EVENT_FILE_ERROR_UNKNOWN_EVENT: "unknown-event",
-
-  
-  
-  ANNOTATION_WHITELIST: [
-    "AsyncShutdownTimeout",
-    "BuildID",
-    "ProductID",
-    "ProductName",
-    "ReleaseChannel",
-    "SecondsSinceLastCrash",
-    "ShutdownProgress",
-    "StartupCrash",
-    "TelemetryEnvironment",
-    "Version",
-    
-    
-    "AvailablePageFile",
-    "AvailablePhysicalMemory",
-    "AvailableVirtualMemory",
-    "BlockedDllList",
-    "BlocklistInitFailed",
-    "ContainsMemoryReport",
-    "CrashTime",
-    "EventLoopNestingLevel",
-    "IsGarbageCollecting",
-    "MozCrashReason",
-    "OOMAllocationSize",
-    "SystemMemoryUsePercentage",
-    "TextureUsage",
-    "TotalPageFile",
-    "TotalPhysicalMemory",
-    "TotalVirtualMemory",
-    "UptimeTS",
-    "User32BeforeBlocklist",
-  ],
 
   
 
@@ -452,12 +384,7 @@ this.CrashManager.prototype = Object.freeze({
         this._crashPromises.delete(id);
         deferred.resolve();
       }
-
-      
-      if (processType === this.PROCESS_TYPE_CONTENT) {
-        this._sendCrashPing(id, processType, date, metadata);
-      }
-   }.bind(this));
+    }.bind(this));
 
     return promise;
   },
@@ -617,51 +544,6 @@ this.CrashManager.prototype = Object.freeze({
     }.bind(this));
   },
 
-  _filterAnnotations: function(annotations) {
-    let filteredAnnotations = {};
-
-    for (let line in annotations) {
-      if (this.ANNOTATION_WHITELIST.includes(line)) {
-        filteredAnnotations[line] = annotations[line];
-      }
-    }
-
-    return filteredAnnotations;
-  },
-
-  _sendCrashPing: function(crashId, type, date, metadata = {}) {
-    
-    
-    let reportMeta = Cu.cloneInto(metadata, myScope);
-    let crashEnvironment = parseAndRemoveField(reportMeta,
-                                               "TelemetryEnvironment");
-    let sessionId = parseAndRemoveField(reportMeta, "TelemetrySessionId",
-                                         false);
-    let stackTraces = parseAndRemoveField(reportMeta, "StackTraces");
-
-    
-    reportMeta = this._filterAnnotations(reportMeta);
-
-    this._pingPromise = TelemetryController.submitExternalPing("crash",
-      {
-        version: 1,
-        crashDate: date.toISOString().slice(0, 10), 
-        sessionId: sessionId,
-        crashId: crashId,
-        processType: type,
-        stackTraces: stackTraces,
-        metadata: reportMeta,
-        hasCrashEnvironment: (crashEnvironment !== null),
-      },
-      {
-        retentionDays: 180,
-        addClientId: true,
-        addEnvironment: true,
-        overrideEnvironment: crashEnvironment,
-      }
-    );
-  },
-
   _handleEventFilePayload: function(store, entry, type, date, payload) {
       
       
@@ -683,7 +565,48 @@ this.CrashManager.prototype = Object.freeze({
           store.addCrash(this.PROCESS_TYPE_MAIN, this.CRASH_TYPE_CRASH,
                          crashID, date, metadata);
 
-          this._sendCrashPing(crashID, this.PROCESS_TYPE_MAIN, date, metadata);
+          
+          
+          let crashEnvironment = null;
+          let sessionId = null;
+          let stackTraces = null;
+          let reportMeta = Cu.cloneInto(metadata, myScope);
+          if ('TelemetryEnvironment' in reportMeta) {
+            try {
+              crashEnvironment = JSON.parse(reportMeta.TelemetryEnvironment);
+            } catch (e) {
+              Cu.reportError(e);
+            }
+            delete reportMeta.TelemetryEnvironment;
+          }
+          if ('TelemetrySessionId' in reportMeta) {
+            sessionId = reportMeta.TelemetrySessionId;
+            delete reportMeta.TelemetrySessionId;
+          }
+          if ('StackTraces' in reportMeta) {
+            try {
+              stackTraces = JSON.parse(reportMeta.StackTraces);
+            } catch (e) {
+              Cu.reportError(e);
+            }
+            delete reportMeta.StackTraces;
+          }
+          TelemetryController.submitExternalPing("crash",
+            {
+              version: 1,
+              crashDate: date.toISOString().slice(0, 10), 
+              sessionId: sessionId,
+              crashId: entry.id,
+              stackTraces: stackTraces,
+              metadata: reportMeta,
+              hasCrashEnvironment: (crashEnvironment !== null),
+            },
+            {
+              retentionDays: 180,
+              addClientId: true,
+              addEnvironment: true,
+              overrideEnvironment: crashEnvironment,
+            });
           break;
 
         case "crash.submission.1":

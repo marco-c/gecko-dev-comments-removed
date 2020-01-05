@@ -6,43 +6,8 @@
 
 const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
-Cu.import("resource://gre/modules/AsyncShutdown.jsm", this);
-Cu.import("resource://gre/modules/KeyValueParser.jsm");
-Cu.import("resource://gre/modules/osfile.jsm", this);
-Cu.import("resource://gre/modules/Promise.jsm", this);
 Cu.import("resource://gre/modules/Services.jsm", this);
-Cu.import("resource://gre/modules/Task.jsm", this);
 Cu.import("resource://gre/modules/XPCOMUtils.jsm", this);
-
-
-
-
-
-
-
-
-
-
-function processExtraFile(id) {
-  let crDir = OS.Path.join(OS.Constants.Path.userApplicationDataDir,
-                           "Crash Reports");
-  let pendingDumpsDir = OS.Path.join(crDir, "pending");
-  let extraPath = OS.Path.join(pendingDumpsDir, id + ".extra");
-
-  return Task.spawn(function* () {
-    try {
-      let decoder = new TextDecoder();
-      let extraFile = yield OS.File.read(extraPath);
-      let extraData = decoder.decode(extraFile);
-
-      return parseKeyValuePairs(extraData);
-    } catch (e) {
-      Cu.reportError(e);
-    }
-
-    return {};
-  });
-}
 
 
 
@@ -90,13 +55,7 @@ CrashService.prototype = Object.freeze({
       throw new Error("Unrecognized CRASH_TYPE: " + crashType);
     }
 
-    AsyncShutdown.profileBeforeChange.addBlocker(
-      "CrashService waiting for content crash ping to be sent",
-      processExtraFile(id).then(metadata => {
-        return Services.crashmanager.addCrash(processType, crashType, id,
-                                              new Date(), metadata)
-      })
-    );
+    Services.crashmanager.addCrash(processType, crashType, id, new Date());
   },
 
   observe: function(subject, topic, data) {
