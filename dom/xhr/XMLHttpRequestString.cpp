@@ -5,7 +5,6 @@
 
 
 #include "XMLHttpRequestString.h"
-#include "mozilla/Mutex.h"
 #include "nsISupportsImpl.h"
 #include "mozilla/dom/DOMString.h"
 

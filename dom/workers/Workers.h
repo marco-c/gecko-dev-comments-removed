@@ -384,14 +384,6 @@ GetWorkerCrossThreadDispatcher(JSContext* aCx, const JS::Value& aWorker);
 
 const uint32_t kJSPrincipalsDebugToken = 0x7e2df9d2;
 
-namespace exceptions {
-
-
-void
-ThrowDOMExceptionForNSResult(JSContext* aCx, nsresult aNSResult);
-
-} 
-
 bool
 IsWorkerGlobal(JSObject* global);
 
