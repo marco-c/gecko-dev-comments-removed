@@ -6145,6 +6145,9 @@ AddGenConPseudoToFrame(nsIFrame* aOwnerFrame, nsIContent* aContent)
   NS_ASSERTION(nsLayoutUtils::IsFirstContinuationOrIBSplitSibling(aOwnerFrame),
                "property should only be set on first continuation/ib-sibling");
 
+  
+  
+
   FrameProperties props = aOwnerFrame->Properties();
   nsIFrame::ContentArray* value = props.Get(nsIFrame::GenConProperty());
   if (!value) {
@@ -6406,7 +6409,7 @@ AdjustAppendParentForAfterContent(nsFrameManager* aFrameManager,
   
   
   
-  if (aParentFrame->GetGenConPseudos() ||
+  if (aParentFrame->Properties().Get(nsIFrame::GenConProperty()) ||
       nsLayoutUtils::HasPseudoStyle(aContainer, aParentFrame->StyleContext(),
                                     CSSPseudoElementType::after,
                                     aParentFrame->PresContext()) ||
@@ -8539,25 +8542,23 @@ nsCSSFrameConstructor::ContentRemoved(nsIContent*  aContainer,
   MOZ_ASSERT(!childFrame || !GetDisplayContentsStyleFor(aChild),
              "display:contents nodes shouldn't have a frame");
   if (!childFrame && GetDisplayContentsStyleFor(aChild)) {
-    nsIFrame* ancestorFrame = nullptr;
     nsIContent* ancestor = aContainer;
-    for (; ancestor; ancestor = ancestor->GetParent()) {
-      ancestorFrame = ancestor->GetPrimaryFrame();
-      if (ancestorFrame) {
-        break;
-      }
+    while (!ancestor->GetPrimaryFrame()) {
+      
+      ancestor = ancestor->GetParent();
+      MOZ_ASSERT(ancestor, "we can't have a display: contents subtree root!");
     }
-    if (ancestorFrame) {
-      nsTArray<nsIContent*>* generated = ancestorFrame->GetGenConPseudos();
-      if (generated) {
-        *aDidReconstruct = true;
-        LAYOUT_PHASE_TEMP_EXIT();
-        
-        
-        RecreateFramesForContent(ancestor, false, aFlags, aDestroyedFramesFor);
-        LAYOUT_PHASE_TEMP_REENTER();
-        return;
-      }
+
+    nsIFrame* ancestorFrame = ancestor->GetPrimaryFrame();
+    if (ancestorFrame->Properties().Get(nsIFrame::GenConProperty())) {
+      *aDidReconstruct = true;
+      LAYOUT_PHASE_TEMP_EXIT();
+
+      
+      
+      RecreateFramesForContent(ancestor, false, aFlags, aDestroyedFramesFor);
+      LAYOUT_PHASE_TEMP_REENTER();
+      return;
     }
 
     FlattenedChildIterator iter(aChild);

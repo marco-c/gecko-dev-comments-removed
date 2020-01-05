@@ -1180,10 +1180,6 @@ public:
     return GetBidiData().embeddingLevel;
   }
 
-  nsTArray<nsIContent*>* GetGenConPseudos() {
-    return Properties().Get(GenConProperty());
-  }
-
   
 
 

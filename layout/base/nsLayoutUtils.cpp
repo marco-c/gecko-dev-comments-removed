@@ -1589,33 +1589,9 @@ nsLayoutUtils::GetChildListNameFor(nsIFrame* aChildFrame)
 nsLayoutUtils::GetBeforeFrameForContent(nsIFrame* aFrame,
                                         const nsIContent* aContent)
 {
-  
-  
-  nsContainerFrame* genConParentFrame =
-    FirstContinuationOrIBSplitSibling(aFrame)->GetContentInsertionFrame();
-  if (!genConParentFrame) {
-    return nullptr;
-  }
-  nsTArray<nsIContent*>* prop = genConParentFrame->GetGenConPseudos();
-  if (prop) {
-    const nsTArray<nsIContent*>& pseudos(*prop);
-    for (uint32_t i = 0; i < pseudos.Length(); ++i) {
-      if (pseudos[i]->GetParent() == aContent &&
-          pseudos[i]->NodeInfo()->NameAtom() == nsGkAtoms::mozgeneratedcontentbefore) {
-        return pseudos[i]->GetPrimaryFrame();
-      }
-    }
-  }
-  
-  
-  
-  nsIFrame* childFrame = genConParentFrame->PrincipalChildList().FirstChild();
-  if (childFrame &&
-      childFrame->IsPseudoFrame(aContent) &&
-      !childFrame->IsGeneratedContentFrame()) {
-    return GetBeforeFrameForContent(childFrame, aContent);
-  }
-  return nullptr;
+  auto* pseudo =
+    static_cast<Element*>(aContent->GetProperty(nsGkAtoms::beforePseudoProperty));
+  return pseudo ? pseudo->GetPrimaryFrame() : nullptr;
 }
 
  nsIFrame*
@@ -1628,41 +1604,9 @@ nsLayoutUtils::GetBeforeFrame(nsIFrame* aFrame)
 nsLayoutUtils::GetAfterFrameForContent(nsIFrame* aFrame,
                                        const nsIContent* aContent)
 {
-  
-  
-  nsContainerFrame* genConParentFrame =
-    FirstContinuationOrIBSplitSibling(aFrame)->GetContentInsertionFrame();
-  if (!genConParentFrame) {
-    return nullptr;
-  }
-  nsTArray<nsIContent*>* prop = genConParentFrame->GetGenConPseudos();
-  if (prop) {
-    const nsTArray<nsIContent*>& pseudos(*prop);
-    for (uint32_t i = 0; i < pseudos.Length(); ++i) {
-      if (pseudos[i]->GetParent() == aContent &&
-          pseudos[i]->NodeInfo()->NameAtom() == nsGkAtoms::mozgeneratedcontentafter) {
-        return pseudos[i]->GetPrimaryFrame();
-      }
-    }
-  }
-  
-  
-  
-  genConParentFrame = aFrame->GetContentInsertionFrame();
-  if (!genConParentFrame) {
-    return nullptr;
-  }
-  nsIFrame* lastParentContinuation =
-    LastContinuationWithChild(static_cast<nsContainerFrame*>(
-      LastContinuationOrIBSplitSibling(genConParentFrame)));
-  nsIFrame* childFrame =
-    lastParentContinuation->GetChildList(nsIFrame::kPrincipalList).LastChild();
-  if (childFrame &&
-      childFrame->IsPseudoFrame(aContent) &&
-      !childFrame->IsGeneratedContentFrame()) {
-    return GetAfterFrameForContent(childFrame->FirstContinuation(), aContent);
-  }
-  return nullptr;
+  auto* pseudo =
+    static_cast<Element*>(aContent->GetProperty(nsGkAtoms::afterPseudoProperty));
+  return pseudo ? pseudo->GetPrimaryFrame() : nullptr;
 }
 
  nsIFrame*
