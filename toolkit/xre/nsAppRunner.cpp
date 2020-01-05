@@ -3445,7 +3445,8 @@ XREMain::XRE_mainInit(bool* aExitFlag)
 
       
       
-      LPCWSTR choices[] = {L"Update Signature", L"Update Revision"};
+      
+      LPCWSTR choices[] = {L"Update Signature", L"Update Revision", L"CurrentPatchLevel"};
       for (size_t oneChoice=0; oneChoice<ArrayLength(choices); oneChoice++) {
         if (RegQueryValueExW(key, choices[oneChoice],
                              0, &vtype,
