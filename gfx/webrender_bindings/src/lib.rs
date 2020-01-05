@@ -2,6 +2,8 @@
 
 
 
+#![deny(warnings)]
+
 extern crate webrender;
 extern crate webrender_traits;
 extern crate euclid;
