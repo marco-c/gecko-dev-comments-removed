@@ -2,8 +2,8 @@
 
 
 
-use dom::bindings::codegen::InheritTypes::XMLHttpRequestUploadDerived;
 use dom::bindings::codegen::Bindings::XMLHttpRequestUploadBinding;
+use dom::bindings::codegen::InheritTypes::XMLHttpRequestUploadDerived;
 use dom::bindings::global::GlobalRef;
 use dom::bindings::js::Root;
 use dom::bindings::utils::reflect_dom_object;

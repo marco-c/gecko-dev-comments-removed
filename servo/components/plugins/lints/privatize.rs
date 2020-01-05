@@ -2,10 +2,10 @@
 
 
 
-use syntax::{ast, ast_util};
+use rustc::lint::{Context, LintPass, LintArray};
 use syntax::ast::Public;
 use syntax::attr::AttrMetaMethods;
-use rustc::lint::{Context, LintPass, LintArray};
+use syntax::{ast, ast_util};
 
 declare_lint!(PRIVATIZE, Deny,
               "Allows to enforce private fields for struct definitions");

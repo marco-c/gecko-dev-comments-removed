@@ -2,14 +2,14 @@
 
 
 
+use rand;
+use rand::Rng;
 use std::collections::HashMap;
 use std::collections::hash_map::Entry::{Occupied, Vacant};
 use std::collections::hash_state::DefaultState;
-use rand::Rng;
-use std::hash::{Hash, Hasher, SipHasher};
-use rand;
-use std::slice::Iter;
 use std::default::Default;
+use std::hash::{Hash, Hasher, SipHasher};
+use std::slice::Iter;
 
 
 pub struct HashCache<K, V> {

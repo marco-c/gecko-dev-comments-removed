@@ -2,9 +2,9 @@
 
 
 
-use std::sync::atomic::{AtomicUsize, ATOMIC_USIZE_INIT, Ordering};
-use std::rc::Rc;
 use std::cell::RefCell;
+use std::rc::Rc;
+use std::sync::atomic::{AtomicUsize, ATOMIC_USIZE_INIT, Ordering};
 
 static mut next_tid: AtomicUsize = ATOMIC_USIZE_INIT;
 

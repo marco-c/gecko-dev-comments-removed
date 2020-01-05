@@ -2,8 +2,8 @@
 
 
 
-use syntax::ast;
 use rustc::lint::{Context, LintPass, LintArray};
+use syntax::ast;
 use utils::match_ty_unwrap;
 
 declare_lint!(BANNED_TYPE, Deny,

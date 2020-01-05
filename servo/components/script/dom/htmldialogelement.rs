@@ -2,10 +2,10 @@
 
 
 
+use dom::bindings::cell::DOMRefCell;
 use dom::bindings::codegen::Bindings::HTMLDialogElementBinding;
 use dom::bindings::codegen::Bindings::HTMLDialogElementBinding::HTMLDialogElementMethods;
 use dom::bindings::codegen::InheritTypes::HTMLDialogElementDerived;
-use dom::bindings::cell::DOMRefCell;
 use dom::bindings::js::Root;
 use dom::document::Document;
 use dom::element::ElementTypeId;

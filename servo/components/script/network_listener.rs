@@ -2,8 +2,8 @@
 
 
 
-use script_task::{ScriptChan, Runnable, CommonScriptMsg};
 use net_traits::{AsyncResponseListener, ResponseAction};
+use script_task::{ScriptChan, Runnable, CommonScriptMsg};
 use std::sync::{Arc, Mutex};
 
 

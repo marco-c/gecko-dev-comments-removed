@@ -2,13 +2,13 @@
 
 
 
+use dom::bindings::cell::DOMRefCell;
 use dom::bindings::codegen::Bindings::CryptoBinding;
 use dom::bindings::codegen::Bindings::CryptoBinding::CryptoMethods;
 use dom::bindings::error::{Error, Fallible};
 use dom::bindings::global::GlobalRef;
 use dom::bindings::js::Root;
 use dom::bindings::utils::{Reflector, reflect_dom_object};
-use dom::bindings::cell::DOMRefCell;
 
 use js::jsapi::{JSContext, JSObject};
 use js::jsapi::{JS_GetObjectAsArrayBufferView, JS_GetArrayBufferViewType, Type};

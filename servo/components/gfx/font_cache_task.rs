@@ -2,11 +2,11 @@
 
 
 
+use platform::font_context::FontContextHandle;
 use platform::font_list::get_available_families;
+use platform::font_list::get_last_resort_font_families;
 use platform::font_list::get_system_default_family;
 use platform::font_list::get_variations_for_family;
-use platform::font_list::get_last_resort_font_families;
-use platform::font_context::FontContextHandle;
 
 use font_template::{FontTemplate, FontTemplateDescriptor};
 use net_traits::{ResourceTask, load_whole_resource};

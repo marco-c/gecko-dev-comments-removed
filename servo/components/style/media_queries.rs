@@ -2,8 +2,8 @@
 
 
 
-use std::ascii::AsciiExt;
 use cssparser::{Token, Parser, Delimiter};
+use std::ascii::AsciiExt;
 
 use euclid::size::{Size2D, TypedSize2D};
 use properties::longhands;

@@ -2,10 +2,10 @@
 
 
 
+use net_traits::{IncludeSubdomains, IPV4_REGEX, IPV6_REGEX};
 use rustc_serialize::json::{decode};
 use time;
 use url::Url;
-use net_traits::{IncludeSubdomains, IPV4_REGEX, IPV6_REGEX};
 
 use std::str::{from_utf8};
 

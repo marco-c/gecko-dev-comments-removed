@@ -2,9 +2,9 @@
 
 
 
-use syntax::{ast, ast_util};
 use rustc::lint::{Context, LintPass, LintArray, Level};
 use rustc::middle::def;
+use syntax::{ast, ast_util};
 
 use utils::match_lang_ty;
 

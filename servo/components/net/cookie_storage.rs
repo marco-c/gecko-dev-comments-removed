@@ -5,10 +5,10 @@
 
 
 
-use net_traits::CookieSource;
-use url::Url;
 use cookie::Cookie;
+use net_traits::CookieSource;
 use std::cmp::Ordering;
+use url::Url;
 
 pub struct CookieStorage {
     cookies: Vec<Cookie>

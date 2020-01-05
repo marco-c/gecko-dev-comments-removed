@@ -2,9 +2,9 @@
 
 
 
+use rustc::lint::{Context, LintPass, LintArray};
 use syntax::ast;
 use syntax::attr::AttrMetaMethods;
-use rustc::lint::{Context, LintPass, LintArray};
 
 declare_lint!(TRANSMUTE_TYPE_LINT, Allow,
               "Warn and report types being transmuted");

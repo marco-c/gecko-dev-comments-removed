@@ -2,13 +2,13 @@
 
 
 
+use devtools_traits::{ConsoleMessage, LogLevel, ScriptToDevtoolsControlMsg};
 use dom::bindings::codegen::Bindings::ConsoleBinding;
 use dom::bindings::codegen::Bindings::ConsoleBinding::ConsoleMethods;
 use dom::bindings::global::{GlobalRef, GlobalField};
 use dom::bindings::js::Root;
 use dom::bindings::utils::{Reflector, reflect_dom_object};
 use dom::window::WindowHelpers;
-use devtools_traits::{ConsoleMessage, LogLevel, ScriptToDevtoolsControlMsg};
 use util::str::DOMString;
 
 

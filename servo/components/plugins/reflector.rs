@@ -2,10 +2,10 @@
 
 
 
-use syntax::ext::base::{Annotatable, ExtCtxt};
-use syntax::codemap::Span;
-use syntax::ast::MetaItem;
 use syntax::ast;
+use syntax::ast::MetaItem;
+use syntax::codemap::Span;
+use syntax::ext::base::{Annotatable, ExtCtxt};
 use utils::match_ty_unwrap;
 
 

@@ -2,11 +2,11 @@
 
 
 
-use url::Url;
-use hyper::status::StatusCode;
 use hyper::header::Headers;
+use hyper::status::StatusCode;
 use std::ascii::AsciiExt;
 use std::sync::mpsc::Receiver;
+use url::Url;
 
 
 #[derive(Clone, PartialEq, Copy)]

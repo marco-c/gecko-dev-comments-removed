@@ -2,12 +2,12 @@
 
 
 
-use syntax::{ast, codemap, visit};
-use syntax::attr::AttrMetaMethods;
 use rustc::ast_map;
 use rustc::lint::{Context, LintPass, LintArray};
-use rustc::middle::ty;
 use rustc::middle::astconv_util::ast_ty_to_prim_ty;
+use rustc::middle::ty;
+use syntax::attr::AttrMetaMethods;
+use syntax::{ast, codemap, visit};
 use utils::{match_def_path, unsafe_context};
 
 declare_lint!(UNROOTED_MUST_ROOT, Deny,

@@ -3,8 +3,8 @@
 
 
 use cssparser::Parser;
-use euclid::size::Size2D;
 use euclid::scale_factor::ScaleFactor;
+use euclid::size::Size2D;
 use style::media_queries::{Device, MediaType};
 use style::parser::ParserContext;
 use style::stylesheets::{Origin, Stylesheet, CSSRuleIteratorExt};

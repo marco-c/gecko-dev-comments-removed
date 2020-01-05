@@ -2,24 +2,24 @@
 
 
 
-use dom::bindings::codegen::Bindings::EventBinding::EventMethods;
 use dom::bindings::codegen::Bindings::ErrorEventBinding;
 use dom::bindings::codegen::Bindings::ErrorEventBinding::ErrorEventMethods;
+use dom::bindings::codegen::Bindings::EventBinding::EventMethods;
 use dom::bindings::codegen::InheritTypes::{EventCast, ErrorEventDerived};
 use dom::bindings::error::Fallible;
 use dom::bindings::global::GlobalRef;
 use dom::bindings::js::{Root, MutHeapJSVal};
-use js::jsapi::{JSContext, HandleValue};
 use dom::bindings::trace::JSTraceable;
+use js::jsapi::{JSContext, HandleValue};
 
 use dom::bindings::utils::reflect_dom_object;
 use dom::event::{Event, EventTypeId, EventBubbles, EventCancelable};
 use util::str::DOMString;
 
 use dom::bindings::cell::DOMRefCell;
+use js::jsval::JSVal;
 use std::borrow::ToOwned;
 use std::cell::Cell;
-use js::jsval::JSVal;
 
 #[dom_struct]
 #[derive(HeapSizeOf)]

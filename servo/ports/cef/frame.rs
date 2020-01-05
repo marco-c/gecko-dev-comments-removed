@@ -2,10 +2,10 @@
 
 
 
+use browser::ServoCefBrowserExtensions;
 use eutil::Downcast;
 use interfaces::{CefBrowser, CefFrame, CefStringVisitor, cef_frame_t, cef_string_visitor_t};
 use types::{cef_string_t, cef_string_userfree_t};
-use browser::ServoCefBrowserExtensions;
 
 use compositing::windowing::WindowEvent;
 use std::cell::RefCell;

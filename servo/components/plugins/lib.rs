@@ -28,8 +28,8 @@ use rustc::lint::LintPassObject;
 use rustc::plugin::Registry;
 use syntax::ext::base::*;
 
-use syntax::parse::token::intern;
 use syntax::feature_gate::AttributeType::Whitelisted;
+use syntax::parse::token::intern;
 
 
 

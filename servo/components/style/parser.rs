@@ -3,10 +3,10 @@
 
 
 
-use selectors::parser::ParserContext as SelectorParserContext;
 use cssparser::{Parser, SourcePosition};
-use url::{Url, UrlParser};
 use log;
+use selectors::parser::ParserContext as SelectorParserContext;
+use url::{Url, UrlParser};
 
 use stylesheets::Origin;
 

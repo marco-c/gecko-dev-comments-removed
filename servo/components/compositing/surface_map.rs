@@ -2,10 +2,10 @@
 
 
 
-use std::collections::HashMap;
-use std::collections::hash_map::Entry::{Occupied, Vacant};
 use euclid::size::Size2D;
 use layers::platform::surface::{NativeDisplay, NativeSurface};
+use std::collections::HashMap;
+use std::collections::hash_map::Entry::{Occupied, Vacant};
 use std::hash::{Hash, Hasher};
 
 

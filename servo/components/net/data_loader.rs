@@ -2,17 +2,17 @@
 
 
 
-use net_traits::{LoadData, Metadata, LoadConsumer};
-use net_traits::ProgressMsg::{Payload, Done};
 use mime_classifier::MIMEClassifier;
+use net_traits::ProgressMsg::{Payload, Done};
+use net_traits::{LoadData, Metadata, LoadConsumer};
 use resource_task::start_sending;
 
 use rustc_serialize::base64::FromBase64;
 
 use hyper::mime::Mime;
 use std::sync::Arc;
-use url::percent_encoding::percent_decode;
 use url::SchemeData;
+use url::percent_encoding::percent_decode;
 
 pub fn factory(load_data: LoadData, senders: LoadConsumer, _classifier: Arc<MIMEClassifier>) {
     

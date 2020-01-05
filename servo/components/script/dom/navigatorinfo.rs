@@ -2,8 +2,8 @@
 
 
 
-use util::str::DOMString;
 use util::opts;
+use util::str::DOMString;
 
 use std::borrow::ToOwned;
 

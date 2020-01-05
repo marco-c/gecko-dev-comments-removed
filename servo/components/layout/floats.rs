@@ -2,14 +2,14 @@
 
 
 
+use std::cmp::{max, min};
+use std::fmt;
+use std::i32;
+use style::computed_values::float;
 use util::geometry::Au;
 use util::logical_geometry::WritingMode;
 use util::logical_geometry::{LogicalRect, LogicalSize};
 use util::persistent_list::PersistentList;
-use std::cmp::{max, min};
-use std::i32;
-use std::fmt;
-use style::computed_values::float;
 
 
 #[derive(Clone, RustcEncodable, Debug, Copy)]

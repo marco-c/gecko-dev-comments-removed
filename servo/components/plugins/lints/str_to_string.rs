@@ -2,9 +2,9 @@
 
 
 
-use syntax::ast;
 use rustc::lint::{Context, LintPass, LintArray};
 use rustc::middle::ty;
+use syntax::ast;
 
 declare_lint!(STR_TO_STRING, Deny,
               "Warn when a String could use to_owned() instead of to_string()");

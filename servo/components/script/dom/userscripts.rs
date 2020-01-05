@@ -2,18 +2,18 @@
 
 
 
-use dom::bindings::codegen::Bindings::NodeBinding::NodeMethods;
 use dom::bindings::codegen::Bindings::DocumentBinding::DocumentMethods;
+use dom::bindings::codegen::Bindings::NodeBinding::NodeMethods;
 use dom::bindings::codegen::InheritTypes::NodeCast;
 use dom::bindings::js::{RootedReference};
 use dom::element::AttributeHandlers;
 use dom::htmlheadelement::HTMLHeadElement;
 use dom::node::NodeHelpers;
-use util::opts;
-use util::resource_files::resources_dir_path;
 use std::borrow::ToOwned;
 use std::fs::read_dir;
 use std::path::PathBuf;
+use util::opts;
+use util::resource_files::resources_dir_path;
 
 
 pub fn load_script(head: &HTMLHeadElement) {

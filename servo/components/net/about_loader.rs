@@ -2,16 +2,16 @@
 
 
 
-use net_traits::{LoadData, Metadata, LoadConsumer};
-use net_traits::ProgressMsg::Done;
-use mime_classifier::MIMEClassifier;
-use resource_task::start_sending;
 use file_loader;
+use mime_classifier::MIMEClassifier;
+use net_traits::ProgressMsg::Done;
+use net_traits::{LoadData, Metadata, LoadConsumer};
+use resource_task::start_sending;
 
-use url::Url;
 use hyper::header::ContentType;
 use hyper::http::RawStatus;
 use hyper::mime::{Mime, TopLevel, SubLevel};
+use url::Url;
 use util::resource_files::resources_dir_path;
 
 use std::fs::PathExt;

@@ -3,8 +3,8 @@
 
 
 use font::FontHandleMethods;
-use platform::font_context::FontContextHandle;
 use platform::font::FontHandle;
+use platform::font_context::FontContextHandle;
 use platform::font_template::FontTemplateData;
 use string_cache::Atom;
 
