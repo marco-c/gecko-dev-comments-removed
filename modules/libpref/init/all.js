@@ -2915,6 +2915,8 @@ pref("dom.ipc.plugins.asyncdrawing.enabled", false);
 #else
 
 pref("dom.ipc.plugins.asyncdrawing.enabled", true);
+
+pref("dom.ipc.plugins.forcedirect.enabled", true);
 #endif
 
 #ifdef NIGHTLY_BUILD
