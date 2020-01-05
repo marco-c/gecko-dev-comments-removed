@@ -1581,6 +1581,12 @@ pref("browser.crashReports.unsubmittedCheck.enabled", false);
 pref("browser.crashReports.unsubmittedCheck.chancesUntilSuppress", 4);
 pref("browser.crashReports.unsubmittedCheck.autoSubmit", false);
 
+#ifdef NIGHTLY_BUILD
+
+
+pref("services.sync.validation.enabled", true);
+#endif
+
 
 pref("browser.formautofill.experimental", false);
 pref("browser.formautofill.enabled", false);
