@@ -737,6 +737,10 @@ protected:
   bool mServiceWorkersTestingEnabled;
 
   mozilla::dom::LargeAllocStatus mLargeAllocStatus; 
+
+  
+  
+  bool mShouldResumeOnFirstActiveMediaComponent;
 };
 
 #define NS_PIDOMWINDOWINNER_IID \
