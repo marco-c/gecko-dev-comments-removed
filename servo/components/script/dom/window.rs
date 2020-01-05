@@ -126,6 +126,81 @@ pub struct TimerData {
     pub funval: Traceable<JSVal>,
 }
 
+
+pub fn base64_btoa(btoa: DOMString) -> Fallible<DOMString> {
+    let input = btoa.as_slice();
+    
+    
+    
+    if input.chars().any(|c: char| c > '\u00FF') {
+        Err(InvalidCharacter)
+    } else {
+        
+        
+        
+        
+        let octets = input.chars().map(|c: char| c as u8).collect::<Vec<u8>>();
+
+        
+        
+        Ok(octets.as_slice().to_base64(STANDARD))
+    }
+}
+
+
+pub fn base64_atob(atob: DOMString) -> Fallible<DOMString> {
+    
+    let mut input = atob.as_slice();
+
+    
+    
+    
+    
+    fn is_html_space(c: char) -> bool {
+        HTML_SPACE_CHARACTERS.iter().any(|&m| m == c)
+    }
+    let without_spaces = input.chars()
+        .filter(|&c| ! is_html_space(c))
+        .collect::<String>();
+    input = without_spaces.as_slice();
+
+    
+    
+    
+    if input.len() % 4 == 0 {
+        if input.ends_with("==") {
+            input = input.slice_to(input.len() - 2)
+        } else if input.ends_with("=") {
+            input = input.slice_to(input.len() - 1)
+        }
+    }
+
+    
+    
+    if input.len() % 4 == 1 {
+        return Err(InvalidCharacter)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    if input.chars()
+        .find(|&c| !(c == '+' || c == '/' || c.is_alphanumeric()))
+        .is_some() {
+            return Err(InvalidCharacter)
+        }
+
+    match input.from_base64() {
+        Ok(data) => Ok(data.iter().map(|&b| b as char).collect::<String>()),
+        Err(..) => Err(InvalidCharacter)
+    }
+}
+
+
 impl<'a> WindowMethods for JSRef<'a, Window> {
     fn Alert(&self, s: DOMString) {
         
@@ -273,78 +348,12 @@ impl<'a> WindowMethods for JSRef<'a, Window> {
         }
     }
 
-    
     fn Btoa(&self, btoa: DOMString) -> Fallible<DOMString> {
-        let input = btoa.as_slice();
-        
-        
-        
-        if input.chars().any(|c: char| c > '\u00FF') {
-            Err(InvalidCharacter)
-        } else {
-            
-            
-            
-            
-            let octets = input.chars().map(|c: char| c as u8).collect::<Vec<u8>>();
-
-            
-            
-            Ok(octets.as_slice().to_base64(STANDARD))
-        }
+        base64_btoa(btoa)
     }
 
-    
     fn Atob(&self, atob: DOMString) -> Fallible<DOMString> {
-        
-        let mut input = atob.as_slice();
-
-        
-        
-        
-        
-        fn is_html_space(c: char) -> bool {
-            HTML_SPACE_CHARACTERS.iter().any(|&m| m == c)
-        }
-        let without_spaces = input.chars()
-                                  .filter(|&c| ! is_html_space(c))
-                                  .collect::<String>();
-        input = without_spaces.as_slice();
-
-        
-        
-        
-        if input.len() % 4 == 0 {
-            if input.ends_with("==") {
-                input = input.slice_to(input.len() - 2)
-            } else if input.ends_with("=") {
-                input = input.slice_to(input.len() - 1)
-            }
-        }
-
-        
-        
-        if input.len() % 4 == 1 {
-            return Err(InvalidCharacter)
-        }
-
-        
-        
-        
-        
-        
-        
-        
-        if input.chars()
-                .find(|&c| !(c == '+' || c == '/' || c.is_alphanumeric()))
-                .is_some() {
-            return Err(InvalidCharacter)
-        }
-
-        match input.from_base64() {
-            Ok(data) => Ok(data.iter().map(|&b| b as char).collect::<String>()),
-            Err(..) => Err(InvalidCharacter)
-        }
+        base64_atob(atob)
     }
 }
 
