@@ -2974,55 +2974,61 @@ ServiceWorkerManager::GetAllClients(nsIPrincipal* aPrincipal,
     return;
   }
 
-  
-  AutoTArray<nsCOMPtr<nsIDocument>, 32> docList;
-  bool loop = true;
-  while (NS_SUCCEEDED(enumerator->HasMoreElements(&loop)) && loop) {
-    nsCOMPtr<nsISupports> ptr;
-    rv = enumerator->GetNext(getter_AddRefs(ptr));
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      continue;
-    }
-
-    nsCOMPtr<nsIDocument> doc = do_QueryInterface(ptr);
-    if (!doc || !doc->GetWindow()) {
-      continue;
+  auto ProcessDocument = [&aDocuments](nsIPrincipal* aPrincipal, nsIDocument* aDoc) {
+    if (!aDoc || !aDoc->GetWindow()) {
+      return;
     }
 
     bool equals = false;
-    Unused << aPrincipal->Equals(doc->NodePrincipal(), &equals);
+    aPrincipal->Equals(aDoc->NodePrincipal(), &equals);
     if (!equals) {
-      continue;
+      return;
     }
 
     
     
-    if (!doc->GetWindow()->GetServiceWorkersTestingEnabled() &&
+    if (!aDoc->GetWindow()->GetServiceWorkersTestingEnabled() &&
         !Preferences::GetBool("dom.serviceWorkers.testing.enabled") &&
-        !IsFromAuthenticatedOrigin(doc)) {
-      continue;
+        !IsFromAuthenticatedOrigin(aDoc)) {
+      return;
     }
 
-    if (!aIncludeUncontrolled && !mControlledDocuments.Contains(doc)) {
-      continue;
+    ServiceWorkerClientInfo clientInfo(aDoc);
+    aDocuments.AppendElement(aDoc);
+  };
+
+  
+  
+  
+  
+  if (aIncludeUncontrolled) {
+    bool loop = true;
+    while (NS_SUCCEEDED(enumerator->HasMoreElements(&loop)) && loop) {
+      nsCOMPtr<nsISupports> ptr;
+      rv = enumerator->GetNext(getter_AddRefs(ptr));
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        continue;
+      }
+
+      nsCOMPtr<nsIDocument> doc = do_QueryInterface(ptr);
+      ProcessDocument(aPrincipal, doc);
     }
+  } else {
+    for (auto iter = mControlledDocuments.Iter(); !iter.Done(); iter.Next()) {
+      ServiceWorkerRegistrationInfo* thisRegistration = iter.UserData();
+      MOZ_ASSERT(thisRegistration);
+      if (!registration->mScope.Equals(thisRegistration->mScope)) {
+        continue;
+      }
 
-    docList.AppendElement(doc.forget());
+      nsCOMPtr<nsIDocument> doc = do_QueryInterface(iter.Key());
+
+      
+      MOZ_ASSERT(doc->GetWindow());
+
+      ProcessDocument(aPrincipal, doc);
+    }
   }
-
-  
-  
-  
-  docList.Reverse();
-
-  
-  uint32_t ordinal = 0;
-  for (uint32_t i = 0; i < docList.Length(); ++i) {
-    aDocuments.AppendElement(ServiceWorkerClientInfo(docList[i], ordinal));
-    ordinal += 1;
-  }
-
-  aDocuments.Sort();
 }
 
 void
