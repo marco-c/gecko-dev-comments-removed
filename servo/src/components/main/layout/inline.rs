@@ -3,21 +3,21 @@
 
 
 use css::node_style::StyledNode;
-use layout::box_::{Box, CannotSplit, GenericBox, IframeBox, ImageBox, ScannedTextBox};
-use layout::box_::{SplitDidFit, SplitDidNotFit, TableBox, TableCellBox, TableColumnBox};
-use layout::box_::{TableRowBox, TableWrapperBox, UnscannedTextBox};
+use layout::box_::{Box, CannotSplit, SplitDidFit, SplitDidNotFit};
 use layout::context::LayoutContext;
-use layout::display_list_builder::{DisplayListBuilder, DisplayListBuildingInfo};
 use layout::floats::{FloatLeft, Floats, PlacementInfo};
 use layout::flow::{BaseFlow, FlowClass, Flow, InlineFlowClass};
 use layout::flow;
 use layout::model::IntrinsicWidths;
 use layout::model;
+use layout::text;
 use layout::wrapper::ThreadSafeLayoutNode;
 
 use collections::{Deque, RingBuf};
 use geom::{Point2D, Rect, SideOffsets2D, Size2D};
-use gfx::display_list::{ContentLevel, StackingContext};
+use gfx::display_list::ContentLevel;
+use gfx::font::FontMetrics;
+use gfx::font_context::FontContext;
 use servo_util::geometry::Au;
 use servo_util::geometry;
 use servo_util::range::Range;
@@ -573,6 +573,14 @@ pub struct InlineFlow {
     
     
     pub lines: SmallVec0<LineBox>,
+
+    
+    
+    pub minimum_height_above_baseline: Au,
+
+    
+    
+    pub minimum_depth_below_baseline: Au,
 }
 
 impl InlineFlow {
@@ -581,6 +589,8 @@ impl InlineFlow {
             base: BaseFlow::new(node),
             boxes: boxes,
             lines: SmallVec0::new(),
+            minimum_height_above_baseline: Au(0),
+            minimum_depth_below_baseline: Au(0),
         }
     }
 
@@ -591,12 +601,9 @@ impl InlineFlow {
         self.boxes = InlineBoxes::new();
     }
 
-    pub fn build_display_list_inline(&mut self,
-                                     stacking_context: &mut StackingContext,
-                                     builder: &DisplayListBuilder,
-                                     info: &DisplayListBuildingInfo) {
+    pub fn build_display_list_inline(&mut self, layout_context: &LayoutContext) {
         let abs_rect = Rect(self.base.abs_position, self.base.position.size);
-        if !abs_rect.intersects(&builder.dirty) {
+        if !abs_rect.intersects(&layout_context.dirty) {
             return
         }
 
@@ -605,14 +612,15 @@ impl InlineFlow {
         debug!("Flow: building display list for {:u} inline boxes", self.boxes.len());
 
         for (fragment, context) in self.boxes.mut_iter() {
-            let rel_offset = fragment.relative_position(&info.relative_containing_block_size,
+            let rel_offset = fragment.relative_position(&self.base
+                                                             .absolute_position_info
+                                                             .relative_containing_block_size,
                                                         Some(context));
-            fragment.build_display_list(stacking_context,
-                                        builder,
-                                        info,
-                                        self.base.abs_position + rel_offset,
-                                        ContentLevel,
-                                        Some(context));
+            drop(fragment.build_display_list(&mut self.base.display_list,
+                                             layout_context,
+                                             self.base.abs_position + rel_offset,
+                                             ContentLevel,
+                                             Some(context)));
         }
 
         
@@ -626,66 +634,67 @@ impl InlineFlow {
     
     
     
-    fn relative_offset_from_baseline(cur_box: &Box,
-                                     ascent: Au,
-                                     parent_text_top: Au,
-                                     parent_text_bottom: Au,
-                                     top_from_base: &mut Au,
-                                     bottom_from_base: &mut Au,
-                                     biggest_top: &mut Au,
-                                     biggest_bottom: &mut Au)
-                                     -> (Au, bool) {
-        match cur_box.vertical_align() {
+    
+    fn distance_from_baseline(fragment: &Box,
+                              ascent: Au,
+                              parent_text_top: Au,
+                              parent_text_bottom: Au,
+                              height_above_baseline: &mut Au,
+                              depth_below_baseline: &mut Au,
+                              largest_height_for_top_fragments: &mut Au,
+                              largest_height_for_bottom_fragments: &mut Au)
+                              -> (Au, bool) {
+        match fragment.vertical_align() {
             vertical_align::baseline => (-ascent, false),
             vertical_align::middle => {
                 
-                let xheight = Au::new(0);
-                (-(xheight + cur_box.content_height()).scale_by(0.5), false)
+                let xheight = Au(0);
+                (-(xheight + fragment.content_height()).scale_by(0.5), false)
             },
             vertical_align::sub => {
                 
                 
-                let sub_offset = Au::new(0);
+                let sub_offset = Au(0);
                 (sub_offset - ascent, false)
             },
             vertical_align::super_ => {
                 
                 
-                let super_offset = Au::new(0);
+                let super_offset = Au(0);
                 (-super_offset - ascent, false)
             },
             vertical_align::text_top => {
-                let box_height = *top_from_base + *bottom_from_base;
-                let prev_bottom_from_base = *bottom_from_base;
-                *top_from_base = parent_text_top;
-                *bottom_from_base = box_height - *top_from_base;
-                (*bottom_from_base - prev_bottom_from_base - ascent, false)
+                let box_height = *height_above_baseline + *depth_below_baseline;
+                let prev_depth_below_baseline = *depth_below_baseline;
+                *height_above_baseline = parent_text_top;
+                *depth_below_baseline = box_height - *height_above_baseline;
+                (*depth_below_baseline - prev_depth_below_baseline - ascent, false)
             },
             vertical_align::text_bottom => {
-                let box_height = *top_from_base + *bottom_from_base;
-                let prev_bottom_from_base = *bottom_from_base;
-                *bottom_from_base = parent_text_bottom;
-                *top_from_base = box_height - *bottom_from_base;
-                (*bottom_from_base - prev_bottom_from_base - ascent, false)
+                let box_height = *height_above_baseline + *depth_below_baseline;
+                let prev_depth_below_baseline = *depth_below_baseline;
+                *depth_below_baseline = parent_text_bottom;
+                *height_above_baseline = box_height - *depth_below_baseline;
+                (*depth_below_baseline - prev_depth_below_baseline - ascent, false)
             },
             vertical_align::top => {
-                if *biggest_top < (*top_from_base + *bottom_from_base) {
-                    *biggest_top = *top_from_base + *bottom_from_base;
-                }
-                let offset_top = *top_from_base - ascent;
+                *largest_height_for_top_fragments =
+                    Au::max(*largest_height_for_top_fragments,
+                            *height_above_baseline + *depth_below_baseline);
+                let offset_top = *height_above_baseline - ascent;
                 (offset_top, true)
             },
             vertical_align::bottom => {
-                if *biggest_bottom < (*top_from_base + *bottom_from_base) {
-                    *biggest_bottom = *top_from_base + *bottom_from_base;
-                }
-                let offset_bottom = -(*bottom_from_base + ascent);
+                *largest_height_for_bottom_fragments =
+                    Au::max(*largest_height_for_bottom_fragments,
+                            *height_above_baseline + *depth_below_baseline);
+                let offset_bottom = -(*depth_below_baseline + ascent);
                 (offset_bottom, true)
             },
             vertical_align::Length(length) => (-(length + ascent), false),
             vertical_align::Percentage(p) => {
-                let pt_size = cur_box.font_style().pt_size;
-                let line_height = cur_box.calculate_line_height(Au::from_pt(pt_size));
+                let pt_size = fragment.font_style().pt_size;
+                let line_height = fragment.calculate_line_height(Au::from_pt(pt_size));
                 let percent_offset = line_height.scale_by(p);
                 (-(percent_offset + ascent), false)
             }
@@ -718,6 +727,21 @@ impl InlineFlow {
             offset_x = offset_x + size.width;
         }
     }
+
+    
+    
+    
+    
+    pub fn compute_minimum_ascent_and_descent(&mut self,
+                                              font_context: &mut FontContext,
+                                              style: &ComputedValues) {
+        let font_style = text::computed_style_to_font_style(style);
+        let font_metrics = text::font_metrics_for_style(font_context, &font_style);
+        let line_height = text::line_height_from_style(style, style.Font.get().font_size);
+        let inline_metrics = InlineMetrics::from_font_metrics(&font_metrics, line_height);
+        self.minimum_height_above_baseline = inline_metrics.height_above_baseline;
+        self.minimum_depth_below_baseline = inline_metrics.depth_below_baseline;
+    }
 }
 
 impl Flow for InlineFlow {
@@ -734,12 +758,8 @@ impl Flow for InlineFlow {
     }
 
     fn bubble_widths(&mut self, _: &mut LayoutContext) {
-        let mut num_floats = 0;
-
         for kid in self.base.child_iter() {
-            let child_base = flow::mut_base(kid);
-            num_floats += child_base.num_floats;
-            child_base.floats = Floats::new();
+            flow::mut_base(kid).floats = Floats::new();
         }
 
         let mut intrinsic_widths = IntrinsicWidths::new();
@@ -754,7 +774,6 @@ impl Flow for InlineFlow {
         }
 
         self.base.intrinsic_widths = intrinsic_widths;
-        self.base.num_floats = num_floats;
     }
 
     
@@ -786,15 +805,6 @@ impl Flow for InlineFlow {
         
     }
 
-    fn assign_height_inorder(&mut self, ctx: &mut LayoutContext) {
-        for kid in self.base.child_iter() {
-            kid.assign_height_inorder(ctx);
-        }
-        self.assign_height(ctx);
-    }
-
-    
-    
     
     fn assign_height(&mut self, _: &mut LayoutContext) {
         debug!("assign_height_inline: assigning height for flow");
@@ -817,161 +827,128 @@ impl Flow for InlineFlow {
 
         let scanner_floats = self.base.floats.clone();
         let mut scanner = LineboxScanner::new(scanner_floats);
-
-        
         scanner.scan_for_lines(self);
-        let mut line_height_offset = Au::new(0);
 
         
         let text_align = self.base.flags.text_align();
 
         
+        let mut line_distance_from_flow_top = Au(0);
         for line in self.lines.mut_iter() {
             
             InlineFlow::set_horizontal_box_positions(&mut self.boxes, line, text_align);
 
             
             
-            line.bounds.origin.y = line.bounds.origin.y + line_height_offset;
+            line.bounds.origin.y = line_distance_from_flow_top;
 
             
-            let (mut topmost, mut bottommost) = (Au(0), Au(0));
+            let mut largest_height_above_baseline = self.minimum_height_above_baseline;
+            let mut largest_depth_below_baseline = self.minimum_depth_below_baseline;
+
             
             
-            let (mut biggest_top, mut biggest_bottom) = (Au(0), Au(0));
+            let (mut largest_height_for_top_fragments, mut largest_height_for_bottom_fragments) =
+                (Au(0), Au(0));
 
             for box_i in line.range.eachi() {
-                let cur_box = self.boxes.boxes.get_mut(box_i);
+                let fragment = self.boxes.boxes.get_mut(box_i);
 
-                let top = cur_box.border_padding.top;
+                let InlineMetrics {
+                    height_above_baseline: mut height_above_baseline,
+                    depth_below_baseline: mut depth_below_baseline,
+                    ascent
+                } = fragment.inline_metrics();
 
                 
-                let (top_from_base, bottom_from_base, ascent) = match cur_box.specific {
-                    ImageBox(_) => {
-                        let mut height = cur_box.content_height();
+                
+                
+                
+                
+                
+                
 
-                        
-                        
-                        let bottom = cur_box.border_padding.bottom;
-                        let noncontent_height = top + bottom;
-                        height = height + noncontent_height;
+                
+                
+                
+                
+                
+                let parent_text_top = fragment.style().Font.get().font_size;
 
-                        let ascent = height + bottom;
-                        (height, Au::new(0), ascent)
-                    },
-                    ScannedTextBox(ref text_box) => {
-                        let range = &text_box.range;
-                        let run = &text_box.run;
+                
+                
+                let parent_text_bottom = Au(0);
 
-                        
-                        let text_bounds = run.metrics_for_range(range).bounding_box;
-                        let em_size = text_bounds.size.height;
-                        let line_height = cur_box.calculate_line_height(em_size);
+                
+                
+                
+                
+                
+                let (distance_from_baseline, no_update_flag) =
+                    InlineFlow::distance_from_baseline(
+                        fragment,
+                        ascent,
+                        parent_text_top,
+                        parent_text_bottom,
+                        &mut height_above_baseline,
+                        &mut depth_below_baseline,
+                        &mut largest_height_for_top_fragments,
+                        &mut largest_height_for_bottom_fragments);
 
-                        
-                        
-                        let text_ascent = text_box.run.font_metrics.ascent;
+                
+                
+                if !no_update_flag {
+                    largest_height_above_baseline = Au::max(height_above_baseline,
+                                                            largest_height_above_baseline);
+                    largest_depth_below_baseline = Au::max(depth_below_baseline,
+                                                           largest_depth_below_baseline);
+                }
 
-                        
-                        let text_offset = text_ascent + (line_height - em_size).scale_by(0.5);
-                        text_bounds.translate(&Point2D(cur_box.border_box.origin.x, Au(0)));
+                
+                
+                fragment.border_box.origin.y = distance_from_baseline
+            }
 
-                        (text_offset, line_height - text_offset, text_ascent)
-                    },
-                    GenericBox | IframeBox(_) | TableBox | TableCellBox | TableRowBox |
-                    TableWrapperBox => {
-                        let height = cur_box.border_box.size.height;
-                        (height, Au::new(0), height)
-                    },
-                    TableColumnBox(_) => fail!("Table column boxes do not have height"),
-                    UnscannedTextBox(_) => {
-                        fail!("Unscanned text boxes should have been scanned by now.")
+            
+            
+            largest_height_above_baseline =
+                Au::max(largest_height_above_baseline,
+                        largest_height_for_bottom_fragments - largest_depth_below_baseline);
+
+            
+            
+            largest_depth_below_baseline =
+                Au::max(largest_depth_below_baseline,
+                        largest_height_for_top_fragments - largest_height_above_baseline);
+
+            
+            
+            let baseline_distance_from_top = largest_height_above_baseline;
+
+            
+            
+            for box_i in line.range.eachi() {
+                let fragment = self.boxes.get_mut(box_i);
+                match fragment.vertical_align() {
+                    vertical_align::top => {
+                        fragment.border_box.origin.y = fragment.border_box.origin.y +
+                            line_distance_from_flow_top
                     }
-                };
-
-                let mut top_from_base = top_from_base;
-                let mut bottom_from_base = bottom_from_base;
-
-                
-                
-                
-                
-                
-                
-                
-                
-
-                
-                
-                
-                
-                
-                let parent_text_top = cur_box.style().Font.get().font_size;
-
-                
-                
-                let parent_text_bottom = Au::new(0);
-
-                
-                
-                
-                
-                
-                let (offset, no_update_flag) =
-                    InlineFlow::relative_offset_from_baseline(cur_box,
-                                                              ascent,
-                                                              parent_text_top,
-                                                              parent_text_bottom,
-                                                              &mut top_from_base,
-                                                              &mut bottom_from_base,
-                                                              &mut biggest_top,
-                                                              &mut biggest_bottom);
-
-                
-                
-                if !no_update_flag && top_from_base > topmost {
-                    topmost = top_from_base;
+                    vertical_align::bottom => {
+                        fragment.border_box.origin.y = fragment.border_box.origin.y +
+                            line_distance_from_flow_top + baseline_distance_from_top +
+                            largest_depth_below_baseline
+                    }
+                    _ => {
+                        fragment.border_box.origin.y = fragment.border_box.origin.y +
+                            line_distance_from_flow_top + baseline_distance_from_top
+                    }
                 }
-                if !no_update_flag && bottom_from_base > bottommost {
-                    bottommost = bottom_from_base;
-                }
-
-                cur_box.border_box.origin.y = line.bounds.origin.y + offset + top;
             }
 
             
-            
-            let topmost_of_bottom = biggest_bottom - bottommost;
-            if topmost_of_bottom > topmost {
-                topmost = topmost_of_bottom;
-            }
-
-            
-            
-            let bottommost_of_top = biggest_top - topmost;
-            if bottommost_of_top > bottommost {
-                bottommost = bottommost_of_top;
-            }
-
-            
-            let baseline_offset = topmost;
-
-            
-            for box_i in line.range.eachi() {
-                let cur_box = self.boxes.get_mut(box_i);
-                let adjust_offset = match cur_box.vertical_align() {
-                    vertical_align::top => Au::new(0),
-                    vertical_align::bottom => baseline_offset + bottommost,
-                    _ => baseline_offset,
-                };
-
-                cur_box.border_box.origin.y = cur_box.border_box.origin.y + adjust_offset;
-            }
-
-            
-            line_height_offset = line_height_offset + topmost + bottommost -
-                line.bounds.size.height;
-            line.bounds.size.height = topmost + bottommost;
+            line.bounds.size.height = largest_height_above_baseline + largest_depth_below_baseline;
+            line_distance_from_flow_top = line_distance_from_flow_top + line.bounds.size.height;
         } 
 
         self.base.position.size.height =
@@ -996,6 +973,12 @@ impl Flow for InlineFlow {
         }
         string
     }
+}
+
+struct FragmentFixupWorkItem {
+    style: Arc<ComputedValues>,
+    new_start_index: uint,
+    old_end_index: uint,
 }
 
 
@@ -1026,12 +1009,6 @@ impl FragmentRange {
         
         model::padding_from_style(&*self.style, Au(0))
     }
-}
-
-struct FragmentFixupWorkItem {
-    style: Arc<ComputedValues>,
-    new_start_index: uint,
-    old_end_index: uint,
 }
 
 
@@ -1234,6 +1211,27 @@ impl<'a> InlineFragmentContext<'a> {
 
     pub fn ranges(&self) -> RangeIterator<'a> {
         self.map.ranges_for_index(self.index)
+    }
+}
+
+
+
+pub struct InlineMetrics {
+    pub height_above_baseline: Au,
+    pub depth_below_baseline: Au,
+    pub ascent: Au,
+}
+
+impl InlineMetrics {
+    
+    #[inline]
+    pub fn from_font_metrics(font_metrics: &FontMetrics, line_height: Au) -> InlineMetrics {
+        let leading = line_height - (font_metrics.ascent + font_metrics.descent);
+        InlineMetrics {
+            height_above_baseline: font_metrics.ascent + leading.scale_by(0.5),
+            depth_below_baseline: font_metrics.descent + leading.scale_by(0.5),
+            ascent: font_metrics.ascent,
+        }
     }
 }
 
