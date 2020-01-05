@@ -1303,10 +1303,11 @@ public:
 
 protected:
   nsIURI* GetExplicitBaseURI() const {
-    if (HasExplicitBaseURI()) {
-      return static_cast<nsIURI*>(GetProperty(nsGkAtoms::baseURIProperty));
+    if (!HasProperties()) {
+      return nullptr;
     }
-    return nullptr;
+
+    return static_cast<nsIURI*>(GetProperty(nsGkAtoms::baseURIProperty));
   }
 
 public:
@@ -1515,8 +1516,6 @@ private:
     
     NodeIsPurpleRoot,
     
-    NodeHasExplicitBaseURI,
-    
     ElementHasLockedStyleStates,
     
     ElementHasPointerLock,
@@ -1721,8 +1720,6 @@ protected:
   void ClearHasName() { ClearBoolFlag(ElementHasName); }
   void SetMayHaveContentEditableAttr()
     { SetBoolFlag(ElementMayHaveContentEditableAttr); }
-  bool HasExplicitBaseURI() const { return GetBoolFlag(NodeHasExplicitBaseURI); }
-  void SetHasExplicitBaseURI() { SetBoolFlag(NodeHasExplicitBaseURI); }
   void SetHasLockedStyleStates() { SetBoolFlag(ElementHasLockedStyleStates); }
   void ClearHasLockedStyleStates() { ClearBoolFlag(ElementHasLockedStyleStates); }
   bool HasLockedStyleStates() const
