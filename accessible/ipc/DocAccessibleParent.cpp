@@ -416,9 +416,14 @@ DocAccessibleParent::RecvShutdown()
 void
 DocAccessibleParent::Destroy()
 {
+  
+  
+  if (mShutdown) {
+    return;
+  }
+
   NS_ASSERTION(mChildDocs.IsEmpty(),
                "why weren't the child docs destroyed already?");
-  MOZ_ASSERT(!mShutdown);
   mShutdown = true;
 
   uint32_t childDocCount = mChildDocs.Length();
