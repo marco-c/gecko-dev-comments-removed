@@ -7,3 +7,8 @@ pre {
   word-wrap: break-word;
   -moz-control-character-visibility: visible;
 }
+
+
+html:not([dir]) pre {
+  unicode-bidi: plaintext;
+}
