@@ -19,7 +19,6 @@
 #include "mozilla/SharedThreadPool.h"
 #include "VideoUtils.h"
 #include "VideoFrameContainer.h"
-#include "mozilla/layers/ShadowLayers.h"
 
 #include <algorithm>
 
@@ -57,7 +56,8 @@ TrackTypeToStr(TrackInfo::TrackType aTrack)
 
 MediaFormatReader::MediaFormatReader(AbstractMediaDecoder* aDecoder,
                                      MediaDataDemuxer* aDemuxer,
-                                     VideoFrameContainer* aVideoFrameContainer)
+                                     VideoFrameContainer* aVideoFrameContainer,
+                                     layers::LayersBackend aLayersBackend)
   : MediaDecoderReader(aDecoder)
   , mAudio(this, MediaData::AUDIO_DATA,
            Preferences::GetUint("media.audio-max-decode-error", 3))
@@ -67,6 +67,7 @@ MediaFormatReader::MediaFormatReader(AbstractMediaDecoder* aDecoder,
   , mDemuxerInitDone(false)
   , mLastReportedNumDecodedFrames(0)
   , mPreviousDecodedKeyframeTime_us(sNoPreviousDecodedKeyframe)
+  , mLayersBackendType(aLayersBackend)
   , mInitDone(false)
   , mTrackDemuxersMayBlock(false)
   , mDemuxOnly(false)
@@ -159,7 +160,7 @@ MediaFormatReader::InitLayersBackendType()
     nsContentUtils::LayerManagerForDocument(element->OwnerDoc());
   NS_ENSURE_TRUE_VOID(layerManager);
 
-  mKnowsCompositor = layerManager->AsShadowForwarder();
+  mLayersBackendType = layerManager->GetCompositorBackendType();
 }
 
 nsresult
@@ -379,10 +380,13 @@ MediaFormatReader::EnsureDecoderCreated(TrackType aTrack)
   MOZ_ASSERT(OnTaskQueue());
   MOZ_DIAGNOSTIC_ASSERT(!IsSuspended());
 
+  auto decoderCreatingError = "error creating decoder";
+  MediaResult result = MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR, decoderCreatingError);
   auto& decoder = GetDecoderData(aTrack);
 
   if (decoder.mDecoder) {
-    return NS_OK;
+    result = NS_OK;
+    return result;
   }
 
   if (!mPlatform) {
@@ -404,7 +408,8 @@ MediaFormatReader::EnsureDecoderCreated(TrackType aTrack)
         decoder.mTaskQueue,
         decoder.mCallback.get(),
         mCrashHelper,
-        decoder.mIsBlankDecode
+        decoder.mIsBlankDecode,
+        &result
       });
       break;
     }
@@ -416,22 +421,25 @@ MediaFormatReader::EnsureDecoderCreated(TrackType aTrack)
         mVideo.mInfo ? *mVideo.mInfo->GetAsVideoInfo() : mInfo.mVideo,
         decoder.mTaskQueue,
         decoder.mCallback.get(),
-        mKnowsCompositor,
+        mLayersBackendType,
         GetImageContainer(),
         mCrashHelper,
-        decoder.mIsBlankDecode
+        decoder.mIsBlankDecode,
+        &result
       });
       break;
     }
     default:
       break;
   }
-  if (decoder.mDecoder ) {
+  if (decoder.mDecoder) {
     decoder.mDescription = decoder.mDecoder->GetDescriptionName();
-    return NS_OK;
+    result = MediaResult(NS_OK);
+    return result;
   }
-  decoder.mDescription = "error creating decoder";
-  return MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR, "error creating decoder");
+
+  decoder.mDescription = decoderCreatingError;
+  return result;
 }
 
 bool

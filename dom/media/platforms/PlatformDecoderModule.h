@@ -10,7 +10,6 @@
 #include "MediaDecoderReader.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/layers/LayersTypes.h"
-#include "mozilla/layers/KnowsCompositor.h"
 #include "nsTArray.h"
 #include "mozilla/RefPtr.h"
 #include "GMPService.h"
@@ -35,7 +34,7 @@ class CDMProxy;
 
 static LazyLogModule sPDMLog("PlatformDecoderModule");
 
-struct CreateDecoderParams {
+struct MOZ_STACK_CLASS CreateDecoderParams final {
   explicit CreateDecoderParams(const TrackInfo& aConfig)
     : mConfig(aConfig)
   {}
@@ -59,20 +58,13 @@ struct CreateDecoderParams {
     return *mConfig.GetAsAudioInfo();
   }
 
-  layers::LayersBackend GetLayersBackend() const
-  {
-    if (mKnowsCompositor) {
-      return mKnowsCompositor->GetCompositorBackendType();
-    }
-    return layers::LayersBackend::LAYERS_NONE;
-  }
-
   const TrackInfo& mConfig;
   TaskQueue* mTaskQueue = nullptr;
   MediaDataDecoderCallback* mCallback = nullptr;
   DecoderDoctorDiagnostics* mDiagnostics = nullptr;
   layers::ImageContainer* mImageContainer = nullptr;
-  RefPtr<layers::KnowsCompositor> mKnowsCompositor;
+  MediaResult* mError = nullptr;
+  layers::LayersBackend mLayersBackend = layers::LayersBackend::LAYERS_NONE;
   RefPtr<GMPCrashHelper> mCrashHelper;
   bool mUseBlankDecoder = false;
 
@@ -81,9 +73,10 @@ private:
   void Set(MediaDataDecoderCallback* aCallback) { mCallback = aCallback; }
   void Set(DecoderDoctorDiagnostics* aDiagnostics) { mDiagnostics = aDiagnostics; }
   void Set(layers::ImageContainer* aImageContainer) { mImageContainer = aImageContainer; }
+  void Set(MediaResult* aError) { mError = aError; }
+  void Set(layers::LayersBackend aLayersBackend) { mLayersBackend = aLayersBackend; }
   void Set(GMPCrashHelper* aCrashHelper) { mCrashHelper = aCrashHelper; }
   void Set(bool aUseBlankDecoder) { mUseBlankDecoder = aUseBlankDecoder; }
-  void Set(layers::KnowsCompositor* aKnowsCompositor) { mKnowsCompositor = aKnowsCompositor; }
   template <typename T1, typename T2, typename... Ts>
   void Set(T1&& a1, T2&& a2, Ts&&... args)
   {
