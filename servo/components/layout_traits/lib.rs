@@ -2,6 +2,7 @@
 
 
 
+extern crate geom;
 extern crate gfx;
 extern crate script_traits;
 extern crate msg;
@@ -15,25 +16,29 @@ extern crate util;
 
 
 
+use geom::rect::Rect;
 use gfx::font_cache_task::FontCacheTask;
 use gfx::paint_task::PaintChan;
-use msg::compositor_msg::Epoch;
+use msg::compositor_msg::{Epoch, LayerId};
 use msg::constellation_msg::{ConstellationChan, Failure, PipelineId, PipelineExitType};
 use profile_traits::mem;
 use profile_traits::time;
 use net_traits::image_cache_task::ImageCacheTask;
-use url::Url;
 use script_traits::{ScriptControlChan, OpaqueScriptLayoutChannel};
 use std::sync::mpsc::{Sender, Receiver};
+use util::geometry::Au;
+use url::Url;
 
 
 pub enum LayoutControlMsg {
     ExitNow(PipelineExitType),
     GetCurrentEpoch(Sender<Epoch>),
     TickAnimations,
+    SetVisibleRects(Vec<(LayerId, Rect<Au>)>),
 }
 
 
+#[derive(Clone)]
 pub struct LayoutControlChan(pub Sender<LayoutControlMsg>);
 
 

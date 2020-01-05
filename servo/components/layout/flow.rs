@@ -271,7 +271,7 @@ pub trait Flow: fmt::Debug + Sync {
     }
 
     
-    fn compute_absolute_position(&mut self) {
+    fn compute_absolute_position(&mut self, _: &LayoutContext) {
         
     }
 
@@ -860,6 +860,12 @@ pub struct BaseFlow {
     pub clip: ClippingRegion,
 
     
+    
+    
+    
+    pub stacking_relative_position_of_display_port: Rect<Au>,
+
+    
     pub display_list_building_result: DisplayListBuildingResult,
 
     
@@ -909,10 +915,18 @@ impl Encodable for BaseFlow {
                                         FlowClass::Block => c.as_immutable_block().encode(e),
                                         FlowClass::Inline => c.as_immutable_inline().encode(e),
                                         FlowClass::Table => c.as_immutable_table().encode(e),
-                                        FlowClass::TableWrapper => c.as_immutable_table_wrapper().encode(e),
-                                        FlowClass::TableRowGroup => c.as_immutable_table_rowgroup().encode(e),
-                                        FlowClass::TableRow => c.as_immutable_table_row().encode(e),
-                                        FlowClass::TableCell => c.as_immutable_table_cell().encode(e),
+                                        FlowClass::TableWrapper => {
+                                            c.as_immutable_table_wrapper().encode(e)
+                                        }
+                                        FlowClass::TableRowGroup => {
+                                            c.as_immutable_table_rowgroup().encode(e)
+                                        }
+                                        FlowClass::TableRow => {
+                                            c.as_immutable_table_row().encode(e)
+                                        }
+                                        FlowClass::TableCell => {
+                                            c.as_immutable_table_cell().encode(e)
+                                        }
                                         _ => { Ok(()) }     // TODO: Support captions
                                     }
                                 })
@@ -1024,6 +1038,7 @@ impl BaseFlow {
             display_list_building_result: DisplayListBuildingResult::None,
             absolute_position_info: AbsolutePositionInfo::new(writing_mode),
             clip: ClippingRegion::max(),
+            stacking_relative_position_of_display_port: Rect::zero(),
             flags: flags,
             writing_mode: writing_mode,
             thread_id: 0,
