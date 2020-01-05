@@ -380,19 +380,6 @@ class ExtensionChildProxyContext extends ProxyContext {
 
 function findPathInObject(obj, path, printErrors = true) {
   for (let elt of path.split(".")) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     if (!obj || !(elt in obj)) {
       if (printErrors) {
         Cu.reportError(`WebExtension API ${path} not found (it may be unimplemented by Firefox).`);
