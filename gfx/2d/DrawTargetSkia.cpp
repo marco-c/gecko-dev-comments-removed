@@ -1567,10 +1567,17 @@ DrawTargetSkia::CreateSimilarDrawTarget(const IntSize &aSize, SurfaceFormat aFor
     
   }
 #endif
+
+#ifdef DEBUG
   
   
-  MOZ_ASSERT(mCanvas->imageInfo().colorType() != kUnknown_SkColorType,
-             "Not backed by pixels - we need to handle PDF backed SkCanvas");
+  
+  
+  if (mCanvas->imageInfo().colorType() != kUnknown_SkColorType) {
+    NS_WARNING("Not backed by pixels - we need to handle PDF backed SkCanvas");
+  }
+#endif
+
   if (!target->Init(aSize, aFormat)) {
     return nullptr;
   }
