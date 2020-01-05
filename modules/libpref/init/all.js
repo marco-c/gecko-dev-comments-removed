@@ -199,6 +199,9 @@ pref("dom.gamepad.non_standard_events.enabled", true);
 pref("dom.gamepad.extensions.enabled", false);
 
 
+pref("dom.keyboardevent.code.enabled", true);
+
+
 
 
 pref("dom.keyboardevent.dispatch_during_composition", false);
@@ -2363,6 +2366,10 @@ pref("security.cert_pinning.process_headers_from_non_builtin_roots", false);
 pref("security.view-source.reachable-from-inner-protocol", false);
 
 
+
+pref("security.allow_chrome_frames_inside_content", false);
+
+
 pref("services.settings.server", "https://firefox.settings.services.mozilla.com/v1");
 
 
@@ -3077,9 +3084,6 @@ pref("dom.ipc.processCount", 4);
 #else
 pref("dom.ipc.processCount", 1);
 #endif
-
-
-pref("dom.ipc.processCount.file", 1);
 
 
 pref("dom.ipc.processCount.extension", 1);

@@ -898,6 +898,23 @@ nsScriptSecurityManager::CheckLoadURIFlags(nsIURI *aSourceURI,
             }
         }
 
+        static bool sCanLoadChromeInContent = false;
+        static bool sCachedCanLoadChromeInContentPref = false;
+        if (!sCachedCanLoadChromeInContentPref) {
+            sCachedCanLoadChromeInContentPref = true;
+            mozilla::Preferences::AddBoolVarCache(&sCanLoadChromeInContent,
+                "security.allow_chrome_frames_inside_content");
+        }
+        if (sCanLoadChromeInContent) {
+            
+            
+            nsAutoCString sourceSpec;
+            if (NS_SUCCEEDED(aSourceBaseURI->GetSpec(sourceSpec)) &&
+                sourceSpec.EqualsLiteral("resource://gre-resources/hiddenWindow.html")) {
+                return NS_OK;
+            }
+        }
+
         if (reportErrors) {
             ReportError(nullptr, errorTag, aSourceURI, aTargetURI);
         }
