@@ -123,7 +123,7 @@ pub trait WindowMethods {
     
     
     
-    fn prepare_for_composite(&self) -> bool;
+    fn prepare_for_composite(&self, width: usize, height: usize) -> bool;
 
     
     fn set_cursor(&self, cursor: Cursor);

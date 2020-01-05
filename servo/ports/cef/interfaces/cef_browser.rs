@@ -1325,6 +1325,13 @@ pub struct _cef_browser_host_t {
   
   
   
+  pub composite: Option<extern "C" fn(this: *mut cef_browser_host_t) -> ()>,
+
+  
+  
+  
+  
+  
   pub initialize_compositing: Option<extern "C" fn(
       this: *mut cef_browser_host_t) -> ()>,
 
@@ -2210,6 +2217,23 @@ impl CefBrowserHost {
     unsafe {
       CefWrap::to_rust(
         ((*self.c_object).drag_source_system_drag_ended.unwrap())(
+          self.c_object))
+    }
+  }
+
+  
+  
+  
+  
+  
+  pub fn composite(&self) -> () {
+    if self.c_object.is_null() ||
+       self.c_object as usize == mem::POST_DROP_USIZE {
+      panic!("called a CEF method on a null object")
+    }
+    unsafe {
+      CefWrap::to_rust(
+        ((*self.c_object).composite.unwrap())(
           self.c_object))
     }
   }

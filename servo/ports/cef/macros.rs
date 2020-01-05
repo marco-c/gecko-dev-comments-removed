@@ -5,6 +5,13 @@
 #![macro_use]
 
 
+macro_rules! check_ptr_exist {
+    ($var:expr, $member:ident) => (
+        unsafe { (*CefWrap::to_c($var)).$member.is_some() }
+    );
+}
+
+
 
 
 
