@@ -321,13 +321,14 @@ bool
 BasePrincipal::Subsumes(nsIPrincipal* aOther, DocumentDomainConsideration aConsideration)
 {
   MOZ_ASSERT(aOther);
+  MOZ_ASSERT_IF(Kind() == eCodebasePrincipal, mOriginSuffix);
 
   
   
   
   
   if (Kind() == eCodebasePrincipal &&
-      OriginAttributesRef() != Cast(aOther)->OriginAttributesRef()) {
+      mOriginSuffix != Cast(aOther)->mOriginSuffix) {
     return false;
   }
 
