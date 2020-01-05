@@ -110,31 +110,7 @@ function shutdownPromise(contentBrowser) {
 
 
 
-
-function waitForEvent(eventType, expectedId) {
-  return new Promise(resolve => {
-    let eventObserver = {
-      observe(subject) {
-        let event = subject.QueryInterface(Ci.nsIAccessibleEvent);
-        if (event.eventType === eventType &&
-            event.accessible.id === expectedId) {
-          Services.obs.removeObserver(this, 'accessible-event');
-          resolve(event);
-        }
-      }
-    };
-    Services.obs.addObserver(eventObserver, 'accessible-event', false);
-  });
-}
-
-
-
-
 function forceGC() {
-  SpecialPowers.gc();
-  SpecialPowers.forceGC();
-  SpecialPowers.forceCC();
-  SpecialPowers.gc();
-  SpecialPowers.forceGC();
-  SpecialPowers.forceCC();
+  Cu.forceCC();
+  Cu.forceGC();
 }

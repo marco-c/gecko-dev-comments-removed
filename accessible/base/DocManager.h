@@ -66,8 +66,6 @@ public:
   void NotifyOfDocumentShutdown(DocAccessible* aDocument,
                                 nsIDocument* aDOMDocument);
 
-  void RemoveFromXPCDocumentCache(DocAccessible* aDocument);
-
   
 
 
@@ -97,8 +95,6 @@ public:
 
   static void NotifyOfRemoteDocShutdown(DocAccessibleParent* adoc);
 
-  static void RemoveFromRemoteXPCDocumentCache(DocAccessibleParent* aDoc);
-
   
 
 
@@ -126,12 +122,6 @@ protected:
 
 
   void Shutdown();
-
-  bool HasXPCDocuments()
-  {
-    return mXPCDocumentCache.Count() > 0 ||
-           (sRemoteXPCDocumentCache && sRemoteXPCDocumentCache->Count() > 0);
-  }
 
 private:
   DocManager(const DocManager&);
