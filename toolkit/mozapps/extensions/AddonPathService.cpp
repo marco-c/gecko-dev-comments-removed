@@ -171,6 +171,28 @@ ResolveURI(nsIURI* aURI, nsAString& out)
     if (NS_WARN_IF(NS_FAILED(rv)))
       return rv;
   } else if (NS_SUCCEEDED(aURI->SchemeIs("chrome", &equals)) && equals) {
+    
+    
+    
+    
+    nsAutoCString package;
+    rv = aURI->GetHostPort(package);
+    if (NS_WARN_IF(NS_FAILED(rv)) ||
+        package.EqualsLiteral("branding") ||
+        package.EqualsLiteral("browser") ||
+        package.EqualsLiteral("branding") ||
+        package.EqualsLiteral("global") ||
+        package.EqualsLiteral("global-platform") ||
+        package.EqualsLiteral("mozapps") ||
+        package.EqualsLiteral("necko") ||
+        package.EqualsLiteral("passwordmgr") ||
+        package.EqualsLiteral("pippki") ||
+        package.EqualsLiteral("pipnss")) {
+      
+      
+      return NS_ERROR_FAILURE;
+    }
+
     nsCOMPtr<nsIChromeRegistry> chromeReg =
       mozilla::services::GetChromeRegistryService();
     if (NS_WARN_IF(!chromeReg))
