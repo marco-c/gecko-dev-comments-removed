@@ -365,12 +365,22 @@ class BaseCompiler
     };
 
     
+    
+    
+    
+    
+
+    typedef uint64_t BCESet;
+
+    
 
     struct Control
     {
         Control()
             : framePushed(UINT32_MAX),
               stackSize(UINT32_MAX),
+              bceSafeOnEntry(0),
+              bceSafeOnExit(~BCESet(0)),
               deadOnArrival(false),
               deadThenBranch(false)
         {}
@@ -379,6 +389,8 @@ class BaseCompiler
         NonAssertingLabel otherLabel;   
         uint32_t framePushed;           
         uint32_t stackSize;             
+        BCESet bceSafeOnEntry;          
+        BCESet bceSafeOnExit;           
         bool deadOnArrival;             
         bool deadThenBranch;            
     };
@@ -469,6 +481,7 @@ class BaseCompiler
     int32_t                     maxFramePushed_; 
     bool                        deadCode_;       
     bool                        debugEnabled_;
+    BCESet                      bceSafe_;        
     ValTypeVector               SigI64I64_;
     ValTypeVector               SigD_;
     ValTypeVector               SigF_;
@@ -1717,6 +1730,14 @@ class BaseCompiler
         return true;
     }
 
+    MOZ_MUST_USE bool peekLocalI32(uint32_t* local) {
+        Stk& v = stk_.back();
+        if (v.kind() != Stk::LocalI32)
+            return false;
+        *local = v.slot();
+        return true;
+    }
+
     
     
     
@@ -2019,6 +2040,7 @@ class BaseCompiler
         item.framePushed = masm.framePushed();
         item.stackSize = stk_.length();
         item.deadOnArrival = deadCode_;
+        item.bceSafeOnEntry = bceSafe_;
     }
 
     Control& controlItem() {
@@ -3186,6 +3208,24 @@ class BaseCompiler
     
     
     
+
+    void bceCheckLocal(MemoryAccessDesc* access, uint32_t local, bool* omitBoundsCheck) {
+        if (local >= sizeof(BCESet)*8)
+            return;
+
+        if ((bceSafe_ & (BCESet(1) << local)) && access->offset() < wasm::OffsetGuardLimit)
+            *omitBoundsCheck = true;
+
+        
+        bceSafe_ |= (BCESet(1) << local);
+    }
+
+    void bceLocalIsUpdated(uint32_t local) {
+        if (local >= sizeof(BCESet)*8)
+            return;
+
+        bceSafe_ &= ~(BCESet(1) << local);
+    }
 
     void checkOffset(MemoryAccessDesc* access, RegI32 ptr) {
         if (access->offset() >= OffsetGuardLimit) {
@@ -5094,8 +5134,10 @@ BaseCompiler::endBlock(ExprType type)
 
     
     AnyReg r;
-    if (!deadCode_)
+    if (!deadCode_) {
         r = popJoinRegUnlessVoid(type);
+        block.bceSafeOnExit &= bceSafe_;
+    }
 
     
     popStackOnBlockExit(block.framePushed);
@@ -5110,6 +5152,8 @@ BaseCompiler::endBlock(ExprType type)
             r = captureJoinRegUnlessVoid(type);
         deadCode_ = false;
     }
+
+    bceSafe_ = block.bceSafeOnExit;
 
     
     if (!deadCode_)
@@ -5126,6 +5170,7 @@ BaseCompiler::emitLoop()
         sync();                    
 
     initControl(controlItem());
+    bceSafe_ = 0;
 
     if (!deadCode_) {
         masm.bind(&controlItem(0).label);
@@ -5141,11 +5186,17 @@ BaseCompiler::endLoop(ExprType type)
     Control& block = controlItem();
 
     AnyReg r;
-    if (!deadCode_)
+    if (!deadCode_) {
         r = popJoinRegUnlessVoid(type);
+        
+        
+    }
 
     popStackOnBlockExit(block.framePushed);
     popValueStackTo(block.stackSize);
+
+    
+    
 
     
     if (!deadCode_)
@@ -5203,7 +5254,12 @@ BaseCompiler::endIfThen()
     if (ifThen.label.used())
         masm.bind(&ifThen.label);
 
+    if (!deadCode_)
+        ifThen.bceSafeOnExit &= bceSafe_;
+
     deadCode_ = ifThen.deadOnArrival;
+
+    bceSafe_ = ifThen.bceSafeOnExit & ifThen.bceSafeOnEntry;
 }
 
 bool
@@ -5238,10 +5294,13 @@ BaseCompiler::emitElse()
 
     
 
-    if (!deadCode_)
+    if (!deadCode_) {
         freeJoinRegUnlessVoid(r);
+        ifThenElse.bceSafeOnExit &= bceSafe_;
+    }
 
     deadCode_ = ifThenElse.deadOnArrival;
+    bceSafe_ = ifThenElse.bceSafeOnEntry;
 
     return true;
 }
@@ -5259,8 +5318,10 @@ BaseCompiler::endIfThenElse(ExprType type)
 
     AnyReg r;
 
-    if (!deadCode_)
+    if (!deadCode_) {
         r = popJoinRegUnlessVoid(type);
+        ifThenElse.bceSafeOnExit &= bceSafe_;
+    }
 
     popStackOnBlockExit(ifThenElse.framePushed);
     popValueStackTo(ifThenElse.stackSize);
@@ -5278,6 +5339,8 @@ BaseCompiler::endIfThenElse(ExprType type)
             r = captureJoinRegUnlessVoid(type);
         deadCode_ = false;
     }
+
+    bceSafe_ = ifThenElse.bceSafeOnExit;
 
     if (!deadCode_)
         pushJoinRegUnlessVoid(r);
@@ -5319,6 +5382,7 @@ BaseCompiler::emitBr()
         return true;
 
     Control& target = controlItem(relativeDepth);
+    target.bceSafeOnExit &= bceSafe_;
 
     
     
@@ -5353,6 +5417,7 @@ BaseCompiler::emitBrIf()
     }
 
     Control& target = controlItem(relativeDepth);
+    target.bceSafeOnExit &= bceSafe_;
 
     BranchState b(&target.label, target.framePushed, InvertBranch(false), type);
     emitBranchSetup(&b);
@@ -5408,6 +5473,7 @@ BaseCompiler::emitBrTable()
     
 
     popStackBeforeBranch(controlItem(defaultDepth).framePushed);
+    controlItem(defaultDepth).bceSafeOnExit &= bceSafe_;
     masm.jump(&controlItem(defaultDepth).label);
 
     
@@ -5423,6 +5489,7 @@ BaseCompiler::emitBrTable()
         masm.bind(&stubs.back());
         uint32_t k = depths[i];
         popStackBeforeBranch(controlItem(k).framePushed);
+        controlItem(k).bceSafeOnExit &= bceSafe_;
         masm.jump(&controlItem(k).label);
     }
 
@@ -5891,6 +5958,7 @@ BaseCompiler::emitSetOrTeeLocal(uint32_t slot)
     if (deadCode_)
         return true;
 
+    bceLocalIsUpdated(slot);
     switch (locals_[slot]) {
       case ValType::I32: {
         RegI32 rv = popI32();
@@ -6074,6 +6142,56 @@ BaseCompiler::emitSetGlobal()
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 BaseCompiler::RegI32
 BaseCompiler::popMemoryAccess(MemoryAccessDesc* access, bool* omitBoundsCheck)
 {
@@ -6083,10 +6201,6 @@ BaseCompiler::popMemoryAccess(MemoryAccessDesc* access, bool* omitBoundsCheck)
     int32_t addrTmp;
     if (popConstI32(addrTmp)) {
         uint32_t addr = addrTmp;
-
-        
-        
-        
 
         uint64_t ea = uint64_t(addr) + uint64_t(access->offset());
         uint64_t limit = uint64_t(env_.minMemoryLength) + uint64_t(wasm::OffsetGuardLimit);
@@ -6105,6 +6219,10 @@ BaseCompiler::popMemoryAccess(MemoryAccessDesc* access, bool* omitBoundsCheck)
         loadConstI32(r, int32_t(addr));
         return r;
     }
+
+    uint32_t local;
+    if (peekLocalI32(&local))
+        bceCheckLocal(access, local, omitBoundsCheck);
 
     return popI32();
 }
@@ -7171,6 +7289,7 @@ BaseCompiler::BaseCompiler(const ModuleEnvironment& env,
       maxFramePushed_(0),
       deadCode_(false),
       debugEnabled_(debugEnabled),
+      bceSafe_(0),
       prologueTrapOffset_(trapOffset()),
       stackAddOffset_(0),
       latentOp_(LatentOp::None),
