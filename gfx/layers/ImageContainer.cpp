@@ -25,6 +25,7 @@
 #include "YCbCrUtils.h"                 
 #include "gfx2DGlue.h"
 #include "mozilla/gfx/2D.h"
+#include "mozilla/CheckedInt.h"
 
 #ifdef XP_MACOSX
 #include "mozilla/gfx/QuartzSupport.h"
@@ -499,8 +500,15 @@ RecyclingPlanarYCbCrImage::CopyData(const Data& aData)
   mData = aData;
 
   
-  size_t size = mData.mCbCrStride * mData.mCbCrSize.height * 2 +
-                mData.mYStride * mData.mYSize.height;
+  
+  const auto checkedSize =
+    CheckedInt<uint32_t>(mData.mCbCrStride) * mData.mCbCrSize.height * 2 +
+    CheckedInt<uint32_t>(mData.mYStride) * mData.mYSize.height;
+
+  if (!checkedSize.isValid())
+    return false;
+
+  const auto size = checkedSize.value();
 
   
   mBuffer = AllocateBuffer(size);
@@ -703,8 +711,15 @@ NVImage::SetData(const Data& aData)
   MOZ_ASSERT((int)std::abs(aData.mCbChannel - aData.mCrChannel) == 1);
 
   
-  const uint32_t size = aData.mYSize.height * aData.mYStride +
-                        aData.mCbCrSize.height * aData.mCbCrStride;
+  
+  const auto checkedSize =
+    CheckedInt<uint32_t>(aData.mYSize.height) * aData.mYStride +
+    CheckedInt<uint32_t>(aData.mCbCrSize.height) * aData.mCbCrStride;
+
+  if (!checkedSize.isValid())
+    return false;
+
+  const auto size = checkedSize.value();
 
   
   mBuffer = AllocateBuffer(size);
