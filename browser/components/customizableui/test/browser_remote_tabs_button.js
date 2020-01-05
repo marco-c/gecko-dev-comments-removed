@@ -1,0 +1,84 @@
+
+
+
+
+"use strict";
+
+let syncService = {};
+Components.utils.import("resource://services-sync/service.js", syncService);
+const service = syncService.Service;
+Components.utils.import("resource://services-sync/UIState.jsm");
+
+let getState;
+let originalSync;
+let syncWasCalled = false;
+
+
+add_task(async function testSyncRemoteTabsButtonFunctionality() {
+  info("Test the Sync Remote Tabs button in the PanelUI");
+  storeInitialValues();
+  mockFunctions();
+
+  
+  Services.obs.notifyObservers(null, UIState.ON_UPDATE);
+
+  
+  CustomizableUI.addWidgetToArea("sync-button", CustomizableUI.AREA_PANEL);
+
+  
+  await PanelUI.show();
+  info("The panel menu was opened");
+
+  let syncRemoteTabsBtn = document.getElementById("sync-button");
+  ok(syncRemoteTabsBtn, "The sync remote tabs button was added to the Panel Menu");
+  
+  syncRemoteTabsBtn.click();
+  let remoteTabsPanel = document.getElementById("PanelUI-remotetabs");
+  ok(remoteTabsPanel.getAttribute("current"), "Sync Panel is in view");
+
+  
+  let syncNowButton = document.getElementById("PanelUI-remotetabs-syncnow");
+  syncNowButton.click();
+  info("The sync now button was clicked");
+
+  await waitForCondition(() => syncWasCalled);
+});
+
+add_task(async function asyncCleanup() {
+  
+  await resetCustomization();
+  ok(CustomizableUI.inDefaultState, "The panel UI is in default state again.");
+
+  if (isPanelUIOpen()) {
+    let panelHidePromise = promisePanelHidden(window);
+    PanelUI.hide();
+    await panelHidePromise;
+  }
+
+  restoreValues();
+});
+
+function mockFunctions() {
+  
+  UIState.get = () => ({
+    status: UIState.STATUS_SIGNED_IN,
+    email: "user@mozilla.com"
+  });
+
+  
+  service.errorHandler.syncAndReportErrors = mocked_syncAndReportErrors;
+}
+
+function mocked_syncAndReportErrors() {
+  syncWasCalled = true;
+}
+
+function restoreValues() {
+  UIState.get = getState;
+  service.syncAndReportErrors = originalSync;
+}
+
+function storeInitialValues() {
+  getState = UIState.get;
+  originalSync = service.syncAndReportErrors;
+}
