@@ -795,11 +795,24 @@ ComputeShapeDistance(nsCSSPropertyID aProperty,
       } while (list);
       break;
     }
-    case eCSSKeyword_inset:
+    case eCSSKeyword_inset: {
       
-      MOZ_ASSERT(false);
+      
+      for (size_t i = 1; i <= 4; ++i) {
+        const nsCSSValue& value = func->Item(i);
+        squareDistance += pixelCalcDistance(ExtractCalcValue(value));
+      }
+      
+      
+      const nsCSSValue::Array* array = func->Item(5).GetArrayValue();
+      const size_t len = array->Count();
+      for (size_t i = 0; i < len; ++i) {
+        const nsCSSValuePair& pair = array->Item(i).GetPairValue();
+        squareDistance += pixelCalcDistance(ExtractCalcValue(pair.mXValue)) +
+                          pixelCalcDistance(ExtractCalcValue(pair.mYValue));
+      }
       break;
-
+    }
     default:
       MOZ_ASSERT_UNREACHABLE("Unknown shape type");
   }
