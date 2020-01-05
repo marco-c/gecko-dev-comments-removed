@@ -36,7 +36,7 @@ impl NodeIterator {
         NodeIterator {
             reflector_: Reflector::new(),
             root_node: JS::from_ref(root_node),
-            reference_node: MutHeap::new(JS::from_ref(root_node)),
+            reference_node: MutHeap::new(root_node),
             pointer_before_reference_node: Cell::new(true),
             what_to_show: what_to_show,
             filter: filter
@@ -87,7 +87,7 @@ impl NodeIteratorMethods for NodeIterator {
 
     
     fn ReferenceNode(&self) -> Root<Node> {
-        self.reference_node.get().root()
+        self.reference_node.get()
     }
 
     
@@ -99,7 +99,7 @@ impl NodeIteratorMethods for NodeIterator {
     fn NextNode(&self) -> Fallible<Option<Root<Node>>> {
         
         
-        let node = self.reference_node.get().root();
+        let node = self.reference_node.get();
 
         
         let mut before_node = self.pointer_before_reference_node.get();
@@ -114,7 +114,7 @@ impl NodeIteratorMethods for NodeIterator {
             
             if result == NodeFilterConstants::FILTER_ACCEPT {
                 
-                self.reference_node.set(JS::from_ref(node.r()));
+                self.reference_node.set(node.r());
                 self.pointer_before_reference_node.set(before_node);
 
                 return Ok(Some(node));
@@ -129,7 +129,7 @@ impl NodeIteratorMethods for NodeIterator {
             
             if result == NodeFilterConstants::FILTER_ACCEPT {
                 
-                self.reference_node.set(JS::from_ref(following_node.r()));
+                self.reference_node.set(following_node.r());
                 self.pointer_before_reference_node.set(before_node);
 
                 return Ok(Some(following_node));
@@ -143,7 +143,7 @@ impl NodeIteratorMethods for NodeIterator {
     fn PreviousNode(&self) -> Fallible<Option<Root<Node>>> {
         
         
-        let node = self.reference_node.get().root();
+        let node = self.reference_node.get();
 
         
         let mut before_node = self.pointer_before_reference_node.get();
@@ -158,7 +158,7 @@ impl NodeIteratorMethods for NodeIterator {
             
             if result == NodeFilterConstants::FILTER_ACCEPT {
                 
-                self.reference_node.set(JS::from_ref(node.r()));
+                self.reference_node.set(node.r());
                 self.pointer_before_reference_node.set(before_node);
 
                 return Ok(Some(node));
@@ -174,7 +174,7 @@ impl NodeIteratorMethods for NodeIterator {
             
             if result == NodeFilterConstants::FILTER_ACCEPT {
                 
-                self.reference_node.set(JS::from_ref(preceding_node.r()));
+                self.reference_node.set(preceding_node.r());
                 self.pointer_before_reference_node.set(before_node);
 
                 return Ok(Some(preceding_node));

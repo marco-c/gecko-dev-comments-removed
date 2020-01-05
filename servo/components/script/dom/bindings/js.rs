@@ -32,10 +32,16 @@ use js::jsapi::{Heap, JSObject, JSTracer};
 use js::jsval::JSVal;
 use layout_interface::TrustedNodeAddress;
 use script_task::STACK_ROOTS;
-use std::cell::{Cell, UnsafeCell};
+use std::cell::UnsafeCell;
 use std::default::Default;
 use std::ops::Deref;
+use std::ptr;
 use util::mem::HeapSizeOf;
+
+
+
+
+
 
 
 
@@ -54,12 +60,13 @@ impl<T> HeapSizeOf for JS<T> {
 
 impl<T> JS<T> {
     
-    pub unsafe fn to_layout(self) -> LayoutJS<T> {
+    pub unsafe fn to_layout(&self) -> LayoutJS<T> {
         LayoutJS {
             ptr: self.ptr.clone()
         }
     }
 }
+
 impl<T: Reflectable> JS<T> {
     
     pub fn root(&self) -> Root<T> {
@@ -108,8 +115,6 @@ impl<T: Reflectable> LayoutJS<T> {
         (**self.ptr).reflector().get_jsobject().get()
     }
 }
-
-impl<T> Copy for JS<T> {}
 
 impl<T> Copy for LayoutJS<T> {}
 
@@ -206,72 +211,75 @@ impl MutHeapJSVal {
 
 
 
+
+
+
 #[must_root]
 #[derive(JSTraceable)]
-#[derive(HeapSizeOf)]
-pub struct MutHeap<T: HeapGCValue + Copy> {
-    val: Cell<T>,
+pub struct MutHeap<T: HeapGCValue> {
+    val: UnsafeCell<T>,
 }
 
-impl<T: HeapGCValue + Copy> MutHeap<T> {
+impl<T: Reflectable> MutHeap<JS<T>> {
     
-    pub fn new(initial: T) -> MutHeap<T> {
+    pub fn new(initial: &T) -> MutHeap<JS<T>> {
         MutHeap {
-            val: Cell::new(initial),
+            val: UnsafeCell::new(JS::from_ref(initial)),
         }
     }
 
     
-    pub fn set(&self, val: T) {
-        self.val.set(val)
+    pub fn set(&self, val: &T) {
+        unsafe {
+            *self.val.get() = JS::from_ref(val);
+        }
     }
 
     
-    pub fn get(&self) -> T {
-        self.val.get()
+    pub fn get(&self) -> Root<T> {
+        unsafe {
+            ptr::read(self.val.get()).root()
+        }
     }
 }
+
+impl<T: HeapGCValue> HeapSizeOf for MutHeap<T> {
+    fn heap_size_of_children(&self) -> usize {
+        
+        0
+    }
+}
+
+
 
 
 
 
 
 #[must_root]
-#[derive(JSTraceable, HeapSizeOf)]
-pub struct MutNullableHeap<T: HeapGCValue + Copy> {
-    ptr: Cell<Option<T>>
-}
-
-impl<T: HeapGCValue + Copy> MutNullableHeap<T> {
-    
-    pub fn new(initial: Option<T>) -> MutNullableHeap<T> {
-        MutNullableHeap {
-            ptr: Cell::new(initial)
-        }
-    }
-
-    
-    pub fn set(&self, val: Option<T>) {
-        self.ptr.set(val);
-    }
-
-    
-    pub fn get(&self) -> Option<T> {
-        self.ptr.get()
-    }
+#[derive(JSTraceable)]
+pub struct MutNullableHeap<T: HeapGCValue> {
+    ptr: UnsafeCell<Option<T>>
 }
 
 impl<T: Reflectable> MutNullableHeap<JS<T>> {
+    
+    pub fn new(initial: Option<&T>) -> MutNullableHeap<JS<T>> {
+        MutNullableHeap {
+            ptr: UnsafeCell::new(initial.map(JS::from_ref))
+        }
+    }
+
     
     
     pub fn or_init<F>(&self, cb: F) -> Root<T>
         where F: FnOnce() -> Root<T>
     {
         match self.get() {
-            Some(inner) => Root::from_rooted(inner),
+            Some(inner) => inner,
             None => {
                 let inner = cb();
-                self.set(Some(JS::from_rooted(&inner)));
+                self.set(Some(&inner));
                 inner
             },
         }
@@ -280,22 +288,42 @@ impl<T: Reflectable> MutNullableHeap<JS<T>> {
     
     
     pub unsafe fn get_inner_as_layout(&self) -> Option<LayoutJS<T>> {
-        self.ptr.get().map(|js| js.to_layout())
+        ptr::read(self.ptr.get()).map(|js| js.to_layout())
     }
 
     
+    pub fn get(&self) -> Option<Root<T>> {
+        unsafe {
+            ptr::read(self.ptr.get()).map(|o| o.root())
+        }
+    }
+
     
     pub fn get_rooted(&self) -> Option<Root<T>> {
-        self.get().map(|o| o.root())
+        self.get()
+    }
+
+    
+    pub fn set(&self, val: Option<&T>) {
+        unsafe {
+            *self.ptr.get() = val.map(|p| JS::from_ref(p));
+        }
     }
 }
 
-impl<T: HeapGCValue + Copy> Default for MutNullableHeap<T> {
+impl<T: HeapGCValue> Default for MutNullableHeap<T> {
     #[allow(unrooted_must_root)]
     fn default() -> MutNullableHeap<T> {
         MutNullableHeap {
-            ptr: Cell::new(None)
+            ptr: UnsafeCell::new(None)
         }
+    }
+}
+
+impl<T: HeapGCValue> HeapSizeOf for MutNullableHeap<T> {
+    fn heap_size_of_children(&self) -> usize {
+        
+        0
     }
 }
 
@@ -434,12 +462,6 @@ impl<T: Reflectable> Root<T> {
     
     pub fn r(&self) -> &T {
         &**self
-    }
-
-    
-    #[allow(unrooted_must_root)]
-    pub fn from_rooted(js: JS<T>) -> Root<T> {
-        js.root()
     }
 }
 
