@@ -881,11 +881,19 @@ public:
     return mFramesReflowed;
   }
 
-  
+  static nscoord GetBorderWidthForKeyword(unsigned int aBorderWidthKeyword)
+  {
+    
+    
+    static const nscoord kBorderWidths[] = {
+      CSSPixelsToAppUnits(1),
+      CSSPixelsToAppUnits(3),
+      CSSPixelsToAppUnits(5)
+    };
+    MOZ_ASSERT(size_t(aBorderWidthKeyword) < mozilla::ArrayLength(kBorderWidths));
 
-
-
-  const nscoord* GetBorderWidthTable() { return mBorderWidthTable; }
+    return kBorderWidths[aBorderWidthKeyword];
+  }
 
   gfxTextPerfMetrics *GetTextPerfMetrics() { return mTextPerf; }
 
