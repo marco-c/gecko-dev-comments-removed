@@ -77,6 +77,9 @@ namespace layers {
 class ContainerLayer;
 class LayerManager;
 } 
+namespace dom {
+class Element;
+} 
 } 
 
 
@@ -720,6 +723,12 @@ public:
   {
     return mViewportStyleScrollbar;
   }
+
+  
+
+
+
+  bool ElementWouldPropagateScrollbarStyles(mozilla::dom::Element* aElement);
 
   
 

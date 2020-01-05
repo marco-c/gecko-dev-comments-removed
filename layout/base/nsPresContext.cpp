@@ -1365,15 +1365,6 @@ static nsIContent*
 GetPropagatedScrollbarStylesForViewport(nsPresContext* aPresContext,
                                         ScrollbarStyles *aStyles)
 {
-  
-  *aStyles = ScrollbarStyles(NS_STYLE_OVERFLOW_AUTO, NS_STYLE_OVERFLOW_AUTO);
-
-  
-  
-  if (aPresContext->IsPaginated()) {
-    return nullptr;
-  }
-
   nsIDocument* document = aPresContext->Document();
   Element* docElement = document->GetRootElement();
 
@@ -1430,8 +1421,15 @@ GetPropagatedScrollbarStylesForViewport(nsPresContext* aPresContext,
 nsIContent*
 nsPresContext::UpdateViewportScrollbarStylesOverride()
 {
-  nsIContent* propagatedFrom =
-    GetPropagatedScrollbarStylesForViewport(this, &mViewportStyleScrollbar);
+  
+  mViewportStyleScrollbar = ScrollbarStyles(NS_STYLE_OVERFLOW_AUTO,
+                                            NS_STYLE_OVERFLOW_AUTO);
+  nsIContent* propagatedFrom = nullptr;
+  
+  if (!IsPaginated()) {
+    propagatedFrom =
+      GetPropagatedScrollbarStylesForViewport(this, &mViewportStyleScrollbar);
+  }
 
   nsIDocument* document = Document();
   if (Element* fullscreenElement = document->GetFullscreenElement()) {
@@ -1448,6 +1446,24 @@ nsPresContext::UpdateViewportScrollbarStylesOverride()
   }
 
   return propagatedFrom;
+}
+
+bool
+nsPresContext::ElementWouldPropagateScrollbarStyles(Element* aElement)
+{
+  MOZ_ASSERT(IsPaginated(), "Should only be called on paginated contexts");
+  if (aElement->GetParent() && !aElement->IsHTMLElement(nsGkAtoms::body)) {
+    
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  ScrollbarStyles dummy(NS_STYLE_OVERFLOW_AUTO, NS_STYLE_OVERFLOW_AUTO);
+  return GetPropagatedScrollbarStylesForViewport(this, &dummy) == aElement;
 }
 
 void
