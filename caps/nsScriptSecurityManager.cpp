@@ -753,16 +753,27 @@ nsScriptSecurityManager::CheckLoadURIWithPrincipal(nsIPrincipal* aPrincipal,
         currentURI->GetScheme(scheme);
         currentOtherURI->GetScheme(otherScheme);
 
+        bool schemesMatch = scheme.Equals(otherScheme, stringComparator);
+        bool isSamePage;
+        
+        if (scheme.EqualsLiteral("about")) {
+            nsAutoCString module, otherModule;
+            isSamePage = schemesMatch &&
+                NS_SUCCEEDED(NS_GetAboutModuleName(currentURI, module)) &&
+                NS_SUCCEEDED(NS_GetAboutModuleName(currentOtherURI, otherModule)) &&
+                module.Equals(otherModule);
+        } else {
+            bool equalExceptRef = false;
+            rv = currentURI->EqualsExceptRef(currentOtherURI, &equalExceptRef);
+            isSamePage = NS_SUCCEEDED(rv) && equalExceptRef;
+        }
+
         
         
         
         
         
-        bool equalExceptRef = false;
-        if (!scheme.Equals(otherScheme, stringComparator) ||
-            (denySameSchemeLinks &&
-             (!NS_SUCCEEDED(currentURI->EqualsExceptRef(currentOtherURI, &equalExceptRef)) ||
-              !equalExceptRef))) {
+        if (!schemesMatch || (denySameSchemeLinks && !isSamePage)) {
             return CheckLoadURIFlags(currentURI, currentOtherURI,
                                      sourceBaseURI, targetBaseURI, aFlags);
         }
