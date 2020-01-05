@@ -13,7 +13,7 @@ const { NetUtil } = Cu.import("resource://gre/modules/NetUtil.jsm", {});
 
 
 
-this.requireRawId = function (id, require) {
+function requireRawId(id, require) {
   
   if (id.endsWith(".properties") && !id.startsWith("raw!chrome://")) {
     id = id.replace("raw!", "raw!chrome://");
@@ -27,6 +27,7 @@ this.requireRawId = function (id, require) {
   if (!id.endsWith(".js") && uri.endsWith(".js")) {
     uri = uri.slice(0, -3);
   }
+
 
   let stream = NetUtil.newChannel({
     uri: NetUtil.newURI(uri, "UTF-8"),
@@ -42,6 +43,6 @@ this.requireRawId = function (id, require) {
   
   
   return data;
-};
+}
 
 this.EXPORTED_SYMBOLS = ["requireRawId"];
