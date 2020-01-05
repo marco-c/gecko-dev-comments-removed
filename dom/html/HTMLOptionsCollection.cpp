@@ -131,12 +131,13 @@ HTMLOptionsCollection::SetLength(uint32_t aLength)
   return mSelect->SetLength(aLength);
 }
 
-NS_IMETHODIMP
-HTMLOptionsCollection::SetOption(uint32_t aIndex,
-                                 nsIDOMHTMLOptionElement* aOption)
+void
+HTMLOptionsCollection::IndexedSetter(uint32_t aIndex,
+                                     HTMLOptionElement* aOption,
+                                     ErrorResult& aError)
 {
   if (!mSelect) {
-    return NS_OK;
+    return;
   }
 
   
@@ -145,43 +146,41 @@ HTMLOptionsCollection::SetOption(uint32_t aIndex,
     mSelect->Remove(aIndex);
 
     
-    return NS_OK;
+    return;
   }
 
-  nsresult rv = NS_OK;
-
-  uint32_t index = uint32_t(aIndex);
-
   
-  if (index > mElements.Length()) {
+  if (aIndex > mElements.Length()) {
     
     
-    rv = SetLength(index);
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
-
-  NS_ASSERTION(index <= mElements.Length(), "SetLength lied");
-  
-  nsCOMPtr<nsIDOMNode> ret;
-  if (index == mElements.Length()) {
-    nsCOMPtr<nsIDOMNode> node = do_QueryInterface(aOption);
-    rv = mSelect->AppendChild(node, getter_AddRefs(ret));
-  } else {
-    
-    
-    RefPtr<HTMLOptionElement> refChild = ItemAsOption(index);
-    NS_ENSURE_TRUE(refChild, NS_ERROR_UNEXPECTED);
-
-    nsCOMPtr<nsINode> parent = refChild->GetParent();
-    if (parent) {
-      nsCOMPtr<nsINode> node = do_QueryInterface(aOption);
-      ErrorResult res;
-      parent->ReplaceChild(*node, *refChild, res);
-      rv = res.StealNSResult();
+    nsresult rv = SetLength(aIndex);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      aError.Throw(rv);
+      return;
     }
   }
 
-  return rv;
+  NS_ASSERTION(aIndex <= mElements.Length(), "SetLength lied");
+  
+  if (aIndex == mElements.Length()) {
+    mSelect->AppendChild(*aOption, aError);
+    return;
+  }
+
+  
+  
+  RefPtr<HTMLOptionElement> refChild = ItemAsOption(aIndex);
+  if (!refChild) {
+    aError.Throw(NS_ERROR_UNEXPECTED);
+    return;
+  }
+
+  nsCOMPtr<nsINode> parent = refChild->GetParent();
+  if (!parent) {
+    return;
+  }
+
+  parent->ReplaceChild(*aOption, *refChild, aError);
 }
 
 int32_t

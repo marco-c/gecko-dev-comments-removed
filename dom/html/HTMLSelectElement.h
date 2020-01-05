@@ -272,6 +272,7 @@ public:
   
 
   using nsINode::Remove;
+  using nsINode::AppendChild;
 
 
   
