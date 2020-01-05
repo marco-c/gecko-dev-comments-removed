@@ -78,6 +78,7 @@ impl BluetoothDeviceMethods for BluetoothDevice {
 
     
     fn Gatt(&self) -> Root<BluetoothRemoteGATTServer> {
+        
         self.gatt.or_init(|| {
             BluetoothRemoteGATTServer::new(&self.global(), self)
         })
