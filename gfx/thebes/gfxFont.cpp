@@ -3642,7 +3642,7 @@ gfxFont::SanitizeMetrics(gfxFont::Metrics *aMetrics, bool aIsBadUnderlineFont)
 
 
 
-UniquePtr<const gfxFont::Metrics>
+const gfxFont::Metrics*
 gfxFont::CreateVerticalMetrics()
 {
     const uint32_t kHheaTableTag = TRUETYPE_TAG('h','h','e','a');
@@ -3651,8 +3651,8 @@ gfxFont::CreateVerticalMetrics()
     const uint32_t kOS_2TableTag = TRUETYPE_TAG('O','S','/','2');
     uint32_t len;
 
-    UniquePtr<Metrics> metrics = MakeUnique<Metrics>();
-    ::memset(metrics.get(), 0, sizeof(Metrics));
+    Metrics* metrics = new Metrics;
+    ::memset(metrics, 0, sizeof(Metrics));
 
     
     
@@ -3797,7 +3797,7 @@ gfxFont::CreateVerticalMetrics()
     metrics->xHeight = metrics->emHeight / 2;
     metrics->capHeight = metrics->maxAscent;
 
-    return Move(metrics);
+    return metrics;
 }
 
 gfxFloat
