@@ -523,7 +523,7 @@ public:
   gfx::Matrix4x4 GetShadowTransform();
   bool GetShadowTransformSetByAnimation() { return mShadowTransformSetByAnimation; }
   bool GetShadowOpacitySetByAnimation() { return mShadowOpacitySetByAnimation; }
-  
+
   
 
 
@@ -577,6 +577,7 @@ public:
 
 
   virtual void Destroy();
+  virtual void Cleanup() {}
 
   
 
@@ -587,7 +588,8 @@ public:
   virtual void Prepare(const RenderTargetIntRect& aClipRect) {}
 
   
-  virtual void RenderLayer(const gfx::IntRect& aClipRect) = 0;
+  virtual void RenderLayer(const gfx::IntRect& aClipRect,
+                           const Maybe<gfx::Polygon>& aGeometry) = 0;
 
   virtual bool SetCompositableHost(CompositableHost*)
   {

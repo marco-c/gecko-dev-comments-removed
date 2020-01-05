@@ -33,6 +33,7 @@
 #include "mozilla/gfx/TiledRegion.h"    
 #include "mozilla/gfx/Types.h"          
 #include "mozilla/gfx/UserData.h"       
+#include "mozilla/layers/BSPTree.h"     
 #include "mozilla/layers/LayersTypes.h"
 #include "mozilla/mozalloc.h"           
 #include "nsAutoPtr.h"                  
@@ -1691,11 +1692,13 @@ public:
 
 
   void Dump(std::stringstream& aStream, const char* aPrefix="",
-            bool aDumpHtml=false, bool aSorted=false);
+            bool aDumpHtml=false, bool aSorted=false,
+            const Maybe<gfx::Polygon>& aGeometry=Nothing());
   
 
 
-  void DumpSelf(std::stringstream& aStream, const char* aPrefix="");
+  void DumpSelf(std::stringstream& aStream, const char* aPrefix="",
+                const Maybe<gfx::Polygon>& aGeometry=Nothing());
 
   
 
@@ -2153,13 +2156,17 @@ public:
 
   virtual void FillSpecificAttributes(SpecificLayerAttributes& aAttrs) override;
 
-  void SortChildrenBy3DZOrder(nsTArray<Layer*>& aArray);
+  enum class SortMode {
+    WITH_GEOMETRY,
+    WITHOUT_GEOMETRY,
+  };
 
-  
+  nsTArray<LayerPolygon> SortChildrenBy3DZOrder(SortMode aSortMode);
 
   virtual ContainerLayer* AsContainerLayer() override { return this; }
   virtual const ContainerLayer* AsContainerLayer() const override { return this; }
 
+  
   virtual Layer* GetFirstChild() const override { return mFirstChild; }
   virtual Layer* GetLastChild() const override { return mLastChild; }
   float GetPreXScale() const { return mPreXScale; }
@@ -2241,7 +2248,28 @@ protected:
   void DidInsertChild(Layer* aLayer);
   void DidRemoveChild(Layer* aLayer);
 
+  bool AnyAncestorOrThisIs3DContextLeaf();
+
   void Collect3DContextLeaves(nsTArray<Layer*>& aToSort);
+
+  
+  
+  nsTArray<Layer*> CollectChildren() {
+    nsTArray<Layer*> children;
+
+    for (Layer* layer = GetFirstChild(); layer; layer = layer->GetNextSibling()) {
+      ContainerLayer* container = layer->AsContainerLayer();
+
+      if (container && container->Extend3DContext() &&
+          !container->UseIntermediateSurface()) {
+        container->Collect3DContextLeaves(children);
+      } else {
+        children.AppendElement(layer);
+      }
+    }
+
+    return children;
+  }
 
   ContainerLayer(LayerManager* aManager, void* aImplData);
 
