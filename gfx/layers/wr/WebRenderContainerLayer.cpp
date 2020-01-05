@@ -48,38 +48,47 @@ WebRenderContainerLayer::RenderLayer(wr::DisplayListBuilder& aBuilder)
   nsTArray<LayerPolygon> children = SortChildrenBy3DZOrder(SortMode::WITHOUT_GEOMETRY);
 
   gfx::Matrix4x4 transform = GetTransform();
-  gfx::Matrix4x4* maybeTransform = &transform;
+  gfx::Matrix4x4* transformForSC = &transform;
   float opacity = GetLocalOpacity();
-  float* maybeOpacity = &opacity;
+  float* opacityForSC = &opacity;
   uint64_t animationsId = 0;
 
   if (gfxPrefs::WebRenderOMTAEnabled() &&
       !GetAnimations().IsEmpty()) {
     MOZ_ASSERT(GetCompositorAnimationsId());
 
+    OptionalOpacity opacityForCompositor = void_t();
+    OptionalTransform transformForCompositor = void_t();
+
     
     
     
     if (HasOpacityAnimation()) {
-      maybeOpacity = nullptr;
+      opacityForSC = nullptr;
+      
+      
+      opacityForCompositor = opacity;
     }
 
     
     
     
     if (HasTransformAnimation()) {
-      maybeTransform = nullptr;
+      transformForSC = nullptr;
+      
+      
+      transformForCompositor = transform;
       UpdateTransformDataForAnimation();
     }
 
     animationsId = GetCompositorAnimationsId();
-    CompositorAnimations anim;
-    anim.animations() = GetAnimations();
-    anim.id() = animationsId;
-    WrBridge()->AddWebRenderParentCommand(OpAddCompositorAnimations(anim));
+    OpAddCompositorAnimations
+      anim(CompositorAnimations(GetAnimations(), animationsId),
+           transformForCompositor, opacityForCompositor);
+    WrBridge()->AddWebRenderParentCommand(anim);
   }
 
-  StackingContextHelper sc(aBuilder, this, animationsId, maybeOpacity, maybeTransform);
+  StackingContextHelper sc(aBuilder, this, animationsId, opacityForSC, transformForSC);
 
   LayerRect rect = Bounds();
   DumpLayerInfo("ContainerLayer", rect);

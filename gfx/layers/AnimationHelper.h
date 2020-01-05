@@ -86,10 +86,17 @@ public:
   
 
 
+
   void SetAnimatedValue(uint64_t aId,
                         gfx::Matrix4x4&& aTransformInDevSpace,
                         gfx::Matrix4x4&& aFrameTransform,
                         const TransformData& aData);
+
+  
+
+
+  void SetAnimatedValue(uint64_t aId,
+                        gfx::Matrix4x4&& aTransformInDevSpace);
 
   
 
