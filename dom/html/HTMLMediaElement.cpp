@@ -4638,6 +4638,9 @@ void HTMLMediaElement::UpdateSrcMediaStreamPlaying(uint32_t aFlags)
     }
 
     SetCapturedOutputStreamsEnabled(true); 
+    
+    
+    SetAudibleState(true);
   } else {
     if (stream) {
       mSrcStreamPausedCurrentTime = CurrentTime();
@@ -4661,10 +4664,6 @@ void HTMLMediaElement::UpdateSrcMediaStreamPlaying(uint32_t aFlags)
     mMediaStreamListener->Forget();
     mMediaStreamListener = nullptr;
   }
-
-  
-  
-  SetAudibleState(shouldPlay);
 }
 
 void HTMLMediaElement::SetupSrcMediaStreamPlayback(DOMMediaStream* aStream)
