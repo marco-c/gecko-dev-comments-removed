@@ -70,6 +70,12 @@
 
 #include <stdint.h>
 
+#define COPY_CODES(NBYTES)  do {    \
+  memcpy(&tramp[nTrampBytes], &origBytes[nOrigBytes], NBYTES);    \
+  nOrigBytes += NBYTES;             \
+  nTrampBytes += NBYTES;            \
+} while (0)
+
 namespace mozilla {
 namespace internal {
 
@@ -543,7 +549,8 @@ protected:
 
   enum JumpType {
    Je,
-   Jmp
+   Jmp,
+   Call
   };
 
   struct JumpPatch {
@@ -557,14 +564,6 @@ protected:
     {
     }
 
-    void AddJumpPatch(size_t aHookOffset, intptr_t aAbsJumpAddress,
-                     JumpType aType = JumpType::Jmp)
-    {
-      mHookOffset = aHookOffset;
-      mJumpAddress = aAbsJumpAddress;
-      mType = aType;
-    }
-
     size_t GenerateJump(uint8_t* aCode)
     {
       size_t offset = mHookOffset;
@@ -576,19 +575,25 @@ protected:
       }
 
       
-      aCode[offset] = 0xff;
-      aCode[offset + 1] = 0x25;
-      *reinterpret_cast<int32_t*>(aCode + offset + 2) = 0;
-
-      
-      *reinterpret_cast<int64_t*>(aCode + offset + 2 + 4) = mJumpAddress;
-
-      return offset + 2 + 4 + 8;
-    }
-
-    bool HasJumpPatch() const
-    {
-      return !!mJumpAddress;
+      if (mType == JumpType::Call) {
+        
+        aCode[offset] = 0xff;
+        aCode[offset + 1] = 0x15;
+        
+        *reinterpret_cast<int32_t*>(aCode + offset + 2) = 2;
+        aCode[offset + 2 + 4] = 0xeb;    
+        aCode[offset + 2 + 4 + 1] = 8;
+        *reinterpret_cast<int64_t*>(aCode + offset + 2 + 4 + 2) = mJumpAddress;
+        return offset + 2 + 4 + 2 + 8;
+      } else {
+        
+        aCode[offset] = 0xff;
+        aCode[offset + 1] = 0x25;
+        
+        *reinterpret_cast<int32_t*>(aCode + offset + 2) = 0;
+        *reinterpret_cast<int64_t*>(aCode + offset + 2 + 4) = mJumpAddress;
+        return offset + 2 + 4 + 8;
+      }
     }
 
     size_t mHookOffset;
@@ -672,186 +677,226 @@ protected:
       return;
     }
 
+    
+    
+    *((void**)tramp) = aOrigFunction;
+    tramp += sizeof(void*);
+
     byteptr_t origBytes = (byteptr_t)aOrigFunction;
 
-    int nBytes = 0;
+    
+    int nOrigBytes = 0;
 
 #if defined(_M_IX86)
     int pJmp32 = -1;
-    while (nBytes < 5) {
+    while (nOrigBytes < 5) {
       
       
       
       
       
       unsigned char prefixGroups;
-      int numPrefixBytes = CountPrefixBytes(origBytes, nBytes, &prefixGroups);
+      int numPrefixBytes = CountPrefixBytes(origBytes, nOrigBytes, &prefixGroups);
       if (numPrefixBytes < 0 || (prefixGroups & (ePrefixGroup3 | ePrefixGroup4))) {
         
         
         return;
       }
-      nBytes += numPrefixBytes;
-      if (origBytes[nBytes] >= 0x88 && origBytes[nBytes] <= 0x8B) {
+      nOrigBytes += numPrefixBytes;
+      if (origBytes[nOrigBytes] >= 0x88 &&
+          origBytes[nOrigBytes] <= 0x8B) {
         
-        ++nBytes;
-        int len = CountModRmSib(origBytes + nBytes);
+        ++nOrigBytes;
+        int len = CountModRmSib(origBytes + nOrigBytes);
         if (len < 0) {
           return;
         }
-        nBytes += len;
-      } else if (origBytes[nBytes] == 0xA1) {
+        nOrigBytes += len;
+      } else if (origBytes[nOrigBytes] == 0xA1) {
         
-        nBytes += 5;
-      } else if (origBytes[nBytes] == 0xB8) {
+        nOrigBytes += 5;
+      } else if (origBytes[nOrigBytes] == 0xB8) {
         
-        nBytes += 5;
-      } else if (origBytes[nBytes] == 0x83) {
+        nOrigBytes += 5;
+      } else if (origBytes[nOrigBytes] == 0x33 &&
+                 (origBytes[nOrigBytes+1] & kMaskMod) == kModReg) {
         
-        unsigned char b = origBytes[nBytes + 1];
+        nOrigBytes += 2;
+      } else if ((origBytes[nOrigBytes] & 0xf8) == 0x40) {
+        
+        nOrigBytes += 1;
+      } else if (origBytes[nOrigBytes] == 0x83) {
+        
+        unsigned char b = origBytes[nOrigBytes + 1];
         if ((b & 0xc0) == 0xc0) {
           
-          nBytes += 3;
+          nOrigBytes += 3;
         } else {
           
           return;
         }
-      } else if (origBytes[nBytes] == 0x68) {
+      } else if (origBytes[nOrigBytes] == 0x68) {
         
-        nBytes += 5;
-      } else if ((origBytes[nBytes] & 0xf0) == 0x50) {
+        nOrigBytes += 5;
+      } else if ((origBytes[nOrigBytes] & 0xf0) == 0x50) {
         
-        nBytes++;
-      } else if (origBytes[nBytes] == 0x6A) {
+        nOrigBytes++;
+      } else if (origBytes[nOrigBytes] == 0x6A) {
         
-        nBytes += 2;
-      } else if (origBytes[nBytes] == 0xe9) {
-        pJmp32 = nBytes;
+        nOrigBytes += 2;
+      } else if (origBytes[nOrigBytes] == 0xe9) {
+        pJmp32 = nOrigBytes;
         
-        nBytes += 5;
-      } else if (origBytes[nBytes] == 0xff && origBytes[nBytes + 1] == 0x25) {
+        nOrigBytes += 5;
+      } else if (origBytes[nOrigBytes] == 0xff &&
+                 origBytes[nOrigBytes + 1] == 0x25) {
         
-        nBytes += 6;
+        nOrigBytes += 6;
+      } else if (origBytes[nOrigBytes] == 0xc2) {
+        
+#if defined(MOZILLA_INTERNAL_API)
+        NS_WARNING("Cannot hook method -- RET opcode found");
+#endif
+        return;
       } else {
         
         return;
       }
     }
+
+    
+    
+    memcpy(tramp, aOrigFunction, nOrigBytes);
 #elif defined(_M_X64)
-    JumpPatch jump;
+    
+    int nTrampBytes = 0;
+    bool foundJmp = false;
 
-    while (nBytes < 13) {
-
+    while (nOrigBytes < 13) {
       
-      if (jump.HasJumpPatch()) {
-        if (origBytes[nBytes] == 0x90 || origBytes[nBytes] == 0xcc) {
-          nBytes++;
+      
+      
+      
+      
+      
+      
+      
+      if (foundJmp) {
+        if (origBytes[nOrigBytes] == 0x90 || origBytes[nOrigBytes] == 0xcc) {
+          nOrigBytes++;
           continue;
         }
         return;
       }
-      if (origBytes[nBytes] == 0x0f) {
-        nBytes++;
-        if (origBytes[nBytes] == 0x1f) {
+      if (origBytes[nOrigBytes] == 0x0f) {
+        COPY_CODES(1);
+        if (origBytes[nOrigBytes] == 0x1f) {
           
-          nBytes++;
-          if ((origBytes[nBytes] & 0xc0) == 0x40 &&
-              (origBytes[nBytes] & 0x7) == 0x04) {
-            nBytes += 3;
+          COPY_CODES(1);
+          if ((origBytes[nOrigBytes] & 0xc0) == 0x40 &&
+              (origBytes[nOrigBytes] & 0x7) == 0x04) {
+            COPY_CODES(3);
           } else {
             return;
           }
-        } else if (origBytes[nBytes] == 0x05) {
+        } else if (origBytes[nOrigBytes] == 0x05) {
           
-          nBytes++;
-        } else if (origBytes[nBytes] == 0x84) {
+          COPY_CODES(1);
+        } else if (origBytes[nOrigBytes] == 0x84) {
           
-          jump.AddJumpPatch(nBytes - 1,
-                            (intptr_t)
-                              origBytes + nBytes + 5 +
-                            *(reinterpret_cast<int32_t*>(origBytes +
-                                                         nBytes + 1)),
-                            JumpType::Je);
-          nBytes += 5;
+          JumpPatch jump(nTrampBytes - 1,  
+                          (intptr_t)(origBytes + nOrigBytes + 5 +
+                                     *(reinterpret_cast<int32_t*>(origBytes + nOrigBytes + 1))),
+                          JumpType::Je);
+          nTrampBytes = jump.GenerateJump(tramp);
+          nOrigBytes += 5;
         } else {
           return;
         }
-      } else if (origBytes[nBytes] == 0x40 ||
-                 origBytes[nBytes] == 0x41) {
+      } else if (origBytes[nOrigBytes] == 0x40 ||
+                 origBytes[nOrigBytes] == 0x41) {
         
-        nBytes++;
-
-        if ((origBytes[nBytes] & 0xf0) == 0x50) {
+        COPY_CODES(1);
+        if ((origBytes[nOrigBytes] & 0xf0) == 0x50) {
           
-          nBytes++;
-        } else if (origBytes[nBytes] >= 0xb8 && origBytes[nBytes] <= 0xbf) {
+          COPY_CODES(1);
+        } else if (origBytes[nOrigBytes] >= 0xb8 && origBytes[nOrigBytes] <= 0xbf) {
           
-          nBytes += 5;
+          COPY_CODES(5);
         } else {
           return;
         }
-      } else if (origBytes[nBytes] == 0x45) {
+      } else if (origBytes[nOrigBytes] == 0x45) {
         
-        nBytes++;
+        COPY_CODES(1);
 
-        if (origBytes[nBytes] == 0x33) {
+        if (origBytes[nOrigBytes] == 0x33) {
           
-          nBytes += 2;
+          COPY_CODES(2);
         } else {
           return;
         }
-      } else if ((origBytes[nBytes] & 0xfb) == 0x48) {
+      } else if ((origBytes[nOrigBytes] & 0xfb) == 0x48) {
         
-        nBytes++;
+        COPY_CODES(1);
 
-        if (origBytes[nBytes] == 0x81 &&
-            (origBytes[nBytes + 1] & 0xf8) == 0xe8) {
+        if (origBytes[nOrigBytes] == 0x81 &&
+            (origBytes[nOrigBytes + 1] & 0xf8) == 0xe8) {
           
-          nBytes += 6;
-        } else if (origBytes[nBytes] == 0x83 &&
-                   (origBytes[nBytes + 1] & 0xf8) == 0xe8) {
+          COPY_CODES(6);
+        } else if (origBytes[nOrigBytes] == 0x83 &&
+                   (origBytes[nOrigBytes + 1] & 0xf8) == 0xe8) {
           
-          nBytes += 3;
-        } else if (origBytes[nBytes] == 0x83 &&
-                   (origBytes[nBytes + 1] & 0xf8) == 0x60) {
+          COPY_CODES(3);
+        } else if (origBytes[nOrigBytes] == 0x83 &&
+                   (origBytes[nOrigBytes + 1] & (kMaskMod|kMaskReg)) == kModReg) {
           
-          nBytes += 5;
-        } else if (origBytes[nBytes] == 0x85) {
+          COPY_CODES(3);
+        } else if (origBytes[nOrigBytes] == 0x83 &&
+                   (origBytes[nOrigBytes + 1] & 0xf8) == 0x60) {
           
-          if ((origBytes[nBytes + 1] & 0xc0) == 0xc0) {
-            nBytes += 2;
+          COPY_CODES(5);
+        } else if (origBytes[nOrigBytes] == 0x2b &&
+                   (origBytes[nOrigBytes + 1] & kMaskMod) == kModReg) {
+          
+          COPY_CODES(2);
+        } else if (origBytes[nOrigBytes] == 0x85) {
+          
+          if ((origBytes[nOrigBytes + 1] & 0xc0) == 0xc0) {
+            COPY_CODES(2);
           } else {
             return;
           }
-        } else if ((origBytes[nBytes] & 0xfd) == 0x89) {
-          ++nBytes;
+        } else if ((origBytes[nOrigBytes] & 0xfd) == 0x89) {
+          COPY_CODES(1);
           
-          int len = CountModRmSib(origBytes + nBytes);
+          int len = CountModRmSib(origBytes + nOrigBytes);
           if (len < 0) {
             return;
           }
-          nBytes += len;
-        } else if (origBytes[nBytes] == 0xc7) {
+          COPY_CODES(len);
+        } else if (origBytes[nOrigBytes] == 0xc7) {
           
-          if (origBytes[nBytes + 1] == 0x44) {
+          if (origBytes[nOrigBytes + 1] == 0x44) {
             
             
-            nBytes += 8;
+            COPY_CODES(8);
           } else {
             return;
           }
-        } else if (origBytes[nBytes] == 0xff) {
+        } else if (origBytes[nOrigBytes] == 0xff) {
           
-          if ((origBytes[nBytes + 1] & 0xc0) == 0x0 &&
-              (origBytes[nBytes + 1] & 0x07) == 0x5) {
+          if ((origBytes[nOrigBytes + 1] & 0xc0) == 0x0 &&
+              (origBytes[nOrigBytes + 1] & 0x07) == 0x5) {
             
             
-            jump.AddJumpPatch(nBytes - 1,
-                              *reinterpret_cast<intptr_t*>(
-                                origBytes + nBytes + 6 +
-                              *reinterpret_cast<int32_t*>(origBytes + nBytes +
-                                                          2)));
-            nBytes += 6;
+            JumpPatch jump(nTrampBytes - 1,  
+                           *reinterpret_cast<intptr_t*>(origBytes + nOrigBytes + 6 +
+                                                        *reinterpret_cast<int32_t*>(origBytes + nOrigBytes + 2)),
+                           JumpType::Jmp);
+            nTrampBytes = jump.GenerateJump(tramp);
+            nOrigBytes += 6;
+            foundJmp = true;
           } else {
             
             return;
@@ -860,91 +905,107 @@ protected:
           
           return;
         }
-      } else if (origBytes[nBytes] == 0x66) {
+      } else if (origBytes[nOrigBytes] == 0x66) {
         
-        nBytes += 1;
+        COPY_CODES(1);
         
-        if (origBytes[nBytes] >= 0x88 && origBytes[nBytes] <= 0x8B) {
+        if (origBytes[nOrigBytes] >= 0x88 && origBytes[nOrigBytes] <= 0x8B) {
           
-          unsigned char b = origBytes[nBytes + 1];
+          unsigned char b = origBytes[nOrigBytes + 1];
           if (((b & 0xc0) == 0xc0) ||
               (((b & 0xc0) == 0x00) &&
                ((b & 0x07) != 0x04) && ((b & 0x07) != 0x05))) {
             
-            nBytes += 2;
+            COPY_CODES(2);
           } else if ((b & 0xc0) == 0x40) {
             if ((b & 0x07) == 0x04) {
               
-              nBytes += 4;
+              COPY_CODES(4);
             } else {
               
-              nBytes += 3;
+              COPY_CODES(3);
             }
           } else {
             
             return;
           }
         }
-      } else if ((origBytes[nBytes] & 0xf0) == 0x50) {
+      } else if ((origBytes[nOrigBytes] & 0xf0) == 0x50) {
         
-        nBytes++;
-      } else if (origBytes[nBytes] == 0x65) {
-        
-        
+        COPY_CODES(1);
+      } else if (origBytes[nOrigBytes] == 0x65) {
         
         
         
-        if (origBytes[nBytes + 1] == 0x48 &&
-            (origBytes[nBytes + 2] >= 0x88 && origBytes[nBytes + 2] <= 0x8b)) {
-          nBytes += 3;
-          int len = CountModRmSib(origBytes + nBytes);
+        
+        
+        if (origBytes[nOrigBytes + 1] == 0x48 &&
+            (origBytes[nOrigBytes + 2] >= 0x88 && origBytes[nOrigBytes + 2] <= 0x8b)) {
+          COPY_CODES(3);
+          int len = CountModRmSib(origBytes + nOrigBytes);
           if (len < 0) {
             
             return;
           }
-          nBytes += len;
+          COPY_CODES(len);
         } else {
           return;
         }
-      } else if (origBytes[nBytes] == 0x90) {
+      } else if (origBytes[nOrigBytes] == 0x90) {
         
-        nBytes++;
-      } else if (origBytes[nBytes] == 0xb8) {
+        COPY_CODES(1);
+      } else if (origBytes[nOrigBytes] == 0xb8) {
         
-        nBytes += 5;
-      } else if (origBytes[nBytes] == 0x33) {
+        COPY_CODES(5);
+      } else if (origBytes[nOrigBytes] == 0x33) {
         
-        nBytes += 2;
-      } else if (origBytes[nBytes] == 0xf6) {
+        COPY_CODES(2);
+      } else if (origBytes[nOrigBytes] == 0xf6) {
         
         
         
         BYTE subOpcode = 0;
-        int nModRmSibBytes = CountModRmSib(&origBytes[nBytes + 1], &subOpcode);
+        int nModRmSibBytes = CountModRmSib(&origBytes[nOrigBytes + 1], &subOpcode);
         if (nModRmSibBytes < 0 || subOpcode != 0) {
           
           return;
         }
-        nBytes += 2 + nModRmSibBytes;
-      } else if (origBytes[nBytes] == 0xc3) {
+        COPY_CODES(2 + nModRmSibBytes);
+      } else if (origBytes[nOrigBytes] == 0xd1 &&
+                  (origBytes[nOrigBytes+1] & kMaskMod) == kModReg) {
         
-        nBytes++;
-      } else if (origBytes[nBytes] == 0xcc) {
         
-        nBytes++;
-      } else if (origBytes[nBytes] == 0xe9) {
+        COPY_CODES(2);
+      } else if (origBytes[nOrigBytes] == 0xc3) {
         
-        jump.AddJumpPatch(nBytes,
-                          
-                          (intptr_t)
-                            origBytes + nBytes + 5 +
-                          *(reinterpret_cast<int32_t*>(origBytes + nBytes + 1)));
-        nBytes += 5;
-      } else if (origBytes[nBytes] == 0xff) {
-        nBytes++;
-        if ((origBytes[nBytes] & 0xf8) == 0xf0) {
+        COPY_CODES(1);
+      } else if (origBytes[nOrigBytes] == 0xcc) {
+        
+        COPY_CODES(1);
+      } else if (origBytes[nOrigBytes] == 0xe8 ||
+                 origBytes[nOrigBytes] == 0xe9) {
+        
+        foundJmp = origBytes[nOrigBytes] == 0xe9;
+        JumpPatch jump(nTrampBytes,
+                       (intptr_t)(origBytes + nOrigBytes + 5 +
+                                  *(reinterpret_cast<int32_t*>(origBytes + nOrigBytes + 1))),
+                       origBytes[nOrigBytes] == 0xe8 ? JumpType::Call : JumpType::Jmp);
+        nTrampBytes = jump.GenerateJump(tramp);
+        nOrigBytes += 5;
+      } else if (origBytes[nOrigBytes] == 0xff) {
+        COPY_CODES(1);
+        if ((origBytes[nOrigBytes] & (kMaskMod|kMaskReg)) == 0xf0) {
           
-          nBytes++;
+          COPY_CODES(1);
+        } else if (origBytes[nOrigBytes] == 0x25) {
+          
+          foundJmp = true;
+          int32_t offset = *(reinterpret_cast<int32_t*>(origBytes + nOrigBytes + 1));
+          int64_t* ptrToJmpDest = reinterpret_cast<int64_t*>(origBytes + nOrigBytes + 5 + offset);
+          intptr_t jmpDest = static_cast<intptr_t>(*ptrToJmpDest);
+          JumpPatch jump(nTrampBytes, jmpDest, JumpType::Jmp);
+          nTrampBytes = jump.GenerateJump(tramp);
+          nOrigBytes += 5;
         } else {
           return;
         }
@@ -956,20 +1017,13 @@ protected:
 #error "Unknown processor type"
 #endif
 
-    if (nBytes > 100) {
+    if (nOrigBytes > 100) {
       
       return;
     }
 
     
-    
-    *((void**)tramp) = aOrigFunction;
-    tramp += sizeof(void*);
-
-    memcpy(tramp, aOrigFunction, nBytes);
-
-    
-    byteptr_t trampDest = origBytes + nBytes;
+    byteptr_t trampDest = origBytes + nOrigBytes;
 
 #if defined(_M_IX86)
     if (pJmp32 >= 0) {
@@ -978,20 +1032,16 @@ protected:
       
       *((intptr_t*)(tramp + pJmp32 + 1)) += origBytes - tramp;
     } else {
-      tramp[nBytes] = 0xE9; 
-      *((intptr_t*)(tramp + nBytes + 1)) =
-        (intptr_t)trampDest - (intptr_t)(tramp + nBytes + 5); 
+      tramp[nOrigBytes] = 0xE9; 
+      *((intptr_t*)(tramp + nOrigBytes + 1)) =
+        (intptr_t)trampDest - (intptr_t)(tramp + nOrigBytes + 5); 
     }
 #elif defined(_M_X64)
     
-    if (jump.HasJumpPatch()) {
-      size_t offset = jump.GenerateJump(tramp);
-      if (jump.mType != JumpType::Jmp) {
-        JumpPatch patch(offset, reinterpret_cast<intptr_t>(trampDest));
-        patch.GenerateJump(tramp);
-      }
-    } else {
-      JumpPatch patch(nBytes, reinterpret_cast<intptr_t>(trampDest));
+    
+    
+    if (!foundJmp) {
+      JumpPatch patch(nTrampBytes, reinterpret_cast<intptr_t>(trampDest));
       patch.GenerateJump(tramp);
     }
 #endif
@@ -1000,7 +1050,7 @@ protected:
     *aOutTramp = tramp;
 
     
-    AutoVirtualProtect protect(aOrigFunction, nBytes, PAGE_EXECUTE_READWRITE);
+    AutoVirtualProtect protect(aOrigFunction, nOrigBytes, PAGE_EXECUTE_READWRITE);
     if (!protect.Protect()) {
       
       return;
