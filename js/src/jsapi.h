@@ -4598,7 +4598,7 @@ CallOriginalPromiseReject(JSContext* cx, JS::HandleValue rejectionValue);
 
 
 extern JS_PUBLIC_API(bool)
-ResolvePromise(JSContext* cx, JS::HandleObject promise, JS::HandleValue resolutionValue);
+ResolvePromise(JSContext* cx, JS::HandleObject promiseObj, JS::HandleValue resolutionValue);
 
 
 
@@ -4607,7 +4607,7 @@ ResolvePromise(JSContext* cx, JS::HandleObject promise, JS::HandleValue resoluti
 
 
 extern JS_PUBLIC_API(bool)
-RejectPromise(JSContext* cx, JS::HandleObject promise, JS::HandleValue rejectionValue);
+RejectPromise(JSContext* cx, JS::HandleObject promiseObj, JS::HandleValue rejectionValue);
 
 
 
