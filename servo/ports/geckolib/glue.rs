@@ -28,6 +28,7 @@ use style::gecko::selector_parser::{SelectorImpl, PseudoElement};
 use style::gecko::traversal::RecalcStyleOnly;
 use style::gecko::wrapper::DUMMY_BASE_URL;
 use style::gecko::wrapper::GeckoElement;
+use style::gecko_bindings::bindings;
 use style::gecko_bindings::bindings::{RawServoDeclarationBlockBorrowed, RawServoDeclarationBlockStrong};
 use style::gecko_bindings::bindings::{RawServoStyleRuleBorrowed, RawServoStyleRuleStrong};
 use style::gecko_bindings::bindings::{RawServoStyleSetBorrowed, RawServoStyleSetOwned};
@@ -163,14 +164,19 @@ fn traverse_subtree(element: GeckoElement, raw_data: RawServoStyleSetBorrowed,
     }
 }
 
+
+
+
 #[no_mangle]
 pub extern "C" fn Servo_TraverseSubtree(root: RawGeckoElementBorrowed,
                                         raw_data: RawServoStyleSetBorrowed,
-                                        behavior: structs::TraversalRootBehavior) -> () {
+                                        behavior: structs::TraversalRootBehavior) -> bool {
     let element = GeckoElement(root);
     debug!("Servo_TraverseSubtree: {:?}", element);
     traverse_subtree(element, raw_data,
                      behavior == structs::TraversalRootBehavior::UnstyledChildrenOnly);
+
+    element.has_dirty_descendants() || element.mutate_data().unwrap().has_restyle()
 }
 
 #[no_mangle]
@@ -339,24 +345,6 @@ pub extern "C" fn Servo_StyleWorkerThreadCount() -> u32 {
 #[no_mangle]
 pub extern "C" fn Servo_Element_ClearData(element: RawGeckoElementBorrowed) -> () {
     GeckoElement(element).clear_data();
-}
-
-#[no_mangle]
-pub extern "C" fn Servo_Element_ShouldTraverse(element: RawGeckoElementBorrowed) -> bool {
-    let element = GeckoElement(element);
-    debug_assert!(!element.has_dirty_descendants(),
-                  "only call Servo_Element_ShouldTraverse if you know the element \
-                   does not have dirty descendants");
-    let result = match element.borrow_data() {
-        
-        
-        
-        
-        
-        Some(d) => !d.has_styles() || d.has_restyle(),
-        None => true,
-    };
-    result
 }
 
 #[no_mangle]
@@ -1077,6 +1065,7 @@ unsafe fn maybe_restyle<'a>(data: &'a mut AtomicRefMut<ElementData>, element: Ge
         if curr.has_dirty_descendants() { break; }
         curr.set_dirty_descendants();
     }
+    bindings::Gecko_SetOwnerDocumentNeedsStyleFlush(element.0);
 
     
     Some(data.ensure_restyle())
