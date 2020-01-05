@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
-* License, v. 2.0. If a copy of the MPL was not distributed with this
-* file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "FlacDemuxer.h"
 
@@ -15,24 +15,19 @@
 #include "VideoUtils.h"
 #include "TimeUnits.h"
 
-#ifdef PR_LOGGING
 extern mozilla::LazyLogModule gMediaDemuxerLog;
 #define LOG(msg, ...) \
   MOZ_LOG(gMediaDemuxerLog, LogLevel::Debug, ("FlacDemuxer " msg, ##__VA_ARGS__))
 #define LOGV(msg, ...) \
   MOZ_LOG(gMediaDemuxerLog, LogLevel::Verbose, ("FlacDemuxer " msg, ##__VA_ARGS__))
-#else
-#define LOG(msg, ...)  do {} while (false)
-#define LOGV(msg, ...) do {} while (false)
-#endif
 
 using namespace mozilla::media;
 
 namespace mozilla {
 namespace flac {
 
-// flac::FrameHeader - Holds the flac frame header and its parsing
-// state.
+
+
 
 #define FLAC_MAX_CHANNELS           8
 #define FLAC_MIN_BLOCKSIZE         16
@@ -51,68 +46,68 @@ public:
 
   bool IsValid() const { return mValid; }
 
-  // Return the index (in samples) from the beginning of the track.
+  
   int64_t Index() const { return mIndex; }
 
-  // Parse the current packet and check that it made a valid flac frame header.
-  // From https://xiph.org/flac/format.html#frame_header
-  // A valid header is one that can be decoded without error and that has a
-  // valid CRC.
-  // aPacket must points to a buffer that is at least FLAC_MAX_FRAME_HEADER_SIZE
-  // bytes.
+  
+  
+  
+  
+  
+  
   bool Parse(const uint8_t* aPacket)
   {
     mp4_demuxer::BitReader br(aPacket, FLAC_MAX_FRAME_HEADER_SIZE * 8);
 
-    // Frame sync code.
+    
     if ((br.ReadBits(15) & 0x7fff) != 0x7ffc) {
       return false;
     }
 
-    // Variable block size stream code.
+    
     mVariableBlockSize = br.ReadBit();
 
-    // Block size and sample rate codes.
+    
     int bs_code = br.ReadBits(4);
     int sr_code = br.ReadBits(4);
 
-    // Channels and decorrelation.
+    
     int ch_mode = br.ReadBits(4);
     if (ch_mode < FLAC_MAX_CHANNELS) {
       mInfo.mChannels = ch_mode + 1;
     } else if (ch_mode < FLAC_MAX_CHANNELS + FLAC_CHMODE_MID_SIDE) {
-      // This is a special flac channels, we can't handle those yet. Treat it
-      // as stereo.
+      
+      
       mInfo.mChannels = 2;
     } else {
-      // invalid channel mode
+      
       return false;
     }
 
-    // Bits per sample.
+    
     int bps_code = br.ReadBits(3);
     if (bps_code == 3 || bps_code == 7) {
-      // Invalid sample size code.
+      
       return false;
     }
     mInfo.mBitDepth = FlacSampleSizeTable[bps_code];
 
-    // Reserved bit, most be 1.
+    
     if (br.ReadBit()) {
-      // Broken stream, invalid padding.
+      
       return false;
     }
 
-    // Sample or frame count.
+    
     int64_t frame_or_sample_num = br.ReadUTF8();
     if (frame_or_sample_num < 0) {
-      // Sample/frame number invalid.
+      
       return false;
     }
 
-    // Blocksize
+    
     if (bs_code == 0) {
-      // reserved blocksize code
+      
       return false;
     } else if (bs_code == 6) {
       mBlocksize = br.ReadBits(8) + 1;
@@ -122,14 +117,14 @@ public:
       mBlocksize = FlacBlocksizeTable[bs_code];
     }
 
-    // The sample index is either:
-    // 1- coded sample number if blocksize is variable or
-    // 2- coded frame number if blocksize is known.
-    // A frame is made of Blocksize sample.
+    
+    
+    
+    
     mIndex = mVariableBlockSize ? frame_or_sample_num
                                 : frame_or_sample_num * mBlocksize;
 
-    // Sample rate.
+    
     if (sr_code < 12) {
       mInfo.mRate = FlacSampleRateTable[sr_code];
     } else if (sr_code == 12) {
@@ -139,11 +134,11 @@ public:
     } else if (sr_code == 14) {
       mInfo.mRate = br.ReadBits(16) * 10;
     } else {
-      // Illegal sample rate code.
+      
       return false;
     }
 
-    // Header CRC-8 check.
+    
     uint8_t crc = 0;
     for (uint32_t i = 0; i < br.BitCount() / 8; i++) {
       crc = CRC8Table[crc ^ aPacket[i]];
@@ -152,7 +147,7 @@ public:
     mSize = br.BitCount() / 8;
 
     if (mValid) {
-      // Set the mimetype to make it a valid AudioInfo.
+      
       mInfo.mMimeType = "audio/flac";
     }
 
@@ -169,7 +164,7 @@ private:
     FLAC_CHMODE_MID_SIDE,
   };
   AudioInfo mInfo;
-  // Index in samples from start;
+  
   int64_t mIndex = 0;
   bool mVariableBlockSize = false;
   uint32_t mBlocksize = 0;;
@@ -234,18 +229,18 @@ const uint8_t FrameHeader::CRC8Table[256] =
   0xE6, 0xE1, 0xE8, 0xEF, 0xFA, 0xFD, 0xF4, 0xF3
 };
 
-// flac::Frame - Frame meta container used to parse and hold a frame
-// header and side info.
+
+
 class Frame
 {
 public:
 
-  // The FLAC signature is made of 14 bits set to 1; however the 15th bit is
-  // mandatorily set to 0, so we need to find either of 0xfffc or 0xfffd 2-bytes
-  // signature. We first use a bitmask to see if 0xfc or 0xfd is present. And if
-  // so we check for the whole signature.
-  // aData must be pointing to a buffer at least
-  // aLength + FLAC_MAX_FRAME_HEADER_SIZE bytes.
+  
+  
+  
+  
+  
+  
   int64_t FindNext(const uint8_t* aData, const uint32_t aLength)
   {
     uint32_t modOffset = aLength % 4;
@@ -274,8 +269,8 @@ public:
     return -1;
   }
 
-  // Find the next frame start in the current resource.
-  // On exit return true, offset is set and resource points to the frame found.
+  
+  
   bool FindNext(MediaResourceIndex& aResource)
   {
     static const int BUFFER_SIZE = 4096;
@@ -297,9 +292,9 @@ public:
       }
 
       if (read < FLAC_MAX_FRAME_HEADER_SIZE) {
-        // Assume that we can't have a valid frame in such small content, we
-        // must have reached EOS.
-        // So we're done.
+        
+        
+        
         mEOS = true;
         return false;
       }
@@ -313,7 +308,7 @@ public:
         return true;
       }
 
-      // Scan the next block;
+      
       offset += bufSize;
       buffer.RemoveElementsAt(0, bufSize);
       innerOffset = buffer.Length();
@@ -355,7 +350,7 @@ public:
     return FramesToTimeUnit(mDuration, Header().Info().mRate);
   }
 
-  // Returns the parsed frame header.
+  
   const FrameHeader& Header() const { return mHeader; }
 
   bool IsValid() const { return mHeader.IsValid(); }
@@ -368,7 +363,7 @@ public:
 
   void SetInvalid() { mHeader.mValid = false; }
 
-  // Resets the frame header and data.
+  
   void Reset() { *this = Frame(); }
 
 private:
@@ -378,13 +373,13 @@ private:
     aResource.Seek(SEEK_SET, mOffset);
   }
 
-  // The offset to the start of the header.
+  
   int64_t mOffset = 0;
   uint32_t mSize = 0;
   uint32_t mDuration = 0;
   bool mEOS = false;
 
-  // The currently parsed frame header.
+  
   FrameHeader mHeader;
 
 };
@@ -393,27 +388,27 @@ class FrameParser
 {
 public:
 
-  // Returns the currently parsed frame. Reset via EndFrameSession.
+  
   const Frame& CurrentFrame() const { return mFrame; }
 
-  // Returns the first parsed frame.
+  
   const Frame& FirstFrame() const { return mFirstFrame; }
 
-  // Clear the last parsed frame to allow for next frame parsing
+  
   void EndFrameSession()
   {
     mNextFrame.Reset();
     mFrame.Reset();
   }
 
-  // Attempt to find the next frame.
+  
   bool FindNextFrame(MediaResourceIndex& aResource)
   {
     mFrame = mNextFrame;
     if (GetNextFrame(aResource)) {
       if (!mFrame.IsValid()) {
         mFrame = mNextFrame;
-        // We need two frames to be able to start playing (or have reached EOS).
+        
         GetNextFrame(aResource);
       }
     }
@@ -433,7 +428,7 @@ public:
     return mFrame.IsValid();
   }
 
-  // Convenience methods to external FlacFrameParser ones.
+  
   bool IsHeaderBlock(const uint8_t* aPacket, size_t aLength) const
   {
     return mParser.IsHeaderBlock(aPacket, aLength);
@@ -453,22 +448,22 @@ public:
 
   AudioInfo Info() const { return mParser.mInfo; }
 
-  // Return a hash table with tag metadata.
+  
   MetadataTags* GetTags() const { return mParser.GetTags(); }
 
 private:
   bool GetNextFrame(MediaResourceIndex& aResource)
   {
     while (mNextFrame.FindNext(aResource)) {
-      // Move our offset slightly, so that we don't find the same frame at the
-      // next FindNext call.
+      
+      
       aResource.Seek(SEEK_CUR, mNextFrame.Header().Size());
       if (mFrame.IsValid()
           && mNextFrame.Offset() - mFrame.Offset() < FLAC_MAX_FRAME_SIZE
           && !CheckCRC16AtOffset(mFrame.Offset(),
                                  mNextFrame.Offset(),
                                  aResource)) {
-        // The frame doesn't match its CRC or would be too far, skip it..
+        
         continue;
       }
       CheckFrameData();
@@ -482,7 +477,7 @@ private:
     if (mNextFrame.Header().Info().mRate == 0
         || mNextFrame.Header().Info().mBitDepth == 0) {
       if (!Info().IsValid()) {
-        // We can only use the STREAMINFO data if we have one.
+        
         mNextFrame.SetInvalid();
       } else {
         if (mNextFrame.Header().Info().mRate == 0) {
@@ -558,16 +553,16 @@ private:
   };
 
   FlacFrameParser mParser;
-  // We keep the first parsed frame around for static info access
-  // and the currently parsed frame.
+  
+  
   Frame mFirstFrame;
   Frame mNextFrame;
   Frame mFrame;
 };
 
-} // namespace flac
+} 
 
-// FlacDemuxer
+
 
 FlacDemuxer::FlacDemuxer(MediaResource* aSource) : mSource(aSource) { }
 
@@ -622,7 +617,7 @@ FlacDemuxer::IsSeekable() const
   return mTrackDemuxer && mTrackDemuxer->IsSeekable();
 }
 
-// FlacTrackDemuxer
+
 FlacTrackDemuxer::FlacTrackDemuxer(MediaResource* aSource)
   : mSource(aSource)
   , mParser(new flac::FrameParser())
@@ -640,9 +635,9 @@ FlacTrackDemuxer::Init()
 {
   static const int BUFFER_SIZE = 4096;
 
-  // First check if we have a valid Flac start.
+  
   char buffer[BUFFER_SIZE];
-  const uint8_t* ubuffer = // only needed due to type constraints of ReadAt.
+  const uint8_t* ubuffer = 
     reinterpret_cast<uint8_t*>(buffer);
   int64_t offset = 0;
 
@@ -650,13 +645,13 @@ FlacTrackDemuxer::Init()
     uint32_t read = 0;
     nsresult ret = mSource.ReadAt(offset, buffer, BUFFER_SIZE, &read);
     if (NS_FAILED(ret) || read < BUFFER_SIZE) {
-      // Assume that if we can't read that many bytes while parsing the header,
-      // that something is wrong.
+      
+      
       return false;
     }
     if (!mParser->IsHeaderBlock(ubuffer, BUFFER_SIZE)) {
-      // Not a header and we haven't reached the end of the metadata blocks.
-      // Will fall back to using the frames header instead.
+      
+      
       break;
     }
     uint32_t sizeHeader = mParser->HeaderBlockLength(ubuffer);
@@ -671,24 +666,24 @@ FlacTrackDemuxer::Init()
     offset += sizeHeader;
   } while (!mParser->HasFullMetadata());
 
-  // First flac frame is found after the metadata.
-  // Can seek there immediately to avoid reparsing it all.
+  
+  
   mSource.Seek(SEEK_SET, offset);
 
-  // Find the first frame to fully initialise our parser.
+  
   if (mParser->FindNextFrame(mSource)) {
-    // Ensure that the next frame returned will be the first.
+    
     mSource.Seek(SEEK_SET, mParser->FirstFrame().Offset());
     mParser->EndFrameSession();
   } else if (!mParser->Info().IsValid() || !mParser->FirstFrame().IsValid()) {
-    // We must find at least a frame to determine the metadata.
-    // We can't play this stream.
+    
+    
     return false;
   }
 
   if (!mParser->Info().IsValid() || !mParser->Info().mDuration) {
-    // Check if we can look at the last frame for the end time to determine the
-    // duration when we don't have any.
+    
+    
     TimeAtEnd();
   }
 
@@ -699,7 +694,7 @@ UniquePtr<TrackInfo>
 FlacTrackDemuxer::GetInfo() const
 {
   if (mParser->Info().IsValid()) {
-    // We have a proper metadata header.
+    
     UniquePtr<TrackInfo> info = mParser->Info().Clone();
     nsAutoPtr<MetadataTags> tags(mParser->GetTags());
     if (tags) {
@@ -709,7 +704,7 @@ FlacTrackDemuxer::GetInfo() const
     }
     return info;
   } else if (mParser->FirstFrame().Info().IsValid()) {
-    // Use the first frame header.
+    
     UniquePtr<TrackInfo> info = mParser->FirstFrame().Info().Clone();
     info->mDuration = Duration().ToMicroseconds();
     return info;
@@ -720,17 +715,17 @@ FlacTrackDemuxer::GetInfo() const
 bool
 FlacTrackDemuxer::IsSeekable() const
 {
-  // For now we only allow seeking if a STREAMINFO block was found and with
-  // a known number of samples (duration is set).
+  
+  
   return mParser->Info().IsValid() && mParser->Info().mDuration;
 }
 
 RefPtr<FlacTrackDemuxer::SeekPromise>
 FlacTrackDemuxer::Seek(const TimeUnit& aTime)
 {
-  // Efficiently seek to the position.
+  
   FastSeek(aTime);
-  // Correct seek position by scanning the next frames.
+  
   const TimeUnit seekTime = ScanUntil(aTime);
 
   return SeekPromise::CreateAndResolve(seekTime, __func__);
@@ -743,32 +738,32 @@ FlacTrackDemuxer::FastSeek(const TimeUnit& aTime)
       aTime.ToSeconds(), AverageFrameLength(),
       mParsedFramesDuration.ToSeconds(), GetResourceOffset());
 
-  // Invalidate current frames in the parser.
+  
   mParser->EndFrameSession();
 
   if (!mParser->FirstFrame().IsValid()) {
-    // Something wrong, and there's nothing to seek to anyway, so we can
-    // do whatever here.
+    
+    
     mSource.Seek(SEEK_SET, 0);
     return TimeUnit();
   }
 
   if (aTime <= mParser->FirstFrame().Time()) {
-    // We're attempting to seek prior the first frame, return the first frame.
+    
     mSource.Seek(SEEK_SET, mParser->FirstFrame().Offset());
     return mParser->FirstFrame().Time();
   }
 
-  // We look for the seek position using a bisection search, starting where the
-  // estimated position might be using the average frame length.
-  // Typically, with flac such approximation is typically useless.
+  
+  
+  
 
-  // Estimate where the position might be.
+  
   int64_t pivot =
     aTime.ToSeconds() * AverageFrameLength() + mParser->FirstFrame().Offset();
 
-  // Time in seconds where we can stop seeking and will continue using
-  // ScanUntil.
+  
+  
   static const int GAP_THRESHOLD = 5;
   int64_t first = mParser->FirstFrame().Offset();
   int64_t last = mSource.GetLength();
@@ -790,7 +785,7 @@ FlacTrackDemuxer::FastSeek(const TimeUnit& aTime)
          iterations, timeSeekedTo.ToSeconds(), frame.Offset());
 
     if (lastFoundOffset && lastFoundOffset.ref() == frame.Offset()) {
-      // Same frame found twice. We're done.
+      
       break;
     }
     lastFoundOffset = Some(frame.Offset());
@@ -800,8 +795,8 @@ FlacTrackDemuxer::FastSeek(const TimeUnit& aTime)
     }
     if (aTime > frame.Time()
         && aTime - frame.Time() <= TimeUnit::FromSeconds(GAP_THRESHOLD)) {
-      // We're close enough to the target, experimentation shows that bisection
-      // search doesn't help much after that.
+      
+      
       break;
     }
     if (frame.Time() > aTime) {
@@ -840,11 +835,11 @@ FlacTrackDemuxer::ScanUntil(const TimeUnit& aTime)
   }
 
   if (!mParser->CurrentFrame().IsValid()) {
-    // We reached EOS.
+    
     return Duration();
   }
 
-  // Seek back to the last frame found prior the target.
+  
   mParser->EndFrameSession();
   mSource.Seek(SEEK_SET, previousOffset);
   return previousTime;
@@ -902,7 +897,7 @@ FlacTrackDemuxer::Reset()
 RefPtr<FlacTrackDemuxer::SkipAccessPointPromise>
 FlacTrackDemuxer::SkipToNextRandomAccessPoint(const TimeUnit& aTimeThreshold)
 {
-  // Will not be called for audio-only resources.
+  
   return SkipAccessPointPromise::CreateAndReject(
     SkipFailureHolder(NS_ERROR_DOM_MEDIA_DEMUXER_ERR, 0), __func__);
 }
@@ -922,8 +917,8 @@ FlacTrackDemuxer::GetBuffered()
     return TimeIntervals();
   }
 
-  // We could simply parse the cached data instead and read the timestamps.
-  // However, for now this will do.
+  
+  
   AutoPinned<MediaResource> stream(mSource.GetResource());
   return GetEstimatedBufferedTimeRanges(stream, duration.ToMicroseconds());
 }
@@ -936,7 +931,7 @@ FlacTrackDemuxer::FindNextFrame()
        GetResourceOffset(), mParsedFramesDuration.ToSeconds(), mTotalFrameLen);
 
   if (mParser->FindNextFrame(mSource)) {
-    // Update our current progress stats.
+    
     mParsedFramesDuration =
       std::max(mParsedFramesDuration,
                mParser->CurrentFrame().Time() - mParser->FirstFrame().Time()
@@ -1027,10 +1022,10 @@ FlacTrackDemuxer::Duration() const
 TimeUnit
 FlacTrackDemuxer::TimeAtEnd()
 {
-  // Scan the last 128kB if available to determine the last frame.
+  
   static const int OFFSET_FROM_END = 128 * 1024;
 
-  // Seek to the end of the file and attempt to find the last frame.
+  
   MediaResourceIndex source(mSource.GetResource());
   TimeUnit previousDuration;
   TimeUnit previousTime;
@@ -1044,20 +1039,20 @@ FlacTrackDemuxer::TimeAtEnd()
 
   source.Seek(SEEK_SET, std::max<int64_t>(0LL, streamLen - OFFSET_FROM_END));
   while (parser.FindNextFrame(source)) {
-    // FFmpeg flac muxer can generate a last frame with earlier than the others.
+    
     previousTime = std::max(previousTime, parser.CurrentFrame().Time());
     if (parser.CurrentFrame().Duration() > TimeUnit()) {
-      // The last frame doesn't have a duration, so only update our duration
-      // if we do have one.
+      
+      
       previousDuration = parser.CurrentFrame().Duration();
     }
     if (source.Tell() >= streamLen) {
-      // Limit the read, in case the length change half-way.
+      
       break;
     }
   }
 
-  // Update our current progress stats.
+  
   mParsedFramesDuration =
     previousTime + previousDuration - mParser->FirstFrame().Time();
   mTotalFrameLen = streamLen - mParser->FirstFrame().Offset();
@@ -1065,7 +1060,7 @@ FlacTrackDemuxer::TimeAtEnd()
   return mParsedFramesDuration;
 }
 
-/* static */ bool
+ bool
 FlacDemuxer::FlacSniffer(const uint8_t* aData, const uint32_t aLength)
 {
   if (aLength < FLAC_MAX_FRAME_HEADER_SIZE) {
@@ -1076,4 +1071,4 @@ FlacDemuxer::FlacSniffer(const uint8_t* aData, const uint32_t aLength)
   return frame.FindNext(aData, aLength - FLAC_MAX_FRAME_HEADER_SIZE) >= 0;
 }
 
-} // namespace mozilla
+} 

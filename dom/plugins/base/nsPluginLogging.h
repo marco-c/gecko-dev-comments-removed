@@ -10,10 +10,6 @@
 
 #include "mozilla/Logging.h"
 
-#ifndef PLUGIN_LOGGING    
-#define PLUGIN_LOGGING 1  // master compile-time switch for pluging logging
-#endif
-
 
 
 
@@ -43,8 +39,6 @@
 
 
 
-#ifdef PLUGIN_LOGGING
-
 class nsPluginLogging
 {
 public:
@@ -53,38 +47,10 @@ public:
   static mozilla::LazyLogModule gPluginLog;  
 };
 
-#endif   
 
-
-#ifdef PLUGIN_LOGGING
- #define NPN_PLUGIN_LOG(a, b)                              \
-   PR_BEGIN_MACRO                                        \
-   MOZ_LOG(nsPluginLogging::gNPNLog, a, b); \
-   PR_LogFlush();                                                    \
-   PR_END_MACRO
-#else
- #define NPN_PLUGIN_LOG(a, b)
-#endif
-
-#ifdef PLUGIN_LOGGING
- #define NPP_PLUGIN_LOG(a, b)                              \
-   PR_BEGIN_MACRO                                         \
-   MOZ_LOG(nsPluginLogging::gNPPLog, a, b); \
-   PR_LogFlush();                                                    \
-   PR_END_MACRO
-#else
- #define NPP_PLUGIN_LOG(a, b)
-#endif
-
-#ifdef PLUGIN_LOGGING
- #define PLUGIN_LOG(a, b)                              \
-   PR_BEGIN_MACRO                                         \
-   MOZ_LOG(nsPluginLogging::gPluginLog, a, b); \
-   PR_LogFlush();                                                    \
-   PR_END_MACRO
-#else
- #define PLUGIN_LOG(a, b)
-#endif
+#define NPN_PLUGIN_LOG(a, b) MOZ_LOG(nsPluginLogging::gNPNLog, a, b)
+#define NPP_PLUGIN_LOG(a, b) MOZ_LOG(nsPluginLogging::gNPPLog, a, b)
+#define PLUGIN_LOG(a, b) MOZ_LOG(nsPluginLogging::gPluginLog, a, b)
 
 #endif   
 
