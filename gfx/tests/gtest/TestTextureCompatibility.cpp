@@ -94,7 +94,7 @@ CheckCompatibilityWithBasicCompositor(LayersBackend aBackends,
     if (!aTextures[i]) {
       continue;
     }
-    aTextures[i]->SetCompositor(compositor);
+    aTextures[i]->SetTextureSourceProvider(compositor);
 
     
     

@@ -456,7 +456,9 @@ public:
 
 
 
-  virtual void SetCompositor(Compositor* aCompositor) {}
+
+
+  virtual void SetTextureSourceProvider(TextureSourceProvider* aProvider) {}
 
   
 
@@ -580,8 +582,6 @@ public:
 
   TextureReadLock* GetReadLock() { return mReadLock; }
 
-  virtual Compositor* GetCompositor() = 0;
-
   virtual BufferTextureHost* AsBufferTextureHost() { return nullptr; }
 
 protected:
@@ -600,6 +600,7 @@ protected:
   void CallNotifyNotUsed();
 
   PTextureParent* mActor;
+  RefPtr<TextureSourceProvider> mProvider;
   RefPtr<TextureReadLock> mReadLock;
   TextureFlags mFlags;
   int mCompositableCount;
@@ -647,9 +648,7 @@ public:
 
   virtual void DeallocateDeviceData() override;
 
-  virtual void SetCompositor(Compositor* aCompositor) override;
-
-  virtual Compositor* GetCompositor() override { return mCompositor; }
+  virtual void SetTextureSourceProvider(TextureSourceProvider* aProvider) override;
 
   
 
