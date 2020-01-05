@@ -2,10 +2,12 @@
 
 
 
-use cssparser::{AtRuleParser, Delimiter, Parser, QualifiedRuleParser, RuleListParser};
+use cssparser::{AtRuleParser, Parser, QualifiedRuleParser, RuleListParser};
+use cssparser::{DeclarationListParser, DeclarationParser};
 use parser::{ParserContext, log_css_error};
+use properties::PropertyDeclarationParseResult;
 use properties::animated_properties::TransitionProperty;
-use properties::{PropertyDeclaration, parse_property_declaration_list};
+use properties::{PropertyDeclaration, Importance};
 use std::sync::Arc;
 
 
@@ -70,28 +72,12 @@ impl KeyframeSelector {
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct Keyframe {
     pub selector: KeyframeSelector,
-    pub declarations: Arc<Vec<PropertyDeclaration>>,
-}
 
-impl Keyframe {
-    pub fn parse(context: &ParserContext, input: &mut Parser) -> Result<Keyframe, ()> {
-        let percentages = try!(input.parse_until_before(Delimiter::CurlyBracketBlock, |input| {
-            input.parse_comma_separated(|input| KeyframePercentage::parse(input))
-        }));
-        let selector = KeyframeSelector(percentages);
-
-        try!(input.expect_curly_bracket_block());
-
-        let declarations = input.parse_nested_block(|input| {
-            Ok(parse_property_declaration_list(context, input))
-        }).unwrap();
-
-        
-        Ok(Keyframe {
-            selector: selector,
-            declarations: declarations.normal,
-        })
-    }
+    
+    
+    
+    
+    pub declarations: Arc<Vec<(PropertyDeclaration, Importance)>>,
 }
 
 
@@ -101,7 +87,8 @@ impl Keyframe {
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub enum KeyframesStepValue {
-    Declarations(Arc<Vec<PropertyDeclaration>>),
+    
+    Declarations(Arc<Vec<(PropertyDeclaration, Importance)>>),
     ComputedValues,
 }
 
@@ -127,7 +114,7 @@ impl KeyframesStep {
            value: KeyframesStepValue) -> Self {
         let declared_timing_function = match value {
             KeyframesStepValue::Declarations(ref declarations) => {
-                declarations.iter().any(|prop_decl| {
+                declarations.iter().any(|&(ref prop_decl, _)| {
                     match *prop_decl {
                         PropertyDeclaration::AnimationTimingFunction(..) => true,
                         _ => false,
@@ -167,8 +154,8 @@ fn get_animated_properties(keyframe: &Keyframe) -> Vec<TransitionProperty> {
     let mut ret = vec![];
     
     
-    for declaration in keyframe.declarations.iter() {
-        if let Some(property) = TransitionProperty::from_declaration(&declaration) {
+    for &(ref declaration, _) in keyframe.declarations.iter() {
+        if let Some(property) = TransitionProperty::from_declaration(declaration) {
             ret.push(property);
         }
     }
@@ -259,12 +246,49 @@ impl<'a> QualifiedRuleParser for KeyframeListParser<'a> {
 
     fn parse_block(&self, prelude: Self::Prelude, input: &mut Parser)
                    -> Result<Self::QualifiedRule, ()> {
+        let mut declarations = Vec::new();
+        let parser = KeyframeDeclarationParser {
+            context: self.context,
+        };
+        let mut iter = DeclarationListParser::new(input, parser);
+        while let Some(declaration) = iter.next() {
+            match declaration {
+                Ok(d) => declarations.extend(d.into_iter().map(|d| (d, Importance::Normal))),
+                Err(range) => {
+                    let pos = range.start;
+                    let message = format!("Unsupported keyframe property declaration: '{}'",
+                                          iter.input.slice(range));
+                    log_css_error(iter.input, pos, &*message, self.context);
+                }
+            }
+            
+        }
         Ok(Keyframe {
             selector: prelude,
-            
-            
-            
-            declarations: parse_property_declaration_list(self.context, input).normal,
+            declarations: Arc::new(declarations),
         })
+    }
+}
+
+struct KeyframeDeclarationParser<'a, 'b: 'a> {
+    context: &'a ParserContext<'b>,
+}
+
+
+impl<'a, 'b> AtRuleParser for KeyframeDeclarationParser<'a, 'b> {
+    type Prelude = ();
+    type AtRule = Vec<PropertyDeclaration>;
+}
+
+impl<'a, 'b> DeclarationParser for KeyframeDeclarationParser<'a, 'b> {
+    type Declaration = Vec<PropertyDeclaration>;
+
+    fn parse_value(&self, name: &str, input: &mut Parser) -> Result<Vec<PropertyDeclaration>, ()> {
+        let mut results = Vec::new();
+        match PropertyDeclaration::parse(name, self.context, input, &mut results, true) {
+            PropertyDeclarationParseResult::ValidOrIgnoredDeclaration => {}
+            _ => return Err(())
+        }
+        Ok(results)
     }
 }
