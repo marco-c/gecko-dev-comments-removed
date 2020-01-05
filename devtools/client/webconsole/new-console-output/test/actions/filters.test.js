@@ -2,7 +2,7 @@
 
 "use strict";
 
-const actions = require("devtools/client/webconsole/new-console-output/actions/filters");
+const actions = require("devtools/client/webconsole/new-console-output/actions/index");
 const {
   FILTER_TEXT_SET,
   FILTER_TOGGLE,

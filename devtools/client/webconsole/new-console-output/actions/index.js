@@ -1,0 +1,18 @@
+
+
+
+
+
+
+"use strict";
+
+const actionModules = [
+  "enhancers",
+  "filters",
+  "messages",
+  "ui",
+].map(filename => require(`./${filename}`));
+
+const actions = Object.assign({}, ...actionModules);
+
+module.exports = actions;
