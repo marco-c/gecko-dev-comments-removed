@@ -38,13 +38,13 @@ use url::Url;
 
 
 
-#[derive(Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct DevtoolsPageInfo {
     pub title: String,
     pub url: Url
 }
 
-#[derive(Deserialize, HeapSizeOf, Serialize, Clone)]
+#[derive(Debug, Deserialize, HeapSizeOf, Serialize, Clone)]
 pub struct CSSError {
     pub filename: String,
     pub line: usize,
@@ -54,6 +54,7 @@ pub struct CSSError {
 
 
 
+#[derive(Debug)]
 pub enum DevtoolsControlMsg {
     
     FromChrome(ChromeToDevtoolsControlMsg),
@@ -62,6 +63,7 @@ pub enum DevtoolsControlMsg {
 }
 
 
+#[derive(Debug)]
 pub enum ChromeToDevtoolsControlMsg {
     
     AddClient(TcpStream),
@@ -72,7 +74,7 @@ pub enum ChromeToDevtoolsControlMsg {
     NetworkEvent(String, NetworkEvent),
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 
 pub enum ScriptToDevtoolsControlMsg {
     
@@ -92,7 +94,7 @@ pub enum ScriptToDevtoolsControlMsg {
 
 
 
-#[derive(Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub enum EvaluateJSReply {
     VoidValue,
     NullValue,
@@ -102,14 +104,14 @@ pub enum EvaluateJSReply {
     ActorValue { class: String, uuid: String },
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct AttrInfo {
     pub namespace: String,
     pub name: String,
     pub value: String,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct NodeInfo {
     pub uniqueId: String,
     pub baseURI: String,
@@ -137,7 +139,7 @@ pub struct StartedTimelineMarker {
     start_stack: Option<Vec<()>>,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct TimelineMarker {
     pub name: String,
     pub start_time: PreciseTime,
@@ -146,14 +148,14 @@ pub struct TimelineMarker {
     pub end_stack: Option<Vec<()>>,
 }
 
-#[derive(PartialEq, Eq, Hash, Clone, Deserialize, Serialize, HeapSizeOf)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Deserialize, Serialize, HeapSizeOf)]
 pub enum TimelineMarkerType {
     Reflow,
     DOMEvent,
 }
 
 
-#[derive(Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct ComputedNodeLayout {
     pub display: String,
     pub position: String,
@@ -180,7 +182,7 @@ pub struct ComputedNodeLayout {
     pub height: f32,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct AutoMargins {
     pub top: bool,
     pub right: bool,
@@ -190,7 +192,7 @@ pub struct AutoMargins {
 
 
 
-#[derive(Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub enum DevtoolScriptControlMsg {
     
     EvaluateJS(PipelineId, String, IpcSender<EvaluateJSReply>),
@@ -219,13 +221,13 @@ pub enum DevtoolScriptControlMsg {
     Reload(PipelineId),
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Modification {
     pub attributeName: String,
     pub newValue: Option<String>,
 }
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub enum LogLevel {
     Log,
     Debug,
@@ -234,7 +236,7 @@ pub enum LogLevel {
     Error,
 }
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ConsoleMessage {
     pub message: String,
     pub logLevel: LogLevel,
@@ -251,7 +253,7 @@ bitflags! {
     }
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct PageError {
     #[serde(rename = "_type")]
     pub type_: String,
@@ -269,7 +271,7 @@ pub struct PageError {
     pub private: bool,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct ConsoleAPI {
     #[serde(rename = "_type")]
     pub type_: String,
@@ -282,7 +284,7 @@ pub struct ConsoleAPI {
     pub arguments: Vec<String>,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub enum CachedConsoleMessage {
     PageError(PageError),
     ConsoleAPI(ConsoleAPI),
@@ -310,6 +312,7 @@ pub struct HttpResponse {
     pub pipeline_id: PipelineId,
 }
 
+#[derive(Debug)]
 pub enum NetworkEvent {
     HttpRequest(HttpRequest),
     HttpResponse(HttpResponse),
@@ -343,7 +346,7 @@ impl StartedTimelineMarker {
 
 
 
-#[derive(Copy, Clone, Deserialize, Serialize)]
+#[derive(Debug, Copy, Clone, Deserialize, Serialize)]
 pub struct PreciseTime(u64);
 
 impl PreciseTime {
