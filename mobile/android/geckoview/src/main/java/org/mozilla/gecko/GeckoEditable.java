@@ -1207,13 +1207,26 @@ final class GeckoEditable extends JNIObject
 
                 
                 final int actionStart = indexInText + start;
-                mText.currentReplace(actionStart, actionStart + action.mEnd - action.mStart,
-                                     action.mSequence);
+                final int actionEnd = actionStart + action.mEnd - action.mStart;
+
+                final Spanned currentText = mText.getCurrentText();
+                final boolean resetSelStart = Selection.getSelectionStart(currentText) == actionEnd;
+                final boolean resetSelEnd = Selection.getSelectionEnd(currentText) == actionEnd;
+
+                mText.currentReplace(actionEnd, oldEnd, text.subSequence(
+                        indexInText + action.mSequence.length(), text.length()));
 
                 
-                final int actionEnd = actionStart + action.mSequence.length();
-                mText.currentReplace(actionEnd, actionEnd + oldEnd - action.mEnd,
-                                     text.subSequence(actionEnd - start, text.length()));
+                
+                
+                if (resetSelStart || resetSelEnd) {
+                    mText.currentSetSelection(
+                            resetSelStart ? actionEnd : Selection.getSelectionStart(currentText),
+                            resetSelEnd ? actionEnd : Selection.getSelectionEnd(currentText));
+                }
+
+                
+                mText.currentReplace(actionStart, actionEnd, action.mSequence);
 
                 
                 
@@ -1230,7 +1243,13 @@ final class GeckoEditable extends JNIObject
 
         } else {
             
-            mText.currentReplace(start, oldEnd, text);
+            
+            mText.currentReplace(start, oldEnd, "");
+            mText.currentReplace(start, start, text);
+
+            
+            
+            mIgnoreSelectionChange = false;
         }
 
         
