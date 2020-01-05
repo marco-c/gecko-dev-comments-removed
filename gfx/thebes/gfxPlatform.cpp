@@ -940,9 +940,9 @@ gfxPlatform::InitLayersIPC()
 
     if (XRE_IsParentProcess())
     {
-        if (gfxPrefs::WebRenderEnabled()) {
-            RenderThread::Start();
-        }
+#ifdef MOZ_ENABLE_WEBRENDER
+        RenderThread::Start();
+#endif
         layers::CompositorThreadHolder::Start();
     }
 }
@@ -969,9 +969,9 @@ gfxPlatform::ShutdownLayersIPC()
 
         
         layers::CompositorThreadHolder::Shutdown();
-        if (gfxPrefs::WebRenderEnabled()) {
-            RenderThread::ShutDown();
-        }
+#ifdef MOZ_ENABLE_WEBRENDER
+        RenderThread::ShutDown();
+#endif
     } else {
       
       
@@ -2223,10 +2223,12 @@ gfxPlatform::InitGPUProcessPrefs()
     return;
   }
 
+#ifdef MOZ_ENABLE_WEBRENDER
   
-  if (gfxPrefs::WebRenderEnabled()) {
+  if (true) {
     return;
   }
+#endif
 
   FeatureState& gpuProc = gfxConfig::GetFeature(Feature::GPU_PROCESS);
 
@@ -2466,12 +2468,6 @@ gfxPlatform::AsyncPanZoomEnabled()
   if (!BrowserTabsRemoteAutostart()) {
     return false;
   }
-#ifdef MOZ_ENABLE_WEBRENDER
-  
-  if (gfxPrefs::WebRenderEnabled() && !gfxPrefs::APZAllowWithWebRender()) {
-    return false;
-  }
-#endif 
 #endif
 #ifdef MOZ_WIDGET_ANDROID
   return true;
