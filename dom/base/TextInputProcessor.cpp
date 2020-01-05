@@ -698,6 +698,13 @@ TextInputProcessor::NotifyIME(TextEventDispatcher* aTextEventDispatcher,
   }
 }
 
+NS_IMETHODIMP_(nsIMEUpdatePreference)
+TextInputProcessor::GetIMEUpdatePreference()
+{
+  
+  return nsIMEUpdatePreference();
+}
+
 NS_IMETHODIMP_(void)
 TextInputProcessor::OnRemovedFrom(TextEventDispatcher* aTextEventDispatcher)
 {

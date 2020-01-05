@@ -33,6 +33,7 @@ public:
 
     NS_IMETHOD NotifyIME(TextEventDispatcher* aTextEventDispatcher,
                          const IMENotification& aNotification) override;
+    NS_IMETHOD_(nsIMEUpdatePreference) GetIMEUpdatePreference() override;
     NS_IMETHOD_(void) OnRemovedFrom(
                           TextEventDispatcher* aTextEventDispatcher) override;
     NS_IMETHOD_(void) WillDispatchKeyboardEvent(
@@ -50,8 +51,6 @@ public:
     
     
     bool IsEnabled() const;
-
-    nsIMEUpdatePreference GetIMEUpdatePreference() const;
 
     
     void OnFocusWindow(nsWindow* aWindow);

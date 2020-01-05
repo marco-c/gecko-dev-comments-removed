@@ -17,6 +17,8 @@ import android.view.KeyEvent;
 interface GeckoEditableListener {
     
     @WrapForJNI
+    int NOTIFY_IME_OF_TOKEN = -3;
+    @WrapForJNI
     int NOTIFY_IME_OPEN_VKB = -2;
     @WrapForJNI
     int NOTIFY_IME_REPLY_EVENT = -1;

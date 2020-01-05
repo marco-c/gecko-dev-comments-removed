@@ -89,9 +89,11 @@ class GeckoEditableSupport final
         COMMIT_IME_COMPOSITION
     };
 
+    const bool mIsRemote;
     nsWindow::WindowPtr<GeckoEditableSupport> mWindow; 
     RefPtr<TextEventDispatcher> mDispatcher;
     java::GeckoEditableChild::GlobalRef mEditable;
+    bool mEditableAttached;
     InputContext mInputContext;
     AutoTArray<UniquePtr<mozilla::WidgetEvent>, 4> mIMEKeyEvents;
     AutoTArray<IMETextChange, 4> mIMETextChanges;
@@ -105,6 +107,15 @@ class GeckoEditableSupport final
     nsIWidget* GetWidget() const
     {
         return mDispatcher ? mDispatcher->GetWidget() : mWindow;
+    }
+
+    nsresult BeginInputTransaction(TextEventDispatcher* aDispatcher)
+    {
+        if (mIsRemote) {
+            return aDispatcher->BeginInputTransaction(this);
+        } else {
+            return aDispatcher->BeginNativeInputTransaction();
+        }
     }
 
     virtual ~GeckoEditableSupport() {}
@@ -154,11 +165,14 @@ public:
                 mozilla::Move(aCall)));
     }
 
+    
     GeckoEditableSupport(nsWindow::NativePtr<GeckoEditableSupport>* aPtr,
                          nsWindow* aWindow,
                          java::GeckoEditableChild::Param aEditableChild)
-        : mWindow(aPtr, aWindow)
+        : mIsRemote(!aWindow)
+        , mWindow(aPtr, aWindow)
         , mEditable(aEditableChild)
+        , mEditableAttached(!mIsRemote)
         , mIMERanges(new TextRangeArray())
         , mIMEMaskEventsCount(1) 
         , mIMEUpdatingContext(false)
@@ -167,11 +181,18 @@ public:
         , mIMEMonitorCursor(false)
     {}
 
+    
+    GeckoEditableSupport(java::GeckoEditableChild::Param aEditableChild)
+        : GeckoEditableSupport(nullptr, nullptr, aEditableChild)
+    {}
+
     NS_DECL_ISUPPORTS
 
     
     NS_IMETHOD NotifyIME(TextEventDispatcher* aTextEventDispatcher,
                          const IMENotification& aNotification) override;
+
+    NS_IMETHOD_(nsIMEUpdatePreference) GetIMEUpdatePreference() override;
 
     NS_IMETHOD_(void) OnRemovedFrom(
             TextEventDispatcher* aTextEventDispatcher) override;
@@ -181,8 +202,6 @@ public:
             WidgetKeyboardEvent& aKeyboardEvent,
             uint32_t aIndexOfKeypress,
             void* aData) override;
-
-    nsIMEUpdatePreference GetIMEUpdatePreference();
 
     void SetInputContext(const InputContext& aContext,
                          const InputContextAction& aAction);
@@ -194,8 +213,9 @@ public:
 
     void OnDetach() {
         RefPtr<GeckoEditableSupport> self(this);
-        nsAppShell::PostEvent([self] {
-            DisposeNative(self->mEditable);
+        nsAppShell::PostEvent([this, self] {
+            mEditableAttached = false;
+            DisposeNative(mEditable);
         });
     }
 

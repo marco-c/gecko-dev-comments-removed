@@ -19,6 +19,7 @@ import org.mozilla.gecko.util.ThreadUtils.AssertBehavior;
 
 import android.graphics.RectF;
 import android.os.Handler;
+import android.os.IBinder;
 import android.os.Looper;
 import android.os.RemoteException;
 import android.text.Editable;
@@ -61,7 +62,11 @@ final class GeckoEditable extends IGeckoEditableParent.Stub
     private Handler mIcRunHandler;
     private Handler mIcPostHandler;
 
-     IGeckoEditableChild mEditableChild;
+    
+     IGeckoEditableChild mDefaultChild; 
+    
+     IGeckoEditableChild mFocusedChild; 
+     IBinder mFocusedToken; 
      GeckoEditableListener mListener;
      GeckoView mView;
 
@@ -71,7 +76,6 @@ final class GeckoEditable extends IGeckoEditableParent.Stub
     private boolean mNeedUpdateComposition; 
     private boolean mSuppressKeyUp; 
 
-    private boolean mGeckoFocused; 
     private boolean mIgnoreSelectionChange; 
 
     private static final int IME_RANGE_CARETPOSITION = 1;
@@ -92,8 +96,9 @@ final class GeckoEditable extends IGeckoEditableParent.Stub
     private static final int IME_RANGE_BACKCOLOR = 4;
     private static final int IME_RANGE_LINECOLOR = 8;
 
-    private void onKeyEvent(KeyEvent event, int action, int savedMetaState,
-                            boolean isSynthesizedImeKey) throws RemoteException {
+    private void onKeyEvent(final IGeckoEditableChild child, KeyEvent event, int action,
+                            int savedMetaState, boolean isSynthesizedImeKey)
+            throws RemoteException {
         
         
         
@@ -117,7 +122,7 @@ final class GeckoEditable extends IGeckoEditableParent.Stub
         final int keyPressMetaState = (unicodeChar >= ' ' &&
                 unicodeChar != unmodifiedUnicodeChar) ? unmodifiedMetaState : metaState;
 
-        mEditableChild.onKeyEvent(action, event.getKeyCode(), event.getScanCode(),
+        child.onKeyEvent(action, event.getKeyCode(), event.getScanCode(),
                    metaState, keyPressMetaState, event.getEventTime(),
                    domPrintableKeyValue, event.getRepeatCount(), event.getFlags(),
                    isSynthesizedImeKey, event);
@@ -167,34 +172,26 @@ final class GeckoEditable extends IGeckoEditableParent.Stub
 
         public synchronized void currentReplace(final int start, final int end,
                                                 final CharSequence newText) {
-            if (DEBUG) {
-                ThreadUtils.assertOnGeckoThread();
-            }
+            
             mCurrentText.replace(start, end, newText);
             addCurrentChangeLocked(start, end, start + newText.length());
         }
 
         public synchronized void currentSetSelection(final int start, final int end) {
-            if (DEBUG) {
-                ThreadUtils.assertOnGeckoThread();
-            }
+            
             Selection.setSelection(mCurrentText, start, end);
             mCurrentSelectionChanged = true;
         }
 
         public synchronized void currentSetSpan(final Object obj, final int start,
                                                 final int end, final int flags) {
-            if (DEBUG) {
-                ThreadUtils.assertOnGeckoThread();
-            }
+            
             mCurrentText.setSpan(obj, start, end, flags);
             addCurrentChangeLocked(start, end, end);
         }
 
         public synchronized void currentRemoveSpan(final Object obj) {
-            if (DEBUG) {
-                ThreadUtils.assertOnGeckoThread();
-            }
+            
             if (obj == null) {
                 mCurrentText.clearSpans();
                 addCurrentChangeLocked(0, mCurrentText.length(), mCurrentText.length());
@@ -212,9 +209,7 @@ final class GeckoEditable extends IGeckoEditableParent.Stub
         
         
         public Spanned getCurrentText() {
-            if (DEBUG) {
-                ThreadUtils.assertOnGeckoThread();
-            }
+            
             return mCurrentText;
         }
 
@@ -438,7 +433,7 @@ final class GeckoEditable extends IGeckoEditableParent.Stub
                           getConstantName(Action.class, "TYPE_", action.mType) + ")");
         }
 
-        if (mListener == null) {
+        if (mFocusedChild == null || mListener == null) {
             
             return;
         }
@@ -458,7 +453,7 @@ final class GeckoEditable extends IGeckoEditableParent.Stub
         switch (action.mType) {
         case Action.TYPE_EVENT:
         case Action.TYPE_SET_HANDLER:
-            mEditableChild.onImeSynchronize();
+            mFocusedChild.onImeSynchronize();
             break;
 
         case Action.TYPE_SET_SPAN:
@@ -472,7 +467,7 @@ final class GeckoEditable extends IGeckoEditableParent.Stub
                      action.mSpanObject == Selection.SELECTION_START ||
                      action.mSpanObject == Selection.SELECTION_END);
 
-            mEditableChild.onImeSynchronize();
+            mFocusedChild.onImeSynchronize();
             break;
 
         case Action.TYPE_REMOVE_SPAN:
@@ -482,7 +477,7 @@ final class GeckoEditable extends IGeckoEditableParent.Stub
             mNeedUpdateComposition |= (flags & Spanned.SPAN_INTERMEDIATE) == 0 &&
                     (flags & Spanned.SPAN_COMPOSING) != 0;
 
-            mEditableChild.onImeSynchronize();
+            mFocusedChild.onImeSynchronize();
             break;
 
         case Action.TYPE_REPLACE_TEXT:
@@ -498,7 +493,7 @@ final class GeckoEditable extends IGeckoEditableParent.Stub
                 sendCharKeyEvents(action);
             }
             mText.shadowReplace(action.mStart, action.mEnd, action.mSequence);
-            mEditableChild.onImeReplaceText(
+            mFocusedChild.onImeReplaceText(
                     action.mStart, action.mEnd, action.mSequence.toString());
             break;
 
@@ -548,7 +543,7 @@ final class GeckoEditable extends IGeckoEditableParent.Stub
             if (DEBUG) {
                 Log.d(LOGTAG, "sending: " + event);
             }
-            onKeyEvent(event, event.getAction(),
+            onKeyEvent(mFocusedChild, event, event.getAction(),
                         0,  true);
         }
     }
@@ -575,7 +570,7 @@ final class GeckoEditable extends IGeckoEditableParent.Stub
 
     @WrapForJNI(calledFrom = "gecko")
     private void setDefaultEditableChild(final IGeckoEditableChild child) {
-        mEditableChild = child;
+        mDefaultChild = child;
     }
 
     @WrapForJNI(calledFrom = "gecko")
@@ -701,7 +696,7 @@ final class GeckoEditable extends IGeckoEditableParent.Stub
             if (found) {
                 icSendComposition(text, selStart, selEnd, composingStart, composingEnd);
                 if (notifyGecko) {
-                    mEditableChild.onImeUpdateComposition(composingStart, composingEnd);
+                    mFocusedChild.onImeUpdateComposition(composingStart, composingEnd);
                 }
                 return true;
             }
@@ -709,7 +704,7 @@ final class GeckoEditable extends IGeckoEditableParent.Stub
 
         if (notifyGecko) {
             
-            mEditableChild.onImeUpdateComposition(selStart, selEnd);
+            mFocusedChild.onImeUpdateComposition(selStart, selEnd);
         }
 
         if (DEBUG) {
@@ -733,7 +728,7 @@ final class GeckoEditable extends IGeckoEditableParent.Stub
         }
 
         if (selEnd >= composingStart && selEnd <= composingEnd) {
-            mEditableChild.onImeAddCompositionRange(
+            mFocusedChild.onImeAddCompositionRange(
                     selEnd - composingStart, selEnd - composingStart,
                     IME_RANGE_CARETPOSITION, 0, 0, false, 0, 0, 0);
         }
@@ -806,7 +801,7 @@ final class GeckoEditable extends IGeckoEditableParent.Stub
                     rangeBackColor = tp.bgColor;
                 }
             }
-            mEditableChild.onImeAddCompositionRange(
+            mFocusedChild.onImeAddCompositionRange(
                     rangeStart - composingStart, rangeEnd - composingStart,
                     rangeType, rangeStyles, rangeLineStyle, rangeBoldLine,
                     rangeForeColor, rangeBackColor, rangeLineColor);
@@ -838,8 +833,17 @@ final class GeckoEditable extends IGeckoEditableParent.Stub
 
 
         try {
+            if (mFocusedChild == null) {
+                
+                onKeyEvent(mDefaultChild, event, action, metaState,
+                            false);
+                return;
+            }
+
+            
             icMaybeSendComposition();
-            onKeyEvent(event, action, metaState,  false);
+            onKeyEvent(mFocusedChild, event, action, metaState,
+                        false);
             icOfferAction(new Action(Action.TYPE_EVENT));
         } catch (final RemoteException e) {
             Log.e(LOGTAG, "Remote call failed", e);
@@ -952,16 +956,16 @@ final class GeckoEditable extends IGeckoEditableParent.Stub
     @Override 
     public void requestCursorUpdates(int requestMode) {
         try {
-            mEditableChild.onImeRequestCursorUpdates(requestMode);
+            if (mFocusedChild != null) {
+                mFocusedChild.onImeRequestCursorUpdates(requestMode);
+            }
         } catch (final RemoteException e) {
             Log.e(LOGTAG, "Remote call failed", e);
         }
     }
 
     private void geckoSetIcHandler(final Handler newHandler) {
-        if (DEBUG) {
-            ThreadUtils.assertOnGeckoThread();
-        }
+        
         mIcPostHandler.post(new Runnable() { 
             @Override
             public void run() {
@@ -980,13 +984,10 @@ final class GeckoEditable extends IGeckoEditableParent.Stub
 
     private void geckoActionReply(final Action action) {
         
-        if (!mGeckoFocused) {
-            if (DEBUG) {
-                Log.d(LOGTAG, "discarding stale reply");
-            }
+        if (action == null) {
+            Log.w(LOGTAG, "Mismatched reply");
             return;
         }
-
         if (DEBUG) {
             Log.d(LOGTAG, "reply: Action(" +
                           getConstantName(Action.class, "TYPE_", action.mType) + ")");
@@ -1015,8 +1016,18 @@ final class GeckoEditable extends IGeckoEditableParent.Stub
         }
     }
 
+    private synchronized boolean binderCheckToken(final IBinder token,
+                                                  final boolean allowNull) {
+        
+        if (mFocusedToken == token || (mFocusedToken == null && allowNull)) {
+            return true;
+        }
+        Log.w(LOGTAG, "Invalid token");
+        return false;
+    }
+
     @Override 
-    public void notifyIME(final int type) {
+    public void notifyIME(final IGeckoEditableChild child, final int type) {
         
         if (DEBUG) {
             
@@ -1027,7 +1038,32 @@ final class GeckoEditable extends IGeckoEditableParent.Stub
             }
         }
 
-        if (type == GeckoEditableListener.NOTIFY_IME_REPLY_EVENT) {
+        final IBinder token = child.asBinder();
+        if (type == GeckoEditableListener.NOTIFY_IME_OF_TOKEN) {
+            synchronized (this) {
+                if (mFocusedToken != null && mFocusedToken != token &&
+                        mFocusedToken.pingBinder()) {
+                    
+                    Log.w(LOGTAG, "Already focused");
+                    return;
+                }
+                mFocusedToken = token;
+                return;
+            }
+        } else if (type == GeckoEditableListener.NOTIFY_IME_OPEN_VKB) {
+            
+            ThreadUtils.assertOnGeckoThread();
+        } else if (!binderCheckToken(token,  false)) {
+            return;
+        }
+
+        if (type == GeckoEditableListener.NOTIFY_IME_OF_BLUR) {
+            synchronized (this) {
+                onTextChange(token, "", 0, Integer.MAX_VALUE);
+                mActions.clear();
+                mFocusedToken = null;
+            }
+        } else if (type == GeckoEditableListener.NOTIFY_IME_REPLY_EVENT) {
             geckoActionReply(mActions.poll());
             if (!mActions.isEmpty()) {
                 
@@ -1046,8 +1082,11 @@ final class GeckoEditable extends IGeckoEditableParent.Stub
                 }
 
                 if (type == GeckoEditableListener.NOTIFY_IME_OF_FOCUS && mListener != null) {
+                    mFocusedChild = child;
                     mNeedSync = false;
                     mText.syncShadowText( null);
+                } else if (type == GeckoEditableListener.NOTIFY_IME_OF_BLUR) {
+                    mFocusedChild = null;
                 }
 
                 if (mListener != null) {
@@ -1055,24 +1094,21 @@ final class GeckoEditable extends IGeckoEditableParent.Stub
                 }
             }
         });
-
-        
-        if (type == GeckoEditableListener.NOTIFY_IME_OF_BLUR) {
-            mGeckoFocused = false;
-        } else if (type == GeckoEditableListener.NOTIFY_IME_OF_FOCUS) {
-            mGeckoFocused = true;
-        }
     }
 
     @Override 
     public void notifyIMEContext(final int state, final String typeHint,
-                                  final String modeHint, final String actionHint) {
+                                 final String modeHint, final String actionHint) {
         
         if (DEBUG) {
             Log.d(LOGTAG, "notifyIMEContext(" +
                           getConstantName(GeckoEditableListener.class, "IME_STATE_", state) +
                           ", \"" + typeHint + "\", \"" + modeHint + "\", \"" + actionHint + "\")");
         }
+
+        
+        
+        ThreadUtils.assertOnGeckoThread();
 
         mIcPostHandler.post(new Runnable() {
             @Override
@@ -1086,10 +1122,15 @@ final class GeckoEditable extends IGeckoEditableParent.Stub
     }
 
     @Override 
-    public void onSelectionChange(final int start, final int end) {
+    public void onSelectionChange(final IBinder token,
+                                  final int start, final int end) {
         
         if (DEBUG) {
             Log.d(LOGTAG, "onSelectionChange(" + start + ", " + end + ")");
+        }
+
+        if (!binderCheckToken(token,  false)) {
+            return;
         }
 
         if (mIgnoreSelectionChange) {
@@ -1112,14 +1153,18 @@ final class GeckoEditable extends IGeckoEditableParent.Stub
     }
 
     @Override 
-    public void onTextChange(final CharSequence text, final int start,
-                             final int unboundedOldEnd) {
+    public void onTextChange(final IBinder token, final CharSequence text,
+                             final int start, final int unboundedOldEnd) {
         
         if (DEBUG) {
             StringBuilder sb = new StringBuilder("onTextChange(");
             debugAppend(sb, text).append(", ").append(start).append(", ")
                                  .append(unboundedOldEnd).append(")");
             Log.d(LOGTAG, sb.toString());
+        }
+
+        if (!binderCheckToken(token,  false)) {
+            return;
         }
 
         final int currentLength = mText.getCurrentText().length();
@@ -1227,7 +1272,7 @@ final class GeckoEditable extends IGeckoEditableParent.Stub
     }
 
     @Override 
-    public void onDefaultKeyEvent(final KeyEvent event) {
+    public void onDefaultKeyEvent(final IBinder token, final KeyEvent event) {
         
         if (DEBUG) {
             StringBuilder sb = new StringBuilder("onDefaultKeyEvent(");
@@ -1237,6 +1282,11 @@ final class GeckoEditable extends IGeckoEditableParent.Stub
                 .append("time=").append(event.getEventTime()).append(", ")
                 .append("repeatCount=").append(event.getRepeatCount()).append(")");
             Log.d(LOGTAG, sb.toString());
+        }
+
+        
+        if (!binderCheckToken(token,  true)) {
+            return;
         }
 
         mIcPostHandler.post(new Runnable() {
@@ -1251,10 +1301,14 @@ final class GeckoEditable extends IGeckoEditableParent.Stub
     }
 
     @Override 
-    public void updateCompositionRects(final RectF[] rects) {
+    public void updateCompositionRects(final IBinder token, final RectF[] rects) {
         
         if (DEBUG) {
             Log.d(LOGTAG, "updateCompositionRects(rects.length = " + rects.length + ")");
+        }
+
+        if (!binderCheckToken(token,  false)) {
+            return;
         }
 
         mIcPostHandler.post(new Runnable() {

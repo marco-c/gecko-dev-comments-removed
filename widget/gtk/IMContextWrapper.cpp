@@ -324,8 +324,8 @@ IMContextWrapper::GetTextEventDispatcher()
   return dispatcher;
 }
 
-nsIMEUpdatePreference
-IMContextWrapper::GetIMEUpdatePreference() const
+NS_IMETHODIMP_(nsIMEUpdatePreference)
+IMContextWrapper::GetIMEUpdatePreference()
 {
     
     

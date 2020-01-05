@@ -693,6 +693,11 @@ PuppetWidget::RequestIMEToCommitComposition(bool aCancel)
 nsresult
 PuppetWidget::NotifyIMEInternal(const IMENotification& aIMENotification)
 {
+  if (mNativeTextEventDispatcherListener) {
+    
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
+
   switch (aIMENotification.mMessage) {
     case REQUEST_TO_COMMIT_COMPOSITION:
       return RequestIMEToCommitComposition(false);
@@ -857,6 +862,11 @@ PuppetWidget::NotifyIMEOfCompositionUpdate(
 nsIMEUpdatePreference
 PuppetWidget::GetIMEUpdatePreference()
 {
+  if (mNativeTextEventDispatcherListener) {
+    
+    return mNativeTextEventDispatcherListener->GetIMEUpdatePreference();
+  }
+
   
   
   
