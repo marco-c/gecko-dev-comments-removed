@@ -7,6 +7,8 @@
 #include "mozilla/layers/RendererOGL.h"
 #include "mozilla/layers/CompositorThread.h"
 #include "mozilla/widget/CompositorWidget.h"
+#include "mozilla/widget/CompositorWidget.h"
+#include "mozilla/layers/SynchronousTask.h"
 
 namespace mozilla {
 namespace layers {
@@ -14,11 +16,15 @@ namespace layers {
 class NewRenderer : public RendererEvent
 {
 public:
-  NewRenderer(WrRenderer* aWrRenderer, CompositorBridgeParentBase* aBridge,
-              RefPtr<widget::CompositorWidget>&& aWidget)
-  : mWrRenderer(aWrRenderer)
+  NewRenderer(WrAPI** aApi, CompositorBridgeParentBase* aBridge,
+              RefPtr<widget::CompositorWidget>&& aWidget,
+              SynchronousTask* aTask,
+              bool aEnableProfiler)
+  : mWrApi(aApi)
   , mBridge(aBridge)
   , mCompositorWidget(Move(aWidget))
+  , mTask(aTask)
+  , mEnableProfiler(aEnableProfiler)
   {
     MOZ_COUNT_CTOR(NewRenderer);
   }
@@ -30,36 +36,58 @@ public:
 
   virtual void Run(RenderThread& aRenderThread, gfx::WindowId aWindowId) override
   {
-    RefPtr<RenderThread> thread = &aRenderThread;
-    auto renderer = RendererOGL::Create(thread.forget(),
-                                        mCompositorWidget.forget(),
-                                        mWrRenderer,
-                                        aWindowId,
-                                        mBridge);
-    if (renderer) {
-      aRenderThread.AddRenderer(aWindowId, Move(renderer));
-    } else {
-      
-      MOZ_CRASH("Failed to initialize the Renderer.");
+    AutoCompleteTask complete(mTask);
+
+    RefPtr<gl::GLContext> gl = gl::GLContextProvider::CreateForCompositorWidget(mCompositorWidget, true);
+    if (!gl || !gl->MakeCurrent()) {
+      return;
     }
+
+    wr_gl_init(&*gl);
+
+    WrRenderer* wrRenderer = nullptr;
+    wr_window_new(aWindowId.mHandle, this->mEnableProfiler, mWrApi, &wrRenderer);
+    MOZ_ASSERT(wrRenderer);
+
+    RefPtr<RenderThread> thread = &aRenderThread;
+    auto renderer = MakeUnique<RendererOGL>(Move(thread),
+                                            Move(gl),
+                                            Move(mCompositorWidget),
+                                            aWindowId,
+                                            wrRenderer,
+                                            mBridge);
+
+    aRenderThread.AddRenderer(aWindowId, Move(renderer));
   }
 
-  WrRenderer* mWrRenderer;
+  WrAPI** mWrApi;
   CompositorBridgeParentBase* mBridge;
   RefPtr<widget::CompositorWidget> mCompositorWidget;
+  SynchronousTask* mTask;
+  bool mEnableProfiler;
 };
 
 class RemoveRenderer : public RendererEvent
 {
 public:
-  RemoveRenderer() { MOZ_COUNT_CTOR(RemoveRenderer); }
+  explicit RemoveRenderer(SynchronousTask* aTask)
+  : mTask(aTask)
+  {
+    MOZ_COUNT_CTOR(RemoveRenderer);
+  }
 
-  ~RemoveRenderer() { MOZ_COUNT_DTOR(RemoveRenderer); }
+  ~RemoveRenderer()
+  {
+    MOZ_COUNT_DTOR(RemoveRenderer);
+  }
 
   virtual void Run(RenderThread& aRenderThread, gfx::WindowId aWindowId) override
   {
     aRenderThread.RemoveRenderer(aWindowId);
+    AutoCompleteTask complete(mTask);
   }
+
+  SynchronousTask* mTask;
 };
 
 
@@ -75,38 +103,41 @@ WebRenderAPI::Create(bool aEnableProfiler,
   static uint64_t sNextId = 1;
   gfx::WindowId id(sNextId++);
 
-  WrAPI* api = nullptr;
-  WrRenderer* renderer = nullptr;
-
-  wr_window_new(id.mHandle, aEnableProfiler, &api, &renderer);
-  MOZ_ASSERT(renderer);
-  MOZ_ASSERT(api);
-
-  auto event = MakeUnique<NewRenderer>(renderer, aBridge, Move(aWidget));
+  WrAPI* wrApi = nullptr;
 
   
   
+  
+  SynchronousTask task("Create Renderer");
+  auto event = MakeUnique<NewRenderer>(&wrApi, aBridge, Move(aWidget), &task, aEnableProfiler);
   RenderThread::Get()->RunEvent(id, Move(event));
 
-  RefPtr<WebRenderAPI> ptr(new WebRenderAPI(api, id));
-  return ptr.forget();
+  task.Wait();
+
+  if (!wrApi) {
+    return nullptr;
+  }
+
+  return RefPtr<WebRenderAPI>(new WebRenderAPI(wrApi, id)).forget();
 }
 
 WebRenderAPI::~WebRenderAPI()
 {
-  auto event = MakeUnique<RemoveRenderer>();
-
-  
-  
-  RenderThread::Get()->RunEvent(mId, Move(event));
 
 #ifdef MOZ_ENABLE_WEBRENDER
   
   
   
   
-  wr_api_delete(mApi);
+  wr_api_delete(mWrApi);
 #endif
+
+  SynchronousTask task("Destroy WebRenderAPI");
+  auto event = MakeUnique<RemoveRenderer>(&task);
+  
+  
+  RenderThread::Get()->RunEvent(mId, Move(event));
+  task.Wait();
 }
 
 } 
