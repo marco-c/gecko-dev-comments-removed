@@ -277,7 +277,7 @@ private:
   
   
   
-  void UpdatePlaybackPosition(int64_t aTime);
+  void UpdatePlaybackPosition(const media::TimeUnit& aTime);
 
   bool CanPlayThrough();
 
