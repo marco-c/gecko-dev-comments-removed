@@ -622,19 +622,21 @@ impl Stylist {
                                               CascadeLevel::UANormal);
         debug!("UA normal: {:?}", relations);
 
-        
-        let length_before_preshints = applicable_declarations.len();
-        element.synthesize_presentational_hints_for_legacy_attributes(applicable_declarations);
-        if applicable_declarations.len() != length_before_preshints {
-            if cfg!(debug_assertions) {
-                for declaration in &applicable_declarations[length_before_preshints..] {
-                    assert_eq!(declaration.level, CascadeLevel::PresHints);
-                }
-            }
+        if pseudo_element.is_none() {
             
-            relations |= AFFECTED_BY_PRESENTATIONAL_HINTS;
+            let length_before_preshints = applicable_declarations.len();
+            element.synthesize_presentational_hints_for_legacy_attributes(applicable_declarations);
+            if applicable_declarations.len() != length_before_preshints {
+                if cfg!(debug_assertions) {
+                    for declaration in &applicable_declarations[length_before_preshints..] {
+                        assert_eq!(declaration.level, CascadeLevel::PresHints);
+                    }
+                }
+                
+                relations |= AFFECTED_BY_PRESENTATIONAL_HINTS;
+            }
+            debug!("preshints: {:?}", relations);
         }
-        debug!("preshints: {:?}", relations);
 
         if element.matches_user_and_author_rules() {
             
