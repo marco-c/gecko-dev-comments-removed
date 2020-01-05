@@ -390,23 +390,30 @@ impl DisplayList {
                     return;
                 }
 
-                if let DisplayItem::BorderClass(ref border) = *item {
-                    
-                    let interior_rect =
-                        Rect::new(
-                            Point2D::new(border.base.bounds.origin.x +
-                                         border.border_widths.left,
-                                         border.base.bounds.origin.y +
-                                         border.border_widths.top),
-                            Size2D::new(border.base.bounds.size.width -
-                                            (border.border_widths.left +
-                                             border.border_widths.right),
-                                        border.base.bounds.size.height -
-                                            (border.border_widths.top +
-                                             border.border_widths.bottom)));
-                    if interior_rect.contains(&point) {
-                        return;
+                match *item {
+                    DisplayItem::BorderClass(ref border) => {
+                        
+                        let interior_rect =
+                            Rect::new(
+                                Point2D::new(border.base.bounds.origin.x +
+                                             border.border_widths.left,
+                                             border.base.bounds.origin.y +
+                                             border.border_widths.top),
+                                Size2D::new(border.base.bounds.size.width -
+                                                (border.border_widths.left +
+                                                 border.border_widths.right),
+                                            border.base.bounds.size.height -
+                                                (border.border_widths.top +
+                                                 border.border_widths.bottom)));
+                        if interior_rect.contains(&point) {
+                            return;
+                        }
                     }
+                    DisplayItem::BoxShadowClass(_) => {
+                        
+                        return
+                    }
+                    _ => {}
                 }
 
                 
