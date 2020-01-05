@@ -602,6 +602,13 @@ struct AnimationValue
   
   bool IsInterpolableWith(nsCSSPropertyID aProperty,
                           const AnimationValue& aToValue) const;
+
+  
+  
+  
+  double ComputeDistance(nsCSSPropertyID aProperty,
+                         const AnimationValue& aOther,
+                         nsStyleContext* aStyleContext) const;
 };
 
 struct PropertyStyleAnimationValuePair
