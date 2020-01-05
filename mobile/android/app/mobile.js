@@ -628,10 +628,8 @@ pref("media.mediasource.enabled", true);
 
 pref("media.mediadrm-widevinecdm.visible", true);
 
-#ifdef NIGHTLY_BUILD
 
 pref("media.eme.enabled", true);
-#endif
 
 
 pref("image.downscale-during-decode.enabled", true);
@@ -777,6 +775,7 @@ pref("dom.phonenumber.substringmatching.VE", 7);
 
 pref("gfx.canvas.azure.backends", "skia");
 pref("gfx.canvas.azure.accelerated", true);
+pref("gfx.canvas.azure.accelerated.limit", 64);
 
 
 pref("general.useragent.updates.enabled", true);
