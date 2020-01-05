@@ -1776,6 +1776,24 @@ GetNameIRGenerator::tryAttachGlobalNameGetter(ObjOperandId objId, HandleId id)
     return true;
 }
 
+static bool
+NeedEnvironmentShapeGuard(JSObject* envObj)
+{
+    if (!envObj->is<CallObject>())
+        return true;
+
+    
+    
+    
+    
+    CallObject* callObj = &envObj->as<CallObject>();
+    JSFunction* fun = &callObj->callee();
+    if (!fun->hasScript() || fun->nonLazyScript()->funHasExtensibleScope())
+        return true;
+
+    return false;
+}
+
 bool
 GetNameIRGenerator::tryAttachEnvironmentName(ObjOperandId objId, HandleId id)
 {
@@ -1818,12 +1836,12 @@ GetNameIRGenerator::tryAttachEnvironmentName(ObjOperandId objId, HandleId id)
     ObjOperandId lastObjId = objId;
     env = env_;
     while (env) {
-        if (env == holder) {
-            writer.guardShape(lastObjId, holder->maybeShape());
-            break;
-        }
+        if (NeedEnvironmentShapeGuard(env))
+            writer.guardShape(lastObjId, env->maybeShape());
 
-        writer.guardShape(lastObjId, env->maybeShape());
+        if (env == holder)
+            break;
+
         lastObjId = writer.loadEnclosingEnvironment(lastObjId);
         env = env->enclosingEnvironment();
     }
