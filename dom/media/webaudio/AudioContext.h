@@ -157,12 +157,6 @@ public:
   
   static already_AddRefed<AudioContext>
   Constructor(const GlobalObject& aGlobal,
-              AudioChannel aChannel,
-              ErrorResult& aRv);
-
-  
-  static already_AddRefed<AudioContext>
-  Constructor(const GlobalObject& aGlobal,
               uint32_t aNumberOfChannels,
               uint32_t aLength,
               float aSampleRate,
