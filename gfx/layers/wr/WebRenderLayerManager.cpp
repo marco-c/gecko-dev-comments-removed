@@ -339,6 +339,24 @@ WebRenderLayerManager::EndEmptyTransaction(EndTransactionFlags aFlags)
   return EndTransactionInternal(nullptr, nullptr, aFlags);
 }
 
+ int32_t
+PopulateScrollData(WebRenderScrollData& aTarget, Layer* aLayer)
+{
+  MOZ_ASSERT(aLayer);
+
+  
+  
+  
+  size_t index = aTarget.AddNewLayerData();
+
+  int32_t descendants = 0;
+  for (Layer* child = aLayer->GetLastChild(); child; child = child->GetPrevSibling()) {
+    descendants += PopulateScrollData(aTarget, child);
+  }
+  aTarget.GetLayerDataMutable(index)->Initialize(aTarget, aLayer, descendants);
+  return descendants + 1;
+}
+
 void
 WebRenderLayerManager::EndTransaction(DrawPaintedLayerCallback aCallback,
                                       void* aCallbackData,
@@ -384,10 +402,15 @@ WebRenderLayerManager::EndTransactionInternal(DrawPaintedLayerCallback aCallback
     return false;
   }
 
+  WebRenderScrollData scrollData;
+  if (mRoot && mWidget->AsyncPanZoomEnabled()) {
+    PopulateScrollData(scrollData, mRoot.get());
+  }
+
   bool sync = mTarget != nullptr;
   mLatestTransactionId = mTransactionIdAllocator->GetTransactionId();
 
-  WrBridge()->DPEnd(builder, size.ToUnknownSize(), sync, mLatestTransactionId);
+  WrBridge()->DPEnd(builder, size.ToUnknownSize(), sync, mLatestTransactionId, scrollData);
 
   MakeSnapshotIfRequired(size);
   mNeedsComposite = false;
