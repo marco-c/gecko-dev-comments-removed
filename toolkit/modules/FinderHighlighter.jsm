@@ -131,7 +131,7 @@ function mockAnonymousContentNode(domNode) {
   };
 }
 
-let gWindows = new Map();
+let gWindows = new WeakMap();
 
 
 
@@ -337,9 +337,9 @@ FinderHighlighter.prototype = {
 
 
 
-  hide(window = null, skipRange = null, event = null) {
+  hide(window, skipRange = null, event = null) {
     try {
-      window = (window || this.finder._getWindow()).top;
+      window = window.top;
     } catch (ex) {
       Cu.reportError(ex);
       return;
@@ -412,7 +412,7 @@ FinderHighlighter.prototype = {
     let foundRange = this.finder._fastFind.getFoundRange();
 
     if (data.result == Ci.nsITypeAheadFind.FIND_NOTFOUND || !data.searchString || !foundRange) {
-      this.hide();
+      this.hide(window);
       return;
     }
 
@@ -454,14 +454,8 @@ FinderHighlighter.prototype = {
 
 
   clear(window = null) {
-    if (!window) {
-      
-      for (let win of gWindows.keys())
-        this.hide(win);
-      
-      gWindows.clear();
+    if (!window || !window.top)
       return;
-    }
 
     let dict = this.getForWindow(window.top);
     this._finishOutlineAnimations(dict);
@@ -479,6 +473,8 @@ FinderHighlighter.prototype = {
 
   onLocationChange() {
     let window = this.finder._getWindow();
+    if (!window || !window.top)
+      return;
     this.hide(window);
     this.clear(window);
     this._removeRangeOutline(window);
@@ -494,9 +490,10 @@ FinderHighlighter.prototype = {
 
 
   onModalHighlightChange(useModalHighlight) {
-    if (this._modal && !useModalHighlight) {
-      this.hide();
-      this.clear();
+    let window = this.finder._getWindow();
+    if (window && this._modal && !useModalHighlight) {
+      this.hide(window);
+      this.clear(window);
     }
     this._modal = useModalHighlight;
   },
