@@ -326,16 +326,14 @@ RequestListContextMenu.prototype = {
 
 
   copyAllAsHar() {
-    let options = this.getDefaultHarOptions();
-    return HarExporter.copy(options);
+    return HarExporter.copy(this.getDefaultHarOptions());
   },
 
   
 
 
   saveAllAsHar() {
-    let options = this.getDefaultHarOptions();
-    return HarExporter.save(options);
+    return HarExporter.save(this.getDefaultHarOptions());
   },
 
   getDefaultHarOptions() {
