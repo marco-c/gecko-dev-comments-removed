@@ -70,6 +70,10 @@ public:
   
   bool CanInitializeKeyedMutexTextures();
 
+  
+  
+  bool HasCrashyInitData();
+
   bool CreateCompositorDevices();
   void CreateContentDevices();
 
