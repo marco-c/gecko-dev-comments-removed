@@ -38,6 +38,9 @@ public:
   
   NS_DECL_ISUPPORTS_INHERITED
 
+  
+  virtual void AsyncEventRunning(AsyncEventDispatcher* aEvent) override;
+
   virtual FilterPrimitiveDescription
     GetPrimitiveDescription(nsSVGFilterInstance* aInstance,
                             const IntRect& aFilterSubregion,

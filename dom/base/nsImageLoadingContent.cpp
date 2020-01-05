@@ -746,10 +746,17 @@ nsImageLoadingContent::LoadImage(const nsAString& aNewURI,
     return NS_OK;
   }
 
+  
+  
+  
+  CancelPendingEvent();
+
   if (aNewURI.IsEmpty()) {
     
     CancelImageRequests(aNotify);
-    FireEvent(NS_LITERAL_STRING("error"));
+    
+    
+    FireEvent(NS_LITERAL_STRING("error"), true);
     return NS_OK;
   }
 
@@ -781,6 +788,11 @@ nsImageLoadingContent::LoadImage(nsIURI* aNewURI,
                                  nsIDocument* aDocument,
                                  nsLoadFlags aLoadFlags)
 {
+  
+  
+  
+  CancelPendingEvent();
+
   
   if (aLoadStart) {
     FireEvent(NS_LITERAL_STRING("loadstart"));
@@ -1143,7 +1155,7 @@ nsImageLoadingContent::StringToURI(const nsAString& aSpec,
 }
 
 nsresult
-nsImageLoadingContent::FireEvent(const nsAString& aEventType)
+nsImageLoadingContent::FireEvent(const nsAString& aEventType, bool aIsCancelable)
 {
   if (nsContentUtils::DocumentInactiveForImageLoads(GetOurOwnerDoc())) {
     
@@ -1160,7 +1172,28 @@ nsImageLoadingContent::FireEvent(const nsAString& aEventType)
     new LoadBlockingAsyncEventDispatcher(thisNode, aEventType, false, false);
   loadBlockingAsyncDispatcher->PostDOMEvent();
 
+  if (aIsCancelable) {
+    mPendingEvent = loadBlockingAsyncDispatcher;
+  }
+
   return NS_OK;
+}
+
+void
+nsImageLoadingContent::AsyncEventRunning(AsyncEventDispatcher* aEvent)
+{
+  if (mPendingEvent == aEvent) {
+    mPendingEvent = nullptr;
+  }
+}
+
+void
+nsImageLoadingContent::CancelPendingEvent()
+{
+  if (mPendingEvent) {
+    mPendingEvent->Cancel();
+    mPendingEvent = nullptr;
+  }
 }
 
 RefPtr<imgRequestProxy>&

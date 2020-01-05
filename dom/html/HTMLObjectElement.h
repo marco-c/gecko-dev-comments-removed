@@ -49,6 +49,9 @@ public:
   virtual bool IsInteractiveHTMLContent(bool aIgnoreTabindex) const override;
 
   
+  virtual void AsyncEventRunning(AsyncEventDispatcher* aEvent) override;
+
+  
   NS_DECL_NSIDOMHTMLOBJECTELEMENT
 
   virtual nsresult BindToTree(nsIDocument *aDocument, nsIContent *aParent,

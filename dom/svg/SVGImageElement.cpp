@@ -139,6 +139,15 @@ SVGImageElement::LoadSVGImage(bool aForce, bool aNotify)
 
 
 
+void
+SVGImageElement::AsyncEventRunning(AsyncEventDispatcher* aEvent)
+{
+  nsImageLoadingContent::AsyncEventRunning(aEvent);
+}
+
+
+
+
 nsresult
 SVGImageElement::AfterSetAttr(int32_t aNamespaceID, nsIAtom* aName,
                               const nsAttrValue* aValue, bool aNotify)

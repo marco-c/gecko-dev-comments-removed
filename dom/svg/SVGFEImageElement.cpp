@@ -97,6 +97,15 @@ SVGFEImageElement::LoadSVGImage(bool aForce, bool aNotify)
 
 
 
+void
+SVGFEImageElement::AsyncEventRunning(AsyncEventDispatcher* aEvent)
+{
+  nsImageLoadingContent::AsyncEventRunning(aEvent);
+}
+
+
+
+
 NS_IMETHODIMP_(bool)
 SVGFEImageElement::IsAttributeMapped(const nsIAtom* name) const
 {

@@ -32,6 +32,10 @@ class nsPresContext;
 class nsIContent;
 class imgRequestProxy;
 
+namespace mozilla {
+class AsyncEventDispatcher;
+} 
+
 #ifdef LoadImage
 
 #undef LoadImage
@@ -213,6 +217,8 @@ protected:
   
   static nsContentPolicyType PolicyTypeForLoad(ImageLoadType aImageLoadType);
 
+  void AsyncEventRunning(mozilla::AsyncEventDispatcher* aEvent);
+
 private:
   
 
@@ -261,7 +267,15 @@ private:
 
 
 
-  nsresult FireEvent(const nsAString& aEventType);
+
+  nsresult FireEvent(const nsAString& aEventType, bool aIsCancelable = false);
+
+  
+
+
+  void CancelPendingEvent();
+
+  RefPtr<mozilla::AsyncEventDispatcher> mPendingEvent;
 
 protected:
   

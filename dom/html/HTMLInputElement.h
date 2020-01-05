@@ -143,6 +143,9 @@ public:
   virtual bool IsInteractiveHTMLContent(bool aIgnoreTabindex) const override;
 
   
+  virtual void AsyncEventRunning(AsyncEventDispatcher* aEvent) override;
+
+  
   NS_DECL_NSIDOMHTMLINPUTELEMENT
 
   

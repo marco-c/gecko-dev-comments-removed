@@ -42,6 +42,9 @@ public:
   NS_DECL_ISUPPORTS_INHERITED
 
   
+  virtual void AsyncEventRunning(AsyncEventDispatcher* aEvent) override;
+
+  
   virtual nsresult AfterSetAttr(int32_t aNamespaceID, nsIAtom* aName,
                                 const nsAttrValue* aValue, bool aNotify) override;
   virtual nsresult BindToTree(nsIDocument* aDocument, nsIContent* aParent,

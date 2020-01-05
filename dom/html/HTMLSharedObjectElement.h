@@ -44,6 +44,9 @@ public:
   
 
   
+  virtual void AsyncEventRunning(AsyncEventDispatcher* aEvent) override;
+
+  
   NS_IMETHOD GetSrc(nsAString &aSrc) override;
   NS_IMETHOD SetSrc(const nsAString &aSrc) override;
   NS_IMETHOD GetType(nsAString &aType) override;
