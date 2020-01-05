@@ -97,6 +97,9 @@ public:
     mNextContinuation = static_cast<nsTextFrame*>(aNextContinuation);
     if (aNextContinuation)
       aNextContinuation->RemoveStateBits(NS_FRAME_IS_FLUID_CONTINUATION);
+    
+    
+    GetContent()->DeleteProperty(nsGkAtoms::flowlength);
   }
   nsIFrame* GetNextInFlowVirtual() const override { return GetNextInFlow(); }
   nsTextFrame* GetNextInFlow() const
@@ -115,8 +118,15 @@ public:
       !nsSplittableFrame::IsInNextContinuationChain(aNextInFlow, this),
       "creating a loop in continuation chain!");
     mNextContinuation = static_cast<nsTextFrame*>(aNextInFlow);
-    if (aNextInFlow)
+    if (mNextContinuation &&
+        !mNextContinuation->HasAnyStateBits(NS_FRAME_IS_FLUID_CONTINUATION)) {
+      
+      
+      GetContent()->DeleteProperty(nsGkAtoms::flowlength);
+    }
+    if (aNextInFlow) {
       aNextInFlow->AddStateBits(NS_FRAME_IS_FLUID_CONTINUATION);
+    }
   }
   nsTextFrame* LastInFlow() const final;
   nsTextFrame* LastContinuation() const final;
