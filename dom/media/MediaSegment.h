@@ -139,7 +139,7 @@ public:
 
 
 
-  void SetLastPrincipalHandle(PrincipalHandle aLastPrincipalHandle)
+  void SetLastPrincipalHandle(const PrincipalHandle& aLastPrincipalHandle)
   {
     mLastPrincipalHandle = aLastPrincipalHandle;
   }
