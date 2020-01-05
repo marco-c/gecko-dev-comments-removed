@@ -71,9 +71,7 @@ use uuid;
 
 
 
-#[jstraceable]
-#[must_root]
-#[privatize]
+#[dom_struct]
 pub struct Node {
     
     eventtarget: EventTarget,

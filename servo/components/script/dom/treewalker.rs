@@ -21,9 +21,7 @@ use dom::node::{Node, NodeHelpers};
 use std::cell::Cell;
 
 
-#[jstraceable]
-#[must_root]
-#[privatize]
+#[dom_struct]
 pub struct TreeWalker {
     reflector_: Reflector,
     root_node: JS<Node>,

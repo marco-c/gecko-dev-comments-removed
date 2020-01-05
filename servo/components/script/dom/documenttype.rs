@@ -13,9 +13,7 @@ use dom::node::{Node, DoctypeNodeTypeId, NodeHelpers};
 use servo_util::str::DOMString;
 
 
-#[jstraceable]
-#[must_root]
-#[privatize]
+#[dom_struct]
 pub struct DocumentType {
     node: Node,
     name: DOMString,
