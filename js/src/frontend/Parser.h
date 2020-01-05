@@ -913,6 +913,13 @@ class Parser final : private JS::AutoGCRooter, public StrictModeGetter
     bool reportWithOffset(ParseReportKind kind, bool strict, uint32_t offset, unsigned errorNumber,
                           ...);
 
+    
+
+
+
+
+    MOZ_MUST_USE bool strictModeError(unsigned errorNumber, ...);
+
     Parser(ExclusiveContext* cx, LifoAlloc& alloc, const ReadOnlyCompileOptions& options,
            const char16_t* chars, size_t length, bool foldConstants, UsedNameTracker& usedNames,
            Parser<SyntaxParseHandler>* syntaxParser, LazyScript* lazyOuterFunction);
