@@ -18,6 +18,7 @@ extern crate serialize;
 extern crate servo_util = "util";
 extern crate stb_image;
 extern crate sync;
+extern crate time;
 extern crate url;
 
 
@@ -42,4 +43,5 @@ pub mod fetch {
     #![allow(dead_code)] 
     pub mod request;
     pub mod response;
+    pub mod cors_cache;
 }
