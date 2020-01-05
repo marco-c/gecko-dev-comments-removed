@@ -408,6 +408,23 @@ CssColor.prototype = {
     return tuple;
   },
 
+  
+
+
+
+  _getHSLATuple: function () {
+    let {r, g, b, a} = colorToRGBA(this.authored, this.cssColor4);
+
+    let [h, s, l] = rgbToHsl([r, g, b]);
+
+    return {
+      h,
+      s,
+      l,
+      a: parseFloat(a.toFixed(1))
+    };
+  },
+
   _hsl: function (maybeAlpha) {
     if (this.lowerCased.startsWith("hsl(") && maybeAlpha === undefined) {
       
