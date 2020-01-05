@@ -317,12 +317,25 @@ protected:
   already_AddRefed<DeleteNodeTransaction>
     CreateTxnForDeleteNode(nsINode* aNode);
 
-  nsresult CreateTxnForDeleteSelection(
-             EDirection aAction,
-             EditAggregateTransaction** aTransaction,
-             nsINode** aNode,
-             int32_t* aOffset,
-             int32_t* aLength);
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  already_AddRefed<EditAggregateTransaction>
+    CreateTxnForDeleteSelection(EDirection aAction,
+                                nsINode** aNode,
+                                int32_t* aOffset,
+                                int32_t* aLength);
 
   
 
