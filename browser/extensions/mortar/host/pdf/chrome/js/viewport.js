@@ -457,7 +457,13 @@ class Viewport {
       type: 'viewport',
       xOffset: this._runtimePosition.x,
       yOffset: this._runtimePosition.y,
-      zoom: this._zoom
+      zoom: this._zoom,
+      
+      
+      
+      
+      
+      pinchPhase: 0
     });
 
     let newPage = this._getMostVisiblePage();
