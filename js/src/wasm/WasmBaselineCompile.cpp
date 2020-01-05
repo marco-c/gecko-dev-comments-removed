@@ -271,26 +271,7 @@ class BaseCompiler
     };
 #endif
 
-    
-    
-
-    struct PooledLabel : public Label, public TempObject, public InlineListNode<PooledLabel>
-    {
-        PooledLabel() : f(nullptr) {}
-        explicit PooledLabel(BaseCompiler* f) : f(f) {}
-        BaseCompiler* f;
-    };
-
-    typedef Vector<PooledLabel*, 8, SystemAllocPolicy> LabelVector;
-
-    struct UniquePooledLabelFreePolicy
-    {
-        void operator()(PooledLabel* p) {
-            p->f->freeLabel(p);
-        }
-    };
-
-    typedef UniquePtr<PooledLabel, UniquePooledLabelFreePolicy> UniquePooledLabel;
+    typedef Vector<NonAssertingLabel, 8, SystemAllocPolicy> LabelVector;
 
     
     
@@ -395,16 +376,14 @@ class BaseCompiler
     struct Control
     {
         Control()
-            : label(nullptr),
-              otherLabel(nullptr),
-              framePushed(0),
-              stackSize(0),
+            : framePushed(UINT32_MAX),
+              stackSize(UINT32_MAX),
               deadOnArrival(false),
               deadThenBranch(false)
         {}
 
-        PooledLabel* label;
-        PooledLabel* otherLabel;        
+        NonAssertingLabel label;        
+        NonAssertingLabel otherLabel;   
         uint32_t framePushed;           
         uint32_t stackSize;             
         bool deadOnArrival;             
@@ -533,8 +512,6 @@ class BaseCompiler
 #ifdef DEBUG
     bool                        scratchRegisterTaken_;
 #endif
-
-    TempObjectPool<PooledLabel> labelPool_;
 
     Vector<Local, 8, SystemAllocPolicy> localInfo_;
     Vector<OutOfLineCode*, 8, SystemAllocPolicy> outOfLine_;
@@ -2054,21 +2031,14 @@ class BaseCompiler
     
     
 
-    void initControl(Control& item, UniquePooledLabel* label, UniquePooledLabel* otherLabel = nullptr)
+    void initControl(Control& item)
     {
+        
+        MOZ_ASSERT(item.framePushed == UINT32_MAX && item.stackSize == UINT32_MAX);
+
         item.framePushed = masm.framePushed();
         item.stackSize = stk_.length();
-        item.label = label->release();
-        if (otherLabel)
-            item.otherLabel = otherLabel->release();
         item.deadOnArrival = deadCode_;
-    }
-
-    void freeControl(Control& item) {
-        if (item.label)
-            freeLabel(item.label);
-        if (item.otherLabel)
-            freeLabel(item.otherLabel);
     }
 
     Control& controlItem() {
@@ -2086,21 +2056,6 @@ class BaseCompiler
     
     
     
-
-    MOZ_MUST_USE PooledLabel* newLabel() {
-        
-        
-        
-        PooledLabel* candidate = labelPool_.allocate();
-        if (!candidate)
-            return nullptr;
-        return new (candidate) PooledLabel(this);
-    }
-
-    void freeLabel(PooledLabel* label) {
-        label->~PooledLabel();
-        labelPool_.free(label);
-    }
 
     void insertBreakablePoint(CallSiteDesc::Kind kind) {
         const uint32_t offset = iter_.currentOffset();
@@ -2593,7 +2548,7 @@ class BaseCompiler
         for (uint32_t i = 0; i < labels.length(); i++) {
             CodeLabel cl;
             masm.writeCodePointer(cl.patchAt());
-            cl.target()->bind(labels[i]->offset());
+            cl.target()->bind(labels[i].offset());
             masm.addCodeLabel(cl);
         }
 #else
@@ -5462,14 +5417,11 @@ BaseCompiler::emitBlock()
     if (!iter_.readBlock())
         return false;
 
-    UniquePooledLabel blockEnd(newLabel());
-    if (!blockEnd)
-        return false;
-
     if (!deadCode_)
         sync();                    
 
-    initControl(controlItem(), &blockEnd);
+    initControl(controlItem());
+
     return true;
 }
 
@@ -5488,16 +5440,14 @@ BaseCompiler::endBlock(ExprType type)
     popValueStackTo(block.stackSize);
 
     
-    if (block.label->used()) {
-        masm.bind(block.label);
+    if (block.label.used()) {
+        masm.bind(&block.label);
         
         
         if (deadCode_)
             r = captureJoinRegUnlessVoid(type);
         deadCode_ = false;
     }
-
-    freeControl(block);
 
     
     if (!deadCode_)
@@ -5510,17 +5460,13 @@ BaseCompiler::emitLoop()
     if (!iter_.readLoop())
         return false;
 
-    UniquePooledLabel blockCont(newLabel());
-    if (!blockCont)
-        return false;
-
     if (!deadCode_)
         sync();                    
 
-    initControl(controlItem(), &blockCont);
+    initControl(controlItem());
 
     if (!deadCode_) {
-        masm.bind(controlItem(0).label);
+        masm.bind(&controlItem(0).label);
         addInterruptCheck();
     }
 
@@ -5538,8 +5484,6 @@ BaseCompiler::endLoop(ExprType type)
 
     popStackOnBlockExit(block.framePushed);
     popValueStackTo(block.stackSize);
-
-    freeControl(block);
 
     
     if (!deadCode_)
@@ -5567,15 +5511,7 @@ BaseCompiler::emitIf()
     if (!iter_.readIf(&unused_cond))
         return false;
 
-    UniquePooledLabel endLabel(newLabel());
-    if (!endLabel)
-        return false;
-
-    UniquePooledLabel elseLabel(newLabel());
-    if (!elseLabel)
-        return false;
-
-    BranchState b(elseLabel.get(), BranchState::NoPop, InvertBranch(true));
+    BranchState b(&controlItem().otherLabel, BranchState::NoPop, InvertBranch(true));
     if (!deadCode_) {
         emitBranchSetup(&b);
         sync();
@@ -5583,7 +5519,7 @@ BaseCompiler::emitIf()
         resetLatentOp();
     }
 
-    initControl(controlItem(), &endLabel, &elseLabel);
+    initControl(controlItem());
 
     if (!deadCode_)
         emitBranchPerform(&b);
@@ -5599,15 +5535,13 @@ BaseCompiler::endIfThen()
     popStackOnBlockExit(ifThen.framePushed);
     popValueStackTo(ifThen.stackSize);
 
-    if (ifThen.otherLabel->used())
-        masm.bind(ifThen.otherLabel);
+    if (ifThen.otherLabel.used())
+        masm.bind(&ifThen.otherLabel);
 
-    if (ifThen.label->used())
-        masm.bind(ifThen.label);
+    if (ifThen.label.used())
+        masm.bind(&ifThen.label);
 
     deadCode_ = ifThen.deadOnArrival;
-
-    freeControl(ifThen);
 }
 
 bool
@@ -5635,10 +5569,10 @@ BaseCompiler::emitElse()
     popValueStackTo(ifThenElse.stackSize);
 
     if (!deadCode_)
-        masm.jump(ifThenElse.label);
+        masm.jump(&ifThenElse.label);
 
-    if (ifThenElse.otherLabel->used())
-        masm.bind(ifThenElse.otherLabel);
+    if (ifThenElse.otherLabel.used())
+        masm.bind(&ifThenElse.otherLabel);
 
     
 
@@ -5669,11 +5603,11 @@ BaseCompiler::endIfThenElse(ExprType type)
     popStackOnBlockExit(ifThenElse.framePushed);
     popValueStackTo(ifThenElse.stackSize);
 
-    if (ifThenElse.label->used())
-        masm.bind(ifThenElse.label);
+    if (ifThenElse.label.used())
+        masm.bind(&ifThenElse.label);
 
     bool joinLive = !ifThenElse.deadOnArrival &&
-                    (!ifThenElse.deadThenBranch || !deadCode_ || ifThenElse.label->bound());
+                    (!ifThenElse.deadThenBranch || !deadCode_ || ifThenElse.label.bound());
 
     if (joinLive) {
         
@@ -5682,8 +5616,6 @@ BaseCompiler::endIfThenElse(ExprType type)
             r = captureJoinRegUnlessVoid(type);
         deadCode_ = false;
     }
-
-    freeControl(ifThenElse);
 
     if (!deadCode_)
         pushJoinRegUnlessVoid(r);
@@ -5732,7 +5664,7 @@ BaseCompiler::emitBr()
     AnyReg r = popJoinRegUnlessVoid(type);
 
     popStackBeforeBranch(target.framePushed);
-    masm.jump(target.label);
+    masm.jump(&target.label);
 
     
     
@@ -5760,7 +5692,7 @@ BaseCompiler::emitBrIf()
 
     Control& target = controlItem(relativeDepth);
 
-    BranchState b(target.label, target.framePushed, InvertBranch(false), type);
+    BranchState b(&target.label, target.framePushed, InvertBranch(false), type);
     emitBranchSetup(&b);
     emitBranchPerform(&b);
 
@@ -5814,7 +5746,7 @@ BaseCompiler::emitBrTable()
     
 
     popStackBeforeBranch(controlItem(defaultDepth).framePushed);
-    masm.jump(controlItem(defaultDepth).label);
+    masm.jump(&controlItem(defaultDepth).label);
 
     
     
@@ -5825,15 +5757,11 @@ BaseCompiler::emitBrTable()
     
 
     for (uint32_t i = 0; i < tableLength; i++) {
-        PooledLabel* stubLabel = newLabel();
-        if (!stubLabel)
-            return false;
-
-        stubs.infallibleAppend(stubLabel);
-        masm.bind(stubLabel);
+        stubs.infallibleEmplaceBack(NonAssertingLabel());
+        masm.bind(&stubs.back());
         uint32_t k = depths[i];
         popStackBeforeBranch(controlItem(k).framePushed);
-        masm.jump(controlItem(k).label);
+        masm.jump(&controlItem(k).label);
     }
 
     
@@ -5851,9 +5779,6 @@ BaseCompiler::emitBrTable()
 
     freeI32(rc);
     freeJoinRegUnlessVoid(r);
-
-    for (uint32_t i = 0; i < tableLength; i++)
-        freeLabel(stubs[i]);
 
     return true;
 }
@@ -7677,11 +7602,7 @@ BaseCompiler::emitFunction()
 
     beginFunction();
 
-    UniquePooledLabel functionEnd(newLabel());
-    if (!functionEnd)
-        return false;
-
-    initControl(controlItem(), &functionEnd);
+    initControl(controlItem());
 
     if (!emitBody())
         return false;
@@ -7770,8 +7691,6 @@ BaseCompiler::BaseCompiler(const ModuleEnvironment& env,
     availGPR_.take(HeapReg);
     availGPR_.take(GlobalReg);
 #endif
-
-    labelPool_.setAllocator(alloc_);
 }
 
 bool
