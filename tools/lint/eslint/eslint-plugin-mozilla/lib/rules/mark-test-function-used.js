@@ -7,6 +7,7 @@
 
 
 
+
 "use strict";
 
 
@@ -22,11 +23,15 @@ module.exports = function(context) {
 
   return {
     Program: function() {
-      if (!helpers.getIsBrowserMochitest(this)) {
+      if (helpers.getIsBrowserMochitest(this)) {
+        context.markVariableAsUsed("test");
         return;
       }
 
-      context.markVariableAsUsed("test");
+      if (helpers.getIsXpcshellTest(this)) {
+        context.markVariableAsUsed("run_test");
+        return;
+      }
     }
   };
 };

@@ -14,8 +14,6 @@ module.exports = {
     "no-undef": 0,
     "block-scoped-var": 0,
     
-    "no-unused-vars": [2, { "varsIgnorePattern": "run_test" }],
-    
     "mozilla/reject-some-requires": 0,
   }
 };

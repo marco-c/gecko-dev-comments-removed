@@ -3,7 +3,6 @@
 
 
 
-
 const Cu = Components.utils;
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
@@ -81,4 +80,3 @@ add_task(function* test_search() {
   equal(expectedEngineName, actualEngineName, `emitter set the correct engine ${expectedEngineName}`);
   NewTabSearchProvider.search.uninit();
 });
-
