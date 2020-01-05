@@ -33,8 +33,7 @@ BUILD_KINDS = set([
 ])
 
 
-JOB_KINDS = set([
-    'source-test',
+JOB_KINDS_MATCHING_BUILD_PLATFORM = set([
     'toolchain',
     'android-stuff',
 ])
@@ -562,10 +561,16 @@ class TryOptionSyntax(object):
                 return False
             return True
 
+        job_try_name = attr('job_try_name')
+        if job_try_name:
+            if self.jobs is None or job_try_name in self.jobs:
+                if self.platforms is None or attr('build_platform') not in self.platforms:
+                    return True
+
         if attr('kind') == 'test':
             return match_test(self.unittests, 'unittest_try_name') \
                  or match_test(self.talos, 'talos_try_name')
-        elif attr('kind') in JOB_KINDS:
+        elif attr('kind') in JOB_KINDS_MATCHING_BUILD_PLATFORM:
             
             if not self.jobs:
                 return True
