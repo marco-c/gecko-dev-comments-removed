@@ -248,8 +248,13 @@ public:
     SLOG("change state to: %s", ToStateStr(s->GetState()));
 
     Exit();
+
+    
+    
+    UniquePtr<StateObject> deathGrip(master->mStateObj.release());
+
     master->mState = s->GetState();
-    master->mStateObj.reset(s); 
+    master->mStateObj.reset(s);
     return s->Enter(Forward<Ts>(aArgs)...);
   }
 
@@ -982,11 +987,7 @@ DecodeMetadataState::OnMetadataRead(MetadataHolder* aMetadata)
   if (waitingForCDM) {
     
     
-
-    
-    
-    bool pendingDormant = mPendingDormant;
-    SetState<WaitForCDMState>(pendingDormant);
+    SetState<WaitForCDMState>(mPendingDormant);
   } else if (mPendingDormant) {
     SetState<DormantState>();
   } else {
