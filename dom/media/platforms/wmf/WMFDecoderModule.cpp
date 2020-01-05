@@ -28,6 +28,7 @@
 #include "nsServiceManagerUtils.h"
 #include "nsWindowsHelpers.h"
 #include "prsystem.h"
+#include "nsIXULRuntime.h"
 
 namespace mozilla {
 
@@ -45,7 +46,20 @@ WMFDecoderModule::~WMFDecoderModule()
 void
 WMFDecoderModule::Init()
 {
-  sDXVAEnabled = gfx::gfxVars::CanUseHardwareVideoDecoding();
+  if (XRE_IsContentProcess()) {
+    
+    
+    
+    sDXVAEnabled = !MediaPrefs::PDMUseGPUDecoder();
+  } else if (XRE_IsGPUProcess()) {
+    
+    sDXVAEnabled = true;
+  } else {
+    
+    sDXVAEnabled = !mozilla::BrowserTabsRemoteAutostart();
+  }
+
+  sDXVAEnabled = sDXVAEnabled && gfx::gfxVars::CanUseHardwareVideoDecoding();
 }
 
 
