@@ -281,14 +281,6 @@ BrowserGlue.prototype = {
         Services.obs.removeObserver(this, "places-database-locked");
         this._isPlacesLockedObserver = false;
         break;
-      case "places-shutdown":
-        if (this._isPlacesShutdownObserver) {
-          Services.obs.removeObserver(this, "places-shutdown");
-          this._isPlacesShutdownObserver = false;
-        }
-        
-        this._onPlacesShutdown();
-        break;
       case "idle":
         this._backupBookmarks();
         break;
@@ -419,8 +411,6 @@ BrowserGlue.prototype = {
     os.addObserver(this, "places-database-locked", false);
     this._isPlacesLockedObserver = true;
     os.addObserver(this, "distribution-customization-complete", false);
-    os.addObserver(this, "places-shutdown", false);
-    this._isPlacesShutdownObserver = true;
     os.addObserver(this, "handle-xul-text-link", false);
     os.addObserver(this, "profile-before-change", false);
     if (AppConstants.MOZ_TELEMETRY_REPORTING) {
@@ -474,8 +464,6 @@ BrowserGlue.prototype = {
       os.removeObserver(this, "places-init-complete");
     if (this._isPlacesLockedObserver)
       os.removeObserver(this, "places-database-locked");
-    if (this._isPlacesShutdownObserver)
-      os.removeObserver(this, "places-shutdown");
     os.removeObserver(this, "handle-xul-text-link");
     os.removeObserver(this, "profile-before-change");
     if (AppConstants.MOZ_TELEMETRY_REPORTING) {
@@ -1004,8 +992,14 @@ BrowserGlue.prototype = {
       Cu.reportError("Could not end startup crash tracking in quit-application-granted: " + e);
     }
 
+    if (this._bookmarksBackupIdleTime) {
+      this._idleService.removeIdleObserver(this, this._bookmarksBackupIdleTime);
+      delete this._bookmarksBackupIdleTime;
+    }
+
     BrowserUsageTelemetry.uninit();
     SelfSupportBackend.uninit();
+    PageThumbs.uninit();
     NewTabMessages.uninit();
     AboutNewTab.uninit();
     webrtcUI.uninit();
@@ -1620,20 +1614,6 @@ BrowserGlue.prototype = {
       
       Services.obs.notifyObservers(null, "places-browser-init-complete", "");
     });
-  },
-
-  
-
-
-
-
-  _onPlacesShutdown: function BG__onPlacesShutdown() {
-    PageThumbs.uninit();
-
-    if (this._bookmarksBackupIdleTime) {
-      this._idleService.removeIdleObserver(this, this._bookmarksBackupIdleTime);
-      delete this._bookmarksBackupIdleTime;
-    }
   },
 
   
