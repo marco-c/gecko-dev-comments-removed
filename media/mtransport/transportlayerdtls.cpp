@@ -370,6 +370,9 @@ static const struct PRIOMethods TransportLayerMethods = {
 };
 
 TransportLayerDtls::~TransportLayerDtls() {
+  
+  
+  ssl_fd_ = nullptr;
   nspr_io_adapter_->SetEnabled(false);
   if (timer_) {
     timer_->Cancel();
