@@ -1300,7 +1300,7 @@ BacktrackingAllocator::processBundle(MIRGenerator* mir, LiveBundle* bundle)
 
             
             
-            if (attempt < MAX_ATTEMPTS &&
+            if ((attempt < MAX_ATTEMPTS || minimalBundle(bundle)) &&
                 !fixed &&
                 !conflicting.empty() &&
                 maximumSpillWeight(conflicting) < computeSpillWeight(bundle))
