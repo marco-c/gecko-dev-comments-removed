@@ -942,8 +942,7 @@ class BuildReader(object):
             'obj*',
         }
 
-        finder = FileFinder(self.config.topsrcdir, find_executables=False,
-            ignore=ignore)
+        finder = FileFinder(self.config.topsrcdir, ignore=ignore)
 
         
         yield 'moz.build'

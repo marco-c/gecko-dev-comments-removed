@@ -418,7 +418,7 @@ class JarMaker(object):
             prefix = ''.join(_prefix(src))
             emitted = set()
             for _srcdir in src_base:
-                finder = FileFinder(_srcdir, find_executables=False)
+                finder = FileFinder(_srcdir)
                 for path, _ in finder.find(src):
                     
                     
