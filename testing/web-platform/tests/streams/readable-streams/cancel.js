@@ -39,10 +39,10 @@ promise_test(() => {
   
   
   const cancel = delay(5).then(() => delay(5)).then(() => delay(5)).then(() => {
-    const cancelPromise = reader.cancel();
+    let cancelPromise = reader.cancel();
     assert_false(cancellationFinished, 'cancellation in source should happen later');
     return cancelPromise;
-  });
+  })
 
   return readableStreamToArray(rs, reader).then(chunks => {
     assert_greater_than(chunks.length, 0, 'at least one chunk should be read');

@@ -88,20 +88,10 @@ function migrateNamedDatabase(
       resolve(Promise.resolve(callbackResult).then(() => requestEventPromise));
     });
     request.onerror = event => reject(event.target.error);
-    request.onsuccess = () => {
-      const database = request.result;
-      testCase.add_cleanup(() => { database.close(); });
-      reject(new Error(
-          'indexedDB.open should not succeed without creating a ' +
-          'versionchange transaction'));
-    };
-  }).then(event => {
-    const database = event.target.result;
-    if (database) {
-      testCase.add_cleanup(() => { database.close(); });
-    }
-    return database || event.target.error;
-  });
+    request.onsuccess = () => reject(new Error(
+        'indexedDB.open should not succeed without creating a ' +
+        'versionchange transaction'));
+  }).then(event => event.target.result || event.target.error);
 }
 
 
@@ -128,10 +118,8 @@ function createNamedDatabase(testCase, databaseName, setupCallback) {
   const request = indexedDB.deleteDatabase(databaseName);
   const eventWatcher = requestWatcher(testCase, request);
 
-  return eventWatcher.wait_for('success').then(event => {
-    testCase.add_cleanup(() => { indexedDB.deleteDatabase(databaseName); });
-    return migrateNamedDatabase(testCase, databaseName, 1, setupCallback)
-  });
+  return eventWatcher.wait_for('success').then(event =>
+      migrateNamedDatabase(testCase, databaseName, 1, setupCallback));
 }
 
 
@@ -153,11 +141,7 @@ function openDatabase(testCase, version) {
 function openNamedDatabase(testCase, databaseName, version) {
   const request = indexedDB.open(databaseName, version);
   const eventWatcher = requestWatcher(testCase, request);
-  return eventWatcher.wait_for('success').then(() => {
-    const database = request.result;
-    testCase.add_cleanup(() => { database.close(); });
-    return database;
-  });
+  return eventWatcher.wait_for('success').then(event => event.target.result);
 }
 
 

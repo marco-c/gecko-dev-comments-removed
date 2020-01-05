@@ -142,7 +142,7 @@ window.onload =
         ]
         .forEach(function (template) {
             testCases.push({
-                description: "'" + template.initiator + ": " + serverStepDelay + "ms delay before 'responseStart', another " + serverStepDelay + "ms delay before 'responseEnd'.",
+                description: "'" + template.initiator + ": 1 second delay before 'responseStart', another 1 second delay before 'responseEnd'.",
                 test: function (test) {
                     initiateFetch(
                         test,
@@ -190,7 +190,7 @@ window.onload =
         ]
         .forEach(function (template) {
             testCases.push({
-                description: "'" + template.initiator + " (Redirected): " + serverStepDelay + "ms delay before 'redirectEnd', another " + serverStepDelay + "ms delay before 'responseStart'.",
+                description: "'" + template.initiator + " (Redirected): 1 second delay before 'redirectEnd', another 1 second delay before 'responseStart'.",
                 test: function (test) {
                     initiateFetch(
                         test,
