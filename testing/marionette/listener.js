@@ -121,7 +121,8 @@ var sandboxName = "default";
 
 var loadListener = {
   command_id: null,
-  seenUnload: null,
+  seenBeforeUnload: false,
+  seenUnload: false,
   timeout: null,
   timerPageLoad: null,
   timerPageUnload: null,
@@ -142,6 +143,7 @@ var loadListener = {
     this.command_id = command_id;
     this.timeout = timeout;
 
+    this.seenBeforeUnload = false;
     this.seenUnload = false;
 
     this.timerPageLoad = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
@@ -213,17 +215,7 @@ var loadListener = {
 
     switch (event.type) {
       case "beforeunload":
-        if (this.timerPageUnload) {
-          
-          
-          
-          
-          
-          
-          
-          this.timerPageUnload.cancel();
-          this.timerPageUnload.initWithCallback(this, 5000, Ci.nsITimer.TYPE_ONE_SHOT)
-        }
+        this.seenBeforeUnload = true;
         break;
 
       case "unload":
@@ -282,10 +274,21 @@ var loadListener = {
 
   notify: function (timer) {
     switch (timer) {
-      
-      
       case this.timerPageUnload:
-        if (!this.seenUnload) {
+        
+        
+        
+        
+        
+        
+        
+        if (this.seenBeforeUnload) {
+          this.seenBeforeUnload = null;
+          this.timerPageUnload.initWithCallback(this, 5000, Ci.nsITimer.TYPE_ONE_SHOT)
+
+        
+        
+        } else if (!this.seenUnload) {
           logger.debug("Canceled page load listener because no navigation " +
               "has been detected");
           this.stop();
