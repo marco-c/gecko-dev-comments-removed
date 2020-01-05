@@ -48,7 +48,11 @@ public:
   virtual void SetIntCacheImpl(const nsTArray<LookAndFeelInt>& aLookAndFeelIntCache);
 
 private:
+  
+  
   int32_t mUseAccessibilityTheme;
+  int32_t mUseDefaultTheme; 
+  int32_t mNativeThemeId; 
 };
 
 #endif
