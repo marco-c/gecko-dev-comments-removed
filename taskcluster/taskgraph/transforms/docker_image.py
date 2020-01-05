@@ -67,6 +67,13 @@ def fill_template(config, tasks):
 
         
         
+        
+        
+        
+        zstd_level = '3' if int(config.params['level']) == 1 else '10'
+
+        
+        
         taskdesc = {
             'label': 'build-docker-image-' + image_name,
             'description': description,
@@ -103,6 +110,7 @@ def fill_template(config, tasks):
                     'HASH': context_hash,
                     'PROJECT': config.params['project'],
                     'IMAGE_NAME': image_name,
+                    'DOCKER_IMAGE_ZSTD_LEVEL': zstd_level,
                     'GECKO_BASE_REPOSITORY': config.params['base_repository'],
                     'GECKO_HEAD_REPOSITORY': config.params['head_repository'],
                     'GECKO_HEAD_REV': config.params['head_rev'],
