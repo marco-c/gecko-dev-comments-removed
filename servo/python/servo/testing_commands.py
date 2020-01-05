@@ -162,6 +162,8 @@ class MachCommands(CommandBase):
              description='Run the page load performance test',
              category='testing')
     def test_perf(self):
+        self.set_software_rendering_env(True)
+
         self.ensure_bootstrapped()
         env = self.build_env()
         return call(["bash", "test_perf.sh"],
@@ -422,31 +424,7 @@ class MachCommands(CommandBase):
 
     
     def wptrunner(self, run_file, **kwargs):
-        
-        
-        if sys.platform.startswith('linux'):
-            try:
-                args = [self.get_binary_path(kwargs["release"], not kwargs["release"])]
-                osmesa_path = path.join(find_dep_path_newest('osmesa-src', args[0]), "out", "lib", "gallium")
-                os.environ["LD_LIBRARY_PATH"] = osmesa_path
-                os.environ["GALLIUM_DRIVER"] = "softpipe"
-            except BuildNotFound:
-                
-                
-                pass
-        if sys.platform.startswith('darwin'):
-            try:
-                args = [self.get_binary_path(kwargs["release"], not kwargs["release"])]
-                osmesa_path = path.join(find_dep_path_newest('osmesa-src', args[0]),
-                                        "out", "src", "gallium", "targets", "osmesa", ".libs")
-                glapi_path = path.join(find_dep_path_newest('osmesa-src', args[0]),
-                                       "out", "src", "mapi", "shared-glapi", ".libs")
-                os.environ["DYLD_LIBRARY_PATH"] = osmesa_path + ":" + glapi_path
-                os.environ["GALLIUM_DRIVER"] = "softpipe"
-            except BuildNotFound:
-                
-                
-                pass
+        self.set_software_rendering_env(kwargs['release'])
 
         os.environ["RUST_BACKTRACE"] = "1"
         kwargs["debug"] = not kwargs["release"]
@@ -657,6 +635,33 @@ class MachCommands(CommandBase):
 
         return check_call(
             [run_file, "|".join(tests), bin_path, base_dir])
+
+    def set_software_rendering_env(self, use_release):
+        
+        
+        if sys.platform.startswith('linux'):
+            try:
+                args = [self.get_binary_path(use_release, not use_release)]
+                osmesa_path = path.join(find_dep_path_newest('osmesa-src', args[0]), "out", "lib", "gallium")
+                os.environ["LD_LIBRARY_PATH"] = osmesa_path
+                os.environ["GALLIUM_DRIVER"] = "softpipe"
+            except BuildNotFound:
+                
+                
+                pass
+        elif sys.platform.startswith('darwin'):
+            try:
+                args = [self.get_binary_path(use_release, not use_release)]
+                osmesa_path = path.join(find_dep_path_newest('osmesa-src', args[0]),
+                                        "out", "src", "gallium", "targets", "osmesa", ".libs")
+                glapi_path = path.join(find_dep_path_newest('osmesa-src', args[0]),
+                                       "out", "src", "mapi", "shared-glapi", ".libs")
+                os.environ["DYLD_LIBRARY_PATH"] = osmesa_path + ":" + glapi_path
+                os.environ["GALLIUM_DRIVER"] = "softpipe"
+            except BuildNotFound:
+                
+                
+                pass
 
 
 def create_parser_create():
