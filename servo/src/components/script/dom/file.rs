@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::js::{JS, JSRef, Temporary};
+use dom::bindings::js::{JSRef, Temporary};
 use dom::bindings::utils::{Reflectable, Reflector, reflect_dom_object};
 use dom::bindings::codegen::Bindings::FileBinding;
 use dom::blob::{Blob, BlobType, FileTypeId};
@@ -13,7 +13,6 @@ use servo_util::str::DOMString;
 pub struct File {
     pub blob: Blob,
     pub name: DOMString,
-    pub window: JS<Window>,
     pub type_: BlobType
 }
 
@@ -22,7 +21,6 @@ impl File {
         File {
             blob: Blob::new_inherited(window),
             name: name,
-            window: JS::from_rooted(window),
             type_: FileTypeId
         }
         
