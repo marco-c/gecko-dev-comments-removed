@@ -14,7 +14,7 @@ add_task(function*() {
 
   
   test_servers['localhost-ip'] = {
-    host: '127.0.0.1',
+    host: '127.0.0.2',
     response: true,
     id: 'localhost-ip',
   };

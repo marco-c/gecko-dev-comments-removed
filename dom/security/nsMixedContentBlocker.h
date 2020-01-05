@@ -46,6 +46,10 @@ public:
   nsMixedContentBlocker();
 
   
+  
+  static bool IsPotentiallyTrustworthyLoopbackURL(nsIURI* aURL);
+
+  
 
 
 
