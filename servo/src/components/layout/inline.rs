@@ -87,8 +87,6 @@ pub struct Line {
     
     
     
-    
-    
     pub range: Range<LineIndices>,
     
     
@@ -167,11 +165,7 @@ pub struct LineIndices {
     
     
     
-    
-    
     pub fragment_index: FragmentIndex,
-    
-    
     
     
     
