@@ -1552,3 +1552,6 @@ pref("browser.crashReports.unsubmittedCheck.autoSubmit", false);
 
 pref("services.sync.validation.enabled", true);
 #endif
+
+
+pref("browser.formautofill.enabled", false);
