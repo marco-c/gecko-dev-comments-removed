@@ -905,7 +905,7 @@ function _loadURIWithFlags(browser, uri, params) {
       let loadParams = {
         uri,
         triggeringPrincipal: triggeringPrincipal
-          ? gSerializationHelper.serializePrincipal(triggeringPrincipal)
+          ? gSerializationHelper.serializeToString(triggeringPrincipal)
           : null,
         flags,
         referrer: referrer ? referrer.spec : null,
@@ -1943,9 +1943,10 @@ function focusAndSelectUrlBar() {
   
   
   if (CustomizationHandler.isExitingCustomizeMode) {
-    gNavToolbox.addEventListener("aftercustomization", function() {
+    gNavToolbox.addEventListener("aftercustomization", function afterCustomize() {
+      gNavToolbox.removeEventListener("aftercustomization", afterCustomize);
       focusAndSelectUrlBar();
-    }, {once: true});
+    });
 
     return true;
   }
