@@ -55,11 +55,6 @@ let headers = {
 };
 
 add_task(function* setup() {
-  
-  
-  yield SpecialPowers.pushPrefEnv({
-    set: [["browser.selfsupport.url", ""]],
-  });
   extension = makeExtension();
   yield extension.startup();
 });
