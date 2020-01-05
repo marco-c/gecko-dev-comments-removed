@@ -1346,6 +1346,13 @@ var Impl = {
         payloadObj.processes.parent.gc = protect(() => GCTelemetry.entries("main", clearSubsession));
         payloadObj.processes.content.gc = protect(() => GCTelemetry.entries("content", clearSubsession));
       }
+
+      
+      
+      let stacks = protect(() => Telemetry.snapshotCapturedStacks(true));
+      if (stacks && ("captures" in stacks) && (stacks.captures.length > 0)) {
+        payloadObj.processes.parent.capturedStacks = stacks;
+      }
     }
 
     if (this._childTelemetry.length) {
