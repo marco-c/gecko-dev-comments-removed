@@ -90,6 +90,10 @@ enum TextureAllocationFlags {
   
   
   ALLOC_MANUAL_SYNCHRONIZATION = 1 << 6,
+
+  
+  
+  ALLOC_UPDATE_FROM_SURFACE = 1 << 7,
 };
 
 #ifdef XP_WIN

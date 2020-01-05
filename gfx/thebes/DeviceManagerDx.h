@@ -58,7 +58,15 @@ public:
 
   unsigned GetCompositorFeatureLevel() const;
   bool TextureSharingWorks();
+  bool AlphaTextureSharingWorks();
   bool IsWARP();
+
+  
+  
+  
+  
+  
+  bool CanInitializeKeyedMutexTextures();
 
   bool CreateCompositorDevices();
   void CreateContentDevices();
