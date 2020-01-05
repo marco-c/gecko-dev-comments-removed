@@ -5977,9 +5977,7 @@ nsHttpChannel::BeginConnect()
         nsCOMPtr<nsIURIClassifier> classifier = do_GetService(NS_URICLASSIFIERSERVICE_CONTRACTID);
         bool tpEnabled = false;
         channelClassifier->ShouldEnableTrackingProtection(&tpEnabled);
-        bool annotateChannelEnabled =
-            Preferences::GetBool("privacy.trackingprotection.annotate_channels");
-        if (classifier && (tpEnabled || annotateChannelEnabled)) {
+        if (classifier && tpEnabled) {
             
             
             
