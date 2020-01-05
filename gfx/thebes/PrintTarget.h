@@ -131,7 +131,7 @@ public:
 
 
 
-  virtual already_AddRefed<DrawTarget> GetReferenceDrawTarget(DrawEventRecorder* aRecorder);
+  virtual already_AddRefed<DrawTarget> GetReferenceDrawTarget();
 
 protected:
 
