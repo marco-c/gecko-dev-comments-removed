@@ -98,7 +98,7 @@ private:
   HandleResponse(nsresult aResponse);
 
   void
-  HandleResponse(const UsageResponse& aResponse);
+  HandleResponse(const OriginUsageResponse& aResponse);
 
   
   virtual void
