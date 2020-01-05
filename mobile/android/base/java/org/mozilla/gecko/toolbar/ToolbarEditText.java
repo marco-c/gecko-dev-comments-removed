@@ -20,6 +20,7 @@ import org.mozilla.gecko.util.StringUtils;
 import android.content.Context;
 import android.graphics.Rect;
 import android.text.Editable;
+import android.text.InputType;
 import android.text.NoCopySpan;
 import android.text.Selection;
 import android.text.Spanned;
@@ -418,11 +419,17 @@ public class ToolbarEditText extends CustomEditText
 
 
 
+
+
     @Override
     public InputConnection onCreateInputConnection(final EditorInfo outAttrs) {
         final InputConnection ic = super.onCreateInputConnection(outAttrs);
         if (ic == null) {
             return null;
+        }
+
+        if (isPrivateMode()) {
+            outAttrs.inputType |= InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS;
         }
 
         return new InputConnectionWrapper(ic, false) {
