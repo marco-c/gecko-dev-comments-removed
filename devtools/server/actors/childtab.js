@@ -5,7 +5,7 @@
 "use strict";
 
 var { Cr } = require("chrome");
-var { TabActor } = require("devtools/server/actors/webbrowser");
+var { TabActor } = require("devtools/server/actors/tab");
 
 
 
