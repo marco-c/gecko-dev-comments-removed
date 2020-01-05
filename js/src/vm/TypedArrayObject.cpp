@@ -1521,39 +1521,64 @@ SetFromNonTypedArray(JSContext* cx, Handle<TypedArrayObject*> target, HandleObje
 }
 
 
+
+
+
  bool
 TypedArrayObject::set_impl(JSContext* cx, const CallArgs& args)
 {
     MOZ_ASSERT(TypedArrayObject::is(args.thisv()));
 
+    
     Rooted<TypedArrayObject*> target(cx, &args.thisv().toObject().as<TypedArrayObject>());
 
     
-    if (args.length() == 0 || !args[0].isObject()) {
-        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_TYPED_ARRAY_BAD_ARGS);
-        return false;
-    }
-
-    int32_t offset = 0;
+    double targetOffset = 0;
     if (args.length() > 1) {
-        if (!ToInt32(cx, args[1], &offset))
+        
+        if (!ToInteger(cx, args[1], &targetOffset))
             return false;
 
-        if (offset < 0 || uint32_t(offset) > target->length()) {
-            
+        
+        if (targetOffset < 0) {
             JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_BAD_INDEX);
             return false;
         }
     }
 
-    RootedObject arg0(cx, &args[0].toObject());
-    if (arg0->is<TypedArrayObject>()) {
-        Handle<TypedArrayObject*> source = arg0.as<TypedArrayObject>();
-        if (source->length() > target->length() - offset) {
+    
+    if (target->hasDetachedBuffer()) {
+        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_TYPED_ARRAY_DETACHED);
+        return false;
+    }
+
+    if (args.get(0).isObject() && args[0].toObject().is<TypedArrayObject>()) {
+        
+        Rooted<TypedArrayObject*> source(cx, &args[0].toObject().as<TypedArrayObject>());
+
+        
+        if (source->hasDetachedBuffer()) {
+            JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_TYPED_ARRAY_DETACHED);
+            return false;
+        }
+
+        
+        uint32_t targetLength = target->length();
+
+        
+        if (targetOffset > targetLength) {
+            JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_BAD_INDEX);
+            return false;
+        }
+
+        
+        uint32_t offset = uint32_t(targetOffset);
+        if (source->length() > targetLength - offset) {
             JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_BAD_ARRAY_LENGTH);
             return false;
         }
 
+        
         switch (target->type()) {
 #define SET_FROM_TYPED_ARRAY(T, N) \
           case Scalar::N: \
@@ -1566,28 +1591,83 @@ JS_FOR_EACH_TYPED_ARRAY(SET_FROM_TYPED_ARRAY)
             MOZ_CRASH("Unsupported TypedArray type");
         }
     } else {
-        uint32_t len;
-        if (!GetLengthProperty(cx, arg0, &len))
+        
+
+        
+        
+        
+        uint32_t targetLength = target->length();
+
+        
+        RootedObject src(cx, ToObject(cx, args.get(0)));
+        if (!src)
             return false;
 
-        if (uint32_t(offset) > target->length() || len > target->length() - offset) {
+        
+        uint32_t srcLength;
+        if (!GetLengthProperty(cx, src, &srcLength))
+            return false;
+
+        
+        if (targetOffset > targetLength) {
+            JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_BAD_INDEX);
+            return false;
+        }
+
+        
+        uint32_t offset = uint32_t(targetOffset);
+        if (srcLength > targetLength - offset) {
             JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_BAD_ARRAY_LENGTH);
             return false;
         }
 
-        switch (target->type()) {
+        
+        if (srcLength > 0) {
+            
+            
+            
+            
+            
+            if (target->hasDetachedBuffer()) {
+                
+                RootedValue v(cx);
+                if (!GetElement(cx, src, src, 0, &v))
+                   return false;
+
+                double unused;
+                if (!ToNumber(cx, v, &unused))
+                    return false;
+
+                
+                JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                          JSMSG_TYPED_ARRAY_DETACHED);
+                return false;
+            }
+
+            switch (target->type()) {
 #define SET_FROM_NON_TYPED_ARRAY(T, N) \
-          case Scalar::N: \
-            if (!SetFromNonTypedArray<T>(cx, target, arg0, len, offset)) \
-                return false; \
-            break;
+              case Scalar::N: \
+                if (!SetFromNonTypedArray<T>(cx, target, src, srcLength, offset)) \
+                    return false; \
+                break;
 JS_FOR_EACH_TYPED_ARRAY(SET_FROM_NON_TYPED_ARRAY)
 #undef SET_FROM_NON_TYPED_ARRAY
-          default:
-            MOZ_CRASH("Unsupported TypedArray type");
+              default:
+                MOZ_CRASH("Unsupported TypedArray type");
+            }
+
+            
+            
+            
+            if (target->hasDetachedBuffer()) {
+                JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                          JSMSG_TYPED_ARRAY_DETACHED);
+                return false;
+            }
         }
     }
 
+    
     args.rval().setUndefined();
     return true;
 }
