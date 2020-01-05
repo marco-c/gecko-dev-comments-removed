@@ -46,7 +46,7 @@ function configureLegacySync() {
     
     response.setHeader("x-weave-alert", JSON.stringify({code: "soft-eol"}));
   }
-  let server = new SyncServer({onRequest: onRequest});
+  let server = new SyncServer({onRequest});
   server.registerUser(USER, "password");
   server.createContents(USER, contents);
   server.start();

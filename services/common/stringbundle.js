@@ -45,8 +45,7 @@ StringBundle.prototype = {
       return Cc["@mozilla.org/intl/nslocaleservice;1"].
              getService(Ci.nsILocaleService).
              getApplicationLocale();
-    }
-    catch(ex) {
+    } catch (ex) {
       return null;
     }
   },
@@ -90,7 +89,7 @@ StringBundle.prototype = {
 
 
 
-  get: function(key, args) {
+  get(key, args) {
     if (args)
       return this.stringBundle.formatStringFromName(key, args, args.length);
     else
@@ -103,7 +102,7 @@ StringBundle.prototype = {
 
 
 
-  getAll: function() {
+  getAll() {
     let strings = [];
 
     
@@ -170,7 +169,7 @@ StringBundle.prototype = {
 
 
 
-  getString: function(key) {
+  getString(key) {
     return this.get(key);
   },
 
@@ -186,7 +185,7 @@ StringBundle.prototype = {
 
 
 
-  getFormattedString: function(key, args) {
+  getFormattedString(key, args) {
     return this.get(key, args);
   },
 

@@ -93,8 +93,7 @@ this.Utils = {
     return function WrappedCatch() {
       try {
         return func.call(thisArg);
-      }
-      catch(ex) {
+      } catch (ex) {
         thisArg._log.debug("Exception calling " + (func.name || "anonymous function"), ex);
         if (exceptionCallback) {
           return exceptionCallback.call(thisArg, ex);
@@ -119,8 +118,7 @@ this.Utils = {
 
       try {
         return func.call(thisArg);
-      }
-      finally {
+      } finally {
         thisArg.unlock();
       }
     };
@@ -166,8 +164,7 @@ this.Utils = {
           let ret = func.call(thisArg);
           notify("finish", ret);
           return ret;
-        }
-        catch(ex) {
+        } catch (ex) {
           notify("error", ex);
           throw ex;
         }
@@ -207,14 +204,14 @@ this.Utils = {
 
     
     if (!prot.__lookupGetter__(prop)) {
-      prot.__defineGetter__(prop, function () {
+      prot.__defineGetter__(prop, function() {
         return this[defer][prop];
       });
     }
 
     
     if (!prot.__lookupSetter__(prop)) {
-      prot.__defineSetter__(prop, function (val) {
+      prot.__defineSetter__(prop, function(val) {
         this[defer][prop] = val;
       });
     }
@@ -364,11 +361,9 @@ this.Utils = {
       if (e instanceof OS.File.Error && e.becauseNoSuchFile) {
         
         json = null;
-      } else {
-        if (that._log) {
+      } else if (that._log) {
           that._log.debug("Failed to load json", e);
         }
-      }
     }
 
     if (callback) {
@@ -502,7 +497,7 @@ this.Utils = {
 
 
 
-  isPassphrase: function(s) {
+  isPassphrase(s) {
     if (s) {
       return /^[abcdefghijkmnpqrstuvwxyz23456789]{26}$/.test(Utils.normalizePassphrase(s));
     }
@@ -532,7 +527,7 @@ this.Utils = {
       return data + "-";
 
     
-    let y = data.substr(0,1);
+    let y = data.substr(0, 1);
     let z = data.substr(1).replace(/(.{1,5})/g, "-$1");
 
     
@@ -629,7 +624,7 @@ this.Utils = {
     try {
       sdr.encryptString("bacon");
       return true;
-    } catch(e) {}
+    } catch (e) {}
     return false;
   },
 
@@ -654,7 +649,7 @@ this.Utils = {
 
 
 
-  getSyncCredentialsHosts: function() {
+  getSyncCredentialsHosts() {
     let result = new Set(this.getSyncCredentialsHostsLegacy());
     for (let host of this.getSyncCredentialsHostsFxA()) {
       result.add(host);
@@ -665,7 +660,7 @@ this.Utils = {
   
 
 
-  getSyncCredentialsHostsLegacy: function() {
+  getSyncCredentialsHostsLegacy() {
     
     return new Set([PWDMGR_HOST]);
   },
@@ -673,7 +668,7 @@ this.Utils = {
   
 
 
-  getSyncCredentialsHostsFxA: function() {
+  getSyncCredentialsHostsFxA() {
     let result = new Set();
     
     result.add(FxAccountsCommon.FXA_PWDMGR_HOST);
@@ -784,7 +779,7 @@ this.Str = {};
   XPCOMUtils.defineLazyGetter(Str, lazy, Utils.lazyStrings(lazy));
 });
 
-Svc.Obs.add("xpcom-shutdown", function () {
+Svc.Obs.add("xpcom-shutdown", function() {
   for (let name in Svc)
     delete Svc[name];
 });

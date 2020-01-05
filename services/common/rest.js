@@ -575,7 +575,7 @@ RESTRequest.prototype = {
 
   
 
-  getInterface: function(aIID) {
+  getInterface(aIID) {
     return this.QueryInterface(aIID);
   },
 
@@ -707,7 +707,7 @@ RESTResponse.prototype = {
     try {
       this._log.trace("Processing response headers.");
       let channel = this.request.channel.QueryInterface(Ci.nsIHttpChannel);
-      channel.visitResponseHeaders(function (header, value) {
+      channel.visitResponseHeaders(function(header, value) {
         headers[header.toLowerCase()] = value;
       });
     } catch (ex) {

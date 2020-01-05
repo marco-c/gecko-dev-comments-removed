@@ -52,7 +52,7 @@ const PREF_SYNC_SHOW_CUSTOMIZATION = "services.sync-setup.ui.showCustomizationDi
 
 function deriveKeyBundle(kB) {
   let out = CryptoUtils.hkdf(kB, undefined,
-                             "identity.mozilla.com/picl/v1/oldsync", 2*32);
+                             "identity.mozilla.com/picl/v1/oldsync", 2 * 32);
   let bundle = new BulkKeyBundle();
   
   bundle.keyPair = [out.slice(0, 32), out.slice(32, 64)];
@@ -72,7 +72,7 @@ function AuthenticationError(details, source) {
 }
 
 AuthenticationError.prototype = {
-  toString: function() {
+  toString() {
     return "AuthenticationError(" + this.details + ")";
   }
 }
@@ -134,7 +134,7 @@ this.BrowserIDManager.prototype = {
     return this._signedInUser && this._signedInUser.deviceId;
   },
 
-  initialize: function() {
+  initialize() {
     for (let topic of OBSERVER_TOPICS) {
       Services.obs.addObserver(this, topic, false);
     }
@@ -157,7 +157,7 @@ this.BrowserIDManager.prototype = {
 
 
 
-  ensureLoggedIn: function() {
+  ensureLoggedIn() {
     if (!this._shouldHaveSyncKeyBundle && this.whenReadyToAuthenticate) {
       
       return this.whenReadyToAuthenticate.promise;
@@ -181,7 +181,7 @@ this.BrowserIDManager.prototype = {
     return this.whenReadyToAuthenticate.promise;
   },
 
-  finalize: function() {
+  finalize() {
     
     for (let topic of OBSERVER_TOPICS) {
       Services.obs.removeObserver(this, topic);
@@ -190,7 +190,7 @@ this.BrowserIDManager.prototype = {
     this._signedInUser = null;
   },
 
-  offerSyncOptions: function () {
+  offerSyncOptions() {
     
     
     const url = "chrome://browser/content/sync/customize.xul";
@@ -203,7 +203,7 @@ this.BrowserIDManager.prototype = {
     return data;
   },
 
-  initializeWithCurrentIdentity: function(isInitialSync=false) {
+  initializeWithCurrentIdentity(isInitialSync = false) {
     
     
     
@@ -284,7 +284,7 @@ this.BrowserIDManager.prototype = {
     });
   },
 
-  _updateSignedInUser: function(userData) {
+  _updateSignedInUser(userData) {
     
     
     
@@ -295,7 +295,7 @@ this.BrowserIDManager.prototype = {
     this._signedInUser = userData;
   },
 
-  logout: function() {
+  logout() {
     
     
     
@@ -304,7 +304,7 @@ this.BrowserIDManager.prototype = {
     this._token = null;
   },
 
-  observe: function (subject, topic, data) {
+  observe(subject, topic, data) {
     this._log.debug("observed " + topic);
     switch (topic) {
     case fxAccountsCommon.ONLOGIN_NOTIFICATION:
@@ -338,7 +338,7 @@ this.BrowserIDManager.prototype = {
   
 
 
-  _sha256: function(message) {
+  _sha256(message) {
     let hasher = Cc["@mozilla.org/security/hash;1"]
                     .createInstance(Ci.nsICryptoHash);
     hasher.init(hasher.SHA256);
@@ -350,14 +350,14 @@ this.BrowserIDManager.prototype = {
 
 
 
-  _computeXClientState: function(kBbytes) {
+  _computeXClientState(kBbytes) {
     return CommonUtils.bytesAsHex(this._sha256(kBbytes).slice(0, 16), false);
   },
 
   
 
 
-  _now: function() {
+  _now() {
     return this._fxaService.now()
   },
 
@@ -365,7 +365,7 @@ this.BrowserIDManager.prototype = {
     return this._fxaService.localtimeOffsetMsec;
   },
 
-  usernameFromAccount: function(val) {
+  usernameFromAccount(val) {
     
     return val;
   },
@@ -407,8 +407,7 @@ this.BrowserIDManager.prototype = {
       
       
       return "99999999999999999999999999";
-    }
-    else {
+    } else {
       return null;
     }
   },
@@ -424,7 +423,7 @@ this.BrowserIDManager.prototype = {
   
 
 
-  resetCredentials: function() {
+  resetCredentials() {
     this.resetSyncKey();
     this._token = null;
     this._hashedUID = null;
@@ -436,7 +435,7 @@ this.BrowserIDManager.prototype = {
   
 
 
-  resetSyncKey: function() {
+  resetSyncKey() {
     this._syncKey = null;
     this._syncKeyBundle = null;
     this._syncKeyUpdated = true;
@@ -449,14 +448,14 @@ this.BrowserIDManager.prototype = {
 
 
 
-  prefetchMigrationSentinel: function(service) {
+  prefetchMigrationSentinel(service) {
     
   },
 
   
 
 
-  _getSyncCredentialsHosts: function() {
+  _getSyncCredentialsHosts() {
     return Utils.getSyncCredentialsHostsFxA();
   },
 
@@ -486,7 +485,7 @@ this.BrowserIDManager.prototype = {
 
   
   
-  _canFetchKeys: function() {
+  _canFetchKeys() {
     let userData = this._signedInUser;
     
     
@@ -499,7 +498,7 @@ this.BrowserIDManager.prototype = {
 
 
 
-  unlockAndVerifyAuthState: function() {
+  unlockAndVerifyAuthState() {
     if (this._canFetchKeys()) {
       log.debug("unlockAndVerifyAuthState already has (or can fetch) sync keys");
       return Promise.resolve(STATUS_OK);
@@ -534,13 +533,13 @@ this.BrowserIDManager.prototype = {
 
 
 
-  hasValidToken: function() {
+  hasValidToken() {
     
     
     let ignoreCachedAuthCredentials = false;
     try {
       ignoreCachedAuthCredentials = Svc.Prefs.get("debug.ignoreCachedAuthCredentials");
-    } catch(e) {
+    } catch (e) {
       
     }
     if (ignoreCachedAuthCredentials) {
@@ -573,7 +572,7 @@ this.BrowserIDManager.prototype = {
   
   
   
-  _fetchTokenForUser: function() {
+  _fetchTokenForUser() {
     
     let tokenServerURI = this._tokenServerUrl;
     let log = this._log;
@@ -607,7 +606,7 @@ this.BrowserIDManager.prototype = {
     let getToken = assertion => {
       log.debug("Getting a token");
       let deferred = Promise.defer();
-      let cb = function (err, token) {
+      let cb = function(err, token) {
         if (err) {
           return deferred.reject(err);
         }
@@ -694,7 +693,7 @@ this.BrowserIDManager.prototype = {
 
   
   
-  _ensureValidToken: function() {
+  _ensureValidToken() {
     if (this.hasValidToken()) {
       this._log.debug("_ensureValidToken already has one");
       return Promise.resolve();
@@ -723,14 +722,14 @@ this.BrowserIDManager.prototype = {
     );
   },
 
-  getResourceAuthenticator: function () {
+  getResourceAuthenticator() {
     return this._getAuthenticationHeader.bind(this);
   },
 
   
 
 
-  getRESTRequestAuthenticator: function() {
+  getRESTRequestAuthenticator() {
     return this._addAuthenticationHeader.bind(this);
   },
 
@@ -738,7 +737,7 @@ this.BrowserIDManager.prototype = {
 
 
 
-  _getAuthenticationHeader: function(httpObject, method) {
+  _getAuthenticationHeader(httpObject, method) {
     let cb = Async.makeSpinningCallback();
     this._ensureValidToken().then(cb, cb);
     
@@ -768,14 +767,14 @@ this.BrowserIDManager.prototype = {
     let options = {
       now: this._now(),
       localtimeOffsetMsec: this._localtimeOffsetMsec,
-      credentials: credentials,
+      credentials,
     };
 
     let headerValue = CryptoUtils.computeHAWK(httpObject.uri, method, options);
     return {headers: {authorization: headerValue.field}};
   },
 
-  _addAuthenticationHeader: function(request, method) {
+  _addAuthenticationHeader(request, method) {
     let header = this._getAuthenticationHeader(request, method);
     if (!header) {
       return null;
@@ -784,7 +783,7 @@ this.BrowserIDManager.prototype = {
     return request;
   },
 
-  createClusterManager: function(service) {
+  createClusterManager(service) {
     return new BrowserIDClusterManager(service);
   },
 
@@ -809,7 +808,7 @@ function BrowserIDClusterManager(service) {
 BrowserIDClusterManager.prototype = {
   __proto__: ClusterManager.prototype,
 
-  _findCluster: function() {
+  _findCluster() {
     let endPointFromIdentityToken = function() {
       
       
@@ -852,7 +851,7 @@ BrowserIDClusterManager.prototype = {
     }.bind(this);
 
     let cb = Async.makeSpinningCallback();
-    promiseClusterURL().then(function (clusterURL) {
+    promiseClusterURL().then(function(clusterURL) {
       cb(null, clusterURL);
     }).then(
       null, err => {
@@ -880,7 +879,7 @@ BrowserIDClusterManager.prototype = {
     return cb.wait();
   },
 
-  getUserBaseURL: function() {
+  getUserBaseURL() {
     
     
     

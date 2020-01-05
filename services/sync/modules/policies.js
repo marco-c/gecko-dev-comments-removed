@@ -133,7 +133,7 @@ SyncScheduler.prototype = {
 
   observe: function observe(subject, topic, data) {
     this._log.trace("Handling " + topic);
-    switch(topic) {
+    switch (topic) {
       case "weave:engine:score:updated":
         if (Status.login == LOGIN_SUCCEEDED) {
           Utils.namedTimer(this.calculateScore, SCORE_UPDATE_DELAY, this,
@@ -584,7 +584,7 @@ ErrorHandler.prototype = {
 
   observe: function observe(subject, topic, data) {
     this._log.trace("Handling " + topic);
-    switch(topic) {
+    switch (topic) {
       case "weave:engine:sync:applied":
         if (subject.newFailed) {
           
@@ -656,7 +656,7 @@ ErrorHandler.prototype = {
         
         
         
-        if (Status.sync    == SYNC_SUCCEEDED &&
+        if (Status.sync == SYNC_SUCCEEDED &&
             Status.service == STATUS_OK) {
           
           this._log.trace("Clearing lastSyncReassigned.");
@@ -843,7 +843,7 @@ ErrorHandler.prototype = {
     return Svc.Prefs.set("errorhandler.alert.earliestNext", msec / 1000);
   },
 
-  clearServerAlerts: function () {
+  clearServerAlerts() {
     
     Svc.Prefs.resetBranch("errorhandler.alert");
   },
@@ -857,7 +857,7 @@ ErrorHandler.prototype = {
 
 
 
-  handleServerAlert: function (xwa) {
+  handleServerAlert(xwa) {
     if (!xwa.code) {
       this._log.warn("Got structured X-Weave-Alert, but no alert code.");
       return;
@@ -895,7 +895,7 @@ ErrorHandler.prototype = {
 
 
 
-  checkServerError: function (resp) {
+  checkServerError(resp) {
     switch (resp.status) {
       case 200:
       case 404:

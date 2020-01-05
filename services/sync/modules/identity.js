@@ -87,26 +87,26 @@ IdentityManager.prototype = {
   
 
 
-  initialize: function() {
+  initialize() {
     
   },
 
-  finalize: function() {
-    
-  },
-
-  
-
-
-  logout: function() {
+  finalize() {
     
   },
 
   
 
 
+  logout() {
+    
+  },
 
-  ensureLoggedIn: function() {
+  
+
+
+
+  ensureLoggedIn() {
     
     return Promise.resolve();
   },
@@ -169,7 +169,7 @@ IdentityManager.prototype = {
   
 
 
-  resetCredentials: function() {
+  resetCredentials() {
     this.basicPassword = null;
     this.resetSyncKey();
   },
@@ -177,7 +177,7 @@ IdentityManager.prototype = {
   
 
 
-  resetSyncKey: function() {
+  resetSyncKey() {
     this.syncKey = null;
     
   },
@@ -372,7 +372,7 @@ IdentityManager.prototype = {
 
 
 
-  unlockAndVerifyAuthState: function() {
+  unlockAndVerifyAuthState() {
     
     
     try {
@@ -441,7 +441,7 @@ IdentityManager.prototype = {
 
 
 
-  prefetchMigrationSentinel: function(service) {
+  prefetchMigrationSentinel(service) {
     
     
     try {
@@ -495,7 +495,7 @@ IdentityManager.prototype = {
   
 
 
-  _getSyncCredentialsHosts: function() {
+  _getSyncCredentialsHosts() {
     return Utils.getSyncCredentialsHostsLegacy();
   },
 
@@ -584,12 +584,12 @@ IdentityManager.prototype = {
     request.setHeader("authorization", "Basic " + btoa(up));
   },
 
-  createClusterManager: function(service) {
+  createClusterManager(service) {
     Cu.import("resource://services-sync/stages/cluster.js");
     return new ClusterManager(service);
   },
 
-  offerSyncOptions: function () {
+  offerSyncOptions() {
     
     return {accepted: true};
   },

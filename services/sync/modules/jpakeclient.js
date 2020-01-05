@@ -208,7 +208,7 @@ JPAKEClient.prototype = {
 
     this._chain(this._computeStepOne,
                 this._getStep,
-                function (callback) {
+                function(callback) {
                   
                   
                   if (!expectDelay) {
@@ -350,7 +350,7 @@ JPAKEClient.prototype = {
     } else {
       request.setHeader("If-None-Match", "*");
     }
-    request.put(this._outgoing, Utils.bind2(this, function (error) {
+    request.put(this._outgoing, Utils.bind2(this, function(error) {
       if (this._finished) {
         return;
       }
@@ -369,7 +369,7 @@ JPAKEClient.prototype = {
       
       
       this._my_etag = request.response.headers["etag"];
-      Utils.namedTimer(function () { callback(); }, this._pollInterval * 2,
+      Utils.namedTimer(function() { callback(); }, this._pollInterval * 2,
                        this, "_pollTimer");
     }));
   },
@@ -383,7 +383,7 @@ JPAKEClient.prototype = {
       request.setHeader("If-None-Match", this._my_etag);
     }
 
-    request.get(Utils.bind2(this, function (error) {
+    request.get(Utils.bind2(this, function(error) {
       if (this._finished) {
         return;
       }
@@ -445,7 +445,7 @@ JPAKEClient.prototype = {
     let request = this._newRequest(this._serverURL + "report");
     request.setHeader("X-KeyExchange-Cid", this._channel);
     request.setHeader("X-KeyExchange-Log", reason);
-    request.post("", Utils.bind2(this, function (error) {
+    request.post("", Utils.bind2(this, function(error) {
       if (error) {
         this._log.warn("Report failed: " + error);
       } else if (request.response.status != 200) {
@@ -572,7 +572,7 @@ JPAKEClient.prototype = {
     }
     this._outgoing = {type: this._my_signerid + "3",
                       version: KEYEXCHANGE_VERSION,
-                      payload: {ciphertext: ciphertext, IV: iv}};
+                      payload: {ciphertext, IV: iv}};
     this._log.trace("Generated message " + this._outgoing.type);
     callback();
   },
@@ -601,7 +601,7 @@ JPAKEClient.prototype = {
 
     this._log.debug("Verified pairing!");
     this._paired = true;
-    Utils.nextTick(function () { this.controller.onPaired(); }, this);
+    Utils.nextTick(function() { this.controller.onPaired(); }, this);
     callback();
   },
 
@@ -619,7 +619,7 @@ JPAKEClient.prototype = {
     }
     this._outgoing = {type: this._my_signerid + "3",
                       version: KEYEXCHANGE_VERSION,
-                      payload: {ciphertext: ciphertext, IV: iv, hmac: hmac}};
+                      payload: {ciphertext, IV: iv, hmac}};
     this._log.trace("Generated message " + this._outgoing.type);
     callback();
   },
@@ -647,7 +647,7 @@ JPAKEClient.prototype = {
 
     this._log.trace("Decrypting data.");
     let cleartext;
-    try {      
+    try {
       cleartext = Svc.Crypto.decrypt(step3.ciphertext, this._crypto_key,
                                      step3.IV);
     } catch (ex) {
@@ -671,7 +671,7 @@ JPAKEClient.prototype = {
   _complete: function _complete() {
     this._log.debug("Exchange completed.");
     this._finished = true;
-    Utils.nextTick(function () { this.controller.onComplete(this._newData); },
+    Utils.nextTick(function() { this.controller.onComplete(this._newData); },
                    this);
   }
 
@@ -710,8 +710,8 @@ this.SendCredentialsController =
   
   
   Services.obs.addObserver(this, "weave:service:sync:finish", false);
-  Services.obs.addObserver(this, "weave:service:sync:error",  false);
-  Services.obs.addObserver(this, "weave:service:start-over",  false);
+  Services.obs.addObserver(this, "weave:service:sync:error", false);
+  Services.obs.addObserver(this, "weave:service:start-over", false);
 }
 SendCredentialsController.prototype = {
 

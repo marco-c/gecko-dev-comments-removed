@@ -63,7 +63,7 @@ add_identity_test(this, async function test_successful_sync_adjustSyncInterval()
   function onSyncFinish() {
     _("Sync success.");
     syncSuccesses++;
-  };
+  }
   Svc.Obs.add("weave:service:sync:finish", onSyncFinish);
 
   let server = sync_httpd_setup();
@@ -334,7 +334,7 @@ add_identity_test(this, async function test_bug671378_scenario() {
   function onSyncFinish() {
     _("Sync success.");
     syncSuccesses++;
-  };
+  }
   Svc.Obs.add("weave:service:sync:finish", onSyncFinish);
 
   
