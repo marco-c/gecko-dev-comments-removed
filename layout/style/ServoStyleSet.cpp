@@ -469,18 +469,15 @@ ServoStyleSet::ResolveTransientServoStyle(Element* aElement,
   return ResolveStyleLazily(aElement, aPseudoTag);
 }
 
-
 already_AddRefed<nsStyleContext>
 ServoStyleSet::ResolveInheritingAnonymousBoxStyle(nsIAtom* aPseudoTag,
-                                                  nsStyleContext* aParentContext,
-                                                  uint32_t aFlags)
+                                                  nsStyleContext* aParentContext)
 {
   MOZ_ASSERT(nsCSSAnonBoxes::IsAnonBox(aPseudoTag) &&
              !nsCSSAnonBoxes::IsNonInheritingAnonBox(aPseudoTag));
 
-  MOZ_ASSERT(aFlags == 0 ||
-             aFlags == nsStyleSet::eSkipParentDisplayBasedStyleFixup);
-  bool skipFixup = aFlags & nsStyleSet::eSkipParentDisplayBasedStyleFixup;
+  bool skipFixup =
+    nsCSSAnonBoxes::AnonBoxSkipsParentDisplayBasedStyleFixup(aPseudoTag);
 
   const ServoComputedValues* parentStyle =
     aParentContext ? aParentContext->StyleSource().AsServoComputedValues()
@@ -500,9 +497,10 @@ ServoStyleSet::ResolveInheritingAnonymousBoxStyle(nsIAtom* aPseudoTag,
 
   
   
+  
   return NS_NewStyleContext(aParentContext, mPresContext, aPseudoTag,
                             CSSPseudoElementType::InheritingAnonBox,
-                            computedValues.forget(), skipFixup);
+                            computedValues.forget(), false);
 }
 
 already_AddRefed<nsStyleContext>
@@ -524,6 +522,8 @@ ServoStyleSet::ResolveNonInheritingAnonymousBoxStyle(nsIAtom* aPseudoTag)
     return retval.forget();
   }
 
+  
+  
   
   
   MOZ_ASSERT(!nsCSSAnonBoxes::IsNonInheritingAnonBox(nsCSSAnonBoxes::viewport),

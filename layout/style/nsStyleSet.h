@@ -262,7 +262,6 @@ class nsStyleSet final
   
 
 
-
   enum {
     eNoFlags =          0,
     eIsLink =           1 << 0,
@@ -280,11 +279,9 @@ class nsStyleSet final
   
   
   
-  
   already_AddRefed<nsStyleContext>
   ResolveInheritingAnonymousBoxStyle(nsIAtom* aPseudoTag,
-                                     nsStyleContext* aParentContext,
-                                     uint32_t aFlags = eNoFlags);
+                                     nsStyleContext* aParentContext);
 
   
   
