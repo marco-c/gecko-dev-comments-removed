@@ -3873,22 +3873,6 @@ public:
   void Forget() { mElement = nullptr; }
 
   
-  void DoNotifyFinished()
-  {
-    mFinished = true;
-    if (mElement) {
-      RefPtr<HTMLMediaElement> deathGrip = mElement;
-
-      
-      
-      mElement = nullptr;
-      
-      
-      NotifyWatchers();
-
-      deathGrip->PlaybackEnded();
-    }
-  }
 
   MediaDecoderOwner::NextFrameStatus NextFrameStatus()
   {
@@ -3943,15 +3927,6 @@ public:
       event = NewRunnableMethod(this, &StreamListener::DoNotifyUnblocked);
     }
     aGraph->DispatchToMainThreadAfterStreamStateUpdate(event.forget());
-  }
-  virtual void NotifyEvent(MediaStreamGraph* aGraph,
-                           MediaStreamGraphEvent event) override
-  {
-    if (event == MediaStreamGraphEvent::EVENT_FINISHED) {
-      nsCOMPtr<nsIRunnable> event =
-        NewRunnableMethod(this, &StreamListener::DoNotifyFinished);
-      aGraph->DispatchToMainThreadAfterStreamStateUpdate(event.forget());
-    }
   }
   virtual void NotifyHasCurrentData(MediaStreamGraph* aGraph) override
   {
@@ -4017,6 +3992,17 @@ public:
   void NotifyTrackRemoved(const RefPtr<MediaStreamTrack>& aTrack) override
   {
     mElement->NotifyMediaStreamTrackRemoved(aTrack);
+  }
+
+  void NotifyInactive() override
+  {
+    LOG(LogLevel::Debug, ("%p, mSrcStream %p became inactive",
+                          mElement, mElement->mSrcStream.get()));
+    MOZ_ASSERT(!mElement->mSrcStream->Active());
+    if (mElement->mMediaStreamListener) {
+      mElement->mMediaStreamListener->Forget();
+    }
+    mElement->PlaybackEnded();
   }
 
 protected:
