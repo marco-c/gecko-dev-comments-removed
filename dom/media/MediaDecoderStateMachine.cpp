@@ -1690,13 +1690,6 @@ void MediaDecoderStateMachine::PlayStateChanged()
     return;
   }
 
-  
-  
-  
-  if (mState == DECODER_STATE_BUFFERING) {
-    SetState(DECODER_STATE_DECODING);
-  }
-
   ScheduleStateMachine();
 }
 
