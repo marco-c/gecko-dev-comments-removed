@@ -116,6 +116,17 @@ pref("app.update.backgroundMaxErrors", 10);
 pref("app.update.enabled", true);
 
 
+pref("app.update.doorhanger", true);
+
+
+
+pref("app.update.download.promptMaxAttempts", 2);
+
+
+
+pref("app.update.elevation.promptMaxAttempts", 2);
+
+
 
 
 pref("app.update.auto", true);
@@ -123,12 +134,6 @@ pref("app.update.auto", true);
 
 pref("app.update.silent", false);
 
-
-#ifndef RELEASE_OR_BETA
-pref("app.update.badge", true);
-#else
-pref("app.update.badge", false);
-#endif
 
 
 
