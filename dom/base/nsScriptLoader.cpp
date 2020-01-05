@@ -2360,39 +2360,6 @@ nsScriptLoader::ReadyToExecuteParserBlockingScripts()
   return true;
 }
 
-
-static bool
-DetectByteOrderMark(const unsigned char* aBytes, int32_t aLen, nsCString& oCharset)
-{
-  if (aLen < 2)
-    return false;
-
-  switch(aBytes[0]) {
-  case 0xEF:
-    if (aLen >= 3 && 0xBB == aBytes[1] && 0xBF == aBytes[2]) {
-      
-      
-      oCharset.AssignLiteral("UTF-8");
-    }
-    break;
-  case 0xFE:
-    if (0xFF == aBytes[1]) {
-      
-      
-      oCharset.AssignLiteral("UTF-16BE");
-    }
-    break;
-  case 0xFF:
-    if (0xFE == aBytes[1]) {
-      
-      
-      oCharset.AssignLiteral("UTF-16LE");
-    }
-    break;
-  }
-  return !oCharset.IsEmpty();
-}
-
  nsresult
 nsScriptLoader::ConvertToUTF16(nsIChannel* aChannel, const uint8_t* aData,
                                uint32_t aLength, const nsAString& aHintCharset,
@@ -2415,8 +2382,7 @@ nsScriptLoader::ConvertToUTF16(nsIChannel* aChannel, const uint8_t* aData,
 
   nsCOMPtr<nsIUnicodeDecoder> unicodeDecoder;
 
-  if (DetectByteOrderMark(aData, aLength, charset)) {
-    
+  if (nsContentUtils::CheckForBOM(aData, aLength, charset)) {
     
     
     unicodeDecoder = EncodingUtils::DecoderForEncoding(charset);
@@ -2974,7 +2940,7 @@ nsScriptLoadHandler::EnsureDecoder(nsIIncrementalStreamLoader *aLoader,
   }
 
   
-  if (DetectByteOrderMark(aData, aDataLength, charset)) {
+  if (nsContentUtils::CheckForBOM(aData, aDataLength, charset)) {
     mDecoder = EncodingUtils::DecoderForEncoding(charset);
     return true;
   }
