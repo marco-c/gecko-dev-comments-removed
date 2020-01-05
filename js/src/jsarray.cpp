@@ -1060,8 +1060,10 @@ ArrayJoinDenseKernel(JSContext* cx, SeparatorOp sepOp, HandleObject obj, uint32_
         if (!CheckForInterrupt(cx))
             return DenseElementResult::Failure;
 
+        
         const Value& elem = GetBoxedOrUnboxedDenseElement<Type>(obj, *numProcessed);
 
+        
         if (elem.isString()) {
             if (!sb.append(elem.toString()))
                 return DenseElementResult::Failure;
@@ -1085,6 +1087,7 @@ ArrayJoinDenseKernel(JSContext* cx, SeparatorOp sepOp, HandleObject obj, uint32_
             MOZ_ASSERT(elem.isMagic(JS_ELEMENTS_HOLE) || elem.isNullOrUndefined());
         }
 
+        
         if (++(*numProcessed) != length && !sepOp(cx, sb))
             return DenseElementResult::Failure;
     }
@@ -1117,6 +1120,7 @@ static bool
 ArrayJoinKernel(JSContext* cx, SeparatorOp sepOp, HandleObject obj, uint32_t length,
                StringBuffer& sb)
 {
+    
     uint32_t i = 0;
 
     if (!ObjectMayHaveExtraIndexedProperties(obj)) {
@@ -1126,20 +1130,25 @@ ArrayJoinKernel(JSContext* cx, SeparatorOp sepOp, HandleObject obj, uint32_t len
             return false;
     }
 
+    
     if (i != length) {
         RootedValue v(cx);
         while (i < length) {
             if (!CheckForInterrupt(cx))
                 return false;
 
+            
             bool hole;
             if (!GetElement(cx, obj, i, &hole, &v))
                 return false;
+
+            
             if (!hole && !v.isNullOrUndefined()) {
                 if (!ValueToStringBuffer(cx, v, sb))
                     return false;
             }
 
+            
             if (++i != length && !sepOp(cx, sb))
                 return false;
         }
@@ -1147,6 +1156,7 @@ ArrayJoinKernel(JSContext* cx, SeparatorOp sepOp, HandleObject obj, uint32_t len
 
     return true;
 }
+
 
 
 bool
@@ -1190,8 +1200,6 @@ js::array_join(JSContext* cx, unsigned argc, Value* vp)
     }
 
     
-
-    
     
     
     if (length == 1 && GetAnyBoxedOrUnboxedInitializedLength(obj) == 1) {
@@ -1202,6 +1210,7 @@ js::array_join(JSContext* cx, unsigned argc, Value* vp)
         }
     }
 
+    
     StringBuffer sb(cx);
     if (sepstr->hasTwoByteChars() && !sb.ensureTwoByteChars())
         return false;
@@ -1407,15 +1416,20 @@ ArrayReverseDenseKernel(JSContext* cx, HandleObject obj, uint32_t length)
 DefineBoxedOrUnboxedFunctor3(ArrayReverseDenseKernel,
                              JSContext*, HandleObject, uint32_t);
 
+
+
 bool
 js::array_reverse(JSContext* cx, unsigned argc, Value* vp)
 {
     AutoGeckoProfilerEntry pseudoFrame(cx->runtime(), "Array.prototype.reverse");
     CallArgs args = CallArgsFromVp(argc, vp);
+
+    
     RootedObject obj(cx, ToObject(cx, args.thisv()));
     if (!obj)
         return false;
 
+    
     uint32_t len;
     if (!GetLengthProperty(cx, obj, &len))
         return false;
@@ -1434,6 +1448,7 @@ js::array_reverse(JSContext* cx, unsigned argc, Value* vp)
         }
     }
 
+    
     RootedValue lowval(cx), hival(cx);
     for (uint32_t i = 0, half = len / 2; i < half; i++) {
         bool hole, hole2;
@@ -1463,6 +1478,8 @@ js::array_reverse(JSContext* cx, unsigned argc, Value* vp)
             
         }
     }
+
+    
     args.rval().setObject(*obj);
     return true;
 }
@@ -2073,6 +2090,7 @@ js::NewbornArrayPush(JSContext* cx, HandleObject obj, const Value& v)
 }
 
 
+
 bool
 js::array_push(JSContext* cx, unsigned argc, Value* vp)
 {
@@ -2121,6 +2139,7 @@ js::array_push(JSContext* cx, unsigned argc, Value* vp)
     args.rval().setNumber(newlength);
     return SetLengthProperty(cx, obj, newlength);
 }
+
 
 
 bool
@@ -2257,6 +2276,7 @@ DefineBoxedOrUnboxedFunctor3(ArrayShiftDenseKernel,
                              JSContext*, HandleObject, MutableHandleValue);
 
 
+
 bool
 js::array_shift(JSContext* cx, unsigned argc, Value* vp)
 {
@@ -2325,20 +2345,25 @@ js::array_shift(JSContext* cx, unsigned argc, Value* vp)
     return SetLengthProperty(cx, obj, newlen);
 }
 
+
+
 bool
 js::array_unshift(JSContext* cx, unsigned argc, Value* vp)
 {
     AutoGeckoProfilerEntry pseudoFrame(cx->runtime(), "Array.prototype.unshift");
     CallArgs args = CallArgsFromVp(argc, vp);
+
+    
     RootedObject obj(cx, ToObject(cx, args.thisv()));
     if (!obj)
         return false;
 
+    
     uint32_t length;
     if (!GetLengthProperty(cx, obj, &length))
         return false;
 
-    double newlen = length;
+    
     if (args.length() > 0) {
         
         if (length > 0) {
@@ -2374,6 +2399,7 @@ js::array_unshift(JSContext* cx, unsigned argc, Value* vp)
                 optimized = true;
             } while (false);
 
+            
             if (!optimized) {
                 uint32_t last = length;
                 double upperIndex = double(last) + args.length();
@@ -2397,16 +2423,19 @@ js::array_unshift(JSContext* cx, unsigned argc, Value* vp)
         }
 
         
+        
         if (!SetArrayElements(cx, obj, 0, args.length(), args.array()))
             return false;
-
-        newlen += args.length();
     }
-    if (!SetLengthProperty(cx, obj, newlen))
+
+    
+    double newlength = length + double(args.length());
+    if (!SetLengthProperty(cx, obj, newlength))
         return false;
 
     
-    args.rval().setNumber(newlen);
+    
+    args.rval().setNumber(newlength);
     return true;
 }
 
