@@ -1225,7 +1225,7 @@ DrawTargetSkia::FillGlyphsWithCG(ScaledFont *aFont,
   }
 
   
-  CGRect *bboxes = new CGRect[aBuffer.mNumGlyphs];
+  auto *bboxes = new CGRect[aBuffer.mNumGlyphs];
   CTFontGetBoundingRectsForGlyphs(macFont->mCTFont, kCTFontDefaultOrientation,
                                   glyphs.begin(), bboxes, aBuffer.mNumGlyphs);
   CGRect extents = ComputeGlyphsExtents(bboxes, positions.begin(), aBuffer.mNumGlyphs, 1.0f);

@@ -1162,7 +1162,7 @@ gfxPlatform::GetSourceSurfaceForSurface(DrawTarget *aTarget,
   }
 
   
-  SourceSurfaceUserData *srcSurfUD = new SourceSurfaceUserData;
+  auto *srcSurfUD = new SourceSurfaceUserData;
   srcSurfUD->mBackendType = aTarget->GetBackendType();
   srcSurfUD->mSrcSurface = srcBuffer;
   aSurface->SetData(&kSourceSurface, srcSurfUD, SourceBufferDestroy);
@@ -1189,7 +1189,7 @@ gfxPlatform::GetWrappedDataSourceSurface(gfxASurface* aSurface)
 
   
   
-  DependentSourceSurfaceUserData *srcSurfUD = new DependentSourceSurfaceUserData;
+  auto *srcSurfUD = new DependentSourceSurfaceUserData;
   srcSurfUD->mSurface = aSurface;
   result->AddUserData(&kThebesSurface, srcSurfUD, SourceSurfaceDestroyed);
 
