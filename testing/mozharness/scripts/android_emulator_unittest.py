@@ -192,12 +192,16 @@ class AndroidEmulatorTest(BlobUploadMixin, TestingMixin, EmulatorMixin, VCSMixin
         env['LD_LIBRARY_PATH'] = self.abs_dirs['abs_work_dir']
 
         
-        
-        
-        
-        
-        
         avd_home_dir = self.abs_dirs['abs_avds_dir']
+        with open(os.path.join(avd_home_dir, "ddms.cfg"), 'w') as f:
+            f.write("pingOptIn=false\npingId=0\n")
+
+        
+        
+        
+        
+        
+        
         env['ANDROID_AVD_HOME'] = os.path.join(avd_home_dir, 'avd')
         env['ANDROID_SDK_HOME'] = os.path.abspath(os.path.join(avd_home_dir, '..'))
 
