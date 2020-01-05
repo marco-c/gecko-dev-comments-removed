@@ -75,6 +75,11 @@ public:
   virtual void DecodeError(const MediaResult& aError) = 0;
 
   
+  
+  
+  virtual void DecodeWarning(const MediaResult& aError) = 0;
+
+  
   virtual bool HasError() const = 0;
 
   

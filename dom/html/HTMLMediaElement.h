@@ -176,6 +176,11 @@ public:
   virtual void DecodeError(const MediaResult& aError) final override;
 
   
+  
+  
+  virtual void DecodeWarning(const MediaResult& aError) final override;
+
+  
   virtual bool HasError() const final override;
 
   
