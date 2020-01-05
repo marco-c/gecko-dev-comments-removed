@@ -470,11 +470,10 @@ public abstract class BrowserToolbar extends ThemedRelativeLayout
                     setPrivateMode(tab.isPrivate());
                     
                 case LOAD_ERROR:
-                    flags.add(UpdateFlags.TITLE);
-                    
                 case LOCATION_CHANGE:
                     
                     
+                    flags.add(UpdateFlags.TITLE);
                     flags.add(UpdateFlags.FAVICON);
                     flags.add(UpdateFlags.SITE_IDENTITY);
 
