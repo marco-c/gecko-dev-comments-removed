@@ -106,8 +106,6 @@ pub enum Msg {
     
     HeadParsed,
     
-    CollectMemoryReports(mem::ReportsChan),
-    
     Status(Option<String>),
     
     GetClientWindow(IpcSender<(Size2D<u32>, Point2D<i32>)>),
@@ -154,7 +152,6 @@ impl Debug for Msg {
             Msg::IsReadyToSaveImageReply(..) => write!(f, "IsReadyToSaveImageReply"),
             Msg::NewFavicon(..) => write!(f, "NewFavicon"),
             Msg::HeadParsed => write!(f, "HeadParsed"),
-            Msg::CollectMemoryReports(..) => write!(f, "CollectMemoryReports"),
             Msg::Status(..) => write!(f, "Status"),
             Msg::GetClientWindow(..) => write!(f, "GetClientWindow"),
             Msg::MoveTo(..) => write!(f, "MoveTo"),

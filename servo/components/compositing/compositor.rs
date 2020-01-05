@@ -17,11 +17,9 @@ use gleam::gl;
 use gleam::gl::types::{GLint, GLsizei};
 use image::{DynamicImage, ImageFormat, RgbImage};
 use ipc_channel::ipc::{self, IpcSender, IpcSharedMemory};
-use ipc_channel::router::ROUTER;
 use msg::constellation_msg::{Key, KeyModifiers, KeyState, CONTROL};
 use msg::constellation_msg::{PipelineId, PipelineIndex, PipelineNamespaceId, TraversalDirection};
 use net_traits::image::base::{Image, PixelFormat};
-use profile_traits::mem::{self, Reporter, ReporterRequest};
 use profile_traits::time::{self, ProfilerCategory, profile};
 use script_traits::{AnimationState, AnimationTickType, ConstellationControlMsg};
 use script_traits::{ConstellationMsg, LayoutControlMsg, LoadData, MouseButton};
@@ -185,9 +183,6 @@ pub struct IOCompositor<Window: WindowMethods> {
     time_profiler_chan: time::ProfilerChan,
 
     
-    mem_profiler_chan: mem::ProfilerChan,
-
-    
     touch_handler: TouchHandler,
 
     
@@ -312,10 +307,6 @@ fn initialize_png(width: usize, height: usize) -> RenderTargetInfo {
     }
 }
 
-fn reporter_name() -> String {
-    "compositor-reporter".to_owned()
-}
-
 struct RenderNotifier {
     compositor_proxy: Box<CompositorProxy>,
     constellation_chan: Sender<ConstellationMsg>,
@@ -368,23 +359,6 @@ impl webrender_traits::RenderDispatcher for CompositorThreadDispatcher {
 impl<Window: WindowMethods> IOCompositor<Window> {
     fn new(window: Rc<Window>, state: InitialCompositorState)
            -> IOCompositor<Window> {
-        
-        let (reporter_sender, reporter_receiver) = ipc::channel()
-            .expect("Compositor reporter chan");
-        let compositor_proxy_for_memory_reporter = state.sender.clone_compositor_proxy();
-        ROUTER.add_route(reporter_receiver.to_opaque(), box move |reporter_request| {
-            match reporter_request.to::<ReporterRequest>() {
-                Err(e) => error!("Cast to ReporterRequest failed ({}).", e),
-                Ok(reporter_request) => {
-                    let msg = Msg::CollectMemoryReports(reporter_request.reports_channel);
-                    compositor_proxy_for_memory_reporter.send(msg);
-                },
-            }
-        });
-        let reporter = Reporter(reporter_sender);
-        state.mem_profiler_chan.send(
-            mem::ProfilerMsg::RegisterReporter(reporter_name(), reporter));
-
         let window_size = window.framebuffer_size();
         let scale_factor = window.scale_factor();
         let composite_target = match opts::get().output_file {
@@ -419,7 +393,6 @@ impl<Window: WindowMethods> IOCompositor<Window> {
             frame_tree_id: FrameTreeId(0),
             constellation_chan: state.constellation_chan,
             time_profiler_chan: state.time_profiler_chan,
-            mem_profiler_chan: state.mem_profiler_chan,
             last_composite_time: 0,
             ready_to_save_state: ReadyState::Unknown,
             scroll_in_progress: false,
@@ -438,18 +411,18 @@ impl<Window: WindowMethods> IOCompositor<Window> {
         compositor.webrender.set_render_notifier(Box::new(render_notifier));
 
         if cfg!(target_os = "windows") {
-            // Used to dispatch functions from webrender to the main thread's event loop.
-            // Required to allow WGL GLContext sharing in Windows.
+            
+            
             let dispatcher = Box::new(CompositorThreadDispatcher {
                 compositor_proxy: compositor.channel_to_self.clone_compositor_proxy()
             });
             compositor.webrender.set_main_thread_dispatcher(dispatcher);
         }
 
-        // Set the size of the root layer.
+        
         compositor.update_zoom_transform();
 
-        // Tell the constellation about the initial window size.
+        
         compositor.send_window_size(WindowSizeType::Initial);
 
         compositor
@@ -461,19 +434,17 @@ impl<Window: WindowMethods> IOCompositor<Window> {
             warn!("Sending exit message to constellation failed ({}).", e);
         }
 
-        self.mem_profiler_chan.send(mem::ProfilerMsg::UnregisterReporter(reporter_name()));
-
         self.shutdown_state = ShutdownState::ShuttingDown;
     }
 
     fn finish_shutting_down(&mut self) {
         debug!("Compositor received message that constellation shutdown is complete");
 
-        // Drain compositor port, sometimes messages contain channels that are blocking
-        // another thread from finishing (i.e. SetFrameTree).
+        
+        
         while self.port.try_recv_compositor_msg().is_some() {}
 
-        // Tell the profiler, memory profiler, and scrolling timer to shut down.
+        
         match ipc::channel() {
             Ok((sender, receiver)) => {
                 self.time_profiler_chan.send(time::ProfilerMsg::Exit(sender));
@@ -481,7 +452,6 @@ impl<Window: WindowMethods> IOCompositor<Window> {
             },
             Err(_) => {},
         }
-        self.mem_profiler_chan.send(mem::ProfilerMsg::Exit);
         self.delayed_composition_timer.shutdown();
 
         self.shutdown_state = ShutdownState::FinishedShuttingDown;
@@ -557,14 +527,14 @@ impl<Window: WindowMethods> IOCompositor<Window> {
             (Msg::LoadComplete(back, forward, root), ShutdownState::NotShuttingDown) => {
                 self.got_load_complete_message = true;
 
-                // If we're painting in headless mode, schedule a recomposite.
+                
                 if opts::get().output_file.is_some() || opts::get().exit_after_load {
                     self.composite_if_necessary(CompositingReason::Headless);
                 }
 
-                // Inform the embedder that the load has finished.
-                //
-                // TODO(pcwalton): Specify which frame's load completed.
+                
+                
+                
                 self.window.load_end(back, forward, root);
             }
 
@@ -636,11 +606,6 @@ impl<Window: WindowMethods> IOCompositor<Window> {
                 self.window.head_parsed();
             }
 
-            (Msg::CollectMemoryReports(reports_chan), ShutdownState::NotShuttingDown) => {
-                let reports = vec![];
-                reports_chan.send(reports);
-            }
-
             (Msg::PipelineVisibilityChanged(pipeline_id, visible), ShutdownState::NotShuttingDown) => {
                 self.pipeline_details(pipeline_id).visible = visible;
                 if visible {
@@ -663,22 +628,22 @@ impl<Window: WindowMethods> IOCompositor<Window> {
             }
 
             (Msg::Dispatch(func), ShutdownState::NotShuttingDown) => {
-                // The functions sent here right now are really dumb, so they can't panic.
-                // But if we start running more complex code here, we should really catch panic here.
+                
+                
                 func();
             }
 
-            // When we are shutting_down, we need to avoid performing operations
-            // such as Paint that may crash because we have begun tearing down
-            // the rest of our resources.
+            
+            
+            
             (_, ShutdownState::ShuttingDown) => { }
         }
 
         true
     }
 
-    /// Sets or unsets the animations-running flag for the given pipeline, and schedules a
-    /// recomposite if necessary.
+    
+    
     fn change_running_animations_state(&mut self,
                                        pipeline_id: PipelineId,
                                        animation_state: AnimationState) {
@@ -897,7 +862,7 @@ impl<Window: WindowMethods> IOCompositor<Window> {
     fn on_resize_window_event(&mut self, new_size: TypedSize2D<u32, DevicePixel>) {
         debug!("compositor resizing to {:?}", new_size.to_untyped());
 
-        // A size change could also mean a resolution change.
+        
         let new_scale_factor = self.window.scale_factor();
         if self.scale_factor != new_scale_factor {
             self.scale_factor = new_scale_factor;
@@ -1037,7 +1002,7 @@ impl<Window: WindowMethods> IOCompositor<Window> {
                 }
             }
             TouchAction::Zoom(magnification, scroll_delta) => {
-                let cursor = TypedPoint2D::new(-1, -1);  // Make sure this hits the base layer.
+                let cursor = TypedPoint2D::new(-1, -1);  
                 self.pending_scroll_zoom_events.push(ScrollZoomEvent {
                     magnification: magnification,
                     delta: scroll_delta,
@@ -1069,7 +1034,7 @@ impl<Window: WindowMethods> IOCompositor<Window> {
     }
 
     fn on_touch_cancel(&mut self, identifier: TouchId, point: TypedPoint2D<f32, DevicePixel>) {
-        // Send the event to script.
+        
         self.touch_handler.on_touch_cancel(identifier, point);
         let dppx = self.page_zoom * self.device_pixels_per_screen_px();
         let translated_point = (point / dppx).to_untyped();
@@ -1091,7 +1056,7 @@ impl<Window: WindowMethods> IOCompositor<Window> {
         }
     }
 
-    /// http://w3c.github.io/touch-events/#mouse-events
+    
     fn simulate_mouse_click(&mut self, p: TypedPoint2D<f32, DevicePixel>) {
         let button = MouseButton::Left;
         self.dispatch_mouse_window_move_event_class(p);
@@ -1141,7 +1106,7 @@ impl<Window: WindowMethods> IOCompositor<Window> {
     fn process_pending_scroll_events(&mut self) {
         let had_events = self.pending_scroll_zoom_events.len() > 0;
 
-        // Batch up all scroll events into one, or else we'll do way too much painting.
+        
         let mut last_combined_event: Option<ScrollZoomEvent> = None;
         for scroll_event in self.pending_scroll_zoom_events.drain(..) {
             let this_delta = scroll_event.delta;
@@ -1168,10 +1133,10 @@ impl<Window: WindowMethods> IOCompositor<Window> {
                 }
                 (&mut Some(ref mut last_combined_event),
                  ScrollEventPhase::Move(false)) => {
-                    // Mac OS X sometimes delivers scroll events out of vsync during a
-                    // fling. This causes events to get bunched up occasionally, causing
-                    // nasty-looking "pops". To mitigate this, during a fling we average
-                    // deltas instead of summing them.
+                    
+                    
+                    
+                    
                     let old_event_count =
                         ScaleFactor::new(last_combined_event.event_count as f32);
                     last_combined_event.event_count += 1;
@@ -1188,7 +1153,7 @@ impl<Window: WindowMethods> IOCompositor<Window> {
             }
         }
 
-        // TODO(gw): Support zoom (WR issue #28).
+        
         if let Some(combined_event) = last_combined_event {
             let delta = (combined_event.delta / self.scale).to_untyped();
             let cursor = (combined_event.cursor.to_f32() / self.scale).to_untyped();
@@ -1201,7 +1166,7 @@ impl<Window: WindowMethods> IOCompositor<Window> {
         }
     }
 
-    /// If there are any animations running, dispatches appropriate messages to the constellation.
+    
     fn process_animations(&mut self) {
         let mut pipeline_ids = vec![];
         for (pipeline_id, pipeline_details) in &self.pipeline_details {
@@ -1226,7 +1191,7 @@ impl<Window: WindowMethods> IOCompositor<Window> {
             }
         }
 
-        // We still need to tick layout unfortunately, see things like #12749.
+        
         let msg = ConstellationMsg::TickAnimation(pipeline_id, AnimationTickType::Layout);
         if let Err(e) = self.constellation_chan.send(msg) {
             warn!("Sending tick to constellation failed ({}).", e);
@@ -1239,7 +1204,7 @@ impl<Window: WindowMethods> IOCompositor<Window> {
         });
 
         if is_root {
-            // TODO: actual viewport size
+            
 
             self.viewport_zoom = constraints.initial_zoom;
             self.min_viewport_zoom = constraints.min_zoom;
@@ -1280,12 +1245,12 @@ impl<Window: WindowMethods> IOCompositor<Window> {
         self.send_window_size(WindowSizeType::Resize);
     }
 
-    /// Simulate a pinch zoom
+    
     fn on_pinch_zoom_window_event(&mut self, magnification: f32) {
         self.pending_scroll_zoom_events.push(ScrollZoomEvent {
             magnification: magnification,
-            delta: TypedPoint2D::zero(), // TODO: Scroll to keep the center in view?
-            cursor:  TypedPoint2D::new(-1, -1), // Make sure this hits the base layer.
+            delta: TypedPoint2D::zero(), 
+            cursor:  TypedPoint2D::new(-1, -1), 
             phase: ScrollEventPhase::Move(true),
             event_count: 1,
         });
@@ -1307,7 +1272,7 @@ impl<Window: WindowMethods> IOCompositor<Window> {
                     key: Key,
                     state: KeyState,
                     modifiers: KeyModifiers) {
-        // Steal a few key events for webrender debug options.
+        
         if modifiers.contains(CONTROL) && state == KeyState::Pressed {
             match key {
                 Key::F12 => {
@@ -1349,11 +1314,11 @@ impl<Window: WindowMethods> IOCompositor<Window> {
         }
     }
 
-    // Check if any pipelines currently have active animations or animation callbacks.
+    
     fn animations_active(&self) -> bool {
         for (_, details) in &self.pipeline_details {
-            // If animations are currently running, then don't bother checking
-            // with the constellation if the output image is stable.
+            
+            
             if details.animations_running {
                 return true;
             }
@@ -1365,18 +1330,18 @@ impl<Window: WindowMethods> IOCompositor<Window> {
         false
     }
 
-    /// Query the constellation to see if the current compositor
-    /// output matches the current frame tree output, and if the
-    /// associated script threads are idle.
+    
+    
+    
     fn is_ready_to_paint_image_output(&mut self) -> Result<(), NotReadyToPaint> {
         match self.ready_to_save_state {
             ReadyState::Unknown => {
-                // Unsure if the output image is stable.
+                
 
-                // Collect the currently painted epoch of each pipeline that is
-                // complete (i.e. has *all* layers painted to the requested epoch).
-                // This gets sent to the constellation for comparison with the current
-                // frame tree.
+                
+                
+                
+                
                 let mut pipeline_epochs = HashMap::new();
                 for (id, _) in &self.pipeline_details {
                     let webrender_pipeline_id = id.to_webrender();
@@ -1387,8 +1352,8 @@ impl<Window: WindowMethods> IOCompositor<Window> {
                     }
                 }
 
-                // Pass the pipeline/epoch states to the constellation and check
-                // if it's safe to output the image.
+                
+                
                 let msg = ConstellationMsg::IsReadyToSaveImage(pipeline_epochs);
                 if let Err(e) = self.constellation_chan.send(msg) {
                     warn!("Sending ready to save to constellation failed ({}).", e);
@@ -1397,16 +1362,16 @@ impl<Window: WindowMethods> IOCompositor<Window> {
                 Err(NotReadyToPaint::JustNotifiedConstellation)
             }
             ReadyState::WaitingForConstellationReply => {
-                // If waiting on a reply from the constellation to the last
-                // query if the image is stable, then assume not ready yet.
+                
+                
                 Err(NotReadyToPaint::WaitingOnConstellation)
             }
             ReadyState::ReadyToSaveImage => {
-                // Constellation has replied at some point in the past
-                // that the current output image is stable and ready
-                // for saving.
-                // Reset the flag so that we check again in the future
-                // TODO: only reset this if we load a new document?
+                
+                
+                
+                
+                
                 if opts::get().is_running_problem_test {
                     println!("was ready to save, resetting ready_to_save_state");
                 }
@@ -1431,11 +1396,11 @@ impl<Window: WindowMethods> IOCompositor<Window> {
         }
     }
 
-    /// Composite either to the screen or to a png image or both.
-    /// Returns Ok if composition was performed or Err if it was not possible to composite
-    /// for some reason. If CompositeTarget is Window or Png no image data is returned;
-    /// in the latter case the image is written directly to a file. If CompositeTarget
-    /// is WindowAndPng Ok(Some(png::Image)) is returned.
+    
+    
+    
+    
+    
     fn composite_specific_target(&mut self,
                                  target: CompositeTarget)
                                  -> Result<Option<Image>, UnableToComposite> {
@@ -1455,9 +1420,9 @@ impl<Window: WindowMethods> IOCompositor<Window> {
         if wait_for_stable_image {
             match self.is_ready_to_paint_image_output() {
                 Ok(()) => {
-                    // The current image is ready to output. However, if there are animations active,
-                    // tick those instead and continue waiting for the image output to be stable AND
-                    // all active animations to complete.
+                    
+                    
+                    
                     if self.animations_active() {
                         self.process_animations();
                         return Err(UnableToComposite::NotReadyToPaintImage(NotReadyToPaint::AnimationsActive));
@@ -1477,7 +1442,7 @@ impl<Window: WindowMethods> IOCompositor<Window> {
         profile(ProfilerCategory::Compositing, None, self.time_profiler_chan.clone(), || {
             debug!("compositor: compositing");
 
-            // Paint the scene.
+            
             self.webrender.render(self.window_size.to_untyped());
         });
 
@@ -1515,7 +1480,7 @@ impl<Window: WindowMethods> IOCompositor<Window> {
             }
         };
 
-        // Perform the page flip. This will likely block for a while.
+        
         self.window.present();
 
         self.last_composite_time = precise_time_ns();
@@ -1544,7 +1509,7 @@ impl<Window: WindowMethods> IOCompositor<Window> {
         gl::delete_buffers(&render_target_info.texture_ids);
         gl::delete_frame_buffers(&render_target_info.framebuffer_ids);
 
-        // flip image vertically (texture is upside down)
+        
         let orig_pixels = pixels.clone();
         let stride = width * 3;
         for y in 0..height {
@@ -1586,7 +1551,7 @@ impl<Window: WindowMethods> IOCompositor<Window> {
     }
 
     pub fn handle_events(&mut self, messages: Vec<WindowEvent>) -> bool {
-        // Check for new messages coming from the other threads in the system.
+        
         let mut compositor_messages = vec![];
         let mut found_recomposite_msg = false;
         while let Some(msg) = self.port.try_recv_compositor_msg() {
@@ -1617,12 +1582,12 @@ impl<Window: WindowMethods> IOCompositor<Window> {
             return false;
         }
 
-        // Handle any messages coming from the windowing system.
+        
         for message in messages {
             self.handle_window_message(message);
         }
 
-        // If a pinch-zoom happened recently, ask for tiles at the new resolution
+        
         if self.zoom_action && precise_time_s() - self.zoom_time > 0.3 {
             self.zoom_action = false;
         }
@@ -1642,10 +1607,10 @@ impl<Window: WindowMethods> IOCompositor<Window> {
         self.shutdown_state != ShutdownState::FinishedShuttingDown
     }
 
-    /// Repaints and recomposites synchronously. You must be careful when calling this, as if a
-    /// paint is not scheduled the compositor will hang forever.
-    ///
-    /// This is used when resizing the window.
+    
+    
+    
+    
     pub fn repaint_synchronously(&mut self) {
         while self.shutdown_state != ShutdownState::ShuttingDown {
             let msg = self.port.recv_compositor_msg();
