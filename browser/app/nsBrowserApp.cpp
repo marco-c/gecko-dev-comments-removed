@@ -288,14 +288,6 @@ int main(int argc, char* argv[], char* envp[])
 
 #ifdef HAS_DLL_BLOCKLIST
   DllBlocklist_Initialize();
-
-#ifdef DEBUG
-  
-  
-  if (GetModuleHandleA("user32.dll")) {
-    fprintf(stderr, "DLL blocklist was unable to intercept AppInit DLLs.\n");
-  }
-#endif
 #endif
 
 #ifdef MOZ_BROWSER_CAN_BE_CONTENTPROC
