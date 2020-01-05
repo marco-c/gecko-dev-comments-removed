@@ -882,12 +882,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleBackground {
   nscolor mBackgroundColor;       
 };
 
-
-
 #define BORDER_COLOR_FOREGROUND   0x20
-#define OUTLINE_COLOR_INITIAL     0x80
-
-#define BORDER_COLOR_SPECIAL      0xA0
+#define BORDER_COLOR_SPECIAL      BORDER_COLOR_FOREGROUND
 #define BORDER_STYLE_MASK         0x1F
 
 #define NS_SPACING_MARGIN   0
@@ -1424,47 +1420,12 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleOutline
   
   nsStyleCoord  mOutlineWidth;    
   nscoord       mOutlineOffset;   
+  mozilla::StyleComplexColor mOutlineColor; 
+  uint8_t       mOutlineStyle;    
 
   nscoord GetOutlineWidth() const
   {
     return mActualOutlineWidth;
-  }
-
-  uint8_t GetOutlineStyle() const
-  {
-    return (mOutlineStyle & BORDER_STYLE_MASK);
-  }
-
-  void SetOutlineStyle(uint8_t aStyle)
-  {
-    mOutlineStyle &= ~BORDER_STYLE_MASK;
-    mOutlineStyle |= (aStyle & BORDER_STYLE_MASK);
-  }
-
-  
-  bool GetOutlineColor(nscolor& aColor) const
-  {
-    if ((mOutlineStyle & BORDER_COLOR_SPECIAL) == 0) {
-      aColor = mOutlineColor;
-      return true;
-    }
-    return false;
-  }
-
-  void SetOutlineColor(nscolor aColor)
-  {
-    mOutlineColor = aColor;
-    mOutlineStyle &= ~BORDER_COLOR_SPECIAL;
-  }
-
-  void SetOutlineInitialColor()
-  {
-    mOutlineStyle |= OUTLINE_COLOR_INITIAL;
-  }
-
-  bool GetOutlineInitialColor() const
-  {
-    return !!(mOutlineStyle & OUTLINE_COLOR_INITIAL);
   }
 
 protected:
@@ -1472,11 +1433,6 @@ protected:
   
   
   nscoord       mActualOutlineWidth;
-
-  nscolor       mOutlineColor;    
-
-  uint8_t       mOutlineStyle;    
-
   nscoord       mTwipsPerPixel;
 };
 
