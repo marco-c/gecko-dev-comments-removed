@@ -29,9 +29,6 @@ var gHttpRoot = null;
 
 var gDataRoot = null;
 
-var gNow = new Date(2010, 1, 1, 12, 0, 0);
-fakeNow(gNow);
-
 const PLATFORM_VERSION = "1.9.2";
 const APP_VERSION = "1";
 const APP_ID = "xpcshell@tests.mozilla.org";
@@ -868,8 +865,6 @@ add_task(function* test_prefWatchPolicies() {
 
   const expectedValue = "some-test-value";
   const unexpectedValue = "unexpected-test-value";
-  gNow = futureDate(gNow, 10 * MILLISECONDS_PER_MINUTE);
-  fakeNow(gNow);
 
   const PREFS_TO_WATCH = new Map([
     [PREF_TEST_1, {what: TelemetryEnvironment.RECORD_PREF_VALUE}],
@@ -927,9 +922,6 @@ add_task(function* test_prefWatch_prefReset() {
   
   Preferences.set(PREF_TEST, false);
 
-  gNow = futureDate(gNow, 10 * MILLISECONDS_PER_MINUTE);
-  fakeNow(gNow);
-
   
   TelemetryEnvironment.testWatchPreferences(PREFS_TO_WATCH);
   let deferred = PromiseUtils.defer();
@@ -957,8 +949,6 @@ add_task(function* test_addonsWatch_InterestingChange() {
   let receivedNotifications = 0;
 
   let registerCheckpointPromise = (aExpected) => {
-    gNow = futureDate(gNow, 10 * MILLISECONDS_PER_MINUTE);
-    fakeNow(gNow);
     return new Promise(resolve => TelemetryEnvironment.registerChangeListener(
       "testWatchAddons_Changes" + aExpected, (reason, data) => {
         Assert.equal(reason, "addons-changed");
@@ -1008,9 +998,6 @@ add_task(function* test_pluginsWatch_Add() {
     return;
   }
 
-  gNow = futureDate(gNow, 10 * MILLISECONDS_PER_MINUTE);
-  fakeNow(gNow);
-
   Assert.equal(TelemetryEnvironment.currentEnvironment.addons.activePlugins.length, 1);
 
   let newPlugin = new PluginTag(PLUGIN2_NAME, PLUGIN2_DESC, PLUGIN2_VERSION, true);
@@ -1041,9 +1028,6 @@ add_task(function* test_pluginsWatch_Remove() {
     return;
   }
 
-  gNow = futureDate(gNow, 10 * MILLISECONDS_PER_MINUTE);
-  fakeNow(gNow);
-
   
   let plugin = gInstalledPlugins.find(plugin => (plugin.name == PLUGIN2_NAME));
   Assert.ok(plugin, "The test plugin must exist.");
@@ -1071,9 +1055,6 @@ add_task(function* test_addonsWatch_NotInterestingChange() {
   
   const DICTIONARY_ADDON_INSTALL_URL = gDataRoot + "dictionary.xpi";
   const INTERESTING_ADDON_INSTALL_URL = gDataRoot + "restartless.xpi";
-
-  gNow = futureDate(gNow, 10 * MILLISECONDS_PER_MINUTE);
-  fakeNow(gNow);
 
   let receivedNotification = false;
   let deferred = PromiseUtils.defer();
@@ -1207,8 +1188,6 @@ add_task(function* test_signedAddon() {
     signedState: mozinfo.addon_signing ? AddonManager.SIGNEDSTATE_SIGNED : AddonManager.SIGNEDSTATE_NOT_REQUIRED,
   };
 
-  
-  gNow = fakeNow(futureDate(gNow, 10 * MILLISECONDS_PER_MINUTE));
   let deferred = PromiseUtils.defer();
   TelemetryEnvironment.registerChangeListener("test_signedAddon", deferred.resolve);
 
@@ -1233,9 +1212,6 @@ add_task(function* test_signedAddon() {
 add_task(function* test_addonsFieldsLimit() {
   const ADDON_INSTALL_URL = gDataRoot + "long-fields.xpi";
   const ADDON_ID = "tel-longfields-xpi@tests.mozilla.org";
-
-  
-  gNow = fakeNow(futureDate(gNow, 10 * MILLISECONDS_PER_MINUTE));
 
   
   let deferred = PromiseUtils.defer();
@@ -1295,8 +1271,6 @@ add_task(function* test_collectionWithbrokenAddonData() {
   let receivedNotifications = 0;
 
   let registerCheckpointPromise = (aExpected) => {
-    gNow = futureDate(gNow, 10 * MILLISECONDS_PER_MINUTE);
-    fakeNow(gNow);
     return new Promise(resolve => TelemetryEnvironment.registerChangeListener(
       "testBrokenAddon_collection" + aExpected, (reason, data) => {
         Assert.equal(reason, "addons-changed");
@@ -1318,8 +1292,6 @@ add_task(function* test_collectionWithbrokenAddonData() {
   yield checkpointPromise;
   assertCheckpoint(1);
 
-  
-  gNow = fakeNow(futureDate(gNow, 10 * MILLISECONDS_PER_MINUTE));
   
   checkpointPromise = registerCheckpointPromise(2);
   yield AddonManagerTesting.installXPIFromURL(ADDON_INSTALL_URL);
@@ -1346,46 +1318,6 @@ add_task(function* test_collectionWithbrokenAddonData() {
 
   
   yield AddonManagerTesting.uninstallAddonByID(ADDON_ID);
-});
-
-add_task(function* test_changeThrottling() {
-  const PREF_TEST = "toolkit.telemetry.test.pref1";
-  const PREFS_TO_WATCH = new Map([
-    [PREF_TEST, {what: TelemetryEnvironment.RECORD_PREF_STATE}],
-  ]);
-  Preferences.reset(PREF_TEST);
-
-  gNow = futureDate(gNow, 10 * MILLISECONDS_PER_MINUTE);
-  fakeNow(gNow);
-
-  
-  TelemetryEnvironment.testWatchPreferences(PREFS_TO_WATCH);
-  let deferred = PromiseUtils.defer();
-  let changeCount = 0;
-  TelemetryEnvironment.registerChangeListener("testWatchPrefs_throttling", () => {
-    ++changeCount;
-    deferred.resolve();
-  });
-
-  
-  Preferences.set(PREF_TEST, 1);
-  yield deferred.promise;
-  Assert.equal(changeCount, 1);
-
-  
-  deferred = PromiseUtils.defer();
-  gNow = futureDate(gNow, MILLISECONDS_PER_MINUTE);
-  fakeNow(gNow);
-  Preferences.set(PREF_TEST, 2);
-  gNow = futureDate(gNow, 5 * MILLISECONDS_PER_MINUTE);
-  fakeNow(gNow);
-  Preferences.set(PREF_TEST, 3);
-  yield deferred.promise;
-
-  Assert.equal(changeCount, 2);
-
-  
-  TelemetryEnvironment.unregisterChangeListener("testWatchPrefs_throttling");
 });
 
 add_task(function* test_defaultSearchEngine() {
@@ -1441,8 +1373,6 @@ add_task(function* test_defaultSearchEngine() {
   Services.search.addEngineWithDetails(SEARCH_ENGINE_ID, "", null, "", "get", SEARCH_ENGINE_URL);
 
   
-  gNow = fakeNow(futureDate(gNow, 10 * MILLISECONDS_PER_MINUTE));
-  
   let deferred = PromiseUtils.defer();
   TelemetryEnvironment.registerChangeListener("testWatch_SearchDefault", deferred.resolve);
   Services.search.defaultEngine = Services.search.getEngineByName(SEARCH_ENGINE_ID);
@@ -1464,7 +1394,6 @@ add_task(function* test_defaultSearchEngine() {
 
   
   
-  gNow = fakeNow(futureDate(gNow, 10 * MILLISECONDS_PER_MINUTE));
   let promise = new Promise(resolve => {
     TelemetryEnvironment.registerChangeListener("testWatch_SearchDefault", resolve);
   });
@@ -1495,7 +1424,6 @@ add_task(function* test_defaultSearchEngine() {
                    {"name":"engine-telemetry", "loadPath":"[other]/engine.xml", "origin":"verified"});
 
   
-  gNow = fakeNow(futureDate(gNow, 10 * MILLISECONDS_PER_MINUTE));
   promise = new Promise(resolve => {
     TelemetryEnvironment.registerChangeListener("testWatch_SearchDefault", resolve);
   });
@@ -1514,8 +1442,6 @@ add_task(function* test_defaultSearchEngine() {
   ]);
   Preferences.reset(PREF_TEST);
 
-  
-  gNow = fakeNow(futureDate(gNow, 10 * MILLISECONDS_PER_MINUTE));
   
   TelemetryEnvironment.testWatchPreferences(PREFS_TO_WATCH);
   deferred = PromiseUtils.defer();
@@ -1588,8 +1514,6 @@ add_task(function* test_environmentShutdown() {
     [PREF_TEST, {what: TelemetryEnvironment.RECORD_PREF_STATE}],
   ]);
   Preferences.reset(PREF_TEST);
-  gNow = futureDate(gNow, 10 * MILLISECONDS_PER_MINUTE);
-  fakeNow(gNow);
 
   
   TelemetryEnvironment.testWatchPreferences(PREFS_TO_WATCH);
