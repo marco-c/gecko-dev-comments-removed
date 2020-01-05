@@ -18,6 +18,8 @@ var hmacErrorCount = 0;
 })();
 
 function shared_setup() {
+  enableValidationPrefs();
+
   hmacErrorCount = 0;
 
   

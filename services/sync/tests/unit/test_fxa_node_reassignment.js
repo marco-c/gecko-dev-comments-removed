@@ -176,6 +176,8 @@ async function syncAndExpectNodeReassignment(server, firstNotification, between,
 
 
 add_task(async function test_single_token_fetch() {
+  enableValidationPrefs();
+
   _("Test a normal sync only fetches 1 token");
 
   let numTokenFetches = 0;
@@ -201,10 +203,13 @@ add_task(async function test_single_token_fetch() {
   
   let expectedClusterURL = server.baseURI + "1.1/johndoe/";
   do_check_eq(Service.clusterURL, expectedClusterURL);
+  Service.startOver();
   await promiseStopServer(server);
 });
 
 add_task(async function test_momentary_401_engine() {
+  enableValidationPrefs();
+
   _("Test a failure for engine URLs that's resolved by reassignment.");
   let server = await prepareServer();
   let john   = server.user("johndoe");
@@ -259,6 +264,8 @@ add_task(async function test_momentary_401_engine() {
 
 
 add_task(async function test_momentary_401_info_collections_loggedin() {
+  enableValidationPrefs();
+
   _("Test a failure for info/collections after login that's resolved by reassignment.");
   let server = await prepareServer();
 
@@ -287,6 +294,8 @@ add_task(async function test_momentary_401_info_collections_loggedin() {
 
 
 add_task(async function test_momentary_401_info_collections_loggedout() {
+  enableValidationPrefs();
+
   _("Test a failure for info/collections before login that's resolved by reassignment.");
 
   let oldHandler;
@@ -319,6 +328,8 @@ add_task(async function test_momentary_401_info_collections_loggedout() {
 
 
 add_task(async function test_momentary_401_storage_loggedin() {
+  enableValidationPrefs();
+
   _("Test a failure for any storage URL after login that's resolved by" +
     "reassignment.");
   let server = await prepareServer();
@@ -346,6 +357,8 @@ add_task(async function test_momentary_401_storage_loggedin() {
 
 
 add_task(async function test_momentary_401_storage_loggedout() {
+  enableValidationPrefs();
+
   _("Test a failure for any storage URL before login, not just engine parts. " +
     "Resolved by reassignment.");
   let server = await prepareServer();

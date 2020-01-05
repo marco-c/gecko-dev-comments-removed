@@ -20,12 +20,6 @@ fhs.observe(null, "profile-after-change", null);
 Services.prefs.setCharPref("identity.sync.tokenserver.uri", "http://token-server");
 
 
-Services.prefs.setIntPref("services.sync.engine.bookmarks.validation.interval", 0);
-Services.prefs.setIntPref("services.sync.engine.bookmarks.validation.percentageChance", 100);
-Services.prefs.setIntPref("services.sync.engine.bookmarks.validation.maxRecords", -1);
-Services.prefs.setBoolPref("services.sync.engine.bookmarks.validation.enabled", true);
-
-
 function getOS() {
   switch (mozinfo.os) {
     case "win":
