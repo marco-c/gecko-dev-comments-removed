@@ -801,7 +801,7 @@ MaybeWrapObjectValue(JSContext* cx, JS::MutableHandle<JS::Value> rval)
 
   
   
-  return JS_WrapValue(cx, rval);
+  return true;
 }
 
 
