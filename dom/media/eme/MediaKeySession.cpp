@@ -10,6 +10,7 @@
 #include "mozilla/dom/MediaKeyMessageEvent.h"
 #include "mozilla/dom/MediaEncryptedEvent.h"
 #include "mozilla/dom/MediaKeyStatusMap.h"
+#include "mozilla/dom/MediaKeySystemAccess.h"
 #include "nsCycleCollectionParticipant.h"
 #include "mozilla/CDMProxy.h"
 #include "mozilla/AsyncEventDispatcher.h"
@@ -38,6 +39,15 @@ NS_IMPL_RELEASE_INHERITED(MediaKeySession, DOMEventTargetHelper)
 
 
 static uint32_t sMediaKeySessionNum = 0;
+
+
+
+static const uint32_t MAX_KEY_ID_LENGTH = 512;
+
+
+
+static const uint32_t MAX_CENC_INIT_DATA_LENGTH = 64 * 1024;
+
 
 MediaKeySession::MediaKeySession(JSContext* aCx,
                                  nsPIDOMWindowInner* aParent,
@@ -160,6 +170,40 @@ MediaKeySession::KeyStatuses() const
   return mKeyStatusMap;
 }
 
+
+
+
+
+
+
+
+
+
+
+static bool
+ValidateInitData(const nsTArray<uint8_t>& aInitData, const nsAString& aInitDataType)
+{
+  if (aInitDataType.LowerCaseEqualsLiteral("webm")) {
+    
+    return aInitData.Length() <= MAX_KEY_ID_LENGTH;
+  } else if (aInitDataType.LowerCaseEqualsLiteral("cenc")) {
+    
+    if (aInitData.Length() > MAX_CENC_INIT_DATA_LENGTH) {
+      return false;
+    }
+    
+  } else if (aInitDataType.LowerCaseEqualsLiteral("keyids")) {
+    if (aInitData.Length() > MAX_KEY_ID_LENGTH) {
+      return false;
+    }
+    
+  }
+  return true;
+}
+
+
+
+
 already_AddRefed<Promise>
 MediaKeySession::GenerateRequest(const nsAString& aInitDataType,
                                  const ArrayBufferViewOrArrayBuffer& aInitData,
@@ -171,16 +215,30 @@ MediaKeySession::GenerateRequest(const nsAString& aInitDataType,
     return nullptr;
   }
 
+  
+  if (IsClosed()) {
+    EME_LOG("MediaKeySession[%p,'%s'] GenerateRequest() failed, closed",
+            this, NS_ConvertUTF16toUTF8(mSessionId).get());
+    promise->MaybeReject(NS_ERROR_DOM_INVALID_STATE_ERR,
+      NS_LITERAL_CSTRING("Session is closed in MediaKeySession.generateRequest()"));
+    return promise.forget();
+  }
+
+  
+  
   if (!mUninitialized) {
     EME_LOG("MediaKeySession[%p,'%s'] GenerateRequest() failed, uninitialized",
             this, NS_ConvertUTF16toUTF8(mSessionId).get());
-    promise->MaybeReject(NS_ERROR_DOM_INVALID_ACCESS_ERR,
+    promise->MaybeReject(NS_ERROR_DOM_INVALID_STATE_ERR,
       NS_LITERAL_CSTRING("Session is already initialized in MediaKeySession.generateRequest()"));
     return promise.forget();
   }
 
+  
   mUninitialized = false;
 
+  
+  
   if (aInitDataType.IsEmpty()) {
     promise->MaybeReject(NS_ERROR_DOM_TYPE_ERR,
       NS_LITERAL_CSTRING("Empty initDataType passed to MediaKeySession.generateRequest()"));
@@ -189,15 +247,55 @@ MediaKeySession::GenerateRequest(const nsAString& aInitDataType,
     return promise.forget();
   }
 
+  
+  
   nsTArray<uint8_t> data;
   CopyArrayBufferViewOrArrayBufferData(aInitData, data);
   if (data.IsEmpty()) {
     promise->MaybeReject(NS_ERROR_DOM_TYPE_ERR,
       NS_LITERAL_CSTRING("Empty initData passed to MediaKeySession.generateRequest()"));
     EME_LOG("MediaKeySession[%p,'%s'] GenerateRequest() failed, empty initData",
-      this, NS_ConvertUTF16toUTF8(mSessionId).get());
+            this, NS_ConvertUTF16toUTF8(mSessionId).get());
     return promise.forget();
   }
+
+  
+  
+  
+  
+  if (!MediaKeySystemAccess::KeySystemSupportsInitDataType(mKeySystem, aInitDataType)) {
+    promise->MaybeReject(NS_ERROR_DOM_NOT_SUPPORTED_ERR,
+      NS_LITERAL_CSTRING("Unsupported initDataType passed to MediaKeySession.generateRequest()"));
+    EME_LOG("MediaKeySession[%p,'%s'] GenerateRequest() failed, unsupported initDataType",
+            this, NS_ConvertUTF16toUTF8(mSessionId).get());
+    return promise.forget();
+  }
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+  
+  if (!ValidateInitData(data, aInitDataType)) {
+    
+    promise->MaybeReject(NS_ERROR_DOM_TYPE_ERR,
+      NS_LITERAL_CSTRING("initData sanitization failed in MediaKeySession.generateRequest()"));
+    EME_LOG("MediaKeySession[%p,'%s'] GenerateRequest() initData sanitization failed",
+            this, NS_ConvertUTF16toUTF8(mSessionId).get());
+    return promise.forget();
+  }
+
+  
+
+  
+
+  
 
   Telemetry::Accumulate(Telemetry::VIDEO_CDM_GENERATE_REQUEST_CALLED,
                         ToCDMTypeTelemetryEnum(mKeySystem));
