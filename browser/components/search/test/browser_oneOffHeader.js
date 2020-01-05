@@ -122,10 +122,19 @@ add_task(function* test_text() {
   is(getHeaderText(), "Search for foo with:",
      "Header has the correct text when search terms have been entered and the Change Search Settings button is selected.");
 
-  promise = promiseEvent(searchPopup, "popuphidden");
-  info("Closing search panel");
-  EventUtils.synthesizeKey("VK_ESCAPE", {});
-  yield promise;
+  
+  
+  let searchbarEngine =
+    document.getAnonymousElementByAttribute(searchPopup, "anonid",
+                                            "searchbar-engine");
+
+  yield synthesizeNativeMouseMove(searchbarEngine);
+  SimpleTest.executeSoon(() => {
+    EventUtils.synthesizeMouseAtCenter(searchbarEngine, {});
+  });
+
+  let url = Services.search.currentEngine.getSubmission(textbox.value).uri.spec;
+  yield promiseTabLoadEvent(gBrowser.selectedTab, url);
 
   
   yield synthesizeNativeMouseMove(searchbar);
