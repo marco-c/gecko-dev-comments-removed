@@ -15,8 +15,6 @@ import cPickle
 from Configuration import *
 from CodegenRust import GlobalGenRoots, replaceFileIfChanged
 
-import Codegen
-
 def generate_file(config, name, filename):
     root = getattr(GlobalGenRoots, name)(config)
     code = root.define()
