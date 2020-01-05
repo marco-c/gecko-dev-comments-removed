@@ -1,3 +1,10 @@
+
+
+if (inJit() == 'Baseline is disabled.') {
+    print("JIT is disabled.");
+    quit();
+}
+
 var wait = 100;
 
 var method_A = function() {
