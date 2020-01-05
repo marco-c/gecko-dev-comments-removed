@@ -62,11 +62,11 @@ const {
 
 
 class TabBase {
-  constructor(extension, tab, id) {
+  constructor(extension, nativeTab, id) {
     this.extension = extension;
     this.tabManager = extension.tabManager;
     this.id = id;
-    this.tab = tab;
+    this.nativeTab = nativeTab;
     this.activeTabWindowID = null;
   }
 
@@ -224,7 +224,7 @@ class TabBase {
 
 
   get _title() {
-    return this.browser.contentTitle || this.tab.label;
+    return this.browser.contentTitle || this.nativeTab.label;
   }
 
 
@@ -1027,7 +1027,7 @@ class TabTrackerBase extends EventEmitter {
 
 
 
-  getId(tab) {
+  getId(nativeTab) {
     throw new Error("Not implemented");
   }
 
@@ -1559,13 +1559,13 @@ class TabManagerBase {
 
 
 
-  addActiveTabPermission(tab) {
+  addActiveTabPermission(nativeTab) {
     if (this.extension.hasPermission("activeTab")) {
       
       
       
       
-      tab = this.getWrapper(tab);
+      let tab = this.getWrapper(nativeTab);
       tab.activeTabWindowID = tab.innerWindowID;
     }
   }
@@ -1577,8 +1577,8 @@ class TabManagerBase {
 
 
 
-  revokeActiveTabPermission(tab) {
-    this.getWrapper(tab).activeTabWindowID = null;
+  revokeActiveTabPermission(nativeTab) {
+    this.getWrapper(nativeTab).activeTabWindowID = null;
   }
 
   
@@ -1590,23 +1590,8 @@ class TabManagerBase {
 
 
 
-  hasActiveTabPermission(tab) {
-    return this.getWrapper(tab).hasActiveTabPermission;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-  hasTabPermission(tab) {
-    return this.getWrapper(tab).hasTabPermission;
+  hasActiveTabPermission(nativeTab) {
+    return this.getWrapper(nativeTab).hasActiveTabPermission;
   }
 
   
@@ -1619,8 +1604,9 @@ class TabManagerBase {
 
 
 
-  getWrapper(tab) {
-    return this._tabs.get(tab);
+
+  hasTabPermission(nativeTab) {
+    return this.getWrapper(nativeTab).hasTabPermission;
   }
 
   
@@ -1633,8 +1619,22 @@ class TabManagerBase {
 
 
 
-  convert(tab) {
-    return this.getWrapper(tab).convert();
+  getWrapper(nativeTab) {
+    return this._tabs.get(nativeTab);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  convert(nativeTab) {
+    return this.getWrapper(nativeTab).convert();
   }
 
   
@@ -1689,7 +1689,7 @@ class TabManagerBase {
 
 
   
-  wrapTab(tab) {
+  wrapTab(nativeTab) {
     throw new Error("Not implemented");
   }
 }
