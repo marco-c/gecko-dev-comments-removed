@@ -51,7 +51,7 @@ const PING_FORMAT_VERSION = 1;
 
 
 const ENGINES = new Set(["addons", "bookmarks", "clients", "forms", "history",
-                         "passwords", "prefs", "tabs"]);
+                         "passwords", "prefs", "tabs", "extension-storage"]);
 
 
 
