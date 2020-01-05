@@ -93,6 +93,7 @@ class MOZ_STACK_CLASS ModuleGenerator
     bool                            alwaysBaseline_;
 
     
+    Assumptions                     assumptions_;
     LinkData                        linkData_;
     MutableMetadata                 metadata_;
     ExportVector                    exports_;

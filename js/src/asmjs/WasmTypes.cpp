@@ -614,6 +614,10 @@ Assumptions::serializedSize() const
 uint8_t*
 Assumptions::serialize(uint8_t* cursor) const
 {
+    
+    
+    
+
     cursor = WriteScalar<uint32_t>(cursor, cpuId);
     cursor = SerializePodVector(cursor, buildId);
     return cursor;
