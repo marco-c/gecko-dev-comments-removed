@@ -96,10 +96,33 @@ impl WebSocket {
 
     }
 
-    pub fn new(global: GlobalRef, url: DOMString) -> Fallible<Root<WebSocket>> {
+    pub fn new(global: GlobalRef,
+               url: DOMString,
+               protocols: Option<DOMString>)
+               -> Fallible<Root<WebSocket>> {
         
         let parsed_url = try!(Url::parse(&url).map_err(|_| Error::Syntax));
         let url = try!(parse_url(&parsed_url).map_err(|_| Error::Syntax));
+
+        
+        let protocols = protocols.as_slice();
+
+        
+        for (i, protocol) in protocols.iter().enumerate() {
+            
+            
+            if protocol.is_empty() {
+                return Err(Syntax);
+            }
+
+            if protocols[i+1..].iter().any(|p| p == protocol) {
+                return Err(Syntax);
+            }
+
+            if protocol.chars().any(|c| c < '\u{0021}' || c > '\u{007E}') {
+                return Err(Syntax);
+            }
+        }
 
         
 
@@ -150,8 +173,11 @@ impl WebSocket {
         Ok(ws)
     }
 
-    pub fn Constructor(global: GlobalRef, url: DOMString) -> Fallible<Root<WebSocket>> {
-        WebSocket::new(global, url)
+    pub fn Constructor(global: GlobalRef,
+                       url: DOMString,
+                       protocols: Option<DOMString>)
+                       -> Fallible<Root<WebSocket>> {
+        WebSocket::new(global, url, protocols)
     }
 }
 
