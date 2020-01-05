@@ -206,13 +206,21 @@ error.fromJson = function (json) {
 
 
 
-this.WebDriverError = function (msg, stack = undefined) {
-  Error.call(this, msg);
+
+
+
+
+this.WebDriverError = function (err) {
+  Error.call(this, err);
   this.name = "WebDriverError";
-  this.message = msg;
-  this.stack = stack;
   this.status = "webdriver error";
-  this.stack = stack;
+
+  if (error.isError(err)) {
+    this.message = err.message;
+    this.stack = err.stack;
+  } else {
+    this.message = err;
+  }
 };
 WebDriverError.prototype = Object.create(Error.prototype);
 
