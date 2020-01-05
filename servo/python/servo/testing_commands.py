@@ -257,15 +257,30 @@ class MachCommands(CommandBase):
              category='testing')
     @CommandArgument('--faster', default=False, action="store_true",
                      help="Only check changed files and skip the WPT lint in tidy, "
-                          "if there are no changes in the WPT files")
+                          "if there are no changes in the WPT files. Cannot be used with --all")
+    @CommandArgument('--all', default=False, action="store_true", dest="all_files",
+                     help="Check all files, and run the WPT lint in tidy, "
+                          "even if unchanged. Cannot be used with --faster")
     @CommandArgument('--no-progress', default=False, action="store_true",
                      help="Don't show progress for tidy")
     @CommandArgument('--self-test', default=False, action="store_true",
                      help="Run unit tests for tidy")
-    def test_tidy(self, faster, no_progress, self_test):
+    def test_tidy(self, faster, all_files, no_progress, self_test):
         if self_test:
             return test_tidy.do_tests()
         else:
+            
+            
+            if faster and all_files:
+                print("Cannot tidy --all while also being --faster")
+                return -1
+
+            
+            
+            
+            
+            
+            
             return tidy.scan(faster, not no_progress)
 
     @Command('test-webidl',
