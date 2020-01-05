@@ -42,8 +42,16 @@ nsStyleChangeList::AppendChange(nsIFrame* aFrame, nsIContent* aContent, nsChange
              "Reflow hint bits set without actually asking for a reflow");
 
   
-  if (!IsEmpty() && (aHint & nsChangeHint_ReconstructFrame)) {
-    if (aContent) {
+  
+  if (IsServo()) {
+    for (size_t i = 0; i < Length(); ++i) {
+      MOZ_ASSERT_IF(aContent && ((aHint | (*this)[i].mHint) & nsChangeHint_ReconstructFrame),
+                    (*this)[i].mContent != aContent);
+    }
+  } else {
+    
+    
+    if (aContent && (aHint & nsChangeHint_ReconstructFrame)) {
       
       
       RemoveElementsBy([&](const nsStyleChangeData& aData) {

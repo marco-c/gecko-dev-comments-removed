@@ -98,7 +98,7 @@ RestyleTracker::ProcessOneRestyle(Element* aElement,
              (primaryFrame ||
               (aChangeHint & nsChangeHint_ReconstructFrame))) {
     
-    nsStyleChangeList changeList;
+    nsStyleChangeList changeList(StyleBackendType::Gecko);
     changeList.AppendChange(primaryFrame, aElement, aChangeHint);
     mRestyleManager->ProcessRestyledFrames(changeList);
   }

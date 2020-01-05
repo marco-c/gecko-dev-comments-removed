@@ -3472,7 +3472,7 @@ GeckoRestyleManager::ComputeAndProcessStyleChange(
     const RestyleHintData& aRestyleHintData)
 {
   MOZ_ASSERT(mReframingStyleContexts, "should have rsc");
-  nsStyleChangeList changeList;
+  nsStyleChangeList changeList(StyleBackendType::Gecko);
   nsTArray<ElementRestyler::ContextToClear> contextsToClear;
 
   
@@ -3517,7 +3517,7 @@ GeckoRestyleManager::ComputeAndProcessStyleChange(
   
   
   nsTArray<RefPtr<nsStyleContext>> swappedStructOwners;
-  nsStyleChangeList changeList;
+  nsStyleChangeList changeList(StyleBackendType::Gecko);
   ElementRestyler r(frame->PresContext(), aElement, &changeList, aMinChange,
                     aRestyleTracker, selectorsForDescendants, treeMatchContext,
                     visibleKidsOfHiddenElement, contextsToClear,

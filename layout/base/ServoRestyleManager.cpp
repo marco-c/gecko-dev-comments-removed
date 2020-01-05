@@ -387,7 +387,7 @@ ServoRestyleManager::ProcessPendingRestyles()
 
     
     
-    nsStyleChangeList currentChanges;
+    nsStyleChangeList currentChanges(StyleBackendType::Servo);
     DocumentStyleRootIterator iter(doc);
     while (Element* root = iter.GetNextStyleRoot()) {
       ProcessPostTraversal(root, nullptr, styleSet, currentChanges);

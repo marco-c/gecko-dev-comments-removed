@@ -10087,6 +10087,11 @@ nsFrame::UpdateStyleOfChildAnonBox(nsIFrame* aChildFrame,
     &equalStructs,
     &samePointerStructs);
   if (childHint) {
+    if (childHint & nsChangeHint_ReconstructFrame) {
+      
+      
+      aChangeList.PopChangesForContent(aChildFrame->GetContent());
+    }
     aChangeList.AppendChange(aChildFrame, aChildFrame->GetContent(), childHint);
   }
 

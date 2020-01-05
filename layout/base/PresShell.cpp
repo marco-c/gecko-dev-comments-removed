@@ -2943,7 +2943,7 @@ PresShell::RecreateFramesFor(nsIContent* aContent)
 
   nsAutoScriptBlocker scriptBlocker;
 
-  nsStyleChangeList changeList;
+  nsStyleChangeList changeList(mPresContext->StyleSet()->BackendType());
   changeList.AppendChange(nullptr, aContent, nsChangeHint_ReconstructFrame);
 
   
@@ -9585,7 +9585,7 @@ PresShell::Observe(nsISupports* aSubject,
 
         
         
-        nsStyleChangeList changeList;
+        nsStyleChangeList changeList(mPresContext->StyleSet()->BackendType());
         WalkFramesThroughPlaceholders(mPresContext, rootFrame,
                                       ReframeImageBoxes, &changeList);
         
