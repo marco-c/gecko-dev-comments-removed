@@ -40,7 +40,11 @@ impl FileListMethods for FileList {
 
     
     fn Item(&self, index: u32) -> Option<Root<File>> {
-        Some(Root::from_ref(&*(self.list[index as usize])))
+        if (index as usize) < self.list.len() {
+            Some(Root::from_ref(&*(self.list[index as usize])))
+        } else {
+            None
+        }
     }
 
     
