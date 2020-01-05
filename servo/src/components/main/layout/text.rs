@@ -3,15 +3,16 @@
 
 
 
-use extra::arc::Arc;
+
 use layout::box::{Box, ScannedTextBox, ScannedTextBoxInfo, UnscannedTextBox};
 use layout::context::LayoutContext;
 use layout::flow::Flow;
 
+use extra::arc::Arc;
 use gfx::text::text_run::TextRun;
 use gfx::text::util::{CompressWhitespaceNewline, transform_text};
-use std::vec;
 use servo_util::range::Range;
+use std::vec;
 
 
 struct TextRunScanner {

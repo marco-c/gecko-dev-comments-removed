@@ -5,8 +5,6 @@
 
 
 
-
-
 pub trait TNode<E:TElement> : Clone {
     fn parent_node(&self) -> Option<Self>;
     fn prev_sibling(&self) -> Option<Self>;

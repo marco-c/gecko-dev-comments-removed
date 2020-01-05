@@ -6,7 +6,7 @@
 
 
 
-use dom::node::{AbstractNode, LayoutDataRef, LayoutView, ScriptView};
+use dom::node::{AbstractNode, LayoutDataRef};
 
 use extra::url::Url;
 use geom::point::Point2D;
@@ -51,16 +51,16 @@ pub enum Msg {
 
 pub enum LayoutQuery {
     
-    ContentBoxQuery(AbstractNode<ScriptView>, Chan<ContentBoxResponse>),
+    ContentBoxQuery(AbstractNode, Chan<ContentBoxResponse>),
     
-    ContentBoxesQuery(AbstractNode<ScriptView>, Chan<ContentBoxesResponse>),
+    ContentBoxesQuery(AbstractNode, Chan<ContentBoxesResponse>),
     
-    HitTestQuery(AbstractNode<ScriptView>, Point2D<f32>, Chan<Result<HitTestResponse, ()>>),
+    HitTestQuery(AbstractNode, Point2D<f32>, Chan<Result<HitTestResponse, ()>>),
 }
 
 pub struct ContentBoxResponse(Rect<Au>);
 pub struct ContentBoxesResponse(~[Rect<Au>]);
-pub struct HitTestResponse(AbstractNode<LayoutView>);
+pub struct HitTestResponse(AbstractNode);
 
 
 #[deriving(Eq, Ord)]
@@ -85,7 +85,7 @@ impl DocumentDamageLevel {
 
 pub struct DocumentDamage {
     
-    root: AbstractNode<ScriptView>,
+    root: AbstractNode,
     
     level: DocumentDamageLevel,
 }
@@ -102,7 +102,7 @@ pub enum ReflowGoal {
 
 pub struct Reflow {
     
-    document_root: AbstractNode<ScriptView>,
+    document_root: AbstractNode,
     
     damage: DocumentDamage,
     

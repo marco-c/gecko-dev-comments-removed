@@ -4,9 +4,10 @@
 
 use layout::box::Box;
 use layout::construct::{ConstructionResult, NoConstructionResult};
+use layout::wrapper::LayoutNode;
 
 use extra::arc::Arc;
-use script::dom::node::{AbstractNode, LayoutView};
+use script::dom::node::AbstractNode;
 use servo_util::range::Range;
 use servo_util::slot::{MutSlotRef, SlotRef};
 use std::cast;
@@ -163,23 +164,23 @@ pub trait LayoutDataAccess {
     fn mutate_layout_data<'a>(&'a self) -> MutSlotRef<'a,Option<~LayoutData>>;
 }
 
-impl LayoutDataAccess for AbstractNode<LayoutView> {
+impl<'self> LayoutDataAccess for LayoutNode<'self> {
     #[inline(always)]
     unsafe fn borrow_layout_data_unchecked<'a>(&'a self) -> &'a Option<~LayoutData> {
-        cast::transmute(self.node().layout_data.borrow_unchecked())
+        cast::transmute(self.get().layout_data.borrow_unchecked())
     }
 
     #[inline(always)]
     fn borrow_layout_data<'a>(&'a self) -> SlotRef<'a,Option<~LayoutData>> {
         unsafe {
-            cast::transmute(self.node().layout_data.borrow())
+            cast::transmute(self.get().layout_data.borrow())
         }
     }
 
     #[inline(always)]
     fn mutate_layout_data<'a>(&'a self) -> MutSlotRef<'a,Option<~LayoutData>> {
         unsafe {
-            cast::transmute(self.node().layout_data.mutate())
+            cast::transmute(self.get().layout_data.mutate())
         }
     }
 }
@@ -193,17 +194,16 @@ impl LayoutDataAccess for AbstractNode<LayoutView> {
 #[deriving(Clone, Eq)]
 pub struct OpaqueNode(uintptr_t);
 
-impl<T> Equiv<AbstractNode<T>> for OpaqueNode {
-    fn equiv(&self, node: &AbstractNode<T>) -> bool {
-        unsafe {
-            **self == cast::transmute_copy::<AbstractNode<T>,uintptr_t>(node)
-        }
-    }
-}
-
 impl OpaqueNode {
     
-    pub fn from_node<T>(node: &AbstractNode<T>) -> OpaqueNode {
+    pub fn from_layout_node(node: &LayoutNode) -> OpaqueNode {
+        unsafe {
+            OpaqueNode(cast::transmute_copy(node))
+        }
+    }
+
+    
+    pub fn from_script_node(node: &AbstractNode) -> OpaqueNode {
         unsafe {
             OpaqueNode(cast::transmute_copy(node))
         }
@@ -211,7 +211,7 @@ impl OpaqueNode {
 
     
     
-    pub unsafe fn to_node<T>(&self) -> AbstractNode<T> {
+    pub unsafe fn to_script_node(&self) -> AbstractNode {
         cast::transmute(**self)
     }
 
