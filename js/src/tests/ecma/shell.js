@@ -636,16 +636,3 @@ function Enumerate ( o ) {
     print( p +": " + o[p] );
   }
 }
-
-
-
-function GetContext() {
-  return Packages.com.netscape.javascript.Context.getCurrentContext();
-}
-function OptLevel( i ) {
-  i = Number(i);
-  var cx = GetContext();
-  cx.setOptimizationLevel(i);
-}
-
-
