@@ -21,10 +21,10 @@ const KEYS_WBO = "keys";
 Cu.import("resource://gre/modules/Preferences.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Log.jsm");
+Cu.import("resource://services-common/async.js");
 Cu.import("resource://services-sync/constants.js");
 Cu.import("resource://services-sync/engines.js");
 Cu.import("resource://services-sync/engines/clients.js");
-Cu.import("resource://services-sync/identity.js");
 Cu.import("resource://services-sync/policies.js");
 Cu.import("resource://services-sync/record.js");
 Cu.import("resource://services-sync/resource.js");
@@ -154,7 +154,7 @@ Sync11Service.prototype = {
 
   _updateCachedURLs: function _updateCachedURLs() {
     
-    if (!this.clusterURL || !this.identity.username) {
+    if (!this.clusterURL) {
       
       
       
@@ -302,14 +302,6 @@ Sync11Service.prototype = {
 
   onStartup: function onStartup() {
     this._migratePrefs();
-
-    
-    
-    
-    
-    if (!Status || !Status._authManager) {
-      throw new Error("Status or Status._authManager not initialized.");
-    }
 
     this.status = Status;
     this.identity = Status._authManager;
@@ -549,21 +541,9 @@ Sync11Service.prototype = {
 
     this._log.debug("Fetching and verifying -- or generating -- symmetric keys.");
 
-    
-    
-    
-
-    if (!this.identity.syncKey) {
-      this.status.login = LOGIN_FAILED_NO_PASSPHRASE;
-      this.status.sync = CREDENTIALS_CHANGED;
-      return false;
-    }
-
     let syncKeyBundle = this.identity.syncKeyBundle;
     if (!syncKeyBundle) {
-      this._log.error("Sync Key Bundle not set. Invalid Sync Key?");
-
-      this.status.login = LOGIN_FAILED_INVALID_PASSPHRASE;
+      this.status.login = LOGIN_FAILED_NO_PASSPHRASE;
       this.status.sync = CREDENTIALS_CHANGED;
       return false;
     }
@@ -699,7 +679,7 @@ Sync11Service.prototype = {
           
           
           
-          if (!this.identity.syncKey) {
+          if (!this.identity.syncKeyBundle) {
             this._log.warn("No passphrase in verifyLogin.");
             this.status.login = LOGIN_FAILED_NO_PASSPHRASE;
             return false;
@@ -807,30 +787,6 @@ Sync11Service.prototype = {
     }
   },
 
-  changePassphrase: function changePassphrase(newphrase) {
-    return this._catch(function doChangePasphrase() {
-      
-      this.wipeServer();
-
-      this.logout();
-
-      
-      this.identity.syncKey = newphrase;
-      this.persistLogin();
-
-      
-      this.resetClient();
-      this.collectionKeys.clear();
-
-      
-      this.sync();
-
-      Svc.Obs.notify("weave:service:change-passphrase", true);
-
-      return true;
-    })();
-  },
-
   startOver: function startOver() {
     this._log.trace("Invoking Service.startOver.");
     Svc.Obs.notify("weave:engine:stop-tracking");
@@ -855,7 +811,7 @@ Sync11Service.prototype = {
     
     
     this._log.info("Service.startOver dropping sync key and logging out.");
-    this.identity.resetSyncKey();
+    this.identity.resetSyncKeyBundle();
     this.status.login = LOGIN_FAILED_NO_PASSPHRASE;
     this.logout();
     Svc.Obs.notify("weave:service:start-over");
@@ -891,7 +847,6 @@ Sync11Service.prototype = {
       
       
       Svc.Obs.notify("weave:service:start-over:init-identity");
-      this.identity.username = "";
       this.status.__authManager = null;
       this.identity = Status._authManager;
       this._clusterManager = this.identity.createClusterManager(this);
@@ -904,31 +859,12 @@ Sync11Service.prototype = {
     }
   },
 
-  persistLogin: function persistLogin() {
-    try {
-      this.identity.persistCredentials(true);
-    } catch (ex) {
-      this._log.info("Unable to persist credentials: " + ex);
-    }
-  },
-
-  login: function login(username, password, passphrase) {
+  login: function login() {
     function onNotify() {
       this._loggedIn = false;
       if (Services.io.offline) {
         this.status.login = LOGIN_FAILED_NETWORK_ERROR;
         throw "Application is offline, login should not be called";
-      }
-
-      let initialStatus = this._checkSetup();
-      if (username) {
-        this.identity.username = username;
-      }
-      if (password) {
-        this.identity.basicPassword = password;
-      }
-      if (passphrase) {
-        this.identity.syncKey = passphrase;
       }
 
       if (this._checkSetup() == CLIENT_NOT_CONFIGURED) {
@@ -946,12 +882,6 @@ Sync11Service.prototype = {
       
       cb.wait();
 
-      
-      
-      if (initialStatus == CLIENT_NOT_CONFIGURED
-          && (username || password || passphrase)) {
-        Svc.Obs.notify("weave:service:setup-complete");
-      }
       this._updateCachedURLs();
 
       this._log.info("User logged in successfully - verifying login.");
@@ -1125,11 +1055,6 @@ Sync11Service.prototype = {
       this.syncID = meta.payload.syncID;
       this._log.debug("Clear cached values and take syncId: " + this.syncID);
 
-      if (!this.upgradeSyncKey(meta.payload.syncID)) {
-        this._log.warn("Failed to upgrade sync key. Failing remote setup.");
-        return false;
-      }
-
       if (!this.verifyAndFetchSymmetricKeys(infoResponse)) {
         this._log.warn("Failed to fetch symmetric keys. Failing remote setup.");
         return false;
@@ -1144,11 +1069,6 @@ Sync11Service.prototype = {
 
       return true;
     }
-    if (!this.upgradeSyncKey(meta.payload.syncID)) {
-      this._log.warn("Failed to upgrade sync key. Failing remote setup.");
-      return false;
-    }
-
     if (!this.verifyAndFetchSymmetricKeys(infoResponse)) {
       this._log.warn("Failed to fetch symmetric keys. Failing remote setup.");
       return false;
@@ -1373,53 +1293,10 @@ Sync11Service.prototype = {
     return Promise.resolve(true);
   },
 
-  
-
-
-
-
-
-
-
-
-
-  upgradeSyncKey: function upgradeSyncKey(syncID) {
-    let p = this.identity.syncKey;
-
-    if (!p) {
-      return false;
-    }
-
-    
-    if (Utils.isPassphrase(p)) {
-      this._log.info("Sync key is up-to-date: no need to upgrade.");
-      return true;
-    }
-
-    
-    
-
-    let s = btoa(syncID);        
-    let k = Utils.derivePresentableKeyFromPassphrase(p, s, PBKDF2_KEY_BYTES);   
-
-    if (!k) {
-      this._log.error("No key resulted from derivePresentableKeyFromPassphrase. Failing upgrade.");
-      return false;
-    }
-
-    this._log.info("Upgrading sync key...");
-    this.identity.syncKey = k;
-    this._log.info("Saving upgraded sync key...");
-    this.persistLogin();
-    this._log.info("Done saving.");
-    return true;
-  },
-
   _freshStart: function _freshStart() {
-    this._log.info("Fresh start. Resetting client and considering key upgrade.");
+    this._log.info("Fresh start. Resetting client.");
     this.resetClient();
     this.collectionKeys.clear();
-    this.upgradeSyncKey(this.syncID);
 
     
     this.wipeServer();
@@ -1528,9 +1405,6 @@ Sync11Service.prototype = {
         engine.wipeClient();
       }
     }
-
-    
-    this.persistLogin();
   },
 
   

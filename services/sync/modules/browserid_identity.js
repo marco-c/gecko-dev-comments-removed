@@ -13,13 +13,11 @@ Cu.import("resource://services-common/async.js");
 Cu.import("resource://services-common/utils.js");
 Cu.import("resource://services-common/tokenserverclient.js");
 Cu.import("resource://services-crypto/utils.js");
-Cu.import("resource://services-sync/identity.js");
 Cu.import("resource://services-sync/util.js");
 Cu.import("resource://services-common/tokenserverclient.js");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://services-sync/constants.js");
 Cu.import("resource://gre/modules/Promise.jsm");
-Cu.import("resource://services-sync/stages/cluster.js");
 Cu.import("resource://gre/modules/FxAccounts.jsm");
 
 
@@ -89,8 +87,6 @@ this.BrowserIDManager = function BrowserIDManager() {
 };
 
 this.BrowserIDManager.prototype = {
-  __proto__: IdentityManager.prototype,
-
   _fxaService: null,
   _tokenServerClient: null,
   
@@ -138,19 +134,6 @@ this.BrowserIDManager.prototype = {
     for (let topic of OBSERVER_TOPICS) {
       Services.obs.addObserver(this, topic, false);
     }
-    
-    
-    
-    
-    
-    
-    this._fxaService.getSignedInUser().then(accountData => {
-      if (accountData) {
-        this.account = accountData.email;
-      }
-    }).catch(err => {
-      
-    });
   },
 
   
@@ -225,14 +208,13 @@ this.BrowserIDManager.prototype = {
     return this._fxaService.getSignedInUser().then(accountData => {
       if (!accountData) {
         this._log.info("initializeWithCurrentIdentity has no user logged in");
-        this.account = null;
         
         this._shouldHaveSyncKeyBundle = true;
         this.whenReadyToAuthenticate.reject("no user is logged in");
         return;
       }
 
-      this.account = accountData.email;
+      this.username = accountData.email;
       this._updateSignedInUser(accountData);
       
       
@@ -365,65 +347,43 @@ this.BrowserIDManager.prototype = {
     return this._fxaService.localtimeOffsetMsec;
   },
 
-  usernameFromAccount(val) {
-    
-    return val;
-  },
-
-  
-
-
-
-
-  get basicPassword() {
-    this._log.error("basicPassword getter should be not used in BrowserIDManager");
-    return null;
-  },
-
-  
-
-
-
-
-  set basicPassword(value) {
-    throw new Error("basicPassword setter should be not used in BrowserIDManager");
-  },
-
-  
-
-
-
-
-
-
-
-
-  get syncKey() {
-    if (this.syncKeyBundle) {
-      
-      
-      
-      
-      
-      
-      return "99999999999999999999999999";
-    }
-    return null;
-  },
-
-  set syncKey(value) {
-    throw "syncKey setter should be not used in BrowserIDManager";
-  },
-
   get syncKeyBundle() {
     return this._syncKeyBundle;
+  },
+
+  get username() {
+    return Svc.Prefs.get("username", null);
+  },
+
+  
+
+
+
+
+  set username(value) {
+    if (value) {
+      value = value.toLowerCase();
+
+      if (value == this.username) {
+        return;
+      }
+
+      Svc.Prefs.set("username", value);
+    } else {
+      Svc.Prefs.reset("username");
+    }
+
+    
+    
+    this._log.info("Username changed. Removing stored credentials.");
+    this.resetCredentials();
   },
 
   
 
 
   resetCredentials() {
-    this.resetSyncKey();
+    this.resetSyncKeyBundle();
     this._token = null;
     this._hashedUID = null;
     
@@ -434,10 +394,8 @@ this.BrowserIDManager.prototype = {
   
 
 
-  resetSyncKey() {
-    this._syncKey = null;
+  resetSyncKeyBundle() {
     this._syncKeyBundle = null;
-    this._syncKeyUpdated = true;
     this._shouldHaveSyncKeyBundle = false;
   },
 
@@ -461,6 +419,18 @@ this.BrowserIDManager.prototype = {
   
 
 
+  deleteSyncCredentials() {
+    for (let host of this._getSyncCredentialsHosts()) {
+      let logins = Services.logins.findLogins({}, host, "", "");
+      for (let login of logins) {
+        Services.logins.removeLogin(login);
+      }
+    }
+  },
+
+  
+
+
 
 
 
@@ -472,6 +442,7 @@ this.BrowserIDManager.prototype = {
                      " due to previous failure");
       return this._authFailureReason;
     }
+
     
     
     
@@ -801,11 +772,39 @@ this.BrowserIDManager.prototype = {
 
 
 function BrowserIDClusterManager(service) {
-  ClusterManager.call(this, service);
+  this._log = log;
+  this.service = service;
 }
 
 BrowserIDClusterManager.prototype = {
-  __proto__: ClusterManager.prototype,
+  get identity() {
+    return this.service.identity;
+  },
+
+  
+
+
+  setCluster() {
+    
+    let cluster = this._findCluster();
+    this._log.debug("Cluster value = " + cluster);
+    if (cluster == null) {
+      return false;
+    }
+
+    
+    
+    cluster = cluster.toString();
+    
+    if (cluster == this.service.clusterURL) {
+      return false;
+    }
+
+    this._log.debug("Setting cluster to " + cluster);
+    this.service.clusterURL = cluster;
+
+    return true;
+  },
 
   _findCluster() {
     let endPointFromIdentityToken = function() {

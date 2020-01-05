@@ -27,7 +27,6 @@ this.EXPORTED_SYMBOLS = [
 var {utils: Cu} = Components;
 
 Cu.import("resource://services-sync/status.js");
-Cu.import("resource://services-sync/identity.js");
 Cu.import("resource://services-common/utils.js");
 Cu.import("resource://services-crypto/utils.js");
 Cu.import("resource://services-sync/util.js");
@@ -170,11 +169,6 @@ this.makeIdentityConfig = function(overrides) {
         hashed_fxa_uid: "f".repeat(32), 
         
       }
-    },
-    sync: {
-      
-      password: "whatever",
-      syncKey: "abcdeabcdeabcdeabcdeabcdea",
     }
   };
 
@@ -182,10 +176,6 @@ this.makeIdentityConfig = function(overrides) {
   if (overrides) {
     if (overrides.username) {
       result.username = overrides.username;
-    }
-    if (overrides.sync) {
-      
-      result.sync = overrides.sync;
     }
     if (overrides.fxaccount) {
       
@@ -260,44 +250,30 @@ this.configureIdentity = async function(identityOverrides, server) {
     ns.Service.serverURL = server.baseURI;
   }
 
-  ns.Service._clusterManager = ns.Service.identity.createClusterManager(ns.Service);
-
-  if (ns.Service.identity instanceof BrowserIDManager) {
-    
-
-    
-    if (server && !config.fxaccount.token.endpoint) {
-      let ep = server.baseURI;
-      if (!ep.endsWith("/")) {
-        ep += "/";
-      }
-      ep += "1.1/" + config.username + "/";
-      config.fxaccount.token.endpoint = ep;
-    }
-
-    configureFxAccountIdentity(ns.Service.identity, config);
-    await ns.Service.identity.initializeWithCurrentIdentity();
-    
-    
-    if (config.fxaccount.token.endpoint) {
-      ns.Service.clusterURL = config.fxaccount.token.endpoint;
-    }
-    return;
-  }
   
-  if (server) {
-    ns.Service.clusterURL = server.baseURI + "/";
+  if (server && !config.fxaccount.token.endpoint) {
+    let ep = server.baseURI;
+    if (!ep.endsWith("/")) {
+      ep += "/";
+    }
+    ep += "1.1/" + config.username + "/";
+    config.fxaccount.token.endpoint = ep;
   }
-  ns.Service.identity.username = config.username;
-  ns.Service._updateCachedURLs();
-  setBasicCredentials(config.username, config.sync.password, config.sync.syncKey);
+
+  configureFxAccountIdentity(ns.Service.identity, config);
+  await ns.Service.identity.initializeWithCurrentIdentity();
+  
+  
+  if (config.fxaccount.token.endpoint) {
+    ns.Service.clusterURL = config.fxaccount.token.endpoint;
+  }
 }
 
-this.SyncTestingInfrastructure = async function(server, username, password) {
+this.SyncTestingInfrastructure = async function(server, username) {
   let ns = {};
   Cu.import("resource://services-sync/service.js", ns);
 
-  let config = makeIdentityConfig({ username, password });
+  let config = makeIdentityConfig({ username });
   await configureIdentity(config, server);
   return {
     logStats: initTestLogging(),
@@ -339,15 +315,6 @@ this.add_identity_test = function(test, testFunction) {
   }
   let ns = {};
   Cu.import("resource://services-sync/service.js", ns);
-  
-  test.add_task(async function() {
-    note("sync");
-    let oldIdentity = Status._authManager;
-    ensureLegacyIdentityManager();
-    await testFunction();
-    Status.__authManager = ns.Service.identity = oldIdentity;
-  });
-  
   test.add_task(async function() {
     note("FxAccounts");
     let oldIdentity = Status._authManager;
