@@ -20,42 +20,34 @@ public class NativeQueue {
         boolean isAtLeast(final State other);
     }
 
-    public static class StateHolder {
-        private volatile State mState;
-        private final State mReadyState;
+    private volatile State mState;
+    private final State mReadyState;
 
-        public StateHolder(final State initial, final State ready) {
-            this.mState = initial;
-            this.mReadyState = ready;
-        }
+    public NativeQueue(final State initial, final State ready) {
+        mState = initial;
+        mReadyState = ready;
+    }
 
-        public boolean isReady() {
-            return getState().isAtLeast(mReadyState);
-        }
+    public boolean isReady() {
+        return getState().isAtLeast(mReadyState);
+    }
 
-        public State getReadyState() {
-            return mReadyState;
-        }
+    public State getState() {
+        return mState;
+    }
 
-        public State getState() {
-            return mState;
-        }
+    public boolean setState(final State newState) {
+        return checkAndSetState(null, newState);
+    }
 
-        public boolean setState(final State newState) {
-            return checkAndSetState(null, newState);
+    public synchronized boolean checkAndSetState(final State expectedState,
+                                                 final State newState) {
+        if (expectedState != null && !mState.is(expectedState)) {
+            return false;
         }
-
-        public boolean checkAndSetState(final State expectedState,
-                                        final State newState) {
-            synchronized (NativeQueue.sQueue) {
-                if (expectedState != null && !mState.is(expectedState)) {
-                    return false;
-                }
-                NativeQueue.flushQueuedLocked(newState);
-                mState = newState;
-                return true;
-            }
-        }
+        flushQueuedLocked(newState);
+        mState = newState;
+        return true;
     }
 
     private static class QueuedCall {
@@ -74,7 +66,7 @@ public class NativeQueue {
     }
 
     private static final int QUEUED_CALLS_COUNT = 16;
-     static final ArrayList<QueuedCall> sQueue =
+     final ArrayList<QueuedCall> mQueue =
         new ArrayList<>(QUEUED_CALLS_COUNT);
 
     
@@ -91,12 +83,11 @@ public class NativeQueue {
     }
 
     
-    private static void queueNativeCallLocked(final StateHolder stateHolder,
-                                              final Class<?> cls,
-                                              final String methodName,
-                                              final Object obj,
-                                              final Object[] args,
-                                              final State state) {
+    private void queueNativeCallLocked(final Class<?> cls,
+                                       final String methodName,
+                                       final Object obj,
+                                       final Object[] args,
+                                       final State state) {
         final ArrayList<Class<?>> argTypes = new ArrayList<>(args.length);
         final ArrayList<Object> argValues = new ArrayList<>(args.length);
 
@@ -135,12 +126,12 @@ public class NativeQueue {
             throw new UnsupportedOperationException("Not allowed to queue non-native methods");
         }
 
-        if (stateHolder.getState().isAtLeast(state)) {
+        if (getState().isAtLeast(state)) {
             invokeMethod(method, obj, argValues.toArray());
             return;
         }
 
-        sQueue.add(new QueuedCall(
+        mQueue.add(new QueuedCall(
                 method, obj, argValues.toArray(), state));
     }
 
@@ -153,17 +144,25 @@ public class NativeQueue {
 
 
 
+    public synchronized void queueUntilReady(final Object obj,
+                                             final String methodName,
+                                             final Object... args) {
+        queueNativeCallLocked(obj.getClass(), methodName, obj, args, mReadyState);
+    }
+
+    
 
 
-    public static void queueUntil(final StateHolder stateHolder,
-                                  final State state,
-                                  final Object obj,
-                                  final String methodName,
-                                  final Object... args) {
-        synchronized (sQueue) {
-            queueNativeCallLocked(stateHolder, obj.getClass(), methodName, obj,
-                                  args, state);
-        }
+
+
+
+
+
+
+    public synchronized void queueUntilReady(final Class<?> cls,
+                                             final String methodName,
+                                             final Object... args) {
+        queueNativeCallLocked(cls, methodName, null, args, mReadyState);
     }
 
     
@@ -176,22 +175,33 @@ public class NativeQueue {
 
 
 
-
-    public static void queueUntil(final StateHolder stateHolder,
-                                  final State state,
-                                  final Class<?> cls,
-                                  final String methodName,
-                                  final Object... args) {
-        synchronized (sQueue) {
-            queueNativeCallLocked(stateHolder, cls, methodName, null, args, state);
-        }
+    public synchronized void queueUntil(final State state, final Object obj,
+                                        final String methodName,
+                                        final Object... args) {
+        queueNativeCallLocked(obj.getClass(), methodName, obj, args, state);
     }
 
     
-    private static void flushQueuedLocked(final State state) {
+
+
+
+
+
+
+
+
+
+    public synchronized void queueUntil(final State state, final Class<?> cls,
+                                        final String methodName,
+                                        final Object... args) {
+        queueNativeCallLocked(cls, methodName, null, args, state);
+    }
+
+    
+    private void flushQueuedLocked(final State state) {
         int lastSkipped = -1;
-        for (int i = 0; i < sQueue.size(); i++) {
-            final QueuedCall call = sQueue.get(i);
+        for (int i = 0; i < mQueue.size(); i++) {
+            final QueuedCall call = mQueue.get(i);
             if (call == null) {
                 
                 continue;
@@ -202,18 +212,18 @@ public class NativeQueue {
                 continue;
             }
             
-            sQueue.set(i, null);
+            mQueue.set(i, null);
 
             invokeMethod(call.method, call.target, call.args);
         }
         if (lastSkipped < 0) {
             
-            sQueue.clear();
-            sQueue.trimToSize();
-        } else if (lastSkipped < sQueue.size() - 1) {
+            mQueue.clear();
+            mQueue.trimToSize();
+        } else if (lastSkipped < mQueue.size() - 1) {
             
             
-            sQueue.subList(lastSkipped + 1, sQueue.size()).clear();
+            mQueue.subList(lastSkipped + 1, mQueue.size()).clear();
         }
     }
 }
