@@ -36,8 +36,7 @@ ignored_files = [
     
     "components/script/dom/bindings/codegen/*",
     "components/style/properties/mod.rs",
-    "components/servo/target/*",
-    "ports/gonk/target/*",
+    "target/*",
     "ports/gonk/src/native_window_glue.cpp",
     "ports/cef/*",
 

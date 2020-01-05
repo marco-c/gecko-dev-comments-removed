@@ -27,27 +27,22 @@ pub fn resources_dir_path() -> PathBuf {
             path.pop();
             path.push("resources");
             if !path.is_dir() {   
-                path.pop();
+                
                 path.pop();
                 path.pop();
                 path.pop();
                 path.push("resources");
-                if !path.is_dir() {  
+                if !path.is_dir() {
+                    
                     path.pop();
                     path.pop();
                     path.push("resources");
-                    if !path.is_dir() { 
-                        path.pop();
-                        path.pop();
-                        path.push("resources");
-                    }
                 }
             }
             path
         }
     }
 }
-
 
 pub fn read_resource_file(relative_path_components: &[&str]) -> io::Result<Vec<u8>> {
     let mut path = resources_dir_path();
