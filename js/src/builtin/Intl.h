@@ -372,16 +372,6 @@ intl_FormatDateTime(JSContext* cx, unsigned argc, Value* vp);
 
 
 
-extern MOZ_MUST_USE bool
-intl_PluralRules(JSContext* cx, unsigned argc, Value* vp);
-
-
-
-
-
-
-
-
 
 extern MOZ_MUST_USE bool
 intl_PluralRules_availableLocales(JSContext* cx, unsigned argc, Value* vp);
