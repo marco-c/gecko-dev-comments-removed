@@ -93,16 +93,10 @@ DOMParser::ParseFromString(const nsAString& str,
     nsCOMPtr<nsIDocument> document = do_QueryInterface(domDocument);
 
     
-    
 
     if (nsContentUtils::IsSystemPrincipal(mOriginalPrincipal)) {
       document->ForceEnableXULXBL();
     }
-
-    
-    document->SetBaseURI(mBaseURI);
-    
-    document->SetPrincipal(mPrincipal);
 
     rv = nsContentUtils::ParseDocumentHTML(str, document, false);
     NS_ENSURE_SUCCESS(rv, rv);
@@ -245,7 +239,7 @@ DOMParser::ParseFromStream(nsIInputStream *stream,
   NS_NewInputStreamChannel(getter_AddRefs(parserChannel),
                            mDocumentURI,
                            nullptr, 
-                           mOriginalPrincipal,
+                           mPrincipal,
                            nsILoadInfo::SEC_FORCE_INHERIT_PRINCIPAL,
                            nsIContentPolicy::TYPE_OTHER,
                            nsDependentCString(contentType));
@@ -261,11 +255,9 @@ DOMParser::ParseFromStream(nsIInputStream *stream,
   
   
   
-  
   nsCOMPtr<nsIDocument> document(do_QueryInterface(domDocument));
   if (!document) return NS_ERROR_FAILURE;
 
-  
   
 
   if (nsContentUtils::IsSystemPrincipal(mOriginalPrincipal)) {
@@ -276,12 +268,6 @@ DOMParser::ParseFromStream(nsIInputStream *stream,
                                    nullptr, nullptr, 
                                    getter_AddRefs(listener),
                                    false);
-
-  
-  document->SetBaseURI(mBaseURI);
-
-  
-  document->SetPrincipal(mPrincipal);
 
   if (NS_FAILED(rv) || !listener) {
     return NS_ERROR_FAILURE;
@@ -367,11 +353,8 @@ DOMParser::Init(nsIPrincipal* principal, nsIURI* documentURI,
       }
     }
   }
-  
+
   mBaseURI = baseURI;
-  
-  
-  
 
   NS_POSTCONDITION(mPrincipal, "Must have principal");
   NS_POSTCONDITION(mOriginalPrincipal, "Must have original principal");
@@ -482,13 +465,9 @@ DOMParser::SetUpDocument(DocumentFlavor aFlavor, nsIDOMDocument** aResult)
   NS_ASSERTION(mPrincipal, "Must have principal by now");
   NS_ASSERTION(mDocumentURI, "Must have document URI by now");
 
-  
-  
-  
-  
   return NS_NewDOMDocument(aResult, EmptyString(), EmptyString(), nullptr,
                            mDocumentURI, mBaseURI,
-                           mOriginalPrincipal,
+                           mPrincipal,
                            true,
                            scriptHandlingObject,
                            aFlavor);
