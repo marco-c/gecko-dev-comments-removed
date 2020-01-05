@@ -67,7 +67,7 @@ var PdfjsChromeUtils = {
 
 
 
-  init: function () {
+  init() {
     this._browsers = new WeakSet();
     if (!this._ppmm) {
       
@@ -94,7 +94,7 @@ var PdfjsChromeUtils = {
     }
   },
 
-  uninit: function () {
+  uninit() {
     if (this._ppmm) {
       this._ppmm.removeMessageListener('PDFJS:Parent:clearUserPref', this);
       this._ppmm.removeMessageListener('PDFJS:Parent:setIntPref', this);
@@ -123,7 +123,7 @@ var PdfjsChromeUtils = {
 
 
 
-  notifyChildOfSettingsChange: function () {
+  notifyChildOfSettingsChange() {
     if (Services.appinfo.processType ===
         Services.appinfo.PROCESS_TYPE_DEFAULT && this._ppmm) {
       
@@ -139,13 +139,13 @@ var PdfjsChromeUtils = {
 
 
 
-  observe: function(aSubject, aTopic, aData) {
+  observe(aSubject, aTopic, aData) {
     if (aTopic === 'quit-application') {
       this.uninit();
     }
   },
 
-  receiveMessage: function (aMsg) {
+  receiveMessage(aMsg) {
     switch (aMsg.name) {
       case 'PDFJS:Parent:clearUserPref':
         this._clearUserPref(aMsg.data.name);
@@ -182,20 +182,20 @@ var PdfjsChromeUtils = {
 
 
 
-  _findbarFromMessage: function(aMsg) {
+  _findbarFromMessage(aMsg) {
     let browser = aMsg.target;
     let tabbrowser = browser.getTabBrowser();
     let tab = tabbrowser.getTabForBrowser(browser);
     return tabbrowser.getFindBar(tab);
   },
 
-  _updateControlState: function (aMsg) {
+  _updateControlState(aMsg) {
     let data = aMsg.data;
     this._findbarFromMessage(aMsg)
         .updateControlState(data.result, data.findPrevious);
   },
 
-  handleEvent: function(aEvent) {
+  handleEvent(aEvent) {
     
     
     let type = aEvent.type;
@@ -213,8 +213,7 @@ var PdfjsChromeUtils = {
     }
     
     let mm = browser.messageManager;
-    mm.sendAsyncMessage('PDFJS:Child:handleEvent',
-                        { type: type, detail: detail });
+    mm.sendAsyncMessage('PDFJS:Child:handleEvent', { type, detail, });
     aEvent.preventDefault();
   },
 
@@ -223,7 +222,7 @@ var PdfjsChromeUtils = {
            'findhighlightallchange',
            'findcasesensitivitychange'],
 
-  _addEventListener: function (aMsg) {
+  _addEventListener(aMsg) {
     let browser = aMsg.target;
     if (this._browsers.has(browser)) {
       throw new Error('FindEventManager was bound 2nd time ' +
@@ -242,7 +241,7 @@ var PdfjsChromeUtils = {
     }
   },
 
-  _removeEventListener: function (aMsg) {
+  _removeEventListener(aMsg) {
     let browser = aMsg.target;
     if (!this._browsers.has(browser)) {
       throw new Error('FindEventManager was unbound without binding it first.');
@@ -258,7 +257,7 @@ var PdfjsChromeUtils = {
     }
   },
 
-  _ensurePreferenceAllowed: function (aPrefName) {
+  _ensurePreferenceAllowed(aPrefName) {
     let unPrefixedName = aPrefName.split(PREF_PREFIX + '.');
     if (unPrefixedName[0] !== '' ||
         this._allowedPrefNames.indexOf(unPrefixedName[1]) === -1) {
@@ -268,27 +267,27 @@ var PdfjsChromeUtils = {
     }
   },
 
-  _clearUserPref: function (aPrefName) {
+  _clearUserPref(aPrefName) {
     this._ensurePreferenceAllowed(aPrefName);
     Services.prefs.clearUserPref(aPrefName);
   },
 
-  _setIntPref: function (aPrefName, aPrefValue) {
+  _setIntPref(aPrefName, aPrefValue) {
     this._ensurePreferenceAllowed(aPrefName);
     Services.prefs.setIntPref(aPrefName, aPrefValue);
   },
 
-  _setBoolPref: function (aPrefName, aPrefValue) {
+  _setBoolPref(aPrefName, aPrefValue) {
     this._ensurePreferenceAllowed(aPrefName);
     Services.prefs.setBoolPref(aPrefName, aPrefValue);
   },
 
-  _setCharPref: function (aPrefName, aPrefValue) {
+  _setCharPref(aPrefName, aPrefValue) {
     this._ensurePreferenceAllowed(aPrefName);
     Services.prefs.setCharPref(aPrefName, aPrefValue);
   },
 
-  _setStringPref: function (aPrefName, aPrefValue) {
+  _setStringPref(aPrefName, aPrefValue) {
     this._ensurePreferenceAllowed(aPrefName);
     let str = Cc['@mozilla.org/supports-string;1']
                 .createInstance(Ci.nsISupportsString);
@@ -301,7 +300,7 @@ var PdfjsChromeUtils = {
 
 
 
-  isDefaultHandlerApp: function () {
+  isDefaultHandlerApp() {
     var handlerInfo = Svc.mime.getFromTypeAndExtension(PDF_CONTENT_TYPE, 'pdf');
     return (!handlerInfo.alwaysAskBeforeHandling &&
             handlerInfo.preferredAction === Ci.nsIHandlerInfo.handleInternally);
@@ -311,7 +310,7 @@ var PdfjsChromeUtils = {
 
 
 
-  _displayWarning: function (aMsg) {
+  _displayWarning(aMsg) {
     let data = aMsg.data;
     let browser = aMsg.target;
 
@@ -324,13 +323,12 @@ var PdfjsChromeUtils = {
     let messageSent = false;
     function sendMessage(download) {
       let mm = browser.messageManager;
-      mm.sendAsyncMessage('PDFJS:Child:fallbackDownload',
-                          { download: download });
+      mm.sendAsyncMessage('PDFJS:Child:fallbackDownload', { download, });
     }
     let buttons = [{
       label: data.label,
       accessKey: data.accessKey,
-      callback: function() {
+      callback() {
         messageSent = true;
         sendMessage(true);
       }

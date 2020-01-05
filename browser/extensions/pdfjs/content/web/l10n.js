@@ -121,12 +121,12 @@
     get: translateString,
 
     
-    getLanguage: function() {
+    getLanguage() {
       return gLanguage;
     },
 
     
-    getDirection: function() {
+    getDirection() {
       
       
       var rtlList = ['ar', 'he', 'fa', 'ps', 'ur'];
@@ -137,9 +137,11 @@
       return (rtlList.indexOf(shortCode) >= 0) ? 'rtl' : 'ltr';
     },
 
-    getReadyState: function() { return gReadyState; },
+    getReadyState() {
+      return gReadyState;
+    },
 
-    setExternalLocalizerServices: function (externalLocalizerServices) {
+    setExternalLocalizerServices(externalLocalizerServices) {
       gExternalLocalizerServices = externalLocalizerServices;
 
       

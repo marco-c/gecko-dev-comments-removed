@@ -38,7 +38,7 @@ var PdfjsContentUtils = {
             Services.appinfo.PROCESS_TYPE_CONTENT);
   },
 
-  init: function () {
+  init() {
     
     
     if (!this._mm) {
@@ -49,7 +49,7 @@ var PdfjsContentUtils = {
     }
   },
 
-  uninit: function () {
+  uninit() {
     if (this._mm) {
       this._mm.removeMessageListener('PDFJS:Child:refreshSettings', this);
       Services.obs.removeObserver(this, 'quit-application');
@@ -63,34 +63,34 @@ var PdfjsContentUtils = {
 
 
 
-  clearUserPref: function (aPrefName) {
+  clearUserPref(aPrefName) {
     this._mm.sendSyncMessage('PDFJS:Parent:clearUserPref', {
       name: aPrefName
     });
   },
 
-  setIntPref: function (aPrefName, aPrefValue) {
+  setIntPref(aPrefName, aPrefValue) {
     this._mm.sendSyncMessage('PDFJS:Parent:setIntPref', {
       name: aPrefName,
       value: aPrefValue
     });
   },
 
-  setBoolPref: function (aPrefName, aPrefValue) {
+  setBoolPref(aPrefName, aPrefValue) {
     this._mm.sendSyncMessage('PDFJS:Parent:setBoolPref', {
       name: aPrefName,
       value: aPrefValue
     });
   },
 
-  setCharPref: function (aPrefName, aPrefValue) {
+  setCharPref(aPrefName, aPrefValue) {
     this._mm.sendSyncMessage('PDFJS:Parent:setCharPref', {
       name: aPrefName,
       value: aPrefValue
     });
   },
 
-  setStringPref: function (aPrefName, aPrefValue) {
+  setStringPref(aPrefName, aPrefValue) {
     this._mm.sendSyncMessage('PDFJS:Parent:setStringPref', {
       name: aPrefName,
       value: aPrefValue
@@ -101,7 +101,7 @@ var PdfjsContentUtils = {
 
 
 
-  isDefaultHandlerApp: function () {
+  isDefaultHandlerApp() {
     return this._mm.sendSyncMessage('PDFJS:Parent:isDefaultHandlerApp')[0];
   },
 
@@ -109,7 +109,7 @@ var PdfjsContentUtils = {
 
 
 
-  displayWarning: function (aWindow, aMessage, aLabel, accessKey) {
+  displayWarning(aWindow, aMessage, aLabel, aAccessKey) {
     
     let winmm = aWindow.QueryInterface(Ci.nsIInterfaceRequestor)
                        .getInterface(Ci.nsIDocShell)
@@ -118,7 +118,7 @@ var PdfjsContentUtils = {
     winmm.sendAsyncMessage('PDFJS:Parent:displayWarning', {
       message: aMessage,
       label: aLabel,
-      accessKey: accessKey
+      accessKey: aAccessKey,
     });
   },
 
@@ -126,13 +126,13 @@ var PdfjsContentUtils = {
 
 
 
-  observe: function(aSubject, aTopic, aData) {
+  observe(aSubject, aTopic, aData) {
     if (aTopic === 'quit-application') {
       this.uninit();
     }
   },
 
-  receiveMessage: function (aMsg) {
+  receiveMessage(aMsg) {
     switch (aMsg.name) {
       case 'PDFJS:Child:refreshSettings':
         

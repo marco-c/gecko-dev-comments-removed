@@ -190,7 +190,7 @@ PdfDataListener.prototype = {
       this.oncompleteCallback(null, errorCode);
     }
   },
-  onprogress: function() {},
+  onprogress() {},
   get oncomplete() {
     return this.oncompleteCallback;
   },
@@ -206,23 +206,26 @@ PdfDataListener.prototype = {
 };
 
 
-function ChromeActions(domWindow, contentDispositionFilename) {
-  this.domWindow = domWindow;
-  this.contentDispositionFilename = contentDispositionFilename;
-  this.telemetryState = {
-    documentInfo: false,
-    firstPageInfo: false,
-    streamTypesUsed: [],
-    fontTypesUsed: [],
-    startAt: Date.now()
-  };
-}
 
-ChromeActions.prototype = {
-  isInPrivateBrowsing: function() {
+
+class ChromeActions {
+  constructor(domWindow, contentDispositionFilename) {
+    this.domWindow = domWindow;
+    this.contentDispositionFilename = contentDispositionFilename;
+    this.telemetryState = {
+      documentInfo: false,
+      firstPageInfo: false,
+      streamTypesUsed: [],
+      fontTypesUsed: [],
+      startAt: Date.now()
+    };
+  }
+
+  isInPrivateBrowsing() {
     return PrivateBrowsingUtils.isContentWindowPrivate(this.domWindow);
-  },
-  download: function(data, sendResponse) {
+  }
+
+  download(data, sendResponse) {
     var self = this;
     var originalUrl = data.originalUrl;
     var blobUrl = data.blobUrl || originalUrl;
@@ -279,7 +282,7 @@ ChromeActions.prototype = {
 
       var listener = {
         extListener: null,
-        onStartRequest: function(aRequest, aContext) {
+        onStartRequest(aRequest, aContext) {
           var loadContext = self.domWindow
                                 .QueryInterface(Ci.nsIInterfaceRequestor)
                                 .getInterface(Ci.nsIWebNavigation)
@@ -290,7 +293,7 @@ ChromeActions.prototype = {
             aRequest, loadContext, false);
           this.extListener.onStartRequest(aRequest, aContext);
         },
-        onStopRequest: function(aRequest, aContext, aStatusCode) {
+        onStopRequest(aRequest, aContext, aStatusCode) {
           if (this.extListener) {
             this.extListener.onStopRequest(aRequest, aContext, aStatusCode);
           }
@@ -299,20 +302,21 @@ ChromeActions.prototype = {
             sendResponse(false);
           }
         },
-        onDataAvailable: function(aRequest, aContext, aInputStream, aOffset,
-                                  aCount) {
-          this.extListener.onDataAvailable(aRequest, aContext, aInputStream,
+        onDataAvailable(aRequest, aContext, aDataInputStream, aOffset, aCount) {
+          this.extListener.onDataAvailable(aRequest, aContext, aDataInputStream,
                                            aOffset, aCount);
         }
       };
 
       channel.asyncOpen2(listener);
     });
-  },
-  getLocale: function() {
+  }
+
+  getLocale() {
     return getStringPref('general.useragent.locale', 'en-US');
-  },
-  getStrings: function(data) {
+  }
+
+  getStrings(data) {
     try {
       
       if (!('localizedStrings' in this)) {
@@ -324,8 +328,9 @@ ChromeActions.prototype = {
       log('Unable to retrieve localized strings: ' + e);
       return 'null';
     }
-  },
-  supportsIntegratedFind: function() {
+  }
+
+  supportsIntegratedFind() {
     
     if (this.domWindow.frameElement !== null) {
       return false;
@@ -339,22 +344,26 @@ ChromeActions.prototype = {
     
     var findBar = getFindBar(this.domWindow);
     return !!findBar && ('updateControlState' in findBar);
-  },
-  supportsDocumentFonts: function() {
+  }
+
+  supportsDocumentFonts() {
     var prefBrowser = getIntPref('browser.display.use_document_fonts', 1);
     var prefGfx = getBoolPref('gfx.downloadable_fonts.enabled', true);
     return (!!prefBrowser && prefGfx);
-  },
-  supportsDocumentColors: function() {
+  }
+
+  supportsDocumentColors() {
     return getIntPref('browser.display.document_color_use', 0) !== 2;
-  },
-  supportedMouseWheelZoomModifierKeys: function() {
+  }
+
+  supportedMouseWheelZoomModifierKeys() {
     return {
       ctrlKey: getIntPref('mousewheel.with_control.action', 3) === 3,
       metaKey: getIntPref('mousewheel.with_meta.action', 1) === 3,
     };
-  },
-  reportTelemetry: function (data) {
+  }
+
+  reportTelemetry(data) {
     var probeInfo = JSON.parse(data);
     switch (probeInfo.type) {
       case 'documentInfo':
@@ -409,12 +418,15 @@ ChromeActions.prototype = {
         PdfJsTelemetry.onPrint();
         break;
     }
-  },
-  fallback: function(args, sendResponse) {
-    var featureId = args.featureId;
-    var url = args.url;
+  }
 
-    var self = this;
+  
+
+
+
+  fallback(args, sendResponse) {
+    var featureId = args.featureId;
+
     var domWindow = this.domWindow;
     var strings = getLocalizedStrings('chrome.properties');
     var message;
@@ -441,8 +453,9 @@ ChromeActions.prototype = {
         winmm.removeMessageListener('PDFJS:Child:fallbackDownload',
                                     fallbackDownload);
       });
-  },
-  updateFindControlState: function(data) {
+  }
+
+  updateFindControlState(data) {
     if (!this.supportsIntegratedFind()) {
       return;
     }
@@ -461,8 +474,9 @@ ChromeActions.prototype = {
                               .getInterface(Ci.nsIContentFrameMessageManager);
 
     winmm.sendAsyncMessage('PDFJS:Parent:updateControlState', data);
-  },
-  setPreferences: function(prefs, sendResponse) {
+  }
+
+  setPreferences(prefs, sendResponse) {
     var defaultBranch = Services.prefs.getDefaultBranch(PREF_PREFIX + '.');
     var numberOfPrefs = 0;
     var prefValue, prefName;
@@ -496,8 +510,9 @@ ChromeActions.prototype = {
     if (sendResponse) {
       sendResponse(true);
     }
-  },
-  getPreferences: function(prefs, sendResponse) {
+  }
+
+  getPreferences(prefs, sendResponse) {
     var defaultBranch = Services.prefs.getDefaultBranch(PREF_PREFIX + '.');
     var currentPrefs = {}, numberOfPrefs = 0;
     var prefValue, prefName;
@@ -529,17 +544,16 @@ ChromeActions.prototype = {
       return JSON.stringify(currentPrefs);
     }
   }
-};
-
-var RangedChromeActions = (function RangedChromeActionsClosure() {
-  
+}
 
 
-  function RangedChromeActions(
-              domWindow, contentDispositionFilename, originalRequest,
+
+
+class RangedChromeActions extends ChromeActions {
+  constructor(domWindow, contentDispositionFilename, originalRequest,
               rangeEnabled, streamingEnabled, dataListener) {
 
-    ChromeActions.call(this, domWindow, contentDispositionFilename);
+    super(domWindow, contentDispositionFilename);
     this.dataListener = dataListener;
     this.originalRequest = originalRequest;
     this.rangeEnabled = rangeEnabled;
@@ -551,7 +565,7 @@ var RangedChromeActions = (function RangedChromeActionsClosure() {
     
     var httpHeaderVisitor = {
       headers: {},
-      visitHeader: function(aHeader, aValue) {
+      visitHeader(aHeader, aValue) {
         if (aHeader === 'Range') {
           
           
@@ -587,7 +601,7 @@ var RangedChromeActions = (function RangedChromeActionsClosure() {
 
     this.networkManager = new NetworkManager(this.pdfUrl, {
       httpHeaders: httpHeaderVisitor.headers,
-      getXhr: getXhr
+      getXhr,
     });
 
     
@@ -598,12 +612,7 @@ var RangedChromeActions = (function RangedChromeActionsClosure() {
     });
   }
 
-  RangedChromeActions.prototype = Object.create(ChromeActions.prototype);
-  var proto = RangedChromeActions.prototype;
-  proto.constructor = RangedChromeActions;
-
-  proto.initPassiveLoading = function RangedChromeActions_initPassiveLoading() {
-    var self = this;
+  initPassiveLoading() {
     var data;
     if (!this.streamingEnabled) {
       this.originalRequest.cancel(Cr.NS_BINDING_ABORTED);
@@ -613,16 +622,16 @@ var RangedChromeActions = (function RangedChromeActionsClosure() {
     } else {
       data = this.dataListener.readData();
 
-      this.dataListener.onprogress = function (loaded, total) {
-        self.domWindow.postMessage({
+      this.dataListener.onprogress = (loaded, total) => {
+        this.domWindow.postMessage({
           pdfjsLoadAction: 'progressiveRead',
-          loaded: loaded,
-          total: total,
-          chunk: self.dataListener.readData()
+          loaded,
+          total,
+          chunk: this.dataListener.readData(),
         }, '*');
       };
-      this.dataListener.oncomplete = function () {
-        self.dataListener = null;
+      this.dataListener.oncomplete = () => {
+        this.dataListener = null;
       };
     }
 
@@ -632,13 +641,13 @@ var RangedChromeActions = (function RangedChromeActionsClosure() {
       streamingEnabled: this.streamingEnabled,
       pdfUrl: this.pdfUrl,
       length: this.contentLength,
-      data: data
+      data,
     }, '*');
 
     return true;
-  };
+  }
 
-  proto.requestDataRange = function RangedChromeActions_requestDataRange(args) {
+  requestDataRange(args) {
     if (!this.rangeEnabled) {
       return;
     }
@@ -650,11 +659,11 @@ var RangedChromeActions = (function RangedChromeActionsClosure() {
     
     
     this.networkManager.requestRange(begin, end, {
-      onDone: function RangedChromeActions_onDone(args) {
+      onDone: function RangedChromeActions_onDone(aArgs) {
         domWindow.postMessage({
           pdfjsLoadAction: 'range',
-          begin: args.begin,
-          chunk: args.chunk
+          begin: aArgs.begin,
+          chunk: aArgs.chunk,
         }, '*');
       },
       onProgress: function RangedChromeActions_onProgress(evt) {
@@ -664,162 +673,155 @@ var RangedChromeActions = (function RangedChromeActionsClosure() {
         }, '*');
       }
     });
-  };
+  }
 
-  proto.abortLoading = function RangedChromeActions_abortLoading() {
+  abortLoading() {
     this.networkManager.abortAllRequests();
     if (this.originalRequest) {
       this.originalRequest.cancel(Cr.NS_BINDING_ABORTED);
       this.originalRequest = null;
     }
     this.dataListener = null;
-  };
-
-  return RangedChromeActions;
-})();
-
-var StandardChromeActions = (function StandardChromeActionsClosure() {
-
-  
+  }
+}
 
 
-  function StandardChromeActions(domWindow, contentDispositionFilename,
-                                 originalRequest, dataListener) {
 
-    ChromeActions.call(this, domWindow, contentDispositionFilename);
+
+class StandardChromeActions extends ChromeActions {
+  constructor(domWindow, contentDispositionFilename, originalRequest,
+              dataListener) {
+    super(domWindow, contentDispositionFilename);
     this.originalRequest = originalRequest;
     this.dataListener = dataListener;
   }
 
-  StandardChromeActions.prototype = Object.create(ChromeActions.prototype);
-  var proto = StandardChromeActions.prototype;
-  proto.constructor = StandardChromeActions;
-
-  proto.initPassiveLoading =
-      function StandardChromeActions_initPassiveLoading() {
-
+  initPassiveLoading() {
     if (!this.dataListener) {
       return false;
     }
 
-    var self = this;
-
-    this.dataListener.onprogress = function ChromeActions_dataListenerProgress(
-                                      loaded, total) {
-      self.domWindow.postMessage({
+    this.dataListener.onprogress = (loaded, total) => {
+      this.domWindow.postMessage({
         pdfjsLoadAction: 'progress',
-        loaded: loaded,
-        total: total
+        loaded,
+        total,
       }, '*');
     };
 
-    this.dataListener.oncomplete =
-        function StandardChromeActions_dataListenerComplete(data, errorCode) {
-      self.domWindow.postMessage({
+    this.dataListener.oncomplete = (data, errorCode) => {
+      this.domWindow.postMessage({
         pdfjsLoadAction: 'complete',
-        data: data,
-        errorCode: errorCode
+        data,
+        errorCode,
       }, '*');
 
-      self.dataListener = null;
-      self.originalRequest = null;
+      this.dataListener = null;
+      this.originalRequest = null;
     };
 
     return true;
-  };
+  }
 
-  proto.abortLoading = function StandardChromeActions_abortLoading() {
+  abortLoading() {
     if (this.originalRequest) {
       this.originalRequest.cancel(Cr.NS_BINDING_ABORTED);
       this.originalRequest = null;
     }
     this.dataListener = null;
-  };
-
-  return StandardChromeActions;
-})();
-
-
-function RequestListener(actions) {
-  this.actions = actions;
+  }
 }
 
-RequestListener.prototype.receive = function(event) {
-  var message = event.target;
-  var doc = message.ownerDocument;
-  var action = event.detail.action;
-  var data = event.detail.data;
-  var sync = event.detail.sync;
-  var actions = this.actions;
-  if (!(action in actions)) {
-    log('Unknown action: ' + action);
-    return;
+
+
+
+class RequestListener {
+  constructor(actions) {
+    this.actions = actions;
   }
-  var response;
-  if (sync) {
-    response = actions[action].call(this.actions, data);
-    event.detail.response = Cu.cloneInto(response, doc.defaultView);
-  } else {
-    if (!event.detail.responseExpected) {
-      doc.documentElement.removeChild(message);
-      response = null;
-    } else {
-      response = function sendResponse(response) {
-        try {
-          var listener = doc.createEvent('CustomEvent');
-          let detail = Cu.cloneInto({ response: response }, doc.defaultView);
-          listener.initCustomEvent('pdf.js.response', true, false, detail);
-          return message.dispatchEvent(listener);
-        } catch (e) {
-          
-          
-          return false;
-        }
-      };
+
+  
+  receive(event) {
+    var message = event.target;
+    var doc = message.ownerDocument;
+    var action = event.detail.action;
+    var data = event.detail.data;
+    var sync = event.detail.sync;
+    var actions = this.actions;
+    if (!(action in actions)) {
+      log('Unknown action: ' + action);
+      return;
     }
-    actions[action].call(this.actions, data, response);
+    var response;
+    if (sync) {
+      response = actions[action].call(this.actions, data);
+      event.detail.response = Cu.cloneInto(response, doc.defaultView);
+    } else {
+      if (!event.detail.responseExpected) {
+        doc.documentElement.removeChild(message);
+        response = null;
+      } else {
+        response = function sendResponse(aResponse) {
+          try {
+            var listener = doc.createEvent('CustomEvent');
+            let detail = Cu.cloneInto({ response: aResponse }, doc.defaultView);
+            listener.initCustomEvent('pdf.js.response', true, false, detail);
+            return message.dispatchEvent(listener);
+          } catch (e) {
+            
+            
+            return false;
+          }
+        };
+      }
+      actions[action].call(this.actions, data, response);
+    }
   }
-};
-
-
-
-function FindEventManager(contentWindow) {
-  this.contentWindow = contentWindow;
-  this.winmm = contentWindow.QueryInterface(Ci.nsIInterfaceRequestor)
-                            .getInterface(Ci.nsIDocShell)
-                            .QueryInterface(Ci.nsIInterfaceRequestor)
-                            .getInterface(Ci.nsIContentFrameMessageManager);
 }
 
-FindEventManager.prototype.bind = function() {
-  var unload = function(e) {
-    this.unbind();
-    this.contentWindow.removeEventListener(e.type, unload);
-  }.bind(this);
-  this.contentWindow.addEventListener('unload', unload);
 
-  
-  
-  
-  
-  this.winmm.sendAsyncMessage('PDFJS:Parent:addEventListener');
-  this.winmm.addMessageListener('PDFJS:Child:handleEvent', this);
-};
 
-FindEventManager.prototype.receiveMessage = function(msg) {
-  var detail = msg.data.detail;
-  var type = msg.data.type;
-  var contentWindow = this.contentWindow;
 
-  detail = Cu.cloneInto(detail, contentWindow);
-  var forward = contentWindow.document.createEvent('CustomEvent');
-  forward.initCustomEvent(type, true, true, detail);
-  contentWindow.dispatchEvent(forward);
-};
 
-FindEventManager.prototype.unbind = function() {
-  this.winmm.sendAsyncMessage('PDFJS:Parent:removeEventListener');
-};
+class FindEventManager {
+  constructor(contentWindow) {
+    this.contentWindow = contentWindow;
+    this.winmm = contentWindow.QueryInterface(Ci.nsIInterfaceRequestor)
+                              .getInterface(Ci.nsIDocShell)
+                              .QueryInterface(Ci.nsIInterfaceRequestor)
+                              .getInterface(Ci.nsIContentFrameMessageManager);
+  }
+
+  bind() {
+    var unload = function(e) {
+      this.unbind();
+      this.contentWindow.removeEventListener(e.type, unload);
+    }.bind(this);
+    this.contentWindow.addEventListener('unload', unload);
+
+    
+    
+    
+    
+    this.winmm.sendAsyncMessage('PDFJS:Parent:addEventListener');
+    this.winmm.addMessageListener('PDFJS:Child:handleEvent', this);
+  }
+
+  receiveMessage(msg) {
+    var detail = msg.data.detail;
+    var type = msg.data.type;
+    var contentWindow = this.contentWindow;
+
+    detail = Cu.cloneInto(detail, contentWindow);
+    var forward = contentWindow.document.createEvent('CustomEvent');
+    forward.initCustomEvent(type, true, true, detail);
+    contentWindow.dispatchEvent(forward);
+  }
+
+  unbind() {
+    this.winmm.sendAsyncMessage('PDFJS:Parent:removeEventListener');
+  }
+}
 
 function PdfStreamConverter() {
 }
@@ -858,18 +860,18 @@ PdfStreamConverter.prototype = {
 
 
   
-  convert: function(aFromStream, aFromType, aToType, aCtxt) {
+  convert(aFromStream, aFromType, aToType, aCtxt) {
     throw Cr.NS_ERROR_NOT_IMPLEMENTED;
   },
 
   
-  asyncConvertData: function(aFromType, aToType, aListener, aCtxt) {
+  asyncConvertData(aFromType, aToType, aListener, aCtxt) {
     
     this.listener = aListener;
   },
 
   
-  onDataAvailable: function(aRequest, aContext, aInputStream, aOffset, aCount) {
+  onDataAvailable(aRequest, aContext, aInputStream, aOffset, aCount) {
     if (!this.dataListener) {
       return;
     }
@@ -881,7 +883,7 @@ PdfStreamConverter.prototype = {
   },
 
   
-  onStartRequest: function(aRequest, aContext) {
+  onStartRequest(aRequest, aContext) {
     
     var isHttpRequest = false;
     try {
@@ -960,14 +962,14 @@ PdfStreamConverter.prototype = {
     
     
     var proxy = {
-      onStartRequest: function(request, context) {
+      onStartRequest(request, context) {
         listener.onStartRequest(aRequest, aContext);
       },
-      onDataAvailable: function(request, context, inputStream, offset, count) {
+      onDataAvailable(request, context, inputStream, offset, count) {
         listener.onDataAvailable(aRequest, aContext, inputStream,
                                  offset, count);
       },
-      onStopRequest: function(request, context, statusCode) {
+      onStopRequest(request, context, statusCode) {
         
         
         var domWindow = getDOMWindow(channel);
@@ -1017,7 +1019,7 @@ PdfStreamConverter.prototype = {
   },
 
   
-  onStopRequest: function(aRequest, aContext, aStatusCode) {
+  onStopRequest(aRequest, aContext, aStatusCode) {
     if (!this.dataListener) {
       
       return;
