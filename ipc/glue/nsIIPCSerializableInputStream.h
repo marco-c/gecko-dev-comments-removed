@@ -8,7 +8,6 @@
 #define mozilla_ipc_nsIIPCSerializableInputStream_h
 
 #include "mozilla/Attributes.h"
-#include "mozilla/Maybe.h"
 #include "nsISupports.h"
 #include "nsTArrayForwardDeclare.h"
 
@@ -39,17 +38,6 @@ public:
   virtual bool
   Deserialize(const mozilla::ipc::InputStreamParams& aParams,
               const FileDescriptorArray& aFileDescriptors) = 0;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  virtual mozilla::Maybe<uint64_t>
-  ExpectedSerializedLength() = 0;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIIPCSerializableInputStream,
@@ -62,10 +50,7 @@ NS_DEFINE_STATIC_IID_ACCESSOR(nsIIPCSerializableInputStream,
                                                                                \
   virtual bool                                                                 \
   Deserialize(const mozilla::ipc::InputStreamParams&,                          \
-              const FileDescriptorArray&) override;                            \
-                                                                               \
-  virtual mozilla::Maybe<uint64_t>                                             \
-  ExpectedSerializedLength() override;
+              const FileDescriptorArray&) override;
 
 #define NS_FORWARD_NSIIPCSERIALIZABLEINPUTSTREAM(_to)                          \
   virtual void                                                                 \
@@ -80,12 +65,6 @@ NS_DEFINE_STATIC_IID_ACCESSOR(nsIIPCSerializableInputStream,
               const FileDescriptorArray& aFileDescriptors) override            \
   {                                                                            \
     return _to Deserialize(aParams, aFileDescriptors);                         \
-  }                                                                            \
-                                                                               \
-  virtual mozilla::Maybe<uint64_t>                                             \
-  ExpectedSerializedLength() override                                          \
-  {                                                                            \
-    return _to ExpectedSerializedLength();                                     \
   }
 
 #define NS_FORWARD_SAFE_NSIIPCSERIALIZABLEINPUTSTREAM(_to)                     \
@@ -103,12 +82,6 @@ NS_DEFINE_STATIC_IID_ACCESSOR(nsIIPCSerializableInputStream,
               const FileDescriptorArray& aFileDescriptors) override            \
   {                                                                            \
     return _to ? _to->Deserialize(aParams, aFileDescriptors) : false;          \
-  }                                                                            \
-                                                                               \
-  virtual mozilla::Maybe<uint64_t>                                             \
-  ExpectedSerializedLength() override                                          \
-  {                                                                            \
-    return _to ? _to->ExpectedSerializedLength() : Nothing();                  \
   }
 
 #endif 
