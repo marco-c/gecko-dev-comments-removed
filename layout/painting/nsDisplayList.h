@@ -4065,7 +4065,8 @@ class nsDisplayTransform: public nsDisplayItem
 public:
   enum PrerenderDecision {
     NoPrerender,
-    FullPrerender
+    FullPrerender,
+    PartialPrerender
   };
 
   
@@ -4281,6 +4282,9 @@ public:
                                                uint32_t aFlags,
                                                const nsRect* aBoundsOverride = nullptr);
   
+
+
+
 
 
 
