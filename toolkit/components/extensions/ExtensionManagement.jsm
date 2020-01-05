@@ -156,16 +156,6 @@ var Service = {
     }
 
     
-    
-    
-    
-    
-    if (AppConstants.MOZ_B2G &&
-        Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_CONTENT &&
-        uri.spec.startsWith("jar:file://")) {
-      uri = Services.io.newURI("jar:remoteopen" + uri.spec.substr("jar:".length), null, null);
-    }
-
     let handler = Services.io.getProtocolHandler("moz-extension");
     handler.QueryInterface(Ci.nsISubstitutingProtocolHandler);
     handler.setSubstitution(uuid, uri);

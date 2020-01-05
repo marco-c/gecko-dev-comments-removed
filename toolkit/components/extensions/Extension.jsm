@@ -900,20 +900,14 @@ this.ExtensionData = class {
         return results;
       }
 
-      if (!(this.rootURI instanceof Ci.nsIJARURI &&
-            this.rootURI.JARFile instanceof Ci.nsIFileURL)) {
-        
-        
-        return [];
-      }
-
       
 
-      let file = this.rootURI.JARFile.file;
-      let zipReader = Cc["@mozilla.org/libjar/zip-reader;1"].createInstance(Ci.nsIZipReader);
-      try {
-        zipReader.open(file);
+      this.rootURI.QueryInterface(Ci.nsIJARURI);
 
+      let file = this.rootURI.JARFile.QueryInterface(Ci.nsIFileURL).file;
+      let zipReader = Cc["@mozilla.org/libjar/zip-reader;1"].createInstance(Ci.nsIZipReader);
+      zipReader.open(file);
+      try {
         let results = [];
 
         
@@ -1654,11 +1648,7 @@ this.Extension = class extends ExtensionData {
       }
     }).then(() => {
       if (this.errors.length) {
-        
-        
-        if (!this.rootURI.schemeIs("app")) {
-          return Promise.reject({errors: this.errors});
-        }
+        return Promise.reject({errors: this.errors});
       }
 
       if (this.hasShutdown) {

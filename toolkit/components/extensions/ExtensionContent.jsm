@@ -194,19 +194,12 @@ Script.prototype = {
     let scheduled = this.run_at || "document_idle";
     if (shouldRun(scheduled)) {
       for (let url of this.js) {
-        
-        
-        
-        if (AppConstants.platform == "gonk" && scheduled != "document_idle") {
-          Cu.reportError(`Script injection: ignoring ${url} at ${scheduled}`);
-          continue;
-        }
         url = this.extension.baseURI.resolve(url);
 
         let options = {
           target: sandbox,
           charset: "UTF-8",
-          async: AppConstants.platform == "gonk",
+          async: false,
         };
         try {
           result = Services.scriptloader.loadSubScriptWithOptions(url, options);

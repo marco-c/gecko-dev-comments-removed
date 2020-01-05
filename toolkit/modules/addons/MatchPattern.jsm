@@ -18,7 +18,7 @@ this.EXPORTED_SYMBOLS = ["MatchPattern", "MatchGlobs", "MatchURLFilters"];
 
 
 
-const PERMITTED_SCHEMES = ["http", "https", "file", "ftp", "app", "data"];
+const PERMITTED_SCHEMES = ["http", "https", "file", "ftp", "data"];
 const PERMITTED_SCHEMES_REGEXP = PERMITTED_SCHEMES.join("|");
 
 
