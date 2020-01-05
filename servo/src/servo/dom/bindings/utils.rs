@@ -540,7 +540,7 @@ pub extern fn ThrowingConstructor(_cx: *JSContext, _argc: uint, _vp: *JSVal) -> 
 }
 
 pub fn initialize_global(global: *JSObject) {
-    let protoArray = @mut ~[0 as *JSObject, ..3]; 
+    let protoArray = @mut ([0 as *JSObject, ..3]); 
     unsafe {
         
         let box = squirrel_away(protoArray);
