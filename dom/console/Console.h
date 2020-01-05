@@ -388,10 +388,6 @@ private:
   
   nsTArray<nsString> mGroupStack;
 
-#ifdef DEBUG
-  PRThread* mOwningThread;
-#endif
-
   uint64_t mOuterID;
   uint64_t mInnerID;
 
