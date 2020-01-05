@@ -131,8 +131,10 @@ do {                                     \
 
 
 
+
+
 #define NSCAP_LOG_ASSIGNMENT(_c, _p)                                \
-  if (_p)                                                           \
+  if (_p != nullptr)                                                \
     NS_LogCOMPtrAddRef((_c),static_cast<nsISupports*>(_p))
 
 #define NSCAP_LOG_RELEASE(_c, _p)                                   \
