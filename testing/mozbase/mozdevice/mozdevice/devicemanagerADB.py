@@ -5,10 +5,11 @@
 import logging
 import re
 import os
-import shutil
 import tempfile
 import time
 import traceback
+
+from distutils import dir_util
 
 from devicemanager import DeviceManager, DMError
 from mozprocess import ProcessHandler
@@ -32,6 +33,7 @@ class DeviceManagerADB(DeviceManager):
     _pollingInterval = 0.01
     _packageName = None
     _tempDir = None
+    _adb_version = None
     connected = False
 
     def __init__(self, host=None, port=5555, retryLimit=5, packageName='fennec',
@@ -271,18 +273,42 @@ class DeviceManagerADB(DeviceManager):
                 self._useZip = False
                 self.pushDir(localDir, remoteDir, retryLimit=retryLimit, timeout=timeout)
         else:
-            
-            
-            
-            self.mkDirs(remoteDir + "/x")
-            self.removeDir(remoteDir)
-            tmpDir = tempfile.mkdtemp()
-            
-            tmpDirTarget = os.path.join(tmpDir, "tmp")
-            shutil.copytree(localDir, tmpDirTarget)
-            self._checkCmd(["push", tmpDirTarget, remoteDir],
-                           retryLimit=retryLimit, timeout=timeout)
-            mozfile.remove(tmpDir)
+            localDir = os.path.normpath(localDir)
+            remoteDir = os.path.normpath(remoteDir)
+            copyRequired = False
+            if self._adb_version >= '1.0.36' and \
+               os.path.isdir(localDir) and self.dirExists(remoteDir):
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                localName = os.path.basename(localDir)
+                remoteName = os.path.basename(remoteDir)
+                if localName != remoteName:
+                    copyRequired = True
+                    tempParent = tempfile.mkdtemp()
+                    newLocal = os.path.join(tempParent, remoteName)
+                    dir_util.copy_tree(localDir, newLocal)
+                    localDir = newLocal
+                remoteDir = '/'.join(remoteDir.rstrip('/').split('/')[:-1])
+            try:
+                self._checkCmd(["push", localDir, remoteDir],
+                               retryLimit=retryLimit, timeout=timeout)
+            except:
+                raise
+            finally:
+                if copyRequired:
+                    mozfile.remove(tempParent)
 
     def dirExists(self, remotePath):
         self._detectLsModifier()
@@ -464,7 +490,37 @@ class DeviceManagerADB(DeviceManager):
         self._runPull(remoteFile, localFile)
 
     def getDirectory(self, remoteDir, localDir, checkDir=True):
+        localDir = os.path.normpath(localDir)
+        remoteDir = os.path.normpath(remoteDir)
+        copyRequired = False
+        originalLocal = localDir
+        if self._adb_version >= '1.0.36' and \
+           os.path.isdir(localDir) and self.dirExists(remoteDir):
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            localName = os.path.basename(localDir)
+            remoteName = os.path.basename(remoteDir)
+            if localName != remoteName:
+                copyRequired = True
+                tempParent = tempfile.mkdtemp()
+                localDir = os.path.join(tempParent, remoteName)
+            else:
+                localDir = '/'.join(localDir.rstrip('/').split('/')[:-1])
         self._runCmd(["pull", remoteDir, localDir]).wait()
+        if copyRequired:
+            dir_util.copy_tree(localDir, originalLocal)
+            mozfile.remove(tempParent)
 
     def validateFile(self, remoteFile, localFile):
         md5Remote = self._getRemoteHash(remoteFile)
@@ -682,7 +738,10 @@ class DeviceManagerADB(DeviceManager):
                 raise DMError("invalid adb path, or adb not executable: %s" % self._adbPath)
 
         try:
-            self._checkCmd(["version"], timeout=self.short_timeout)
+            proc = self._runCmd(["version"], timeout=self.short_timeout)
+            re_version = re.compile(r'Android Debug Bridge version (.*)')
+            self._adb_version = re_version.match(proc.output[0]).group(1)
+            self._logger.info("Detected adb %s", self._adb_version)
         except os.error as err:
             raise DMError(
                 "unable to execute ADB (%s): ensure Android SDK is installed "
