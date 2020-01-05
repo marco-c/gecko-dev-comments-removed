@@ -61,8 +61,6 @@ const URI_UPDATES_PROPERTIES    = "chrome://mozapps/locale/update/updates.proper
 const KEY_UPDROOT         = "UpdRootD";
 const KEY_EXECUTABLE      = "XREExeF";
 
-const KEY_UPDATE_ARCHIVE_DIR = "UpdArchD";
-
 const DIR_UPDATES         = "updates";
 
 const FILE_ACTIVE_UPDATE_XML = "active-update.xml";
@@ -83,7 +81,6 @@ const STATE_PENDING_SERVICE = "pending-service";
 const STATE_PENDING_ELEVATE = "pending-elevate";
 const STATE_APPLYING        = "applying";
 const STATE_APPLIED         = "applied";
-const STATE_APPLIED_OS      = "applied-os";
 const STATE_APPLIED_SERVICE = "applied-service";
 const STATE_SUCCEEDED       = "succeeded";
 const STATE_DOWNLOAD_FAILED = "download-failed";
@@ -202,17 +199,6 @@ const APPID_TO_TOPIC = {
 };
 
 var gUpdateMutexHandle = null;
-
-
-var gSDCardMountLock = null;
-
-
-XPCOMUtils.defineLazyGetter(this, "gExtStorage", function aus_gExtStorage() {
-  if (AppConstants.platform != "gonk") {
-    throw Cr.NS_ERROR_NOT_IMPLEMENTED;
-  }
-  return Services.env.get("EXTERNAL_STORAGE");
-});
 
 XPCOMUtils.defineLazyModuleGetter(this, "UpdateUtils",
                                   "resource://gre/modules/UpdateUtils.jsm");
@@ -568,13 +554,6 @@ function getCanStageUpdates() {
     return true;
   }
 
-  
-  
-  if (AppConstants.platform == "gonk") {
-    LOG("getCanStageUpdates - able to stage updates because this is gonk");
-    return true;
-  }
-
   if (!hasUpdateMutex()) {
     LOG("getCanStageUpdates - unable to apply updates because another " +
         "instance of the application is already handling updates for this " +
@@ -805,105 +784,6 @@ function writeVersionFile(dir, version) {
 
 
 
-
-
-
-
-function getFileFromUpdateLink(dir) {
-  if (AppConstants.platform != "gonk") {
-    throw Cr.NS_ERROR_NOT_IMPLEMENTED;
-  }
-  let linkFile = dir.clone();
-  linkFile.append(FILE_UPDATE_LINK);
-  let link = readStringFromFile(linkFile);
-  LOG("getFileFromUpdateLink linkFile.path: " + linkFile.path + ", link: " + link);
-  if (!link) {
-    return null;
-  }
-  let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
-  file.initWithPath(link);
-  return file;
-}
-
-
-
-
-
-
-
-
-
-
-function writeLinkFile(dir, patchFile) {
-  if (AppConstants.platform != "gonk") {
-    throw Cr.NS_ERROR_NOT_IMPLEMENTED;
-  }
-  let linkFile = dir.clone();
-  linkFile.append(FILE_UPDATE_LINK);
-  writeStringToFile(linkFile, patchFile.path);
-  if (patchFile.path.indexOf(gExtStorage) == 0) {
-    
-    
-    
-    acquireSDCardMountLock();
-  }
-}
-
-
-
-
-
-
-
-function acquireSDCardMountLock() {
-  if (AppConstants.platform != "gonk") {
-    throw Cr.NS_ERROR_NOT_IMPLEMENTED;
-  }
-  let volsvc = Cc["@mozilla.org/telephony/volume-service;1"].
-                    getService(Ci.nsIVolumeService);
-  if (volsvc) {
-    gSDCardMountLock = volsvc.createMountLock("sdcard");
-  }
-}
-
-
-
-
-
-
-
-
-
-function isInterruptedUpdate(status) {
-  if (AppConstants.platform != "gonk") {
-    throw Cr.NS_ERROR_NOT_IMPLEMENTED;
-  }
-  return (status == STATE_DOWNLOADING) ||
-         (status == STATE_PENDING) ||
-         (status == STATE_APPLYING);
-}
-
-
-
-
-
-
-function releaseSDCardMountLock() {
-  if (AppConstants.platform != "gonk") {
-    throw Cr.NS_ERROR_UNEXPECTED;
-  }
-  if (gSDCardMountLock) {
-    gSDCardMountLock.unlock();
-    gSDCardMountLock = null;
-  }
-}
-
-
-
-
-
-
-
 function shouldUseService() {
   
   
@@ -1060,15 +940,6 @@ function cleanUpUpdatesDir(aRemovePatchFiles = true) {
     let dirEntries = updateDir.directoryEntries;
     while (dirEntries.hasMoreElements()) {
       let file = dirEntries.getNext().QueryInterface(Ci.nsIFile);
-      if (AppConstants.platform == "gonk") {
-        if (file.leafName == FILE_UPDATE_LINK) {
-          let linkedFile = getFileFromUpdateLink(updateDir);
-          if (linkedFile && linkedFile.exists()) {
-            linkedFile.remove(false);
-          }
-        }
-      }
-
       
       
       
@@ -1079,9 +950,6 @@ function cleanUpUpdatesDir(aRemovePatchFiles = true) {
         LOG("cleanUpUpdatesDir - failed to remove file " + file.path);
       }
     }
-  }
-  if (AppConstants.platform == "gonk") {
-    releaseSDCardMountLock();
   }
 }
 
@@ -1349,9 +1217,6 @@ function pingStateAndStatusCodes(aUpdate, aStartup, aStatus) {
         break;
       case STATE_APPLIED:
         stateCode = 7;
-        break;
-      case STATE_APPLIED_OS:
-        stateCode = 8;
         break;
       case STATE_APPLIED_SERVICE:
         stateCode = 9;
@@ -1830,12 +1695,6 @@ function UpdateService() {
   LOG("Creating UpdateService");
   Services.obs.addObserver(this, "xpcom-shutdown");
   Services.prefs.addObserver(PREF_APP_UPDATE_LOG, this);
-  if (AppConstants.platform == "gonk") {
-    
-    
-    
-    Services.obs.addObserver(this, "profile-change-net-teardown");
-  }
 }
 
 UpdateService.prototype = {
@@ -1917,7 +1776,6 @@ UpdateService.prototype = {
           gLogEnabled = getPref("getBoolPref", PREF_APP_UPDATE_LOG, false);
         }
         break;
-      case "profile-change-net-teardown": 
       case "xpcom-shutdown":
         Services.obs.removeObserver(this, topic);
         Services.prefs.removeObserver(PREF_APP_UPDATE_LOG, this);
@@ -1983,23 +1841,6 @@ UpdateService.prototype = {
       return;
     }
 
-    if (AppConstants.platform == "gonk") {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if (isInterruptedUpdate(status)) {
-        LOG("UpdateService:_postUpdateProcessing - interrupted update detected - wait for user consent");
-        return;
-      }
-    }
-
     if (status == STATE_DOWNLOADING) {
       LOG("UpdateService:_postUpdateProcessing - patch found in downloading " +
           "state");
@@ -2039,34 +1880,6 @@ UpdateService.prototype = {
         cleanupActiveUpdate();
       }
       return;
-    }
-
-    if (AppConstants.platform == "gonk") {
-      
-      if (status == STATE_APPLIED && update && update.isOSUpdate) {
-        LOG("UpdateService:_postUpdateProcessing - update staged as applied found");
-        return;
-      }
-
-      if (status == STATE_APPLIED_OS && update && update.isOSUpdate) {
-        
-        
-        let recoveryService = Cc["@mozilla.org/recovery-service;1"].
-                              getService(Ci.nsIRecoveryService);
-        let fotaStatus = recoveryService.getFotaUpdateStatus();
-        switch (fotaStatus) {
-          case Ci.nsIRecoveryService.FOTA_UPDATE_SUCCESS:
-            status = STATE_SUCCEEDED;
-            break;
-          case Ci.nsIRecoveryService.FOTA_UPDATE_FAIL:
-            status = STATE_FAILED + ": " + FOTA_GENERAL_ERROR;
-            break;
-          case Ci.nsIRecoveryService.FOTA_UPDATE_UNKNOWN:
-          default:
-            status = STATE_FAILED + ": " + FOTA_UNKNOWN_ERROR;
-            break;
-        }
-      }
     }
 
     if (!update) {
@@ -2527,11 +2340,6 @@ UpdateService.prototype = {
     var um = Cc["@mozilla.org/updates/update-manager;1"].
              getService(Ci.nsIUpdateManager);
     if (um.activeUpdate) {
-      if (AppConstants.platform == "gonk") {
-        
-        
-        this._showPrompt(um.activeUpdate);
-      }
       AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_HAS_ACTIVEUPDATE);
       return;
     }
@@ -2734,21 +2542,6 @@ UpdateService.prototype = {
       }
       this._downloader.cancel();
     }
-    if (AppConstants.platform == "gonk") {
-      let um = Cc["@mozilla.org/updates/update-manager;1"].
-               getService(Ci.nsIUpdateManager);
-      let activeUpdate = um.activeUpdate;
-      if (activeUpdate &&
-          (activeUpdate.appVersion != update.appVersion ||
-           activeUpdate.buildID != update.buildID)) {
-        
-        
-        
-        
-        LOG("UpdateService:downloadUpdate - removing stale active update.");
-        cleanupActiveUpdate();
-      }
-    }
     
     update.previousAppVersion = Services.appinfo.version;
     this._downloader = new Downloader(background, this);
@@ -2780,55 +2573,6 @@ UpdateService.prototype = {
 
   get isDownloading() {
     return this._downloader && this._downloader.isBusy;
-  },
-
-  
-
-
-  applyOsUpdate: function AUS_applyOsUpdate(aUpdate) {
-    if (!aUpdate.isOSUpdate || aUpdate.state != STATE_APPLIED) {
-      aUpdate.statusText = "fota-state-error";
-      throw Cr.NS_ERROR_FAILURE;
-    }
-
-    aUpdate.QueryInterface(Ci.nsIWritablePropertyBag);
-    let osApplyToDir = aUpdate.getProperty("osApplyToDir");
-
-    if (!osApplyToDir) {
-      LOG("UpdateService:applyOsUpdate - Error: osApplyToDir is not defined" +
-          "in the nsIUpdate!");
-      pingStateAndStatusCodes(aUpdate, false,
-                              STATE_FAILED + ": " + FOTA_FILE_OPERATION_ERROR);
-      handleUpdateFailure(aUpdate, FOTA_FILE_OPERATION_ERROR);
-      return;
-    }
-
-    let updateFile = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
-    updateFile.initWithPath(osApplyToDir + "/update.zip");
-    if (!updateFile.exists()) {
-      LOG("UpdateService:applyOsUpdate - Error: OS update is not found at " +
-          updateFile.path);
-      pingStateAndStatusCodes(aUpdate, false,
-                              STATE_FAILED + ": " + FOTA_FILE_OPERATION_ERROR);
-      handleUpdateFailure(aUpdate, FOTA_FILE_OPERATION_ERROR);
-      return;
-    }
-
-    writeStatusFile(getUpdatesDir(), aUpdate.state = STATE_APPLIED_OS);
-    LOG("UpdateService:applyOsUpdate - Rebooting into recovery to apply " +
-        "FOTA update: " + updateFile.path);
-    try {
-      let recoveryService = Cc["@mozilla.org/recovery-service;1"]
-                            .getService(Ci.nsIRecoveryService);
-      recoveryService.installFotaUpdate(updateFile.path);
-    } catch (e) {
-      LOG("UpdateService:applyOsUpdate - Error: Couldn't reboot into recovery" +
-          " to apply FOTA update " + updateFile.path);
-      pingStateAndStatusCodes(aUpdate, false,
-                              STATE_FAILED + ": " + FOTA_RECOVERY_ERROR);
-      writeStatusFile(getUpdatesDir(), aUpdate.state = STATE_APPLIED);
-      handleUpdateFailure(aUpdate, FOTA_RECOVERY_ERROR);
-    }
   },
 
   classID: UPDATESERVICE_CID,
@@ -3156,21 +2900,6 @@ UpdateManager.prototype = {
         "the update was staged. topic: update-staged, status: " + update.state);
     Services.obs.notifyObservers(update, "update-staged", update.state);
 
-    if (AppConstants.platform == "gonk") {
-      
-      
-      if (update.state == STATE_APPLIED) {
-        
-        
-        
-        let prompter = Cc["@mozilla.org/updates/update-prompt;1"].
-                       createInstance(Ci.nsIUpdatePrompt);
-        prompter.showUpdateDownloaded(update, true);
-      } else {
-        releaseSDCardMountLock();
-      }
-      return;
-    }
     
     let windowType = getPref("getCharPref", PREF_APP_UPDATE_ALTWINDOWTYPE, null);
     if (Services.wm.getMostRecentWindow(UPDATE_WINDOW_NAME) ||
@@ -3522,9 +3251,6 @@ Downloader.prototype = {
     if (this._request && this._request instanceof Ci.nsIRequest) {
       this._request.cancel(cancelError);
     }
-    if (AppConstants.platform == "gonk") {
-      releaseSDCardMountLock();
-    }
   },
 
   
@@ -3653,19 +3379,10 @@ Downloader.prototype = {
         LOG("Downloader:_selectPatch - resuming download");
         return selectedPatch;
       }
-
-      if (AppConstants.platform == "gonk") {
-        if (state == STATE_PENDING || state == STATE_APPLYING) {
-          LOG("Downloader:_selectPatch - resuming interrupted apply");
-          return selectedPatch;
-        }
-        if (state == STATE_APPLIED) {
-          LOG("Downloader:_selectPatch - already downloaded and staged");
-          return null;
-        }
-      } else if (state == STATE_PENDING || state == STATE_PENDING_SERVICE ||
-                 state == STATE_PENDING_ELEVATE) {
-        LOG("Downloader:_selectPatch - already downloaded and staged");
+      if (state == STATE_PENDING || state == STATE_PENDING_SERVICE ||
+          state == STATE_PENDING_ELEVATE || state == STATE_APPLIED ||
+          state == STATE_APPLIED_SERVICE) {
+        LOG("Downloader:_selectPatch - already downloaded");
         return null;
       }
 
@@ -3724,25 +3441,6 @@ Downloader.prototype = {
   
 
 
-  _getUpdateArchiveFile: function Downloader__getUpdateArchiveFile() {
-    var updateArchive;
-    if (AppConstants.platform == "gonk") {
-      try {
-        updateArchive = FileUtils.getDir(KEY_UPDATE_ARCHIVE_DIR, [], true);
-      } catch (e) {
-        return null;
-      }
-    } else {
-      updateArchive = getUpdatesDir().clone();
-    }
-
-    updateArchive.append(FILE_UPDATE_MAR);
-    return updateArchive;
-  },
-
-  
-
-
 
 
   downloadUpdate: function Downloader_downloadUpdate(update) {
@@ -3766,96 +3464,8 @@ Downloader.prototype = {
     }
     this.isCompleteUpdate = this._patch.type == "complete";
 
-    let patchFile = null;
-
-    
-    let status = STATE_NONE;
-    if (AppConstants.platform == "gonk") {
-      status = readStatusFile(updateDir);
-      if (isInterruptedUpdate(status)) {
-        LOG("Downloader:downloadUpdate - interruptted update");
-        
-        
-        
-        patchFile = getFileFromUpdateLink(updateDir);
-        if (!patchFile) {
-          
-          
-          patchFile = updateDir.clone();
-          patchFile.append(FILE_UPDATE_MAR);
-        }
-        if (patchFile.exists()) {
-          LOG("Downloader:downloadUpdate - resuming with patchFile " + patchFile.path);
-          if (patchFile.fileSize == this._patch.size) {
-            LOG("Downloader:downloadUpdate - patchFile appears to be fully downloaded");
-            
-            if (getElevationRequired()) {
-              status = STATE_PENDING_ELEVATE;
-            } else {
-              status = STATE_PENDING;
-            }
-          }
-        } else {
-          LOG("Downloader:downloadUpdate - patchFile " + patchFile.path +
-              " doesn't exist - performing full download");
-          
-          
-          patchFile = null;
-        }
-        if (patchFile && status != STATE_DOWNLOADING) {
-          
-          
-
-          if (getElevationRequired()) {
-            writeStatusFile(updateDir, STATE_PENDING_ELEVATE);
-          } else {
-            writeStatusFile(updateDir, STATE_PENDING);
-          }
-
-          
-          
-          
-
-          this._downloadTimer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
-          this._downloadTimer.initWithCallback(function() {
-            this._downloadTimer = null;
-            
-            
-            this._request = {destination: patchFile};
-            this.onStopRequest(this._request, null, Cr.NS_OK);
-          }.bind(this), 0, Ci.nsITimer.TYPE_ONE_SHOT);
-
-          
-          
-          
-          return STATE_DOWNLOADING;
-        }
-      }
-    }
-
-    if (!patchFile) {
-      
-      patchFile = this._getUpdateArchiveFile();
-    }
-    if (!patchFile) {
-      AUSTLMY.pingDownloadCode(this.isCompleteUpdate,
-                               AUSTLMY.DWNLD_ERR_NO_PATCH_FILE);
-      return STATE_NONE;
-    }
-
-    if (AppConstants.platform == "gonk") {
-      if (patchFile.path.indexOf(updateDir.path) != 0) {
-        
-        
-        writeLinkFile(updateDir, patchFile);
-
-        if (!isInterruptedUpdate(status) && patchFile.exists()) {
-          
-          patchFile.remove(false);
-        }
-      }
-    }
-
+    let patchFile = getUpdatesDir().clone();
+    patchFile.append(FILE_UPDATE_MAR);
     update.QueryInterface(Ci.nsIPropertyBag);
     let interval = this.background ? update.getProperty("backgroundInterval")
                                    : DOWNLOAD_FOREGROUND_INTERVAL;
@@ -4127,13 +3737,6 @@ Downloader.prototype = {
       this._update.statusText = getStatusTextFromCode(status,
                                                       Cr.NS_BINDING_FAILED);
 
-      if (AppConstants.platform == "gonk") {
-        
-        
-        
-        this._update.selectedPatch.selected = false;
-      }
-
       
       cleanUpUpdatesDir();
 
@@ -4211,13 +3814,6 @@ Downloader.prototype = {
                            createInstance(Ci.nsIUpdatePrompt);
             prompter.showUpdateError(this._update);
           }
-        }
-
-        if (AppConstants.platform == "gonk") {
-          
-          let prompter = Cc["@mozilla.org/updates/update-prompt;1"].
-                         createInstance(Ci.nsIUpdatePrompt);
-          prompter.showUpdateError(this._update);
         }
 
         
