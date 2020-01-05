@@ -94,12 +94,6 @@ public:
   }
 
   
-  bool AccessAllowed() const
-  {
-    return mTabGroup->AccessAllowed();
-  }
-
-  
   
   
   bool* GetValidAccessPtr();

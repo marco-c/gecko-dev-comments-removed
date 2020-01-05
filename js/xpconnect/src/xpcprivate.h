@@ -866,9 +866,6 @@ public:
 
     bool AttachComponentsObject(JSContext* aCx);
 
-    void SetDocGroupValidation() { mDocGroupValidation = true; }
-    bool HasDocGroupValidation() const { return mDocGroupValidation; }
-
     
     bool
     GetComponentsJSObject(JS::MutableHandleObject obj);
@@ -1069,12 +1066,6 @@ private:
     
     
     bool mHasCallInterpositions;
-
-    
-    
-    
-    
-    bool mDocGroupValidation;
 
     nsAutoPtr<DOMExpandoSet> mDOMExpandoSet;
 
