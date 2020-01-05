@@ -113,15 +113,6 @@ const uint8_t g2xGoogleWPTCencInitData[] = {
   0x00, 0x00, 0x00, 0x00                           
 };
 
-const uint8_t gPrimetimePSSH[] = {
-  0x00, 0x00, 0x00, 0x00,                          
-  0x70, 0x73, 0x73, 0x68,                          
-  0x01,                                            
-  0x00, 0x00, 0x00,                                
-  0xf2, 0x39, 0xe7, 0x69, 0xef, 0xa3, 0x48, 0x50,  
-  0x9c, 0x16, 0xa9, 0x03, 0xc6, 0x93, 0x2e, 0xfb
-};
-
 TEST(PsshParser, ParseCencInitData) {
   std::vector<std::vector<uint8_t>> keyIds;
   bool rv;
@@ -162,8 +153,4 @@ TEST(PsshParser, ParseCencInitData) {
   EXPECT_EQ(16u, keyIds[1].size());
   EXPECT_EQ(0, memcmp(&keyIds[0].front(), &g2xGoogleWPTCencInitData[32], 16));
   EXPECT_EQ(0, memcmp(&keyIds[1].front(), &g2xGoogleWPTCencInitData[84], 16));
-
-  rv = ParseCENCInitData(gPrimetimePSSH, MOZ_ARRAY_LENGTH(gPrimetimePSSH), keyIds);
-  EXPECT_TRUE(rv);
-  EXPECT_EQ(0u, keyIds.size());
 }
