@@ -27,7 +27,7 @@ using namespace dom;
 DeleteRangeTransaction::DeleteRangeTransaction(EditorBase& aEditorBase,
                                                nsRange& aRangeToDelete,
                                                RangeUpdater* aRangeUpdater)
-  : mEditorBase(aEditorBase)
+  : mEditorBase(&aEditorBase)
   , mRangeToDelete(aRangeToDelete.CloneRange())
   , mRangeUpdater(aRangeUpdater)
 {
@@ -35,6 +35,7 @@ DeleteRangeTransaction::DeleteRangeTransaction(EditorBase& aEditorBase,
 
 NS_IMPL_CYCLE_COLLECTION_INHERITED(DeleteRangeTransaction,
                                    EditAggregateTransaction,
+                                   mEditorBase,
                                    mRangeToDelete)
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(DeleteRangeTransaction)
@@ -43,7 +44,9 @@ NS_INTERFACE_MAP_END_INHERITING(EditAggregateTransaction)
 NS_IMETHODIMP
 DeleteRangeTransaction::DoTransaction()
 {
-  MOZ_ASSERT(mRangeToDelete);
+  if (NS_WARN_IF(!mEditorBase) || NS_WARN_IF(!mRangeToDelete)) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
 
   
   nsCOMPtr<nsINode> startParent = mRangeToDelete->GetStartParent();
@@ -77,9 +80,9 @@ DeleteRangeTransaction::DoTransaction()
 
   
   bool bAdjustSelection;
-  mEditorBase.ShouldTxnSetSelection(&bAdjustSelection);
+  mEditorBase->ShouldTxnSetSelection(&bAdjustSelection);
   if (bAdjustSelection) {
-    RefPtr<Selection> selection = mEditorBase.GetSelection();
+    RefPtr<Selection> selection = mEditorBase->GetSelection();
     NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
     rv = selection->Collapse(startParent, startOffset);
     NS_ENSURE_SUCCESS(rv, rv);
@@ -117,6 +120,10 @@ DeleteRangeTransaction::CreateTxnsToDeleteBetween(nsINode* aNode,
                                                   int32_t aStartOffset,
                                                   int32_t aEndOffset)
 {
+  if (NS_WARN_IF(!mEditorBase)) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
   
   if (aNode->IsNodeOfType(nsINode::eDATA_NODE)) {
     
@@ -131,7 +138,7 @@ DeleteRangeTransaction::CreateTxnsToDeleteBetween(nsINode* aNode,
       static_cast<nsGenericDOMDataNode*>(aNode);
 
     RefPtr<DeleteTextTransaction> deleteTextTransaction =
-      new DeleteTextTransaction(mEditorBase, *charDataNode, aStartOffset,
+      new DeleteTextTransaction(*mEditorBase, *charDataNode, aStartOffset,
                                 numToDel, mRangeUpdater);
     
     
@@ -150,7 +157,7 @@ DeleteRangeTransaction::CreateTxnsToDeleteBetween(nsINode* aNode,
       break;
     }
     RefPtr<DeleteNodeTransaction> deleteNodeTransaction =
-      new DeleteNodeTransaction(mEditorBase, *child, mRangeUpdater);
+      new DeleteNodeTransaction(*mEditorBase, *child, mRangeUpdater);
     
     
     
@@ -169,6 +176,10 @@ DeleteRangeTransaction::CreateTxnsToDeleteContent(nsINode* aNode,
                                                   int32_t aOffset,
                                                   nsIEditor::EDirection aAction)
 {
+  if (NS_WARN_IF(!mEditorBase)) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
   
   if (aNode->IsNodeOfType(nsINode::eDATA_NODE)) {
     
@@ -185,7 +196,7 @@ DeleteRangeTransaction::CreateTxnsToDeleteContent(nsINode* aNode,
       RefPtr<nsGenericDOMDataNode> dataNode =
         static_cast<nsGenericDOMDataNode*>(aNode);
       RefPtr<DeleteTextTransaction> deleteTextTransaction =
-        new DeleteTextTransaction(mEditorBase, *dataNode, start, numToDelete,
+        new DeleteTextTransaction(*mEditorBase, *dataNode, start, numToDelete,
                                   mRangeUpdater);
       
       
@@ -202,6 +213,10 @@ DeleteRangeTransaction::CreateTxnsToDeleteContent(nsINode* aNode,
 nsresult
 DeleteRangeTransaction::CreateTxnsToDeleteNodesBetween()
 {
+  if (NS_WARN_IF(!mEditorBase)) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
   nsCOMPtr<nsIContentIterator> iter = NS_NewContentSubtreeIterator();
 
   nsresult rv = iter->Init(mRangeToDelete);
@@ -214,7 +229,7 @@ DeleteRangeTransaction::CreateTxnsToDeleteNodesBetween()
     }
 
     RefPtr<DeleteNodeTransaction> deleteNodeTransaction =
-      new DeleteNodeTransaction(mEditorBase, *node, mRangeUpdater);
+      new DeleteNodeTransaction(*mEditorBase, *node, mRangeUpdater);
     
     
     

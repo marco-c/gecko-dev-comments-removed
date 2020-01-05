@@ -48,7 +48,7 @@ public:
   NS_DECL_EDITTRANSACTIONBASE
 
 protected:
-  EditorBase& mEditorBase;
+  RefPtr<EditorBase> mEditorBase;
 
   
   

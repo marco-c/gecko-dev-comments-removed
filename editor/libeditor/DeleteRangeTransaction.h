@@ -61,7 +61,7 @@ protected:
                                      nsIEditor::EDirection aAction);
 
   
-  EditorBase& mEditorBase;
+  RefPtr<EditorBase> mEditorBase;
 
   
   RefPtr<nsRange> mRangeToDelete;

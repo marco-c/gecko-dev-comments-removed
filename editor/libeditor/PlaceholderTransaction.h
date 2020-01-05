@@ -82,7 +82,7 @@ protected:
   SelectionState mEndSel;
 
   
-  EditorBase& mEditorBase;
+  RefPtr<EditorBase> mEditorBase;
 };
 
 } 

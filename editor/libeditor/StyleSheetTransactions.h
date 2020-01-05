@@ -32,7 +32,7 @@ public:
 
 protected:
   
-  EditorBase& mEditor;
+  RefPtr<EditorBase> mEditorBase;
   
   RefPtr<mozilla::StyleSheet> mSheet;
 };
@@ -55,7 +55,7 @@ public:
 
 protected:
   
-  EditorBase& mEditor;
+  RefPtr<EditorBase> mEditorBase;
   
   RefPtr<StyleSheet> mSheet;
 

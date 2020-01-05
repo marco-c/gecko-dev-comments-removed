@@ -90,7 +90,7 @@ private:
   nsString mStringToInsert;
 
   
-  EditorBase& mEditorBase;
+  RefPtr<EditorBase> mEditorBase;
 
   RangeUpdater* mRangeUpdater;
 

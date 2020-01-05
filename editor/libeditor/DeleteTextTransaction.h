@@ -57,7 +57,7 @@ public:
 
 protected:
   
-  EditorBase& mEditorBase;
+  RefPtr<EditorBase> mEditorBase;
 
   
   RefPtr<nsGenericDOMDataNode> mCharData;

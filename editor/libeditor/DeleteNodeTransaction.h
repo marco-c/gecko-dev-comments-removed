@@ -46,7 +46,7 @@ protected:
   virtual ~DeleteNodeTransaction();
 
   
-  EditorBase& mEditorBase;
+  RefPtr<EditorBase> mEditorBase;
 
   
   nsCOMPtr<nsINode> mNodeToDelete;

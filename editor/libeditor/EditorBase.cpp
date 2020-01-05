@@ -465,6 +465,13 @@ EditorBase::PreDestroy(bool aDestroyingFrames)
   mSpellcheckCheckboxState = eTriUnset;
   mRootElement = nullptr;
 
+  
+  
+  if (mTxnMgr) {
+    mTxnMgr->Clear();
+    mTxnMgr = nullptr;
+  }
+
   mDidPreDestroy = true;
   return NS_OK;
 }

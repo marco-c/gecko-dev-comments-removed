@@ -50,7 +50,7 @@ protected:
   int32_t mOffset;
 
   
-  EditorBase& mEditorBase;
+  RefPtr<EditorBase> mEditorBase;
 };
 
 } 

@@ -57,7 +57,7 @@ protected:
   virtual ~CreateElementTransaction();
 
   
-  EditorBase* mEditorBase;
+  RefPtr<EditorBase> mEditorBase;
 
   
   nsCOMPtr<nsIAtom> mTag;
