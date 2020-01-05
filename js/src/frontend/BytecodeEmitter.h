@@ -677,7 +677,16 @@ struct MOZ_STACK_CLASS BytecodeEmitter
 
     
     
-    MOZ_MUST_USE bool emitDefault(ParseNode* defaultExpr);
+    
+    
+    
+    MOZ_MUST_USE bool emitDefault(ParseNode* defaultExpr, ParseNode* pattern);
+
+    MOZ_MUST_USE bool setOrEmitSetFunName(ParseNode* maybeFun, HandleAtom name,
+                                          FunctionPrefixKind prefixKind);
+
+    MOZ_MUST_USE bool emitInitializer(ParseNode* initializer, ParseNode* pattern);
+    MOZ_MUST_USE bool emitInitializerInBranch(ParseNode* initializer, ParseNode* pattern);
 
     MOZ_MUST_USE bool emitCallSiteObject(ParseNode* pn);
     MOZ_MUST_USE bool emitTemplateString(ParseNode* pn);

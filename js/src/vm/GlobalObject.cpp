@@ -803,10 +803,10 @@ GlobalObject::getSelfHostedFunction(JSContext* cx, Handle<GlobalObject*> global,
         return false;
     if (exists) {
         RootedFunction fun(cx, &funVal.toObject().as<JSFunction>());
-        if (fun->name() == name)
+        if (fun->explicitName() == name)
             return true;
 
-        if (fun->name() == selfHostedName) {
+        if (fun->explicitName() == selfHostedName) {
             
             
             

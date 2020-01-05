@@ -562,7 +562,7 @@ js::XDRInterpretedFunction(XDRState<mode>* xdr, HandleScope enclosingScope,
             return false;
         }
 
-        if (fun->name() || fun->hasGuessedAtom())
+        if (fun->explicitName() || fun->hasCompileTimeName() || fun->hasGuessedAtom())
             firstword |= HasAtom;
 
         if (fun->isStarGenerator())
@@ -990,8 +990,8 @@ js::FunctionToString(JSContext* cx, HandleFunction fun, bool prettyPrint)
         if (!ok)
             return nullptr;
     }
-    if (fun->name()) {
-        if (!out.append(fun->name()))
+    if (fun->explicitName()) {
+        if (!out.append(fun->explicitName()))
             return nullptr;
     }
 
@@ -1309,14 +1309,14 @@ JSFunction::getUnresolvedName(JSContext* cx)
     if (isClassConstructor()) {
         
         
-        MOZ_ASSERT(name() != cx->names().empty);
+        MOZ_ASSERT(explicitOrCompileTimeName() != cx->names().empty);
 
         
-        return name();
+        return explicitOrCompileTimeName();
     }
 
-    
-    return name() != nullptr ? name() : cx->names().empty;
+    return explicitOrCompileTimeName() != nullptr ? explicitOrCompileTimeName()
+                                                  : cx->names().empty;
 }
 
 static const js::Value&
@@ -2079,32 +2079,107 @@ js::CloneFunctionAndScript(JSContext* cx, HandleFunction fun, HandleObject enclo
 
 
 JSAtom*
-js::IdToFunctionName(JSContext* cx, HandleId id, const char* prefix )
+js::IdToFunctionName(JSContext* cx, HandleId id,
+                     FunctionPrefixKind prefixKind )
 {
-    if (JSID_IS_ATOM(id) && !prefix)
+    
+    if (JSID_IS_ATOM(id) && prefixKind == FunctionPrefixKind::None)
         return JSID_TO_ATOM(id);
 
     
-    MOZ_ASSERT_IF(prefix, !JSID_IS_SYMBOL(id));
 
     
     if (JSID_IS_SYMBOL(id)) {
+        
         RootedAtom desc(cx, JSID_TO_SYMBOL(id)->description());
+
+        
+        if (!desc && prefixKind == FunctionPrefixKind::None)
+            return cx->names().empty;
+
+        
         StringBuffer sb(cx);
-        if (!sb.append('[') || !sb.append(desc) || !sb.append(']'))
-            return nullptr;
+        if (prefixKind == FunctionPrefixKind::Get) {
+            if (!sb.append("get "))
+                return nullptr;
+        } else if (prefixKind == FunctionPrefixKind::Set) {
+            if (!sb.append("set "))
+                return nullptr;
+        }
+
+        
+        if (desc) {
+            
+            if (!sb.append('[') || !sb.append(desc) || !sb.append(']'))
+                return nullptr;
+        }
         return sb.finishAtom();
     }
 
-    
     RootedValue idv(cx, IdToValue(id));
-    if (!prefix)
-        return ToAtom<CanGC>(cx, idv);
+    RootedAtom name(cx, ToAtom<CanGC>(cx, idv));
+    if (!name)
+        return nullptr;
+
+    
+    return NameToFunctionName(cx, name, prefixKind);
+}
+
+JSAtom*
+js::NameToFunctionName(ExclusiveContext* cx, HandleAtom name,
+                       FunctionPrefixKind prefixKind )
+{
+    if (prefixKind == FunctionPrefixKind::None)
+        return name;
 
     StringBuffer sb(cx);
-    if (!sb.append(prefix, strlen(prefix)) || !sb.append(' ') || !sb.append(ToAtom<CanGC>(cx, idv)))
+    if (prefixKind == FunctionPrefixKind::Get) {
+        if (!sb.append("get "))
+            return nullptr;
+    } else {
+        if (!sb.append("set "))
+            return nullptr;
+    }
+    if (!sb.append(name))
         return nullptr;
     return sb.finishAtom();
+}
+
+bool
+js::SetFunctionNameIfNoOwnName(JSContext* cx, HandleFunction fun, HandleValue name,
+                               FunctionPrefixKind prefixKind)
+{
+    MOZ_ASSERT(name.isString() || name.isSymbol() || name.isNumber());
+
+    if (fun->isClassConstructor()) {
+        
+        RootedId nameId(cx, NameToId(cx->names().name));
+        bool result;
+        if (!HasOwnProperty(cx, fun, nameId, &result))
+            return false;
+
+        if (result)
+            return true;
+    } else {
+        
+        MOZ_ASSERT(!fun->containsPure(cx->names().name));
+    }
+
+    RootedId id(cx);
+    if (!ValueToId<CanGC>(cx, name, &id))
+        return false;
+
+    RootedAtom funNameAtom(cx, IdToFunctionName(cx, id, prefixKind));
+    if (!funNameAtom)
+        return false;
+
+    RootedValue funNameVal(cx, StringValue(funNameAtom));
+    if (!NativeDefineProperty(cx, fun, cx->names().name, funNameVal, nullptr, nullptr,
+                              JSPROP_READONLY))
+    {
+        return false;
+    }
+    return true;
 }
 
 JSFunction*

@@ -902,3 +902,21 @@ FunctionBox::trace(JSTracer* trc)
     if (enclosingScope_)
         TraceRoot(trc, &enclosingScope_, "funbox-enclosingScope");
 }
+
+bool
+js::frontend::IsAnonymousFunctionDefinition(ParseNode* pn)
+{
+    
+    
+    
+    
+    
+    if (pn->isKind(PNK_FUNCTION) && !pn->pn_funbox->function()->explicitName())
+        return true;
+
+    
+    if (pn->is<ClassNode>() && !pn->as<ClassNode>().names())
+        return true;
+
+    return false;
+}

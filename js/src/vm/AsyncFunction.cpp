@@ -119,7 +119,7 @@ js::WrapAsyncFunctionWithProto(JSContext* cx, HandleFunction unwrapped, HandleOb
     
     
 
-    RootedAtom funName(cx, unwrapped->name());
+    RootedAtom funName(cx, unwrapped->explicitName());
     uint16_t length;
     if (!JSFunction::getLength(cx, unwrapped, &length))
         return nullptr;
@@ -132,6 +132,9 @@ js::WrapAsyncFunctionWithProto(JSContext* cx, HandleFunction unwrapped, HandleOb
                                                     TenuredObject));
     if (!wrapped)
         return nullptr;
+
+    if (unwrapped->hasCompileTimeName())
+        wrapped->setCompileTimeName(unwrapped->compileTimeName());
 
     
     

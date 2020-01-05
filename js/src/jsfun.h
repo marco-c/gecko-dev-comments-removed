@@ -31,6 +31,12 @@ static const uint32_t JSSLOT_BOUND_FUNCTION_ARGS       = 4;
 static const char FunctionConstructorMedialSigils[] = ") {\n";
 static const char FunctionConstructorFinalBrace[] = "\n}";
 
+enum class FunctionPrefixKind {
+    None,
+    Get,
+    Set
+};
+
 class JSFunction : public js::NativeObject
 {
   public:
@@ -58,6 +64,9 @@ class JSFunction : public js::NativeObject
 
 
         SELF_HOSTED      = 0x0080,  
+
+        HAS_COMPILE_TIME_NAME = 0x0100, 
+
 
         INTERPRETED_LAZY = 0x0200,  
         RESOLVED_LENGTH  = 0x0400,  
@@ -92,7 +101,7 @@ class JSFunction : public js::NativeObject
         NO_XDR_FLAGS = RESOLVED_LENGTH | RESOLVED_NAME,
 
         STABLE_ACROSS_CLONES = CONSTRUCTOR | HAS_GUESSED_ATOM | LAMBDA |
-                               SELF_HOSTED | FUNCTION_KIND_MASK
+                               SELF_HOSTED | HAS_COMPILE_TIME_NAME | FUNCTION_KIND_MASK
     };
 
     static_assert((INTERPRETED | INTERPRETED_LAZY) == js::JS_FUNCTION_INTERPRETED_BITS,
@@ -176,6 +185,7 @@ class JSFunction : public js::NativeObject
     bool isAsmJSNative()            const { return kind() == AsmJS; }
 
     
+    bool hasCompileTimeName()       const { return flags() & HAS_COMPILE_TIME_NAME; }
     bool hasGuessedAtom()           const { return flags() & HAS_GUESSED_ATOM; }
     bool isLambda()                 const { return flags() & LAMBDA; }
     bool isBoundFunction()          const { return flags() & BOUND_FUN; }
@@ -217,7 +227,7 @@ class JSFunction : public js::NativeObject
     }
 
     bool isNamedLambda() const {
-        return isLambda() && displayAtom() && !hasGuessedAtom();
+        return isLambda() && displayAtom() && !hasCompileTimeName() && !hasGuessedAtom();
     }
 
     bool hasLexicalThis() const {
@@ -301,14 +311,12 @@ class JSFunction : public js::NativeObject
 
     JSAtom* getUnresolvedName(JSContext* cx);
 
-    JSAtom* name() const { return hasGuessedAtom() ? nullptr : atom_.get(); }
-
-    
-    
-    
-    
-    
-    JSAtom* functionName(JSContext* cx) const;
+    JSAtom* explicitName() const {
+        return (hasCompileTimeName() || hasGuessedAtom()) ? nullptr : atom_.get();
+    }
+    JSAtom* explicitOrCompileTimeName() const {
+        return hasGuessedAtom() ? nullptr : atom_.get();
+    }
 
     void initAtom(JSAtom* atom) { atom_.init(atom); }
 
@@ -318,9 +326,24 @@ class JSFunction : public js::NativeObject
         return atom_;
     }
 
+    void setCompileTimeName(JSAtom* atom) {
+        MOZ_ASSERT(!atom_);
+        MOZ_ASSERT(atom);
+        MOZ_ASSERT(!hasGuessedAtom());
+        MOZ_ASSERT(!isClassConstructor());
+        atom_ = atom;
+        flags_ |= HAS_COMPILE_TIME_NAME;
+    }
+    JSAtom* compileTimeName() const {
+        MOZ_ASSERT(hasCompileTimeName());
+        MOZ_ASSERT(atom_);
+        return atom_;
+    }
+
     void setGuessedAtom(JSAtom* atom) {
         MOZ_ASSERT(!atom_);
         MOZ_ASSERT(atom);
+        MOZ_ASSERT(!hasCompileTimeName());
         MOZ_ASSERT(!hasGuessedAtom());
         atom_ = atom;
         flags_ |= HAS_GUESSED_ATOM;
@@ -664,7 +687,16 @@ NewFunctionWithProto(ExclusiveContext* cx, JSNative native, unsigned nargs,
                      NewFunctionProtoHandling protoHandling = NewFunctionClassProto);
 
 extern JSAtom*
-IdToFunctionName(JSContext* cx, HandleId id, const char* prefix = nullptr);
+IdToFunctionName(JSContext* cx, HandleId id,
+                 FunctionPrefixKind prefixKind = FunctionPrefixKind::None);
+
+extern JSAtom*
+NameToFunctionName(ExclusiveContext* cx, HandleAtom name,
+                   FunctionPrefixKind prefixKind = FunctionPrefixKind::None);
+
+extern bool
+SetFunctionNameIfNoOwnName(JSContext* cx, HandleFunction fun, HandleValue name,
+                           FunctionPrefixKind prefixKind);
 
 extern JSFunction*
 DefineFunction(JSContext* cx, HandleObject obj, HandleId id, JSNative native,
