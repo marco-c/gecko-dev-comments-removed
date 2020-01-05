@@ -61,7 +61,20 @@ HourCycle()
     key = "clock-format";
   }
 
-  GSettings* settings = g_settings_new(schema);
+  
+  
+  
+  
+  const char* const* schemas = g_settings_list_schemas();
+  GSettings* settings = nullptr;
+
+  for (uint32_t i = 0; schemas[i] != nullptr; i++) {
+    if (strcmp(schemas[i], schema) == 0) {
+      settings = g_settings_new(schema);
+      break;
+    }
+  }
+
   if (settings) {
     
     
