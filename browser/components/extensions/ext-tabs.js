@@ -57,6 +57,12 @@ global.tabGetSender = getSender;
 
 extensions.on("page-shutdown", (type, context) => {
   if (context.viewType == "tab") {
+    if (context.extension.id !== context.xulBrowser.contentPrincipal.addonId) {
+      
+      
+      
+      return;
+    }
     let {gBrowser} = context.xulBrowser.ownerGlobal;
     if (gBrowser) {
       let tab = gBrowser.getTabForBrowser(context.xulBrowser);
