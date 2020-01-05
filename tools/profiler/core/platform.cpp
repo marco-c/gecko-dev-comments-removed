@@ -1128,6 +1128,9 @@ StreamMetaJSCustomObject(PS::LockRef aLock, SpliceableJSONWriter& aWriter)
   bool asyncStacks = Preferences::GetBool("javascript.options.asyncstack");
   aWriter.IntProperty("asyncstack", asyncStacks);
 
+  
+  
+  
   mozilla::TimeDuration delta =
     mozilla::TimeStamp::Now() - gPS->StartTime(aLock);
   aWriter.DoubleProperty(
