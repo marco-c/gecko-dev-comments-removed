@@ -1450,6 +1450,11 @@ public:
 
   bool HasTransformAnimation() const;
 
+  StyleAnimationValue GetBaseAnimationStyle() const
+  {
+    return mBaseAnimationStyle;
+  }
+
   
 
 
@@ -1970,6 +1975,8 @@ protected:
 #endif
   
   nsCString mDisplayListLog;
+
+  StyleAnimationValue mBaseAnimationStyle;
 };
 
 
