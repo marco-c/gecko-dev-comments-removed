@@ -25,7 +25,6 @@
 
 
 #include "SkANP.h"
-#include "SkTypeface.h"
 
 static ANPPaint* anp_newPaint() {
     return new ANPPaint;
@@ -136,7 +135,7 @@ static void anp_setTextSkewX(ANPPaint* paint, float skewX) {
 }
 
 static void anp_setTypeface(ANPPaint* paint, ANPTypeface* tf) {
-    paint->setTypeface(tf);
+    paint->setTypeface(sk_ref_sp(tf));
 }
 
 static float anp_measureText(ANPPaint* paint, const void* text,
