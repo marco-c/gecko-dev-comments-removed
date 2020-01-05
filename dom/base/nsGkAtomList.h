@@ -1963,6 +1963,9 @@ GK_ATOM(onmozinterruptend, "onmozinterruptend")
 GK_ATOM(ondevicechange, "ondevicechange")
 
 
+GK_ATOM(mozinputrangeignorepreventdefault, "mozinputrangeignorepreventdefault")
+
+
 
 
 
