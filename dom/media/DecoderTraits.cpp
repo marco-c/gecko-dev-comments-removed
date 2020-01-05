@@ -50,31 +50,15 @@
 namespace mozilla
 {
 
-template <class String>
 static bool
-CodecListContains(char const *const * aCodecs, const String& aCodec)
+IsHttpLiveStreamingType(const MediaContentType& aType)
 {
-  for (int32_t i = 0; aCodecs[i]; ++i) {
-    if (aCodec.EqualsASCII(aCodecs[i]))
-      return true;
-  }
-  return false;
-}
-
-static char const *const gHttpLiveStreamingTypes[] = {
-  
-  
-  "application/vnd.apple.mpegurl",
-  
-  "application/x-mpegurl",
-  "audio/x-mpegurl",
-  nullptr
-};
-
-static bool
-IsHttpLiveStreamingType(const nsACString& aType)
-{
-  return CodecListContains(gHttpLiveStreamingTypes, aType);
+  return 
+         
+         aType.Type() == MEDIAMIMETYPE("application/vnd.apple.mpegurl")
+         
+         || aType.Type() == MEDIAMIMETYPE("application/x-mpegurl")
+         || aType.Type() == MEDIAMIMETYPE("audio/x-mpegurl");
 }
 
 #ifdef MOZ_ANDROID_OMX
@@ -193,7 +177,7 @@ CanHandleMediaType(const MediaContentType& aType,
 {
   MOZ_ASSERT(NS_IsMainThread());
 
-  if (IsHttpLiveStreamingType(aType.Type().AsString())) {
+  if (IsHttpLiveStreamingType(aType)) {
     Telemetry::Accumulate(Telemetry::MEDIA_HLS_CANPLAY_REQUESTED, true);
   }
 
@@ -344,7 +328,7 @@ InstantiateDecoder(const MediaContentType& aType,
   }
 #endif
 
-  if (IsHttpLiveStreamingType(aType.Type().AsString())) {
+  if (IsHttpLiveStreamingType(aType)) {
     
     Telemetry::Accumulate(Telemetry::MEDIA_HLS_DECODER_SUCCESS, false);
   }
