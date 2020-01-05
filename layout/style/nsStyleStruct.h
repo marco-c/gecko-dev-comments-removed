@@ -2083,11 +2083,11 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleText
   uint8_t mTextEmphasisPosition;        
   uint8_t mTextEmphasisStyle;           
   uint8_t mTextRendering;               
+  int32_t mTabSize;                     
   mozilla::StyleComplexColor mTextEmphasisColor;      
   mozilla::StyleComplexColor mWebkitTextFillColor;    
   mozilla::StyleComplexColor mWebkitTextStrokeColor;  
 
-  nsStyleCoord mTabSize;                
   nsStyleCoord mWordSpacing;            
   nsStyleCoord mLetterSpacing;          
   nsStyleCoord mLineHeight;             
