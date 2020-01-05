@@ -1176,10 +1176,12 @@ public:
         RefPtr<UiCompositorControllerChild> child = UiCompositorControllerChild::Get();
 
         if (!child) {
-            return;
+            
+            
+            UiCompositorControllerChild::CacheSurfaceResize(id, aWidth, aHeight);
+        } else {
+            child->SendResumeAndResize(id, aWidth, aHeight);
         }
-
-        child->SendResumeAndResize(id, aWidth, aHeight);
 
         mCompositorPaused = false;
 
