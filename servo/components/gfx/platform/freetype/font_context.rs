@@ -2,6 +2,7 @@
 
 
 
+use alloc::heap;
 use freetype::freetype::FTErrorMethods;
 use freetype::freetype::FT_Add_Default_Modules;
 use freetype::freetype::FT_Done_Library;
@@ -12,7 +13,6 @@ use freetype::freetype::struct_FT_MemoryRec_;
 use libc::{c_void, c_long};
 use std::ptr;
 use std::rc::Rc;
-use std::rt::heap;
 use util::mem::{HeapSizeOf, heap_size_of};
 
 

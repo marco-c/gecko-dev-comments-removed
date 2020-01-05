@@ -2,10 +2,6 @@
 
 
 
-#![feature(append)]
-#![feature(arc_unique)]
-#![feature(arc_weak)]
-#![feature(box_str)]
 #![feature(box_syntax)]
 #![feature(cell_extras)]
 #![feature(custom_derive)]

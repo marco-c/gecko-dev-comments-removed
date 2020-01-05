@@ -53,7 +53,7 @@ extern {
 
 
 pub fn heap_size_of(ptr: *const c_void) -> usize {
-    if ptr == ::std::rt::heap::EMPTY as *const c_void {
+    if ptr == ::alloc::heap::EMPTY as *const c_void {
         0
     } else {
         unsafe { je_malloc_usable_size(ptr) as usize }

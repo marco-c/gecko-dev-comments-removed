@@ -2,8 +2,6 @@
 
 
 
-#![cfg_attr(test, feature(box_raw))]
-
 extern crate cookie as cookie_rs;
 extern crate flate2;
 extern crate hyper;

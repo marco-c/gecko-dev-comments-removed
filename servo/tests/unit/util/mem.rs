@@ -34,22 +34,22 @@ fn test_heap_size() {
 
     unsafe {
         
-        assert_eq!(heap_size_of(::std::rt::heap::EMPTY as *const c_void), 0);
+        assert_eq!(heap_size_of(::alloc::heap::EMPTY as *const c_void), 0);
 
         
-        let x = ::std::rt::heap::allocate(64, 0);
+        let x = ::alloc::heap::allocate(64, 0);
         assert_eq!(heap_size_of(x as *const c_void), 64);
-        ::std::rt::heap::deallocate(x, 64, 0);
+        ::alloc::heap::deallocate(x, 64, 0);
 
         
-        let x = ::std::rt::heap::allocate(255, 0);
+        let x = ::alloc::heap::allocate(255, 0);
         assert_eq!(heap_size_of(x as *const c_void), 256);
-        ::std::rt::heap::deallocate(x, 255, 0);
+        ::alloc::heap::deallocate(x, 255, 0);
 
         
-        let x = ::std::rt::heap::allocate(1024 * 1024, 0);
+        let x = ::alloc::heap::allocate(1024 * 1024, 0);
         assert_eq!(heap_size_of(x as *const c_void), 1024 * 1024);
-        ::std::rt::heap::deallocate(x, 1024 * 1024, 0);
+        ::alloc::heap::deallocate(x, 1024 * 1024, 0);
     }
 
     

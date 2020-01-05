@@ -2,13 +2,10 @@
 
 
 
-#![feature(append)]
-#![feature(arc_unique)]
 #![feature(ascii)]
 #![feature(as_slice)]
 #![feature(as_unsafe_cell)]
 #![feature(borrow_state)]
-#![feature(box_raw)]
 #![feature(box_syntax)]
 #![feature(cell_extras)]
 #![feature(core)]
@@ -24,9 +21,7 @@
 #![feature(nonzero)]
 #![feature(plugin)]
 #![feature(ref_slice)]
-#![feature(rc_unique)]
 #![feature(slice_patterns)]
-#![feature(str_split_at)]
 #![feature(str_utf16)]
 #![feature(unicode)]
 #![feature(vec_push_all)]

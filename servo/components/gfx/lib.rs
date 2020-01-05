@@ -2,8 +2,7 @@
 
 
 
-#![feature(arc_weak)]
-#![feature(box_raw)]
+#![feature(alloc)]
 #![feature(box_syntax)]
 
 
@@ -26,6 +25,7 @@
 extern crate log;
 extern crate serde;
 
+extern crate alloc;
 extern crate azure;
 #[macro_use] extern crate bitflags;
 extern crate fnv;
