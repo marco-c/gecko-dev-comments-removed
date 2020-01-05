@@ -4713,6 +4713,8 @@ nsresult HTMLMediaElement::FinishDecoderSetup(MediaDecoder* aDecoder,
   }
   
   mDecoder->SetSuspendTaint(mHasSuspendTaint);
+  
+  NotifyDecoderActivityChanges();
 
   
   
