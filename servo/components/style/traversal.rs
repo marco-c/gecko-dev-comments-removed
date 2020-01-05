@@ -126,12 +126,6 @@ pub fn recalc_style_at<'a, N, C>(context: &'a C,
           C: StyleContext<'a, <N::ConcreteElement as Element>::Impl>,
           <N::ConcreteElement as Element>::Impl: SelectorImplExt<ComputedValues=N::ConcreteComputedValues> + 'a {
     
-    
-    
-    
-    node.initialize_data();
-
-    
     let parent_opt = match node.parent_node() {
         Some(parent) if parent.is_element() => Some(parent),
         _ => None,

@@ -88,12 +88,6 @@ pub trait TNode : Sized + Copy + Clone {
 
     
     
-    
-    
-    fn initialize_data(self);
-
-    
-    
     fn layout_parent_node(self, reflow_root: OpaqueNode) -> Option<Self>;
 
     fn debug_id(self) -> usize;
