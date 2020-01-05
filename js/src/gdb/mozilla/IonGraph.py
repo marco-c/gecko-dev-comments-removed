@@ -178,7 +178,7 @@ class IonGraphCommand(gdb.Command):
         d = subprocess.Popen([dot.value, '-Tpng'], stdin = i.stdout, stdout = png)
 
         
-        i.stdin.write(bytes(jsonStr, 'utf8'))
+        i.stdin.write(jsonStr.encode('utf8'))
         i.stdin.close()
         i.stdout.close()
 
