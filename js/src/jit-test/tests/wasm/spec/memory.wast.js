@@ -1,3 +1,1 @@
-
-quit();
-var importedArgs = ['memory.wast']; load(scriptdir + '../spec.js');
+var importedArgs = ['memory.wast']; load(scriptdir + '../wast.js');
