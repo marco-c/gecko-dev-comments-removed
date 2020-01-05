@@ -28,13 +28,13 @@ enum MethodStatus
     Method_Compiled
 };
 
-enum AbortReason {
-    AbortReason_Alloc,
-    AbortReason_Inlining,
-    AbortReason_PreliminaryObjects,
-    AbortReason_Disable,
-    AbortReason_Error,
-    AbortReason_NoAbort
+enum class AbortReason {
+    Alloc,
+    Inlining,
+    PreliminaryObjects,
+    Disable,
+    Error,
+    NoAbort
 };
 
 

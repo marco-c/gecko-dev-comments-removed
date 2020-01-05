@@ -120,7 +120,7 @@ class MIRGenerator
     }
 
     void disable() {
-        abortReason_ = AbortReason_Disable;
+        abortReason_ = AbortReason::Disable;
     }
     AbortReason abortReason() {
         return abortReason_;
