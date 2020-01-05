@@ -155,9 +155,45 @@ impl<'a> GlobalRef<'a> {
 
     
     
-    pub fn script_chan(&self) -> Box<ScriptChan + Send> {
+    pub fn dom_manipulation_task_source(&self) -> Box<ScriptChan + Send> {
         match *self {
-            GlobalRef::Window(ref window) => window.script_chan(),
+            GlobalRef::Window(ref window) => window.dom_manipulation_task_source(),
+            GlobalRef::Worker(ref worker) => worker.script_chan(),
+        }
+    }
+
+    
+    
+    pub fn user_interaction_task_source(&self) -> Box<ScriptChan + Send> {
+        match *self {
+            GlobalRef::Window(ref window) => window.user_interaction_task_source(),
+            GlobalRef::Worker(ref worker) => worker.script_chan(),
+        }
+    }
+
+    
+    
+    pub fn networking_task_source(&self) -> Box<ScriptChan + Send> {
+        match *self {
+            GlobalRef::Window(ref window) => window.networking_task_source(),
+            GlobalRef::Worker(ref worker) => worker.script_chan(),
+        }
+    }
+
+    
+    
+    pub fn history_traversal_task_source(&self) -> Box<ScriptChan + Send> {
+        match *self {
+            GlobalRef::Window(ref window) => window.history_traversal_task_source(),
+            GlobalRef::Worker(ref worker) => worker.script_chan(),
+        }
+    }
+
+    
+    
+    pub fn file_reading_task_source(&self) -> Box<ScriptChan + Send> {
+        match *self {
+            GlobalRef::Window(ref window) => window.file_reading_task_source(),
             GlobalRef::Worker(ref worker) => worker.script_chan(),
         }
     }
