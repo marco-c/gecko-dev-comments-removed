@@ -617,6 +617,18 @@ public:
   virtual uint32_t GetAttrCount() const override;
   virtual bool IsNodeOfType(uint32_t aFlags) const override;
 
+  
+
+
+
+
+  const nsAttrValue* GetClasses() const {
+    if (HasFlag(NODE_MAY_HAVE_CLASS)) {
+      return DoGetClasses();
+    }
+    return nullptr;
+  }
+
 #ifdef DEBUG
   virtual void List(FILE* out = stdout, int32_t aIndent = 0) const override
   {
@@ -1438,6 +1450,12 @@ protected:
   nsDataHashtable<nsPtrHashKey<DOMIntersectionObserver>, int32_t>* RegisteredIntersectionObservers();
 
 private:
+  
+
+
+
+  const nsAttrValue* DoGetClasses() const;
+
   
 
 

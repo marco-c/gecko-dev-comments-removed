@@ -871,18 +871,6 @@ public:
 
 
 
-
-  const nsAttrValue* GetClasses() const {
-    if (HasFlag(NODE_MAY_HAVE_CLASS)) {
-      return DoGetClasses();
-    }
-    return nullptr;
-  }
-
-  
-
-
-
   NS_IMETHOD WalkContentStyleRules(nsRuleWalker* aRuleWalker) = 0;
 
   
@@ -987,13 +975,6 @@ protected:
 
 
   nsIAtom* DoGetID() const;
-
-private:
-  
-
-
-
-  const nsAttrValue* DoGetClasses() const;
 
 public:
 #ifdef DEBUG
