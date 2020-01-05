@@ -394,7 +394,7 @@ public:
 
 
 
-  void AddListener(MediaStreamTrackListener* aListener);
+  virtual void AddListener(MediaStreamTrackListener* aListener);
 
   
 
@@ -408,7 +408,7 @@ public:
 
 
 
-  void AddDirectListener(DirectMediaStreamTrackListener *aListener);
+  virtual void AddDirectListener(DirectMediaStreamTrackListener *aListener);
   void RemoveDirectListener(DirectMediaStreamTrackListener  *aListener);
 
   
