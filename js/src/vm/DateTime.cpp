@@ -6,26 +6,18 @@
 
 #include "vm/DateTime.h"
 
-#include "mozilla/Atomics.h"
-
 #include <time.h>
 
 #include "jsutil.h"
 
 #include "js/Date.h"
+#include "threading/ExclusiveData.h"
 #if ENABLE_INTL_API
 #include "unicode/timezone.h"
 #endif
+#include "vm/MutexIDs.h"
 
-using mozilla::Atomic;
-using mozilla::ReleaseAcquire;
 using mozilla::UnspecifiedNaN;
-
- js::DateTimeInfo
-js::DateTimeInfo::instance;
-
- mozilla::Atomic<bool, mozilla::ReleaseAcquire>
-js::DateTimeInfo::AcquireLock::spinLock;
 
 static bool
 ComputeLocalTime(time_t local, struct tm* ptm)
@@ -173,25 +165,13 @@ js::DateTimeInfo::internalUpdateTimeZoneAdjustment()
     sanityCheck();
 }
 
-
-
-
-
-
-
- void
-js::DateTimeInfo::init()
+js::DateTimeInfo::DateTimeInfo()
 {
-    DateTimeInfo* dtInfo = &DateTimeInfo::instance;
-
-    MOZ_ASSERT(dtInfo->localTZA_ == 0,
-               "we should be initializing only once, and the static instance "
-               "should have started out zeroed");
-
     
     
-    dtInfo->localTZA_ = UnspecifiedNaN<double>();
-    dtInfo->internalUpdateTimeZoneAdjustment();
+    
+    localTZA_ = UnspecifiedNaN<double>();
+    internalUpdateTimeZoneAdjustment();
 }
 
 int64_t
@@ -311,22 +291,45 @@ js::DateTimeInfo::sanityCheck()
                   rangeStartSeconds <= MaxUnixTimeT && rangeEndSeconds <= MaxUnixTimeT);
 }
 
-static struct IcuTimeZoneInfo
+ js::ExclusiveData<js::DateTimeInfo>*
+js::DateTimeInfo::instance;
+
+ ExclusiveData<IcuTimeZoneStatus>*
+js::IcuTimeZoneState;
+
+bool
+js::InitDateTimeState()
 {
-    Atomic<bool, ReleaseAcquire> locked;
-    enum { Valid = 0, NeedsUpdate } status;
 
-    void acquire() {
-        while (!locked.compareExchange(false, true))
-            continue;
+    MOZ_ASSERT(!DateTimeInfo::instance,
+               "we should be initializing only once");
+
+    DateTimeInfo::instance = js_new<ExclusiveData<DateTimeInfo>>(mutexid::DateTimeInfoMutex);
+    if (!DateTimeInfo::instance)
+        return false;
+
+    MOZ_ASSERT(!IcuTimeZoneState,
+               "we should be initializing only once");
+
+    IcuTimeZoneState = js_new<ExclusiveData<IcuTimeZoneStatus>>(mutexid::IcuTimeZoneStateMutex);
+    if (!IcuTimeZoneState) {
+        js_delete(DateTimeInfo::instance);
+        DateTimeInfo::instance = nullptr;
+        return false;
     }
 
-    void release() {
-        MOZ_ASSERT(locked, "should have been acquired");
-        locked = false;
-    }
-} TZInfo;
+    return true;
+}
 
+ void
+js::FinishDateTimeState()
+{
+    js_delete(IcuTimeZoneState);
+    IcuTimeZoneState = nullptr;
+
+    js_delete(DateTimeInfo::instance);
+    DateTimeInfo::instance = nullptr;
+}
 
 JS_PUBLIC_API(void)
 JS::ResetTimeZone()
@@ -334,9 +337,7 @@ JS::ResetTimeZone()
     js::DateTimeInfo::updateTimeZoneAdjustment();
 
 #if ENABLE_INTL_API && defined(ICU_TZ_HAS_RECREATE_DEFAULT)
-    TZInfo.acquire();
-    TZInfo.status = IcuTimeZoneInfo::NeedsUpdate;
-    TZInfo.release();
+    IcuTimeZoneState->lock().get() = IcuTimeZoneStatus::NeedsUpdate;
 #endif
 }
 
@@ -344,11 +345,10 @@ void
 js::ResyncICUDefaultTimeZone()
 {
 #if ENABLE_INTL_API && defined(ICU_TZ_HAS_RECREATE_DEFAULT)
-    TZInfo.acquire();
-    if (TZInfo.status == IcuTimeZoneInfo::NeedsUpdate) {
+    auto guard = IcuTimeZoneState->lock();
+    if (guard.get() == IcuTimeZoneStatus::NeedsUpdate) {
         icu::TimeZone::recreateDefault();
-        TZInfo.status = IcuTimeZoneInfo::Valid;
+        guard.get() = IcuTimeZoneStatus::Valid;
     }
-    TZInfo.release();
 #endif
 }
