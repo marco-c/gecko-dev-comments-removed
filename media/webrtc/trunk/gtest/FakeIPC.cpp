@@ -3,14 +3,23 @@
 
 
 #include "FakeIPC.h"
+
+#ifdef WEBRTC_WIN
+#include <Windows.h>
+#else
 #include <unistd.h>
+#endif
 
 
 
  void
 PlatformThread:: YieldCurrentThread()
 {
+#ifdef WEBRTC_WIN
+  Sleep(1);
+#else
   sleep(1);
+#endif
 }
 
 namespace base {
