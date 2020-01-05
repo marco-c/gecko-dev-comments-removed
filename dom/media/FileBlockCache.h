@@ -9,7 +9,9 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/Monitor.h"
+#include "mozilla/MozPromise.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/AbstractThread.h"
 #include "nsTArray.h"
 #include "MediaCache.h"
 #include "nsDeque.h"
@@ -62,8 +64,7 @@ protected:
   ~FileBlockCache();
 
 public:
-  
-  nsresult Open(PRFileDesc* aFD);
+  nsresult Init();
 
   
   void Close();
@@ -130,6 +131,8 @@ private:
     return static_cast<int64_t>(aBlockIndex) * BLOCK_SIZE;
   }
 
+  void SetCacheFile(PRFileDesc* aFD);
+
   
   
   
@@ -165,11 +168,20 @@ private:
   
   
   
+  RefPtr<GenericPromise::Private> mInitPromise;
+
+  
+  
+  
+  
+  
   nsTArray< RefPtr<BlockChange> > mBlockChanges;
   
   
   
   nsCOMPtr<nsIThread> mThread;
+  
+  RefPtr<AbstractThread> mAbstractThread;
   
   std::deque<int32_t> mChangeIndexList;
   
