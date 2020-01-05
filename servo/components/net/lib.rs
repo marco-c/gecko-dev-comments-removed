@@ -2,13 +2,13 @@
 
 
 
-#![feature(alloc)]
+#![feature(box_raw)]
 #![feature(box_syntax)]
-#![feature(collections)]
-#![feature(core)]
+#![feature(fnbox)]
+#![feature(mpsc_select)]
 #![feature(path_ext)]
 #![feature(plugin)]
-#![feature(std_misc)]
+#![feature(vec_push_all)]
 
 #![plugin(regex_macros)]
 

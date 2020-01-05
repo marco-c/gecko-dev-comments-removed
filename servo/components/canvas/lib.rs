@@ -3,7 +3,9 @@
 
 
 #![feature(core)]
-#![feature(collections)]
+#![feature(nonzero)]
+#![feature(slice_bytes)]
+#![feature(vec_push_all)]
 
 extern crate core;
 extern crate canvas_traits;

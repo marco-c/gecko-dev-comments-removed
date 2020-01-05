@@ -2,13 +2,16 @@
 
 
 
-#![feature(alloc)]
-#![feature(plugin)]
+#![feature(arc_unique)]
 #![feature(box_syntax)]
-#![feature(core)]
-#![feature(collections)]
-#![feature(hash)]
-#![feature(custom_attribute, custom_derive)]
+#![feature(core_intrinsics)]
+#![feature(custom_attribute)]
+#![feature(custom_derive)]
+#![feature(hasher_write)]
+#![feature(plugin)]
+#![feature(vec_push_all)]
+#![feature(vec_push_all)]
+
 #![plugin(string_cache_plugin)]
 #![plugin(plugins)]
 

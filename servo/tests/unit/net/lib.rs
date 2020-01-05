@@ -2,7 +2,7 @@
 
 
 
-#![cfg_attr(test, feature(alloc))]
+#![cfg_attr(test, feature(box_raw))]
 
 extern crate net;
 extern crate net_traits;

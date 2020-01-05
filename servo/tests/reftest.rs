@@ -7,7 +7,14 @@
 
 
 
-#![feature(collections, exit_status, fs_walk, path_ext, slice_patterns, test)]
+#![feature(append)]
+#![feature(exit_status)]
+#![feature(fs_walk)]
+#![feature(path_ext)]
+#![feature(slice_extras)]
+#![feature(slice_patterns)]
+#![feature(test)]
+
 #[macro_use] extern crate bitflags;
 extern crate png;
 extern crate test;

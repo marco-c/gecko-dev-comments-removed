@@ -3,8 +3,8 @@
 
 
 #![feature(box_syntax)]
-#![feature(collections)]
-#![feature(core)]
+#![feature(slice_bytes)]
+#![feature(vec_push_all)]
 
 #[macro_use]
 extern crate log;

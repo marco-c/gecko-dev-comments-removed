@@ -2,7 +2,7 @@
 
 
 
-#![feature(plugin, custom_derive, alloc)]
+#![feature(plugin, custom_derive, heap_api)]
 #![plugin(plugins)]
 extern crate util;
 extern crate libc;
