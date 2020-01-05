@@ -33,6 +33,15 @@ JITFLAGS = {
         ['--baseline-eager'],
     ],
     
+    
+    'tsan': [
+        ['--no-asmjs', '--no-wasm'],
+        ['--no-asmjs', '--no-wasm',
+         '--ion-eager', '--ion-offthread-compile=off', '--non-writable-jitcode',
+         '--ion-check-range-analysis', '--ion-extra-checks', '--no-sse3', '--no-threads'],
+        ['--no-asmjs', '--no-wasm', '--no-baseline', '--no-ion'],
+    ],
+    
     'interp': [
         ['--no-baseline', '--no-asmjs', '--no-wasm', '--no-native-regexp']
     ],
