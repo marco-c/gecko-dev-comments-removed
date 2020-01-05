@@ -129,8 +129,7 @@ impl AttrValue {
     }
 
     pub fn from_atomic(string: DOMString) -> AttrValue {
-        
-        let value = Atom::from(&*string);
+        let value = Atom::from(string);
         AttrValue::Atom(value)
     }
 

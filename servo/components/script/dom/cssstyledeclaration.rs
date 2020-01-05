@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 use dom::bindings::codegen::Bindings::CSSStyleDeclarationBinding::{self, CSSStyleDeclarationMethods};
 use dom::bindings::error::{Error, ErrorResult, Fallible};
@@ -21,7 +21,7 @@ use style::properties::{is_supported_property, parse_one_declaration};
 use style::selector_impl::PseudoElement;
 use util::str::{DOMString, str_join};
 
-// http://dev.w3.org/csswg/cssom/#the-cssstyledeclaration-interface
+
 #[dom_struct]
 pub struct CSSStyleDeclaration {
     reflector_: Reflector,
@@ -50,7 +50,7 @@ macro_rules! css_properties(
 );
 
 fn serialize_shorthand(shorthand: Shorthand, declarations: &[Ref<PropertyDeclaration>]) -> String {
-    // https://drafts.csswg.org/css-variables/#variables-in-shorthands
+    
     if let Some(css) = declarations[0].with_variables_from_shorthand(shorthand) {
         if declarations[1..]
                .iter()
@@ -64,9 +64,9 @@ fn serialize_shorthand(shorthand: Shorthand, declarations: &[Ref<PropertyDeclara
             String::new()
         } else {
             let str_iter = declarations.iter().map(|d| d.value());
-            // FIXME: this needs property-specific code, which probably should be in style/
-            // "as appropriate according to the grammar of shorthand "
-            // https://drafts.csswg.org/cssom/#serialize-a-css-value
+            
+            
+            
             str_join(str_iter, " ")
         }
     }
@@ -146,7 +146,7 @@ impl CSSStyleDeclarationMethods for CSSStyleDeclaration {
 
         // Step 1
         property.make_ascii_lowercase();
-        let property = Atom::from(&*property);
+        let property = Atom::from(property);
 
         if self.readonly {
             // Readonly style declarations are used for getComputedStyle.
@@ -185,7 +185,7 @@ impl CSSStyleDeclarationMethods for CSSStyleDeclaration {
     fn GetPropertyPriority(&self, mut property: DOMString) -> DOMString {
         // Step 1
         property.make_ascii_lowercase();
-        let property = Atom::from(&*property);
+        let property = Atom::from(property);
 
         // Step 2
         if let Some(shorthand) = Shorthand::from_name(&property) {
@@ -347,13 +347,13 @@ impl CSSStyleDeclarationMethods for CSSStyleDeclaration {
         self.SetPropertyValue(DOMString::from("float"), value)
     }
 
-    // https://dev.w3.org/csswg/cssom/#the-cssstyledeclaration-interface
+    
     fn IndexedGetter(&self, index: u32, found: &mut bool) -> DOMString {
         let rval = self.Item(index);
         *found = index < self.Length();
         rval
     }
 
-    // https://drafts.csswg.org/cssom/#cssstyledeclaration
+    
     css_properties_accessors!(css_properties);
 }
