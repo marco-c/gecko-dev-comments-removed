@@ -26,7 +26,6 @@ function fullZoomObserver(aSubject, aTopic) {
     return;
   }
 
-  
   let animate = (aTopic != "browser-fullZoom:location-change");
   updateZoomButton(aSubject, animate);
 }
@@ -35,7 +34,17 @@ function onEndSwapDocShells(event) {
   updateZoomButton(event.originalTarget);
 }
 
-function updateZoomButton(aBrowser, aAnimate = false) {
+  
+
+
+
+
+
+
+
+
+
+function updateZoomButton(aBrowser, aAnimate = false, aValue = undefined) {
   let win = aBrowser.ownerGlobal;
   if (aBrowser != win.gBrowser.selectedBrowser) {
     return;
@@ -51,7 +60,7 @@ function updateZoomButton(aBrowser, aAnimate = false) {
     return;
   }
 
-  let zoomFactor = Math.round(win.ZoomManager.zoom * 100);
+  let zoomFactor = Math.round((aValue || win.ZoomManager.zoom) * 100);
   if (zoomFactor != 100) {
     
     if (zoomResetButton.hidden) {
@@ -73,3 +82,6 @@ function updateZoomButton(aBrowser, aAnimate = false) {
 Services.obs.addObserver(fullZoomObserver, "browser-fullZoom:zoomChange", false);
 Services.obs.addObserver(fullZoomObserver, "browser-fullZoom:zoomReset", false);
 Services.obs.addObserver(fullZoomObserver, "browser-fullZoom:location-change", false);
+Services.mm.addMessageListener("SyntheticDocument:ZoomChange", function(aMessage) {
+  updateZoomButton(aMessage.target, true, aMessage.data.value);
+});
