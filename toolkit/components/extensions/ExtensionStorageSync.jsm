@@ -182,96 +182,21 @@ const cryptoCollectionIdSchema = {
   },
 };
 
-
-
-
-const cryptoCollection = this.cryptoCollection = {
-  getCollection: Task.async(function* () {
-    const {kinto} = yield storageSyncInit;
-    return kinto.collection(STORAGE_SYNC_CRYPTO_COLLECTION_NAME, {
-      idSchema: cryptoCollectionIdSchema,
-      remoteTransformers: [new KeyRingEncryptionRemoteTransformer()],
-    });
-  }),
-
+let cryptoCollection, CollectionKeyEncryptionRemoteTransformer;
+if (AppConstants.platform != "android") {
   
 
 
+  cryptoCollection = this.cryptoCollection = {
+    getCollection: Task.async(function* () {
+      const {kinto} = yield storageSyncInit;
+      return kinto.collection(STORAGE_SYNC_CRYPTO_COLLECTION_NAME, {
+        idSchema: cryptoCollectionIdSchema,
+        remoteTransformers: [new KeyRingEncryptionRemoteTransformer()],
+      });
+    }),
 
-
-
-
-
-  getKeyRingRecord: Task.async(function* () {
-    const collection = yield this.getCollection();
-    const cryptoKeyRecord = yield collection.getAny(STORAGE_SYNC_CRYPTO_KEYRING_RECORD_ID);
-
-    let data = cryptoKeyRecord.data;
-    if (!data) {
-      
-      
-      
-      const uuidgen = Cc["@mozilla.org/uuid-generator;1"].getService(Ci.nsIUUIDGenerator);
-      const uuid = uuidgen.generateUUID();
-      data = {uuid};
-    }
-    return data;
-  }),
-
-  
-
-
-
-
-  getKeyRing: Task.async(function* () {
-    const cryptoKeyRecord = yield this.getKeyRingRecord();
-    const collectionKeys = new CollectionKeyManager();
-    if (cryptoKeyRecord.keys) {
-      collectionKeys.setContents(cryptoKeyRecord.keys, cryptoKeyRecord.last_modified);
-    } else {
-      
-      
-      collectionKeys.generateDefaultKey();
-    }
     
-    collectionKeys.uuid = cryptoKeyRecord.uuid;
-    return collectionKeys;
-  }),
-
-  updateKBHash: Task.async(function* (kbHash) {
-    const coll = yield this.getCollection();
-    yield coll.update({id: STORAGE_SYNC_CRYPTO_KEYRING_RECORD_ID,
-                       kbHash: kbHash},
-                      {patch: true});
-  }),
-
-  upsert: Task.async(function* (record) {
-    const collection = yield this.getCollection();
-    yield collection.upsert(record);
-  }),
-
-  sync: Task.async(function* () {
-    const collection = yield this.getCollection();
-    return yield ExtensionStorageSync._syncCollection(collection, {
-      strategy: "server_wins",
-    });
-  }),
-
-  
-
-
-
-  resetSyncStatus: Task.async(function* () {
-    const coll = yield this.getCollection();
-    yield coll.db.resetSyncStatus();
-  }),
-
-  
-  _clear: Task.async(function* () {
-    const collection = yield this.getCollection();
-    yield collection.clear();
-  }),
-};
 
 
 
@@ -279,28 +204,105 @@ const cryptoCollection = this.cryptoCollection = {
 
 
 
-class CollectionKeyEncryptionRemoteTransformer extends EncryptionRemoteTransformer {
-  constructor(extensionId) {
-    super();
-    this.extensionId = extensionId;
-  }
+    getKeyRingRecord: Task.async(function* () {
+      const collection = yield this.getCollection();
+      const cryptoKeyRecord = yield collection.getAny(STORAGE_SYNC_CRYPTO_KEYRING_RECORD_ID);
 
-  getKeys() {
-    const self = this;
-    return Task.spawn(function* () {
-      
-      const collectionKeys = yield cryptoCollection.getKeyRing();
-      if (!collectionKeys.hasKeysFor([self.extensionId])) {
+      let data = cryptoKeyRecord.data;
+      if (!data) {
         
         
-        throw new Error(`tried to encrypt records for ${this.extensionId}, but key is not present`);
+        
+        const uuidgen = Cc["@mozilla.org/uuid-generator;1"].getService(Ci.nsIUUIDGenerator);
+        const uuid = uuidgen.generateUUID();
+        data = {uuid};
       }
-      return collectionKeys.keyForCollection(self.extensionId);
-    });
-  }
-}
-global.CollectionKeyEncryptionRemoteTransformer = CollectionKeyEncryptionRemoteTransformer;
+      return data;
+    }),
 
+    
+
+
+
+
+    getKeyRing: Task.async(function* () {
+      const cryptoKeyRecord = yield this.getKeyRingRecord();
+      const collectionKeys = new CollectionKeyManager();
+      if (cryptoKeyRecord.keys) {
+        collectionKeys.setContents(cryptoKeyRecord.keys, cryptoKeyRecord.last_modified);
+      } else {
+        
+        
+        collectionKeys.generateDefaultKey();
+      }
+      
+      collectionKeys.uuid = cryptoKeyRecord.uuid;
+      return collectionKeys;
+    }),
+
+    updateKBHash: Task.async(function* (kbHash) {
+      const coll = yield this.getCollection();
+      yield coll.update({id: STORAGE_SYNC_CRYPTO_KEYRING_RECORD_ID,
+                         kbHash: kbHash},
+                        {patch: true});
+    }),
+
+    upsert: Task.async(function* (record) {
+      const collection = yield this.getCollection();
+      yield collection.upsert(record);
+    }),
+
+    sync: Task.async(function* () {
+      const collection = yield this.getCollection();
+      return yield ExtensionStorageSync._syncCollection(collection, {
+        strategy: "server_wins",
+      });
+    }),
+
+    
+
+
+
+    resetSyncStatus: Task.async(function* () {
+      const coll = yield this.getCollection();
+      yield coll.db.resetSyncStatus();
+    }),
+
+    
+    _clear: Task.async(function* () {
+      const collection = yield this.getCollection();
+      yield collection.clear();
+    }),
+  };
+
+  
+
+
+
+
+
+  CollectionKeyEncryptionRemoteTransformer = class extends EncryptionRemoteTransformer {
+    constructor(extensionId) {
+      super();
+      this.extensionId = extensionId;
+    }
+
+    getKeys() {
+      const self = this;
+      return Task.spawn(function* () {
+        
+        const collectionKeys = yield cryptoCollection.getKeyRing();
+        if (!collectionKeys.hasKeysFor([self.extensionId])) {
+          
+          
+          throw new Error(`tried to encrypt records for ${this.extensionId}, but key is not present`);
+        }
+        return collectionKeys.keyForCollection(self.extensionId);
+      });
+    }
+  };
+  global.CollectionKeyEncryptionRemoteTransformer = CollectionKeyEncryptionRemoteTransformer;
+}
 
 
 
@@ -336,9 +338,13 @@ function cleanUpForContext(extension, context) {
 const openCollection = Task.async(function* (extension, context) {
   let collectionId = extension.id;
   const {kinto} = yield storageSyncInit;
+  const remoteTransformers = [];
+  if (CollectionKeyEncryptionRemoteTransformer) {
+    remoteTransformers.push(new CollectionKeyEncryptionRemoteTransformer(extension.id));
+  }
   const coll = kinto.collection(collectionId, {
     idSchema: storageSyncIdSchema,
-    remoteTransformers: [new CollectionKeyEncryptionRemoteTransformer(extension.id)],
+    remoteTransformers,
   });
   return coll;
 });
@@ -365,8 +371,26 @@ function extensionIdToCollectionId(user, extensionId) {
   return CommonUtils.bytesAsHex(hasher.finish(false));
 }
 
+
+
+
+
+function ensureCryptoCollection() {
+  if (!cryptoCollection) {
+    throw new Error("Call to ensureKeysFor, but no sync code; are you on Android?");
+  }
+}
+
+
+
+
+let _fxaService = null;
+if (AppConstants.platform != "android") {
+  _fxaService = fxAccounts;
+}
+
 this.ExtensionStorageSync = {
-  _fxaService: fxAccounts,
+  _fxaService,
   listeners: new WeakMap(),
 
   syncAll: Task.async(function* () {
@@ -512,6 +536,8 @@ this.ExtensionStorageSync = {
 
 
   ensureKeysFor: Task.async(function* (extIds) {
+    ensureCryptoCollection();
+
     const collectionKeys = yield cryptoCollection.getKeyRing();
     if (collectionKeys.hasKeysFor(extIds)) {
       return collectionKeys;
@@ -565,6 +591,8 @@ this.ExtensionStorageSync = {
 
 
   updateKeyRingKB: Task.async(function* () {
+    ensureCryptoCollection();
+
     const signedInUser = yield this._fxaService.getSignedInUser();
     if (!signedInUser) {
       
@@ -589,6 +617,8 @@ this.ExtensionStorageSync = {
 
 
   checkSyncKeyRing: Task.async(function* () {
+    ensureCryptoCollection();
+
     yield this.updateKeyRingKB();
 
     const cryptoKeyRecord = yield cryptoCollection.getKeyRingRecord();
@@ -603,6 +633,8 @@ this.ExtensionStorageSync = {
   }),
 
   _syncKeyRing: Task.async(function* (cryptoKeyRecord) {
+    ensureCryptoCollection();
+
     try {
       
       
