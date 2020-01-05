@@ -592,13 +592,26 @@ var LoginManagerContent = {
 
 
 
-  _getPasswordFields(form, skipEmptyFields = false) {
+
+
+  _getPasswordFields(form, {
+    fieldOverrideRecipe = null,
+    skipEmptyFields = false,
+  } = {}) {
     
     let pwFields = [];
     for (let i = 0; i < form.elements.length; i++) {
       let element = form.elements[i];
       if (!(element instanceof Ci.nsIDOMHTMLInputElement) ||
           element.type != "password") {
+        continue;
+      }
+
+      
+      if (fieldOverrideRecipe && fieldOverrideRecipe.notPasswordSelector &&
+          element.matches(fieldOverrideRecipe.notPasswordSelector)) {
+        log("skipping password field (id/name is", element.id, " / ",
+            element.name + ") due to recipe:", fieldOverrideRecipe);
         continue;
       }
 
@@ -675,7 +688,10 @@ var LoginManagerContent = {
     if (!pwFields) {
       
       
-      pwFields = this._getPasswordFields(form, isSubmission);
+      pwFields = this._getPasswordFields(form, {
+        fieldOverrideRecipe,
+        skipEmptyFields: isSubmission,
+      });
     }
 
     if (!pwFields) {
