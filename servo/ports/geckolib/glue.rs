@@ -2,8 +2,6 @@
 
 
 
-#![allow(unsafe_code)]
-
 use app_units::Au;
 use env_logger;
 use euclid::Size2D;
