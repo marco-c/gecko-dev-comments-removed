@@ -58,6 +58,7 @@
 #include "mozilla/dom/MessageEventBinding.h"
 #include "mozilla/dom/MessagePort.h"
 #include "mozilla/dom/MessagePortBinding.h"
+#include "mozilla/dom/nsCSPUtils.h"
 #include "mozilla/dom/Performance.h"
 #include "mozilla/dom/PMessagePort.h"
 #include "mozilla/dom/Promise.h"
@@ -2590,6 +2591,57 @@ WorkerPrivateParent<Derived>::GetDocument() const
   }
   
   return nullptr;
+}
+
+template <class Derived>
+nsresult
+WorkerPrivateParent<Derived>::SetCSPFromHeaderValues(const nsACString& aCSPHeaderValue,
+                                                     const nsACString& aCSPReportOnlyHeaderValue)
+{
+  AssertIsOnMainThread();
+  MOZ_DIAGNOSTIC_ASSERT(!mLoadInfo.mCSP);
+
+  NS_ConvertASCIItoUTF16 cspHeaderValue(aCSPHeaderValue);
+  NS_ConvertASCIItoUTF16 cspROHeaderValue(aCSPReportOnlyHeaderValue);
+
+  nsCOMPtr<nsIContentSecurityPolicy> csp;
+  nsresult rv = mLoadInfo.mPrincipal->EnsureCSP(nullptr, getter_AddRefs(csp));
+  if (!csp) {
+    return NS_OK;
+  }
+
+  
+  if (!cspHeaderValue.IsEmpty()) {
+    rv = CSP_AppendCSPFromHeader(csp, cspHeaderValue, false);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+  
+  if (!cspROHeaderValue.IsEmpty()) {
+    rv = CSP_AppendCSPFromHeader(csp, cspROHeaderValue, true);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+
+  
+  bool evalAllowed = false;
+  bool reportEvalViolations = false;
+  rv = csp->GetAllowsEval(&reportEvalViolations, &evalAllowed);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  bool hasReferrerPolicy = false;
+  uint32_t rp = mozilla::net::RP_Unset;
+  rv = csp->GetReferrerPolicy(&rp, &hasReferrerPolicy);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  mLoadInfo.mCSP = csp;
+  mLoadInfo.mEvalAllowed = evalAllowed;
+  mLoadInfo.mReportCSPViolations = reportEvalViolations;
+
+  if (hasReferrerPolicy) {
+    mLoadInfo.mReferrerPolicy = static_cast<net::ReferrerPolicy>(rp);
+  }
+
+  return NS_OK;
 }
 
 
