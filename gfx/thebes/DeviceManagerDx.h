@@ -78,16 +78,20 @@ public:
 
   
   
-  bool GetAnyDeviceRemovedReason(DeviceResetReason* aOutReason);
-
-  
-  
   
   bool MaybeResetAndReacquireDevices();
 
   
   
   bool CheckRemotePresentSupport();
+
+  
+  bool HasDeviceReset(DeviceResetReason* aOutReason = nullptr);
+
+  
+  
+  void ForceDeviceReset(ForcedDeviceResetReason aReason);
+  void NotifyD3D9DeviceReset();
 
 private:
   IDXGIAdapter1 *GetDXGIAdapter();
@@ -116,6 +120,10 @@ private:
   bool LoadD3D11();
   void ReleaseD3D11();
 
+  
+  
+  bool GetAnyDeviceRemovedReason(DeviceResetReason* aOutReason);
+
 private:
   static StaticAutoPtr<DeviceManagerDx> sInstance;
 
@@ -136,6 +144,8 @@ private:
 
   nsModuleHandle mDirectDrawDLL;
   RefPtr<IDirectDraw7> mDirectDraw;
+
+  Maybe<DeviceResetReason> mDeviceResetReason;
 };
 
 } 

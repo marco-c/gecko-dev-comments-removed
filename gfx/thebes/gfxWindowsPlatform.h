@@ -153,11 +153,6 @@ public:
     
 
 
-    void ForceDeviceReset(ForcedDeviceResetReason aReason);
-
-    
-
-
 
 
 
@@ -211,8 +206,6 @@ public:
     { return mRenderingParams[aRenderMode]; }
 
 public:
-    void D3D9DeviceReset();
-
     bool DwmCompositionEnabled();
 
     mozilla::layers::ReadbackManagerD3D11* GetReadbackManager();
@@ -228,8 +221,6 @@ public:
     
     bool HandleDeviceReset();
     void UpdateBackendPrefs();
-
-    void TestDeviceReset(DeviceResetReason aReason);
 
     virtual already_AddRefed<mozilla::gfx::VsyncSource> CreateHardwareVsyncSource() override;
     static mozilla::Atomic<size_t> sD3D11SharedTextures;
@@ -281,11 +272,6 @@ private:
     RefPtr<IDWriteFactory> mDWriteFactory;
     RefPtr<IDWriteRenderingParams> mRenderingParams[TEXT_RENDERING_COUNT];
     DWRITE_MEASURING_MODE mMeasuringMode;
-
-    bool mHasDeviceReset;
-    bool mHasFakeDeviceReset;
-    mozilla::Atomic<bool> mHasD3D9DeviceReset;
-    DeviceResetReason mDeviceResetReason;
 
     RefPtr<mozilla::layers::ReadbackManagerD3D11> mD3D11ReadbackManager;
 
