@@ -228,15 +228,22 @@ WebConsoleConnectionProxy.prototype = {
   
 
 
-  dispatchMessageAdd: function(packet) {
+  dispatchMessageAdd: function (packet) {
     this.webConsoleFrame.newConsoleOutput.dispatchMessageAdd(packet);
   },
 
   
 
 
-  dispatchMessagesAdd: function(packets) {
+  dispatchMessagesAdd: function (packets) {
     this.webConsoleFrame.newConsoleOutput.dispatchMessagesAdd(packets);
+  },
+
+  
+
+
+  dispatchMessageUpdate: function (networkInfo, response) {
+    this.webConsoleFrame.newConsoleOutput.dispatchMessageUpdate(networkInfo, response);
   },
 
   
@@ -363,10 +370,12 @@ WebConsoleConnectionProxy.prototype = {
 
 
 
-
-
-  _onNetworkEventUpdate: function (type, { packet, networkInfo }) {
+  _onNetworkEventUpdate: function (type, response) {
+    let { packet, networkInfo } = response;
     if (this.webConsoleFrame) {
+      if (this.webConsoleFrame.NEW_CONSOLE_OUTPUT_ENABLED) {
+        this.dispatchMessageUpdate(networkInfo, response);
+      }
       this.webConsoleFrame.handleNetworkEventUpdate(networkInfo, packet);
     }
   },

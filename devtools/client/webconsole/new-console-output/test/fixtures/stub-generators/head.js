@@ -133,31 +133,9 @@ function formatStub(key, packet) {
   return `stubPreparedMessages.set("${key}", new ConsoleMessage(${stringifiedMessage}));`;
 }
 
-function formatNetworkStub(key, packet) {
-  let actor = packet.eventActor;
-  let networkInfo = {
-    _type: "NetworkEvent",
-    timeStamp: actor.timeStamp,
-    node: null,
-    actor: actor.actor,
-    discardRequestBody: true,
-    discardResponseBody: true,
-    startedDateTime: actor.startedDateTime,
-    request: {
-      url: actor.url,
-      method: actor.method,
-    },
-    isXHR: actor.isXHR,
-    cause: actor.cause,
-    response: {},
-    timings: {},
-    
-    updates: [],
-    private: actor.private,
-    fromCache: actor.fromCache,
-    fromServiceWorker: actor.fromServiceWorker
-  };
-  let prepared = prepareMessage(networkInfo, {getNextId: () => "1"});
+function formatNetworkEventStub(key, packet) {
+  let networkInfo = packet.actor ? packet : packet.networkInfo;
+  let prepared = prepareMessage(networkInfo, {getNextId: () => networkInfo.actor});
   let stringifiedMessage = JSON.stringify(prepared, null, 2);
   return `stubPreparedMessages.set("${key}", ` +
     `new NetworkEventMessage(${stringifiedMessage}));`;
