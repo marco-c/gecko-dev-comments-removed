@@ -8,7 +8,6 @@ use pipeline::CompositionPipeline;
 
 use azure::azure_hl::Color;
 use geom::point::TypedPoint2D;
-use geom::scale_factor::ScaleFactor;
 use geom::size::{Size2D, TypedSize2D};
 use gfx::render_task::UnusedBufferMsg;
 use layers::layers::{Layer, LayerBufferSet};
@@ -16,7 +15,7 @@ use layers::platform::surface::NativeSurfaceMethods;
 use servo_msg::compositor_msg::{Epoch, LayerId};
 use servo_msg::compositor_msg::ScrollPolicy;
 use servo_msg::constellation_msg::PipelineId;
-use servo_util::geometry::PagePx;
+use servo_util::geometry::DevicePixel;
 use std::rc::Rc;
 
 pub struct CompositorData {
@@ -25,10 +24,6 @@ pub struct CompositorData {
 
     
     pub id: LayerId,
-
-    
-    
-    pub scroll_offset: TypedPoint2D<PagePx, f32>,
 
     
     pub wants_scroll_events: WantsScrollEventsFlag,
@@ -59,7 +54,6 @@ impl CompositorData {
         let new_compositor_data = CompositorData {
             pipeline: pipeline,
             id: layer_properties.id,
-            scroll_offset: TypedPoint2D(0f32, 0f32),
             wants_scroll_events: wants_scroll_events,
             scroll_policy: layer_properties.scroll_policy,
             background_color: layer_properties.background_color,
@@ -77,14 +71,11 @@ impl CompositorData {
 
         
         
-        
-        
-        let size: TypedSize2D<PagePx, f32> = Size2D::from_untyped(&layer.bounds.borrow().size);
+        let size: TypedSize2D<DevicePixel, f32> = Size2D::from_untyped(&layer.bounds.borrow().size);
         events::handle_scroll_event(layer.clone(),
                                     TypedPoint2D(0f32, 0f32),
                                     TypedPoint2D(-1f32, -1f32),
-                                    size,
-                                    ScaleFactor(1.0));
+                                    size);
     }
 
     pub fn find_layer_with_pipeline_and_layer_id(layer: Rc<Layer<CompositorData>>,
