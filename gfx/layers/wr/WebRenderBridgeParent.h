@@ -68,7 +68,7 @@ public:
                                             const uint32_t& aHeight,
                                             InfallibleTArray<uint8_t>* aOutImageSnapshot) override;
 
-  void ActorDestroy(ActorDestroyReason aWhy) override {}
+  void ActorDestroy(ActorDestroyReason aWhy) override;
 
   
   bool IsPendingComposite() override { return false; }
@@ -80,6 +80,7 @@ protected:
   void DeleteOldImages();
   void ProcessWebrenderCommands(InfallibleTArray<WebRenderCommand>& commands);
   void ScheduleComposition();
+  void ClearResources();
 
 private:
   
