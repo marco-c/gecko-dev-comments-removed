@@ -287,6 +287,10 @@ public:
 
   const nsMappedAttributes* GetMappedAttributes() const;
 
+  void ClearMappedServoStyle() {
+    mAttrsAndChildren.ClearMappedServoStyle();
+  }
+
   
 
 

@@ -55,6 +55,7 @@
 #include "nsGlobalWindow.h"
 #include "nsPIWindowRoot.h"
 #include "nsLayoutUtils.h"
+#include "nsMappedAttributes.h"
 #include "nsView.h"
 #include "GroupedSHistory.h"
 #include "PartialSHistory.h"
@@ -1205,9 +1206,25 @@ nsFrameLoader::MarginsChanged(uint32_t aMarginWidth,
 
   
   
+  if (nsIDocument* doc = mDocShell->GetDocument()) {
+    
+    
+    if (doc->GetStyleBackendType() == StyleBackendType::Servo) {
+      for (nsINode* cur = doc; cur; cur = cur->GetNextNode()) {
+        if (cur->IsHTMLElement(nsGkAtoms::body)) {
+          static_cast<HTMLBodyElement*>(cur)->ClearMappedServoStyle();
+        }
+      }
+    }
+  }
+
+  
+  
   RefPtr<nsPresContext> presContext;
   mDocShell->GetPresContext(getter_AddRefs(presContext));
   if (presContext)
+    
+    
     presContext->RebuildAllStyleData(nsChangeHint(0), eRestyle_Subtree);
 }
 
