@@ -1,14 +1,17 @@
 
 
 
+
 "use strict";
 
 const {utils: Cu} = Components;
 
 const {redux} = Cu.import("resource://activity-stream/vendor/Redux.jsm", {});
-const {actionTypes: at} = Cu.import("resource://activity-stream/common/Actions.jsm", {});
 const {reducers} = Cu.import("resource://activity-stream/common/Reducers.jsm", {});
 const {ActivityStreamMessageChannel} = Cu.import("resource://activity-stream/lib/ActivityStreamMessageChannel.jsm", {});
+
+const PREF_PREFIX = "browser.newtabpage.activity-stream.";
+Cu.import("resource://gre/modules/Preferences.jsm");
 
 
 
@@ -32,7 +35,9 @@ this.Store = class Store {
         return this._store[method](...args);
       }.bind(this);
     });
-    this.feeds = new Set();
+    this.feeds = new Map();
+    this._feedFactories = null;
+    this._prefHandlers = new Map();
     this._messageChannel = new ActivityStreamMessageChannel({dispatch: this.dispatch});
     this._store = redux.createStore(
       redux.combineReducers(reducers),
@@ -58,15 +63,71 @@ this.Store = class Store {
 
 
 
-  init(feeds) {
-    if (feeds) {
-      feeds.forEach(subscriber => {
-        subscriber.store = this;
-        this.feeds.add(subscriber);
-      });
+  initFeed(feedName) {
+    const feed = this._feedFactories[feedName]();
+    feed.store = this;
+    this.feeds.set(feedName, feed);
+  }
+
+  
+
+
+
+
+
+  uninitFeed(feedName) {
+    const feed = this.feeds.get(feedName);
+    if (!feed) {
+      return;
+    }
+    if (feed.uninit) {
+      feed.uninit();
+    }
+    this.feeds.delete(feedName);
+  }
+
+  
+
+
+
+
+
+
+
+  maybeStartFeedAndListenForPrefChanges(name) {
+    const prefName = PREF_PREFIX + name;
+
+    
+    if (!Preferences.has(prefName)) {
+      Preferences.set(prefName, true);
+    }
+
+    
+    
+    const onPrefChanged = isEnabled => (isEnabled ? this.initFeed(name) : this.uninitFeed(name));
+    this._prefHandlers.set(prefName, onPrefChanged);
+    Preferences.observe(prefName, onPrefChanged);
+
+    
+    
+    if (Preferences.get(prefName)) {
+      this.initFeed(name);
+    }
+  }
+
+  
+
+
+
+
+  init(feedConstructors) {
+    if (feedConstructors) {
+      this._feedFactories = feedConstructors;
+      for (const name of Object.keys(feedConstructors)) {
+        this.maybeStartFeedAndListenForPrefChanges(name);
+      }
     }
     this._messageChannel.createChannel();
-    this.dispatch({type: at.INIT});
   }
 
   
@@ -76,10 +137,14 @@ this.Store = class Store {
 
 
   uninit() {
+    this.feeds.forEach(feed => this.uninitFeed(feed));
+    this._prefHandlers.forEach((handler, pref) => Preferences.ignore(pref, handler));
+    this._prefHandlers.clear();
+    this._feedFactories = null;
     this.feeds.clear();
-    this.dispatch({type: at.UNINIT});
     this._messageChannel.destroyChannel();
   }
 };
 
-this.EXPORTED_SYMBOLS = ["Store"];
+this.PREF_PREFIX = PREF_PREFIX;
+this.EXPORTED_SYMBOLS = ["Store", "PREF_PREFIX"];

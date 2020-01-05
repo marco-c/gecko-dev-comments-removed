@@ -1,13 +1,35 @@
 
 
 
+
+
 "use strict";
 
 const {utils: Cu} = Components;
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 const {Store} = Cu.import("resource://activity-stream/lib/Store.jsm", {});
+const {actionTypes: at} = Cu.import("resource://activity-stream/common/Actions.jsm", {});
 
 
-const {NewTabInit} = Cu.import("resource://activity-stream/lib/NewTabInit.jsm", {});
+XPCOMUtils.defineLazyModuleGetter(this, "NewTabInit",
+  "resource://activity-stream/lib/NewTabInit.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "TopSitesFeed",
+  "resource://activity-stream/lib/TopSitesFeed.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "SearchFeed",
+  "resource://activity-stream/lib/SearchFeed.jsm");
+
+const feeds = {
+  
+  
+  
+  
+  
+  
+  
+  "feeds.newtabinit": () => new NewTabInit(),
+  "feeds.topsites": () => new TopSitesFeed(),
+  "feeds.search": () => new SearchFeed()
+};
 
 this.ActivityStream = class ActivityStream {
 
@@ -23,14 +45,15 @@ this.ActivityStream = class ActivityStream {
     this.initialized = false;
     this.options = options;
     this.store = new Store();
+    this.feeds = feeds;
   }
   init() {
     this.initialized = true;
-    this.store.init([
-      new NewTabInit()
-    ]);
+    this.store.init(this.feeds);
+    this.store.dispatch({type: at.INIT});
   }
   uninit() {
+    this.store.dispatch({type: at.UNINIT});
     this.store.uninit();
     this.initialized = false;
   }

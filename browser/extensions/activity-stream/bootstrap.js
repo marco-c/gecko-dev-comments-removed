@@ -7,10 +7,12 @@
 const {utils: Cu} = Components;
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Preferences.jsm");
+Cu.import("resource://gre/modules/Services.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "ActivityStream",
   "resource://activity-stream/lib/ActivityStream.jsm");
 
+const BROWSER_READY_NOTIFICATION = "browser-ui-startup-complete";
 const ACTIVITY_STREAM_ENABLED_PREF = "browser.newtabpage.activity-stream.enabled";
 const REASON_STARTUP_ON_PREF_CHANGE = "PREF_ON";
 const REASON_SHUTDOWN_ON_PREF_CHANGE = "PREF_OFF";
@@ -19,6 +21,7 @@ const ACTIVITY_STREAM_OPTIONS = {newTabURL: "about:newtab"};
 
 let activityStream;
 let startupData;
+let startupReason;
 
 
 
@@ -64,27 +67,38 @@ function onPrefChanged(isEnabled) {
   }
 }
 
+function observe(subject, topic, data) {
+  switch (topic) {
+    case BROWSER_READY_NOTIFICATION:
+      
+      Preferences.observe(ACTIVITY_STREAM_ENABLED_PREF, onPrefChanged);
+      
+      if (Preferences.get(ACTIVITY_STREAM_ENABLED_PREF)) {
+        init(startupReason);
+        Services.obs.removeObserver(this, BROWSER_READY_NOTIFICATION);
+      }
+      break;
+  }
+}
+
 
 
 this.install = function install(data, reason) {};
 
 this.startup = function startup(data, reason) {
   
+  Services.obs.addObserver(observe, BROWSER_READY_NOTIFICATION);
+
+  
   
   startupData = data;
-
-  
-  Preferences.observe(ACTIVITY_STREAM_ENABLED_PREF, onPrefChanged);
-
-  
-  if (Preferences.get(ACTIVITY_STREAM_ENABLED_PREF)) {
-    init(reason);
-  }
+  startupReason = reason;
 };
 
 this.shutdown = function shutdown(data, reason) {
   
   startupData = null;
+  startupReason = null;
   uninit(reason);
 
   

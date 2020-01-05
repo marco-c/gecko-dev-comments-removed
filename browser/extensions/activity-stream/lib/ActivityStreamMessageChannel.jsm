@@ -33,6 +33,7 @@ const DEFAULT_OPTIONS = {
 };
 
 this.ActivityStreamMessageChannel = class ActivityStreamMessageChannel {
+
   
 
 
@@ -183,13 +184,17 @@ this.ActivityStreamMessageChannel = class ActivityStreamMessageChannel {
 
 
   onMessage(msg) {
-    const action = msg.data;
     const {portID} = msg.target;
-    if (!action || !action.type) {
+    if (!msg.data || !msg.data.type) {
       Cu.reportError(new Error(`Received an improperly formatted message from ${portID}`));
       return;
     }
-    this.onActionFromContent(action, msg.target.portID);
+    let action = {};
+    Object.assign(action, msg.data);
+    
+    
+    action._target = msg.target;
+    this.onActionFromContent(action, portID);
   }
 }
 
