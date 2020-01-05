@@ -1519,9 +1519,9 @@ function getFontPreviewData(font, doc, options) {
   
   ctx.font = fontValue;
   ctx.fillStyle = fillStyle;
-  let textWidth = ctx.measureText(previewText).width;
+  let textWidth = Math.round(ctx.measureText(previewText).width);
 
-  canvas.width = textWidth * 2 + FONT_PREVIEW_OFFSET * 2;
+  canvas.width = textWidth * 2 + FONT_PREVIEW_OFFSET * 4;
   canvas.height = previewFontSize * 3;
 
   
