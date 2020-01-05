@@ -56,6 +56,7 @@ public:
   void SetAxis(uint32_t aAxis, double aValue);
   void SetIndex(uint32_t aIndex);
   void SetPose(const GamepadPoseState& aPose);
+  void SetHand(GamepadHand aHand);
 
   
   void SyncState(Gamepad* aOther);
