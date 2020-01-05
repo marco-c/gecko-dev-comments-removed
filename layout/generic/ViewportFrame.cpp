@@ -8,7 +8,8 @@
 
 
 
-#include "nsViewportFrame.h"
+#include "mozilla/ViewportFrame.h"
+
 #include "nsGkAtoms.h"
 #include "nsIScrollableFrame.h"
 #include "nsSubDocumentFrame.h"

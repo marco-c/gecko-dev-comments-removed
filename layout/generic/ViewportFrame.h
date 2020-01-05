@@ -8,8 +8,8 @@
 
 
 
-#ifndef nsViewportFrame_h___
-#define nsViewportFrame_h___
+#ifndef mozilla_ViewportFrame_h
+#define mozilla_ViewportFrame_h
 
 #include "mozilla/Attributes.h"
 #include "nsContainerFrame.h"
