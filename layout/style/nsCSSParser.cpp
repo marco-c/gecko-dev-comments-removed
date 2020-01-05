@@ -6936,7 +6936,12 @@ CSSParserImpl::ParseHue(float& aAngle)
   
   
   if (ParseSingleTokenVariant(angleValue, VARIANT_ANGLE, nullptr)) {
+    
     aAngle = angleValue.GetAngleValueInDegrees();
+    
+    aAngle = mozilla::clamped(aAngle,
+                              -std::numeric_limits<float>::max(),
+                               std::numeric_limits<float>::max());
     return true;
   }
 
