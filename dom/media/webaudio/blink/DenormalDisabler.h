@@ -165,6 +165,4 @@ public:
 #endif
 
 } 
-
-#undef HAVE_DENORMAL
 #endif 

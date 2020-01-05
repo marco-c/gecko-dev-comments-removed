@@ -28,6 +28,8 @@
 
 #include "Biquad.h"
 
+#include "DenormalDisabler.h"
+
 #include <float.h>
 #include <algorithm>
 #include <math.h>
@@ -76,15 +78,16 @@ void Biquad::process(const float* sourceP, float* destP, size_t framesToProcess)
 
     
     
-    
     if (x1 == 0.0 && x2 == 0.0 && (y1 != 0.0 || y2 != 0.0) &&
         fabs(y1) < FLT_MIN && fabs(y2) < FLT_MIN) {
       
       y1 = y2 = 0.0;
       
+      #ifndef HAVE_DENORMAL
       for (int i = framesToProcess; i-- && fabsf(destP[i]) < FLT_MIN; ) {
         destP[i] = 0.0f;
       }
+      #endif
     }
     
     m_x1 = x1;
