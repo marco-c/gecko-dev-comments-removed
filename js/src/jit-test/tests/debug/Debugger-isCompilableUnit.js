@@ -20,7 +20,7 @@ const compilable_units = [
    "'Get Schwifty!'",
    "1 + 2",
    "function f(x) {}",
-   "function x(f,) {", 
+   "function x(...f,) {", 
    "let x = 100",
    ";;;;;;;;",
    "",
