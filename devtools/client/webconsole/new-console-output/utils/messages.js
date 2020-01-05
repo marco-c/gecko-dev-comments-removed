@@ -76,7 +76,10 @@ function transformPacket(packet) {
           break;
         case "timeEnd":
           parameters = null;
-          if (timer) {
+          if (timer && timer.error) {
+            messageText = l10n.getFormatStr(timer.error, [timer.name]);
+            level = MESSAGE_LEVEL.WARN;
+          } else if (timer) {
             
             
             let duration = Math.round(timer.duration * 100) / 100;

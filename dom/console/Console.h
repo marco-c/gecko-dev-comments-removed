@@ -260,13 +260,18 @@ private:
   bool
   UnstoreGroupName(nsAString& aName);
 
-  enum StartTimerStatus {
+  enum TimerStatus {
     eTimerUnknown,
-    eTimerStarted,
+    eTimerDone,
     eTimerAlreadyExists,
+    eTimerDoesntExist,
     eTimerJSException,
     eTimerMaxReached,
   };
+
+  JS::Value
+  CreateTimerError(JSContext* aCx, const nsAString& aTimerLabel,
+                   TimerStatus aStatus) const;
 
   
   
@@ -278,7 +283,7 @@ private:
   
   
   
-  StartTimerStatus
+  TimerStatus
   StartTimer(JSContext* aCx, const JS::Value& aName,
              DOMHighResTimeStamp aTimestamp,
              nsAString& aTimerLabel,
@@ -293,11 +298,7 @@ private:
   
   JS::Value
   CreateStartTimerValue(JSContext* aCx, const nsAString& aTimerLabel,
-                        StartTimerStatus aTimerStatus) const;
-
-  void
-  StartTimerStatusToError(StartTimerStatus aStatus,
-                          ConsoleTimerError& aError) const;
+                        TimerStatus aTimerStatus) const;
 
   
   
@@ -310,8 +311,7 @@ private:
   
   
   
-  
-  bool
+  TimerStatus
   StopTimer(JSContext* aCx, const JS::Value& aName,
             DOMHighResTimeStamp aTimestamp,
             nsAString& aTimerLabel,
@@ -326,7 +326,7 @@ private:
   JS::Value
   CreateStopTimerValue(JSContext* aCx, const nsAString& aTimerLabel,
                        double aTimerDuration,
-                       bool aTimerStatus) const;
+                       TimerStatus aTimerStatus) const;
 
   
   bool
