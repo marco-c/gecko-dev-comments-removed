@@ -68,6 +68,8 @@ use dom::node::{Node, NodeHelpers, ElementNodeTypeId, CloneChildrenFlag};
 
 use servo_util::str::DOMString;
 
+use string_cache::Atom;
+
 
 
 pub trait VirtualMethods {
@@ -95,7 +97,7 @@ pub trait VirtualMethods {
 
     
     
-    fn parse_plain_attribute(&self, name: &str, value: DOMString) -> AttrValue {
+    fn parse_plain_attribute(&self, name: &Atom, value: DOMString) -> AttrValue {
         match self.super_type() {
             Some(ref s) => s.parse_plain_attribute(name, value),
             _ => StringAttrValue(value),
