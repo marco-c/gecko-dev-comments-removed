@@ -4697,13 +4697,8 @@ pref("full-screen-api.unprefix.enabled", true);
 pref("full-screen-api.allow-trusted-requests-only", true);
 pref("full-screen-api.pointer-lock.enabled", true);
 
-#ifndef MOZ_WIDGET_GTK
 pref("full-screen-api.transition-duration.enter", "200 200");
 pref("full-screen-api.transition-duration.leave", "200 200");
-#else
-pref("full-screen-api.transition-duration.enter", "0 0");
-pref("full-screen-api.transition-duration.leave", "0 0");
-#endif
 
 pref("full-screen-api.transition.timeout", 1000);
 
@@ -4732,12 +4727,6 @@ pref("dom.vibrator.max_vibrate_list_len", 128);
 
 
 pref("dom.battery.enabled", true);
-
-
-pref("dom.image.srcset.enabled", true);
-
-
-pref("dom.image.picture.enabled", true);
 
 
 pref("dom.sms.enabled", false);

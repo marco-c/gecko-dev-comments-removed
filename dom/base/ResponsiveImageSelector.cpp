@@ -16,10 +16,6 @@
 #include "nsRuleNode.h"
 #include "nsRuleData.h"
 
-
-
-#include "HTMLPictureElement.h"
-
 using namespace mozilla;
 using namespace mozilla::dom;
 
@@ -557,8 +553,7 @@ ResponsiveImageDescriptors::AddDescriptor(const nsAString& aDescriptor)
     
     
     if (ParseInteger(valueStr, possibleWidth) && possibleWidth >= 0) {
-      if (possibleWidth != 0 && HTMLPictureElement::IsPictureEnabled() &&
-          mWidth.isNothing() && mDensity.isNothing()) {
+      if (possibleWidth != 0 && mWidth.isNothing() && mDensity.isNothing()) {
         mWidth.emplace(possibleWidth);
       } else {
         
