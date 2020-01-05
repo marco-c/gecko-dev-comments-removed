@@ -682,134 +682,6 @@ RNG_GetNoise(void *buf, size_t maxbytes)
     return n;
 }
 
-#define SAFE_POPEN_MAXARGS 10 /* must be at least 2 */
-
-
-
-
-
-
-static pid_t safe_popen_pid;
-static struct sigaction oldact;
-
-static FILE *
-safe_popen(char *cmd)
-{
-    int p[2], fd, argc;
-    pid_t pid;
-    char *argv[SAFE_POPEN_MAXARGS + 1];
-    FILE *fp;
-    static char blank[] = " \t";
-    static struct sigaction newact;
-
-    if (pipe(p) < 0)
-        return 0;
-
-    fp = fdopen(p[0], "r");
-    if (fp == 0) {
-        close(p[0]);
-        close(p[1]);
-        return 0;
-    }
-
-    
-    newact.sa_handler = SIG_DFL;
-    newact.sa_flags = 0;
-    sigfillset(&newact.sa_mask);
-    sigaction(SIGCHLD, &newact, &oldact);
-
-    pid = fork();
-    switch (pid) {
-        int ndesc;
-
-        case -1:
-            fclose(fp); 
-            close(p[1]);
-            sigaction(SIGCHLD, &oldact, NULL);
-            return 0;
-
-        case 0:
-            
-            if (p[1] != 1)
-                dup2(p[1], 1);
-            if (p[1] != 2)
-                dup2(p[1], 2);
-
-            
-
-
-
-            if (!freopen("/dev/null", "r", stdin))
-                close(0);
-            ndesc = getdtablesize();
-            for (fd = PR_MIN(65536, ndesc); --fd > 2; close(fd))
-                ;
-
-            
-            putenv("PATH=/bin:/usr/bin:/sbin:/usr/sbin:/etc:/usr/etc");
-            putenv("SHELL=/bin/sh");
-            putenv("IFS= \t");
-
-            
-
-
-
-            cmd = strdup(cmd);
-            
-            argv[0] = strtok(cmd, blank);
-            argc = 1;
-            while ((argv[argc] = strtok(0, blank)) != 0) {
-                if (++argc == SAFE_POPEN_MAXARGS) {
-                    argv[argc] = 0;
-                    break;
-                }
-            }
-
-            
-            execvp(argv[0], argv);
-            exit(127);
-            break;
-
-        default:
-            close(p[1]);
-            break;
-    }
-
-    
-    safe_popen_pid = pid;
-    return fp;
-}
-
-static int
-safe_pclose(FILE *fp)
-{
-    pid_t pid;
-    int status = -1, rv;
-
-    if ((pid = safe_popen_pid) == 0)
-        return -1;
-    safe_popen_pid = 0;
-
-    fclose(fp);
-
-    
-    PR_Sleep(PR_INTERVAL_NO_WAIT);
-
-    
-    while ((rv = waitpid(pid, &status, WNOHANG)) == -1 && errno == EINTR)
-        ;
-    if (rv == 0) {
-        kill(pid, SIGKILL);
-        while ((rv = waitpid(pid, &status, 0)) == -1 && errno == EINTR)
-            ;
-    }
-
-    
-    sigaction(SIGCHLD, &oldact, NULL);
-
-    return status;
-}
-
 #ifdef DARWIN
 #include <TargetConditionals.h>
 #if !TARGET_OS_IPHONE
@@ -817,15 +689,9 @@ safe_pclose(FILE *fp)
 #endif
 #endif
 
-
-
-
-#define DO_NETSTAT 1
-
 void
 RNG_SystemInfoForRNG(void)
 {
-    FILE *fp;
     char buf[BUFSIZ];
     size_t bytes;
     const char *const *cp;
@@ -860,12 +726,6 @@ RNG_SystemInfoForRNG(void)
     };
 #endif
 
-#if defined(BSDI)
-    static char netstat_ni_cmd[] = "netstat -nis";
-#else
-    static char netstat_ni_cmd[] = "netstat -ni";
-#endif
-
     GiveSystemInfo();
 
     bytes = RNG_GetNoise(buf, sizeof(buf));
@@ -890,7 +750,6 @@ RNG_SystemInfoForRNG(void)
     if (gethostname(buf, sizeof(buf)) == 0) {
         RNG_RandomUpdate(buf, strlen(buf));
     }
-    GiveSystemInfo();
 
     
     bytes = RNG_FileUpdate("/dev/urandom", SYSTEM_RNG_SEED_COUNT);
@@ -914,33 +773,12 @@ RNG_SystemInfoForRNG(void)
     for (cp = files; *cp; cp++)
         RNG_FileForRNG(*cp);
 
-
-
-
-
-
-
-
-
-
-
 #if defined(BSDI) || defined(FREEBSD) || defined(NETBSD) || defined(OPENBSD) || defined(DARWIN) || defined(LINUX) || defined(HPUX)
     if (bytes)
         return;
 #endif
 
 #ifdef SOLARIS
-
-
-
-
-
-
-
-
-
-
-#undef DO_NETSTAT
     if (!bytes) {
         
         PRUint32 kstat_bytes = 0;
@@ -949,15 +787,6 @@ RNG_SystemInfoForRNG(void)
         }
         bytes += kstat_bytes;
         PORT_Assert(bytes);
-    }
-#endif
-
-#ifdef DO_NETSTAT
-    fp = safe_popen(netstat_ni_cmd);
-    if (fp != NULL) {
-        while ((bytes = fread(buf, 1, sizeof(buf), fp)) > 0)
-            RNG_RandomUpdate(buf, bytes);
-        safe_pclose(fp);
     }
 #endif
 }
