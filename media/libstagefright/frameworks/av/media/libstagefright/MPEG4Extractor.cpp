@@ -50,6 +50,9 @@ static const int64_t OVERFLOW_ERROR = -INT64_MAX;
 
 
 int64_t unitsToUs(int64_t units, int64_t hz) {
+    if (hz == 0) {
+        return OVERFLOW_ERROR;
+    }
     const int64_t MAX_S = INT64_MAX / 1000000;
     if (std::abs(units) <= MAX_S) {
         return units * 1000000 / hz;
