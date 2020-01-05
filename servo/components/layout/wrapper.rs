@@ -1000,6 +1000,15 @@ impl<'ln> ThreadSafeLayoutNode<'ln> {
             _ => panic!("no layout data for this node"),
         }
     }
+
+    
+    
+    pub fn is_content(&self) -> bool {
+        match self.type_id() {
+            Some(NodeTypeId::Element(..)) | Some(NodeTypeId::Text(..)) => true,
+            _ => false
+        }
+    }
 }
 
 pub struct ThreadSafeLayoutNodeChildrenIterator<'a> {
