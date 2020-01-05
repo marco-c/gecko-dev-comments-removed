@@ -351,6 +351,8 @@ public:
 
   void GetBufferInfo(uint32_t *aCurrentPosition, uint32_t *aTotalSize, uint32_t *aGeneration);
 
+  size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
+
 private:
   
   void doNativeBacktrace(ThreadInfo& aInfo, TickSample* aSample);

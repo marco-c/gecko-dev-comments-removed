@@ -9,6 +9,7 @@
 
 #include "LulPlatformMacros.h"
 #include "mozilla/Atomics.h"
+#include "mozilla/MemoryReporting.h"
 
 
 
@@ -352,6 +353,8 @@ public:
   
   
   void MaybeShowStats();
+
+  size_t SizeOfIncludingThis(mozilla::MallocSizeOf) const;
 
 private:
   

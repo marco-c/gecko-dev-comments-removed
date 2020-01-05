@@ -354,6 +354,22 @@ public:
       js::EnableContextProfilingStack(mContext, false);
   }
 
+  size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
+    size_t n = aMallocSizeOf(this);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    return n;
+  }
+
   
   StackEntry volatile mStack[1024];
  private:

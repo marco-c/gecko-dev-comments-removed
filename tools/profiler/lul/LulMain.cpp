@@ -37,6 +37,7 @@ using std::vector;
 using std::pair;
 using mozilla::CheckedInt;
 using mozilla::DebugOnly;
+using mozilla::MallocSizeOf;
 
 
 
@@ -371,6 +372,18 @@ bool SecMap::IsEmpty() {
   return mRuleSets.empty();
 }
 
+size_t
+SecMap::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
+{
+  size_t n = aMallocSizeOf(this);
+
+  
+  
+  n += aMallocSizeOf(mRuleSets.data());
+  n += aMallocSizeOf(mPfxInstrs.data());
+
+  return n;
+}
 
 
 
@@ -786,6 +799,20 @@ class PriMap {
     return false;
   }
 
+  size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
+    size_t n = aMallocSizeOf(this);
+
+    
+    
+    n += aMallocSizeOf(mSecMaps.data());
+
+    for (size_t i = 0; i < mSecMaps.size(); i++) {
+      n += mSecMaps[i]->SizeOfIncludingThis(aMallocSizeOf);
+    }
+
+    return n;
+  }
+
  private:
   
   SecMap* FindSecMap(uintptr_t ia) {
@@ -879,6 +906,21 @@ LUL::MaybeShowStats()
     buf[sizeof(buf)-1] = 0;
     mLog(buf);
   }
+}
+
+
+size_t
+LUL::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
+{
+  size_t n = aMallocSizeOf(this);
+  n += mPriMap->SizeOfIncludingThis(aMallocSizeOf);
+
+  
+  
+  
+  
+
+  return n;
 }
 
 

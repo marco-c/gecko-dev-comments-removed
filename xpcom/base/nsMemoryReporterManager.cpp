@@ -1564,6 +1564,12 @@ nsMemoryReporterManager::Init()
   RegisterStrongReporter(new DeadlockDetectorReporter());
 #endif
 
+#ifdef MOZ_GECKO_PROFILER
+  
+  
+  RegisterStrongReporter(new GeckoProfilerReporter());
+#endif
+
 #ifdef MOZ_DMD
   RegisterStrongReporter(new mozilla::dmd::DMDReporter());
 #endif

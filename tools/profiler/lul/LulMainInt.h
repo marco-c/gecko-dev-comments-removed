@@ -358,6 +358,8 @@ public:
 
   size_t Size() { return mRuleSets.size(); }
 
+  size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
+
   
   
   uintptr_t mSummaryMinAddr;

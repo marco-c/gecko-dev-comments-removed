@@ -261,3 +261,25 @@ ThreadInfo::DuplicateLastSample()
   mBuffer->DuplicateLastSample(mThreadId);
 }
 
+size_t
+ThreadInfo::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
+{
+  size_t n = aMallocSizeOf(this);
+
+  n += aMallocSizeOf(mName.get());
+  n += mPseudoStack->SizeOfIncludingThis(aMallocSizeOf);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  return n;
+}
+
