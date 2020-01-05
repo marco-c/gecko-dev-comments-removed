@@ -47,7 +47,6 @@ class SETA(object):
     def query_low_value_tasks(self, project):
         
         
-        logger.debug("Querying SETA service for low-value tasks on {}".format(project))
         low_value_tasks = []
 
         url = SETA_ENDPOINT % project
@@ -121,7 +120,6 @@ class SETA(object):
         url = PUSH_ENDPOINT % (project, cur_push_id - 2, prev_push_id)
 
         try:
-            logger.debug("Retrieving datetime of previous push")
             response = retry(requests.get, attempts=2, sleeptime=10,
                              args=(url, ),
                              kwargs={'timeout': 5, 'headers': headers})
@@ -166,7 +164,6 @@ class SETA(object):
     def is_low_value_task(self, label, project, pushlog_id, push_date):
         
         if project not in SETA_PROJECTS:
-            logger.debug("SETA is not enabled for project `{}`".format(project))
             return False
 
         schedule_all_every = PROJECT_SCHEDULE_ALL_EVERY_PUSHES.get(project, 5)
