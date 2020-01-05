@@ -337,5 +337,22 @@ TextTrack::DispatchAsyncTrustedEvent(const nsString& aEventName)
   );
 }
 
+bool
+TextTrack::IsLoaded()
+{
+  if (mMode == TextTrackMode::Disabled) {
+    return true;
+  }
+  
+  
+  if (mTrackElement) {
+    nsAutoString src;
+    if (!(mTrackElement->GetAttr(kNameSpaceID_None, nsGkAtoms::src, src))) {
+      return true;
+    }
+  }
+  return (mReadyState >= Loaded);
+}
+
 } 
 } 

@@ -103,6 +103,8 @@ public:
 
   void NotifyReset();
 
+  bool IsLoaded();
+
 private:
   
 
