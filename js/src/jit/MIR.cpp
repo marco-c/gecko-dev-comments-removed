@@ -5424,6 +5424,11 @@ InlinePropertyTable::trimTo(const ObjectVector& targets, const BoolVector& choic
         if (choiceSet[i])
             continue;
 
+        
+        
+        if (!targets[i]->is<JSFunction>())
+			continue;
+
         JSFunction* target = &targets[i]->as<JSFunction>();
 
         
