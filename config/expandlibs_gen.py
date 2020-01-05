@@ -21,11 +21,6 @@ def generate(args):
             else:
                 raise Exception("File not found: %s" % arg)
         elif os.path.splitext(arg)[1] == conf.LIB_SUFFIX:
-            
-            
-            
-            if '-rs-prelink' in os.path.basename(arg):
-                continue
             if os.path.exists(arg) or os.path.exists(arg + conf.LIBS_DESC_SUFFIX):
                 desc['LIBS'].append(os.path.abspath(arg))
             else:

@@ -1238,49 +1238,8 @@ class RecursiveMakeBackend(CommonBackend):
         
         
         
-
-        def find_rlibs(obj):
-            if isinstance(obj, RustLibrary):
-                yield obj
-            elif isinstance(obj, StaticLibrary) and not obj.no_expand_lib:
-                for l in obj.linked_libraries:
-                    for rlib in find_rlibs(l):
-                        yield rlib
-
-        
-        
-        rlibs = []
-        if isinstance(obj, (SharedLibrary, StaticLibrary)):
-            for l in obj.linked_libraries:
-                rlibs += find_rlibs(l)
-        if rlibs:
-            prelink_libname = '%s/%s%s-rs-prelink%s' \
-                              % (relpath,
-                                 obj.config.lib_prefix,
-                                 obj.basename,
-                                 obj.config.lib_suffix)
-            backend_file.write('RUST_PRELINK := %s\n' % prelink_libname)
-            backend_file.write_once('STATIC_LIBS += %s\n' % prelink_libname)
-
-            extern_crate_file = mozpath.join(
-                obj.objdir, '%s-rs-prelink.rs' % obj.basename)
-            with self._write_file(extern_crate_file) as f:
-                f.write('// AUTOMATICALLY GENERATED.  DO NOT EDIT.\n\n')
-                for rlib in rlibs:
-                    f.write('extern crate %s;\n'
-                            % rlib.basename.replace('-', '_'))
-            backend_file.write('RUST_PRELINK_SRC := %s\n' % extern_crate_file)
-
-            backend_file.write('RUST_PRELINK_FLAGS :=\n')
-            backend_file.write('RUST_PRELINK_DEPS :=\n')
-            for rlib in rlibs:
-                rlib_relpath = pretty_relpath(rlib)
-                backend_file.write('RUST_PRELINK_FLAGS += --extern %s=%s/%s\n'
-                                   % (rlib.basename.replace('-', '_'), rlib_relpath, rlib.import_name))
-                backend_file.write('RUST_PRELINK_FLAGS += -L %s/%s\n'
-                                   % (rlib_relpath, rlib.deps_path))
-                backend_file.write('RUST_PRELINK_DEPS += %s/%s\n'
-                                   % (rlib_relpath, rlib.import_name))
+        if isinstance(obj, SharedLibrary):
+            self._process_rust_libraries(obj, backend_file, pretty_relpath)
 
         for lib in obj.linked_system_libs:
             if obj.KIND == 'target':
@@ -1290,6 +1249,23 @@ class RecursiveMakeBackend(CommonBackend):
 
         
         self._process_defines(obj.lib_defines, backend_file)
+
+    def _process_rust_libraries(self, obj, backend_file, pretty_relpath):
+        assert isinstance(obj, SharedLibrary)
+
+        
+        direct_linked = [l for l in obj.linked_libraries if isinstance(l, RustLibrary)]
+        if not direct_linked:
+            return
+
+        
+        assert len(direct_linked) == 1
+
+        
+
+        direct_linked = direct_linked[0]
+        backend_file.write('RUST_STATIC_LIB_FOR_SHARED_LIB := %s/%s\n' %
+                           (pretty_relpath(direct_linked), direct_linked.import_name))
 
     def _process_final_target_files(self, obj, files, backend_file):
         target = obj.install_target
