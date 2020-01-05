@@ -23,6 +23,10 @@ module.exports = {
     
 
     
+    
+    "complexity": ["error", {"max": 48}],
+
+    
     "computed-property-spacing": ["error", "never"],
 
     
@@ -53,6 +57,10 @@ module.exports = {
 
     
     "linebreak-style": ["error", "unix"],
+
+    
+    
+    "max-depth": "off",
 
     
     

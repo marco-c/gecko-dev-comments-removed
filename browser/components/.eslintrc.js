@@ -1,0 +1,9 @@
+"use strict";
+
+module.exports = {
+  rules: {
+    
+    
+    "complexity": ["error", {"max": 69}],
+  }
+};

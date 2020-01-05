@@ -19,7 +19,7 @@ module.exports = {
     "comma-dangle": "off",
     "comma-spacing": ["warn", {"before": false, "after": true}],
     "comma-style": ["warn", "last"],
-    
+    "complexity": ["error", {"max": 21}],
     "consistent-return": "error",
     
     "dot-notation": "error",
@@ -79,4 +79,3 @@ module.exports = {
     "yoda": "error"
   }
 };
-

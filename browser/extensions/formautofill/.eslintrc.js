@@ -109,7 +109,7 @@ module.exports = {
     "comma-dangle": ["error", "always-multiline"],
 
     
-    "complexity": "warn",
+    "complexity": ["error", {"max": 20}],
 
     
     
