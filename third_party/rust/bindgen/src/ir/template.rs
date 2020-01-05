@@ -279,8 +279,7 @@ impl TemplateInstantiation {
 
     
     pub fn has_vtable(&self, ctx: &BindgenContext) -> bool {
-        ctx.resolve_type(self.definition).has_vtable(ctx) ||
-        self.args.iter().any(|arg| ctx.resolve_type(*arg).has_vtable(ctx))
+        ctx.resolve_type(self.definition).has_vtable(ctx)
     }
 
     

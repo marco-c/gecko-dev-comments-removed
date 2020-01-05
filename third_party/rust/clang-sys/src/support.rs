@@ -51,9 +51,9 @@ pub struct Clang {
     
     pub version: Option<CXVersion>,
     
-    pub c_search_paths: Vec<PathBuf>,
+    pub c_search_paths: Option<Vec<PathBuf>>,
     
-    pub cpp_search_paths: Vec<PathBuf>,
+    pub cpp_search_paths: Option<Vec<PathBuf>>,
 }
 
 impl Clang {
@@ -132,9 +132,9 @@ fn is_executable(path: &Path) -> io::Result<bool> {
     use libc;
     use std::ffi::CString;
     use std::os::unix::ffi::OsStrExt;
-    let cpath = CString::new(path.as_os_str().as_bytes())?;
-    let res = unsafe { libc::access(cpath.as_ptr(), libc::X_OK) };
-    Ok(res == 0)
+
+    let path = CString::new(path.as_os_str().as_bytes())?;
+    unsafe { Ok(libc::access(path.as_ptr(), libc::X_OK) == 0) }
 }
 
 #[cfg(not(unix))]
@@ -179,11 +179,10 @@ fn parse_version(path: &Path) -> Option<CXVersion> {
 }
 
 
-fn parse_search_paths(path: &Path, language: &str) -> Vec<PathBuf> {
+fn parse_search_paths(path: &Path, language: &str) -> Option<Vec<PathBuf>> {
     let output = run_clang(path, &["-E", "-x", language, "-", "-v"]).1;
-    let include_start = "#include <...> search starts here:";
-    let start = output.find(include_start).expect(include_start) + include_start.len();
-    let end = output.find("End of search list.").expect("End of search list");
+    let start = try_opt!(output.find("#include <...> search starts here:")) + 34;
+    let end = try_opt!(output.find("End of search list."));
     let paths = output[start..end].replace("(framework directory)", "");
-    paths.lines().filter(|l| !l.is_empty()).map(|l| Path::new(l.trim()).into()).collect()
+    Some(paths.lines().filter(|l| !l.is_empty()).map(|l| Path::new(l.trim()).into()).collect())
 }

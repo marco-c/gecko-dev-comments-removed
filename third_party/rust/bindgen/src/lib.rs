@@ -1047,10 +1047,12 @@ impl<'ctx> Bindings<'ctx> {
             if !has_target_arg {
                 
                 
-                for path in clang.cpp_search_paths.into_iter() {
-                    if let Ok(path) = path.into_os_string().into_string() {
-                        options.clang_args.push("-isystem".to_owned());
-                        options.clang_args.push(path);
+                if let Some(cpp_search_paths) = clang.cpp_search_paths {
+                    for path in cpp_search_paths.into_iter() {
+                        if let Ok(path) = path.into_os_string().into_string() {
+                            options.clang_args.push("-isystem".to_owned());
+                            options.clang_args.push(path);
+                        }
                     }
                 }
             }
