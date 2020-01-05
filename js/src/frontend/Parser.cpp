@@ -1698,6 +1698,7 @@ Parser<FullParseHandler>::newFunctionScopeData(ParseContext::Scope& scope, bool 
     Vector<BindingName> vars(context);
 
     bool allBindingsClosedOver = pc->sc()->allBindingsClosedOver();
+    bool hasDuplicateParams = pc->functionBox()->hasDuplicateParameters;
 
     
     
@@ -1711,8 +1712,22 @@ Parser<FullParseHandler>::newFunctionScopeData(ParseContext::Scope& scope, bool 
             
             
             
-            bindName = BindingName(name, (allBindingsClosedOver ||
-                                          (p && p->value()->closedOver())));
+            bool closedOver = allBindingsClosedOver ||
+                              (p && p->value()->closedOver());
+
+            
+            
+            
+            if (hasDuplicateParams) {
+                for (size_t j = pc->positionalFormalParameterNames().length() - 1; j > i; j--) {
+                    if (pc->positionalFormalParameterNames()[j] == name) {
+                        closedOver = false;
+                        break;
+                    }
+                }
+            }
+
+            bindName = BindingName(name, closedOver);
         }
 
         if (!positionalFormals.append(bindName))
