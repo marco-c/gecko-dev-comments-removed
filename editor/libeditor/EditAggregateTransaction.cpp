@@ -33,53 +33,53 @@ NS_INTERFACE_MAP_END_INHERITING(EditTransactionBase)
 NS_IMETHODIMP
 EditAggregateTransaction::DoTransaction()
 {
-  nsresult result=NS_OK;  
+  
   for (uint32_t i = 0, length = mChildren.Length(); i < length; ++i) {
     nsITransaction *txn = mChildren[i];
     if (!txn) {
       return NS_ERROR_NULL_POINTER;
     }
-    result = txn->DoTransaction();
-    if (NS_FAILED(result)) {
-      break;
+    nsresult rv = txn->DoTransaction();
+    if (NS_FAILED(rv)) {
+      return rv;
     }
   }
-  return result;
+  return NS_OK;
 }
 
 NS_IMETHODIMP
 EditAggregateTransaction::UndoTransaction()
 {
-  nsresult result=NS_OK;  
+  
   
   for (uint32_t i = mChildren.Length(); i--; ) {
     nsITransaction *txn = mChildren[i];
     if (!txn) {
       return NS_ERROR_NULL_POINTER;
     }
-    result = txn->UndoTransaction();
-    if (NS_FAILED(result)) {
-      break;
+    nsresult rv = txn->UndoTransaction();
+    if (NS_FAILED(rv)) {
+      return rv;
     }
   }
-  return result;
+  return NS_OK;
 }
 
 NS_IMETHODIMP
 EditAggregateTransaction::RedoTransaction()
 {
-  nsresult result=NS_OK;  
+  
   for (uint32_t i = 0, length = mChildren.Length(); i < length; ++i) {
     nsITransaction *txn = mChildren[i];
     if (!txn) {
       return NS_ERROR_NULL_POINTER;
     }
-    result = txn->RedoTransaction();
-    if (NS_FAILED(result)) {
-      break;
+    nsresult rv = txn->RedoTransaction();
+    if (NS_FAILED(rv)) {
+      return rv;
     }
   }
-  return result;
+  return NS_OK;
 }
 
 NS_IMETHODIMP

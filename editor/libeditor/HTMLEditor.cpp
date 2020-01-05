@@ -258,16 +258,16 @@ HTMLEditor::Init(nsIDOMDocument* aDoc,
   NS_ENSURE_TRUE(aDoc, NS_ERROR_NULL_POINTER);
   MOZ_ASSERT(aInitialValue.IsEmpty(), "Non-empty initial values not supported");
 
-  nsresult result = NS_OK, rulesRes = NS_OK;
+  nsresult rulesRv = NS_OK;
 
   {
     
-    AutoEditInitRulesTrigger rulesTrigger(this, rulesRes);
+    AutoEditInitRulesTrigger rulesTrigger(this, rulesRv);
 
     
-    result = TextEditor::Init(aDoc, aRoot, nullptr, aFlags, aInitialValue);
-    if (NS_FAILED(result)) {
-      return result;
+    nsresult rv = TextEditor::Init(aDoc, aRoot, nullptr, aFlags, aInitialValue);
+    if (NS_FAILED(rv)) {
+      return rv;
     }
 
     
@@ -317,9 +317,9 @@ HTMLEditor::Init(nsIDOMDocument* aDoc,
       }
     }
   }
+  NS_ENSURE_SUCCESS(rulesRv, rulesRv);
 
-  NS_ENSURE_SUCCESS(rulesRes, rulesRes);
-  return result;
+  return NS_OK;
 }
 
 NS_IMETHODIMP
@@ -1553,8 +1553,8 @@ HTMLEditor::InsertElementAtSelection(nsIDOMElement* aElement,
         NS_ENSURE_SUCCESS(rv, rv);
       }
 
-      nsresult result = DeleteSelectionAndPrepareToCreateNode();
-      NS_ENSURE_SUCCESS(result, result);
+      nsresult rv = DeleteSelectionAndPrepareToCreateNode();
+      NS_ENSURE_SUCCESS(rv, rv);
     }
 
     
@@ -3637,7 +3637,6 @@ HTMLEditor::IsTextPropertySetByContent(nsIDOMNode* aNode,
                                        bool& aIsSet,
                                        nsAString* outValue)
 {
-  nsresult result;
   aIsSet = false;  
   nsAutoString propName;
   aProperty->ToString(propName);
@@ -3680,8 +3679,7 @@ HTMLEditor::IsTextPropertySetByContent(nsIDOMNode* aNode,
       }
     }
     nsCOMPtr<nsIDOMNode>temp;
-    result = node->GetParentNode(getter_AddRefs(temp));
-    if (NS_SUCCEEDED(result) && temp) {
+    if (NS_SUCCEEDED(node->GetParentNode(getter_AddRefs(temp))) && temp) {
       node = temp;
     } else {
       node = nullptr;
@@ -3760,10 +3758,10 @@ HTMLEditor::CollapseAdjacentTextNodes(nsRange* aInRange)
 
 
   
-  nsresult result;
+  nsresult rv = NS_ERROR_UNEXPECTED;
   nsCOMPtr<nsIContentIterator> iter =
-    do_CreateInstance("@mozilla.org/content/subtree-content-iterator;1", &result);
-  NS_ENSURE_SUCCESS(result, result);
+    do_CreateInstance("@mozilla.org/content/subtree-content-iterator;1", &rv);
+  NS_ENSURE_SUCCESS(rv, rv);
 
   iter->Init(aInRange);
 
@@ -3788,22 +3786,21 @@ HTMLEditor::CollapseAdjacentTextNodes(nsRange* aInRange)
 
     
     nsCOMPtr<nsIDOMNode> prevSibOfRightNode;
-    result =
-      rightTextNode->GetPreviousSibling(getter_AddRefs(prevSibOfRightNode));
-    NS_ENSURE_SUCCESS(result, result);
+    rv = rightTextNode->GetPreviousSibling(getter_AddRefs(prevSibOfRightNode));
+    NS_ENSURE_SUCCESS(rv, rv);
     if (prevSibOfRightNode && prevSibOfRightNode == leftTextNode) {
       nsCOMPtr<nsIDOMNode> parent;
-      result = rightTextNode->GetParentNode(getter_AddRefs(parent));
-      NS_ENSURE_SUCCESS(result, result);
+      rv = rightTextNode->GetParentNode(getter_AddRefs(parent));
+      NS_ENSURE_SUCCESS(rv, rv);
       NS_ENSURE_TRUE(parent, NS_ERROR_NULL_POINTER);
-      result = JoinNodes(leftTextNode, rightTextNode, parent);
-      NS_ENSURE_SUCCESS(result, result);
+      rv = JoinNodes(leftTextNode, rightTextNode, parent);
+      NS_ENSURE_SUCCESS(rv, rv);
     }
 
     textNodes.RemoveElementAt(0); 
   }
 
-  return result;
+  return NS_OK;
 }
 
 nsresult

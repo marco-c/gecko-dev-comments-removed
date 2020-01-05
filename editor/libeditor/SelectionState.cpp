@@ -346,8 +346,8 @@ RangeUpdater::SelAdjSplitNode(nsIContent& aOldRightNode,
   int32_t offset = parent ? parent->IndexOf(&aOldRightNode) : -1;
 
   
-  nsresult result = SelAdjInsertNode(parent, offset - 1);
-  NS_ENSURE_SUCCESS(result, result);
+  nsresult rv = SelAdjInsertNode(parent, offset - 1);
+  NS_ENSURE_SUCCESS(rv, rv);
 
   
   for (size_t i = 0; i < count; i++) {
