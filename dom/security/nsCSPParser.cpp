@@ -924,6 +924,11 @@ nsCSPParser::referrerDirectiveValue(nsCSPDirective* aDir)
                              params, ArrayLength(params));
 
   
+  nsWeakPtr ctx = mCSPContext->GetLoadingContext();
+  nsCOMPtr<nsIDocument> doc = do_QueryReferent(ctx);
+  if (doc) {
+    doc->SetHasReferrerPolicyCSP(true);
+  }
   mPolicy->setReferrerPolicy(&mCurDir[1]);
   mPolicy->addDirective(aDir);
 }
