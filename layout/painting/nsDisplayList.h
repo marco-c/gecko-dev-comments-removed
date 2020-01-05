@@ -3150,6 +3150,8 @@ protected:
   void PaintInternal(nsDisplayListBuilder* aBuilder, nsRenderingContext* aCtx,
                      const nsRect& aBounds, nsRect* aClipRect);
 
+  virtual nsIFrame* StyleFrame() { return mFrame; }
+
   
   
   enum ImageLayerization {
@@ -3194,6 +3196,36 @@ static_assert(
   static_cast<uint8_t>(TableType::TABLE_TYPE_MAX) < (1 << (static_cast<uint8_t>(TableTypeBits::COUNT) + 1)),
   "TableType cannot fit with TableTypeBits::COUNT");
 TableType GetTableTypeFromFrame(nsIFrame* aFrame);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class nsDisplayTableBackgroundImage : public nsDisplayBackgroundImage {
+public:
+  nsDisplayTableBackgroundImage(const InitData& aInitData, nsIFrame* aCellFrame);
+
+  virtual uint32_t GetPerFrameKey() override {
+    return (static_cast<uint8_t>(mTableType) << nsDisplayItem::TYPE_BITS) |
+           nsDisplayItem::GetPerFrameKey();
+  }
+
+  virtual bool IsInvalid(nsRect& aRect) override;
+protected:
+  virtual nsIFrame* StyleFrame() override { return mStyleFrame; }
+
+  nsIFrame* mStyleFrame;
+  TableType mTableType;
+};
 
 
 
