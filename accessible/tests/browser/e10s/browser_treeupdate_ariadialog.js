@@ -18,8 +18,9 @@ addAccessibleTask('doc_treeupdate_ariadialog.html', function*(browser, accDoc) {
 
   
   let onShow = waitForEvent(EVENT_SHOW, 'dialog');
-  yield ContentTask.spawn(browser, {}, () =>
-    content.document.getElementById('dialog').style.display = 'block');
+  yield ContentTask.spawn(browser, {}, () => {
+    content.document.getElementById('dialog').style.display = 'block';
+  });
   yield onShow;
 
   testAccessibleTree(accDoc, {

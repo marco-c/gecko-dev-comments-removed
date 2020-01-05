@@ -41,8 +41,9 @@ addAccessibleTask(`
   
   let onStateChange = waitForEvent(EVENT_STATE_CHANGE, 'checkbox');
   
-  yield ContentTask.spawn(browser, {}, () =>
-    content.document.getElementById('checkbox').checked = true);
+  yield ContentTask.spawn(browser, {}, () => {
+    content.document.getElementById('checkbox').checked = true;
+  });
   let event = yield onStateChange;
 
   checkStateChangeEvent(event, STATE_CHECKED, false, true);
@@ -51,8 +52,9 @@ addAccessibleTask(`
   
   onStateChange = waitForEvent(EVENT_STATE_CHANGE, 'iframe');
   
-  yield ContentTask.spawn(browser, {}, () =>
-    content.document.getElementById('iframe').contentDocument.designMode = 'on');
+  yield ContentTask.spawn(browser, {}, () => {
+    content.document.getElementById('iframe').contentDocument.designMode = 'on';
+  });
   event = yield onStateChange;
 
   checkStateChangeEvent(event, EXT_STATE_EDITABLE, true, true);
