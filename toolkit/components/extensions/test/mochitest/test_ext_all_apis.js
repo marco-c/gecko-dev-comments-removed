@@ -39,6 +39,8 @@ let expectedCommonApis = [
   
   "test.assertEq",
   "test.assertFalse",
+  "test.assertRejects",
+  "test.assertThrows",
   "test.assertTrue",
   "test.fail",
   "test.log",
