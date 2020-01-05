@@ -29,7 +29,6 @@
 #include "vm/ErrorReporting.h"
 #include "vm/RegExpObject.h"
 #include "vm/String.h"
-#include "vm/Unicode.h"
 
 struct KeywordInfo;
 
@@ -268,6 +267,12 @@ class TokenStreamBase
 {
   protected:
     TokenStreamBase(JSContext* cx, const ReadOnlyCompileOptions& options, StrictModeGetter* smg);
+
+    
+    enum {
+        LINE_SEPARATOR = 0x2028,
+        PARA_SEPARATOR = 0x2029
+    };
 
     static const size_t ntokens = 4;                
                                                     
@@ -999,10 +1004,7 @@ class MOZ_STACK_CLASS TokenStream final : public TokenStreamBase
 #endif
 
         static bool isRawEOLChar(int32_t c) {
-            return c == '\n' ||
-                   c == '\r' ||
-                   c == unicode::LINE_SEPARATOR ||
-                   c == unicode::PARA_SEPARATOR;
+            return c == '\n' || c == '\r' || c == LINE_SEPARATOR || c == PARA_SEPARATOR;
         }
 
         
