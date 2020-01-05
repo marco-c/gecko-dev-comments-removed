@@ -361,6 +361,12 @@ private:
     
     virtual void Translate(nscoord aLineLeft, nscoord aBlockStart) = 0;
 
+    static mozilla::UniquePtr<ShapeInfo> CreateCircleOrEllipse(
+      mozilla::StyleBasicShape* const aBasicShape,
+      const mozilla::LogicalRect& aShapeBoxRect,
+      mozilla::WritingMode aWM,
+      const nsSize& aContainerSize);
+
   protected:
     
     
@@ -424,10 +430,11 @@ private:
   class EllipseShapeInfo : public ShapeInfo
   {
   public:
-    EllipseShapeInfo(mozilla::StyleBasicShape* const aBasicShape,
-                     const mozilla::LogicalRect& aShapeBoxRect,
-                     mozilla::WritingMode aWM,
-                     const nsSize& aContainerSize);
+    EllipseShapeInfo(const nsPoint& aCenter,
+                     const nsSize& aRadii)
+      : mCenter(aCenter)
+      , mRadii(aRadii)
+    {}
 
     nscoord LineLeft(mozilla::WritingMode aWM,
                      const nscoord aBStart,
@@ -445,24 +452,12 @@ private:
     }
 
   protected:
-    EllipseShapeInfo() = default;
-
     
     
     nsPoint mCenter;
     
     
     nsSize mRadii;
-  };
-
-  
-  class CircleShapeInfo final : public EllipseShapeInfo
-  {
-  public:
-    CircleShapeInfo(mozilla::StyleBasicShape* const aBasicShape,
-                    const mozilla::LogicalRect& aShapeBoxRect,
-                    mozilla::WritingMode aWM,
-                    const nsSize& aContainerSize);
   };
 
   struct FloatInfo {

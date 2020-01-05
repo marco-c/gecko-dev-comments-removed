@@ -615,50 +615,6 @@ nsFloatManager::BoxShapeInfo::LineRight(WritingMode aWM,
 
 
 
-
-nsFloatManager::CircleShapeInfo::CircleShapeInfo(
-  StyleBasicShape* const aBasicShape,
-  const LogicalRect& aShapeBoxRect,
-  WritingMode aWM,
-  const nsSize& aContainerSize)
-{
-  
-  
-  
-  nsRect physicalShapeBoxRect =
-    aShapeBoxRect.GetPhysicalRect(aWM, aContainerSize);
-  nsPoint physicalCenter =
-    ShapeUtils::ComputeCircleOrEllipseCenter(aBasicShape, physicalShapeBoxRect);
-  nscoord radius = ShapeUtils::ComputeCircleRadius(aBasicShape, physicalCenter,
-                                                   physicalShapeBoxRect);
-  mRadii = nsSize(radius, radius);
-  mCenter = ConvertPhysicalToLogical(aWM, physicalCenter, aContainerSize);
-}
-
-
-
-
-nsFloatManager::EllipseShapeInfo::EllipseShapeInfo(
-  StyleBasicShape* const aBasicShape,
-  const LogicalRect& aShapeBoxRect,
-  WritingMode aWM,
-  const nsSize& aContainerSize)
-{
-  
-  
-  
-  nsRect physicalShapeBoxRect =
-    aShapeBoxRect.GetPhysicalRect(aWM, aContainerSize);
-  nsPoint physicalCenter =
-    ShapeUtils::ComputeCircleOrEllipseCenter(aBasicShape, physicalShapeBoxRect);
-  nsSize physicalRadii =
-    ShapeUtils::ComputeEllipseRadii(aBasicShape, physicalCenter,
-                                    physicalShapeBoxRect);
-  LogicalSize logicalRadii(aWM, physicalRadii);
-  mRadii = nsSize(logicalRadii.ISize(aWM), logicalRadii.BSize(aWM));
-  mCenter = ConvertPhysicalToLogical(aWM, physicalCenter, aContainerSize);
-}
-
 nscoord
 nsFloatManager::EllipseShapeInfo::LineLeft(WritingMode aWM,
                                            const nscoord aBStart,
@@ -749,12 +705,9 @@ nsFloatManager::FloatInfo::FloatInfo(nsIFrame* aFrame,
         
         break;
       case StyleBasicShapeType::Circle:
-        mShapeInfo =
-          MakeUnique<CircleShapeInfo>(basicShape, rect, aWM, aContainerSize);
-        break;
       case StyleBasicShapeType::Ellipse:
         mShapeInfo =
-          MakeUnique<EllipseShapeInfo>(basicShape, rect, aWM, aContainerSize);
+          ShapeInfo::CreateCircleOrEllipse(basicShape, rect, aWM, aContainerSize);
         break;
       case StyleBasicShapeType::Inset:
         
@@ -870,6 +823,43 @@ nsFloatManager::FloatInfo::IsEmpty(ShapeType aShapeType) const
 }
 
 
+
+
+ UniquePtr<nsFloatManager::ShapeInfo>
+nsFloatManager::ShapeInfo::CreateCircleOrEllipse(
+  StyleBasicShape* const aBasicShape,
+  const LogicalRect& aShapeBoxRect,
+  WritingMode aWM,
+  const nsSize& aContainerSize)
+{
+  
+  
+  
+  nsRect physicalShapeBoxRect =
+    aShapeBoxRect.GetPhysicalRect(aWM, aContainerSize);
+  nsPoint physicalCenter =
+    ShapeUtils::ComputeCircleOrEllipseCenter(aBasicShape, physicalShapeBoxRect);
+  nsPoint center =
+    ConvertPhysicalToLogical(aWM, physicalCenter, aContainerSize);
+
+  
+  nsSize radii;
+  StyleBasicShapeType type = aBasicShape->GetShapeType();
+  if (type == StyleBasicShapeType::Circle) {
+    nscoord radius = ShapeUtils::ComputeCircleRadius(aBasicShape, physicalCenter,
+                                                     physicalShapeBoxRect);
+    radii = nsSize(radius, radius);
+  } else {
+    MOZ_ASSERT(type == StyleBasicShapeType::Ellipse);
+    nsSize physicalRadii =
+      ShapeUtils::ComputeEllipseRadii(aBasicShape, physicalCenter,
+                                      physicalShapeBoxRect);
+    LogicalSize logicalRadii(aWM, physicalRadii);
+    radii = nsSize(logicalRadii.ISize(aWM), logicalRadii.BSize(aWM));
+  }
+
+  return MakeUnique<EllipseShapeInfo>(center, radii);
+}
 
 
  nscoord
