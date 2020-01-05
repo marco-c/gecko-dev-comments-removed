@@ -272,7 +272,7 @@ namespace mozilla {
 LibFuzzerRunner* libFuzzerRunner = 0;
 } 
 
-void XRE_LibFuzzerSetMain(int argc, char** argv, LibFuzzerMain main) {
+extern "C" MOZ_EXPORT void XRE_LibFuzzerSetMain(int argc, char** argv, LibFuzzerMain main) {
   mozilla::libFuzzerRunner->setParams(argc, argv, main);
 }
 #endif
