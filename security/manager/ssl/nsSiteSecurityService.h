@@ -6,6 +6,7 @@
 #define __nsSiteSecurityService_h__
 
 #include "mozilla/DataStorage.h"
+#include "mozilla/RefPtr.h"
 #include "nsCOMPtr.h"
 #include "nsIObserver.h"
 #include "nsISiteSecurityService.h"
@@ -32,10 +33,10 @@ class nsISSLStatus;
 
 
 enum SecurityPropertyState {
-  SecurityPropertyUnset = 0,
-  SecurityPropertySet = 1,
-  SecurityPropertyKnockout = 2,
-  SecurityPropertyNegative = 3,
+  SecurityPropertyUnset = nsISiteSecurityState::SECURITY_PROPERTY_UNSET,
+  SecurityPropertySet = nsISiteSecurityState::SECURITY_PROPERTY_SET,
+  SecurityPropertyKnockout = nsISiteSecurityState::SECURITY_PROPERTY_KNOCKOUT,
+  SecurityPropertyNegative = nsISiteSecurityState::SECURITY_PROPERTY_NEGATIVE,
 };
 
 
@@ -47,14 +48,21 @@ enum SecurityPropertyState {
 
 
 
-class SiteHPKPState
+
+class SiteHPKPState : public nsISiteHPKPState
 {
 public:
-  SiteHPKPState();
-  explicit SiteHPKPState(nsCString& aStateString);
-  SiteHPKPState(PRTime aExpireTime, SecurityPropertyState aState,
-                bool aIncludeSubdomains, nsTArray<nsCString>& SHA256keys);
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSISITEHPKPSTATE
+  NS_DECL_NSISITESECURITYSTATE
 
+  SiteHPKPState();
+  SiteHPKPState(const nsCString& aHost, const nsCString& aStateString);
+  SiteHPKPState(const nsCString& aHost, PRTime aExpireTime,
+                SecurityPropertyState aState, bool aIncludeSubdomains,
+                nsTArray<nsCString>& SHA256keys);
+
+  nsCString mHostname;
   PRTime mExpireTime;
   SecurityPropertyState mState;
   bool mIncludeSubdomains;
@@ -70,6 +78,9 @@ public:
   }
 
   void ToString(nsCString& aString);
+
+protected:
+  virtual ~SiteHPKPState() {};
 };
 
 
@@ -80,13 +91,19 @@ public:
 
 
 
-class SiteHSTSState
+
+class SiteHSTSState : public nsISiteHSTSState
 {
 public:
-  explicit SiteHSTSState(nsCString& aStateString);
-  SiteHSTSState(PRTime aHSTSExpireTime, SecurityPropertyState aHSTSState,
-                bool aHSTSIncludeSubdomains);
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSISITEHSTSSTATE
+  NS_DECL_NSISITESECURITYSTATE
 
+  SiteHSTSState(const nsCString& aHost, const nsCString& aStateString);
+  SiteHSTSState(const nsCString& aHost, PRTime aHSTSExpireTime,
+                SecurityPropertyState aHSTSState, bool aHSTSIncludeSubdomains);
+
+  nsCString mHostname;
   PRTime mHSTSExpireTime;
   SecurityPropertyState mHSTSState;
   bool mHSTSIncludeSubdomains;
@@ -108,6 +125,9 @@ public:
   }
 
   void ToString(nsCString &aString);
+
+protected:
+  virtual ~SiteHSTSState() {}
 };
 
 struct nsSTSPreload;
