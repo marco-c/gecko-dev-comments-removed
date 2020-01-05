@@ -834,10 +834,6 @@ struct GCManagedDeletePolicy
 
 namespace JS {
 
-template <typename T>
-struct DeletePolicy<js::GCPtr<T>> : public js::GCManagedDeletePolicy<js::GCPtr<T>>
-{};
-
 
 
 
