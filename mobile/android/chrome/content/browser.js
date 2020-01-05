@@ -1716,28 +1716,10 @@ var BrowserApp = {
 
       case "Locale:Changed": {
         if (data) {
-          
-          
-          console.log("Locale:Changed: " + data.languageTag);
-
-          
-          
-          this.setLocalizedPref("general.useragent.locale", data.languageTag);
+          Services.locale.setRequestedLocales([data.languageTag]);
         } else {
-          
-          console.log("Switching to system locale.");
-          Services.prefs.clearUserPref("general.useragent.locale");
+          Services.locale.setRequestedLocales([]);
         }
-
-        Services.prefs.setBoolPref("intl.locale.matchOS", !data);
-
-        
-        
-        Services.prefs.savePrefFile(null);
-
-        
-        
-        Strings.flush();
 
         
         let osLocale;

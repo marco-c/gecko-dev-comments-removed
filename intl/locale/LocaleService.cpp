@@ -143,8 +143,6 @@ LocaleService::GetRequestedLocales(nsTArray<nsCString>& aRetVal)
 {
   nsAutoCString locale;
 
-  nsCOMPtr<nsIPrefBranch> prefs(do_GetService("@mozilla.org/preferences-service;1"));
-
   
   bool matchOSLocale = Preferences::GetBool(MATCH_OS_LOCALE_PREF);
 
@@ -162,7 +160,6 @@ LocaleService::GetRequestedLocales(nsTArray<nsCString>& aRetVal)
   
   
   if (!NS_SUCCEEDED(Preferences::GetLocalizedCString(SELECTED_LOCALE_PREF, &locale))) {
-    
     
     if (!NS_SUCCEEDED(Preferences::GetCString(SELECTED_LOCALE_PREF, &locale))) {
       return false;
@@ -639,5 +636,21 @@ LocaleService::GetRequestedLocales(uint32_t* aCount, char*** aOutArray)
   *aCount = requestedLocales.Length();
   *aOutArray = CreateOutArray(requestedLocales);
 
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+LocaleService::SetRequestedLocales(const char** aRequested,
+                                   uint32_t aRequestedCount)
+{
+  MOZ_ASSERT(aRequestedCount < 2, "We can only handle one requested locale");
+
+  if (aRequestedCount == 0) {
+    Preferences::ClearUser(SELECTED_LOCALE_PREF);
+  } else {
+    Preferences::SetCString(SELECTED_LOCALE_PREF, aRequested[0]);
+  }
+
+  Preferences::SetBool(MATCH_OS_LOCALE_PREF, aRequestedCount == 0);
   return NS_OK;
 }
