@@ -109,7 +109,7 @@ window {
 
 #inspector-eyedropper-toggle {
   
-  display: none;
+  pointer-events: auto;
 }
 
 #inspector-eyedropper-toggle::before {

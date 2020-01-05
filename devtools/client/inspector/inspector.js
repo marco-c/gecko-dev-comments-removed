@@ -129,12 +129,7 @@ Inspector.prototype = {
     yield this._cssPropertiesLoaded;
     yield this.target.makeRemote();
     yield this._getPageStyle();
-
-    
-    
-    let defaultSelection = yield this._getDefaultNodeForSelection()
-      .catch(this._handleRejectionIfNotDestroyed);
-
+    let defaultSelection = yield this._getDefaultNodeForSelection();
     return yield this._deferredOpen(defaultSelection);
   }),
 
@@ -218,13 +213,13 @@ Inspector.prototype = {
   _deferredOpen: function (defaultSelection) {
     let deferred = defer();
 
-    this.breadcrumbs = new HTMLBreadcrumbs(this);
-
     this.walker.on("new-root", this.onNewRoot);
 
     this.selection.on("new-node-front", this.onNewSelection);
     this.selection.on("before-new-node-front", this.onBeforeNewSelection);
     this.selection.on("detached-front", this.onDetached);
+
+    this.breadcrumbs = new HTMLBreadcrumbs(this);
 
     if (this.target.isLocalTab) {
       
@@ -262,10 +257,8 @@ Inspector.prototype = {
       this.isReady = true;
 
       
-      if (defaultSelection) {
-        this.selection.setNodeFront(defaultSelection, "inspector-open");
-        this.markup.expandNode(this.selection.nodeFront);
-      }
+      this.selection.setNodeFront(defaultSelection, "inspector-open");
+      this.markup.expandNode(this.selection.nodeFront);
 
       
       this.setupToolbar();
@@ -652,11 +645,14 @@ Inspector.prototype = {
         this.onEyeDropperButtonClicked = this.onEyeDropperButtonClicked.bind(this);
         this.eyeDropperButton = this.panelDoc
                                     .getElementById("inspector-eyedropper-toggle");
-        this.eyeDropperButton.style.display = "initial";
+        this.eyeDropperButton.disabled = false;
+        this.eyeDropperButton.title = INSPECTOR_L10N.getStr("inspector.eyedropper.label");
         this.eyeDropperButton.addEventListener("click", this.onEyeDropperButtonClicked);
       }, e => console.error(e));
     } else {
-      this.panelDoc.getElementById("inspector-eyedropper-toggle").style.display = "none";
+      let eyeDropperButton = this.panelDoc.getElementById("inspector-eyedropper-toggle");
+      eyeDropperButton.disabled = true;
+      eyeDropperButton.title = INSPECTOR_L10N.getStr("eyedropper.disabled.title");
     }
   },
 
