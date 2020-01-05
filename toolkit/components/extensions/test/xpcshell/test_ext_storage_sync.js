@@ -48,12 +48,16 @@ class KintoServer {
 
     
     
-    this.collections = new Map();
+    this.records = [];
+
+    
+    this.collections = new Set();
 
     
     this.etag = 1;
 
     this.port = this.httpServer.identity.primaryPort;
+
     
     this.posts = [];
     
@@ -153,8 +157,9 @@ class KintoServer {
       };
 
       if (this.conflicts.length > 0) {
-        const {collectionId, encrypted} = this.conflicts.shift();
-        this.collections.get(collectionId).add(encrypted);
+        const nextConflict = this.conflicts.shift();
+        this.records.push(nextConflict);
+        const {data} = nextConflict;
         dump(`responding with etag ${this.etag}\n`);
         postResponse = {
           responses: body.requests.map(req => {
@@ -164,7 +169,7 @@ class KintoServer {
               headers: {"ETag": this.etag}, 
               body: {
                 details: {
-                  existing: encrypted,
+                  existing: data,
                 },
               },
             };
@@ -192,44 +197,85 @@ class KintoServer {
     });
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  addRecord(properties) {
+    if (!properties.conflict) {
+      this.records.push(properties);
+    } else {
+      this.conflicts.push(properties);
+    }
+
+    this.installCollection(properties.collectionId);
+  }
+
+  
+
+
+
+
+
+
+
   installCollection(collectionId) {
-    this.collections.set(collectionId, new Set());
-
+    if (this.collections.has(collectionId)) {
+      return;
+    }
+    this.collections.add(collectionId);
     const remoteRecordsPath = "/v1" + collectionRecordsPath(encodeURIComponent(collectionId));
+    this.httpServer.registerPathHandler(remoteRecordsPath, this.handleGetRecords.bind(this, collectionId));
+  }
 
-    function handleGetRecords(request, response) {
-      if (request.method != "GET") {
-        do_throw(`only GET is supported on ${remoteRecordsPath}`);
+  handleGetRecords(collectionId, request, response) {
+    if (request.method != "GET") {
+      do_throw(`only GET is supported on ${request.path}`);
+    }
+
+    let sinceMatch = request.queryString.match(/(^|&)_since=(\d+)/);
+    let since = sinceMatch && parseInt(sinceMatch[2], 10);
+
+    response.setStatusLine(null, 200, "OK");
+    response.setHeader("Content-Type", "application/json; charset=UTF-8");
+    response.setHeader("Date", (new Date()).toUTCString());
+    response.setHeader("ETag", this.etag.toString());
+
+    const records = this.records.filter(properties => {
+      if (properties.collectionId != collectionId) {
+        return false;
       }
 
-      response.setStatusLine(null, 200, "OK");
-      response.setHeader("Content-Type", "application/json; charset=UTF-8");
-      response.setHeader("Date", (new Date()).toUTCString());
-      response.setHeader("ETag", this.etag.toString());
-
-      const records = this.collections.get(collectionId);
-      
-      let data = Array.from(records);
-      if (request.queryString.includes("_since=")) {
-        data = data.filter(r => !(r._inPast || false));
-      }
-
-      
-      
-      
-      for (const record of records) {
-        if (record._onlyOnce) {
-          records.delete(record);
+      if (properties.predicate) {
+        const predAllowed = properties.predicate({
+          request: request,
+          response: response,
+          since: since,
+          server: this,
+        });
+        if (!predAllowed) {
+          return false;
         }
       }
 
-      const body = JSON.stringify({
-        "data": data,
-      });
-      response.write(body);
-    }
+      return true;
+    }).map(properties => properties.data);
 
-    this.httpServer.registerPathHandler(remoteRecordsPath, handleGetRecords.bind(this));
+    const body = JSON.stringify({
+      "data": records,
+    });
+    response.write(body);
   }
 
   installDeleteBucket() {
@@ -247,9 +293,7 @@ class KintoServer {
 
       this.deletedBuckets.push(bucket);
       
-      for (const [, set] of this.collections) {
-        set.clear();
-      }
+      this.records = [];
 
       response.write(JSON.stringify({
         data: {
@@ -262,8 +306,7 @@ class KintoServer {
   }
 
   
-  installKeyRing(fxaService, keysData, salts, etag, {conflict = false} = {}) {
-    this.installCollection("storage-sync-crypto");
+  installKeyRing(fxaService, keysData, salts, etag, properties) {
     const keysRecord = {
       "id": "keys",
       "keys": keysData,
@@ -271,64 +314,42 @@ class KintoServer {
       "last_modified": etag,
     };
     this.etag = etag;
-    const methodName = conflict ? "encryptAndAddRecordWithConflict" : "encryptAndAddRecord";
-    this[methodName](new KeyRingEncryptionRemoteTransformer(fxaService),
-                     "storage-sync-crypto", keysRecord);
+    const transformer = new KeyRingEncryptionRemoteTransformer(fxaService);
+    this.encryptAndAddRecord(transformer, Object.assign({}, properties, {
+      collectionId: "storage-sync-crypto",
+      data: keysRecord,
+    }));
   }
 
-  
-  addRecord(collectionId, record) {
-    this.collections.get(collectionId).add(record);
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  addRecordInPast(collectionId, record) {
-    record._inPast = true;
-    this.addRecord(collectionId, record);
-  }
-
-  encryptAndAddRecord(transformer, collectionId, record) {
-    return transformer.encode(record).then(encrypted => {
-      this.addRecord(collectionId, encrypted);
+  encryptAndAddRecord(transformer, properties) {
+    return transformer.encode(properties.data).then(encrypted => {
+      this.addRecord(Object.assign({}, properties, {data: encrypted}));
     });
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  encryptAndAddRecordOnlyOnce(transformer, collectionId, record) {
-    return transformer.encode(record).then(encrypted => {
-      encrypted._onlyOnce = true;
-      this.addRecord(collectionId, encrypted);
-    });
-  }
-
-  
-  encryptAndAddRecordWithConflict(transformer, collectionId, record) {
-    return transformer.encode(record).then(encrypted => {
-      this.conflicts.push({collectionId, encrypted});
-    });
-  }
-
-  clearCollection(collectionId) {
-    this.collections.get(collectionId).clear();
   }
 
   stop() {
     this.httpServer.stop(() => { });
   }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function appearsAt(startTime) {
+  return function({since, server}) {
+    return since < startTime && startTime < server.etag;
+  };
 }
 
 
@@ -526,7 +547,11 @@ add_task(function* ensureCanSync_posts_new_keys() {
       server.clearPosts();
       
       const firstPostedKeyring = Object.assign({}, post.body.data, {last_modified: server.etag});
-      server.addRecordInPast("storage-sync-crypto", firstPostedKeyring);
+      server.addRecord({
+        data: firstPostedKeyring,
+        collectionId: "storage-sync-crypto",
+        predicate: appearsAt(250),
+      });
       const extensionId2 = uuid();
       newKeys = yield extensionStorageSync.ensureCanSync([extensionId2]);
       ok(newKeys.hasKeysFor([extensionId]), `didn't forget key for ${extensionId}`);
@@ -565,6 +590,7 @@ add_task(function* ensureCanSync_pulls_key() {
       
       const cryptoCollection = new CryptoCollection(fxaService);
       const RANDOM_SALT = cryptoCollection.getNewSalt();
+      yield extensionStorageSync.cryptoCollection._clear();
       const keysData = {
         "default": DEFAULT_KEY.keyPairB64,
         "collections": {
@@ -574,7 +600,9 @@ add_task(function* ensureCanSync_pulls_key() {
       const saltData = {
         [extensionId]: RANDOM_SALT,
       };
-      server.installKeyRing(fxaService, keysData, saltData, 999);
+      server.installKeyRing(fxaService, keysData, saltData, 950, {
+        predicate: appearsAt(900),
+      });
 
       let collectionKeys = yield extensionStorageSync.ensureCanSync([extensionId]);
       assertKeyRingKey(collectionKeys, extensionId, RANDOM_KEY);
@@ -588,8 +616,9 @@ add_task(function* ensureCanSync_pulls_key() {
       newKey.generateRandom();
       keysData.collections[extensionId2] = newKey.keyPairB64;
       saltData[extensionId2] = cryptoCollection.getNewSalt();
-      server.clearCollection("storage-sync-crypto");
-      server.installKeyRing(fxaService, keysData, saltData, 1000);
+      server.installKeyRing(fxaService, keysData, saltData, 1050, {
+        predicate: appearsAt(1000),
+      });
 
       let newCollectionKeys = yield extensionStorageSync.ensureCanSync([extensionId, extensionId2]);
       assertKeyRingKey(newCollectionKeys, extensionId2, newKey);
@@ -603,8 +632,9 @@ add_task(function* ensureCanSync_pulls_key() {
       const onlyKey = new BulkKeyBundle(extensionOnlyKey);
       onlyKey.generateRandom();
       keysData.collections[extensionOnlyKey] = onlyKey.keyPairB64;
-      server.clearCollection("storage-sync-crypto");
-      server.installKeyRing(fxaService, keysData, saltData, 1001);
+      server.installKeyRing(fxaService, keysData, saltData, 1150, {
+        predicate: appearsAt(1100),
+      });
 
       let withNewKey = yield extensionStorageSync.ensureCanSync([extensionId, extensionOnlyKey]);
       dump(`got ${JSON.stringify(withNewKey.asWBO().cleartext)}\n`);
@@ -623,8 +653,9 @@ add_task(function* ensureCanSync_pulls_key() {
       
       const newSalt = cryptoCollection.getNewSalt();
       saltData[extensionOnlySalt] = newSalt;
-      server.clearCollection("storage-sync-crypto");
-      server.installKeyRing(fxaService, keysData, saltData, 1002);
+      server.installKeyRing(fxaService, keysData, saltData, 1250, {
+        predicate: appearsAt(1200),
+      });
 
       let withOnlySaltKey = yield extensionStorageSync.ensureCanSync([extensionId, extensionOnlySalt]);
       assertKeyRingKey(withOnlySaltKey, extensionId, RANDOM_KEY,
@@ -762,19 +793,9 @@ add_task(function* checkSyncKeyRing_overwrites_on_conflict() {
       
       const NOVEL_KB = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdee";
       const oldUser = Object.assign({}, loggedInUser, {kB: NOVEL_KB});
-      server.installCollection("storage-sync-crypto");
       server.installDeleteBucket();
-      server.etag = 765;
       yield* withSignedInUser(oldUser, function* (extensionStorageSync, fxaService) {
-        const transformer = new KeyRingEncryptionRemoteTransformer(fxaService);
-        const FAKE_KEYRING = {
-          id: "keys",
-          keys: {},
-          salts: {},
-          uuid: "abcd",
-          kbHash: "abcd",
-        };
-        yield server.encryptAndAddRecord(transformer, "storage-sync-crypto", FAKE_KEYRING);
+        yield server.installKeyRing(fxaService, {}, {}, 765);
       });
 
       
@@ -884,9 +905,12 @@ add_task(function* checkSyncKeyRing_flushes_on_uuid_change() {
           
           last_modified: 765,
         });
-        server.clearCollection("storage-sync-crypto");
-        server.etag = 765;
-        yield server.encryptAndAddRecordOnlyOnce(transformer, "storage-sync-crypto", newKeyRingData);
+        server.etag = 1000;
+        yield server.encryptAndAddRecord(transformer, {
+          collectionId: "storage-sync-crypto",
+          data: newKeyRingData,
+          predicate: appearsAt(800),
+        });
 
         
         
@@ -941,12 +965,16 @@ add_task(function* test_storage_sync_pulls_changes() {
 
       yield extensionStorageSync.ensureCanSync([extensionId]);
       const collectionId = yield cryptoCollection.extensionIdToCollectionId(extensionId);
-      server.installCollection(collectionId);
-      yield server.encryptAndAddRecord(transformer, collectionId, {
-        "id": "key-remote_2D_key",
-        "key": "remote-key",
-        "data": 6,
+      yield server.encryptAndAddRecord(transformer, {
+        collectionId,
+        data: {
+          "id": "key-remote_2D_key",
+          "key": "remote-key",
+          "data": 6,
+        },
+        predicate: appearsAt(850),
       });
+      server.etag = 900;
 
       yield extensionStorageSync.syncAll();
       const remoteValue = (yield extensionStorageSync.get(extension, "remote-key", context))["remote-key"];
@@ -966,11 +994,14 @@ add_task(function* test_storage_sync_pulls_changes() {
 
       
       server.etag = 1000;
-      server.clearCollection(collectionId);
-      yield server.encryptAndAddRecord(transformer, collectionId, {
-        "id": "key-remote_2D_key",
-        "key": "remote-key",
-        "data": 7,
+      yield server.encryptAndAddRecord(transformer, {
+        collectionId,
+        data: {
+          "id": "key-remote_2D_key",
+          "key": "remote-key",
+          "data": 7,
+        },
+        predicate: appearsAt(950),
       });
 
       yield extensionStorageSync.syncAll();
@@ -1080,10 +1111,13 @@ add_task(function* test_storage_sync_pulls_deletes() {
       }, context);
 
       const transformer = new CollectionKeyEncryptionRemoteTransformer(new CryptoCollection(fxaService), extension.id);
-      yield server.encryptAndAddRecord(transformer, collectionId, {
-        "id": "key-my_2D_key",
-        "data": 6,
-        "_status": "deleted",
+      yield server.encryptAndAddRecord(transformer, {
+        collectionId,
+        data: {
+          "id": "key-my_2D_key",
+          "data": 6,
+          "_status": "deleted",
+        },
       });
 
       yield extensionStorageSync.syncAll();
