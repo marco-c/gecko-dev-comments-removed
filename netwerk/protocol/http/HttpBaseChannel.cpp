@@ -205,7 +205,7 @@ HttpBaseChannel::HttpBaseChannel()
   , mForceMainDocumentChannel(false)
   , mIsTrackingResource(false)
 {
-  LOG(("Creating HttpBaseChannel @%p\n", this));
+  LOG(("Creating HttpBaseChannel @%x\n", this));
 
   
 #ifdef MOZ_VALGRIND
@@ -221,7 +221,7 @@ HttpBaseChannel::HttpBaseChannel()
 
 HttpBaseChannel::~HttpBaseChannel()
 {
-  LOG(("Destroying HttpBaseChannel @%p\n", this));
+  LOG(("Destroying HttpBaseChannel @%x\n", this));
 
   
   CleanRedirectCacheChainIfNecessary();
@@ -1043,8 +1043,7 @@ public:
   NS_IMETHOD OnStopRequest(nsIRequest *aRequest, nsISupports *aContext, nsresult aStatusCode) override
   {
     if (NS_FAILED(aStatusCode) && NS_SUCCEEDED(mChannel->mStatus)) {
-      LOG(("HttpBaseChannel::InterceptFailedOnStop %p seting status %" PRIx32,
-           mChannel, static_cast<uint32_t>(aStatusCode)));
+      LOG(("HttpBaseChannel::InterceptFailedOnStop %p seting status %x", mChannel, aStatusCode));
       mChannel->mStatus = aStatusCode;
     }
     return mNext->OnStopRequest(aRequest, aContext, aStatusCode);
@@ -2721,12 +2720,6 @@ HttpBaseChannel::GetIntegrityMetadata(nsAString& aIntegrityMetadata)
 {
   aIntegrityMetadata = mIntegrityMetadata;
   return NS_OK;
-}
-
-mozilla::net::nsHttpChannel*
-HttpBaseChannel::QueryHttpChannelImpl(void)
-{
-  return nullptr;
 }
 
 

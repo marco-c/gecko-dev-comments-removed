@@ -1021,9 +1021,3 @@ nsViewSourceChannel::SetCorsPreflightParameters(const nsTArray<nsCString>& aUnsa
 {
   mHttpChannelInternal->SetCorsPreflightParameters(aUnsafeHeaders);
 }
-
-mozilla::net::nsHttpChannel *
-nsViewSourceChannel::QueryHttpChannelImpl()
-{
-  return mHttpChannelInternal->QueryHttpChannelImpl();
-}
