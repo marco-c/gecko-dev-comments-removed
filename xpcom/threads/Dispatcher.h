@@ -4,55 +4,36 @@
 
 
 
-#ifndef mozilla_dom_Dispatcher_h
-#define mozilla_dom_Dispatcher_h
+#ifndef mozilla_Dispatcher_h
+#define mozilla_Dispatcher_h
 
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/TaskCategory.h"
-#include "nsISupports.h"
+#include "nsISupportsImpl.h"
 
 class nsIEventTarget;
 class nsIRunnable;
-
-
-
-
-
-
-
-
-
 
 namespace mozilla {
 class AbstractThread;
 namespace dom {
 class TabGroup;
+}
 
 
 
 
 
-class DispatcherTrait {
+
+
+
+
+
+
+class Dispatcher {
 public:
-  
-  
-  virtual nsresult Dispatch(const char* aName,
-                            TaskCategory aCategory,
-                            already_AddRefed<nsIRunnable>&& aRunnable);
+  NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
 
-  
-  
-  
-  virtual nsIEventTarget* EventTargetFor(TaskCategory aCategory) const;
-
-  
-  
-  virtual AbstractThread* AbstractMainThreadFor(TaskCategory aCategory);
-};
-
-
-class Dispatcher : public nsISupports {
-public:
   
   virtual nsresult Dispatch(const char* aName,
                             TaskCategory aCategory,
@@ -64,20 +45,26 @@ public:
 
   
   
-  virtual AbstractThread* AbstractMainThreadFor(TaskCategory aCategory) = 0;
+  AbstractThread* AbstractMainThreadFor(TaskCategory aCategory);
 
   
   
-  virtual TabGroup* AsTabGroup() { return nullptr; }
+  virtual dom::TabGroup* AsTabGroup() { return nullptr; }
 
 protected:
+  
+  
+  virtual AbstractThread* AbstractMainThreadForImpl(TaskCategory aCategory) = 0;
+
+  
   virtual already_AddRefed<nsIEventTarget>
   CreateEventTargetFor(TaskCategory aCategory);
 
+  
+  
   static Dispatcher* FromEventTarget(nsIEventTarget* aEventTarget);
 };
 
-} 
 } 
 
 #endif 
