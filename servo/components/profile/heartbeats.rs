@@ -3,8 +3,8 @@
 
 
 
-use hbs_pow::HeartbeatPow as Heartbeat;
-use hbs_pow::HeartbeatPowContext as HeartbeatContext;
+use heartbeats_simple::HeartbeatPow as Heartbeat;
+use heartbeats_simple::HeartbeatPowContext as HeartbeatContext;
 use profile_traits::time::ProfilerCategory;
 use std::collections::HashMap;
 use std::env::var_os;
