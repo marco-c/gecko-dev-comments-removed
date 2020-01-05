@@ -192,25 +192,29 @@ NSSCertDBTrustDomain::GetCertTrust(EndEntityOrCA endEntityOrCA,
     return Result::FATAL_ERROR_LIBRARY_FAILURE;
   }
 
-  bool isCertRevoked;
-  nsresult nsrv = mCertBlocklist->IsCertRevoked(
-                    candidateCert->derIssuer.data,
-                    candidateCert->derIssuer.len,
-                    candidateCert->serialNumber.data,
-                    candidateCert->serialNumber.len,
-                    candidateCert->derSubject.data,
-                    candidateCert->derSubject.len,
-                    candidateCert->derPublicKey.data,
-                    candidateCert->derPublicKey.len,
-                    &isCertRevoked);
-  if (NS_FAILED(nsrv)) {
-    return Result::FATAL_ERROR_LIBRARY_FAILURE;
-  }
+  
+  
+  if (mCertDBTrustType == trustSSL) {
+    bool isCertRevoked;
+    nsresult nsrv = mCertBlocklist->IsCertRevoked(
+                      candidateCert->derIssuer.data,
+                      candidateCert->derIssuer.len,
+                      candidateCert->serialNumber.data,
+                      candidateCert->serialNumber.len,
+                      candidateCert->derSubject.data,
+                      candidateCert->derSubject.len,
+                      candidateCert->derPublicKey.data,
+                      candidateCert->derPublicKey.len,
+                      &isCertRevoked);
+    if (NS_FAILED(nsrv)) {
+      return Result::FATAL_ERROR_LIBRARY_FAILURE;
+    }
 
-  if (isCertRevoked) {
-    MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
-           ("NSSCertDBTrustDomain: certificate is in blocklist"));
-    return Result::ERROR_REVOKED_CERTIFICATE;
+    if (isCertRevoked) {
+      MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
+             ("NSSCertDBTrustDomain: certificate is in blocklist"));
+      return Result::ERROR_REVOKED_CERTIFICATE;
+    }
   }
 
   
