@@ -654,7 +654,7 @@ public:
 
 
   static void MapCommonAttributesInto(const nsMappedAttributes* aAttributes, 
-                                      nsRuleData* aRuleData);
+                                      GenericSpecifiedValues* aGenericData);
   
 
 
@@ -663,7 +663,7 @@ public:
 
 
   static void MapCommonAttributesIntoExceptHidden(const nsMappedAttributes* aAttributes,
-                                                  nsRuleData* aRuleData);
+                                                  GenericSpecifiedValues* aGenericData);
 
   static const MappedAttributeEntry sCommonAttributeMap[];
   static const MappedAttributeEntry sImageMarginSizeAttributeMap[];
@@ -681,7 +681,7 @@ public:
 
 
   static void MapImageAlignAttributeInto(const nsMappedAttributes* aAttributes,
-                                         nsRuleData* aData);
+                                         GenericSpecifiedValues* aGenericData);
 
   
 
@@ -692,7 +692,7 @@ public:
 
 
   static void MapDivAlignAttributeInto(const nsMappedAttributes* aAttributes,
-                                       nsRuleData* aData);
+                                       GenericSpecifiedValues* aGenericData);
 
   
 
@@ -702,7 +702,7 @@ public:
 
 
   static void MapImageBorderAttributeInto(const nsMappedAttributes* aAttributes,
-                                          nsRuleData* aData);
+                                          GenericSpecifiedValues* aGenericData);
   
 
 
@@ -711,7 +711,7 @@ public:
 
 
   static void MapImageMarginAttributeInto(const nsMappedAttributes* aAttributes,
-                                          nsRuleData* aData);
+                                          GenericSpecifiedValues* aGenericData);
   
 
 
@@ -720,7 +720,7 @@ public:
 
 
   static void MapImageSizeAttributesInto(const nsMappedAttributes* aAttributes,
-                                         nsRuleData* aData);
+                                         GenericSpecifiedValues* aGenericData);
   
 
 
@@ -730,7 +730,7 @@ public:
 
 
   static void MapBackgroundInto(const nsMappedAttributes* aAttributes,
-                                nsRuleData* aData);
+                                GenericSpecifiedValues* aGenericData);
   
 
 
@@ -740,7 +740,7 @@ public:
 
 
   static void MapBGColorInto(const nsMappedAttributes* aAttributes,
-                             nsRuleData* aData);
+                             GenericSpecifiedValues* aGenericData);
   
 
 
@@ -750,7 +750,7 @@ public:
 
 
   static void MapBackgroundAttributesInto(const nsMappedAttributes* aAttributes,
-                                          nsRuleData* aData);
+                                          GenericSpecifiedValues* aGenericData);
   
 
 
@@ -760,7 +760,7 @@ public:
 
 
   static void MapScrollingAttributeInto(const nsMappedAttributes* aAttributes,
-                                        nsRuleData* aData);
+                                        GenericSpecifiedValues* aGenericData);
   
 
 

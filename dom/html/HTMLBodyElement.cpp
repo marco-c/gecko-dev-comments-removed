@@ -360,8 +360,9 @@ HTMLBodyElement::UnbindFromTree(bool aDeep, bool aNullParent)
 
 void
 HTMLBodyElement::MapAttributesIntoRule(const nsMappedAttributes* aAttributes,
-                                       nsRuleData* aData)
+                                       GenericSpecifiedValues* aGenericData)
 {
+  nsRuleData* aData = aGenericData->AsRuleData();
   if (aData->mSIDs & NS_STYLE_INHERIT_BIT(Display)) {
     
     nsIPresShell *presShell = aData->mPresContext->GetPresShell();
@@ -403,8 +404,8 @@ HTMLBodyElement::MapAttributesIntoRule(const nsMappedAttributes* aAttributes,
     }
   }
 
-  nsGenericHTMLElement::MapBackgroundAttributesInto(aAttributes, aData);
-  nsGenericHTMLElement::MapCommonAttributesInto(aAttributes, aData);
+  nsGenericHTMLElement::MapBackgroundAttributesInto(aAttributes, aGenericData);
+  nsGenericHTMLElement::MapCommonAttributesInto(aAttributes, aGenericData);
 }
 
 nsMapRuleToAttributesFunc
