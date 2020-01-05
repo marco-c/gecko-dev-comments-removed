@@ -2,6 +2,8 @@
 
 
 
+
+
 pref("services.sync.serverURL", "https://auth.services.mozilla.com/");
 pref("services.sync.userURL", "user/");
 pref("services.sync.miscURL", "misc/");
