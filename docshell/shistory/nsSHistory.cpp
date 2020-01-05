@@ -1536,7 +1536,10 @@ nsSHistory::LoadNextPossibleEntry(int32_t aNewIndex, long aLoadType,
 NS_IMETHODIMP
 nsSHistory::LoadEntry(int32_t aIndex, long aLoadType, uint32_t aHistCmd)
 {
-  nsCOMPtr<nsIDocShell> docShell;
+  if (!mRootDocShell) {
+    return NS_ERROR_FAILURE;
+  }
+
   
   mRequestedIndex = aIndex;
 
@@ -1584,75 +1587,31 @@ nsSHistory::LoadEntry(int32_t aIndex, long aLoadType, uint32_t aHistCmd)
     return NS_OK;  
   }
 
-  int32_t pCount = 0;
-  int32_t nCount = 0;
-  nsCOMPtr<nsISHContainer> prevAsContainer(do_QueryInterface(prevEntry));
-  nsCOMPtr<nsISHContainer> nextAsContainer(do_QueryInterface(nextEntry));
-  if (prevAsContainer && nextAsContainer) {
-    prevAsContainer->GetChildCount(&pCount);
-    nextAsContainer->GetChildCount(&nCount);
-  }
-
   if (mRequestedIndex == mIndex) {
     
-    docShell = mRootDocShell;
-  } else {
-    
-    if (pCount > 0 && nCount > 0) {
-      
-
-
-      bool frameFound = false;
-      nsresult rv = CompareFrames(prevEntry, nextEntry, mRootDocShell,
-                                  aLoadType, &frameFound);
-      if (!frameFound) {
-        
-        
-        return LoadNextPossibleEntry(aIndex, aLoadType, aHistCmd);
-      }
-      return rv;
-    } else {
-      
-      uint32_t prevID = 0;
-      uint32_t nextID = 0;
-      prevEntry->GetID(&prevID);
-      nextEntry->GetID(&nextID);
-      if (prevID == nextID) {
-        
-        
-        return LoadNextPossibleEntry(aIndex, aLoadType, aHistCmd);
-      }
-      docShell = mRootDocShell;
-    }
-  }
-
-  if (!docShell) {
-    
-    
-    mRequestedIndex = -1;
-    return NS_ERROR_FAILURE;
+    return InitiateLoad(nextEntry, mRootDocShell, aLoadType);
   }
 
   
-  return InitiateLoad(nextEntry, docShell, aLoadType);
+  bool differenceFound = false;
+  nsresult rv = LoadDifferingEntries(prevEntry, nextEntry, mRootDocShell,
+                                     aLoadType, differenceFound);
+  if (!differenceFound) {
+    
+    return LoadNextPossibleEntry(aIndex, aLoadType, aHistCmd);
+  }
+
+  return rv;
 }
 
 nsresult
-nsSHistory::CompareFrames(nsISHEntry* aPrevEntry, nsISHEntry* aNextEntry,
-                          nsIDocShell* aParent, long aLoadType,
-                          bool* aIsFrameFound)
+nsSHistory::LoadDifferingEntries(nsISHEntry* aPrevEntry, nsISHEntry* aNextEntry,
+                                 nsIDocShell* aParent, long aLoadType,
+                                 bool& aDifferenceFound)
 {
   if (!aPrevEntry || !aNextEntry || !aParent) {
     return NS_ERROR_FAILURE;
   }
-
-  
-  
-  
-  uint64_t prevdID, nextdID;
-  aPrevEntry->GetDocshellID(&prevdID);
-  aNextEntry->GetDocshellID(&nextdID);
-  NS_ENSURE_STATE(prevdID == nextdID);
 
   nsresult result = NS_OK;
   uint32_t prevID, nextID;
@@ -1662,14 +1621,11 @@ nsSHistory::CompareFrames(nsISHEntry* aPrevEntry, nsISHEntry* aNextEntry,
 
   
   if (prevID != nextID) {
-    if (aIsFrameFound) {
-      *aIsFrameFound = true;
-    }
+    aDifferenceFound = true;
+
     
-    
-    aNextEntry->SetIsSubFrame(true);
-    InitiateLoad(aNextEntry, aParent, aLoadType);
-    return NS_OK;
+    aNextEntry->SetIsSubFrame(aParent != mRootDocShell);
+    return InitiateLoad(aNextEntry, aParent, aLoadType);
   }
 
   
@@ -1679,7 +1635,7 @@ nsSHistory::CompareFrames(nsISHEntry* aPrevEntry, nsISHEntry* aNextEntry,
   nsCOMPtr<nsISHContainer> prevContainer(do_QueryInterface(aPrevEntry));
   nsCOMPtr<nsISHContainer> nextContainer(do_QueryInterface(aNextEntry));
 
-  if (!aParent || !prevContainer || !nextContainer) {
+  if (!prevContainer || !nextContainer) {
     return NS_ERROR_FAILURE;
   }
 
@@ -1744,7 +1700,7 @@ nsSHistory::CompareFrames(nsISHEntry* aPrevEntry, nsISHEntry* aNextEntry,
     
     
     
-    CompareFrames(pChild, nChild, dsChild, aLoadType, aIsFrameFound);
+    LoadDifferingEntries(pChild, nChild, dsChild, aLoadType, aDifferenceFound);
   }
   return result;
 }
