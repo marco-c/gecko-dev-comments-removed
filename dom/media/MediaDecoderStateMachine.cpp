@@ -2658,20 +2658,14 @@ MediaDecoderStateMachine::MediaDecoderStateMachine(MediaDecoder* aDecoder,
   INIT_CANONICAL(mCurrentPosition, TimeUnit::Zero()),
   INIT_CANONICAL(mPlaybackOffset, 0),
   INIT_CANONICAL(mIsAudioDataAudible, false)
+#ifdef XP_WIN
+  , mShouldUseHiResTimers(Preferences::GetBool("media.hi-res-timers.enabled", true))
+#endif
 {
   MOZ_COUNT_CTOR(MediaDecoderStateMachine);
   NS_ASSERTION(NS_IsMainThread(), "Should be on main thread.");
 
   InitVideoQueuePrefs();
-
-#ifdef XP_WIN
-  
-  
-  
-  
-  
-  timeBeginPeriod(1);
-#endif
 }
 
 #undef INIT_WATCHABLE
@@ -2684,7 +2678,7 @@ MediaDecoderStateMachine::~MediaDecoderStateMachine()
   MOZ_COUNT_DTOR(MediaDecoderStateMachine);
 
 #ifdef XP_WIN
-  timeEndPeriod(1);
+  MOZ_ASSERT(!mHiResTimersRequested);
 #endif
 }
 
@@ -2895,6 +2889,12 @@ MediaDecoderStateMachine::StopPlayback()
   if (IsPlaying()) {
     mMediaSink->SetPlaying(false);
     MOZ_ASSERT(!IsPlaying());
+#ifdef XP_WIN
+    if (mHiResTimersRequested) {
+      mHiResTimersRequested = false;
+      timeEndPeriod(1);
+    }
+#endif
   }
 }
 
@@ -2917,6 +2917,20 @@ void MediaDecoderStateMachine::MaybeStartPlayback()
   LOG("MaybeStartPlayback() starting playback");
   mOnPlaybackEvent.Notify(MediaEventType::PlaybackStarted);
   StartMediaSink();
+
+#ifdef XP_WIN
+  if (!mHiResTimersRequested && mShouldUseHiResTimers) {
+    mHiResTimersRequested = true;
+    
+    
+    
+    
+    
+    
+    
+    timeBeginPeriod(1);
+  }
+#endif
 
   if (!IsPlaying()) {
     mMediaSink->SetPlaying(true);
