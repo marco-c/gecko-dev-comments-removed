@@ -11,11 +11,17 @@ Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/UpdateUtils.jsm");
 Cu.import("resource://gre/modules/AppConstants.jsm");
 
- 
+
 const TEST_THRESHOLD = {
   "beta": 0.9,  
   "release": 1.0,  
   "esr": 1.0,  
+};
+
+
+
+const MULTI_BUCKETS = {
+  "beta": { 1: .5, 4: 1, },
 };
 
 const ADDON_ROLLOUT_POLICY = {
@@ -120,14 +126,14 @@ function defineCohort() {
     cohortPrefix = `addons-set${addonPolicy}-`;
   }
 
-  let inMultiExperiment = false;
+  let eligibleForMulti = false;
   if (userOptedOut.e10s || userOptedOut.multi) {
     
     
     setCohort("optedOut");
   } else if (userOptedIn.e10s) {
     setCohort("optedIn");
-    inMultiExperiment = true;
+    eligibleForMulti = true;
   } else if (temporaryDisqualification != "") {
     
     
@@ -147,11 +153,11 @@ function defineCohort() {
     
     setCohort(`temp-qualified-${temporaryQualification}`);
     Preferences.set(PREF_TOGGLE_E10S, true);
-    inMultiExperiment = true;
+    eligibleForMulti = true;
   } else if (testGroup) {
     setCohort(`${cohortPrefix}test`);
     Preferences.set(PREF_TOGGLE_E10S, true);
-    inMultiExperiment = true;
+    eligibleForMulti = true;
   } else {
     setCohort(`${cohortPrefix}control`);
     Preferences.reset(PREF_TOGGLE_E10S);
@@ -166,8 +172,8 @@ function defineCohort() {
   
   
   
-  if (updateChannel !== "beta" ||
-      !inMultiExperiment ||
+  if (!(updateChannel in MULTI_BUCKETS) ||
+      !eligibleForMulti ||
       userOptedIn.multi ||
       disqualified ||
       getAddonsDisqualifyForMulti()) {
@@ -184,16 +190,11 @@ function defineCohort() {
 
   
   
-  let BUCKETS = {
-    1: .25,
-    2: .5,
-    4: .75,
-    8: 1
-  };
+  let buckets = MULTI_BUCKETS[updateChannel];
 
   let multiUserSample = getUserSample(true);
-  for (let sampleName of Object.getOwnPropertyNames(BUCKETS)) {
-    if (multiUserSample < BUCKETS[sampleName]) {
+  for (let sampleName of Object.getOwnPropertyNames(buckets)) {
+    if (multiUserSample < buckets[sampleName]) {
       setCohort(`${cohortPrefix}multiBucket${sampleName}`);
       Preferences.set(PREF_E10S_PROCESSCOUNT + ".web", sampleName);
       break;
