@@ -177,8 +177,8 @@ function tunnelToInnerBrowser(outer, inner) {
 
       
       
-      outer.setDocShellIsActiveAndForeground = value => {
-        inner.frameLoader.tabParent.setDocShellIsActiveAndForeground(value);
+      outer.preserveLayers = value => {
+        inner.frameLoader.tabParent.preserveLayers(value);
       };
 
       
@@ -218,7 +218,7 @@ function tunnelToInnerBrowser(outer, inner) {
       delete outer.isRemoteBrowser;
       delete outer.hasContentOpener;
       delete outer.docShellIsActive;
-      delete outer.setDocShellIsActiveAndForeground;
+      delete outer.preserveLayers;
 
       
       delete inner.ownerGlobal.PopupNotifications;
