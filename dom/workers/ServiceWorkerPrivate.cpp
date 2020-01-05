@@ -1926,54 +1926,80 @@ ServiceWorkerPrivate::IsIdle() const
   return mTokenCount == 0 || (mTokenCount == 1 && mIdleKeepAliveToken);
 }
 
- void
-ServiceWorkerPrivate::NoteIdleWorkerCallback(nsITimer* aTimer, void* aPrivate)
+namespace {
+
+class ServiceWorkerPrivateTimerCallback final : public nsITimerCallback
+{
+public:
+  typedef void (ServiceWorkerPrivate::*Method)(nsITimer*);
+
+  ServiceWorkerPrivateTimerCallback(ServiceWorkerPrivate* aServiceWorkerPrivate,
+                                    Method aMethod)
+    : mServiceWorkerPrivate(aServiceWorkerPrivate)
+    , mMethod(aMethod)
+  {
+  }
+
+  NS_IMETHOD
+  Notify(nsITimer* aTimer) override
+  {
+    (mServiceWorkerPrivate->*mMethod)(aTimer);
+    mServiceWorkerPrivate = nullptr;
+    return NS_OK;
+  }
+
+private:
+  ~ServiceWorkerPrivateTimerCallback() = default;
+
+  RefPtr<ServiceWorkerPrivate> mServiceWorkerPrivate;
+  Method mMethod;
+
+  NS_DECL_THREADSAFE_ISUPPORTS
+};
+
+NS_IMPL_ISUPPORTS(ServiceWorkerPrivateTimerCallback, nsITimerCallback);
+
+} 
+
+void
+ServiceWorkerPrivate::NoteIdleWorkerCallback(nsITimer* aTimer)
 {
   AssertIsOnMainThread();
-  MOZ_ASSERT(aPrivate);
 
-  RefPtr<ServiceWorkerPrivate> swp = static_cast<ServiceWorkerPrivate*>(aPrivate);
-
-  MOZ_ASSERT(aTimer == swp->mIdleWorkerTimer, "Invalid timer!");
+  MOZ_ASSERT(aTimer == mIdleWorkerTimer, "Invalid timer!");
 
   
-  swp->mIdleKeepAliveToken = nullptr;
+  mIdleKeepAliveToken = nullptr;
 
-  if (swp->mWorkerPrivate) {
+  if (mWorkerPrivate) {
     
     
     
     uint32_t timeout = Preferences::GetInt("dom.serviceWorkers.idle_extended_timeout");
+    nsCOMPtr<nsITimerCallback> cb = new ServiceWorkerPrivateTimerCallback(
+      this, &ServiceWorkerPrivate::TerminateWorkerCallback);
     DebugOnly<nsresult> rv =
-      swp->mIdleWorkerTimer->InitWithFuncCallback(ServiceWorkerPrivate::TerminateWorkerCallback,
-                                                  aPrivate,
-                                                  timeout,
-                                                  nsITimer::TYPE_ONE_SHOT);
+      mIdleWorkerTimer->InitWithCallback(cb, timeout, nsITimer::TYPE_ONE_SHOT);
     MOZ_ASSERT(NS_SUCCEEDED(rv));
   }
 }
 
- void
-ServiceWorkerPrivate::TerminateWorkerCallback(nsITimer* aTimer, void *aPrivate)
+void
+ServiceWorkerPrivate::TerminateWorkerCallback(nsITimer* aTimer)
 {
   AssertIsOnMainThread();
-  MOZ_ASSERT(aPrivate);
 
-  RefPtr<ServiceWorkerPrivate> serviceWorkerPrivate =
-    static_cast<ServiceWorkerPrivate*>(aPrivate);
-
-  MOZ_ASSERT(aTimer == serviceWorkerPrivate->mIdleWorkerTimer,
-      "Invalid timer!");
+  MOZ_ASSERT(aTimer == this->mIdleWorkerTimer, "Invalid timer!");
 
   
   
   
   ServiceWorkerManager::LocalizeAndReportToAllClients(
-    serviceWorkerPrivate->mInfo->Scope(),
+    mInfo->Scope(),
     "ServiceWorkerGraceTimeoutTermination",
-    nsTArray<nsString> { NS_ConvertUTF8toUTF16(serviceWorkerPrivate->mInfo->Scope()) });
+    nsTArray<nsString> { NS_ConvertUTF8toUTF16(mInfo->Scope()) });
 
-  serviceWorkerPrivate->TerminateWorker();
+  TerminateWorker();
 }
 
 void
@@ -1998,10 +2024,10 @@ void
 ServiceWorkerPrivate::ResetIdleTimeout()
 {
   uint32_t timeout = Preferences::GetInt("dom.serviceWorkers.idle_timeout");
+  nsCOMPtr<nsITimerCallback> cb = new ServiceWorkerPrivateTimerCallback(
+    this, &ServiceWorkerPrivate::NoteIdleWorkerCallback);
   DebugOnly<nsresult> rv =
-    mIdleWorkerTimer->InitWithFuncCallback(ServiceWorkerPrivate::NoteIdleWorkerCallback,
-                                           this, timeout,
-                                           nsITimer::TYPE_ONE_SHOT);
+    mIdleWorkerTimer->InitWithCallback(cb, timeout, nsITimer::TYPE_ONE_SHOT);
   MOZ_ASSERT(NS_SUCCEEDED(rv));
 }
 
