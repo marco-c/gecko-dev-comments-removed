@@ -4,6 +4,7 @@
 
 from __future__ import absolute_import
 
+import errno
 import os
 import signal
 import subprocess
@@ -160,7 +161,7 @@ class ProcessHandlerMixin(object):
                             
                             
                             
-                            if getattr(e, "errno", None) != 3:
+                            if getattr(e, "errno", None) != errno.ESRCH:
                                 print >> sys.stderr, "Could not terminate process: %s" % self.pid
                                 raise
                     else:
@@ -739,7 +740,7 @@ falling back to not using job objects for managing child processes"""
 
         if isPosix:
             
-            self.proc.pgid = os.getpgid(self.proc.pid)
+            self.proc.pgid = self._getpgid(self.proc.pid)
             self.proc.detached_pid = None
 
         self.processOutput(timeout=timeout, outputTimeout=outputTimeout)
@@ -850,6 +851,15 @@ falling back to not using job objects for managing child processes"""
     def pid(self):
         return self.proc.pid
 
+    @classmethod
+    def _getpgid(cls, pid):
+        try:
+            return os.getpgid(pid)
+        except OSError as e:
+            
+            if e.errno != errno.ESRCH:
+                raise
+
     def check_for_detached(self, new_pid):
         """Check if the current process has been detached and mark it appropriately.
 
@@ -864,13 +874,7 @@ falling back to not using job objects for managing child processes"""
             return
 
         if isPosix:
-            new_pgid = None
-            try:
-                new_pgid = os.getpgid(new_pid)
-            except OSError as e:
-                
-                if e.errno != 3:
-                    raise
+            new_pgid = self._getpgid(new_pid)
 
             if new_pgid and new_pgid != self.proc.pgid:
                 self.proc.detached_pid = new_pid
