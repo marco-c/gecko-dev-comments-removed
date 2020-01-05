@@ -185,7 +185,12 @@ private:
   bool RunPerformAsyncLaunch(StringVector aExtraOpts=StringVector(),
                              base::ProcessArchitecture aArch=base::GetCurrentProcessArchitecture());
 
-  static void GetPathToBinary(FilePath& exePath, GeckoProcessType processType);
+  enum class BinaryPathType {
+    Self,
+    PluginContainer
+  };
+
+  static BinaryPathType GetPathToBinary(FilePath& exePath, GeckoProcessType processType);
 
   
   
