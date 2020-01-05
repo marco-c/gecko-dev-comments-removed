@@ -104,6 +104,7 @@ ImageBridgeParent::ActorDestroy(ActorDestroyReason aWhy)
 {
   
   mClosed = true;
+  mCompositables.clear();
 
   MessageLoop::current()->PostTask(NewRunnableMethod(this, &ImageBridgeParent::DeferredDestroy));
 
