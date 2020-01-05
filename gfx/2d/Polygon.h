@@ -27,11 +27,15 @@ CalculateEdgeIntersect(const Point4DTyped<Units>& aFirst,
   return aFirst + (aSecond - aFirst) * t;
 }
 
+
+
+
+
 template<class Units>
 nsTArray<Point4DTyped<Units>>
-ClipHomogeneous(const nsTArray<Point4DTyped<Units>>& aPoints)
+ClipPointsAtInfinity(const nsTArray<Point4DTyped<Units>>& aPoints)
 {
-  nsTArray<Point4DTyped<Units>> outPoints;
+  nsTArray<Point4DTyped<Units>> outPoints(aPoints.Length());
 
   const size_t pointCount = aPoints.Length();
   for (size_t i = 0; i < pointCount; ++i) {
@@ -56,16 +60,90 @@ ClipHomogeneous(const nsTArray<Point4DTyped<Units>>& aPoints)
 }
 
 template<class Units>
-nsTArray<Point4DTyped<Units>>
-ToPoints4D(const nsTArray<Point3DTyped<Units>>& aPoints)
+nsTArray<float>
+CalculatePointPlaneDistances(const nsTArray<Point4DTyped<Units>>& aPoints,
+                             const Point4DTyped<Units>& aPlaneNormal,
+                             const Point4DTyped<Units>& aPlanePoint,
+                             size_t& aPos, size_t& aNeg)
 {
-  nsTArray<Point4DTyped<Units>> points;
+  
+  
+  const float epsilon = 0.05f;
 
-  for (const Point3DTyped<Units>& point : aPoints) {
-    points.AppendElement(Point4DTyped<Units>(point));
+  aPos = aNeg = 0;
+  nsTArray<float> distances(aPoints.Length());
+
+  for (const Point4DTyped<Units>& point : aPoints) {
+    float dot = (point - aPlanePoint).DotProduct(aPlaneNormal);
+
+    if (dot > epsilon) {
+      aPos++;
+    } else if (dot < -epsilon) {
+      aNeg++;
+    } else {
+      
+      dot = 0.0f;
+    }
+
+    distances.AppendElement(dot);
   }
 
-  return points;
+  return distances;
+}
+
+
+
+
+
+
+template<class Units>
+void
+ClipPointsWithPlane(const nsTArray<Point4DTyped<Units>>& aPoints,
+                    const Point4DTyped<Units>& aNormal,
+                    const nsTArray<float>& aDots,
+                    nsTArray<Point4DTyped<Units>>& aBackPoints,
+                    nsTArray<Point4DTyped<Units>>& aFrontPoints)
+{
+  static const auto Sign = [](const float& f) {
+    if (f > 0.0f) return 1;
+    if (f < 0.0f) return -1;
+    return 0;
+  };
+
+  const size_t pointCount = aPoints.Length();
+  for (size_t i = 0; i < pointCount; ++i) {
+    size_t j = (i + 1) % pointCount;
+
+    const Point4DTyped<Units>& a = aPoints[i];
+    const Point4DTyped<Units>& b = aPoints[j];
+    const float dotA = aDots[i];
+    const float dotB = aDots[j];
+
+    
+    if (dotA >= 0) {
+      aFrontPoints.AppendElement(a);
+    }
+
+    
+    if (dotA <= 0) {
+      aBackPoints.AppendElement(a);
+    }
+
+    
+    
+    
+    if (Sign(dotA) && Sign(dotB) && Sign(dotA) != Sign(dotB)) {
+      
+      const Point4DTyped<Units> ab = b - a;
+      const float dotAB = ab.DotProduct(aNormal);
+      const float t = -dotA / dotAB;
+      const Point4DTyped<Units> p = a + (ab * t);
+
+      
+      aBackPoints.AppendElement(p);
+      aFrontPoints.AppendElement(p);
+    }
+  }
 }
 
 
@@ -89,9 +167,9 @@ public:
                         const Point4DType& aNormal = DefaultNormal())
     : mNormal(aNormal), mPoints(aPoints)
   {
-    #ifdef DEBUG
+#ifdef DEBUG
     EnsurePlanarPolygon();
-    #endif
+#endif
   }
 
   RectTyped<Units> BoundingBox() const
@@ -115,38 +193,6 @@ public:
     return RectTyped<Units>(minX, minY, maxX - minX, maxY - minY);
   }
 
-  nsTArray<float> CalculateDotProducts(const PolygonTyped<Units>& aPlane,
-                                       size_t& aPos, size_t& aNeg) const
-  {
-    
-    
-    const float epsilon = 0.05f;
-
-    MOZ_ASSERT(!aPlane.GetPoints().IsEmpty());
-    const Point4DType& planeNormal = aPlane.GetNormal();
-    const Point4DType& planePoint = aPlane[0];
-
-    aPos = aNeg = 0;
-    nsTArray<float> dotProducts;
-
-    for (const Point4DType& point : mPoints) {
-      float dot = (point - planePoint).DotProduct(planeNormal);
-
-      if (dot > epsilon) {
-        aPos++;
-      } else if (dot < -epsilon) {
-        aNeg++;
-      } else {
-        
-        dot = 0.0f;
-      }
-
-      dotProducts.AppendElement(dot);
-    }
-
-    return dotProducts;
-  }
-
   
   PolygonTyped<Units> ClipPolygon(const RectTyped<Units>& aRect) const
   {
@@ -166,25 +212,43 @@ public:
       return PolygonTyped<Units>();
     }
 
-    PolygonTyped<Units> polygon(mPoints, mNormal);
+    nsTArray<Point4DType> clippedPoints(mPoints);
 
+    size_t pos, neg;
+    nsTArray<Point4DType> backPoints(4), frontPoints(4);
+
+    
+    
     const size_t pointCount = points.Length();
     for (size_t i = 0; i < pointCount; ++i) {
       const Point4DType p1 = points[(i + 1) % pointCount];
       const Point4DType p2 = points[i];
 
+      
       const Point4DType normal(p2.y - p1.y, p1.x - p2.x, 0.0f, 0.0f);
-      const PolygonTyped<Units> plane({p1, p2}, normal);
 
-      ClipPolygonWithPlane(polygon, plane);
+      
+      
+      const nsTArray<float> distances =
+        CalculatePointPlaneDistances(clippedPoints, normal, p1, pos, neg);
 
-      if (polygon.IsEmpty()) {
+      backPoints.ClearAndRetainStorage();
+      frontPoints.ClearAndRetainStorage();
+
+      
+      ClipPointsWithPlane(clippedPoints, normal, distances,
+                          backPoints, frontPoints);
+
+      
+      clippedPoints = Move(backPoints);
+
+      if (clippedPoints.Length() < 3) {
         
         return PolygonTyped<Units>();
       }
     }
 
-    return polygon;
+    return PolygonTyped<Units>(Move(clippedPoints), mNormal);
   }
 
   static PolygonTyped<Units> FromRect(const RectTyped<Units>& aRect)
@@ -209,63 +273,10 @@ public:
     return mPoints;
   }
 
-  const Point4DType& operator[](size_t aIndex) const
-  {
-    MOZ_ASSERT(mPoints.Length() > aIndex);
-    return mPoints[aIndex];
-  }
-
   bool IsEmpty() const
   {
     
     return mPoints.Length() < 3;
-  }
-
-  void SplitPolygon(const Point4DType& aNormal,
-                    const nsTArray<float>& aDots,
-                    nsTArray<Point4DType>& aBackPoints,
-                    nsTArray<Point4DType>& aFrontPoints) const
-  {
-    static const auto Sign = [](const float& f) {
-      if (f > 0.0f) return 1;
-      if (f < 0.0f) return -1;
-      return 0;
-    };
-
-    const size_t pointCount = mPoints.Length();
-    for (size_t i = 0; i < pointCount; ++i) {
-      size_t j = (i + 1) % pointCount;
-
-      const Point4DType& a = mPoints[i];
-      const Point4DType& b = mPoints[j];
-      const float dotA = aDots[i];
-      const float dotB = aDots[j];
-
-      
-      if (dotA >= 0) {
-        aFrontPoints.AppendElement(a);
-      }
-
-      
-      if (dotA <= 0) {
-        aBackPoints.AppendElement(a);
-      }
-
-      
-      
-      
-      if (Sign(dotA) && Sign(dotB) && Sign(dotA) != Sign(dotB)) {
-        
-        const Point4DType ab = b - a;
-        const float dotAB = ab.DotProduct(aNormal);
-        const float t = -dotA / dotAB;
-        const Point4DType p = a + (ab * t);
-
-        
-        aBackPoints.AppendElement(p);
-        aFrontPoints.AppendElement(p);
-      }
-    }
   }
 
   nsTArray<TriangleTyped<Units>> ToTriangles() const
@@ -297,27 +308,16 @@ public:
     MOZ_ASSERT(!aTransform.IsSingular());
 
     TransformPoints(aTransform, false);
-    mPoints = ClipHomogeneous(mPoints);
+
+    
+    
+    mPoints = ClipPointsAtInfinity(mPoints);
 
     
     mNormal = aTransform.Inverse().Transpose().TransformPoint(mNormal);
   }
 
 private:
-  void ClipPolygonWithPlane(PolygonTyped<Units>& aPolygon,
-                            const PolygonTyped<Units>& aPlane) const
-  {
-    size_t pos, neg;
-    const nsTArray<float> dots =
-      aPolygon.CalculateDotProducts(aPlane, pos, neg);
-
-    nsTArray<Point4DType> backPoints, frontPoints;
-    aPolygon.SplitPolygon(aPlane.GetNormal(), dots, backPoints, frontPoints);
-
-    
-    aPolygon = PolygonTyped<Units>(Move(backPoints), aPolygon.GetNormal());
-  }
-
   static Point4DType DefaultNormal()
   {
     return Point4DType(0.0f, 0.0f, 1.0f, 0.0f);
