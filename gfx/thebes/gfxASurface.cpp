@@ -81,11 +81,10 @@ gfxASurface::AddRef(void)
         }
 
         return (nsrefcnt) cairo_surface_get_reference_count(mSurface);
-    } else {
-        
-        
-        return ++mFloatingRefs;
     }
+    
+    
+    return ++mFloatingRefs;
 }
 
 nsrefcnt
@@ -103,14 +102,12 @@ gfxASurface::Release(void)
         
 
         return --refcnt;
-    } else {
-        if (--mFloatingRefs == 0) {
-            delete this;
-            return 0;
-        }
-
-        return mFloatingRefs;
     }
+    if (--mFloatingRefs == 0) {
+        delete this;
+        return 0;
+    }
+    return mFloatingRefs;
 }
 
 void
