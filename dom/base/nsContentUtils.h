@@ -1039,6 +1039,12 @@ public:
 
 
 
+  static bool IsUtf8OnlyPlainTextType(const nsACString& aContentType);
+
+  
+
+
+
 
 
 
