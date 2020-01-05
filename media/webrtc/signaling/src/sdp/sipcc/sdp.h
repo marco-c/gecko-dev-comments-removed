@@ -717,6 +717,15 @@ typedef struct sdp_fmtp {
     uint8_t              redundant_encodings[SDP_FMTP_MAX_REDUNDANT_ENCODINGS];
 
     
+
+
+
+
+
+
+    char                 dtmf_tones[SDP_MAX_STRING_LEN+1];
+
+    
     uint16_t                       annex_p_val_picture_resize; 
     uint16_t                       annex_p_val_warp; 
 

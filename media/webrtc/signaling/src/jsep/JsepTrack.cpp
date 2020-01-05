@@ -347,12 +347,18 @@ JsepTrack::NegotiateCodecs(
   
   JsepVideoCodecDescription* red = nullptr;
   JsepVideoCodecDescription* ulpfec = nullptr;
+  JsepAudioCodecDescription* dtmf = nullptr;
+  
+  
   for (auto codec : *codecs) {
     if (codec->mName == "red") {
       red = static_cast<JsepVideoCodecDescription*>(codec);
     }
     else if (codec->mName == "ulpfec") {
       ulpfec = static_cast<JsepVideoCodecDescription*>(codec);
+    }
+    else if (codec->mName == "telephone-event") {
+      dtmf = static_cast<JsepAudioCodecDescription*>(codec);
     }
   }
   
@@ -388,17 +394,37 @@ JsepTrack::NegotiateCodecs(
 
   
   
+  
+  
+  if (dtmf) {
+    for (auto codec : *codecs) {
+      JsepAudioCodecDescription* audioCodec =
+          static_cast<JsepAudioCodecDescription*>(codec);
+      audioCodec->mDtmfEnabled = true;
+    }
+  }
+
+  
+  
   std::stable_sort(codecs->begin(), codecs->end(), CompareCodec);
 
   
   
   
+  
+  
   if (!codecs->empty() && !red) {
+    int newSize = dtmf ? 2 : 1;
     for (size_t i = 1; i < codecs->size(); ++i) {
-      delete (*codecs)[i];
-      (*codecs)[i] = nullptr;
+      if (!dtmf || dtmf != (*codecs)[i]) {
+        delete (*codecs)[i];
+        (*codecs)[i] = nullptr;
+      }
     }
-    codecs->resize(1);
+    if (dtmf) {
+      (*codecs)[newSize-1] = dtmf;
+    }
+    codecs->resize(newSize);
   }
 }
 

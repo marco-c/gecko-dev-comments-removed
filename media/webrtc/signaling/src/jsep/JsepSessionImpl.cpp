@@ -289,9 +289,12 @@ JsepSessionImpl::SetParameters(const std::string& streamId,
   SdpDirectionAttribute::Direction addVideoExt = SdpDirectionAttribute::kInactive;
   for (auto constraintEntry: constraints) {
     if (constraintEntry.rid != "") {
-      if (it->mTrack->GetMediaType() == SdpMediaSection::kVideo) {
-        addVideoExt = static_cast<SdpDirectionAttribute::Direction>(addVideoExt
-                                                                    | it->mTrack->GetDirection());
+      switch (it->mTrack->GetMediaType()) {
+        case SdpMediaSection::kVideo: {
+           addVideoExt = static_cast<SdpDirectionAttribute::Direction>(addVideoExt
+                                                                       | it->mTrack->GetDirection());
+          break;
+        }
       }
     }
   }
@@ -2148,6 +2151,18 @@ JsepSessionImpl::SetupDefaultCodecs()
                                     1,
                                     8000 / 50,   
                                     8 * 8000 * 1 
+                                    ));
+
+  
+  
+  
+  mSupportedCodecs.values.push_back(
+      new JsepAudioCodecDescription("101",
+                                    "telephone-event",
+                                    8000,
+                                    1,
+                                    0, 
+                                    0  
                                     ));
 
   
