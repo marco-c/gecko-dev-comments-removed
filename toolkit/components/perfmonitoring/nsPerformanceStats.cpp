@@ -1219,7 +1219,8 @@ nsPerformanceStatsService::CommitGroup(uint64_t iteration,
   
   
   MOZ_ASSERT(ticksDelta != 0);
-  if (cyclesDelta > totalCyclesDelta || cyclesDelta == 0 || totalCyclesDelta == 0) {
+  MOZ_ASSERT(cyclesDelta <= totalCyclesDelta);
+  if (cyclesDelta == 0 || totalCyclesDelta == 0) {
     
     return;
   }
