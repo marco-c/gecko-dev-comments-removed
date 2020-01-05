@@ -387,9 +387,7 @@ class DesktopInstance(GeckoInstance):
         "browser.EULA.override": True,
 
         
-        
-        
-        "browser.newtabpage.enabled": True,
+        "browser.newtabpage.enabled": False,
         
         
         "browser.newtabpage.introShown": True,
