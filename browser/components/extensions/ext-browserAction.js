@@ -196,6 +196,13 @@ BrowserAction.prototype = {
           let enabled = this.getProperty(tab, "enabled");
 
           if (popupURL && enabled) {
+            
+            
+            if (!this.pendingPopup && !this.tabManager.hasActiveTabPermission(tab)) {
+              this.tabManager.addActiveTabPermission(tab);
+              this.tabToRevokeDuringClearPopup = tab;
+            }
+
             this.pendingPopup = this.getPopup(window, popupURL);
             window.addEventListener("mouseup", this, true);
           } else {
@@ -259,6 +266,10 @@ BrowserAction.prototype = {
   clearPopup() {
     this.clearPopupTimeout();
     if (this.pendingPopup) {
+      if (this.tabToRevokeDuringClearPopup) {
+        this.tabManager.revokeActiveTabPermission(this.tabToRevokeDuringClearPopup);
+        this.tabToRevokeDuringClearPopup = null;
+      }
       this.pendingPopup.destroy();
       this.pendingPopup = null;
     }

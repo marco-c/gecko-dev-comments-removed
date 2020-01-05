@@ -598,6 +598,10 @@ ExtensionTabManager.prototype = {
     }
   },
 
+  revokeActiveTabPermission(tab = TabManager.activeTab) {
+    this.hasTabPermissionFor.delete(tab);
+  },
+
   
   
   
