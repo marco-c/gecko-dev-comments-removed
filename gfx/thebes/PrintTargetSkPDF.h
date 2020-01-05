@@ -59,12 +59,14 @@ private:
   UniquePtr<SkWStream> mOStream;
 
   
-  sk_sp<SkCanvas> mPageCanvas;
+  
+  SkCanvas* mPageCanvas;
   RefPtr<DrawTarget> mPageDT;
 
   
   sk_sp<SkDocument> mRefPDFDoc;
-  sk_sp<SkCanvas> mRefCanvas;
+  
+  SkCanvas* mRefCanvas;
   SkDynamicMemoryWStream mRefOStream;
 };
 
