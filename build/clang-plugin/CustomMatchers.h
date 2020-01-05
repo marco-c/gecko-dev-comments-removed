@@ -65,6 +65,12 @@ AST_MATCHER(BinaryOperator, binaryEqualityOperator) {
 }
 
 
+AST_MATCHER(BinaryOperator, binaryCommaOperator) {
+  BinaryOperatorKind OpCode = Node.getOpcode();
+  return OpCode == BO_Comma;
+}
+
+
 AST_MATCHER(QualType, isFloat) { return Node->isRealFloatingType(); }
 
 
