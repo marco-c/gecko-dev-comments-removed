@@ -755,6 +755,24 @@ class alignas(8) DispatchWrapper
 
 namespace JS {
 
+namespace detail {
+
+
+
+
+
+
+
+
+
+template <typename T>
+using MaybeWrapped = typename mozilla::Conditional<
+    MapTypeToRootKind<T>::kind == JS::RootKind::Traceable,
+    js::DispatchWrapper<T>,
+    T>::Type;
+
+} 
+
 
 
 
@@ -825,19 +843,7 @@ class MOZ_RAII Rooted : public js::RootedBase<T, Rooted<T>>
     Rooted<void*>** stack;
     Rooted<void*>* prev;
 
-    
-
-
-
-
-
-
-
-    using MaybeWrapped = typename mozilla::Conditional<
-        MapTypeToRootKind<T>::kind == JS::RootKind::Traceable,
-        js::DispatchWrapper<T>,
-        T>::Type;
-    MaybeWrapped ptr;
+    detail::MaybeWrapped<T> ptr;
 
     Rooted(const Rooted&) = delete;
 } JS_HAZ_ROOTED;
@@ -1188,12 +1194,7 @@ class PersistentRooted : public js::RootedBase<T, PersistentRooted<T>>,
         ptr = mozilla::Forward<U>(value);
     }
 
-    
-    using MaybeWrapped = typename mozilla::Conditional<
-        MapTypeToRootKind<T>::kind == JS::RootKind::Traceable,
-        js::DispatchWrapper<T>,
-        T>::Type;
-    MaybeWrapped ptr;
+    detail::MaybeWrapped<T> ptr;
 } JS_HAZ_ROOTED;
 
 class JS_PUBLIC_API(ObjectPtr)
