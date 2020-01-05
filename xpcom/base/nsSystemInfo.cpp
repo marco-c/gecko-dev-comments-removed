@@ -77,6 +77,8 @@ NS_EXPORT int android_sdk_version;
 
 uint32_t nsSystemInfo::gUserUmask = 0;
 
+using namespace mozilla::dom;
+
 #if defined (XP_LINUX) && !defined (ANDROID)
 static void
 SimpleParseKeyValuePairs(const std::string& aFilename,
