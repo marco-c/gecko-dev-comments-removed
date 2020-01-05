@@ -155,7 +155,7 @@ fn main_fetch(request: Rc<Request>, cache: &mut CORSCache, cors_flag: bool,
 
     
     if request.referrer_policy.get().is_none() {
-        request.referrer_policy.set(Some(ReferrerPolicy::NoRefWhenDowngrade));
+        request.referrer_policy.set(Some(ReferrerPolicy::NoReferrerWhenDowngrade));
     }
 
     
