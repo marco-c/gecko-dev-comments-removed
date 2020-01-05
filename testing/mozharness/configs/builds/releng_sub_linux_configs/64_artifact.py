@@ -8,6 +8,7 @@ config = {
         'checkout-sources',
         'setup-mock',
         'build',
+        'sendchange',
         
     ],
     "buildbot_json_path": "buildprops.json",
@@ -24,7 +25,8 @@ config = {
     'tooltool_bootstrap': "setup.sh",
     'enable_count_ctors': True,
     'enable_talos_sendchange': False,
-    'enable_unittest_sendchange': False,
+    
+    'enable_unittest_sendchange': True,
     
 
 

@@ -15,6 +15,7 @@ config = {
         'checkout-sources',
         
         'build',
+        'sendchange',
     ],
     "buildbot_json_path": "buildprops.json",
     'exes': {
@@ -45,7 +46,8 @@ config = {
     'tooltool_bootstrap': "setup.sh",
     'enable_count_ctors': False,
     'enable_talos_sendchange': False,
-    'enable_unittest_sendchange': False,
+    
+    'enable_unittest_sendchange': True,
     'max_build_output_timeout': 60 * 80,
     
 
