@@ -68,11 +68,11 @@ impl<'a> TextMethods for JSRef<'a, Text> {
         let owner_doc = node.owner_doc().root();
         let new_node = owner_doc.r().CreateTextNode(new_data).root();
         
-        let parent = node.parent_node().root();
+        let parent = node.GetParentNode().root();
         if let Some(ref parent) = parent {
             
             parent.r().InsertBefore(NodeCast::from_ref(new_node.r()),
-                                    node.next_sibling().root().r())
+                                    node.GetNextSibling().root().r())
                   .unwrap();
             
         }

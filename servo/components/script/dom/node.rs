@@ -285,7 +285,7 @@ trait PrivateNodeHelpers {
 impl<'a> PrivateNodeHelpers for JSRef<'a, Node> {
     
     fn node_inserted(self) {
-        assert!(self.parent_node().is_some());
+        assert!(self.parent_node.get().is_some());
         let document = document_from_node(self).root();
         let is_in_doc = self.is_in_doc();
 
@@ -294,14 +294,14 @@ impl<'a> PrivateNodeHelpers for JSRef<'a, Node> {
             vtable_for(&node.r()).bind_to_tree(is_in_doc);
         }
 
-        let parent = self.parent_node().root();
+        let parent = self.parent_node.get().root();
         parent.r().map(|parent| vtable_for(&parent).child_inserted(self));
         document.r().content_and_heritage_changed(self, NodeDamage::OtherNodeDamage);
     }
 
     
     fn node_removed(self, parent_in_doc: bool) {
-        assert!(self.parent_node().is_none());
+        assert!(self.parent_node.get().is_none());
         for node in self.traverse_preorder() {
             let node = node.root();
             vtable_for(&node.r()).unbind_from_tree(parent_in_doc);
@@ -317,15 +317,15 @@ impl<'a> PrivateNodeHelpers for JSRef<'a, Node> {
     
     
     fn add_child(self, new_child: JSRef<Node>, before: Option<JSRef<Node>>) {
-        assert!(new_child.parent_node().is_none());
-        assert!(new_child.prev_sibling().is_none());
-        assert!(new_child.next_sibling().is_none());
+        assert!(new_child.parent_node.get().is_none());
+        assert!(new_child.prev_sibling.get().is_none());
+        assert!(new_child.next_sibling.get().is_none());
         match before {
             Some(ref before) => {
-                assert!(before.parent_node().root().r() == Some(self));
-                match before.prev_sibling().root() {
+                assert!(before.parent_node.get().root().r() == Some(self));
+                match before.prev_sibling.get().root() {
                     None => {
-                        assert!(Some(*before) == self.first_child().root().r());
+                        assert!(Some(*before) == self.first_child.get().root().r());
                         self.first_child.set(Some(JS::from_rooted(new_child)));
                     },
                     Some(ref prev_sibling) => {
@@ -337,10 +337,10 @@ impl<'a> PrivateNodeHelpers for JSRef<'a, Node> {
                 new_child.next_sibling.set(Some(JS::from_rooted(*before)));
             },
             None => {
-                match self.last_child().root() {
+                match self.last_child.get().root() {
                     None => self.first_child.set(Some(JS::from_rooted(new_child))),
                     Some(ref last_child) => {
-                        assert!(last_child.r().next_sibling().is_none());
+                        assert!(last_child.r().next_sibling.get().is_none());
                         last_child.r().next_sibling.set(Some(JS::from_rooted(new_child)));
                         new_child.prev_sibling.set(Some(JS::from_rooted(last_child.r())));
                     }
@@ -357,7 +357,7 @@ impl<'a> PrivateNodeHelpers for JSRef<'a, Node> {
     
     
     fn remove_child(self, child: JSRef<Node>) {
-        assert!(child.parent_node().root().r() == Some(self));
+        assert!(child.parent_node.get().root().r() == Some(self));
 
         match child.prev_sibling.get().root() {
             None => {
@@ -428,12 +428,6 @@ pub trait NodeHelpers {
     fn type_id(self) -> NodeTypeId;
     fn len(self) -> u32;
     fn index(self) -> u32;
-
-    fn parent_node(self) -> Option<Temporary<Node>>;
-    fn first_child(self) -> Option<Temporary<Node>>;
-    fn last_child(self) -> Option<Temporary<Node>>;
-    fn prev_sibling(self) -> Option<Temporary<Node>>;
-    fn next_sibling(self) -> Option<Temporary<Node>>;
 
     fn owner_doc(self) -> Temporary<Document>;
     fn set_owner_doc(self, document: JSRef<Document>);
@@ -582,28 +576,6 @@ impl<'a> NodeHelpers for JSRef<'a, Node> {
     
     fn index(self) -> u32 {
         self.preceding_siblings().count() as u32
-    }
-
-    fn parent_node(self) -> Option<Temporary<Node>> {
-        self.parent_node.get().map(Temporary::from_rooted)
-    }
-
-    fn first_child(self) -> Option<Temporary<Node>> {
-        self.first_child.get().map(Temporary::from_rooted)
-    }
-
-    fn last_child(self) -> Option<Temporary<Node>> {
-        self.last_child.get().map(Temporary::from_rooted)
-    }
-
-    
-    fn prev_sibling(self) -> Option<Temporary<Node>> {
-        self.prev_sibling.get().map(Temporary::from_rooted)
-    }
-
-    
-    fn next_sibling(self) -> Option<Temporary<Node>> {
-        self.next_sibling.get().map(Temporary::from_rooted)
     }
 
     #[inline]
@@ -756,12 +728,12 @@ impl<'a> NodeHelpers for JSRef<'a, Node> {
         
         if !self.get_has_dirty_siblings() {
             let parent =
-                match self.parent_node() {
+                match self.parent_node.get() {
                     None         => return,
                     Some(parent) => parent,
-                };
+                }.root();
 
-            for sibling in parent.root().r().children() {
+            for sibling in parent.r().children() {
                 let sibling = sibling.root();
                 sibling.r().set_has_dirty_siblings(true);
             }
@@ -798,20 +770,20 @@ impl<'a> NodeHelpers for JSRef<'a, Node> {
 
     fn following_siblings(self) -> NodeSiblingIterator {
         NodeSiblingIterator {
-            current: self.next_sibling(),
+            current: self.GetNextSibling(),
         }
     }
 
     fn preceding_siblings(self) -> ReverseSiblingIterator {
         ReverseSiblingIterator {
-            current: self.prev_sibling(),
+            current: self.GetPreviousSibling(),
         }
     }
 
     fn is_parent_of(self, child: JSRef<Node>) -> bool {
-        match child.parent_node() {
-            Some(ref parent) if parent == &Temporary::from_rooted(self) => true,
-            _ => false
+        match child.parent_node.get().root() {
+            Some(ref parent) => parent.r() == self,
+            None => false,
         }
     }
 
@@ -829,7 +801,7 @@ impl<'a> NodeHelpers for JSRef<'a, Node> {
 
     
     fn before(self, nodes: Vec<NodeOrString>) -> ErrorResult {
-        match self.parent_node().root() {
+        match self.parent_node.get().root() {
             None => {
                 
                 Ok(())
@@ -847,7 +819,7 @@ impl<'a> NodeHelpers for JSRef<'a, Node> {
 
     
     fn after(self, nodes: Vec<NodeOrString>) -> ErrorResult {
-        match self.parent_node().root() {
+        match self.parent_node.get().root() {
             None => {
                 
                 Ok(())
@@ -858,7 +830,7 @@ impl<'a> NodeHelpers for JSRef<'a, Node> {
                 let node = try!(doc.r().node_from_nodes_and_strings(nodes)).root();
                 
                 
-                let next_sibling = self.next_sibling().root();
+                let next_sibling = self.next_sibling.get().root();
                 Node::pre_insert(node.r(), parent_node.r(),
                                  next_sibling.r()).map(|_| ())
             },
@@ -867,7 +839,7 @@ impl<'a> NodeHelpers for JSRef<'a, Node> {
 
     
     fn replace_with(self, nodes: Vec<NodeOrString>) -> ErrorResult {
-        match self.parent_node().root() {
+        match self.parent_node.get().root() {
             None => {
                 
                 Ok(())
@@ -888,7 +860,7 @@ impl<'a> NodeHelpers for JSRef<'a, Node> {
         let doc = self.owner_doc().root();
         let node = try!(doc.r().node_from_nodes_and_strings(nodes)).root();
         
-        let first_child = self.first_child().root();
+        let first_child = self.first_child.get().root();
         Node::pre_insert(node.r(), self, first_child.r()).map(|_| ())
     }
 
@@ -951,7 +923,7 @@ impl<'a> NodeHelpers for JSRef<'a, Node> {
 
     fn ancestors(self) -> AncestorIterator {
         AncestorIterator {
-            current: self.parent_node()
+            current: self.GetParentNode()
         }
     }
 
@@ -975,13 +947,13 @@ impl<'a> NodeHelpers for JSRef<'a, Node> {
 
     fn children(self) -> NodeSiblingIterator {
         NodeSiblingIterator {
-            current: self.first_child(),
+            current: self.GetFirstChild(),
         }
     }
 
     fn rev_children(self) -> ReverseSiblingIterator {
         ReverseSiblingIterator {
-            current: self.last_child(),
+            current: self.GetLastChild(),
         }
     }
 
@@ -995,7 +967,7 @@ impl<'a> NodeHelpers for JSRef<'a, Node> {
     }
 
     fn remove_self(self) {
-        match self.parent_node().root() {
+        match self.parent_node.get().root() {
             Some(ref parent) => parent.r().remove_child(self),
             None => ()
         }
@@ -1243,7 +1215,7 @@ impl Iterator for NodeSiblingIterator {
             None => return None,
             Some(current) => current,
         }.root();
-        self.current = current.r().next_sibling();
+        self.current = current.r().GetNextSibling();
         Some(Temporary::from_rooted(current.r()))
     }
 }
@@ -1260,7 +1232,7 @@ impl Iterator for ReverseSiblingIterator {
             None => return None,
             Some(current) => current,
         }.root();
-        self.current = current.r().prev_sibling();
+        self.current = current.r().GetPreviousSibling();
         Some(Temporary::from_rooted(current.r()))
     }
 }
@@ -1277,7 +1249,7 @@ impl Iterator for AncestorIterator {
             None => return None,
             Some(current) => current,
         }.root();
-        self.current = current.r().parent_node();
+        self.current = current.r().GetParentNode();
         Some(Temporary::from_rooted(current.r()))
     }
 }
@@ -1306,7 +1278,7 @@ impl Iterator for TreeIterator {
             Some(current) => current,
         };
         let node = current.root();
-        if let Some(first_child) = node.r().first_child() {
+        if let Some(first_child) = node.r().GetFirstChild() {
             self.current = Some(first_child);
             self.depth += 1;
             return Some(current);
@@ -1315,7 +1287,7 @@ impl Iterator for TreeIterator {
             if self.depth == 0 {
                 break;
             }
-            if let Some(next_sibling) = ancestor.root().r().next_sibling() {
+            if let Some(next_sibling) = ancestor.root().r().GetNextSibling() {
                 self.current = Some(next_sibling);
                 return Some(current);
             }
@@ -1394,7 +1366,7 @@ impl Node {
     
     pub fn adopt(node: JSRef<Node>, document: JSRef<Document>) {
         
-        match node.parent_node().root() {
+        match node.parent_node.get().root() {
             Some(ref parent) => {
                 Node::remove(node, parent.r(), SuppressObserver::Unsuppressed);
             }
@@ -1534,7 +1506,7 @@ impl Node {
 
         
         let reference_child = match child {
-            Some(child) if child == node => node.next_sibling(),
+            Some(child) if child == node => node.GetNextSibling(),
             _ => None
         }.root();
         let reference_child = reference_child.r().or(child);
@@ -1672,7 +1644,7 @@ impl Node {
     
     fn pre_remove(child: JSRef<Node>, parent: JSRef<Node>) -> Fallible<Temporary<Node>> {
         
-        match child.parent_node() {
+        match child.GetParentNode() {
             Some(ref node) if node != &Temporary::from_rooted(parent) => return Err(NotFound),
             None => return Err(NotFound),
             _ => ()
@@ -1687,7 +1659,7 @@ impl Node {
 
     
     fn remove(node: JSRef<Node>, parent: JSRef<Node>, suppress_observers: SuppressObserver) {
-        assert!(node.parent_node().map_or(false, |node_parent| node_parent == Temporary::from_rooted(parent)));
+        assert!(node.GetParentNode().map_or(false, |node_parent| node_parent == Temporary::from_rooted(parent)));
 
         
         
@@ -1892,13 +1864,7 @@ impl<'a> NodeMethods for JSRef<'a, Node> {
 
     
     fn GetParentElement(self) -> Option<Temporary<Element>> {
-        self.parent_node.get()
-                        .and_then(|parent| {
-                            let parent = parent.root();
-                            ElementCast::to_ref(parent.r()).map(|elem| {
-                                Temporary::from_rooted(elem)
-                            })
-                        })
+        self.GetParentNode().and_then(ElementCast::to_temporary)
     }
 
     
@@ -2124,8 +2090,8 @@ impl<'a> NodeMethods for JSRef<'a, Node> {
         }
 
         
-        let child_next_sibling = child.next_sibling().root();
-        let node_next_sibling = node.next_sibling().root();
+        let child_next_sibling = child.next_sibling.get().root();
+        let node_next_sibling = node.next_sibling.get().root();
         let reference_child = if child_next_sibling.r() == Some(node) {
             node_next_sibling.r()
         } else {
@@ -2433,53 +2399,28 @@ impl<'a> style::node::TNode<'a> for JSRef<'a, Node> {
     type Element = JSRef<'a, Element>;
 
     fn parent_node(self) -> Option<JSRef<'a, Node>> {
-        
-        
-        fn parent_node<'a, T: NodeHelpers>(this: T) -> Option<Temporary<Node>> {
-            this.parent_node()
-        }
-
-        parent_node(self).map(|node| node.root().get_unsound_ref_forever())
+        (*self).parent_node.get()
+               .map(|node| node.root().get_unsound_ref_forever())
     }
 
     fn first_child(self) -> Option<JSRef<'a, Node>> {
-        
-        
-        fn first_child<'a, T: NodeHelpers>(this: T) -> Option<Temporary<Node>> {
-            this.first_child()
-        }
-
-        first_child(self).map(|node| node.root().get_unsound_ref_forever())
+        (*self).first_child.get()
+               .map(|node| node.root().get_unsound_ref_forever())
     }
 
     fn last_child(self) -> Option<JSRef<'a, Node>> {
-        
-        
-        fn last_child<'a, T: NodeHelpers>(this: T) -> Option<Temporary<Node>> {
-            this.last_child()
-        }
-
-        last_child(self).map(|node| node.root().get_unsound_ref_forever())
+        (*self).last_child.get()
+               .map(|node| node.root().get_unsound_ref_forever())
     }
 
     fn prev_sibling(self) -> Option<JSRef<'a, Node>> {
-        
-        
-        fn prev_sibling<'a, T: NodeHelpers>(this: T) -> Option<Temporary<Node>> {
-            this.prev_sibling()
-        }
-
-        prev_sibling(self).map(|node| node.root().get_unsound_ref_forever())
+        (*self).prev_sibling.get()
+               .map(|node| node.root().get_unsound_ref_forever())
     }
 
     fn next_sibling(self) -> Option<JSRef<'a, Node>> {
-        
-        
-        fn next_sibling<'a, T: NodeHelpers>(this: T) -> Option<Temporary<Node>> {
-            this.next_sibling()
-        }
-
-        next_sibling(self).map(|node| node.root().get_unsound_ref_forever())
+        (*self).next_sibling.get()
+               .map(|node| node.root().get_unsound_ref_forever())
     }
 
     fn is_document(self) -> bool {
@@ -2597,7 +2538,7 @@ impl<'a> DisabledStateHelpers for JSRef<'a, Node> {
 
     fn check_parent_disabled_state_for_option(self) {
         if self.get_disabled_state() { return; }
-        if let Some(ref parent) = self.parent_node().root() {
+        if let Some(ref parent) = self.GetParentNode().root() {
             if parent.r().is_htmloptgroupelement() && parent.r().get_disabled_state() {
                 self.set_disabled_state(true);
                 self.set_enabled_state(false);
