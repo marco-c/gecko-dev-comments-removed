@@ -209,33 +209,19 @@ enum nsSpread {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class nsReflowStatus final {
 public:
   nsReflowStatus()
     : mStatus(0)
+    , mIncomplete(false)
+    , mOverflowIncomplete(false)
   {}
+
+  
+  void Reset() {
+    mIncomplete = false;
+    mOverflowIncomplete = false;
+  }
 
   nsReflowStatus(uint32_t aStatus)
     : mStatus(aStatus)
@@ -274,8 +260,42 @@ public:
     return !(*this == aRhs);
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool IsComplete() const { return !mIncomplete; }
+  bool IsIncomplete() const { return mIncomplete; }
+  bool IsOverflowIncomplete() const { return mOverflowIncomplete; }
+  bool IsFullyComplete() const {
+    return !IsIncomplete() && !IsOverflowIncomplete();
+  }
+
+  void SetIncomplete() {
+    mIncomplete = true;
+    mOverflowIncomplete = false;
+  }
+  void SetOverflowIncomplete() {
+    mIncomplete = false;
+    mOverflowIncomplete = true;
+  }
+
 private:
   uint32_t mStatus;
+
+  
+  bool mIncomplete : 1;
+  bool mOverflowIncomplete : 1;
 };
 
 #define NS_FRAME_COMPLETE             0       // Note: not a bit!
