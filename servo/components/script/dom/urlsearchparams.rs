@@ -78,13 +78,8 @@ impl URLSearchParamsMethods for URLSearchParams {
     
     fn Get(&self, name: USVString) -> Option<USVString> {
         let list = self.list.borrow();
-        list.iter().filter_map(|&(ref k, ref v)| {
-            if k == &name.0 {
-                Some(USVString(v.clone()))
-            } else {
-                None
-            }
-        }).next()
+        list.iter().find(|&kv| kv.0 == name.0)
+            .map(|ref kv| USVString(kv.1.clone()))
     }
 
     
