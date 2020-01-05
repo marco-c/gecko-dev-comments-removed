@@ -270,6 +270,8 @@ public:
 
   void Destroy(CompositableChild* aCompositable) override;
 
+  void ForgetImageContainer(uint64_t aAsyncContainerID);
+
   
 
 
@@ -386,7 +388,8 @@ private:
   
 
 
-  nsDataHashtable<nsUint64HashKey, RefPtr<ImageContainer>> mImageContainers;
+  Mutex mContainerMapLock;
+  nsDataHashtable<nsUint64HashKey, ImageContainer*> mImageContainers;
 };
 
 } 
