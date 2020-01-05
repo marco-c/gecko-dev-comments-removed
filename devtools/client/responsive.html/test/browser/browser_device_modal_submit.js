@@ -4,7 +4,7 @@
 "use strict";
 
 
-const { getDevices, addDevice } = require("devtools/client/shared/devices");
+const { getDevices } = require("devtools/client/shared/devices");
 
 const addedDevice = {
   "name": "Fake Phone RDM Test",
@@ -107,7 +107,7 @@ addRDMTask(TEST_URL, function* ({ ui }) {
     checkedVal + " is unchecked in the device modal.");
 
   
-  addDevice(addedDevice);
+  addDeviceForTest(addedDevice);
 });
 
 addRDMTask(TEST_URL, function* ({ ui }) {
