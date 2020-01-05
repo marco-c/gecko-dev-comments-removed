@@ -109,6 +109,20 @@ nsNullPrincipal::GetHashValue(uint32_t *aResult)
 }
 
 NS_IMETHODIMP
+nsNullPrincipal::SetCsp(nsIContentSecurityPolicy* aCsp) {
+  
+  
+
+  MOZ_ASSERT(!mCSP, "do not destroy an existing CSP");
+  if (mCSP) {
+    return NS_ERROR_ALREADY_INITIALIZED;
+  }
+
+  mCSP = aCsp;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 nsNullPrincipal::GetURI(nsIURI** aURI)
 {
   return NS_EnsureSafeToReturn(mURI, aURI);
