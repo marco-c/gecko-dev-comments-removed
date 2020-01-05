@@ -44,6 +44,12 @@ treecol {
 }
 
 
+.learnMore {
+  margin-inline-start: 1.5em;
+  font-weight: normal;
+}
+
+
 
 #categories {
   max-height: 100vh;
@@ -174,15 +180,6 @@ treecol {
 }
 
 
-#playDRMContentLink {
-  
-  margin-left: 4px !important;
-  margin-right: 4px !important;
-}
-
-#notificationsPolicyLearnMore {
-  margin-inline-start: 1.5em !important;
-}
 
 #defaultFontSizeLabel {
   
@@ -231,14 +228,6 @@ treecol {
 
 
 
-#trackingProtectionPBMLearnMore,
-#trackingProtectionLearnMore,
-#browserContainersLearnMore {
-  margin-inline-start: 1.5em !important;
-  margin-top: 0;
-  font-weight: normal;
-}
-
 .doNotTrackLearnMore {
   margin-inline-start: calc(1em + 30px);
   margin-bottom: 1em;
@@ -282,17 +271,6 @@ description > html|a {
 
 #tabsElement {
   margin-inline-end: 4px; 
-}
-
-#telemetryLearnMore,
-#FHRLearnMore,
-#crashReporterLearnMore {
-  
-  
-  margin-inline-start: 20px !important;
-  
-  margin-top: 8px;
-  margin-bottom: 8px;
 }
 
 .indent {
