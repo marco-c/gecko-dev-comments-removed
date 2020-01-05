@@ -160,6 +160,50 @@ function checkPermissionString(string, key, param, msg) {
 
 
 
+
+
+
+
+
+
+function checkNotification(panel, checkIcon, permissions) {
+  let icon = panel.getAttribute("icon");
+  let ul = document.getElementById("addon-webext-perm-list");
+  let header = document.getElementById("addon-webext-perm-intro");
+
+  if (checkIcon instanceof RegExp) {
+    ok(checkIcon.test(icon), "Notification icon is correct");
+  } else if (typeof checkIcon == "function") {
+    ok(checkIcon(icon), "Notification icon is correct");
+  } else {
+    is(icon, checkIcon, "Notification icon is correct");
+  }
+
+  is(ul.childElementCount, permissions.length, `Permissions list has ${permissions.length} entries`);
+  if (permissions.length == 0) {
+    is(header.getAttribute("hidden"), "true", "Permissions header is hidden");
+  } else {
+    is(header.getAttribute("hidden"), "", "Permissions header is visible");
+  }
+
+  for (let i in permissions) {
+    let [key, param] = permissions[i];
+    checkPermissionString(ul.children[i].textContent, key, param,
+                          `Permission number ${i + 1} is correct`);
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
 async function testInstallMethod(installFn) {
   const PERMS_XPI = "browser_webext_permissions.xpi";
   const NO_PERMS_XPI = "browser_webext_nopermissions.xpi";
@@ -213,44 +257,19 @@ async function testInstallMethod(installFn) {
     let installMethodPromise = installFn(filename);
 
     let panel = await promisePopupNotificationShown("addon-webext-permissions");
-    let icon = panel.getAttribute("icon");
-
-    let ul = document.getElementById("addon-webext-perm-list");
-    let header = document.getElementById("addon-webext-perm-intro");
-
     if (filename == PERMS_XPI) {
       
       
       
-      ok(icon.startsWith("jar:file://"), "Icon is a jar url");
-      ok(icon.endsWith("/icon.png"), "Icon is icon.png inside a jar");
-
-      is(header.getAttribute("hidden"), "", "Permission list header is visible");
-      is(ul.childElementCount, 5, "Permissions list has 5 entries");
-
-      checkPermissionString(ul.children[0].textContent,
-                            "webextPerms.hostDescription.wildcard",
-                            "wildcard.domain",
-                            "First permission is domain permission");
-      checkPermissionString(ul.children[1].textContent,
-                            "webextPerms.hostDescription.oneSite",
-                            "singlehost.domain",
-                            "Second permission is single host permission");
-      checkPermissionString(ul.children[2].textContent,
-                            "webextPerms.description.nativeMessaging", null,
-                            "Third permission is nativeMessaging");
-      checkPermissionString(ul.children[3].textContent,
-                            "webextPerms.description.tabs", null,
-                            "Fourth permission is tabs");
-      checkPermissionString(ul.children[4].textContent,
-                            "webextPerms.description.history", null,
-                            "Fifth permission is history");
+      checkNotification(panel, /^jar:file:\/\/.*\/icon\.png$/, [
+        ["webextPerms.hostDescription.wildcard", "wildcard.domain"],
+        ["webextPerms.hostDescription.oneSite", "singlehost.domain"],
+        ["webextPerms.description.nativeMessaging"],
+        ["webextPerms.description.tabs"],
+        ["webextPerms.description.history"],
+      ]);
     } else if (filename == NO_PERMS_XPI) {
-      
-      ok(isDefaultIcon(icon), "Icon is the default extension icon");
-
-      is(header.getAttribute("hidden"), "true", "Permission list header is hidden");
-      is(ul.childElementCount, 0, "Permissions list has 0 entries");
+      checkNotification(panel, isDefaultIcon, []);
     }
 
     if (cancel) {

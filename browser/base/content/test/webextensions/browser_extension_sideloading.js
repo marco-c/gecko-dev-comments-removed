@@ -206,8 +206,10 @@ add_task(function* () {
   is(win.gViewController.currentViewId, VIEW, "about:addons is at extensions list");
 
   
-  let icon = panel.getAttribute("icon");
-  is(icon, ICON_URL, "Permissions notification has the addon icon");
+  checkNotification(panel, ICON_URL, [
+    ["webextPerms.hostDescription.allUrls"],
+    ["webextPerms.description.history"],
+  ]);
 
   let disablePromise = promiseSetDisabled(mock1);
   panel.secondaryButton.click();
@@ -243,8 +245,9 @@ add_task(function* () {
   is(win.gViewController.currentViewId, VIEW, "about:addons is at extensions list");
 
   
-  icon = panel.getAttribute("icon");
-  is(icon, DEFAULT_ICON_URL, "Permissions notification has the default icon");
+  checkNotification(panel, DEFAULT_ICON_URL, []);
+
+  
   disablePromise = promiseSetDisabled(mock2);
   panel.button.click();
 
@@ -285,6 +288,7 @@ add_task(function* () {
   BrowserTestUtils.synthesizeMouseAtCenter(item._enableBtn, {},
                                            gBrowser.selectedBrowser);
   panel = yield popupPromise;
+  checkNotification(panel, DEFAULT_ICON_URL, [["webextPerms.hostDescription.allUrls"]]);
 
   
   disablePromise = promiseSetDisabled(mock3);
@@ -312,6 +316,7 @@ add_task(function* () {
   BrowserTestUtils.synthesizeMouseAtCenter(button, {},
                                            gBrowser.selectedBrowser);
   panel = yield popupPromise;
+  checkNotification(panel, DEFAULT_ICON_URL, [["webextPerms.hostDescription.allUrls"]]);
 
   
   disablePromise = promiseSetDisabled(mock4);
