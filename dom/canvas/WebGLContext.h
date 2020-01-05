@@ -1641,18 +1641,44 @@ public:
         return true;
     }
 
-    bool ValidateObject(const char* funcName, const WebGLDeletableObject& object) {
+    bool ValidateObject(const char* funcName, const WebGLDeletableObject& object,
+                        bool isShaderOrProgram = false)
+    {
         if (!ValidateObjectAllowDeleted(funcName, object))
             return false;
 
-        if (object.IsDeleteRequested()) {
-            ErrorInvalidOperation("%s: Object argument cannot be marked for deletion.",
+        if (isShaderOrProgram) {
+            
+
+
+
+
+
+
+
+
+            if (object.IsDeleted()) {
+                ErrorInvalidValue("%s: Shader or program object argument cannot have been"
+                                  " deleted.",
                                   funcName);
-            return false;
+                return false;
+            }
+        } else {
+            if (object.IsDeleteRequested()) {
+                ErrorInvalidOperation("%s: Object argument cannot have been marked for"
+                                      " deletion.",
+                                      funcName);
+                return false;
+            }
         }
 
         return true;
     }
+
+    
+
+    bool ValidateObject(const char* funcName, const WebGLProgram& object);
+    bool ValidateObject(const char* funcName, const WebGLShader& object);
 
     
 
