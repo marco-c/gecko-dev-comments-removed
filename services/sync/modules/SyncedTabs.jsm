@@ -272,16 +272,13 @@ this.SyncedTabs = {
     return this._internal.syncTabs(force);
   },
 
-  sortTabClientsByLastUsed(clients, maxTabs = Infinity) {
+  sortTabClientsByLastUsed(clients) {
     
     
     
     for (let client of clients) {
       let tabs = client.tabs;
       tabs.sort((a, b) => b.lastUsed - a.lastUsed);
-      if (Number.isFinite(maxTabs)) {
-        client.tabs = tabs.slice(0, maxTabs);
-      }
     }
     
     

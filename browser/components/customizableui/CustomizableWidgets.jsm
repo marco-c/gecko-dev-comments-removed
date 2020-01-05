@@ -309,6 +309,8 @@ const CustomizableWidgets = [
       DECKINDEX_FETCHING: 2,
       DECKINDEX_NOCLIENTS: 3,
     },
+    TABS_PER_PAGE: 25,
+    NEXT_PAGE_MIN_TABS: 5, 
     onCreated(aNode) {
       
       
@@ -401,13 +403,13 @@ const CustomizableWidgets = [
 
     _showTabsPromise: Promise.resolve(),
     
-    _showTabs() {
+    _showTabs(paginationInfo) {
       this._showTabsPromise = this._showTabsPromise.then(() => {
-        return this.__showTabs();
+        return this.__showTabs(paginationInfo);
       });
     },
     
-    __showTabs() {
+    __showTabs(paginationInfo) {
       let doc = this._tabsList.ownerDocument;
       return SyncedTabs.getTabClients().then(clients => {
         
@@ -427,7 +429,7 @@ const CustomizableWidgets = [
 
         this.setDeckIndex(this.deckIndices.DECKINDEX_TABS);
         this._clearTabList();
-        SyncedTabs.sortTabClientsByLastUsed(clients, 50 );
+        SyncedTabs.sortTabClientsByLastUsed(clients);
         let fragment = doc.createDocumentFragment();
 
         for (let client of clients) {
@@ -436,7 +438,11 @@ const CustomizableWidgets = [
             let separator = doc.createElementNS(kNSXUL, "menuseparator");
             fragment.appendChild(separator);
           }
-          this._appendClient(client, fragment);
+          if (paginationInfo && paginationInfo.clientId == client.id) {
+            this._appendClient(client, fragment, paginationInfo.maxTabs);
+          } else {
+            this._appendClient(client, fragment);
+          }
         }
         this._tabsList.appendChild(fragment);
       }).catch(err => {
@@ -466,7 +472,7 @@ const CustomizableWidgets = [
       appendTo.appendChild(messageLabel);
       return messageLabel;
     },
-    _appendClient(client, attachFragment) {
+    _appendClient(client, attachFragment, maxTabs = this.TABS_PER_PAGE) {
       let doc = attachFragment.ownerDocument;
       
       let clientItem = doc.createElementNS(kNSXUL, "label");
@@ -482,9 +488,29 @@ const CustomizableWidgets = [
         let label = this._appendMessageLabel("notabsforclientlabel", attachFragment);
         label.setAttribute("class", "PanelUI-remotetabs-notabsforclient-label");
       } else {
+        
+        
+        
+        let hasNextPage = client.tabs.length > maxTabs;
+        let nextPageIsLastPage = hasNextPage && maxTabs + this.TABS_PER_PAGE >= client.tabs.length;
+        if (nextPageIsLastPage) {
+          
+          
+          maxTabs = Math.min(client.tabs.length - this.NEXT_PAGE_MIN_TABS, maxTabs);
+        }
+        if (hasNextPage) {
+          client.tabs = client.tabs.slice(0, maxTabs);
+        }
         for (let tab of client.tabs) {
           let tabEnt = this._createTabElement(doc, tab);
           attachFragment.appendChild(tabEnt);
+        }
+        if (hasNextPage) {
+          let showAllEnt = this._createShowMoreElement(doc, client.id,
+                                                       nextPageIsLastPage ?
+                                                       Infinity :
+                                                       maxTabs + this.TABS_PER_PAGE);
+          attachFragment.appendChild(showAllEnt);
         }
       }
     },
@@ -506,6 +532,29 @@ const CustomizableWidgets = [
       });
       return item;
     },
+    _createShowMoreElement(doc, clientId, showCount) {
+      let labelAttr, tooltipAttr;
+      if (showCount === Infinity) {
+        labelAttr = "showAllLabel";
+        tooltipAttr = "showAllTooltipText";
+      } else {
+        labelAttr = "showMoreLabel";
+        tooltipAttr = "showMoreTooltipText";
+      }
+      let showAllItem = doc.createElementNS(kNSXUL, "toolbarbutton");
+      showAllItem.setAttribute("itemtype", "showmorebutton");
+      showAllItem.setAttribute("class", "subviewbutton");
+      let label = this._tabsList.getAttribute(labelAttr);
+      showAllItem.setAttribute("label", label);
+      let tooltipText = this._tabsList.getAttribute(tooltipAttr);
+      showAllItem.setAttribute("tooltiptext", tooltipText);
+      showAllItem.addEventListener("click", e => {
+        e.preventDefault();
+        e.stopPropagation();
+        this._showTabs({ clientId, maxTabs: showCount });
+      });
+      return showAllItem;
+    }
   }, {
     id: "privatebrowsing-button",
     shortcutId: "key_privatebrowsing",
