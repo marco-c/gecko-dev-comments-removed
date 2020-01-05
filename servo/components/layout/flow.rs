@@ -34,7 +34,7 @@ use floats::Floats;
 use flow_list::{FlowList, FlowListIterator, MutFlowListIterator};
 use flow_ref::{self, FlowRef, WeakFlowRef};
 use fragment::{Fragment, FragmentBorderBoxIterator, Overflow, SpecificFragmentInfo};
-use gfx::display_list::{ClippingRegion, DisplayListEntry, StackingContext, StackingContextId};
+use gfx::display_list::{ClippingRegion, StackingContext, StackingContextId};
 use gfx_traits::{LayerId, LayerType};
 use incremental::{RECONSTRUCT_FLOW, REFLOW, REFLOW_OUT_OF_FLOW, REPAINT, RestyleDamage};
 use inline::InlineFlow;
@@ -224,7 +224,7 @@ pub trait Flow: fmt::Debug + Sync + Send + 'static {
 
     fn collect_stacking_contexts(&mut self,
                                  _parent_id: StackingContextId,
-                                 _: &mut Vec<StackingContext>)
+                                 _: &mut Vec<Box<StackingContext>>)
                                  -> StackingContextId;
 
     
@@ -958,9 +958,6 @@ pub struct BaseFlow {
     pub stacking_relative_position_of_display_port: Rect<Au>,
 
     
-    pub display_list_building_result: Option<Vec<DisplayListEntry>>,
-
-    
     pub writing_mode: WritingMode,
 
     
@@ -1129,7 +1126,6 @@ impl BaseFlow {
             block_container_writing_mode: writing_mode,
             block_container_explicit_block_size: None,
             absolute_cb: ContainingBlockLink::new(),
-            display_list_building_result: None,
             early_absolute_position_info: EarlyAbsolutePositionInfo::new(writing_mode),
             late_absolute_position_info: LateAbsolutePositionInfo::new(),
             clip: ClippingRegion::max(),
@@ -1147,8 +1143,6 @@ impl BaseFlow {
             children: children,
             restyle_damage: self.restyle_damage | REPAINT | REFLOW_OUT_OF_FLOW | REFLOW,
             parallel: FlowParallelInfo::new(),
-            display_list_building_result: None,
-
             floats: self.floats.clone(),
             abs_descendants: self.abs_descendants.clone(),
             absolute_cb: self.absolute_cb.clone(),
@@ -1167,43 +1161,13 @@ impl BaseFlow {
         p as usize
     }
 
-    
-    
-    pub fn validate_display_list_geometry(&self) {
-        
-        let container_size = Size2D::zero();
-        let position_with_overflow = self.position
-                                         .to_physical(self.writing_mode, container_size)
-                                         .union(&self.overflow.paint);
-        let bounds = Rect::new(self.stacking_relative_position, position_with_overflow.size);
-
-        let items = match self.display_list_building_result {
-            Some(ref items) => items,
-            None => return,
-        };
-
-        for item in items.iter() {
-            let base_item = item.item.base();
-            let paint_bounds = base_item.clip.clone().intersect_rect(&base_item.bounds);
-            if !paint_bounds.might_be_nonempty() {
-                continue;
-            }
-
-            if bounds.union(&paint_bounds.bounding_rect()) != bounds {
-                error!("DisplayList item {:?} outside of Flow overflow ({:?})",
-                       item.item,
-                       paint_bounds);
-            }
-        }
-    }
-
     pub fn flow_id(&self) -> usize {
         return self as *const BaseFlow as usize;
     }
 
     pub fn collect_stacking_contexts_for_children(&mut self,
                                                   parent_id: StackingContextId,
-                                                  contexts: &mut Vec<StackingContext>) {
+                                                  contexts: &mut Vec<Box<StackingContext>>) {
         for kid in self.children.iter_mut() {
             kid.collect_stacking_contexts(parent_id, contexts);
         }
