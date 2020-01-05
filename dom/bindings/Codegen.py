@@ -996,6 +996,8 @@ class CGElseChain(CGThing):
 
 class CGTemplatedType(CGWrapper):
     def __init__(self, templateName, child, isConst=False, isReference=False):
+        if isinstance(child, list):
+            child = CGList(child, ", ")
         const = "const " if isConst else ""
         pre = "%s%s<" % (const, templateName)
         ref = "&" if isReference else ""
@@ -1165,9 +1167,9 @@ class CGHeaders(CGWrapper):
                 bindingHeaders.add("mozilla/dom/PrimitiveConversions.h")
             elif unrolled.isRecord():
                 if dictionary or jsImplementedDescriptors:
-                    declareIncludes.add("mozilla/dom/MozMap.h")
+                    declareIncludes.add("mozilla/dom/Record.h")
                 else:
-                    bindingHeaders.add("mozilla/dom/MozMap.h")
+                    bindingHeaders.add("mozilla/dom/Record.h")
                 
                 
                 addHeadersForType((t.inner, dictionary))
@@ -1391,7 +1393,7 @@ def UnionTypes(unionTypes, config):
                     
                     headers.add(CGHeaders.getDeclarationFilename(f.callback))
                 elif f.isRecord():
-                    headers.add("mozilla/dom/MozMap.h")
+                    headers.add("mozilla/dom/Record.h")
                     
                     addHeadersForType(f.inner)
 
@@ -1459,7 +1461,7 @@ def UnionConversions(unionTypes, config):
                 elif f.isPrimitive():
                     headers.add("mozilla/dom/PrimitiveConversions.h")
                 elif f.isRecord():
-                    headers.add("mozilla/dom/MozMap.h")
+                    headers.add("mozilla/dom/Record.h")
                     
                     addHeadersForType(f.inner)
 
@@ -4471,6 +4473,13 @@ def handleDefaultStringValue(defaultValue, method):
             }
 
 
+def recordKeyDeclType(recordType):
+    assert recordType.keyType.isString()
+    if recordType.keyType.isByteString():
+        return CGGeneric("nsCString")
+    return CGGeneric("nsString")
+
+
 
 
 
@@ -4665,7 +4674,7 @@ def getJSToNativeConversionInfo(type, descriptorProvider, failureCode=None,
             declArgs = "cx"
         else:
             assert (isMember in
-                    ("Sequence", "Variadic", "Dictionary", "OwningUnion", "MozMap"))
+                    ("Sequence", "Variadic", "Dictionary", "OwningUnion", "Record"))
             
             declType = CGGeneric("JSObject*")
             declArgs = None
@@ -4833,36 +4842,38 @@ def getJSToNativeConversionInfo(type, descriptorProvider, failureCode=None,
     if type.isRecord():
         assert not isEnforceRange and not isClamp
         if failureCode is None:
-            notMozMap = ('ThrowErrorMessage(cx, MSG_NOT_OBJECT, "%s");\n'
+            notRecord = ('ThrowErrorMessage(cx, MSG_NOT_OBJECT, "%s");\n'
                          "%s" % (firstCap(sourceDescription), exceptionCode))
         else:
-            notMozMap = failureCode
+            notRecord = failureCode
 
         nullable = type.nullable()
         
         if nullable:
-            valueType = type.inner.inner
+            recordType = type.inner
         else:
-            valueType = type.inner
+            recordType = type
+        valueType = recordType.inner
 
         valueInfo = getJSToNativeConversionInfo(
-            valueType, descriptorProvider, isMember="MozMap",
+            valueType, descriptorProvider, isMember="Record",
             exceptionCode=exceptionCode, lenientFloatCode=lenientFloatCode,
             isCallbackReturnValue=isCallbackReturnValue,
             sourceDescription="value in %s" % sourceDescription,
             nestingLevel=incrementNestingLevel())
         if valueInfo.dealWithOptional:
-            raise TypeError("Shouldn't have optional things in MozMap")
+            raise TypeError("Shouldn't have optional things in record")
         if valueInfo.holderType is not None:
-            raise TypeError("Shouldn't need holders for MozMap")
+            raise TypeError("Shouldn't need holders for record")
 
-        typeName = CGTemplatedType("MozMap", valueInfo.declType)
-        mozMapType = typeName.define()
+        declType = CGTemplatedType("Record", [recordKeyDeclType(recordType),
+                                              valueInfo.declType])
+        typeName = declType.define()
         if nullable:
-            typeName = CGTemplatedType("Nullable", typeName)
-            mozMapRef = "${declName}.SetValue()"
+            declType = CGTemplatedType("Nullable", declType)
+            recordRef = "${declName}.SetValue()"
         else:
-            mozMapRef = "${declName}"
+            recordRef = "${declName}"
 
         valueConversion = string.Template(valueInfo.template).substitute({
             "val": "temp",
@@ -4876,17 +4887,17 @@ def getJSToNativeConversionInfo(type, descriptorProvider, failureCode=None,
 
         templateBody = fill(
             """
-            auto& mozMapEntries = ${mozMapRef}.Entries();
+            auto& recordEntries = ${recordRef}.Entries();
 
-            JS::Rooted<JSObject*> mozMapObj(cx, &$${val}.toObject());
+            JS::Rooted<JSObject*> recordObj(cx, &$${val}.toObject());
             JS::AutoIdVector ids(cx);
             // Keep skipping symbols until
             // https://github.com/heycam/webidl/issues/294 is sorted out.
-            if (!js::GetPropertyKeys(cx, mozMapObj,
+            if (!js::GetPropertyKeys(cx, recordObj,
                                      JSITER_OWNONLY | JSITER_HIDDEN, &ids)) {
               $*{exceptionCode}
             }
-            if (!mozMapEntries.SetCapacity(ids.length(), mozilla::fallible)) {
+            if (!recordEntries.SetCapacity(ids.length(), mozilla::fallible)) {
               JS_ReportOutOfMemory(cx);
               $*{exceptionCode}
             }
@@ -4899,7 +4910,7 @@ def getJSToNativeConversionInfo(type, descriptorProvider, failureCode=None,
               MOZ_ASSERT(!JSID_IS_SYMBOL(curId), "No symbols, we said!");
 
               JS::Rooted<JS::PropertyDescriptor> desc(cx);
-              if (!JS_GetOwnPropertyDescriptorById(cx, mozMapObj, curId,
+              if (!JS_GetOwnPropertyDescriptorById(cx, recordObj, curId,
                                                    &desc)) {
                 $*{exceptionCode}
               }
@@ -4916,29 +4927,28 @@ def getJSToNativeConversionInfo(type, descriptorProvider, failureCode=None,
               }
               MOZ_ASSERT(!isSymbol, "We said, no symbols!");
 
-              if (!JS_GetPropertyById(cx, mozMapObj, curId, &temp)) {
+              if (!JS_GetPropertyById(cx, recordObj, curId, &temp)) {
                 $*{exceptionCode}
               }
 
               // Safe to do an infallible append here, because we did a
               // SetCapacity above to the right capacity.
-              ${mozMapType}::EntryType* entry = mozMapEntries.AppendElement();
+              ${typeName}::EntryType* entry = recordEntries.AppendElement();
               entry->mKey = propName;
               ${valueType}& slot = entry->mValue;
               $*{valueConversion}
             }
             """,
             exceptionCode=exceptionCode,
-            mozMapRef=mozMapRef,
-            mozMapType=mozMapType,
+            recordRef=recordRef,
+            typeName=typeName,
             valueType=valueInfo.declType.define(),
             valueConversion=valueConversion)
 
         templateBody = wrapObjectTemplate(templateBody, type,
                                           "${declName}.SetNull();\n",
-                                          notMozMap)
+                                          notRecord)
 
-        declType = typeName
         declArgs = None
         holderType = None
         holderArgs = None
@@ -4949,11 +4959,13 @@ def getJSToNativeConversionInfo(type, descriptorProvider, failureCode=None,
             declType = CGWrapper(declType, post="&")
             declArgs = "aRetVal"
         elif not isMember and typeNeedsRooting(valueType):
-            holderType = CGTemplatedType("MozMapRooter", valueInfo.declType)
+            holderType = CGTemplatedType("RecordRooter",
+                                         [recordKeyDeclType(recordType),
+                                          valueInfo.declType])
             
             
             
-            holderArgs = "cx, &%s" % mozMapRef
+            holderArgs = "cx, &%s" % recordRef
 
         return JSToNativeConversionInfo(templateBody, declType=declType,
                                         declArgs=declArgs,
@@ -5036,16 +5048,16 @@ def getJSToNativeConversionInfo(type, descriptorProvider, failureCode=None,
         else:
             setDictionary = None
 
-        mozMapMemberTypes = filter(lambda t: t.isRecord(), memberTypes)
-        if len(mozMapMemberTypes) > 0:
-            assert len(mozMapMemberTypes) == 1
-            name = getUnionMemberName(mozMapMemberTypes[0])
-            mozMapObject = CGGeneric(
+        recordMemberTypes = filter(lambda t: t.isRecord(), memberTypes)
+        if len(recordMemberTypes) > 0:
+            assert len(recordMemberTypes) == 1
+            name = getUnionMemberName(recordMemberTypes[0])
+            recordObject = CGGeneric(
                 "done = (failed = !%s.TrySetTo%s(cx, ${val}, tryNext, ${passedToJSImpl})) || !tryNext;\n" %
                 (unionArgumentObj, name))
             names.append(name)
         else:
-            mozMapObject = None
+            recordObject = None
 
         objectMemberTypes = filter(lambda t: t.isObject(), memberTypes)
         if len(objectMemberTypes) > 0:
@@ -5061,10 +5073,10 @@ def getJSToNativeConversionInfo(type, descriptorProvider, failureCode=None,
         else:
             object = None
 
-        hasObjectTypes = interfaceObject or sequenceObject or dateObject or callbackObject or object or mozMapObject
+        hasObjectTypes = interfaceObject or sequenceObject or dateObject or callbackObject or object or recordObject
         if hasObjectTypes:
             
-            assert not object or not (interfaceObject or sequenceObject or dateObject or callbackObject or mozMapObject)
+            assert not object or not (interfaceObject or sequenceObject or dateObject or callbackObject or recordObject)
             if sequenceObject or dateObject or callbackObject:
                 
                 
@@ -5084,9 +5096,9 @@ def getJSToNativeConversionInfo(type, descriptorProvider, failureCode=None,
             if dateObject:
                 templateBody.prepend(CGGeneric("JS::Rooted<JSObject*> argObj(cx, &${val}.toObject());\n"))
 
-            if mozMapObject:
+            if recordObject:
                 templateBody = CGList([templateBody,
-                                       CGIfWrapper(mozMapObject, "!done")])
+                                       CGIfWrapper(recordObject, "!done")])
 
             templateBody = CGIfWrapper(templateBody, "${val}.isObject()")
         else:
@@ -5826,7 +5838,7 @@ def getJSToNativeConversionInfo(type, descriptorProvider, failureCode=None,
         assert not isEnforceRange and not isClamp
 
         declArgs = None
-        if isMember in ("Variadic", "Sequence", "Dictionary", "MozMap"):
+        if isMember in ("Variadic", "Sequence", "Dictionary", "Record"):
             
             declType = "JS::Value"
         else:
@@ -6347,7 +6359,7 @@ def getMaybeWrapValueFuncForType(type):
 
 
 sequenceWrapLevel = 0
-mozMapWrapLevel = 0
+recordWrapLevel = 0
 
 
 def getWrapTemplateForType(type, descriptorProvider, result, successCode,
@@ -6530,9 +6542,9 @@ def getWrapTemplateForType(type, descriptorProvider, result, successCode,
         
         
         
-        global mozMapWrapLevel
-        valueName = "mozMapValue%d" % mozMapWrapLevel
-        mozMapWrapLevel += 1
+        global recordWrapLevel
+        valueName = "recordValue%d" % recordWrapLevel
+        recordWrapLevel += 1
         innerTemplate = wrapForType(
             type.inner, descriptorProvider,
             {
@@ -6545,7 +6557,7 @@ def getWrapTemplateForType(type, descriptorProvider, result, successCode,
                 'obj': "returnObj",
                 'typedArraysAreStructs': typedArraysAreStructs
             })
-        mozMapWrapLevel -= 1
+        recordWrapLevel -= 1
         code = fill(
             """
 
@@ -6970,14 +6982,15 @@ def getRetvalDeclarationForType(returnType, descriptorProvider,
             returnType = returnType.inner
         result, _, _, _, _ = getRetvalDeclarationForType(returnType.inner,
                                                          descriptorProvider,
-                                                         isMember="MozMap")
+                                                         isMember="Record")
         
         if not isMember and typeNeedsRooting(returnType):
-            rooter = CGGeneric("MozMapRooter<%s> resultRooter(cx, &result);\n" %
-                               result.define())
+            rooter = CGGeneric("RecordRooter<%s> resultRooter(cx, &result);\n" %
+                               ("nsString, " + result.define()))
         else:
             rooter = None
-        result = CGTemplatedType("MozMap", result)
+        result = CGTemplatedType("Record", [recordKeyDeclType(returnType),
+                                            result])
         if nullable:
             result = CGTemplatedType("Nullable", result)
         return result, "ref", rooter, None, None
@@ -7239,7 +7252,7 @@ class MethodNotNewObjectError(Exception):
 
 
 sequenceWrapLevel = 0
-mapWrapLevel = 0
+recordWrapLevel = 0
 
 
 def wrapTypeIntoCurrentCompartment(type, value, isMember=True):
@@ -7304,20 +7317,20 @@ def wrapTypeIntoCurrentCompartment(type, value, isMember=True):
         origType = type
         if type.nullable():
             type = type.inner
-            mozMapRef = "%s.Value()" % value
+            recordRef = "%s.Value()" % value
         else:
-            mozMapRef = value
-        global mapWrapLevel
-        entryRef = "mapEntry%d" % mapWrapLevel
-        mapWrapLevel += 1
+            recordRef = value
+        global recordWrapLevel
+        entryRef = "mapEntry%d" % recordWrapLevel
+        recordWrapLevel += 1
         wrapElement = wrapTypeIntoCurrentCompartment(type.inner,
                                                      "%s.mValue" % entryRef)
-        mapWrapLevel -= 1
+        recordWrapLevel -= 1
         if not wrapElement:
             return None
         wrapCode = CGWrapper(CGIndenter(wrapElement),
                              pre=("for (auto& %s : %s.Entries()) {\n" %
-                                  (entryRef, mozMapRef)),
+                                  (entryRef, recordRef)),
                              post="}\n")
         if origType.nullable():
             wrapCode = CGIfWrapper(wrapCode, "!%s.IsNull()" % value)
@@ -9840,13 +9853,18 @@ def getUnionAccessorSignatureType(type, descriptorProvider):
         if type.isSequence():
             wrapperType = "Sequence"
         else:
-            wrapperType = "MozMap"
+            wrapperType = "Record"
         
         
         elementInfo = getJSToNativeConversionInfo(type.inner,
                                                   descriptorProvider,
                                                   isMember=wrapperType)
-        return CGTemplatedType(wrapperType, elementInfo.declType,
+        if wrapperType == "Sequence":
+            innerType = elementInfo.declType
+        else:
+            innerType = [recordKeyDeclType(type), elementInfo.declType]
+
+        return CGTemplatedType(wrapperType, innerType,
                                isConst=True, isReference=True)
 
     
@@ -10204,7 +10222,7 @@ class CGUnionStruct(CGThing):
                 elif t.isRecord():
                     traceCases.append(
                         CGCase("e" + vars["name"],
-                               CGGeneric("TraceMozMap(trc, mValue.m%s.Value());\n" %
+                               CGGeneric("TraceRecord(trc, mValue.m%s.Value());\n" %
                                          vars["name"])))
                 else:
                     assert t.isSpiderMonkeyInterface()
@@ -14333,7 +14351,8 @@ class CGNativeMember(ClassMethod):
                 returnType = returnType.inner
             
             elementDecl = self.getReturnType(returnType.inner, True)
-            type = CGTemplatedType("MozMap", CGGeneric(elementDecl))
+            type = CGTemplatedType("Record", [recordKeyDeclType(returnType),
+                                              CGGeneric(elementDecl)])
             if nullable:
                 type = CGTemplatedType("Nullable", type)
             args.append(Argument("%s&" % type.define(), "aRetVal"))
@@ -14397,7 +14416,7 @@ class CGNativeMember(ClassMethod):
         Nullable as needed.
 
         isMember can be false or one of the strings "Sequence", "Variadic",
-                 "MozMap"
+                 "Record"
         """
         if type.isSequence():
             nullable = type.nullable()
@@ -14413,8 +14432,8 @@ class CGNativeMember(ClassMethod):
             if nullable:
                 type = type.inner
             elementType = type.inner
-            argType = self.getArgType(elementType, False, "MozMap")[0]
-            decl = CGTemplatedType("MozMap", argType)
+            argType = self.getArgType(elementType, False, "Record")[0]
+            decl = CGTemplatedType("Record", [recordKeyDeclType(type), argType])
             return decl.define(), True, True
 
         if type.isUnion():

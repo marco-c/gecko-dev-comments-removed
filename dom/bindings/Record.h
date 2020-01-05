@@ -8,8 +8,8 @@
 
 
 
-#ifndef mozilla_dom_MozMap_h
-#define mozilla_dom_MozMap_h
+#ifndef mozilla_dom_Record_h
+#define mozilla_dom_Record_h
 
 #include "nsTHashtable.h"
 #include "nsHashKeys.h"
@@ -23,15 +23,15 @@ namespace dom {
 
 namespace binding_detail {
 template<typename KeyType, typename ValueType>
-class MozMapEntry
+class RecordEntry
 {
 public:
-  MozMapEntry()
+  RecordEntry()
   {
   }
 
   
-  MozMapEntry(MozMapEntry<KeyType, ValueType>&& aOther)
+  RecordEntry(RecordEntry<KeyType, ValueType>&& aOther)
     : mKey(Move(aOther.mKey)),
       mValue(Move(aOther.mValue))
   {
@@ -43,20 +43,19 @@ public:
 
 } 
 
-template<typename ValueType>
-class MozMap
+template<typename KeyType, typename ValueType>
+class Record
 {
 public:
-  typedef nsString KeyType;
-  typedef typename binding_detail::MozMapEntry<KeyType, ValueType> EntryType;
-  typedef MozMap<ValueType> SelfType;
+  typedef typename binding_detail::RecordEntry<nsString, ValueType> EntryType;
+  typedef Record<KeyType, ValueType> SelfType;
 
-  MozMap()
+  Record()
   {
   }
 
   
-  MozMap(SelfType&& aOther) :
+  Record(SelfType&& aOther) :
     mEntries(Move(aOther.mEntries))
   {
   }
