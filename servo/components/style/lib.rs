@@ -15,6 +15,8 @@
 #![plugin(serde_macros)]
 #![plugin(plugins)]
 
+#![recursion_limit = "500"]  
+
 extern crate app_units;
 #[macro_use]
 extern crate bitflags;
