@@ -132,10 +132,15 @@ public abstract class TabsLayout extends RecyclerView
     public void onItemClicked(RecyclerView recyclerView, int position, View v) {
         final TabsLayoutItemView item = (TabsLayoutItemView) v;
         final int tabId = item.getTabId();
-        final Tabs tabs = Tabs.getInstance();
-        tabs.selectTab(tabId);
+        final Tab tab = Tabs.getInstance().selectTab(tabId);
+        if (tab == null) {
+            
+            
+            return;
+        }
+
         autoHidePanel();
-        tabs.notifyListeners(tabs.getTab(tabId), Tabs.TabEvents.OPENED_FROM_TABS_TRAY);
+        Tabs.getInstance().notifyListeners(tab, Tabs.TabEvents.OPENED_FROM_TABS_TRAY);
     }
 
     
@@ -165,9 +170,14 @@ public abstract class TabsLayout extends RecyclerView
     private void closeTab(View view) {
         final TabsLayoutItemView itemView = (TabsLayoutItemView) view;
         final Tab tab = getTabForView(itemView);
+        if (tab == null) {
+            
+            
+            return;
+        }
+
         final boolean closingLastTab = tabsAdapter.getItemCount() == 1;
         Tabs.getInstance().closeTab(tab, true);
-
         if (closingLastTab) {
             autoHidePanel();
         }

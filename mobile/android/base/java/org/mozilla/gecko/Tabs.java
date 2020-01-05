@@ -265,7 +265,7 @@ public class Tabs implements GeckoEventListener {
         
         
         if (tab == null || oldTab == tab) {
-            return null;
+            return tab;
         }
 
         mSelectedTab = tab;
