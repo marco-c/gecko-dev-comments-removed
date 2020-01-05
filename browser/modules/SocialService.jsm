@@ -211,16 +211,11 @@ var ActiveProviders = {
 };
 
 function migrateSettings() {
-  let activeProviders, enabled;
-  try {
-    activeProviders = Services.prefs.getCharPref("social.activeProviders");
-  } catch (e) {
-    
-  }
+  let enabled;
   if (Services.prefs.prefHasUserValue("social.enabled")) {
     enabled = Services.prefs.getBoolPref("social.enabled");
   }
-  if (activeProviders) {
+  if (Services.prefs.getCharPref("social.activeProviders", "")) {
     
     
     for (let origin in ActiveProviders._providers) {

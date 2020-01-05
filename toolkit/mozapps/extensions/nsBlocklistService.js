@@ -254,16 +254,7 @@ function getLocale() {
 
 
 function getDistributionPrefValue(aPrefName) {
-  var prefValue = "default";
-
-  var defaults = gPref.getDefaultBranch(null);
-  try {
-    prefValue = defaults.getCharPref(aPrefName);
-  } catch (e) {
-    
-  }
-
-  return prefValue;
+  return gPref.getDefaultBranch(null).getCharPref(aPrefName, "default");
 }
 
 

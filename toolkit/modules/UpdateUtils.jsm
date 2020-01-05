@@ -31,13 +31,9 @@ this.UpdateUtils = {
 
 
   getUpdateChannel(aIncludePartners = true) {
-    let channel = AppConstants.MOZ_UPDATE_CHANNEL;
     let defaults = Services.prefs.getDefaultBranch(null);
-    try {
-      channel = defaults.getCharPref("app.update.channel");
-    } catch (e) {
-      
-    }
+    let channel = defaults.getCharPref("app.update.channel",
+                                       AppConstants.MOZ_UPDATE_CHANNEL);
 
     if (aIncludePartners) {
       try {

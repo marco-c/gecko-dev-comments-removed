@@ -256,15 +256,11 @@ var shell = {
       
       
       if (AppConstants.MOZ_GRAPHENE && !startManifestURL) {
-        try {
-          startManifestURL = Services.prefs.getCharPref("b2g.system_manifest_url");
-        } catch(e) {}
+        startManifestURL = Services.prefs.getCharPref("b2g.system_manifest_url", "");
       }
 
       if (!startManifestURL) {
-        try {
-          startManifestURL = Services.prefs.getCharPref("b2g.default.start_manifest_url");
-        } catch(e) {}
+        startManifestURL = Services.prefs.getCharPref("b2g.default.start_manifest_url", "");
       }
 
       if (startManifestURL) {

@@ -724,6 +724,7 @@ function promiseTargetFile(aFpP,  aSkipPrompt,  aRelatedURI) {
     
     
     if (aFpP.saveMode != SAVEMODE_FILEONLY) {
+      
       try {
         fp.filterIndex = prefBranch.getIntPref("save_converter_index");
       } catch (e) {

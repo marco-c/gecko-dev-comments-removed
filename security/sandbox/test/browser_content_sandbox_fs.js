@@ -141,6 +141,7 @@ add_task(function*() {
   
   
   
+  
   try {
     level = prefs.getIntPref("security.sandbox.content.level");
   } catch (e) {

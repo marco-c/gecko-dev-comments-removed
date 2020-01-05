@@ -46,6 +46,7 @@ var AdbController = {
       this.disableAdbTimer.cancel();
     } else {
       this.disableAdbTimer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
+      
       try {
         this.disableAdbTimeoutHours =
           Services.prefs.getIntPref("b2g.adb.timeout-hours");

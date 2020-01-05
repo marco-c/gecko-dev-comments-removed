@@ -793,11 +793,8 @@ nsPlacesExpiration.prototype = {
 
   _loadPrefs: Task.async(function* () {
     
-    try {
-      
-      
-      this._urisLimit = this._prefBranch.getIntPref(PREF_MAX_URIS);
-    } catch (ex) {  }
+    this._urisLimit = this._prefBranch.getIntPref(PREF_MAX_URIS,
+                                                  PREF_MAX_URIS_NOTSET);
 
     if (this._urisLimit < 0) {
       
@@ -855,11 +852,8 @@ nsPlacesExpiration.prototype = {
                                 this._urisLimit);
 
     
-    try {
-      
-      
-      this._interval = this._prefBranch.getIntPref(PREF_INTERVAL_SECONDS);
-    } catch (ex) {  }
+    this._interval = this._prefBranch.getIntPref(PREF_INTERVAL_SECONDS,
+                                                 PREF_INTERVAL_SECONDS_NOTSET);
     if (this._interval <= 0) {
       this._interval = PREF_INTERVAL_SECONDS_NOTSET;
     }

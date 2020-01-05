@@ -116,6 +116,7 @@ DirectoryProvider.prototype = {
     try {
       curLocale = Services.prefs.getComplexValue("general.useragent.locale", Ci.nsIPrefLocalizedString).data;
     } catch (e) {
+      
       try {
         curLocale = Services.prefs.getCharPref("general.useragent.locale");
       } catch (ee) {

@@ -75,6 +75,7 @@ this.Bootstraper = {
     return Promise.resolve();
 
     let oldManifestURL;
+    
     try{
       oldManifestURL = Services.prefs.getCharPref("b2g.system_manifest_url");
     } catch(e) {

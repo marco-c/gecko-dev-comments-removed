@@ -427,12 +427,8 @@ setUpdateTrackingId();
       return;
     }
     
-    let prefValue = AppConstants.MOZ_TELEMETRY_ON_BY_DEFAULT;
-    try {
-      prefValue = Services.prefs.getBoolPref(geckoPrefName);
-    } catch (e) {
-      
-    }
+    let prefValue = Services.prefs.getBoolPref(geckoPrefName,
+                                               AppConstants.MOZ_TELEMETRY_ON_BY_DEFAULT);
     let setting = {};
     setting[gaiaSettingName] = prefValue;
     window.navigator.mozSettings.createLock().set(setting);
