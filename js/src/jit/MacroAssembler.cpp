@@ -1043,9 +1043,9 @@ AllocateObjectBufferWithInit(JSContext* cx, TypedArrayObject* obj, int32_t count
     
     
     if (count <= 0) {
+        obj->setFixedSlot(TypedArrayObject::LENGTH_SLOT, Int32Value(0));
         if (count == 0)
             obj->setInlineElements();
-        obj->setFixedSlot(TypedArrayObject::LENGTH_SLOT, Int32Value(0));
         return;
     }
 
@@ -1096,6 +1096,12 @@ MacroAssembler::initTypedArraySlots(Register obj, Register temp, Register length
 
     if (lengthKind == TypedArrayLength::Fixed && dataOffset + nbytes <= JSObject::MAX_BYTE_SIZE) {
         MOZ_ASSERT(dataOffset + nbytes <= templateObj->tenuredSizeOfThis());
+
+        if (length == 0) {
+            
+            storePtr(ImmPtr(nullptr), Address(obj, dataSlotOffset));
+            return;
+        }
 
         
         computeEffectiveAddress(Address(obj, dataOffset), temp);
