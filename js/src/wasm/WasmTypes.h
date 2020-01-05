@@ -899,7 +899,8 @@ class CallSiteDesc
         Symbolic,  
         TrapExit,   
         EnterFrame, 
-        LeaveFrame  
+        LeaveFrame, 
+        Breakpoint  
     };
     CallSiteDesc() {}
     explicit CallSiteDesc(Kind kind)

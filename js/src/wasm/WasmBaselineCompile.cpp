@@ -2041,7 +2041,7 @@ class BaseCompiler
     
 
     void insertBreakablePoint(CallSiteDesc::Kind kind) {
-        const uint32_t offset = iter_.currentOffset();
+        const uint32_t offset = trapOffset().bytecodeOffset;
         masm.nopPatchableToCall(CallSiteDesc(offset, kind));
     }
 
@@ -2214,6 +2214,7 @@ class BaseCompiler
             
             
             saveResult();
+            insertBreakablePoint(CallSiteDesc::Breakpoint);
             insertBreakablePoint(CallSiteDesc::LeaveFrame);
             restoreResult();
         }
@@ -6837,6 +6838,16 @@ BaseCompiler::emitBody()
 
         uint16_t op;
         CHECK(iter_.readOp(&op));
+
+        
+        if (debugEnabled_ && op != (uint16_t)Op::End) {
+            
+            
+            
+            sync();
+
+            insertBreakablePoint(CallSiteDesc::Breakpoint);
+        }
 
         switch (op) {
           

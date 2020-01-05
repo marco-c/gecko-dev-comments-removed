@@ -25,7 +25,11 @@
 namespace js {
 
 struct AsmJSMetadata;
+class Debugger;
 class WasmActivation;
+class WasmBreakpoint;
+class WasmBreakpointSite;
+class WasmInstanceObject;
 
 namespace wasm {
 
@@ -573,6 +577,10 @@ class GeneratedSourceMap
 
 typedef UniquePtr<GeneratedSourceMap> UniqueGeneratedSourceMap;
 
+typedef HashMap<uint32_t, uint32_t, DefaultHasher<uint32_t>, SystemAllocPolicy> StepModeCounters;
+
+typedef HashMap<uint32_t, WasmBreakpointSite*, DefaultHasher<uint32_t>, SystemAllocPolicy> WasmBreakpointSiteMap;
+
 
 
 
@@ -585,8 +593,13 @@ class Code
     const SharedBytes        maybeBytecode_;
     UniqueGeneratedSourceMap maybeSourceMap_;
     CacheableCharsVector     funcLabels_;
-    uint32_t                 enterAndLeaveFrameTrapsCounter_;
     bool                     profilingEnabled_;
+
+    
+
+    uint32_t                 enterAndLeaveFrameTrapsCounter_;
+    WasmBreakpointSiteMap    breakpointSites_;
+    StepModeCounters         stepModeCounters_;
 
     void toggleDebugTrap(uint32_t offset, bool enabled);
     bool ensureSourceMap(JSContext* cx);
@@ -604,6 +617,7 @@ class Code
 
     const CallSite* lookupCallSite(void* returnAddress) const;
     const CodeRange* lookupRange(void* pc) const;
+    const CodeRange* lookupRangeByFuncIndexSlow(uint32_t funcIndex) const;
     const MemoryAccess* lookupMemoryAccess(void* pc) const;
 
     
@@ -636,6 +650,24 @@ class Code
     
 
     void adjustEnterAndLeaveFrameTrapsState(JSContext* cx, bool enabled);
+
+    
+    
+
+    bool hasBreakpointTrapAtOffset(uint32_t offset);
+    void toggleBreakpointTrap(JSRuntime* rt, uint32_t offset, bool enabled);
+    WasmBreakpointSite* getOrCreateBreakpointSite(JSContext* cx, uint32_t offset);
+    bool hasBreakpointSite(uint32_t offset);
+    void destroyBreakpointSite(FreeOp* fop, uint32_t offset);
+    bool clearBreakpointsIn(JSContext* cx, WasmInstanceObject* instance,
+                            js::Debugger* dbg, JSObject* handler);
+
+    
+    
+
+    bool stepModeEnabled(uint32_t funcIndex) const;
+    bool incrementStepModeCount(JSContext* cx, uint32_t funcIndex);
+    bool decrementStepModeCount(JSContext* cx, uint32_t funcIndex);
 
     
 
