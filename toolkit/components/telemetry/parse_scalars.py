@@ -91,14 +91,14 @@ class ScalarType:
             'description': basestring,
             'expires': basestring,
             'kind': basestring,
-            'notification_emails': list 
+            'notification_emails': list, 
+            'record_in_processes': list,
         }
 
         OPTIONAL_FIELDS = {
             'cpp_guard': basestring,
             'release_channel_collection': basestring,
             'keyed': bool,
-            'record_in_processes': list,
         }
 
         
@@ -229,7 +229,7 @@ class ScalarType:
     @property
     def record_in_processes(self):
         """Get the non-empty list of processes to record data in"""
-        return self._definition.get('record_in_processes', ['main'])
+        return self._definition['record_in_processes']
 
     @property
     def record_in_processes_enum(self):
