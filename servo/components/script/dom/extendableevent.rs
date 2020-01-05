@@ -51,7 +51,7 @@ impl ExtendableEvent {
     }
 
     
-    pub fn WaitUntil(&self, _cx: *mut JSContext, val: HandleValue) -> ErrorResult {
+    pub fn WaitUntil(&self, _cx: *mut JSContext, _val: HandleValue) -> ErrorResult {
         
         if !self.extensions_allowed {
             return Err(Error::InvalidState);
