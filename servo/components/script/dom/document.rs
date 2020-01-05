@@ -222,6 +222,9 @@ pub struct Document {
     
     modified_elements: DOMRefCell<HashMap<JS<Element>, ElementSnapshot>>,
     
+    
+    needs_paint: Cell<bool>,
+    
     active_touch_points: DOMRefCell<Vec<JS<Touch>>>,
     
     
@@ -376,6 +379,10 @@ impl Document {
         }
     }
 
+    pub fn needs_paint(&self) -> bool {
+        self.needs_paint.get()
+    }
+
     pub fn needs_reflow(&self) -> bool {
         
         
@@ -384,7 +391,8 @@ impl Document {
             Some(root) => {
                 root.upcast::<Node>().is_dirty() ||
                 root.upcast::<Node>().has_dirty_descendants() ||
-                !self.modified_elements.borrow().is_empty()
+                !self.modified_elements.borrow().is_empty() ||
+                self.needs_paint()
             }
             None => false,
         }
@@ -1602,6 +1610,8 @@ pub enum DocumentSource {
 pub trait LayoutDocumentHelpers {
     unsafe fn is_html_document_for_layout(&self) -> bool;
     unsafe fn drain_modified_elements(&self) -> Vec<(LayoutJS<Element>, ElementSnapshot)>;
+    unsafe fn needs_paint_from_layout(&self);
+    unsafe fn will_paint(&self);
 }
 
 #[allow(unsafe_code)]
@@ -1617,6 +1627,16 @@ impl LayoutDocumentHelpers for LayoutJS<Document> {
         let mut elements = (*self.unsafe_get()).modified_elements.borrow_mut_for_layout();
         let result = elements.drain().map(|(k, v)| (k.to_layout(), v)).collect();
         result
+    }
+
+    #[inline]
+    unsafe fn needs_paint_from_layout(&self) {
+        (*self.unsafe_get()).needs_paint.set(true)
+    }
+
+    #[inline]
+    unsafe fn will_paint(&self) {
+        (*self.unsafe_get()).needs_paint.set(false)
     }
 }
 
@@ -1723,6 +1743,7 @@ impl Document {
             base_element: Default::default(),
             appropriate_template_contents_owner_document: Default::default(),
             modified_elements: DOMRefCell::new(HashMap::new()),
+            needs_paint: Cell::new(false),
             active_touch_points: DOMRefCell::new(Vec::new()),
             dom_loading: Cell::new(Default::default()),
             dom_interactive: Cell::new(Default::default()),

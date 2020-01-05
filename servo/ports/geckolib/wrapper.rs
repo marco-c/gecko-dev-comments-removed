@@ -414,6 +414,8 @@ impl<'ld> TDocument for GeckoDocument<'ld> {
 
 
     }
+    fn will_paint(&self) { unimplemented!() }
+    fn needs_paint_from_layout(&self) { unimplemented!() }
 }
 
 #[derive(Clone, Copy)]
