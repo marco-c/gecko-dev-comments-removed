@@ -68,6 +68,11 @@ public:
   ogg_packet* PopFront() { return static_cast<ogg_packet*>(nsDeque::PopFront()); }
   ogg_packet* PeekFront() { return static_cast<ogg_packet*>(nsDeque::PeekFront()); }
   ogg_packet* Pop() { return static_cast<ogg_packet*>(nsDeque::Pop()); }
+  ogg_packet* operator[](size_t aIndex) const
+  {
+    return static_cast<ogg_packet*>(nsDeque::ObjectAt(aIndex));
+  }
+  size_t Length() const { return nsDeque::GetSize(); }
   void PushFront(ogg_packet* aPacket) { nsDeque::PushFront(aPacket); }
   void Erase() { nsDeque::Erase(); }
 };
@@ -280,19 +285,21 @@ public:
   nsresult Reset() override;
   bool IsHeader(ogg_packet* aPacket) override;
   nsresult PageIn(ogg_page* aPage) override;
+  const TrackInfo* GetInfo() const override { return &mInfo; }
 
   
   MetadataTags* GetTags() override;
 
-  
-  static int64_t Time(vorbis_info* aInfo, int64_t aGranulePos);
-
-  vorbis_info mInfo;
+private:
+  AudioInfo mInfo;
+  vorbis_info mVorbisInfo;
   vorbis_comment mComment;
   vorbis_dsp_state mDsp;
   vorbis_block mBlock;
+  OggPacketQueue mHeaders;
 
-private:
+  
+  static int64_t Time(vorbis_info* aInfo, int64_t aGranulePos);
 
   
   
