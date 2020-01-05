@@ -66,8 +66,8 @@ WR_DECL_FFI_2(WrFontKey, uint32_t, uint32_t)
 
 
 struct WrByteSlice {
-  uint8_t* mBuffer;
-  size_t mLength;
+  uint8_t* buffer;
+  size_t len;
 };
 
 
