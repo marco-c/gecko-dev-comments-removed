@@ -17,12 +17,6 @@
 
 namespace mozilla {
 
-typedef MozPromise<bool, bool,  false> HaveStartTimePromise;
-
-typedef Variant<MediaData*, MediaResult> AudioCallbackData;
-typedef Variant<Tuple<MediaData*, TimeStamp>, MediaResult> VideoCallbackData;
-typedef Variant<MediaData::Type, WaitForDataRejectValue> WaitCallbackData;
-
 
 
 
@@ -44,13 +38,11 @@ public:
   media::TimeUnit StartTime() const;
   RefPtr<MetadataPromise> ReadMetadata();
 
-  
   RefPtr<MediaDataPromise> RequestAudioData();
 
   RefPtr<MediaDataPromise>
   RequestVideoData(bool aSkipToNextKeyframe, media::TimeUnit aTimeThreshold);
 
-  
   RefPtr<WaitForDataPromise> WaitForData(MediaData::Type aType);
 
   RefPtr<SeekPromise> Seek(const SeekTarget& aTarget);
