@@ -66,12 +66,6 @@ public:
 
   
   static nsTArray<GfxVarUpdate> FetchNonDefaultVars();
-  
-  
-  static bool SerializeNonDefaultVarUpdates(nsACString& aUpdates, size_t aMax);
-  
-  
-  static void GotSerializedInitialVarUpdates(const char* aUpdates);
 
 public:
   
@@ -92,7 +86,6 @@ public:
 private:
   static StaticAutoPtr<gfxVars> sInstance;
   static StaticAutoPtr<nsTArray<VarBase*>> sVarList;
-  static const char* sSerializedInitialVarUpdates;
 
   template <typename T, T Default()>
   class VarImpl final : public VarBase
@@ -147,8 +140,6 @@ public:                                                         \
 
 private:
   gfxVars();
-
-  static bool ApplySerializedVarUpdates(const char* aUpdates);
 
   void NotifyReceivers(VarBase* aVar);
 
