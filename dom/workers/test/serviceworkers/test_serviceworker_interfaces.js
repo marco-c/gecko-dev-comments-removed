@@ -159,10 +159,11 @@ var interfaceNamesInGlobalScope =
 
     "MessagePort",
 
+    { name: "NetworkInformation", android: true },
+
     "Notification",
 
     "NotificationEvent",
-
 
     "Performance",
 
