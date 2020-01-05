@@ -85,6 +85,8 @@ class PseudoChildAPIManager extends ChildAPIManager {
     
     data.principal = originalData.principal;
 
+    this.url = data.url;
+
     let name = "API:CreateProxyContext";
     
     let target = this.context.contentWindow
