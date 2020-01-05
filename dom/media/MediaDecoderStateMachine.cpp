@@ -86,6 +86,7 @@ using namespace mozilla::media;
 #define SLOG(x, ...) MOZ_LOG(gMediaDecoderLog, LogLevel::Debug, (SFMT(x, ##__VA_ARGS__)))
 #define SWARN(x, ...) NS_WARNING(nsPrintfCString(SFMT(x, ##__VA_ARGS__)).get())
 #define SDUMP(x, ...) NS_DebugBreak(NS_DEBUG_WARNING, nsPrintfCString(SFMT(x, ##__VA_ARGS__)).get(), nullptr, nullptr, -1)
+#define SSAMPLELOG(x, ...) MOZ_LOG(gMediaSampleLog, LogLevel::Debug, (SFMT(x, ##__VA_ARGS__)))
 
 
 
@@ -887,6 +888,151 @@ public:
 
     
     mSeekRequest.DisconnectIfExists();
+  }
+
+  void HandleAudioDecoded(MediaData* aAudio) override
+  {
+    MOZ_ASSERT(mSeekTaskRequest.Exists(), "Seek shouldn't be finished");
+
+    RefPtr<MediaData> audio(aAudio);
+    MOZ_ASSERT(audio);
+
+    
+    
+
+    SSAMPLELOG("HandleAudioDecoded [%lld,%lld]", audio->mTime, audio->GetEndTime());
+
+    
+    
+    
+    if (mTask->mTarget.IsVideoOnly()) {
+      mTask->mSeekedAudioData = audio.forget();
+      return;
+    }
+
+    mTask->AdjustFastSeekIfNeeded(audio);
+
+    if (mTask->mTarget.IsFast()) {
+      
+      mTask->mSeekedAudioData = audio;
+      mTask->mDoneAudioSeeking = true;
+    } else {
+      nsresult rv = mTask->DropAudioUpToSeekTarget(audio);
+      if (NS_FAILED(rv)) {
+        mTask->RejectIfExist(rv, __func__);
+        return;
+      }
+    }
+
+    if (!mTask->mDoneAudioSeeking) {
+      RequestAudioData();
+      return;
+    }
+    mTask->MaybeFinishSeek();
+  }
+
+  void HandleVideoDecoded(MediaData* aVideo, TimeStamp aDecodeStart) override
+  {
+    MOZ_ASSERT(mSeekTaskRequest.Exists(), "Seek shouldn't be finished");
+
+    RefPtr<MediaData> video(aVideo);
+    MOZ_ASSERT(video);
+
+    
+    
+
+    SSAMPLELOG("HandleVideoDecoded [%lld,%lld]", video->mTime, video->GetEndTime());
+
+    mTask->AdjustFastSeekIfNeeded(video);
+
+    if (mTask->mTarget.IsFast()) {
+      
+      mTask->mSeekedVideoData = video;
+      mTask->mDoneVideoSeeking = true;
+    } else {
+      nsresult rv = mTask->DropVideoUpToSeekTarget(video.get());
+      if (NS_FAILED(rv)) {
+        mTask->RejectIfExist(rv, __func__);
+        return;
+      }
+    }
+
+    if (!mTask->mDoneVideoSeeking) {
+      RequestVideoData();
+      return;
+    }
+    mTask->MaybeFinishSeek();
+  }
+
+  void HandleNotDecoded(MediaData::Type aType, const MediaResult& aError) override
+  {
+    MOZ_ASSERT(mSeekTaskRequest.Exists(), "Seek shouldn't be finished");
+
+    SSAMPLELOG("OnNotDecoded type=%d reason=%u", aType, aError.Code());
+
+    
+    if (aType == MediaData::AUDIO_DATA && mTask->mTarget.IsVideoOnly()) {
+      return;
+    }
+
+    
+    
+    if (aError == NS_ERROR_DOM_MEDIA_WAITING_FOR_DATA) {
+      Reader()->WaitForData(aType);
+      return;
+    }
+
+    if (aError == NS_ERROR_DOM_MEDIA_CANCELED) {
+      if (aType == MediaData::AUDIO_DATA) {
+        RequestAudioData();
+      } else {
+        RequestVideoData();
+      }
+      return;
+    }
+
+    if (aError == NS_ERROR_DOM_MEDIA_END_OF_STREAM) {
+      if (aType == MediaData::AUDIO_DATA) {
+        mTask->mIsAudioQueueFinished = true;
+        mTask->mDoneAudioSeeking = true;
+      } else {
+        mTask->mIsVideoQueueFinished = true;
+        mTask->mDoneVideoSeeking = true;
+        if (mTask->mFirstVideoFrameAfterSeek) {
+          
+          
+          mTask->mSeekedVideoData = mTask->mFirstVideoFrameAfterSeek.forget();
+        }
+      }
+      mTask->MaybeFinishSeek();
+      return;
+    }
+
+    
+    mTask->RejectIfExist(aError, __func__);
+  }
+
+  void HandleAudioWaited(MediaData::Type aType) override
+  {
+    MOZ_ASSERT(mSeekTaskRequest.Exists(), "Seek shouldn't be finished");
+
+    
+    if (mTask->mTarget.IsVideoOnly()) {
+      return;
+    }
+    RequestAudioData();
+  }
+
+  void HandleVideoWaited(MediaData::Type aType) override
+  {
+    MOZ_ASSERT(mSeekTaskRequest.Exists(), "Seek shouldn't be finished");
+
+    RequestVideoData();
+  }
+
+  void HandleNotWaited(const WaitForDataRejectValue& aRejection) override
+  {
+    MOZ_ASSERT(mSeekTaskRequest.Exists(), "Seek shouldn't be finished");
   }
 
 private:
