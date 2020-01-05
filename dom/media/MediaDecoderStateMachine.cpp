@@ -873,11 +873,6 @@ public:
 
     
     
-
-    SSAMPLELOG("HandleAudioDecoded [%lld,%lld]", audio->mTime, audio->GetEndTime());
-
-    
-    
     
     if (mSeekJob.mTarget.IsVideoOnly()) {
       mSeekedAudioData = audio.forget();
@@ -912,11 +907,6 @@ public:
     RefPtr<MediaData> video(aVideo);
     MOZ_ASSERT(video);
 
-    
-    
-
-    SSAMPLELOG("HandleVideoDecoded [%lld,%lld]", video->mTime, video->GetEndTime());
-
     AdjustFastSeekIfNeeded(video);
 
     if (mSeekJob.mTarget.IsFast()) {
@@ -941,8 +931,6 @@ public:
   void HandleNotDecoded(MediaData::Type aType, const MediaResult& aError) override
   {
     MOZ_ASSERT(!mDoneAudioSeeking || !mDoneVideoSeeking, "Seek shouldn't be finished");
-
-    SSAMPLELOG("OnNotDecoded type=%d reason=%u", aType, aError.Code());
 
     
     if (aType == MediaData::AUDIO_DATA && mSeekJob.mTarget.IsVideoOnly()) {
