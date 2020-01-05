@@ -273,7 +273,7 @@ add_task(function* testBrowserActionClickCanceled() {
   
   
   
-  let mouseUpPromise = BrowserTestUtils.waitForEvent(widget.node, "mouseup", event => {
+  let mouseUpPromise = BrowserTestUtils.waitForEvent(widget.node, "mouseup", false, event => {
     isnot(browserAction.pendingPopup, null, "Pending popup was not cleared");
     isnot(browserAction.pendingPopupTimeout, null, "Have a pending popup timeout");
     return true;
@@ -288,6 +288,77 @@ add_task(function* testBrowserActionClickCanceled() {
 
   yield promisePopupShown(getBrowserActionPopup(extension));
   yield closeBrowserAction(extension);
+
+  yield extension.unload();
+});
+
+add_task(function* testBrowserActionDisabled() {
+  let extension = ExtensionTestUtils.loadExtension({
+    manifest: {
+      "browser_action": {
+        "default_popup": "popup.html",
+        "browser_style": true,
+      },
+    },
+
+    background() {
+      browser.browserAction.disable();
+    },
+
+    files: {
+      "popup.html": `<!DOCTYPE html><html><head><meta charset="utf-8"><script src="popup.js"></script></head></html>`,
+      "popup.js"() {
+        browser.test.fail("Should not get here");
+      },
+    },
+  });
+
+  yield extension.startup();
+
+  const {GlobalManager, Management: {global: {browserActionFor}}} = Cu.import("resource://gre/modules/Extension.jsm", {});
+
+  let ext = GlobalManager.extensionMap.get(extension.id);
+  let browserAction = browserActionFor(ext);
+
+  let widget = getBrowserActionWidget(extension).forWindow(window);
+
+  
+  EventUtils.synthesizeMouseAtCenter(widget.node, {type: "mousedown", button: 0}, window);
+
+  is(browserAction.pendingPopup, null, "Have no pending popup");
+  is(browserAction.pendingPopupTimeout, null, "Have no pending popup timeout");
+
+  EventUtils.synthesizeMouseAtCenter(document.documentElement, {type: "mouseup", button: 0}, window);
+
+  is(browserAction.pendingPopup, null, "Have no pending popup");
+  is(browserAction.pendingPopupTimeout, null, "Have no pending popup timeout");
+
+
+  
+  EventUtils.synthesizeMouseAtCenter(widget.node, {type: "mousedown", button: 0}, window);
+
+  is(browserAction.pendingPopup, null, "Have no pending popup");
+  is(browserAction.pendingPopupTimeout, null, "Have no pending popup timeout");
+
+  
+  
+  
+  let mouseUpPromise = BrowserTestUtils.waitForEvent(widget.node, "mouseup", false, event => {
+    is(browserAction.pendingPopup, null, "Have no pending popup");
+    is(browserAction.pendingPopupTimeout, null, "Have no pending popup timeout");
+    return true;
+  });
+
+  EventUtils.synthesizeMouseAtCenter(widget.node, {type: "mouseup", button: 0}, window);
+
+  yield mouseUpPromise;
+
+  is(browserAction.pendingPopup, null, "Have no pending popup");
+  is(browserAction.pendingPopupTimeout, null, "Have no pending popup timeout");
+
+  
+  
+  yield new Promise(resolve => setTimeout(resolve, 250));
 
   yield extension.unload();
 });
