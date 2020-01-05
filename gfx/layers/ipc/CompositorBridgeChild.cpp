@@ -207,8 +207,7 @@ CompositorBridgeChild::InitForContent(Endpoint<PCompositorBridgeChild>&& aEndpoi
     NS_RUNTIMEABORT("Couldn't Open() Compositor channel.");
     return false;
   }
-
-  child->mCanSend = true;
+  child->InitIPDL();
 
   
   sCompositorBridge = child;
@@ -245,11 +244,12 @@ CompositorBridgeChild::InitSameProcess(widget::CompositorWidget* aWidget,
   mCompositorBridgeParent =
     new CompositorBridgeParent(aScale, vsyncRate, aUseExternalSurface, aSurfaceSize);
 
-  mCanSend = Open(mCompositorBridgeParent->GetIPCChannel(),
-                  CompositorThreadHolder::Loop(),
-                  ipc::ChildSide);
-  MOZ_RELEASE_ASSERT(mCanSend);
+  bool ok = Open(mCompositorBridgeParent->GetIPCChannel(),
+                 CompositorThreadHolder::Loop(),
+                 ipc::ChildSide);
+  MOZ_RELEASE_ASSERT(ok);
 
+  InitIPDL();
   mCompositorBridgeParent->InitSameProcess(aWidget, aLayerTreeId, aUseAPZ);
   return mCompositorBridgeParent;
 }
@@ -263,10 +263,22 @@ CompositorBridgeChild::CreateRemote(const uint64_t& aProcessToken,
   if (!aEndpoint.Bind(child)) {
     return nullptr;
   }
-
-  child->mCanSend = true;
+  child->InitIPDL();
   child->mProcessToken = aProcessToken;
   return child;
+}
+
+void
+CompositorBridgeChild::InitIPDL()
+{
+  mCanSend = true;
+  AddRef();
+}
+
+void
+CompositorBridgeChild::DeallocPCompositorBridgeChild()
+{
+  Release();
 }
 
  CompositorBridgeChild*
@@ -573,19 +585,12 @@ void
 CompositorBridgeChild::ActorDestroy(ActorDestroyReason aWhy)
 {
   if (aWhy == AbnormalShutdown) {
-#ifdef MOZ_B2G
-  
-  
-  
-  
-    NS_RUNTIMEABORT("ActorDestroy by IPC channel failure at CompositorBridgeChild");
-#endif
-
     
     
-    mCanSend = false;
     gfxCriticalNote << "Receive IPC close with reason=AbnormalShutdown";
   }
+
+  mCanSend = false;
 
   if (mProcessToken && XRE_IsParentProcess()) {
     GPUProcessManager::Get()->NotifyRemoteActorDestroyed(mProcessToken);
