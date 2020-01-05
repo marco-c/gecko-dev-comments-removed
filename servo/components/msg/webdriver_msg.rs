@@ -2,7 +2,7 @@
 
 
 
-use constellation_msg::{PipelineId, WindowSizeData};
+use constellation_msg::PipelineId;
 use euclid::rect::Rect;
 use ipc_channel::ipc::IpcSender;
 use rustc_serialize::json::{Json, ToJson};
@@ -23,7 +23,6 @@ pub enum WebDriverScriptCommand {
     GetElementText(String, IpcSender<Result<String, ()>>),
     GetFrameId(WebDriverFrameId, IpcSender<Result<Option<PipelineId>, ()>>),
     GetUrl(IpcSender<Url>),
-    GetWindowSize(IpcSender<Option<WindowSizeData>>),
     IsEnabled(String, IpcSender<Result<bool, ()>>),
     IsSelected(String, IpcSender<Result<bool, ()>>),
     GetTitle(IpcSender<String>)
