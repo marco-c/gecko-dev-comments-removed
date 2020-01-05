@@ -7,7 +7,7 @@
 
 
 add_task(function* () {
-  const dbg = yield initDebugger("doc-iframes.html", "iframes.html");
+  const dbg = yield initDebugger("doc-iframes.html");
 
   
   yield reload(dbg);

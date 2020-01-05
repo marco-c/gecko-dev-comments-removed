@@ -17,7 +17,7 @@ function caughtException() {
 
 
 add_task(function* () {
-  const dbg = yield initDebugger("doc-exceptions.html", "exceptions.js");
+  const dbg = yield initDebugger("doc-exceptions.html");
 
   
   yield togglePauseOnExceptions(dbg, false, false);

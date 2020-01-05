@@ -8,3 +8,9 @@ output(times2(2));
 if(opts.extra) {
   output(times2(3));
 }
+
+window.keepMeAlive = function() {
+  
+  
+  return 1;
+}
