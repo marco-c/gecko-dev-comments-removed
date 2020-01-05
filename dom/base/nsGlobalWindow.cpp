@@ -13929,10 +13929,8 @@ nsGlobalWindow::ReportLargeAllocStatus()
       message = "LargeAllocationSuccess";
       break;
     case LargeAllocStatus::NON_WIN32:
-      
-      
       errorFlags = nsIScriptError::infoFlag;
-      message = "LargeAllocationSuccess";
+      message = "LargeAllocationNonWin32";
       break;
     case LargeAllocStatus::NON_GET:
       message = "LargeAllocationNonGetRequest";
