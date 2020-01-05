@@ -1,0 +1,11 @@
+
+
+
+
+#![crate_name = "canvas"]
+#![crate_type = "rlib"]
+
+extern crate azure;
+extern crate geom;
+
+pub mod canvas_render_task;
