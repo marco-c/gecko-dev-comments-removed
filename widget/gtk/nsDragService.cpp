@@ -5,6 +5,7 @@
 
 
 #include "nsDragService.h"
+#include "nsArrayUtils.h"
 #include "nsIObserverService.h"
 #include "nsWidgetsCID.h"
 #include "nsWindow.h"
@@ -703,7 +704,7 @@ nsDragService::GetData(nsITransferable * aTransferable,
     
     
     
-    nsCOMPtr<nsISupportsArray> flavorList;
+    nsCOMPtr<nsIArray> flavorList;
     nsresult rv = aTransferable->FlavorsTransferableCanImport(
                         getter_AddRefs(flavorList));
     if (NS_FAILED(rv))
@@ -711,7 +712,7 @@ nsDragService::GetData(nsITransferable * aTransferable,
 
     
     uint32_t cnt;
-    flavorList->Count(&cnt);
+    flavorList->GetLength(&cnt);
     unsigned int i;
 
     
@@ -721,10 +722,8 @@ nsDragService::GetData(nsITransferable * aTransferable,
         MOZ_LOG(sDragLm, LogLevel::Debug, ("it's a list..."));
         
         for (i = 0; i < cnt; ++i) {
-            nsCOMPtr<nsISupports> genericWrapper;
-            flavorList->GetElementAt(i, getter_AddRefs(genericWrapper));
             nsCOMPtr<nsISupportsCString> currentFlavor;
-            currentFlavor = do_QueryInterface(genericWrapper);
+            currentFlavor = do_QueryElementAt(flavorList, i);
             if (!currentFlavor)
                 continue;
 
@@ -772,10 +771,8 @@ nsDragService::GetData(nsITransferable * aTransferable,
     
     
     for ( i = 0; i < cnt; ++i ) {
-        nsCOMPtr<nsISupports> genericWrapper;
-        flavorList->GetElementAt(i,getter_AddRefs(genericWrapper));
         nsCOMPtr<nsISupportsCString> currentFlavor;
-        currentFlavor = do_QueryInterface(genericWrapper);
+        currentFlavor = do_QueryElementAt(flavorList, i);
         if (currentFlavor) {
             
             nsXPIDLCString flavorStr;
@@ -1033,20 +1030,17 @@ nsDragService::IsDataFlavorSupported(const char *aDataFlavor,
                                            getter_AddRefs(genericItem));
             nsCOMPtr<nsITransferable> currItem(do_QueryInterface(genericItem));
             if (currItem) {
-                nsCOMPtr <nsISupportsArray> flavorList;
+                nsCOMPtr <nsIArray> flavorList;
                 currItem->FlavorsTransferableCanExport(
                           getter_AddRefs(flavorList));
                 if (flavorList) {
                     uint32_t numFlavors;
-                    flavorList->Count( &numFlavors );
+                    flavorList->GetLength( &numFlavors );
                     for ( uint32_t flavorIndex = 0;
                           flavorIndex < numFlavors ;
                           ++flavorIndex ) {
-                        nsCOMPtr<nsISupports> genericWrapper;
-                        flavorList->GetElementAt(flavorIndex,
-                                                getter_AddRefs(genericWrapper));
                         nsCOMPtr<nsISupportsCString> currentFlavor;
-                        currentFlavor = do_QueryInterface(genericWrapper);
+                        currentFlavor = do_QueryElementAt(flavorList, flavorIndex);
                         if (currentFlavor) {
                             nsXPIDLCString flavorStr;
                             currentFlavor->ToString(getter_Copies(flavorStr));
@@ -1274,19 +1268,16 @@ nsDragService::GetSourceList(void)
         nsCOMPtr<nsITransferable> currItem(do_QueryInterface(genericItem));
 
         if (currItem) {
-            nsCOMPtr <nsISupportsArray> flavorList;
+            nsCOMPtr <nsIArray> flavorList;
             currItem->FlavorsTransferableCanExport(getter_AddRefs(flavorList));
             if (flavorList) {
                 uint32_t numFlavors;
-                flavorList->Count( &numFlavors );
+                flavorList->GetLength( &numFlavors );
                 for (uint32_t flavorIndex = 0;
                      flavorIndex < numFlavors ;
                      ++flavorIndex ) {
-                    nsCOMPtr<nsISupports> genericWrapper;
-                    flavorList->GetElementAt(flavorIndex,
-                                           getter_AddRefs(genericWrapper));
                     nsCOMPtr<nsISupportsCString> currentFlavor;
-                    currentFlavor = do_QueryInterface(genericWrapper);
+                    currentFlavor = do_QueryElementAt(flavorList, flavorIndex);
                     if (currentFlavor) {
                         nsXPIDLCString flavorStr;
                         currentFlavor->ToString(getter_Copies(flavorStr));
@@ -1313,19 +1304,16 @@ nsDragService::GetSourceList(void)
         mSourceDataItems->GetElementAt(0, getter_AddRefs(genericItem));
         nsCOMPtr<nsITransferable> currItem(do_QueryInterface(genericItem));
         if (currItem) {
-            nsCOMPtr <nsISupportsArray> flavorList;
+            nsCOMPtr <nsIArray> flavorList;
             currItem->FlavorsTransferableCanExport(getter_AddRefs(flavorList));
             if (flavorList) {
                 uint32_t numFlavors;
-                flavorList->Count( &numFlavors );
+                flavorList->GetLength( &numFlavors );
                 for (uint32_t flavorIndex = 0;
                      flavorIndex < numFlavors ;
                      ++flavorIndex ) {
-                    nsCOMPtr<nsISupports> genericWrapper;
-                    flavorList->GetElementAt(flavorIndex,
-                                             getter_AddRefs(genericWrapper));
                     nsCOMPtr<nsISupportsCString> currentFlavor;
-                    currentFlavor = do_QueryInterface(genericWrapper);
+                    currentFlavor = do_QueryElementAt(flavorList, flavorIndex);
                     if (currentFlavor) {
                         nsXPIDLCString flavorStr;
                         currentFlavor->ToString(getter_Copies(flavorStr));
