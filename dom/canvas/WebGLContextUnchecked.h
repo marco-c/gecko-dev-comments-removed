@@ -20,18 +20,6 @@ class WebGLContextUnchecked
 public:
     explicit WebGLContextUnchecked(gl::GLContext* gl);
 
-    
-    
-    void BindSampler(GLuint unit, WebGLSampler* sampler);
-
-    GLint   GetSamplerParameteriv(WebGLSampler* sampler, GLenum pname);
-    GLfloat GetSamplerParameterfv(WebGLSampler* sampler, GLenum pname);
-
-    void SamplerParameteri(WebGLSampler* sampler, GLenum pname, GLint param);
-    void SamplerParameteriv(WebGLSampler* sampler, GLenum pname, const GLint* param);
-    void SamplerParameterf(WebGLSampler* sampler, GLenum pname, GLfloat param);
-    void SamplerParameterfv(WebGLSampler* sampler, GLenum pname, const GLfloat* param);
-
 protected:
     
     
