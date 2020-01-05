@@ -47,6 +47,7 @@ public:
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(ImageBitmapRenderingContext)
 
   void TransferImageBitmap(ImageBitmap& aImageBitmap);
+  void TransferFromImageBitmap(ImageBitmap& aImageBitmap);
 
   
   virtual int32_t GetWidth() const override;
