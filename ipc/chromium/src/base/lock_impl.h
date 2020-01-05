@@ -2,11 +2,10 @@
 
 
 
-
-
 #ifndef BASE_LOCK_IMPL_H_
 #define BASE_LOCK_IMPL_H_
 
+#include "base/basictypes.h"
 #include "build/build_config.h"
 
 #if defined(OS_WIN)
@@ -15,8 +14,8 @@
 #include <pthread.h>
 #endif
 
-#include "base/basictypes.h"
-#include "base/platform_thread.h"
+namespace base {
+namespace internal {
 
 
 
@@ -24,9 +23,9 @@
 class LockImpl {
  public:
 #if defined(OS_WIN)
-  typedef CRITICAL_SECTION OSLockType;
+  using NativeHandle = SRWLOCK;
 #elif defined(OS_POSIX)
-  typedef pthread_mutex_t OSLockType;
+  using NativeHandle =  pthread_mutex_t;
 #endif
 
   LockImpl();
@@ -46,34 +45,20 @@ class LockImpl {
   
   
   
-  
-  
-#if defined(NDEBUG) || !defined(OS_WIN)
-  void AssertAcquired() const {}
-#else
-  void AssertAcquired() const;
-#endif
+  NativeHandle* native_handle() { return &native_handle_; }
 
+#if defined(OS_POSIX)
   
-  
-  
-#if !defined(OS_WIN)
-  OSLockType* os_lock() { return &os_lock_; }
+  static bool PriorityInheritanceAvailable();
 #endif
 
  private:
-  OSLockType os_lock_;
-
-#if !defined(NDEBUG) && defined(OS_WIN)
-  
-  
-  PlatformThreadId owning_thread_id_;
-  int32_t recursion_count_shadow_;
-  bool recursion_used_;      
-#endif  
+  NativeHandle native_handle_;
 
   DISALLOW_COPY_AND_ASSIGN(LockImpl);
 };
 
+}  
+}  
 
 #endif  

@@ -2,38 +2,59 @@
 
 
 
-
-
 #ifndef BASE_LOCK_H_
 #define BASE_LOCK_H_
 
+#include "base/basictypes.h"
 #include "base/lock_impl.h"
-
+#include "base/platform_thread.h"
+#include "build/build_config.h"
 
 
 class Lock {
  public:
+   
   Lock() : lock_() {}
   ~Lock() {}
   void Acquire() { lock_.Lock(); }
   void Release() { lock_.Unlock(); }
+
+  
+  
   
   
   bool Try() { return lock_.Try(); }
 
   
-  
-  
-  
-  void AssertAcquired() const { return lock_.AssertAcquired(); }
+  void AssertAcquired() const {}
 
   
   
+  static bool HandlesMultipleThreadPriorities() {
+#if defined(OS_POSIX)
+    
+    
+    return base::internal::LockImpl::PriorityInheritanceAvailable();
+#elif defined(OS_WIN)
+    
+    
+    
+    return true;
+#else
+#error Unsupported platform
+#endif
+  }
+
+#if defined(OS_POSIX) || defined(OS_WIN)
   
-  LockImpl* lock_impl() { return &lock_; }
+  
+  
+  friend class ConditionVariable;
+#endif
 
  private:
-  LockImpl lock_;  
+  
+  ::base::internal::LockImpl lock_;
 
   DISALLOW_COPY_AND_ASSIGN(Lock);
 };
@@ -41,8 +62,14 @@ class Lock {
 
 class AutoLock {
  public:
+  struct AlreadyAcquired {};
+
   explicit AutoLock(Lock& lock) : lock_(lock) {
     lock_.Acquire();
+  }
+
+  AutoLock(Lock& lock, const AlreadyAcquired&) : lock_(lock) {
+    lock_.AssertAcquired();
   }
 
   ~AutoLock() {

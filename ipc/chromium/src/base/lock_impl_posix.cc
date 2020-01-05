@@ -2,49 +2,95 @@
 
 
 
-
-
 #include "base/lock_impl.h"
 
 #include <errno.h>
+#include <string.h>
 
 #include "base/logging.h"
+#include "base/lock.h"
+
+namespace base {
+namespace internal {
+
+
+
+
+
+
+
+
+#if defined(OS_NACL) || defined(OS_ANDROID)
+#define PRIORITY_INHERITANCE_LOCKS_POSSIBLE() 0
+#else
+#define PRIORITY_INHERITANCE_LOCKS_POSSIBLE() 1
+#endif
 
 LockImpl::LockImpl() {
-#ifndef NDEBUG
-  
   pthread_mutexattr_t mta;
   int rv = pthread_mutexattr_init(&mta);
-  DCHECK_EQ(rv, 0);
-  rv = pthread_mutexattr_settype(&mta, PTHREAD_MUTEX_ERRORCHECK);
-  DCHECK_EQ(rv, 0);
-  rv = pthread_mutex_init(&os_lock_, &mta);
-  DCHECK_EQ(rv, 0);
-  rv = pthread_mutexattr_destroy(&mta);
-  DCHECK_EQ(rv, 0);
-#else
-  
-  pthread_mutex_init(&os_lock_, NULL);
+  DCHECK_EQ(rv, 0) << ". " << strerror(rv);
+#if PRIORITY_INHERITANCE_LOCKS_POSSIBLE()
+  if (PriorityInheritanceAvailable()) {
+    rv = pthread_mutexattr_setprotocol(&mta, PTHREAD_PRIO_INHERIT);
+    DCHECK_EQ(rv, 0) << ". " << strerror(rv);
+  }
 #endif
+#ifndef NDEBUG
+  
+  rv = pthread_mutexattr_settype(&mta, PTHREAD_MUTEX_ERRORCHECK);
+  DCHECK_EQ(rv, 0) << ". " << strerror(rv);
+#endif
+  rv = pthread_mutex_init(&native_handle_, &mta);
+  DCHECK_EQ(rv, 0) << ". " << strerror(rv);
+  rv = pthread_mutexattr_destroy(&mta);
+  DCHECK_EQ(rv, 0) << ". " << strerror(rv);
 }
 
 LockImpl::~LockImpl() {
-  int rv = pthread_mutex_destroy(&os_lock_);
-  DCHECK_EQ(rv, 0);
+  int rv = pthread_mutex_destroy(&native_handle_);
+  DCHECK_EQ(rv, 0) << ". " << strerror(rv);
 }
 
 bool LockImpl::Try() {
-  int rv = pthread_mutex_trylock(&os_lock_);
-  DCHECK(rv == 0 || rv == EBUSY);
+  int rv = pthread_mutex_trylock(&native_handle_);
+  DCHECK(rv == 0 || rv == EBUSY) << ". " << strerror(rv);
   return rv == 0;
 }
 
 void LockImpl::Lock() {
-  int rv = pthread_mutex_lock(&os_lock_);
-  DCHECK_EQ(rv, 0);
+  int rv = pthread_mutex_lock(&native_handle_);
+  DCHECK_EQ(rv, 0) << ". " << strerror(rv);
 }
 
 void LockImpl::Unlock() {
-  int rv = pthread_mutex_unlock(&os_lock_);
-  DCHECK_EQ(rv, 0);
+  int rv = pthread_mutex_unlock(&native_handle_);
+  DCHECK_EQ(rv, 0) << ". " << strerror(rv);
 }
+
+
+bool LockImpl::PriorityInheritanceAvailable() {
+#if PRIORITY_INHERITANCE_LOCKS_POSSIBLE() && defined(OS_MACOSX)
+  return true;
+#else
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  return false;
+#endif
+}
+
+}  
+}  
