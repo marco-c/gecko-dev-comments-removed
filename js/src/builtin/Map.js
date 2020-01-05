@@ -15,13 +15,43 @@ function MapConstructorInit(iterable) {
         ThrowTypeError(JSMSG_NOT_FUNCTION, typeof adder);
 
     
-    for (var nextItem of allowContentIter(iterable)) {
+    var iterFn = iterable[std_iterator];
+    if (!IsCallable(iterFn))
+        ThrowTypeError(JSMSG_NOT_ITERABLE, DecompileArg(0, iterable));
+
+    var iter = callContentFunction(iterFn, iterable);
+    if (!IsObject(iter))
+        ThrowTypeError(JSMSG_NOT_NONNULL_OBJECT, typeof iter);
+
+    
+
+    
+    while (true) {
         
-        if (!IsObject(nextItem))
-            ThrowTypeError(JSMSG_INVALID_MAP_ITERABLE, "Map");
+        var next = callContentFunction(iter.next, iter);
+        if (!IsObject(next))
+            ThrowTypeError(JSMSG_NOT_NONNULL_OBJECT, typeof next);
 
         
-        callContentFunction(adder, map, nextItem[0], nextItem[1]);
+        if (next.done)
+            return;
+
+        
+        var nextItem = next.value;
+
+        
+        if (!IsObject(nextItem)) {
+            IteratorCloseThrow(iter);
+            ThrowTypeError(JSMSG_INVALID_MAP_ITERABLE, "Map");
+        }
+
+        
+        try {
+            callContentFunction(adder, map, nextItem[0], nextItem[1]);
+        } catch (e) {
+            IteratorCloseThrow(iter);
+            throw e;
+        }
     }
 }
 
