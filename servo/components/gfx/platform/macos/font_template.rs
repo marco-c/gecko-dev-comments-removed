@@ -7,6 +7,8 @@ use core_graphics::font::CGFont;
 use core_text::font::CTFont;
 use core_text;
 
+use std::borrow::ToOwned;
+
 
 
 
@@ -34,7 +36,7 @@ impl FontTemplateData {
 
         FontTemplateData {
             ctfont: ctfont,
-            identifier: identifier.into_string(),
+            identifier: identifier.to_owned(),
         }
     }
 }

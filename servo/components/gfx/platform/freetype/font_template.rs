@@ -2,6 +2,7 @@
 
 
 
+use std::borrow::ToOwned;
 use std::io;
 use std::io::File;
 
@@ -29,7 +30,7 @@ impl FontTemplateData {
 
         FontTemplateData {
             bytes: bytes,
-            identifier: identifier.into_string(),
+            identifier: identifier.to_owned(),
         }
     }
 }

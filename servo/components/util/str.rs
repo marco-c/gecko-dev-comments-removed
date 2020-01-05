@@ -6,6 +6,7 @@ use geometry::Au;
 
 use cssparser::{mod, RGBA, Color};
 use std::ascii::AsciiExt;
+use std::borrow::ToOwned;
 use std::iter::Filter;
 use std::num::Int;
 use std::str::{CharEq, CharSplits, FromStr};
@@ -20,7 +21,7 @@ pub fn null_str_as_empty(s: &Option<DOMString>) -> DOMString {
     
     match *s {
         Some(ref s) => s.clone(),
-        None => "".into_string()
+        None => "".to_owned()
     }
 }
 
