@@ -1174,19 +1174,92 @@ GetNameIRGenerator::tryAttachStub()
     AutoAssertNoPendingException aanpe(cx_);
 
     ObjOperandId envId(writer.setInputOperandId(0));
-    if (tryAttachEnvironmentName(envId))
+    RootedId id(cx_, NameToId(name_));
+
+    if (tryAttachGlobalNameValue(envId, id))
+        return true;
+    if (tryAttachEnvironmentName(envId, id))
         return true;
 
     return false;
 }
 
 bool
-GetNameIRGenerator::tryAttachEnvironmentName(ObjOperandId objId)
+GetNameIRGenerator::tryAttachGlobalNameValue(ObjOperandId objId, HandleId id)
+{
+    if (!IsGlobalOp(JSOp(*pc_)) || script_->hasNonSyntacticScope())
+        return false;
+
+    Handle<LexicalEnvironmentObject*> globalLexical = env_.as<LexicalEnvironmentObject>();
+    MOZ_ASSERT(globalLexical->isGlobal());
+
+    
+    RootedShape shape(cx_);
+    RootedNativeObject current(cx_, globalLexical);
+    while (true) {
+        shape = current->lookup(cx_, id);
+        if (shape)
+            break;
+        if (current == globalLexical) {
+            current = &globalLexical->global();
+        } else {
+            
+            if (!current->staticPrototypeIsImmutable())
+                return false;
+            JSObject* proto = current->staticPrototype();
+            if (!proto || !proto->is<NativeObject>())
+                return false;
+            current = &proto->as<NativeObject>();
+        }
+    }
+
+    if (!shape->hasDefaultGetter() || !shape->hasSlot())
+        return false;
+
+    
+    if (IsIonEnabled(cx_))
+        EnsureTrackPropertyTypes(cx_, current, id);
+
+    if (current == globalLexical) {
+        
+        
+        size_t dynamicSlotOffset = current->dynamicSlotIndex(shape->slot()) * sizeof(Value);
+        writer.loadDynamicSlotResult(objId, dynamicSlotOffset);
+    } else {
+        
+        
+        
+        
+        if (!IsCacheableGetPropReadSlotForIonOrCacheIR(&globalLexical->global(), current, shape))
+            return false;
+
+        
+        writer.guardShape(objId, globalLexical->lastProperty());
+
+        
+        ObjOperandId globalId = writer.loadEnclosingEnvironment(objId);
+        writer.guardShape(globalId, globalLexical->global().lastProperty());
+
+        ObjOperandId holderId = globalId;
+        if (current != &globalLexical->global()) {
+            
+            holderId = writer.loadObject(current);
+            writer.guardShape(holderId, current->lastProperty());
+        }
+
+        EmitLoadSlotResult(writer, holderId, current, shape);
+    }
+
+    writer.typeMonitorResult();
+    return true;
+}
+
+bool
+GetNameIRGenerator::tryAttachEnvironmentName(ObjOperandId objId, HandleId id)
 {
     if (IsGlobalOp(JSOp(*pc_)) || script_->hasNonSyntacticScope())
         return false;
 
-    RootedId id(cx_, NameToId(name_));
     RootedObject env(cx_, env_);
     RootedShape shape(cx_);
     RootedNativeObject holder(cx_);
