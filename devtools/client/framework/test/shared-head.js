@@ -266,6 +266,41 @@ function waitForNEvents(target, eventName, numTimes, useCapture = false) {
 
 
 
+
+
+
+function waitForDOM(target, selector, expectedLength = 1) {
+  return new Promise((resolve) => {
+    let observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        let elements = mutation.target.querySelectorAll(selector);
+
+        if (elements.length === expectedLength) {
+          observer.disconnect();
+          resolve(elements);
+        }
+      });
+    });
+
+    observer.observe(target, {
+      attributes: true,
+      childList: true,
+      subtree: true,
+    });
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+
 function once(target, eventName, useCapture = false) {
   return waitForNEvents(target, eventName, 1, useCapture);
 }

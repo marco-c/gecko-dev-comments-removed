@@ -14,7 +14,7 @@ const {
   PRESELECT_REQUEST,
   CLONE_SELECTED_REQUEST,
   REMOVE_SELECTED_CUSTOM_REQUEST,
-  OPEN_SIDEBAR
+  OPEN_SIDEBAR,
 } = require("../constants");
 
 const Request = I.Record({
@@ -37,7 +37,7 @@ const Request = I.Record({
   httpVersion: undefined,
   securityState: undefined,
   securityInfo: undefined,
-  mimeType: undefined,
+  mimeType: "text/plain",
   contentSize: undefined,
   transferredSize: undefined,
   totalTime: undefined,
@@ -51,6 +51,7 @@ const Request = I.Record({
   responseCookies: undefined,
   responseContent: undefined,
   responseContentDataUri: undefined,
+  formDataSections: undefined,
 });
 
 const Requests = I.Record({
@@ -87,7 +88,8 @@ const UPDATE_PROPS = [
   "responseHeaders",
   "responseCookies",
   "responseContent",
-  "responseContentDataUri"
+  "responseContentDataUri",
+  "formDataSections",
 ];
 
 function requestsReducer(state = new Requests(), action) {
@@ -138,13 +140,6 @@ function requestsReducer(state = new Requests(), action) {
             case "url":
               
               request.urlDetails = getUrlDetails(value);
-              break;
-            case "responseContent":
-              
-              
-              if (!request.mimeType) {
-                request.mimeType = "text/plain";
-              }
               break;
             case "totalTime":
               const endedMillis = request.startedMillis + value;
