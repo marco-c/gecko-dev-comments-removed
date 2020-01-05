@@ -568,9 +568,17 @@ public class FxAccountSyncAdapter extends AbstractThreadedSyncAdapter {
                     syncKeyBundle, clientState, sessionCallback, extras, fxAccount, syncDeadline);
 
             
+            
+            
+            
             if (fxAccount.getDeviceRegistrationVersion() != FxAccountDeviceRegistrator.DEVICE_REGISTRATION_VERSION
-                || TextUtils.isEmpty(fxAccount.getDeviceId())) {
+              || TextUtils.isEmpty(fxAccount.getDeviceId())) {
               FxAccountDeviceRegistrator.register(context);
+            
+            
+            
+            } else if (FxAccountDeviceRegistrator.needToRenewRegistration(fxAccount.getDeviceRegistrationTimestamp())) {
+              FxAccountDeviceRegistrator.renewRegistration(context);
             }
 
             

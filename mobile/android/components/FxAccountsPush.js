@@ -38,6 +38,9 @@ FxAccountsPush.prototype = {
           this._subscribe();
         } else if (data === "android-fxa-unsubscribe") {
           this._unsubscribe();
+        } else if (data === "android-fxa-resubscribe") {
+          
+          this._unsubscribe().then(this._subscribe, this._subscribe);
         }
         break;
       case "FxAccountsPush:ReceivedPushMessageToDecode":

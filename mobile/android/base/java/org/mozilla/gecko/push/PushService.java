@@ -5,6 +5,8 @@
 
 package org.mozilla.gecko.push;
 
+import android.accounts.Account;
+import android.accounts.AccountManager;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
@@ -22,7 +24,11 @@ import org.mozilla.gecko.Telemetry;
 import org.mozilla.gecko.TelemetryContract;
 import org.mozilla.gecko.annotation.ReflectionTarget;
 import org.mozilla.gecko.db.BrowserDB;
+import org.mozilla.gecko.fxa.FxAccountConstants;
+import org.mozilla.gecko.fxa.FxAccountDeviceRegistrator;
 import org.mozilla.gecko.fxa.FxAccountPushHandler;
+import org.mozilla.gecko.fxa.authenticator.AndroidFxAccount;
+import org.mozilla.gecko.fxa.login.State;
 import org.mozilla.gecko.gcm.GcmTokenClient;
 import org.mozilla.gecko.push.autopush.AutopushClientException;
 import org.mozilla.gecko.util.BundleEventListener;
@@ -102,7 +108,14 @@ public class PushService implements BundleEventListener {
     private boolean isReadyFxAccountsPush = false;
     private final List<JSONObject> pendingPushMessages;
 
+    
+    
+    
+    
+    private final Context context;
+
     public PushService(Context context) {
+        this.context = context;
         pushManager = new PushManager(new PushState(context, "GeckoPushState.json"), new GcmTokenClient(context), new PushManager.PushClientFactory() {
             @Override
             public PushClient getPushClient(String autopushEndpoint, boolean debug) {
@@ -119,6 +132,48 @@ public class PushService implements BundleEventListener {
 
         try {
             pushManager.startup(System.currentTimeMillis());
+
+            
+            
+            
+            
+            
+
+            
+            
+            
+            
+            
+            
+            final AccountManager accountManager = AccountManager.get(context);
+            final Account[] fxAccounts = accountManager.getAccountsByType(FxAccountConstants.ACCOUNT_TYPE);
+
+            
+            if (fxAccounts.length == 0) {
+                return;
+            }
+
+            
+            final AndroidFxAccount fxAccount = new AndroidFxAccount(context, fxAccounts[0]);
+            final State fxAccountState;
+            try {
+                fxAccountState = fxAccount.getState();
+            } catch (IllegalStateException e) {
+                Log.e(LOG_TAG, "Failed to obtain FxA account state while renewing registration", e);
+                return;
+            }
+
+            
+            if (!State.StateLabel.Married.equals(fxAccountState.getStateLabel())) {
+                Log.i(LOG_TAG, "FxA account not in Married state, not proceeding with registration renewal");
+                return;
+            }
+
+            
+            if (FxAccountDeviceRegistrator.needToRenewRegistration(fxAccount.getDeviceRegistrationTimestamp())) {
+                Log.i(LOG_TAG, "FxA device needs registration renewal");
+                FxAccountDeviceRegistrator.renewRegistration(context);
+            }
         } catch (Exception e) {
             Log.e(LOG_TAG, "Got exception during startup; ignoring.", e);
             return;
