@@ -32,22 +32,113 @@ use util::taskpool::TaskPool;
 
 
 struct PendingLoad {
+    
+    
     bytes: Vec<u8>,
+
+    
     result: Option<Result<(), String>>,
     listeners: Vec<ImageListener>,
+
+    
+    
+    url: Arc<Url>
 }
 
 impl PendingLoad {
-    fn new() -> PendingLoad {
+    fn new(url: Arc<Url>) -> PendingLoad {
         PendingLoad {
             bytes: vec!(),
             result: None,
             listeners: vec!(),
+            url: url,
         }
     }
 
     fn add_listener(&mut self, listener: ImageListener) {
         self.listeners.push(listener);
+    }
+}
+
+
+
+struct AllPendingLoads {
+    
+    
+    loads: HashMap<LoadKey, PendingLoad>,
+
+    
+    
+    url_to_load_key: HashMap<Arc<Url>, LoadKey>,
+
+    
+    keygen: LoadKeyGenerator,
+}
+
+
+#[derive(Eq, PartialEq)]
+enum CacheResult {
+    Hit,  
+    Miss, 
+}
+
+impl AllPendingLoads {
+    fn new() -> AllPendingLoads {
+        AllPendingLoads {
+            loads: HashMap::new(),
+            url_to_load_key: HashMap::new(),
+            keygen: LoadKeyGenerator::new(),
+        }
+    }
+
+    
+    fn is_empty(&self) -> bool {
+        assert!(self.loads.is_empty() == self.url_to_load_key.is_empty());
+        self.loads.is_empty()
+    }
+
+    
+    
+    fn get_by_key_mut(&mut self, key: &LoadKey) -> Option<&mut PendingLoad> {
+        self.loads.get_mut(key)
+    }
+
+    
+    fn get_by_url(&self, url: &Url) -> Option<&PendingLoad> {
+        self.url_to_load_key.get(url).
+            and_then(|load_key|
+                self.loads.get(load_key)
+                )
+    }
+
+    fn remove(&mut self, key: &LoadKey) -> Option<PendingLoad> {
+        self.loads.remove(key).
+            and_then(|pending_load| {
+                self.url_to_load_key.remove(&pending_load.url).unwrap();
+                Some(pending_load)
+            })
+    }
+
+    fn get_cached(&mut self, url: Arc<Url>) -> (CacheResult, LoadKey, &mut PendingLoad) {
+        match self.url_to_load_key.entry(url.clone()) {
+            Occupied(url_entry) => {
+                let load_key = url_entry.get();
+                (CacheResult::Hit, *load_key, self.loads.get_mut(load_key).unwrap())
+            }
+            Vacant(url_entry) => {
+                let load_key = self.keygen.next();
+                url_entry.insert(load_key);
+
+                let pending_load = PendingLoad::new(url);
+                match self.loads.entry(load_key) {
+                    Occupied(_) => unreachable!(),
+                    Vacant(load_entry) => {
+                        let mut_load = load_entry.insert(pending_load);
+                        (CacheResult::Miss, load_key, mut_load)
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -74,6 +165,26 @@ struct ImageListener {
     responder: Option<ImageResponder>,
 }
 
+
+#[derive(Eq, Hash, PartialEq, Clone, Copy)]
+struct LoadKey(u64);
+
+struct LoadKeyGenerator {
+    counter: u64
+}
+
+impl LoadKeyGenerator {
+    fn new() -> LoadKeyGenerator {
+        LoadKeyGenerator {
+            counter: 0
+        }
+    }
+    fn next(&mut self) -> LoadKey {
+        self.counter += 1;
+        LoadKey(self.counter)
+    }
+}
+
 impl ImageListener {
     fn new(sender: ImageCacheChan, responder: Option<ImageResponder>) -> ImageListener {
         ImageListener {
@@ -94,7 +205,7 @@ impl ImageListener {
 
 struct ResourceLoadInfo {
     action: ResponseAction,
-    url: Url,
+    key: LoadKey,
 }
 
 
@@ -117,10 +228,10 @@ struct ImageCache {
     resource_task: ResourceTask,
 
     
-    pending_loads: HashMap<Url, PendingLoad>,
+    pending_loads: AllPendingLoads,
 
     
-    completed_loads: HashMap<Url, CompletedLoad>,
+    completed_loads: HashMap<Arc<Url>, CompletedLoad>,
 
     
     placeholder_image: Option<Arc<Image>>,
@@ -128,7 +239,7 @@ struct ImageCache {
 
 
 struct DecoderMsg {
-    url: Url,
+    key: LoadKey,
     image: Option<Image>,
 }
 
@@ -214,8 +325,8 @@ impl ImageCache {
                         }
                     }
                     None => {
-                        let pending_load = self.pending_loads.get(&url);
-                        Err(pending_load.map_or(ImageState::NotRequested, |_| ImageState::Pending))
+                        self.pending_loads.get_by_url(&url).
+                            map_or(Err(ImageState::NotRequested), |_| Err(ImageState::Pending))
                     }
                 };
                 consumer.send(result).unwrap();
@@ -227,26 +338,25 @@ impl ImageCache {
 
     
     fn handle_progress(&mut self, msg: ResourceLoadInfo) {
-        match msg.action {
-            ResponseAction::HeadersAvailable(_) => {}
-            ResponseAction::DataAvailable(data) => {
-                let pending_load = self.pending_loads.get_mut(&msg.url).unwrap();
+        match (msg.action, msg.key) {
+            (ResponseAction::HeadersAvailable(_), _) => {}
+            (ResponseAction::DataAvailable(data), _) => {
+                let pending_load = self.pending_loads.get_by_key_mut(&msg.key).unwrap();
                 pending_load.bytes.push_all(&data);
             }
-            ResponseAction::ResponseComplete(result) => {
+            (ResponseAction::ResponseComplete(result), key) => {
                 match result {
                     Ok(()) => {
-                        let pending_load = self.pending_loads.get_mut(&msg.url).unwrap();
+                        let pending_load = self.pending_loads.get_by_key_mut(&msg.key).unwrap();
                         pending_load.result = Some(result);
 
                         let bytes = mem::replace(&mut pending_load.bytes, vec!());
-                        let url = msg.url.clone();
                         let sender = self.decoder_sender.clone();
 
                         self.task_pool.execute(move || {
                             let image = load_from_memory(&bytes);
                             let msg = DecoderMsg {
-                                url: url,
+                                key: key,
                                 image: image
                             };
                             sender.send(msg).unwrap();
@@ -255,10 +365,10 @@ impl ImageCache {
                     Err(_) => {
                         match self.placeholder_image.clone() {
                             Some(placeholder_image) => {
-                                self.complete_load(msg.url, ImageResponse::PlaceholderLoaded(
+                                self.complete_load(msg.key, ImageResponse::PlaceholderLoaded(
                                         placeholder_image))
                             }
-                            None => self.complete_load(msg.url, ImageResponse::None),
+                            None => self.complete_load(msg.key, ImageResponse::None),
                         }
                     }
                 }
@@ -272,15 +382,15 @@ impl ImageCache {
             None => ImageResponse::None,
             Some(image) => ImageResponse::Loaded(Arc::new(image)),
         };
-        self.complete_load(msg.url, image);
+        self.complete_load(msg.key, image);
     }
 
     
-    fn complete_load(&mut self, url: Url, image_response: ImageResponse) {
-        let pending_load = self.pending_loads.remove(&url).unwrap();
+    fn complete_load(&mut self, key: LoadKey, image_response: ImageResponse) {
+        let pending_load = self.pending_loads.remove(&key).unwrap();
 
         let completed_load = CompletedLoad::new(image_response.clone());
-        self.completed_loads.insert(url, completed_load);
+        self.completed_loads.insert(pending_load.url, completed_load);
 
         for listener in pending_load.listeners {
             listener.notify(image_response.clone());
@@ -288,34 +398,31 @@ impl ImageCache {
     }
 
     
+    
+    
     fn request_image(&mut self,
                      url: Url,
                      result_chan: ImageCacheChan,
                      responder: Option<ImageResponder>) {
         let image_listener = ImageListener::new(result_chan, responder);
+        
+        let ref_url = Arc::new(url);
 
         
-        match self.completed_loads.get(&url) {
+        match self.completed_loads.get(&ref_url) {
             Some(completed_load) => {
                 
                 image_listener.notify(completed_load.image_response.clone());
             }
             None => {
                 
-                match self.pending_loads.entry(url.clone()) {
-                    Occupied(mut e) => {
-                        
-                        let pending_load = e.get_mut();
-                        pending_load.add_listener(image_listener);
-                    }
-                    Vacant(e) => {
+                let (cache_result, load_key, mut pending_load) = self.pending_loads.get_cached(ref_url.clone());
+                pending_load.add_listener(image_listener);
+                match cache_result {
+                    CacheResult::Miss => {
                         
                         
-                        let mut pending_load = PendingLoad::new();
-                        pending_load.add_listener(image_listener);
-                        e.insert(pending_load);
-
-                        let load_data = LoadData::new(url.clone(), None);
+                        let load_data = LoadData::new((*ref_url).clone(), None);
                         let (action_sender, action_receiver) = ipc::channel().unwrap();
                         let response_target = AsyncResponseTarget {
                             sender: action_sender,
@@ -327,10 +434,13 @@ impl ImageCache {
                             let action: ResponseAction = message.to().unwrap();
                             progress_sender.send(ResourceLoadInfo {
                                 action: action,
-                                url: url.clone(),
+                                key: load_key,
                             }).unwrap();
                         });
                         self.resource_task.send(msg).unwrap();
+                    }
+                    CacheResult::Hit => {
+                        // Request is already on its way.
                     }
                 }
             }
@@ -377,7 +487,7 @@ pub fn new_image_cache_task(resource_task: ResourceTask) -> ImageCacheTask {
             decoder_sender: decoder_sender,
             decoder_receiver: decoder_receiver,
             task_pool: TaskPool::new(4),
-            pending_loads: HashMap::new(),
+            pending_loads: AllPendingLoads::new(),
             completed_loads: HashMap::new(),
             resource_task: resource_task,
             placeholder_image: placeholder_image,
