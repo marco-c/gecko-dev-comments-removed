@@ -18,6 +18,7 @@
 #endif
 
 #include "mozilla/Attributes.h"
+#include "mozilla/DeclarationBlock.h"
 #include "mozilla/MemoryReporting.h"
 #include "CSSVariableDeclarations.h"
 #include "nsCSSDataBlock.h"
@@ -82,14 +83,16 @@ private:
 
 
 
-class Declaration final : public nsIStyleRule {
+class Declaration final : public DeclarationBlock
+                        , public nsIStyleRule
+{
 public:
   
 
 
 
 
-  Declaration();
+  Declaration() : DeclarationBlock(StyleBackendType::Gecko) {}
 
   Declaration(const Declaration& aCopy);
 
@@ -279,27 +282,7 @@ public:
   
 
 
-  bool IsMutable() const {
-    return !mImmutable;
-  }
-
-  
-
-
   already_AddRefed<Declaration> EnsureMutable();
-
-  
-
-
-  void AssertMutable() const {
-    MOZ_ASSERT(IsMutable(), "someone forgot to call EnsureMutable");
-  }
-
-  
-
-
-
-  void SetImmutable() const { mImmutable = true; }
 
   
 
@@ -313,37 +296,6 @@ public:
     mImportantVariables = nullptr;
     mOrder.Clear();
     mVariableOrder.Clear();
-  }
-
-  void SetOwningRule(Rule* aRule) {
-    MOZ_ASSERT(!mContainer.mOwningRule || !aRule,
-               "should never overwrite one rule with another");
-    mContainer.mOwningRule = aRule;
-  }
-
-  Rule* GetOwningRule() const {
-    if (mContainer.mRaw & 0x1) {
-      return nullptr;
-    }
-    return mContainer.mOwningRule;
-  }
-
-  void SetHTMLCSSStyleSheet(nsHTMLCSSStyleSheet* aHTMLCSSStyleSheet) {
-    MOZ_ASSERT(!mContainer.mHTMLCSSStyleSheet || !aHTMLCSSStyleSheet,
-               "should never overwrite one sheet with another");
-    mContainer.mHTMLCSSStyleSheet = aHTMLCSSStyleSheet;
-    if (aHTMLCSSStyleSheet) {
-      mContainer.mRaw |= uintptr_t(1);
-    }
-  }
-
-  nsHTMLCSSStyleSheet* GetHTMLCSSStyleSheet() const {
-    if (!(mContainer.mRaw & 0x1)) {
-      return nullptr;
-    }
-    auto c = mContainer;
-    c.mRaw &= ~uintptr_t(1);
-    return c.mHTMLCSSStyleSheet;
   }
 
   ImportantStyleData* GetImportantStyleData() {
@@ -438,29 +390,8 @@ private:
   
   nsAutoPtr<CSSVariableDeclarations> mImportantVariables;
 
-  union {
-    
-    
-    
-
-    
-
-    uintptr_t mRaw;
-
-    
-    Rule* mOwningRule;
-
-    
-    
-    nsHTMLCSSStyleSheet* mHTMLCSSStyleSheet;
-  } mContainer;
-
   friend class ImportantStyleData;
   ImportantStyleData mImportantStyleData;
-
-  
-  
-  mutable bool mImmutable;
 };
 
 inline ::mozilla::css::Declaration*
