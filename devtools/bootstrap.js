@@ -142,20 +142,22 @@ let getTopLevelWindow = function (window) {
 function reload(event) {
   
   
-  let top = getTopLevelWindow(event.view);
-  let isBrowser = top.location.href.includes("/browser.xul");
   let reloadToolbox = false;
-  if (isBrowser && top.gBrowser) {
-    
-    
-    
-    let nbox = top.gBrowser.getNotificationBox();
-    reloadToolbox =
-      top.document.getAnonymousElementByAttribute(nbox, "class",
-        "devtools-toolbox-bottom-iframe") ||
-      top.document.getAnonymousElementByAttribute(nbox, "class",
-        "devtools-toolbox-side-iframe") ||
-      Services.wm.getMostRecentWindow("devtools:toolbox");
+  if (event) {
+    let top = getTopLevelWindow(event.view);
+    let isBrowser = top.location.href.includes("/browser.xul");
+    if (isBrowser && top.gBrowser) {
+      
+      
+      
+      let nbox = top.gBrowser.getNotificationBox();
+      reloadToolbox =
+        top.document.getAnonymousElementByAttribute(nbox, "class",
+          "devtools-toolbox-bottom-iframe") ||
+        top.document.getAnonymousElementByAttribute(nbox, "class",
+          "devtools-toolbox-side-iframe") ||
+        Services.wm.getMostRecentWindow("devtools:toolbox");
+    }
   }
   let browserConsole = Services.wm.getMostRecentWindow("devtools:webconsole");
   let reopenBrowserConsole = false;
@@ -248,6 +250,7 @@ function reload(event) {
     setTimeout(() => {
       let { TargetFactory } = devtools.require("devtools/client/framework/target");
       let { gDevTools } = devtools.require("devtools/client/framework/devtools");
+      let top = getTopLevelWindow(event.view);
       let target = TargetFactory.forTab(top.gBrowser.selectedTab);
       gDevTools.showToolbox(target);
     }, 1000);
@@ -286,6 +289,8 @@ function startup(data) {
       originalPrefValues[name] = userValue;
     }
   }
+
+  reload();
 }
 function shutdown() {
   listener.stop();
@@ -301,6 +306,11 @@ function shutdown() {
   }
 }
 function install() {
-  actionOccurred("reloadAddonInstalled");
+  try {
+    actionOccurred("reloadAddonInstalled");
+  } catch (e) {
+    
+    
+  }
 }
 function uninstall() {}
