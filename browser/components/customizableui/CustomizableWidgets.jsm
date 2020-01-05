@@ -466,6 +466,9 @@ const CustomizableWidgets = [
       
       let clientItem = doc.createElementNS(kNSXUL, "label");
       clientItem.setAttribute("itemtype", "client");
+      let window = doc.defaultView;
+      clientItem.setAttribute("tooltiptext",
+        window.gSyncUI.formatLastSyncDate(new Date(client.lastModified)));
       clientItem.textContent = client.name;
 
       attachFragment.appendChild(clientItem);
