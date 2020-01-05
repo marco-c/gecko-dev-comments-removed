@@ -2163,6 +2163,7 @@ nsHttpTransaction::Do0RTT()
 nsresult
 nsHttpTransaction::Finish0RTT(bool aRestart, bool aAlpnChanged )
 {
+    LOG(("nsHttpTransaction::Finish0RTT %p %d %d\n", this, aRestart, aAlpnChanged));
     MOZ_ASSERT(m0RTTInProgress);
     m0RTTInProgress = false;
     if (aRestart) {
@@ -2174,6 +2175,10 @@ nsHttpTransaction::Finish0RTT(bool aRestart, bool aAlpnChanged )
         } else {
             return NS_ERROR_FAILURE;
         }
+    } else if (!mConnected) {
+        
+        mConnected = true;
+        mConnection->GetSecurityInfo(getter_AddRefs(mSecurityInfo));
     }
     return NS_OK;
 }
