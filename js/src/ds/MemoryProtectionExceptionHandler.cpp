@@ -250,9 +250,13 @@ UnixExceptionHandler(int signum, siginfo_t* info, void* context)
     if (sPrevSEGVHandler.sa_flags & SA_SIGINFO)
         sPrevSEGVHandler.sa_sigaction(signum, info, context);
     else if (sPrevSEGVHandler.sa_handler == SIG_DFL || sPrevSEGVHandler.sa_handler == SIG_IGN)
-        raise(signum);
+        sigaction(SIGSEGV, &sPrevSEGVHandler, nullptr);
     else
         sPrevSEGVHandler.sa_handler(signum);
+
+    
+    
+    
 }
 
 bool
@@ -266,7 +270,7 @@ MemoryProtectionExceptionHandler::install()
 
     
     struct sigaction faultHandler = {};
-    faultHandler.sa_flags = SA_SIGINFO;
+    faultHandler.sa_flags = SA_SIGINFO | SA_NODEFER;
     faultHandler.sa_sigaction = UnixExceptionHandler;
     sigemptyset(&faultHandler.sa_mask);
     sExceptionHandlerInstalled = !sigaction(SIGSEGV, &faultHandler, &sPrevSEGVHandler);
