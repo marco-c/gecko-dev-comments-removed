@@ -43,7 +43,6 @@ pub fn handle_evaluate_js(global: &GlobalRef, eval: String, reply: IpcSender<Eva
     } else if rval.ptr.is_null() {
         EvaluateJSReply::NullValue
     } else {
-        
         assert!(rval.ptr.is_object());
         panic!("object values unimplemented")
     }).unwrap();

@@ -1436,4 +1436,3 @@ impl OpaqueFlow {
         OpaqueFlow(base_flow as *const BaseFlow as usize)
     }
 }
-
