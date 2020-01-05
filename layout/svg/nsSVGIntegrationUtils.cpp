@@ -420,6 +420,22 @@ private:
   nsPoint mOffset;
 };
 
+
+
+
+static bool
+HasNonSVGMask(const nsTArray<nsSVGMaskFrame*>& aMaskFrames)
+{
+  for (size_t i = 0; i < aMaskFrames.Length() ; i++) {
+    nsSVGMaskFrame *maskFrame = aMaskFrames[i];
+    if (!maskFrame) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 typedef nsSVGIntegrationUtils::PaintFramesParams PaintFramesParams;
 
 
@@ -434,7 +450,6 @@ PaintMaskSurface(const PaintFramesParams& aParams,
 {
   MOZ_ASSERT(aMaskFrames.Length() > 0);
   MOZ_ASSERT(aMaskDT->GetFormat() == SurfaceFormat::A8);
-  MOZ_ASSERT(aOpacity == 1.0 || aMaskFrames.Length() == 1);
 
   const nsStyleSVGReset *svgReset = aSC->StyleSVGReset();
   gfxMatrix cssPxToDevPxMatrix =
@@ -494,8 +509,7 @@ PaintMaskSurface(const PaintFramesParams& aParams,
                                                       aParams.frame,
                                                       aParams.builder->GetBackgroundPaintFlags() |
                                                       nsCSSRendering::PAINTBG_MASK_IMAGE,
-                                                      i, compositionOp,
-                                                      aOpacity);
+                                                      i, compositionOp);
 
       result =
         nsCSSRendering::PaintStyleImageLayerWithSC(params, aSC,
@@ -569,8 +583,7 @@ CreateAndPaintMaskSurface(const PaintFramesParams& aParams,
   
   
   
-  
-  paintResult.opacityApplied = (aMaskFrames.Length() == 1);
+  paintResult.opacityApplied = !HasNonSVGMask(aMaskFrames);
 
   
   
