@@ -403,11 +403,15 @@ nsXBLProtoImplField::InstallField(JS::Handle<JSObject*> aBoundNode,
 
   
   
-  AutoEntryScript aes(globalObject, "XBL <field> initialization", true);
-  JSContext* cx = aes.cx();
-
-  NS_ASSERTION(!::JS_IsExceptionPending(cx),
-               "Shouldn't get here when an exception is pending!");
+  
+  
+  
+  AutoJSAPI jsapi;
+  if (!jsapi.Init(globalObject)) {
+    return NS_ERROR_UNEXPECTED;
+  }
+  MOZ_ASSERT(!::JS_IsExceptionPending(jsapi.cx()),
+             "Shouldn't get here when an exception is pending!");
 
   JSAddonId* addonId = MapURIToAddonID(aBindingDocURI);
 
@@ -419,9 +423,12 @@ nsXBLProtoImplField::InstallField(JS::Handle<JSObject*> aBoundNode,
 
   
   
-  JS::Rooted<JSObject*> scopeObject(cx, xpc::GetScopeForXBLExecution(cx, aBoundNode, addonId));
+  JS::Rooted<JSObject*> scopeObject(jsapi.cx(),
+    xpc::GetScopeForXBLExecution(jsapi.cx(), aBoundNode, addonId));
   NS_ENSURE_TRUE(scopeObject, NS_ERROR_OUT_OF_MEMORY);
-  JSAutoCompartment ac(cx, scopeObject);
+
+  AutoEntryScript aes(scopeObject, "XBL <field> initialization", true);
+  JSContext* cx = aes.cx();
 
   JS::Rooted<JS::Value> result(cx);
   JS::CompileOptions options(cx);
@@ -445,6 +452,7 @@ nsXBLProtoImplField::InstallField(JS::Handle<JSObject*> aBoundNode,
   }
 
   if (rv == NS_SUCCESS_DOM_SCRIPT_EVALUATION_THREW) {
+    
     
     
     aes.ReportException();
