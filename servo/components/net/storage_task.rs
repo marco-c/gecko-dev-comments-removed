@@ -2,6 +2,7 @@
 
 
 
+use std::borrow::ToOwned;
 use std::comm::{channel, Receiver, Sender};
 use std::collections::HashMap;
 use std::collections::TreeMap;
@@ -46,7 +47,7 @@ impl StorageTaskFactory for StorageTask {
     
     fn new() -> StorageTask {
         let (chan, port) = channel();
-        spawn_named("StorageManager", proc() {
+        spawn_named("StorageManager".to_owned(), proc() {
             StorageManager::new(port).start();
         });
         chan
