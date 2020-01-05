@@ -254,7 +254,7 @@ public:
     
 
 
-    bool IsPrinterSurface();
+    bool IsPrinterContext();
 
     mozilla::DesktopToLayoutDeviceScale GetDesktopToDeviceScale();
 
