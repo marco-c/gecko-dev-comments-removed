@@ -103,6 +103,7 @@ NS_IMPL_CYCLE_COLLECTION_CLASS(CustomElementRegistry)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(CustomElementRegistry)
   tmp->mCustomDefinitions.Clear();
+  tmp->mConstructors.clear();
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mWhenDefinedPromiseMap)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mWindow)
   NS_IMPL_CYCLE_COLLECTION_UNLINK_PRESERVED_WRAPPER
@@ -150,6 +151,12 @@ NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN(CustomElementRegistry)
                      "mCustomDefinitions prototype",
                      aClosure);
   }
+
+  for (ConstructorMap::Enum iter(tmp->mConstructors); !iter.empty(); iter.popFront()) {
+    aCallbacks.Trace(&iter.front().mutableKey(),
+                     "mConstructors key",
+                     aClosure);
+  }
   NS_IMPL_CYCLE_COLLECTION_TRACE_PRESERVED_WRAPPER
 NS_IMPL_CYCLE_COLLECTION_TRACE_END
 
@@ -190,6 +197,11 @@ CustomElementRegistry::Create(nsPIDOMWindowInner* aWindow)
 
   RefPtr<CustomElementRegistry> customElementRegistry =
     new CustomElementRegistry(aWindow);
+
+  if (!customElementRegistry->Init()) {
+    return nullptr;
+  }
+
   return customElementRegistry.forget();
 }
 
@@ -246,6 +258,12 @@ CustomElementRegistry::CustomElementRegistry(nsPIDOMWindowInner* aWindow)
 CustomElementRegistry::~CustomElementRegistry()
 {
   mozilla::DropJSObjects(this);
+}
+
+bool
+CustomElementRegistry::Init()
+{
+  return mConstructors.init();
 }
 
 CustomElementDefinition*
@@ -616,9 +634,13 @@ CustomElementRegistry::Define(const nsAString& aName,
 
 
 
-  
-  
-  
+  const auto& ptr = mConstructors.lookup(constructorUnwrapped);
+  if (ptr) {
+    MOZ_ASSERT(mCustomDefinitions.Get(ptr->value()),
+               "Definition must be found in mCustomDefinitions");
+    aRv.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
+    return;
+  }
 
   
 
@@ -774,7 +796,15 @@ CustomElementRegistry::Define(const nsAString& aName,
   
 
 
+  if (!mConstructors.put(constructorUnwrapped, nameAtom)) {
+    aRv.Throw(NS_ERROR_FAILURE);
+    return;
+  }
+
   mCustomDefinitions.Put(nameAtom, definition);
+
+  MOZ_ASSERT(mCustomDefinitions.Count() == mConstructors.count(),
+             "Number of entries should be the same");
 
   
 
