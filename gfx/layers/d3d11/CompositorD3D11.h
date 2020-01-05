@@ -115,6 +115,8 @@ public:
 
   virtual void EndFrame() override;
 
+  virtual void CancelFrame() override;
+
   
 
 
