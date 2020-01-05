@@ -24,6 +24,12 @@ pub struct Bezier {
 
 impl Bezier {
     
+    
+    
+    
+    
+    
+    
     #[inline]
     pub fn new(p1: Point2D<f64>, p2: Point2D<f64>) -> Bezier {
         let cx = 3.0 * p1.x;
