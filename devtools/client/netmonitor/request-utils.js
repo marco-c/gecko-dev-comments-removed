@@ -3,6 +3,7 @@
 const { Ci } = require("chrome");
 const { KeyCodes } = require("devtools/client/shared/keycodes");
 const { Task } = require("devtools/shared/task");
+const NetworkHelper = require("devtools/shared/webconsole/network-helper");
 
 
 
@@ -106,6 +107,48 @@ exports.formDataURI = function (mimeType, encoding, text) {
 
 exports.writeHeaderText = function (headers) {
   return headers.map(({name, value}) => name + ": " + value).join("\n");
+};
+
+
+
+
+
+
+
+exports.getAbbreviatedMimeType = function (mimeType) {
+  if (!mimeType) {
+    return "";
+  }
+  return (mimeType.split(";")[0].split("/")[1] || "").split("+")[0];
+};
+
+
+
+
+
+
+
+exports.getUriNameWithQuery = function (url) {
+  if (!(url instanceof Ci.nsIURL)) {
+    url = NetworkHelper.nsIURL(url);
+  }
+
+  let name = NetworkHelper.convertToUnicode(
+    unescape(url.fileName || url.filePath || "/"));
+  let query = NetworkHelper.convertToUnicode(unescape(url.query));
+
+  return name + (query ? "?" + query : "");
+};
+
+exports.getUriHostPort = function (url) {
+  if (!(url instanceof Ci.nsIURL)) {
+    url = NetworkHelper.nsIURL(url);
+  }
+  return NetworkHelper.convertToUnicode(unescape(url.hostPort));
+};
+
+exports.getUriHost = function (url) {
+  return exports.getUriHostPort(url).replace(/:\d+$/, "");
 };
 
 
