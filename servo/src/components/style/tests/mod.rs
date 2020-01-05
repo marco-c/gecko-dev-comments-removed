@@ -2,11 +2,11 @@
 
 
 
-use super::stylesheets::parse_stylesheet;
+use super::stylesheets::Stylesheet;
 
 #[test]
 fn test_bootstrap() {
     
-    let stylesheet = parse_stylesheet(include_str!("bootstrap-v3.0.0.css"));
+    let stylesheet = Stylesheet::from_str(include_str!("bootstrap-v3.0.0.css"));
     assert!(stylesheet.rules.len() > 100);  
 }
