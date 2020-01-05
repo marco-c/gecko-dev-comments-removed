@@ -813,14 +813,14 @@ HttpObserverManager = {
       
       
       let channelData = getData(channel);
-      if (!channelData.listener && channel instanceof Ci.nsITraceableChannel) {
+      if (!channelData.hasListener && channel instanceof Ci.nsITraceableChannel) {
         let responseStatus = channel.responseStatus;
         
         if (responseStatus < 300 || responseStatus >= 400) {
           let listener = new StartStopListener(this, loadContext);
           let orig = channel.setNewListener(listener);
           listener.orig = orig;
-          channelData.listener = listener;
+          channelData.hasListener = true;
         }
       }
     }
