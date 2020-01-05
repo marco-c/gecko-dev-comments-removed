@@ -2386,7 +2386,7 @@ nsFrameLoader::MaybeCreateDocShell()
   if (parentType == nsIDocShellTreeItem::typeContent &&
       !nsContentUtils::IsSystemPrincipal(doc->NodePrincipal()) &&
       !OwnerIsMozBrowserFrame()) {
-    PrincipalOriginAttributes poa = BasePrincipal::Cast(doc->NodePrincipal())->OriginAttributesRef();
+    PrincipalOriginAttributes poa = doc->NodePrincipal()->OriginAttributesRef();
 
     
     if (mIsTopLevelContent) {

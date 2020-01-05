@@ -184,7 +184,7 @@ ServiceWorkerInfo::ServiceWorkerInfo(nsIPrincipal* aPrincipal,
 {
   MOZ_ASSERT(mPrincipal);
   
-  mOriginAttributes = BasePrincipal::Cast(mPrincipal)->OriginAttributesRef();
+  mOriginAttributes = mPrincipal->OriginAttributesRef();
   MOZ_ASSERT(!mScope.IsEmpty());
   MOZ_ASSERT(!mScriptSpec.IsEmpty());
   MOZ_ASSERT(!mCacheName.IsEmpty());

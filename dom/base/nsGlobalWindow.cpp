@@ -2464,8 +2464,7 @@ nsGlobalWindow::ComputeIsSecureContext(nsIDocument* aDocument)
     
     
     
-    const PrincipalOriginAttributes& attrs =
-      BasePrincipal::Cast(principal)->OriginAttributesRef();
+    const PrincipalOriginAttributes& attrs = principal->OriginAttributesRef();
     
     
     principal = BasePrincipal::CreateCodebasePrincipal(uri, attrs);
@@ -8465,8 +8464,7 @@ nsGlobalWindow::PostMessageMozOuter(JSContext* aCx, JS::Handle<JS::Value> aMessa
       return;
     }
 
-    PrincipalOriginAttributes attrs =
-      BasePrincipal::Cast(&aSubjectPrincipal)->OriginAttributesRef();
+    PrincipalOriginAttributes attrs = aSubjectPrincipal.OriginAttributesRef();
     if (aSubjectPrincipal.GetIsSystemPrincipal()) {
       auto principal = BasePrincipal::Cast(GetPrincipal());
 
