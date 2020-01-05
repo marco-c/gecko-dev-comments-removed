@@ -686,15 +686,6 @@ bool NS_GetAppInfo(nsIChannel *aChannel,
 
 
 
-
-
-nsresult NS_GetAppInfoFromClearDataNotification(nsISupports *aSubject,
-                                                uint32_t *aAppID,
-                                                bool *aBrowserOnly);
-
-
-
-
 bool NS_ShouldCheckAppCache(nsIURI *aURI, bool usePrivateBrowsing);
 
 bool NS_ShouldCheckAppCache(nsIPrincipal *aPrincipal, bool usePrivateBrowsing);
