@@ -1024,12 +1024,9 @@ KeyframeEffectReadOnly::GetKeyframes(JSContext*& aCx,
     for (const PropertyValuePair& propertyValue : keyframe.mPropertyValues) {
       nsAutoString stringValue;
       if (propertyValue.mServoDeclarationBlock) {
-        
-        
-        
-        nsIAtom* atom = nsCSSProps::AtomForProperty(propertyValue.mProperty);
         Servo_DeclarationBlock_SerializeOneValue(
-          propertyValue.mServoDeclarationBlock, atom, false, &stringValue);
+          propertyValue.mServoDeclarationBlock,
+          propertyValue.mProperty, &stringValue);
       } else {
         
         
