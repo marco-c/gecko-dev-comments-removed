@@ -67,15 +67,6 @@ impl<'a> ParserContext<'a> {
 }
 
 
-impl<'a> ParserContext<'a> {
-    pub fn parse_url(&self, input: &str) -> Url {
-        self.base_url.join(input)
-            .unwrap_or_else(|_| Url::parse("about:invalid").unwrap())
-    }
-}
-
-
-
 
 
 pub fn log_css_error(input: &mut Parser, position: SourcePosition, message: &str, parsercontext: &ParserContext) {

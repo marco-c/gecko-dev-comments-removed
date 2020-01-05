@@ -3,9 +3,7 @@
 
 
 use app_units::Au;
-use cssparser::CssStringWriter;
-use std::fmt::{self, Write};
-use url::Url;
+use std::fmt;
 
 
 
@@ -27,15 +25,6 @@ pub trait ToCss {
 impl ToCss for Au {
     fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
         write!(dest, "{}px", self.to_f64_px())
-    }
-}
-
-impl ToCss for Url {
-    fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
-        try!(dest.write_str("url(\""));
-        try!(write!(CssStringWriter::new(dest), "{}", self));
-        try!(dest.write_str("\")"));
-        Ok(())
     }
 }
 
