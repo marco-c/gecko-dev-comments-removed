@@ -96,10 +96,10 @@ pub trait PaintListener for Sized? {
                                       epoch: Epoch);
 
     
-    fn paint(&mut self,
-             pipeline_id: PipelineId,
-             epoch: Epoch,
-             replies: Vec<(LayerId, Box<LayerBufferSet>)>);
+    fn assign_painted_buffers(&mut self,
+                              pipeline_id: PipelineId,
+                              epoch: Epoch,
+                              replies: Vec<(LayerId, Box<LayerBufferSet>)>);
 
     fn paint_msg_discarded(&mut self);
     fn set_paint_state(&mut self, PipelineId, PaintState);

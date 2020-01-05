@@ -86,7 +86,7 @@ impl CompositorEventListener for NullCompositor {
                 chan.send(None);
             }
 
-            Msg::SetIds(_, response_chan, _) => {
+            Msg::SetFrameTree(_, response_chan, _) => {
                 response_chan.send(());
             }
 
@@ -98,10 +98,10 @@ impl CompositorEventListener for NullCompositor {
             
             
 
-            Msg::CreateOrUpdateRootLayer(..) |
+            Msg::CreateOrUpdateBaseLayer(..) |
             Msg::CreateOrUpdateDescendantLayer(..) |
             Msg::SetLayerOrigin(..) |
-            Msg::Paint(..) |
+            Msg::AssignPaintedBuffers(..) |
             Msg::ChangeReadyState(..) |
             Msg::ChangePaintState(..) |
             Msg::ScrollFragmentPoint(..) |
