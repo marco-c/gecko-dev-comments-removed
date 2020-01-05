@@ -6324,6 +6324,16 @@ HTMLEditRules::IsInListItem(nsINode* aNode)
   return nullptr;
 }
 
+nsIAtom&
+HTMLEditRules::DefaultParagraphSeparator()
+{
+  MOZ_ASSERT(mHTMLEditor);
+  if (!mHTMLEditor) {
+    return *nsGkAtoms::div;
+  }
+  return ParagraphSeparatorElement(mHTMLEditor->GetDefaultParagraphSeparator());
+}
+
 
 
 
@@ -6379,8 +6389,12 @@ HTMLEditRules::ReturnInHeader(Selection& aSelection,
       htmlEditor->mTypeInState->ClearAllProps();
 
       
+      nsIAtom& paraAtom = DefaultParagraphSeparator();
+      
       nsCOMPtr<Element> pNode =
-        htmlEditor->CreateNode(nsGkAtoms::p, headerParent, offset + 1);
+        htmlEditor->CreateNode(&paraAtom == nsGkAtoms::br ? nsGkAtoms::p
+                                                           : &paraAtom,
+                                headerParent, offset + 1);
       NS_ENSURE_STATE(pNode);
 
       
@@ -6651,8 +6665,12 @@ HTMLEditRules::ReturnInListItem(Selection& aSelection,
       NS_ENSURE_SUCCESS(rv, rv);
 
       
+      nsIAtom& paraAtom = DefaultParagraphSeparator();
+      
       nsCOMPtr<Element> pNode =
-        htmlEditor->CreateNode(nsGkAtoms::p, listParent, offset + 1);
+        htmlEditor->CreateNode(&paraAtom == nsGkAtoms::br ? nsGkAtoms::p
+                                                           : &paraAtom,
+                                listParent, offset + 1);
       NS_ENSURE_STATE(pNode);
 
       
