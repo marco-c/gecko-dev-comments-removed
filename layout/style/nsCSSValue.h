@@ -135,6 +135,14 @@ public:
 
   bool HasRef() const;
 
+  
+  
+  
+  
+  
+  
+  bool MightHaveRef() const;
+
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(URLValueData)
 
   
@@ -159,6 +167,7 @@ private:
   mutable bool mURIResolved;
   
   mutable Maybe<bool> mIsLocalRef;
+  mutable Maybe<bool> mMightHaveRef;
 
 protected:
   virtual ~URLValueData() = default;
