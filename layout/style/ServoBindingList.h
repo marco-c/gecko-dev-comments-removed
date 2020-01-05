@@ -366,11 +366,6 @@ SERVO_BINDING_FUNC(Servo_Shutdown, void)
 
 
 
-SERVO_BINDING_FUNC(Servo_Element_GetSnapshot, ServoElementSnapshot*,
-                   RawGeckoElementBorrowed element)
-
-
-
 SERVO_BINDING_FUNC(Servo_Element_GetStyleRuleList, void,
                    RawGeckoElementBorrowed element,
                    RawGeckoServoStyleRuleListBorrowedMut rules)
@@ -404,13 +399,18 @@ SERVO_BINDING_FUNC(Servo_HasAuthorSpecifiedRules, bool,
 
 
 SERVO_BINDING_FUNC(Servo_ResolveStyleLazily, ServoComputedValuesStrong,
-                   RawGeckoElementBorrowed element, nsIAtom* pseudo_tag,
+                   RawGeckoElementBorrowed element,
+                   nsIAtom* pseudo_tag,
+                   const mozilla::ServoElementSnapshotTable* snapshots,
                    RawServoStyleSetBorrowed set)
 
 
 
-SERVO_BINDING_FUNC(Servo_TraverseSubtree, bool,
-                   RawGeckoElementBorrowed root, RawServoStyleSetBorrowed set,
+SERVO_BINDING_FUNC(Servo_TraverseSubtree,
+                   bool,
+                   RawGeckoElementBorrowed root,
+                   RawServoStyleSetBorrowed set,
+                   const mozilla::ServoElementSnapshotTable* snapshots,
                    mozilla::TraversalRootBehavior root_behavior,
                    mozilla::TraversalRestyleBehavior restyle_behavior)
 
@@ -422,6 +422,7 @@ SERVO_BINDING_FUNC(Servo_StyleSet_GetBaseComputedValuesForElement,
                    ServoComputedValuesStrong,
                    RawServoStyleSetBorrowed set,
                    RawGeckoElementBorrowed element,
+                   const mozilla::ServoElementSnapshotTable* snapshots,
                    nsIAtom* pseudo_tag)
 
 

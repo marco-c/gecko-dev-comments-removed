@@ -32,6 +32,7 @@ class ServoRestyleManager;
 class ServoStyleSheet;
 struct Keyframe;
 struct ServoComputedValuesWithParent;
+class ServoElementSnapshotTable;
 } 
 class nsIContent;
 class nsIDocument;
@@ -50,6 +51,8 @@ namespace mozilla {
 class ServoStyleSet
 {
   friend class ServoRestyleManager;
+  typedef ServoElementSnapshotTable SnapshotTable;
+
 public:
   class AutoAllowStaleStyles
   {
@@ -239,6 +242,9 @@ public:
 
 
 
+
+
+
   bool StyleDocument();
 
   
@@ -373,6 +379,12 @@ private:
   
 
 
+  const SnapshotTable& Snapshots();
+
+  
+
+
+
 
 
   void ResolveMappedAttrDeclarationBlocks();
@@ -381,11 +393,15 @@ private:
 
 
 
+
+
   bool PrepareAndTraverseSubtree(RawGeckoElementBorrowed aRoot,
                                  TraversalRootBehavior aRootBehavior,
                                  TraversalRestyleBehavior aRestyleBehavior);
 
   
+
+
 
 
 

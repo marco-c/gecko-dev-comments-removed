@@ -7,15 +7,11 @@
 #ifndef mozilla_ServoRestyleManager_h
 #define mozilla_ServoRestyleManager_h
 
-#include "mozilla/DocumentStyleRootIterator.h"
 #include "mozilla/EventStates.h"
 #include "mozilla/RestyleManager.h"
-#include "mozilla/ServoBindings.h"
 #include "mozilla/ServoElementSnapshot.h"
+#include "mozilla/ServoElementSnapshotTable.h"
 #include "nsChangeHint.h"
-#include "nsHashKeys.h"
-#include "nsINode.h"
-#include "nsISupportsImpl.h"
 #include "nsPresContext.h"
 
 namespace mozilla {
@@ -37,7 +33,9 @@ namespace mozilla {
 class ServoRestyleManager : public RestyleManager
 {
   friend class ServoStyleSet;
+
 public:
+  typedef ServoElementSnapshotTable SnapshotTable;
   typedef RestyleManager base_type;
 
   explicit ServoRestyleManager(nsPresContext* aPresContext);
@@ -136,6 +134,10 @@ private:
     return PresContext()->StyleSet()->AsServo();
   }
 
+  const SnapshotTable& Snapshots() const { return mSnapshots; }
+  void ClearSnapshots();
+  ServoElementSnapshot& SnapshotFor(mozilla::dom::Element* aElement);
+
   
   
   
@@ -155,6 +157,10 @@ private:
   
   
   bool mHaveNonAnimationRestyles = false;
+
+  
+  
+  SnapshotTable mSnapshots;
 };
 
 } 
