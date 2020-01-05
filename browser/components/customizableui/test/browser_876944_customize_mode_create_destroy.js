@@ -30,12 +30,7 @@ add_task(function* testPanelPlaceholders() {
   
   
   
-  let expectedPlaceholders = 1;
-  if (isInDevEdition()) {
-    expectedPlaceholders += 1;
-  } else if (isInNightly()) {
-    expectedPlaceholders += 2;
-  }
+  let expectedPlaceholders = 1 + (isInDevEdition() ? 1 : 0);
   is(panel.querySelectorAll(".panel-customization-placeholder").length, expectedPlaceholders, "The number of placeholders should be correct.");
   CustomizableUI.createWidget({id: kTestWidget2, label: "Pretty label", tooltiptext: "Pretty tooltip", defaultArea: CustomizableUI.AREA_PANEL});
   let elem = document.getElementById(kTestWidget2);
@@ -44,7 +39,7 @@ add_task(function* testPanelPlaceholders() {
   ok(wrapper, "There should be a wrapper");
   is(wrapper.firstChild.id, kTestWidget2, "Wrapper should have test widget");
   is(wrapper.parentNode, panel, "Wrapper should be in panel");
-  expectedPlaceholders = (expectedPlaceholders - 1) || 3;
+  expectedPlaceholders = isInDevEdition() ? 1 : 3;
   is(panel.querySelectorAll(".panel-customization-placeholder").length, expectedPlaceholders, "The number of placeholders should be correct.");
   CustomizableUI.destroyWidget(kTestWidget2);
   wrapper = document.getElementById("wrapper-" + kTestWidget2);

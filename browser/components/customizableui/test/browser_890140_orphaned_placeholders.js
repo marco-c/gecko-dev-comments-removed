@@ -22,7 +22,7 @@ add_task(function*() {
 
   
   
-  removeNonOriginalButtons();
+  CustomizableUI.removeWidgetFromArea("sync-button");
   let panel = document.getElementById(CustomizableUI.AREA_PANEL);
   let placements = getAreaWidgetIds(CustomizableUI.AREA_PANEL);
 
@@ -37,7 +37,7 @@ add_task(function*() {
     CustomizableUI.addWidgetToArea("developer-button", CustomizableUI.AREA_NAVBAR, 2);
   }
 
-  restoreNonOriginalButtons();
+  CustomizableUI.addWidgetToArea("sync-button", CustomizableUI.AREA_PANEL);
   ok(CustomizableUI.inDefaultState, "Should be in default state again.");
 });
 
@@ -51,7 +51,7 @@ add_task(function*() {
 
   
   
-  removeNonOriginalButtons()
+  CustomizableUI.removeWidgetFromArea("sync-button");
 
   let btn = document.getElementById("open-file-button");
   let panel = document.getElementById(CustomizableUI.AREA_PANEL);
@@ -81,7 +81,7 @@ add_task(function*() {
     CustomizableUI.addWidgetToArea("developer-button", CustomizableUI.AREA_NAVBAR, 2);
   }
 
-  restoreNonOriginalButtons();
+  CustomizableUI.addWidgetToArea("sync-button", CustomizableUI.AREA_PANEL);
   ok(CustomizableUI.inDefaultState, "Should be in default state again.");
 });
 
@@ -94,7 +94,7 @@ add_task(function*() {
   }
   
   
-  removeNonOriginalButtons();
+  CustomizableUI.removeWidgetFromArea("sync-button");
 
   let btn = document.getElementById("add-ons-button");
   let btn2 = document.getElementById("developer-button");
@@ -123,7 +123,7 @@ add_task(function*() {
     CustomizableUI.addWidgetToArea("developer-button", CustomizableUI.AREA_NAVBAR, 2);
   }
 
-  restoreNonOriginalButtons();
+  CustomizableUI.addWidgetToArea("sync-button", CustomizableUI.AREA_PANEL);
   ok(CustomizableUI.inDefaultState, "Should be in default state again.");
 });
 
@@ -137,7 +137,7 @@ add_task(function*() {
 
   
   
-  removeNonOriginalButtons();
+  CustomizableUI.removeWidgetFromArea("sync-button");
 
   let btn = document.getElementById("edit-controls");
   let btn2 = document.getElementById("developer-button");
@@ -167,7 +167,7 @@ add_task(function*() {
     CustomizableUI.addWidgetToArea("developer-button", CustomizableUI.AREA_NAVBAR, 2);
   }
 
-  restoreNonOriginalButtons();
+  CustomizableUI.addWidgetToArea("sync-button", CustomizableUI.AREA_PANEL);
   ok(CustomizableUI.inDefaultState, "Should be in default state again.");
 });
 
@@ -187,7 +187,7 @@ add_task(function*() {
 
   
   
-  removeNonOriginalButtons();
+  CustomizableUI.removeWidgetFromArea("sync-button");
 
   is(getVisiblePlaceholderCount(panel), numPlaceholders, "Should have " + numPlaceholders + " visible placeholders before exiting");
 
@@ -195,7 +195,7 @@ add_task(function*() {
   yield startCustomizing();
   is(getVisiblePlaceholderCount(panel), numPlaceholders, "Should have " + numPlaceholders + " visible placeholders after re-entering");
 
-  restoreNonOriginalButtons();
+  CustomizableUI.addWidgetToArea("sync-button", CustomizableUI.AREA_PANEL);
   ok(CustomizableUI.inDefaultState, "Should still be in default state.");
 });
 

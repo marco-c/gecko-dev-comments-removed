@@ -24,9 +24,8 @@ add_task(function*() {
                              "add-ons-button",
                              "developer-button",
                              "sync-button",
-                             "webcompat-reporter-button"
                             ];
-  removeNonReleaseButtons(placementsAfterMove);
+  removeDeveloperButtonIfDevEdition(placementsAfterMove);
   simulateItemDrag(zoomControls, printButton);
   assertAreaPlacements(CustomizableUI.AREA_PANEL, placementsAfterMove);
   ok(!CustomizableUI.inDefaultState, "Should no longer be in default state.");
@@ -53,9 +52,8 @@ add_task(function*() {
                              "add-ons-button",
                              "developer-button",
                              "sync-button",
-                             "webcompat-reporter-button"
                             ];
-  removeNonReleaseButtons(placementsAfterMove);
+  removeDeveloperButtonIfDevEdition(placementsAfterMove);
   simulateItemDrag(zoomControls, savePageButton);
   assertAreaPlacements(CustomizableUI.AREA_PANEL, placementsAfterMove);
   ok(CustomizableUI.inDefaultState, "Should be in default state.");
@@ -80,9 +78,8 @@ add_task(function*() {
                              "add-ons-button",
                              "developer-button",
                              "sync-button",
-                             "webcompat-reporter-button"
                             ];
-  removeNonReleaseButtons(placementsAfterMove);
+  removeDeveloperButtonIfDevEdition(placementsAfterMove);
   simulateItemDrag(zoomControls, newWindowButton);
   assertAreaPlacements(CustomizableUI.AREA_PANEL, placementsAfterMove);
   ok(CustomizableUI.inDefaultState, "Should still be in default state.");
@@ -106,9 +103,8 @@ add_task(function*() {
                              "add-ons-button",
                              "developer-button",
                              "sync-button",
-                             "webcompat-reporter-button"
                             ];
-  removeNonReleaseButtons(placementsAfterMove);
+  removeDeveloperButtonIfDevEdition(placementsAfterMove);
   simulateItemDrag(zoomControls, historyPanelMenu);
   assertAreaPlacements(CustomizableUI.AREA_PANEL, placementsAfterMove);
   ok(!CustomizableUI.inDefaultState, "Should no longer be in default state.");
@@ -136,9 +132,8 @@ add_task(function*() {
                              "add-ons-button",
                              "developer-button",
                              "sync-button",
-                             "webcompat-reporter-button"
                             ];
-  removeNonReleaseButtons(placementsAfterMove);
+  removeDeveloperButtonIfDevEdition(placementsAfterMove);
   simulateItemDrag(zoomControls, preferencesButton);
   assertAreaPlacements(CustomizableUI.AREA_PANEL, placementsAfterMove);
   ok(!CustomizableUI.inDefaultState, "Should no longer be in default state.");
@@ -166,9 +161,8 @@ add_task(function*() {
                                "add-ons-button",
                                "developer-button",
                                "sync-button",
-                               "webcompat-reporter-button"
                               ];
-  removeNonReleaseButtons(placementsAfterInsert);
+  removeDeveloperButtonIfDevEdition(placementsAfterInsert);
   simulateItemDrag(openFileButton, zoomControls);
   assertAreaPlacements(CustomizableUI.AREA_PANEL, placementsAfterInsert);
   ok(!CustomizableUI.inDefaultState, "Should no longer be in default state.");
@@ -208,9 +202,8 @@ add_task(function*() {
                                "add-ons-button",
                                "developer-button",
                                "sync-button",
-                               "webcompat-reporter-button"
                               ];
-  removeNonReleaseButtons(placementsAfterInsert);
+  removeDeveloperButtonIfDevEdition(placementsAfterInsert);
   simulateItemDrag(openFileButton, editControls);
   assertAreaPlacements(CustomizableUI.AREA_PANEL, placementsAfterInsert);
   ok(!CustomizableUI.inDefaultState, "Should no longer be in default state.");
@@ -247,9 +240,8 @@ add_task(function*() {
                              "add-ons-button",
                              "developer-button",
                              "sync-button",
-                             "webcompat-reporter-button"
                             ];
-  removeNonReleaseButtons(placementsAfterMove);
+  removeDeveloperButtonIfDevEdition(placementsAfterMove);
   simulateItemDrag(editControls, zoomControls);
   assertAreaPlacements(CustomizableUI.AREA_PANEL, placementsAfterMove);
   ok(CustomizableUI.inDefaultState, "Should still be in default state.");
@@ -274,9 +266,8 @@ add_task(function*() {
                              "add-ons-button",
                              "developer-button",
                              "sync-button",
-                             "webcompat-reporter-button"
                             ];
-  removeNonReleaseButtons(placementsAfterMove);
+  removeDeveloperButtonIfDevEdition(placementsAfterMove);
   simulateItemDrag(editControls, newWindowButton);
   assertAreaPlacements(CustomizableUI.AREA_PANEL, placementsAfterMove);
   let zoomControls = document.getElementById("zoom-controls");
@@ -304,9 +295,8 @@ add_task(function*() {
                              "add-ons-button",
                              "developer-button",
                              "sync-button",
-                             "webcompat-reporter-button"
                             ];
-  removeNonReleaseButtons(placementsAfterMove);
+  removeDeveloperButtonIfDevEdition(placementsAfterMove);
   simulateItemDrag(editControls, privateBrowsingButton);
   assertAreaPlacements(CustomizableUI.AREA_PANEL, placementsAfterMove);
   let zoomControls = document.getElementById("zoom-controls");
@@ -334,9 +324,8 @@ add_task(function*() {
                              "add-ons-button",
                              "developer-button",
                              "sync-button",
-                             "webcompat-reporter-button"
                             ];
-  removeNonReleaseButtons(placementsAfterMove);
+  removeDeveloperButtonIfDevEdition(placementsAfterMove);
   simulateItemDrag(editControls, savePageButton);
   assertAreaPlacements(CustomizableUI.AREA_PANEL, placementsAfterMove);
   let zoomControls = document.getElementById("zoom-controls");
@@ -364,17 +353,11 @@ add_task(function*() {
                              "developer-button",
                              "sync-button",
                             ];
-  removeNonReleaseButtons(placementsAfterMove);
-  if (isInNightly()) {
-    CustomizableUI.removeWidgetFromArea("webcompat-reporter-button");
-  }
+  removeDeveloperButtonIfDevEdition(placementsAfterMove);
   simulateItemDrag(editControls, panel);
   assertAreaPlacements(CustomizableUI.AREA_PANEL, placementsAfterMove);
   let zoomControls = document.getElementById("zoom-controls");
   simulateItemDrag(editControls, zoomControls);
-  if (isInNightly()) {
-    CustomizableUI.addWidgetToArea("webcompat-reporter-button", CustomizableUI.AREA_PANEL);
-  }
   ok(CustomizableUI.inDefaultState, "Should still be in default state.");
 });
 
@@ -396,9 +379,8 @@ add_task(function*() {
                              "add-ons-button",
                              "developer-button",
                              "sync-button",
-                             "webcompat-reporter-button",
                             ];
-  removeNonReleaseButtons(placementsAfterMove);
+  removeDeveloperButtonIfDevEdition(placementsAfterMove);
   let paletteChildElementCount = palette.childElementCount;
   simulateItemDrag(editControls, palette);
   assertAreaPlacements(CustomizableUI.AREA_PANEL, placementsAfterMove);
@@ -428,8 +410,7 @@ add_task(function*() {
     
     
     
-    
-    removeNonOriginalButtons();
+    CustomizableUI.removeWidgetFromArea("sync-button");
     
     
     let placeholder = panel.getElementsByClassName("panel-customization-placeholder")[i];
@@ -444,14 +425,13 @@ add_task(function*() {
                                "preferences-button",
                                "add-ons-button",
                                "edit-controls",
-                               "developer-button",
-                              ];
-    removeNonReleaseButtons(placementsAfterMove);
+                               "developer-button"];
+    removeDeveloperButtonIfDevEdition(placementsAfterMove);
     simulateItemDrag(editControls, placeholder);
     assertAreaPlacements(CustomizableUI.AREA_PANEL, placementsAfterMove);
     let zoomControls = document.getElementById("zoom-controls");
     simulateItemDrag(editControls, zoomControls);
-    restoreNonOriginalButtons();
+    CustomizableUI.addWidgetToArea("sync-button", CustomizableUI.AREA_PANEL);
     ok(CustomizableUI.inDefaultState, "Should still be in default state.");
   }
 });
@@ -476,8 +456,7 @@ add_task(function*() {
   
   
   
-  
-  removeNonOriginalButtons();
+  CustomizableUI.removeWidgetFromArea("sync-button");
   yield startCustomizing();
   let editControls = document.getElementById("edit-controls");
   let panel = document.getElementById(CustomizableUI.AREA_PANEL);
@@ -493,9 +472,8 @@ add_task(function*() {
                              "preferences-button",
                              "add-ons-button",
                              "edit-controls",
-                             "developer-button",
-                            ];
-  removeNonReleaseButtons(placementsAfterMove);
+                             "developer-button"];
+  removeDeveloperButtonIfDevEdition(placementsAfterMove);
   simulateItemDrag(editControls, target);
   assertAreaPlacements(CustomizableUI.AREA_PANEL, placementsAfterMove);
   let itemToDrag = "email-link-button"; 
@@ -509,7 +487,7 @@ add_task(function*() {
   let zoomControls = document.getElementById("zoom-controls");
   simulateItemDrag(button, palette);
   simulateItemDrag(editControls, zoomControls);
-  restoreNonOriginalButtons();
+  CustomizableUI.addWidgetToArea("sync-button", CustomizableUI.AREA_PANEL);
   ok(CustomizableUI.inDefaultState, "Should be in default state again.");
 });
 
