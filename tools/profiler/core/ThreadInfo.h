@@ -17,7 +17,7 @@ class ThreadInfo final
 {
 public:
   ThreadInfo(const char* aName, int aThreadId, bool aIsMainThread,
-             mozilla::NotNull<PseudoStack*> aPseudoStack, void* aStackTop);
+             void* aStackTop);
 
   ~ThreadInfo();
 
@@ -25,6 +25,7 @@ public:
   int ThreadId() const { return mThreadId; }
 
   bool IsMainThread() const { return mIsMainThread; }
+
   mozilla::NotNull<PseudoStack*> Stack() const { return mPseudoStack; }
 
   void SetHasProfile() { mHasProfile = true; }
@@ -41,6 +42,9 @@ private:
   int mThreadId;
   const bool mIsMainThread;
 
+  
+  
+  
   
   mozilla::NotNull<PseudoStack*> mPseudoStack;
 

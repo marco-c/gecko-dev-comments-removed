@@ -1905,11 +1905,12 @@ locked_register_thread(PS::LockRef aLock, const char* aName, void* stackTop)
   if (!tlsPseudoStack.init()) {
     return;
   }
-  NotNull<PseudoStack*> stack = WrapNotNull(new PseudoStack());
-  tlsPseudoStack.set(stack);
 
   ThreadInfo* info = new ThreadInfo(aName, Thread::GetCurrentId(),
-                                    NS_IsMainThread(), stack, stackTop);
+                                    NS_IsMainThread(), stackTop);
+  NotNull<PseudoStack*> pseudoStack = info->Stack();
+
+  tlsPseudoStack.set(pseudoStack.get());
 
   if (ShouldProfileThread(aLock, info)) {
     info->SetHasProfile();
@@ -1917,8 +1918,8 @@ locked_register_thread(PS::LockRef aLock, const char* aName, void* stackTop)
     if (gPS->IsActive(aLock) && gPS->FeatureJS(aLock)) {
       
       
-      stack->startJSSampling();
-      stack->pollJSSampling();
+      pseudoStack->startJSSampling();
+      pseudoStack->pollJSSampling();
     }
   }
 
@@ -2403,8 +2404,8 @@ locked_profiler_start(PS::LockRef aLock, int aEntries, double aInterval,
   if (featureJS) {
     
     
-    if (PseudoStack* stack = tlsPseudoStack.get()) {
-      stack->pollJSSampling();
+    if (PseudoStack* pseudoStack = tlsPseudoStack.get()) {
+      pseudoStack->pollJSSampling();
     }
   }
 

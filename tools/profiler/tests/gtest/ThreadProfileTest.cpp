@@ -8,22 +8,17 @@
 #include "ProfileBufferEntry.h"
 #include "ThreadInfo.h"
 
-using mozilla::NotNull;
-using mozilla::WrapNotNull;
-
 
 TEST(ThreadProfile, Initialization) {
   Thread::tid_t tid = 1000;
-  ThreadInfo info("testThread", tid, true, WrapNotNull(new PseudoStack()),
-                  nullptr);
+  ThreadInfo info("testThread", tid, true, nullptr);
   info.SetHasProfile();
 }
 
 
 TEST(ThreadProfile, InsertOneTag) {
   Thread::tid_t tid = 1000;
-  ThreadInfo info("testThread", tid, true, WrapNotNull(new PseudoStack()),
-                  nullptr);
+  ThreadInfo info("testThread", tid, true, nullptr);
   ProfileBuffer* pb = new ProfileBuffer(10);
   pb->addTag(ProfileBufferEntry::Time(123.1));
   ASSERT_TRUE(pb->mEntries != nullptr);
@@ -35,8 +30,7 @@ TEST(ThreadProfile, InsertOneTag) {
 
 TEST(ThreadProfile, InsertTagsNoWrap) {
   Thread::tid_t tid = 1000;
-  ThreadInfo info("testThread", tid, true, WrapNotNull(new PseudoStack()),
-                  nullptr);
+  ThreadInfo info("testThread", tid, true, nullptr);
   ProfileBuffer* pb = new ProfileBuffer(100);
   int test_size = 50;
   for (int i = 0; i < test_size; i++) {
@@ -58,8 +52,7 @@ TEST(ThreadProfile, InsertTagsWrap) {
   
   int tags = 24;
   int buffer_size = tags + 1;
-  ThreadInfo info("testThread", tid, true, WrapNotNull(new PseudoStack()),
-                  nullptr);
+  ThreadInfo info("testThread", tid, true, nullptr);
   ProfileBuffer* pb = new ProfileBuffer(buffer_size);
   int test_size = 43;
   for (int i = 0; i < test_size; i++) {
