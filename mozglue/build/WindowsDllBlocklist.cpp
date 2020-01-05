@@ -222,6 +222,9 @@ static const DllBlockInfo sWindowsDllBlocklist[] = {
   
   { "nzbrcom.dll", ALL_VERSIONS },
 
+  
+  { "k7pswsen.dll", MAKE_VERSION(15, 2, 2, 95) },
+
   { nullptr, 0 }
 };
 
