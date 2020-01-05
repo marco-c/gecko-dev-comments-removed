@@ -63,8 +63,6 @@ def test(mod, path, entity = None):
     return "error"
 
   
-  if re.match(r"searchplugins\/.+\.xml", path):
-    return "ignore"
   if path == "chrome/region.properties":
     
     if (re.match(r"browser\.search\.order\.[1-9]", entity) or
