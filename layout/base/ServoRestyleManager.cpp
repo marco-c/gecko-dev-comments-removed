@@ -217,6 +217,8 @@ ServoRestyleManager::RecreateStyleContexts(Element* aElement,
       aStyleSet->GetContext(computedValues.forget(), aParentContext, nullptr,
                             CSSPseudoElementType::NotPseudo, aElement);
 
+    newContext->EnsureStructsForServo(oldStyleContext);
+
     
     
     
