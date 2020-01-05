@@ -1383,13 +1383,14 @@ protected:
 
 
 
-
-
   
   
   virtual nsresult BeforeSetAttr(int32_t aNamespaceID, nsIAtom* aName,
-                                 nsAttrValueOrString* aValue,
-                                 bool aNotify);
+                                 const nsAttrValueOrString* aValue,
+                                 bool aNotify)
+  {
+    return NS_OK;
+  }
 
   
 
