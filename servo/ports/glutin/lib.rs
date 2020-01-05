@@ -5,6 +5,7 @@
 
 
 #![feature(box_syntax)]
+#![feature(struct_field_attributes)]
 
 #[macro_use] extern crate bitflags;
 extern crate compositing;
