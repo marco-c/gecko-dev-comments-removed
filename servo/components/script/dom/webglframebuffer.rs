@@ -1,0 +1,39 @@
+
+
+
+
+
+use dom::bindings::codegen::Bindings::WebGLFramebufferBinding;
+use dom::bindings::global::GlobalRef;
+use dom::bindings::js::{Temporary, JSRef};
+use dom::bindings::utils::reflect_dom_object;
+use dom::webglobject::WebGLObject;
+
+#[dom_struct]
+pub struct WebGLFramebuffer {
+    webgl_object: WebGLObject,
+    id: u32,
+}
+
+impl WebGLFramebuffer {
+    fn new_inherited(id: u32) -> WebGLFramebuffer {
+        WebGLFramebuffer {
+            webgl_object: WebGLObject::new_inherited(),
+            id: id,
+        }
+    }
+
+    pub fn new(global: GlobalRef, id: u32) -> Temporary<WebGLFramebuffer> {
+        reflect_dom_object(box WebGLFramebuffer::new_inherited(id), global, WebGLFramebufferBinding::Wrap)
+    }
+}
+
+pub trait WebGLFramebufferHelpers {
+    fn get_id(&self) -> u32;
+}
+
+impl<'a> WebGLFramebufferHelpers for JSRef<'a, WebGLFramebuffer> {
+    fn get_id(&self) -> u32 {
+        self.id
+    }
+}
