@@ -474,9 +474,9 @@ nsXPLookAndFeel::Init()
     mozilla::dom::ContentChild* cc =
       mozilla::dom::ContentChild::GetSingleton();
 
-    LookAndFeel::SetIntCache(cc->LookAndFeelCache());
-    
-    cc->LookAndFeelCache().Clear();
+    nsTArray<LookAndFeelInt> lookAndFeelIntCache;
+    cc->SendGetLookAndFeelCache(&lookAndFeelIntCache);
+    LookAndFeel::SetIntCache(lookAndFeelIntCache);
   }
 }
 
@@ -769,12 +769,14 @@ nsXPLookAndFeel::GetColorImpl(ColorID aID, bool aUseStandinsForNativeColors,
   }
 
   
+#ifndef XP_MACOSX
   if (aID == eColorID_TextSelectBackgroundDisabled) {
     
     
     aResult = NS_RGB(0xb0, 0xb0, 0xb0);
     return NS_OK;
   }
+#endif
 
   if (aID == eColorID_TextSelectBackgroundAttention) {
     if (sFindbarModalHighlight) {
