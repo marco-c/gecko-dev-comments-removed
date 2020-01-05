@@ -9,7 +9,7 @@
 #define GrPathRenderer_DEFINED
 
 #include "GrCaps.h"
-#include "GrDrawContext.h"
+#include "GrRenderTargetContext.h"
 #include "GrPaint.h"
 #include "GrResourceProvider.h"
 #include "GrShape.h"
@@ -84,11 +84,10 @@ public:
         const GrShaderCaps*         fShaderCaps;
         const SkMatrix*             fViewMatrix;
         const GrShape*              fShape;
-        bool                        fAntiAlias;
+        GrAAType                    fAAType;
 
         
         bool                        fHasUserStencilSettings;
-        bool                        fIsStencilBufferMSAA;
 
 #ifdef SK_DEBUG
         void validate() const {
@@ -125,22 +124,20 @@ public:
 
 
     struct DrawPathArgs {
-        GrResourceProvider*         fResourceProvider;
-        const GrPaint*              fPaint;
-        const GrUserStencilSettings*fUserStencilSettings;
-
-        GrDrawContext*              fDrawContext;
-        const GrClip*               fClip;
-        const SkMatrix*             fViewMatrix;
-        const GrShape*              fShape;
-        bool                        fAntiAlias;
-        bool                        fGammaCorrect;
+        GrContext*                   fContext;
+        GrPaint&&                    fPaint;
+        const GrUserStencilSettings* fUserStencilSettings;
+        GrRenderTargetContext*       fRenderTargetContext;
+        const GrClip*                fClip;
+        const SkMatrix*              fViewMatrix;
+        const GrShape*               fShape;
+        GrAAType                     fAAType;
+        bool                         fGammaCorrect;
 #ifdef SK_DEBUG
         void validate() const {
-            SkASSERT(fResourceProvider);
-            SkASSERT(fPaint);
+            SkASSERT(fContext);
             SkASSERT(fUserStencilSettings);
-            SkASSERT(fDrawContext);
+            SkASSERT(fRenderTargetContext);
             SkASSERT(fClip);
             SkASSERT(fViewMatrix);
             SkASSERT(fShape);
@@ -156,13 +153,16 @@ public:
         SkDEBUGCODE(args.validate();)
 #ifdef SK_DEBUG
         CanDrawPathArgs canArgs;
-        canArgs.fShaderCaps = args.fResourceProvider->caps()->shaderCaps();
+        canArgs.fShaderCaps = args.fContext->caps()->shaderCaps();
         canArgs.fViewMatrix = args.fViewMatrix;
         canArgs.fShape = args.fShape;
-        canArgs.fAntiAlias = args.fAntiAlias;
+        canArgs.fAAType = args.fAAType;
 
         canArgs.fHasUserStencilSettings = !args.fUserStencilSettings->isUnused();
-        canArgs.fIsStencilBufferMSAA = args.fDrawContext->isStencilBufferMultisampled();
+        SkASSERT(!(canArgs.fAAType == GrAAType::kMSAA &&
+                   !args.fRenderTargetContext->isUnifiedMultisampled()));
+        SkASSERT(!(canArgs.fAAType == GrAAType::kMixedSamples &&
+                   !args.fRenderTargetContext->isStencilBufferMultisampled()));
         SkASSERT(this->canDrawPath(canArgs));
         if (!args.fUserStencilSettings->isUnused()) {
             SkPath path;
@@ -183,20 +183,21 @@ public:
 
 
     struct StencilPathArgs {
-        GrResourceProvider* fResourceProvider;
-        GrDrawContext*      fDrawContext;
-        const GrClip*       fClip;
-        const SkMatrix*     fViewMatrix;
-        bool                fIsAA;
-        const GrShape*      fShape;
+        GrContext*             fContext;
+        GrRenderTargetContext* fRenderTargetContext;
+        const GrClip*          fClip;
+        const SkMatrix*        fViewMatrix;
+        GrAAType               fAAType;
+        const GrShape*         fShape;
 
 #ifdef SK_DEBUG
         void validate() const {
-            SkASSERT(fResourceProvider);
-            SkASSERT(fDrawContext);
+            SkASSERT(fContext);
+            SkASSERT(fRenderTargetContext);
             SkASSERT(fViewMatrix);
             SkASSERT(fShape);
             SkASSERT(fShape->style().isSimpleFill());
+            SkASSERT(GrAAType::kCoverage != fAAType);
             SkPath path;
             fShape->asPath(&path);
             SkASSERT(!path.isInverseFillType());
@@ -276,15 +277,15 @@ private:
 
         GrPaint paint;
 
-        DrawPathArgs drawArgs;
-        drawArgs.fResourceProvider = args.fResourceProvider;
-        drawArgs.fPaint = &paint;
-        drawArgs.fUserStencilSettings = &kIncrementStencil;
-        drawArgs.fDrawContext = args.fDrawContext;
-        drawArgs.fViewMatrix = args.fViewMatrix;
-        drawArgs.fShape = args.fShape;
-        drawArgs.fAntiAlias = false;  
-        drawArgs.fGammaCorrect = false;
+        DrawPathArgs drawArgs{args.fContext,
+                              std::move(paint),
+                              &kIncrementStencil,
+                              args.fRenderTargetContext,
+                              nullptr,  
+                              args.fViewMatrix,
+                              args.fShape,
+                              args.fAAType,
+                              false};
         this->drawPath(drawArgs);
     }
 

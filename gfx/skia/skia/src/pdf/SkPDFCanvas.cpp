@@ -19,15 +19,15 @@ SkPDFCanvas::~SkPDFCanvas() {}
 
 
 
-void SkPDFCanvas::onClipRect(const SkRect& rect, ClipOp op, ClipEdgeStyle edgeStyle) {
+void SkPDFCanvas::onClipRect(const SkRect& rect, SkClipOp op, ClipEdgeStyle edgeStyle) {
     this->INHERITED::onClipRect(rect, op, kHard_ClipEdgeStyle);
 }
 
-void SkPDFCanvas::onClipRRect(const SkRRect& rrect, ClipOp op, ClipEdgeStyle edgeStyle) {
+void SkPDFCanvas::onClipRRect(const SkRRect& rrect, SkClipOp op, ClipEdgeStyle edgeStyle) {
     this->INHERITED::onClipRRect(rrect, op, kHard_ClipEdgeStyle);
 }
 
-void SkPDFCanvas::onClipPath(const SkPath& path, ClipOp op, ClipEdgeStyle edgeStyle) {
+void SkPDFCanvas::onClipPath(const SkPath& path, SkClipOp op, ClipEdgeStyle edgeStyle) {
     this->INHERITED::onClipPath(path, op, kHard_ClipEdgeStyle);
 }
 

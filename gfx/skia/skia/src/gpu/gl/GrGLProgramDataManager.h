@@ -8,12 +8,10 @@
 #ifndef GrGLProgramDataManager_DEFINED
 #define GrGLProgramDataManager_DEFINED
 
-#include "glsl/GrGLSLProgramDataManager.h"
-
 #include "GrAllocator.h"
-#include "gl/GrGLSampler.h"
+#include "GrShaderVar.h"
 #include "gl/GrGLTypes.h"
-#include "glsl/GrGLSLShaderVar.h"
+#include "glsl/GrGLSLProgramDataManager.h"
 
 #include "SkTArray.h"
 
@@ -28,13 +26,13 @@ class GrGLProgram;
 class GrGLProgramDataManager : public GrGLSLProgramDataManager {
 public:
     struct UniformInfo {
-        GrGLSLShaderVar fVariable;
+        GrShaderVar fVariable;
         uint32_t        fVisibility;
         GrGLint         fLocation;
     };
 
     struct VaryingInfo {
-        GrGLSLShaderVar fVariable;
+        GrShaderVar fVariable;
         GrGLint         fLocation;
     };
 
@@ -48,7 +46,8 @@ public:
                            const VaryingInfoArray&);
 
 
-    void setSamplers(const SkTArray<GrGLSampler>& samplers) const;
+    void setSamplers(const UniformInfoArray& samplers) const;
+    void setImageStorages(const UniformInfoArray &images) const;
 
     
 
@@ -82,12 +81,11 @@ private:
     };
 
     struct Uniform {
-        GrGLint     fVSLocation;
-        GrGLint     fFSLocation;
-        SkDEBUGCODE(
-            GrSLType    fType;
-            int         fArrayCount;
-        );
+        GrGLint     fLocation;
+#ifdef SK_DEBUG
+        GrSLType    fType;
+        int         fArrayCount;
+#endif
     };
 
     enum {
@@ -100,8 +98,6 @@ private:
             int         fArrayCount;
         );
     };
-
-    SkDEBUGCODE(void printUnused(const Uniform&) const;)
 
     template<int N> inline void setMatrices(UniformHandle, int arrayCount,
                                             const float matrices[]) const;

@@ -4,7 +4,7 @@
 
 
 
- 
+
 #ifndef SKSL_ASTDOSTATEMENT
 #define SKSL_ASTDOSTATEMENT
 
@@ -22,7 +22,7 @@ struct ASTDoStatement : public ASTStatement {
     , fStatement(std::move(statement))
     , fTest(std::move(test)) {}
 
-    std::string description() const override {
+    String description() const override {
         return "do " + fStatement->description() + " while (" + fTest->description() + ");";
     }
 

@@ -9,25 +9,21 @@
 #define GrContext_DEFINED
 
 #include "GrCaps.h"
-#include "GrClip.h"
 #include "GrColor.h"
-#include "GrPaint.h"
 #include "GrRenderTarget.h"
-#include "GrTextureProvider.h"
 #include "SkMatrix.h"
 #include "SkPathEffect.h"
 #include "SkTypes.h"
 #include "../private/GrAuditTrail.h"
 #include "../private/GrSingleOwner.h"
-#include "../private/SkMutex.h"
 
-struct GrBatchAtlasConfig;
-class GrBatchFontCache;
+class GrAtlasGlyphCache;
 struct GrContextOptions;
 class GrContextPriv;
 class GrContextThreadSafeProxy;
 class GrDrawingManager;
-class GrDrawContext;
+struct GrDrawOpAtlasConfig;
+class GrRenderTargetContext;
 class GrFragmentProcessor;
 class GrGpu;
 class GrIndexBuffer;
@@ -37,13 +33,17 @@ class GrPipelineBuilder;
 class GrResourceEntry;
 class GrResourceCache;
 class GrResourceProvider;
-class GrTestTarget;
+class GrSamplerParams;
+class GrSurfaceProxy;
 class GrTextBlobCache;
 class GrTextContext;
-class GrTextureParams;
+class GrTextureProxy;
 class GrVertexBuffer;
 class GrSwizzle;
 class SkTraceMemoryDump;
+
+class SkImage;
+class SkSurfaceProps;
 
 class SK_API GrContext : public SkRefCnt {
 public:
@@ -60,7 +60,7 @@ public:
 
     virtual ~GrContext();
 
-    GrContextThreadSafeProxy* threadSafeProxy();
+    sk_sp<GrContextThreadSafeProxy> threadSafeProxy();
 
     
 
@@ -148,9 +148,6 @@ public:
 
     void setResourceCacheLimits(int maxResources, size_t maxResourceBytes);
 
-    GrTextureProvider* textureProvider() { return fTextureProvider; }
-    const GrTextureProvider* textureProvider() const { return fTextureProvider; }
-
     
 
 
@@ -163,6 +160,12 @@ public:
 
 
     void purgeAllUnlockedResources();
+
+    
+
+
+
+    void purgeResourcesNotUsedInMs(std::chrono::milliseconds ms);
 
     
     const GrCaps* caps() const { return fCaps; }
@@ -185,28 +188,52 @@ public:
 
 
 
-    sk_sp<GrDrawContext> makeDrawContext(SkBackingFit fit, 
-                                         int width, int height,
-                                         GrPixelConfig config,
-                                         sk_sp<SkColorSpace> colorSpace,
-                                         int sampleCnt = 0,
-                                         GrSurfaceOrigin origin = kDefault_GrSurfaceOrigin,
-                                         const SkSurfaceProps* surfaceProps = nullptr,
-                                         SkBudgeted = SkBudgeted::kYes);
+    sk_sp<GrRenderTargetContext> makeRenderTargetContext(
+                                                 SkBackingFit fit,
+                                                 int width, int height,
+                                                 GrPixelConfig config,
+                                                 sk_sp<SkColorSpace> colorSpace,
+                                                 int sampleCnt = 0,
+                                                 GrSurfaceOrigin origin = kBottomLeft_GrSurfaceOrigin,
+                                                 const SkSurfaceProps* surfaceProps = nullptr,
+                                                 SkBudgeted = SkBudgeted::kYes);
 
+    
+    
+    sk_sp<GrRenderTargetContext> makeDeferredRenderTargetContext(
+                                                 SkBackingFit fit, 
+                                                 int width, int height,
+                                                 GrPixelConfig config,
+                                                 sk_sp<SkColorSpace> colorSpace,
+                                                 int sampleCnt = 0,
+                                                 GrSurfaceOrigin origin = kBottomLeft_GrSurfaceOrigin,
+                                                 const SkSurfaceProps* surfaceProps = nullptr,
+                                                 SkBudgeted = SkBudgeted::kYes);
     
 
 
 
 
 
-    sk_sp<GrDrawContext> makeDrawContextWithFallback(
+    sk_sp<GrRenderTargetContext> makeRenderTargetContextWithFallback(
                                                  SkBackingFit fit,
                                                  int width, int height,
                                                  GrPixelConfig config,
                                                  sk_sp<SkColorSpace> colorSpace,
                                                  int sampleCnt = 0,
-                                                 GrSurfaceOrigin origin = kDefault_GrSurfaceOrigin,
+                                                 GrSurfaceOrigin origin = kBottomLeft_GrSurfaceOrigin,
+                                                 const SkSurfaceProps* surfaceProps = nullptr,
+                                                 SkBudgeted budgeted = SkBudgeted::kYes);
+
+    
+    
+    sk_sp<GrRenderTargetContext> makeDeferredRenderTargetContextWithFallback(
+                                                 SkBackingFit fit,
+                                                 int width, int height,
+                                                 GrPixelConfig config,
+                                                 sk_sp<SkColorSpace> colorSpace,
+                                                 int sampleCnt = 0,
+                                                 GrSurfaceOrigin origin = kBottomLeft_GrSurfaceOrigin,
                                                  const SkSurfaceProps* surfaceProps = nullptr,
                                                  SkBudgeted budgeted = SkBudgeted::kYes);
 
@@ -219,104 +246,6 @@ public:
 
     void flush();
 
-   
-
-
-    enum PixelOpsFlags {
-        
-
-        kDontFlush_PixelOpsFlag = 0x1,
-        
-
-        kFlushWrites_PixelOp = 0x2,
-        
-
-        kUnpremul_PixelOpsFlag  = 0x4,
-    };
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    bool readSurfacePixels(GrSurface* surface,
-                           int left, int top, int width, int height,
-                           GrPixelConfig config, void* buffer,
-                           size_t rowBytes = 0,
-                           uint32_t pixelOpsFlags = 0);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    bool writeSurfacePixels(GrSurface* surface,
-                            int left, int top, int width, int height,
-                            GrPixelConfig config, const void* buffer,
-                            size_t rowBytes,
-                            uint32_t pixelOpsFlags = 0);
-
-    
-
-
-
-
-
-
-    bool copySurface(GrSurface* dst,
-                     GrSurface* src,
-                     const SkIRect& srcRect,
-                     const SkIPoint& dstPoint);
-
-    
-
-    bool copySurface(GrSurface* dst, GrSurface* src) {
-        return this->copySurface(dst, src, SkIRect::MakeWH(dst->width(), dst->height()),
-                                 SkIPoint::Make(0,0));
-    }
-
-    
-
-
-    void flushSurfaceWrites(GrSurface* surface);
-
-    
-
-
-
-    void flushSurfaceIO(GrSurface* surface);
-
-    
-
-
-
-
-
-
-
-    void prepareSurfaceForExternalIO(GrSurface*);
-
     
 
 
@@ -326,15 +255,12 @@ public:
     
     GrGpu* getGpu() { return fGpu; }
     const GrGpu* getGpu() const { return fGpu; }
-    GrBatchFontCache* getBatchFontCache() { return fBatchFontCache; }
-    GrTextBlobCache* getTextBlobCache() { return fTextBlobCache; }
+    GrAtlasGlyphCache* getAtlasGlyphCache() { return fAtlasGlyphCache; }
+    GrTextBlobCache* getTextBlobCache() { return fTextBlobCache.get(); }
     bool abandoned() const;
     GrResourceProvider* resourceProvider() { return fResourceProvider; }
     const GrResourceProvider* resourceProvider() const { return fResourceProvider; }
     GrResourceCache* getResourceCache() { return fResourceCache; }
-
-    
-    void getTestTarget(GrTestTarget*, sk_sp<GrDrawContext>);
 
     
     void resetGpuStats() const ;
@@ -355,13 +281,15 @@ public:
 
     
 
-    void setTextContextAtlasSizes_ForTesting(const GrBatchAtlasConfig* configs);
+    void setTextContextAtlasSizes_ForTesting(const GrDrawOpAtlasConfig* configs);
 
     
     void dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump) const;
 
     
-    GrTexture* getFontAtlasTexture(GrMaskFormat format);
+
+
+    sk_sp<SkImage> getFontAtlasImage_ForTesting(GrMaskFormat format);
 
     GrAuditTrail* getAuditTrail() { return &fAuditTrail; }
 
@@ -376,33 +304,17 @@ private:
     GrGpu*                                  fGpu;
     const GrCaps*                           fCaps;
     GrResourceCache*                        fResourceCache;
-    
-    
-    union {
-        GrResourceProvider*                 fResourceProvider;
-        GrTextureProvider*                  fTextureProvider;
-    };
+    GrResourceProvider*                     fResourceProvider;
 
-    SkAutoTUnref<GrContextThreadSafeProxy>  fThreadSafeProxy;
+    sk_sp<GrContextThreadSafeProxy>         fThreadSafeProxy;
 
-    GrBatchFontCache*                       fBatchFontCache;
-    SkAutoTDelete<GrTextBlobCache>          fTextBlobCache;
+    GrAtlasGlyphCache*                      fAtlasGlyphCache;
+    std::unique_ptr<GrTextBlobCache>        fTextBlobCache;
 
+    bool                                    fDisableGpuYUVConversion;
     bool                                    fDidTestPMConversions;
     int                                     fPMToUPMConversion;
     int                                     fUPMToPMConversion;
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    SkMutex                                 fReadPixelsMutex;
-    SkMutex                                 fTestPMConversionsMutex;
 
     
     
@@ -418,7 +330,7 @@ private:
 
     const uint32_t                          fUniqueID;
 
-    SkAutoTDelete<GrDrawingManager>         fDrawingManager;
+    std::unique_ptr<GrDrawingManager>       fDrawingManager;
 
     GrAuditTrail                            fAuditTrail;
 
@@ -436,17 +348,14 @@ private:
 
 
 
-    sk_sp<GrFragmentProcessor> createPMToUPMEffect(GrTexture*, const GrSwizzle&,
-                                                   const SkMatrix&) const;
-    sk_sp<GrFragmentProcessor> createUPMToPMEffect(GrTexture*, const GrSwizzle&,
-                                                   const SkMatrix&) const;
+    sk_sp<GrFragmentProcessor> createPMToUPMEffect(sk_sp<GrFragmentProcessor>, GrPixelConfig);
+    sk_sp<GrFragmentProcessor> createUPMToPMEffect(sk_sp<GrFragmentProcessor>, GrPixelConfig);
     
-
 
     void testPMConversionsIfNecessary(uint32_t flags);
     
 
-    bool didFailPMUPMConversionTest() const;
+    bool validPMUPMConversionExists(GrPixelConfig) const;
 
     
 
@@ -463,12 +372,12 @@ private:
 
 class GrContextThreadSafeProxy : public SkRefCnt {
 private:
-    GrContextThreadSafeProxy(const GrCaps* caps, uint32_t uniqueID)
-        : fCaps(SkRef(caps))
+    GrContextThreadSafeProxy(sk_sp<const GrCaps> caps, uint32_t uniqueID)
+        : fCaps(std::move(caps))
         , fContextUniqueID(uniqueID) {}
 
-    SkAutoTUnref<const GrCaps>  fCaps;
-    uint32_t                    fContextUniqueID;
+    sk_sp<const GrCaps> fCaps;
+    uint32_t            fContextUniqueID;
 
     friend class GrContext;
     friend class SkImage;

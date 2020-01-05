@@ -104,7 +104,9 @@ namespace GrPathUtils {
     
     
     
-    void getConicKLM(const SkPoint p[3], const SkScalar weight, SkScalar klm[9]);
+    
+    
+    void getConicKLM(const SkPoint p[3], const SkScalar weight, SkMatrix* klm);
 
     
     
@@ -154,21 +156,12 @@ namespace GrPathUtils {
     
     
     
+    
+    
+    
+    
     int chopCubicAtLoopIntersection(const SkPoint src[4], SkPoint dst[10] = nullptr,
-                                    SkScalar klm[9] = nullptr, SkScalar klm_rev[3] = nullptr);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    void getCubicKLM(const SkPoint p[4], SkScalar klm[9]);
+                                    SkMatrix* klm = nullptr, int* loopIndex = nullptr);
 
     
     

@@ -9,7 +9,9 @@
 #define GrGpuCommandBuffer_DEFINED
 
 #include "GrColor.h"
+#include "ops/GrDrawOp.h"
 
+class GrOpFlushState;
 class GrFixedClip;
 class GrGpu;
 class GrMesh;
@@ -17,6 +19,13 @@ class GrPipeline;
 class GrPrimitiveProcessor;
 class GrRenderTarget;
 struct SkIRect;
+struct SkRect;
+
+
+
+
+
+
 
 
 
@@ -51,8 +60,7 @@ public:
 
     
     
-    
-    void submit(const SkIRect& bounds);
+    void submit();
 
     
     
@@ -61,36 +69,44 @@ public:
     bool draw(const GrPipeline&,
               const GrPrimitiveProcessor&,
               const GrMesh*,
-              int meshCount);
+              int meshCount,
+              const SkRect& bounds);
+
+    
+    virtual void inlineUpload(GrOpFlushState* state, GrDrawOp::DeferredUploadFn& upload,
+                              GrRenderTarget* rt) = 0;
 
     
 
 
-    void clear(const GrFixedClip&, GrColor, GrRenderTarget*);
+    void clear(GrRenderTarget*, const GrFixedClip&, GrColor);
 
-    void clearStencilClip(const GrFixedClip&, bool insideStencilMask, GrRenderTarget*);
-    
-
-
+    void clearStencilClip(GrRenderTarget*, const GrFixedClip&, bool insideStencilMask);
 
     
-    virtual void discard(GrRenderTarget* = nullptr) = 0;
+
+
+
+    
+    virtual void discard(GrRenderTarget*) = 0;
 
 private:
     virtual GrGpu* gpu() = 0;
-    virtual void onSubmit(const SkIRect& bounds) = 0;
+    virtual GrRenderTarget* renderTarget() = 0;
+
+    virtual void onSubmit() = 0;
 
     
     virtual void onDraw(const GrPipeline&,
                         const GrPrimitiveProcessor&,
                         const GrMesh*,
-                        int meshCount) = 0;
+                        int meshCount,
+                        const SkRect& bounds) = 0;
 
     
     virtual void onClear(GrRenderTarget*, const GrFixedClip&, GrColor) = 0;
 
-    virtual void onClearStencilClip(GrRenderTarget*,
-                                    const GrFixedClip&,
+    virtual void onClearStencilClip(GrRenderTarget*, const GrFixedClip&,
                                     bool insideStencilMask) = 0;
 
 };

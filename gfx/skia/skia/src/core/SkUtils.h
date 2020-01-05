@@ -9,39 +9,16 @@
 #define SkUtils_DEFINED
 
 #include "SkTypes.h"
+#include "SkMath.h"
 
 
 
 
 
 
-static inline void sk_memset16(uint16_t buffer[], uint16_t value, int count) {
-    for (int i = 0; i < count; i++) {
-        buffer[i] = value;
-    }
-}
-
-
-
-
-
-
-static inline void sk_memset32(uint32_t buffer[], uint32_t value, int count) {
-    for (int i = 0; i < count; i++) {
-        buffer[i] = value;
-    }
-}
-
-
-
-
-
-
-static inline void sk_memset64(uint64_t buffer[], uint64_t value, int count) {
-    for (int i = 0; i < count; i++) {
-        buffer[i] = value;
-    }
-}
+void sk_memset16(uint16_t buffer[], uint16_t value, int count);
+void sk_memset32(uint32_t buffer[], uint32_t value, int count);
+void sk_memset64(uint64_t buffer[], uint64_t value, int count);
 
 
 #define kMaxBytesInUTF8Sequence     4
@@ -58,7 +35,31 @@ inline int SkUTF8_CountUTF8Bytes(const char utf8[]) {
 }
 
 int         SkUTF8_CountUnichars(const char utf8[]);
-int         SkUTF8_CountUnichars(const char utf8[], size_t byteLength);
+
+
+int         SkUTF8_CountUnicharsWithError(const char utf8[], size_t byteLength);
+
+
+inline int  SkUTF8_CountUnichars(const char utf8[], size_t byteLength) {
+    return SkClampPos(SkUTF8_CountUnicharsWithError(utf8, byteLength));
+}
+
+
+
+
+
+SkUnichar SkUTF8_NextUnicharWithError(const char** ptr, const char* end);
+
+
+inline SkUnichar SkUTF8_NextUnichar(const char** ptr, const char* end) {
+    SkUnichar val = SkUTF8_NextUnicharWithError(ptr, end);
+    if (val < 0) {
+        *ptr = end;
+        return 0xFFFD;  
+    }
+    return val;
+}
+
 SkUnichar   SkUTF8_ToUnichar(const char utf8[]);
 SkUnichar   SkUTF8_NextUnichar(const char**);
 SkUnichar   SkUTF8_PrevUnichar(const char**);
@@ -99,5 +100,4 @@ inline bool SkUnichar_IsVariationSelector(SkUnichar uni) {
     }
     return true;
 }
-
 #endif

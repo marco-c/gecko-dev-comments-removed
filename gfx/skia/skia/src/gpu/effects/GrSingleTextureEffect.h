@@ -11,10 +11,10 @@
 #include "GrFragmentProcessor.h"
 #include "GrColorSpaceXform.h"
 #include "GrCoordTransform.h"
-#include "GrInvariantOutput.h"
 #include "SkMatrix.h"
 
 class GrTexture;
+class GrTextureProxy;
 
 
 
@@ -22,11 +22,9 @@ class GrTexture;
 
 class GrSingleTextureEffect : public GrFragmentProcessor {
 public:
-    ~GrSingleTextureEffect() override;
-
     SkString dumpInfo() const override {
         SkString str;
-        str.appendf("Texture: %d", fTextureAccess.getTexture()->uniqueID());
+        str.appendf("Texture: %d", fTextureSampler.texture()->uniqueID().asUInt());
         return str;
     }
 
@@ -34,33 +32,33 @@ public:
 
 protected:
     
-    GrSingleTextureEffect(GrTexture*, sk_sp<GrColorSpaceXform>, const SkMatrix&);
+    GrSingleTextureEffect(GrResourceProvider*, OptimizationFlags, sk_sp<GrTextureProxy>,
+                          sk_sp<GrColorSpaceXform>, const SkMatrix&);
     
-    GrSingleTextureEffect(GrTexture*, sk_sp<GrColorSpaceXform>, const SkMatrix&,
-                          GrTextureParams::FilterMode filterMode);
-    GrSingleTextureEffect(GrTexture*,
-                          sk_sp<GrColorSpaceXform>,
-                          const SkMatrix&,
-                          const GrTextureParams&);
+    GrSingleTextureEffect(GrResourceProvider*, OptimizationFlags, sk_sp<GrTextureProxy>,
+                          sk_sp<GrColorSpaceXform>, const SkMatrix&,
+                          GrSamplerParams::FilterMode filterMode);
+    GrSingleTextureEffect(GrResourceProvider*, OptimizationFlags, sk_sp<GrTextureProxy>,
+                          sk_sp<GrColorSpaceXform>, const SkMatrix&, const GrSamplerParams&);
 
     
 
 
 
 
-    void updateInvariantOutputForModulation(GrInvariantOutput* inout) const {
-        if (GrPixelConfigIsAlphaOnly(this->texture(0)->config())) {
-            inout->mulByUnknownSingleComponent();
-        } else if (GrPixelConfigIsOpaque(this->texture(0)->config())) {
-            inout->mulByUnknownOpaqueFourComponents();
+
+    static OptimizationFlags ModulationFlags(GrPixelConfig config) {
+        if (GrPixelConfigIsOpaque(config)) {
+            return kCompatibleWithCoverageAsAlpha_OptimizationFlag |
+                   kPreservesOpaqueInput_OptimizationFlag;
         } else {
-            inout->mulByUnknownFourComponents();
+            return kCompatibleWithCoverageAsAlpha_OptimizationFlag;
         }
     }
 
 private:
     GrCoordTransform fCoordTransform;
-    GrTextureAccess  fTextureAccess;
+    TextureSampler fTextureSampler;
     sk_sp<GrColorSpaceXform> fColorSpaceXform;
 
     typedef GrFragmentProcessor INHERITED;

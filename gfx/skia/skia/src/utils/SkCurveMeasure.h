@@ -37,8 +37,8 @@ private:
     SkSegType fSegType;
 
     
-    Sk8f xCoeff[3];
-    Sk8f yCoeff[3];
+    float xCoeff[3][8];
+    float yCoeff[3][8];
 };
 
 class SkCurveMeasure {

@@ -83,12 +83,24 @@ public:
         virtual size_t bytesUsed() const = 0;
 
         
-        virtual const char* getCategory() const = 0;
-        virtual SkDiscardableMemory* diagnostic_only_getDiscardable() const { return nullptr; }
+        
+        
+        virtual bool canBePurged() { return true; }
 
         
-        static uint32_t Hash(const Key& key) { return key.hash(); }
-        static const Key& GetKey(const Rec& rec) { return rec.getKey(); }
+        
+        
+        
+        
+        
+        
+        
+        
+        virtual void postAddInstall(void*) {}
+
+        
+        virtual const char* getCategory() const = 0;
+        virtual SkDiscardableMemory* diagnostic_only_getDiscardable() const { return nullptr; }
 
     private:
         Rec*    fNext;
@@ -139,7 +151,7 @@ public:
 
 
     static bool Find(const Key& key, FindVisitor, void* context);
-    static void Add(Rec*);
+    static void Add(Rec*, void* payload = nullptr);
 
     typedef void (*Visitor)(const Rec&, void* context);
     
@@ -166,12 +178,6 @@ public:
 
 
     static DiscardableFactory GetDiscardableFactory();
-
-    
-
-
-
-    static SkBitmap::Allocator* GetAllocator();
 
     static SkCachedData* NewCachedData(size_t bytes);
 
@@ -212,7 +218,7 @@ public:
 
 
     bool find(const Key&, FindVisitor, void* context);
-    void add(Rec*);
+    void add(Rec*, void* payload = nullptr);
     void visitAll(Visitor, void* context);
 
     size_t getTotalBytesUsed() const { return fTotalBytesUsed; }
@@ -243,7 +249,6 @@ public:
     }
 
     DiscardableFactory discardableFactory() const { return fDiscardableFactory; }
-    SkBitmap::Allocator* allocator() const { return fAllocator; }
 
     SkCachedData* newCachedData(size_t bytes);
 
@@ -260,8 +265,6 @@ private:
     Hash*   fHash;
 
     DiscardableFactory  fDiscardableFactory;
-    
-    SkBitmap::Allocator* fAllocator;
 
     size_t  fTotalBytesUsed;
     size_t  fTotalByteLimit;

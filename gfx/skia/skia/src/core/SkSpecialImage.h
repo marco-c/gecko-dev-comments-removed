@@ -16,7 +16,9 @@
 #include "SkImageInfo.h"   
 
 class GrContext;
+class GrSurfaceProxy;
 class GrTexture;
+class GrTextureProxy;
 class SkBitmap;
 class SkCanvas;
 class SkImage;
@@ -71,17 +73,19 @@ public:
 
     static sk_sp<SkSpecialImage> MakeFromImage(const SkIRect& subset,
                                                sk_sp<SkImage>,
+                                               SkColorSpace* dstColorSpace,
                                                const SkSurfaceProps* = nullptr);
     static sk_sp<SkSpecialImage> MakeFromRaster(const SkIRect& subset,
                                                 const SkBitmap&,
                                                 const SkSurfaceProps* = nullptr);
 #if SK_SUPPORT_GPU
-    static sk_sp<SkSpecialImage> MakeFromGpu(const SkIRect& subset,
-                                             uint32_t uniqueID,
-                                             sk_sp<GrTexture>,
-                                             sk_sp<SkColorSpace>,
-                                             const SkSurfaceProps* = nullptr,
-                                             SkAlphaType at = kPremul_SkAlphaType);
+    static sk_sp<SkSpecialImage> MakeDeferredFromGpu(GrContext*,
+                                                     const SkIRect& subset,
+                                                     uint32_t uniqueID,
+                                                     sk_sp<GrTextureProxy>,
+                                                     sk_sp<SkColorSpace>,
+                                                     const SkSurfaceProps* = nullptr,
+                                                     SkAlphaType at = kPremul_SkAlphaType);
 #endif
 
     
@@ -110,7 +114,10 @@ public:
 
 
 
-    sk_sp<SkImage> makeTightSubset(const SkIRect& subset) const;
+
+
+
+    sk_sp<SkImage> asImage(const SkIRect* subset = nullptr) const;
 
     
     
@@ -128,7 +135,7 @@ public:
 
 
 
-    sk_sp<GrTexture> asTextureRef(GrContext*) const;
+    sk_sp<GrTextureProxy> asTextureProxyRef(GrContext*) const;
 #endif
 
     

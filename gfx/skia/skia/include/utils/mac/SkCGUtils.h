@@ -10,6 +10,7 @@
 
 #include "SkSize.h"
 #include "SkImageInfo.h"
+#include "SkImage.h"
 
 #if defined(SK_BUILD_FOR_MAC) || defined(SK_BUILD_FOR_IOS)
 
@@ -23,8 +24,10 @@
 
 class SkBitmap;
 class SkData;
+class SkPixmap;
 class SkStreamRewindable;
 
+SK_API CGContextRef SkCreateCGContext(const SkPixmap&);
 
 
 
@@ -32,7 +35,10 @@ class SkStreamRewindable;
 
 
 
-SK_API bool SkCreateBitmapFromCGImage(SkBitmap* dst, CGImageRef src, SkISize* scaleToFit = NULL);
+
+SK_API bool SkCreateBitmapFromCGImage(SkBitmap* dst, CGImageRef src);
+
+SK_API sk_sp<SkImage> SkMakeImageFromCGImage(CGImageRef);
 
 
 

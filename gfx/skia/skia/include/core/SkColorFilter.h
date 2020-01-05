@@ -8,14 +8,16 @@
 #ifndef SkColorFilter_DEFINED
 #define SkColorFilter_DEFINED
 
+#include "SkBlendMode.h"
 #include "SkColor.h"
 #include "SkFlattenable.h"
 #include "SkRefCnt.h"
-#include "SkXfermode.h"
 
 class GrContext;
 class GrFragmentProcessor;
+class SkArenaAlloc;
 class SkBitmap;
+class SkColorSpace;
 class SkRasterPipeline;
 
 
@@ -33,7 +35,7 @@ public:
 
 
 
-    virtual bool asColorMode(SkColor* color, SkXfermode::Mode* mode) const;
+    virtual bool asColorMode(SkColor* color, SkBlendMode* bmode) const;
 
     
 
@@ -71,7 +73,8 @@ public:
 
     virtual void filterSpan4f(const SkPM4f src[], int count, SkPM4f result[]) const;
 
-    bool appendStages(SkRasterPipeline*) const;
+    bool appendStages(SkRasterPipeline*, SkColorSpace*, SkArenaAlloc*,
+                      bool shaderIsOpaque) const;
 
     enum Flags {
         
@@ -114,10 +117,7 @@ public:
 
 
 
-    static sk_sp<SkColorFilter> MakeModeFilter(SkColor c, SkXfermode::Mode mode);
-    static sk_sp<SkColorFilter> MakeModeFilter(SkColor c, SkBlendMode mode) {
-        return MakeModeFilter(c, (SkXfermode::Mode)mode);
-    }
+    static sk_sp<SkColorFilter> MakeModeFilter(SkColor c, SkBlendMode mode);
 
     
 
@@ -134,21 +134,6 @@ public:
 
     static sk_sp<SkColorFilter> MakeMatrixFilterRowMajor255(const SkScalar array[20]);
 
-#ifdef SK_SUPPORT_LEGACY_COLORFILTER_PTR
-    static SkColorFilter* CreateModeFilter(SkColor c, SkXfermode::Mode mode) {
-        return MakeModeFilter(c, mode).release();
-    }
-    static SkColorFilter* CreateComposeFilter(SkColorFilter* outer, SkColorFilter* inner) {
-        return MakeComposeFilter(sk_ref_sp(outer), sk_ref_sp(inner)).release();
-    }
-    static SkColorFilter* CreateMatrixFilterRowMajor255(const SkScalar array[20]) {
-        return MakeMatrixFilterRowMajor255(array).release();
-    }
-    virtual SkColorFilter* newComposed(const SkColorFilter* inner) const {
-        return this->makeComposed(sk_ref_sp(const_cast<SkColorFilter*>(inner))).release();
-    }
-#endif
-
 #if SK_SUPPORT_GPU
     
 
@@ -159,7 +144,8 @@ public:
 
 
 
-    virtual sk_sp<GrFragmentProcessor> asFragmentProcessor(GrContext*) const;
+    virtual sk_sp<GrFragmentProcessor> asFragmentProcessor(GrContext*,
+                                                           SkColorSpace* dstColorSpace) const;
 #endif
 
     bool affectsTransparentBlack() const {
@@ -174,7 +160,8 @@ public:
 protected:
     SkColorFilter() {}
 
-    virtual bool onAppendStages(SkRasterPipeline*) const;
+    virtual bool onAppendStages(SkRasterPipeline*, SkColorSpace*, SkArenaAlloc*,
+                                bool shaderIsOpaque) const;
 
 private:
     

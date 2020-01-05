@@ -8,8 +8,8 @@
 #ifndef GrGLSLFragmentShaderBuilder_DEFINED
 #define GrGLSLFragmentShaderBuilder_DEFINED
 
+#include "GrBlend.h"
 #include "GrGLSLShaderBuilder.h"
-
 #include "GrProcessor.h"
 
 class GrRenderTarget;
@@ -29,8 +29,6 @@ public:
 
 
     enum GLSLFeature {
-        kStandardDerivatives_GLSLFeature = kLastGLSLPrivateFeature + 1,
-        kPixelLocalStorage_GLSLFeature,
         kMultisampleInterpolation_GLSLFeature
     };
 
@@ -47,11 +45,6 @@ public:
 
 
     virtual SkString ensureCoords2D(const GrShaderVar&) = 0;
-
-
-    
-
-    virtual const char* fragmentPosition() = 0;
 
     
     void declAppendf(const char* fmt, ...);
@@ -99,6 +92,13 @@ public:
     
 
     virtual const char* distanceVectorName() const = 0;
+
+    
+
+
+
+
+    virtual void elevateDefaultPrecision(GrSLPrecision) = 0;
 
     
 
@@ -168,13 +168,13 @@ public:
     
     bool enableFeature(GLSLFeature) override;
     virtual SkString ensureCoords2D(const GrShaderVar&) override;
-    const char* fragmentPosition() override;
     const char* distanceVectorName() const override;
 
     
     void appendOffsetToSample(const char* sampleIdx, Coordinates) override;
     void maskSampleCoverage(const char* mask, bool invert = false) override;
     void overrideSampleCoverage(const char* mask) override;
+    void elevateDefaultPrecision(GrSLPrecision) override;
     const SkString& getMangleString() const override { return fMangleString; }
     void onBeforeChildProcEmitCode() override;
     void onAfterChildProcEmitCode() override;
@@ -203,7 +203,7 @@ private:
     }
 #endif
 
-    static const char* DeclaredColorOutputName() { return "fsColorOut"; }
+    static const char* DeclaredColorOutputName() { return "sk_FragColor"; }
     static const char* DeclaredSecondaryColorOutputName() { return "fsSecondaryColorOut"; }
 
     GrSurfaceOrigin getSurfaceOrigin() const;
@@ -233,13 +233,14 @@ private:
 
     SkString fMangleString;
 
-    bool       fSetupFragPosition;
-    bool       fHasCustomColorOutput;
-    int        fCustomColorOutputIndex;
-    bool       fHasSecondaryOutput;
-    uint8_t    fUsedSampleOffsetArrays;
-    bool       fHasInitializedSampleMask;
-    SkString   fDistanceVectorOutput;
+    bool          fSetupFragPosition;
+    bool          fHasCustomColorOutput;
+    int           fCustomColorOutputIndex;
+    bool          fHasSecondaryOutput;
+    uint8_t       fUsedSampleOffsetArrays;
+    bool          fHasInitializedSampleMask;
+    SkString      fDistanceVectorOutput;
+    GrSLPrecision fDefaultPrecision;
 
 #ifdef SK_DEBUG
     

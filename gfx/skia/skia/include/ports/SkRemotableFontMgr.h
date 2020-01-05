@@ -62,15 +62,6 @@ public:
 
 
 
-    virtual sk_sp<SkDataTable> getFamilyNames() const = 0;
-
-    
-
-
-
-
-
-
     virtual SkRemotableFontIdentitySet* getIndex(int familyIndex) const = 0;
 
     

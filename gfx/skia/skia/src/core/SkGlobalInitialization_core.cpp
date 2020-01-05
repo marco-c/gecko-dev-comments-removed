@@ -19,7 +19,6 @@
 #include "SkPathEffect.h"
 #include "SkPictureShader.h"
 #include "SkRecordedDrawable.h"
-#include "SkXfermode.h"
 
 
 
@@ -37,18 +36,13 @@ void SkFlattenable::PrivateInitializer::InitCore() {
     SK_DEFINE_FLATTENABLE_REGISTRAR_ENTRY(SkLocalMatrixShader)
     SK_DEFINE_FLATTENABLE_REGISTRAR_ENTRY(SkPictureShader)
 
-    
-    SK_DEFINE_FLATTENABLE_REGISTRAR_ENTRY(SkComposePathEffect)
 
     
     SK_DEFINE_FLATTENABLE_REGISTRAR_ENTRY(SkMatrixImageFilter)
 
-    
     SkColorFilter::InitializeFlattenables();
-
+    SkPathEffect::InitializeFlattenables();
     SkShader::InitializeFlattenables();
-
-    
     SkXfermode::InitializeFlattenables();
 
     

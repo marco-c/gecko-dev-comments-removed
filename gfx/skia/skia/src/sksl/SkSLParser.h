@@ -4,13 +4,13 @@
 
 
 
- 
+
 #ifndef SKSL_PARSER
 #define SKSL_PARSER
 
-#include <string>
 #include <vector>
 #include <memory>
+#include <unordered_map>
 #include <unordered_set>
 #include "SkSLErrorReporter.h"
 #include "SkSLToken.h"
@@ -32,15 +32,18 @@ struct ASTExpressionStatement;
 struct ASTForStatement;
 struct ASTIfStatement;
 struct ASTInterfaceBlock;
-struct ASTLayout;
-struct ASTModifiers;
 struct ASTParameter;
+struct ASTPrecision;
 struct ASTReturnStatement;
 struct ASTStatement;
 struct ASTSuffix;
+struct ASTSwitchCase;
+struct ASTSwitchStatement;
 struct ASTType;
 struct ASTWhileStatement;
 struct ASTVarDeclarations;
+struct Layout;
+struct Modifiers;
 class SymbolTable;
 
 
@@ -48,7 +51,7 @@ class SymbolTable;
 
 class Parser {
 public:
-    Parser(std::string text, SymbolTable& types, ErrorReporter& errors);
+    Parser(String text, SymbolTable& types, ErrorReporter& errors);
 
     ~Parser();
 
@@ -86,21 +89,23 @@ private:
 
 
 
-    bool expect(Token::Kind kind, std::string expected, Token* result = nullptr);
+    bool expect(Token::Kind kind, const char* expected, Token* result = nullptr);
+    bool expect(Token::Kind kind, String expected, Token* result = nullptr);
 
-    void error(Position p, std::string msg);
-    
-    
-
-
-
-    bool isType(std::string name);
+    void error(Position p, const char* msg);
+    void error(Position p, String msg);
 
     
+
+
+
+    bool isType(String name);
+
+    
     
     
 
-    void precision();
+    std::unique_ptr<ASTDeclaration> precision();
 
     std::unique_ptr<ASTDeclaration> directive();
 
@@ -110,27 +115,27 @@ private:
 
     std::unique_ptr<ASTType> structDeclaration();
 
-    std::unique_ptr<ASTVarDeclarations> structVarDeclaration(ASTModifiers modifiers);
+    std::unique_ptr<ASTVarDeclarations> structVarDeclaration(Modifiers modifiers);
 
-    std::unique_ptr<ASTVarDeclarations> varDeclarationEnd(ASTModifiers modifiers,
-                                                          std::unique_ptr<ASTType> type, 
-                                                          std::string name);
+    std::unique_ptr<ASTVarDeclarations> varDeclarationEnd(Modifiers modifiers,
+                                                          std::unique_ptr<ASTType> type,
+                                                          String name);
 
     std::unique_ptr<ASTParameter> parameter();
 
     int layoutInt();
-    
-    ASTLayout layout();
 
-    ASTModifiers modifiers();
+    Layout layout();
 
-    ASTModifiers modifiersWithDefaults(int defaultFlags);
+    Modifiers modifiers();
+
+    Modifiers modifiersWithDefaults(int defaultFlags);
 
     std::unique_ptr<ASTStatement> statement();
 
     std::unique_ptr<ASTType> type();
 
-    std::unique_ptr<ASTDeclaration> interfaceBlock(ASTModifiers mods);
+    std::unique_ptr<ASTDeclaration> interfaceBlock(Modifiers mods);
 
     std::unique_ptr<ASTIfStatement> ifStatement();
 
@@ -139,6 +144,10 @@ private:
     std::unique_ptr<ASTWhileStatement> whileStatement();
 
     std::unique_ptr<ASTForStatement> forStatement();
+
+    std::unique_ptr<ASTSwitchCase> switchCase();
+
+    std::unique_ptr<ASTStatement> switchStatement();
 
     std::unique_ptr<ASTReturnStatement> returnStatement();
 
@@ -155,7 +164,7 @@ private:
     std::unique_ptr<ASTExpression> expression();
 
     std::unique_ptr<ASTExpression> assignmentExpression();
-    
+
     std::unique_ptr<ASTExpression> ternaryExpression();
 
     std::unique_ptr<ASTExpression> logicalOrExpression();
@@ -194,14 +203,19 @@ private:
 
     bool boolLiteral(bool* dest);
 
-    bool identifier(std::string* dest);
-
+    bool identifier(String* dest);
 
     void* fScanner;
+    void* fLayoutScanner;
     YY_BUFFER_STATE fBuffer;
+    
+    
+    int fDepth = 0;
     Token fPushback;
     SymbolTable& fTypes;
     ErrorReporter& fErrors;
+
+    friend class AutoDepth;
 };
 
 } 

@@ -50,16 +50,14 @@ public:
 
 
 
-
-    static sk_sp<GrFragmentProcessor> Make(GrPrimitiveEdgeType, const SkPath&,
-                                           const SkVector* offset = nullptr);
+    static sk_sp<GrFragmentProcessor> Make(GrPrimitiveEdgeType, const SkPath&);
 
     
 
 
     static sk_sp<GrFragmentProcessor> Make(GrPrimitiveEdgeType, const SkRect&);
 
-    virtual ~GrConvexPolyEffect();
+    ~GrConvexPolyEffect() override;
 
     const char* name() const override { return "ConvexPoly"; }
 
@@ -74,11 +72,9 @@ private:
 
     GrGLSLFragmentProcessor* onCreateGLSLInstance() const override;
 
-    void onGetGLSLProcessorKey(const GrGLSLCaps&, GrProcessorKeyBuilder*) const override;
+    void onGetGLSLProcessorKey(const GrShaderCaps&, GrProcessorKeyBuilder*) const override;
 
     bool onIsEqual(const GrFragmentProcessor& other) const override;
-
-    void onComputeInvariantOutput(GrInvariantOutput* inout) const override;
 
     GrPrimitiveEdgeType    fEdgeType;
     int                    fEdgeCount;

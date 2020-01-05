@@ -4,12 +4,14 @@
 
 
 
+#ifndef SkPngCodec_DEFINED
+#define SkPngCodec_DEFINED
 
 #include "SkCodec.h"
 #include "SkColorSpaceXform.h"
 #include "SkColorTable.h"
 #include "SkPngChunkReader.h"
-#include "SkEncodedFormat.h"
+#include "SkEncodedImageFormat.h"
 #include "SkImageInfo.h"
 #include "SkRefCnt.h"
 #include "SkSwizzler.h"
@@ -30,7 +32,7 @@ public:
     
     static SkCodec* NewFromStream(SkStream*, SkPngChunkReader* = NULL);
 
-    virtual ~SkPngCodec();
+    ~SkPngCodec() override;
 
 protected:
     
@@ -51,7 +53,7 @@ protected:
 
     Result onGetPixels(const SkImageInfo&, void*, size_t, const Options&, SkPMColor*, int*, int*)
             override;
-    SkEncodedFormat onGetEncodedFormat() const override { return kPNG_SkEncodedFormat; }
+    SkEncodedImageFormat onGetEncodedFormat() const override { return SkEncodedImageFormat::kPNG; }
     bool onRewind() override;
     uint64_t onGetFillValue(const SkImageInfo&) const override;
 
@@ -61,7 +63,7 @@ protected:
     voidp png_ptr() { return fPng_ptr; }
     voidp info_ptr() { return fInfo_ptr; }
 
-    SkSwizzler* swizzler() { return fSwizzler; }
+    SkSwizzler* swizzler() { return fSwizzler.get(); }
 
     
     void initializeXformParams();
@@ -91,17 +93,16 @@ protected:
             SkPMColor* ctable, int* ctableCount) override;
     Result onIncrementalDecode(int*) override;
 
-    SkAutoTUnref<SkPngChunkReader> fPngChunkReader;
-    voidp                          fPng_ptr;
-    voidp                          fInfo_ptr;
+    sk_sp<SkPngChunkReader>     fPngChunkReader;
+    voidp                       fPng_ptr;
+    voidp                       fInfo_ptr;
 
     
-    SkAutoTUnref<SkColorTable>         fColorTable;    
-    SkAutoTDelete<SkSwizzler>          fSwizzler;
-    std::unique_ptr<SkColorSpaceXform> fColorXform;
-    SkAutoTMalloc<uint8_t>             fStorage;
-    uint32_t*                          fColorXformSrcRow;
-    const int                          fBitDepth;
+    sk_sp<SkColorTable>         fColorTable;    
+    std::unique_ptr<SkSwizzler> fSwizzler;
+    SkAutoTMalloc<uint8_t>      fStorage;
+    void*                       fColorXformSrcRow;
+    const int                   fBitDepth;
 
 private:
 
@@ -120,7 +121,7 @@ private:
     
     bool initializeXforms(const SkImageInfo& dstInfo, const Options&, SkPMColor* colorPtr,
                           int* colorCount);
-    void initializeSwizzler(const SkImageInfo& dstInfo, const Options&);
+    void initializeSwizzler(const SkImageInfo& dstInfo, const Options&, bool skipFormatConversion);
     void allocateStorage(const SkImageInfo& dstInfo);
     void destroyReadStruct();
 
@@ -139,3 +140,4 @@ private:
 
     typedef SkCodec INHERITED;
 };
+#endif  

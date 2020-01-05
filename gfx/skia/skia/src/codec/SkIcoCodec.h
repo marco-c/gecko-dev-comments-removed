@@ -4,10 +4,13 @@
 
 
 
+#ifndef SkIcoCodec_DEFINED
+#define SkIcoCodec_DEFINED
 
 #include "SkCodec.h"
 #include "SkImageInfo.h"
 #include "SkStream.h"
+#include "SkTArray.h"
 #include "SkTypes.h"
 
 
@@ -39,8 +42,8 @@ protected:
     Result onGetPixels(const SkImageInfo& dstInfo, void* dst, size_t dstRowBytes, const Options&,
             SkPMColor*, int*, int*) override;
 
-    SkEncodedFormat onGetEncodedFormat() const override {
-        return kICO_SkEncodedFormat;
+    SkEncodedImageFormat onGetEncodedFormat() const override {
+        return SkEncodedImageFormat::kICO;
     }
 
     SkScanlineOrder onGetScanlineOrder() const override;
@@ -77,9 +80,9 @@ private:
 
 
     SkIcoCodec(int width, int height, const SkEncodedInfo& info,
-            SkTArray<SkAutoTDelete<SkCodec>, true>* embeddedCodecs);
+            SkTArray<std::unique_ptr<SkCodec>, true>* embeddedCodecs, sk_sp<SkColorSpace> colorSpace);
 
-    SkAutoTDelete<SkTArray<SkAutoTDelete<SkCodec>, true>> fEmbeddedCodecs; 
+    std::unique_ptr<SkTArray<std::unique_ptr<SkCodec>, true>> fEmbeddedCodecs;
 
     
     
@@ -99,3 +102,4 @@ private:
 
     typedef SkCodec INHERITED;
 };
+#endif  

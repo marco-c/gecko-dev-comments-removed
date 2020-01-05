@@ -8,37 +8,37 @@
 #ifndef GrConfigConversionEffect_DEFINED
 #define GrConfigConversionEffect_DEFINED
 
-#include "GrSingleTextureEffect.h"
-#include "GrSwizzle.h"
-
-class GrInvariantOutput;
+#include "GrFragmentProcessor.h"
 
 
 
 
 
-
-class GrConfigConversionEffect : public GrSingleTextureEffect {
+class GrConfigConversionEffect : public GrFragmentProcessor {
 public:
     
 
 
     enum PMConversion {
-        kNone_PMConversion = 0,
-        kMulByAlpha_RoundUp_PMConversion,
+        kMulByAlpha_RoundUp_PMConversion = 0,
         kMulByAlpha_RoundDown_PMConversion,
+        kMulByAlpha_RoundNearest_PMConversion,
+
         kDivByAlpha_RoundUp_PMConversion,
         kDivByAlpha_RoundDown_PMConversion,
+        kDivByAlpha_RoundNearest_PMConversion,
 
         kPMConversionCnt
     };
 
-    static sk_sp<GrFragmentProcessor> Make(GrTexture*, const GrSwizzle&, PMConversion,
-                                           const SkMatrix&);
+    
+
+
+
+    static sk_sp<GrFragmentProcessor> Make(sk_sp<GrFragmentProcessor>, PMConversion);
 
     const char* name() const override { return "Config Conversion"; }
 
-    const GrSwizzle& swizzle() const { return fSwizzle; }
     PMConversion  pmConversion() const { return fPMConversion; }
 
     
@@ -49,27 +49,20 @@ public:
     static void TestForPreservingPMConversions(GrContext* context,
                                                PMConversion* PMToUPMRule,
                                                PMConversion* UPMToPMRule);
-
 private:
-    GrConfigConversionEffect(GrTexture*,
-                             const GrSwizzle&,
-                             PMConversion pmConversion,
-                             const SkMatrix& matrix);
+    GrConfigConversionEffect(PMConversion);
 
     GrGLSLFragmentProcessor* onCreateGLSLInstance() const override;
 
-    void onGetGLSLProcessorKey(const GrGLSLCaps&, GrProcessorKeyBuilder*) const override;
+    void onGetGLSLProcessorKey(const GrShaderCaps&, GrProcessorKeyBuilder*) const override;
 
     bool onIsEqual(const GrFragmentProcessor&) const override;
 
-    void onComputeInvariantOutput(GrInvariantOutput* inout) const override;
-
-    GrSwizzle       fSwizzle;
     PMConversion    fPMConversion;
 
     GR_DECLARE_FRAGMENT_PROCESSOR_TEST;
 
-    typedef GrSingleTextureEffect INHERITED;
+    typedef GrFragmentProcessor INHERITED;
 };
 
 #endif

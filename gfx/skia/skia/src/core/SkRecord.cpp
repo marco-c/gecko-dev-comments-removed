@@ -8,6 +8,9 @@
 #include "SkRecord.h"
 #include <algorithm>
 
+SkRecord::SkRecord()
+    : fCount(0), fReserved(0), fAlloc(8) {}
+
 SkRecord::~SkRecord() {
     Destroyer destroyer;
     for (int i = 0; i < this->count(); i++) {
@@ -17,19 +20,14 @@ SkRecord::~SkRecord() {
 
 void SkRecord::grow() {
     SkASSERT(fCount == fReserved);
-    SkASSERT(fReserved > 0);
-    fReserved *= 2;
+    fReserved = fReserved ? fReserved * 2 : 4;
     fRecords.realloc(fReserved);
 }
 
 size_t SkRecord::bytesUsed() const {
-    size_t bytes = fAlloc.approxBytesAllocated() + sizeof(SkRecord);
-    
-    
-    if (fReserved > kInlineRecords) {
-        bytes += fReserved * sizeof(Record);
-    }
-    return bytes;
+    return sizeof(SkRecord)
+         + fReserved * sizeof(Record)
+         + fAlloc.approxBytesAllocated();
 }
 
 void SkRecord::defrag() {

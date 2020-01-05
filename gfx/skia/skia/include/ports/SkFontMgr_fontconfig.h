@@ -8,7 +8,7 @@
 #ifndef SkFontMgr_fontconfig_DEFINED
 #define SkFontMgr_fontconfig_DEFINED
 
-#include "SkTypes.h"
+#include "SkRefCnt.h"
 #include <fontconfig/fontconfig.h>
 
 class SkFontMgr;
@@ -17,6 +17,6 @@ class SkFontMgr;
 
 
 
-SK_API SkFontMgr* SkFontMgr_New_FontConfig(FcConfig* fc);
+SK_API sk_sp<SkFontMgr> SkFontMgr_New_FontConfig(FcConfig* fc);
 
 #endif 

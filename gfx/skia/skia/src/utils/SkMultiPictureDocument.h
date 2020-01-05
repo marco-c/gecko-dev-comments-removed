@@ -7,42 +7,32 @@
 #ifndef SkMultiPictureDocument_DEFINED
 #define SkMultiPictureDocument_DEFINED
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #include "SkDocument.h"
+
+class SkStreamSeekable;
+
 
 
 
 SK_API sk_sp<SkDocument> SkMakeMultiPictureDocument(SkWStream* dst);
+
+struct SkDocumentPage {
+    sk_sp<SkPicture> fPicture;
+    SkSize fSize;
+};
+
+
+
+
+SK_API int SkMultiPictureDocumentReadPageCount(SkStreamSeekable* src);
+
+
+
+
+
+
+SK_API bool SkMultiPictureDocumentRead(SkStreamSeekable* src,
+                                       SkDocumentPage* dstArray,
+                                       int dstArrayCount);
 
 #endif  

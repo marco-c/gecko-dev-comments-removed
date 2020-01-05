@@ -4,14 +4,21 @@
 
 
 
- 
+
 #ifndef SKSL_EXPRESSION
 #define SKSL_EXPRESSION
 
-#include "SkSLIRNode.h"
 #include "SkSLType.h"
+#include "SkSLVariable.h"
+
+#include <unordered_map>
 
 namespace SkSL {
+
+struct Expression;
+class IRGenerator;
+
+typedef std::unordered_map<const Variable*, std::unique_ptr<Expression>*> DefinitionMap;
 
 
 
@@ -33,6 +40,7 @@ struct Expression : public IRNode {
         kVariableReference_Kind,
         kTernary_Kind,
         kTypeReference_Kind,
+        kDefined_Kind
     };
 
     Expression(Position position, Kind kind, const Type& type)
@@ -42,6 +50,18 @@ struct Expression : public IRNode {
 
     virtual bool isConstant() const {
         return false;
+    }
+
+    
+
+
+
+
+
+
+    virtual std::unique_ptr<Expression> constantPropagate(const IRGenerator& irGenerator,
+                                                          const DefinitionMap& definitions) {
+        return nullptr;
     }
 
     const Kind fKind;

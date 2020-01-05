@@ -9,6 +9,7 @@
 #define SkShader_DEFINED
 
 #include "SkBitmap.h"
+#include "SkFilterQuality.h"
 #include "SkFlattenable.h"
 #include "SkImageInfo.h"
 #include "SkMask.h"
@@ -16,12 +17,13 @@
 #include "SkPaint.h"
 #include "../gpu/GrColor.h"
 
+class SkArenaAlloc;
 class SkColorFilter;
 class SkColorSpace;
 class SkImage;
 class SkPath;
 class SkPicture;
-class SkXfermode;
+class SkRasterPipeline;
 class GrContext;
 class GrFragmentProcessor;
 
@@ -38,7 +40,7 @@ class GrFragmentProcessor;
 class SK_API SkShader : public SkFlattenable {
 public:
     SkShader(const SkMatrix* localMatrix = NULL);
-    virtual ~SkShader();
+    ~SkShader() override;
 
     
 
@@ -101,6 +103,12 @@ public:
     
 
 
+
+    virtual bool isConstant() const { return false; }
+
+    
+
+
     struct ContextRec {
         enum DstType {
             kPMColor_DstType, 
@@ -108,16 +116,18 @@ public:
         };
 
         ContextRec(const SkPaint& paint, const SkMatrix& matrix, const SkMatrix* localM,
-                   DstType dstType)
+                   DstType dstType, SkColorSpace* dstColorSpace)
             : fPaint(&paint)
             , fMatrix(&matrix)
             , fLocalMatrix(localM)
-            , fPreferredDstType(dstType) {}
+            , fPreferredDstType(dstType)
+            , fDstColorSpace(dstColorSpace) {}
 
         const SkPaint*  fPaint;            
         const SkMatrix* fMatrix;           
         const SkMatrix* fLocalMatrix;      
         const DstType   fPreferredDstType; 
+        SkColorSpace*   fDstColorSpace;    
     };
 
     class Context : public ::SkNoncopyable {
@@ -153,7 +163,7 @@ public:
         struct BlitState {
             
             Context*    fCtx;
-            SkXfermode* fXfer;
+            SkBlendMode fMode;
 
             
             enum { N = 2 };
@@ -222,12 +232,8 @@ public:
 
 
 
-    Context* createContext(const ContextRec&, void* storage) const;
 
-    
-
-
-    size_t contextSize(const ContextRec&) const;
+    Context* makeContext(const ContextRec&, SkArenaAlloc*) const;
 
 #ifdef SK_SUPPORT_LEGACY_SHADER_ISABITMAP
     
@@ -320,32 +326,30 @@ public:
     struct ComposeRec {
         const SkShader*     fShaderA;
         const SkShader*     fShaderB;
-        const SkXfermode*   fMode;
+        SkBlendMode         fBlendMode;
     };
 
     virtual bool asACompose(ComposeRec*) const { return false; }
 
 #if SK_SUPPORT_GPU
     struct AsFPArgs {
+        AsFPArgs() {}
         AsFPArgs(GrContext* context,
                  const SkMatrix* viewMatrix,
                  const SkMatrix* localMatrix,
                  SkFilterQuality filterQuality,
-                 SkColorSpace* dstColorSpace,
-                 SkSourceGammaTreatment gammaTreatment)
+                 SkColorSpace* dstColorSpace)
             : fContext(context)
             , fViewMatrix(viewMatrix)
             , fLocalMatrix(localMatrix)
             , fFilterQuality(filterQuality)
-            , fDstColorSpace(dstColorSpace)
-            , fGammaTreatment(gammaTreatment) {}
+            , fDstColorSpace(dstColorSpace) {}
 
-        GrContext*             fContext;
-        const SkMatrix*        fViewMatrix;
-        const SkMatrix*        fLocalMatrix;
-        SkFilterQuality        fFilterQuality;
-        SkColorSpace*          fDstColorSpace;
-        SkSourceGammaTreatment fGammaTreatment;
+        GrContext*                    fContext;
+        const SkMatrix*               fViewMatrix;
+        const SkMatrix*               fLocalMatrix;
+        SkFilterQuality               fFilterQuality;
+        SkColorSpace*                 fDstColorSpace;
     };
 
     
@@ -374,14 +378,6 @@ public:
 
     bool asLuminanceColor(SkColor*) const;
 
-#ifdef SK_BUILD_FOR_ANDROID_FRAMEWORK
-    
-
-
-
-    virtual bool asACustomShader(void** ) const { return false; }
-#endif
-
     
     
 
@@ -399,7 +395,7 @@ public:
 
     
     
-    
+
     
 
 
@@ -419,40 +415,7 @@ public:
 
     static sk_sp<SkShader> MakeColorShader(const SkColor4f&, sk_sp<SkColorSpace>);
 
-    static sk_sp<SkShader> MakeComposeShader(sk_sp<SkShader> dst, sk_sp<SkShader> src,
-                                             SkXfermode::Mode);
-
-#ifdef SK_SUPPORT_LEGACY_CREATESHADER_PTR
-    static SkShader* CreateEmptyShader() { return MakeEmptyShader().release(); }
-    static SkShader* CreateColorShader(SkColor c) { return MakeColorShader(c).release(); }
-    static SkShader* CreateBitmapShader(const SkBitmap& src, TileMode tmx, TileMode tmy,
-                                        const SkMatrix* localMatrix = nullptr) {
-        return MakeBitmapShader(src, tmx, tmy, localMatrix).release();
-    }
-    static SkShader* CreateComposeShader(SkShader* dst, SkShader* src, SkXfermode::Mode mode);
-    static SkShader* CreateComposeShader(SkShader* dst, SkShader* src, SkXfermode* xfer);
-    static SkShader* CreatePictureShader(const SkPicture* src, TileMode tmx, TileMode tmy,
-                                         const SkMatrix* localMatrix, const SkRect* tile);
-
-    SkShader* newWithLocalMatrix(const SkMatrix& matrix) const {
-        return this->makeWithLocalMatrix(matrix).release();
-    }
-    SkShader* newWithColorFilter(SkColorFilter* filter) const;
-#endif
-
-    
-
-
-
-
-
-
-    static sk_sp<SkShader> MakeComposeShader(sk_sp<SkShader> dst, sk_sp<SkShader> src,
-                                             sk_sp<SkXfermode> xfer);
-#ifdef SK_SUPPORT_LEGACY_XFERMODE_PTR
-    static sk_sp<SkShader> MakeComposeShader(sk_sp<SkShader> dst, sk_sp<SkShader> src,
-                                             SkXfermode* xfer);
-#endif
+    static sk_sp<SkShader> MakeComposeShader(sk_sp<SkShader> dst, sk_sp<SkShader> src, SkBlendMode);
 
     
 
@@ -494,14 +457,14 @@ public:
 
 
 
-
-
-
-    virtual SkShader* refAsALocalMatrixShader(SkMatrix* localMatrix) const;
+    virtual sk_sp<SkShader> makeAsALocalMatrixShader(SkMatrix* localMatrix) const;
 
     SK_TO_STRING_VIRT()
     SK_DEFINE_FLATTENABLE_TYPE(SkShader)
     SK_DECLARE_FLATTENABLE_REGISTRAR_GROUP()
+
+    bool appendStages(SkRasterPipeline*, SkColorSpace*, SkArenaAlloc*,
+                      const SkMatrix& ctm, const SkPaint&) const;
 
 protected:
     void flatten(SkWriteBuffer&) const override;
@@ -512,13 +475,9 @@ protected:
 
 
 
-    virtual Context* onCreateContext(const ContextRec&, void* storage) const;
-
-    
-
-
-
-    virtual size_t onContextSize(const ContextRec&) const;
+    virtual Context* onMakeContext(const ContextRec&, SkArenaAlloc*) const {
+        return nullptr;
+    }
 
     virtual bool onAsLuminanceColor(SkColor*) const {
         return false;
@@ -533,6 +492,10 @@ protected:
     virtual SkImage* onIsAImage(SkMatrix*, TileMode[2]) const {
         return nullptr;
     }
+
+    virtual bool onAppendStages(SkRasterPipeline*, SkColorSpace*, SkArenaAlloc*,
+                                const SkMatrix&, const SkPaint&,
+                                const SkMatrix* ) const;
 
 private:
     

@@ -8,11 +8,9 @@
 #ifndef SkXfermodeImageFilter_DEFINED
 #define SkXfermodeImageFilter_DEFINED
 
+#include "SkArithmeticImageFilter.h"
 #include "SkBlendMode.h"
 #include "SkImageFilter.h"
-
-class SkXfermode;
-
 
 
 
@@ -27,51 +25,20 @@ public:
         return Make(mode, std::move(background), nullptr, nullptr);
     }
 
+    
+    
     static sk_sp<SkImageFilter> MakeArithmetic(float k1, float k2, float k3, float k4,
-                                               bool enforcePMColor,
-                                               sk_sp<SkImageFilter> background,
+                                               bool enforcePMColor, sk_sp<SkImageFilter> background,
                                                sk_sp<SkImageFilter> foreground,
-                                               const SkImageFilter::CropRect* cropRect);
+                                               const SkImageFilter::CropRect* cropRect) {
+        return SkArithmeticImageFilter::Make(k1, k2, k3, k4, enforcePMColor, std::move(background),
+                                             std::move(foreground), cropRect);
+    }
     static sk_sp<SkImageFilter> MakeArithmetic(float k1, float k2, float k3, float k4,
                                                bool enforcePMColor,
                                                sk_sp<SkImageFilter> background) {
-        return MakeArithmetic(k1, k2, k3, k4, enforcePMColor, std::move(background),
-                              nullptr, nullptr);
+        return SkArithmeticImageFilter::Make(k1, k2, k3, k4, enforcePMColor, std::move(background));
     }
-
-#ifdef SK_SUPPORT_LEGACY_XFERMODE_OBJECT
-    static sk_sp<SkImageFilter> Make(sk_sp<SkXfermode> mode, sk_sp<SkImageFilter> background,
-                                     sk_sp<SkImageFilter> foreground,
-                                     const SkImageFilter::CropRect* cropRect);
-    static sk_sp<SkImageFilter> Make(sk_sp<SkXfermode> mode, sk_sp<SkImageFilter> background) {
-        return Make(std::move(mode), std::move(background), nullptr, nullptr);
-    }
-
-#endif
-
-#ifdef SK_SUPPORT_LEGACY_XFERMODE_PTR
-    static SkImageFilter* Create(SkXfermode* mode, SkImageFilter* background,
-                                 SkImageFilter* foreground = NULL,
-                                 const SkImageFilter::CropRect* cropRect = NULL) {
-        return Make(sk_ref_sp(mode), 
-                    sk_ref_sp(background),
-                    sk_ref_sp(foreground),
-                    cropRect).release();
-    }
-#endif
-#ifdef SK_SUPPORT_LEGACY_IMAGEFILTER_PTR
-    static sk_sp<SkImageFilter> Make(sk_sp<SkXfermode> mode, SkImageFilter* background,
-                                     SkImageFilter* foreground,
-                                     const SkImageFilter::CropRect* cropRect) {
-        return Make(std::move(mode),
-                    sk_ref_sp(background),
-                    sk_ref_sp(foreground),
-                    cropRect);
-    }
-    static sk_sp<SkImageFilter> Make(sk_sp<SkXfermode> mode, SkImageFilter* background) {
-        return Make(std::move(mode), sk_ref_sp(background));
-    }
-#endif
 
     SK_DECLARE_FLATTENABLE_REGISTRAR_GROUP();
 

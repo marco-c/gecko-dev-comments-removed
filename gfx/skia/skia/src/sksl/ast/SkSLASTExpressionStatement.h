@@ -4,7 +4,7 @@
 
 
 
- 
+
 #ifndef SKSL_ASTEXPRESSIONSTATEMENT
 #define SKSL_ASTEXPRESSIONSTATEMENT
 
@@ -20,7 +20,7 @@ struct ASTExpressionStatement : public ASTStatement {
     : INHERITED(expression->fPosition, kExpression_Kind)
     , fExpression(std::move(expression)) {}
 
-    std::string description() const override {
+    String description() const override {
         return fExpression->description() + ";";
     }
 

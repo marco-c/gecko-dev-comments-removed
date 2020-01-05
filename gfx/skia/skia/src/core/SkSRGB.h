@@ -20,17 +20,20 @@
 
 
 
-extern const float sk_linear_from_srgb[256];
+extern const float    sk_linear_from_srgb[256];
+extern const uint16_t sk_linear12_from_srgb[256];
+extern const uint8_t  sk_linear12_to_srgb[4096];
 
-static inline Sk4f sk_clamp_0_255(const Sk4f& x) {
+template <typename V>
+static inline V sk_clamp_0_255(const V& x) {
     
     
-    return Sk4f::Min(Sk4f::Max(x, 0.0f), 255.0f);
+    return V::Min(V::Max(x, 0.0f), 255.0f);
 }
 
 
-
-static inline Sk4f sk_linear_to_srgb_needs_trunc(const Sk4f& x) {
+template <typename V>
+static inline V sk_linear_to_srgb_needs_trunc(const V& x) {
     
     
     
@@ -43,42 +46,65 @@ static inline Sk4f sk_linear_to_srgb_needs_trunc(const Sk4f& x) {
 
     auto lo = (13.0471f * 255.0f) * x;
 
-    auto hi = (-0.0974983f * 255.0f)
-            + (+0.687999f  * 255.0f) * sqrt
-            + (+0.412999f  * 255.0f) * ftrt;
+    auto hi = SkNx_fma(V{+0.412999f  * 255.0f}, ftrt,
+              SkNx_fma(V{+0.687999f  * 255.0f}, sqrt,
+                       V{-0.0974983f * 255.0f}));
     return (x < 0.0048f).thenElse(lo, hi);
 }
 
-static inline Sk4i sk_linear_to_srgb(const Sk4f& x) {
-    Sk4f f = sk_linear_to_srgb_needs_trunc(x);
+
+template <typename V>
+static inline V sk_linear_to_srgb_needs_round(const V& x) {
+    
+    auto rsqrt = x.rsqrt(),
+         sqrt  = rsqrt.invert(),
+         ftrt  = rsqrt.rsqrt();
+
+    auto lo = 12.46f * x;
+
+    auto hi = V::Min(1.0f, SkNx_fma(V{+0.411192f}, ftrt,
+                           SkNx_fma(V{+0.689206f}, sqrt,
+                                    V{-0.0988f})));
+    return (x < 0.0043f).thenElse(lo, hi);
+}
+
+template <int N>
+static inline SkNx<N,int> sk_linear_to_srgb(const SkNx<N,float>& x) {
+    auto f = sk_linear_to_srgb_needs_trunc(x);
     return SkNx_cast<int>(sk_clamp_0_255(f));
 }
 
-static inline Sk4i sk_linear_to_srgb_noclamp(const Sk4f& x) {
-    Sk4f f = sk_linear_to_srgb_needs_trunc(x);
-    for (int i = 0; i < 4; i++) {
-        SkASSERTF(0.0f <= f[i] && f[i] < 256.0f, "f[%d] was %g, outside [0,256)\n", i, f[i]);
-    }
-    return SkNx_cast<int>(f);
+
+
+template <typename V>
+static inline V sk_linear_from_srgb_math(const V& x) {
+    
+    
+    const V k0 = 0.0025f,
+            k2 = 0.6975f,
+            k3 = 0.3000f;
+    auto hi = SkNx_fma(x*x, SkNx_fma(x, k3, k2), k0);
+
+    
+    auto lo = x * (1/12.92f);
+
+    return (x < 0.055f).thenElse(lo, hi);
 }
 
 
-static inline Sk4f sk_linear_from_srgb_math(const Sk4i& s) {
+template <int N>
+static inline SkNx<N,float> sk_linear_from_srgb_math(const SkNx<N,int>& s) {
     auto x = SkNx_cast<float>(s);
 
-    const float u = 1/255.0f;  
+    
+    const float u = 1/255.0f;
 
-    
-    
-    const float k0 = 0.0025f,
-                k2 = 0.6975f * u*u,
-                k3 = 0.3000f * u*u*u;
-    auto hi = k0 + (k2 + k3*x) * (x*x);
-
-    
+    const SkNx<N,float> k0 = 0.0025f,
+                        k2 = 0.6975f * u*u,
+                        k3 = 0.3000f * u*u*u;
+    auto hi = SkNx_fma(x*x, SkNx_fma(x, k3, k2), k0);
     auto lo = x * (u/12.92f);
-
-    return (x < 14.025f).thenElse(lo, hi);
+    return (x < (0.055f/u)).thenElse(lo, hi);
 }
 
 #endif

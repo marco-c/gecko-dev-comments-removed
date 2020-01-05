@@ -18,10 +18,8 @@
 #include "SkRefCnt.h"
 #include "SkSize.h"
 #include "SkString.h"
-#include "SkYUVSizeInfo.h"
 
 class SkColorTable;
-class SkData;
 struct SkIRect;
 
 class GrTexture;
@@ -37,7 +35,11 @@ class SkDiscardableMemory;
 
 class SK_API SkPixelRef : public SkRefCnt {
 public:
+#ifdef SK_SUPPORT_LEGACY_NO_ADDR_PIXELREF
     explicit SkPixelRef(const SkImageInfo&);
+#endif
+    explicit SkPixelRef(const SkImageInfo&, void* addr, size_t rowBytes,
+                        sk_sp<SkColorTable> = nullptr);
     virtual ~SkPixelRef();
 
     const SkImageInfo& info() const {
@@ -100,14 +102,6 @@ public:
 
 
 
-
-
-    bool lockPixelsAreWritable() const;
-
-    
-
-
-
     uint32_t getGenerationID() const;
 
 #ifdef SK_BUILD_FOR_ANDROID_FRAMEWORK
@@ -147,39 +141,6 @@ public:
 
     void setImmutable();
 
-    
-
-
-    const char* getURI() const { return fURI.size() ? fURI.c_str() : NULL; }
-
-    
-
-    void setURI(const char uri[]) {
-        fURI.set(uri);
-    }
-
-    
-
-    void setURI(const char uri[], size_t len) {
-        fURI.set(uri, len);
-    }
-
-    
-
-    void setURI(const SkString& uri) { fURI = uri; }
-
-    
-
-
-
-
-
-
-
-    SkData* refEncodedData() {
-        return this->onRefEncodedData();
-    }
-
     struct LockRequest {
         SkISize         fSize;
         SkFilterQuality fQuality;
@@ -207,34 +168,6 @@ public:
     bool requestLock(const LockRequest&, LockResult*);
 
     
-
-
-
-
-
-
-
-    bool queryYUV8(SkYUVSizeInfo* sizeInfo, SkYUVColorSpace* colorSpace) const {
-        return this->onQueryYUV8(sizeInfo, colorSpace);
-    }
-
-    
-
-
-
-
-
-
-
-
-    bool getYUV8Planes(const SkYUVSizeInfo& sizeInfo, void* planes[3]) {
-        return this->onGetYUV8Planes(sizeInfo, planes);
-    }
-
-    
-    bool readPixels(SkBitmap* dst, SkColorType colorType, const SkIRect* subset = NULL);
-
-    
     
     
     
@@ -258,12 +191,10 @@ public:
 
     virtual SkDiscardableMemory* diagnostic_only_getDiscardable() const { return NULL; }
 
-    
-
-
-    bool isLazyGenerated() const { return this->onIsLazyGenerated(); }
-
 protected:
+#ifdef SK_SUPPORT_LEGACY_NO_ADDR_PIXELREF
+    virtual
+#endif
     
 
 
@@ -271,8 +202,14 @@ protected:
 
 
 
-    virtual bool onNewLockPixels(LockRec*) = 0;
+    bool onNewLockPixels(LockRec*) {
+        SkASSERT(false);    
+        return true;
+    }
 
+#ifdef SK_SUPPORT_LEGACY_NO_ADDR_PIXELREF
+    virtual
+#endif
     
 
 
@@ -281,31 +218,12 @@ protected:
 
 
 
-    virtual void onUnlockPixels() = 0;
-
-    
-    virtual bool onLockPixelsAreWritable() const;
-
-    
-
-
-
-
-
-    virtual bool onReadPixels(SkBitmap* dst, SkColorType colorType, const SkIRect* subsetOrNull);
-
-    
-    virtual SkData* onRefEncodedData();
+    void onUnlockPixels() {
+        SkASSERT(false);    
+    }
 
     
     virtual void onNotifyPixelsChanged();
-
-    virtual bool onQueryYUV8(SkYUVSizeInfo*, SkYUVColorSpace*) const {
-        return false;
-    }
-    virtual bool onGetYUV8Planes(const SkYUVSizeInfo&, void*[3] ) {
-        return false;
-    }
 
     
 
@@ -317,31 +235,36 @@ protected:
 
     virtual size_t getAllocatedSizeInBytes() const;
 
-    virtual bool onRequestLock(const LockRequest&, LockResult*);
-
-    virtual bool onIsLazyGenerated() const { return false; }
+#ifdef SK_BUILD_FOR_ANDROID_FRAMEWORK
+    
+    void android_only_reset(const SkImageInfo&, size_t rowBytes, sk_sp<SkColorTable>);
+#endif
 
     
 
 
     SkBaseMutex* mutex() const { return &fMutex; }
 
+#ifdef SK_SUPPORT_LEGACY_NO_ADDR_PIXELREF
     
     
     
     void setPreLocked(void*, size_t rowBytes, SkColorTable*);
+#endif
 
 private:
     mutable SkMutex fMutex;
 
     
     const SkImageInfo fInfo;
+    sk_sp<SkColorTable> fCTable;    
 
     
     LockRec         fRec;
     int             fLockCount;
 
     bool lockPixelsInsideMutex();
+    bool internalRequestLock(const LockRequest&, LockResult*);
 
     
     bool genIDIsUnique() const { return SkToBool(fTaggedGenID.load() & 1); }
@@ -352,8 +275,6 @@ private:
 #endif
 
     SkTDArray<GenIDChangeListener*> fGenIDChangeListeners;  
-
-    SkString    fURI;
 
     
     SkAtomic<bool> fAddedToCache;
@@ -387,19 +308,9 @@ private:
     friend class SkImage_Gpu;
     friend class SkImageCacherator;
     friend class SkSpecialImage_Gpu;
+    friend void SkBitmapCache_setImmutableWithID(SkPixelRef*, uint32_t);
 
     typedef SkRefCnt INHERITED;
-};
-
-class SkPixelRefFactory : public SkRefCnt {
-public:
-    
-
-
-
-
-
-    virtual SkPixelRef* create(const SkImageInfo&, size_t rowBytes, SkColorTable*) = 0;
 };
 
 #endif

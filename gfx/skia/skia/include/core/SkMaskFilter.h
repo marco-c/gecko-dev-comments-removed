@@ -18,10 +18,13 @@
 
 class GrClip;
 class GrContext;
-class GrDrawContext;
+class GrRenderTargetContext;
 class GrPaint;
+class GrFragmentProcessor;
 class GrRenderTarget;
-class GrTextureProvider;
+class GrResourceProvider;
+class GrTexture;
+class GrTextureProxy;
 class SkBitmap;
 class SkBlitter;
 class SkCachedData;
@@ -112,9 +115,9 @@ public:
 
 
 
-    virtual bool directFilterMaskGPU(GrTextureProvider* texProvider,
-                                     GrDrawContext* drawContext,
-                                     GrPaint* grp,
+    virtual bool directFilterMaskGPU(GrContext*,
+                                     GrRenderTargetContext* renderTargetContext,
+                                     GrPaint&& paint,
                                      const GrClip&,
                                      const SkMatrix& viewMatrix,
                                      const SkStrokeRec& strokeRec,
@@ -124,8 +127,8 @@ public:
 
 
     virtual bool directFilterRRectMaskGPU(GrContext*,
-                                          GrDrawContext* drawContext,
-                                          GrPaint* grp,
+                                          GrRenderTargetContext* renderTargetContext,
+                                          GrPaint&& paint,
                                           const GrClip&,
                                           const SkMatrix& viewMatrix,
                                           const SkStrokeRec& strokeRec,
@@ -139,10 +142,10 @@ public:
 
 
 
-    virtual bool filterMaskGPU(GrTexture* src,
-                               const SkMatrix& ctm,
-                               const SkIRect& maskRect,
-                               GrTexture** result) const;
+    virtual sk_sp<GrTextureProxy> filterMaskGPU(GrContext*,
+                                                sk_sp<GrTextureProxy> srcProxy,
+                                                const SkMatrix& ctm,
+                                                const SkIRect& maskRect) const;
 #endif
 
     

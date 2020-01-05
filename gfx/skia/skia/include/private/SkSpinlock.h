@@ -23,6 +23,16 @@ public:
         }
     }
 
+    
+    bool tryAcquire() {
+        
+        if (fLocked.exchange(true, std::memory_order_acquire)) {
+            
+            return false;
+        }
+        return true;
+    }
+
     void release() {
         
         fLocked.store(false, std::memory_order_release);

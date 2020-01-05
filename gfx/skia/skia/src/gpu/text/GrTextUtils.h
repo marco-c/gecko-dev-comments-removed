@@ -9,23 +9,28 @@
 #define GrTextUtils_DEFINED
 
 #include "GrColor.h"
+#include "SkColorFilter.h"
+#include "SkGr.h"
 #include "SkPaint.h"
 #include "SkScalar.h"
+#include "SkTLazy.h"
 
+class GrAtlasGlyphCache;
 class GrAtlasTextBlob;
-class GrBatchFontCache;
-class GrBatchTextStrike;
+class GrAtlasTextStrike;
 class GrClip;
 class GrContext;
-class GrDrawContext;
+class GrPaint;
+class GrRenderTargetContext;
 class GrShaderCaps;
+class SkDrawFilter;
 class SkGlyph;
 class SkMatrix;
 struct SkIRect;
 struct SkPoint;
 class SkGlyphCache;
+class SkTextBlobRunIterator;
 class SkSurfaceProps;
-
 
 
 
@@ -34,70 +39,123 @@ class SkSurfaceProps;
 class GrTextUtils {
 public:
     
-    static void DrawBmpText(GrAtlasTextBlob*, int runIndex,
-                            GrBatchFontCache*, const SkSurfaceProps&,
-                            const SkPaint&,
-                            GrColor, uint32_t scalerContextFlags, const SkMatrix& viewMatrix,
-                            const char text[], size_t byteLength,
+
+
+
+
+    class Paint {
+    public:
+        explicit Paint(const SkPaint* paint) : fPaint(paint) { this->initFilteredColor(); }
+
+        
+        
+        SkColor filteredSkColor() const { return fFilteredSkColor; }
+        GrColor filteredPremulGrColor() const { return fFilteredGrColor; }
+
+        const SkPaint& skPaint() const { return *fPaint; }
+        operator const SkPaint&() const { return this->skPaint(); }
+
+        bool toGrPaint(GrMaskFormat, GrRenderTargetContext*, const SkMatrix& viewMatrix,
+                       GrPaint*) const;
+
+    protected:
+        void initFilteredColor() {
+            fFilteredSkColor = fPaint->getColor();
+            if (fPaint->getColorFilter()) {
+                fFilteredSkColor = fPaint->getColorFilter()->filterColor(fFilteredSkColor);
+            }
+            fFilteredGrColor = SkColorToPremulGrColor(fFilteredSkColor);
+        }
+        Paint() = default;
+        const SkPaint* fPaint;
+        
+        
+        
+        SkColor fFilteredSkColor;
+        SkColor fFilteredGrColor;
+    };
+
+    
+
+
+
+
+    class RunPaint : public Paint {
+    public:
+        RunPaint(const Paint* paint, SkDrawFilter* filter, const SkSurfaceProps& props)
+                : fOriginalPaint(paint), fFilter(filter), fProps(props) {
+            
+            fPaint = &fOriginalPaint->skPaint();
+            fFilteredSkColor = fOriginalPaint->filteredSkColor();
+            fFilteredGrColor = fOriginalPaint->filteredPremulGrColor();
+        }
+
+        bool modifyForRun(const SkTextBlobRunIterator&);
+
+    private:
+        SkTLazy<SkPaint> fModifiedPaint;
+        const Paint* fOriginalPaint;
+        SkDrawFilter* fFilter;
+        const SkSurfaceProps& fProps;
+    };
+
+    
+    static void DrawBmpText(GrAtlasTextBlob*, int runIndex, GrAtlasGlyphCache*,
+                            const SkSurfaceProps&, const Paint& paint, uint32_t scalerContextFlags,
+                            const SkMatrix& viewMatrix, const char text[], size_t byteLength,
                             SkScalar x, SkScalar y);
 
-    static void DrawBmpPosText(GrAtlasTextBlob*, int runIndex,
-                               GrBatchFontCache*, const SkSurfaceProps&, const SkPaint&,
-                               GrColor, uint32_t scalerContextFlags, const SkMatrix& viewMatrix,
-                               const char text[], size_t byteLength,
-                               const SkScalar pos[], int scalarsPerPosition,
-                               const SkPoint& offset);
+    static void DrawBmpPosText(GrAtlasTextBlob*, int runIndex, GrAtlasGlyphCache*,
+                               const SkSurfaceProps&, const Paint& paint,
+                               uint32_t scalerContextFlags, const SkMatrix& viewMatrix,
+                               const char text[], size_t byteLength, const SkScalar pos[],
+                               int scalarsPerPosition, const SkPoint& offset);
 
     
     static bool CanDrawAsDistanceFields(const SkPaint& skPaint, const SkMatrix& viewMatrix,
                                         const SkSurfaceProps& props, const GrShaderCaps& caps);
 
-    static void DrawDFText(GrAtlasTextBlob* blob, int runIndex,
-                           GrBatchFontCache*, const SkSurfaceProps&,
-                           const SkPaint& skPaint, GrColor color, uint32_t scalerContextFlags,
-                           const SkMatrix& viewMatrix,
-                           const char text[], size_t byteLength,
+    static void DrawDFText(GrAtlasTextBlob* blob, int runIndex, GrAtlasGlyphCache*,
+                           const SkSurfaceProps&, const Paint& paint, uint32_t scalerContextFlags,
+                           const SkMatrix& viewMatrix, const char text[], size_t byteLength,
                            SkScalar x, SkScalar y);
 
-    static void DrawDFPosText(GrAtlasTextBlob* blob, int runIndex,
-                              GrBatchFontCache*, const SkSurfaceProps&, const SkPaint&,
-                              GrColor color, uint32_t scalerContextFlags,
-                              const SkMatrix& viewMatrix,
-                              const char text[], size_t byteLength,
-                              const SkScalar pos[], int scalarsPerPosition,
-                              const SkPoint& offset);
+    static void DrawDFPosText(GrAtlasTextBlob* blob, int runIndex, GrAtlasGlyphCache*,
+                              const SkSurfaceProps&, const Paint& paint,
+                              uint32_t scalerContextFlags, const SkMatrix& viewMatrix,
+                              const char text[], size_t byteLength, const SkScalar pos[],
+                              int scalarsPerPosition, const SkPoint& offset);
 
     
-    static void DrawTextAsPath(GrContext*, GrDrawContext*, const GrClip& clip,
-                               const SkPaint& origPaint, const SkMatrix& viewMatrix,
-                               const char text[], size_t byteLength, SkScalar x, SkScalar y,
+    static void DrawTextAsPath(GrContext*, GrRenderTargetContext*, const GrClip& clip,
+                               const SkPaint& paint, const SkMatrix& viewMatrix, const char text[],
+                               size_t byteLength, SkScalar x, SkScalar y,
                                const SkIRect& clipBounds);
 
-    static void DrawPosTextAsPath(GrContext* context,
-                                  GrDrawContext* dc,
-                                  const SkSurfaceProps& props,
-                                  const GrClip& clip,
-                                  const SkPaint& origPaint, const SkMatrix& viewMatrix,
-                                  const char text[], size_t byteLength,
-                                  const SkScalar pos[], int scalarsPerPosition,
-                                  const SkPoint& offset, const SkIRect& clipBounds);
+    static void DrawPosTextAsPath(GrContext* context, GrRenderTargetContext* rtc,
+                                  const SkSurfaceProps& props, const GrClip& clip,
+                                  const SkPaint& paint, const SkMatrix& viewMatrix,
+                                  const char text[], size_t byteLength, const SkScalar pos[],
+                                  int scalarsPerPosition, const SkPoint& offset,
+                                  const SkIRect& clipBounds);
 
     static bool ShouldDisableLCD(const SkPaint& paint);
 
-    static uint32_t FilterTextFlags(const SkSurfaceProps& surfaceProps, const SkPaint& paint);
 
 private:
+    static uint32_t FilterTextFlags(const SkSurfaceProps& surfaceProps, const SkPaint& paint);
+
     static void InitDistanceFieldPaint(GrAtlasTextBlob* blob,
                                        SkPaint* skPaint,
                                        SkScalar* textRatio,
                                        const SkMatrix& viewMatrix);
 
-    static void BmpAppendGlyph(GrAtlasTextBlob*, int runIndex, GrBatchFontCache*,
-                               GrBatchTextStrike**, const SkGlyph&, int left, int top,
+    static void BmpAppendGlyph(GrAtlasTextBlob*, int runIndex, GrAtlasGlyphCache*,
+                               GrAtlasTextStrike**, const SkGlyph&, int left, int top,
                                GrColor color, SkGlyphCache*);
 
-    static bool DfAppendGlyph(GrAtlasTextBlob*, int runIndex, GrBatchFontCache*,
-                              GrBatchTextStrike**, const SkGlyph&,
+    static bool DfAppendGlyph(GrAtlasTextBlob*, int runIndex, GrAtlasGlyphCache*,
+                              GrAtlasTextStrike**, const SkGlyph&,
                               SkScalar sx, SkScalar sy, GrColor color,
                               SkGlyphCache* cache,
                               SkScalar textRatio, const SkMatrix& viewMatrix);

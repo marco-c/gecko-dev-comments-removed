@@ -31,121 +31,14 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-class GrGLSLCaps;
 class GrGLSLPrimitiveProcessor;
 
-struct GrInitInvariantOutput;
-
-
-enum GrPixelLocalStorageState {
-    
-    kDraw_GrPixelLocalStorageState,
-    
-    kFinish_GrPixelLocalStorageState,
-    
-    kDisabled_GrPixelLocalStorageState
-};
 
 
 
 
 
-
-
-
-
-
-class GrXPOverridesForBatch {
-public:
-    
-    bool readsColor() const { return SkToBool(kReadsColor_Flag & fFlags); }
-
-    
-    bool readsCoverage() const { return
-        SkToBool(kReadsCoverage_Flag & fFlags); }
-
-    
-    bool readsLocalCoords() const {
-        return SkToBool(kReadsLocalCoords_Flag & fFlags);
-    }
-
-    
-
-    bool canTweakAlphaForCoverage() const {
-        return SkToBool(kCanTweakAlphaForCoverage_Flag & fFlags);
-    }
-
-    
-
-    bool getOverrideColorIfSet(GrColor* overrideColor) const {
-        if (SkToBool(kUseOverrideColor_Flag & fFlags)) {
-            SkASSERT(SkToBool(kReadsColor_Flag & fFlags));
-            if (overrideColor) {
-                *overrideColor = fOverrideColor;
-            }
-            return true;
-        }
-        return false;
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-    bool willColorBlendWithDst() const { return SkToBool(kWillColorBlendWithDst_Flag & fFlags); }
-
-private:
-    enum {
-        
-        kReadsColor_Flag                = 0x1,
-
-        
-        kReadsCoverage_Flag             = 0x2,
-
-        
-        kReadsLocalCoords_Flag          = 0x4,
-
-        
-        
-        kCanTweakAlphaForCoverage_Flag  = 0x8,
-
-        
-        
-        kUseOverrideColor_Flag          = 0x10,
-
-        kWillColorBlendWithDst_Flag     = 0x20,
-    };
-
-    uint32_t    fFlags;
-    GrColor     fOverrideColor;
-
-    friend class GrPipeline; 
-};
-
-
-
-
-
-
-class GrPrimitiveProcessor : public GrProcessor {
+class GrPrimitiveProcessor : public GrResourceIOProcessor, public GrProgramElement {
 public:
     
     
@@ -190,20 +83,15 @@ public:
 
 
 
-    virtual void getGLSLProcessorKey(const GrGLSLCaps& caps,
-                                     GrProcessorKeyBuilder* b) const = 0;
+    virtual void getGLSLProcessorKey(const GrShaderCaps&, GrProcessorKeyBuilder*) const = 0;
 
 
     
 
 
-    virtual GrGLSLPrimitiveProcessor* createGLSLInstance(const GrGLSLCaps& caps) const = 0;
+    virtual GrGLSLPrimitiveProcessor* createGLSLInstance(const GrShaderCaps&) const = 0;
 
     virtual bool isPathRendering() const { return false; }
-
-    virtual GrPixelLocalStorageState getPixelLocalStorageState() const {
-        return kDisabled_GrPixelLocalStorageState;
-    }
 
     
 
@@ -226,6 +114,9 @@ protected:
     size_t fVertexStride;
 
 private:
+    void addPendingIOs() const override { GrResourceIOProcessor::addPendingIOs(); }
+    void removeRefs() const override { GrResourceIOProcessor::removeRefs(); }
+    void pendingIOComplete() const override { GrResourceIOProcessor::pendingIOComplete(); }
     void notifyRefCntIsZero() const final {}
     virtual bool hasExplicitLocalCoords() const = 0;
 

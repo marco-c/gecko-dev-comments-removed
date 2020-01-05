@@ -117,11 +117,23 @@ void SkPDFUtils::AppendRectangle(const SkRect& rect, SkWStream* content) {
 
 
 void SkPDFUtils::EmitPath(const SkPath& path, SkPaint::Style paintStyle,
-                          bool doConsumeDegerates, SkWStream* content) {
+                          bool doConsumeDegerates, SkWStream* content,
+                          SkScalar tolerance) {
     
     
     
     
+
+    SkRect rect;
+    bool isClosed; 
+    SkPath::Direction direction;
+    if (path.isRect(&rect, &isClosed, &direction) &&
+        isClosed && SkPath::kCW_Direction == direction)
+    {
+        SkPDFUtils::AppendRectangle(rect, content);
+        return;
+    }
+
     enum SkipFillState {
         kEmpty_SkipFillState,
         kSingleLine_SkipFillState,
@@ -158,9 +170,8 @@ void SkPDFUtils::EmitPath(const SkPath& path, SkPaint::Style paintStyle,
                 fillState = kNonSingleLine_SkipFillState;
                 break;
             case SkPath::kConic_Verb: {
-                const SkScalar tol = SK_Scalar1 / 4;
                 SkAutoConicToQuads converter;
-                const SkPoint* quads = converter.computeQuads(args, iter.conicWeight(), tol);
+                const SkPoint* quads = converter.computeQuads(args, iter.conicWeight(), tolerance);
                 for (int i = 0; i < converter.countQuads(); ++i) {
                     append_quad(&quads[i * 2], &currentSegment);
                 }
@@ -172,9 +183,7 @@ void SkPDFUtils::EmitPath(const SkPath& path, SkPaint::Style paintStyle,
                 fillState = kNonSingleLine_SkipFillState;
                 break;
             case SkPath::kClose_Verb:
-
-                    ClosePath(&currentSegment);
-
+                ClosePath(&currentSegment);
                 currentSegment.writeToStream(content);
                 currentSegment.reset();
                 break;

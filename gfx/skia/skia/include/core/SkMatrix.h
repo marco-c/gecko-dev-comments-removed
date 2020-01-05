@@ -22,6 +22,8 @@ class SkString;
 
 
 
+
+
 SK_BEGIN_REQUIRE_DENSE
 class SK_API SkMatrix {
 public:
@@ -461,8 +463,7 @@ public:
 
     
 
-    void mapPointsWithStride(SkPoint dst[], SkPoint src[],
-                             size_t stride, int count) const {
+    void mapPointsWithStride(SkPoint dst[], const SkPoint src[], size_t stride, int count) const {
         SkASSERT(stride >= sizeof(SkPoint));
         SkASSERT(0 == stride % sizeof(SkScalar));
         for (int i = 0; i < count; ++i) {
@@ -813,6 +814,14 @@ private:
             return false;
         }
         return ((fTypeMask & 0xF) == 0);
+    }
+
+    inline void updateTranslateMask() {
+        if ((fMat[kMTransX] != 0) | (fMat[kMTransY] != 0)) {
+            fTypeMask |= kTranslate_Mask;
+        } else {
+            fTypeMask &= ~kTranslate_Mask;
+        }
     }
 
     bool SK_WARN_UNUSED_RESULT invertNonIdentity(SkMatrix* inverse) const;

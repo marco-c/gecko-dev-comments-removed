@@ -12,8 +12,10 @@
 #include "SkMutex.h"
 #include "SkTemplates.h"
 
+class GrCaps;
 class GrContext;
-class GrTextureParams;
+class GrSamplerParams;
+class GrTextureProxy;
 class GrUniqueKey;
 class SkBitmap;
 class SkImage;
@@ -23,11 +25,22 @@ class SkImage;
 
 class SkImageCacherator {
 public:
-    
-    static SkImageCacherator* NewFromGenerator(SkImageGenerator*, const SkIRect* subset = nullptr);
+    static SkImageCacherator* NewFromGenerator(std::unique_ptr<SkImageGenerator>,
+                                               const SkIRect* subset = nullptr);
+
+    ~SkImageCacherator();
 
     const SkImageInfo& info() const { return fInfo; }
-    uint32_t uniqueID() const { return fUniqueID; }
+    uint32_t uniqueID() const { return this->getUniqueID(kLegacy_CachedFormat); }
+
+    enum CachedFormat {
+        kLegacy_CachedFormat,    
+        kLinearF16_CachedFormat, 
+        kSRGB8888_CachedFormat,  
+        kSBGR8888_CachedFormat,  
+
+        kNumCachedFormats,
+    };
 
     
 
@@ -36,9 +49,10 @@ public:
 
 
 
-    bool lockAsBitmap(SkBitmap*, const SkImage* client,
+    bool lockAsBitmap(GrContext*, SkBitmap*, const SkImage* client, SkColorSpace* dstColorSpace,
                       SkImage::CachingHint = SkImage::kAllow_CachingHint);
 
+#if SK_SUPPORT_GPU
     
 
 
@@ -48,9 +62,18 @@ public:
 
 
 
-    GrTexture* lockAsTexture(GrContext*, const GrTextureParams&,
-                             SkSourceGammaTreatment gammaTreatment, const SkImage* client,
-                             SkImage::CachingHint = SkImage::kAllow_CachingHint);
+
+
+
+
+
+    sk_sp<GrTextureProxy> lockAsTextureProxy(GrContext*, const GrSamplerParams&,
+                                             SkColorSpace* dstColorSpace,
+                                             sk_sp<SkColorSpace>* texColorSpace,
+                                             const SkImage* client,
+                                             SkScalar scaleAdjust[2],
+                                             SkImage::CachingHint = SkImage::kAllow_CachingHint);
+#endif
 
     
 
@@ -62,44 +85,84 @@ public:
     SkData* refEncoded(GrContext*);
 
     
-    bool lockAsBitmapOnlyIfAlreadyCached(SkBitmap*);
+    bool lockAsBitmapOnlyIfAlreadyCached(SkBitmap*, CachedFormat);
     
     bool directGeneratePixels(const SkImageInfo& dstInfo, void* dstPixels, size_t dstRB,
-                              int srcX, int srcY);
+                              int srcX, int srcY, SkTransferFunctionBehavior behavior);
 
 private:
-    SkImageCacherator(SkImageGenerator*, const SkImageInfo&, const SkIPoint&, uint32_t uniqueID);
+    
+    
+    class SharedGenerator final : public SkNVRefCnt<SharedGenerator> {
+    public:
+        static sk_sp<SharedGenerator> Make(std::unique_ptr<SkImageGenerator> gen) {
+            return gen ? sk_sp<SharedGenerator>(new SharedGenerator(std::move(gen))) : nullptr;
+        }
 
-    bool generateBitmap(SkBitmap*);
-    bool tryLockAsBitmap(SkBitmap*, const SkImage*, SkImage::CachingHint);
+    private:
+        explicit SharedGenerator(std::unique_ptr<SkImageGenerator> gen)
+            : fGenerator(std::move(gen))
+        {
+            SkASSERT(fGenerator);
+        }
+
+        friend class ScopedGenerator;
+        friend class SkImageCacherator;
+
+        std::unique_ptr<SkImageGenerator> fGenerator;
+        SkMutex                           fMutex;
+    };
+    class ScopedGenerator;
+
+    struct Validator {
+        Validator(sk_sp<SharedGenerator>, const SkIRect* subset);
+
+        MOZ_IMPLICIT operator bool() const { return fSharedGenerator.get(); }
+
+        sk_sp<SharedGenerator> fSharedGenerator;
+        SkImageInfo            fInfo;
+        SkIPoint               fOrigin;
+        uint32_t               fUniqueID;
+    };
+
+    SkImageCacherator(Validator*);
+
+    CachedFormat chooseCacheFormat(SkColorSpace* dstColorSpace, const GrCaps* = nullptr);
+    SkImageInfo buildCacheInfo(CachedFormat);
+
+    bool tryLockAsBitmap(SkBitmap*, const SkImage*, SkImage::CachingHint, CachedFormat,
+                         const SkImageInfo&);
 #if SK_SUPPORT_GPU
     
     
-    GrTexture* lockTexture(GrContext*, const GrUniqueKey& key, const SkImage* client,
-                           SkImage::CachingHint, bool willBeMipped, SkSourceGammaTreatment);
+    sk_sp<GrTextureProxy> lockTextureProxy(GrContext*,
+                                           const GrUniqueKey& key,
+                                           const SkImage* client,
+                                           SkImage::CachingHint,
+                                           bool willBeMipped,
+                                           SkColorSpace* dstColorSpace);
+    
+    
+    
+    sk_sp<SkColorSpace> getColorSpace(GrContext*, SkColorSpace* dstColorSpace);
+    void makeCacheKeyFromOrigKey(const GrUniqueKey& origKey, CachedFormat, GrUniqueKey* cacheKey);
 #endif
 
-    class ScopedGenerator {
-        SkImageCacherator* fCacher;
-    public:
-        ScopedGenerator(SkImageCacherator* cacher) : fCacher(cacher) {
-            fCacher->fMutexForGenerator.acquire();
-        }
-        ~ScopedGenerator() {
-            fCacher->fMutexForGenerator.release();
-        }
-        SkImageGenerator* operator->() const { return fCacher->fNotThreadSafeGenerator; }
-        operator SkImageGenerator*() const { return fCacher->fNotThreadSafeGenerator; }
+    sk_sp<SharedGenerator> fSharedGenerator;
+    const SkImageInfo      fInfo;
+    const SkIPoint         fOrigin;
+
+    struct IDRec {
+        SkOnce      fOnce;
+        uint32_t    fUniqueID;
     };
+    mutable IDRec fIDRecs[kNumCachedFormats];
 
-    SkMutex                         fMutexForGenerator;
-    SkAutoTDelete<SkImageGenerator> fNotThreadSafeGenerator;
-
-    const SkImageInfo   fInfo;
-    const SkIPoint      fOrigin;
-    const uint32_t      fUniqueID;
+    uint32_t getUniqueID(CachedFormat) const;
 
     friend class GrImageTextureMaker;
+    friend class SkImage;
+    friend class SkImage_Generator;
 };
 
 #endif

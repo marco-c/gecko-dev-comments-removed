@@ -9,28 +9,34 @@
 #include "SkColorPriv.h"
 #include "SkNx.h"
 #include "SkPM4fPriv.h"
+#include "SkRasterPipeline.h"
 #include "SkReadBuffer.h"
 #include "SkRefCnt.h"
 #include "SkString.h"
 #include "SkUnPreMultiply.h"
 #include "SkWriteBuffer.h"
 
-static void transpose(float dst[20], const float src[20]) {
+static void transpose_and_scale01(float dst[20], const float src[20]) {
     const float* srcR = src + 0;
     const float* srcG = src + 5;
     const float* srcB = src + 10;
     const float* srcA = src + 15;
 
-    for (int i = 0; i < 20; i += 4) {
+    for (int i = 0; i < 16; i += 4) {
         dst[i + 0] = *srcR++;
         dst[i + 1] = *srcG++;
         dst[i + 2] = *srcB++;
         dst[i + 3] = *srcA++;
     }
+    
+    dst[16] = *srcR * (1/255.0f);
+    dst[17] = *srcG * (1/255.0f);
+    dst[18] = *srcB * (1/255.0f);
+    dst[19] = *srcA * (1/255.0f);
 }
 
 void SkColorMatrixFilterRowMajor255::initState() {
-    transpose(fTranspose, fMatrix);
+    transpose_and_scale01(fTranspose, fMatrix);
 
     const float* array = fMatrix;
 
@@ -81,13 +87,11 @@ static SkPMColor round(const Sk4f& x) {
 
 template <typename Adaptor, typename T>
 void filter_span(const float array[], const T src[], int count, T dst[]) {
-    
     const Sk4f c0 = Sk4f::Load(array + 0);
     const Sk4f c1 = Sk4f::Load(array + 4);
     const Sk4f c2 = Sk4f::Load(array + 8);
     const Sk4f c3 = Sk4f::Load(array + 12);
-    
-    const Sk4f c4 = Sk4f::Load(array + 16)*Sk4f(1.0f/255);
+    const Sk4f c4 = Sk4f::Load(array + 16);
 
     
     T matrix_translate_pmcolor = Adaptor::From4f(premul(clamp_0_1(c4)));
@@ -227,6 +231,32 @@ static void set_concat(SkScalar result[20], const SkScalar outer[20], const SkSc
 
 
 
+bool SkColorMatrixFilterRowMajor255::onAppendStages(SkRasterPipeline* p,
+                                                    SkColorSpace* dst,
+                                                    SkArenaAlloc* scratch,
+                                                    bool shaderIsOpaque) const {
+    bool willStayOpaque = shaderIsOpaque && (fFlags & kAlphaUnchanged_Flag);
+    bool needsClamp0 = false,
+         needsClamp1 = false;
+    for (int i = 0; i < 4; i++) {
+        SkScalar min = fTranspose[i+16],
+                 max = fTranspose[i+16];
+        (fTranspose[i+ 0] < 0 ? min : max) += fTranspose[i+ 0];
+        (fTranspose[i+ 4] < 0 ? min : max) += fTranspose[i+ 4];
+        (fTranspose[i+ 8] < 0 ? min : max) += fTranspose[i+ 8];
+        (fTranspose[i+12] < 0 ? min : max) += fTranspose[i+12];
+        needsClamp0 = needsClamp0 || min < 0;
+        needsClamp1 = needsClamp1 || max > 1;
+    }
+
+    if (!shaderIsOpaque) { p->append(SkRasterPipeline::unpremul); }
+    if (           true) { p->append(SkRasterPipeline::matrix_4x5, fTranspose); }
+    if (!willStayOpaque) { p->append(SkRasterPipeline::premul); }
+    if (    needsClamp0) { p->append(SkRasterPipeline::clamp_0); }
+    if (    needsClamp1) { p->append(SkRasterPipeline::clamp_a); }
+    return true;
+}
+
 sk_sp<SkColorFilter>
 SkColorMatrixFilterRowMajor255::makeComposed(sk_sp<SkColorFilter> innerFilter) const {
     SkScalar innerMatrix[20];
@@ -240,7 +270,6 @@ SkColorMatrixFilterRowMajor255::makeComposed(sk_sp<SkColorFilter> innerFilter) c
 
 #if SK_SUPPORT_GPU
 #include "GrFragmentProcessor.h"
-#include "GrInvariantOutput.h"
 #include "glsl/GrGLSLFragmentProcessor.h"
 #include "glsl/GrGLSLFragmentShaderBuilder.h"
 #include "glsl/GrGLSLProgramDataManager.h"
@@ -259,7 +288,7 @@ public:
     class GLSLProcessor : public GrGLSLFragmentProcessor {
     public:
         
-        static void GenKey(const GrProcessor&, const GrGLSLCaps&, GrProcessorKeyBuilder*) {}
+        static void GenKey(const GrProcessor&, const GrShaderCaps&, GrProcessorKeyBuilder*) {}
 
         void emitCode(EmitArgs& args) override {
             GrGLSLUniformHandler* uniformHandler = args.fUniformHandler;
@@ -291,7 +320,7 @@ public:
 
     protected:
         void onSetData(const GrGLSLProgramDataManager& uniManager,
-                       const GrProcessor& proc) override {
+                       const GrFragmentProcessor& proc) override {
             const ColorMatrixEffect& cme = proc.cast<ColorMatrixEffect>();
             const float* m = cme.fMatrix;
             
@@ -315,9 +344,10 @@ public:
 
         typedef GrGLSLFragmentProcessor INHERITED;
     };
-
 private:
-    ColorMatrixEffect(const SkScalar matrix[20]) {
+    
+    
+    ColorMatrixEffect(const SkScalar matrix[20]) : INHERITED(kNone_OptimizationFlags) {
         memcpy(fMatrix, matrix, sizeof(SkScalar) * 20);
         this->initClassID<ColorMatrixEffect>();
     }
@@ -326,7 +356,7 @@ private:
         return new GLSLProcessor;
     }
 
-    virtual void onGetGLSLProcessorKey(const GrGLSLCaps& caps,
+    virtual void onGetGLSLProcessorKey(const GrShaderCaps& caps,
                                        GrProcessorKeyBuilder* b) const override {
         GLSLProcessor::GenKey(*this, caps, b);
     }
@@ -336,51 +366,6 @@ private:
         return 0 == memcmp(fMatrix, cme.fMatrix, sizeof(fMatrix));
     }
 
-    void onComputeInvariantOutput(GrInvariantOutput* inout) const override {
-        
-        
-
-        
-        
-        
-        static const uint32_t kRGBAFlags[] = {
-            kR_GrColorComponentFlag,
-            kG_GrColorComponentFlag,
-            kB_GrColorComponentFlag,
-            kA_GrColorComponentFlag
-        };
-        static const int kShifts[] = {
-            GrColor_SHIFT_R, GrColor_SHIFT_G, GrColor_SHIFT_B, GrColor_SHIFT_A,
-        };
-        enum {
-            kAlphaRowStartIdx = 15,
-            kAlphaRowTranslateIdx = 19,
-        };
-
-        SkScalar outputA = 0;
-        for (int i = 0; i < 4; ++i) {
-            
-            
-            if (0 != fMatrix[kAlphaRowStartIdx + i]) {
-                if (!(inout->validFlags() & kRGBAFlags[i])) {
-                    inout->setToUnknown(GrInvariantOutput::kWill_ReadInput);
-                    return;
-                } else {
-                    uint32_t component = (inout->color() >> kShifts[i]) & 0xFF;
-                    outputA += fMatrix[kAlphaRowStartIdx + i] * component;
-                }
-            }
-        }
-        outputA += fMatrix[kAlphaRowTranslateIdx];
-        
-        
-        
-        
-        inout->setToOther(kA_GrColorComponentFlag,
-                          static_cast<uint8_t>(SkScalarPin(outputA, 0, 255)) << GrColor_SHIFT_A,
-                          GrInvariantOutput::kWill_ReadInput);
-    }
-
     SkScalar fMatrix[20];
 
     typedef GrFragmentProcessor INHERITED;
@@ -388,6 +373,7 @@ private:
 
 GR_DEFINE_FRAGMENT_PROCESSOR_TEST(ColorMatrixEffect);
 
+#if GR_TEST_UTILS
 sk_sp<GrFragmentProcessor> ColorMatrixEffect::TestCreate(GrProcessorTestData* d) {
     SkScalar colorMatrix[20];
     for (size_t i = 0; i < SK_ARRAY_COUNT(colorMatrix); ++i) {
@@ -395,8 +381,10 @@ sk_sp<GrFragmentProcessor> ColorMatrixEffect::TestCreate(GrProcessorTestData* d)
     }
     return ColorMatrixEffect::Make(colorMatrix);
 }
+#endif
 
-sk_sp<GrFragmentProcessor> SkColorMatrixFilterRowMajor255::asFragmentProcessor(GrContext*) const {
+sk_sp<GrFragmentProcessor> SkColorMatrixFilterRowMajor255::asFragmentProcessor(
+                                                                  GrContext*, SkColorSpace*) const {
     return ColorMatrixEffect::Make(fMatrix);
 }
 

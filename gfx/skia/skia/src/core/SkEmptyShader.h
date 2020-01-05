@@ -24,13 +24,7 @@ public:
     SK_DECLARE_PUBLIC_FLATTENABLE_DESERIALIZATION_PROCS(SkEmptyShader)
 
 protected:
-    size_t onContextSize(const ContextRec&) const override {
-        
-        
-        return sizeof(SkShader::Context);
-    }
-
-    SkShader::Context* onCreateContext(const ContextRec&, void*) const override {
+    SkShader::Context* onMakeContext(const ContextRec&, SkArenaAlloc*) const override {
         return nullptr;
     }
 
