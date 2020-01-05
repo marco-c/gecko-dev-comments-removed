@@ -97,7 +97,7 @@ impl StackingContext {
     
     fn new(list: DisplayList) -> StackingContext {
         let DisplayList {
-            list: mut list
+            list: list
         } = list;
 
         let mut stacking_context = StackingContext {
@@ -161,7 +161,7 @@ impl StackingContext {
             block_backgrounds_and_borders,
             floats,
             content,
-            positioned_descendants: mut positioned_descendants
+            positioned_descendants: positioned_descendants
         } = other;
 
         let push = |destination: &mut DisplayList, source: DisplayList, level| {
