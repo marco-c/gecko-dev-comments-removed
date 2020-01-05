@@ -271,16 +271,8 @@ impl Window {
                 }
             }
         } else {
-            
-            
-            
-            
-            for event in self.window.poll_events() {
-                close_event = self.handle_window_event(event);
-                if close_event {
-                    break;
-                }
-            }
+            let event = self.window.wait_events().next().unwrap();
+            close_event = self.handle_window_event(event);
         }
 
         if close_event || self.window.is_closed() {
