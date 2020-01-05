@@ -1452,9 +1452,9 @@ struct MOZ_STACK_CLASS JS_FRIEND_API(ErrorReport)
         return reportp;
     }
 
-    const JS::ConstUTF8CharsZ message()
+    const JS::ConstUTF8CharsZ toStringResult()
     {
-        return message_;
+        return toStringResult_;
     }
 
   private:
@@ -1474,9 +1474,6 @@ struct MOZ_STACK_CLASS JS_FRIEND_API(ErrorReport)
     JSErrorReport* reportp;
 
     
-    JS::ConstUTF8CharsZ message_;
-
-    
     JSErrorReport ownedReport;
 
     
@@ -1490,10 +1487,13 @@ struct MOZ_STACK_CLASS JS_FRIEND_API(ErrorReport)
     JS::RootedObject exnObject;
 
     
-    JSAutoByteString bytesStorage;
+    JSAutoByteString filename;
 
     
-    JSAutoByteString filename;
+    
+    
+    JS::ConstUTF8CharsZ toStringResult_;
+    JSAutoByteString toStringResultBytesStorage;
 };
 
 
