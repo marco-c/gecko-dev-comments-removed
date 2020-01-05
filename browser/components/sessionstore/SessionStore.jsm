@@ -180,7 +180,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "TabStateCache",
 XPCOMUtils.defineLazyModuleGetter(this, "TabStateFlusher",
   "resource:///modules/sessionstore/TabStateFlusher.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Utils",
-  "resource:///modules/sessionstore/Utils.jsm");
+  "resource://gre/modules/sessionstore/Utils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "ViewSourceBrowser",
   "resource://gre/modules/ViewSourceBrowser.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "AsyncShutdown",
@@ -209,10 +209,6 @@ this.SessionStore = {
 
   set canRestoreLastSession(val) {
     SessionStoreInternal.canRestoreLastSession = val;
-  },
-
-  get lastClosedObjectType() {
-    return SessionStoreInternal.lastClosedObjectType;
   },
 
   init: function ss_init() {
@@ -343,10 +339,6 @@ this.SessionStore = {
     return SessionStoreInternal.getSessionHistory(tab, updatedCallback);
   },
 
-  undoCloseById(aClosedId) {
-    return SessionStoreInternal.undoCloseById(aClosedId);
-  },
-
   
 
 
@@ -385,9 +377,6 @@ var SessionStoreInternal = {
   ]),
 
   _globalState: new GlobalState(),
-
-  
-  _nextClosedId: 0,
 
   
   
@@ -505,33 +494,6 @@ var SessionStoreInternal = {
     if (!val) {
       LastSession.clear();
     }
-  },
-
-  
-
-
-
-
-  get lastClosedObjectType() {
-    if (this._closedWindows.length) {
-      
-      
-      
-      let tabTimestamps = [];
-      let windowsEnum = Services.wm.getEnumerator("navigator:browser");
-      while (windowsEnum.hasMoreElements()) {
-        let window = windowsEnum.getNext();
-        let windowState = this._windows[window.__SSi];
-        if (windowState && windowState._closedTabs[0]) {
-          tabTimestamps.push(windowState._closedTabs[0].closedAt);
-        }
-      }
-      if (!tabTimestamps.length ||
-          (tabTimestamps.sort((a, b) => b - a)[0] < this._closedWindows[0].closedAt)) {
-        return "window";
-      }
-    }
-    return "tab";
   },
 
   
@@ -1470,9 +1432,6 @@ var SessionStoreInternal = {
         }
 
         
-        winData.closedId = this._nextClosedId++;
-
-        
         this._closedWindows.splice(index, 0, winData);
         this._capClosedWindows();
       } else if (!shouldStore && alreadyStored) {
@@ -1892,9 +1851,6 @@ var SessionStoreInternal = {
     if (index == -1) {
       index = closedTabs.length;
     }
-
-    
-    tabData.closedId = this._nextClosedId++;
 
     
     closedTabs.splice(index, 0, tabData);
@@ -2440,42 +2396,6 @@ var SessionStoreInternal = {
     if (TabAttributes.persist(aName)) {
       this.saveStateDelayed();
     }
-  },
-
-
-  
-
-
-
-
-
-
-
-
-  undoCloseById(aClosedId) {
-    
-    for (let i = 0, l = this._closedWindows.length; i < l; i++) {
-      if (this._closedWindows[i].closedId == aClosedId) {
-        return this.undoCloseWindow(i);
-      }
-    }
-
-    
-    let windowsEnum = Services.wm.getEnumerator("navigator:browser");
-    while (windowsEnum.hasMoreElements()) {
-      let window = windowsEnum.getNext();
-      let windowState = this._windows[window.__SSi];
-      if (windowState) {
-        for (let j = 0, l = windowState._closedTabs.length; j < l; j++) {
-          if (windowState._closedTabs[j].closedId == aClosedId) {
-            return this.undoCloseTab(window, j);
-          }
-        }
-      }
-    }
-
-    
-    return undefined;
   },
 
   
