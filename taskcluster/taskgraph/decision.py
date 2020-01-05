@@ -65,6 +65,11 @@ PER_PROJECT_PARAMETERS = {
         'optimize_target_tasks': True,
     },
 
+    'pine': {
+        'target_tasks_method': 'pine_tasks',
+        'optimize_target_tasks': True,
+    },
+
     
     'default': {
         'target_tasks_method': 'default',
