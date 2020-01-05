@@ -84,8 +84,6 @@ const PORTRAIT_MODE_WIDTH = 700;
 
 
 
-
-
 function Inspector(toolbox) {
   this._toolbox = toolbox;
   this._target = toolbox.target;
