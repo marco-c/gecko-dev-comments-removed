@@ -528,8 +528,19 @@ public:
       return mFilter && mFilter->ReferencesValidResources();
     }
 
-    bool HasNoFilterOrHasValidFilter() {
+    
+
+
+
+    bool HasNoOrValidFilter() {
       return !mFilter || mFilter->ReferencesValidResources();
+    }
+
+    
+
+
+    bool HasInvalidFilter() {
+      return !HasNoOrValidFilter();
     }
   };
 
