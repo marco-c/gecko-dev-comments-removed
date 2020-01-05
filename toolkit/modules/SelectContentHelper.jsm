@@ -70,7 +70,7 @@ this.SelectContentHelper.prototype = {
       
       this._updateTimer.arm();
     });
-    this.mut.observe(this.element, {childList: true, subtree: true, attributes: true});
+    this.mut.observe(this.element, {childList: true, subtree: true});
   },
 
   uninit() {
