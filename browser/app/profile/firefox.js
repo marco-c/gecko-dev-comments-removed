@@ -584,9 +584,7 @@ pref("browser.xul.error_pages.enabled", true);
 pref("browser.xul.error_pages.expert_bad_cert", false);
 
 
-#ifdef NIGHTLY_BUILD
 pref("network.captive-portal-service.enabled", true);
-#endif
 
 
 pref("network.manage-offline-status", true);
