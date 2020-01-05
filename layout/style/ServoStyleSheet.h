@@ -27,8 +27,6 @@ public:
                   net::ReferrerPolicy aReferrerPolicy,
                   const dom::SRIMetadata& aIntegrity);
 
-  NS_DECL_ISUPPORTS
-
   bool HasRules() const;
 
   void SetOwningDocument(nsIDocument* aDocument);
@@ -63,7 +61,7 @@ public:
   void DidDirty() {}
 
 protected:
-  ~ServoStyleSheet();
+  virtual ~ServoStyleSheet();
 
   
   dom::CSSRuleList* GetCssRulesInternal(ErrorResult& aRv);
