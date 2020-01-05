@@ -117,7 +117,7 @@ public:
   
   
   already_AddRefed<nsStyleContext>
-  ResolveStyleForPlaceholder(nsStyleContext* aParentContext);
+  ResolveStyleForPlaceholder();
 
   
   

@@ -38,7 +38,7 @@ CSS_ANON_BOX(mozText, ":-moz-text")
 
 
 
-CSS_ANON_BOX(oofPlaceholder, ":-moz-oof-placeholder")
+CSS_NON_INHERITING_ANON_BOX(oofPlaceholder, ":-moz-oof-placeholder")
 
 CSS_ANON_BOX(firstLetterContinuation, ":-moz-first-letter-continuation")
 

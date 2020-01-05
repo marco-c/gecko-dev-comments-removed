@@ -9293,13 +9293,13 @@ nsFrame::DoGetParentStyleContext(nsIFrame** aProviderFrame) const
   
   
   
-  nsIFrame* placeholder = fm->GetPlaceholderFrameFor(FirstInFlow());
+  nsPlaceholderFrame* placeholder = fm->GetPlaceholderFrameFor(FirstInFlow());
   if (!placeholder) {
     NS_NOTREACHED("no placeholder frame for out-of-flow frame");
     *aProviderFrame = GetCorrectedParent(this);
     return *aProviderFrame ? (*aProviderFrame)->StyleContext() : nullptr;
   }
-  return placeholder->GetParentStyleContext(aProviderFrame);
+  return placeholder->GetParentStyleContextForOutOfFlow(aProviderFrame);
 }
 
 void

@@ -2486,7 +2486,10 @@ ElementRestyler::RestyleSelf(nsIFrame* aSelf,
   } else if (pseudoTag == nsCSSAnonBoxes::firstLetterContinuation) {
     newContext = styleSet->ResolveStyleForFirstLetterContinuation(parentContext);
   } else if (pseudoTag == nsCSSAnonBoxes::oofPlaceholder) {
-    newContext = styleSet->ResolveStyleForPlaceholder(parentContext);
+    
+    
+    
+    newContext = styleSet->ResolveStyleForPlaceholder();
   }
   else {
     Element* element = ElementForStyleContext(mParentContent, aSelf, pseudoType);

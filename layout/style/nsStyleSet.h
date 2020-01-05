@@ -232,7 +232,7 @@ class nsStyleSet final
   
   
   already_AddRefed<nsStyleContext>
-  ResolveStyleForPlaceholder(nsStyleContext* aParentContext);
+  ResolveStyleForPlaceholder();
 
   
   
