@@ -2132,7 +2132,7 @@ UpdateExistingGenerationalDOMProxyStub(ICGetProp_Fallback* stub,
                 
                 uint64_t generation = expandoAndGeneration->generation;
                 JitSpew(JitSpew_BaselineIC,
-                        "  Updating existing stub with generation, old value: %i, "
+                        "  Updating existing stub with generation, old value: %" PRIu64 ", "
                         "new value: %" PRIu64 "", updateStub->generation(),
                         generation);
                 updateStub->setGeneration(generation);

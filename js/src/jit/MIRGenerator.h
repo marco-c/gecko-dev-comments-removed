@@ -72,7 +72,7 @@ class MIRGenerator
 
     
     
-    bool abort(const char* message, ...);           
+    bool abort(const char* message, ...) MOZ_FORMAT_PRINTF(2, 3); 
     bool abortFmt(const char* message, va_list ap); 
 
     bool errored() const {

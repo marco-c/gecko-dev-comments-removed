@@ -154,8 +154,8 @@ inline void SetPendingExceptionASCII(JSContext *cx, const char *aMsg)
 
 inline void SetPendingException(JSContext *cx, const char16_t *aMsg)
 {
-    
-    JS_ReportErrorLatin1(cx, "%hs", aMsg);
+    NS_ConvertUTF16toUTF8 msg(aMsg);
+    JS_ReportErrorUTF8(cx, "%s", msg.get());
 }
 
 
