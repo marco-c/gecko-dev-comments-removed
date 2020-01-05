@@ -206,8 +206,6 @@ GPUProcessHost::KillHard(const char* aReason)
   }
 
   SetAlreadyDead();
-  XRE_GetIOMessageLoop()->PostTask(
-    NewRunnableFunction(&ProcessWatcher::EnsureProcessTerminated, handle, true));
 }
 
 uint64_t
