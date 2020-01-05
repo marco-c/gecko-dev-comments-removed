@@ -6,18 +6,8 @@
 
 "use strict";
 
-
-const {Cc, Ci} = require("chrome");
-
 const {escapeCSSComment} = require("devtools/shared/css/parsing-utils");
 const {getCssProperties} = require("devtools/shared/fronts/css-properties");
-
-const {XPCOMUtils} = require("resource://gre/modules/XPCOMUtils.jsm");
-
-
-XPCOMUtils.defineLazyGetter(this, "domUtils", function () {
-  return Cc["@mozilla.org/inspector/dom-utils;1"].getService(Ci.inIDOMUtils);
-});
 
 
 
