@@ -24,8 +24,7 @@ use std::ptr;
 use std::rt::local::Local;
 #[cfg(not(target_os="android"))]
 use std::rt::task::Task;
-use style::{ComputedValues, Stylist};
-use sync::Arc;
+use style::Stylist;
 use url::Url;
 
 #[cfg(target_os="android")]
@@ -76,9 +75,6 @@ pub struct LayoutContext {
     
     
     pub stylist: *Stylist,
-
-    /// The initial set of CSS properties.
-    pub initial_css_values: Arc<ComputedValues>,
 
     /// The root node at which we're starting the layout.
     pub reflow_root: OpaqueNode,
