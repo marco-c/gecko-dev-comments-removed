@@ -5,6 +5,9 @@
 
 
 import unittest
+
+import mozunit
+
 from mozprocess import processhandler
 
 
@@ -77,8 +80,5 @@ class ParamTests(unittest.TestCase):
         self.assertFalse(err)
 
 
-def main():
-    unittest.main()
-
 if __name__ == '__main__':
-    main()
+    mozunit.main()

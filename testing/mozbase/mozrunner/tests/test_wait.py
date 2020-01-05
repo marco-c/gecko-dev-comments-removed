@@ -3,6 +3,7 @@
 
 
 
+import mozunit
 import mozrunnertest
 
 
@@ -27,3 +28,7 @@ class MozrunnerWaitTestCase(mozrunnertest.MozrunnerTestCase):
 
         self.assertNotIn(returncode, [None, 0])
         self.assertIsNotNone(self.runner.process_handler)
+
+
+if __name__ == '__main__':
+    mozunit.main()
