@@ -124,15 +124,6 @@ function process()
   checkPasswords();
 }
 
-function onP12Load(disableOkButton)
-{
-  document.documentElement.getButton("accept").disabled = disableOkButton;
-  pw1 = document.getElementById("pw1");
-  params = window.arguments[0].QueryInterface(nsIDialogParamBlock);
-  
-  document.getElementById('pw1').focus();
-}
-
 function setPassword()
 {
   var pk11db = Components.classes[nsPK11TokenDB].getService(nsIPK11TokenDB);
@@ -204,16 +195,6 @@ function setPassword()
 
   
   return success;
-}
-
-function setP12Password()
-{
-  
-  params.SetString(2, pw1.value);
-  
-  params.SetInt(1, 1);
-  
-  return true;
 }
 
 function setPasswordStrength()
