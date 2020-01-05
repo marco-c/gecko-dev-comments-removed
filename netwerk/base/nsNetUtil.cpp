@@ -36,7 +36,6 @@
 #include "nsIMIMEHeaderParam.h"
 #include "nsIMutable.h"
 #include "nsINode.h"
-#include "nsIObjectLoadingContent.h"
 #include "nsIOfflineCacheUpdate.h"
 #include "nsIPersistentProperties2.h"
 #include "nsIPrivateBrowsingChannel.h"
@@ -356,45 +355,6 @@ NS_NewChannel(nsIChannel           **outChannel,
                                aCallbacks,
                                aLoadFlags,
                                aIoService);
-}
-
-nsresult
-NS_GetIsDocumentChannel(nsIChannel * aChannel, bool *aIsDocument)
-{
-  
-  
-  
-  
-
-  *aIsDocument = false;
-  if (!aChannel || !aIsDocument) {
-      return NS_ERROR_NULL_POINTER;
-  }
-  nsLoadFlags loadFlags;
-  nsresult rv = aChannel->GetLoadFlags(&loadFlags);
-  if (NS_FAILED(rv)) {
-      return rv;
-  }
-  if (loadFlags & nsIChannel::LOAD_DOCUMENT_URI) {
-      *aIsDocument = true;
-      return NS_OK;
-  }
-  if (!(loadFlags & nsIRequest::LOAD_HTML_OBJECT_DATA)) {
-      *aIsDocument = false;
-      return NS_OK;
-  }
-  nsAutoCString mimeType;
-  rv = aChannel->GetContentType(mimeType);
-  if (NS_FAILED(rv)) {
-      return rv;
-  }
-  if (nsContentUtils::HtmlObjectContentTypeForMIMEType(mimeType, nullptr) ==
-      nsIObjectLoadingContent::TYPE_DOCUMENT) {
-      *aIsDocument = true;
-      return NS_OK;
-  }
-  *aIsDocument = false;
-  return NS_OK;
 }
 
 nsresult
