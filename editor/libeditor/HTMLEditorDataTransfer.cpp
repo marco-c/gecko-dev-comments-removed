@@ -2096,15 +2096,16 @@ nsresult FindTargetNode(nsIDOMNode *aStart, nsCOMPtr<nsIDOMNode> &aResult)
         
         aStart->RemoveChild(child, getter_AddRefs(tmp));
 
-        return NS_FOUND_TARGET;
+        return NS_SUCCESS_EDITOR_FOUND_TARGET;
       }
     }
 
-    
-    
-    
     rv = FindTargetNode(child, aResult);
     NS_ENSURE_SUCCESS(rv, rv);
+
+    if (rv == NS_SUCCESS_EDITOR_FOUND_TARGET) {
+      return NS_SUCCESS_EDITOR_FOUND_TARGET;
+    }
 
     rv = child->GetNextSibling(getter_AddRefs(tmp));
     NS_ENSURE_SUCCESS(rv, rv);
@@ -2147,9 +2148,6 @@ HTMLEditor::CreateDOMFragmentFromPaste(const nsAString& aInputString,
     RemoveBodyAndHead(*contextAsNode);
 
     rv = FindTargetNode(contextAsNode, contextLeaf);
-    if (rv == NS_FOUND_TARGET) {
-      rv = NS_OK;
-    }
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
