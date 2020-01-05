@@ -1115,16 +1115,11 @@ Loader::CreateSheet(nsIURI* aURI,
 
     
 #ifdef MOZ_XUL
-    
-    
-    if (IsChromeURI(aURI) &&
-        GetStyleBackendType() == StyleBackendType::Gecko) {
+    if (IsChromeURI(aURI)) {
       nsXULPrototypeCache* cache = nsXULPrototypeCache::GetInstance();
-      if (cache) {
-        if (cache->IsEnabled()) {
-          sheet = cache->GetStyleSheet(aURI, GetStyleBackendType());
-          LOG(("  From XUL cache: %p", sheet.get()));
-        }
+      if (cache && cache->IsEnabled()) {
+        sheet = cache->GetStyleSheet(aURI, GetStyleBackendType());
+        LOG(("  From XUL cache: %p", sheet.get()));
       }
     }
 #endif
@@ -1957,8 +1952,7 @@ Loader::DoSheetComplete(SheetLoadData* aLoadData, nsresult aStatus,
       data = data->mNext;
     }
 #ifdef MOZ_XUL
-    if (IsChromeURI(aLoadData->mURI) &&
-        GetStyleBackendType() == StyleBackendType::Gecko) {
+    if (IsChromeURI(aLoadData->mURI)) {
       nsXULPrototypeCache* cache = nsXULPrototypeCache::GetInstance();
       if (cache && cache->IsEnabled()) {
         if (!cache->GetStyleSheet(aLoadData->mURI, GetStyleBackendType())) {
