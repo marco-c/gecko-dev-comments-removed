@@ -336,7 +336,8 @@ def check_rust(file_name, lines):
 
         
         if not line_is_attribute(line):
-            line = re.sub(r'"(\\.|[^\\"])*?"|' + r"'(\\.|[^\\'])*?'", '', line)
+            line = re.sub(r'"(\\.|[^\\"])*?"', '""', line)
+            line = re.sub(r"'(\\.|[^\\'])*?'", "''", line)
 
         
         line = re.sub('//.*?$|/\*.*?$|^\*.*?$', '', line)
@@ -373,7 +374,7 @@ def check_rust(file_name, lines):
             (r" :[^:]", "extra space before :",
                 lambda match, line: 'trait ' not in line[:match.start()]),
             
-            (r"[^:]:[A-Za-z]", "missing space after :",
+            (r"[^:]:[A-Za-z0-9\"]", "missing space after :",
                 lambda match, line: '$' not in line[:match.end()]),
             (r"[A-Za-z0-9\)]{", "missing space before {{", no_filter),
             
