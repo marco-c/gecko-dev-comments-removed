@@ -122,6 +122,7 @@ class JitTest:
         self.expect_status = 0 
         self.expect_crash = False 
         self.is_module = False
+        self.need_for_each = False 
         self.test_reflect_stringify = None  
 
         
@@ -146,6 +147,7 @@ class JitTest:
         t.test_reflect_stringify = self.test_reflect_stringify
         t.enable = True
         t.is_module = self.is_module
+        t.need_for_each = self.need_for_each
         return t
 
     def copy_and_extend_jitflags(self, variant):
@@ -262,6 +264,8 @@ class JitTest:
                     elif name.startswith('--'):
                         
                         test.jitflags.append(name)
+                    elif name == 'need-for-each':
+                        test.need_for_each = True
                     else:
                         print('{}: warning: unrecognized |jit-test| attribute'
                               ' {}'.format(path, part))
@@ -296,6 +300,9 @@ class JitTest:
             js_quote(quotechar, sys.platform),
             js_quote(quotechar, libdir),
             js_quote(quotechar, scriptdir_var))
+
+        if self.need_for_each:
+            expr += "; enableForEach()"
 
         
         
