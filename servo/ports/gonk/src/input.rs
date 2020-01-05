@@ -10,6 +10,8 @@ use std::os::errno;
 use std::os::unix::AsRawFd;
 use std::num::Float;
 use std::io::File;
+use std::thread::Thread;
+use std::sync::mpsc::Sender;
 
 use geom::point::TypedPoint2D;
 
@@ -117,8 +119,8 @@ fn read_input_device(device_path: &Path,
 
     
     
-    let mut buf: [u8, ..(16 * 16)] = unsafe { zeroed() };
-    let mut slots: [input_slot, ..10] = unsafe { zeroed() };
+    let mut buf: [u8; (16 * 16)] = unsafe { zeroed() };
+    let mut slots: [input_slot; 10] = unsafe { zeroed() };
     for slot in slots.iter_mut() {
         slot.tracking_id = -1;
     }
@@ -131,7 +133,7 @@ fn read_input_device(device_path: &Path,
     let mut last_dist: f32 = 0f32;
     let mut touch_count: i32 = 0;
     let mut current_slot: uint = 0;
-    // XXX: Need to use the real dimensions of the screen
+    
     let screen_dist = dist(0, 480, 854, 0);
     loop {
         let read = match device.read(buf.as_mut_slice()) {
@@ -234,8 +236,8 @@ fn read_input_device(device_path: &Path,
 
 pub fn run_input_loop(event_sender: &Sender<WindowEvent>) {
     let sender = event_sender.clone();
-    spawn(proc () {
-        // XXX need to scan all devices and read every one.
+    Thread::spawn(move || {
+        
         let touchinputdev = Path::new("/dev/input/event0");
         read_input_device(&touchinputdev, &sender);
     });
