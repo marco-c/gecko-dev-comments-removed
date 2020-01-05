@@ -68,10 +68,11 @@ public:
                               const mozilla::TimeStamp& aStartTime);
 
   
+  
   ThreadResponsiveness* GetThreadResponsiveness()
   {
     ThreadResponsiveness* responsiveness = mResponsiveness.ptrOr(nullptr);
-    MOZ_ASSERT(!!responsiveness == mIsMainThread);
+    MOZ_ASSERT(!!responsiveness == (mIsMainThread && mIsBeingProfiled));
     return responsiveness;
   }
 
