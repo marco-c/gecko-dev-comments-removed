@@ -130,6 +130,8 @@ class VideoSendStream : public SendStream {
 
       
       std::string c_name;
+
+      std::vector<std::string> rids;
     } rtp;
 
     
