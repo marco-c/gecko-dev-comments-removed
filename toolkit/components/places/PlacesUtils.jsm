@@ -952,7 +952,7 @@ this.PlacesUtils = {
           let uriString = parts[i];
           
           
-          if (uriString.substr(0, 1) == '\x23')
+          if (uriString.substr(0, 1) == "\x23")
             continue;
           
           if (uriString != "" && this._uri(uriString))

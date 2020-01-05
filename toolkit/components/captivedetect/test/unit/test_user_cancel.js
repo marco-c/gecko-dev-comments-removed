@@ -2,32 +2,32 @@
 
 
 
-'use strict';
+"use strict";
 
-const kInterfaceName = 'wifi';
+const kInterfaceName = "wifi";
 
 var server;
 var step = 0;
 
 function xhr_handler(metadata, response) {
-  response.setStatusLine(metadata.httpVersion, 200, 'OK');
-  response.setHeader('Cache-Control', 'no-cache', false);
-  response.setHeader('Content-Type', 'text/plain', false);
-  response.write('false');
+  response.setStatusLine(metadata.httpVersion, 200, "OK");
+  response.setHeader("Cache-Control", "no-cache", false);
+  response.setHeader("Content-Type", "text/plain", false);
+  response.write("false");
 }
 
 function fakeUIResponse() {
   Services.obs.addObserver(function observe(subject, topic, data) {
-    if (topic === 'captive-portal-login') {
-      let xhr = Cc['@mozilla.org/xmlextras/xmlhttprequest;1']
+    if (topic === "captive-portal-login") {
+      let xhr = Cc["@mozilla.org/xmlextras/xmlhttprequest;1"]
                   .createInstance(Ci.nsIXMLHttpRequest);
-      xhr.open('GET', gServerURL + kCanonicalSitePath, true);
+      xhr.open("GET", gServerURL + kCanonicalSitePath, true);
       xhr.send();
       do_check_eq(++step, 2);
       let details = JSON.parse(data);
       gCaptivePortalDetector.cancelLogin(details.id);
     }
-  }, 'captive-portal-login', false);
+  }, "captive-portal-login", false);
 }
 
 function test_cancel() {

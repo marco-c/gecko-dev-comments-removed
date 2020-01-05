@@ -118,7 +118,7 @@ function test() {
 
   
   
-  Services.prefs.clearUserPref('browser.startup.page');
+  Services.prefs.clearUserPref("browser.startup.page");
 
   if (gPrefService.prefHasUserValue(PREF_MSTONE)) {
     gOriginalMStone = gPrefService.getCharPref(PREF_MSTONE);

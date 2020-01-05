@@ -233,7 +233,7 @@ function getBrowserLocale() {
   try {
     return Cc["@mozilla.org/chrome/chrome-registry;1"].
              getService(Ci.nsIXULChromeRegistry).
-             getSelectedLocale('global');
+             getSelectedLocale("global");
   } catch (e) {
     return null;
   }
@@ -366,7 +366,7 @@ function getWindowsVersionInfo() {
   
   
   const SZCSDVERSIONLENGTH = 128;
-  const OSVERSIONINFOEXW = new ctypes.StructType('OSVERSIONINFOEXW',
+  const OSVERSIONINFOEXW = new ctypes.StructType("OSVERSIONINFOEXW",
       [
       {dwOSVersionInfoSize: DWORD},
       {dwMajorVersion: DWORD},
@@ -1315,7 +1315,7 @@ EnvironmentCache.prototype = {
       data.servicePackMajor = versionInfo.servicePackMajor;
       data.servicePackMinor = versionInfo.servicePackMinor;
       
-      if (typeof(data.version) === 'string' &&
+      if (typeof(data.version) === "string" &&
           Services.vc.compare(data.version, "10") >= 0) {
         data.windowsBuildNumber = versionInfo.buildNumber;
         

@@ -62,7 +62,7 @@ function test() {
     });
     gotCached.then(function() {
       
-      let notification = PopupNotifications.getNotification('offline-app-usage');
+      let notification = PopupNotifications.getNotification("offline-app-usage");
       ok(notification, "have offline-app-usage notification");
       
       

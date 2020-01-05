@@ -4,7 +4,7 @@
 function run_test() {
   Services.prefs.setCharPref("browser.search.geoip.url", 'data:application/json,{"country_code": "US"}');
   
-  Services.prefs.setCharPref("distribution.id", 'mozilla38');
+  Services.prefs.setCharPref("distribution.id", "mozilla38");
   setUpGeoDefaults();
 
   Services.search.init(() => {

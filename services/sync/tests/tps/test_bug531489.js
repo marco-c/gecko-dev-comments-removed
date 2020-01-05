@@ -41,21 +41,21 @@ var bookmarks_initial = {
 
 
 
-Phase('phase1', [
+Phase("phase1", [
   [Bookmarks.add, bookmarks_initial],
   [Bookmarks.verify, bookmarks_initial],
   [Sync]
 ]);
 
 
-Phase('phase2', [
+Phase("phase2", [
   [Sync],
   [Bookmarks.verify, bookmarks_initial]
 ]);
 
 
 
-Phase('phase3', [
+Phase("phase3", [
   [Sync],
   [Bookmarks.verify, bookmarks_initial]
 ]);

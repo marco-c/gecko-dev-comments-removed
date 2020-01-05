@@ -427,8 +427,8 @@ function checkPayload(payload, reason, successfulPings, savedPings) {
   
   
 
-  Assert.ok('MEMORY_JS_GC_HEAP' in payload.histograms); 
-  Assert.ok('MEMORY_JS_COMPARTMENTS_SYSTEM' in payload.histograms); 
+  Assert.ok("MEMORY_JS_GC_HEAP" in payload.histograms); 
+  Assert.ok("MEMORY_JS_COMPARTMENTS_SYSTEM" in payload.histograms); 
 
   
   Assert.ok("addonHistograms" in payload);

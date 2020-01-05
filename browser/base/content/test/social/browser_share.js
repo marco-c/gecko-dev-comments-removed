@@ -37,7 +37,7 @@ function test() {
     
 
     content.onbeforeunload = function(e) {
-      return 'FAIL.';
+      return "FAIL.";
     };
   }.toString() + ")();";
   let mm = getGroupMessageManager("social");

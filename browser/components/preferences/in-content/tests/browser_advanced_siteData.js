@@ -5,7 +5,7 @@
 
 const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 
-Cu.import('resource://gre/modules/XPCOMUtils.jsm');
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 Services.scriptloader.loadSubScript("resource://testing-common/sinon-1.16.1.js");
 

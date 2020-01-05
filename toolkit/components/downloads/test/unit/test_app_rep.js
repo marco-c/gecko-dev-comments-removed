@@ -4,7 +4,7 @@
 
 
 
-Cu.import('resource://gre/modules/NetUtil.jsm');
+Cu.import("resource://gre/modules/NetUtil.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 const gAppRep = Cc["@mozilla.org/downloads/application-reputation-service;1"].

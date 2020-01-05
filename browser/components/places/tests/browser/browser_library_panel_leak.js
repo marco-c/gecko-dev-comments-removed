@@ -29,7 +29,7 @@ function test() {
     isnot(organizer.gEditItemOverlay.itemId, -1, "Editing a bookmark");
 
     
-    organizer.PlacesOrganizer.selectLeftPaneQuery('History');
+    organizer.PlacesOrganizer.selectLeftPaneQuery("History");
     
     let selection = contentTree.view.selection;
     selection.clearSelection();

@@ -175,7 +175,7 @@ this.TranslationDocument.prototype = {
         
         
         item.original.push(TranslationItem_NodePlaceholder);
-        str += '<br>';
+        str += "<br>";
         wasLastItemPlaceholder = true;
       }
     }
@@ -368,7 +368,7 @@ const TranslationItem_NodePlaceholder = {
 
 function generateTranslationHtmlForItem(item, content) {
   let localName = item.isRoot ? "div" : "b";
-  return '<' + localName + ' id=n' + item.id + '>' +
+  return "<" + localName + " id=n" + item.id + ">" +
          content +
          "</" + localName + ">";
 }

@@ -171,19 +171,19 @@ function registerRunTests() {
   
   
   window.addEventListener("DOMContentLoaded", (event) => {
-    var form = document.createElement('form');
-    form.id = 'observerforcer';
-    var username = document.createElement('input');
-    username.name = 'testuser';
+    var form = document.createElement("form");
+    form.id = "observerforcer";
+    var username = document.createElement("input");
+    username.name = "testuser";
     form.appendChild(username);
-    var password = document.createElement('input');
-    password.name = 'testpass';
-    password.type = 'password';
+    var password = document.createElement("input");
+    password.name = "testpass";
+    password.type = "password";
     form.appendChild(password);
 
     var observer = SpecialPowers.wrapCallback(function(subject, topic, data) {
       var formLikeRoot = subject.QueryInterface(SpecialPowers.Ci.nsIDOMNode);
-      if (formLikeRoot.id !== 'observerforcer')
+      if (formLikeRoot.id !== "observerforcer")
         return;
       SpecialPowers.removeObserver(observer, "passwordmgr-processed-form");
       formLikeRoot.remove();

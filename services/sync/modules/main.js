@@ -2,7 +2,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ['Weave'];
+this.EXPORTED_SYMBOLS = ["Weave"];
 
 this.Weave = {};
 Components.utils.import("resource://services-sync/constants.js", Weave);
@@ -10,7 +10,7 @@ var lazies = {
   "jpakeclient.js":       ["JPAKEClient", "SendCredentialsController"],
   "service.js":           ["Service"],
   "status.js":            ["Status"],
-  "util.js":              ['Utils', 'Svc']
+  "util.js":              ["Utils", "Svc"]
 };
 
 function lazyImport(module, dest, props) {

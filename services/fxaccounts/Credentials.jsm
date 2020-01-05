@@ -90,7 +90,7 @@ this.Credentials = Object.freeze({
 
 
   keyWordExtended(name, email) {
-    return CommonUtils.stringToBytes(PROTOCOL_VERSION + name + ':' + email);
+    return CommonUtils.stringToBytes(PROTOCOL_VERSION + name + ":" + email);
   },
 
   setup(emailInput, passwordInput, options = {}) {

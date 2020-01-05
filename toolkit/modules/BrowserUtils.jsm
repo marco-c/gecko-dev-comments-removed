@@ -15,7 +15,7 @@ Cu.import("resource://gre/modules/Task.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PlacesUtils",
   "resource://gre/modules/PlacesUtils.jsm");
 
-Cu.importGlobalProperties(['URL']);
+Cu.importGlobalProperties(["URL"]);
 
 this.BrowserUtils = {
 
@@ -269,7 +269,7 @@ this.BrowserUtils = {
     
     
     let values = rel.split(/[ \t\r\n\f]/);
-    return values.indexOf('noreferrer') != -1;
+    return values.indexOf("noreferrer") != -1;
   },
 
   

@@ -34,7 +34,7 @@ this.FxAccountsStorageManager = function(options = {}) {
   this.plainStorage = new JSONStorage(this.options);
   
   
-  let useSecure = 'useSecure' in options ? options.useSecure : haveLoginManager;
+  let useSecure = "useSecure" in options ? options.useSecure : haveLoginManager;
   if (useSecure) {
     this.secureStorage = new LoginManagerStorage();
   } else {
@@ -150,7 +150,7 @@ this.FxAccountsStorageManager.prototype = {
     
     
     
-    if (!('uid' in this.cachedPlain)) {
+    if (!("uid" in this.cachedPlain)) {
       return null;
     }
     let result = {};
@@ -205,12 +205,12 @@ this.FxAccountsStorageManager.prototype = {
   
   updateAccountData: Task.async(function* (newFields) {
     yield this._promiseInitialized;
-    if (!('uid' in this.cachedPlain)) {
+    if (!("uid" in this.cachedPlain)) {
       
       
       throw new Error("No user is logged in");
     }
-    if (!newFields || 'uid' in newFields || 'email' in newFields) {
+    if (!newFields || "uid" in newFields || "email" in newFields) {
       
       
       

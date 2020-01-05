@@ -63,20 +63,20 @@ var bookmarks_after_move = {
 
 
 
-Phase('phase1', [
+Phase("phase1", [
   [Bookmarks.add, bookmarks_initial],
   [Bookmarks.verify, bookmarks_initial],
   [Sync]
 ]);
 
 
-Phase('phase2', [
+Phase("phase2", [
   [Sync],
   [Bookmarks.verify, bookmarks_initial]
 ]);
 
 
-Phase('phase3', [
+Phase("phase3", [
   [Sync],
   [Bookmarks.verify, bookmarks_initial],
   [Bookmarks.modify, bookmarks_initial],
@@ -86,7 +86,7 @@ Phase('phase3', [
 
 
 
-Phase('phase4', [
+Phase("phase4", [
   [Sync],
   [Bookmarks.verify, bookmarks_after_move]
 ]);

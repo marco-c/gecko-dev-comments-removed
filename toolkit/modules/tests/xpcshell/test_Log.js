@@ -365,11 +365,11 @@ add_task(function* log_message_with_params() {
   
   
   do_check_eq(formatMessage("Missing object is ${missing}", {}),
-              'Missing object is ${missing}');
+              "Missing object is ${missing}");
 
   
   do_check_eq(formatMessage("False is ${false}", {false: true}),
-              'False is true');
+              "False is true");
 
   
   let ob = function() {};
@@ -381,17 +381,17 @@ add_task(function* log_message_with_params() {
   ob = function() {};
   ob.toJSON = function() {throw "oh noes JSON"};
   do_check_eq(formatMessage("Fail is ${sub}", {sub: ob}),
-              'Fail is (function () {})');
+              "Fail is (function () {})");
 
   
   ob.toSource = function() {throw "oh noes SOURCE"};
   do_check_eq(formatMessage("Fail is ${sub}", {sub: ob}),
-              'Fail is function () {}');
+              "Fail is function () {}");
 
   
   ob.toString = function() {throw "oh noes STRING"};
   do_check_eq(formatMessage("Fail is ${sub}", {sub: ob}),
-              'Fail is [object]');
+              "Fail is [object]");
 
   
   
@@ -401,7 +401,7 @@ add_task(function* log_message_with_params() {
   
   
   do_check_eq(formatMessage("Text with partial sub ${a}", {a: "b", c: "d"}),
-              'Text with partial sub b');
+              "Text with partial sub b");
 
   
   do_check_eq(formatMessage("Params with _ ${}", {a: "b", _c: "d", _level:20, _message:"froo",
@@ -411,16 +411,16 @@ add_task(function* log_message_with_params() {
   
   do_check_eq(formatMessage("All params internal", {_level:20, _message:"froo",
                                                     _time:123456, _namespace:"here.there"}),
-              'All params internal');
+              "All params internal");
 
   
   do_check_eq(formatMessage("Null ${n} undefined ${u}", {n: null, u: undefined}),
-              'Null null undefined undefined');
+              "Null null undefined undefined");
 
   
   do_check_eq(formatMessage("number ${n} boolean ${b} boxed Boolean ${bx} String ${s}",
                             {n: 45, b: false, bx: new Boolean(true), s: new String("whatevs")}),
-              'number 45 boolean false boxed Boolean true String whatevs');
+              "number 45 boolean false boxed Boolean true String whatevs");
 
   
 
@@ -457,30 +457,30 @@ add_task(function* log_message_with_params() {
   
   
   do_check_eq(formatMessage("non-object no subst", 1),
-              'non-object no subst: 1');
+              "non-object no subst: 1");
   do_check_eq(formatMessage("non-object all subst ${}", 2),
-              'non-object all subst 2');
+              "non-object all subst 2");
   do_check_eq(formatMessage("false no subst", false),
-              'false no subst: false');
+              "false no subst: false");
   do_check_eq(formatMessage("null no subst", null),
-              'null no subst: null');
+              "null no subst: null");
   
   
   do_check_eq(formatMessage("undefined no subst", undefined),
-              'undefined no subst');
+              "undefined no subst");
   
   
   do_check_eq(formatMessage("non-object named subst ${junk} space", 3),
-              'non-object named subst ${junk} space: 3');
+              "non-object named subst ${junk} space: 3");
   
   do_check_eq(formatMessage("no params ${missing}", undefined),
-              'no params ${missing}');
+              "no params ${missing}");
   
   
   do_check_eq(formatMessage("object missing tag ${missing} space", {mising: "not here"}),
               'object missing tag ${missing} space: {"mising":"not here"}');
   
-  do_check_eq(formatMessage(null), '');
+  do_check_eq(formatMessage(null), "");
 });
 
 
@@ -533,7 +533,7 @@ add_task(function* test_structured_basic() {
   log.logStructured("action", {_message: "Structured sub ${data}", data: "structure"});
   do_check_eq(appender.messages.length, 2);
   do_print(appender.messages[1]);
-  do_check_true(appender.messages[1].includes('Structured sub structure'));
+  do_check_true(appender.messages[1].includes("Structured sub structure"));
 });
 
 

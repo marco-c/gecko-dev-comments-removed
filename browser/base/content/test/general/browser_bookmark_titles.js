@@ -6,17 +6,17 @@
 
 var tests = [
     
-    ['http://example.com/browser/browser/base/content/test/general/dummy_page.html',
-     'Dummy test page'],
+    ["http://example.com/browser/browser/base/content/test/general/dummy_page.html",
+     "Dummy test page"],
     
-    ['data:text/html;charset=utf-8,<title>test%20data:%20url</title>',
-     'test data: url'],
+    ["data:text/html;charset=utf-8,<title>test%20data:%20url</title>",
+     "test data: url"],
     
-    ['data:application/vnd.mozilla.xul+xml,',
-     'data:application/vnd.mozilla.xul+xml,'],
+    ["data:application/vnd.mozilla.xul+xml,",
+     "data:application/vnd.mozilla.xul+xml,"],
     
-    ['https://untrusted.example.com/somepage.html',
-     'https://untrusted.example.com/somepage.html']
+    ["https://untrusted.example.com/somepage.html",
+     "https://untrusted.example.com/somepage.html"]
 ];
 
 add_task(function* () {
@@ -40,11 +40,11 @@ add_task(function* () {
     
     
     BrowserOffline.toggleOfflineStatus();
-    let proxy = Services.prefs.getIntPref('network.proxy.type');
-    Services.prefs.setIntPref('network.proxy.type', 0);
+    let proxy = Services.prefs.getIntPref("network.proxy.type");
+    Services.prefs.setIntPref("network.proxy.type", 0);
     registerCleanupFunction(function() {
         BrowserOffline.toggleOfflineStatus();
-        Services.prefs.setIntPref('network.proxy.type', proxy);
+        Services.prefs.setIntPref("network.proxy.type", proxy);
     });
 
     
@@ -58,7 +58,7 @@ add_task(function* () {
 
     
     yield ContentTask.spawn(browser, null, function() {
-      is(content.document.documentURI.substring(0, 14), 'about:neterror',
+      is(content.document.documentURI.substring(0, 14), "about:neterror",
           "Offline mode successfully simulated network outage.");
     });
     yield checkBookmark(uri, title);

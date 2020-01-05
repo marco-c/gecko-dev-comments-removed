@@ -131,7 +131,7 @@ function getDistributionPrefValue(aPrefName) {
 XPCOMUtils.defineLazyGetter(UpdateUtils, "Locale", function() {
   let channel;
   let locale;
-  for (let res of ['app', 'gre']) {
+  for (let res of ["app", "gre"]) {
     channel = NetUtil.newChannel({
       uri: "resource://" + res + "/" + FILE_UPDATE_LOCALE,
       contentPolicyType: Ci.nsIContentPolicy.TYPE_INTERNAL_XMLHTTPREQUEST,
@@ -208,7 +208,7 @@ XPCOMUtils.defineLazyGetter(this, "gWinCPUArch", function aus_gWinCPUArch() {
 
   
   
-  const SYSTEM_INFO = new ctypes.StructType('SYSTEM_INFO',
+  const SYSTEM_INFO = new ctypes.StructType("SYSTEM_INFO",
       [
       {wProcessorArchitecture: WORD},
       {wReserved: WORD},
@@ -307,7 +307,7 @@ XPCOMUtils.defineLazyGetter(UpdateUtils, "OSVersion", function() {
       
       
       const SZCSDVERSIONLENGTH = 128;
-      const OSVERSIONINFOEXW = new ctypes.StructType('OSVERSIONINFOEXW',
+      const OSVERSIONINFOEXW = new ctypes.StructType("OSVERSIONINFOEXW",
           [
           {dwOSVersionInfoSize: DWORD},
           {dwMajorVersion: DWORD},

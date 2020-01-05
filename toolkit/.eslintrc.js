@@ -203,6 +203,10 @@ module.exports = {
     "object-shorthand": ["error", "always", { "avoidQuotes": true }],
 
     
+    
+    "quotes": ["error", "double", { "avoidEscape": true, "allowTemplateLiterals": true }],
+
+    
     "rest-spread-spacing": "error",
 
     

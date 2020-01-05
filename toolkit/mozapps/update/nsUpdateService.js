@@ -4,7 +4,7 @@
 
 
 
-'use strict';
+"use strict";
 
 const { classes: Cc, interfaces: Ci, results: Cr, utils: Cu } = Components;
 
@@ -931,7 +931,7 @@ function shouldUseService() {
   
   
   const SZCSDVERSIONLENGTH = 128;
-  const OSVERSIONINFOEXW = new ctypes.StructType('OSVERSIONINFOEXW',
+  const OSVERSIONINFOEXW = new ctypes.StructType("OSVERSIONINFOEXW",
     [
       {dwOSVersionInfoSize: DWORD},
       {dwMajorVersion: DWORD},

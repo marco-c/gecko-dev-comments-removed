@@ -67,7 +67,7 @@
 
 
 
-'use strict';
+"use strict";
 
 
 

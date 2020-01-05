@@ -57,12 +57,12 @@ function test1A() {
 function test1B() {
   var expected = "Mixed Content Blocker disabled";
   waitForCondition(
-    () => content.document.getElementById('mctestdiv').innerHTML == expected,
+    () => content.document.getElementById("mctestdiv").innerHTML == expected,
     test1C, "Error: Waited too long for mixed script to run in Test 1B");
 }
 
 function test1C() {
-  var actual = content.document.getElementById('mctestdiv').innerHTML;
+  var actual = content.document.getElementById("mctestdiv").innerHTML;
   is(actual, "Mixed Content Blocker disabled", "OK: Executed mixed script in Test 1C");
 
   
@@ -78,7 +78,7 @@ function test1D() {
   
   assertMixedContentBlockingState(gTestBrowser, {activeLoaded: true, activeBlocked: false, passiveLoaded: false});
 
-  var actual = content.document.getElementById('mctestdiv').innerHTML;
+  var actual = content.document.getElementById("mctestdiv").innerHTML;
   is(actual, "Mixed Content Blocker disabled", "OK: Executed mixed script in Test 1D");
 
   
@@ -106,12 +106,12 @@ function test2A() {
 function test2B() {
   var expected = "Mixed Content Blocker disabled";
   waitForCondition(
-    () => content.document.getElementById('mctestdiv').innerHTML == expected,
+    () => content.document.getElementById("mctestdiv").innerHTML == expected,
     test2C, "Error: Waited too long for mixed script to run in Test 2B");
 }
 
 function test2C() {
-  var actual = content.document.getElementById('mctestdiv').innerHTML;
+  var actual = content.document.getElementById("mctestdiv").innerHTML;
   is(actual, "Mixed Content Blocker disabled", "OK: Executed mixed script in Test 2C");
 
   
@@ -128,7 +128,7 @@ function test2D() {
   
   assertMixedContentBlockingState(gTestBrowser, {activeLoaded: true, activeBlocked: false, passiveLoaded: false});
 
-  var actual = content.document.getElementById('mctestdiv').innerHTML;
+  var actual = content.document.getElementById("mctestdiv").innerHTML;
   is(actual, "Mixed Content Blocker disabled", "OK: Executed mixed script in Test 2D");
 
   

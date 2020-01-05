@@ -994,7 +994,7 @@ var loadManifestFromWebManifest = Task.async(function*(aUri) {
     let rawManifest = extension.rawManifest;
 
     
-    let creator = typeof(rawManifest.author) === 'string' ? rawManifest.author : null;
+    let creator = typeof(rawManifest.author) === "string" ? rawManifest.author : null;
     let homepageURL = rawManifest.homepage_url;
 
     
@@ -1669,7 +1669,7 @@ function flushChromeCaches() {
 
 function getTemporaryFile() {
   let file = FileUtils.getDir(KEY_TEMPDIR, []);
-  let random = Math.random().toString(36).replace(/0./, '').substr(-3);
+  let random = Math.random().toString(36).replace(/0./, "").substr(-3);
   file.append("tmp-" + random + ".xpi");
   file.createUnique(Ci.nsIFile.NORMAL_FILE_TYPE, FileUtils.PERMS_FILE);
 
@@ -2097,16 +2097,16 @@ function XPIState(saved) {
 }
 
 XPIState.prototype = {
-  fields: [['d', 'descriptor'],
-           ['e', 'enabled'],
-           ['v', 'version'],
-           ['st', 'scanTime'],
-           ['mt', 'manifestTime']],
+  fields: [["d", "descriptor"],
+           ["e", "enabled"],
+           ["v", "version"],
+           ["st", "scanTime"],
+           ["mt", "manifestTime"]],
   
 
 
   get mtime() {
-    if (!this.enabled && ('manifestTime' in this) && this.manifestTime > this.scanTime) {
+    if (!this.enabled && ("manifestTime" in this) && this.manifestTime > this.scanTime) {
       return this.manifestTime;
     }
     return this.scanTime;
@@ -2132,8 +2132,8 @@ XPIState.prototype = {
     let changed = false;
     let scanStarted = Cu.now();
     
-    if (!('scanTime' in this) || this.enabled) {
-      logger.debug('getModTime: Recursive scan of ' + aId);
+    if (!("scanTime" in this) || this.enabled) {
+      logger.debug("getModTime: Recursive scan of " + aId);
       let [modFile, modTime, items] = recursiveLastModifiedTime(aFile);
       XPIProvider._mostRecentlyModifiedFile[aId] = modFile;
       XPIProvider.setTelemetry(aId, "scan_items", items);

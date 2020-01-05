@@ -130,7 +130,7 @@ var prefs2 = [
 
 
 
-Phase('phase1', [
+Phase("phase1", [
   [Passwords.add, passwords_initial],
   [Bookmarks.add, bookmarks_initial],
   [Prefs.modify, prefs1],
@@ -139,7 +139,7 @@ Phase('phase1', [
 ]);
 
 
-Phase('phase2', [
+Phase("phase2", [
   [Sync],
   [Prefs.verify, prefs1],
   [Passwords.verify, passwords_initial],
@@ -149,7 +149,7 @@ Phase('phase2', [
 
 
 
-Phase('phase3', [
+Phase("phase3", [
   [Prefs.modify, prefs2],
   [Passwords.modify, passwords_initial],
   [Bookmarks.modify, bookmarks_initial],

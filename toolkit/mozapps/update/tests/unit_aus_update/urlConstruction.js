@@ -178,7 +178,7 @@ function getServicePack() {
   
   
   const SZCSDVERSIONLENGTH = 128;
-  const OSVERSIONINFOEXW = new ctypes.StructType('OSVERSIONINFOEXW',
+  const OSVERSIONINFOEXW = new ctypes.StructType("OSVERSIONINFOEXW",
     [
       {dwOSVersionInfoSize: DWORD},
       {dwMajorVersion: DWORD},
@@ -223,7 +223,7 @@ function getProcArchitecture() {
 
   
   
-  const SYSTEM_INFO = new ctypes.StructType('SYSTEM_INFO',
+  const SYSTEM_INFO = new ctypes.StructType("SYSTEM_INFO",
     [
       {wProcessorArchitecture: WORD},
       {wReserved: WORD},

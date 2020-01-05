@@ -88,7 +88,7 @@ tests.push({
     let stmt = mDBConn.createStatement(
       "INSERT INTO moz_anno_attributes (name) VALUES (:anno)"
     );
-    stmt.params['anno'] = this._obsoleteWeaveAttribute;
+    stmt.params["anno"] = this._obsoleteWeaveAttribute;
     stmt.execute();
     stmt.finalize();
     stmt = mDBConn.createStatement(
@@ -97,8 +97,8 @@ tests.push({
          (SELECT id FROM moz_anno_attributes WHERE name = :anno)
        )`
     );
-    stmt.params['place_id'] = this._placeId;
-    stmt.params['anno'] = this._obsoleteWeaveAttribute;
+    stmt.params["place_id"] = this._placeId;
+    stmt.params["anno"] = this._obsoleteWeaveAttribute;
     stmt.execute();
     stmt.finalize();
   },
@@ -108,7 +108,7 @@ tests.push({
     let stmt = mDBConn.createStatement(
       "SELECT id FROM moz_anno_attributes WHERE name = :anno"
     );
-    stmt.params['anno'] = this._obsoleteWeaveAttribute;
+    stmt.params["anno"] = this._obsoleteWeaveAttribute;
     do_check_false(stmt.executeStep());
     stmt.finalize();
   }
@@ -134,9 +134,9 @@ tests.push({
       `INSERT INTO moz_anno_attributes (name)
        VALUES (:anno1), (:anno2), (:anno3)`
     );
-    stmt.params['anno1'] = this._obsoleteSyncAttribute;
-    stmt.params['anno2'] = this._obsoleteGuidAttribute;
-    stmt.params['anno3'] = this._obsoleteWeaveAttribute;
+    stmt.params["anno1"] = this._obsoleteSyncAttribute;
+    stmt.params["anno2"] = this._obsoleteGuidAttribute;
+    stmt.params["anno3"] = this._obsoleteWeaveAttribute;
     stmt.execute();
     stmt.finalize();
     stmt = mDBConn.createStatement(
@@ -145,10 +145,10 @@ tests.push({
        FROM moz_anno_attributes
        WHERE name IN (:anno1, :anno2, :anno3)`
     );
-    stmt.params['item_id'] = this._bookmarkId;
-    stmt.params['anno1'] = this._obsoleteSyncAttribute;
-    stmt.params['anno2'] = this._obsoleteGuidAttribute;
-    stmt.params['anno3'] = this._obsoleteWeaveAttribute;
+    stmt.params["item_id"] = this._bookmarkId;
+    stmt.params["anno1"] = this._obsoleteSyncAttribute;
+    stmt.params["anno2"] = this._obsoleteGuidAttribute;
+    stmt.params["anno3"] = this._obsoleteWeaveAttribute;
     stmt.execute();
     stmt.finalize();
   },
@@ -159,9 +159,9 @@ tests.push({
       `SELECT id FROM moz_anno_attributes
        WHERE name IN (:anno1, :anno2, :anno3)`
     );
-    stmt.params['anno1'] = this._obsoleteSyncAttribute;
-    stmt.params['anno2'] = this._obsoleteGuidAttribute;
-    stmt.params['anno3'] = this._obsoleteWeaveAttribute;
+    stmt.params["anno1"] = this._obsoleteSyncAttribute;
+    stmt.params["anno2"] = this._obsoleteGuidAttribute;
+    stmt.params["anno3"] = this._obsoleteWeaveAttribute;
     do_check_false(stmt.executeStep());
     stmt.finalize();
   }
@@ -184,24 +184,24 @@ tests.push({
     this._bookmarkId = addBookmark(this._placeId);
     
     let stmt = mDBConn.createStatement("INSERT INTO moz_anno_attributes (name) VALUES (:anno)");
-    stmt.params['anno'] = this._usedPageAttribute;
+    stmt.params["anno"] = this._usedPageAttribute;
     stmt.execute();
     stmt.reset();
-    stmt.params['anno'] = this._usedItemAttribute;
+    stmt.params["anno"] = this._usedItemAttribute;
     stmt.execute();
     stmt.reset();
-    stmt.params['anno'] = this._unusedAttribute;
+    stmt.params["anno"] = this._unusedAttribute;
     stmt.execute();
     stmt.finalize();
 
     stmt = mDBConn.createStatement("INSERT INTO moz_annos (place_id, anno_attribute_id) VALUES(:place_id, (SELECT id FROM moz_anno_attributes WHERE name = :anno))");
-    stmt.params['place_id'] = this._placeId;
-    stmt.params['anno'] = this._usedPageAttribute;
+    stmt.params["place_id"] = this._placeId;
+    stmt.params["anno"] = this._usedPageAttribute;
     stmt.execute();
     stmt.finalize();
     stmt = mDBConn.createStatement("INSERT INTO moz_items_annos (item_id, anno_attribute_id) VALUES(:item_id, (SELECT id FROM moz_anno_attributes WHERE name = :anno))");
-    stmt.params['item_id'] = this._bookmarkId;
-    stmt.params['anno'] = this._usedItemAttribute;
+    stmt.params["item_id"] = this._bookmarkId;
+    stmt.params["anno"] = this._usedItemAttribute;
     stmt.execute();
     stmt.finalize();
   },
@@ -209,14 +209,14 @@ tests.push({
   check() {
     
     let stmt = mDBConn.createStatement("SELECT id FROM moz_anno_attributes WHERE name = :anno");
-    stmt.params['anno'] = this._usedPageAttribute;
+    stmt.params["anno"] = this._usedPageAttribute;
     do_check_true(stmt.executeStep());
     stmt.reset();
-    stmt.params['anno'] = this._usedItemAttribute;
+    stmt.params["anno"] = this._usedItemAttribute;
     do_check_true(stmt.executeStep());
     stmt.reset();
     
-    stmt.params['anno'] = this._unusedAttribute;
+    stmt.params["anno"] = this._unusedAttribute;
     do_check_false(stmt.executeStep());
     stmt.finalize();
   }
@@ -236,17 +236,17 @@ tests.push({
     this._placeId = addPlace();
     
     let stmt = mDBConn.createStatement("INSERT INTO moz_anno_attributes (name) VALUES (:anno)");
-    stmt.params['anno'] = this._usedPageAttribute;
+    stmt.params["anno"] = this._usedPageAttribute;
     stmt.execute();
     stmt.finalize();
     stmt = mDBConn.createStatement("INSERT INTO moz_annos (place_id, anno_attribute_id) VALUES(:place_id, (SELECT id FROM moz_anno_attributes WHERE name = :anno))");
-    stmt.params['place_id'] = this._placeId;
-    stmt.params['anno'] = this._usedPageAttribute;
+    stmt.params["place_id"] = this._placeId;
+    stmt.params["anno"] = this._usedPageAttribute;
     stmt.execute();
     stmt.finalize();
     
     stmt = mDBConn.createStatement("INSERT INTO moz_annos (place_id, anno_attribute_id) VALUES(:place_id, 1337)");
-    stmt.params['place_id'] = this._placeId;
+    stmt.params["place_id"] = this._placeId;
     stmt.execute();
     stmt.finalize();
   },
@@ -254,12 +254,12 @@ tests.push({
   check() {
     
     let stmt = mDBConn.createStatement("SELECT id FROM moz_anno_attributes WHERE name = :anno");
-    stmt.params['anno'] = this._usedPageAttribute;
+    stmt.params["anno"] = this._usedPageAttribute;
     do_check_true(stmt.executeStep());
     stmt.finalize();
     
     stmt = mDBConn.createStatement("SELECT id FROM moz_annos WHERE anno_attribute_id = (SELECT id FROM moz_anno_attributes WHERE name = :anno)");
-    stmt.params['anno'] = this._usedPageAttribute;
+    stmt.params["anno"] = this._usedPageAttribute;
     do_check_true(stmt.executeStep());
     stmt.finalize();
     
@@ -283,17 +283,17 @@ tests.push({
     this._placeId = addPlace();
     
     let stmt = mDBConn.createStatement("INSERT INTO moz_anno_attributes (name) VALUES (:anno)");
-    stmt.params['anno'] = this._usedPageAttribute;
+    stmt.params["anno"] = this._usedPageAttribute;
     stmt.execute();
     stmt.finalize();
     stmt = mDBConn.createStatement("INSERT INTO moz_annos (place_id, anno_attribute_id) VALUES(:place_id, (SELECT id FROM moz_anno_attributes WHERE name = :anno))");
-    stmt.params['place_id'] = this._placeId;
-    stmt.params['anno'] = this._usedPageAttribute;
+    stmt.params["place_id"] = this._placeId;
+    stmt.params["anno"] = this._usedPageAttribute;
     stmt.execute();
     stmt.reset();
     
-    stmt.params['place_id'] = 1337;
-    stmt.params['anno'] = this._usedPageAttribute;
+    stmt.params["place_id"] = 1337;
+    stmt.params["anno"] = this._usedPageAttribute;
     stmt.execute();
     stmt.finalize();
   },
@@ -301,12 +301,12 @@ tests.push({
   check() {
     
     let stmt = mDBConn.createStatement("SELECT id FROM moz_anno_attributes WHERE name = :anno");
-    stmt.params['anno'] = this._usedPageAttribute;
+    stmt.params["anno"] = this._usedPageAttribute;
     do_check_true(stmt.executeStep());
     stmt.finalize();
     
     stmt = mDBConn.createStatement("SELECT id FROM moz_annos WHERE anno_attribute_id = (SELECT id FROM moz_anno_attributes WHERE name = :anno)");
-    stmt.params['anno'] = this._usedPageAttribute;
+    stmt.params["anno"] = this._usedPageAttribute;
     do_check_true(stmt.executeStep());
     stmt.finalize();
     
@@ -910,17 +910,17 @@ tests.push({
     this._bookmarkId = addBookmark(this._placeId);
     
     let stmt = mDBConn.createStatement("INSERT INTO moz_anno_attributes (name) VALUES (:anno)");
-    stmt.params['anno'] = this._usedItemAttribute;
+    stmt.params["anno"] = this._usedItemAttribute;
     stmt.execute();
     stmt.finalize();
     stmt = mDBConn.createStatement("INSERT INTO moz_items_annos (item_id, anno_attribute_id) VALUES(:item_id, (SELECT id FROM moz_anno_attributes WHERE name = :anno))");
-    stmt.params['item_id'] = this._bookmarkId;
-    stmt.params['anno'] = this._usedItemAttribute;
+    stmt.params["item_id"] = this._bookmarkId;
+    stmt.params["anno"] = this._usedItemAttribute;
     stmt.execute();
     stmt.finalize();
     
     stmt = mDBConn.createStatement("INSERT INTO moz_items_annos (item_id, anno_attribute_id) VALUES(:item_id, 1337)");
-    stmt.params['item_id'] = this._bookmarkId;
+    stmt.params["item_id"] = this._bookmarkId;
     stmt.execute();
     stmt.finalize();
   },
@@ -928,12 +928,12 @@ tests.push({
   check() {
     
     let stmt = mDBConn.createStatement("SELECT id FROM moz_anno_attributes WHERE name = :anno");
-    stmt.params['anno'] = this._usedItemAttribute;
+    stmt.params["anno"] = this._usedItemAttribute;
     do_check_true(stmt.executeStep());
     stmt.finalize();
     
     stmt = mDBConn.createStatement("SELECT id FROM moz_items_annos WHERE anno_attribute_id = (SELECT id FROM moz_anno_attributes WHERE name = :anno)");
-    stmt.params['anno'] = this._usedItemAttribute;
+    stmt.params["anno"] = this._usedItemAttribute;
     do_check_true(stmt.executeStep());
     stmt.finalize();
     
@@ -961,7 +961,7 @@ tests.push({
     this._bookmarkId = addBookmark(this._placeId);
     
     let stmt = mDBConn.createStatement("INSERT INTO moz_anno_attributes (name) VALUES (:anno)");
-    stmt.params['anno'] = this._usedItemAttribute;
+    stmt.params["anno"] = this._usedItemAttribute;
     stmt.execute();
     stmt.finalize();
     stmt = mDBConn.createStatement("INSERT INTO moz_items_annos (item_id, anno_attribute_id) VALUES (:item_id, (SELECT id FROM moz_anno_attributes WHERE name = :anno))");
@@ -979,12 +979,12 @@ tests.push({
   check() {
     
     let stmt = mDBConn.createStatement("SELECT id FROM moz_anno_attributes WHERE name = :anno");
-    stmt.params['anno'] = this._usedItemAttribute;
+    stmt.params["anno"] = this._usedItemAttribute;
     do_check_true(stmt.executeStep());
     stmt.finalize();
     
     stmt = mDBConn.createStatement("SELECT id FROM moz_items_annos WHERE anno_attribute_id = (SELECT id FROM moz_anno_attributes WHERE name = :anno)");
-    stmt.params['anno'] = this._usedItemAttribute;
+    stmt.params["anno"] = this._usedItemAttribute;
     do_check_true(stmt.executeStep());
     stmt.finalize();
     

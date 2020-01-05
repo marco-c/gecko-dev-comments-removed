@@ -4,7 +4,7 @@ let rootDir = getRootDirectory(gTestPath);
 let jar = getJar(rootDir);
 if (jar) {
   let tmpdir = extractJarToTmp(jar);
-  rootDir = "file://" + tmpdir.path + '/';
+  rootDir = "file://" + tmpdir.path + "/";
 }
 
 loader.loadSubScript(rootDir + "privacypane_tests_perwindow.js", this);

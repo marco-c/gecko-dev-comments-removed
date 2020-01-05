@@ -372,7 +372,7 @@ let BrowserUsageTelemetry = {
         
         
         
-        if (['urlbar', 'searchbar'].includes(source)) {
+        if (["urlbar", "searchbar"].includes(source)) {
           Services.telemetry.getKeyedHistogramById("SEARCH_COUNTS").add(countId);
           return;
         }

@@ -5,9 +5,9 @@
 
 
 var search = window.location.href.match(/^.*\?(.*)$/);
-var searchParams = new URLSearchParams(search ? search[1] : '');
-var storage = searchParams.get('storage');
-var cacheContext = searchParams.get('context');
+var searchParams = new URLSearchParams(search ? search[1] : "");
+var storage = searchParams.get("storage");
+var cacheContext = searchParams.get("context");
 
 
 if (cacheContext)
@@ -19,25 +19,25 @@ if (appId)
 function $(id) { return document.getElementById(id) || {}; }
 
 
-addEventListener('DOMContentLoaded', function() {
-  $('anon').checked = !!isAnon;
-  $('inbrowser').checked = !!isInBrowser;
-  $('appid').value = appId || '';
-  $('priv').checked = !!isPrivate;
+addEventListener("DOMContentLoaded", function() {
+  $("anon").checked = !!isAnon;
+  $("inbrowser").checked = !!isInBrowser;
+  $("appid").value = appId || "";
+  $("priv").checked = !!isPrivate;
 }, false);
 
 
 
 function navigate() {
-  context = '';
-  if ($('anon').checked)
-    context += 'a,';
-  if ($('inbrowser').checked)
-    context += 'b,';
-  if ($('appid').value)
-    context += 'i' + $('appid').value + ',';
-  if ($('priv').checked)
-    context += 'p,';
+  context = "";
+  if ($("anon").checked)
+    context += "a,";
+  if ($("inbrowser").checked)
+    context += "b,";
+  if ($("appid").value)
+    context += "i" + $("appid").value + ",";
+  if ($("priv").checked)
+    context += "p,";
 
-  window.location.href = 'about:cache?storage=' + storage + '&context=' + context;
+  window.location.href = "about:cache?storage=" + storage + "&context=" + context;
 }

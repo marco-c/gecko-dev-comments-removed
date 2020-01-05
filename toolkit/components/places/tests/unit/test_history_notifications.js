@@ -3,7 +3,7 @@ const NS_PLACES_DATABASE_LOCKED_TOPIC = "places-database-locked";
 
 add_task(function* () {
   
-  let db = Services.dirsvc.get('ProfD', Ci.nsIFile);
+  let db = Services.dirsvc.get("ProfD", Ci.nsIFile);
   db.append("places.sqlite");
   let dbConn = Services.storage.openUnsharedDatabase(db);
   Assert.ok(db.exists(), "The database should have been created");

@@ -152,10 +152,10 @@ function* doTest(aBrowser) {
     let URLSuffix = "?r=" + arg.randomSuffix;
 
     
-    let audio = content.document.createElement('audio');
-    let video = content.document.createElement('video');
-    let audioSource = content.document.createElement('source');
-    let audioTrack = content.document.createElement('track');
+    let audio = content.document.createElement("audio");
+    let video = content.document.createElement("video");
+    let audioSource = content.document.createElement("source");
+    let audioTrack = content.document.createElement("track");
 
     
     yield new Promise(resolve => {

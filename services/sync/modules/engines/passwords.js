@@ -2,7 +2,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ['PasswordEngine', 'LoginRec', 'PasswordValidator'];
+this.EXPORTED_SYMBOLS = ["PasswordEngine", "LoginRec", "PasswordValidator"];
 
 var {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 

@@ -38,7 +38,7 @@ var satchelFormListener = {
     
     isValidCCNumber(ccNumber) {
         
-        ccNumber = ccNumber.replace(/[\-\s]/g, '');
+        ccNumber = ccNumber.replace(/[\-\s]/g, "");
 
         let len = ccNumber.length;
         if (len != 9 && len != 15 && len != 16)
@@ -154,7 +154,7 @@ var satchelFormListener = {
                 if (!name)
                     continue;
 
-                if (name == 'searchbar-history') {
+                if (name == "searchbar-history") {
                     this.log('addEntry for input name "' + name + '" is denied')
                     continue;
                 }

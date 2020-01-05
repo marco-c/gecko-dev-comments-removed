@@ -86,7 +86,7 @@ add_task(function* test_sidebar() {
   
   BUIT._countableEvents = {};
 
-  yield SidebarUI.show('viewTabsSidebar');
+  yield SidebarUI.show("viewTabsSidebar");
 
   let syncedTabsDeckComponent = SidebarUI.browser.contentWindow.syncedTabsDeckComponent;
 

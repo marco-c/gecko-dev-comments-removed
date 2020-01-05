@@ -23,7 +23,7 @@ const PREF_LOG_SENSITIVE_DETAILS = "identity.fxaccounts.log.sensitive";
 
 var exports = Object.create(null);
 
-XPCOMUtils.defineLazyGetter(exports, 'log', function() {
+XPCOMUtils.defineLazyGetter(exports, "log", function() {
   let log = Log.repository.getLogger("FirefoxAccounts");
   
   
@@ -54,7 +54,7 @@ XPCOMUtils.defineLazyGetter(exports, 'log', function() {
 
 
 
-XPCOMUtils.defineLazyGetter(exports, 'logPII', function() {
+XPCOMUtils.defineLazyGetter(exports, "logPII", function() {
   try {
     return Services.prefs.getBoolPref(PREF_LOG_SENSITIVE_DETAILS);
   } catch (_) {

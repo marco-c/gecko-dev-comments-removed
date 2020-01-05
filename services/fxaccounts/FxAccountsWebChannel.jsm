@@ -435,7 +435,7 @@ this.FxAccountsWebChannelHelpers.prototype = {
                       ps.BUTTON_POS_1_DEFAULT;
 
     
-    var targetWindow = typeof window === 'undefined' ? null : window;
+    var targetWindow = typeof window === "undefined" ? null : window;
     let pressed = Services.prompt.confirmEx(targetWindow, title, body, buttonFlags,
                                        continueLabel, null, null, null,
                                        {});

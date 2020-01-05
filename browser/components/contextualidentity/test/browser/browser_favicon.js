@@ -84,8 +84,8 @@ add_task(function* setup() {
   
   if (!gHttpServer) {
     gHttpServer = new HttpServer();
-    gHttpServer.registerPathHandler('/', loadIndexHandler);
-    gHttpServer.registerPathHandler('/favicon.png', loadFaviconHandler);
+    gHttpServer.registerPathHandler("/", loadIndexHandler);
+    gHttpServer.registerPathHandler("/favicon.png", loadFaviconHandler);
     gHttpServer.start(-1);
   }
 });

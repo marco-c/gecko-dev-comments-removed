@@ -2,7 +2,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ['HistoryEngine', 'HistoryRec'];
+this.EXPORTED_SYMBOLS = ["HistoryEngine", "HistoryRec"];
 
 var Cc = Components.classes;
 var Ci = Components.interfaces;

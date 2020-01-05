@@ -54,7 +54,7 @@ add_task(function*() {
   
   
   yield ContentTask.spawn(browser, {}, function*() {
-    dump('\nJust wasting some time.\n');
+    dump("\nJust wasting some time.\n");
   });
 
   gPageStyleMenu.fillPopup(menupopup);

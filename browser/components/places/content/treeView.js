@@ -2,7 +2,7 @@
 
 
 
-Components.utils.import('resource://gre/modules/XPCOMUtils.jsm');
+Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 const PTV_interfaces = [Ci.nsITreeView,
                         Ci.nsINavHistoryResultObserver,
@@ -502,7 +502,7 @@ PlacesTreeView.prototype = {
       const locale = Cc["@mozilla.org/chrome/chrome-registry;1"]
                      .getService(Ci.nsIXULChromeRegistry)
                      .getSelectedLocale("global", true);
-      const dtOptions = { hour: 'numeric', minute: 'numeric' };
+      const dtOptions = { hour: "numeric", minute: "numeric" };
       this.__todayFormatter = new Intl.DateTimeFormat(locale, dtOptions);
     }
     return this.__todayFormatter;
@@ -514,8 +514,8 @@ PlacesTreeView.prototype = {
       const locale = Cc["@mozilla.org/chrome/chrome-registry;1"]
                      .getService(Ci.nsIXULChromeRegistry)
                      .getSelectedLocale("global", true);
-      const dtOptions = { year: '2-digit', month: 'numeric', day: 'numeric',
-                          hour: 'numeric', minute: 'numeric' };
+      const dtOptions = { year: "2-digit", month: "numeric", day: "numeric",
+                          hour: "numeric", minute: "numeric" };
       this.__dateFormatter = new Intl.DateTimeFormat(locale, dtOptions);
     }
     return this.__dateFormatter;

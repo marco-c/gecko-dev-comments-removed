@@ -2,7 +2,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ['PrefsEngine', 'PrefRec'];
+this.EXPORTED_SYMBOLS = ["PrefsEngine", "PrefRec"];
 
 var Cc = Components.classes;
 var Ci = Components.interfaces;

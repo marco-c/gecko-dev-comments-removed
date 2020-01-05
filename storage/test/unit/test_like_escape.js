@@ -21,7 +21,7 @@ function setup() {
 
 function test_escape_for_like_ascii() {
   var stmt = createStatement("SELECT x FROM t1 WHERE x LIKE ?1 ESCAPE '/'");
-  var paramForLike = stmt.escapeStringForLIKE("oo/bar_baz%20chees", '/');
+  var paramForLike = stmt.escapeStringForLIKE("oo/bar_baz%20chees", "/");
   
   do_check_eq(paramForLike, "oo//bar/_baz/%20chees");
   
@@ -33,7 +33,7 @@ function test_escape_for_like_ascii() {
 
 function test_escape_for_like_non_ascii() {
   var stmt = createStatement("SELECT x FROM t1 WHERE x LIKE ?1 ESCAPE '/'");
-  var paramForLike = stmt.escapeStringForLIKE("oo%20" + LATIN1_AE + "/_ba", '/');
+  var paramForLike = stmt.escapeStringForLIKE("oo%20" + LATIN1_AE + "/_ba", "/");
   
   do_check_eq(paramForLike, "oo/%20" + LATIN1_AE + "///_ba");
   

@@ -697,7 +697,7 @@ extApplication.prototype = {
     if (cancelQuit.data)
       return false; 
 
-    let appStartup = Components.classes['@mozilla.org/toolkit/app-startup;1']
+    let appStartup = Components.classes["@mozilla.org/toolkit/app-startup;1"]
                                .getService(Components.interfaces.nsIAppStartup);
     appStartup.quit(aFlags);
     return true;

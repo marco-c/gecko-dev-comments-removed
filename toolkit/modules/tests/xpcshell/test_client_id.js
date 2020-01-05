@@ -43,7 +43,7 @@ add_task(function* () {
     yield OS.File.remove(drsPath);
     yield CommonUtils.writeJSON({clientID: invalidID}, fhrPath);
     clientID = yield ClientID.getClientID();
-    Assert.equal(typeof(clientID), 'string');
+    Assert.equal(typeof(clientID), "string");
     Assert.ok(uuidRegex.test(clientID));
   }
 
@@ -52,7 +52,7 @@ add_task(function* () {
   yield OS.File.remove(drsPath);
   yield OS.File.writeAtomic(fhrPath, "abcd", {encoding: "utf-8", tmpPath: fhrPath + ".tmp"});
   clientID = yield ClientID.getClientID();
-  Assert.equal(typeof(clientID), 'string');
+  Assert.equal(typeof(clientID), "string");
   Assert.ok(uuidRegex.test(clientID));
 
   
@@ -70,7 +70,7 @@ add_task(function* () {
   yield OS.File.remove(fhrPath);
   yield OS.File.writeAtomic(drsPath, "abcd", {encoding: "utf-8", tmpPath: drsPath + ".tmp"});
   clientID = yield ClientID.getClientID();
-  Assert.equal(typeof(clientID), 'string');
+  Assert.equal(typeof(clientID), "string");
   Assert.ok(uuidRegex.test(clientID));
 
   
@@ -79,7 +79,7 @@ add_task(function* () {
     yield CommonUtils.writeJSON({clientID: invalidID}, fhrPath);
     yield CommonUtils.writeJSON({clientID: invalidID}, drsPath);
     clientID = yield ClientID.getClientID();
-    Assert.equal(typeof(clientID), 'string');
+    Assert.equal(typeof(clientID), "string");
     Assert.ok(uuidRegex.test(clientID));
   }
 

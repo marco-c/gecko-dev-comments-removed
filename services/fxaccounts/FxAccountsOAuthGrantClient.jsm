@@ -166,7 +166,7 @@ this.FxAccountsOAuthGrantClient.prototype = {
           return resolve(body);
         }
 
-        if (typeof body.errno === 'number') {
+        if (typeof body.errno === "number") {
           
           body.errno += OAUTH_SERVER_ERRNO_OFFSET;
         } else if (body.errno) {

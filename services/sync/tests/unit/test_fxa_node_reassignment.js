@@ -85,7 +85,7 @@ function prepareServer(cbAfterTokenFetch) {
         
         
         numReassigns += 1;
-        let trailingZeros = new Array(numReassigns + 1).join('0');
+        let trailingZeros = new Array(numReassigns + 1).join("0");
         let token = config.fxaccount.token;
         token.endpoint = server.baseURI + "1.1" + trailingZeros + "/johndoe";
         token.uid = config.username;

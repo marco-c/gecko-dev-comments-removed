@@ -2,12 +2,12 @@
 
 
 
-'use strict';
+"use strict";
 
 const Cc = Components.classes;
 const Ci = Components.interfaces;
 
-this.EXPORTED_SYMBOLS = ['ContentPrefInstance'];
+this.EXPORTED_SYMBOLS = ["ContentPrefInstance"];
 
 
 

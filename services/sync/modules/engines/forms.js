@@ -2,7 +2,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ['FormEngine', 'FormRec', 'FormValidator'];
+this.EXPORTED_SYMBOLS = ["FormEngine", "FormRec", "FormValidator"];
 
 var Cc = Components.classes;
 var Ci = Components.interfaces;

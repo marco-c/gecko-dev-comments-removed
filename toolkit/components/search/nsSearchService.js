@@ -935,7 +935,7 @@ function sanitizeName(aName) {
 
   
   if (name.length < minLength)
-    name = Math.random().toString(36).replace(/^.*\./, '');
+    name = Math.random().toString(36).replace(/^.*\./, "");
 
   
   return name.substring(0, maxLength);

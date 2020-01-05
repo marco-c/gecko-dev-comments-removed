@@ -1816,7 +1816,7 @@ function getArchivedPingPath(aPingId, aDate, aType) {
   
   
   let archivedPingDir = OS.Path.join(gPingsArchivePath,
-    aDate.getFullYear() + '-' + addLeftPadding(aDate.getMonth() + 1));
+    aDate.getFullYear() + "-" + addLeftPadding(aDate.getMonth() + 1));
   
   let fileName = [aDate.getTime(), aPingId, aType, "json"].join(".");
   return OS.Path.join(archivedPingDir, fileName);

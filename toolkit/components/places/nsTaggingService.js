@@ -611,7 +611,7 @@ TagAutoCompleteSearch.prototype = {
     
     var index = Math.max(searchString.lastIndexOf(","),
       searchString.lastIndexOf(";"));
-    var before = '';
+    var before = "";
     if (index != -1) {
       before = searchString.slice(0, index + 1);
       searchString = searchString.slice(index + 1);

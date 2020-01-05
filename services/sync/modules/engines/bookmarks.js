@@ -2,7 +2,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ['BookmarksEngine', "PlacesItem", "Bookmark",
+this.EXPORTED_SYMBOLS = ["BookmarksEngine", "PlacesItem", "Bookmark",
                          "BookmarkFolder", "BookmarkQuery",
                          "Livemark", "BookmarkSeparator"];
 

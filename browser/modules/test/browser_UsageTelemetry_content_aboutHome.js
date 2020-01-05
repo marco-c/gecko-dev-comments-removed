@@ -77,7 +77,7 @@ add_task(function* test_abouthome_simpleQuery() {
                "This search must only increment one entry in the scalar.");
 
   
-  checkKeyedHistogram(search_hist, 'other-MozSearch.abouthome', 1);
+  checkKeyedHistogram(search_hist, "other-MozSearch.abouthome", 1);
 
   
   let events = Services.telemetry.snapshotBuiltinEvents(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, false);

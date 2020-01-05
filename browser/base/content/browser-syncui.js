@@ -432,9 +432,9 @@ var gSyncUI = {
     })();
     
     if (date < sixDaysAgo) {
-      dateFormat = {month: 'long', day: 'numeric'};
+      dateFormat = {month: "long", day: "numeric"};
     } else {
-      dateFormat = {weekday: 'long', hour: 'numeric', minute: 'numeric'};
+      dateFormat = {weekday: "long", hour: "numeric", minute: "numeric"};
     }
     let lastSyncDateString = date.toLocaleDateString(undefined, dateFormat);
     return this._stringBundle.formatStringFromName("lastSync2.label", [lastSyncDateString], 1);

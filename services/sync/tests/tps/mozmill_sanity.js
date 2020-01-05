@@ -2,7 +2,7 @@
 
 
 
-Components.utils.import('resource://tps/tps.jsm');
+Components.utils.import("resource://tps/tps.jsm");
 
 var setupModule = function(module) {
   module.controller = mozmill.getBrowserController();

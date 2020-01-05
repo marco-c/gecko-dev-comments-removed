@@ -5,7 +5,7 @@
 
 
 
-'use strict';
+"use strict";
 
 const { classes: Cc, interfaces: Ci, manager: Cm, results: Cr,
         utils: Cu } = Components;

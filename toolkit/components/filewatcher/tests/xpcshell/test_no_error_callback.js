@@ -19,7 +19,7 @@ function run_test() {
 add_task(function* test_error_with_no_error_callback() {
 
   let watcher = makeWatcher();
-  let testPath = 'someInvalidPath';
+  let testPath = "someInvalidPath";
 
   
   

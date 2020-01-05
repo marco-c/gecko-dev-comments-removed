@@ -179,9 +179,9 @@ var gConnectionsDialog = {
     var noProxiesPref = document.getElementById("network.proxy.no_proxies_on");
     
     
-    noProxiesPref.value = noProxiesPref.value.replace(/([^, \n;])[;\n]+(?![,\n;])/g, '$1,');
+    noProxiesPref.value = noProxiesPref.value.replace(/([^, \n;])[;\n]+(?![,\n;])/g, "$1,");
     
-    noProxiesPref.value = noProxiesPref.value.replace(/[;\n]/g, '');
+    noProxiesPref.value = noProxiesPref.value.replace(/[;\n]/g, "");
   },
 
   readHTTPProxyServer() {

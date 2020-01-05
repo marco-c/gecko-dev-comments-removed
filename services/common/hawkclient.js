@@ -71,7 +71,7 @@ XPCOMUtils.defineLazyGetter(this, "log", function() {
 
 
 
-XPCOMUtils.defineLazyGetter(this, 'logPII', function() {
+XPCOMUtils.defineLazyGetter(this, "logPII", function() {
   try {
     return Services.prefs.getBoolPref(PREF_LOG_SENSITIVE_DETAILS);
   } catch (_) {

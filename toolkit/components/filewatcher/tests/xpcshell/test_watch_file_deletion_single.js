@@ -38,7 +38,7 @@ add_task(function* test_watch_single_path_file_deletion() {
   yield promiseAddPath(watcher, watchedDir, deferred.resolve, deferred.reject);
 
   
-  do_print('Removing ' + tmpFilePath);
+  do_print("Removing " + tmpFilePath);
   yield OS.File.remove(tmpFilePath);
 
   

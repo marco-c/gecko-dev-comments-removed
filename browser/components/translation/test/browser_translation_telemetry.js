@@ -69,7 +69,7 @@ var MetricsChecker = {
     for (let metric of Object.keys(additions)) {
       let addition = additions[metric];
       
-      if (typeof addition === 'object') {
+      if (typeof addition === "object") {
         this._assertionLoop(prevMetrics[metric], metrics[metric], addition);
         continue;
       }

@@ -48,7 +48,7 @@ function check_submit_pending(tab, crashes) {
   let CrashURL = null;
   function csp_onload() {
     
-    ok(true, 'got submission onload');
+    ok(true, "got submission onload");
 
     ContentTask.spawn(browser, null, function() {
       
@@ -133,11 +133,11 @@ function test() {
   
   crashes.push(addPendingCrashreport(crD,
                                      crashes[crashes.length - 1].date + 60000,
-                                     {'ServerURL': 'http://example.com/browser/toolkit/crashreporter/test/browser/crashreport.sjs',
-                                      'ProductName': 'Test App',
+                                     {"ServerURL": "http://example.com/browser/toolkit/crashreporter/test/browser/crashreport.sjs",
+                                      "ProductName": "Test App",
                                       
                                       
-                                      'Foo': 'ABC=XYZ'
+                                      "Foo": "ABC=XYZ"
                                      }));
   crashes.sort((a, b) => b.date - a.date);
 
