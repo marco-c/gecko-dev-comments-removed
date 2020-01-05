@@ -294,5 +294,5 @@ pub trait CompositorEventListener {
     fn shutdown(&mut self);
     fn pinch_zoom_level(&self) -> f32;
     
-    fn get_title_for_main_frame(&self);
+    fn title_for_main_frame(&self);
 }

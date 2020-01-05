@@ -82,7 +82,7 @@ impl ActorRegistry {
     }
 
     
-    pub fn get_shareable(&self) -> Arc<Mutex<ActorRegistry>> {
+    pub fn shareable(&self) -> Arc<Mutex<ActorRegistry>> {
         self.shareable.as_ref().unwrap().clone()
     }
 
