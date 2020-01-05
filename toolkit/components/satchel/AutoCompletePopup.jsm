@@ -15,47 +15,43 @@ Cu.import("resource://gre/modules/Services.jsm");
 
 
 
-var AutoCompleteTreeView = {
+
+
+var AutoCompleteResultView = {
   
-  QueryInterface: XPCOMUtils.generateQI([Ci.nsITreeView,
-                                         Ci.nsIAutoCompleteController]),
+  QueryInterface: XPCOMUtils.generateQI([Ci.nsIAutoCompleteController,
+                                         Ci.nsIAutoCompleteInput]),
 
   
-  treeBox: null,
   results: [],
 
   
-  selection: null,
-
-  get rowCount()                     { return this.results.length; },
-  setTree: function(treeBox)         { this.treeBox = treeBox; },
-  getCellText: function(idx, column) { return this.results[idx].value },
-  isContainer: function(idx)         { return false; },
-  getCellValue: function(idx, column) { return false },
-  isContainerOpen: function(idx)     { return false; },
-  isContainerEmpty: function(idx)    { return false; },
-  isSeparator: function(idx)         { return false; },
-  isSorted: function()               { return false; },
-  isEditable: function(idx, column)  { return false; },
-  canDrop: function(idx, orientation, dt) { return false; },
-  getLevel: function(idx)            { return 0; },
-  getParentIndex: function(idx)      { return -1; },
-  hasNextSibling: function(idx, after) { return idx < this.results.length - 1 },
-  toggleOpenState: function(idx)     { },
-  getCellProperties: function(idx, column) { return this.results[idx].style || ""; },
-  getRowProperties: function(idx)    { return ""; },
-  getImageSrc: function(idx, column) { return null; },
-  getProgressMode : function(idx, column) { },
-  cycleHeader: function(column) { },
-  cycleCell: function(idx, column) { },
-  selectionChanged: function() { },
-  performAction: function(action) { },
-  performActionOnCell: function(action, index, column) { },
-  getColumnProperties: function(column) { return ""; },
-
-  
   get matchCount() {
-    return this.rowCount;
+    return this.results.length;
+  },
+
+  getValueAt(index) {
+    return this.results[index].value;
+  },
+
+  getLabelAt(index) {
+    
+    return "";
+  },
+
+  getCommentAt(index) {
+    
+    
+    
+    return this.results[index].label;
+  },
+
+  getStyleAt(index) {
+    return this.results[index].style;
+  },
+
+  getImageAt(index) {
+    return this.results[index].image;
   },
 
   handleEnter: function(aIsPopupSelection) {
@@ -63,6 +59,21 @@ var AutoCompleteTreeView = {
   },
 
   stopSearch: function() {},
+
+  searchString: "",
+
+  
+  get controller() {
+    return this;
+  },
+
+  get popup() {
+    return null;
+  },
+
+  _focus() {
+    AutoCompletePopup.requestFocus();
+  },
 
   
   clearResults: function() {
@@ -106,7 +117,12 @@ this.AutoCompletePopup = {
       }
 
       case "popuphidden": {
+        AutoCompleteResultView.clearResults();
         this.sendMessageToBrowser("FormAutoComplete:PopupClosed");
+        
+        
+        
+        this.openedPopup.adjustHeight();
         this.openedPopup = null;
         this.weakBrowser = null;
         evt.target.removeEventListener("popuphidden", this);
@@ -144,14 +160,13 @@ this.AutoCompletePopup = {
     this.openedPopup.setAttribute("width", Math.max(100, rect.width));
     this.openedPopup.style.direction = dir;
 
-    AutoCompleteTreeView.setResults(results);
-    this.openedPopup.view = AutoCompleteTreeView;
+    AutoCompleteResultView.setResults(results);
+    this.openedPopup.view = AutoCompleteResultView;
     this.openedPopup.selectedIndex = -1;
-    this.openedPopup.invalidate();
 
     if (results.length) {
       
-      this.openedPopup.mInput = null;
+      this.openedPopup.mInput = AutoCompleteResultView;
       this.openedPopup.showCommentColumn = false;
       this.openedPopup.showImageColumn = false;
       this.openedPopup.addEventListener("popuphidden", this);
@@ -159,6 +174,7 @@ this.AutoCompletePopup = {
       this.openedPopup.openPopupAtScreenRect("after_start", rect.left, rect.top,
                                              rect.width, rect.height, false,
                                              false);
+      this.openedPopup.invalidate();
     } else {
       this.closePopup();
     }
@@ -172,10 +188,7 @@ this.AutoCompletePopup = {
     if (!results.length) {
       this.closePopup();
     } else {
-      AutoCompleteTreeView.setResults(results);
-      
-      
-      this.openedPopup.view = AutoCompleteTreeView;
+      AutoCompleteResultView.setResults(results);
       this.openedPopup.invalidate();
     }
   },
@@ -187,7 +200,6 @@ this.AutoCompletePopup = {
       
       this.openedPopup.hidePopup();
     }
-    AutoCompleteTreeView.clearResults();
   },
 
   removeLogin(login) {
@@ -203,7 +215,9 @@ this.AutoCompletePopup = {
 
     switch (message.name) {
       case "FormAutoComplete:SelectBy": {
-        this.openedPopup.selectBy(message.data.reverse, message.data.page);
+        if (this.openedPopup) {
+          this.openedPopup.selectBy(message.data.reverse, message.data.page);
+        }
         break;
       }
 
@@ -247,7 +261,7 @@ this.AutoCompletePopup = {
         
         
         
-        AutoCompleteTreeView.clearResults();
+        AutoCompleteResultView.clearResults();
         break;
       }
     }
@@ -286,5 +300,15 @@ this.AutoCompletePopup = {
     }
   },
 
-  stopSearch: function() {}
+  stopSearch: function() {},
+
+  
+
+
+
+  requestFocus: function() {
+    if (this.openedPopup) {
+      this.sendMessageToBrowser("FormAutoComplete:Focus");
+    }
+  },
 }
