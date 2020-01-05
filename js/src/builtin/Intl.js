@@ -44,10 +44,10 @@ function toASCIIUpperCase(s) {
     
     var result = "";
     for (var i = 0; i < s.length; i++) {
-        var c = s[i];
-        if ("a" <= c && c <= "z")
-            c = callFunction(std_String_toUpperCase, c);
-        result += c;
+        var c = callFunction(std_String_charCodeAt, s, i);
+        result += (0x61 <= c && c <= 0x7A)
+                  ? callFunction(std_String_fromCharCode, null, c & ~0x20)
+                  : s[i];
     }
     return result;
 }
@@ -619,6 +619,113 @@ function IsWellFormedCurrencyCode(currency) {
     if (normalized.length !== 3)
         return false;
     return !regexp_test_no_statics(getIsWellFormedCurrencyCodeRE(), normalized);
+}
+
+
+var timeZoneCache = {
+    icuDefaultTimeZone: undefined,
+    defaultTimeZone: undefined,
+    timeZones: undefined,
+};
+
+
+
+
+
+
+
+
+
+
+function IsValidTimeZoneName(timeZone) {
+    assert(typeof timeZone === "string", "IsValidTimeZoneName");
+
+    var timeZones = timeZoneCache.timeZones;
+    if (timeZones === undefined) {
+        timeZones = intl_availableTimeZones();
+        timeZoneCache.timeZones = timeZones;
+    }
+
+    
+    var tz = timeZones[toASCIIUpperCase(timeZone)];
+    return (tz === undefined || tz in legacyICUTimeZones) ? null : tz;
+}
+
+
+
+
+
+
+
+
+
+function CanonicalizeTimeZoneName(timeZone) {
+    assert(typeof timeZone === "string", "CanonicalizeTimeZoneName");
+
+    
+    assert(timeZone !== "Etc/Unknown", "Invalid time zone");
+    assert(timeZone === IsValidTimeZoneName(timeZone), "Time zone name not normalized");
+
+    
+    var ianaTimeZone = intl_canonicalizeTimeZone(timeZone);
+    assert(ianaTimeZone !== "Etc/Unknown", "Invalid canonical time zone");
+    assert(ianaTimeZone === IsValidTimeZoneName(ianaTimeZone), "Unsupported canonical time zone");
+
+    
+    if (ianaTimeZone === "Etc/UTC" || ianaTimeZone === "Etc/GMT") {
+        
+        
+        if (timeZone === "Etc/UCT" || timeZone === "UCT")
+            ianaTimeZone = "Etc/UCT";
+        else
+            ianaTimeZone = "UTC";
+    } else {
+        
+        
+        if (timeZone in tzLinkNamesNonICU) {
+            
+            
+            
+            
+            if (IsValidTimeZoneName(tzLinkNamesNonICU[timeZone]) !== null) {
+                ianaTimeZone = tzLinkNamesNonICU[timeZone];
+            }
+        } else if (timeZone in tzZoneNamesNonICU) {
+            
+            
+            ianaTimeZone = timeZone;
+        }
+    }
+
+    
+    return ianaTimeZone;
+}
+
+
+
+
+
+
+
+
+
+function DefaultTimeZone() {
+    const icuDefaultTimeZone = intl_defaultTimeZone();
+    if (timeZoneCache.icuDefaultTimeZone === icuDefaultTimeZone)
+        return timeZoneCache.defaultTimeZone;
+
+    
+    var timeZone = IsValidTimeZoneName(icuDefaultTimeZone);
+    if (timeZone === null)
+        timeZone = "UTC";
+
+    
+    var defaultTimeZone = CanonicalizeTimeZoneName(timeZone);
+
+    timeZoneCache.defaultTimeZone = defaultTimeZone;
+    timeZoneCache.icuDefaultTimeZone = icuDefaultTimeZone;
+
+    return defaultTimeZone;
 }
 
 
@@ -2264,9 +2371,19 @@ function InitializeDateTimeFormat(dateTimeFormat, locales, options) {
     
     var tz = options.timeZone;
     if (tz !== undefined) {
-        tz = toASCIIUpperCase(ToString(tz));
-        if (tz !== "UTC")
+        
+        tz = ToString(tz);
+
+        
+        var timeZone = IsValidTimeZoneName(tz);
+        if (timeZone === null)
             ThrowRangeError(JSMSG_INVALID_TIME_ZONE, tz);
+
+        
+        tz = CanonicalizeTimeZoneName(timeZone);
+    } else {
+        
+        tz = DefaultTimeZone();
     }
     lazyDateTimeFormatData.timeZone = tz;
 
