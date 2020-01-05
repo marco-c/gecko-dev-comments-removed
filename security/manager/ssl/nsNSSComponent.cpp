@@ -79,16 +79,6 @@ int nsNSSComponent::mInstanceCount = 0;
 
 bool EnsureNSSInitializedChromeOrContent()
 {
-  nsresult rv;
-  if (XRE_IsParentProcess()) {
-    nsCOMPtr<nsISupports> nss = do_GetService(PSM_COMPONENT_CONTRACTID, &rv);
-    if (NS_FAILED(rv)) {
-      return false;
-    }
-
-    return true;
-  }
-
   
   
   if (!NS_IsMainThread()) {
@@ -115,6 +105,14 @@ bool EnsureNSSInitializedChromeOrContent()
     return initialized;
   }
 
+  if (XRE_IsParentProcess()) {
+    nsCOMPtr<nsISupports> nss = do_GetService(PSM_COMPONENT_CONTRACTID);
+    if (!nss) {
+      return false;
+    }
+    return true;
+  }
+
   if (NSS_IsInitialized()) {
     return true;
   }
@@ -129,84 +127,6 @@ bool EnsureNSSInitializedChromeOrContent()
 
   mozilla::psm::DisableMD5();
   return true;
-}
-
-
-
-bool EnsureNSSInitialized(EnsureNSSOperator op)
-{
-  if (GeckoProcessType_Default != XRE_GetProcessType())
-  {
-    if (op == nssEnsureOnChromeOnly)
-    {
-      
-      
-      
-      
-      return true;
-    }
-
-    NS_ERROR("Trying to initialize PSM/NSS in a non-chrome process!");
-    return false;
-  }
-
-  static bool loading = false;
-  static int32_t haveLoaded = 0;
-
-  switch (op)
-  {
-    
-    
-    
-  case nssLoadingComponent:
-    if (loading)
-      return false; 
-    loading = true;
-    return true;
-
-  case nssInitSucceeded:
-    MOZ_ASSERT(loading, "Bad call to EnsureNSSInitialized(nssInitSucceeded)");
-    loading = false;
-    PR_AtomicSet(&haveLoaded, 1);
-    return true;
-
-  case nssInitFailed:
-    MOZ_ASSERT(loading, "Bad call to EnsureNSSInitialized(nssInitFailed)");
-    loading = false;
-    MOZ_FALLTHROUGH;
-
-  case nssShutdown:
-    PR_AtomicSet(&haveLoaded, 0);
-    return false;
-
-    
-    
-    
-  case nssEnsure:
-  case nssEnsureOnChromeOnly:
-  case nssEnsureChromeOrContent:
-    
-    if (PR_AtomicAdd(&haveLoaded, 0) || loading)
-      return true;
-
-    {
-    nsCOMPtr<nsINSSComponent> nssComponent
-      = do_GetService(PSM_COMPONENT_CONTRACTID);
-
-    
-    
-    if (!nssComponent)
-      return false;
-
-    bool isInitialized;
-    nsresult rv = nssComponent->IsNSSInitialized(&isInitialized);
-    return NS_SUCCEEDED(rv) && isInitialized;
-    }
-
-  default:
-    MOZ_ASSERT_UNREACHABLE("Bad operator to EnsureNSSInitialized");
-    return false;
-  }
 }
 
 static void
@@ -278,10 +198,6 @@ nsNSSComponent::~nsNSSComponent()
   RememberCertErrorsTable::Cleanup();
   --mInstanceCount;
   nsNSSShutDownList::shutdown();
-
-  
-  
-  EnsureNSSInitialized(nssShutdown);
 
   MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("nsNSSComponent::dtor finished\n"));
 }
@@ -1696,9 +1612,6 @@ GetNSSProfilePath(nsAutoCString& aProfilePath)
 nsresult
 nsNSSComponent::InitializeNSS()
 {
-  
-  
-
   MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("nsNSSComponent::InitializeNSS\n"));
 
   static_assert(nsINSSErrorsService::NSS_SEC_ERROR_BASE == SEC_ERROR_BASE &&
@@ -1708,12 +1621,6 @@ nsNSSComponent::InitializeNSS()
                 "You must update the values in nsINSSErrorsService.idl");
 
   MutexAutoLock lock(mutex);
-
-  if (mNSSInitialized) {
-    
-    MOZ_ASSERT_UNREACHABLE("Trying to initialize NSS twice");
-    return NS_ERROR_FAILURE;
-  }
 
   MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("NSS Initialization beginning\n"));
 
@@ -1784,8 +1691,6 @@ nsNSSComponent::InitializeNSS()
   
   mContentSigningRootHash =
     Preferences::GetString("security.content.signature.root_hash");
-
-  mNSSInitialized = true;
 
   PK11_SetPasswordFunc(PK11PasswordPrompt);
 
@@ -1858,12 +1763,6 @@ nsNSSComponent::InitializeNSS()
   }
 
   
-  nsCOMPtr<nsICertBlocklist> certList = do_GetService(NS_CERTBLOCKLIST_CONTRACTID);
-  if (!certList) {
-    return NS_ERROR_FAILURE;
-  }
-
-  
   setValidationOptions(true, lock);
 
 #ifndef MOZ_NO_SMART_CARDS
@@ -1872,35 +1771,18 @@ nsNSSComponent::InitializeNSS()
 
   mozilla::pkix::RegisterErrorTable();
 
-  
-  nsCOMPtr<nsISiteSecurityService> sssService =
-    do_GetService(NS_SSSERVICE_CONTRACTID);
-  if (!sssService) {
-    MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("Cannot initialize site security service\n"));
-    return NS_ERROR_FAILURE;
-  }
-
-  
-  nsCOMPtr<nsICertOverrideService> coService =
-    do_GetService(NS_CERTOVERRIDE_CONTRACTID);
-  if (!coService) {
-    MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("Cannot initialize cert override service\n"));
-    return NS_ERROR_FAILURE;
-  }
-
   if (PK11_IsFIPS()) {
     Telemetry::Accumulate(Telemetry::FIPS_ENABLED, true);
   }
   MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("NSS Initialization done\n"));
+  mNSSInitialized = true;
+
   return NS_OK;
 }
 
 void
 nsNSSComponent::ShutdownNSS()
 {
-  
-  
-
   MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("nsNSSComponent::ShutdownNSS\n"));
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
@@ -1932,7 +1814,6 @@ nsNSSComponent::ShutdownNSS()
       return;
     }
     UnloadLoadableRoots();
-    EnsureNSSInitialized(nssShutdown);
     if (SECSuccess != ::NSS_Shutdown()) {
       MOZ_LOG(gPIPNSSLog, LogLevel::Error, ("NSS SHUTDOWN FAILURE"));
     } else {
@@ -1949,11 +1830,14 @@ nsNSSComponent::Init()
     return NS_ERROR_NOT_SAME_THREAD;
   }
 
-  nsresult rv = NS_OK;
+  MOZ_ASSERT(XRE_IsParentProcess());
+  if (!XRE_IsParentProcess()) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
 
   MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("Beginning NSS initialization\n"));
 
-  rv = InitializePIPNSSBundle();
+  nsresult rv = InitializePIPNSSBundle();
   if (NS_FAILED(rv)) {
     MOZ_LOG(gPIPNSSLog, LogLevel::Error, ("Unable to create pipnss bundle.\n"));
     return rv;
@@ -1998,7 +1882,7 @@ nsNSSComponent::Observe(nsISupports* aSubject, const char* aTopic,
 {
   if (nsCRT::strcmp(aTopic, PROFILE_BEFORE_CHANGE_TOPIC) == 0) {
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("receiving profile change topic\n"));
-    DoProfileBeforeChange();
+    ShutdownNSS();
   } else if (nsCRT::strcmp(aTopic, NS_PREFBRANCH_PREFCHANGE_TOPIC_ID) == 0) {
     nsNSSShutDownPreventionLock locker;
     bool clearSessionCache = true;
@@ -2143,35 +2027,6 @@ nsNSSComponent::RegisterObservers()
   
   observerService->AddObserver(this, PROFILE_BEFORE_CHANGE_TOPIC, false);
 
-  return NS_OK;
-}
-
-void
-nsNSSComponent::DoProfileBeforeChange()
-{
-  bool needsCleanup = true;
-
-  {
-    MutexAutoLock lock(mutex);
-
-    if (!mNSSInitialized) {
-      
-      
-      
-      needsCleanup = false;
-    }
-  }
-
-  if (needsCleanup) {
-    ShutdownNSS();
-  }
-}
-
-NS_IMETHODIMP
-nsNSSComponent::IsNSSInitialized(bool* initialized)
-{
-  MutexAutoLock lock(mutex);
-  *initialized = mNSSInitialized;
   return NS_OK;
 }
 
