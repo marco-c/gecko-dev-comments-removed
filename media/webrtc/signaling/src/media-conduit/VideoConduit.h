@@ -457,9 +457,15 @@ private:
   
   nsTArray<UniquePtr<VideoCodecConfig>> mRecvCodecList;
 
-  Mutex mCodecMutex; 
+  
+  Mutex mCodecMutex;
   nsAutoPtr<VideoCodecConfig> mCurSendCodecConfig;
   bool mInReconfig;
+  SendStreamStatistics mSendStreamStats;
+  ReceiveStreamStatistics mRecvStreamStats;
+  
+  webrtc::VideoReceiveStream* mRecvStream;
+  webrtc::VideoSendStream* mSendStream;
 
   unsigned short mLastWidth;
   unsigned short mLastHeight;
@@ -492,14 +498,10 @@ private:
   
   RefPtr<WebRtcCallWrapper> mCall;
 
-  webrtc::VideoSendStream* mSendStream;
-  
   webrtc::VideoSendStream::Config mSendStreamConfig;
   VideoEncoderConfigBuilder mEncoderConfig;
   webrtc::VideoCodecH264 mEncoderSpecificH264;
 
-  webrtc::VideoReceiveStream* mRecvStream;
-  
   webrtc::VideoReceiveStream::Config mRecvStreamConfig;
   
   
@@ -522,8 +524,6 @@ private:
   WebrtcVideoDecoder* mRecvCodecPlugin;
 
   nsCOMPtr<nsITimer> mVideoStatsTimer;
-  SendStreamStatistics mSendStreamStats;
-  ReceiveStreamStatistics mRecvStreamStats;
 
   std::string mPCHandle;
 };
