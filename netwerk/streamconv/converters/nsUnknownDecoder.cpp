@@ -793,8 +793,8 @@ nsBinaryDetector::DetermineContentType(nsIRequest* aRequest)
 
   
   nsAutoCString contentTypeHdr;
-  httpChannel->GetResponseHeader(NS_LITERAL_CSTRING("Content-Type"),
-                                 contentTypeHdr);
+  Unused << httpChannel->GetResponseHeader(NS_LITERAL_CSTRING("Content-Type"),
+                                           contentTypeHdr);
   nsAutoCString contentType;
   httpChannel->GetContentType(contentType);
 
@@ -818,8 +818,8 @@ nsBinaryDetector::DetermineContentType(nsIRequest* aRequest)
   
   
   nsAutoCString contentEncoding;
-  httpChannel->GetResponseHeader(NS_LITERAL_CSTRING("Content-Encoding"),
-                                 contentEncoding);
+  Unused << httpChannel->GetResponseHeader(NS_LITERAL_CSTRING("Content-Encoding"),
+                                           contentEncoding);
   if (!contentEncoding.IsEmpty()) {
     return;
   }

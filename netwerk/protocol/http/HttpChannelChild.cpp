@@ -2009,7 +2009,7 @@ HttpChannelChild::AsyncOpen(nsIStreamListener *listener, nsISupports *aContext)
     
     
     
-    AsyncAbort(mStatus);
+    Unused << AsyncAbort(mStatus);
     return NS_OK;
   }
 
@@ -2846,7 +2846,7 @@ HttpChannelChild::ResetInterception()
   
   nsresult rv = ContinueAsyncOpen();
   if (NS_WARN_IF(NS_FAILED(rv))) {
-    AsyncAbort(rv);
+    Unused << AsyncAbort(rv);
   }
 }
 

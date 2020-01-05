@@ -42,8 +42,10 @@ HttpRequestSucceeded(nsIStreamLoader *loader)
   bool result = true;  
 
   nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(request);
-  if (httpChannel)
-    httpChannel->GetRequestSucceeded(&result);
+  if (httpChannel) {
+    
+    Unused << httpChannel->GetRequestSucceeded(&result);
+  }
 
   return result;
 }

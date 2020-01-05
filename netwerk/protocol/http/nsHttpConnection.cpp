@@ -325,7 +325,11 @@ nsHttpConnection::StartSpdy(uint8_t spdyVersion)
     if (!mTLSFilter) {
         mTransaction = mSpdySession;
     } else {
-        mTLSFilter->SetProxiedTransaction(mSpdySession);
+        rv = mTLSFilter->SetProxiedTransaction(mSpdySession);
+        if (NS_FAILED(rv)) {
+            LOG(("nsHttpConnection::StartSpdy [%p] SetProxiedTransaction failed"
+                 " rv[0x%x]", this, static_cast<uint32_t>(rv)));
+        }
     }
     if (mDontReuse) {
         mSpdySession->DontReuse();
@@ -555,7 +559,7 @@ nsHttpConnection::OnTunnelNudged(TLSFilterTransaction *trans)
         return;
     }
     LOG(("nsHttpConnection::OnTunnelNudged %p Calling OnSocketWritable\n", this));
-    OnSocketWritable();
+    Unused << OnSocketWritable();
 }
 
 
@@ -761,7 +765,7 @@ nsHttpConnection::AddTransaction(nsAHttpTransaction *httpTransaction,
         return NS_ERROR_FAILURE;
     }
 
-    ResumeSend();
+    Unused << ResumeSend();
     return NS_OK;
 }
 
@@ -1052,7 +1056,7 @@ nsHttpConnection::OnHeadersAvailable(nsAHttpTransaction *trans,
     bool foundKeepAliveMax = false;
     if (mKeepAlive) {
         nsAutoCString keepAlive;
-        responseHead->GetHeader(nsHttp::Keep_Alive, keepAlive);
+        Unused << responseHead->GetHeader(nsHttp::Keep_Alive, keepAlive);
 
         if (!mUsingSpdyVersion) {
             const char *cp = PL_strcasestr(keepAlive.get(), "timeout=");
@@ -1754,7 +1758,7 @@ nsHttpConnection::OnSocketReadable()
         
         
         mKeepAliveMask = false;
-        gHttpHandler->ProcessPendingQ(mConnInfo);
+        Unused << gHttpHandler->ProcessPendingQ(mConnInfo);
     }
 
     
@@ -2084,7 +2088,7 @@ nsHttpConnection::OnInputStreamReady(nsIAsyncInputStream *in)
 
         if (!CanReuse()) {
             LOG(("Server initiated close of idle conn %p\n", this));
-            gHttpHandler->ConnMgr()->CloseIdleConnection(this);
+            Unused << gHttpHandler->ConnMgr()->CloseIdleConnection(this);
             return NS_OK;
         }
 

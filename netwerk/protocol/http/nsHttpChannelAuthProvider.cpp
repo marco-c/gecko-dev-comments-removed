@@ -770,8 +770,8 @@ nsHttpChannelAuthProvider::GetCredentialsForChallenge(const char *challenge,
     
     
     nsHttpAuthEntry *entry = nullptr;
-    authCache->GetAuthEntryForDomain(scheme.get(), host, port,
-                                     realm.get(), suffix, &entry);
+    Unused << authCache->GetAuthEntryForDomain(scheme.get(), host, port,
+                                               realm.get(), suffix, &entry);
 
     
     
@@ -975,7 +975,7 @@ nsHttpChannelAuthProvider::BlockPrompt()
 
         if (!topDoc && !xhr) {
             nsCOMPtr<nsIURI> topURI;
-            chanInternal->GetTopWindowURI(getter_AddRefs(topURI));
+            Unused << chanInternal->GetTopWindowURI(getter_AddRefs(topURI));
 
             if (!topURI) {
                 
@@ -1292,9 +1292,9 @@ NS_IMETHODIMP nsHttpChannelAuthProvider::OnAuthAvailable(nsISupports *aContext,
 
     nsHttpAuthCache *authCache = gHttpHandler->AuthCache(mIsPrivate);
     nsHttpAuthEntry *entry = nullptr;
-    authCache->GetAuthEntryForDomain(scheme.get(), host, port,
-                                     realm.get(), suffix,
-                                     &entry);
+    Unused << authCache->GetAuthEntryForDomain(scheme.get(), host, port,
+                                               realm.get(), suffix,
+                                               &entry);
 
     nsCOMPtr<nsISupports> sessionStateGrip;
     if (entry)

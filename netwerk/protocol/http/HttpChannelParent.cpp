@@ -1653,8 +1653,8 @@ HttpChannelParent::StartDiversion()
   
   
   nsCOMPtr<nsIStreamListener> converterListener;
-  mChannel->DoApplyContentConversions(mDivertListener,
-                                      getter_AddRefs(converterListener));
+  Unused << mChannel->DoApplyContentConversions(mDivertListener,
+                                                getter_AddRefs(converterListener));
   if (converterListener) {
     mDivertListener = converterListener.forget();
   }
