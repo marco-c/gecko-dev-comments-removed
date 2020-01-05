@@ -795,6 +795,7 @@ pref("gfx.canvas.skiagl.dynamic-cache", true);
 pref("gfx.text.disable-aa", false);
 
 pref("gfx.work-around-driver-bugs", true);
+pref("gfx.prefer-mesa-llvmpipe", false);
 
 pref("gfx.draw-color-bars", false);
 
@@ -1110,7 +1111,10 @@ pref("print.print_edge_right", 0);
 pref("print.print_edge_bottom", 0);
 
 
-#if defined(XP_WIN) || defined(XP_MACOSX)
+
+#if defined(XP_WIN)
+pref("print.print_via_parent", true);
+#elif defined(XP_MACOSX) && defined(NIGHTLY_BUILD)
 pref("print.print_via_parent", true);
 #else
 pref("print.print_via_parent", false);
@@ -2861,6 +2865,17 @@ pref("dom.ipc.plugins.asyncdrawing.enabled", true);
 #endif
 
 pref("dom.ipc.processCount", 1);
+
+
+pref("dom.ipc.processCount.webLargeAllocation", 2);
+
+
+
+#if defined(NIGHTLY_BUILD)
+pref("browser.tabs.remote.separateFileUriProcess", true);
+#else
+pref("browser.tabs.remote.separateFileUriProcess", false);
+#endif
 
 
 pref("svg.path-caching.enabled", true);
