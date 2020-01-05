@@ -163,12 +163,6 @@ private:
   
   
   void EnsureWriteScheduled();
-  
-  
-  
-  
-  
-  RefPtr<GenericPromise::Private> mInitPromise;
 
   
   
@@ -181,14 +175,16 @@ private:
   
   nsCOMPtr<nsIThread> mThread;
   
-  RefPtr<AbstractThread> mAbstractThread;
-  
   std::deque<int32_t> mChangeIndexList;
   
   
   bool mIsWriteScheduled;
   
   bool mIsOpen;
+  
+  
+  
+  bool mInitialized = false;
 };
 
 } 

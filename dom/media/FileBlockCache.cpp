@@ -27,7 +27,6 @@ FileBlockCache::SetCacheFile(PRFileDesc* aFD)
 
   if (!aFD) {
     
-    mInitPromise->Reject(NS_ERROR_FAILURE, __func__);
     Close();
     return;
   }
@@ -35,7 +34,20 @@ FileBlockCache::SetCacheFile(PRFileDesc* aFD)
     MonitorAutoLock lock(mFileMonitor);
     mFD = aFD;
   }
-  mInitPromise->Resolve(true, __func__);
+  {
+    MonitorAutoLock lock(mDataMonitor);
+    if (!mIsOpen) {
+      
+      
+      return;
+    }
+    mInitialized = true;
+    if (mIsWriteScheduled) {
+      
+      
+      mThread->Dispatch(this, NS_DISPATCH_NORMAL);
+    }
+  }
 }
 
 nsresult
@@ -53,14 +65,12 @@ FileBlockCache::Init()
   if (NS_FAILED(rv)) {
     return rv;
   }
-  mAbstractThread = AbstractThread::CreateXPCOMThreadWrapper(mThread, false);
   mIsOpen = true;
 
-  mInitPromise = new GenericPromise::Private(__func__);
   if (XRE_IsParentProcess()) {
     rv = NS_OpenAnonymousTemporaryFile(&mFD);
     if (NS_SUCCEEDED(rv)) {
-      mInitPromise->Resolve(true, __func__);
+      mInitialized = true;
     }
   } else {
     
@@ -111,11 +121,13 @@ void FileBlockCache::Close()
   NS_ASSERTION(NS_IsMainThread(), "Only call on main thread");
 
   MonitorAutoLock mon(mDataMonitor);
+  if (!mIsOpen) {
+    return;
+  }
   mIsOpen = false;
   if (!mThread) {
     return;
   }
-  mAbstractThread = nullptr;
   
   
   
@@ -173,14 +185,12 @@ void FileBlockCache::EnsureWriteScheduled()
     return;
   }
   mIsWriteScheduled = true;
-
-  RefPtr<FileBlockCache> self = this;
-  mInitPromise->Then(mAbstractThread,
-                     __func__,
-                     [self](bool aValue) { self->Run(); },
-                     [self](nsresult rv) {}
-                     
-                     );
+  if (!mInitialized) {
+    
+    
+    return;
+  }
+  mThread->Dispatch(this, NS_DISPATCH_NORMAL);
 }
 
 nsresult FileBlockCache::Seek(int64_t aOffset)
