@@ -212,10 +212,6 @@ public:
   ~Sampler();
 
   
-  void Start();
-  void Stop();
-
-  
   
   
   struct PlatformDataDestructor {

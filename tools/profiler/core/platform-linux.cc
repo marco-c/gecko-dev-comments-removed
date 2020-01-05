@@ -358,7 +358,9 @@ static void* SignalSender(void* arg) {
   return 0;
 }
 
-void Sampler::Start() {
+static void
+PlatformStart()
+{
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
   LOG("Sampler started");
@@ -417,8 +419,9 @@ void Sampler::Start() {
   LOG("Profiler thread started");
 }
 
-
-void Sampler::Stop() {
+static void
+PlatformStop()
+{
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
   MOZ_ASSERT(gIsActive);

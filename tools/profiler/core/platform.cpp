@@ -1533,6 +1533,10 @@ hasFeature(const char** aFeatures, uint32_t aFeatureCount, const char* aFeature)
 }
 
 
+static void PlatformStart();
+static void PlatformStop();
+
+
 void
 profiler_start(int aProfileEntries, double aInterval,
                const char** aFeatures, uint32_t aFeatureCount,
@@ -1606,7 +1610,7 @@ profiler_start(int aProfileEntries, double aInterval,
   gUseStackWalk     = hasFeature(aFeatures, aFeatureCount, "stackwalk");
 
   MOZ_ASSERT(!gIsActive && !gIsPaused);
-  gSampler->Start();
+  PlatformStart();
   MOZ_ASSERT(gIsActive && !gIsPaused);  
 
   if (gProfileJS || privacyMode) {
@@ -1697,7 +1701,7 @@ profiler_stop()
   }
   gFeatures.clear();
 
-  gSampler->Stop();
+  PlatformStop();
   MOZ_ASSERT(!gIsActive && !gIsPaused);   
 
   gProfileJava      = false;
