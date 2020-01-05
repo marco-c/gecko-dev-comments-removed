@@ -97,13 +97,10 @@ this.DateTimePickerHelper = {
 
   
   updateInputBoxValue(aEvent) {
-    
-    const { hour, minute } = aEvent.detail;
-    debug("hour: " + hour + ", minute: " + minute);
     let browser = this.weakBrowser ? this.weakBrowser.get() : null;
     if (browser) {
       browser.messageManager.sendAsyncMessage(
-        "FormDateTime:PickerValueChanged", { hour, minute });
+        "FormDateTime:PickerValueChanged", aEvent.detail);
     }
   },
 
