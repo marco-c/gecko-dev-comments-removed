@@ -237,7 +237,7 @@ Shape::fixupDictionaryShapeAfterMovingGC()
     
     
     
-    Cell* cell = reinterpret_cast<Cell*>(uintptr_t(listp) & ~CellMask);
+    Cell* cell = reinterpret_cast<Cell*>(uintptr_t(listp) & ~CellAlignMask);
     AllocKind kind = TenuredCell::fromPointer(cell)->getAllocKind();
     MOZ_ASSERT_IF(listpPointsIntoShape, IsShapeAllocKind(kind));
     MOZ_ASSERT_IF(!listpPointsIntoShape, IsObjectAllocKind(kind));

@@ -505,9 +505,9 @@ class BaseShape : public gc::TenuredCell
   private:
     static void staticAsserts() {
         JS_STATIC_ASSERT(offsetof(BaseShape, clasp_) == offsetof(js::shadow::BaseShape, clasp_));
-        static_assert(sizeof(BaseShape) % gc::CellSize == 0,
+        static_assert(sizeof(BaseShape) % gc::CellAlignBytes == 0,
                       "Things inheriting from gc::Cell must have a size that's "
-                      "a multiple of gc::CellSize");
+                      "a multiple of gc::CellAlignBytes");
     }
 
     void traceShapeTable(JSTracer* trc);

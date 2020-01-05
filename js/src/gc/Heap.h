@@ -326,23 +326,38 @@ class TenuredCell : public Cell
 };
 
 
-const uintptr_t LargestTaggedNullCellPointer = (1 << CellShift) - 1;
+const uintptr_t LargestTaggedNullCellPointer = (1 << CellAlignShift) - 1;
+
+
+
+
+
+
+const size_t MarkBitsPerCell = 2;
+const size_t MinCellSize = CellBytesPerMarkBit * MarkBitsPerCell;
 
 constexpr size_t
 DivideAndRoundUp(size_t numerator, size_t divisor) {
     return (numerator + divisor - 1) / divisor;
 }
 
-const size_t ArenaCellCount = ArenaSize / CellSize;
-static_assert(ArenaSize % CellSize == 0, "Arena size must be a multiple of cell size");
+static_assert(ArenaSize % CellAlignBytes == 0,
+              "Arena size must be a multiple of cell alignment");
 
 
 
 
 
 
+const size_t ArenaCellIndexBytes = CellAlignBytes;
+const size_t MaxArenaCellIndex = ArenaSize / CellAlignBytes;
 
-const size_t ArenaBitmapBits = ArenaCellCount;
+
+
+
+
+
+const size_t ArenaBitmapBits = ArenaSize / CellBytesPerMarkBit;
 const size_t ArenaBitmapBytes = DivideAndRoundUp(ArenaBitmapBits, 8);
 const size_t ArenaBitmapWords = DivideAndRoundUp(ArenaBitmapBits, JS_BITS_PER_WORD);
 
@@ -1119,7 +1134,7 @@ AssertValidColor(const TenuredCell* thing, uint32_t color)
 {
 #ifdef DEBUG
     Arena* arena = thing->arena();
-    MOZ_ASSERT(color < arena->getThingSize() / CellSize);
+    MOZ_ASSERT(color < arena->getThingSize() / CellBytesPerMarkBit);
 #endif
 }
 
@@ -1155,7 +1170,7 @@ inline uintptr_t
 Cell::address() const
 {
     uintptr_t addr = uintptr_t(this);
-    MOZ_ASSERT(addr % CellSize == 0);
+    MOZ_ASSERT(addr % CellAlignBytes == 0);
     MOZ_ASSERT(Chunk::withinValidRange(addr));
     return addr;
 }
@@ -1164,7 +1179,7 @@ Chunk*
 Cell::chunk() const
 {
     uintptr_t addr = uintptr_t(this);
-    MOZ_ASSERT(addr % CellSize == 0);
+    MOZ_ASSERT(addr % CellAlignBytes == 0);
     addr &= ~ChunkMask;
     return reinterpret_cast<Chunk*>(addr);
 }

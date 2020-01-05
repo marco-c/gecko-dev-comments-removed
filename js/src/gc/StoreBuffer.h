@@ -450,7 +450,7 @@ class ArenaCellSet
     ArenaCellSet* next;
 
     
-    BitArray<ArenaCellCount> bits;
+    BitArray<MaxArenaCellIndex> bits;
 
   public:
     explicit ArenaCellSet(Arena* arena);
