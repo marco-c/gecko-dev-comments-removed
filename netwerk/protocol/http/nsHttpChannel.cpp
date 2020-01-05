@@ -4626,11 +4626,9 @@ nsHttpChannel::OpenCacheInputStream(nsICacheEntry* cacheEntry, bool startBufferi
             
             mAvailableCachedAltDataType = mPreferredCachedAltDataType;
             
-            mCachedResponseHead->SetContentLength(-1);
-            
             int64_t altDataSize;
             if (NS_SUCCEEDED(cacheEntry->GetAltDataSize(&altDataSize))) {
-                mCachedResponseHead->SetContentLength(altDataSize);
+                mAltDataLength = altDataSize;
             }
         }
     }
@@ -6111,10 +6109,6 @@ nsHttpChannel::BeginConnect()
         }
         if (mClassOfService & nsIClassOfService::Unblocked) {
             mCaps |= NS_HTTP_LOAD_UNBLOCKED;
-        }
-        if (mClassOfService & nsIClassOfService::UrgentStart) {
-            mCaps |= NS_HTTP_URGENT_START;
-            SetPriority(nsISupportsPriority::PRIORITY_HIGHEST);
         }
     }
 

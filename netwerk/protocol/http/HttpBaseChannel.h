@@ -336,6 +336,7 @@ public:
     MOZ_MUST_USE nsresult OverrideSecurityInfo(nsISupports* aSecurityInfo);
 
 public: 
+    int64_t GetAltDataLength() { return mAltDataLength; }
     bool IsNavigation();
 
     
@@ -604,6 +605,7 @@ protected:
   nsCString mPreferredCachedAltDataType;
   
   nsCString mAvailableCachedAltDataType;
+  int64_t   mAltDataLength;
 
   bool mForceMainDocumentChannel;
   bool mIsTrackingResource;
