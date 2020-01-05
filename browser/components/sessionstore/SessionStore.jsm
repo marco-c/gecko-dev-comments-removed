@@ -45,7 +45,7 @@ const OBSERVING = [
   "quit-application-granted", "browser-lastwindow-close-granted",
   "quit-application", "browser:purge-session-history",
   "browser:purge-domain-data",
-  "idle-daily",
+  "idle-daily", "clear-origin-attributes-data"
 ];
 
 
@@ -388,7 +388,7 @@ this.SessionStore = {
       let win = aState.windows[i];
       for (let j = win.tabs.length - 1; j >= 0; j--) {
         let tab = win.tabs[j];
-        if (!SessionStoreInternal._shouldSaveTab(tab)) {
+        if (!SessionStoreInternal._shouldSaveTabState(tab)) {
           win.tabs.splice(j, 1);
           if (win.selected > j) {
             win.selected--;
@@ -748,6 +748,13 @@ var SessionStoreInternal = {
         this.onIdleDaily();
         this._notifyOfClosedObjectsChange();
         break;
+      case "clear-origin-attributes-data":
+        let userContextId = 0;
+        try {
+          userContextId = JSON.parse(aData).userContextId;
+        } catch(e) {}
+        if (userContextId)
+          this._forgetTabsWithUserContextId(userContextId);
     }
   },
 
@@ -2583,6 +2590,33 @@ var SessionStoreInternal = {
   },
 
   
+  _forgetTabsWithUserContextId(userContextId) {
+    let windowsEnum = Services.wm.getEnumerator("navigator:browser");
+    while (windowsEnum.hasMoreElements()) {
+      let window = windowsEnum.getNext();
+      let windowState = this._windows[window.__SSi];
+      if (windowState) {
+        
+        
+        
+        let indexes = [];
+        windowState._closedTabs.forEach((closedTab, index) => {
+          if (closedTab.state.userContextId == userContextId) {
+            indexes.push(index);
+          }
+        });
+
+        for (let index of indexes.reverse()) {
+          this.removeClosedTabData(windowState._closedTabs, index);
+        }
+      }
+    }
+
+    
+    this._notifyOfClosedObjectsChange();
+  },
+
+  
 
 
 
@@ -4198,27 +4232,8 @@ var SessionStoreInternal = {
            !(aTabState.entries.length == 1 &&
                 (aTabState.entries[0].url == "about:blank" ||
                  aTabState.entries[0].url == "about:newtab" ||
-                 aTabState.entries[0].url == "about:printpreview" ||
                  aTabState.entries[0].url == "about:privatebrowsing") &&
                  !aTabState.userTypedValue);
-  },
-
-  
-
-
-
-
-
-
-
-
-
-  _shouldSaveTab: function ssi_shouldSaveTab(aTabState) {
-    
-    
-    return aTabState.entries.length &&
-           !(aTabState.entries[0].url == "about:printpreview" ||
-             aTabState.entries[0].url == "about:privatebrowsing");
   },
 
   
