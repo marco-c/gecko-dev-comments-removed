@@ -10,8 +10,6 @@
 
 #include "FlacFrameParser.h"
 #include "VideoUtils.h"
-#include <nsAutoPtr.h>
-#include <nsAutoRef.h>
 #include <nsDeque.h>
 #include <nsTArray.h>
 #include <nsClassHashtable.h>
@@ -202,7 +200,6 @@ public:
   
   
   
-  
   OggPacketPtr PacketOut();
 
   
@@ -212,10 +209,6 @@ public:
 
   
   void PushFront(OggPacketQueue&& aOther);
-
-  
-  
-  static void ReleasePacket(ogg_packet* aPacket);
 
   
   
@@ -664,18 +657,5 @@ private:
 };
 
 } 
-
-
-
-template <>
-class nsAutoRefTraits<ogg_packet> : public nsPointerRefTraits<ogg_packet>
-{
-public:
-  static void Release(ogg_packet* aPacket)
-  {
-    mozilla::OggCodecState::ReleasePacket(aPacket);
-  }
-};
-
 
 #endif
