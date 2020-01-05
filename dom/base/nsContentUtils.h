@@ -817,16 +817,6 @@ public:
   
 
 
-  static bool IsInPrivateBrowsing(nsIDocument* aDoc);
-
-  
-
-
-  static bool IsInPrivateBrowsing(nsILoadGroup* aLoadGroup);
-
-  
-
-
 
 
 
