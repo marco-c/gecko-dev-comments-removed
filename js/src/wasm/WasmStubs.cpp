@@ -232,17 +232,18 @@ static const LiveRegisterSet NonVolatileRegs =
 #endif
 
 #if defined(JS_CODEGEN_MIPS32)
-static const unsigned NonVolatileRegsPushSize = NonVolatileRegs.gprs().size() * sizeof(intptr_t) +
-                                                NonVolatileRegs.fpus().getPushSizeInBytes() +
-                                                sizeof(double);
+
+
+static const unsigned FramePushedAfterSave = NonVolatileRegs.gprs().size() * sizeof(intptr_t) +
+                                             NonVolatileRegs.fpus().getPushSizeInBytes() +
+                                             sizeof(double);
 #elif defined(JS_CODEGEN_NONE)
-static const unsigned NonVolatileRegsPushSize = 0;
+static const unsigned FramePushedAfterSave = 0;
 #else
-static const unsigned NonVolatileRegsPushSize = NonVolatileRegs.gprs().size() * sizeof(intptr_t) +
-                                                NonVolatileRegs.fpus().getPushSizeInBytes();
+static const unsigned FramePushedAfterSave = NonVolatileRegs.gprs().size() * sizeof(intptr_t)
+                                           + NonVolatileRegs.fpus().getPushSizeInBytes();
 #endif
-static const unsigned FramePushedBeforeAlign = NonVolatileRegsPushSize + sizeof(void*);
-static const unsigned FailFP = 0xbad;
+static const unsigned FramePushedForEntrySP = FramePushedAfterSave + sizeof(void*);
 
 
 
@@ -267,9 +268,8 @@ wasm::GenerateEntry(MacroAssembler& masm, const FuncExport& fe)
     
     masm.setFramePushed(0);
     masm.PushRegsInMask(NonVolatileRegs);
-    MOZ_ASSERT(masm.framePushed() == NonVolatileRegsPushSize);
+    MOZ_ASSERT(masm.framePushed() == FramePushedAfterSave);
 
-    
     
     
     Register argv = ABINonArgReturnReg0;
@@ -296,46 +296,50 @@ wasm::GenerateEntry(MacroAssembler& masm, const FuncExport& fe)
         masm.loadPtr(Address(masm.getStackPointer(), argBase + arg.offsetFromArgBase()), WasmTlsReg);
 
     
+    masm.loadWasmPinnedRegsFromTls();
+
+    
+    
     masm.Push(argv);
 
     
     
-    MOZ_ASSERT(masm.framePushed() == FramePushedBeforeAlign);
-    masm.setFramePushed(0);
+    MOZ_ASSERT(masm.framePushed() == FramePushedForEntrySP);
+    masm.loadWasmActivationFromTls(scratch);
+    masm.storeStackPtr(Address(scratch, WasmActivation::offsetOfEntrySP()));
 
     
     
-    masm.moveStackPtrTo(scratch);
+    
     masm.andToStackPtr(Imm32(~(WasmStackAlignment - 1)));
-    masm.Push(scratch);
 
     
-    unsigned argDecrement = StackDecrementForCall(WasmStackAlignment,
-                                                  masm.framePushed(),
-                                                  StackArgBytes(fe.sig().args()));
-    masm.reserveStack(argDecrement);
+    masm.reserveStack(AlignBytes(StackArgBytes(fe.sig().args()), WasmStackAlignment));
 
     
     SetupABIArguments(masm, fe, argv, scratch);
 
     
-    
     masm.movePtr(ImmWord(0), FramePointer);
-    masm.loadWasmPinnedRegsFromTls();
 
-    
     
     masm.assertStackAlignment(WasmStackAlignment);
     masm.call(CallSiteDesc(CallSiteDesc::Func), fe.funcIndex());
     masm.assertStackAlignment(WasmStackAlignment);
 
+#ifdef DEBUG
     
-    masm.freeStack(argDecrement);
+    Label ok;
+    masm.branchTestPtr(Assembler::Zero, FramePointer, FramePointer, &ok);
+    masm.breakpoint();
+    masm.bind(&ok);
+#endif
 
     
-    masm.PopStackPtr();
-    MOZ_ASSERT(masm.framePushed() == 0);
-    masm.setFramePushed(FramePushedBeforeAlign);
+    masm.loadWasmActivationFromTls(scratch);
+    masm.wasmAssertNonExitInvariants(scratch);
+    masm.loadStackPtr(Address(scratch, WasmActivation::offsetOfEntrySP()));
+    masm.setFramePushed(FramePushedForEntrySP);
 
     
     masm.Pop(argv);
@@ -344,27 +348,10 @@ wasm::GenerateEntry(MacroAssembler& masm, const FuncExport& fe)
     StoreABIReturn(masm, fe, argv);
 
     
-    
-    
-    
-    Label success, join;
-    masm.branchTestPtr(Assembler::Zero, FramePointer, FramePointer, &success);
-#ifdef DEBUG
-    Label ok;
-    masm.branchPtr(Assembler::Equal, FramePointer, Imm32(FailFP), &ok);
-    masm.breakpoint();
-    masm.bind(&ok);
-#endif
-    masm.move32(Imm32(false), ReturnReg);
-    masm.jump(&join);
-    masm.bind(&success);
-    masm.move32(Imm32(true), ReturnReg);
-    masm.bind(&join);
-
-    
     masm.PopRegsInMask(NonVolatileRegs);
     MOZ_ASSERT(masm.framePushed() == 0);
 
+    masm.move32(Imm32(true), ReturnReg);
     masm.ret();
 
     FinishOffsets(masm, &offsets);
@@ -1254,18 +1241,22 @@ wasm::GenerateThrowStub(MacroAssembler& masm, Label* throwLabel)
     offsets.begin = masm.currentOffset();
 
     
-    
-    
     masm.andToStackPtr(Imm32(~(ABIStackAlignment - 1)));
     if (ShadowStackSpace)
         masm.subFromStackPtr(Imm32(ShadowStackSpace));
+    masm.call(SymbolicAddress::HandleThrow);
 
     
-    
-    
-    masm.call(SymbolicAddress::HandleThrow);
-    masm.moveToStackPtr(ReturnReg);
-    masm.move32(Imm32(FailFP), FramePointer);
+    Register act = ReturnReg;
+    masm.wasmAssertNonExitInvariants(act);
+
+    masm.setFramePushed(FramePushedForEntrySP);
+    masm.loadStackPtr(Address(act, WasmActivation::offsetOfEntrySP()));
+    masm.Pop(ReturnReg);
+    masm.PopRegsInMask(NonVolatileRegs);
+    MOZ_ASSERT(masm.framePushed() == 0);
+
+    masm.mov(ImmWord(0), ReturnReg);
     masm.ret();
 
     FinishOffsets(masm, &offsets);

@@ -1644,9 +1644,12 @@ jit::JitActivation::traceIonRecovery(JSTracer* trc)
 
 WasmActivation::WasmActivation(JSContext* cx)
   : Activation(cx, Wasm),
+    entrySP_(nullptr),
     exitFP_(nullptr),
     exitReason_(wasm::ExitReason::Fixed::None)
 {
+    (void) entrySP_;  
+
     prevWasm_ = cx->wasmActivationStack_;
     cx->wasmActivationStack_ = this;
 
