@@ -8,6 +8,9 @@
 
 
 var rule = require("../lib/rules/no-useless-removeEventListener");
+var RuleTester = require("eslint/lib/testers/rule-tester");
+
+const ruleTester = new RuleTester({ parserOptions: { ecmaVersion: 6 } });
 
 
 
@@ -19,64 +22,62 @@ function invalidCode(code) {
   return {code, errors: [{message, type: "CallExpression"}]};
 }
 
-exports.runTest = function(ruleTester) {
-  ruleTester.run("no-useless-removeEventListener", rule, {
-    valid: [
-      
-      "elt.addEventListener('click', handler);",
-      "elt.addEventListener('click', handler, true);",
-      "elt.addEventListener('click', handler, {once: true});",
+ruleTester.run("no-useless-removeEventListener", rule, {
+  valid: [
+    
+    "elt.addEventListener('click', handler);",
+    "elt.addEventListener('click', handler, true);",
+    "elt.addEventListener('click', handler, {once: true});",
 
-      
-      "elt.addEventListener('click', function() {});",
+    
+    "elt.addEventListener('click', function() {});",
 
-      
-      "elt.addEventListener('click', function listener() {" +
-      "  elt.removeEventListener('keypress', listener);" +
-      "});",
+    
+    "elt.addEventListener('click', function listener() {" +
+    "  elt.removeEventListener('keypress', listener);" +
+    "});",
 
-      
-      
-      "elt.addEventListener('click', function listener() {" +
-      "  elt.focus();" +
-      "  elt.removeEventListener('click', listener);" +
-      "});",
+    
+    
+    "elt.addEventListener('click', function listener() {" +
+    "  elt.focus();" +
+    "  elt.removeEventListener('click', listener);" +
+    "});",
 
-      
-      "elt.addEventListener('click', function listener() {" +
-      "  elt.removeEventListener('click', listener);" +
-      "}, false, true);",
+    
+    "elt.addEventListener('click', function listener() {" +
+    "  elt.removeEventListener('click', listener);" +
+    "}, false, true);",
 
-      
-      "elt.addEventListener('click', function listener() {" +
-      "  elt.removeEventListener(eventName, listener);" +
-      "});",
+    
+    "elt.addEventListener('click', function listener() {" +
+    "  elt.removeEventListener(eventName, listener);" +
+    "});",
 
-      
-      "elt.addEventListener(event1, function listener() {" +
-      "  elt.removeEventListener(event2, listener);" +
-      "});"
-    ],
-    invalid: [
-      invalidCode("elt.addEventListener('click', function listener() {" +
-                  "  elt.removeEventListener('click', listener);" +
-                  "});"),
-      invalidCode("elt.addEventListener('click', function listener() {" +
-                  "  elt.removeEventListener('click', listener, true);" +
-                  "}, true);"),
-      invalidCode("elt.addEventListener('click', function listener() {" +
-                  "  elt.removeEventListener('click', listener);" +
-                  "}, {once: true});"),
-      invalidCode("elt.addEventListener('click', function listener() {" +
-                  "  /* Comment */" +
-                  "  elt.removeEventListener('click', listener);" +
-                  "});"),
-      invalidCode("elt.addEventListener('click', function() {" +
-                  "  elt.removeEventListener('click', arguments.callee);" +
-                  "});"),
-      invalidCode("elt.addEventListener(eventName, function listener() {" +
-                  "  elt.removeEventListener(eventName, listener);" +
-                  "});")
-    ]
-  });
-};
+    
+    "elt.addEventListener(event1, function listener() {" +
+    "  elt.removeEventListener(event2, listener);" +
+    "});"
+  ],
+  invalid: [
+    invalidCode("elt.addEventListener('click', function listener() {" +
+                "  elt.removeEventListener('click', listener);" +
+                "});"),
+    invalidCode("elt.addEventListener('click', function listener() {" +
+                "  elt.removeEventListener('click', listener, true);" +
+                "}, true);"),
+    invalidCode("elt.addEventListener('click', function listener() {" +
+                "  elt.removeEventListener('click', listener);" +
+                "}, {once: true});"),
+    invalidCode("elt.addEventListener('click', function listener() {" +
+                "  /* Comment */" +
+                "  elt.removeEventListener('click', listener);" +
+                "});"),
+    invalidCode("elt.addEventListener('click', function() {" +
+                "  elt.removeEventListener('click', arguments.callee);" +
+                "});"),
+    invalidCode("elt.addEventListener(eventName, function listener() {" +
+                "  elt.removeEventListener(eventName, listener);" +
+                "});")
+  ]
+});
