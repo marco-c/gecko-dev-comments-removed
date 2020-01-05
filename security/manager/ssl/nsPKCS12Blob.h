@@ -77,17 +77,8 @@ private:
   
   PRFileDesc *mTmpFile;
 
-  
-  nsCString                 *mDigest;
-  nsCString::const_iterator *mDigestIterator;
-
   bool        mTokenSet;
 
-  
-  static SECStatus digest_open(void *, PRBool);
-  static SECStatus digest_close(void *, PRBool);
-  static int       digest_read(void *, unsigned char *, unsigned long);
-  static int       digest_write(void *, unsigned char *, unsigned long);
   static SECItem * nickname_collision(SECItem *, PRBool *, void *);
   static void write_export_file(void *arg, const char *buf, unsigned long len);
 
