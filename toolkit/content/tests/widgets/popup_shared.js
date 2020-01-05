@@ -247,8 +247,11 @@ function goNextStepSync()
     test.test(test.testname, step);
 
     
-    if (!("events" in test))
+    if (!("events" in test)) {
       checkResult();
+    } else if (typeof test.events == "function" && !test.events().length) {
+      checkResult();
+    }
   }
   else {
     finish();

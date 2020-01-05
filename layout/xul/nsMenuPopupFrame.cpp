@@ -1838,7 +1838,7 @@ void nsMenuPopupFrame::ChangeByPage(bool aIsUp)
     
     
     
-    newMenu = nsXULPopupManager::GetNextMenuItem(this, nullptr, true);
+    newMenu = nsXULPopupManager::GetNextMenuItem(this, nullptr, true, false);
     if (!aIsUp) {
       currentMenu = newMenu;
     }
@@ -2066,7 +2066,7 @@ nsMenuPopupFrame::FindMenuWithShortcut(nsIDOMKeyEvent* aKeyEvent, bool& doAction
   
   
   
-  nsIFrame* firstMenuItem = nsXULPopupManager::GetNextMenuItem(immediateParent, nullptr, true);
+  nsIFrame* firstMenuItem = nsXULPopupManager::GetNextMenuItem(immediateParent, nullptr, true, false);
   nsIFrame* currFrame = firstMenuItem;
 
   int32_t menuAccessKey = -1;
@@ -2131,7 +2131,7 @@ nsMenuPopupFrame::FindMenuWithShortcut(nsIDOMKeyEvent* aKeyEvent, bool& doAction
     }
 
     nsMenuFrame* menu = do_QueryFrame(currFrame);
-    currFrame = nsXULPopupManager::GetNextMenuItem(immediateParent, menu, true);
+    currFrame = nsXULPopupManager::GetNextMenuItem(immediateParent, menu, true, true);
     if (currFrame == firstMenuItem)
       break;
   }
