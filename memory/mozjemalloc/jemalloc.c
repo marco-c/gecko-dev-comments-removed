@@ -1460,65 +1460,6 @@ static
 #endif
 void	_malloc_postfork(void);
 
-#ifdef MOZ_MEMORY_DARWIN
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#ifndef MOZ_REPLACE_MALLOC
-#include "osx_zone_types.h"
-
-#define LEOPARD_MALLOC_ZONE_T_VERSION 3
-#define SNOW_LEOPARD_MALLOC_ZONE_T_VERSION 6
-#define LION_MALLOC_ZONE_T_VERSION 8
-
-static bool osx_use_jemalloc = false;
-
-
-static lion_malloc_zone l_szone;
-static malloc_zone_t * szone = (malloc_zone_t*)(&l_szone);
-
-static lion_malloc_introspection l_ozone_introspect;
-static malloc_introspection_t * const ozone_introspect =
-	(malloc_introspection_t*)(&l_ozone_introspect);
-static malloc_zone_t *get_default_zone();
-static void szone2ozone(malloc_zone_t *zone, size_t size);
-static size_t zone_version_size(int version);
-#else
-static const bool osx_use_jemalloc = true;
-#endif
-
-#endif
-
 
 
 
@@ -5586,6 +5527,10 @@ malloc_init(void)
 }
 #endif
 
+#if defined(MOZ_MEMORY_DARWIN) && !defined(MOZ_REPLACE_MALLOC)
+extern void register_zone(void);
+#endif
+
 #if !defined(MOZ_MEMORY_WINDOWS)
 static
 #endif
@@ -5598,9 +5543,6 @@ malloc_init_hard(void)
 	long result;
 #ifndef MOZ_MEMORY_WINDOWS
 	int linklen;
-#endif
-#ifdef MOZ_MEMORY_DARWIN
-    malloc_zone_t* default_zone;
 #endif
 
 #ifndef MOZ_MEMORY_WINDOWS
@@ -6107,45 +6049,7 @@ MALLOC_OUT:
 #endif
 
 #if defined(MOZ_MEMORY_DARWIN) && !defined(MOZ_REPLACE_MALLOC)
-	
-
-
-	default_zone = get_default_zone();
-
-	
-
-
-
-
-
-
-
-
-
-	osx_use_jemalloc = (default_zone->version == SNOW_LEOPARD_MALLOC_ZONE_T_VERSION ||
-			    default_zone->version == LION_MALLOC_ZONE_T_VERSION);
-
-	
-	if (getenv("NO_MAC_JEMALLOC")) {
-		osx_use_jemalloc = false;
-#ifdef __i386__
-		malloc_printf("Warning: NO_MAC_JEMALLOC has no effect on "
-			      "i386 machines (such as this one).\n");
-#endif
-	}
-
-	if (osx_use_jemalloc) {
-		
-
-
-
-
-		size_t size = zone_version_size(default_zone->version);
-		szone2ozone(default_zone, size);
-	}
-	else {
-		szone = default_zone;
-	}
+	register_zone();
 #endif
 
 #ifndef MOZ_MEMORY_WINDOWS
@@ -6172,31 +6076,10 @@ malloc_shutdown()
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-#if defined(MOZ_MEMORY_DARWIN) && !defined(__i386__) && !defined(MOZ_REPLACE_MALLOC)
-#define DARWIN_ONLY(A) if (!osx_use_jemalloc) { A; }
-#else
-#define DARWIN_ONLY(A)
-#endif
-
 MOZ_MEMORY_API void *
 malloc_impl(size_t size)
 {
 	void *ret;
-
-	DARWIN_ONLY(return (szone->malloc)(szone, size));
 
 	if (malloc_init()) {
 		ret = NULL;
@@ -6279,8 +6162,6 @@ void *
 MEMALIGN(size_t alignment, size_t size)
 {
 	void *ret;
-
-	DARWIN_ONLY(return (szone->memalign)(szone, alignment, size));
 
 	assert(((alignment - 1) & alignment) == 0);
 
@@ -6380,8 +6261,6 @@ calloc_impl(size_t num, size_t size)
 	void *ret;
 	size_t num_size;
 
-	DARWIN_ONLY(return (szone->calloc)(szone, num, size));
-
 	if (malloc_init()) {
 		num_size = 0;
 		ret = NULL;
@@ -6435,8 +6314,6 @@ MOZ_MEMORY_API void *
 realloc_impl(void *ptr, size_t size)
 {
 	void *ret;
-
-	DARWIN_ONLY(return (szone->realloc)(szone, ptr, size));
 
 	if (size == 0) {
 #ifdef MALLOC_SYSV
@@ -6500,8 +6377,6 @@ free_impl(void *ptr)
 {
 	size_t offset;
 
-	DARWIN_ONLY((szone->free)(szone, ptr); return);
-
 	UTRACE(ptr, 0, 0);
 
 	
@@ -6525,12 +6400,7 @@ free_impl(void *ptr)
 
 
 
-#if defined(MOZ_MEMORY_DARWIN) && !defined(MOZ_REPLACE_MALLOC)
-static
-#else
-MOZ_MEMORY_API
-#endif
-size_t
+MOZ_MEMORY_API size_t
 malloc_good_size_impl(size_t size)
 {
 	
@@ -6572,8 +6442,6 @@ malloc_good_size_impl(size_t size)
 MOZ_MEMORY_API size_t
 malloc_usable_size_impl(MALLOC_USABLE_SIZE_CONST_PTR void *ptr)
 {
-	DARWIN_ONLY(return (szone->size)(szone, ptr));
-
 #ifdef MALLOC_VALIDATE
 	return (isalloc_validate(ptr));
 #else
@@ -6943,254 +6811,6 @@ _malloc_postfork(void)
 #endif
 
 #if defined(MOZ_MEMORY_DARWIN)
-
-#if !defined(MOZ_REPLACE_MALLOC)
-static void *
-zone_malloc(malloc_zone_t *zone, size_t size)
-{
-
-	return (malloc_impl(size));
-}
-
-static void *
-zone_calloc(malloc_zone_t *zone, size_t num, size_t size)
-{
-
-	return (calloc_impl(num, size));
-}
-
-static void *
-zone_valloc(malloc_zone_t *zone, size_t size)
-{
-	void *ret = NULL; 
-
-	posix_memalign_impl(&ret, pagesize, size);
-
-	return (ret);
-}
-
-static void *
-zone_memalign(malloc_zone_t *zone, size_t alignment, size_t size)
-{
-	return (memalign_impl(alignment, size));
-}
-
-static void *
-zone_destroy(malloc_zone_t *zone)
-{
-
-	
-	assert(false);
-	return (NULL);
-}
-
-static size_t
-zone_good_size(malloc_zone_t *zone, size_t size)
-{
-	return malloc_good_size_impl(size);
-}
-
-static size_t
-ozone_size(malloc_zone_t *zone, void *ptr)
-{
-	size_t ret = isalloc_validate(ptr);
-	if (ret == 0)
-		ret = szone->size(zone, ptr);
-
-	return ret;
-}
-
-static void
-ozone_free(malloc_zone_t *zone, void *ptr)
-{
-	if (isalloc_validate(ptr) != 0)
-		free_impl(ptr);
-	else {
-		size_t size = szone->size(zone, ptr);
-		if (size != 0)
-			(szone->free)(zone, ptr);
-		
-	}
-}
-
-static void *
-ozone_realloc(malloc_zone_t *zone, void *ptr, size_t size)
-{
-    size_t oldsize;
-	if (ptr == NULL)
-		return (malloc_impl(size));
-
-	oldsize = isalloc_validate(ptr);
-	if (oldsize != 0)
-		return (realloc_impl(ptr, size));
-	else {
-		oldsize = szone->size(zone, ptr);
-		if (oldsize == 0)
-			return (malloc_impl(size));
-		else {
-			void *ret = malloc_impl(size);
-			if (ret != NULL) {
-				memcpy(ret, ptr, (oldsize < size) ? oldsize :
-				    size);
-				(szone->free)(zone, ptr);
-			}
-			return (ret);
-		}
-	}
-}
-
-static unsigned
-ozone_batch_malloc(malloc_zone_t *zone, size_t size, void **results,
-    unsigned num_requested)
-{
-	
-	return 0;
-}
-
-static void
-ozone_batch_free(malloc_zone_t *zone, void **to_be_freed, unsigned num)
-{
-	unsigned i;
-
-	for (i = 0; i < num; i++)
-		ozone_free(zone, to_be_freed[i]);
-}
-
-static void
-ozone_free_definite_size(malloc_zone_t *zone, void *ptr, size_t size)
-{
-	if (isalloc_validate(ptr) != 0) {
-		assert(isalloc_validate(ptr) == size);
-		free_impl(ptr);
-	} else {
-		assert(size == szone->size(zone, ptr));
-		l_szone.m16(zone, ptr, size);
-	}
-}
-
-static void
-ozone_force_lock(malloc_zone_t *zone)
-{
-	_malloc_prefork();
-	szone->introspect->force_lock(zone);
-}
-
-static void
-ozone_force_unlock(malloc_zone_t *zone)
-{
-	szone->introspect->force_unlock(zone);
-        _malloc_postfork();
-}
-
-static size_t
-zone_version_size(int version)
-{
-    switch (version)
-    {
-        case SNOW_LEOPARD_MALLOC_ZONE_T_VERSION:
-            return sizeof(snow_leopard_malloc_zone);
-        case LEOPARD_MALLOC_ZONE_T_VERSION:
-            return sizeof(leopard_malloc_zone);
-        default:
-        case LION_MALLOC_ZONE_T_VERSION:
-            return sizeof(lion_malloc_zone);
-    }
-}
-
-static malloc_zone_t *get_default_zone()
-{
-  malloc_zone_t **zones = NULL;
-  unsigned int num_zones = 0;
-
-  
-
-
-
-
-
-
-
-
-
-  if (KERN_SUCCESS != malloc_get_all_zones(0, NULL, (vm_address_t**) &zones,
-                                           &num_zones)) {
-    
-    num_zones = 0;
-  }
-  if (num_zones) {
-    return zones[0];
-  }
-  return malloc_default_zone();
-}
-
-
-
-
-
-
-
-static void
-szone2ozone(malloc_zone_t *default_zone, size_t size)
-{
-    lion_malloc_zone *l_zone;
-	assert(malloc_initialized);
-
-	
-
-
-
-
-
-
-	memcpy(szone, default_zone, size);
-
-	
-	if (default_zone->version >= LION_MALLOC_ZONE_T_VERSION) {
-		void* start_of_page = (void*)((size_t)(default_zone) & ~pagesize_mask);
-		mprotect (start_of_page, size, PROT_READ | PROT_WRITE);
-	}
-
-	default_zone->size = (void *)ozone_size;
-	default_zone->malloc = (void *)zone_malloc;
-	default_zone->calloc = (void *)zone_calloc;
-	default_zone->valloc = (void *)zone_valloc;
-	default_zone->free = (void *)ozone_free;
-	default_zone->realloc = (void *)ozone_realloc;
-	default_zone->destroy = (void *)zone_destroy;
-	default_zone->batch_malloc = NULL;
-	default_zone->batch_free = ozone_batch_free;
-	default_zone->introspect = ozone_introspect;
-
-	
-
-
-	ozone_introspect->enumerator = NULL;
-	ozone_introspect->good_size = (void *)zone_good_size;
-	ozone_introspect->check = NULL;
-	ozone_introspect->print = NULL;
-	ozone_introspect->log = NULL;
-	ozone_introspect->force_lock = (void *)ozone_force_lock;
-	ozone_introspect->force_unlock = (void *)ozone_force_unlock;
-	ozone_introspect->statistics = NULL;
-
-    
-    l_zone = (lion_malloc_zone*)(default_zone);
-
-    if (default_zone->version >= SNOW_LEOPARD_MALLOC_ZONE_T_VERSION) {
-        l_zone->m15 = (void (*)())zone_memalign;
-        l_zone->m16 = (void (*)())ozone_free_definite_size;
-        l_ozone_introspect.m9 = NULL;
-    }
-
-    if (default_zone->version >= LION_MALLOC_ZONE_T_VERSION) {
-        l_zone->m17 = NULL;
-        l_ozone_introspect.m10 = NULL;
-        l_ozone_introspect.m11 = NULL;
-        l_ozone_introspect.m12 = NULL;
-        l_ozone_introspect.m13 = NULL;
-    }
-}
-#endif
 
 __attribute__((constructor))
 void
