@@ -151,7 +151,7 @@ nsStyleDisplay::HasFixedPosContainingBlockStyleInternal(
 {
   
   
-  NS_ASSERTION(aStyleContext->StyleDisplay() == this,
+  NS_ASSERTION(aStyleContext->ThreadsafeStyleDisplay() == this,
                "unexpected aStyleContext");
 
   if (IsContainPaint() || HasPerspectiveStyle()) {
