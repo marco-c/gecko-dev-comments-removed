@@ -567,7 +567,13 @@ this.FinderIterator = {
       let frame = window.frames[i];
       
       let frameEl = frame && frame.frameElement;
-      if (!frameEl || !frameEl.getClientRects().length)
+      if (!frameEl)
+        continue;
+      
+      let range = window.document.createRange();
+      range.setStart(frameEl, 0);
+      range.setEnd(frameEl, 0);
+      if (!finder._fastFind.isRangeVisible(range, this._getDocShell(range), true))
         continue;
       
       
