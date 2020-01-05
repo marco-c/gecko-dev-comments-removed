@@ -35,6 +35,7 @@ var { loader, require } = BrowserLoaderModule.BrowserLoader({
 
 const promise = require("promise");
 const Services = require("Services");
+
 const {XPCOMUtils} = require("resource://gre/modules/XPCOMUtils.jsm");
 const EventEmitter = require("devtools/shared/event-emitter");
 const Editor = require("devtools/client/sourceeditor/editor");
