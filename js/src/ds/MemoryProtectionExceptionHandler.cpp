@@ -170,7 +170,7 @@ VectoredExceptionHandler(EXCEPTION_POINTERS* ExceptionInfo)
             
             if (sProtectedRegions.isProtected(address)) {
                 ReportCrashIfDebug("Hit MOZ_CRASH(Tried to access a protected region!)\n");
-                MOZ_CRASH_ANNOTATE("Tried to access a protected region!");
+                MOZ_CRASH_ANNOTATE("MOZ_CRASH(Tried to access a protected region!)");
             }
         }
     }
@@ -240,7 +240,7 @@ UnixExceptionHandler(int signum, siginfo_t* info, void* context)
             
             if (sProtectedRegions.isProtected(address)) {
                 ReportCrashIfDebug("Hit MOZ_CRASH(Tried to access a protected region!)\n");
-                MOZ_CRASH_ANNOTATE("Tried to access a protected region!");
+                MOZ_CRASH_ANNOTATE("MOZ_CRASH(Tried to access a protected region!)");
             }
         }
     }
@@ -560,7 +560,7 @@ MachExceptionHandler()
     
     if (sProtectedRegions.isProtected(address)) {
         ReportCrashIfDebug("Hit MOZ_CRASH(Tried to access a protected region!)\n");
-        MOZ_CRASH_ANNOTATE("Tried to access a protected region!");
+        MOZ_CRASH_ANNOTATE("MOZ_CRASH(Tried to access a protected region!)");
     }
 
     
