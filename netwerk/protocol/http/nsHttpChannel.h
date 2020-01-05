@@ -29,6 +29,7 @@
 #include "nsICorsPreflightCallback.h"
 #include "AlternateServices.h"
 #include "nsIHstsPrimingCallback.h"
+#include <nsIRaceCacheWithNetwork.h>
 
 class nsDNSPrefetch;
 class nsICancelable;
@@ -77,6 +78,8 @@ class nsHttpChannel final : public HttpBaseChannel
                           , public nsICorsPreflightCallback
                           , public nsIChannelWithDivertableParentListener
                           , public nsIHstsPrimingCallback
+                          , public nsIRaceCacheWithNetwork
+                          , public nsITimerCallback
 {
 public:
     NS_DECL_ISUPPORTS_INHERITED
@@ -97,6 +100,8 @@ public:
     NS_DECL_NSIDNSLISTENER
     NS_DECL_NSICHANNELWITHDIVERTABLEPARENTLISTENER
     NS_DECLARE_STATIC_IID_ACCESSOR(NS_HTTPCHANNEL_IID)
+    NS_DECL_NSIRACECACHEWITHNETWORK
+    NS_DECL_NSITIMERCALLBACK
 
     
     
@@ -611,6 +616,11 @@ private:
     
     Atomic<bool> mIsReadingFromCache;
 
+    
+    
+    nsCOMPtr<nsITimer> mCacheOpenTimer;
+    nsCOMPtr<nsIRunnable> mCacheOpenRunnable;
+    uint32_t mCacheOpenDelay = 0;
 protected:
     virtual void DoNotifyListenerCleanup() override;
 
