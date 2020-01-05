@@ -15,7 +15,9 @@ use ipc_channel::ipc::IpcSender;
 use layers::geometry::DevicePixel;
 use offscreen_gl_context::GLContextAttributes;
 use png::Image;
+use std::cell::Cell;
 use std::collections::HashMap;
+use std::fmt;
 use std::sync::mpsc::{Receiver, Sender, channel};
 use style_traits::viewport::ViewportConstraints;
 use url::Url;
@@ -213,6 +215,23 @@ pub enum FocusType {
 
 
 #[derive(Deserialize, Serialize)]
+pub struct IframeLoadInfo {
+    
+    pub url: Url,
+    
+    pub containing_pipeline_id: PipelineId,
+    
+    pub new_subpage_id: SubpageId,
+    
+    pub old_subpage_id: Option<SubpageId>,
+    
+    pub new_pipeline_id: PipelineId,
+    
+    pub sandbox: IFrameSandboxState,
+}
+
+
+#[derive(Deserialize, Serialize)]
 pub enum Msg {
     Exit,
     Failure(Failure),
@@ -222,7 +241,7 @@ pub enum Msg {
     DOMLoad(PipelineId),
     FrameSize(PipelineId, SubpageId, Size2D<f32>),
     LoadUrl(PipelineId, LoadData),
-    ScriptLoadedURLInIFrame(Url, PipelineId, SubpageId, Option<SubpageId>, IFrameSandboxState),
+    ScriptLoadedURLInIFrame(IframeLoadInfo),
     Navigate(Option<(PipelineId, SubpageId)>, NavigationDirection),
     PainterReady(PipelineId),
     ResizedWindow(WindowSizeData),
@@ -393,8 +412,95 @@ pub struct FrameId(pub u32);
 #[derive(Clone, PartialEq, Eq, Copy, Hash, Debug, Deserialize, Serialize, HeapSizeOf)]
 pub struct WorkerId(pub u32);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Clone, Copy)]
+pub struct PipelineNamespace {
+    id: PipelineNamespaceId,
+    next_index: PipelineIndex,
+}
+
+impl PipelineNamespace {
+    pub fn install(namespace_id: PipelineNamespaceId) {
+        PIPELINE_NAMESPACE.with(|tls| {
+            assert!(tls.get().is_none());
+            tls.set(Some(PipelineNamespace {
+                id: namespace_id,
+                next_index: PipelineIndex(0),
+            }));
+        });
+    }
+
+    fn next(&mut self) -> PipelineId {
+        let pipeline_id = PipelineId {
+            namespace_id: self.id,
+            index: self.next_index,
+        };
+
+        let PipelineIndex(current_index) = self.next_index;
+        self.next_index = PipelineIndex(current_index + 1);
+
+        pipeline_id
+    }
+}
+
+thread_local!(pub static PIPELINE_NAMESPACE: Cell<Option<PipelineNamespace>> = Cell::new(None));
+
 #[derive(Clone, PartialEq, Eq, Copy, Hash, Debug, Deserialize, Serialize, HeapSizeOf)]
-pub struct PipelineId(pub u32);
+pub struct PipelineNamespaceId(pub u32);
+
+#[derive(Clone, PartialEq, Eq, Copy, Hash, Debug, Deserialize, Serialize, HeapSizeOf)]
+pub struct PipelineIndex(u32);
+
+#[derive(Clone, PartialEq, Eq, Copy, Hash, Debug, Deserialize, Serialize, HeapSizeOf)]
+pub struct PipelineId {
+    namespace_id: PipelineNamespaceId,
+    index: PipelineIndex
+}
+
+impl PipelineId {
+    pub fn new() -> PipelineId {
+        PIPELINE_NAMESPACE.with(|tls| {
+            let mut namespace = tls.get().expect("No namespace set for this thread!");
+            let new_pipeline_id = namespace.next();
+            tls.set(Some(namespace));
+            new_pipeline_id
+        })
+    }
+
+    
+    
+    
+    
+    
+    pub fn fake_root_pipeline_id() -> PipelineId {
+        PipelineId {
+            namespace_id: PipelineNamespaceId(0),
+            index: PipelineIndex(0),
+        }
+    }
+}
+
+impl fmt::Display for PipelineId {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        let PipelineNamespaceId(namespace_id) = self.namespace_id;
+        let PipelineIndex(index) = self.index;
+        write!(fmt, "({},{})", namespace_id, index)
+    }
+}
 
 #[derive(Clone, PartialEq, Eq, Copy, Hash, Debug, Deserialize, Serialize, HeapSizeOf)]
 pub struct SubpageId(pub u32);

@@ -433,7 +433,7 @@ fn run_server(sender: Sender<DevtoolsControlMsg>,
                 
                 
                 handle_network_event(actors.clone(), connections, &actor_pipelines, &mut actor_requests,
-                                     &actor_workers, PipelineId(0), request_id, network_event);
+                                     &actor_workers, PipelineId::fake_root_pipeline_id(), request_id, network_event);
             },
             Ok(DevtoolsControlMsg::FromChrome(ChromeToDevtoolsControlMsg::ServerExitMsg)) |
             Err(RecvError) => break
