@@ -2929,7 +2929,7 @@ SVGTextDrawPathCallbacks::MakeFillPattern(GeneralPattern* aOutPattern)
 {
   if (mColor == NS_SAME_AS_FOREGROUND_COLOR ||
       mColor == NS_40PERCENT_FOREGROUND_COLOR) {
-    Unused << nsSVGUtils::MakeFillPatternFor(mFrame, gfx, aOutPattern);
+    nsSVGUtils::MakeFillPatternFor(mFrame, gfx, aOutPattern);
     return;
   }
 
@@ -3000,8 +3000,7 @@ SVGTextDrawPathCallbacks::StrokeGeometry()
       mColor == NS_40PERCENT_FOREGROUND_COLOR) {
     if (nsSVGUtils::HasStroke(mFrame,  nullptr)) {
       GeneralPattern strokePattern;
-      Unused << nsSVGUtils::MakeStrokePatternFor(mFrame, gfx, &strokePattern,
-                                                  nullptr);
+      nsSVGUtils::MakeStrokePatternFor(mFrame, gfx, &strokePattern,  nullptr);
       if (strokePattern.GetPattern()) {
         if (!mFrame->GetParent()->GetContent()->IsSVGElement()) {
           
@@ -3646,7 +3645,7 @@ SVGTextFrame::PaintSVG(gfxContext& aContext,
     SVGContextPaint::GetContextPaint(mContent);
 
   nsRenderingContext rendCtx(&aContext);
-  DrawResult finalResult = DrawResult::SUCCESS;
+
   while (run.mFrame) {
     nsTextFrame* frame = run.mFrame;
 
@@ -3659,12 +3658,10 @@ SVGTextFrame::PaintSVG(gfxContext& aContext,
     aContext.SetMatrix(initialMatrix);
 
     RefPtr<SVGContextPaintImpl> contextPaint = new SVGContextPaintImpl();
-    DrawMode drawMode;
-    DrawResult result = DrawResult::SUCCESS;
-    Tie(result, drawMode) = contextPaint->Init(&aDrawTarget,
-                                               aContext.CurrentMatrix(),
-                                               frame, outerContextPaint);
-    finalResult &= result;
+    DrawMode drawMode = contextPaint->Init(&aDrawTarget,
+                                           aContext.CurrentMatrix(),
+                                           frame, outerContextPaint);
+
     if (drawMode & DrawMode::GLYPH_STROKE) {
       
       
@@ -3706,7 +3703,7 @@ SVGTextFrame::PaintSVG(gfxContext& aContext,
     run = it.Next();
   }
 
-  return finalResult;
+  return DrawResult::SUCCESS;
 }
 
 nsIFrame*
