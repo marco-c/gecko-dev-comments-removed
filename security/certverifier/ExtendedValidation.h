@@ -8,16 +8,27 @@
 
 #include "ScopedNSSTypes.h"
 #include "certt.h"
-#include "prtypes.h"
 
 namespace mozilla { namespace pkix { struct CertPolicyId; } }
 
 namespace mozilla { namespace psm {
 
 nsresult LoadExtendedValidationInfo();
-SECStatus GetFirstEVPolicy(CERTCertificate* cert,
-                            mozilla::pkix::CertPolicyId& policy,
-                            SECOidTag& policyOidTag);
+
+
+
+
+
+
+
+
+
+
+
+
+bool GetFirstEVPolicy(CERTCertificate& cert,
+                       mozilla::pkix::CertPolicyId& policy,
+                       SECOidTag& policyOidTag);
 
 
 

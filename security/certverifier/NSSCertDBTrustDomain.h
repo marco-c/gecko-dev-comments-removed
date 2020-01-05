@@ -40,7 +40,6 @@ SECStatus InitializeNSS(const char* dir, bool readOnly, bool loadPKCS11Modules);
 
 void DisableMD5();
 
-extern const char BUILTIN_ROOTS_MODULE_DEFAULT_NAME[];
 
 
 
@@ -48,8 +47,11 @@ extern const char BUILTIN_ROOTS_MODULE_DEFAULT_NAME[];
 
 
 
-SECStatus LoadLoadableRoots( const char* dir,
-                            const char* modNameUTF8);
+
+
+
+
+bool LoadLoadableRoots(const nsCString& dir, const nsCString& modNameUTF8);
 
 void UnloadLoadableRoots(const char* modNameUTF8);
 
