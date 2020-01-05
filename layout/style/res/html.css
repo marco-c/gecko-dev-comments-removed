@@ -775,23 +775,20 @@ input[type="time"] > xul|datetimebox {
 }
 
 
+details > summary:first-of-type,
+details > summary:-moz-native-anonymous {
+  display: list-item;
+  list-style: disclosure-closed inside;
+}
 
-@supports -moz-bool-pref("dom.details_element.enabled") {
-  details > summary:first-of-type,
-  details > summary:-moz-native-anonymous {
-    display: list-item;
-    list-style: disclosure-closed inside;
-  }
+details[open] > summary:first-of-type,
+details[open] > summary:-moz-native-anonymous {
+  list-style-type: disclosure-open;
+}
 
-  details[open] > summary:first-of-type,
-  details[open] > summary:-moz-native-anonymous {
-    list-style-type: disclosure-open;
-  }
-
-  details > summary:first-of-type > *|* {
-    
-    list-style-position: initial;
-  }
+details > summary:first-of-type > *|* {
+  
+  list-style-position: initial;
 }
 
 

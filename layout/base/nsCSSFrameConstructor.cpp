@@ -3552,10 +3552,6 @@ nsCSSFrameConstructor::FindHTMLData(Element* aElement,
     return nullptr;
   }
 
-  if (aTag == nsGkAtoms::details && !HTMLDetailsElement::IsDetailsEnabled()) {
-    return nullptr;
-  }
-
   static const FrameConstructionDataByTag sHTMLData[] = {
     SIMPLE_TAG_CHAIN(img, nsCSSFrameConstructor::FindImgData),
     SIMPLE_TAG_CHAIN(mozgeneratedcontentimage,
@@ -5767,7 +5763,7 @@ nsCSSFrameConstructor::AddFrameConstructionItemsInternal(nsFrameConstructorState
   
   
   auto* details = HTMLDetailsElement::FromContentOrNull(parent);
-  if (details && details->IsDetailsEnabled() && !details->Open() &&
+  if (details && !details->Open() &&
       (!aContent->IsRootOfNativeAnonymousSubtree() ||
        aContent->IsGeneratedContentContainerForBefore() ||
        aContent->IsGeneratedContentContainerForAfter())) {
@@ -5935,7 +5931,7 @@ nsCSSFrameConstructor::AddFrameConstructionItemsInternal(nsFrameConstructorState
   }
 
   FrameConstructionItem* item = nullptr;
-  if (details && details->IsDetailsEnabled() && details->Open()) {
+  if (details && details->Open()) {
     auto* summary = HTMLSummaryElement::FromContentOrNull(aContent);
     if (summary && summary->IsMainSummary()) {
       
