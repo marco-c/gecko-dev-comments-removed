@@ -44,6 +44,7 @@
 #include "nsEmbedCID.h"
 #include "nsIWebBrowser.h"
 #include "nsIDocShell.h"
+#include "gfxPlatform.h"
 
 #ifdef MOZ_INSTRUMENT_EVENT_LOOP
 #include "EventTracer.h"
@@ -526,9 +527,14 @@ nsAppShellService::CreateWindowlessBrowser(bool aIsChrome, nsIWindowlessBrowser 
 
 
 
-  nsCOMPtr<nsIWidget> widget = nsIWidget::CreateHeadlessWidget();
+  nsCOMPtr<nsIWidget> widget;
+  if (gfxPlatform::IsHeadless()) {
+    widget = nsIWidget::CreateHeadlessWidget();
+  } else {
+    widget = nsIWidget::CreatePuppetWidget(nullptr);
+  }
   if (!widget) {
-    NS_ERROR("Couldn't create instance of PuppetWidget");
+    NS_ERROR("Couldn't create instance of stub widget");
     return NS_ERROR_FAILURE;
   }
   nsresult rv =
