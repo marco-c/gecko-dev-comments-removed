@@ -264,6 +264,15 @@ void nsBaseWidget::DestroyCompositor()
   
   
   
+  if (mCompositorVsyncDispatcher) {
+    mCompositorVsyncDispatcher->Shutdown();
+    mCompositorVsyncDispatcher = nullptr;
+  }
+
+  
+  
+  
+  
   
   
   
@@ -283,13 +292,6 @@ void nsBaseWidget::DestroyCompositor()
     
     RefPtr<CompositorSession> session = mCompositorSession.forget();
     session->Shutdown();
-  }
-
-  
-  
-  if (mCompositorVsyncDispatcher) {
-    mCompositorVsyncDispatcher->Shutdown();
-    mCompositorVsyncDispatcher = nullptr;
   }
 }
 
