@@ -1490,8 +1490,9 @@ public abstract class GeckoApp
 
 
 
-    protected void loadStartupTab(final int flags) {
-        if (!mShouldRestore) {
+
+    protected void loadStartupTab(final int flags, String action) {
+        if (!mShouldRestore || Intent.ACTION_VIEW.equals(action)) {
             if (mLastSessionCrashed) {
                 
                 
@@ -1514,7 +1515,7 @@ public abstract class GeckoApp
     protected void loadStartupTab(final String url, final SafeIntent intent, final int flags) {
         
         if (url == null) {
-            loadStartupTab(flags);
+            loadStartupTab(flags, intent.getAction());
             return;
         }
 
@@ -1596,7 +1597,7 @@ public abstract class GeckoApp
             });
         } else {
             if (!mIsRestoringActivity) {
-                loadStartupTab(Tabs.LOADURL_NEW_TAB);
+                loadStartupTab(Tabs.LOADURL_NEW_TAB, action);
             }
 
             Tabs.getInstance().notifyListeners(null, Tabs.TabEvents.RESTORED);
