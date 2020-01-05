@@ -1408,6 +1408,22 @@ HttpBaseChannel::SetReferrerWithPolicy(nsIURI *referrer,
 
       
       if (!match) return NS_OK;
+
+      
+      if (!gHttpHandler->SendSecureXSiteReferrer()) {
+        nsAutoCString referrerHost;
+        nsAutoCString host;
+
+        rv = referrer->GetAsciiHost(referrerHost);
+        if (NS_FAILED(rv)) return rv;
+
+        rv = mURI->GetAsciiHost(host);
+        if (NS_FAILED(rv)) return rv;
+
+        
+        if (!referrerHost.Equals(host))
+          return NS_OK;
+      }
     }
   }
 
@@ -1500,15 +1516,6 @@ HttpBaseChannel::SetReferrerWithPolicy(nsIURI *referrer,
   if (NS_FAILED(rv)) return rv;
 
   nsAutoCString spec;
-
-  
-  
-  if (isCrossOrigin) {
-    int userReferrerXOriginTrimmingPolicy =
-      gHttpHandler->ReferrerXOriginTrimmingPolicy();
-    userReferrerTrimmingPolicy =
-      std::max(userReferrerTrimmingPolicy, userReferrerXOriginTrimmingPolicy);
-  }
 
   
   
@@ -2657,18 +2664,33 @@ HttpBaseChannel::ShouldIntercept(nsIURI* aURI)
   return shouldIntercept;
 }
 
-void HttpBaseChannel::CheckPrivateBrowsing()
+#ifdef DEBUG
+void HttpBaseChannel::AssertPrivateBrowsingId()
 {
   nsCOMPtr<nsILoadContext> loadContext;
   NS_QueryNotificationCallbacks(this, loadContext);
   
-  if (mLoadInfo && loadContext) {
-      DocShellOriginAttributes docShellAttrs;
-      loadContext->GetOriginAttributes(docShellAttrs);
-      MOZ_ASSERT(mLoadInfo->GetOriginAttributes().mPrivateBrowsingId == docShellAttrs.mPrivateBrowsingId,
-                 "PrivateBrowsingId values are not the same between LoadInfo and LoadContext.");
+  if (!mLoadInfo) {
+    return;
   }
+
+  if (!loadContext) {
+    return;
+  }
+
+  
+  
+  if (nsContentUtils::IsSystemPrincipal(mLoadInfo->LoadingPrincipal()) &&
+      mLoadInfo->InternalContentPolicyType() == nsIContentPolicy::TYPE_INTERNAL_IMAGE_FAVICON) {
+    return;
+  }
+
+  DocShellOriginAttributes docShellAttrs;
+  loadContext->GetOriginAttributes(docShellAttrs);
+  MOZ_ASSERT(mLoadInfo->GetOriginAttributes().mPrivateBrowsingId == docShellAttrs.mPrivateBrowsingId,
+             "PrivateBrowsingId values are not the same between LoadInfo and LoadContext.");
 }
+#endif
 
 
 
