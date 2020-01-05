@@ -80,8 +80,9 @@ impl ServiceWorkerMethods for ServiceWorker {
         USVString(self.script_url.borrow().clone())
     }
 
+    #[allow(unsafe_code)]
     
-    fn PostMessage(&self, cx: *mut JSContext, message: HandleValue) -> ErrorResult {
+    unsafe fn PostMessage(&self, cx: *mut JSContext, message: HandleValue) -> ErrorResult {
         
         if let ServiceWorkerState::Redundant = self.state.get() {
             return Err(Error::InvalidState);

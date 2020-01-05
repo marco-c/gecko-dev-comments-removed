@@ -130,8 +130,9 @@ impl ErrorEventMethods for ErrorEvent {
         self.filename.borrow().clone()
     }
 
+    #[allow(unsafe_code)]
     
-    fn Error(&self, _cx: *mut JSContext) -> JSVal {
+    unsafe fn Error(&self, _cx: *mut JSContext) -> JSVal {
         self.error.get()
     }
 

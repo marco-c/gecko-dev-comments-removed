@@ -173,11 +173,11 @@ pub fn init_service_workers(sw_senders: SWManagerSenders) {
 pub fn init() {
     unsafe {
         proxyhandler::init();
-    }
 
-    
-    
-    RegisterBindings::RegisterProxyHandlers();
+        
+        
+        RegisterBindings::RegisterProxyHandlers();
+    }
 
     perform_platform_specific_initialization();
 }

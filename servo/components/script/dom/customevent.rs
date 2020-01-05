@@ -76,13 +76,15 @@ impl CustomEvent {
 }
 
 impl CustomEventMethods for CustomEvent {
+    #[allow(unsafe_code)]
     
-    fn Detail(&self, _cx: *mut JSContext) -> JSVal {
+    unsafe fn Detail(&self, _cx: *mut JSContext) -> JSVal {
         self.detail.get()
     }
 
+    #[allow(unsafe_code)]
     
-    fn InitCustomEvent(&self,
+    unsafe fn InitCustomEvent(&self,
                        _cx: *mut JSContext,
                        type_: DOMString,
                        can_bubble: bool,

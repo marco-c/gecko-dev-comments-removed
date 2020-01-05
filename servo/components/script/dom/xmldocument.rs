@@ -86,8 +86,9 @@ impl XMLDocumentMethods for XMLDocument {
         self.upcast::<Document>().SupportedPropertyNames()
     }
 
+    #[allow(unsafe_code)]
     
-    fn NamedGetter(&self, _cx: *mut JSContext, name: DOMString) -> Option<NonZero<*mut JSObject>> {
+    unsafe fn NamedGetter(&self, _cx: *mut JSContext, name: DOMString) -> Option<NonZero<*mut JSObject>> {
         self.upcast::<Document>().NamedGetter(_cx, name)
     }
 }

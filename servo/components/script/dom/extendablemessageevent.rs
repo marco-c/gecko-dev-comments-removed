@@ -74,8 +74,9 @@ impl ExtendableMessageEvent {
 }
 
 impl ExtendableMessageEventMethods for ExtendableMessageEvent {
+    #[allow(unsafe_code)]
     
-    fn Data(&self, _cx: *mut JSContext) -> JSVal {
+    unsafe fn Data(&self, _cx: *mut JSContext) -> JSVal {
         self.data.get()
     }
 

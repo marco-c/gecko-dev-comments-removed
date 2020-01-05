@@ -164,8 +164,9 @@ impl Worker {
 }
 
 impl WorkerMethods for Worker {
+    #[allow(unsafe_code)]
     
-    fn PostMessage(&self, cx: *mut JSContext, message: HandleValue) -> ErrorResult {
+    unsafe fn PostMessage(&self, cx: *mut JSContext, message: HandleValue) -> ErrorResult {
         let data = try!(StructuredCloneData::write(cx, message));
         let address = Trusted::new(self);
 
