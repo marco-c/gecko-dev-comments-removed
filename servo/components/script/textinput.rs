@@ -550,6 +550,11 @@ impl<T: ClipboardProvider> TextInput<T> {
     }
 
     
+    pub fn is_empty(&self) -> bool {
+        self.lines.len() <= 1 && self.lines.get(0).map_or(true, |line| line.is_empty())
+    }
+
+    
     pub fn len(&self) -> usize {
         self.lines.iter().fold(0, |m, l| {
             m + l.len() + 1 
