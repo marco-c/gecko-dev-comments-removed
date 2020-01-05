@@ -7316,10 +7316,6 @@ BytecodeEmitter::emitForOf(ParseNode* forOfLoop, EmitterScope* headLexicalEmitte
         auto loopDepth = this->stackDepth;
 #endif
 
-        
-        if (!updateSourceCoordNotes(forOfHead->pn_pos.begin))
-            return false;
-
         if (!emit1(JSOP_POP))                             
             return false;
         if (!emit1(JSOP_DUP))                             
@@ -7527,10 +7523,6 @@ BytecodeEmitter::emitForIn(ParseNode* forInLoop, EmitterScope* headLexicalEmitte
 
     
     loopInfo.continueTarget = { offset() };
-
-    
-    if (!updateSourceCoordNotes(forInHead->pn_pos.begin))
-        return false;
 
     if (!emitLoopEntry(nullptr, initialJump))             
         return false;
