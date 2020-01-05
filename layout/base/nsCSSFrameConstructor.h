@@ -48,7 +48,7 @@ class FlattenedChildIterator;
 } 
 } 
 
-class nsCSSFrameConstructor : public nsFrameManager
+class nsCSSFrameConstructor final : public nsFrameManager
 {
 public:
   typedef mozilla::CSSPseudoElementType CSSPseudoElementType;
@@ -60,7 +60,7 @@ public:
 
   nsCSSFrameConstructor(nsIDocument* aDocument, nsIPresShell* aPresShell);
   ~nsCSSFrameConstructor(void) {
-    NS_ASSERTION(mUpdateCount == 0, "Dying in the middle of our own update?");
+    MOZ_ASSERT(mUpdateCount == 0, "Dying in the middle of our own update?");
   }
 
   
@@ -78,7 +78,7 @@ public:
 
   nsIFrame* ConstructRootFrame();
 
-  nsresult ReconstructDocElementHierarchy();
+  void ReconstructDocElementHierarchy();
 
   
   
@@ -208,17 +208,17 @@ public:
   
   
   
-  nsresult ContentAppended(nsIContent* aContainer,
-                           nsIContent* aFirstNewContent,
-                           bool aAllowLazyConstruction,
-                           TreeMatchContext* aProvidedTreeMatchContext = nullptr);
+  void ContentAppended(nsIContent* aContainer,
+                       nsIContent* aFirstNewContent,
+                       bool aAllowLazyConstruction,
+                       TreeMatchContext* aProvidedTreeMatchContext = nullptr);
 
   
   
-  nsresult ContentInserted(nsIContent* aContainer,
-                           nsIContent* aChild,
-                           nsILayoutHistoryState* aFrameState,
-                           bool aAllowLazyConstruction);
+  void ContentInserted(nsIContent* aContainer,
+                       nsIContent* aChild,
+                       nsILayoutHistoryState* aFrameState,
+                       bool aAllowLazyConstruction);
 
   
   
@@ -231,12 +231,12 @@ public:
   
   
   
-  nsresult ContentRangeInserted(nsIContent* aContainer,
-                                nsIContent* aStartChild,
-                                nsIContent* aEndChild,
-                                nsILayoutHistoryState* aFrameState,
-                                bool aAllowLazyConstruction,
-                                TreeMatchContext* aProvidedTreeMatchContext = nullptr);
+  void ContentRangeInserted(nsIContent* aContainer,
+                            nsIContent* aStartChild,
+                            nsIContent* aEndChild,
+                            nsILayoutHistoryState* aFrameState,
+                            bool aAllowLazyConstruction,
+                            TreeMatchContext* aProvidedTreeMatchContext = nullptr);
 
   enum RemoveFlags {
     REMOVE_CONTENT, REMOVE_FOR_RECONSTRUCTION, REMOVE_DESTROY_FRAMES };
@@ -256,15 +256,15 @@ public:
 
 
 
-  nsresult ContentRemoved(nsIContent*  aContainer,
-                          nsIContent*  aChild,
-                          nsIContent*  aOldNextSibling,
-                          RemoveFlags  aFlags,
-                          bool*        aDidReconstruct,
-                          nsIContent** aDestroyedFramesFor = nullptr);
+  void ContentRemoved(nsIContent*  aContainer,
+                      nsIContent*  aChild,
+                      nsIContent*  aOldNextSibling,
+                      RemoveFlags  aFlags,
+                      bool*        aDidReconstruct,
+                      nsIContent** aDestroyedFramesFor = nullptr);
 
-  nsresult CharacterDataChanged(nsIContent* aContent,
-                                CharacterDataChangeInfo* aInfo);
+  void CharacterDataChanged(nsIContent* aContent,
+                            CharacterDataChangeInfo* aInfo);
 
   
   
@@ -274,7 +274,7 @@ public:
   nsIFrame* EnsureFrameForTextNode(nsGenericDOMDataNode* aContent);
 
   
-  nsresult GenerateChildFrames(nsContainerFrame* aFrame);
+  void GenerateChildFrames(nsContainerFrame* aFrame);
 
   
   
@@ -316,11 +316,11 @@ public:
 
   InsertionPoint GetInsertionPoint(nsIContent* aContainer, nsIContent* aChild);
 
-  nsresult CreateListBoxContent(nsContainerFrame* aParentFrame,
-                                nsIFrame*         aPrevFrame,
-                                nsIContent*       aChild,
-                                nsIFrame**        aResult,
-                                bool              aIsAppend);
+  void CreateListBoxContent(nsContainerFrame* aParentFrame,
+                            nsIFrame*         aPrevFrame,
+                            nsIContent*       aChild,
+                            nsIFrame**        aResult,
+                            bool              aIsAppend);
 
   
   
@@ -432,14 +432,14 @@ private:
 
 
 
-  nsresult CreateAttributeContent(nsIContent* aParentContent,
-                                  nsIFrame* aParentFrame,
-                                  int32_t aAttrNamespace,
-                                  nsIAtom* aAttrName,
-                                  nsStyleContext* aStyleContext,
-                                  nsCOMArray<nsIContent>& aGeneratedContent,
-                                  nsIContent** aNewContent,
-                                  nsIFrame** aNewFrame);
+  void CreateAttributeContent(nsIContent* aParentContent,
+                              nsIFrame* aParentFrame,
+                              int32_t aAttrNamespace,
+                              nsIAtom* aAttrName,
+                              nsStyleContext* aStyleContext,
+                              nsCOMArray<nsIContent>& aGeneratedContent,
+                              nsIContent** aNewContent,
+                              nsIFrame** aNewFrame);
 
   
 
@@ -477,11 +477,11 @@ private:
   
   
   
-  nsresult AppendFramesToParent(nsFrameConstructorState&       aState,
-                                nsContainerFrame*              aParentFrame,
-                                nsFrameItems&                  aFrameList,
-                                nsIFrame*                      aPrevSibling,
-                                bool                           aIsRecursiveCall = false);
+  void AppendFramesToParent(nsFrameConstructorState&       aState,
+                            nsContainerFrame*              aParentFrame,
+                            nsFrameItems&                  aFrameList,
+                            nsIFrame*                      aPrevSibling,
+                            bool                           aIsRecursiveCall = false);
 
   
   
@@ -1703,7 +1703,7 @@ private:
   
   
   
-  nsresult
+  void
   InitializeSelectFrame(nsFrameConstructorState& aState,
                         nsContainerFrame*        aScrollFrame,
                         nsContainerFrame*        aScrolledFrame,
@@ -1732,7 +1732,7 @@ private:
 
 
 
-  nsresult
+  void
   RecreateFramesForContent(nsIContent*  aContent,
                            bool         aAsyncInsert,
                            RemoveFlags  aFlags,
@@ -1750,7 +1750,6 @@ private:
   
   bool MaybeRecreateContainerForFrameRemoval(nsIFrame*    aFrame,
                                              RemoveFlags  aFlags,
-                                             nsresult*    aResult,
                                              nsIContent** aDestroyedFramesFor);
 
   nsIFrame* CreateContinuingOuterTableFrame(nsIPresShell*     aPresShell,
@@ -1875,9 +1874,9 @@ private:
                              bool                     aIsAppend,
                              nsIFrame*                aPrevSibling);
 
-  nsresult ReframeContainingBlock(nsIFrame*    aFrame,
-                                  RemoveFlags  aFlags,
-                                  nsIContent** aReframeContent);
+  void ReframeContainingBlock(nsIFrame*    aFrame,
+                              RemoveFlags  aFlags,
+                              nsIContent** aReframeContent);
 
   
 
@@ -1931,18 +1930,18 @@ private:
   void RecoverLetterFrames(nsContainerFrame* aBlockFrame);
 
   
-  nsresult RemoveLetterFrames(nsIPresShell*     aPresShell,
-                              nsContainerFrame* aBlockFrame);
+  void RemoveLetterFrames(nsIPresShell*     aPresShell,
+                          nsContainerFrame* aBlockFrame);
 
   
-  nsresult RemoveFirstLetterFrames(nsIPresShell*     aPresShell,
-                                   nsContainerFrame* aFrame,
-                                   nsContainerFrame* aBlockFrame,
-                                   bool*             aStopLooking);
+  void RemoveFirstLetterFrames(nsIPresShell*     aPresShell,
+                               nsContainerFrame* aFrame,
+                               nsContainerFrame* aBlockFrame,
+                               bool*             aStopLooking);
 
   
-  nsresult RemoveFloatingFirstLetterFrames(nsIPresShell*    aPresShell,
-                                           nsIFrame*        aBlockFrame);
+  void RemoveFloatingFirstLetterFrames(nsIPresShell*    aPresShell,
+                                       nsIFrame*        aBlockFrame);
 
   
   
@@ -1973,12 +1972,12 @@ private:
                              nsContainerFrame*        aBlockFrame,
                              nsFrameItems&            aFrameItems);
 
-  nsresult InsertFirstLineFrames(nsFrameConstructorState& aState,
-                                 nsIContent*              aContent,
-                                 nsIFrame*                aBlockFrame,
-                                 nsContainerFrame**       aParentFrame,
-                                 nsIFrame*                aPrevSibling,
-                                 nsFrameItems&            aFrameItems);
+  void InsertFirstLineFrames(nsFrameConstructorState& aState,
+                             nsIContent*              aContent,
+                             nsIFrame*                aBlockFrame,
+                             nsContainerFrame**       aParentFrame,
+                             nsIFrame*                aPrevSibling,
+                             nsFrameItems&            aFrameItems);
 
   
 

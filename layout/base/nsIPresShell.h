@@ -1022,7 +1022,7 @@ public:
   
 
 
-  virtual nsresult ReconstructFrames() = 0;
+  virtual void ReconstructFrames() = 0;
 
   
 
