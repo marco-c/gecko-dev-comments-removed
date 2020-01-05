@@ -7,9 +7,9 @@ class MOZ_NON_PARAM NonParamClass {};
 enum MOZ_NON_PARAM NonParamEnum { X, Y, Z };
 enum class MOZ_NON_PARAM NonParamEnumClass { X, Y, Z };
 
-struct HasNonParamStruct { NonParam x; int y; };
-union HasNonParamUnion { NonParam x; int y; };
-struct HasNonParamStructUnion { HasNonParamUnion z; };
+struct HasNonParamStruct { NonParam x; int y; }; 
+union HasNonParamUnion { NonParam x; int y; }; 
+struct HasNonParamStructUnion { HasNonParamUnion z; }; 
 
 #define MAYBE_STATIC
 #include "NonParameterTestCases.h"
@@ -180,10 +180,10 @@ void testLambda()
 
 
 
-struct alignas(8) AlignasStruct { char a; };
+struct alignas(8) AlignasStruct { char a; }; 
 void takesAlignasStruct(AlignasStruct x) { } 
 void takesAlignasStructByRef(const AlignasStruct& x) { }
 
-struct AlignasMember { alignas(8) char a; };
+struct AlignasMember { alignas(8) char a; }; 
 void takesAlignasMember(AlignasMember x) { } 
 void takesAlignasMemberByRef(const AlignasMember& x) { }

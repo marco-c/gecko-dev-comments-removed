@@ -15,12 +15,11 @@ protected:
   
   
   
-  bool hasFakeAnnotation(const TagDecl *D) const override {
+  std::string getImplicitReason(const TagDecl *D) const override {
     
     for (const Attr *A : D->attrs()) {
       if (isa<AlignedAttr>(A)) {
-        D->dump();
-        return true;
+        return "it has an alignas(_) annotation";
       }
     }
 
@@ -29,9 +28,7 @@ protected:
       for (auto F : RD->fields()) {
         for (auto A : F->attrs()) {
           if (isa<AlignedAttr>(A)) {
-            D->dump();
-
-            return true;
+            return ("member '" + F->getName() + "' has an alignas(_) annotation").str();
           }
         }
       }
@@ -39,7 +36,7 @@ protected:
 
     
     
-    return false;
+    return "";
   }
 };
 NonParamAnnotation NonParam;
@@ -100,6 +97,8 @@ void NonParamInsideFunctionDeclChecker::check(
              DiagnosticIDs::Note)
           << Spec->getSpecializedTemplate();
       }
+
+      NonParam.dumpAnnotationReason(*this, T, p->getLocation());
     }
   }
 }
