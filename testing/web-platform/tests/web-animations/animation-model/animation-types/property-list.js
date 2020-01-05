@@ -364,12 +364,15 @@ var gCSSProperties = {
   },
   'column-count': {
     
-    types: [
+    types: [ 'positiveInteger',
+            { type: 'discrete', options: [ [ 'auto', '10' ] ] }
     ]
   },
   'column-gap': {
     
-    types: [ 'length' ]
+    types: [ 'length',
+	     {  type: 'discrete', options: [ [ 'normal', '200px' ] ] }
+    ]
   },
   'column-rule-color': {
     
@@ -1518,7 +1521,6 @@ function propertyToIDL(property) {
                           function (str) {
                             return str.substr(1).toUpperCase(); });
 }
-
 function calcFromPercentage(idlName, percentageValue) {
   var examElem = document.createElement('div');
   document.body.appendChild(examElem);
