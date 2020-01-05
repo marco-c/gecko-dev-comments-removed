@@ -199,3 +199,6 @@ class CollectionValidator {
     };
   }
 }
+
+
+CollectionValidator.prototype.version = 0;
