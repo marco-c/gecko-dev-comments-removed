@@ -1312,6 +1312,10 @@ protected:
 
   
   
+  void MarkAsTainted();
+
+  
+  
   RefPtr<MediaDecoder> mDecoder;
 
   

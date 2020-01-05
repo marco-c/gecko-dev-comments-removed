@@ -1532,12 +1532,7 @@ HTMLMediaElement::SetVisible(bool aVisible)
 already_AddRefed<layers::Image>
 HTMLMediaElement::GetCurrentImage()
 {
-  
-  
-  mHasSuspendTaint = true;
-  if (mDecoder) {
-    mDecoder->SetSuspendTaint(true);
-  }
+  MarkAsTainted();
 
   
   ImageContainer* container = GetImageContainer();
@@ -3335,6 +3330,7 @@ HTMLMediaElement::CaptureStreamInternal(bool aFinishWhenEnded,
   MOZ_RELEASE_ASSERT(aGraph);
 
   MarkAsContentSource(CallerAPI::CAPTURE_STREAM);
+  MarkAsTainted();
 
   nsPIDOMWindowInner* window = OwnerDoc()->GetInnerWindow();
   if (!window) {
@@ -7482,6 +7478,16 @@ already_AddRefed<GMPCrashHelper>
 HTMLMediaElement::CreateGMPCrashHelper()
 {
   return MakeAndAddRef<MediaElementGMPCrashHelper>(this);
+}
+
+void
+HTMLMediaElement::MarkAsTainted()
+{
+  mHasSuspendTaint = true;
+
+  if (mDecoder) {
+    mDecoder->SetSuspendTaint(true);
+  }
 }
 
 bool HasDebuggerPrivilege(JSContext* aCx, JSObject* aObj)
