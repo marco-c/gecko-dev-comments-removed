@@ -253,9 +253,11 @@ protected:
                                    nsAFlatString& aString,
                                    LineBreakType aLineBreakType);
   
-  nsresult GetFlatTextLengthBefore(nsRange* aRange,
-                                   uint32_t* aOffset,
-                                   LineBreakType aLineBreakType);
+  
+  
+  nsresult GetStartOffset(nsRange* aRange,
+                          uint32_t* aOffset,
+                          LineBreakType aLineBreakType);
   
   
   
