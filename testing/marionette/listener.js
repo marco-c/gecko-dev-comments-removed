@@ -1144,26 +1144,6 @@ function goForward(msg) {
 
 
 
-
-
-
-
-
-function refresh(msg) {
-  let {command_id, pageTimeout} = msg.json;
-
-  
-  sendSyncMessage("Marionette:switchedToFrame", {frameValue: null});
-  curContainer.frame = content;
-
-  loadListener.navigate(() => {
-    curContainer.frame.location.reload(true);
-  }, command_id, pageTimeout);
-}
-
-
-
-
 function getCurrentUrl() {
   return content.location.href;
 }
@@ -1180,6 +1160,19 @@ function getTitle() {
 
 function getPageSource() {
   return curContainer.frame.document.documentElement.outerHTML;
+}
+
+
+
+
+function refresh(msg) {
+  let command_id = msg.json.command_id;
+  curContainer.frame.location.reload(true);
+  let listen = function() {
+    removeEventListener("DOMContentLoaded", listen, false);
+    sendOk(command_id);
+  };
+  addEventListener("DOMContentLoaded", listen, false);
 }
 
 
