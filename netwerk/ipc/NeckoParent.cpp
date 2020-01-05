@@ -45,6 +45,7 @@
 #include "nsINetworkPredictorVerifier.h"
 #include "nsISpeculativeConnect.h"
 #include "nsIThrottlingService.h"
+#include "nsNetUtil.h"
 
 using mozilla::OriginAttributes;
 using mozilla::dom::ChromeUtils;
@@ -911,6 +912,16 @@ NeckoParent::RecvDecreaseThrottlePressure()
   
   
   mThrottlers.RemoveElementAt(0);
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult
+NeckoParent::RecvNotifyCurrentTopLevelOuterContentWindowId(const uint64_t& aWindowId)
+{
+  if (NS_FAILED(NS_NotifyCurrentTopLevelOuterContentWindowId(aWindowId))) {
+    NS_WARNING("NS_NotifyCurrentTopLevelOuterContentWindowId failed!");
+  }
+
   return IPC_OK();
 }
 

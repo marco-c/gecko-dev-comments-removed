@@ -943,6 +943,11 @@ nsresult NS_CompareLoadInfoAndLoadContext(nsIChannel *aChannel);
 
 uint32_t NS_GetDefaultReferrerPolicy();
 
+
+
+
+nsresult NS_NotifyCurrentTopLevelOuterContentWindowId(uint64_t aWindowId);
+
 namespace mozilla {
 namespace net {
 
