@@ -567,8 +567,8 @@ protected:
   ReflowInput &mReflowInput;
   mozilla::UniquePtr<nsFloatManager> mNew;
 
- 
- 
+  
+  
   nsFloatManager* mOld;
 };
 
