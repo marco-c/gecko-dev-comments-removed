@@ -112,6 +112,9 @@ pub trait FlowContext {
     }
 
     
+    fn mark_as_root(&mut self) {}
+
+    
     fn debug_str(&self) -> ~str {
         ~"???"
     }
@@ -360,6 +363,7 @@ impl Iterator<@RenderBox> for BoxIterator {
 }
 
 impl FlowData {
+    #[inline]
     pub fn new(id: int, node: AbstractNode<LayoutView>) -> FlowData {
         FlowData {
             node: node,

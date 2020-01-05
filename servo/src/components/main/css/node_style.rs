@@ -17,6 +17,7 @@ pub trait StyledNode {
 }
 
 impl StyledNode for AbstractNode<LayoutView> {
+    #[inline]
     fn style(&self) -> &ComputedValues {
         
         

@@ -6,15 +6,16 @@
 
 
 
-use dom::node::{AbstractNode, ScriptView, LayoutView};
-use script_task::{ScriptChan};
-use std::comm::{Chan, SharedChan};
+use dom::node::{AbstractNode, LayoutDataRef, LayoutView, ScriptView};
+
+use extra::url::Url;
+use geom::point::Point2D;
 use geom::rect::Rect;
 use geom::size::Size2D;
-use geom::point::Point2D;
+use script_task::{ScriptChan};
 use servo_util::geometry::Au;
+use std::comm::{Chan, SharedChan};
 use style::Stylesheet;
-use extra::url::Url;
 
 
 
@@ -32,7 +33,18 @@ pub enum Msg {
     QueryMsg(LayoutQuery),
 
     
-    ExitMsg,
+    
+    
+    ReapLayoutDataMsg(LayoutDataRef),
+
+    
+    
+    
+    PrepareToExitMsg(Chan<()>),
+
+    
+    
+    ExitNowMsg,
 }
 
 
