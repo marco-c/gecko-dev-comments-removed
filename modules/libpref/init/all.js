@@ -621,6 +621,9 @@ pref("layers.geometry.opengl.enabled", true);
 pref("layers.geometry.basic.enabled", true);
 
 
+pref("layers.geometry.d3d11.enabled", true);
+
+
 
 pref("apz.allow_checkerboarding", true);
 pref("apz.allow_immediate_handoff", true);
@@ -2553,7 +2556,7 @@ pref("layout.css.convertFromNode.enabled", true);
 pref("layout.css.text-align-unsafe-value.enabled", false);
 
 
-pref("layout.css.text-justify.enabled", false);
+pref("layout.css.text-justify.enabled", true);
 
 
 
@@ -2678,6 +2681,9 @@ pref("layout.css.control-characters.visible", false);
 #else
 pref("layout.css.control-characters.visible", true);
 #endif
+
+
+pref("layout.css.column-span.enabled", false);
 
 
 
@@ -4769,6 +4775,7 @@ pref("extensions.webextensions.keepUuidOnUninstall", false);
 pref("extensions.webextensions.identity.redirectDomain", "extensions.allizom.org");
 
 pref("extensions.webextensions.themes.enabled", false);
+pref("extensions.webextensions.themes.icons.enabled", false);
 pref("extensions.webextensions.remote", false);
 
 
