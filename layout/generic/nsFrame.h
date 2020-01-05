@@ -479,7 +479,7 @@ public:
 
   void Trace(const char* aMethod, bool aEnter);
   void Trace(const char* aMethod, bool aEnter, nsReflowStatus aStatus);
-  void TraceMsg(const char* fmt, ...);
+  void TraceMsg(const char* fmt, ...) MOZ_FORMAT_PRINTF(2, 3);
 
   
   
