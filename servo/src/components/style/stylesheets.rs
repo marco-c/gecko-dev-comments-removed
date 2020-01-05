@@ -16,6 +16,8 @@ use media_queries;
 
 
 pub struct Stylesheet {
+    
+    
     rules: ~[CSSRule],
     namespaces: NamespaceMap,
 }
