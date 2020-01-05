@@ -2848,11 +2848,7 @@ pref("dom.ipc.plugins.asyncdrawing.enabled", false);
 pref("dom.ipc.plugins.asyncdrawing.enabled", true);
 #endif
 
-#ifdef NIGHTLY_BUILD
-pref("dom.ipc.processCount", 2);
-#else
 pref("dom.ipc.processCount", 1);
-#endif
 
 
 pref("svg.path-caching.enabled", true);
