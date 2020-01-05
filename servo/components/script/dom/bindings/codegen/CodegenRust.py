@@ -3445,7 +3445,6 @@ class CGUnionStruct(CGThing):
         
         
         return ("""\
-#[allow(unrooted_must_root)]
 pub enum %s {
 %s
 }
