@@ -7185,17 +7185,21 @@ PresShell::HandleEvent(nsIFrame* aFrame,
                        nsIContent** aTargetContent)
 {
 #ifdef MOZ_TASK_TRACER
-  
-  
-  SourceEventType type = SourceEventType::Unknown;
-  if (aEvent->AsTouchEvent()) {
-    type = SourceEventType::Touch;
-  } else if (aEvent->AsMouseEvent()) {
-    type = SourceEventType::Mouse;
-  } else if (aEvent->AsKeyboardEvent()) {
-    type = SourceEventType::Key;
+  Maybe<AutoSourceEvent> taskTracerEvent;
+  if (MOZ_UNLIKELY(IsStartLogging())) {
+    
+    
+    
+    SourceEventType type = SourceEventType::Unknown;
+    if (aEvent->AsTouchEvent()) {
+      type = SourceEventType::Touch;
+    } else if (aEvent->AsMouseEvent()) {
+      type = SourceEventType::Mouse;
+    } else if (aEvent->AsKeyboardEvent()) {
+      type = SourceEventType::Key;
+    }
+    taskTracerEvent.emplace(type);
   }
-  AutoSourceEvent taskTracerEvent(type);
 #endif
 
   NS_ASSERTION(aFrame, "aFrame should be not null");
