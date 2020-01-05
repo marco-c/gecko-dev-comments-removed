@@ -435,6 +435,11 @@ class ScriptSource
     
     
     
+    UniquePtr<XDRIncrementalEncoder> xdrEncoder_;
+
+    
+    
+    
     bool sourceRetrievable_:1;
     bool hasIntroductionOffset_:1;
 
@@ -453,6 +458,7 @@ class ScriptSource
         parameterListEnd_(0),
         introducerFilename_(nullptr),
         introductionType_(nullptr),
+        xdrEncoder_(nullptr),
         sourceRetrievable_(false),
         hasIntroductionOffset_(false)
     {
@@ -579,6 +585,29 @@ class ScriptSource
     uint32_t parameterListEnd() const {
         return parameterListEnd_;
     }
+
+    
+    bool hasEncoder() const { return bool(xdrEncoder_); }
+
+    
+    
+    
+    
+    bool xdrEncodeTopLevel(ExclusiveContext* cx, JS::TranscodeBuffer& buffer, HandleScript script);
+
+    
+    
+    
+    
+    
+    
+    bool xdrEncodeFunction(ExclusiveContext* cx, HandleFunction fun,
+                           HandleScriptSource sourceObject);
+
+    
+    
+    
+    bool xdrFinalizeEncoder();
 };
 
 class ScriptSourceHolder
