@@ -8,6 +8,7 @@
 
 
 
+#include "AudioChannelService.h"
 #include "nsDocument.h"
 #include "nsIDocumentInlines.h"
 #include "mozilla/AnimationComparator.h"
@@ -12084,7 +12085,8 @@ nsDocument::MaybeActiveMediaComponents()
   }
 
   mEverInForeground = true;
-  if (GetWindow()->GetMediaSuspend() == nsISuspendedTypes::SUSPENDED_BLOCK) {
+  if (GetWindow()->GetMediaSuspend() == nsISuspendedTypes::SUSPENDED_BLOCK &&
+      AudioChannelService::IsServiceStarted()) {
     GetWindow()->SetMediaSuspend(nsISuspendedTypes::NONE_SUSPENDED);
   }
 }

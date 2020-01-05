@@ -41,6 +41,9 @@ AudioChannelAgent::AudioChannelAgent()
   , mInnerWindowID(0)
   , mIsRegToService(false)
 {
+  
+  
+  RefPtr<AudioChannelService> service = AudioChannelService::GetOrCreate();
 }
 
 AudioChannelAgent::~AudioChannelAgent()
