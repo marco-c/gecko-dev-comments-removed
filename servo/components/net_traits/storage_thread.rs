@@ -36,5 +36,5 @@ pub enum StorageThreadMsg {
     Clear(IpcSender<bool>, Url, StorageType),
 
     
-    Exit
+    Exit(IpcSender<()>)
 }

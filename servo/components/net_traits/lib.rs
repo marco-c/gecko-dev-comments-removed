@@ -341,7 +341,8 @@ pub enum CoreResourceMsg {
     
     Synchronize(IpcSender<()>),
     
-    Exit,
+    
+    Exit(IpcSender<()>),
 }
 
 
