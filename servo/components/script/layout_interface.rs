@@ -109,6 +109,8 @@ pub struct Reflow {
     pub id: uint,
     
     pub query_type: ReflowQueryType,
+    
+    pub page_clip_rect: Rect<Au>,
 }
 
 
