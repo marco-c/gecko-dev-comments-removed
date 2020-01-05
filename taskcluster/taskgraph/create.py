@@ -75,13 +75,13 @@ def create_tasks(taskgraph, label_to_taskid, params):
             for f in futures.as_completed(deps_fs):
                 f.result()
 
-            fs[task_id] = e.submit(_create_task, session, task_id,
+            fs[task_id] = e.submit(create_task, session, task_id,
                                    taskid_to_label[task_id], task_def)
 
             
             for i in range(1, attributes.get('task_duplicates', 1)):
                 
-                fs[task_id] = e.submit(_create_task, session, slugid(),
+                fs[task_id] = e.submit(create_task, session, slugid(),
                                        taskid_to_label[task_id], task_def)
 
         
@@ -89,7 +89,7 @@ def create_tasks(taskgraph, label_to_taskid, params):
             f.result()
 
 
-def _create_task(session, task_id, label, task_def):
+def create_task(session, task_id, label, task_def):
     
     
 
