@@ -44,6 +44,7 @@ var publicProperties = [
   "getAccountsClient",
   "getAssertion",
   "getDeviceId",
+  "getDeviceList",
   "getKeys",
   "getOAuthToken",
   "getProfileCache",
@@ -672,6 +673,11 @@ FxAccountsInternal.prototype = {
         
         return null;
       });
+  },
+
+  async getDeviceList() {
+    let accountData = await this._getVerifiedAccountOrReject();
+    return this.fxAccountsClient.getDeviceList(accountData.sessionToken);
   },
 
   
@@ -1443,8 +1449,8 @@ FxAccountsInternal.prototype = {
     }
    }),
 
-  _getVerifiedAccountOrReject: Task.async(function* () {
-    let data = yield this.currentAccountState.getUserAccountData();
+  async _getVerifiedAccountOrReject() {
+    let data = await this.currentAccountState.getUserAccountData();
     if (!data) {
       
       throw this._error(ERROR_NO_ACCOUNT);
@@ -1453,7 +1459,8 @@ FxAccountsInternal.prototype = {
       
       throw this._error(ERROR_UNVERIFIED_ACCOUNT);
     }
-  }),
+    return data;
+  },
 
   
 
