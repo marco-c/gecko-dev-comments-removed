@@ -1239,17 +1239,6 @@ HTMLEditRules::WillInsertText(EditAction aAction,
     return NS_ERROR_NULL_POINTER;
   }
 
-  if (inString->IsEmpty() && aAction != EditAction::insertIMEText) {
-    
-    
-    
-    
-    
-    *aCancel = true;
-    *aHandled = false;
-    return NS_OK;
-  }
-
   
   *aCancel = false;
   *aHandled = true;
