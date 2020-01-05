@@ -12,6 +12,7 @@
 #include "nsCSSPropertyIDSet.h"
 #include "nsCSSValue.h"
 #include "nsCycleCollectionParticipant.h"
+#include "nsRefPtrHashtable.h"
 #include "nsTArray.h"
 #include "nsWrapperCache.h"
 #include "mozilla/AnimationPerformanceWarning.h"
@@ -412,10 +413,7 @@ protected:
   void EnsureBaseStyles(nsStyleContext* aStyleContext,
                         const nsTArray<AnimationProperty>& aProperties);
   void EnsureBaseStyles(const ServoComputedValuesWithParent& aServoValues,
-                        const nsTArray<AnimationProperty>& aProperties)
-  {
-    
-  }
+                        const nsTArray<AnimationProperty>& aProperties);
 
   
   
@@ -425,6 +423,12 @@ protected:
   void EnsureBaseStyle(nsCSSPropertyID aProperty,
                        nsStyleContext* aStyleContext,
                        RefPtr<nsStyleContext>& aCachedBaseStyleContext);
+  
+  
+  void EnsureBaseStyle(const AnimationProperty& aProperty,
+                       nsIAtom* aPseudoAtom,
+                       nsPresContext* aPresContext,
+                       RefPtr<ServoComputedValues>& aBaseComputedValues);
 
   Maybe<OwningAnimationTarget> mTarget;
 
@@ -454,6 +458,8 @@ protected:
   
   
   nsDataHashtable<nsUint32HashKey, StyleAnimationValue> mBaseStyleValues;
+  nsRefPtrHashtable<nsUint32HashKey, RawServoAnimationValue>
+    mBaseStyleValuesForServo;
 
   
   
