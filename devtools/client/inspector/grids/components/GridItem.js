@@ -82,6 +82,8 @@ module.exports = createClass({
         attributes: attributesMap,
         attributesLength: attributes.length,
         
+        isConnected: true,
+        
         nodeName: nodeFront.nodeName.toLowerCase(),
         nodeType: nodeFront.nodeType,
       }
