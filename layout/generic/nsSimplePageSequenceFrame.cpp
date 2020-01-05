@@ -690,9 +690,16 @@ nsSimplePageSequenceFrame::PrintNextPage()
   
   
   
+  
+  
+  
+  
+  
+  
+  
 
-  nsIFrame* currentPage = GetCurrentPageFrame();
-  if (!currentPage) {
+  nsIFrame* currentPageFrame = GetCurrentPageFrame();
+  if (!currentPageFrame) {
     return NS_ERROR_FAILURE;
   }
 
@@ -701,44 +708,50 @@ nsSimplePageSequenceFrame::PrintNextPage()
   DetermineWhetherToPrintPage();
 
   if (mPrintThisPage) {
-    
     nsDeviceContext* dc = PresContext()->DeviceContext();
 
-    
-    
-    
-    
-    
-    
-    bool    continuePrinting = true;
-    nscoord width, height;
-    width = PresContext()->GetPageSize().width;
-    height = PresContext()->GetPageSize().height;
-    height -= mMargin.top + mMargin.bottom;
-    width  -= mMargin.left + mMargin.right;
-    nscoord selectionY = height;
-    nsIFrame* conFrame = currentPage->PrincipalChildList().FirstChild();
-    if (mSelectionHeight >= 0) {
-      conFrame->SetPosition(conFrame->GetPosition() + nsPoint(0, -mYSelOffset));
-      nsContainerFrame::PositionChildViews(conFrame);
-    }
-
-    
-    nsPageFrame * pf = static_cast<nsPageFrame*>(currentPage);
+    nsPageFrame * pf = static_cast<nsPageFrame*>(currentPageFrame);
     pf->SetPageNumInfo(mPageNum, mTotalPages);
     pf->SetSharedPageData(mPageData);
 
-    int32_t printedPageNum = 1;
-    while (continuePrinting) {
+    
+    nsIFrame* selectionContentFrame = nullptr;
+    nscoord pageContentHeight =
+      PresContext()->GetPageSize().height - (mMargin.top + mMargin.bottom);
+    nscoord selectionY = pageContentHeight;
+    int32_t selectionCurrentPageNum = 1;
+    bool haveUnfinishedSelectionToPrint = false;
+
+    if (mSelectionHeight >= 0) {
+      selectionContentFrame = currentPageFrame->PrincipalChildList().FirstChild();
+      MOZ_ASSERT(selectionContentFrame->GetType() == nsGkAtoms::pageContentFrame &&
+                 !selectionContentFrame->GetNextSibling(),
+                 "Unexpected frame tree");
+      
+      
+      
+      
+      selectionContentFrame->SetPosition(selectionContentFrame->GetPosition() +
+                                         nsPoint(0, -mYSelOffset));
+      nsContainerFrame::PositionChildViews(selectionContentFrame);
+    }
+
+    do {
       if (PresContext()->IsRootPaginatedDocument()) {
         if (!mCalledBeginPage) {
+          
+          
+          
           PR_PL(("\n"));
           PR_PL(("***************** BeginPage *****************\n"));
           rv = dc->BeginPage();
           NS_ENSURE_SUCCESS(rv, rv);
-        } else {
-          mCalledBeginPage = false;
         }
+
+        
+        
+        
+        mCalledBeginPage = false;
       }
 
       PR_PL(("SeqFr::PrintNextPage -> %p PageNo: %d", pf, mPageNum));
@@ -749,27 +762,32 @@ nsSimplePageSequenceFrame::PrintNextPage()
 
       nsRenderingContext renderingContext(gCtx);
 
-      nsRect drawingRect(nsPoint(0, 0), currentPage->GetSize());
+      nsRect drawingRect(nsPoint(0, 0), currentPageFrame->GetSize());
       nsRegion drawingRegion(drawingRect);
-      nsLayoutUtils::PaintFrame(&renderingContext, currentPage,
+      nsLayoutUtils::PaintFrame(&renderingContext, currentPageFrame,
                                 drawingRegion, NS_RGBA(0,0,0,0),
                                 nsDisplayListBuilderMode::PAINTING,
                                 nsLayoutUtils::PaintFrameFlags::PAINT_SYNC_DECODE_IMAGES);
 
-      if (mSelectionHeight >= 0 && selectionY < mSelectionHeight) {
-        selectionY += height;
-        printedPageNum++;
-        pf->SetPageNumInfo(printedPageNum, mTotalPages);
-        conFrame->SetPosition(conFrame->GetPosition() + nsPoint(0, -height));
-        nsContainerFrame::PositionChildViews(conFrame);
+      if (mSelectionHeight >= 0) {
+        haveUnfinishedSelectionToPrint = (selectionY < mSelectionHeight);
+        if (haveUnfinishedSelectionToPrint) {
+          selectionY += pageContentHeight;
+          selectionCurrentPageNum++;
+          pf->SetPageNumInfo(selectionCurrentPageNum, mTotalPages);
+          selectionContentFrame->SetPosition(selectionContentFrame->GetPosition() +
+                                             nsPoint(0, -pageContentHeight));
+          nsContainerFrame::PositionChildViews(selectionContentFrame);
 
-        PR_PL(("***************** End Page (PrintNextPage) *****************\n"));
-        rv = dc->EndPage();
-        NS_ENSURE_SUCCESS(rv, rv);
-      } else {
-        continuePrinting = false;
+          
+          
+          
+          PR_PL(("***************** End Page (PrintNextPage) *****************\n"));
+          rv = dc->EndPage();
+          NS_ENSURE_SUCCESS(rv, rv);
+        }
       }
-    }
+    } while (haveUnfinishedSelectionToPrint);
   }
   return rv;
 }
