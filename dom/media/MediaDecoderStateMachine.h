@@ -562,11 +562,11 @@ private:
 
   
   
-  int64_t mDecodedAudioEndTime;
+  media::TimeUnit mDecodedAudioEndTime;
 
   
   
-  int64_t mDecodedVideoEndTime;
+  media::TimeUnit mDecodedVideoEndTime;
 
   
   double mPlaybackRate;
