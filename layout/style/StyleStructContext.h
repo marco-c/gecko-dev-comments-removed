@@ -9,6 +9,7 @@
 #include "CounterStyleManager.h"
 #include "mozilla/LookAndFeel.h"
 #include "nsPresContext.h"
+#include "mozilla/StyleSetHandle.h"
 
 class nsDeviceContext;
 
@@ -88,6 +89,12 @@ public:
   mozilla::CounterStyle* BuildCounterStyle(const nsSubstring& aName)
   {
     SERVO_DEFAULT(mozilla::CounterStyleManager::GetBuiltinStyle(NS_STYLE_LIST_STYLE_DISC));
+    
+    
+    
+    if (mPresContext->StyleSet()->IsServo()) {
+      return mozilla::CounterStyleManager::GetBuiltinStyle(NS_STYLE_LIST_STYLE_DISC);
+    }
     return mPresContext->CounterStyleManager()->BuildCounterStyle(aName);
   }
 
