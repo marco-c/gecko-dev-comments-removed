@@ -39,6 +39,6 @@ public class ColorUtil {
         final int blue = Color.blue(color);
         
         
-        return (int) (0.299*red + 0.587*green + 0.114*blue);
+        return (int) (0.299 * red + 0.587 * green + 0.114 * blue);
     }
 }
