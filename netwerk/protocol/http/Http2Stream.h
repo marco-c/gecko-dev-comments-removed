@@ -18,10 +18,6 @@
 class nsIInputStream;
 class nsIOutputStream;
 
-namespace mozilla{
-class OriginAttributes;
-}
-
 namespace mozilla {
 namespace net {
 
@@ -169,7 +165,6 @@ public:
 protected:
   static void CreatePushHashKey(const nsCString &scheme,
                                 const nsCString &hostHeader,
-                                const mozilla::OriginAttributes &originAttributes,
                                 uint64_t serial,
                                 const nsCSubstring &pathInfo,
                                 nsCString &outOrigin,
@@ -226,9 +221,6 @@ protected:
   virtual void AdjustInitialWindow();
   MOZ_MUST_USE nsresult TransmitFrame(const char *, uint32_t *, bool forceCommitment);
 
-  
-  nsISocketTransport         *mSocketTransport;
-
 private:
   friend class nsAutoPtr<Http2Stream>;
 
@@ -245,6 +237,9 @@ private:
   
   
   RefPtr<nsAHttpTransaction> mTransaction;
+
+  
+  nsISocketTransport         *mSocketTransport;
 
   
   uint32_t                    mChunkSize;
