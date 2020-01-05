@@ -215,7 +215,7 @@ fn matches_simple_selector<N: TreeNode<T>, T: TreeNodeRefAsElement<N, E>, E: Ele
             do element.with_imm_element_like |element: &E| {
                 match element.get_attr("class") {
                     None => false,
-                    
+                    // TODO: case-sensitivity depends on the document type and quirks mode
                     Some(ref class_attr)
                     => class_attr.split_iter(WHITESPACE).any(|c| c == class.as_slice()),
                 }
@@ -241,12 +241,41 @@ fn matches_simple_selector<N: TreeNode<T>, T: TreeNodeRefAsElement<N, E>, E: Ele
             attr_value.ends_with(value.as_slice())
         },
 
+
+        AnyLink => {
+            do element.with_imm_element_like |element: &E| {
+                element.get_link().is_some()
+            }
+        }
+        Link => {
+            do element.with_imm_element_like |element: &E| {
+                match element.get_link() {
+                    Some(url) => !url_is_visited(url),
+                    None => false,
+                }
+            }
+        }
+        Visited => {
+            do element.with_imm_element_like |element: &E| {
+                match element.get_link() {
+                    Some(url) => url_is_visited(url),
+                    None => false,
+                }
+            }
+        }
         FirstChild => matches_first_child(element),
 
         Negation(ref negated) => {
             !negated.iter().all(|s| matches_simple_selector(s, element))
         },
     }
+}
+
+fn url_is_visited(_url: &str) -> bool {
+    // FIXME: implement this.
+    // This function will probably need to take a "session"
+    
+    false
 }
 
 #[inline]
