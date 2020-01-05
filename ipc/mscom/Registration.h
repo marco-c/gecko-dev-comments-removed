@@ -28,6 +28,8 @@ class RegisteredProxy
 public:
   RegisteredProxy(uintptr_t aModule, IUnknown* aClassObject,
                   uint32_t aRegCookie, ITypeLib* aTypeLib);
+  RegisteredProxy(IUnknown* aClassObject, uint32_t aRegCookie,
+                  ITypeLib* aTypeLib);
   explicit RegisteredProxy(ITypeLib* aTypeLib);
   RegisteredProxy(RegisteredProxy&& aOther);
   RegisteredProxy& operator=(RegisteredProxy&& aOther);
@@ -62,6 +64,10 @@ enum class RegistrationFlags
   eUseBinDirectory,
   eUseSystemDirectory
 };
+
+
+
+UniquePtr<RegisteredProxy> RegisterProxy();
 
 
 UniquePtr<RegisteredProxy> RegisterProxy(const wchar_t* aLeafName,
