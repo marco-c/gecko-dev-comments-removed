@@ -2,7 +2,10 @@
 
 
 var tabState = {
-  entries: [{url: "about:robots", children: [{url: "about:mozilla"}]}]
+  entries: [{
+    url: "about:robots",
+    triggeringPrincipal_base64,
+    children: [{url: "about:mozilla", triggeringPrincipal_base64,}]}]
 };
 
 function test() {
@@ -31,7 +34,8 @@ function test() {
 
           whenChildCount(entry, 0, function () {
             
-            let blankState = { windows: [{ tabs: [{ entries: [{ url: "about:blank" }] }]}]};
+            let blankState = { windows: [{ tabs: [{ entries: [{ url: "about:blank",
+                                                                triggeringPrincipal_base64 }] }]}]};
             waitForBrowserState(blankState, finish);
           });
         });

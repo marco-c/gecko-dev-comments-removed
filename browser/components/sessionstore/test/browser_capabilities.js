@@ -41,7 +41,7 @@ add_task(function* docshell_capabilities() {
   is(disallow.size, 2, "two capabilities disallowed");
 
   
-  yield promiseTabState(tab, {entries: [{url: "about:robots"}]});
+  yield promiseTabState(tab, {entries: [{url: "about:robots", triggeringPrincipal_base64}]});
 
   
   yield TabStateFlusher.flush(browser);
