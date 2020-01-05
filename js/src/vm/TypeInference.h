@@ -834,6 +834,7 @@ class TemporaryTypeSet : public TypeSet
 
     
     JSObject* maybeSingleton();
+    ObjectKey* maybeSingleObject();
 
     
     bool propertyNeedsBarrier(CompilerConstraintList* constraints, jsid id);
