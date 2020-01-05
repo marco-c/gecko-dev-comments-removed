@@ -202,8 +202,6 @@
 #include "mozilla/dom/GamepadManager.h"
 
 #include "mozilla/dom/VRDisplay.h"
-#include "mozilla/dom/VRDisplayEvent.h"
-#include "mozilla/dom/VRDisplayEventBinding.h"
 #include "mozilla/dom/VREventObserver.h"
 
 #include "nsRefreshDriver.h"
@@ -3146,7 +3144,7 @@ nsGlobalWindow::SetNewDocument(nsIDocument* aDocument,
     newInnerWindow->mChromeEventHandler = mChromeEventHandler;
   }
 
-  nsJSContext::PokeGC(JS::gcreason::SET_NEW_DOCUMENT);
+  nsJSContext::PokeGC(JS::gcreason::SET_NEW_DOCUMENT, nullptr);
   kungFuDeathGrip->DidInitializeContext();
 
   
@@ -3376,7 +3374,8 @@ nsGlobalWindow::DetachFromDocShell()
   mChromeEventHandler = nullptr; 
 
   if (mContext) {
-    nsJSContext::PokeGC(JS::gcreason::SET_DOC_SHELL);
+    nsJSContext::PokeGC(JS::gcreason::SET_DOC_SHELL,
+                        GetWrapperPreserveColor());
     mContext = nullptr;
   }
 
@@ -13174,9 +13173,7 @@ nsGlobalWindow::SetHasGamepadEventListener(bool aHasGamepad)
 void
 nsGlobalWindow::EventListenerAdded(nsIAtom* aType)
 {
-  if (aType == nsGkAtoms::onvrdisplayactivate ||
-      aType == nsGkAtoms::onvrdisplayconnect ||
-      aType == nsGkAtoms::onvrdisplaydeactivate ||
+  if (aType == nsGkAtoms::onvrdisplayconnect ||
       aType == nsGkAtoms::onvrdisplaydisconnect ||
       aType == nsGkAtoms::onvrdisplaypresentchange) {
     NotifyVREventListenerAdded();
@@ -13357,62 +13354,6 @@ nsGlobalWindow::NotifyActiveVRDisplaysChanged()
   }
 }
 
-void
-nsGlobalWindow::DispatchVRDisplayActivate(uint32_t aDisplayID,
-                                          mozilla::dom::VRDisplayEventReason aReason)
-{
-  for (auto display : mVRDisplays) {
-    if (display->DisplayId() == aDisplayID
-        && !display->IsAnyPresenting()) {
-      
-      
-
-      VRDisplayEventInit init;
-      init.mBubbles = true;
-      init.mCancelable = false;
-      init.mDisplay = display;
-      init.mReason.Construct(aReason);
-
-      RefPtr<VRDisplayEvent> event =
-        VRDisplayEvent::Constructor(this,
-                                    NS_LITERAL_STRING("vrdisplayactivate"),
-                                    init);
-      
-      
-      
-      event->SetTrusted(true);
-      bool defaultActionEnabled;
-      Unused << DispatchEvent(event, &defaultActionEnabled);
-      break;
-    }
-  }
-}
-
-void
-nsGlobalWindow::DispatchVRDisplayDeactivate(uint32_t aDisplayID,
-                                            mozilla::dom::VRDisplayEventReason aReason)
-{
-  for (auto display : mVRDisplays) {
-    if (display->DisplayId() == aDisplayID && display->IsPresenting()) {
-      
-      
-
-      VRDisplayEventInit init;
-      init.mBubbles = true;
-      init.mCancelable = false;
-      init.mDisplay = display;
-      init.mReason.Construct(aReason);
-
-      RefPtr<VRDisplayEvent> event =
-        VRDisplayEvent::Constructor(this,
-                                    NS_LITERAL_STRING("vrdisplaydeactivate"),
-                                    init);
-      bool defaultActionEnabled;
-      Unused << DispatchEvent(event, &defaultActionEnabled);
-      break;
-    }
-  }
-}
 
 
 

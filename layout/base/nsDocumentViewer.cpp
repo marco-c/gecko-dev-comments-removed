@@ -1086,7 +1086,8 @@ nsDocumentViewer::LoadComplete(nsresult aStatus)
   nsJSContext::LoadEnd();
 
   
-  PokeGC(JS::gcreason::LOAD_END);
+  nsJSContext::PokeGC(JS::gcreason::LOAD_END,
+                      mDocument ? mDocument->GetWrapperPreserveColor() : nullptr);
 
 #ifdef NS_PRINTING
   
@@ -1339,7 +1340,9 @@ nsDocumentViewer::PageHide(bool aIsUnload)
 
   if (aIsUnload) {
     
-    nsJSContext::PokeGC(JS::gcreason::PAGE_HIDE, NS_GC_DELAY * 2);
+    nsJSContext::PokeGC(JS::gcreason::PAGE_HIDE,
+                        mDocument->GetWrapperPreserveColor(),
+                        NS_GC_DELAY * 2);
   }
 
   mDocument->OnPageHide(!aIsUnload, nullptr);
