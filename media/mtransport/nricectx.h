@@ -321,7 +321,7 @@ class NrIceCtx {
   nsresult StartGathering(bool default_route_only, bool proxy_only);
 
   
-  nsresult StartChecks();
+  nsresult StartChecks(bool offerer);
 
   
   void UpdateNetworkState(bool online);
@@ -349,9 +349,7 @@ class NrIceCtx {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(NrIceCtx)
 
 private:
-  NrIceCtx(const std::string& name,
-           bool offerer,
-           Policy policy);
+  NrIceCtx(const std::string& name, Policy policy);
 
   virtual ~NrIceCtx();
 
