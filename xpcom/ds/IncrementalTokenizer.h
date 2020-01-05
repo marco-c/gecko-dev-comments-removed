@@ -43,7 +43,7 @@ public:
 
 
 
-  explicit IncrementalTokenizer(Consumer aConsumer,
+  explicit IncrementalTokenizer(Consumer&& aConsumer,
                                 const char* aWhitespaces = nullptr,
                                 const char* aAdditionalWordChars = nullptr,
                                 uint32_t aRawMinBuffered = 1024);

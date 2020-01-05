@@ -251,7 +251,7 @@ public:
   }
 
   
-  void RemoveElementsBy(std::function<bool(const elem_type&)> aPredicate)
+  void RemoveElementsBy(const std::function<bool(const elem_type&)>& aPredicate)
   {
     index_type i = 0;
     mArray.RemoveElementsBy([&](const elem_type& aItem) {

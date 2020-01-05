@@ -18,6 +18,6 @@ namespace mozilla {
 
 
 void NSPRLogModulesParser(const char* aLogModules,
-                          std::function<void(const char*, LogLevel, int32_t)> aCallback);
+                          const std::function<void(const char*, LogLevel, int32_t)>& aCallback);
 
 } 

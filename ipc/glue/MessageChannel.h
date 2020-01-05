@@ -152,7 +152,7 @@ class MessageChannel : HasResultCodes, MessageLoop::DestructionObserver
     
     
     
-    void PeekMessages(std::function<bool(const Message& aMsg)> aInvoke);
+    void PeekMessages(const std::function<bool(const Message& aMsg)>& aInvoke);
 
     
     enum ChannelFlags {
