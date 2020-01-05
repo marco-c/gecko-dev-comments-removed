@@ -139,6 +139,9 @@
 
 
 
+
+
+
   function getToolboxDocIfXulOnly(node) {
     
     if (typeof XULDocument !== "function") {
@@ -146,8 +149,9 @@
     }
 
     let doc = node.ownerDocument;
+    const inspectorUrl = "chrome://devtools/content/inspector/inspector.xhtml";
 
-    while (doc instanceof XULDocument) {
+    while (doc instanceof XULDocument || doc.location.href === inspectorUrl) {
       const {frameElement} = doc.defaultView;
 
       if (!frameElement) {
