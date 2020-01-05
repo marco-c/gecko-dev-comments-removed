@@ -228,7 +228,7 @@ pub trait Flow: fmt::Debug + Sync + Send + 'static {
                                  -> StackingContextId;
 
     
-    fn place_float_if_applicable<'a>(&mut self, _: &'a LayoutContext<'a>) {}
+    fn place_float_if_applicable<'a>(&mut self) {}
 
     
     
