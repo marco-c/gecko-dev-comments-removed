@@ -59,13 +59,14 @@ class GamepadManager final : public nsIObserver,
   
   
   
-  void NewButtonEvent(uint32_t aIndex, uint32_t aButton, bool aPressed,
-                      double aValue);
+  void NewButtonEvent(uint32_t aIndex, GamepadServiceType aServiceType, uint32_t aButton,
+                      bool aPressed, double aValue);
 
   
   
   
-  void NewAxisMoveEvent(uint32_t aIndex, uint32_t aAxis, double aValue);
+  void NewAxisMoveEvent(uint32_t aIndex, GamepadServiceType aServiceType,
+                        uint32_t aAxis, double aValue);
 
   
   void SyncGamepadState(uint32_t aIndex, Gamepad* aGamepad);
