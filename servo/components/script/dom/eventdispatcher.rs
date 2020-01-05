@@ -47,7 +47,9 @@ fn handle_event(window: Option<&Window>, listener: &CompiledEventListener,
     listener.call_or_handle_event(current_target, event, Report);
 }
 
-fn dispatch_to_listeners(event: &Event, target: &EventTarget, chain: &[&EventTarget]) {
+
+
+fn dispatch_to_listeners(event: &Event, target: &EventTarget, event_path: &[&EventTarget]) {
     assert!(!event.stop_propagation());
     assert!(!event.stop_immediate());
 
@@ -62,108 +64,88 @@ fn dispatch_to_listeners(event: &Event, target: &EventTarget, chain: &[&EventTar
         _ => None,
     };
 
-    let type_ = event.type_();
-
     
     event.set_phase(EventPhase::Capturing);
-    for cur_target in chain.iter().rev() {
-        if let Some(listeners) = cur_target.get_listeners_for(&type_, ListenerPhase::Capturing) {
-            event.set_current_target(cur_target);
-            for listener in &listeners {
-                handle_event(window.r(), listener, *cur_target, event);
 
-                if event.stop_immediate() {
-                    return;
-                }
-            }
-
-            if event.stop_propagation() {
-                return;
-            }
+    
+    for object in event_path.iter().rev() {
+        invoke(window.r(), object, event, Some(ListenerPhase::Capturing));
+        if event.stop_propagation() {
+            return;
         }
     }
-
     assert!(!event.stop_propagation());
     assert!(!event.stop_immediate());
 
     
     event.set_phase(EventPhase::AtTarget);
-    event.set_current_target(target);
 
-    if let Some(listeners) = target.get_listeners(&type_) {
-        for listener in listeners {
-            handle_event(window.r(), &listener, target, event);
-
-            if event.stop_immediate() {
-                return;
-            }
-        }
-        if event.stop_propagation() {
-            return;
-        }
+    
+    invoke(window.r(), target, event, None);
+    if event.stop_propagation() {
+        return;
     }
-
     assert!(!event.stop_propagation());
     assert!(!event.stop_immediate());
 
-    
     if !event.bubbles() {
         return;
     }
 
+    
     event.set_phase(EventPhase::Bubbling);
-    for cur_target in chain {
-        if let Some(listeners) = cur_target.get_listeners_for(&type_, ListenerPhase::Bubbling) {
-            event.set_current_target(cur_target);
-            for listener in &listeners {
-                handle_event(window.r(), listener, *cur_target, event);
 
-                if event.stop_immediate() {
-                    return;
-                }
-            }
-
-            if event.stop_propagation() {
-                return;
-            }
+    
+    for object in event_path {
+        invoke(window.r(), object, event, Some(ListenerPhase::Bubbling));
+        if event.stop_propagation() {
+            return;
         }
     }
 }
 
 
-pub fn dispatch_event(target: &EventTarget, pseudo_target: Option<&EventTarget>,
+pub fn dispatch_event(target: &EventTarget,
+                      target_override: Option<&EventTarget>,
                       event: &Event) -> bool {
     assert!(!event.dispatching());
     assert!(event.initialized());
     assert_eq!(event.phase(), EventPhase::None);
     assert!(event.GetCurrentTarget().is_none());
 
-    event.set_target(match pseudo_target {
-        Some(pseudo_target) => pseudo_target,
-        None => target.clone(),
-    });
+    
+    event.set_target(target_override.unwrap_or(target));
 
     if event.stop_propagation() {
+        
+        
+        
         return !event.DefaultPrevented();
     }
 
+    
     event.set_dispatching(true);
 
-    let mut chain: RootedVec<JS<EventTarget>> = RootedVec::new();
+    
+    
+    let mut event_path: RootedVec<JS<EventTarget>> = RootedVec::new();
+
+    
     if let Some(target_node) = target.downcast::<Node>() {
         for ancestor in target_node.ancestors() {
-            chain.push(JS::from_ref(ancestor.upcast()));
+            event_path.push(JS::from_ref(ancestor.upcast()));
         }
         let top_most_ancestor_or_target =
-            Root::from_ref(chain.r().last().cloned().unwrap_or(target));
+            Root::from_ref(event_path.r().last().cloned().unwrap_or(target));
         if let Some(document) = Root::downcast::<Document>(top_most_ancestor_or_target) {
             if event.type_() != atom!("load") && document.browsing_context().is_some() {
-                chain.push(JS::from_ref(document.window().upcast()));
+                event_path.push(JS::from_ref(document.window().upcast()));
             }
         }
     }
 
-    dispatch_to_listeners(event, target, chain.r());
+    
+    dispatch_to_listeners(event, target, event_path.r());
 
     
     let target = event.GetTarget();
@@ -177,9 +159,67 @@ pub fn dispatch_event(target: &EventTarget, pseudo_target: Option<&EventTarget>,
         None => {}
     }
 
+    
     event.set_dispatching(false);
+
+    
     event.set_phase(EventPhase::None);
+
+    
     event.clear_current_target();
 
+    
     !event.DefaultPrevented()
+}
+
+
+fn invoke(window: Option<&Window>,
+          object: &EventTarget,
+          event: &Event,
+          specific_listener_phase: Option<ListenerPhase>) {
+    
+    assert!(!event.stop_propagation());
+
+    
+    let listeners = object.get_listeners_for(&event.type_(), specific_listener_phase);
+
+    
+    event.set_current_target(object);
+
+    
+    inner_invoke(window, object, event, &listeners);
+
+    
+}
+
+
+fn inner_invoke(window: Option<&Window>,
+                object: &EventTarget,
+                event: &Event,
+                listeners: &[CompiledEventListener])
+                -> bool {
+    
+    let mut found = false;
+
+    
+    for listener in listeners {
+        
+        
+
+        
+        found = true;
+
+        
+
+        
+        handle_event(window, listener, object, event);
+        if event.stop_immediate() {
+            return found;
+        }
+
+        
+    }
+
+    
+    found
 }
