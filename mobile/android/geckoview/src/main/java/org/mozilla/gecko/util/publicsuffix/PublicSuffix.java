@@ -4,15 +4,16 @@
 
 package org.mozilla.gecko.util.publicsuffix;
 
+import android.content.Context;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.text.TextUtils;
+import android.support.annotation.WorkerThread;
 
 import org.mozilla.gecko.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 
 
@@ -34,12 +35,13 @@ public class PublicSuffix {
 
 
     @NonNull
-    public static String stripPublicSuffix(@NonNull String domain) {
+    @WorkerThread 
+    public static String stripPublicSuffix(Context context, @NonNull String domain) {
         if (domain.length() == 0) {
             return domain;
         }
 
-        final int index = findPublicSuffixIndex(domain);
+        final int index = findPublicSuffixIndex(context, domain);
         if (index == -1) {
             return domain;
         }
@@ -50,14 +52,16 @@ public class PublicSuffix {
     
 
 
-    private static int findPublicSuffixIndex(String domain) {
+    @WorkerThread
+    private static int findPublicSuffixIndex(Context context, String domain) {
         final List<String> parts = normalizeAndSplit(domain);
         final int partsSize = parts.size();
+        final Set<String> exact = PublicSuffixPatterns.getExactSet(context);
 
         for (int i = 0; i < partsSize; i++) {
             String ancestorName = StringUtils.join(".", parts.subList(i, partsSize));
 
-            if (PublicSuffixPatterns.EXACT.contains(ancestorName)) {
+            if (exact.contains(ancestorName)) {
                 return joinIndex(parts, i);
             }
 
