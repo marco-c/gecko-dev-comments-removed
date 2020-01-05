@@ -7,7 +7,7 @@
 #define MEDIA_PREFS_H
 
 #ifdef MOZ_WIDGET_ANDROID
-#include "GeneratedJNIWrappers.h"
+#include "AndroidBridge.h"
 #endif
 
 #include "mozilla/Atomics.h"
@@ -199,7 +199,8 @@ private:
   static int32_t MediaDecoderLimitDefault()
   {
 #ifdef MOZ_WIDGET_ANDROID
-    if (jni::GetAPIVersion() < 18) {
+    if (AndroidBridge::Bridge() &&
+        AndroidBridge::Bridge()->GetAPIVersion() < 18) {
       
       
       return 1;

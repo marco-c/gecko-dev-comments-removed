@@ -56,14 +56,9 @@ CreateTextureHostOGL(const SurfaceDescriptor& aDesc,
 #ifdef MOZ_WIDGET_ANDROID
     case SurfaceDescriptor::TSurfaceTextureDescriptor: {
       const SurfaceTextureDescriptor& desc = aDesc.get_SurfaceTextureDescriptor();
-      java::GeckoSurfaceTexture::LocalRef surfaceTexture = java::GeckoSurfaceTexture::Lookup(desc.handle());
-
-      MOZ_RELEASE_ASSERT(surfaceTexture);
-
       result = new SurfaceTextureHost(aFlags,
-                                      surfaceTexture,
-                                      desc.size(),
-                                      desc.continuous());
+                                      (AndroidSurfaceTexture*)desc.surfTex(),
+                                      desc.size());
       break;
     }
 #endif
@@ -340,7 +335,7 @@ GLTextureSource::IsValid() const
 #ifdef MOZ_WIDGET_ANDROID
 
 SurfaceTextureSource::SurfaceTextureSource(TextureSourceProvider* aProvider,
-                                           mozilla::java::GeckoSurfaceTexture::Ref& aSurfTex,
+                                           AndroidSurfaceTexture* aSurfTex,
                                            gfx::SurfaceFormat aFormat,
                                            GLenum aTarget,
                                            GLenum aWrapMode,
@@ -366,7 +361,12 @@ SurfaceTextureSource::BindTexture(GLenum aTextureUnit,
   }
 
   gl->fActiveTexture(aTextureUnit);
-  gl->fBindTexture(mTextureTarget, mSurfTex->GetTexName());
+
+  
+  
+  gl->FlushErrors();
+
+  mSurfTex->UpdateTexImage();
 
   ApplySamplingFilterToBoundTexture(gl, aSamplingFilter, mTextureTarget);
 }
@@ -395,9 +395,7 @@ SurfaceTextureSource::GetTextureTransform()
   MOZ_ASSERT(mSurfTex);
 
   gfx::Matrix4x4 ret;
-
-  const auto& surf = java::sdk::SurfaceTexture::LocalRef(java::sdk::SurfaceTexture::Ref::From(mSurfTex));
-  AndroidSurfaceTexture::GetTransformMatrix(surf, ret);
+  mSurfTex->GetTransformMatrix(ret);
 
   return ret;
 }
@@ -411,37 +409,16 @@ SurfaceTextureSource::DeallocateDeviceData()
 
 
 SurfaceTextureHost::SurfaceTextureHost(TextureFlags aFlags,
-                                       mozilla::java::GeckoSurfaceTexture::Ref& aSurfTex,
-                                       gfx::IntSize aSize,
-                                       bool aContinuousUpdate)
+                                       AndroidSurfaceTexture* aSurfTex,
+                                       gfx::IntSize aSize)
   : TextureHost(aFlags)
   , mSurfTex(aSurfTex)
   , mSize(aSize)
-  , mContinuousUpdate(aContinuousUpdate)
 {
-  
-  MOZ_ASSERT(!mSurfTex->IsSingleBuffer() || !mContinuousUpdate);
 }
 
 SurfaceTextureHost::~SurfaceTextureHost()
 {
-}
-
-void
-SurfaceTextureHost::PrepareTextureSource(CompositableTextureSourceRef& aTexture)
-{
-  GLContext* gl = this->gl();
-  if (!gl || !gl->MakeCurrent()) {
-    return;
-  }
-
-  if (!mContinuousUpdate) {
-    
-    
-    
-    
-    mSurfTex->UpdateTexImage();
-  }
 }
 
 gl::GLContext*
@@ -459,13 +436,9 @@ SurfaceTextureHost::Lock()
     return false;
   }
 
-  if (mContinuousUpdate) {
-    mSurfTex->UpdateTexImage();
-  }
-
   if (!mTextureSource) {
     gfx::SurfaceFormat format = gfx::SurfaceFormat::R8G8B8A8;
-    GLenum target = LOCAL_GL_TEXTURE_EXTERNAL; 
+    GLenum target = LOCAL_GL_TEXTURE_EXTERNAL;
     GLenum wrapMode = LOCAL_GL_CLAMP_TO_EDGE;
     mTextureSource = new SurfaceTextureSource(mProvider,
                                               mSurfTex,
@@ -475,7 +448,14 @@ SurfaceTextureHost::Lock()
                                               mSize);
   }
 
-  return true;
+  return NS_SUCCEEDED(mSurfTex->Attach(gl));
+}
+
+void
+SurfaceTextureHost::Unlock()
+{
+  MOZ_ASSERT(mSurfTex);
+  mSurfTex->Detach();
 }
 
 void
@@ -492,16 +472,6 @@ SurfaceTextureHost::SetTextureSourceProvider(TextureSourceProvider* aProvider)
   if (mTextureSource) {
     mTextureSource->SetTextureSourceProvider(aProvider);
   }
-}
-
-void
-SurfaceTextureHost::NotifyNotUsed()
-{
-  if (mSurfTex->IsSingleBuffer()) {
-    mSurfTex->ReleaseTexImage();
-  }
-
-  TextureHost::NotifyNotUsed();
 }
 
 gfx::SurfaceFormat
