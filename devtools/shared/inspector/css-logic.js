@@ -284,7 +284,11 @@ function prettifyCSS(text, ruleCount) {
     }
 
     if (isCloseBrace) {
-      indent = TAB_CHARS.repeat(--indentLevel);
+      
+      
+      indentLevel = Math.max(0, indentLevel - 1);
+
+      indent = TAB_CHARS.repeat(indentLevel);
       result = result + indent + "}";
     }
 
