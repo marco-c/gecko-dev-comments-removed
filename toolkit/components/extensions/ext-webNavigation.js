@@ -98,7 +98,7 @@ function fillTransitionProperties(eventName, src, dst) {
 
 function WebNavigationEventManager(context, eventName) {
   let name = `webNavigation.${eventName}`;
-  let register = (callback, urlFilters) => {
+  let register = (fire, urlFilters) => {
     
     let filters = urlFilters ?
           new MatchURLFilters(urlFilters.url) : null;
@@ -127,7 +127,7 @@ function WebNavigationEventManager(context, eventName) {
 
       fillTransitionProperties(eventName, data, data2);
 
-      context.runSafe(callback, data2);
+      fire.async(data2);
     };
 
     WebNavigation[eventName].addListener(listener, filters);
