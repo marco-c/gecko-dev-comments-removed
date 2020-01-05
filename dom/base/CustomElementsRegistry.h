@@ -197,6 +197,9 @@ private:
   
   DefinitionMap mCustomDefinitions;
 
+  typedef nsRefPtrHashtable<nsISupportsHashKey, Promise>
+    WhenDefinedPromiseMap;
+  WhenDefinedPromiseMap mWhenDefinedPromiseMap;
   
   
   
@@ -245,7 +248,7 @@ public:
   void Get(JSContext* cx, const nsAString& name,
            JS::MutableHandle<JS::Value> aRetVal);
 
-  already_AddRefed<Promise> WhenDefined(const nsAString& name, ErrorResult& aRv);
+  already_AddRefed<Promise> WhenDefined(const nsAString& aName, ErrorResult& aRv);
 };
 
 } 
