@@ -553,8 +553,6 @@ public:
 
   bool IsInitedByParent() const { return mInitedByParent; }
 
-  static TabParent* GetNextTabParent();
-
   bool SendLoadRemoteScript(const nsString& aURL,
                             const bool& aRunInGlobalScope);
 
@@ -697,13 +695,6 @@ private:
   RefPtr<nsFrameLoader> mFrameLoader;
 
   TabId mTabId;
-
-  
-  
-  
-  
-  
-  static TabParent* sNextTabParent;
 
   
   
