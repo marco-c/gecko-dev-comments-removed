@@ -368,7 +368,7 @@ class ProxyContext extends BaseContext {
   }
 }
 
-function findPathInObject(obj, path) {
+function findPathInObject(obj, path, printErrors = true) {
   for (let elt of path.split(".")) {
     
     
@@ -384,6 +384,9 @@ function findPathInObject(obj, path) {
     
     
     if (!obj || !(elt in obj)) {
+      if (printErrors) {
+        Cu.reportError(`WebExtension API ${path} not found (it may be unimplemented by Firefox).`);
+      }
       return null;
     }
 
@@ -704,7 +707,7 @@ GlobalManager = {
         if (context.envType === "content_parent" && !allowedContexts.includes("content")) {
           return false;
         }
-        return findPathInObject(apis, namespace) !== null;
+        return findPathInObject(apis, namespace, false) !== null;
       },
 
       getImplementation(namespace, name) {
