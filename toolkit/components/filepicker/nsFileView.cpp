@@ -3,6 +3,7 @@
 
 
 
+#include "DateTimeFormat.h"
 #include "nsIFileView.h"
 #include "nsITreeView.h"
 #include "mozilla/ModuleUtils.h"
@@ -14,7 +15,6 @@
 #include "nsReadableUtils.h"
 #include "nsCRT.h"
 #include "nsPrintfCString.h"
-#include "nsIDateTimeFormat.h"
 #include "nsQuickSort.h"
 #include "nsIAtom.h"
 #include "nsIAutoCompleteResult.h"
@@ -234,7 +234,6 @@ protected:
   nsCOMPtr<nsIFile> mDirectoryPath;
   nsCOMPtr<nsITreeBoxObject> mTree;
   nsCOMPtr<nsITreeSelection> mSelection;
-  nsCOMPtr<nsIDateTimeFormat> mDateFormatter;
 
   int16_t mSortType;
   int32_t mTotalRows;
@@ -291,10 +290,6 @@ nsFileView::~nsFileView()
 nsresult
 nsFileView::Init()
 {
-  mDateFormatter = nsIDateTimeFormat::Create();
-  if (!mDateFormatter)
-    return NS_ERROR_OUT_OF_MEMORY;
-
   return NS_OK;
 }
 
@@ -730,8 +725,8 @@ nsFileView::GetCellText(int32_t aRow, nsITreeColumn* aCol,
     curFile->GetLastModifiedTime(&lastModTime);
     
     nsAutoString temp;
-    mDateFormatter->FormatPRTime(nullptr, kDateFormatShort, kTimeFormatSeconds,
-                                 lastModTime * 1000, temp);
+    mozilla::DateTimeFormat::FormatPRTime(kDateFormatShort, kTimeFormatSeconds,
+                                          lastModTime * 1000, temp);
     aCellText = temp;
   } else {
     
