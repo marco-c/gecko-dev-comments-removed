@@ -71,6 +71,18 @@ AllocateCodeSegment(JSContext* cx, uint32_t codeLength)
     codeLength = JS_ROUNDUP(codeLength, ExecutableCodePageSize);
 
     void* p = AllocateExecutableMemory(codeLength, ProtectionSetting::Writable);
+
+    
+    
+    
+    if (!p) {
+        JSRuntime* rt = cx->runtime();
+        if (rt->largeAllocationFailureCallback) {
+            rt->largeAllocationFailureCallback(rt->largeAllocationFailureCallbackData);
+            p = AllocateExecutableMemory(codeLength, ProtectionSetting::Writable);
+        }
+    }
+
     if (!p) {
         ReportOutOfMemory(cx);
         return nullptr;
