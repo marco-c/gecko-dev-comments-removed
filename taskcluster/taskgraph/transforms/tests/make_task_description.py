@@ -200,8 +200,11 @@ def docker_worker_setup(config, test, taskdesc):
 
     
     
+    docker_worker_support_vcs_checkout(config, test, taskdesc)
+
+    
+    
     if test['checkout']:
-        docker_worker_support_vcs_checkout(config, test, taskdesc)
         command.extend(['--vcs-checkout', '/home/worker/checkouts/gecko'])
         env['MOZHARNESS_PATH'] = '/home/worker/checkouts/gecko/testing/mozharness'
     else:
