@@ -22,8 +22,11 @@ add_task(function* () {
 
 
 
+  
+  
+  
   let setIECookie = wininet.declare("InternetSetCookieW",
-                                    ctypes.default_abi,
+                                    ctypes.winapi_abi,
                                     BOOL,
                                     LPCTSTR,
                                     LPCTSTR,
@@ -37,8 +40,11 @@ add_task(function* () {
 
 
 
+  
+  
+  
   let getIECookie = wininet.declare("InternetGetCookieW",
-                                    ctypes.default_abi,
+                                    ctypes.winapi_abi,
                                     BOOL,
                                     LPCTSTR,
                                     LPCTSTR,
