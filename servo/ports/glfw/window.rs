@@ -4,15 +4,15 @@
 
 
 
-use windowing::{ApplicationMethods, WindowEvent, WindowMethods};
-use windowing::{IdleWindowEvent, ResizeWindowEvent, LoadUrlWindowEvent, MouseWindowEventClass,  MouseWindowMoveEventClass};
-use windowing::{ScrollWindowEvent, ZoomWindowEvent, PinchZoomWindowEvent, NavigationWindowEvent, FinishedWindowEvent};
-use windowing::{QuitWindowEvent, MouseWindowClickEvent, MouseWindowMouseDownEvent, MouseWindowMouseUpEvent};
-use windowing::RefreshWindowEvent;
-use windowing::{Forward, Back};
+use compositing::windowing::{WindowEvent, WindowMethods};
+use compositing::windowing::{IdleWindowEvent, ResizeWindowEvent, LoadUrlWindowEvent, MouseWindowEventClass,  MouseWindowMoveEventClass};
+use compositing::windowing::{ScrollWindowEvent, ZoomWindowEvent, PinchZoomWindowEvent, NavigationWindowEvent, FinishedWindowEvent};
+use compositing::windowing::{QuitWindowEvent, MouseWindowClickEvent, MouseWindowMouseDownEvent, MouseWindowMouseUpEvent};
+use compositing::windowing::RefreshWindowEvent;
+use compositing::windowing::{Forward, Back};
 
 use alert::{Alert, AlertMethods};
-use libc::{exit, c_int};
+use libc::c_int;
 use time;
 use time::Timespec;
 use std::cell::{Cell, RefCell};
@@ -23,34 +23,13 @@ use geom::point::{Point2D, TypedPoint2D};
 use geom::scale_factor::ScaleFactor;
 use geom::size::TypedSize2D;
 use layers::geometry::DevicePixel;
-use servo_msg::compositor_msg::{IdleRenderState, RenderState, RenderingRenderState};
-use servo_msg::compositor_msg::{FinishedLoading, Blank, Loading, PerformingLayout, ReadyState};
-use servo_util::geometry::ScreenPx;
+use msg::compositor_msg::{IdleRenderState, RenderState, RenderingRenderState};
+use msg::compositor_msg::{FinishedLoading, Blank, Loading, PerformingLayout, ReadyState};
+use util::geometry::ScreenPx;
 
 use glfw;
 use glfw::Context;
 
-
-pub struct Application {
-    pub glfw: glfw::Glfw,
-}
-
-impl ApplicationMethods for Application {
-    fn new() -> Application {
-        let app = glfw::init(glfw::LOG_ERRORS);
-        match app {
-            Err(_) => {
-                
-                
-                println!("GLFW initialization failed");
-                unsafe { exit(1); }
-            }
-            Ok(app) => {
-                Application { glfw: app }
-            }
-        }
-    }
-}
 
 macro_rules! glfw_callback(
     (
@@ -102,21 +81,22 @@ pub struct Window {
     last_title_set_time: Cell<Timespec>,
 }
 
-impl WindowMethods<Application> for Window {
+impl Window {
     
-    fn new(app: &Application, is_foreground: bool, size: TypedSize2D<DevicePixel, uint>) -> Rc<Window> {
+    pub fn new(glfw: glfw::Glfw, is_foreground: bool, size: TypedSize2D<DevicePixel, uint>)
+               -> Rc<Window> {
         
         let window_size = size.to_untyped();
-        app.glfw.window_hint(glfw::Visible(is_foreground));
-        let (glfw_window, events) = app.glfw.create_window(window_size.width as u32,
-                                                            window_size.height as u32,
-                                                            "Servo", glfw::Windowed)
+        glfw.window_hint(glfw::Visible(is_foreground));
+        let (glfw_window, events) = glfw.create_window(window_size.width as u32,
+                                                       window_size.height as u32,
+                                                       "Servo", glfw::Windowed)
             .expect("Failed to create GLFW window");
         glfw_window.make_current();
 
         
         let window = Window {
-            glfw: app.glfw,
+            glfw: glfw,
 
             glfw_window: glfw_window,
             events: events,
@@ -144,7 +124,9 @@ impl WindowMethods<Application> for Window {
 
         wrapped_window
     }
+}
 
+impl WindowMethods for Window {
     
     fn framebuffer_size(&self) -> TypedSize2D<DevicePixel, uint> {
         let (width, height) = self.glfw_window.get_framebuffer_size();
