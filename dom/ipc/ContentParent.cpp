@@ -2222,10 +2222,6 @@ ContentParent::InitInternal(ProcessPriority aInitialPriority,
     SerializeURI(nullptr, xpcomInit.userContentSheetURL());
   }
 
-  xpcomInit.gfxNonDefaultVarUpdates() = gfxVars::FetchNonDefaultVars();
-  
-  gfxVars::AddReceiver(this);
-
   gfxPlatform::GetPlatform()->BuildContentDeviceData(&xpcomInit.contentDeviceData());
 
   nsCOMPtr<nsIGfxInfo> gfxInfo = services::GetGfxInfo();

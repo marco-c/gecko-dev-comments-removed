@@ -15,11 +15,9 @@ StaticAutoPtr<gfxVars> gfxVars::sInstance;
 StaticAutoPtr<nsTArray<gfxVars::VarBase*>> gfxVars::sVarList;
 
 void
-gfxVars::Initialize(const nsTArray<GfxVarUpdate>* aInitUpdates )
+gfxVars::Initialize()
 {
   if (sInstance) {
-    
-    MOZ_RELEASE_ASSERT(!aInitUpdates, "aInitUpdates should not be provided after any gfxVars operation");
     return;
   }
 
@@ -30,16 +28,12 @@ gfxVars::Initialize(const nsTArray<GfxVarUpdate>* aInitUpdates )
 
   
   
+  
   if (XRE_IsContentProcess()) {
-    MOZ_RELEASE_ASSERT(aInitUpdates, "aInitUpdates must be provided in content process");
-    InfallibleTArray<GfxVarUpdate> initUpdates;
-    if (!aInitUpdates) {
-      
-      dom::ContentChild::GetSingleton()->SendGetGfxVars(&initUpdates);
-      aInitUpdates = &initUpdates;
-    }
-    for (const auto& varUpdate : *aInitUpdates) {
-      ApplyUpdate(varUpdate);
+    InfallibleTArray<GfxVarUpdate> vars;
+    dom::ContentChild::GetSingleton()->SendGetGfxVars(&vars);
+    for (const auto& var : vars) {
+      ApplyUpdate(var);
     }
   }
 }
