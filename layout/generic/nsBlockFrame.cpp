@@ -73,8 +73,8 @@ typedef nsAbsoluteContainingBlock::AbsPosReflowFlags AbsPosReflowFlags;
 
 static void MarkAllDescendantLinesDirty(nsBlockFrame* aBlock)
 {
-  nsLineList::iterator line = aBlock->begin_lines();
-  nsLineList::iterator endLine = aBlock->end_lines();
+  nsLineList::iterator line = aBlock->BeginLine();
+  nsLineList::iterator endLine = aBlock->EndLine();
   while (line != endLine) {
     if (line->IsBlock()) {
       nsIFrame* f = line->mFirstChild;
@@ -117,8 +117,8 @@ static bool BlockHasAnyFloats(nsIFrame* aFrame)
   if (block->GetChildList(nsIFrame::kFloatList).FirstChild())
     return true;
     
-  nsLineList::iterator line = block->begin_lines();
-  nsLineList::iterator endLine = block->end_lines();
+  nsLineList::iterator line = block->BeginLine();
+  nsLineList::iterator endLine = block->EndLine();
   while (line != endLine) {
     if (line->IsBlock() && BlockHasAnyFloats(line->mFirstChild))
       return true;
@@ -397,7 +397,7 @@ nsBlockFrame::List(FILE* out, const char* aPrefix, uint32_t aFlags) const
 
   
   if (!mLines.empty()) {
-    ConstLineIterator line = begin_lines(), line_end = end_lines();
+    ConstLineIterator line = BeginLine(), line_end = EndLine();
     for ( ; line != line_end; ++line) {
       line->List(out, pfx.get(), aFlags);
     }
@@ -504,7 +504,7 @@ nsBlockFrame::GetCaretBaseline() const
   nsMargin bp = GetUsedBorderAndPadding();
 
   if (!mLines.empty()) {
-    ConstLineIterator line = begin_lines();
+    ConstLineIterator line = BeginLine();
     const nsLineBox* firstLine = line;
     if (firstLine->GetChildCount()) {
       return bp.top + firstLine->mFirstChild->GetCaretBaseline();
@@ -704,7 +704,7 @@ nsBlockFrame::GetMinISize(nsRenderingContext *aRenderingContext)
   InlineMinISizeData data;
   for (nsBlockFrame* curFrame = this; curFrame;
        curFrame = static_cast<nsBlockFrame*>(curFrame->GetNextContinuation())) {
-    for (LineIterator line = curFrame->begin_lines(), line_end = curFrame->end_lines();
+    for (LineIterator line = curFrame->BeginLine(), line_end = curFrame->EndLine();
       line != line_end; ++line)
     {
 #ifdef DEBUG
@@ -723,7 +723,7 @@ nsBlockFrame::GetMinISize(nsRenderingContext *aRenderingContext)
         data.ForceBreak();
       } else {
         if (!curFrame->GetPrevContinuation() &&
-            line == curFrame->begin_lines()) {
+            line == curFrame->BeginLine()) {
           
           
           
@@ -792,7 +792,7 @@ nsBlockFrame::GetPrefISize(nsRenderingContext *aRenderingContext)
   InlinePrefISizeData data;
   for (nsBlockFrame* curFrame = this; curFrame;
        curFrame = static_cast<nsBlockFrame*>(curFrame->GetNextContinuation())) {
-    for (LineIterator line = curFrame->begin_lines(), line_end = curFrame->end_lines();
+    for (LineIterator line = curFrame->BeginLine(), line_end = curFrame->EndLine();
          line != line_end; ++line)
     {
 #ifdef DEBUG
@@ -813,7 +813,7 @@ nsBlockFrame::GetPrefISize(nsRenderingContext *aRenderingContext)
         data.ForceBreak();
       } else {
         if (!curFrame->GetPrevContinuation() &&
-            line == curFrame->begin_lines()) {
+            line == curFrame->BeginLine()) {
           
           
           
@@ -878,7 +878,7 @@ nsBlockFrame::GetPrefWidthTightBounds(nsRenderingContext* aRenderingContext,
   InlinePrefISizeData data;
   for (nsBlockFrame* curFrame = this; curFrame;
        curFrame = static_cast<nsBlockFrame*>(curFrame->GetNextContinuation())) {
-    for (LineIterator line = curFrame->begin_lines(), line_end = curFrame->end_lines();
+    for (LineIterator line = curFrame->BeginLine(), line_end = curFrame->EndLine();
          line != line_end; ++line)
     {
       nscoord childX, childXMost;
@@ -891,7 +891,7 @@ nsBlockFrame::GetPrefWidthTightBounds(nsRenderingContext* aRenderingContext,
         *aXMost = std::max(*aXMost, childXMost);
       } else {
         if (!curFrame->GetPrevContinuation() &&
-            line == curFrame->begin_lines()) {
+            line == curFrame->BeginLine()) {
           
           
           
@@ -1313,7 +1313,7 @@ nsBlockFrame::Reflow(nsPresContext*           aPresContext,
     nsSize containerSize = aMetrics.PhysicalSize();
     nscoord deltaX = containerSize.width - state.ContainerSize().width;
     if (deltaX != 0) {
-      for (LineIterator line = begin_lines(), end = end_lines();
+      for (LineIterator line = BeginLine(), end = EndLine();
            line != end; line++) {
         UpdateLineContainerSize(line, containerSize);
       }
@@ -1484,8 +1484,8 @@ nsBlockFrame::Reflow(nsPresContext*           aPresContext,
 bool
 nsBlockFrame::CheckForCollapsedBEndMarginFromClearanceLine()
 {
-  LineIterator begin = begin_lines();
-  LineIterator line = end_lines();
+  LineIterator begin = BeginLine();
+  LineIterator line = EndLine();
 
   while (true) {
     if (begin == line) {
@@ -1719,7 +1719,7 @@ nsBlockFrame::ComputeOverflowAreas(const nsRect&         aBounds,
   
   nsOverflowAreas areas(aBounds, aBounds);
   if (!ShouldApplyOverflowClipping(this, aDisplay)) {
-    for (LineIterator line = begin_lines(), line_end = end_lines();
+    for (LineIterator line = BeginLine(), line_end = EndLine();
          line != line_end;
          ++line) {
       areas.UnionWith(line->GetOverflowAreas());
@@ -1757,7 +1757,7 @@ nsBlockFrame::UnionChildOverflow(nsOverflowAreas& aOverflowAreas)
   
   
   
-  for (LineIterator line = begin_lines(), line_end = end_lines();
+  for (LineIterator line = BeginLine(), line_end = EndLine();
        line != line_end;
        ++line) {
     nsRect bounds = line->GetPhysicalBounds();
@@ -1807,7 +1807,7 @@ void
 nsBlockFrame::LazyMarkLinesDirty()
 {
   if (GetStateBits() & NS_BLOCK_LOOK_FOR_DIRTY_FRAMES) {
-    for (LineIterator line = begin_lines(), line_end = end_lines();
+    for (LineIterator line = BeginLine(), line_end = EndLine();
          line != line_end; ++line) {
       int32_t n = line->GetChildCount();
       for (nsIFrame* lineFrame = line->mFirstChild;
@@ -1914,7 +1914,7 @@ nsBlockFrame::PrepareResizeReflow(BlockReflowInput& aState)
     }
 #endif
 
-    for (LineIterator line = begin_lines(), line_end = end_lines();
+    for (LineIterator line = BeginLine(), line_end = EndLine();
          line != line_end;
          ++line)
     {
@@ -1942,7 +1942,7 @@ nsBlockFrame::PrepareResizeReflow(BlockReflowInput& aState)
         IndentBy(stdout, gNoiseIndent + 1);
         printf("skipped: line=%p next=%p %s %s%s%s breakTypeBefore/After=%s/%s xmost=%d\n",
            static_cast<void*>(line.get()),
-           static_cast<void*>((line.next() != end_lines() ? line.next().get() : nullptr)),
+           static_cast<void*>((line.next() != EndLine() ? line.next().get() : nullptr)),
            line->IsBlock() ? "block" : "inline",
            line->HasBreakAfter() ? "has-break-after " : "",
            line->HasFloats() ? "has-floats " : "",
@@ -1956,7 +1956,7 @@ nsBlockFrame::PrepareResizeReflow(BlockReflowInput& aState)
   }
   else {
     
-    for (LineIterator line = begin_lines(), line_end = end_lines();
+    for (LineIterator line = BeginLine(), line_end = EndLine();
          line != line_end;
          ++line)
     {
@@ -2124,8 +2124,8 @@ nsBlockFrame::ReflowDirtyLines(BlockReflowInput& aState)
   if (aState.mReflowInput.AvailableBSize() != NS_UNCONSTRAINEDSIZE
       && GetNextInFlow() && aState.mReflowInput.AvailableBSize() >
         GetLogicalSize().BSize(aState.mReflowInput.GetWritingMode())) {
-    LineIterator lastLine = end_lines();
-    if (lastLine != begin_lines()) {
+    LineIterator lastLine = EndLine();
+    if (lastLine != BeginLine()) {
       --lastLine;
       lastLine->MarkDirty();
     }
@@ -2145,7 +2145,7 @@ nsBlockFrame::ReflowDirtyLines(BlockReflowInput& aState)
   
   StyleClear inlineFloatBreakType = aState.mFloatBreakType;
 
-  LineIterator line = begin_lines(), line_end = end_lines();
+  LineIterator line = BeginLine(), line_end = EndLine();
 
   
   for ( ; line != line_end; ++line, aState.AdvanceToNextLine()) {
@@ -2363,7 +2363,7 @@ nsBlockFrame::ReflowDirtyLines(BlockReflowInput& aState)
       
       
       
-      if (line.next() != end_lines()) {
+      if (line.next() != EndLine()) {
         bool maybeWasEmpty = oldB == line.next()->BStart();
         bool isEmpty = line->CachedIsEmpty();
         if (maybeReflowingForFirstTime  ||
@@ -2509,8 +2509,8 @@ nsBlockFrame::ReflowDirtyLines(BlockReflowInput& aState)
     
     
     
-    LineIterator lineIter = this->end_lines();
-    if (lineIter != this->begin_lines()) {
+    LineIterator lineIter = this->EndLine();
+    if (lineIter != this->BeginLine()) {
       lineIter--; 
       nsBlockInFlowLineIterator bifLineIter(this, lineIter);
 
@@ -2581,7 +2581,7 @@ nsBlockFrame::ReflowDirtyLines(BlockReflowInput& aState)
       mFrames.AppendFrames(nullptr, pulledFrames);
 
       
-      line = mLines.before_insert(end_lines(), pulledLine);
+      line = mLines.before_insert(EndLine(), pulledLine);
       aState.mPrevChild = mFrames.LastChild();
 
       
@@ -2599,7 +2599,7 @@ nsBlockFrame::ReflowDirtyLines(BlockReflowInput& aState)
         
         
         
-        while (line != end_lines()) {
+        while (line != EndLine()) {
           ReflowLine(aState, line, &keepGoing);
 
           if (aState.mReflowInput.WillReflowAgainForClearance()) {
@@ -2788,7 +2788,7 @@ nsBlockFrame::PullFrame(BlockReflowInput& aState,
                         LineIterator       aLine)
 {
   
-  if (end_lines() != aLine.next()) {
+  if (EndLine() != aLine.next()) {
     return PullFrameFrom(aLine, this, aLine.next());
   }
 
@@ -3058,7 +3058,7 @@ nsBlockFrame::CachedIsEmpty()
     return false;
   }
 
-  for (LineIterator line = begin_lines(), line_end = end_lines();
+  for (LineIterator line = BeginLine(), line_end = EndLine();
        line != line_end;
        ++line)
   {
@@ -3076,7 +3076,7 @@ nsBlockFrame::IsEmpty()
     return false;
   }
 
-  for (LineIterator line = begin_lines(), line_end = end_lines();
+  for (LineIterator line = BeginLine(), line_end = EndLine();
        line != line_end;
        ++line)
   {
@@ -3108,7 +3108,7 @@ nsBlockFrame::ShouldApplyBStartMargin(BlockReflowInput& aState,
   }
 
   
-  LineIterator line = begin_lines();
+  LineIterator line = BeginLine();
   if (aState.mFlags.mHasLineAdjacentToTop) {
     line = aState.mLineAdjacentToTop;
   }
@@ -3561,7 +3561,7 @@ nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
       if (aLine->SetCarriedOutBEndMargin(collapsedBEndMargin)) {
         LineIterator nextLine = aLine;
         ++nextLine;
-        if (nextLine != end_lines()) {
+        if (nextLine != EndLine()) {
           nextLine->MarkPreviousMarginDirty();
         }
       }
@@ -3627,8 +3627,8 @@ nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
                   nsLayoutUtils::GetAsBlock(nextFrame->GetParent());
                 NS_ASSERTION(nifBlock,
                              "A block's child's next in flow's parent must be a block!");
-                for (LineIterator line = nifBlock->begin_lines(),
-                     line_end = nifBlock->end_lines(); line != line_end; ++line) {
+                for (LineIterator line = nifBlock->BeginLine(),
+                     line_end = nifBlock->EndLine(); line != line_end; ++line) {
                   if (line->Contains(nextFrame)) {
                     line->MarkDirty();
                     break;
@@ -3903,7 +3903,7 @@ nsBlockFrame::DoReflowInlineFrames(BlockReflowInput& aState,
       
       
       ++aLine;
-      while ((aLine != end_lines()) && (0 == aLine->GetChildCount())) {
+      while ((aLine != EndLine()) && (0 == aLine->GetChildCount())) {
         
         
         nsLineBox *toremove = aLine;
@@ -4383,7 +4383,7 @@ bool
 nsBlockFrame::IsLastLine(BlockReflowInput& aState,
                          LineIterator aLine)
 {
-  while (++aLine != end_lines()) {
+  while (++aLine != EndLine()) {
     
     if (0 != aLine->GetChildCount()) {
       
@@ -4397,8 +4397,8 @@ nsBlockFrame::IsLastLine(BlockReflowInput& aState,
   
   nsBlockFrame* nextInFlow = (nsBlockFrame*) GetNextInFlow();
   while (nullptr != nextInFlow) {
-    for (LineIterator line = nextInFlow->begin_lines(),
-                   line_end = nextInFlow->end_lines();
+    for (LineIterator line = nextInFlow->BeginLine(),
+                   line_end = nextInFlow->EndLine();
          line != line_end;
          ++line)
     {
@@ -4635,9 +4635,9 @@ nsBlockFrame::PushLines(BlockReflowInput&  aState,
   nsLineList::iterator overBegin(aLineBefore.next());
 
   
-  bool firstLine = overBegin == begin_lines();
+  bool firstLine = overBegin == BeginLine();
 
-  if (overBegin != end_lines()) {
+  if (overBegin != EndLine()) {
     
     nsFrameList floats;
     CollectFloats(overBegin->mFirstChild, floats, true);
@@ -4678,7 +4678,7 @@ nsBlockFrame::PushLines(BlockReflowInput&  aState,
       overflowLines->mFrames.InsertFrames(nullptr, nullptr, pushedFrames);
 
       overflowLines->mLines.splice(overflowLines->mLines.begin(), mLines,
-                                    overBegin, end_lines());
+                                    overBegin, EndLine());
       NS_ASSERTION(!overflowLines->mLines.empty(), "should not be empty");
       
       
@@ -5352,7 +5352,7 @@ nsBlockFrame::RemoveFloatFromFloatCache(nsIFrame* aFloat)
 {
   
   
-  LineIterator line = begin_lines(), line_end = end_lines();
+  LineIterator line = BeginLine(), line_end = EndLine();
   for ( ; line != line_end; ++line) {
     if (line->IsInline() && line->RemoveFloat(aFloat)) {
       break;
@@ -5455,7 +5455,7 @@ nsBlockInFlowLineIterator::nsBlockInFlowLineIterator(nsBlockFrame* aFrame,
   : mFrame(aFrame), mLine(aLine), mLineList(&aFrame->mLines)
 {
   
-  DebugOnly<bool> check = aLine == mFrame->begin_lines();
+  DebugOnly<bool> check = aLine == mFrame->BeginLine();
 }
 
 nsBlockInFlowLineIterator::nsBlockInFlowLineIterator(nsBlockFrame* aFrame,
@@ -5470,7 +5470,7 @@ nsBlockInFlowLineIterator::nsBlockInFlowLineIterator(nsBlockFrame* aFrame,
     bool* aFoundValidLine)
   : mFrame(aFrame), mLineList(&aFrame->mLines)
 {
-  mLine = aFrame->begin_lines();
+  mLine = aFrame->BeginLine();
   *aFoundValidLine = FindValidLine();
 }
 
@@ -5507,15 +5507,15 @@ nsBlockInFlowLineIterator::nsBlockInFlowLineIterator(nsBlockFrame* aFrame,
   if (!child)
     return;
 
-  LineIterator line_end = aFrame->end_lines();
+  LineIterator line_end = aFrame->EndLine();
   
   if (nsLineBox* const cursor = aFrame->GetLineCursor()) {
     mLine = line_end;
     
     
-    nsBlockFrame::LineIterator line = aFrame->line(cursor);
-    nsBlockFrame::ReverseLineIterator rline = aFrame->rline(cursor);
-    nsBlockFrame::ReverseLineIterator rline_end = aFrame->rend_lines();
+    nsBlockFrame::LineIterator line = aFrame->BeginLineFrom(cursor);
+    nsBlockFrame::ReverseLineIterator rline = aFrame->RBeginLineFrom(cursor);
+    nsBlockFrame::ReverseLineIterator rline_end = aFrame->REndLine();
     
     
     
@@ -5544,7 +5544,7 @@ nsBlockInFlowLineIterator::nsBlockInFlowLineIterator(nsBlockFrame* aFrame,
       return;
     }
   } else {
-    for (mLine = aFrame->begin_lines(); mLine != line_end; ++mLine) {
+    for (mLine = aFrame->BeginLine(); mLine != line_end; ++mLine) {
       if (mLine->Contains(child)) {
         *aFoundValidLine = true;
         return;
@@ -6246,8 +6246,8 @@ nsBlockFrame::FindTrailingClear()
   
   for (nsIFrame* b = this; b; b = b->GetPrevInFlow()) {
     nsBlockFrame* block = static_cast<nsBlockFrame*>(b);
-    LineIterator endLine = block->end_lines();
-    if (endLine != block->begin_lines()) {
+    LineIterator endLine = block->EndLine();
+    if (endLine != block->BeginLine()) {
       --endLine;
       return endLine->GetBreakTypeAfter();
     }
@@ -6350,7 +6350,7 @@ nsBlockFrame::RecoverFloats(nsFloatManager& aFloatManager, WritingMode aWM,
   }
 
   
-  for (nsBlockFrame::LineIterator line = begin_lines(); line != end_lines(); ++line) {
+  for (nsBlockFrame::LineIterator line = BeginLine(); line != EndLine(); ++line) {
     if (line->IsBlock()) {
       RecoverFloatsFor(line->mFirstChild, aFloatManager, aWM, aContainerSize);
     }
@@ -6560,7 +6560,7 @@ nsBlockFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
   
   nsLineBox* cursor = aBuilder->ShouldDescendIntoFrame(this) ?
     nullptr : GetFirstLineContaining(aDirtyRect.y);
-  LineIterator line_end = end_lines();
+  LineIterator line_end = EndLine();
   
   if (cursor) {
     for (LineIterator line = mLines.begin(cursor);
@@ -6582,7 +6582,7 @@ nsBlockFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
     int32_t lineCount = 0;
     nscoord lastY = INT32_MIN;
     nscoord lastYMost = INT32_MIN;
-    for (LineIterator line = begin_lines();
+    for (LineIterator line = BeginLine();
          line != line_end;
          ++line) {
       nsRect lineArea = line->GetVisualOverflowArea();
@@ -6745,13 +6745,13 @@ nsBlockFrame::ChildIsDirty(nsIFrame* aChild)
     
     
     
-    LineIterator bulletLine = begin_lines();
-    if (bulletLine != end_lines() && bulletLine->BSize() == 0 &&
+    LineIterator bulletLine = BeginLine();
+    if (bulletLine != EndLine() && bulletLine->BSize() == 0 &&
         bulletLine != mLines.back()) {
       bulletLine = bulletLine.next();
     }
     
-    if (bulletLine != end_lines()) {
+    if (bulletLine != EndLine()) {
       MarkLineDirty(bulletLine, &mLines);
     }
     
@@ -7136,7 +7136,7 @@ nsBlockFrame::CheckFloats(BlockReflowInput& aState)
 
   
   AutoTArray<nsIFrame*, 8> lineFloats;
-  for (LineIterator line = begin_lines(), line_end = end_lines();
+  for (LineIterator line = BeginLine(), line_end = EndLine();
        line != line_end; ++line) {
     if (line->HasFloats()) {
       nsFloatCache* fc = line->GetFirstFloat();
@@ -7379,7 +7379,7 @@ nsBlockFrame::VerifyLines(bool aFinalCheckOK)
   
   int32_t count = 0;
   LineIterator line, line_end;
-  for (line = begin_lines(), line_end = end_lines();
+  for (line = BeginLine(), line_end = EndLine();
        line != line_end;
        ++line) {
     if (line == cursor) {
@@ -7404,7 +7404,7 @@ nsBlockFrame::VerifyLines(bool aFinalCheckOK)
   NS_ASSERTION(count == frameCount, "bad line list");
 
   
-  for (line = begin_lines(), line_end = end_lines();
+  for (line = BeginLine(), line_end = EndLine();
        line != line_end;
         ) {
     count = line->GetChildCount();
@@ -7492,8 +7492,8 @@ nsBlockFrame::VerifyOverflowSituation()
     }
     nsLineBox* cursor = flow->GetLineCursor();
     if (cursor) {
-      LineIterator line = flow->begin_lines();
-      LineIterator line_end = flow->end_lines();
+      LineIterator line = flow->BeginLine();
+      LineIterator line_end = flow->EndLine();
       for (; line != line_end && line != cursor; ++line)
         ;
       if (line == line_end && overflowLines) {
