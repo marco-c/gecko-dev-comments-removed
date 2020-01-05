@@ -117,7 +117,6 @@ pref("browser.download.forbid_open_with", false);
 
 
 pref("dom.quotaManager.testing", false);
-pref("dom.select_popup_in_parent.enabled", false);
 
 
 pref("dom.indexedDB.enabled", true);
@@ -1199,6 +1198,14 @@ pref("dom.forms.requestAutocomplete", false);
 
 
 pref("dom.forms.selectSearch", false);
+
+
+#ifdef XP_LINUX
+pref("dom.forms.select.customstyling", false);
+#else
+pref("dom.forms.select.customstyling", true);
+#endif
+pref("dom.select_popup_in_parent.enabled", false);
 
 
 pref("dom.input.dirpicker", false);
