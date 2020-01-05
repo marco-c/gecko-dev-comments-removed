@@ -59,6 +59,7 @@ pub enum LogEntry {
 
 
 #[derive(Deserialize, Serialize)]
+#[serde(bound = "")] 
 pub enum ScriptMsg {
     
     ChangeRunningAnimationsState(PipelineId, AnimationState),

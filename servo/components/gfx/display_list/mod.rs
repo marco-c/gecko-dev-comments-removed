@@ -744,6 +744,7 @@ impl fmt::Debug for StackingContext {
 
 
 #[derive(Clone, Deserialize, HeapSizeOf, Serialize)]
+#[serde(bound = "")] 
 pub enum DisplayItem {
     SolidColorClass(Box<SolidColorDisplayItem>),
     TextClass(Box<TextDisplayItem>),

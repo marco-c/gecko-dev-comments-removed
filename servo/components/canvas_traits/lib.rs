@@ -74,6 +74,7 @@ pub enum FromLayoutMsg {
 }
 
 #[derive(Clone, Deserialize, Serialize)]
+#[serde(bound = "")] 
 pub enum Canvas2dMsg {
     Arc(Point2D<f32>, f32, f32, f32, bool),
     ArcTo(Point2D<f32>, Point2D<f32>, f32),
