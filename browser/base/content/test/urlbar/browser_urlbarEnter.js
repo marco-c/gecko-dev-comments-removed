@@ -19,27 +19,27 @@ add_task(function* () {
   is(gBrowser.selectedTab, tab, "New URL was loaded in the current tab");
 
   
-  gBrowser.removeCurrentTab();
+  yield BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 
 add_task(function* () {
   info("Alt+Return keypress");
-  let tab = gBrowser.selectedTab = gBrowser.addTab(START_VALUE);
   
   
-  yield BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+  let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, START_VALUE);
 
+  let tabOpenPromise = BrowserTestUtils.waitForEvent(gBrowser.tabContainer, "TabOpen");
   gURLBar.focus();
   EventUtils.synthesizeKey("VK_RETURN", {altKey: true});
 
   
-  yield BrowserTestUtils.waitForEvent(gBrowser.tabContainer, "TabOpen");
+  yield tabOpenPromise;
 
   
   is(gURLBar.textValue, TEST_VALUE, "Urlbar should preserve the value on return keypress");
   isnot(gBrowser.selectedTab, tab, "New URL was loaded in a new tab");
 
   
-  gBrowser.removeTab(tab);
-  gBrowser.removeCurrentTab();
+  yield BrowserTestUtils.removeTab(tab);
+  yield BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });

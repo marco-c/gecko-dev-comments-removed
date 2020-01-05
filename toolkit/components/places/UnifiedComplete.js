@@ -272,6 +272,8 @@ XPCOMUtils.defineLazyModuleGetter(this, "PlacesSearchAutocompleteProvider",
                                   "resource://gre/modules/PlacesSearchAutocompleteProvider.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PlacesRemoteTabsAutocompleteProvider",
                                   "resource://gre/modules/PlacesRemoteTabsAutocompleteProvider.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "BrowserUtils",
+                                  "resource://gre/modules/BrowserUtils.jsm");
 
 XPCOMUtils.defineLazyServiceGetter(this, "textURIService",
                                    "@mozilla.org/intl/texttosuburi;1",
@@ -913,7 +915,7 @@ Search.prototype = {
         return;
     }
 
-    if (this._enableActions) {
+    if (this._enableActions && this._searchTokens.length > 0) {
       yield this._matchSearchSuggestions();
       if (!this.pending)
         return;
@@ -953,18 +955,19 @@ Search.prototype = {
     
     
 
-    if (this._searchTokens.length > 0) {
+    let hasSearchTerms = this._searchTokens.length > 0 ;
+
+    if (this._enableActions && hasSearchTerms) {
       
-      let matched = yield this._matchPlacesKeyword();
+      let matched = yield this._matchSearchEngineAlias();
       if (matched) {
         return true;
       }
     }
 
-    if (this.pending && this._enableActions) {
+    if (this.pending && hasSearchTerms) {
       
-      
-      let matched = yield this._matchSearchEngineAlias();
+      let matched = yield this._matchPlacesKeyword();
       if (matched) {
         return true;
       }
@@ -987,7 +990,7 @@ Search.prototype = {
       }
     }
 
-    if (this.pending && this._enableActions) {
+    if (this.pending && hasSearchTerms && this._enableActions) {
       
       
 
@@ -1133,23 +1136,26 @@ Search.prototype = {
     if (!entry)
       return false;
 
-    
-    let searchString = this._trimmedOriginalSearchString;
-    let queryString = "";
-    let queryIndex = searchString.indexOf(" ");
-    if (queryIndex != -1) {
-      queryString = searchString.substring(queryIndex + 1);
+    let searchString = this._trimmedOriginalSearchString.substr(keyword.length + 1);
+
+    let url = null, postData = null;
+    try {
+      [url, postData] =
+        yield BrowserUtils.parseUrlAndPostData(entry.url.href,
+                                               entry.postData,
+                                               searchString);
+    } catch (ex) {
+      
+      return false;
     }
-    
-    queryString = encodeURIComponent(queryString).replace(/%20/g, "+");
-    let escapedURL = entry.url.href.replace("%s", queryString);
 
     let style = (this._enableActions ? "action " : "") + "keyword";
     let actionURL = PlacesUtils.mozActionURI("keyword", {
-      url: escapedURL,
+      url,
       input: this._originalSearchString,
+      postData,
     });
-    let value = this._enableActions ? actionURL : escapedURL;
+    let value = this._enableActions ? actionURL : url;
     
     let comment = entry.url.host;
 
@@ -1219,7 +1225,7 @@ Search.prototype = {
       return false;
 
     match.engineAlias = alias;
-    let query = this._searchTokens.slice(1).join(" ");
+    let query = this._trimmedOriginalSearchString.substr(alias.length + 1);
 
     this._addSearchEngineMatch(match, query);
     return true;
