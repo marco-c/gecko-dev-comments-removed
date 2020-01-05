@@ -1605,6 +1605,9 @@ moz_gtk_tab_paint(cairo_t *cr, GdkRectangle* rect,
                     gap_loffset = initial_gap;
             }
 
+            GtkStyleContext* panelStyle =
+                ClaimStyleContext(MOZ_GTK_TABPANELS, direction);
+
             if (isBottomTab) {
                 
                 focusRect.y += gap_voffset;
@@ -1614,20 +1617,18 @@ moz_gtk_tab_paint(cairo_t *cr, GdkRectangle* rect,
                                      tabRect.x, tabRect.y + gap_voffset, tabRect.width,
                                      tabRect.height - gap_voffset, GTK_POS_TOP);
 
-                gtk_style_context_remove_region(style, GTK_STYLE_REGION_TAB);
-
                 backRect.y += (gap_voffset - gap_height);
                 backRect.height = gap_height;
 
                 
 
-                gtk_render_background(style, cr, backRect.x, backRect.y,
+                gtk_render_background(panelStyle, cr, backRect.x, backRect.y,
                                      backRect.width, backRect.height);
                 cairo_save(cr);
                 cairo_rectangle(cr, backRect.x, backRect.y, backRect.width, backRect.height);
                 cairo_clip(cr);
 
-                gtk_render_frame_gap(style, cr,
+                gtk_render_frame_gap(panelStyle, cr,
                                      tabRect.x - gap_loffset,
                                      tabRect.y + gap_voffset - 3 * gap_height,
                                      tabRect.width + gap_loffset + gap_roffset,
@@ -1641,21 +1642,19 @@ moz_gtk_tab_paint(cairo_t *cr, GdkRectangle* rect,
                                      tabRect.x, tabRect.y, tabRect.width,
                                      tabRect.height - gap_voffset, GTK_POS_BOTTOM);
 
-                gtk_style_context_remove_region(style, GTK_STYLE_REGION_TAB);
-
                 backRect.y += (tabRect.height - gap_voffset);
                 backRect.height = gap_height;
 
                 
 
-                gtk_render_background(style, cr, backRect.x, backRect.y,
+                gtk_render_background(panelStyle, cr, backRect.x, backRect.y,
                                       backRect.width, backRect.height);
 
                 cairo_save(cr);
                 cairo_rectangle(cr, backRect.x, backRect.y, backRect.width, backRect.height);
                 cairo_clip(cr);
 
-                gtk_render_frame_gap(style, cr,
+                gtk_render_frame_gap(panelStyle, cr,
                                      tabRect.x - gap_loffset,
                                      tabRect.y + tabRect.height - gap_voffset,
                                      tabRect.width + gap_loffset + gap_roffset,
