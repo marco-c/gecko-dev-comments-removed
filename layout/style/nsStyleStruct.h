@@ -3605,7 +3605,7 @@ struct nsStyleFilter
     return !(*this == aOther);
   }
 
-  int32_t GetType() const {
+  uint32_t GetType() const {
     return mType;
   }
 
@@ -3634,7 +3634,7 @@ struct nsStyleFilter
 private:
   void ReleaseRef();
 
-  int32_t mType; 
+  uint32_t mType; 
   nsStyleCoord mFilterParameter; 
   union {
     mozilla::css::URLValue* mURL;
