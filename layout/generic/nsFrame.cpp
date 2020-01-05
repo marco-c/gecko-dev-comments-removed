@@ -701,8 +701,9 @@ nsFrame::DestroyFrom(nsIFrame* aDestructRoot)
     
     
     if (presContext->RestyleManager()->IsGecko()) {
-      RestyleManager::AnimationsWithDestroyedFrame* adf =
-        presContext->RestyleManager()->AsGecko()->GetAnimationsWithDestroyedFrame();
+      RestyleManagerBase::AnimationsWithDestroyedFrame* adf =
+        presContext->RestyleManager()->AsGecko()
+                   ->GetAnimationsWithDestroyedFrame();
       
       if (adf) {
         adf->Put(mContent, mStyleContext);

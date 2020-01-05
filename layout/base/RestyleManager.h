@@ -50,8 +50,6 @@ private:
   {
     MOZ_ASSERT(!mReframingStyleContexts,
                "temporary member should be nulled out before destruction");
-    MOZ_ASSERT(!mAnimationsWithDestroyedFrame,
-               "leaving dangling pointers from AnimationsWithDestroyedFrame");
   }
 
 public:
@@ -220,62 +218,6 @@ public:
   TryInitiatingTransition(nsPresContext* aPresContext, nsIContent* aContent,
                           nsStyleContext* aOldStyleContext,
                           RefPtr<nsStyleContext>* aNewStyleContext );
-
-  
-  
-  
-  class MOZ_STACK_CLASS AnimationsWithDestroyedFrame final {
-  public:
-    
-    
-    
-    
-    explicit AnimationsWithDestroyedFrame(RestyleManager* aRestyleManager);
-
-    
-    
-    
-    void Put(nsIContent* aContent, nsStyleContext* aStyleContext) {
-      MOZ_ASSERT(aContent);
-      CSSPseudoElementType pseudoType = aStyleContext->GetPseudoType();
-      if (pseudoType == CSSPseudoElementType::NotPseudo) {
-        mContents.AppendElement(aContent);
-      } else if (pseudoType == CSSPseudoElementType::before) {
-        MOZ_ASSERT(aContent->NodeInfo()->NameAtom() == nsGkAtoms::mozgeneratedcontentbefore);
-        mBeforeContents.AppendElement(aContent->GetParent());
-      } else if (pseudoType == CSSPseudoElementType::after) {
-        MOZ_ASSERT(aContent->NodeInfo()->NameAtom() == nsGkAtoms::mozgeneratedcontentafter);
-        mAfterContents.AppendElement(aContent->GetParent());
-      }
-    }
-
-    void StopAnimationsForElementsWithoutFrames();
-
-  private:
-    void StopAnimationsWithoutFrame(nsTArray<RefPtr<nsIContent>>& aArray,
-                                    CSSPseudoElementType aPseudoType);
-
-    RestyleManager* mRestyleManager;
-    AutoRestore<AnimationsWithDestroyedFrame*> mRestorePointer;
-
-    
-    
-    
-    
-    
-    
-    nsTArray<RefPtr<nsIContent>> mContents;
-    nsTArray<RefPtr<nsIContent>> mBeforeContents;
-    nsTArray<RefPtr<nsIContent>> mAfterContents;
-  };
-
-  
-
-
-
-  AnimationsWithDestroyedFrame* GetAnimationsWithDestroyedFrame() {
-    return mAnimationsWithDestroyedFrame;
-  }
 
 private:
   void RestyleForEmptyChange(Element* aContainer);
@@ -509,7 +451,6 @@ private:
   uint64_t mAnimationGeneration;
 
   ReframingStyleContexts* mReframingStyleContexts;
-  AnimationsWithDestroyedFrame* mAnimationsWithDestroyedFrame;
 
   RestyleTracker mPendingRestyles;
 
