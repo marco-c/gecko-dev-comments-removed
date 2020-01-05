@@ -293,6 +293,9 @@ struct WorkerLoadInfo
   bool
   FinalChannelPrincipalIsValid(nsIChannel* aChannel);
 #endif
+
+  void
+  ForgetMainThreadObjects(nsTArray<nsCOMPtr<nsISupports> >& aDoomed);
 };
 
 
