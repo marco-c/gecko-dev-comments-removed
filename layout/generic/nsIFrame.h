@@ -343,6 +343,12 @@ private:
 #define NS_FRAME_SET_TRUNCATION(aStatus, aReflowInput, aMetrics) \
   aStatus.UpdateTruncated(aReflowInput, aMetrics);
 
+#ifdef DEBUG
+
+std::ostream&
+operator<<(std::ostream& aStream, const nsReflowStatus& aStatus);
+#endif
+
 
 
 
