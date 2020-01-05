@@ -111,11 +111,6 @@ public:
   nsTArray<nsPIDOMWindowOuter*> GetTopLevelWindows();
 
   
-  
-  ThrottledEventQueue*
-  GetThrottledEventQueue() const;
-
-  
   virtual nsresult Dispatch(const char* aName,
                             TaskCategory aCategory,
                             already_AddRefed<nsIRunnable>&& aRunnable) override;
@@ -133,8 +128,7 @@ private:
   DocGroupMap mDocGroups;
   Atomic<bool> mLastWindowLeft;
   nsTArray<nsPIDOMWindowOuter*> mWindows;
-  bool mThrottledQueuesInitialized;
-  RefPtr<ThrottledEventQueue> mThrottledEventQueue;
+  Atomic<bool> mThrottledQueuesInitialized;
   nsCOMPtr<nsIEventTarget> mEventTargets[size_t(TaskCategory::Count)];
 };
 

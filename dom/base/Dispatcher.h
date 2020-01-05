@@ -30,6 +30,9 @@ enum class TaskCategory {
   Timer,
 
   
+  Worker,
+
+  
   IdleCallback,
 
   

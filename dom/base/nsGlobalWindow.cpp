@@ -9565,18 +9565,6 @@ nsGlobalWindow::UpdateCommands(const nsAString& anAction, nsISelection* aSel, in
   return NS_OK;
 }
 
-ThrottledEventQueue*
-nsGlobalWindow::GetThrottledEventQueue()
-{
-  
-  nsGlobalWindow* outer = GetOuterWindowInternal();
-  if (!outer) {
-    return nullptr;
-  }
-
-  return TabGroup()->GetThrottledEventQueue();
-}
-
 Selection*
 nsGlobalWindow::GetSelectionOuter()
 {
