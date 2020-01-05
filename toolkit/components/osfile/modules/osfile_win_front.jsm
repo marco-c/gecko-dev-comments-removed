@@ -343,6 +343,33 @@
 
        mode = OS.Shared.AbstractFile.normalizeOpenMode(mode);
 
+       
+       
+       
+       
+       
+       
+       
+       if (options.winAllowLengthBeyondMaxPathWithCaveats) {
+         
+         
+         let isUNC = path.length >= 2 && (path[0] == "\\" || path[0] == "/") &&
+                                         (path[1] == "\\" || path[1] == "/");
+         let pathToUse = "\\\\?\\" + (isUNC ? "UNC\\" + path.slice(2) : path);
+         
+         
+         let buffer_size = 512;
+         let array = new (ctypes.ArrayType(ctypes.char16_t, buffer_size))();
+         let expected_size = throw_on_zero("open",
+           WinFile.GetFullPathName(pathToUse, buffer_size, array, 0)
+         );
+         if (expected_size > buffer_size) {
+           
+           throw new File.Error("open", ctypes.winLastError, path);
+         }
+         path = array.readString();
+       }
+
        if ("winAccess" in options && "winDisposition" in options) {
          access = options.winAccess;
          disposition = options.winDisposition;

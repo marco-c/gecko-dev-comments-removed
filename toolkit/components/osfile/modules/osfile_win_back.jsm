@@ -299,6 +299,15 @@
                         Type.out_path
                    );
 
+       libc.declareLazyFFI(SysFile, "GetFullPathName",
+         "GetFullPathNameW", ctypes.winapi_abi,
+                       Type.zero_or_DWORD,
+                     Type.path,
+                       Type.DWORD,
+                          Type.out_path,
+                     Type.DWORD
+                   );
+
        libc.declareLazyFFI(SysFile, "GetDiskFreeSpaceEx",
          "GetDiskFreeSpaceExW", ctypes.winapi_abi,
                      Type.zero_or_nothing,
