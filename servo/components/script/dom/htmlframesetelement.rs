@@ -2,11 +2,14 @@
 
 
 
+use dom::bindings::codegen::Bindings::EventHandlerBinding::{EventHandlerNonNull, OnBeforeUnloadEventHandlerNonNull};
 use dom::bindings::codegen::Bindings::HTMLFrameSetElementBinding;
+use dom::bindings::codegen::Bindings::HTMLFrameSetElementBinding::HTMLFrameSetElementMethods;
+use dom::bindings::codegen::Bindings::WindowBinding::WindowMethods;
 use dom::bindings::js::Root;
 use dom::document::Document;
 use dom::htmlelement::HTMLElement;
-use dom::node::Node;
+use dom::node::{Node, window_from_node};
 use string_cache::Atom;
 use util::str::DOMString;
 
@@ -32,4 +35,9 @@ impl HTMLFrameSetElement {
         let element = HTMLFrameSetElement::new_inherited(localName, prefix, document);
         Node::reflect_node(box element, document, HTMLFrameSetElementBinding::Wrap)
     }
+}
+
+impl HTMLFrameSetElementMethods for HTMLFrameSetElement {
+    
+    window_event_handlers!(ForwardToWindow);
 }
