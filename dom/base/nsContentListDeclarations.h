@@ -18,6 +18,12 @@ class nsINode;
 class nsString;
 class nsAString;
 
+namespace mozilla {
+namespace dom {
+class Element;
+} 
+} 
+
 
 
 #define kNameSpaceID_Wildcard INT32_MIN
@@ -26,7 +32,7 @@ class nsAString;
 
 
 
-typedef bool (*nsContentListMatchFunc)(nsIContent* aContent,
+typedef bool (*nsContentListMatchFunc)(mozilla::dom::Element* aElement,
                                        int32_t aNamespaceID,
                                        nsIAtom* aAtom,
                                        void* aData);

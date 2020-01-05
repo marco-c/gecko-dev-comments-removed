@@ -2076,22 +2076,15 @@ nsContentUtils::CanCallerAccess(nsPIDOMWindowInner* aWindow)
 
 
 bool
-nsContentUtils::PrincipalHasPermission(nsIPrincipal* aPrincipal, const nsAString& aPerm)
+nsContentUtils::CallerHasPermission(JSContext* aCx, const nsAString& aPerm)
 {
   
-  if (IsSystemPrincipal(aPrincipal)) {
+  if (IsSystemCaller(aCx)) {
     return true;
   }
 
   
-  return BasePrincipal::Cast(aPrincipal)->AddonHasPermission(aPerm);
-}
-
-
-bool
-nsContentUtils::CallerHasPermission(JSContext* aCx, const nsAString& aPerm)
-{
-  return PrincipalHasPermission(SubjectPrincipal(aCx), aPerm);
+  return BasePrincipal::Cast(SubjectPrincipal(aCx))->AddonHasPermission(aPerm);
 }
 
 
@@ -6356,11 +6349,11 @@ struct ClassMatchingInfo {
 
 
 bool
-nsContentUtils::MatchClassNames(nsIContent* aContent, int32_t aNamespaceID,
+nsContentUtils::MatchClassNames(Element* aElement, int32_t aNamespaceID,
                                 nsIAtom* aAtom, void* aData)
 {
   
-  const nsAttrValue* classAttr = aContent->GetClasses();
+  const nsAttrValue* classAttr = aElement->GetClasses();
   if (!classAttr) {
     return false;
   }
@@ -6901,11 +6894,12 @@ nsContentUtils::IsRequestFullScreenAllowed(CallerType aCallerType)
 bool
 nsContentUtils::IsCutCopyAllowed(nsIPrincipal* aSubjectPrincipal)
 {
-  if (!IsCutCopyRestricted() && EventStateManager::IsHandlingUserInput()) {
+  if ((!IsCutCopyRestricted() && EventStateManager::IsHandlingUserInput()) ||
+      IsSystemPrincipal(aSubjectPrincipal)) {
     return true;
   }
 
-  return PrincipalHasPermission(aSubjectPrincipal, NS_LITERAL_STRING("clipboardWrite"));
+  return BasePrincipal::Cast(aSubjectPrincipal)->AddonHasPermission(NS_LITERAL_STRING("clipboardWrite"));
 }
 
 

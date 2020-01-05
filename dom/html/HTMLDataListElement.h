@@ -37,8 +37,8 @@ public:
   virtual nsresult Clone(mozilla::dom::NodeInfo *aNodeInfo, nsINode **aResult) const override;
 
   
-  static bool MatchOptions(nsIContent* aContent, int32_t aNamespaceID,
-                             nsIAtom* aAtom, void* aData);
+  static bool MatchOptions(Element* aElement, int32_t aNamespaceID,
+                           nsIAtom* aAtom, void* aData);
 
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(HTMLDataListElement,
                                            nsGenericHTMLElement)
