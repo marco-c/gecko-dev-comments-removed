@@ -146,6 +146,10 @@ WebRenderAPI::Create(bool aEnableProfiler,
 
 WebRenderAPI::~WebRenderAPI()
 {
+  layers::SynchronousTask task("Destroy WebRenderAPI");
+  auto event = MakeUnique<RemoveRenderer>(&task);
+  RunOnRenderThread(Move(event));
+  task.Wait();
 
 #ifdef MOZ_ENABLE_WEBRENDER
   
@@ -154,13 +158,6 @@ WebRenderAPI::~WebRenderAPI()
   
   wr_api_delete(mWRApi);
 #endif
-
-  layers::SynchronousTask task("Destroy WebRenderAPI");
-  auto event = MakeUnique<RemoveRenderer>(&task);
-  
-  
-  RenderThread::Get()->RunEvent(mId, Move(event));
-  task.Wait();
 }
 
 void
@@ -256,7 +253,14 @@ void
 WebRenderAPI::SetProfilerEnabled(bool aEnabled)
 {
   auto event = MakeUnique<EnableProfiler>(aEnabled);
-  RenderThread::Get()->RunEvent(mId, Move(event));
+  RunOnRenderThread(Move(event));
+}
+
+void
+WebRenderAPI::RunOnRenderThread(UniquePtr<RendererEvent>&& aEvent)
+{
+  auto event = reinterpret_cast<uintptr_t>(aEvent.release());
+  wr_api_send_external_event(mWRApi, event);
 }
 
 DisplayListBuilder::DisplayListBuilder(const LayerIntSize& aSize, PipelineId aId)
