@@ -297,7 +297,11 @@ public class BookmarksPanel extends HomeFragment implements BookmarkEditFragment
                 userCursor = mDB.getBookmarksInFolder(contentResolver, mFolderInfo.id);
             }
 
-
+            
+            
+            
+            
+            
             if (partnerCursor == null && userCursor == null) {
                 return null;
             } else if (partnerCursor == null) {
@@ -305,8 +309,10 @@ public class BookmarksPanel extends HomeFragment implements BookmarkEditFragment
             } else if (userCursor == null) {
                 return partnerCursor;
             } else {
-                return new MergeCursor(new Cursor[] { partnerCursor, userCursor });
+                return new MergeCursor(new Cursor[]{ partnerCursor, userCursor });
             }
+
+
         }
 
         @Override
