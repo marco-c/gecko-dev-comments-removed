@@ -2241,6 +2241,14 @@ this.XPIStates = {
   
   db: null,
 
+  
+
+
+
+
+
+  sideLoadedAddons: new Map(),
+
   get size() {
     if (!this.db) {
       return 0;
@@ -2321,6 +2329,7 @@ this.XPIStates = {
           let xpiState = new XPIState({d: file.persistentDescriptor});
           changed = xpiState.getModTime(file, id) || changed;
           foundAddons.set(id, xpiState);
+          this.sideLoadedAddons.set(id, xpiState);
         } else {
           let xpiState = new XPIState(locState[id]);
           
@@ -3867,12 +3876,7 @@ this.XPIProvider = {
       
       
       if (extensionListChanged || hasPendingChanges) {
-        logger.debug("Updating database with changes to installed add-ons");
-        XPIDatabase.updateActiveAddons();
-        Services.prefs.setBoolPref(PREF_PENDING_OPERATIONS,
-                                   !XPIDatabase.writeAddonsList());
-        Services.prefs.setCharPref(PREF_BOOTSTRAP_ADDONS,
-                                   JSON.stringify(this.bootstrappedAddons));
+        this._updateActiveAddons();
         return true;
       }
 
@@ -3891,6 +3895,38 @@ this.XPIProvider = {
     }
 
     return false;
+  },
+
+  _updateActiveAddons() {
+    logger.debug("Updating database with changes to installed add-ons");
+    XPIDatabase.updateActiveAddons();
+    Services.prefs.setBoolPref(PREF_PENDING_OPERATIONS,
+                               !XPIDatabase.writeAddonsList());
+    Services.prefs.setCharPref(PREF_BOOTSTRAP_ADDONS,
+                               JSON.stringify(this.bootstrappedAddons));
+  },
+
+  
+
+
+
+
+
+
+  async getNewSideloads() {
+    if (XPIStates.getInstallState(false)) {
+      
+      await XPIDatabase.asyncLoadDB(false);
+      XPIDatabaseReconcile.processFileChanges({}, false);
+      this._updateActiveAddons();
+    }
+
+    let addons = await Promise.all(
+      Array.from(XPIStates.sideLoadedAddons.keys(),
+                 id => AddonManager.getAddonByID(id)));
+
+    return addons.filter(addon => (addon.seen === false &&
+                                   addon.permissions & AddonManager.PERM_CAN_ENABLE));
   },
 
   
