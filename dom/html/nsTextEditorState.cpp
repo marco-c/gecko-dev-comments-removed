@@ -46,7 +46,6 @@
 #include "mozilla/dom/HTMLInputElement.h"
 #include "nsNumberControlFrame.h"
 #include "nsFrameSelection.h"
-#include "mozilla/ErrorResult.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/layers/ScrollInputMethods.h"
 
@@ -1499,12 +1498,6 @@ nsTextEditorState::PrepareEditor(const nsAString *aValue)
   }
 
   
-  
-  
-  
-  
-  
-  
   if (number) {
     number->ClearSelectionCached();
   } else {
@@ -1545,14 +1538,6 @@ nsTextEditorState::GetSelectionProperties()
 }
 
 void
-nsTextEditorState::SyncUpSelectionPropertiesBeforeDestruction()
-{
-  if (mBoundFrame) {
-    UnbindFromFrame(mBoundFrame);
-  }
-}
-
-void
 nsTextEditorState::SetSelectionProperties(nsTextEditorState::SelectionProperties& aProps)
 {
   if (mBoundFrame) {
@@ -1564,377 +1549,74 @@ nsTextEditorState::SetSelectionProperties(nsTextEditorState::SelectionProperties
   }
 }
 
-void
+nsresult
 nsTextEditorState::GetSelectionRange(int32_t* aSelectionStart,
-                                     int32_t* aSelectionEnd,
-                                     ErrorResult& aRv)
+                                     int32_t* aSelectionEnd)
 {
   MOZ_ASSERT(aSelectionStart);
   MOZ_ASSERT(aSelectionEnd);
-  MOZ_ASSERT(IsSelectionCached() || GetSelectionController(),
-             "How can we not have a cached selection if we have no selection "
-             "controller?");
+
+  if (!mBoundFrame) {
+    return NS_ERROR_FAILURE;
+  }
 
   
   
-  if (IsSelectionCached()) {
-    const SelectionProperties& props = GetSelectionProperties();
-    *aSelectionStart = props.GetStart();
-    *aSelectionEnd = props.GetEnd();
-    return;
-  }
+  
+
+  nsresult rv = mBoundFrame->EnsureEditorInitialized();
+  NS_ENSURE_SUCCESS(rv, rv);
 
   nsISelectionController* selCon = GetSelectionController();
+  NS_ENSURE_TRUE(selCon, NS_ERROR_FAILURE);
 
   nsCOMPtr<nsISelection> selection;
-  nsresult rv = selCon->GetSelection(nsISelectionController::SELECTION_NORMAL,
-                                     getter_AddRefs(selection));
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    aRv.Throw(rv);
-    return;
-  }
-  if (NS_WARN_IF(!selection)) {
-    aRv.Throw(NS_ERROR_FAILURE);
-    return;
-  }
+  rv = selCon->GetSelection(nsISelectionController::SELECTION_NORMAL,
+                            getter_AddRefs(selection));
+  NS_ENSURE_SUCCESS(rv, rv);
+  NS_ENSURE_TRUE(selection, NS_ERROR_FAILURE);
 
   dom::Selection* sel = selection->AsSelection();
   mozilla::dom::Element* root = GetRootNode();
-  if (NS_WARN_IF(!root)) {
-    aRv.Throw(NS_ERROR_UNEXPECTED);
-    return;
-  }
+  NS_ENSURE_STATE(root);
   nsContentUtils::GetSelectionInTextControl(sel, root,
                                             *aSelectionStart, *aSelectionEnd);
+  return NS_OK;
 }
 
-nsITextControlFrame::SelectionDirection
-nsTextEditorState::GetSelectionDirection(ErrorResult& aRv)
+nsresult
+nsTextEditorState::GetSelectionDirection(nsITextControlFrame::SelectionDirection* aDirection)
 {
-  MOZ_ASSERT(IsSelectionCached() || GetSelectionController(),
-             "How can we not have a cached selection if we have no selection "
-             "controller?");
+  MOZ_ASSERT(mBoundFrame,
+             "Caller didn't flush out frames and check for a frame?");
+  MOZ_ASSERT(aDirection);
 
   
   
-  if (IsSelectionCached()) {
-    return GetSelectionProperties().GetDirection();
-  }
+  
+
+  nsresult rv = mBoundFrame->EnsureEditorInitialized();
+  NS_ENSURE_SUCCESS(rv, rv);
 
   nsISelectionController* selCon = GetSelectionController();
+  NS_ENSURE_TRUE(selCon, NS_ERROR_FAILURE);
 
   nsCOMPtr<nsISelection> selection;
-  nsresult rv = selCon->GetSelection(nsISelectionController::SELECTION_NORMAL,
-                                     getter_AddRefs(selection));
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    aRv.Throw(rv);
-    return nsITextControlFrame::eForward; 
-  }
-  if (NS_WARN_IF(!selection)) {
-    aRv.Throw(NS_ERROR_FAILURE);
-    return nsITextControlFrame::eForward; 
-  }
+  rv = selCon->GetSelection(nsISelectionController::SELECTION_NORMAL,
+                            getter_AddRefs(selection));
+  NS_ENSURE_SUCCESS(rv, rv);
+  NS_ENSURE_TRUE(selection, NS_ERROR_FAILURE);
 
   dom::Selection* sel = selection->AsSelection();
   nsDirection direction = sel->GetSelectionDirection();
   if (direction == eDirNext) {
-    return nsITextControlFrame::eForward;
-  }
-
-  MOZ_ASSERT(direction == eDirPrevious);
-  return nsITextControlFrame::eBackward;
-}
-
-void
-nsTextEditorState::SetSelectionRange(int32_t aStart, int32_t aEnd,
-                                     nsITextControlFrame::SelectionDirection aDirection,
-                                     ErrorResult& aRv)
-{
-  MOZ_ASSERT(IsSelectionCached() || mBoundFrame,
-             "How can we have a non-cached selection but no frame?");
-
-  if (aStart > aEnd) {
-    aStart = aEnd;
-  }
-
-  bool changed = false;
-  nsresult rv = NS_OK; 
-  if (IsSelectionCached()) {
-    nsAutoString value;
-    
-    
-    GetValue(value, false);
-    uint32_t length = value.Length();
-    if (uint32_t(aStart) > length) {
-      aStart = length;
-    }
-    if (uint32_t(aEnd) > length) {
-      aEnd = length;
-    }
-    SelectionProperties& props = GetSelectionProperties();
-    changed = props.GetStart() != aStart ||
-              props.GetEnd() != aEnd ||
-              props.GetDirection() != aDirection;
-    props.SetStart(aStart);
-    props.SetEnd(aEnd);
-    props.SetDirection(aDirection);
+    *aDirection = nsITextControlFrame::eForward;
+  } else if (direction == eDirPrevious) {
+    *aDirection = nsITextControlFrame::eBackward;
   } else {
-    aRv = mBoundFrame->SetSelectionRange(aStart, aEnd, aDirection);
-    if (aRv.Failed()) {
-      return;
-    }
-    rv = mBoundFrame->ScrollSelectionIntoView();
-    
-    
-    
-    
-
-    
-    
-    
-    changed = true;
+    NS_NOTREACHED("Invalid nsDirection enum value");
   }
-
-  if (changed) {
-    
-    nsCOMPtr<nsINode> node = do_QueryInterface(mTextCtrlElement);
-    RefPtr<AsyncEventDispatcher> asyncDispatcher =
-      new AsyncEventDispatcher(node, NS_LITERAL_STRING("select"), true, false);
-    asyncDispatcher->PostDOMEvent();
-  }
-
-  if (NS_FAILED(rv)) {
-    aRv.Throw(rv);
-  }
-}
-
-void
-nsTextEditorState::SetSelectionStart(const mozilla::dom::Nullable<uint32_t>& aStart,
-                                     ErrorResult& aRv)
-{
-  int32_t start = 0;
-  if (!aStart.IsNull()) {
-    
-    
-    start = aStart.Value();
-  }
-
-  int32_t ignored, end;
-  GetSelectionRange(&ignored, &end, aRv);
-  if (aRv.Failed()) {
-    return;
-  }
-
-  nsITextControlFrame::SelectionDirection dir = GetSelectionDirection(aRv);
-  if (aRv.Failed()) {
-    return;
-  }
-
-  if (end < start) {
-    end = start;
-  }
-
-  SetSelectionRange(start, end, dir, aRv);
-}
-
-void
-nsTextEditorState::SetSelectionEnd(const mozilla::dom::Nullable<uint32_t>& aEnd,
-                                   ErrorResult& aRv)
-{
-  int32_t end = 0;
-  if (!aEnd.IsNull()) {
-    
-    
-    end = aEnd.Value();
-  }
-
-  int32_t start, ignored;
-  GetSelectionRange(&start, &ignored, aRv);
-  if (aRv.Failed()) {
-    return;
-  }
-
-  nsITextControlFrame::SelectionDirection dir = GetSelectionDirection(aRv);
-  if (aRv.Failed()) {
-    return;
-  }
-
-  SetSelectionRange(start, end, dir, aRv);
-}
-
-static void
-DirectionToName(nsITextControlFrame::SelectionDirection dir, nsAString& aDirection)
-{
-  if (dir == nsITextControlFrame::eNone) {
-    NS_WARNING("We don't actually support this... how did we get it?");
-    aDirection.AssignLiteral("none");
-  } else if (dir == nsITextControlFrame::eForward) {
-    aDirection.AssignLiteral("forward");
-  } else if (dir == nsITextControlFrame::eBackward) {
-    aDirection.AssignLiteral("backward");
-  } else {
-    NS_NOTREACHED("Invalid SelectionDirection value");
-  }
-}
-
-void
-nsTextEditorState::GetSelectionDirectionString(nsAString& aDirection,
-                                               ErrorResult& aRv)
-{
-  nsITextControlFrame::SelectionDirection dir = GetSelectionDirection(aRv);
-  if (aRv.Failed()) {
-    return;
-  }
-  DirectionToName(dir, aDirection);
-}
-
-static nsITextControlFrame::SelectionDirection
-DirectionStringToSelectionDirection(const nsAString& aDirection)
-{
-  if (aDirection.EqualsLiteral("backward")) {
-    return nsITextControlFrame::eBackward;
-  }
-
-  
-  return nsITextControlFrame::eForward;
-}
-
-void
-nsTextEditorState::SetSelectionDirection(const nsAString& aDirection,
-                                         ErrorResult& aRv)
-{
-  nsITextControlFrame::SelectionDirection dir =
-    DirectionStringToSelectionDirection(aDirection);
-
-  if (IsSelectionCached()) {
-    GetSelectionProperties().SetDirection(dir);
-    return;
-  }
-
-  int32_t start, end;
-  GetSelectionRange(&start, &end, aRv);
-  if (aRv.Failed()) {
-    return;
-  }
-
-  SetSelectionRange(start, end, dir, aRv);
-}
-
-static nsITextControlFrame::SelectionDirection
-DirectionStringToSelectionDirection(const Optional<nsAString>& aDirection)
-{
-  if (!aDirection.WasPassed()) {
-    
-    return nsITextControlFrame::eForward;
-  }
-
-  return DirectionStringToSelectionDirection(aDirection.Value());
-}
-
-void
-nsTextEditorState::SetSelectionRange(int32_t aSelectionStart,
-                                     int32_t aSelectionEnd,
-                                     const Optional<nsAString>& aDirection,
-                                     ErrorResult& aRv)
-{
-  nsITextControlFrame::SelectionDirection dir =
-    DirectionStringToSelectionDirection(aDirection);
-
-  SetSelectionRange(aSelectionStart, aSelectionEnd, dir, aRv);
-}
-
-void
-nsTextEditorState::SetRangeText(const nsAString& aReplacement,
-                                ErrorResult& aRv)
-{
-  int32_t start, end;
-  GetSelectionRange(&start, &end, aRv);
-  if (aRv.Failed()) {
-    return;
-  }
-
-  SetRangeText(aReplacement, start, end, SelectionMode::Preserve,
-               aRv, start, end);
-}
-
-void
-nsTextEditorState::SetRangeText(const nsAString& aReplacement, uint32_t aStart,
-                                uint32_t aEnd, SelectionMode aSelectMode,
-                                ErrorResult& aRv, int32_t aSelectionStart,
-                                int32_t aSelectionEnd)
-{
-  if (aStart > aEnd) {
-    aRv.Throw(NS_ERROR_DOM_INDEX_SIZE_ERR);
-    return;
-  }
-
-  nsAutoString value;
-  mTextCtrlElement->GetValueFromSetRangeText(value);
-  uint32_t inputValueLength = value.Length();
-
-  if (aStart > inputValueLength) {
-    aStart = inputValueLength;
-  }
-
-  if (aEnd > inputValueLength) {
-    aEnd = inputValueLength;
-  }
-
-  if (aSelectionStart == -1 && aSelectionEnd == -1) {
-    GetSelectionRange(&aSelectionStart, &aSelectionEnd, aRv);
-    if (aRv.Failed()) {
-      return;
-    }
-  }
-
-  MOZ_ASSERT(aStart <= aEnd);
-  value.Replace(aStart, aEnd - aStart, aReplacement);
-  nsresult rv = mTextCtrlElement->SetValueFromSetRangeText(value);
-  if (NS_FAILED(rv)) {
-    aRv.Throw(rv);
-    return;
-  }
-
-  uint32_t newEnd = aStart + aReplacement.Length();
-  int32_t delta =  aReplacement.Length() - (aEnd - aStart);
-
-  switch (aSelectMode) {
-    case mozilla::dom::SelectionMode::Select:
-    {
-      aSelectionStart = aStart;
-      aSelectionEnd = newEnd;
-    }
-    break;
-    case mozilla::dom::SelectionMode::Start:
-    {
-      aSelectionStart = aSelectionEnd = aStart;
-    }
-    break;
-    case mozilla::dom::SelectionMode::End:
-    {
-      aSelectionStart = aSelectionEnd = newEnd;
-    }
-    break;
-    case mozilla::dom::SelectionMode::Preserve:
-    {
-      if ((uint32_t)aSelectionStart > aEnd) {
-        aSelectionStart += delta;
-      } else if ((uint32_t)aSelectionStart > aStart) {
-        aSelectionStart = aStart;
-      }
-
-      if ((uint32_t)aSelectionEnd > aEnd) {
-        aSelectionEnd += delta;
-      } else if ((uint32_t)aSelectionEnd > aStart) {
-        aSelectionEnd = newEnd;
-      }
-    }
-    break;
-    default:
-      MOZ_CRASH("Unknown mode!");
-  }
-
-  SetSelectionRange(aSelectionStart, aSelectionEnd, Optional<nsAString>(), aRv);
+  return NS_OK;
 }
 
 HTMLInputElement*
@@ -2012,28 +1694,29 @@ nsTextEditorState::UnbindFromFrame(nsTextControlFrame* aFrame)
   
   
   
-  if (!IsSelectionCached()) {
-    
-    int32_t start = 0, end = 0;
-    IgnoredErrorResult rangeRv;
-    GetSelectionRange(&start, &end, rangeRv);
-
-    IgnoredErrorResult dirRv;
-    nsITextControlFrame::SelectionDirection direction =
-      GetSelectionDirection(dirRv);
-
-    MOZ_ASSERT(aFrame == mBoundFrame);
-    SelectionProperties& props = GetSelectionProperties();
-    props.SetStart(start);
-    props.SetEnd(end);
-    props.SetDirection(direction);
+  
+  int32_t start = 0, end = 0;
+  nsITextControlFrame::SelectionDirection direction =
+    nsITextControlFrame::eForward;
+  if (mEditorInitialized) {
     HTMLInputElement* number = GetParentNumberControl(aFrame);
     if (number) {
       
       
       
-      number->SetSelectionCached();
+      SelectionProperties props;
+      GetSelectionRange(&start, &end);
+      GetSelectionDirection(&direction);
+      props.SetStart(start);
+      props.SetEnd(end);
+      props.SetDirection(direction);
+      number->SetSelectionProperties(props);
     } else {
+      GetSelectionRange(&start, &end);
+      GetSelectionDirection(&direction);
+      mSelectionProperties.SetStart(start);
+      mSelectionProperties.SetEnd(end);
+      mSelectionProperties.SetDirection(direction);
       mSelectionCached = true;
     }
   }
@@ -2571,19 +2254,6 @@ nsTextEditorState::SetValue(const nsAString& aValue, uint32_t aFlags)
     }
     if (!mValue->Assign(value, fallible)) {
       return false;
-    }
-
-    
-    if (IsSelectionCached()) {
-      SelectionProperties& props = GetSelectionProperties();
-      if (aFlags & eSetValue_MoveCursorToEnd) {
-        props.SetStart(value.Length());
-        props.SetEnd(value.Length());
-      } else {
-        
-        props.SetStart(std::min(uint32_t(props.GetStart()), value.Length()));
-        props.SetEnd(std::min(uint32_t(props.GetEnd()), value.Length()));
-      }
     }
 
     

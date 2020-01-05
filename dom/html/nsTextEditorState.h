@@ -15,8 +15,6 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/WeakPtr.h"
-#include "mozilla/dom/HTMLInputElementBinding.h"
-#include "mozilla/dom/Nullable.h"
 
 class nsTextInputListener;
 class nsTextControlFrame;
@@ -29,9 +27,6 @@ class nsITextControlElement;
 class nsFrame;
 
 namespace mozilla {
-
-class ErrorResult;
-
 namespace dom {
 class HTMLInputElement;
 } 
@@ -158,11 +153,7 @@ public:
     
     eSetValue_ByContent             = 1 << 1,
     
-    eSetValue_Notify                = 1 << 2,
-    
-    
-    
-    eSetValue_MoveCursorToEnd       = 1 << 3,
+    eSetValue_Notify                = 1 << 2
   };
   MOZ_MUST_USE bool SetValue(const nsAString& aValue, uint32_t aFlags);
   void GetValue(nsAString& aValue, bool aIgnoreWrap) const;
@@ -270,76 +261,12 @@ public:
   void SetSelectionProperties(SelectionProperties& aProps);
   void WillInitEagerly() { mSelectionRestoreEagerInit = true; }
   bool HasNeverInitializedBefore() const { return !mEverInited; }
-  
-  
-  
-  void SyncUpSelectionPropertiesBeforeDestruction();
 
   
-  void GetSelectionRange(int32_t* aSelectionStart, int32_t* aSelectionEnd,
-                         mozilla::ErrorResult& aRv);
+  nsresult GetSelectionRange(int32_t* aSelectionStart, int32_t* aSelectionEnd);
 
   
-  nsITextControlFrame::SelectionDirection
-    GetSelectionDirection(mozilla::ErrorResult& aRv);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  void SetSelectionRange(int32_t aStart, int32_t aEnd,
-                         nsITextControlFrame::SelectionDirection aDirection,
-                         mozilla::ErrorResult& aRv);
-
-  
-  
-  
-  void SetSelectionRange(int32_t aSelectionStart,
-                         int32_t aSelectionEnd,
-                         const mozilla::dom::Optional<nsAString>& aDirection,
-                         mozilla::ErrorResult& aRv);
-
-  
-  
-  
-  void SetSelectionStart(const mozilla::dom::Nullable<uint32_t>& aStart,
-                         mozilla::ErrorResult& aRv);
-
-  
-  
-  
-  void SetSelectionEnd(const mozilla::dom::Nullable<uint32_t>& aEnd,
-                       mozilla::ErrorResult& aRv);
-
-  
-  
-  
-  void GetSelectionDirectionString(nsAString& aDirection,
-                                   mozilla::ErrorResult& aRv);
-
-  
-  
-  
-  void SetSelectionDirection(const nsAString& aDirection,
-                             mozilla::ErrorResult& aRv);
-
-  
-  
-  void SetRangeText(const nsAString& aReplacement, mozilla::ErrorResult& aRv);
-  
-  
-  void SetRangeText(const nsAString& aReplacement, uint32_t aStart,
-                    uint32_t aEnd, mozilla::dom::SelectionMode aSelectMode,
-                    mozilla::ErrorResult& aRv, int32_t aSelectionStart = -1,
-                    int32_t aSelectionEnd = -1);
+  nsresult GetSelectionDirection(nsITextControlFrame::SelectionDirection* aDirection);
 
   void UpdateEditableState(bool aNotify) {
     if (mRootNode) {
@@ -399,7 +326,6 @@ private:
   
   
   nsITextControlElement* const MOZ_NON_OWNING_REF mTextCtrlElement;
-  
   RefPtr<nsTextInputSelectionImpl> mSelCon;
   RefPtr<RestoreSelectionState> mRestoringSelection;
   nsCOMPtr<nsIEditor> mEditor;
