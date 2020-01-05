@@ -180,7 +180,7 @@ function* testPopupSize(standardsMode, browserWin = window, arrowSide = "top") {
 
   
   
-  yield new Promise(resolve => setTimeout(resolve, 100));
+  yield delay(100);
 
   let dims = yield promiseContentDimensions(browser);
 
@@ -295,7 +295,7 @@ add_task(function* testBrowserActionMenuResizeBottomArrow() {
       break;
     }
 
-    yield new Promise(resolve => setTimeout(resolve, 100));
+    yield delay(100);
   }
 
   yield testPopupSize(true, win, "bottom");
