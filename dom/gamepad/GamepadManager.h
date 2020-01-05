@@ -15,6 +15,9 @@
 class nsGlobalWindow;
 
 namespace mozilla {
+namespace gfx {
+class VRManagerChild;
+} 
 namespace dom {
 
 class EventTarget;
@@ -113,6 +116,7 @@ class GamepadManager final : public nsIObserver,
   
   
   nsTArray<GamepadEventChannelChild *> mChannelChildren;
+  gfx::VRManagerChild* mVRChannelChild;
 
  private:
 
