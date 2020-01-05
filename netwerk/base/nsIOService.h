@@ -45,6 +45,12 @@ namespace mozilla {
 namespace net {
 class NeckoChild;
 class nsAsyncRedirectVerifyHelper;
+class nsIOService;
+
+
+
+
+extern nsIOService* gIOService;
 
 class nsIOService final : public nsIIOService2
                         , public nsIObserver
@@ -65,7 +71,8 @@ public:
     
     
     
-    static nsIOService* GetInstance();
+    static nsIOService* GetAddRefed();
+    static nsIOService* GetInstance() { return gIOService; }
 
     nsresult Init();
     nsresult NewURI(const char* aSpec, nsIURI* aBaseURI,
@@ -193,11 +200,6 @@ public:
     static uint32_t   gDefaultSegmentSize;
     static uint32_t   gDefaultSegmentCount;
 };
-
-
-
-
-extern nsIOService* gIOService;
 
 } 
 } 
