@@ -2636,26 +2636,41 @@ nsTextEditorState::SetValue(const nsAString& aValue, uint32_t aFlags)
     if (!mValue) {
       mValue.emplace();
     }
-    if (!mValue->Assign(newValue, fallible)) {
-      return false;
-    }
 
     
-    if (IsSelectionCached()) {
-      SelectionProperties& props = GetSelectionProperties();
-      if (aFlags & eSetValue_MoveCursorToEndIfValueChanged) {
-        props.SetStart(newValue.Length());
-        props.SetEnd(newValue.Length());
-      } else {
-        
-        props.SetStart(std::min(props.GetStart(), newValue.Length()));
-        props.SetEnd(std::min(props.GetEnd(), newValue.Length()));
+    
+    if (!mValue->Equals(newValue) ||
+        !nsContentUtils::SkipCursorMoveForSameValueSet()) {
+      if (!mValue->Assign(newValue, fallible)) {
+        return false;
       }
-    }
 
-    
-    if (mBoundFrame) {
-      mBoundFrame->UpdateValueDisplay(true);
+      
+      if (IsSelectionCached()) {
+        SelectionProperties& props = GetSelectionProperties();
+        if (aFlags & eSetValue_MoveCursorToEndIfValueChanged) {
+          props.SetStart(newValue.Length());
+          props.SetEnd(newValue.Length());
+        } else {
+          
+          props.SetStart(std::min(props.GetStart(), newValue.Length()));
+          props.SetEnd(std::min(props.GetEnd(), newValue.Length()));
+        }
+      }
+
+      
+      if (mBoundFrame) {
+        mBoundFrame->UpdateValueDisplay(true);
+      }
+    } else {
+      
+      
+      
+      
+      if (IsSelectionCached()) {
+        SelectionProperties& props = GetSelectionProperties();
+        props.SetIsDirty();
+      }
     }
   }
 

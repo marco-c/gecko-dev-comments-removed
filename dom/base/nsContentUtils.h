@@ -2888,6 +2888,13 @@ public:
 
   static uint64_t GenerateTabId();
 
+  
+
+
+
+  static bool
+  SkipCursorMoveForSameValueSet() { return sSkipCursorMoveForSameValueSet; }
+
 private:
   static bool InitializeEventTable();
 
@@ -3012,6 +3019,7 @@ private:
   static bool sAnimationsAPICoreEnabled;
   static bool sAnimationsAPIElementAnimateEnabled;
   static bool sGetBoxQuadsEnabled;
+  static bool sSkipCursorMoveForSameValueSet;
   static uint32_t sCookiesLifetimePolicy;
   static uint32_t sCookiesBehavior;
 

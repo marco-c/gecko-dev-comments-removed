@@ -283,9 +283,14 @@ public:
         mDirection = value;
       }
       
+      
       bool IsDirty() const
       {
         return mIsDirty;
+      }
+      void SetIsDirty()
+      {
+        mIsDirty = true;
       }
     private:
       uint32_t mStart, mEnd;

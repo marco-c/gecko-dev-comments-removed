@@ -1252,6 +1252,10 @@ pref("dom.select_popup_in_parent.enabled", false);
 pref("dom.input.dirpicker", false);
 
 
+
+pref("dom.input.skip_cursor_move_for_same_value_set", true);
+
+
 pref("dom.sysmsg.enabled", false);
 
 
