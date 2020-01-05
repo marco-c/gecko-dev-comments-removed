@@ -535,7 +535,6 @@ this.PlacesUIUtils = {
 
         
         return new PlacesMoveItemTransaction(data.id, container, index);
-        break;
       case PlacesUtils.TYPE_X_MOZ_PLACE:
         if (copy || data.id == -1) { 
           return this._getURIItemCopyTransaction(data, container, index);
@@ -543,7 +542,6 @@ this.PlacesUIUtils = {
 
         
         return new PlacesMoveItemTransaction(data.id, container, index);
-        break;
       case PlacesUtils.TYPE_X_MOZ_PLACE_SEPARATOR:
         if (copy) {
           
@@ -553,7 +551,6 @@ this.PlacesUIUtils = {
 
         
         return new PlacesMoveItemTransaction(data.id, container, index);
-        break;
       default:
         if (type == PlacesUtils.TYPE_X_MOZ_URL ||
             type == PlacesUtils.TYPE_UNICODE ||
@@ -1723,6 +1720,7 @@ XPCOMUtils.defineLazyGetter(PlacesUIUtils, "ptm", function() {
       return new PlacesSetItemAnnotationTransaction(aItemId, annoObj);
     },
 
+    
     
 
     beginBatch: () =>

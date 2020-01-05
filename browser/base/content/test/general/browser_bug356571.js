@@ -63,10 +63,12 @@ var gProgressListener = {
 function test() {
   todo(false, "temp. disabled");
   return; 
-  waitForExplicitFinish();
   
-  gBrowser.addTabsProgressListener(gProgressListener);
-  loadOneOrMoreURIs(kURIs.join("|"));
+
+
+
+
+
 }
 
 function finishTest() {

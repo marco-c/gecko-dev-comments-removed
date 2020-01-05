@@ -151,7 +151,7 @@ module.exports = {
     "no-unexpected-multiline": 2,
 
     
-    
+    "no-unreachable": 2,
 
     
     

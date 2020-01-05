@@ -156,17 +156,18 @@ add_task(function* testAltReturn() {
 
 add_task(function* testShiftAltReturn() {
   return;
+  
 
-  yield* prepareTest();
 
-  let url = expectedURL(searchBar.value);
 
-  let newTabPromise = BrowserTestUtils.waitForNewTab(gBrowser, url);
-  EventUtils.synthesizeKey("VK_RETURN", { shiftKey: true, altKey: true });
-  let newTab = yield newTabPromise;
 
-  is(gBrowser.tabs.length, preTabNo + 1, "Shift+Alt+Return key added new tab");
-  is(gBrowser.currentURI.spec, url, "testShiftAltReturn opened correct search page");
+
+
+
+
+
+
+
 });
 
 add_task(function* testLeftClick() {

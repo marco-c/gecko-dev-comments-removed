@@ -98,16 +98,18 @@ add_task(function* panel_shown_once_for_slow_doubleclick_on_new_bookmark_star_an
               "browser-places.js for this.");
   return;
 
-  yield test_bookmarks_popup({
-    isNewBookmark: true,
-    *popupShowFn() {
-      EventUtils.synthesizeMouse(bookmarkStar, 10, 10, window);
-      yield new Promise(resolve => setTimeout(resolve, 300));
-      EventUtils.synthesizeMouse(bookmarkStar, 10, 10, window);
-    },
-    shouldAutoClose: true,
-    isBookmarkRemoved: false,
-  });
+  
+
+
+
+
+
+
+
+
+
+
+
 });
 
 add_task(function* panel_shown_for_keyboardshortcut_on_new_bookmark_star_and_autocloses() {

@@ -375,56 +375,60 @@ add_task(function* test_textarea() {
   todo(false, "spell checker tests are failing, bug 1246296");
   return;
 
-  yield test_contextmenu("#test-textarea",
-    ["context-undo",                false,
-     "---",                         null,
-     "context-cut",                 true,
-     "context-copy",                true,
-     "context-paste",               null,
-     "context-delete",              false,
-     "---",                         null,
-     "context-selectall",           true,
-     "---",                         null,
-     "spell-add-dictionaries-main", true,
-    ],
-    {
-      skipFocusChange: true,
-    }
-  );
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 });
 
 add_task(function* test_textarea_spellcheck() {
   todo(false, "spell checker tests are failing, bug 1246296");
   return;
 
-  yield test_contextmenu("#test-textarea",
-    ["*chubbiness",         true, 
-     "spell-add-to-dictionary", true,
-     "---",                 null,
-     "context-undo",        false,
-     "---",                 null,
-     "context-cut",         true,
-     "context-copy",        true,
-     "context-paste",       null, 
-     "context-delete",      false,
-     "---",                 null,
-     "context-selectall",   true,
-     "---",                 null,
-     "spell-check-enabled", true,
-     "spell-dictionaries",  true,
-         ["spell-check-dictionary-en-US", true,
-          "---",                          null,
-          "spell-add-dictionaries",       true], null
-    ],
-    {
-      waitForSpellCheck: true,
-      offsetX: 6,
-      offsetY: 6,
-      postCheckContextMenuFn() {
-        document.getElementById("spell-add-to-dictionary").doCommand();
-      }
-    }
-  );
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 });
 
 add_task(function* test_plaintext2() {
@@ -435,59 +439,63 @@ add_task(function* test_undo_add_to_dictionary() {
   todo(false, "spell checker tests are failing, bug 1246296");
   return;
 
-  yield test_contextmenu("#test-textarea",
-    ["spell-undo-add-to-dictionary", true,
-     "---",                 null,
-     "context-undo",        false,
-     "---",                 null,
-     "context-cut",         true,
-     "context-copy",        true,
-     "context-paste",       null, 
-     "context-delete",      false,
-     "---",                 null,
-     "context-selectall",   true,
-     "---",                 null,
-     "spell-check-enabled", true,
-     "spell-dictionaries",  true,
-         ["spell-check-dictionary-en-US", true,
-          "---",                          null,
-          "spell-add-dictionaries",       true], null
-    ],
-    {
-      waitForSpellCheck: true,
-      postCheckContextMenuFn() {
-        document.getElementById("spell-undo-add-to-dictionary")
-                .doCommand();
-      }
-    }
-  );
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 });
 
 add_task(function* test_contenteditable() {
   todo(false, "spell checker tests are failing, bug 1246296");
   return;
 
-  yield test_contextmenu("#test-contenteditable",
-    ["spell-no-suggestions", false,
-     "spell-add-to-dictionary", true,
-     "---",                 null,
-     "context-undo",        false,
-     "---",                 null,
-     "context-cut",         true,
-     "context-copy",        true,
-     "context-paste",       null, 
-     "context-delete",      false,
-     "---",                 null,
-     "context-selectall",   true,
-     "---",                 null,
-     "spell-check-enabled", true,
-     "spell-dictionaries",  true,
-         ["spell-check-dictionary-en-US", true,
-          "---",                          null,
-          "spell-add-dictionaries",       true], null
-    ],
-    {waitForSpellCheck: true}
-  );
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 });
 
 add_task(function* test_copylinkcommand() {
@@ -719,72 +727,76 @@ add_task(function* test_select_input_text() {
   todo(false, "spell checker tests are failing, bug 1246296");
   return;
 
-  yield test_contextmenu("#test-select-input-text",
-    ["context-undo",         false,
-     "---",                  null,
-     "context-cut",          true,
-     "context-copy",         true,
-     "context-paste",        null, 
-     "context-delete",       true,
-     "---",                  null,
-     "context-selectall",    true,
-     "context-searchselect", true,
-     "---",                  null,
-     "spell-check-enabled",  true
-    ].concat(LOGIN_FILL_ITEMS),
-    {
-      *preCheckContextMenuFn() {
-        yield ContentTask.spawn(gBrowser.selectedBrowser, null, function*() {
-          let doc = content.document;
-          let win = doc.defaultView;
-          win.getSelection().removeAllRanges();
-          let element = doc.querySelector("#test-select-input-text");
-          element.select();
-        });
-      }
-    }
-  );
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 });
 
 add_task(function* test_select_input_text_password() {
   todo(false, "spell checker tests are failing, bug 1246296");
   return;
 
-  yield test_contextmenu("#test-select-input-text-type-password",
-    ["context-undo",        false,
-     "---",                 null,
-     "context-cut",         true,
-     "context-copy",        true,
-     "context-paste",       null, 
-     "context-delete",      true,
-     "---",                 null,
-     "context-selectall",   true,
-     "---",                 null,
-     "spell-check-enabled", true,
-     
-     "spell-dictionaries",  true,
-         ["spell-check-dictionary-en-US", true,
-          "---",                          null,
-          "spell-add-dictionaries",       true], null
-    ].concat(LOGIN_FILL_ITEMS),
-    {
-      *preCheckContextMenuFn() {
-        yield ContentTask.spawn(gBrowser.selectedBrowser, null, function*() {
-          let doc = content.document;
-          let win = doc.defaultView;
-          win.getSelection().removeAllRanges();
-          let element = doc.querySelector("#test-select-input-text-type-password");
-          element.select();
-        });
-      },
-      *postCheckContextMenuFn() {
-        yield ContentTask.spawn(gBrowser.selectedBrowser, null, function*() {
-          let win = content.document.defaultView;
-          win.getSelection().removeAllRanges();
-        });
-      }
-    }
-  );
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 });
 
 add_task(function* test_click_to_play_blocked_plugin() {
@@ -867,17 +879,19 @@ add_task(function* test_input_spell_false() {
   todo(false, "spell checker tests are failing, bug 1246296");
   return;
 
-  yield test_contextmenu("#test-contenteditable-spellcheck-false",
-    ["context-undo",        false,
-     "---",                 null,
-     "context-cut",         true,
-     "context-copy",        true,
-     "context-paste",       null, 
-     "context-delete",      false,
-     "---",                 null,
-     "context-selectall",   true,
-    ]
-  );
+  
+
+
+
+
+
+
+
+
+
+
+
+
 });
 
 const remoteClientsFixture = [ { id: 1, name: "Foo"}, { id: 2, name: "Bar"} ];

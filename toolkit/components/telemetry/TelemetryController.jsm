@@ -837,7 +837,6 @@ var Impl = {
     case "app-startup":
       
       return this.setupContentTelemetry();
-      break;
     }
     return undefined;
   },

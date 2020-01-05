@@ -301,6 +301,8 @@ var PrintUtils = {
   },
 
   
+  
+  
 
   _listener: null,
   _closeHandlerPP: null,
@@ -410,7 +412,6 @@ var PrintUtils = {
                                          data.maxSelfProgress,
                                          data.curTotalProgress,
                                          data.maxTotalProgress);
-        break;
       }
 
       case "Printing:Preview:StateChange": {
@@ -428,7 +429,6 @@ var PrintUtils = {
         return listener.onStateChange(null, null,
                                       data.stateFlags,
                                       data.status);
-        break;
       }
     }
     return undefined;

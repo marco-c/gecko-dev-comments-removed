@@ -413,19 +413,16 @@ var TelemetryScheduler = {
         
         this._isUserIdle = true;
         return this._onSchedulerTick();
-        break;
       case "active":
         
         this._isUserIdle = false;
         return this._onSchedulerTick();
-        break;
       case "wake_notification":
         
         
         
         
         return this._onSchedulerTick();
-        break;
     }
     return undefined;
   },
