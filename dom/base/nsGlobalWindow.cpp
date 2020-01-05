@@ -9061,13 +9061,29 @@ public:
 
       AutoSafeJSContext cx;
       JS::Rooted<JSObject*> obj(cx, currentInner->FastGetGlobalJSObject());
-      
       if (obj && !js::IsSystemCompartment(js::GetObjectCompartment(obj))) {
-        js::NukeCrossCompartmentWrappers(cx,
-                                         BrowserCompartmentMatcher(),
-                                         js::SingleCompartment(js::GetObjectCompartment(obj)),
-                                         win->IsInnerWindow() ? js::DontNukeWindowReferences
-                                                              : js::NukeWindowReferences);
+        JSCompartment* cpt = js::GetObjectCompartment(obj);
+        nsCOMPtr<nsIPrincipal> pc = nsJSPrincipals::get(JS_GetCompartmentPrincipals(cpt));
+
+        nsAutoString addonId;
+        if (NS_SUCCEEDED(pc->GetAddonId(addonId)) && !addonId.IsEmpty()) {
+          
+          js::NukeCrossCompartmentWrappers(cx, js::AllCompartments(),
+                                           js::SingleCompartment(cpt),
+                                           win->IsInnerWindow() ? js::DontNukeWindowReferences
+                                                                : js::NukeWindowReferences);
+
+          
+          auto compartmentPrivate = xpc::CompartmentPrivate::Get(cpt);
+          compartmentPrivate->wasNuked = true;
+          compartmentPrivate->scriptability.Block();
+        } else {
+          
+          js::NukeCrossCompartmentWrappers(cx, BrowserCompartmentMatcher(),
+                                           js::SingleCompartment(cpt),
+                                           win->IsInnerWindow() ? js::DontNukeWindowReferences
+                                                                : js::NukeWindowReferences);
+        }
       }
     }
 
