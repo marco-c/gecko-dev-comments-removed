@@ -2866,7 +2866,7 @@ public:
   
   virtual RefLayer* AsRefLayer() override { return this; }
 
-  virtual int64_t GetReferentId() { return mId; }
+  virtual uint64_t GetReferentId() { return mId; }
 
   
 
