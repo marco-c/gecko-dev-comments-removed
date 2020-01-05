@@ -19,7 +19,6 @@
 #include <X11/XKBlib.h>
 #include "WidgetUtils.h"
 #include "keysym2ucs.h"
-#include "nsContentUtils.h"
 #include "nsGtkUtils.h"
 #include "nsIBidiKeyboard.h"
 #include "nsServiceManagerUtils.h"
@@ -42,6 +41,7 @@ KeymapWrapper* KeymapWrapper::sInstance = nullptr;
 guint KeymapWrapper::sLastRepeatableHardwareKeyCode = 0;
 KeymapWrapper::RepeatState KeymapWrapper::sRepeatState =
     KeymapWrapper::NOT_PRESSED;
+nsIBidiKeyboard* sBidiKeyboard = nullptr;
 
 static const char* GetBoolName(bool aBool)
 {
@@ -170,8 +170,6 @@ KeymapWrapper::KeymapWrapper() :
     g_object_ref(mGdkKeymap);
     g_signal_connect(mGdkKeymap, "keys-changed",
                      (GCallback)OnKeysChanged, this);
-    g_signal_connect(mGdkKeymap, "direction-changed",
-                     (GCallback)OnDirectionChanged, this);
 
     if (GDK_IS_X11_DISPLAY(gdk_display_get_default()))
         InitXKBExtension();
@@ -444,9 +442,8 @@ KeymapWrapper::~KeymapWrapper()
     gdk_window_remove_filter(nullptr, FilterEvents, this);
     g_signal_handlers_disconnect_by_func(mGdkKeymap,
                                          FuncToGpointer(OnKeysChanged), this);
-    g_signal_handlers_disconnect_by_func(mGdkKeymap,
-                                         FuncToGpointer(OnDirectionChanged), this);
     g_object_unref(mGdkKeymap);
+    NS_IF_RELEASE(sBidiKeyboard);
     MOZ_LOG(gKeymapWrapperLog, LogLevel::Info,
         ("%p Destructor", this));
 }
@@ -522,16 +519,6 @@ KeymapWrapper::FilterEvents(GdkXEvent* aXEvent,
     return GDK_FILTER_CONTINUE;
 }
 
-static void
-ResetBidiKeyboard()
-{
-    
-    nsCOMPtr<nsIBidiKeyboard> bidiKeyboard = nsContentUtils::GetBidiKeyboard();
-    if (bidiKeyboard) {
-        bidiKeyboard->Reset();
-    }
-}
-
  void
 KeymapWrapper::OnKeysChanged(GdkKeymap *aGdkKeymap,
                              KeymapWrapper* aKeymapWrapper)
@@ -546,27 +533,14 @@ KeymapWrapper::OnKeysChanged(GdkKeymap *aGdkKeymap,
     
     
     sInstance->mInitialized = false;
-    ResetBidiKeyboard();
-}
 
-
-void
-KeymapWrapper::OnDirectionChanged(GdkKeymap *aGdkKeymap,
-                                  KeymapWrapper* aKeymapWrapper)
-{
     
-    
-    
-    
-    
-    
-    
-
-    MOZ_LOG(gKeymapWrapperLog, LogLevel::Info,
-        ("OnDirectionChanged, aGdkKeymap=%p, aKeymapWrapper=%p",
-         aGdkKeymap, aKeymapWrapper));
-
-    ResetBidiKeyboard();
+    if (!sBidiKeyboard) {
+        CallGetService("@mozilla.org/widget/bidikeyboard;1", &sBidiKeyboard);
+    }
+    if (sBidiKeyboard) {
+        sBidiKeyboard->Reset();
+    }
 }
 
  guint
