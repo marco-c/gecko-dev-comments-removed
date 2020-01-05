@@ -1054,9 +1054,21 @@ wasm::GenerateInterruptExit(MacroAssembler& masm, Label* throwLabel)
     masm.as_jr(HeapReg);
     masm.loadPtr(Address(StackPointer, -sizeof(intptr_t)), HeapReg);
 #elif defined(JS_CODEGEN_ARM)
-    masm.push(Imm32(0));            
-    masm.setFramePushed(0);         
-    masm.PushRegsInMask(AllRegsExceptPCSP); 
+    {
+        
+        ScratchRegisterScope scratch(masm);
+        SecondScratchRegisterScope secondScratch(masm);
+
+        
+        masm.as_alu(StackPointer, StackPointer, Imm8(4), OpSub);
+
+        
+        
+        masm.setFramePushed(0);
+
+        
+        masm.PushRegsInMask(AllRegsExceptPCSP);
+    }
 
     
     masm.as_mrs(r4);
