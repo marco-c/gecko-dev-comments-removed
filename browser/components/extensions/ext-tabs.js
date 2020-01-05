@@ -74,7 +74,7 @@ function getDocShellOwner(docShell) {
 
 
 extensions.on("page-load", (type, context, params, sender) => {
-  if (params.type == "tab" || params.type == "popup") {
+  if (params.viewType == "tab" || params.viewType == "popup") {
     let {xulWindow, tab} = getDocShellOwner(params.docShell);
 
     
@@ -87,7 +87,7 @@ extensions.on("page-load", (type, context, params, sender) => {
 });
 
 extensions.on("page-shutdown", (type, context) => {
-  if (context.type == "tab") {
+  if (context.viewType == "tab") {
     let {xulWindow, tab} = getDocShellOwner(context.docShell);
     if (tab) {
       xulWindow.gBrowser.removeTab(tab);

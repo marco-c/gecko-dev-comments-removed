@@ -141,8 +141,8 @@ this.ExtensionContext = class extends BaseContext {
       throw new Error("ExtensionContext cannot be created in child processes");
     }
 
-    let {type, uri, contentWindow} = params;
-    this.type = type;
+    let {viewType, uri, contentWindow} = params;
+    this.viewType = viewType;
     this.uri = uri || extension.baseURI;
 
     this.setContentWindow(contentWindow);
@@ -167,7 +167,7 @@ this.ExtensionContext = class extends BaseContext {
     apiManager.generateAPIs(this, localApis);
     this.childManager = new WannabeChildAPIManager(this, this.messageManager, localApis, {
       envType: "addon_parent",
-      viewType: type,
+      viewType,
       url: uri.spec,
     });
     let chromeApiWrapper = Object.create(this.childManager);
