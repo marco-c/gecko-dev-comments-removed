@@ -52,18 +52,13 @@ XPCOMUtils.defineLazyModuleGetter(this, "pktApi",
 var pktUI = (function() {
 
     
-    var inited = false;
     var _currentPanelDidShow;
     var _currentPanelDidHide;
-    var _isHidden = false;
-    var _notificationTimeout;
 
     
     
     
     var _panelId = 0;
-
-    var prefBranch = Services.prefs.getBranch("extensions.pocket.settings.");
 
     var overflowMenuWidth = 230;
     var overflowMenuHeight = 475;
@@ -92,13 +87,6 @@ var pktUI = (function() {
         getPanelFrame().setAttribute('src', 'about:blank');
     }
 
-
-    
-
-
-     function pocketBookmarkBarOpenPocketCommand(event) {
-        openTabWithUrl('https://getpocket.com/a/', true);
-     }
 
     
 
@@ -173,7 +161,7 @@ var pktUI = (function() {
                 variant = 'storyboard_lm';
             }
 
-            var panelId = showPanel("about:pocket-signup?pockethost="
+            showPanel("about:pocket-signup?pockethost="
                 + Services.prefs.getCharPref("extensions.pocket.site")
                 + "&fxasignedin="
                 + fxasignedin
@@ -572,14 +560,6 @@ var pktUI = (function() {
     function isInOverflowMenu() {
         var subview = getSubview();
         return !!subview;
-    }
-
-    function hasLegacyExtension() {
-        return !!document.getElementById('RIL_urlbar_add');
-    }
-
-    function isHidden() {
-        return _isHidden;
     }
 
     function getFirefoxAccountSignedInUser(callback) {
