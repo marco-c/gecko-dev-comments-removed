@@ -822,11 +822,6 @@ add_task(function test_common_initialize()
 
   
   
-  let registrar = Components.manager.QueryInterface(Ci.nsIComponentRegistrar);
-  do_register_cleanup(() => registrar = null);
-
-  
-  
   let mock = {
     QueryInterface: XPCOMUtils.generateQI([Ci.nsIHelperAppLauncherDialog]),
     promptForSaveToFileAsync(aLauncher,

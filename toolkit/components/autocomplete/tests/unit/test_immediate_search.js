@@ -35,7 +35,6 @@ function run_test() {
 
 
 add_test(function test_immediate_search() {
-  let immediateResults = ["mozillaTest"];
   let inputStr = "moz";
 
   let immediateSearch = new AutoCompleteImmediateSearch(
@@ -79,7 +78,6 @@ add_test(function test_immediate_search() {
 
 
 add_test(function test_immediate_search_notimeout() {
-  let immediateResults = ["mozillaTest"];
   let inputStr = "moz";
 
   let immediateSearch = new AutoCompleteImmediateSearch(
@@ -124,7 +122,6 @@ add_test(function test_immediate_search_notimeout() {
 
 
 add_test(function test_delayed_search_notimeout() {
-  let immediateResults = ["mozillaTest"];
   let inputStr = "moz";
 
   let delayedSearch = new AutoCompleteDelayedSearch(

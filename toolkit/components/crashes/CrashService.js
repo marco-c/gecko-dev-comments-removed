@@ -62,7 +62,7 @@ CrashService.prototype = Object.freeze({
     switch (topic) {
       case "profile-after-change":
         
-        let m = Services.crashmanager;
+        Services.crashmanager;
         break;
     }
   },

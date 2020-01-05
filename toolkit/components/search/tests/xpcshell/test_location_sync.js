@@ -55,7 +55,7 @@ add_task(function* test_simple() {
 
   
   
-  let engines = Services.search.getEngines();
+  Services.search.getEngines();
   ok(Services.search.isInitialized);
 
   

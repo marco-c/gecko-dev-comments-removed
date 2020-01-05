@@ -121,8 +121,6 @@
       }
       modules.set(path, module);
 
-      let name = ":" + path;
-      let objectURL;
       try {
         
         let xhr = new XMLHttpRequest();

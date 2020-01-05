@@ -85,7 +85,7 @@ add_task(function*() {
   }
 
   
-  let childPromise = run_test_in_child("test_ChildHistograms.js");
+  run_test_in_child("test_ChildHistograms.js");
   yield do_await_remote_message(MESSAGE_CHILD_TEST_DONE);
 
   yield ContentTaskUtils.waitForCondition(() => {
