@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 Cu.import("resource://gre/modules/Task.jsm");
