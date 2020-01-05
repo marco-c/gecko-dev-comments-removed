@@ -11,6 +11,8 @@
 
 #ifdef XPCOM_GLUE
 
+#include "mozilla/Bootstrap.h"
+
 
 
 
@@ -39,6 +41,16 @@ struct nsDynamicFunctionLoad
 
 extern "C" NS_HIDDEN_(nsresult)
 XPCOMGlueLoadXULFunctions(const nsDynamicFunctionLoad* aSymbols);
+
+namespace mozilla {
+
+
+
+
+
+NS_HIDDEN_(Bootstrap::UniquePtr) GetBootstrap(const char* aXPCOMFile);
+
+} 
 
 #endif 
 #endif 

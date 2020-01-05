@@ -1,0 +1,119 @@
+
+
+
+
+
+
+
+
+
+
+
+#ifndef mozilla_Bootstrap_h
+#define mozilla_Bootstrap_h
+
+#include "mozilla/UniquePtr.h"
+#include "nscore.h"
+#include "nsXULAppAPI.h"
+
+#ifdef MOZ_WIDGET_ANDROID
+#include "jni.h"
+
+extern "C" NS_EXPORT
+void GeckoStart(JNIEnv* aEnv, char** argv, int argc, const mozilla::StaticXREAppData& aAppData);
+#endif
+
+namespace mozilla {
+
+
+
+
+
+
+class Bootstrap
+{
+protected:
+  Bootstrap() { }
+
+  
+  
+  virtual ~Bootstrap() { }
+
+  
+
+
+  virtual void Dispose() = 0;
+
+  
+
+
+  class BootstrapDelete
+  {
+  public:
+    constexpr BootstrapDelete() { }
+    void operator()(Bootstrap* aPtr) const
+    {
+      aPtr->Dispose();
+    }
+  };
+
+public:
+  typedef mozilla::UniquePtr<Bootstrap, BootstrapDelete> UniquePtr;
+
+  virtual void NS_LogInit() = 0;
+
+  virtual void NS_LogTerm() = 0;
+
+  virtual nsresult XRE_GetFileFromPath(const char* aPath, nsIFile** aResult) = 0;
+
+  virtual nsresult XRE_ParseAppData(nsIFile* aINIFile, mozilla::XREAppData& aAppData) = 0;
+
+  virtual void XRE_TelemetryAccumulate(int aID, uint32_t aSample) = 0;
+
+  virtual void XRE_StartupTimelineRecord(int aEvent, mozilla::TimeStamp aWhen) = 0;
+
+  virtual int XRE_main(int argc, char* argv[], const mozilla::XREAppData& aAppData) = 0;
+
+  virtual void XRE_StopLateWriteChecks() = 0;
+
+  virtual int XRE_XPCShellMain(int argc, char** argv, char** envp, const XREShellData* aShellData) = 0;
+
+  virtual GeckoProcessType XRE_GetProcessType() = 0;
+
+  virtual void XRE_SetProcessType(const char* aProcessTypeString) = 0;
+
+  virtual nsresult XRE_InitChildProcess(int argc, char* argv[], const XREChildData* aChildData) = 0;
+
+  virtual void XRE_EnableSameExecutableForContentProc() = 0;
+
+#ifdef MOZ_WIDGET_ANDROID
+  virtual void GeckoStart(JNIEnv* aEnv, char** argv, int argc, const StaticXREAppData& aAppData) = 0;
+
+  virtual void XRE_SetAndroidChildFds(int aCrashFd, int aIPCFd) = 0;
+#endif
+
+#ifdef LIBFUZZER
+  virtual void XRE_LibFuzzerSetMain(int argc, char** argv, LibFuzzerMain aMain) = 0;
+
+  virtual void XRE_LibFuzzerGetFuncs(const char* aModuleName, LibFuzzerInitFunc* aInitFunc, LibFuzzerTestingFunc* aTestingFunc) = 0;
+#endif
+
+#ifdef MOZ_IPDL_TESTS
+  virtual int XRE_RunIPDLTest(int argc, char **argv) = 0;
+#endif
+};
+
+
+
+
+
+
+
+
+extern "C" NS_EXPORT void NS_FROZENCALL
+XRE_GetBootstrap(Bootstrap::UniquePtr& b);
+typedef void (*GetBootstrapType)(Bootstrap::UniquePtr&);
+
+} 
+
+#endif 
