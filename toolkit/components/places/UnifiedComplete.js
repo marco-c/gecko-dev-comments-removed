@@ -265,6 +265,8 @@ const SQL_BOOKMARKED_TYPED_URL_QUERY = urlQuery("AND bookmarked AND h.typed = 1"
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 
+Cu.importGlobalProperties(["fetch"]);
+
 XPCOMUtils.defineLazyModuleGetter(this, "PlacesUtils",
                                   "resource://gre/modules/PlacesUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "TelemetryStopwatch",
@@ -570,13 +572,10 @@ XPCOMUtils.defineLazyGetter(this, "PrefillSiteStorage", () => Object.seal({
     this.sites.push(site);
   },
 
-  populate() {
-    this.add("https://google.com/", "Google");
-    this.add("https://youtube.com/", "YouTube");
-    this.add("https://facebook.com/", "Facebook");
-    this.add("https://baidu.com/", "\u767E\u5EA6\u4E00\u4E0B\uFF0C\u4F60\u5C31\u77E5\u9053");
-    this.add("https://wikipedia.org/", "Wikipedia");
-    this.add("https://yahoo.com/", "Yahoo");
+  populate(sites) {
+    for (let site of sites) {
+      this.add(site[0], site[1]);
+    }
   },
 }));
 
@@ -2077,7 +2076,11 @@ function UnifiedComplete() {
     
     
     ProfileAgeCreatedPromise;
-    PrefillSiteStorage.populate(); 
+
+    fetch("chrome://global/content/unifiedcomplete-top-urls.json")
+      .then(response => response.json())
+      .then(sites => PrefillSiteStorage.populate(sites))
+      .catch(ex => Cu.reportError(ex));
   }
 }
 
@@ -2146,6 +2149,10 @@ UnifiedComplete.prototype = {
 
   addPrefillSite(url, title) {
     PrefillSiteStorage.add(url, title);
+  },
+
+  populatePrefillSiteStorage(json) {
+    PrefillSiteStorage.populate(json);
   },
 
   
