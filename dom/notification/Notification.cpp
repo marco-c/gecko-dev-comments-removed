@@ -2558,6 +2558,12 @@ public:
     }
 
     RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
+    if (!swm) {
+      
+      mRv = NS_ERROR_FAILURE;
+      return true;
+    }
+
     RefPtr<ServiceWorkerRegistrationInfo> registration =
       swm->GetRegistration(principal, mScope);
 

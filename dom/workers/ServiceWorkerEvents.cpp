@@ -874,6 +874,10 @@ public:
   {
     AssertIsOnMainThread();
     RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
+    if (!swm) {
+      
+      return;
+    }
 
     
     nsString message;

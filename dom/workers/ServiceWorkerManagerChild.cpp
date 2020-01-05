@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "ServiceWorkerManagerChild.h"
 #include "ServiceWorkerManager.h"
@@ -24,9 +24,10 @@ ServiceWorkerManagerChild::RecvNotifyRegister(
   }
 
   RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
-  MOZ_ASSERT(swm);
+  if (swm) {
+    swm->LoadRegistration(aData);
+  }
 
-  swm->LoadRegistration(aData);
   return IPC_OK();
 }
 
@@ -40,9 +41,10 @@ ServiceWorkerManagerChild::RecvNotifySoftUpdate(
   }
 
   RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
-  MOZ_ASSERT(swm);
+  if (swm) {
+    swm->SoftUpdate(aOriginAttributes, NS_ConvertUTF16toUTF8(aScope));
+  }
 
-  swm->SoftUpdate(aOriginAttributes, NS_ConvertUTF16toUTF8(aScope));
   return IPC_OK();
 }
 
@@ -55,7 +57,10 @@ ServiceWorkerManagerChild::RecvNotifyUnregister(const PrincipalInfo& aPrincipalI
   }
 
   RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
-  MOZ_ASSERT(swm);
+  if (!swm) {
+    
+    return IPC_OK();
+  }
 
   nsCOMPtr<nsIPrincipal> principal = PrincipalInfoToPrincipal(aPrincipalInfo);
   if (NS_WARN_IF(!principal)) {
@@ -75,9 +80,10 @@ ServiceWorkerManagerChild::RecvNotifyRemove(const nsCString& aHost)
   }
 
   RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
-  MOZ_ASSERT(swm);
+  if (swm) {
+    swm->Remove(aHost);
+  }
 
-  swm->Remove(aHost);
   return IPC_OK();
 }
 
@@ -89,12 +95,13 @@ ServiceWorkerManagerChild::RecvNotifyRemoveAll()
   }
 
   RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
-  MOZ_ASSERT(swm);
+  if (swm) {
+    swm->RemoveAll();
+  }
 
-  swm->RemoveAll();
   return IPC_OK();
 }
 
-} // namespace workers
-} // namespace dom
-} // namespace mozilla
+} 
+} 
+} 

@@ -99,7 +99,8 @@ ServiceWorkerUnregisterJob::Unregister()
 {
   AssertIsOnMainThread();
 
-  if (Canceled()) {
+  RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
+  if (Canceled() || !swm) {
     Finish(NS_ERROR_DOM_ABORT_ERR);
     return;
   }
@@ -108,8 +109,6 @@ ServiceWorkerUnregisterJob::Unregister()
   
   
   
-
-  RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
 
   
   

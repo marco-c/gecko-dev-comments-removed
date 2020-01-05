@@ -13,6 +13,8 @@ namespace mozilla {
 namespace dom {
 namespace workers {
 
+class ServiceWorkerManager;
+
 
 
 
@@ -93,7 +95,7 @@ private:
 
   
   void
-  Install();
+  Install(ServiceWorkerManager* aSWM);
 
   
   void

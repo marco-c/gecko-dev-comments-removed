@@ -238,12 +238,17 @@ ServiceWorkerRegistrationInfo::Activate()
     return;
   }
 
+  RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
+  if (!swm) {
+    
+    return;
+  }
+
   TransitionWaitingToActive();
 
   
 
   
-  RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
   nsCOMPtr<nsIRunnable> controllerChangeRunnable =
     NewRunnableMethod<RefPtr<ServiceWorkerRegistrationInfo>>(
       swm, &ServiceWorkerManager::FireControllerChange, this);
@@ -279,6 +284,10 @@ ServiceWorkerRegistrationInfo::FinishActivate(bool aSuccess)
   
   mActiveWorker->UpdateState(ServiceWorkerState::Activated);
   RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
+  if (!swm) {
+    
+    return;
+  }
   swm->StoreRegistration(mPrincipal, this);
 }
 
@@ -314,6 +323,11 @@ ServiceWorkerRegistrationInfo::AsyncUpdateRegistrationStateProperties(WhichServi
 {
   AssertIsOnMainThread();
   RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
+  if (!swm) {
+    
+    return;
+  }
+
   if (aTransition == Invalidate) {
     swm->InvalidateServiceWorkerRegistrationWorker(this, aWorker);
   } else {
@@ -495,6 +509,10 @@ ServiceWorkerRegistrationInfo::TransitionInstallingToWaiting()
   mWaitingWorker->UpdateState(ServiceWorkerState::Installed);
 
   RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
+  if (!swm) {
+    
+    return;
+  }
   swm->StoreRegistration(mPrincipal, this);
 }
 

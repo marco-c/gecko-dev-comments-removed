@@ -101,7 +101,12 @@ ServiceWorkerJob::Start(Callback* aFinalCallback)
   
   
   RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
+  if (!swm) {
+    
+    return;
+  }
   if (!swm->HasBackgroundActor()) {
+    
     swm->AppendPendingOperation(runnable);
     return;
   }
