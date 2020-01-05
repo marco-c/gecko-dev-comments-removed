@@ -25,10 +25,6 @@
 namespace js {
 
 struct AsmJSMetadata;
-class Debugger;
-class WasmActivation;
-class WasmBreakpoint;
-class WasmBreakpointSite;
 class WasmInstanceObject;
 
 namespace wasm {
@@ -359,66 +355,16 @@ typedef RefPtr<const Metadata> SharedMetadata;
 
 
 
-struct ExprLoc
-{
-    uint32_t lineno;
-    uint32_t column;
-    uint32_t offset;
-    ExprLoc() : lineno(0), column(0), offset(0) {}
-    ExprLoc(uint32_t lineno_, uint32_t column_, uint32_t offset_)
-      : lineno(lineno_), column(column_), offset(offset_)
-    {}
-};
-
-typedef Vector<ExprLoc, 0, SystemAllocPolicy> ExprLocVector;
-typedef Vector<uint32_t, 0, SystemAllocPolicy> ExprLocIndexVector;
 
 
-
-
-class GeneratedSourceMap
-{
-    ExprLocVector exprlocs_;
-    UniquePtr<ExprLocIndexVector> sortedByOffsetExprLocIndices_;
-    uint32_t totalLines_;
-
-  public:
-    explicit GeneratedSourceMap() : totalLines_(0) {}
-    ExprLocVector& exprlocs() { return exprlocs_; }
-
-    uint32_t totalLines() { return totalLines_; }
-    void setTotalLines(uint32_t val) { totalLines_ = val; }
-
-    bool searchLineByOffset(JSContext* cx, uint32_t offset, size_t* exprlocIndex);
-};
-
-typedef UniquePtr<GeneratedSourceMap> UniqueGeneratedSourceMap;
-typedef HashMap<uint32_t, uint32_t, DefaultHasher<uint32_t>, SystemAllocPolicy> StepModeCounters;
-typedef HashMap<uint32_t, WasmBreakpointSite*, DefaultHasher<uint32_t>, SystemAllocPolicy> WasmBreakpointSiteMap;
-
-
-
-
-
-
-class Code
+class Code : public ShareableBase<Code>
 {
     const UniqueCodeSegment  segment_;
     const SharedMetadata     metadata_;
     const SharedBytes        maybeBytecode_;
-    UniqueGeneratedSourceMap maybeSourceMap_;
 
     
     CacheableCharsVector     profilingLabels_;
-
-    
-
-    uint32_t                 enterAndLeaveFrameTrapsCounter_;
-    WasmBreakpointSiteMap    breakpointSites_;
-    StepModeCounters         stepModeCounters_;
-
-    void toggleDebugTrap(uint32_t offset, bool enabled);
-    bool ensureSourceMap(JSContext* cx);
 
   public:
     Code(UniqueCodeSegment segment,
@@ -443,51 +389,9 @@ class Code
 
     
     
-    
-
-    JSString* createText(JSContext* cx);
-    bool getLineOffsets(JSContext* cx, size_t lineno, Vector<uint32_t>* offsets);
-    bool getOffsetLocation(JSContext* cx, uint32_t offset, bool* found, size_t* lineno, size_t* column);
-    bool totalSourceLines(JSContext* cx, uint32_t* count);
-
-    
-    
 
     void ensureProfilingLabels(bool profilingEnabled);
     const char* profilingLabel(uint32_t funcIndex) const;
-
-    
-    
-    
-
-    void adjustEnterAndLeaveFrameTrapsState(JSContext* cx, bool enabled);
-
-    
-    
-
-    bool hasBreakpointTrapAtOffset(uint32_t offset);
-    void toggleBreakpointTrap(JSRuntime* rt, uint32_t offset, bool enabled);
-    WasmBreakpointSite* getOrCreateBreakpointSite(JSContext* cx, uint32_t offset);
-    bool hasBreakpointSite(uint32_t offset);
-    void destroyBreakpointSite(FreeOp* fop, uint32_t offset);
-    bool clearBreakpointsIn(JSContext* cx, WasmInstanceObject* instance,
-                            js::Debugger* dbg, JSObject* handler);
-
-    
-    
-
-    bool stepModeEnabled(uint32_t funcIndex) const;
-    bool incrementStepModeCount(JSContext* cx, uint32_t funcIndex);
-    bool decrementStepModeCount(JSContext* cx, uint32_t funcIndex);
-
-    
-
-    bool debugGetLocalTypes(uint32_t funcIndex, ValTypeVector* locals, size_t* argsLength);
-    ExprType debugGetResultType(uint32_t funcIndex);
-
-    
-
-    JSString* debugDisplayURL(JSContext* cx) const;
 
     
 
@@ -500,7 +404,7 @@ class Code
     WASM_DECLARE_SERIALIZABLE(Code);
 };
 
-typedef UniquePtr<Code> UniqueCode;
+typedef RefPtr<Code> MutableCode;
 
 } 
 } 

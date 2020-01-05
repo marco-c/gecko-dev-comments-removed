@@ -904,12 +904,20 @@ Module::instantiate(JSContext* cx,
     if (!globalSegment)
         return false;
 
-    auto code = cx->make_unique<Code>(Move(codeSegment), *metadata_, maybeBytecode);
+    MutableCode code(js_new<Code>(Move(codeSegment), *metadata_, maybeBytecode));
     if (!code)
         return false;
 
+    
+    
+    
+    auto debug = cx->make_unique<DebugState>(code, *metadata_, maybeBytecode);
+    if (!debug)
+        return false;
+
     instance.set(WasmInstanceObject::create(cx,
-                                            Move(code),
+                                            code,
+                                            Move(debug),
                                             Move(globalSegment),
                                             memory,
                                             Move(tables),
