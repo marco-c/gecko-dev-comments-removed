@@ -64,7 +64,6 @@ use std::cell::{Cell, UnsafeCell};
 use std::default::Default;
 use std::intrinsics::return_address;
 use std::marker::PhantomData;
-use std::mem;
 use std::ops::Deref;
 
 
@@ -185,13 +184,6 @@ impl<T: Reflectable> Temporary<T> {
 
     unsafe fn inner(&self) -> JS<T> {
         self.inner.clone()
-    }
-
-    
-    
-    
-    pub unsafe fn transmute<To>(self) -> Temporary<To> {
-        mem::transmute(self)
     }
 }
 
@@ -435,20 +427,6 @@ impl<T: Reflectable> LayoutJS<T> {
     
     pub unsafe fn unsafe_get(&self) -> *const T {
         *self.ptr
-    }
-}
-
-impl<From> JS<From> {
-    
-    pub unsafe fn transmute_copy<To>(&self) -> JS<To> {
-        mem::transmute_copy(self)
-    }
-}
-
-impl<From> LayoutJS<From> {
-    
-    pub unsafe fn transmute_copy<To>(&self) -> LayoutJS<To> {
-        mem::transmute_copy(self)
     }
 }
 
@@ -748,18 +726,6 @@ impl<'a, 'b, T> PartialEq<JSRef<'b, T>> for JSRef<'a, T> {
 }
 
 impl<'a,T> JSRef<'a,T> {
-    
-    
-    pub unsafe fn transmute<To>(self) -> JSRef<'a, To> {
-        mem::transmute(self)
-    }
-
-    
-    
-    pub unsafe fn transmute_borrowed<'b, To>(&'b self) -> &'b JSRef<'a, To> {
-        mem::transmute(self)
-    }
-
     
     pub fn unrooted(&self) -> JS<T> {
         JS {
