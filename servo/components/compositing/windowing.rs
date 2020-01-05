@@ -63,7 +63,7 @@ pub enum WindowEvent {
     Touch(TouchEventType, TouchId, TypedPoint2D<DevicePixel, f32>),
     
     
-    Scroll(TypedPoint2D<DevicePixel, f32>, TypedPoint2D<DevicePixel, i32>),
+    Scroll(TypedPoint2D<DevicePixel, f32>, TypedPoint2D<DevicePixel, i32>, TouchEventType),
     
     Zoom(f32),
     
