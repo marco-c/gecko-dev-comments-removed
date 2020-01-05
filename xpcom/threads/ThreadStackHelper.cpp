@@ -247,8 +247,15 @@ ThreadStackHelper::GetStack(Stack& aStack)
     return;
   }
 
-  FillStackBuffer();
-  FillThreadContext();
+  
+  
+  
+  CONTEXT context;
+  context.ContextFlags = CONTEXT_CONTROL;
+  if (::GetThreadContext(mThreadID, &context)) {
+    FillStackBuffer();
+    FillThreadContext();
+  }
 
   MOZ_ALWAYS_TRUE(::ResumeThread(mThreadID) != DWORD(-1));
 
