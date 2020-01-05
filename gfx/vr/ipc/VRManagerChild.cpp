@@ -17,10 +17,7 @@
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/layers/TextureClient.h"
 #include "nsContentUtils.h"
-
-#ifdef MOZ_GAMEPAD
 #include "mozilla/dom/GamepadManager.h"
-#endif
 
 using layers::TextureClient;
 
@@ -479,7 +476,6 @@ VRManagerChild::RecvNotifyVRVSync(const uint32_t& aDisplayID)
 mozilla::ipc::IPCResult
 VRManagerChild::RecvGamepadUpdate(const GamepadChangeEvent& aGamepadEvent)
 {
-#ifdef MOZ_GAMEPAD
   
   
   
@@ -489,7 +485,6 @@ VRManagerChild::RecvGamepadUpdate(const GamepadChangeEvent& aGamepadEvent)
   if (gamepadManager) {
     gamepadManager->Update(aGamepadEvent);
   }
-#endif
 
   return IPC_OK();
 }
