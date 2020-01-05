@@ -3,6 +3,7 @@
 
 
 use app_units::Au;
+use cssparser::{Parser, ToCss};
 use env_logger;
 use euclid::Size2D;
 use parking_lot::RwLock;
@@ -29,17 +30,22 @@ use style::gecko_bindings::bindings::{RawServoStyleSheetStrong, ServoComputedVal
 use style::gecko_bindings::bindings::{ServoDeclarationBlockBorrowed, ServoDeclarationBlockStrong};
 use style::gecko_bindings::bindings::{ThreadSafePrincipalHolder, ThreadSafeURIHolder};
 use style::gecko_bindings::bindings::{nsHTMLCSSStyleSheet, ServoComputedValuesBorrowedOrNull};
+use style::gecko_bindings::bindings::Gecko_Utf8SliceToString;
 use style::gecko_bindings::bindings::RawServoStyleSetBorrowedMut;
 use style::gecko_bindings::ptr::{GeckoArcPrincipal, GeckoArcURI};
 use style::gecko_bindings::structs::{SheetParsingMode, nsIAtom};
 use style::gecko_bindings::structs::ServoElementSnapshot;
 use style::gecko_bindings::structs::nsRestyleHint;
+use style::gecko_bindings::structs::nsString;
 use style::gecko_bindings::sugar::ownership::{FFIArcHelpers, HasArcFFI, HasBoxFFI};
 use style::gecko_bindings::sugar::ownership::{HasSimpleFFI, Strong};
 use style::parallel;
-use style::parser::ParserContextExtraData;
-use style::properties::{ComputedValues, parse_one_declaration};
+use style::parser::{ParserContext, ParserContextExtraData};
+use style::properties::{ComputedValues, Importance, PropertyDeclaration};
+use style::properties::{PropertyDeclarationParseResult, PropertyDeclarationBlock};
+use style::properties::{cascade, parse_one_declaration};
 use style::selector_impl::PseudoElementCascadeType;
+use style::selector_matching::ApplicableDeclarationBlock;
 use style::sequential;
 use style::string_cache::Atom;
 use style::stylesheets::{Origin, Stylesheet};
@@ -91,6 +97,7 @@ fn restyle_subtree(node: GeckoNode, raw_data: RawServoStyleSetBorrowedMut) {
         LocalStyleContextCreationInfo::new(per_doc_data.new_animations_sender.clone());
 
     let shared_style_context = SharedStyleContext {
+        
         viewport_size: Size2D::new(Au(0), Au(0)),
         screen_size_changed: false,
         generation: 0,
@@ -118,6 +125,35 @@ pub extern "C" fn Servo_RestyleSubtree(node: RawGeckoNodeBorrowed,
                                        raw_data: RawServoStyleSetBorrowedMut) -> () {
     let node = GeckoNode(node);
     restyle_subtree(node, raw_data);
+}
+
+#[no_mangle]
+pub extern "C" fn Servo_RestyleWithAddedDeclaration(declarations: ServoDeclarationBlockBorrowed,
+                                                    previous_style: ServoComputedValuesBorrowed)
+  -> ServoComputedValuesStrong
+{
+    match GeckoDeclarationBlock::as_arc(&declarations).declarations {
+        Some(ref declarations) => {
+            let declaration_block = ApplicableDeclarationBlock {
+                mixed_declarations: declarations.clone(),
+                importance: Importance::Normal,
+                source_order: 0,
+                specificity: ::std::u32::MAX,
+            };
+            let previous_style = ComputedValues::as_arc(&previous_style);
+
+            
+            let (computed, _) = cascade(Size2D::new(Au(0), Au(0)),
+                                        &[declaration_block],
+                                        false,
+                                        Some(previous_style),
+                                        None,
+                                        None,
+                                        Box::new(StdoutErrorReporter));
+            Arc::new(computed).into_strong()
+        },
+        None => ServoComputedValuesStrong::null(),
+    }
 }
 
 #[no_mangle]
@@ -338,6 +374,54 @@ pub extern "C" fn Servo_StyleSet_Drop(data: RawServoStyleSetOwned) -> () {
     let _ = data.into_box::<PerDocumentStyleData>();
 }
 
+
+#[no_mangle]
+pub extern "C" fn Servo_ParseProperty(property_bytes: *const u8,
+                                      property_length: u32,
+                                      value_bytes: *const u8,
+                                      value_length: u32,
+                                      base_bytes: *const u8,
+                                      base_length: u32,
+                                      base: *mut ThreadSafeURIHolder,
+                                      referrer: *mut ThreadSafeURIHolder,
+                                      principal: *mut ThreadSafePrincipalHolder)
+                                      -> ServoDeclarationBlockStrong {
+    
+    let name = unsafe { from_utf8_unchecked(slice::from_raw_parts(property_bytes,
+                                                                  property_length as usize)) };
+    let value_str = unsafe { from_utf8_unchecked(slice::from_raw_parts(value_bytes,
+                                                                       value_length as usize)) };
+    let base_str = unsafe { from_utf8_unchecked(slice::from_raw_parts(base_bytes,
+                                                                      base_length as usize)) };
+    let base_url = Url::parse(base_str).unwrap();
+    let extra_data = ParserContextExtraData {
+        base: Some(GeckoArcURI::new(base)),
+        referrer: Some(GeckoArcURI::new(referrer)),
+        principal: Some(GeckoArcPrincipal::new(principal)),
+    };
+
+    let context = ParserContext::new_with_extra_data(Origin::Author, &base_url,
+                                                     Box::new(StdoutErrorReporter),
+                                                     extra_data);
+
+    let mut results = vec![];
+    match PropertyDeclaration::parse(name, &context, &mut Parser::new(value_str),
+                                     &mut results, false) {
+        PropertyDeclarationParseResult::ValidOrIgnoredDeclaration => {},
+        _ => return ServoDeclarationBlockStrong::null(),
+    }
+
+    let results = results.into_iter().map(|r| (r, Importance::Normal)).collect();
+
+    Arc::new(GeckoDeclarationBlock {
+        declarations: Some(Arc::new(RwLock::new(PropertyDeclarationBlock {
+            declarations: results,
+            important_count: 0,
+        }))),
+        cache: AtomicPtr::new(ptr::null_mut()),
+        immutable: AtomicBool::new(false),
+    }).into_strong()
+}
 #[no_mangle]
 pub extern "C" fn Servo_ParseStyleAttribute(bytes: *const u8, length: u32,
                                             cache: *mut nsHTMLCSSStyleSheet)
@@ -363,6 +447,13 @@ pub extern "C" fn Servo_DeclarationBlock_Release(declarations: ServoDeclarationB
 }
 
 #[no_mangle]
+pub extern "C" fn Servo_DeclarationBlock_Equals(a: ServoDeclarationBlockBorrowed,
+                                                b: ServoDeclarationBlockBorrowed)
+                                                -> bool {
+    GeckoDeclarationBlock::as_arc(&a) == GeckoDeclarationBlock::as_arc(&b)
+}
+
+#[no_mangle]
 pub extern "C" fn Servo_DeclarationBlock_GetCache(declarations: ServoDeclarationBlockBorrowed)
                                                  -> *mut nsHTMLCSSStyleSheet {
     GeckoDeclarationBlock::as_arc(&declarations).cache.load(Ordering::Relaxed)
@@ -376,6 +467,39 @@ pub extern "C" fn Servo_DeclarationBlock_SetImmutable(declarations: ServoDeclara
 #[no_mangle]
 pub extern "C" fn Servo_DeclarationBlock_ClearCachePointer(declarations: ServoDeclarationBlockBorrowed) {
     GeckoDeclarationBlock::as_arc(&declarations).cache.store(ptr::null_mut(), Ordering::Relaxed)
+}
+
+#[no_mangle]
+pub extern "C" fn Servo_DeclarationBlock_SerializeOneValue(
+    declarations: ServoDeclarationBlockBorrowed,
+    buffer: *mut nsString)
+{
+    let mut string = String::new();
+
+    if let Some(ref declarations) = GeckoDeclarationBlock::as_arc(&declarations).declarations {
+        declarations.read().to_css(&mut string).unwrap();
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        debug_assert!(string.find(':').is_some());
+        let position = string.find(':').unwrap();
+        
+        let value = &string[(position + 1)..].trim_left();
+        debug_assert!(value.ends_with(';'));
+        let length = value.len() - 1; 
+
+        
+        
+        unsafe {
+            Gecko_Utf8SliceToString(buffer, value.as_ptr(), length);
+        }
+    }
 }
 
 #[no_mangle]
