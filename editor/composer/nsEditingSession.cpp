@@ -7,7 +7,7 @@
 #include <string.h>                     
 
 #include "imgIContainer.h"              
-#include "mozFlushType.h"               
+#include "mozilla/FlushType.h"          
 #include "mozilla/mozalloc.h"           
 #include "nsAString.h"
 #include "nsComponentManagerUtils.h"    

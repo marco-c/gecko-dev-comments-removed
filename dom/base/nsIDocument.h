@@ -6,7 +6,7 @@
 #ifndef nsIDocument_h___
 #define nsIDocument_h___
 
-#include "mozFlushType.h"                
+#include "mozilla/FlushType.h"           
 #include "nsAutoPtr.h"                   
 #include "nsCOMArray.h"                  
 #include "nsCRT.h"                       
